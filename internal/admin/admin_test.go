@@ -14,6 +14,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/scheduler"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
@@ -46,6 +47,40 @@ func TestAdminRequiresLogin(t *testing.T) {
 	}
 	if loc := rec.Header().Get("Location"); loc != "/admin/login" {
 		t.Fatalf("location=%q", loc)
+	}
+}
+
+func TestAdminAggregateManualEndpoints(t *testing.T) {
+	srv, db, mux, _ := newAdminTestServer(t)
+	svc := scheduler.New(scheduler.Config{}, nil, nil, srv.Outbound)
+	svc.Repo = db
+	srv.Scheduler = svc
+
+	unauth := httptest.NewRecorder()
+	mux.ServeHTTP(unauth, httptest.NewRequest(http.MethodPost, "/admin/aggregate/draft-now", nil))
+	if unauth.Code != http.StatusSeeOther || unauth.Header().Get("Location") != "/admin/login" {
+		t.Fatalf("unauth draft code=%d location=%q", unauth.Code, unauth.Header().Get("Location"))
+	}
+
+	srv.sessions["tok"] = "admin"
+	for _, path := range []string{"/admin/aggregate/draft-now", "/admin/aggregate/publish-now"} {
+		req := httptest.NewRequest(http.MethodPost, path, nil)
+		req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status=%d body=%s", path, rec.Code, rec.Body.String())
+		}
+		var got struct {
+			Processed  int      `json:"processed"`
+			ProjectIDs []string `json:"project_ids"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+			t.Fatalf("%s json: %v body=%s", path, err, rec.Body.String())
+		}
+		if got.Processed != 0 || len(got.ProjectIDs) != 0 {
+			t.Fatalf("%s response=%+v", path, got)
+		}
 	}
 }
 

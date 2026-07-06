@@ -108,6 +108,7 @@ func run(logger *slog.Logger) error {
 	}, nil, clock.Real{}, outbound)
 	schedulerSvc.Repo = st
 	schedulerSvc.Legacy = coord
+	adm.Scheduler = schedulerSvc
 	prefixHub.System = schedulerSvc
 	scheduleSvc := schedule.New(st, clock.Real{}, nil)
 	scheduleSvc.Coordinator = schedulerSvc

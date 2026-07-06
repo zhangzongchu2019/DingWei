@@ -11,6 +11,7 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -39,6 +40,7 @@ type Server struct {
 	Outbound  bus.Queue
 	Prefix    *m8.Hub
 	Collector SeenPersonCollector
+	Scheduler *scheduler.Service
 	SecretKey string
 	mu        sync.Mutex
 	sessions  map[string]string // token -> username
@@ -86,6 +88,8 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/config", s.requireAuth(s.configs))
 	mux.HandleFunc("POST /admin/config", s.requireAuth(s.upsertConfig))
 	mux.HandleFunc("POST /admin/delegate/schedule", s.requireAuth(s.delegateSchedule))
+	mux.HandleFunc("POST /admin/aggregate/draft-now", s.requireAuth(s.aggregateDraftNow))
+	mux.HandleFunc("POST /admin/aggregate/publish-now", s.requireAuth(s.aggregatePublishNow))
 	mux.HandleFunc("POST /admin/cleanup", s.requireAuth(s.cleanup))
 }
 
@@ -1343,6 +1347,43 @@ func (s *Server) cleanup(w http.ResponseWriter, r *http.Request) {
 		_ = s.Repo.WriteAudit(r.Context(), adminUser(r), "admin_cleanup_confirm", cutoff.Format("2006-01-02"))
 	}
 	writeJSON(w, result)
+}
+
+func (s *Server) aggregateDraftNow(w http.ResponseWriter, r *http.Request) {
+	if s.Scheduler == nil {
+		writeAggregateManualResult(w, nil, errors.New("scheduler service is not configured"), http.StatusServiceUnavailable)
+		return
+	}
+	reports, err := s.Scheduler.RunAggregateWeeklyDrafts(r.Context(), "admin手动聚合周报草稿")
+	writeAggregateManualResult(w, reports, err, http.StatusInternalServerError)
+}
+
+func (s *Server) aggregatePublishNow(w http.ResponseWriter, r *http.Request) {
+	if s.Scheduler == nil {
+		writeAggregateManualResult(w, nil, errors.New("scheduler service is not configured"), http.StatusServiceUnavailable)
+		return
+	}
+	reports, err := s.Scheduler.PublishDueAggregateWeeklyReports(r.Context(), "admin手动聚合周报发布")
+	writeAggregateManualResult(w, reports, err, http.StatusInternalServerError)
+}
+
+func writeAggregateManualResult(w http.ResponseWriter, reports []model.ProjectWeeklyReport, err error, errorStatus int) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	projectIDs := make([]string, 0, len(reports))
+	for _, report := range reports {
+		projectIDs = append(projectIDs, report.ProjectID)
+	}
+	status := http.StatusOK
+	resp := map[string]any{
+		"processed":   len(reports),
+		"project_ids": projectIDs,
+	}
+	if err != nil {
+		status = errorStatus
+		resp["error"] = err.Error()
+	}
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
