@@ -81,8 +81,9 @@ func run(logger *slog.Logger) error {
 	}
 
 	mux := http.NewServeMux()
-	inbound := bus.NewDBQueue(st, model.DirectionIn)
-	outbound := bus.NewDBQueue(st, model.DirectionOut)
+	writeQueueConfig := bus.AsyncDBQueueConfigFromEnv(logger)
+	inbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionIn, writeQueueConfig)
+	outbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionOut, writeQueueConfig)
 	prefixHub := m8.New(st)
 	prefixHub.Outbound = outbound
 	adm := admin.New(st)

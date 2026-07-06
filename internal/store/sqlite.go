@@ -1086,6 +1086,47 @@ func (s *SQLite) DeleteBotChannel(ctx context.Context, id string) error {
 }
 
 func (s *SQLite) EnqueueMessage(ctx context.Context, m model.Message) error {
+	m = s.prepareMessageForInsert(m)
+	var feishuMsgID any
+	if m.FeishuMsgID != "" {
+		feishuMsgID = m.FeishuMsgID
+	}
+	_, err := s.db.ExecContext(ctx,
+		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
+		m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339))
+	return err
+}
+
+func (s *SQLite) BatchEnqueueMessages(ctx context.Context, messages []model.Message) error {
+	if len(messages) == 0 {
+		return nil
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stmt, err := tx.PrepareContext(ctx, `INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, m := range messages {
+		m = s.prepareMessageForInsert(m)
+		var feishuMsgID any
+		if m.FeishuMsgID != "" {
+			feishuMsgID = m.FeishuMsgID
+		}
+		if _, err := stmt.ExecContext(ctx, m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *SQLite) prepareMessageForInsert(m model.Message) model.Message {
 	if m.ID == "" {
 		m.ID = newID()
 	}
@@ -1096,15 +1137,7 @@ func (s *SQLite) EnqueueMessage(ctx context.Context, m model.Message) error {
 		m.CreatedAt = time.Now().UTC()
 	}
 	m.Content = redact.Content(m.Content)
-	var feishuMsgID any
-	if m.FeishuMsgID != "" {
-		feishuMsgID = m.FeishuMsgID
-	}
-	_, err := s.db.ExecContext(ctx,
-		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
-		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
-		m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339))
-	return err
+	return m
 }
 
 func (s *SQLite) ClaimNextMessage(ctx context.Context, direction model.Direction) (*model.Message, error) {
