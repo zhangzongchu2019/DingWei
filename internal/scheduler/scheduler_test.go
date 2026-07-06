@@ -564,6 +564,101 @@ func TestRunWeeklyProjectReportsPersistsNonAggregateOwnerProjects(t *testing.T) 
 	}
 }
 
+func TestAggregateWeeklyDraftReviewAndApprovePublishes(t *testing.T) {
+	dir := t.TempDir()
+	db, err := store.OpenSQLite(filepath.Join(dir, "wp.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	seeded, err := db.ListProjects(ctx, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, project := range seeded {
+		project.Active = false
+		if err := db.UpsertProject(ctx, project); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "manager", DisplayName: "负责人", FeishuOpenID: "ou_manager", Role: model.RoleManager, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []model.Project{
+		{ID: "proj:aggregate", Name: "聚合项目", OwnerKey: "manager", NotifyChatID: "oc_aggregate", NotifyBotID: "reviewbot", Active: true},
+		{ID: "proj:source-a", Name: "来源A", OwnerKey: "alice", Active: true},
+		{ID: "proj:source-b", Name: "来源B", OwnerKey: "bob", Active: true},
+	} {
+		if err := db.UpsertProject(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.SetProjectAggregateSources(ctx, "proj:aggregate", []string{"proj:source-a", "proj:source-b"}); err != nil {
+		t.Fatal(err)
+	}
+	week := "2026-06-29"
+	for _, report := range []model.ProjectWeeklyReport{
+		{ProjectID: "proj:source-a", Week: week, Content: "来源A完成网关联调", Status: "final", CreatedAt: time.Date(2026, 7, 4, 2, 0, 0, 0, time.UTC)},
+		{ProjectID: "proj:source-b", Week: week, Content: "来源B完成评测闭环", Status: "final", CreatedAt: time.Date(2026, 7, 4, 2, 0, 0, 0, time.UTC)},
+	} {
+		if err := db.UpsertProjectWeeklyReport(ctx, report); err != nil {
+			t.Fatal(err)
+		}
+	}
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	runner := &fakeRunner{out: "聚合周报草稿\n- 来源A完成网关联调\n- 来源B完成评测闭环"}
+	clk := &clock.Fake{T: time.Date(2026, 7, 5, 22, 0, 0, 0, time.UTC)}
+	svc := New(Config{}, runner, clk, outbound)
+	svc.Repo = db
+	reports, err := svc.RunAggregateWeeklyDrafts(ctx, "单测草稿")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 1 || reports[0].ProjectID != "proj:aggregate" || reports[0].Status != "draft" || reports[0].Week != week {
+		t.Fatalf("aggregate reports=%+v", reports)
+	}
+	if !strings.Contains(runner.prompt, "来源A完成网关联调") || !strings.Contains(runner.prompt, "审阅草稿") {
+		t.Fatalf("aggregate prompt missing sources/review guard: %s", runner.prompt)
+	}
+	dm, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || dm == nil {
+		t.Fatalf("review dm=%+v err=%v", dm, err)
+	}
+	if dm.ChatEntityID != "reviewbot:personal:ou_manager" || !strings.Contains(dm.Content, "批准发送") || !strings.Contains(dm.Content, "不要发送") {
+		t.Fatalf("review dm target/content=%+v", dm)
+	}
+	if next, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || next != nil {
+		t.Fatalf("draft should not publish group before approval next=%+v err=%v", next, err)
+	}
+	reply, err := svc.HandleSystemRequest(ctx, "scheduler", "record", "批准发送", model.Message{
+		ChatEntityID: "reviewbot:personal:ou_manager",
+		BotChannelID: "reviewbot",
+		ChatType:     model.ChatPersonal,
+		SenderOpenID: "ou_manager",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(reply, "已批准并发送") {
+		t.Fatalf("approve reply=%q", reply)
+	}
+	group, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || group == nil {
+		t.Fatalf("published group=%+v err=%v", group, err)
+	}
+	if group.ChatEntityID != "reviewbot:group:oc_aggregate" || group.ChatType != model.ChatGroup || !strings.Contains(group.Content, "聚合周报草稿") {
+		t.Fatalf("group publish=%+v", group)
+	}
+	stored, err := db.GetProjectWeeklyReport(ctx, "proj:aggregate", week)
+	if err != nil || stored == nil || stored.Status != "published" || stored.PublishedAt == nil || stored.ApprovedAt == nil {
+		t.Fatalf("stored aggregate=%+v err=%v", stored, err)
+	}
+}
+
 func TestRunPersonalRemindersSendsDMsAtFakeTimes(t *testing.T) {
 	dir := t.TempDir()
 	db, err := store.OpenSQLite(filepath.Join(dir, "wp.db"))

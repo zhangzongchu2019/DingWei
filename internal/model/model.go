@@ -242,13 +242,18 @@ type Progress struct {
 	Source     string
 }
 
-// ProjectWeeklyReport 是非聚合项目周报产物；week 使用 UTC 周一日期 YYYY-MM-DD。
+// ProjectWeeklyReport 是项目周报产物；week 使用 UTC 周一日期 YYYY-MM-DD。
 type ProjectWeeklyReport struct {
-	ID        string
-	ProjectID string
-	Week      string
-	Content   string
-	CreatedAt time.Time
+	ID          string
+	ProjectID   string
+	Week        string
+	Content     string
+	Status      string // final|draft|approved|vetoed|published
+	ApprovedAt  *time.Time
+	VetoedAt    *time.Time
+	PublishedAt *time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // Risk 风险记录。相同内容的 open 风险会归集到同一条。

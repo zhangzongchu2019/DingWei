@@ -332,6 +332,14 @@ func (m *schedulerCronManager) reload(ctx context.Context, logger *slog.Logger, 
 				if _, err := svc.RunWeeklyProjectReports(ctx, "定时非聚合项目周报"); err != nil {
 					logger.Warn("scheduler weekly project reports failed", "error", err)
 				}
+			case "aggregate_weekly_draft":
+				if _, err := svc.RunAggregateWeeklyDrafts(ctx, "定时聚合周报草稿"); err != nil {
+					logger.Warn("scheduler aggregate weekly draft failed", "error", err)
+				}
+			case "aggregate_weekly_publish":
+				if _, err := svc.PublishDueAggregateWeeklyReports(ctx, "定时聚合周报发布"); err != nil {
+					logger.Warn("scheduler aggregate weekly publish failed", "error", err)
+				}
 			}
 		}); err != nil {
 			logger.Warn("scheduler cron entry disabled", "kind", entry.Kind, "project_id", entry.ProjectID, "spec", entry.Spec, "tz", entry.TZ, "error", err)
@@ -357,6 +365,8 @@ func schedulerCronPlan(ctx context.Context, svc *scheduler.Service) ([]scheduler
 		{Kind: "group", Spec: normalizeCronSpec(groupSpec), TZ: firstNonEmpty(groupTZ, "UTC")},
 		{Kind: "personal", Spec: normalizeCronSpec(personalSpec), TZ: firstNonEmpty(personalTZ, "UTC")},
 		{Kind: "weekly_project", Spec: "0 2 * * 6", TZ: "UTC"},
+		{Kind: "aggregate_weekly_draft", Spec: "0 22 * * 0", TZ: "UTC"},
+		{Kind: "aggregate_weekly_publish", Spec: "0 2 * * 1", TZ: "UTC"},
 	}
 	if svc.Repo == nil {
 		return entries, nil

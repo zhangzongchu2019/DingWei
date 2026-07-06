@@ -392,6 +392,12 @@ func TestSchedulerCronPlanR16NotificationTiers(t *testing.T) {
 	if got["weekly_project"].Spec != "0 2 * * 6" || got["weekly_project"].TZ != "UTC" {
 		t.Fatalf("weekly project cron=%+v entries=%+v", got["weekly_project"], entries)
 	}
+	if got["aggregate_weekly_draft"].Spec != "0 22 * * 0" || got["aggregate_weekly_draft"].TZ != "UTC" {
+		t.Fatalf("aggregate weekly draft cron=%+v entries=%+v", got["aggregate_weekly_draft"], entries)
+	}
+	if got["aggregate_weekly_publish"].Spec != "0 2 * * 1" || got["aggregate_weekly_publish"].TZ != "UTC" {
+		t.Fatalf("aggregate weekly publish cron=%+v entries=%+v", got["aggregate_weekly_publish"], entries)
+	}
 	if got["project:proj:aggregate"].Spec != "0 2 * * 1,3" {
 		t.Fatalf("project override spec=%q entries=%+v", got["project:proj:aggregate"].Spec, entries)
 	}

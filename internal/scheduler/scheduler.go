@@ -150,6 +150,9 @@ func (s *Service) HandleSystemRequest(ctx context.Context, serviceName, action, 
 	}
 	switch action {
 	case "record", "evidence":
+		if reply, matched, err := s.HandleAggregateWeeklyReviewCommand(ctx, body, source); matched || err != nil {
+			return reply, err
+		}
 		owner, err := s.RecordProgressReport(ctx, body, source)
 		if err != nil {
 			return "", err
@@ -587,7 +590,9 @@ func (s *Service) RunWeeklyProjectReport(ctx context.Context, projectID, reason 
 		ProjectID: project.ID,
 		Week:      weekStart.Format("2006-01-02"),
 		Content:   content,
+		Status:    "final",
 		CreatedAt: s.Clock.Now().UTC(),
+		UpdatedAt: s.Clock.Now().UTC(),
 	}
 	if err := s.Repo.UpsertProjectWeeklyReport(ctx, report); err != nil {
 		return model.ProjectWeeklyReport{}, err
@@ -595,11 +600,260 @@ func (s *Service) RunWeeklyProjectReport(ctx context.Context, projectID, reason 
 	return report, nil
 }
 
+func (s *Service) RunAggregateWeeklyDrafts(ctx context.Context, reason string) ([]model.ProjectWeeklyReport, error) {
+	if s.Repo == nil {
+		return nil, errors.New("scheduler repository is not configured")
+	}
+	projects, err := s.AggregateWeeklyProjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reports := make([]model.ProjectWeeklyReport, 0, len(projects))
+	for _, project := range projects {
+		report, err := s.RunAggregateWeeklyDraft(ctx, project.ID, reason)
+		if err != nil {
+			return reports, err
+		}
+		reports = append(reports, report)
+	}
+	return reports, nil
+}
+
+func (s *Service) AggregateWeeklyProjects(ctx context.Context) ([]model.Project, error) {
+	if s.Repo == nil {
+		return nil, errors.New("scheduler repository is not configured")
+	}
+	ids, err := s.Repo.ListAggregateProjectIDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]model.Project, 0, len(ids))
+	for _, id := range ids {
+		project, err := s.Repo.GetProject(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if project == nil || !project.Active || strings.TrimSpace(project.OwnerKey) == "" {
+			continue
+		}
+		out = append(out, *project)
+	}
+	return out, nil
+}
+
+func (s *Service) RunAggregateWeeklyDraft(ctx context.Context, projectID, reason string) (model.ProjectWeeklyReport, error) {
+	if s.Repo == nil {
+		return model.ProjectWeeklyReport{}, errors.New("scheduler repository is not configured")
+	}
+	project, err := s.Repo.GetProject(ctx, projectID)
+	if err != nil {
+		return model.ProjectWeeklyReport{}, err
+	}
+	if project == nil || !project.Active {
+		return model.ProjectWeeklyReport{}, fmt.Errorf("aggregate project %s not found or inactive", projectID)
+	}
+	if strings.TrimSpace(project.OwnerKey) == "" {
+		return model.ProjectWeeklyReport{}, fmt.Errorf("aggregate project %s owner_key is empty", projectID)
+	}
+	sources, err := s.Repo.ListProjectAggregateSources(ctx, projectID)
+	if err != nil {
+		return model.ProjectWeeklyReport{}, err
+	}
+	if len(sources) == 0 {
+		return model.ProjectWeeklyReport{}, fmt.Errorf("project %s is not aggregate", projectID)
+	}
+	weekStart, _ := aggregateWeeklyReportWindow(s.Clock.Now().UTC())
+	sourceReports := make([]model.ProjectWeeklyReport, 0, len(sources))
+	missing := make([]model.Project, 0)
+	week := weekStart.Format("2006-01-02")
+	for _, source := range sources {
+		report, err := s.Repo.GetProjectWeeklyReport(ctx, source.ID, week)
+		if err != nil {
+			return model.ProjectWeeklyReport{}, err
+		}
+		if report == nil {
+			missing = append(missing, source)
+			continue
+		}
+		sourceReports = append(sourceReports, *report)
+	}
+	prompt := aggregateWeeklyReportPrompt(*project, sources, sourceReports, missing, week, reason)
+	content, err := s.Runner.Run(ctx, prompt)
+	if err != nil {
+		return model.ProjectWeeklyReport{}, err
+	}
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return model.ProjectWeeklyReport{}, errors.New("scheduler returned empty aggregate weekly report")
+	}
+	now := s.Clock.Now().UTC()
+	report := model.ProjectWeeklyReport{
+		ID:        "aggregate-weekly-" + project.ID + "-" + weekStart.Format("20060102"),
+		ProjectID: project.ID,
+		Week:      week,
+		Content:   content,
+		Status:    "draft",
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	if err := s.Repo.UpsertProjectWeeklyReport(ctx, report); err != nil {
+		return model.ProjectWeeklyReport{}, err
+	}
+	if err := s.notifyAggregateWeeklyReviewer(ctx, *project, report); err != nil {
+		return model.ProjectWeeklyReport{}, err
+	}
+	return report, nil
+}
+
+func (s *Service) PublishDueAggregateWeeklyReports(ctx context.Context, reason string) ([]model.ProjectWeeklyReport, error) {
+	if s.Repo == nil {
+		return nil, errors.New("scheduler repository is not configured")
+	}
+	projects, err := s.AggregateWeeklyProjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+	weekStart, _ := aggregateWeeklyReportWindow(s.Clock.Now().UTC())
+	week := weekStart.Format("2006-01-02")
+	published := make([]model.ProjectWeeklyReport, 0, len(projects))
+	for _, project := range projects {
+		report, err := s.Repo.GetProjectWeeklyReport(ctx, project.ID, week)
+		if err != nil {
+			return published, err
+		}
+		if report == nil {
+			reportValue, err := s.RunAggregateWeeklyDraft(ctx, project.ID, firstNonEmpty(reason, "到点发布前补生成草稿"))
+			if err != nil {
+				return published, err
+			}
+			report = &reportValue
+		}
+		switch report.Status {
+		case "vetoed", "published":
+			continue
+		default:
+			next, err := s.publishAggregateWeeklyReport(ctx, project, *report)
+			if err != nil {
+				return published, err
+			}
+			published = append(published, next)
+		}
+	}
+	return published, nil
+}
+
+func (s *Service) HandleAggregateWeeklyReviewCommand(ctx context.Context, body string, source model.Message) (string, bool, error) {
+	if s.Repo == nil {
+		return "", false, nil
+	}
+	command := strings.TrimSpace(body)
+	if command == "" {
+		return "", false, nil
+	}
+	action := ""
+	edit := ""
+	switch {
+	case strings.Contains(command, "批准发送"):
+		action = "approve"
+	case strings.Contains(command, "不要发送"):
+		action = "veto"
+	case strings.HasPrefix(command, "改稿加内容"):
+		action = "edit"
+		edit = strings.TrimSpace(strings.TrimPrefix(command, "改稿加内容"))
+	case strings.HasPrefix(command, "改稿"):
+		action = "edit"
+		edit = strings.TrimSpace(strings.TrimPrefix(command, "改稿"))
+	default:
+		return "", false, nil
+	}
+	owner := s.resolveProgressOwner(ctx, source)
+	project, report, err := s.findAggregateWeeklyReviewReport(ctx, owner)
+	if err != nil {
+		return "", true, err
+	}
+	if report == nil {
+		return "未找到待审阅的聚合周报草稿。", true, nil
+	}
+	now := s.Clock.Now().UTC()
+	switch action {
+	case "approve":
+		report.Status = "approved"
+		report.ApprovedAt = &now
+		report.VetoedAt = nil
+		report.UpdatedAt = now
+		if err := s.Repo.UpsertProjectWeeklyReport(ctx, *report); err != nil {
+			return "", true, err
+		}
+		if _, err := s.publishAggregateWeeklyReport(ctx, *project, *report); err != nil {
+			return "", true, err
+		}
+		return "已批准并发送聚合周报。", true, nil
+	case "veto":
+		report.Status = "vetoed"
+		report.VetoedAt = &now
+		report.UpdatedAt = now
+		if err := s.Repo.UpsertProjectWeeklyReport(ctx, *report); err != nil {
+			return "", true, err
+		}
+		return "已记录：本周聚合周报不要发送。", true, nil
+	case "edit":
+		if edit == "" {
+			return "请在“改稿”后写明要加入或替换的内容。", true, nil
+		}
+		report.Content = strings.TrimSpace(report.Content + "\n" + edit)
+		report.Status = "draft"
+		report.ApprovedAt = nil
+		report.VetoedAt = nil
+		report.UpdatedAt = now
+		if err := s.Repo.UpsertProjectWeeklyReport(ctx, *report); err != nil {
+			return "", true, err
+		}
+		return "已更新聚合周报定稿，发送前仍需批准；若无进一步操作，到点且未否决会按定稿发送。", true, nil
+	default:
+		return "", false, nil
+	}
+}
+
 func weeklyReportWindow(now time.Time) (time.Time, time.Time) {
 	date := time.Date(now.UTC().Year(), now.UTC().Month(), now.UTC().Day(), 0, 0, 0, 0, time.UTC)
 	daysSinceMonday := (int(date.Weekday()) + 6) % 7
 	start := date.AddDate(0, 0, -daysSinceMonday)
 	return start, start.AddDate(0, 0, 7)
+}
+
+func aggregateWeeklyReportWindow(now time.Time) (time.Time, time.Time) {
+	return weeklyReportWindow(now.UTC().AddDate(0, 0, -1))
+}
+
+func aggregateWeeklyReportPrompt(project model.Project, sources []model.Project, reports []model.ProjectWeeklyReport, missing []model.Project, week, reason string) string {
+	var b strings.Builder
+	_, _ = fmt.Fprintf(&b, "你是 DingWei 聚合项目周报生成器。请把来源项目周报汇总成一份给正式群发布前审阅的纯文本草稿。\n聚合项目：%s (%s)\n周：%s\n", firstNonEmpty(project.Name, project.ID), project.ID, week)
+	if strings.TrimSpace(reason) != "" {
+		_, _ = fmt.Fprintf(&b, "触发原因：%s\n", strings.TrimSpace(reason))
+	}
+	b.WriteString("\n必须遵守：\n")
+	b.WriteString("1. 只依据下方各来源项目周报汇总，不引入代码中未给出的人员、群、项目或完成项。\n")
+	b.WriteString("2. 输出纯文本主线摘要，禁止 Markdown 表格，控制在 10 行左右。\n")
+	b.WriteString("3. 负责人是内部问责关系，不在正文露出。\n")
+	b.WriteString("4. 这是审阅草稿，不要写“已发送”“已批准”等状态。\n\n")
+	b.WriteString("来源项目清单：\n")
+	for _, source := range sources {
+		_, _ = fmt.Fprintf(&b, "- %s (%s)\n", firstNonEmpty(source.Name, source.ID), source.ID)
+	}
+	b.WriteString("\n来源项目周报：\n")
+	if len(reports) == 0 {
+		b.WriteString("无已生成的来源项目周报。\n")
+	}
+	for _, report := range reports {
+		_, _ = fmt.Fprintf(&b, "\n[%s]\n%s\n", report.ProjectID, strings.TrimSpace(report.Content))
+	}
+	if len(missing) > 0 {
+		b.WriteString("\n缺失来源周报（只可提示缺失，不得编造）：\n")
+		for _, source := range missing {
+			_, _ = fmt.Fprintf(&b, "- %s (%s)\n", firstNonEmpty(source.Name, source.ID), source.ID)
+		}
+	}
+	return b.String()
 }
 
 func weeklyProjectReportPrompt(project model.Project, weekStart, weekEnd time.Time, reason string, progress []model.Progress, evidence []model.AIEvidence, teamDoc, ownerDoc *model.ScheduleDoc) string {
@@ -1057,6 +1311,140 @@ func (s *Service) NotifyProject(ctx context.Context, projectID, text string) err
 		ChatType:     model.ChatGroup,
 		Content:      string(content),
 	})
+}
+
+func (s *Service) notifyAggregateWeeklyReviewer(ctx context.Context, project model.Project, report model.ProjectWeeklyReport) error {
+	if s.Outbound == nil {
+		return nil
+	}
+	botID, openID, err := s.resolveOwnerDMTarget(ctx, project.OwnerKey, project.NotifyBotID)
+	if err != nil {
+		return err
+	}
+	text := fmt.Sprintf("聚合项目周报草稿待审阅：%s（%s）\n\n%s\n\n操作：回复“批准发送”立即发正式群；回复“不要发送”否决本周发送；回复“改稿加内容 ...”补充定稿正文。",
+		firstNonEmpty(project.Name, project.ID), report.Week, strings.TrimSpace(report.Content))
+	content, _ := json.Marshal(map[string]string{"text": text})
+	return s.Outbound.Enqueue(ctx, model.Message{
+		ID:           "aggregate-review-" + project.ID + "-" + report.Week + "-" + s.Clock.Now().UTC().Format("150405.000000000"),
+		ChatEntityID: botID + ":personal:" + openID,
+		BotChannelID: botID,
+		ChatType:     model.ChatPersonal,
+		Content:      string(content),
+	})
+}
+
+func (s *Service) publishAggregateWeeklyReport(ctx context.Context, project model.Project, report model.ProjectWeeklyReport) (model.ProjectWeeklyReport, error) {
+	if s.Outbound == nil {
+		return report, nil
+	}
+	chatID := strings.TrimSpace(project.NotifyChatID)
+	botID := strings.TrimSpace(project.NotifyBotID)
+	if chatID == "" || botID == "" {
+		return model.ProjectWeeklyReport{}, fmt.Errorf("aggregate project %s notify_chat_id/notify_bot_id is not configured", project.ID)
+	}
+	content, _ := json.Marshal(map[string]string{"text": strings.TrimSpace(report.Content)})
+	if err := s.Outbound.Enqueue(ctx, model.Message{
+		ID:           "aggregate-publish-" + project.ID + "-" + report.Week + "-" + s.Clock.Now().UTC().Format("150405.000000000"),
+		ChatEntityID: botID + ":group:" + chatID,
+		BotChannelID: botID,
+		ChatType:     model.ChatGroup,
+		Content:      string(content),
+	}); err != nil {
+		return model.ProjectWeeklyReport{}, err
+	}
+	now := s.Clock.Now().UTC()
+	report.Status = "published"
+	report.PublishedAt = &now
+	report.UpdatedAt = now
+	if err := s.Repo.UpsertProjectWeeklyReport(ctx, report); err != nil {
+		return model.ProjectWeeklyReport{}, err
+	}
+	return report, nil
+}
+
+func (s *Service) resolveOwnerDMTarget(ctx context.Context, ownerKey, preferredBotID string) (string, string, error) {
+	ownerKey = strings.TrimSpace(ownerKey)
+	preferredBotID = strings.TrimSpace(preferredBotID)
+	if ownerKey == "" {
+		return "", "", errors.New("owner_key is empty")
+	}
+	if member, err := s.Repo.GetMemberByOwnerKey(ctx, ownerKey); err != nil {
+		return "", "", err
+	} else if member != nil && strings.TrimSpace(member.FeishuOpenID) != "" {
+		botID := preferredBotID
+		if botID == "" {
+			botID = s.Config.NotifyBotID
+		}
+		if strings.TrimSpace(botID) == "" {
+			return "", "", fmt.Errorf("owner %s has no review bot channel", ownerKey)
+		}
+		return strings.TrimSpace(botID), strings.TrimSpace(member.FeishuOpenID), nil
+	}
+	endpoints, err := s.Repo.ListSessionEndpoints(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	for _, endpoint := range endpoints {
+		if endpoint.OwnerKey != ownerKey || endpoint.KeyID == "" {
+			continue
+		}
+		accounts, err := s.Repo.ListAPIKeyAccounts(ctx, endpoint.KeyID)
+		if err != nil {
+			return "", "", err
+		}
+		for _, account := range accounts {
+			botID, openID := parsePersonalAccount(account)
+			if openID == "" {
+				continue
+			}
+			if preferredBotID != "" {
+				botID = preferredBotID
+			}
+			if botID == "" {
+				continue
+			}
+			return botID, openID, nil
+		}
+	}
+	return "", "", fmt.Errorf("owner %s has no resolvable feishu personal account", ownerKey)
+}
+
+func parsePersonalAccount(account string) (string, string) {
+	parts := strings.Split(account, ":")
+	if len(parts) >= 3 && parts[len(parts)-2] == string(model.ChatPersonal) {
+		return parts[len(parts)-3], parts[len(parts)-1]
+	}
+	return "", ""
+}
+
+func (s *Service) findAggregateWeeklyReviewReport(ctx context.Context, ownerKey string) (*model.Project, *model.ProjectWeeklyReport, error) {
+	weekStart, _ := aggregateWeeklyReportWindow(s.Clock.Now().UTC())
+	week := weekStart.Format("2006-01-02")
+	projects, err := s.AggregateWeeklyProjects(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	var matchedProject *model.Project
+	var matchedReport *model.ProjectWeeklyReport
+	for _, project := range projects {
+		if project.OwnerKey != ownerKey {
+			continue
+		}
+		report, err := s.Repo.GetProjectWeeklyReport(ctx, project.ID, week)
+		if err != nil {
+			return nil, nil, err
+		}
+		if report == nil || report.Status == "vetoed" || report.Status == "published" {
+			continue
+		}
+		projectCopy := project
+		if matchedReport != nil {
+			return nil, nil, fmt.Errorf("找到多个待审阅聚合周报，请先在后台指定项目后操作")
+		}
+		matchedProject = &projectCopy
+		matchedReport = report
+	}
+	return matchedProject, matchedReport, nil
 }
 
 type NotifyTarget struct {

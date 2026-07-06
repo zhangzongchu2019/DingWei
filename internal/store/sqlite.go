@@ -357,10 +357,57 @@ func (s *SQLite) ensureProjectWeeklyReportTable(ctx context.Context) error {
   project_id TEXT NOT NULL,
   week       TEXT NOT NULL,
   content    TEXT NOT NULL,
+  status     TEXT NOT NULL DEFAULT 'final',
+  approved_at TEXT,
+  vetoed_at TEXT,
+  published_at TEXT,
   created_at TEXT NOT NULL,
+  updated_at TEXT,
   UNIQUE(project_id, week)
 )`)
 	if err != nil {
+		return err
+	}
+	rows, err := s.db.QueryContext(ctx, `PRAGMA table_info(project_weekly_report)`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	cols := map[string]bool{}
+	for rows.Next() {
+		var cid int
+		var name, typ string
+		var notNull int
+		var defaultValue sql.NullString
+		var pk int
+		if err := rows.Scan(&cid, &name, &typ, &notNull, &defaultValue, &pk); err != nil {
+			return err
+		}
+		cols[name] = true
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, stmt := range []struct {
+		col string
+		sql string
+	}{
+		{"status", `ALTER TABLE project_weekly_report ADD COLUMN status TEXT NOT NULL DEFAULT 'final'`},
+		{"approved_at", `ALTER TABLE project_weekly_report ADD COLUMN approved_at TEXT`},
+		{"vetoed_at", `ALTER TABLE project_weekly_report ADD COLUMN vetoed_at TEXT`},
+		{"published_at", `ALTER TABLE project_weekly_report ADD COLUMN published_at TEXT`},
+		{"updated_at", `ALTER TABLE project_weekly_report ADD COLUMN updated_at TEXT`},
+	} {
+		if !cols[stmt.col] {
+			if _, err := s.db.ExecContext(ctx, stmt.sql); err != nil {
+				return err
+			}
+		}
+	}
+	if _, err := s.db.ExecContext(ctx, `UPDATE project_weekly_report SET status='final' WHERE status IS NULL OR status=''`); err != nil {
+		return err
+	}
+	if _, err := s.db.ExecContext(ctx, `UPDATE project_weekly_report SET updated_at=created_at WHERE updated_at IS NULL OR updated_at=''`); err != nil {
 		return err
 	}
 	_, err = s.db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS idx_project_weekly_report_project_week ON project_weekly_report(project_id, week)`)
@@ -1040,25 +1087,56 @@ func (s *SQLite) UpsertProjectWeeklyReport(ctx context.Context, r model.ProjectW
 	if r.CreatedAt.IsZero() {
 		r.CreatedAt = s.now().UTC()
 	}
+	if r.UpdatedAt.IsZero() {
+		r.UpdatedAt = s.now().UTC()
+	}
+	if strings.TrimSpace(r.Status) == "" {
+		r.Status = "final"
+	}
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO project_weekly_report(id, project_id, week, content, created_at) VALUES(?,?,?,?,?)
-		 ON CONFLICT(project_id, week) DO UPDATE SET content=excluded.content, created_at=excluded.created_at`,
-		r.ID, r.ProjectID, r.Week, r.Content, r.CreatedAt.UTC().Format(time.RFC3339))
+		`INSERT INTO project_weekly_report(id, project_id, week, content, status, approved_at, vetoed_at, published_at, created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)
+		 ON CONFLICT(project_id, week) DO UPDATE SET content=excluded.content, status=excluded.status, approved_at=excluded.approved_at, vetoed_at=excluded.vetoed_at, published_at=excluded.published_at, updated_at=excluded.updated_at`,
+		r.ID, r.ProjectID, r.Week, r.Content, r.Status, nullableTime(r.ApprovedAt), nullableTime(r.VetoedAt), nullableTime(r.PublishedAt), r.CreatedAt.UTC().Format(time.RFC3339), r.UpdatedAt.UTC().Format(time.RFC3339))
 	return err
 }
 
 func (s *SQLite) GetProjectWeeklyReport(ctx context.Context, projectID, week string) (*model.ProjectWeeklyReport, error) {
-	row := s.db.QueryRowContext(ctx, `SELECT id, project_id, week, content, created_at FROM project_weekly_report WHERE project_id=? AND week=?`, projectID, week)
+	row := s.db.QueryRowContext(ctx, `SELECT id, project_id, week, content, COALESCE(status, 'final'), approved_at, vetoed_at, published_at, created_at, updated_at FROM project_weekly_report WHERE project_id=? AND week=?`, projectID, week)
 	var r model.ProjectWeeklyReport
+	var approved, vetoed, published, updated sql.NullString
 	var created string
-	if err := row.Scan(&r.ID, &r.ProjectID, &r.Week, &r.Content, &created); err != nil {
+	if err := row.Scan(&r.ID, &r.ProjectID, &r.Week, &r.Content, &r.Status, &approved, &vetoed, &published, &created, &updated); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
 	r.CreatedAt, _ = time.Parse(time.RFC3339, created)
+	if updated.Valid {
+		r.UpdatedAt, _ = time.Parse(time.RFC3339, updated.String)
+	}
+	r.ApprovedAt = parseNullableTime(approved)
+	r.VetoedAt = parseNullableTime(vetoed)
+	r.PublishedAt = parseNullableTime(published)
 	return &r, nil
+}
+
+func nullableTime(t *time.Time) any {
+	if t == nil || t.IsZero() {
+		return nil
+	}
+	return t.UTC().Format(time.RFC3339)
+}
+
+func parseNullableTime(v sql.NullString) *time.Time {
+	if !v.Valid || strings.TrimSpace(v.String) == "" {
+		return nil
+	}
+	t, err := time.Parse(time.RFC3339, v.String)
+	if err != nil {
+		return nil
+	}
+	return &t
 }
 
 func (s *SQLite) GetChatEntity(ctx context.Context, botChannelID, feishuID string) (*model.ChatEntity, error) {
