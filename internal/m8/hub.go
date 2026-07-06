@@ -78,13 +78,15 @@ type ForwardResponse struct {
 }
 
 const (
-	secOpsOwnerKey      = "system-v-task-internal"
-	secOpsMemberName    = "SYSTEM-V-TASK-INTERNAL"
-	secOpsKeyword       = "#系统安全"
-	secOpsAdminOwnerKey = "zsf"
+	secOpsOwnerKey   = "system-v-task-internal"
+	secOpsMemberName = "SYSTEM-V-TASK-INTERNAL"
+	secOpsKeyword    = "#系统安全"
 )
 
-var secOpsAdminOpenID = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
+var (
+	secOpsAdminOpenID   = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
+	secOpsAdminOwnerKey = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OWNER_KEY"))
+)
 
 func New(repo store.Repository) *Hub {
 	return &Hub{
@@ -571,27 +573,30 @@ func (h *Hub) securityOpsAuthorized(ctx context.Context, msg model.Message) (boo
 	if secOpsAdminOpenID != "" && msg.ChatType == model.ChatPersonal && openID == secOpsAdminOpenID {
 		return true, nil
 	}
-	members, err := h.Repo.ListMembers(ctx)
-	if err != nil {
-		return false, err
-	}
-	for _, member := range members {
-		if !member.Active || member.OwnerKey != secOpsAdminOwnerKey {
-			continue
+	if secOpsAdminOwnerKey != "" {
+		members, err := h.Repo.ListMembers(ctx)
+		if err != nil {
+			return false, err
 		}
-		if openID != "" && member.FeishuOpenID == openID {
-			return true, nil
+		for _, member := range members {
+			if !member.Active || member.OwnerKey != secOpsAdminOwnerKey {
+				continue
+			}
+			if openID != "" && member.FeishuOpenID == openID {
+				return true, nil
+			}
 		}
+		botChannelID, feishuID, ok := accountEntityParts(sourceAccount(msg))
+		if !ok {
+			return false, nil
+		}
+		entity, err := h.Repo.GetChatEntity(ctx, botChannelID, feishuID)
+		if err != nil {
+			return false, err
+		}
+		return entity != nil && entity.Active && entity.BoundOwner == secOpsAdminOwnerKey, nil
 	}
-	botChannelID, feishuID, ok := accountEntityParts(sourceAccount(msg))
-	if !ok {
-		return false, nil
-	}
-	entity, err := h.Repo.GetChatEntity(ctx, botChannelID, feishuID)
-	if err != nil {
-		return false, err
-	}
-	return entity != nil && entity.Active && entity.BoundOwner == secOpsAdminOwnerKey, nil
+	return false, nil
 }
 
 type ownerSessionTarget struct {

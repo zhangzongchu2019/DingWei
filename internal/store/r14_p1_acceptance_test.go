@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -60,98 +59,45 @@ func TestR14P1_Migration0008_DefaultProjectBackfill(t *testing.T) {
 	}
 	t.Logf("✅ proj:default 已创建: name=%q notify_chat=%q notify_bot=%q", proj.Name, proj.NotifyChatID, proj.NotifyBotID)
 
-	// 验证 name 必须为 "研发一组"
-	if proj.Name != "研发一组" {
-		t.Errorf("❌ proj:default name 期望 '研发一组', 实际 %q", proj.Name)
+	// 验证 name 必须为 "Default Project"
+	if proj.Name != "Default Project" {
+		t.Errorf("❌ proj:default name 期望 'Default Project', 实际 %q", proj.Name)
 	} else {
-		t.Logf("✅ proj:default name = '研发一组'")
+		t.Logf("✅ proj:default name = 'Default Project'")
 	}
 }
 
-func TestR14P1_Migration0008_DefaultMembers(t *testing.T) {
+func TestR14P1_Migration0008_NoDefaultBusinessMembers(t *testing.T) {
 	db, ctx := newTestDB_R14P1(t)
 
 	members, err := db.ListProjectMembers(ctx, "proj:default")
 	if err != nil {
 		t.Fatalf("❌ ListProjectMembers 报错: %v", err)
 	}
-	if len(members) < 3 {
-		t.Errorf("❌ proj:default 成员数 %d (期望 >=3: zsf, fulei, tanping)", len(members))
-	} else {
-		t.Logf("✅ proj:default 成员数 %d", len(members))
+	if len(members) != 0 {
+		t.Fatalf("❌ proj:default 不应 seed 业务成员: %+v", members)
 	}
-
-	got := make(map[string]bool)
-	for _, m := range members {
-		got[m.OwnerKey] = true
-		t.Logf("  成员: owner_key=%q display=%q", m.OwnerKey, m.DisplayName)
-	}
-	for _, want := range []string{"zsf", "fulei", "tanping"} {
-		if !got[want] {
-			t.Errorf("❌ 缺少成员 %q", want)
-		} else {
-			t.Logf("✅ 成员 %q 已分配", want)
-		}
-	}
+	t.Log("✅ proj:default 未 seed 业务成员")
 }
 
-func TestR14P1_Migration0008_MDImportAsV1(t *testing.T) {
-	// 写入临时 md 文件，验证导入为 v1
-	td := t.TempDir()
-	teamMD := filepath.Join(td, "AI-研究工作内容清单.md")
-	zsfMD := filepath.Join(td, "工作计划-张三丰.md")
-	fuleiMD := filepath.Join(td, "工作计划-符坚.md")
-	tanpingMD := filepath.Join(td, "工作计划-唐盛.md")
-
-	os.WriteFile(teamMD, []byte("# 团队排期 v1\n## 本周\n- [ ] 任务A"), 0644)
-	os.WriteFile(zsfMD, []byte("# 张三丰排期\n- 任务1"), 0644)
-	os.WriteFile(fuleiMD, []byte("# 符坚排期\n- 任务2"), 0644)
-	os.WriteFile(tanpingMD, []byte("# 唐盛排期\n- 任务3"), 0644)
-
-	t.Setenv("WP_SCHEDULE_TEAM_FILE", teamMD)
-	t.Setenv("WP_SCHEDULE_PERSONAL_DIR", td)
-
+func TestR14P1_Migration0008_NoDefaultScheduleDocImport(t *testing.T) {
 	db, ctx := newTestDB_R14P1(t)
 
-	// team doc v1
 	team, err := db.LatestScheduleDoc(ctx, "proj:default", "team", "")
 	if err != nil {
 		t.Fatalf("❌ LatestScheduleDoc(team) 报错: %v", err)
 	}
-	if team == nil {
-		t.Fatal("❌ team schedule_doc v1 未导入")
+	if team != nil {
+		t.Fatalf("❌ proj:default 不应 seed team schedule_doc: %+v", team)
 	}
-	if team.Version != 1 {
-		t.Errorf("❌ team version=%d (want 1)", team.Version)
+	personal, err := db.LatestScheduleDoc(ctx, "proj:default", "personal", "u1")
+	if err != nil {
+		t.Fatalf("❌ LatestScheduleDoc(personal) 报错: %v", err)
 	}
-	if !strings.Contains(team.Content, "任务A") {
-		t.Errorf("❌ team content 不包含预期内容: %s", team.Content)
+	if personal != nil {
+		t.Fatalf("❌ proj:default 不应 seed personal schedule_doc: %+v", personal)
 	}
-	t.Logf("✅ team doc imported as v1, content=%d chars", len(team.Content))
-
-	// personal docs v1
-	for _, tc := range []struct{ owner, wantContent string }{
-		{"zsf", "任务1"},
-		{"fulei", "任务2"},
-		{"tanping", "任务3"},
-	} {
-		doc, err := db.LatestScheduleDoc(ctx, "proj:default", "personal", tc.owner)
-		if err != nil {
-			t.Fatalf("❌ LatestScheduleDoc(personal, %s) 报错: %v", tc.owner, err)
-		}
-		if doc == nil {
-			t.Errorf("❌ personal schedule_doc v1 for %s 未导入", tc.owner)
-			continue
-		}
-		if doc.Version != 1 {
-			t.Errorf("❌ %s version=%d (want 1)", tc.owner, doc.Version)
-		}
-		if !strings.Contains(doc.Content, tc.wantContent) {
-			t.Errorf("❌ %s content 不包含 %q: %s", tc.owner, tc.wantContent, doc.Content)
-		} else {
-			t.Logf("✅ personal doc %s imported v1: %q", tc.owner, tc.wantContent)
-		}
-	}
+	t.Log("✅ 空库不再导入任何业务排期文档")
 }
 
 // ----------------------------------------------
@@ -211,20 +157,20 @@ func TestR14P1_PersonalNL_AppendScheduleDoc(t *testing.T) {
 
 	// 先写入初始 personal doc 并写 model.Schedule（模拟已有 schedule 行）
 	if err := db.UpsertSchedule(ctx, model.Schedule{
-		ID: "sched-1", OwnerKey: "zsf", Task: "旧任务A",
+		ID: "sched-1", OwnerKey: "u1", Task: "旧任务A",
 		StartDate: "07/01", EndDate: "07/07", Status: "进行中",
 	}); err != nil {
 		t.Fatalf("upsert schedule: %v", err)
 	}
 	if err := db.UpsertSchedule(ctx, model.Schedule{
-		ID: "sched-2", OwnerKey: "zsf", Task: "旧任务B",
+		ID: "sched-2", OwnerKey: "u1", Task: "旧任务B",
 		StartDate: "07/08", EndDate: "07/14", Status: "计划中",
 	}); err != nil {
 		t.Fatalf("upsert schedule 2: %v", err)
 	}
 
 	// 模拟 appendPersonalDoc 行为
-	items, err := db.ListSchedules(ctx, "zsf")
+	items, err := db.ListSchedules(ctx, "u1")
 	if err != nil {
 		t.Fatalf("ListSchedules: %v", err)
 	}
@@ -235,9 +181,9 @@ func TestR14P1_PersonalNL_AppendScheduleDoc(t *testing.T) {
 
 	// append personal schedule_doc
 	doc1, err := db.AppendScheduleDoc(ctx, model.ScheduleDoc{
-		ProjectID: "proj:default", Kind: "personal", OwnerKey: "zsf",
-		Content:   "# zsf\n- 07/01-07/07 旧任务A [进行中]\n- 07/08-07/14 旧任务B [计划中]",
-		Source:    "nl", CreatedBy: "zsf",
+		ProjectID: "proj:default", Kind: "personal", OwnerKey: "u1",
+		Content: "# u1\n- 07/01-07/07 旧任务A [进行中]\n- 07/08-07/14 旧任务B [计划中]",
+		Source:  "nl", CreatedBy: "u1",
 	})
 	if err != nil {
 		t.Fatalf("append personal doc v1: %v", err)
@@ -246,9 +192,9 @@ func TestR14P1_PersonalNL_AppendScheduleDoc(t *testing.T) {
 
 	// 再次 append（模拟下次 NL 变更）
 	doc2, err := db.AppendScheduleDoc(ctx, model.ScheduleDoc{
-		ProjectID: "proj:default", Kind: "personal", OwnerKey: "zsf",
-		Content:   "# zsf\n- 07/01-07/07 旧任务A [已完成]\n- 07/08-07/14 旧任务B [进行中]\n- 07/15-07/21 新任务C [计划中]",
-		Source:    "nl", CreatedBy: "zsf",
+		ProjectID: "proj:default", Kind: "personal", OwnerKey: "u1",
+		Content: "# u1\n- 07/01-07/07 旧任务A [已完成]\n- 07/08-07/14 旧任务B [进行中]\n- 07/15-07/21 新任务C [计划中]",
+		Source:  "nl", CreatedBy: "u1",
 	})
 	if err != nil {
 		t.Fatalf("append personal doc v2: %v", err)
@@ -256,7 +202,7 @@ func TestR14P1_PersonalNL_AppendScheduleDoc(t *testing.T) {
 	t.Logf("✅ personal doc v%d appended (第二次 NL)", doc2.Version)
 
 	// 验证旧 schedule 行仍在
-	itemsAfter, _ := db.ListSchedules(ctx, "zsf")
+	itemsAfter, _ := db.ListSchedules(ctx, "u1")
 	if len(itemsAfter) < 2 {
 		t.Errorf("❌ 旧 schedule 行丢失: %d 条", len(itemsAfter))
 	} else {
@@ -264,7 +210,7 @@ func TestR14P1_PersonalNL_AppendScheduleDoc(t *testing.T) {
 	}
 
 	// 最新版应包含新任务
-	latest, _ := db.LatestScheduleDoc(ctx, "proj:default", "personal", "zsf")
+	latest, _ := db.LatestScheduleDoc(ctx, "proj:default", "personal", "u1")
 	if latest.Version != 2 {
 		t.Errorf("❌ personal latest version=%d (want 2)", latest.Version)
 	} else {
@@ -277,11 +223,10 @@ func TestR14P1_PersonalNL_AppendScheduleDoc(t *testing.T) {
 	}
 
 	// 版本历史保留
-	versions, _ := db.ListScheduleDocVersions(ctx, "proj:default", "personal", "zsf")
+	versions, _ := db.ListScheduleDocVersions(ctx, "proj:default", "personal", "u1")
 	if len(versions) != 2 {
 		t.Errorf("❌ 版本历史 %d 条 (want 2)", len(versions))
 	} else {
 		t.Logf("✅ 版本历史 %d 条，旧版本可追溯", len(versions))
 	}
 }
-

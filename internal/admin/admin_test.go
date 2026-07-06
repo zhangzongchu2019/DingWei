@@ -19,7 +19,6 @@ import (
 
 func newAdminTestServer(t *testing.T) (*Server, *store.SQLite, *http.ServeMux, context.Context) {
 	t.Helper()
-	t.Setenv("WP_SEED_CCCONNECTOR_APPID", "cli_testcc0000000000")
 	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "admin.db"))
 	if err != nil {
 		t.Fatalf("OpenSQLite: %v", err)
@@ -272,7 +271,7 @@ func TestAdminSessionMirrorPersists(t *testing.T) {
 	if err := db.BindAPIKeyAccount(ctx, "FB-test", "dev:personal:ou_alice"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "dev:personal:ou_alice", DisplayName: "张三丰", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "dev:personal:ou_alice", DisplayName: "UserOne", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "home", LastSeenAt: time.Now(), Active: true}); err != nil {
@@ -288,7 +287,7 @@ func TestAdminSessionMirrorPersists(t *testing.T) {
 		t.Fatalf("mirror on endpoints=%+v err=%v", endpoints, err)
 	}
 	page = getAuth(t, mux, "/admin/sessions").Body.String()
-	if !strings.Contains(page, "张三丰 via UnifiedRobot") || strings.Contains(page, "ou_alice#FB-test#UnifiedRobot") {
+	if !strings.Contains(page, "UserOne via UnifiedRobot") || strings.Contains(page, "ou_alice#FB-test#UnifiedRobot") {
 		t.Fatalf("session page should show friendly mirror target: %s", page)
 	}
 	postForm(t, mux, "/admin/sessions", url.Values{"action": {"mirror_off"}, "key_id": {"FB-test"}, "session_name": {"home"}})
@@ -402,31 +401,30 @@ func TestAdminProjectsCRUDAndMemberAssignment(t *testing.T) {
 	}
 }
 
-func TestAdminBotChannelPageCanSeedAndEditCCConnector(t *testing.T) {
+func TestAdminBotChannelPageCanCreateAndEditBotChannel(t *testing.T) {
 	srv, db, mux, ctx := newAdminTestServer(t)
 	srv.sessions["tok"] = "admin"
 	channels, err := db.ListBotChannels(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cc := findBotChannel(channels, "CC-Connector")
-	if cc == nil || cc.AppID != "cli_testcc0000000000" || cc.Name != "CC-Connector" {
-		t.Fatalf("CC-Connector not seeded: %+v", channels)
+	if len(channels) != 0 {
+		t.Fatalf("bot channels should not be seeded: %+v", channels)
 	}
 	page := getAuth(t, mux, "/admin/bot-channels").Body.String()
-	for _, want := range []string{"CC-Connector", "cli_testcc0000000000", "app_secret", "保存", "WS状态", "缺 app_secret"} {
+	for _, want := range []string{"app_secret", "保存", "WS状态"} {
 		if !strings.Contains(page, want) {
 			t.Fatalf("bot channel page missing %q: %s", want, page)
 		}
 	}
-	postForm(t, mux, "/admin/bot-channels", url.Values{"id": {"CC-Connector"}, "name": {"CC-Connector"}, "app_id": {"cli_testcc0000000000"}, "purpose": {"general"}})
+	postForm(t, mux, "/admin/bot-channels", url.Values{"id": {"bot-test"}, "name": {"bot-test"}, "app_id": {"cli_testbot000000000"}, "purpose": {"general"}})
 	channels, err = db.ListBotChannels(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cc = findBotChannel(channels, "CC-Connector")
+	cc := findBotChannel(channels, "bot-test")
 	if cc == nil || cc.Purpose != "general" || !cc.CanSend || !cc.CanReceive {
-		t.Fatalf("CC-Connector edit failed: %+v", cc)
+		t.Fatalf("bot-test edit failed: %+v", cc)
 	}
 }
 
@@ -434,7 +432,7 @@ func TestAdminAggregateSourcesPageSavesSources(t *testing.T) {
 	srv, db, mux, ctx := newAdminTestServer(t)
 	srv.sessions["tok"] = "admin"
 	for _, p := range []model.Project{
-		{ID: "proj:agg", Name: "聚合项目", ParentID: "proj:default", NotifyBotID: "CC-Connector", EvidenceCron: "0 2 * * 1,3", Active: true},
+		{ID: "proj:agg", Name: "聚合项目", ParentID: "proj:default", NotifyBotID: "bot-test", EvidenceCron: "0 2 * * 1,3", Active: true},
 		{ID: "proj:a", Name: "项目A", ParentID: "proj:default", Active: true},
 		{ID: "proj:b", Name: "项目B", ParentID: "proj:default", Active: true},
 	} {

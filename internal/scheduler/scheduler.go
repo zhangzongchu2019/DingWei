@@ -81,10 +81,10 @@ func New(cfg Config, runner Runner, clk clock.Clock, outbound bus.Queue) *Servic
 
 func normalizeConfig(cfg Config) Config {
 	if cfg.TeamFile == "" {
-		cfg.TeamFile = "docs/AI研究任务排期/AI-研究工作内容清单.md"
+		cfg.TeamFile = "docs/schedule/team.md"
 	}
 	if cfg.PersonalDir == "" {
-		cfg.PersonalDir = "docs/AI研究任务排期"
+		cfg.PersonalDir = "docs/schedule"
 	}
 	if cfg.BackupDir == "" {
 		cfg.BackupDir = filepath.Join(cfg.PersonalDir, "backup")

@@ -43,6 +43,15 @@ func useTestSecOpsAdminOpenID(t *testing.T) {
 	})
 }
 
+func useTestSecOpsAdminOwnerKey(t *testing.T, ownerKey string) {
+	t.Helper()
+	old := secOpsAdminOwnerKey
+	secOpsAdminOwnerKey = ownerKey
+	t.Cleanup(func() {
+		secOpsAdminOwnerKey = old
+	})
+}
+
 func TestIssueAPIKeyStoresHashAndBindScope(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
@@ -111,11 +120,11 @@ func TestSystemKeywordRoutesToSystemHandler(t *testing.T) {
 	if handler.service != "scheduler" || handler.action != "record" || handler.body != "本周做了X" {
 		t.Fatalf("handler=%+v", handler)
 	}
-	result, err = hub.Dispatch(ctx, model.Message{ID: "sys2", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#调整日程 唐盛顺延3天")
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sys2", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#调整日程 UserThree顺延3天")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.Matched || handler.action != "coordinate" || handler.body != "唐盛顺延3天" {
+	if !result.Matched || handler.action != "coordinate" || handler.body != "UserThree顺延3天" {
 		t.Fatalf("coordinate result=%+v handler=%+v", result, handler)
 	}
 	result, err = hub.Dispatch(ctx, model.Message{ID: "sys3", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "我想 #调整日程")
@@ -133,11 +142,11 @@ func TestSystemKeywordRoutesToSystemHandler(t *testing.T) {
 		t.Fatalf("sys compat result=%+v handler=%+v", result, handler)
 	}
 	hub.RegisterBot("dev", "UnifiedRobot")
-	result, err = hub.Dispatch(ctx, model.Message{ID: "sys5", ChatEntityID: "dev:group:oc_team", BotChannelID: "dev", ChatType: model.ChatGroup}, "@UnifiedRobot #调整日程 唐盛顺延3天")
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sys5", ChatEntityID: "dev:group:oc_team", BotChannelID: "dev", ChatType: model.ChatGroup}, "@UnifiedRobot #调整日程 UserThree顺延3天")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.Matched || handler.action != "coordinate" || handler.body != "唐盛顺延3天" {
+	if !result.Matched || handler.action != "coordinate" || handler.body != "UserThree顺延3天" {
 		t.Fatalf("literal bot mention should strip to system route result=%+v handler=%+v", result, handler)
 	}
 }
@@ -146,8 +155,8 @@ func TestSecurityOpsRoutesToAllSystemSessions(t *testing.T) {
 	useTestSecOpsAdminOpenID(t)
 	hub, db, ctx := newTestHub(t)
 	hub.RegisterBot("dev", "UnifiedRobot")
-	hub.RegisterBot("CC-Connector", "CC-Connector")
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zsf", DisplayName: "张三丰", FeishuOpenID: secOpsAdminOpenID, Role: model.RoleManager, Active: true}); err != nil {
+	hub.RegisterBot("bot-test", "bot-test")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: secOpsAdminOpenID, Role: model.RoleManager, Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: secOpsOwnerKey, DisplayName: secOpsMemberName, Role: model.RoleSystem, Active: true}); err != nil {
@@ -200,8 +209,8 @@ func TestSecurityOpsRoutesToAllSystemSessions(t *testing.T) {
 
 	result, err = hub.Dispatch(ctx, model.Message{
 		ID:           "secops2",
-		ChatEntityID: "CC-Connector:group:oc_c610",
-		BotChannelID: "CC-Connector",
+		ChatEntityID: "bot-test:group:oc_c610",
+		BotChannelID: "bot-test",
 		ChatType:     model.ChatGroup,
 		SenderOpenID: secOpsAdminOpenID,
 		Content:      `{"text":"@SYSTEM-V-TASK-INTERNAL #系统安全 撤销封禁 2.2.2.2"}`,
@@ -214,7 +223,7 @@ func TestSecurityOpsRoutesToAllSystemSessions(t *testing.T) {
 	}
 }
 
-func TestSecurityOpsRejectsNonZzc(t *testing.T) {
+func TestSecurityOpsRejectsUnauthorizedSender(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.RegisterBot("dev", "UnifiedRobot")
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: secOpsOwnerKey, DisplayName: secOpsMemberName, Role: model.RoleSystem, Active: true}); err != nil {
@@ -235,20 +244,21 @@ func TestSecurityOpsRejectsNonZzc(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !result.Matched || !strings.Contains(result.Reply, "无权限") {
-		t.Fatalf("non zsf secops result=%+v", result)
+		t.Fatalf("non u1 secops result=%+v", result)
 	}
 }
 
-func TestSecurityOpsAllowsBoundZzcOwner(t *testing.T) {
+func TestSecurityOpsAllowsBoundAdminOwner(t *testing.T) {
+	useTestSecOpsAdminOwnerKey(t, "u1")
 	hub, db, ctx := newTestHub(t)
 	hub.RegisterBot("dev", "UnifiedRobot")
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: secOpsOwnerKey, DisplayName: secOpsMemberName, Role: model.RoleSystem, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zsf", DisplayName: "张三丰", Role: model.RoleManager, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", Role: model.RoleManager, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_alias", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_alias", BoundOwner: "zsf", Active: true}); err != nil {
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_alias", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_alias", BoundOwner: "u1", Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	result, err := hub.Dispatch(ctx, model.Message{
@@ -263,7 +273,7 @@ func TestSecurityOpsAllowsBoundZzcOwner(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !result.Matched || strings.Contains(result.Reply, "无权限") || !strings.Contains(result.Reply, "无在线") {
-		t.Fatalf("bound zsf secops result=%+v", result)
+		t.Fatalf("bound u1 secops result=%+v", result)
 	}
 }
 
@@ -671,18 +681,18 @@ func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "zsf")
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
 	if err != nil {
 		t.Fatal(err)
 	}
 	keyID := key.ID
-	if err := hub.BindAccount(ctx, keyID, "is3-Connector:personal:ou_zsf"); err != nil {
+	if err := hub.BindAccount(ctx, keyID, "is3-Connector:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
 	if err := hub.BindAccount(ctx, keyID, "is3-Connector:personal:ou_sender"); err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, keyID, "dev:personal:ou_zsf"); err != nil {
+	if err := hub.BindAccount(ctx, keyID, "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
 	outbound := bus.NewDBQueue(db, model.DirectionOut)
@@ -700,7 +710,7 @@ func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "source-personal",
-		ChatEntityID: "is3-Connector:personal:ou_zsf",
+		ChatEntityID: "is3-Connector:personal:ou_u1",
 		BotChannelID: "is3-Connector",
 		ChatType:     model.ChatPersonal,
 		Content:      `{"text":"#ccbot ping"}`,
@@ -712,12 +722,12 @@ func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
 		t.Fatalf("personal dispatch result=%+v", result)
 	}
 	gotPersonal := readEnvelope(t, ctx, ccbot)
-	if gotPersonal.Meta["source_bot_channel_id"] != "is3-Connector" || gotPersonal.Meta["source_chat_type"] != string(model.ChatPersonal) || gotPersonal.Meta["source_open_id"] != "ou_zsf" {
+	if gotPersonal.Meta["source_bot_channel_id"] != "is3-Connector" || gotPersonal.Meta["source_chat_type"] != string(model.ChatPersonal) || gotPersonal.Meta["source_open_id"] != "ou_u1" {
 		t.Fatalf("personal source meta=%+v", gotPersonal.Meta)
 	}
 	if err := writeEnvelope(ctx, ccbot, model.Envelope{
 		ID:   "reply-personal",
-		To:   "ou_zsf#" + keyID + "#UnifiedRobot",
+		To:   "ou_u1#" + keyID + "#UnifiedRobot",
 		From: "ccbot#" + keyID,
 		Body: "个人回复",
 		Meta: gotPersonal.Meta,
@@ -725,7 +735,7 @@ func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	msg := waitOutbound(t, ctx, outbound)
-	if msg == nil || msg.BotChannelID != "is3-Connector" || msg.ChatEntityID != "is3-Connector:personal:ou_zsf" || msg.ChatType != model.ChatPersonal {
+	if msg == nil || msg.BotChannelID != "is3-Connector" || msg.ChatEntityID != "is3-Connector:personal:ou_u1" || msg.ChatType != model.ChatPersonal {
 		t.Fatalf("personal reply outbound=%+v", msg)
 	}
 
@@ -766,14 +776,14 @@ func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
 
 	if err := hub.RouteEnvelope(ctx, model.Envelope{
 		ID:   "reply-fallback",
-		To:   "ou_zsf#" + keyID + "#UnifiedRobot",
+		To:   "ou_u1#" + keyID + "#UnifiedRobot",
 		From: "ccbot#" + keyID,
 		Body: "默认回复",
 	}); err != nil {
 		t.Fatal(err)
 	}
 	msg = waitOutbound(t, ctx, outbound)
-	if msg == nil || msg.BotChannelID != "dev" || msg.ChatEntityID != "dev:personal:ou_zsf" || msg.ChatType != model.ChatPersonal {
+	if msg == nil || msg.BotChannelID != "dev" || msg.ChatEntityID != "dev:personal:ou_u1" || msg.ChatType != model.ChatPersonal {
 		t.Fatalf("fallback outbound=%+v", msg)
 	}
 }
@@ -783,24 +793,24 @@ func TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource(t *testing.T)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	zsfSecret, zsfKey, err := hub.IssueAPIKey(ctx, "svc1", "zsf")
+	u1Secret, u1Key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	fuleiSecret, fuleiKey, err := hub.IssueAPIKey(ctx, "svc1", "fulei")
+	u2Secret, u2Key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, zsfKey.ID, "dev:personal:ou_zsf"); err != nil {
+	if err := hub.BindAccount(ctx, u1Key.ID, "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, fuleiKey.ID, "dev:personal:ou_fulei"); err != nil {
+	if err := hub.BindAccount(ctx, u2Key.ID, "dev:personal:ou_u2"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zsf", DisplayName: "张三丰", FeishuOpenID: "ou_zsf", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "fulei", DisplayName: "符坚", FeishuOpenID: "ou_fulei", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	outbound := bus.NewDBQueue(db, model.DirectionOut)
@@ -810,37 +820,37 @@ func TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource(t *testing.T)
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	zsf := dialSession(t, ctx, srv.URL, "home", zsfKey.ID, zsfSecret)
-	defer zsf.Close(websocket.StatusNormalClosure, "done")
-	fulei := dialSession(t, ctx, srv.URL, "fulei", fuleiKey.ID, fuleiSecret)
-	defer fulei.Close(websocket.StatusNormalClosure, "done")
+	u1 := dialSession(t, ctx, srv.URL, "home", u1Key.ID, u1Secret)
+	defer u1.Close(websocket.StatusNormalClosure, "done")
+	u2 := dialSession(t, ctx, srv.URL, "u2", u2Key.ID, u2Secret)
+	defer u2.Close(websocket.StatusNormalClosure, "done")
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "cross-1",
-		ChatEntityID: "dev:personal:ou_zsf",
+		ChatEntityID: "dev:personal:ou_u1",
 		BotChannelID: "dev",
 		ChatType:     model.ChatPersonal,
-		Content:      `{"text":"@符坚#fulei 看看这个方案"}`,
-	}, "@符坚#fulei 看看这个方案")
+		Content:      `{"text":"@UserTwo#u2 看看这个方案"}`,
+	}, "@UserTwo#u2 看看这个方案")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !result.Matched || result.Reply != "" {
 		t.Fatalf("cross dispatch result=%+v", result)
 	}
-	got := readEnvelope(t, ctx, fulei)
-	if got.To != "fulei#"+fuleiKey.ID || got.From != "ou_zsf#"+fuleiKey.ID+"#UnifiedRobot" || got.Body != "看看这个方案" {
+	got := readEnvelope(t, ctx, u2)
+	if got.To != "u2#"+u2Key.ID || got.From != "ou_u1#"+u2Key.ID+"#UnifiedRobot" || got.Body != "看看这个方案" {
 		t.Fatalf("cross envelope=%+v", got)
 	}
-	if got.Meta["reply_prefix"] != "【符坚·fulei】" || got.Meta["cross_member"] != "fulei" {
+	if got.Meta["reply_prefix"] != "【UserTwo·u2】" || got.Meta["cross_member"] != "u2" {
 		t.Fatalf("cross meta=%+v", got.Meta)
 	}
 
-	if err := writeEnvelope(ctx, fulei, model.Envelope{ID: "cross-reply", To: got.From, From: got.To, Body: "【符坚·fulei】已看"}); err != nil {
+	if err := writeEnvelope(ctx, u2, model.Envelope{ID: "cross-reply", To: got.From, From: got.To, Body: "【UserTwo·u2】已看"}); err != nil {
 		t.Fatal(err)
 	}
 	msg := waitOutbound(t, ctx, outbound)
-	if msg == nil || msg.ChatEntityID != "dev:personal:ou_zsf" || !strings.Contains(messageText(t, msg), "【符坚·fulei】已看") {
+	if msg == nil || msg.ChatEntityID != "dev:personal:ou_u1" || !strings.Contains(messageText(t, msg), "【UserTwo·u2】已看") {
 		t.Fatalf("cross reply outbound=%+v", msg)
 	}
 }
@@ -850,42 +860,42 @@ func TestCrossMemberMentionRejectsNoDirectorySession(t *testing.T) {
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	zsfSecret, zsfKey, err := hub.IssueAPIKey(ctx, "svc1", "zsf")
+	u1Secret, u1Key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	fuleiSecret, fuleiKey, err := hub.IssueAPIKey(ctx, "svc1", "fulei")
+	u2Secret, u2Key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, zsfKey.ID, "dev:personal:ou_zsf"); err != nil {
+	if err := hub.BindAccount(ctx, u1Key.ID, "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, fuleiKey.ID, "dev:personal:ou_fulei"); err != nil {
+	if err := hub.BindAccount(ctx, u2Key.ID, "dev:personal:ou_u2"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zsf", DisplayName: "张三丰", FeishuOpenID: "ou_zsf", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "fulei", DisplayName: "符坚", FeishuOpenID: "ou_fulei", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	zsf := dialSession(t, ctx, srv.URL, "home", zsfKey.ID, zsfSecret)
-	defer zsf.Close(websocket.StatusNormalClosure, "done")
-	secOps := dialSessionWithQuery(t, ctx, srv.URL, "sec-ops", fuleiKey.ID, fuleiSecret, "no_directory=1")
+	u1 := dialSession(t, ctx, srv.URL, "home", u1Key.ID, u1Secret)
+	defer u1.Close(websocket.StatusNormalClosure, "done")
+	secOps := dialSessionWithQuery(t, ctx, srv.URL, "sec-ops", u2Key.ID, u2Secret, "no_directory=1")
 	defer secOps.Close(websocket.StatusNormalClosure, "done")
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "cross-hidden",
-		ChatEntityID: "dev:personal:ou_zsf",
+		ChatEntityID: "dev:personal:ou_u1",
 		BotChannelID: "dev",
 		ChatType:     model.ChatPersonal,
-		Content:      `{"text":"@符坚#sec-ops 帮忙看"}`,
-	}, "@符坚#sec-ops 帮忙看")
+		Content:      `{"text":"@UserTwo#sec-ops 帮忙看"}`,
+	}, "@UserTwo#sec-ops 帮忙看")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -895,7 +905,7 @@ func TestCrossMemberMentionRejectsNoDirectorySession(t *testing.T) {
 
 	result, err = hub.Dispatch(ctx, model.Message{
 		ID:           "direct-hidden",
-		ChatEntityID: "dev:personal:ou_fulei",
+		ChatEntityID: "dev:personal:ou_u2",
 		BotChannelID: "dev",
 		ChatType:     model.ChatPersonal,
 		Content:      `{"text":"#sec-ops 自查"}`,
@@ -904,7 +914,7 @@ func TestCrossMemberMentionRejectsNoDirectorySession(t *testing.T) {
 		t.Fatalf("direct hidden dispatch result=%+v err=%v", result, err)
 	}
 	got := readEnvelope(t, ctx, secOps)
-	if got.To != "sec-ops#"+fuleiKey.ID || got.Body != "自查" {
+	if got.To != "sec-ops#"+u2Key.ID || got.Body != "自查" {
 		t.Fatalf("direct hidden envelope=%+v", got)
 	}
 }
@@ -914,14 +924,14 @@ func TestCrossMemberMentionRequiresSessionWhenMultipleOnline(t *testing.T) {
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "fulei")
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_fulei"); err != nil {
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u2"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "fulei", DisplayName: "符坚", FeishuOpenID: "ou_fulei", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
@@ -933,7 +943,7 @@ func TestCrossMemberMentionRequiresSessionWhenMultipleOnline(t *testing.T) {
 	dev := dialSession(t, ctx, srv.URL, "dev", key.ID, secret)
 	defer dev.Close(websocket.StatusNormalClosure, "done")
 
-	result, err := hub.Dispatch(ctx, model.Message{ID: "cross-amb", ChatEntityID: "dev:personal:ou_zsf", BotChannelID: "dev", ChatType: model.ChatPersonal}, "@fulei 帮我看")
+	result, err := hub.Dispatch(ctx, model.Message{ID: "cross-amb", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}, "@u2 帮我看")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -944,10 +954,10 @@ func TestCrossMemberMentionRequiresSessionWhenMultipleOnline(t *testing.T) {
 
 func TestCrossMemberMentionHonorsDMOptOut(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "fulei", DisplayName: "符坚", FeishuOpenID: "ou_fulei", Role: model.RoleMember, DMOptOut: true, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, DMOptOut: true, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	result, err := hub.Dispatch(ctx, model.Message{ID: "cross-optout", ChatEntityID: "dev:personal:ou_zsf", BotChannelID: "dev", ChatType: model.ChatPersonal}, "@符坚#fulei hi")
+	result, err := hub.Dispatch(ctx, model.Message{ID: "cross-optout", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}, "@UserTwo#u2 hi")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -961,11 +971,11 @@ func TestPersonalMessageDefaultsToOnlyOnlineSession(t *testing.T) {
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "fulei")
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_fulei"); err != nil {
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u2"); err != nil {
 		t.Fatal(err)
 	}
 	outbound := bus.NewDBQueue(db, model.DirectionOut)
@@ -975,12 +985,12 @@ func TestPersonalMessageDefaultsToOnlyOnlineSession(t *testing.T) {
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	fulei := dialSession(t, ctx, srv.URL, "fulei", key.ID, secret)
-	defer fulei.Close(websocket.StatusNormalClosure, "done")
+	u2 := dialSession(t, ctx, srv.URL, "u2", key.ID, secret)
+	defer u2.Close(websocket.StatusNormalClosure, "done")
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "default-1",
-		ChatEntityID: "dev:personal:ou_fulei",
+		ChatEntityID: "dev:personal:ou_u2",
 		BotChannelID: "dev",
 		ChatType:     model.ChatPersonal,
 		Content:      `{"text":"你好"}`,
@@ -991,19 +1001,19 @@ func TestPersonalMessageDefaultsToOnlyOnlineSession(t *testing.T) {
 	if !result.Matched || result.Reply != "" {
 		t.Fatalf("default dispatch result=%+v", result)
 	}
-	got := readEnvelope(t, ctx, fulei)
-	if got.To != "fulei#"+key.ID || got.From != "ou_fulei#"+key.ID+"#UnifiedRobot" || got.Body != "你好" {
+	got := readEnvelope(t, ctx, u2)
+	if got.To != "u2#"+key.ID || got.From != "ou_u2#"+key.ID+"#UnifiedRobot" || got.Body != "你好" {
 		t.Fatalf("default envelope=%+v", got)
 	}
-	if got.Meta["reply_prefix"] != "【fulei】" {
+	if got.Meta["reply_prefix"] != "【u2】" {
 		t.Fatalf("default envelope meta=%+v", got.Meta)
 	}
 
-	if err := writeEnvelope(ctx, fulei, model.Envelope{ID: "default-reply", To: got.From, From: got.To, Body: "【fulei】你好"}); err != nil {
+	if err := writeEnvelope(ctx, u2, model.Envelope{ID: "default-reply", To: got.From, From: got.To, Body: "【u2】你好"}); err != nil {
 		t.Fatal(err)
 	}
 	msg := waitOutbound(t, ctx, outbound)
-	if msg == nil || msg.ChatEntityID != "dev:personal:ou_fulei" || !strings.Contains(messageText(t, msg), "【fulei】你好") {
+	if msg == nil || msg.ChatEntityID != "dev:personal:ou_u2" || !strings.Contains(messageText(t, msg), "【u2】你好") {
 		t.Fatalf("default reply outbound=%+v", msg)
 	}
 }
@@ -1013,27 +1023,27 @@ func TestPersonalMessageDefaultRouteRequiresExplicitSessionWhenMultipleOnline(t 
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "fulei")
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_fulei"); err != nil {
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u2"); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	fulei := dialSession(t, ctx, srv.URL, "fulei", key.ID, secret)
-	defer fulei.Close(websocket.StatusNormalClosure, "done")
+	u2 := dialSession(t, ctx, srv.URL, "u2", key.ID, secret)
+	defer u2.Close(websocket.StatusNormalClosure, "done")
 	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
 	defer home.Close(websocket.StatusNormalClosure, "done")
 
-	result, err := hub.Dispatch(ctx, model.Message{ID: "default-many", ChatEntityID: "dev:personal:ou_fulei", BotChannelID: "dev", ChatType: model.ChatPersonal}, "你好")
+	result, err := hub.Dispatch(ctx, model.Message{ID: "default-many", ChatEntityID: "dev:personal:ou_u2", BotChannelID: "dev", ChatType: model.ChatPersonal}, "你好")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.Matched || !strings.Contains(result.Reply, "多个在线会话") || !strings.Contains(result.Reply, "fulei") || !strings.Contains(result.Reply, "home") {
+	if !result.Matched || !strings.Contains(result.Reply, "多个在线会话") || !strings.Contains(result.Reply, "u2") || !strings.Contains(result.Reply, "home") {
 		t.Fatalf("multi default result=%+v", result)
 	}
 }
@@ -1043,21 +1053,21 @@ func TestPersonalMessageDefaultRouteNoSessionAndGroupAreIgnored(t *testing.T) {
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	_, key, err := hub.IssueAPIKey(ctx, "svc1", "fulei")
+	_, key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_fulei"); err != nil {
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u2"); err != nil {
 		t.Fatal(err)
 	}
-	personal, err := hub.Dispatch(ctx, model.Message{ID: "default-none", ChatEntityID: "dev:personal:ou_fulei", BotChannelID: "dev", ChatType: model.ChatPersonal}, "你好")
+	personal, err := hub.Dispatch(ctx, model.Message{ID: "default-none", ChatEntityID: "dev:personal:ou_u2", BotChannelID: "dev", ChatType: model.ChatPersonal}, "你好")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if personal.Matched || personal.Reply != "" {
 		t.Fatalf("no-session personal result=%+v", personal)
 	}
-	group, err := hub.Dispatch(ctx, model.Message{ID: "default-group", ChatEntityID: "dev:group:oc_group", BotChannelID: "dev", ChatType: model.ChatGroup, SenderOpenID: "ou_fulei"}, "你好")
+	group, err := hub.Dispatch(ctx, model.Message{ID: "default-group", ChatEntityID: "dev:group:oc_group", BotChannelID: "dev", ChatType: model.ChatGroup, SenderOpenID: "ou_u2"}, "你好")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1229,8 +1239,8 @@ func TestSessionEndpointStoresHandshakeMirrorToBotUnchanged(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	mirrorTo := "ou_zsf#" + key.ID + "#is3-Connector"
-	conn := dialSessionWithQuery(t, ctx, srv.URL, "ts3-poc", key.ID, secret, "target_bot=CC-Connector&mirror_to="+url.QueryEscape(mirrorTo))
+	mirrorTo := "ou_u1#" + key.ID + "#is3-Connector"
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "ts3-poc", key.ID, secret, "target_bot=bot-test&mirror_to="+url.QueryEscape(mirrorTo))
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	endpoints, err := db.ListSessionEndpoints(ctx)
 	if err != nil || len(endpoints) != 1 {
@@ -1240,7 +1250,7 @@ func TestSessionEndpointStoresHandshakeMirrorToBotUnchanged(t *testing.T) {
 		t.Fatalf("mirror_to should preserve source bot: %+v want=%q", endpoints[0], mirrorTo)
 	}
 
-	reconnect := dialSessionWithQuery(t, ctx, srv.URL, "ts3-poc", key.ID, secret, "target_bot=CC-Connector")
+	reconnect := dialSessionWithQuery(t, ctx, srv.URL, "ts3-poc", key.ID, secret, "target_bot=bot-test")
 	defer reconnect.Close(websocket.StatusNormalClosure, "done")
 	endpoints, err = db.ListSessionEndpoints(ctx)
 	if err != nil || len(endpoints) != 1 {
@@ -1256,24 +1266,24 @@ func TestSessionNameAutoSuffixWithinOwner(t *testing.T) {
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_zsf", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_zsf", BoundOwner: "zsf", Active: true}); err != nil {
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_u1", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_u1", BoundOwner: "u1", Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_zsf_2", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_zsf_2", BoundOwner: "zsf", Active: true}); err != nil {
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_u1_2", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_u1_2", BoundOwner: "u1", Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	secret1, key1, err := hub.IssueAPIKey(ctx, "svc1", "zsf1")
+	secret1, key1, err := hub.IssueAPIKey(ctx, "svc1", "u11")
 	if err != nil {
 		t.Fatal(err)
 	}
-	secret2, key2, err := hub.IssueAPIKey(ctx, "svc1", "zsf2")
+	secret2, key2, err := hub.IssueAPIKey(ctx, "svc1", "u12")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, key1.ID, "dev:personal:ou_zsf"); err != nil {
+	if err := hub.BindAccount(ctx, key1.ID, "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, key2.ID, "dev:personal:ou_zsf_2"); err != nil {
+	if err := hub.BindAccount(ctx, key2.ID, "dev:personal:ou_u1_2"); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
@@ -1327,24 +1337,24 @@ func TestSessionNameReconnectKeepsNameAndReleaseReuses(t *testing.T) {
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_zsf", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_zsf", BoundOwner: "zsf", Active: true}); err != nil {
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_u1", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_u1", BoundOwner: "u1", Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_zsf_2", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_zsf_2", BoundOwner: "zsf", Active: true}); err != nil {
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_u1_2", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_u1_2", BoundOwner: "u1", Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	secret1, key1, err := hub.IssueAPIKey(ctx, "svc1", "zsf1")
+	secret1, key1, err := hub.IssueAPIKey(ctx, "svc1", "u11")
 	if err != nil {
 		t.Fatal(err)
 	}
-	secret2, key2, err := hub.IssueAPIKey(ctx, "svc1", "zsf2")
+	secret2, key2, err := hub.IssueAPIKey(ctx, "svc1", "u12")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, key1.ID, "dev:personal:ou_zsf"); err != nil {
+	if err := hub.BindAccount(ctx, key1.ID, "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, key2.ID, "dev:personal:ou_zsf_2"); err != nil {
+	if err := hub.BindAccount(ctx, key2.ID, "dev:personal:ou_u1_2"); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
@@ -1389,16 +1399,16 @@ func TestSessionNameReconnectKeepsNameAndReleaseReuses(t *testing.T) {
 func TestSessionEndpointOwnerActiveUniqueIndex(t *testing.T) {
 	_, db, ctx := newTestHub(t)
 	now := time.Now()
-	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-1", SessionName: "developer", OwnerKey: "zsf", LastSeenAt: now, Active: true}); err != nil {
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-1", SessionName: "developer", OwnerKey: "u1", LastSeenAt: now, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-2", SessionName: "developer", OwnerKey: "zsf", LastSeenAt: now, Active: true}); err == nil {
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-2", SessionName: "developer", OwnerKey: "u1", LastSeenAt: now, Active: true}); err == nil {
 		t.Fatal("expected active owner/session unique violation")
 	}
-	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-1", SessionName: "developer", OwnerKey: "zsf", LastSeenAt: now, Active: false}); err != nil {
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-1", SessionName: "developer", OwnerKey: "u1", LastSeenAt: now, Active: false}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-2", SessionName: "developer", OwnerKey: "zsf", LastSeenAt: now, Active: true}); err != nil {
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-2", SessionName: "developer", OwnerKey: "u1", LastSeenAt: now, Active: true}); err != nil {
 		t.Fatalf("name should be reusable after inactive: %v", err)
 	}
 }
@@ -1411,24 +1421,24 @@ func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) 
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zsf", DisplayName: "张三丰", FeishuOpenID: "ou_zsf", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "fulei", DisplayName: "符坚", FeishuOpenID: "ou_fulei", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	zsfSecret, zsfKey, err := hub.IssueAPIKey(ctx, "svc1", "zsf")
+	u1Secret, u1Key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	fuleiSecret, fuleiKey, err := hub.IssueAPIKey(ctx, "svc1", "fulei")
+	u2Secret, u2Key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, zsfKey.ID, "dev:personal:ou_zsf"); err != nil {
+	if err := hub.BindAccount(ctx, u1Key.ID, "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, fuleiKey.ID, "dev:personal:ou_fulei"); err != nil {
+	if err := hub.BindAccount(ctx, u2Key.ID, "dev:personal:ou_u2"); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
@@ -1436,41 +1446,41 @@ func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) 
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	zsfDev := dialSessionWithQuery(t, ctx, srv.URL, "developer", zsfKey.ID, zsfSecret, "tool=CODEX&model=gpt-5.5&full_session_name=sh-developer-e0d12642")
-	defer zsfDev.Close(websocket.StatusNormalClosure, "done")
-	zsfHome := dialSession(t, ctx, srv.URL, "home", zsfKey.ID, zsfSecret)
-	defer zsfHome.Close(websocket.StatusNormalClosure, "done")
-	fuleiDev := dialSessionWithQuery(t, ctx, srv.URL, "developer", fuleiKey.ID, fuleiSecret, "tool=CLAUDE&model=opus&full_session_name=sh-developer-fulei")
-	defer fuleiDev.Close(websocket.StatusNormalClosure, "done")
-	zsfSecOps := dialSessionWithQuery(t, ctx, srv.URL, "sec-ops", zsfKey.ID, zsfSecret, "tool=SEC&model=monitor&no_directory=1")
-	defer zsfSecOps.Close(websocket.StatusNormalClosure, "done")
+	u1Dev := dialSessionWithQuery(t, ctx, srv.URL, "developer", u1Key.ID, u1Secret, "tool=CODEX&model=gpt-5.5&full_session_name=sh-developer-e0d12642")
+	defer u1Dev.Close(websocket.StatusNormalClosure, "done")
+	u1Home := dialSession(t, ctx, srv.URL, "home", u1Key.ID, u1Secret)
+	defer u1Home.Close(websocket.StatusNormalClosure, "done")
+	u2Dev := dialSessionWithQuery(t, ctx, srv.URL, "developer", u2Key.ID, u2Secret, "tool=CLAUDE&model=opus&full_session_name=sh-developer-u2")
+	defer u2Dev.Close(websocket.StatusNormalClosure, "done")
+	u1SecOps := dialSessionWithQuery(t, ctx, srv.URL, "sec-ops", u1Key.ID, u1Secret, "tool=SEC&model=monitor&no_directory=1")
+	defer u1SecOps.Close(websocket.StatusNormalClosure, "done")
 
-	zsfDevMsg := readEnvelope(t, ctx, zsfDev)
-	zsfHomeMsg := readEnvelope(t, ctx, zsfHome)
-	fuleiMsg := readEnvelope(t, ctx, fuleiDev)
-	if !strings.Contains(zsfDevMsg.Body, "sh-developer-e0d12642") || !strings.Contains(zsfDevMsg.Body, "home") {
-		t.Fatalf("zsf directory missing own sessions: %s", zsfDevMsg.Body)
+	u1DevMsg := readEnvelope(t, ctx, u1Dev)
+	u1HomeMsg := readEnvelope(t, ctx, u1Home)
+	u2Msg := readEnvelope(t, ctx, u2Dev)
+	if !strings.Contains(u1DevMsg.Body, "sh-developer-e0d12642") || !strings.Contains(u1DevMsg.Body, "home") {
+		t.Fatalf("u1 directory missing own sessions: %s", u1DevMsg.Body)
 	}
-	if strings.Contains(zsfDevMsg.Body, "sec-ops") || strings.Contains(zsfHomeMsg.Body, "sec-ops") {
-		t.Fatalf("no_directory session leaked into directory: %s / %s", zsfDevMsg.Body, zsfHomeMsg.Body)
+	if strings.Contains(u1DevMsg.Body, "sec-ops") || strings.Contains(u1HomeMsg.Body, "sec-ops") {
+		t.Fatalf("no_directory session leaked into directory: %s / %s", u1DevMsg.Body, u1HomeMsg.Body)
 	}
-	if strings.Contains(zsfDevMsg.Body, "fulei") || strings.Contains(zsfHomeMsg.Body, "fulei") {
-		t.Fatalf("zsf directory leaked fulei: %s / %s", zsfDevMsg.Body, zsfHomeMsg.Body)
+	if strings.Contains(u1DevMsg.Body, "u2") || strings.Contains(u1HomeMsg.Body, "u2") {
+		t.Fatalf("u1 directory leaked u2: %s / %s", u1DevMsg.Body, u1HomeMsg.Body)
 	}
-	if !strings.Contains(fuleiMsg.Body, "sh-developer-fulei") || strings.Contains(fuleiMsg.Body, "ou_zsf") || strings.Contains(fuleiMsg.Body, "home") {
-		t.Fatalf("fulei directory wrong/leaked: %s", fuleiMsg.Body)
+	if !strings.Contains(u2Msg.Body, "sh-developer-u2") || strings.Contains(u2Msg.Body, "ou_u1") || strings.Contains(u2Msg.Body, "home") {
+		t.Fatalf("u2 directory wrong/leaked: %s", u2Msg.Body)
 	}
-	for _, want := range []string{"【DingWei在线清单】", "#developer · CODEX/gpt-5.5", "· 全名:sh-developer-e0d12642", "@zsf#developer", "(末"} {
-		if !strings.Contains(zsfDevMsg.Body, want) {
-			t.Fatalf("zsf directory missing %q: %s", want, zsfDevMsg.Body)
+	for _, want := range []string{"【DingWei在线清单】", "#developer · CODEX/gpt-5.5", "· 全名:sh-developer-e0d12642", "@u1#developer", "(末"} {
+		if !strings.Contains(u1DevMsg.Body, want) {
+			t.Fatalf("u1 directory missing %q: %s", want, u1DevMsg.Body)
 		}
 	}
-	if !strings.Contains(zsfDevMsg.Body, "#home · 未知/未知") {
-		t.Fatalf("old session metadata should render unknown: %s", zsfDevMsg.Body)
+	if !strings.Contains(u1DevMsg.Body, "#home · 未知/未知") {
+		t.Fatalf("old session metadata should render unknown: %s", u1DevMsg.Body)
 	}
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "hidden-direct",
-		ChatEntityID: "dev:personal:ou_zsf",
+		ChatEntityID: "dev:personal:ou_u1",
 		BotChannelID: "dev",
 		ChatType:     model.ChatPersonal,
 		Content:      `{"text":"#sec-ops 直接派活"}`,
@@ -1478,8 +1488,8 @@ func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) 
 	if err != nil || !result.Matched {
 		t.Fatalf("direct hidden session dispatch result=%+v err=%v", result, err)
 	}
-	hidden := readEnvelope(t, ctx, zsfSecOps)
-	if hidden.To != "sec-ops#"+zsfKey.ID || hidden.Body != "直接派活" {
+	hidden := readEnvelope(t, ctx, u1SecOps)
+	if hidden.To != "sec-ops#"+u1Key.ID || hidden.Body != "直接派活" {
 		t.Fatalf("hidden session should still be addressable: %+v", hidden)
 	}
 	for i := 0; i < 2; i++ {
@@ -1487,7 +1497,7 @@ func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) 
 		if err != nil || msg == nil {
 			t.Fatalf("dm %d missing msg=%+v err=%v", i, msg, err)
 		}
-		if msg.ChatEntityID != "dev:personal:ou_zsf" && msg.ChatEntityID != "dev:personal:ou_fulei" {
+		if msg.ChatEntityID != "dev:personal:ou_u1" && msg.ChatEntityID != "dev:personal:ou_u2" {
 			t.Fatalf("unexpected dm target: %+v", msg)
 		}
 	}
@@ -1501,14 +1511,14 @@ func TestOnlineDirectoryDebouncesFlapping(t *testing.T) {
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zsf", DisplayName: "张三丰", FeishuOpenID: "ou_zsf", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "zsf")
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_zsf"); err != nil {
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
@@ -1529,7 +1539,7 @@ func TestOnlineDirectoryDebouncesFlapping(t *testing.T) {
 	}
 	assertNoEnvelope(t, ctx, home, 120*time.Millisecond)
 	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
-	if err != nil || msg == nil || msg.ChatEntityID != "dev:personal:ou_zsf" {
+	if err != nil || msg == nil || msg.ChatEntityID != "dev:personal:ou_u1" {
 		t.Fatalf("dm missing after debounce msg=%+v err=%v", msg, err)
 	}
 	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
@@ -1541,24 +1551,24 @@ func TestOnlineDirectoryDebouncesFlapping(t *testing.T) {
 func TestOnlineDirectorySkipsNoDirectoryPresenceBroadcast(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.onlineDebounce = time.Hour
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zsf", DisplayName: "张三丰", FeishuOpenID: "ou_zsf", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.BindAPIKeyAccount(ctx, "FB-hidden", "dev:personal:ou_zsf"); err != nil {
+	if err := db.BindAPIKeyAccount(ctx, "FB-hidden", "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.BindAPIKeyAccount(ctx, "FB-visible", "dev:personal:ou_zsf"); err != nil {
+	if err := db.BindAPIKeyAccount(ctx, "FB-visible", "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-hidden", SessionName: "sec-ops", OwnerKey: "zsf", LastSeenAt: time.Now(), Active: true, NoDirectory: true}); err != nil {
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-hidden", SessionName: "sec-ops", OwnerKey: "u1", LastSeenAt: time.Now(), Active: true, NoDirectory: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-visible", SessionName: "developer", OwnerKey: "zsf", LastSeenAt: time.Now(), Active: true}); err != nil {
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-visible", SessionName: "developer", OwnerKey: "u1", LastSeenAt: time.Now(), Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	hub.scheduleOnlineBroadcastForSession(ctx, "FB-hidden", "sec-ops")
 	hub.mu.Lock()
-	hiddenTimer := hub.onlineTimers["zsf"]
+	hiddenTimer := hub.onlineTimers["u1"]
 	hub.mu.Unlock()
 	if hiddenTimer != nil {
 		hiddenTimer.Stop()
@@ -1566,7 +1576,7 @@ func TestOnlineDirectorySkipsNoDirectoryPresenceBroadcast(t *testing.T) {
 	}
 	hub.scheduleOnlineBroadcastForSession(ctx, "FB-visible", "developer")
 	hub.mu.Lock()
-	visibleTimer := hub.onlineTimers["zsf"]
+	visibleTimer := hub.onlineTimers["u1"]
 	hub.mu.Unlock()
 	if visibleTimer == nil {
 		t.Fatal("visible presence should schedule online directory broadcast")
@@ -1677,7 +1687,7 @@ func TestProducerSessionTargetBotQueryRoutesGroup(t *testing.T) {
 	hub.onlineDebounce = time.Hour
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
 	hub.RegisterBot("dev", "UnifiedRobot")
-	hub.RegisterBot("CC-Connector", "CC-Connector")
+	hub.RegisterBot("bot-test", "bot-test")
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -1695,7 +1705,7 @@ func TestProducerSessionTargetBotQueryRoutesGroup(t *testing.T) {
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	producer := dialSessionWithQuery(t, ctx, srv.URL, "producer", key.ID, secret, "producer=1&target_group=oc_alert&target_bot=CC-Connector")
+	producer := dialSessionWithQuery(t, ctx, srv.URL, "producer", key.ID, secret, "producer=1&target_group=oc_alert&target_bot=bot-test")
 	defer producer.Close(websocket.StatusNormalClosure, "done")
 
 	if err := writeEnvelope(ctx, producer, model.Envelope{
@@ -1709,7 +1719,7 @@ func TestProducerSessionTargetBotQueryRoutesGroup(t *testing.T) {
 		t.Fatal(err)
 	}
 	msg := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
-	if msg.BotChannelID != "CC-Connector" || msg.ChatEntityID != "CC-Connector:group:oc_alert" {
+	if msg.BotChannelID != "bot-test" || msg.ChatEntityID != "bot-test:group:oc_alert" {
 		t.Fatalf("producer query target_bot msg=%+v", msg)
 	}
 }
@@ -1912,7 +1922,7 @@ func TestNoMirrorSystemEnvelopeSkipsFeishuMirrorButNormalMirrors(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
 	hub.RegisterBot("dev", "UnifiedRobot")
-	hub.RegisterBot("CC-Connector", "CC-Connector")
+	hub.RegisterBot("bot-test", "bot-test")
 	keyID := "FB-test"
 	if err := hub.RouteEnvelope(ctx, model.Envelope{
 		ID:   "sys-online",
@@ -1944,7 +1954,7 @@ func TestNoMirrorSystemEnvelopeSkipsFeishuMirrorButNormalMirrors(t *testing.T) {
 	if msg.ChatEntityID != "dev:personal:ou_alice" || !strings.Contains(msg.Content, "普通 AI 输出") {
 		t.Fatalf("normal mirror msg=%+v", msg)
 	}
-	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "CC-Connector:group:oc_group", BotChannelID: "CC-Connector", Type: model.ChatGroup, FeishuID: "oc_group", Active: true}); err != nil {
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "bot-test:group:oc_group", BotChannelID: "bot-test", Type: model.ChatGroup, FeishuID: "oc_group", Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	if err := hub.RouteEnvelope(ctx, model.Envelope{
@@ -1961,7 +1971,7 @@ func TestNoMirrorSystemEnvelopeSkipsFeishuMirrorButNormalMirrors(t *testing.T) {
 	if err != nil || msg == nil {
 		t.Fatalf("producer group msg missing msg=%+v err=%v", msg, err)
 	}
-	if msg.BotChannelID != "CC-Connector" || msg.ChatEntityID != "CC-Connector:group:oc_group" || !strings.Contains(msg.Content, "系统任务产出") {
+	if msg.BotChannelID != "bot-test" || msg.ChatEntityID != "bot-test:group:oc_group" || !strings.Contains(msg.Content, "系统任务产出") {
 		t.Fatalf("producer group msg=%+v", msg)
 	}
 }
@@ -1970,7 +1980,7 @@ func TestProducerTargetBotOverrideAndUnknownGroupDoesNotDefault(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
 	hub.RegisterBot("dev", "UnifiedRobot")
-	hub.RegisterBot("CC-Connector", "CC-Connector")
+	hub.RegisterBot("bot-test", "bot-test")
 	keyID := "FB-test"
 	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:group:oc_alert", BotChannelID: "dev", Type: model.ChatGroup, FeishuID: "oc_alert", Active: true}); err != nil {
 		t.Fatal(err)
@@ -1981,7 +1991,7 @@ func TestProducerTargetBotOverrideAndUnknownGroupDoesNotDefault(t *testing.T) {
 		From: "producer#" + keyID,
 		Body: "告警",
 		TS:   time.Now().Unix(),
-		Meta: map[string]any{"producer": true, "target_group": "oc_alert", "target_bot": "CC-Connector", "no_mirror": true},
+		Meta: map[string]any{"producer": true, "target_group": "oc_alert", "target_bot": "bot-test", "no_mirror": true},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -1989,7 +1999,7 @@ func TestProducerTargetBotOverrideAndUnknownGroupDoesNotDefault(t *testing.T) {
 	if err != nil || msg == nil {
 		t.Fatalf("producer override missing msg=%+v err=%v", msg, err)
 	}
-	if msg.BotChannelID != "CC-Connector" || msg.ChatEntityID != "CC-Connector:group:oc_alert" {
+	if msg.BotChannelID != "bot-test" || msg.ChatEntityID != "bot-test:group:oc_alert" {
 		t.Fatalf("producer override msg=%+v", msg)
 	}
 	if err := hub.RouteEnvelope(ctx, model.Envelope{

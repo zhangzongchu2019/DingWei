@@ -111,7 +111,7 @@ export SH_KEY_ID=FB-system-v-task-internal
 export SH_SECRET='管理员单独发放'
 export SH_PRODUCER=1
 export SH_TARGET_GROUP=oc_xxx
-export SH_TARGET_BOT=CC-Connector  # 可选；群归属已在 DingWei 里时可不填
+export SH_TARGET_BOT=bot-test  # 可选；群归属已在 DingWei 里时可不填
 ./dist/sessionhelper
 ```
 

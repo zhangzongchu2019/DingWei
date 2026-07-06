@@ -91,22 +91,22 @@ func TestHandleFeishuWebhookEnqueuesCCConnectorInboundMessage(t *testing.T) {
 		t.Fatalf("Migrate: %v", err)
 	}
 	inbound := bus.NewDBQueue(db, model.DirectionIn)
-	if err := db.UpsertBotChannel(ctx, model.BotChannel{ID: "CC-Connector", Name: "CC-Connector", AppID: "cli_testcc0000000000", CanSend: true, CanReceive: true, Active: true}); err != nil {
+	if err := db.UpsertBotChannel(ctx, model.BotChannel{ID: "bot-test", Name: "bot-test", AppID: "cli_testbot000000000", CanSend: true, CanReceive: true, Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	body := `{"schema":"2.0","header":{"event_id":"evt1","event_type":"im.message.receive_v1","create_time":"1783200000000"},"event":{"sender":{"sender_id":{"open_id":"ou_1"}},"message":{"message_id":"cc1","chat_type":"group","chat_id":"oc_ai","create_time":"1783200000000","content":"{\"text\":\"#修改日程 今天推进聚合通知\"}"}}}`
-	req, err := http.NewRequest(http.MethodPost, "/webhook/CC-Connector", strings.NewReader(body))
+	req, err := http.NewRequest(http.MethodPost, "/webhook/bot-test", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("NewRequest: %v", err)
 	}
-	if handled, err := handleFeishuWebhook(ctx, nilLogger(), db, inbound, "cc-connector", req, httptest.NewRecorder()); err != nil || handled {
+	if handled, err := handleFeishuWebhook(ctx, nilLogger(), db, inbound, "bot-test", req, httptest.NewRecorder()); err != nil || handled {
 		t.Fatalf("handleFeishuWebhook handled=%t err=%v", handled, err)
 	}
 	msg, err := inbound.Dequeue(ctx)
 	if err != nil {
 		t.Fatalf("Dequeue: %v", err)
 	}
-	if msg == nil || msg.BotChannelID != "CC-Connector" || msg.ChatEntityID != "CC-Connector:group:oc_ai" || !strings.Contains(msg.Content, "#修改日程") {
+	if msg == nil || msg.BotChannelID != "bot-test" || msg.ChatEntityID != "bot-test:group:oc_ai" || !strings.Contains(msg.Content, "#修改日程") {
 		t.Fatalf("cc connector inbound = %+v", msg)
 	}
 }
@@ -269,7 +269,7 @@ func TestBuildFeishuGatewayConfiguresMultipleBotChannels(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertBotChannel(ctx, model.BotChannel{ID: "CC-Connector", Name: "CC-Connector", AppID: "cli_testcc0000000000", AppSecretEnc: ccSecret, Purpose: "general", CanSend: true, CanReceive: true, Active: true}); err != nil {
+	if err := db.UpsertBotChannel(ctx, model.BotChannel{ID: "bot-test", Name: "bot-test", AppID: "cli_testbot000000000", AppSecretEnc: ccSecret, Purpose: "general", CanSend: true, CanReceive: true, Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	gw, receiver, err := buildFeishuGateway(ctx, nilLogger(), db, config.Bootstrap{
@@ -287,7 +287,7 @@ func TestBuildFeishuGatewayConfiguresMultipleBotChannels(t *testing.T) {
 		t.Fatalf("gateway=%T receiver=%T", gw, receiver)
 	}
 	ids := strings.Join(multi.BotChannelIDs(), ",")
-	if !strings.Contains(ids, "dev") || !strings.Contains(ids, "CC-Connector") {
+	if !strings.Contains(ids, "dev") || !strings.Contains(ids, "bot-test") {
 		t.Fatalf("multi gateway ids=%s", ids)
 	}
 }

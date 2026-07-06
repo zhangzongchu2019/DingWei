@@ -39,12 +39,12 @@ func TestR14P1_PortalSchedule_CacheInvalidation(t *testing.T) {
 	}
 
 	// 分配成员 + personal doc
-	if err := db.AssignProjectMember(ctx, "proj:default", "zsf"); err != nil {
+	if err := db.AssignProjectMember(ctx, "proj:default", "u1"); err != nil {
 		t.Fatalf("assign member: %v", err)
 	}
 	if _, err := db.AppendScheduleDoc(ctx, model.ScheduleDoc{
-		ProjectID: "proj:default", Kind: "personal", OwnerKey: "zsf",
-		Content: "# zsf排期\n- [ ] 个人任务", Source: "test", CreatedBy: "tester",
+		ProjectID: "proj:default", Kind: "personal", OwnerKey: "u1",
+		Content: "# u1排期\n- [ ] 个人任务", Source: "test", CreatedBy: "tester",
 	}); err != nil {
 		t.Fatalf("append personal: %v", err)
 	}

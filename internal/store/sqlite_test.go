@@ -81,24 +81,23 @@ func TestMigrateUpgradesExistingDBWithSeenPersonAndBotSecret(t *testing.T) {
 	if !tableExists(t, db, "project_weekly_report") {
 		t.Fatal("project_weekly_report table missing after migration")
 	}
-	channels, err := db.ListBotChannels(ctx)
-	if err != nil || findBotChannel(channels, "CC-Connector") == nil {
-		t.Fatalf("CC-Connector seed missing channels=%+v err=%v", channels, err)
-	}
 	projects, err := db.ListProjects(ctx, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if countAISeedProjects(projects) != 8 {
-		t.Fatalf("AI projects not seeded projects=%+v", projects)
+	if len(projects) != 1 || projects[0].ID != "proj:default" || projects[0].OwnerKey != "" {
+		t.Fatalf("unexpected project bootstrap projects=%+v", projects)
 	}
-	agg, err := db.GetProject(ctx, "proj:ai-research")
-	if err != nil || agg == nil || agg.NotifyBotID != "CC-Connector" || agg.EvidenceCron != "0 2 * * 1,3" || agg.OwnerKey == "" {
-		t.Fatalf("AI aggregate project=%+v err=%v", agg, err)
+	channels, err := db.ListBotChannels(ctx)
+	if err != nil {
+		t.Fatalf("ListBotChannels: %v", err)
 	}
-	sources, err := db.ListProjectAggregateSources(ctx, "proj:ai-research")
-	if err != nil || len(sources) != 8 {
-		t.Fatalf("AI aggregate sources=%+v err=%v", sources, err)
+	if len(channels) != 0 {
+		t.Fatalf("business bot channels should not be seeded: %+v", channels)
+	}
+	aggregateIDs, err := db.ListAggregateProjectIDs(ctx)
+	if err != nil || len(aggregateIDs) != 0 {
+		t.Fatalf("aggregate projects should not be seeded ids=%+v err=%v", aggregateIDs, err)
 	}
 	member, err := db.GetMemberByOwnerKey(ctx, "system-v-task-internal")
 	if err != nil || member == nil || member.Role != model.RoleSystem || member.FeishuOpenID != "" {
@@ -204,7 +203,7 @@ func TestSessionNoDirectoryCombinesReportedAndAdmin(t *testing.T) {
 	}
 }
 
-func TestDefaultPersonalImportTriesDisplayNameAndOwnerKey(t *testing.T) {
+func TestDefaultPersonalImportDisabled(t *testing.T) {
 	dir := t.TempDir()
 	personalDir := filepath.Join(dir, "plans")
 	if err := os.MkdirAll(personalDir, 0o750); err != nil {
@@ -212,13 +211,16 @@ func TestDefaultPersonalImportTriesDisplayNameAndOwnerKey(t *testing.T) {
 	}
 	t.Setenv("WP_SCHEDULE_PERSONAL_DIR", personalDir)
 	t.Setenv("WP_SCHEDULE_TEAM_FILE", filepath.Join(dir, "missing-team.md"))
-	if err := os.WriteFile(filepath.Join(personalDir, "工作计划-zsf.md"), []byte("# zsf\n\nowner key 文件"), 0o640); err != nil {
+	if err := os.WriteFile(filepath.Join(personalDir, "工作计划-u1.md"), []byte("# u1\n\nowner key 文件"), 0o640); err != nil {
 		t.Fatal(err)
 	}
 	db, ctx := newTestSQLite(t)
-	doc, err := db.LatestScheduleDoc(ctx, "proj:default", "personal", "zsf")
-	if err != nil || doc == nil || !strings.Contains(doc.Content, "owner key 文件") {
-		t.Fatalf("personal import doc=%+v err=%v", doc, err)
+	doc, err := db.LatestScheduleDoc(ctx, "proj:default", "personal", "u1")
+	if err != nil {
+		t.Fatalf("LatestScheduleDoc: %v", err)
+	}
+	if doc != nil {
+		t.Fatalf("personal docs should not be imported from business seed files: %+v", doc)
 	}
 }
 
@@ -294,15 +296,6 @@ func columnExists(t *testing.T, db *SQLite, table, column string) bool {
 	return false
 }
 
-func findBotChannel(channels []model.BotChannel, id string) *model.BotChannel {
-	for i := range channels {
-		if channels[i].ID == id {
-			return &channels[i]
-		}
-	}
-	return nil
-}
-
 func hasSystemRoute(routes []model.SystemRoute, keyword, service string) bool {
 	for _, route := range routes {
 		if route.Keyword == keyword && route.ServiceName == service && route.Active {
@@ -310,26 +303,6 @@ func hasSystemRoute(routes []model.SystemRoute, keyword, service string) bool {
 		}
 	}
 	return false
-}
-
-func countAISeedProjects(projects []model.Project) int {
-	ids := map[string]bool{
-		"proj:imgsearch":            true,
-		"proj:ai-open-platform":     true,
-		"proj:image-generation":     true,
-		"proj:attribute-analysis":   true,
-		"proj:document-recognition": true,
-		"proj:end-cloud-drive":      true,
-		"proj:cross-platform-order": true,
-		"proj:auto-marketing":       true,
-	}
-	count := 0
-	for _, project := range projects {
-		if ids[project.ID] && project.ParentID == "proj:default" {
-			count++
-		}
-	}
-	return count
 }
 
 func tableExists(t *testing.T, db *SQLite, table string) bool {

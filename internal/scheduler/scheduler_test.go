@@ -28,7 +28,7 @@ func (f *fakeRunner) Run(_ context.Context, prompt string) (string, error) {
 func TestCoordinateBacksUpAndWritesTeamSchedule(t *testing.T) {
 	dir := t.TempDir()
 	team := filepath.Join(dir, "AI-研究工作内容清单.md")
-	personal := filepath.Join(dir, "工作计划-张三丰.md")
+	personal := filepath.Join(dir, "工作计划-UserOne.md")
 	if err := os.WriteFile(team, []byte("旧团队\n"), 0o640); err != nil {
 		t.Fatal(err)
 	}
@@ -80,9 +80,9 @@ func TestRunEvidenceWritesReportAndNotifiesGroup(t *testing.T) {
 	}
 	outbound := bus.NewDBQueue(db, model.DirectionOut)
 	runner := &fakeRunner{out: strings.Join([]string{
-		"张三丰：已执行：模型评测",
-		"符坚：无证据：销售单联调",
-		"唐盛：计划外：补充数据核验",
+		"UserOne：已执行：模型评测",
+		"UserTwo：无证据：销售单联调",
+		"UserThree：计划外：补充数据核验",
 		"主线：模型评测已推进，销售单仍需补证据。",
 		"详细行1",
 		"详细行2",
@@ -126,16 +126,16 @@ func TestRunEvidenceUsesRuntimeNotifyConfigAndMemberSessions(t *testing.T) {
 	if err := db.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "fullei", DisplayName: "符坚", FeishuOpenID: "ou_fulei", Role: model.RoleMember, Active: true}); err != nil {
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-fulei", SessionName: "fulei", LastSeenAt: time.Now(), Active: true}); err != nil {
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-u2", SessionName: "u2", LastSeenAt: time.Now(), Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.BindAPIKeyAccount(ctx, "FB-fulei", "dev:personal:ou_fulei"); err != nil {
+	if err := db.BindAPIKeyAccount(ctx, "FB-u2", "dev:personal:ou_u2"); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.EnqueueMessage(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:ou_fulei", Direction: model.DirectionIn, BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"完成销售单联调"}`}); err != nil {
+	if err := db.EnqueueMessage(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:ou_u2", Direction: model.DirectionIn, BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"完成销售单联调"}`}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.UpsertAppConfig(ctx, "schedule.notify_chat", `"oc_runtime"`); err != nil {
@@ -145,13 +145,13 @@ func TestRunEvidenceUsesRuntimeNotifyConfigAndMemberSessions(t *testing.T) {
 		t.Fatal(err)
 	}
 	outbound := bus.NewDBQueue(db, model.DirectionOut)
-	runner := &fakeRunner{out: "符坚：已执行：销售单联调\n主线：销售单主链路有证据。"}
+	runner := &fakeRunner{out: "UserTwo：已执行：销售单联调\n主线：销售单主链路有证据。"}
 	svc := New(Config{TeamFile: team, PersonalDir: dir, ReportDir: dir, NotifyChatID: "oc_env", NotifyBotID: "envbot"}, runner, &clock.Fake{T: time.Date(2026, 7, 2, 13, 0, 0, 0, time.UTC)}, outbound)
 	svc.Repo = db
 	if _, err := svc.RunEvidence(ctx, "定时"); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(runner.prompt, "成员：符坚") || !strings.Contains(runner.prompt, "fulei#FB-fulei") || !strings.Contains(runner.prompt, "完成销售单联调") {
+	if !strings.Contains(runner.prompt, "成员：UserTwo") || !strings.Contains(runner.prompt, "u2#FB-u2") || !strings.Contains(runner.prompt, "完成销售单联调") {
 		t.Fatalf("prompt missing member evidence: %s", runner.prompt)
 	}
 	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
@@ -172,9 +172,9 @@ func TestRecordSystemRequestStoresProgressWithoutLLM(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := db.UpsertMember(ctx, model.Member{
-		OwnerKey:     "fullei",
-		DisplayName:  "符坚",
-		FeishuOpenID: "ou_fulei",
+		OwnerKey:     "u2",
+		DisplayName:  "UserTwo",
+		FeishuOpenID: "ou_u2",
 		Role:         model.RoleMember,
 		Active:       true,
 	}); err != nil {
@@ -185,7 +185,7 @@ func TestRecordSystemRequestStoresProgressWithoutLLM(t *testing.T) {
 	svc.Repo = db
 	reply, err := svc.HandleSystemRequest(ctx, "scheduler", "record", "完成销售单联调", model.Message{
 		ChatEntityID: "dev:group:oc_team",
-		SenderOpenID: "ou_fulei",
+		SenderOpenID: "ou_u2",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -196,7 +196,7 @@ func TestRecordSystemRequestStoresProgressWithoutLLM(t *testing.T) {
 	if runner.prompt != "" {
 		t.Fatalf("record action called LLM runner: %s", runner.prompt)
 	}
-	progress, err := db.LatestProgress(ctx, "fullei")
+	progress, err := db.LatestProgress(ctx, "u2")
 	if err != nil || len(progress) != 1 {
 		t.Fatalf("progress=%+v err=%v", progress, err)
 	}
@@ -398,7 +398,7 @@ func TestRunAggregateProjectBuildsNestedSummaryAndNotifies(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range []model.Project{
-		{ID: "proj:agg", Name: "总聚合", NotifyChatID: "oc_agg", NotifyBotID: "CC-Connector", EvidenceCron: "0 2 * * 1,3", Active: true},
+		{ID: "proj:agg", Name: "总聚合", NotifyChatID: "oc_agg", NotifyBotID: "bot-test", EvidenceCron: "0 2 * * 1,3", Active: true},
 		{ID: "proj:nested", Name: "嵌套聚合", Active: true},
 		{ID: "proj:a", Name: "项目A", Active: true},
 		{ID: "proj:b", Name: "项目B", Active: true},
@@ -420,7 +420,7 @@ func TestRunAggregateProjectBuildsNestedSummaryAndNotifies(t *testing.T) {
 发布: milestone, m1, 2026-08-08, 0d
 for AI
 无需显卡支持
-zsf 8月盘子拥堵，需收敛并行任务。
+u1 8月盘子拥堵，需收敛并行任务。
 [完整飞书文档](https://example.com/very/long/doc/url)
 `
 	if _, err := db.AppendScheduleDoc(ctx, model.ScheduleDoc{ProjectID: "proj:a", Kind: "team", Content: dirtyA, Source: "test"}); err != nil {
@@ -437,7 +437,7 @@ B灰度:id1, 2026-07-02, 2026-07-11
 上线: crit, b2, 2026-08-04, 1d
 | 表格碎片
 🟠 B进展：推进灰度，风险是回滚窗口待确认。<br>下周目标：完成验收。
-zsf 8月盘子拥堵，需收敛并行任务。
+u1 8月盘子拥堵，需收敛并行任务。
 `
 	if _, err := db.AppendScheduleDoc(ctx, model.ScheduleDoc{ProjectID: "proj:b", Kind: "team", Content: dirtyB, Source: "test"}); err != nil {
 		t.Fatal(err)
@@ -465,7 +465,7 @@ zsf 8月盘子拥堵，需收敛并行任务。
 			t.Fatalf("aggregate summary should be clean, found %q:\n%s", bad, summary)
 		}
 	}
-	if strings.Count(summary, "zsf 8月盘子拥堵") != 1 {
+	if strings.Count(summary, "u1 8月盘子拥堵") != 1 {
 		t.Fatalf("duplicate cross-source mainline should appear once:\n%s", summary)
 	}
 	if lines := strings.Count(strings.TrimSpace(summary), "\n") + 1; lines > 10 {
@@ -475,7 +475,7 @@ zsf 8月盘子拥堵，需收敛并行任务。
 	if err != nil || msg == nil {
 		t.Fatalf("aggregate msg=%+v err=%v", msg, err)
 	}
-	if msg.ChatEntityID != "CC-Connector:group:oc_agg" || !strings.Contains(msg.Content, "A进展") || !strings.Contains(msg.Content, "B进展") {
+	if msg.ChatEntityID != "bot-test:group:oc_agg" || !strings.Contains(msg.Content, "A进展") || !strings.Contains(msg.Content, "B进展") {
 		t.Fatalf("aggregate outbound=%+v", msg)
 	}
 	var payload map[string]string
@@ -488,7 +488,7 @@ zsf 8月盘子拥堵，需收敛并行任务。
 			t.Fatalf("aggregate outbound should be clean, found %q: %s", bad, outboundText)
 		}
 	}
-	if strings.Count(outboundText, "zsf 8月盘子拥堵") != 1 {
+	if strings.Count(outboundText, "u1 8月盘子拥堵") != 1 {
 		t.Fatalf("duplicate outbound mainline should appear once: %s", outboundText)
 	}
 }

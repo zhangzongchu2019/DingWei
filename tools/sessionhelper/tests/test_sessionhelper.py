@@ -66,15 +66,15 @@ class SessionHelperTest(unittest.TestCase):
         )
 
     def test_ws_url_reports_producer_target_group(self):
-        cfg = load_config(dict(BASE_ENV, SH_PRODUCER="1", SH_TARGET_GROUP="oc_ai", SH_TARGET_BOT="CC-Connector"))
+        cfg = load_config(dict(BASE_ENV, SH_PRODUCER="1", SH_TARGET_GROUP="oc_ai", SH_TARGET_BOT="bot-test"))
         self.assertTrue(cfg.producer)
         self.assertEqual(cfg.target_group, "oc_ai")
-        self.assertEqual(cfg.target_bot, "CC-Connector")
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&producer=1&target_group=oc_ai&target_bot=CC-Connector")
+        self.assertEqual(cfg.target_bot, "bot-test")
+        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&producer=1&target_group=oc_ai&target_bot=bot-test")
 
     def test_ws_url_reports_mirror_to(self):
-        cfg = load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_zsf#FB-test#is3-Connector"))
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&mirror_to=ou_zsf%23FB-test%23is3-Connector")
+        cfg = load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-test#is3-Connector"))
+        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&mirror_to=ou_u1%23FB-test%23is3-Connector")
 
     def test_ws_url_reports_no_directory(self):
         cfg = load_config(dict(BASE_ENV, SH_NO_DIRECTORY="1"))
@@ -236,24 +236,24 @@ class SessionHelperTest(unittest.TestCase):
         book = AddressBook("home", "FB-test", "UnifiedRobot")
         to, meta = reply_target(
             {
-                "from": "ou_zsf#FB-test#UnifiedRobot",
+                "from": "ou_u1#FB-test#UnifiedRobot",
                 "meta": {
                     "source_bot_channel_id": "is3-Connector",
                     "source_chat_type": "personal",
-                    "source_open_id": "ou_zsf",
-                    "source_chat_id": "ou_zsf",
+                    "source_open_id": "ou_u1",
+                    "source_chat_id": "ou_u1",
                 },
             },
             book,
         )
-        self.assertEqual(to, "ou_zsf#FB-test#is3-Connector")
+        self.assertEqual(to, "ou_u1#FB-test#is3-Connector")
         self.assertEqual(
             meta,
             {
                 "source_bot_channel_id": "is3-Connector",
                 "source_chat_type": "personal",
-                "source_open_id": "ou_zsf",
-                "source_chat_id": "ou_zsf",
+                "source_open_id": "ou_u1",
+                "source_chat_id": "ou_u1",
             },
         )
 
@@ -296,10 +296,10 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(helper.mirror.to, "oc_group#FB-test#UnifiedRobot")
 
     def test_mirror_control_without_target_keeps_configured_mirror_to(self):
-        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_zsf#FB-test#is3-Connector")))
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-test#is3-Connector")))
         helper.apply_mirror_control({"meta": {"type": "mirror_control", "enabled": True}})
         self.assertTrue(helper.mirror.enabled)
-        self.assertEqual(helper.mirror.to, "ou_zsf#FB-test#is3-Connector")
+        self.assertEqual(helper.mirror.to, "ou_u1#FB-test#is3-Connector")
 
         helper.apply_mirror_control({"meta": {"type": "mirror_control", "enabled": False, "mirror_to": ""}})
         self.assertFalse(helper.mirror.enabled)
@@ -447,14 +447,14 @@ class SessionHelperTest(unittest.TestCase):
         self.assertIn("正常任务回复", mirrored_normal[0]["body"])
 
     def test_producer_envelope_targets_group_and_marks_no_mirror(self):
-        helper = SessionHelper(load_config(dict(BASE_ENV, SH_PRODUCER="1", SH_TARGET_GROUP="oc_group", SH_TARGET_BOT="CC-Connector")))
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_PRODUCER="1", SH_TARGET_GROUP="oc_group", SH_TARGET_BOT="bot-test")))
         env = helper.producer_envelope("hello", role="alert")
         self.assertEqual(env["to"], "oc_group#FB-test#UnifiedRobot")
         self.assertEqual(env["from"], "home#FB-test")
         self.assertEqual(env["body"], "hello")
         self.assertEqual(env["meta"]["producer"], True)
         self.assertEqual(env["meta"]["target_group"], "oc_group")
-        self.assertEqual(env["meta"]["target_bot"], "CC-Connector")
+        self.assertEqual(env["meta"]["target_bot"], "bot-test")
         self.assertEqual(env["meta"]["role"], "alert")
         self.assertEqual(env["meta"]["no_mirror"], True)
 
@@ -532,8 +532,8 @@ class SessionHelperTest(unittest.TestCase):
 
     def test_reply_body_uses_cross_member_prefix(self):
         helper = SessionHelper(load_config(BASE_ENV))
-        body = helper.reply_body({"meta": {"reply_prefix": "【符坚·fulei】"}}, "干净答案")
-        self.assertEqual(body, "【符坚·fulei】干净答案")
+        body = helper.reply_body({"meta": {"reply_prefix": "【UserTwo·u2】"}}, "干净答案")
+        self.assertEqual(body, "【UserTwo·u2】干净答案")
 
     def test_provider_defaults_include_required_names(self):
         for name in ["deepseek", "qwen", "kimi", "minimax", "glm", "openai", "claude", "gemini"]:

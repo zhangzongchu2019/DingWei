@@ -337,7 +337,7 @@ func (s *Server) projects(w http.ResponseWriter, r *http.Request) {
 <p>项目组定义通知群、佐证源和排期文档归属。通知群可从已知群会话下拉选择，也可手工填写 chat_id。</p>
 <form method=post action=/admin/projects>
 <p>ID <input name=id placeholder="proj:team-a"> 名称 <input name=name>
-parent <select name=parent_id><option value="proj:default">研发一组 (proj:default)</option>`))
+parent <select name=parent_id><option value="proj:default">Default Project (proj:default)</option>`))
 	_, _ = w.Write([]byte(projectOptions(projects, "proj:default", "")))
 	_, _ = w.Write([]byte(`</select>
 负责人 <select name=owner_key><option value="">必选</option>`))
