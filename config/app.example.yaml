@@ -2,7 +2,7 @@
 # 注意：配置真值存 SQLite，经 M9 后台管理（规范 §9.1）；本文件仅说明可配项与结构。
 # bootstrap（DB 路径 / 监听 / 初始管理员口令）走环境变量，见 .env.example。
 
-# 容量基线（§13.2）：≤50 人 / 峰值写入 ≤5 次每秒 → SQLite WAL 足够，不需 Redis/PG。
+# 容量基线（§13.2）：≤100 人 / 峰值写入 ≤200 次每秒 → SQLite WAL 足够，不需 Redis/PG。
 
 # 机器人管道（可多个；每个都能收发；凭证走 env / secret，勿写真值）
 bot_channels:

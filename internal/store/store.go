@@ -1,7 +1,7 @@
 // Package store 是数据访问层（Repository 抽象）。
 //
 // 规范 §14.1：Repository 接口 → SQLite/PG 可换；本期实现为 SQLite（modernc.org/sqlite，纯 Go 无 cgo）。
-// 容量基线 ≤50 人 / ≤5 写每秒，SQLite WAL 足够（§13.2）。
+// 容量基线 ≤100 人 / ≤200 写每秒，SQLite WAL 足够（§13.2）。
 package store
 
 import (
