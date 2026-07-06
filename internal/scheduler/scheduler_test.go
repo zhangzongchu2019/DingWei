@@ -659,6 +659,106 @@ func TestAggregateWeeklyDraftReviewAndApprovePublishes(t *testing.T) {
 	}
 }
 
+// 隔离验证补充：两个不同负责人的聚合项目——一个否决、一个到点发布；
+// 断言 否决挡住发布、到点发布只发未否决者、且各自发到自身配置目标(去写死)。
+func TestAggregateWeeklyVetoBlocksAndDuePublishesPerConfig(t *testing.T) {
+	dir := t.TempDir()
+	db, err := store.OpenSQLite(filepath.Join(dir, "wp.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	seeded, err := db.ListProjects(ctx, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, project := range seeded {
+		project.Active = false
+		if err := db.UpsertProject(ctx, project); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, m := range []model.Member{
+		{OwnerKey: "mgr1", DisplayName: "负责人一", FeishuOpenID: "ou_mgr1", Role: model.RoleManager, Active: true},
+		{OwnerKey: "mgr2", DisplayName: "负责人二", FeishuOpenID: "ou_mgr2", Role: model.RoleManager, Active: true},
+	} {
+		if err := db.UpsertMember(ctx, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, p := range []model.Project{
+		{ID: "proj:agg1", Name: "聚合一", OwnerKey: "mgr1", NotifyChatID: "oc_agg1", NotifyBotID: "bot1", Active: true},
+		{ID: "proj:agg2", Name: "聚合二", OwnerKey: "mgr2", NotifyChatID: "oc_agg2", NotifyBotID: "bot2", Active: true},
+		{ID: "proj:src1", Name: "源1", OwnerKey: "a", Active: true},
+		{ID: "proj:src2", Name: "源2", OwnerKey: "b", Active: true},
+	} {
+		if err := db.UpsertProject(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.SetProjectAggregateSources(ctx, "proj:agg1", []string{"proj:src1"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetProjectAggregateSources(ctx, "proj:agg2", []string{"proj:src2"}); err != nil {
+		t.Fatal(err)
+	}
+	week := "2026-06-29"
+	for _, r := range []model.ProjectWeeklyReport{
+		{ProjectID: "proj:src1", Week: week, Content: "源1完成", Status: "final", CreatedAt: time.Date(2026, 7, 4, 2, 0, 0, 0, time.UTC)},
+		{ProjectID: "proj:src2", Week: week, Content: "源2完成", Status: "final", CreatedAt: time.Date(2026, 7, 4, 2, 0, 0, 0, time.UTC)},
+	} {
+		if err := db.UpsertProjectWeeklyReport(ctx, r); err != nil {
+			t.Fatal(err)
+		}
+	}
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	runner := &fakeRunner{out: "聚合草稿正文"}
+	clk := &clock.Fake{T: time.Date(2026, 7, 5, 22, 0, 0, 0, time.UTC)}
+	svc := New(Config{}, runner, clk, outbound)
+	svc.Repo = db
+	if _, err := svc.RunAggregateWeeklyDrafts(ctx, "单测草稿"); err != nil {
+		t.Fatal(err)
+	}
+	// 排空两条审阅 DM
+	for i := 0; i < 2; i++ {
+		if _, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// 仅否决 agg1
+	if _, err := svc.HandleSystemRequest(ctx, "scheduler", "record", "不要发送", model.Message{ChatEntityID: "bot1:personal:ou_mgr1", BotChannelID: "bot1", ChatType: model.ChatPersonal, SenderOpenID: "ou_mgr1"}); err != nil {
+		t.Fatal(err)
+	}
+	if r, err := db.GetProjectWeeklyReport(ctx, "proj:agg1", week); err != nil || r == nil || r.Status != "vetoed" || r.VetoedAt == nil {
+		t.Fatalf("agg1 veto=%+v err=%v", r, err)
+	}
+	// 到点发布：agg2(未否决)发到自身配置目标；agg1(已否决)不发
+	clk.T = time.Date(2026, 7, 6, 2, 0, 0, 0, time.UTC)
+	if _, err := svc.PublishDueAggregateWeeklyReports(ctx, "单测发布"); err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg == nil {
+		t.Fatalf("agg2 应在到点发布: msg=%+v err=%v", msg, err)
+	}
+	if msg.ChatEntityID != "bot2:group:oc_agg2" {
+		t.Fatalf("agg2 必须发到自身配置目标, got %s", msg.ChatEntityID)
+	}
+	if next, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || next != nil {
+		t.Fatalf("agg1 已否决不应发布, 却有额外出站: next=%+v err=%v", next, err)
+	}
+	if r, err := db.GetProjectWeeklyReport(ctx, "proj:agg1", week); err != nil || r == nil || r.Status != "vetoed" || r.PublishedAt != nil {
+		t.Fatalf("agg1 应保持 vetoed 未发布: %+v err=%v", r, err)
+	}
+	if r, err := db.GetProjectWeeklyReport(ctx, "proj:agg2", week); err != nil || r == nil || r.Status != "published" || r.PublishedAt == nil {
+		t.Fatalf("agg2 应 published: %+v err=%v", r, err)
+	}
+}
+
 func TestRunPersonalRemindersSendsDMsAtFakeTimes(t *testing.T) {
 	dir := t.TempDir()
 	db, err := store.OpenSQLite(filepath.Join(dir, "wp.db"))
