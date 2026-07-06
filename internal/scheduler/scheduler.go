@@ -683,7 +683,7 @@ func (s *Service) RunAggregateWeeklyDraft(ctx context.Context, projectID, reason
 	if err != nil {
 		return model.ProjectWeeklyReport{}, err
 	}
-	content = stripSchedulerTimestampPreamble(content)
+	content = cleanAggregateDraftContent(content)
 	if content == "" {
 		return model.ProjectWeeklyReport{}, errors.New("scheduler returned empty aggregate weekly report")
 	}
@@ -834,7 +834,7 @@ func aggregateWeeklyReportPrompt(project model.Project, sources []model.Project,
 	}
 	b.WriteString("\n必须遵守：\n")
 	b.WriteString("1. 只依据下方各来源项目周报汇总，不引入代码中未给出的人员、群、项目或完成项。\n")
-	b.WriteString("2. 输出纯文本主线摘要，禁止 Markdown 表格，控制在 10 行左右。\n")
+	b.WriteString("2. 输出纯文本主线摘要，禁止 Markdown 的 --- 分割线、**加粗、# 标题、表格；只使用中文标点、换行，以及可选的 · 或 - 项目符号，控制在 10 行左右。\n")
 	b.WriteString("3. 负责人是内部问责关系，不在正文露出。\n")
 	b.WriteString("4. 这是审阅草稿，不要写“已发送”“已批准”等状态。\n\n")
 	b.WriteString("来源项目清单：\n")
@@ -866,6 +866,24 @@ func stripSchedulerTimestampPreamble(content string) string {
 		lines = lines[1:]
 	}
 	return strings.TrimSpace(strings.Join(lines, "\n"))
+}
+
+func cleanAggregateDraftContent(content string) string {
+	content = stripSchedulerTimestampPreamble(content)
+	lines := strings.Split(content, "\n")
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "---" {
+			continue
+		}
+		line = strings.ReplaceAll(line, "**", "")
+		line = strings.TrimLeft(line, " \t")
+		line = strings.TrimLeft(line, "#")
+		line = strings.TrimLeft(line, " \t")
+		out = append(out, line)
+	}
+	return strings.TrimSpace(strings.Join(out, "\n"))
 }
 
 func weeklyProjectReportPrompt(project model.Project, weekStart, weekEnd time.Time, reason string, progress []model.Progress, evidence []model.AIEvidence, teamDoc, ownerDoc *model.ScheduleDoc) string {

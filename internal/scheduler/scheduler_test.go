@@ -610,7 +610,7 @@ func TestAggregateWeeklyDraftReviewAndApprovePublishes(t *testing.T) {
 		}
 	}
 	outbound := bus.NewDBQueue(db, model.DirectionOut)
-	runner := &fakeRunner{out: "\n[2026-07-06 08:00:28]\n\n聚合周报草稿\n- 来源A完成网关联调\n- 来源B完成评测闭环"}
+	runner := &fakeRunner{out: "\n[2026-07-06 08:00:28]\n\n# **聚合周报草稿**\n---\n- 来源A完成网关联调\n- **来源B完成评测闭环**"}
 	clk := &clock.Fake{T: time.Date(2026, 7, 5, 22, 0, 0, 0, time.UTC)}
 	svc := New(Config{}, runner, clk, outbound)
 	svc.Repo = db
@@ -623,6 +623,9 @@ func TestAggregateWeeklyDraftReviewAndApprovePublishes(t *testing.T) {
 	}
 	if strings.HasPrefix(reports[0].Content, "[2026-07-06") || !strings.HasPrefix(reports[0].Content, "聚合周报草稿") {
 		t.Fatalf("aggregate content should strip scheduler timestamp: %q", reports[0].Content)
+	}
+	if strings.Contains(reports[0].Content, "---") || strings.Contains(reports[0].Content, "**") || strings.Contains(reports[0].Content, "#") {
+		t.Fatalf("aggregate content should be plain text: %q", reports[0].Content)
 	}
 	if !strings.Contains(runner.prompt, "来源A完成网关联调") || !strings.Contains(runner.prompt, "审阅草稿") {
 		t.Fatalf("aggregate prompt missing sources/review guard: %s", runner.prompt)
