@@ -14,7 +14,9 @@ import (
 	"github.com/coder/websocket"
 
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
+	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/scheduler"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
@@ -949,6 +951,81 @@ func TestCrossMemberMentionRequiresSessionWhenMultipleOnline(t *testing.T) {
 	}
 	if !result.Matched || !strings.Contains(result.Reply, "多个在线会话") {
 		t.Fatalf("ambiguous cross result=%+v", result)
+	}
+}
+
+func TestAggregateReviewCommandBypassesPersonalSessionAmbiguity(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "reviewer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_reviewer"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "reviewer", DisplayName: "Reviewer", FeishuOpenID: "ou_reviewer", Role: model.RoleManager, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, project := range []model.Project{
+		{ID: "proj:aggregate", Name: "Aggregate", OwnerKey: "reviewer", NotifyChatID: "oc_group", NotifyBotID: "dev", Active: true},
+		{ID: "proj:source", Name: "Source", OwnerKey: "source-owner", Active: true},
+	} {
+		if err := db.UpsertProject(ctx, project); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.SetProjectAggregateSources(ctx, "proj:aggregate", []string{"proj:source"}); err != nil {
+		t.Fatal(err)
+	}
+	week := "2026-06-29"
+	if err := db.UpsertProjectWeeklyReport(ctx, model.ProjectWeeklyReport{
+		ID:        "aggregate-weekly-proj:aggregate-20260629",
+		ProjectID: "proj:aggregate",
+		Week:      week,
+		Content:   "聚合周报草稿",
+		Status:    "draft",
+		CreatedAt: time.Date(2026, 7, 5, 22, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 7, 5, 22, 0, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = outbound
+	svc := scheduler.New(scheduler.Config{}, nil, &clock.Fake{T: time.Date(2026, 7, 6, 1, 0, 0, 0, time.UTC)}, outbound)
+	svc.Repo = db
+	hub.System = svc
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	dev := dialSession(t, ctx, srv.URL, "dev", key.ID, secret)
+	defer dev.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "approve-aggregate",
+		ChatEntityID: "dev:personal:ou_reviewer",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		SenderOpenID: "ou_reviewer",
+	}, "批准发送")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已批准并发送") || strings.Contains(result.Reply, "多个在线会话") {
+		t.Fatalf("aggregate review result=%+v", result)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg == nil {
+		t.Fatalf("published message=%+v err=%v", msg, err)
+	}
+	if msg.ChatEntityID != "dev:group:oc_group" || msg.ChatType != model.ChatGroup {
+		t.Fatalf("published message target=%+v", msg)
 	}
 }
 

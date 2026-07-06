@@ -32,6 +32,10 @@ type SystemHandler interface {
 	HandleSystemRequest(ctx context.Context, serviceName, action, body string, source model.Message) (string, error)
 }
 
+type aggregateWeeklyReviewHandler interface {
+	HandleAggregateWeeklyReviewCommand(ctx context.Context, body string, source model.Message) (string, bool, error)
+}
+
 type Hub struct {
 	Repo     store.Repository
 	Outbound MessageQueue
@@ -398,6 +402,9 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 	if result, handled, err := h.dispatchSystem(ctx, msg, text); handled || err != nil {
 		return result, err
 	}
+	if result, handled, err := h.dispatchAggregateWeeklyReview(ctx, msg, text); handled || err != nil {
+		return result, err
+	}
 	if result, handled, err := h.dispatchMirrorCommand(ctx, msg, text); handled || err != nil {
 		return result, err
 	}
@@ -492,6 +499,25 @@ func (h *Hub) dispatchSystem(ctx context.Context, msg model.Message, text string
 		return model.PrefixDispatchResult{Matched: true, Reply: reply}, true, nil
 	}
 	return model.PrefixDispatchResult{}, false, nil
+}
+
+func (h *Hub) dispatchAggregateWeeklyReview(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
+	if h.System == nil {
+		return model.PrefixDispatchResult{}, false, nil
+	}
+	reviewer, ok := h.System.(aggregateWeeklyReviewHandler)
+	if !ok {
+		return model.PrefixDispatchResult{}, false, nil
+	}
+	body := h.stripLeadingBotMentions(msg.BotChannelID, text)
+	reply, matched, err := reviewer.HandleAggregateWeeklyReviewCommand(ctx, body, msg)
+	if !matched && err == nil {
+		return model.PrefixDispatchResult{}, false, nil
+	}
+	if err != nil {
+		return model.PrefixDispatchResult{Matched: true, Reply: "系统服务执行失败：" + err.Error()}, true, nil
+	}
+	return model.PrefixDispatchResult{Matched: true, Reply: reply}, true, nil
 }
 
 func (h *Hub) dispatchSecurityOps(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {

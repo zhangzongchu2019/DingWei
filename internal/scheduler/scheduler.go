@@ -26,15 +26,16 @@ import (
 )
 
 var (
-	aggregateBRTagRE        = regexp.MustCompile(`(?i)<br\s*/?>`)
-	aggregateHTMLTagRE      = regexp.MustCompile(`(?i)</?[^>]+>`)
-	aggregateMarkdownLinkRE = regexp.MustCompile(`\[([^\]]+)\]\((https?://[^)\s]+)[^)]*\)`)
-	aggregateURLRE          = regexp.MustCompile(`https?://\S+`)
-	aggregateWhitespaceRE   = regexp.MustCompile(`\s+`)
-	aggregateGanttLineRE    = regexp.MustCompile(`^[^:：\n]{1,80}[:：]\s*[A-Za-z0-9_.-]+,\s*\d{4}-\d{1,2}-\d{1,2},\s*\d{4}-\d{1,2}-\d{1,2}`)
-	aggregateGanttMarkerRE  = regexp.MustCompile(`(?i)(^|[,\s])(milestone|active|done|crit)([,\s]|$)`)
-	aggregateDurationRE     = regexp.MustCompile(`,\s*\d+d\s*$`)
-	aggregateRuleLineRE     = regexp.MustCompile(`^[\s|:\-]+$`)
+	aggregateBRTagRE         = regexp.MustCompile(`(?i)<br\s*/?>`)
+	aggregateHTMLTagRE       = regexp.MustCompile(`(?i)</?[^>]+>`)
+	aggregateMarkdownLinkRE  = regexp.MustCompile(`\[([^\]]+)\]\((https?://[^)\s]+)[^)]*\)`)
+	aggregateURLRE           = regexp.MustCompile(`https?://\S+`)
+	aggregateWhitespaceRE    = regexp.MustCompile(`\s+`)
+	aggregateGanttLineRE     = regexp.MustCompile(`^[^:：\n]{1,80}[:：]\s*[A-Za-z0-9_.-]+,\s*\d{4}-\d{1,2}-\d{1,2},\s*\d{4}-\d{1,2}-\d{1,2}`)
+	aggregateGanttMarkerRE   = regexp.MustCompile(`(?i)(^|[,\s])(milestone|active|done|crit)([,\s]|$)`)
+	aggregateDurationRE      = regexp.MustCompile(`,\s*\d+d\s*$`)
+	aggregateRuleLineRE      = regexp.MustCompile(`^[\s|:\-]+$`)
+	schedulerTimestampLineRE = regexp.MustCompile(`^\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:[.,]\d+)?\]\s*$`)
 )
 
 type Runner interface {
@@ -682,7 +683,7 @@ func (s *Service) RunAggregateWeeklyDraft(ctx context.Context, projectID, reason
 	if err != nil {
 		return model.ProjectWeeklyReport{}, err
 	}
-	content = strings.TrimSpace(content)
+	content = stripSchedulerTimestampPreamble(content)
 	if content == "" {
 		return model.ProjectWeeklyReport{}, errors.New("scheduler returned empty aggregate weekly report")
 	}
@@ -772,7 +773,7 @@ func (s *Service) HandleAggregateWeeklyReviewCommand(ctx context.Context, body s
 		return "", true, err
 	}
 	if report == nil {
-		return "未找到待审阅的聚合周报草稿。", true, nil
+		return "", false, nil
 	}
 	now := s.Clock.Now().UTC()
 	switch action {
@@ -854,6 +855,17 @@ func aggregateWeeklyReportPrompt(project model.Project, sources []model.Project,
 		}
 	}
 	return b.String()
+}
+
+func stripSchedulerTimestampPreamble(content string) string {
+	lines := strings.Split(strings.TrimLeft(content, " \t\r\n"), "\n")
+	for len(lines) > 0 && strings.TrimSpace(lines[0]) == "" {
+		lines = lines[1:]
+	}
+	if len(lines) > 0 && schedulerTimestampLineRE.MatchString(strings.TrimSpace(lines[0])) {
+		lines = lines[1:]
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
 
 func weeklyProjectReportPrompt(project model.Project, weekStart, weekEnd time.Time, reason string, progress []model.Progress, evidence []model.AIEvidence, teamDoc, ownerDoc *model.ScheduleDoc) string {
