@@ -1,0 +1,48 @@
+# ===== 敏感信息（个人姓名 / 企业名称 / 凭证 / LLM 配置）一律不入 git =====
+# 真实配置（仅提交 *.example.* 模板）
+config/*.yaml
+config/*.yml
+config/*.json
+config/*.toml
+config/*.ini
+!config/*.example.yaml
+!config/*.example.yml
+!config/*.example.json
+!config/*.example.toml
+!config/*.example.ini
+
+# 环境变量 / 凭证 / 密钥
+.env
+.env.*
+!.env.example
+*secret*
+*credential*
+*apikey*
+*api_key*
+*.key
+*.pem
+
+# ===== 数据与留存（含姓名/群名/会话内容等敏感数据）=====
+*.db
+*.sqlite*
+*.sqlite3
+/data/
+/store/
+/archive/
+/bin/
+/build/
+/dist/
+build/
+dist/
+
+# ===== 运行时 =====
+__pycache__/
+*.pyc
+.venv/
+venv/
+logs/
+*.log
+.DS_Store
+tools/sessionhelper/config
+*.creds
+dingwei-onboard/

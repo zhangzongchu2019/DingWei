@@ -1,0 +1,23 @@
+# WorkPulse 部署示例（规范 §13.5）。敏感项放 .env（不入 git）。
+services:
+  workpulse:
+    build: .
+    image: workpulse:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"      # webhook + M9 后台 + healthz
+    volumes:
+      - workpulse-data:/data   # SQLite 主库 + 月度归档，持久化
+    env_file:
+      - .env             # WP_ADMIN_INIT_PASSWORD / 飞书凭证 / LLM key 等（不入 git）
+    environment:
+      - WP_ADDR=:8080
+      - WP_DB_PATH=/data/workpulse.db
+      - WP_DATA_DIR=/data
+    healthcheck:
+      test: ["CMD", "/app/workpulse", "-healthcheck"]   # 占位；或用外部 curl /healthz
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  workpulse-data:

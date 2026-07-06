@@ -1,0 +1,25 @@
+[Unit]
+Description=WorkPulse Feishu robot gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{USER}}
+WorkingDirectory={{WORKDIR}}
+EnvironmentFile={{WORKDIR}}/.env
+ExecStart={{WORKDIR}}/bin/workpulse
+Restart=on-failure
+RestartSec=5s
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+# Hardening. Keep write access to the project directory because SQLite, exported
+# schedules, and local data live under {{WORKDIR}} by default.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths={{WORKDIR}}
+
+[Install]
+WantedBy=multi-user.target
