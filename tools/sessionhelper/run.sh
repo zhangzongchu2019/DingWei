@@ -158,7 +158,7 @@ write_config() {
     printf 'SH_SECRET=%s\n' "$(shell_quote "$secret")"
     printf 'SH_MODE=%s\n' "$(shell_quote cli)"
     printf 'SH_CLI=%s\n' "$(shell_quote "$cli_name")"
-    printf 'SH_CLI_LAUNCH=%s\n' "$(shell_quote tmux)"
+    printf 'SH_CLI_LAUNCH=%s\n' "$(shell_quote pty)"
     printf 'SH_CLI_CMD=%s\n' "$(shell_quote "$cli_cmd")"
     printf 'SH_CLI_CWD=%s\n' "$(shell_quote "$cli_cwd")"
     printf 'SH_CLI_READY_TIMEOUT=%s\n' "$(shell_quote "$ready_timeout")"
@@ -189,7 +189,7 @@ apply_config_defaults() {
   : "${SH_SECRET:?SH_SECRET is required in $CONFIG_FILE}"
   SH_MODE=${SH_MODE:-cli}
   SH_CLI=${SH_CLI:-claude}
-  SH_CLI_LAUNCH=${SH_CLI_LAUNCH:-tmux}
+  SH_CLI_LAUNCH=${SH_CLI_LAUNCH:-pty}
   SH_CLI_CMD=${SH_CLI_CMD:-}
   SH_CLI_CWD=${SH_CLI_CWD:-$(pwd -P)}
   SH_CLI_READY_TIMEOUT=${SH_CLI_READY_TIMEOUT:-90}
@@ -249,7 +249,7 @@ PY
 }
 
 cleanup_tmux() {
-  if command -v tmux >/dev/null 2>&1 && [ -n "${SH_SESSION_NAME:-}" ] && [ -n "${SH_KEY_ID:-}" ] && [ -x "$VENV_DIR/bin/python" ]; then
+  if [ "${SH_CLI_LAUNCH:-pty}" = "tmux" ] && command -v tmux >/dev/null 2>&1 && [ -n "${SH_SESSION_NAME:-}" ] && [ -n "${SH_KEY_ID:-}" ] && [ -x "$VENV_DIR/bin/python" ]; then
     session=$(tmux_session_name 2>/dev/null || true)
     if [ -n "$session" ]; then
       tmux kill-session -t "$session" >/dev/null 2>&1 || true
@@ -271,7 +271,6 @@ case "$(platform_name)" in
 esac
 
 require_cmd python3
-require_cmd tmux
 check_python python3
 
 if [ "$RECONFIGURE" = "1" ] && [ -f "$CONFIG_FILE" ]; then

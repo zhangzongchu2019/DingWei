@@ -149,6 +149,8 @@ func run(logger *slog.Logger) error {
 	})
 	mux.HandleFunc("GET /ws/service/{serviceID}", prefixHub.HandleWS)
 	mux.HandleFunc("GET /ws/session/{sessionName}", prefixHub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.HandleTerminalViewWS)
+	mux.HandleFunc("GET /view/{sessionName}", prefixHub.HandleTerminalViewPage)
 
 	srv := &http.Server{Addr: bs.Addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 

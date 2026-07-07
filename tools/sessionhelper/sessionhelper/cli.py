@@ -38,10 +38,10 @@ class CLIProfile:
 
 
 CLI_PROFILES: dict[str, CLIProfile] = {
-    "claude": CLIProfile(["claude", "--dangerously-skip-permissions"], ("claude", ">", "❯", "╭", "Welcome"), "transcript", launch="tmux"),
-    "codex": CLIProfile(["codex"], ("codex", ">", "›", "❯", "Welcome"), "transcript", launch="tmux"),
+    "claude": CLIProfile(["claude", "--dangerously-skip-permissions"], ("claude", ">", "❯", "╭", "Welcome"), "transcript"),
+    "codex": CLIProfile(["codex"], ("codex", ">", "›", "❯", "Welcome"), "transcript"),
     "aider": CLIProfile(["aider"], ("aider", ">", "Tokens")),
-    "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db", launch="tmux"),
+    "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db"),
     "cline": CLIProfile(["cline"], ("cline", ">", "Welcome")),
     "gemini": CLIProfile(["gemini"], ("gemini", ">", "Welcome")),
 }
@@ -78,8 +78,11 @@ class CLIAdapter:
         self.ready = threading.Event()
         self.closed = threading.Event()
         self.output_q: queue.Queue[str] = queue.Queue()
+        self.terminal_q: queue.Queue[str] = queue.Queue()
         self.mirror_q: queue.Queue[tuple[str, str]] = queue.Queue()
         self.reader: threading.Thread | None = None
+        self.write_lock = threading.Lock()
+        self.web_typing_until = 0.0
         self.started_at = time.time()
         self.last_output_at = 0.0
         self.transcript: TranscriptTailer | None = None
@@ -234,17 +237,19 @@ class CLIAdapter:
         return f"（CLI未就绪：{reason}；sessionHelper仍在线，稍后可重试）"
 
     def inject_text(self, text: str) -> None:
-        if self.launch_mode == "tmux":
-            self.send_tmux_text(text)
+        self.wait_for_web_idle()
+        with self.write_lock:
+            if self.launch_mode == "tmux":
+                self.send_tmux_text(text)
+                time.sleep(0.15)
+                self.submit_enter()
+                return
+            assert self.child is not None
+            # Full-screen TUIs can miss sendline during redraw. Submit in two steps:
+            # write text, wait for the input widget to settle, then send CR alone.
+            self.child.send(self.prepare_input_text(text))
             time.sleep(0.15)
             self.submit_enter()
-            return
-        assert self.child is not None
-        # Full-screen TUIs can miss sendline during redraw. Submit in two steps:
-        # write text, wait for the input widget to settle, then send CR alone.
-        self.child.send(self.prepare_input_text(text))
-        time.sleep(0.15)
-        self.submit_enter()
 
     def submit_enter(self) -> None:
         if self.launch_mode == "tmux":
@@ -252,6 +257,32 @@ class CLIAdapter:
             return
         if self.child is not None:
             self.child.send("\r")
+
+    def write_terminal_input(self, data: str) -> None:
+        if not data:
+            return
+        if not self.start():
+            return
+        self.web_typing_until = time.time() + 0.8
+        with self.write_lock:
+            if self.launch_mode == "tmux":
+                subprocess.run(["tmux", "send-keys", "-t", self.tmux_session, "-l", data], check=False)
+                return
+            if self.child is not None:
+                self.child.send(data)
+
+    def wait_for_web_idle(self) -> None:
+        while True:
+            delay = self.web_typing_until - time.time()
+            if delay <= 0:
+                return
+            time.sleep(min(delay, 0.2))
+
+    def next_terminal_chunk(self, timeout: float = 0.2) -> str | None:
+        try:
+            return self.terminal_q.get(timeout=timeout)
+        except queue.Empty:
+            return None
 
     def send_tmux_text(self, text: str) -> None:
         # send-keys -l treats the text literally, so punctuation and spaces are
@@ -407,6 +438,8 @@ class CLIAdapter:
             except pexpect.EOF:
                 self.closed.set()
                 return
+            if raw:
+                self.terminal_q.put(raw)
             cleaned = clean_output(raw)
             if not cleaned:
                 continue

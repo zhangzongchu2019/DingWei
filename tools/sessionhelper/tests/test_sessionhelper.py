@@ -112,6 +112,9 @@ class SessionHelperTest(unittest.TestCase):
         cfg = load_config(dict(BASE_ENV, SH_CLI="opencode", SH_OPENCODE_DB="/tmp/opencode.db"))
         self.assertEqual(cfg.opencode_db, "/tmp/opencode.db")
         self.assertEqual(CLI_PROFILES["opencode"].output_source, "opencode_db")
+        self.assertEqual(CLI_PROFILES["opencode"].launch, "pty")
+        self.assertEqual(CLI_PROFILES["claude"].launch, "pty")
+        self.assertEqual(CLI_PROFILES["codex"].launch, "pty")
 
     def test_cli_launch_failure_returns_not_ready_reply(self):
         cfg = load_config(
@@ -339,6 +342,21 @@ class SessionHelperTest(unittest.TestCase):
         asyncio.run(helper.inject_agent_network_skill({"body": "指南", "meta": {"type": "agent_network_skill"}}))
         self.assertEqual(fake.injected, ["指南"])
         self.assertEqual(fake.handled, [])
+
+    def test_terminal_input_writes_cli_adapter(self):
+        class FakeAdapter:
+            def __init__(self):
+                self.inputs = []
+
+            def write_terminal_input(self, data):
+                self.inputs.append(data)
+
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli")))
+        fake = FakeAdapter()
+        helper.adapter = fake
+        self.assertTrue(helper.is_terminal_input({"meta": {"type": "terminal_input"}}))
+        asyncio.run(helper.handle_terminal_input({"body": "abc\r", "meta": {"type": "terminal_input"}}))
+        self.assertEqual(fake.inputs, ["abc\r"])
 
     def test_recv_loop_filters_online_directory_without_handle(self):
         class FakeWS:

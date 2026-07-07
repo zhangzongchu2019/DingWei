@@ -49,6 +49,7 @@ type Hub struct {
 	botNames       map[string]string
 	envelopeIDs    map[string]string
 	onlineTimers   map[string]*time.Timer
+	terminals      map[string]*terminalState
 	onlineDebounce time.Duration
 }
 
@@ -108,6 +109,7 @@ func New(repo store.Repository) *Hub {
 		botNames:       map[string]string{},
 		envelopeIDs:    map[string]string{},
 		onlineTimers:   map[string]*time.Timer{},
+		terminals:      map[string]*terminalState{},
 		onlineDebounce: 2500 * time.Millisecond,
 	}
 }
@@ -294,7 +296,12 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 				delete(h.keyAccounts, keyID)
 			}
 		}
+		terminalViewers := h.closeTerminalLocked(keyID, sessionName)
 		h.mu.Unlock()
+		for _, viewer := range terminalViewers {
+			_ = terminalWrite(context.Background(), viewer, map[string]any{"type": "status", "readonly": true, "message": "会话已离线"})
+			_ = viewer.conn.Close(websocket.StatusNormalClosure, "session offline")
+		}
 		_ = conn.Close(websocket.StatusNormalClosure, "bye")
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
@@ -343,6 +350,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if h.handleAgentNetworkSkillAck(c, env) {
+			continue
+		}
+		if h.handleTerminalOutputEnvelope(c, env) {
 			continue
 		}
 		if h.routeSessionSelectorEnvelope(r.Context(), c, env) {
@@ -415,6 +425,9 @@ func suffixedSessionName(base string, n int) string {
 
 func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
 	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
+		return result, err
+	}
+	if result, handled, err := h.dispatchTerminalInputCommand(ctx, msg, text); handled || err != nil {
 		return result, err
 	}
 	if result, handled, err := h.dispatchSystem(ctx, msg, text); handled || err != nil {

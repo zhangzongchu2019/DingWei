@@ -226,6 +226,7 @@ class SessionHelper:
             else:
                 await asyncio.gather(
                     self.recv_loop(ws),
+                    self.terminal_loop(ws),
                     self.outbox_loop(ws),
                     self.mirror_loop(ws),
                 )
@@ -235,6 +236,9 @@ class SessionHelper:
             try:
                 env = json.loads(raw)
             except Exception:
+                continue
+            if self.is_terminal_input(env):
+                await self.handle_terminal_input(env)
                 continue
             if is_mirror_control(env):
                 self.apply_mirror_control(env)
@@ -269,6 +273,15 @@ class SessionHelper:
 
     def is_agent_network_skill(self, env: dict) -> bool:
         return (env.get("meta") or {}).get("type") == "agent_network_skill"
+
+    def is_terminal_input(self, env: dict) -> bool:
+        return (env.get("meta") or {}).get("type") == "terminal_input"
+
+    async def handle_terminal_input(self, env: dict) -> None:
+        data = str(env.get("body") or "")
+        if not data or self.cfg.mode != "cli" or not hasattr(self.adapter, "write_terminal_input"):
+            return
+        await asyncio.to_thread(self.adapter.write_terminal_input, data)
 
     async def inject_agent_network_skill(self, env: dict) -> None:
         body = str(env.get("body") or "")
@@ -422,6 +435,26 @@ class SessionHelper:
                 body = f"【{self.cfg.session_name}·{role}】{text}"
                 await ws.send(json.dumps(self.producer_envelope(body, role), ensure_ascii=False))
                 print(f"[producer] target_group={self.cfg.target_group} role={role}", flush=True)
+
+    async def terminal_loop(self, ws) -> None:
+        if self.cfg.mode != "cli" or not hasattr(self.adapter, "next_terminal_chunk"):
+            await asyncio.Future()
+        if hasattr(self.adapter, "start"):
+            await asyncio.to_thread(self.adapter.start)
+        while True:
+            chunk = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.5)
+            if not chunk:
+                continue
+            deadline = asyncio.get_running_loop().time() + 0.12
+            chunks = [chunk]
+            while asyncio.get_running_loop().time() < deadline:
+                more = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.01)
+                if not more:
+                    break
+                chunks.append(more)
+            body = "".join(chunks)
+            meta = {"type": "terminal_output", "session": self.cfg.session_name, "key_id": self.cfg.key_id, "no_mirror": True}
+            await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), body, self.book.self_addr, meta), ensure_ascii=False))
 
 
 def main() -> None:

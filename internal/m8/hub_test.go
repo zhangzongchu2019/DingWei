@@ -225,6 +225,23 @@ func TestSecurityOpsRoutesToAllSystemSessions(t *testing.T) {
 	}
 }
 
+func TestParseTerminalInputCommand(t *testing.T) {
+	action, session, code, ok := parseTerminalInputCommand("#解锁输入 developer ab12cd")
+	if !ok || action != "unlock" || session != "developer" || code != "AB12CD" {
+		t.Fatalf("unlock parse = %q %q %q %v", action, session, code, ok)
+	}
+	action, session, code, ok = parseTerminalInputCommand("#锁定输入 developer")
+	if !ok || action != "lock" || session != "developer" || code != "" {
+		t.Fatalf("lock parse = %q %q %q %v", action, session, code, ok)
+	}
+	if _, _, _, ok := parseTerminalInputCommand("#解锁输入 developer"); ok {
+		t.Fatal("accepted incomplete unlock")
+	}
+	if _, _, _, ok := parseTerminalInputCommand("#锁定输入 developer extra"); ok {
+		t.Fatal("accepted invalid lock")
+	}
+}
+
 func TestSecurityOpsRejectsUnauthorizedSender(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.RegisterBot("dev", "UnifiedRobot")
