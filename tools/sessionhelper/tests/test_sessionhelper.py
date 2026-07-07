@@ -15,6 +15,8 @@ from sessionhelper.app import (
     comm_skill_ack_envelope,
     contains_comm_skill_ack,
     is_broadcast_envelope,
+    is_no_mirror_envelope,
+    is_online_directory_text,
 )
 from sessionhelper.cli import (
     BRACKETED_PASTE_END,
@@ -338,6 +340,90 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(fake.injected, ["指南"])
         self.assertEqual(fake.handled, [])
 
+    def test_recv_loop_filters_online_directory_without_handle(self):
+        class FakeWS:
+            def __init__(self, env):
+                self.env = env
+                self.done = False
+                self.sent = []
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if self.done:
+                    raise StopAsyncIteration
+                self.done = True
+                return json.dumps(self.env, ensure_ascii=False)
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        class FakeAdapter:
+            def __init__(self):
+                self.handled = []
+
+            def handle(self, env):
+                self.handled.append(env)
+                return "should not run"
+
+        body = "\n**********\n【DingWei在线清单】同账号在线AI会话\n1. #home\n**********\n"
+        self.assertTrue(is_online_directory_text(body))
+        env = {"from": "workpulse#FB-test", "to": "home#FB-test", "body": body, "meta": {"type": "online_directory", "no_mirror": True}}
+        self.assertTrue(is_no_mirror_envelope(env))
+        helper = SessionHelper(load_config(BASE_ENV))
+        fake = FakeAdapter()
+        helper.adapter = fake
+        ws = FakeWS(env)
+
+        asyncio.run(helper.recv_loop(ws))
+
+        self.assertEqual(fake.handled, [])
+        self.assertEqual(ws.sent, [])
+
+    def test_recv_loop_duplicate_agent_skill_acks_without_reinject(self):
+        class FakeWS:
+            def __init__(self, env):
+                self.env = env
+                self.done = False
+                self.sent = []
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if self.done:
+                    raise StopAsyncIteration
+                self.done = True
+                return json.dumps(self.env, ensure_ascii=False)
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        class FakeAdapter:
+            name = "cli"
+
+            def __init__(self):
+                self.injected = []
+
+            def start(self):
+                return True
+
+            def inject_text(self, text):
+                self.injected.append(text)
+
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli")))
+        fake = FakeAdapter()
+        helper.adapter = fake
+        helper.comm_skill_installed = True
+        ws = FakeWS({"from": "workpulse#FB-test", "to": "home#FB-test", "body": "指南", "meta": {"type": "agent_network_skill"}})
+
+        asyncio.run(helper.recv_loop(ws))
+
+        self.assertEqual(fake.injected, [])
+        self.assertEqual(len(ws.sent), 1)
+        self.assertEqual(ws.sent[0]["meta"]["type"], "agent_network_skill_ack")
+
     def test_mirror_loop_sends_comm_skill_ack_on_marker(self):
         class FakeWS:
             def __init__(self):
@@ -403,7 +489,7 @@ class SessionHelperTest(unittest.TestCase):
         self.assertFalse(helper.mirror.enabled)
         self.assertEqual(helper.mirror.to, "")
 
-    def test_broadcast_to_three_sessions_injects_all_but_mirrors_primary_only(self):
+    def test_online_directory_broadcast_is_filtered_from_cli(self):
         class FakeWS:
             def __init__(self, env):
                 self.env = env
@@ -468,7 +554,7 @@ class SessionHelperTest(unittest.TestCase):
                 }
                 cfg = load_config(dict(BASE_ENV, SH_SESSION_NAME=session, SH_MIRROR_TO="ou_alice#FB-test#UnifiedRobot", SH_COLLECT="0"))
                 helper = SessionHelper(cfg)
-                helper.adapter = FakeAdapter(events=[("user", "系统广播内容")])
+                helper.adapter = FakeAdapter()
                 recv_ws = FakeWS(env)
                 await helper.recv_loop(recv_ws)
                 helpers.append((helper, recv_ws))
@@ -480,9 +566,8 @@ class SessionHelperTest(unittest.TestCase):
             return [helper.adapter.seen for helper, _ in helpers], mirror_sends
 
         injected, mirrored = asyncio.run(run_case())
-        self.assertEqual(injected, [["系统广播内容"], ["系统广播内容"], ["系统广播内容"]])
-        self.assertEqual(len(mirrored), 1)
-        self.assertIn("【home·user】系统广播内容", mirrored[0]["body"])
+        self.assertEqual(injected, [[], [], []])
+        self.assertEqual(mirrored, [])
 
     def test_is_broadcast_envelope_requires_dedup_key(self):
         env = {

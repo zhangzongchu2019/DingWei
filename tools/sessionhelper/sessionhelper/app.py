@@ -68,6 +68,16 @@ def is_broadcast_envelope(env: dict) -> bool:
     return bool(str(meta.get("broadcast_dedup_key") or "").strip())
 
 
+def is_no_mirror_envelope(env: dict) -> bool:
+    meta = env.get("meta") or {}
+    return truthy_meta(meta.get("no_mirror")) or truthy_meta(meta.get("system"))
+
+
+def is_online_directory_text(text: str) -> bool:
+    text = str(text or "")
+    return ("【DingWei在线清单】" in text or "【DingWei 在线清单】" in text) and "**********" in text
+
+
 def normalized_text(text: str) -> str:
     return " ".join(str(text or "").split())
 
@@ -102,6 +112,7 @@ class SessionHelper:
         self.book = AddressBook(cfg.session_name, cfg.key_id, cfg.bot_name)
         self.mirror = MirrorState(bool(cfg.mirror_to), cfg.mirror_to)
         self.non_primary_broadcast_texts: deque[str] = deque(maxlen=32)
+        self.comm_skill_installed = False
         self.adapter = self._build_adapter()
 
     def _build_adapter(self) -> Adapter:
@@ -231,7 +242,14 @@ class SessionHelper:
             from_addr = str(env.get("from") or "")
             print(f"[recv] from={from_addr} to={env.get('to')} body={env.get('body')!r}", flush=True)
             if self.is_agent_network_skill(env):
+                if self.comm_skill_installed:
+                    await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
+                    print("[agent_skill] already installed; ack sent", flush=True)
+                    continue
                 await self.inject_agent_network_skill(env)
+                continue
+            body = str(env.get("body") or "")
+            if is_online_directory_text(body) or is_no_mirror_envelope(env):
                 continue
             self.remember_broadcast_mirror_decision(env)
             try:
@@ -378,6 +396,7 @@ class SessionHelper:
             role, text = event
             if role != "user" and contains_comm_skill_ack(text):
                 await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
+                self.comm_skill_installed = True
                 print("[agent_skill] ack sent", flush=True)
                 continue
             if self.cfg.agent_route and role != "user":
