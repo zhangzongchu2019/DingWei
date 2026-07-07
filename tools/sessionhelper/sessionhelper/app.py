@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import sys
 from collections import deque
 from dataclasses import dataclass
@@ -50,6 +51,10 @@ class MirrorState:
     to: str = ""
 
 
+COMM_SKILL_ACK = "DINGWEI_COMM_SKILL_INSTALLED"
+AGENT_ROUTE_RE = re.compile(r"^(#[A-Za-z0-9_.-]+|@[^\s#]+#[A-Za-z0-9_.-]+)\s+(.+)$", re.S)
+
+
 def truthy_meta(value: object) -> bool:
     if isinstance(value, bool):
         return value
@@ -65,6 +70,30 @@ def is_broadcast_envelope(env: dict) -> bool:
 
 def normalized_text(text: str) -> str:
     return " ".join(str(text or "").split())
+
+
+def contains_comm_skill_ack(text: str) -> bool:
+    return COMM_SKILL_ACK in str(text or "")
+
+
+def comm_skill_ack_envelope(book: AddressBook) -> dict:
+    return envelope(
+        session_addr("workpulse", book.key_id),
+        COMM_SKILL_ACK,
+        book.self_addr,
+        {"type": "agent_network_skill_ack", "ack_token": COMM_SKILL_ACK, "no_mirror": True},
+    )
+
+
+def agent_route_envelope(text: str, book: AddressBook) -> dict | None:
+    text = str(text or "").strip()
+    match = AGENT_ROUTE_RE.match(text)
+    if not match:
+        return None
+    to, body = match.group(1).strip(), match.group(2).strip()
+    if not body:
+        return None
+    return envelope(to, body, book.self_addr, {"type": "agent_route", "no_mirror": True})
 
 
 class SessionHelper:
@@ -201,6 +230,9 @@ class SessionHelper:
                 continue
             from_addr = str(env.get("from") or "")
             print(f"[recv] from={from_addr} to={env.get('to')} body={env.get('body')!r}", flush=True)
+            if self.is_agent_network_skill(env):
+                await self.inject_agent_network_skill(env)
+                continue
             self.remember_broadcast_mirror_decision(env)
             try:
                 reply_body = await asyncio.to_thread(self.adapter.handle, env)
@@ -216,6 +248,24 @@ class SessionHelper:
     def reply_body(self, env: dict, reply_body: str) -> str:
         prefix = str((env.get("meta") or {}).get("reply_prefix") or f"【{self.cfg.session_name}】")
         return f"{prefix}{reply_body}"
+
+    def is_agent_network_skill(self, env: dict) -> bool:
+        return (env.get("meta") or {}).get("type") == "agent_network_skill"
+
+    async def inject_agent_network_skill(self, env: dict) -> None:
+        body = str(env.get("body") or "")
+        if not body:
+            return
+        if self.cfg.mode == "cli" and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
+            started = await asyncio.to_thread(self.adapter.start)
+            if started:
+                await asyncio.to_thread(self.adapter.inject_text, body)
+                print("[agent_skill] injected", flush=True)
+            return
+        try:
+            await asyncio.to_thread(self.adapter.handle, env)
+        except Exception as exc:
+            print(f"[agent_skill] inject failed: {exc}", flush=True)
 
     def apply_mirror_control(self, env: dict) -> None:
         meta = env.get("meta") or {}
@@ -326,6 +376,16 @@ class SessionHelper:
                 await asyncio.sleep(0.8)
                 continue
             role, text = event
+            if role != "user" and contains_comm_skill_ack(text):
+                await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
+                print("[agent_skill] ack sent", flush=True)
+                continue
+            if self.cfg.agent_route and role != "user":
+                routed = agent_route_envelope(text, self.book)
+                if routed is not None:
+                    await ws.send(json.dumps(routed, ensure_ascii=False))
+                    print(f"[agent_route] to={routed['to']}", flush=True)
+                    continue
             if self.cfg.collect:
                 meta = {"type": "collect", "role": role, "session": self.cfg.session_name, "key_id": self.cfg.key_id}
                 await ws.send(

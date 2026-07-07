@@ -58,11 +58,13 @@ type client struct {
 }
 
 type sessionClient struct {
-	conn        *websocket.Conn
-	mu          sync.Mutex
-	keyID       string
-	sessionName string
-	targetBot   string
+	conn           *websocket.Conn
+	mu             sync.Mutex
+	keyID          string
+	sessionName    string
+	targetBot      string
+	skillInstalled bool
+	skillCancel    context.CancelFunc
 }
 
 type ForwardRequest struct {
@@ -82,9 +84,13 @@ type ForwardResponse struct {
 }
 
 const (
-	secOpsOwnerKey   = "system-v-task-internal"
-	secOpsMemberName = "SYSTEM-V-TASK-INTERNAL"
-	secOpsKeyword    = "#系统安全"
+	secOpsOwnerKey             = "system-v-task-internal"
+	secOpsMemberName           = "SYSTEM-V-TASK-INTERNAL"
+	secOpsKeyword              = "#系统安全"
+	agentNetworkSkillAck       = "DINGWEI_COMM_SKILL_INSTALLED"
+	agentNetworkSkillPushType  = "agent_network_skill"
+	agentNetworkSkillAckType   = "agent_network_skill_ack"
+	agentNetworkSkillRetryWait = 2 * time.Minute
 )
 
 var (
@@ -269,8 +275,14 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	h.sessionClients[keyID][sessionName] = c
 	h.keyAccounts[keyID] = stringSet(accounts)
 	h.mu.Unlock()
+	skillCtx, skillCancel := context.WithCancel(context.Background())
+	c.skillCancel = skillCancel
+	h.startAgentNetworkSkillPush(skillCtx, c)
 	h.scheduleOnlineBroadcastForSession(r.Context(), keyID, sessionName)
 	defer func() {
+		if c.skillCancel != nil {
+			c.skillCancel()
+		}
 		ownerCtx, ownerCancel := context.WithTimeout(context.Background(), time.Second)
 		ownerKey := h.ownerKeyForKey(ownerCtx, keyID)
 		ownerCancel()
@@ -328,6 +340,12 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		}
 		if env.From != sessionAddress(sessionName, keyID) {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "from 地址必须等于当前会话地址"))
+			continue
+		}
+		if h.handleAgentNetworkSkillAck(c, env) {
+			continue
+		}
+		if h.routeSessionSelectorEnvelope(r.Context(), c, env) {
 			continue
 		}
 		if err := h.RouteEnvelope(r.Context(), env); err != nil {
@@ -792,6 +810,150 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 	default:
 		return errors.New("unsupported target address")
 	}
+}
+
+func (h *Hub) handleAgentNetworkSkillAck(c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") != agentNetworkSkillAckType && strings.TrimSpace(env.Body) != agentNetworkSkillAck {
+		return false
+	}
+	c.mu.Lock()
+	c.skillInstalled = true
+	cancel := c.skillCancel
+	c.mu.Unlock()
+	if cancel != nil {
+		cancel()
+	}
+	return true
+}
+
+func (h *Hub) startAgentNetworkSkillPush(ctx context.Context, c *sessionClient) {
+	go func() {
+		h.pushAgentNetworkSkill(ctx, c)
+		ticker := time.NewTicker(agentNetworkSkillRetryWait)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if h.agentNetworkSkillInstalled(c) {
+					return
+				}
+				h.pushAgentNetworkSkill(ctx, c)
+			}
+		}
+	}()
+}
+
+func (h *Hub) agentNetworkSkillInstalled(c *sessionClient) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.skillInstalled
+}
+
+func (h *Hub) pushAgentNetworkSkill(ctx context.Context, c *sessionClient) {
+	if h.agentNetworkSkillInstalled(c) {
+		return
+	}
+	env := model.Envelope{
+		ID:   randomHex(16),
+		To:   sessionAddress(c.sessionName, c.keyID),
+		From: sessionAddress("workpulse", c.keyID),
+		Body: renderAgentNetworkSkill(c.sessionName, c.keyID),
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{
+			"type":         agentNetworkSkillPushType,
+			"system":       true,
+			"no_mirror":    true,
+			"ack_required": true,
+			"ack_token":    agentNetworkSkillAck,
+			"retry_after":  int(agentNetworkSkillRetryWait.Seconds()),
+		},
+	}
+	if err := c.write(ctx, env); err != nil {
+		return
+	}
+}
+
+func renderAgentNetworkSkill(sessionName, keyID string) string {
+	return strings.Join([]string{
+		"DingWei Agent网络协作指南",
+		"",
+		"你已接入DingWei Agent网络。每次有会话上下线时，你会收到【DingWei在线清单】，它是同账号在线AI会话列表，用来发现可协作的其它AI CLI。",
+		"",
+		"如何主动联系其它会话：",
+		"1. 本租户内发 #会话名 正文。例如：#developer 请核对X。",
+		"2. 跨成员/跨租户发 @成员#会话名 正文。例如：@tester#review 请复测登录流程。",
+		"3. 飞书私聊无前缀时，平台会默认路由到唯一在线会话；群聊必须显式写 #会话名 或 @成员#会话名。",
+		"",
+		"AI CLI主动发起的真实机制：当你的assistant输出以 #会话名 正文 或 @成员#会话名 正文 开头时，sessionHelper会把这行输出转成DingWei主动信封并交给Hub路由；对方收到后可以回复。",
+		"",
+		"协作礼仪：消息要简明，说清诉求与来源，不刷屏。发给队友的正文第一行建议自报身份，例如【" + sessionName + "→manager】。",
+		"",
+		"收到并理解本指南后，请只回复下面这个固定确认标记，方便sessionHelper回执安装完成：",
+		agentNetworkSkillAck,
+	}, "\n")
+}
+
+func (h *Hub) routeSessionSelectorEnvelope(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	text := strings.TrimSpace(env.To)
+	if text == "" || (!strings.HasPrefix(text, "#") && !strings.HasPrefix(text, "@")) {
+		return false
+	}
+	if body := strings.TrimSpace(env.Body); body != "" {
+		text += " " + body
+	}
+	if strings.HasPrefix(text, "#") {
+		sessionName, body, ok := parseSelector(text)
+		if !ok {
+			return false
+		}
+		env.To = sessionAddress(sessionName, c.keyID)
+		env.From = sessionAddress(c.sessionName, c.keyID)
+		env.Body = body
+		if err := h.RouteEnvelope(ctx, env); err != nil {
+			_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+err.Error()))
+		}
+		return true
+	}
+	memberName, sessionName, body, ok := parseMemberMention(text)
+	if !ok {
+		return false
+	}
+	target, err := h.resolveMemberByName(ctx, memberName)
+	if err != nil {
+		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+err.Error()))
+		return true
+	}
+	if target.DMOptOut {
+		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败：该成员未开放会话接入："+memberLabel(target)))
+		return true
+	}
+	keyID, resolvedSession, noDirectory, err := h.resolveMemberSession(ctx, target, sessionName)
+	if err != nil {
+		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+err.Error()))
+		return true
+	}
+	if noDirectory {
+		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败：该会话为专职隔离会话不接受任务派发"))
+		return true
+	}
+	if env.Meta == nil {
+		env.Meta = map[string]any{}
+	}
+	env.Meta["cross_member"] = target.OwnerKey
+	env.Meta["cross_member_name"] = memberLabel(target)
+	env.Meta["cross_session_name"] = resolvedSession
+	env.Meta["source_session_name"] = c.sessionName
+	env.Meta["source_key_id"] = c.keyID
+	env.Meta["reply_prefix"] = fmt.Sprintf("【%s·%s】", memberLabel(target), resolvedSession)
+	env.To = sessionAddress(resolvedSession, keyID)
+	env.From = sessionAddress(c.sessionName, keyID)
+	env.Body = body
+	if err := h.RouteEnvelope(ctx, env); err != nil {
+		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+err.Error()))
+	}
+	return true
 }
 
 func isCollectEnvelope(env model.Envelope) bool {

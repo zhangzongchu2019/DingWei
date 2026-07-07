@@ -840,20 +840,83 @@ func TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource(t *testing.T)
 	if !result.Matched || result.Reply != "" {
 		t.Fatalf("cross dispatch result=%+v", result)
 	}
-	got := readEnvelope(t, ctx, u2)
-	if got.To != "u2#"+u2Key.ID || got.From != "ou_u1#"+u2Key.ID+"#UnifiedRobot" || got.Body != "看看这个方案" {
-		t.Fatalf("cross envelope=%+v", got)
+	gotFeishu := readEnvelope(t, ctx, u2)
+	if gotFeishu.To != "u2#"+u2Key.ID || gotFeishu.From != "ou_u1#"+u2Key.ID+"#UnifiedRobot" || gotFeishu.Body != "看看这个方案" {
+		t.Fatalf("cross envelope=%+v", gotFeishu)
 	}
-	if got.Meta["reply_prefix"] != "【UserTwo·u2】" || got.Meta["cross_member"] != "u2" {
-		t.Fatalf("cross meta=%+v", got.Meta)
+	if gotFeishu.Meta["reply_prefix"] != "【UserTwo·u2】" || gotFeishu.Meta["cross_member"] != "u2" {
+		t.Fatalf("cross meta=%+v", gotFeishu.Meta)
 	}
 
-	if err := writeEnvelope(ctx, u2, model.Envelope{ID: "cross-reply", To: got.From, From: got.To, Body: "【UserTwo·u2】已看"}); err != nil {
+	if err := writeEnvelope(ctx, u1, model.Envelope{ID: "cross-ws", To: "@UserTwo#u2", From: "home#" + u1Key.ID, Body: "会话主动消息"}); err != nil {
+		t.Fatal(err)
+	}
+	gotWS := readEnvelope(t, ctx, u2)
+	if gotWS.To != "u2#"+u2Key.ID || gotWS.From != "home#"+u2Key.ID || gotWS.Body != "会话主动消息" {
+		t.Fatalf("cross ws envelope=%+v", gotWS)
+	}
+	if gotWS.Meta["source_session_name"] != "home" || gotWS.Meta["source_key_id"] != u1Key.ID || gotWS.Meta["reply_prefix"] != "【UserTwo·u2】" {
+		t.Fatalf("cross ws meta=%+v", gotWS.Meta)
+	}
+
+	if err := writeEnvelope(ctx, u2, model.Envelope{ID: "cross-reply", To: gotFeishu.From, From: gotFeishu.To, Body: "【UserTwo·u2】已看"}); err != nil {
 		t.Fatal(err)
 	}
 	msg := waitOutbound(t, ctx, outbound)
 	if msg == nil || msg.ChatEntityID != "dev:personal:ou_u1" || !strings.Contains(messageText(t, msg), "【UserTwo·u2】已看") {
 		t.Fatalf("cross reply outbound=%+v", msg)
+	}
+}
+
+func TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	home := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	skill := readEnvelopeIncludingSystem(t, ctx, home)
+	if skill.Meta["type"] != agentNetworkSkillPushType || !strings.Contains(skill.Body, agentNetworkSkillAck) || !strings.Contains(skill.Body, "#developer 请核对X") {
+		t.Fatalf("agent skill push=%+v", skill)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "skill-ack",
+		To:   "workpulse#" + key.ID,
+		From: "home#" + key.ID,
+		Body: agentNetworkSkillAck,
+		Meta: map[string]any{"type": agentNetworkSkillAckType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		return hub.sessionClients[key.ID]["home"].skillInstalled
+	})
+
+	developer := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer developer.Close(websocket.StatusNormalClosure, "done")
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "selector", To: "#developer", From: "home#" + key.ID, Body: "请核对X"}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, developer)
+	if got.To != "developer#"+key.ID || got.From != "home#"+key.ID || got.Body != "请核对X" {
+		t.Fatalf("selector routed envelope=%+v", got)
 	}
 }
 
@@ -2102,6 +2165,13 @@ func dialSession(t *testing.T, ctx context.Context, baseURL, sessionName, keyID,
 
 func dialSessionWithHeader(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string, header http.Header) *websocket.Conn {
 	t.Helper()
+	conn := dialSessionWithHeaderRaw(t, ctx, baseURL, sessionName, keyID, secret, header)
+	discardInitialAgentNetworkSkill(t, ctx, conn)
+	return conn
+}
+
+func dialSessionWithHeaderRaw(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string, header http.Header) *websocket.Conn {
+	t.Helper()
 	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/session/" + sessionName + "?key_id=" + keyID
 	if header == nil {
 		header = http.Header{}
@@ -2116,6 +2186,13 @@ func dialSessionWithHeader(t *testing.T, ctx context.Context, baseURL, sessionNa
 
 func dialSessionWithQuery(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret, query string) *websocket.Conn {
 	t.Helper()
+	conn := dialSessionWithQueryRaw(t, ctx, baseURL, sessionName, keyID, secret, query)
+	discardInitialAgentNetworkSkill(t, ctx, conn)
+	return conn
+}
+
+func dialSessionWithQueryRaw(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret, query string) *websocket.Conn {
+	t.Helper()
 	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/session/" + sessionName + "?key_id=" + keyID
 	if strings.TrimSpace(query) != "" {
 		wsURL += "&" + query
@@ -2129,12 +2206,39 @@ func dialSessionWithQuery(t *testing.T, ctx context.Context, baseURL, sessionNam
 	return conn
 }
 
+func discardInitialAgentNetworkSkill(t *testing.T, ctx context.Context, conn *websocket.Conn) {
+	t.Helper()
+	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	defer cancel()
+	_, data, err := conn.Read(readCtx)
+	if err != nil {
+		return
+	}
+	var env model.Envelope
+	if err := json.Unmarshal(data, &env); err != nil {
+		t.Fatalf("decode initial envelope: %v", err)
+	}
+	if env.Meta["type"] != agentNetworkSkillPushType {
+		t.Fatalf("expected initial agent network skill push, got %+v", env)
+	}
+}
+
 func writeEnvelope(ctx context.Context, conn *websocket.Conn, env model.Envelope) error {
 	payload, _ := json.Marshal(env)
 	return conn.Write(ctx, websocket.MessageText, payload)
 }
 
 func readEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn) model.Envelope {
+	t.Helper()
+	for {
+		env := readEnvelopeIncludingSystem(t, ctx, conn)
+		if env.Meta["type"] != agentNetworkSkillPushType {
+			return env
+		}
+	}
+}
+
+func readEnvelopeIncludingSystem(t *testing.T, ctx context.Context, conn *websocket.Conn) model.Envelope {
 	t.Helper()
 	readCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
@@ -2156,7 +2260,9 @@ func assertNoEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn, w
 	_, data, err := conn.Read(readCtx)
 	if err == nil {
 		var env model.Envelope
-		_ = json.Unmarshal(data, &env)
+		if err := json.Unmarshal(data, &env); err == nil && env.Meta["type"] == agentNetworkSkillPushType {
+			return
+		}
 		t.Fatalf("unexpected envelope: %+v", env)
 	}
 }
@@ -2179,6 +2285,18 @@ func waitEndpointInactive(t *testing.T, ctx context.Context, db *store.SQLite, k
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
+}
+
+func waitFor(t *testing.T, timeout time.Duration, ok func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if ok() {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("condition not met before timeout")
 }
 
 func waitSessionOnline(t *testing.T, hub *Hub, keyID, sessionName string) {

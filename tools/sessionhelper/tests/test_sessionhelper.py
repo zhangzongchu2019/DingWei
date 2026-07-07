@@ -8,7 +8,14 @@ import tempfile
 from unittest import mock
 from pathlib import Path
 
-from sessionhelper.app import SessionHelper, is_broadcast_envelope
+from sessionhelper.app import (
+    COMM_SKILL_ACK,
+    SessionHelper,
+    agent_route_envelope,
+    comm_skill_ack_envelope,
+    contains_comm_skill_ack,
+    is_broadcast_envelope,
+)
 from sessionhelper.cli import (
     BRACKETED_PASTE_END,
     BRACKETED_PASTE_START,
@@ -53,6 +60,7 @@ class SessionHelperTest(unittest.TestCase):
         self.assertFalse(cfg.async_reply)
         self.assertFalse(cfg.producer)
         self.assertFalse(cfg.no_directory)
+        self.assertTrue(cfg.agent_route)
         self.assertEqual(cfg.target_group, "")
         self.assertEqual(cfg.target_bot, "")
         self.assertEqual(cfg.opencode_db, "")
@@ -280,6 +288,96 @@ class SessionHelperTest(unittest.TestCase):
                 "at": ["ou_sender"],
             },
         )
+
+    def test_comm_skill_ack_envelope(self):
+        book = AddressBook("home", "FB-test", "UnifiedRobot")
+        self.assertTrue(contains_comm_skill_ack(f"ok {COMM_SKILL_ACK}"))
+        env = comm_skill_ack_envelope(book)
+        self.assertEqual(env["to"], "workpulse#FB-test")
+        self.assertEqual(env["from"], "home#FB-test")
+        self.assertEqual(env["body"], COMM_SKILL_ACK)
+        self.assertEqual(env["meta"]["type"], "agent_network_skill_ack")
+
+    def test_agent_route_envelope_accepts_selector_output(self):
+        book = AddressBook("home", "FB-test", "UnifiedRobot")
+        env = agent_route_envelope("#developer 请核对X", book)
+        self.assertEqual(env["to"], "#developer")
+        self.assertEqual(env["from"], "home#FB-test")
+        self.assertEqual(env["body"], "请核对X")
+        self.assertEqual(env["meta"]["type"], "agent_route")
+
+        env = agent_route_envelope("@u2#tester 请复测", book)
+        self.assertEqual(env["to"], "@u2#tester")
+        self.assertEqual(env["body"], "请复测")
+
+        self.assertIsNone(agent_route_envelope("普通回答", book))
+        self.assertIsNone(agent_route_envelope("# 中文标题", book))
+
+    def test_agent_network_skill_injects_without_handle(self):
+        class FakeAdapter:
+            name = "cli"
+
+            def __init__(self):
+                self.injected = []
+                self.handled = []
+
+            def start(self):
+                return True
+
+            def inject_text(self, text):
+                self.injected.append(text)
+
+            def handle(self, env):
+                self.handled.append(env)
+                return "should not happen"
+
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli")))
+        fake = FakeAdapter()
+        helper.adapter = fake
+        asyncio.run(helper.inject_agent_network_skill({"body": "指南", "meta": {"type": "agent_network_skill"}}))
+        self.assertEqual(fake.injected, ["指南"])
+        self.assertEqual(fake.handled, [])
+
+    def test_mirror_loop_sends_comm_skill_ack_on_marker(self):
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        class FakeAdapter:
+            def __init__(self):
+                self.events = [("assistant", f"收到 {COMM_SKILL_ACK}")]
+
+            def start(self):
+                return True
+
+            def next_mirror_event(self, _timeout):
+                if self.events:
+                    return self.events.pop(0)
+                return None
+
+        async def run_case():
+            helper = SessionHelper(load_config(dict(BASE_ENV, SH_COLLECT="1", SH_MIRROR_TO="ou_u1#FB-test#UnifiedRobot")))
+            helper.adapter = FakeAdapter()
+            ws = FakeWS()
+            task = asyncio.create_task(helper.mirror_loop(ws))
+            deadline = asyncio.get_running_loop().time() + 1.5
+            while asyncio.get_running_loop().time() < deadline and not ws.sent:
+                await asyncio.sleep(0.05)
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            return ws.sent
+
+        sent = asyncio.run(run_case())
+        self.assertEqual(len(sent), 1)
+        self.assertEqual(sent[0]["to"], "workpulse#FB-test")
+        self.assertEqual(sent[0]["body"], COMM_SKILL_ACK)
+        self.assertEqual(sent[0]["meta"]["type"], "agent_network_skill_ack")
 
     def test_mirror_control_updates_state_without_adapter(self):
         helper = SessionHelper(load_config(BASE_ENV))

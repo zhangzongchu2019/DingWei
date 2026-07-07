@@ -15,6 +15,7 @@ SH_CLI_LAUNCH=tmux                   # TUI型(claude/codex/opencode)用tmux
 SH_MIRROR_TO=                        # 可选:会话镜像到某飞书目标
 SH_COLLECT=1                         # 1=采集你的AI会话用于团队进度佐证(不发飞书);0=关
 SH_ASYNC_REPLY=0                     # 1=cli收到指令只注入,不等模型回复/不发同步回执
+SH_AGENT_ROUTE=1                     # 1=assistant输出#会话名/@成员#会话名开头时转DingWei主动信封
 SH_NO_DIRECTORY=0                    # 1=专职会话不进在线清单/不收清单广播,仍可显式 #会话名 寻址
 SH_TARGET_GROUP=                     # producer专用:目标飞书群chat_id;普通会话留空不向群发
 SH_TARGET_BOT=                       # producer可选:强制指定目标群使用的bot_channel

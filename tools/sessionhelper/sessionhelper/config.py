@@ -51,6 +51,7 @@ class Config:
     producer: bool = False
     no_directory: bool = False
     async_reply: bool = False
+    agent_route: bool = True
 
     @property
     def ws_url(self) -> str:
@@ -117,6 +118,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         producer=truthy(env.get("SH_PRODUCER", "0")),
         no_directory=truthy(env.get("SH_NO_DIRECTORY", "0")),
         async_reply=truthy(env.get("SH_ASYNC_REPLY", "0")),
+        agent_route=truthy(env.get("SH_AGENT_ROUTE", "1")),
     )
 
 
