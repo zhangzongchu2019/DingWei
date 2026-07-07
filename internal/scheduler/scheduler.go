@@ -1181,7 +1181,18 @@ func (s *Service) RunGroupNotifications(ctx context.Context, reason string) erro
 	if err != nil {
 		return err
 	}
+	aggregateIDs, err := s.Repo.ListAggregateProjectIDs(ctx)
+	if err != nil {
+		return err
+	}
+	aggregates := map[string]bool{}
+	for _, id := range aggregateIDs {
+		aggregates[id] = true
+	}
 	for _, p := range projects {
+		if aggregates[p.ID] {
+			continue
+		}
 		if strings.TrimSpace(p.EvidenceCron) != "" {
 			continue
 		}
@@ -1335,7 +1346,7 @@ func (s *Service) NotifyProject(ctx context.Context, projectID, text string) err
 	botID := firstNonEmpty(target.BotID, s.Config.NotifyBotID, "unifiedrobot")
 	content, _ := json.Marshal(map[string]string{"text": text})
 	return s.Outbound.Enqueue(ctx, model.Message{
-		ID:           "scheduler-" + s.Clock.Now().UTC().Format("20060102150405.000000000"),
+		ID:           "scheduler-" + projectID + "-" + s.Clock.Now().UTC().Format("20060102150405.000000000"),
 		ChatEntityID: botID + ":group:" + target.ChatID,
 		BotChannelID: botID,
 		ChatType:     model.ChatGroup,

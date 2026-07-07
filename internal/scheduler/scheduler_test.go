@@ -282,6 +282,8 @@ func TestRunGroupNotificationsSkipsProjectEvidenceOverrides(t *testing.T) {
 	projects := []model.Project{
 		{ID: "proj:daily", Name: "日更项目", NotifyChatID: "oc_daily", NotifyBotID: "dev", Active: true},
 		{ID: "proj:weekly", Name: "覆盖项目", NotifyChatID: "oc_weekly", NotifyBotID: "dev", EvidenceCron: "0 2 * * 1,3", Active: true},
+		{ID: "proj:source", Name: "来源项目", NotifyChatID: "oc_source", NotifyBotID: "dev", Active: true},
+		{ID: "proj:aggregate", Name: "聚合项目", NotifyChatID: "oc_aggregate", NotifyBotID: "dev", Active: true},
 	}
 	for _, project := range projects {
 		if err := db.UpsertProject(ctx, project); err != nil {
@@ -290,6 +292,9 @@ func TestRunGroupNotificationsSkipsProjectEvidenceOverrides(t *testing.T) {
 		if _, err := db.AppendScheduleDoc(ctx, model.ScheduleDoc{ProjectID: project.ID, Kind: "team", Content: "团队排期\n", Source: "test"}); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if err := db.SetProjectAggregateSources(ctx, "proj:aggregate", []string{"proj:source"}); err != nil {
+		t.Fatal(err)
 	}
 	outbound := bus.NewDBQueue(db, model.DirectionOut)
 	svc := New(Config{ReportDir: dir, NotifyBotID: "dev"}, &fakeRunner{out: "主线：正常推进。"}, &clock.Fake{T: time.Date(2026, 7, 4, 0, 0, 0, 0, time.UTC)}, outbound)
@@ -304,12 +309,25 @@ func TestRunGroupNotificationsSkipsProjectEvidenceOverrides(t *testing.T) {
 	if msg.ChatEntityID != "dev:group:oc_daily" || msg.ChatType != model.ChatGroup {
 		t.Fatalf("group msg target=%+v", msg)
 	}
+	if err := db.AckMessage(ctx, msg.ID); err != nil {
+		t.Fatal(err)
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg == nil {
+		t.Fatalf("source project msg=%+v err=%v", msg, err)
+	}
+	if msg.ChatEntityID != "dev:group:oc_source" || msg.ChatType != model.ChatGroup {
+		t.Fatalf("source project msg target=%+v", msg)
+	}
+	if err := db.AckMessage(ctx, msg.ID); err != nil {
+		t.Fatal(err)
+	}
 	next, err := db.ClaimNextMessage(ctx, model.DirectionOut)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if next != nil {
-		t.Fatalf("project evidence override should not be sent by group cron: %+v", next)
+		t.Fatalf("project evidence override and aggregate project should not be sent by group cron: %+v", next)
 	}
 }
 
