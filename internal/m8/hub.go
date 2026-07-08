@@ -266,6 +266,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	conn.SetReadLimit(16 << 20) // 终端 PTY 全屏输出可能远超默认 32KB
 	c := &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, targetBot: targetBot}
 	h.mu.Lock()
 	if h.sessionClients[keyID] == nil {
@@ -1671,6 +1672,8 @@ func (h *Hub) ownerKeyForKeyWithMembers(ctx context.Context, keyID string, membe
 	return ""
 }
 
+var terminalViewBase = strings.TrimRight(os.Getenv("WP_VIEW_BASE_URL"), "/")
+
 func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string {
 	var b strings.Builder
 	b.WriteString("\n**********\n")
@@ -1685,6 +1688,9 @@ func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string
 		displayName := firstNonEmpty(ep.FullSessionName, ep.SessionName)
 		short := shortSessionName(displayName)
 		fmt.Fprintf(&b, "%d. #%s · %s/%s · %s(末%s) · @%s#%s", i+1, short, unknown(ep.Tool), unknown(ep.Model), unknown(ep.ClientIP), keyTail(ep.KeyID), owner.OwnerKey, short)
+		if terminalViewBase != "" {
+			fmt.Fprintf(&b, " · 页面 %s/view/%s", terminalViewBase, short)
+		}
 		if displayName != short {
 			fmt.Fprintf(&b, " · 全名:%s", displayName)
 		}
@@ -2421,4 +2427,16 @@ func randomHex(n int) string {
 	b := make([]byte, n)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+func randomDigits(n int) string {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return strings.Repeat("0", n)
+	}
+	out := make([]byte, n)
+	for i := range b {
+		out[i] = '0' + b[i]%10
+	}
+	return string(out)
 }

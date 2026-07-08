@@ -312,12 +312,37 @@ func (s *Server) upsertMember(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "owner_key required", http.StatusBadRequest)
 		return
 	}
+	m.OwnerKey = s.allocateUniqueOwnerKey(r.Context(), m.OwnerKey, m.FeishuOpenID)
 	if err := s.Repo.UpsertMember(r.Context(), m); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	_ = s.Repo.WriteAudit(r.Context(), adminUser(r), "admin_member_upsert", m.OwnerKey)
-	writeOK(w, "member saved")
+	writeOK(w, "member saved: "+m.OwnerKey)
+}
+
+// allocateUniqueOwnerKey：owner_key（拼音缩写）撞了自动加序号 base→base1→base2…
+// feishu_open_id 是权威锚点——同一 open_id 视为本人（更新自己），不算撞。
+func (s *Server) allocateUniqueOwnerKey(ctx context.Context, base, openID string) string {
+	base = strings.TrimSpace(base)
+	if base == "" {
+		return base
+	}
+	openID = strings.TrimSpace(openID)
+	for n := 0; n < 1000; n++ {
+		cand := base
+		if n > 0 {
+			cand = base + strconv.Itoa(n)
+		}
+		ex, err := s.Repo.GetMemberByOwnerKey(ctx, cand)
+		if err != nil {
+			return cand
+		}
+		if ex == nil || strings.TrimSpace(ex.FeishuOpenID) == openID {
+			return cand
+		}
+	}
+	return base
 }
 
 func (s *Server) projects(w http.ResponseWriter, r *http.Request) {

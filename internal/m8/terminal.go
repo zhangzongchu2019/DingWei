@@ -108,7 +108,7 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	viewer := &terminalViewer{id: randomHex(8), code: strings.ToUpper(randomHex(3)), conn: conn, mu: make(chan struct{}, 1)}
+	viewer := &terminalViewer{id: randomHex(8), code: h.uniqueTerminalCode(), conn: conn, mu: make(chan struct{}, 1)}
 	viewer.mu <- struct{}{}
 	var st *terminalState
 	h.mu.Lock()
@@ -143,7 +143,7 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		"type":     "status",
 		"readonly": st.writerPage != viewer.id,
 		"code":     viewer.code,
-		"message":  "飞书发送 #解锁输入 " + sessionName + " " + viewer.code + " 后可输入",
+		"message":  "飞书发送 #unlock " + viewer.code + " 后可输入",
 	})
 	for {
 		_, data, err := conn.Read(r.Context())
@@ -227,9 +227,23 @@ func (h *Hub) dispatchTerminalInputCommand(ctx context.Context, msg model.Messag
 		return model.PrefixDispatchResult{}, false, nil
 	}
 	source := sourceAccount(msg)
-	keyID, found := h.lookupKeyIDForSession(source, sessionName)
-	if !found {
-		return model.PrefixDispatchResult{Matched: true, Reply: "未找到可控制的在线会话：" + sessionName}, true, nil
+	var keyID string
+	if sessionName == "" {
+		if action == "lock" && pageCode == "" {
+			n := h.revokeTerminalWritersForAccount(source)
+			return model.PrefixDispatchResult{Matched: true, Reply: fmt.Sprintf("已锁定你名下 %d 个页面的输入。", n)}, true, nil
+		}
+		k, s, err := h.findTerminalViewerByCode(source, pageCode)
+		if err != nil {
+			return model.PrefixDispatchResult{Matched: true, Reply: err.Error()}, true, nil
+		}
+		keyID, sessionName = k, s
+	} else {
+		var found bool
+		keyID, found = h.lookupKeyIDForSession(source, sessionName)
+		if !found {
+			return model.PrefixDispatchResult{Matched: true, Reply: "未找到可控制的在线会话：" + sessionName}, true, nil
+		}
 	}
 	switch action {
 	case "unlock":
@@ -249,10 +263,23 @@ func (h *Hub) dispatchTerminalInputCommand(ctx context.Context, msg model.Messag
 
 func parseTerminalInputCommand(text string) (action, sessionName, pageCode string, ok bool) {
 	fields := strings.Fields(strings.TrimSpace(text))
-	if len(fields) < 2 {
+	if len(fields) < 1 {
 		return "", "", "", false
 	}
 	switch fields[0] {
+	case "#unlock":
+		if len(fields) != 2 {
+			return "", "", "", false
+		}
+		return "unlock", "", strings.ToUpper(fields[1]), true
+	case "#lock":
+		if len(fields) == 2 {
+			return "lock", "", strings.ToUpper(fields[1]), true
+		}
+		if len(fields) == 1 {
+			return "lock", "", "", true
+		}
+		return "", "", "", false
 	case "#解锁输入":
 		if len(fields) != 3 {
 			return "", "", "", false
@@ -266,6 +293,76 @@ func parseTerminalInputCommand(text string) (action, sessionName, pageCode strin
 	default:
 		return "", "", "", false
 	}
+}
+
+func (h *Hub) uniqueTerminalCode() string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	used := map[string]bool{}
+	for _, st := range h.terminals {
+		for _, v := range st.viewers {
+			used[v.code] = true
+		}
+	}
+	for i := 0; i < 64; i++ {
+		c := randomDigits(4)
+		if !used[c] {
+			return c
+		}
+	}
+	return randomDigits(4)
+}
+
+func (h *Hub) findTerminalViewerByCode(account, code string) (keyID, sessionName string, err error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	var mk, ms string
+	n := 0
+	for _, st := range h.terminals {
+		if !h.keyAccounts[st.keyID][account] {
+			continue
+		}
+		for _, v := range st.viewers {
+			if strings.EqualFold(v.code, code) {
+				mk, ms = st.keyID, st.sessionName
+				n++
+			}
+		}
+	}
+	if n == 0 {
+		return "", "", fmt.Errorf("未找到页面码 %s 对应的可控制页面（先在网页打开会话）", code)
+	}
+	if n > 1 {
+		return "", "", fmt.Errorf("页面码 %s 命中多个页面，请刷新其中一个再试", code)
+	}
+	return mk, ms, nil
+}
+
+func (h *Hub) revokeTerminalWritersForAccount(account string) int {
+	h.mu.Lock()
+	var toNotify []*terminalViewer
+	n := 0
+	for _, st := range h.terminals {
+		if !h.keyAccounts[st.keyID][account] {
+			continue
+		}
+		if st.writerPage != "" {
+			for _, v := range st.viewers {
+				if v.id == st.writerPage {
+					toNotify = append(toNotify, v)
+				}
+			}
+			st.writerPage = ""
+			st.writerToken = ""
+			st.writerUntil = time.Time{}
+			n++
+		}
+	}
+	h.mu.Unlock()
+	for _, v := range toNotify {
+		_ = terminalWrite(context.Background(), v, map[string]any{"type": "write_revoked", "readonly": true, "message": "输入已锁定"})
+	}
+	return n
 }
 
 func (h *Hub) grantTerminalInput(keyID, sessionName, pageCode string) (string, error) {
@@ -336,7 +433,7 @@ const terminalPageHTML = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DingWei Terminal - %s</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.5.0/css/xterm.css">
+  <link rel="stylesheet" href="/xterm/xterm.min.css">
   <style>
     html, body { height: 100%%; margin: 0; background: #0b0f14; color: #d7dde8; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     body { display: flex; flex-direction: column; }
@@ -346,7 +443,7 @@ const terminalPageHTML = `<!doctype html>
     .pill { padding: 2px 7px; border-radius: 999px; background: #263244; color: #dbe6f7; }
     .locked { color: #ffcf66; }
     .unlocked { color: #7ee787; }
-    #terminal { flex: 1; min-height: 0; padding: 8px; }
+    #terminal { height: 75vh; min-height: 120px; padding: 8px; resize: vertical; overflow: hidden; box-sizing: border-box; border-bottom: 2px solid #273244; }
   </style>
 </head>
 <body>
@@ -358,20 +455,32 @@ const terminalPageHTML = `<!doctype html>
     <span id="msg"></span>
   </div>
   <div id="terminal"></div>
-  <script src="https://cdn.jsdelivr.net/npm/xterm@5.5.0/lib/xterm.min.js"></script>
+  <script src="/xterm/xterm.min.js"></script>
+  <script src="/xterm/addon-fit.min.js"></script>
   <script>
     const sessionName = location.pathname.split('/').pop();
     const key = 'dingwei.terminal.scrollback.' + sessionName;
     const input = document.getElementById('scrollback');
     input.value = localStorage.getItem(key) || '5000';
-    let term = new Terminal({ convertEol: false, cursorBlink: true, scrollback: parseInt(input.value, 10) || 5000, theme: { background: '#0b0f14' } });
-    term.open(document.getElementById('terminal'));
+    let fit;
+    function newTerm() {
+      const t = new Terminal({ convertEol: false, cursorBlink: true, scrollback: parseInt(input.value, 10) || 5000, theme: { background: '#0b0f14' } });
+      fit = new FitAddon.FitAddon();
+      t.loadAddon(fit);
+      t.open(document.getElementById('terminal'));
+      try { fit.fit(); } catch (e) {}
+      return t;
+    }
+    let term = newTerm();
+    let fitPending = false;
+    const doFit = () => { if (fitPending) return; fitPending = true; requestAnimationFrame(() => { fitPending = false; try { fit.fit(); } catch (e) {} }); };
+    new ResizeObserver(doFit).observe(document.getElementById('terminal'));
+    window.addEventListener('resize', doFit);
     function recreate() {
       localStorage.setItem(key, input.value);
       const old = term;
       document.getElementById('terminal').innerHTML = '';
-      term = new Terminal({ convertEol: false, cursorBlink: true, scrollback: parseInt(input.value, 10) || 5000, theme: { background: '#0b0f14' } });
-      term.open(document.getElementById('terminal'));
+      term = newTerm();
       old.dispose();
       term.write('\r\n[scrollback changed; reconnect to replay buffer]\r\n');
       bindTerm();
