@@ -741,10 +741,32 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		if h.routeSessionSelectorEnvelope(r.Context(), c, env) {
 			continue
 		}
+		if h.handleControlSubtaskResult(r.Context(), c, env) {
+			continue
+		}
 		if err := h.RouteEnvelope(r.Context(), env); err != nil {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "投递失败："+err.Error()))
 		}
 	}
+}
+
+func (h *Hub) handleControlSubtaskResult(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	taskID := metaString(env.Meta, "control_task_id")
+	if taskID == "" {
+		return false
+	}
+	task, err := h.Repo.GetControlTask(ctx, taskID)
+	if err != nil {
+		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "子任务查询失败："+err.Error()))
+		return true
+	}
+	if task == nil || task.ParentID == "" {
+		return false
+	}
+	if err := h.CompleteControlSubtask(ctx, taskID, env.Body, "done", ""); err != nil {
+		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "子任务回填失败："+err.Error()))
+	}
+	return true
 }
 
 func sessionMirrorToFromRequest(r *http.Request) string {

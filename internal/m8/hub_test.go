@@ -406,20 +406,36 @@ func TestControlPlaneP3DecomposeChildrenAggregateAndNotify(t *testing.T) {
 		}
 	}
 
-	if err := hub.CompleteControlSubtask(ctx, "p3-parent-sub-01", "需求完成", "done", ""); err != nil {
+	if err := writeEnvelope(ctx, alpha, model.Envelope{
+		ID:   "p3-parent-alpha-reply",
+		To:   "workpulse#" + key.ID,
+		From: "alpha#" + key.ID,
+		Body: "需求完成",
+		Meta: map[string]any{"control_task_id": "p3-parent-sub-01"},
+	}); err != nil {
 		t.Fatal(err)
 	}
-	parent, err = db.GetControlTask(ctx, "p3-parent")
-	if err != nil || parent == nil || parent.Status != "awaiting_children" {
-		t.Fatalf("parent should wait for second child=%+v err=%v", parent, err)
-	}
-	if err := hub.CompleteControlSubtask(ctx, "p3-parent-sub-02", "风险完成", "done", ""); err != nil {
+	waitFor(t, time.Second, func() bool {
+		child, err := db.GetControlTask(ctx, "p3-parent-sub-01")
+		if err != nil || child == nil || child.Status != "done" || child.Result != "需求完成" {
+			return false
+		}
+		parent, err = db.GetControlTask(ctx, "p3-parent")
+		return err == nil && parent != nil && parent.Status == "awaiting_children"
+	})
+	if err := writeEnvelope(ctx, beta, model.Envelope{
+		ID:   "p3-parent-beta-reply",
+		To:   "workpulse#" + key.ID,
+		From: "beta#" + key.ID,
+		Body: "风险完成",
+		Meta: map[string]any{"control_task_id": "p3-parent-sub-02"},
+	}); err != nil {
 		t.Fatal(err)
 	}
-	parent, err = db.GetControlTask(ctx, "p3-parent")
-	if err != nil || parent == nil || parent.Status != "done" || parent.Intent != "aggregate" || !strings.Contains(parent.Result, "综合回复") {
-		t.Fatalf("parent after aggregate=%+v err=%v", parent, err)
-	}
+	waitFor(t, time.Second, func() bool {
+		parent, err = db.GetControlTask(ctx, "p3-parent")
+		return err == nil && parent != nil && parent.Status == "done" && parent.Intent == "aggregate" && strings.Contains(parent.Result, "综合回复")
+	})
 	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
 	if out == nil || !strings.Contains(messageText(t, out), "综合回复：需求和风险都已完成。") {
 		t.Fatalf("aggregate source reply=%+v", out)
