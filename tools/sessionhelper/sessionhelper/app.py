@@ -506,7 +506,9 @@ class SessionHelper:
         if self.cfg.mode != "cli" or not hasattr(self.adapter, "next_terminal_chunk"):
             await asyncio.Future()
         if hasattr(self.adapter, "start"):
-            await asyncio.to_thread(self.adapter.start)
+            # 后台启动 CLI（spawn 后台跑，不等“就绪”），立即进入转发循环——
+            # 网页终端从而能实时看到 CLI 启动全过程（含首次 onboarding），可交互过去
+            asyncio.create_task(asyncio.to_thread(self.adapter.start))
         while True:
             chunk = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.5)
             if not chunk:

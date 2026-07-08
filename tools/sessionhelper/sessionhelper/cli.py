@@ -81,6 +81,7 @@ class CLIAdapter:
         self.respawn_count = 0
         self.win_rows = 40
         self.win_cols = 140
+        self._start_lock = threading.Lock()
         self.output_q: queue.Queue[str] = queue.Queue()
         self.terminal_q: queue.Queue[str] = queue.Queue()
         self.mirror_q: queue.Queue[tuple[str, str]] = queue.Queue()
@@ -96,20 +97,33 @@ class CLIAdapter:
     def start(self) -> bool:
         if self.ready.is_set():
             return True
-        self.launch_attempts += 1
-        try:
-            if self.launch_mode == "tmux":
-                self.start_tmux()
-            else:
-                self.start_pty()
-        except Exception as exc:
-            self.last_launch_error = str(exc)
-            self.ready.clear()
-            return False
-        if self.ready.is_set():
-            self.last_launch_error = ""
+        # 快路径：子进程已在跑就直接算成功（不抢锁，避免被 ready 等待长期占锁而阻塞其它调用）
+        if self.launch_mode != "tmux" and self.child is not None and self.child.isalive():
             return True
-        return False
+        with self._start_lock:
+            if self.ready.is_set():
+                return True
+            if self.launch_mode != "tmux" and self.child is not None and self.child.isalive():
+                return True
+            self.launch_attempts += 1
+            try:
+                if self.launch_mode == "tmux":
+                    self.start_tmux()
+                else:
+                    self.start_pty()
+            except Exception as exc:
+                self.last_launch_error = str(exc)
+                print(f"[cli] start failed (attempt {self.launch_attempts}): {exc}", flush=True)
+                # PTY 模式：子进程可能已起来只是没到 ready，别清空——留给终端转发用
+                if self.launch_mode == "tmux" or self.child is None or not self.child.isalive():
+                    self.ready.clear()
+                    return False
+                print("[cli] child is alive though not 'ready'; keeping it for terminal streaming", flush=True)
+                return True
+            if self.ready.is_set():
+                self.last_launch_error = ""
+                return True
+            return self.launch_mode != "tmux" and self.child is not None and self.child.isalive()
 
     def start_pty(self) -> None:
         if self.child is not None:
