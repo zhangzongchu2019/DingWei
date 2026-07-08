@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS 下 sessionHelper 的守护方式：launchd（替代 Linux 的 cron+guard.sh）。
+  KeepAlive=true 让 launchd 在 sessionHelper 退出时自动重启（等价 guard 的掉线自愈）。
+  安装见同目录 install-launchd.sh；占位符 __SESSION__ / __CONFIG__ / __RUNSH__ / __LOG__ 由脚本替换。
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.dingwei.sessionhelper.__SESSION__</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>exec "__RUNSH__"</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>WORKPULSE_SH_CONFIG_FILE</key>
+    <string>__CONFIG__</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>__LOG__</string>
+  <key>StandardErrorPath</key>
+  <string>__LOG__</string>
+</dict>
+</plist>

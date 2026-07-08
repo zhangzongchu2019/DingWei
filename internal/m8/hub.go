@@ -65,6 +65,7 @@ type sessionClient struct {
 	sessionName    string
 	targetBot      string
 	webTerminal    bool
+	osName         string
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 }
@@ -242,6 +243,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	targetGroup := strings.TrimSpace(r.URL.Query().Get("target_group"))
 	targetBot := strings.TrimSpace(r.URL.Query().Get("target_bot"))
 	webTerminal := truthyQuery(r.URL.Query().Get("terminal"))
+	osName := strings.TrimSpace(r.URL.Query().Get("os"))
 	mirrorTo := sessionMirrorToFromRequest(r)
 	ownerKey := h.ownerKeyForKeyWithAccounts(r.Context(), keyID, accounts)
 	sessionName, err := h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
@@ -269,7 +271,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conn.SetReadLimit(16 << 20) // 终端 PTY 全屏输出可能远超默认 32KB
-	c := &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, targetBot: targetBot, webTerminal: webTerminal}
+	c := &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, targetBot: targetBot, webTerminal: webTerminal, osName: osName}
 	h.mu.Lock()
 	if h.sessionClients[keyID] == nil {
 		h.sessionClients[keyID] = map[string]*sessionClient{}
@@ -1695,6 +1697,9 @@ func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string
 		displayName := firstNonEmpty(ep.FullSessionName, ep.SessionName)
 		short := shortSessionName(displayName)
 		fmt.Fprintf(&b, "%d. #%s · %s/%s · %s(末%s) · @%s#%s", i+1, short, unknown(ep.Tool), unknown(ep.Model), unknown(ep.ClientIP), keyTail(ep.KeyID), owner.OwnerKey, short)
+		if item.Client != nil && item.Client.osName != "" {
+			fmt.Fprintf(&b, " · %s", item.Client.osName)
+		}
 		if terminalViewBase != "" && item.Client != nil && item.Client.webTerminal {
 			fmt.Fprintf(&b, " · 页面 %s/view/%s", terminalViewBase, short)
 		}
