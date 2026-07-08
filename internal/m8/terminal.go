@@ -155,11 +155,9 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 			case <-r.Context().Done():
 				return
 			case <-t.C:
-				pctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-				err := conn.Ping(pctx)
-				cancel()
-				if err != nil {
-					_ = conn.Close(websocket.StatusGoingAway, "ping timeout")
+				// 通过串行化的写路径(terminalWrite 用 viewer.mu)发心跳消息,
+				// 不用 conn.Ping —— 否则会与输出转发的 conn.Write 并发写、coder/websocket 崩连接
+				if err := terminalWrite(r.Context(), viewer, map[string]any{"type": "ping"}); err != nil {
 					return
 				}
 			}
