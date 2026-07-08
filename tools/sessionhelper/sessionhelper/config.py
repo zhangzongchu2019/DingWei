@@ -66,6 +66,8 @@ class Config:
             query["producer"] = "1"
         if self.no_directory:
             query["no_directory"] = "1"
+        if self.cli_launch == "pty":
+            query["terminal"] = "1"  # 仅 PTY 客户端支持网页终端,清单据此决定是否给 /view 入口
         if self.target_group:
             query["target_group"] = self.target_group
         if self.target_bot:
