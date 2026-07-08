@@ -223,6 +223,8 @@ ensure_venv() {
   log "installing Python dependencies in isolated venv"
   "$VENV_DIR/bin/python" -m pip install -q --upgrade pip
   "$VENV_DIR/bin/python" -m pip install -q -r "$SCRIPT_DIR/requirements.txt"
+  # certifi 提供 CA 根证书;macOS 的 Python 默认没有系统证书,不装会 SSL 握手失败
+  "$VENV_DIR/bin/python" -m pip install -q certifi 2>/dev/null || true
 }
 
 detect_cli_command() {
@@ -295,6 +297,15 @@ PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONPATH
 # 导出所有 SH_* 变量(含 SH_DEBUG/SH_OPEN_TIMEOUT 等,以后新增不会再漏)
 for _shvar in ${!SH_*}; do export "$_shvar"; done
+# macOS 的 Python 默认找不到系统 CA → WS 握手报 CERTIFICATE_VERIFY_FAILED。
+# 用 venv 里的 certifi 证书,且只作用于本 sessionHelper 进程(不全局 export,避免坑 curl/git)。
+if [ -z "${SSL_CERT_FILE:-}" ]; then
+  _certifi=$("$VENV_DIR/bin/python" -m certifi 2>/dev/null || true)
+  if [ -n "$_certifi" ] && [ -f "$_certifi" ]; then
+    export SSL_CERT_FILE="$_certifi"
+    log "SSL_CERT_FILE 已从 certifi 自动设置(仅本进程 TLS 用)"
+  fi
+fi
 log "starting sessionHelper session=$SH_SESSION_NAME key_id=$SH_KEY_ID cli=$SH_CLI ws=$SH_WS_BASE"
 log "secret loaded from local config; it will not be printed"
 trap cleanup_tmux EXIT
