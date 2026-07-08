@@ -203,6 +203,9 @@ func TestControlPlaneP2DispatchAndClarifyWithMockLLM(t *testing.T) {
 	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
 		t.Fatal(err)
 	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
@@ -334,6 +337,290 @@ func TestControlPlaneP2ProviderFailureRequeuesUntilMaxAttempts(t *testing.T) {
 	}
 }
 
+func TestControlPlaneP3DecomposeChildrenAggregateAndNotify(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	alpha := dialSession(t, ctx, srv.URL, "alpha", key.ID, secret)
+	defer alpha.Close(websocket.StatusNormalClosure, "done")
+	beta := dialSession(t, ctx, srv.URL, "beta", key.ID, secret)
+	defer beta.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "alpha")
+	waitSessionOnline(t, hub, key.ID, "beta")
+
+	hub.L2 = &sequenceTriageProvider{outs: []string{
+		`{"intent":"decompose","subtasks":[{"session":"alpha","instruction":"整理需求"},{"session":"beta","instruction":"评估风险"}],"confidence":0.95}`,
+		`{"intent":"aggregate","reply":"综合回复：需求和风险都已完成。","confidence":0.92}`,
+	}}
+	task := model.ControlTask{
+		ID:           "p3-parent",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "请团队拆分处理",
+		Status:       "llm_pending",
+		Priority:     7,
+	}
+	if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, task, hub.effectiveL2Config())
+
+	gotAlpha := readEnvelope(t, ctx, alpha)
+	if gotAlpha.Body != "整理需求" || gotAlpha.Meta["control_task_id"] != "p3-parent-sub-01" {
+		t.Fatalf("alpha child envelope=%+v", gotAlpha)
+	}
+	gotBeta := readEnvelope(t, ctx, beta)
+	if gotBeta.Body != "评估风险" || gotBeta.Meta["control_task_id"] != "p3-parent-sub-02" {
+		t.Fatalf("beta child envelope=%+v", gotBeta)
+	}
+	parent, err := db.GetControlTask(ctx, "p3-parent")
+	if err != nil || parent == nil || parent.Status != "awaiting_children" || parent.Intent != "decompose" {
+		t.Fatalf("parent after decompose=%+v err=%v", parent, err)
+	}
+	children, err := db.ListControlSubtasks(ctx, "p3-parent")
+	if err != nil || len(children) != 2 {
+		t.Fatalf("children=%+v err=%v", children, err)
+	}
+	for _, child := range children {
+		if child.Status != "awaiting_result" || child.Priority != 7 {
+			t.Fatalf("child should await result and inherit priority: %+v", child)
+		}
+	}
+
+	if err := hub.CompleteControlSubtask(ctx, "p3-parent-sub-01", "需求完成", "done", ""); err != nil {
+		t.Fatal(err)
+	}
+	parent, err = db.GetControlTask(ctx, "p3-parent")
+	if err != nil || parent == nil || parent.Status != "awaiting_children" {
+		t.Fatalf("parent should wait for second child=%+v err=%v", parent, err)
+	}
+	if err := hub.CompleteControlSubtask(ctx, "p3-parent-sub-02", "风险完成", "done", ""); err != nil {
+		t.Fatal(err)
+	}
+	parent, err = db.GetControlTask(ctx, "p3-parent")
+	if err != nil || parent == nil || parent.Status != "done" || parent.Intent != "aggregate" || !strings.Contains(parent.Result, "综合回复") {
+		t.Fatalf("parent after aggregate=%+v err=%v", parent, err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "综合回复：需求和风险都已完成。") {
+		t.Fatalf("aggregate source reply=%+v", out)
+	}
+}
+
+func TestControlPlaneP3PartialChildFailureStillAggregates(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	alpha := dialSession(t, ctx, srv.URL, "alpha", key.ID, secret)
+	defer alpha.Close(websocket.StatusNormalClosure, "done")
+	beta := dialSession(t, ctx, srv.URL, "beta", key.ID, secret)
+	defer beta.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "alpha")
+	waitSessionOnline(t, hub, key.ID, "beta")
+
+	hub.L2 = &sequenceTriageProvider{outs: []string{
+		`{"intent":"decompose","subtasks":[{"session":"alpha","instruction":"整理需求"},{"session":"beta","instruction":"评估风险"}],"confidence":0.95}`,
+		`{"intent":"aggregate","reply":"部分完成：需求完成，风险子任务失败。","confidence":0.88}`,
+	}}
+	task := model.ControlTask{
+		ID:           "p3-partial",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "请团队拆分处理",
+		Status:       "llm_pending",
+	}
+	if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, task, hub.effectiveL2Config())
+	gotAlpha := readEnvelope(t, ctx, alpha)
+	if gotAlpha.Body != "整理需求" || gotAlpha.Meta["control_task_id"] != "p3-partial-sub-01" {
+		t.Fatalf("alpha child envelope=%+v", gotAlpha)
+	}
+	gotBeta := readEnvelope(t, ctx, beta)
+	if gotBeta.Body != "评估风险" || gotBeta.Meta["control_task_id"] != "p3-partial-sub-02" {
+		t.Fatalf("beta child envelope=%+v", gotBeta)
+	}
+	if err := hub.CompleteControlSubtask(ctx, "p3-partial-sub-01", "需求完成", "done", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.CompleteControlSubtask(ctx, "p3-partial-sub-02", "", "failed", "风险评估失败"); err != nil {
+		t.Fatal(err)
+	}
+	failedChild, err := db.GetControlTask(ctx, "p3-partial-sub-02")
+	if err != nil || failedChild == nil || failedChild.Status != "failed" || !strings.Contains(failedChild.Error, "风险评估失败") {
+		t.Fatalf("failed child=%+v err=%v", failedChild, err)
+	}
+	parent, err := db.GetControlTask(ctx, "p3-partial")
+	if err != nil || parent == nil || parent.Status != "done" || parent.Intent != "aggregate" {
+		t.Fatalf("partial parent=%+v err=%v", parent, err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "部分完成") {
+		t.Fatalf("partial aggregate reply=%+v", out)
+	}
+}
+
+func TestControlPlaneP3AggregateFailureRetriesAndFails(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.L2 = &fakeTriageProvider{err: errors.New("aggregate llm down")}
+	parent := model.ControlTask{
+		ID:           "p3-agg-fail",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "请团队拆分处理",
+		Status:       "llm_pending",
+		MaxAttempts:  1,
+	}
+	if _, _, err := db.EnqueueControlTask(ctx, parent); err != nil {
+		t.Fatal(err)
+	}
+	children := []model.ControlTask{{
+		ID:          "p3-agg-fail-sub-01",
+		ParentID:    "p3-agg-fail",
+		Source:      "session",
+		OwnerKey:    "u1",
+		RawInput:    "整理需求",
+		Intent:      "dispatch",
+		Layer:       "L2",
+		Result:      "需求完成",
+		Status:      "done",
+		MaxAttempts: 1,
+	}}
+	parent.Target = `[{"session":"alpha","instruction":"整理需求"}]`
+	if err := db.CreateControlSubtasks(ctx, parent, children); err != nil {
+		t.Fatal(err)
+	}
+	claimed, err := db.ClaimNextAggregateControlTask(ctx, "agg-w1", time.Now().Add(time.Minute), time.Now())
+	if err != nil || claimed == nil || claimed.ID != "p3-agg-fail" {
+		t.Fatalf("aggregate claim=%+v err=%v", claimed, err)
+	}
+	hub.processL2Task(ctx, *claimed, hub.effectiveL2Config())
+	stored, err := db.GetControlTask(ctx, "p3-agg-fail")
+	if err != nil || stored == nil || stored.Status != "failed" || stored.Attempts != 1 {
+		t.Fatalf("aggregate failed parent=%+v err=%v", stored, err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "处理失败") {
+		t.Fatalf("aggregate failure reply=%+v", out)
+	}
+}
+
+func TestControlPlaneP3L2ClaimHonorsPriority(t *testing.T) {
+	_, db, ctx := newTestHub(t)
+	now := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
+	for _, task := range []model.ControlTask{
+		{ID: "prio-low", Priority: 1},
+		{ID: "prio-high", Priority: 9},
+		{ID: "prio-mid", Priority: 5},
+	} {
+		task.Source = "feishu"
+		task.SourceAddr = "ou_1#dev#UnifiedRobot"
+		task.OwnerKey = "u1"
+		task.RawInput = task.ID
+		task.Status = "llm_pending"
+		task.CreatedAt = now
+		if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+			t.Fatal(err)
+		}
+	}
+	claimed, err := db.ClaimNextL2ControlTask(ctx, "prio-w", now.Add(time.Minute), now)
+	if err != nil || claimed == nil || claimed.ID != "prio-high" {
+		t.Fatalf("priority claim=%+v err=%v", claimed, err)
+	}
+}
+
+func TestControlPlaneP3AggregateClaimReclaimsExpiredLease(t *testing.T) {
+	_, db, ctx := newTestHub(t)
+	now := time.Now().UTC()
+	parent := model.ControlTask{
+		ID:          "p3-agg-reclaim",
+		Source:      "feishu",
+		SourceAddr:  "ou_1#dev#UnifiedRobot",
+		OwnerKey:    "u1",
+		RawInput:    "聚合",
+		Status:      "llm_pending",
+		MaxAttempts: 3,
+	}
+	if _, _, err := db.EnqueueControlTask(ctx, parent); err != nil {
+		t.Fatal(err)
+	}
+	parent.Target = `[{"session":"alpha","instruction":"整理需求"}]`
+	if err := db.CreateControlSubtasks(ctx, parent, []model.ControlTask{{
+		ID:          "p3-agg-reclaim-sub-01",
+		ParentID:    "p3-agg-reclaim",
+		Source:      "session",
+		OwnerKey:    "u1",
+		RawInput:    "整理需求",
+		Status:      "done",
+		Result:      "完成",
+		MaxAttempts: 3,
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	first, err := db.ClaimNextAggregateControlTask(ctx, "agg-w1", now.Add(time.Minute), now)
+	if err != nil || first == nil || first.ID != "p3-agg-reclaim" || first.LeaseOwner != "agg-w1" {
+		t.Fatalf("first aggregate claim=%+v err=%v", first, err)
+	}
+	none, err := db.ClaimNextAggregateControlTask(ctx, "agg-w2", now.Add(2*time.Minute), now.Add(30*time.Second))
+	if err != nil || none != nil {
+		t.Fatalf("unexpired aggregate claim=%+v err=%v", none, err)
+	}
+	reclaimed, err := db.ClaimNextAggregateControlTask(ctx, "agg-w2", now.Add(3*time.Minute), now.Add(2*time.Minute))
+	if err != nil || reclaimed == nil || reclaimed.ID != "p3-agg-reclaim" || reclaimed.LeaseOwner != "agg-w2" {
+		t.Fatalf("reclaimed aggregate claim=%+v err=%v", reclaimed, err)
+	}
+	stats, err := db.ControlTaskStats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.L2InFlight != 1 {
+		t.Fatalf("stats should count aggregating lease as L2 in-flight: %+v", stats)
+	}
+}
+
 type fakeTriageProvider struct {
 	out string
 	err error
@@ -348,6 +635,24 @@ func (f *fakeTriageProvider) Complete(_ context.Context, _, user string) (string
 		return "", errors.New("missing request_id")
 	}
 	return f.out, nil
+}
+
+type sequenceTriageProvider struct {
+	outs  []string
+	index int
+}
+
+func (f *sequenceTriageProvider) Name() string { return "sequence-triage" }
+func (f *sequenceTriageProvider) Complete(_ context.Context, _, user string) (string, error) {
+	if !strings.Contains(user, "request_id") {
+		return "", errors.New("missing request_id")
+	}
+	if f.index >= len(f.outs) {
+		return "", fmt.Errorf("unexpected l2 call %d", f.index+1)
+	}
+	out := f.outs[f.index]
+	f.index++
+	return out, nil
 }
 
 func TestIssueAPIKeyStoresHashAndBindScope(t *testing.T) {

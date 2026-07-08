@@ -1547,6 +1547,22 @@ WHERE id=? AND status='llm_pending'`,
 	return s.GetControlTask(ctx, id)
 }
 
+func (s *SQLite) RetryAggregatingControlTask(ctx context.Context, id, errText string) (*model.ControlTask, error) {
+	_, err := s.db.ExecContext(ctx, `UPDATE control_task
+SET attempts=attempts+1,
+    status=CASE WHEN attempts+1 >= max_attempts THEN 'failed' ELSE 'awaiting_children' END,
+    error=?,
+    updated_at=?,
+    lease_owner=NULL,
+    lease_until=NULL
+WHERE id=? AND status='aggregating'`,
+		errText, s.now().UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return nil, err
+	}
+	return s.GetControlTask(ctx, id)
+}
+
 func (s *SQLite) CompleteControlTaskL2(ctx context.Context, id, intent, target, result string, duration time.Duration) error {
 	now := s.now().UTC().Format(time.RFC3339)
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -1577,6 +1593,145 @@ ON CONFLICT(task_id) DO UPDATE SET duration_ms=excluded.duration_ms, success=exc
 	return err
 }
 
+func (s *SQLite) CreateControlSubtasks(ctx context.Context, parent model.ControlTask, children []model.ControlTask) error {
+	now := s.now().UTC().Format(time.RFC3339)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `UPDATE control_task
+SET intent='decompose', layer='L2', target=?, status='awaiting_children', result=NULL, error=NULL, updated_at=?, lease_owner=NULL, lease_until=NULL
+WHERE id=?`,
+		parent.Target, now, parent.ID); err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx, `INSERT INTO control_task(id, parent_id, created_at, updated_at, source, source_addr, owner_key, bot_channel_id, raw_input, intent, layer, target, result, status, priority, attempts, max_attempts, error, lease_owner, lease_until, expire_at)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, child := range children {
+		if child.ID == "" {
+			child.ID = newID()
+		}
+		if child.CreatedAt.IsZero() {
+			child.CreatedAt = s.now().UTC()
+		}
+		child.UpdatedAt = s.now().UTC()
+		if child.Status == "" {
+			child.Status = "awaiting_result"
+		}
+		if child.MaxAttempts <= 0 {
+			child.MaxAttempts = 3
+		}
+		if _, err := stmt.ExecContext(ctx,
+			child.ID, nullString(child.ParentID), child.CreatedAt.UTC().Format(time.RFC3339), child.UpdatedAt.UTC().Format(time.RFC3339), child.Source, child.SourceAddr, child.OwnerKey, nullString(child.BotChannelID), child.RawInput, nullString(child.Intent), nullString(child.Layer), nullString(child.Target), nullString(child.Result), child.Status, child.Priority, child.Attempts, child.MaxAttempts, nullString(child.Error), nullString(child.LeaseOwner), timePtrString(child.LeaseUntil), timePtrString(child.ExpireAt)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *SQLite) CompleteControlSubtask(ctx context.Context, id, result, status, errText string) (*model.ControlTask, error) {
+	if status == "" {
+		status = "done"
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE control_task
+SET result=?, status=?, error=?, updated_at=?, lease_owner=NULL, lease_until=NULL
+WHERE id=? AND parent_id IS NOT NULL`,
+		nullString(result), status, nullString(errText), s.now().UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return nil, err
+	}
+	return s.GetControlTask(ctx, id)
+}
+
+func (s *SQLite) ListControlSubtasks(ctx context.Context, parentID string) ([]model.ControlTask, error) {
+	return s.listControlTasks(ctx, `WHERE parent_id=? ORDER BY created_at, id`, parentID)
+}
+
+func (s *SQLite) TryClaimControlParentForAggregation(ctx context.Context, parentID, workerID string, leaseUntil time.Time, now time.Time) (*model.ControlTask, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	var openChildren int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM control_task WHERE parent_id=? AND status NOT IN ('done','failed','expired')`, parentID).Scan(&openChildren); err != nil {
+		return nil, err
+	}
+	if openChildren != 0 {
+		return nil, nil
+	}
+	nowText := now.UTC().Format(time.RFC3339)
+	res, err := tx.ExecContext(ctx, `UPDATE control_task
+SET status='aggregating', lease_owner=?, lease_until=?, updated_at=?
+WHERE id=? AND status='awaiting_children'`,
+		workerID, leaseUntil.UTC().Format(time.RFC3339), nowText, parentID)
+	if err != nil {
+		return nil, err
+	}
+	if n, err := res.RowsAffected(); err != nil {
+		return nil, err
+	} else if n == 0 {
+		return nil, nil
+	}
+	parent, err := scanControlTaskRow(tx.QueryRowContext(ctx, `SELECT id, parent_id, created_at, updated_at, source, source_addr, owner_key, bot_channel_id, raw_input, intent, layer, target, result, status, priority, attempts, max_attempts, error, lease_owner, lease_until, expire_at FROM control_task WHERE id=?`, parentID))
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return parent, nil
+}
+
+func (s *SQLite) ClaimNextAggregateControlTask(ctx context.Context, workerID string, leaseUntil time.Time, now time.Time) (*model.ControlTask, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	var id string
+	err = tx.QueryRowContext(ctx, `SELECT p.id
+FROM control_task p
+WHERE (p.status='awaiting_children' OR (p.status='aggregating' AND (p.lease_owner IS NULL OR p.lease_until IS NULL OR p.lease_until <= ?)))
+  AND EXISTS (SELECT 1 FROM control_task c WHERE c.parent_id=p.id)
+  AND NOT EXISTS (SELECT 1 FROM control_task c WHERE c.parent_id=p.id AND c.status NOT IN ('done','failed','expired'))
+ORDER BY p.priority DESC, p.created_at
+LIMIT 1`, now.UTC().Format(time.RFC3339)).Scan(&id)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	nowText := now.UTC().Format(time.RFC3339)
+	res, err := tx.ExecContext(ctx, `UPDATE control_task
+SET status='aggregating', lease_owner=?, lease_until=?, updated_at=?
+WHERE id=?
+  AND (status='awaiting_children' OR (status='aggregating' AND (lease_owner IS NULL OR lease_until IS NULL OR lease_until <= ?)))`,
+		workerID, leaseUntil.UTC().Format(time.RFC3339), nowText, id, nowText)
+	if err != nil {
+		return nil, err
+	}
+	if n, err := res.RowsAffected(); err != nil {
+		return nil, err
+	} else if n == 0 {
+		return nil, nil
+	}
+	parent, err := scanControlTaskRow(tx.QueryRowContext(ctx, `SELECT id, parent_id, created_at, updated_at, source, source_addr, owner_key, bot_channel_id, raw_input, intent, layer, target, result, status, priority, attempts, max_attempts, error, lease_owner, lease_until, expire_at FROM control_task WHERE id=?`, id))
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return parent, nil
+}
+
 func (s *SQLite) ControlTaskStats(ctx context.Context) (model.ControlTaskStats, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT status, COUNT(*) FROM control_task GROUP BY status`)
 	if err != nil {
@@ -1593,7 +1748,7 @@ func (s *SQLite) ControlTaskStats(ctx context.Context) (model.ControlTaskStats, 
 		stats.Status[status] = n
 		stats.Total += n
 		switch status {
-		case "queued", "llm_pending", "dispatched", "awaiting_result", "awaiting_children":
+		case "queued", "llm_pending", "dispatched", "awaiting_result", "awaiting_children", "aggregating":
 			stats.Depth += n
 		}
 	}
@@ -1604,7 +1759,7 @@ func (s *SQLite) ControlTaskStats(ctx context.Context) (model.ControlTaskStats, 
 		stats.FailedRate = float64(stats.Status["failed"]) / float64(stats.Total)
 		stats.ExpiredRate = float64(stats.Status["expired"]) / float64(stats.Total)
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM control_task WHERE status='llm_pending' AND lease_owner IS NOT NULL AND lease_until > ?`, s.now().UTC().Format(time.RFC3339)).Scan(&stats.L2InFlight); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM control_task WHERE status IN ('llm_pending','aggregating') AND lease_owner IS NOT NULL AND lease_until > ?`, s.now().UTC().Format(time.RFC3339)).Scan(&stats.L2InFlight); err != nil {
 		return model.ControlTaskStats{}, err
 	}
 	l2Rows, err := s.db.QueryContext(ctx, `SELECT duration_ms, success FROM control_task_l2_metric ORDER BY duration_ms`)

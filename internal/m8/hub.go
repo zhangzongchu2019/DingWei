@@ -169,6 +169,9 @@ func (h *Hub) effectiveL2Config() L2Config {
 func (h *Hub) runL2Worker(ctx context.Context, workerID string, cfg L2Config) {
 	for {
 		task, err := h.Repo.ClaimNextL2ControlTask(ctx, workerID, time.Now().UTC().Add(cfg.LeaseDuration), time.Now().UTC())
+		if err == nil && task == nil {
+			task, err = h.Repo.ClaimNextAggregateControlTask(ctx, workerID, time.Now().UTC().Add(cfg.LeaseDuration), time.Now().UTC())
+		}
 		if err != nil || task == nil {
 			select {
 			case <-ctx.Done():
@@ -183,16 +186,28 @@ func (h *Hub) runL2Worker(ctx context.Context, workerID string, cfg L2Config) {
 
 func (h *Hub) processL2Task(ctx context.Context, task model.ControlTask, cfg L2Config) {
 	start := time.Now()
-	triageCtx, err := h.buildL2TriageContext(ctx, task)
-	if err == nil {
-		err = h.dispatchL2Triage(ctx, task, triageCtx, cfg, start)
+	var err error
+	if task.Status == "aggregating" {
+		err = h.aggregateControlParent(ctx, task, start)
+	} else {
+		var triageCtx model.L2TriageContext
+		triageCtx, err = h.buildL2TriageContext(ctx, task)
+		if err == nil {
+			err = h.dispatchL2Triage(ctx, task, triageCtx, cfg, start)
+		}
 	}
 	duration := time.Since(start)
 	if err == nil {
 		return
 	}
 	_ = h.Repo.RecordControlTaskL2Failure(ctx, task.ID, err.Error(), duration)
-	retried, retryErr := h.Repo.RetryL2ControlTask(ctx, task.ID, err.Error())
+	var retried *model.ControlTask
+	var retryErr error
+	if task.Status == "aggregating" {
+		retried, retryErr = h.Repo.RetryAggregatingControlTask(ctx, task.ID, err.Error())
+	} else {
+		retried, retryErr = h.Repo.RetryL2ControlTask(ctx, task.ID, err.Error())
+	}
 	if retryErr != nil || retried == nil || retried.Status != "failed" {
 		return
 	}
@@ -239,8 +254,8 @@ func (h *Hub) dispatchL2Triage(ctx context.Context, task model.ControlTask, inpu
 	system := strings.Join([]string{
 		"你是 DingWei 平台总控 L2 分诊器。只返回 JSON。",
 		"schema: {\"intent\":\"dispatch|clarify|reject|decompose|aggregate\",\"reply\":\"string\",\"targets\":[{\"session\":\"string\",\"instruction\":\"string\"}],\"subtasks\":[],\"confidence\":0.0}",
-		"P2 只允许 dispatch 或 clarify；信息不足、低置信度、多目标/decompose/aggregate/reject 都返回 clarify。",
-		"dispatch 必须且只能选择一个 online_sessions 中存在的 session。",
+		"支持 dispatch、clarify、decompose；信息不足或低置信度返回 clarify。",
+		"dispatch 必须且只能选择一个 online_sessions 中存在的 session；decompose 的 subtasks 必须全部指向 online_sessions。",
 	}, "\n")
 	userBytes, _ := json.Marshal(input)
 	callCtx, cancel := context.WithTimeout(ctx, cfg.ProviderTimeout)
@@ -262,6 +277,8 @@ func (h *Hub) dispatchL2Triage(ctx context.Context, task model.ControlTask, inpu
 	switch result.Intent {
 	case "dispatch":
 		return h.completeL2Dispatch(ctx, task, result, startedAt)
+	case "decompose":
+		return h.completeL2Decompose(ctx, task, result)
 	case "clarify":
 		return h.completeL2Clarify(ctx, task, result, startedAt)
 	default:
@@ -269,6 +286,134 @@ func (h *Hub) dispatchL2Triage(ctx context.Context, task model.ControlTask, inpu
 		result.Reply = "该任务类型暂不支持自动分解，请指定一个明确会话或补充目标。"
 		return h.completeL2Clarify(ctx, task, result, startedAt)
 	}
+}
+
+func (h *Hub) completeL2Decompose(ctx context.Context, task model.ControlTask, result model.L2TriageResult) error {
+	if len(result.Subtasks) == 0 {
+		result.Intent = "clarify"
+		result.Reply = "我无法拆出明确子任务，请补充目标和分工。"
+		return h.completeL2Clarify(ctx, task, result, time.Now())
+	}
+	targetJSON, _ := json.Marshal(result.Subtasks)
+	parent := task
+	parent.Target = string(targetJSON)
+	var children []model.ControlTask
+	now := time.Now().UTC()
+	for i, sub := range result.Subtasks {
+		sub.Session = strings.TrimSpace(sub.Session)
+		sub.Instruction = strings.TrimSpace(sub.Instruction)
+		if sub.Session == "" || sub.Instruction == "" {
+			return fmt.Errorf("invalid subtask %d", i+1)
+		}
+		childID := fmt.Sprintf("%s-sub-%02d", task.ID, i+1)
+		childTarget, _ := json.Marshal([]model.L2Target{sub})
+		children = append(children, model.ControlTask{
+			ID:           childID,
+			ParentID:     task.ID,
+			CreatedAt:    now.Add(time.Duration(i) * time.Nanosecond),
+			UpdatedAt:    now,
+			Source:       "session",
+			SourceAddr:   "",
+			OwnerKey:     task.OwnerKey,
+			BotChannelID: task.BotChannelID,
+			RawInput:     sub.Instruction,
+			Intent:       "dispatch",
+			Layer:        "L2",
+			Target:       string(childTarget),
+			Status:       "awaiting_result",
+			Priority:     task.Priority,
+			MaxAttempts:  task.MaxAttempts,
+			ExpireAt:     task.ExpireAt,
+		})
+	}
+	if err := h.Repo.CreateControlSubtasks(ctx, parent, children); err != nil {
+		return err
+	}
+	for i, child := range children {
+		if err := h.routeL2Target(ctx, child, result.Subtasks[i]); err != nil {
+			_, _ = h.Repo.CompleteControlSubtask(ctx, child.ID, "", "failed", err.Error())
+		}
+	}
+	_, err := h.tryAggregateParent(ctx, task.ID)
+	return err
+}
+
+func (h *Hub) CompleteControlSubtask(ctx context.Context, id, result, status, errText string) error {
+	child, err := h.Repo.CompleteControlSubtask(ctx, id, result, status, errText)
+	if err != nil || child == nil || child.ParentID == "" {
+		return err
+	}
+	_, err = h.tryAggregateParent(ctx, child.ParentID)
+	return err
+}
+
+func (h *Hub) tryAggregateParent(ctx context.Context, parentID string) (*model.ControlTask, error) {
+	parent, err := h.Repo.TryClaimControlParentForAggregation(ctx, parentID, "aggregate-"+randomHex(4), time.Now().UTC().Add(h.effectiveL2Config().LeaseDuration), time.Now().UTC())
+	if err != nil || parent == nil {
+		return parent, err
+	}
+	err = h.aggregateControlParent(ctx, *parent, time.Now())
+	if err != nil {
+		retried, retryErr := h.Repo.RetryAggregatingControlTask(ctx, parent.ID, err.Error())
+		if retryErr != nil {
+			return parent, retryErr
+		}
+		if retried != nil && retried.Status == "failed" {
+			_ = h.notifyControlTask(ctx, *retried, controlTaskFailedReply(*retried))
+		}
+		return parent, err
+	}
+	return parent, nil
+}
+
+func (h *Hub) aggregateControlParent(ctx context.Context, parent model.ControlTask, startedAt time.Time) error {
+	children, err := h.Repo.ListControlSubtasks(ctx, parent.ID)
+	if err != nil {
+		return err
+	}
+	input := map[string]any{
+		"request_id": parent.ID,
+		"intent":     "aggregate",
+		"raw_input":  parent.RawInput,
+		"owner_key":  parent.OwnerKey,
+		"children":   children,
+	}
+	system := "你是 DingWei 平台总控聚合器。只返回 JSON: {\"intent\":\"aggregate\",\"reply\":\"给发起人的综合回复\",\"confidence\":0.0}。即使部分子任务 failed/expired，也要说明完成与失败情况。"
+	userBytes, _ := json.Marshal(input)
+	callCtx, cancel := context.WithTimeout(ctx, h.effectiveL2Config().ProviderTimeout)
+	defer cancel()
+	out, err := h.L2.Complete(callCtx, system, string(userBytes))
+	if err != nil {
+		return err
+	}
+	result, err := parseL2TriageResult(out)
+	if err != nil {
+		return err
+	}
+	reply := strings.TrimSpace(result.Reply)
+	if reply == "" {
+		reply = aggregateFallbackReply(children)
+	}
+	if err := h.Repo.CompleteControlTaskL2(ctx, parent.ID, "aggregate", parent.Target, reply, time.Since(startedAt)); err != nil {
+		return err
+	}
+	return h.notifyControlTask(ctx, model.ControlTask{ID: parent.ID, Status: "done", SourceAddr: parent.SourceAddr, BotChannelID: parent.BotChannelID}, reply)
+}
+
+func aggregateFallbackReply(children []model.ControlTask) string {
+	done, failed := 0, 0
+	for _, child := range children {
+		switch child.Status {
+		case "done":
+			done++
+		case "failed", "expired":
+			failed++
+		}
+	}
+	if failed > 0 {
+		return fmt.Sprintf("子任务已完成 %d 个，失败/超时 %d 个，请查看详情。", done, failed)
+	}
+	return fmt.Sprintf("子任务已全部完成，共 %d 个。", done)
 }
 
 func parseL2TriageResult(raw string) (model.L2TriageResult, error) {
