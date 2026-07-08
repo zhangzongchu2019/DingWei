@@ -91,6 +91,55 @@ type MessageStats struct {
 	Dead       int
 }
 
+// ControlTask is the platform control-plane L0 queue item.
+type ControlTask struct {
+	ID           string
+	ParentID     string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	Source       string
+	SourceAddr   string
+	OwnerKey     string
+	BotChannelID string
+	RawInput     string
+	Intent       string
+	Layer        string
+	Target       string
+	Result       string
+	Status       string
+	Priority     int
+	Attempts     int
+	MaxAttempts  int
+	Error        string
+	LeaseOwner   string
+	LeaseUntil   *time.Time
+	ExpireAt     *time.Time
+}
+
+// L1DecisionRule is a data-driven, ordered L1 rule row.
+type L1DecisionRule struct {
+	ID          string
+	Seq         int
+	MatchType   string
+	Pattern     string
+	Intent      string
+	Action      string
+	ExitQueue   bool
+	Enabled     bool
+	Description string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+// ControlTaskStats summarizes the control-plane queue for observability.
+type ControlTaskStats struct {
+	Total       int
+	Depth       int
+	Status      map[string]int
+	FailedRate  float64
+	ExpiredRate float64
+}
+
 // AppConfig 是 M9 管理的运行时配置键值。
 type AppConfig struct {
 	Key       string

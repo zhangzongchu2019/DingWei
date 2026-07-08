@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -429,30 +430,133 @@ func suffixedSessionName(base string, n int) string {
 }
 
 func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
-	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
+	if h.Repo == nil {
+		return h.dispatchL1Direct(ctx, msg, text)
+	}
+	_, _ = h.Repo.ReapExpiredControlTasks(ctx, time.Now().UTC())
+	task, inserted, err := h.Repo.EnqueueControlTask(ctx, h.newControlTask(ctx, msg, text))
+	if err != nil {
+		return model.PrefixDispatchResult{}, err
+	}
+	ack := fmt.Sprintf("已受理 #%s", task.ID)
+	if !inserted && task.Status == "done" {
+		if task.Result == "" {
+			return model.PrefixDispatchResult{Matched: true, Reply: ack}, nil
+		}
+		return model.PrefixDispatchResult{Matched: true, Reply: task.Result}, nil
+	}
+	result, intent, target, err := h.dispatchL1(ctx, msg, text)
+	if err != nil {
+		_ = h.Repo.RetryControlTask(ctx, task.ID, err.Error())
 		return result, err
+	}
+	status := "llm_pending"
+	layer := "L1"
+	resultText := result.Reply
+	errText := ""
+	if result.Matched {
+		status = "done"
+	} else if intent == "" {
+		intent = "unknown"
+	}
+	if err := h.Repo.UpdateControlTaskAfterL1(ctx, task.ID, intent, layer, target, resultText, status, errText); err != nil {
+		return model.PrefixDispatchResult{}, err
+	}
+	if result.Matched {
+		return result, nil
+	}
+	_ = ack
+	return result, nil
+}
+
+func (h *Hub) dispatchL1Direct(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
+	result, _, _, err := h.dispatchL1LegacyFallback(ctx, msg, text)
+	return result, err
+}
+
+func (h *Hub) dispatchL1(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, string, string, error) {
+	rules, err := h.Repo.ListL1DecisionRules(ctx)
+	if err != nil {
+		return model.PrefixDispatchResult{}, "", "", err
+	}
+	for _, rule := range rules {
+		matched, err := h.l1RuleMatches(ctx, rule, msg, text)
+		if err != nil {
+			return model.PrefixDispatchResult{}, "", "", err
+		}
+		if !matched {
+			continue
+		}
+		result, target, handled, err := h.executeL1Rule(ctx, rule, msg, text)
+		if err != nil {
+			return result, rule.Intent, target, err
+		}
+		if handled {
+			return result, rule.Intent, target, nil
+		}
+		if !rule.ExitQueue {
+			return model.PrefixDispatchResult{}, rule.Intent, target, nil
+		}
+	}
+	return model.PrefixDispatchResult{}, "unknown", "", nil
+}
+
+func (h *Hub) executeL1Rule(ctx context.Context, rule model.L1DecisionRule, msg model.Message, text string) (model.PrefixDispatchResult, string, bool, error) {
+	switch rule.ID {
+	case "l1_command_terminal_input":
+		result, handled, err := h.dispatchTerminalInputCommand(ctx, msg, text)
+		return result, "", handled, err
+	case "l1_command_roster":
+		result, handled, err := h.dispatchOnlineRosterCommand(ctx, msg, text)
+		return result, "", handled, err
+	case "l1_command_apply_key":
+		result, handled, err := h.dispatchMemberMention(ctx, msg, text)
+		return result, "", handled, err
+	case "l1_command_mirror":
+		result, handled, err := h.dispatchMirrorCommand(ctx, msg, text)
+		return result, "", handled, err
+	case "l1_route_session":
+		result, handled, err := h.dispatchSelector(ctx, msg, text)
+		return result, "", handled, err
+	case "l1_route_cross":
+		result, handled, err := h.dispatchMemberMention(ctx, msg, text)
+		return result, "", handled, err
+	case "l1_route_default_single":
+		return h.dispatchL1LegacyFallback(ctx, msg, text)
+	case "l1_nl_dispatch", "l1_unknown":
+		return h.dispatchL1LegacyFallback(ctx, msg, text)
+	case "l1_decompose":
+		return model.PrefixDispatchResult{}, "", false, nil
+	default:
+		return h.dispatchL1LegacyFallback(ctx, msg, text)
+	}
+}
+
+func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, string, bool, error) {
+	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
+		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchTerminalInputCommand(ctx, msg, text); handled || err != nil {
-		return result, err
+		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchSystem(ctx, msg, text); handled || err != nil {
-		return result, err
+		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchAggregateWeeklyReview(ctx, msg, text); handled || err != nil {
-		return result, err
+		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchMirrorCommand(ctx, msg, text); handled || err != nil {
-		return result, err
+		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchMemberMention(ctx, msg, text); handled || err != nil {
-		return result, err
+		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchSelector(ctx, msg, text); handled || err != nil {
-		return result, err
+		return result, "", handled, err
 	}
 	routes, err := h.Repo.ListPrefixRoutes(ctx, msg.ChatEntityID)
 	if err != nil {
-		return model.PrefixDispatchResult{}, err
+		return model.PrefixDispatchResult{}, "", false, err
 	}
 	for _, route := range routes {
 		if !router.MatchPrefix(route.Rule.MatchExpr, text, route.Rule.CaseSensitive) {
@@ -486,9 +590,9 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 				env.Meta["sender_open_id"] = msg.SenderOpenID
 			}
 			if err := h.RouteEnvelope(ctx, env); err != nil {
-				return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, nil
+				return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, "", true, nil
 			}
-			return model.PrefixDispatchResult{Matched: true}, nil
+			return model.PrefixDispatchResult{Matched: true}, route.Service.ID, true, nil
 		}
 		if route.Service.DeliveryType != "ws" {
 			continue
@@ -504,14 +608,147 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 			RawContent:   msg.Content,
 		}, route.Service.TimeoutMs)
 		if err != nil {
-			return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, nil
+			return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, route.Service.ID, true, nil
 		}
-		return model.PrefixDispatchResult{Matched: true, Reply: reply}, nil
+		return model.PrefixDispatchResult{Matched: true, Reply: reply}, route.Service.ID, true, nil
 	}
 	if result, handled, err := h.dispatchDefaultPersonalSession(ctx, msg, text); handled || err != nil {
-		return result, err
+		return result, "", handled, err
 	}
-	return model.PrefixDispatchResult{}, nil
+	return model.PrefixDispatchResult{}, "", false, nil
+}
+
+func (h *Hub) newControlTask(ctx context.Context, msg model.Message, text string) model.ControlTask {
+	sourceAddr := controlSourceAddr(msg, h.botName(msg.BotChannelID))
+	ownerKey := h.controlOwnerKey(ctx, msg)
+	expireAt := time.Now().UTC().Add(5 * time.Minute)
+	return model.ControlTask{
+		ID:           firstNonEmpty(msg.ID, msg.FeishuMsgID, randomHex(16)),
+		CreatedAt:    time.Now().UTC(),
+		UpdatedAt:    time.Now().UTC(),
+		Source:       controlSource(msg),
+		SourceAddr:   sourceAddr,
+		OwnerKey:     ownerKey,
+		BotChannelID: msg.BotChannelID,
+		RawInput:     text,
+		Status:       "queued",
+		Priority:     0,
+		MaxAttempts:  3,
+		ExpireAt:     &expireAt,
+	}
+}
+
+func (h *Hub) l1RuleMatches(ctx context.Context, rule model.L1DecisionRule, msg model.Message, text string) (bool, error) {
+	text = strings.TrimSpace(h.stripLeadingBotMentions(msg.BotChannelID, text))
+	switch rule.MatchType {
+	case "prefix":
+		return strings.HasPrefix(text, rule.Pattern), nil
+	case "prefix_any":
+		for _, p := range splitRulePattern(rule.Pattern) {
+			if strings.HasPrefix(text, p) {
+				return true, nil
+			}
+		}
+		return false, nil
+	case "keyword_any":
+		for _, p := range splitRulePattern(rule.Pattern) {
+			if strings.Contains(text, p) {
+				return true, nil
+			}
+		}
+		return false, nil
+	case "regex":
+		return regexp.MatchString(rule.Pattern, text)
+	case "default":
+		source := sourceAccount(msg)
+		_, sessions, err := h.onlineSessionsForAccount(ctx, source)
+		if err != nil {
+			return false, err
+		}
+		switch rule.Pattern {
+		case "personal_single_online_session":
+			return msg.ChatType == model.ChatPersonal && len(sessions) == 1 && !looksPrefixed(text), nil
+		case "personal_multiple_online_sessions":
+			return msg.ChatType == model.ChatPersonal && len(sessions) > 1 && !looksPrefixed(text), nil
+		default:
+			return false, nil
+		}
+	case "fallback":
+		return true, nil
+	default:
+		return false, nil
+	}
+}
+
+func (h *Hub) dispatchOnlineRosterCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
+	text = strings.TrimSpace(h.stripLeadingBotMentions(msg.BotChannelID, text))
+	if text != "#在线" && text != "#roster" {
+		return model.PrefixDispatchResult{}, false, nil
+	}
+	ownerKey := h.controlOwnerKey(ctx, msg)
+	items, owner, err := h.onlineDirectory(ctx, ownerKey)
+	if err != nil {
+		return model.PrefixDispatchResult{}, true, err
+	}
+	if owner.OwnerKey == "" {
+		return model.PrefixDispatchResult{Matched: true, Reply: "未找到当前账号的在线清单。"}, true, nil
+	}
+	return model.PrefixDispatchResult{Matched: true, Reply: renderOnlineDirectory(owner, items)}, true, nil
+}
+
+func (h *Hub) controlOwnerKey(ctx context.Context, msg model.Message) string {
+	source := sourceAccount(msg)
+	if h.Repo == nil {
+		return source
+	}
+	members, err := h.Repo.ListMembers(ctx)
+	if err == nil {
+		for _, member := range members {
+			if member.Active && accountBelongsToMember(source, member) {
+				return member.OwnerKey
+			}
+		}
+	}
+	if botChannelID, feishuID, ok := accountEntityParts(source); ok {
+		if entity, err := h.Repo.GetChatEntity(ctx, botChannelID, feishuID); err == nil && entity != nil && strings.TrimSpace(entity.BoundOwner) != "" {
+			return entity.BoundOwner
+		}
+	}
+	return source
+}
+
+func controlSource(msg model.Message) string {
+	if msg.BotChannelID != "" || msg.ChatEntityID != "" {
+		return "feishu"
+	}
+	return "session"
+}
+
+func controlSourceAddr(msg model.Message, botName string) string {
+	source := sourceAccount(msg)
+	keyID := msg.BotChannelID
+	if keyID == "" {
+		keyID = "unknown"
+	}
+	if controlSource(msg) == "feishu" {
+		return feishuAddress(feishuOpenIDFromAccount(source), keyID, botName)
+	}
+	return source
+}
+
+func splitRulePattern(pattern string) []string {
+	var out []string
+	for _, part := range strings.Split(pattern, "|") {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
+func looksPrefixed(text string) bool {
+	return strings.HasPrefix(text, "#") || strings.HasPrefix(text, "@")
 }
 
 func (h *Hub) dispatchSystem(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
@@ -830,7 +1067,7 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 		// （send.py 会把地址补成发件人自己的 key，所以即便 to.KeyID==from.KeyID，目标也可能在该 owner 的另一个 key 下）
 		senderOwner := h.ownerKeyForKey(ctx, from.KeyID)
 		if senderOwner == "" {
-			return errors.New("无法解析发件人账号")
+			return fmt.Errorf("无法解析发件人账号 key_id=%s", from.KeyID)
 		}
 		k, ok := h.resolveOwnerSessionKey(ctx, senderOwner, to.SessionName, to.KeyID)
 		if !ok {
@@ -954,6 +1191,7 @@ func renderAgentNetworkSkill(sessionName, keyID string) string {
 		"  回复的收件人 = 对方消息里【X→你】中的那个 X（用精确会话名）。长正文改用 --file <文件路径>。",
 		"",
 		"AI CLI主动发起的真实机制：当你的assistant输出以 #会话名 正文 或 @成员#会话名 正文 开头时，sessionHelper会把这行输出转成DingWei主动信封并交给Hub路由；对方收到后可以回复。",
+		"例如：#developer 请核对X",
 		"",
 		"协作礼仪：消息要简明，说清诉求与来源，不刷屏。发给队友的正文第一行建议自报身份，例如【" + sessionName + "→manager】。",
 		"",

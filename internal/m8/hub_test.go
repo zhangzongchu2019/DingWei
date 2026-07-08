@@ -54,6 +54,44 @@ func useTestSecOpsAdminOwnerKey(t *testing.T, ownerKey string) {
 	})
 }
 
+func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	rosterMsg := model.Message{ID: "ct-roster", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, err := hub.Dispatch(ctx, rosterMsg, "#roster")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "DingWei在线清单") {
+		t.Fatalf("roster result=%+v", result)
+	}
+	task, err := db.GetControlTask(ctx, "ct-roster")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if task == nil || task.Status != "done" || task.Intent != "command.roster" || task.Layer != "L1" {
+		t.Fatalf("roster task=%+v", task)
+	}
+
+	unknownMsg := model.Message{ID: "ct-unknown", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, err = hub.Dispatch(ctx, unknownMsg, "请帮我判断该找谁")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Matched {
+		t.Fatalf("unknown should preserve old external return, got %+v", result)
+	}
+	task, err = db.GetControlTask(ctx, "ct-unknown")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if task == nil || task.Status != "llm_pending" || task.Intent != "unknown" || task.Layer != "L1" {
+		t.Fatalf("unknown task=%+v", task)
+	}
+}
+
 func TestIssueAPIKeyStoresHashAndBindScope(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {

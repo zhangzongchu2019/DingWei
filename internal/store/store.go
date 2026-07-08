@@ -60,6 +60,15 @@ type Repository interface {
 	DeleteCollectMessagesBefore(ctx context.Context, cutoff time.Time) (int64, error)
 	MessageStats(ctx context.Context) (model.MessageStats, error)
 
+	// 平台总控 L0/L1（P1）
+	EnqueueControlTask(ctx context.Context, task model.ControlTask) (model.ControlTask, bool, error)
+	GetControlTask(ctx context.Context, id string) (*model.ControlTask, error)
+	UpdateControlTaskAfterL1(ctx context.Context, id, intent, layer, target, result, status, errText string) error
+	RetryControlTask(ctx context.Context, id, errText string) error
+	ReapExpiredControlTasks(ctx context.Context, now time.Time) (int64, error)
+	ControlTaskStats(ctx context.Context) (model.ControlTaskStats, error)
+	ListL1DecisionRules(ctx context.Context) ([]model.L1DecisionRule, error)
+
 	// 排期（M1）
 	ListSchedules(ctx context.Context, ownerKey string) ([]model.Schedule, error)
 	UpsertSchedule(ctx context.Context, s model.Schedule) error

@@ -132,10 +132,16 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	controlStats, err := s.Repo.ControlTaskStats(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = fmt.Fprintf(w, `<!doctype html><meta charset=utf-8><title>WorkPulse</title>
 <h3>WorkPulse 后台</h3><p>服务运行中。</p>
 <p>消息总数: %d | queued: %d | processing: %d | done: %d | dead: %d</p>
+<p>总控队列深度: %d | total: %d | queued: %d | llm_pending: %d | done: %d | failed: %d | expired: %d | failed_rate: %.2f%% | expired_rate: %.2f%%</p>
 <ul>
 <li><a href="/portal">团队门户</a></li><li><a href="/admin/messages">最近 100 条消息</a></li>
 <li><a href="/admin/members">成员 / 租户候选</a></li><li><a href="/admin/bot-channels">机器人管道</a></li>
@@ -143,7 +149,8 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 <li><a href="/admin/services">租户 / 成员空间</a></li><li><a href="/admin/api-keys">凭证 API key</a></li>
 <li><a href="/admin/sessions">会话端点 / 通配 / 镜像</a></li>
 <li><a href="/admin/config">运行配置</a></li>
-</ul>`, stats.Total, stats.Queued, stats.Processing, stats.Done, stats.Dead)
+</ul>`, stats.Total, stats.Queued, stats.Processing, stats.Done, stats.Dead,
+		controlStats.Depth, controlStats.Total, controlStats.Status["queued"], controlStats.Status["llm_pending"], controlStats.Status["done"], controlStats.Status["failed"], controlStats.Status["expired"], controlStats.FailedRate*100, controlStats.ExpiredRate*100)
 }
 
 func (s *Server) portal(w http.ResponseWriter, r *http.Request) {

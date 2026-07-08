@@ -98,6 +98,9 @@ func (s *SQLite) Migrate(ctx context.Context) error {
 	if err := s.ensureProjectWeeklyReportTable(ctx); err != nil {
 		return err
 	}
+	if err := s.ensureControlPlaneTables(ctx); err != nil {
+		return err
+	}
 	return s.ensureDefaultProject(ctx)
 }
 
@@ -412,6 +415,79 @@ func (s *SQLite) ensureProjectWeeklyReportTable(ctx context.Context) error {
 	}
 	_, err = s.db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS idx_project_weekly_report_project_week ON project_weekly_report(project_id, week)`)
 	return err
+}
+
+func (s *SQLite) ensureControlPlaneTables(ctx context.Context) error {
+	for _, stmt := range []string{
+		`CREATE TABLE IF NOT EXISTS control_task (
+  id             TEXT PRIMARY KEY,
+  parent_id      TEXT,
+  created_at     TEXT NOT NULL,
+  updated_at     TEXT NOT NULL,
+  source         TEXT NOT NULL,
+  source_addr    TEXT NOT NULL,
+  owner_key      TEXT NOT NULL,
+  bot_channel_id TEXT,
+  raw_input      TEXT NOT NULL,
+  intent         TEXT,
+  layer          TEXT,
+  target         TEXT,
+  result         TEXT,
+  status         TEXT NOT NULL,
+  priority       INTEGER NOT NULL DEFAULT 0,
+  attempts       INTEGER NOT NULL DEFAULT 0,
+  max_attempts   INTEGER NOT NULL DEFAULT 3,
+  error          TEXT,
+  lease_owner    TEXT,
+  lease_until    TEXT,
+  expire_at      TEXT
+)`,
+		`CREATE INDEX IF NOT EXISTS idx_ct_status_prio ON control_task(status, priority DESC, created_at)`,
+		`CREATE INDEX IF NOT EXISTS idx_ct_parent ON control_task(parent_id)`,
+		`CREATE TABLE IF NOT EXISTS l1_decision_rule (
+  id          TEXT PRIMARY KEY,
+  seq         INTEGER NOT NULL UNIQUE,
+  match_type  TEXT NOT NULL,
+  pattern     TEXT NOT NULL,
+  intent      TEXT NOT NULL,
+  action      TEXT NOT NULL,
+  exit_queue  INTEGER NOT NULL DEFAULT 0,
+  enabled     INTEGER NOT NULL DEFAULT 1,
+  description TEXT,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+)`,
+		`CREATE INDEX IF NOT EXISTS idx_l1_decision_rule_enabled_seq ON l1_decision_rule(enabled, seq)`,
+	} {
+		if _, err := s.db.ExecContext(ctx, stmt); err != nil {
+			return err
+		}
+	}
+	return s.seedL1DecisionRules(ctx)
+}
+
+func (s *SQLite) seedL1DecisionRules(ctx context.Context) error {
+	now := s.now().UTC().Format(time.RFC3339)
+	rules := []model.L1DecisionRule{
+		{ID: "l1_command_terminal_input", Seq: 1, MatchType: "prefix_any", Pattern: "#unlock |#lock", Intent: "command.unlock", Action: "grantTerminalInput/revoke", ExitQueue: true, Enabled: true, Description: "Terminal input unlock/lock commands"},
+		{ID: "l1_command_roster", Seq: 2, MatchType: "prefix_any", Pattern: "#在线|#roster", Intent: "command.roster", Action: "onlineDirectory", ExitQueue: true, Enabled: true, Description: "Online roster command"},
+		{ID: "l1_command_apply_key", Seq: 3, MatchType: "prefix", Pattern: "#申请 ", Intent: "command.apply_key", Action: "applyKeyFlow", ExitQueue: true, Enabled: true, Description: "Session key application command"},
+		{ID: "l1_command_mirror", Seq: 4, MatchType: "prefix_any", Pattern: "#mirror on|#mirror off|mirror on|mirror off", Intent: "command.mirror", Action: "setMirror", ExitQueue: true, Enabled: true, Description: "Mirror on/off command"},
+		{ID: "l1_route_session", Seq: 5, MatchType: "regex", Pattern: "^#[^[:space:]]+[[:space:]]+.+", Intent: "route.session", Action: "routeToSession", ExitQueue: true, Enabled: true, Description: "Same-owner #session routing"},
+		{ID: "l1_route_cross", Seq: 6, MatchType: "regex", Pattern: "^@[^[:space:]#]+#[^[:space:]]+[[:space:]]+.+", Intent: "route.cross", Action: "routeToSession", ExitQueue: true, Enabled: true, Description: "Cross-member @member#session routing"},
+		{ID: "l1_route_default_single", Seq: 7, MatchType: "default", Pattern: "personal_single_online_session", Intent: "route.default", Action: "routeToOnlySession", ExitQueue: true, Enabled: true, Description: "DM without prefix and one online session"},
+		{ID: "l1_nl_dispatch", Seq: 8, MatchType: "default", Pattern: "personal_multiple_online_sessions", Intent: "nl_dispatch", Action: "handoffL2", ExitQueue: false, Enabled: true, Description: "DM without prefix and multiple online sessions"},
+		{ID: "l1_decompose", Seq: 9, MatchType: "keyword_any", Pattern: "让团队|大家|所有人", Intent: "decompose", Action: "handoffL2", ExitQueue: false, Enabled: true, Description: "Multi-target team semantics"},
+		{ID: "l1_unknown", Seq: 10, MatchType: "fallback", Pattern: "*", Intent: "unknown", Action: "handoffL2", ExitQueue: false, Enabled: true, Description: "Fallback to L2 clarification"},
+	}
+	for _, rule := range rules {
+		if _, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO l1_decision_rule(id, seq, match_type, pattern, intent, action, exit_queue, enabled, description, created_at, updated_at)
+VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
+			rule.ID, rule.Seq, rule.MatchType, rule.Pattern, rule.Intent, rule.Action, boolInt(rule.ExitQueue), boolInt(rule.Enabled), rule.Description, now, now); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *SQLite) ensureDefaultProject(ctx context.Context) error {
@@ -1279,6 +1355,137 @@ func (s *SQLite) MessageStats(ctx context.Context) (model.MessageStats, error) {
 	return st, rows.Err()
 }
 
+func (s *SQLite) EnqueueControlTask(ctx context.Context, task model.ControlTask) (model.ControlTask, bool, error) {
+	if task.ID == "" {
+		task.ID = newID()
+	}
+	now := s.now().UTC()
+	if task.CreatedAt.IsZero() {
+		task.CreatedAt = now
+	}
+	task.UpdatedAt = now
+	if task.Status == "" {
+		task.Status = "queued"
+	}
+	if task.MaxAttempts <= 0 {
+		task.MaxAttempts = 3
+	}
+	if task.ExpireAt == nil {
+		expire := now.Add(5 * time.Minute)
+		task.ExpireAt = &expire
+	}
+	res, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO control_task(id, parent_id, created_at, updated_at, source, source_addr, owner_key, bot_channel_id, raw_input, intent, layer, target, result, status, priority, attempts, max_attempts, error, lease_owner, lease_until, expire_at)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		task.ID, nullString(task.ParentID), task.CreatedAt.UTC().Format(time.RFC3339), task.UpdatedAt.UTC().Format(time.RFC3339), task.Source, task.SourceAddr, task.OwnerKey, nullString(task.BotChannelID), task.RawInput, nullString(task.Intent), nullString(task.Layer), nullString(task.Target), nullString(task.Result), task.Status, task.Priority, task.Attempts, task.MaxAttempts, nullString(task.Error), nullString(task.LeaseOwner), timePtrString(task.LeaseUntil), timePtrString(task.ExpireAt))
+	if err != nil {
+		return model.ControlTask{}, false, err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return model.ControlTask{}, false, err
+	}
+	if affected == 0 {
+		existing, err := s.GetControlTask(ctx, task.ID)
+		if err != nil {
+			return model.ControlTask{}, false, err
+		}
+		if existing == nil {
+			return model.ControlTask{}, false, sql.ErrNoRows
+		}
+		return *existing, false, nil
+	}
+	return task, true, nil
+}
+
+func (s *SQLite) GetControlTask(ctx context.Context, id string) (*model.ControlTask, error) {
+	task, err := scanControlTaskRow(s.db.QueryRowContext(ctx, `SELECT id, parent_id, created_at, updated_at, source, source_addr, owner_key, bot_channel_id, raw_input, intent, layer, target, result, status, priority, attempts, max_attempts, error, lease_owner, lease_until, expire_at FROM control_task WHERE id=?`, id))
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return task, err
+}
+
+func (s *SQLite) UpdateControlTaskAfterL1(ctx context.Context, id, intent, layer, target, result, status, errText string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE control_task
+SET intent=?, layer=?, target=?, result=?, status=?, error=?, updated_at=?, lease_owner=NULL, lease_until=NULL
+WHERE id=?`,
+		nullString(intent), nullString(layer), nullString(target), nullString(result), status, nullString(errText), s.now().UTC().Format(time.RFC3339), id)
+	return err
+}
+
+func (s *SQLite) RetryControlTask(ctx context.Context, id, errText string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE control_task
+SET attempts=attempts+1,
+    status=CASE WHEN attempts+1 >= max_attempts THEN 'failed' ELSE 'queued' END,
+    error=?,
+    updated_at=?,
+    lease_owner=NULL,
+    lease_until=NULL
+WHERE id=?`,
+		errText, s.now().UTC().Format(time.RFC3339), id)
+	return err
+}
+
+func (s *SQLite) ReapExpiredControlTasks(ctx context.Context, now time.Time) (int64, error) {
+	res, err := s.db.ExecContext(ctx, `UPDATE control_task
+SET status='expired', error=COALESCE(NULLIF(error,''), 'task expired'), updated_at=?, lease_owner=NULL, lease_until=NULL
+WHERE expire_at IS NOT NULL
+  AND expire_at <= ?
+  AND status NOT IN ('done','failed','expired')`,
+		now.UTC().Format(time.RFC3339), now.UTC().Format(time.RFC3339))
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+func (s *SQLite) ControlTaskStats(ctx context.Context) (model.ControlTaskStats, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT status, COUNT(*) FROM control_task GROUP BY status`)
+	if err != nil {
+		return model.ControlTaskStats{}, err
+	}
+	defer rows.Close()
+	stats := model.ControlTaskStats{Status: map[string]int{}}
+	for rows.Next() {
+		var status string
+		var n int
+		if err := rows.Scan(&status, &n); err != nil {
+			return model.ControlTaskStats{}, err
+		}
+		stats.Status[status] = n
+		stats.Total += n
+		switch status {
+		case "queued", "llm_pending", "dispatched", "awaiting_result", "awaiting_children":
+			stats.Depth += n
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return model.ControlTaskStats{}, err
+	}
+	if stats.Total > 0 {
+		stats.FailedRate = float64(stats.Status["failed"]) / float64(stats.Total)
+		stats.ExpiredRate = float64(stats.Status["expired"]) / float64(stats.Total)
+	}
+	return stats, nil
+}
+
+func (s *SQLite) ListL1DecisionRules(ctx context.Context) ([]model.L1DecisionRule, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT id, seq, match_type, pattern, intent, action, exit_queue, enabled, description, created_at, updated_at FROM l1_decision_rule WHERE enabled=1 ORDER BY seq`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.L1DecisionRule
+	for rows.Next() {
+		rule, err := scanL1DecisionRuleRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, rule)
+	}
+	return out, rows.Err()
+}
+
 func (s *SQLite) ListSchedules(ctx context.Context, ownerKey string) ([]model.Schedule, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT id, owner_key, start_date, end_date, task, status, priority FROM schedule WHERE owner_key=? ORDER BY start_date`, ownerKey)
@@ -1334,6 +1541,74 @@ func scanMessageRow(row rowScanner) (*model.Message, error) {
 		}
 	}
 	return &m, nil
+}
+
+func scanControlTaskRow(row rowScanner) (*model.ControlTask, error) {
+	var task model.ControlTask
+	var parentID, botChannelID, intent, layer, target, result, errText, leaseOwner, leaseUntil, expireAt sql.NullString
+	var created, updated string
+	err := row.Scan(&task.ID, &parentID, &created, &updated, &task.Source, &task.SourceAddr, &task.OwnerKey, &botChannelID, &task.RawInput, &intent, &layer, &target, &result, &task.Status, &task.Priority, &task.Attempts, &task.MaxAttempts, &errText, &leaseOwner, &leaseUntil, &expireAt)
+	if err != nil {
+		return nil, err
+	}
+	task.ParentID = nullableString(parentID)
+	task.BotChannelID = nullableString(botChannelID)
+	task.Intent = nullableString(intent)
+	task.Layer = nullableString(layer)
+	task.Target = nullableString(target)
+	task.Result = nullableString(result)
+	task.Error = nullableString(errText)
+	task.LeaseOwner = nullableString(leaseOwner)
+	task.CreatedAt, _ = time.Parse(time.RFC3339, created)
+	task.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
+	task.LeaseUntil = parseTimePtr(leaseUntil)
+	task.ExpireAt = parseTimePtr(expireAt)
+	return &task, nil
+}
+
+func scanL1DecisionRuleRow(row rowScanner) (model.L1DecisionRule, error) {
+	var rule model.L1DecisionRule
+	var exitQueue, enabled int
+	var desc, created, updated sql.NullString
+	err := row.Scan(&rule.ID, &rule.Seq, &rule.MatchType, &rule.Pattern, &rule.Intent, &rule.Action, &exitQueue, &enabled, &desc, &created, &updated)
+	if err != nil {
+		return rule, err
+	}
+	rule.ExitQueue = exitQueue == 1
+	rule.Enabled = enabled == 1
+	rule.Description = nullableString(desc)
+	if created.Valid {
+		rule.CreatedAt, _ = time.Parse(time.RFC3339, created.String)
+	}
+	if updated.Valid {
+		rule.UpdatedAt, _ = time.Parse(time.RFC3339, updated.String)
+	}
+	return rule, nil
+}
+
+func nullString(v string) any {
+	if strings.TrimSpace(v) == "" {
+		return nil
+	}
+	return v
+}
+
+func nullableString(v sql.NullString) string {
+	if v.Valid {
+		return v.String
+	}
+	return ""
+}
+
+func parseTimePtr(v sql.NullString) *time.Time {
+	if !v.Valid || strings.TrimSpace(v.String) == "" {
+		return nil
+	}
+	t, err := time.Parse(time.RFC3339, v.String)
+	if err != nil {
+		return nil
+	}
+	return &t
 }
 
 func boolInt(v bool) int {
