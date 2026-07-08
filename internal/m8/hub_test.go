@@ -3,6 +3,8 @@ package m8
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -52,6 +54,300 @@ func useTestSecOpsAdminOwnerKey(t *testing.T, ownerKey string) {
 	t.Cleanup(func() {
 		secOpsAdminOwnerKey = old
 	})
+}
+
+func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	rosterMsg := model.Message{ID: "ct-roster", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, err := hub.Dispatch(ctx, rosterMsg, "#roster")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "DingWei在线清单") {
+		t.Fatalf("roster result=%+v", result)
+	}
+	task, err := db.GetControlTask(ctx, "ct-roster")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if task == nil || task.Status != "done" || task.Intent != "command.roster" || task.Layer != "L1" {
+		t.Fatalf("roster task=%+v", task)
+	}
+
+	unknownMsg := model.Message{ID: "ct-unknown", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, err = hub.Dispatch(ctx, unknownMsg, "请帮我判断该找谁")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #ct-unknown") {
+		t.Fatalf("unknown should ack, got %+v", result)
+	}
+	task, err = db.GetControlTask(ctx, "ct-unknown")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if task == nil || task.Status != "llm_pending" || task.Intent != "unknown" || task.Layer != "L1" {
+		t.Fatalf("unknown task=%+v", task)
+	}
+
+	dup, err := hub.Dispatch(ctx, unknownMsg, "请帮我判断该找谁")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !dup.Matched || dup.Reply != "已受理 #ct-unknown" {
+		t.Fatalf("duplicate in-flight should ack without re-dispatch, got %+v", dup)
+	}
+
+	expireAt := time.Now().UTC().Add(-time.Minute)
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "ct-expired",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "stale",
+		Status:       "queued",
+		ExpireAt:     &expireAt,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := hub.Dispatch(ctx, model.Message{ID: "ct-trigger", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#roster"); err != nil {
+		t.Fatal(err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "任务 #ct-expired 已超时") {
+		t.Fatalf("expired notification=%+v", out)
+	}
+
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "ct-failed",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "fail",
+		Status:       "queued",
+		MaxAttempts:  1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	failed, err := db.RetryControlTask(ctx, "ct-failed", "boom")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if failed == nil || failed.Status != "failed" {
+		t.Fatalf("failed task=%+v", failed)
+	}
+	if err := hub.notifyControlTask(ctx, *failed, controlTaskFailedReply(*failed)); err != nil {
+		t.Fatal(err)
+	}
+	out = waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "任务 #ct-failed 处理失败：boom") {
+		t.Fatalf("failed notification=%+v", out)
+	}
+}
+
+func TestControlPlaneP2LeaseClaimIsExclusiveAndReclaimsExpired(t *testing.T) {
+	_, db, ctx := newTestHub(t)
+	now := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
+	for _, id := range []string{"l2-a", "l2-b"} {
+		if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+			ID:         id,
+			Source:     "feishu",
+			SourceAddr: "ou_1#dev#UnifiedRobot",
+			OwnerKey:   "u1",
+			RawInput:   id,
+			Status:     "llm_pending",
+			CreatedAt:  now,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	first, err := db.ClaimNextL2ControlTask(ctx, "w1", now.Add(time.Minute), now)
+	if err != nil || first == nil || first.ID != "l2-a" {
+		t.Fatalf("first claim=%+v err=%v", first, err)
+	}
+	second, err := db.ClaimNextL2ControlTask(ctx, "w2", now.Add(time.Minute), now)
+	if err != nil || second == nil || second.ID != "l2-b" {
+		t.Fatalf("second claim=%+v err=%v", second, err)
+	}
+	none, err := db.ClaimNextL2ControlTask(ctx, "w3", now.Add(time.Minute), now)
+	if err != nil || none != nil {
+		t.Fatalf("third claim=%+v err=%v", none, err)
+	}
+	reclaimed, err := db.ClaimNextL2ControlTask(ctx, "w4", now.Add(2*time.Minute), now.Add(2*time.Minute))
+	if err != nil || reclaimed == nil || reclaimed.ID != "l2-a" || reclaimed.LeaseOwner != "w4" {
+		t.Fatalf("reclaimed=%+v err=%v", reclaimed, err)
+	}
+}
+
+func TestControlPlaneP2DispatchAndClarifyWithMockLLM(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	dev := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer dev.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "developer")
+
+	hub.L2 = &fakeTriageProvider{out: `{"intent":"dispatch","targets":[{"session":"developer","instruction":"请处理这个任务"}],"confidence":0.95}`}
+	task := model.ControlTask{ID: "l2-dispatch", Source: "feishu", SourceAddr: feishuAddress("ou_u1", "dev", "UnifiedRobot"), OwnerKey: "u1", BotChannelID: "dev", RawInput: "帮我处理", Status: "llm_pending"}
+	if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, task, hub.effectiveL2Config())
+	got := readEnvelope(t, ctx, dev)
+	if got.Body != "请处理这个任务" || got.Meta["control_task_id"] != "l2-dispatch" {
+		t.Fatalf("dispatch envelope=%+v", got)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "已分诊给 #developer") {
+		t.Fatalf("dispatch source reply=%+v", out)
+	}
+	stored, err := db.GetControlTask(ctx, "l2-dispatch")
+	if err != nil || stored == nil || stored.Status != "done" || stored.Layer != "L2" || stored.Intent != "dispatch" {
+		t.Fatalf("stored dispatch task=%+v err=%v", stored, err)
+	}
+
+	hub.L2 = &fakeTriageProvider{out: `{"intent":"dispatch","targets":[{"session":"developer","instruction":"低置信"}],"confidence":0.2}`}
+	clarifyTask := model.ControlTask{ID: "l2-clarify", Source: "feishu", SourceAddr: feishuAddress("ou_u1", "dev", "UnifiedRobot"), OwnerKey: "u1", BotChannelID: "dev", RawInput: "不明确", Status: "llm_pending"}
+	if _, _, err := db.EnqueueControlTask(ctx, clarifyTask); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, clarifyTask, hub.effectiveL2Config())
+	out = waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "不确定该派给谁") {
+		t.Fatalf("clarify source reply=%+v", out)
+	}
+	stored, err = db.GetControlTask(ctx, "l2-clarify")
+	if err != nil || stored == nil || stored.Status != "done" || stored.Intent != "clarify" {
+		t.Fatalf("stored clarify task=%+v err=%v", stored, err)
+	}
+}
+
+func TestControlPlaneP2ProviderFailureRetriesAndFails(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.L2 = &fakeTriageProvider{err: errors.New("llm down")}
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "l2-fail",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "失败",
+		Status:       "llm_pending",
+		MaxAttempts:  1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	task, err := db.ClaimNextL2ControlTask(ctx, "w1", time.Now().Add(time.Minute), time.Now())
+	if err != nil || task == nil {
+		t.Fatalf("claim=%+v err=%v", task, err)
+	}
+	hub.processL2Task(ctx, *task, hub.effectiveL2Config())
+	stored, err := db.GetControlTask(ctx, "l2-fail")
+	if err != nil || stored == nil || stored.Status != "failed" {
+		t.Fatalf("failed task=%+v err=%v", stored, err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "处理失败") {
+		t.Fatalf("failed notification=%+v", out)
+	}
+	stats, err := db.ControlTaskStats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.L2FailureRate != 1 {
+		t.Fatalf("stats=%+v", stats)
+	}
+}
+
+func TestControlPlaneP2ProviderFailureRequeuesUntilMaxAttempts(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.L2 = &fakeTriageProvider{err: errors.New("temporary llm down")}
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "l2-retry",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "重试",
+		Status:       "llm_pending",
+		MaxAttempts:  3,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for attempt := 1; attempt <= 2; attempt++ {
+		task, err := db.ClaimNextL2ControlTask(ctx, fmt.Sprintf("w%d", attempt), time.Now().Add(time.Minute), time.Now())
+		if err != nil || task == nil {
+			t.Fatalf("claim attempt %d task=%+v err=%v", attempt, task, err)
+		}
+		hub.processL2Task(ctx, *task, hub.effectiveL2Config())
+		stored, err := db.GetControlTask(ctx, "l2-retry")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if stored.Status != "llm_pending" || stored.Attempts != attempt || stored.LeaseOwner != "" || stored.LeaseUntil != nil {
+			t.Fatalf("after attempt %d task=%+v", attempt, stored)
+		}
+	}
+	task, err := db.ClaimNextL2ControlTask(ctx, "w3", time.Now().Add(time.Minute), time.Now())
+	if err != nil || task == nil {
+		t.Fatalf("claim third task=%+v err=%v", task, err)
+	}
+	hub.processL2Task(ctx, *task, hub.effectiveL2Config())
+	stored, err := db.GetControlTask(ctx, "l2-retry")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stored.Status != "failed" || stored.Attempts != 3 {
+		t.Fatalf("after third failure task=%+v", stored)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "处理失败") {
+		t.Fatalf("failed notification=%+v", out)
+	}
+}
+
+type fakeTriageProvider struct {
+	out string
+	err error
+}
+
+func (f *fakeTriageProvider) Name() string { return "fake-triage" }
+func (f *fakeTriageProvider) Complete(_ context.Context, _, user string) (string, error) {
+	if f.err != nil {
+		return "", f.err
+	}
+	if !strings.Contains(user, "request_id") {
+		return "", errors.New("missing request_id")
+	}
+	return f.out, nil
 }
 
 func TestIssueAPIKeyStoresHashAndBindScope(t *testing.T) {
@@ -133,8 +429,8 @@ func TestSystemKeywordRoutesToSystemHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Matched {
-		t.Fatalf("middle keyword should not match: %+v", result)
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #sys3") {
+		t.Fatalf("middle keyword should only ack for L2: %+v", result)
 	}
 	result, err = hub.Dispatch(ctx, model.Message{ID: "sys4", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "sys:调度 协调团队排期")
 	if err != nil {
@@ -251,19 +547,42 @@ func TestSecurityOpsRejectsUnauthorizedSender(t *testing.T) {
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "sec", Name: "sec", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "sec", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, secOpsOwnerKey); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	secSession := dialSession(t, ctx, srv.URL, "sec-claude", key.ID, secret)
+	defer secSession.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "sec-claude")
+
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "secops-deny",
 		ChatEntityID: "dev:group:oc_c610",
 		BotChannelID: "dev",
 		ChatType:     model.ChatGroup,
 		SenderOpenID: "ou_alice",
-		Content:      `{"text":"@SYSTEM-V-TASK-INTERNAL #系统安全 加白名单 1.2.3.4"}`,
-	}, "@SYSTEM-V-TASK-INTERNAL #系统安全 加白名单 1.2.3.4")
+		Content:      `{"text":"@SYSTEM-V-TASK-INTERNAL#sec-claude #系统安全 加白名单 6.6.6.6"}`,
+	}, "@SYSTEM-V-TASK-INTERNAL#sec-claude #系统安全 加白名单 6.6.6.6")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !result.Matched || !strings.Contains(result.Reply, "无权限") {
 		t.Fatalf("non u1 secops result=%+v", result)
+	}
+	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	defer cancel()
+	if _, _, err := secSession.Read(readCtx); err == nil {
+		t.Fatal("unauthorized secops command was delivered to sec-claude")
 	}
 }
 
@@ -373,8 +692,8 @@ func TestDispatchDoesNotMatchUnscopedAccount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Matched {
-		t.Fatalf("unscoped account matched: %+v", result)
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #m1") {
+		t.Fatalf("unscoped account should only ack for L2, got: %+v", result)
 	}
 }
 
@@ -404,8 +723,8 @@ func TestDispatchEmptyScopeUsesBoundAccountsOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bob.Matched {
-		t.Fatalf("unbound account matched empty scope: %+v", bob)
+	if !bob.Matched || !strings.Contains(bob.Reply, "已受理 #m2") {
+		t.Fatalf("unbound account should only ack for L2: %+v", bob)
 	}
 }
 
@@ -532,8 +851,8 @@ func TestDispatchNonEmptyScopeRequiresStillBoundAccount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Matched {
-		t.Fatalf("revoked key still allowed scoped route: %+v", result)
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #m1") {
+		t.Fatalf("revoked key should only ack for L2: %+v", result)
 	}
 }
 
@@ -1221,14 +1540,14 @@ func TestPersonalMessageDefaultRouteNoSessionAndGroupAreIgnored(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if personal.Matched || personal.Reply != "" {
+	if !personal.Matched || !strings.Contains(personal.Reply, "已受理 #default-none") {
 		t.Fatalf("no-session personal result=%+v", personal)
 	}
 	group, err := hub.Dispatch(ctx, model.Message{ID: "default-group", ChatEntityID: "dev:group:oc_group", BotChannelID: "dev", ChatType: model.ChatGroup, SenderOpenID: "ou_u2"}, "你好")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if group.Matched || group.Reply != "" {
+	if !group.Matched || !strings.Contains(group.Reply, "已受理 #default-group") {
 		t.Fatalf("group default result=%+v", group)
 	}
 }

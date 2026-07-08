@@ -35,6 +35,10 @@ type Bootstrap struct {
 	ScheduleEvidenceCron string // 定时佐证 cron 表达式
 	ScheduleEvidenceTZ   string // 定时佐证 cron 时区
 	TranscriptDirs       string // 逗号分隔 transcript 数据源目录
+	L2DeepSeekAPIKey     string // P2 L2 triage DeepSeek API key
+	L2DeepSeekBaseURL    string // P2 L2 triage DeepSeek OpenAI-compatible base URL
+	L2DeepSeekModel      string // P2 L2 triage model
+	L2Workers            string // P2 L2 worker concurrency
 }
 
 // LoadBootstrap 从环境变量读取 bootstrap。
@@ -62,6 +66,10 @@ func LoadBootstrap() Bootstrap {
 		ScheduleEvidenceCron: env("WP_SCHEDULE_EVIDENCE_CRON", "0 0,6 * * *"),
 		ScheduleEvidenceTZ:   env("WP_SCHEDULE_EVIDENCE_TZ", "UTC"),
 		TranscriptDirs:       os.Getenv("WP_TRANSCRIPT_DIRS"),
+		L2DeepSeekAPIKey:     os.Getenv("WP_L2_DEEPSEEK_API_KEY"),
+		L2DeepSeekBaseURL:    env("WP_L2_DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
+		L2DeepSeekModel:      env("WP_L2_DEEPSEEK_MODEL", "deepseek-chat"),
+		L2Workers:            env("WP_L2_WORKERS", "4"),
 	}
 }
 

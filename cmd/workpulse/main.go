@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -31,6 +32,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/config"
 	"github.com/zhangzongchu2019/dingwei/internal/coordination"
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
+	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/portal"
@@ -86,6 +88,14 @@ func run(logger *slog.Logger) error {
 	outbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionOut, writeQueueConfig)
 	prefixHub := m8.New(st)
 	prefixHub.Outbound = outbound
+	if bs.L2DeepSeekAPIKey != "" {
+		prefixHub.L2 = llm.NewDeepSeek(bs.L2DeepSeekAPIKey, bs.L2DeepSeekBaseURL, bs.L2DeepSeekModel)
+		if n, err := strconv.Atoi(bs.L2Workers); err == nil && n > 0 {
+			prefixHub.L2Config.Workers = n
+		}
+	} else {
+		logger.Warn("L2 triage provider not configured", "env", "WP_L2_DEEPSEEK_API_KEY")
+	}
 	adm := admin.New(st)
 	adm.Outbound = outbound
 	adm.Prefix = prefixHub
@@ -161,6 +171,7 @@ func run(logger *slog.Logger) error {
 		}
 	}()
 	go processor.Run(ctx, 200*time.Millisecond)
+	prefixHub.StartL2Workers(ctx)
 	go runOutboundLoop(ctx, logger, outbound, feishuGateway, 200*time.Millisecond)
 	if feishuReceiver != nil {
 		go func() {

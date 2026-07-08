@@ -545,6 +545,56 @@ func TestEnqueueMessageRedactsContentBeforeStorage(t *testing.T) {
 	}
 }
 
+func TestControlPlaneP1QueueRulesRetryReaperAndStats(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	rules, err := db.ListL1DecisionRules(ctx)
+	if err != nil {
+		t.Fatalf("ListL1DecisionRules: %v", err)
+	}
+	if len(rules) != 10 {
+		t.Fatalf("L1 rules count=%d, want 10", len(rules))
+	}
+	if rules[0].Intent != "command.unlock" || rules[9].Intent != "unknown" {
+		t.Fatalf("unexpected L1 rule order: first=%+v last=%+v", rules[0], rules[9])
+	}
+	expire := time.Now().UTC().Add(-time.Minute)
+	task, inserted, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:         "ct1",
+		Source:     "feishu",
+		SourceAddr: "ou_1#FB-test#UnifiedRobot",
+		OwnerKey:   "u1",
+		RawInput:   "hello",
+		ExpireAt:   &expire,
+	})
+	if err != nil || !inserted {
+		t.Fatalf("EnqueueControlTask inserted=%v err=%v", inserted, err)
+	}
+	if task.MaxAttempts != 3 || task.Status != "queued" || task.ExpireAt == nil {
+		t.Fatalf("task defaults not applied: %+v", task)
+	}
+	if _, err := db.RetryControlTask(ctx, "ct1", "temporary"); err != nil {
+		t.Fatalf("RetryControlTask: %v", err)
+	}
+	got, err := db.GetControlTask(ctx, "ct1")
+	if err != nil {
+		t.Fatalf("GetControlTask: %v", err)
+	}
+	if got.Attempts != 1 || got.Status != "queued" {
+		t.Fatalf("retry state=%+v", got)
+	}
+	expired, err := db.ReapExpiredControlTasks(ctx, time.Now().UTC())
+	if err != nil || len(expired) != 1 {
+		t.Fatalf("ReapExpiredControlTasks expired=%+v err=%v", expired, err)
+	}
+	stats, err := db.ControlTaskStats(ctx)
+	if err != nil {
+		t.Fatalf("ControlTaskStats: %v", err)
+	}
+	if stats.Status["expired"] != 1 || stats.ExpiredRate != 1 {
+		t.Fatalf("stats=%+v", stats)
+	}
+}
+
 func TestMessageQueueSurvivesReopen(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "reopen.db")
 	ctx := context.Background()
