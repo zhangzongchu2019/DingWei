@@ -67,6 +67,7 @@ type Repository interface {
 	RetryControlTask(ctx context.Context, id, errText string) (*model.ControlTask, error)
 	ReapExpiredControlTasks(ctx context.Context, now time.Time) ([]model.ControlTask, error)
 	ClaimNextL2ControlTask(ctx context.Context, workerID string, leaseUntil time.Time, now time.Time) (*model.ControlTask, error)
+	RetryL2ControlTask(ctx context.Context, id, errText string) (*model.ControlTask, error)
 	CompleteControlTaskL2(ctx context.Context, id, intent, target, result string, duration time.Duration) error
 	RecordControlTaskL2Failure(ctx context.Context, id, errText string, duration time.Duration) error
 	ControlTaskStats(ctx context.Context) (model.ControlTaskStats, error)

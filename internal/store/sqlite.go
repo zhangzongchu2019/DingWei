@@ -1531,6 +1531,22 @@ WHERE id=?
 	return task, nil
 }
 
+func (s *SQLite) RetryL2ControlTask(ctx context.Context, id, errText string) (*model.ControlTask, error) {
+	_, err := s.db.ExecContext(ctx, `UPDATE control_task
+SET attempts=attempts+1,
+    status=CASE WHEN attempts+1 >= max_attempts THEN 'failed' ELSE 'llm_pending' END,
+    error=?,
+    updated_at=?,
+    lease_owner=NULL,
+    lease_until=NULL
+WHERE id=? AND status='llm_pending'`,
+		errText, s.now().UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return nil, err
+	}
+	return s.GetControlTask(ctx, id)
+}
+
 func (s *SQLite) CompleteControlTaskL2(ctx context.Context, id, intent, target, result string, duration time.Duration) error {
 	now := s.now().UTC().Format(time.RFC3339)
 	tx, err := s.db.BeginTx(ctx, nil)

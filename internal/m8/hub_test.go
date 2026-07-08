@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -281,6 +282,55 @@ func TestControlPlaneP2ProviderFailureRetriesAndFails(t *testing.T) {
 	}
 	if stats.L2FailureRate != 1 {
 		t.Fatalf("stats=%+v", stats)
+	}
+}
+
+func TestControlPlaneP2ProviderFailureRequeuesUntilMaxAttempts(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.L2 = &fakeTriageProvider{err: errors.New("temporary llm down")}
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "l2-retry",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "重试",
+		Status:       "llm_pending",
+		MaxAttempts:  3,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for attempt := 1; attempt <= 2; attempt++ {
+		task, err := db.ClaimNextL2ControlTask(ctx, fmt.Sprintf("w%d", attempt), time.Now().Add(time.Minute), time.Now())
+		if err != nil || task == nil {
+			t.Fatalf("claim attempt %d task=%+v err=%v", attempt, task, err)
+		}
+		hub.processL2Task(ctx, *task, hub.effectiveL2Config())
+		stored, err := db.GetControlTask(ctx, "l2-retry")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if stored.Status != "llm_pending" || stored.Attempts != attempt || stored.LeaseOwner != "" || stored.LeaseUntil != nil {
+			t.Fatalf("after attempt %d task=%+v", attempt, stored)
+		}
+	}
+	task, err := db.ClaimNextL2ControlTask(ctx, "w3", time.Now().Add(time.Minute), time.Now())
+	if err != nil || task == nil {
+		t.Fatalf("claim third task=%+v err=%v", task, err)
+	}
+	hub.processL2Task(ctx, *task, hub.effectiveL2Config())
+	stored, err := db.GetControlTask(ctx, "l2-retry")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stored.Status != "failed" || stored.Attempts != 3 {
+		t.Fatalf("after third failure task=%+v", stored)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "处理失败") {
+		t.Fatalf("failed notification=%+v", out)
 	}
 }
 

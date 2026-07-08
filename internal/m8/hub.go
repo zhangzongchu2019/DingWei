@@ -192,7 +192,7 @@ func (h *Hub) processL2Task(ctx context.Context, task model.ControlTask, cfg L2C
 		return
 	}
 	_ = h.Repo.RecordControlTaskL2Failure(ctx, task.ID, err.Error(), duration)
-	retried, retryErr := h.Repo.RetryControlTask(ctx, task.ID, err.Error())
+	retried, retryErr := h.Repo.RetryL2ControlTask(ctx, task.ID, err.Error())
 	if retryErr != nil || retried == nil || retried.Status != "failed" {
 		return
 	}
