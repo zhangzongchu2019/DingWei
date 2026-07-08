@@ -77,6 +77,7 @@ type Repository interface {
 	ClaimNextAggregateControlTask(ctx context.Context, workerID string, leaseUntil time.Time, now time.Time) (*model.ControlTask, error)
 	RetryAggregatingControlTask(ctx context.Context, id, errText string) (*model.ControlTask, error)
 	ControlTaskStats(ctx context.Context) (model.ControlTaskStats, error)
+	ListRecentControlTaskL2Metrics(ctx context.Context, limit int) ([]model.ControlTaskL2Metric, error)
 	ListL1DecisionRules(ctx context.Context) ([]model.L1DecisionRule, error)
 
 	// 排期（M1）

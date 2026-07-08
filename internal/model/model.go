@@ -144,6 +144,15 @@ type ControlTaskStats struct {
 	L2P95MS       int64
 }
 
+// ControlTaskL2Metric is one recorded L2 processing attempt for observability.
+type ControlTaskL2Metric struct {
+	TaskID     string
+	DurationMS int64
+	Success    bool
+	Error      string
+	CreatedAt  time.Time
+}
+
 // L2TriageContext is the structured input sent to the dispatch LLM.
 type L2TriageContext struct {
 	RequestID      string            `json:"request_id"`

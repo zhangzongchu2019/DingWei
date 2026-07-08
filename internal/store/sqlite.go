@@ -1792,6 +1792,45 @@ func (s *SQLite) ControlTaskStats(ctx context.Context) (model.ControlTaskStats, 
 	return stats, nil
 }
 
+func (s *SQLite) ListRecentControlTaskL2Metrics(ctx context.Context, limit int) ([]model.ControlTaskL2Metric, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 50
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT task_id, duration_ms, success, error, created_at
+FROM control_task_l2_metric
+ORDER BY created_at DESC
+LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.ControlTaskL2Metric
+	for rows.Next() {
+		var item model.ControlTaskL2Metric
+		var success int
+		var errText sql.NullString
+		var created string
+		if err := rows.Scan(&item.TaskID, &item.DurationMS, &success, &errText, &created); err != nil {
+			return nil, err
+		}
+		item.Success = success != 0
+		if errText.Valid {
+			item.Error = errText.String
+		}
+		if t, err := time.Parse(time.RFC3339, created); err == nil {
+			item.CreatedAt = t
+		}
+		out = append(out, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return out, nil
+}
+
 func percentileDuration(sorted []int64, p float64) int64 {
 	if len(sorted) == 0 {
 		return 0
