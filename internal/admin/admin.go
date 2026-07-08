@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -58,6 +59,7 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/login", s.loginForm)
 	mux.HandleFunc("POST /admin/login", s.loginSubmit)
 	mux.HandleFunc("GET /admin", s.requireAuth(s.status))
+	mux.HandleFunc("GET /admin/control-plane", s.requireAuth(s.controlPlaneDashboard))
 	mux.HandleFunc("GET /admin/messages", s.requireAuth(s.messages))
 	mux.HandleFunc("GET /admin/members", s.requireAuth(s.members))
 	mux.HandleFunc("POST /admin/members", s.requireAuth(s.upsertMember))
@@ -149,10 +151,246 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 <li><a href="/admin/projects">项目组 / 排期文档</a></li>
 <li><a href="/admin/services">租户 / 成员空间</a></li><li><a href="/admin/api-keys">凭证 API key</a></li>
 <li><a href="/admin/sessions">会话端点 / 通配 / 镜像</a></li>
+<li><a href="/admin/control-plane">总控指标看板</a></li>
 <li><a href="/admin/config">运行配置</a></li>
 </ul>`, stats.Total, stats.Queued, stats.Processing, stats.Done, stats.Dead,
 		controlStats.Depth, controlStats.Total, controlStats.Status["queued"], controlStats.Status["llm_pending"], controlStats.Status["done"], controlStats.Status["failed"], controlStats.Status["expired"], controlStats.FailedRate*100, controlStats.ExpiredRate*100,
 		controlStats.L2InFlight, controlStats.L2P50MS, controlStats.L2P95MS, controlStats.L2FailureRate*100)
+}
+
+func (s *Server) controlPlaneDashboard(w http.ResponseWriter, r *http.Request) {
+	stats, err := s.Repo.ControlTaskStats(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	metrics, err := s.Repo.ListRecentControlTaskL2Metrics(r.Context(), 50)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	l2 := summarizeL2Metrics(metrics)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = fmt.Fprintf(w, `<!doctype html><meta charset=utf-8><title>总控指标看板</title>
+<style>
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:24px;color:#1f2933;background:#f8fafc}
+a{color:#135cc8}.muted{color:#5f6b7a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.tile{background:#fff;border:1px solid #d8dee7;border-radius:8px;padding:14px}.tile b{display:block;font-size:24px;margin-top:6px}
+.panel{background:#fff;border:1px solid #d8dee7;border-radius:8px;padding:16px;margin:16px 0}
+table{border-collapse:collapse;width:100%%;background:#fff}th,td{border:1px solid #d8dee7;padding:7px 9px;text-align:left}th{background:#edf2f7}
+.bar{height:18px;display:flex;overflow:hidden;border-radius:5px;background:#e8edf3;border:1px solid #d8dee7}.seg{height:18px}.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}.dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+.trend{width:100%%;max-width:860px;height:180px}.empty{padding:18px;border:1px dashed #b7c1ce;border-radius:8px;background:#fff;color:#5f6b7a}
+</style>
+<h3>总控指标看板</h3><p><a href="/admin">返回后台首页</a></p>
+<div class=grid>
+%s
+</div>
+<div class=panel><h4>状态分布</h4>
+<p class=muted>队列深度口径：queued + llm_pending + dispatched + awaiting_result + awaiting_children + aggregating。</p>
+%s
+%s
+</div>
+<div class=panel><h4>L2 近段处理</h4>
+%s
+</div>`,
+		controlPlaneTiles(stats), controlPlaneStatusBar(stats), controlPlaneStatusTable(stats), controlPlaneL2Panel(l2, metrics))
+}
+
+func controlPlaneTiles(stats model.ControlTaskStats) string {
+	items := []struct {
+		Label string
+		Value string
+	}{
+		{"队列深度", strconv.Itoa(stats.Depth)},
+		{"Total", strconv.Itoa(stats.Total)},
+		{"失败率", percentText(stats.FailedRate)},
+		{"超时率", percentText(stats.ExpiredRate)},
+		{"L2 in-flight", strconv.Itoa(stats.L2InFlight)},
+		{"L2 P50", fmt.Sprintf("%dms", stats.L2P50MS)},
+		{"L2 P95", fmt.Sprintf("%dms", stats.L2P95MS)},
+		{"L2 分诊失败率", percentText(stats.L2FailureRate)},
+	}
+	var b strings.Builder
+	for _, item := range items {
+		fmt.Fprintf(&b, `<div class=tile><span>%s</span><b>%s</b></div>`, esc(item.Label), esc(item.Value))
+	}
+	return b.String()
+}
+
+func controlPlaneStatusBar(stats model.ControlTaskStats) string {
+	statuses := controlPlaneStatuses()
+	total := stats.Total
+	if total <= 0 {
+		return `<div class=empty>暂无总控任务。</div>`
+	}
+	colors := controlPlaneStatusColors()
+	var b strings.Builder
+	b.WriteString(`<div class=bar>`)
+	for _, status := range statuses {
+		n := stats.Status[status]
+		if n == 0 {
+			continue
+		}
+		width := float64(n) / float64(total) * 100
+		fmt.Fprintf(&b, `<div class=seg title="%s %d" style="width:%.2f%%;background:%s"></div>`, esc(status), n, width, colors[status])
+	}
+	b.WriteString(`</div><div class=legend>`)
+	for _, status := range statuses {
+		fmt.Fprintf(&b, `<span><i class=dot style="background:%s"></i>%s %d</span>`, colors[status], esc(status), stats.Status[status])
+	}
+	b.WriteString(`</div>`)
+	return b.String()
+}
+
+func controlPlaneStatusTable(stats model.ControlTaskStats) string {
+	depthStatuses := map[string]bool{"queued": true, "llm_pending": true, "dispatched": true, "awaiting_result": true, "awaiting_children": true, "aggregating": true}
+	var b strings.Builder
+	b.WriteString(`<table><tr><th>状态</th><th>计数</th><th>纳入 Depth</th></tr>`)
+	for _, status := range controlPlaneStatuses() {
+		inDepth := "否"
+		if depthStatuses[status] {
+			inDepth = "是"
+		}
+		fmt.Fprintf(&b, `<tr><td><code>%s</code></td><td>%d</td><td>%s</td></tr>`, esc(status), stats.Status[status], inDepth)
+	}
+	b.WriteString(`</table>`)
+	return b.String()
+}
+
+func controlPlaneL2Panel(summary l2MetricSummary, metrics []model.ControlTaskL2Metric) string {
+	if len(metrics) == 0 {
+		return `<div class=empty>暂无 L2 处理记录。</div>`
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, `<div class=grid>
+<div class=tile><span>最近记录</span><b>%d</b></div>
+<div class=tile><span>成功</span><b>%d</b></div>
+<div class=tile><span>失败</span><b>%d</b></div>
+<div class=tile><span>Min</span><b>%dms</b></div>
+<div class=tile><span>P50</span><b>%dms</b></div>
+<div class=tile><span>P95</span><b>%dms</b></div>
+<div class=tile><span>Max</span><b>%dms</b></div>
+</div>`, summary.Total, summary.Success, summary.Failure, summary.MinMS, summary.P50MS, summary.P95MS, summary.MaxMS)
+	b.WriteString(controlPlaneTrendSVG(metrics))
+	b.WriteString(`<table><tr><th>时间</th><th>task_id</th><th>结果</th><th>duration_ms</th><th>error</th></tr>`)
+	for i := len(metrics) - 1; i >= 0; i-- {
+		m := metrics[i]
+		result := "success"
+		if !m.Success {
+			result = "failure"
+		}
+		when := ""
+		if !m.CreatedAt.IsZero() {
+			when = m.CreatedAt.Format(time.RFC3339)
+		}
+		fmt.Fprintf(&b, `<tr><td>%s</td><td><code>%s</code></td><td>%s</td><td>%d</td><td>%s</td></tr>`, esc(when), esc(m.TaskID), esc(result), m.DurationMS, esc(m.Error))
+	}
+	b.WriteString(`</table>`)
+	return b.String()
+}
+
+type l2MetricSummary struct {
+	Total   int
+	Success int
+	Failure int
+	MinMS   int64
+	P50MS   int64
+	P95MS   int64
+	MaxMS   int64
+}
+
+func summarizeL2Metrics(metrics []model.ControlTaskL2Metric) l2MetricSummary {
+	if len(metrics) == 0 {
+		return l2MetricSummary{}
+	}
+	summary := l2MetricSummary{Total: len(metrics)}
+	durations := make([]int64, 0, len(metrics))
+	for i, m := range metrics {
+		if m.Success {
+			summary.Success++
+		} else {
+			summary.Failure++
+		}
+		if i == 0 || m.DurationMS < summary.MinMS {
+			summary.MinMS = m.DurationMS
+		}
+		if m.DurationMS > summary.MaxMS {
+			summary.MaxMS = m.DurationMS
+		}
+		durations = append(durations, m.DurationMS)
+	}
+	sort.Slice(durations, func(i, j int) bool { return durations[i] < durations[j] })
+	summary.P50MS = dashboardPercentile(durations, 0.50)
+	summary.P95MS = dashboardPercentile(durations, 0.95)
+	return summary
+}
+
+func controlPlaneTrendSVG(metrics []model.ControlTaskL2Metric) string {
+	if len(metrics) == 0 {
+		return ""
+	}
+	const width, height, pad = 860.0, 180.0, 24.0
+	var max int64
+	for _, m := range metrics {
+		if m.DurationMS > max {
+			max = m.DurationMS
+		}
+	}
+	if max <= 0 {
+		max = 1
+	}
+	var points strings.Builder
+	for i, m := range metrics {
+		x := pad
+		if len(metrics) > 1 {
+			x = pad + float64(i)*(width-2*pad)/float64(len(metrics)-1)
+		}
+		y := height - pad - float64(m.DurationMS)*(height-2*pad)/float64(max)
+		fmt.Fprintf(&points, "%.1f,%.1f ", x, y)
+	}
+	return fmt.Sprintf(`<svg class=trend viewBox="0 0 %.0f %.0f" role=img aria-label="L2 latency trend">
+<rect x="0" y="0" width="%.0f" height="%.0f" fill="#fff"/>
+<line x1="%.0f" y1="%.0f" x2="%.0f" y2="%.0f" stroke="#d8dee7"/>
+<line x1="%.0f" y1="%.0f" x2="%.0f" y2="%.0f" stroke="#d8dee7"/>
+<polyline fill="none" stroke="#135cc8" stroke-width="3" points="%s"/>
+<text x="%.0f" y="16" fill="#5f6b7a" font-size="12">最近 L2 时延趋势，max=%dms</text>
+</svg>`, width, height, width, height, pad, height-pad, width-pad, height-pad, pad, pad, pad, height-pad, points.String(), pad, max)
+}
+
+func dashboardPercentile(sorted []int64, p float64) int64 {
+	if len(sorted) == 0 {
+		return 0
+	}
+	idx := int(float64(len(sorted)-1) * p)
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(sorted) {
+		idx = len(sorted) - 1
+	}
+	return sorted[idx]
+}
+
+func percentText(v float64) string {
+	return fmt.Sprintf("%.2f%%", v*100)
+}
+
+func controlPlaneStatuses() []string {
+	return []string{"queued", "llm_pending", "dispatched", "awaiting_result", "awaiting_children", "aggregating", "done", "failed", "expired"}
+}
+
+func controlPlaneStatusColors() map[string]string {
+	return map[string]string{
+		"queued":            "#6b9bd2",
+		"llm_pending":       "#8e7cc3",
+		"dispatched":        "#76a5af",
+		"awaiting_result":   "#f6b26b",
+		"awaiting_children": "#ffd966",
+		"aggregating":       "#c27ba0",
+		"done":              "#93c47d",
+		"failed":            "#e06666",
+		"expired":           "#999999",
+	}
 }
 
 func (s *Server) portal(w http.ResponseWriter, r *http.Request) {

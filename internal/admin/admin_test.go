@@ -129,8 +129,64 @@ func TestAdminStatusRequiresAuthAndShowsStats(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	body := rec.Body.String()
-	if !strings.Contains(body, "服务运行中") || !strings.Contains(body, "queued: 1") || !strings.Contains(body, "/admin/messages") {
+	if !strings.Contains(body, "服务运行中") || !strings.Contains(body, "queued: 1") || !strings.Contains(body, "/admin/messages") || !strings.Contains(body, "/admin/control-plane") {
 		t.Fatalf("admin status body = %s", body)
+	}
+}
+
+func TestAdminControlPlaneDashboardEmptyData(t *testing.T) {
+	srv, _, mux, _ := newAdminTestServer(t)
+	unauth := httptest.NewRecorder()
+	mux.ServeHTTP(unauth, httptest.NewRequest(http.MethodGet, "/admin/control-plane", nil))
+	if unauth.Code != http.StatusSeeOther || unauth.Header().Get("Location") != "/admin/login" {
+		t.Fatalf("unauth dashboard code=%d location=%q", unauth.Code, unauth.Header().Get("Location"))
+	}
+	srv.sessions["tok"] = "admin"
+	body := getAuth(t, mux, "/admin/control-plane").Body.String()
+	for _, want := range []string{"总控指标看板", "队列深度", "暂无总控任务", "暂无 L2 处理记录", "0.00%"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("empty dashboard missing %q in %s", want, body)
+		}
+	}
+}
+
+func TestAdminControlPlaneDashboardWithData(t *testing.T) {
+	srv, db, mux, ctx := newAdminTestServer(t)
+	srv.sessions["tok"] = "admin"
+	now := time.Now().UTC()
+	tasks := []model.ControlTask{
+		{ID: "ctl-queued", Status: "queued", Priority: 1},
+		{ID: "ctl-awaiting", Status: "awaiting_children", Priority: 2},
+		{ID: "ctl-done", Status: "done"},
+		{ID: "ctl-failed", Status: "failed", Error: "boom"},
+	}
+	for _, task := range tasks {
+		task.Source = "feishu"
+		task.SourceAddr = "ou_1#dev#UnifiedRobot"
+		task.OwnerKey = "u1"
+		task.RawInput = task.ID
+		task.CreatedAt = now
+		if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.CompleteControlTaskL2(ctx, "l2-ok", "dispatch", "developer", "ok", 120*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.RecordControlTaskL2Failure(ctx, "l2-fail", "down", 360*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+
+	body := getAuth(t, mux, "/admin/control-plane").Body.String()
+	for _, want := range []string{
+		"队列深度", "<b>2</b>", "Total", "<b>4</b>",
+		"失败率", "25.00%", "awaiting_children", "纳入 Depth",
+		"L2 近段处理", "最近记录", "<b>2</b>", "成功", "失败", "360ms",
+		"queued 1", "failed 1", "l2-ok", "l2-fail", "<svg",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("dashboard missing %q in %s", want, body)
+		}
 	}
 }
 
