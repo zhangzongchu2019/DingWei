@@ -263,7 +263,13 @@ class SessionHelper:
                     await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
                     print("[agent_skill] already installed; ack sent", flush=True)
                     continue
-                await self.inject_agent_network_skill(env)
+                injected = await self.inject_agent_network_skill(env)
+                if injected:
+                    # 注入成功即自动回执（确认“已送达”），不再依赖模型乖乖回标记——
+                    # 否则 deepseek 等不老实的模型不回标记，服务端会每2分钟重推、刷屏
+                    self.comm_skill_installed = True
+                    await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
+                    print("[agent_skill] injected + auto-acked", flush=True)
                 continue
             body = str(env.get("body") or "")
             if is_online_directory_text(body):
@@ -313,20 +319,23 @@ class SessionHelper:
             return
         await asyncio.to_thread(self.adapter.set_winsize, rows, cols)
 
-    async def inject_agent_network_skill(self, env: dict) -> None:
+    async def inject_agent_network_skill(self, env: dict) -> bool:
         body = str(env.get("body") or "")
         if not body:
-            return
+            return False
         if self.cfg.mode == "cli" and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
             started = await asyncio.to_thread(self.adapter.start)
             if started:
                 await asyncio.to_thread(self.adapter.inject_text, body)
                 print("[agent_skill] injected", flush=True)
-            return
+                return True
+            return False  # CLI 未就绪，先不回执，下次重推时再试
         try:
             await asyncio.to_thread(self.adapter.handle, env)
+            return True
         except Exception as exc:
             print(f"[agent_skill] inject failed: {exc}", flush=True)
+            return False
 
     def online_list_path(self) -> str:
         """会话专属的在线清单共享文件路径（会话名前缀，区隔同机多会话）。"""
