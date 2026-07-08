@@ -17,6 +17,7 @@ import (
 const (
 	terminalOutputType = "terminal_output"
 	terminalInputType  = "terminal_input"
+	terminalResizeType = "terminal_resize"
 	terminalTokenTTL   = 8 * time.Hour
 	terminalBufferCap  = 1 << 20
 )
@@ -160,7 +161,9 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 				_ = terminalWrite(r.Context(), viewer, map[string]any{"type": "status", "readonly": true, "message": err.Error()})
 			}
 		case "resize":
-			// MVP keeps resize client-side. PTY resize can be added once the first instance path is accepted.
+			if msg.Cols > 0 && msg.Rows > 0 {
+				_ = h.routeTerminalResize(r.Context(), st.keyID, st.sessionName, msg.Cols, msg.Rows)
+			}
 		}
 	}
 }
@@ -217,6 +220,25 @@ func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID
 		Body: data,
 		TS:   time.Now().Unix(),
 		Meta: map[string]any{"type": terminalInputType, "system": true, "no_mirror": true},
+	}
+	return c.write(ctx, env)
+}
+
+// routeTerminalResize 把浏览器 xterm 的实际尺寸(列/行)转发给 sessionHelper，
+// 让它对 PTY setwinsize，CLI 才会按整块显示区渲染（否则停在默认 24×80）。
+func (h *Hub) routeTerminalResize(ctx context.Context, keyID, sessionName string, cols, rows int) error {
+	h.mu.Lock()
+	c := h.sessionClients[keyID][sessionName]
+	h.mu.Unlock()
+	if c == nil {
+		return nil
+	}
+	env := model.Envelope{
+		ID:   randomHex(16),
+		To:   sessionAddress(sessionName, keyID),
+		From: sessionAddress("workpulse", keyID),
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalResizeType, "system": true, "no_mirror": true, "cols": cols, "rows": rows},
 	}
 	return c.write(ctx, env)
 }
@@ -473,7 +495,16 @@ const terminalPageHTML = `<!doctype html>
     }
     let term = newTerm();
     let fitPending = false;
-    const doFit = () => { if (fitPending) return; fitPending = true; requestAnimationFrame(() => { fitPending = false; try { fit.fit(); } catch (e) {} }); };
+    let lastSize = '';
+    function sendResize() {
+      try {
+        if (!ws || ws.readyState !== 1 || !term) return;
+        const s = term.cols + 'x' + term.rows;
+        if (s === lastSize) return; lastSize = s;
+        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+      } catch (e) {}
+    }
+    const doFit = () => { if (fitPending) return; fitPending = true; requestAnimationFrame(() => { fitPending = false; try { fit.fit(); sendResize(); } catch (e) {} }); };
     new ResizeObserver(doFit).observe(document.getElementById('terminal'));
     window.addEventListener('resize', doFit);
     function recreate() {
@@ -513,6 +544,7 @@ const terminalPageHTML = `<!doctype html>
       }
     };
     ws.onclose = () => setStatus(true, '连接已断开');
+    ws.onopen = () => { try { fit.fit(); } catch (e) {} sendResize(); };
     function bindTerm() {
       term.onData((data) => {
         if (readonly || !token || ws.readyState !== WebSocket.OPEN) return;

@@ -79,6 +79,8 @@ class CLIAdapter:
         self.closed = threading.Event()
         self.stopping = threading.Event()
         self.respawn_count = 0
+        self.win_rows = 40
+        self.win_cols = 140
         self.output_q: queue.Queue[str] = queue.Queue()
         self.terminal_q: queue.Queue[str] = queue.Queue()
         self.mirror_q: queue.Queue[tuple[str, str]] = queue.Queue()
@@ -123,6 +125,7 @@ class CLIAdapter:
             codec_errors="replace",
             echo=False,
             timeout=0.2,
+            dimensions=(self.win_rows, self.win_cols),
         )
         self.reader = threading.Thread(target=self._read_loop, name="sessionhelper-cli-reader", daemon=True)
         self.reader.start()
@@ -132,6 +135,20 @@ class CLIAdapter:
                 return
             time.sleep(0.1)
         raise RuntimeError(f"CLI did not become ready: {shlex.join(self.command)}")
+
+    def set_winsize(self, rows: int, cols: int) -> None:
+        """按浏览器 xterm 实际尺寸调整 PTY 窗口大小，CLI 才会铺满整块显示区。"""
+        if rows > 0:
+            self.win_rows = rows
+        if cols > 0:
+            self.win_cols = cols
+        child = self.child
+        if child is None:
+            return
+        try:
+            child.setwinsize(self.win_rows, self.win_cols)
+        except Exception:
+            pass
 
     def start_tmux(self) -> None:
         if self.ready.is_set():
@@ -454,6 +471,7 @@ class CLIAdapter:
                 codec_errors="replace",
                 echo=False,
                 timeout=0.2,
+                dimensions=(self.win_rows, self.win_cols),
             )
         except Exception as exc:  # noqa: BLE001
             self.output_q.put(f"\r\n[sessionHelper] CLI 重启失败: {exc}\r\n")

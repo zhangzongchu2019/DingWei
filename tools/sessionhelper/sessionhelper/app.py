@@ -113,6 +113,7 @@ class SessionHelper:
         self.mirror = MirrorState(bool(cfg.mirror_to), cfg.mirror_to)
         self.non_primary_broadcast_texts: deque[str] = deque(maxlen=32)
         self.comm_skill_installed = False
+        self.roster_onboarded = False
         self.adapter = self._build_adapter()
 
     def _build_adapter(self) -> Adapter:
@@ -240,6 +241,9 @@ class SessionHelper:
             if self.is_terminal_input(env):
                 await self.handle_terminal_input(env)
                 continue
+            if self.is_terminal_resize(env):
+                await self.handle_terminal_resize(env)
+                continue
             if is_mirror_control(env):
                 self.apply_mirror_control(env)
                 continue
@@ -253,7 +257,12 @@ class SessionHelper:
                 await self.inject_agent_network_skill(env)
                 continue
             body = str(env.get("body") or "")
-            if is_online_directory_text(body) or is_no_mirror_envelope(env):
+            if is_online_directory_text(body):
+                if not self.roster_onboarded:
+                    self.roster_onboarded = True
+                    await self.inject_onboarding_roster(body)
+                continue
+            if is_no_mirror_envelope(env):
                 continue
             self.remember_broadcast_mirror_decision(env)
             try:
@@ -283,6 +292,20 @@ class SessionHelper:
             return
         await asyncio.to_thread(self.adapter.write_terminal_input, data)
 
+    def is_terminal_resize(self, env: dict) -> bool:
+        return (env.get("meta") or {}).get("type") == "terminal_resize"
+
+    async def handle_terminal_resize(self, env: dict) -> None:
+        meta = env.get("meta") or {}
+        try:
+            cols = int(meta.get("cols") or 0)
+            rows = int(meta.get("rows") or 0)
+        except (TypeError, ValueError):
+            return
+        if cols <= 0 or rows <= 0 or self.cfg.mode != "cli" or not hasattr(self.adapter, "set_winsize"):
+            return
+        await asyncio.to_thread(self.adapter.set_winsize, rows, cols)
+
     async def inject_agent_network_skill(self, env: dict) -> None:
         body = str(env.get("body") or "")
         if not body:
@@ -297,6 +320,24 @@ class SessionHelper:
             await asyncio.to_thread(self.adapter.handle, env)
         except Exception as exc:
             print(f"[agent_skill] inject failed: {exc}", flush=True)
+
+    async def inject_onboarding_roster(self, body: str) -> None:
+        """AI-CLI 刚进入时不知道在线清单——把就绪后收到的首份清单注入一次（引导）。
+        inject 会等 CLI 就绪；失败则清标志、下份清单再试。后续清单广播仍跳过、不刷屏。"""
+        text = str(body or "")
+        if not text:
+            return
+        if self.cfg.mode == "cli" and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
+            try:
+                started = await asyncio.to_thread(self.adapter.start)
+                if started:
+                    await asyncio.to_thread(self.adapter.inject_text, text)
+                    print("[roster] onboarding directory injected", flush=True)
+                else:
+                    self.roster_onboarded = False
+            except Exception as exc:
+                print(f"[roster] inject failed: {exc}", flush=True)
+                self.roster_onboarded = False
 
     def apply_mirror_control(self, env: dict) -> None:
         meta = env.get("meta") or {}
