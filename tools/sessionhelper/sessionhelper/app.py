@@ -113,6 +113,7 @@ class SessionHelper:
         self.mirror = MirrorState(bool(cfg.mirror_to), cfg.mirror_to)
         self.non_primary_broadcast_texts: deque[str] = deque(maxlen=32)
         self.comm_skill_installed = False
+        self.last_online_list = ""
         self.adapter = self._build_adapter()
 
     def _build_adapter(self) -> Adapter:
@@ -224,12 +225,20 @@ class SessionHelper:
                     except asyncio.CancelledError:
                         pass
             else:
-                await asyncio.gather(
-                    self.recv_loop(ws),
-                    self.terminal_loop(ws),
-                    self.outbox_loop(ws),
-                    self.mirror_loop(ws),
-                )
+                hb = asyncio.create_task(self.online_list_heartbeat_loop())
+                try:
+                    await asyncio.gather(
+                        self.recv_loop(ws),
+                        self.terminal_loop(ws),
+                        self.outbox_loop(ws),
+                        self.mirror_loop(ws),
+                    )
+                finally:
+                    hb.cancel()
+                    try:
+                        await hb
+                    except asyncio.CancelledError:
+                        pass
 
     async def recv_loop(self, ws) -> None:
         async for raw in ws:
@@ -327,16 +336,32 @@ class SessionHelper:
         return os.path.join(base, f"{self.cfg.session_name}.DingWeiOnlineSessions.list")
 
     def write_online_list(self, body: str) -> None:
-        """把最新在线清单原子写入共享文件，供 CLI（经 skill）按需读取。始终最新、不进对话。"""
+        """把最新在线清单原子写入共享文件，供 CLI（经 skill）按需读取。始终最新、不进对话。
+        body 非空=更新清单内容；空=仅刷新时间戳（心跳）。文件头带 UTC 更新时间，供 AI 判新鲜度。"""
+        if body:
+            self.last_online_list = str(body)
         try:
+            ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            header = (
+                f"# 更新于 {ts} — sessionHelper 每分钟刷新一次。\n"
+                "# 若此时间距当前已超过 2 分钟，说明本机 sessionHelper 可能异常或已断连，\n"
+                "# 本清单不可信，请勿据此判断谁在线。\n"
+            )
             path = self.online_list_path()
             os.makedirs(os.path.dirname(path), exist_ok=True)
             tmp = f"{path}.tmp"
             with open(tmp, "w", encoding="utf-8") as f:
-                f.write(str(body or ""))
+                f.write(header + (self.last_online_list or ""))
             os.replace(tmp, path)
         except Exception as exc:
             print(f"[roster] write list failed: {exc}", flush=True)
+
+    async def online_list_heartbeat_loop(self) -> None:
+        """心跳：连接存续期间每 60s 刷新清单文件时间戳。由连接生命周期管理（见 recv 分支的
+        create_task/cancel）——进程死或断连时本 loop 停止 → 文件时间变旧 → AI 据 2 分钟判据识别异常。"""
+        while True:
+            await asyncio.to_thread(self.write_online_list, "")
+            await asyncio.sleep(60)
 
     def apply_mirror_control(self, env: dict) -> None:
         meta = env.get("meta") or {}
