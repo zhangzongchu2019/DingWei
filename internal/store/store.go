@@ -70,6 +70,12 @@ type Repository interface {
 	RetryL2ControlTask(ctx context.Context, id, errText string) (*model.ControlTask, error)
 	CompleteControlTaskL2(ctx context.Context, id, intent, target, result string, duration time.Duration) error
 	RecordControlTaskL2Failure(ctx context.Context, id, errText string, duration time.Duration) error
+	CreateControlSubtasks(ctx context.Context, parent model.ControlTask, children []model.ControlTask) error
+	CompleteControlSubtask(ctx context.Context, id, result, status, errText string) (*model.ControlTask, error)
+	ListControlSubtasks(ctx context.Context, parentID string) ([]model.ControlTask, error)
+	TryClaimControlParentForAggregation(ctx context.Context, parentID, workerID string, leaseUntil time.Time, now time.Time) (*model.ControlTask, error)
+	ClaimNextAggregateControlTask(ctx context.Context, workerID string, leaseUntil time.Time, now time.Time) (*model.ControlTask, error)
+	RetryAggregatingControlTask(ctx context.Context, id, errText string) (*model.ControlTask, error)
 	ControlTaskStats(ctx context.Context) (model.ControlTaskStats, error)
 	ListL1DecisionRules(ctx context.Context) ([]model.L1DecisionRule, error)
 
