@@ -69,7 +69,7 @@
 ---
 
 ## 4. 核心概念 & 数据模型
-- **租户(tenant/service)** = 一个人/空间，有 `key_id`（如 `FB-fulei-…`，公开，进地址）。表 `registered_service` + `service_api_key`(key_hash + 绑定飞书账号 `api_key_account`)。
+- **租户(tenant/service)** = 一个人/空间，有 `key_id`（如 `FB-xxx-…`，公开，进地址）。表 `registered_service` + `service_api_key`(key_hash + 绑定飞书账号 `api_key_account`)。
 - **会话(session)** = sessionHelper 连接，表 `session_endpoint`(key_id + 会话名 + 在线 + client_ip + 镜像)。
 - **成员(member)** = `member`(owner_key/display_name/feishu_open_id/role/evidence_optout)。链：`member.open_id → api_key_account → key_id → session`。
 - **寻址**：
