@@ -822,21 +822,21 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 	}
 	switch to.Kind {
 	case addressSession:
-		keyID := to.KeyID
-		if keyID != from.KeyID {
-			// 同一飞书账号(owner)下允许跨 key 互通:按发件人账号解析目标会话真实 key
-			// （容错发件人把地址里的 key 补成了自己的 key —— 按会话名在该 owner 的所有 key 里找）
-			senderOwner := h.ownerKeyForKey(ctx, from.KeyID)
-			if senderOwner == "" {
-				return errors.New("无法解析发件人账号")
-			}
-			k, ok := h.resolveOwnerSessionKey(ctx, senderOwner, to.SessionName, to.KeyID)
-			if !ok {
-				return errors.New("目标会话不在你的账号下或不在线：" + to.SessionName)
-			}
-			keyID = k
+		// 常规同 key 且在线 → 快路径直投
+		if to.KeyID == from.KeyID && h.sessionOnline(to.KeyID, to.SessionName) {
+			return h.routeToSession(ctx, to.KeyID, to.SessionName, env, from.Kind == addressFeishu)
 		}
-		return h.routeToSession(ctx, keyID, to.SessionName, env, from.Kind == addressFeishu)
+		// 否则按发件人账号(owner)解析真实 key：支持同账号跨 key 互通 + 容错发件人补错 key + 强制同 owner。
+		// （send.py 会把地址补成发件人自己的 key，所以即便 to.KeyID==from.KeyID，目标也可能在该 owner 的另一个 key 下）
+		senderOwner := h.ownerKeyForKey(ctx, from.KeyID)
+		if senderOwner == "" {
+			return errors.New("无法解析发件人账号")
+		}
+		k, ok := h.resolveOwnerSessionKey(ctx, senderOwner, to.SessionName, to.KeyID)
+		if !ok {
+			return errors.New("目标会话不在你的账号下或不在线：" + to.SessionName)
+		}
+		return h.routeToSession(ctx, k, to.SessionName, env, from.Kind == addressFeishu)
 	case addressFeishu:
 		if to.KeyID != from.KeyID {
 			return errors.New("to/from key_id mismatch")
