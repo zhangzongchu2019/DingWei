@@ -20,6 +20,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/router"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
@@ -41,6 +42,8 @@ type Hub struct {
 	Repo     store.Repository
 	Outbound MessageQueue
 	System   SystemHandler
+	L2       llm.Provider
+	L2Config L2Config
 
 	mu             sync.Mutex
 	serviceClients map[string]*client
@@ -52,6 +55,14 @@ type Hub struct {
 	onlineTimers   map[string]*time.Timer
 	terminals      map[string]*terminalState
 	onlineDebounce time.Duration
+}
+
+type L2Config struct {
+	Workers             int
+	PollInterval        time.Duration
+	LeaseDuration       time.Duration
+	ProviderTimeout     time.Duration
+	ConfidenceThreshold float64
 }
 
 type client struct {
@@ -114,7 +125,228 @@ func New(repo store.Repository) *Hub {
 		onlineTimers:   map[string]*time.Timer{},
 		terminals:      map[string]*terminalState{},
 		onlineDebounce: 2500 * time.Millisecond,
+		L2Config: L2Config{
+			Workers:             4,
+			PollInterval:        200 * time.Millisecond,
+			LeaseDuration:       5 * time.Minute,
+			ProviderTimeout:     60 * time.Second,
+			ConfidenceThreshold: 0.60,
+		},
 	}
+}
+
+func (h *Hub) StartL2Workers(ctx context.Context) {
+	if h.Repo == nil || h.L2 == nil {
+		return
+	}
+	cfg := h.effectiveL2Config()
+	for i := 0; i < cfg.Workers; i++ {
+		workerID := fmt.Sprintf("l2-%d-%s", i+1, randomHex(4))
+		go h.runL2Worker(ctx, workerID, cfg)
+	}
+}
+
+func (h *Hub) effectiveL2Config() L2Config {
+	cfg := h.L2Config
+	if cfg.Workers <= 0 {
+		cfg.Workers = 4
+	}
+	if cfg.PollInterval <= 0 {
+		cfg.PollInterval = 200 * time.Millisecond
+	}
+	if cfg.LeaseDuration <= 0 {
+		cfg.LeaseDuration = 5 * time.Minute
+	}
+	if cfg.ProviderTimeout <= 0 {
+		cfg.ProviderTimeout = 60 * time.Second
+	}
+	if cfg.ConfidenceThreshold <= 0 {
+		cfg.ConfidenceThreshold = 0.60
+	}
+	return cfg
+}
+
+func (h *Hub) runL2Worker(ctx context.Context, workerID string, cfg L2Config) {
+	for {
+		task, err := h.Repo.ClaimNextL2ControlTask(ctx, workerID, time.Now().UTC().Add(cfg.LeaseDuration), time.Now().UTC())
+		if err != nil || task == nil {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(cfg.PollInterval):
+				continue
+			}
+		}
+		h.processL2Task(ctx, *task, cfg)
+	}
+}
+
+func (h *Hub) processL2Task(ctx context.Context, task model.ControlTask, cfg L2Config) {
+	start := time.Now()
+	triageCtx, err := h.buildL2TriageContext(ctx, task)
+	if err == nil {
+		err = h.dispatchL2Triage(ctx, task, triageCtx, cfg, start)
+	}
+	duration := time.Since(start)
+	if err == nil {
+		return
+	}
+	_ = h.Repo.RecordControlTaskL2Failure(ctx, task.ID, err.Error(), duration)
+	retried, retryErr := h.Repo.RetryControlTask(ctx, task.ID, err.Error())
+	if retryErr != nil || retried == nil || retried.Status != "failed" {
+		return
+	}
+	_ = h.notifyControlTask(ctx, *retried, controlTaskFailedReply(*retried))
+}
+
+func (h *Hub) buildL2TriageContext(ctx context.Context, task model.ControlTask) (model.L2TriageContext, error) {
+	sessions, err := h.l2OnlineSessions(ctx, task.OwnerKey)
+	if err != nil {
+		return model.L2TriageContext{}, err
+	}
+	return model.L2TriageContext{
+		RequestID:      task.ID,
+		RawInput:       task.RawInput,
+		Source:         task.Source,
+		OwnerKey:       task.OwnerKey,
+		OnlineSessions: sessions,
+	}, nil
+}
+
+func (h *Hub) l2OnlineSessions(ctx context.Context, ownerKey string) ([]model.L2OnlineSession, error) {
+	endpoints, err := h.Repo.ListSessionEndpoints(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var out []model.L2OnlineSession
+	for _, ep := range endpoints {
+		if !ep.Active || ep.OwnerKey != ownerKey || ep.NoDirectory || !h.sessionOnline(ep.KeyID, ep.SessionName) {
+			continue
+		}
+		out = append(out, model.L2OnlineSession{
+			Session: ep.SessionName,
+			Tool:    ep.Tool,
+			Model:   ep.Model,
+			Role:    ep.TargetGroup,
+			Busy:    false,
+		})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Session < out[j].Session })
+	return out, nil
+}
+
+func (h *Hub) dispatchL2Triage(ctx context.Context, task model.ControlTask, input model.L2TriageContext, cfg L2Config, startedAt time.Time) error {
+	system := strings.Join([]string{
+		"你是 DingWei 平台总控 L2 分诊器。只返回 JSON。",
+		"schema: {\"intent\":\"dispatch|clarify|reject|decompose|aggregate\",\"reply\":\"string\",\"targets\":[{\"session\":\"string\",\"instruction\":\"string\"}],\"subtasks\":[],\"confidence\":0.0}",
+		"P2 只允许 dispatch 或 clarify；信息不足、低置信度、多目标/decompose/aggregate/reject 都返回 clarify。",
+		"dispatch 必须且只能选择一个 online_sessions 中存在的 session。",
+	}, "\n")
+	userBytes, _ := json.Marshal(input)
+	callCtx, cancel := context.WithTimeout(ctx, cfg.ProviderTimeout)
+	defer cancel()
+	out, err := h.L2.Complete(callCtx, system, string(userBytes))
+	if err != nil {
+		return err
+	}
+	result, err := parseL2TriageResult(out)
+	if err != nil {
+		return err
+	}
+	if result.Confidence < cfg.ConfidenceThreshold {
+		result.Intent = "clarify"
+		if strings.TrimSpace(result.Reply) == "" {
+			result.Reply = "我还不确定该派给谁，请补充目标会话或更具体的任务背景。"
+		}
+	}
+	switch result.Intent {
+	case "dispatch":
+		return h.completeL2Dispatch(ctx, task, result, startedAt)
+	case "clarify":
+		return h.completeL2Clarify(ctx, task, result, startedAt)
+	default:
+		result.Intent = "clarify"
+		result.Reply = "该任务类型暂不支持自动分解，请指定一个明确会话或补充目标。"
+		return h.completeL2Clarify(ctx, task, result, startedAt)
+	}
+}
+
+func parseL2TriageResult(raw string) (model.L2TriageResult, error) {
+	var result model.L2TriageResult
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &result); err != nil {
+		return result, err
+	}
+	result.Intent = strings.TrimSpace(result.Intent)
+	for i := range result.Targets {
+		result.Targets[i].Session = strings.TrimSpace(result.Targets[i].Session)
+		result.Targets[i].Instruction = strings.TrimSpace(result.Targets[i].Instruction)
+	}
+	return result, nil
+}
+
+func (h *Hub) completeL2Dispatch(ctx context.Context, task model.ControlTask, result model.L2TriageResult, completedAt time.Time) error {
+	if len(result.Targets) != 1 || result.Targets[0].Session == "" || result.Targets[0].Instruction == "" {
+		result.Intent = "clarify"
+		result.Reply = "我还不能确定唯一目标，请用 #会话名 内容 指定。"
+		return h.completeL2Clarify(ctx, task, result, completedAt)
+	}
+	target := result.Targets[0]
+	if err := h.routeL2Target(ctx, task, target); err != nil {
+		return err
+	}
+	targetJSON, _ := json.Marshal(result.Targets)
+	reply := result.Reply
+	if strings.TrimSpace(reply) == "" {
+		reply = fmt.Sprintf("已分诊给 #%s。", target.Session)
+	}
+	if err := h.Repo.CompleteControlTaskL2(ctx, task.ID, "dispatch", string(targetJSON), reply, time.Since(completedAt)); err != nil {
+		return err
+	}
+	return h.notifyControlTask(ctx, model.ControlTask{ID: task.ID, Status: "done", SourceAddr: task.SourceAddr, BotChannelID: task.BotChannelID}, reply)
+}
+
+func (h *Hub) completeL2Clarify(ctx context.Context, task model.ControlTask, result model.L2TriageResult, completedAt time.Time) error {
+	reply := strings.TrimSpace(result.Reply)
+	if reply == "" {
+		reply = "请补充目标会话或更具体的任务背景。"
+	}
+	if err := h.Repo.CompleteControlTaskL2(ctx, task.ID, "clarify", "", reply, time.Since(completedAt)); err != nil {
+		return err
+	}
+	return h.notifyControlTask(ctx, model.ControlTask{ID: task.ID, Status: "done", SourceAddr: task.SourceAddr, BotChannelID: task.BotChannelID}, reply)
+}
+
+func (h *Hub) routeL2Target(ctx context.Context, task model.ControlTask, target model.L2Target) error {
+	keyID, found, err := h.l2SessionKey(ctx, task.OwnerKey, target.Session)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("target session %s is not online for owner %s", target.Session, task.OwnerKey)
+	}
+	env := model.Envelope{
+		ID:   task.ID + "-l2-dispatch",
+		To:   sessionAddress(target.Session, keyID),
+		From: sessionAddress("workpulse", keyID),
+		Body: target.Instruction,
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"system": true, "control_task_id": task.ID},
+	}
+	return h.RouteEnvelope(ctx, env)
+}
+
+func (h *Hub) l2SessionKey(ctx context.Context, ownerKey, sessionName string) (string, bool, error) {
+	endpoints, err := h.Repo.ListSessionEndpoints(ctx)
+	if err != nil {
+		return "", false, err
+	}
+	for _, ep := range endpoints {
+		if !ep.Active || ep.OwnerKey != ownerKey || ep.SessionName != sessionName || ep.NoDirectory || !h.sessionOnline(ep.KeyID, ep.SessionName) {
+			continue
+		}
+		return ep.KeyID, true, nil
+	}
+	return "", false, nil
 }
 
 func (h *Hub) RegisterBot(botChannelID, botName string) {

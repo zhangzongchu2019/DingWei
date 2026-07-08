@@ -3,6 +3,8 @@ package llm
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -13,7 +15,7 @@ type testProvider struct {
 	err  error
 }
 
-func (p testProvider) Name() string                                     { return p.name }
+func (p testProvider) Name() string                                            { return p.name }
 func (p testProvider) Complete(_ context.Context, _, _ string) (string, error) { return p.out, p.err }
 
 func TestFailoverPrimarySucceeds(t *testing.T) {
@@ -95,5 +97,27 @@ func TestStubAlwaysFails(t *testing.T) {
 	_, err := s.Complete(context.Background(), "", "")
 	if err == nil || !strings.Contains(err.Error(), "not configured") {
 		t.Fatalf("unexpected stub error: %v", err)
+	}
+}
+
+func TestOpenAICompatibleProviderComplete(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/chat/completions" {
+			t.Fatalf("path=%s", r.URL.Path)
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer test-key" {
+			t.Fatalf("auth=%q", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"{\"intent\":\"clarify\"}"}}]}`))
+	}))
+	defer srv.Close()
+	p := NewDeepSeek("test-key", srv.URL, "deepseek-chat")
+	out, err := p.Complete(context.Background(), "sys", "user")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out != `{"intent":"clarify"}` {
+		t.Fatalf("out=%q", out)
 	}
 }

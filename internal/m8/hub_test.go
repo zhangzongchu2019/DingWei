@@ -3,6 +3,7 @@ package m8
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -148,6 +149,155 @@ func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
 	if out == nil || !strings.Contains(messageText(t, out), "任务 #ct-failed 处理失败：boom") {
 		t.Fatalf("failed notification=%+v", out)
 	}
+}
+
+func TestControlPlaneP2LeaseClaimIsExclusiveAndReclaimsExpired(t *testing.T) {
+	_, db, ctx := newTestHub(t)
+	now := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
+	for _, id := range []string{"l2-a", "l2-b"} {
+		if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+			ID:         id,
+			Source:     "feishu",
+			SourceAddr: "ou_1#dev#UnifiedRobot",
+			OwnerKey:   "u1",
+			RawInput:   id,
+			Status:     "llm_pending",
+			CreatedAt:  now,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	first, err := db.ClaimNextL2ControlTask(ctx, "w1", now.Add(time.Minute), now)
+	if err != nil || first == nil || first.ID != "l2-a" {
+		t.Fatalf("first claim=%+v err=%v", first, err)
+	}
+	second, err := db.ClaimNextL2ControlTask(ctx, "w2", now.Add(time.Minute), now)
+	if err != nil || second == nil || second.ID != "l2-b" {
+		t.Fatalf("second claim=%+v err=%v", second, err)
+	}
+	none, err := db.ClaimNextL2ControlTask(ctx, "w3", now.Add(time.Minute), now)
+	if err != nil || none != nil {
+		t.Fatalf("third claim=%+v err=%v", none, err)
+	}
+	reclaimed, err := db.ClaimNextL2ControlTask(ctx, "w4", now.Add(2*time.Minute), now.Add(2*time.Minute))
+	if err != nil || reclaimed == nil || reclaimed.ID != "l2-a" || reclaimed.LeaseOwner != "w4" {
+		t.Fatalf("reclaimed=%+v err=%v", reclaimed, err)
+	}
+}
+
+func TestControlPlaneP2DispatchAndClarifyWithMockLLM(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	dev := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer dev.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "developer")
+
+	hub.L2 = &fakeTriageProvider{out: `{"intent":"dispatch","targets":[{"session":"developer","instruction":"请处理这个任务"}],"confidence":0.95}`}
+	task := model.ControlTask{ID: "l2-dispatch", Source: "feishu", SourceAddr: feishuAddress("ou_u1", "dev", "UnifiedRobot"), OwnerKey: "u1", BotChannelID: "dev", RawInput: "帮我处理", Status: "llm_pending"}
+	if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, task, hub.effectiveL2Config())
+	got := readEnvelope(t, ctx, dev)
+	if got.Body != "请处理这个任务" || got.Meta["control_task_id"] != "l2-dispatch" {
+		t.Fatalf("dispatch envelope=%+v", got)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "已分诊给 #developer") {
+		t.Fatalf("dispatch source reply=%+v", out)
+	}
+	stored, err := db.GetControlTask(ctx, "l2-dispatch")
+	if err != nil || stored == nil || stored.Status != "done" || stored.Layer != "L2" || stored.Intent != "dispatch" {
+		t.Fatalf("stored dispatch task=%+v err=%v", stored, err)
+	}
+
+	hub.L2 = &fakeTriageProvider{out: `{"intent":"dispatch","targets":[{"session":"developer","instruction":"低置信"}],"confidence":0.2}`}
+	clarifyTask := model.ControlTask{ID: "l2-clarify", Source: "feishu", SourceAddr: feishuAddress("ou_u1", "dev", "UnifiedRobot"), OwnerKey: "u1", BotChannelID: "dev", RawInput: "不明确", Status: "llm_pending"}
+	if _, _, err := db.EnqueueControlTask(ctx, clarifyTask); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, clarifyTask, hub.effectiveL2Config())
+	out = waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "不确定该派给谁") {
+		t.Fatalf("clarify source reply=%+v", out)
+	}
+	stored, err = db.GetControlTask(ctx, "l2-clarify")
+	if err != nil || stored == nil || stored.Status != "done" || stored.Intent != "clarify" {
+		t.Fatalf("stored clarify task=%+v err=%v", stored, err)
+	}
+}
+
+func TestControlPlaneP2ProviderFailureRetriesAndFails(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.L2 = &fakeTriageProvider{err: errors.New("llm down")}
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "l2-fail",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "失败",
+		Status:       "llm_pending",
+		MaxAttempts:  1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	task, err := db.ClaimNextL2ControlTask(ctx, "w1", time.Now().Add(time.Minute), time.Now())
+	if err != nil || task == nil {
+		t.Fatalf("claim=%+v err=%v", task, err)
+	}
+	hub.processL2Task(ctx, *task, hub.effectiveL2Config())
+	stored, err := db.GetControlTask(ctx, "l2-fail")
+	if err != nil || stored == nil || stored.Status != "failed" {
+		t.Fatalf("failed task=%+v err=%v", stored, err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "处理失败") {
+		t.Fatalf("failed notification=%+v", out)
+	}
+	stats, err := db.ControlTaskStats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.L2FailureRate != 1 {
+		t.Fatalf("stats=%+v", stats)
+	}
+}
+
+type fakeTriageProvider struct {
+	out string
+	err error
+}
+
+func (f *fakeTriageProvider) Name() string { return "fake-triage" }
+func (f *fakeTriageProvider) Complete(_ context.Context, _, user string) (string, error) {
+	if f.err != nil {
+		return "", f.err
+	}
+	if !strings.Contains(user, "request_id") {
+		return "", errors.New("missing request_id")
+	}
+	return f.out, nil
 }
 
 func TestIssueAPIKeyStoresHashAndBindScope(t *testing.T) {

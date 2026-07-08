@@ -458,6 +458,14 @@ func (s *SQLite) ensureControlPlaneTables(ctx context.Context) error {
   updated_at  TEXT NOT NULL
 )`,
 		`CREATE INDEX IF NOT EXISTS idx_l1_decision_rule_enabled_seq ON l1_decision_rule(enabled, seq)`,
+		`CREATE TABLE IF NOT EXISTS control_task_l2_metric (
+  task_id     TEXT PRIMARY KEY,
+  duration_ms INTEGER NOT NULL,
+  success     INTEGER NOT NULL,
+  error       TEXT,
+  created_at  TEXT NOT NULL
+)`,
+		`CREATE INDEX IF NOT EXISTS idx_ctl2_metric_created ON control_task_l2_metric(created_at)`,
 	} {
 		if _, err := s.db.ExecContext(ctx, stmt); err != nil {
 			return err
@@ -1478,6 +1486,81 @@ WHERE expire_at IS NOT NULL
 	return expired, nil
 }
 
+func (s *SQLite) ClaimNextL2ControlTask(ctx context.Context, workerID string, leaseUntil time.Time, now time.Time) (*model.ControlTask, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	nowText := now.UTC().Format(time.RFC3339)
+	var id string
+	err = tx.QueryRowContext(ctx, `SELECT id FROM control_task
+WHERE status='llm_pending'
+  AND attempts < max_attempts
+  AND (lease_owner IS NULL OR lease_until IS NULL OR lease_until <= ?)
+ORDER BY priority DESC, created_at
+LIMIT 1`, nowText).Scan(&id)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	res, err := tx.ExecContext(ctx, `UPDATE control_task
+SET lease_owner=?, lease_until=?, updated_at=?
+WHERE id=?
+  AND status='llm_pending'
+  AND attempts < max_attempts
+  AND (lease_owner IS NULL OR lease_until IS NULL OR lease_until <= ?)`,
+		workerID, leaseUntil.UTC().Format(time.RFC3339), nowText, id, nowText)
+	if err != nil {
+		return nil, err
+	}
+	if n, err := res.RowsAffected(); err != nil {
+		return nil, err
+	} else if n == 0 {
+		return nil, nil
+	}
+	task, err := scanControlTaskRow(tx.QueryRowContext(ctx, `SELECT id, parent_id, created_at, updated_at, source, source_addr, owner_key, bot_channel_id, raw_input, intent, layer, target, result, status, priority, attempts, max_attempts, error, lease_owner, lease_until, expire_at FROM control_task WHERE id=?`, id))
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
+func (s *SQLite) CompleteControlTaskL2(ctx context.Context, id, intent, target, result string, duration time.Duration) error {
+	now := s.now().UTC().Format(time.RFC3339)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `UPDATE control_task
+SET intent=?, layer='L2', target=?, result=?, status='done', error=NULL, updated_at=?, lease_owner=NULL, lease_until=NULL
+WHERE id=?`,
+		nullString(intent), nullString(target), nullString(result), now, id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO control_task_l2_metric(task_id, duration_ms, success, error, created_at)
+VALUES(?,?,?,?,?)
+ON CONFLICT(task_id) DO UPDATE SET duration_ms=excluded.duration_ms, success=excluded.success, error=excluded.error, created_at=excluded.created_at`,
+		id, duration.Milliseconds(), 1, nil, now); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *SQLite) RecordControlTaskL2Failure(ctx context.Context, id, errText string, duration time.Duration) error {
+	_, err := s.db.ExecContext(ctx, `INSERT INTO control_task_l2_metric(task_id, duration_ms, success, error, created_at)
+VALUES(?,?,?,?,?)
+ON CONFLICT(task_id) DO UPDATE SET duration_ms=excluded.duration_ms, success=excluded.success, error=excluded.error, created_at=excluded.created_at`,
+		id, duration.Milliseconds(), 0, nullString(errText), s.now().UTC().Format(time.RFC3339))
+	return err
+}
+
 func (s *SQLite) ControlTaskStats(ctx context.Context) (model.ControlTaskStats, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT status, COUNT(*) FROM control_task GROUP BY status`)
 	if err != nil {
@@ -1505,7 +1588,51 @@ func (s *SQLite) ControlTaskStats(ctx context.Context) (model.ControlTaskStats, 
 		stats.FailedRate = float64(stats.Status["failed"]) / float64(stats.Total)
 		stats.ExpiredRate = float64(stats.Status["expired"]) / float64(stats.Total)
 	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM control_task WHERE status='llm_pending' AND lease_owner IS NOT NULL AND lease_until > ?`, s.now().UTC().Format(time.RFC3339)).Scan(&stats.L2InFlight); err != nil {
+		return model.ControlTaskStats{}, err
+	}
+	l2Rows, err := s.db.QueryContext(ctx, `SELECT duration_ms, success FROM control_task_l2_metric ORDER BY duration_ms`)
+	if err != nil {
+		return model.ControlTaskStats{}, err
+	}
+	defer l2Rows.Close()
+	var durations []int64
+	var total, failures int
+	for l2Rows.Next() {
+		var duration int64
+		var success int
+		if err := l2Rows.Scan(&duration, &success); err != nil {
+			return model.ControlTaskStats{}, err
+		}
+		durations = append(durations, duration)
+		total++
+		if success == 0 {
+			failures++
+		}
+	}
+	if err := l2Rows.Err(); err != nil {
+		return model.ControlTaskStats{}, err
+	}
+	if total > 0 {
+		stats.L2FailureRate = float64(failures) / float64(total)
+		stats.L2P50MS = percentileDuration(durations, 0.50)
+		stats.L2P95MS = percentileDuration(durations, 0.95)
+	}
 	return stats, nil
+}
+
+func percentileDuration(sorted []int64, p float64) int64 {
+	if len(sorted) == 0 {
+		return 0
+	}
+	idx := int(float64(len(sorted)-1) * p)
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(sorted) {
+		idx = len(sorted) - 1
+	}
+	return sorted[idx]
 }
 
 func (s *SQLite) ListL1DecisionRules(ctx context.Context) ([]model.L1DecisionRule, error) {

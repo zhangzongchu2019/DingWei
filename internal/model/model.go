@@ -133,11 +133,47 @@ type L1DecisionRule struct {
 
 // ControlTaskStats summarizes the control-plane queue for observability.
 type ControlTaskStats struct {
-	Total       int
-	Depth       int
-	Status      map[string]int
-	FailedRate  float64
-	ExpiredRate float64
+	Total         int
+	Depth         int
+	Status        map[string]int
+	FailedRate    float64
+	ExpiredRate   float64
+	L2InFlight    int
+	L2FailureRate float64
+	L2P50MS       int64
+	L2P95MS       int64
+}
+
+// L2TriageContext is the structured input sent to the dispatch LLM.
+type L2TriageContext struct {
+	RequestID      string            `json:"request_id"`
+	RawInput       string            `json:"raw_input"`
+	Source         string            `json:"source"`
+	OwnerKey       string            `json:"owner_key"`
+	OnlineSessions []L2OnlineSession `json:"online_sessions"`
+	RecentContext  string            `json:"recent_context,omitempty"`
+}
+
+type L2OnlineSession struct {
+	Session string `json:"session"`
+	Tool    string `json:"tool"`
+	Model   string `json:"model"`
+	Role    string `json:"role"`
+	Busy    bool   `json:"busy"`
+}
+
+// L2TriageResult is the constrained JSON result from the dispatch LLM.
+type L2TriageResult struct {
+	Intent     string     `json:"intent"`
+	Reply      string     `json:"reply"`
+	Targets    []L2Target `json:"targets"`
+	Subtasks   []L2Target `json:"subtasks"`
+	Confidence float64    `json:"confidence"`
+}
+
+type L2Target struct {
+	Session     string `json:"session"`
+	Instruction string `json:"instruction"`
 }
 
 // AppConfig 是 M9 管理的运行时配置键值。
