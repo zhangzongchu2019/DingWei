@@ -16,6 +16,7 @@ from . import __version__
 from .config import Config, load_config
 from .llm import LLMProvider
 from .protocol import AddressBook, envelope, is_feishu_addr, is_mirror_control, reply_target, session_addr
+from .provision import Provisioner, is_provision_envelope
 
 
 class Adapter(Protocol):
@@ -115,7 +116,11 @@ class SessionHelper:
         self.non_primary_broadcast_texts: deque[str] = deque(maxlen=32)
         self.comm_skill_installed = False
         self.last_online_list = ""
+        self.pending_inbound: deque[dict] = deque(maxlen=max(1, cfg.busy_buffer_max))
+        self.busy_acked_from: set[str] = set()
         self.adapter = self._build_adapter()
+        self.provisioner = Provisioner(cfg)
+        self.provisioner.rollback_stale_update_if_needed()
         self.install_send_script()
 
     def _build_adapter(self) -> Adapter:
@@ -215,6 +220,7 @@ class SessionHelper:
             if self.cfg.debug:
                 print(f"[sessionHelper][debug] WS 握手成功,耗时 {time.monotonic()-_t0:.2f}s", flush=True)
             print(f"[sessionHelper] connected self={self.book.self_addr} version={__version__}", flush=True)
+            self.provisioner.confirm_update_connected()
             if self.cfg.producer:
                 recv_task = asyncio.create_task(self.recv_control_loop(ws))
                 try:
@@ -231,6 +237,7 @@ class SessionHelper:
                 try:
                     await asyncio.gather(
                         self.recv_loop(ws),
+                        self.pending_drain_loop(ws),
                         self.terminal_loop(ws),
                         self.outbox_loop(ws),
                         self.mirror_loop(ws),
@@ -257,6 +264,9 @@ class SessionHelper:
             if is_mirror_control(env):
                 self.apply_mirror_control(env)
                 continue
+            if is_provision_envelope(env):
+                await self.handle_provision(ws, env)
+                continue
             from_addr = str(env.get("from") or "")
             print(f"[recv] from={from_addr} to={env.get('to')} body={env.get('body')!r}", flush=True)
             if self.is_agent_network_skill(env):
@@ -279,16 +289,80 @@ class SessionHelper:
             if is_no_mirror_envelope(env):
                 continue
             self.remember_broadcast_mirror_decision(env)
-            try:
-                reply_body = await asyncio.to_thread(self.adapter.handle, env)
-            except Exception as exc:
-                reply_body = f"处理失败：{exc}"
-            if not reply_body or not is_feishu_addr(from_addr):
+            if await self.buffer_if_busy(ws, env):
                 continue
-            to, meta = reply_target(env, self.book)
-            body = self.reply_body(env, reply_body)
-            await ws.send(json.dumps(envelope(to, body, self.book.self_addr, meta), ensure_ascii=False))
-            print(f"[reply] to={to} meta={meta}", flush=True)
+            await self.process_inbound_message(ws, env)
+
+    async def handle_provision(self, ws, env: dict) -> None:
+        result = await asyncio.to_thread(self.provisioner.handle, env)
+        ack = envelope(
+            session_addr("workpulse", self.cfg.key_id),
+            json.dumps(result.to_meta(), ensure_ascii=False),
+            self.book.self_addr,
+            result.to_meta(),
+        )
+        await ws.send(json.dumps(ack, ensure_ascii=False))
+        print(f"[provision] action={result.action} target={result.target} ok={result.ok} message={result.message}", flush=True)
+
+    async def buffer_if_busy(self, ws, env: dict) -> bool:
+        if self.cfg.mode != "cli" or not hasattr(self.adapter, "is_idle"):
+            return False
+        try:
+            idle = bool(await asyncio.to_thread(self.adapter.is_idle))
+        except Exception:
+            idle = True
+        if idle:
+            return False
+        if len(self.pending_inbound) >= self.pending_inbound.maxlen:
+            dropped = self.pending_inbound.popleft()
+            print(f"[busy_buffer] drop oldest from={dropped.get('from')}", flush=True)
+        self.pending_inbound.append(env)
+        from_addr = str(env.get("from") or "")
+        if from_addr not in self.busy_acked_from:
+            self.busy_acked_from.add(from_addr)
+            await self.send_busy_ack(ws, env)
+        print(f"[busy_buffer] queued size={len(self.pending_inbound)} from={from_addr}", flush=True)
+        return True
+
+    async def send_busy_ack(self, ws, env: dict) -> None:
+        to, meta = reply_target(env, self.book)
+        if not to:
+            return
+        meta = dict(meta)
+        meta["no_mirror"] = True
+        meta["system"] = True
+        await ws.send(json.dumps(envelope(to, self.cfg.busy_reply_text, self.book.self_addr, meta), ensure_ascii=False))
+
+    async def pending_drain_loop(self, ws) -> None:
+        while True:
+            await asyncio.sleep(0.2)
+            if not self.pending_inbound or self.cfg.mode != "cli" or not hasattr(self.adapter, "is_idle"):
+                continue
+            try:
+                idle = bool(await asyncio.to_thread(self.adapter.is_idle))
+            except Exception:
+                idle = True
+            if not idle:
+                continue
+            env = self.pending_inbound.popleft()
+            print(f"[busy_buffer] draining size={len(self.pending_inbound)} from={env.get('from')}", flush=True)
+            await self.process_inbound_message(ws, env)
+            if not self.pending_inbound:
+                self.busy_acked_from.clear()
+            await asyncio.sleep(max(0.1, min(self.cfg.cli_settle_seconds, 1.0)))
+
+    async def process_inbound_message(self, ws, env: dict) -> None:
+        from_addr = str(env.get("from") or "")
+        try:
+            reply_body = await asyncio.to_thread(self.adapter.handle, env)
+        except Exception as exc:
+            reply_body = f"处理失败：{exc}"
+        if not reply_body or not is_feishu_addr(from_addr):
+            return
+        to, meta = reply_target(env, self.book)
+        body = self.reply_body(env, reply_body)
+        await ws.send(json.dumps(envelope(to, body, self.book.self_addr, meta), ensure_ascii=False))
+        print(f"[reply] to={to} meta={meta}", flush=True)
 
     def reply_body(self, env: dict, reply_body: str) -> str:
         prefix = str((env.get("meta") or {}).get("reply_prefix") or f"【{self.cfg.session_name}】")

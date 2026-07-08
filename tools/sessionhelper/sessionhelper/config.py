@@ -53,6 +53,10 @@ class Config:
     no_directory: bool = False
     async_reply: bool = False
     agent_route: bool = True
+    busy_buffer_max: int = 100
+    busy_reply_text: str = "消息已收到，但此时忙，稍后处理你的请求"
+    provision_allowed_hosts: tuple[str, ...] = ("ts.wegoab.com",)
+    provision_audit_db: str = ""
 
     @property
     def ws_url(self) -> str:
@@ -125,6 +129,14 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         no_directory=truthy(env.get("SH_NO_DIRECTORY", "0")),
         async_reply=truthy(env.get("SH_ASYNC_REPLY", "0")),
         agent_route=truthy(env.get("SH_AGENT_ROUTE", "1")),
+        busy_buffer_max=int(env.get("SH_BUSY_BUFFER_MAX", "100")),
+        busy_reply_text=env.get("SH_BUSY_REPLY_TEXT", "消息已收到，但此时忙，稍后处理你的请求"),
+        provision_allowed_hosts=tuple(
+            item.strip().lower()
+            for item in env.get("SH_PROVISION_ALLOWED_HOSTS", "ts.wegoab.com").split(",")
+            if item.strip()
+        ),
+        provision_audit_db=expand_path(env.get("SH_PROVISION_AUDIT_DB", "")),
     )
 
 
