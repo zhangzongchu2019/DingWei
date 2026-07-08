@@ -814,20 +814,62 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 	if err != nil {
 		return err
 	}
-	if to.KeyID != from.KeyID {
-		return errors.New("to/from key_id mismatch")
-	}
 	if isCollectEnvelope(env) {
+		if to.KeyID != from.KeyID {
+			return errors.New("to/from key_id mismatch")
+		}
 		return h.storeCollectEnvelope(ctx, from, env)
 	}
 	switch to.Kind {
 	case addressSession:
-		return h.routeToSession(ctx, to.KeyID, to.SessionName, env, from.Kind == addressFeishu)
+		keyID := to.KeyID
+		if keyID != from.KeyID {
+			// 同一飞书账号(owner)下允许跨 key 互通:按发件人账号解析目标会话真实 key
+			// （容错发件人把地址里的 key 补成了自己的 key —— 按会话名在该 owner 的所有 key 里找）
+			senderOwner := h.ownerKeyForKey(ctx, from.KeyID)
+			if senderOwner == "" {
+				return errors.New("无法解析发件人账号")
+			}
+			k, ok := h.resolveOwnerSessionKey(ctx, senderOwner, to.SessionName, to.KeyID)
+			if !ok {
+				return errors.New("目标会话不在你的账号下或不在线：" + to.SessionName)
+			}
+			keyID = k
+		}
+		return h.routeToSession(ctx, keyID, to.SessionName, env, from.Kind == addressFeishu)
 	case addressFeishu:
+		if to.KeyID != from.KeyID {
+			return errors.New("to/from key_id mismatch")
+		}
 		return h.routeToFeishu(ctx, to, env)
 	default:
 		return errors.New("unsupported target address")
 	}
+}
+
+// resolveOwnerSessionKey 在同一账号(owner)下按会话名找到在线目标会话的真实 key_id。
+// 先信地址里给的 hintKey(若在线且同账号),否则在该 owner 的所有在线会话里按名匹配。
+func (h *Hub) resolveOwnerSessionKey(ctx context.Context, ownerKey, sessionName, hintKey string) (string, bool) {
+	if ownerKey == "" || sessionName == "" {
+		return "", false
+	}
+	if hintKey != "" && h.sessionOnline(hintKey, sessionName) && h.ownerKeyForKey(ctx, hintKey) == ownerKey {
+		return hintKey, true
+	}
+	h.mu.Lock()
+	var candidates []string
+	for keyID, sessions := range h.sessionClients {
+		if sessions[sessionName] != nil {
+			candidates = append(candidates, keyID)
+		}
+	}
+	h.mu.Unlock()
+	for _, keyID := range candidates {
+		if h.ownerKeyForKey(ctx, keyID) == ownerKey {
+			return keyID, true
+		}
+	}
+	return "", false
 }
 
 func (h *Hub) handleAgentNetworkSkillAck(c *sessionClient, env model.Envelope) bool {
