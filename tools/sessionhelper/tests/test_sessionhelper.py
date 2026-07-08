@@ -39,7 +39,7 @@ from sessionhelper.cli import (
     tmux_session_name,
     user_text_matches,
 )
-from sessionhelper.config import detect_full_session_name, load_config
+from sessionhelper.config import detect_full_session_name, detect_os, load_config
 from sessionhelper.llm import PROVIDERS
 from sessionhelper.protocol import AddressBook, is_mirror_control, reply_target
 from sessionhelper.provision import Provisioner, compare_versions
@@ -71,13 +71,13 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(cfg.target_group, "")
         self.assertEqual(cfg.target_bot, "")
         self.assertEqual(cfg.opencode_db, "")
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os=linux")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}")
 
     def test_ws_url_reports_tool_and_model_when_configured(self):
         cfg = load_config(dict(BASE_ENV, SH_TOOL="CODEX", SH_MODEL="gpt-5.5", SH_SESSION_FULL="sh-home-e0d12642"))
         self.assertEqual(
             cfg.ws_url,
-            "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&tool=CODEX&os=linux&model=gpt-5.5&full_session_name=sh-home-e0d12642",
+            f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&tool=CODEX&os={detect_os()}&model=gpt-5.5&full_session_name=sh-home-e0d12642",
         )
 
     def test_ws_url_reports_producer_target_group(self):
@@ -85,16 +85,16 @@ class SessionHelperTest(unittest.TestCase):
         self.assertTrue(cfg.producer)
         self.assertEqual(cfg.target_group, "oc_ai")
         self.assertEqual(cfg.target_bot, "bot-test")
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os=linux&producer=1&target_group=oc_ai&target_bot=bot-test")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}&producer=1&target_group=oc_ai&target_bot=bot-test")
 
     def test_ws_url_reports_mirror_to(self):
         cfg = load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-test#is3-Connector"))
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os=linux&mirror_to=ou_u1%23FB-test%23is3-Connector")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}&mirror_to=ou_u1%23FB-test%23is3-Connector")
 
     def test_ws_url_reports_no_directory(self):
         cfg = load_config(dict(BASE_ENV, SH_NO_DIRECTORY="1"))
         self.assertTrue(cfg.no_directory)
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os=linux&no_directory=1")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}&no_directory=1")
 
     def test_detect_full_session_name_prefers_tmux_session(self):
         with mock.patch("sessionhelper.config.subprocess.check_output", return_value="sh-developer-e0d12642\n"):
