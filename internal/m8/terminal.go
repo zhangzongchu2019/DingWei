@@ -146,6 +146,25 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		"code":     viewer.code,
 		"message":  "飞书发送 #unlock " + viewer.code + " 后可输入",
 	})
+	// 保活:每 30s 发一次 WS ping,防止 nginx/浏览器在空闲(无终端输出)时断连,并及时发现死连接
+	go func() {
+		t := time.NewTicker(30 * time.Second)
+		defer t.Stop()
+		for {
+			select {
+			case <-r.Context().Done():
+				return
+			case <-t.C:
+				pctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+				err := conn.Ping(pctx)
+				cancel()
+				if err != nil {
+					_ = conn.Close(websocket.StatusGoingAway, "ping timeout")
+					return
+				}
+			}
+		}
+	}()
 	for {
 		_, data, err := conn.Read(r.Context())
 		if err != nil {
@@ -520,34 +539,39 @@ const terminalPageHTML = `<!doctype html>
     let token = '';
     let readonly = true;
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(proto + '//' + location.host + '/ws/view/' + encodeURIComponent(sessionName));
+    let ws;
+    let reconnectDelay = 1000;
     function setStatus(ro, msg) {
       readonly = ro;
       document.getElementById('state').textContent = ro ? '只读' : '可输入';
       document.getElementById('state').className = ro ? 'locked' : 'unlocked';
       document.getElementById('msg').textContent = msg || '';
     }
-    ws.onmessage = (ev) => {
-      const m = JSON.parse(ev.data);
-      if (m.type === 'output') term.write(m.data || '');
-      if (m.type === 'status') {
-        if (m.code) document.getElementById('code').textContent = m.code;
-        setStatus(m.readonly !== false, m.message || '');
-      }
-      if (m.type === 'write_granted') {
-        token = m.token || '';
-        setStatus(false, m.message || '输入已解锁');
-      }
-      if (m.type === 'write_revoked') {
+    function connectWS() {
+      ws = new WebSocket(proto + '//' + location.host + '/ws/view/' + encodeURIComponent(sessionName));
+      ws.onopen = () => { reconnectDelay = 1000; try { fit.fit(); } catch (e) {} sendResize(); };
+      ws.onmessage = (ev) => {
+        const m = JSON.parse(ev.data);
+        if (m.type === 'output') term.write(m.data || '');
+        if (m.type === 'status') {
+          if (m.code) document.getElementById('code').textContent = m.code;
+          setStatus(m.readonly !== false, m.message || '');
+        }
+        if (m.type === 'write_granted') { token = m.token || ''; setStatus(false, m.message || '输入已解锁'); }
+        if (m.type === 'write_revoked') { token = ''; setStatus(true, m.message || '输入已锁定'); }
+      };
+      ws.onclose = () => {
         token = '';
-        setStatus(true, m.message || '输入已锁定');
-      }
-    };
-    ws.onclose = () => setStatus(true, '连接已断开');
-    ws.onopen = () => { try { fit.fit(); } catch (e) {} sendResize(); };
+        setStatus(true, '连接断开，自动重连中…');
+        setTimeout(connectWS, reconnectDelay);
+        reconnectDelay = Math.min(Math.floor(reconnectDelay * 1.5), 10000);
+      };
+      ws.onerror = () => { try { ws.close(); } catch (e) {} };
+    }
+    connectWS();
     function bindTerm() {
       term.onData((data) => {
-        if (readonly || !token || ws.readyState !== WebSocket.OPEN) return;
+        if (readonly || !token || !ws || ws.readyState !== WebSocket.OPEN) return;
         ws.send(JSON.stringify({ type: 'input', token, data }));
       });
     }
