@@ -77,6 +77,8 @@ class CLIAdapter:
         self.child: pexpect.spawn | None = None
         self.ready = threading.Event()
         self.closed = threading.Event()
+        self.stopping = threading.Event()
+        self.respawn_count = 0
         self.output_q: queue.Queue[str] = queue.Queue()
         self.terminal_q: queue.Queue[str] = queue.Queue()
         self.mirror_q: queue.Queue[tuple[str, str]] = queue.Queue()
@@ -165,6 +167,7 @@ class CLIAdapter:
         return time.time() - self.last_output_at >= self.cfg.cli_settle_seconds
 
     def stop(self) -> None:
+        self.stopping.set()
         self.closed.set()
         if self.launch_mode == "tmux":
             subprocess.run(["tmux", "kill-session", "-t", self.tmux_session], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -426,6 +429,37 @@ class CLIAdapter:
         except queue.Empty:
             return None
 
+    def _respawn_child(self) -> bool:
+        """PTY 模式下 CLI 子进程退出（如自动更新后要求重启、或崩溃）时自动重新拉起，
+        新进程即用新版本，用户侧会话不断。带退避与上限，避免崩溃死循环。"""
+        self.respawn_count += 1
+        if self.respawn_count > 30:
+            self.output_q.put("\r\n[sessionHelper] CLI 反复退出，已停止自动重启（请人工检查）\r\n")
+            return False
+        note = f"\r\n[sessionHelper] CLI 已退出（可能自动更新），自动重启 #{self.respawn_count} ...\r\n"
+        self.output_q.put(note)
+        self.terminal_q.put(note)
+        time.sleep(min(2 * self.respawn_count, 8))
+        if self.stopping.is_set():
+            return False
+        self.ready.clear()
+        self.last_output_at = 0.0
+        self.started_at = time.time()
+        try:
+            self.child = pexpect.spawn(
+                self.command[0],
+                self.command[1:],
+                cwd=self.cwd,
+                encoding="utf-8",
+                codec_errors="replace",
+                echo=False,
+                timeout=0.2,
+            )
+        except Exception as exc:  # noqa: BLE001
+            self.output_q.put(f"\r\n[sessionHelper] CLI 重启失败: {exc}\r\n")
+            return False
+        return True
+
     def _read_loop(self) -> None:
         assert self.child is not None
         buf = ""
@@ -436,8 +470,15 @@ class CLIAdapter:
             except pexpect.TIMEOUT:
                 continue
             except pexpect.EOF:
-                self.closed.set()
-                return
+                # 真关闭 / 非 PTY 模式：照旧退出
+                if self.stopping.is_set() or self.profile.output_source != "pty":
+                    self.closed.set()
+                    return
+                # PTY 模式下 CLI 子进程退出（多为自动更新/崩溃）→ 自动重生，拿到新版本、会话不断
+                if not self._respawn_child():
+                    self.closed.set()
+                    return
+                continue
             if raw:
                 self.terminal_q.put(raw)
             cleaned = clean_output(raw)
@@ -447,6 +488,7 @@ class CLIAdapter:
             buf += "\n" + cleaned
             if any(pat.lower() in cleaned.lower() for pat in self.profile.ready_patterns):
                 self.ready.set()
+                self.respawn_count = 0
             if self.profile.output_source == "pty":
                 self.output_q.put(cleaned)
                 self.mirror_q.put((self.cli_name, cleaned))
