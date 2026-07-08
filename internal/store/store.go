@@ -64,8 +64,8 @@ type Repository interface {
 	EnqueueControlTask(ctx context.Context, task model.ControlTask) (model.ControlTask, bool, error)
 	GetControlTask(ctx context.Context, id string) (*model.ControlTask, error)
 	UpdateControlTaskAfterL1(ctx context.Context, id, intent, layer, target, result, status, errText string) error
-	RetryControlTask(ctx context.Context, id, errText string) error
-	ReapExpiredControlTasks(ctx context.Context, now time.Time) (int64, error)
+	RetryControlTask(ctx context.Context, id, errText string) (*model.ControlTask, error)
+	ReapExpiredControlTasks(ctx context.Context, now time.Time) ([]model.ControlTask, error)
 	ControlTaskStats(ctx context.Context) (model.ControlTaskStats, error)
 	ListL1DecisionRules(ctx context.Context) ([]model.L1DecisionRule, error)
 

@@ -56,6 +56,8 @@ func useTestSecOpsAdminOwnerKey(t *testing.T, ownerKey string) {
 
 func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -80,8 +82,8 @@ func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Matched {
-		t.Fatalf("unknown should preserve old external return, got %+v", result)
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #ct-unknown") {
+		t.Fatalf("unknown should ack, got %+v", result)
 	}
 	task, err = db.GetControlTask(ctx, "ct-unknown")
 	if err != nil {
@@ -89,6 +91,62 @@ func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
 	}
 	if task == nil || task.Status != "llm_pending" || task.Intent != "unknown" || task.Layer != "L1" {
 		t.Fatalf("unknown task=%+v", task)
+	}
+
+	dup, err := hub.Dispatch(ctx, unknownMsg, "请帮我判断该找谁")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !dup.Matched || dup.Reply != "已受理 #ct-unknown" {
+		t.Fatalf("duplicate in-flight should ack without re-dispatch, got %+v", dup)
+	}
+
+	expireAt := time.Now().UTC().Add(-time.Minute)
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "ct-expired",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "stale",
+		Status:       "queued",
+		ExpireAt:     &expireAt,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := hub.Dispatch(ctx, model.Message{ID: "ct-trigger", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#roster"); err != nil {
+		t.Fatal(err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "任务 #ct-expired 已超时") {
+		t.Fatalf("expired notification=%+v", out)
+	}
+
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "ct-failed",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "UnifiedRobot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "fail",
+		Status:       "queued",
+		MaxAttempts:  1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	failed, err := db.RetryControlTask(ctx, "ct-failed", "boom")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if failed == nil || failed.Status != "failed" {
+		t.Fatalf("failed task=%+v", failed)
+	}
+	if err := hub.notifyControlTask(ctx, *failed, controlTaskFailedReply(*failed)); err != nil {
+		t.Fatal(err)
+	}
+	out = waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "任务 #ct-failed 处理失败：boom") {
+		t.Fatalf("failed notification=%+v", out)
 	}
 }
 
@@ -171,8 +229,8 @@ func TestSystemKeywordRoutesToSystemHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Matched {
-		t.Fatalf("middle keyword should not match: %+v", result)
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #sys3") {
+		t.Fatalf("middle keyword should only ack for L2: %+v", result)
 	}
 	result, err = hub.Dispatch(ctx, model.Message{ID: "sys4", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "sys:调度 协调团队排期")
 	if err != nil {
@@ -289,19 +347,42 @@ func TestSecurityOpsRejectsUnauthorizedSender(t *testing.T) {
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "sec", Name: "sec", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "sec", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, secOpsOwnerKey); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	secSession := dialSession(t, ctx, srv.URL, "sec-claude", key.ID, secret)
+	defer secSession.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "sec-claude")
+
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "secops-deny",
 		ChatEntityID: "dev:group:oc_c610",
 		BotChannelID: "dev",
 		ChatType:     model.ChatGroup,
 		SenderOpenID: "ou_alice",
-		Content:      `{"text":"@SYSTEM-V-TASK-INTERNAL #系统安全 加白名单 1.2.3.4"}`,
-	}, "@SYSTEM-V-TASK-INTERNAL #系统安全 加白名单 1.2.3.4")
+		Content:      `{"text":"@SYSTEM-V-TASK-INTERNAL#sec-claude #系统安全 加白名单 6.6.6.6"}`,
+	}, "@SYSTEM-V-TASK-INTERNAL#sec-claude #系统安全 加白名单 6.6.6.6")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !result.Matched || !strings.Contains(result.Reply, "无权限") {
 		t.Fatalf("non u1 secops result=%+v", result)
+	}
+	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	defer cancel()
+	if _, _, err := secSession.Read(readCtx); err == nil {
+		t.Fatal("unauthorized secops command was delivered to sec-claude")
 	}
 }
 
@@ -411,8 +492,8 @@ func TestDispatchDoesNotMatchUnscopedAccount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Matched {
-		t.Fatalf("unscoped account matched: %+v", result)
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #m1") {
+		t.Fatalf("unscoped account should only ack for L2, got: %+v", result)
 	}
 }
 
@@ -442,8 +523,8 @@ func TestDispatchEmptyScopeUsesBoundAccountsOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bob.Matched {
-		t.Fatalf("unbound account matched empty scope: %+v", bob)
+	if !bob.Matched || !strings.Contains(bob.Reply, "已受理 #m2") {
+		t.Fatalf("unbound account should only ack for L2: %+v", bob)
 	}
 }
 
@@ -570,8 +651,8 @@ func TestDispatchNonEmptyScopeRequiresStillBoundAccount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Matched {
-		t.Fatalf("revoked key still allowed scoped route: %+v", result)
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #m1") {
+		t.Fatalf("revoked key should only ack for L2: %+v", result)
 	}
 }
 
@@ -1259,14 +1340,14 @@ func TestPersonalMessageDefaultRouteNoSessionAndGroupAreIgnored(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if personal.Matched || personal.Reply != "" {
+	if !personal.Matched || !strings.Contains(personal.Reply, "已受理 #default-none") {
 		t.Fatalf("no-session personal result=%+v", personal)
 	}
 	group, err := hub.Dispatch(ctx, model.Message{ID: "default-group", ChatEntityID: "dev:group:oc_group", BotChannelID: "dev", ChatType: model.ChatGroup, SenderOpenID: "ou_u2"}, "你好")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if group.Matched || group.Reply != "" {
+	if !group.Matched || !strings.Contains(group.Reply, "已受理 #default-group") {
 		t.Fatalf("group default result=%+v", group)
 	}
 }

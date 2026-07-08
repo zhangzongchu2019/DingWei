@@ -1405,6 +1405,25 @@ func (s *SQLite) GetControlTask(ctx context.Context, id string) (*model.ControlT
 	return task, err
 }
 
+func (s *SQLite) listControlTasks(ctx context.Context, where string, args ...any) ([]model.ControlTask, error) {
+	query := `SELECT id, parent_id, created_at, updated_at, source, source_addr, owner_key, bot_channel_id, raw_input, intent, layer, target, result, status, priority, attempts, max_attempts, error, lease_owner, lease_until, expire_at FROM control_task `
+	query += where
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.ControlTask
+	for rows.Next() {
+		task, err := scanControlTaskRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *task)
+	}
+	return out, rows.Err()
+}
+
 func (s *SQLite) UpdateControlTaskAfterL1(ctx context.Context, id, intent, layer, target, result, status, errText string) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE control_task
 SET intent=?, layer=?, target=?, result=?, status=?, error=?, updated_at=?, lease_owner=NULL, lease_until=NULL
@@ -1413,7 +1432,7 @@ WHERE id=?`,
 	return err
 }
 
-func (s *SQLite) RetryControlTask(ctx context.Context, id, errText string) error {
+func (s *SQLite) RetryControlTask(ctx context.Context, id, errText string) (*model.ControlTask, error) {
 	_, err := s.db.ExecContext(ctx, `UPDATE control_task
 SET attempts=attempts+1,
     status=CASE WHEN attempts+1 >= max_attempts THEN 'failed' ELSE 'queued' END,
@@ -1423,20 +1442,40 @@ SET attempts=attempts+1,
     lease_until=NULL
 WHERE id=?`,
 		errText, s.now().UTC().Format(time.RFC3339), id)
-	return err
+	if err != nil {
+		return nil, err
+	}
+	return s.GetControlTask(ctx, id)
 }
 
-func (s *SQLite) ReapExpiredControlTasks(ctx context.Context, now time.Time) (int64, error) {
-	res, err := s.db.ExecContext(ctx, `UPDATE control_task
+func (s *SQLite) ReapExpiredControlTasks(ctx context.Context, now time.Time) ([]model.ControlTask, error) {
+	nowText := now.UTC().Format(time.RFC3339)
+	expired, err := s.listControlTasks(ctx, `WHERE expire_at IS NOT NULL
+  AND expire_at <= ?
+  AND status NOT IN ('done','failed','expired')`, nowText)
+	if err != nil {
+		return nil, err
+	}
+	if len(expired) == 0 {
+		return nil, nil
+	}
+	_, err = s.db.ExecContext(ctx, `UPDATE control_task
 SET status='expired', error=COALESCE(NULLIF(error,''), 'task expired'), updated_at=?, lease_owner=NULL, lease_until=NULL
 WHERE expire_at IS NOT NULL
   AND expire_at <= ?
   AND status NOT IN ('done','failed','expired')`,
-		now.UTC().Format(time.RFC3339), now.UTC().Format(time.RFC3339))
+		nowText, nowText)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return res.RowsAffected()
+	for i := range expired {
+		expired[i].Status = "expired"
+		if expired[i].Error == "" {
+			expired[i].Error = "task expired"
+		}
+		expired[i].UpdatedAt = now.UTC()
+	}
+	return expired, nil
 }
 
 func (s *SQLite) ControlTaskStats(ctx context.Context) (model.ControlTaskStats, error) {

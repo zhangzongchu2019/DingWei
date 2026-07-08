@@ -433,12 +433,17 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 	if h.Repo == nil {
 		return h.dispatchL1Direct(ctx, msg, text)
 	}
-	_, _ = h.Repo.ReapExpiredControlTasks(ctx, time.Now().UTC())
+	for _, expired := range h.reapExpiredControlTasks(ctx) {
+		_ = h.notifyControlTask(ctx, expired, controlTaskExpiredReply(expired))
+	}
 	task, inserted, err := h.Repo.EnqueueControlTask(ctx, h.newControlTask(ctx, msg, text))
 	if err != nil {
 		return model.PrefixDispatchResult{}, err
 	}
 	ack := fmt.Sprintf("已受理 #%s", task.ID)
+	if !inserted && task.Status != "done" {
+		return model.PrefixDispatchResult{Matched: true, Reply: ack}, nil
+	}
 	if !inserted && task.Status == "done" {
 		if task.Result == "" {
 			return model.PrefixDispatchResult{Matched: true, Reply: ack}, nil
@@ -447,8 +452,16 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 	}
 	result, intent, target, err := h.dispatchL1(ctx, msg, text)
 	if err != nil {
-		_ = h.Repo.RetryControlTask(ctx, task.ID, err.Error())
-		return result, err
+		retried, retryErr := h.Repo.RetryControlTask(ctx, task.ID, err.Error())
+		if retryErr != nil {
+			return result, retryErr
+		}
+		if retried != nil && retried.Status == "failed" {
+			reply := controlTaskFailedReply(*retried)
+			_ = h.notifyControlTask(ctx, *retried, reply)
+			return model.PrefixDispatchResult{Matched: true, Reply: reply}, nil
+		}
+		return model.PrefixDispatchResult{Matched: true, Reply: ack}, nil
 	}
 	status := "llm_pending"
 	layer := "L1"
@@ -465,8 +478,7 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 	if result.Matched {
 		return result, nil
 	}
-	_ = ack
-	return result, nil
+	return model.PrefixDispatchResult{Matched: true, Reply: ack}, nil
 }
 
 func (h *Hub) dispatchL1Direct(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
@@ -475,6 +487,15 @@ func (h *Hub) dispatchL1Direct(ctx context.Context, msg model.Message, text stri
 }
 
 func (h *Hub) dispatchL1(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, string, string, error) {
+	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
+		return result, "command.security", "", err
+	}
+	if result, handled, err := h.dispatchSystem(ctx, msg, text); handled || err != nil {
+		return result, "command.system", "", err
+	}
+	if result, handled, err := h.dispatchAggregateWeeklyReview(ctx, msg, text); handled || err != nil {
+		return result, "command.aggregate_weekly_review", "", err
+	}
 	rules, err := h.Repo.ListL1DecisionRules(ctx)
 	if err != nil {
 		return model.PrefixDispatchResult{}, "", "", err
@@ -619,13 +640,14 @@ func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, t
 }
 
 func (h *Hub) newControlTask(ctx context.Context, msg model.Message, text string) model.ControlTask {
+	now := time.Now().UTC()
 	sourceAddr := controlSourceAddr(msg, h.botName(msg.BotChannelID))
 	ownerKey := h.controlOwnerKey(ctx, msg)
-	expireAt := time.Now().UTC().Add(5 * time.Minute)
+	expireAt := now.Add(5 * time.Minute)
 	return model.ControlTask{
 		ID:           firstNonEmpty(msg.ID, msg.FeishuMsgID, randomHex(16)),
-		CreatedAt:    time.Now().UTC(),
-		UpdatedAt:    time.Now().UTC(),
+		CreatedAt:    now,
+		UpdatedAt:    now,
 		Source:       controlSource(msg),
 		SourceAddr:   sourceAddr,
 		OwnerKey:     ownerKey,
@@ -636,6 +658,68 @@ func (h *Hub) newControlTask(ctx context.Context, msg model.Message, text string
 		MaxAttempts:  3,
 		ExpireAt:     &expireAt,
 	}
+}
+
+func (h *Hub) reapExpiredControlTasks(ctx context.Context) []model.ControlTask {
+	if h.Repo == nil {
+		return nil
+	}
+	expired, err := h.Repo.ReapExpiredControlTasks(ctx, time.Now().UTC())
+	if err != nil {
+		return nil
+	}
+	return expired
+}
+
+func (h *Hub) notifyControlTask(ctx context.Context, task model.ControlTask, reply string) error {
+	if strings.TrimSpace(task.SourceAddr) == "" || strings.TrimSpace(reply) == "" {
+		return nil
+	}
+	to, err := parseAddress(task.SourceAddr)
+	if err != nil {
+		return err
+	}
+	if to.Kind == addressFeishu {
+		if h.Outbound == nil {
+			return nil
+		}
+		chatType := model.ChatPersonal
+		entityKind := "personal"
+		if strings.HasPrefix(to.OpenID, "oc_") {
+			chatType = model.ChatGroup
+			entityKind = "group"
+		}
+		botChannelID := firstNonEmpty(task.BotChannelID, h.botChannel(to.BotName), to.KeyID)
+		content, _ := json.Marshal(map[string]string{"text": reply})
+		return h.Outbound.Enqueue(ctx, model.Message{
+			ID:           "control-" + task.Status + "-" + task.ID,
+			ChatEntityID: botChannelID + ":" + entityKind + ":" + to.OpenID,
+			BotChannelID: botChannelID,
+			FeishuMsgID:  "control-" + task.Status + "-" + task.ID,
+			ChatType:     chatType,
+			Content:      string(content),
+		})
+	}
+	env := model.Envelope{
+		ID:   "control-" + task.Status + "-" + task.ID,
+		To:   task.SourceAddr,
+		From: sessionAddress("workpulse", to.KeyID),
+		Body: reply,
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"system": true, "no_mirror": true, "source_bot_channel_id": task.BotChannelID},
+	}
+	return h.RouteEnvelope(ctx, env)
+}
+
+func controlTaskExpiredReply(task model.ControlTask) string {
+	return fmt.Sprintf("任务 #%s 已超时，请重新发起或补充更明确的目标。", task.ID)
+}
+
+func controlTaskFailedReply(task model.ControlTask) string {
+	if strings.TrimSpace(task.Error) == "" {
+		return fmt.Sprintf("任务 #%s 处理失败，请稍后重试。", task.ID)
+	}
+	return fmt.Sprintf("任务 #%s 处理失败：%s", task.ID, task.Error)
 }
 
 func (h *Hub) l1RuleMatches(ctx context.Context, rule model.L1DecisionRule, msg model.Message, text string) (bool, error) {

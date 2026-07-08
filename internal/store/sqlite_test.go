@@ -572,7 +572,7 @@ func TestControlPlaneP1QueueRulesRetryReaperAndStats(t *testing.T) {
 	if task.MaxAttempts != 3 || task.Status != "queued" || task.ExpireAt == nil {
 		t.Fatalf("task defaults not applied: %+v", task)
 	}
-	if err := db.RetryControlTask(ctx, "ct1", "temporary"); err != nil {
+	if _, err := db.RetryControlTask(ctx, "ct1", "temporary"); err != nil {
 		t.Fatalf("RetryControlTask: %v", err)
 	}
 	got, err := db.GetControlTask(ctx, "ct1")
@@ -582,9 +582,9 @@ func TestControlPlaneP1QueueRulesRetryReaperAndStats(t *testing.T) {
 	if got.Attempts != 1 || got.Status != "queued" {
 		t.Fatalf("retry state=%+v", got)
 	}
-	n, err := db.ReapExpiredControlTasks(ctx, time.Now().UTC())
-	if err != nil || n != 1 {
-		t.Fatalf("ReapExpiredControlTasks n=%d err=%v", n, err)
+	expired, err := db.ReapExpiredControlTasks(ctx, time.Now().UTC())
+	if err != nil || len(expired) != 1 {
+		t.Fatalf("ReapExpiredControlTasks expired=%+v err=%v", expired, err)
 	}
 	stats, err := db.ControlTaskStats(ctx)
 	if err != nil {
