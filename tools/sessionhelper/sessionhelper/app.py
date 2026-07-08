@@ -116,6 +116,7 @@ class SessionHelper:
         self.comm_skill_installed = False
         self.last_online_list = ""
         self.adapter = self._build_adapter()
+        self.install_send_script()
 
     def _build_adapter(self) -> Adapter:
         if self.cfg.mode == "llm":
@@ -336,6 +337,23 @@ class SessionHelper:
         except Exception as exc:
             print(f"[agent_skill] inject failed: {exc}", flush=True)
             return False
+
+    def install_send_script(self) -> None:
+        """把统一发信脚本装到 ~/.dingwei/send.py，供 CLI 里的 AI 调用（跨会话可靠发信/回信）。"""
+        try:
+            src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "send_dingwei.py")
+            if not os.path.exists(src):
+                return
+            dst_dir = os.path.expanduser(os.path.join("~", ".dingwei"))
+            os.makedirs(dst_dir, exist_ok=True)
+            dst = os.path.join(dst_dir, "send.py")
+            with open(src, encoding="utf-8") as f:
+                content = f.read()
+            with open(dst, "w", encoding="utf-8") as f:
+                f.write(content)
+            os.chmod(dst, 0o755)
+        except Exception as exc:
+            print(f"[send] install failed: {exc}", flush=True)
 
     def online_list_path(self) -> str:
         """会话专属的在线清单共享文件路径（会话名前缀，区隔同机多会话）。"""
