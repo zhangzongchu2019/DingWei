@@ -113,7 +113,6 @@ class SessionHelper:
         self.mirror = MirrorState(bool(cfg.mirror_to), cfg.mirror_to)
         self.non_primary_broadcast_texts: deque[str] = deque(maxlen=32)
         self.comm_skill_installed = False
-        self.roster_onboarded = False
         self.adapter = self._build_adapter()
 
     def _build_adapter(self) -> Adapter:
@@ -258,9 +257,7 @@ class SessionHelper:
                 continue
             body = str(env.get("body") or "")
             if is_online_directory_text(body):
-                if not self.roster_onboarded:
-                    self.roster_onboarded = True
-                    await self.inject_onboarding_roster(body)
+                self.write_online_list(body)  # 始终写最新到会话专属共享文件，供CLI按需读取（不注入对话、不刷屏）
                 continue
             if is_no_mirror_envelope(env):
                 continue
@@ -321,23 +318,25 @@ class SessionHelper:
         except Exception as exc:
             print(f"[agent_skill] inject failed: {exc}", flush=True)
 
-    async def inject_onboarding_roster(self, body: str) -> None:
-        """AI-CLI 刚进入时不知道在线清单——把就绪后收到的首份清单注入一次（引导）。
-        inject 会等 CLI 就绪；失败则清标志、下份清单再试。后续清单广播仍跳过、不刷屏。"""
-        text = str(body or "")
-        if not text:
-            return
-        if self.cfg.mode == "cli" and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
-            try:
-                started = await asyncio.to_thread(self.adapter.start)
-                if started:
-                    await asyncio.to_thread(self.adapter.inject_text, text)
-                    print("[roster] onboarding directory injected", flush=True)
-                else:
-                    self.roster_onboarded = False
-            except Exception as exc:
-                print(f"[roster] inject failed: {exc}", flush=True)
-                self.roster_onboarded = False
+    def online_list_path(self) -> str:
+        """会话专属的在线清单共享文件路径（会话名前缀，区隔同机多会话）。"""
+        override = os.environ.get("SH_ONLINE_LIST_PATH", "").strip()
+        if override:
+            return override
+        base = os.path.expanduser(os.path.join("~", ".dingwei"))
+        return os.path.join(base, f"{self.cfg.session_name}.DingWeiOnlineSessions.list")
+
+    def write_online_list(self, body: str) -> None:
+        """把最新在线清单原子写入共享文件，供 CLI（经 skill）按需读取。始终最新、不进对话。"""
+        try:
+            path = self.online_list_path()
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            tmp = f"{path}.tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write(str(body or ""))
+            os.replace(tmp, path)
+        except Exception as exc:
+            print(f"[roster] write list failed: {exc}", flush=True)
 
     def apply_mirror_control(self, env: dict) -> None:
         meta = env.get("meta") or {}
