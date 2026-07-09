@@ -134,14 +134,15 @@ const (
 )
 
 var (
-	secOpsAdminOpenID   = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
-	secOpsAdminOwnerKey = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OWNER_KEY"))
-	applyKeyApproverID  = strings.TrimSpace(os.Getenv("WP_APPLY_KEY_APPROVER_OPENID"))
-	ansiCSIRE           = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
-	ansiOSCSTRE         = regexp.MustCompile(`\x1b\][^\x07]*(\x07|\x1b\\)`)
-	ansiSimpleRE        = regexp.MustCompile(`\x1b[@-Z\\-_]`)
-	controlExceptTextRE = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
-	sessionNamePattern  = regexp.MustCompile(`^[a-z0-9]+-[a-z0-9]+-[0-9a-f]{4}$`)
+	secOpsAdminOpenID      = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
+	secOpsAdminOwnerKey    = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OWNER_KEY"))
+	applyKeyApproverID     = strings.TrimSpace(os.Getenv("WP_APPLY_KEY_APPROVER_OPENID"))
+	ansiCSIRE              = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
+	ansiOSCSTRE            = regexp.MustCompile(`\x1b\][^\x07]*(\x07|\x1b\\)`)
+	ansiSimpleRE           = regexp.MustCompile(`\x1b[@-Z\\-_]`)
+	controlExceptTextRE    = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
+	bareSessionNamePattern = regexp.MustCompile(`^[a-z0-9]+$`)
+	sessionNamePattern     = regexp.MustCompile(`^[a-z0-9]+-[a-z0-9]+-[0-9a-f]{4}$`)
 )
 
 func New(repo store.Repository) *Hub {
@@ -910,18 +911,12 @@ func suffixedSessionName(base string, n int) string {
 }
 
 func deriveRegisteredSessionName(requested, keyID, ownerKey string) string {
-	short := clientRequestedShortName(requested)
-	if ownerKey == "" {
-		return strings.TrimSpace(requested)
-	}
-	return fmt.Sprintf("%s-%s-%s", ownerKey, short, keyTail(keyID))
-}
-
-func clientRequestedShortName(requested string) string {
 	requested = strings.TrimSpace(requested)
-	parts := strings.Split(requested, "-")
-	if len(parts) == 3 && sessionNamePattern.MatchString(requested) {
-		return parts[1]
+	if sessionNamePattern.MatchString(requested) {
+		return requested
+	}
+	if bareSessionNamePattern.MatchString(requested) && ownerKey != "" {
+		return fmt.Sprintf("%s-%s-%s", ownerKey, requested, keyTail(keyID))
 	}
 	return requested
 }

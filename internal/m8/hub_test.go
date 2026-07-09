@@ -2084,7 +2084,7 @@ func TestSessionHandshakeDerivesRegisteredNameFromShortName(t *testing.T) {
 	}
 }
 
-func TestSessionHandshakeDerivesOwnerFromBindingAndIgnoresClientFullName(t *testing.T) {
+func TestSessionHandshakeKeepsCompliantRegisteredName(t *testing.T) {
 	useTestNameEnforce(t, "enforce")
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
@@ -2106,9 +2106,16 @@ func TestSessionHandshakeDerivesOwnerFromBindingAndIgnoresClientFullName(t *test
 	defer srv.Close()
 
 	want := "realowner-developer-" + keyTail(key.ID)
-	conn := dialSession(t, ctx, srv.URL, "wrongowner-developer-0000", key.ID, secret)
+	conn := dialSession(t, ctx, srv.URL, want, key.ID, secret)
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	waitSessionOnline(t, hub, key.ID, want)
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].SessionName != want {
+		t.Fatalf("registered long name should be kept unchanged: %+v", endpoints[0])
+	}
 }
 
 func TestSessionEndpointStoresHandshakeMirrorToBotUnchanged(t *testing.T) {
@@ -3427,13 +3434,22 @@ func TestSessionNameEnforceRejectsInvalidNames(t *testing.T) {
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	waitSessionOnline(t, hub, key.ID, sessionName)
 
-	legacy := dialSession(t, ctx, srv.URL, "u2-review-0000", key.ID, secret)
-	defer legacy.Close(websocket.StatusNormalClosure, "done")
-	waitSessionOnline(t, hub, key.ID, "u1-review-"+keyTail(key.ID))
-
-	body := dialSessionErrorBody(t, ctx, srv.URL, "Dev-1", key.ID, secret)
-	if !strings.Contains(body, "会话名不合规") {
-		t.Fatalf("invalid short name should still be rejected, body=%q", body)
+	for _, tc := range []struct {
+		name    string
+		session string
+		want    string
+	}{
+		{name: "wrong owner", session: "u2-review-" + keyTail(key.ID), want: "owner_key"},
+		{name: "wrong tail", session: "u1-review-0000", want: "末4位"},
+		{name: "has hyphen but not full name", session: "dev-review", want: "会话名不合规"},
+		{name: "invalid chars", session: "Dev-1", want: "会话名不合规"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := dialSessionErrorBody(t, ctx, srv.URL, tc.session, key.ID, secret)
+			if !strings.Contains(body, tc.want) {
+				t.Fatalf("error body %q does not contain %q", body, tc.want)
+			}
+		})
 	}
 }
 
