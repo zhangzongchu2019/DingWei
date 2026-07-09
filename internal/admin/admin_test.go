@@ -1,10 +1,14 @@
 package admin
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -725,6 +729,11 @@ func TestAdminProvisionPackageSessionHelperCreatesDownloadArtifact(t *testing.T)
 	srv, _, _, _ := newAdminTestServer(t)
 	dl := t.TempDir()
 	t.Setenv("WP_PROVISION_DL_DIR", dl)
+	secretConfig := filepath.Join("..", "..", "tools", "sessionhelper", "config-secret.json")
+	if err := os.WriteFile(secretConfig, []byte(`{"secret":true}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Remove(secretConfig) })
 	req := httptest.NewRequest(http.MethodPost, "http://localhost/admin/provision", nil)
 	info, err := srv.packageSessionHelper(req, "9.9.9-test")
 	if err != nil {
@@ -740,6 +749,39 @@ func TestAdminProvisionPackageSessionHelperCreatesDownloadArtifact(t *testing.T)
 	}
 	if !strings.Contains(info.URL, "/dl/sessionhelper-9.9.9-test.tar.gz") || info.Version != "9.9.9-test" {
 		t.Fatalf("info=%+v", info)
+	}
+	names := tarNames(t, data)
+	if !names["sessionhelper/config.py"] {
+		t.Fatalf("package missing sessionhelper/config.py names=%v", names)
+	}
+	if !names["config.example"] {
+		t.Fatalf("package missing config.example names=%v", names)
+	}
+	for name := range names {
+		if strings.HasPrefix(filepath.Base(name), "config-") && strings.HasSuffix(name, ".json") {
+			t.Fatalf("package leaked config json: %s", name)
+		}
+	}
+}
+
+func tarNames(t *testing.T, data []byte) map[string]bool {
+	t.Helper()
+	gz, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer gz.Close()
+	tr := tar.NewReader(gz)
+	out := map[string]bool{}
+	for {
+		hdr, err := tr.Next()
+		if err != nil {
+			if err == io.EOF {
+				return out
+			}
+			t.Fatal(err)
+		}
+		out[hdr.Name] = true
 	}
 }
 

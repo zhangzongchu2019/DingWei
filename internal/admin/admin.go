@@ -2350,7 +2350,7 @@ func shouldSkipProvisionPackage(rel string, d os.DirEntry) bool {
 	if base == "__pycache__" || base == ".venv" || base == ".pytest_cache" {
 		return true
 	}
-	if strings.HasPrefix(base, "config") && base != "config.example" {
+	if strings.HasPrefix(base, "config") && base != "config.example" && !strings.HasSuffix(base, ".py") {
 		return true
 	}
 	return !d.IsDir() && (strings.HasSuffix(base, ".pyc") || strings.HasSuffix(base, ".pyo"))
