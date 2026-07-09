@@ -10,7 +10,7 @@
 - **看/控**:网页终端 `/view`(resize 铺满 / #unlock 打字 / 自动重连保活);
 - **发现/协作**:在线清单文件(心跳新鲜度)+ 统一发信 `send.py`(owner 范围跨 key 路由);
 - **智能总控**:L1 规则过滤 + L2 deepseek 分诊/编排(decompose/aggregate)+ 任务队列保交付 + 看板(已上线验证);
-- **下发**:provision 客户端(update_self/skill/mcp,sha256+鉴权+回滚,2.1.0)——**发送方在建**;
+- **下发**:provision 客户端(update_self/skill/mcp,sha256+鉴权+回滚,2.1.0)+ **发送方✅已上线**(/admin/provision:三种目标+灰度+上传自动sha256+审计);
 - **弹性**:CLI 忙时缓存 + 空闲逐条灌;CLI 更新退出自动重生;
 - **工程规范**:版本号 semver(每交付 bump)、推送前敏感信息门禁、真名/claude 合规。
 
@@ -45,7 +45,7 @@
 ### 方向 D · skill/MCP 快捷安装
 - **目标**:任意 skill/MCP 一键装到目标会话。
 - **抓手**:
-  1. **provision 发送方**(在建)—— install_skill/install_mcp 的服务端入口;
+  1. **provision 发送方**(✅已上线)—— install_skill/install_mcp 的服务端入口(/admin/provision);
   2. **skill/MCP 注册中心/市场**:列可用项、版本、一键下发;
   3. 结合**自助 onboarding**(飞书 `#申请` 发 key + 自动装基础 skill)。
 
