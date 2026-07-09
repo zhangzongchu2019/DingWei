@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -213,6 +214,17 @@ func TestOwnerLinksCommandAndPage(t *testing.T) {
 		t.Fatalf("links reply missing URLs: %s", result.Reply)
 	}
 	code := strings.TrimSpace(strings.Split(strings.Split(result.Reply, "code=")[1], "\n")[0])
+	if len(code) != 24 || !regexp.MustCompile(`^[0-9a-f]+$`).MatchString(code) {
+		t.Fatalf("link code should be 24 lowercase hex chars, got %q", code)
+	}
+	otherOwnerResp, err := http.Get(srv.URL + "/links/u2?code=" + url.QueryEscape(code))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer otherOwnerResp.Body.Close()
+	if otherOwnerResp.StatusCode != http.StatusForbidden {
+		t.Fatalf("other owner status=%d", otherOwnerResp.StatusCode)
+	}
 	resp, err := http.Get(srv.URL + "/links/u1?code=" + url.QueryEscape(code))
 	if err != nil {
 		t.Fatal(err)

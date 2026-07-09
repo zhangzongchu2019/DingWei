@@ -3058,14 +3058,14 @@ func (h *Hub) issueOwnerLinkCode(ownerKey string) string {
 		}
 	}
 	for i := 0; i < 64; i++ {
-		code := randomDigits(6)
+		code := randomHex(12)
 		if _, exists := h.linkTokens[code]; exists {
 			continue
 		}
 		h.linkTokens[code] = ownerLinkToken{ownerKey: ownerKey, expiresAt: now.Add(ownerLinkTokenTTL)}
 		return code
 	}
-	code := randomHex(6)
+	code := randomHex(16)
 	h.linkTokens[code] = ownerLinkToken{ownerKey: ownerKey, expiresAt: now.Add(ownerLinkTokenTTL)}
 	return code
 }
@@ -3073,14 +3073,16 @@ func (h *Hub) issueOwnerLinkCode(ownerKey string) string {
 func (h *Hub) ownerLinkCodeValid(ownerKey, code string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	token, ok := h.linkTokens[strings.TrimSpace(code)]
-	if !ok || token.ownerKey != ownerKey || time.Now().After(token.expiresAt) {
-		if ok {
-			delete(h.linkTokens, strings.TrimSpace(code))
-		}
+	code = strings.TrimSpace(code)
+	token, ok := h.linkTokens[code]
+	if !ok {
 		return false
 	}
-	return true
+	if time.Now().After(token.expiresAt) {
+		delete(h.linkTokens, code)
+		return false
+	}
+	return token.ownerKey == ownerKey
 }
 
 func (h *Hub) terminalPageCodes(keyID, sessionName string) []string {
