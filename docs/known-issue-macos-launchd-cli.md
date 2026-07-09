@@ -1,7 +1,12 @@
-# 已知问题：macOS 下 launchd 后台运行时 CLI 不启动（待定位）
+# 已知问题（已解决）：macOS 首次部署 CLI 不启动 / /view 空白
 
-> 状态：**未解决 / 待后续定位**。当前缓解方案见文末。Linux 不受影响。
-> 记录时间：2026-07-09。版本：sessionHelper 2.1.0。
+> 状态：**已定位并解决**（2026-07-09）。版本：sessionHelper 2.1.0。Linux 不受影响。
+
+## ✅ 根因与解决（结论）
+**真正根因**：claude 首次在某目录启动会弹"**信任此文件夹**"安全提示；sessionHelper 用 pexpect（非交互）起 claude，**应答不了弹窗 → claude 秒退（带 `--dangerously-skip-permissions` 时 exit 1）→ /view 空白、日志无任何 `[cli]`**。美洲机（Linux）正常是因为其工作目录早已信任过。
+**解决**：首次手动信任 `SH_CLI_CWD` 目录一次（`cd ~/dingwei-work && claude-deepseek --dangerously-skip-permissions` → Enter 信任 → /exit）。信任记入 `~/.claude-deepseek`，之后 sessionHelper 起 claude 不再弹。
+**叠加的三个 launchd 环境坑（已随 run.sh/install 脚本修复）**：① `install-launchd.sh` run.sh 路径 `../../`→`../sessionhelper/`；② launchd 无 `~/.local/bin` → run.sh 自补 PATH；③ launchd 无 `TERM`/`LANG` → run.sh 自补。
+> 下方为定位过程中的排查记录（保留备查）。
 
 ## 症状
 macOS 上用 **launchd 后台**运行 sessionHelper（2.1.0）时：

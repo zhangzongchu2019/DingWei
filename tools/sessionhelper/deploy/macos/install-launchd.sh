@@ -6,7 +6,7 @@ set -euo pipefail
 
 CONFIG="${1:?用法: install-launchd.sh <config绝对路径> [run.sh绝对路径]}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-RUNSH="${2:-$HERE/../../run.sh}"
+RUNSH="${2:-$HERE/../sessionhelper/run.sh}"
 CONFIG="$(cd "$(dirname "$CONFIG")" && pwd)/$(basename "$CONFIG")"
 RUNSH="$(cd "$(dirname "$RUNSH")" && pwd)/$(basename "$RUNSH")"
 

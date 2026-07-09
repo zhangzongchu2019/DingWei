@@ -2,6 +2,13 @@
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+# launchd/cron 的 PATH 极简，不含 ~/.local/bin、homebrew 等 → CLI 包装脚本(如 claude-deepseek 在 ~/.local/bin)找不到。
+# 这里主动补上常见的 CLI 安装目录，使 run.sh 在前台/launchd/cron 下都能定位 AI CLI。
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+# launchd/cron 环境无 TERM/LANG → CLI(claude 等)的终端 UI 渲染不出，网页终端 /view 一片空白。
+# pexpect 起 CLI 时继承本进程 env，这里补默认值即可让 TUI 正常渲染（前台已有则不覆盖）。
+export TERM="${TERM:-xterm-256color}"
+export LANG="${LANG:-en_US.UTF-8}"
 CONFIG_DIR=${WORKPULSE_SH_CONFIG_DIR:-"$HOME/.workpulse-sh"}
 CONFIG_FILE=${WORKPULSE_SH_CONFIG_FILE:-"$CONFIG_DIR/config"}
 VENV_DIR=${WORKPULSE_SH_VENV:-"$SCRIPT_DIR/.venv"}

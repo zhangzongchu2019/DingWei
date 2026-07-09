@@ -482,7 +482,7 @@ const terminalPageHTML = `<!doctype html>
     .pill { padding: 2px 7px; border-radius: 999px; background: #263244; color: #dbe6f7; }
     .locked { color: #ffcf66; }
     .unlocked { color: #7ee787; }
-    #terminal { height: 75vh; min-height: 120px; padding: 8px; resize: vertical; overflow: hidden; box-sizing: border-box; border-bottom: 2px solid #273244; }
+    #terminal { flex: 1; min-height: 0; padding: 8px; overflow: hidden; box-sizing: border-box; }
   </style>
 </head>
 <body>
