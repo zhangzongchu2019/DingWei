@@ -665,7 +665,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	mirrorTo := sessionMirrorToFromRequest(r)
 	ownerKey := h.ownerKeyForKeyWithAccounts(r.Context(), keyID, accounts)
 	sessionName := deriveRegisteredSessionName(requestedSessionName, keyID, ownerKey)
-	nameWarn := sessionNamePolicyWarning(sessionName, keyID, ownerKey)
+	nameWarn := sessionNameRequestWarning(requestedSessionName, keyID, ownerKey)
 	switch sessionNameEnforceMode() {
 	case "enforce":
 		if nameWarn != "" {
@@ -912,13 +912,31 @@ func suffixedSessionName(base string, n int) string {
 
 func deriveRegisteredSessionName(requested, keyID, ownerKey string) string {
 	requested = strings.TrimSpace(requested)
-	if sessionNamePattern.MatchString(requested) {
+	if ownerKey == "" {
 		return requested
 	}
-	if bareSessionNamePattern.MatchString(requested) && ownerKey != "" {
-		return fmt.Sprintf("%s-%s-%s", ownerKey, requested, keyTail(keyID))
+	short := requested
+	if sessionNamePattern.MatchString(requested) {
+		short = strings.Split(requested, "-")[1]
 	}
-	return requested
+	if !bareSessionNamePattern.MatchString(short) {
+		return requested
+	}
+	return fmt.Sprintf("%s-%s-%s", ownerKey, short, keyTail(keyID))
+}
+
+// sessionNameRequestWarning 判定客户端上报名本身是否合规:B 方案裸短名合规,
+// 完整名须 owner_key 与 key 末4位都与该 key 绑定成员一致。返回非空即触发 warn/enforce。
+func sessionNameRequestWarning(requested, keyID, ownerKey string) string {
+	requested = strings.TrimSpace(requested)
+	ownerKey = strings.TrimSpace(ownerKey)
+	if ownerKey == "" {
+		return "无法确认该 key 绑定成员 owner_key"
+	}
+	if bareSessionNamePattern.MatchString(requested) {
+		return ""
+	}
+	return sessionNamePolicyWarning(requested, keyID, ownerKey)
 }
 
 func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
