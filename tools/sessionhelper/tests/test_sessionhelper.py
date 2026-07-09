@@ -43,11 +43,13 @@ from sessionhelper.config import detect_full_session_name, detect_os, load_confi
 from sessionhelper.llm import PROVIDERS
 from sessionhelper.protocol import AddressBook, is_mirror_control, reply_target
 from sessionhelper.provision import Provisioner, compare_versions
+from sessionhelper.send_dingwei import temporary_session_name
 
 
 BASE_ENV = {
     "SH_SESSION_NAME": "home",
-    "SH_KEY_ID": "FB-test",
+    "SH_OWNER": "zzc",
+    "SH_KEY_ID": "FB-2642",
     "SH_SECRET": "secret",
 }
 
@@ -57,8 +59,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class SessionHelperTest(unittest.TestCase):
     def test_load_config_required_and_defaults(self):
         cfg = load_config(BASE_ENV)
-        self.assertEqual(cfg.session_name, "home")
-        self.assertEqual(cfg.key_id, "FB-test")
+        self.assertEqual(cfg.session_name, "zzc-home-2642")
+        self.assertEqual(cfg.key_id, "FB-2642")
         self.assertEqual(cfg.mode, "echo")
         self.assertEqual(cfg.cli_launch, "")
         self.assertEqual(cfg.cli_ready_timeout, 90.0)
@@ -71,13 +73,40 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(cfg.target_group, "")
         self.assertEqual(cfg.target_bot, "")
         self.assertEqual(cfg.opencode_db, "")
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&os={detect_os()}")
+
+    def test_load_config_requires_owner_and_valid_short_name(self):
+        with self.assertRaises(SystemExit) as missing_owner:
+            load_config({k: v for k, v in BASE_ENV.items() if k != "SH_OWNER"})
+        self.assertIn("SH_OWNER is required", str(missing_owner.exception))
+
+        with self.assertRaises(SystemExit) as bad_short:
+            load_config(dict(BASE_ENV, SH_SESSION_NAME="Dev-1"))
+        self.assertIn("短名只能小写字母数字", str(bad_short.exception))
+
+        with self.assertRaises(SystemExit) as bad_owner:
+            load_config(dict(BASE_ENV, SH_OWNER="Zzc"))
+        self.assertIn("SH_OWNER 不合规", str(bad_owner.exception))
+
+    def test_send_dingwei_temporary_session_name_is_compliant(self):
+        self.assertEqual(
+            temporary_session_name({"SH_OWNER": "zzc", "SH_SESSION_NAME": "manager", "SH_KEY_ID": "FB-zzc-devteam-e0d12642"}),
+            "zzc-managernote-2642",
+        )
+        self.assertEqual(
+            temporary_session_name({"SH_SESSION_NAME": "fulei-dev1013-3dd6", "SH_KEY_ID": "FB-key-3dd6"}),
+            "fulei-dev1013note-3dd6",
+        )
+        self.assertEqual(
+            temporary_session_name({"SH_SESSION_NAME": "Bad-Name", "SH_KEY_ID": "FB-key-1a2b"}),
+            "zzc-sendernote-1a2b",
+        )
 
     def test_ws_url_reports_tool_and_model_when_configured(self):
         cfg = load_config(dict(BASE_ENV, SH_TOOL="CODEX", SH_MODEL="gpt-5.5", SH_SESSION_FULL="sh-home-e0d12642"))
         self.assertEqual(
             cfg.ws_url,
-            f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&tool=CODEX&os={detect_os()}&model=gpt-5.5&full_session_name=sh-home-e0d12642",
+            f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&tool=CODEX&os={detect_os()}&model=gpt-5.5&full_session_name=sh-home-e0d12642",
         )
 
     def test_ws_url_reports_producer_target_group(self):
@@ -85,16 +114,16 @@ class SessionHelperTest(unittest.TestCase):
         self.assertTrue(cfg.producer)
         self.assertEqual(cfg.target_group, "oc_ai")
         self.assertEqual(cfg.target_bot, "bot-test")
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}&producer=1&target_group=oc_ai&target_bot=bot-test")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&os={detect_os()}&producer=1&target_group=oc_ai&target_bot=bot-test")
 
     def test_ws_url_reports_mirror_to(self):
-        cfg = load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-test#is3-Connector"))
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}&mirror_to=ou_u1%23FB-test%23is3-Connector")
+        cfg = load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-2642#is3-Connector"))
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&os={detect_os()}&mirror_to=ou_u1%23FB-2642%23is3-Connector")
 
     def test_ws_url_reports_no_directory(self):
         cfg = load_config(dict(BASE_ENV, SH_NO_DIRECTORY="1"))
         self.assertTrue(cfg.no_directory)
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}&no_directory=1")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&os={detect_os()}&no_directory=1")
 
     def test_detect_full_session_name_prefers_tmux_session(self):
         with mock.patch("sessionhelper.config.subprocess.check_output", return_value="sh-developer-e0d12642\n"):
@@ -109,7 +138,7 @@ class SessionHelperTest(unittest.TestCase):
         env = dict(BASE_ENV, SH_CLI_LAUNCH="tmux")
         cfg = load_config(env)
         self.assertEqual(cfg.cli_launch, "tmux")
-        name = tmux_session_name("home/dev", "FB-test-key-0000")
+        name = tmux_session_name("home/dev", "FB-2642-key-0000")
         self.assertTrue(name.startswith("sh-home-dev-"))
         self.assertIn("key-0000", name)
 
@@ -235,10 +264,10 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(adapter.prepare_input_text("a\n\nb"), "a / b")
 
     def test_group_reply_targets_chat_and_at_sender(self):
-        book = AddressBook("home", "FB-test", "UnifiedRobot")
+        book = AddressBook("home", "FB-2642", "UnifiedRobot")
         to, meta = reply_target(
             {
-                "from": "ou_alice#FB-test#UnifiedRobot",
+                "from": "ou_alice#FB-2642#UnifiedRobot",
                 "meta": {
                     "chat_type": "group",
                     "group_chat_id": "oc_group",
@@ -247,14 +276,14 @@ class SessionHelperTest(unittest.TestCase):
             },
             book,
         )
-        self.assertEqual(to, "oc_group#FB-test#UnifiedRobot")
+        self.assertEqual(to, "oc_group#FB-2642#UnifiedRobot")
         self.assertEqual(meta, {"at": ["ou_alice"]})
 
     def test_reply_target_preserves_source_bot_context(self):
-        book = AddressBook("home", "FB-test", "UnifiedRobot")
+        book = AddressBook("home", "FB-2642", "UnifiedRobot")
         to, meta = reply_target(
             {
-                "from": "ou_u1#FB-test#UnifiedRobot",
+                "from": "ou_u1#FB-2642#UnifiedRobot",
                 "meta": {
                     "source_bot_channel_id": "is3-Connector",
                     "source_chat_type": "personal",
@@ -264,7 +293,7 @@ class SessionHelperTest(unittest.TestCase):
             },
             book,
         )
-        self.assertEqual(to, "ou_u1#FB-test#is3-Connector")
+        self.assertEqual(to, "ou_u1#FB-2642#is3-Connector")
         self.assertEqual(
             meta,
             {
@@ -277,7 +306,7 @@ class SessionHelperTest(unittest.TestCase):
 
         to, meta = reply_target(
             {
-                "from": "ou_sender#FB-test#UnifiedRobot",
+                "from": "ou_sender#FB-2642#UnifiedRobot",
                 "meta": {
                     "source_bot_channel_id": "is3-Connector",
                     "source_chat_type": "group",
@@ -287,7 +316,7 @@ class SessionHelperTest(unittest.TestCase):
             },
             book,
         )
-        self.assertEqual(to, "oc_team#FB-test#is3-Connector")
+        self.assertEqual(to, "oc_team#FB-2642#is3-Connector")
         self.assertEqual(
             meta,
             {
@@ -300,19 +329,19 @@ class SessionHelperTest(unittest.TestCase):
         )
 
     def test_comm_skill_ack_envelope(self):
-        book = AddressBook("home", "FB-test", "UnifiedRobot")
+        book = AddressBook("home", "FB-2642", "UnifiedRobot")
         self.assertTrue(contains_comm_skill_ack(f"ok {COMM_SKILL_ACK}"))
         env = comm_skill_ack_envelope(book)
-        self.assertEqual(env["to"], "workpulse#FB-test")
-        self.assertEqual(env["from"], "home#FB-test")
+        self.assertEqual(env["to"], "workpulse#FB-2642")
+        self.assertEqual(env["from"], "home#FB-2642")
         self.assertEqual(env["body"], COMM_SKILL_ACK)
         self.assertEqual(env["meta"]["type"], "agent_network_skill_ack")
 
     def test_agent_route_envelope_accepts_selector_output(self):
-        book = AddressBook("home", "FB-test", "UnifiedRobot")
+        book = AddressBook("home", "FB-2642", "UnifiedRobot")
         env = agent_route_envelope("#developer 请核对X", book)
         self.assertEqual(env["to"], "#developer")
-        self.assertEqual(env["from"], "home#FB-test")
+        self.assertEqual(env["from"], "home#FB-2642")
         self.assertEqual(env["body"], "请核对X")
         self.assertEqual(env["meta"]["type"], "agent_route")
 
@@ -392,7 +421,7 @@ class SessionHelperTest(unittest.TestCase):
 
         body = "\n**********\n【DingWei在线清单】同账号在线AI会话\n1. #home\n**********\n"
         self.assertTrue(is_online_directory_text(body))
-        env = {"from": "workpulse#FB-test", "to": "home#FB-test", "body": body, "meta": {"type": "online_directory", "no_mirror": True}}
+        env = {"from": "workpulse#FB-2642", "to": "home#FB-2642", "body": body, "meta": {"type": "online_directory", "no_mirror": True}}
         self.assertTrue(is_no_mirror_envelope(env))
         helper = SessionHelper(load_config(BASE_ENV))
         fake = FakeAdapter()
@@ -439,7 +468,7 @@ class SessionHelperTest(unittest.TestCase):
         fake = FakeAdapter()
         helper.adapter = fake
         helper.comm_skill_installed = True
-        ws = FakeWS({"from": "workpulse#FB-test", "to": "home#FB-test", "body": "指南", "meta": {"type": "agent_network_skill"}})
+        ws = FakeWS({"from": "workpulse#FB-2642", "to": "home#FB-2642", "body": "指南", "meta": {"type": "agent_network_skill"}})
 
         asyncio.run(helper.recv_loop(ws))
 
@@ -479,8 +508,8 @@ class SessionHelperTest(unittest.TestCase):
                 return ""
 
         envs = [
-            {"from": "peer#FB-test", "to": "home#FB-test", "body": "one", "meta": {}},
-            {"from": "peer#FB-test", "to": "home#FB-test", "body": "two", "meta": {}},
+            {"from": "peer#FB-2642", "to": "home#FB-2642", "body": "one", "meta": {}},
+            {"from": "peer#FB-2642", "to": "home#FB-2642", "body": "two", "meta": {}},
         ]
         helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli", SH_BUSY_BUFFER_MAX="10", SH_CLI_SETTLE_SECONDS="0.1")))
         fake = FakeAdapter()
@@ -490,7 +519,7 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(fake.handled, [])
         self.assertEqual([item["body"] for item in helper.pending_inbound], ["one", "two"])
         self.assertEqual(len(ws.sent), 1)
-        self.assertEqual(ws.sent[0]["to"], "peer#FB-test")
+        self.assertEqual(ws.sent[0]["to"], "peer#FB-2642")
         self.assertIn("忙", ws.sent[0]["body"])
 
         async def drain_once():
@@ -530,7 +559,7 @@ class SessionHelperTest(unittest.TestCase):
 
         async def run_case():
             for body in ["one", "two", "three"]:
-                await helper.buffer_if_busy(ws, {"from": "peer#FB-test", "to": "home#FB-test", "body": body, "meta": {}})
+                await helper.buffer_if_busy(ws, {"from": "peer#FB-2642", "to": "home#FB-2642", "body": body, "meta": {}})
 
         asyncio.run(run_case())
         self.assertEqual([item["body"] for item in helper.pending_inbound], ["two", "three"])
@@ -541,8 +570,8 @@ class SessionHelperTest(unittest.TestCase):
             cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
             result = Provisioner(cfg).handle(
                 {
-                    "from": "attacker#FB-test",
-                    "to": "home#FB-test",
+                    "from": "attacker#FB-2642",
+                    "to": "home#FB-2642",
                     "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://ts.wegoab.com/x", "sha256": "0" * 64},
                 }
             )
@@ -550,14 +579,14 @@ class SessionHelperTest(unittest.TestCase):
             self.assertIn("source denied", result.message)
             with sqlite3.connect(Path(tmp) / "audit.db") as conn:
                 rows = conn.execute("SELECT action, ok, source FROM provision_audit").fetchall()
-            self.assertEqual(rows, [("install_skill", 0, "attacker#FB-test")])
+            self.assertEqual(rows, [("install_skill", 0, "attacker#FB-2642")])
 
     def test_provision_validates_host_and_sha_before_download(self):
         with tempfile.TemporaryDirectory() as tmp:
             cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
             base = {
-                "from": "workpulse#FB-test",
-                "to": "home#FB-test",
+                "from": "workpulse#FB-2642",
+                "to": "home#FB-2642",
                 "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://evil.example/x", "sha256": "0" * 64},
             }
             result = Provisioner(cfg).handle(base)
@@ -577,8 +606,8 @@ class SessionHelperTest(unittest.TestCase):
             provisioner.version_file = Path(tmp) / "versions.json"
             provisioner.record_version("install_skill", "demo", "2.0")
             env = {
-                "from": "workpulse#FB-test",
-                "to": "home#FB-test",
+                "from": "workpulse#FB-2642",
+                "to": "home#FB-2642",
                 "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/x", "sha256": "0" * 64},
             }
             with mock.patch.object(provisioner, "download_and_verify", side_effect=AssertionError("should not download")):
@@ -601,8 +630,8 @@ class SessionHelperTest(unittest.TestCase):
                 provisioner = Provisioner(cfg)
                 provisioner.version_file = Path(tmp) / "versions.json"
                 env = {
-                    "from": "workpulse#FB-test",
-                    "to": "home#FB-test",
+                    "from": "workpulse#FB-2642",
+                    "to": "home#FB-2642",
                     "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/skill.tar", "sha256": "0" * 64},
                 }
                 with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
@@ -621,8 +650,8 @@ class SessionHelperTest(unittest.TestCase):
                 provisioner = Provisioner(cfg)
                 provisioner.version_file = Path(tmp) / "versions.json"
                 env = {
-                    "from": "workpulse#FB-test",
-                    "to": "home#FB-test",
+                    "from": "workpulse#FB-2642",
+                    "to": "home#FB-2642",
                     "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/mcp.json", "sha256": "0" * 64},
                 }
                 with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
@@ -644,8 +673,8 @@ class SessionHelperTest(unittest.TestCase):
                 provisioner = Provisioner(cfg)
                 provisioner.version_file = Path(tmp) / "versions.json"
                 env = {
-                    "from": "workpulse#FB-test",
-                    "to": "home#FB-test",
+                    "from": "workpulse#FB-2642",
+                    "to": "home#FB-2642",
                     "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/mcp.json", "sha256": "0" * 64},
                 }
                 with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
@@ -754,11 +783,11 @@ class SessionHelperTest(unittest.TestCase):
                 self.sent.append(json.loads(payload))
 
         helper = SessionHelper(load_config(BASE_ENV))
-        env = {"from": "workpulse#FB-test", "to": "home#FB-test", "body": "", "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://evil.example/x", "sha256": "0" * 64}}
+        env = {"from": "workpulse#FB-2642", "to": "home#FB-2642", "body": "", "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://evil.example/x", "sha256": "0" * 64}}
         ws = FakeWS(env)
         asyncio.run(helper.recv_loop(ws))
         self.assertEqual(len(ws.sent), 1)
-        self.assertEqual(ws.sent[0]["to"], "workpulse#FB-test")
+        self.assertEqual(ws.sent[0]["to"], "workpulse#FB-2642")
         self.assertEqual(ws.sent[0]["meta"]["type"], "provision_ack")
         self.assertFalse(ws.sent[0]["meta"]["ok"])
 
@@ -787,7 +816,7 @@ class SessionHelperTest(unittest.TestCase):
                 return None
 
         async def run_case():
-            helper = SessionHelper(load_config(dict(BASE_ENV, SH_COLLECT="1", SH_MIRROR_TO="ou_u1#FB-test#UnifiedRobot")))
+            helper = SessionHelper(load_config(dict(BASE_ENV, SH_COLLECT="1", SH_MIRROR_TO="ou_u1#FB-2642#UnifiedRobot")))
             helper.adapter = FakeAdapter()
             ws = FakeWS()
             task = asyncio.create_task(helper.mirror_loop(ws))
@@ -803,7 +832,7 @@ class SessionHelperTest(unittest.TestCase):
 
         sent = asyncio.run(run_case())
         self.assertEqual(len(sent), 1)
-        self.assertEqual(sent[0]["to"], "workpulse#FB-test")
+        self.assertEqual(sent[0]["to"], "workpulse#FB-2642")
         self.assertEqual(sent[0]["body"], COMM_SKILL_ACK)
         self.assertEqual(sent[0]["meta"]["type"], "agent_network_skill_ack")
 
@@ -813,19 +842,19 @@ class SessionHelperTest(unittest.TestCase):
             "meta": {
                 "type": "mirror_control",
                 "enabled": True,
-                "mirror_to": "oc_group#FB-test#UnifiedRobot",
+                "mirror_to": "oc_group#FB-2642#UnifiedRobot",
             }
         }
         self.assertTrue(is_mirror_control(env))
         helper.apply_mirror_control(env)
         self.assertTrue(helper.mirror.enabled)
-        self.assertEqual(helper.mirror.to, "oc_group#FB-test#UnifiedRobot")
+        self.assertEqual(helper.mirror.to, "oc_group#FB-2642#UnifiedRobot")
 
     def test_mirror_control_without_target_keeps_configured_mirror_to(self):
-        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-test#is3-Connector")))
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-2642#is3-Connector")))
         helper.apply_mirror_control({"meta": {"type": "mirror_control", "enabled": True}})
         self.assertTrue(helper.mirror.enabled)
-        self.assertEqual(helper.mirror.to, "ou_u1#FB-test#is3-Connector")
+        self.assertEqual(helper.mirror.to, "ou_u1#FB-2642#is3-Connector")
 
         helper.apply_mirror_control({"meta": {"type": "mirror_control", "enabled": False, "mirror_to": ""}})
         self.assertFalse(helper.mirror.enabled)
@@ -883,8 +912,8 @@ class SessionHelperTest(unittest.TestCase):
             helpers = []
             for i, session in enumerate(["home", "developer", "review"]):
                 env = {
-                    "from": "workpulse#FB-test",
-                    "to": f"{session}#FB-test",
+                    "from": "workpulse#FB-2642",
+                    "to": f"{session}#FB-2642",
                     "body": "系统广播内容",
                     "meta": {
                         "type": "online_directory",
@@ -894,7 +923,7 @@ class SessionHelperTest(unittest.TestCase):
                         "mirror_primary": i == 0,
                     },
                 }
-                cfg = load_config(dict(BASE_ENV, SH_SESSION_NAME=session, SH_MIRROR_TO="ou_alice#FB-test#UnifiedRobot", SH_COLLECT="0"))
+                cfg = load_config(dict(BASE_ENV, SH_SESSION_NAME=session, SH_MIRROR_TO="ou_alice#FB-2642#UnifiedRobot", SH_COLLECT="0"))
                 helper = SessionHelper(cfg)
                 helper.adapter = FakeAdapter()
                 recv_ws = FakeWS(env)
@@ -940,7 +969,7 @@ class SessionHelperTest(unittest.TestCase):
                 return None
 
         async def run_one(events, remembered=""):
-            helper = SessionHelper(load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_alice#FB-test#UnifiedRobot", SH_COLLECT="0")))
+            helper = SessionHelper(load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_alice#FB-2642#UnifiedRobot", SH_COLLECT="0")))
             if remembered:
                 helper.remember_broadcast_mirror_decision(
                     {"body": remembered, "meta": {"broadcast_dedup_key": "broadcast:test", "mirror_primary": False}}
@@ -968,14 +997,14 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(len(ai_output), 1)
         self.assertIn("各自 AI 输出", ai_output[0]["body"])
         self.assertEqual(len(mirrored_normal), 1)
-        self.assertEqual(mirrored_normal[0]["to"], "ou_alice#FB-test#UnifiedRobot")
+        self.assertEqual(mirrored_normal[0]["to"], "ou_alice#FB-2642#UnifiedRobot")
         self.assertIn("正常任务回复", mirrored_normal[0]["body"])
 
     def test_producer_envelope_targets_group_and_marks_no_mirror(self):
         helper = SessionHelper(load_config(dict(BASE_ENV, SH_PRODUCER="1", SH_TARGET_GROUP="oc_group", SH_TARGET_BOT="bot-test")))
         env = helper.producer_envelope("hello", role="alert")
-        self.assertEqual(env["to"], "oc_group#FB-test#UnifiedRobot")
-        self.assertEqual(env["from"], "home#FB-test")
+        self.assertEqual(env["to"], "oc_group#FB-2642#UnifiedRobot")
+        self.assertEqual(env["from"], "zzc-home-2642#FB-2642")
         self.assertEqual(env["body"], "hello")
         self.assertEqual(env["meta"]["producer"], True)
         self.assertEqual(env["meta"]["target_group"], "oc_group")
@@ -1010,7 +1039,7 @@ class SessionHelperTest(unittest.TestCase):
 
         sent = asyncio.run(run_case())
         self.assertEqual(len(sent), 1)
-        self.assertEqual(sent[0]["to"], "oc_group#FB-test#UnifiedRobot")
+        self.assertEqual(sent[0]["to"], "oc_group#FB-2642#UnifiedRobot")
         self.assertEqual(sent[0]["body"], "hello")
         self.assertEqual(sent[0]["meta"]["no_mirror"], True)
 

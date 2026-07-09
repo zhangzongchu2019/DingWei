@@ -9,8 +9,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"sort"
@@ -139,6 +141,7 @@ var (
 	ansiOSCSTRE         = regexp.MustCompile(`\x1b\][^\x07]*(\x07|\x1b\\)`)
 	ansiSimpleRE        = regexp.MustCompile(`\x1b[@-Z\\-_]`)
 	controlExceptTextRE = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
+	sessionNamePattern  = regexp.MustCompile(`^[a-z0-9]+-[a-z0-9]+-[0-9a-f]{4}$`)
 )
 
 func New(repo store.Repository) *Hub {
@@ -660,6 +663,18 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	osName := strings.TrimSpace(r.URL.Query().Get("os"))
 	mirrorTo := sessionMirrorToFromRequest(r)
 	ownerKey := h.ownerKeyForKeyWithAccounts(r.Context(), keyID, accounts)
+	nameWarn := sessionNamePolicyWarning(requestedSessionName, keyID, ownerKey)
+	switch sessionNameEnforceMode() {
+	case "enforce":
+		if nameWarn != "" {
+			http.Error(w, nameWarn, http.StatusBadRequest)
+			return
+		}
+	case "warn":
+		if nameWarn != "" {
+			log.Printf("session name warning key_id=%s owner=%s session=%s: %s", keyID, ownerKey, requestedSessionName, nameWarn)
+		}
+	}
 	sessionName, err := h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
 		KeyID:           keyID,
 		SessionName:     requestedSessionName,
@@ -708,21 +723,26 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		ownerKey := h.ownerKeyForKey(ownerCtx, keyID)
 		ownerCancel()
 		h.mu.Lock()
-		if h.sessionClients[keyID][sessionName] == c {
+		current := h.sessionClients[keyID][sessionName] == c
+		var terminalViewers []*terminalViewer
+		if current {
 			delete(h.sessionClients[keyID], sessionName)
 			if len(h.sessionClients[keyID]) == 0 {
 				delete(h.sessionClients, keyID)
 				delete(h.keyAccounts, keyID)
 			}
+			terminalViewers = h.closeTerminalLocked(keyID, sessionName)
+			h.closeFeishuSyncLocked(keyID, sessionName)
 		}
-		terminalViewers := h.closeTerminalLocked(keyID, sessionName)
-		h.closeFeishuSyncLocked(keyID, sessionName)
 		h.mu.Unlock()
 		for _, viewer := range terminalViewers {
 			_ = terminalWrite(context.Background(), viewer, map[string]any{"type": "status", "readonly": true, "message": "会话已离线"})
 			_ = viewer.conn.Close(websocket.StatusNormalClosure, "session offline")
 		}
 		_ = conn.Close(websocket.StatusNormalClosure, "bye")
+		if !current {
+			return
+		}
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 		_ = h.Repo.UpsertSessionEndpoint(cleanupCtx, model.SessionEndpoint{
@@ -3028,17 +3048,24 @@ func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string
 	}
 	for i, item := range items {
 		ep := item.Endpoint
-		displayName := firstNonEmpty(ep.FullSessionName, ep.SessionName)
-		short := shortSessionName(displayName)
+		short := shortSessionName(ep.SessionName)
 		fmt.Fprintf(&b, "%d. #%s · %s/%s · %s(末%s) · @%s#%s", i+1, short, unknown(ep.Tool), unknown(ep.Model), unknown(ep.ClientIP), keyTail(ep.KeyID), owner.OwnerKey, short)
 		if item.Client != nil && item.Client.osName != "" {
 			fmt.Fprintf(&b, " · %s", item.Client.osName)
 		}
 		if terminalViewBase != "" && item.Client != nil && item.Client.webTerminal {
-			fmt.Fprintf(&b, " · 页面 %s/view/%s", terminalViewBase, short)
+			fmt.Fprintf(&b, " · 页面 %s/view/%s", terminalViewBase, url.PathEscape(ep.SessionName))
 		}
-		if displayName != short {
-			fmt.Fprintf(&b, " · 全名:%s", displayName)
+		if ep.SessionName != short {
+			fmt.Fprintf(&b, " · 全名:%s", ep.SessionName)
+		}
+		if strings.TrimSpace(ep.FullSessionName) != "" && ep.FullSessionName != ep.SessionName {
+			fmt.Fprintf(&b, " · 终端:%s", strings.TrimSpace(ep.FullSessionName))
+		}
+		if sessionNameEnforceMode() == "warn" {
+			if nameWarn := sessionNamePolicyWarning(ep.SessionName, ep.KeyID, ep.OwnerKey); nameWarn != "" {
+				fmt.Fprintf(&b, " · 命名告警:%s", nameWarn)
+			}
 		}
 		if ep.Producer || strings.TrimSpace(ep.TargetGroup) != "" {
 			fmt.Fprintf(&b, " · Producer:%s", yesNo(ep.Producer))
@@ -3053,15 +3080,53 @@ func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string
 }
 
 func shortSessionName(sessionName string) string {
+	sessionName = strings.TrimSpace(sessionName)
 	parts := strings.Split(sessionName, "-")
+	if len(parts) == 3 && sessionNamePattern.MatchString(sessionName) && strings.TrimSpace(parts[1]) != "" {
+		return parts[1]
+	}
 	if len(parts) >= 3 && parts[0] == "sh" && strings.TrimSpace(parts[1]) != "" {
 		return parts[1]
 	}
 	return sessionName
 }
 
-func keyTail(keyID string) string {
+func sessionNameEnforceMode() string {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("WP_NAME_ENFORCE"))) {
+	case "off":
+		return "off"
+	case "enforce":
+		return "enforce"
+	default:
+		return "warn"
+	}
+}
+
+func sessionNamePolicyWarning(sessionName, keyID, ownerKey string) string {
+	sessionName = strings.TrimSpace(sessionName)
 	keyID = strings.TrimSpace(keyID)
+	ownerKey = strings.TrimSpace(ownerKey)
+	if !sessionNamePattern.MatchString(sessionName) {
+		return "会话名不合规,须为 <owner_key>-<短名>-<key末4位>,如 fulei-dev1013-3dd6"
+	}
+	parts := strings.Split(sessionName, "-")
+	if len(parts) != 3 {
+		return "会话名不合规,须为 <owner_key>-<短名>-<key末4位>,如 fulei-dev1013-3dd6"
+	}
+	if parts[2] != keyTail(keyID) {
+		return "会话名末4位与 SH_KEY_ID 不匹配"
+	}
+	if ownerKey == "" {
+		return "无法确认该 key 绑定成员 owner_key"
+	}
+	if parts[0] != ownerKey {
+		return "会话名 owner_key 与该 key 绑定成员不匹配"
+	}
+	return ""
+}
+
+func keyTail(keyID string) string {
+	keyID = strings.ToLower(strings.TrimSpace(keyID))
 	if len(keyID) <= 4 {
 		return keyID
 	}
