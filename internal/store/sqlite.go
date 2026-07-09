@@ -478,7 +478,7 @@ func (s *SQLite) seedL1DecisionRules(ctx context.Context) error {
 	now := s.now().UTC().Format(time.RFC3339)
 	rules := []model.L1DecisionRule{
 		{ID: "l1_command_terminal_input", Seq: 1, MatchType: "prefix_any", Pattern: "#unlock |#lock", Intent: "command.unlock", Action: "grantTerminalInput/revoke", ExitQueue: true, Enabled: true, Description: "Terminal input unlock/lock commands"},
-		{ID: "l1_command_roster", Seq: 2, MatchType: "prefix_any", Pattern: "#在线|#roster", Intent: "command.roster", Action: "onlineDirectory", ExitQueue: true, Enabled: true, Description: "Online roster command"},
+		{ID: "l1_command_roster", Seq: 2, MatchType: "prefix_any", Pattern: "#在线|#roster|#清单", Intent: "command.roster", Action: "onlineDirectory", ExitQueue: true, Enabled: true, Description: "Online roster command"},
 		{ID: "l1_command_apply_key", Seq: 3, MatchType: "prefix", Pattern: "#申请 ", Intent: "command.apply_key", Action: "applyKeyFlow", ExitQueue: true, Enabled: true, Description: "Session key application command"},
 		{ID: "l1_command_mirror", Seq: 4, MatchType: "prefix_any", Pattern: "#mirror on|#mirror off|mirror on|mirror off", Intent: "command.mirror", Action: "setMirror", ExitQueue: true, Enabled: true, Description: "Mirror on/off command"},
 		{ID: "l1_route_session", Seq: 5, MatchType: "regex", Pattern: "^#[^[:space:]]+[[:space:]]+.+", Intent: "route.session", Action: "routeToSession", ExitQueue: true, Enabled: true, Description: "Same-owner #session routing"},

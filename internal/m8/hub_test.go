@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -164,6 +165,82 @@ func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
 	out = waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
 	if out == nil || !strings.Contains(messageText(t, out), "任务 #ct-failed 处理失败：boom") {
 		t.Fatalf("failed notification=%+v", out)
+	}
+}
+
+func TestOwnerLinksCommandAndPage(t *testing.T) {
+	oldViewBase := terminalViewBase
+	terminalViewBase = "https://example.test"
+	t.Cleanup(func() { terminalViewBase = oldViewBase })
+
+	hub, db, ctx := newTestHub(t)
+	hub.onlineDebounce = time.Hour
+	hub.RegisterBot("dev", "UnifiedRobot")
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /links/{ownerKey}", hub.HandleOwnerLinksPage)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	fullName := "u1-developer-" + keyTail(key.ID)
+	conn := dialSessionWithQuery(t, ctx, srv.URL, fullName, key.ID, secret, "tool=CODEX&model=gpt-5.5&terminal=1")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, fullName)
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "links-1",
+		ChatEntityID: "dev:personal:ou_u1",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"#清单"}`,
+	}, "#清单")
+	if err != nil || !result.Matched {
+		t.Fatalf("links result=%+v err=%v", result, err)
+	}
+	if !strings.Contains(result.Reply, "https://example.test/links/u1?code=") || !strings.Contains(result.Reply, "https://example.test/view/"+fullName) {
+		t.Fatalf("links reply missing URLs: %s", result.Reply)
+	}
+	code := strings.TrimSpace(strings.Split(strings.Split(result.Reply, "code=")[1], "\n")[0])
+	if len(code) != 24 || !regexp.MustCompile(`^[0-9a-f]+$`).MatchString(code) {
+		t.Fatalf("link code should be 24 lowercase hex chars, got %q", code)
+	}
+	otherOwnerResp, err := http.Get(srv.URL + "/links/u2?code=" + url.QueryEscape(code))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer otherOwnerResp.Body.Close()
+	if otherOwnerResp.StatusCode != http.StatusForbidden {
+		t.Fatalf("other owner status=%d", otherOwnerResp.StatusCode)
+	}
+	resp, err := http.Get(srv.URL + "/links/u1?code=" + url.QueryEscape(code))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK || !strings.Contains(string(body), fullName) || !strings.Contains(string(body), "https://example.test/view/"+fullName) || !strings.Contains(string(body), "CODEX/gpt-5.5") {
+		t.Fatalf("links page status=%d body=%s", resp.StatusCode, string(body))
+	}
+	badResp, err := http.Get(srv.URL + "/links/u1?code=000000")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer badResp.Body.Close()
+	if badResp.StatusCode != http.StatusForbidden {
+		t.Fatalf("bad code status=%d", badResp.StatusCode)
 	}
 }
 

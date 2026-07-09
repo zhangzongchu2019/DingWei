@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_l1_decision_rule_enabled_seq ON l1_decision_rule(
 
 INSERT OR IGNORE INTO l1_decision_rule(id, seq, match_type, pattern, intent, action, exit_queue, enabled, description, created_at, updated_at) VALUES
 ('l1_command_terminal_input', 1, 'prefix_any', '#unlock |#lock', 'command.unlock', 'grantTerminalInput/revoke', 1, 1, 'Terminal input unlock/lock commands', strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-('l1_command_roster', 2, 'prefix_any', '#在线|#roster', 'command.roster', 'onlineDirectory', 1, 1, 'Online roster command', strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+('l1_command_roster', 2, 'prefix_any', '#在线|#roster|#清单', 'command.roster', 'onlineDirectory', 1, 1, 'Online roster command', strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')),
 ('l1_command_apply_key', 3, 'prefix', '#申请 ', 'command.apply_key', 'applyKeyFlow', 1, 1, 'Session key application command', strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')),
 ('l1_command_mirror', 4, 'prefix_any', '#mirror on|#mirror off|mirror on|mirror off', 'command.mirror', 'setMirror', 1, 1, 'Mirror on/off command', strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')),
 ('l1_route_session', 5, 'regex', '^#[^[:space:]]+[[:space:]]+.+', 'route.session', 'routeToSession', 1, 1, 'Same-owner #session routing', strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')),

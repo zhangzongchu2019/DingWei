@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"log"
 	"net"
 	"net/http"
@@ -59,6 +60,7 @@ type Hub struct {
 	syncTargets    map[string]map[string]feishuSyncTarget
 	recentTerminal map[string][]terminalSyncItem
 	syncBuffers    map[string]*feishuSyncBuffer
+	linkTokens     map[string]ownerLinkToken
 	onlineDebounce time.Duration
 }
 
@@ -107,6 +109,11 @@ type feishuSyncBuffer struct {
 	timer       *time.Timer
 }
 
+type ownerLinkToken struct {
+	ownerKey  string
+	expiresAt time.Time
+}
+
 type ForwardRequest struct {
 	ID           string `json:"id"`
 	ServiceID    string `json:"service_id"`
@@ -131,6 +138,7 @@ const (
 	agentNetworkSkillPushType  = "agent_network_skill"
 	agentNetworkSkillAckType   = "agent_network_skill_ack"
 	agentNetworkSkillRetryWait = 2 * time.Minute
+	ownerLinkTokenTTL          = 8 * time.Hour
 )
 
 var (
@@ -159,6 +167,7 @@ func New(repo store.Repository) *Hub {
 		syncTargets:    map[string]map[string]feishuSyncTarget{},
 		recentTerminal: map[string][]terminalSyncItem{},
 		syncBuffers:    map[string]*feishuSyncBuffer{},
+		linkTokens:     map[string]ownerLinkToken{},
 		onlineDebounce: 2500 * time.Millisecond,
 		L2Config: L2Config{
 			Workers:             4,
@@ -1288,7 +1297,7 @@ func (h *Hub) l1RuleMatches(ctx context.Context, rule model.L1DecisionRule, msg 
 
 func (h *Hub) dispatchOnlineRosterCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
 	text = strings.TrimSpace(h.stripLeadingBotMentions(msg.BotChannelID, text))
-	if text != "#在线" && text != "#roster" {
+	if text != "#在线" && text != "#roster" && text != "#清单" {
 		return model.PrefixDispatchResult{}, false, nil
 	}
 	ownerKey := h.controlOwnerKey(ctx, msg)
@@ -1298,6 +1307,10 @@ func (h *Hub) dispatchOnlineRosterCommand(ctx context.Context, msg model.Message
 	}
 	if owner.OwnerKey == "" {
 		return model.PrefixDispatchResult{Matched: true, Reply: "未找到当前账号的在线清单。"}, true, nil
+	}
+	if text == "#清单" {
+		code := h.issueOwnerLinkCode(owner.OwnerKey)
+		return model.PrefixDispatchResult{Matched: true, Reply: renderOwnerLinksText(owner, items, code)}, true, nil
 	}
 	return model.PrefixDispatchResult{Matched: true, Reply: renderOnlineDirectory(owner, items)}, true, nil
 }
@@ -3066,7 +3079,144 @@ func (h *Hub) ownerKeyForKeyWithMembers(ctx context.Context, keyID string, membe
 	return ""
 }
 
+func (h *Hub) issueOwnerLinkCode(ownerKey string) string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	now := time.Now()
+	for code, token := range h.linkTokens {
+		if now.After(token.expiresAt) {
+			delete(h.linkTokens, code)
+		}
+	}
+	for i := 0; i < 64; i++ {
+		code := randomHex(12)
+		if _, exists := h.linkTokens[code]; exists {
+			continue
+		}
+		h.linkTokens[code] = ownerLinkToken{ownerKey: ownerKey, expiresAt: now.Add(ownerLinkTokenTTL)}
+		return code
+	}
+	code := randomHex(16)
+	h.linkTokens[code] = ownerLinkToken{ownerKey: ownerKey, expiresAt: now.Add(ownerLinkTokenTTL)}
+	return code
+}
+
+func (h *Hub) ownerLinkCodeValid(ownerKey, code string) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	code = strings.TrimSpace(code)
+	token, ok := h.linkTokens[code]
+	if !ok {
+		return false
+	}
+	if time.Now().After(token.expiresAt) {
+		delete(h.linkTokens, code)
+		return false
+	}
+	return token.ownerKey == ownerKey
+}
+
+func (h *Hub) terminalPageCodes(keyID, sessionName string) []string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	st := h.terminals[terminalKey(keyID, sessionName)]
+	if st == nil {
+		return nil
+	}
+	codes := make([]string, 0, len(st.viewers))
+	for _, viewer := range st.viewers {
+		if viewer.code != "" {
+			codes = append(codes, viewer.code)
+		}
+	}
+	sort.Strings(codes)
+	return codes
+}
+
+func (h *Hub) HandleOwnerLinksPage(w http.ResponseWriter, r *http.Request) {
+	ownerKey := strings.TrimSpace(r.PathValue("ownerKey"))
+	code := strings.TrimSpace(r.URL.Query().Get("code"))
+	if ownerKey == "" || strings.Contains(ownerKey, "/") || code == "" || !h.ownerLinkCodeValid(ownerKey, code) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	items, owner, err := h.onlineDirectory(r.Context(), ownerKey)
+	if err != nil {
+		http.Error(w, "load links failed", http.StatusInternalServerError)
+		return
+	}
+	if owner.OwnerKey == "" {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write([]byte(renderOwnerLinksHTML(owner, items, code, h)))
+}
+
 var terminalViewBase = strings.TrimRight(os.Getenv("WP_VIEW_BASE_URL"), "/")
+
+func ownerLinksURL(ownerKey, code string) string {
+	path := "/links/" + url.PathEscape(ownerKey) + "?code=" + url.QueryEscape(code)
+	if terminalViewBase == "" {
+		return path
+	}
+	return terminalViewBase + path
+}
+
+func viewURL(sessionName string) string {
+	path := "/view/" + url.PathEscape(sessionName)
+	if terminalViewBase == "" {
+		return path
+	}
+	return terminalViewBase + path
+}
+
+func renderOwnerLinksText(owner model.Member, items []onlineSessionItem, code string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "【在线客户端访问清单】%s\n", firstNonEmpty(owner.DisplayName, owner.OwnerKey))
+	fmt.Fprintf(&b, "清单页面: %s\n", ownerLinksURL(owner.OwnerKey, code))
+	if len(items) == 0 {
+		b.WriteString("暂无在线会话。")
+		return b.String()
+	}
+	for i, item := range items {
+		ep := item.Endpoint
+		fmt.Fprintf(&b, "%d. %s · %s/%s · 在线 · view: %s", i+1, ep.SessionName, unknown(ep.Tool), unknown(ep.Model), viewURL(ep.SessionName))
+		b.WriteByte('\n')
+	}
+	return b.String()
+}
+
+func renderOwnerLinksHTML(owner model.Member, items []onlineSessionItem, code string, h *Hub) string {
+	var b strings.Builder
+	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">`)
+	b.WriteString(`<meta http-equiv="refresh" content="10">`)
+	b.WriteString(`<title>DingWei 在线客户端</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:24px;color:#1f2328;background:#f6f8fa}table{border-collapse:collapse;width:100%;background:#fff}th,td{border:1px solid #d0d7de;padding:8px;text-align:left}th{background:#f0f3f6}a{color:#0969da}.muted{color:#656d76}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}</style></head><body>`)
+	fmt.Fprintf(&b, `<h1>%s 在线客户端</h1>`, html.EscapeString(firstNonEmpty(owner.DisplayName, owner.OwnerKey)))
+	fmt.Fprintf(&b, `<p class="muted">owner: <span class="code">%s</span> · 页面码 <span class="code">%s</span> · 每 10 秒自动刷新</p>`, html.EscapeString(owner.OwnerKey), html.EscapeString(code))
+	if len(items) == 0 {
+		b.WriteString(`<p>暂无在线会话。</p></body></html>`)
+		return b.String()
+	}
+	b.WriteString(`<table><thead><tr><th>完整名</th><th>工具/模型</th><th>状态</th><th>View</th><th>页面码</th></tr></thead><tbody>`)
+	for _, item := range items {
+		ep := item.Endpoint
+		codes := h.terminalPageCodes(ep.KeyID, ep.SessionName)
+		codeText := "未打开"
+		if len(codes) > 0 {
+			codeText = strings.Join(codes, ", ")
+		}
+		fmt.Fprintf(&b, `<tr><td class="code">%s</td><td>%s/%s</td><td>在线</td><td><a href="%s" target="_blank" rel="noreferrer">打开</a></td><td class="code">%s</td></tr>`,
+			html.EscapeString(ep.SessionName),
+			html.EscapeString(unknown(ep.Tool)),
+			html.EscapeString(unknown(ep.Model)),
+			html.EscapeString(viewURL(ep.SessionName)),
+			html.EscapeString(codeText),
+		)
+	}
+	b.WriteString(`</tbody></table></body></html>`)
+	return b.String()
+}
 
 func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string {
 	var b strings.Builder
