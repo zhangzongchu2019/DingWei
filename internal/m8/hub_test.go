@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -63,6 +64,11 @@ func useTestApplyKeyApprover(t *testing.T, openID string) {
 	t.Cleanup(func() {
 		applyKeyApproverID = old
 	})
+}
+
+func useTestNameEnforce(t *testing.T, mode string) {
+	t.Helper()
+	t.Setenv("WP_NAME_ENFORCE", mode)
 }
 
 func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
@@ -2276,7 +2282,7 @@ func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) 
 	if !strings.Contains(u2Msg.Body, "sh-developer-u2") || strings.Contains(u2Msg.Body, "ou_u1") || strings.Contains(u2Msg.Body, "home") {
 		t.Fatalf("u2 directory wrong/leaked: %s", u2Msg.Body)
 	}
-	for _, want := range []string{"【DingWei在线清单】", "#developer · CODEX/gpt-5.5", "· 全名:sh-developer-e0d12642", "@u1#developer", "(末"} {
+	for _, want := range []string{"【DingWei在线清单】", "#developer · CODEX/gpt-5.5", "· 终端:sh-developer-e0d12642", "@u1#developer", "(末"} {
 		if !strings.Contains(u1DevMsg.Body, want) {
 			t.Fatalf("u1 directory missing %q: %s", want, u1DevMsg.Body)
 		}
@@ -3310,6 +3316,104 @@ func TestProvisionAckIsAuditedAndNotRoutedBackAsError(t *testing.T) {
 	}
 }
 
+func TestSessionNameEnforceRejectsInvalidNames(t *testing.T) {
+	useTestNameEnforce(t, "enforce")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-name-enforce", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-name-enforce", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	for _, tc := range []struct {
+		name    string
+		session string
+		want    string
+	}{
+		{name: "regex", session: "developer", want: "会话名不合规"},
+		{name: "tail", session: "u1-developer-0000", want: "末4位"},
+		{name: "owner", session: "u2-developer-" + keyTail(key.ID), want: "owner_key"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := dialSessionErrorBody(t, ctx, srv.URL, tc.session, key.ID, secret)
+			if !strings.Contains(body, tc.want) {
+				t.Fatalf("error body %q does not contain %q", body, tc.want)
+			}
+		})
+	}
+
+	sessionName := "u1-developer-" + keyTail(key.ID)
+	conn := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, sessionName)
+}
+
+func TestSessionNameWarnAllowsLegacyNameAndDirectoryFlagsIt(t *testing.T) {
+	useTestNameEnforce(t, "warn")
+	oldViewBase := terminalViewBase
+	terminalViewBase = "https://example.test"
+	t.Cleanup(func() { terminalViewBase = oldViewBase })
+
+	owner := model.Member{OwnerKey: "u1", DisplayName: "UserOne", Active: true}
+	text := renderOnlineDirectory(owner, []onlineSessionItem{{
+		Endpoint: model.SessionEndpoint{
+			KeyID:       "FB-zzc-devteam-e0d12642",
+			SessionName: "dev1013",
+			OwnerKey:    "u1",
+			Tool:        "CODEX",
+			Model:       "gpt-5",
+			ClientIP:    "127.0.0.1",
+		},
+		Client: &sessionClient{webTerminal: true},
+	}})
+	if !strings.Contains(text, "#dev1013") || !strings.Contains(text, "@u1#dev1013") {
+		t.Fatalf("legacy short address should be based on ep.SessionName: %s", text)
+	}
+	if strings.Contains(text, "#bg") {
+		t.Fatalf("legacy name should not be cut to #bg: %s", text)
+	}
+	if !strings.Contains(text, "/view/dev1013") || !strings.Contains(text, "命名告警:") {
+		t.Fatalf("warn directory missing view or warning: %s", text)
+	}
+}
+
+func TestSessionNameOffSkipsDirectoryWarning(t *testing.T) {
+	useTestNameEnforce(t, "off")
+	owner := model.Member{OwnerKey: "u1", DisplayName: "UserOne", Active: true}
+	text := renderOnlineDirectory(owner, []onlineSessionItem{{
+		Endpoint: model.SessionEndpoint{
+			KeyID:       "FB-zzc-devteam-e0d12642",
+			SessionName: "dev1013",
+			OwnerKey:    "u1",
+		},
+	}})
+	if strings.Contains(text, "命名告警:") {
+		t.Fatalf("off mode should not render naming warning: %s", text)
+	}
+}
+
+func TestShortSessionNameUsesThreePartRegisteredName(t *testing.T) {
+	if got := shortSessionName("zzc-manager-2642"); got != "manager" {
+		t.Fatalf("shortSessionName compliant=%q", got)
+	}
+	if got := shortSessionName("dev1013"); got != "dev1013" {
+		t.Fatalf("shortSessionName legacy=%q", got)
+	}
+}
+
 func dialSession(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string) *websocket.Conn {
 	t.Helper()
 	return dialSessionWithHeader(t, ctx, baseURL, sessionName, keyID, secret, nil)
@@ -3334,6 +3438,26 @@ func dialSessionWithHeaderRaw(t *testing.T, ctx context.Context, baseURL, sessio
 		t.Fatalf("Dial %s: %v", sessionName, err)
 	}
 	return conn
+}
+
+func dialSessionErrorBody(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string) string {
+	t.Helper()
+	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/session/" + sessionName + "?key_id=" + keyID
+	header := http.Header{}
+	header.Set("Authorization", "Bearer "+secret)
+	conn, resp, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{HTTPHeader: header})
+	if conn != nil {
+		_ = conn.Close(websocket.StatusNormalClosure, "unexpected")
+	}
+	if err == nil {
+		t.Fatalf("Dial %s unexpectedly succeeded", sessionName)
+	}
+	if resp == nil {
+		return err.Error()
+	}
+	defer resp.Body.Close()
+	data, _ := io.ReadAll(resp.Body)
+	return string(data)
 }
 
 func dialSessionWithQuery(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret, query string) *websocket.Conn {

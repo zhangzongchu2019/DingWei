@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import os
+import re
 import shlex
 import subprocess
 from dataclasses import dataclass, field
 from urllib.parse import urlencode
 
 from .protocol import required_env
+
+
+NAME_PART_RE = re.compile(r"^[a-z0-9]+$")
+SESSION_NAME_RE = re.compile(r"^[a-z0-9]+-[a-z0-9]+-[0-9a-f]{4}$")
 
 
 @dataclass
@@ -88,10 +93,13 @@ class Config:
 def load_config(env: dict[str, str] | None = None) -> Config:
     env = env or os.environ
     cli_cmd = shlex.split(env.get("SH_CLI_CMD", ""))
-    session_name = required_env("SH_SESSION_NAME", env)
+    short_session_name = required_session_env("SH_SESSION_NAME", env).strip()
+    owner = required_session_env("SH_OWNER", env).strip()
+    key_id = required_env("SH_KEY_ID", env).strip()
+    session_name = build_session_name(owner, short_session_name, key_id)
     return Config(
         session_name=session_name,
-        key_id=required_env("SH_KEY_ID", env),
+        key_id=key_id,
         secret=required_env("SH_SECRET", env),
         ws_base=env.get("SH_WS_BASE", "ws://127.0.0.1:8791"),
         bot_name=env.get("SH_BOT_NAME", "UnifiedRobot"),
@@ -144,6 +152,45 @@ def load_config(env: dict[str, str] | None = None) -> Config:
 
 def truthy(value: str) -> bool:
     return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+def required_session_env(name: str, env: dict[str, str]) -> str:
+    try:
+        return required_env(name, env)
+    except (RuntimeError, SystemExit) as exc:
+        raise SystemExit(
+            f"{name} is required。\n"
+            "正确格式: SH_OWNER=<owner_key>, SH_SESSION_NAME=<短名>, 客户端自动注册为 <owner_key>-<短名>-<key末4位>。\n"
+            "本机示例: SH_OWNER=zzc SH_SESSION_NAME=manager -> zzc-manager-2642"
+        ) from exc
+
+
+def build_session_name(owner: str, short_name: str, key_id: str) -> str:
+    owner = (owner or "").strip()
+    short_name = (short_name or "").strip()
+    key_id = (key_id or "").strip()
+    key_tail = key_id[-4:].lower()
+    example = f"{owner or 'zzc'}-{short_name or 'manager'}-{key_tail or '2642'}"
+    if not NAME_PART_RE.fullmatch(owner):
+        raise SystemExit(
+            "SH_OWNER 不合规: 只能使用小写字母数字。\n"
+            "正确格式: SH_OWNER=<owner_key>, SH_SESSION_NAME=<短名>, 客户端自动注册为 <owner_key>-<短名>-<key末4位>。\n"
+            f"本机示例: SH_OWNER={owner or 'zzc'} SH_SESSION_NAME={short_name or 'manager'} -> {example}"
+        )
+    if not NAME_PART_RE.fullmatch(short_name):
+        raise SystemExit(
+            "SH_SESSION_NAME 不合规: 短名只能小写字母数字, 如 manager。\n"
+            "正确格式: SH_OWNER=<owner_key>, SH_SESSION_NAME=<短名>, 客户端自动注册为 <owner_key>-<短名>-<key末4位>。\n"
+            f"本机示例: SH_OWNER={owner} SH_SESSION_NAME={short_name or 'manager'} -> {example}"
+        )
+    session_name = f"{owner}-{short_name}-{key_tail}"
+    if not SESSION_NAME_RE.fullmatch(session_name):
+        raise SystemExit(
+            "会话注册名不合规: 须为 <owner_key>-<短名>-<key末4位>。\n"
+            "正确格式: SH_OWNER=<owner_key>, SH_SESSION_NAME=<短名>, 客户端自动注册为 <owner_key>-<短名>-<key末4位>。\n"
+            f"本机示例: SH_OWNER={owner} SH_SESSION_NAME={short_name} -> {example}"
+        )
+    return session_name
 
 
 def detect_os() -> str:
