@@ -2816,6 +2816,92 @@ WHERE id=? AND status='pending'`,
 	return nil
 }
 
+func (s *SQLite) ApproveKeyApplicationWithGrant(ctx context.Context, id, approverOpenID string, svc model.RegisteredService, key model.ServiceAPIKey, account string, entity model.ChatEntity, grant model.Message, reviewedAt time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if svc.ID == "" || key.ID == "" || key.KeyHash == "" || account == "" || grant.ID == "" {
+		return fmt.Errorf("approve key application requires service, key, account and grant message")
+	}
+	if svc.DeliveryType == "" {
+		svc.DeliveryType = "ws"
+	}
+	if svc.ReplyMode == "" {
+		svc.ReplyMode = "sync"
+	}
+	if svc.Priority == 0 {
+		svc.Priority = 100
+	}
+	if svc.TimeoutMs == 0 {
+		svc.TimeoutMs = 5000
+	}
+	if key.CreatedAt.IsZero() {
+		key.CreatedAt = time.Now().UTC()
+	}
+	if grant.Direction == "" {
+		grant.Direction = model.DirectionOut
+	}
+	grant = s.prepareMessageForInsert(grant)
+
+	res, err := tx.ExecContext(ctx, `UPDATE key_application
+SET status='approved', approver_open_id=?, service_id=?, key_id=?, reviewed_at=?
+WHERE id=? AND status='pending'`,
+		approverOpenID, svc.ID, key.ID, reviewedAt.UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO registered_service(id, name, description, delivery_type, endpoint, secret_ref, reply_mode, priority, timeout_ms, retry, enabled, health_status, last_heartbeat)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+		 ON CONFLICT(id) DO UPDATE SET name=excluded.name, description=excluded.description, delivery_type=excluded.delivery_type, endpoint=excluded.endpoint, secret_ref=excluded.secret_ref, reply_mode=excluded.reply_mode, priority=excluded.priority, timeout_ms=excluded.timeout_ms, retry=excluded.retry, enabled=excluded.enabled, health_status=excluded.health_status, last_heartbeat=excluded.last_heartbeat`,
+		svc.ID, svc.Name, svc.Description, svc.DeliveryType, svc.Endpoint, svc.SecretRef, svc.ReplyMode, svc.Priority, svc.TimeoutMs, svc.Retry, boolInt(svc.Enabled), svc.HealthStatus, timePtrString(svc.LastHeartbeatAt)); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO service_api_key(id, service_id, key_hash, label, active, created_at, revoked_at) VALUES(?,?,?,?,?,?,?)`,
+		key.ID, key.ServiceID, key.KeyHash, key.Label, boolInt(key.Active), key.CreatedAt.UTC().Format(time.RFC3339), timePtrString(key.RevokedAt)); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT OR IGNORE INTO api_key_account(api_key_id, chat_entity_id) VALUES(?,?)`,
+		key.ID, account); err != nil {
+		return err
+	}
+	if entity.ID != "" {
+		if entity.Type == "" {
+			entity.Type = model.ChatPersonal
+		}
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO chat_entity(id, bot_channel_id, type, feishu_id, display_name, bound_owner, active)
+			 VALUES(?,?,?,?,?,?,?)
+			 ON CONFLICT(id) DO UPDATE SET bot_channel_id=excluded.bot_channel_id, type=excluded.type, feishu_id=excluded.feishu_id, active=excluded.active`,
+			entity.ID, entity.BotChannelID, string(entity.Type), entity.FeishuID, entity.DisplayName, entity.BoundOwner, boolInt(entity.Active)); err != nil {
+			return err
+		}
+	}
+	var feishuMsgID any
+	if grant.FeishuMsgID != "" {
+		feishuMsgID = grant.FeishuMsgID
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
+		grant.ID, grant.ChatEntityID, string(grant.Direction), grant.BotChannelID, feishuMsgID, string(grant.ChatType), grant.SenderOpenID, grant.Content, grant.Status, grant.Attempts, grant.Err, grant.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 func (s *SQLite) RejectKeyApplication(ctx context.Context, id, approverOpenID, reason string, reviewedAt time.Time) error {
 	res, err := s.db.ExecContext(ctx, `UPDATE key_application
 SET status='rejected', approver_open_id=?, reject_reason=?, reviewed_at=?

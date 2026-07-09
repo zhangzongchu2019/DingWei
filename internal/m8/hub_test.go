@@ -2979,10 +2979,9 @@ func TestApplyKeyFlowRejectsPendingApplication(t *testing.T) {
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "apply-reject-create",
-		ChatEntityID: "dev:group:oc_team",
+		ChatEntityID: "dev:personal:ou_applicant",
 		BotChannelID: "dev",
-		ChatType:     model.ChatGroup,
-		SenderOpenID: "ou_applicant",
+		ChatType:     model.ChatPersonal,
 	}, "#申请 临时测试")
 	if err != nil {
 		t.Fatal(err)
@@ -3013,6 +3012,34 @@ func TestApplyKeyFlowRejectsPendingApplication(t *testing.T) {
 	app, err := db.GetKeyApplication(ctx, id)
 	if err != nil || app == nil || app.Status != "rejected" || app.RejectReason != "信息不足" {
 		t.Fatalf("rejected application=%+v err=%v", app, err)
+	}
+}
+
+func TestApplyKeyFlowIgnoresGroupCommands(t *testing.T) {
+	useTestApplyKeyApprover(t, "ou_approver")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-group",
+		ChatEntityID: "dev:group:oc_team",
+		BotChannelID: "dev",
+		ChatType:     model.ChatGroup,
+		SenderOpenID: "ou_applicant",
+	}, "#申请 群里申请")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("group apply should be silently handled, got %+v", result)
+	}
+	audits, err := db.ListRecentAudit(ctx, "key_application_create", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(audits) != 0 {
+		t.Fatalf("group command should not create application audit: %+v", audits)
 	}
 }
 

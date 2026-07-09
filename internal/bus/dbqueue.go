@@ -39,7 +39,11 @@ func (q *DBQueue) Dequeue(ctx context.Context) (*model.Message, error) {
 }
 
 func (q *DBQueue) Ack(ctx context.Context, id string) error {
-	return q.Repo.AckMessage(ctx, id)
+	if err := q.Repo.AckMessage(ctx, id); err != nil {
+		return err
+	}
+	q.forgetSensitive(id)
+	return nil
 }
 
 func (q *DBQueue) Fail(ctx context.Context, id string, reason string) error {
@@ -50,12 +54,19 @@ func (q *DBQueue) rememberSensitive(m model.Message) {
 	if m.ID == "" || m.SensitiveContent == "" {
 		return
 	}
+	q.RememberSensitiveContent(m.ID, m.SensitiveContent)
+}
+
+func (q *DBQueue) RememberSensitiveContent(id, content string) {
+	if id == "" || content == "" {
+		return
+	}
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if q.sensitive == nil {
 		q.sensitive = map[string]string{}
 	}
-	q.sensitive[m.ID] = m.SensitiveContent
+	q.sensitive[id] = content
 }
 
 func (q *DBQueue) applySensitive(m *model.Message) {
@@ -66,8 +77,13 @@ func (q *DBQueue) applySensitive(m *model.Message) {
 	}
 	if content := q.sensitive[m.ID]; content != "" {
 		m.Content = content
-		delete(q.sensitive, m.ID)
 	}
+}
+
+func (q *DBQueue) forgetSensitive(id string) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	delete(q.sensitive, id)
 }
 
 var _ Queue = (*DBQueue)(nil)

@@ -549,6 +549,11 @@ func (h *Hub) UpsertService(ctx context.Context, svc model.RegisteredService) er
 }
 
 func (h *Hub) IssueAPIKey(ctx context.Context, serviceID, label string) (secret string, meta model.ServiceAPIKey, err error) {
+	secret, meta = h.newAPIKey(serviceID, label)
+	return secret, meta, h.Repo.InsertServiceAPIKey(ctx, meta)
+}
+
+func (h *Hub) newAPIKey(serviceID, label string) (secret string, meta model.ServiceAPIKey) {
 	secret = "wp_" + randomHex(32)
 	meta = model.ServiceAPIKey{
 		ID:        newKeyID(label, serviceID),
@@ -558,7 +563,7 @@ func (h *Hub) IssueAPIKey(ctx context.Context, serviceID, label string) (secret 
 		Active:    true,
 		CreatedAt: time.Now().UTC(),
 	}
-	return secret, meta, h.Repo.InsertServiceAPIKey(ctx, meta)
+	return secret, meta
 }
 
 func HashAPIKey(plain string) string {
@@ -1622,6 +1627,9 @@ func (h *Hub) dispatchApplyKeyCommand(ctx context.Context, msg model.Message, te
 	if h.Repo == nil {
 		return model.PrefixDispatchResult{Matched: true, Reply: "自助申请 key 暂不可用：存储未配置"}, true, nil
 	}
+	if msg.ChatType != model.ChatPersonal {
+		return model.PrefixDispatchResult{Matched: true}, true, nil
+	}
 	switch cmd {
 	case "apply":
 		return h.createKeyApplication(ctx, msg, arg)
@@ -1691,43 +1699,45 @@ func (h *Hub) approveKeyApplication(ctx context.Context, msg model.Message, id s
 	if app.Status != "pending" {
 		return model.PrefixDispatchResult{Matched: true, Reply: fmt.Sprintf("申请 %s 当前状态为 %s，不能重复审批", app.ID, app.Status)}, true, nil
 	}
+	if _, ok := h.Outbound.(sensitiveOutboundRememberer); !ok {
+		return model.PrefixDispatchResult{}, true, errors.New("outbound queue does not support one-time secret delivery")
+	}
 	serviceID := applyKeyServiceID(app.ApplicantOpenID)
-	if err := h.UpsertService(ctx, model.RegisteredService{
+	secret, key := h.newAPIKey(serviceID, app.ApplicantOpenID)
+	account := firstNonEmpty(app.ApplicantAccount, app.ApplicantBotID+":personal:"+app.ApplicantOpenID)
+	grantID := "apply-key-grant-" + app.ID
+	grantText := applyKeyGrantText(key.ID, secret)
+	storedGrantText := applyKeyGrantStoredText(key.ID)
+	grantContent, _ := json.Marshal(map[string]string{"text": storedGrantText})
+	now := time.Now().UTC()
+	h.rememberSensitiveOutbound(grantID, mustTextContent(grantText))
+	if err := h.Repo.ApproveKeyApplicationWithGrant(ctx, app.ID, approver, model.RegisteredService{
 		ID:           serviceID,
 		Name:         "DingWei key " + app.ApplicantOpenID,
 		Description:  "Self-service key application " + app.ID,
 		DeliveryType: "ws",
 		ReplyMode:    "sync",
 		Enabled:      true,
-	}); err != nil {
-		return model.PrefixDispatchResult{}, true, err
-	}
-	secret, key, err := h.IssueAPIKey(ctx, serviceID, app.ApplicantOpenID)
-	if err != nil {
-		return model.PrefixDispatchResult{}, true, err
-	}
-	account := firstNonEmpty(app.ApplicantAccount, app.ApplicantBotID+":personal:"+app.ApplicantOpenID)
-	if err := h.BindAccount(ctx, key.ID, account); err != nil {
-		return model.PrefixDispatchResult{}, true, err
-	}
-	if err := h.Repo.UpsertChatEntity(ctx, model.ChatEntity{
+	}, key, account, model.ChatEntity{
 		ID:           account,
 		BotChannelID: app.ApplicantBotID,
 		Type:         model.ChatPersonal,
 		FeishuID:     app.ApplicantOpenID,
 		DisplayName:  app.ApplicantOpenID,
 		Active:       true,
-	}); err != nil {
-		return model.PrefixDispatchResult{}, true, err
-	}
-	now := time.Now().UTC()
-	if err := h.Repo.ApproveKeyApplication(ctx, app.ID, approver, serviceID, key.ID, now); err != nil {
+	}, model.Message{
+		ID:           grantID,
+		ChatEntityID: app.ApplicantBotID + ":personal:" + app.ApplicantOpenID,
+		Direction:    model.DirectionOut,
+		BotChannelID: app.ApplicantBotID,
+		FeishuMsgID:  grantID,
+		ChatType:     model.ChatPersonal,
+		Content:      string(grantContent),
+		Status:       "queued",
+	}, now); err != nil {
 		return model.PrefixDispatchResult{}, true, err
 	}
 	_ = h.Repo.WriteAudit(ctx, approver, "key_application_approve", app.ID+":"+key.ID)
-	if err := h.enqueueFeishuSensitiveText(ctx, app.ApplicantBotID, app.ApplicantOpenID, "apply-key-grant-"+app.ID, applyKeyGrantText(key.ID, secret), applyKeyGrantStoredText(key.ID)); err != nil {
-		return model.PrefixDispatchResult{}, true, err
-	}
 	return model.PrefixDispatchResult{Matched: true, Reply: "已批准申请 " + app.ID + "，key_id：" + key.ID + "。secret 已私聊发放给申请人。"}, true, nil
 }
 
@@ -1858,6 +1868,21 @@ func applyKeyGrantText(keyID, secret string) string {
 
 func applyKeyGrantStoredText(keyID string) string {
 	return strings.Replace(applyKeyGrantText(keyID, "***"), "secret: ***", "secret 已隐藏", 1)
+}
+
+type sensitiveOutboundRememberer interface {
+	RememberSensitiveContent(id, content string)
+}
+
+func (h *Hub) rememberSensitiveOutbound(id, content string) {
+	if q, ok := h.Outbound.(sensitiveOutboundRememberer); ok {
+		q.RememberSensitiveContent(id, content)
+	}
+}
+
+func mustTextContent(text string) string {
+	content, _ := json.Marshal(map[string]string{"text": text})
+	return string(content)
 }
 
 func parseSyncCommand(text string) (action, sessionName, keyID string, ok bool) {
