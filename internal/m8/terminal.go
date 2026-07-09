@@ -197,6 +197,7 @@ func (h *Hub) handleTerminalOutputEnvelope(c *sessionClient, env model.Envelope)
 		return false
 	}
 	data := env.Body
+	clean := sanitizeTerminalSyncText(data)
 	ts := time.Now().UTC()
 	h.mu.Lock()
 	st := h.terminalForSession(c.keyID, c.sessionName)
@@ -208,14 +209,17 @@ func (h *Hub) handleTerminalOutputEnvelope(c *sessionClient, env model.Envelope)
 	for _, v := range st.viewers {
 		viewers = append(viewers, v)
 	}
-	syncTargets := h.appendTerminalSyncItemLocked(c.keyID, c.sessionName, data, ts)
+	var syncTargets []feishuSyncTarget
+	if clean != "" {
+		syncTargets = h.appendTerminalSyncItemLocked(c.keyID, c.sessionName, clean, ts)
+	}
 	h.mu.Unlock()
 	for _, v := range viewers {
 		_ = terminalWrite(context.Background(), v, map[string]any{"type": "output", "data": data})
 	}
-	item := terminalSyncItem{TS: ts, Text: data}
+	item := terminalSyncItem{TS: ts, Text: clean}
 	for _, target := range syncTargets {
-		_ = h.sendFeishuSyncItem(context.Background(), c.keyID, c.sessionName, target, item)
+		h.queueFeishuSyncItem(c.keyID, c.sessionName, target, item)
 	}
 	return true
 }

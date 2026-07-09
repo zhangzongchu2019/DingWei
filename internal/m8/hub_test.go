@@ -2723,10 +2723,30 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 	}
 
 	if err := writeEnvelope(ctx, home, model.Envelope{
-		ID:   "term-live",
+		ID:   "term-live-1",
 		From: "home#" + key.ID,
 		To:   "workpulse#" + key.ID,
-		Body: "live-line",
+		Body: "\x1b[31mlive-line\x1b[0m",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-live-2",
+		From: "home#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: "\x1b[?25l",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-live-3",
+		From: "home#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: " tail",
 		TS:   time.Now().Unix(),
 		Meta: map[string]any{"type": terminalOutputType},
 	}); err != nil {
@@ -2736,8 +2756,11 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 	if live == nil {
 		t.Fatal("missing live sync message")
 	}
-	if text := messageText(t, live); !strings.Contains(text, "live-line") || !hasUTCPrefix(text) {
+	if text := messageText(t, live); !strings.Contains(text, "live-line tail") || strings.Contains(text, "\x1b") || !hasUTCPrefix(text) {
 		t.Fatalf("live sync msg=%+v text=%q", live, text)
+	}
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || msg != nil {
+		t.Fatalf("live chunks should be aggregated into one message msg=%+v err=%v", msg, err)
 	}
 
 	result, err = hub.Dispatch(ctx, model.Message{ID: "sync-2", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#unsync home")
@@ -2827,8 +2850,8 @@ func TestFeishuSyncRequiresExplicitKeyForOtherOwner(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.Matched || !strings.Contains(result.Reply, "已开启同步 home") {
-		t.Fatalf("explicit key sync result=%+v", result)
+	if !result.Matched || !strings.Contains(result.Reply, "无权同步他人会话") {
+		t.Fatalf("cross owner explicit key should be denied result=%+v", result)
 	}
 }
 
