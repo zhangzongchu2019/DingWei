@@ -2644,6 +2644,217 @@ func TestMirrorCommandDMControlsSessionAndGroupIgnored(t *testing.T) {
 	}
 }
 
+func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice-owner", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-sync", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-sync", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "home")
+
+	for i := 1; i <= 12; i++ {
+		if err := writeEnvelope(ctx, home, model.Envelope{
+			ID:   fmt.Sprintf("term-%02d", i),
+			From: "home#" + key.ID,
+			To:   "workpulse#" + key.ID,
+			Body: fmt.Sprintf("line-%02d", i),
+			TS:   time.Now().Unix(),
+			Meta: map[string]any{"type": terminalOutputType},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	waitFor(t, 2*time.Second, func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		items := hub.recentTerminal[terminalKey(key.ID, "home")]
+		return len(items) == 10 && strings.Contains(items[0].Text, "line-03") && strings.Contains(items[9].Text, "line-12")
+	})
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || msg != nil {
+		t.Fatalf("terminal output should not reach feishu before sync msg=%+v err=%v", msg, err)
+	}
+
+	result, err := hub.Dispatch(ctx, model.Message{ID: "sync-1", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#sync home")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已开启同步 home") {
+		t.Fatalf("sync result=%+v", result)
+	}
+	backfillLines := map[string]bool{}
+	for i := 0; i < 10; i++ {
+		msg := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+		if msg == nil || msg.ChatEntityID != "dev:personal:ou_alice" {
+			t.Fatalf("backfill msg=%+v", msg)
+		}
+		text := messageText(t, msg)
+		if !hasUTCPrefix(text) {
+			t.Fatalf("backfill text=%q", text)
+		}
+		for n := 3; n <= 12; n++ {
+			line := fmt.Sprintf("line-%02d", n)
+			if strings.Contains(text, line) {
+				backfillLines[line] = true
+			}
+		}
+	}
+	for i := 3; i <= 12; i++ {
+		line := fmt.Sprintf("line-%02d", i)
+		if !backfillLines[line] {
+			t.Fatalf("backfill missing %s in %v", line, backfillLines)
+		}
+	}
+
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-live-1",
+		From: "home#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: "\x1b[31mlive-line\x1b[0m",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-live-2",
+		From: "home#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: "\x1b[?25l",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-live-3",
+		From: "home#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: " tail",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	live := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if live == nil {
+		t.Fatal("missing live sync message")
+	}
+	if text := messageText(t, live); !strings.Contains(text, "live-line tail") || strings.Contains(text, "\x1b") || !hasUTCPrefix(text) {
+		t.Fatalf("live sync msg=%+v text=%q", live, text)
+	}
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || msg != nil {
+		t.Fatalf("live chunks should be aggregated into one message msg=%+v err=%v", msg, err)
+	}
+
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sync-2", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#unsync home")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已停止同步 home") {
+		t.Fatalf("unsync result=%+v", result)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-after-unsync",
+		From: "home#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: "after-unsync",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(50 * time.Millisecond)
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || msg != nil {
+		t.Fatalf("terminal output should stop after unsync msg=%+v err=%v", msg, err)
+	}
+	_ = home.Close(websocket.StatusNormalClosure, "done")
+	waitEndpointInactive(t, ctx, db, key.ID, "home")
+	hub.mu.Lock()
+	_, stillCached := hub.recentTerminal[terminalKey(key.ID, "home")]
+	hub.mu.Unlock()
+	if stillCached {
+		t.Fatal("terminal sync cache should be cleared after session offline")
+	}
+}
+
+func TestFeishuSyncRequiresExplicitKeyForOtherOwner(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice-owner", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob-owner", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-sync-cross", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	aliceSecret, aliceKey, err := hub.IssueAPIKey(ctx, "svc-sync-cross", "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	bobSecret, bobKey, err := hub.IssueAPIKey(ctx, "svc-sync-cross", "bob")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, aliceKey.ID, "dev:personal:ou_alice"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, bobKey.ID, "dev:personal:ou_bob"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	aliceHome := dialSession(t, ctx, srv.URL, "home", aliceKey.ID, aliceSecret)
+	defer aliceHome.Close(websocket.StatusNormalClosure, "done")
+	bobHome := dialSession(t, ctx, srv.URL, "home", bobKey.ID, bobSecret)
+	defer bobHome.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, aliceKey.ID, "home")
+	waitSessionOnline(t, hub, bobKey.ID, "home")
+
+	result, err := hub.Dispatch(ctx, model.Message{ID: "sync-cross-1", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#sync home")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已开启同步 home") {
+		t.Fatalf("own sync result=%+v", result)
+	}
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sync-cross-2", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#sync missing")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "同步他人会话请显式使用") {
+		t.Fatalf("missing owner sync result=%+v", result)
+	}
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sync-cross-3", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#sync home#"+bobKey.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "无权同步他人会话") {
+		t.Fatalf("cross owner explicit key should be denied result=%+v", result)
+	}
+}
+
 func TestParseSelectorRejectsHashSpace(t *testing.T) {
 	if name, _, ok := parseSelector("#home hello"); !ok || name != "home" {
 		t.Fatalf("#home selector not parsed: name=%q ok=%v", name, ok)
@@ -3083,6 +3294,18 @@ func messageText(t *testing.T, msg *model.Message) string {
 		t.Fatalf("unmarshal message content: %v content=%q", err, msg.Content)
 	}
 	return payload.Text
+}
+
+func hasUTCPrefix(text string) bool {
+	if len(text) < len("[2006-01-02 15:04:05 UTC]") {
+		return false
+	}
+	prefix := text[:len("[2006-01-02 15:04:05 UTC]")]
+	if !strings.HasPrefix(prefix, "[") || !strings.HasSuffix(prefix, " UTC]") {
+		return false
+	}
+	_, err := time.Parse("2006-01-02 15:04:05 MST", strings.TrimSuffix(strings.TrimPrefix(prefix, "["), "]"))
+	return err == nil
 }
 
 func waitOutbound(t *testing.T, ctx context.Context, q *bus.DBQueue) *model.Message {

@@ -54,6 +54,9 @@ type Hub struct {
 	envelopeIDs    map[string]string
 	onlineTimers   map[string]*time.Timer
 	terminals      map[string]*terminalState
+	syncTargets    map[string]map[string]feishuSyncTarget
+	recentTerminal map[string][]terminalSyncItem
+	syncBuffers    map[string]*feishuSyncBuffer
 	onlineDebounce time.Duration
 }
 
@@ -80,6 +83,26 @@ type sessionClient struct {
 	osName         string
 	skillInstalled bool
 	skillCancel    context.CancelFunc
+}
+
+type feishuSyncTarget struct {
+	openID       string
+	keyID        string
+	botName      string
+	botChannelID string
+}
+
+type terminalSyncItem struct {
+	TS   time.Time
+	Text string
+}
+
+type feishuSyncBuffer struct {
+	keyID       string
+	sessionName string
+	target      feishuSyncTarget
+	items       []terminalSyncItem
+	timer       *time.Timer
 }
 
 type ForwardRequest struct {
@@ -111,6 +134,10 @@ const (
 var (
 	secOpsAdminOpenID   = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
 	secOpsAdminOwnerKey = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OWNER_KEY"))
+	ansiCSIRE           = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
+	ansiOSCSTRE         = regexp.MustCompile(`\x1b\][^\x07]*(\x07|\x1b\\)`)
+	ansiSimpleRE        = regexp.MustCompile(`\x1b[@-Z\\-_]`)
+	controlExceptTextRE = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
 )
 
 func New(repo store.Repository) *Hub {
@@ -124,6 +151,9 @@ func New(repo store.Repository) *Hub {
 		envelopeIDs:    map[string]string{},
 		onlineTimers:   map[string]*time.Timer{},
 		terminals:      map[string]*terminalState{},
+		syncTargets:    map[string]map[string]feishuSyncTarget{},
+		recentTerminal: map[string][]terminalSyncItem{},
+		syncBuffers:    map[string]*feishuSyncBuffer{},
 		onlineDebounce: 2500 * time.Millisecond,
 		L2Config: L2Config{
 			Workers:             4,
@@ -680,6 +710,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		terminalViewers := h.closeTerminalLocked(keyID, sessionName)
+		h.closeFeishuSyncLocked(keyID, sessionName)
 		h.mu.Unlock()
 		for _, viewer := range terminalViewers {
 			_ = terminalWrite(context.Background(), viewer, map[string]any{"type": "status", "readonly": true, "message": "会话已离线"})
@@ -912,6 +943,9 @@ func (h *Hub) dispatchL1(ctx context.Context, msg model.Message, text string) (m
 	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
 		return result, "command.security", "", err
 	}
+	if result, handled, err := h.dispatchFeishuSyncCommand(ctx, msg, text); handled || err != nil {
+		return result, "command.sync", "", err
+	}
 	if result, handled, err := h.dispatchSystem(ctx, msg, text); handled || err != nil {
 		return result, "command.system", "", err
 	}
@@ -977,6 +1011,9 @@ func (h *Hub) executeL1Rule(ctx context.Context, rule model.L1DecisionRule, msg 
 
 func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, string, bool, error) {
 	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
+		return result, "", handled, err
+	}
+	if result, handled, err := h.dispatchFeishuSyncCommand(ctx, msg, text); handled || err != nil {
 		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchTerminalInputCommand(ctx, msg, text); handled || err != nil {
@@ -1514,6 +1551,237 @@ func (h *Hub) dispatchMirrorCommand(ctx context.Context, msg model.Message, text
 		return model.PrefixDispatchResult{Matched: true, Reply: "镜像已关闭：" + sessionName}, true, nil
 	}
 	return model.PrefixDispatchResult{Matched: true, Reply: "镜像已关闭并保存；会话当前离线：" + sessionName}, true, nil
+}
+
+func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
+	action, sessionName, explicitKey, ok := parseSyncCommand(text)
+	if !ok {
+		return model.PrefixDispatchResult{}, false, nil
+	}
+	if msg.ChatType != model.ChatPersonal {
+		return model.PrefixDispatchResult{Matched: true}, true, nil
+	}
+	openID := firstNonEmpty(msg.SenderOpenID, feishuOpenIDFromAccount(sourceAccount(msg)))
+	if openID == "" {
+		return model.PrefixDispatchResult{Matched: true, Reply: "无法识别发起人 open_id"}, true, nil
+	}
+	targetKey, found := "", false
+	if explicitKey != "" {
+		sourceOwner := h.controlOwnerKey(ctx, msg)
+		targetOwner := h.ownerKeyForKey(ctx, explicitKey)
+		if sourceOwner == "" || targetOwner == "" || sourceOwner != targetOwner {
+			return model.PrefixDispatchResult{Matched: true, Reply: "无权同步他人会话"}, true, nil
+		}
+		if h.sessionOnline(explicitKey, sessionName) {
+			targetKey, found = explicitKey, true
+		}
+	} else {
+		ownerKey := h.controlOwnerKey(ctx, msg)
+		targetKey, found = h.resolveOwnerSessionKey(ctx, ownerKey, sessionName, "")
+	}
+	if !found {
+		if explicitKey == "" {
+			return model.PrefixDispatchResult{Matched: true, Reply: "未找到你名下在线会话：" + sessionName + "。同步他人会话请显式使用 #sync " + sessionName + "#<key>。"}, true, nil
+		}
+		return model.PrefixDispatchResult{Matched: true, Reply: "未找到在线会话：" + sessionName + "#" + explicitKey}, true, nil
+	}
+	target := feishuSyncTarget{
+		openID:       openID,
+		keyID:        targetKey,
+		botName:      h.botName(msg.BotChannelID),
+		botChannelID: msg.BotChannelID,
+	}
+	switch action {
+	case "sync":
+		for _, item := range h.addFeishuSyncTargetAndSnapshot(targetKey, sessionName, target) {
+			if err := h.sendFeishuSyncItem(ctx, targetKey, sessionName, target, item); err != nil {
+				return model.PrefixDispatchResult{}, true, err
+			}
+		}
+		return model.PrefixDispatchResult{Matched: true, Reply: "已开启同步 " + sessionName}, true, nil
+	case "unsync":
+		h.removeFeishuSyncTarget(targetKey, sessionName, target)
+		return model.PrefixDispatchResult{Matched: true, Reply: "已停止同步 " + sessionName}, true, nil
+	default:
+		return model.PrefixDispatchResult{}, false, nil
+	}
+}
+
+func parseSyncCommand(text string) (action, sessionName, keyID string, ok bool) {
+	fields := strings.Fields(strings.TrimSpace(stripLeadingMentions(text)))
+	if len(fields) != 2 {
+		return "", "", "", false
+	}
+	switch strings.ToLower(fields[0]) {
+	case "#sync":
+		action = "sync"
+	case "#unsync":
+		action = "unsync"
+	default:
+		return "", "", "", false
+	}
+	target := strings.TrimSpace(fields[1])
+	if target == "" {
+		return "", "", "", false
+	}
+	if strings.Contains(target, "#") {
+		parts := strings.SplitN(target, "#", 2)
+		sessionName, keyID = strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+		if sessionName == "" || keyID == "" || strings.Contains(keyID, "#") {
+			return "", "", "", false
+		}
+		return action, sessionName, keyID, true
+	}
+	return action, target, "", true
+}
+
+func (h *Hub) addFeishuSyncTargetAndSnapshot(keyID, sessionName string, target feishuSyncTarget) []terminalSyncItem {
+	k := terminalKey(keyID, sessionName)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.syncTargets[k] == nil {
+		h.syncTargets[k] = map[string]feishuSyncTarget{}
+	}
+	h.syncTargets[k][target.syncKey()] = target
+	items := h.recentTerminal[k]
+	out := make([]terminalSyncItem, len(items))
+	copy(out, items)
+	return out
+}
+
+func (h *Hub) removeFeishuSyncTarget(keyID, sessionName string, target feishuSyncTarget) {
+	k := terminalKey(keyID, sessionName)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if targets := h.syncTargets[k]; targets != nil {
+		delete(targets, target.syncKey())
+		if len(targets) == 0 {
+			delete(h.syncTargets, k)
+		}
+	}
+	for bufferKey, buffer := range h.syncBuffers {
+		if buffer.keyID == keyID && buffer.sessionName == sessionName && buffer.target.syncKey() == target.syncKey() {
+			if buffer.timer != nil {
+				buffer.timer.Stop()
+			}
+			delete(h.syncBuffers, bufferKey)
+		}
+	}
+}
+
+func (h *Hub) appendTerminalSyncItemLocked(keyID, sessionName, text string, ts time.Time) []feishuSyncTarget {
+	k := terminalKey(keyID, sessionName)
+	items := append(h.recentTerminal[k], terminalSyncItem{TS: ts.UTC(), Text: text})
+	if len(items) > 10 {
+		items = items[len(items)-10:]
+	}
+	h.recentTerminal[k] = items
+	targets := make([]feishuSyncTarget, 0, len(h.syncTargets[k]))
+	for _, target := range h.syncTargets[k] {
+		targets = append(targets, target)
+	}
+	return targets
+}
+
+func (h *Hub) closeFeishuSyncLocked(keyID, sessionName string) {
+	k := terminalKey(keyID, sessionName)
+	delete(h.recentTerminal, k)
+	delete(h.syncTargets, k)
+	for bufferKey, buffer := range h.syncBuffers {
+		if buffer.keyID == keyID && buffer.sessionName == sessionName {
+			if buffer.timer != nil {
+				buffer.timer.Stop()
+			}
+			delete(h.syncBuffers, bufferKey)
+		}
+	}
+}
+
+func (h *Hub) sendFeishuSyncItem(ctx context.Context, keyID, sessionName string, target feishuSyncTarget, item terminalSyncItem) error {
+	if strings.TrimSpace(item.Text) == "" {
+		return nil
+	}
+	env := model.Envelope{
+		ID:   randomHex(16),
+		To:   feishuAddress(target.openID, keyID, target.botName),
+		From: sessionAddress(sessionName, keyID),
+		Body: formatTerminalSyncText(item),
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{
+			"type":                  "feishu_sync",
+			"source_bot_channel_id": target.botChannelID,
+		},
+	}
+	return h.RouteEnvelope(ctx, env)
+}
+
+func (h *Hub) queueFeishuSyncItem(keyID, sessionName string, target feishuSyncTarget, item terminalSyncItem) {
+	if strings.TrimSpace(item.Text) == "" {
+		return
+	}
+	bufferKey := terminalKey(keyID, sessionName) + ":" + target.syncKey()
+	h.mu.Lock()
+	buffer := h.syncBuffers[bufferKey]
+	if buffer == nil {
+		buffer = &feishuSyncBuffer{keyID: keyID, sessionName: sessionName, target: target}
+		h.syncBuffers[bufferKey] = buffer
+	}
+	buffer.items = append(buffer.items, item)
+	if buffer.timer == nil {
+		buffer.timer = time.AfterFunc(time.Second, func() {
+			h.flushFeishuSyncBuffer(bufferKey)
+		})
+	}
+	h.mu.Unlock()
+}
+
+func (h *Hub) flushFeishuSyncBuffer(bufferKey string) {
+	h.mu.Lock()
+	buffer := h.syncBuffers[bufferKey]
+	if buffer == nil {
+		h.mu.Unlock()
+		return
+	}
+	delete(h.syncBuffers, bufferKey)
+	items := append([]terminalSyncItem(nil), buffer.items...)
+	keyID, sessionName, target := buffer.keyID, buffer.sessionName, buffer.target
+	active := false
+	if targets := h.syncTargets[terminalKey(keyID, sessionName)]; targets != nil {
+		_, active = targets[target.syncKey()]
+	}
+	h.mu.Unlock()
+	if !active || len(items) == 0 {
+		return
+	}
+	var b strings.Builder
+	for _, item := range items {
+		b.WriteString(item.Text)
+	}
+	text := strings.TrimSpace(b.String())
+	if text == "" {
+		return
+	}
+	_ = h.sendFeishuSyncItem(context.Background(), keyID, sessionName, target, terminalSyncItem{TS: items[0].TS, Text: text})
+}
+
+func formatTerminalSyncText(item terminalSyncItem) string {
+	return fmt.Sprintf("[%s] %s", item.TS.UTC().Format("2006-01-02 15:04:05 UTC"), item.Text)
+}
+
+func sanitizeTerminalSyncText(text string) string {
+	text = ansiOSCSTRE.ReplaceAllString(text, "")
+	text = ansiCSIRE.ReplaceAllString(text, "")
+	text = ansiSimpleRE.ReplaceAllString(text, "")
+	text = strings.ReplaceAll(text, "\r", "\n")
+	text = controlExceptTextRE.ReplaceAllString(text, "")
+	if strings.TrimSpace(text) == "" {
+		return ""
+	}
+	return text
+}
+
+func (t feishuSyncTarget) syncKey() string {
+	return t.botChannelID + ":" + t.openID
 }
 
 func (h *Hub) forward(ctx context.Context, serviceID string, req ForwardRequest, timeoutMs int) (string, error) {
