@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -47,6 +48,8 @@ type AsyncDBQueue struct {
 	flushEvery time.Duration
 	logger     *slog.Logger
 	flushReq   chan chan struct{}
+	mu         sync.Mutex
+	sensitive  map[string]string
 }
 
 func NewAsyncDBQueue(ctx context.Context, repo BatchMessageRepository, direction model.Direction, cfg AsyncDBQueueConfig) *AsyncDBQueue {
@@ -67,6 +70,7 @@ func NewAsyncDBQueue(ctx context.Context, repo BatchMessageRepository, direction
 		flushEvery: cfg.FlushInterval,
 		logger:     cfg.Logger,
 		flushReq:   make(chan chan struct{}),
+		sensitive:  map[string]string{},
 	}
 	go q.run(ctx)
 	return q
@@ -84,6 +88,7 @@ func (q *AsyncDBQueue) Enqueue(ctx context.Context, m model.Message) error {
 	if m.Status == "" {
 		m.Status = "queued"
 	}
+	q.rememberSensitive(m)
 	select {
 	case q.ch <- m:
 		return nil
@@ -93,7 +98,12 @@ func (q *AsyncDBQueue) Enqueue(ctx context.Context, m model.Message) error {
 }
 
 func (q *AsyncDBQueue) Dequeue(ctx context.Context) (*model.Message, error) {
-	return q.repo.ClaimNextMessage(ctx, q.direction)
+	msg, err := q.repo.ClaimNextMessage(ctx, q.direction)
+	if err != nil || msg == nil {
+		return msg, err
+	}
+	q.applySensitive(msg)
+	return msg, nil
 }
 
 func (q *AsyncDBQueue) Ack(ctx context.Context, id string) error {
@@ -102,6 +112,30 @@ func (q *AsyncDBQueue) Ack(ctx context.Context, id string) error {
 
 func (q *AsyncDBQueue) Fail(ctx context.Context, id string, reason string) error {
 	return q.repo.FailMessage(ctx, id, reason)
+}
+
+func (q *AsyncDBQueue) rememberSensitive(m model.Message) {
+	if m.ID == "" || m.SensitiveContent == "" {
+		return
+	}
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if q.sensitive == nil {
+		q.sensitive = map[string]string{}
+	}
+	q.sensitive[m.ID] = m.SensitiveContent
+}
+
+func (q *AsyncDBQueue) applySensitive(m *model.Message) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if q.sensitive == nil {
+		return
+	}
+	if content := q.sensitive[m.ID]; content != "" {
+		m.Content = content
+		delete(q.sensitive, m.ID)
+	}
 }
 
 func (q *AsyncDBQueue) Flush(ctx context.Context) error {

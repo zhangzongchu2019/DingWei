@@ -68,11 +68,13 @@ type Message struct {
 	ChatType     ChatType
 	SenderOpenID string // 群消息=发言人
 	Content      string // content_json
-	Status       string
-	Attempts     int
-	Err          string
-	CreatedAt    time.Time
-	ProcessedAt  *time.Time
+	// SensitiveContent is an in-memory-only delivery override. It is never stored.
+	SensitiveContent string
+	Status           string
+	Attempts         int
+	Err              string
+	CreatedAt        time.Time
+	ProcessedAt      *time.Time
 }
 
 // MessageFilter 最近消息只读筛选条件。
@@ -440,6 +442,23 @@ type ServiceAPIKey struct {
 	Active    bool
 	CreatedAt time.Time
 	RevokedAt *time.Time
+}
+
+// KeyApplication records a self-service session key request and its review trail.
+type KeyApplication struct {
+	ID               string
+	ApplicantOpenID  string
+	ApplicantAccount string
+	ApplicantBotID   string
+	ApplicantBotName string
+	Description      string
+	Status           string
+	ApproverOpenID   string
+	ServiceID        string
+	KeyID            string
+	RejectReason     string
+	CreatedAt        time.Time
+	ReviewedAt       *time.Time
 }
 
 // PrefixRoute 是一条可执行的 prefix 路由视图。

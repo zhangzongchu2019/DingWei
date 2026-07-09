@@ -2764,6 +2764,76 @@ func (s *SQLite) ListServiceBoundAccounts(ctx context.Context, serviceID string)
 	return scanStrings(rows)
 }
 
+func (s *SQLite) CreateKeyApplication(ctx context.Context, app model.KeyApplication) (model.KeyApplication, error) {
+	if app.ID == "" {
+		app.ID = newID()
+	}
+	if app.Status == "" {
+		app.Status = "pending"
+	}
+	if app.CreatedAt.IsZero() {
+		app.CreatedAt = time.Now().UTC()
+	}
+	_, err := s.db.ExecContext(ctx, `INSERT INTO key_application(
+  id, applicant_open_id, applicant_account, applicant_bot_id, applicant_bot_name, description,
+  status, approver_open_id, service_id, key_id, reject_reason, created_at, reviewed_at
+) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		app.ID, app.ApplicantOpenID, app.ApplicantAccount, app.ApplicantBotID, app.ApplicantBotName, app.Description,
+		app.Status, nullString(app.ApproverOpenID), nullString(app.ServiceID), nullString(app.KeyID), nullString(app.RejectReason),
+		app.CreatedAt.UTC().Format(time.RFC3339), timePtrString(app.ReviewedAt))
+	return app, err
+}
+
+func (s *SQLite) GetKeyApplication(ctx context.Context, id string) (*model.KeyApplication, error) {
+	row := s.db.QueryRowContext(ctx, `SELECT id, applicant_open_id, applicant_account, applicant_bot_id, applicant_bot_name, description,
+  status, approver_open_id, service_id, key_id, reject_reason, created_at, reviewed_at
+  FROM key_application WHERE id=?`, id)
+	app, err := scanKeyApplication(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
+func (s *SQLite) ApproveKeyApplication(ctx context.Context, id, approverOpenID, serviceID, keyID string, reviewedAt time.Time) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE key_application
+SET status='approved', approver_open_id=?, service_id=?, key_id=?, reviewed_at=?
+WHERE id=? AND status='pending'`,
+		approverOpenID, serviceID, keyID, reviewedAt.UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (s *SQLite) RejectKeyApplication(ctx context.Context, id, approverOpenID, reason string, reviewedAt time.Time) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE key_application
+SET status='rejected', approver_open_id=?, reject_reason=?, reviewed_at=?
+WHERE id=? AND status='pending'`,
+		approverOpenID, reason, reviewedAt.UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 func sessionServiceParts(serviceID string) (keyID string, sessionName string, ok bool) {
 	if !strings.HasPrefix(serviceID, "session:") {
 		return "", "", false
@@ -2978,6 +3048,24 @@ func timePtrString(t *time.Time) any {
 		return nil
 	}
 	return t.UTC().Format(time.RFC3339)
+}
+
+func scanKeyApplication(row rowScanner) (model.KeyApplication, error) {
+	var app model.KeyApplication
+	var approver, serviceID, keyID, rejectReason, reviewed sql.NullString
+	var created string
+	err := row.Scan(&app.ID, &app.ApplicantOpenID, &app.ApplicantAccount, &app.ApplicantBotID, &app.ApplicantBotName, &app.Description,
+		&app.Status, &approver, &serviceID, &keyID, &rejectReason, &created, &reviewed)
+	if err != nil {
+		return app, err
+	}
+	app.ApproverOpenID = nullableString(approver)
+	app.ServiceID = nullableString(serviceID)
+	app.KeyID = nullableString(keyID)
+	app.RejectReason = nullableString(rejectReason)
+	app.CreatedAt, _ = time.Parse(time.RFC3339, created)
+	app.ReviewedAt = parseTimePtr(reviewed)
+	return app, nil
 }
 
 func scanStrings(rows *sql.Rows) ([]string, error) {

@@ -140,6 +140,10 @@ type Repository interface {
 	BindAPIKeyAccount(ctx context.Context, keyID, chatEntityID string) error
 	ListAPIKeyAccounts(ctx context.Context, keyID string) ([]string, error)
 	ListServiceBoundAccounts(ctx context.Context, serviceID string) ([]string, error)
+	CreateKeyApplication(ctx context.Context, app model.KeyApplication) (model.KeyApplication, error)
+	GetKeyApplication(ctx context.Context, id string) (*model.KeyApplication, error)
+	ApproveKeyApplication(ctx context.Context, id, approverOpenID, serviceID, keyID string, reviewedAt time.Time) error
+	RejectKeyApplication(ctx context.Context, id, approverOpenID, reason string, reviewedAt time.Time) error
 	InsertRoutingRule(ctx context.Context, rule model.RoutingRule) error
 	DeleteRoutingRule(ctx context.Context, id string) error
 	ListAllPrefixRoutes(ctx context.Context) ([]model.PrefixRoute, error)
