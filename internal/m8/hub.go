@@ -124,7 +124,7 @@ type ForwardResponse struct {
 }
 
 const (
-	secOpsOwnerKey             = "system-v-task-internal"
+	secOpsOwnerKey             = "systemtaskintl"
 	secOpsMemberName           = "SYSTEM-V-TASK-INTERNAL"
 	secOpsKeyword              = "#系统安全"
 	agentNetworkSkillAck       = "DINGWEI_COMM_SKILL_INSTALLED"
@@ -134,14 +134,15 @@ const (
 )
 
 var (
-	secOpsAdminOpenID   = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
-	secOpsAdminOwnerKey = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OWNER_KEY"))
-	applyKeyApproverID  = strings.TrimSpace(os.Getenv("WP_APPLY_KEY_APPROVER_OPENID"))
-	ansiCSIRE           = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
-	ansiOSCSTRE         = regexp.MustCompile(`\x1b\][^\x07]*(\x07|\x1b\\)`)
-	ansiSimpleRE        = regexp.MustCompile(`\x1b[@-Z\\-_]`)
-	controlExceptTextRE = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
-	sessionNamePattern  = regexp.MustCompile(`^[a-z0-9]+-[a-z0-9]+-[0-9a-f]{4}$`)
+	secOpsAdminOpenID      = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
+	secOpsAdminOwnerKey    = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OWNER_KEY"))
+	applyKeyApproverID     = strings.TrimSpace(os.Getenv("WP_APPLY_KEY_APPROVER_OPENID"))
+	ansiCSIRE              = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
+	ansiOSCSTRE            = regexp.MustCompile(`\x1b\][^\x07]*(\x07|\x1b\\)`)
+	ansiSimpleRE           = regexp.MustCompile(`\x1b[@-Z\\-_]`)
+	controlExceptTextRE    = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
+	bareSessionNamePattern = regexp.MustCompile(`^[a-z0-9]+$`)
+	sessionNamePattern     = regexp.MustCompile(`^[a-z0-9]+-[a-z0-9]+-[0-9a-f]{4}$`)
 )
 
 func New(repo store.Repository) *Hub {
@@ -663,7 +664,8 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	osName := strings.TrimSpace(r.URL.Query().Get("os"))
 	mirrorTo := sessionMirrorToFromRequest(r)
 	ownerKey := h.ownerKeyForKeyWithAccounts(r.Context(), keyID, accounts)
-	nameWarn := sessionNamePolicyWarning(requestedSessionName, keyID, ownerKey)
+	sessionName := deriveRegisteredSessionName(requestedSessionName, keyID, ownerKey)
+	nameWarn := sessionNamePolicyWarning(sessionName, keyID, ownerKey)
 	switch sessionNameEnforceMode() {
 	case "enforce":
 		if nameWarn != "" {
@@ -675,9 +677,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			log.Printf("session name warning key_id=%s owner=%s session=%s: %s", keyID, ownerKey, requestedSessionName, nameWarn)
 		}
 	}
-	sessionName, err := h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
+	sessionName, err = h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
 		KeyID:           keyID,
-		SessionName:     requestedSessionName,
+		SessionName:     sessionName,
 		FullSessionName: fullSessionName,
 		OwnerKey:        ownerKey,
 		LastSeenAt:      time.Now().UTC(),
@@ -906,6 +908,17 @@ func (h *Hub) nextSessionNameForOwner(ctx context.Context, ownerKey, keyID, requ
 
 func suffixedSessionName(base string, n int) string {
 	return fmt.Sprintf("%s%d", base, n)
+}
+
+func deriveRegisteredSessionName(requested, keyID, ownerKey string) string {
+	requested = strings.TrimSpace(requested)
+	if sessionNamePattern.MatchString(requested) {
+		return requested
+	}
+	if bareSessionNamePattern.MatchString(requested) && ownerKey != "" {
+		return fmt.Sprintf("%s-%s-%s", ownerKey, requested, keyTail(keyID))
+	}
+	return requested
 }
 
 func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {

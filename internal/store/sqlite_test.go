@@ -99,16 +99,16 @@ func TestMigrateUpgradesExistingDBWithSeenPersonAndBotSecret(t *testing.T) {
 	if err != nil || len(aggregateIDs) != 0 {
 		t.Fatalf("aggregate projects should not be seeded ids=%+v err=%v", aggregateIDs, err)
 	}
-	member, err := db.GetMemberByOwnerKey(ctx, "system-v-task-internal")
+	member, err := db.GetMemberByOwnerKey(ctx, "systemtaskintl")
 	if err != nil || member == nil || member.Role != model.RoleSystem || member.FeishuOpenID != "" {
 		t.Fatalf("system producer member=%+v err=%v", member, err)
 	}
-	keys, err := db.ListServiceAPIKeys(ctx, "system-v-task-internal")
+	keys, err := db.ListServiceAPIKeys(ctx, "systemtaskintl")
 	if err != nil || len(keys) == 0 {
 		t.Fatalf("system producer keys=%+v err=%v", keys, err)
 	}
 	accounts, err := db.ListAPIKeyAccounts(ctx, keys[0].ID)
-	if err != nil || len(accounts) != 1 || accounts[0] != "system-v-task-internal" {
+	if err != nil || len(accounts) != 1 || accounts[0] != "systemtaskintl" {
 		t.Fatalf("system producer key accounts=%+v err=%v", accounts, err)
 	}
 	routes, err := db.ListSystemRoutes(ctx)

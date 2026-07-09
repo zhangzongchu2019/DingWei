@@ -2,7 +2,7 @@
 # 用法：复制本文件为 config，填入你的 key_id/secret(管理员单独私密发你),再 ./start.sh
 # ⚠️ config 含密钥,权限设 600,不要提交 git、不要外传。
 
-SH_SESSION_NAME=你的会话名          # 如 u2;飞书里 #会话名 找你的AI
+SH_SESSION_NAME=你的短会话名        # 如 developer;服务端按 key 绑定自动生成完整注册名
 SH_KEY_ID=管理员发给你的key_id       # 如 FB-xxx-...(公开,进地址)
 SH_SECRET=管理员发给你的secret        # wp_... 私密凭证,谁拿到能以你身份接入
 SH_WS_BASE=wss://<DingWei域名>/dingwei # WS 端点(管理员告知)

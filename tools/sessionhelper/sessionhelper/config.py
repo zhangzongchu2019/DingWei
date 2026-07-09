@@ -94,9 +94,8 @@ def load_config(env: dict[str, str] | None = None) -> Config:
     env = env or os.environ
     cli_cmd = shlex.split(env.get("SH_CLI_CMD", ""))
     short_session_name = required_session_env("SH_SESSION_NAME", env).strip()
-    owner = required_session_env("SH_OWNER", env).strip()
     key_id = required_env("SH_KEY_ID", env).strip()
-    session_name = build_session_name(owner, short_session_name, key_id)
+    session_name = normalize_client_session_name(short_session_name)
     return Config(
         session_name=session_name,
         key_id=key_id,
@@ -160,9 +159,23 @@ def required_session_env(name: str, env: dict[str, str]) -> str:
     except (RuntimeError, SystemExit) as exc:
         raise SystemExit(
             f"{name} is required。\n"
-            "正确格式: SH_OWNER=<owner_key>, SH_SESSION_NAME=<短名>, 客户端自动注册为 <owner_key>-<短名>-<key末4位>。\n"
-            "本机示例: SH_OWNER=zzc SH_SESSION_NAME=manager -> zzc-manager-2642"
+            "正确格式: SH_SESSION_NAME=<短名>。owner_key 与完整注册名由服务端按 key 绑定自动派生。\n"
+            "本机示例: SH_SESSION_NAME=manager"
         ) from exc
+
+
+def normalize_client_session_name(value: str) -> str:
+    value = (value or "").strip()
+    parsed = SESSION_NAME_RE.fullmatch(value)
+    if parsed:
+        value = value.split("-")[1]
+    if not NAME_PART_RE.fullmatch(value):
+        raise SystemExit(
+            "SH_SESSION_NAME 不合规: 短名只能小写字母数字, 如 manager。\n"
+            "正确格式: SH_SESSION_NAME=<短名>。owner_key 与完整注册名由服务端按 key 绑定自动派生。\n"
+            f"本机示例: SH_SESSION_NAME={value or 'manager'}"
+        )
+    return value
 
 
 def build_session_name(owner: str, short_name: str, key_id: str) -> str:

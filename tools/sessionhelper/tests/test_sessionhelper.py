@@ -59,7 +59,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class SessionHelperTest(unittest.TestCase):
     def test_load_config_required_and_defaults(self):
         cfg = load_config(BASE_ENV)
-        self.assertEqual(cfg.session_name, "zzc-home-2642")
+        self.assertEqual(cfg.session_name, "home")
         self.assertEqual(cfg.key_id, "FB-2642")
         self.assertEqual(cfg.mode, "echo")
         self.assertEqual(cfg.cli_launch, "")
@@ -73,40 +73,38 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(cfg.target_group, "")
         self.assertEqual(cfg.target_bot, "")
         self.assertEqual(cfg.opencode_db, "")
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&os={detect_os()}")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&os={detect_os()}")
 
-    def test_load_config_requires_owner_and_valid_short_name(self):
-        with self.assertRaises(SystemExit) as missing_owner:
-            load_config({k: v for k, v in BASE_ENV.items() if k != "SH_OWNER"})
-        self.assertIn("SH_OWNER is required", str(missing_owner.exception))
+    def test_load_config_accepts_missing_owner_and_validates_short_name(self):
+        cfg = load_config({k: v for k, v in BASE_ENV.items() if k != "SH_OWNER"})
+        self.assertEqual(cfg.session_name, "home")
 
         with self.assertRaises(SystemExit) as bad_short:
             load_config(dict(BASE_ENV, SH_SESSION_NAME="Dev-1"))
         self.assertIn("短名只能小写字母数字", str(bad_short.exception))
 
-        with self.assertRaises(SystemExit) as bad_owner:
-            load_config(dict(BASE_ENV, SH_OWNER="Zzc"))
-        self.assertIn("SH_OWNER 不合规", str(bad_owner.exception))
+        cfg = load_config(dict(BASE_ENV, SH_OWNER="Zzc", SH_SESSION_NAME="zzc-home-2642"))
+        self.assertEqual(cfg.session_name, "home")
 
     def test_send_dingwei_temporary_session_name_is_compliant(self):
         self.assertEqual(
             temporary_session_name({"SH_OWNER": "zzc", "SH_SESSION_NAME": "manager", "SH_KEY_ID": "FB-zzc-devteam-e0d12642"}),
-            "zzc-managernote-2642",
+            "managernote",
         )
         self.assertEqual(
             temporary_session_name({"SH_SESSION_NAME": "fulei-dev1013-3dd6", "SH_KEY_ID": "FB-key-3dd6"}),
-            "fulei-dev1013note-3dd6",
+            "dev1013note",
         )
         self.assertEqual(
             temporary_session_name({"SH_SESSION_NAME": "Bad-Name", "SH_KEY_ID": "FB-key-1a2b"}),
-            "zzc-sendernote-1a2b",
+            "sendernote",
         )
 
     def test_ws_url_reports_tool_and_model_when_configured(self):
         cfg = load_config(dict(BASE_ENV, SH_TOOL="CODEX", SH_MODEL="gpt-5.5", SH_SESSION_FULL="sh-home-e0d12642"))
         self.assertEqual(
             cfg.ws_url,
-            f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&tool=CODEX&os={detect_os()}&model=gpt-5.5&full_session_name=sh-home-e0d12642",
+            f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&tool=CODEX&os={detect_os()}&model=gpt-5.5&full_session_name=sh-home-e0d12642",
         )
 
     def test_ws_url_reports_producer_target_group(self):
@@ -114,16 +112,16 @@ class SessionHelperTest(unittest.TestCase):
         self.assertTrue(cfg.producer)
         self.assertEqual(cfg.target_group, "oc_ai")
         self.assertEqual(cfg.target_bot, "bot-test")
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&os={detect_os()}&producer=1&target_group=oc_ai&target_bot=bot-test")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&os={detect_os()}&producer=1&target_group=oc_ai&target_bot=bot-test")
 
     def test_ws_url_reports_mirror_to(self):
         cfg = load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-2642#is3-Connector"))
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&os={detect_os()}&mirror_to=ou_u1%23FB-2642%23is3-Connector")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&os={detect_os()}&mirror_to=ou_u1%23FB-2642%23is3-Connector")
 
     def test_ws_url_reports_no_directory(self):
         cfg = load_config(dict(BASE_ENV, SH_NO_DIRECTORY="1"))
         self.assertTrue(cfg.no_directory)
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/zzc-home-2642?key_id=FB-2642&os={detect_os()}&no_directory=1")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&os={detect_os()}&no_directory=1")
 
     def test_detect_full_session_name_prefers_tmux_session(self):
         with mock.patch("sessionhelper.config.subprocess.check_output", return_value="sh-developer-e0d12642\n"):
@@ -1004,7 +1002,7 @@ class SessionHelperTest(unittest.TestCase):
         helper = SessionHelper(load_config(dict(BASE_ENV, SH_PRODUCER="1", SH_TARGET_GROUP="oc_group", SH_TARGET_BOT="bot-test")))
         env = helper.producer_envelope("hello", role="alert")
         self.assertEqual(env["to"], "oc_group#FB-2642#UnifiedRobot")
-        self.assertEqual(env["from"], "zzc-home-2642#FB-2642")
+        self.assertEqual(env["from"], "home#FB-2642")
         self.assertEqual(env["body"], "hello")
         self.assertEqual(env["meta"]["producer"], True)
         self.assertEqual(env["meta"]["target_group"], "oc_group")

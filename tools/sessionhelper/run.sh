@@ -138,7 +138,7 @@ write_config() {
   mkdir -p "$CONFIG_DIR"
   tmp="$CONFIG_FILE.tmp.$$"
 
-  session_name=$(prompt_value "Session name (会话名)" "$old_session" 0)
+  session_name=$(prompt_value "Session short name (短会话名)" "$old_session" 0)
   key_id=$(prompt_value "WorkPulse key_id (公开租户标识)" "$old_key" 0)
   secret=$(prompt_value "WorkPulse secret (hidden)" "$old_secret" 1)
   cli_name=$(prompt_value "AI CLI name (claude/codex/aider/cline/gemini)" "$old_cli" 0)
