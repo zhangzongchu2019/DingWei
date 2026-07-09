@@ -2815,6 +2815,47 @@ func TestProducerTargetBotOverrideAndUnknownGroupDoesNotDefault(t *testing.T) {
 	}
 }
 
+func TestSendProvisionWritesSystemEnvelopeToOnlineSession(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-provision", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-provision", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "owner-one"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "developer")
+
+	if err := hub.SendProvision(ctx, key.ID, "developer", "install_skill", "https://ts.wegoab.com/skill.tar", strings.Repeat("a", 64), "2.2.0", "demo", map[string]any{"channel": "gray"}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, conn)
+	if got.From != "workpulse#"+key.ID || got.To != "developer#"+key.ID {
+		t.Fatalf("addresses=%+v", got)
+	}
+	if got.Meta["type"] != "provision" || got.Meta["system"] != true || got.Meta["no_mirror"] != true {
+		t.Fatalf("meta=%+v", got.Meta)
+	}
+	if got.Meta["action"] != "install_skill" || got.Meta["target"] != "demo" || got.Meta["version"] != "2.2.0" {
+		t.Fatalf("provision fields=%+v", got.Meta)
+	}
+	if _, ok := got.Meta["extra"].(map[string]any); !ok {
+		t.Fatalf("extra missing: %+v", got.Meta)
+	}
+	if err := hub.SendProvision(ctx, key.ID, "offline", "install_skill", "https://ts.wegoab.com/skill.tar", strings.Repeat("a", 64), "2.2.0", "demo", nil); err == nil {
+		t.Fatal("offline provision should fail")
+	}
+}
+
 func dialSession(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string) *websocket.Conn {
 	t.Helper()
 	return dialSessionWithHeader(t, ctx, baseURL, sessionName, keyID, secret, nil)

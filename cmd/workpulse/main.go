@@ -161,6 +161,7 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /ws/session/{sessionName}", prefixHub.HandleSessionWS)
 	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.HandleTerminalViewWS)
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.HandleTerminalViewPage)
+	mux.Handle("GET /dl/", http.StripPrefix("/dl/", http.FileServer(http.Dir(provisionDownloadDir()))))
 
 	srv := &http.Server{Addr: bs.Addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 
@@ -464,6 +465,13 @@ func collectorOrNil(g feishu.Gateway) admin.SeenPersonCollector {
 		return c
 	}
 	return nil
+}
+
+func provisionDownloadDir() string {
+	if v := strings.TrimSpace(os.Getenv("WP_PROVISION_DL_DIR")); v != "" {
+		return v
+	}
+	return "data/dl"
 }
 
 func upsertInboundEntity(ctx context.Context, repo store.Repository, m model.Message) error {

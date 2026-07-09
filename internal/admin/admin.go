@@ -5,6 +5,8 @@
 package admin
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -14,7 +16,11 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"io"
 	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -87,6 +93,8 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("POST /admin/routes", s.requireAuth(s.addRoute))
 	mux.HandleFunc("GET /admin/sessions", s.requireAuth(s.sessionsPage))
 	mux.HandleFunc("POST /admin/sessions", s.requireAuth(s.manageSession))
+	mux.HandleFunc("GET /admin/provision", s.requireAuth(s.provisionPage))
+	mux.HandleFunc("POST /admin/provision", s.requireAuth(s.manageProvision))
 	mux.HandleFunc("GET /admin/config", s.requireAuth(s.configs))
 	mux.HandleFunc("POST /admin/config", s.requireAuth(s.upsertConfig))
 	mux.HandleFunc("POST /admin/delegate/schedule", s.requireAuth(s.delegateSchedule))
@@ -151,6 +159,7 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 <li><a href="/admin/projects">项目组 / 排期文档</a></li>
 <li><a href="/admin/services">租户 / 成员空间</a></li><li><a href="/admin/api-keys">凭证 API key</a></li>
 <li><a href="/admin/sessions">会话端点 / 通配 / 镜像</a></li>
+<li><a href="/admin/provision">Provision 下发</a></li>
 <li><a href="/admin/control-plane">总控指标看板</a></li>
 <li><a href="/admin/config">运行配置</a></li>
 </ul>`, stats.Total, stats.Queued, stats.Processing, stats.Done, stats.Dead,
@@ -1523,6 +1532,332 @@ func (s *Server) manageSession(w http.ResponseWriter, r *http.Request) {
 	writeOK(w, "session mirror updated")
 }
 
+type provisionTarget struct {
+	KeyID       string
+	SessionName string
+	OwnerKey    string
+}
+
+type provisionSendResult struct {
+	KeyID       string `json:"key_id"`
+	SessionName string `json:"session_name"`
+	OK          bool   `json:"ok"`
+	Error       string `json:"error,omitempty"`
+}
+
+func (s *Server) provisionPage(w http.ResponseWriter, r *http.Request) {
+	items, err := s.Repo.ListSessionEndpoints(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeHTMLHeader(w, "Provision 下发")
+	_, _ = w.Write([]byte(`<h3>Provision 下发</h3><p><a href="/admin">返回后台首页</a></p>
+<form method=post action=/admin/provision enctype="multipart/form-data">
+<p>目标类型 <select name=target_mode><option value=session>单会话</option><option value=owner>owner 全部在线会话</option><option value=key>key 全部在线会话</option></select>
+ key_id <input name=key_id> session <input name=session_name> owner <input name=owner_key> 灰度台数 <input name=limit size=4 placeholder="1"></p>
+<p>action <select name=provision_action><option value=update_self>update_self</option><option value=install_skill>install_skill</option><option value=install_mcp>install_mcp</option></select>
+ version <input name=version> target <input name=target value=self></p>
+<p>url <input name=url size=70> sha256 <input name=sha256 size=68></p>
+<p>extra(JSON) <textarea name=extra rows=3 cols=80>{}</textarea></p>
+<p>上传制品 <input type=file name=artifact> <button name=op value=send>下发</button> <button name=op value=package_self>打包当前 sessionHelper</button></p>
+</form>
+<h4>在线会话</h4><table border=1 cellpadding=4><tr><th>key_id</th><th>session</th><th>owner</th><th>tool</th><th>model</th><th>last_seen</th></tr>`))
+	count := 0
+	for _, ep := range items {
+		if !ep.Active {
+			continue
+		}
+		count++
+		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>`,
+			esc(ep.KeyID), esc(ep.SessionName), esc(ep.OwnerKey), esc(ep.Tool), esc(ep.Model), esc(ep.LastSeenAt.Format(time.RFC3339)))
+	}
+	if count == 0 {
+		_, _ = w.Write([]byte(`<tr><td colspan=6>暂无在线会话。</td></tr>`))
+	}
+	_, _ = w.Write([]byte(`</table>`))
+}
+
+func (s *Server) manageProvision(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(64 << 20); err != nil && !errors.Is(err, http.ErrNotMultipart) {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if r.FormValue("op") == "package_self" {
+		info, err := s.packageSessionHelper(r, strings.TrimSpace(r.FormValue("version")))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_ = s.Repo.WriteAudit(r.Context(), adminUser(r), "admin_provision_package", info.URL+":"+info.SHA256)
+		writeJSON(w, info)
+		return
+	}
+	req, err := s.provisionRequestFromForm(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	targets, err := s.resolveProvisionTargets(r.Context(), r.FormValue("target_mode"), r.FormValue("key_id"), r.FormValue("session_name"), r.FormValue("owner_key"), r.FormValue("limit"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	results := make([]provisionSendResult, 0, len(targets))
+	for _, target := range targets {
+		err := s.ensureProvisionVersionMonotonic(r.Context(), req.Action, target.KeyID, target.SessionName, req.Target, req.Version)
+		if err == nil {
+			err = s.Prefix.SendProvision(r.Context(), target.KeyID, target.SessionName, req.Action, req.URL, req.SHA256, req.Version, req.Target, req.Extra)
+		}
+		result := provisionSendResult{KeyID: target.KeyID, SessionName: target.SessionName, OK: err == nil}
+		if err != nil {
+			result.Error = err.Error()
+		} else {
+			s.recordProvisionVersion(r.Context(), req.Action, target.KeyID, target.SessionName, req.Target, req.Version)
+		}
+		results = append(results, result)
+	}
+	detail, _ := json.Marshal(map[string]any{"action": req.Action, "version": req.Version, "sha256": req.SHA256, "target": req.Target, "results": results})
+	_ = s.Repo.WriteAudit(r.Context(), adminUser(r), "admin_provision_send", string(detail))
+	writeJSON(w, map[string]any{"results": results})
+}
+
+type provisionRequest struct {
+	Action  string
+	URL     string
+	SHA256  string
+	Version string
+	Target  string
+	Extra   map[string]any
+}
+
+type provisionArtifactInfo struct {
+	URL     string `json:"url"`
+	SHA256  string `json:"sha256"`
+	Version string `json:"version"`
+	Path    string `json:"path"`
+}
+
+func (s *Server) provisionRequestFromForm(r *http.Request) (provisionRequest, error) {
+	req := provisionRequest{
+		Action:  strings.TrimSpace(r.FormValue("provision_action")),
+		URL:     strings.TrimSpace(r.FormValue("url")),
+		SHA256:  strings.ToLower(strings.TrimSpace(r.FormValue("sha256"))),
+		Version: strings.TrimSpace(r.FormValue("version")),
+		Target:  strings.TrimSpace(firstNonEmpty(r.FormValue("target"), "self")),
+		Extra:   map[string]any{},
+	}
+	switch req.Action {
+	case "update_self", "install_skill", "install_mcp":
+	default:
+		return req, errors.New("invalid provision action")
+	}
+	if extraText := strings.TrimSpace(r.FormValue("extra")); extraText != "" {
+		if err := json.Unmarshal([]byte(extraText), &req.Extra); err != nil {
+			return req, fmt.Errorf("extra must be json object: %w", err)
+		}
+	}
+	if file, header, err := r.FormFile("artifact"); err == nil {
+		defer file.Close()
+		info, err := s.saveProvisionUpload(r, file, header.Filename)
+		if err != nil {
+			return req, err
+		}
+		req.URL, req.SHA256 = info.URL, info.SHA256
+	} else if err != http.ErrMissingFile {
+		return req, err
+	}
+	if req.URL == "" || req.SHA256 == "" || req.Version == "" || req.Target == "" {
+		return req, errors.New("action/url/sha256/version/target required")
+	}
+	if !validSHA256(req.SHA256) {
+		return req, errors.New("invalid sha256")
+	}
+	if err := validateProvisionURL(req.URL, provisionAllowedHosts()); err != nil {
+		return req, err
+	}
+	return req, nil
+}
+
+func (s *Server) resolveProvisionTargets(ctx context.Context, mode, keyID, sessionName, ownerKey, limitText string) ([]provisionTarget, error) {
+	items, err := s.Repo.ListSessionEndpoints(ctx)
+	if err != nil {
+		return nil, err
+	}
+	keyID, sessionName, ownerKey = strings.TrimSpace(keyID), strings.TrimSpace(sessionName), strings.TrimSpace(ownerKey)
+	limit, _ := strconv.Atoi(strings.TrimSpace(limitText))
+	var out []provisionTarget
+	for _, ep := range items {
+		if !ep.Active {
+			continue
+		}
+		match := false
+		switch strings.TrimSpace(mode) {
+		case "", "session":
+			match = ep.KeyID == keyID && ep.SessionName == sessionName
+		case "owner":
+			match = ep.OwnerKey == ownerKey
+		case "key":
+			match = ep.KeyID == keyID
+		default:
+			return nil, errors.New("invalid target_mode")
+		}
+		if !match {
+			continue
+		}
+		out = append(out, provisionTarget{KeyID: ep.KeyID, SessionName: ep.SessionName, OwnerKey: ep.OwnerKey})
+		if limit > 0 && len(out) >= limit {
+			break
+		}
+	}
+	if len(out) == 0 {
+		return nil, errors.New("no online target sessions")
+	}
+	return out, nil
+}
+
+func (s *Server) ensureProvisionVersionMonotonic(ctx context.Context, action, keyID, sessionName, target, version string) error {
+	current := s.provisionLastVersion(ctx, provisionVersionKey(action, keyID, sessionName, target))
+	if current != "" && compareProvisionVersions(current, version) > 0 {
+		return fmt.Errorf("version downgrade denied: last=%s new=%s", current, version)
+	}
+	return nil
+}
+
+func (s *Server) recordProvisionVersion(ctx context.Context, action, keyID, sessionName, target, version string) {
+	payload, _ := json.Marshal(map[string]string{"version": version})
+	_ = s.Repo.UpsertAppConfig(ctx, provisionVersionKey(action, keyID, sessionName, target), string(payload))
+}
+
+func (s *Server) provisionLastVersion(ctx context.Context, key string) string {
+	items, err := s.Repo.ListAppConfig(ctx)
+	if err != nil {
+		return ""
+	}
+	for _, item := range items {
+		if item.Key != key {
+			continue
+		}
+		var payload struct {
+			Version string `json:"version"`
+		}
+		if json.Unmarshal([]byte(item.ValueJSON), &payload) == nil {
+			return strings.TrimSpace(payload.Version)
+		}
+	}
+	return ""
+}
+
+func provisionVersionKey(action, keyID, sessionName, target string) string {
+	return "provision:last:" + action + ":" + keyID + ":" + sessionName + ":" + target
+}
+
+func (s *Server) saveProvisionUpload(r *http.Request, src io.Reader, name string) (provisionArtifactInfo, error) {
+	base := provisionDownloadDir()
+	if err := os.MkdirAll(base, 0o755); err != nil {
+		return provisionArtifactInfo{}, err
+	}
+	filename := safeProvisionFilename(name)
+	if filename == "" {
+		filename = "artifact-" + token()
+	}
+	dst := filepath.Join(base, filename)
+	f, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	if os.IsExist(err) {
+		dst = filepath.Join(base, token()+"-"+filename)
+		f, err = os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	}
+	if err != nil {
+		return provisionArtifactInfo{}, err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(io.MultiWriter(f, h), src); err != nil {
+		return provisionArtifactInfo{}, err
+	}
+	return provisionArtifactInfo{URL: publicProvisionURL(r, filepath.Base(dst)), SHA256: hex.EncodeToString(h.Sum(nil)), Path: dst}, nil
+}
+
+func (s *Server) packageSessionHelper(r *http.Request, version string) (provisionArtifactInfo, error) {
+	root, err := findRepoRoot()
+	if err != nil {
+		return provisionArtifactInfo{}, err
+	}
+	src := filepath.Join(root, "tools", "sessionhelper")
+	if version == "" {
+		version = readSessionHelperVersion(filepath.Join(src, "sessionhelper", "__init__.py"))
+	}
+	if version == "" {
+		return provisionArtifactInfo{}, errors.New("version required")
+	}
+	base := provisionDownloadDir()
+	if err := os.MkdirAll(base, 0o755); err != nil {
+		return provisionArtifactInfo{}, err
+	}
+	name := "sessionhelper-" + safeProvisionFilename(version) + ".tar.gz"
+	dst := filepath.Join(base, name)
+	f, err := os.Create(dst)
+	if err != nil {
+		return provisionArtifactInfo{}, err
+	}
+	h := sha256.New()
+	gz := gzip.NewWriter(io.MultiWriter(f, h))
+	tw := tar.NewWriter(gz)
+	err = filepath.WalkDir(src, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		rel, err := filepath.Rel(src, path)
+		if err != nil || rel == "." {
+			return err
+		}
+		if shouldSkipProvisionPackage(rel, d) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+		hdr, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+		hdr.Name = filepath.ToSlash(rel)
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		in, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer in.Close()
+		_, err = io.Copy(tw, in)
+		return err
+	})
+	closeErr := tw.Close()
+	gzErr := gz.Close()
+	fileErr := f.Close()
+	if err != nil {
+		return provisionArtifactInfo{}, err
+	}
+	if closeErr != nil {
+		return provisionArtifactInfo{}, closeErr
+	}
+	if gzErr != nil {
+		return provisionArtifactInfo{}, gzErr
+	}
+	if fileErr != nil {
+		return provisionArtifactInfo{}, fileErr
+	}
+	return provisionArtifactInfo{URL: publicProvisionURL(r, name), SHA256: hex.EncodeToString(h.Sum(nil)), Version: version, Path: dst}, nil
+}
+
 func (s *Server) upsertConfig(w http.ResponseWriter, r *http.Request) {
 	key := strings.TrimSpace(r.FormValue("key"))
 	switch r.FormValue("action") {
@@ -1881,6 +2216,178 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func provisionDownloadDir() string {
+	return firstNonEmpty(os.Getenv("WP_PROVISION_DL_DIR"), filepath.Join("data", "dl"))
+}
+
+func provisionAllowedHosts() map[string]bool {
+	raw := firstNonEmpty(os.Getenv("WP_PROVISION_ALLOWED_HOSTS"), os.Getenv("SH_PROVISION_ALLOWED_HOSTS"), "ts.wegoab.com")
+	out := map[string]bool{}
+	for _, part := range strings.Split(raw, ",") {
+		host := strings.ToLower(strings.TrimSpace(part))
+		if host != "" {
+			out[host] = true
+		}
+	}
+	return out
+}
+
+func validateProvisionURL(raw string, allowed map[string]bool) error {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return errors.New("invalid url")
+	}
+	if u.Scheme != "https" && u.Scheme != "http" {
+		return errors.New("url scheme must be http/https")
+	}
+	host := strings.ToLower(u.Hostname())
+	if !allowed[host] {
+		return fmt.Errorf("url host not allowed: %s", host)
+	}
+	return nil
+}
+
+func validSHA256(v string) bool {
+	if len(v) != 64 {
+		return false
+	}
+	for _, ch := range v {
+		if !strings.ContainsRune("0123456789abcdef", ch) {
+			return false
+		}
+	}
+	return true
+}
+
+func publicProvisionURL(r *http.Request, filename string) string {
+	scheme := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
+	if scheme == "" {
+		if r.TLS != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	}
+	return scheme + "://" + r.Host + "/dl/" + url.PathEscape(filename)
+}
+
+func safeProvisionFilename(name string) string {
+	name = filepath.Base(strings.TrimSpace(name))
+	name = strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			return r
+		case r == '.', r == '-', r == '_':
+			return r
+		default:
+			return '-'
+		}
+	}, name)
+	name = strings.Trim(name, ".-")
+	return name
+}
+
+func findRepoRoot() (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(wd, "tools", "sessionhelper", "sessionhelper", "__init__.py")); err == nil {
+			return wd, nil
+		}
+		next := filepath.Dir(wd)
+		if next == wd {
+			return "", errors.New("repo root not found")
+		}
+		wd = next
+	}
+}
+
+func readSessionHelperVersion(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "__version__") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			return strings.Trim(strings.TrimSpace(parts[1]), `"'`)
+		}
+	}
+	return ""
+}
+
+func shouldSkipProvisionPackage(rel string, d os.DirEntry) bool {
+	base := filepath.Base(rel)
+	if base == "__pycache__" || base == ".venv" || base == ".pytest_cache" {
+		return true
+	}
+	return !d.IsDir() && (strings.HasSuffix(base, ".pyc") || strings.HasSuffix(base, ".pyo"))
+}
+
+type provisionVersionPart struct {
+	numeric bool
+	num     int
+	text    string
+}
+
+func compareProvisionVersions(left, right string) int {
+	a, b := provisionVersionParts(left), provisionVersionParts(right)
+	n := max(len(a), len(b))
+	for i := 0; i < n; i++ {
+		av, bv := provisionVersionPart{numeric: true}, provisionVersionPart{numeric: true}
+		if i < len(a) {
+			av = a[i]
+		}
+		if i < len(b) {
+			bv = b[i]
+		}
+		if av.numeric != bv.numeric {
+			if av.numeric {
+				return -1
+			}
+			return 1
+		}
+		if av.numeric {
+			if av.num < bv.num {
+				return -1
+			}
+			if av.num > bv.num {
+				return 1
+			}
+			continue
+		}
+		if av.text < bv.text {
+			return -1
+		}
+		if av.text > bv.text {
+			return 1
+		}
+	}
+	return 0
+}
+
+func provisionVersionParts(v string) []provisionVersionPart {
+	fields := strings.FieldsFunc(v, func(r rune) bool { return r == '.' || r == '-' })
+	out := make([]provisionVersionPart, 0, len(fields))
+	for _, field := range fields {
+		if field == "" {
+			continue
+		}
+		if n, err := strconv.Atoi(field); err == nil {
+			out = append(out, provisionVersionPart{numeric: true, num: n})
+		} else {
+			out = append(out, provisionVersionPart{text: field})
+		}
+	}
+	return out
 }
 
 type configPreset struct {
