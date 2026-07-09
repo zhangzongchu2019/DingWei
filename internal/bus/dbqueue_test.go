@@ -45,6 +45,45 @@ func TestDBQueueWrapsRepositoryByDirection(t *testing.T) {
 	}
 }
 
+func TestDBQueueSensitiveContentSurvivesFailUntilAck(t *testing.T) {
+	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "sensitive-retry.db"))
+	if err != nil {
+		t.Fatalf("OpenSQLite: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	ctx := context.Background()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatalf("Migrate: %v", err)
+	}
+	q := NewDBQueue(db, model.DirectionOut)
+	stored := `{"text":"secret 已隐藏"}`
+	plain := `{"text":"secret: wp_retry"}`
+	if err := q.Enqueue(ctx, model.Message{ID: "s1", ChatEntityID: "chat1", BotChannelID: "bot1", ChatType: model.ChatPersonal, Content: stored, SensitiveContent: plain}); err != nil {
+		t.Fatal(err)
+	}
+	first, err := q.Dequeue(ctx)
+	if err != nil || first == nil || first.Content != plain {
+		t.Fatalf("first dequeue msg=%+v err=%v", first, err)
+	}
+	if err := q.Fail(ctx, "s1", "rate limited"); err != nil {
+		t.Fatal(err)
+	}
+	second, err := q.Dequeue(ctx)
+	if err != nil || second == nil || second.Content != plain {
+		t.Fatalf("second dequeue after fail msg=%+v err=%v", second, err)
+	}
+	if err := q.Ack(ctx, "s1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := q.Enqueue(ctx, model.Message{ID: "s2", ChatEntityID: "chat1", BotChannelID: "bot1", ChatType: model.ChatPersonal, Content: stored}); err != nil {
+		t.Fatal(err)
+	}
+	third, err := q.Dequeue(ctx)
+	if err != nil || third == nil || third.Content != stored {
+		t.Fatalf("sensitive content should be gone after ack msg=%+v err=%v", third, err)
+	}
+}
+
 func TestAsyncDBQueueFlushesByBatchSize(t *testing.T) {
 	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "async-batch.db"))
 	if err != nil {
@@ -91,6 +130,37 @@ func TestAsyncDBQueueFlushesByTimer(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitForMessage(t, ctx, q, "t1")
+}
+
+func TestAsyncDBQueueSensitiveContentSurvivesFailUntilAck(t *testing.T) {
+	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "async-sensitive-retry.db"))
+	if err != nil {
+		t.Fatalf("OpenSQLite: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatalf("Migrate: %v", err)
+	}
+	q := NewAsyncDBQueue(ctx, db, model.DirectionOut, AsyncDBQueueConfig{QueueSize: 10, BatchSize: 10, FlushInterval: time.Millisecond})
+	stored := `{"text":"secret 已隐藏"}`
+	plain := `{"text":"secret: wp_retry"}`
+	if err := q.Enqueue(ctx, model.Message{ID: "as1", ChatEntityID: "chat1", BotChannelID: "bot1", ChatType: model.ChatPersonal, Content: stored, SensitiveContent: plain}); err != nil {
+		t.Fatal(err)
+	}
+	waitForMessageContent(t, ctx, q, "as1", plain)
+	if err := q.Fail(ctx, "as1", "rate limited"); err != nil {
+		t.Fatal(err)
+	}
+	waitForMessageContent(t, ctx, q, "as1", plain)
+	if err := q.Ack(ctx, "as1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := q.Enqueue(ctx, model.Message{ID: "as2", ChatEntityID: "chat1", BotChannelID: "bot1", ChatType: model.ChatPersonal, Content: stored}); err != nil {
+		t.Fatal(err)
+	}
+	_ = waitForMessageContent(t, ctx, q, "as2", stored)
 }
 
 func TestAsyncDBQueueBackpressuresWhenFull(t *testing.T) {
@@ -157,6 +227,28 @@ func waitForMessage(t *testing.T, ctx context.Context, q Queue, id string) {
 		select {
 		case <-deadline:
 			t.Fatalf("message %s not flushed", id)
+		case <-time.After(5 * time.Millisecond):
+		}
+	}
+}
+
+func waitForMessageContent(t *testing.T, ctx context.Context, q Queue, id, content string) *model.Message {
+	t.Helper()
+	deadline := time.After(time.Second)
+	for {
+		msg, err := q.Dequeue(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if msg != nil {
+			if msg.ID != id || msg.Content != content {
+				t.Fatalf("message id/content=%s/%q want %s/%q", msg.ID, msg.Content, id, content)
+			}
+			return msg
+		}
+		select {
+		case <-deadline:
+			t.Fatalf("message %s with content %q not flushed", id, content)
 		case <-time.After(5 * time.Millisecond):
 		}
 	}

@@ -545,6 +545,44 @@ func TestEnqueueMessageRedactsContentBeforeStorage(t *testing.T) {
 	}
 }
 
+func TestApproveKeyApplicationWithGrantCommitsCredentialAndGrantAtomically(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	app, err := db.CreateKeyApplication(ctx, model.KeyApplication{
+		ID:               "ka1",
+		ApplicantOpenID:  "ou_applicant",
+		ApplicantAccount: "dev:personal:ou_applicant",
+		ApplicantBotID:   "dev",
+		ApplicantBotName: "UnifiedRobot",
+		Description:      "接入测试",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	if err := db.ApproveKeyApplicationWithGrant(ctx, app.ID, "ou_approver",
+		model.RegisteredService{ID: "apply:ou-applicant", Name: "申请人", DeliveryType: "ws", ReplyMode: "sync", Enabled: true},
+		model.ServiceAPIKey{ID: "FB-test-key", ServiceID: "apply:ou-applicant", KeyHash: "hash", Label: "ou_applicant", Active: true, CreatedAt: now},
+		"dev:personal:ou_applicant",
+		model.ChatEntity{ID: "dev:personal:ou_applicant", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_applicant", DisplayName: "Applicant", Active: true},
+		model.Message{ID: "grant-ka1", ChatEntityID: "dev:personal:ou_applicant", Direction: model.DirectionOut, BotChannelID: "dev", FeishuMsgID: "grant-ka1", ChatType: model.ChatPersonal, Content: `{"text":"key_id: FB-test-key\nsecret 已隐藏"}`, Status: "queued"},
+		now,
+	); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.GetKeyApplication(ctx, app.ID)
+	if err != nil || got == nil || got.Status != "approved" || got.KeyID != "FB-test-key" || got.ServiceID != "apply:ou-applicant" {
+		t.Fatalf("application=%+v err=%v", got, err)
+	}
+	accounts, err := db.ListAPIKeyAccounts(ctx, "FB-test-key")
+	if err != nil || len(accounts) != 1 || accounts[0] != "dev:personal:ou_applicant" {
+		t.Fatalf("accounts=%+v err=%v", accounts, err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg == nil || msg.ID != "grant-ka1" || strings.Contains(msg.Content, "wp_") {
+		t.Fatalf("grant message=%+v err=%v", msg, err)
+	}
+}
+
 func TestControlPlaneP1QueueRulesRetryReaperAndStats(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	rules, err := db.ListL1DecisionRules(ctx)

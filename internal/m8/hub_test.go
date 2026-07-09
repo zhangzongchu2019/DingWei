@@ -56,6 +56,15 @@ func useTestSecOpsAdminOwnerKey(t *testing.T, ownerKey string) {
 	})
 }
 
+func useTestApplyKeyApprover(t *testing.T, openID string) {
+	t.Helper()
+	old := applyKeyApproverID
+	applyKeyApproverID = openID
+	t.Cleanup(func() {
+		applyKeyApproverID = old
+	})
+}
+
 func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.RegisterBot("dev", "UnifiedRobot")
@@ -2855,6 +2864,185 @@ func TestFeishuSyncRequiresExplicitKeyForOtherOwner(t *testing.T) {
 	}
 }
 
+func TestApplyKeyFlowCreatesPendingAndApprovesWithOneTimeSecretDM(t *testing.T) {
+	useTestApplyKeyApprover(t, "ou_approver")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	q := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = q
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-1",
+		ChatEntityID: "dev:personal:ou_applicant",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#申请接入 zzc-developer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "申请 ID") {
+		t.Fatalf("apply result=%+v", result)
+	}
+	reviewMsg := waitOutbound(t, ctx, q)
+	if reviewMsg == nil || reviewMsg.ChatEntityID != "dev:personal:ou_approver" {
+		t.Fatalf("review msg=%+v", reviewMsg)
+	}
+	reviewText := messageText(t, reviewMsg)
+	if !strings.Contains(reviewText, "批准：#批准") || !strings.Contains(reviewText, "接入 zzc-developer") {
+		t.Fatalf("review text=%q", reviewText)
+	}
+	id := applyIDFromReply(t, result.Reply)
+	app, err := db.GetKeyApplication(ctx, id)
+	if err != nil || app == nil || app.Status != "pending" || app.ApplicantOpenID != "ou_applicant" {
+		t.Fatalf("application=%+v err=%v", app, err)
+	}
+
+	deny, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-approve-deny",
+		ChatEntityID: "dev:personal:ou_other",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#批准"+id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(deny.Reply, "只有指定审批人") {
+		t.Fatalf("deny result=%+v", deny)
+	}
+
+	approve, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-approve",
+		ChatEntityID: "dev:personal:ou_approver",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#批准"+id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !approve.Matched || !strings.Contains(approve.Reply, "已批准申请") || strings.Contains(approve.Reply, "wp_") {
+		t.Fatalf("approve result=%+v", approve)
+	}
+	grantMsg := waitOutbound(t, ctx, q)
+	if grantMsg == nil || grantMsg.ChatEntityID != "dev:personal:ou_applicant" {
+		t.Fatalf("grant msg=%+v", grantMsg)
+	}
+	grantText := messageText(t, grantMsg)
+	if !strings.Contains(grantText, "key_id: FB-") || !strings.Contains(grantText, "secret: wp_") || !strings.Contains(grantText, "Windows WSL2") {
+		t.Fatalf("grant text=%q", grantText)
+	}
+	app, err = db.GetKeyApplication(ctx, id)
+	if err != nil || app == nil || app.Status != "approved" || app.KeyID == "" || app.ServiceID == "" {
+		t.Fatalf("approved application=%+v err=%v", app, err)
+	}
+	storedMsgs, err := db.RecentMessages(ctx, model.MessageFilter{ChatEntityID: "dev:personal:ou_applicant", Limit: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	foundGrant := false
+	for _, stored := range storedMsgs {
+		if stored.ID != "apply-key-grant-"+id {
+			continue
+		}
+		foundGrant = true
+		if strings.Contains(stored.Content, "wp_") {
+			t.Fatalf("stored grant leaked secret: %s", stored.Content)
+		}
+		var payload map[string]string
+		if err := json.Unmarshal([]byte(stored.Content), &payload); err != nil {
+			t.Fatalf("stored grant is invalid JSON: %v content=%q", err, stored.Content)
+		}
+	}
+	if !foundGrant {
+		t.Fatalf("stored grant message not found: %+v", storedMsgs)
+	}
+	accounts, err := db.ListAPIKeyAccounts(ctx, app.KeyID)
+	if err != nil || len(accounts) != 1 || accounts[0] != "dev:personal:ou_applicant" {
+		t.Fatalf("accounts=%+v err=%v", accounts, err)
+	}
+	audits, err := db.ListRecentAudit(ctx, "key_application_", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, audit := range audits {
+		if strings.Contains(audit.Target, "wp_") {
+			t.Fatalf("audit leaked secret: %+v", audit)
+		}
+	}
+}
+
+func TestApplyKeyFlowRejectsPendingApplication(t *testing.T) {
+	useTestApplyKeyApprover(t, "ou_approver")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	q := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = q
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-reject-create",
+		ChatEntityID: "dev:personal:ou_applicant",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#申请 临时测试")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = waitOutbound(t, ctx, q)
+	id := applyIDFromReply(t, result.Reply)
+
+	reject, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-reject",
+		ChatEntityID: "dev:personal:ou_approver",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#拒绝"+id+" 信息不足")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reject.Matched || !strings.Contains(reject.Reply, "已拒绝申请") {
+		t.Fatalf("reject result=%+v", reject)
+	}
+	rejectMsg := waitOutbound(t, ctx, q)
+	rejectText := ""
+	if rejectMsg != nil {
+		rejectText = messageText(t, rejectMsg)
+	}
+	if rejectMsg == nil || rejectMsg.ChatEntityID != "dev:personal:ou_applicant" || !strings.Contains(rejectText, "信息不足") {
+		t.Fatalf("reject msg=%+v text=%q", rejectMsg, rejectText)
+	}
+	app, err := db.GetKeyApplication(ctx, id)
+	if err != nil || app == nil || app.Status != "rejected" || app.RejectReason != "信息不足" {
+		t.Fatalf("rejected application=%+v err=%v", app, err)
+	}
+}
+
+func TestApplyKeyFlowIgnoresGroupCommands(t *testing.T) {
+	useTestApplyKeyApprover(t, "ou_approver")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-group",
+		ChatEntityID: "dev:group:oc_team",
+		BotChannelID: "dev",
+		ChatType:     model.ChatGroup,
+		SenderOpenID: "ou_applicant",
+	}, "#申请 群里申请")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("group apply should be silently handled, got %+v", result)
+	}
+	audits, err := db.ListRecentAudit(ctx, "key_application_create", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(audits) != 0 {
+		t.Fatalf("group command should not create application audit: %+v", audits)
+	}
+}
+
 func TestParseSelectorRejectsHashSpace(t *testing.T) {
 	if name, _, ok := parseSelector("#home hello"); !ok || name != "home" {
 		t.Fatalf("#home selector not parsed: name=%q ok=%v", name, ok)
@@ -3294,6 +3482,16 @@ func messageText(t *testing.T, msg *model.Message) string {
 		t.Fatalf("unmarshal message content: %v content=%q", err, msg.Content)
 	}
 	return payload.Text
+}
+
+func applyIDFromReply(t *testing.T, reply string) string {
+	t.Helper()
+	const prefix = "已提交 key 申请，申请 ID："
+	const suffix = "。审批通过后会私聊发放。"
+	if !strings.HasPrefix(reply, prefix) || !strings.HasSuffix(reply, suffix) {
+		t.Fatalf("unexpected apply reply: %q", reply)
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(reply, prefix), suffix)
 }
 
 func hasUTCPrefix(text string) bool {

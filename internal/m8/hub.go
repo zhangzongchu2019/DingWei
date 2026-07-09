@@ -134,6 +134,7 @@ const (
 var (
 	secOpsAdminOpenID   = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
 	secOpsAdminOwnerKey = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OWNER_KEY"))
+	applyKeyApproverID  = strings.TrimSpace(os.Getenv("WP_APPLY_KEY_APPROVER_OPENID"))
 	ansiCSIRE           = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
 	ansiOSCSTRE         = regexp.MustCompile(`\x1b\][^\x07]*(\x07|\x1b\\)`)
 	ansiSimpleRE        = regexp.MustCompile(`\x1b[@-Z\\-_]`)
@@ -548,6 +549,11 @@ func (h *Hub) UpsertService(ctx context.Context, svc model.RegisteredService) er
 }
 
 func (h *Hub) IssueAPIKey(ctx context.Context, serviceID, label string) (secret string, meta model.ServiceAPIKey, err error) {
+	secret, meta = h.newAPIKey(serviceID, label)
+	return secret, meta, h.Repo.InsertServiceAPIKey(ctx, meta)
+}
+
+func (h *Hub) newAPIKey(serviceID, label string) (secret string, meta model.ServiceAPIKey) {
 	secret = "wp_" + randomHex(32)
 	meta = model.ServiceAPIKey{
 		ID:        newKeyID(label, serviceID),
@@ -557,7 +563,7 @@ func (h *Hub) IssueAPIKey(ctx context.Context, serviceID, label string) (secret 
 		Active:    true,
 		CreatedAt: time.Now().UTC(),
 	}
-	return secret, meta, h.Repo.InsertServiceAPIKey(ctx, meta)
+	return secret, meta
 }
 
 func HashAPIKey(plain string) string {
@@ -946,6 +952,9 @@ func (h *Hub) dispatchL1(ctx context.Context, msg model.Message, text string) (m
 	if result, handled, err := h.dispatchFeishuSyncCommand(ctx, msg, text); handled || err != nil {
 		return result, "command.sync", "", err
 	}
+	if result, handled, err := h.dispatchApplyKeyCommand(ctx, msg, text); handled || err != nil {
+		return result, "command.apply_key", "", err
+	}
 	if result, handled, err := h.dispatchSystem(ctx, msg, text); handled || err != nil {
 		return result, "command.system", "", err
 	}
@@ -987,7 +996,7 @@ func (h *Hub) executeL1Rule(ctx context.Context, rule model.L1DecisionRule, msg 
 		result, handled, err := h.dispatchOnlineRosterCommand(ctx, msg, text)
 		return result, "", handled, err
 	case "l1_command_apply_key":
-		result, handled, err := h.dispatchMemberMention(ctx, msg, text)
+		result, handled, err := h.dispatchApplyKeyCommand(ctx, msg, text)
 		return result, "", handled, err
 	case "l1_command_mirror":
 		result, handled, err := h.dispatchMirrorCommand(ctx, msg, text)
@@ -1014,6 +1023,9 @@ func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, t
 		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchFeishuSyncCommand(ctx, msg, text); handled || err != nil {
+		return result, "", handled, err
+	}
+	if result, handled, err := h.dispatchApplyKeyCommand(ctx, msg, text); handled || err != nil {
 		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchTerminalInputCommand(ctx, msg, text); handled || err != nil {
@@ -1605,6 +1617,272 @@ func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, 
 	default:
 		return model.PrefixDispatchResult{}, false, nil
 	}
+}
+
+func (h *Hub) dispatchApplyKeyCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
+	cmd, arg, ok := parseApplyKeyCommand(text)
+	if !ok {
+		return model.PrefixDispatchResult{}, false, nil
+	}
+	if h.Repo == nil {
+		return model.PrefixDispatchResult{Matched: true, Reply: "自助申请 key 暂不可用：存储未配置"}, true, nil
+	}
+	if msg.ChatType != model.ChatPersonal {
+		return model.PrefixDispatchResult{Matched: true}, true, nil
+	}
+	switch cmd {
+	case "apply":
+		return h.createKeyApplication(ctx, msg, arg)
+	case "approve":
+		return h.approveKeyApplication(ctx, msg, arg)
+	case "reject":
+		id, reason := splitApplyReviewArg(arg)
+		return h.rejectKeyApplication(ctx, msg, id, reason)
+	default:
+		return model.PrefixDispatchResult{}, false, nil
+	}
+}
+
+func (h *Hub) createKeyApplication(ctx context.Context, msg model.Message, description string) (model.PrefixDispatchResult, bool, error) {
+	description = strings.TrimSpace(description)
+	if description == "" {
+		return model.PrefixDispatchResult{Matched: true, Reply: "请补充申请说明，例如：#申请 接入 zzc-developer"}, true, nil
+	}
+	openID := applicantOpenID(msg)
+	if openID == "" {
+		return model.PrefixDispatchResult{Matched: true, Reply: "无法识别申请人 open_id"}, true, nil
+	}
+	approver := h.applyKeyApproverOpenID()
+	if approver == "" {
+		return model.PrefixDispatchResult{Matched: true, Reply: "自助申请 key 暂未配置审批人"}, true, nil
+	}
+	botName := h.botName(msg.BotChannelID)
+	app, err := h.Repo.CreateKeyApplication(ctx, model.KeyApplication{
+		ApplicantOpenID:  openID,
+		ApplicantAccount: msg.BotChannelID + ":personal:" + openID,
+		ApplicantBotID:   msg.BotChannelID,
+		ApplicantBotName: botName,
+		Description:      description,
+		Status:           "pending",
+		CreatedAt:        time.Now().UTC(),
+	})
+	if err != nil {
+		return model.PrefixDispatchResult{}, true, err
+	}
+	_ = h.Repo.WriteAudit(ctx, app.ApplicantOpenID, "key_application_create", app.ID)
+	notice := fmt.Sprintf("收到新的 DingWei key 申请\nID：%s\n申请人：%s\n说明：%s\n\n批准：#批准%s\n拒绝：#拒绝%s 原因", app.ID, app.ApplicantOpenID, app.Description, app.ID, app.ID)
+	if err := h.enqueueFeishuText(ctx, msg.BotChannelID, approver, "apply-key-review-"+app.ID, notice); err != nil {
+		return model.PrefixDispatchResult{}, true, err
+	}
+	return model.PrefixDispatchResult{Matched: true, Reply: "已提交 key 申请，申请 ID：" + app.ID + "。审批通过后会私聊发放。"}, true, nil
+}
+
+func (h *Hub) approveKeyApplication(ctx context.Context, msg model.Message, id string) (model.PrefixDispatchResult, bool, error) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return model.PrefixDispatchResult{Matched: true, Reply: "请提供申请 ID，例如：#批准<申请ID>"}, true, nil
+	}
+	approver := h.applyKeyApproverOpenID()
+	if approver == "" {
+		return model.PrefixDispatchResult{Matched: true, Reply: "自助申请 key 暂未配置审批人"}, true, nil
+	}
+	if got := applicantOpenID(msg); got != approver {
+		return model.PrefixDispatchResult{Matched: true, Reply: "只有指定审批人可以批准 key 申请"}, true, nil
+	}
+	app, err := h.Repo.GetKeyApplication(ctx, id)
+	if err != nil {
+		return model.PrefixDispatchResult{}, true, err
+	}
+	if app == nil {
+		return model.PrefixDispatchResult{Matched: true, Reply: "未找到 key 申请：" + id}, true, nil
+	}
+	if app.Status != "pending" {
+		return model.PrefixDispatchResult{Matched: true, Reply: fmt.Sprintf("申请 %s 当前状态为 %s，不能重复审批", app.ID, app.Status)}, true, nil
+	}
+	if _, ok := h.Outbound.(sensitiveOutboundRememberer); !ok {
+		return model.PrefixDispatchResult{}, true, errors.New("outbound queue does not support one-time secret delivery")
+	}
+	serviceID := applyKeyServiceID(app.ApplicantOpenID)
+	secret, key := h.newAPIKey(serviceID, app.ApplicantOpenID)
+	account := firstNonEmpty(app.ApplicantAccount, app.ApplicantBotID+":personal:"+app.ApplicantOpenID)
+	grantID := "apply-key-grant-" + app.ID
+	grantText := applyKeyGrantText(key.ID, secret)
+	storedGrantText := applyKeyGrantStoredText(key.ID)
+	grantContent, _ := json.Marshal(map[string]string{"text": storedGrantText})
+	now := time.Now().UTC()
+	h.rememberSensitiveOutbound(grantID, mustTextContent(grantText))
+	if err := h.Repo.ApproveKeyApplicationWithGrant(ctx, app.ID, approver, model.RegisteredService{
+		ID:           serviceID,
+		Name:         "DingWei key " + app.ApplicantOpenID,
+		Description:  "Self-service key application " + app.ID,
+		DeliveryType: "ws",
+		ReplyMode:    "sync",
+		Enabled:      true,
+	}, key, account, model.ChatEntity{
+		ID:           account,
+		BotChannelID: app.ApplicantBotID,
+		Type:         model.ChatPersonal,
+		FeishuID:     app.ApplicantOpenID,
+		DisplayName:  app.ApplicantOpenID,
+		Active:       true,
+	}, model.Message{
+		ID:           grantID,
+		ChatEntityID: app.ApplicantBotID + ":personal:" + app.ApplicantOpenID,
+		Direction:    model.DirectionOut,
+		BotChannelID: app.ApplicantBotID,
+		FeishuMsgID:  grantID,
+		ChatType:     model.ChatPersonal,
+		Content:      string(grantContent),
+		Status:       "queued",
+	}, now); err != nil {
+		return model.PrefixDispatchResult{}, true, err
+	}
+	_ = h.Repo.WriteAudit(ctx, approver, "key_application_approve", app.ID+":"+key.ID)
+	return model.PrefixDispatchResult{Matched: true, Reply: "已批准申请 " + app.ID + "，key_id：" + key.ID + "。secret 已私聊发放给申请人。"}, true, nil
+}
+
+func (h *Hub) rejectKeyApplication(ctx context.Context, msg model.Message, id, reason string) (model.PrefixDispatchResult, bool, error) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return model.PrefixDispatchResult{Matched: true, Reply: "请提供申请 ID，例如：#拒绝<申请ID> 原因"}, true, nil
+	}
+	approver := h.applyKeyApproverOpenID()
+	if approver == "" {
+		return model.PrefixDispatchResult{Matched: true, Reply: "自助申请 key 暂未配置审批人"}, true, nil
+	}
+	if got := applicantOpenID(msg); got != approver {
+		return model.PrefixDispatchResult{Matched: true, Reply: "只有指定审批人可以拒绝 key 申请"}, true, nil
+	}
+	app, err := h.Repo.GetKeyApplication(ctx, id)
+	if err != nil {
+		return model.PrefixDispatchResult{}, true, err
+	}
+	if app == nil {
+		return model.PrefixDispatchResult{Matched: true, Reply: "未找到 key 申请：" + id}, true, nil
+	}
+	if app.Status != "pending" {
+		return model.PrefixDispatchResult{Matched: true, Reply: fmt.Sprintf("申请 %s 当前状态为 %s，不能重复审批", app.ID, app.Status)}, true, nil
+	}
+	now := time.Now().UTC()
+	if err := h.Repo.RejectKeyApplication(ctx, app.ID, approver, strings.TrimSpace(reason), now); err != nil {
+		return model.PrefixDispatchResult{}, true, err
+	}
+	_ = h.Repo.WriteAudit(ctx, approver, "key_application_reject", app.ID)
+	reply := "你的 DingWei key 申请已被拒绝。申请 ID：" + app.ID
+	if strings.TrimSpace(reason) != "" {
+		reply += "\n原因：" + strings.TrimSpace(reason)
+	}
+	if err := h.enqueueFeishuText(ctx, app.ApplicantBotID, app.ApplicantOpenID, "apply-key-reject-"+app.ID, reply); err != nil {
+		return model.PrefixDispatchResult{}, true, err
+	}
+	return model.PrefixDispatchResult{Matched: true, Reply: "已拒绝申请 " + app.ID}, true, nil
+}
+
+func parseApplyKeyCommand(text string) (cmd, arg string, ok bool) {
+	text = strings.TrimSpace(stripLeadingMentions(text))
+	for _, item := range []struct {
+		prefix string
+		cmd    string
+	}{
+		{"#申请", "apply"},
+		{"#批准", "approve"},
+		{"#拒绝", "reject"},
+	} {
+		if strings.HasPrefix(text, item.prefix) {
+			return item.cmd, strings.TrimSpace(strings.TrimPrefix(text, item.prefix)), true
+		}
+	}
+	return "", "", false
+}
+
+func splitApplyReviewArg(arg string) (id, reason string) {
+	fields := strings.Fields(strings.TrimSpace(arg))
+	if len(fields) == 0 {
+		return "", ""
+	}
+	id = fields[0]
+	if len(fields) > 1 {
+		reason = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(arg), id))
+	}
+	return id, reason
+}
+
+func applicantOpenID(msg model.Message) string {
+	return firstNonEmpty(msg.SenderOpenID, feishuOpenIDFromAccount(sourceAccount(msg)))
+}
+
+func (h *Hub) applyKeyApproverOpenID() string {
+	return firstNonEmpty(strings.TrimSpace(applyKeyApproverID), strings.TrimSpace(secOpsAdminOpenID))
+}
+
+func applyKeyServiceID(openID string) string {
+	return "apply:" + sanitizeKeyIDPart(openID)
+}
+
+func (h *Hub) enqueueFeishuText(ctx context.Context, botChannelID, openID, id, text string) error {
+	return h.enqueueFeishuSensitiveText(ctx, botChannelID, openID, id, text, "")
+}
+
+func (h *Hub) enqueueFeishuSensitiveText(ctx context.Context, botChannelID, openID, id, text, storedText string) error {
+	if h.Outbound == nil {
+		return errors.New("outbound queue not configured")
+	}
+	content, _ := json.Marshal(map[string]string{"text": text})
+	storedContent := string(content)
+	sensitiveContent := ""
+	if storedText != "" {
+		stored, _ := json.Marshal(map[string]string{"text": storedText})
+		storedContent = string(stored)
+		sensitiveContent = string(content)
+	}
+	return h.Outbound.Enqueue(ctx, model.Message{
+		ID:               id,
+		ChatEntityID:     botChannelID + ":personal:" + openID,
+		BotChannelID:     botChannelID,
+		FeishuMsgID:      id,
+		ChatType:         model.ChatPersonal,
+		Content:          storedContent,
+		SensitiveContent: sensitiveContent,
+	})
+}
+
+func applyKeyGrantText(keyID, secret string) string {
+	return strings.Join([]string{
+		"DingWei key 已批准，请立即保存；secret 只显示这一次。",
+		"",
+		"key_id: " + keyID,
+		"secret: " + secret,
+		"",
+		"Linux / macOS:",
+		"1. 确认已安装 python3、tmux 和你的 AI CLI。",
+		"2. 拉取或解压 sessionHelper 接入包，进入 tools/sessionhelper。",
+		"3. 运行 ./run.sh --reconfigure，按提示填写 SH_WS_BASE、会话名、key_id 和 secret。",
+		"4. 后续运行 ./run.sh 启动；Linux 可用 cron/guard，macOS 可用 launchd 或前台 nohup。",
+		"",
+		"Windows WSL2:",
+		"1. 安装 Ubuntu WSL2，并在 WSL 内安装 python3、tmux 和 AI CLI。",
+		"2. 在 WSL 内按 Linux 步骤运行 tools/sessionhelper/run.sh --reconfigure。",
+		"3. 配置写在 WSL 用户目录，保持 WSL 网络可访问 DingWei Hub。",
+	}, "\n")
+}
+
+func applyKeyGrantStoredText(keyID string) string {
+	return strings.Replace(applyKeyGrantText(keyID, "***"), "secret: ***", "secret 已隐藏", 1)
+}
+
+type sensitiveOutboundRememberer interface {
+	RememberSensitiveContent(id, content string)
+}
+
+func (h *Hub) rememberSensitiveOutbound(id, content string) {
+	if q, ok := h.Outbound.(sensitiveOutboundRememberer); ok {
+		q.RememberSensitiveContent(id, content)
+	}
+}
+
+func mustTextContent(text string) string {
+	content, _ := json.Marshal(map[string]string{"text": text})
+	return string(content)
 }
 
 func parseSyncCommand(text string) (action, sessionName, keyID string, ok bool) {
