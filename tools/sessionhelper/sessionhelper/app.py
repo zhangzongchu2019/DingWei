@@ -118,9 +118,9 @@ class SessionHelper:
         self.last_online_list = ""
         self.pending_inbound: deque[dict] = deque(maxlen=max(1, cfg.busy_buffer_max))
         self.busy_acked_from: set[str] = set()
-        self.adapter = self._build_adapter()
         self.provisioner = Provisioner(cfg)
-        self.provisioner.rollback_stale_update_if_needed()
+        self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
+        self.adapter = self._build_adapter()
         self.install_send_script()
 
     def _build_adapter(self) -> Adapter:

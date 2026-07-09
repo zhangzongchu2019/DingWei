@@ -57,6 +57,7 @@ class Config:
     busy_reply_text: str = "消息已收到，但此时忙，稍后处理你的请求"
     provision_allowed_hosts: tuple[str, ...] = ("ts.wegoab.com",)
     provision_audit_db: str = ""
+    provision_rollback_timeout: int = 300
 
     @property
     def ws_url(self) -> str:
@@ -137,6 +138,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
             if item.strip()
         ),
         provision_audit_db=expand_path(env.get("SH_PROVISION_AUDIT_DB", "")),
+        provision_rollback_timeout=int(env.get("SH_PROVISION_ROLLBACK_TIMEOUT", "300")),
     )
 
 
