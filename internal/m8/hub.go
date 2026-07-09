@@ -124,7 +124,7 @@ type ForwardResponse struct {
 }
 
 const (
-	secOpsOwnerKey             = "system-v-task-internal"
+	secOpsOwnerKey             = "systemtaskintl"
 	secOpsMemberName           = "SYSTEM-V-TASK-INTERNAL"
 	secOpsKeyword              = "#系统安全"
 	agentNetworkSkillAck       = "DINGWEI_COMM_SKILL_INSTALLED"
@@ -663,7 +663,8 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	osName := strings.TrimSpace(r.URL.Query().Get("os"))
 	mirrorTo := sessionMirrorToFromRequest(r)
 	ownerKey := h.ownerKeyForKeyWithAccounts(r.Context(), keyID, accounts)
-	nameWarn := sessionNamePolicyWarning(requestedSessionName, keyID, ownerKey)
+	sessionName := deriveRegisteredSessionName(requestedSessionName, keyID, ownerKey)
+	nameWarn := sessionNamePolicyWarning(sessionName, keyID, ownerKey)
 	switch sessionNameEnforceMode() {
 	case "enforce":
 		if nameWarn != "" {
@@ -675,9 +676,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			log.Printf("session name warning key_id=%s owner=%s session=%s: %s", keyID, ownerKey, requestedSessionName, nameWarn)
 		}
 	}
-	sessionName, err := h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
+	sessionName, err = h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
 		KeyID:           keyID,
-		SessionName:     requestedSessionName,
+		SessionName:     sessionName,
 		FullSessionName: fullSessionName,
 		OwnerKey:        ownerKey,
 		LastSeenAt:      time.Now().UTC(),
@@ -906,6 +907,23 @@ func (h *Hub) nextSessionNameForOwner(ctx context.Context, ownerKey, keyID, requ
 
 func suffixedSessionName(base string, n int) string {
 	return fmt.Sprintf("%s%d", base, n)
+}
+
+func deriveRegisteredSessionName(requested, keyID, ownerKey string) string {
+	short := clientRequestedShortName(requested)
+	if ownerKey == "" {
+		return strings.TrimSpace(requested)
+	}
+	return fmt.Sprintf("%s-%s-%s", ownerKey, short, keyTail(keyID))
+}
+
+func clientRequestedShortName(requested string) string {
+	requested = strings.TrimSpace(requested)
+	parts := strings.Split(requested, "-")
+	if len(parts) == 3 && sessionNamePattern.MatchString(requested) {
+		return parts[1]
+	}
+	return requested
 }
 
 func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {

@@ -1,7 +1,8 @@
 # sessionHelper
 
 `sessionHelper` 是 DingWei / feishu-bot-bridge 的会话侧适配器。它连接
-`/ws/session/{SH_SESSION_NAME}?key_id={SH_KEY_ID}`，使用
+`/ws/session/{SH_SESSION_NAME}?key_id={SH_KEY_ID}`，其中 `SH_SESSION_NAME`
+只填短名，Hub 会按 key 绑定成员自动生成完整注册名。连接使用
 `Authorization: Bearer ${SH_SECRET}` 鉴权，并按统一信封 `{id,to,from,body,ts,meta}` 双向收发。
 
 敏感值只从环境变量读取，不写入配置文件或仓库。
@@ -46,7 +47,7 @@ AI CLI 需要用户自行安装并登录，本工具只托管已可用的 CLI，
 
 | 配置 | 说明 |
 |---|---|
-| `SH_SESSION_NAME` | 会话名，对应飞书 `#会话名` |
+| `SH_SESSION_NAME` | 短会话名；完整注册名由 Hub 按 key 绑定成员自动生成 |
 | `SH_KEY_ID` | DingWei 公开租户标识，进入地址 |
 | `SH_SECRET` | DingWei 私密连接 secret，仅用于 `Authorization: Bearer` |
 | `SH_CLI` | AI CLI profile，如 `claude` / `codex` |

@@ -520,7 +520,7 @@ func (s *SQLite) ensureDefaultProject(ctx context.Context) error {
 	return s.ensureSystemProducerIdentity(ctx)
 }
 
-const systemProducerOwner = "system-v-task-internal"
+const systemProducerOwner = "systemtaskintl"
 
 func (s *SQLite) ensureSystemProducerIdentity(ctx context.Context) error {
 	if err := s.UpsertMember(ctx, model.Member{
