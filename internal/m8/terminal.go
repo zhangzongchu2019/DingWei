@@ -510,10 +510,10 @@ const terminalPageHTML = `<!doctype html>
     const sessionName = location.pathname.split('/').pop();
     const key = 'dingwei.terminal.scrollback.' + sessionName;
     const input = document.getElementById('scrollback');
-    input.value = localStorage.getItem(key) || '5000';
+    input.value = localStorage.getItem(key) || '2000';
     let fit;
     function newTerm() {
-      const t = new Terminal({ convertEol: false, cursorBlink: true, scrollback: parseInt(input.value, 10) || 5000, theme: { background: '#0b0f14' } });
+      const t = new Terminal({ convertEol: false, cursorBlink: true, scrollback: parseInt(input.value, 10) || 2000, theme: { background: '#0b0f14' } });
       fit = new FitAddon.FitAddon();
       t.loadAddon(fit);
       t.open(document.getElementById('terminal'));
