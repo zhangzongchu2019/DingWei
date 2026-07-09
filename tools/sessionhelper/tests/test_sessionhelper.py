@@ -43,6 +43,7 @@ from sessionhelper.config import detect_full_session_name, detect_os, load_confi
 from sessionhelper.llm import PROVIDERS
 from sessionhelper.protocol import AddressBook, is_mirror_control, reply_target
 from sessionhelper.provision import Provisioner, compare_versions
+from sessionhelper.send_dingwei import temporary_session_name
 
 
 BASE_ENV = {
@@ -86,6 +87,20 @@ class SessionHelperTest(unittest.TestCase):
         with self.assertRaises(SystemExit) as bad_owner:
             load_config(dict(BASE_ENV, SH_OWNER="Zzc"))
         self.assertIn("SH_OWNER 不合规", str(bad_owner.exception))
+
+    def test_send_dingwei_temporary_session_name_is_compliant(self):
+        self.assertEqual(
+            temporary_session_name({"SH_OWNER": "zzc", "SH_SESSION_NAME": "manager", "SH_KEY_ID": "FB-zzc-devteam-e0d12642"}),
+            "zzc-managernote-2642",
+        )
+        self.assertEqual(
+            temporary_session_name({"SH_SESSION_NAME": "fulei-dev1013-3dd6", "SH_KEY_ID": "FB-key-3dd6"}),
+            "fulei-dev1013note-3dd6",
+        )
+        self.assertEqual(
+            temporary_session_name({"SH_SESSION_NAME": "Bad-Name", "SH_KEY_ID": "FB-key-1a2b"}),
+            "zzc-sendernote-1a2b",
+        )
 
     def test_ws_url_reports_tool_and_model_when_configured(self):
         cfg = load_config(dict(BASE_ENV, SH_TOOL="CODEX", SH_MODEL="gpt-5.5", SH_SESSION_FULL="sh-home-e0d12642"))

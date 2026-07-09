@@ -3361,6 +3361,34 @@ func TestSessionNameEnforceRejectsInvalidNames(t *testing.T) {
 	waitSessionOnline(t, hub, key.ID, sessionName)
 }
 
+func TestSessionNameEnforceAllowsTemporarySendName(t *testing.T) {
+	useTestNameEnforce(t, "enforce")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-name-note", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-name-note", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	sessionName := "u1-managernote-" + keyTail(key.ID)
+	conn := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, sessionName)
+}
+
 func TestSessionNameWarnAllowsLegacyNameAndDirectoryFlagsIt(t *testing.T) {
 	useTestNameEnforce(t, "warn")
 	oldViewBase := terminalViewBase

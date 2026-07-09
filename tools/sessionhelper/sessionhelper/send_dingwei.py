@@ -6,7 +6,7 @@
   send.py <收件会话名或完整地址> --file <正文文件>       # 长正文用文件
 
 凭据从环境变量读（sessionHelper 已把它们注入到 CLI 运行环境）：
-  SH_KEY_ID / SH_SECRET / SH_WS_BASE / SH_SESSION_NAME
+  SH_KEY_ID / SH_SECRET / SH_WS_BASE / SH_OWNER / SH_SESSION_NAME
 
 收件地址：只给会话名会自动补成 <会话名>#<SH_KEY_ID>；也可直接给完整 <会话名>#<key>。
 ⚠️ 会话名必须用【在线清单文件】里的精确名字（如 zzc-manager），不要用简称/旧名。
@@ -14,6 +14,7 @@
 import base64
 import json
 import os
+import re
 import socket
 import ssl
 import sys
@@ -21,15 +22,38 @@ import time
 from urllib.parse import urlparse
 
 
+NAME_PART_RE = re.compile(r"^[a-z0-9]+$")
+SESSION_NAME_RE = re.compile(r"^([a-z0-9]+)-([a-z0-9]+)-([0-9a-f]{4})$")
+
+
+def temporary_session_name(env: dict[str, str] | None = None) -> str:
+    env = env or os.environ
+    key = env.get("SH_KEY_ID", "").strip()
+    key_tail = (key[-4:] if len(key) >= 4 else "0000").lower()
+    configured_owner = env.get("SH_OWNER", "").strip()
+    configured_session = env.get("SH_SESSION_NAME", "").strip()
+
+    parsed = SESSION_NAME_RE.fullmatch(configured_session)
+    owner = configured_owner
+    short = configured_session
+    if parsed:
+        owner = owner or parsed.group(1)
+        short = parsed.group(2)
+    if not NAME_PART_RE.fullmatch(owner):
+        owner = "zzc"
+    if not NAME_PART_RE.fullmatch(short):
+        short = "sender"
+    return f"{owner}-{short}note-{key_tail}"
+
+
 def send(recipient: str, body: str) -> None:
     key = os.environ.get("SH_KEY_ID", "").strip()
     secret = os.environ.get("SH_SECRET", "").strip()
     ws_base = os.environ.get("SH_WS_BASE", "wss://ts.wegoab.com/dingwei").strip()
-    me = os.environ.get("SH_SESSION_NAME", "sender").strip() or "sender"
     if not key or not secret:
         sys.exit("缺少 SH_KEY_ID/SH_SECRET 环境变量（应由 sessionHelper 注入到 CLI 环境）")
     to = recipient if "#" in recipient else f"{recipient}#{key}"
-    name = f"{me}-note"  # 临时发信会话名，不占用/顶掉真实会话
+    name = temporary_session_name()  # 临时发信会话名，不占用/顶掉真实会话
 
     u = urlparse(ws_base)
     host = u.hostname
