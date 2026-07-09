@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -161,7 +162,7 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /ws/session/{sessionName}", prefixHub.HandleSessionWS)
 	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.HandleTerminalViewWS)
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.HandleTerminalViewPage)
-	mux.Handle("GET /dl/", http.StripPrefix("/dl/", http.FileServer(http.Dir(provisionDownloadDir()))))
+	mux.HandleFunc("GET /dl/{file}", provisionDownload)
 
 	srv := &http.Server{Addr: bs.Addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 
@@ -472,6 +473,21 @@ func provisionDownloadDir() string {
 		return v
 	}
 	return "data/dl"
+}
+
+func provisionDownload(w http.ResponseWriter, r *http.Request) {
+	name := filepath.Base(strings.TrimSpace(r.PathValue("file")))
+	if name == "." || name == "" || name != strings.TrimSpace(r.PathValue("file")) {
+		http.NotFound(w, r)
+		return
+	}
+	path := filepath.Join(provisionDownloadDir(), name)
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+	http.ServeFile(w, r, path)
 }
 
 func upsertInboundEntity(ctx context.Context, repo store.Repository, m model.Message) error {

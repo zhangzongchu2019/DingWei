@@ -2856,6 +2856,61 @@ func TestSendProvisionWritesSystemEnvelopeToOnlineSession(t *testing.T) {
 	}
 }
 
+func TestProvisionAckIsAuditedAndNotRoutedBackAsError(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-provision-ack", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-provision-ack", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "owner-one"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "developer")
+
+	if err := writeEnvelope(ctx, conn, model.Envelope{
+		ID:   "ack-1",
+		To:   "workpulse#" + key.ID,
+		From: "developer#" + key.ID,
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{
+			"type":         "provision_ack",
+			"system":       true,
+			"no_mirror":    true,
+			"action":       "install_skill",
+			"target":       "demo",
+			"version":      "2.2.0",
+			"ok":           true,
+			"message":      "skill installed",
+			"from_version": "2.1.0",
+			"to_version":   "2.2.0",
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(50 * time.Millisecond)
+	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	defer cancel()
+	if _, _, err := conn.Read(readCtx); err == nil {
+		t.Fatal("provision ack should be swallowed without error envelope")
+	}
+	audits, err := db.ListRecentAudit(ctx, "provision_ack", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(audits) != 1 || audits[0].Actor != "developer#"+key.ID || !strings.Contains(audits[0].Target, `"ok":true`) || !strings.Contains(audits[0].Target, `"skill installed"`) {
+		t.Fatalf("audits=%+v", audits)
+	}
+}
+
 func dialSession(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string) *websocket.Conn {
 	t.Helper()
 	return dialSessionWithHeader(t, ctx, baseURL, sessionName, keyID, secret, nil)

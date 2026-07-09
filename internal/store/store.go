@@ -115,6 +115,7 @@ type Repository interface {
 
 	// 审计
 	WriteAudit(ctx context.Context, actor, action, target string) error
+	ListRecentAudit(ctx context.Context, actionPrefix string, limit int) ([]model.AuditLog, error)
 	UpsertAppConfig(ctx context.Context, key, valueJSON string) error
 	ListAppConfig(ctx context.Context) ([]model.AppConfig, error)
 	DeleteAppConfig(ctx context.Context, key string) error

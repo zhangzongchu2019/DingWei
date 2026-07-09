@@ -665,6 +665,9 @@ func TestAdminProvisionPageRequiresAuthAndShowsOnlineSessions(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if err := db.WriteAudit(ctx, "developer#FB-test", "provision_ack", `{"action":"install_skill","ok":true,"message":"skill installed"}`); err != nil {
+		t.Fatal(err)
+	}
 	unauth := httptest.NewRecorder()
 	mux.ServeHTTP(unauth, httptest.NewRequest(http.MethodGet, "/admin/provision", nil))
 	if unauth.Code != http.StatusSeeOther || unauth.Header().Get("Location") != "/admin/login" {
@@ -672,7 +675,7 @@ func TestAdminProvisionPageRequiresAuthAndShowsOnlineSessions(t *testing.T) {
 	}
 	srv.sessions["tok"] = "admin"
 	body := getAuth(t, mux, "/admin/provision").Body.String()
-	for _, want := range []string{"Provision 下发", "developer", "alice", "install_skill", "打包当前 sessionHelper"} {
+	for _, want := range []string{"Provision 下发", "developer", "alice", "install_skill", "打包当前 sessionHelper", "最近 Provision 回执", "skill installed"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("provision page missing %q in %s", want, body)
 		}

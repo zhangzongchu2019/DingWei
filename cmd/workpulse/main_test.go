@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -45,6 +46,35 @@ func TestHandleFeishuWebhookURLVerification(t *testing.T) {
 	}
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "challenge-code") {
 		t.Fatalf("url verification response code=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestProvisionDownloadServesFilesButNotDirectoryListing(t *testing.T) {
+	dl := t.TempDir()
+	t.Setenv("WP_PROVISION_DL_DIR", dl)
+	if err := os.WriteFile(dl+"/artifact.tar.gz", []byte("artifact"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/dl/artifact.tar.gz", nil)
+	req.SetPathValue("file", "artifact.tar.gz")
+	provisionDownload(rec, req)
+	if rec.Code != http.StatusOK || rec.Body.String() != "artifact" {
+		t.Fatalf("file response code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/dl/", nil)
+	req.SetPathValue("file", "")
+	provisionDownload(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("directory listing should be denied, code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/dl/../artifact.tar.gz", nil)
+	req.SetPathValue("file", "../artifact.tar.gz")
+	provisionDownload(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("path traversal should be denied, code=%d body=%s", rec.Code, rec.Body.String())
 	}
 }
 

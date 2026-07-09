@@ -192,6 +192,15 @@ type AppConfig struct {
 	UpdatedAt time.Time
 }
 
+// AuditLog is one admin/system audit entry.
+type AuditLog struct {
+	ID     string
+	Actor  string
+	Action string
+	Target string
+	TS     time.Time
+}
+
 // SessionEndpoint 是统一寻址协议中的会话端点元数据。
 type SessionEndpoint struct {
 	KeyID            string

@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -1576,6 +1577,7 @@ func (s *Server) provisionPage(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`<tr><td colspan=6>暂无在线会话。</td></tr>`))
 	}
 	_, _ = w.Write([]byte(`</table>`))
+	s.renderProvisionAudit(w, r.Context())
 }
 
 func (s *Server) manageProvision(w http.ResponseWriter, r *http.Request) {
@@ -1590,6 +1592,7 @@ func (s *Server) manageProvision(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		_ = s.Repo.WriteAudit(r.Context(), adminUser(r), "admin_provision_package", info.URL+":"+info.SHA256)
+		slog.Info("admin provision package", "url", info.URL, "sha256", info.SHA256, "version", info.Version, "actor", adminUser(r))
 		writeJSON(w, info)
 		return
 	}
@@ -1619,7 +1622,25 @@ func (s *Server) manageProvision(w http.ResponseWriter, r *http.Request) {
 	}
 	detail, _ := json.Marshal(map[string]any{"action": req.Action, "version": req.Version, "sha256": req.SHA256, "target": req.Target, "results": results})
 	_ = s.Repo.WriteAudit(r.Context(), adminUser(r), "admin_provision_send", string(detail))
+	slog.Info("admin provision send", "action", req.Action, "version", req.Version, "target", req.Target, "sha256", req.SHA256, "count", len(results), "actor", adminUser(r))
 	writeJSON(w, map[string]any{"results": results})
+}
+
+func (s *Server) renderProvisionAudit(w http.ResponseWriter, ctx context.Context) {
+	items, err := s.Repo.ListRecentAudit(ctx, "provision_", 30)
+	if err != nil {
+		_, _ = fmt.Fprintf(w, `<p>Provision 审计加载失败：%s</p>`, esc(err.Error()))
+		return
+	}
+	_, _ = w.Write([]byte(`<h4>最近 Provision 回执 / 审计</h4><table border=1 cellpadding=4><tr><th>time</th><th>action</th><th>actor/from</th><th>detail</th></tr>`))
+	if len(items) == 0 {
+		_, _ = w.Write([]byte(`<tr><td colspan=4>暂无 provision 审计。</td></tr>`))
+	}
+	for _, item := range items {
+		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td><pre>%s</pre></td></tr>`,
+			esc(item.TS.Format(time.RFC3339)), esc(item.Action), esc(item.Actor), esc(item.Target))
+	}
+	_, _ = w.Write([]byte(`</table>`))
 }
 
 type provisionRequest struct {
@@ -2327,6 +2348,9 @@ func readSessionHelperVersion(path string) string {
 func shouldSkipProvisionPackage(rel string, d os.DirEntry) bool {
 	base := filepath.Base(rel)
 	if base == "__pycache__" || base == ".venv" || base == ".pytest_cache" {
+		return true
+	}
+	if strings.HasPrefix(base, "config") && base != "config.example" {
 		return true
 	}
 	return !d.IsDir() && (strings.HasSuffix(base, ".pyc") || strings.HasSuffix(base, ".pyo"))

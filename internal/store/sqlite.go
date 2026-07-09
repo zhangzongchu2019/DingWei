@@ -2382,6 +2382,37 @@ func (s *SQLite) WriteAudit(ctx context.Context, actor, action, target string) e
 	return err
 }
 
+func (s *SQLite) ListRecentAudit(ctx context.Context, actionPrefix string, limit int) ([]model.AuditLog, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	actionPrefix = strings.TrimSpace(actionPrefix)
+	query := `SELECT id, COALESCE(actor, ''), action, COALESCE(target, ''), ts FROM audit_log`
+	var args []any
+	if actionPrefix != "" {
+		query += ` WHERE action LIKE ?`
+		args = append(args, actionPrefix+"%")
+	}
+	query += ` ORDER BY ts DESC LIMIT ?`
+	args = append(args, limit)
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.AuditLog
+	for rows.Next() {
+		var item model.AuditLog
+		var ts string
+		if err := rows.Scan(&item.ID, &item.Actor, &item.Action, &item.Target, &ts); err != nil {
+			return nil, err
+		}
+		item.TS, _ = time.Parse(time.RFC3339, ts)
+		out = append(out, item)
+	}
+	return out, rows.Err()
+}
+
 func (s *SQLite) UpsertAppConfig(ctx context.Context, key, valueJSON string) error {
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO app_config(key, value_json, updated_at) VALUES(?,?,?)
