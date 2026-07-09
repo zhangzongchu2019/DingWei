@@ -69,6 +69,7 @@
 ---
 
 ## 三、既有 backlog(并入规划)
+- 🐛 **[bug·待定位] macOS 下 launchd 后台运行时 CLI 不启动**(2.1.0,/view 空白;前台正常;Linux 不受影响)——诊断线索见 [known-issue-macos-launchd-cli.md](known-issue-macos-launchd-cli.md);当前以"前台 nohup 后台化 + 输出重定向"缓解;
 - is3/本机会话升级到最新客户端(2.1.0,+改名 zzc-*);
 - 远程成员部署包更新到新方案 + 发放(亚洲+美洲机);
 - 灰度 8792 下线;
