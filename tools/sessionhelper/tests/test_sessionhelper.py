@@ -1,10 +1,14 @@
 import unittest
 import asyncio
+import hashlib
+import io
 import json
 import stat
 import sqlite3
 import subprocess
+import tarfile
 import tempfile
+import time
 from unittest import mock
 from pathlib import Path
 
@@ -35,9 +39,10 @@ from sessionhelper.cli import (
     tmux_session_name,
     user_text_matches,
 )
-from sessionhelper.config import detect_full_session_name, load_config
+from sessionhelper.config import detect_full_session_name, detect_os, load_config
 from sessionhelper.llm import PROVIDERS
 from sessionhelper.protocol import AddressBook, is_mirror_control, reply_target
+from sessionhelper.provision import Provisioner, compare_versions
 
 
 BASE_ENV = {
@@ -66,13 +71,13 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(cfg.target_group, "")
         self.assertEqual(cfg.target_bot, "")
         self.assertEqual(cfg.opencode_db, "")
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}")
 
     def test_ws_url_reports_tool_and_model_when_configured(self):
         cfg = load_config(dict(BASE_ENV, SH_TOOL="CODEX", SH_MODEL="gpt-5.5", SH_SESSION_FULL="sh-home-e0d12642"))
         self.assertEqual(
             cfg.ws_url,
-            "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&tool=CODEX&model=gpt-5.5&full_session_name=sh-home-e0d12642",
+            f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&tool=CODEX&os={detect_os()}&model=gpt-5.5&full_session_name=sh-home-e0d12642",
         )
 
     def test_ws_url_reports_producer_target_group(self):
@@ -80,16 +85,16 @@ class SessionHelperTest(unittest.TestCase):
         self.assertTrue(cfg.producer)
         self.assertEqual(cfg.target_group, "oc_ai")
         self.assertEqual(cfg.target_bot, "bot-test")
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&producer=1&target_group=oc_ai&target_bot=bot-test")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}&producer=1&target_group=oc_ai&target_bot=bot-test")
 
     def test_ws_url_reports_mirror_to(self):
         cfg = load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-test#is3-Connector"))
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&mirror_to=ou_u1%23FB-test%23is3-Connector")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}&mirror_to=ou_u1%23FB-test%23is3-Connector")
 
     def test_ws_url_reports_no_directory(self):
         cfg = load_config(dict(BASE_ENV, SH_NO_DIRECTORY="1"))
         self.assertTrue(cfg.no_directory)
-        self.assertEqual(cfg.ws_url, "ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&no_directory=1")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-test&os={detect_os()}&no_directory=1")
 
     def test_detect_full_session_name_prefers_tmux_session(self):
         with mock.patch("sessionhelper.config.subprocess.check_output", return_value="sh-developer-e0d12642\n"):
@@ -441,6 +446,325 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(fake.injected, [])
         self.assertEqual(len(ws.sent), 1)
         self.assertEqual(ws.sent[0]["meta"]["type"], "agent_network_skill_ack")
+
+    def test_busy_buffer_queues_busy_messages_and_drains_fifo(self):
+        class FakeWS:
+            def __init__(self, envs):
+                self.envs = list(envs)
+                self.sent = []
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if not self.envs:
+                    raise StopAsyncIteration
+                return json.dumps(self.envs.pop(0), ensure_ascii=False)
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        class FakeAdapter:
+            name = "cli"
+
+            def __init__(self):
+                self.idle = False
+                self.handled = []
+
+            def is_idle(self):
+                return self.idle
+
+            def handle(self, env):
+                self.handled.append(env["body"])
+                return ""
+
+        envs = [
+            {"from": "peer#FB-test", "to": "home#FB-test", "body": "one", "meta": {}},
+            {"from": "peer#FB-test", "to": "home#FB-test", "body": "two", "meta": {}},
+        ]
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli", SH_BUSY_BUFFER_MAX="10", SH_CLI_SETTLE_SECONDS="0.1")))
+        fake = FakeAdapter()
+        helper.adapter = fake
+        ws = FakeWS(envs)
+        asyncio.run(helper.recv_loop(ws))
+        self.assertEqual(fake.handled, [])
+        self.assertEqual([item["body"] for item in helper.pending_inbound], ["one", "two"])
+        self.assertEqual(len(ws.sent), 1)
+        self.assertEqual(ws.sent[0]["to"], "peer#FB-test")
+        self.assertIn("忙", ws.sent[0]["body"])
+
+        async def drain_once():
+            fake.idle = True
+            task = asyncio.create_task(helper.pending_drain_loop(ws))
+            deadline = asyncio.get_running_loop().time() + 1.5
+            while asyncio.get_running_loop().time() < deadline and helper.pending_inbound:
+                await asyncio.sleep(0.05)
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+        asyncio.run(drain_once())
+        self.assertEqual(fake.handled, ["one", "two"])
+        self.assertEqual(len(helper.pending_inbound), 0)
+        self.assertEqual(helper.busy_acked_from, set())
+
+    def test_busy_buffer_drops_oldest_when_full_and_skips_special_messages(self):
+        class FakeAdapter:
+            name = "cli"
+
+            def is_idle(self):
+                return False
+
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli", SH_BUSY_BUFFER_MAX="2")))
+        helper.adapter = FakeAdapter()
+        ws = FakeWS()
+
+        async def run_case():
+            for body in ["one", "two", "three"]:
+                await helper.buffer_if_busy(ws, {"from": "peer#FB-test", "to": "home#FB-test", "body": body, "meta": {}})
+
+        asyncio.run(run_case())
+        self.assertEqual([item["body"] for item in helper.pending_inbound], ["two", "three"])
+        self.assertEqual(len(ws.sent), 1)
+
+    def test_provision_rejects_bad_source_and_audits(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
+            result = Provisioner(cfg).handle(
+                {
+                    "from": "attacker#FB-test",
+                    "to": "home#FB-test",
+                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://ts.wegoab.com/x", "sha256": "0" * 64},
+                }
+            )
+            self.assertFalse(result.ok)
+            self.assertIn("source denied", result.message)
+            with sqlite3.connect(Path(tmp) / "audit.db") as conn:
+                rows = conn.execute("SELECT action, ok, source FROM provision_audit").fetchall()
+            self.assertEqual(rows, [("install_skill", 0, "attacker#FB-test")])
+
+    def test_provision_validates_host_and_sha_before_download(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
+            base = {
+                "from": "workpulse#FB-test",
+                "to": "home#FB-test",
+                "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://evil.example/x", "sha256": "0" * 64},
+            }
+            result = Provisioner(cfg).handle(base)
+            self.assertFalse(result.ok)
+            self.assertIn("host not allowed", result.message)
+            bad_sha = json.loads(json.dumps(base))
+            bad_sha["meta"]["url"] = "https://ts.wegoab.com/x"
+            bad_sha["meta"]["sha256"] = "abc"
+            result = Provisioner(cfg).handle(bad_sha)
+            self.assertFalse(result.ok)
+            self.assertIn("invalid sha256", result.message)
+
+    def test_provision_idempotent_version_skips_download(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
+            provisioner = Provisioner(cfg)
+            provisioner.version_file = Path(tmp) / "versions.json"
+            provisioner.record_version("install_skill", "demo", "2.0")
+            env = {
+                "from": "workpulse#FB-test",
+                "to": "home#FB-test",
+                "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/x", "sha256": "0" * 64},
+            }
+            with mock.patch.object(provisioner, "download_and_verify", side_effect=AssertionError("should not download")):
+                result = provisioner.handle(env)
+            self.assertTrue(result.ok)
+            self.assertEqual(result.message, "already installed")
+
+    def test_provision_install_skill_from_verified_tar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            artifact = Path(tmp) / "skill.tar"
+            src = Path(tmp) / "src"
+            src.mkdir()
+            (src / "SKILL.md").write_text("demo skill", encoding="utf-8")
+            with tarfile.open(artifact, "w") as tf:
+                tf.add(src / "SKILL.md", arcname="SKILL.md")
+            cfg = load_config(dict(BASE_ENV, SH_CLI="codex", SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
+            with mock.patch.dict("os.environ", {"HOME": str(home), "CODEX_HOME": str(home / ".codex")}):
+                provisioner = Provisioner(cfg)
+                provisioner.version_file = Path(tmp) / "versions.json"
+                env = {
+                    "from": "workpulse#FB-test",
+                    "to": "home#FB-test",
+                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/skill.tar", "sha256": "0" * 64},
+                }
+                with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
+                    result = provisioner.handle(env)
+                self.assertTrue(result.ok, result.message)
+                self.assertEqual((home / ".codex" / "skills" / "demo" / "SKILL.md").read_text(encoding="utf-8"), "demo skill")
+
+    def test_provision_install_mcp_merges_json_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            home.mkdir()
+            artifact = Path(tmp) / "mcp.json"
+            artifact.write_text(json.dumps({"command": "demo-mcp", "args": ["--stdio"], "env": {"TOKEN": "${DEMO_TOKEN}"}}), encoding="utf-8")
+            cfg = load_config(dict(BASE_ENV, SH_CLI="claude", SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
+            with mock.patch.dict("os.environ", {"HOME": str(home)}):
+                provisioner = Provisioner(cfg)
+                provisioner.version_file = Path(tmp) / "versions.json"
+                env = {
+                    "from": "workpulse#FB-test",
+                    "to": "home#FB-test",
+                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/mcp.json", "sha256": "0" * 64},
+                }
+                with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
+                    result = provisioner.handle(env)
+                self.assertTrue(result.ok, result.message)
+                data = json.loads((home / ".claude.json").read_text(encoding="utf-8"))
+                self.assertEqual(data["mcpServers"]["demo"]["command"], "demo-mcp")
+                self.assertEqual(data["mcpServers"]["demo"]["env"]["TOKEN"], "${DEMO_TOKEN}")
+
+    def test_provision_install_mcp_writes_codex_toml_snippet(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            codex_home = home / ".codex"
+            home.mkdir()
+            artifact = Path(tmp) / "mcp.json"
+            artifact.write_text(json.dumps({"mcpServers": {"demo": {"command": "demo-mcp", "args": ["--stdio"]}}}), encoding="utf-8")
+            cfg = load_config(dict(BASE_ENV, SH_CLI="codex", SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
+            with mock.patch.dict("os.environ", {"HOME": str(home), "CODEX_HOME": str(codex_home)}):
+                provisioner = Provisioner(cfg)
+                provisioner.version_file = Path(tmp) / "versions.json"
+                env = {
+                    "from": "workpulse#FB-test",
+                    "to": "home#FB-test",
+                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/mcp.json", "sha256": "0" * 64},
+                }
+                with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
+                    result = provisioner.handle(env)
+                self.assertTrue(result.ok, result.message)
+                text = (codex_home / "config.toml").read_text(encoding="utf-8")
+                self.assertIn('# dingwei-mcp:demo:1.0', text)
+                self.assertIn('[mcp_servers."demo"]', text)
+                self.assertIn('command = "demo-mcp"', text)
+
+    def test_provision_download_requires_matching_sha256(self):
+        class FakeResponse:
+            def __init__(self, chunks):
+                self.chunks = list(chunks)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self, _size):
+                if not self.chunks:
+                    return b""
+                return self.chunks.pop(0)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
+            provisioner = Provisioner(cfg)
+            expected = hashlib.sha256(b"abcdef").hexdigest()
+            with mock.patch("sessionhelper.provision.urllib.request.urlopen", return_value=FakeResponse([b"abc", b"def"])):
+                path = provisioner.download_and_verify("https://ts.wegoab.com/artifact", expected)
+            self.assertEqual(path.read_bytes(), b"abcdef")
+            with mock.patch("sessionhelper.provision.urllib.request.urlopen", return_value=FakeResponse([b"bad"])):
+                with self.assertRaises(Exception):
+                    provisioner.download_and_verify("https://ts.wegoab.com/artifact", expected)
+
+    def test_provision_rejects_tar_escape_and_links(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
+            provisioner = Provisioner(cfg)
+            escape_tar = Path(tmp) / "escape.tar"
+            with tarfile.open(escape_tar, "w") as tf:
+                info = tarfile.TarInfo("../escape.txt")
+                payload = b"x"
+                info.size = len(payload)
+                tf.addfile(info, io.BytesIO(payload))
+            with self.assertRaises(Exception):
+                provisioner.extract_package(escape_tar, Path(tmp) / "out")
+
+            link_tar = Path(tmp) / "link.tar"
+            with tarfile.open(link_tar, "w") as tf:
+                info = tarfile.TarInfo("link")
+                info.type = tarfile.SYMTYPE
+                info.linkname = "/tmp/escape"
+                tf.addfile(info)
+            with self.assertRaises(Exception):
+                provisioner.extract_package(link_tar, Path(tmp) / "out2")
+
+    def test_provision_update_self_rolls_back_stale_pending_update(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            root = Path(tmp) / "sessionhelper"
+            backup = Path(tmp) / "backup"
+            home.mkdir()
+            root.mkdir()
+            backup.mkdir()
+            (root / "app.py").write_text("new", encoding="utf-8")
+            (backup / "app.py").write_text("old", encoding="utf-8")
+            cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
+            with mock.patch.dict("os.environ", {"HOME": str(home), "SH_PROVISION_NO_EXIT": "1"}):
+                provisioner = Provisioner(cfg, package_root=str(root))
+                provisioner.update_state_file.parent.mkdir(parents=True, exist_ok=True)
+                provisioner.update_state_file.write_text(
+                    json.dumps({"version": "future", "backup": str(backup), "status": "pending", "ts": int(time.time()) - 100}),
+                    encoding="utf-8",
+                )
+                self.assertTrue(provisioner.rollback_stale_update_if_needed(timeout_seconds=1))
+                self.assertEqual((root / "app.py").read_text(encoding="utf-8"), "old")
+
+    def test_provision_restart_strategy_is_platform_specific(self):
+        cfg = load_config(BASE_ENV)
+        provisioner = Provisioner(cfg)
+        with mock.patch("sessionhelper.provision.detect_os", return_value="linux"):
+            self.assertEqual(provisioner.restart_strategy(), "cron_guard")
+        with mock.patch("sessionhelper.provision.detect_os", return_value="macos"):
+            self.assertEqual(provisioner.restart_strategy(), "launchd")
+
+    def test_provision_ack_is_sent_from_recv_loop(self):
+        class FakeWS:
+            def __init__(self, env):
+                self.env = env
+                self.done = False
+                self.sent = []
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if self.done:
+                    raise StopAsyncIteration
+                self.done = True
+                return json.dumps(self.env, ensure_ascii=False)
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        helper = SessionHelper(load_config(BASE_ENV))
+        env = {"from": "workpulse#FB-test", "to": "home#FB-test", "body": "", "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://evil.example/x", "sha256": "0" * 64}}
+        ws = FakeWS(env)
+        asyncio.run(helper.recv_loop(ws))
+        self.assertEqual(len(ws.sent), 1)
+        self.assertEqual(ws.sent[0]["to"], "workpulse#FB-test")
+        self.assertEqual(ws.sent[0]["meta"]["type"], "provision_ack")
+        self.assertFalse(ws.sent[0]["meta"]["ok"])
+
+    def test_compare_versions_handles_numbers_and_hashes(self):
+        self.assertGreater(compare_versions("2.0", "1.9"), 0)
+        self.assertLess(compare_versions("abc", "bcd"), 0)
 
     def test_mirror_loop_sends_comm_skill_ack_on_marker(self):
         class FakeWS:
