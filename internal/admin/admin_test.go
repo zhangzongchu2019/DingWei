@@ -1,11 +1,18 @@
 package admin
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -646,6 +653,135 @@ func TestAdminCleanupRequiresOneMonthCutoff(t *testing.T) {
 	rec = postFormRaw(mux, "/admin/cleanup", url.Values{"cutoff": {old}})
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Messages") {
 		t.Fatalf("dry-run cleanup status=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestAdminProvisionPageRequiresAuthAndShowsOnlineSessions(t *testing.T) {
+	srv, db, mux, ctx := newAdminTestServer(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{
+		KeyID:       "FB-test",
+		SessionName: "developer",
+		OwnerKey:    "alice",
+		LastSeenAt:  time.Now().UTC(),
+		Active:      true,
+		Tool:        "codex",
+		Model:       "gpt-5",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.WriteAudit(ctx, "developer#FB-test", "provision_ack", `{"action":"install_skill","ok":true,"message":"skill installed"}`); err != nil {
+		t.Fatal(err)
+	}
+	unauth := httptest.NewRecorder()
+	mux.ServeHTTP(unauth, httptest.NewRequest(http.MethodGet, "/admin/provision", nil))
+	if unauth.Code != http.StatusSeeOther || unauth.Header().Get("Location") != "/admin/login" {
+		t.Fatalf("unauth provision code=%d location=%q", unauth.Code, unauth.Header().Get("Location"))
+	}
+	srv.sessions["tok"] = "admin"
+	body := getAuth(t, mux, "/admin/provision").Body.String()
+	for _, want := range []string{"Provision 下发", "developer", "alice", "install_skill", "打包当前 sessionHelper", "最近 Provision 回执", "skill installed"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("provision page missing %q in %s", want, body)
+		}
+	}
+}
+
+func TestAdminProvisionTargetLimitAndVersionMonotonic(t *testing.T) {
+	srv, db, _, ctx := newAdminTestServer(t)
+	for _, name := range []string{"dev1", "dev2"} {
+		if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: name, OwnerKey: "alice", LastSeenAt: time.Now().UTC(), Active: true}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	targets, err := srv.resolveProvisionTargets(ctx, "owner", "", "", "alice", "1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(targets) != 1 || targets[0].OwnerKey != "alice" {
+		t.Fatalf("targets=%+v", targets)
+	}
+	srv.recordProvisionVersion(ctx, "install_skill", "FB-test", "dev1", "demo", "2.2.0")
+	if err := srv.ensureProvisionVersionMonotonic(ctx, "install_skill", "FB-test", "dev1", "demo", "2.1.9"); err == nil {
+		t.Fatal("downgrade should be denied")
+	}
+	if err := srv.ensureProvisionVersionMonotonic(ctx, "install_skill", "FB-test", "dev1", "demo", "2.2"); err != nil {
+		t.Fatalf("equivalent shorter version should pass: %v", err)
+	}
+	if err := srv.ensureProvisionVersionMonotonic(ctx, "install_skill", "FB-test", "dev1", "demo", "2.2.1"); err != nil {
+		t.Fatalf("upgrade should pass: %v", err)
+	}
+}
+
+func TestAdminProvisionValidatesURLHost(t *testing.T) {
+	t.Setenv("WP_PROVISION_ALLOWED_HOSTS", "ts.wegoab.com,localhost")
+	if err := validateProvisionURL("https://ts.wegoab.com/a.tar", provisionAllowedHosts()); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateProvisionURL("https://evil.example/a.tar", provisionAllowedHosts()); err == nil {
+		t.Fatal("evil host should be denied")
+	}
+	if !validSHA256(strings.Repeat("a", 64)) || validSHA256(strings.Repeat("z", 64)) {
+		t.Fatal("sha256 validation mismatch")
+	}
+}
+
+func TestAdminProvisionPackageSessionHelperCreatesDownloadArtifact(t *testing.T) {
+	srv, _, _, _ := newAdminTestServer(t)
+	dl := t.TempDir()
+	t.Setenv("WP_PROVISION_DL_DIR", dl)
+	secretConfig := filepath.Join("..", "..", "tools", "sessionhelper", "config-secret.json")
+	if err := os.WriteFile(secretConfig, []byte(`{"secret":true}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Remove(secretConfig) })
+	req := httptest.NewRequest(http.MethodPost, "http://localhost/admin/provision", nil)
+	info, err := srv.packageSessionHelper(req, "9.9.9-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(info.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(data)
+	if got := hex.EncodeToString(sum[:]); got != info.SHA256 {
+		t.Fatalf("sha=%s want %s", got, info.SHA256)
+	}
+	if !strings.Contains(info.URL, "/dl/sessionhelper-9.9.9-test.tar.gz") || info.Version != "9.9.9-test" {
+		t.Fatalf("info=%+v", info)
+	}
+	names := tarNames(t, data)
+	if !names["sessionhelper/config.py"] {
+		t.Fatalf("package missing sessionhelper/config.py names=%v", names)
+	}
+	if !names["config.example"] {
+		t.Fatalf("package missing config.example names=%v", names)
+	}
+	for name := range names {
+		if strings.HasPrefix(filepath.Base(name), "config-") && strings.HasSuffix(name, ".json") {
+			t.Fatalf("package leaked config json: %s", name)
+		}
+	}
+}
+
+func tarNames(t *testing.T, data []byte) map[string]bool {
+	t.Helper()
+	gz, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer gz.Close()
+	tr := tar.NewReader(gz)
+	out := map[string]bool{}
+	for {
+		hdr, err := tr.Next()
+		if err != nil {
+			if err == io.EOF {
+				return out
+			}
+			t.Fatal(err)
+		}
+		out[hdr.Name] = true
 	}
 }
 

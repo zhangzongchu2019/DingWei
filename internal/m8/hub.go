@@ -744,10 +744,33 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		if h.handleControlSubtaskResult(r.Context(), c, env) {
 			continue
 		}
+		if h.handleProvisionAck(r.Context(), c, env) {
+			continue
+		}
 		if err := h.RouteEnvelope(r.Context(), env); err != nil {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "投递失败："+err.Error()))
 		}
 	}
+}
+
+func (h *Hub) handleProvisionAck(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") != "provision_ack" {
+		return false
+	}
+	if h.Repo != nil {
+		target, _ := json.Marshal(map[string]any{
+			"from":         env.From,
+			"action":       metaString(env.Meta, "action"),
+			"target":       metaString(env.Meta, "target"),
+			"version":      metaString(env.Meta, "version"),
+			"ok":           metaBool(env.Meta, "ok"),
+			"message":      metaString(env.Meta, "message"),
+			"from_version": metaString(env.Meta, "from_version"),
+			"to_version":   metaString(env.Meta, "to_version"),
+		})
+		_ = h.Repo.WriteAudit(ctx, env.From, "provision_ack", string(target))
+	}
+	return true
 }
 
 func (h *Hub) handleControlSubtaskResult(ctx context.Context, c *sessionClient, env model.Envelope) bool {
@@ -2580,6 +2603,22 @@ func metaString(meta map[string]any, key string) string {
 		return strings.TrimSpace(v)
 	}
 	return ""
+}
+
+func metaBool(meta map[string]any, key string) bool {
+	if meta == nil {
+		return false
+	}
+	switch v := meta[key].(type) {
+	case bool:
+		return v
+	case string:
+		switch strings.ToLower(strings.TrimSpace(v)) {
+		case "1", "true", "yes", "y", "on":
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Hub) claimEnvelope(env model.Envelope) (bool, string, error) {
