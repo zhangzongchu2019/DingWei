@@ -48,20 +48,21 @@ type Hub struct {
 	L2       llm.Provider
 	L2Config L2Config
 
-	mu             sync.Mutex
-	serviceClients map[string]*client
-	sessionClients map[string]map[string]*sessionClient
-	keyAccounts    map[string]map[string]bool
-	botChannels    map[string]string
-	botNames       map[string]string
-	envelopeIDs    map[string]string
-	onlineTimers   map[string]*time.Timer
-	terminals      map[string]*terminalState
-	syncTargets    map[string]map[string]feishuSyncTarget
-	recentTerminal map[string][]terminalSyncItem
-	syncBuffers    map[string]*feishuSyncBuffer
-	linkTokens     map[string]ownerLinkToken
-	onlineDebounce time.Duration
+	mu               sync.Mutex
+	serviceClients   map[string]*client
+	sessionClients   map[string]map[string]*sessionClient
+	keyAccounts      map[string]map[string]bool
+	botChannels      map[string]string
+	botNames         map[string]string
+	envelopeIDs      map[string]string
+	onlineTimers     map[string]*time.Timer
+	terminals        map[string]*terminalState
+	terminalLastSize map[string][2]int
+	syncTargets      map[string]map[string]feishuSyncTarget
+	recentTerminal   map[string][]terminalSyncItem
+	syncBuffers      map[string]*feishuSyncBuffer
+	linkTokens       map[string]ownerLinkToken
+	onlineDebounce   time.Duration
 }
 
 type L2Config struct {
@@ -155,20 +156,21 @@ var (
 
 func New(repo store.Repository) *Hub {
 	return &Hub{
-		Repo:           repo,
-		serviceClients: map[string]*client{},
-		sessionClients: map[string]map[string]*sessionClient{},
-		keyAccounts:    map[string]map[string]bool{},
-		botChannels:    map[string]string{},
-		botNames:       map[string]string{},
-		envelopeIDs:    map[string]string{},
-		onlineTimers:   map[string]*time.Timer{},
-		terminals:      map[string]*terminalState{},
-		syncTargets:    map[string]map[string]feishuSyncTarget{},
-		recentTerminal: map[string][]terminalSyncItem{},
-		syncBuffers:    map[string]*feishuSyncBuffer{},
-		linkTokens:     map[string]ownerLinkToken{},
-		onlineDebounce: 2500 * time.Millisecond,
+		Repo:             repo,
+		serviceClients:   map[string]*client{},
+		sessionClients:   map[string]map[string]*sessionClient{},
+		keyAccounts:      map[string]map[string]bool{},
+		botChannels:      map[string]string{},
+		botNames:         map[string]string{},
+		envelopeIDs:      map[string]string{},
+		onlineTimers:     map[string]*time.Timer{},
+		terminals:        map[string]*terminalState{},
+		terminalLastSize: map[string][2]int{},
+		syncTargets:      map[string]map[string]feishuSyncTarget{},
+		recentTerminal:   map[string][]terminalSyncItem{},
+		syncBuffers:      map[string]*feishuSyncBuffer{},
+		linkTokens:       map[string]ownerLinkToken{},
+		onlineDebounce:   2500 * time.Millisecond,
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,
@@ -721,7 +723,17 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	}
 	h.sessionClients[keyID][sessionName] = c
 	h.keyAccounts[keyID] = stringSet(accounts)
+	reSize := h.terminalLastSize[terminalKey(keyID, sessionName)]
 	h.mu.Unlock()
+	if reSize[0] > 0 && reSize[1] > 0 {
+		_ = c.write(r.Context(), model.Envelope{
+			ID:   randomHex(16),
+			To:   sessionAddress(sessionName, keyID),
+			From: sessionAddress("workpulse", keyID),
+			TS:   time.Now().Unix(),
+			Meta: map[string]any{"type": terminalResizeType, "system": true, "no_mirror": true, "cols": reSize[0], "rows": reSize[1]},
+		})
+	}
 	skillCtx, skillCancel := context.WithCancel(context.Background())
 	c.skillCancel = skillCancel
 	h.startAgentNetworkSkillPush(skillCtx, c)

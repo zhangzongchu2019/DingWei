@@ -256,6 +256,7 @@ func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID
 func (h *Hub) routeTerminalResize(ctx context.Context, keyID, sessionName string, cols, rows int) error {
 	h.mu.Lock()
 	c := h.sessionClients[keyID][sessionName]
+	h.terminalLastSize[terminalKey(keyID, sessionName)] = [2]int{cols, rows}
 	h.mu.Unlock()
 	if c == nil {
 		return nil
@@ -557,7 +558,7 @@ const terminalPageHTML = `<!doctype html>
     }
     function connectWS() {
       ws = new WebSocket(proto + '//' + location.host + '/ws/view/' + encodeURIComponent(sessionName));
-      ws.onopen = () => { reconnectDelay = 1000; try { fit.fit(); } catch (e) {} sendResize(); };
+      ws.onopen = () => { reconnectDelay = 1000; lastSize = ''; try { fit.fit(); } catch (e) {} sendResize(); };
       ws.onmessage = (ev) => {
         const m = JSON.parse(ev.data);
         if (m.type === 'output') term.write(m.data || '');
