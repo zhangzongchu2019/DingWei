@@ -2,6 +2,8 @@ package m8
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -32,6 +34,8 @@ type terminalState struct {
 	writerPage  string
 	writerToken string
 	writerUntil time.Time
+	cookieToken string
+	cookieUntil time.Time
 }
 
 type terminalViewer struct {
@@ -47,6 +51,10 @@ type terminalClientMessage struct {
 	Token string `json:"token,omitempty"`
 	Rows  int    `json:"rows,omitempty"`
 	Cols  int    `json:"cols,omitempty"`
+}
+
+type terminalCookieRequest struct {
+	Token string `json:"token"`
 }
 
 func terminalKey(keyID, sessionName string) string {
@@ -101,6 +109,39 @@ func (h *Hub) HandleTerminalViewPage(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, terminalPageHTML, html.EscapeString(sessionName), html.EscapeString(sessionName))
 }
 
+func (h *Hub) HandleTerminalViewCookie(w http.ResponseWriter, r *http.Request) {
+	sessionName := strings.TrimSpace(r.PathValue("sessionName"))
+	if sessionName == "" || strings.Contains(sessionName, "#") {
+		http.Error(w, "invalid session name", http.StatusBadRequest)
+		return
+	}
+	var req terminalCookieRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	token := strings.TrimSpace(req.Token)
+	if token == "" {
+		http.Error(w, "token required", http.StatusBadRequest)
+		return
+	}
+	if !h.validTerminalCookieToken(sessionName, token) {
+		http.Error(w, "unlock token expired", http.StatusUnauthorized)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     terminalViewCookieName(sessionName),
+		Value:    token,
+		Path:     "/",
+		MaxAge:   int(terminalTokenTTL.Seconds()),
+		HttpOnly: true,
+		Secure:   terminalCookieSecure(r),
+		SameSite: http.SameSiteLaxMode,
+	})
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(`{"ok":true}`))
+}
+
 func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	sessionName := strings.TrimSpace(r.PathValue("sessionName"))
 	if sessionName == "" || strings.Contains(sessionName, "#") {
@@ -132,7 +173,6 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 			delete(cur.viewers, viewer.id)
 			if cur.writerPage == viewer.id {
 				cur.writerPage = ""
-				cur.writerToken = ""
 				cur.writerUntil = time.Time{}
 			}
 		}
@@ -149,6 +189,9 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		"code":     viewer.code,
 		"message":  "飞书发送 #unlock " + viewer.code + " 后可输入",
 	})
+		if token, ok := terminalViewCookie(r, sessionName); ok {
+			h.restoreTerminalInputFromCookie(viewer, st.keyID, st.sessionName, token)
+		}
 	if needsRefresh {
 		go h.requestTerminalRefreshAfterInitialResize(r.Context(), st.keyID, st.sessionName, viewer.id)
 	}
@@ -241,6 +284,9 @@ func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID
 		return fmt.Errorf("输入未解锁或令牌已过期")
 	}
 	st.writerUntil = time.Now().Add(terminalTokenTTL)
+	if st.cookieToken == token {
+		st.cookieUntil = st.writerUntil
+	}
 	c := h.sessionClients[keyID][sessionName]
 	h.mu.Unlock()
 	if c == nil {
@@ -534,6 +580,8 @@ func (h *Hub) revokeTerminalWritersForAccount(ctx context.Context, account strin
 			st.writerPage = ""
 			st.writerToken = ""
 			st.writerUntil = time.Time{}
+			st.cookieToken = ""
+			st.cookieUntil = time.Time{}
 			n++
 		}
 	}
@@ -572,6 +620,8 @@ func (h *Hub) grantTerminalInput(keyID, sessionName, pageCode string) (string, e
 	st.writerPage = target.id
 	st.writerToken = token
 	st.writerUntil = time.Now().Add(terminalTokenTTL)
+	st.cookieToken = token
+	st.cookieUntil = st.writerUntil
 	h.mu.Unlock()
 	for _, v := range oldViewers {
 		_ = terminalWrite(context.Background(), v, map[string]any{"type": "write_revoked", "readonly": true, "message": "输入权已转移到其它页面"})
@@ -600,10 +650,72 @@ func (h *Hub) revokeTerminalInput(keyID, sessionName string) {
 	st.writerPage = ""
 	st.writerToken = ""
 	st.writerUntil = time.Time{}
+	st.cookieToken = ""
+	st.cookieUntil = time.Time{}
 	h.mu.Unlock()
 	for _, v := range viewers {
 		_ = terminalWrite(context.Background(), v, map[string]any{"type": "write_revoked", "readonly": true, "message": "输入已锁定"})
 	}
+}
+
+func (h *Hub) validTerminalCookieToken(sessionName, token string) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	st, ok := h.terminalBySessionNameLocked(sessionName)
+	if !ok || st == nil || st.cookieToken == "" || st.cookieToken != token || time.Now().After(st.cookieUntil) {
+		return false
+	}
+	return true
+}
+
+func (h *Hub) restoreTerminalInputFromCookie(viewer *terminalViewer, keyID, sessionName, token string) bool {
+	h.mu.Lock()
+	st := h.terminals[terminalKey(keyID, sessionName)]
+	if st == nil || st.cookieToken == "" || st.cookieToken != token || time.Now().After(st.cookieUntil) {
+		h.mu.Unlock()
+		return false
+	}
+	oldViewers := make([]*terminalViewer, 0, len(st.viewers))
+	for _, v := range st.viewers {
+		if v.id != viewer.id && st.writerPage == v.id {
+			oldViewers = append(oldViewers, v)
+		}
+	}
+	st.writerPage = viewer.id
+	st.writerToken = token
+	st.writerUntil = time.Now().Add(terminalTokenTTL)
+	h.mu.Unlock()
+	for _, v := range oldViewers {
+		_ = terminalWrite(context.Background(), v, map[string]any{"type": "write_revoked", "readonly": true, "message": "输入权已转移到其它页面"})
+	}
+	_ = terminalWrite(context.Background(), viewer, map[string]any{
+		"type":      "write_granted",
+		"readonly":  false,
+		"token":     token,
+		"expiresIn": int(terminalTokenTTL.Seconds()),
+		"message":   "输入已解锁",
+	})
+	return true
+}
+
+func terminalViewCookie(r *http.Request, sessionName string) (string, bool) {
+	c, err := r.Cookie(terminalViewCookieName(sessionName))
+	if err != nil || strings.TrimSpace(c.Value) == "" {
+		return "", false
+	}
+	return strings.TrimSpace(c.Value), true
+}
+
+func terminalViewCookieName(sessionName string) string {
+	sum := sha256.Sum256([]byte(strings.TrimSpace(sessionName)))
+	return "dw_view_" + hex.EncodeToString(sum[:8])
+}
+
+func terminalCookieSecure(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 }
 
 const terminalPageHTML = `<!doctype html>
@@ -695,6 +807,15 @@ const terminalPageHTML = `<!doctype html>
       document.getElementById('state').className = ro ? 'locked' : 'unlocked';
       document.getElementById('msg').textContent = msg || '';
     }
+	    function persistUnlockCookie(unlockToken) {
+	      if (!unlockToken) return;
+	      fetch('/view/' + encodeURIComponent(sessionName) + '/unlock-cookie', {
+	        method: 'POST',
+	        credentials: 'same-origin',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify({ token: unlockToken })
+	      }).catch(() => {});
+	    }
     function connectWS() {
       ws = new WebSocket(proto + '//' + location.host + '/ws/view/' + encodeURIComponent(sessionName));
       ws.onopen = () => { reconnectDelay = 1000; primeResize(); };
@@ -705,7 +826,7 @@ const terminalPageHTML = `<!doctype html>
           if (m.code) document.getElementById('code').textContent = m.code;
           setStatus(m.readonly !== false, m.message || '');
         }
-        if (m.type === 'write_granted') { token = m.token || ''; setStatus(false, m.message || '输入已解锁'); }
+        if (m.type === 'write_granted') { token = m.token || ''; persistUnlockCookie(token); setStatus(false, m.message || '输入已解锁'); }
         if (m.type === 'write_revoked') { token = ''; setStatus(true, m.message || '输入已锁定'); }
       };
       ws.onclose = () => {

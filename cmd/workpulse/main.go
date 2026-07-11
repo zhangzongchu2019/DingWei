@@ -162,6 +162,7 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /ws/session/{sessionName}", prefixHub.HandleSessionWS)
 	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.HandleTerminalViewWS)
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.HandleTerminalViewPage)
+	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.HandleTerminalViewCookie)
 	mux.HandleFunc("GET /links/{ownerKey}", prefixHub.HandleOwnerLinksPage)
 	mux.HandleFunc("GET /dl/{file}", provisionDownload)
 
