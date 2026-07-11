@@ -145,7 +145,15 @@ const (
 	ownerLinkTokenTTL          = 8 * time.Hour
 )
 
-var sessionReadIdleTimeout = 75 * time.Second
+var (
+	// sessionReadIdleTimeout is the maximum interval between application data or
+	// WebSocket ping/pong activity. It must not be used as a Read deadline:
+	// coder/websocket closes the whole connection when a Read context expires.
+	sessionReadIdleTimeout = 75 * time.Second
+	// A 15 second cadence bounds an idle disconnect to 90 seconds while avoiding
+	// a per-connection timer for every activity update.
+	sessionIdleWatchdogInterval = 15 * time.Second
+)
 
 var (
 	secOpsAdminOpenID      = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
@@ -740,6 +748,8 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName}
+	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
+	go h.watchSessionIdle(idleWatchdogCtx, c)
 	h.mu.Lock()
 	if h.sessionClients[keyID] == nil {
 		h.sessionClients[keyID] = map[string]*sessionClient{}
@@ -765,6 +775,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	h.startAgentNetworkSkillPush(skillCtx, c)
 	h.scheduleOnlineBroadcastForSession(r.Context(), keyID, sessionName)
 	defer func() {
+		stopIdleWatchdog()
 		if c.skillCancel != nil {
 			c.skillCancel()
 		}
@@ -3374,22 +3385,37 @@ func yesNo(v bool) string {
 }
 
 func (h *Hub) readSessionMessage(ctx context.Context, c *sessionClient) (websocket.MessageType, []byte, error) {
+	typ, data, err := c.conn.Read(ctx)
+	if err == nil {
+		c.recordActivity(time.Now().UTC())
+	}
+	return typ, data, err
+}
+
+// watchSessionIdle closes only genuinely inactive sessions. Ping and pong
+// handlers update lastSeenAt independently of the Hub write lock, so a healthy
+// idle client is not disconnected merely because it sends no data frames.
+func (h *Hub) watchSessionIdle(ctx context.Context, c *sessionClient) {
 	idleTimeout := sessionReadIdleTimeout
 	if idleTimeout <= 0 {
 		idleTimeout = 75 * time.Second
 	}
+	interval := sessionIdleWatchdogInterval
+	if interval <= 0 {
+		interval = 15 * time.Second
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
 	for {
-		readCtx, cancel := context.WithTimeout(ctx, idleTimeout)
-		typ, data, err := c.conn.Read(readCtx)
-		cancel()
-		if err == nil {
-			c.recordActivity(time.Now().UTC())
-			return typ, data, nil
+		select {
+		case <-ctx.Done():
+			return
+		case now := <-ticker.C:
+			if now.Sub(c.lastSeen()) > idleTimeout {
+				_ = c.conn.Close(websocket.StatusGoingAway, "idle timeout")
+				return
+			}
 		}
-		if errors.Is(err, context.DeadlineExceeded) && time.Since(c.lastSeen()) < idleTimeout {
-			continue
-		}
-		return 0, nil, err
 	}
 }
 

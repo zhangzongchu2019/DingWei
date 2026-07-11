@@ -81,6 +81,15 @@ func useTestSessionReadIdleTimeout(t *testing.T, d time.Duration) {
 	})
 }
 
+func useTestSessionIdleWatchdogInterval(t *testing.T, d time.Duration) {
+	t.Helper()
+	old := sessionIdleWatchdogInterval
+	sessionIdleWatchdogInterval = d
+	t.Cleanup(func() {
+		sessionIdleWatchdogInterval = old
+	})
+}
+
 func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.RegisterBot("dev", "UnifiedRobot")
@@ -2138,6 +2147,7 @@ func TestSessionEndpointStoresToolAndModel(t *testing.T) {
 
 func TestSessionEndpointIdleTimeoutMarksOffline(t *testing.T) {
 	useTestSessionReadIdleTimeout(t, 120*time.Millisecond)
+	useTestSessionIdleWatchdogInterval(t, 20*time.Millisecond)
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
@@ -2153,8 +2163,54 @@ func TestSessionEndpointIdleTimeoutMarksOffline(t *testing.T) {
 
 	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
 	defer conn.Close(websocket.StatusNormalClosure, "done")
+	go readSessionControls(conn)
 	waitSessionOnline(t, hub, key.ID, "developer")
 	waitEndpointInactive(t, ctx, db, key.ID, "developer")
+}
+
+func TestSessionEndpointPingKeepsIdleConnectionOnline(t *testing.T) {
+	useTestSessionReadIdleTimeout(t, 120*time.Millisecond)
+	useTestSessionIdleWatchdogInterval(t, 20*time.Millisecond)
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	go readSessionControls(conn)
+	deadline := time.Now().Add(3 * sessionReadIdleTimeout)
+	for time.Now().Before(deadline) {
+		pingCtx, cancel := context.WithTimeout(ctx, time.Second)
+		err := conn.Ping(pingCtx)
+		cancel()
+		if err != nil {
+			t.Fatalf("ping failed before idle timeout: %v", err)
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || !endpoints[0].Active {
+		t.Fatalf("ping-only session was marked offline: endpoints=%+v err=%v", endpoints, err)
+	}
+}
+
+// Ping requires a concurrent reader to consume the matching pong. It also lets
+// the client complete the server's idle close handshake in the silent case.
+func readSessionControls(conn *websocket.Conn) {
+	for {
+		if _, _, err := conn.Read(context.Background()); err != nil {
+			return
+		}
+	}
 }
 
 func TestSessionEndpointConnSeqAndLastSeenOnReconnectAndMessage(t *testing.T) {
