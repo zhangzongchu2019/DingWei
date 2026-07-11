@@ -72,6 +72,15 @@ func useTestNameEnforce(t *testing.T, mode string) {
 	t.Setenv("WP_NAME_ENFORCE", mode)
 }
 
+func useTestSessionReadIdleTimeout(t *testing.T, d time.Duration) {
+	t.Helper()
+	old := sessionReadIdleTimeout
+	sessionReadIdleTimeout = d
+	t.Cleanup(func() {
+		sessionReadIdleTimeout = old
+	})
+}
+
 func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.RegisterBot("dev", "UnifiedRobot")
@@ -2125,6 +2134,76 @@ func TestSessionEndpointStoresToolAndModel(t *testing.T) {
 	if endpoints[0].SessionName != "developer" || endpoints[0].FullSessionName != "sh-developer-e0d12642" {
 		t.Fatalf("session names not stored correctly: %+v", endpoints[0])
 	}
+}
+
+func TestSessionEndpointIdleTimeoutMarksOffline(t *testing.T) {
+	useTestSessionReadIdleTimeout(t, 120*time.Millisecond)
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "developer")
+	waitEndpointInactive(t, ctx, db, key.ID, "developer")
+}
+
+func TestSessionEndpointConnSeqAndLastSeenOnReconnectAndMessage(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	first := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	_ = first.Close(websocket.StatusNormalClosure, "done")
+	waitEndpointInactive(t, ctx, db, key.ID, "developer")
+
+	reconnect := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer reconnect.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints after reconnect=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].ConnSeq != 2 {
+		t.Fatalf("conn_seq after reconnect=%d want 2 endpoints=%+v", endpoints[0].ConnSeq, endpoints)
+	}
+	oldSeen := time.Now().UTC().Add(-time.Minute)
+	if err := db.TouchSessionEndpoint(ctx, key.ID, "developer", oldSeen); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, reconnect, model.Envelope{
+		ID:   "touch-last-seen",
+		To:   "workpulse#" + key.ID,
+		From: "developer#" + key.ID,
+		Body: "touch",
+		TS:   time.Now().Unix(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, 2*time.Second, func() bool {
+		endpoints, err := db.ListSessionEndpoints(ctx)
+		if err != nil || len(endpoints) != 1 {
+			return false
+		}
+		return endpoints[0].LastSeenAt.After(oldSeen)
+	})
 }
 
 func TestSessionHandshakeDerivesRegisteredNameFromShortName(t *testing.T) {

@@ -81,8 +81,11 @@ type client struct {
 type sessionClient struct {
 	conn           *websocket.Conn
 	mu             sync.Mutex
+	stateMu        sync.Mutex
 	keyID          string
 	sessionName    string
+	connSeq        int
+	lastSeenAt     time.Time
 	targetBot      string
 	webTerminal    bool
 	osName         string
@@ -141,6 +144,8 @@ const (
 	agentNetworkSkillRetryWait = 2 * time.Minute
 	ownerLinkTokenTTL          = 8 * time.Hour
 )
+
+var sessionReadIdleTimeout = 75 * time.Second
 
 var (
 	secOpsAdminOpenID      = strings.TrimSpace(os.Getenv("WP_SECOPS_ADMIN_OPENID"))
@@ -708,12 +713,33 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "save session endpoint failed", http.StatusInternalServerError)
 		return
 	}
-	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
+	var c *sessionClient
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		InsecureSkipVerify: true,
+		OnPingReceived: func(ctx context.Context, payload []byte) bool {
+			if c != nil {
+				c.recordActivity(time.Now().UTC())
+				go h.touchSessionEndpoint(context.Background(), c)
+			}
+			return true
+		},
+		OnPongReceived: func(ctx context.Context, payload []byte) {
+			if c != nil {
+				c.recordActivity(time.Now().UTC())
+				go h.touchSessionEndpoint(context.Background(), c)
+			}
+		},
+	})
 	if err != nil {
 		return
 	}
 	conn.SetReadLimit(16 << 20) // 终端 PTY 全屏输出可能远超默认 32KB
-	c := &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, targetBot: targetBot, webTerminal: webTerminal, osName: osName}
+	connSeq, err := h.Repo.IncrementSessionEndpointConnSeq(r.Context(), keyID, sessionName)
+	if err != nil {
+		_ = conn.Close(websocket.StatusInternalError, "save session endpoint failed")
+		return
+	}
+	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName}
 	h.mu.Lock()
 	if h.sessionClients[keyID] == nil {
 		h.sessionClients[keyID] = map[string]*sessionClient{}
@@ -771,7 +797,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		_ = h.Repo.UpsertSessionEndpoint(cleanupCtx, model.SessionEndpoint{
 			KeyID:       keyID,
 			SessionName: sessionName,
-			LastSeenAt:  time.Now().UTC(),
+			LastSeenAt:  c.lastSeen(),
 			Active:      false,
 		})
 		if ownerKey != "" {
@@ -779,10 +805,11 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	for {
-		_, data, err := conn.Read(r.Context())
+		_, data, err := h.readSessionMessage(r.Context(), c)
 		if err != nil {
 			return
 		}
+		h.touchSessionEndpoint(r.Context(), c)
 		var env model.Envelope
 		if err := json.Unmarshal(data, &env); err != nil {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
@@ -3041,6 +3068,9 @@ func (h *Hub) onlineDirectory(ctx context.Context, ownerKey string) ([]onlineSes
 			if !ep.Active {
 				ep.Active = true
 			}
+			if ep.ConnSeq == 0 && c.connSeq > 0 {
+				ep.ConnSeq = c.connSeq
+			}
 			if ep.NoDirectory {
 				continue
 			}
@@ -3246,6 +3276,9 @@ func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string
 		if item.Client != nil && item.Client.osName != "" {
 			fmt.Fprintf(&b, " · %s", item.Client.osName)
 		}
+		if ep.ConnSeq > 0 {
+			fmt.Fprintf(&b, " · 连接:%s", sessionConnSeqName(ep.SessionName, ep.ConnSeq))
+		}
 		if terminalViewBase != "" && item.Client != nil && item.Client.webTerminal {
 			fmt.Fprintf(&b, " · 页面 %s/view/%s", terminalViewBase, url.PathEscape(ep.SessionName))
 		}
@@ -3338,6 +3371,58 @@ func yesNo(v bool) string {
 		return "是"
 	}
 	return "否"
+}
+
+func (h *Hub) readSessionMessage(ctx context.Context, c *sessionClient) (websocket.MessageType, []byte, error) {
+	idleTimeout := sessionReadIdleTimeout
+	if idleTimeout <= 0 {
+		idleTimeout = 75 * time.Second
+	}
+	for {
+		readCtx, cancel := context.WithTimeout(ctx, idleTimeout)
+		typ, data, err := c.conn.Read(readCtx)
+		cancel()
+		if err == nil {
+			c.recordActivity(time.Now().UTC())
+			return typ, data, nil
+		}
+		if errors.Is(err, context.DeadlineExceeded) && time.Since(c.lastSeen()) < idleTimeout {
+			continue
+		}
+		return 0, nil, err
+	}
+}
+
+func (c *sessionClient) recordActivity(ts time.Time) {
+	if ts.IsZero() {
+		ts = time.Now().UTC()
+	}
+	c.stateMu.Lock()
+	c.lastSeenAt = ts
+	c.stateMu.Unlock()
+}
+
+func (c *sessionClient) lastSeen() time.Time {
+	c.stateMu.Lock()
+	defer c.stateMu.Unlock()
+	if c.lastSeenAt.IsZero() {
+		return time.Now().UTC()
+	}
+	return c.lastSeenAt
+}
+
+func (h *Hub) touchSessionEndpoint(ctx context.Context, c *sessionClient) {
+	if h.Repo == nil || c == nil {
+		return
+	}
+	_ = h.Repo.TouchSessionEndpoint(ctx, c.keyID, c.sessionName, c.lastSeen())
+}
+
+func sessionConnSeqName(sessionName string, seq int) string {
+	if seq <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s%06d", sessionName, seq)
 }
 
 func (c *sessionClient) write(ctx context.Context, env model.Envelope) error {

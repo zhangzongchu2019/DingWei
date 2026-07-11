@@ -263,6 +263,11 @@ func (s *SQLite) ensureSessionEndpointColumns(ctx context.Context) error {
 			return err
 		}
 	}
+	if !cols["conn_seq"] {
+		if _, err := s.db.ExecContext(ctx, `ALTER TABLE session_endpoint ADD COLUMN conn_seq INTEGER NOT NULL DEFAULT 0`); err != nil {
+			return err
+		}
+	}
 	if _, err := s.db.ExecContext(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS ux_session_endpoint_owner_active_name
 ON session_endpoint(owner_key, session_name)
 WHERE active=1 AND owner_key <> ''`); err != nil {
@@ -2525,9 +2530,33 @@ func (s *SQLite) UpsertSessionEndpoint(ctx context.Context, ep model.SessionEndp
 	return err
 }
 
+func (s *SQLite) IncrementSessionEndpointConnSeq(ctx context.Context, keyID, sessionName string) (int, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `UPDATE session_endpoint SET conn_seq=conn_seq+1 WHERE key_id=? AND session_name=?`, keyID, sessionName); err != nil {
+		return 0, err
+	}
+	var seq int
+	if err := tx.QueryRowContext(ctx, `SELECT conn_seq FROM session_endpoint WHERE key_id=? AND session_name=?`, keyID, sessionName).Scan(&seq); err != nil {
+		return 0, err
+	}
+	return seq, tx.Commit()
+}
+
+func (s *SQLite) TouchSessionEndpoint(ctx context.Context, keyID, sessionName string, lastSeenAt time.Time) error {
+	if lastSeenAt.IsZero() {
+		lastSeenAt = time.Now().UTC()
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE session_endpoint SET last_seen_at=? WHERE key_id=? AND session_name=?`, lastSeenAt.UTC().Format(time.RFC3339), keyID, sessionName)
+	return err
+}
+
 func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpoint, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT key_id, session_name, COALESCE(full_session_name, ''), COALESCE(owner_key, ''), last_seen_at, active, mirror_enabled, COALESCE(mirror_to, ''), COALESCE(client_ip, ''), COALESCE(tool, ''), COALESCE(model, ''), COALESCE(producer, 0), COALESCE(target_group, ''), COALESCE(no_directory, 0), COALESCE(no_directory_admin, 0)
+		`SELECT key_id, session_name, COALESCE(full_session_name, ''), COALESCE(owner_key, ''), last_seen_at, active, mirror_enabled, COALESCE(mirror_to, ''), COALESCE(client_ip, ''), COALESCE(tool, ''), COALESCE(model, ''), COALESCE(producer, 0), COALESCE(target_group, ''), COALESCE(no_directory, 0), COALESCE(no_directory_admin, 0), COALESCE(conn_seq, 0)
 		   FROM session_endpoint ORDER BY key_id, session_name`)
 	if err != nil {
 		return nil, err
@@ -2538,7 +2567,7 @@ func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpo
 		var ep model.SessionEndpoint
 		var lastSeen string
 		var active, mirrorEnabled, producer, noDirectory, noDirectoryAdmin int
-		if err := rows.Scan(&ep.KeyID, &ep.SessionName, &ep.FullSessionName, &ep.OwnerKey, &lastSeen, &active, &mirrorEnabled, &ep.MirrorTo, &ep.ClientIP, &ep.Tool, &ep.Model, &producer, &ep.TargetGroup, &noDirectory, &noDirectoryAdmin); err != nil {
+		if err := rows.Scan(&ep.KeyID, &ep.SessionName, &ep.FullSessionName, &ep.OwnerKey, &lastSeen, &active, &mirrorEnabled, &ep.MirrorTo, &ep.ClientIP, &ep.Tool, &ep.Model, &producer, &ep.TargetGroup, &noDirectory, &noDirectoryAdmin, &ep.ConnSeq); err != nil {
 			return nil, err
 		}
 		ep.LastSeenAt, _ = time.Parse(time.RFC3339, lastSeen)

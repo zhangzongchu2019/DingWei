@@ -1,0 +1,1 @@
+ALTER TABLE session_endpoint ADD COLUMN conn_seq INTEGER NOT NULL DEFAULT 0;

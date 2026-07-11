@@ -121,6 +121,8 @@ type Repository interface {
 	DeleteAppConfig(ctx context.Context, key string) error
 	CleanupBefore(ctx context.Context, cutoff time.Time, confirm bool) (model.CleanupResult, error)
 	UpsertSessionEndpoint(ctx context.Context, ep model.SessionEndpoint) error
+	IncrementSessionEndpointConnSeq(ctx context.Context, keyID, sessionName string) (int, error)
+	TouchSessionEndpoint(ctx context.Context, keyID, sessionName string, lastSeenAt time.Time) error
 	ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpoint, error)
 	SetSessionMirror(ctx context.Context, keyID, sessionName string, enabled bool, mirrorTo string) error
 	SetSessionNoDirectory(ctx context.Context, keyID, sessionName string, enabled bool) error
