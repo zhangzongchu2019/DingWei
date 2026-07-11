@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -319,17 +320,17 @@ func (h *Hub) dispatchTerminalInputCommand(ctx context.Context, msg model.Messag
 	var keyID string
 	if sessionName == "" {
 		if action == "lock" && pageCode == "" {
-			n := h.revokeTerminalWritersForAccount(source)
+			n := h.revokeTerminalWritersForAccount(ctx, source)
 			return model.PrefixDispatchResult{Matched: true, Reply: fmt.Sprintf("已锁定你名下 %d 个页面的输入。", n)}, true, nil
 		}
-		k, s, err := h.findTerminalViewerByCode(source, pageCode)
+		k, s, err := h.findTerminalViewerByCode(ctx, source, pageCode)
 		if err != nil {
 			return model.PrefixDispatchResult{Matched: true, Reply: err.Error()}, true, nil
 		}
 		keyID, sessionName = k, s
 	} else {
 		var found bool
-		keyID, found = h.lookupKeyIDForSession(source, sessionName)
+		keyID, found = h.lookupKeyIDForTerminalSession(ctx, source, sessionName)
 		if !found {
 			return model.PrefixDispatchResult{Matched: true, Reply: "未找到可控制的在线会话：" + sessionName}, true, nil
 		}
@@ -402,23 +403,50 @@ func (h *Hub) uniqueTerminalCode() string {
 	return randomDigits(4)
 }
 
-func (h *Hub) findTerminalViewerByCode(account, code string) (keyID, sessionName string, err error) {
+type terminalViewerLookupItem struct {
+	keyID        string
+	sessionName  string
+	code         string
+	exactAccount bool
+}
+
+func (h *Hub) findTerminalViewerByCode(ctx context.Context, account, code string) (keyID, sessionName string, err error) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
+	var candidates []terminalViewerLookupItem
+	totalViewers := 0
+	exactAccountViewers := 0
+	for _, st := range h.terminals {
+		exact := h.keyAccounts[st.keyID][account]
+		for _, v := range st.viewers {
+			totalViewers++
+			if exact {
+				exactAccountViewers++
+			}
+			candidates = append(candidates, terminalViewerLookupItem{keyID: st.keyID, sessionName: st.sessionName, code: v.code, exactAccount: exact})
+		}
+	}
+	h.mu.Unlock()
 	var mk, ms string
 	n := 0
-	for _, st := range h.terminals {
-		if !h.keyAccounts[st.keyID][account] {
-			continue
-		}
-		for _, v := range st.viewers {
-			if strings.EqualFold(v.code, code) {
-				mk, ms = st.keyID, st.sessionName
-				n++
+	accountOwner := ""
+	ownerMatchedViewers := 0
+	for _, item := range candidates {
+		if !item.exactAccount {
+			if accountOwner == "" {
+				accountOwner = h.ownerKeyForAccount(ctx, account)
 			}
+			if accountOwner == "" || h.ownerKeyForKey(ctx, item.keyID) != accountOwner {
+				continue
+			}
+			ownerMatchedViewers++
+		}
+		if strings.EqualFold(item.code, code) {
+			mk, ms = item.keyID, item.sessionName
+			n++
 		}
 	}
 	if n == 0 {
+		log.Printf("terminal unlock code not found account=%s account_owner=%s code=%s viewers=%d exact_account_viewers=%d owner_matched_viewers=%d", account, accountOwner, code, totalViewers, exactAccountViewers, ownerMatchedViewers)
 		return "", "", fmt.Errorf("未找到页面码 %s 对应的可控制页面（先在网页打开会话）", code)
 	}
 	if n > 1 {
@@ -427,12 +455,74 @@ func (h *Hub) findTerminalViewerByCode(account, code string) (keyID, sessionName
 	return mk, ms, nil
 }
 
-func (h *Hub) revokeTerminalWritersForAccount(account string) int {
+func (h *Hub) lookupKeyIDForTerminalSession(ctx context.Context, account, sessionName string) (string, bool) {
+	h.mu.Lock()
+	var candidates []terminalViewerLookupItem
+	for keyID, sessions := range h.sessionClients {
+		if sessions[sessionName] == nil {
+			continue
+		}
+		candidates = append(candidates, terminalViewerLookupItem{keyID: keyID, sessionName: sessionName, exactAccount: h.keyAccounts[keyID][account]})
+	}
+	h.mu.Unlock()
+	accountOwner := ""
+	for _, item := range candidates {
+		if item.exactAccount {
+			return item.keyID, true
+		}
+		if accountOwner == "" {
+			accountOwner = h.ownerKeyForAccount(ctx, account)
+		}
+		if accountOwner != "" && h.ownerKeyForKey(ctx, item.keyID) == accountOwner {
+			return item.keyID, true
+		}
+	}
+	return "", false
+}
+
+func (h *Hub) ownerKeyForAccount(ctx context.Context, account string) string {
+	if strings.TrimSpace(account) == "" || h.Repo == nil {
+		return ""
+	}
+	members, err := h.Repo.ListMembers(ctx)
+	if err == nil {
+		for _, member := range members {
+			if member.Active && accountBelongsToMember(account, member) {
+				return member.OwnerKey
+			}
+		}
+	}
+	if botChannelID, feishuID, ok := accountEntityParts(account); ok {
+		entity, err := h.Repo.GetChatEntity(ctx, botChannelID, feishuID)
+		if err == nil && entity != nil && entity.Active && strings.TrimSpace(entity.BoundOwner) != "" {
+			return entity.BoundOwner
+		}
+	}
+	return ""
+}
+
+func (h *Hub) revokeTerminalWritersForAccount(ctx context.Context, account string) int {
+	h.mu.Lock()
+	var candidates []terminalViewerLookupItem
+	for _, st := range h.terminals {
+		exact := h.keyAccounts[st.keyID][account]
+		for _, v := range st.viewers {
+			candidates = append(candidates, terminalViewerLookupItem{keyID: st.keyID, sessionName: st.sessionName, code: v.id, exactAccount: exact})
+		}
+	}
+	h.mu.Unlock()
+	accountOwner := h.ownerKeyForAccount(ctx, account)
+	allowed := map[string]bool{}
+	for _, item := range candidates {
+		if item.exactAccount || (accountOwner != "" && h.ownerKeyForKey(ctx, item.keyID) == accountOwner) {
+			allowed[terminalKey(item.keyID, item.sessionName)] = true
+		}
+	}
 	h.mu.Lock()
 	var toNotify []*terminalViewer
 	n := 0
 	for _, st := range h.terminals {
-		if !h.keyAccounts[st.keyID][account] {
+		if !allowed[terminalKey(st.keyID, st.sessionName)] {
 			continue
 		}
 		if st.writerPage != "" {

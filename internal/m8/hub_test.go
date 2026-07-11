@@ -3174,6 +3174,89 @@ func TestTerminalViewEmptyBufferRequestsRefresh(t *testing.T) {
 	}
 }
 
+func TestTerminalUnlockAllowsSameOwnerAccountWithoutExactKeyBinding(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	registeredName := "alice-home-" + keyTail(key.ID)
+	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	view := dialTerminalView(t, ctx, srv.URL, registeredName)
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	code := terminalViewerCode(t, hub, key.ID, registeredName)
+	bobMsg := model.Message{ID: "unlock-bob", ChatEntityID: "dev:personal:ou_bob", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, bobMsg, "#unlock "+code)
+	if err != nil || !handled || !strings.Contains(result.Reply, "未找到页面码") {
+		t.Fatalf("bob unlock result=%+v handled=%v err=%v", result, handled, err)
+	}
+
+	aliceMsg := model.Message{ID: "unlock-alice", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, aliceMsg, "#unlock "+code)
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁输入") {
+		t.Fatalf("alice unlock result=%+v handled=%v err=%v", result, handled, err)
+	}
+	waitFor(t, 2*time.Second, func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		st := hub.terminals[terminalKey(key.ID, registeredName)]
+		return st != nil && st.writerPage != "" && st.writerToken != ""
+	})
+}
+
+func TestTerminalExplicitUnlockAllowsSameOwnerAccount(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	registeredName := "alice-home-" + keyTail(key.ID)
+	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	view := dialTerminalView(t, ctx, srv.URL, registeredName)
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	code := terminalViewerCode(t, hub, key.ID, registeredName)
+	msg := model.Message{ID: "unlock-explicit", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, msg, "#解锁输入 "+registeredName+" "+code)
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁输入") {
+		t.Fatalf("explicit unlock result=%+v handled=%v err=%v", result, handled, err)
+	}
+}
+
 func TestFeishuSyncRequiresExplicitKeyForOtherOwner(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
@@ -3913,6 +3996,26 @@ func dialTerminalView(t *testing.T, ctx context.Context, baseURL, sessionName st
 		t.Fatalf("Dial view %s: %v", sessionName, err)
 	}
 	return conn
+}
+
+func terminalViewerCode(t *testing.T, hub *Hub, keyID, sessionName string) string {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		hub.mu.Lock()
+		st := hub.terminals[terminalKey(keyID, sessionName)]
+		if st != nil {
+			for _, v := range st.viewers {
+				code := v.code
+				hub.mu.Unlock()
+				return code
+			}
+		}
+		hub.mu.Unlock()
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("terminal viewer code not found key=%s session=%s", keyID, sessionName)
+	return ""
 }
 
 func readEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn) model.Envelope {
