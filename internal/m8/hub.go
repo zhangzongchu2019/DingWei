@@ -2991,6 +2991,7 @@ func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string, inc
 	}
 	text := renderOnlineDirectory(owner, items)
 	broadcastKey := broadcastDedupKey("online_directory", randomHex(16), owner.OwnerKey)
+	var wg sync.WaitGroup
 	for i, item := range items {
 		env := model.Envelope{
 			ID:   randomHex(16),
@@ -3001,10 +3002,17 @@ func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string, inc
 			Meta: map[string]any{"type": "online_directory", "owner": owner.OwnerKey, "system": true, "no_mirror": true},
 		}
 		annotateBroadcastMirror(&env, broadcastKey, i == 0)
-		if err := item.Client.write(ctx, env); err != nil {
-			continue
-		}
+		// 异步扇出:每个会话独立 goroutine + 5s 超时。一个慢/半死的客户端只卡自己的
+		// goroutine、超时即放弃,不再阻塞后续所有会话的广播——修"全体同时收不到在线清单"根因。
+		wg.Add(1)
+		go func(c *sessionClient, e model.Envelope) {
+			defer wg.Done()
+			wctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			_ = c.write(wctx, e)
+		}(item.Client, env)
 	}
+	wg.Wait()
 	if includeFeishu && h.Outbound != nil && owner.FeishuOpenID != "" {
 		botChannelID := h.botChannel("UnifiedRobot")
 		content, _ := json.Marshal(map[string]string{"text": text})
