@@ -1359,7 +1359,7 @@ func (s *Server) sessionsPage(w http.ResponseWriter, r *http.Request) {
 <p>客户端 IP：仅当连接来自本机可信反代时信任 <code>X-Forwarded-For</code>/<code>X-Real-IP</code>，否则使用 RemoteAddr，防止伪造。</p>
 <p>镜像默认回本会话 key 绑定的飞书账号，只需选择机器人账号；open_id 与 key_id 由后台自动推断。需要镜像到其他人或群时，可展开高级填写完整地址。</p>
 <h4>系统默认</h4><p>排期、进度、风险、查询、mirror on/off 等 M1-M7/M10 内置指令优先级最高，不在此处修改。</p>
-<table border=1 cellpadding=4><tr><th>key_id</th><th>会话名</th><th>工具</th><th>大模型</th><th>完整会话名</th><th>producer</th><th>target_group</th><th>last_seen</th><th>在线</th><th>client_ip</th><th>清单/派发隔离</th><th>会话自动</th><th>用户通配</th><th>镜像</th><th>镜像目标/操作</th></tr>`))
+<table border=1 cellpadding=4><tr><th>key_id</th><th>会话名</th><th>连接序号</th><th>工具</th><th>大模型</th><th>完整会话名</th><th>producer</th><th>target_group</th><th>last_seen</th><th>在线</th><th>client_ip</th><th>清单/派发隔离</th><th>会话自动</th><th>用户通配</th><th>镜像</th><th>镜像目标/操作</th></tr>`))
 	visible := 0
 	for _, ep := range items {
 		if !ep.Active {
@@ -1373,7 +1373,7 @@ func (s *Server) sessionsPage(w http.ResponseWriter, r *http.Request) {
 			isolationAction = "no_directory_off"
 			isolationButton = "关闭"
 		}
-		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%t</td><td>%s</td><td>%s</td><td>%t</td><td>%s</td><td>生效:%t 后台:%t<form method=post action=/admin/sessions><input type=hidden name=action value="%s"><input type=hidden name=key_id value="%s"><input type=hidden name=session_name value="%s"><button>%s不进清单不可派发</button></form></td><td><code>#%s</code> 精确匹配</td><td>%s
+		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%t</td><td>%s</td><td>%s</td><td>%t</td><td>%s</td><td>生效:%t 后台:%t<form method=post action=/admin/sessions><input type=hidden name=action value="%s"><input type=hidden name=key_id value="%s"><input type=hidden name=session_name value="%s"><button>%s不进清单不可派发</button></form></td><td><code>#%s</code> 精确匹配</td><td>%s
 <form method=post action=/admin/sessions><input type=hidden name=action value=add_wildcard><input type=hidden name=key_id value="%s"><input type=hidden name=session_name value="%s">通配 <input name=match_expr placeholder="dev* 或 foo;bar"><label><input type=checkbox name=strip_prefix>剥离通配</label><button>添加</button></form></td><td>%t</td><td>
 <form method=post action=/admin/sessions>
 <input type=hidden name=key_id value="%s"><input type=hidden name=session_name value="%s">
@@ -1384,11 +1384,11 @@ func (s *Server) sessionsPage(w http.ResponseWriter, r *http.Request) {
 </details>
 <button name=action value=mirror_on>开启镜像</button><button name=action value=mirror_off>关闭镜像</button>
 </form></td></tr>`,
-			esc(ep.KeyID), esc(ep.SessionName), esc(ep.Tool), esc(ep.Model), esc(ep.FullSessionName), ep.Producer, esc(ep.TargetGroup), esc(ep.LastSeenAt.Format(time.RFC3339)), ep.Active, esc(ep.ClientIP), ep.NoDirectory, ep.NoDirectoryAdmin, isolationAction, esc(ep.KeyID), esc(ep.SessionName), isolationButton, esc(ep.SessionName), renderSessionRoutes(bySession[key]),
+			esc(ep.KeyID), esc(ep.SessionName), esc(sessionConnSeqName(ep.SessionName, ep.ConnSeq)), esc(ep.Tool), esc(ep.Model), esc(ep.FullSessionName), ep.Producer, esc(ep.TargetGroup), esc(ep.LastSeenAt.Format(time.RFC3339)), ep.Active, esc(ep.ClientIP), ep.NoDirectory, ep.NoDirectoryAdmin, isolationAction, esc(ep.KeyID), esc(ep.SessionName), isolationButton, esc(ep.SessionName), renderSessionRoutes(bySession[key]),
 			esc(ep.KeyID), esc(ep.SessionName), ep.MirrorEnabled, esc(ep.KeyID), esc(ep.SessionName), esc(s.mirrorTargetDisplay(r.Context(), ep.MirrorTo, bots)), botOptions(bots, mirrorBotName(ep.MirrorTo)))
 	}
 	if visible == 0 {
-		_, _ = w.Write([]byte(`<tr><td colspan=15>暂无在线会话。启动 sessionHelper 后会自动出现；离线会话默认隐藏，避免测试残留干扰。</td></tr>`))
+		_, _ = w.Write([]byte(`<tr><td colspan=16>暂无在线会话。启动 sessionHelper 后会自动出现；离线会话默认隐藏，避免测试残留干扰。</td></tr>`))
 	}
 	_, _ = w.Write([]byte(`</table>`))
 	s.renderMemberSessionDirectory(w, r.Context(), items)
@@ -1563,18 +1563,18 @@ func (s *Server) provisionPage(w http.ResponseWriter, r *http.Request) {
 <p>extra(JSON) <textarea name=extra rows=3 cols=80>{}</textarea></p>
 <p>上传制品 <input type=file name=artifact> <button name=op value=send>下发</button> <button name=op value=package_self>打包当前 sessionHelper</button></p>
 </form>
-<h4>在线会话</h4><table border=1 cellpadding=4><tr><th>key_id</th><th>session</th><th>owner</th><th>tool</th><th>model</th><th>last_seen</th></tr>`))
+<h4>在线会话</h4><table border=1 cellpadding=4><tr><th>key_id</th><th>session</th><th>conn_seq</th><th>owner</th><th>tool</th><th>model</th><th>last_seen</th></tr>`))
 	count := 0
 	for _, ep := range items {
 		if !ep.Active {
 			continue
 		}
 		count++
-		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>`,
-			esc(ep.KeyID), esc(ep.SessionName), esc(ep.OwnerKey), esc(ep.Tool), esc(ep.Model), esc(ep.LastSeenAt.Format(time.RFC3339)))
+		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>`,
+			esc(ep.KeyID), esc(ep.SessionName), esc(sessionConnSeqName(ep.SessionName, ep.ConnSeq)), esc(ep.OwnerKey), esc(ep.Tool), esc(ep.Model), esc(ep.LastSeenAt.Format(time.RFC3339)))
 	}
 	if count == 0 {
-		_, _ = w.Write([]byte(`<tr><td colspan=6>暂无在线会话。</td></tr>`))
+		_, _ = w.Write([]byte(`<tr><td colspan=7>暂无在线会话。</td></tr>`))
 	}
 	_, _ = w.Write([]byte(`</table>`))
 	s.renderProvisionAudit(w, r.Context())
@@ -2697,6 +2697,13 @@ func displayName(m model.Member) string {
 
 func esc(s string) string {
 	return html.EscapeString(s)
+}
+
+func sessionConnSeqName(sessionName string, seq int) string {
+	if seq <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s%06d", sessionName, seq)
 }
 
 // SeedAdmin 若无管理员则用初始密码创建（首次 bootstrap，§9.1）。

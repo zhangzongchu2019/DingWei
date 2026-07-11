@@ -72,6 +72,9 @@ func TestMigrateUpgradesExistingDBWithSeenPersonAndBotSecret(t *testing.T) {
 	if !columnExists(t, db, "session_endpoint", "no_directory_admin") || !columnExists(t, db, "session_endpoint", "no_directory_reported") {
 		t.Fatal("session_endpoint no_directory split columns missing after migration")
 	}
+	if !columnExists(t, db, "session_endpoint", "conn_seq") {
+		t.Fatal("session_endpoint.conn_seq missing after migration")
+	}
 	if !columnExists(t, db, "project", "parent_id") {
 		t.Fatal("project.parent_id missing after migration")
 	}
@@ -135,6 +138,36 @@ func TestMigrateUpgradesExistingDBWithSeenPersonAndBotSecret(t *testing.T) {
 	}
 	if !columnExists(t, reopened, "bot_channel", "app_secret_enc") || !tableExists(t, reopened, "seen_person") {
 		t.Fatal("schema missing after reopen migration")
+	}
+}
+
+func TestSessionEndpointConnSeqAndTouch(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	initial := time.Now().UTC().Add(-time.Minute)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "developer", LastSeenAt: initial, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	seq, err := db.IncrementSessionEndpointConnSeq(ctx, "FB-test", "developer")
+	if err != nil || seq != 1 {
+		t.Fatalf("first conn seq=%d err=%v", seq, err)
+	}
+	seq, err = db.IncrementSessionEndpointConnSeq(ctx, "FB-test", "developer")
+	if err != nil || seq != 2 {
+		t.Fatalf("second conn seq=%d err=%v", seq, err)
+	}
+	touched := time.Now().UTC()
+	if err := db.TouchSessionEndpoint(ctx, "FB-test", "developer", touched); err != nil {
+		t.Fatal(err)
+	}
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].ConnSeq != 2 {
+		t.Fatalf("conn_seq=%d want 2", endpoints[0].ConnSeq)
+	}
+	if endpoints[0].LastSeenAt.Sub(touched).Abs() > time.Second {
+		t.Fatalf("last_seen=%s want %s", endpoints[0].LastSeenAt, touched)
 	}
 }
 

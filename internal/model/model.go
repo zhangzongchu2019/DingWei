@@ -220,6 +220,7 @@ type SessionEndpoint struct {
 	TargetGroup      string
 	NoDirectory      bool
 	NoDirectoryAdmin bool
+	ConnSeq          int
 }
 
 // CleanupResult 是数据清理 dry-run/confirm 的统计。
