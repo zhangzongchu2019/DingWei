@@ -159,8 +159,18 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	var ok bool
 	st, ok = h.terminalBySessionNameLocked(sessionName)
+		// Capture values under h.mu to avoid racing with grantTerminalInput
+		// (which writes st.writerPage) and other terminal state mutators.
+		var isWriter bool
+		var hasBuffer bool
+		var buf string
+		var needsRefresh bool = true
 	if ok {
 		st.viewers[viewer.id] = viewer
+			isWriter = st.writerPage == viewer.id
+			hasBuffer = st.buffer != ""
+			buf = st.buffer
+			needsRefresh = st.buffer == ""
 	}
 	h.mu.Unlock()
 	if !ok || st == nil {
@@ -180,13 +190,12 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		h.mu.Unlock()
 		_ = conn.Close(websocket.StatusNormalClosure, "bye")
 	}()
-	needsRefresh := st.buffer == ""
-	if st.buffer != "" {
-		_ = terminalWrite(r.Context(), viewer, map[string]any{"type": "output", "data": st.buffer})
+	if hasBuffer {
+		_ = terminalWrite(r.Context(), viewer, map[string]any{"type": "output", "data": buf})
 	}
 	_ = terminalWrite(r.Context(), viewer, map[string]any{
 		"type":     "status",
-		"readonly": st.writerPage != viewer.id,
+		"readonly": !isWriter,
 		"code":     viewer.code,
 		"message":  "飞书发送 #unlock " + viewer.code + " 后可输入",
 	})
