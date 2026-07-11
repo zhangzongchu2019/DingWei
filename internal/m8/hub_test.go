@@ -3116,6 +3116,64 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 	}
 }
 
+func TestTerminalViewResizeForwardsToSessionAndCachesSize(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	view := dialTerminalView(t, ctx, srv.URL, "home")
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	if err := writeTerminalClientMessage(ctx, view, terminalClientMessage{Type: "resize", Cols: 132, Rows: 43}); err != nil {
+		t.Fatal(err)
+	}
+	env := readEnvelopeOfType(t, ctx, session, terminalResizeType)
+	if metaInt(env.Meta, "cols") != 132 || metaInt(env.Meta, "rows") != 43 {
+		t.Fatalf("resize meta=%+v", env.Meta)
+	}
+	waitFor(t, 2*time.Second, func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		return hub.terminalLastSize[terminalKey(key.ID, "home")] == [2]int{132, 43}
+	})
+}
+
+func TestTerminalViewEmptyBufferRequestsRefresh(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	view := dialTerminalView(t, ctx, srv.URL, "home")
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	env := readEnvelopeOfType(t, ctx, session, terminalRefreshType)
+	if env.To != sessionAddress("home", key.ID) {
+		t.Fatalf("refresh envelope=%+v", env)
+	}
+}
+
 func TestFeishuSyncRequiresExplicitKeyForOtherOwner(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
@@ -3842,6 +3900,21 @@ func writeEnvelope(ctx context.Context, conn *websocket.Conn, env model.Envelope
 	return conn.Write(ctx, websocket.MessageText, payload)
 }
 
+func writeTerminalClientMessage(ctx context.Context, conn *websocket.Conn, msg terminalClientMessage) error {
+	payload, _ := json.Marshal(msg)
+	return conn.Write(ctx, websocket.MessageText, payload)
+}
+
+func dialTerminalView(t *testing.T, ctx context.Context, baseURL, sessionName string) *websocket.Conn {
+	t.Helper()
+	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/view/" + sessionName
+	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	if err != nil {
+		t.Fatalf("Dial view %s: %v", sessionName, err)
+	}
+	return conn
+}
+
 func readEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn) model.Envelope {
 	t.Helper()
 	for {
@@ -3865,6 +3938,35 @@ func readEnvelopeIncludingSystem(t *testing.T, ctx context.Context, conn *websoc
 		t.Fatalf("unmarshal envelope: %v", err)
 	}
 	return env
+}
+
+func readEnvelopeOfType(t *testing.T, ctx context.Context, conn *websocket.Conn, typ string) model.Envelope {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		env := readEnvelopeIncludingSystem(t, ctx, conn)
+		if metaString(env.Meta, "type") == typ {
+			return env
+		}
+	}
+	t.Fatalf("did not receive envelope type %s", typ)
+	return model.Envelope{}
+}
+
+func metaInt(meta map[string]any, key string) int {
+	switch v := meta[key].(type) {
+	case int:
+		return v
+	case int64:
+		return int(v)
+	case float64:
+		return int(v)
+	case json.Number:
+		n, _ := v.Int64()
+		return int(n)
+	default:
+		return 0
+	}
 }
 
 func assertNoEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn, wait time.Duration) {

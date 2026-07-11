@@ -390,6 +390,44 @@ class SessionHelperTest(unittest.TestCase):
         asyncio.run(helper.handle_terminal_input({"body": "abc\r", "meta": {"type": "terminal_input"}}))
         self.assertEqual(fake.inputs, ["abc\r"])
 
+    def test_terminal_resize_sets_cli_winsize(self):
+        class FakeAdapter:
+            def __init__(self):
+                self.sizes = []
+
+            def set_winsize(self, rows, cols):
+                self.sizes.append((rows, cols))
+
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli")))
+        fake = FakeAdapter()
+        helper.adapter = fake
+        env = {"meta": {"type": "terminal_resize", "rows": 43, "cols": 132}}
+        self.assertTrue(helper.is_terminal_resize(env))
+        asyncio.run(helper.handle_terminal_resize(env))
+        self.assertEqual(fake.sizes, [(43, 132)])
+
+    def test_terminal_refresh_sends_snapshot(self):
+        class FakeAdapter:
+            def request_terminal_refresh(self):
+                return "current screen"
+
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli")))
+        helper.adapter = FakeAdapter()
+        ws = FakeWS()
+        env = {"meta": {"type": "terminal_refresh"}}
+        self.assertTrue(helper.is_terminal_refresh(env))
+        asyncio.run(helper.handle_terminal_refresh(ws, env))
+        self.assertEqual(len(ws.sent), 1)
+        self.assertEqual(ws.sent[0]["body"], "current screen")
+        self.assertEqual(ws.sent[0]["meta"]["type"], "terminal_output")
+
     def test_recv_loop_filters_online_directory_without_handle(self):
         class FakeWS:
             def __init__(self, env):

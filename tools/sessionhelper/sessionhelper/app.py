@@ -261,6 +261,9 @@ class SessionHelper:
             if self.is_terminal_resize(env):
                 await self.handle_terminal_resize(env)
                 continue
+            if self.is_terminal_refresh(env):
+                await self.handle_terminal_refresh(ws, env)
+                continue
             if is_mirror_control(env):
                 self.apply_mirror_control(env)
                 continue
@@ -393,6 +396,18 @@ class SessionHelper:
         if cols <= 0 or rows <= 0 or self.cfg.mode != "cli" or not hasattr(self.adapter, "set_winsize"):
             return
         await asyncio.to_thread(self.adapter.set_winsize, rows, cols)
+
+    def is_terminal_refresh(self, env: dict) -> bool:
+        return (env.get("meta") or {}).get("type") == "terminal_refresh"
+
+    async def handle_terminal_refresh(self, ws, env: dict) -> None:
+        if self.cfg.mode != "cli" or not hasattr(self.adapter, "request_terminal_refresh"):
+            return
+        snapshot = await asyncio.to_thread(self.adapter.request_terminal_refresh)
+        if not snapshot:
+            return
+        meta = {"type": "terminal_output", "session": self.cfg.session_name, "key_id": self.cfg.key_id, "no_mirror": True}
+        await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), snapshot, self.book.self_addr, meta), ensure_ascii=False))
 
     async def inject_agent_network_skill(self, env: dict) -> bool:
         body = str(env.get("body") or "")

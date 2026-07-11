@@ -318,6 +318,16 @@ class CLIAdapter:
         except queue.Empty:
             return None
 
+    def request_terminal_refresh(self) -> str:
+        if not self.start():
+            return ""
+        if self.launch_mode == "tmux":
+            return self.capture_tmux()
+        with self.write_lock:
+            if self.child is not None:
+                self.child.send("\x0c")
+        return ""
+
     def send_tmux_text(self, text: str) -> None:
         # send-keys -l treats the text literally, so punctuation and spaces are
         # not interpreted as tmux key names.

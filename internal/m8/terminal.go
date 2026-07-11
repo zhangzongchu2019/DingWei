@@ -15,11 +15,12 @@ import (
 )
 
 const (
-	terminalOutputType = "terminal_output"
-	terminalInputType  = "terminal_input"
-	terminalResizeType = "terminal_resize"
-	terminalTokenTTL   = 8 * time.Hour
-	terminalBufferCap  = 1 << 20
+	terminalOutputType  = "terminal_output"
+	terminalInputType   = "terminal_input"
+	terminalResizeType  = "terminal_resize"
+	terminalRefreshType = "terminal_refresh"
+	terminalTokenTTL    = 8 * time.Hour
+	terminalBufferCap   = 1 << 20
 )
 
 type terminalState struct {
@@ -137,6 +138,7 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		h.mu.Unlock()
 		_ = conn.Close(websocket.StatusNormalClosure, "bye")
 	}()
+	needsRefresh := st.buffer == ""
 	if st.buffer != "" {
 		_ = terminalWrite(r.Context(), viewer, map[string]any{"type": "output", "data": st.buffer})
 	}
@@ -146,6 +148,9 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		"code":     viewer.code,
 		"message":  "飞书发送 #unlock " + viewer.code + " 后可输入",
 	})
+	if needsRefresh {
+		go h.requestTerminalRefreshAfterInitialResize(r.Context(), st.keyID, st.sessionName, viewer.id)
+	}
 	// 保活:每 30s 发一次 WS ping,防止 nginx/浏览器在空闲(无终端输出)时断连,并及时发现死连接
 	go func() {
 		t := time.NewTicker(30 * time.Second)
@@ -269,6 +274,40 @@ func (h *Hub) routeTerminalResize(ctx context.Context, keyID, sessionName string
 		Meta: map[string]any{"type": terminalResizeType, "system": true, "no_mirror": true, "cols": cols, "rows": rows},
 	}
 	return c.write(ctx, env)
+}
+
+func (h *Hub) requestTerminalRefresh(ctx context.Context, keyID, sessionName string) error {
+	h.mu.Lock()
+	c := h.sessionClients[keyID][sessionName]
+	h.mu.Unlock()
+	if c == nil {
+		return nil
+	}
+	env := model.Envelope{
+		ID:   randomHex(16),
+		To:   sessionAddress(sessionName, keyID),
+		From: sessionAddress("workpulse", keyID),
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalRefreshType, "system": true, "no_mirror": true},
+	}
+	return c.write(ctx, env)
+}
+
+func (h *Hub) requestTerminalRefreshAfterInitialResize(ctx context.Context, keyID, sessionName, viewerID string) {
+	timer := time.NewTimer(250 * time.Millisecond)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return
+	case <-timer.C:
+	}
+	h.mu.Lock()
+	st := h.terminals[terminalKey(keyID, sessionName)]
+	ok := st != nil && st.viewers[viewerID] != nil && st.buffer == ""
+	h.mu.Unlock()
+	if ok {
+		_ = h.requestTerminalRefresh(context.Background(), keyID, sessionName)
+	}
 }
 
 func (h *Hub) dispatchTerminalInputCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
@@ -524,15 +563,25 @@ const terminalPageHTML = `<!doctype html>
     let term = newTerm();
     let fitPending = false;
     let lastSize = '';
-    function sendResize() {
+    function sendResize(force) {
       try {
         if (!ws || ws.readyState !== 1 || !term) return;
+        if (!term.cols || !term.rows) return;
         const s = term.cols + 'x' + term.rows;
-        if (s === lastSize) return; lastSize = s;
+        if (!force && s === lastSize) return; lastSize = s;
         ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
       } catch (e) {}
     }
-    const doFit = () => { if (fitPending) return; fitPending = true; requestAnimationFrame(() => { fitPending = false; try { fit.fit(); sendResize(); } catch (e) {} }); };
+    function fitAndResize(force) {
+      try { fit.fit(); sendResize(force); } catch (e) {}
+    }
+    const doFit = () => { if (fitPending) return; fitPending = true; requestAnimationFrame(() => { fitPending = false; fitAndResize(false); }); };
+    function primeResize() {
+      lastSize = '';
+      fitAndResize(true);
+      setTimeout(() => fitAndResize(true), 100);
+      setTimeout(() => fitAndResize(true), 500);
+    }
     new ResizeObserver(doFit).observe(document.getElementById('terminal'));
     window.addEventListener('resize', doFit);
     function recreate() {
@@ -558,7 +607,7 @@ const terminalPageHTML = `<!doctype html>
     }
     function connectWS() {
       ws = new WebSocket(proto + '//' + location.host + '/ws/view/' + encodeURIComponent(sessionName));
-      ws.onopen = () => { reconnectDelay = 1000; lastSize = ''; try { fit.fit(); } catch (e) {} sendResize(); };
+      ws.onopen = () => { reconnectDelay = 1000; primeResize(); };
       ws.onmessage = (ev) => {
         const m = JSON.parse(ev.data);
         if (m.type === 'output') term.write(m.data || '');
