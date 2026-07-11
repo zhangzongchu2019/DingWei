@@ -354,6 +354,27 @@ func (h *Hub) requestTerminalRefreshAfterInitialResize(ctx context.Context, keyI
 	h.mu.Unlock()
 	if ok {
 		_ = h.requestTerminalRefresh(context.Background(), keyID, sessionName)
+		// 5 s timeout: if session client didn't respond with terminal output,
+		// notify the viewer so the page doesn't stay black indefinitely.
+		go func() {
+			time.Sleep(5 * time.Second)
+			h.mu.Lock()
+			st := h.terminals[terminalKey(keyID, sessionName)]
+			var viewer *terminalViewer
+			stillEmpty := false
+			if st != nil {
+				viewer = st.viewers[viewerID]
+				stillEmpty = st.buffer == ""
+			}
+			h.mu.Unlock()
+			if viewer != nil && stillEmpty {
+				_ = terminalWrite(context.Background(), viewer, map[string]any{
+					"type":     "status",
+					"readonly": true,
+					"message":  "等待会话活动...",
+				})
+			}
+		}()
 	}
 }
 
@@ -781,8 +802,24 @@ const terminalPageHTML = `<!doctype html>
     function primeResize() {
       lastSize = '';
       fitAndResize(true);
-      setTimeout(() => fitAndResize(true), 100);
-      setTimeout(() => fitAndResize(true), 500);
+      // If terminal already has dimensions after first fit, we are done.
+      if (term.cols && term.rows) return;
+      // Otherwise watch for non-zero dimensions via ResizeObserver
+      // (handles slow xterm.js initialization beyond fixed-delay retries).
+      let attempts = 0;
+      const maxAttempts = 12;
+      const termEl = document.getElementById('terminal');
+      const ro = new ResizeObserver(() => {
+        fitAndResize(true);
+        attempts++;
+        if ((term.cols && term.rows) || attempts >= maxAttempts) {
+          ro.disconnect();
+        }
+      });
+      ro.observe(termEl);
+      // Hard fallback after 3 s (covers edge case where ResizeObserver
+      // fires but xterm.js cols/rows stay zero due to CSS/layout issues).
+      setTimeout(() => { ro.disconnect(); fitAndResize(true); }, 3000);
     }
     new ResizeObserver(doFit).observe(document.getElementById('terminal'));
     window.addEventListener('resize', doFit);

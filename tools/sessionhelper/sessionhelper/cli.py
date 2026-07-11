@@ -373,8 +373,9 @@ class CLIAdapter:
                 ["tmux", "capture-pane", "-p", "-t", self.tmux_session],
                 text=True,
                 stderr=subprocess.DEVNULL,
+                timeout=5,
             )
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             return ""
 
     def collect_output(self, wait_seconds: float) -> list[str]:
