@@ -1684,8 +1684,14 @@ func TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope(t *testing.T) {
 	}
 	waitFor(t, time.Second, func() bool {
 		hub.mu.Lock()
-		defer hub.mu.Unlock()
-		return hub.sessionClients[key.ID][homeName].skillInstalled
+		c := hub.sessionClients[key.ID][homeName]
+		hub.mu.Unlock()
+		if c == nil {
+			return false
+		}
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		return c.skillInstalled
 	})
 
 	developer := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
@@ -2203,8 +2209,8 @@ func TestSessionEndpointPingKeepsIdleConnectionOnline(t *testing.T) {
 	}
 }
 
-// Ping requires a concurrent reader to consume the matching pong. It also lets
-// the client complete the server's idle close handshake in the silent case.
+// Test-only helper: Ping requires a concurrent reader to consume the matching
+// pong. The test closes the connection, which makes this goroutine exit.
 func readSessionControls(conn *websocket.Conn) {
 	for {
 		if _, _, err := conn.Read(context.Background()); err != nil {
