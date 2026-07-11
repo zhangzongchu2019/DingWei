@@ -163,6 +163,9 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.HandleTerminalViewWS)
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.HandleTerminalViewPage)
 	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.HandleTerminalViewCookie)
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("WP_TERMINAL_MOCK_UNLOCK")), "true") {
+		mux.HandleFunc("POST /api/terminal/mock-unlock", prefixHub.HandleTerminalMockUnlock)
+	}
 	mux.HandleFunc("GET /links/{ownerKey}", prefixHub.HandleOwnerLinksPage)
 	mux.HandleFunc("GET /dl/{file}", provisionDownload)
 

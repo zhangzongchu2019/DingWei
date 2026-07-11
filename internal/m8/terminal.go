@@ -9,6 +9,7 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -737,6 +738,85 @@ func terminalCookieSecure(r *http.Request) bool {
 		return true
 	}
 	return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
+}
+
+// terminalMockUnlockEnabled returns true when WP_TERMINAL_MOCK_UNLOCK is set to
+// "true". This gate is checked at both route registration time (production builds
+// never register the handler) and at request time (defence in depth).
+func terminalMockUnlockEnabled() bool {
+	return strings.EqualFold(strings.TrimSpace(os.Getenv("WP_TERMINAL_MOCK_UNLOCK")), "true")
+}
+
+// HandleTerminalMockUnlock is a test-only endpoint that validates a terminal
+// unlock code without going through the real Feishu bot flow. It is gated behind
+// WP_TERMINAL_MOCK_UNLOCK=true and must be disabled in production builds.
+//
+// POST /api/terminal/mock-unlock
+// Body: {"code": "1234", "session_name": "alice-home-abc1"}
+// Response: {"valid": true, "token": "<32-char-hex>"} or {"valid": false}
+//
+// The fixed test code "0000" always passes for any session that has an active
+// viewer page — this lets integration tests unlock any session without a real
+// Feishu round-trip.
+func (h *Hub) HandleTerminalMockUnlock(w http.ResponseWriter, r *http.Request) {
+	if !terminalMockUnlockEnabled() {
+		http.Error(w, "not available", http.StatusNotFound)
+		return
+	}
+	var req struct {
+		Code        string `json:"code"`
+		SessionName string `json:"session_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	code := strings.TrimSpace(req.Code)
+	sessionName := strings.TrimSpace(req.SessionName)
+	if code == "" || sessionName == "" {
+		http.Error(w, "code and session_name required", http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	// Fixed test code "0000" bypasses Feishu and unlocks any session.
+	if code != "0000" {
+		_, _ = w.Write([]byte(`{"valid":false}`))
+		return
+	}
+	h.mu.Lock()
+	st, ok := h.terminalBySessionNameLocked(sessionName)
+	if !ok || st == nil {
+		h.mu.Unlock()
+		_, _ = w.Write([]byte(`{"valid":false,"error":"terminal not connected"}`))
+		return
+	}
+	if len(st.viewers) == 0 {
+		h.mu.Unlock()
+		_, _ = w.Write([]byte(`{"valid":false,"error":"no viewer page open"}`))
+		return
+	}
+	// Grant input to the first viewer page.
+	token := randomHex(32)
+	until := time.Now().Add(terminalTokenTTL)
+	var target *terminalViewer
+	for _, v := range st.viewers {
+		target = v
+		st.writerPage = v.id
+		break
+	}
+	st.writerToken = token
+	st.writerUntil = until
+	st.cookieToken = token
+	st.cookieUntil = until
+	h.mu.Unlock()
+	_ = terminalWrite(context.Background(), target, map[string]any{
+		"type":      "write_granted",
+		"readonly":  false,
+		"token":     token,
+		"expiresIn": int(terminalTokenTTL.Seconds()),
+		"message":   "输入已解锁 (mock)",
+	})
+	_, _ = w.Write([]byte(`{"valid":true,"token":"` + token + `"}`))
 }
 
 const terminalPageHTML = `<!doctype html>

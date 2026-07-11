@@ -3257,6 +3257,119 @@ func TestTerminalExplicitUnlockAllowsSameOwnerAccount(t *testing.T) {
 	}
 }
 
+func TestTerminalViewCookiePersistsAndRestoresUnlock(t *testing.T) {
+	// Verify the cookie token survives viewer disconnect and can be used
+	// to re-grant input. This tests the Go-level logic without HTTP cookie
+	// round-trip complexities (the HTTP cookie flow is tested in the
+	// Python sessionhelper tests).
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	sessionName := "home"
+	session := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	view := dialTerminalView(t, ctx, srv.URL, sessionName)
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	// Drain the initial status message so the handler goroutine finishes
+	// accessing st.writerPage before the test modifies terminal state.
+	readCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	_ = readTerminalViewMessageType(t, readCtx, view)
+	cancel()
+
+	// Get the viewer's page code (random 4-digit) and use it for grant.
+	hub.mu.Lock()
+	st := hub.terminals[terminalKey(key.ID, sessionName)]
+	var viewerCode string
+	for _, v := range st.viewers {
+		viewerCode = v.code
+		break
+	}
+	hub.mu.Unlock()
+	if viewerCode == "" {
+		t.Fatal("no viewer found")
+	}
+	token, err := hub.grantTerminalInput(key.ID, sessionName, viewerCode)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify cookieToken was set alongside writerToken.
+	hub.mu.Lock()
+	st = hub.terminals[terminalKey(key.ID, sessionName)]
+	hub.mu.Unlock()
+	if st == nil || st.cookieToken != token {
+		t.Fatalf("cookieToken not set after grant: got %q want %q", st.cookieToken, token)
+	}
+	if time.Now().After(st.cookieUntil) {
+		t.Fatal("cookieUntil is in the past")
+	}
+
+	// Disconnect viewer. cookieToken must survive (the fix preserves it).
+	view.Close(websocket.StatusNormalClosure, "done")
+	time.Sleep(50 * time.Millisecond) // let defer run
+	hub.mu.Lock()
+	st = hub.terminals[terminalKey(key.ID, sessionName)]
+	hub.mu.Unlock()
+	if st == nil || st.cookieToken != token {
+		t.Fatalf("cookieToken lost after viewer disconnect: got %q want %q",
+			func() string { if st != nil { return st.cookieToken }; return "nil" }(), token)
+	}
+
+	// Simulate reconnect with cookie: create new viewer, restore from cookie.
+	view2 := dialTerminalView(t, ctx, srv.URL, sessionName)
+	defer view2.Close(websocket.StatusNormalClosure, "done")
+
+	// Drain initial status from second viewer before modifying terminal state.
+	readCtx2, cancel2 := context.WithTimeout(ctx, 2*time.Second)
+	_ = readTerminalViewMessageType(t, readCtx2, view2)
+	cancel2()
+
+	// Find the viewer in the terminal state.
+	hub.mu.Lock()
+	st = hub.terminals[terminalKey(key.ID, sessionName)]
+	var v2 *terminalViewer
+	for _, v := range st.viewers {
+		v2 = v
+		break
+	}
+	hub.mu.Unlock()
+	if v2 == nil {
+		t.Fatal("no viewer found after reconnect")
+	}
+	restored := hub.restoreTerminalInputFromCookie(v2, key.ID, sessionName, token)
+	if !restored {
+		t.Fatal("restoreTerminalInputFromCookie returned false")
+	}
+
+	// Verify the new viewer is now the writer.
+	hub.mu.Lock()
+	st = hub.terminals[terminalKey(key.ID, sessionName)]
+	hub.mu.Unlock()
+	if st == nil || st.writerToken != token {
+		t.Fatalf("writerToken not restored: st=%+v", st)
+	}
+
+	// Also verify the cookie token validation helper.
+	if !hub.validTerminalCookieToken(sessionName, token) {
+		t.Fatal("validTerminalCookieToken returned false for valid token")
+	}
+	if hub.validTerminalCookieToken(sessionName, "bogus") {
+		t.Fatal("validTerminalCookieToken returned true for bogus token")
+	}
+}
+
+
 func TestFeishuSyncRequiresExplicitKeyForOtherOwner(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
@@ -3990,8 +4103,41 @@ func writeTerminalClientMessage(ctx context.Context, conn *websocket.Conn, msg t
 
 func dialTerminalView(t *testing.T, ctx context.Context, baseURL, sessionName string) *websocket.Conn {
 	t.Helper()
+	return dialTerminalViewWithCookie(t, ctx, baseURL, sessionName, "")
+}
+
+// readTerminalViewMessage reads one terminal message from a viewer connection.
+// Viewer messages use the terminal wire format {type, ...} rather than Envelope.
+func readTerminalViewMessage(t *testing.T, ctx context.Context, conn *websocket.Conn) map[string]any {
+	t.Helper()
+	_, data, err := conn.Read(ctx)
+	if err != nil {
+		t.Fatalf("read terminal view message: %v", err)
+	}
+	var msg map[string]any
+	if err := json.Unmarshal(data, &msg); err != nil {
+		t.Fatalf("unmarshal terminal view message: %v", err)
+	}
+	return msg
+}
+
+func readTerminalViewMessageType(t *testing.T, ctx context.Context, conn *websocket.Conn) string {
+	t.Helper()
+	msg := readTerminalViewMessage(t, ctx, conn)
+	s, _ := msg["type"].(string)
+	return s
+}
+
+func dialTerminalViewWithCookie(t *testing.T, ctx context.Context, baseURL, sessionName, cookieValue string) *websocket.Conn {
+	t.Helper()
 	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/view/" + sessionName
-	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	var opts *websocket.DialOptions
+	if cookieValue != "" {
+		opts = &websocket.DialOptions{
+			HTTPHeader: http.Header{"Cookie": {cookieValue}},
+		}
+	}
+	conn, _, err := websocket.Dial(ctx, wsURL, opts)
 	if err != nil {
 		t.Fatalf("Dial view %s: %v", sessionName, err)
 	}
