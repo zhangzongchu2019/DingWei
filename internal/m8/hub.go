@@ -62,7 +62,10 @@ type Hub struct {
 	recentTerminal   map[string][]terminalSyncItem
 	syncBuffers      map[string]*feishuSyncBuffer
 	linkTokens       map[string]ownerLinkToken
+	onboardPushed    map[string]time.Time
+	onboardContexts  map[string]onboardContext
 	onlineDebounce   time.Duration
+	onboardInterval  time.Duration
 }
 
 type L2Config struct {
@@ -92,6 +95,7 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
+	onboardBody    string
 }
 
 type feishuSyncTarget struct {
@@ -184,7 +188,10 @@ func New(repo store.Repository) *Hub {
 		recentTerminal:   map[string][]terminalSyncItem{},
 		syncBuffers:      map[string]*feishuSyncBuffer{},
 		linkTokens:       map[string]ownerLinkToken{},
+		onboardPushed:    map[string]time.Time{},
+		onboardContexts:  map[string]onboardContext{},
 		onlineDebounce:   2500 * time.Millisecond,
+		onboardInterval:  envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,
@@ -722,6 +729,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "save session endpoint failed", http.StatusInternalServerError)
 		return
 	}
+	// Resolve owner-scoped onboarding data before the websocket is published.
+	// The first write after Accept is then local and deterministic.
+	onboardBody := h.renderAgentNetworkOnboard(r.Context(), sessionName, keyID)
 	var c *sessionClient
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
@@ -748,9 +758,14 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		_ = conn.Close(websocket.StatusInternalError, "save session endpoint failed")
 		return
 	}
-	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName}
+	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, onboardBody: onboardBody}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
+	skillCtx, skillCancel := context.WithCancel(context.Background())
+	c.skillCancel = skillCancel
+	// Send onboarding before publishing the client to directory broadcasters, so
+	// no concurrent online-directory frame can overtake the initial guide.
+	h.startAgentNetworkSkillPush(skillCtx, c)
 	h.mu.Lock()
 	if h.sessionClients[keyID] == nil {
 		h.sessionClients[keyID] = map[string]*sessionClient{}
@@ -771,9 +786,6 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			Meta: map[string]any{"type": terminalResizeType, "system": true, "no_mirror": true, "cols": reSize[0], "rows": reSize[1]},
 		})
 	}
-	skillCtx, skillCancel := context.WithCancel(context.Background())
-	c.skillCancel = skillCancel
-	h.startAgentNetworkSkillPush(skillCtx, c)
 	h.scheduleOnlineBroadcastForSession(r.Context(), keyID, sessionName)
 	defer func() {
 		stopIdleWatchdog()
@@ -2294,8 +2306,12 @@ func (h *Hub) handleAgentNetworkSkillAck(c *sessionClient, env model.Envelope) b
 }
 
 func (h *Hub) startAgentNetworkSkillPush(ctx context.Context, c *sessionClient) {
+	if !h.reserveOnboardPush(c, time.Now().UTC()) {
+		h.pushAgentNetworkSkillResume(ctx, c)
+		return
+	}
+	h.pushAgentNetworkSkill(ctx, c)
 	go func() {
-		h.pushAgentNetworkSkill(ctx, c)
 		ticker := time.NewTicker(agentNetworkSkillRetryWait)
 		defer ticker.Stop()
 		for {
@@ -2312,6 +2328,14 @@ func (h *Hub) startAgentNetworkSkillPush(ctx context.Context, c *sessionClient) 
 	}()
 }
 
+func (h *Hub) pushAgentNetworkSkillResume(ctx context.Context, c *sessionClient) {
+	_ = c.write(ctx, model.Envelope{
+		ID: randomHex(16), To: sessionAddress(c.sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID),
+		Body: "近期已推送完整上线指南；本次重连沿用，不重复注入。", TS: time.Now().Unix(),
+		Meta: map[string]any{"type": agentNetworkSkillPushType, "system": true, "no_mirror": true, "debounced": true},
+	})
+}
+
 func (h *Hub) agentNetworkSkillInstalled(c *sessionClient) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -2322,11 +2346,15 @@ func (h *Hub) pushAgentNetworkSkill(ctx context.Context, c *sessionClient) {
 	if h.agentNetworkSkillInstalled(c) {
 		return
 	}
+	body := c.onboardBody
+	if body == "" {
+		body = h.renderAgentNetworkOnboard(ctx, c.sessionName, c.keyID)
+	}
 	env := model.Envelope{
 		ID:   randomHex(16),
 		To:   sessionAddress(c.sessionName, c.keyID),
 		From: sessionAddress("workpulse", c.keyID),
-		Body: renderAgentNetworkSkill(c.sessionName, c.keyID),
+		Body: body,
 		TS:   time.Now().Unix(),
 		Meta: map[string]any{
 			"type":         agentNetworkSkillPushType,
@@ -2342,9 +2370,100 @@ func (h *Hub) pushAgentNetworkSkill(ctx context.Context, c *sessionClient) {
 	}
 }
 
+func (h *Hub) reserveOnboardPush(c *sessionClient, now time.Time) bool {
+	key := terminalKey(c.keyID, c.sessionName)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if last := h.onboardPushed[key]; !last.IsZero() && now.Sub(last) < h.onboardInterval {
+		return false
+	}
+	h.onboardPushed[key] = now
+	return true
+}
+
+type onboardGitIdentity struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type onboardOwnerIdentity struct {
+	Public  onboardGitIdentity `json:"public"`
+	Private onboardGitIdentity `json:"private"`
+}
+
+type onboardContext struct {
+	OwnerKey  string
+	OwnerName string
+	Identity  onboardOwnerIdentity
+	Brief     string
+	Generated time.Time
+}
+
+func (h *Hub) renderAgentNetworkOnboard(ctx context.Context, sessionName, keyID string) string {
+	h.mu.Lock()
+	info, cached := h.onboardContexts[keyID]
+	h.mu.Unlock()
+	if cached && time.Since(info.Generated) < h.onboardInterval {
+		return renderAgentNetworkSkillWithContext(sessionName, keyID, info)
+	}
+	info = onboardContext{Generated: time.Now().UTC()}
+	if h.Repo != nil {
+		info.OwnerKey = h.ownerKeyForKey(ctx, keyID)
+	}
+	info.OwnerName = info.OwnerKey
+	if h.Repo != nil && info.OwnerKey != "" {
+		if member, err := h.Repo.GetMemberByOwnerKey(ctx, info.OwnerKey); err == nil && member != nil && strings.TrimSpace(member.DisplayName) != "" {
+			info.OwnerName = strings.TrimSpace(member.DisplayName)
+		}
+		if configs, err := h.Repo.ListAppConfig(ctx); err == nil {
+			for _, cfg := range configs {
+				switch cfg.Key {
+				case "onboard.git_identities":
+					var identities map[string]onboardOwnerIdentity
+					if json.Unmarshal([]byte(cfg.ValueJSON), &identities) == nil {
+						info.Identity = identities[info.OwnerKey]
+					}
+				case "onboard.project_briefs":
+					var briefs map[string]string
+					if json.Unmarshal([]byte(cfg.ValueJSON), &briefs) == nil {
+						info.Brief = strings.TrimSpace(briefs[info.OwnerKey])
+					}
+				}
+			}
+		}
+	}
+	h.mu.Lock()
+	h.onboardContexts[keyID] = info
+	h.mu.Unlock()
+	return renderAgentNetworkSkillWithContext(sessionName, keyID, info)
+}
+
 func renderAgentNetworkSkill(sessionName, keyID string) string {
+	return renderAgentNetworkSkillWithContext(sessionName, keyID, onboardContext{Generated: time.Now().UTC()})
+}
+
+func renderAgentNetworkSkillWithContext(sessionName, keyID string, info onboardContext) string {
+	owner := info.OwnerKey
+	if owner == "" {
+		owner = "未识别"
+	}
+	ownerName := info.OwnerName
+	if ownerName == "" {
+		ownerName = owner
+	}
+	identityLine := func(label string, identity onboardGitIdentity) string {
+		if identity.Name == "" || identity.Email == "" {
+			return label + "：未配置；提交前从仓库/负责人确认，禁止猜测或沿用他人身份。"
+		}
+		return fmt.Sprintf("%s：git config user.name %q；git config user.email %q", label, identity.Name, identity.Email)
+	}
+	brief := info.Brief
+	if brief == "" {
+		brief = "当前 owner 暂无已配置项目简报；开始工作前读取仓库文档、任务书和最新交接。"
+	}
 	return strings.Join([]string{
-		"DingWei Agent网络协作指南",
+		"DingWei 客户端上线指南",
+		"生成时间（UTC）：" + info.Generated.UTC().Format(time.RFC3339),
 		"",
 		"你已接入DingWei Agent网络，可与同账号的其它在线AI CLI会话互相发消息、协作。",
 		"",
@@ -2369,6 +2488,17 @@ func renderAgentNetworkSkill(sessionName, keyID string) string {
 		"",
 		"旧的 #会话名 正文 / @成员#会话名 正文 仍作为严格 legacy fallback。控制块只允许 to/body，Hub 收到的 from 永远由 helper 填写，不能伪造。",
 		"legacy 示例：#developer 请核对X",
+		"",
+		"【三、回复时间戳】每次状态回复、交接和结论都带明确时间戳（推荐 RFC3339，注明时区），不要只写“刚才/稍后”。",
+		"",
+		"【四、代码、测试与文档合规】当前身份：" + ownerName + "（owner=" + owner + "）。提交前按仓库公开性选用下列 DB 配置身份：",
+		identityLine("公开仓身份", info.Identity.Public),
+		identityLine("私有仓身份", info.Identity.Private),
+		"公开仓与私有仓身份可能不同；不得硬编码其他 owner 的姓名/邮箱，不得添加未经要求的协作者尾注。",
+		"代码改动须有相称测试；文档与行为同步；提交前检查 diff、敏感信息和作者信息。",
+		"",
+		"【五、项目知识简报（仅当前 owner）】",
+		brief,
 		"",
 		"协作礼仪：消息要简明，说清诉求与来源，不刷屏。发给队友的正文第一行建议自报身份，例如【" + sessionName + "→manager】。",
 		"",
@@ -3899,6 +4029,18 @@ func truthyQuery(value string) bool {
 	default:
 		return false
 	}
+}
+
+func envDuration(name string, fallback time.Duration) time.Duration {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback
+	}
+	duration, err := time.ParseDuration(value)
+	if err != nil || duration <= 0 {
+		return fallback
+	}
+	return duration
 }
 
 func hostOnly(addr string) string {
