@@ -39,7 +39,7 @@ class DeliveryInbox:
             db.execute("CREATE INDEX IF NOT EXISTS idx_delivery_inbox_fifo ON delivery_inbox(state,received_at)")
             db.execute("UPDATE delivery_inbox SET state='received', updated_at=? WHERE state='processing'", (time.time(),))
 
-    def accept(self, delivery_id: str, env: dict) -> tuple[str, int, int]:
+    def accept(self, delivery_id: str, env: dict, retry_failed: bool = False) -> tuple[str, int, int]:
         """Persist a delivery and return (ack_state, queue_position, queue_depth)."""
         now = time.time()
         payload = json.dumps(env, ensure_ascii=False, separators=(",", ":"))
@@ -61,6 +61,14 @@ class DeliveryInbox:
                 state = "received"
             else:
                 state, received_at = row["state"], row["received_at"]
+                if state == "failed" and retry_failed:
+                    db.execute(
+                        """UPDATE delivery_inbox
+                           SET envelope_json=?,state='received',error=NULL,updated_at=?
+                           WHERE delivery_id=? AND state='failed'""",
+                        (payload, now, delivery_id),
+                    )
+                    state = "received"
             position = db.execute(
                 """SELECT COUNT(*) FROM delivery_inbox
                    WHERE state IN ('received','processing') AND (received_at<? OR (received_at=? AND delivery_id<?))""",

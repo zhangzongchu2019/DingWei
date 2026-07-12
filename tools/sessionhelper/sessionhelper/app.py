@@ -386,11 +386,13 @@ class SessionHelper:
                 self.busy_acked_from.clear()
             await asyncio.sleep(max(0.1, min(self.cfg.cli_settle_seconds, 1.0)))
 
-    async def process_inbound_message(self, ws, env: dict) -> None:
+    async def process_inbound_message(self, ws, env: dict, raise_adapter_errors: bool = False) -> None:
         from_addr = str(env.get("from") or "")
         try:
             reply_body = await asyncio.to_thread(self.adapter.handle, env)
         except Exception as exc:
+            if raise_adapter_errors:
+                raise
             reply_body = f"处理失败：{exc}"
         if not reply_body or not is_feishu_addr(from_addr):
             return
@@ -413,7 +415,15 @@ class SessionHelper:
         if not delivery_id:
             return
         try:
-            state, position, depth = await asyncio.to_thread(self.delivery_inbox.accept, delivery_id, env)
+            retry_failed = False
+            if self.cfg.mode == "cli" and hasattr(self.adapter, "is_idle"):
+                try:
+                    retry_failed = bool(await asyncio.to_thread(self.adapter.is_idle))
+                except Exception:
+                    retry_failed = True
+            state, position, depth = await asyncio.to_thread(
+                self.delivery_inbox.accept, delivery_id, env, retry_failed
+            )
             extra = {"queue_position": position, "queue_depth": depth} if state == "delivered" else {}
             if state == "failed":
                 extra = {"reason": "cli_injection_failed", "retryable": True}
@@ -447,9 +457,25 @@ class SessionHelper:
                     await asyncio.sleep(0.75)
                     continue
             try:
-                await self.process_inbound_message(ws, env)
+                await self.process_inbound_message(ws, env, raise_adapter_errors=True)
             except Exception as exc:
+                busy = False
+                if self.cfg.mode == "cli" and hasattr(self.adapter, "is_idle"):
+                    try:
+                        busy = not bool(await asyncio.to_thread(self.adapter.is_idle))
+                    except Exception:
+                        busy = False
+                if busy:
+                    await asyncio.to_thread(self.delivery_inbox.release, delivery_id)
+                    if delivery_id not in self.delivery_busy_acked:
+                        self.delivery_busy_acked.add(delivery_id)
+                        await ws.send(json.dumps(self.delivery_ack(
+                            delivery_id, "busy", reason="cli_busy", retryable=True
+                        ), ensure_ascii=False))
+                    await asyncio.sleep(0.75)
+                    continue
                 await asyncio.to_thread(self.delivery_inbox.finish, delivery_id, str(exc))
+                self.delivery_busy_acked.discard(delivery_id)
                 await ws.send(json.dumps(self.delivery_ack(
                     delivery_id, "failed", reason="cli_injection_failed", retryable=True
                 ), ensure_ascii=False))
