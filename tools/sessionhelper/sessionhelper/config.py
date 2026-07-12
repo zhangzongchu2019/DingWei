@@ -22,6 +22,7 @@ class Config:
     session_name: str
     key_id: str
     secret: str
+    owner: str = ""
     ws_base: str = "ws://127.0.0.1:8791"
     bot_name: str = "UnifiedRobot"
     mode: str = "echo"
@@ -67,6 +68,12 @@ class Config:
     provision_rollback_timeout: int = 300
 
     @property
+    def registered_session_name(self) -> str:
+        if not self.owner:
+            return ""
+        return build_session_name(self.owner, self.session_name, self.key_id)
+
+    @property
     def ws_url(self) -> str:
         query = {"key_id": self.key_id}
         if self.tool:
@@ -98,10 +105,14 @@ def load_config(env: dict[str, str] | None = None) -> Config:
     short_session_name = required_session_env("SH_SESSION_NAME", env).strip()
     key_id = required_env("SH_KEY_ID", env).strip()
     session_name = normalize_client_session_name(short_session_name)
+    owner = env.get("SH_OWNER", "").strip()
+    if owner and not NAME_PART_RE.fullmatch(owner):
+        raise SystemExit("SH_OWNER 不合规: 只能使用小写字母数字。")
     return Config(
         session_name=session_name,
         key_id=key_id,
         secret=required_env("SH_SECRET", env),
+        owner=owner,
         ws_base=env.get("SH_WS_BASE", "ws://127.0.0.1:8791"),
         bot_name=env.get("SH_BOT_NAME", "UnifiedRobot"),
         mode=env.get("SH_MODE", env.get("SH_ADAPTER", "echo")).lower(),

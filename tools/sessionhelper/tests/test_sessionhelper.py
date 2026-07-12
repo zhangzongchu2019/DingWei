@@ -192,7 +192,6 @@ class SessionHelperTest(unittest.TestCase):
                     """INSERT INTO delivery_inbox(delivery_id,envelope_json,state,attempts,received_at,updated_at)
                        VALUES(?,?,?,?,?,?)""",
                     [
-                        ("dlv_home", json.dumps({"to": "home#FB-2642", "body": "home"}), "received", 0, 1.0, 1.0),
                         (
                             "dlv_home_full",
                             json.dumps({"to": "zzc-home-2642#FB-2642", "body": "home full"}),
@@ -209,12 +208,10 @@ class SessionHelperTest(unittest.TestCase):
 
             stderr = io.StringIO()
             with mock.patch("sys.stderr", stderr):
-                inbox = DeliveryInbox(str(target_path), 10, "home", "zzc-home-2642")
-            self.assertIn("[delivery][legacy_inbox] imported 2/2 pending deliveries", stderr.getvalue())
+                inbox = DeliveryInbox(str(target_path), 10, "home", "home", "zzc-home-2642", "FB-2642")
+            self.assertIn("[delivery][legacy_inbox] imported 1/1 pending deliveries", stderr.getvalue())
             self.assertIn("[delivery][legacy_inbox][WARN] skipped 1 pending deliveries without parseable target", stderr.getvalue())
-            delivery_id, env = inbox.claim_next()
-            self.assertEqual(delivery_id, "dlv_home")
-            self.assertEqual(env["body"], "home")
+            self.assertIn("[delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions", stderr.getvalue())
             delivery_id, env = inbox.claim_next()
             self.assertEqual(delivery_id, "dlv_home_full")
             self.assertEqual(env["body"], "home full")
@@ -263,7 +260,7 @@ class SessionHelperTest(unittest.TestCase):
                     ],
                 )
 
-            inbox = DeliveryInbox(str(target_path), 10, "home", "zzc-home-2642")
+            inbox = DeliveryInbox(str(target_path), 10, "home", "home", "zzc-home-2642", "FB-2642")
             delivery_id, env = inbox.claim_next()
             self.assertEqual(delivery_id, "dlv_home")
             self.assertEqual(env["body"], "home")
@@ -287,10 +284,61 @@ class SessionHelperTest(unittest.TestCase):
             inbox.accept("dlv_new", {"body": "new"})
             self.assertEqual(inbox.claim_next()[0], "dlv_new")
 
+    def test_delivery_inbox_matches_registered_session_shape_by_short_name_and_key_tail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy_path = Path(tmp) / "sessionhelper_inbox.db"
+            target_path = Path(tmp) / "sessionhelper_inbox-manager.db"
+            with sqlite3.connect(legacy_path) as db:
+                db.execute(
+                    """CREATE TABLE delivery_inbox (
+                        delivery_id TEXT PRIMARY KEY,
+                        envelope_json TEXT NOT NULL,
+                        state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed')),
+                        attempts INTEGER NOT NULL DEFAULT 0,
+                        error TEXT,
+                        received_at REAL NOT NULL,
+                        updated_at REAL NOT NULL
+                    )"""
+                )
+                db.executemany(
+                    """INSERT INTO delivery_inbox(delivery_id,envelope_json,state,attempts,received_at,updated_at)
+                       VALUES(?,?,?,?,?,?)""",
+                    [
+                        (
+                            "dlv_manager",
+                            json.dumps({"to": "renamed-manager-2642#FB-2642", "body": "manager"}),
+                            "received",
+                            0,
+                            1.0,
+                            1.0,
+                        ),
+                        (
+                            "dlv_other_tail",
+                            json.dumps({"to": "renamed-manager-9999#FB-2642", "body": "other tail"}),
+                            "received",
+                            0,
+                            2.0,
+                            2.0,
+                        ),
+                    ],
+                )
+
+            stderr = io.StringIO()
+            with mock.patch("sys.stderr", stderr):
+                inbox = DeliveryInbox(str(target_path), 10, "manager", "manager", "", "FB-2642")
+            self.assertIn("[delivery][legacy_inbox] imported 1/1 pending deliveries", stderr.getvalue())
+            self.assertIn("[delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions", stderr.getvalue())
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_manager")
+            self.assertEqual(env["body"], "manager")
+            self.assertIsNone(inbox.claim_next())
+
     def test_load_config_required_and_defaults(self):
         cfg = load_config(BASE_ENV)
         self.assertEqual(cfg.session_name, "home")
         self.assertEqual(cfg.key_id, "FB-2642")
+        self.assertEqual(cfg.owner, "zzc")
+        self.assertEqual(cfg.registered_session_name, "zzc-home-2642")
         self.assertEqual(cfg.mode, "echo")
         self.assertEqual(cfg.cli_launch, "")
         self.assertEqual(cfg.cli_ready_timeout, 90.0)
@@ -324,8 +372,9 @@ class SessionHelperTest(unittest.TestCase):
             load_config(dict(BASE_ENV, SH_SESSION_NAME="Dev-1"))
         self.assertIn("短名只能小写字母数字", str(bad_short.exception))
 
-        cfg = load_config(dict(BASE_ENV, SH_OWNER="Zzc", SH_SESSION_NAME="zzc-home-2642"))
-        self.assertEqual(cfg.session_name, "home")
+        with self.assertRaises(SystemExit) as bad_owner:
+            load_config(dict(BASE_ENV, SH_OWNER="Zzc", SH_SESSION_NAME="zzc-home-2642"))
+        self.assertIn("SH_OWNER 不合规", str(bad_owner.exception))
 
     def test_send_dingwei_temporary_session_name_is_compliant(self):
         self.assertEqual(

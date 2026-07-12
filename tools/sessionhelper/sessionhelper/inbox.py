@@ -11,11 +11,21 @@ import time
 
 
 class DeliveryInbox:
-    def __init__(self, path: str, capacity: int = 100, session_name: str = "default", session_full_name: str = ""):
+    def __init__(
+        self,
+        path: str,
+        capacity: int = 100,
+        session_name: str = "default",
+        session_full_name: str = "",
+        registered_session_name: str = "",
+        key_id: str = "",
+    ):
         self.path = os.path.expanduser(path)
         self.capacity = max(1, capacity)
         self.session_name = (session_name or "default").strip() or "default"
         self.session_full_name = (session_full_name or "").strip()
+        self.registered_session_name = (registered_session_name or "").strip()
+        self.key_tail = (key_id or "").strip()[-4:].lower()
         self._lock = threading.Lock()
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
         self._initialize()
@@ -172,31 +182,53 @@ class DeliveryInbox:
 
     def _filter_legacy_rows_for_session(self, rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
         out = []
-        skipped = 0
-        targets = {self.session_name}
-        if self.session_full_name:
-            targets.add(self.session_full_name)
+        missing = 0
+        mismatched = []
         for row in rows:
             try:
                 env = json.loads(row["envelope_json"])
             except Exception:
-                skipped += 1
+                missing += 1
                 continue
             to = str(env.get("to") or "").strip()
             if not to:
-                skipped += 1
+                missing += 1
                 continue
             session = to.split("#", 1)[0]
-            if session in targets:
+            if self._target_matches_session(session):
                 out.append(row)
-        if skipped:
+            else:
+                mismatched.append(to)
+        if missing:
             print(
-                f"[delivery][legacy_inbox][WARN] skipped {skipped} pending deliveries without parseable target "
+                f"[delivery][legacy_inbox][WARN] skipped {missing} pending deliveries without parseable target "
                 f"session={self.session_name}",
                 file=sys.stderr,
                 flush=True,
             )
+        if mismatched:
+            print(
+                f"[delivery][legacy_inbox][WARN] skipped {len(mismatched)} pending deliveries for other sessions "
+                f"session={self.session_name} targets={sorted(self._target_sessions())} to={mismatched[:5]}",
+                file=sys.stderr,
+                flush=True,
+            )
         return out
+
+    def _target_sessions(self) -> set[str]:
+        out = {self.session_name}
+        if self.session_full_name:
+            out.add(self.session_full_name)
+        if self.registered_session_name:
+            out.add(self.registered_session_name)
+        return out
+
+    def _target_matches_session(self, session: str) -> bool:
+        session = (session or "").strip()
+        if session in self._target_sessions():
+            return True
+        parts = session.split("-")
+        return bool(self.key_tail) and len(parts) == 3 and parts[1] == self.session_name and parts[2].lower() == self.key_tail
 
     def _filter_sessioned_legacy_rows(self, rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
         out = []
