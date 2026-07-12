@@ -27,6 +27,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/router"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
 type MessageQueue interface {
@@ -704,6 +705,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	tool := strings.TrimSpace(r.URL.Query().Get("tool"))
 	modelName := strings.TrimSpace(r.URL.Query().Get("model"))
 	clientVersion := strings.TrimSpace(r.URL.Query().Get("version"))
+	versionWarn := versionCompatibilityWarning(clientVersion)
 	fullSessionName := strings.TrimSpace(r.URL.Query().Get("full_session_name"))
 	producer := truthyQuery(r.URL.Query().Get("producer"))
 	noDirectory := truthyQuery(r.URL.Query().Get("no_directory"))
@@ -725,6 +727,17 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	case "warn":
 		if nameWarn != "" {
 			log.Printf("session name warning key_id=%s owner=%s session=%s: %s", keyID, ownerKey, requestedSessionName, nameWarn)
+		}
+	}
+	switch versionEnforceMode() {
+	case "enforce":
+		if versionWarn != "" {
+			http.Error(w, versionRejectionMessage(clientVersion, versionWarn), http.StatusBadRequest)
+			return
+		}
+	case "warn":
+		if versionWarn != "" {
+			log.Printf("session version warning key_id=%s owner=%s session=%s version=%q required=%s: %s", keyID, ownerKey, requestedSessionName, clientVersion, dwversion.Version, versionWarn)
 		}
 	}
 	sessionName, err = h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
@@ -3845,6 +3858,11 @@ func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string
 				fmt.Fprintf(&b, " · 命名告警:%s", nameWarn)
 			}
 		}
+		if versionEnforceMode() == "warn" {
+			if versionWarn := versionCompatibilityWarning(ep.Version); versionWarn != "" {
+				fmt.Fprintf(&b, " · 版本告警:%s", versionWarn)
+			}
+		}
 		if ep.Producer || strings.TrimSpace(ep.TargetGroup) != "" {
 			fmt.Fprintf(&b, " · Producer:%s", yesNo(ep.Producer))
 			if strings.TrimSpace(ep.TargetGroup) != "" {
@@ -3866,6 +3884,68 @@ func versionLabel(version string) string {
 		return version
 	}
 	return "v" + version
+}
+
+func versionEnforceMode() string {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("WP_VERSION_ENFORCE"))) {
+	case "enforce":
+		return "enforce"
+	default:
+		return "warn"
+	}
+}
+
+func versionCompatibilityWarning(clientVersion string) string {
+	clientVersion = strings.TrimSpace(clientVersion)
+	if clientVersion == "" {
+		return fmt.Sprintf("未上报版本,要求 %s", dwversion.Version)
+	}
+	client, ok := parseWireVersion(clientVersion)
+	if !ok {
+		return fmt.Sprintf("版本格式非法 %q,要求 %s", clientVersion, dwversion.Version)
+	}
+	required, ok := parseWireVersion(dwversion.Version)
+	if !ok {
+		return fmt.Sprintf("hub 版本格式非法 %q", dwversion.Version)
+	}
+	if client[0] != required[0] || client[1] != required[1] {
+		return fmt.Sprintf("版本不兼容,当前 %s,要求 %s", clientVersion, dwversion.Version)
+	}
+	return ""
+}
+
+func parseWireVersion(v string) ([4]int, bool) {
+	var out [4]int
+	parts := strings.Split(strings.TrimSpace(v), ".")
+	if len(parts) != 4 {
+		return out, false
+	}
+	for i, part := range parts {
+		if part == "" {
+			return out, false
+		}
+		n := 0
+		for _, r := range part {
+			if r < '0' || r > '9' {
+				return out, false
+			}
+			n = n*10 + int(r-'0')
+		}
+		out[i] = n
+	}
+	return out, true
+}
+
+func versionRejectionMessage(clientVersion, reason string) string {
+	current := strings.TrimSpace(clientVersion)
+	if current == "" {
+		current = "未上报"
+	}
+	return fmt.Sprintf("sessionHelper 版本不兼容: 当前版本=%s; 要求版本=%s; 原因=%s; 下载地址=%s", current, dwversion.Version, reason, sessionHelperDownloadURL())
+}
+
+func sessionHelperDownloadURL() string {
+	return "https://dingwei.wegoab.com/downloads/sessionHelper-" + dwversion.Version + "/"
 }
 
 func shortSessionName(sessionName string) string {
