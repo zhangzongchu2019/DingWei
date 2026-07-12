@@ -234,6 +234,7 @@ type SessionEndpoint struct {
 	ClientIP         string
 	Tool             string
 	Model            string
+	Version          string
 	Producer         bool
 	TargetGroup      string
 	NoDirectory      bool

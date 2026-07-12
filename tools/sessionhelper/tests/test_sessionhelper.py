@@ -12,6 +12,7 @@ import time
 from unittest import mock
 from pathlib import Path
 
+from sessionhelper import __version__
 from sessionhelper.app import (
     COMM_SKILL_ACK,
     SessionHelper,
@@ -353,7 +354,7 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(cfg.target_bot, "")
         self.assertEqual(cfg.opencode_db, "")
         self.assertTrue(cfg.inbox_db.endswith("/.dingwei/sessionhelper_inbox-home.db"))
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&os={detect_os()}")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&version={__version__}&os={detect_os()}")
 
     def test_load_config_inbox_default_is_session_scoped_and_overridable(self):
         cfg = load_config(dict(BASE_ENV, SH_SESSION_NAME="tester"))
@@ -403,7 +404,7 @@ class SessionHelperTest(unittest.TestCase):
         cfg = load_config(dict(BASE_ENV, SH_TOOL="CODEX", SH_MODEL="gpt-5.5", SH_SESSION_FULL="sh-home-e0d12642"))
         self.assertEqual(
             cfg.ws_url,
-            f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&tool=CODEX&os={detect_os()}&model=gpt-5.5&full_session_name=sh-home-e0d12642",
+            f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&version={__version__}&tool=CODEX&os={detect_os()}&model=gpt-5.5&full_session_name=sh-home-e0d12642",
         )
 
     def test_ws_url_reports_producer_target_group(self):
@@ -411,16 +412,16 @@ class SessionHelperTest(unittest.TestCase):
         self.assertTrue(cfg.producer)
         self.assertEqual(cfg.target_group, "oc_ai")
         self.assertEqual(cfg.target_bot, "bot-test")
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&os={detect_os()}&producer=1&target_group=oc_ai&target_bot=bot-test")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&version={__version__}&os={detect_os()}&producer=1&target_group=oc_ai&target_bot=bot-test")
 
     def test_ws_url_reports_mirror_to(self):
         cfg = load_config(dict(BASE_ENV, SH_MIRROR_TO="ou_u1#FB-2642#is3-Connector"))
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&os={detect_os()}&mirror_to=ou_u1%23FB-2642%23is3-Connector")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&version={__version__}&os={detect_os()}&mirror_to=ou_u1%23FB-2642%23is3-Connector")
 
     def test_ws_url_reports_no_directory(self):
         cfg = load_config(dict(BASE_ENV, SH_NO_DIRECTORY="1"))
         self.assertTrue(cfg.no_directory)
-        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&os={detect_os()}&no_directory=1")
+        self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&version={__version__}&os={detect_os()}&no_directory=1")
 
     def test_detect_full_session_name_prefers_tmux_session(self):
         with mock.patch("sessionhelper.config.subprocess.check_output", return_value="sh-developer-e0d12642\n"):

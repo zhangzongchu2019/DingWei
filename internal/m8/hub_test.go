@@ -2243,7 +2243,7 @@ func TestSessionEndpointTracksClientIPAndOffline(t *testing.T) {
 	}
 }
 
-func TestSessionEndpointStoresToolAndModel(t *testing.T) {
+func TestSessionEndpointStoresClientMetadata(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
@@ -2256,7 +2256,7 @@ func TestSessionEndpointStoresToolAndModel(t *testing.T) {
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "tool=CODEX&model=gpt-5.5&full_session_name=sh-developer-e0d12642")
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "tool=CODEX&model=gpt-5.5&version=2.2.0&full_session_name=sh-developer-e0d12642")
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	endpoints, err := db.ListSessionEndpoints(ctx)
 	if err != nil || len(endpoints) != 1 {
@@ -2265,8 +2265,42 @@ func TestSessionEndpointStoresToolAndModel(t *testing.T) {
 	if endpoints[0].Tool != "CODEX" || endpoints[0].Model != "gpt-5.5" {
 		t.Fatalf("tool/model not stored: %+v", endpoints[0])
 	}
+	if endpoints[0].Version != "2.2.0" {
+		t.Fatalf("version not stored: %+v", endpoints[0])
+	}
 	if endpoints[0].SessionName != "developer" || endpoints[0].FullSessionName != "sh-developer-e0d12642" {
 		t.Fatalf("session names not stored correctly: %+v", endpoints[0])
+	}
+}
+
+func TestSessionEndpointAllowsMissingVersion(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: key.ID, SessionName: "developer", Version: "2.2.0", LastSeenAt: time.Now(), Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].Version != "" {
+		t.Fatalf("old client should have empty version: %+v", endpoints[0])
+	}
+	text := renderOnlineDirectory(model.Member{OwnerKey: "person", DisplayName: "Person"}, []onlineSessionItem{{Endpoint: endpoints[0]}})
+	if !strings.Contains(text, " · v? · ") {
+		t.Fatalf("directory should show unknown version for old clients: %s", text)
 	}
 }
 
@@ -4261,6 +4295,7 @@ func TestSessionNameWarnAllowsLegacyNameAndDirectoryFlagsIt(t *testing.T) {
 			OwnerKey:    "u1",
 			Tool:        "CODEX",
 			Model:       "gpt-5",
+			Version:     "2.2.0",
 			ClientIP:    "127.0.0.1",
 		},
 		Client: &sessionClient{webTerminal: true},
@@ -4273,6 +4308,9 @@ func TestSessionNameWarnAllowsLegacyNameAndDirectoryFlagsIt(t *testing.T) {
 	}
 	if !strings.Contains(text, "/view/dev1013") || !strings.Contains(text, "命名告警:") {
 		t.Fatalf("warn directory missing view or warning: %s", text)
+	}
+	if !strings.Contains(text, " · v2.2.0 · ") {
+		t.Fatalf("directory missing client version: %s", text)
 	}
 }
 
