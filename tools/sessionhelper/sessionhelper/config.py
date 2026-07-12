@@ -14,6 +14,7 @@ from .protocol import required_env
 
 NAME_PART_RE = re.compile(r"^[a-z0-9]+$")
 SESSION_NAME_RE = re.compile(r"^[a-z0-9]+-[a-z0-9]+-[0-9a-f]{4}$")
+INBOX_FILENAME_RE = re.compile(r"[^a-z0-9_-]+")
 
 
 @dataclass
@@ -59,7 +60,7 @@ class Config:
     async_reply: bool = False
     agent_route: bool = True
     busy_buffer_max: int = 100
-    inbox_db: str = "~/.dingwei/sessionhelper_inbox.db"
+    inbox_db: str = ""
     busy_reply_text: str = "消息已收到，但此时忙，稍后处理你的请求"
     provision_allowed_hosts: tuple[str, ...] = ("ts.wegoab.com",)
     provision_audit_db: str = ""
@@ -139,7 +140,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         async_reply=truthy(env.get("SH_ASYNC_REPLY", "0")),
         agent_route=truthy(env.get("SH_AGENT_ROUTE", "1")),
         busy_buffer_max=int(env.get("SH_BUSY_BUFFER_MAX", "100")),
-        inbox_db=expand_path(env.get("SH_INBOX_DB", "~/.dingwei/sessionhelper_inbox.db")),
+        inbox_db=expand_path(env.get("SH_INBOX_DB", default_inbox_db(session_name))),
         busy_reply_text=env.get("SH_BUSY_REPLY_TEXT", "消息已收到，但此时忙，稍后处理你的请求"),
         provision_allowed_hosts=tuple(
             item.strip().lower()
@@ -227,6 +228,16 @@ def expand_path(value: str) -> str:
     if not value:
         return value
     return os.path.expanduser(os.path.expandvars(value))
+
+
+def safe_inbox_session_name(session_name: str) -> str:
+    value = (session_name or "").strip().lower()
+    value = INBOX_FILENAME_RE.sub("_", value).strip("_")
+    return value or "session"
+
+
+def default_inbox_db(session_name: str) -> str:
+    return f"~/.dingwei/sessionhelper_inbox-{safe_inbox_session_name(session_name)}.db"
 
 
 def detect_full_session_name(session_name: str, env: dict[str, str] | None = None) -> str:

@@ -137,7 +137,7 @@ class SessionHelper:
         self.comm_skill_installed = False
         self.last_online_list = ""
         self.pending_inbound: deque[dict] = deque(maxlen=max(1, cfg.busy_buffer_max))
-        self.delivery_inbox = DeliveryInbox(cfg.inbox_db, cfg.busy_buffer_max)
+        self.delivery_inbox = DeliveryInbox(cfg.inbox_db, cfg.busy_buffer_max, cfg.session_name)
         self.busy_acked_from: set[str] = set()
         self.delivery_busy_acked: set[str] = set()
         self.provisioner = Provisioner(cfg)

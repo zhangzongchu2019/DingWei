@@ -39,7 +39,7 @@ from sessionhelper.cli import (
     tmux_session_name,
     user_text_matches,
 )
-from sessionhelper.config import detect_full_session_name, detect_os, load_config
+from sessionhelper.config import default_inbox_db, detect_full_session_name, detect_os, load_config
 from sessionhelper.llm import PROVIDERS
 from sessionhelper.protocol import AddressBook, is_mirror_control, reply_target
 from sessionhelper.provision import Provisioner, compare_versions
@@ -112,6 +112,66 @@ class SessionHelperTest(unittest.TestCase):
             with self.assertRaises(OverflowError):
                 inbox.accept("dlv_3", {"body": "three"})
             self.assertEqual(inbox.claim_next()[0], "dlv_1")
+
+    def test_delivery_inbox_claims_only_current_session_from_shared_db(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "shared.db")
+            home = DeliveryInbox(path, 10, "home")
+            tester = DeliveryInbox(path, 10, "tester")
+            home.accept("dlv_home", {"body": "home"})
+            tester.accept("dlv_tester", {"body": "tester"})
+            home.accept("dlv_same", {"body": "home same"})
+            tester.accept("dlv_same", {"body": "tester same"})
+
+            tester_delivery_id, tester_env = tester.claim_next()
+            self.assertEqual(tester_delivery_id, "dlv_tester")
+            self.assertEqual(tester_env["body"], "tester")
+            tester_delivery_id, tester_env = tester.claim_next()
+            self.assertEqual(tester_delivery_id, "dlv_same")
+            self.assertEqual(tester_env["body"], "tester same")
+            self.assertIsNone(tester.claim_next())
+
+            home_delivery_id, home_env = home.claim_next()
+            self.assertEqual(home_delivery_id, "dlv_home")
+            self.assertEqual(home_env["body"], "home")
+            home_delivery_id, home_env = home.claim_next()
+            self.assertEqual(home_delivery_id, "dlv_same")
+            self.assertEqual(home_env["body"], "home same")
+
+    def test_delivery_inbox_migrates_legacy_db_and_recovers_processing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "legacy.db")
+            with sqlite3.connect(path) as db:
+                db.execute(
+                    """CREATE TABLE delivery_inbox (
+                        delivery_id TEXT PRIMARY KEY,
+                        envelope_json TEXT NOT NULL,
+                        state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed')),
+                        attempts INTEGER NOT NULL DEFAULT 0,
+                        error TEXT,
+                        received_at REAL NOT NULL,
+                        updated_at REAL NOT NULL
+                    )"""
+                )
+                db.execute(
+                    """INSERT INTO delivery_inbox(delivery_id,envelope_json,state,received_at,updated_at)
+                       VALUES(?,?,'processing',?,?)""",
+                    ("dlv_legacy", json.dumps({"body": "legacy"}), 1.0, 1.0),
+                )
+
+            inbox = DeliveryInbox(path, 10, "home")
+            with sqlite3.connect(path) as db:
+                columns = {row[1] for row in db.execute("PRAGMA table_info(delivery_inbox)")}
+                self.assertIn("session_name", columns)
+                row = db.execute(
+                    "SELECT session_name,state FROM delivery_inbox WHERE delivery_id='dlv_legacy'"
+                ).fetchone()
+                self.assertEqual(row, ("home", "received"))
+
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_legacy")
+            self.assertEqual(env["body"], "legacy")
+
     def test_load_config_required_and_defaults(self):
         cfg = load_config(BASE_ENV)
         self.assertEqual(cfg.session_name, "home")
@@ -128,7 +188,17 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(cfg.target_group, "")
         self.assertEqual(cfg.target_bot, "")
         self.assertEqual(cfg.opencode_db, "")
+        self.assertTrue(cfg.inbox_db.endswith("/.dingwei/sessionhelper_inbox-home.db"))
         self.assertEqual(cfg.ws_url, f"ws://127.0.0.1:8791/ws/session/home?key_id=FB-2642&os={detect_os()}")
+
+    def test_load_config_inbox_default_is_session_scoped_and_overridable(self):
+        cfg = load_config(dict(BASE_ENV, SH_SESSION_NAME="tester"))
+        self.assertTrue(cfg.inbox_db.endswith("/.dingwei/sessionhelper_inbox-tester.db"))
+
+        overridden = load_config(dict(BASE_ENV, SH_INBOX_DB="/tmp/shared-inbox.db"))
+        self.assertEqual(overridden.inbox_db, "/tmp/shared-inbox.db")
+
+        self.assertEqual(default_inbox_db("Dev 55/Prod"), "~/.dingwei/sessionhelper_inbox-dev_55_prod.db")
 
     def test_load_config_accepts_missing_owner_and_validates_short_name(self):
         cfg = load_config({k: v for k, v in BASE_ENV.items() if k != "SH_OWNER"})
