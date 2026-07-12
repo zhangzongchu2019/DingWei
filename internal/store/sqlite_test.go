@@ -27,6 +27,40 @@ func newTestSQLite(t *testing.T) (*SQLite, context.Context) {
 	return db, ctx
 }
 
+func TestSessionDeliveryClaimBypassesExpiredDeliveredAndIsMonotonic(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	for i, id := range []string{"dlv_1", "dlv_2"} {
+		if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+			ID: id, KeyID: "key", SessionName: "home", Envelope: `{"body":"x"}`,
+			SourceMessageID: "msg_" + id, SourceType: "feishu_inbound", CreatedAt: now.Add(time.Duration(i) * time.Millisecond),
+		}); err != nil {
+			t.Fatalf("enqueue %s: %v", id, err)
+		}
+	}
+	first, err := db.ClaimSessionDelivery(ctx, "key", "home", now.Add(time.Second))
+	if err != nil || first == nil || first.ID != "dlv_1" {
+		t.Fatalf("first claim = %+v, %v", first, err)
+	}
+	if err := db.UpdateSessionDelivery(ctx, first.ID, "delivered", "", now.Add(-time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	second, err := db.ClaimSessionDelivery(ctx, "key", "home", now.Add(time.Second))
+	if err != nil || second == nil || second.ID != "dlv_2" {
+		t.Fatalf("expired delivered must not starve FIFO: %+v, %v", second, err)
+	}
+	if err := db.UpdateSessionDelivery(ctx, first.ID, "processed", "", now); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpdateSessionDelivery(ctx, first.ID, "delivered", "", now); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.GetSessionDelivery(ctx, first.ID)
+	if err != nil || got.State != "processed" || got.ProcessedAt == nil {
+		t.Fatalf("state regressed: %+v, %v", got, err)
+	}
+}
+
 func TestMigrateUpgradesExistingDBWithSeenPersonAndBotSecret(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "workpulse-old.db")
 	ctx := context.Background()

@@ -59,6 +59,10 @@ type Repository interface {
 	RecentMessages(ctx context.Context, filter model.MessageFilter) ([]model.Message, error)
 	DeleteCollectMessagesBefore(ctx context.Context, cutoff time.Time) (int64, error)
 	MessageStats(ctx context.Context) (model.MessageStats, error)
+	EnqueueSessionDelivery(ctx context.Context, d model.SessionDelivery) error
+	ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error)
+	UpdateSessionDelivery(ctx context.Context, id, state, errText string, nextAttemptAt time.Time) error
+	GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error)
 
 	// 平台总控 L0/L1（P1）
 	EnqueueControlTask(ctx context.Context, task model.ControlTask) (model.ControlTask, bool, error)
