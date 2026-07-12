@@ -3429,6 +3429,60 @@ func TestRouteToSessionAcksDeliveredInboundMessage(t *testing.T) {
 	}
 }
 
+func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(20 * time.Millisecond)
+	if err := db.EnqueueMessage(ctx, model.Message{ID: "fm-reliable", ChatEntityID: "dev:personal:alice",
+		Direction: model.DirectionIn, BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"#home ping"}`}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{ID: "fm-reliable", To: "home#" + key.ID,
+		From: "alice#" + key.ID + "#UnifiedRobot", Body: "ping", TS: time.Now().Unix()}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, home)
+	deliveryID := metaString(got.Meta, "delivery_id")
+	if metaString(got.Meta, "type") != "delivery" || deliveryID == "" || got.ID != "fm-reliable" {
+		t.Fatalf("reliable envelope = %+v", got)
+	}
+	record, err := db.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || record == nil || record.State != "sent" {
+		t.Fatalf("delivery record=%+v err=%v", record, err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "ack", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ = db.GetSessionDelivery(ctx, deliveryID)
+		return record != nil && record.State == "processed"
+	})
+	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || next != nil {
+		t.Fatalf("source not acked after processed: %+v err=%v", next, err)
+	}
+}
+
 func TestNoMirrorSystemEnvelopeSkipsFeishuMirrorButNormalMirrors(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)

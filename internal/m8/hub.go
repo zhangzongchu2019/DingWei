@@ -91,6 +91,7 @@ type sessionClient struct {
 	osName         string
 	skillInstalled bool
 	skillCancel    context.CancelFunc
+	deliveryACKV1  bool
 }
 
 type feishuSyncTarget struct {
@@ -824,6 +825,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		var env model.Envelope
 		if err := json.Unmarshal(data, &env); err != nil {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
+			continue
+		}
+		if h.handleSessionCapability(c, env) || h.handleSessionDeliveryAck(r.Context(), c, env) {
 			continue
 		}
 		if env.From == "" {
@@ -2349,15 +2353,22 @@ func renderAgentNetworkSkill(sessionName, keyID string) string {
 		"文件里每行是一个在线会话：#会话名 · 工具/模型 · 归属@成员 等。要发现可协作对象、或确认某会话是否在线，读它即可。",
 		"重要：文件头有一行“更新于 <时间>”。若该时间距当前已超过 2 分钟，说明本机 sessionHelper 可能异常或已断连，此时清单不可信，不要据此判断在线状态。",
 		"",
-		"【二、给协作者发消息 / 回复】统一用发信脚本主动发（可靠，不受终端渲染影响，也不会被平台丢弃）：",
+		"【二、给协作者发消息 / 回复】优先输出严格控制块，由当前 sessionHelper 连接主动发送：",
+		"正例1：\n[[DW_ROUTE_V1\n{\"to\":\"#developer\",\"body\":\"请核对X\"}\n]]",
+		"正例2：\n[[DW_ROUTE_V1\n{\"to\":\"@zzc#manager\",\"body\":\"第一行\\n第二行\"}\n]]",
+		"正例3：\n[[DW_ROUTE_V1\n{\n  \"to\": \"#reviewer\",\n  \"body\": \"请评审结论与测试\"\n}\n]]",
+		"反例1（普通 Markdown，不会路由）：# 标题",
+		"反例2（缺少结束行，不会路由）：[[DW_ROUTE_V1 {\"to\":\"#developer\",\"body\":\"x\"}",
+		"反例3（额外字段或非法收件人，不会路由）：[[DW_ROUTE_V1\\n{\"to\":\"all\",\"body\":\"x\",\"from\":\"fake\"}\\n]]",
+		"兼容旧环境也可用 best-effort 发信脚本：",
 		"  python3 ~/.dingwei/send.py <收件会话名> <正文>",
 		"收件会话名务必用【在线清单】文件里的精确名字（如 zzc-manager，不要用简称或旧名），脚本会自动补全 #key 地址。例如：",
 		"  python3 ~/.dingwei/send.py zzc-manager '【" + sessionName + "→zzc-manager】已收到，链路正常。'",
 		"⚠️ 收到别人消息后要回复，也必须用本脚本发回给对方——直接在 CLI 里回答无效（平台只回传飞书来源的消息）。",
 		"  回复的收件人 = 对方消息里【X→你】中的那个 X（用精确会话名）。长正文改用 --file <文件路径>。",
 		"",
-		"AI CLI主动发起的真实机制：当你的assistant输出以 #会话名 正文 或 @成员#会话名 正文 开头时，sessionHelper会把这行输出转成DingWei主动信封并交给Hub路由；对方收到后可以回复。",
-		"例如：#developer 请核对X",
+		"旧的 #会话名 正文 / @成员#会话名 正文 仍作为严格 legacy fallback。控制块只允许 to/body，Hub 收到的 from 永远由 helper 填写，不能伪造。",
+		"legacy 示例：#developer 请核对X",
 		"",
 		"协作礼仪：消息要简明，说清诉求与来源，不刷屏。发给队友的正文第一行建议自报身份，例如【" + sessionName + "→manager】。",
 		"",
@@ -2630,6 +2641,28 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		h.unclaimEnvelope(env.ID, sig)
 		return fmt.Errorf("session %s offline", sessionName)
 	}
+	if ackInbound && h.sessionSupportsDeliveryACK(c) && h.Repo != nil {
+		if env.Meta == nil {
+			env.Meta = map[string]any{}
+		}
+		deliveryID := "dlv_" + randomHex(16)
+		env.Meta["type"] = "delivery"
+		env.Meta["delivery_id"] = deliveryID
+		env.Meta["delivery_version"] = 1
+		env.Meta["ack_required"] = true
+		env.Meta["source_message_id"] = env.ID
+		payload, err := json.Marshal(env)
+		if err != nil {
+			h.unclaimEnvelope(env.ID, sig)
+			return err
+		}
+		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: "feishu_inbound"}); err != nil {
+			h.unclaimEnvelope(env.ID, sig)
+			return err
+		}
+		h.drainSessionDeliveries(ctx, c)
+		return nil
+	}
 	if err := c.write(ctx, env); err != nil {
 		h.unclaimEnvelope(env.ID, sig)
 		return err
@@ -2638,6 +2671,110 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		_ = h.Repo.AckMessage(ctx, env.ID)
 	}
 	return nil
+}
+
+func (h *Hub) sessionSupportsDeliveryACK(c *sessionClient) bool {
+	c.stateMu.Lock()
+	defer c.stateMu.Unlock()
+	return c.deliveryACKV1
+}
+
+func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") != "session_capabilities" {
+		return false
+	}
+	c.stateMu.Lock()
+	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
+	c.stateMu.Unlock()
+	if h.sessionSupportsDeliveryACK(c) {
+		go h.drainSessionDeliveries(context.Background(), c)
+	}
+	return true
+}
+
+func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") != "delivery_ack" || h.Repo == nil {
+		return false
+	}
+	id := metaString(env.Meta, "delivery_id")
+	state := metaString(env.Meta, "state")
+	if id == "" || (state != "delivered" && state != "processed" && state != "failed") {
+		return true
+	}
+	d, err := h.Repo.GetSessionDelivery(ctx, id)
+	if err != nil || d == nil {
+		return true
+	}
+	if d.KeyID != c.keyID || d.SessionName != c.sessionName || d.State == "dead" || d.State == "cancelled" {
+		return true
+	}
+	if state == "processed" {
+		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
+		if d.SourceMessageID != "" {
+			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
+		}
+		go h.drainSessionDeliveries(context.Background(), c)
+	} else if state == "failed" {
+		retryable := metaBool(env.Meta, "retryable")
+		if retryable {
+			_ = h.Repo.UpdateSessionDelivery(ctx, id, "queued", metaString(env.Meta, "reason"), time.Now().UTC().Add(2*time.Second))
+			h.scheduleSessionDeliveryDrain(c, 2*time.Second)
+		} else {
+			_ = h.Repo.UpdateSessionDelivery(ctx, id, "dead", metaString(env.Meta, "reason"), time.Now().UTC())
+			go h.drainSessionDeliveries(context.Background(), c)
+		}
+	} else if d.State != "processed" {
+		_ = h.Repo.UpdateSessionDelivery(ctx, id, "delivered", "", time.Now().UTC().Add(2*time.Minute))
+		h.scheduleSessionDeliveryDrain(c, 2*time.Minute)
+		if position := metaInt(env.Meta, "queue_position"); position > 0 {
+			h.notifyDeliveryQueued(ctx, *d, position)
+		}
+	}
+	return true
+}
+
+func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
+	if h.Repo == nil || !h.sessionSupportsDeliveryACK(c) {
+		return
+	}
+	for {
+		d, err := h.Repo.ClaimSessionDelivery(ctx, c.keyID, c.sessionName, time.Now().UTC())
+		if err != nil || d == nil {
+			return
+		}
+		var env model.Envelope
+		if err := json.Unmarshal([]byte(d.Envelope), &env); err != nil {
+			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", err.Error(), time.Now().UTC())
+			continue
+		}
+		if err := c.write(ctx, env); err != nil {
+			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "queued", err.Error(), time.Now().UTC().Add(5*time.Second))
+			return
+		}
+		delay := time.Until(d.NextAttemptAt)
+		if delay <= 0 {
+			delay = time.Second
+		}
+		h.scheduleSessionDeliveryDrain(c, delay)
+		return
+	}
+}
+
+func (h *Hub) scheduleSessionDeliveryDrain(c *sessionClient, delay time.Duration) {
+	if delay < 10*time.Millisecond {
+		delay = 10 * time.Millisecond
+	}
+	time.AfterFunc(delay, func() { h.drainSessionDeliveries(context.Background(), c) })
+}
+
+func (h *Hub) notifyDeliveryQueued(ctx context.Context, d model.SessionDelivery, position int) {
+	var original model.Envelope
+	if json.Unmarshal([]byte(d.Envelope), &original) != nil || original.From == "" {
+		return
+	}
+	status := model.Envelope{ID: "delivery_status_" + randomHex(8), From: sessionAddress(d.SessionName, d.KeyID), To: original.From,
+		Body: fmt.Sprintf("消息已接收，前面还有 %d 条待处理", position), Meta: map[string]any{"type": "delivery_status", "no_mirror": true, "system": true}}
+	_ = h.RouteEnvelope(ctx, status)
 }
 
 func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope) error {
@@ -3518,6 +3655,23 @@ func metaString(meta map[string]any, key string) string {
 		return strings.TrimSpace(v)
 	}
 	return ""
+}
+
+func metaInt(meta map[string]any, key string) int {
+	if meta == nil {
+		return 0
+	}
+	switch value := meta[key].(type) {
+	case float64:
+		return int(value)
+	case int:
+		return value
+	case json.Number:
+		n, _ := value.Int64()
+		return int(n)
+	default:
+		return 0
+	}
 }
 
 func metaBool(meta map[string]any, key string) bool {
