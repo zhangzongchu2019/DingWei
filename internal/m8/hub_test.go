@@ -4256,21 +4256,6 @@ func readEnvelopeOfType(t *testing.T, ctx context.Context, conn *websocket.Conn,
 	return model.Envelope{}
 }
 
-func metaInt(meta map[string]any, key string) int {
-	switch v := meta[key].(type) {
-	case int:
-		return v
-	case int64:
-		return int(v)
-	case float64:
-		return int(v)
-	case json.Number:
-		n, _ := v.Int64()
-		return int(n)
-	default:
-		return 0
-	}
-}
 
 func assertNoEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn, wait time.Duration) {
 	t.Helper()
