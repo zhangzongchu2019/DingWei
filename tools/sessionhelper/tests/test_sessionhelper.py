@@ -428,6 +428,38 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(ws.sent[0]["body"], "current screen")
         self.assertEqual(ws.sent[0]["meta"]["type"], "terminal_output")
 
+    
+    def test_buffer_if_busy_always_enqueues_in_cli_mode_and_never_returns_false(self):
+        """Recv-loop hang fix (#4): buffer_if_busy must always return True in CLI
+        mode so recv_loop never calls the blocking process_inbound_message directly."""
+        class FakeAdapter:
+            call_count = 0
+            def is_idle(self):
+                self.call_count += 1
+                return self.call_count <= 2  # idle for first 2 calls, then "busy"
+
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        async def run():
+            helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli")))
+            helper.adapter = FakeAdapter()
+            ws = FakeWS()
+            env = {"body": "test", "from": "alice#FB-2642#UnifiedRobot",
+                   "meta": {"type": "inbound"}}
+            results = []
+            for _ in range(5):
+                results.append(await helper.buffer_if_busy(ws, env))
+            return results, helper, ws
+
+        results, helper, ws = asyncio.run(run())
+        self.assertTrue(all(results), "buffer_if_busy must always return True in CLI mode")
+        self.assertEqual(len(helper.pending_inbound), 5)
+        # busy ack only sent once per sender (dedup via busy_acked_from), at most 1 expected
+
     def test_recv_loop_filters_online_directory_without_handle(self):
         class FakeWS:
             def __init__(self, env):

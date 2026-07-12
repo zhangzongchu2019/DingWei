@@ -308,23 +308,23 @@ class SessionHelper:
         print(f"[provision] action={result.action} target={result.target} ok={result.ok} message={result.message}", flush=True)
 
     async def buffer_if_busy(self, ws, env: dict) -> bool:
+        # Route all CLI inbound messages through the drain loop so recv_loop
+        # never blocks on subprocess/pexpect injection (#4 recv_loop hang fix).
         if self.cfg.mode != "cli" or not hasattr(self.adapter, "is_idle"):
             return False
         try:
             idle = bool(await asyncio.to_thread(self.adapter.is_idle))
         except Exception:
             idle = True
-        if idle:
-            return False
         if len(self.pending_inbound) >= self.pending_inbound.maxlen:
             dropped = self.pending_inbound.popleft()
             print(f"[busy_buffer] drop oldest from={dropped.get('from')}", flush=True)
         self.pending_inbound.append(env)
         from_addr = str(env.get("from") or "")
-        if from_addr not in self.busy_acked_from:
+        if not idle and from_addr not in self.busy_acked_from:
             self.busy_acked_from.add(from_addr)
             await self.send_busy_ack(ws, env)
-        print(f"[busy_buffer] queued size={len(self.pending_inbound)} from={from_addr}", flush=True)
+        print(f"[busy_buffer] queued size={len(self.pending_inbound)} from={from_addr} idle={idle}", flush=True)
         return True
 
     async def send_busy_ack(self, ws, env: dict) -> None:

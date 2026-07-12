@@ -169,9 +169,9 @@ class CLIAdapter:
             return
         self.started_at = time.time()
         self.last_output_at = 0.0
-        subprocess.run(["tmux", "kill-session", "-t", self.tmux_session], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["tmux", "kill-session", "-t", self.tmux_session], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
         cmd = ["tmux", "new-session", "-d", "-s", self.tmux_session, "-c", self.cwd, shlex.join(self.command)]
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, timeout=30)
         deadline = time.time() + self.cfg.cli_ready_timeout
         last_pane = ""
         last_change = time.time()
@@ -201,7 +201,7 @@ class CLIAdapter:
         self.stopping.set()
         self.closed.set()
         if self.launch_mode == "tmux":
-            subprocess.run(["tmux", "kill-session", "-t", self.tmux_session], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(["tmux", "kill-session", "-t", self.tmux_session], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
             return
         child = self.child
         if child is None:
@@ -287,7 +287,7 @@ class CLIAdapter:
 
     def submit_enter(self) -> None:
         if self.launch_mode == "tmux":
-            subprocess.run(["tmux", "send-keys", "-t", self.tmux_session, "Enter"], check=False)
+            subprocess.run(["tmux", "send-keys", "-t", self.tmux_session, "Enter"], check=False, timeout=5)
             return
         if self.child is not None:
             self.child.send("\r")
@@ -300,7 +300,7 @@ class CLIAdapter:
         self.web_typing_until = time.time() + 0.8
         with self.write_lock:
             if self.launch_mode == "tmux":
-                subprocess.run(["tmux", "send-keys", "-t", self.tmux_session, "-l", data], check=False)
+                subprocess.run(["tmux", "send-keys", "-t", self.tmux_session, "-l", data], check=False, timeout=5)
                 return
             if self.child is not None:
                 self.child.send(data)
@@ -334,9 +334,9 @@ class CLIAdapter:
         prepared = self.prepare_input_text(text)
         if prepared.startswith(BRACKETED_PASTE_START) and prepared.endswith(BRACKETED_PASTE_END):
             for chunk in (BRACKETED_PASTE_START, text, BRACKETED_PASTE_END):
-                subprocess.run(["tmux", "send-keys", "-t", self.tmux_session, "-l", chunk], check=True)
+                subprocess.run(["tmux", "send-keys", "-t", self.tmux_session, "-l", chunk], check=True, timeout=5)
             return
-        subprocess.run(["tmux", "send-keys", "-t", self.tmux_session, "-l", prepared], check=True)
+        subprocess.run(["tmux", "send-keys", "-t", self.tmux_session, "-l", prepared], check=True, timeout=5)
 
     def prepare_input_text(self, text: str) -> str:
         if not is_multiline(text):
