@@ -62,7 +62,7 @@ AI CLI 需要用户自行安装并登录，本工具只托管已可用的 CLI，
 | `SH_MIRROR_TO` | 可选，默认镜像目标地址 |
 | `SH_BUSY_BUFFER_MAX` | CLI 忙时本地缓存上限，默认 `100`；超限丢最旧并记录日志 |
 | `SH_BUSY_REPLY_TEXT` | CLI 忙时发给请求方的节流回执文本 |
-| `SH_PROVISION_ALLOWED_HOSTS` | provision 下载 host 白名单，逗号分隔，默认 `ts.wegoab.com` |
+| `SH_PROVISION_ALLOWED_HOSTS` | provision 下载 host 白名单，逗号分隔，默认 `dingwei.wegoab.com` |
 | `SH_PROVISION_AUDIT_DB` | provision 审计 SQLite 路径，默认 `~/.dingwei/sessionhelper_audit.db` |
 | `SH_TARGET_GROUP` | 可选，producer 输出目标飞书群 chat_id；普通会话留空不会向群发 |
 | `SH_TARGET_BOT` | 可选，producer 发群时强制使用的 bot_channel；留空则由 DingWei 按群归属解析 |

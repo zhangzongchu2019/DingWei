@@ -103,7 +103,7 @@ class Provisioner:
         host = (urlparse(str(meta.get("url") or "")).hostname or "").lower()
         allowed = {h.lower() for h in self.cfg.provision_allowed_hosts}
         if not host or host not in allowed:
-            raise ProvisionError(f"url host not allowed: {host}")
+            raise ProvisionError(f"url host denied: {host}")
 
     def download_and_verify(self, url: str, expected_sha: str) -> Path:
         tmpdir = Path(tempfile.mkdtemp(prefix="sessionhelper-provision-"))

@@ -713,8 +713,23 @@ func TestAdminProvisionTargetLimitAndVersionMonotonic(t *testing.T) {
 }
 
 func TestAdminProvisionValidatesURLHost(t *testing.T) {
-	t.Setenv("WP_PROVISION_ALLOWED_HOSTS", "ts.wegoab.com,localhost")
-	if err := validateProvisionURL("https://ts.wegoab.com/a.tar", provisionAllowedHosts()); err != nil {
+	t.Setenv("WP_PROVISION_ALLOWED_HOSTS", "")
+	t.Setenv("SH_PROVISION_ALLOWED_HOSTS", "")
+	defaultHosts := provisionAllowedHosts()
+	if !defaultHosts["dingwei.wegoab.com"] {
+		t.Fatal("default provision hosts must include dingwei.wegoab.com")
+	}
+	if defaultHosts["ts.wegoab.com"] {
+		t.Fatal("default provision hosts must not include legacy ts.wegoab.com")
+	}
+	if err := validateProvisionURL("https://dingwei.wegoab.com/a.tar", defaultHosts); err != nil {
+		t.Fatalf("default dingwei host should pass: %v", err)
+	}
+	if err := validateProvisionURL("https://ts.wegoab.com/a.tar", defaultHosts); err == nil {
+		t.Fatal("legacy ts host should not be allowed by default")
+	}
+	t.Setenv("WP_PROVISION_ALLOWED_HOSTS", "dingwei.wegoab.com,localhost")
+	if err := validateProvisionURL("https://dingwei.wegoab.com/a.tar", provisionAllowedHosts()); err != nil {
 		t.Fatal(err)
 	}
 	if err := validateProvisionURL("https://evil.example/a.tar", provisionAllowedHosts()); err == nil {

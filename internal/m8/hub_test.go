@@ -4097,7 +4097,7 @@ func TestSendProvisionWritesSystemEnvelopeToOnlineSession(t *testing.T) {
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	waitSessionOnline(t, hub, key.ID, "developer")
 
-	if err := hub.SendProvision(ctx, key.ID, "developer", "install_skill", "https://ts.wegoab.com/skill.tar", strings.Repeat("a", 64), "2.2.0", "demo", map[string]any{"channel": "gray"}); err != nil {
+	if err := hub.SendProvision(ctx, key.ID, "developer", "install_skill", "https://dingwei.wegoab.com/skill.tar", strings.Repeat("a", 64), "2.2.0", "demo", map[string]any{"channel": "gray"}); err != nil {
 		t.Fatal(err)
 	}
 	got := readEnvelope(t, ctx, conn)
@@ -4113,7 +4113,7 @@ func TestSendProvisionWritesSystemEnvelopeToOnlineSession(t *testing.T) {
 	if _, ok := got.Meta["extra"].(map[string]any); !ok {
 		t.Fatalf("extra missing: %+v", got.Meta)
 	}
-	if err := hub.SendProvision(ctx, key.ID, "offline", "install_skill", "https://ts.wegoab.com/skill.tar", strings.Repeat("a", 64), "2.2.0", "demo", nil); err == nil {
+	if err := hub.SendProvision(ctx, key.ID, "offline", "install_skill", "https://dingwei.wegoab.com/skill.tar", strings.Repeat("a", 64), "2.2.0", "demo", nil); err == nil {
 		t.Fatal("offline provision should fail")
 	}
 }

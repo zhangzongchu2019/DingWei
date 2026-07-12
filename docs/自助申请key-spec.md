@@ -43,7 +43,7 @@
 —— 安装配置 DingWei 客户端(sessionHelper) ——
 
 [Linux]
-1. 下载接入包: curl -fsSL https://ts.wegoab.com/dl/dingwei-linux.tar.gz -o ~/dingwei.tgz && tar xzf ~/dingwei.tgz -C ~/dingwei
+1. 下载接入包: curl -fsSL https://dingwei.wegoab.com/dl/dingwei-linux.tar.gz -o ~/dingwei.tgz && tar xzf ~/dingwei.tgz -C ~/dingwei
 2. 前提: 本机已装并登录好 AI CLI(claude/codex/opencode 任一)
 3. 改 config: 填 SH_KEY_ID=<key_id> SH_SECRET=<secret> SH_SESSION_NAME=<会话名> SH_CLI=<cli> SH_CLI_CWD=<工作目录>
 4. 首次信任工作目录(claude 需要): cd <工作目录> && claude --dangerously-skip-permissions → 选“信任” → /exit
@@ -52,7 +52,7 @@
 
 [macOS]
 1. 前提: 装好 claude + 包装脚本(key 写死进脚本，勿用变量)
-2. 下载: env -u SSL_CERT_FILE curl -fsSL https://ts.wegoab.com/dl/dingwei-mac.tar.gz -o ~/Downloads/dingwei-mac.tar.gz
+2. 下载: env -u SSL_CERT_FILE curl -fsSL https://dingwei.wegoab.com/dl/dingwei-mac.tar.gz -o ~/Downloads/dingwei-mac.tar.gz
 3. 解压: mkdir -p ~/dingwei && tar xzf ~/Downloads/dingwei-mac.tar.gz -C ~/dingwei
 4. 改 config-*: 填 key_id/secret/会话名/CLI/工作目录
 5. 首次信任工作目录(=SH_CLI_CWD，不是安装目录): cd <SH_CLI_CWD> && claude-deepseek --dangerously-skip-permissions → Enter信任 → /exit

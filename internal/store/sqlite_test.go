@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -677,6 +678,32 @@ func TestApproveKeyApplicationWithGrantCommitsCredentialAndGrantAtomically(t *te
 	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
 	if err != nil || msg == nil || msg.ID != "grant-ka1" || strings.Contains(msg.Content, "wp_") {
 		t.Fatalf("grant message=%+v err=%v", msg, err)
+	}
+}
+
+func TestListAPIKeyAccountsForKeys(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	for _, pair := range [][2]string{
+		{"FB-key-1", "dev:personal:ou_one"},
+		{"FB-key-1", "dev:group:oc_one"},
+		{"FB-key-2", "dev:personal:ou_two"},
+	} {
+		if err := db.BindAPIKeyAccount(ctx, pair[0], pair[1]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := db.ListAPIKeyAccountsForKeys(ctx, []string{"FB-key-2", "FB-key-1", "FB-key-1", ""})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got["FB-key-1"], []string{"dev:group:oc_one", "dev:personal:ou_one"}) {
+		t.Fatalf("key1 accounts=%+v", got["FB-key-1"])
+	}
+	if !reflect.DeepEqual(got["FB-key-2"], []string{"dev:personal:ou_two"}) {
+		t.Fatalf("key2 accounts=%+v", got["FB-key-2"])
+	}
+	if _, ok := got[""]; ok {
+		t.Fatalf("empty key should not be present: %+v", got)
 	}
 }
 

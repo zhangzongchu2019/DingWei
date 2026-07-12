@@ -7,7 +7,7 @@
 
 ## 前置条件
 
-- [ ] developer 已完成 feat/provision-sender 服务端实现并部署到 ts.wegoab.com
+- [ ] developer 已完成 feat/provision-sender 服务端实现并部署到 dingwei.wegoab.com
 - [ ] zzc-tester (Linux 美洲机) sessionHelper 在线
 - [ ] zzc-mac (macOS) sessionHelper 在线
 - [ ] Admin 后台 /admin/provision 可访问
@@ -149,7 +149,7 @@
 1. Admin 提交 provision，url 指向非白名单 host (如 https://evil.com/skill.tar.gz)
 
 **预期 5c**:
-- ✅ 服务端在发送前校验 url host，拒绝并提示 "url host not allowed"
+- ✅ 服务端在发送前校验 url host，拒绝并提示 "url host denied"
 
 **Linux 结果**: [ ] PASS / [ ] FAIL
 **macOS 结果**: [ ] PASS / [ ] FAIL
@@ -186,7 +186,7 @@
 **预期结果**:
 - ✅ 文件保存到 /dl/<filename>
 - ✅ sha256 自动回填到表单
-- ✅ url 自动生成为 https://ts.wegoab.com/dl/<filename>
+- ✅ url 自动生成为 https://dingwei.wegoab.com/dl/<filename>
 
 **Linux 结果**: [ ] PASS / [ ] FAIL
 

@@ -43,7 +43,7 @@ from sessionhelper.config import default_inbox_db, detect_full_session_name, det
 from sessionhelper.llm import PROVIDERS
 from sessionhelper.protocol import AddressBook, is_mirror_control, reply_target
 from sessionhelper.provision import Provisioner, compare_versions
-from sessionhelper.send_dingwei import temporary_session_name
+from sessionhelper.send_dingwei import DEFAULT_WS_BASE, temporary_session_name
 from sessionhelper.inbox import DeliveryInbox
 
 
@@ -172,10 +172,173 @@ class SessionHelperTest(unittest.TestCase):
             self.assertEqual(delivery_id, "dlv_legacy")
             self.assertEqual(env["body"], "legacy")
 
+    def test_delivery_inbox_imports_matching_pending_rows_from_old_shared_db(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy_path = Path(tmp) / "sessionhelper_inbox.db"
+            target_path = Path(tmp) / "sessionhelper_inbox-home.db"
+            with sqlite3.connect(legacy_path) as db:
+                db.execute(
+                    """CREATE TABLE delivery_inbox (
+                        delivery_id TEXT PRIMARY KEY,
+                        envelope_json TEXT NOT NULL,
+                        state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed')),
+                        attempts INTEGER NOT NULL DEFAULT 0,
+                        error TEXT,
+                        received_at REAL NOT NULL,
+                        updated_at REAL NOT NULL
+                    )"""
+                )
+                db.executemany(
+                    """INSERT INTO delivery_inbox(delivery_id,envelope_json,state,attempts,received_at,updated_at)
+                       VALUES(?,?,?,?,?,?)""",
+                    [
+                        (
+                            "dlv_home_full",
+                            json.dumps({"to": "zzc-home-2642#FB-2642", "body": "home full"}),
+                            "processing",
+                            2,
+                            2.0,
+                            2.0,
+                        ),
+                        ("dlv_tester", json.dumps({"to": "tester#FB-2642", "body": "tester"}), "received", 0, 3.0, 3.0),
+                        ("dlv_missing_to", json.dumps({"body": "missing to"}), "received", 0, 4.0, 4.0),
+                        ("dlv_processed", json.dumps({"to": "home#FB-2642", "body": "processed"}), "processed", 1, 5.0, 5.0),
+                    ],
+                )
+
+            stderr = io.StringIO()
+            with mock.patch("sys.stderr", stderr):
+                inbox = DeliveryInbox(str(target_path), 10, "home", "home", "zzc-home-2642", "FB-2642")
+            self.assertIn("[delivery][legacy_inbox] imported 1/1 pending deliveries", stderr.getvalue())
+            self.assertIn("[delivery][legacy_inbox][WARN] skipped 1 pending deliveries without parseable target", stderr.getvalue())
+            self.assertIn("[delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions", stderr.getvalue())
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_home_full")
+            self.assertEqual(env["body"], "home full")
+            self.assertIsNone(inbox.claim_next())
+
+    def test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy_path = Path(tmp) / "sessionhelper_inbox.db"
+            target_path = Path(tmp) / "sessionhelper_inbox-home.db"
+            with sqlite3.connect(legacy_path) as db:
+                db.execute(
+                    """CREATE TABLE delivery_inbox (
+                        delivery_id TEXT NOT NULL,
+                        session_name TEXT NOT NULL,
+                        envelope_json TEXT NOT NULL,
+                        state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed')),
+                        attempts INTEGER NOT NULL DEFAULT 0,
+                        error TEXT,
+                        received_at REAL NOT NULL,
+                        updated_at REAL NOT NULL,
+                        PRIMARY KEY(session_name, delivery_id)
+                    )"""
+                )
+                db.executemany(
+                    """INSERT INTO delivery_inbox(delivery_id,session_name,envelope_json,state,received_at,updated_at)
+                       VALUES(?,?,?,?,?,?)""",
+                    [
+                        ("dlv_home", "home", json.dumps({"body": "home"}), "received", 1.0, 1.0),
+                        ("dlv_tester", "tester", json.dumps({"body": "tester"}), "received", 2.0, 2.0),
+                        (
+                            "dlv_empty_home",
+                            "",
+                            json.dumps({"to": "zzc-home-2642#FB-2642", "body": "empty home"}),
+                            "received",
+                            3.0,
+                            3.0,
+                        ),
+                        (
+                            "dlv_empty_tester",
+                            "",
+                            json.dumps({"to": "tester#FB-2642", "body": "empty tester"}),
+                            "received",
+                            4.0,
+                            4.0,
+                        ),
+                    ],
+                )
+
+            inbox = DeliveryInbox(str(target_path), 10, "home", "home", "zzc-home-2642", "FB-2642")
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_home")
+            self.assertEqual(env["body"], "home")
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_empty_home")
+            self.assertEqual(env["body"], "empty home")
+            self.assertIsNone(inbox.claim_next())
+
+    def test_delivery_inbox_warns_when_old_shared_db_cannot_be_imported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy_path = Path(tmp) / "sessionhelper_inbox.db"
+            target_path = Path(tmp) / "sessionhelper_inbox-home.db"
+            with sqlite3.connect(legacy_path) as db:
+                db.execute("CREATE TABLE delivery_inbox (delivery_id TEXT PRIMARY KEY)")
+                db.execute("INSERT INTO delivery_inbox(delivery_id) VALUES('dlv_bad')")
+
+            stderr = io.StringIO()
+            with mock.patch("sys.stderr", stderr):
+                inbox = DeliveryInbox(str(target_path), 10, "home")
+            self.assertIn("[delivery][legacy_inbox][WARN] failed to import pending deliveries", stderr.getvalue())
+            inbox.accept("dlv_new", {"body": "new"})
+            self.assertEqual(inbox.claim_next()[0], "dlv_new")
+
+    def test_delivery_inbox_matches_registered_session_shape_by_short_name_and_key_tail(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy_path = Path(tmp) / "sessionhelper_inbox.db"
+            target_path = Path(tmp) / "sessionhelper_inbox-manager.db"
+            with sqlite3.connect(legacy_path) as db:
+                db.execute(
+                    """CREATE TABLE delivery_inbox (
+                        delivery_id TEXT PRIMARY KEY,
+                        envelope_json TEXT NOT NULL,
+                        state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed')),
+                        attempts INTEGER NOT NULL DEFAULT 0,
+                        error TEXT,
+                        received_at REAL NOT NULL,
+                        updated_at REAL NOT NULL
+                    )"""
+                )
+                db.executemany(
+                    """INSERT INTO delivery_inbox(delivery_id,envelope_json,state,attempts,received_at,updated_at)
+                       VALUES(?,?,?,?,?,?)""",
+                    [
+                        (
+                            "dlv_manager",
+                            json.dumps({"to": "renamed-manager-2642#FB-2642", "body": "manager"}),
+                            "received",
+                            0,
+                            1.0,
+                            1.0,
+                        ),
+                        (
+                            "dlv_other_tail",
+                            json.dumps({"to": "renamed-manager-9999#FB-2642", "body": "other tail"}),
+                            "received",
+                            0,
+                            2.0,
+                            2.0,
+                        ),
+                    ],
+                )
+
+            stderr = io.StringIO()
+            with mock.patch("sys.stderr", stderr):
+                inbox = DeliveryInbox(str(target_path), 10, "manager", "manager", "", "FB-2642")
+            self.assertIn("[delivery][legacy_inbox] imported 1/1 pending deliveries", stderr.getvalue())
+            self.assertIn("[delivery][legacy_inbox][WARN] skipped 1 pending deliveries for other sessions", stderr.getvalue())
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_manager")
+            self.assertEqual(env["body"], "manager")
+            self.assertIsNone(inbox.claim_next())
+
     def test_load_config_required_and_defaults(self):
         cfg = load_config(BASE_ENV)
         self.assertEqual(cfg.session_name, "home")
         self.assertEqual(cfg.key_id, "FB-2642")
+        self.assertEqual(cfg.owner, "zzc")
+        self.assertEqual(cfg.registered_session_name, "zzc-home-2642")
         self.assertEqual(cfg.mode, "echo")
         self.assertEqual(cfg.cli_launch, "")
         self.assertEqual(cfg.cli_ready_timeout, 90.0)
@@ -185,6 +348,7 @@ class SessionHelperTest(unittest.TestCase):
         self.assertFalse(cfg.producer)
         self.assertFalse(cfg.no_directory)
         self.assertTrue(cfg.agent_route)
+        self.assertEqual(cfg.provision_allowed_hosts, ("dingwei.wegoab.com",))
         self.assertEqual(cfg.target_group, "")
         self.assertEqual(cfg.target_bot, "")
         self.assertEqual(cfg.opencode_db, "")
@@ -200,6 +364,12 @@ class SessionHelperTest(unittest.TestCase):
 
         self.assertEqual(default_inbox_db("Dev 55/Prod"), "~/.dingwei/sessionhelper_inbox-dev_55_prod.db")
 
+    def test_provision_allowed_hosts_default_is_hub_not_legacy_domain(self):
+        env = {k: v for k, v in BASE_ENV.items() if k != "SH_PROVISION_ALLOWED_HOSTS"}
+        hosts = load_config(env).provision_allowed_hosts
+        self.assertIn("dingwei.wegoab.com", hosts)
+        self.assertNotIn("ts.wegoab.com", hosts)
+
     def test_load_config_accepts_missing_owner_and_validates_short_name(self):
         cfg = load_config({k: v for k, v in BASE_ENV.items() if k != "SH_OWNER"})
         self.assertEqual(cfg.session_name, "home")
@@ -208,8 +378,9 @@ class SessionHelperTest(unittest.TestCase):
             load_config(dict(BASE_ENV, SH_SESSION_NAME="Dev-1"))
         self.assertIn("短名只能小写字母数字", str(bad_short.exception))
 
-        cfg = load_config(dict(BASE_ENV, SH_OWNER="Zzc", SH_SESSION_NAME="zzc-home-2642"))
-        self.assertEqual(cfg.session_name, "home")
+        with self.assertRaises(SystemExit) as bad_owner:
+            load_config(dict(BASE_ENV, SH_OWNER="Zzc", SH_SESSION_NAME="zzc-home-2642"))
+        self.assertIn("SH_OWNER 不合规", str(bad_owner.exception))
 
     def test_send_dingwei_temporary_session_name_is_compliant(self):
         self.assertEqual(
@@ -224,6 +395,9 @@ class SessionHelperTest(unittest.TestCase):
             temporary_session_name({"SH_SESSION_NAME": "Bad-Name", "SH_KEY_ID": "FB-key-1a2b"}),
             "sendernote",
         )
+
+    def test_send_dingwei_default_ws_base_uses_dingwei_host(self):
+        self.assertEqual(DEFAULT_WS_BASE, "wss://dingwei.wegoab.com")
 
     def test_ws_url_reports_tool_and_model_when_configured(self):
         cfg = load_config(dict(BASE_ENV, SH_TOOL="CODEX", SH_MODEL="gpt-5.5", SH_SESSION_FULL="sh-home-e0d12642"))
@@ -1012,7 +1186,7 @@ class SessionHelperTest(unittest.TestCase):
                 {
                     "from": "attacker#FB-2642",
                     "to": "home#FB-2642",
-                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://ts.wegoab.com/x", "sha256": "0" * 64},
+                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://dingwei.wegoab.com/x", "sha256": "0" * 64},
                 }
             )
             self.assertFalse(result.ok)
@@ -1031,9 +1205,14 @@ class SessionHelperTest(unittest.TestCase):
             }
             result = Provisioner(cfg).handle(base)
             self.assertFalse(result.ok)
-            self.assertIn("host not allowed", result.message)
+            self.assertIn("denied", result.message)
+            evil = json.loads(json.dumps(base))
+            evil["meta"]["url"] = "https://evil.example.com/x.tar"
+            result = Provisioner(cfg).handle(evil)
+            self.assertFalse(result.ok)
+            self.assertIn("denied", result.message)
             bad_sha = json.loads(json.dumps(base))
-            bad_sha["meta"]["url"] = "https://ts.wegoab.com/x"
+            bad_sha["meta"]["url"] = "https://dingwei.wegoab.com/x"
             bad_sha["meta"]["sha256"] = "abc"
             result = Provisioner(cfg).handle(bad_sha)
             self.assertFalse(result.ok)
@@ -1048,7 +1227,7 @@ class SessionHelperTest(unittest.TestCase):
             env = {
                 "from": "workpulse#FB-2642",
                 "to": "home#FB-2642",
-                "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/x", "sha256": "0" * 64},
+                "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://dingwei.wegoab.com/x", "sha256": "0" * 64},
             }
             with mock.patch.object(provisioner, "download_and_verify", side_effect=AssertionError("should not download")):
                 result = provisioner.handle(env)
@@ -1072,7 +1251,7 @@ class SessionHelperTest(unittest.TestCase):
                 env = {
                     "from": "workpulse#FB-2642",
                     "to": "home#FB-2642",
-                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/skill.tar", "sha256": "0" * 64},
+                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://dingwei.wegoab.com/skill.tar", "sha256": "0" * 64},
                 }
                 with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
                     result = provisioner.handle(env)
@@ -1092,7 +1271,7 @@ class SessionHelperTest(unittest.TestCase):
                 env = {
                     "from": "workpulse#FB-2642",
                     "to": "home#FB-2642",
-                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/mcp.json", "sha256": "0" * 64},
+                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://dingwei.wegoab.com/mcp.json", "sha256": "0" * 64},
                 }
                 with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
                     result = provisioner.handle(env)
@@ -1115,7 +1294,7 @@ class SessionHelperTest(unittest.TestCase):
                 env = {
                     "from": "workpulse#FB-2642",
                     "to": "home#FB-2642",
-                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/mcp.json", "sha256": "0" * 64},
+                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://dingwei.wegoab.com/mcp.json", "sha256": "0" * 64},
                 }
                 with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
                     result = provisioner.handle(env)
@@ -1146,11 +1325,11 @@ class SessionHelperTest(unittest.TestCase):
             provisioner = Provisioner(cfg)
             expected = hashlib.sha256(b"abcdef").hexdigest()
             with mock.patch("sessionhelper.provision.urllib.request.urlopen", return_value=FakeResponse([b"abc", b"def"])):
-                path = provisioner.download_and_verify("https://ts.wegoab.com/artifact", expected)
+                path = provisioner.download_and_verify("https://dingwei.wegoab.com/artifact", expected)
             self.assertEqual(path.read_bytes(), b"abcdef")
             with mock.patch("sessionhelper.provision.urllib.request.urlopen", return_value=FakeResponse([b"bad"])):
                 with self.assertRaises(Exception):
-                    provisioner.download_and_verify("https://ts.wegoab.com/artifact", expected)
+                    provisioner.download_and_verify("https://dingwei.wegoab.com/artifact", expected)
 
     def test_provision_rejects_tar_escape_and_links(self):
         with tempfile.TemporaryDirectory() as tmp:
