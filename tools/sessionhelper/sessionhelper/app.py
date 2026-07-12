@@ -15,6 +15,7 @@ from typing import Protocol
 from . import __version__
 from .config import Config, load_config
 from .llm import LLMProvider
+from .inbox import DeliveryInbox
 from .protocol import AddressBook, envelope, is_feishu_addr, is_mirror_control, reply_target, session_addr
 from .provision import Provisioner, is_provision_envelope
 
@@ -54,7 +55,9 @@ class MirrorState:
 
 
 COMM_SKILL_ACK = "DINGWEI_COMM_SKILL_INSTALLED"
-AGENT_ROUTE_RE = re.compile(r"^(#[A-Za-z0-9_.-]+|@[^\s#]+#[A-Za-z0-9_.-]+)\s+(.+)$", re.S)
+LEGACY_AGENT_ROUTE_RE = re.compile(r"^(#[A-Za-z0-9_.-]+|@[^\s#]+#[A-Za-z0-9_.-]+)\s+(.+)$", re.S)
+CONTROL_ROUTE_RE = re.compile(r"^\s*\[\[DW_ROUTE_V1\s*\n(?P<json>.*?)\n\]\]\s*$", re.S)
+ROUTE_BODY_MAX = 100_000
 
 
 def truthy_meta(value: object) -> bool:
@@ -99,7 +102,24 @@ def comm_skill_ack_envelope(book: AddressBook) -> dict:
 
 def agent_route_envelope(text: str, book: AddressBook) -> dict | None:
     text = str(text or "").strip()
-    match = AGENT_ROUTE_RE.match(text)
+    control = CONTROL_ROUTE_RE.match(text)
+    if control:
+        try:
+            payload = json.loads(control.group("json"))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return None
+        if not isinstance(payload, dict) or set(payload) != {"to", "body"}:
+            return None
+        if not isinstance(payload.get("to"), str) or not isinstance(payload.get("body"), str):
+            return None
+        to = payload["to"].strip()
+        body = payload["body"].strip()
+        if not re.fullmatch(r"#[A-Za-z0-9_.-]+|@[^\s#]+#[A-Za-z0-9_.-]+", to):
+            return None
+        if not body or len(body) > ROUTE_BODY_MAX:
+            return None
+        return envelope(to, body, book.self_addr, {"type": "agent_route", "no_mirror": True})
+    match = LEGACY_AGENT_ROUTE_RE.match(text)
     if not match:
         return None
     to, body = match.group(1).strip(), match.group(2).strip()
@@ -117,6 +137,7 @@ class SessionHelper:
         self.comm_skill_installed = False
         self.last_online_list = ""
         self.pending_inbound: deque[dict] = deque(maxlen=max(1, cfg.busy_buffer_max))
+        self.delivery_inbox = DeliveryInbox(cfg.inbox_db, cfg.busy_buffer_max)
         self.busy_acked_from: set[str] = set()
         self.provisioner = Provisioner(cfg)
         self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
@@ -233,10 +254,17 @@ class SessionHelper:
                     except asyncio.CancelledError:
                         pass
             else:
+                await ws.send(json.dumps(envelope(
+                    session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
+                    {"type": "session_capabilities", "delivery_ack_v1": True,
+                     "persistent_inbox_v1": True, "agent_route_v2": True,
+                     "processed_semantics": "accepted_to_cli", "helper_version": __version__},
+                ), ensure_ascii=False))
                 hb = asyncio.create_task(self.online_list_heartbeat_loop())
                 try:
                     await asyncio.gather(
                         self.recv_loop(ws),
+                        self.delivery_worker_loop(ws),
                         self.pending_drain_loop(ws),
                         self.terminal_loop(ws),
                         self.outbox_loop(ws),
@@ -269,6 +297,9 @@ class SessionHelper:
                 continue
             if is_provision_envelope(env):
                 await self.handle_provision(ws, env)
+                continue
+            if self.is_delivery(env):
+                await self.accept_delivery(ws, env)
                 continue
             from_addr = str(env.get("from") or "")
             print(f"[recv] from={from_addr} to={env.get('to')} body={env.get('body')!r}", flush=True)
@@ -366,6 +397,50 @@ class SessionHelper:
         body = self.reply_body(env, reply_body)
         await ws.send(json.dumps(envelope(to, body, self.book.self_addr, meta), ensure_ascii=False))
         print(f"[reply] to={to} meta={meta}", flush=True)
+
+    def is_delivery(self, env: dict) -> bool:
+        meta = env.get("meta") or {}
+        return meta.get("type") == "delivery" and bool(meta.get("ack_required"))
+
+    def delivery_ack(self, delivery_id: str, state: str, **extra: object) -> dict:
+        meta = {"type": "delivery_ack", "delivery_id": delivery_id, "state": state, "no_mirror": True}
+        meta.update(extra)
+        return envelope(session_addr("workpulse", self.book.key_id), "", self.book.self_addr, meta)
+
+    async def accept_delivery(self, ws, env: dict) -> None:
+        delivery_id = str((env.get("meta") or {}).get("delivery_id") or "").strip()
+        if not delivery_id:
+            return
+        try:
+            state, position, depth = await asyncio.to_thread(self.delivery_inbox.accept, delivery_id, env)
+            extra = {"queue_position": position, "queue_depth": depth} if state == "delivered" else {}
+            if state == "failed":
+                extra = {"reason": "cli_injection_failed", "retryable": True}
+            ack = self.delivery_ack(delivery_id, state, **extra)
+        except OverflowError:
+            ack = self.delivery_ack(delivery_id, "failed", reason="queue_full", retryable=True)
+        except Exception as exc:
+            print(f"[delivery] inbox unavailable: {exc}", flush=True)
+            ack = self.delivery_ack(delivery_id, "failed", reason="inbox_unavailable", retryable=True)
+        await ws.send(json.dumps(ack, ensure_ascii=False))
+
+    async def delivery_worker_loop(self, ws) -> None:
+        while True:
+            item = await asyncio.to_thread(self.delivery_inbox.claim_next)
+            if item is None:
+                await asyncio.sleep(0.2)
+                continue
+            delivery_id, env = item
+            try:
+                await self.process_inbound_message(ws, env)
+            except Exception as exc:
+                await asyncio.to_thread(self.delivery_inbox.finish, delivery_id, str(exc))
+                await ws.send(json.dumps(self.delivery_ack(
+                    delivery_id, "failed", reason="cli_injection_failed", retryable=True
+                ), ensure_ascii=False))
+            else:
+                await asyncio.to_thread(self.delivery_inbox.finish, delivery_id)
+                await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
 
     def reply_body(self, env: dict, reply_body: str) -> str:
         prefix = str((env.get("meta") or {}).get("reply_prefix") or f"【{self.cfg.session_name}】")

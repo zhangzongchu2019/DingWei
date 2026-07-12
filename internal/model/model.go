@@ -77,6 +77,24 @@ type Message struct {
 	ProcessedAt      *time.Time
 }
 
+// SessionDelivery is a durable Hub-to-session delivery record.
+type SessionDelivery struct {
+	ID              string
+	KeyID           string
+	SessionName     string
+	Envelope        string
+	SourceMessageID string
+	SourceType      string
+	State           string
+	Attempts        int
+	NextAttemptAt   time.Time
+	LeaseUntil      time.Time
+	LastError       string
+	CreatedAt       time.Time
+	DeliveredAt     *time.Time
+	ProcessedAt     *time.Time
+}
+
 // MessageFilter 最近消息只读筛选条件。
 type MessageFilter struct {
 	BotChannelID string

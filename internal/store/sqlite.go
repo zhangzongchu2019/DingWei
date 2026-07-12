@@ -1278,6 +1278,121 @@ func (s *SQLite) AckMessage(ctx context.Context, id string) error {
 	return err
 }
 
+func (s *SQLite) EnqueueSessionDelivery(ctx context.Context, d model.SessionDelivery) error {
+	if d.ID == "" {
+		d.ID = newID()
+	}
+	if d.SourceType == "" {
+		d.SourceType = "feishu_inbound"
+	}
+	if d.State == "" {
+		d.State = "queued"
+	}
+	if d.CreatedAt.IsZero() {
+		d.CreatedAt = time.Now().UTC()
+	}
+	if d.NextAttemptAt.IsZero() {
+		d.NextAttemptAt = d.CreatedAt
+	}
+	_, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO session_delivery
+		(id,key_id,session_name,envelope_json,source_message_id,source_type,state,attempts,next_attempt_at,last_error,created_at,updated_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, d.ID, d.KeyID, d.SessionName, d.Envelope, nullString(d.SourceMessageID), d.SourceType, d.State, d.Attempts, d.NextAttemptAt.UTC().Format(time.RFC3339Nano), d.LastError, d.CreatedAt.UTC().Format(time.RFC3339Nano), d.CreatedAt.UTC().Format(time.RFC3339Nano))
+	return err
+}
+
+func scanSessionDelivery(row rowScanner) (*model.SessionDelivery, error) {
+	var d model.SessionDelivery
+	var next, created string
+	var lease, delivered, processed sql.NullString
+	if err := row.Scan(&d.ID, &d.KeyID, &d.SessionName, &d.Envelope, &d.SourceMessageID, &d.SourceType, &d.State, &d.Attempts, &next, &lease, &d.LastError, &created, &delivered, &processed); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	d.NextAttemptAt, _ = time.Parse(time.RFC3339Nano, next)
+	d.CreatedAt, _ = time.Parse(time.RFC3339Nano, created)
+	if lease.Valid {
+		d.LeaseUntil, _ = time.Parse(time.RFC3339Nano, lease.String)
+	}
+	if delivered.Valid {
+		value, _ := time.Parse(time.RFC3339Nano, delivered.String)
+		d.DeliveredAt = &value
+	}
+	if processed.Valid {
+		value, _ := time.Parse(time.RFC3339Nano, processed.String)
+		d.ProcessedAt = &value
+	}
+	return &d, nil
+}
+
+const sessionDeliverySelect = `SELECT id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at FROM session_delivery`
+
+func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	nowText := now.UTC().Format(time.RFC3339Nano)
+	// Expired delivered records no longer hold the single in-flight slot. Prefer a
+	// never-sent FIFO item so one stuck delivery cannot starve the whole session.
+	_, err = tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',last_error='delivery_expired',updated_at=?
+		WHERE key_id=? AND session_name=? AND state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?)`,
+		nowText, keyID, sessionName, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		return nil, err
+	}
+	var id string
+	err = tx.QueryRowContext(ctx, `SELECT id FROM session_delivery d
+		WHERE key_id=? AND session_name=? AND state IN ('queued','sent','delivered') AND next_attempt_at<=?
+		AND NOT EXISTS (SELECT 1 FROM session_delivery active WHERE active.key_id=d.key_id AND active.session_name=d.session_name AND active.state IN ('sent','delivered') AND active.next_attempt_at>?)
+		ORDER BY CASE WHEN state='queued' AND attempts=0 THEN 0 ELSE 1 END,created_at,id LIMIT 1`, keyID, sessionName, nowText, nowText).Scan(&id)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var attempts int
+	if err = tx.QueryRowContext(ctx, `SELECT attempts FROM session_delivery WHERE id=?`, id).Scan(&attempts); err != nil {
+		return nil, err
+	}
+	delays := []time.Duration{time.Second, 2 * time.Second, 5 * time.Second, 10 * time.Second, 30 * time.Second, time.Minute, 2 * time.Minute}
+	delay := 2 * time.Minute
+	if attempts < len(delays) {
+		delay = delays[attempts]
+	}
+	lease := now.Add(delay).UTC().Format(time.RFC3339Nano)
+	if _, err = tx.ExecContext(ctx, `UPDATE session_delivery SET state='sent',attempts=attempts+1,next_attempt_at=?,lease_until=?,updated_at=? WHERE id=? AND state IN ('queued','sent','delivered')`, lease, lease, nowText, id); err != nil {
+		return nil, err
+	}
+	d, err := scanSessionDelivery(tx.QueryRowContext(ctx, sessionDeliverySelect+` WHERE id=?`, id))
+	if err != nil {
+		return nil, err
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+func (s *SQLite) UpdateSessionDelivery(ctx context.Context, id, state, errText string, nextAttemptAt time.Time) error {
+	if nextAttemptAt.IsZero() {
+		nextAttemptAt = time.Now().UTC()
+	}
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	_, err := s.db.ExecContext(ctx, `UPDATE session_delivery SET state=?,last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=?,
+		delivered_at=CASE WHEN ?='delivered' THEN COALESCE(delivered_at,?) ELSE delivered_at END,
+		processed_at=CASE WHEN ?='processed' THEN COALESCE(processed_at,?) ELSE processed_at END WHERE id=? AND state NOT IN ('processed','dead','cancelled')`,
+		state, errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now, state, now, state, now, id)
+	return err
+}
+
+func (s *SQLite) GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error) {
+	return scanSessionDelivery(s.db.QueryRowContext(ctx, sessionDeliverySelect+` WHERE id=?`, id))
+}
+
 func (s *SQLite) FailMessage(ctx context.Context, id, reason string) error {
 	_, err := s.db.ExecContext(ctx,
 		`UPDATE message
