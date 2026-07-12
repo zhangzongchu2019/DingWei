@@ -1389,6 +1389,19 @@ func (s *SQLite) UpdateSessionDelivery(ctx context.Context, id, state, errText s
 	return err
 }
 
+func (s *SQLite) UpdateSessionDeliveryBusy(ctx context.Context, id, errText string, nextAttemptAt time.Time) error {
+	if nextAttemptAt.IsZero() {
+		nextAttemptAt = time.Now().UTC()
+	}
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	_, err := s.db.ExecContext(ctx, `UPDATE session_delivery
+		SET state='queued',last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=?,
+		    attempts=CASE WHEN attempts>0 THEN attempts-1 ELSE attempts END
+		WHERE id=? AND state NOT IN ('processed','dead','cancelled')`,
+		errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now, id)
+	return err
+}
+
 func (s *SQLite) GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error) {
 	return scanSessionDelivery(s.db.QueryRowContext(ctx, sessionDeliverySelect+` WHERE id=?`, id))
 }

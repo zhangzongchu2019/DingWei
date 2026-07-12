@@ -99,3 +99,10 @@ class DeliveryInbox:
                 "UPDATE delivery_inbox SET state=?,error=?,updated_at=? WHERE delivery_id=?",
                 (state, error or None, time.time(), delivery_id),
             )
+
+    def release(self, delivery_id: str) -> None:
+        with self._lock, self._connect() as db:
+            db.execute(
+                "UPDATE delivery_inbox SET state='received',updated_at=? WHERE delivery_id=? AND state='processing'",
+                (time.time(), delivery_id),
+            )

@@ -62,6 +62,7 @@ type Repository interface {
 	EnqueueSessionDelivery(ctx context.Context, d model.SessionDelivery) error
 	ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error)
 	UpdateSessionDelivery(ctx context.Context, id, state, errText string, nextAttemptAt time.Time) error
+	UpdateSessionDeliveryBusy(ctx context.Context, id, errText string, nextAttemptAt time.Time) error
 	GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error)
 
 	// 平台总控 L0/L1（P1）

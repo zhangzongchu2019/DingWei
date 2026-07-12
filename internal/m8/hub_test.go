@@ -3323,7 +3323,12 @@ func TestTerminalViewCookiePersistsAndRestoresUnlock(t *testing.T) {
 	hub.mu.Unlock()
 	if st == nil || st.cookieToken != token {
 		t.Fatalf("cookieToken lost after viewer disconnect: got %q want %q",
-			func() string { if st != nil { return st.cookieToken }; return "nil" }(), token)
+			func() string {
+				if st != nil {
+					return st.cookieToken
+				}
+				return "nil"
+			}(), token)
 	}
 
 	// Simulate reconnect with cookie: create new viewer, restore from cookie.
@@ -3737,6 +3742,64 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
 	if err != nil || next != nil {
 		t.Fatalf("source not acked after processed: %+v err=%v", next, err)
+	}
+}
+
+func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	_ = readEnvelopeIncludingSystem(t, ctx, home)
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(20 * time.Millisecond)
+	if err := db.EnqueueMessage(ctx, model.Message{ID: "fm-busy", ChatEntityID: "dev:personal:alice",
+		Direction: model.DirectionIn, BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"#home ping"}`}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{ID: "fm-busy", To: "home#" + key.ID,
+		From: "alice#" + key.ID + "#UnifiedRobot", Body: "ping", TS: time.Now().Unix()}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, home)
+	deliveryID := metaString(got.Meta, "delivery_id")
+	if deliveryID == "" {
+		t.Fatalf("missing delivery id: %+v", got)
+	}
+	record, err := db.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || record == nil || record.State != "sent" || record.Attempts != 1 {
+		t.Fatalf("sent delivery record=%+v err=%v", record, err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "busy", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "busy", "reason": "cli_busy", "retryable": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ = db.GetSessionDelivery(ctx, deliveryID)
+		return record != nil && record.State == "queued" && record.Attempts == 0 && record.LastError == "cli_busy"
+	})
+	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if next == nil || next.ID != "fm-busy" {
+		t.Fatalf("source should remain pending until processed, got %+v", next)
 	}
 }
 

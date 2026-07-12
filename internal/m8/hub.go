@@ -2834,7 +2834,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	}
 	id := metaString(env.Meta, "delivery_id")
 	state := metaString(env.Meta, "state")
-	if id == "" || (state != "delivered" && state != "processed" && state != "failed") {
+	if id == "" || (state != "delivered" && state != "processed" && state != "failed" && state != "busy") {
 		return true
 	}
 	d, err := h.Repo.GetSessionDelivery(ctx, id)
@@ -2850,6 +2850,9 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
 		}
 		go h.drainSessionDeliveries(context.Background(), c)
+	} else if state == "busy" {
+		_ = h.Repo.UpdateSessionDeliveryBusy(ctx, id, metaString(env.Meta, "reason"), time.Now().UTC().Add(15*time.Second))
+		h.scheduleSessionDeliveryDrain(c, 15*time.Second)
 	} else if state == "failed" {
 		retryable := metaBool(env.Meta, "retryable")
 		if retryable {

@@ -83,6 +83,14 @@ class SessionHelperTest(unittest.TestCase):
             recovered.finish("dlv_1")
             self.assertEqual(recovered.accept("dlv_1", env)[0], "processed")
 
+    def test_delivery_inbox_release_returns_processing_to_received(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)
+            inbox.accept("dlv_1", {"body": "one"})
+            self.assertEqual(inbox.claim_next()[0], "dlv_1")
+            inbox.release("dlv_1")
+            self.assertEqual(inbox.claim_next()[0], "dlv_1")
+
     def test_delivery_inbox_fifo_and_capacity_preserve_oldest(self):
         with tempfile.TemporaryDirectory() as tmp:
             inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)
@@ -666,6 +674,68 @@ class SessionHelperTest(unittest.TestCase):
         asyncio.run(run_case())
         self.assertEqual([item["body"] for item in helper.pending_inbound], ["two", "three"])
         self.assertEqual(len(ws.sent), 1)
+
+    def test_delivery_worker_busy_acks_once_and_defers_injection(self):
+        class FakeAdapter:
+            name = "cli"
+
+            def __init__(self):
+                self.idle = False
+                self.handled = []
+
+            def is_idle(self):
+                return self.idle
+
+            def handle(self, env):
+                self.handled.append(env["body"])
+                return ""
+
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        async def run_case():
+            with tempfile.TemporaryDirectory() as tmp:
+                helper = SessionHelper(load_config(dict(
+                    BASE_ENV, SH_MODE="cli", SH_INBOX_DB=str(Path(tmp) / "inbox.db")
+                )))
+                fake = FakeAdapter()
+                helper.adapter = fake
+                ws = FakeWS()
+                env = {
+                    "from": "peer#FB-2642",
+                    "to": "home#FB-2642",
+                    "body": "one",
+                    "meta": {"type": "delivery", "ack_required": True, "delivery_id": "dlv_1"},
+                }
+                helper.delivery_inbox.accept("dlv_1", env)
+                task = asyncio.create_task(helper.delivery_worker_loop(ws))
+                deadline = asyncio.get_running_loop().time() + 1.5
+                while asyncio.get_running_loop().time() < deadline and not ws.sent:
+                    await asyncio.sleep(0.05)
+                await asyncio.sleep(0.1)
+                busy_sent = list(ws.sent)
+                fake.idle = True
+                deadline = asyncio.get_running_loop().time() + 1.5
+                while asyncio.get_running_loop().time() < deadline and len(ws.sent) < 2:
+                    await asyncio.sleep(0.05)
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                return busy_sent, ws.sent, fake.handled
+
+        busy_sent, sent, handled = asyncio.run(run_case())
+        self.assertEqual(len(busy_sent), 1)
+        self.assertEqual(busy_sent[0]["meta"]["type"], "delivery_ack")
+        self.assertEqual(busy_sent[0]["meta"]["state"], "busy")
+        self.assertEqual(busy_sent[0]["meta"]["reason"], "cli_busy")
+        self.assertEqual(handled, ["one"])
+        self.assertEqual(sent[-1]["meta"]["state"], "processed")
 
     def test_provision_rejects_bad_source_and_audits(self):
         with tempfile.TemporaryDirectory() as tmp:

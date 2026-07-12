@@ -61,6 +61,36 @@ func TestSessionDeliveryClaimBypassesExpiredDeliveredAndIsMonotonic(t *testing.T
 	}
 }
 
+func TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+		ID: "dlv_busy", KeyID: "key", SessionName: "home", Envelope: `{"body":"x"}`,
+		SourceMessageID: "msg_busy", SourceType: "feishu_inbound", CreatedAt: now,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 15; i++ {
+		claimed, err := db.ClaimSessionDelivery(ctx, "key", "home", now.Add(time.Duration(i)*time.Minute))
+		if err != nil || claimed == nil || claimed.ID != "dlv_busy" {
+			t.Fatalf("claim %d = %+v, %v", i, claimed, err)
+		}
+		if claimed.Attempts != 1 {
+			t.Fatalf("busy claim attempts=%d, want transient 1", claimed.Attempts)
+		}
+		if err := db.UpdateSessionDeliveryBusy(ctx, claimed.ID, "cli_busy", now.Add(time.Duration(i+1)*time.Minute)); err != nil {
+			t.Fatal(err)
+		}
+		got, err := db.GetSessionDelivery(ctx, "dlv_busy")
+		if err != nil || got == nil {
+			t.Fatalf("get after busy: %+v %v", got, err)
+		}
+		if got.State != "queued" || got.Attempts != 0 {
+			t.Fatalf("after busy state=%s attempts=%d, want queued attempts 0", got.State, got.Attempts)
+		}
+	}
+}
+
 func TestMigrateUpgradesExistingDBWithSeenPersonAndBotSecret(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "workpulse-old.db")
 	ctx := context.Background()

@@ -139,6 +139,7 @@ class SessionHelper:
         self.pending_inbound: deque[dict] = deque(maxlen=max(1, cfg.busy_buffer_max))
         self.delivery_inbox = DeliveryInbox(cfg.inbox_db, cfg.busy_buffer_max)
         self.busy_acked_from: set[str] = set()
+        self.delivery_busy_acked: set[str] = set()
         self.provisioner = Provisioner(cfg)
         self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
@@ -431,6 +432,20 @@ class SessionHelper:
                 await asyncio.sleep(0.2)
                 continue
             delivery_id, env = item
+            if self.cfg.mode == "cli" and hasattr(self.adapter, "is_idle"):
+                try:
+                    idle = bool(await asyncio.to_thread(self.adapter.is_idle))
+                except Exception:
+                    idle = True
+                if not idle:
+                    await asyncio.to_thread(self.delivery_inbox.release, delivery_id)
+                    if delivery_id not in self.delivery_busy_acked:
+                        self.delivery_busy_acked.add(delivery_id)
+                        await ws.send(json.dumps(self.delivery_ack(
+                            delivery_id, "busy", reason="cli_busy", retryable=True
+                        ), ensure_ascii=False))
+                    await asyncio.sleep(0.75)
+                    continue
             try:
                 await self.process_inbound_message(ws, env)
             except Exception as exc:
@@ -440,6 +455,7 @@ class SessionHelper:
                 ), ensure_ascii=False))
             else:
                 await asyncio.to_thread(self.delivery_inbox.finish, delivery_id)
+                self.delivery_busy_acked.discard(delivery_id)
                 await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
 
     def reply_body(self, env: dict, reply_body: str) -> str:
