@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -1740,23 +1741,33 @@ func TestFeishuShortSessionSelectorResolvesRegisteredNameByOwner(t *testing.T) {
 	u2Dev := dialSession(t, ctx, srv.URL, "developer", u2Key.ID, u2Secret)
 	defer u2Dev.Close(websocket.StatusNormalClosure, "done")
 
-	result, err := hub.Dispatch(ctx, model.Message{
-		ID:           "short-feishu",
-		ChatEntityID: "dev:personal:ou_u1",
-		BotChannelID: "dev",
-		ChatType:     model.ChatPersonal,
-		Content:      `{"text":"#developer hello"}`,
-	}, "#developer hello")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.Matched || result.Reply != "" {
-		t.Fatalf("dispatch result = %+v", result)
-	}
-	got := readEnvelope(t, ctx, u1Dev)
 	u1DevName := "u1-developer-" + keyTail(u1Key.ID)
-	if got.To != u1DevName+"#"+u1Key.ID || got.Body != "hello" {
-		t.Fatalf("u1 short selector envelope=%+v", got)
+	for _, tc := range []struct {
+		id   string
+		to   string
+		body string
+	}{
+		{id: "short-feishu", to: "developer", body: "short"},
+		{id: "owner-short-feishu", to: "u1-developer", body: "owner-short"},
+		{id: "full-feishu", to: u1DevName, body: "full"},
+	} {
+		result, err := hub.Dispatch(ctx, model.Message{
+			ID:           tc.id,
+			ChatEntityID: "dev:personal:ou_u1",
+			BotChannelID: "dev",
+			ChatType:     model.ChatPersonal,
+			Content:      `{"text":"#` + tc.to + ` ` + tc.body + `"}`,
+		}, "#"+tc.to+" "+tc.body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !result.Matched || result.Reply != "" {
+			t.Fatalf("%s dispatch result = %+v", tc.id, result)
+		}
+		got := readEnvelope(t, ctx, u1Dev)
+		if got.To != u1DevName+"#"+u1Key.ID || got.Body != tc.body {
+			t.Fatalf("%s envelope=%+v", tc.id, got)
+		}
 	}
 	assertNoEnvelope(t, ctx, u2Dev, 120*time.Millisecond)
 }
@@ -1804,6 +1815,10 @@ func TestShortSessionSelectorRejectsAmbiguousOwnerMatch(t *testing.T) {
 	secondName := "u1-dev55-" + keyTail(secondKey.ID)
 	if !strings.Contains(got.Body, "存在多个 dev55 会话") || !strings.Contains(got.Body, firstName) || !strings.Contains(got.Body, secondName) || !strings.Contains(got.Body, "请用全名指定") {
 		t.Fatalf("ambiguous selector error=%+v", got)
+	}
+	resolved := hub.resolveOwnerSessionByShort(ctx, "u1", "u1-dev55", "")
+	if resolved.status != ownerSessionAmbiguous || len(resolved.candidates) != 2 || !slices.Contains(resolved.candidates, firstName) || !slices.Contains(resolved.candidates, secondName) {
+		t.Fatalf("owner-short should be ambiguous: %+v", resolved)
 	}
 	assertNoEnvelope(t, ctx, firstDev, 120*time.Millisecond)
 	assertNoEnvelope(t, ctx, secondDev, 120*time.Millisecond)

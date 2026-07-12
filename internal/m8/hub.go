@@ -1689,13 +1689,13 @@ func (h *Hub) resolveOwnerSessionByShort(ctx context.Context, ownerKey, requeste
 		if h.ownerKeyForKey(ctx, item.keyID) != ownerKey {
 			continue
 		}
-		if hintKey != "" && item.keyID == hintKey && (item.sessionName == requested || shortSessionName(item.sessionName) == requested) {
+		if hintKey != "" && item.keyID == hintKey && (item.sessionName == requested || ownerSessionAliasMatch(ownerKey, item.sessionName, requested)) {
 			return ownerSessionResolveResult{keyID: item.keyID, sessionName: item.sessionName, status: ownerSessionUniqueHit}
 		}
 		if item.sessionName == requested {
 			return ownerSessionResolveResult{keyID: item.keyID, sessionName: item.sessionName, status: ownerSessionUniqueHit}
 		}
-		if shortSessionName(item.sessionName) == requested {
+		if ownerSessionAliasMatch(ownerKey, item.sessionName, requested) {
 			shortMatches = append(shortMatches, item)
 		}
 	}
@@ -1710,6 +1710,21 @@ func (h *Hub) resolveOwnerSessionByShort(ctx context.Context, ownerKey, requeste
 		names = append(names, item.sessionName)
 	}
 	return ownerSessionResolveResult{status: ownerSessionAmbiguous, candidates: names}
+}
+
+func ownerSessionAliasMatch(ownerKey, sessionName, requested string) bool {
+	short := shortSessionName(sessionName)
+	if short == "" {
+		return false
+	}
+	if requested == short {
+		return true
+	}
+	parts := strings.Split(sessionName, "-")
+	if len(parts) == 3 && sessionNamePattern.MatchString(sessionName) && parts[0] == ownerKey {
+		return requested == parts[0]+"-"+parts[1]
+	}
+	return false
 }
 
 func ambiguousSessionError(requested string, candidates []string) error {
