@@ -63,6 +63,7 @@ type Hub struct {
 	syncBuffers      map[string]*feishuSyncBuffer
 	linkTokens       map[string]ownerLinkToken
 	onboardPushed    map[string]time.Time
+	onboardContexts  map[string]onboardContext
 	onlineDebounce   time.Duration
 	onboardInterval  time.Duration
 }
@@ -94,6 +95,7 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
+	onboardBody    string
 }
 
 type feishuSyncTarget struct {
@@ -187,6 +189,7 @@ func New(repo store.Repository) *Hub {
 		syncBuffers:      map[string]*feishuSyncBuffer{},
 		linkTokens:       map[string]ownerLinkToken{},
 		onboardPushed:    map[string]time.Time{},
+		onboardContexts:  map[string]onboardContext{},
 		onlineDebounce:   2500 * time.Millisecond,
 		onboardInterval:  envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
 		L2Config: L2Config{
@@ -726,6 +729,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "save session endpoint failed", http.StatusInternalServerError)
 		return
 	}
+	// Resolve owner-scoped onboarding data before the websocket is published.
+	// The first write after Accept is then local and deterministic.
+	onboardBody := h.renderAgentNetworkOnboard(r.Context(), sessionName, keyID)
 	var c *sessionClient
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
@@ -752,9 +758,14 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		_ = conn.Close(websocket.StatusInternalError, "save session endpoint failed")
 		return
 	}
-	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName}
+	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, onboardBody: onboardBody}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
+	skillCtx, skillCancel := context.WithCancel(context.Background())
+	c.skillCancel = skillCancel
+	// Send onboarding before publishing the client to directory broadcasters, so
+	// no concurrent online-directory frame can overtake the initial guide.
+	h.startAgentNetworkSkillPush(skillCtx, c)
 	h.mu.Lock()
 	if h.sessionClients[keyID] == nil {
 		h.sessionClients[keyID] = map[string]*sessionClient{}
@@ -775,9 +786,6 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			Meta: map[string]any{"type": terminalResizeType, "system": true, "no_mirror": true, "cols": reSize[0], "rows": reSize[1]},
 		})
 	}
-	skillCtx, skillCancel := context.WithCancel(context.Background())
-	c.skillCancel = skillCancel
-	h.startAgentNetworkSkillPush(skillCtx, c)
 	h.scheduleOnlineBroadcastForSession(r.Context(), keyID, sessionName)
 	defer func() {
 		stopIdleWatchdog()
@@ -2299,11 +2307,11 @@ func (h *Hub) handleAgentNetworkSkillAck(c *sessionClient, env model.Envelope) b
 
 func (h *Hub) startAgentNetworkSkillPush(ctx context.Context, c *sessionClient) {
 	if !h.reserveOnboardPush(c, time.Now().UTC()) {
-		go h.pushAgentNetworkSkillResume(ctx, c)
+		h.pushAgentNetworkSkillResume(ctx, c)
 		return
 	}
+	h.pushAgentNetworkSkill(ctx, c)
 	go func() {
-		h.pushAgentNetworkSkill(ctx, c)
 		ticker := time.NewTicker(agentNetworkSkillRetryWait)
 		defer ticker.Stop()
 		for {
@@ -2338,11 +2346,15 @@ func (h *Hub) pushAgentNetworkSkill(ctx context.Context, c *sessionClient) {
 	if h.agentNetworkSkillInstalled(c) {
 		return
 	}
+	body := c.onboardBody
+	if body == "" {
+		body = h.renderAgentNetworkOnboard(ctx, c.sessionName, c.keyID)
+	}
 	env := model.Envelope{
 		ID:   randomHex(16),
 		To:   sessionAddress(c.sessionName, c.keyID),
 		From: sessionAddress("workpulse", c.keyID),
-		Body: h.renderAgentNetworkOnboard(ctx, c.sessionName, c.keyID),
+		Body: body,
 		TS:   time.Now().Unix(),
 		Meta: map[string]any{
 			"type":         agentNetworkSkillPushType,
@@ -2388,7 +2400,13 @@ type onboardContext struct {
 }
 
 func (h *Hub) renderAgentNetworkOnboard(ctx context.Context, sessionName, keyID string) string {
-	info := onboardContext{Generated: time.Now().UTC()}
+	h.mu.Lock()
+	info, cached := h.onboardContexts[keyID]
+	h.mu.Unlock()
+	if cached && time.Since(info.Generated) < h.onboardInterval {
+		return renderAgentNetworkSkillWithContext(sessionName, keyID, info)
+	}
+	info = onboardContext{Generated: time.Now().UTC()}
 	if h.Repo != nil {
 		info.OwnerKey = h.ownerKeyForKey(ctx, keyID)
 	}
@@ -2414,6 +2432,9 @@ func (h *Hub) renderAgentNetworkOnboard(ctx context.Context, sessionName, keyID 
 			}
 		}
 	}
+	h.mu.Lock()
+	h.onboardContexts[keyID] = info
+	h.mu.Unlock()
 	return renderAgentNetworkSkillWithContext(sessionName, keyID, info)
 }
 
