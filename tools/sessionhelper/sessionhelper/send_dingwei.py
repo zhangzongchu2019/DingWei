@@ -24,6 +24,7 @@ from urllib.parse import urlparse
 
 NAME_PART_RE = re.compile(r"^[a-z0-9]+$")
 SESSION_NAME_RE = re.compile(r"^([a-z0-9]+)-([a-z0-9]+)-([0-9a-f]{4})$")
+DEFAULT_WS_BASE = "wss://dingwei.wegoab.com"
 
 
 def temporary_session_name(env: dict[str, str] | None = None) -> str:
@@ -42,7 +43,7 @@ def temporary_session_name(env: dict[str, str] | None = None) -> str:
 def send(recipient: str, body: str) -> None:
     key = os.environ.get("SH_KEY_ID", "").strip()
     secret = os.environ.get("SH_SECRET", "").strip()
-    ws_base = os.environ.get("SH_WS_BASE", "wss://ts.wegoab.com/dingwei").strip()
+    ws_base = os.environ.get("SH_WS_BASE", DEFAULT_WS_BASE).strip()
     if not key or not secret:
         sys.exit("缺少 SH_KEY_ID/SH_SECRET 环境变量（应由 sessionHelper 注入到 CLI 环境）")
     to = recipient if "#" in recipient else f"{recipient}#{key}"
