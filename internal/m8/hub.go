@@ -703,6 +703,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	clientIP := clientIPFromRequest(r)
 	tool := strings.TrimSpace(r.URL.Query().Get("tool"))
 	modelName := strings.TrimSpace(r.URL.Query().Get("model"))
+	clientVersion := strings.TrimSpace(r.URL.Query().Get("version"))
 	fullSessionName := strings.TrimSpace(r.URL.Query().Get("full_session_name"))
 	producer := truthyQuery(r.URL.Query().Get("producer"))
 	noDirectory := truthyQuery(r.URL.Query().Get("no_directory"))
@@ -736,6 +737,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		ClientIP:        clientIP,
 		Tool:            tool,
 		Model:           modelName,
+		Version:         clientVersion,
 		Producer:        producer,
 		TargetGroup:     targetGroup,
 		NoDirectory:     noDirectory,
@@ -3822,7 +3824,7 @@ func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string
 	for i, item := range items {
 		ep := item.Endpoint
 		short := shortSessionName(ep.SessionName)
-		fmt.Fprintf(&b, "%d. #%s · %s/%s · %s(末%s) · @%s#%s", i+1, short, unknown(ep.Tool), unknown(ep.Model), unknown(ep.ClientIP), keyTail(ep.KeyID), owner.OwnerKey, short)
+		fmt.Fprintf(&b, "%d. #%s · %s/%s · %s · %s(末%s) · @%s#%s", i+1, short, unknown(ep.Tool), unknown(ep.Model), versionLabel(ep.Version), unknown(ep.ClientIP), keyTail(ep.KeyID), owner.OwnerKey, short)
 		if item.Client != nil && item.Client.osName != "" {
 			fmt.Fprintf(&b, " · %s", item.Client.osName)
 		}
@@ -3853,6 +3855,17 @@ func renderOnlineDirectory(owner model.Member, items []onlineSessionItem) string
 	}
 	b.WriteString("**********\n")
 	return b.String()
+}
+
+func versionLabel(version string) string {
+	version = strings.TrimSpace(version)
+	if version == "" {
+		return "v?"
+	}
+	if strings.HasPrefix(strings.ToLower(version), "v") {
+		return version
+	}
+	return "v" + version
 }
 
 func shortSessionName(sessionName string) string {

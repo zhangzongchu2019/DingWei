@@ -9,6 +9,7 @@ import subprocess
 from dataclasses import dataclass, field
 from urllib.parse import urlencode
 
+from . import __version__
 from .protocol import required_env
 
 
@@ -75,7 +76,7 @@ class Config:
 
     @property
     def ws_url(self) -> str:
-        query = {"key_id": self.key_id}
+        query = {"key_id": self.key_id, "version": __version__}
         if self.tool:
             query["tool"] = self.tool
         if self.os_name:

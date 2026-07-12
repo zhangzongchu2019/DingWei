@@ -225,6 +225,11 @@ func (s *SQLite) ensureSessionEndpointColumns(ctx context.Context) error {
 			return err
 		}
 	}
+	if !cols["version"] {
+		if _, err := s.db.ExecContext(ctx, `ALTER TABLE session_endpoint ADD COLUMN version TEXT NOT NULL DEFAULT ''`); err != nil {
+			return err
+		}
+	}
 	if !cols["full_session_name"] {
 		if _, err := s.db.ExecContext(ctx, `ALTER TABLE session_endpoint ADD COLUMN full_session_name TEXT NOT NULL DEFAULT ''`); err != nil {
 			return err
@@ -2634,8 +2639,8 @@ func (s *SQLite) UpsertSessionEndpoint(ctx context.Context, ep model.SessionEndp
 		ep.LastSeenAt = time.Now().UTC()
 	}
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO session_endpoint(key_id, session_name, full_session_name, owner_key, last_seen_at, active, mirror_enabled, mirror_to, client_ip, tool, model, producer, target_group, no_directory, no_directory_admin, no_directory_reported)
-		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		`INSERT INTO session_endpoint(key_id, session_name, full_session_name, owner_key, last_seen_at, active, mirror_enabled, mirror_to, client_ip, tool, model, version, producer, target_group, no_directory, no_directory_admin, no_directory_reported)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		 ON CONFLICT(key_id, session_name) DO UPDATE SET
 		   last_seen_at=excluded.last_seen_at,
 		   active=excluded.active,
@@ -2644,6 +2649,7 @@ func (s *SQLite) UpsertSessionEndpoint(ctx context.Context, ep model.SessionEndp
 		   client_ip=COALESCE(NULLIF(excluded.client_ip,''), session_endpoint.client_ip),
 		   tool=COALESCE(NULLIF(excluded.tool,''), session_endpoint.tool),
 		   model=COALESCE(NULLIF(excluded.model,''), session_endpoint.model),
+		   version=CASE WHEN excluded.active=0 THEN session_endpoint.version ELSE excluded.version END,
 		   producer=excluded.producer,
 		   target_group=COALESCE(NULLIF(excluded.target_group,''), session_endpoint.target_group),
 		   no_directory_reported=CASE WHEN excluded.active=0 THEN session_endpoint.no_directory_reported ELSE excluded.no_directory_reported END,
@@ -2654,7 +2660,7 @@ func (s *SQLite) UpsertSessionEndpoint(ctx context.Context, ep model.SessionEndp
 		   END,
 		   mirror_enabled=CASE WHEN excluded.mirror_to<>'' THEN excluded.mirror_enabled ELSE session_endpoint.mirror_enabled END,
 		   mirror_to=COALESCE(NULLIF(excluded.mirror_to,''), session_endpoint.mirror_to)`,
-		ep.KeyID, ep.SessionName, ep.FullSessionName, ep.OwnerKey, ep.LastSeenAt.UTC().Format(time.RFC3339), boolInt(ep.Active), boolInt(ep.MirrorEnabled), ep.MirrorTo, ep.ClientIP, ep.Tool, ep.Model, boolInt(ep.Producer), ep.TargetGroup, boolInt(ep.NoDirectory), boolInt(ep.NoDirectoryAdmin), boolInt(ep.NoDirectory))
+		ep.KeyID, ep.SessionName, ep.FullSessionName, ep.OwnerKey, ep.LastSeenAt.UTC().Format(time.RFC3339), boolInt(ep.Active), boolInt(ep.MirrorEnabled), ep.MirrorTo, ep.ClientIP, ep.Tool, ep.Model, ep.Version, boolInt(ep.Producer), ep.TargetGroup, boolInt(ep.NoDirectory), boolInt(ep.NoDirectoryAdmin), boolInt(ep.NoDirectory))
 	return err
 }
 
@@ -2684,7 +2690,7 @@ func (s *SQLite) TouchSessionEndpoint(ctx context.Context, keyID, sessionName st
 
 func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpoint, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT key_id, session_name, COALESCE(full_session_name, ''), COALESCE(owner_key, ''), last_seen_at, active, mirror_enabled, COALESCE(mirror_to, ''), COALESCE(client_ip, ''), COALESCE(tool, ''), COALESCE(model, ''), COALESCE(producer, 0), COALESCE(target_group, ''), COALESCE(no_directory, 0), COALESCE(no_directory_admin, 0), COALESCE(conn_seq, 0)
+		`SELECT key_id, session_name, COALESCE(full_session_name, ''), COALESCE(owner_key, ''), last_seen_at, active, mirror_enabled, COALESCE(mirror_to, ''), COALESCE(client_ip, ''), COALESCE(tool, ''), COALESCE(model, ''), COALESCE(version, ''), COALESCE(producer, 0), COALESCE(target_group, ''), COALESCE(no_directory, 0), COALESCE(no_directory_admin, 0), COALESCE(conn_seq, 0)
 		   FROM session_endpoint ORDER BY key_id, session_name`)
 	if err != nil {
 		return nil, err
@@ -2695,7 +2701,7 @@ func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpo
 		var ep model.SessionEndpoint
 		var lastSeen string
 		var active, mirrorEnabled, producer, noDirectory, noDirectoryAdmin int
-		if err := rows.Scan(&ep.KeyID, &ep.SessionName, &ep.FullSessionName, &ep.OwnerKey, &lastSeen, &active, &mirrorEnabled, &ep.MirrorTo, &ep.ClientIP, &ep.Tool, &ep.Model, &producer, &ep.TargetGroup, &noDirectory, &noDirectoryAdmin, &ep.ConnSeq); err != nil {
+		if err := rows.Scan(&ep.KeyID, &ep.SessionName, &ep.FullSessionName, &ep.OwnerKey, &lastSeen, &active, &mirrorEnabled, &ep.MirrorTo, &ep.ClientIP, &ep.Tool, &ep.Model, &ep.Version, &producer, &ep.TargetGroup, &noDirectory, &noDirectoryAdmin, &ep.ConnSeq); err != nil {
 			return nil, err
 		}
 		ep.LastSeenAt, _ = time.Parse(time.RFC3339, lastSeen)

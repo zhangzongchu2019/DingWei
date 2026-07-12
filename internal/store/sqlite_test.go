@@ -140,6 +140,9 @@ func TestMigrateUpgradesExistingDBWithSeenPersonAndBotSecret(t *testing.T) {
 	if !columnExists(t, db, "session_endpoint", "conn_seq") {
 		t.Fatal("session_endpoint.conn_seq missing after migration")
 	}
+	if !columnExists(t, db, "session_endpoint", "version") {
+		t.Fatal("session_endpoint.version missing after migration")
+	}
 	if !columnExists(t, db, "project", "parent_id") {
 		t.Fatal("project.parent_id missing after migration")
 	}
