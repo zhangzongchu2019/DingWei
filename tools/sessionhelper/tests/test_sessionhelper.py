@@ -56,9 +56,13 @@ BASE_ENV = {
 }
 
 ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[1]
 
 
 class SessionHelperTest(unittest.TestCase):
+    def test_helper_version_matches_repository_version_file(self):
+        self.assertEqual(__version__, (REPO_ROOT / "VERSION").read_text().strip())
+
     def test_control_route_multiline_positive_and_negative_examples(self):
         book = AddressBook("home", "FB-2642", "UnifiedRobot")
         routed = agent_route_envelope(

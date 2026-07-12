@@ -73,6 +73,11 @@ func useTestNameEnforce(t *testing.T, mode string) {
 	t.Setenv("WP_NAME_ENFORCE", mode)
 }
 
+func useTestVersionEnforce(t *testing.T, mode string) {
+	t.Helper()
+	t.Setenv("WP_VERSION_ENFORCE", mode)
+}
+
 func useTestSessionReadIdleTimeout(t *testing.T, d time.Duration) {
 	t.Helper()
 	old := sessionReadIdleTimeout
@@ -2256,7 +2261,7 @@ func TestSessionEndpointStoresClientMetadata(t *testing.T) {
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "tool=CODEX&model=gpt-5.5&version=2.2.0&full_session_name=sh-developer-e0d12642")
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "tool=CODEX&model=gpt-5.5&version=0.1.2.5&full_session_name=sh-developer-e0d12642")
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	endpoints, err := db.ListSessionEndpoints(ctx)
 	if err != nil || len(endpoints) != 1 {
@@ -2265,7 +2270,7 @@ func TestSessionEndpointStoresClientMetadata(t *testing.T) {
 	if endpoints[0].Tool != "CODEX" || endpoints[0].Model != "gpt-5.5" {
 		t.Fatalf("tool/model not stored: %+v", endpoints[0])
 	}
-	if endpoints[0].Version != "2.2.0" {
+	if endpoints[0].Version != "0.1.2.5" {
 		t.Fatalf("version not stored: %+v", endpoints[0])
 	}
 	if endpoints[0].SessionName != "developer" || endpoints[0].FullSessionName != "sh-developer-e0d12642" {
@@ -2273,7 +2278,8 @@ func TestSessionEndpointStoresClientMetadata(t *testing.T) {
 	}
 }
 
-func TestSessionEndpointAllowsMissingVersion(t *testing.T) {
+func TestSessionEndpointWarnModeAllowsMissingVersionAndMarksDirectory(t *testing.T) {
+	useTestVersionEnforce(t, "warn")
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
@@ -2282,7 +2288,7 @@ func TestSessionEndpointAllowsMissingVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: key.ID, SessionName: "developer", Version: "2.2.0", LastSeenAt: time.Now(), Active: true}); err != nil {
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: key.ID, SessionName: "developer", Version: "0.1.2.5", LastSeenAt: time.Now(), Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
@@ -2301,6 +2307,73 @@ func TestSessionEndpointAllowsMissingVersion(t *testing.T) {
 	text := renderOnlineDirectory(model.Member{OwnerKey: "person", DisplayName: "Person"}, []onlineSessionItem{{Endpoint: endpoints[0]}})
 	if !strings.Contains(text, " · v? · ") {
 		t.Fatalf("directory should show unknown version for old clients: %s", text)
+	}
+	if !strings.Contains(text, "版本告警:未上报版本") {
+		t.Fatalf("directory should mark incompatible missing version: %s", text)
+	}
+}
+
+func TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		version string
+		want    string
+	}{
+		{name: "missing", version: "", want: "当前版本=未上报"},
+		{name: "invalid", version: "0.1", want: "版本格式非法"},
+		{name: "a mismatch", version: "1.1.2.5", want: "版本不兼容"},
+		{name: "b mismatch", version: "0.2.0.0", want: "版本不兼容"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			useTestVersionEnforce(t, "enforce")
+			hub, _, ctx := newTestHub(t)
+			if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+				t.Fatal(err)
+			}
+			secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+			if err != nil {
+				t.Fatal(err)
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+			srv := httptest.NewServer(mux)
+			defer srv.Close()
+			query := ""
+			if tc.version != "" {
+				query = "version=" + url.QueryEscape(tc.version)
+			}
+			body := dialSessionErrorBodyWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, query)
+			for _, want := range []string{tc.want, "要求版本=0.1.2.5", "下载地址=https://dingwei.wegoab.com/downloads/sessionHelper-0.1.2.5/"} {
+				if !strings.Contains(body, want) {
+					t.Fatalf("error body missing %q: %s", want, body)
+				}
+			}
+		})
+	}
+}
+
+func TestSessionEndpointVersionEnforceAllowsCDDrift(t *testing.T) {
+	useTestVersionEnforce(t, "enforce")
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "version=0.1.9.9")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].Version != "0.1.9.9" {
+		t.Fatalf("compatible C/D drift should be stored: %+v", endpoints[0])
 	}
 }
 
@@ -4295,7 +4368,7 @@ func TestSessionNameWarnAllowsLegacyNameAndDirectoryFlagsIt(t *testing.T) {
 			OwnerKey:    "u1",
 			Tool:        "CODEX",
 			Model:       "gpt-5",
-			Version:     "2.2.0",
+			Version:     "0.1.2.5",
 			ClientIP:    "127.0.0.1",
 		},
 		Client: &sessionClient{webTerminal: true},
@@ -4309,7 +4382,7 @@ func TestSessionNameWarnAllowsLegacyNameAndDirectoryFlagsIt(t *testing.T) {
 	if !strings.Contains(text, "/view/dev1013") || !strings.Contains(text, "命名告警:") {
 		t.Fatalf("warn directory missing view or warning: %s", text)
 	}
-	if !strings.Contains(text, " · v2.2.0 · ") {
+	if !strings.Contains(text, " · v0.1.2.5 · ") {
 		t.Fatalf("directory missing client version: %s", text)
 	}
 }
@@ -4367,6 +4440,20 @@ func dialSessionWithHeaderRaw(t *testing.T, ctx context.Context, baseURL, sessio
 func dialSessionErrorBody(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string) string {
 	t.Helper()
 	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/session/" + sessionName + "?key_id=" + keyID
+	return dialSessionErrorBodyURL(t, ctx, wsURL, sessionName, secret)
+}
+
+func dialSessionErrorBodyWithQuery(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret, query string) string {
+	t.Helper()
+	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/session/" + sessionName + "?key_id=" + keyID
+	if strings.TrimSpace(query) != "" {
+		wsURL += "&" + query
+	}
+	return dialSessionErrorBodyURL(t, ctx, wsURL, sessionName, secret)
+}
+
+func dialSessionErrorBodyURL(t *testing.T, ctx context.Context, wsURL, sessionName, secret string) string {
+	t.Helper()
 	header := http.Header{}
 	header.Set("Authorization", "Bearer "+secret)
 	conn, resp, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{HTTPHeader: header})
