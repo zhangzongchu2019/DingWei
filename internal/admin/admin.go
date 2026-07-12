@@ -2265,7 +2265,7 @@ func validateProvisionURL(raw string, allowed map[string]bool) error {
 	}
 	host := strings.ToLower(u.Hostname())
 	if !allowed[host] {
-		return fmt.Errorf("url host not allowed: %s", host)
+		return fmt.Errorf("url host denied: %s", host)
 	}
 	return nil
 }

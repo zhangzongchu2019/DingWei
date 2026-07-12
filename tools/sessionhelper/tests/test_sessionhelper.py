@@ -364,6 +364,12 @@ class SessionHelperTest(unittest.TestCase):
 
         self.assertEqual(default_inbox_db("Dev 55/Prod"), "~/.dingwei/sessionhelper_inbox-dev_55_prod.db")
 
+    def test_provision_allowed_hosts_default_is_hub_not_legacy_domain(self):
+        env = {k: v for k, v in BASE_ENV.items() if k != "SH_PROVISION_ALLOWED_HOSTS"}
+        hosts = load_config(env).provision_allowed_hosts
+        self.assertIn("dingwei.wegoab.com", hosts)
+        self.assertNotIn("ts.wegoab.com", hosts)
+
     def test_load_config_accepts_missing_owner_and_validates_short_name(self):
         cfg = load_config({k: v for k, v in BASE_ENV.items() if k != "SH_OWNER"})
         self.assertEqual(cfg.session_name, "home")
@@ -1199,7 +1205,12 @@ class SessionHelperTest(unittest.TestCase):
             }
             result = Provisioner(cfg).handle(base)
             self.assertFalse(result.ok)
-            self.assertIn("host not allowed", result.message)
+            self.assertIn("denied", result.message)
+            evil = json.loads(json.dumps(base))
+            evil["meta"]["url"] = "https://evil.example.com/x.tar"
+            result = Provisioner(cfg).handle(evil)
+            self.assertFalse(result.ok)
+            self.assertIn("denied", result.message)
             bad_sha = json.loads(json.dumps(base))
             bad_sha["meta"]["url"] = "https://dingwei.wegoab.com/x"
             bad_sha["meta"]["sha256"] = "abc"

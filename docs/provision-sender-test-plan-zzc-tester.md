@@ -149,7 +149,7 @@
 1. Admin 提交 provision，url 指向非白名单 host (如 https://evil.com/skill.tar.gz)
 
 **预期 5c**:
-- ✅ 服务端在发送前校验 url host，拒绝并提示 "url host not allowed"
+- ✅ 服务端在发送前校验 url host，拒绝并提示 "url host denied"
 
 **Linux 结果**: [ ] PASS / [ ] FAIL
 **macOS 结果**: [ ] PASS / [ ] FAIL
