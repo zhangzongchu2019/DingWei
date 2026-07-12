@@ -11,10 +11,11 @@ import time
 
 
 class DeliveryInbox:
-    def __init__(self, path: str, capacity: int = 100, session_name: str = "default"):
+    def __init__(self, path: str, capacity: int = 100, session_name: str = "default", session_full_name: str = ""):
         self.path = os.path.expanduser(path)
         self.capacity = max(1, capacity)
         self.session_name = (session_name or "default").strip() or "default"
+        self.session_full_name = (session_full_name or "").strip()
         self._lock = threading.Lock()
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
         self._initialize()
@@ -148,9 +149,9 @@ class DeliveryInbox:
             if missing:
                 raise RuntimeError(f"legacy delivery_inbox missing columns: {','.join(sorted(missing))}")
             if "session_name" in column_names:
-                return list(
+                rows = list(
                     db.execute(
-                        """SELECT delivery_id,envelope_json,state,attempts,error,received_at
+                        """SELECT delivery_id,session_name,envelope_json,state,attempts,error,received_at
                            FROM delivery_inbox
                            WHERE state IN ('received','processing')
                              AND (session_name=? OR session_name IS NULL OR session_name='')
@@ -158,7 +159,8 @@ class DeliveryInbox:
                         (self.session_name,),
                     )
                 )
-            return list(
+                return self._filter_sessioned_legacy_rows(rows)
+            rows = list(
                 db.execute(
                     """SELECT delivery_id,envelope_json,state,attempts,error,received_at
                        FROM delivery_inbox
@@ -166,6 +168,46 @@ class DeliveryInbox:
                        ORDER BY received_at,delivery_id"""
                 )
             )
+            return self._filter_legacy_rows_for_session(rows)
+
+    def _filter_legacy_rows_for_session(self, rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
+        out = []
+        skipped = 0
+        targets = {self.session_name}
+        if self.session_full_name:
+            targets.add(self.session_full_name)
+        for row in rows:
+            try:
+                env = json.loads(row["envelope_json"])
+            except Exception:
+                skipped += 1
+                continue
+            to = str(env.get("to") or "").strip()
+            if not to:
+                skipped += 1
+                continue
+            session = to.split("#", 1)[0]
+            if session in targets:
+                out.append(row)
+        if skipped:
+            print(
+                f"[delivery][legacy_inbox][WARN] skipped {skipped} pending deliveries without parseable target "
+                f"session={self.session_name}",
+                file=sys.stderr,
+                flush=True,
+            )
+        return out
+
+    def _filter_sessioned_legacy_rows(self, rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
+        out = []
+        empty_session_rows = []
+        for row in rows:
+            if str(row["session_name"] or "").strip() == self.session_name:
+                out.append(row)
+            else:
+                empty_session_rows.append(row)
+        out.extend(self._filter_legacy_rows_for_session(empty_session_rows))
+        return out
 
     def accept(self, delivery_id: str, env: dict, retry_failed: bool = False) -> tuple[str, int, int]:
         """Persist a delivery and return (ack_state, queue_position, queue_depth)."""

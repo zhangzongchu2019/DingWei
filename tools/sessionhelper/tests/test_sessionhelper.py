@@ -172,7 +172,7 @@ class SessionHelperTest(unittest.TestCase):
             self.assertEqual(delivery_id, "dlv_legacy")
             self.assertEqual(env["body"], "legacy")
 
-    def test_delivery_inbox_imports_pending_rows_from_old_shared_db(self):
+    def test_delivery_inbox_imports_matching_pending_rows_from_old_shared_db(self):
         with tempfile.TemporaryDirectory() as tmp:
             legacy_path = Path(tmp) / "sessionhelper_inbox.db"
             target_path = Path(tmp) / "sessionhelper_inbox-home.db"
@@ -192,22 +192,32 @@ class SessionHelperTest(unittest.TestCase):
                     """INSERT INTO delivery_inbox(delivery_id,envelope_json,state,attempts,received_at,updated_at)
                        VALUES(?,?,?,?,?,?)""",
                     [
-                        ("dlv_received", json.dumps({"body": "received"}), "received", 0, 1.0, 1.0),
-                        ("dlv_processing", json.dumps({"body": "processing"}), "processing", 2, 2.0, 2.0),
-                        ("dlv_processed", json.dumps({"body": "processed"}), "processed", 1, 3.0, 3.0),
+                        ("dlv_home", json.dumps({"to": "home#FB-2642", "body": "home"}), "received", 0, 1.0, 1.0),
+                        (
+                            "dlv_home_full",
+                            json.dumps({"to": "zzc-home-2642#FB-2642", "body": "home full"}),
+                            "processing",
+                            2,
+                            2.0,
+                            2.0,
+                        ),
+                        ("dlv_tester", json.dumps({"to": "tester#FB-2642", "body": "tester"}), "received", 0, 3.0, 3.0),
+                        ("dlv_missing_to", json.dumps({"body": "missing to"}), "received", 0, 4.0, 4.0),
+                        ("dlv_processed", json.dumps({"to": "home#FB-2642", "body": "processed"}), "processed", 1, 5.0, 5.0),
                     ],
                 )
 
             stderr = io.StringIO()
             with mock.patch("sys.stderr", stderr):
-                inbox = DeliveryInbox(str(target_path), 10, "home")
+                inbox = DeliveryInbox(str(target_path), 10, "home", "zzc-home-2642")
             self.assertIn("[delivery][legacy_inbox] imported 2/2 pending deliveries", stderr.getvalue())
+            self.assertIn("[delivery][legacy_inbox][WARN] skipped 1 pending deliveries without parseable target", stderr.getvalue())
             delivery_id, env = inbox.claim_next()
-            self.assertEqual(delivery_id, "dlv_received")
-            self.assertEqual(env["body"], "received")
+            self.assertEqual(delivery_id, "dlv_home")
+            self.assertEqual(env["body"], "home")
             delivery_id, env = inbox.claim_next()
-            self.assertEqual(delivery_id, "dlv_processing")
-            self.assertEqual(env["body"], "processing")
+            self.assertEqual(delivery_id, "dlv_home_full")
+            self.assertEqual(env["body"], "home full")
             self.assertIsNone(inbox.claim_next())
 
     def test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db(self):
@@ -234,13 +244,32 @@ class SessionHelperTest(unittest.TestCase):
                     [
                         ("dlv_home", "home", json.dumps({"body": "home"}), "received", 1.0, 1.0),
                         ("dlv_tester", "tester", json.dumps({"body": "tester"}), "received", 2.0, 2.0),
+                        (
+                            "dlv_empty_home",
+                            "",
+                            json.dumps({"to": "zzc-home-2642#FB-2642", "body": "empty home"}),
+                            "received",
+                            3.0,
+                            3.0,
+                        ),
+                        (
+                            "dlv_empty_tester",
+                            "",
+                            json.dumps({"to": "tester#FB-2642", "body": "empty tester"}),
+                            "received",
+                            4.0,
+                            4.0,
+                        ),
                     ],
                 )
 
-            inbox = DeliveryInbox(str(target_path), 10, "home")
+            inbox = DeliveryInbox(str(target_path), 10, "home", "zzc-home-2642")
             delivery_id, env = inbox.claim_next()
             self.assertEqual(delivery_id, "dlv_home")
             self.assertEqual(env["body"], "home")
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_empty_home")
+            self.assertEqual(env["body"], "empty home")
             self.assertIsNone(inbox.claim_next())
 
     def test_delivery_inbox_warns_when_old_shared_db_cannot_be_imported(self):
