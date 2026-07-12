@@ -62,7 +62,7 @@ class Config:
     busy_buffer_max: int = 100
     inbox_db: str = ""
     busy_reply_text: str = "消息已收到，但此时忙，稍后处理你的请求"
-    provision_allowed_hosts: tuple[str, ...] = ("ts.wegoab.com",)
+    provision_allowed_hosts: tuple[str, ...] = ("dingwei.wegoab.com",)
     provision_audit_db: str = ""
     provision_rollback_timeout: int = 300
 
@@ -144,7 +144,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         busy_reply_text=env.get("SH_BUSY_REPLY_TEXT", "消息已收到，但此时忙，稍后处理你的请求"),
         provision_allowed_hosts=tuple(
             item.strip().lower()
-            for item in env.get("SH_PROVISION_ALLOWED_HOSTS", "ts.wegoab.com").split(",")
+            for item in env.get("SH_PROVISION_ALLOWED_HOSTS", "dingwei.wegoab.com").split(",")
             if item.strip()
         ),
         provision_audit_db=expand_path(env.get("SH_PROVISION_AUDIT_DB", "")),

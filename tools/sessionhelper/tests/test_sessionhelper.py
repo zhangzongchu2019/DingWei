@@ -300,6 +300,7 @@ class SessionHelperTest(unittest.TestCase):
         self.assertFalse(cfg.producer)
         self.assertFalse(cfg.no_directory)
         self.assertTrue(cfg.agent_route)
+        self.assertEqual(cfg.provision_allowed_hosts, ("dingwei.wegoab.com",))
         self.assertEqual(cfg.target_group, "")
         self.assertEqual(cfg.target_bot, "")
         self.assertEqual(cfg.opencode_db, "")
@@ -1130,7 +1131,7 @@ class SessionHelperTest(unittest.TestCase):
                 {
                     "from": "attacker#FB-2642",
                     "to": "home#FB-2642",
-                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://ts.wegoab.com/x", "sha256": "0" * 64},
+                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "x", "version": "1", "url": "https://dingwei.wegoab.com/x", "sha256": "0" * 64},
                 }
             )
             self.assertFalse(result.ok)
@@ -1151,7 +1152,7 @@ class SessionHelperTest(unittest.TestCase):
             self.assertFalse(result.ok)
             self.assertIn("host not allowed", result.message)
             bad_sha = json.loads(json.dumps(base))
-            bad_sha["meta"]["url"] = "https://ts.wegoab.com/x"
+            bad_sha["meta"]["url"] = "https://dingwei.wegoab.com/x"
             bad_sha["meta"]["sha256"] = "abc"
             result = Provisioner(cfg).handle(bad_sha)
             self.assertFalse(result.ok)
@@ -1166,7 +1167,7 @@ class SessionHelperTest(unittest.TestCase):
             env = {
                 "from": "workpulse#FB-2642",
                 "to": "home#FB-2642",
-                "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/x", "sha256": "0" * 64},
+                "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://dingwei.wegoab.com/x", "sha256": "0" * 64},
             }
             with mock.patch.object(provisioner, "download_and_verify", side_effect=AssertionError("should not download")):
                 result = provisioner.handle(env)
@@ -1190,7 +1191,7 @@ class SessionHelperTest(unittest.TestCase):
                 env = {
                     "from": "workpulse#FB-2642",
                     "to": "home#FB-2642",
-                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/skill.tar", "sha256": "0" * 64},
+                    "meta": {"type": "provision", "system": True, "action": "install_skill", "target": "demo", "version": "1.0", "url": "https://dingwei.wegoab.com/skill.tar", "sha256": "0" * 64},
                 }
                 with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
                     result = provisioner.handle(env)
@@ -1210,7 +1211,7 @@ class SessionHelperTest(unittest.TestCase):
                 env = {
                     "from": "workpulse#FB-2642",
                     "to": "home#FB-2642",
-                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/mcp.json", "sha256": "0" * 64},
+                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://dingwei.wegoab.com/mcp.json", "sha256": "0" * 64},
                 }
                 with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
                     result = provisioner.handle(env)
@@ -1233,7 +1234,7 @@ class SessionHelperTest(unittest.TestCase):
                 env = {
                     "from": "workpulse#FB-2642",
                     "to": "home#FB-2642",
-                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://ts.wegoab.com/mcp.json", "sha256": "0" * 64},
+                    "meta": {"type": "provision", "system": True, "action": "install_mcp", "target": "demo", "version": "1.0", "url": "https://dingwei.wegoab.com/mcp.json", "sha256": "0" * 64},
                 }
                 with mock.patch.object(provisioner, "download_and_verify", return_value=artifact):
                     result = provisioner.handle(env)
@@ -1264,11 +1265,11 @@ class SessionHelperTest(unittest.TestCase):
             provisioner = Provisioner(cfg)
             expected = hashlib.sha256(b"abcdef").hexdigest()
             with mock.patch("sessionhelper.provision.urllib.request.urlopen", return_value=FakeResponse([b"abc", b"def"])):
-                path = provisioner.download_and_verify("https://ts.wegoab.com/artifact", expected)
+                path = provisioner.download_and_verify("https://dingwei.wegoab.com/artifact", expected)
             self.assertEqual(path.read_bytes(), b"abcdef")
             with mock.patch("sessionhelper.provision.urllib.request.urlopen", return_value=FakeResponse([b"bad"])):
                 with self.assertRaises(Exception):
-                    provisioner.download_and_verify("https://ts.wegoab.com/artifact", expected)
+                    provisioner.download_and_verify("https://dingwei.wegoab.com/artifact", expected)
 
     def test_provision_rejects_tar_escape_and_links(self):
         with tempfile.TemporaryDirectory() as tmp:

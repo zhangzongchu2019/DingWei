@@ -19,7 +19,7 @@ SH_AGENT_ROUTE=1                     # 1=assistant输出#会话名/@成员#会�
 SH_NO_DIRECTORY=0                    # 1=专职会话不进在线清单/不收清单广播,仍可显式 #会话名 寻址
 SH_BUSY_BUFFER_MAX=100               # CLI忙时本地缓存上限,超限丢最旧
 SH_BUSY_REPLY_TEXT=消息已收到，但此时忙，稍后处理你的请求
-SH_PROVISION_ALLOWED_HOSTS=ts.wegoab.com # provision下载白名单host,逗号分隔
+SH_PROVISION_ALLOWED_HOSTS=dingwei.wegoab.com # provision下载白名单host,逗号分隔
 # SH_PROVISION_AUDIT_DB=~/.dingwei/sessionhelper_audit.db # provision审计库路径
 SH_TARGET_GROUP=                     # producer专用:目标飞书群chat_id;普通会话留空不向群发
 SH_TARGET_BOT=                       # producer可选:强制指定目标群使用的bot_channel

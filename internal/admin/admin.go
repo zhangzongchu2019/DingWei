@@ -2244,7 +2244,7 @@ func provisionDownloadDir() string {
 }
 
 func provisionAllowedHosts() map[string]bool {
-	raw := firstNonEmpty(os.Getenv("WP_PROVISION_ALLOWED_HOSTS"), os.Getenv("SH_PROVISION_ALLOWED_HOSTS"), "ts.wegoab.com")
+	raw := firstNonEmpty(os.Getenv("WP_PROVISION_ALLOWED_HOSTS"), os.Getenv("SH_PROVISION_ALLOWED_HOSTS"), "dingwei.wegoab.com")
 	out := map[string]bool{}
 	for _, part := range strings.Split(raw, ",") {
 		host := strings.ToLower(strings.TrimSpace(part))

@@ -19,7 +19,7 @@ sessionHelper: ①验来源(仅 from=workpulse/system) ②下载 ③校验sha256
   "meta": {
     "type":"provision", "system":true, "no_mirror":true,
     "action":"update_self | install_skill | install_mcp",
-    "url":"https://ts.wegoab.com/dl/<artifact>",     // 下载地址(白名单host)
+    "url":"https://dingwei.wegoab.com/dl/<artifact>",     // 下载地址(白名单host)
     "sha256":"<hex>",                                 // 必带,校验
     "version":"<语义版本或hash>",                      // 幂等/防降级
     "target":"<skill名/mcp名/‘self’>",                // 装到哪
@@ -52,7 +52,7 @@ sessionHelper: ①验来源(仅 from=workpulse/system) ②下载 ③校验sha256
 ## 四、🔴 安全模型(必做,不可省)
 1. **来源鉴权**:只接受 `from=workpulse#<本会话key>` 且 `meta.system=true` 的 provision;别的一律拒并记日志;
 2. **完整性**:每个下载物**必带 sha256**,不匹配不落地;可选 Ed25519 签名(P2);
-3. **来源白名单**:url 的 host 必须在白名单(如 `ts.wegoab.com`);
+3. **来源白名单**:url 的 host 必须在白名单(如 `dingwei.wegoab.com`);
 4. **幂等/防降级**:version 记录,已装过或版本更低→跳过;
 5. **审计**:每次 provision(action/target/version/结果)落库 + 日志;
 6. **最小权限**:install_skill/mcp 只写对应目录;update_self 只替换代码不碰用户数据/密钥。
