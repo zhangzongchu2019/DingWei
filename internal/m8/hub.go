@@ -87,6 +87,7 @@ type sessionClient struct {
 	stateMu        sync.Mutex
 	keyID          string
 	sessionName    string
+	localName      string // 客户端握手上报的原始名；sessionHelper 用它命名本机在线清单文件
 	connSeq        int
 	lastSeenAt     time.Time
 	targetBot      string
@@ -731,7 +732,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	}
 	// Resolve owner-scoped onboarding data before the websocket is published.
 	// The first write after Accept is then local and deterministic.
-	onboardBody := h.renderAgentNetworkOnboard(r.Context(), sessionName, keyID)
+	onboardBody := h.renderAgentNetworkOnboard(r.Context(), sessionName, requestedSessionName, keyID)
 	var c *sessionClient
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
@@ -758,7 +759,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		_ = conn.Close(websocket.StatusInternalError, "save session endpoint failed")
 		return
 	}
-	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, onboardBody: onboardBody}
+	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, onboardBody: onboardBody}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	skillCtx, skillCancel := context.WithCancel(context.Background())
@@ -2348,7 +2349,7 @@ func (h *Hub) pushAgentNetworkSkill(ctx context.Context, c *sessionClient) {
 	}
 	body := c.onboardBody
 	if body == "" {
-		body = h.renderAgentNetworkOnboard(ctx, c.sessionName, c.keyID)
+		body = h.renderAgentNetworkOnboard(ctx, c.sessionName, c.localName, c.keyID)
 	}
 	env := model.Envelope{
 		ID:   randomHex(16),
@@ -2399,12 +2400,12 @@ type onboardContext struct {
 	Generated time.Time
 }
 
-func (h *Hub) renderAgentNetworkOnboard(ctx context.Context, sessionName, keyID string) string {
+func (h *Hub) renderAgentNetworkOnboard(ctx context.Context, sessionName, localName, keyID string) string {
 	h.mu.Lock()
 	info, cached := h.onboardContexts[keyID]
 	h.mu.Unlock()
 	if cached && time.Since(info.Generated) < h.onboardInterval {
-		return renderAgentNetworkSkillWithContext(sessionName, keyID, info)
+		return renderAgentNetworkSkillWithContext(sessionName, localName, keyID, info)
 	}
 	info = onboardContext{Generated: time.Now().UTC()}
 	if h.Repo != nil {
@@ -2435,14 +2436,19 @@ func (h *Hub) renderAgentNetworkOnboard(ctx context.Context, sessionName, keyID 
 	h.mu.Lock()
 	h.onboardContexts[keyID] = info
 	h.mu.Unlock()
-	return renderAgentNetworkSkillWithContext(sessionName, keyID, info)
+	return renderAgentNetworkSkillWithContext(sessionName, localName, keyID, info)
 }
 
-func renderAgentNetworkSkill(sessionName, keyID string) string {
-	return renderAgentNetworkSkillWithContext(sessionName, keyID, onboardContext{Generated: time.Now().UTC()})
+func renderAgentNetworkSkill(sessionName, localName, keyID string) string {
+	return renderAgentNetworkSkillWithContext(sessionName, localName, keyID, onboardContext{Generated: time.Now().UTC()})
 }
 
-func renderAgentNetworkSkillWithContext(sessionName, keyID string, info onboardContext) string {
+func renderAgentNetworkSkillWithContext(sessionName, localName, keyID string, info onboardContext) string {
+	// 在线清单文件由 sessionHelper 按【客户端自己配置的会话名】(SH_SESSION_NAME)命名，
+	// 不是 Hub 派生的完整名；指南里的路径必须回指前者，否则会话读到的是不存在的文件。
+	if strings.TrimSpace(localName) == "" {
+		localName = sessionName
+	}
 	owner := info.OwnerKey
 	if owner == "" {
 		owner = "未识别"
@@ -2468,7 +2474,7 @@ func renderAgentNetworkSkillWithContext(sessionName, keyID string, info onboardC
 		"你已接入DingWei Agent网络，可与同账号的其它在线AI CLI会话互相发消息、协作。",
 		"",
 		"【一、先查在线清单】谁在线是会变的，需要时你自己去读这个文件（sessionHelper 每分钟刷新，不会主动推给你）：",
-		"  ~/.dingwei/" + sessionName + ".DingWeiOnlineSessions.list",
+		"  ~/.dingwei/" + localName + ".DingWeiOnlineSessions.list",
 		"文件里每行是一个在线会话：#会话名 · 工具/模型 · 归属@成员 等。要发现可协作对象、或确认某会话是否在线，读它即可。",
 		"重要：文件头有一行“更新于 <时间>”。若该时间距当前已超过 2 分钟，说明本机 sessionHelper 可能异常或已断连，此时清单不可信，不要据此判断在线状态。",
 		"",

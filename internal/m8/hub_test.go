@@ -3369,7 +3369,6 @@ func TestTerminalViewCookiePersistsAndRestoresUnlock(t *testing.T) {
 	}
 }
 
-
 func TestFeishuSyncRequiresExplicitKeyForOtherOwner(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
@@ -3764,7 +3763,7 @@ func TestOnboardUsesOwnerScopedDBIdentityAndBrief(t *testing.T) {
 	if err := db.UpsertAppConfig(ctx, "onboard.project_briefs", briefs); err != nil {
 		t.Fatal(err)
 	}
-	body := hub.renderAgentNetworkOnboard(ctx, "developer", key.ID)
+	body := hub.renderAgentNetworkOnboard(ctx, "developer", "developer", key.ID)
 	for _, want := range []string{"符磊（owner=fulei）", "Fu Lei", "fu-public@example.test", "fu-private@example.test", "负责客户端上线与可靠投递联调"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("onboard missing %q:\n%s", want, body)
@@ -4315,7 +4314,6 @@ func readEnvelopeOfType(t *testing.T, ctx context.Context, conn *websocket.Conn,
 	return model.Envelope{}
 }
 
-
 func assertNoEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn, wait time.Duration) {
 	t.Helper()
 	readCtx, cancel := context.WithTimeout(ctx, wait)
@@ -4431,4 +4429,33 @@ func waitOutbound(t *testing.T, ctx context.Context, q *bus.DBQueue) *model.Mess
 		time.Sleep(10 * time.Millisecond)
 	}
 	return nil
+}
+
+func TestOnboardOnlineListPathUsesClientLocalName(t *testing.T) {
+	// sessionHelper 用客户端自己配置的 SH_SESSION_NAME 命名清单文件；
+	// 指南若印 Hub 派生的完整名，会话会去读一个不存在的文件。
+	cases := []struct {
+		name        string
+		sessionName string
+		localName   string
+		wantPath    string
+	}{
+		{"短名客户端", "zzc-dev55-2642", "dev55", "~/.dingwei/dev55.DingWeiOnlineSessions.list"},
+		{"旧全名客户端", "zzc-dev55-2642", "zzc-dev55-2642", "~/.dingwei/zzc-dev55-2642.DingWeiOnlineSessions.list"},
+		{"缺失时回退派生名", "zzc-dev55-2642", "", "~/.dingwei/zzc-dev55-2642.DingWeiOnlineSessions.list"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			body := renderAgentNetworkSkill(tc.sessionName, tc.localName, "FB-example-0000")
+			if !strings.Contains(body, tc.wantPath) {
+				t.Fatalf("onboard guide missing %q:\n%s", tc.wantPath, body)
+			}
+			if tc.localName != "" && tc.localName != tc.sessionName {
+				stale := "~/.dingwei/" + tc.sessionName + ".DingWeiOnlineSessions.list"
+				if strings.Contains(body, stale) {
+					t.Fatalf("onboard guide still points at derived-name path %q:\n%s", stale, body)
+				}
+			}
+		})
+	}
 }
