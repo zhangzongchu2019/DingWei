@@ -1590,6 +1590,21 @@ type ownerSessionTarget struct {
 	ownerKey    string
 }
 
+type ownerSessionResolveStatus string
+
+const (
+	ownerSessionUniqueHit ownerSessionResolveStatus = "unique-hit"
+	ownerSessionNoMatch   ownerSessionResolveStatus = "no-match"
+	ownerSessionAmbiguous ownerSessionResolveStatus = "ambiguous"
+)
+
+type ownerSessionResolveResult struct {
+	keyID       string
+	sessionName string
+	status      ownerSessionResolveStatus
+	candidates  []string
+}
+
 func (h *Hub) onlineSessionsForOwner(ctx context.Context, ownerKey string) ([]ownerSessionTarget, error) {
 	member, err := h.Repo.GetMemberByOwnerKey(ctx, ownerKey)
 	if err != nil {
@@ -1641,6 +1656,67 @@ func (h *Hub) sessionOnline(keyID, sessionName string) bool {
 		return sessions[sessionName] != nil
 	}
 	return false
+}
+
+func (h *Hub) resolveOwnerSessionByShort(ctx context.Context, ownerKey, requested, hintKey string) ownerSessionResolveResult {
+	ownerKey = strings.TrimSpace(ownerKey)
+	requested = strings.TrimSpace(requested)
+	if ownerKey == "" || requested == "" {
+		return ownerSessionResolveResult{status: ownerSessionNoMatch}
+	}
+	h.mu.Lock()
+	type candidate struct {
+		keyID       string
+		sessionName string
+	}
+	var online []candidate
+	for keyID, sessions := range h.sessionClients {
+		for sessionName, c := range sessions {
+			if c != nil {
+				online = append(online, candidate{keyID: keyID, sessionName: sessionName})
+			}
+		}
+	}
+	h.mu.Unlock()
+	sort.Slice(online, func(i, j int) bool {
+		if online[i].sessionName == online[j].sessionName {
+			return online[i].keyID < online[j].keyID
+		}
+		return online[i].sessionName < online[j].sessionName
+	})
+	var shortMatches []candidate
+	for _, item := range online {
+		if h.ownerKeyForKey(ctx, item.keyID) != ownerKey {
+			continue
+		}
+		if hintKey != "" && item.keyID == hintKey && (item.sessionName == requested || shortSessionName(item.sessionName) == requested) {
+			return ownerSessionResolveResult{keyID: item.keyID, sessionName: item.sessionName, status: ownerSessionUniqueHit}
+		}
+		if item.sessionName == requested {
+			return ownerSessionResolveResult{keyID: item.keyID, sessionName: item.sessionName, status: ownerSessionUniqueHit}
+		}
+		if shortSessionName(item.sessionName) == requested {
+			shortMatches = append(shortMatches, item)
+		}
+	}
+	if len(shortMatches) == 0 {
+		return ownerSessionResolveResult{status: ownerSessionNoMatch}
+	}
+	if len(shortMatches) == 1 {
+		return ownerSessionResolveResult{keyID: shortMatches[0].keyID, sessionName: shortMatches[0].sessionName, status: ownerSessionUniqueHit}
+	}
+	names := make([]string, 0, len(shortMatches))
+	for _, item := range shortMatches {
+		names = append(names, item.sessionName)
+	}
+	return ownerSessionResolveResult{status: ownerSessionAmbiguous, candidates: names}
+}
+
+func ambiguousSessionError(requested string, candidates []string) error {
+	if len(candidates) == 0 {
+		return fmt.Errorf("存在多个 %s 会话，请用全名指定", requested)
+	}
+	return fmt.Errorf("存在多个 %s 会话：%s，请用全名指定", requested, strings.Join(candidates, "、"))
 }
 
 func (h *Hub) dispatchMirrorCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
@@ -2252,11 +2328,20 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 		if senderOwner == "" {
 			return fmt.Errorf("无法解析发件人账号 key_id=%s", from.KeyID)
 		}
-		k, ok := h.resolveOwnerSessionKey(ctx, senderOwner, to.SessionName, to.KeyID)
+		resolved := h.resolveOwnerSessionByShort(ctx, senderOwner, to.SessionName, to.KeyID)
+		if resolved.status == ownerSessionAmbiguous {
+			return ambiguousSessionError(to.SessionName, resolved.candidates)
+		}
+		k, sessionName, ok := resolved.keyID, resolved.sessionName, resolved.status == ownerSessionUniqueHit
+		if !ok {
+			k, ok = h.resolveOwnerSessionKey(ctx, senderOwner, to.SessionName, to.KeyID)
+			sessionName = to.SessionName
+		}
 		if !ok {
 			return errors.New("目标会话不在你的账号下或不在线：" + to.SessionName)
 		}
-		return h.routeToSession(ctx, k, to.SessionName, env, from.Kind == addressFeishu)
+		env.To = sessionAddress(sessionName, k)
+		return h.routeToSession(ctx, k, sessionName, env, from.Kind == addressFeishu)
 	case addressFeishu:
 		if to.KeyID != from.KeyID {
 			return errors.New("to/from key_id mismatch")
@@ -2526,7 +2611,16 @@ func (h *Hub) routeSessionSelectorEnvelope(ctx context.Context, c *sessionClient
 		if !ok {
 			return false
 		}
-		env.To = sessionAddress(sessionName, c.keyID)
+		resolved := h.resolveOwnerSessionByShort(ctx, h.ownerKeyForKey(ctx, c.keyID), sessionName, "")
+		if resolved.status == ownerSessionAmbiguous {
+			_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+ambiguousSessionError(sessionName, resolved.candidates).Error()))
+			return true
+		}
+		keyID, resolvedSession := c.keyID, sessionName
+		if resolved.status == ownerSessionUniqueHit {
+			keyID, resolvedSession = resolved.keyID, resolved.sessionName
+		}
+		env.To = sessionAddress(resolvedSession, keyID)
 		env.From = sessionAddress(c.sessionName, c.keyID)
 		env.Body = body
 		if err := h.RouteEnvelope(ctx, env); err != nil {
@@ -2652,7 +2746,14 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 	source := sourceAccount(msg)
 	keyID, found := h.lookupKeyIDForSession(source, sessionName)
 	if !found {
-		return model.PrefixDispatchResult{}, false, nil
+		resolved := h.resolveOwnerSessionByShort(ctx, h.controlOwnerKey(ctx, msg), sessionName, "")
+		if resolved.status == ownerSessionAmbiguous {
+			return model.PrefixDispatchResult{Matched: true, Reply: ambiguousSessionError(sessionName, resolved.candidates).Error()}, true, nil
+		}
+		if resolved.status != ownerSessionUniqueHit {
+			return model.PrefixDispatchResult{}, false, nil
+		}
+		keyID, sessionName, found = resolved.keyID, resolved.sessionName, true
 	}
 	env := model.Envelope{
 		ID:   firstNonEmpty(msg.ID, msg.FeishuMsgID, randomHex(16)),

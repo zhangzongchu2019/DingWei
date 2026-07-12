@@ -1696,13 +1696,117 @@ func TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope(t *testing.T) {
 
 	developer := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
 	defer developer.Close(websocket.StatusNormalClosure, "done")
-	if err := writeEnvelope(ctx, home, model.Envelope{ID: "selector", To: "#" + developerName, From: homeName + "#" + key.ID, Body: "请核对X"}); err != nil {
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "selector", To: "#developer", From: homeName + "#" + key.ID, Body: "请核对X"}); err != nil {
 		t.Fatal(err)
 	}
 	got := readEnvelope(t, ctx, developer)
 	if got.To != developerName+"#"+key.ID || got.From != homeName+"#"+key.ID || got.Body != "请核对X" {
 		t.Fatalf("selector routed envelope=%+v", got)
 	}
+}
+
+func TestFeishuShortSessionSelectorResolvesRegisteredNameByOwner(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	u1Secret, u1Key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	u2Secret, u2Key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u1Key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u2Key.ID, "dev:personal:ou_u2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	u1Dev := dialSession(t, ctx, srv.URL, "developer", u1Key.ID, u1Secret)
+	defer u1Dev.Close(websocket.StatusNormalClosure, "done")
+	u2Dev := dialSession(t, ctx, srv.URL, "developer", u2Key.ID, u2Secret)
+	defer u2Dev.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "short-feishu",
+		ChatEntityID: "dev:personal:ou_u1",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"#developer hello"}`,
+	}, "#developer hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("dispatch result = %+v", result)
+	}
+	got := readEnvelope(t, ctx, u1Dev)
+	u1DevName := "u1-developer-" + keyTail(u1Key.ID)
+	if got.To != u1DevName+"#"+u1Key.ID || got.Body != "hello" {
+		t.Fatalf("u1 short selector envelope=%+v", got)
+	}
+	assertNoEnvelope(t, ctx, u2Dev, 120*time.Millisecond)
+}
+
+func TestShortSessionSelectorRejectsAmbiguousOwnerMatch(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	firstSecret, firstKey, err := hub.IssueAPIKey(ctx, "svc1", "u1-a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondSecret, secondKey, err := hub.IssueAPIKey(ctx, "svc1", "u1-b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, firstKey.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, secondKey.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	home := dialSession(t, ctx, srv.URL, "home", firstKey.ID, firstSecret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	firstDev := dialSession(t, ctx, srv.URL, "dev55", firstKey.ID, firstSecret)
+	defer firstDev.Close(websocket.StatusNormalClosure, "done")
+	secondDev := dialSession(t, ctx, srv.URL, "dev55", secondKey.ID, secondSecret)
+	defer secondDev.Close(websocket.StatusNormalClosure, "done")
+
+	homeName := "u1-home-" + keyTail(firstKey.ID)
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "ambiguous", To: "#dev55", From: homeName + "#" + firstKey.ID, Body: "ping"}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, home)
+	firstName := "u1-dev55-" + keyTail(firstKey.ID)
+	secondName := "u1-dev55-" + keyTail(secondKey.ID)
+	if !strings.Contains(got.Body, "存在多个 dev55 会话") || !strings.Contains(got.Body, firstName) || !strings.Contains(got.Body, secondName) || !strings.Contains(got.Body, "请用全名指定") {
+		t.Fatalf("ambiguous selector error=%+v", got)
+	}
+	assertNoEnvelope(t, ctx, firstDev, 120*time.Millisecond)
+	assertNoEnvelope(t, ctx, secondDev, 120*time.Millisecond)
 }
 
 func TestCrossMemberMentionRejectsNoDirectorySession(t *testing.T) {
