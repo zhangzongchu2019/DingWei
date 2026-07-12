@@ -3445,8 +3445,12 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	home := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
 	defer home.Close(websocket.StatusNormalClosure, "done")
+	onboard := readEnvelopeIncludingSystem(t, ctx, home)
+	if metaString(onboard.Meta, "type") != agentNetworkSkillPushType || !strings.Contains(onboard.Body, "生成时间（UTC）") {
+		t.Fatalf("onboard must be the initial system frame: %+v", onboard)
+	}
 	if err := writeEnvelope(ctx, home, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
 		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
 		t.Fatal(err)
@@ -3480,6 +3484,61 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
 	if err != nil || next != nil {
 		t.Fatalf("source not acked after processed: %+v err=%v", next, err)
+	}
+}
+
+func TestOnboardUsesOwnerScopedDBIdentityAndBrief(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := hub.IssueAPIKey(ctx, "svc1", "fulei")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "fulei", DisplayName: "符磊", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "fulei"); err != nil {
+		t.Fatal(err)
+	}
+	identities := `{"fulei":{"public":{"name":"Fu Lei","email":"fu-public@example.test"},"private":{"name":"符磊","email":"fu-private@example.test"}},"zzc":{"public":{"name":"wrong","email":"wrong@example.test"}}}`
+	briefs := `{"fulei":"负责客户端上线与可靠投递联调。","zzc":"不应泄漏的其他 owner 简报"}`
+	if err := db.UpsertAppConfig(ctx, "onboard.git_identities", identities); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertAppConfig(ctx, "onboard.project_briefs", briefs); err != nil {
+		t.Fatal(err)
+	}
+	body := hub.renderAgentNetworkOnboard(ctx, "developer", key.ID)
+	for _, want := range []string{"符磊（owner=fulei）", "Fu Lei", "fu-public@example.test", "fu-private@example.test", "负责客户端上线与可靠投递联调"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("onboard missing %q:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, "wrong@example.test") || strings.Contains(body, "不应泄漏") {
+		t.Fatalf("onboard leaked another owner configuration:\n%s", body)
+	}
+}
+
+func TestOnboardReconnectDebouncePerSession(t *testing.T) {
+	hub := New(nil)
+	hub.onboardInterval = time.Hour
+	now := time.Date(2026, 7, 11, 12, 0, 0, 0, time.UTC)
+	home := &sessionClient{keyID: "key", sessionName: "home", connSeq: 1}
+	if !hub.reserveOnboardPush(home, now) {
+		t.Fatal("first connection must push")
+	}
+	home.connSeq++
+	if hub.reserveOnboardPush(home, now.Add(59*time.Minute)) {
+		t.Fatal("short reconnect must be debounced")
+	}
+	if !hub.reserveOnboardPush(home, now.Add(time.Hour)) {
+		t.Fatal("push must resume after interval")
+	}
+	other := &sessionClient{keyID: "key", sessionName: "review", connSeq: 1}
+	if !hub.reserveOnboardPush(other, now.Add(time.Minute)) {
+		t.Fatal("debounce must be scoped per session")
 	}
 }
 
