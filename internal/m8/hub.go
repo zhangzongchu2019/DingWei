@@ -663,6 +663,14 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
+	timingStart := time.Now()
+	timingLast := timingStart
+	var timingParts []string
+	markTiming := func(name string) {
+		now := time.Now()
+		timingParts = append(timingParts, fmt.Sprintf("%s=%s", name, now.Sub(timingLast).Round(time.Millisecond)))
+		timingLast = now
+	}
 	requestedSessionName := strings.TrimSpace(r.PathValue("sessionName"))
 	if requestedSessionName == "" || strings.Contains(requestedSessionName, "#") {
 		http.Error(w, "invalid session name", http.StatusBadRequest)
@@ -680,11 +688,13 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
+	markTiming("auth")
 	accounts, err := h.Repo.ListAPIKeyAccounts(r.Context(), meta.ID)
 	if err != nil {
 		http.Error(w, "load key accounts failed", http.StatusInternalServerError)
 		return
 	}
+	markTiming("accounts")
 	clientIP := clientIPFromRequest(r)
 	tool := strings.TrimSpace(r.URL.Query().Get("tool"))
 	modelName := strings.TrimSpace(r.URL.Query().Get("model"))
@@ -697,6 +707,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	osName := strings.TrimSpace(r.URL.Query().Get("os"))
 	mirrorTo := sessionMirrorToFromRequest(r)
 	ownerKey := h.ownerKeyForKeyWithAccounts(r.Context(), keyID, accounts)
+	markTiming("owner")
 	sessionName := deriveRegisteredSessionName(requestedSessionName, keyID, ownerKey)
 	nameWarn := sessionNameRequestWarning(requestedSessionName, keyID, ownerKey)
 	switch sessionNameEnforceMode() {
@@ -730,9 +741,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "save session endpoint failed", http.StatusInternalServerError)
 		return
 	}
-	// Resolve owner-scoped onboarding data before the websocket is published.
-	// The first write after Accept is then local and deterministic.
-	onboardBody := h.renderAgentNetworkOnboard(r.Context(), sessionName, requestedSessionName, keyID)
+	markTiming("register")
 	var c *sessionClient
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
@@ -753,20 +762,25 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	markTiming("accept")
 	conn.SetReadLimit(16 << 20) // 终端 PTY 全屏输出可能远超默认 32KB
 	connSeq, err := h.Repo.IncrementSessionEndpointConnSeq(r.Context(), keyID, sessionName)
 	if err != nil {
 		_ = conn.Close(websocket.StatusInternalError, "save session endpoint failed")
 		return
 	}
-	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, onboardBody: onboardBody}
+	markTiming("conn_seq")
+	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	skillCtx, skillCancel := context.WithCancel(context.Background())
 	c.skillCancel = skillCancel
 	// Send onboarding before publishing the client to directory broadcasters, so
 	// no concurrent online-directory frame can overtake the initial guide.
+	onboardStart := time.Now()
 	h.startAgentNetworkSkillPush(skillCtx, c)
+	timingParts = append(timingParts, fmt.Sprintf("onboard=%s", time.Since(onboardStart).Round(time.Millisecond)))
+	lockStart := time.Now()
 	h.mu.Lock()
 	if h.sessionClients[keyID] == nil {
 		h.sessionClients[keyID] = map[string]*sessionClient{}
@@ -778,6 +792,8 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	h.keyAccounts[keyID] = stringSet(accounts)
 	reSize := h.terminalLastSize[terminalKey(keyID, sessionName)]
 	h.mu.Unlock()
+	timingParts = append(timingParts, fmt.Sprintf("register_lock=%s", time.Since(lockStart).Round(time.Millisecond)))
+	log.Printf("session handshake timing key_id=%s session=%s total=%s %s", keyID, sessionName, time.Since(timingStart).Round(time.Millisecond), strings.Join(timingParts, " "))
 	if reSize[0] > 0 && reSize[1] > 0 {
 		_ = c.write(r.Context(), model.Envelope{
 			ID:   randomHex(16),
@@ -3204,6 +3220,14 @@ type onlineSessionItem struct {
 	Client   *sessionClient
 }
 
+type onlineSessionSnapshot struct {
+	KeyID    string
+	Session  string
+	Client   *sessionClient
+	Accounts []string
+	ConnSeq  int
+}
+
 func (h *Hub) scheduleOnlineBroadcast(ctx context.Context, keyID string) {
 	if h.Repo == nil {
 		return
@@ -3374,15 +3398,18 @@ func (h *Hub) ownerKeyForKeyWithMembersAndAccounts(accounts []string, members []
 }
 
 func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string, includeFeishu bool) error {
+	start := time.Now()
 	items, owner, err := h.onlineDirectory(ctx, ownerKey)
 	if err != nil {
 		return err
 	}
+	snapshotDur := time.Since(start)
 	if owner.OwnerKey == "" {
 		return nil
 	}
 	text := renderOnlineDirectory(owner, items)
 	broadcastKey := broadcastDedupKey("online_directory", randomHex(16), owner.OwnerKey)
+	fanoutStart := time.Now()
 	var wg sync.WaitGroup
 	for i, item := range items {
 		env := model.Envelope{
@@ -3405,7 +3432,10 @@ func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string, inc
 		}(item.Client, env)
 	}
 	wg.Wait()
+	fanoutDur := time.Since(fanoutStart)
+	enqueueDur := time.Duration(0)
 	if includeFeishu && h.Outbound != nil && owner.FeishuOpenID != "" {
+		enqueueStart := time.Now()
 		botChannelID := h.botChannel("UnifiedRobot")
 		content, _ := json.Marshal(map[string]string{"text": text})
 		if err := h.Outbound.Enqueue(ctx, model.Message{
@@ -3417,7 +3447,9 @@ func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string, inc
 		}); err != nil {
 			return err
 		}
+		enqueueDur = time.Since(enqueueStart)
 	}
+	log.Printf("online directory broadcast timing owner=%s total=%s snapshot=%s fanout=%s enqueue=%s clients=%d include_feishu=%t", owner.OwnerKey, time.Since(start).Round(time.Millisecond), snapshotDur.Round(time.Millisecond), fanoutDur.Round(time.Millisecond), enqueueDur.Round(time.Millisecond), len(items), includeFeishu)
 	return nil
 }
 
@@ -3439,10 +3471,12 @@ func broadcastDedupKey(kind, sourceID, ownerKey string) string {
 }
 
 func (h *Hub) onlineDirectory(ctx context.Context, ownerKey string) ([]onlineSessionItem, model.Member, error) {
+	start := time.Now()
 	members, err := h.Repo.ListMembers(ctx)
 	if err != nil {
 		return nil, model.Member{}, err
 	}
+	membersDur := time.Since(start)
 	var owner model.Member
 	byOwner := map[string]model.Member{}
 	for _, member := range members {
@@ -3457,38 +3491,75 @@ func (h *Hub) onlineDirectory(ctx context.Context, ownerKey string) ([]onlineSes
 	if owner.OwnerKey == "" {
 		return nil, model.Member{}, nil
 	}
+	endpointsStart := time.Now()
 	endpoints, err := h.Repo.ListSessionEndpoints(ctx)
 	if err != nil {
 		return nil, model.Member{}, err
 	}
+	endpointsDur := time.Since(endpointsStart)
 	endpointByID := map[string]model.SessionEndpoint{}
 	for _, ep := range endpoints {
 		endpointByID[ep.KeyID+"#"+ep.SessionName] = ep
 	}
+	snapshotStart := time.Now()
 	h.mu.Lock()
-	var clients []onlineSessionItem
+	var snapshots []onlineSessionSnapshot
+	var missingAccountKeys []string
+	missingAccountSeen := map[string]bool{}
 	for keyID, sessions := range h.sessionClients {
-		if h.ownerKeyForKeyLocked(ctx, keyID, byOwner) != ownerKey {
-			continue
+		accounts := stringSetKeys(h.keyAccounts[keyID])
+		if len(accounts) == 0 && !missingAccountSeen[keyID] {
+			missingAccountSeen[keyID] = true
+			missingAccountKeys = append(missingAccountKeys, keyID)
 		}
 		for sessionName, c := range sessions {
-			ep := endpointByID[keyID+"#"+sessionName]
-			if ep.KeyID == "" {
-				ep = model.SessionEndpoint{KeyID: keyID, SessionName: sessionName, Active: true}
-			}
-			if !ep.Active {
-				ep.Active = true
-			}
-			if ep.ConnSeq == 0 && c.connSeq > 0 {
-				ep.ConnSeq = c.connSeq
-			}
-			if ep.NoDirectory {
-				continue
-			}
-			clients = append(clients, onlineSessionItem{Endpoint: ep, Owner: owner, Client: c})
+			snapshots = append(snapshots, onlineSessionSnapshot{
+				KeyID: keyID, Session: sessionName, Client: c, Accounts: append([]string(nil), accounts...),
+				ConnSeq: c.connSeq,
+			})
 		}
 	}
 	h.mu.Unlock()
+	snapshotDur := time.Since(snapshotStart)
+	accountsStart := time.Now()
+	accountByKey := map[string][]string{}
+	if len(missingAccountKeys) > 0 {
+		accountByKey, err = h.Repo.ListAPIKeyAccountsForKeys(ctx, missingAccountKeys)
+		if err != nil {
+			return nil, model.Member{}, err
+		}
+	}
+	accountsDur := time.Since(accountsStart)
+	boundStart := time.Now()
+	boundOwners, err := h.boundOwnersByAccount(ctx)
+	if err != nil {
+		return nil, model.Member{}, err
+	}
+	boundDur := time.Since(boundStart)
+	var clients []onlineSessionItem
+	for _, snap := range snapshots {
+		accounts := snap.Accounts
+		if len(accounts) == 0 {
+			accounts = accountByKey[snap.KeyID]
+		}
+		if ownerKeyForAccounts(accounts, byOwner, boundOwners) != ownerKey {
+			continue
+		}
+		ep := endpointByID[snap.KeyID+"#"+snap.Session]
+		if ep.KeyID == "" {
+			ep = model.SessionEndpoint{KeyID: snap.KeyID, SessionName: snap.Session, Active: true}
+		}
+		if !ep.Active {
+			ep.Active = true
+		}
+		if ep.ConnSeq == 0 && snap.ConnSeq > 0 {
+			ep.ConnSeq = snap.ConnSeq
+		}
+		if ep.NoDirectory {
+			continue
+		}
+		clients = append(clients, onlineSessionItem{Endpoint: ep, Owner: owner, Client: snap.Client})
+	}
 	sort.Slice(clients, func(i, j int) bool {
 		a, b := clients[i].Endpoint, clients[j].Endpoint
 		if a.SessionName == b.SessionName {
@@ -3496,11 +3567,77 @@ func (h *Hub) onlineDirectory(ctx context.Context, ownerKey string) ([]onlineSes
 		}
 		return a.SessionName < b.SessionName
 	})
+	log.Printf("online directory snapshot timing owner=%s total=%s members=%s endpoints=%s snapshot=%s account_fill=%s bound=%s sessions=%d clients=%d", ownerKey, time.Since(start).Round(time.Millisecond), membersDur.Round(time.Millisecond), endpointsDur.Round(time.Millisecond), snapshotDur.Round(time.Millisecond), accountsDur.Round(time.Millisecond), boundDur.Round(time.Millisecond), len(snapshots), len(clients))
 	return clients, owner, nil
 }
 
-func (h *Hub) ownerKeyForKeyLocked(ctx context.Context, keyID string, members map[string]model.Member) string {
-	return h.ownerKeyForKeyWithMembers(ctx, keyID, members)
+func (h *Hub) boundOwnersByAccount(ctx context.Context) (map[string]string, error) {
+	out := map[string]string{}
+	for _, typ := range []model.ChatType{model.ChatPersonal, model.ChatGroup} {
+		entities, err := h.Repo.ListChatEntities(ctx, typ)
+		if err != nil {
+			return nil, err
+		}
+		for _, entity := range entities {
+			if !entity.Active || entity.BoundOwner == "" {
+				continue
+			}
+			out[entity.ID] = entity.BoundOwner
+			if entity.BotChannelID != "" && entity.FeishuID != "" {
+				out[entity.BotChannelID+":"+entity.FeishuID] = entity.BoundOwner
+			}
+		}
+	}
+	return out, nil
+}
+
+func ownerKeyForAccounts(accounts []string, members map[string]model.Member, boundOwners map[string]string) string {
+	if owner := ownerKeyFromBoundAccountsCached(accounts, boundOwners); owner != "" {
+		return owner
+	}
+	owners := map[string]bool{}
+	for _, member := range members {
+		if !member.Active {
+			continue
+		}
+		for _, account := range accounts {
+			if account == member.OwnerKey || accountBelongsToMember(account, member) {
+				owners[member.OwnerKey] = true
+				break
+			}
+		}
+	}
+	if len(owners) != 1 {
+		return ""
+	}
+	for owner := range owners {
+		return owner
+	}
+	return ""
+}
+
+func ownerKeyFromBoundAccountsCached(accounts []string, boundOwners map[string]string) string {
+	owners := map[string]bool{}
+	for _, account := range accounts {
+		if owner := boundOwners[account]; owner != "" {
+			owners[owner] = true
+			continue
+		}
+		botChannelID, feishuID, ok := accountEntityParts(account)
+		if !ok {
+			continue
+		}
+		if owner := boundOwners[botChannelID+":"+feishuID]; owner != "" {
+			owners[owner] = true
+		}
+	}
+	if len(owners) != 1 {
+		return ""
+	}
+	for owner := range owners {
+		return owner
+	}
+	return ""
 }
 
 func (h *Hub) ownerKeyForKeyWithMembers(ctx context.Context, keyID string, members map[string]model.Member) string {
@@ -4540,8 +4677,24 @@ func firstNonEmpty(values ...string) string {
 func stringSet(items []string) map[string]bool {
 	out := map[string]bool{}
 	for _, item := range items {
-		out[item] = true
+		if item != "" {
+			out[item] = true
+		}
 	}
+	return out
+}
+
+func stringSetKeys(items map[string]bool) []string {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for item := range items {
+		if item != "" {
+			out = append(out, item)
+		}
+	}
+	sort.Strings(out)
 	return out
 }
 

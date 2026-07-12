@@ -2903,6 +2903,43 @@ func (s *SQLite) ListAPIKeyAccounts(ctx context.Context, keyID string) ([]string
 	return scanStrings(rows)
 }
 
+func (s *SQLite) ListAPIKeyAccountsForKeys(ctx context.Context, keyIDs []string) (map[string][]string, error) {
+	out := make(map[string][]string, len(keyIDs))
+	if len(keyIDs) == 0 {
+		return out, nil
+	}
+	seen := make(map[string]bool, len(keyIDs))
+	args := make([]any, 0, len(keyIDs))
+	placeholders := make([]string, 0, len(keyIDs))
+	for _, keyID := range keyIDs {
+		keyID = strings.TrimSpace(keyID)
+		if keyID == "" || seen[keyID] {
+			continue
+		}
+		seen[keyID] = true
+		args = append(args, keyID)
+		placeholders = append(placeholders, "?")
+		out[keyID] = nil
+	}
+	if len(args) == 0 {
+		return out, nil
+	}
+	query := `SELECT api_key_id, chat_entity_id FROM api_key_account WHERE api_key_id IN (` + strings.Join(placeholders, ",") + `) ORDER BY api_key_id, chat_entity_id`
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var keyID, account string
+		if err := rows.Scan(&keyID, &account); err != nil {
+			return nil, err
+		}
+		out[keyID] = append(out[keyID], account)
+	}
+	return out, rows.Err()
+}
+
 func (s *SQLite) ListServiceBoundAccounts(ctx context.Context, serviceID string) ([]string, error) {
 	if keyID, _, ok := sessionServiceParts(serviceID); ok {
 		return s.ListAPIKeyAccounts(ctx, keyID)

@@ -146,6 +146,7 @@ type Repository interface {
 	RevokeServiceAPIKey(ctx context.Context, keyID string) error
 	BindAPIKeyAccount(ctx context.Context, keyID, chatEntityID string) error
 	ListAPIKeyAccounts(ctx context.Context, keyID string) ([]string, error)
+	ListAPIKeyAccountsForKeys(ctx context.Context, keyIDs []string) (map[string][]string, error)
 	ListServiceBoundAccounts(ctx context.Context, serviceID string) ([]string, error)
 	CreateKeyApplication(ctx context.Context, app model.KeyApplication) (model.KeyApplication, error)
 	GetKeyApplication(ctx context.Context, id string) (*model.KeyApplication, error)
