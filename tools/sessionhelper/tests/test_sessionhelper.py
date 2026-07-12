@@ -44,6 +44,7 @@ from sessionhelper.llm import PROVIDERS
 from sessionhelper.protocol import AddressBook, is_mirror_control, reply_target
 from sessionhelper.provision import Provisioner, compare_versions
 from sessionhelper.send_dingwei import temporary_session_name
+from sessionhelper.inbox import DeliveryInbox
 
 
 BASE_ENV = {
@@ -57,6 +58,39 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class SessionHelperTest(unittest.TestCase):
+    def test_control_route_multiline_positive_and_negative_examples(self):
+        book = AddressBook("home", "FB-2642", "UnifiedRobot")
+        routed = agent_route_envelope(
+            '[[DW_ROUTE_V1\n{\n  "to": "@zzc#manager",\n  "body": "first\\nsecond"\n}\n]]', book
+        )
+        self.assertEqual(routed["to"], "@zzc#manager")
+        self.assertEqual(routed["body"], "first\nsecond")
+        self.assertIsNone(agent_route_envelope("# Markdown title", book))
+        self.assertIsNone(agent_route_envelope('[[DW_ROUTE_V1\n{"to":"all","body":"x"}\n]]', book))
+        self.assertIsNone(agent_route_envelope('[[DW_ROUTE_V1\n{"to":"#dev","body":"x","from":"fake"}\n]]', book))
+
+    def test_delivery_inbox_deduplicates_and_recovers_processing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "inbox.db")
+            inbox = DeliveryInbox(path, 2)
+            env = {"body": "one", "meta": {"type": "delivery", "delivery_id": "dlv_1"}}
+            self.assertEqual(inbox.accept("dlv_1", env), ("delivered", 0, 1))
+            self.assertEqual(inbox.accept("dlv_1", env), ("delivered", 0, 1))
+            self.assertEqual(inbox.claim_next()[0], "dlv_1")
+            self.assertEqual(inbox.accept("dlv_1", env)[0], "delivered")  # processing maps to delivered
+            recovered = DeliveryInbox(path, 2)
+            self.assertEqual(recovered.claim_next()[0], "dlv_1")
+            recovered.finish("dlv_1")
+            self.assertEqual(recovered.accept("dlv_1", env)[0], "processed")
+
+    def test_delivery_inbox_fifo_and_capacity_preserve_oldest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)
+            inbox.accept("dlv_1", {"body": "one"})
+            inbox.accept("dlv_2", {"body": "two"})
+            with self.assertRaises(OverflowError):
+                inbox.accept("dlv_3", {"body": "three"})
+            self.assertEqual(inbox.claim_next()[0], "dlv_1")
     def test_load_config_required_and_defaults(self):
         cfg = load_config(BASE_ENV)
         self.assertEqual(cfg.session_name, "home")
