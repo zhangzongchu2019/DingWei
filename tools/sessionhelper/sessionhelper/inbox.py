@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import sys
 import threading
 import time
 
@@ -17,6 +18,7 @@ class DeliveryInbox:
         self._lock = threading.Lock()
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
         self._initialize()
+        self._import_legacy_shared_inbox()
 
     def _connect(self) -> sqlite3.Connection:
         db = sqlite3.connect(self.path, timeout=5)
@@ -83,6 +85,87 @@ class DeliveryInbox:
             (self.session_name,),
         )
         db.execute("DROP TABLE delivery_inbox_legacy")
+
+    def _legacy_shared_path(self) -> str:
+        return os.path.join(os.path.dirname(self.path) or ".", "sessionhelper_inbox.db")
+
+    def _import_legacy_shared_inbox(self) -> None:
+        legacy_path = self._legacy_shared_path()
+        if os.path.abspath(legacy_path) == os.path.abspath(self.path) or not os.path.exists(legacy_path):
+            return
+        if os.path.getsize(legacy_path) == 0:
+            return
+        try:
+            rows = self._pending_legacy_rows(legacy_path)
+            if not rows:
+                return
+            imported = 0
+            with self._lock, self._connect() as db:
+                for row in rows:
+                    cursor = db.execute(
+                        """INSERT OR IGNORE INTO delivery_inbox(
+                                delivery_id,session_name,envelope_json,state,attempts,error,received_at,updated_at
+                            ) VALUES(?,?,?,?,?,?,?,?)""",
+                        (
+                            row["delivery_id"],
+                            self.session_name,
+                            row["envelope_json"],
+                            "received",
+                            row["attempts"],
+                            row["error"],
+                            row["received_at"],
+                            time.time(),
+                        ),
+                    )
+                    imported += cursor.rowcount
+            if imported:
+                print(
+                    f"[delivery][legacy_inbox] imported {imported}/{len(rows)} pending deliveries "
+                    f"from {legacy_path} into {self.path} session={self.session_name}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+        except Exception as exc:
+            print(
+                f"[delivery][legacy_inbox][WARN] failed to import pending deliveries "
+                f"from {legacy_path} into {self.path} session={self.session_name}: {exc}",
+                file=sys.stderr,
+                flush=True,
+            )
+
+    def _pending_legacy_rows(self, legacy_path: str) -> list[sqlite3.Row]:
+        with sqlite3.connect(f"file:{legacy_path}?mode=ro", uri=True, timeout=5) as db:
+            db.row_factory = sqlite3.Row
+            table = db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='delivery_inbox'"
+            ).fetchone()
+            if table is None:
+                return []
+            columns = db.execute("PRAGMA table_info(delivery_inbox)").fetchall()
+            column_names = {str(row["name"]) for row in columns}
+            required = {"delivery_id", "envelope_json", "state", "attempts", "error", "received_at"}
+            missing = required - column_names
+            if missing:
+                raise RuntimeError(f"legacy delivery_inbox missing columns: {','.join(sorted(missing))}")
+            if "session_name" in column_names:
+                return list(
+                    db.execute(
+                        """SELECT delivery_id,envelope_json,state,attempts,error,received_at
+                           FROM delivery_inbox
+                           WHERE state IN ('received','processing')
+                             AND (session_name=? OR session_name IS NULL OR session_name='')
+                           ORDER BY received_at,delivery_id""",
+                        (self.session_name,),
+                    )
+                )
+            return list(
+                db.execute(
+                    """SELECT delivery_id,envelope_json,state,attempts,error,received_at
+                       FROM delivery_inbox
+                       WHERE state IN ('received','processing')
+                       ORDER BY received_at,delivery_id"""
+                )
+            )
 
     def accept(self, delivery_id: str, env: dict, retry_failed: bool = False) -> tuple[str, int, int]:
         """Persist a delivery and return (ack_state, queue_position, queue_depth)."""

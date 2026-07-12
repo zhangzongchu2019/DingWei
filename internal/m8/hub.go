@@ -96,7 +96,6 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
-	onboardBody    string
 }
 
 type feishuSyncTarget struct {
@@ -609,7 +608,13 @@ func HashAPIKey(plain string) string {
 }
 
 func (h *Hub) BindAccount(ctx context.Context, keyID, chatEntityID string) error {
-	return h.Repo.BindAPIKeyAccount(ctx, keyID, chatEntityID)
+	if err := h.Repo.BindAPIKeyAccount(ctx, keyID, chatEntityID); err != nil {
+		return err
+	}
+	h.mu.Lock()
+	delete(h.keyAccounts, keyID)
+	h.mu.Unlock()
+	return nil
 }
 
 func (h *Hub) AddPrefixRule(ctx context.Context, rule model.RoutingRule) error {
@@ -2463,10 +2468,7 @@ func (h *Hub) pushAgentNetworkSkill(ctx context.Context, c *sessionClient) {
 	if h.agentNetworkSkillInstalled(c) {
 		return
 	}
-	body := c.onboardBody
-	if body == "" {
-		body = h.renderAgentNetworkOnboard(ctx, c.sessionName, c.localName, c.keyID)
-	}
+	body := h.renderAgentNetworkOnboard(ctx, c.sessionName, c.localName, c.keyID)
 	env := model.Envelope{
 		ID:   randomHex(16),
 		To:   sessionAddress(c.sessionName, c.keyID),

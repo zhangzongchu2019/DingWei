@@ -172,6 +172,92 @@ class SessionHelperTest(unittest.TestCase):
             self.assertEqual(delivery_id, "dlv_legacy")
             self.assertEqual(env["body"], "legacy")
 
+    def test_delivery_inbox_imports_pending_rows_from_old_shared_db(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy_path = Path(tmp) / "sessionhelper_inbox.db"
+            target_path = Path(tmp) / "sessionhelper_inbox-home.db"
+            with sqlite3.connect(legacy_path) as db:
+                db.execute(
+                    """CREATE TABLE delivery_inbox (
+                        delivery_id TEXT PRIMARY KEY,
+                        envelope_json TEXT NOT NULL,
+                        state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed')),
+                        attempts INTEGER NOT NULL DEFAULT 0,
+                        error TEXT,
+                        received_at REAL NOT NULL,
+                        updated_at REAL NOT NULL
+                    )"""
+                )
+                db.executemany(
+                    """INSERT INTO delivery_inbox(delivery_id,envelope_json,state,attempts,received_at,updated_at)
+                       VALUES(?,?,?,?,?,?)""",
+                    [
+                        ("dlv_received", json.dumps({"body": "received"}), "received", 0, 1.0, 1.0),
+                        ("dlv_processing", json.dumps({"body": "processing"}), "processing", 2, 2.0, 2.0),
+                        ("dlv_processed", json.dumps({"body": "processed"}), "processed", 1, 3.0, 3.0),
+                    ],
+                )
+
+            stderr = io.StringIO()
+            with mock.patch("sys.stderr", stderr):
+                inbox = DeliveryInbox(str(target_path), 10, "home")
+            self.assertIn("[delivery][legacy_inbox] imported 2/2 pending deliveries", stderr.getvalue())
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_received")
+            self.assertEqual(env["body"], "received")
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_processing")
+            self.assertEqual(env["body"], "processing")
+            self.assertIsNone(inbox.claim_next())
+
+    def test_delivery_inbox_imports_only_current_session_from_sessioned_shared_db(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy_path = Path(tmp) / "sessionhelper_inbox.db"
+            target_path = Path(tmp) / "sessionhelper_inbox-home.db"
+            with sqlite3.connect(legacy_path) as db:
+                db.execute(
+                    """CREATE TABLE delivery_inbox (
+                        delivery_id TEXT NOT NULL,
+                        session_name TEXT NOT NULL,
+                        envelope_json TEXT NOT NULL,
+                        state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed')),
+                        attempts INTEGER NOT NULL DEFAULT 0,
+                        error TEXT,
+                        received_at REAL NOT NULL,
+                        updated_at REAL NOT NULL,
+                        PRIMARY KEY(session_name, delivery_id)
+                    )"""
+                )
+                db.executemany(
+                    """INSERT INTO delivery_inbox(delivery_id,session_name,envelope_json,state,received_at,updated_at)
+                       VALUES(?,?,?,?,?,?)""",
+                    [
+                        ("dlv_home", "home", json.dumps({"body": "home"}), "received", 1.0, 1.0),
+                        ("dlv_tester", "tester", json.dumps({"body": "tester"}), "received", 2.0, 2.0),
+                    ],
+                )
+
+            inbox = DeliveryInbox(str(target_path), 10, "home")
+            delivery_id, env = inbox.claim_next()
+            self.assertEqual(delivery_id, "dlv_home")
+            self.assertEqual(env["body"], "home")
+            self.assertIsNone(inbox.claim_next())
+
+    def test_delivery_inbox_warns_when_old_shared_db_cannot_be_imported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy_path = Path(tmp) / "sessionhelper_inbox.db"
+            target_path = Path(tmp) / "sessionhelper_inbox-home.db"
+            with sqlite3.connect(legacy_path) as db:
+                db.execute("CREATE TABLE delivery_inbox (delivery_id TEXT PRIMARY KEY)")
+                db.execute("INSERT INTO delivery_inbox(delivery_id) VALUES('dlv_bad')")
+
+            stderr = io.StringIO()
+            with mock.patch("sys.stderr", stderr):
+                inbox = DeliveryInbox(str(target_path), 10, "home")
+            self.assertIn("[delivery][legacy_inbox][WARN] failed to import pending deliveries", stderr.getvalue())
+            inbox.accept("dlv_new", {"body": "new"})
+            self.assertEqual(inbox.claim_next()[0], "dlv_new")
+
     def test_load_config_required_and_defaults(self):
         cfg = load_config(BASE_ENV)
         self.assertEqual(cfg.session_name, "home")
