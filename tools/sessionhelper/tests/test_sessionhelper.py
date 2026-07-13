@@ -367,6 +367,23 @@ class SessionHelperTest(unittest.TestCase):
         overridden = load_config(dict(BASE_ENV, SH_INBOX_DB="/tmp/shared-inbox.db"))
         self.assertEqual(overridden.inbox_db, "/tmp/shared-inbox.db")
 
+    def test_provision_state_files_are_session_scoped_and_overridable(self):
+        # F3: 单机多 helper 不得共用 versions/update_state 文件（否则陈旧记录会把新下发误判为 already installed）。
+        a = load_config(dict(BASE_ENV, SH_SESSION_NAME="tester"))
+        b = load_config(dict(BASE_ENV, SH_SESSION_NAME="reviewer"))
+        self.assertTrue(a.provision_versions_file.endswith("/.dingwei/sessionhelper_versions-tester.json"))
+        self.assertTrue(a.provision_update_state_file.endswith("/.dingwei/sessionhelper_update_state-tester.json"))
+        self.assertNotEqual(a.provision_versions_file, b.provision_versions_file)
+        self.assertNotEqual(a.provision_update_state_file, b.provision_update_state_file)
+        # Provisioner 实际采用按会话隔离的路径
+        prov = Provisioner(a)
+        self.assertTrue(str(prov.version_file).endswith("sessionhelper_versions-tester.json"))
+        self.assertTrue(str(prov.update_state_file).endswith("sessionhelper_update_state-tester.json"))
+        # 显式覆盖仍生效
+        ov = load_config(dict(BASE_ENV, SH_PROVISION_VERSIONS_FILE="/tmp/v.json", SH_PROVISION_STATE_FILE="/tmp/s.json"))
+        self.assertEqual(ov.provision_versions_file, "/tmp/v.json")
+        self.assertEqual(ov.provision_update_state_file, "/tmp/s.json")
+
         self.assertEqual(default_inbox_db("Dev 55/Prod"), "~/.dingwei/sessionhelper_inbox-dev_55_prod.db")
 
     def test_provision_allowed_hosts_default_is_hub_not_legacy_domain(self):

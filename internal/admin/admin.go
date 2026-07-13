@@ -1615,9 +1615,10 @@ func (s *Server) manageProvision(w http.ResponseWriter, r *http.Request) {
 		result := provisionSendResult{KeyID: target.KeyID, SessionName: target.SessionName, OK: err == nil}
 		if err != nil {
 			result.Error = err.Error()
-		} else {
-			s.recordProvisionVersion(r.Context(), req.Action, target.KeyID, target.SessionName, req.Target, req.Version)
 		}
+		// F2: 版本单调闸只在收到 helper 的 provision_ack(ok=true) 后推进（见 m8.Hub.handleProvisionAck）。
+		// 「下发成功」≠「apply 成功」——若在此记录，一次被 helper 拒绝的下发（如 sha256 失配）也会烧掉版本号，
+		// 之后合法的更低/同版本会被误判为 downgrade denied（实测 2026-07-12 V1 复现）。
 		results = append(results, result)
 	}
 	detail, _ := json.Marshal(map[string]any{"action": req.Action, "version": req.Version, "sha256": req.SHA256, "target": req.Target, "results": results})
@@ -1738,11 +1739,36 @@ func (s *Server) resolveProvisionTargets(ctx context.Context, mode, keyID, sessi
 }
 
 func (s *Server) ensureProvisionVersionMonotonic(ctx context.Context, action, keyID, sessionName, target, version string) error {
-	current := s.provisionLastVersion(ctx, provisionVersionKey(action, keyID, sessionName, target))
+	var current string
+	if action == "update_self" {
+		// F2: update_self 不做独立记账，以 helper 在线自报版本(session_endpoint.version，
+		// 握手 query 参数 version，由 helper 自报)为准。
+		// 「下发失败」不改变在线版本 → 不会烧号；「升级成功」helper 重连刷新在线版本 → 闸自然跟上。
+		// 注意：在线版本是「helper 声称在跑的版本」，受 helper 控制；这道闸只是省一次无谓往返的早退。
+		// 真正不可伪造的降级兜底在 helper 侧 update_self 的 compare_versions(__version__, version)——
+		// 即便这道闸被跳过(离线/version 为空)，helper 也会用实际运行版本拒掉真正的降级。
+		current = s.liveSessionVersion(ctx, keyID, sessionName)
+	} else {
+		current = s.provisionLastVersion(ctx, provisionVersionKey(action, keyID, sessionName, target))
+	}
 	if current != "" && compareProvisionVersions(current, version) > 0 {
 		return fmt.Errorf("version downgrade denied: last=%s new=%s", current, version)
 	}
 	return nil
+}
+
+// liveSessionVersion 返回某会话当前在线上报的版本（session_endpoint.version），查不到返回 ""。
+func (s *Server) liveSessionVersion(ctx context.Context, keyID, sessionName string) string {
+	items, err := s.Repo.ListSessionEndpoints(ctx)
+	if err != nil {
+		return ""
+	}
+	for _, ep := range items {
+		if ep.KeyID == keyID && ep.SessionName == sessionName {
+			return strings.TrimSpace(ep.Version)
+		}
+	}
+	return ""
 }
 
 func (s *Server) recordProvisionVersion(ctx context.Context, action, keyID, sessionName, target, version string) {
@@ -1770,7 +1796,7 @@ func (s *Server) provisionLastVersion(ctx context.Context, key string) string {
 }
 
 func provisionVersionKey(action, keyID, sessionName, target string) string {
-	return "provision:last:" + action + ":" + keyID + ":" + sessionName + ":" + target
+	return store.ProvisionVersionKey(action, keyID, sessionName, target)
 }
 
 func (s *Server) saveProvisionUpload(r *http.Request, src io.Reader, name string) (provisionArtifactInfo, error) {

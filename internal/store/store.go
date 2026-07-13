@@ -163,3 +163,10 @@ type Repository interface {
 	ListSystemRoutes(ctx context.Context) ([]model.SystemRoute, error)
 	GetSystemService(ctx context.Context, name string) (*model.SystemService, error)
 }
+
+// ProvisionVersionKey 是「某目标最后一次已确认 apply 的 provision 版本」在 app_config 里的键。
+// 由 admin（下发前的单调闸读取）与 m8（收到 provision_ack ok 后写入）共用，
+// 单一来源避免两侧键格式漂移。
+func ProvisionVersionKey(action, keyID, sessionName, target string) string {
+	return "provision:last:" + action + ":" + keyID + ":" + sessionName + ":" + target
+}

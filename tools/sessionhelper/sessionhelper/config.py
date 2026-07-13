@@ -66,6 +66,8 @@ class Config:
     busy_reply_text: str = "消息已收到，但此时忙，稍后处理你的请求"
     provision_allowed_hosts: tuple[str, ...] = ("dingwei.wegoab.com",)
     provision_audit_db: str = ""
+    provision_versions_file: str = ""
+    provision_update_state_file: str = ""
     provision_rollback_timeout: int = 300
 
     @property
@@ -160,6 +162,8 @@ def load_config(env: dict[str, str] | None = None) -> Config:
             if item.strip()
         ),
         provision_audit_db=expand_path(env.get("SH_PROVISION_AUDIT_DB", "")),
+        provision_versions_file=expand_path(env.get("SH_PROVISION_VERSIONS_FILE", default_provision_versions_file(session_name))),
+        provision_update_state_file=expand_path(env.get("SH_PROVISION_STATE_FILE", default_provision_update_state_file(session_name))),
         provision_rollback_timeout=int(env.get("SH_PROVISION_ROLLBACK_TIMEOUT", "300")),
     )
 
@@ -250,6 +254,16 @@ def safe_inbox_session_name(session_name: str) -> str:
 
 def default_inbox_db(session_name: str) -> str:
     return f"~/.dingwei/sessionhelper_inbox-{safe_inbox_session_name(session_name)}.db"
+
+
+def default_provision_versions_file(session_name: str) -> str:
+    # F3: 按会话隔离，避免单机多 helper 共用一份 ~/.dingwei/sessionhelper_versions.json 时互相串味
+    # （陈旧记录会把新下发误判成 already installed）。
+    return f"~/.dingwei/sessionhelper_versions-{safe_inbox_session_name(session_name)}.json"
+
+
+def default_provision_update_state_file(session_name: str) -> str:
+    return f"~/.dingwei/sessionhelper_update_state-{safe_inbox_session_name(session_name)}.json"
 
 
 def detect_full_session_name(session_name: str, env: dict[str, str] | None = None) -> str:

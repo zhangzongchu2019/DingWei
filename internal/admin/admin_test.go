@@ -712,6 +712,32 @@ func TestAdminProvisionTargetLimitAndVersionMonotonic(t *testing.T) {
 	}
 }
 
+// F2: update_self 的单调闸以 helper 在线上报版本(session_endpoint.version)为准，
+// 不依赖 app_config 记账——这样失败下发不会烧号，成功升级重连即刷新。
+func TestAdminProvisionUpdateSelfGatesOnLiveSessionVersion(t *testing.T) {
+	srv, db, _, ctx := newAdminTestServer(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{
+		KeyID: "FB-test", SessionName: "dev1", OwnerKey: "alice",
+		LastSeenAt: time.Now().UTC(), Active: true, Version: "0.1.2.6",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// 比在线版本低 → 拒
+	if err := srv.ensureProvisionVersionMonotonic(ctx, "update_self", "FB-test", "dev1", "self", "0.1.2.5"); err == nil {
+		t.Fatal("低于在线版本的 update_self 应被拒")
+	}
+	// 高于在线版本 → 放行
+	if err := srv.ensureProvisionVersionMonotonic(ctx, "update_self", "FB-test", "dev1", "self", "0.1.2.7"); err != nil {
+		t.Fatalf("高于在线版本应放行: %v", err)
+	}
+	// 一条陈旧的 app_config 记录不得影响 update_self（它只看在线版本）——
+	// 复现 V1 的 bug：一次失败下发若曾写过高版本记录，也不能把合法下发挡住。
+	srv.recordProvisionVersion(ctx, "update_self", "FB-test", "dev1", "self", "9.9.9")
+	if err := srv.ensureProvisionVersionMonotonic(ctx, "update_self", "FB-test", "dev1", "self", "0.1.2.7"); err != nil {
+		t.Fatalf("陈旧 app_config 记录不应影响 update_self 闸: %v", err)
+	}
+}
+
 func TestAdminProvisionValidatesURLHost(t *testing.T) {
 	t.Setenv("WP_PROVISION_ALLOWED_HOSTS", "")
 	t.Setenv("SH_PROVISION_ALLOWED_HOSTS", "")

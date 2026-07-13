@@ -57,8 +57,10 @@ class Provisioner:
         self.cfg = cfg
         self.package_root = Path(package_root or Path(__file__).resolve().parents[1]).expanduser().resolve()
         self.audit_db = Path(cfg.provision_audit_db or Path.home() / ".dingwei" / "sessionhelper_audit.db").expanduser()
-        self.version_file = Path.home() / ".dingwei" / "sessionhelper_versions.json"
-        self.update_state_file = Path.home() / ".dingwei" / "sessionhelper_update_state.json"
+        # F3: 按会话隔离（cfg 已按 SH_SESSION_NAME 派生默认路径）；cfg 为空时回退到旧的共享路径，
+        # 保证在不带完整 cfg 构造 Provisioner 的场景（如单测）下仍可用。
+        self.version_file = Path(cfg.provision_versions_file or Path.home() / ".dingwei" / "sessionhelper_versions.json").expanduser()
+        self.update_state_file = Path(cfg.provision_update_state_file or Path.home() / ".dingwei" / "sessionhelper_update_state.json").expanduser()
 
     def handle(self, env: dict) -> ProvisionResult:
         meta = env.get("meta") or {}

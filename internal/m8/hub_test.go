@@ -4280,6 +4280,78 @@ func TestProvisionAckIsAuditedAndNotRoutedBackAsError(t *testing.T) {
 	}
 }
 
+// F2: 版本单调闸只在 helper 确认 apply 成功(ok=true)后推进；失败的下发不得烧号；
+// update_self 不在此记账（成功会重启且不回 ack，改以 session_endpoint.version 为准）。
+func TestProvisionAckRecordsConfirmedVersionOnlyOnSuccess(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-f2", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-f2", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "owner-f2"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "developer")
+
+	skillKey := "provision:last:install_skill:" + key.ID + ":developer:demo" // == store.ProvisionVersionKey
+	selfKey := "provision:last:update_self:" + key.ID + ":developer:self"
+
+	sendAck := func(action, target, version string, ok bool) {
+		if err := writeEnvelope(ctx, conn, model.Envelope{
+			ID: "ack", To: "workpulse#" + key.ID, From: "developer#" + key.ID, TS: time.Now().Unix(),
+			Meta: map[string]any{
+				"type": "provision_ack", "system": true, "no_mirror": true,
+				"action": action, "target": target, "version": version, "ok": ok, "message": "m",
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(40 * time.Millisecond)
+	}
+	appVersion := func(cfgKey string) string {
+		items, err := db.ListAppConfig(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, it := range items {
+			if it.Key != cfgKey {
+				continue
+			}
+			var p struct {
+				Version string `json:"version"`
+			}
+			_ = json.Unmarshal([]byte(it.ValueJSON), &p)
+			return p.Version
+		}
+		return ""
+	}
+
+	// 1) 成功的 install_skill → 记录版本
+	sendAck("install_skill", "demo", "2.2.0", true)
+	if got := appVersion(skillKey); got != "2.2.0" {
+		t.Fatalf("ok=true 应记录 2.2.0, got=%q", got)
+	}
+	// 2) 失败的更高版本 install_skill → 不得烧号（仍是 2.2.0）
+	sendAck("install_skill", "demo", "9.9.9", false)
+	if got := appVersion(skillKey); got != "2.2.0" {
+		t.Fatalf("ok=false 不得推进版本, got=%q", got)
+	}
+	// 3) update_self 即便 ok=true 也不在此记账（以 session_endpoint.version 为准）
+	sendAck("update_self", "self", "5.0.0", true)
+	if got := appVersion(selfKey); got != "" {
+		t.Fatalf("update_self 不应写 app_config 记录, got=%q", got)
+	}
+}
+
 func TestSessionNameEnforceRejectsInvalidNames(t *testing.T) {
 	useTestNameEnforce(t, "enforce")
 	hub, db, ctx := newTestHub(t)

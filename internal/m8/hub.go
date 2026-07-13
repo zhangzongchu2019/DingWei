@@ -940,6 +940,20 @@ func (h *Hub) handleProvisionAck(ctx context.Context, c *sessionClient, env mode
 			"to_version":   metaString(env.Meta, "to_version"),
 		})
 		_ = h.Repo.WriteAudit(ctx, env.From, "provision_ack", string(target))
+		// F2: 只有 helper 确认 apply 成功(ok=true)才推进「最后已确认版本」，供下发前单调闸判断，
+		// 避免「下发成功但 helper 拒绝(如 sha256 失配)」烧掉版本号。
+		// update_self 不在此记账——它成功时会重启且不回 ack，改以 session_endpoint.version 为准
+		// （见 admin.ensureProvisionVersionMonotonic）。
+		if metaBool(env.Meta, "ok") {
+			action := strings.TrimSpace(metaString(env.Meta, "action"))
+			version := strings.TrimSpace(metaString(env.Meta, "version"))
+			if action != "" && action != "update_self" && version != "" {
+				if addr, err := parseAddress(env.From); err == nil && addr.Kind == addressSession {
+					payload, _ := json.Marshal(map[string]string{"version": version})
+					_ = h.Repo.UpsertAppConfig(ctx, store.ProvisionVersionKey(action, addr.KeyID, addr.SessionName, strings.TrimSpace(metaString(env.Meta, "target"))), string(payload))
+				}
+			}
+		}
 	}
 	return true
 }
