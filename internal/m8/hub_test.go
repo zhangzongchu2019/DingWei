@@ -24,6 +24,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/scheduler"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
 const testSecOpsAdminOpenID = "ou_testadmin0000000000"
@@ -2346,7 +2347,7 @@ func TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch(t *test
 				query = "version=" + url.QueryEscape(tc.version)
 			}
 			body := dialSessionErrorBodyWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, query)
-			for _, want := range []string{tc.want, "要求版本=0.1.2.5", "下载地址=https://dingwei.wegoab.com/downloads/sessionHelper-0.1.2.5/"} {
+			for _, want := range []string{tc.want, "要求版本=" + dwversion.Version, "下载地址=https://dingwei.wegoab.com/downloads/sessionHelper-" + dwversion.Version + "/"} {
 				if !strings.Contains(body, want) {
 					t.Fatalf("error body missing %q: %s", want, body)
 				}
