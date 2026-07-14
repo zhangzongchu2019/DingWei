@@ -5246,3 +5246,48 @@ func TestViewServiceFullChainIntegration(t *testing.T) {
 		t.Fatal("会话未收到 terminal_input(input 未回投成功)")
 	}
 }
+
+// fix/terminal-unlock-code-persist:断连宽限期内 viewer 的码仍可 #unlock 授权
+// (直接修"未找到页面码 X"——切飞书导致WS断,回来仍能解锁)。
+func TestUnlockFindsGracedDisconnectedViewer(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	st := hub.terminalForSession("key", "s1")
+	st.viewers["v1"] = &terminalViewer{id: "v1", code: "1234", conn: nil, mu: make(chan struct{}, 1), pageID: "pageA", disconnectedAt: time.Now()}
+	hub.mu.Unlock()
+
+	token, err := hub.grantTerminalInput("key", "s1", "1234")
+	if err != nil {
+		t.Fatalf("断连宽限中授权失败(bug未修): %v", err)
+	}
+	hub.mu.Lock()
+	wp, wt := st.writerPage, st.writerToken
+	hub.mu.Unlock()
+	if wp != "v1" || wt != token || token == "" {
+		t.Fatalf("授权未落到宽限 viewer: writerPage=%q token=%q", wp, wt)
+	}
+}
+
+// 断连 sweep:过期宽限清、宽限内留、View Service 虚拟 viewer 不碰。
+func TestSweepDisconnectedViewersRespectsGraceAndVirtual(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	st := hub.terminalForSession("key", "s1")
+	st.viewers["old"] = &terminalViewer{id: "old", code: "1111", conn: nil, disconnectedAt: time.Now().Add(-terminalDisconnectGrace - time.Minute)}
+	st.viewers["fresh"] = &terminalViewer{id: "fresh", code: "2222", conn: nil, disconnectedAt: time.Now()}
+	st.viewers["virt"] = &terminalViewer{id: "virt", code: "3333", conn: nil, lastSeen: time.Now()} // View Service 虚拟
+	hub.sweepDisconnectedViewersLocked(st)
+	_, oldE := st.viewers["old"]
+	_, freshE := st.viewers["fresh"]
+	_, virtE := st.viewers["virt"]
+	hub.mu.Unlock()
+	if oldE {
+		t.Fatal("过期宽限 viewer 应被清")
+	}
+	if !freshE {
+		t.Fatal("宽限内 viewer 应保留")
+	}
+	if !virtE {
+		t.Fatal("View Service 虚拟 viewer 不该被断连 sweep 清")
+	}
+}
