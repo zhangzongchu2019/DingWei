@@ -30,6 +30,7 @@ const (
 	terminalTokenTTL         = 8 * time.Hour
 	terminalBufferCap        = 1 << 20
 	terminalEventRingCap     = 1000
+	terminalDisconnectGrace  = 5 * time.Minute // 网页断连后保留 viewer+码 的宽限期(修解锁码失效)
 )
 
 type terminalState struct {
@@ -47,11 +48,13 @@ type terminalState struct {
 }
 
 type terminalViewer struct {
-	id       string
-	code     string
-	conn     *websocket.Conn // nil ⇒ 虚拟 viewer(View Service 代理身份,不推 WS)
-	mu       chan struct{}
-	lastSeen time.Time // 仅虚拟 viewer 用:authorize 轮询/输入时刷新,供清理陈旧代理
+	id             string
+	code           string
+	conn           *websocket.Conn // nil ⇒ 无活连接(View Service 虚拟 viewer;或网页断连宽限中)
+	mu             chan struct{}
+	lastSeen       time.Time // 仅虚拟 viewer 用:authorize 轮询/输入时刷新,供清理陈旧代理
+	pageID         string    // 网页 localStorage 稳定页标识:重连据此认回原 viewer(码/写权不丢)
+	disconnectedAt time.Time // 网页断连时刻;非零=宽限保留中,超 terminalDisconnectGrace 才清
 }
 
 type terminalClientMessage struct {
@@ -169,8 +172,10 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	viewer := &terminalViewer{id: randomHex(8), code: h.uniqueTerminalCode(), conn: conn, mu: make(chan struct{}, 1)}
-	viewer.mu <- struct{}{}
+	pageID := strings.TrimSpace(r.URL.Query().Get("page"))
+	mu := make(chan struct{}, 1)
+	mu <- struct{}{}
+	var viewer *terminalViewer
 	var st *terminalState
 	h.mu.Lock()
 	var ok bool
@@ -181,26 +186,55 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	var hasBuffer bool
 	var buf string
 	var needsRefresh bool = true
+	var writerToken string
 	if ok {
+		h.sweepDisconnectedViewersLocked(st)
+		// 认回:同会话、同 pageID、断连宽限中的 viewer ⇒ 继承其 id/code(码与写权不丢)。
+		var reclaim *terminalViewer
+		if pageID != "" {
+			for _, v := range st.viewers {
+				if v.conn == nil && v.pageID == pageID && !v.disconnectedAt.IsZero() {
+					reclaim = v
+					break
+				}
+			}
+		}
+		if reclaim != nil {
+			// 新对象继承旧 id/code,替换 map 里旧对象(旧连接的 defer 据 v!=viewer 不误删)
+			viewer = &terminalViewer{id: reclaim.id, code: reclaim.code, conn: conn, mu: mu, pageID: pageID}
+		} else {
+			viewer = &terminalViewer{id: randomHex(8), code: h.uniqueTerminalCodeLocked(), conn: conn, mu: mu, pageID: pageID}
+		}
 		st.viewers[viewer.id] = viewer
 		isWriter = st.writerPage == viewer.id
+		if isWriter {
+			writerToken = st.writerToken
+		}
 		hasBuffer = st.buffer != ""
 		buf = st.buffer
 		needsRefresh = st.buffer == ""
 	}
 	h.mu.Unlock()
 	if !ok || st == nil {
-		_ = terminalWrite(r.Context(), viewer, map[string]any{"type": "status", "readonly": true, "message": "会话不在线或会话名不唯一"})
+		_ = terminalWrite(r.Context(), &terminalViewer{conn: conn, mu: mu}, map[string]any{"type": "status", "readonly": true, "message": "会话不在线或会话名不唯一"})
 		_ = conn.Close(websocket.StatusNormalClosure, "offline")
 		return
 	}
 	defer func() {
 		h.mu.Lock()
 		if cur := h.terminals[terminalKey(st.keyID, st.sessionName)]; cur != nil {
-			delete(cur.viewers, viewer.id)
-			if cur.writerPage == viewer.id {
-				cur.writerPage = ""
-				cur.writerUntil = time.Time{}
+			if v := cur.viewers[viewer.id]; v == viewer { // 仍是本连接(未被重连认领替换)
+				if viewer.pageID != "" {
+					// 有 pageID:断连保留宽限——码在窗口内仍可 #unlock,重连据 pageID 认回写权
+					v.conn = nil
+					v.disconnectedAt = time.Now()
+				} else {
+					delete(cur.viewers, viewer.id)
+					if cur.writerPage == viewer.id {
+						cur.writerPage = ""
+						cur.writerUntil = time.Time{}
+					}
+				}
 			}
 		}
 		h.mu.Unlock()
@@ -215,6 +249,16 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		"code":     viewer.code,
 		"message":  "飞书发送 #unlock " + viewer.code + " 后可输入",
 	})
+	if isWriter && writerToken != "" {
+		// 重连认回:该页在断连期间已被 #unlock 授权 ⇒ 直接补发 write_granted,页面立即可输入
+		_ = terminalWrite(r.Context(), viewer, map[string]any{
+			"type":      "write_granted",
+			"readonly":  false,
+			"token":     writerToken,
+			"expiresIn": int(terminalTokenTTL.Seconds()),
+			"message":   "输入已解锁",
+		})
+	}
 	if token, ok := terminalViewCookie(r, sessionName); ok {
 		h.restoreTerminalInputFromCookie(viewer, st.keyID, st.sessionName, token)
 	}
@@ -600,6 +644,22 @@ func (h *Hub) sweepStaleViewViewersLocked(st *terminalState) {
 	now := time.Now()
 	for id, v := range st.viewers {
 		if v.conn == nil && !v.lastSeen.IsZero() && now.Sub(v.lastSeen) > terminalTokenTTL {
+			delete(st.viewers, id)
+			if st.writerPage == id {
+				st.writerPage = ""
+				st.writerToken = ""
+				st.writerUntil = time.Time{}
+			}
+		}
+	}
+}
+
+// sweepDisconnectedViewersLocked 清理断连超过宽限期的网页 viewer(conn==nil 且 disconnectedAt 非零)。
+// 只碰"断连宽限"的真网页 viewer,不碰 View Service 虚拟 viewer(那些 disconnectedAt 恒为零、用 lastSeen)。调用方须持 h.mu。
+func (h *Hub) sweepDisconnectedViewersLocked(st *terminalState) {
+	now := time.Now()
+	for id, v := range st.viewers {
+		if v.conn == nil && !v.disconnectedAt.IsZero() && now.Sub(v.disconnectedAt) > terminalDisconnectGrace {
 			delete(st.viewers, id)
 			if st.writerPage == id {
 				st.writerPage = ""
@@ -1365,8 +1425,13 @@ const terminalPageHTML = `<!doctype html>
 	        body: JSON.stringify({ token: unlockToken })
 	      }).catch(() => {});
 	    }
+    var pageId = (function(){
+      var k = 'dwViewPage:' + sessionName;
+      try { var p = localStorage.getItem(k); if(!p){ p = 'p'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem(k,p);} return p; }
+      catch(e){ return 'p'+Math.random().toString(36).slice(2,10); }
+    })();
     function connectWS() {
-      ws = new WebSocket(proto + '//' + location.host + '/ws/view/' + encodeURIComponent(sessionName));
+      ws = new WebSocket(proto + '//' + location.host + '/ws/view/' + encodeURIComponent(sessionName) + '?page=' + encodeURIComponent(pageId));
       ws.onopen = () => { reconnectDelay = 1000; primeResize(); };
       ws.onmessage = (ev) => {
         const m = JSON.parse(ev.data);
