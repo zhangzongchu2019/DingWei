@@ -129,6 +129,26 @@ func (h *Hub) HandleTerminalViewPage(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, terminalPageHTML, html.EscapeString(sessionName), html.EscapeString(sessionName))
 }
 
+// HandleViewSubPath 处理 /view/<名>/{events,input,status,...} 子路径。
+// 新 view 的页面(SSE/输入/状态)不在 hub 根路径,而是挂在会话自己的 /view/<名>/ 下,
+// 命中 View 服务就反代过去(剥前缀 + 带 X-DW-Session);未路由到 View 服务的会话没有这些
+// 子路径(老 xterm 走 /ws/view),故 404。
+func (h *Hub) HandleViewSubPath(w http.ResponseWriter, r *http.Request) {
+	sessionName := strings.TrimSpace(r.PathValue("sessionName"))
+	if sessionName == "" || strings.Contains(sessionName, "#") {
+		http.Error(w, "invalid session name", http.StatusBadRequest)
+		return
+	}
+	name, tgt := loadViewRouting().resolve(sessionName, ownerFromSessionName(sessionName))
+	if !tgt.Builtin && tgt.URL != "" {
+		if h.proxyToViewService(w, r, sessionName, tgt.URL) {
+			return
+		}
+		log.Printf("[view-routing] subpath target %s (%s) unreachable for %s", name, tgt.URL, sessionName)
+	}
+	http.NotFound(w, r)
+}
+
 func (h *Hub) HandleTerminalViewCookie(w http.ResponseWriter, r *http.Request) {
 	sessionName := strings.TrimSpace(r.PathValue("sessionName"))
 	if sessionName == "" || strings.Contains(sessionName, "#") {
