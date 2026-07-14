@@ -46,3 +46,5 @@ logs/
 tools/sessionhelper/config
 *.creds
 dingwei-onboard/
+workpulse
+.aider*
