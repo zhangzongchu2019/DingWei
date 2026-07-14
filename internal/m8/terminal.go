@@ -337,6 +337,76 @@ func (h *Hub) subscribeSessionEvents(keyID, sessionName, subID string) (replay [
 	return replay, ch, unsub
 }
 
+// HandleInternalViewEvents(C2):内网 SSE 口,View Service 订阅某会话的结构化事件流。
+// 先回放 eventRing,再挂实时流。**仅内网监听**(部署时绑 127.0.0.1,不上公网 mux)。
+func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
+	sessionName := strings.TrimSpace(r.PathValue("session"))
+	if sessionName == "" || strings.Contains(sessionName, "#") {
+		http.Error(w, "invalid session name", http.StatusBadRequest)
+		return
+	}
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+	// 解析 keyID:会话须在线且会话名唯一(与 view WS 同判据)
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	var keyID string
+	if found {
+		keyID = st.keyID
+	}
+	h.mu.Unlock()
+	if !found {
+		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Connection", "keep-alive")
+	w.WriteHeader(http.StatusOK)
+	flusher.Flush()
+
+	subID := randomHex(8)
+	replay, ch, unsub := h.subscribeSessionEvents(keyID, sessionName, subID)
+	defer unsub()
+
+	writeSSE := func(data string) bool {
+		if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+			return false
+		}
+		flusher.Flush()
+		return true
+	}
+	for _, data := range replay {
+		if !writeSSE(data) {
+			return
+		}
+	}
+	ping := time.NewTicker(30 * time.Second)
+	defer ping.Stop()
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case data, ok := <-ch:
+			if !ok {
+				return
+			}
+			if !writeSSE(data) {
+				return
+			}
+		case <-ping.C:
+			if _, err := fmt.Fprintf(w, ": ping\n\n"); err != nil {
+				return
+			}
+			flusher.Flush()
+		}
+	}
+}
+
 func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID, token, data string) error {
 	if data == "" {
 		return nil

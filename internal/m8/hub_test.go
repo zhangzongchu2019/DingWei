@@ -4889,3 +4889,60 @@ func TestSessionEventRelayFansOutWithoutTouchingBuffer(t *testing.T) {
 		t.Fatalf("late subscriber replay = %v, want [%q]", replay2, payload)
 	}
 }
+
+// C2(feat/view-service-dock):内网事件订阅 SSE —— 离线会话 404;
+// 在线会话回放 eventRing 里的事件。
+func TestInternalViewEventsReplaysOnSubscribe(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	hub.sessionClients["key"] = map[string]*sessionClient{"s1": {keyID: "key", sessionName: "s1", connSeq: 1}}
+	hub.mu.Unlock()
+
+	c := &sessionClient{keyID: "key", sessionName: "s1", connSeq: 1}
+	payload := `{"kind":"assistant_text","text":"hi","delivery_id":"d1"}`
+	hub.handleSessionEventEnvelope(c, model.Envelope{Meta: map[string]any{"type": terminalSessionEventType}, Body: payload})
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /internal/view/{session}/events", hub.HandleInternalViewEvents)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	// 离线/不存在会话 → 404
+	resp404, err := http.Get(srv.URL + "/internal/view/nope/events")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp404.Body.Close()
+	if resp404.StatusCode != http.StatusNotFound {
+		t.Fatalf("offline session: got %d, want 404", resp404.StatusCode)
+	}
+
+	// 在线会话 → SSE 回放事件
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, "GET", srv.URL+"/internal/view/s1/events", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("online: got %d, want 200", resp.StatusCode)
+	}
+	buf := make([]byte, 0, 512)
+	tmp := make([]byte, 256)
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		n, rerr := resp.Body.Read(tmp)
+		buf = append(buf, tmp[:n]...)
+		if strings.Contains(string(buf), payload) {
+			break
+		}
+		if rerr != nil {
+			break
+		}
+	}
+	if !strings.Contains(string(buf), "data: "+payload) {
+		t.Fatalf("SSE did not replay event; got %q", string(buf))
+	}
+}
