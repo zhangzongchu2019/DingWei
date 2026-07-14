@@ -4946,3 +4946,65 @@ func TestInternalViewEventsReplaysOnSubscribe(t *testing.T) {
 		t.Fatalf("SSE did not replay event; got %q", string(buf))
 	}
 }
+
+// C3(feat/view-service-dock):内网鉴权/输入口 —— 注册虚拟 viewer、
+// 解锁前输入被拒(auth gate)、#unlock 后 authorize 报可写且同一 token、未知 viewer 404。
+func TestInternalViewAuthorizeAndInputAuthGate(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	hub.sessionClients["key"] = map[string]*sessionClient{"s1": {keyID: "key", sessionName: "s1", connSeq: 1}}
+	hub.mu.Unlock()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /internal/view/authorize", hub.HandleInternalViewAuthorize)
+	mux.HandleFunc("POST /internal/view/{session}/input", hub.HandleInternalViewInput)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	post := func(path, body string) (int, string) {
+		resp, err := http.Post(srv.URL+path, "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return resp.StatusCode, string(b)
+	}
+
+	// 注册虚拟 viewer:可读、未可写、有 code
+	code, body := post("/internal/view/authorize", `{"session":"s1"}`)
+	if code != 200 {
+		t.Fatalf("authorize register: %d %s", code, body)
+	}
+	var reg viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(body), &reg)
+	if reg.ViewerID == "" || reg.Code == "" || !reg.CanRead || reg.CanWrite {
+		t.Fatalf("register resp unexpected: %+v", reg)
+	}
+
+	// 未解锁 → 输入被拒(auth gate,复用 routeTerminalInput 校验)
+	sc, _ := post("/internal/view/s1/input", `{"viewer_id":"`+reg.ViewerID+`","token":"wrong","text":"hi"}`)
+	if sc != http.StatusForbidden {
+		t.Fatalf("input before unlock: got %d, want 403", sc)
+	}
+
+	// 模拟飞书 #unlock <code>
+	token, err := hub.grantTerminalInput("key", "s1", reg.Code)
+	if err != nil {
+		t.Fatalf("grant: %v", err)
+	}
+
+	// 解锁后 authorize(viewer_id):可写 + 同一 writer token
+	_, body2 := post("/internal/view/authorize", `{"session":"s1","viewer_id":"`+reg.ViewerID+`"}`)
+	var st2 viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(body2), &st2)
+	if !st2.CanWrite || st2.WriterToken != token {
+		t.Fatalf("after unlock: %+v (want token=%s)", st2, token)
+	}
+
+	// 未知 viewer → 404(提示重新注册)
+	sc2, _ := post("/internal/view/authorize", `{"session":"s1","viewer_id":"nope"}`)
+	if sc2 != http.StatusNotFound {
+		t.Fatalf("unknown viewer: got %d, want 404", sc2)
+	}
+}
