@@ -507,6 +507,8 @@ func (vr *ViewRouting) resolve(sessionName, owner string) (string, ViewTarget) {
 	if t, ok := vr.Targets[name]; ok {
 		return name, t
 	}
+	// 配置引用了未定义的 target ⇒ 兜底老页,但打日志提示配置错误(否则静默走 legacy 难排查)
+	log.Printf("[view-routing] target %q not defined in targets (session=%s owner=%s), falling back to legacy-xterm", name, sessionName, owner)
 	return "legacy-xterm", ViewTarget{Builtin: true}
 }
 
@@ -586,16 +588,7 @@ func (h *Hub) registerViewViewer(sessionName string) (keyID, viewerID, code stri
 		return "", "", "", fmt.Errorf("session offline or ambiguous")
 	}
 	h.sweepStaleViewViewersLocked(st)
-	used := map[string]bool{}
-	for _, s := range h.terminals {
-		for _, v := range s.viewers {
-			used[v.code] = true
-		}
-	}
-	code = randomDigits(4)
-	for i := 0; i < 64 && used[code]; i++ {
-		code = randomDigits(4)
-	}
+	code = h.uniqueTerminalCodeLocked() // 与真 WS viewer 同一份码生成,避免逻辑漂移
 	viewerID = randomHex(8)
 	st.viewers[viewerID] = &terminalViewer{id: viewerID, code: code, conn: nil, mu: make(chan struct{}, 1), lastSeen: time.Now()}
 	return st.keyID, viewerID, code, nil
@@ -665,7 +658,9 @@ func (h *Hub) HandleInternalViewAuthorize(w http.ResponseWriter, r *http.Request
 		resp.ViewerID = req.ViewerID
 		resp.CanWrite, resp.WriterToken, resp.ExpiresUnix = canWrite, token, exp
 	}
-	resp.UnlockHint = "飞书发送 #unlock " + resp.Code + " 后可输入"
+	if resp.Code != "" { // 查询已有 viewer 时无新 code,不拼半截提示(View Service 已握有初始 code)
+		resp.UnlockHint = "飞书发送 #unlock " + resp.Code + " 后可输入"
+	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
 }
@@ -887,6 +882,12 @@ func parseTerminalInputCommand(text string) (action, sessionName, pageCode strin
 func (h *Hub) uniqueTerminalCode() string {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	return h.uniqueTerminalCodeLocked()
+}
+
+// uniqueTerminalCodeLocked 生成全局唯一的 4 位页面码(真 WS viewer 与虚拟 viewer 同码池)。
+// 调用方须持 h.mu。真/虚拟 viewer 共用这一份,避免两处各自实现而逻辑漂移。
+func (h *Hub) uniqueTerminalCodeLocked() string {
 	used := map[string]bool{}
 	for _, st := range h.terminals {
 		for _, v := range st.viewers {
