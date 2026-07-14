@@ -169,12 +169,30 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /links/{ownerKey}", prefixHub.HandleOwnerLinksPage)
 	mux.HandleFunc("GET /dl/{file}", provisionDownload)
 
+	// View Service 对接内网口(仅 127.0.0.1 / 内网,不进公开 mux):
+	// C2 事件订阅 / C3 鉴权 / C3 输入回投。View Service 作为内部消费者调用。
+	internalMux := http.NewServeMux()
+	internalMux.HandleFunc("GET /internal/view/{session}/events", prefixHub.HandleInternalViewEvents)
+	internalMux.HandleFunc("POST /internal/view/authorize", prefixHub.HandleInternalViewAuthorize)
+	internalMux.HandleFunc("POST /internal/view/{session}/input", prefixHub.HandleInternalViewInput)
+	internalAddr := strings.TrimSpace(os.Getenv("WP_INTERNAL_ADDR"))
+	if internalAddr == "" {
+		internalAddr = "127.0.0.1:8792"
+	}
+	internalSrv := &http.Server{Addr: internalAddr, Handler: internalMux, ReadHeaderTimeout: 5 * time.Second}
+
 	srv := &http.Server{Addr: bs.Addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 
 	go func() {
 		logger.Info("workpulse started", "addr", bs.Addr, "db", bs.DBPath)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("http server", "error", err)
+		}
+	}()
+	go func() {
+		logger.Info("workpulse internal (view-service dock) started", "addr", internalAddr)
+		if err := internalSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("internal http server", "error", err)
 		}
 	}()
 	go processor.Run(ctx, 200*time.Millisecond)
@@ -205,6 +223,7 @@ func run(logger *slog.Logger) error {
 	defer cancel()
 	cancelRun()
 	logger.Info("shutting down")
+	_ = internalSrv.Shutdown(shutCtx)
 	return srv.Shutdown(shutCtx)
 }
 
