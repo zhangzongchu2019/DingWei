@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -4892,5 +4893,355 @@ func TestControlPlaneGroupNonCommandIsSilenced(t *testing.T) {
 	}
 	if !r3.Matched || !strings.Contains(r3.Reply, "已受理 #p-chatter") {
 		t.Fatalf("personal chatter should still ack, got %+v", r3)
+	}
+}
+
+// C1(feat/view-service-dock):session_event 中继 —— 扇出给内网订阅者、
+// 存入 eventRing 供回放、且【不污染 xterm buffer】、不认领其它类型信封。
+func TestSessionEventRelayFansOutWithoutTouchingBuffer(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	c := &sessionClient{keyID: "key", sessionName: "s1", connSeq: 1}
+
+	replay, ch, unsub := hub.subscribeSessionEvents(c.keyID, c.sessionName, "sub1")
+	defer unsub()
+	if len(replay) != 0 {
+		t.Fatalf("expected empty replay, got %d", len(replay))
+	}
+
+	// 非 session_event:不认领(返回 false,交给后续 handler)
+	if hub.handleSessionEventEnvelope(c, model.Envelope{Meta: map[string]any{"type": terminalOutputType}, Body: "x"}) {
+		t.Fatal("should not claim non-session_event envelope")
+	}
+
+	// session_event:认领 + 扇出
+	payload := `{"kind":"assistant_text","text":"hi","delivery_id":"d1"}`
+	if !hub.handleSessionEventEnvelope(c, model.Envelope{Meta: map[string]any{"type": terminalSessionEventType}, Body: payload}) {
+		t.Fatal("should claim session_event envelope")
+	}
+	select {
+	case got := <-ch:
+		if got != payload {
+			t.Fatalf("subscriber got %q, want %q", got, payload)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("subscriber did not receive event")
+	}
+
+	// 不污染 xterm buffer;eventRing 记 1 条
+	hub.mu.Lock()
+	st := hub.terminalForSession(c.keyID, c.sessionName)
+	buf, ringLen := st.buffer, len(st.eventRing)
+	hub.mu.Unlock()
+	if buf != "" {
+		t.Fatalf("session_event must not touch xterm buffer, got %q", buf)
+	}
+	if ringLen != 1 {
+		t.Fatalf("eventRing len = %d, want 1", ringLen)
+	}
+
+	// 晚订阅者拿到回放
+	replay2, _, unsub2 := hub.subscribeSessionEvents(c.keyID, c.sessionName, "sub2")
+	defer unsub2()
+	if len(replay2) != 1 || replay2[0] != payload {
+		t.Fatalf("late subscriber replay = %v, want [%q]", replay2, payload)
+	}
+}
+
+// C2(feat/view-service-dock):内网事件订阅 SSE —— 离线会话 404;
+// 在线会话回放 eventRing 里的事件。
+func TestInternalViewEventsReplaysOnSubscribe(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	hub.sessionClients["key"] = map[string]*sessionClient{"s1": {keyID: "key", sessionName: "s1", connSeq: 1}}
+	hub.mu.Unlock()
+
+	c := &sessionClient{keyID: "key", sessionName: "s1", connSeq: 1}
+	payload := `{"kind":"assistant_text","text":"hi","delivery_id":"d1"}`
+	hub.handleSessionEventEnvelope(c, model.Envelope{Meta: map[string]any{"type": terminalSessionEventType}, Body: payload})
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /internal/view/{session}/events", hub.HandleInternalViewEvents)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	// 离线/不存在会话 → 404
+	resp404, err := http.Get(srv.URL + "/internal/view/nope/events")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp404.Body.Close()
+	if resp404.StatusCode != http.StatusNotFound {
+		t.Fatalf("offline session: got %d, want 404", resp404.StatusCode)
+	}
+
+	// 在线会话 → SSE 回放事件
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, "GET", srv.URL+"/internal/view/s1/events", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("online: got %d, want 200", resp.StatusCode)
+	}
+	buf := make([]byte, 0, 512)
+	tmp := make([]byte, 256)
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		n, rerr := resp.Body.Read(tmp)
+		buf = append(buf, tmp[:n]...)
+		if strings.Contains(string(buf), payload) {
+			break
+		}
+		if rerr != nil {
+			break
+		}
+	}
+	if !strings.Contains(string(buf), "data: "+payload) {
+		t.Fatalf("SSE did not replay event; got %q", string(buf))
+	}
+}
+
+// C3(feat/view-service-dock):内网鉴权/输入口 —— 注册虚拟 viewer、
+// 解锁前输入被拒(auth gate)、#unlock 后 authorize 报可写且同一 token、未知 viewer 404。
+func TestInternalViewAuthorizeAndInputAuthGate(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	hub.sessionClients["key"] = map[string]*sessionClient{"s1": {keyID: "key", sessionName: "s1", connSeq: 1}}
+	hub.mu.Unlock()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /internal/view/authorize", hub.HandleInternalViewAuthorize)
+	mux.HandleFunc("POST /internal/view/{session}/input", hub.HandleInternalViewInput)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	post := func(path, body string) (int, string) {
+		resp, err := http.Post(srv.URL+path, "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return resp.StatusCode, string(b)
+	}
+
+	// 注册虚拟 viewer:可读、未可写、有 code
+	code, body := post("/internal/view/authorize", `{"session":"s1"}`)
+	if code != 200 {
+		t.Fatalf("authorize register: %d %s", code, body)
+	}
+	var reg viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(body), &reg)
+	if reg.ViewerID == "" || reg.Code == "" || !reg.CanRead || reg.CanWrite {
+		t.Fatalf("register resp unexpected: %+v", reg)
+	}
+
+	// 未解锁 → 输入被拒(auth gate,复用 routeTerminalInput 校验)
+	sc, _ := post("/internal/view/s1/input", `{"viewer_id":"`+reg.ViewerID+`","token":"wrong","text":"hi"}`)
+	if sc != http.StatusForbidden {
+		t.Fatalf("input before unlock: got %d, want 403", sc)
+	}
+
+	// 模拟飞书 #unlock <code>
+	token, err := hub.grantTerminalInput("key", "s1", reg.Code)
+	if err != nil {
+		t.Fatalf("grant: %v", err)
+	}
+
+	// 解锁后 authorize(viewer_id):可写 + 同一 writer token
+	_, body2 := post("/internal/view/authorize", `{"session":"s1","viewer_id":"`+reg.ViewerID+`"}`)
+	var st2 viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(body2), &st2)
+	if !st2.CanWrite || st2.WriterToken != token {
+		t.Fatalf("after unlock: %+v (want token=%s)", st2, token)
+	}
+
+	// 未知 viewer → 404(提示重新注册)
+	sc2, _ := post("/internal/view/authorize", `{"session":"s1","viewer_id":"nope"}`)
+	if sc2 != http.StatusNotFound {
+		t.Fatalf("unknown viewer: got %d, want 404", sc2)
+	}
+}
+
+// C4(feat/view-service-dock):入口路由器三级优先级 + fail-safe。
+// 用户级路由 / 会话级覆盖用户级 / 默认兜底老页 / 目标不可达回退老页。
+func TestViewRoutingPrecedenceAndFallback(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+
+	// stub View 服务:回显 X-DW-Session + 路径
+	stub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("VIEWSVC session=" + r.Header.Get("X-DW-Session") + " path=" + r.URL.Path))
+	}))
+	defer stub.Close()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /view/{sessionName}", hub.HandleTerminalViewPage)
+	front := httptest.NewServer(mux)
+	defer front.Close()
+
+	get := func(session string) string {
+		resp, err := http.Get(front.URL + "/view/" + session)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return string(b)
+	}
+	head := func(s string) string {
+		if len(s) > 60 {
+			return s[:60]
+		}
+		return s
+	}
+
+	cfg := `{
+	  "sessions": {"zzc-pinned-3dd6": "legacy-xterm", "dead-one-3dd6": "dead"},
+	  "users":    {"zzc": "v2"},
+	  "default":  "legacy-xterm",
+	  "targets":  {"v2": {"url": "` + stub.URL + `"}, "dead": {"url": "http://127.0.0.1:1"}}
+	}`
+	path := t.TempDir() + "/routing.json"
+	if err := os.WriteFile(path, []byte(cfg), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("VIEW_ROUTING_CONFIG", path)
+	viewRoutingMu.Lock()
+	viewRoutingCache = nil
+	viewRoutingMu.Unlock()
+
+	// 用户级:zzc-* → v2(反代到 stub,前缀剥离为 "/",带 session 头)
+	if b := get("zzc-demo-3dd6"); !strings.Contains(b, "VIEWSVC session=zzc-demo-3dd6 path=/") {
+		t.Fatalf("user-level route failed: %q", head(b))
+	}
+	// 会话级覆盖用户级:zzc-pinned 强制 legacy(即便 users[zzc]=v2)
+	if b := get("zzc-pinned-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
+		t.Fatalf("session-level override failed: %q", head(b))
+	}
+	// 默认兜底:别的 owner → legacy
+	if b := get("bob-demo-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
+		t.Fatalf("default should be legacy: %q", head(b))
+	}
+	// 目标不可达 → fail-safe 回退老页
+	if b := get("dead-one-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
+		t.Fatalf("unreachable target should fall back to legacy: %q", head(b))
+	}
+}
+
+// 离线全链路集成(feat/view-service-dock C1..C5):真 WS 会话发 session_event(C5)
+// → hub 中继(C1)→ 内网 SSE 订阅回放(C2)→ authorize+#unlock+input 回到会话(C3)。
+func TestViewServiceFullChainIntegration(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyID := key.ID
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /internal/view/{session}/events", hub.HandleInternalViewEvents)
+	mux.HandleFunc("POST /internal/view/authorize", hub.HandleInternalViewAuthorize)
+	mux.HandleFunc("POST /internal/view/{session}/input", hub.HandleInternalViewInput)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	// (1) 会话上线(真 WS)
+	sess := dialSession(t, ctx, srv.URL, "home", keyID, secret)
+	defer sess.Close(websocket.StatusNormalClosure, "done")
+
+	// (2) C5/C1:会话发 session_event 信封
+	eventJSON := `{"kind":"assistant_text","text":"你好世界","delivery_id":"d1","cursor":"1"}`
+	if err := writeEnvelope(ctx, sess, model.Envelope{
+		ID: "ev1", From: "home#" + keyID, To: "workpulse#" + keyID,
+		Body: eventJSON, Meta: map[string]any{"type": "session_event", "session": "home", "key_id": keyID},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for dl := time.Now().Add(3 * time.Second); time.Now().Before(dl); time.Sleep(20 * time.Millisecond) {
+		hub.mu.Lock()
+		st, ok := hub.terminalBySessionNameLocked("home")
+		n := 0
+		if ok {
+			n = len(st.eventRing)
+		}
+		hub.mu.Unlock()
+		if n > 0 {
+			break
+		}
+	}
+
+	// (3) C2:内网 SSE 订阅 → 回放拿到该事件
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx2, "GET", srv.URL+"/internal/view/home/events", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	buf := make([]byte, 0, 512)
+	tmp := make([]byte, 256)
+	for dl := time.Now().Add(2 * time.Second); time.Now().Before(dl); {
+		n, rerr := resp.Body.Read(tmp)
+		buf = append(buf, tmp[:n]...)
+		if strings.Contains(string(buf), eventJSON) {
+			break
+		}
+		if rerr != nil {
+			break
+		}
+	}
+	if !strings.Contains(string(buf), eventJSON) {
+		t.Fatalf("C2 SSE 未送达 session_event; got %q", string(buf))
+	}
+
+	// (4) C3:authorize 注册虚拟 viewer → #unlock 授权 → 可写
+	post := func(path, body string) (int, string) {
+		r, err := http.Post(srv.URL+path, "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(r.Body)
+		r.Body.Close()
+		return r.StatusCode, string(b)
+	}
+	_, regBody := post("/internal/view/authorize", `{"session":"home"}`)
+	var reg viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(regBody), &reg)
+	if reg.ViewerID == "" || reg.Code == "" {
+		t.Fatalf("authorize register: %s", regBody)
+	}
+	token, err := hub.grantTerminalInput(keyID, "home", reg.Code) // 模拟飞书 #unlock <code>
+	if err != nil {
+		t.Fatalf("grant: %v", err)
+	}
+	_, stBody := post("/internal/view/authorize", `{"session":"home","viewer_id":"`+reg.ViewerID+`"}`)
+	var st2 viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(stBody), &st2)
+	if !st2.CanWrite || st2.WriterToken != token {
+		t.Fatalf("after unlock not writable: %s", stBody)
+	}
+
+	// (5) C3 input:浏览器输入 → hub → 会话收到 terminal_input
+	sc, ib := post("/internal/view/home/input", `{"viewer_id":"`+reg.ViewerID+`","token":"`+token+`","text":"跑一下测试"}`)
+	if sc != 200 {
+		t.Fatalf("input POST status=%d body=%s", sc, ib)
+	}
+	var gotInput bool
+	for i := 0; i < 6 && !gotInput; i++ {
+		env := readEnvelope(t, ctx, sess)
+		if env.Meta["type"] == "terminal_input" && env.Body == "跑一下测试" {
+			gotInput = true
+		}
+	}
+	if !gotInput {
+		t.Fatal("会话未收到 terminal_input(input 未回投成功)")
 	}
 }

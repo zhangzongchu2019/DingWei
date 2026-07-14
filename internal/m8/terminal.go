@@ -9,8 +9,11 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coder/websocket"
@@ -19,12 +22,14 @@ import (
 )
 
 const (
-	terminalOutputType  = "terminal_output"
-	terminalInputType   = "terminal_input"
-	terminalResizeType  = "terminal_resize"
-	terminalRefreshType = "terminal_refresh"
-	terminalTokenTTL    = 8 * time.Hour
-	terminalBufferCap   = 1 << 20
+	terminalOutputType       = "terminal_output"
+	terminalInputType        = "terminal_input"
+	terminalResizeType       = "terminal_resize"
+	terminalRefreshType      = "terminal_refresh"
+	terminalSessionEventType = "session_event"
+	terminalTokenTTL         = 8 * time.Hour
+	terminalBufferCap        = 1 << 20
+	terminalEventRingCap     = 1000
 )
 
 type terminalState struct {
@@ -37,13 +42,16 @@ type terminalState struct {
 	writerUntil time.Time
 	cookieToken string
 	cookieUntil time.Time
+	eventRing   []string               // 结构化会话事件(session_event)环形缓冲,供晚订阅回放
+	eventSubs   map[string]chan string // 内网事件订阅者(View Service),subID → channel
 }
 
 type terminalViewer struct {
-	id   string
-	code string
-	conn *websocket.Conn
-	mu   chan struct{}
+	id       string
+	code     string
+	conn     *websocket.Conn // nil ⇒ 虚拟 viewer(View Service 代理身份,不推 WS)
+	mu       chan struct{}
+	lastSeen time.Time // 仅虚拟 viewer 用:authorize 轮询/输入时刷新,供清理陈旧代理
 }
 
 type terminalClientMessage struct {
@@ -106,6 +114,14 @@ func (h *Hub) HandleTerminalViewPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid session name", http.StatusBadRequest)
 		return
 	}
+	// C4:按三级路由策略选目标。命中 View 服务 ⇒ 反代;否则(含任何异常)走老 xterm。
+	name, tgt := loadViewRouting().resolve(sessionName, ownerFromSessionName(sessionName))
+	if !tgt.Builtin && tgt.URL != "" {
+		if h.proxyToViewService(w, r, sessionName, tgt.URL) {
+			return
+		}
+		log.Printf("[view-routing] target %s (%s) unreachable, fallback to legacy for %s", name, tgt.URL, sessionName)
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = fmt.Fprintf(w, terminalPageHTML, html.EscapeString(sessionName), html.EscapeString(sessionName))
 }
@@ -159,18 +175,18 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	var ok bool
 	st, ok = h.terminalBySessionNameLocked(sessionName)
-		// Capture values under h.mu to avoid racing with grantTerminalInput
-		// (which writes st.writerPage) and other terminal state mutators.
-		var isWriter bool
-		var hasBuffer bool
-		var buf string
-		var needsRefresh bool = true
+	// Capture values under h.mu to avoid racing with grantTerminalInput
+	// (which writes st.writerPage) and other terminal state mutators.
+	var isWriter bool
+	var hasBuffer bool
+	var buf string
+	var needsRefresh bool = true
 	if ok {
 		st.viewers[viewer.id] = viewer
-			isWriter = st.writerPage == viewer.id
-			hasBuffer = st.buffer != ""
-			buf = st.buffer
-			needsRefresh = st.buffer == ""
+		isWriter = st.writerPage == viewer.id
+		hasBuffer = st.buffer != ""
+		buf = st.buffer
+		needsRefresh = st.buffer == ""
 	}
 	h.mu.Unlock()
 	if !ok || st == nil {
@@ -199,9 +215,9 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		"code":     viewer.code,
 		"message":  "飞书发送 #unlock " + viewer.code + " 后可输入",
 	})
-		if token, ok := terminalViewCookie(r, sessionName); ok {
-			h.restoreTerminalInputFromCookie(viewer, st.keyID, st.sessionName, token)
-		}
+	if token, ok := terminalViewCookie(r, sessionName); ok {
+		h.restoreTerminalInputFromCookie(viewer, st.keyID, st.sessionName, token)
+	}
 	if needsRefresh {
 		go h.requestTerminalRefreshAfterInitialResize(r.Context(), st.keyID, st.sessionName, viewer.id)
 	}
@@ -245,6 +261,11 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func terminalWrite(ctx context.Context, v *terminalViewer, payload map[string]any) error {
+	// 虚拟 viewer(View Service 的代理身份,conn==nil)不走 WS 写:
+	// 它通过 /internal/view/authorize 轮询获知授权,不需要推送。
+	if v == nil || v.conn == nil {
+		return nil
+	}
 	data, _ := json.Marshal(payload)
 	<-v.mu
 	defer func() { v.mu <- struct{}{} }()
@@ -281,6 +302,402 @@ func (h *Hub) handleTerminalOutputEnvelope(c *sessionClient, env model.Envelope)
 		h.queueFeishuSyncItem(c.keyID, c.sessionName, target, item)
 	}
 	return true
+}
+
+// handleSessionEventEnvelope 接收 helper 发来的结构化会话事件(session_event):
+// 存入 eventRing(供晚订阅的 View Service 回放),并扇出给内网订阅者。
+// 刻意【不进 buffer、不碰老 xterm viewers】—— 新页走这条,老页照旧走 terminal_output。
+func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") != terminalSessionEventType {
+		return false
+	}
+	data := env.Body
+	h.mu.Lock()
+	st := h.terminalForSession(c.keyID, c.sessionName)
+	st.eventRing = append(st.eventRing, data)
+	if len(st.eventRing) > terminalEventRingCap {
+		st.eventRing = st.eventRing[len(st.eventRing)-terminalEventRingCap:]
+	}
+	subs := make([]chan string, 0, len(st.eventSubs))
+	for _, ch := range st.eventSubs {
+		subs = append(subs, ch)
+	}
+	h.mu.Unlock()
+	for _, ch := range subs {
+		select {
+		case ch <- data:
+		default: // 慢消费者不阻塞事件主路(与 output 扇出同纪律)
+		}
+	}
+	return true
+}
+
+// subscribeSessionEvents 注册一个内网事件订阅者(C2 的 SSE 端点使用):
+// 返回当前 eventRing 回放快照 + 实时 channel + 注销函数。
+func (h *Hub) subscribeSessionEvents(keyID, sessionName, subID string) (replay []string, ch chan string, unsub func()) {
+	ch = make(chan string, 256)
+	h.mu.Lock()
+	st := h.terminalForSession(keyID, sessionName)
+	if st.eventSubs == nil {
+		st.eventSubs = map[string]chan string{}
+	}
+	st.eventSubs[subID] = ch
+	replay = append([]string(nil), st.eventRing...)
+	h.mu.Unlock()
+	unsub = func() {
+		h.mu.Lock()
+		if cur := h.terminals[terminalKey(keyID, sessionName)]; cur != nil {
+			delete(cur.eventSubs, subID)
+		}
+		h.mu.Unlock()
+	}
+	return replay, ch, unsub
+}
+
+// HandleInternalViewEvents(C2):内网 SSE 口,View Service 订阅某会话的结构化事件流。
+// 先回放 eventRing,再挂实时流。**仅内网监听**(部署时绑 127.0.0.1,不上公网 mux)。
+func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
+	sessionName := strings.TrimSpace(r.PathValue("session"))
+	if sessionName == "" || strings.Contains(sessionName, "#") {
+		http.Error(w, "invalid session name", http.StatusBadRequest)
+		return
+	}
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+	// 解析 keyID:会话须在线且会话名唯一(与 view WS 同判据)
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	var keyID string
+	if found {
+		keyID = st.keyID
+	}
+	h.mu.Unlock()
+	if !found {
+		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Connection", "keep-alive")
+	w.WriteHeader(http.StatusOK)
+	flusher.Flush()
+
+	subID := randomHex(8)
+	replay, ch, unsub := h.subscribeSessionEvents(keyID, sessionName, subID)
+	defer unsub()
+
+	writeSSE := func(data string) bool {
+		if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+			return false
+		}
+		flusher.Flush()
+		return true
+	}
+	for _, data := range replay {
+		if !writeSSE(data) {
+			return
+		}
+	}
+	ping := time.NewTicker(30 * time.Second)
+	defer ping.Stop()
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case data, ok := <-ch:
+			if !ok {
+				return
+			}
+			if !writeSSE(data) {
+				return
+			}
+		case <-ping.C:
+			if _, err := fmt.Fprintf(w, ": ping\n\n"); err != nil {
+				return
+			}
+			flusher.Flush()
+		}
+	}
+}
+
+// ---- C4:入口路由器(按用户三级灰度路由到不同 View 服务 / 老 xterm)----
+
+type ViewTarget struct {
+	URL     string `json:"url,omitempty"`     // View 服务地址(反代)
+	Builtin bool   `json:"builtin,omitempty"` // true ⇒ hub 内置老 xterm 页
+}
+
+// ViewRouting 路由策略。解析顺序:会话级 > 用户级 > 默认(命中即停)。
+type ViewRouting struct {
+	Sessions map[string]string     `json:"sessions"` // 会话全名 → target 名
+	Users    map[string]string     `json:"users"`    // owner → target 名
+	Default  string                `json:"default"`  // 兜底 target 名
+	Targets  map[string]ViewTarget `json:"targets"`
+}
+
+var (
+	viewRoutingMu    sync.Mutex
+	viewRoutingCache *ViewRouting
+	viewRoutingMTime time.Time
+)
+
+func viewRoutingFallback() *ViewRouting {
+	return &ViewRouting{Default: "legacy-xterm", Targets: map[string]ViewTarget{"legacy-xterm": {Builtin: true}}}
+}
+
+// loadViewRouting 读路由配置(JSON,路径来自 VIEW_ROUTING_CONFIG)。
+// 按文件 mtime 热加载。**任何缺失/出错一律回退老 xterm(fail-safe)。**
+func loadViewRouting() *ViewRouting {
+	path := strings.TrimSpace(os.Getenv("VIEW_ROUTING_CONFIG"))
+	if path == "" {
+		return viewRoutingFallback()
+	}
+	viewRoutingMu.Lock()
+	defer viewRoutingMu.Unlock()
+	fi, err := os.Stat(path)
+	if err != nil {
+		return viewRoutingFallback()
+	}
+	if viewRoutingCache != nil && fi.ModTime().Equal(viewRoutingMTime) {
+		return viewRoutingCache
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if viewRoutingCache != nil {
+			return viewRoutingCache
+		}
+		return viewRoutingFallback()
+	}
+	var vr ViewRouting
+	if err := json.Unmarshal(data, &vr); err != nil {
+		log.Printf("[view-routing] parse error, keeping previous/fallback: %v", err)
+		if viewRoutingCache != nil {
+			return viewRoutingCache
+		}
+		return viewRoutingFallback()
+	}
+	if vr.Default == "" {
+		vr.Default = "legacy-xterm"
+	}
+	if vr.Targets == nil {
+		vr.Targets = map[string]ViewTarget{}
+	}
+	if _, ok := vr.Targets["legacy-xterm"]; !ok {
+		vr.Targets["legacy-xterm"] = ViewTarget{Builtin: true}
+	}
+	viewRoutingCache = &vr
+	viewRoutingMTime = fi.ModTime()
+	return &vr
+}
+
+// resolve 三级:会话级 > 用户级 > 默认。目标名未在 Targets 定义 ⇒ 兜底老页。
+func (vr *ViewRouting) resolve(sessionName, owner string) (string, ViewTarget) {
+	name := vr.Default
+	if t, ok := vr.Sessions[sessionName]; ok {
+		name = t
+	} else if owner != "" {
+		if t, ok := vr.Users[owner]; ok {
+			name = t
+		}
+	}
+	if t, ok := vr.Targets[name]; ok {
+		return name, t
+	}
+	// 配置引用了未定义的 target ⇒ 兜底老页,但打日志提示配置错误(否则静默走 legacy 难排查)
+	log.Printf("[view-routing] target %q not defined in targets (session=%s owner=%s), falling back to legacy-xterm", name, sessionName, owner)
+	return "legacy-xterm", ViewTarget{Builtin: true}
+}
+
+// ownerFromSessionName 取合规会话名(<owner>-<短名>-<key末4位>)的 owner 段。
+func ownerFromSessionName(sessionName string) string {
+	sessionName = strings.TrimSpace(sessionName)
+	if !sessionNamePattern.MatchString(sessionName) {
+		return ""
+	}
+	parts := strings.Split(sessionName, "-")
+	if len(parts) == 3 {
+		return parts[0]
+	}
+	return ""
+}
+
+// proxyToViewService 反代到 View 服务;剥掉 /view/<名> 前缀 + 带 X-DW-Session 头。
+// 后端不可达时(连接失败)返回 false,调用方兜底老页(不让用户白屏)。
+func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, sessionName, target string) bool {
+	u, err := url.Parse(target)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+	prefix := "/view/" + sessionName
+	rp := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = u.Scheme
+			req.URL.Host = u.Host
+			p := strings.TrimPrefix(req.URL.Path, prefix)
+			if p == "" {
+				p = "/"
+			}
+			req.URL.Path = strings.TrimRight(u.Path, "/") + p
+			req.Host = u.Host
+			req.Header.Set("X-DW-Session", sessionName)
+		},
+	}
+	reached := true
+	rp.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, e error) {
+		reached = false // 连接失败:不写响应,交给调用方兜底
+	}
+	rp.ServeHTTP(w, r)
+	return reached
+}
+
+// ---- C3:内网鉴权/输入口(View Service 用;复用解锁/写令牌机制,不 fork 鉴权)----
+
+type viewAuthorizeRequest struct {
+	Session  string `json:"session"`
+	ViewerID string `json:"viewer_id,omitempty"` // 空=注册新虚拟 viewer;有=查询该 viewer 写权
+}
+
+type viewAuthorizeResponse struct {
+	ViewerID    string `json:"viewer_id"`
+	Code        string `json:"code"`         // 页面展示,用户飞书发 #unlock <code> 解锁
+	CanRead     bool   `json:"can_read"`     // 会话在线即可读
+	CanWrite    bool   `json:"can_write"`    // 已解锁且令牌未过期
+	WriterToken string `json:"writer_token"` // can_write 时给出,用于 /input
+	ExpiresUnix int64  `json:"expires,omitempty"`
+	UnlockHint  string `json:"unlock_hint"`
+}
+
+type viewInputRequest struct {
+	ViewerID string `json:"viewer_id"`
+	Token    string `json:"token"`
+	Text     string `json:"text"`
+}
+
+// registerViewViewer 为 View Service 注册一个虚拟 viewer(conn=nil),
+// 分配唯一 code(与真 WS viewer 同码池,故 #unlock <code> 经 grantTerminalInput 原样命中)。
+// 顺带清理陈旧虚拟 viewer。返回 keyID/viewerID/code。
+func (h *Hub) registerViewViewer(sessionName string) (keyID, viewerID, code string, err error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	st, ok := h.terminalBySessionNameLocked(sessionName)
+	if !ok {
+		return "", "", "", fmt.Errorf("session offline or ambiguous")
+	}
+	h.sweepStaleViewViewersLocked(st)
+	code = h.uniqueTerminalCodeLocked() // 与真 WS viewer 同一份码生成,避免逻辑漂移
+	viewerID = randomHex(8)
+	st.viewers[viewerID] = &terminalViewer{id: viewerID, code: code, conn: nil, mu: make(chan struct{}, 1), lastSeen: time.Now()}
+	return st.keyID, viewerID, code, nil
+}
+
+// sweepStaleViewViewersLocked 移除超过 TTL 未活动的虚拟 viewer(conn==nil)。
+// 只碰虚拟 viewer,绝不动真 WS viewer。调用方须持 h.mu。
+func (h *Hub) sweepStaleViewViewersLocked(st *terminalState) {
+	now := time.Now()
+	for id, v := range st.viewers {
+		if v.conn == nil && !v.lastSeen.IsZero() && now.Sub(v.lastSeen) > terminalTokenTTL {
+			delete(st.viewers, id)
+			if st.writerPage == id {
+				st.writerPage = ""
+				st.writerToken = ""
+				st.writerUntil = time.Time{}
+			}
+		}
+	}
+}
+
+// viewWriteState 查某虚拟 viewer 当前写权(刷新 lastSeen);复用 writerPage/writerToken/writerUntil。
+func (h *Hub) viewWriteState(sessionName, viewerID string) (canWrite bool, token string, expiresUnix int64, ok bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	if !found {
+		return false, "", 0, false
+	}
+	v := st.viewers[viewerID]
+	if v == nil {
+		return false, "", 0, false
+	}
+	v.lastSeen = time.Now()
+	if st.writerPage == viewerID && st.writerToken != "" && time.Now().Before(st.writerUntil) {
+		return true, st.writerToken, st.writerUntil.Unix(), true
+	}
+	return false, "", 0, true
+}
+
+// HandleInternalViewAuthorize(C3):View Service 注册虚拟 viewer / 查询写权。仅内网。
+func (h *Hub) HandleInternalViewAuthorize(w http.ResponseWriter, r *http.Request) {
+	var req viewAuthorizeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	sessionName := strings.TrimSpace(req.Session)
+	if sessionName == "" || strings.Contains(sessionName, "#") {
+		http.Error(w, "invalid session name", http.StatusBadRequest)
+		return
+	}
+	resp := viewAuthorizeResponse{CanRead: true}
+	if req.ViewerID == "" {
+		_, viewerID, code, err := h.registerViewViewer(sessionName)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		resp.ViewerID, resp.Code = viewerID, code
+	} else {
+		canWrite, token, exp, ok := h.viewWriteState(sessionName, req.ViewerID)
+		if !ok {
+			http.Error(w, "viewer not found (re-register)", http.StatusNotFound)
+			return
+		}
+		resp.ViewerID = req.ViewerID
+		resp.CanWrite, resp.WriterToken, resp.ExpiresUnix = canWrite, token, exp
+	}
+	if resp.Code != "" { // 查询已有 viewer 时无新 code,不拼半截提示(View Service 已握有初始 code)
+		resp.UnlockHint = "飞书发送 #unlock " + resp.Code + " 后可输入"
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// HandleInternalViewInput(C3):View Service 回投人类输入。复用 routeTerminalInput,
+// 解锁判定一字不改(viewerID=writerPage,token=writerToken)。仅内网。
+func (h *Hub) HandleInternalViewInput(w http.ResponseWriter, r *http.Request) {
+	sessionName := strings.TrimSpace(r.PathValue("session"))
+	if sessionName == "" || strings.Contains(sessionName, "#") {
+		http.Error(w, "invalid session name", http.StatusBadRequest)
+		return
+	}
+	var req viewInputRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	var keyID string
+	if found {
+		keyID = st.keyID
+		if v := st.viewers[req.ViewerID]; v != nil {
+			v.lastSeen = time.Now()
+		}
+	}
+	h.mu.Unlock()
+	if !found {
+		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
+		return
+	}
+	if err := h.routeTerminalInput(r.Context(), keyID, sessionName, req.ViewerID, req.Token, req.Text); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(`{"ok":true}`))
 }
 
 func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID, token, data string) error {
@@ -465,6 +882,12 @@ func parseTerminalInputCommand(text string) (action, sessionName, pageCode strin
 func (h *Hub) uniqueTerminalCode() string {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	return h.uniqueTerminalCodeLocked()
+}
+
+// uniqueTerminalCodeLocked 生成全局唯一的 4 位页面码(真 WS viewer 与虚拟 viewer 同码池)。
+// 调用方须持 h.mu。真/虚拟 viewer 共用这一份,避免两处各自实现而逻辑漂移。
+func (h *Hub) uniqueTerminalCodeLocked() string {
 	used := map[string]bool{}
 	for _, st := range h.terminals {
 		for _, v := range st.viewers {

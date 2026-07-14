@@ -909,6 +909,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		if h.handleTerminalOutputEnvelope(c, env) {
 			continue
 		}
+		if h.handleSessionEventEnvelope(c, env) {
+			continue
+		}
 		if h.routeSessionSelectorEnvelope(r.Context(), c, env) {
 			continue
 		}
