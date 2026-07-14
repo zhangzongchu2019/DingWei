@@ -4838,3 +4838,54 @@ func TestOnboardOnlineListPathUsesClientLocalName(t *testing.T) {
 		})
 	}
 }
+
+// C1(feat/view-service-dock):session_event 中继 —— 扇出给内网订阅者、
+// 存入 eventRing 供回放、且【不污染 xterm buffer】、不认领其它类型信封。
+func TestSessionEventRelayFansOutWithoutTouchingBuffer(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	c := &sessionClient{keyID: "key", sessionName: "s1", connSeq: 1}
+
+	replay, ch, unsub := hub.subscribeSessionEvents(c.keyID, c.sessionName, "sub1")
+	defer unsub()
+	if len(replay) != 0 {
+		t.Fatalf("expected empty replay, got %d", len(replay))
+	}
+
+	// 非 session_event:不认领(返回 false,交给后续 handler)
+	if hub.handleSessionEventEnvelope(c, model.Envelope{Meta: map[string]any{"type": terminalOutputType}, Body: "x"}) {
+		t.Fatal("should not claim non-session_event envelope")
+	}
+
+	// session_event:认领 + 扇出
+	payload := `{"kind":"assistant_text","text":"hi","delivery_id":"d1"}`
+	if !hub.handleSessionEventEnvelope(c, model.Envelope{Meta: map[string]any{"type": terminalSessionEventType}, Body: payload}) {
+		t.Fatal("should claim session_event envelope")
+	}
+	select {
+	case got := <-ch:
+		if got != payload {
+			t.Fatalf("subscriber got %q, want %q", got, payload)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("subscriber did not receive event")
+	}
+
+	// 不污染 xterm buffer;eventRing 记 1 条
+	hub.mu.Lock()
+	st := hub.terminalForSession(c.keyID, c.sessionName)
+	buf, ringLen := st.buffer, len(st.eventRing)
+	hub.mu.Unlock()
+	if buf != "" {
+		t.Fatalf("session_event must not touch xterm buffer, got %q", buf)
+	}
+	if ringLen != 1 {
+		t.Fatalf("eventRing len = %d, want 1", ringLen)
+	}
+
+	// 晚订阅者拿到回放
+	replay2, _, unsub2 := hub.subscribeSessionEvents(c.keyID, c.sessionName, "sub2")
+	defer unsub2()
+	if len(replay2) != 1 || replay2[0] != payload {
+		t.Fatalf("late subscriber replay = %v, want [%q]", replay2, payload)
+	}
+}

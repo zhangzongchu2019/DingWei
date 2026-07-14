@@ -19,12 +19,14 @@ import (
 )
 
 const (
-	terminalOutputType  = "terminal_output"
-	terminalInputType   = "terminal_input"
-	terminalResizeType  = "terminal_resize"
-	terminalRefreshType = "terminal_refresh"
-	terminalTokenTTL    = 8 * time.Hour
-	terminalBufferCap   = 1 << 20
+	terminalOutputType       = "terminal_output"
+	terminalInputType        = "terminal_input"
+	terminalResizeType       = "terminal_resize"
+	terminalRefreshType      = "terminal_refresh"
+	terminalSessionEventType = "session_event"
+	terminalTokenTTL         = 8 * time.Hour
+	terminalBufferCap        = 1 << 20
+	terminalEventRingCap     = 1000
 )
 
 type terminalState struct {
@@ -37,6 +39,8 @@ type terminalState struct {
 	writerUntil time.Time
 	cookieToken string
 	cookieUntil time.Time
+	eventRing   []string               // 结构化会话事件(session_event)环形缓冲,供晚订阅回放
+	eventSubs   map[string]chan string // 内网事件订阅者(View Service),subID → channel
 }
 
 type terminalViewer struct {
@@ -159,18 +163,18 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	var ok bool
 	st, ok = h.terminalBySessionNameLocked(sessionName)
-		// Capture values under h.mu to avoid racing with grantTerminalInput
-		// (which writes st.writerPage) and other terminal state mutators.
-		var isWriter bool
-		var hasBuffer bool
-		var buf string
-		var needsRefresh bool = true
+	// Capture values under h.mu to avoid racing with grantTerminalInput
+	// (which writes st.writerPage) and other terminal state mutators.
+	var isWriter bool
+	var hasBuffer bool
+	var buf string
+	var needsRefresh bool = true
 	if ok {
 		st.viewers[viewer.id] = viewer
-			isWriter = st.writerPage == viewer.id
-			hasBuffer = st.buffer != ""
-			buf = st.buffer
-			needsRefresh = st.buffer == ""
+		isWriter = st.writerPage == viewer.id
+		hasBuffer = st.buffer != ""
+		buf = st.buffer
+		needsRefresh = st.buffer == ""
 	}
 	h.mu.Unlock()
 	if !ok || st == nil {
@@ -199,9 +203,9 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		"code":     viewer.code,
 		"message":  "飞书发送 #unlock " + viewer.code + " 后可输入",
 	})
-		if token, ok := terminalViewCookie(r, sessionName); ok {
-			h.restoreTerminalInputFromCookie(viewer, st.keyID, st.sessionName, token)
-		}
+	if token, ok := terminalViewCookie(r, sessionName); ok {
+		h.restoreTerminalInputFromCookie(viewer, st.keyID, st.sessionName, token)
+	}
 	if needsRefresh {
 		go h.requestTerminalRefreshAfterInitialResize(r.Context(), st.keyID, st.sessionName, viewer.id)
 	}
@@ -281,6 +285,56 @@ func (h *Hub) handleTerminalOutputEnvelope(c *sessionClient, env model.Envelope)
 		h.queueFeishuSyncItem(c.keyID, c.sessionName, target, item)
 	}
 	return true
+}
+
+// handleSessionEventEnvelope 接收 helper 发来的结构化会话事件(session_event):
+// 存入 eventRing(供晚订阅的 View Service 回放),并扇出给内网订阅者。
+// 刻意【不进 buffer、不碰老 xterm viewers】—— 新页走这条,老页照旧走 terminal_output。
+func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) bool {
+	if metaString(env.Meta, "type") != terminalSessionEventType {
+		return false
+	}
+	data := env.Body
+	h.mu.Lock()
+	st := h.terminalForSession(c.keyID, c.sessionName)
+	st.eventRing = append(st.eventRing, data)
+	if len(st.eventRing) > terminalEventRingCap {
+		st.eventRing = st.eventRing[len(st.eventRing)-terminalEventRingCap:]
+	}
+	subs := make([]chan string, 0, len(st.eventSubs))
+	for _, ch := range st.eventSubs {
+		subs = append(subs, ch)
+	}
+	h.mu.Unlock()
+	for _, ch := range subs {
+		select {
+		case ch <- data:
+		default: // 慢消费者不阻塞事件主路(与 output 扇出同纪律)
+		}
+	}
+	return true
+}
+
+// subscribeSessionEvents 注册一个内网事件订阅者(C2 的 SSE 端点使用):
+// 返回当前 eventRing 回放快照 + 实时 channel + 注销函数。
+func (h *Hub) subscribeSessionEvents(keyID, sessionName, subID string) (replay []string, ch chan string, unsub func()) {
+	ch = make(chan string, 256)
+	h.mu.Lock()
+	st := h.terminalForSession(keyID, sessionName)
+	if st.eventSubs == nil {
+		st.eventSubs = map[string]chan string{}
+	}
+	st.eventSubs[subID] = ch
+	replay = append([]string(nil), st.eventRing...)
+	h.mu.Unlock()
+	unsub = func() {
+		h.mu.Lock()
+		if cur := h.terminals[terminalKey(keyID, sessionName)]; cur != nil {
+			delete(cur.eventSubs, subID)
+		}
+		h.mu.Unlock()
+	}
+	return replay, ch, unsub
 }
 
 func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID, token, data string) error {
