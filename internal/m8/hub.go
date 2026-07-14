@@ -786,7 +786,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	conn.SetReadLimit(16 << 20) // 终端 PTY 全屏输出可能远超默认 32KB
 	connSeq, err := h.Repo.IncrementSessionEndpointConnSeq(r.Context(), keyID, sessionName)
 	if err != nil {
-		_ = conn.Close(websocket.StatusInternalError, "save session endpoint failed")
+		if conn != nil {
+			_ = conn.Close(websocket.StatusInternalError, "save session endpoint failed")
+		}
 		return
 	}
 	markTiming("conn_seq")
@@ -801,17 +803,26 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	h.startAgentNetworkSkillPush(skillCtx, c)
 	timingParts = append(timingParts, fmt.Sprintf("onboard=%s", time.Since(onboardStart).Round(time.Millisecond)))
 	lockStart := time.Now()
+	var oldConn *websocket.Conn
+	var reSize [2]int
 	h.mu.Lock()
-	if h.sessionClients[keyID] == nil {
-		h.sessionClients[keyID] = map[string]*sessionClient{}
+	func() {
+		defer h.mu.Unlock()
+		if h.sessionClients[keyID] == nil {
+			h.sessionClients[keyID] = map[string]*sessionClient{}
+		}
+		if old := h.sessionClients[keyID][sessionName]; old != nil {
+			oldConn = old.conn
+		}
+		if c != nil && c.conn != nil {
+			h.sessionClients[keyID][sessionName] = c
+		}
+		h.keyAccounts[keyID] = stringSet(accounts)
+		reSize = h.terminalLastSize[terminalKey(keyID, sessionName)]
+	}()
+	if oldConn != nil {
+		_ = oldConn.Close(websocket.StatusPolicyViolation, "replaced")
 	}
-	if old := h.sessionClients[keyID][sessionName]; old != nil {
-		_ = old.conn.Close(websocket.StatusPolicyViolation, "replaced")
-	}
-	h.sessionClients[keyID][sessionName] = c
-	h.keyAccounts[keyID] = stringSet(accounts)
-	reSize := h.terminalLastSize[terminalKey(keyID, sessionName)]
-	h.mu.Unlock()
 	timingParts = append(timingParts, fmt.Sprintf("register_lock=%s", time.Since(lockStart).Round(time.Millisecond)))
 	log.Printf("session handshake timing key_id=%s session=%s total=%s %s", keyID, sessionName, time.Since(timingStart).Round(time.Millisecond), strings.Join(timingParts, " "))
 	if reSize[0] > 0 && reSize[1] > 0 {
@@ -847,9 +858,13 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		h.mu.Unlock()
 		for _, viewer := range terminalViewers {
 			_ = terminalWrite(context.Background(), viewer, map[string]any{"type": "status", "readonly": true, "message": "会话已离线"})
-			_ = viewer.conn.Close(websocket.StatusNormalClosure, "session offline")
+			if viewer != nil && viewer.conn != nil {
+				_ = viewer.conn.Close(websocket.StatusNormalClosure, "session offline")
+			}
 		}
-		_ = conn.Close(websocket.StatusNormalClosure, "bye")
+		if conn != nil {
+			_ = conn.Close(websocket.StatusNormalClosure, "bye")
+		}
 		if !current {
 			return
 		}
