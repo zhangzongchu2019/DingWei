@@ -9,8 +9,11 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coder/websocket"
@@ -110,6 +113,14 @@ func (h *Hub) HandleTerminalViewPage(w http.ResponseWriter, r *http.Request) {
 	if sessionName == "" || strings.Contains(sessionName, "#") {
 		http.Error(w, "invalid session name", http.StatusBadRequest)
 		return
+	}
+	// C4:按三级路由策略选目标。命中 View 服务 ⇒ 反代;否则(含任何异常)走老 xterm。
+	name, tgt := loadViewRouting().resolve(sessionName, ownerFromSessionName(sessionName))
+	if !tgt.Builtin && tgt.URL != "" {
+		if h.proxyToViewService(w, r, sessionName, tgt.URL) {
+			return
+		}
+		log.Printf("[view-routing] target %s (%s) unreachable, fallback to legacy for %s", name, tgt.URL, sessionName)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = fmt.Fprintf(w, terminalPageHTML, html.EscapeString(sessionName), html.EscapeString(sessionName))
@@ -411,6 +422,134 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 			flusher.Flush()
 		}
 	}
+}
+
+// ---- C4:入口路由器(按用户三级灰度路由到不同 View 服务 / 老 xterm)----
+
+type ViewTarget struct {
+	URL     string `json:"url,omitempty"`     // View 服务地址(反代)
+	Builtin bool   `json:"builtin,omitempty"` // true ⇒ hub 内置老 xterm 页
+}
+
+// ViewRouting 路由策略。解析顺序:会话级 > 用户级 > 默认(命中即停)。
+type ViewRouting struct {
+	Sessions map[string]string     `json:"sessions"` // 会话全名 → target 名
+	Users    map[string]string     `json:"users"`    // owner → target 名
+	Default  string                `json:"default"`  // 兜底 target 名
+	Targets  map[string]ViewTarget `json:"targets"`
+}
+
+var (
+	viewRoutingMu    sync.Mutex
+	viewRoutingCache *ViewRouting
+	viewRoutingMTime time.Time
+)
+
+func viewRoutingFallback() *ViewRouting {
+	return &ViewRouting{Default: "legacy-xterm", Targets: map[string]ViewTarget{"legacy-xterm": {Builtin: true}}}
+}
+
+// loadViewRouting 读路由配置(JSON,路径来自 VIEW_ROUTING_CONFIG)。
+// 按文件 mtime 热加载。**任何缺失/出错一律回退老 xterm(fail-safe)。**
+func loadViewRouting() *ViewRouting {
+	path := strings.TrimSpace(os.Getenv("VIEW_ROUTING_CONFIG"))
+	if path == "" {
+		return viewRoutingFallback()
+	}
+	viewRoutingMu.Lock()
+	defer viewRoutingMu.Unlock()
+	fi, err := os.Stat(path)
+	if err != nil {
+		return viewRoutingFallback()
+	}
+	if viewRoutingCache != nil && fi.ModTime().Equal(viewRoutingMTime) {
+		return viewRoutingCache
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if viewRoutingCache != nil {
+			return viewRoutingCache
+		}
+		return viewRoutingFallback()
+	}
+	var vr ViewRouting
+	if err := json.Unmarshal(data, &vr); err != nil {
+		log.Printf("[view-routing] parse error, keeping previous/fallback: %v", err)
+		if viewRoutingCache != nil {
+			return viewRoutingCache
+		}
+		return viewRoutingFallback()
+	}
+	if vr.Default == "" {
+		vr.Default = "legacy-xterm"
+	}
+	if vr.Targets == nil {
+		vr.Targets = map[string]ViewTarget{}
+	}
+	if _, ok := vr.Targets["legacy-xterm"]; !ok {
+		vr.Targets["legacy-xterm"] = ViewTarget{Builtin: true}
+	}
+	viewRoutingCache = &vr
+	viewRoutingMTime = fi.ModTime()
+	return &vr
+}
+
+// resolve 三级:会话级 > 用户级 > 默认。目标名未在 Targets 定义 ⇒ 兜底老页。
+func (vr *ViewRouting) resolve(sessionName, owner string) (string, ViewTarget) {
+	name := vr.Default
+	if t, ok := vr.Sessions[sessionName]; ok {
+		name = t
+	} else if owner != "" {
+		if t, ok := vr.Users[owner]; ok {
+			name = t
+		}
+	}
+	if t, ok := vr.Targets[name]; ok {
+		return name, t
+	}
+	return "legacy-xterm", ViewTarget{Builtin: true}
+}
+
+// ownerFromSessionName 取合规会话名(<owner>-<短名>-<key末4位>)的 owner 段。
+func ownerFromSessionName(sessionName string) string {
+	sessionName = strings.TrimSpace(sessionName)
+	if !sessionNamePattern.MatchString(sessionName) {
+		return ""
+	}
+	parts := strings.Split(sessionName, "-")
+	if len(parts) == 3 {
+		return parts[0]
+	}
+	return ""
+}
+
+// proxyToViewService 反代到 View 服务;剥掉 /view/<名> 前缀 + 带 X-DW-Session 头。
+// 后端不可达时(连接失败)返回 false,调用方兜底老页(不让用户白屏)。
+func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, sessionName, target string) bool {
+	u, err := url.Parse(target)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+	prefix := "/view/" + sessionName
+	rp := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = u.Scheme
+			req.URL.Host = u.Host
+			p := strings.TrimPrefix(req.URL.Path, prefix)
+			if p == "" {
+				p = "/"
+			}
+			req.URL.Path = strings.TrimRight(u.Path, "/") + p
+			req.Host = u.Host
+			req.Header.Set("X-DW-Session", sessionName)
+		},
+	}
+	reached := true
+	rp.ErrorHandler = func(rw http.ResponseWriter, req *http.Request, e error) {
+		reached = false // 连接失败:不写响应,交给调用方兜底
+	}
+	rp.ServeHTTP(w, r)
+	return reached
 }
 
 // ---- C3:内网鉴权/输入口(View Service 用;复用解锁/写令牌机制,不 fork 鉴权)----

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -5006,5 +5007,70 @@ func TestInternalViewAuthorizeAndInputAuthGate(t *testing.T) {
 	sc2, _ := post("/internal/view/authorize", `{"session":"s1","viewer_id":"nope"}`)
 	if sc2 != http.StatusNotFound {
 		t.Fatalf("unknown viewer: got %d, want 404", sc2)
+	}
+}
+
+// C4(feat/view-service-dock):入口路由器三级优先级 + fail-safe。
+// 用户级路由 / 会话级覆盖用户级 / 默认兜底老页 / 目标不可达回退老页。
+func TestViewRoutingPrecedenceAndFallback(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+
+	// stub View 服务:回显 X-DW-Session + 路径
+	stub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("VIEWSVC session=" + r.Header.Get("X-DW-Session") + " path=" + r.URL.Path))
+	}))
+	defer stub.Close()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /view/{sessionName}", hub.HandleTerminalViewPage)
+	front := httptest.NewServer(mux)
+	defer front.Close()
+
+	get := func(session string) string {
+		resp, err := http.Get(front.URL + "/view/" + session)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return string(b)
+	}
+	head := func(s string) string {
+		if len(s) > 60 {
+			return s[:60]
+		}
+		return s
+	}
+
+	cfg := `{
+	  "sessions": {"zzc-pinned-3dd6": "legacy-xterm", "dead-one-3dd6": "dead"},
+	  "users":    {"zzc": "v2"},
+	  "default":  "legacy-xterm",
+	  "targets":  {"v2": {"url": "` + stub.URL + `"}, "dead": {"url": "http://127.0.0.1:1"}}
+	}`
+	path := t.TempDir() + "/routing.json"
+	if err := os.WriteFile(path, []byte(cfg), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("VIEW_ROUTING_CONFIG", path)
+	viewRoutingMu.Lock()
+	viewRoutingCache = nil
+	viewRoutingMu.Unlock()
+
+	// 用户级:zzc-* → v2(反代到 stub,前缀剥离为 "/",带 session 头)
+	if b := get("zzc-demo-3dd6"); !strings.Contains(b, "VIEWSVC session=zzc-demo-3dd6 path=/") {
+		t.Fatalf("user-level route failed: %q", head(b))
+	}
+	// 会话级覆盖用户级:zzc-pinned 强制 legacy(即便 users[zzc]=v2)
+	if b := get("zzc-pinned-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
+		t.Fatalf("session-level override failed: %q", head(b))
+	}
+	// 默认兜底:别的 owner → legacy
+	if b := get("bob-demo-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
+		t.Fatalf("default should be legacy: %q", head(b))
+	}
+	// 目标不可达 → fail-safe 回退老页
+	if b := get("dead-one-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
+		t.Fatalf("unreachable target should fall back to legacy: %q", head(b))
 	}
 }
