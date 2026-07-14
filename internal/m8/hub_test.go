@@ -5074,3 +5074,118 @@ func TestViewRoutingPrecedenceAndFallback(t *testing.T) {
 		t.Fatalf("unreachable target should fall back to legacy: %q", head(b))
 	}
 }
+
+// 离线全链路集成(feat/view-service-dock C1..C5):真 WS 会话发 session_event(C5)
+// → hub 中继(C1)→ 内网 SSE 订阅回放(C2)→ authorize+#unlock+input 回到会话(C3)。
+func TestViewServiceFullChainIntegration(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyID := key.ID
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /internal/view/{session}/events", hub.HandleInternalViewEvents)
+	mux.HandleFunc("POST /internal/view/authorize", hub.HandleInternalViewAuthorize)
+	mux.HandleFunc("POST /internal/view/{session}/input", hub.HandleInternalViewInput)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	// (1) 会话上线(真 WS)
+	sess := dialSession(t, ctx, srv.URL, "home", keyID, secret)
+	defer sess.Close(websocket.StatusNormalClosure, "done")
+
+	// (2) C5/C1:会话发 session_event 信封
+	eventJSON := `{"kind":"assistant_text","text":"你好世界","delivery_id":"d1","cursor":"1"}`
+	if err := writeEnvelope(ctx, sess, model.Envelope{
+		ID: "ev1", From: "home#" + keyID, To: "workpulse#" + keyID,
+		Body: eventJSON, Meta: map[string]any{"type": "session_event", "session": "home", "key_id": keyID},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for dl := time.Now().Add(3 * time.Second); time.Now().Before(dl); time.Sleep(20 * time.Millisecond) {
+		hub.mu.Lock()
+		st, ok := hub.terminalBySessionNameLocked("home")
+		n := 0
+		if ok {
+			n = len(st.eventRing)
+		}
+		hub.mu.Unlock()
+		if n > 0 {
+			break
+		}
+	}
+
+	// (3) C2:内网 SSE 订阅 → 回放拿到该事件
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx2, "GET", srv.URL+"/internal/view/home/events", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	buf := make([]byte, 0, 512)
+	tmp := make([]byte, 256)
+	for dl := time.Now().Add(2 * time.Second); time.Now().Before(dl); {
+		n, rerr := resp.Body.Read(tmp)
+		buf = append(buf, tmp[:n]...)
+		if strings.Contains(string(buf), eventJSON) {
+			break
+		}
+		if rerr != nil {
+			break
+		}
+	}
+	if !strings.Contains(string(buf), eventJSON) {
+		t.Fatalf("C2 SSE 未送达 session_event; got %q", string(buf))
+	}
+
+	// (4) C3:authorize 注册虚拟 viewer → #unlock 授权 → 可写
+	post := func(path, body string) (int, string) {
+		r, err := http.Post(srv.URL+path, "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(r.Body)
+		r.Body.Close()
+		return r.StatusCode, string(b)
+	}
+	_, regBody := post("/internal/view/authorize", `{"session":"home"}`)
+	var reg viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(regBody), &reg)
+	if reg.ViewerID == "" || reg.Code == "" {
+		t.Fatalf("authorize register: %s", regBody)
+	}
+	token, err := hub.grantTerminalInput(keyID, "home", reg.Code) // 模拟飞书 #unlock <code>
+	if err != nil {
+		t.Fatalf("grant: %v", err)
+	}
+	_, stBody := post("/internal/view/authorize", `{"session":"home","viewer_id":"`+reg.ViewerID+`"}`)
+	var st2 viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(stBody), &st2)
+	if !st2.CanWrite || st2.WriterToken != token {
+		t.Fatalf("after unlock not writable: %s", stBody)
+	}
+
+	// (5) C3 input:浏览器输入 → hub → 会话收到 terminal_input
+	sc, ib := post("/internal/view/home/input", `{"viewer_id":"`+reg.ViewerID+`","token":"`+token+`","text":"跑一下测试"}`)
+	if sc != 200 {
+		t.Fatalf("input POST status=%d body=%s", sc, ib)
+	}
+	var gotInput bool
+	for i := 0; i < 6 && !gotInput; i++ {
+		env := readEnvelope(t, ctx, sess)
+		if env.Meta["type"] == "terminal_input" && env.Body == "跑一下测试" {
+			gotInput = true
+		}
+	}
+	if !gotInput {
+		t.Fatal("会话未收到 terminal_input(input 未回投成功)")
+	}
+}
