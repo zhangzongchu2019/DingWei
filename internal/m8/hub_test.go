@@ -2117,12 +2117,14 @@ func TestPersonalMessageDefaultRouteNoSessionAndGroupAreIgnored(t *testing.T) {
 	if !personal.Matched || !strings.Contains(personal.Reply, "已受理 #default-none") {
 		t.Fatalf("no-session personal result=%+v", personal)
 	}
+	// 变更(fix/control-plane-intent-gate):群聊里 L1 未命中命令的消息不再回执/进 L2,
+	// 而是静默(避免机器人截胡人对人的消息、幻觉执行)。旧行为是回 "已受理"。
 	group, err := hub.Dispatch(ctx, model.Message{ID: "default-group", ChatEntityID: "dev:group:oc_group", BotChannelID: "dev", ChatType: model.ChatGroup, SenderOpenID: "ou_u2"}, "你好")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !group.Matched || !strings.Contains(group.Reply, "已受理 #default-group") {
-		t.Fatalf("group default result=%+v", group)
+	if group.Matched {
+		t.Fatalf("group non-command should now be silenced, got %+v", group)
 	}
 }
 
@@ -4836,5 +4838,59 @@ func TestOnboardOnlineListPathUsesClientLocalName(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// fix/control-plane-intent-gate:群聊里 L1 未命中命令的消息(闲聊/@别人)静默,
+// 不回执、不进 L2、任务标 ignored,且重复投递仍静默;个人会话行为不变(仍回执)。
+func TestControlPlaneGroupNonCommandIsSilenced(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+
+	// 群聊闲聊 "好的" → 静默
+	groupMsg := model.Message{ID: "grp-chatter", ChatEntityID: "dev:group:oc_x", BotChannelID: "dev", ChatType: model.ChatGroup}
+	result, err := hub.Dispatch(ctx, groupMsg, "好的")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Matched {
+		t.Fatalf("group chatter should be silent, got %+v", result)
+	}
+	task, err := db.GetControlTask(ctx, "grp-chatter")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if task == nil || task.Status != "ignored" {
+		t.Fatalf("group chatter task should be ignored, got %+v", task)
+	}
+
+	// 重复投递仍静默(不因幂等路径回执)
+	dup, err := hub.Dispatch(ctx, groupMsg, "好的")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dup.Matched {
+		t.Fatalf("duplicate group chatter should stay silent, got %+v", dup)
+	}
+
+	// 群聊 @别人(无命令)→ 静默
+	atMsg := model.Message{ID: "grp-at", ChatEntityID: "dev:group:oc_x", BotChannelID: "dev", ChatType: model.ChatGroup}
+	r2, err := hub.Dispatch(ctx, atMsg, "@_user_1 @_user_2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r2.Matched {
+		t.Fatalf("group @people should be silent, got %+v", r2)
+	}
+
+	// 对照:个人会话同样的非命令消息 → 仍回执(原行为不变)
+	pmsg := model.Message{ID: "p-chatter", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	r3, err := hub.Dispatch(ctx, pmsg, "好的")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !r3.Matched || !strings.Contains(r3.Reply, "已受理 #p-chatter") {
+		t.Fatalf("personal chatter should still ack, got %+v", r3)
 	}
 }

@@ -1077,6 +1077,10 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 		return model.PrefixDispatchResult{}, err
 	}
 	ack := fmt.Sprintf("已受理 #%s", task.ID)
+	if !inserted && task.Status == "ignored" {
+		// 已判定为群聊非命令消息:重复投递也保持静默(与首次一致)
+		return model.PrefixDispatchResult{Matched: false}, nil
+	}
 	if !inserted && task.Status != "done" {
 		return model.PrefixDispatchResult{Matched: true, Reply: ack}, nil
 	}
@@ -1108,11 +1112,22 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 	} else if intent == "" {
 		intent = "unknown"
 	}
+	// 止血(fix/control-plane-intent-gate):群聊里 L1 未命中任何命令的消息
+	// (闲聊/"好的"/@别人)——不进 L2、不回执,保持静默。
+	// 群聊只应答明确命令;自然语言路由仅限个人会话直聊机器人,
+	// 避免机器人截胡人对人的消息、或对不懂的话幻觉执行(如"正在为您安排会议")。
+	gateSilent := !result.Matched && msg.ChatType == model.ChatGroup
+	if gateSilent {
+		status = "ignored"
+	}
 	if err := h.Repo.UpdateControlTaskAfterL1(ctx, task.ID, intent, layer, target, resultText, status, errText); err != nil {
 		return model.PrefixDispatchResult{}, err
 	}
 	if result.Matched {
 		return result, nil
+	}
+	if gateSilent {
+		return model.PrefixDispatchResult{Matched: false}, nil
 	}
 	return model.PrefixDispatchResult{Matched: true, Reply: ack}, nil
 }
