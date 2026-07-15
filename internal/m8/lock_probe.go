@@ -2,11 +2,22 @@ package m8
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 )
+
+type LockTimingStats struct {
+	Count uint64        `json:"count"`
+	Min   time.Duration `json:"min_ns"`
+	P50   time.Duration `json:"p50_ns"`
+	P95   time.Duration `json:"p95_ns"`
+	P99   time.Duration `json:"p99_ns"`
+	P999  time.Duration `json:"p999_ns"`
+	Max   time.Duration `json:"max_ns"`
+}
 
 const (
 	defaultLockProbeInterval = 50 * time.Millisecond
@@ -93,4 +104,16 @@ func (h *Hub) HandleDebugHoldLock(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusAccepted)
 	_, _ = fmt.Fprintf(w, "holding hub lock for %s\n", duration)
+}
+
+// HandleDebugLockStats exposes h.mu hold-time percentiles in instrmutex builds.
+// Production builds return 204 even if the debug route is accidentally enabled.
+func (h *Hub) HandleDebugLockStats(w http.ResponseWriter, _ *http.Request) {
+	stats, enabled := h.mu.lockStats()
+	if !enabled {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(stats)
 }

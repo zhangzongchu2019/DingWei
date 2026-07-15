@@ -49,7 +49,7 @@ type Hub struct {
 	L2       llm.Provider
 	L2Config L2Config
 
-	mu               sync.Mutex
+	mu               hubMutex
 	serviceClients   map[string]*client
 	sessionClients   map[string]map[string]*sessionClient
 	keyAccounts      map[string]map[string]bool
