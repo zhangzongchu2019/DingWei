@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import threading
 import unittest
 from unittest import mock
 
@@ -73,6 +74,56 @@ class RendererCanaryTest(unittest.TestCase):
     def test_empty_canary_config_keeps_default_renderer(self):
         with mock.patch.multiple(vs, CANARY_RENDERER="", CANARY_SESSIONS=frozenset()):
             self.assertEqual(vs._renderer_path_for_session("any-session"), vs.RENDERER)
+
+
+class ViewerStabilityTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.old_file = vs.STATE_FILE
+        vs.STATE_FILE = os.path.join(self.tmp.name, "state.json")
+        with vs._state_lock:
+            vs._sessions.clear()
+        with vs._ready_locks_lock:
+            vs._ready_locks.clear()
+
+    def tearDown(self):
+        vs.STATE_FILE = self.old_file
+        self.tmp.cleanup()
+
+    def test_parallel_first_requests_register_only_one_viewer(self):
+        calls = []
+
+        def fake_post(_base, path, obj):
+            calls.append((path, dict(obj)))
+            if not obj.get("viewer_id"):
+                return 200, {"viewer_id": "viewer-stable", "code": "6613"}
+            return 200, {"viewer_id": "viewer-stable", "can_write": False}
+
+        results = []
+        with mock.patch.object(vs, "_hub_post", side_effect=fake_post), \
+                mock.patch.object(vs, "AUTO_UNLOCK", False):
+            threads = [threading.Thread(target=lambda: results.append(vs._ensure_ready("reviewer"))) for _ in range(2)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+        registrations = [obj for path, obj in calls if path == "/internal/view/authorize" and not obj.get("viewer_id")]
+        self.assertEqual(len(registrations), 1)
+        self.assertEqual([result["viewer_id"] for result in results], ["viewer-stable", "viewer-stable"])
+        self.assertEqual([result["code"] for result in results], ["6613", "6613"])
+
+    def test_transient_authorize_failure_keeps_cached_viewer_and_unlock(self):
+        state = vs._sess_state("reviewer")
+        state.update({"viewer_id": "viewer-stable", "code": "6613", "token": "token", "can_write": True})
+
+        with mock.patch.object(vs, "_hub_post", return_value=(0, {"error": "timeout"})):
+            result = vs._ensure_ready("reviewer")
+
+        self.assertEqual(result["viewer_id"], "viewer-stable")
+        self.assertEqual(result["code"], "6613")
+        self.assertEqual(result["token"], "token")
+        self.assertTrue(result["can_write"])
 
 
 if __name__ == "__main__":

@@ -39,6 +39,8 @@ STATE_FILE = os.environ.get("VS_STATE_FILE", os.path.join(BASE_DIR, "view-state.
 
 _state_lock = threading.Lock()
 _sessions: dict[str, dict] = {}   # session -> {viewer_id, token, cost_total, cost_last, turns}
+_ready_locks_lock = threading.Lock()
+_ready_locks: dict[str, threading.Lock] = {}
 
 
 def _renderer_path_for_session(session: str) -> str:
@@ -95,6 +97,15 @@ def _sess_state(session: str) -> dict:
         return st
 
 
+def _ready_lock_for(session: str) -> threading.Lock:
+    with _ready_locks_lock:
+        lock = _ready_locks.get(session)
+        if lock is None:
+            lock = threading.Lock()
+            _ready_locks[session] = lock
+        return lock
+
+
 def _hub_post(base: str, path: str, obj: dict) -> tuple[int, dict]:
     data = json.dumps(obj).encode()
     req = urllib.request.Request(base + path, data=data,
@@ -115,6 +126,13 @@ def _hub_post(base: str, path: str, obj: dict) -> tuple[int, dict]:
 def _ensure_ready(session: str) -> dict:
     """注册虚拟 viewer 拿真码;每次刷新写权(用户真 #unlock 后 can_write 会翻转)。
     返回 {viewer_id, code, can_write, token}。"""
+    # 页面加载会并发请求 /events 与 /status。必须按 session 串行化首次注册，
+    # 否则两条请求会各拿一个 viewer/code，后写入缓存者令先展示的解锁码失效。
+    with _ready_lock_for(session):
+        return _ensure_ready_locked(session)
+
+
+def _ensure_ready_locked(session: str) -> dict:
     st = _sess_state(session)
     # 1) 已有 viewer:查写权。hub 返回 404 = viewer 已失效(pilot 断连重连清了 hub 侧 viewer)
     #    → 清缓存,走下面重注册(自愈,避免 pilot 重启后旧码 unlock 不到/订不到事件)。
@@ -127,6 +145,10 @@ def _ensure_ready(session: str) -> dict:
                 if ws.get("writer_token"):
                     st["token"] = ws.get("writer_token", "")
                 _save_state_locked()
+            return st
+        # 只有 Hub 明确确认 viewer 不存在时才能换码。网络超时、5xx 等瞬时
+        # 故障保留原 viewer/token，避免一次状态探测把稳定解锁状态冲掉。
+        if c2 != 404:
             return st
         with _state_lock:  # 失效(404 等):清缓存
             st["viewer_id"] = ""
