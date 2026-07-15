@@ -201,11 +201,13 @@
     }
     .waiting-area {
       flex: 0 0 auto;
-      margin-bottom: 10px;
+      margin-top: 10px;
+      max-height: min(35vh, 280px);
       border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--line));
       border-radius: 10px;
       background: color-mix(in srgb, var(--accent) 5%, var(--panel));
-      overflow: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .waiting-area[hidden] { display: none; }
     .waiting-title { padding: 8px 12px; color: var(--muted); font-size: 12px; font-weight: 700; }
@@ -650,11 +652,11 @@
     </header>
 
     <main class="main">
+      <section class="timeline" id="timeline" aria-live="polite"></section>
       <section class="waiting-area" id="waitingArea" aria-label="等待接纳的消息" aria-live="polite" hidden>
         <div class="waiting-title">等待接纳</div>
         <div id="waitingList"></div>
       </section>
-      <section class="timeline" id="timeline" aria-live="polite"></section>
     </main>
 
     <footer class="composer">

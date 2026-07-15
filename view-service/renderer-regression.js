@@ -10,14 +10,25 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
       await page.goto(`${baseUrl}?mock=1&unlocked=1`, { waitUntil: 'domcontentloaded' });
       await page.evaluate(() => {
         resetConversation();
-        handleIncomingEvent({ kind: 'user_input', text: '排队中的外部任务', delivery_id: 'd-wait', cursor: '1' });
+        handleIncomingEvent({ kind: 'user_input', text: '排队中的外部任务', data: { lifecycle: 'queued' }, delivery_id: 'd-wait', turn_id: '', cursor: '1' });
       });
       assert.strictEqual(await page.locator('#waitingArea').isVisible(), true);
       assert.strictEqual(await page.locator('#waitingList > .waiting-item').count(), 1);
       assert.match(await page.locator('#waitingList').innerText(), /排队中的外部任务/);
       assert.strictEqual(await page.locator('#timeline > .turn-group').count(), 0);
+      const bottomCluster = await page.evaluate(() => {
+        const waiting = document.querySelector('#waitingArea').getBoundingClientRect();
+        const composer = document.querySelector('.composer').getBoundingClientRect();
+        const timeline = document.querySelector('#timeline').getBoundingClientRect();
+        return { waitingBottom: waiting.bottom, composerTop: composer.top, composerBottom: composer.bottom,
+          timelineBottom: timeline.bottom, viewportHeight: innerHeight };
+      });
+      assert.ok(bottomCluster.timelineBottom <= bottomCluster.waitingBottom);
+      assert.ok(bottomCluster.waitingBottom <= bottomCluster.composerTop);
+      assert.ok(Math.abs(bottomCluster.composerBottom - bottomCluster.viewportHeight) <= 1);
+      await page.screenshot({ path: `/tmp/renderer-pw/waiting-bottom-${viewport.width}.png`, fullPage: true });
       await page.evaluate(() => {
-        handleIncomingEvent({ kind: 'state_change', data: { change: 'accepted' }, delivery_id: 'd-wait', turn_id: 't-wait', cursor: '2' });
+        handleIncomingEvent({ kind: 'user_input', text: '排队中的外部任务', data: { lifecycle: 'admitted' }, delivery_id: 'd-wait', turn_id: 't-wait', cursor: '2' });
       });
       assert.strictEqual(await page.locator('#waitingArea').isVisible(), false);
       assert.strictEqual(await page.locator('#waitingList > .waiting-item').count(), 0);

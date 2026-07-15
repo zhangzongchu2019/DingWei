@@ -286,9 +286,8 @@ class _Handler(BaseHTTPRequestHandler):
         if text:
             st = _ensure_ready(session)
             if st.get("viewer_id") and st.get("token"):
-                # pilot 的 write_terminal_input 是按键式:遇回车才提交 → 整条消息末尾补 \r 触发投递。
-                # 内嵌换行(Ctrl+Enter)先归一为空格,避免被拆成多条(多行完整投递属后续优化)。
-                payload_text = text.replace("\r\n", "\n").replace("\n", " ") + "\r"
+                # pilot 按键式输入以末尾 CR 提交；内嵌 LF 由 adapter 保留为消息换行。
+                payload_text = text.replace("\r\n", "\n").replace("\r", "\n") + "\r"
                 code, _ = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/input",
                                     {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text})
                 ok = (code == 200)
