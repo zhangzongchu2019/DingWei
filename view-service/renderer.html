@@ -211,8 +211,14 @@
     }
     .waiting-area[hidden] { display: none; }
     .waiting-title { padding: 8px 12px; color: var(--muted); font-size: 12px; font-weight: 700; }
-    .waiting-item { padding: 10px 12px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
-    .waiting-item::before { content: '⏳ 等候接纳'; display: block; margin-bottom: 4px; color: var(--muted); font-size: 12px; }
+    .waiting-item {
+      padding: 10px 12px;
+      border-top: 1px solid var(--line);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .waiting-item::before { content: '⏳'; margin-right: 6px; color: var(--muted); }
     .event-card {
       flex: 0 0 auto;      /* 关键:不被 flex 压缩,事件保持原高 → 溢出由 timeline 滚动,而不是压扁内容 */
       display: block;
