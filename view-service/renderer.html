@@ -878,7 +878,7 @@
     }
 
     function deliveryLifecycle(ev) {
-      return String(ev.data?.state || ev.data?.change || '').toLowerCase();
+      return String(ev.data?.lifecycle || ev.data?.state || ev.data?.change || '').toLowerCase();
     }
 
     function isWaitingDelivery(ev) {
