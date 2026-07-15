@@ -93,6 +93,10 @@ QueuedCommand
 
 所有 `enqueue()`、`popleft()`、当前项切换和 `queue_seq` 分配必须在同一锁/事件循环内完成。只允许一个 delivery worker；driver 的内部锁只是最后防线，不能用它决定 UI 顺序。
 
+“一个 worker”只表示一个 FIFO 调度者，不表示在 asyncio 事件循环内同步执行 driver。`driver.deliver()` 必须通过 `asyncio.to_thread()`、专用 executor 或独立 task 执行；worker 等待接纳期间，`recv_loop` 和 `terminal_interrupt` handler 必须继续运行，且 interrupt 可与在途 deliver 并发。禁止直接在 event-loop thread 调用阻塞式 `driver.deliver()`。
+
+队列的 `current`、pending pop、admitting/admitted/terminal 状态迁移与 interrupt 的 stale-turn 核对必须共用 `UnifiedCommandQueue` 的同一把锁。interrupt handler 不得从另一个无锁字段读取 current，否则会在 worker 切换 turn 时中断错误回合。
+
 队列满时不得沿用现在的“静默 drop oldest”（runtime `app.py:362-364`）。统一队列需要显式拒绝新项并发 `queue_rejected(reason='queue_full')`，否则页面显示顺序与实际执行会分叉。队列容量继续沿用 `SH_BUSY_BUFFER_MAX`，但拒绝策略固定为 reject-new，不删除已向用户展示的旧项。
 
 ### 3.2 来源归一
@@ -139,6 +143,12 @@ QueuedCommand
 `queued` 与 `admitted` 必须幂等。用 `(delivery_id,lifecycle)` 去重，重连、可靠投递重试和 receipt 轮询不能重复发事件。
 
 `admitted` 后，该项从“排队列表”搬到“正在执行”；收到 turn terminal 后移出当前项，worker 再取下一项。driver 如果在 `deliver()` 内阻塞到接纳，当前状态显示“正在接纳”仍属于队首，不允许后项越过。
+
+### 3.4 每-turn terminal 看门狗
+
+每项 admitted 后必须启动 terminal watchdog，避免 driver 活着但永久漏发 terminal 时冻结整个 FIFO。watchdog 以 `(delivery_id, turn_id)` 绑定；任何同 turn 的 assistant/tool/state 进展事件可刷新最后进展时间，真实 terminal 到达时取消。
+
+新增有限正数配置 `SH_TURN_TERMINAL_TIMEOUT_SECONDS`（建议默认 1800 秒，部署可按 driver 最长任务调大，但禁止无限）。超过“最后进展时间 + timeout”仍无 terminal 时，在队列锁内 compare-and-set：仅当 current 仍为同一 delivery/turn，才 emit 一次 `state_change(change='turn_completed', outcome='failed', reason='terminal_timeout')`、清 current 并推进下一项。迟到 terminal 只记诊断，不得二次 finish 或影响新回合。提交 2 应在超时推进前 best-effort 调 driver interrupt；interrupt 无论是否确认，队列都不能永久冻结。
 
 ## 4. Emit 点（文件、函数与确切位置）
 
@@ -240,6 +250,8 @@ helper 侧入队和接纳位置与 Agent 相同，但来源元数据由 Hub 在�
 - `delivery_id` 是生命周期主键；queued/admitted/turn 原生事件都必须相同。
 - queued 的 `turn_id` 必为空；admitted 必须非空。没有 turn_id 不允许为了 UI 提前 admitted。
 - `cursor` 是事件去重/重放游标，不替代 `queue_seq`。renderer 按 `queue_seq` 排队，不能依赖不同 driver 的字符串 cursor 比较。
+
+`queue:*` 与 driver 原生 cursor 属于不同命名空间，任何地方都不得直接比较二者。等候区与执行顺序只认 `data.queue_seq`；turn 内事件继续使用该 driver 自己的 cursor 排序。
 
 终结事件扩展：
 
@@ -359,7 +371,7 @@ POST /internal/view/{session}/interrupt
 处理步骤：
 
 1. 复用 `routeTerminalInput` 的 viewer writer 校验（`terminal.go:787-801`）：session 存在、viewer 是当前 writer、token 匹配且未过期。
-2. 校验请求的 delivery_id/turn_id 与 Hub 最近从该 session SSE 看见的 current turn 一致；不一致返回 409，避免旧 tab 中断新回合。
+2. Hub 可用最近 SSE 快照做 best-effort 预筛，但它不是 stale-turn CAS 权威；SSE 可能落后于 helper，Hub 不得仅因快照不一致就拒绝合法 ESC。Hub 应把 delivery_id/turn_id 原样透传给 helper。
 3. 向 session client 发送独立控制 envelope：
 
 ```json
@@ -391,7 +403,7 @@ if is_terminal_interrupt(env):
 
 `handle_terminal_interrupt`：
 
-1. 向统一队列读取 current 快照，核对 delivery_id/turn_id；不匹配回控制 ack `stale`。
+1. 在统一队列锁内读取 current，并以 delivery_id+turn_id 做 compare-and-set 核对；helper 是 stale-turn CAS 的唯一权威。不匹配回控制 ack `stale`，Hub 再映射为 409。
 2. 直接调用 `adapter.interrupt_current()`，内部调用 driver 原语；不得等 `is_idle`。
 3. driver 确认中断后，由 driver 的真实 terminal frame/event发 `outcome=interrupted`；helper 只负责补齐 delivery_id、turn_id、queue_seq，不应抢先伪造成功。
 4. 若 driver 返回 false/超时，发 `interrupt_failed`，保持 current，不能提前执行下一项。
@@ -409,20 +421,30 @@ sidecar `POST /interrupt` 改为调用同一个 `adapter.interrupt_current()`，
 
 因此 OpenCode 不是 N/A。PTY Ctrl-C 只适用于 legacy CLI adapter；协议 driver 必须使用上表原生 API。若仍保留 legacy PTY driver，调用已有 `write_terminal_input('\x03')`/pexpect sendcontrol('c')，成功证据至少为进程重新出现 prompt；单纯写字符成功不算中断成功。
 
+Codex 实现必须在 admitted 时记录 `delivery_id → (threadId, turnId)`，interrupt 只能使用 current delivery 对应的 active IDs；不得用“最近一个 turn”或可变化的全局字段猜测。测试须覆盖下一 turn 已建立时旧 turn interrupt 到达，断言不会调用错误的 `(threadId, turnId)`。
+
+### 7.6 Driver 重投与恢复约束
+
+`admitting` 恢复不能假设 `driver.deliver(delivery_id, text)` 天然跨进程幂等。提交 2 必须逐 driver 用 fixture/实测证明以下二者之一：相同 delivery_id 重投由 driver/daemon 去重且不会新开 turn；或 driver 提供 by-delivery_id 查询，可恢复原 turn/receipt 而不重投。
+
+恢复顺序固定为“先查询，后决定”。能查到原 turn 时恢复 current；明确查不到且已证明重投幂等时才允许重投。没有查询能力且未证明跨重启幂等的 driver，必须把该 admitting 项标记 `failed(reason='admitting_recovery_unverifiable')` 并继续队列，禁止盲目重投导致命令双跑。
+
 ## 8. Hub 变更范围与风险
 
 以下改动会改变 Hub，必须重新构建并发布 Hub 二进制，不能靠替换 renderer/view_service 热更新完成：
 
 1. 新增 `/internal/view/{session}/interrupt` 路由、writer token 鉴权和 stale-turn 防护。
 2. 增加 `terminal_interrupt` 控制 envelope。
-3. 在飞书→session envelope 上补 `source_kind/source_open_id/source_display_name/source_bot_channel_id`。
+3. 在飞书→session envelope 上补 `source_kind/source_open_id/source_display_name/source_bot_channel_id`。真名 resolver 的 member → chat_entity → seen_person 三段 Repo 查询必须在 `h.mu` 外执行。
 4. 把 `displayNameForOpenID` 的查找逻辑抽为 Hub/admin 可共享 resolver（不改变查找优先级）。
-5. 若 Hub 要校验 current turn，需要维护每 session 的最近 admitted/terminal 状态，或让 helper interrupt ack 做最终核对；不得仅信浏览器传参。
+5. helper interrupt ack 是 delivery_id+turn_id stale-turn CAS 的唯一权威。Hub 若维护最近 admitted/terminal，只可用于展示或 best-effort 预筛，不能形成第二道权威 CAS。
+
+Hub 锁序硬约束：interrupt 控制 envelope 必须照 `routeToSession` 模式，在 `h.mu` 内只抓 session client 指针，释放 `h.mu` 后再 `c.write()`；禁止持 `h.mu` 访问 Repo/数据库、等待网络写或获取 client 内部锁。per-session current-turn 快照也只能在短临界区读写纯内存值，不得在同一临界区调用 resolver、DB 或 `c.write()`。
 
 主要风险：
 
 - 安全：interrupt 与输入同等级写权限，绝不能只凭 session 名调用。
-- 竞态：旧 tab 的 ESC 可能到达下一 turn；delivery_id+turn_id 双重 CAS 是硬要求。
+- 竞态：旧 tab 的 ESC 可能到达下一 turn；delivery_id+turn_id 双重 CAS 是硬要求，唯一权威在 helper。
 - 兼容：旧 helper 不认识 `terminal_interrupt` 时应返回 capability unavailable，而非把它喂给模型。
 - 真名：飞书 resolver 只读现有 Repo，不新增外部 API阻塞消息投递；查不到立即回退 open_id。
 - 发布：Hub 和 helper 是协议升级，建议 capability `view_interrupt_v1`、`unified_queue_v1`；灰度时 Hub 仅对声明 capability 的 helper 开放按钮。
@@ -454,12 +476,17 @@ SSE 重连后 renderer 通过 `delivery_id+lifecycle` 去重，通过 queue_seq 
 6. ESC 控制 envelope 在 driver busy 时立即调用 interrupt，不进入普通 FIFO。
 7. stale delivery/turn 中断被拒，不能打断下一轮。
 8. 中断失败/超时不 dequeue；确认成功才启动下一项。
+9. `driver.deliver` 阻塞期间 event loop 仍能接收 terminal_interrupt，并发调用 interrupt；不得等 deliver 返回。
+10. admitted 后 driver 永不发 terminal：watchdog 恰好 emit 一次 failed/terminal_timeout，清 current 并执行下一项；迟到 terminal 不二次 finish。
+11. current 的 pop/切换与 interrupt stale-turn 检查并发，断言同锁 CAS 不会读到半切换状态。
 
 ### 10.2 Driver fixtures
 
 - Claude：Agent/Task tool_use 映射 `tool_call category=subagent`；result 后 renderer 隐藏。
 - Codex：用当前 daemon 实录一轮 `spawn_agent → wait → completed`，把实际 item type 做 fixture；live 和 history 都映射 `tool_call category=subagent`。
 - 三 driver 分别断言 interrupt 请求内容和真实 interrupted 证据；OpenCode 自然完成竞态必须归 completed。
+- 三 driver 分别证明“相同 delivery_id 跨重启重投去重”或提供 by-delivery_id 查询 fixture；两者皆无时，admitting 恢复必须 failed，断言不会再次调用 deliver。
+- Codex fixture 断言 current delivery 持有准确 `(threadId, turnId)`；旧 turn ESC 不会中断新 turn。
 
 ### 10.3 Renderer/Docker Playwright
 
@@ -472,6 +499,7 @@ SSE 重连后 renderer 通过 `delivery_id+lifecycle` 去重，通过 queue_seq 
 7. 部分 assistant_text 后中断：文本保留，footer 为“已中断”，下一项顺序不变并立即执行。
 8. 旧 tab 对旧 turn 发 ESC，Hub 409；新 turn 不受影响。
 9. 1280×900 和 390×844 双视口，等候区常驻、长真名/长 open_id 和多行文本不破版。
+10. View 用户从统一队列新路径提交三条：每条恰好一对 queued/admitted，queued turn 空、admitted turn 非空；同 delivery 不双 emit、不双 deliver。这是替换已验证 `_deliver_human` 线程路径的强制 GO 门槛。
 
 ### 10.4 真 E2E GO 门槛
 
@@ -503,5 +531,6 @@ Hub 提交必须单独列出二进制版本/SHA和回滚方案。renderer 实施
 2. Hub 当前飞书个人/群两条入站分支各自最靠近 `c.write()` 的具体代码位置，以确保只 enrich 一次。
 3. 当前 helper inbox SQLite schema 是否可直接扩展 queue_seq/state，或需新 migration。
 4. legacy PTY driver 是否仍在允许用于人看的会话；若允许，补 prompt-return 中断证据测试。
+5. 逐 driver 核实 delivery_id 跨重启幂等或 by-delivery_id 查询能力；未核实者不得启用 admitting 自动重投。
 
 这些是实现前核证项，不是重新讨论来源图标、真名、常驻队列、多行或 ESC 语义。
