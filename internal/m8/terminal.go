@@ -24,6 +24,7 @@ import (
 const (
 	terminalOutputType       = "terminal_output"
 	terminalInputType        = "terminal_input"
+	terminalInterruptType    = "terminal_interrupt"
 	terminalResizeType       = "terminal_resize"
 	terminalRefreshType      = "terminal_refresh"
 	terminalSessionEventType = "session_event"
@@ -67,6 +68,13 @@ type terminalClientMessage struct {
 
 type terminalCookieRequest struct {
 	Token string `json:"token"`
+}
+
+type viewInterruptRequest struct {
+	ViewerID   string `json:"viewer_id"`
+	Token      string `json:"token"`
+	DeliveryID string `json:"delivery_id"`
+	TurnID     string `json:"turn_id"`
 }
 
 func terminalKey(keyID, sessionName string) string {
@@ -778,6 +786,39 @@ func (h *Hub) HandleInternalViewInput(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write([]byte(`{"ok":true}`))
+}
+
+// HandleInternalViewInterrupt validates only the view write grant, then
+// forwards the requested identity. The helper is the sole stale-turn CAS authority.
+func (h *Hub) HandleInternalViewInterrupt(w http.ResponseWriter, r *http.Request) {
+	sessionName := strings.TrimSpace(r.PathValue("session"))
+	var req viewInterruptRequest
+	if sessionName == "" || strings.Contains(sessionName, "#") || json.NewDecoder(r.Body).Decode(&req) != nil || strings.TrimSpace(req.DeliveryID) == "" || strings.TrimSpace(req.TurnID) == "" {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	var c *sessionClient
+	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
+		c = h.sessionClients[st.keyID][st.sessionName]
+		st.writerUntil = time.Now().Add(terminalTokenTTL)
+	}
+	h.mu.Unlock()
+	if c == nil {
+		http.Error(w, "interrupt not authorized or session offline", http.StatusForbidden)
+		return
+	}
+	env := model.Envelope{
+		ID: randomHex(16), To: sessionAddress(sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
+		Meta: map[string]any{"type": terminalInterruptType, "system": true, "no_mirror": true, "delivery_id": req.DeliveryID, "turn_id": req.TurnID},
+	}
+	if err := c.write(r.Context(), env); err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(`{"ok":true,"state":"forwarded"}`))
 }
 
 func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID, token, data string) error {

@@ -271,6 +271,7 @@ class SessionHelper:
                     {"type": "session_capabilities", "delivery_ack_v1": True,
                      "persistent_inbox_v1": True, "agent_route_v2": True,
                      "unified_queue_v1": self.cfg.mode == "driver",
+                     "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
                      "processed_semantics": "accepted_to_cli", "helper_version": __version__},
                 ), ensure_ascii=False))
                 hb = asyncio.create_task(self.online_list_heartbeat_loop())

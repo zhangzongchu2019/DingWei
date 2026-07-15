@@ -97,6 +97,8 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
+	deviceID       string
+	deviceIDV1     bool
 }
 
 type feishuSyncTarget struct {
@@ -176,6 +178,7 @@ var (
 	controlExceptTextRE    = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
 	bareSessionNamePattern = regexp.MustCompile(`^[a-z0-9]+$`)
 	sessionNamePattern     = regexp.MustCompile(`^[a-z0-9]+-[a-z0-9]+-[0-9a-f]{4}$`)
+	deviceIDPattern        = regexp.MustCompile(`^[0-9a-f]{16}$`)
 )
 
 func New(repo store.Repository) *Hub {
@@ -718,6 +721,8 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	tool := strings.TrimSpace(r.URL.Query().Get("tool"))
 	modelName := strings.TrimSpace(r.URL.Query().Get("model"))
 	clientVersion := strings.TrimSpace(r.URL.Query().Get("version"))
+	deviceID := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("device_id")))
+	deviceIDV1 := truthyQuery(r.URL.Query().Get("device_id_v1")) && deviceIDPattern.MatchString(deviceID)
 	versionWarn := versionCompatibilityWarning(clientVersion)
 	fullSessionName := strings.TrimSpace(r.URL.Query().Get("full_session_name"))
 	producer := truthyQuery(r.URL.Query().Get("producer"))
@@ -730,6 +735,16 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	ownerKey := h.ownerKeyForKeyWithAccounts(r.Context(), keyID, accounts)
 	markTiming("owner")
 	sessionName := deriveRegisteredSessionName(requestedSessionName, keyID, ownerKey)
+	if deviceIDV1 {
+		h.mu.Lock()
+		old := h.sessionClients[keyID][sessionName]
+		occupied := old != nil && old.deviceIDV1 && old.deviceID != deviceID
+		h.mu.Unlock()
+		if occupied {
+			http.Error(w, "session held by another device", http.StatusConflict)
+			return
+		}
+	}
 	nameWarn := sessionNameRequestWarning(requestedSessionName, keyID, ownerKey)
 	switch sessionNameEnforceMode() {
 	case "enforce":
@@ -805,7 +820,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	markTiming("conn_seq")
-	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName}
+	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, deviceID: deviceID, deviceIDV1: deviceIDV1}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	go h.watchSessionKeepalive(idleWatchdogCtx, c)
@@ -818,6 +833,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	timingParts = append(timingParts, fmt.Sprintf("onboard=%s", time.Since(onboardStart).Round(time.Millisecond)))
 	lockStart := time.Now()
 	var oldConn *websocket.Conn
+	var rejectDevice bool
 	var reSize [2]int
 	h.mu.Lock()
 	func() {
@@ -826,14 +842,24 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			h.sessionClients[keyID] = map[string]*sessionClient{}
 		}
 		if old := h.sessionClients[keyID][sessionName]; old != nil {
-			oldConn = old.conn
+			if c.deviceIDV1 && old.deviceIDV1 && old.deviceID != c.deviceID {
+				rejectDevice = true
+			} else {
+				oldConn = old.conn
+			}
 		}
-		if c != nil && c.conn != nil {
+		if !rejectDevice && c != nil && c.conn != nil {
 			h.sessionClients[keyID][sessionName] = c
 		}
 		h.keyAccounts[keyID] = stringSet(accounts)
 		reSize = h.terminalLastSize[terminalKey(keyID, sessionName)]
 	}()
+	if rejectDevice {
+		stopIdleWatchdog()
+		skillCancel()
+		_ = conn.Close(websocket.StatusPolicyViolation, "session held by another device")
+		return
+	}
 	if oldConn != nil {
 		_ = oldConn.Close(websocket.StatusPolicyViolation, "replaced")
 	}
@@ -1122,6 +1148,18 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 		}
 		return model.PrefixDispatchResult{Matched: true, Reply: task.Result}, nil
 	}
+	if msg.ChatType == model.ChatGroup {
+		explicit, gateErr := h.groupHasExplicitIntent(ctx, msg, text)
+		if gateErr != nil {
+			return model.PrefixDispatchResult{}, gateErr
+		}
+		if !explicit {
+			if err := h.Repo.UpdateControlTaskAfterL1(ctx, task.ID, "ignored.group_natural_language", "L1", "", "", "ignored", ""); err != nil {
+				return model.PrefixDispatchResult{}, err
+			}
+			return model.PrefixDispatchResult{Matched: false}, nil
+		}
+	}
 	result, intent, target, err := h.dispatchL1(ctx, msg, text)
 	if err != nil {
 		retried, retryErr := h.Repo.RetryControlTask(ctx, task.ID, err.Error())
@@ -1162,6 +1200,34 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 		return model.PrefixDispatchResult{Matched: false}, nil
 	}
 	return model.PrefixDispatchResult{Matched: true, Reply: ack}, nil
+}
+
+func (h *Hub) groupHasExplicitIntent(ctx context.Context, msg model.Message, text string) (bool, error) {
+	if msg.ChatType != model.ChatGroup {
+		return true, nil
+	}
+	trimmed := strings.TrimSpace(text)
+	if withoutBot := strings.TrimSpace(h.stripLeadingBotMentions(msg.BotChannelID, trimmed)); withoutBot != trimmed {
+		return true, nil
+	}
+	if _, _, ok := parseSelector(trimmed); ok {
+		return true, nil
+	}
+	if _, _, _, ok := h.parseMemberMention(msg.BotChannelID, trimmed); ok {
+		return true, nil
+	}
+	routes, err := h.Repo.ListPrefixRoutes(ctx, msg.ChatEntityID)
+	if err != nil {
+		return false, err
+	}
+	for _, route := range routes {
+		if router.MatchPrefix(route.Rule.MatchExpr, trimmed, route.Rule.CaseSensitive) {
+			return true, nil
+		}
+	}
+	// System/security/apply/sync/roster commands are explicit hash commands even
+	// when their backing route is temporarily unavailable.
+	return strings.HasPrefix(trimmed, "#"), nil
 }
 
 func (h *Hub) dispatchL1Direct(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
@@ -1300,7 +1366,7 @@ func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, t
 					"route_id":       route.Rule.ID,
 				},
 			}
-			h.annotateSourceContext(env.Meta, msg)
+			h.annotateSourceContext(ctx, env.Meta, msg)
 			if msg.ChatType == model.ChatGroup {
 				env.Meta["group_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
 				env.Meta["sender_open_id"] = msg.SenderOpenID
@@ -1634,7 +1700,7 @@ func (h *Hub) dispatchSecurityOps(ctx context.Context, msg model.Message, text s
 				"source_sender_openid": msg.SenderOpenID,
 			},
 		}
-		h.annotateSourceContext(env.Meta, msg)
+		h.annotateSourceContext(ctx, env.Meta, msg)
 		annotateBroadcastMirror(&env, broadcastKey, i == 0)
 		if msg.ChatType == model.ChatGroup {
 			env.Meta["group_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
@@ -2879,7 +2945,7 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 			"bot_channel_id": msg.BotChannelID,
 		},
 	}
-	h.annotateSourceContext(env.Meta, msg)
+	h.annotateSourceContext(ctx, env.Meta, msg)
 	if msg.ChatType == model.ChatGroup {
 		env.Meta["group_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
 		env.Meta["sender_open_id"] = msg.SenderOpenID
@@ -2916,7 +2982,7 @@ func (h *Hub) dispatchDefaultPersonalSession(ctx context.Context, msg model.Mess
 				"reply_prefix":   fmt.Sprintf("【%s】", sessions[0]),
 			},
 		}
-		h.annotateSourceContext(env.Meta, msg)
+		h.annotateSourceContext(ctx, env.Meta, msg)
 		if err := h.RouteEnvelope(ctx, env); err != nil {
 			return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, true, nil
 		}
@@ -2964,7 +3030,7 @@ func (h *Hub) dispatchMemberMention(ctx context.Context, msg model.Message, text
 			"source_sender_openid": msg.SenderOpenID,
 		},
 	}
-	h.annotateSourceContext(env.Meta, msg)
+	h.annotateSourceContext(ctx, env.Meta, msg)
 	if msg.ChatType == model.ChatGroup {
 		env.Meta["group_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
 		env.Meta["sender_open_id"] = msg.SenderOpenID
@@ -3248,15 +3314,20 @@ func shouldSkipMirror(env model.Envelope) bool {
 	}
 }
 
-func (h *Hub) annotateSourceContext(meta map[string]any, msg model.Message) {
+func (h *Hub) annotateSourceContext(ctx context.Context, meta map[string]any, msg model.Message) {
 	if meta == nil {
 		return
 	}
 	meta["source_bot_channel_id"] = msg.BotChannelID
 	meta["source_chat_type"] = string(msg.ChatType)
+	meta["source_kind"] = "feishu"
 	source := sourceAccount(msg)
 	if openID := feishuOpenIDFromAccount(source); openID != "" {
 		meta["source_open_id"] = openID
+	}
+	sender := firstNonEmpty(msg.SenderOpenID, feishuOpenIDFromAccount(source))
+	if sender != "" {
+		meta["source_display_name"] = firstNonEmpty(h.displayNameForOpenID(ctx, sender, msg.BotChannelID), sender)
 	}
 	switch msg.ChatType {
 	case model.ChatGroup:
@@ -3267,6 +3338,33 @@ func (h *Hub) annotateSourceContext(meta map[string]any, msg model.Message) {
 	case model.ChatPersonal:
 		meta["source_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
 	}
+}
+
+func (h *Hub) displayNameForOpenID(ctx context.Context, openID, botChannelID string) string {
+	// Every repository lookup stays outside h.mu; callers enrich before routing.
+	if h.Repo == nil {
+		return ""
+	}
+	if members, err := h.Repo.ListMembers(ctx); err == nil {
+		for _, member := range members {
+			if member.FeishuOpenID == openID && member.DisplayName != "" {
+				return member.DisplayName
+			}
+		}
+	}
+	if botChannelID != "" {
+		if entity, err := h.Repo.GetChatEntity(ctx, botChannelID, openID); err == nil && entity != nil && entity.DisplayName != "" {
+			return entity.DisplayName
+		}
+	}
+	if persons, err := h.Repo.ListSeenPersons(ctx); err == nil {
+		for _, person := range persons {
+			if person.OpenID == openID && person.Name != "" {
+				return person.Name
+			}
+		}
+	}
+	return ""
 }
 
 func replySourceAddress(meta map[string]any) (string, bool) {

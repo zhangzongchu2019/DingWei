@@ -3207,7 +3207,7 @@ func TestMirrorCommandDMControlsSessionAndGroupIgnored(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !groupResult.Matched || groupResult.Reply != "" {
+	if groupResult.Matched || groupResult.Reply != "" {
 		t.Fatalf("group mirror result = %+v", groupResult)
 	}
 	endpoints, _ = db.ListSessionEndpoints(ctx)
@@ -3229,6 +3229,80 @@ func TestMirrorCommandDMControlsSessionAndGroupIgnored(t *testing.T) {
 	endpoints, _ = db.ListSessionEndpoints(ctx)
 	if endpoints[0].MirrorEnabled || endpoints[0].MirrorTo != "" {
 		t.Fatalf("mirror state after off: %+v", endpoints[0])
+	}
+}
+
+func TestGroupExplicitIntentGate(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	msg := model.Message{ChatType: model.ChatGroup, ChatEntityID: "dev:group:oc_g", BotChannelID: "dev"}
+	if ok, err := hub.groupHasExplicitIntent(ctx, msg, "两个人继续讨论，不要理机器人"); err != nil || ok {
+		t.Fatalf("natural group language passed gate: ok=%v err=%v", ok, err)
+	}
+	if ok, err := hub.groupHasExplicitIntent(ctx, msg, "@UnifiedRobot 请处理"); err != nil || !ok {
+		t.Fatalf("bot mention rejected: ok=%v err=%v", ok, err)
+	}
+	if ok, err := hub.groupHasExplicitIntent(ctx, msg, "#home 执行任务"); err != nil || !ok {
+		t.Fatalf("selector rejected: ok=%v err=%v", ok, err)
+	}
+}
+
+func TestAnnotateSourceContextEnrichesFeishuDisplayName(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zzc", DisplayName: "张宗楚", FeishuOpenID: "ou_zzc", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	meta := map[string]any{}
+	hub.annotateSourceContext(ctx, meta, model.Message{ChatType: model.ChatGroup, BotChannelID: "dev", SenderOpenID: "ou_zzc"})
+	if meta["source_kind"] != "feishu" || meta["source_display_name"] != "张宗楚" || meta["source_sender_openid"] != "ou_zzc" {
+		t.Fatalf("source enrichment=%+v", meta)
+	}
+}
+
+func TestDeviceIDV1RejectsDifferentDeviceWithoutEvictingHolder(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	first := dialSessionWithQueryRaw(t, ctx, srv.URL, "developer", key.ID, secret, "device_id_v1=1&device_id=1111111111111111")
+	defer first.Close(websocket.StatusNormalClosure, "done")
+	var holder *sessionClient
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline) && holder == nil; {
+		hub.mu.Lock()
+		holder = hub.sessionClients[key.ID]["developer"]
+		hub.mu.Unlock()
+		if holder == nil {
+			time.Sleep(time.Millisecond)
+		}
+	}
+	body := dialSessionErrorBodyWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "device_id_v1=1&device_id=2222222222222222")
+	if !strings.Contains(body, "session held by another device") {
+		t.Fatalf("different device rejection=%q", body)
+	}
+	hub.mu.Lock()
+	stillHolder := hub.sessionClients[key.ID]["developer"]
+	hub.mu.Unlock()
+	if holder == nil || stillHolder != holder {
+		t.Fatalf("holder was evicted: before=%p after=%p", holder, stillHolder)
+	}
+	reconnect := dialSessionWithQueryRaw(t, ctx, srv.URL, "developer", key.ID, secret, "device_id_v1=1&device_id=1111111111111111")
+	defer reconnect.Close(websocket.StatusNormalClosure, "done")
+	reclaimed := holder
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline) && reclaimed == holder; {
+		hub.mu.Lock()
+		reclaimed = hub.sessionClients[key.ID]["developer"]
+		hub.mu.Unlock()
+		if reclaimed == holder {
+			time.Sleep(time.Millisecond)
+		}
+	}
+	if reclaimed == nil || reclaimed == holder || reclaimed.deviceID != holder.deviceID {
+		t.Fatalf("same device did not reclaim: holder=%p reclaimed=%p", holder, reclaimed)
 	}
 }
 

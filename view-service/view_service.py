@@ -312,15 +312,25 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
-        if path != "/input":
+        if path not in ("/input", "/interrupt"):
             return self.send_error(404)
         session = self._session()
         length = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(length) if length else b"{}"
         try:
-            text = json.loads(raw).get("text", "").strip()
+            request_body = json.loads(raw)
         except Exception:
-            text = ""
+            request_body = {}
+        if path == "/interrupt":
+            st = _ensure_ready(session)
+            delivery_id = str(request_body.get("delivery_id", "")).strip()
+            turn_id = str(request_body.get("turn_id", "")).strip()
+            code, result = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/interrupt", {
+                "viewer_id": st.get("viewer_id", ""), "token": st.get("token", ""),
+                "delivery_id": delivery_id, "turn_id": turn_id,
+            })
+            return self._json_response({"ok": code == 200, **result})
+        text = str(request_body.get("text", "")).strip()
         ok = False
         if text:
             st = _ensure_ready(session)
@@ -331,6 +341,14 @@ class _Handler(BaseHTTPRequestHandler):
                                     {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text})
                 ok = (code == 200)
         body = json.dumps({"ok": ok}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _json_response(self, obj: dict):
+        body = json.dumps(obj).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
