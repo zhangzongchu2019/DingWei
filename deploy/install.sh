@@ -5,6 +5,8 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 WORKDIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 SERVICE_NAME=${SERVICE_NAME:-workpulse}
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+LIVEZ_SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}-livez.service"
+LIVEZ_TIMER_FILE="/etc/systemd/system/${SERVICE_NAME}-livez.timer"
 ENV_FILE="$WORKDIR/.env"
 
 need_cmd() {
@@ -119,8 +121,16 @@ tmp_unit=$(mktemp)
 sed "s#{{WORKDIR}}#$WORKDIR#g; s#{{USER}}#$(id -un)#g" "$WORKDIR/deploy/workpulse.service" > "$tmp_unit"
 sudo install -m 0644 "$tmp_unit" "$SERVICE_FILE"
 rm -f "$tmp_unit"
+tmp_livez_service=$(mktemp)
+tmp_livez_timer=$(mktemp)
+sed "s#{{WORKDIR}}#$WORKDIR#g; s#{{SERVICE_NAME}}#$SERVICE_NAME#g" "$WORKDIR/deploy/workpulse-livez.service" > "$tmp_livez_service"
+sed "s#{{SERVICE_NAME}}#$SERVICE_NAME#g" "$WORKDIR/deploy/workpulse-livez.timer" > "$tmp_livez_timer"
+sudo install -m 0644 "$tmp_livez_service" "$LIVEZ_SERVICE_FILE"
+sudo install -m 0644 "$tmp_livez_timer" "$LIVEZ_TIMER_FILE"
+rm -f "$tmp_livez_service" "$tmp_livez_timer"
 sudo systemctl daemon-reload
 sudo systemctl enable --now "$SERVICE_NAME"
+sudo systemctl enable --now "${SERVICE_NAME}-livez.timer"
 
 echo "== smoke =="
 "$WORKDIR/deploy/smoke.sh"

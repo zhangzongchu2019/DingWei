@@ -159,6 +159,11 @@ var (
 	// A 15 second cadence bounds an idle disconnect to 90 seconds while avoiding
 	// a per-connection timer for every activity update.
 	sessionIdleWatchdogInterval = 15 * time.Second
+	// Server-initiated WebSocket control pings keep otherwise idle helpers alive
+	// through proxies and detect half-open connections before a replacement
+	// reconnect starts a 1008 churn loop.
+	sessionKeepaliveInterval = 30 * time.Second
+	sessionKeepaliveTimeout  = 5 * time.Second
 )
 
 var (
@@ -612,9 +617,11 @@ func (h *Hub) BindAccount(ctx context.Context, keyID, chatEntityID string) error
 	if err := h.Repo.BindAPIKeyAccount(ctx, keyID, chatEntityID); err != nil {
 		return err
 	}
-	h.mu.Lock()
-	delete(h.keyAccounts, keyID)
-	h.mu.Unlock()
+	func() {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		delete(h.keyAccounts, keyID)
+	}()
 	return nil
 }
 
@@ -801,6 +808,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
+	go h.watchSessionKeepalive(idleWatchdogCtx, c)
 	skillCtx, skillCancel := context.WithCancel(context.Background())
 	c.skillCancel = skillCancel
 	// Send onboarding before publishing the client to directory broadcasters, so
@@ -2374,9 +2382,12 @@ func (t feishuSyncTarget) syncKey() string {
 }
 
 func (h *Hub) forward(ctx context.Context, serviceID string, req ForwardRequest, timeoutMs int) (string, error) {
-	h.mu.Lock()
-	c := h.serviceClients[serviceID]
-	h.mu.Unlock()
+	var c *client
+	func() {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		c = h.serviceClients[serviceID]
+	}()
 	if c == nil {
 		return "", errors.New("service websocket offline")
 	}
@@ -2969,12 +2980,14 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 	if err != nil || !claimed {
 		return err
 	}
-	h.mu.Lock()
 	var c *sessionClient
-	if sessions := h.sessionClients[keyID]; sessions != nil {
-		c = sessions[sessionName]
-	}
-	h.mu.Unlock()
+	func() {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		if sessions := h.sessionClients[keyID]; sessions != nil {
+			c = sessions[sessionName]
+		}
+	}()
 	if c == nil {
 		h.unclaimEnvelope(env.ID, sig)
 		return fmt.Errorf("session %s offline", sessionName)
@@ -4098,6 +4111,35 @@ func (h *Hub) watchSessionIdle(ctx context.Context, c *sessionClient) {
 		case now := <-ticker.C:
 			if now.Sub(c.lastSeen()) > idleTimeout {
 				_ = c.conn.Close(websocket.StatusGoingAway, "idle timeout")
+				return
+			}
+		}
+	}
+}
+
+func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
+	interval := sessionKeepaliveInterval
+	if interval <= 0 || c == nil || c.conn == nil {
+		return
+	}
+	timeout := sessionKeepaliveTimeout
+	if timeout <= 0 {
+		timeout = 5 * time.Second
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			pingCtx, cancel := context.WithTimeout(ctx, timeout)
+			c.mu.Lock()
+			err := c.conn.Ping(pingCtx)
+			c.mu.Unlock()
+			cancel()
+			if err != nil {
+				_ = c.conn.Close(websocket.StatusGoingAway, "keepalive failed")
 				return
 			}
 		}

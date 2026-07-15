@@ -1,0 +1,16 @@
+[Unit]
+Description=WorkPulse external liveness check
+After=workpulse.service
+
+[Service]
+Type=oneshot
+Environment=WP_LIVEZ_SERVICE_NAME={{SERVICE_NAME}}.service
+ExecStart={{WORKDIR}}/deploy/workpulse-livez-check.sh
+
+# The checker needs permission to restart workpulse.service. It intentionally
+# runs outside the WorkPulse process so a frozen hub cannot certify itself.
+User=root
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/run

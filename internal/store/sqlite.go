@@ -47,7 +47,7 @@ const messageProcessingLease = 5 * time.Minute
 
 // OpenSQLite 打开（或创建）SQLite 主库，启用 WAL + busy_timeout（§13.2）。
 func OpenSQLite(path string) (*SQLite, error) {
-	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)", path)
+	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)", path)
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
@@ -61,6 +61,10 @@ func OpenSQLite(path string) (*SQLite, error) {
 }
 
 func (s *SQLite) Close() error { return s.db.Close() }
+
+// Ping verifies that SQLite can acquire a connection and answer within the
+// caller's deadline. It is used by the lock-aware liveness endpoint.
+func (s *SQLite) Ping(ctx context.Context) error { return s.db.PingContext(ctx) }
 
 // Migrate 按文件名顺序执行内嵌迁移。
 func (s *SQLite) Migrate(ctx context.Context) error {

@@ -186,19 +186,36 @@ func run(logger *slog.Logger) error {
 	internalSrv := &http.Server{Addr: internalAddr, Handler: internalMux, ReadHeaderTimeout: 5 * time.Second}
 
 	srv := &http.Server{Addr: bs.Addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	publicListener, publicAccept, err := listenWithHeartbeat(bs.Addr)
+	if err != nil {
+		return fmt.Errorf("listen public %s: %w", bs.Addr, err)
+	}
+	defer publicListener.Close()
+	internalListener, internalAccept, err := listenWithHeartbeat(internalAddr)
+	if err != nil {
+		return fmt.Errorf("listen internal %s: %w", internalAddr, err)
+	}
+	defer internalListener.Close()
+	mux.HandleFunc("GET /livez", livezHandler(prefixHub, st, publicAccept, internalAccept))
 
 	go func() {
 		logger.Info("workpulse started", "addr", bs.Addr, "db", bs.DBPath)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := srv.Serve(publicListener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("http server", "error", err)
 		}
 	}()
 	go func() {
 		logger.Info("workpulse internal (view-service dock) started", "addr", internalAddr)
-		if err := internalSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := internalSrv.Serve(internalListener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("internal http server", "error", err)
 		}
 	}()
+	startAcceptPulse(ctx, publicListener.Addr().String(), 5*time.Second)
+	startAcceptPulse(ctx, internalListener.Addr().String(), 5*time.Second)
+	if err := sdNotify("READY=1"); err != nil {
+		return fmt.Errorf("sd_notify READY: %w", err)
+	}
+	startSystemdWatchdog(ctx, logger, prefixHub)
 	go processor.Run(ctx, 200*time.Millisecond)
 	prefixHub.StartL2Workers(ctx)
 	go runOutboundLoop(ctx, logger, outbound, feishuGateway, 200*time.Millisecond)

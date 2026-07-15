@@ -813,10 +813,13 @@ func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID
 // routeTerminalResize 把浏览器 xterm 的实际尺寸(列/行)转发给 sessionHelper，
 // 让它对 PTY setwinsize，CLI 才会按整块显示区渲染（否则停在默认 24×80）。
 func (h *Hub) routeTerminalResize(ctx context.Context, keyID, sessionName string, cols, rows int) error {
-	h.mu.Lock()
-	c := h.sessionClients[keyID][sessionName]
-	h.terminalLastSize[terminalKey(keyID, sessionName)] = [2]int{cols, rows}
-	h.mu.Unlock()
+	var c *sessionClient
+	func() {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		c = h.sessionClients[keyID][sessionName]
+		h.terminalLastSize[terminalKey(keyID, sessionName)] = [2]int{cols, rows}
+	}()
 	if c == nil {
 		return nil
 	}
@@ -831,9 +834,12 @@ func (h *Hub) routeTerminalResize(ctx context.Context, keyID, sessionName string
 }
 
 func (h *Hub) requestTerminalRefresh(ctx context.Context, keyID, sessionName string) error {
-	h.mu.Lock()
-	c := h.sessionClients[keyID][sessionName]
-	h.mu.Unlock()
+	var c *sessionClient
+	func() {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		c = h.sessionClients[keyID][sessionName]
+	}()
 	if c == nil {
 		return nil
 	}

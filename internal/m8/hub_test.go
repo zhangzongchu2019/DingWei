@@ -98,6 +98,15 @@ func useTestSessionIdleWatchdogInterval(t *testing.T, d time.Duration) {
 	})
 }
 
+func useTestSessionKeepalive(t *testing.T, interval, timeout time.Duration) {
+	t.Helper()
+	oldInterval, oldTimeout := sessionKeepaliveInterval, sessionKeepaliveTimeout
+	sessionKeepaliveInterval, sessionKeepaliveTimeout = interval, timeout
+	t.Cleanup(func() {
+		sessionKeepaliveInterval, sessionKeepaliveTimeout = oldInterval, oldTimeout
+	})
+}
+
 func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.RegisterBot("dev", "UnifiedRobot")
@@ -2439,6 +2448,34 @@ func TestSessionEndpointPingKeepsIdleConnectionOnline(t *testing.T) {
 	}
 }
 
+func TestServerPingKeepsIdleSessionOnline(t *testing.T) {
+	useTestSessionReadIdleTimeout(t, 150*time.Millisecond)
+	useTestSessionIdleWatchdogInterval(t, 20*time.Millisecond)
+	useTestSessionKeepalive(t, 25*time.Millisecond, 100*time.Millisecond)
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	go readSessionControls(conn)
+	waitSessionOnline(t, hub, key.ID, "developer")
+	time.Sleep(3 * sessionReadIdleTimeout)
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || !endpoints[0].Active {
+		t.Fatalf("server-ping session was marked offline: endpoints=%+v err=%v", endpoints, err)
+	}
+}
+
 // Test-only helper: Ping requires a concurrent reader to consume the matching
 // pong. The test closes the connection, which makes this goroutine exit.
 func readSessionControls(conn *websocket.Conn) {
@@ -3362,6 +3399,7 @@ func TestTerminalViewResizeForwardsToSessionAndCachesSize(t *testing.T) {
 	defer srv.Close()
 	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
 	defer session.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "home")
 	view := dialTerminalView(t, ctx, srv.URL, "home")
 	defer view.Close(websocket.StatusNormalClosure, "done")
 
@@ -3884,6 +3922,7 @@ func TestRouteToSessionAcksDeliveredInboundMessage(t *testing.T) {
 	defer srv.Close()
 	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
 	defer home.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "home")
 
 	if err := db.EnqueueMessage(ctx, model.Message{
 		ID:           "fm-delivered",
