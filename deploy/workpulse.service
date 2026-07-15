@@ -17,7 +17,7 @@ Type=simple
 User={{USER}}
 WorkingDirectory={{WORKDIR}}
 EnvironmentFile={{WORKDIR}}/.env
-ExecStart={{WORKDIR}}/bin/workpulse
+ExecStart={{WORKDIR}}/bin/dingwei
 # 崩溃/退出即自动拉起(注:对"冻结但不退出"无效,那需看门狗;见上)。
 Restart=always
 RestartSec=3s
