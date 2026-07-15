@@ -142,34 +142,66 @@ func startSystemdWatchdog(ctx context.Context, logger *slog.Logger, hub *m8.Hub)
 		interval = window / 3
 	}
 	probeTimeout := envDuration("WP_HUB_LOCK_WATCHDOG_PROBE_TIMEOUT", 200*time.Millisecond)
-	failuresRequired := envInt("WP_HUB_LOCK_WATCHDOG_FAILURES", 3)
-	if failuresRequired < 1 {
-		failuresRequired = 3
+	confirmations := envInt("WP_HUB_LOCK_WATCHDOG_CONFIRMATIONS", envInt("WP_HUB_LOCK_WATCHDOG_FAILURES", 3))
+	if confirmations < 1 {
+		confirmations = 3
 	}
+	confirmInterval := envDuration("WP_HUB_LOCK_WATCHDOG_CONFIRM_INTERVAL", 500*time.Millisecond)
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
-		failures := 0
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
 				if hub.ProbeLock(ctx, probeTimeout, 50*time.Millisecond) {
-					failures = 0
 					if err := sdNotify("WATCHDOG=1"); err != nil {
 						logger.Warn("sd_notify watchdog failed", "error", err)
 					}
 					continue
 				}
-				failures++
-				logger.Warn("hub lock watchdog probe failed", "consecutive", failures, "threshold", failuresRequired)
-				if failures < failuresRequired {
-					_ = sdNotify("WATCHDOG=1")
+				logger.Warn("hub lock watchdog probe failed; starting fast confirmation", "confirmations", confirmations, "interval", confirmInterval)
+				if watchdogFastConfirm(ctx, confirmations, confirmInterval, func() bool {
+					return hub.ProbeLock(ctx, probeTimeout, 50*time.Millisecond)
+				}) {
+					logger.Info("hub lock watchdog recovered during fast confirmation")
+					if err := sdNotify("WATCHDOG=1"); err != nil {
+						logger.Warn("sd_notify watchdog recovery failed", "error", err)
+					}
+					continue
 				}
+				// Do not renew the lease after a confirmed failure. The loop keeps
+				// probing, so a later recovery resumes feeding before systemd fires.
+				logger.Error("hub lock watchdog confirmed stuck; withholding WATCHDOG")
 			}
 		}
 	}()
+}
+
+func watchdogFastConfirm(ctx context.Context, attempts int, interval time.Duration, probe func() bool) bool {
+	if attempts < 1 || probe == nil {
+		return false
+	}
+	if interval <= 0 {
+		interval = 500 * time.Millisecond
+	}
+	timer := time.NewTimer(interval)
+	defer timer.Stop()
+	for attempt := 0; attempt < attempts; attempt++ {
+		select {
+		case <-ctx.Done():
+			return false
+		case <-timer.C:
+		}
+		if probe() {
+			return true
+		}
+		if attempt+1 < attempts {
+			timer.Reset(interval)
+		}
+	}
+	return false
 }
 
 func envDuration(name string, fallback time.Duration) time.Duration {

@@ -13,7 +13,7 @@ StartLimitBurst=5
 Type=notify
 NotifyAccess=main
 # 次级自愈起步值来自 T2 锁审计/时延数据；最终值仍由 instrMutex 压测定稿。
-WatchdogSec=15s
+WatchdogSec=12s
 WatchdogSignal=SIGABRT
 User={{USER}}
 WorkingDirectory={{WORKDIR}}
@@ -24,8 +24,9 @@ Restart=always
 RestartSec=3s
 # 崩溃时 dump 全部 goroutine 到 journald,便于事后取证(而非靠猜)。
 Environment=GOTRACEBACK=all
-Environment=WP_HUB_LOCK_WATCHDOG_FAILURES=3
 Environment=WP_HUB_LOCK_WATCHDOG_PROBE_TIMEOUT=200ms
+Environment=WP_HUB_LOCK_WATCHDOG_CONFIRMATIONS=3
+Environment=WP_HUB_LOCK_WATCHDOG_CONFIRM_INTERVAL=500ms
 KillSignal=SIGTERM
 TimeoutStopSec=30s
 

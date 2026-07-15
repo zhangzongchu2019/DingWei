@@ -73,3 +73,25 @@ func TestWatchdogInterval(t *testing.T) {
 		t.Fatalf("watchdogInterval = %s, %v", got, ok)
 	}
 }
+
+func TestWatchdogFastConfirmRecoversOnAnySuccessfulProbe(t *testing.T) {
+	attempts := 0
+	recovered := watchdogFastConfirm(context.Background(), 3, time.Nanosecond, func() bool {
+		attempts++
+		return attempts == 2
+	})
+	if !recovered || attempts != 2 {
+		t.Fatalf("recovered=%v attempts=%d", recovered, attempts)
+	}
+}
+
+func TestWatchdogFastConfirmRequiresAllConfiguredFailures(t *testing.T) {
+	attempts := 0
+	recovered := watchdogFastConfirm(context.Background(), 3, time.Nanosecond, func() bool {
+		attempts++
+		return false
+	})
+	if recovered || attempts != 3 {
+		t.Fatalf("recovered=%v attempts=%d", recovered, attempts)
+	}
+}
