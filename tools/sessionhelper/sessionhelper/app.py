@@ -297,6 +297,9 @@ class SessionHelper:
                 env = json.loads(raw)
             except Exception:
                 continue
+            if self.is_terminal_interrupt(env):
+                await self.handle_terminal_interrupt(ws, env)
+                continue
             if self.is_terminal_input(env):
                 await self.handle_terminal_input(env)
                 continue
@@ -523,6 +526,23 @@ class SessionHelper:
 
     def is_terminal_input(self, env: dict) -> bool:
         return (env.get("meta") or {}).get("type") == "terminal_input"
+
+    def is_terminal_interrupt(self, env: dict) -> bool:
+        return (env.get("meta") or {}).get("type") == "terminal_interrupt"
+
+    async def handle_terminal_interrupt(self, ws, env: dict) -> None:
+        meta = env.get("meta") or {}
+        delivery_id = str(meta.get("delivery_id") or "").strip()
+        turn_id = str(meta.get("turn_id") or "").strip()
+        if self.cfg.mode != "driver" or not delivery_id or not turn_id or not hasattr(self.adapter, "interrupt_current"):
+            result = {"ok": False, "state": "invalid", "delivery_id": delivery_id, "turn_id": turn_id}
+        else:
+            result = await asyncio.to_thread(self.adapter.interrupt_current, delivery_id, turn_id)
+        ack = envelope(
+            session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
+            {"type": "terminal_interrupt_ack", "no_mirror": True, **result},
+        )
+        await ws.send(json.dumps(ack, ensure_ascii=False))
 
     async def handle_terminal_input(self, env: dict) -> None:
         data = str(env.get("body") or "")

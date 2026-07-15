@@ -147,6 +147,10 @@ class Driver(Protocol):
         **不要发 Ctrl-C**。返回是否真的中断了（要以可观测的副作用取证，不以"没报错"取证）。"""
         ...
 
+    def interrupt_delivery(self, envelope_id: str, turn_id: str) -> bool:
+        """Interrupt exactly this delivery/turn; stale or unverifiable targets must fail closed."""
+        ...
+
     def human_input(self, data: bytes) -> None:
         """view 页面的人类输入。注意：**外部消息不走这里**（走 deliver），
         这样就不会把人正在打的字挤走（P2 自然消失）。"""

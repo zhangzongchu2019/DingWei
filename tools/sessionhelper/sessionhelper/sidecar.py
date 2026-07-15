@@ -144,14 +144,14 @@ class _Handler(BaseHTTPRequestHandler):
                 self.adapter.deliver_human_text(text)
             return self._json({"ok": bool(text)})
         if path == "/interrupt":
-            fn = getattr(self.adapter.driver, "interrupt", None)
-            ok = False
-            if callable(fn):
-                try:
-                    ok = bool(fn())
-                except Exception:
-                    ok = False
-            return self._json({"ok": ok})
+            current = self.adapter._commands.current
+            if current is None or not current.turn_id:
+                return self._json({"ok": False, "state": "idle"})
+            try:
+                result = self.adapter.interrupt_current(current.delivery_id, current.turn_id)
+            except Exception:
+                result = {"ok": False, "state": "failed"}
+            return self._json(result)
         self.send_error(404)
 
     def _json(self, obj):

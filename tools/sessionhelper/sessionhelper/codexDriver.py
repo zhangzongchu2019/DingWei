@@ -103,6 +103,16 @@ class _DeliveryStore:
             return None
         return _DeliveryRecord(*row)
 
+    def get_by_envelope(self, envelope_id: str) -> Optional[_DeliveryRecord]:
+        """Recovery lookup independent of a freshly initialized thread alias."""
+        with self._lock, self._connect() as db:
+            row = db.execute(
+                """SELECT envelope_id, thread_id, turn_id, body_hash, state, detail, created_at, updated_at
+                   FROM deliveries WHERE envelope_id = ? ORDER BY updated_at DESC LIMIT 1""",
+                (envelope_id,),
+            ).fetchone()
+        return _DeliveryRecord(*row) if row is not None else None
+
     def upsert(
         self,
         thread_id: str,
@@ -594,8 +604,10 @@ class CodexProtocolDriver(Driver):
 
         with self._delivery_lock:
             body_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
-            existing = self._store.get(self._thread_id, envelope_id)
+            existing = self._store.get(self._thread_id, envelope_id) or self._store.get_by_envelope(envelope_id)
             if existing is not None and existing.state != "failed":
+                self._thread_id = existing.thread_id
+                self._session_id = existing.thread_id
                 self._remember_delivery(envelope_id, existing.turn_id, existing.state)
                 return DeliveryReceipt(
                     id=envelope_id,
@@ -636,7 +648,7 @@ class CodexProtocolDriver(Driver):
             return DeliveryReceipt(id=envelope_id, state="unknown", source="protocol", detail="no thread")
 
         current_state = self._envelope_states.get(envelope_id)
-        record = self._store.get(self._thread_id, envelope_id)
+        record = self._store.get(self._thread_id, envelope_id) or self._store.get_by_envelope(envelope_id)
         if record is not None and record.state == "done":
             self._remember_delivery(envelope_id, record.turn_id, record.state)
             return DeliveryReceipt(
@@ -736,15 +748,27 @@ class CodexProtocolDriver(Driver):
 
     def interrupt(self) -> bool:
         self._sync_thread_alias()
-        if not self._thread_id:
-            return False
-        turn_id = self._active_turn_id or self._latest_in_progress_turn_id()
-        if not turn_id:
+        turn_id = self._active_turn_id
+        envelope_id = self._turn_to_envelope.get(turn_id, "")
+        if not turn_id or not envelope_id:
             self._last_interrupt_evidence = "no active turn"
             return False
+        return self.interrupt_delivery(envelope_id, turn_id)
+
+    def interrupt_delivery(self, envelope_id: str, turn_id: str) -> bool:
+        """Interrupt the durable delivery mapping, never a mutable 'latest turn'."""
+        self._sync_thread_alias()
+        if not self._thread_id:
+            return False
+        record = self._store.get(self._thread_id, envelope_id)
+        mapped_turn = self._envelope_to_turn.get(envelope_id) or (record.turn_id if record else "")
+        if not mapped_turn or mapped_turn != turn_id:
+            self._last_interrupt_evidence = "stale or unverifiable delivery/turn mapping"
+            return False
+        thread_id = record.thread_id if record is not None else self._thread_id
 
         try:
-            self._request("turn/interrupt", {"threadId": self._thread_id, "turnId": turn_id}, timeout=10)
+            self._request("turn/interrupt", {"threadId": thread_id, "turnId": turn_id}, timeout=10)
         except Exception as exc:
             self._last_interrupt_evidence = f"interrupt request failed: {exc}"
             return False

@@ -128,6 +128,16 @@ class UnifiedCommandQueue:
         with self._lock:
             return self._current
 
+    def interrupt_target(self, delivery_id: str, turn_id: str) -> QueuedCommand | None:
+        """Atomically validate an interrupt against the authoritative current turn."""
+        with self._lock:
+            command = self._current
+            if command is None or command.delivery_id != delivery_id:
+                return None
+            if not command.turn_id or command.turn_id != turn_id:
+                return None
+            return command
+
     @property
     def pending(self) -> tuple[QueuedCommand, ...]:
         with self._lock:

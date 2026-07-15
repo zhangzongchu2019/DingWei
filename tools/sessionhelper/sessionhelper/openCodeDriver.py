@@ -21,10 +21,12 @@ import os
 import queue
 import shlex
 import shutil
+import sqlite3
 import subprocess
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterator, Optional
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
@@ -62,6 +64,7 @@ SSE_RECONNECT_MAX = 15.0
 # 协议回执只保证 prompt 被受理，不保证会被处理（如模型未配好）
 ACCEPTED_STALL_TIMEOUT = 120.0
 EVENT_DRAIN_TIMEOUT = 5.0     # poll_receipt done 后等事件排空的超时（实测差值 0.45s ×10）
+DEFAULT_STORE = os.path.join(os.path.expanduser("~"), ".opencode-driver-delivery.sqlite3")
 
 
 # ---------------------------------------------------------------- 工具
@@ -70,6 +73,38 @@ def _basic_auth_header(username: str, password: str) -> str:
     import base64
     raw = f"{username}:{password}"
     return "Basic " + base64.b64encode(raw.encode()).decode()
+
+
+class _DeliveryStore:
+    """Durable no-redelivery ledger for helper restarts."""
+
+    def __init__(self, path: str):
+        self._path = path
+        self._lock = threading.Lock()
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with self._connect() as db:
+            db.execute("""CREATE TABLE IF NOT EXISTS deliveries (
+                envelope_id TEXT PRIMARY KEY, session_id TEXT NOT NULL,
+                message_id TEXT NOT NULL, state TEXT NOT NULL, detail TEXT NOT NULL,
+                updated_at REAL NOT NULL)""")
+
+    def _connect(self):
+        return sqlite3.connect(self._path, timeout=10)
+
+    def get(self, envelope_id: str):
+        with self._lock, self._connect() as db:
+            return db.execute(
+                "SELECT session_id,message_id,state,detail FROM deliveries WHERE envelope_id=?",
+                (envelope_id,),
+            ).fetchone()
+
+    def upsert(self, envelope_id: str, session_id: str, message_id: str, state: str, detail: str):
+        with self._lock, self._connect() as db:
+            db.execute("""INSERT INTO deliveries VALUES (?,?,?,?,?,?)
+                ON CONFLICT(envelope_id) DO UPDATE SET session_id=excluded.session_id,
+                message_id=excluded.message_id,state=excluded.state,
+                detail=excluded.detail,updated_at=excluded.updated_at""",
+                (envelope_id, session_id, message_id, state, detail, time.time()))
 
 
 # ---------------------------------------------------------------- 驱动
@@ -111,6 +146,7 @@ class OpenCodeProtocolDriver(Driver):
         workdir: str = "",
         manage_server: bool = True,
         stall_timeout: float = ACCEPTED_STALL_TIMEOUT,
+        store_path: str = DEFAULT_STORE,
     ):
         """
         password: OPENCODE_SERVER_PASSWORD（必设，serve 默认无鉴权）
@@ -125,6 +161,7 @@ class OpenCodeProtocolDriver(Driver):
         self._workdir = workdir
         self._manage_server = manage_server
         self._stall_timeout = stall_timeout
+        self._store = _DeliveryStore(store_path)
 
         self._base_url = f"http://{host}:{port}"
         self._auth_header = _basic_auth_header(username, password)
@@ -211,6 +248,18 @@ class OpenCodeProtocolDriver(Driver):
           "steer" → accepted（直送对话）
           "queue" → queued（排队等待）
         """
+        # Durable query-first recovery: never blindly POST an admitting delivery.
+        durable = self._store.get(envelope_id)
+        if durable is not None and durable[2] != "failed":
+            session_id, msg_id, state, detail = durable
+            self._session_id = session_id
+            self._envelope_to_msg[envelope_id] = msg_id
+            self._msg_to_envelope[msg_id] = envelope_id
+            self._envelope_states[envelope_id] = state
+            self._current_delivery = envelope_id if state in ("accepted", "processing", "queued") else ""
+            return DeliveryReceipt(id=envelope_id, state=state, source="protocol",
+                                   detail=f"persistent idempotency hit: {detail}")
+
         # 幂等：已投过则返回已知状态
         prev = self._envelope_states.get(envelope_id)
         if prev is not None and prev != "unknown":
@@ -242,16 +291,21 @@ class OpenCodeProtocolDriver(Driver):
             delivery = data.get("delivery", "steer")
             state: ReceiptState = "accepted" if delivery == "steer" else "queued"
             self._envelope_states[envelope_id] = state
+            self._current_delivery = envelope_id
+            detail = f"delivery={delivery} admittedSeq={data.get('admittedSeq')}"
+            self._store.upsert(envelope_id, self._session_id, msg_id, state, detail)
             if state == "accepted":
                 self._delivery_timestamps[envelope_id] = time.monotonic()
             return DeliveryReceipt(
                 id=envelope_id, state=state, source="protocol",
-                detail=f"delivery={delivery} admittedSeq={data.get('admittedSeq')}"
+                detail=detail
             )
         elif code == 409:
             # opencode 服务端按 message id 去重，重复投递返回 200（不是 409）。
             # 此分支保留以防未来版本行为变化。
             self._envelope_states[envelope_id] = "accepted"
+            self._current_delivery = envelope_id
+            self._store.upsert(envelope_id, self._session_id, msg_id, "accepted", "server conflict")
             return DeliveryReceipt(
                 id=envelope_id, state="accepted", source="protocol",
                 detail="conflict - already delivered (server returned 409)"
@@ -542,7 +596,19 @@ class OpenCodeProtocolDriver(Driver):
            - 超时仍无 step 事件 → 模型可能卡死（不算打断成功）
         3. 对照：同 prompt 不打断 → 必然 step.ended + finish=stop + 完整输出
         """
-        if not self._session_id:
+        envelope_id = self._current_delivery
+        turn_id = self._envelope_to_msg.get(envelope_id, "")
+        if not envelope_id or not turn_id:
+            return False
+        return self.interrupt_delivery(envelope_id, turn_id)
+
+    def interrupt_delivery(self, envelope_id: str, turn_id: str) -> bool:
+        """OpenCode interrupts the session current turn; guard it with exact local ownership."""
+        if (
+            not self._session_id
+            or self._current_delivery != envelope_id
+            or self._envelope_to_msg.get(envelope_id) != turn_id
+        ):
             return False
 
         code, _ = self._request(

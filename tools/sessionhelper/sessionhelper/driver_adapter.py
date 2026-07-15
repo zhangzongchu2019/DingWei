@@ -34,6 +34,7 @@ class DriverAdapter:
         self._work_available = threading.Event()
         self._turn_progress: dict[tuple[str, str], float] = {}
         self._timed_out_turns: set[tuple[str, str]] = set()
+        self._interrupt_confirmed: set[tuple[str, str]] = set()
         self._terminal_timeout = max(0.1, float(cfg.turn_terminal_timeout_seconds))
         self._input_buf = ""          # view 输入的行缓冲
         self._cost_total = 0.0        # 会话累计成本(状态栏用)
@@ -52,7 +53,8 @@ class DriverAdapter:
             pw = os.environ.get("OPENCODE_SERVER_PASSWORD", "pilotpw")
             port = int(os.environ.get("SH_OPENCODE_PORT", "19300"))
             return OpenCodeProtocolDriver(password=pw, port=port, workdir=cwd,
-                                          model=os.environ.get("SH_OPENCODE_MODEL", "deepseek-anthropic/deepseek-v4-pro"))
+                                          model=os.environ.get("SH_OPENCODE_MODEL", "deepseek-anthropic/deepseek-v4-pro"),
+                                          store_path=store)
         # 默认 codex —— sandbox/approval 给足权限(对齐 claude 的 --dangerously-skip-permissions 意图),可用 env 收紧
         from .codexDriver import CodexProtocolDriver
         return CodexProtocolDriver(store_path=store, workdir=cwd,
@@ -156,8 +158,14 @@ class DriverAdapter:
             if not admitted:
                 admitted = self._admit_from_receipt(command, receipt)
             if receipt.state in ("done", "failed"):
-                outcome = "completed" if receipt.state == "done" else "failed"
+                key = (command.delivery_id, command.turn_id)
+                outcome = (
+                    "completed" if receipt.state == "done"
+                    else "interrupted" if key in self._interrupt_confirmed
+                    else "failed"
+                )
                 self._commands.finish(command.delivery_id, outcome)
+                self._interrupt_confirmed.discard(key)
                 self._turn_progress.pop((command.delivery_id, command.turn_id), None)
                 print(
                     f"[delivery] {receipt.state} id={command.delivery_id} "
@@ -169,6 +177,7 @@ class DriverAdapter:
                 key = (command.delivery_id, command.turn_id)
                 last_progress = self._turn_progress.get(key, time.monotonic())
                 if time.monotonic() - last_progress >= self._terminal_timeout:
+                    self._best_effort_timeout_interrupt(command)
                     self._publish_terminal_failure(command, "terminal_timeout", "driver emitted no terminal event")
                     self._timed_out_turns.add(key)
                     self._commands.finish(command.delivery_id, "failed")
@@ -177,6 +186,24 @@ class DriverAdapter:
                     return
             time.sleep(0.1)
             receipt = self.driver.poll_receipt(command.delivery_id)
+
+    def _best_effort_timeout_interrupt(self, command: QueuedCommand) -> None:
+        """Bounded cleanup attempt; watchdog progress never depends on driver cooperation."""
+        fn = getattr(self.driver, "interrupt_delivery", None)
+        if not callable(fn) or not command.turn_id:
+            return
+        done = threading.Event()
+
+        def run() -> None:
+            try:
+                fn(command.delivery_id, command.turn_id)
+            except Exception:
+                pass
+            finally:
+                done.set()
+
+        threading.Thread(target=run, daemon=True, name="driver-timeout-interrupt").start()
+        done.wait(min(2.0, self._terminal_timeout))
 
     @staticmethod
     def _receipt_turn_id(receipt) -> str:
@@ -321,6 +348,24 @@ class DriverAdapter:
 
     def is_idle(self) -> bool:
         return self._commands.depth == 0
+
+    def interrupt_current(self, delivery_id: str, turn_id: str) -> dict:
+        """High-priority control path; queue owns the stale-turn CAS."""
+        target = self._commands.interrupt_target(delivery_id, turn_id)
+        if target is None:
+            return {"ok": False, "state": "stale", "delivery_id": delivery_id, "turn_id": turn_id}
+        fn = getattr(self.driver, "interrupt_delivery", None)
+        if not callable(fn):
+            return {"ok": False, "state": "unsupported", "delivery_id": delivery_id, "turn_id": turn_id}
+        ok = bool(fn(delivery_id, turn_id))
+        if ok:
+            self._interrupt_confirmed.add((delivery_id, turn_id))
+        return {
+            "ok": ok,
+            "state": "interrupt_requested" if ok else "unconfirmed",
+            "delivery_id": delivery_id,
+            "turn_id": turn_id,
+        }
 
     def write_terminal_input(self, data: str) -> None:
         # 人在 view 里敲的键。协议 driver 不吃裸键(claude stdin 要 JSONL),

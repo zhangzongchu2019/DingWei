@@ -389,6 +389,14 @@ class ClaudeProtocolDriver(Driver):
             active = self._active
         if active is None:
             return False
+        return self.interrupt_delivery(active.envelope_id, active.turn_id)
+
+    def interrupt_delivery(self, envelope_id: str, turn_id: str) -> bool:
+        """Fail closed unless the serial pipe is executing this exact delivery/turn."""
+        with self._active_lock:
+            active = self._active
+            if active is None or active.envelope_id != envelope_id or active.turn_id != turn_id:
+                return False
         frame = {"type": "control_request", "request": {"subtype": "interrupt"}}
         try:
             with self._write_lock:
