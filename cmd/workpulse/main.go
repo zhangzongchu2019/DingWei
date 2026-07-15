@@ -176,6 +176,9 @@ func run(logger *slog.Logger) error {
 	internalMux.HandleFunc("GET /internal/view/{session}/events", prefixHub.HandleInternalViewEvents)
 	internalMux.HandleFunc("POST /internal/view/authorize", prefixHub.HandleInternalViewAuthorize)
 	internalMux.HandleFunc("POST /internal/view/{session}/input", prefixHub.HandleInternalViewInput)
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("WP_DEBUG_HOLD_LOCK")), "true") {
+		internalMux.HandleFunc("POST /debug/hold-lock", prefixHub.HandleDebugHoldLock)
+	}
 	internalAddr := strings.TrimSpace(os.Getenv("WP_INTERNAL_ADDR"))
 	if internalAddr == "" {
 		internalAddr = "127.0.0.1:8792"
