@@ -10,7 +10,7 @@ python3 -m unittest -v test_view_service.py
 python3 -m http.server 19312 --bind 127.0.0.1
 ```
 
-浏览器回归使用 Playwright 1.45.3 Docker 镜像，覆盖桌面与移动视口、等候区接纳转移、回合分组、工具折叠和横向溢出：
+浏览器回归使用 Playwright 1.45.3 Docker 镜像，覆盖桌面与移动视口、等候区接纳转移、回合分组、进行中工具折叠、完成后工具区移除和横向溢出：
 
 ```bash
 mkdir -p /tmp/renderer-pw

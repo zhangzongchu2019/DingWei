@@ -1013,7 +1013,10 @@
         const text = users.map(ev => ev.text || '').join('');
         html += `<section class="event-body turn-section turn-user">${eventMetaHtml(users[0])}<span class="event-content">${escapeHtml(text)}</span></section>`;
       }
-      if (tools.length) {
+      // Tools are useful as live progress while a turn is running. Once the
+      // turn completes, remove them from the reading view and keep only the
+      // user request and final answer.
+      if (tools.length && !completed) {
         html += `<details class="turn-tools"><summary><span>🔧 ${tools.length} 次工具调用</span></summary><div class="turn-tools-list">${tools.map(renderTurnTool).join('')}</div></details>`;
       }
       if (assistants.length) {

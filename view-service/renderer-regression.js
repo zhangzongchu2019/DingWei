@@ -30,7 +30,6 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
           { kind: 'tool_call', data: { name: 'Read', input: { file_path: '/tmp/a' } }, delivery_id: 'd-pw', turn_id: 't-pw', cursor: '20' },
           { kind: 'tool_call', data: { name: 'Bash', input: { command: 'milvus-check --token shencedeepseek-very-long-inline-token-without-breaks-00112233445566778899' } }, delivery_id: 'd-pw', turn_id: 't-pw', cursor: '30' },
           { kind: 'assistant_text', text: '诊断完成。', delivery_id: 'd-pw', turn_id: 't-pw', cursor: '40' },
-          { kind: 'state_change', data: { change: 'turn_completed', turn_cost_usd: 0.1234 }, delivery_id: 'd-pw', turn_id: 't-pw', cursor: '50' },
         ].forEach(handleIncomingEvent);
       });
       assert.strictEqual(await page.locator('#timeline > .turn-group').count(), 1);
@@ -46,10 +45,13 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
       assert.match(await group.locator('.turn-tool-item').last().innerText(), /Bash/);
       assert.match(await group.locator('.turn-user').innerText(), /诊断 Milvus/);
       assert.match(await group.locator('.turn-assistant').innerText(), /诊断完成/);
+      await page.evaluate(() => {
+        handleIncomingEvent({ kind: 'state_change', data: { change: 'turn_completed', turn_cost_usd: 0.1234 }, delivery_id: 'd-pw', turn_id: 't-pw', cursor: '50' });
+      });
+      assert.strictEqual(await group.locator('.turn-tools').count(), 0);
       assert.match(await group.locator('.turn-completed').innerText(), /本回合 \$0\.1234/);
       assert.deepStrictEqual(await group.locator(':scope > *').evaluateAll(nodes => nodes.map(n => n.className)), [
         'event-body turn-section turn-user',
-        'turn-tools',
         'event-body turn-section turn-assistant',
         'turn-completed',
       ]);
@@ -61,7 +63,7 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
       await page.screenshot({ path: `/tmp/renderer-pw/turn-group-${viewport.width}.png`, fullPage: true });
       await page.close();
     }
-    console.log('renderer regression PASS: waiting admission + turn grouping + tool folding (1280x900, 390x844)');
+    console.log('renderer regression PASS: waiting admission + live tool folding + completed cleanup (1280x900, 390x844)');
   } finally {
     await browser.close();
   }
