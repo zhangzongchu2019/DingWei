@@ -651,12 +651,18 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := &client{conn: conn}
+	var oldConn *websocket.Conn
 	h.mu.Lock()
 	if old := h.serviceClients[serviceID]; old != nil {
-		_ = old.conn.Close(websocket.StatusPolicyViolation, "replaced")
+		oldConn = old.conn
 	}
 	h.serviceClients[serviceID] = c
 	h.mu.Unlock()
+	// 关闭旧连接必须在锁外:Close 会写关闭帧,对端半死时可阻塞数秒,
+	// 持 h.mu 期间阻塞会让整个 hub 停摆(与 365b3a2 修的 HandleSessionWS 同型)。
+	if oldConn != nil {
+		_ = oldConn.Close(websocket.StatusPolicyViolation, "replaced")
+	}
 	defer func() {
 		h.mu.Lock()
 		if h.serviceClients[serviceID] == c {
