@@ -26,7 +26,7 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
       await page.evaluate(() => {
         resetConversation();
         [
-          { kind: 'user_input', text: '诊断 Milvus', delivery_id: 'd-pw', turn_id: 't-pw', cursor: '10' },
+          { kind: 'user_input', text: '诊断 Milvus\n第二行参数\n第三行确认', delivery_id: 'd-pw', turn_id: 't-pw', cursor: '10' },
           { kind: 'tool_call', data: { name: 'Read', input: { file_path: '/tmp/a' } }, delivery_id: 'd-pw', turn_id: 't-pw', cursor: '20' },
           { kind: 'tool_call', data: { name: 'Bash', input: { command: 'milvus-check --token shencedeepseek-very-long-inline-token-without-breaks-00112233445566778899' } }, delivery_id: 'd-pw', turn_id: 't-pw', cursor: '30' },
           { kind: 'assistant_text', text: '诊断完成。', delivery_id: 'd-pw', turn_id: 't-pw', cursor: '40' },
@@ -44,6 +44,18 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
       assert.match(await group.locator('.turn-tool-item').first().innerText(), /Read/);
       assert.match(await group.locator('.turn-tool-item').last().innerText(), /Bash/);
       assert.match(await group.locator('.turn-user').innerText(), /诊断 Milvus/);
+      const multiline = await group.locator('.turn-user .event-content').evaluate(node => {
+        const style = getComputedStyle(node);
+        return {
+          lines: node.innerText.split('\n').length,
+          whiteSpace: style.whiteSpace,
+          height: node.getBoundingClientRect().height,
+          lineHeight: parseFloat(style.lineHeight),
+        };
+      });
+      assert.strictEqual(multiline.lines, 3);
+      assert.strictEqual(multiline.whiteSpace, 'pre-wrap');
+      assert.ok(multiline.height >= multiline.lineHeight * 2.5, `multiline text did not render as 3 lines: ${JSON.stringify(multiline)}`);
       assert.match(await group.locator('.turn-assistant').innerText(), /诊断完成/);
       await page.evaluate(() => {
         handleIncomingEvent({ kind: 'state_change', data: { change: 'turn_completed', turn_cost_usd: 0.1234 }, delivery_id: 'd-pw', turn_id: 't-pw', cursor: '50' });
