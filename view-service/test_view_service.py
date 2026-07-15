@@ -51,5 +51,29 @@ class ViewStatePersistenceTest(unittest.TestCase):
         self.assertEqual(os.stat(vs.STATE_FILE).st_mode & 0o777, 0o600)
 
 
+class RendererCanaryTest(unittest.TestCase):
+    def test_canary_session_uses_canary_renderer_and_other_uses_default(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            default_renderer = os.path.join(tmp, "default.html")
+            canary_renderer = os.path.join(tmp, "canary.html")
+            with open(default_renderer, "wb") as fh:
+                fh.write(b"default renderer")
+            with open(canary_renderer, "wb") as fh:
+                fh.write(b"canary renderer")
+
+            with mock.patch.multiple(
+                vs,
+                RENDERER=default_renderer,
+                CANARY_RENDERER=canary_renderer,
+                CANARY_SESSIONS=frozenset({"zzc-reviewer-2642"}),
+            ):
+                self.assertEqual(vs._read_renderer("zzc-reviewer-2642"), b"canary renderer")
+                self.assertEqual(vs._read_renderer("zzc-dev55-2642"), b"default renderer")
+
+    def test_empty_canary_config_keeps_default_renderer(self):
+        with mock.patch.multiple(vs, CANARY_RENDERER="", CANARY_SESSIONS=frozenset()):
+            self.assertEqual(vs._renderer_path_for_session("any-session"), vs.RENDERER)
+
+
 if __name__ == "__main__":
     unittest.main()

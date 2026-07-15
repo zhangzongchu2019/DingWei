@@ -25,6 +25,12 @@ from urllib.parse import urlparse, parse_qs
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RENDERER = os.environ.get("VS_RENDERER", os.path.join(BASE_DIR, "renderer.html"))
+CANARY_SESSIONS = frozenset(
+    session.strip()
+    for session in os.environ.get("VS_CANARY_SESSIONS", "").split(",")
+    if session.strip()
+)
+CANARY_RENDERER = os.environ.get("VS_CANARY_RENDERER", "").strip()
 HUB_INTERNAL = os.environ.get("VS_HUB_INTERNAL", "http://127.0.0.1:8792").rstrip("/")
 HUB_PUBLIC = os.environ.get("VS_HUB_PUBLIC", "http://127.0.0.1:8791").rstrip("/")
 DEFAULT_SESSION = os.environ.get("VS_SESSION", "")
@@ -33,6 +39,18 @@ STATE_FILE = os.environ.get("VS_STATE_FILE", os.path.join(BASE_DIR, "view-state.
 
 _state_lock = threading.Lock()
 _sessions: dict[str, dict] = {}   # session -> {viewer_id, token, cost_total, cost_last, turns}
+
+
+def _renderer_path_for_session(session: str) -> str:
+    if CANARY_RENDERER and session in CANARY_SESSIONS:
+        return CANARY_RENDERER
+    return RENDERER
+
+
+def _read_renderer(session: str) -> bytes:
+    # Per-request read keeps renderer hot updates working for both tracks.
+    with open(_renderer_path_for_session(session), "rb") as fh:
+        return fh.read()
 
 
 def _load_state() -> None:
@@ -180,8 +198,7 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _serve_file(self):
         try:
-            with open(RENDERER, "rb") as fh:
-                body = fh.read()
+            body = _read_renderer(self._session())
         except Exception as exc:
             return self.send_error(500, str(exc))
         # 经 hub /view/<名> 路由来的(带 X-DW-Session 头):页面里的绝对 API 端点要挂到 /view/<会话>/ 下,
