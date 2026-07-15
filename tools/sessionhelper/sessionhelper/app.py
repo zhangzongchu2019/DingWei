@@ -153,6 +153,10 @@ class SessionHelper:
         self.install_send_script()
 
     def _build_adapter(self) -> Adapter:
+        if self.cfg.mode == "driver":
+            from .driver_adapter import DriverAdapter
+
+            return DriverAdapter(self.cfg)
         if self.cfg.mode == "llm":
             return LLMAdapter(self.cfg)
         if self.cfg.mode == "cli":
@@ -266,6 +270,7 @@ class SessionHelper:
                     session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
                     {"type": "session_capabilities", "delivery_ack_v1": True,
                      "persistent_inbox_v1": True, "agent_route_v2": True,
+                     "unified_queue_v1": self.cfg.mode == "driver",
                      "processed_semantics": "accepted_to_cli", "helper_version": __version__},
                 ), ensure_ascii=False))
                 hb = asyncio.create_task(self.online_list_heartbeat_loop())
@@ -275,6 +280,7 @@ class SessionHelper:
                         self.delivery_worker_loop(ws),
                         self.pending_drain_loop(ws),
                         self.terminal_loop(ws),
+                        self.session_event_loop(ws),
                         self.outbox_loop(ws),
                         self.mirror_loop(ws),
                     )
@@ -349,6 +355,16 @@ class SessionHelper:
     async def buffer_if_busy(self, ws, env: dict) -> bool:
         # Route all CLI inbound messages through the drain loop so recv_loop
         # never blocks on subprocess/pexpect injection (#4 recv_loop hang fix).
+        if self.cfg.mode == "driver" and hasattr(self.adapter, "enqueue_envelope"):
+            idle = bool(await asyncio.to_thread(self.adapter.is_idle))
+            result = await asyncio.to_thread(self.adapter.enqueue_envelope, env)
+            from_addr = str(env.get("from") or "")
+            if result.state == "rejected":
+                await self.send_busy_ack(ws, env, text="队列已满，本条未接纳")
+            elif not idle and from_addr not in self.busy_acked_from:
+                self.busy_acked_from.add(from_addr)
+                await self.send_busy_ack(ws, env)
+            return True
         if self.cfg.mode != "cli" or not hasattr(self.adapter, "is_idle"):
             return False
         try:
@@ -366,14 +382,14 @@ class SessionHelper:
         print(f"[busy_buffer] queued size={len(self.pending_inbound)} from={from_addr} idle={idle}", flush=True)
         return True
 
-    async def send_busy_ack(self, ws, env: dict) -> None:
+    async def send_busy_ack(self, ws, env: dict, text: str | None = None) -> None:
         to, meta = reply_target(env, self.book)
         if not to:
             return
         meta = dict(meta)
         meta["no_mirror"] = True
         meta["system"] = True
-        await ws.send(json.dumps(envelope(to, self.cfg.busy_reply_text, self.book.self_addr, meta), ensure_ascii=False))
+        await ws.send(json.dumps(envelope(to, text or self.cfg.busy_reply_text, self.book.self_addr, meta), ensure_ascii=False))
 
     async def pending_drain_loop(self, ws) -> None:
         while True:
@@ -465,6 +481,13 @@ class SessionHelper:
                     continue
             try:
                 await self.process_inbound_message(ws, env, raise_adapter_errors=True)
+            except OverflowError:
+                await asyncio.to_thread(self.delivery_inbox.release, delivery_id)
+                await ws.send(json.dumps(self.delivery_ack(
+                    delivery_id, "busy", reason="queue_full", retryable=True
+                ), ensure_ascii=False))
+                await asyncio.sleep(0.75)
+                continue
             except Exception as exc:
                 busy = False
                 if self.cfg.mode == "cli" and hasattr(self.adapter, "is_idle"):
@@ -503,7 +526,7 @@ class SessionHelper:
 
     async def handle_terminal_input(self, env: dict) -> None:
         data = str(env.get("body") or "")
-        if not data or self.cfg.mode != "cli" or not hasattr(self.adapter, "write_terminal_input"):
+        if not data or self.cfg.mode not in ("cli", "driver") or not hasattr(self.adapter, "write_terminal_input"):
             return
         await asyncio.to_thread(self.adapter.write_terminal_input, data)
 
@@ -537,7 +560,7 @@ class SessionHelper:
         body = str(env.get("body") or "")
         if not body:
             return False
-        if self.cfg.mode == "cli" and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
+        if self.cfg.mode in ("cli", "driver") and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
             started = await asyncio.to_thread(self.adapter.start)
             if started:
                 await asyncio.to_thread(self.adapter.inject_text, body)
@@ -743,7 +766,7 @@ class SessionHelper:
                 print(f"[producer] target_group={self.cfg.target_group} role={role}", flush=True)
 
     async def terminal_loop(self, ws) -> None:
-        if self.cfg.mode != "cli" or not hasattr(self.adapter, "next_terminal_chunk"):
+        if self.cfg.mode not in ("cli", "driver") or not hasattr(self.adapter, "next_terminal_chunk"):
             await asyncio.Future()
         if hasattr(self.adapter, "start"):
             # 后台启动 CLI（spawn 后台跑，不等“就绪”），立即进入转发循环——
@@ -763,6 +786,21 @@ class SessionHelper:
             body = "".join(chunks)
             meta = {"type": "terminal_output", "session": self.cfg.session_name, "key_id": self.cfg.key_id, "no_mirror": True}
             await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), body, self.book.self_addr, meta), ensure_ascii=False))
+
+    async def session_event_loop(self, ws) -> None:
+        if os.environ.get("SH_EMIT_SESSION_EVENT") != "1":
+            await asyncio.Future()
+        if not hasattr(self.adapter, "next_session_event"):
+            await asyncio.Future()
+        while True:
+            payload = await asyncio.to_thread(self.adapter.next_session_event, 0.5)
+            if not payload:
+                continue
+            meta = {"type": "session_event", "session": self.cfg.session_name,
+                    "key_id": self.cfg.key_id, "no_mirror": True}
+            await ws.send(json.dumps(envelope(
+                session_addr("workpulse", self.cfg.key_id), payload, self.book.self_addr, meta
+            ), ensure_ascii=False))
 
 
 def main() -> None:

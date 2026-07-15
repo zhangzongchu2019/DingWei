@@ -62,6 +62,7 @@ class Config:
     async_reply: bool = False
     agent_route: bool = True
     busy_buffer_max: int = 100
+    turn_terminal_timeout_seconds: float = 1800.0
     inbox_db: str = ""
     busy_reply_text: str = "消息已收到，但此时忙，稍后处理你的请求"
     provision_allowed_hosts: tuple[str, ...] = ("dingwei.wegoab.com",)
@@ -154,6 +155,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         async_reply=truthy(env.get("SH_ASYNC_REPLY", "0")),
         agent_route=truthy(env.get("SH_AGENT_ROUTE", "1")),
         busy_buffer_max=int(env.get("SH_BUSY_BUFFER_MAX", "100")),
+        turn_terminal_timeout_seconds=max(0.1, float(env.get("SH_TURN_TERMINAL_TIMEOUT_SECONDS", "1800"))),
         inbox_db=expand_path(env.get("SH_INBOX_DB", default_inbox_db(session_name))),
         busy_reply_text=env.get("SH_BUSY_REPLY_TEXT", "消息已收到，但此时忙，稍后处理你的请求"),
         provision_allowed_hosts=tuple(

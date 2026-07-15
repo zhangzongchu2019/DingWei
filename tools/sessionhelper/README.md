@@ -208,6 +208,27 @@ CLI 采用懒启动：sessionHelper 会先保持 WS 在线，收到消息时启�
 长耗时命令接收器可设置 `SH_ASYNC_REPLY=1`。此模式下 CLI 收到指令后只做注入和 user 轮落盘确认，
 不等待 assistant 输出，也不发送同步回执；回执由 CLI 内的 wrapper/agent 自行异步发送。
 
+## 模式 C：协议 Driver
+
+协议 Driver 的版本化真源位于 `tools/sessionhelper/sessionhelper/`，不再依赖仓外运行副本：
+
+```bash
+export SH_MODE=driver
+export SH_DRIVER=codex            # codex | claude | opencode
+export SH_EMIT_SESSION_EVENT=1
+export SH_TURN_TERMINAL_TIMEOUT_SECONDS=1800
+./dist/sessionhelper
+```
+
+三来源输入（View 用户、Agent 互调、飞书）进入同一会话级 FIFO。每项按同一
+`delivery_id` 发唯一 `queued → admitted` 生命周期事件，并带 `source`、`display_name`、
+`open_id`、`queue_seq` 和完整多行 `text`。队列满时拒绝新项，不删除已展示的旧项。
+`driver.deliver()` 只在独立 worker 线程执行，不阻塞 WebSocket asyncio 事件循环；admitted
+回合若超过 terminal watchdog 且无新进展，会以 `terminal_timeout` 失败并推进下一项。
+
+`SH_SIDECAR_PORT` 可选启用本机 sidecar。构建产物的 hidden imports 已包含三种 driver、
+contract、sidecar 和 unified queue。
+
 ## 镜像控制
 
 DingWei 侧通过 DM 指令：
