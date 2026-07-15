@@ -45,6 +45,39 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
       assert.match(await page.locator('#timeline > .turn-group .turn-user').innerText(), /排队中的外部任务\n第二行\n第三行/);
       await page.evaluate(() => {
         resetConversation();
+        for (let i = 0; i < 30; i += 1) {
+          handleIncomingEvent({ kind: 'user_input', text: `回放输入 ${i}`, delivery_id: `d-scroll-${i}`,
+            turn_id: `t-scroll-${i}`, cursor: `${i}.1` });
+          handleIncomingEvent({ kind: 'assistant_text', text: `回放回应 ${i}\n附加内容`, delivery_id: `d-scroll-${i}`,
+            turn_id: `t-scroll-${i}`, cursor: `${i}.2` });
+        }
+      });
+      await page.waitForTimeout(350);
+      assert.strictEqual(await page.locator('#timeline').evaluate(node =>
+        Math.abs(node.scrollHeight - node.clientHeight - node.scrollTop) <= 1), true);
+      await page.evaluate(() => {
+        handleIncomingEvent({ kind: 'assistant_text', text: '底部新增消息', delivery_id: 'd-scroll-live',
+          turn_id: 't-scroll-live', cursor: 'live.1' });
+      });
+      await page.waitForTimeout(50);
+      assert.strictEqual(await page.locator('#timeline').evaluate(node =>
+        Math.abs(node.scrollHeight - node.clientHeight - node.scrollTop) <= 1), true);
+      const scrolledUp = await page.locator('#timeline').evaluate(node => {
+        const previous = node.style.scrollBehavior;
+        node.style.scrollBehavior = 'auto';
+        node.scrollTop = 0;
+        node.style.scrollBehavior = previous;
+        return node.scrollTop;
+      });
+      await page.waitForTimeout(50);
+      await page.evaluate(() => {
+        handleIncomingEvent({ kind: 'assistant_text', text: '上翻后新增消息', delivery_id: 'd-scroll-up',
+          turn_id: 't-scroll-up', cursor: 'up.1' });
+      });
+      await page.waitForTimeout(50);
+      assert.strictEqual(await page.locator('#timeline').evaluate(node => node.scrollTop), scrolledUp);
+      await page.evaluate(() => {
+        resetConversation();
         [
           { kind: 'user_input', text: '诊断 Milvus\n第二行参数\n第三行确认', delivery_id: 'd-pw', turn_id: 't-pw', cursor: '10' },
           { kind: 'tool_call', data: { name: 'Read', input: { file_path: '/tmp/a' } }, delivery_id: 'd-pw', turn_id: 't-pw', cursor: '20' },

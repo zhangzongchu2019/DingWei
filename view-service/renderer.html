@@ -736,6 +736,11 @@
     const messageNodes = new Map();
     const turnGroups = new Map();
     const waitingDeliveries = new Map();
+    const BOTTOM_THRESHOLD_PX = 50;
+    const REPLAY_SETTLE_MS = 250;
+    let timelineAtBottom = true;
+    let replayInProgress = true;
+    let replaySettleTimer = null;
     const stats = {
       turns: 0,
       cost: 0,
@@ -839,11 +844,31 @@
       }
     }
     function isTimelineNearBottom() {
-      return timeline.scrollHeight - timeline.scrollTop - timeline.clientHeight < 96;
+      return timeline.scrollHeight - timeline.scrollTop - timeline.clientHeight <= BOTTOM_THRESHOLD_PX;
     }
     function scrollTimelineToBottom() {
+      const previous = timeline.style.scrollBehavior;
+      timeline.style.scrollBehavior = 'auto';
       timeline.scrollTop = timeline.scrollHeight;
+      timeline.style.scrollBehavior = previous;
+      timelineAtBottom = true;
     }
+    function beginTimelineReplay() {
+      replayInProgress = true;
+      clearTimeout(replaySettleTimer);
+    }
+    function scheduleTimelineReplayEnd() {
+      if (!replayInProgress) return;
+      clearTimeout(replaySettleTimer);
+      replaySettleTimer = setTimeout(() => {
+        scrollTimelineToBottom();
+        replayInProgress = false;
+      }, REPLAY_SETTLE_MS);
+    }
+
+    timeline.addEventListener('scroll', () => {
+      if (!replayInProgress) timelineAtBottom = isTimelineNearBottom();
+    }, { passive: true });
 
     function resetConversation() {
       rendered = 0;
@@ -858,12 +883,14 @@
       timeline.textContent = '';
       waitingList.textContent = '';
       waitingArea.hidden = true;
+      beginTimelineReplay();
       scrollTimelineToBottom();
       updateMetrics();
     }
 
     function handleIncomingEvent(ev) {
-      const shouldFollow = isTimelineNearBottom();
+      const shouldFollow = replayInProgress || timelineAtBottom;
+      scheduleTimelineReplayEnd();
       if (isWaitingDelivery(ev)) {
         renderWaitingDelivery(ev);
         rendered += 1;
@@ -880,7 +907,7 @@
         timeline.removeChild(oldest);
       }
       updateMetrics();
-      if (shouldFollow) scrollTimelineToBottom();   // 仅当已在底部才跟随;用户上滚查看时不打扰
+      if (shouldFollow) requestAnimationFrame(scrollTimelineToBottom);
     }
 
     function deliveryLifecycle(ev) {
@@ -1444,6 +1471,7 @@
 
     function connectEventStream() {
       if (eventSource) eventSource.close();
+      beginTimelineReplay();
       setStatus('idle');
       eventSource = new EventSource(API.events);
       eventSource.onopen = () => {
