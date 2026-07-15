@@ -23,6 +23,20 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
       assert.strictEqual(await page.locator('#waitingList > .waiting-item').evaluate(node =>
         getComputedStyle(node).textOverflow), 'ellipsis');
       assert.ok(await page.locator('#waitingList > .waiting-item').evaluate(node => node.getBoundingClientRect().height < 50));
+      await page.evaluate(() => {
+        for (let i = 0; i < 20; i += 1) {
+          handleIncomingEvent({ kind: 'user_input', text: `排队任务 ${i}`, data: { lifecycle: 'queued' },
+            delivery_id: `d-wait-${i}`, turn_id: '', cursor: `1-${i}` });
+        }
+      });
+      await page.waitForTimeout(50);
+      assert.strictEqual(await page.locator('#waitingArea').evaluate(node =>
+        Math.abs(node.scrollHeight - node.clientHeight - node.scrollTop) <= 1), true);
+      await page.evaluate(() => {
+        resetConversation();
+        handleIncomingEvent({ kind: 'user_input', text: '排队中的外部任务\n第二行\n第三行', data: { lifecycle: 'queued' },
+          delivery_id: 'd-wait', turn_id: '', cursor: '1' });
+      });
       assert.strictEqual(await page.locator('#timeline > .turn-group').count(), 0);
       const bottomCluster = await page.evaluate(() => {
         const waiting = document.querySelector('#waitingArea').getBoundingClientRect();

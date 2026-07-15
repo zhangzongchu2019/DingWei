@@ -19,6 +19,7 @@
       --danger-bg: #fff1f0;
       --code-bg: #101828;
       --code-text: #e6edf3;
+      --waiting-white-space: nowrap;
       --shadow: 0 12px 30px rgba(16, 24, 40, 0.08);
     }
 
@@ -92,7 +93,7 @@
     .title {
       font-size: 18px;
       font-weight: 750;
-      white-space: nowrap;
+      white-space: var(--waiting-white-space);
       overflow: hidden;
       text-overflow: ellipsis;
       line-height: 1.2;
@@ -935,6 +936,9 @@
       }
       entry.node.textContent = entry.event.text || ev.data?.text || `delivery ${ev.delivery_id}`;
       waitingArea.hidden = false;
+      requestAnimationFrame(() => {
+        waitingArea.scrollTop = waitingArea.scrollHeight;
+      });
     }
 
     function admitWaitingDelivery(ev) {
