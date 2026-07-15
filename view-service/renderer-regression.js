@@ -9,6 +9,10 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
       const page = await browser.newPage({ viewport });
       await page.goto(`${baseUrl}?mock=1&unlocked=1`, { waitUntil: 'domcontentloaded' });
       await page.evaluate(() => {
+        clearTimeout(mockEventTimer);
+        clearInterval(statusTimer);
+      });
+      await page.evaluate(() => {
         resetConversation();
         handleIncomingEvent({ kind: 'user_input', text: '排队中的外部任务\n第二行\n第三行', data: { lifecycle: 'queued' }, delivery_id: 'd-wait', turn_id: '', cursor: '1' });
       });
@@ -134,6 +138,48 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
         'event-body turn-section turn-assistant',
         'turn-completed',
       ]);
+      await page.evaluate(() => {
+        resetConversation();
+        for (let i = 0; i < 30; i += 1) {
+          handleIncomingEvent({ kind: 'assistant_text', text: `持续回放 ${i}\n内容`, delivery_id: `d-live-${i}`,
+            turn_id: `t-live-${i}`, cursor: `live.${i}` });
+        }
+      });
+      // 100ms 一条事件持续超过硬截止，包含不渲染进 timeline 的 heartbeat。
+      await page.evaluate(() => {
+        window.__continuousSeq = 0;
+        window.__continuousTimer = setInterval(() => {
+          const i = window.__continuousSeq++;
+          const ev = i % 2 === 0
+            ? { kind: 'state_change', data: { change: 'heartbeat', load: i }, cursor: `heartbeat.${i}` }
+            : { kind: 'assistant_text', text: `live ${i}`, delivery_id: `d-cont-${i}`, turn_id: `t-cont-${i}`, cursor: `cont.${i}` };
+          handleIncomingEvent(ev);
+        }, 100);
+      });
+      await page.waitForTimeout(1200);
+      assert.strictEqual(await page.evaluate(() => replayInProgress), false);
+      assert.strictEqual(await page.locator('#timeline').evaluate(node =>
+        Math.abs(node.scrollHeight - node.clientHeight - node.scrollTop) <= 1), true);
+      // 模拟 Markdown/字体/折叠内容在 append 之后异步增高，ResizeObserver 应补到底。
+      await page.evaluate(() => {
+        const growth = document.createElement('div');
+        growth.style.height = '240px';
+        growth.textContent = 'async reflow';
+        document.querySelector('#timeline > .turn-group:last-of-type').appendChild(growth);
+      });
+      await page.waitForTimeout(100);
+      assert.strictEqual(await page.locator('#timeline').evaluate(node =>
+        Math.abs(node.scrollHeight - node.clientHeight - node.scrollTop) <= 1), true);
+      const continuousScrollTop = await page.locator('#timeline').evaluate(node => {
+        node.style.scrollBehavior = 'auto';
+        node.scrollTop = 0;
+        node.dispatchEvent(new Event('scroll'));
+        return node.scrollTop;
+      });
+      await page.waitForTimeout(2100);
+      assert.strictEqual(await page.evaluate(() => replayInProgress), false);
+      assert.strictEqual(await page.locator('#timeline').evaluate(node => node.scrollTop), continuousScrollTop);
+      await page.evaluate(() => clearInterval(window.__continuousTimer));
       const layout = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
         clientWidth: document.documentElement.clientWidth,
@@ -142,7 +188,7 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.htm
       await page.screenshot({ path: `/tmp/renderer-pw/turn-group-${viewport.width}.png`, fullPage: true });
       await page.close();
     }
-    console.log('renderer regression PASS: waiting admission + live tool folding + completed cleanup (1280x900, 390x844)');
+    console.log('renderer regression PASS: waiting admission + continuous SSE scroll ownership + async reflow (1280x900, 390x844)');
   } finally {
     await browser.close();
   }

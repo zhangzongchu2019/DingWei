@@ -738,10 +738,13 @@
     const turnGroups = new Map();
     const waitingDeliveries = new Map();
     const BOTTOM_THRESHOLD_PX = 50;
-    const INITIAL_REPLAY_MS = 1000;
+    const REPLAY_QUIET_MS = 250;
+    const REPLAY_HARD_LIMIT_MS = 1000;
     let timelineAtBottom = true;
     let replayInProgress = true;
-    let replayFinishTimer = null;
+    let replayQuietTimer = null;
+    let replayHardTimer = null;
+    let followScrollFrame = null;
     const stats = {
       turns: 0,
       cost: 0,
@@ -854,20 +857,34 @@
       timeline.style.scrollBehavior = previous;
       timelineAtBottom = true;
     }
+    function scheduleTimelineToBottom() {
+      if (followScrollFrame !== null) return;
+      followScrollFrame = requestAnimationFrame(() => {
+        followScrollFrame = null;
+        if (replayInProgress || timelineAtBottom) scrollTimelineToBottom();
+      });
+    }
+    function finishTimelineReplay(forceBottom = true) {
+      if (!replayInProgress) return;
+      replayInProgress = false;
+      clearTimeout(replayQuietTimer);
+      clearTimeout(replayHardTimer);
+      replayQuietTimer = null;
+      replayHardTimer = null;
+      if (forceBottom) scheduleTimelineToBottom();
+    }
     function beginTimelineReplay() {
       replayInProgress = true;
-      clearTimeout(replayFinishTimer);
-      replayFinishTimer = null;
+      clearTimeout(replayQuietTimer);
+      clearTimeout(replayHardTimer);
+      replayQuietTimer = null;
+      // 活跃会话可能永远没有 quiet window；硬截止不可被 live SSE 续期。
+      replayHardTimer = setTimeout(() => finishTimelineReplay(true), REPLAY_HARD_LIMIT_MS);
     }
     function scheduleTimelineReplayEnd() {
-      if (!replayInProgress || replayFinishTimer) return;
-      // 初始历史与后续 live SSE 没有协议边界时，从首个事件起只保留一个
-      // 固定回放窗口。live 事件不能续期，否则活跃会话会让 replay 永不结束。
-      replayFinishTimer = setTimeout(() => {
-        scrollTimelineToBottom();
-        replayInProgress = false;
-        replayFinishTimer = null;
-      }, INITIAL_REPLAY_MS);
+      if (!replayInProgress) return;
+      clearTimeout(replayQuietTimer);
+      replayQuietTimer = setTimeout(() => finishTimelineReplay(true), REPLAY_QUIET_MS);
     }
 
     timeline.addEventListener('scroll', () => {
@@ -875,12 +892,34 @@
       if (replayInProgress && !nearBottom) {
         // 用户在初始窗口内主动上翻时立即交还滚动控制权；后续 live 事件
         // 只能在用户仍贴底时跟随。
-        replayInProgress = false;
-        clearTimeout(replayFinishTimer);
-        replayFinishTimer = null;
+        finishTimelineReplay(false);
+        if (followScrollFrame !== null) {
+          cancelAnimationFrame(followScrollFrame);
+          followScrollFrame = null;
+        }
       }
       timelineAtBottom = nearBottom;
     }, { passive: true });
+
+    const timelineResizeObserver = new ResizeObserver(() => {
+      // Markdown、折叠区、字体等在 append 后继续增高时补一次到底；用户已
+      // 上翻则 timelineAtBottom=false，不取得滚动控制权。
+      if (replayInProgress || timelineAtBottom) scheduleTimelineToBottom();
+    });
+    function observeTimelineNode(node) {
+      timelineResizeObserver.observe(node);
+    }
+    const timelineMutationObserver = new MutationObserver(records => {
+      for (const record of records) {
+        record.addedNodes.forEach(node => {
+          if (node.nodeType === Node.ELEMENT_NODE) observeTimelineNode(node);
+        });
+        record.removedNodes.forEach(node => {
+          if (node.nodeType === Node.ELEMENT_NODE) timelineResizeObserver.unobserve(node);
+        });
+      }
+    });
+    timelineMutationObserver.observe(timeline, { childList: true });
 
     function resetConversation() {
       rendered = 0;
@@ -919,7 +958,7 @@
         timeline.removeChild(oldest);
       }
       updateMetrics();
-      if (shouldFollow) requestAnimationFrame(scrollTimelineToBottom);
+      if (shouldFollow) scheduleTimelineToBottom();
     }
 
     function deliveryLifecycle(ev) {
