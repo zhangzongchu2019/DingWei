@@ -2,15 +2,27 @@
 Description=WorkPulse Feishu robot gateway
 After=network-online.target
 Wants=network-online.target
+# 重启限流断路器:60s 内超过 5 次重启即进入 failed(而非静默狂重启)。
+# 防止"起来又立刻崩/冻"时形成重启风暴——让故障暴露成告警,由人介入。
+# 事故复盘(2026-07-14 hub 冻结)结论:上一版曾拟设 StartLimitIntervalSec=0
+# 关掉此断路器,评审指出会放任重启风暴,已改回保留限流。
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
+# Type=simple:进程内 sd_notify 看门狗尚未上线前不能用 Type=notify
+# (否则应用不发 READY=1,systemd 会判启动失败而杀进程)。
+# 待锁看门狗(ProbeLock + sd_notify)接线后,再切 Type=notify + WatchdogSec + WatchdogSignal=SIGABRT。
 Type=simple
 User={{USER}}
 WorkingDirectory={{WORKDIR}}
 EnvironmentFile={{WORKDIR}}/.env
 ExecStart={{WORKDIR}}/bin/workpulse
-Restart=on-failure
-RestartSec=5s
+# 崩溃/退出即自动拉起(注:对"冻结但不退出"无效,那需看门狗;见上)。
+Restart=always
+RestartSec=3s
+# 崩溃时 dump 全部 goroutine 到 journald,便于事后取证(而非靠猜)。
+Environment=GOTRACEBACK=all
 KillSignal=SIGTERM
 TimeoutStopSec=30s
 
