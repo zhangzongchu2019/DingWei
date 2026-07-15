@@ -738,10 +738,10 @@
     const turnGroups = new Map();
     const waitingDeliveries = new Map();
     const BOTTOM_THRESHOLD_PX = 50;
-    const REPLAY_SETTLE_MS = 250;
+    const INITIAL_REPLAY_MS = 1000;
     let timelineAtBottom = true;
     let replayInProgress = true;
-    let replaySettleTimer = null;
+    let replayFinishTimer = null;
     const stats = {
       turns: 0,
       cost: 0,
@@ -856,19 +856,30 @@
     }
     function beginTimelineReplay() {
       replayInProgress = true;
-      clearTimeout(replaySettleTimer);
+      clearTimeout(replayFinishTimer);
+      replayFinishTimer = null;
     }
     function scheduleTimelineReplayEnd() {
-      if (!replayInProgress) return;
-      clearTimeout(replaySettleTimer);
-      replaySettleTimer = setTimeout(() => {
+      if (!replayInProgress || replayFinishTimer) return;
+      // 初始历史与后续 live SSE 没有协议边界时，从首个事件起只保留一个
+      // 固定回放窗口。live 事件不能续期，否则活跃会话会让 replay 永不结束。
+      replayFinishTimer = setTimeout(() => {
         scrollTimelineToBottom();
         replayInProgress = false;
-      }, REPLAY_SETTLE_MS);
+        replayFinishTimer = null;
+      }, INITIAL_REPLAY_MS);
     }
 
     timeline.addEventListener('scroll', () => {
-      if (!replayInProgress) timelineAtBottom = isTimelineNearBottom();
+      const nearBottom = isTimelineNearBottom();
+      if (replayInProgress && !nearBottom) {
+        // 用户在初始窗口内主动上翻时立即交还滚动控制权；后续 live 事件
+        // 只能在用户仍贴底时跟随。
+        replayInProgress = false;
+        clearTimeout(replayFinishTimer);
+        replayFinishTimer = null;
+      }
+      timelineAtBottom = nearBottom;
     }, { passive: true });
 
     function resetConversation() {
