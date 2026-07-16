@@ -3671,6 +3671,32 @@ func TestViewUnlockV2RejectsAmbiguousEndpointMatch(t *testing.T) {
 	}
 }
 
+func TestViewUnlockV2RejectsCrossOwnerLegacyEndpoint(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{
+		KeyID: "FB-bob-2642", SessionName: "dev55", FullSessionName: "", OwnerKey: "bob", Active: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	bob := model.Message{
+		ID: "cross-owner", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_bob",
+		ChatType: model.ChatPersonal, SenderOpenID: "ou_bob", IngressProvenance: model.IngressFeishuWSAuthenticated,
+	}
+
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, bob, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "发信人不是该会话 owner") {
+		t.Fatalf("cross-owner result=%+v handled=%v err=%v", result, handled, err)
+	}
+	if len(unlocker.requests) != 0 {
+		t.Fatalf("cross-owner unlock reached view service: requests=%+v", unlocker.requests)
+	}
+}
+
 func TestViewUnlockV2RejectsGroupWithoutSenderAndSupportsLegacyShortName(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
