@@ -179,13 +179,19 @@ def main():
                 "  print('SMOKE_OUTPUT:LEVEL1', flush=True)\n"
                 "  buf=b''\n")
             helper_env = {**os.environ, "PYTHONPATH": str(ROOT / "tools/sessionhelper"), "SH_SESSION_NAME": "reviewer",
-                "SH_SESSION_FULL": SESSION, "SH_OWNER": "alice", "SH_KEY_ID": KEY_ID, "SH_SECRET": KEY_SECRET,
+                "SH_OWNER": "alice", "SH_KEY_ID": KEY_ID, "SH_SECRET": KEY_SECRET,
                 "SH_WS_BASE": hub_url.replace("http", "ws"), "SH_MODE": "cli", "SH_CLI_LAUNCH": "pty",
                 "SH_CLI_CMD": f"{sys.executable} -u {cli_program}",
                 "SH_PROXY": "off", "SH_INBOX_DB": str(tmp / "helper-inbox.db")}
             helper = subprocess.Popen([sys.executable, "-m", "sessionhelper"], cwd=ROOT, env=helper_env,
                                       stdout=logs["helper"], stderr=subprocess.STDOUT)
             time.sleep(1)
+            with sqlite3.connect(db) as conn:
+                endpoint = conn.execute(
+                    "SELECT session_name, full_session_name, owner_key FROM session_endpoint WHERE key_id=?",
+                    (KEY_ID,),
+                ).fetchone()
+            assert endpoint == (SESSION, "", "alice"), endpoint
             _, wiring_page = post(f"{vs_url}/page", {})
             unlock_body = {"command_id": "a1-unlock", "request_id": "a1-unlock", "session": SESSION,
                 "code": wiring_page["code"], "owner_key": "alice", "sender_open_id": "ou_alice",

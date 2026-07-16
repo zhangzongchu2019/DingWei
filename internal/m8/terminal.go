@@ -1061,8 +1061,11 @@ func (h *Hub) authorizeViewUnlockOwner(ctx context.Context, msg model.Message, f
 	shortName, keySuffix := strings.Join(parts[1:len(parts)-1], "-"), parts[len(parts)-1]
 	var matches []model.SessionEndpoint
 	for _, endpoint := range endpoints {
-		if endpoint.FullSessionName == fullSessionName ||
-			(endpoint.FullSessionName == "" && endpoint.SessionName == shortName && strings.HasSuffix(strings.ToLower(endpoint.KeyID), keySuffix)) {
+		if keyTail(endpoint.KeyID) != keySuffix {
+			continue
+		}
+		if endpoint.FullSessionName == fullSessionName || endpoint.SessionName == fullSessionName ||
+			(endpoint.FullSessionName == "" && endpoint.SessionName == shortName) {
 			matches = append(matches, endpoint)
 		}
 	}

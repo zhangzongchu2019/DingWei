@@ -3614,7 +3614,64 @@ func TestViewUnlockV2RequiresTrustedOwnerAndPreservesCodeCase(t *testing.T) {
 	}
 }
 
-func TestViewUnlockV2RejectsGroupWithoutSenderAndSupportsEmptyFullNameFallback(t *testing.T) {
+func TestViewUnlockV2MatchesDerivedSessionNameWithEmptyFullName(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-derived", Name: "svc-derived", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-derived", "derived")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "dev55", key.ID, secret, "")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	fullName := "alice-dev55-" + keyTail(key.ID)
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || endpoints[0].SessionName != fullName || endpoints[0].FullSessionName != "" {
+		t.Fatalf("derived endpoint=%+v err=%v", endpoints, err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	trusted := model.Message{ID: "derived", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_alice", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, trusted, "#unlock "+fullName+"-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
+		t.Fatalf("derived-name unlock result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+}
+
+func TestViewUnlockV2RejectsAmbiguousEndpointMatch(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, endpoint := range []model.SessionEndpoint{
+		{KeyID: "FB-one-2642", SessionName: "alice-dev55-2642", OwnerKey: "alice", Active: true},
+		{KeyID: "FB-two-2642", SessionName: "dev55", FullSessionName: "alice-dev55-2642", OwnerKey: "alice", Active: true},
+	} {
+		if err := db.UpsertSessionEndpoint(ctx, endpoint); err != nil {
+			t.Fatal(err)
+		}
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	trusted := model.Message{ID: "ambiguous", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_alice", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, trusted, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "页面会话不存在或不可用") || len(unlocker.requests) != 0 {
+		t.Fatalf("ambiguous result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+}
+
+func TestViewUnlockV2RejectsGroupWithoutSenderAndSupportsLegacyShortName(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
@@ -3633,6 +3690,14 @@ func TestViewUnlockV2RejectsGroupWithoutSenderAndSupportsEmptyFullNameFallback(t
 	result, handled, err = hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-dev55-2642-a3Kf9xQ2")
 	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
 		t.Fatalf("fallback result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+	group.SenderOpenID = "ou_bob"
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "发信人不是该会话 owner") || len(unlocker.requests) != 1 {
+		t.Fatalf("legacy non-owner result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
 	}
 }
 
