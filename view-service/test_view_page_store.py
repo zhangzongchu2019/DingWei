@@ -1,6 +1,7 @@
 import os
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -69,6 +70,23 @@ class ViewPageStoreTest(unittest.TestCase):
         self.assertEqual(self.store.page(page["page_id"])["state"], "unlocked")
         self.clock.value += 2
         self.store.sweep()
+        self.assertEqual(self.store.page(page["page_id"])["state"], "revoked")
+
+    def test_periodic_sweeper_revokes_within_one_cycle(self):
+        page = self.store.create_page("alice-dev55-2642")
+        command = {"command_id": "sweep-c", "request_id": "sweep-r",
+                   "session": "alice-dev55-2642", "code": page["code"], "owner_key": "alice"}
+        self.assertEqual(self.store.unlock(command), 200)
+        self.assertTrue(self.store.mark_disconnected(page["page_id"], page["page_token"]))
+        self.clock.value += 301
+        stop = threading.Event()
+        thread = threading.Thread(target=vs._run_page_sweeper, args=(stop, 0.01, self.store))
+        thread.start()
+        deadline = time.monotonic() + 0.5
+        while time.monotonic() < deadline and self.store.page(page["page_id"])["state"] != "revoked":
+            time.sleep(0.005)
+        stop.set()
+        thread.join(timeout=1)
         self.assertEqual(self.store.page(page["page_id"])["state"], "revoked")
 
     def test_grant_and_locked_orphan_expiry_boundaries(self):

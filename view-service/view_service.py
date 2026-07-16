@@ -48,6 +48,7 @@ VIEW_TARGET_NAME = os.environ.get("VS_TARGET_NAME", "").strip()
 HUB_TO_VS_SECRET_FILE = os.environ.get("VS_HUB_TO_VS_SECRET_FILE", "").strip()
 PAGE_DB_FILE = os.environ.get("VS_PAGE_DB", os.path.join(BASE_DIR, "view-pages.db"))
 VS_TO_HUB_SECRET_FILE = os.environ.get("VS_TO_HUB_SECRET_FILE", "").strip()
+PAGE_SWEEP_INTERVAL = max(5.0, float(os.environ.get("VS_PAGE_SWEEP_INTERVAL", "30")))
 CONTROL_CLOCK_SKEW = 60
 HUB_TO_VS_DIRECTION = "hub-to-view-service/v1"
 CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
@@ -67,6 +68,31 @@ def _get_page_store() -> ViewPageStore:
             import time
             _page_store = ViewPageStore(PAGE_DB_FILE, now=time.time)
         return _page_store
+
+
+def _run_page_sweeper(stop_event: threading.Event, interval: float,
+                      store: ViewPageStore | None = None) -> None:
+    store = store or _get_page_store()
+    while not stop_event.wait(interval):
+        try:
+            store.sweep()
+        except Exception:
+            # A transient SQLite error must not kill the only lifecycle worker.
+            continue
+
+
+def _start_page_sweeper() -> tuple[threading.Event, threading.Thread] | None:
+    if not VIEW_UNLOCK_V2:
+        return None
+    stop_event = threading.Event()
+    thread = threading.Thread(
+        target=_run_page_sweeper,
+        args=(stop_event, PAGE_SWEEP_INTERVAL),
+        name="view-page-sweeper",
+        daemon=True,
+    )
+    thread.start()
+    return stop_event, thread
 
 
 def _control_signature(secret: bytes, method: str, path: str, timestamp: str,
@@ -514,10 +540,16 @@ class _Handler(BaseHTTPRequestHandler):
 
 def main():
     port = int(os.environ.get("VS_PORT", "19320"))
+    sweeper = _start_page_sweeper()
     srv = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
     print(f"[view-service] :{port} hub_internal={HUB_INTERNAL} hub_public={HUB_PUBLIC} "
           f"session={DEFAULT_SESSION or '(from X-DW-Session)'} renderer={RENDERER}", flush=True)
-    srv.serve_forever()
+    try:
+        srv.serve_forever()
+    finally:
+        if sweeper:
+            sweeper[0].set()
+            sweeper[1].join(timeout=PAGE_SWEEP_INTERVAL + 1)
 
 
 if __name__ == "__main__":
