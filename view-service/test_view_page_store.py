@@ -109,6 +109,20 @@ class ViewPageStoreTest(unittest.TestCase):
         commands, _ = self.store.replay_counts()
         self.assertEqual(commands, 1)
 
+    def test_only_successful_token_authenticated_write_renews_grant(self):
+        page = self.store.create_page("alice-dev55-2642")
+        command = {"command_id": "write-c", "request_id": "write-r",
+                   "session": "alice-dev55-2642", "code": page["code"], "owner_key": "alice"}
+        self.assertEqual(self.store.unlock(command), 200)
+        original_expiry = self.store.page(page["page_id"])["unlock_expires_at"]
+        self.clock.value += 100
+        self.assertFalse(self.store.record_successful_write(page["page_id"], "wrong"))
+        self.assertEqual(self.store.page(page["page_id"])["unlock_expires_at"], original_expiry)
+        self.assertTrue(self.store.record_successful_write(page["page_id"], page["page_token"]))
+        renewed = self.store.page(page["page_id"])
+        self.assertGreater(renewed["unlock_expires_at"], original_expiry)
+        self.assertIsNotNone(renewed["last_write_at"])
+
     def test_nonce_and_command_tables_are_bounded(self):
         for i in range(5):
             self.assertTrue(self.store.claim_nonce("canary", f"{i:032x}"))
@@ -165,8 +179,9 @@ class ControlHMACTest(unittest.TestCase):
             vs, VIEW_UNLOCK_V2=True, VIEW_TARGET_NAME="canary",
             HUB_TO_VS_SECRET_FILE=self.secret_path,
         ):
-            with mock.patch.object(vs, "HUB_TO_VS_DIRECTION", "view-service-to-hub/v1"):
-                reverse = vs._control_signature(secret, "POST", vs.CONTROL_UNLOCK_PATH, ts, nonce, body)
+            reverse = vs._control_signature(
+                secret, "POST", vs.CONTROL_UNLOCK_PATH, ts, nonce, body,
+                direction="view-service-to-hub/v1")
             headers = {"X-DW-VS-Target": "canary", "X-DW-Timestamp": ts,
                        "X-DW-Nonce": nonce, "X-DW-Signature": reverse}
             self.assertEqual(vs._verify_control_request(
@@ -216,6 +231,48 @@ class ControlHMACTest(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=2)
+
+    def test_v2_input_uses_reverse_direction_signature(self):
+        captured = {}
+
+        class Response:
+            status = 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return b'{"ok":true}'
+
+        def fake_urlopen(request, timeout):
+            captured["request"] = request
+            captured["timeout"] = timeout
+            return Response()
+
+        with mock.patch.multiple(
+            vs, VIEW_TARGET_NAME="canary", VS_TO_HUB_SECRET_FILE=self.secret_path,
+            HUB_INTERNAL="http://hub.internal",
+        ), mock.patch.object(vs.urllib.request, "urlopen", side_effect=fake_urlopen), \
+                mock.patch.object(vs.secrets, "token_hex", return_value="1234567890abcdef1234567890abcdef"), \
+                mock.patch.object(vs.time, "time", return_value=self.clock.value):
+            status, _ = vs._hub_v2_input("alice-dev55-2642", "page-1", "req-1", "a\nb")
+        self.assertEqual(status, 200)
+        request = captured["request"]
+        self.assertEqual(request.full_url, "http://hub.internal/internal/view-v2/alice-dev55-2642/input")
+        signature = request.headers["X-dw-signature"]
+        reverse = vs._control_signature(
+            b"0123456789abcdef0123456789abcdef", "POST",
+            "/internal/view-v2/alice-dev55-2642/input", request.headers["X-dw-timestamp"],
+            request.headers["X-dw-nonce"], request.data, direction="view-service-to-hub/v1")
+        self.assertEqual(signature, reverse)
+        forward = vs._control_signature(
+            b"0123456789abcdef0123456789abcdef", "POST",
+            "/internal/view-v2/alice-dev55-2642/input", request.headers["X-dw-timestamp"],
+            request.headers["X-dw-nonce"], request.data)
+        self.assertNotEqual(signature, forward)
 
 
 if __name__ == "__main__":

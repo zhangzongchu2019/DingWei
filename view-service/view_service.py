@@ -19,6 +19,8 @@ import hmac
 import json
 import os
 import re
+import secrets
+import time
 import tempfile
 import threading
 import urllib.request
@@ -45,6 +47,7 @@ VIEW_UNLOCK_V2 = os.environ.get("VS_VIEW_UNLOCK_V2", "0") == "1"
 VIEW_TARGET_NAME = os.environ.get("VS_TARGET_NAME", "").strip()
 HUB_TO_VS_SECRET_FILE = os.environ.get("VS_HUB_TO_VS_SECRET_FILE", "").strip()
 PAGE_DB_FILE = os.environ.get("VS_PAGE_DB", os.path.join(BASE_DIR, "view-pages.db"))
+VS_TO_HUB_SECRET_FILE = os.environ.get("VS_TO_HUB_SECRET_FILE", "").strip()
 CONTROL_CLOCK_SKEW = 60
 HUB_TO_VS_DIRECTION = "hub-to-view-service/v1"
 CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
@@ -67,8 +70,8 @@ def _get_page_store() -> ViewPageStore:
 
 
 def _control_signature(secret: bytes, method: str, path: str, timestamp: str,
-                       nonce: str, body: bytes) -> str:
-    direction_key = hmac.new(secret, HUB_TO_VS_DIRECTION.encode(), hashlib.sha256).digest()
+                       nonce: str, body: bytes, direction=HUB_TO_VS_DIRECTION) -> str:
+    direction_key = hmac.new(secret, direction.encode(), hashlib.sha256).digest()
     body_hash = hashlib.sha256(body).hexdigest()
     canonical = "\n".join((method, path, timestamp, nonce, body_hash)).encode()
     return hmac.new(direction_key, canonical, hashlib.sha256).hexdigest()
@@ -103,6 +106,39 @@ def _verify_control_request(headers, method: str, path: str, body: bytes,
     if not store.claim_nonce(target, nonce):
         return False, 409
     return True, 200
+
+
+def _hub_v2_input(session: str, page_id: str, request_id: str, text: str) -> tuple[int, dict]:
+    if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
+        return 0, {"error": "v2 input auth unavailable"}
+    try:
+        with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+            secret = fh.read().strip()
+    except OSError as exc:
+        return 0, {"error": str(exc)}
+    if len(secret) < 32:
+        return 0, {"error": "v2 input secret too short"}
+    path = f"/internal/view-v2/{session}/input"
+    body = json.dumps({"session": session, "page_id": page_id, "request_id": request_id, "text": text},
+                      ensure_ascii=False, separators=(",", ":")).encode()
+    timestamp = str(int(time.time()))
+    nonce = secrets.token_hex(16)
+    signature = _control_signature(secret, "POST", path, timestamp, nonce, body,
+                                   direction="view-service-to-hub/v1")
+    req = urllib.request.Request(
+        HUB_INTERNAL + path, data=body, method="POST",
+        headers={"Content-Type": "application/json", "X-DW-VS-Target": VIEW_TARGET_NAME,
+                 "X-DW-Timestamp": timestamp, "X-DW-Nonce": nonce,
+                 "X-DW-Request-ID": request_id, "X-DW-Signature": signature},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as response:
+            raw = response.read().decode("utf-8", "replace")
+            return response.status, json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as exc:
+        return exc.code, {"error": exc.read().decode("utf-8", "replace")}
+    except Exception as exc:
+        return 0, {"error": str(exc)}
 
 
 def _renderer_path_for_session(session: str) -> str:
@@ -387,18 +423,31 @@ class _Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(length) if length else b"{}"
         try:
-            text = json.loads(raw).get("text", "").strip()
+            incoming = json.loads(raw)
+            text = incoming.get("text", "")
         except Exception:
+            incoming = {}
             text = ""
         ok = False
-        if text:
-            st = _ensure_ready(session)
-            if st.get("viewer_id") and st.get("token"):
-                # pilot 按键式输入以末尾 CR 提交；内嵌 LF 由 adapter 保留为消息换行。
-                payload_text = text.replace("\r\n", "\n").replace("\r", "\n") + "\r"
-                code, _ = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/input",
-                                    {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text})
-                ok = (code == 200)
+        if isinstance(text, str) and text:
+            if VIEW_UNLOCK_V2:
+                page_id = str(incoming.get("page_id", ""))
+                page_token = str(incoming.get("page_token", ""))
+                request_id = str(incoming.get("request_id", ""))
+                store = _get_page_store()
+                if page_id and page_token and request_id and store.authorize_page(page_id, page_token, session):
+                    code, _ = _hub_v2_input(session, page_id, request_id, text)
+                    ok = code == 200
+                    if ok:
+                        store.record_successful_write(page_id, page_token)
+            else:
+                st = _ensure_ready(session)
+                if st.get("viewer_id") and st.get("token"):
+                    # pilot 按键式输入以末尾 CR 提交；内嵌 LF 由 adapter 保留为消息换行。
+                    payload_text = text.replace("\r\n", "\n").replace("\r", "\n") + "\r"
+                    code, _ = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/input",
+                                        {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text})
+                    ok = (code == 200)
         body = json.dumps({"ok": ok}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")

@@ -164,6 +164,19 @@ class ViewPageStore:
             self._db.execute("UPDATE view_pages SET disconnected_at=? WHERE page_id=?", (_utc_iso(now), page_id))
             return True
 
+    def record_successful_write(self, page_id: str, page_token: str) -> bool:
+        now = self.now()
+        with self._lock, self._db:
+            page = self._db.execute("SELECT page_token_hash,state FROM view_pages WHERE page_id=?", (page_id,)).fetchone()
+            if not page or page["state"] != "unlocked" or not hmac.compare_digest(
+                    page["page_token_hash"], self._token_hash(page_token)):
+                return False
+            self._db.execute("""
+                UPDATE view_pages SET last_write_at=?,last_seen_at=?,unlock_expires_at=?
+                WHERE page_id=? AND state='unlocked'
+            """, (_utc_iso(now), _utc_iso(now), _utc_iso(now + self.grant_ttl), page_id))
+            return True
+
     def sweep(self):
         now = self.now()
         with self._lock, self._db:

@@ -496,6 +496,7 @@ type ViewTarget struct {
 	Builtin           bool   `json:"builtin,omitempty"`               // true ⇒ hub 内置老 xterm 页
 	ViewUnlockV2      bool   `json:"view_unlock_v2,omitempty"`        // 显式 capability gate
 	HubToVSSecretFile string `json:"hub_to_vs_secret_file,omitempty"` // 每 target 独立密钥文件
+	VSToHubSecretFile string `json:"vs_to_hub_secret_file,omitempty"` // 反向输入独立密钥文件
 }
 
 // ViewRouting 路由策略。解析顺序:会话级 > 用户级 > 默认(命中即停)。

@@ -82,6 +82,9 @@ type Hub struct {
 	onboardContexts  map[string]onboardContext
 	onlineDebounce   time.Duration
 	onboardInterval  time.Duration
+	viewV2Mu         sync.Mutex
+	viewV2Nonces     map[string]time.Time
+	viewV2Requests   map[string]viewV2RequestResult
 }
 
 type L2Config struct {
@@ -211,6 +214,8 @@ func New(repo store.Repository) *Hub {
 		linkTokens:       map[string]ownerLinkToken{},
 		onboardPushed:    map[string]time.Time{},
 		onboardContexts:  map[string]onboardContext{},
+		viewV2Nonces:     map[string]time.Time{},
+		viewV2Requests:   map[string]viewV2RequestResult{},
 		onlineDebounce:   2500 * time.Millisecond,
 		onboardInterval:  envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
 		L2Config: L2Config{
