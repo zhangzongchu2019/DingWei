@@ -89,6 +89,12 @@ func TestViewV2RequestIDValidation(t *testing.T) {
 	}
 }
 
+func TestViewV2TerminalSubmissionPreservesMultilineAndSubmitsOnce(t *testing.T) {
+	if got, want := terminalSubmission("line1\r\nline2\rline3"), "line1\nline2\nline3\r"; got != want {
+		t.Fatalf("terminal submission=%q want=%q", got, want)
+	}
+}
+
 func TestViewV2ReplayCachesAreBounded(t *testing.T) {
 	hub, _, _ := newTestHub(t)
 	now := time.Now()

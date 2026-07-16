@@ -125,11 +125,17 @@ func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, reques
 		// Stable request ID reaches the helper queue as the delivery identity, so a
 		// Hub restart between response loss and retry cannot create a second turn.
 		ID: requestID, To: sessionAddress(session, keyID), From: sessionAddress("workpulse", keyID),
-		Body: text, TS: time.Now().Unix(),
+		Body: terminalSubmission(text), TS: time.Now().Unix(),
 		Meta: map[string]any{"type": terminalInputType, "system": true, "no_mirror": true,
 			"auth_mode": "view_page_v2", "page_id": pageID, "request_id": requestID},
 	}
 	return c.write(ctx, env)
+}
+
+func terminalSubmission(text string) string {
+	// The helper writes terminal_input bytes directly to the PTY. Preserve the
+	// user's internal newlines, normalize CR variants, and submit exactly once.
+	return strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n") + "\r"
 }
 
 func (h *Hub) claimViewV2Nonce(target, nonce string, now time.Time) bool {
