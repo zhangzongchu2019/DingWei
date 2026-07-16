@@ -4,15 +4,18 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
 import socket
+import secrets
 import sqlite3
 import subprocess
 import sys
 import tempfile
 import time
 import urllib.request
+import urllib.error
 from pathlib import Path
 
 
@@ -44,8 +47,29 @@ def wait_http(url, timeout=10):
 def post(url, payload):
     request = urllib.request.Request(url, json.dumps(payload).encode(),
                                      {"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=5) as response:
-        return response.status, json.loads(response.read() or b"{}")
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return response.status, json.loads(response.read() or b"{}")
+    except urllib.error.HTTPError as error:
+        return error.code, {}
+
+
+def signed_post(url, path, payload, secret, target, direction):
+    raw = json.dumps(payload, separators=(",", ":")).encode()
+    timestamp, nonce = str(int(time.time())), secrets.token_hex(16)
+    direction_key = hmac.new(secret, direction.encode(), hashlib.sha256).digest()
+    canonical = "\n".join(("POST", path, timestamp, nonce, hashlib.sha256(raw).hexdigest())).encode()
+    signature = hmac.new(direction_key, canonical, hashlib.sha256).hexdigest()
+    request = urllib.request.Request(url + path, raw, {
+        "Content-Type": "application/json", "X-DW-VS-Target": target,
+        "X-DW-Timestamp": timestamp, "X-DW-Nonce": nonce,
+        "X-DW-Request-ID": str(payload.get("request_id", "")), "X-DW-Signature": signature,
+    }, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return response.status
+    except urllib.error.HTTPError as error:
+        return error.code
 
 
 def stop(proc):
@@ -97,6 +121,18 @@ def wait_unlocked(vs_url, page, timeout=8):
     raise AssertionError("page did not become unlocked")
 
 
+def wait_unlock_reply(db, event_id, minimum_count, timeout=8):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            rows = conn.execute("SELECT content_json FROM message WHERE direction='out' ORDER BY created_at DESC").fetchall()
+        text = "\n".join(row[0] or "" for row in rows)
+        if text.count("已解锁页面输入") >= minimum_count:
+            return text
+        time.sleep(.1)
+    raise AssertionError(f"missing successful unlock reply for {event_id}")
+
+
 def main():
     public_port, internal_port, vs_port = free_port(), free_port(), free_port()
     hub_url = f"http://127.0.0.1:{public_port}"
@@ -105,7 +141,8 @@ def main():
         tmp = Path(tmp_raw)
         binary, db = tmp / "workpulse", tmp / "hub.db"
         forward, reverse = tmp / "hub-to-vs.key", tmp / "vs-to-hub.key"
-        forward.write_text("f" * 48); reverse.write_text("r" * 48)
+        forward_secret, reverse_secret = b"f" * 48, b"r" * 48
+        forward.write_bytes(forward_secret); reverse.write_bytes(reverse_secret)
         subprocess.run(["/usr/local/go/bin/go", "build", "-o", binary, "./cmd/workpulse"], cwd=ROOT, check=True)
         hub_env = {**os.environ, "WP_DB_PATH": str(db), "WP_DATA_DIR": str(tmp / "data"),
                    "WP_ADDR": f"127.0.0.1:{public_port}", "WP_INTERNAL_ADDR": f"127.0.0.1:{internal_port}",
@@ -134,10 +171,11 @@ def main():
             cli_program.write_text(
                 "import os,pathlib,sys,tty\ntty.setraw(0)\nprint('>', flush=True)\n"
                 f"marker=pathlib.Path({str(cli_marker)!r})\n"
-                "buf=b''\nwhile True:\n"
+                "buf=b''; count=0\nwhile True:\n"
                 " buf += os.read(0,1024)\n"
                 " if b'LEVEL1\\r' in buf:\n"
-                "  marker.write_text('SMOKE_OUTPUT:LEVEL1')\n"
+                "  count += buf.count(b'LEVEL1\\r')\n"
+                "  marker.write_text(str(count))\n"
                 "  print('SMOKE_OUTPUT:LEVEL1', flush=True)\n"
                 "  buf=b''\n")
             helper_env = {**os.environ, "PYTHONPATH": str(ROOT / "tools/sessionhelper"), "SH_SESSION_NAME": "reviewer",
@@ -148,9 +186,21 @@ def main():
             helper = subprocess.Popen([sys.executable, "-m", "sessionhelper"], cwd=ROOT, env=helper_env,
                                       stdout=logs["helper"], stderr=subprocess.STDOUT)
             time.sleep(1)
+            _, wiring_page = post(f"{vs_url}/page", {})
+            unlock_body = {"command_id": "a1-unlock", "request_id": "a1-unlock", "session": SESSION,
+                "code": wiring_page["code"], "owner_key": "alice", "sender_open_id": "ou_alice",
+                "granted_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+            assert signed_post(vs_url, "/internal/control/view-page/unlock", unlock_body,
+                               forward_secret, "canary", "hub-to-view-service/v1") == 200
+            wait_unlocked(vs_url, wiring_page)
+            reverse_body = {"session": SESSION, "page_id": wiring_page["page_id"],
+                            "request_id": "1" * 32, "text": "A1_CONFIG"}
+            assert signed_post(f"http://127.0.0.1:{internal_port}", f"/internal/view-v2/{SESSION}/input",
+                               reverse_body, reverse_secret, "canary", "view-service-to-hub/v1") == 200
             _, page = post(f"{vs_url}/page", {})
             assert webhook_unlock(hub_url, page["code"], "unlock-first") == 202
             wait_unlocked(vs_url, page)
+            wait_unlock_reply(db, "unlock-first", 1)
             request_id = "a" * 32
             _, result = post(f"{vs_url}/input", {"text": "LEVEL1", "page_id": page["page_id"],
                                                    "page_token": page["page_token"], "request_id": request_id})
@@ -158,16 +208,33 @@ def main():
             deadline = time.time() + 5
             while time.time() < deadline and not cli_marker.exists():
                 time.sleep(.05)
-            cli_output_ok = cli_marker.exists() and cli_marker.read_text() == "SMOKE_OUTPUT:LEVEL1"
+            time.sleep(.3)
+            cli_output_ok = cli_marker.exists() and cli_marker.read_text() == "1"
             stop(helper)
             helper = subprocess.Popen([sys.executable, "-m", "sessionhelper"], cwd=ROOT, env=helper_env,
                                       stdout=logs["helper"], stderr=subprocess.STDOUT)
             time.sleep(1)
             assert webhook_unlock(hub_url, page["code"], "unlock-after-churn") == 202
             wait_unlocked(vs_url, page)
+            wait_unlock_reply(db, "unlock-after-churn", 2)
             time.sleep(.5); logs["hub"].flush(); logs["hub"].seek(0)
             assert "未找到页面码" not in logs["hub"].read()
             assert cli_output_ok, "CLI output did not return through Hub events"
+            route_data = json.loads(routing.read_text())
+            route_data["targets"]["canary"]["view_unlock_v2"] = False
+            time.sleep(1.1)
+            routing.write_text(json.dumps(route_data))
+            assert signed_post(f"http://127.0.0.1:{internal_port}", f"/internal/view-v2/{SESSION}/input",
+                               {**reverse_body, "request_id": "2" * 32}, reverse_secret, "canary",
+                               "view-service-to-hub/v1") == 404
+            stop(vs)
+            off_env = {**vs_env, "VS_VIEW_UNLOCK_V2": "0"}
+            vs = subprocess.Popen([sys.executable, "view_service.py"], cwd=ROOT / "view-service", env=off_env,
+                                  stdout=logs["vs"], stderr=subprocess.STDOUT)
+            wait_http(f"{vs_url}/status")
+            assert signed_post(vs_url, "/internal/control/view-page/unlock",
+                               {**unlock_body, "command_id": "off", "request_id": "off"},
+                               forward_secret, "canary", "hub-to-view-service/v1") == 404
             print("LEVEL1 PASS: wiring + CLI output + churn first-unlock")
         except Exception:
             for name, stream in logs.items():
