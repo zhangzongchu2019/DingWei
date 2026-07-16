@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import tempfile
@@ -74,6 +75,38 @@ class RendererCanaryTest(unittest.TestCase):
     def test_empty_canary_config_keeps_default_renderer(self):
         with mock.patch.multiple(vs, CANARY_RENDERER="", CANARY_SESSIONS=frozenset()):
             self.assertEqual(vs._renderer_path_for_session("any-session"), vs.RENDERER)
+
+    def _render_for_public_base(self, public_base):
+        handler = object.__new__(vs._Handler)
+        handler.headers = {"X-DW-Session": "zzc-tester-2642"}
+        handler.wfile = io.BytesIO()
+        handler.send_response = mock.Mock()
+        handler.send_header = mock.Mock()
+        handler.end_headers = mock.Mock()
+        renderer = b"const API={events:'/events',input:'/input',interrupt:'/interrupt',status:'/status',page:'/page'}"
+        with mock.patch.object(vs, "PUBLIC_VIEW_BASE", public_base), \
+                mock.patch.object(vs, "_read_renderer", return_value=renderer):
+            handler._serve_file()
+        return handler.wfile.getvalue().decode()
+
+    def test_public_view_base_rewrites_canary_api_paths_once(self):
+        rendered = self._render_for_public_base("/v2c/view")
+        for endpoint in ("events", "input", "interrupt", "status", "page"):
+            self.assertIn(f"'/v2c/view/zzc-tester-2642/{endpoint}'", rendered)
+        self.assertNotIn("'/view/zzc-tester-2642/", rendered)
+
+    def test_default_public_view_base_preserves_main_view_paths(self):
+        rendered = self._render_for_public_base("/view")
+        for endpoint in ("events", "input", "interrupt", "status", "page"):
+            self.assertIn(f"'/view/zzc-tester-2642/{endpoint}'", rendered)
+
+    def test_public_view_base_validation_fails_closed(self):
+        self.assertEqual(vs._validate_public_view_base(" /v2c/view "), "/v2c/view")
+        for value in ("", "/", "v2c/view", "/v2c/view/", "/v2c//view", "/v2c/../view",
+                      "/v2c/./view", "/v2c/view?session=x", "/v2c/view#fragment", "https://host/v2c/view"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    vs._validate_public_view_base(value)
 
 
 class ViewerStabilityTest(unittest.TestCase):

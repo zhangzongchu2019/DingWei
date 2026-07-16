@@ -53,6 +53,22 @@ CONTROL_CLOCK_SKEW = 60
 HUB_TO_VS_DIRECTION = "hub-to-view-service/v1"
 CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
 
+
+def _validate_public_view_base(value: str) -> str:
+    value = value.strip()
+    parsed = urlparse(value)
+    if (not value.startswith("/") or value == "/" or value.endswith("/")
+            or parsed.scheme or parsed.netloc or parsed.query or parsed.fragment
+            or parsed.path != value or "//" in value):
+        raise ValueError("VS_PUBLIC_VIEW_BASE must be a canonical absolute path without a trailing slash")
+    segments = value[1:].split("/")
+    if any(not segment or segment in (".", "..") for segment in segments):
+        raise ValueError("VS_PUBLIC_VIEW_BASE must not contain empty or dot path segments")
+    return value
+
+
+PUBLIC_VIEW_BASE = _validate_public_view_base(os.environ.get("VS_PUBLIC_VIEW_BASE", "/view"))
+
 _state_lock = threading.Lock()
 _sessions: dict[str, dict] = {}   # session -> {viewer_id, token, cost_total, cost_last, turns}
 _ready_locks_lock = threading.Lock()
@@ -347,12 +363,11 @@ class _Handler(BaseHTTPRequestHandler):
             body = _read_renderer(self._session())
         except Exception as exc:
             return self.send_error(500, str(exc))
-        # 经 hub /view/<名> 路由来的(带 X-DW-Session 头):页面里的绝对 API 端点要挂到 /view/<会话>/ 下,
-        # 否则浏览器请求 /events 会打到 hub 根路径(404)。这 4 个带引号字面量只在 renderer 的 API 对象出现。
-        # 走 nginx 专属路径的(无此头,用 DEFAULT_SESSION)不改,靠 nginx sub_filter 改写。
+        # The trusted router supplies the session. This process-level base is a deployment fact,
+        # so the renderer has one path rewriter and request headers cannot choose its public prefix.
         hdr_sess = self.headers.get("X-DW-Session")
         if hdr_sess:
-            pre = "/view/" + hdr_sess.strip()
+            pre = PUBLIC_VIEW_BASE + "/" + hdr_sess.strip()
             text = body.decode("utf-8", "replace")
             for ep in ("/events", "/input", "/interrupt", "/status", "/page"):
                 text = text.replace("'" + ep + "'", "'" + pre + ep + "'")
@@ -551,7 +566,8 @@ def main():
     sweeper = _start_page_sweeper()
     srv = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
     print(f"[view-service] :{port} hub_internal={HUB_INTERNAL} hub_public={HUB_PUBLIC} "
-          f"session={DEFAULT_SESSION or '(from X-DW-Session)'} renderer={RENDERER}", flush=True)
+          f"session={DEFAULT_SESSION or '(from X-DW-Session)'} renderer={RENDERER} "
+          f"public_view_base={PUBLIC_VIEW_BASE}", flush=True)
     try:
         srv.serve_forever()
     finally:
