@@ -76,6 +76,59 @@ const assert = require('assert');
     assert.match(inputs[1].request_id, /^[0-9a-f]{32}$/);
     assert.strictEqual(inputs[1].text, 'multi\nline');
     assert.ok(!first.url().includes('shared-token') && !second.url().includes('shared-token'), 'page token leaked into URL');
+
+    const restoreContext = await browser.newContext();
+    const stale = { page_id: 'expired-page', page_token: 'expired-token', code: 'alice-dev55-2642-expired1' };
+    await restoreContext.addInitScript(identity => {
+      sessionStorage.setItem('dw-view-page:alice-dev55-2642', JSON.stringify(identity));
+    }, stale);
+    let restoreCreated = 0;
+    let expireCurrent = false;
+    await restoreContext.route('http://restore.test/**', async route => {
+      const request = route.request();
+      const path = new URL(request.url()).pathname;
+      if (path === '/renderer') {
+        return route.fulfill({ contentType: 'text/html', body: fs.readFileSync('renderer-canary-sse.html') });
+      }
+      if (path === '/status') {
+        return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+          session: 'alice-dev55-2642', auth_mode: 'view_page_v2', readonly: true, state: 'idle',
+        }) });
+      }
+      if (path === '/events') return route.abort();
+      if (path === '/page/resume') {
+        const body = request.postDataJSON();
+        const expired = body.page_id === 'expired-page' || expireCurrent;
+        return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+          page_id: body.page_id, code: expired ? stale.code : `alice-dev55-2642-R${restoreCreated}`,
+          state: expired ? 'expired' : 'locked', can_write: false,
+        }) });
+      }
+      if (path === '/page') {
+        restoreCreated += 1;
+        return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({
+          page_id: `restore-page-${restoreCreated}`, page_token: `restore-token-${restoreCreated}`,
+          code: `alice-dev55-2642-R${String(restoreCreated).padStart(7, '0')}`, state: 'locked',
+        }) });
+      }
+      return route.fulfill({ status: 404, body: 'not found' });
+    });
+    const restored = await restoreContext.newPage();
+    await restored.goto('http://restore.test/renderer', { waitUntil: 'domcontentloaded' });
+    await restored.waitForFunction(() => pageIdentity?.page_id === 'restore-page-1');
+    assert.strictEqual(restoreCreated, 1, 'expired resume did not replace the stale identity');
+    expireCurrent = true;
+    await restored.evaluate(() => dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
+    await restored.waitForFunction(() => pageIdentity?.page_id === 'restore-page-2');
+    await restored.waitForFunction(() => pageIdentityUnique === true);
+    assert.strictEqual(restoreCreated, 2, 'persisted pageshow did not revalidate and replace the expired identity');
+    assert.strictEqual(await restored.evaluate(() => pageIdentityUnique), true,
+      'replacement identity did not settle uniqueness after bfcache restore');
+    await restored.evaluate(() => applyStatusData({ session_state: 'busy' }));
+    assert.strictEqual(await restored.locator('#taskProgress').isVisible(), true);
+    await restored.evaluate(() => applyStatusData({ session_state: 'idle' }));
+    assert.strictEqual(await restored.locator('#taskProgress').isVisible(), false);
+    await restoreContext.close();
     console.log('renderer page identity PASS: cloned-tab tie-break + credentialed input');
   } finally {
     await browser.close();

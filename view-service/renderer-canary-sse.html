@@ -219,14 +219,13 @@
       flex: 0 0 auto;
       margin-top: 10px;
       max-height: min(35vh, 280px);
-      border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--line));
+      border: 1px dashed var(--line);
       border-radius: 10px;
-      background: color-mix(in srgb, var(--accent) 5%, var(--panel));
+      background: color-mix(in srgb, var(--muted) 12%, var(--panel));
       overflow-y: auto;
       overscroll-behavior: contain;
     }
     .waiting-area[hidden] { display: none; }
-    .waiting-title { padding: 8px 12px; color: var(--muted); font-size: 12px; font-weight: 700; }
     .waiting-item {
       padding: 10px 12px;
       border-top: 1px solid var(--line);
@@ -234,7 +233,46 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .waiting-item::before { content: '⏳'; margin-right: 6px; color: var(--muted); }
+    .waiting-item:first-child { border-top: none; }
+    .waiting-item::before {
+      content: '';
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      margin-right: 8px;
+      vertical-align: -1px;
+      border: 2px solid color-mix(in srgb, var(--muted) 35%, transparent);
+      border-top-color: var(--muted);
+      border-radius: 50%;
+      animation: dw-waiting-spin .7s linear infinite;
+    }
+    @keyframes dw-waiting-spin { to { transform: rotate(360deg); } }
+    .task-progress {
+      flex: 0 0 auto;
+      height: 3px;
+      width: 100%;
+      overflow: hidden;
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      border-radius: 2px;
+    }
+    .task-progress[hidden] { display: none; }
+    .task-progress::before {
+      content: '';
+      display: block;
+      height: 100%;
+      width: 40%;
+      background: var(--accent);
+      border-radius: 2px;
+      animation: dw-task-indeterminate 1.1s ease-in-out infinite;
+    }
+    @keyframes dw-task-indeterminate {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(250%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .waiting-item::before { animation: none; }
+      .task-progress::before { animation-duration: 2.2s; }
+    }
     .event-card {
       flex: 0 0 auto;      /* 关键:不被 flex 压缩,事件保持原高 → 溢出由 timeline 滚动,而不是压扁内容 */
       display: block;
@@ -679,9 +717,9 @@
         <span>⚠️ 事件流连接不上——可能打开了太多 web-view 页窗口（Chrome 每个域名最多 6 个连接），请关闭多余窗口后点【重试】</span>
         <button class="text-btn" id="streamRetryBtn" type="button">重试</button>
       </section>
+      <div class="task-progress" id="taskProgress" hidden aria-hidden="true"></div>
       <section class="timeline" id="timeline" aria-live="polite"></section>
       <section class="waiting-area" id="waitingArea" aria-label="等待接纳的消息" aria-live="polite" hidden>
-        <div class="waiting-title">等待接纳</div>
         <div id="waitingList"></div>
       </section>
     </main>
@@ -733,6 +771,7 @@
     const copyUnlockBtn = document.getElementById('copyUnlockBtn');
     const sessionDot = document.getElementById('sessionDot');
     const sessionState = document.getElementById('sessionState');
+    const taskProgress = document.getElementById('taskProgress');
     const memStat = document.getElementById('memStat');
     const diskStat = document.getElementById('diskStat');
     const loadStat = document.getElementById('loadStat');
@@ -792,6 +831,7 @@
     let pageIdentityFallbackApplied = false;
     let pageIdentityUnique = false;
     let pageIdentityUniqueTimer = null;
+    let pageIdentityEnsurePromise = null;
     const pageInstanceNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
       value => value.toString(16).padStart(2, '0')).join('');
 
@@ -823,6 +863,7 @@
       }[value] || value;
     }
     function updateMetrics() {
+      taskProgress.hidden = stats.sessionState !== 'running';
       const stateClass = stats.readonly ? 'readonly' : (['running', 'idle', 'disconnected'].includes(stats.sessionState) ? stats.sessionState : 'idle');
       sessionDot.className = `status-dot ${stateClass}`;
       sessionState.textContent = stats.readonly ? '只读' : labelForSessionState(stats.sessionState);
@@ -1625,11 +1666,31 @@
         code: created.code, state: created.state, can_write: created.state === 'unlocked' });
       announcePageIdentity();
     }
+    function resetPageIdentityChannel() {
+      clearTimeout(pageIdentityUniqueTimer);
+      pageIdentityUnique = false;
+      if (pageIdentityChannel) pageIdentityChannel.close();
+      pageIdentityChannel = null;
+    }
     async function ensurePageIdentity(forceNew = false) {
+      if (pageIdentityEnsurePromise) {
+        await pageIdentityEnsurePromise;
+        if (!forceNew) return;
+      }
+      const pending = ensurePageIdentityOnce(forceNew);
+      pageIdentityEnsurePromise = pending;
+      try {
+        await pending;
+      } finally {
+        if (pageIdentityEnsurePromise === pending) pageIdentityEnsurePromise = null;
+      }
+    }
+    async function ensurePageIdentityOnce(forceNew = false) {
       if (!pageIdentity && !forceNew) {
         try { pageIdentity = JSON.parse(sessionStorage.getItem(pageStorageKey()) || 'null'); } catch { pageIdentity = null; }
       }
       if (!pageIdentity || forceNew) {
+        resetPageIdentityChannel();
         await createPageIdentity();
         setupPageIdentityChannel();
         return;
@@ -1641,10 +1702,18 @@
       if (!res.ok) {
         sessionStorage.removeItem(pageStorageKey());
         pageIdentity = null;
+        resetPageIdentityChannel();
         await createPageIdentity();
       } else {
         const resumed = await res.json();
-        savePageIdentity({ ...pageIdentity, ...resumed });
+        if (!['locked', 'unlocked'].includes(resumed.state)) {
+          sessionStorage.removeItem(pageStorageKey());
+          pageIdentity = null;
+          resetPageIdentityChannel();
+          await createPageIdentity();
+        } else {
+          savePageIdentity({ ...pageIdentity, ...resumed });
+        }
       }
       setupPageIdentityChannel();
     }
@@ -1795,6 +1864,11 @@
       navigator.sendBeacon(`${API.page}/disconnect`, new Blob([JSON.stringify({
         page_id: pageIdentity.page_id, page_token: pageIdentity.page_token,
       })], { type: 'application/json' }));
+    });
+    addEventListener('pageshow', event => {
+      if (!event.persisted || stats.authMode !== 'view_page_v2') return;
+      resetPageIdentityChannel();
+      ensurePageIdentity().catch(() => setStatus('disconnected'));
     });
 
     startApp();
