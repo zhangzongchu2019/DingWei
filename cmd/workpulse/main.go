@@ -732,6 +732,12 @@ func handleFeishuWebhook(ctx context.Context, logger *slog.Logger, repo store.Re
 	if err != nil {
 		return false, err
 	}
+	// Authentication provenance is derived only from checks performed by this
+	// ingress adapter. Payload fields can never promote their own trust level.
+	msg.IngressProvenance = model.IngressUntrusted
+	if strings.TrimSpace(bot.VerificationToken) != "" || strings.TrimSpace(bot.EncryptKey) != "" {
+		msg.IngressProvenance = model.IngressWebhookVerified
+	}
 	if err := upsertInboundEntity(ctx, repo, msg); err != nil {
 		return false, err
 	}

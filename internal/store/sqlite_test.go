@@ -555,6 +555,59 @@ func TestMessageQueueIdempotentClaimAckAndFail(t *testing.T) {
 	}
 }
 
+func TestMessageIngressProvenanceDefaultsUntrustedAndSurvivesRetry(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.EnqueueMessage(ctx, model.Message{
+		ID: "direct", ChatEntityID: "chat1", Direction: model.DirectionIn,
+		BotChannelID: "bot1", ChatType: model.ChatPersonal, Content: `{"text":"direct"}`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil {
+		t.Fatalf("ClaimNextMessage: msg=%+v err=%v", msg, err)
+	}
+	if msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("direct provenance = %q", msg.IngressProvenance)
+	}
+	if err := db.FailMessage(ctx, msg.ID, "retry"); err != nil {
+		t.Fatal(err)
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil || msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("retry upgraded provenance: msg=%+v err=%v", msg, err)
+	}
+}
+
+func TestLegacyMessageRowDefaultsUntrusted(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	_, err := db.db.ExecContext(ctx, `INSERT INTO message
+		(id,chat_entity_id,direction,bot_channel_id,chat_type,sender_open_id,content_json,status,attempts,created_at)
+		VALUES('legacy','chat1','in','bot1','personal','','{}','queued',0,?)`, time.Now().UTC().Format(time.RFC3339))
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil || msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("legacy provenance: msg=%+v err=%v", msg, err)
+	}
+}
+
+func TestMessageIngressProvenanceRejectsUnknownValue(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.EnqueueMessage(ctx, model.Message{
+		ID: "unknown", ChatEntityID: "chat1", Direction: model.DirectionIn,
+		BotChannelID: "bot1", ChatType: model.ChatPersonal,
+		IngressProvenance: model.IngressProvenance("payload_verified"), Content: `{}`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil || msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("unknown provenance: msg=%+v err=%v", msg, err)
+	}
+}
+
 func TestSeenPersonUpsertAndMemberFlag(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	if err := db.UpsertSeenPerson(ctx, model.SeenPerson{OpenID: "ou_1", BotChannelID: "bot1", Name: "Alice", Source: "group"}); err != nil {
