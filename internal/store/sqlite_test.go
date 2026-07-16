@@ -269,6 +269,23 @@ func TestUpsertSessionEndpointPreservesMirrorToWhenReconnectOmitsIt(t *testing.T
 	}
 }
 
+func TestUpsertSessionEndpointPreservesOwnerAndFullNameWhenReconnectOmitsThem(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "dev55", FullSessionName: "alice-dev55-test", OwnerKey: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "dev55", FullSessionName: "", OwnerKey: "", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].OwnerKey != "alice" || endpoints[0].FullSessionName != "alice-dev55-test" {
+		t.Fatalf("identity metadata overwritten: %+v", endpoints[0])
+	}
+}
+
 func TestSessionNoDirectoryCombinesReportedAndAdmin(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "sec-ops", LastSeenAt: time.Now(), Active: true, NoDirectory: true}); err != nil {

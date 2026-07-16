@@ -162,6 +162,17 @@ func TestHandleFeishuWebhookVerifiesTokenWhenConfigured(t *testing.T) {
 	if _, err := handleFeishuWebhook(ctx, nilLogger(), db, bus.NewDBQueue(db, model.DirectionIn), "dev", req, httptest.NewRecorder()); err == nil {
 		t.Fatalf("handleFeishuWebhook accepted bad token")
 	}
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionIn); err != nil || msg != nil {
+		t.Fatalf("bad token reached queue: msg=%+v err=%v", msg, err)
+	}
+	bodyMissing := strings.ReplaceAll(body, `,"token":"bad-token"`, "")
+	req, _ = http.NewRequest(http.MethodPost, "/webhook/dev", strings.NewReader(bodyMissing))
+	if _, err := handleFeishuWebhook(ctx, nilLogger(), db, bus.NewDBQueue(db, model.DirectionIn), "dev", req, httptest.NewRecorder()); err == nil {
+		t.Fatalf("handleFeishuWebhook accepted missing token")
+	}
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionIn); err != nil || msg != nil {
+		t.Fatalf("missing token reached queue: msg=%+v err=%v", msg, err)
+	}
 	body = strings.ReplaceAll(body, "bad-token", "good-token")
 	req, _ = http.NewRequest(http.MethodPost, "/webhook/dev", strings.NewReader(body))
 	if handled, err := handleFeishuWebhook(ctx, nilLogger(), db, bus.NewDBQueue(db, model.DirectionIn), "dev", req, httptest.NewRecorder()); err != nil || handled {

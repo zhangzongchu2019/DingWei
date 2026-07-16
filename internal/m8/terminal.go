@@ -12,6 +12,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -892,7 +893,11 @@ func (h *Hub) requestTerminalRefreshAfterInitialResize(ctx context.Context, keyI
 }
 
 func (h *Hub) dispatchTerminalInputCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
-	action, sessionName, pageCode, ok := parseTerminalInputCommand(h.stripLeadingBotMentions(msg.BotChannelID, text))
+	commandText := h.stripLeadingBotMentions(msg.BotChannelID, text)
+	if fullSessionName, pageCode, ok := parseViewUnlockV2Command(commandText); ok {
+		return h.dispatchViewUnlockV2(ctx, msg, fullSessionName, pageCode)
+	}
+	action, sessionName, pageCode, ok := parseTerminalInputCommand(commandText)
 	if !ok {
 		return model.PrefixDispatchResult{}, false, nil
 	}
@@ -929,6 +934,92 @@ func (h *Hub) dispatchTerminalInputCommand(ctx context.Context, msg model.Messag
 	default:
 		return model.PrefixDispatchResult{}, false, nil
 	}
+}
+
+var viewUnlockV2CodePattern = regexp.MustCompile(`^([a-z0-9]+-[a-z0-9]+-[0-9a-f]{4})-([A-Za-z0-9]{8})$`)
+
+func parseViewUnlockV2Command(text string) (fullSessionName, pageCode string, ok bool) {
+	fields := strings.Fields(strings.TrimSpace(text))
+	if len(fields) != 2 || fields[0] != "#unlock" {
+		return "", "", false
+	}
+	matches := viewUnlockV2CodePattern.FindStringSubmatch(fields[1])
+	if len(matches) != 3 {
+		return "", "", false
+	}
+	return matches[1], fields[1], true
+}
+
+func trustedViewUnlockIngress(provenance model.IngressProvenance) bool {
+	provenance = model.NormalizeIngressProvenance(provenance)
+	return provenance == model.IngressWebhookVerified || provenance == model.IngressFeishuWSAuthenticated
+}
+
+func (h *Hub) dispatchViewUnlockV2(ctx context.Context, msg model.Message, fullSessionName, pageCode string) (model.PrefixDispatchResult, bool, error) {
+	if !trustedViewUnlockIngress(msg.IngressProvenance) {
+		return model.PrefixDispatchResult{Matched: true, Reply: "拒绝解锁：消息来源未通过可信入站认证。"}, true, nil
+	}
+	ownerKey, senderOpenID, err := h.authorizeViewUnlockOwner(ctx, msg, fullSessionName)
+	if err != nil {
+		return model.PrefixDispatchResult{Matched: true, Reply: err.Error()}, true, nil
+	}
+	if h.ViewPageUnlocker == nil {
+		return model.PrefixDispatchResult{Matched: true, Reply: "页级解锁尚未启用。"}, true, nil
+	}
+	err = h.ViewPageUnlocker.UnlockViewPage(ctx, ViewPageUnlockRequest{
+		Code: pageCode, FullSessionName: fullSessionName, OwnerKey: ownerKey,
+		SenderOpenID: senderOpenID, MessageID: msg.ID,
+	})
+	if err != nil {
+		return model.PrefixDispatchResult{Matched: true, Reply: "解锁失败：" + err.Error()}, true, nil
+	}
+	return model.PrefixDispatchResult{Matched: true, Reply: "已解锁页面输入：" + fullSessionName}, true, nil
+}
+
+func (h *Hub) authorizeViewUnlockOwner(ctx context.Context, msg model.Message, fullSessionName string) (ownerKey, senderOpenID string, err error) {
+	senderOpenID = strings.TrimSpace(msg.SenderOpenID)
+	if msg.ChatType == model.ChatGroup && senderOpenID == "" {
+		return "", "", fmt.Errorf("拒绝解锁：群消息缺少可信发信人")
+	}
+	if senderOpenID == "" {
+		botID, entityID, ok := accountEntityParts(msg.ChatEntityID)
+		if !ok || botID != msg.BotChannelID || entityID == "" || msg.ChatType != model.ChatPersonal {
+			return "", "", fmt.Errorf("拒绝解锁：缺少可信发信人")
+		}
+		senderOpenID = entityID
+	}
+	senderOwner := h.ownerKeyForAccount(ctx, msg.BotChannelID+":personal:"+senderOpenID)
+	if senderOwner == "" {
+		return "", "", fmt.Errorf("拒绝解锁：发信人未绑定会话 owner")
+	}
+
+	endpoints, listErr := h.Repo.ListSessionEndpoints(ctx)
+	if listErr != nil {
+		return "", "", fmt.Errorf("解锁失败：查询会话失败")
+	}
+	parts := strings.Split(fullSessionName, "-")
+	if len(parts) < 3 {
+		return "", "", fmt.Errorf("拒绝解锁：页面会话名无效")
+	}
+	shortName, keySuffix := strings.Join(parts[1:len(parts)-1], "-"), parts[len(parts)-1]
+	var matches []model.SessionEndpoint
+	for _, endpoint := range endpoints {
+		if endpoint.FullSessionName == fullSessionName ||
+			(endpoint.FullSessionName == "" && endpoint.SessionName == shortName && strings.HasSuffix(strings.ToLower(endpoint.KeyID), keySuffix)) {
+			matches = append(matches, endpoint)
+		}
+	}
+	if len(matches) != 1 {
+		return "", "", fmt.Errorf("拒绝解锁：页面会话匹配数为 %d", len(matches))
+	}
+	targetOwner := strings.TrimSpace(matches[0].OwnerKey)
+	if targetOwner == "" {
+		targetOwner = h.ownerKeyForKey(ctx, matches[0].KeyID)
+	}
+	if targetOwner == "" || parts[0] != targetOwner || targetOwner != senderOwner {
+		return "", "", fmt.Errorf("拒绝解锁：发信人不是该会话 owner")
+	}
+	return targetOwner, senderOpenID, nil
 }
 
 func parseTerminalInputCommand(text string) (action, sessionName, pageCode string, ok bool) {
