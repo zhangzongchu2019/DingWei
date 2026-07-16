@@ -25,6 +25,20 @@ class RendererIter2ContractTest(unittest.TestCase):
         self.assertIn("if (!['locked', 'unlocked'].includes(resumed.state))", text)
         self.assertIn("resetPageIdentityChannel()", text)
 
+    def test_v2_status_cannot_override_page_write_authority(self):
+        text = (ROOT / "renderer-canary-sse.html").read_text()
+        self.assertIn("const pageAuthorized = stats.authMode === 'view_page_v2'", text)
+        self.assertIn("if (!pageAuthorized && data.readonly !== undefined)", text)
+        self.assertIn("if (!pageAuthorized && incomingState === 'readonly')", text)
+
+    def test_shared_lock_rendering_is_idempotent_and_focus_safe(self):
+        for name in ("renderer.html", "renderer-canary-sse.html"):
+            with self.subTest(renderer=name):
+                text = (ROOT / name).read_text()
+                self.assertIn("function setHumanInputDisabled(disabled)", text)
+                self.assertIn("document.activeElement === humanInput", text)
+                self.assertIn("copyUnlockBtn.textContent !== '复制解锁指令'", text)
+
 
 if __name__ == "__main__":
     unittest.main()

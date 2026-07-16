@@ -152,6 +152,7 @@
       cursor: pointer;
       white-space: nowrap;
     }
+    .unlock-btn[hidden] { display: none; }
     .controls {
       display: flex;
       align-items: center;
@@ -871,20 +872,43 @@
       headerSessionName.textContent = stats.sessionName;
       headerOwner.textContent = `归属 ${stats.owner}`;
       if (stats.readonly) {
-        lockBadge.className = 'lock-badge readonly';
-        lockBadge.textContent = '🔒 只读';
-        lockHelp.textContent = '🔒 只读模式 · 输入被锁';
-        copyUnlockBtn.hidden = false;
-        copyUnlockBtn.textContent = '复制解锁指令';
-        humanInput.disabled = true;
-        humanInput.placeholder = '只读模式。点击头部按钮复制 #unlock 指令，发给机器人后解锁输入。';
+        if (lockBadge.className !== 'lock-badge readonly') lockBadge.className = 'lock-badge readonly';
+        if (lockBadge.textContent !== '🔒 只读') lockBadge.textContent = '🔒 只读';
+        if (lockHelp.textContent !== '🔒 只读模式 · 输入被锁') lockHelp.textContent = '🔒 只读模式 · 输入被锁';
+        if (copyUnlockBtn.hidden) copyUnlockBtn.hidden = false;
+        if (copyUnlockBtn.textContent !== '复制解锁指令') copyUnlockBtn.textContent = '复制解锁指令';
+        setHumanInputDisabled(true);
+        const placeholder = '只读模式。点击头部按钮复制 #unlock 指令，发给机器人后解锁输入。';
+        if (humanInput.placeholder !== placeholder) humanInput.placeholder = placeholder;
       } else {
-        lockBadge.className = 'lock-badge writable';
-        lockBadge.textContent = '🔓 可输入';
-        lockHelp.textContent = '已解锁，8h 无操作自动回收';
-        copyUnlockBtn.hidden = true;
-        humanInput.disabled = false;
-        humanInput.placeholder = 'Human input only. External delivery appears in the conversation and never touches this box.';
+        if (lockBadge.className !== 'lock-badge writable') lockBadge.className = 'lock-badge writable';
+        if (lockBadge.textContent !== '🔓 可输入') lockBadge.textContent = '🔓 可输入';
+        if (lockHelp.textContent !== '已解锁，8h 无操作自动回收') lockHelp.textContent = '已解锁，8h 无操作自动回收';
+        if (!copyUnlockBtn.hidden) copyUnlockBtn.hidden = true;
+        setHumanInputDisabled(false);
+        const placeholder = 'Human input only. External delivery appears in the conversation and never touches this box.';
+        if (humanInput.placeholder !== placeholder) humanInput.placeholder = placeholder;
+      }
+    }
+    function setHumanInputDisabled(disabled) {
+      if (humanInput.disabled === disabled) return;
+      if (disabled && document.activeElement === humanInput) {
+        if (!setHumanInputDisabled.pendingBlur) {
+          setHumanInputDisabled.pendingBlur = true;
+          humanInput.addEventListener('blur', () => {
+            setHumanInputDisabled.pendingBlur = false;
+            if (stats.readonly && !humanInput.disabled) humanInput.disabled = true;
+          }, { once: true });
+        }
+        return;
+      }
+      const focused = document.activeElement === humanInput;
+      const selectionStart = humanInput.selectionStart;
+      const selectionEnd = humanInput.selectionEnd;
+      humanInput.disabled = disabled;
+      if (focused && !disabled) {
+        humanInput.focus();
+        humanInput.setSelectionRange(selectionStart, selectionEnd);
       }
     }
     function isTimelineNearBottom() {

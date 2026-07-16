@@ -76,6 +76,31 @@ const assert = require('assert');
     assert.match(inputs[1].request_id, /^[0-9a-f]{32}$/);
     assert.strictEqual(inputs[1].text, 'multi\nline');
     assert.ok(!first.url().includes('shared-token') && !second.url().includes('shared-token'), 'page token leaked into URL');
+    await writable.locator('#humanInput').fill('typing survives status refresh');
+    await writable.locator('#humanInput').focus();
+    await writable.locator('#humanInput').evaluate(input => input.setSelectionRange(7, 15));
+    await writable.evaluate(() => {
+      for (let tick = 0; tick < 7; tick += 1) {
+        applyStatusData({
+          auth_mode: 'view_page_v2', readonly: true, can_write: false,
+          access: '只读', session_state: 'readonly',
+        });
+      }
+    });
+    const focusState = await writable.locator('#humanInput').evaluate(input => ({
+      active: document.activeElement === input,
+      disabled: input.disabled,
+      value: input.value,
+      selectionStart: input.selectionStart,
+      selectionEnd: input.selectionEnd,
+    }));
+    assert.deepStrictEqual(focusState, {
+      active: true, disabled: false, value: 'typing survives status refresh', selectionStart: 7, selectionEnd: 15,
+    }, 'v2 status refresh stole focus, selection, or writable page authority');
+    assert.strictEqual(await writable.locator('#copyUnlockBtn').isVisible(), false,
+      'v2 status refresh flashed the unlock button');
+    assert.strictEqual(await writable.evaluate(() => stats.readonly), false,
+      'v2 status refresh overrode page-level write authority');
 
     const restoreContext = await browser.newContext();
     const stale = { page_id: 'expired-page', page_token: 'expired-token', code: 'alice-dev55-2642-expired1' };
