@@ -956,14 +956,18 @@ func trustedViewUnlockIngress(provenance model.IngressProvenance) bool {
 }
 
 func (h *Hub) dispatchViewUnlockV2(ctx context.Context, msg model.Message, fullSessionName, pageCode string) (model.PrefixDispatchResult, bool, error) {
+	routeTarget, _ := loadViewRouting().resolve(fullSessionName, ownerFromSessionName(fullSessionName))
 	if !trustedViewUnlockIngress(msg.IngressProvenance) {
+		auditViewUnlockV2(msg, "", "", fullSessionName, routeTarget, pageCode, "rejected", "untrusted_ingress")
 		return model.PrefixDispatchResult{Matched: true, Reply: "拒绝解锁：消息来源未通过可信入站认证。"}, true, nil
 	}
 	ownerKey, senderOpenID, err := h.authorizeViewUnlockOwner(ctx, msg, fullSessionName)
 	if err != nil {
+		auditViewUnlockV2(msg, senderOpenID, "", fullSessionName, routeTarget, pageCode, "rejected", err.Error())
 		return model.PrefixDispatchResult{Matched: true, Reply: err.Error()}, true, nil
 	}
 	if h.ViewPageUnlocker == nil {
+		auditViewUnlockV2(msg, senderOpenID, ownerKey, fullSessionName, routeTarget, pageCode, "rejected", "capability_disabled")
 		return model.PrefixDispatchResult{Matched: true, Reply: "页级解锁尚未启用。"}, true, nil
 	}
 	err = h.ViewPageUnlocker.UnlockViewPage(ctx, ViewPageUnlockRequest{
@@ -971,9 +975,18 @@ func (h *Hub) dispatchViewUnlockV2(ctx context.Context, msg model.Message, fullS
 		SenderOpenID: senderOpenID, MessageID: msg.ID,
 	})
 	if err != nil {
+		auditViewUnlockV2(msg, senderOpenID, ownerKey, fullSessionName, routeTarget, pageCode, "failed", err.Error())
 		return model.PrefixDispatchResult{Matched: true, Reply: "解锁失败：" + err.Error()}, true, nil
 	}
+	auditViewUnlockV2(msg, senderOpenID, ownerKey, fullSessionName, routeTarget, pageCode, "granted", "")
 	return model.PrefixDispatchResult{Matched: true, Reply: "已解锁页面输入：" + fullSessionName}, true, nil
+}
+
+func auditViewUnlockV2(msg model.Message, senderOpenID, ownerKey, targetSession, routeTarget, pageCode, result, reason string) {
+	digest := sha256.Sum256([]byte(pageCode))
+	log.Printf("view_unlock_v2_audit message_id=%q sender_open_id=%q sender_owner=%q target_session=%q target_owner=%q route_target=%q code_sha256=%s result=%q reason=%q",
+		msg.ID, senderOpenID, ownerKey, targetSession, ownerKey, routeTarget,
+		hex.EncodeToString(digest[:8]), result, reason)
 }
 
 func (h *Hub) authorizeViewUnlockOwner(ctx context.Context, msg model.Message, fullSessionName string) (ownerKey, senderOpenID string, err error) {
@@ -1010,7 +1023,7 @@ func (h *Hub) authorizeViewUnlockOwner(ctx context.Context, msg model.Message, f
 		}
 	}
 	if len(matches) != 1 {
-		return "", "", fmt.Errorf("拒绝解锁：页面会话匹配数为 %d", len(matches))
+		return "", senderOpenID, fmt.Errorf("拒绝解锁：页面会话不存在或不可用")
 	}
 	targetOwner := strings.TrimSpace(matches[0].OwnerKey)
 	if targetOwner == "" {
