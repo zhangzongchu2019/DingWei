@@ -14,14 +14,19 @@ View Service 是独立进程,只跟 **hub** 打交道(不认识 driver):
 from __future__ import annotations
 
 import http.client
+import hashlib
+import hmac
 import json
 import os
+import re
 import tempfile
 import threading
 import urllib.request
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
+
+from view_page_store import ViewPageStore
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RENDERER = os.environ.get("VS_RENDERER", os.path.join(BASE_DIR, "renderer.html"))
@@ -36,11 +41,68 @@ HUB_PUBLIC = os.environ.get("VS_HUB_PUBLIC", "http://127.0.0.1:8791").rstrip("/"
 DEFAULT_SESSION = os.environ.get("VS_SESSION", "")
 AUTO_UNLOCK = os.environ.get("VS_AUTO_UNLOCK", "1") == "1"   # 演示便利:mock-unlock 自动解锁
 STATE_FILE = os.environ.get("VS_STATE_FILE", os.path.join(BASE_DIR, "view-state.json"))
+VIEW_UNLOCK_V2 = os.environ.get("VS_VIEW_UNLOCK_V2", "0") == "1"
+VIEW_TARGET_NAME = os.environ.get("VS_TARGET_NAME", "").strip()
+HUB_TO_VS_SECRET_FILE = os.environ.get("VS_HUB_TO_VS_SECRET_FILE", "").strip()
+PAGE_DB_FILE = os.environ.get("VS_PAGE_DB", os.path.join(BASE_DIR, "view-pages.db"))
+CONTROL_CLOCK_SKEW = 60
+HUB_TO_VS_DIRECTION = "hub-to-view-service/v1"
+CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
 
 _state_lock = threading.Lock()
 _sessions: dict[str, dict] = {}   # session -> {viewer_id, token, cost_total, cost_last, turns}
 _ready_locks_lock = threading.Lock()
 _ready_locks: dict[str, threading.Lock] = {}
+_page_store_lock = threading.Lock()
+_page_store: ViewPageStore | None = None
+
+
+def _get_page_store() -> ViewPageStore:
+    global _page_store
+    with _page_store_lock:
+        if _page_store is None:
+            import time
+            _page_store = ViewPageStore(PAGE_DB_FILE, now=time.time)
+        return _page_store
+
+
+def _control_signature(secret: bytes, method: str, path: str, timestamp: str,
+                       nonce: str, body: bytes) -> str:
+    direction_key = hmac.new(secret, HUB_TO_VS_DIRECTION.encode(), hashlib.sha256).digest()
+    body_hash = hashlib.sha256(body).hexdigest()
+    canonical = "\n".join((method, path, timestamp, nonce, body_hash)).encode()
+    return hmac.new(direction_key, canonical, hashlib.sha256).hexdigest()
+
+
+def _verify_control_request(headers, method: str, path: str, body: bytes,
+                            store: ViewPageStore, *, now: float) -> tuple[bool, int]:
+    if not VIEW_UNLOCK_V2 or not VIEW_TARGET_NAME or not HUB_TO_VS_SECRET_FILE:
+        return False, 404
+    target = headers.get("X-DW-VS-Target", "")
+    timestamp = headers.get("X-DW-Timestamp", "")
+    nonce = headers.get("X-DW-Nonce", "")
+    signature = headers.get("X-DW-Signature", "")
+    if target != VIEW_TARGET_NAME or not re.fullmatch(r"[0-9a-f]{32}", nonce):
+        return False, 401
+    try:
+        request_time = int(timestamp)
+    except (TypeError, ValueError):
+        return False, 401
+    if abs(now - request_time) > CONTROL_CLOCK_SKEW:
+        return False, 401
+    try:
+        with open(HUB_TO_VS_SECRET_FILE, "rb") as fh:
+            secret = fh.read().strip()
+    except OSError:
+        return False, 503
+    if len(secret) < 32:
+        return False, 503
+    expected = _control_signature(secret, method, path, timestamp, nonce, body)
+    if not hmac.compare_digest(signature, expected):
+        return False, 401
+    if not store.claim_nonce(target, nonce):
+        return False, 409
+    return True, 200
 
 
 def _renderer_path_for_session(session: str) -> str:
@@ -312,6 +374,13 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if path == CONTROL_UNLOCK_PATH:
+            return self._control_unlock()
+        if path == "/page":
+            if not VIEW_UNLOCK_V2:
+                return self.send_error(404)
+            page = _get_page_store().create_page(self._session())
+            return self._json_response(201, page)
         if path != "/input":
             return self.send_error(404)
         session = self._session()
@@ -334,6 +403,33 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _control_unlock(self):
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0 or length > 65536:
+            return self._json_response(400, {"ok": False})
+        raw = self.rfile.read(length)
+        import time
+        store = _get_page_store()
+        verified, status = _verify_control_request(
+            self.headers, "POST", CONTROL_UNLOCK_PATH, raw, store, now=time.time())
+        if not verified:
+            return self._json_response(status, {"ok": False})
+        try:
+            command = json.loads(raw)
+        except (TypeError, json.JSONDecodeError):
+            return self._json_response(400, {"ok": False})
+        status = store.unlock(command)
+        return self._json_response(status, {"ok": status == 200})
+
+    def _json_response(self, status: int, obj: dict):
+        body = json.dumps(obj, ensure_ascii=False).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
 
