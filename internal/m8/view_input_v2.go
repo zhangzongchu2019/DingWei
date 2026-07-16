@@ -26,6 +26,7 @@ const (
 )
 
 var viewV2NoncePattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
+var viewV2RequestIDPattern = regexp.MustCompile(`^(?:[0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$`)
 
 type viewV2InputRequest struct {
 	Session   string `json:"session"`
@@ -80,7 +81,7 @@ func (h *Hub) HandleInternalViewV2Input(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var req viewV2InputRequest
-	if err := json.Unmarshal(body, &req); err != nil || req.Session != session || strings.TrimSpace(req.PageID) == "" || strings.TrimSpace(req.RequestID) == "" || req.Text == "" {
+	if err := json.Unmarshal(body, &req); err != nil || req.Session != session || strings.TrimSpace(req.PageID) == "" || !viewV2RequestIDPattern.MatchString(req.RequestID) || req.Text == "" {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}

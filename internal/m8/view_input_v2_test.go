@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -38,7 +39,7 @@ func TestViewV2InputAuthenticatesReplaysAndIdempotency(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /internal/view-v2/{session}/input", hub.HandleInternalViewV2Input)
 	body, _ := json.Marshal(viewV2InputRequest{
-		Session: "alice-dev55-2642", PageID: "page-1", RequestID: "request-1", Text: "line1\nline2\r",
+		Session: "alice-dev55-2642", PageID: "page-1", RequestID: "0123456789abcdef0123456789abcdef", Text: "line1\nline2\r",
 	})
 
 	do := func(nonce, direction string) *httptest.ResponseRecorder {
@@ -69,6 +70,22 @@ func TestViewV2InputAuthenticatesReplaysAndIdempotency(t *testing.T) {
 	wrongDirection := do("1234567890abcdef1234567890abcdef", hubToVSDirection)
 	if wrongDirection.Code != http.StatusUnauthorized {
 		t.Fatalf("wrong direction status=%d", wrongDirection.Code)
+	}
+}
+
+func TestViewV2RequestIDValidation(t *testing.T) {
+	for _, valid := range []string{
+		"0123456789abcdef0123456789abcdef",
+		"01234567-89ab-cdef-0123-456789abcdef",
+	} {
+		if !viewV2RequestIDPattern.MatchString(valid) {
+			t.Fatalf("rejected valid request id %q", valid)
+		}
+	}
+	for _, invalid := range []string{"", "request-1", strings.Repeat("a", 129), "../../same", "ABCDEF0123456789ABCDEF0123456789"} {
+		if viewV2RequestIDPattern.MatchString(invalid) {
+			t.Fatalf("accepted invalid request id %q", invalid)
+		}
 	}
 }
 

@@ -28,6 +28,18 @@ docker run --rm --network host \
 
 - 仓库 `dingwei/view-service/` 同步到 `/home/ai-dev/dingwei-viewservice/`。
 - `VS_RENDERER=/home/ai-dev/dingwei-viewservice/renderer.html`。
+
+### View unlock v2 签名路径约束
+
+双向 HMAC 都把 HTTP path 纳入签名原文，部署时不得在 View Service 与 Hub
+之间改写以下内部路径：
+
+- Hub → VS：`/internal/control/view-page/unlock`
+- VS → Hub：`/internal/view-v2/{session}/input`
+
+Hub 按实际发送路径签名，VS 按实际收到的 path 验签；反向同理。若中间 nginx、
+sidecar 或 service mesh 添加/删除前缀，验签会 fail closed。需要增加代理层时应保持
+path 原样透传，并在发布前用双向签名集成测试验证，不能通过放宽验签绕过。
 - `VS_STATE_FILE=/home/ai-dev/dingwei-viewservice/view-state.json`；文件原子替换并保持 `0600`，用于 View Service 重启后复用 viewer/token。
 - 保持 `VS_HUB_INTERNAL=http://127.0.0.1:8792` 和 `VS_HUB_PUBLIC=http://127.0.0.1:8791`，除非生产端口另有配置。
 - 同步代码和 renderer 后执行 `systemctl restart dingwei-viewservice`。renderer 每请求读取，也支持先热替换再重启服务。

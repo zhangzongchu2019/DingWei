@@ -116,7 +116,9 @@ class ViewUnlockV2IntegrationTest(unittest.TestCase):
         self.assertEqual(self._unlock(page_b, "unlock-b", "1" * 32)[0], 200)
         self.assertEqual(self._unlock(page_a, "unlock-a", "0" * 32)[0], 409)
 
-        for page, request_id in ((page_a, "input-a"), (page_b, "input-b")):
+        input_a = "a" * 32
+        input_b = "b" * 32
+        for page, request_id in ((page_a, input_a), (page_b, input_b)):
             status, result = self._post("/input", {
                 "text": f"hello {request_id}", "page_id": page["page_id"],
                 "page_token": page["page_token"], "request_id": request_id,
@@ -124,10 +126,10 @@ class ViewUnlockV2IntegrationTest(unittest.TestCase):
             self.assertEqual((status, result["ok"]), (200, True))
         status, result = self._post("/input", {
             "text": "must reject", "page_id": page_c["page_id"],
-            "page_token": page_c["page_token"], "request_id": "input-c",
+            "page_token": page_c["page_token"], "request_id": "c" * 32,
         })
         self.assertEqual((status, result["ok"]), (200, False))
-        self.assertEqual([item["request_id"] for item in _FakeHubHandler.received], ["input-a", "input-b"])
+        self.assertEqual([item["request_id"] for item in _FakeHubHandler.received], [input_a, input_b])
 
         # VS restart: SQLite restores both independent grants and page codes.
         self.store.close()
