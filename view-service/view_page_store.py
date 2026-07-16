@@ -155,6 +155,18 @@ class ViewPageStore:
                              (_utc_iso(now), page_id))
             return True
 
+    def resume_page(self, page_id: str, page_token: str, session_name: str):
+        now = self.now()
+        with self._lock, self._db:
+            page = self._db.execute("SELECT * FROM view_pages WHERE page_id=? AND session_name=?",
+                                    (page_id, session_name)).fetchone()
+            if not page or not hmac.compare_digest(page["page_token_hash"], self._token_hash(page_token)):
+                return None
+            self._db.execute("UPDATE view_pages SET last_seen_at=?,disconnected_at=NULL WHERE page_id=?",
+                             (_utc_iso(now), page_id))
+            return {"page_id": page_id, "code": page["code"], "state": page["state"],
+                    "can_write": page["state"] == "unlocked" and not self._expired(page["unlock_expires_at"], now)}
+
     def mark_disconnected(self, page_id: str, page_token: str) -> bool:
         now = self.now()
         with self._lock, self._db:

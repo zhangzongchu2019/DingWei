@@ -747,6 +747,7 @@
       input: '/input',
       interrupt: '/interrupt',
       status: '/status',
+      page: '/page',
     };
     const params = new URLSearchParams(location.search);
     const useMockApi = params.get('mock') === '1' || location.protocol === 'file:';
@@ -788,7 +789,13 @@
       statusDatetimeMs: 0,
       statusDatetimeReceivedAt: 0,
       statusDatetimeText: '',
+      authMode: 'hub_viewer_v1',
     };
+    let pageIdentity = null;
+    let pageIdentityChannel = null;
+    let pageIdentityFallbackApplied = false;
+    const pageInstanceNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
+      value => value.toString(16).padStart(2, '0')).join('');
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -797,6 +804,10 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+    }
+    function newRequestId() {
+      return Array.from(crypto.getRandomValues(new Uint8Array(16)),
+        value => value.toString(16).padStart(2, '0')).join('');
     }
 
     function setStatus(value) {
@@ -1267,6 +1278,7 @@
     function applyStatusData(data) {
       if (data.session_id || data.session) stats.sessionName = data.session_id || data.session;
       if (data.owner) stats.owner = data.owner;
+      if (data.auth_mode) stats.authMode = data.auth_mode;
       if (data.model || data.driver) stats.model = data.model || data.driver;
       if (data.unlock_code || data.unlockCode) stats.unlockCode = data.unlock_code || data.unlockCode;
       if (data.readonly !== undefined) {
@@ -1535,7 +1547,7 @@
       { kind: 'error', text: '示例错误：模型请求超时（演示 error 事件的样式）', data: { code: 'timeout' }, delivery_id: 'd-003', turn_id: 't-004', cursor: '11' },
     ];
 
-    function startApp() {
+    async function startApp() {
       resetConversation();
       updateLocalTime();
       setInterval(updateLocalTime, 1000);
@@ -1543,7 +1555,7 @@
         startMockApi();
       } else {
         connectEventStream();
-        refreshStatus();
+        await refreshStatus();
         statusTimer = setInterval(refreshStatus, 5000);
       }
     }
@@ -1612,9 +1624,84 @@
         const res = await fetch(API.status, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         applyStatusData(await res.json());
+        if (stats.authMode === 'view_page_v2') await ensurePageIdentity();
       } catch {
         setStatus('disconnected');
       }
+    }
+
+    function pageStorageKey() {
+      return `dw-view-page:${stats.sessionName}`;
+    }
+    function savePageIdentity(identity) {
+      pageIdentity = identity;
+      sessionStorage.setItem(pageStorageKey(), JSON.stringify(identity));
+      stats.unlockCode = identity.code;
+      stats.readonly = !identity.can_write;
+      stats.access = stats.readonly ? '只读' : '可写';
+      updateMetrics();
+    }
+    async function createPageIdentity() {
+      const res = await fetch(API.page, { method: 'POST' });
+      if (!res.ok) throw new Error(`POST /page failed: HTTP ${res.status}`);
+      const created = await res.json();
+      savePageIdentity({ page_id: created.page_id, page_token: created.page_token,
+        code: created.code, state: created.state, can_write: created.state === 'unlocked' });
+      announcePageIdentity();
+    }
+    async function ensurePageIdentity(forceNew = false) {
+      if (!pageIdentity && !forceNew) {
+        try { pageIdentity = JSON.parse(sessionStorage.getItem(pageStorageKey()) || 'null'); } catch { pageIdentity = null; }
+      }
+      if (!pageIdentity || forceNew) {
+        await createPageIdentity();
+        setupPageIdentityChannel();
+        return;
+      }
+      const res = await fetch(`${API.page}/resume`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page_id: pageIdentity.page_id, page_token: pageIdentity.page_token }),
+      });
+      if (!res.ok) {
+        sessionStorage.removeItem(pageStorageKey());
+        pageIdentity = null;
+        await createPageIdentity();
+      } else {
+        const resumed = await res.json();
+        savePageIdentity({ ...pageIdentity, ...resumed });
+      }
+      setupPageIdentityChannel();
+    }
+    function announcePageIdentity() {
+      if (pageIdentityChannel && pageIdentity?.page_id) {
+        pageIdentityChannel.postMessage({ type: 'claim', page_id: pageIdentity.page_id, nonce: pageInstanceNonce });
+      }
+    }
+    function setupPageIdentityChannel() {
+      if (pageIdentityChannel || !pageIdentity?.page_id) return;
+      if (!('BroadcastChannel' in window)) {
+        // Cannot prove a cloned sessionStorage identity is single-tab: fail safe.
+        if (!pageIdentityFallbackApplied) {
+          pageIdentityFallbackApplied = true;
+          ensurePageIdentity(true).catch(() => setStatus('disconnected'));
+        }
+        return;
+      }
+      pageIdentityChannel = new BroadcastChannel(`dw-view-page:${stats.sessionName}`);
+      pageIdentityChannel.onmessage = event => {
+        const claim = event.data || {};
+        if (claim.type !== 'claim' || claim.page_id !== pageIdentity?.page_id || claim.nonce === pageInstanceNonce) return;
+        // Deterministic tie-break: the lexicographically smaller instance nonce yields.
+        if (pageInstanceNonce < String(claim.nonce)) {
+          pageIdentityChannel.close();
+          pageIdentityChannel = null;
+          ensurePageIdentity(true).catch(() => setStatus('disconnected'));
+        } else {
+          announcePageIdentity();
+        }
+      };
+      setTimeout(announcePageIdentity, 50);
+      setTimeout(announcePageIdentity, 250);
     }
 
     function startMockApi() {
@@ -1659,7 +1746,10 @@
       const res = await fetch(API.input, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify(stats.authMode === 'view_page_v2' ? {
+          text, page_id: pageIdentity?.page_id, page_token: pageIdentity?.page_token,
+          request_id: newRequestId(),
+        } : { text }),
       });
       if (!res.ok) throw new Error(`POST /input failed: HTTP ${res.status}`);
     }
@@ -1751,6 +1841,13 @@
       }, 1100);
     }
     copyUnlockBtn.addEventListener('click', copyUnlockInstruction);
+
+    addEventListener('pagehide', () => {
+      if (stats.authMode !== 'view_page_v2' || !pageIdentity) return;
+      navigator.sendBeacon(`${API.page}/disconnect`, new Blob([JSON.stringify({
+        page_id: pageIdentity.page_id, page_token: pageIdentity.page_token,
+      })], { type: 'application/json' }));
+    });
 
     startApp();
   </script>

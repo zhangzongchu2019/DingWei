@@ -328,7 +328,7 @@ class _Handler(BaseHTTPRequestHandler):
         if hdr_sess:
             pre = "/view/" + hdr_sess.strip()
             text = body.decode("utf-8", "replace")
-            for ep in ("/events", "/input", "/interrupt", "/status"):
+            for ep in ("/events", "/input", "/interrupt", "/status", "/page"):
                 text = text.replace("'" + ep + "'", "'" + pre + ep + "'")
             body = text.encode("utf-8")
         self.send_response(200)
@@ -386,6 +386,21 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _serve_status(self):
         session = self._session()
+        if VIEW_UNLOCK_V2:
+            body = json.dumps({
+                "session": session, "session_id": session, "state": "idle", "driver": "via-hub",
+                "auth_mode": "view_page_v2", "can_write": False, "readonly": True,
+                "unlock_code": "", "cost_total": 0, "cost_last": 0, "turns": 0,
+                "mem": _read_mem(), "disk": _read_disk(),
+                "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }, ensure_ascii=False).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+            return
         st = _ensure_ready(session)  # 注册虚拟 viewer + 刷新写权(拿真码/can_write)
         body = json.dumps({
             "session": session,
@@ -417,6 +432,20 @@ class _Handler(BaseHTTPRequestHandler):
                 return self.send_error(404)
             page = _get_page_store().create_page(self._session())
             return self._json_response(201, page)
+        if path in ("/page/resume", "/page/disconnect"):
+            if not VIEW_UNLOCK_V2:
+                return self.send_error(404)
+            length = int(self.headers.get("Content-Length") or 0)
+            try:
+                payload = json.loads(self.rfile.read(length) if length else b"{}")
+            except json.JSONDecodeError:
+                return self._json_response(400, {"ok": False})
+            page_id, page_token = str(payload.get("page_id", "")), str(payload.get("page_token", ""))
+            if path == "/page/disconnect":
+                ok = _get_page_store().mark_disconnected(page_id, page_token)
+                return self._json_response(200 if ok else 403, {"ok": ok})
+            page = _get_page_store().resume_page(page_id, page_token, self._session())
+            return self._json_response(200, page) if page else self._json_response(403, {"ok": False})
         if path != "/input":
             return self.send_error(404)
         session = self._session()

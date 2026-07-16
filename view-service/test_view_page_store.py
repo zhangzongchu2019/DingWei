@@ -52,6 +52,10 @@ class ViewPageStoreTest(unittest.TestCase):
         self.assertEqual(row["grant_owner"], "alice")
         self.assertFalse(self.store.authorize_page(page["page_id"], "wrong", "alice-dev55-2642"))
         self.assertTrue(self.store.authorize_page(page["page_id"], page["page_token"], "alice-dev55-2642"))
+        resumed = self.store.resume_page(page["page_id"], page["page_token"], "alice-dev55-2642")
+        self.assertEqual(resumed["code"], page["code"])
+        self.assertTrue(resumed["can_write"])
+        self.assertIsNone(self.store.resume_page(page["page_id"], "wrong", "alice-dev55-2642"))
 
     def test_disconnect_grace_revokes_without_token_bypass(self):
         page = self.store.create_page("alice-dev55-2642")
