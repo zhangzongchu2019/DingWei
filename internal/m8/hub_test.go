@@ -3505,6 +3505,9 @@ func TestViewUnlockV2RequiresTrustedOwnerAndPreservesCodeCase(t *testing.T) {
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
 		t.Fatal(err)
 	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
 	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test-2642", SessionName: "dev55", FullSessionName: "alice-dev55-2642", OwnerKey: "alice", Active: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -3527,6 +3530,13 @@ func TestViewUnlockV2RequiresTrustedOwnerAndPreservesCodeCase(t *testing.T) {
 	}
 	if got := unlocker.requests[0].Code; got != "alice-dev55-2642-a3Kf9xQ2" {
 		t.Fatalf("code case changed: %q", got)
+	}
+	bob := base
+	bob.ChatEntityID = "dev:personal:ou_bob"
+	bob.SenderOpenID = "ou_bob"
+	senderOwner, targetOwner, _, authErr := hub.authorizeViewUnlockOwner(ctx, bob, "alice-dev55-2642")
+	if authErr == nil || senderOwner != "bob" || targetOwner != "alice" {
+		t.Fatalf("owner mismatch evidence sender=%q target=%q err=%v", senderOwner, targetOwner, authErr)
 	}
 }
 
