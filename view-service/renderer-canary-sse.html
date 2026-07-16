@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DingWei Event View Mock</title>
+  <title>DingWei Event View</title>
   <style>
     :root {
       color-scheme: light;
@@ -749,14 +749,10 @@
       status: '/status',
       page: '/page',
     };
-    const params = new URLSearchParams(location.search);
-    const useMockApi = params.get('mock') === '1' || location.protocol === 'file:';
-
     let eventSource = null;
     let eventSourceGeneration = 0;
     let streamConnectTimer = null;
     const STREAM_CONNECT_GRACE_MS = 7500;
-    let mockEventTimer = null;
     let statusTimer = null;
     let rendered = 0;
     const messageBuffers = new Map();
@@ -776,15 +772,15 @@
       cost: 0,
       turnCost: 0,
       sessionState: 'idle',
-      sessionName: 'demo-1a2b',
-      owner: 'zzc · zzc-dev55',
-      model: 'mock-model',
-      readonly: params.get('unlocked') !== '1',
-      unlockCode: '1460',
-      access: params.get('unlocked') === '1' ? '可写' : '只读',
-      mem: { used: 9.8, total: 32, unit: 'GB' },
-      disk: { used: 142, total: 512, unit: 'GB' },
-      load: 0.72,
+      sessionName: '',
+      owner: '',
+      model: '',
+      readonly: true,
+      unlockCode: '',
+      access: '只读',
+      mem: { used: 0, total: 0, unit: '' },
+      disk: { used: 0, total: 0, unit: '' },
+      load: 0,
       lastTurnCostTotal: 0,
       statusDatetimeMs: 0,
       statusDatetimeReceivedAt: 0,
@@ -1286,7 +1282,7 @@
       if (data.readonly !== undefined) {
         stats.readonly = Boolean(data.readonly);
         stats.access = stats.readonly ? '只读' : '可写';
-      } else if (!useMockApi) {
+      } else {
         stats.readonly = false;
         stats.access = '可写';
       }
@@ -1531,35 +1527,13 @@
       });
     }
 
-    const mockEvents = [
-      { kind: 'state_change', data: { change: 'session_init', session_id: 'demo-1a2b', owner: 'zzc · zzc-dev55', model: 'claude-opus-4-8', readonly: stats.readonly, unlock_code: '1460', session_state: stats.readonly ? 'readonly' : 'idle', mem: stats.mem, disk: stats.disk, load: stats.load, cost_total: 0 }, cursor: '1' },
-      { kind: 'user_input', text: '请给我三种水果价格', delivery_id: 'd-001', turn_id: 't-001', cursor: '1.5' },
-      { kind: 'assistant_text', text: '收到，你要的三种水果价格如下：', delivery_id: 'd-001', turn_id: 't-001', cursor: '2' },
-      { kind: 'assistant_text', text: '\n\n| 水果 | 价格 |\n|------|------|\n| 苹果 | 8 元/斤 |\n| 香蕉 | 4 元/斤 |\n| 西瓜 | 3 元/斤 |', delivery_id: 'd-001', turn_id: 't-001', cursor: '3' },
-      { kind: 'state_change', data: { change: 'turn_completed', subtype: 'success', num_turns: 1, total_cost_usd: 0.0123 }, delivery_id: 'd-001', turn_id: 't-001', cursor: '4' },
-      { kind: 'assistant_text', text: '下面帮你数当前目录文件：', delivery_id: 'd-002', turn_id: 't-002', cursor: '5' },
-      { kind: 'tool_call', data: { name: 'Bash', input: { command: 'ls -A | wc -l' } }, delivery_id: 'd-002', turn_id: 't-002', cursor: '6' },
-      { kind: 'tool_call', data: { name: 'Write', input: { file_path: 'count.txt', content: '0' } }, delivery_id: 'd-002', turn_id: 't-002', cursor: '7' },
-      { kind: 'assistant_text', text: '结果是 **0**，目录是空的。这是排序函数示例：\n\n```python\ndef quicksort(a):\n    if len(a) <= 1:\n        return a\n    p = a[len(a)//2]\n    return quicksort([x for x in a if x < p]) + [x for x in a if x == p] + quicksort([x for x in a if x > p])\n```\n\n- 平均 O(n log n)\n- 最坏 O(n²)', delivery_id: 'd-002', turn_id: 't-002', cursor: '8' },
-      { kind: 'state_change', data: { change: 'turn_completed', subtype: 'success', num_turns: 3, total_cost_usd: 0.0884 }, delivery_id: 'd-002', turn_id: 't-002', cursor: '9' },
-      { kind: 'assistant_text', text: '（这是一条来自 zzc-dev55 的【外部消息】演示——它直接进对话区，不碰你的输入框）', delivery_id: 'ext-001', turn_id: 't-003', cursor: '10' },
-      { kind: 'user_input', text: '这是一条专门验证图标内联排版的长用户输入，第一行跟在图标后面，第二行必须回到卡片左内边距，不能形成图标右侧的缩进列。', delivery_id: 'd-wrap-user-001', turn_id: 't-wrap-user-001', cursor: '10.25' },
-      { kind: 'assistant_text', text: '1. 埋点治理/对账：设计埋点 vs 线上实际采集对表，找治理缺口。\n2. 数据盘点：生产项目日均约 2.5 亿条上报，盘点平台分布和 Top 事件。\n3. 协作评审：在分析主机上跑深化分析，输出阶段性评审。', delivery_id: 'd-list-start-001', turn_id: 't-list-start-001', cursor: '10.35' },
-      { kind: 'assistant_text', text: '长 token 回归样例：`shencedeepseek-very-long-inline-token-without-breaks-dw-7bff1039aabbccddeeff00112233445566778899-ai.wegoab.com/data-analysis/root/work` 应该在卡片内强制换行，不能把卡片撑出视口。', delivery_id: 'd-long-token-001', turn_id: 't-long-token-001', cursor: '10.5' },
-      { kind: 'error', text: '示例错误：模型请求超时（演示 error 事件的样式）', data: { code: 'timeout' }, delivery_id: 'd-003', turn_id: 't-004', cursor: '11' },
-    ];
-
     async function startApp() {
       resetConversation();
       updateLocalTime();
       setInterval(updateLocalTime, 1000);
-      if (useMockApi) {
-        startMockApi();
-      } else {
-        connectEventStream();
-        await refreshStatus();
-        statusTimer = setInterval(refreshStatus, 5000);
-      }
+      connectEventStream();
+      await refreshStatus();
+      statusTimer = setInterval(refreshStatus, 5000);
     }
 
     function clearStreamConnectTimer() {
@@ -1723,45 +1697,7 @@
       setTimeout(announcePageIdentity, 250);
     }
 
-    function startMockApi() {
-      applyStatusData(mockStatus());
-      let i = 0;
-      const pump = () => {
-        if (i >= mockEvents.length) {
-          setStatus(stats.readonly ? 'readonly' : 'idle');
-          return;
-        }
-        handleIncomingEvent(mockEvents[i]);
-        i += 1;
-        mockEventTimer = setTimeout(pump, 620);
-      };
-      mockEventTimer = setTimeout(pump, 200);
-      statusTimer = setInterval(() => applyStatusData(mockStatus()), 5000);
-    }
-
-    function mockStatus() {
-      return {
-        session_id: 'demo-1a2b',
-        owner: 'zzc · zzc-dev55',
-        model: 'claude-opus-4-8',
-        readonly: stats.readonly,
-        unlock_code: stats.unlockCode,
-        session_state: stats.readonly ? 'readonly' : stats.sessionState,
-        mem: { used: 10.1, total: 32, unit: 'GB' },
-        disk: { used: 143, total: 512, unit: 'GB' },
-        load: 0.78,
-        datetime: new Date().toISOString(),
-        cost_total: stats.cost,
-      };
-    }
-
     async function submitInput(text) {
-      if (useMockApi) {
-        const id = `mock-${Date.now()}`;
-        handleIncomingEvent({ kind: 'user_input', text, delivery_id: id, turn_id: 'mock-input', cursor: `${id}-user` });
-        handleIncomingEvent({ kind: 'assistant_text', text: `Mock accepted input: ${text}`, delivery_id: id, turn_id: 'mock-input', cursor: `${id}-assistant` });
-        return;
-      }
       if (stats.authMode === 'view_page_v2') {
         await awaitPageIdentityUniqueness();
         if (stats.readonly) throw new Error('当前页面尚未解锁');
@@ -1778,10 +1714,6 @@
     }
 
     async function interruptTurn() {
-      if (useMockApi) {
-        setStatus('idle');
-        return;
-      }
       const res = await fetch(API.interrupt, { method: 'POST' });
       if (!res.ok) throw new Error(`POST /interrupt failed: HTTP ${res.status}`);
       const body = await res.json().catch(() => ({}));
@@ -1793,15 +1725,8 @@
       document.body.dataset.theme = next;
     });
     reconnectBtn.addEventListener('click', () => {
-      if (useMockApi) {
-        clearTimeout(mockEventTimer);
-        clearInterval(statusTimer);
-        resetConversation();
-        startMockApi();
-      } else {
-        connectEventStream();
-        refreshStatus();
-      }
+      connectEventStream();
+      refreshStatus();
     });
     streamRetryBtn.addEventListener('click', () => {
       hideStreamAlert();
