@@ -794,6 +794,8 @@
     let pageIdentity = null;
     let pageIdentityChannel = null;
     let pageIdentityFallbackApplied = false;
+    let pageIdentityUnique = false;
+    let pageIdentityUniqueTimer = null;
     const pageInstanceNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
       value => value.toString(16).padStart(2, '0')).join('');
 
@@ -1677,6 +1679,18 @@
         pageIdentityChannel.postMessage({ type: 'claim', page_id: pageIdentity.page_id, nonce: pageInstanceNonce });
       }
     }
+    function settlePageIdentityUniqueness() {
+      pageIdentityUnique = false;
+      clearTimeout(pageIdentityUniqueTimer);
+      pageIdentityUniqueTimer = setTimeout(() => { pageIdentityUnique = true; }, 300);
+    }
+    async function awaitPageIdentityUniqueness() {
+      const deadline = Date.now() + 1500;
+      while (!pageIdentityUnique && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      if (!pageIdentityUnique) throw new Error('页面身份确认超时，请重试');
+    }
     function setupPageIdentityChannel() {
       if (pageIdentityChannel || !pageIdentity?.page_id) return;
       if (!('BroadcastChannel' in window)) {
@@ -1684,6 +1698,8 @@
         if (!pageIdentityFallbackApplied) {
           pageIdentityFallbackApplied = true;
           ensurePageIdentity(true).catch(() => setStatus('disconnected'));
+        } else {
+          pageIdentityUnique = true;
         }
         return;
       }
@@ -1691,15 +1707,18 @@
       pageIdentityChannel.onmessage = event => {
         const claim = event.data || {};
         if (claim.type !== 'claim' || claim.page_id !== pageIdentity?.page_id || claim.nonce === pageInstanceNonce) return;
+        settlePageIdentityUniqueness();
         // Deterministic tie-break: the lexicographically smaller instance nonce yields.
         if (pageInstanceNonce < String(claim.nonce)) {
           pageIdentityChannel.close();
           pageIdentityChannel = null;
+          pageIdentityUnique = false;
           ensurePageIdentity(true).catch(() => setStatus('disconnected'));
         } else {
           announcePageIdentity();
         }
       };
+      settlePageIdentityUniqueness();
       setTimeout(announcePageIdentity, 50);
       setTimeout(announcePageIdentity, 250);
     }
@@ -1742,6 +1761,10 @@
         handleIncomingEvent({ kind: 'user_input', text, delivery_id: id, turn_id: 'mock-input', cursor: `${id}-user` });
         handleIncomingEvent({ kind: 'assistant_text', text: `Mock accepted input: ${text}`, delivery_id: id, turn_id: 'mock-input', cursor: `${id}-assistant` });
         return;
+      }
+      if (stats.authMode === 'view_page_v2') {
+        await awaitPageIdentityUniqueness();
+        if (stats.readonly) throw new Error('当前页面尚未解锁');
       }
       const res = await fetch(API.input, {
         method: 'POST',

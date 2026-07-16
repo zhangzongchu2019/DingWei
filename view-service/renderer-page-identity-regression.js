@@ -52,6 +52,14 @@ const assert = require('assert');
       first.goto('http://renderer.test/renderer', { waitUntil: 'domcontentloaded' }),
       second.goto('http://renderer.test/renderer', { waitUntil: 'domcontentloaded' }),
     ]);
+    const earlyWrites = await Promise.allSettled([
+      first.evaluate(() => submitInput('early-first')),
+      second.evaluate(() => submitInput('early-second')),
+    ]);
+    assert.strictEqual(earlyWrites.filter(result => result.status === 'fulfilled').length, 1,
+      'both cloned tabs wrote before identity uniqueness settled');
+    assert.strictEqual(inputs.length, 1, 'cloned unlocked token was used twice during tie-break');
+    assert.strictEqual(inputs[0].page_id, 'shared-page');
     await first.waitForTimeout(800);
     const identities = await Promise.all([first, second].map(page => page.evaluate(() =>
       JSON.parse(sessionStorage.getItem('dw-view-page:alice-dev55-2642')))));
@@ -62,11 +70,11 @@ const assert = require('assert');
     const writable = runtimeIDs[0] === 'shared-page' ? first : second;
     await writable.waitForFunction(() => stats.readonly === false);
     await writable.evaluate(() => submitInput('multi\nline'));
-    assert.strictEqual(inputs.length, 1);
-    assert.strictEqual(inputs[0].page_id, 'shared-page');
-    assert.strictEqual(inputs[0].page_token, 'shared-token');
-    assert.match(inputs[0].request_id, /^[0-9a-f]{32}$/);
-    assert.strictEqual(inputs[0].text, 'multi\nline');
+    assert.strictEqual(inputs.length, 2);
+    assert.strictEqual(inputs[1].page_id, 'shared-page');
+    assert.strictEqual(inputs[1].page_token, 'shared-token');
+    assert.match(inputs[1].request_id, /^[0-9a-f]{32}$/);
+    assert.strictEqual(inputs[1].text, 'multi\nline');
     assert.ok(!first.url().includes('shared-token') && !second.url().includes('shared-token'), 'page token leaked into URL');
     console.log('renderer page identity PASS: cloned-tab tie-break + credentialed input');
   } finally {
