@@ -67,6 +67,48 @@ class ViewPageStoreTest(unittest.TestCase):
         self.store.sweep()
         self.assertEqual(self.store.page(page["page_id"])["state"], "revoked")
 
+    def test_grant_and_locked_orphan_expiry_boundaries(self):
+        unlocked = self.store.create_page("alice-dev55-2642")
+        command = {"command_id": "expiry-c", "request_id": "expiry-r",
+                   "session": "alice-dev55-2642", "code": unlocked["code"], "owner_key": "alice"}
+        self.assertEqual(self.store.unlock(command), 200)
+        locked = self.store.create_page("alice-dev55-2642")
+        self.clock.value += 1799
+        self.store.sweep()
+        self.assertEqual(self.store.page(locked["page_id"])["state"], "locked")
+        self.clock.value += 2
+        self.store.sweep()
+        self.assertEqual(self.store.page(locked["page_id"])["state"], "expired")
+        self.assertEqual(self.store.page(unlocked["page_id"])["state"], "unlocked")
+        self.clock.value += 28800 - 1801 - 1
+        self.store.sweep()
+        self.assertEqual(self.store.page(unlocked["page_id"])["state"], "unlocked")
+        self.clock.value += 1
+        self.store.sweep()
+        self.assertEqual(self.store.page(unlocked["page_id"])["state"], "expired")
+
+    def test_concurrent_same_command_is_exactly_once_and_idempotent(self):
+        page = self.store.create_page("alice-dev55-2642")
+        command = {"command_id": "race-c", "request_id": "race-r",
+                   "session": "alice-dev55-2642", "code": page["code"], "owner_key": "alice"}
+        barrier = threading.Barrier(3)
+        statuses = []
+
+        def unlock():
+            barrier.wait()
+            statuses.append(self.store.unlock(command))
+
+        threads = [threading.Thread(target=unlock) for _ in range(2)]
+        for thread in threads:
+            thread.start()
+        barrier.wait()
+        for thread in threads:
+            thread.join(timeout=2)
+        self.assertEqual(sorted(statuses), [200, 200])
+        self.assertEqual(self.store.page(page["page_id"])["state"], "unlocked")
+        commands, _ = self.store.replay_counts()
+        self.assertEqual(commands, 1)
+
     def test_nonce_and_command_tables_are_bounded(self):
         for i in range(5):
             self.assertTrue(self.store.claim_nonce("canary", f"{i:032x}"))
