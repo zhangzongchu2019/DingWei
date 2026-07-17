@@ -1,0 +1,54 @@
+# WorkPulse 配置样例（仅文档/占位，无真值）
+# 注意：配置真值存 SQLite，经 M9 后台管理（规范 §9.1）；本文件仅说明可配项与结构。
+# bootstrap（DB 路径 / 监听 / 初始管理员口令）走环境变量。
+
+# 容量基线（§13.2）：≤100 人 / 峰值写入 ≤200 次每秒 → SQLite WAL 足够，不需 Redis/PG。
+
+# 机器人管道（可多个；每个都能收发；凭证走 env / secret，勿写真值）
+bot_channels:
+  - name: dm-bot
+    purpose: dm            # dm 个人提醒 | group 群周知 | general
+    can_send: true
+    can_receive: true
+  - name: group-bot
+    purpose: group
+    can_send: true
+    can_receive: true
+
+# 三级路由唤起符号（§4.4）
+trigger_symbols: ["@机器人", "/", "#排期", "#进度"]
+
+# 排期数据组织与调整（§M1 说明）
+schedule:
+  # 全局日程管理文件（指定位置）：SQLite 为事实源，按配置同步导出到此文件，供门户/人读/既有流程衔接
+  global_file: /data/schedules/global.md
+  per_owner_dir: /data/schedules        # 每个成员的个人排期（导出镜像）
+  date_timezone: Asia/Shanghai          # MM/DD 跨年推断与 deadline 用此时区
+  feedback_driven: true                 # 依据 进度/完成/风险/顺延/改期/代改 反馈动态调整
+
+# 留存与归档（§2.5.7）
+retention:
+  hot_window: 1mo        # 热保留窗
+  archive_period: month  # 按月归档到 /data/archive/messages-YYYY-MM.sqlite
+  compress: true
+  archive_groups: true
+  # 数据清理下限（M9 按时间删除）：最少 1 个月以前，不可更短
+  cleanup_floor: 1mo
+
+# AI 对话佐证（M4，§6/§12；默认全员 opt-out + 五态自动）
+ai_evidence:
+  enabled: true
+  default_opt_out: false        # 默认全员开启（opt-out）
+  five_state: true              # 五态自动判定（含 🔴）
+  transcript_sources:           # 可插拔适配器（§6.1）
+    - type: cli_local
+      watch_paths: []           # 本地 transcript 监听目录（勿写敏感真值）
+
+# LLM 双 provider 故障转移（§15.3；key 走 env / secret）
+llm:
+  primary:   { name: primary }
+  backup:    { name: backup }
+
+# M9 后台（必须密码登录；初始口令走 env，§4.6）
+admin:
+  login_required: true

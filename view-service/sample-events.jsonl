@@ -1,0 +1,11 @@
+{"kind":"state_change","data":{"change":"session_init","session_id":"demo-1a2b","model":"claude-opus-4-8"},"delivery_id":"","turn_id":"","cursor":"1"}
+{"kind":"assistant_text","text":"收到，你要的三种水果价格如下：","delivery_id":"d-001","turn_id":"t-001","cursor":"2"}
+{"kind":"assistant_text","text":"\n\n| 水果 | 价格 |\n|------|------|\n| 苹果 | 8 元/斤 |\n| 香蕉 | 4 元/斤 |\n| 西瓜 | 3 元/斤 |","delivery_id":"d-001","turn_id":"t-001","cursor":"3"}
+{"kind":"state_change","data":{"change":"turn_completed","subtype":"success","num_turns":1,"cost_usd":0.0123},"delivery_id":"d-001","turn_id":"t-001","cursor":"4"}
+{"kind":"assistant_text","text":"下面帮你数当前目录文件：","delivery_id":"d-002","turn_id":"t-002","cursor":"5"}
+{"kind":"tool_call","data":{"name":"Bash","input":{"command":"ls -A | wc -l"}},"delivery_id":"d-002","turn_id":"t-002","cursor":"6"}
+{"kind":"tool_call","data":{"name":"Write","input":{"file_path":"count.txt","content":"0"}},"delivery_id":"d-002","turn_id":"t-002","cursor":"7"}
+{"kind":"assistant_text","text":"结果是 **0**，目录是空的。这是排序函数示例：\n\n```python\ndef quicksort(a):\n    if len(a) <= 1:\n        return a\n    p = a[len(a)//2]\n    return quicksort([x for x in a if x < p]) + [x for x in a if x == p] + quicksort([x for x in a if x > p])\n```\n\n- 平均 O(n log n)\n- 最坏 O(n²)","delivery_id":"d-002","turn_id":"t-002","cursor":"8"}
+{"kind":"state_change","data":{"change":"turn_completed","subtype":"success","num_turns":3,"cost_usd":0.0761},"delivery_id":"d-002","turn_id":"t-002","cursor":"9"}
+{"kind":"assistant_text","text":"（这是一条来自 owner1-developer 的【外部消息】演示——它直接进对话区，不碰你的输入框）","delivery_id":"ext-001","turn_id":"t-003","cursor":"10"}
+{"kind":"error","text":"示例错误：模型请求超时（演示 error 事件的样式）","data":{"code":"timeout"},"delivery_id":"d-003","turn_id":"t-004","cursor":"11"}

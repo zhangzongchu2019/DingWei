@@ -1,0 +1,5568 @@
+package m8
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
+	"slices"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/coder/websocket"
+
+	"github.com/zhangzongchu2019/dingwei/internal/bus"
+	"github.com/zhangzongchu2019/dingwei/internal/clock"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/scheduler"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
+)
+
+const testSecOpsAdminOpenID = "ou_testadmin0000000000"
+
+func newTestHub(t *testing.T) (*Hub, *store.SQLite, context.Context) {
+	t.Helper()
+	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "m8.db"))
+	if err != nil {
+		t.Fatalf("OpenSQLite: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	ctx := context.Background()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatalf("Migrate: %v", err)
+	}
+	return New(db), db, ctx
+}
+
+func useTestSecOpsAdminOpenID(t *testing.T) {
+	t.Helper()
+	old := secOpsAdminOpenID
+	secOpsAdminOpenID = testSecOpsAdminOpenID
+	t.Cleanup(func() {
+		secOpsAdminOpenID = old
+	})
+}
+
+func useTestSecOpsAdminOwnerKey(t *testing.T, ownerKey string) {
+	t.Helper()
+	old := secOpsAdminOwnerKey
+	secOpsAdminOwnerKey = ownerKey
+	t.Cleanup(func() {
+		secOpsAdminOwnerKey = old
+	})
+}
+
+func useTestApplyKeyApprover(t *testing.T, openID string) {
+	t.Helper()
+	old := applyKeyApproverID
+	applyKeyApproverID = openID
+	t.Cleanup(func() {
+		applyKeyApproverID = old
+	})
+}
+
+func useTestNameEnforce(t *testing.T, mode string) {
+	t.Helper()
+	t.Setenv("WP_NAME_ENFORCE", mode)
+}
+
+func useTestVersionEnforce(t *testing.T, mode string) {
+	t.Helper()
+	t.Setenv("WP_VERSION_ENFORCE", mode)
+}
+
+func useTestSessionReadIdleTimeout(t *testing.T, d time.Duration) {
+	t.Helper()
+	old := sessionReadIdleTimeout
+	sessionReadIdleTimeout = d
+	t.Cleanup(func() {
+		sessionReadIdleTimeout = old
+	})
+}
+
+func useTestSessionIdleWatchdogInterval(t *testing.T, d time.Duration) {
+	t.Helper()
+	old := sessionIdleWatchdogInterval
+	sessionIdleWatchdogInterval = d
+	t.Cleanup(func() {
+		sessionIdleWatchdogInterval = old
+	})
+}
+
+func useTestSessionKeepalive(t *testing.T, interval, timeout time.Duration) {
+	t.Helper()
+	oldInterval, oldTimeout := sessionKeepaliveInterval, sessionKeepaliveTimeout
+	sessionKeepaliveInterval, sessionKeepaliveTimeout = interval, timeout
+	t.Cleanup(func() {
+		sessionKeepaliveInterval, sessionKeepaliveTimeout = oldInterval, oldTimeout
+	})
+}
+
+func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	rosterMsg := model.Message{ID: "ct-roster", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, err := hub.Dispatch(ctx, rosterMsg, "#roster")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "DingWei在线清单") {
+		t.Fatalf("roster result=%+v", result)
+	}
+	task, err := db.GetControlTask(ctx, "ct-roster")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if task == nil || task.Status != "done" || task.Intent != "command.roster" || task.Layer != "L1" {
+		t.Fatalf("roster task=%+v", task)
+	}
+
+	unknownMsg := model.Message{ID: "ct-unknown", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, err = hub.Dispatch(ctx, unknownMsg, "请帮我判断该找谁")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #ct-unknown") {
+		t.Fatalf("unknown should ack, got %+v", result)
+	}
+	task, err = db.GetControlTask(ctx, "ct-unknown")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if task == nil || task.Status != "llm_pending" || task.Intent != "unknown" || task.Layer != "L1" {
+		t.Fatalf("unknown task=%+v", task)
+	}
+
+	dup, err := hub.Dispatch(ctx, unknownMsg, "请帮我判断该找谁")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !dup.Matched || dup.Reply != "已受理 #ct-unknown" {
+		t.Fatalf("duplicate in-flight should ack without re-dispatch, got %+v", dup)
+	}
+
+	expireAt := time.Now().UTC().Add(-time.Minute)
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "ct-expired",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "ExampleBot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "stale",
+		Status:       "queued",
+		ExpireAt:     &expireAt,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := hub.Dispatch(ctx, model.Message{ID: "ct-trigger", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#roster"); err != nil {
+		t.Fatal(err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "任务 #ct-expired 已超时") {
+		t.Fatalf("expired notification=%+v", out)
+	}
+
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "ct-failed",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "ExampleBot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "fail",
+		Status:       "queued",
+		MaxAttempts:  1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	failed, err := db.RetryControlTask(ctx, "ct-failed", "boom")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if failed == nil || failed.Status != "failed" {
+		t.Fatalf("failed task=%+v", failed)
+	}
+	if err := hub.notifyControlTask(ctx, *failed, controlTaskFailedReply(*failed)); err != nil {
+		t.Fatal(err)
+	}
+	out = waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "任务 #ct-failed 处理失败：boom") {
+		t.Fatalf("failed notification=%+v", out)
+	}
+}
+
+func TestOwnerLinksCommandAndPage(t *testing.T) {
+	oldViewBase := terminalViewBase
+	terminalViewBase = "https://example.test"
+	t.Cleanup(func() { terminalViewBase = oldViewBase })
+
+	hub, db, ctx := newTestHub(t)
+	hub.onlineDebounce = time.Hour
+	hub.RegisterBot("dev", "ExampleBot")
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /links/{ownerKey}", hub.HandleOwnerLinksPage)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	fullName := "u1-developer-" + keyTail(key.ID)
+	conn := dialSessionWithQuery(t, ctx, srv.URL, fullName, key.ID, secret, "tool=CODEX&model=gpt-5.5&terminal=1")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, fullName)
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "links-1",
+		ChatEntityID: "dev:personal:ou_u1",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"#清单"}`,
+	}, "#清单")
+	if err != nil || !result.Matched {
+		t.Fatalf("links result=%+v err=%v", result, err)
+	}
+	if !strings.Contains(result.Reply, "https://example.test/links/u1?code=") || !strings.Contains(result.Reply, "https://example.test/view/"+fullName) {
+		t.Fatalf("links reply missing URLs: %s", result.Reply)
+	}
+	code := strings.TrimSpace(strings.Split(strings.Split(result.Reply, "code=")[1], "\n")[0])
+	if len(code) != 24 || !regexp.MustCompile(`^[0-9a-f]+$`).MatchString(code) {
+		t.Fatalf("link code should be 24 lowercase hex chars, got %q", code)
+	}
+	otherOwnerResp, err := http.Get(srv.URL + "/links/u2?code=" + url.QueryEscape(code))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer otherOwnerResp.Body.Close()
+	if otherOwnerResp.StatusCode != http.StatusForbidden {
+		t.Fatalf("other owner status=%d", otherOwnerResp.StatusCode)
+	}
+	resp, err := http.Get(srv.URL + "/links/u1?code=" + url.QueryEscape(code))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK || !strings.Contains(string(body), fullName) || !strings.Contains(string(body), "https://example.test/view/"+fullName) || !strings.Contains(string(body), "CODEX/gpt-5.5") {
+		t.Fatalf("links page status=%d body=%s", resp.StatusCode, string(body))
+	}
+	badResp, err := http.Get(srv.URL + "/links/u1?code=000000")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer badResp.Body.Close()
+	if badResp.StatusCode != http.StatusForbidden {
+		t.Fatalf("bad code status=%d", badResp.StatusCode)
+	}
+}
+
+func TestControlPlaneP2LeaseClaimIsExclusiveAndReclaimsExpired(t *testing.T) {
+	_, db, ctx := newTestHub(t)
+	now := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
+	for _, id := range []string{"l2-a", "l2-b"} {
+		if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+			ID:         id,
+			Source:     "feishu",
+			SourceAddr: "ou_1#dev#ExampleBot",
+			OwnerKey:   "u1",
+			RawInput:   id,
+			Status:     "llm_pending",
+			CreatedAt:  now,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	first, err := db.ClaimNextL2ControlTask(ctx, "w1", now.Add(time.Minute), now)
+	if err != nil || first == nil || first.ID != "l2-a" {
+		t.Fatalf("first claim=%+v err=%v", first, err)
+	}
+	second, err := db.ClaimNextL2ControlTask(ctx, "w2", now.Add(time.Minute), now)
+	if err != nil || second == nil || second.ID != "l2-b" {
+		t.Fatalf("second claim=%+v err=%v", second, err)
+	}
+	none, err := db.ClaimNextL2ControlTask(ctx, "w3", now.Add(time.Minute), now)
+	if err != nil || none != nil {
+		t.Fatalf("third claim=%+v err=%v", none, err)
+	}
+	reclaimed, err := db.ClaimNextL2ControlTask(ctx, "w4", now.Add(2*time.Minute), now.Add(2*time.Minute))
+	if err != nil || reclaimed == nil || reclaimed.ID != "l2-a" || reclaimed.LeaseOwner != "w4" {
+		t.Fatalf("reclaimed=%+v err=%v", reclaimed, err)
+	}
+}
+
+func TestControlPlaneP2DispatchAndClarifyWithMockLLM(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	devName := "u1-developer-" + keyTail(key.ID)
+	dev := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer dev.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, devName)
+
+	hub.L2 = &fakeTriageProvider{out: fmt.Sprintf(`{"intent":"dispatch","targets":[{"session":%q,"instruction":"请处理这个任务"}],"confidence":0.95}`, devName)}
+	task := model.ControlTask{ID: "l2-dispatch", Source: "feishu", SourceAddr: feishuAddress("ou_u1", "dev", "ExampleBot"), OwnerKey: "u1", BotChannelID: "dev", RawInput: "帮我处理", Status: "llm_pending"}
+	if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, task, hub.effectiveL2Config())
+	got := readEnvelope(t, ctx, dev)
+	if got.Body != "请处理这个任务" || got.Meta["control_task_id"] != "l2-dispatch" {
+		t.Fatalf("dispatch envelope=%+v", got)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "已分诊给 #"+devName) {
+		t.Fatalf("dispatch source reply=%+v", out)
+	}
+	stored, err := db.GetControlTask(ctx, "l2-dispatch")
+	if err != nil || stored == nil || stored.Status != "done" || stored.Layer != "L2" || stored.Intent != "dispatch" {
+		t.Fatalf("stored dispatch task=%+v err=%v", stored, err)
+	}
+
+	hub.L2 = &fakeTriageProvider{out: `{"intent":"dispatch","targets":[{"session":"developer","instruction":"低置信"}],"confidence":0.2}`}
+	clarifyTask := model.ControlTask{ID: "l2-clarify", Source: "feishu", SourceAddr: feishuAddress("ou_u1", "dev", "ExampleBot"), OwnerKey: "u1", BotChannelID: "dev", RawInput: "不明确", Status: "llm_pending"}
+	if _, _, err := db.EnqueueControlTask(ctx, clarifyTask); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, clarifyTask, hub.effectiveL2Config())
+	out = waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "不确定该派给谁") {
+		t.Fatalf("clarify source reply=%+v", out)
+	}
+	stored, err = db.GetControlTask(ctx, "l2-clarify")
+	if err != nil || stored == nil || stored.Status != "done" || stored.Intent != "clarify" {
+		t.Fatalf("stored clarify task=%+v err=%v", stored, err)
+	}
+}
+
+func TestControlPlaneP2ProviderFailureRetriesAndFails(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.L2 = &fakeTriageProvider{err: errors.New("llm down")}
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "l2-fail",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "ExampleBot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "失败",
+		Status:       "llm_pending",
+		MaxAttempts:  1,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	task, err := db.ClaimNextL2ControlTask(ctx, "w1", time.Now().Add(time.Minute), time.Now())
+	if err != nil || task == nil {
+		t.Fatalf("claim=%+v err=%v", task, err)
+	}
+	hub.processL2Task(ctx, *task, hub.effectiveL2Config())
+	stored, err := db.GetControlTask(ctx, "l2-fail")
+	if err != nil || stored == nil || stored.Status != "failed" {
+		t.Fatalf("failed task=%+v err=%v", stored, err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "处理失败") {
+		t.Fatalf("failed notification=%+v", out)
+	}
+	stats, err := db.ControlTaskStats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.L2FailureRate != 1 {
+		t.Fatalf("stats=%+v", stats)
+	}
+}
+
+func TestControlPlaneP2ProviderFailureRequeuesUntilMaxAttempts(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.L2 = &fakeTriageProvider{err: errors.New("temporary llm down")}
+	if _, _, err := db.EnqueueControlTask(ctx, model.ControlTask{
+		ID:           "l2-retry",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "ExampleBot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "重试",
+		Status:       "llm_pending",
+		MaxAttempts:  3,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for attempt := 1; attempt <= 2; attempt++ {
+		task, err := db.ClaimNextL2ControlTask(ctx, fmt.Sprintf("w%d", attempt), time.Now().Add(time.Minute), time.Now())
+		if err != nil || task == nil {
+			t.Fatalf("claim attempt %d task=%+v err=%v", attempt, task, err)
+		}
+		hub.processL2Task(ctx, *task, hub.effectiveL2Config())
+		stored, err := db.GetControlTask(ctx, "l2-retry")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if stored.Status != "llm_pending" || stored.Attempts != attempt || stored.LeaseOwner != "" || stored.LeaseUntil != nil {
+			t.Fatalf("after attempt %d task=%+v", attempt, stored)
+		}
+	}
+	task, err := db.ClaimNextL2ControlTask(ctx, "w3", time.Now().Add(time.Minute), time.Now())
+	if err != nil || task == nil {
+		t.Fatalf("claim third task=%+v err=%v", task, err)
+	}
+	hub.processL2Task(ctx, *task, hub.effectiveL2Config())
+	stored, err := db.GetControlTask(ctx, "l2-retry")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stored.Status != "failed" || stored.Attempts != 3 {
+		t.Fatalf("after third failure task=%+v", stored)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "处理失败") {
+		t.Fatalf("failed notification=%+v", out)
+	}
+}
+
+func TestControlPlaneP3DecomposeChildrenAggregateAndNotify(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	alphaName := "u1-alpha-" + keyTail(key.ID)
+	betaName := "u1-beta-" + keyTail(key.ID)
+	alpha := dialSession(t, ctx, srv.URL, "alpha", key.ID, secret)
+	defer alpha.Close(websocket.StatusNormalClosure, "done")
+	beta := dialSession(t, ctx, srv.URL, "beta", key.ID, secret)
+	defer beta.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, alphaName)
+	waitSessionOnline(t, hub, key.ID, betaName)
+
+	hub.L2 = &sequenceTriageProvider{outs: []string{
+		fmt.Sprintf(`{"intent":"decompose","subtasks":[{"session":%q,"instruction":"整理需求"},{"session":%q,"instruction":"评估风险"}],"confidence":0.95}`, alphaName, betaName),
+		`{"intent":"aggregate","reply":"综合回复：需求和风险都已完成。","confidence":0.92}`,
+	}}
+	task := model.ControlTask{
+		ID:           "p3-parent",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "ExampleBot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "请团队拆分处理",
+		Status:       "llm_pending",
+		Priority:     7,
+	}
+	if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, task, hub.effectiveL2Config())
+
+	gotAlpha := readEnvelope(t, ctx, alpha)
+	if gotAlpha.Body != "整理需求" || gotAlpha.Meta["control_task_id"] != "p3-parent-sub-01" {
+		t.Fatalf("alpha child envelope=%+v", gotAlpha)
+	}
+	gotBeta := readEnvelope(t, ctx, beta)
+	if gotBeta.Body != "评估风险" || gotBeta.Meta["control_task_id"] != "p3-parent-sub-02" {
+		t.Fatalf("beta child envelope=%+v", gotBeta)
+	}
+	parent, err := db.GetControlTask(ctx, "p3-parent")
+	if err != nil || parent == nil || parent.Status != "awaiting_children" || parent.Intent != "decompose" {
+		t.Fatalf("parent after decompose=%+v err=%v", parent, err)
+	}
+	children, err := db.ListControlSubtasks(ctx, "p3-parent")
+	if err != nil || len(children) != 2 {
+		t.Fatalf("children=%+v err=%v", children, err)
+	}
+	for _, child := range children {
+		if child.Status != "awaiting_result" || child.Priority != 7 {
+			t.Fatalf("child should await result and inherit priority: %+v", child)
+		}
+	}
+
+	if err := writeEnvelope(ctx, alpha, model.Envelope{
+		ID:   "p3-parent-alpha-reply",
+		To:   "workpulse#" + key.ID,
+		From: "alpha#" + key.ID,
+		Body: "需求完成",
+		Meta: map[string]any{"control_task_id": "p3-parent-sub-01"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		child, err := db.GetControlTask(ctx, "p3-parent-sub-01")
+		if err != nil || child == nil || child.Status != "done" || child.Result != "需求完成" {
+			return false
+		}
+		parent, err = db.GetControlTask(ctx, "p3-parent")
+		return err == nil && parent != nil && parent.Status == "awaiting_children"
+	})
+	if err := writeEnvelope(ctx, beta, model.Envelope{
+		ID:   "p3-parent-beta-reply",
+		To:   "workpulse#" + key.ID,
+		From: "beta#" + key.ID,
+		Body: "风险完成",
+		Meta: map[string]any{"control_task_id": "p3-parent-sub-02"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		parent, err = db.GetControlTask(ctx, "p3-parent")
+		return err == nil && parent != nil && parent.Status == "done" && parent.Intent == "aggregate" && strings.Contains(parent.Result, "综合回复")
+	})
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "综合回复：需求和风险都已完成。") {
+		t.Fatalf("aggregate source reply=%+v", out)
+	}
+}
+
+func TestControlPlaneP3PartialChildFailureStillAggregates(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	alphaName := "u1-alpha-" + keyTail(key.ID)
+	betaName := "u1-beta-" + keyTail(key.ID)
+	alpha := dialSession(t, ctx, srv.URL, "alpha", key.ID, secret)
+	defer alpha.Close(websocket.StatusNormalClosure, "done")
+	beta := dialSession(t, ctx, srv.URL, "beta", key.ID, secret)
+	defer beta.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, alphaName)
+	waitSessionOnline(t, hub, key.ID, betaName)
+
+	hub.L2 = &sequenceTriageProvider{outs: []string{
+		fmt.Sprintf(`{"intent":"decompose","subtasks":[{"session":%q,"instruction":"整理需求"},{"session":%q,"instruction":"评估风险"}],"confidence":0.95}`, alphaName, betaName),
+		`{"intent":"aggregate","reply":"部分完成：需求完成，风险子任务失败。","confidence":0.88}`,
+	}}
+	task := model.ControlTask{
+		ID:           "p3-partial",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "ExampleBot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "请团队拆分处理",
+		Status:       "llm_pending",
+	}
+	if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+		t.Fatal(err)
+	}
+	hub.processL2Task(ctx, task, hub.effectiveL2Config())
+	gotAlpha := readEnvelope(t, ctx, alpha)
+	if gotAlpha.Body != "整理需求" || gotAlpha.Meta["control_task_id"] != "p3-partial-sub-01" {
+		t.Fatalf("alpha child envelope=%+v", gotAlpha)
+	}
+	gotBeta := readEnvelope(t, ctx, beta)
+	if gotBeta.Body != "评估风险" || gotBeta.Meta["control_task_id"] != "p3-partial-sub-02" {
+		t.Fatalf("beta child envelope=%+v", gotBeta)
+	}
+	if err := hub.CompleteControlSubtask(ctx, "p3-partial-sub-01", "需求完成", "done", ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.CompleteControlSubtask(ctx, "p3-partial-sub-02", "", "failed", "风险评估失败"); err != nil {
+		t.Fatal(err)
+	}
+	failedChild, err := db.GetControlTask(ctx, "p3-partial-sub-02")
+	if err != nil || failedChild == nil || failedChild.Status != "failed" || !strings.Contains(failedChild.Error, "风险评估失败") {
+		t.Fatalf("failed child=%+v err=%v", failedChild, err)
+	}
+	parent, err := db.GetControlTask(ctx, "p3-partial")
+	if err != nil || parent == nil || parent.Status != "done" || parent.Intent != "aggregate" {
+		t.Fatalf("partial parent=%+v err=%v", parent, err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "部分完成") {
+		t.Fatalf("partial aggregate reply=%+v", out)
+	}
+}
+
+func TestControlPlaneP3AggregateFailureRetriesAndFails(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.L2 = &fakeTriageProvider{err: errors.New("aggregate llm down")}
+	parent := model.ControlTask{
+		ID:           "p3-agg-fail",
+		Source:       "feishu",
+		SourceAddr:   feishuAddress("ou_u1", "dev", "ExampleBot"),
+		OwnerKey:     "u1",
+		BotChannelID: "dev",
+		RawInput:     "请团队拆分处理",
+		Status:       "llm_pending",
+		MaxAttempts:  1,
+	}
+	if _, _, err := db.EnqueueControlTask(ctx, parent); err != nil {
+		t.Fatal(err)
+	}
+	children := []model.ControlTask{{
+		ID:          "p3-agg-fail-sub-01",
+		ParentID:    "p3-agg-fail",
+		Source:      "session",
+		OwnerKey:    "u1",
+		RawInput:    "整理需求",
+		Intent:      "dispatch",
+		Layer:       "L2",
+		Result:      "需求完成",
+		Status:      "done",
+		MaxAttempts: 1,
+	}}
+	parent.Target = `[{"session":"alpha","instruction":"整理需求"}]`
+	if err := db.CreateControlSubtasks(ctx, parent, children); err != nil {
+		t.Fatal(err)
+	}
+	claimed, err := db.ClaimNextAggregateControlTask(ctx, "agg-w1", time.Now().Add(time.Minute), time.Now())
+	if err != nil || claimed == nil || claimed.ID != "p3-agg-fail" {
+		t.Fatalf("aggregate claim=%+v err=%v", claimed, err)
+	}
+	hub.processL2Task(ctx, *claimed, hub.effectiveL2Config())
+	stored, err := db.GetControlTask(ctx, "p3-agg-fail")
+	if err != nil || stored == nil || stored.Status != "failed" || stored.Attempts != 1 {
+		t.Fatalf("aggregate failed parent=%+v err=%v", stored, err)
+	}
+	out := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if out == nil || !strings.Contains(messageText(t, out), "处理失败") {
+		t.Fatalf("aggregate failure reply=%+v", out)
+	}
+}
+
+func TestControlPlaneP3L2ClaimHonorsPriority(t *testing.T) {
+	_, db, ctx := newTestHub(t)
+	now := time.Date(2026, 7, 8, 12, 0, 0, 0, time.UTC)
+	for _, task := range []model.ControlTask{
+		{ID: "prio-low", Priority: 1},
+		{ID: "prio-high", Priority: 9},
+		{ID: "prio-mid", Priority: 5},
+	} {
+		task.Source = "feishu"
+		task.SourceAddr = "ou_1#dev#ExampleBot"
+		task.OwnerKey = "u1"
+		task.RawInput = task.ID
+		task.Status = "llm_pending"
+		task.CreatedAt = now
+		if _, _, err := db.EnqueueControlTask(ctx, task); err != nil {
+			t.Fatal(err)
+		}
+	}
+	claimed, err := db.ClaimNextL2ControlTask(ctx, "prio-w", now.Add(time.Minute), now)
+	if err != nil || claimed == nil || claimed.ID != "prio-high" {
+		t.Fatalf("priority claim=%+v err=%v", claimed, err)
+	}
+}
+
+func TestControlPlaneP3AggregateClaimReclaimsExpiredLease(t *testing.T) {
+	_, db, ctx := newTestHub(t)
+	now := time.Now().UTC()
+	parent := model.ControlTask{
+		ID:          "p3-agg-reclaim",
+		Source:      "feishu",
+		SourceAddr:  "ou_1#dev#ExampleBot",
+		OwnerKey:    "u1",
+		RawInput:    "聚合",
+		Status:      "llm_pending",
+		MaxAttempts: 3,
+	}
+	if _, _, err := db.EnqueueControlTask(ctx, parent); err != nil {
+		t.Fatal(err)
+	}
+	parent.Target = `[{"session":"alpha","instruction":"整理需求"}]`
+	if err := db.CreateControlSubtasks(ctx, parent, []model.ControlTask{{
+		ID:          "p3-agg-reclaim-sub-01",
+		ParentID:    "p3-agg-reclaim",
+		Source:      "session",
+		OwnerKey:    "u1",
+		RawInput:    "整理需求",
+		Status:      "done",
+		Result:      "完成",
+		MaxAttempts: 3,
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	first, err := db.ClaimNextAggregateControlTask(ctx, "agg-w1", now.Add(time.Minute), now)
+	if err != nil || first == nil || first.ID != "p3-agg-reclaim" || first.LeaseOwner != "agg-w1" {
+		t.Fatalf("first aggregate claim=%+v err=%v", first, err)
+	}
+	none, err := db.ClaimNextAggregateControlTask(ctx, "agg-w2", now.Add(2*time.Minute), now.Add(30*time.Second))
+	if err != nil || none != nil {
+		t.Fatalf("unexpired aggregate claim=%+v err=%v", none, err)
+	}
+	reclaimed, err := db.ClaimNextAggregateControlTask(ctx, "agg-w2", now.Add(3*time.Minute), now.Add(2*time.Minute))
+	if err != nil || reclaimed == nil || reclaimed.ID != "p3-agg-reclaim" || reclaimed.LeaseOwner != "agg-w2" {
+		t.Fatalf("reclaimed aggregate claim=%+v err=%v", reclaimed, err)
+	}
+	stats, err := db.ControlTaskStats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.L2InFlight != 1 {
+		t.Fatalf("stats should count aggregating lease as L2 in-flight: %+v", stats)
+	}
+}
+
+type fakeTriageProvider struct {
+	out string
+	err error
+}
+
+func (f *fakeTriageProvider) Name() string { return "fake-triage" }
+func (f *fakeTriageProvider) Complete(_ context.Context, _, user string) (string, error) {
+	if f.err != nil {
+		return "", f.err
+	}
+	if !strings.Contains(user, "request_id") {
+		return "", errors.New("missing request_id")
+	}
+	return f.out, nil
+}
+
+type sequenceTriageProvider struct {
+	outs  []string
+	index int
+}
+
+func (f *sequenceTriageProvider) Name() string { return "sequence-triage" }
+func (f *sequenceTriageProvider) Complete(_ context.Context, _, user string) (string, error) {
+	if !strings.Contains(user, "request_id") {
+		return "", errors.New("missing request_id")
+	}
+	if f.index >= len(f.outs) {
+		return "", fmt.Errorf("unexpected l2 call %d", f.index+1)
+	}
+	out := f.outs[f.index]
+	f.index++
+	return out, nil
+}
+
+func TestIssueAPIKeyStoresHashAndBindScope(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, meta, err := hub.IssueAPIKey(ctx, "svc1", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if secret == "" || strings.Contains(meta.KeyHash, secret) || !strings.HasPrefix(meta.ID, "FB-") {
+		t.Fatalf("secret/hash/key_id invalid secret=%q meta=%+v", secret, meta)
+	}
+	resolved, err := db.ResolveServiceAPISecret(ctx, meta.ID, HashAPIKey(secret))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved == nil || resolved.ID != meta.ID || resolved.KeyHash == secret {
+		t.Fatalf("resolved key = %+v", resolved)
+	}
+	if err := hub.BindAccount(ctx, meta.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	scope, _ := json.Marshal([]string{"dev:personal:alice"})
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "r1", ServiceID: "svc1", MatchExpr: "openapi", AccountScopeJSON: string(scope), Enabled: true}); err != nil {
+		t.Fatalf("AddPrefixRule bound scope: %v", err)
+	}
+	badScope, _ := json.Marshal([]string{"dev:personal:bob"})
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "r2", ServiceID: "svc1", MatchExpr: "codex", AccountScopeJSON: string(badScope), Enabled: true}); err == nil {
+		t.Fatalf("AddPrefixRule accepted unbound account scope")
+	}
+	if err := db.RevokeServiceAPIKey(ctx, meta.ID); err != nil {
+		t.Fatalf("RevokeServiceAPIKey: %v", err)
+	}
+	revoked, err := db.ResolveServiceAPISecret(ctx, meta.ID, HashAPIKey(secret))
+	if err != nil {
+		t.Fatalf("Resolve revoked key: %v", err)
+	}
+	if revoked != nil {
+		t.Fatalf("revoked key resolved: %+v", revoked)
+	}
+}
+
+func TestSystemKeywordRoutesToSystemHandler(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertSystemService(ctx, model.SystemService{Name: "scheduler", Description: "调度", Delivery: "internal", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSystemRoute(ctx, model.SystemRoute{Keyword: "#进度汇报", ServiceName: "scheduler", Action: "record", Priority: 1, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSystemRoute(ctx, model.SystemRoute{Keyword: "#调整日程", ServiceName: "scheduler", Action: "coordinate", Priority: 1, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSystemRoute(ctx, model.SystemRoute{Keyword: "sys:调度", ServiceName: "scheduler", Action: "auto", Priority: 99, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	handler := &fakeSystemHandler{reply: "已提交"}
+	hub.System = handler
+	result, err := hub.Dispatch(ctx, model.Message{ID: "sys1", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "@_user_1 #进度汇报 本周做了X")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "已提交" {
+		t.Fatalf("result=%+v", result)
+	}
+	if handler.service != "scheduler" || handler.action != "record" || handler.body != "本周做了X" {
+		t.Fatalf("handler=%+v", handler)
+	}
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sys2", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#调整日程 UserThree顺延3天")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || handler.action != "coordinate" || handler.body != "UserThree顺延3天" {
+		t.Fatalf("coordinate result=%+v handler=%+v", result, handler)
+	}
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sys3", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "我想 #调整日程")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #sys3") {
+		t.Fatalf("middle keyword should only ack for L2: %+v", result)
+	}
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sys4", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "sys:调度 协调团队排期")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || handler.action != "auto" || handler.body != "协调团队排期" {
+		t.Fatalf("sys compat result=%+v handler=%+v", result, handler)
+	}
+	hub.RegisterBot("dev", "ExampleBot")
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sys5", ChatEntityID: "dev:group:oc_team", BotChannelID: "dev", ChatType: model.ChatGroup}, "@ExampleBot #调整日程 UserThree顺延3天")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || handler.action != "coordinate" || handler.body != "UserThree顺延3天" {
+		t.Fatalf("literal bot mention should strip to system route result=%+v handler=%+v", result, handler)
+	}
+}
+
+func TestSecurityOpsRoutesToAllSystemSessions(t *testing.T) {
+	useTestSecOpsAdminOpenID(t)
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.RegisterBot("bot-test", "bot-test")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: secOpsAdminOpenID, Role: model.RoleManager, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: secOpsOwnerKey, DisplayName: secOpsMemberName, Role: model.RoleSystem, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "sec", Name: "sec", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "sec", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, secOpsOwnerKey); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	claudeName := secOpsOwnerKey + "-secclaude-" + keyTail(key.ID)
+	deepseekName := secOpsOwnerKey + "-secdeepseek-" + keyTail(key.ID)
+	claude := dialSession(t, ctx, srv.URL, "secclaude", key.ID, secret)
+	defer claude.Close(websocket.StatusNormalClosure, "done")
+	deepseek := dialSession(t, ctx, srv.URL, "secdeepseek", key.ID, secret)
+	defer deepseek.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, claudeName)
+	waitSessionOnline(t, hub, key.ID, deepseekName)
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "secops1",
+		ChatEntityID: "dev:group:oc_c610",
+		BotChannelID: "dev",
+		ChatType:     model.ChatGroup,
+		SenderOpenID: secOpsAdminOpenID,
+		Content:      `{"text":"@SYSTEM-V-TASK-INTERNAL #系统安全 加白名单 1.2.3.4"}`,
+	}, "@SYSTEM-V-TASK-INTERNAL #系统安全 加白名单 1.2.3.4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "2个sec-ops会话") {
+		t.Fatalf("secops result=%+v", result)
+	}
+	gotClaude := readEnvelope(t, ctx, claude)
+	gotDeepseek := readEnvelope(t, ctx, deepseek)
+	got := gotClaude.Body + "\n" + gotDeepseek.Body
+	if strings.Count(got, "加白名单 1.2.3.4") != 2 || strings.Contains(got, "#系统安全") || strings.Contains(got, "@SYSTEM-V-TASK-INTERNAL") {
+		t.Fatalf("secops bodies not stripped:\nclaude=%+v\ndeepseek=%+v", gotClaude, gotDeepseek)
+	}
+	if gotClaude.Meta["group_chat_id"] != "oc_c610" || gotDeepseek.Meta["sender_open_id"] != secOpsAdminOpenID {
+		t.Fatalf("secops meta missing source: claude=%+v deepseek=%+v", gotClaude.Meta, gotDeepseek.Meta)
+	}
+
+	result, err = hub.Dispatch(ctx, model.Message{
+		ID:           "secops2",
+		ChatEntityID: "bot-test:group:oc_c610",
+		BotChannelID: "bot-test",
+		ChatType:     model.ChatGroup,
+		SenderOpenID: secOpsAdminOpenID,
+		Content:      `{"text":"@SYSTEM-V-TASK-INTERNAL #系统安全 撤销封禁 2.2.2.2"}`,
+	}, "@SYSTEM-V-TASK-INTERNAL #系统安全 撤销封禁 2.2.2.2")
+	if err != nil || !result.Matched {
+		t.Fatalf("cc secops result=%+v err=%v", result, err)
+	}
+	if readEnvelope(t, ctx, claude).Body != "撤销封禁 2.2.2.2" || readEnvelope(t, ctx, deepseek).Body != "撤销封禁 2.2.2.2" {
+		t.Fatal("cc connector secops did not fan out stripped command")
+	}
+}
+
+func TestParseTerminalInputCommand(t *testing.T) {
+	action, session, code, ok := parseTerminalInputCommand("#解锁输入 developer ab12cd")
+	if !ok || action != "unlock" || session != "developer" || code != "AB12CD" {
+		t.Fatalf("unlock parse = %q %q %q %v", action, session, code, ok)
+	}
+	action, session, code, ok = parseTerminalInputCommand("#锁定输入 developer")
+	if !ok || action != "lock" || session != "developer" || code != "" {
+		t.Fatalf("lock parse = %q %q %q %v", action, session, code, ok)
+	}
+	if _, _, _, ok := parseTerminalInputCommand("#解锁输入 developer"); ok {
+		t.Fatal("accepted incomplete unlock")
+	}
+	if _, _, _, ok := parseTerminalInputCommand("#锁定输入 developer extra"); ok {
+		t.Fatal("accepted invalid lock")
+	}
+}
+
+func TestSecurityOpsRejectsUnauthorizedSender(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: secOpsOwnerKey, DisplayName: secOpsMemberName, Role: model.RoleSystem, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "sec", Name: "sec", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "sec", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, secOpsOwnerKey); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	secName := secOpsOwnerKey + "-secclaude-" + keyTail(key.ID)
+	secSession := dialSession(t, ctx, srv.URL, "secclaude", key.ID, secret)
+	defer secSession.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, secName)
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "secops-deny",
+		ChatEntityID: "dev:group:oc_c610",
+		BotChannelID: "dev",
+		ChatType:     model.ChatGroup,
+		SenderOpenID: "ou_alice",
+		Content:      `{"text":"@SYSTEM-V-TASK-INTERNAL#` + secName + ` #系统安全 加白名单 6.6.6.6"}`,
+	}, "@SYSTEM-V-TASK-INTERNAL#"+secName+" #系统安全 加白名单 6.6.6.6")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "无权限") {
+		t.Fatalf("non u1 secops result=%+v", result)
+	}
+	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	defer cancel()
+	if _, _, err := secSession.Read(readCtx); err == nil {
+		t.Fatal("unauthorized secops command was delivered to sec-claude")
+	}
+}
+
+func TestSecurityOpsAllowsBoundAdminOwner(t *testing.T) {
+	useTestSecOpsAdminOwnerKey(t, "u1")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: secOpsOwnerKey, DisplayName: secOpsMemberName, Role: model.RoleSystem, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", Role: model.RoleManager, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_alias", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_alias", BoundOwner: "u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "secops-owner",
+		ChatEntityID: "dev:group:oc_c610",
+		BotChannelID: "dev",
+		ChatType:     model.ChatGroup,
+		SenderOpenID: "ou_alias",
+		Content:      `{"text":"@SYSTEM-V-TASK-INTERNAL #系统安全 改规则 404阈值=30"}`,
+	}, "@SYSTEM-V-TASK-INTERNAL #系统安全 改规则 404阈值=30")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || strings.Contains(result.Reply, "无权限") || !strings.Contains(result.Reply, "无在线") {
+		t.Fatalf("bound u1 secops result=%+v", result)
+	}
+}
+
+type fakeSystemHandler struct {
+	service string
+	action  string
+	body    string
+	reply   string
+}
+
+func (f *fakeSystemHandler) HandleSystemRequest(_ context.Context, serviceName, action, body string, _ model.Message) (string, error) {
+	f.service = serviceName
+	f.action = action
+	f.body = body
+	return f.reply, nil
+}
+
+func TestDispatchForwardsOnlineWSWithStripPrefix(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	plain := setupRoute(t, hub, ctx, "svc1", "dev:personal:alice", "bot", true)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/service/{serviceID}", hub.HandleWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http") + "/ws/service/svc1?api_key=" + plain
+	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	if err != nil {
+		t.Fatalf("Dial: %v", err)
+	}
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, data, err := conn.Read(ctx)
+		if err != nil {
+			t.Errorf("client read: %v", err)
+			return
+		}
+		var req ForwardRequest
+		if err := json.Unmarshal(data, &req); err != nil {
+			t.Errorf("unmarshal request: %v", err)
+			return
+		}
+		if req.Text != "hello" || req.ChatEntityID != "dev:personal:alice" {
+			t.Errorf("request = %+v", req)
+		}
+		resp, _ := json.Marshal(ForwardResponse{Reply: "service ok"})
+		if err := conn.Write(ctx, websocket.MessageText, resp); err != nil {
+			t.Errorf("client write: %v", err)
+		}
+	}()
+	result, err := hub.Dispatch(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"bot hello"}`}, "bot hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "service ok" {
+		t.Fatalf("result = %+v", result)
+	}
+	<-done
+}
+
+func TestDispatchOfflineReturnsFailureNoReplay(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	_ = setupRoute(t, hub, ctx, "svc1", "dev:personal:alice", "bot", false)
+	result, err := hub.Dispatch(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "bot hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "该消息投递失败") || !strings.Contains(result.Reply, "bot hello") {
+		t.Fatalf("result = %+v", result)
+	}
+}
+
+func TestDispatchDoesNotMatchUnscopedAccount(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	_ = setupRoute(t, hub, ctx, "svc1", "dev:personal:alice", "bot", false)
+	result, err := hub.Dispatch(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:bob", BotChannelID: "dev", ChatType: model.ChatPersonal}, "bot hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #m1") {
+		t.Fatalf("unscoped account should only ack for L2, got: %+v", result)
+	}
+}
+
+func TestDispatchEmptyScopeUsesBoundAccountsOnly(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", ReplyMode: "sync", TimeoutMs: 1000, Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := hub.IssueAPIKey(ctx, "svc1", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "r1", ServiceID: "svc1", MatchExpr: "bot", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	alice, err := hub.Dispatch(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "bot hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !alice.Matched {
+		t.Fatalf("bound account should match empty scope")
+	}
+	bob, err := hub.Dispatch(ctx, model.Message{ID: "m2", ChatEntityID: "dev:personal:bob", BotChannelID: "dev", ChatType: model.ChatPersonal}, "bot hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bob.Matched || !strings.Contains(bob.Reply, "已受理 #m2") {
+		t.Fatalf("unbound account should only ack for L2: %+v", bob)
+	}
+}
+
+func TestAddPrefixRuleRejectsWildcardOverlapInSameScope(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", ReplyMode: "sync", TimeoutMs: 1000, Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := hub.IssueAPIKey(ctx, "svc1", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	scope, _ := json.Marshal([]string{"dev:personal:alice"})
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "r1", ServiceID: "svc1", MatchExpr: "openAPI???", AccountScopeJSON: string(scope), Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "r2", ServiceID: "svc1", MatchExpr: "openAPI1", AccountScopeJSON: string(scope), Enabled: true}); err == nil {
+		t.Fatalf("accepted overlapping wildcard prefix")
+	}
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "r3", ServiceID: "svc1", MatchExpr: "*", AccountScopeJSON: string(scope), Enabled: true}); err == nil {
+		t.Fatalf("accepted high-risk * prefix")
+	}
+}
+
+func TestAddPrefixRuleAllowsSamePatternForDisjointAccounts(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", ReplyMode: "sync", TimeoutMs: 1000, Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc2", Name: "svc2", DeliveryType: "ws", ReplyMode: "sync", TimeoutMs: 1000, Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key1, err := hub.IssueAPIKey(ctx, "svc1", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, key2, err := hub.IssueAPIKey(ctx, "svc2", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key1.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key2.ID, "dev:personal:bob"); err != nil {
+		t.Fatal(err)
+	}
+	scopeAlice, _ := json.Marshal([]string{"dev:personal:alice"})
+	scopeBob, _ := json.Marshal([]string{"dev:personal:bob"})
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "r1", ServiceID: "svc1", MatchExpr: "open*", AccountScopeJSON: string(scopeAlice), Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "r2", ServiceID: "svc2", MatchExpr: "openAPI", AccountScopeJSON: string(scopeBob), Enabled: true}); err != nil {
+		t.Fatalf("disjoint account scope reported conflict: %v", err)
+	}
+}
+
+func TestDispatchWildcardStripPrefix(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	plain := setupRoute(t, hub, ctx, "svc1", "dev:personal:alice", "bot???", true)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/service/{serviceID}", hub.HandleWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http") + "/ws/service/svc1?api_key=" + plain
+	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	if err != nil {
+		t.Fatalf("Dial: %v", err)
+	}
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, data, err := conn.Read(ctx)
+		if err != nil {
+			t.Errorf("client read: %v", err)
+			return
+		}
+		var req ForwardRequest
+		if err := json.Unmarshal(data, &req); err != nil {
+			t.Errorf("unmarshal request: %v", err)
+			return
+		}
+		if req.Text != "hello" {
+			t.Errorf("request text = %q", req.Text)
+		}
+		resp, _ := json.Marshal(ForwardResponse{Reply: "service ok"})
+		if err := conn.Write(ctx, websocket.MessageText, resp); err != nil {
+			t.Errorf("client write: %v", err)
+		}
+	}()
+	result, err := hub.Dispatch(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "bot123 hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "service ok" {
+		t.Fatalf("wildcard strip/failure reply = %+v", result)
+	}
+	<-done
+}
+
+func TestDispatchNonEmptyScopeRequiresStillBoundAccount(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", ReplyMode: "sync", TimeoutMs: 1000, Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := hub.IssueAPIKey(ctx, "svc1", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	scope, _ := json.Marshal([]string{"dev:personal:alice"})
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "r1", ServiceID: "svc1", MatchExpr: "bot", AccountScopeJSON: string(scope), Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.RevokeServiceAPIKey(ctx, key.ID); err != nil {
+		t.Fatal(err)
+	}
+	result, err := hub.Dispatch(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "bot hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已受理 #m1") {
+		t.Fatalf("revoked key should only ack for L2: %+v", result)
+	}
+}
+
+func setupRoute(t *testing.T, hub *Hub, ctx context.Context, serviceID, account, prefix string, strip bool) string {
+	t.Helper()
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: serviceID, Name: serviceID, DeliveryType: "ws", ReplyMode: "sync", TimeoutMs: 1000, Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	plain, key, err := hub.IssueAPIKey(ctx, serviceID, "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, account); err != nil {
+		t.Fatal(err)
+	}
+	scope, _ := json.Marshal([]string{account})
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{
+		ID:               serviceID + "-rule",
+		ServiceID:        serviceID,
+		MatchExpr:        prefix,
+		AccountScopeJSON: string(scope),
+		StripPrefix:      strip,
+		Enabled:          true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return plain
+}
+
+func TestHashAPIKeyStable(t *testing.T) {
+	a := HashAPIKey("secret")
+	b := HashAPIKey("secret")
+	if a != b || a == "secret" || len(a) == 0 {
+		t.Fatalf("hash invalid a=%q b=%q", a, b)
+	}
+}
+
+func TestSessionAddressingFourFlows(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyID := key.ID
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_alice"); err != nil {
+		t.Fatal(err)
+	}
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = outbound
+	hub.RegisterBot("dev", "ExampleBot")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	home := dialSession(t, ctx, srv.URL, "home", keyID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	developer := dialSession(t, ctx, srv.URL, "developer", keyID, secret)
+	defer developer.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "fm1",
+		ChatEntityID: "dev:personal:alice",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"#home 你好"}`,
+	}, "#home 你好")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("dispatch result = %+v", result)
+	}
+	gotHome := readEnvelope(t, ctx, home)
+	if gotHome.To != "home#"+keyID || gotHome.From != "alice#"+keyID+"#ExampleBot" || gotHome.Body != "你好" {
+		t.Fatalf("feishu->home envelope = %+v", gotHome)
+	}
+	assertEnvelopeDoesNotContain(t, gotHome, secret)
+
+	devEnv := model.Envelope{ID: "e2", To: "home#" + keyID, From: "developer#" + keyID, Body: "内部消息"}
+	if err := writeEnvelope(ctx, developer, devEnv); err != nil {
+		t.Fatalf("developer write: %v", err)
+	}
+	gotHome = readEnvelope(t, ctx, home)
+	if gotHome.ID != "e2" || gotHome.Body != "内部消息" || gotHome.From != "developer#"+keyID {
+		t.Fatalf("developer->home envelope = %+v", gotHome)
+	}
+	assertEnvelopeDoesNotContain(t, gotHome, secret)
+	claimed, _, err := hub.claimEnvelope(devEnv)
+	if err != nil {
+		t.Fatalf("duplicate same envelope returned error: %v", err)
+	}
+	if claimed {
+		t.Fatalf("duplicate same envelope was claimed again")
+	}
+	diffEnv := devEnv
+	diffEnv.Body = "不同内容"
+	if _, _, err := hub.claimEnvelope(diffEnv); err == nil {
+		t.Fatalf("duplicate id with different body was accepted")
+	}
+
+	feishuEnv := model.Envelope{ID: "e3", To: "alice#" + keyID + "#ExampleBot", From: "home#" + keyID, Body: "回飞书"}
+	if err := writeEnvelope(ctx, home, feishuEnv); err != nil {
+		t.Fatalf("home write: %v", err)
+	}
+	msg := waitOutbound(t, ctx, outbound)
+	if msg == nil || msg.ChatEntityID != "dev:personal:alice" || msg.BotChannelID != "dev" || !strings.Contains(msg.Content, "回飞书") {
+		t.Fatalf("outbound message = %+v", msg)
+	}
+	if msg.ChatType != model.ChatPersonal || strings.Contains(messageText(t, msg), "<at user_id=") {
+		t.Fatalf("personal outbound should not render at mention: %+v text=%q", msg, messageText(t, msg))
+	}
+
+	groupResult, err := hub.Dispatch(ctx, model.Message{
+		ID:           "fm-group",
+		ChatEntityID: "dev:group:oc_group",
+		BotChannelID: "dev",
+		ChatType:     model.ChatGroup,
+		SenderOpenID: "ou_alice",
+		Content:      `{"text":"@_user_1 #home 群里你好"}`,
+	}, "@_user_1 #home 群里你好")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !groupResult.Matched || groupResult.Reply != "" {
+		t.Fatalf("group dispatch result = %+v", groupResult)
+	}
+	gotGroup := readEnvelope(t, ctx, home)
+	if gotGroup.To != "home#"+keyID || gotGroup.From != "ou_alice#"+keyID+"#ExampleBot" || gotGroup.Body != "群里你好" {
+		t.Fatalf("group feishu->home envelope = %+v", gotGroup)
+	}
+	if gotGroup.Meta["group_chat_id"] != "oc_group" || gotGroup.Meta["sender_open_id"] != "ou_alice" {
+		t.Fatalf("group inbound meta = %+v", gotGroup.Meta)
+	}
+	assertEnvelopeDoesNotContain(t, gotGroup, secret)
+
+	groupEnv := model.Envelope{
+		ID:   "e4",
+		To:   "oc_group#" + keyID + "#ExampleBot",
+		From: "home#" + keyID,
+		Body: "群回复",
+		Meta: map[string]any{"at": []any{"ou_alice"}},
+	}
+	if err := writeEnvelope(ctx, home, groupEnv); err != nil {
+		t.Fatalf("home group write: %v", err)
+	}
+	msg = waitOutbound(t, ctx, outbound)
+	if msg == nil || msg.ChatEntityID != "dev:group:oc_group" || msg.BotChannelID != "dev" || msg.ChatType != model.ChatGroup {
+		t.Fatalf("group outbound message = %+v", msg)
+	}
+	if text := messageText(t, msg); text != `<at user_id="ou_alice"></at> 群回复` {
+		t.Fatalf("group outbound text = %q msg=%+v", text, msg)
+	}
+}
+
+func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyID := key.ID
+	if err := hub.BindAccount(ctx, keyID, "ExampleConnector:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, keyID, "ExampleConnector:personal:ou_sender"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, keyID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = outbound
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.RegisterBot("ExampleConnector", "ExampleConnector")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	ccbot := dialSession(t, ctx, srv.URL, "ccbot", keyID, secret)
+	defer ccbot.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, keyID, "ccbot")
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "source-personal",
+		ChatEntityID: "ExampleConnector:personal:ou_u1",
+		BotChannelID: "ExampleConnector",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"#ccbot ping"}`,
+	}, "#ccbot ping")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("personal dispatch result=%+v", result)
+	}
+	gotPersonal := readEnvelope(t, ctx, ccbot)
+	if gotPersonal.Meta["source_bot_channel_id"] != "ExampleConnector" || gotPersonal.Meta["source_chat_type"] != string(model.ChatPersonal) || gotPersonal.Meta["source_open_id"] != "ou_u1" {
+		t.Fatalf("personal source meta=%+v", gotPersonal.Meta)
+	}
+	if err := writeEnvelope(ctx, ccbot, model.Envelope{
+		ID:   "reply-personal",
+		To:   "ou_u1#" + keyID + "#ExampleBot",
+		From: "ccbot#" + keyID,
+		Body: "个人回复",
+		Meta: gotPersonal.Meta,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg := waitOutbound(t, ctx, outbound)
+	if msg == nil || msg.BotChannelID != "ExampleConnector" || msg.ChatEntityID != "ExampleConnector:personal:ou_u1" || msg.ChatType != model.ChatPersonal {
+		t.Fatalf("personal reply outbound=%+v", msg)
+	}
+
+	result, err = hub.Dispatch(ctx, model.Message{
+		ID:           "source-group",
+		ChatEntityID: "ExampleConnector:group:oc_team",
+		BotChannelID: "ExampleConnector",
+		ChatType:     model.ChatGroup,
+		SenderOpenID: "ou_sender",
+		Content:      `{"text":"@_user_1 #ccbot group ping"}`,
+	}, "@_user_1 #ccbot group ping")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("group dispatch result=%+v", result)
+	}
+	gotGroup := readEnvelope(t, ctx, ccbot)
+	if gotGroup.Meta["source_bot_channel_id"] != "ExampleConnector" || gotGroup.Meta["source_chat_type"] != string(model.ChatGroup) || gotGroup.Meta["source_chat_id"] != "oc_team" || gotGroup.Meta["source_sender_openid"] != "ou_sender" {
+		t.Fatalf("group source meta=%+v", gotGroup.Meta)
+	}
+	if err := writeEnvelope(ctx, ccbot, model.Envelope{
+		ID:   "reply-group",
+		To:   "oc_team#" + keyID + "#ExampleBot",
+		From: "ccbot#" + keyID,
+		Body: "群回复",
+		Meta: gotGroup.Meta,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg = waitOutbound(t, ctx, outbound)
+	if msg == nil || msg.BotChannelID != "ExampleConnector" || msg.ChatEntityID != "ExampleConnector:group:oc_team" || msg.ChatType != model.ChatGroup {
+		t.Fatalf("group reply outbound=%+v", msg)
+	}
+	if text := messageText(t, msg); text != `<at user_id="ou_sender"></at> 群回复` {
+		t.Fatalf("group reply text=%q msg=%+v", text, msg)
+	}
+
+	if err := hub.RouteEnvelope(ctx, model.Envelope{
+		ID:   "reply-fallback",
+		To:   "ou_u1#" + keyID + "#ExampleBot",
+		From: "ccbot#" + keyID,
+		Body: "默认回复",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg = waitOutbound(t, ctx, outbound)
+	if msg == nil || msg.BotChannelID != "dev" || msg.ChatEntityID != "dev:personal:ou_u1" || msg.ChatType != model.ChatPersonal {
+		t.Fatalf("fallback outbound=%+v", msg)
+	}
+}
+
+func TestCrossMemberMentionRoutesToTargetSessionAndRepliesToSource(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	u1Secret, u1Key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	u2Secret, u2Key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u1Key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u2Key.ID, "dev:personal:ou_u2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = outbound
+	hub.RegisterBot("dev", "ExampleBot")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	u1 := dialSession(t, ctx, srv.URL, "home", u1Key.ID, u1Secret)
+	defer u1.Close(websocket.StatusNormalClosure, "done")
+	u1HomeName := "u1-home-" + keyTail(u1Key.ID)
+	u2Name := "u2-u2-" + keyTail(u2Key.ID)
+	u2 := dialSession(t, ctx, srv.URL, "u2", u2Key.ID, u2Secret)
+	defer u2.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "cross-1",
+		ChatEntityID: "dev:personal:ou_u1",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"@UserTwo#` + u2Name + ` 看看这个方案"}`,
+	}, "@UserTwo#"+u2Name+" 看看这个方案")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("cross dispatch result=%+v", result)
+	}
+	gotFeishu := readEnvelope(t, ctx, u2)
+	if gotFeishu.To != u2Name+"#"+u2Key.ID || gotFeishu.From != "ou_u1#"+u2Key.ID+"#ExampleBot" || gotFeishu.Body != "看看这个方案" {
+		t.Fatalf("cross envelope=%+v", gotFeishu)
+	}
+	if gotFeishu.Meta["reply_prefix"] != "【UserTwo·"+u2Name+"】" || gotFeishu.Meta["cross_member"] != "u2" {
+		t.Fatalf("cross meta=%+v", gotFeishu.Meta)
+	}
+
+	if err := writeEnvelope(ctx, u1, model.Envelope{ID: "cross-ws", To: "@UserTwo#" + u2Name, From: u1HomeName + "#" + u1Key.ID, Body: "会话主动消息"}); err != nil {
+		t.Fatal(err)
+	}
+	gotWS := readEnvelope(t, ctx, u2)
+	if gotWS.To != u2Name+"#"+u2Key.ID || gotWS.From != u1HomeName+"#"+u2Key.ID || gotWS.Body != "会话主动消息" {
+		t.Fatalf("cross ws envelope=%+v", gotWS)
+	}
+	if gotWS.Meta["source_session_name"] != u1HomeName || gotWS.Meta["source_key_id"] != u1Key.ID || gotWS.Meta["reply_prefix"] != "【UserTwo·"+u2Name+"】" {
+		t.Fatalf("cross ws meta=%+v", gotWS.Meta)
+	}
+
+	if err := writeEnvelope(ctx, u2, model.Envelope{ID: "cross-reply", To: gotFeishu.From, From: gotFeishu.To, Body: "【UserTwo·u2】已看"}); err != nil {
+		t.Fatal(err)
+	}
+	msg := waitOutbound(t, ctx, outbound)
+	if msg == nil || msg.ChatEntityID != "dev:personal:ou_u1" || !strings.Contains(messageText(t, msg), "【UserTwo·u2】已看") {
+		t.Fatalf("cross reply outbound=%+v", msg)
+	}
+}
+
+func TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	home := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	homeName := "u1-home-" + keyTail(key.ID)
+	developerName := "u1-developer-" + keyTail(key.ID)
+	skill := readEnvelopeIncludingSystem(t, ctx, home)
+	if skill.Meta["type"] != agentNetworkSkillPushType || !strings.Contains(skill.Body, agentNetworkSkillAck) || !strings.Contains(skill.Body, "#developer 请核对X") {
+		t.Fatalf("agent skill push=%+v", skill)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "skill-ack",
+		To:   "workpulse#" + key.ID,
+		From: homeName + "#" + key.ID,
+		Body: agentNetworkSkillAck,
+		Meta: map[string]any{"type": agentNetworkSkillAckType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		hub.mu.Lock()
+		c := hub.sessionClients[key.ID][homeName]
+		hub.mu.Unlock()
+		if c == nil {
+			return false
+		}
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		return c.skillInstalled
+	})
+
+	developer := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer developer.Close(websocket.StatusNormalClosure, "done")
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "selector", To: "#developer", From: homeName + "#" + key.ID, Body: "请核对X"}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, developer)
+	if got.To != developerName+"#"+key.ID || got.From != homeName+"#"+key.ID || got.Body != "请核对X" {
+		t.Fatalf("selector routed envelope=%+v", got)
+	}
+}
+
+func TestFeishuShortSessionSelectorResolvesRegisteredNameByOwner(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	u1Secret, u1Key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	u2Secret, u2Key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u1Key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u2Key.ID, "dev:personal:ou_u2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	u1Dev := dialSession(t, ctx, srv.URL, "developer", u1Key.ID, u1Secret)
+	defer u1Dev.Close(websocket.StatusNormalClosure, "done")
+	u2Dev := dialSession(t, ctx, srv.URL, "developer", u2Key.ID, u2Secret)
+	defer u2Dev.Close(websocket.StatusNormalClosure, "done")
+
+	u1DevName := "u1-developer-" + keyTail(u1Key.ID)
+	for _, tc := range []struct {
+		id   string
+		to   string
+		body string
+	}{
+		{id: "short-feishu", to: "developer", body: "short"},
+		{id: "owner-short-feishu", to: "u1-developer", body: "owner-short"},
+		{id: "full-feishu", to: u1DevName, body: "full"},
+	} {
+		result, err := hub.Dispatch(ctx, model.Message{
+			ID:           tc.id,
+			ChatEntityID: "dev:personal:ou_u1",
+			BotChannelID: "dev",
+			ChatType:     model.ChatPersonal,
+			Content:      `{"text":"#` + tc.to + ` ` + tc.body + `"}`,
+		}, "#"+tc.to+" "+tc.body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !result.Matched || result.Reply != "" {
+			t.Fatalf("%s dispatch result = %+v", tc.id, result)
+		}
+		got := readEnvelope(t, ctx, u1Dev)
+		if got.To != u1DevName+"#"+u1Key.ID || got.Body != tc.body {
+			t.Fatalf("%s envelope=%+v", tc.id, got)
+		}
+	}
+	assertNoEnvelope(t, ctx, u2Dev, 120*time.Millisecond)
+}
+
+func TestShortSessionSelectorRejectsAmbiguousOwnerMatch(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	firstSecret, firstKey, err := hub.IssueAPIKey(ctx, "svc1", "u1-a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondSecret, secondKey, err := hub.IssueAPIKey(ctx, "svc1", "u1-b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, firstKey.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, secondKey.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	home := dialSession(t, ctx, srv.URL, "home", firstKey.ID, firstSecret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	firstDev := dialSession(t, ctx, srv.URL, "developer", firstKey.ID, firstSecret)
+	defer firstDev.Close(websocket.StatusNormalClosure, "done")
+	secondDev := dialSession(t, ctx, srv.URL, "developer", secondKey.ID, secondSecret)
+	defer secondDev.Close(websocket.StatusNormalClosure, "done")
+
+	homeName := "u1-home-" + keyTail(firstKey.ID)
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "ambiguous", To: "#developer", From: homeName + "#" + firstKey.ID, Body: "ping"}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, home)
+	firstName := "u1-developer-" + keyTail(firstKey.ID)
+	secondName := "u1-developer-" + keyTail(secondKey.ID)
+	if !strings.Contains(got.Body, "存在多个 developer 会话") || !strings.Contains(got.Body, firstName) || !strings.Contains(got.Body, secondName) || !strings.Contains(got.Body, "请用全名指定") {
+		t.Fatalf("ambiguous selector error=%+v", got)
+	}
+	resolved := hub.resolveOwnerSessionByShort(ctx, "u1", "u1-developer", "")
+	if resolved.status != ownerSessionAmbiguous || len(resolved.candidates) != 2 || !slices.Contains(resolved.candidates, firstName) || !slices.Contains(resolved.candidates, secondName) {
+		t.Fatalf("owner-short should be ambiguous: %+v", resolved)
+	}
+	assertNoEnvelope(t, ctx, firstDev, 120*time.Millisecond)
+	assertNoEnvelope(t, ctx, secondDev, 120*time.Millisecond)
+}
+
+func TestCrossMemberMentionRejectsNoDirectorySession(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	u1Secret, u1Key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	u2Secret, u2Key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u1Key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u2Key.ID, "dev:personal:ou_u2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	u1 := dialSession(t, ctx, srv.URL, "home", u1Key.ID, u1Secret)
+	defer u1.Close(websocket.StatusNormalClosure, "done")
+	secOpsName := "u2-secops-" + keyTail(u2Key.ID)
+	secOps := dialSessionWithQuery(t, ctx, srv.URL, "secops", u2Key.ID, u2Secret, "no_directory=1")
+	defer secOps.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "cross-hidden",
+		ChatEntityID: "dev:personal:ou_u1",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"@UserTwo#` + secOpsName + ` 帮忙看"}`,
+	}, "@UserTwo#"+secOpsName+" 帮忙看")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "该会话为专职隔离会话不接受任务派发" {
+		t.Fatalf("hidden cross dispatch result=%+v", result)
+	}
+
+	result, err = hub.Dispatch(ctx, model.Message{
+		ID:           "direct-hidden",
+		ChatEntityID: "dev:personal:ou_u2",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"#` + secOpsName + ` 自查"}`,
+	}, "#"+secOpsName+" 自查")
+	if err != nil || !result.Matched {
+		t.Fatalf("direct hidden dispatch result=%+v err=%v", result, err)
+	}
+	got := readEnvelope(t, ctx, secOps)
+	if got.To != secOpsName+"#"+u2Key.ID || got.Body != "自查" {
+		t.Fatalf("direct hidden envelope=%+v", got)
+	}
+}
+
+func TestCrossMemberMentionRequiresSessionWhenMultipleOnline(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u2"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	dev := dialSession(t, ctx, srv.URL, "dev", key.ID, secret)
+	defer dev.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{ID: "cross-amb", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}, "@u2 帮我看")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "多个在线会话") {
+		t.Fatalf("ambiguous cross result=%+v", result)
+	}
+}
+
+func TestAggregateReviewCommandBypassesPersonalSessionAmbiguity(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "reviewer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_reviewer"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "reviewer", DisplayName: "Reviewer", FeishuOpenID: "ou_reviewer", Role: model.RoleManager, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, project := range []model.Project{
+		{ID: "proj:aggregate", Name: "Aggregate", OwnerKey: "reviewer", NotifyChatID: "oc_group", NotifyBotID: "dev", Active: true},
+		{ID: "proj:source", Name: "Source", OwnerKey: "source-owner", Active: true},
+	} {
+		if err := db.UpsertProject(ctx, project); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.SetProjectAggregateSources(ctx, "proj:aggregate", []string{"proj:source"}); err != nil {
+		t.Fatal(err)
+	}
+	week := "2026-06-29"
+	if err := db.UpsertProjectWeeklyReport(ctx, model.ProjectWeeklyReport{
+		ID:        "aggregate-weekly-proj:aggregate-20260629",
+		ProjectID: "proj:aggregate",
+		Week:      week,
+		Content:   "聚合周报草稿",
+		Status:    "draft",
+		CreatedAt: time.Date(2026, 7, 5, 22, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 7, 5, 22, 0, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = outbound
+	svc := scheduler.New(scheduler.Config{}, nil, &clock.Fake{T: time.Date(2026, 7, 6, 1, 0, 0, 0, time.UTC)}, outbound)
+	svc.Repo = db
+	hub.System = svc
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	dev := dialSession(t, ctx, srv.URL, "dev", key.ID, secret)
+	defer dev.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "approve-aggregate",
+		ChatEntityID: "dev:personal:ou_reviewer",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		SenderOpenID: "ou_reviewer",
+	}, "批准发送")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已批准并发送") || strings.Contains(result.Reply, "多个在线会话") {
+		t.Fatalf("aggregate review result=%+v", result)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg == nil {
+		t.Fatalf("published message=%+v err=%v", msg, err)
+	}
+	if msg.ChatEntityID != "dev:group:oc_group" || msg.ChatType != model.ChatGroup {
+		t.Fatalf("published message target=%+v", msg)
+	}
+}
+
+func TestCrossMemberMentionHonorsDMOptOut(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, DMOptOut: true, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := hub.Dispatch(ctx, model.Message{ID: "cross-optout", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}, "@UserTwo#u2 hi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "未开放会话接入") {
+		t.Fatalf("optout cross result=%+v", result)
+	}
+}
+
+func TestPersonalMessageDefaultsToOnlyOnlineSession(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u2"); err != nil {
+		t.Fatal(err)
+	}
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = outbound
+	hub.RegisterBot("dev", "ExampleBot")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	u2 := dialSession(t, ctx, srv.URL, "u2", key.ID, secret)
+	defer u2.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "default-1",
+		ChatEntityID: "dev:personal:ou_u2",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"你好"}`,
+	}, "你好")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("default dispatch result=%+v", result)
+	}
+	got := readEnvelope(t, ctx, u2)
+	if got.To != "u2#"+key.ID || got.From != "ou_u2#"+key.ID+"#ExampleBot" || got.Body != "你好" {
+		t.Fatalf("default envelope=%+v", got)
+	}
+	if got.Meta["reply_prefix"] != "【u2】" {
+		t.Fatalf("default envelope meta=%+v", got.Meta)
+	}
+
+	if err := writeEnvelope(ctx, u2, model.Envelope{ID: "default-reply", To: got.From, From: got.To, Body: "【u2】你好"}); err != nil {
+		t.Fatal(err)
+	}
+	msg := waitOutbound(t, ctx, outbound)
+	if msg == nil || msg.ChatEntityID != "dev:personal:ou_u2" || !strings.Contains(messageText(t, msg), "【u2】你好") {
+		t.Fatalf("default reply outbound=%+v", msg)
+	}
+}
+
+func TestPersonalMessageDefaultRouteRequiresExplicitSessionWhenMultipleOnline(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u2"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	u2 := dialSession(t, ctx, srv.URL, "u2", key.ID, secret)
+	defer u2.Close(websocket.StatusNormalClosure, "done")
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{ID: "default-many", ChatEntityID: "dev:personal:ou_u2", BotChannelID: "dev", ChatType: model.ChatPersonal}, "你好")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "多个在线会话") || !strings.Contains(result.Reply, "u2") || !strings.Contains(result.Reply, "home") {
+		t.Fatalf("multi default result=%+v", result)
+	}
+}
+
+func TestPersonalMessageDefaultRouteNoSessionAndGroupAreIgnored(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u2"); err != nil {
+		t.Fatal(err)
+	}
+	personal, err := hub.Dispatch(ctx, model.Message{ID: "default-none", ChatEntityID: "dev:personal:ou_u2", BotChannelID: "dev", ChatType: model.ChatPersonal}, "你好")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !personal.Matched || !strings.Contains(personal.Reply, "已受理 #default-none") {
+		t.Fatalf("no-session personal result=%+v", personal)
+	}
+	// 变更(fix/control-plane-intent-gate):群聊里 L1 未命中命令的消息不再回执/进 L2,
+	// 而是静默(避免机器人截胡人对人的消息、幻觉执行)。旧行为是回 "已受理"。
+	group, err := hub.Dispatch(ctx, model.Message{ID: "default-group", ChatEntityID: "dev:group:oc_group", BotChannelID: "dev", ChatType: model.ChatGroup, SenderOpenID: "ou_u2"}, "你好")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if group.Matched {
+		t.Fatalf("group non-command should now be silenced, got %+v", group)
+	}
+}
+
+func TestSessionAddressingRejectsCrossKey(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyID := key.ID
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", keyID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "bad", To: "developer#other", From: "home#" + keyID, Body: "x"}); err != nil {
+		t.Fatalf("write bad envelope: %v", err)
+	}
+	got := readEnvelope(t, ctx, home)
+	if !strings.Contains(got.Body, "key_id") {
+		t.Fatalf("cross-key error envelope = %+v", got)
+	}
+	assertEnvelopeDoesNotContain(t, got, secret)
+}
+
+func TestCollectEnvelopeStoresOnlyAndHonorsOptOut(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_alice"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	outbound := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = outbound
+	if err := hub.RouteEnvelope(ctx, model.Envelope{
+		ID:   "collect-1",
+		To:   "workpulse#" + key.ID,
+		From: "home#" + key.ID,
+		Body: "完成自主研发",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": "collect", "role": "claude", "session": "home"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msgs, err := db.RecentMessages(ctx, model.MessageFilter{ChatEntityID: "home#" + key.ID, Limit: 10})
+	if err != nil || len(msgs) != 1 {
+		t.Fatalf("collect msgs=%+v err=%v", msgs, err)
+	}
+	if msgs[0].Direction != model.DirectionCollect || msgs[0].Status != "done" || !strings.Contains(msgs[0].Content, "完成自主研发") {
+		t.Fatalf("collect message = %+v", msgs[0])
+	}
+	next, err := db.ClaimNextMessage(ctx, model.DirectionCollect)
+	if err != nil || next != nil {
+		t.Fatalf("collect should not be claimable next=%+v err=%v", next, err)
+	}
+	if out, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || out != nil {
+		t.Fatalf("collect should not enqueue outbound out=%+v err=%v", out, err)
+	}
+
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, EvidenceOptOut: true, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{
+		ID:   "collect-2",
+		To:   "workpulse#" + key.ID,
+		From: "home#" + key.ID,
+		Body: "不应采集",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": "collect", "role": "claude", "session": "home"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msgs, err = db.RecentMessages(ctx, model.MessageFilter{ChatEntityID: "home#" + key.ID, Limit: 10})
+	if err != nil || len(msgs) != 1 {
+		t.Fatalf("optout collect msgs=%+v err=%v", msgs, err)
+	}
+}
+
+func TestSessionEndpointTracksClientIPAndOffline(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSessionWithHeader(t, ctx, srv.URL, "home", key.ID, secret, http.Header{"X-Forwarded-For": {"203.0.113.7, 10.0.0.1"}, "X-Real-IP": {"198.51.100.9"}})
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || !endpoints[0].Active || endpoints[0].ClientIP != "203.0.113.7" {
+		t.Fatalf("endpoint after connect=%+v err=%v", endpoints, err)
+	}
+	_ = conn.Close(websocket.StatusNormalClosure, "done")
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		endpoints, err = db.ListSessionEndpoints(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(endpoints) == 1 && !endpoints[0].Active && endpoints[0].ClientIP == "203.0.113.7" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("endpoint not offline after close: %+v", endpoints)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+func TestSessionEndpointStoresClientMetadata(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "tool=CODEX&model=gpt-5.5&version=0.1.2.5&full_session_name=sh-developer-e0d10000")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].Tool != "CODEX" || endpoints[0].Model != "gpt-5.5" {
+		t.Fatalf("tool/model not stored: %+v", endpoints[0])
+	}
+	if endpoints[0].Version != "0.1.2.5" {
+		t.Fatalf("version not stored: %+v", endpoints[0])
+	}
+	if endpoints[0].SessionName != "developer" || endpoints[0].FullSessionName != "sh-developer-e0d10000" {
+		t.Fatalf("session names not stored correctly: %+v", endpoints[0])
+	}
+}
+
+func TestSessionEndpointWarnModeAllowsMissingVersionAndMarksDirectory(t *testing.T) {
+	useTestVersionEnforce(t, "warn")
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: key.ID, SessionName: "developer", Version: "0.1.2.5", LastSeenAt: time.Now(), Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].Version != "" {
+		t.Fatalf("old client should have empty version: %+v", endpoints[0])
+	}
+	text := renderOnlineDirectory(model.Member{OwnerKey: "person", DisplayName: "Person"}, []onlineSessionItem{{Endpoint: endpoints[0]}})
+	if !strings.Contains(text, " · v? · ") {
+		t.Fatalf("directory should show unknown version for old clients: %s", text)
+	}
+	if !strings.Contains(text, "版本告警:未上报版本") {
+		t.Fatalf("directory should mark incompatible missing version: %s", text)
+	}
+}
+
+func TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		version string
+		want    string
+	}{
+		{name: "missing", version: "", want: "当前版本=未上报"},
+		{name: "invalid", version: "0.1", want: "版本格式非法"},
+		{name: "a mismatch", version: "1.1.2.5", want: "版本不兼容"},
+		{name: "b mismatch", version: "0.2.0.0", want: "版本不兼容"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			useTestVersionEnforce(t, "enforce")
+			hub, _, ctx := newTestHub(t)
+			if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+				t.Fatal(err)
+			}
+			secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+			if err != nil {
+				t.Fatal(err)
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+			srv := httptest.NewServer(mux)
+			defer srv.Close()
+			query := ""
+			if tc.version != "" {
+				query = "version=" + url.QueryEscape(tc.version)
+			}
+			body := dialSessionErrorBodyWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, query)
+			for _, want := range []string{tc.want, "要求版本=" + dwversion.Version, "下载地址=http://localhost/downloads/sessionHelper-" + dwversion.Version + "/"} {
+				if !strings.Contains(body, want) {
+					t.Fatalf("error body missing %q: %s", want, body)
+				}
+			}
+		})
+	}
+}
+
+func TestSessionEndpointVersionEnforceAllowsCDDrift(t *testing.T) {
+	useTestVersionEnforce(t, "enforce")
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "version=0.1.9.9")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].Version != "0.1.9.9" {
+		t.Fatalf("compatible C/D drift should be stored: %+v", endpoints[0])
+	}
+}
+
+func TestSessionEndpointIdleTimeoutMarksOffline(t *testing.T) {
+	useTestSessionReadIdleTimeout(t, 120*time.Millisecond)
+	useTestSessionIdleWatchdogInterval(t, 20*time.Millisecond)
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	go readSessionControls(conn)
+	waitSessionOnline(t, hub, key.ID, "developer")
+	waitEndpointInactive(t, ctx, db, key.ID, "developer")
+}
+
+func TestSessionEndpointPingKeepsIdleConnectionOnline(t *testing.T) {
+	useTestSessionReadIdleTimeout(t, 120*time.Millisecond)
+	useTestSessionIdleWatchdogInterval(t, 20*time.Millisecond)
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	go readSessionControls(conn)
+	deadline := time.Now().Add(3 * sessionReadIdleTimeout)
+	for time.Now().Before(deadline) {
+		pingCtx, cancel := context.WithTimeout(ctx, time.Second)
+		err := conn.Ping(pingCtx)
+		cancel()
+		if err != nil {
+			t.Fatalf("ping failed before idle timeout: %v", err)
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || !endpoints[0].Active {
+		t.Fatalf("ping-only session was marked offline: endpoints=%+v err=%v", endpoints, err)
+	}
+}
+
+func TestServerPingKeepsIdleSessionOnline(t *testing.T) {
+	useTestSessionReadIdleTimeout(t, 150*time.Millisecond)
+	useTestSessionIdleWatchdogInterval(t, 20*time.Millisecond)
+	useTestSessionKeepalive(t, 25*time.Millisecond, 100*time.Millisecond)
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	go readSessionControls(conn)
+	waitSessionOnline(t, hub, key.ID, "developer")
+	time.Sleep(3 * sessionReadIdleTimeout)
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || !endpoints[0].Active {
+		t.Fatalf("server-ping session was marked offline: endpoints=%+v err=%v", endpoints, err)
+	}
+}
+
+// Test-only helper: Ping requires a concurrent reader to consume the matching
+// pong. The test closes the connection, which makes this goroutine exit.
+func readSessionControls(conn *websocket.Conn) {
+	for {
+		if _, _, err := conn.Read(context.Background()); err != nil {
+			return
+		}
+	}
+}
+
+func TestSessionEndpointConnSeqAndLastSeenOnReconnectAndMessage(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	first := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	_ = first.Close(websocket.StatusNormalClosure, "done")
+	waitEndpointInactive(t, ctx, db, key.ID, "developer")
+
+	reconnect := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer reconnect.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints after reconnect=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].ConnSeq != 2 {
+		t.Fatalf("conn_seq after reconnect=%d want 2 endpoints=%+v", endpoints[0].ConnSeq, endpoints)
+	}
+	oldSeen := time.Now().UTC().Add(-time.Minute)
+	if err := db.TouchSessionEndpoint(ctx, key.ID, "developer", oldSeen); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, reconnect, model.Envelope{
+		ID:   "touch-last-seen",
+		To:   "workpulse#" + key.ID,
+		From: "developer#" + key.ID,
+		Body: "touch",
+		TS:   time.Now().Unix(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, 2*time.Second, func() bool {
+		endpoints, err := db.ListSessionEndpoints(ctx)
+		if err != nil || len(endpoints) != 1 {
+			return false
+		}
+		return endpoints[0].LastSeenAt.After(oldSeen)
+	})
+}
+
+func TestSessionHandshakeDerivesRegisteredNameFromShortName(t *testing.T) {
+	useTestNameEnforce(t, "enforce")
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	want := "u1-developer-" + keyTail(key.ID)
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, want)
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].SessionName != want || endpoints[0].OwnerKey != "u1" {
+		t.Fatalf("derived endpoint=%+v want=%s", endpoints[0], want)
+	}
+}
+
+func TestSessionHandshakeKeepsCompliantRegisteredName(t *testing.T) {
+	useTestNameEnforce(t, "enforce")
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "realowner", DisplayName: "Real", FeishuOpenID: "ou_real", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_real"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	want := "realowner-developer-" + keyTail(key.ID)
+	conn := dialSession(t, ctx, srv.URL, want, key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, want)
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].SessionName != want {
+		t.Fatalf("registered long name should be kept unchanged: %+v", endpoints[0])
+	}
+}
+
+func TestSessionEndpointStoresHandshakeMirrorToBotUnchanged(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	mirrorTo := "ou_u1#" + key.ID + "#ExampleConnector"
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "ts3-poc", key.ID, secret, "target_bot=bot-test&mirror_to="+url.QueryEscape(mirrorTo))
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if !endpoints[0].MirrorEnabled || endpoints[0].MirrorTo != mirrorTo {
+		t.Fatalf("mirror_to should preserve source bot: %+v want=%q", endpoints[0], mirrorTo)
+	}
+
+	reconnect := dialSessionWithQuery(t, ctx, srv.URL, "ts3-poc", key.ID, secret, "target_bot=bot-test")
+	defer reconnect.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err = db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints after reconnect=%+v err=%v", endpoints, err)
+	}
+	if !endpoints[0].MirrorEnabled || endpoints[0].MirrorTo != mirrorTo {
+		t.Fatalf("reconnect without mirror_to should keep stored target: %+v want=%q", endpoints[0], mirrorTo)
+	}
+}
+
+func TestSessionNameAutoSuffixWithinOwner(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_u1", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_u1", BoundOwner: "u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_u1_2", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_u1_2", BoundOwner: "u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret1, key1, err := hub.IssueAPIKey(ctx, "svc1", "u11")
+	if err != nil {
+		t.Fatal(err)
+	}
+	secret2, key2, err := hub.IssueAPIKey(ctx, "svc1", "u12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key1.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key2.ID, "dev:personal:ou_u1_2"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	first := dialSession(t, ctx, srv.URL, "developer", key1.ID, secret1)
+	defer first.Close(websocket.StatusNormalClosure, "done")
+	second := dialSession(t, ctx, srv.URL, "developer", key2.ID, secret2)
+	defer second.Close(websocket.StatusNormalClosure, "done")
+
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, ep := range endpoints {
+		if ep.Active {
+			got[ep.KeyID] = ep.SessionName
+		}
+	}
+	name1 := "u1-developer-" + keyTail(key1.ID)
+	name2 := "u1-developer-" + keyTail(key2.ID)
+	if got[key1.ID] != name1 || got[key2.ID] != name2 {
+		t.Fatalf("effective names = %+v endpoints=%+v", got, endpoints)
+	}
+
+	env := model.Envelope{ID: "suffix-rewrite", To: "workpulse#" + key2.ID, From: name2 + "#" + key2.ID, Body: "ok"}
+	if err := writeEnvelope(ctx, second, env); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		endpoints, err = db.ListSessionEndpoints(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, ep := range endpoints {
+			if ep.KeyID == key2.ID && ep.SessionName == name2 && ep.Active {
+				return
+			}
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("rewritten effective session missing: %+v", endpoints)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+func TestSessionNameReconnectKeepsNameAndReleaseReuses(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_u1", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_u1", BoundOwner: "u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_u1_2", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_u1_2", BoundOwner: "u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret1, key1, err := hub.IssueAPIKey(ctx, "svc1", "u11")
+	if err != nil {
+		t.Fatal(err)
+	}
+	secret2, key2, err := hub.IssueAPIKey(ctx, "svc1", "u12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key1.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key2.ID, "dev:personal:ou_u1_2"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	first := dialSession(t, ctx, srv.URL, "developer", key1.ID, secret1)
+	reconnect := dialSession(t, ctx, srv.URL, "developer", key1.ID, secret1)
+	defer reconnect.Close(websocket.StatusNormalClosure, "done")
+	_ = first.Close(websocket.StatusNormalClosure, "replaced")
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	activeByKey := map[string]string{}
+	for _, ep := range endpoints {
+		if ep.Active {
+			activeByKey[ep.KeyID] = ep.SessionName
+		}
+	}
+	name1 := "u1-developer-" + keyTail(key1.ID)
+	name2 := "u1-developer-" + keyTail(key2.ID)
+	if activeByKey[key1.ID] != name1 {
+		t.Fatalf("reconnect should keep %s: %+v", name1, endpoints)
+	}
+
+	_ = reconnect.Close(websocket.StatusNormalClosure, "done")
+	waitEndpointInactive(t, ctx, db, key1.ID, name1)
+	second := dialSession(t, ctx, srv.URL, "developer", key2.ID, secret2)
+	defer second.Close(websocket.StatusNormalClosure, "done")
+	endpoints, err = db.ListSessionEndpoints(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ep := range endpoints {
+		if ep.KeyID == key2.ID && ep.Active && ep.SessionName == name2 {
+			return
+		}
+	}
+	t.Fatalf("released name was not reused: %+v", endpoints)
+}
+
+func TestSessionEndpointOwnerActiveUniqueIndex(t *testing.T) {
+	_, db, ctx := newTestHub(t)
+	now := time.Now()
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-1", SessionName: "developer", OwnerKey: "u1", LastSeenAt: now, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-2", SessionName: "developer", OwnerKey: "u1", LastSeenAt: now, Active: true}); err == nil {
+		t.Fatal("expected active owner/session unique violation")
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-1", SessionName: "developer", OwnerKey: "u1", LastSeenAt: now, Active: false}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-2", SessionName: "developer", OwnerKey: "u1", LastSeenAt: now, Active: true}); err != nil {
+		t.Fatalf("name should be reusable after inactive: %v", err)
+	}
+}
+
+func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.onlineDebounce = 30 * time.Millisecond
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "ExampleBot")
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u2", DisplayName: "UserTwo", FeishuOpenID: "ou_u2", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	u1Secret, u1Key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	u2Secret, u2Key, err := hub.IssueAPIKey(ctx, "svc1", "u2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u1Key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, u2Key.ID, "dev:personal:ou_u2"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	u1Dev := dialSessionWithQuery(t, ctx, srv.URL, "developer", u1Key.ID, u1Secret, "tool=CODEX&model=gpt-5.5&full_session_name=sh-developer-e0d10000")
+	defer u1Dev.Close(websocket.StatusNormalClosure, "done")
+	u1Home := dialSession(t, ctx, srv.URL, "home", u1Key.ID, u1Secret)
+	defer u1Home.Close(websocket.StatusNormalClosure, "done")
+	u2Dev := dialSessionWithQuery(t, ctx, srv.URL, "developer", u2Key.ID, u2Secret, "tool=CLAUDE&model=opus&full_session_name=sh-developer-u2")
+	defer u2Dev.Close(websocket.StatusNormalClosure, "done")
+	u1SecOpsName := "u1-secops-" + keyTail(u1Key.ID)
+	u1SecOps := dialSessionWithQuery(t, ctx, srv.URL, "secops", u1Key.ID, u1Secret, "tool=SEC&model=monitor&no_directory=1")
+	defer u1SecOps.Close(websocket.StatusNormalClosure, "done")
+
+	u1DevMsg := readEnvelope(t, ctx, u1Dev)
+	u1HomeMsg := readEnvelope(t, ctx, u1Home)
+	u2Msg := readEnvelope(t, ctx, u2Dev)
+	if !strings.Contains(u1DevMsg.Body, "sh-developer-e0d10000") || !strings.Contains(u1DevMsg.Body, "home") {
+		t.Fatalf("u1 directory missing own sessions: %s", u1DevMsg.Body)
+	}
+	if strings.Contains(u1DevMsg.Body, "secops") || strings.Contains(u1HomeMsg.Body, "secops") {
+		t.Fatalf("no_directory session leaked into directory: %s / %s", u1DevMsg.Body, u1HomeMsg.Body)
+	}
+	if strings.Contains(u1DevMsg.Body, "u2") || strings.Contains(u1HomeMsg.Body, "u2") {
+		t.Fatalf("u1 directory leaked u2: %s / %s", u1DevMsg.Body, u1HomeMsg.Body)
+	}
+	if !strings.Contains(u2Msg.Body, "sh-developer-u2") || strings.Contains(u2Msg.Body, "ou_u1") || strings.Contains(u2Msg.Body, "home") {
+		t.Fatalf("u2 directory wrong/leaked: %s", u2Msg.Body)
+	}
+	u1DevName := "u1-developer-" + keyTail(u1Key.ID)
+	u1HomeName := "u1-home-" + keyTail(u1Key.ID)
+	for _, want := range []string{"【DingWei在线清单】", "#developer · CODEX/gpt-5.5", "· 终端:sh-developer-e0d10000", "@u1#developer", "全名:" + u1DevName, "(末"} {
+		if !strings.Contains(u1DevMsg.Body, want) {
+			t.Fatalf("u1 directory missing %q: %s", want, u1DevMsg.Body)
+		}
+	}
+	if !strings.Contains(u1DevMsg.Body, "#home · 未知/未知") || !strings.Contains(u1DevMsg.Body, "全名:"+u1HomeName) {
+		t.Fatalf("old session metadata should render unknown: %s", u1DevMsg.Body)
+	}
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "hidden-direct",
+		ChatEntityID: "dev:personal:ou_u1",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"#` + u1SecOpsName + ` 直接派活"}`,
+	}, "#"+u1SecOpsName+" 直接派活")
+	if err != nil || !result.Matched {
+		t.Fatalf("direct hidden session dispatch result=%+v err=%v", result, err)
+	}
+	hidden := readEnvelope(t, ctx, u1SecOps)
+	if hidden.To != u1SecOpsName+"#"+u1Key.ID || hidden.Body != "直接派活" {
+		t.Fatalf("hidden session should still be addressable: %+v", hidden)
+	}
+	for i := 0; i < 2; i++ {
+		msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+		if err != nil || msg == nil {
+			t.Fatalf("dm %d missing msg=%+v err=%v", i, msg, err)
+		}
+		if msg.ChatEntityID != "dev:personal:ou_u1" && msg.ChatEntityID != "dev:personal:ou_u2" {
+			t.Fatalf("unexpected dm target: %+v", msg)
+		}
+	}
+}
+
+func TestOnlineDirectoryDebouncesFlapping(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.onlineDebounce = 80 * time.Millisecond
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "ExampleBot")
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	time.Sleep(20 * time.Millisecond)
+	dev := dialSession(t, ctx, srv.URL, "sh-developer-e0d10000", key.ID, secret)
+	defer dev.Close(websocket.StatusNormalClosure, "done")
+
+	gotHome := readEnvelope(t, ctx, home)
+	gotDev := readEnvelope(t, ctx, dev)
+	if strings.Count(gotHome.Body, "\n1. #") != 1 || strings.Count(gotHome.Body, "\n2. #") != 1 || strings.Count(gotDev.Body, "\n1. #") != 1 || strings.Count(gotDev.Body, "\n2. #") != 1 {
+		t.Fatalf("debounced directory should contain final two sessions:\nhome=%s\ndev=%s", gotHome.Body, gotDev.Body)
+	}
+	assertNoEnvelope(t, ctx, home, 120*time.Millisecond)
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg == nil || msg.ChatEntityID != "dev:personal:ou_u1" {
+		t.Fatalf("dm missing after debounce msg=%+v err=%v", msg, err)
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg != nil {
+		t.Fatalf("debounce should enqueue one dm, got msg=%+v err=%v", msg, err)
+	}
+}
+
+func TestOnlineDirectorySkipsNoDirectoryPresenceBroadcast(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.onlineDebounce = time.Hour
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.BindAPIKeyAccount(ctx, "FB-hidden", "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.BindAPIKeyAccount(ctx, "FB-visible", "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-hidden", SessionName: "sec-ops", OwnerKey: "u1", LastSeenAt: time.Now(), Active: true, NoDirectory: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-visible", SessionName: "developer", OwnerKey: "u1", LastSeenAt: time.Now(), Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	hub.scheduleOnlineBroadcastForSession(ctx, "FB-hidden", "sec-ops")
+	hub.mu.Lock()
+	hiddenTimer := hub.onlineTimers["u1"]
+	hub.mu.Unlock()
+	if hiddenTimer != nil {
+		hiddenTimer.Stop()
+		t.Fatal("no_directory presence should not schedule online directory broadcast")
+	}
+	hub.scheduleOnlineBroadcastForSession(ctx, "FB-visible", "developer")
+	hub.mu.Lock()
+	visibleTimer := hub.onlineTimers["u1"]
+	hub.mu.Unlock()
+	if visibleTimer == nil {
+		t.Fatal("visible presence should schedule online directory broadcast")
+	}
+	visibleTimer.Stop()
+}
+
+func TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.onlineDebounce = time.Hour
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	developer := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer developer.Close(websocket.StatusNormalClosure, "done")
+	review := dialSession(t, ctx, srv.URL, "review", key.ID, secret)
+	defer review.Close(websocket.StatusNormalClosure, "done")
+
+	if err := hub.BroadcastOnlineDirectories(ctx, false); err != nil {
+		t.Fatal(err)
+	}
+	envs := []model.Envelope{
+		readEnvelope(t, ctx, home),
+		readEnvelope(t, ctx, developer),
+		readEnvelope(t, ctx, review),
+	}
+	keys := map[string]bool{}
+	primaries := 0
+	for _, env := range envs {
+		if env.Meta["type"] != "online_directory" {
+			t.Fatalf("unexpected broadcast meta: %+v", env.Meta)
+		}
+		key, _ := env.Meta["broadcast_dedup_key"].(string)
+		if key == "" {
+			t.Fatalf("missing broadcast_dedup_key: %+v", env.Meta)
+		}
+		keys[key] = true
+		if primary, _ := env.Meta["mirror_primary"].(bool); primary {
+			primaries++
+		}
+	}
+	if len(keys) != 1 || primaries != 1 {
+		t.Fatalf("broadcast mirror metadata keys=%v primaries=%d envs=%+v", keys, primaries, envs)
+	}
+}
+
+func TestProducerSessionMetadataAndOnlineDirectory(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.onlineDebounce = time.Hour
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "systemtaskintl", DisplayName: "SYSTEM-V-TASK-INTERNAL", Role: model.RoleSystem, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "system")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "systemtaskintl"); err != nil {
+		t.Fatal(err)
+	}
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "ExampleBot")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	producer := dialSessionWithQuery(t, ctx, srv.URL, "producer", key.ID, secret, "producer=1&target_group=oc_ai")
+	defer producer.Close(websocket.StatusNormalClosure, "done")
+
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || !endpoints[0].Producer || endpoints[0].TargetGroup != "oc_ai" {
+		t.Fatalf("producer endpoint=%+v err=%v", endpoints, err)
+	}
+	if err := hub.BroadcastOnlineDirectories(ctx, true); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, producer)
+	if !strings.Contains(got.Body, "Producer:是→oc_ai") {
+		t.Fatalf("producer directory missing marker: %s", got.Body)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg != nil {
+		t.Fatalf("system producer directory should not DM real user msg=%+v err=%v", msg, err)
+	}
+}
+
+func TestProducerSessionTargetBotQueryRoutesGroup(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.onlineDebounce = time.Hour
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.RegisterBot("bot-test", "bot-test")
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "systemtaskintl", DisplayName: "SYSTEM-V-TASK-INTERNAL", Role: model.RoleSystem, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "system")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "systemtaskintl"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	producer := dialSessionWithQuery(t, ctx, srv.URL, "producer", key.ID, secret, "producer=1&target_group=oc_alert&target_bot=bot-test")
+	defer producer.Close(websocket.StatusNormalClosure, "done")
+
+	if err := writeEnvelope(ctx, producer, model.Envelope{
+		ID:   "producer-query-target-bot",
+		To:   "oc_alert#" + key.ID + "#ExampleBot",
+		From: "producer#" + key.ID,
+		Body: "告警",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"producer": true, "target_group": "oc_alert", "no_mirror": true},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if msg.BotChannelID != "bot-test" || msg.ChatEntityID != "bot-test:group:oc_alert" {
+		t.Fatalf("producer query target_bot msg=%+v", msg)
+	}
+}
+
+func TestClientIPFromRequestTrustsOnlyLoopbackProxy(t *testing.T) {
+	trusted := httptest.NewRequest("GET", "/ws/session/home", nil)
+	trusted.RemoteAddr = "127.0.0.1:1234"
+	trusted.Header.Set("X-Forwarded-For", "203.0.113.8, 10.0.0.2")
+	if got := clientIPFromRequest(trusted); got != "203.0.113.8" {
+		t.Fatalf("trusted proxy client ip=%q", got)
+	}
+	untrusted := httptest.NewRequest("GET", "/ws/session/home", nil)
+	untrusted.RemoteAddr = "198.51.100.10:5678"
+	untrusted.Header.Set("X-Forwarded-For", "203.0.113.8")
+	if got := clientIPFromRequest(untrusted); got != "198.51.100.10" {
+		t.Fatalf("untrusted proxy client ip=%q", got)
+	}
+}
+
+func TestSessionWildcardRouteDeliversEnvelope(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "tenant1", Name: "tenant", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "tenant1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	sessionService := sessionServiceID(key.ID, "home")
+	if err := db.UpsertRegisteredService(ctx, model.RegisteredService{ID: sessionService, Name: "会话 home", DeliveryType: "session", ReplyMode: "none", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.AddPrefixRule(ctx, model.RoutingRule{ID: "sr1", ServiceID: sessionService, MatchExpr: "dev*", StripPrefix: true, Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	hub.RegisterBot("dev", "ExampleBot")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{ID: "m-wild", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"dev hello"}`}, "dev hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("dispatch result=%+v", result)
+	}
+	got := readEnvelope(t, ctx, home)
+	if got.To != "home#"+key.ID || got.Body != "hello" || got.Meta["route_id"] != "sr1" {
+		t.Fatalf("wildcard envelope=%+v", got)
+	}
+}
+
+func TestMirrorCommandDMControlsSessionAndGroupIgnored(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	hub.RegisterBot("dev", "ExampleBot")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+
+	result, err := hub.Dispatch(ctx, model.Message{ID: "m1", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "mirror on home")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "镜像已开启") {
+		t.Fatalf("mirror on result = %+v", result)
+	}
+	got := readEnvelope(t, ctx, home)
+	if got.To != "home#"+key.ID || got.From != "workpulse#"+key.ID || got.Meta["type"] != "mirror_control" || got.Meta["enabled"] != true {
+		t.Fatalf("mirror on envelope = %+v", got)
+	}
+	if got.Meta["mirror_to"] != "alice#"+key.ID+"#ExampleBot" {
+		t.Fatalf("mirror target = %+v", got.Meta["mirror_to"])
+	}
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || !endpoints[0].MirrorEnabled {
+		t.Fatalf("mirror state after on endpoints=%+v err=%v", endpoints, err)
+	}
+
+	groupResult, err := hub.Dispatch(ctx, model.Message{ID: "m2", ChatEntityID: "dev:group:oc_group", BotChannelID: "dev", ChatType: model.ChatGroup, SenderOpenID: "alice"}, "mirror off home")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if groupResult.Matched || groupResult.Reply != "" {
+		t.Fatalf("group mirror result = %+v", groupResult)
+	}
+	endpoints, _ = db.ListSessionEndpoints(ctx)
+	if !endpoints[0].MirrorEnabled {
+		t.Fatalf("group mirror command changed state: %+v", endpoints[0])
+	}
+
+	result, err = hub.Dispatch(ctx, model.Message{ID: "m3", ChatEntityID: "dev:personal:alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "mirror off home")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "镜像已关闭") {
+		t.Fatalf("mirror off result = %+v", result)
+	}
+	got = readEnvelope(t, ctx, home)
+	if got.Meta["type"] != "mirror_control" || got.Meta["enabled"] != false || got.Meta["mirror_to"] != "" {
+		t.Fatalf("mirror off envelope = %+v", got)
+	}
+	endpoints, _ = db.ListSessionEndpoints(ctx)
+	if endpoints[0].MirrorEnabled || endpoints[0].MirrorTo != "" {
+		t.Fatalf("mirror state after off: %+v", endpoints[0])
+	}
+}
+
+func TestGroupExplicitIntentGate(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	msg := model.Message{ChatType: model.ChatGroup, ChatEntityID: "dev:group:oc_g", BotChannelID: "dev"}
+	if ok, err := hub.groupHasExplicitIntent(ctx, msg, "两个人继续讨论，不要理机器人"); err != nil || ok {
+		t.Fatalf("natural group language passed gate: ok=%v err=%v", ok, err)
+	}
+	if ok, err := hub.groupHasExplicitIntent(ctx, msg, "@ExampleBot 请处理"); err != nil || !ok {
+		t.Fatalf("bot mention rejected: ok=%v err=%v", ok, err)
+	}
+	if ok, err := hub.groupHasExplicitIntent(ctx, msg, "#home 执行任务"); err != nil || !ok {
+		t.Fatalf("selector rejected: ok=%v err=%v", ok, err)
+	}
+}
+
+func TestAnnotateSourceContextEnrichesFeishuDisplayName(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "owner1", DisplayName: "示例用户", FeishuOpenID: "ou_example", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	meta := map[string]any{}
+	hub.annotateSourceContext(ctx, meta, model.Message{ChatType: model.ChatGroup, BotChannelID: "dev", SenderOpenID: "ou_example"})
+	if meta["source_kind"] != "feishu" || meta["source_display_name"] != "示例用户" || meta["source_sender_openid"] != "ou_example" {
+		t.Fatalf("source enrichment=%+v", meta)
+	}
+}
+
+func TestDeviceIDV1RejectsDifferentDeviceWithoutEvictingHolder(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	first := dialSessionWithQueryRaw(t, ctx, srv.URL, "developer", key.ID, secret, "device_id_v1=1&device_id=1111111111111111")
+	defer first.Close(websocket.StatusNormalClosure, "done")
+	var holder *sessionClient
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline) && holder == nil; {
+		hub.mu.Lock()
+		holder = hub.sessionClients[key.ID]["developer"]
+		hub.mu.Unlock()
+		if holder == nil {
+			time.Sleep(time.Millisecond)
+		}
+	}
+	body := dialSessionErrorBodyWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "device_id_v1=1&device_id=2222222222222222")
+	if !strings.Contains(body, "session held by another device") {
+		t.Fatalf("different device rejection=%q", body)
+	}
+	hub.mu.Lock()
+	stillHolder := hub.sessionClients[key.ID]["developer"]
+	hub.mu.Unlock()
+	if holder == nil || stillHolder != holder {
+		t.Fatalf("holder was evicted: before=%p after=%p", holder, stillHolder)
+	}
+	reconnect := dialSessionWithQueryRaw(t, ctx, srv.URL, "developer", key.ID, secret, "device_id_v1=1&device_id=1111111111111111")
+	defer reconnect.Close(websocket.StatusNormalClosure, "done")
+	reclaimed := holder
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline) && reclaimed == holder; {
+		hub.mu.Lock()
+		reclaimed = hub.sessionClients[key.ID]["developer"]
+		hub.mu.Unlock()
+		if reclaimed == holder {
+			time.Sleep(time.Millisecond)
+		}
+	}
+	if reclaimed == nil || reclaimed == holder || reclaimed.deviceID != holder.deviceID {
+		t.Fatalf("same device did not reclaim: holder=%p reclaimed=%p", holder, reclaimed)
+	}
+}
+
+func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "ExampleBot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "aliceowner", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-sync", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-sync", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	homeName := "aliceowner-home-" + keyTail(key.ID)
+	waitSessionOnline(t, hub, key.ID, homeName)
+
+	for i := 1; i <= 12; i++ {
+		if err := writeEnvelope(ctx, home, model.Envelope{
+			ID:   fmt.Sprintf("term-%02d", i),
+			From: homeName + "#" + key.ID,
+			To:   "workpulse#" + key.ID,
+			Body: fmt.Sprintf("line-%02d", i),
+			TS:   time.Now().Unix(),
+			Meta: map[string]any{"type": terminalOutputType},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	waitFor(t, 2*time.Second, func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		items := hub.recentTerminal[terminalKey(key.ID, homeName)]
+		return len(items) == 10 && strings.Contains(items[0].Text, "line-03") && strings.Contains(items[9].Text, "line-12")
+	})
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || msg != nil {
+		t.Fatalf("terminal output should not reach feishu before sync msg=%+v err=%v", msg, err)
+	}
+
+	result, err := hub.Dispatch(ctx, model.Message{ID: "sync-1", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#sync "+homeName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已开启同步 "+homeName) {
+		t.Fatalf("sync result=%+v", result)
+	}
+	backfillLines := map[string]bool{}
+	for i := 0; i < 10; i++ {
+		msg := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+		if msg == nil || msg.ChatEntityID != "dev:personal:ou_alice" {
+			t.Fatalf("backfill msg=%+v", msg)
+		}
+		text := messageText(t, msg)
+		if !hasUTCPrefix(text) {
+			t.Fatalf("backfill text=%q", text)
+		}
+		for n := 3; n <= 12; n++ {
+			line := fmt.Sprintf("line-%02d", n)
+			if strings.Contains(text, line) {
+				backfillLines[line] = true
+			}
+		}
+	}
+	for i := 3; i <= 12; i++ {
+		line := fmt.Sprintf("line-%02d", i)
+		if !backfillLines[line] {
+			t.Fatalf("backfill missing %s in %v", line, backfillLines)
+		}
+	}
+
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-live-1",
+		From: homeName + "#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: "\x1b[31mlive-line\x1b[0m",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-live-2",
+		From: homeName + "#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: "\x1b[?25l",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-live-3",
+		From: homeName + "#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: " tail",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	live := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if live == nil {
+		t.Fatal("missing live sync message")
+	}
+	if text := messageText(t, live); !strings.Contains(text, "live-line tail") || strings.Contains(text, "\x1b") || !hasUTCPrefix(text) {
+		t.Fatalf("live sync msg=%+v text=%q", live, text)
+	}
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || msg != nil {
+		t.Fatalf("live chunks should be aggregated into one message msg=%+v err=%v", msg, err)
+	}
+
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sync-2", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#unsync "+homeName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已停止同步 "+homeName) {
+		t.Fatalf("unsync result=%+v", result)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{
+		ID:   "term-after-unsync",
+		From: homeName + "#" + key.ID,
+		To:   "workpulse#" + key.ID,
+		Body: "after-unsync",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": terminalOutputType},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(50 * time.Millisecond)
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || msg != nil {
+		t.Fatalf("terminal output should stop after unsync msg=%+v err=%v", msg, err)
+	}
+	_ = home.Close(websocket.StatusNormalClosure, "done")
+	waitEndpointInactive(t, ctx, db, key.ID, homeName)
+	hub.mu.Lock()
+	_, stillCached := hub.recentTerminal[terminalKey(key.ID, homeName)]
+	hub.mu.Unlock()
+	if stillCached {
+		t.Fatal("terminal sync cache should be cleared after session offline")
+	}
+}
+
+func TestTerminalViewResizeForwardsToSessionAndCachesSize(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "home")
+	view := dialTerminalView(t, ctx, srv.URL, "home")
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	if err := writeTerminalClientMessage(ctx, view, terminalClientMessage{Type: "resize", Cols: 132, Rows: 43}); err != nil {
+		t.Fatal(err)
+	}
+	env := readEnvelopeOfType(t, ctx, session, terminalResizeType)
+	if metaInt(env.Meta, "cols") != 132 || metaInt(env.Meta, "rows") != 43 {
+		t.Fatalf("resize meta=%+v", env.Meta)
+	}
+	waitFor(t, 2*time.Second, func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		return hub.terminalLastSize[terminalKey(key.ID, "home")] == [2]int{132, 43}
+	})
+}
+
+func TestTerminalViewEmptyBufferRequestsRefresh(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	view := dialTerminalView(t, ctx, srv.URL, "home")
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	env := readEnvelopeOfType(t, ctx, session, terminalRefreshType)
+	if env.To != sessionAddress("home", key.ID) {
+		t.Fatalf("refresh envelope=%+v", env)
+	}
+}
+
+func TestTerminalUnlockAllowsSameOwnerAccountWithoutExactKeyBinding(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	registeredName := "alice-home-" + keyTail(key.ID)
+	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	view := dialTerminalView(t, ctx, srv.URL, registeredName)
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	code := terminalViewerCode(t, hub, key.ID, registeredName)
+	bobMsg := model.Message{ID: "unlock-bob", ChatEntityID: "dev:personal:ou_bob", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, bobMsg, "#unlock "+code)
+	if err != nil || !handled || !strings.Contains(result.Reply, "未找到页面码") {
+		t.Fatalf("bob unlock result=%+v handled=%v err=%v", result, handled, err)
+	}
+
+	aliceMsg := model.Message{ID: "unlock-alice", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, aliceMsg, "#unlock "+code)
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁输入") {
+		t.Fatalf("alice unlock result=%+v handled=%v err=%v", result, handled, err)
+	}
+	waitFor(t, 2*time.Second, func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		st := hub.terminals[terminalKey(key.ID, registeredName)]
+		return st != nil && st.writerPage != "" && st.writerToken != ""
+	})
+}
+
+type recordingViewPageUnlocker struct {
+	requests []ViewPageUnlockRequest
+}
+
+func (r *recordingViewPageUnlocker) UnlockViewPage(_ context.Context, request ViewPageUnlockRequest) error {
+	r.requests = append(r.requests, request)
+	return nil
+}
+
+func TestViewUnlockV2RequiresTrustedOwnerAndPreservesCodeCase(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test-0000", SessionName: "developer", FullSessionName: "alice-developer-0000", OwnerKey: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	base := model.Message{ID: "m1", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_alice", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice"}
+
+	untrusted := base
+	untrusted.IngressProvenance = model.IngressUntrusted
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, untrusted, "#unlock alice-developer-0000-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "未通过可信入站") || len(unlocker.requests) != 0 {
+		t.Fatalf("untrusted result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+
+	trusted := base
+	trusted.IngressProvenance = model.IngressFeishuWSAuthenticated
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, trusted, "#unlock alice-developer-0000-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
+		t.Fatalf("trusted result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+	if got := unlocker.requests[0].Code; got != "alice-developer-0000-a3Kf9xQ2" {
+		t.Fatalf("code case changed: %q", got)
+	}
+	bob := base
+	bob.ChatEntityID = "dev:personal:ou_bob"
+	bob.SenderOpenID = "ou_bob"
+	senderOwner, targetOwner, _, authErr := hub.authorizeViewUnlockOwner(ctx, bob, "alice-developer-0000")
+	if authErr == nil || senderOwner != "bob" || targetOwner != "alice" {
+		t.Fatalf("owner mismatch evidence sender=%q target=%q err=%v", senderOwner, targetOwner, authErr)
+	}
+}
+
+func TestViewUnlockV2MatchesDerivedSessionNameWithEmptyFullName(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-derived", Name: "svc-derived", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-derived", "derived")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	fullName := "alice-developer-" + keyTail(key.ID)
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || endpoints[0].SessionName != fullName || endpoints[0].FullSessionName != "" {
+		t.Fatalf("derived endpoint=%+v err=%v", endpoints, err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	trusted := model.Message{ID: "derived", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_alice", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, trusted, "#unlock "+fullName+"-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
+		t.Fatalf("derived-name unlock result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+}
+
+func TestViewUnlockV2RejectsAmbiguousEndpointMatch(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, endpoint := range []model.SessionEndpoint{
+		{KeyID: "FB-one-0000", SessionName: "alice-developer-0000", OwnerKey: "alice", Active: true},
+		{KeyID: "FB-two-0000", SessionName: "developer", FullSessionName: "alice-developer-0000", OwnerKey: "alice", Active: true},
+	} {
+		if err := db.UpsertSessionEndpoint(ctx, endpoint); err != nil {
+			t.Fatal(err)
+		}
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	trusted := model.Message{ID: "ambiguous", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_alice", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, trusted, "#unlock alice-developer-0000-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "页面会话不存在或不可用") || len(unlocker.requests) != 0 {
+		t.Fatalf("ambiguous result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+}
+
+func TestViewUnlockV2RejectsCrossOwnerLegacyEndpoint(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{
+		KeyID: "FB-bob-0000", SessionName: "developer", FullSessionName: "", OwnerKey: "bob", Active: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	bob := model.Message{
+		ID: "cross-owner", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_bob",
+		ChatType: model.ChatPersonal, SenderOpenID: "ou_bob", IngressProvenance: model.IngressFeishuWSAuthenticated,
+	}
+
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, bob, "#unlock alice-developer-0000-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "发信人不是该会话 owner") {
+		t.Fatalf("cross-owner result=%+v handled=%v err=%v", result, handled, err)
+	}
+	if len(unlocker.requests) != 0 {
+		t.Fatalf("cross-owner unlock reached view service: requests=%+v", unlocker.requests)
+	}
+}
+
+func TestViewUnlockV2RejectsGroupWithoutSenderAndSupportsLegacyShortName(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-one-0000", SessionName: "developer", OwnerKey: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	group := model.Message{ID: "g1", BotChannelID: "dev", ChatEntityID: "dev:group:oc_group", ChatType: model.ChatGroup, IngressProvenance: model.IngressWebhookVerified}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-developer-0000-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "缺少可信发信人") {
+		t.Fatalf("empty group sender result=%+v handled=%v err=%v", result, handled, err)
+	}
+	group.SenderOpenID = "ou_alice"
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-developer-0000-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
+		t.Fatalf("fallback result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+	group.SenderOpenID = "ou_bob"
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-developer-0000-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "发信人不是该会话 owner") || len(unlocker.requests) != 1 {
+		t.Fatalf("legacy non-owner result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+}
+
+func TestTerminalExplicitUnlockAllowsSameOwnerAccount(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	registeredName := "alice-home-" + keyTail(key.ID)
+	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	view := dialTerminalView(t, ctx, srv.URL, registeredName)
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	code := terminalViewerCode(t, hub, key.ID, registeredName)
+	msg := model.Message{ID: "unlock-explicit", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, msg, "#解锁输入 "+registeredName+" "+code)
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁输入") {
+		t.Fatalf("explicit unlock result=%+v handled=%v err=%v", result, handled, err)
+	}
+}
+
+func TestTerminalViewCookiePersistsAndRestoresUnlock(t *testing.T) {
+	// Verify the cookie token survives viewer disconnect and can be used
+	// to re-grant input. This tests the Go-level logic without HTTP cookie
+	// round-trip complexities (the HTTP cookie flow is tested in the
+	// Python sessionhelper tests).
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", hub.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	sessionName := "home"
+	session := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
+	defer session.Close(websocket.StatusNormalClosure, "done")
+	view := dialTerminalView(t, ctx, srv.URL, sessionName)
+	defer view.Close(websocket.StatusNormalClosure, "done")
+
+	// Drain the initial status message so the handler goroutine finishes
+	// accessing st.writerPage before the test modifies terminal state.
+	readCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	_ = readTerminalViewMessageType(t, readCtx, view)
+	cancel()
+
+	// Get the viewer's page code (random 4-digit) and use it for grant.
+	hub.mu.Lock()
+	st := hub.terminals[terminalKey(key.ID, sessionName)]
+	var viewerCode string
+	for _, v := range st.viewers {
+		viewerCode = v.code
+		break
+	}
+	hub.mu.Unlock()
+	if viewerCode == "" {
+		t.Fatal("no viewer found")
+	}
+	token, err := hub.grantTerminalInput(key.ID, sessionName, viewerCode)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify cookieToken was set alongside writerToken.
+	hub.mu.Lock()
+	st = hub.terminals[terminalKey(key.ID, sessionName)]
+	hub.mu.Unlock()
+	if st == nil || st.cookieToken != token {
+		t.Fatalf("cookieToken not set after grant: got %q want %q", st.cookieToken, token)
+	}
+	if time.Now().After(st.cookieUntil) {
+		t.Fatal("cookieUntil is in the past")
+	}
+
+	// Disconnect viewer. cookieToken must survive (the fix preserves it).
+	view.Close(websocket.StatusNormalClosure, "done")
+	time.Sleep(50 * time.Millisecond) // let defer run
+	hub.mu.Lock()
+	st = hub.terminals[terminalKey(key.ID, sessionName)]
+	hub.mu.Unlock()
+	if st == nil || st.cookieToken != token {
+		t.Fatalf("cookieToken lost after viewer disconnect: got %q want %q",
+			func() string {
+				if st != nil {
+					return st.cookieToken
+				}
+				return "nil"
+			}(), token)
+	}
+
+	// Simulate reconnect with cookie: create new viewer, restore from cookie.
+	view2 := dialTerminalView(t, ctx, srv.URL, sessionName)
+	defer view2.Close(websocket.StatusNormalClosure, "done")
+
+	// Drain initial status from second viewer before modifying terminal state.
+	readCtx2, cancel2 := context.WithTimeout(ctx, 2*time.Second)
+	_ = readTerminalViewMessageType(t, readCtx2, view2)
+	cancel2()
+
+	// Find the viewer in the terminal state.
+	hub.mu.Lock()
+	st = hub.terminals[terminalKey(key.ID, sessionName)]
+	var v2 *terminalViewer
+	for _, v := range st.viewers {
+		v2 = v
+		break
+	}
+	hub.mu.Unlock()
+	if v2 == nil {
+		t.Fatal("no viewer found after reconnect")
+	}
+	restored := hub.restoreTerminalInputFromCookie(v2, key.ID, sessionName, token)
+	if !restored {
+		t.Fatal("restoreTerminalInputFromCookie returned false")
+	}
+
+	// Verify the new viewer is now the writer.
+	hub.mu.Lock()
+	st = hub.terminals[terminalKey(key.ID, sessionName)]
+	hub.mu.Unlock()
+	if st == nil || st.writerToken != token {
+		t.Fatalf("writerToken not restored: st=%+v", st)
+	}
+
+	// Also verify the cookie token validation helper.
+	if !hub.validTerminalCookieToken(sessionName, token) {
+		t.Fatal("validTerminalCookieToken returned false for valid token")
+	}
+	if hub.validTerminalCookieToken(sessionName, "bogus") {
+		t.Fatal("validTerminalCookieToken returned true for bogus token")
+	}
+}
+
+func TestFeishuSyncRequiresExplicitKeyForOtherOwner(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "ExampleBot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "aliceowner", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bobowner", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-sync-cross", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	aliceSecret, aliceKey, err := hub.IssueAPIKey(ctx, "svc-sync-cross", "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	bobSecret, bobKey, err := hub.IssueAPIKey(ctx, "svc-sync-cross", "bob")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, aliceKey.ID, "dev:personal:ou_alice"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, bobKey.ID, "dev:personal:ou_bob"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	aliceHome := dialSession(t, ctx, srv.URL, "home", aliceKey.ID, aliceSecret)
+	defer aliceHome.Close(websocket.StatusNormalClosure, "done")
+	bobHome := dialSession(t, ctx, srv.URL, "home", bobKey.ID, bobSecret)
+	defer bobHome.Close(websocket.StatusNormalClosure, "done")
+	aliceHomeName := "aliceowner-home-" + keyTail(aliceKey.ID)
+	bobHomeName := "bobowner-home-" + keyTail(bobKey.ID)
+	waitSessionOnline(t, hub, aliceKey.ID, aliceHomeName)
+	waitSessionOnline(t, hub, bobKey.ID, bobHomeName)
+
+	result, err := hub.Dispatch(ctx, model.Message{ID: "sync-cross-1", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#sync "+aliceHomeName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "已开启同步 "+aliceHomeName) {
+		t.Fatalf("own sync result=%+v", result)
+	}
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sync-cross-2", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#sync missing")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "同步他人会话请显式使用") {
+		t.Fatalf("missing owner sync result=%+v", result)
+	}
+	result, err = hub.Dispatch(ctx, model.Message{ID: "sync-cross-3", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#sync "+bobHomeName+"#"+bobKey.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "无权同步他人会话") {
+		t.Fatalf("cross owner explicit key should be denied result=%+v", result)
+	}
+}
+
+func TestApplyKeyFlowCreatesPendingAndApprovesWithOneTimeSecretDM(t *testing.T) {
+	useTestApplyKeyApprover(t, "ou_approver")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	q := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = q
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-1",
+		ChatEntityID: "dev:personal:ou_applicant",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#申请接入 owner1-developer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || !strings.Contains(result.Reply, "申请 ID") {
+		t.Fatalf("apply result=%+v", result)
+	}
+	reviewMsg := waitOutbound(t, ctx, q)
+	if reviewMsg == nil || reviewMsg.ChatEntityID != "dev:personal:ou_approver" {
+		t.Fatalf("review msg=%+v", reviewMsg)
+	}
+	reviewText := messageText(t, reviewMsg)
+	if !strings.Contains(reviewText, "批准：#批准") || !strings.Contains(reviewText, "接入 owner1-developer") {
+		t.Fatalf("review text=%q", reviewText)
+	}
+	id := applyIDFromReply(t, result.Reply)
+	app, err := db.GetKeyApplication(ctx, id)
+	if err != nil || app == nil || app.Status != "pending" || app.ApplicantOpenID != "ou_applicant" {
+		t.Fatalf("application=%+v err=%v", app, err)
+	}
+
+	deny, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-approve-deny",
+		ChatEntityID: "dev:personal:ou_other",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#批准"+id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(deny.Reply, "只有指定审批人") {
+		t.Fatalf("deny result=%+v", deny)
+	}
+
+	approve, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-approve",
+		ChatEntityID: "dev:personal:ou_approver",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#批准"+id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !approve.Matched || !strings.Contains(approve.Reply, "已批准申请") || strings.Contains(approve.Reply, "wp_") {
+		t.Fatalf("approve result=%+v", approve)
+	}
+	grantMsg := waitOutbound(t, ctx, q)
+	if grantMsg == nil || grantMsg.ChatEntityID != "dev:personal:ou_applicant" {
+		t.Fatalf("grant msg=%+v", grantMsg)
+	}
+	grantText := messageText(t, grantMsg)
+	if !strings.Contains(grantText, "key_id: FB-") || !strings.Contains(grantText, "secret: wp_") || !strings.Contains(grantText, "Windows WSL2") {
+		t.Fatalf("grant text=%q", grantText)
+	}
+	app, err = db.GetKeyApplication(ctx, id)
+	if err != nil || app == nil || app.Status != "approved" || app.KeyID == "" || app.ServiceID == "" {
+		t.Fatalf("approved application=%+v err=%v", app, err)
+	}
+	storedMsgs, err := db.RecentMessages(ctx, model.MessageFilter{ChatEntityID: "dev:personal:ou_applicant", Limit: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	foundGrant := false
+	for _, stored := range storedMsgs {
+		if stored.ID != "apply-key-grant-"+id {
+			continue
+		}
+		foundGrant = true
+		if strings.Contains(stored.Content, "wp_") {
+			t.Fatalf("stored grant leaked secret: %s", stored.Content)
+		}
+		var payload map[string]string
+		if err := json.Unmarshal([]byte(stored.Content), &payload); err != nil {
+			t.Fatalf("stored grant is invalid JSON: %v content=%q", err, stored.Content)
+		}
+	}
+	if !foundGrant {
+		t.Fatalf("stored grant message not found: %+v", storedMsgs)
+	}
+	accounts, err := db.ListAPIKeyAccounts(ctx, app.KeyID)
+	if err != nil || len(accounts) != 1 || accounts[0] != "dev:personal:ou_applicant" {
+		t.Fatalf("accounts=%+v err=%v", accounts, err)
+	}
+	audits, err := db.ListRecentAudit(ctx, "key_application_", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, audit := range audits {
+		if strings.Contains(audit.Target, "wp_") {
+			t.Fatalf("audit leaked secret: %+v", audit)
+		}
+	}
+}
+
+func TestApplyKeyFlowRejectsPendingApplication(t *testing.T) {
+	useTestApplyKeyApprover(t, "ou_approver")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	q := bus.NewDBQueue(db, model.DirectionOut)
+	hub.Outbound = q
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-reject-create",
+		ChatEntityID: "dev:personal:ou_applicant",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#申请 临时测试")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = waitOutbound(t, ctx, q)
+	id := applyIDFromReply(t, result.Reply)
+
+	reject, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-reject",
+		ChatEntityID: "dev:personal:ou_approver",
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+	}, "#拒绝"+id+" 信息不足")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reject.Matched || !strings.Contains(reject.Reply, "已拒绝申请") {
+		t.Fatalf("reject result=%+v", reject)
+	}
+	rejectMsg := waitOutbound(t, ctx, q)
+	rejectText := ""
+	if rejectMsg != nil {
+		rejectText = messageText(t, rejectMsg)
+	}
+	if rejectMsg == nil || rejectMsg.ChatEntityID != "dev:personal:ou_applicant" || !strings.Contains(rejectText, "信息不足") {
+		t.Fatalf("reject msg=%+v text=%q", rejectMsg, rejectText)
+	}
+	app, err := db.GetKeyApplication(ctx, id)
+	if err != nil || app == nil || app.Status != "rejected" || app.RejectReason != "信息不足" {
+		t.Fatalf("rejected application=%+v err=%v", app, err)
+	}
+}
+
+func TestApplyKeyFlowIgnoresGroupCommands(t *testing.T) {
+	useTestApplyKeyApprover(t, "ou_approver")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+
+	result, err := hub.Dispatch(ctx, model.Message{
+		ID:           "apply-group",
+		ChatEntityID: "dev:group:oc_team",
+		BotChannelID: "dev",
+		ChatType:     model.ChatGroup,
+		SenderOpenID: "ou_applicant",
+	}, "#申请 群里申请")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Matched || result.Reply != "" {
+		t.Fatalf("group apply should be silently handled, got %+v", result)
+	}
+	audits, err := db.ListRecentAudit(ctx, "key_application_create", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(audits) != 0 {
+		t.Fatalf("group command should not create application audit: %+v", audits)
+	}
+}
+
+func TestParseSelectorRejectsHashSpace(t *testing.T) {
+	if name, _, ok := parseSelector("#home hello"); !ok || name != "home" {
+		t.Fatalf("#home selector not parsed: name=%q ok=%v", name, ok)
+	}
+	if name, body, ok := parseSelector("@_user_1 #home hello"); !ok || name != "home" || body != "hello" {
+		t.Fatalf("@ placeholder selector not parsed: name=%q body=%q ok=%v", name, body, ok)
+	}
+	if _, _, ok := parseSelector("# home hello"); ok {
+		t.Fatalf("# followed by space should not be parsed as selector")
+	}
+	if action, session, ok := parseMirrorCommand("mirror on home"); !ok || action != "on" || session != "home" {
+		t.Fatalf("mirror command not parsed: action=%q session=%q ok=%v", action, session, ok)
+	}
+	hub, _, _ := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	if name, body, ok := hub.parseSelector("dev", "@ExampleBot #home hello"); !ok || name != "home" || body != "hello" {
+		t.Fatalf("literal bot mention selector not parsed: name=%q body=%q ok=%v", name, body, ok)
+	}
+}
+
+func TestRouteToSessionAcksDeliveredInboundMessage(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "home")
+
+	if err := db.EnqueueMessage(ctx, model.Message{
+		ID:           "fm-delivered",
+		ChatEntityID: "dev:personal:alice",
+		Direction:    model.DirectionIn,
+		BotChannelID: "dev",
+		ChatType:     model.ChatPersonal,
+		Content:      `{"text":"#home ping"}`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{
+		ID:   "fm-delivered",
+		To:   "home#" + key.ID,
+		From: "alice#" + key.ID + "#ExampleBot",
+		Body: "ping",
+		TS:   time.Now().Unix(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, home)
+	if got.ID != "fm-delivered" || got.Body != "ping" {
+		t.Fatalf("delivered envelope = %+v", got)
+	}
+	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil {
+		t.Fatalf("ClaimNextMessage: %v", err)
+	}
+	if next != nil {
+		t.Fatalf("delivered inbound message was re-claimable: %+v", next)
+	}
+}
+
+func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	onboard := readEnvelopeIncludingSystem(t, ctx, home)
+	if metaString(onboard.Meta, "type") != agentNetworkSkillPushType || !strings.Contains(onboard.Body, "生成时间（UTC）") {
+		t.Fatalf("onboard must be the initial system frame: %+v", onboard)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(20 * time.Millisecond)
+	if err := db.EnqueueMessage(ctx, model.Message{ID: "fm-reliable", ChatEntityID: "dev:personal:alice",
+		Direction: model.DirectionIn, BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"#home ping"}`}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{ID: "fm-reliable", To: "home#" + key.ID,
+		From: "alice#" + key.ID + "#ExampleBot", Body: "ping", TS: time.Now().Unix()}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, home)
+	deliveryID := metaString(got.Meta, "delivery_id")
+	if metaString(got.Meta, "type") != "delivery" || deliveryID == "" || got.ID != "fm-reliable" {
+		t.Fatalf("reliable envelope = %+v", got)
+	}
+	record, err := db.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || record == nil || record.State != "sent" {
+		t.Fatalf("delivery record=%+v err=%v", record, err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "ack", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ = db.GetSessionDelivery(ctx, deliveryID)
+		return record != nil && record.State == "processed"
+	})
+	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || next != nil {
+		t.Fatalf("source not acked after processed: %+v err=%v", next, err)
+	}
+}
+
+func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	_ = readEnvelopeIncludingSystem(t, ctx, home)
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(20 * time.Millisecond)
+	if err := db.EnqueueMessage(ctx, model.Message{ID: "fm-busy", ChatEntityID: "dev:personal:alice",
+		Direction: model.DirectionIn, BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"#home ping"}`}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{ID: "fm-busy", To: "home#" + key.ID,
+		From: "alice#" + key.ID + "#ExampleBot", Body: "ping", TS: time.Now().Unix()}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, home)
+	deliveryID := metaString(got.Meta, "delivery_id")
+	if deliveryID == "" {
+		t.Fatalf("missing delivery id: %+v", got)
+	}
+	record, err := db.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || record == nil || record.State != "sent" || record.Attempts != 1 {
+		t.Fatalf("sent delivery record=%+v err=%v", record, err)
+	}
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "busy", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "busy", "reason": "cli_busy", "retryable": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ = db.GetSessionDelivery(ctx, deliveryID)
+		return record != nil && record.State == "queued" && record.Attempts == 0 && record.LastError == "cli_busy"
+	})
+	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if next == nil || next.ID != "fm-busy" {
+		t.Fatalf("source should remain pending until processed, got %+v", next)
+	}
+}
+
+func TestOnboardUsesOwnerScopedDBIdentityAndBrief(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := hub.IssueAPIKey(ctx, "svc1", "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "示例成员", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	identities := `{"alice":{"public":{"name":"Alice Example","email":"alice-public@example.test"},"private":{"name":"示例成员","email":"alice-private@example.test"}},"owner1":{"public":{"name":"wrong","email":"wrong@example.test"}}}`
+	briefs := `{"alice":"负责客户端上线与可靠投递联调。","owner1":"不应泄漏的其他 owner 简报"}`
+	if err := db.UpsertAppConfig(ctx, "onboard.git_identities", identities); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertAppConfig(ctx, "onboard.project_briefs", briefs); err != nil {
+		t.Fatal(err)
+	}
+	body := hub.renderAgentNetworkOnboard(ctx, "developer", "developer", key.ID)
+	for _, want := range []string{"示例成员（owner=alice）", "Alice Example", "alice-public@example.test", "alice-private@example.test", "负责客户端上线与可靠投递联调"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("onboard missing %q:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, "wrong@example.test") || strings.Contains(body, "不应泄漏") {
+		t.Fatalf("onboard leaked another owner configuration:\n%s", body)
+	}
+}
+
+func TestOnboardReconnectDebouncePerSession(t *testing.T) {
+	hub := New(nil)
+	hub.onboardInterval = time.Hour
+	now := time.Date(2026, 7, 11, 12, 0, 0, 0, time.UTC)
+	home := &sessionClient{keyID: "key", sessionName: "home", connSeq: 1}
+	if !hub.reserveOnboardPush(home, now) {
+		t.Fatal("first connection must push")
+	}
+	home.connSeq++
+	if hub.reserveOnboardPush(home, now.Add(59*time.Minute)) {
+		t.Fatal("short reconnect must be debounced")
+	}
+	if !hub.reserveOnboardPush(home, now.Add(time.Hour)) {
+		t.Fatal("push must resume after interval")
+	}
+	other := &sessionClient{keyID: "key", sessionName: "review", connSeq: 1}
+	if !hub.reserveOnboardPush(other, now.Add(time.Minute)) {
+		t.Fatal("debounce must be scoped per session")
+	}
+}
+
+func TestNoMirrorSystemEnvelopeSkipsFeishuMirrorButNormalMirrors(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.RegisterBot("bot-test", "bot-test")
+	keyID := "FB-test"
+	if err := hub.RouteEnvelope(ctx, model.Envelope{
+		ID:   "sys-online",
+		To:   "ou_alice#" + keyID + "#ExampleBot",
+		From: "home#" + keyID,
+		Body: "在线清单",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"type": "online_directory", "system": true, "no_mirror": true},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg != nil {
+		t.Fatalf("system no_mirror should not enqueue mirror msg=%+v err=%v", msg, err)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{
+		ID:   "normal-mirror",
+		To:   "ou_alice#" + keyID + "#ExampleBot",
+		From: "home#" + keyID,
+		Body: "普通 AI 输出",
+		TS:   time.Now().Unix(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg == nil {
+		t.Fatalf("normal mirror missing msg=%+v err=%v", msg, err)
+	}
+	if msg.ChatEntityID != "dev:personal:ou_alice" || !strings.Contains(msg.Content, "普通 AI 输出") {
+		t.Fatalf("normal mirror msg=%+v", msg)
+	}
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "bot-test:group:oc_group", BotChannelID: "bot-test", Type: model.ChatGroup, FeishuID: "oc_group", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{
+		ID:   "producer-group",
+		To:   "oc_group#" + keyID + "#ExampleBot",
+		From: "producer#" + keyID,
+		Body: "系统任务产出",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"producer": true, "target_group": "oc_group", "no_mirror": true},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg == nil {
+		t.Fatalf("producer group msg missing msg=%+v err=%v", msg, err)
+	}
+	if msg.BotChannelID != "bot-test" || msg.ChatEntityID != "bot-test:group:oc_group" || !strings.Contains(msg.Content, "系统任务产出") {
+		t.Fatalf("producer group msg=%+v", msg)
+	}
+}
+
+func TestProducerTargetBotOverrideAndUnknownGroupDoesNotDefault(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.RegisterBot("bot-test", "bot-test")
+	keyID := "FB-test"
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:group:oc_alert", BotChannelID: "dev", Type: model.ChatGroup, FeishuID: "oc_alert", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{
+		ID:   "producer-override",
+		To:   "oc_alert#" + keyID + "#ExampleBot",
+		From: "producer#" + keyID,
+		Body: "告警",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"producer": true, "target_group": "oc_alert", "target_bot": "bot-test", "no_mirror": true},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg == nil {
+		t.Fatalf("producer override missing msg=%+v err=%v", msg, err)
+	}
+	if msg.BotChannelID != "bot-test" || msg.ChatEntityID != "bot-test:group:oc_alert" {
+		t.Fatalf("producer override msg=%+v", msg)
+	}
+	if err := hub.RouteEnvelope(ctx, model.Envelope{
+		ID:   "producer-unknown",
+		To:   "oc_unknown#" + keyID + "#ExampleBot",
+		From: "producer#" + keyID,
+		Body: "未知群",
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{"producer": true, "target_group": "oc_unknown", "no_mirror": true},
+	}); err == nil {
+		t.Fatal("unknown producer target group should fail instead of defaulting to ExampleBot")
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg != nil {
+		t.Fatalf("unknown producer target should not enqueue msg=%+v err=%v", msg, err)
+	}
+}
+
+func TestSendProvisionWritesSystemEnvelopeToOnlineSession(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-provision", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-provision", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "owner-one"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "developer")
+
+	if err := hub.SendProvision(ctx, key.ID, "developer", "install_skill", "https://downloads.example.com/skill.tar", strings.Repeat("a", 64), "2.2.0", "demo", map[string]any{"channel": "gray"}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, conn)
+	if got.From != "workpulse#"+key.ID || got.To != "developer#"+key.ID {
+		t.Fatalf("addresses=%+v", got)
+	}
+	if got.Meta["type"] != "provision" || got.Meta["system"] != true || got.Meta["no_mirror"] != true {
+		t.Fatalf("meta=%+v", got.Meta)
+	}
+	if got.Meta["action"] != "install_skill" || got.Meta["target"] != "demo" || got.Meta["version"] != "2.2.0" {
+		t.Fatalf("provision fields=%+v", got.Meta)
+	}
+	if _, ok := got.Meta["extra"].(map[string]any); !ok {
+		t.Fatalf("extra missing: %+v", got.Meta)
+	}
+	if err := hub.SendProvision(ctx, key.ID, "offline", "install_skill", "https://downloads.example.com/skill.tar", strings.Repeat("a", 64), "2.2.0", "demo", nil); err == nil {
+		t.Fatal("offline provision should fail")
+	}
+}
+
+func TestProvisionAckIsAuditedAndNotRoutedBackAsError(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-provision-ack", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-provision-ack", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "owner-one"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "developer")
+
+	if err := writeEnvelope(ctx, conn, model.Envelope{
+		ID:   "ack-1",
+		To:   "workpulse#" + key.ID,
+		From: "developer#" + key.ID,
+		TS:   time.Now().Unix(),
+		Meta: map[string]any{
+			"type":         "provision_ack",
+			"system":       true,
+			"no_mirror":    true,
+			"action":       "install_skill",
+			"target":       "demo",
+			"version":      "2.2.0",
+			"ok":           true,
+			"message":      "skill installed",
+			"from_version": "2.1.0",
+			"to_version":   "2.2.0",
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(50 * time.Millisecond)
+	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	defer cancel()
+	if _, _, err := conn.Read(readCtx); err == nil {
+		t.Fatal("provision ack should be swallowed without error envelope")
+	}
+	audits, err := db.ListRecentAudit(ctx, "provision_ack", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(audits) != 1 || audits[0].Actor != "developer#"+key.ID || !strings.Contains(audits[0].Target, `"ok":true`) || !strings.Contains(audits[0].Target, `"skill installed"`) {
+		t.Fatalf("audits=%+v", audits)
+	}
+}
+
+// F2: 版本单调闸只在 helper 确认 apply 成功(ok=true)后推进；失败的下发不得烧号；
+// update_self 不在此记账（成功会重启且不回 ack，改以 session_endpoint.version 为准）。
+func TestProvisionAckRecordsConfirmedVersionOnlyOnSuccess(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-f2", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-f2", "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "owner-f2"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "developer")
+
+	skillKey := "provision:last:install_skill:" + key.ID + ":developer:demo" // == store.ProvisionVersionKey
+	selfKey := "provision:last:update_self:" + key.ID + ":developer:self"
+
+	sendAck := func(action, target, version string, ok bool) {
+		if err := writeEnvelope(ctx, conn, model.Envelope{
+			ID: "ack", To: "workpulse#" + key.ID, From: "developer#" + key.ID, TS: time.Now().Unix(),
+			Meta: map[string]any{
+				"type": "provision_ack", "system": true, "no_mirror": true,
+				"action": action, "target": target, "version": version, "ok": ok, "message": "m",
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(40 * time.Millisecond)
+	}
+	appVersion := func(cfgKey string) string {
+		items, err := db.ListAppConfig(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, it := range items {
+			if it.Key != cfgKey {
+				continue
+			}
+			var p struct {
+				Version string `json:"version"`
+			}
+			_ = json.Unmarshal([]byte(it.ValueJSON), &p)
+			return p.Version
+		}
+		return ""
+	}
+
+	// 1) 成功的 install_skill → 记录版本
+	sendAck("install_skill", "demo", "2.2.0", true)
+	if got := appVersion(skillKey); got != "2.2.0" {
+		t.Fatalf("ok=true 应记录 2.2.0, got=%q", got)
+	}
+	// 2) 失败的更高版本 install_skill → 不得烧号（仍是 2.2.0）
+	sendAck("install_skill", "demo", "9.9.9", false)
+	if got := appVersion(skillKey); got != "2.2.0" {
+		t.Fatalf("ok=false 不得推进版本, got=%q", got)
+	}
+	// 3) update_self 即便 ok=true 也不在此记账（以 session_endpoint.version 为准）
+	sendAck("update_self", "self", "5.0.0", true)
+	if got := appVersion(selfKey); got != "" {
+		t.Fatalf("update_self 不应写 app_config 记录, got=%q", got)
+	}
+}
+
+func TestSessionNameEnforceRejectsInvalidNames(t *testing.T) {
+	useTestNameEnforce(t, "enforce")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-name-enforce", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-name-enforce", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	sessionName := "u1-developer-" + keyTail(key.ID)
+	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, sessionName)
+
+	for _, tc := range []struct {
+		name    string
+		session string
+		want    string
+	}{
+		{name: "wrong owner", session: "u2-review-" + keyTail(key.ID), want: "owner_key"},
+		{name: "wrong tail", session: "u1-review-0000", want: "末4位"},
+		{name: "has hyphen but not full name", session: "dev-review", want: "会话名不合规"},
+		{name: "invalid chars", session: "Dev-1", want: "会话名不合规"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := dialSessionErrorBody(t, ctx, srv.URL, tc.session, key.ID, secret)
+			if !strings.Contains(body, tc.want) {
+				t.Fatalf("error body %q does not contain %q", body, tc.want)
+			}
+		})
+	}
+}
+
+func TestSessionNameEnforceAllowsTemporarySendName(t *testing.T) {
+	useTestNameEnforce(t, "enforce")
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-name-note", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-name-note", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	sessionName := "u1-managernote-" + keyTail(key.ID)
+	conn := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, sessionName)
+}
+
+func TestSessionNameWarnAllowsLegacyNameAndDirectoryFlagsIt(t *testing.T) {
+	useTestNameEnforce(t, "warn")
+	oldViewBase := terminalViewBase
+	terminalViewBase = "https://example.test"
+	t.Cleanup(func() { terminalViewBase = oldViewBase })
+
+	owner := model.Member{OwnerKey: "u1", DisplayName: "UserOne", Active: true}
+	text := renderOnlineDirectory(owner, []onlineSessionItem{{
+		Endpoint: model.SessionEndpoint{
+			KeyID:       "FB-example-e0d10000",
+			SessionName: "dev1013",
+			OwnerKey:    "u1",
+			Tool:        "CODEX",
+			Model:       "gpt-5",
+			Version:     "0.1.2.5",
+			ClientIP:    "127.0.0.1",
+		},
+		Client: &sessionClient{webTerminal: true},
+	}})
+	if !strings.Contains(text, "#dev1013") || !strings.Contains(text, "@u1#dev1013") {
+		t.Fatalf("legacy short address should be based on ep.SessionName: %s", text)
+	}
+	if strings.Contains(text, "#bg") {
+		t.Fatalf("legacy name should not be cut to #bg: %s", text)
+	}
+	if !strings.Contains(text, "/view/dev1013") || !strings.Contains(text, "命名告警:") {
+		t.Fatalf("warn directory missing view or warning: %s", text)
+	}
+	if !strings.Contains(text, " · v0.1.2.5 · ") {
+		t.Fatalf("directory missing client version: %s", text)
+	}
+}
+
+func TestSessionNameOffSkipsDirectoryWarning(t *testing.T) {
+	useTestNameEnforce(t, "off")
+	owner := model.Member{OwnerKey: "u1", DisplayName: "UserOne", Active: true}
+	text := renderOnlineDirectory(owner, []onlineSessionItem{{
+		Endpoint: model.SessionEndpoint{
+			KeyID:       "FB-example-e0d10000",
+			SessionName: "dev1013",
+			OwnerKey:    "u1",
+		},
+	}})
+	if strings.Contains(text, "命名告警:") {
+		t.Fatalf("off mode should not render naming warning: %s", text)
+	}
+}
+
+func TestShortSessionNameUsesThreePartRegisteredName(t *testing.T) {
+	if got := shortSessionName("owner1-manager-0000"); got != "manager" {
+		t.Fatalf("shortSessionName compliant=%q", got)
+	}
+	if got := shortSessionName("dev1013"); got != "dev1013" {
+		t.Fatalf("shortSessionName legacy=%q", got)
+	}
+}
+
+func dialSession(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string) *websocket.Conn {
+	t.Helper()
+	return dialSessionWithHeader(t, ctx, baseURL, sessionName, keyID, secret, nil)
+}
+
+func dialSessionWithHeader(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string, header http.Header) *websocket.Conn {
+	t.Helper()
+	conn := dialSessionWithHeaderRaw(t, ctx, baseURL, sessionName, keyID, secret, header)
+	discardInitialAgentNetworkSkill(t, ctx, conn)
+	return conn
+}
+
+func dialSessionWithHeaderRaw(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string, header http.Header) *websocket.Conn {
+	t.Helper()
+	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/session/" + sessionName + "?key_id=" + keyID
+	if header == nil {
+		header = http.Header{}
+	}
+	header.Set("Authorization", "Bearer "+secret)
+	conn, _, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{HTTPHeader: header})
+	if err != nil {
+		t.Fatalf("Dial %s: %v", sessionName, err)
+	}
+	return conn
+}
+
+func dialSessionErrorBody(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret string) string {
+	t.Helper()
+	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/session/" + sessionName + "?key_id=" + keyID
+	return dialSessionErrorBodyURL(t, ctx, wsURL, sessionName, secret)
+}
+
+func dialSessionErrorBodyWithQuery(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret, query string) string {
+	t.Helper()
+	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/session/" + sessionName + "?key_id=" + keyID
+	if strings.TrimSpace(query) != "" {
+		wsURL += "&" + query
+	}
+	return dialSessionErrorBodyURL(t, ctx, wsURL, sessionName, secret)
+}
+
+func dialSessionErrorBodyURL(t *testing.T, ctx context.Context, wsURL, sessionName, secret string) string {
+	t.Helper()
+	header := http.Header{}
+	header.Set("Authorization", "Bearer "+secret)
+	conn, resp, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{HTTPHeader: header})
+	if conn != nil {
+		_ = conn.Close(websocket.StatusNormalClosure, "unexpected")
+	}
+	if err == nil {
+		t.Fatalf("Dial %s unexpectedly succeeded", sessionName)
+	}
+	if resp == nil {
+		return err.Error()
+	}
+	defer resp.Body.Close()
+	data, _ := io.ReadAll(resp.Body)
+	return string(data)
+}
+
+func dialSessionWithQuery(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret, query string) *websocket.Conn {
+	t.Helper()
+	conn := dialSessionWithQueryRaw(t, ctx, baseURL, sessionName, keyID, secret, query)
+	discardInitialAgentNetworkSkill(t, ctx, conn)
+	return conn
+}
+
+func dialSessionWithQueryRaw(t *testing.T, ctx context.Context, baseURL, sessionName, keyID, secret, query string) *websocket.Conn {
+	t.Helper()
+	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/session/" + sessionName + "?key_id=" + keyID
+	if strings.TrimSpace(query) != "" {
+		wsURL += "&" + query
+	}
+	header := http.Header{}
+	header.Set("Authorization", "Bearer "+secret)
+	conn, _, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{HTTPHeader: header})
+	if err != nil {
+		t.Fatalf("Dial %s: %v", sessionName, err)
+	}
+	return conn
+}
+
+func discardInitialAgentNetworkSkill(t *testing.T, ctx context.Context, conn *websocket.Conn) {
+	t.Helper()
+	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	defer cancel()
+	_, data, err := conn.Read(readCtx)
+	if err != nil {
+		return
+	}
+	var env model.Envelope
+	if err := json.Unmarshal(data, &env); err != nil {
+		t.Fatalf("decode initial envelope: %v", err)
+	}
+	if env.Meta["type"] != agentNetworkSkillPushType {
+		t.Fatalf("expected initial agent network skill push, got %+v", env)
+	}
+}
+
+func writeEnvelope(ctx context.Context, conn *websocket.Conn, env model.Envelope) error {
+	payload, _ := json.Marshal(env)
+	return conn.Write(ctx, websocket.MessageText, payload)
+}
+
+func writeTerminalClientMessage(ctx context.Context, conn *websocket.Conn, msg terminalClientMessage) error {
+	payload, _ := json.Marshal(msg)
+	return conn.Write(ctx, websocket.MessageText, payload)
+}
+
+func dialTerminalView(t *testing.T, ctx context.Context, baseURL, sessionName string) *websocket.Conn {
+	t.Helper()
+	return dialTerminalViewWithCookie(t, ctx, baseURL, sessionName, "")
+}
+
+// readTerminalViewMessage reads one terminal message from a viewer connection.
+// Viewer messages use the terminal wire format {type, ...} rather than Envelope.
+func readTerminalViewMessage(t *testing.T, ctx context.Context, conn *websocket.Conn) map[string]any {
+	t.Helper()
+	_, data, err := conn.Read(ctx)
+	if err != nil {
+		t.Fatalf("read terminal view message: %v", err)
+	}
+	var msg map[string]any
+	if err := json.Unmarshal(data, &msg); err != nil {
+		t.Fatalf("unmarshal terminal view message: %v", err)
+	}
+	return msg
+}
+
+func readTerminalViewMessageType(t *testing.T, ctx context.Context, conn *websocket.Conn) string {
+	t.Helper()
+	msg := readTerminalViewMessage(t, ctx, conn)
+	s, _ := msg["type"].(string)
+	return s
+}
+
+func dialTerminalViewWithCookie(t *testing.T, ctx context.Context, baseURL, sessionName, cookieValue string) *websocket.Conn {
+	t.Helper()
+	wsURL := "ws" + strings.TrimPrefix(baseURL, "http") + "/ws/view/" + sessionName
+	var opts *websocket.DialOptions
+	if cookieValue != "" {
+		opts = &websocket.DialOptions{
+			HTTPHeader: http.Header{"Cookie": {cookieValue}},
+		}
+	}
+	conn, _, err := websocket.Dial(ctx, wsURL, opts)
+	if err != nil {
+		t.Fatalf("Dial view %s: %v", sessionName, err)
+	}
+	return conn
+}
+
+func terminalViewerCode(t *testing.T, hub *Hub, keyID, sessionName string) string {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		hub.mu.Lock()
+		st := hub.terminals[terminalKey(keyID, sessionName)]
+		if st != nil {
+			for _, v := range st.viewers {
+				code := v.code
+				hub.mu.Unlock()
+				return code
+			}
+		}
+		hub.mu.Unlock()
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("terminal viewer code not found key=%s session=%s", keyID, sessionName)
+	return ""
+}
+
+func readEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn) model.Envelope {
+	t.Helper()
+	for {
+		env := readEnvelopeIncludingSystem(t, ctx, conn)
+		if env.Meta["type"] != agentNetworkSkillPushType {
+			return env
+		}
+	}
+}
+
+func readEnvelopeIncludingSystem(t *testing.T, ctx context.Context, conn *websocket.Conn) model.Envelope {
+	t.Helper()
+	readCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	_, data, err := conn.Read(readCtx)
+	if err != nil {
+		t.Fatalf("read envelope: %v", err)
+	}
+	var env model.Envelope
+	if err := json.Unmarshal(data, &env); err != nil {
+		t.Fatalf("unmarshal envelope: %v", err)
+	}
+	return env
+}
+
+func readEnvelopeOfType(t *testing.T, ctx context.Context, conn *websocket.Conn, typ string) model.Envelope {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		env := readEnvelopeIncludingSystem(t, ctx, conn)
+		if metaString(env.Meta, "type") == typ {
+			return env
+		}
+	}
+	t.Fatalf("did not receive envelope type %s", typ)
+	return model.Envelope{}
+}
+
+func assertNoEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn, wait time.Duration) {
+	t.Helper()
+	readCtx, cancel := context.WithTimeout(ctx, wait)
+	defer cancel()
+	_, data, err := conn.Read(readCtx)
+	if err == nil {
+		var env model.Envelope
+		if err := json.Unmarshal(data, &env); err == nil && env.Meta["type"] == agentNetworkSkillPushType {
+			return
+		}
+		t.Fatalf("unexpected envelope: %+v", env)
+	}
+}
+
+func waitEndpointInactive(t *testing.T, ctx context.Context, db *store.SQLite, keyID, sessionName string) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		endpoints, err := db.ListSessionEndpoints(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, ep := range endpoints {
+			if ep.KeyID == keyID && ep.SessionName == sessionName && !ep.Active {
+				return
+			}
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("endpoint did not become inactive key=%s session=%s endpoints=%+v", keyID, sessionName, endpoints)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+func waitFor(t *testing.T, timeout time.Duration, ok func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if ok() {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("condition not met before timeout")
+}
+
+func waitSessionOnline(t *testing.T, hub *Hub, keyID, sessionName string) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		if hub.sessionOnline(keyID, sessionName) {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("session did not become online key=%s session=%s", keyID, sessionName)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+func assertEnvelopeDoesNotContain(t *testing.T, env model.Envelope, secret string) {
+	t.Helper()
+	payload, _ := json.Marshal(env)
+	if strings.Contains(string(payload), secret) {
+		t.Fatalf("envelope leaked secret %q: %s", secret, payload)
+	}
+}
+
+func messageText(t *testing.T, msg *model.Message) string {
+	t.Helper()
+	var payload struct {
+		Text string `json:"text"`
+	}
+	if err := json.Unmarshal([]byte(msg.Content), &payload); err != nil {
+		t.Fatalf("unmarshal message content: %v content=%q", err, msg.Content)
+	}
+	return payload.Text
+}
+
+func applyIDFromReply(t *testing.T, reply string) string {
+	t.Helper()
+	const prefix = "已提交 key 申请，申请 ID："
+	const suffix = "。审批通过后会私聊发放。"
+	if !strings.HasPrefix(reply, prefix) || !strings.HasSuffix(reply, suffix) {
+		t.Fatalf("unexpected apply reply: %q", reply)
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(reply, prefix), suffix)
+}
+
+func hasUTCPrefix(text string) bool {
+	if len(text) < len("[2006-01-02 15:04:05 UTC]") {
+		return false
+	}
+	prefix := text[:len("[2006-01-02 15:04:05 UTC]")]
+	if !strings.HasPrefix(prefix, "[") || !strings.HasSuffix(prefix, " UTC]") {
+		return false
+	}
+	_, err := time.Parse("2006-01-02 15:04:05 MST", strings.TrimSuffix(strings.TrimPrefix(prefix, "["), "]"))
+	return err == nil
+}
+
+func waitOutbound(t *testing.T, ctx context.Context, q *bus.DBQueue) *model.Message {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		msg, err := q.Dequeue(ctx)
+		if err != nil {
+			t.Fatalf("outbound dequeue: %v", err)
+		}
+		if msg != nil {
+			return msg
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return nil
+}
+
+func TestOnboardOnlineListPathUsesClientLocalName(t *testing.T) {
+	// sessionHelper 用客户端自己配置的 SH_SESSION_NAME 命名清单文件；
+	// 指南若印 Hub 派生的完整名，会话会去读一个不存在的文件。
+	cases := []struct {
+		name        string
+		sessionName string
+		localName   string
+		wantPath    string
+	}{
+		{"短名客户端", "owner1-developer-0000", "developer", "~/.dingwei/developer.DingWeiOnlineSessions.list"},
+		{"旧全名客户端", "owner1-developer-0000", "owner1-developer-0000", "~/.dingwei/owner1-developer-0000.DingWeiOnlineSessions.list"},
+		{"缺失时回退派生名", "owner1-developer-0000", "", "~/.dingwei/owner1-developer-0000.DingWeiOnlineSessions.list"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			body := renderAgentNetworkSkill(tc.sessionName, tc.localName, "FB-example-0000")
+			if !strings.Contains(body, tc.wantPath) {
+				t.Fatalf("onboard guide missing %q:\n%s", tc.wantPath, body)
+			}
+			if tc.localName != "" && tc.localName != tc.sessionName {
+				stale := "~/.dingwei/" + tc.sessionName + ".DingWeiOnlineSessions.list"
+				if strings.Contains(body, stale) {
+					t.Fatalf("onboard guide still points at derived-name path %q:\n%s", stale, body)
+				}
+			}
+		})
+	}
+}
+
+// fix/control-plane-intent-gate:群聊里 L1 未命中命令的消息(闲聊/@别人)静默,
+// 不回执、不进 L2、任务标 ignored,且重复投递仍静默;个人会话行为不变(仍回执)。
+func TestControlPlaneGroupNonCommandIsSilenced(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "ExampleBot")
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+
+	// 群聊闲聊 "好的" → 静默
+	groupMsg := model.Message{ID: "grp-chatter", ChatEntityID: "dev:group:oc_x", BotChannelID: "dev", ChatType: model.ChatGroup}
+	result, err := hub.Dispatch(ctx, groupMsg, "好的")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Matched {
+		t.Fatalf("group chatter should be silent, got %+v", result)
+	}
+	task, err := db.GetControlTask(ctx, "grp-chatter")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if task == nil || task.Status != "ignored" {
+		t.Fatalf("group chatter task should be ignored, got %+v", task)
+	}
+
+	// 重复投递仍静默(不因幂等路径回执)
+	dup, err := hub.Dispatch(ctx, groupMsg, "好的")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dup.Matched {
+		t.Fatalf("duplicate group chatter should stay silent, got %+v", dup)
+	}
+
+	// 群聊 @别人(无命令)→ 静默
+	atMsg := model.Message{ID: "grp-at", ChatEntityID: "dev:group:oc_x", BotChannelID: "dev", ChatType: model.ChatGroup}
+	r2, err := hub.Dispatch(ctx, atMsg, "@_user_1 @_user_2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r2.Matched {
+		t.Fatalf("group @people should be silent, got %+v", r2)
+	}
+
+	// 对照:个人会话同样的非命令消息 → 仍回执(原行为不变)
+	pmsg := model.Message{ID: "p-chatter", ChatEntityID: "dev:personal:ou_u1", BotChannelID: "dev", ChatType: model.ChatPersonal}
+	r3, err := hub.Dispatch(ctx, pmsg, "好的")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !r3.Matched || !strings.Contains(r3.Reply, "已受理 #p-chatter") {
+		t.Fatalf("personal chatter should still ack, got %+v", r3)
+	}
+}
+
+// C1(feat/view-service-dock):session_event 中继 —— 扇出给内网订阅者、
+// 存入 eventRing 供回放、且【不污染 xterm buffer】、不认领其它类型信封。
+func TestSessionEventRelayFansOutWithoutTouchingBuffer(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	c := &sessionClient{keyID: "key", sessionName: "s1", connSeq: 1}
+
+	replay, ch, unsub := hub.subscribeSessionEvents(c.keyID, c.sessionName, "sub1")
+	defer unsub()
+	if len(replay) != 0 {
+		t.Fatalf("expected empty replay, got %d", len(replay))
+	}
+
+	// 非 session_event:不认领(返回 false,交给后续 handler)
+	if hub.handleSessionEventEnvelope(c, model.Envelope{Meta: map[string]any{"type": terminalOutputType}, Body: "x"}) {
+		t.Fatal("should not claim non-session_event envelope")
+	}
+
+	// session_event:认领 + 扇出
+	payload := `{"kind":"assistant_text","text":"hi","delivery_id":"d1"}`
+	if !hub.handleSessionEventEnvelope(c, model.Envelope{Meta: map[string]any{"type": terminalSessionEventType}, Body: payload}) {
+		t.Fatal("should claim session_event envelope")
+	}
+	select {
+	case got := <-ch:
+		if got != payload {
+			t.Fatalf("subscriber got %q, want %q", got, payload)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("subscriber did not receive event")
+	}
+
+	// 不污染 xterm buffer;eventRing 记 1 条
+	hub.mu.Lock()
+	st := hub.terminalForSession(c.keyID, c.sessionName)
+	buf, ringLen := st.buffer, len(st.eventRing)
+	hub.mu.Unlock()
+	if buf != "" {
+		t.Fatalf("session_event must not touch xterm buffer, got %q", buf)
+	}
+	if ringLen != 1 {
+		t.Fatalf("eventRing len = %d, want 1", ringLen)
+	}
+
+	// 晚订阅者拿到回放
+	replay2, _, unsub2 := hub.subscribeSessionEvents(c.keyID, c.sessionName, "sub2")
+	defer unsub2()
+	if len(replay2) != 1 || replay2[0] != payload {
+		t.Fatalf("late subscriber replay = %v, want [%q]", replay2, payload)
+	}
+}
+
+// C2(feat/view-service-dock):内网事件订阅 SSE —— 离线会话 404;
+// 在线会话回放 eventRing 里的事件。
+func TestInternalViewEventsReplaysOnSubscribe(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	hub.sessionClients["key"] = map[string]*sessionClient{"s1": {keyID: "key", sessionName: "s1", connSeq: 1}}
+	hub.mu.Unlock()
+
+	c := &sessionClient{keyID: "key", sessionName: "s1", connSeq: 1}
+	payload := `{"kind":"assistant_text","text":"hi","delivery_id":"d1"}`
+	hub.handleSessionEventEnvelope(c, model.Envelope{Meta: map[string]any{"type": terminalSessionEventType}, Body: payload})
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /internal/view/{session}/events", hub.HandleInternalViewEvents)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	// 离线/不存在会话 → 404
+	resp404, err := http.Get(srv.URL + "/internal/view/nope/events")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp404.Body.Close()
+	if resp404.StatusCode != http.StatusNotFound {
+		t.Fatalf("offline session: got %d, want 404", resp404.StatusCode)
+	}
+
+	// 在线会话 → SSE 回放事件
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, "GET", srv.URL+"/internal/view/s1/events", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("online: got %d, want 200", resp.StatusCode)
+	}
+	buf := make([]byte, 0, 512)
+	tmp := make([]byte, 256)
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		n, rerr := resp.Body.Read(tmp)
+		buf = append(buf, tmp[:n]...)
+		if strings.Contains(string(buf), payload) {
+			break
+		}
+		if rerr != nil {
+			break
+		}
+	}
+	if !strings.Contains(string(buf), "data: "+payload) {
+		t.Fatalf("SSE did not replay event; got %q", string(buf))
+	}
+}
+
+// C3(feat/view-service-dock):内网鉴权/输入口 —— 注册虚拟 viewer、
+// 解锁前输入被拒(auth gate)、#unlock 后 authorize 报可写且同一 token、未知 viewer 404。
+func TestInternalViewAuthorizeAndInputAuthGate(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	hub.sessionClients["key"] = map[string]*sessionClient{"s1": {keyID: "key", sessionName: "s1", connSeq: 1}}
+	hub.mu.Unlock()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /internal/view/authorize", hub.HandleInternalViewAuthorize)
+	mux.HandleFunc("POST /internal/view/{session}/input", hub.HandleInternalViewInput)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	post := func(path, body string) (int, string) {
+		resp, err := http.Post(srv.URL+path, "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return resp.StatusCode, string(b)
+	}
+
+	// 注册虚拟 viewer:可读、未可写、有 code
+	code, body := post("/internal/view/authorize", `{"session":"s1"}`)
+	if code != 200 {
+		t.Fatalf("authorize register: %d %s", code, body)
+	}
+	var reg viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(body), &reg)
+	if reg.ViewerID == "" || reg.Code == "" || !reg.CanRead || reg.CanWrite {
+		t.Fatalf("register resp unexpected: %+v", reg)
+	}
+
+	// 未解锁 → 输入被拒(auth gate,复用 routeTerminalInput 校验)
+	sc, _ := post("/internal/view/s1/input", `{"viewer_id":"`+reg.ViewerID+`","token":"wrong","text":"hi"}`)
+	if sc != http.StatusForbidden {
+		t.Fatalf("input before unlock: got %d, want 403", sc)
+	}
+
+	// 模拟飞书 #unlock <code>
+	token, err := hub.grantTerminalInput("key", "s1", reg.Code)
+	if err != nil {
+		t.Fatalf("grant: %v", err)
+	}
+
+	// 解锁后 authorize(viewer_id):可写 + 同一 writer token
+	_, body2 := post("/internal/view/authorize", `{"session":"s1","viewer_id":"`+reg.ViewerID+`"}`)
+	var st2 viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(body2), &st2)
+	if !st2.CanWrite || st2.WriterToken != token {
+		t.Fatalf("after unlock: %+v (want token=%s)", st2, token)
+	}
+
+	// 未知 viewer → 404(提示重新注册)
+	sc2, _ := post("/internal/view/authorize", `{"session":"s1","viewer_id":"nope"}`)
+	if sc2 != http.StatusNotFound {
+		t.Fatalf("unknown viewer: got %d, want 404", sc2)
+	}
+}
+
+// C4(feat/view-service-dock):入口路由器三级优先级 + fail-safe。
+// 用户级路由 / 会话级覆盖用户级 / 默认兜底老页 / 目标不可达回退老页。
+func TestViewRoutingPrecedenceAndFallback(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+
+	// stub View 服务:回显 X-DW-Session + 路径
+	stub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("VIEWSVC session=" + r.Header.Get("X-DW-Session") + " path=" + r.URL.Path))
+	}))
+	defer stub.Close()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /view/{sessionName}", hub.HandleTerminalViewPage)
+	front := httptest.NewServer(mux)
+	defer front.Close()
+
+	get := func(session string) string {
+		resp, err := http.Get(front.URL + "/view/" + session)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return string(b)
+	}
+	head := func(s string) string {
+		if len(s) > 60 {
+			return s[:60]
+		}
+		return s
+	}
+
+	cfg := `{
+	  "sessions": {"owner1-pinned-3dd6": "legacy-xterm", "dead-one-3dd6": "dead"},
+	  "users":    {"owner1": "v2"},
+	  "default":  "legacy-xterm",
+	  "targets":  {"v2": {"url": "` + stub.URL + `"}, "dead": {"url": "http://127.0.0.1:1"}}
+	}`
+	path := t.TempDir() + "/routing.json"
+	if err := os.WriteFile(path, []byte(cfg), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("VIEW_ROUTING_CONFIG", path)
+	viewRoutingMu.Lock()
+	viewRoutingCache = nil
+	viewRoutingMu.Unlock()
+
+	// 用户级:owner1-* → v2(反代到 stub,前缀剥离为 "/",带 session 头)
+	if b := get("owner1-demo-3dd6"); !strings.Contains(b, "VIEWSVC session=owner1-demo-3dd6 path=/") {
+		t.Fatalf("user-level route failed: %q", head(b))
+	}
+	// 会话级覆盖用户级:owner1-pinned 强制 legacy(即便 users[owner1]=v2)
+	if b := get("owner1-pinned-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
+		t.Fatalf("session-level override failed: %q", head(b))
+	}
+	// 默认兜底:别的 owner → legacy
+	if b := get("bob-demo-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
+		t.Fatalf("default should be legacy: %q", head(b))
+	}
+	// 目标不可达 → fail-safe 回退老页
+	if b := get("dead-one-3dd6"); strings.Contains(b, "VIEWSVC") || !strings.Contains(b, "<!doctype") {
+		t.Fatalf("unreachable target should fall back to legacy: %q", head(b))
+	}
+}
+
+// 离线全链路集成(feat/view-service-dock C1..C5):真 WS 会话发 session_event(C5)
+// → hub 中继(C1)→ 内网 SSE 订阅回放(C2)→ authorize+#unlock+input 回到会话(C3)。
+func TestViewServiceFullChainIntegration(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyID := key.ID
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	mux.HandleFunc("GET /internal/view/{session}/events", hub.HandleInternalViewEvents)
+	mux.HandleFunc("POST /internal/view/authorize", hub.HandleInternalViewAuthorize)
+	mux.HandleFunc("POST /internal/view/{session}/input", hub.HandleInternalViewInput)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	// (1) 会话上线(真 WS)
+	sess := dialSession(t, ctx, srv.URL, "home", keyID, secret)
+	defer sess.Close(websocket.StatusNormalClosure, "done")
+
+	// (2) C5/C1:会话发 session_event 信封
+	eventJSON := `{"kind":"assistant_text","text":"你好世界","delivery_id":"d1","cursor":"1"}`
+	if err := writeEnvelope(ctx, sess, model.Envelope{
+		ID: "ev1", From: "home#" + keyID, To: "workpulse#" + keyID,
+		Body: eventJSON, Meta: map[string]any{"type": "session_event", "session": "home", "key_id": keyID},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for dl := time.Now().Add(3 * time.Second); time.Now().Before(dl); time.Sleep(20 * time.Millisecond) {
+		hub.mu.Lock()
+		st, ok := hub.terminalBySessionNameLocked("home")
+		n := 0
+		if ok {
+			n = len(st.eventRing)
+		}
+		hub.mu.Unlock()
+		if n > 0 {
+			break
+		}
+	}
+
+	// (3) C2:内网 SSE 订阅 → 回放拿到该事件
+	ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx2, "GET", srv.URL+"/internal/view/home/events", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	buf := make([]byte, 0, 512)
+	tmp := make([]byte, 256)
+	for dl := time.Now().Add(2 * time.Second); time.Now().Before(dl); {
+		n, rerr := resp.Body.Read(tmp)
+		buf = append(buf, tmp[:n]...)
+		if strings.Contains(string(buf), eventJSON) {
+			break
+		}
+		if rerr != nil {
+			break
+		}
+	}
+	if !strings.Contains(string(buf), eventJSON) {
+		t.Fatalf("C2 SSE 未送达 session_event; got %q", string(buf))
+	}
+
+	// (4) C3:authorize 注册虚拟 viewer → #unlock 授权 → 可写
+	post := func(path, body string) (int, string) {
+		r, err := http.Post(srv.URL+path, "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(r.Body)
+		r.Body.Close()
+		return r.StatusCode, string(b)
+	}
+	_, regBody := post("/internal/view/authorize", `{"session":"home"}`)
+	var reg viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(regBody), &reg)
+	if reg.ViewerID == "" || reg.Code == "" {
+		t.Fatalf("authorize register: %s", regBody)
+	}
+	token, err := hub.grantTerminalInput(keyID, "home", reg.Code) // 模拟飞书 #unlock <code>
+	if err != nil {
+		t.Fatalf("grant: %v", err)
+	}
+	_, stBody := post("/internal/view/authorize", `{"session":"home","viewer_id":"`+reg.ViewerID+`"}`)
+	var st2 viewAuthorizeResponse
+	_ = json.Unmarshal([]byte(stBody), &st2)
+	if !st2.CanWrite || st2.WriterToken != token {
+		t.Fatalf("after unlock not writable: %s", stBody)
+	}
+
+	// (5) C3 input:浏览器输入 → hub → 会话收到 terminal_input
+	sc, ib := post("/internal/view/home/input", `{"viewer_id":"`+reg.ViewerID+`","token":"`+token+`","text":"跑一下测试"}`)
+	if sc != 200 {
+		t.Fatalf("input POST status=%d body=%s", sc, ib)
+	}
+	var gotInput bool
+	for i := 0; i < 6 && !gotInput; i++ {
+		env := readEnvelope(t, ctx, sess)
+		if env.Meta["type"] == "terminal_input" && env.Body == "跑一下测试" {
+			gotInput = true
+		}
+	}
+	if !gotInput {
+		t.Fatal("会话未收到 terminal_input(input 未回投成功)")
+	}
+}
+
+// fix/terminal-unlock-code-persist:断连宽限期内 viewer 的码仍可 #unlock 授权
+// (直接修"未找到页面码 X"——切飞书导致WS断,回来仍能解锁)。
+func TestUnlockFindsGracedDisconnectedViewer(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	st := hub.terminalForSession("key", "s1")
+	st.viewers["v1"] = &terminalViewer{id: "v1", code: "1234", conn: nil, mu: make(chan struct{}, 1), pageID: "pageA", disconnectedAt: time.Now()}
+	hub.mu.Unlock()
+
+	token, err := hub.grantTerminalInput("key", "s1", "1234")
+	if err != nil {
+		t.Fatalf("断连宽限中授权失败(bug未修): %v", err)
+	}
+	hub.mu.Lock()
+	wp, wt := st.writerPage, st.writerToken
+	hub.mu.Unlock()
+	if wp != "v1" || wt != token || token == "" {
+		t.Fatalf("授权未落到宽限 viewer: writerPage=%q token=%q", wp, wt)
+	}
+}
+
+// 断连 sweep:过期宽限清、宽限内留、View Service 虚拟 viewer 不碰。
+func TestSweepDisconnectedViewersRespectsGraceAndVirtual(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.mu.Lock()
+	st := hub.terminalForSession("key", "s1")
+	st.viewers["old"] = &terminalViewer{id: "old", code: "1111", conn: nil, disconnectedAt: time.Now().Add(-terminalDisconnectGrace - time.Minute)}
+	st.viewers["fresh"] = &terminalViewer{id: "fresh", code: "2222", conn: nil, disconnectedAt: time.Now()}
+	st.viewers["virt"] = &terminalViewer{id: "virt", code: "3333", conn: nil, lastSeen: time.Now()} // View Service 虚拟
+	hub.sweepDisconnectedViewersLocked(st)
+	_, oldE := st.viewers["old"]
+	_, freshE := st.viewers["fresh"]
+	_, virtE := st.viewers["virt"]
+	hub.mu.Unlock()
+	if oldE {
+		t.Fatal("过期宽限 viewer 应被清")
+	}
+	if !freshE {
+		t.Fatal("宽限内 viewer 应保留")
+	}
+	if !virtE {
+		t.Fatal("View Service 虚拟 viewer 不该被断连 sweep 清")
+	}
+}

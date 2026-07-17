@@ -1,0 +1,249 @@
+# sessionHelper
+
+`sessionHelper` 是 DingWei / feishu-bot-bridge 的会话侧适配器。它连接
+`/ws/session/{SH_SESSION_NAME}?key_id={SH_KEY_ID}`，其中 `SH_SESSION_NAME`
+只填短名，Hub 会按 key 绑定成员自动生成完整注册名。连接使用
+`Authorization: Bearer ${SH_SECRET}` 鉴权，并按统一信封 `{id,to,from,body,ts,meta}` 双向收发。
+
+敏感值只从环境变量读取，不写入配置文件或仓库。
+
+## 一条命令启动（Linux / Mac）
+
+本期推荐用源码 bootstrap，不预打二进制：
+
+```bash
+cd tools/sessionhelper
+./run.sh
+```
+
+首次运行会交互引导一次，之后复用本地配置并自动启动：
+
+- 检测 `python3 >= 3.9`、所选 AI CLI（如 `claude` / `codex`）。
+- 在工具目录创建/复用 `.venv`，执行 `pip install -r requirements.txt`，不污染全局 Python。
+- 把配置写入 `~/.workpulse-sh/config`，权限强制 `600`；`SH_SECRET` 不回显、不打印、不写入仓库。
+- 导出 `SH_MODE=cli`、`SH_CLI_LAUNCH=pty`、`SH_COLLECT=1`、`SH_CLI_READY_TIMEOUT=90`、`SH_CLI_REPLY_WAIT=45` 等环境变量后运行 `python -m sessionhelper`。
+- 默认会静默采集本地 AI CLI 会话轮次到 DingWei，用于团队进度佐证；不会发到飞书。需关闭请联系管理员设置成员 `evidence_optout`，或本地把 `SH_COLLECT=0`。
+- sessionHelper 断线会自动重连；PTY 子进程与 sessionHelper 生死绑定。
+
+重新配置：
+
+```bash
+./run.sh --reconfigure
+```
+
+缺依赖时按平台提示安装：
+
+```bash
+# macOS
+brew install python
+
+# Debian/Ubuntu
+sudo apt-get install python3 python3-venv python3-pip
+```
+
+AI CLI 需要用户自行安装并登录，本工具只托管已可用的 CLI，不代装、不保存模型账号。
+
+本地配置项：
+
+| 配置 | 说明 |
+|---|---|
+| `SH_SESSION_NAME` | 短会话名；完整注册名由 Hub 按 key 绑定成员自动生成 |
+| `SH_KEY_ID` | DingWei 公开租户标识，进入地址 |
+| `SH_SECRET` | DingWei 私密连接 secret，仅用于 `Authorization: Bearer` |
+| `SH_CLI` | AI CLI profile，如 `claude` / `codex` |
+| `SH_CLI_CMD` | 可选，自定义 CLI 启动命令 |
+| `SH_CLI_CWD` | CLI 工作目录 |
+| `SH_OPENCODE_DB` | 可选，opencode SQLite 会话库路径，默认 `~/.local/share/opencode/opencode.db` |
+| `SH_CLI_READY_TIMEOUT` | CLI 冷启动等待时间，启动器默认 90 秒 |
+| `SH_CLI_REPLY_WAIT` | CLI 首答等待时间，启动器默认 45 秒 |
+| `SH_WS_BASE` | DingWei WebSocket base URL |
+| `SH_COLLECT` | 是否静默采集 transcript 供佐证使用，默认 `1` |
+| `SH_ASYNC_REPLY` | CLI 模式可选，`1` 表示只注入指令，不等待模型输出、不发同步回执 |
+| `SH_MIRROR_TO` | 可选，默认镜像目标地址 |
+| `SH_BUSY_BUFFER_MAX` | CLI 忙时本地缓存上限，默认 `100`；超限丢最旧并记录日志 |
+| `SH_BUSY_REPLY_TEXT` | CLI 忙时发给请求方的节流回执文本 |
+| `SH_PROVISION_ALLOWED_HOSTS` | provision 下载 host 白名单，逗号分隔，默认 `localhost` |
+| `SH_PROVISION_AUDIT_DB` | provision 审计 SQLite 路径，默认 `~/.dingwei/sessionhelper_audit.db` |
+| `SH_TARGET_GROUP` | 可选，producer 输出目标飞书群 chat_id；普通会话留空不会向群发 |
+| `SH_TARGET_BOT` | 可选，producer 发群时强制使用的 bot_channel；留空则由 DingWei 按群归属解析 |
+| `SH_PRODUCER` | 可选，`1` 表示非交互 producer，只从 stdin 推内容到 `SH_TARGET_GROUP` |
+
+## 构建
+
+```bash
+python3 -m pip install -r tools/sessionhelper/requirements.txt
+make sessionhelper
+./dist/sessionhelper
+```
+
+产物为单文件二进制：`dist/sessionhelper`。
+
+## 通用环境变量
+
+```bash
+export SH_SESSION_NAME=home
+export SH_KEY_ID=FB-xxx-20260701-abcd
+export SH_SECRET='只在连接鉴权使用的 secret'
+export SH_WS_BASE=ws://127.0.0.1:8080
+export SH_BOT_NAME=ExampleBot
+```
+
+可选：
+
+```bash
+export SH_OUTBOX=/tmp/sessionhelper.outbox
+export SH_RECONNECT_MIN=1
+export SH_RECONNECT_MAX=30
+```
+
+`SH_OUTBOX` 每行格式为：
+
+```text
+目标地址|正文
+```
+
+目标地址可以是会话地址 `developer#FB-...`，也可以是飞书地址
+`ou_xxx#FB-...#ExampleBot` / `oc_xxx#FB-...#ExampleBot`。
+
+## Producer 模式：系统任务发群
+
+普通 sessionHelper 不会自动向飞书群发消息。系统任务需要发群时，使用管理员分配给
+`SYSTEM-V-TASK-INTERNAL` 的 key，并显式配置目标群：
+
+```bash
+export SH_SESSION_NAME=producer
+export SH_KEY_ID=FB-system-v-task-internal
+export SH_SECRET='管理员单独发放'
+export SH_PRODUCER=1
+export SH_TARGET_GROUP=oc_xxx
+export SH_TARGET_BOT=bot-test  # 可选；群归属已在 DingWei 里时可不填
+./dist/sessionhelper
+```
+
+`SH_PRODUCER=1` 时不启动交互 CLI，进程从 stdin 按行读取内容并经 DingWei 发到
+`SH_TARGET_GROUP`。发送信封带 `no_mirror`，不会再进入会话镜像链路。
+
+## 模式 A：直连模型 API
+
+```bash
+export SH_MODE=llm
+export SH_PROVIDER=deepseek
+export SH_API_KEY='sk-...'
+export SH_MODEL=deepseek-chat
+./dist/sessionhelper
+```
+
+支持 provider：
+
+| provider | 协议 | 默认 base_url | 默认模型 |
+|---|---|---|---|
+| `deepseek` | OpenAI compatible | `https://api.deepseek.com/v1` | `deepseek-chat` |
+| `qwen` | OpenAI compatible | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
+| `kimi` | OpenAI compatible | `https://api.moonshot.cn/v1` | `moonshot-v1-8k` |
+| `minimax` | OpenAI compatible | `https://api.minimax.chat/v1` | `MiniMax-Text-01` |
+| `glm` | OpenAI compatible | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-flash` |
+| `openai` | OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
+| `claude` | Anthropic Messages | `https://api.anthropic.com` | `claude-3-5-sonnet-latest` |
+| `gemini` | Google Generative Language | `https://generativelanguage.googleapis.com/v1beta` | `gemini-1.5-flash` |
+
+可用 `SH_BASE_URL` / `SH_MODEL` 覆盖默认值。按发起方地址维护简单对话历史，历史长度由
+`SH_HISTORY_TURNS` 控制。
+
+## 模式 B：托管终端 CLI
+
+```bash
+export SH_MODE=cli
+export SH_CLI=claude
+export SH_CLI_CWD=/path/to/your/project
+./dist/sessionhelper
+```
+
+支持 CLI profile：
+
+| SH_CLI | 默认命令 |
+|---|---|
+| `claude` | `claude --dangerously-skip-permissions` |
+| `codex` | `codex` |
+| `aider` | `aider` |
+| `cline` | `cline` |
+| `gemini` | `gemini` |
+
+可用 `SH_CLI_CMD` 覆盖启动命令，例如：
+
+```bash
+export SH_CLI_CMD='codex --dangerously-bypass-approvals-and-sandbox'
+```
+
+sessionHelper 默认用 `SH_CLI_LAUNCH=pty` 直接托管 CLI 子进程，原始 PTY 流会同步到
+DingWei Web 终端页面 `/view/<会话名>`。页面默认只读；飞书发送
+`#解锁输入 <会话名> <页面码>` 后，该页面获得 8 小时输入令牌，同一会话其它页面输入权会被撤销。
+需要主动收回时发送 `#锁定输入 <会话名>`。
+
+可调参数：
+
+```bash
+export SH_CLI_SETTLE_SECONDS=1.2
+export SH_CLI_USER_ACK_WAIT=10
+export SH_CLI_REPLY_WAIT=60
+export SH_CLI_LAUNCH=pty
+export SH_CLI_LAUNCH_RETRIES=3
+```
+
+`claude` / `codex` / `opencode` 属于全屏 TUI。sessionHelper 对这几类 CLI **用 PTY 做注入**，
+回复和镜像改从 transcript 读取，避免把启动框、ANSI 重绘、输入回显发回飞书：
+
+- `claude`：自动定位 `~/.claude/projects/<cwd-slug>/*.jsonl`，解析 assistant text。
+- `codex`：自动定位 `~/.codex/sessions/**/rollout-*.jsonl`，解析 `event_msg/agent_message`。
+- `opencode`：只读打开 `~/.local/share/opencode/opencode.db`（可用 `SH_OPENCODE_DB` 覆盖），注入后先找晚于注入时刻且文本匹配的 user message，以其 `session_id` 定位当前会话，再等同会话下 `role=assistant` 且 `finish=true` 的 message，拼接 `part.data.type=text` 的文本作为回复。
+
+自动定位只接受本次启动后新建/首写的 transcript，避免抓到旧 session 文件。可用
+`SH_CLI_TRANSCRIPT=/path/to/session.jsonl` 手工指定 transcript。若 transcript 未出现对应
+user 轮，会返回“注入未被 CLI 接收”；若 user 轮已落盘但未出现回答，会返回“答案超时”，
+不会返回原始 TUI 画面。
+
+CLI 采用懒启动：sessionHelper 会先保持 WS 在线，收到消息时启动/重试 CLI。若 Claude
+因 MCP/auth/网络等原因慢启动或未就绪，进程不会退出，会向飞书返回“CLI未就绪”，后续消息仍可
+继续触发有限次重试。
+
+长耗时命令接收器可设置 `SH_ASYNC_REPLY=1`。此模式下 CLI 收到指令后只做注入和 user 轮落盘确认，
+不等待 assistant 输出，也不发送同步回执；回执由 CLI 内的 wrapper/agent 自行异步发送。
+
+## 模式 C：协议 Driver
+
+协议 Driver 的版本化真源位于 `tools/sessionhelper/sessionhelper/`，不再依赖仓外运行副本：
+
+```bash
+export SH_MODE=driver
+export SH_DRIVER=codex            # codex | claude | opencode
+export SH_EMIT_SESSION_EVENT=1
+export SH_TURN_TERMINAL_TIMEOUT_SECONDS=1800
+./dist/sessionhelper
+```
+
+三来源输入（View 用户、Agent 互调、飞书）进入同一会话级 FIFO。每项按同一
+`delivery_id` 发唯一 `queued → admitted` 生命周期事件，并带 `source`、`display_name`、
+`open_id`、`queue_seq` 和完整多行 `text`。队列满时拒绝新项，不删除已展示的旧项。
+`driver.deliver()` 只在独立 worker 线程执行，不阻塞 WebSocket asyncio 事件循环；admitted
+回合若超过 terminal watchdog 且无新进展，会以 `terminal_timeout` 失败并推进下一项。
+
+`SH_SIDECAR_PORT` 可选启用本机 sidecar。构建产物的 hidden imports 已包含三种 driver、
+contract、sidecar 和 unified queue。
+
+## 镜像控制
+
+DingWei 侧通过 DM 指令：
+
+```text
+mirror on home
+mirror off home
+```
+
+下发 `meta.type=mirror_control` 信封。sessionHelper 收到后只改变镜像状态，不把控制消息注入模型。
+镜像开启后，CLI 输出会同步到 `meta.mirror_to` 指定的飞书地址；关闭后停止。
+
+## 开发检查
+
+```bash
+python3 -m compileall -q tools/sessionhelper/sessionhelper tools/sessionhelper/sessionhelper.py
+python3 -m unittest discover -s tools/sessionhelper/tests
+```

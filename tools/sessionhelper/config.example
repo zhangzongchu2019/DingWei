@@ -1,0 +1,38 @@
+# DingWei sessionHelper 配置模板
+# 用法：复制本文件为 config，填入你的 key_id/secret(管理员单独私密发你),再 ./start.sh
+# ⚠️ config 含密钥,权限设 600,不要提交 git、不要外传。
+
+SH_SESSION_NAME=你的短会话名        # 如 developer;服务端按 key 绑定自动生成完整注册名
+SH_KEY_ID=管理员发给你的key_id       # 如 FB-xxx-...(公开,进地址)
+SH_SECRET=管理员发给你的secret        # wp_... 私密凭证,谁拿到能以你身份接入
+SH_WS_BASE=wss://<your-server>/<ws-path> # WS 端点(管理员告知)
+SH_MODE=cli                          # cli=托管你的AI CLI(Mode B) / llm=直连模型API(Mode A)
+SH_CLI=claude                        # 托管哪个CLI: claude/codex/opencode/aider/gemini/cline
+SH_CLI_LAUNCH=pty                    # PTY子进程托管CLI,用于Web终端
+# SH_CLI_CMD=claude --model xxx      # 可选:覆盖启动命令+参数
+# SH_CLI_CWD=/你的项目目录            # 可选:AI CLI工作目录(默认当前目录)
+# SH_OPENCODE_DB=~/.local/share/opencode/opencode.db  # 可选:opencode SQLite会话库覆盖路径
+SH_MIRROR_TO=                        # 可选:会话镜像到某飞书目标
+SH_COLLECT=1                         # 1=采集你的AI会话用于团队进度佐证(不发飞书);0=关
+SH_ASYNC_REPLY=0                     # 1=cli收到指令只注入,不等模型回复/不发同步回执
+SH_AGENT_ROUTE=1                     # 1=assistant输出#会话名/@成员#会话名开头时转DingWei主动信封
+SH_NO_DIRECTORY=0                    # 1=专职会话不进在线清单/不收清单广播,仍可显式 #会话名 寻址
+SH_BUSY_BUFFER_MAX=100               # CLI忙时本地缓存上限,超限丢最旧
+SH_BUSY_REPLY_TEXT=消息已收到，但此时忙，稍后处理你的请求
+SH_PROVISION_ALLOWED_HOSTS=localhost # provision下载白名单host,逗号分隔
+# SH_PROVISION_AUDIT_DB=~/.dingwei/sessionhelper_audit.db # provision审计库路径
+SH_TARGET_GROUP=                     # producer专用:目标飞书群chat_id;普通会话留空不向群发
+SH_TARGET_BOT=                       # producer可选:强制指定目标群使用的bot_channel
+SH_PRODUCER=0                        # 1=非交互producer,从stdin按行推内容到SH_TARGET_GROUP
+# ── 佐证采集(SH_COLLECT=1)的 transcript 目录 ──────────────────────────
+# 默认从 claude=~/.claude/projects、codex=~/.codex/sessions 读会话记录。若你用了
+# claude 变体(如 claude-deepseek 的 ~/.claude-deepseek/projects)或给 codex 设了
+# CODEX_HOME 重定位, 采集会读错目录 → 用下面覆盖(否则佐证静默采不到):
+# SH_CLAUDE_PROJECTS_ROOT=~/.claude-deepseek/projects   # claude 变体的 projects 根
+# CODEX_HOME=/custom/.codex                             # codex 重定位时(sessionHelper 会对齐)
+# HOME 相关:以上路径基于 $HOME/Path.home(),请确保 HOME 指向当前运行用户的家目录。
+SH_CLI_READY_TIMEOUT=120
+SH_CLI_REPLY_WAIT=60
+SH_OPEN_TIMEOUT=60                     # WS连接握手超时(秒),网络慢/国际链路调大
+SH_PROXY=off                          # off=强制直连(忽略容器HTTPS_PROXY环境变量);要走代理填 http://用户:密码@IP:端口
+# SH_DEBUG=1                         # 连不上时开,打详细连接诊断日志;连通后删掉
