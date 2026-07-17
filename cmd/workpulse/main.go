@@ -177,6 +177,7 @@ func run(logger *slog.Logger) error {
 	internalMux.HandleFunc("POST /internal/view/authorize", prefixHub.HandleInternalViewAuthorize)
 	internalMux.HandleFunc("POST /internal/view/{session}/input", prefixHub.HandleInternalViewInput)
 	internalMux.HandleFunc("POST /internal/view/{session}/interrupt", prefixHub.HandleInternalViewInterrupt)
+	internalMux.HandleFunc("POST /internal/view-v2/{session}/input", prefixHub.HandleInternalViewV2Input)
 	if strings.EqualFold(strings.TrimSpace(os.Getenv("WP_DEBUG_HOLD_LOCK")), "true") {
 		internalMux.HandleFunc("POST /debug/hold-lock", prefixHub.HandleDebugHoldLock)
 		internalMux.HandleFunc("GET /debug/lock-stats", prefixHub.HandleDebugLockStats)
@@ -732,6 +733,12 @@ func handleFeishuWebhook(ctx context.Context, logger *slog.Logger, repo store.Re
 	msg, err := feishu.WebhookMessageFromPayload(bot.ID, data)
 	if err != nil {
 		return false, err
+	}
+	// Authentication provenance is derived only from checks performed by this
+	// ingress adapter. Payload fields can never promote their own trust level.
+	msg.IngressProvenance = model.IngressUntrusted
+	if strings.TrimSpace(bot.VerificationToken) != "" || strings.TrimSpace(bot.EncryptKey) != "" {
+		msg.IngressProvenance = model.IngressWebhookVerified
 	}
 	if err := upsertInboundEntity(ctx, repo, msg); err != nil {
 		return false, err

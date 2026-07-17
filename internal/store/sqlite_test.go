@@ -269,6 +269,23 @@ func TestUpsertSessionEndpointPreservesMirrorToWhenReconnectOmitsIt(t *testing.T
 	}
 }
 
+func TestUpsertSessionEndpointPreservesOwnerAndFullNameWhenReconnectOmitsThem(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "dev55", FullSessionName: "alice-dev55-test", OwnerKey: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "dev55", FullSessionName: "", OwnerKey: "", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].OwnerKey != "alice" || endpoints[0].FullSessionName != "alice-dev55-test" {
+		t.Fatalf("identity metadata overwritten: %+v", endpoints[0])
+	}
+}
+
 func TestSessionNoDirectoryCombinesReportedAndAdmin(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "sec-ops", LastSeenAt: time.Now(), Active: true, NoDirectory: true}); err != nil {
@@ -552,6 +569,59 @@ func TestMessageQueueIdempotentClaimAckAndFail(t *testing.T) {
 	}
 	if next != nil {
 		t.Fatalf("next after duplicate+ack = %+v, want nil", next)
+	}
+}
+
+func TestMessageIngressProvenanceDefaultsUntrustedAndSurvivesRetry(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.EnqueueMessage(ctx, model.Message{
+		ID: "direct", ChatEntityID: "chat1", Direction: model.DirectionIn,
+		BotChannelID: "bot1", ChatType: model.ChatPersonal, Content: `{"text":"direct"}`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil {
+		t.Fatalf("ClaimNextMessage: msg=%+v err=%v", msg, err)
+	}
+	if msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("direct provenance = %q", msg.IngressProvenance)
+	}
+	if err := db.FailMessage(ctx, msg.ID, "retry"); err != nil {
+		t.Fatal(err)
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil || msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("retry upgraded provenance: msg=%+v err=%v", msg, err)
+	}
+}
+
+func TestLegacyMessageRowDefaultsUntrusted(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	_, err := db.db.ExecContext(ctx, `INSERT INTO message
+		(id,chat_entity_id,direction,bot_channel_id,chat_type,sender_open_id,content_json,status,attempts,created_at)
+		VALUES('legacy','chat1','in','bot1','personal','','{}','queued',0,?)`, time.Now().UTC().Format(time.RFC3339))
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil || msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("legacy provenance: msg=%+v err=%v", msg, err)
+	}
+}
+
+func TestMessageIngressProvenanceRejectsUnknownValue(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.EnqueueMessage(ctx, model.Message{
+		ID: "unknown", ChatEntityID: "chat1", Direction: model.DirectionIn,
+		BotChannelID: "bot1", ChatType: model.ChatPersonal,
+		IngressProvenance: model.IngressProvenance("payload_verified"), Content: `{}`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil || msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("unknown provenance: msg=%+v err=%v", msg, err)
 	}
 }
 

@@ -42,12 +42,27 @@ type aggregateWeeklyReviewHandler interface {
 	HandleAggregateWeeklyReviewCommand(ctx context.Context, body string, source model.Message) (string, bool, error)
 }
 
+// ViewPageUnlocker is the capability boundary for page-scoped view unlock v2.
+// A nil implementation keeps the capability disabled.
+type ViewPageUnlocker interface {
+	UnlockViewPage(ctx context.Context, request ViewPageUnlockRequest) error
+}
+
+type ViewPageUnlockRequest struct {
+	Code            string
+	FullSessionName string
+	OwnerKey        string
+	SenderOpenID    string
+	MessageID       string
+}
+
 type Hub struct {
-	Repo     store.Repository
-	Outbound MessageQueue
-	System   SystemHandler
-	L2       llm.Provider
-	L2Config L2Config
+	Repo             store.Repository
+	Outbound         MessageQueue
+	System           SystemHandler
+	L2               llm.Provider
+	L2Config         L2Config
+	ViewPageUnlocker ViewPageUnlocker
 
 	mu               hubMutex
 	serviceClients   map[string]*client
@@ -67,6 +82,9 @@ type Hub struct {
 	onboardContexts  map[string]onboardContext
 	onlineDebounce   time.Duration
 	onboardInterval  time.Duration
+	viewV2Mu         sync.Mutex
+	viewV2Nonces     map[string]time.Time
+	viewV2Requests   map[string]viewV2RequestResult
 }
 
 type L2Config struct {
@@ -199,6 +217,8 @@ func New(repo store.Repository) *Hub {
 		linkTokens:       map[string]ownerLinkToken{},
 		onboardPushed:    map[string]time.Time{},
 		onboardContexts:  map[string]onboardContext{},
+		viewV2Nonces:     map[string]time.Time{},
+		viewV2Requests:   map[string]viewV2RequestResult{},
 		onlineDebounce:   2500 * time.Millisecond,
 		onboardInterval:  envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
 		L2Config: L2Config{

@@ -53,6 +53,9 @@ func TestLarkGatewayMessageFromEventPersonal(t *testing.T) {
 	if msg.SenderOpenID != openID || msg.Content != content {
 		t.Fatalf("message sender/content = %+v", msg)
 	}
+	if msg.IngressProvenance != model.IngressFeishuWSAuthenticated {
+		t.Fatalf("provenance = %q, want ws authenticated", msg.IngressProvenance)
+	}
 	if want := time.UnixMilli(1719820800000).UTC(); !msg.CreatedAt.Equal(want) {
 		t.Fatalf("CreatedAt = %s, want %s", msg.CreatedAt, want)
 	}
@@ -78,6 +81,9 @@ func TestLarkGatewayMessageFromEventGroup(t *testing.T) {
 	}
 	if msg.ChatEntityID != "dev:group:oc_1" || msg.ChatType != model.ChatGroup || msg.SenderOpenID != openID {
 		t.Fatalf("message = %+v", msg)
+	}
+	if msg.IngressProvenance != model.IngressFeishuWSAuthenticated {
+		t.Fatalf("provenance = %q, want ws authenticated", msg.IngressProvenance)
 	}
 	if msg.Content != `{"text":"plain text"}` {
 		t.Fatalf("Content = %s", msg.Content)

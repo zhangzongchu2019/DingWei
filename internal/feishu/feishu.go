@@ -316,15 +316,16 @@ func (g *LarkGateway) messageFromEvent(ev *larkim.P2MessageReceiveV1) (model.Mes
 	senderOpenID := senderOpenID(ev.Event.Sender)
 	content := normalizeContent(value(m.Content))
 	return model.Message{
-		ID:           msgID,
-		ChatEntityID: entityID(g.botChannelID, chatType, feishuID),
-		Direction:    model.DirectionIn,
-		BotChannelID: g.botChannelID,
-		FeishuMsgID:  msgID,
-		ChatType:     chatType,
-		SenderOpenID: senderOpenID,
-		Content:      content,
-		CreatedAt:    parseMillisTime(value(m.CreateTime)),
+		ID:                msgID,
+		ChatEntityID:      entityID(g.botChannelID, chatType, feishuID),
+		Direction:         model.DirectionIn,
+		BotChannelID:      g.botChannelID,
+		FeishuMsgID:       msgID,
+		ChatType:          chatType,
+		SenderOpenID:      senderOpenID,
+		IngressProvenance: model.IngressFeishuWSAuthenticated,
+		Content:           content,
+		CreatedAt:         parseMillisTime(value(m.CreateTime)),
 	}, nil
 }
 

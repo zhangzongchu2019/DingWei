@@ -1190,9 +1190,9 @@ func (s *SQLite) EnqueueMessage(ctx context.Context, m model.Message) error {
 		feishuMsgID = m.FeishuMsgID
 	}
 	_, err := s.db.ExecContext(ctx,
-		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
-		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
-		m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339))
+		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
+		m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, string(m.IngressProvenance), m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339))
 	return err
 }
 
@@ -1205,8 +1205,8 @@ func (s *SQLite) BatchEnqueueMessages(ctx context.Context, messages []model.Mess
 		return err
 	}
 	defer tx.Rollback()
-	stmt, err := tx.PrepareContext(ctx, `INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
-		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`)
+	stmt, err := tx.PrepareContext(ctx, `INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`)
 	if err != nil {
 		return err
 	}
@@ -1217,7 +1217,7 @@ func (s *SQLite) BatchEnqueueMessages(ctx context.Context, messages []model.Mess
 		if m.FeishuMsgID != "" {
 			feishuMsgID = m.FeishuMsgID
 		}
-		if _, err := stmt.ExecContext(ctx, m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
+		if _, err := stmt.ExecContext(ctx, m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, string(m.IngressProvenance), m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
 			return err
 		}
 	}
@@ -1234,6 +1234,7 @@ func (s *SQLite) prepareMessageForInsert(m model.Message) model.Message {
 	if m.CreatedAt.IsZero() {
 		m.CreatedAt = time.Now().UTC()
 	}
+	m.IngressProvenance = model.NormalizeIngressProvenance(m.IngressProvenance)
 	m.Content = redact.Content(m.Content)
 	return m
 }
@@ -1269,7 +1270,7 @@ func (s *SQLite) ClaimNextMessage(ctx context.Context, direction model.Direction
 		return nil, err
 	}
 	m, err := scanMessageRow(tx.QueryRowContext(ctx,
-		`SELECT id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at FROM message WHERE id=?`,
+		`SELECT id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at FROM message WHERE id=?`,
 		id))
 	if err != nil {
 		return nil, err
@@ -1439,7 +1440,7 @@ func (s *SQLite) RecentMessages(ctx context.Context, filter model.MessageFilter)
 	if limit <= 0 || limit > 100 {
 		limit = 100
 	}
-	query := `SELECT id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at FROM message WHERE 1=1`
+	query := `SELECT id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at FROM message WHERE 1=1`
 	args := []any{}
 	if filter.BotChannelID != "" {
 		query += ` AND bot_channel_id=?`
@@ -2040,12 +2041,14 @@ func scanMessageRow(row rowScanner) (*model.Message, error) {
 	var m model.Message
 	var direction, chatType, created string
 	var feishuMsgID, errText, processed sql.NullString
-	err := row.Scan(&m.ID, &m.ChatEntityID, &direction, &m.BotChannelID, &feishuMsgID, &chatType, &m.SenderOpenID, &m.Content, &m.Status, &m.Attempts, &errText, &created, &processed)
+	var provenance string
+	err := row.Scan(&m.ID, &m.ChatEntityID, &direction, &m.BotChannelID, &feishuMsgID, &chatType, &m.SenderOpenID, &provenance, &m.Content, &m.Status, &m.Attempts, &errText, &created, &processed)
 	if err != nil {
 		return nil, err
 	}
 	m.Direction = model.Direction(direction)
 	m.ChatType = model.ChatType(chatType)
+	m.IngressProvenance = model.NormalizeIngressProvenance(model.IngressProvenance(provenance))
 	if feishuMsgID.Valid {
 		m.FeishuMsgID = feishuMsgID.String
 	}
@@ -3098,9 +3101,9 @@ WHERE id=? AND status='pending'`,
 		feishuMsgID = grant.FeishuMsgID
 	}
 	if _, err := tx.ExecContext(ctx,
-		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
-		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
-		grant.ID, grant.ChatEntityID, string(grant.Direction), grant.BotChannelID, feishuMsgID, string(grant.ChatType), grant.SenderOpenID, grant.Content, grant.Status, grant.Attempts, grant.Err, grant.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
+		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
+		grant.ID, grant.ChatEntityID, string(grant.Direction), grant.BotChannelID, feishuMsgID, string(grant.ChatType), grant.SenderOpenID, string(model.NormalizeIngressProvenance(grant.IngressProvenance)), grant.Content, grant.Status, grant.Attempts, grant.Err, grant.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
 		return err
 	}
 	return tx.Commit()

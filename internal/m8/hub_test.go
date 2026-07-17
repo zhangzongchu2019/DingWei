@@ -3565,6 +3565,77 @@ func TestTerminalUnlockAllowsSameOwnerAccountWithoutExactKeyBinding(t *testing.T
 	})
 }
 
+type recordingViewPageUnlocker struct {
+	requests []ViewPageUnlockRequest
+}
+
+func (r *recordingViewPageUnlocker) UnlockViewPage(_ context.Context, request ViewPageUnlockRequest) error {
+	r.requests = append(r.requests, request)
+	return nil
+}
+
+func TestViewUnlockV2RequiresTrustedOwnerAndPreservesCodeCase(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test-2642", SessionName: "dev55", FullSessionName: "alice-dev55-2642", OwnerKey: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	base := model.Message{ID: "m1", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_alice", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice"}
+
+	untrusted := base
+	untrusted.IngressProvenance = model.IngressUntrusted
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, untrusted, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "未通过可信入站") || len(unlocker.requests) != 0 {
+		t.Fatalf("untrusted result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+
+	trusted := base
+	trusted.IngressProvenance = model.IngressFeishuWSAuthenticated
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, trusted, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
+		t.Fatalf("trusted result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+	if got := unlocker.requests[0].Code; got != "alice-dev55-2642-a3Kf9xQ2" {
+		t.Fatalf("code case changed: %q", got)
+	}
+	bob := base
+	bob.ChatEntityID = "dev:personal:ou_bob"
+	bob.SenderOpenID = "ou_bob"
+	senderOwner, targetOwner, _, authErr := hub.authorizeViewUnlockOwner(ctx, bob, "alice-dev55-2642")
+	if authErr == nil || senderOwner != "bob" || targetOwner != "alice" {
+		t.Fatalf("owner mismatch evidence sender=%q target=%q err=%v", senderOwner, targetOwner, authErr)
+	}
+}
+
+func TestViewUnlockV2RejectsGroupWithoutSenderAndSupportsEmptyFullNameFallback(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-one-2642", SessionName: "dev55", OwnerKey: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	group := model.Message{ID: "g1", BotChannelID: "dev", ChatEntityID: "dev:group:oc_group", ChatType: model.ChatGroup, IngressProvenance: model.IngressWebhookVerified}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "缺少可信发信人") {
+		t.Fatalf("empty group sender result=%+v handled=%v err=%v", result, handled, err)
+	}
+	group.SenderOpenID = "ou_alice"
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
+		t.Fatalf("fallback result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+}
+
 func TestTerminalExplicitUnlockAllowsSameOwnerAccount(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {

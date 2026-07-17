@@ -11,6 +11,25 @@ const (
 	ChatGroup    ChatType = "group"
 )
 
+// IngressProvenance records which ingress boundary authenticated an inbound
+// message. Empty, unknown and pre-migration values are always untrusted.
+type IngressProvenance string
+
+const (
+	IngressUntrusted             IngressProvenance = "untrusted"
+	IngressWebhookVerified       IngressProvenance = "webhook_verified"
+	IngressFeishuWSAuthenticated IngressProvenance = "feishu_ws_authenticated"
+)
+
+func NormalizeIngressProvenance(value IngressProvenance) IngressProvenance {
+	switch value {
+	case IngressWebhookVerified, IngressFeishuWSAuthenticated:
+		return value
+	default:
+		return IngressUntrusted
+	}
+}
+
 // Direction 消息方向。
 type Direction string
 
@@ -67,7 +86,10 @@ type Message struct {
 	FeishuMsgID  string // 幂等去重
 	ChatType     ChatType
 	SenderOpenID string // 群消息=发言人
-	Content      string // content_json
+	// IngressProvenance is assigned by the authenticated ingress adapter, never
+	// decoded from message content. Direct/internal enqueue defaults untrusted.
+	IngressProvenance IngressProvenance
+	Content           string // content_json
 	// SensitiveContent is an in-memory-only delivery override. It is never stored.
 	SensitiveContent string
 	Status           string

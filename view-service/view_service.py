@@ -14,14 +14,21 @@ View Service 是独立进程,只跟 **hub** 打交道(不认识 driver):
 from __future__ import annotations
 
 import http.client
+import hashlib
+import hmac
 import json
 import os
+import re
+import secrets
+import time
 import tempfile
 import threading
 import urllib.request
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
+
+from view_page_store import ViewPageStore
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RENDERER = os.environ.get("VS_RENDERER", os.path.join(BASE_DIR, "renderer.html"))
@@ -36,11 +43,128 @@ HUB_PUBLIC = os.environ.get("VS_HUB_PUBLIC", "http://127.0.0.1:8791").rstrip("/"
 DEFAULT_SESSION = os.environ.get("VS_SESSION", "")
 AUTO_UNLOCK = os.environ.get("VS_AUTO_UNLOCK", "1") == "1"   # 演示便利:mock-unlock 自动解锁
 STATE_FILE = os.environ.get("VS_STATE_FILE", os.path.join(BASE_DIR, "view-state.json"))
+VIEW_UNLOCK_V2 = os.environ.get("VS_VIEW_UNLOCK_V2", "0") == "1"
+VIEW_TARGET_NAME = os.environ.get("VS_TARGET_NAME", "").strip()
+HUB_TO_VS_SECRET_FILE = os.environ.get("VS_HUB_TO_VS_SECRET_FILE", "").strip()
+PAGE_DB_FILE = os.environ.get("VS_PAGE_DB", os.path.join(BASE_DIR, "view-pages.db"))
+VS_TO_HUB_SECRET_FILE = os.environ.get("VS_TO_HUB_SECRET_FILE", "").strip()
+PAGE_SWEEP_INTERVAL = max(5.0, float(os.environ.get("VS_PAGE_SWEEP_INTERVAL", "30")))
+CONTROL_CLOCK_SKEW = 60
+HUB_TO_VS_DIRECTION = "hub-to-view-service/v1"
+CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
 
 _state_lock = threading.Lock()
 _sessions: dict[str, dict] = {}   # session -> {viewer_id, token, cost_total, cost_last, turns}
 _ready_locks_lock = threading.Lock()
 _ready_locks: dict[str, threading.Lock] = {}
+_page_store_lock = threading.Lock()
+_page_store: ViewPageStore | None = None
+
+
+def _get_page_store() -> ViewPageStore:
+    global _page_store
+    with _page_store_lock:
+        if _page_store is None:
+            import time
+            _page_store = ViewPageStore(PAGE_DB_FILE, now=time.time)
+        return _page_store
+
+
+def _run_page_sweeper(stop_event: threading.Event, interval: float,
+                      store: ViewPageStore | None = None) -> None:
+    store = store or _get_page_store()
+    while not stop_event.wait(interval):
+        try:
+            store.sweep()
+        except Exception:
+            # A transient SQLite error must not kill the only lifecycle worker.
+            continue
+
+
+def _start_page_sweeper() -> tuple[threading.Event, threading.Thread] | None:
+    if not VIEW_UNLOCK_V2:
+        return None
+    stop_event = threading.Event()
+    thread = threading.Thread(
+        target=_run_page_sweeper,
+        args=(stop_event, PAGE_SWEEP_INTERVAL),
+        name="view-page-sweeper",
+        daemon=True,
+    )
+    thread.start()
+    return stop_event, thread
+
+
+def _control_signature(secret: bytes, method: str, path: str, timestamp: str,
+                       nonce: str, body: bytes, direction=HUB_TO_VS_DIRECTION) -> str:
+    direction_key = hmac.new(secret, direction.encode(), hashlib.sha256).digest()
+    body_hash = hashlib.sha256(body).hexdigest()
+    canonical = "\n".join((method, path, timestamp, nonce, body_hash)).encode()
+    return hmac.new(direction_key, canonical, hashlib.sha256).hexdigest()
+
+
+def _verify_control_request(headers, method: str, path: str, body: bytes,
+                            store: ViewPageStore, *, now: float) -> tuple[bool, int]:
+    if not VIEW_UNLOCK_V2 or not VIEW_TARGET_NAME or not HUB_TO_VS_SECRET_FILE:
+        return False, 404
+    target = headers.get("X-DW-VS-Target", "")
+    timestamp = headers.get("X-DW-Timestamp", "")
+    nonce = headers.get("X-DW-Nonce", "")
+    signature = headers.get("X-DW-Signature", "")
+    if target != VIEW_TARGET_NAME or not re.fullmatch(r"[0-9a-f]{32}", nonce):
+        return False, 401
+    try:
+        request_time = int(timestamp)
+    except (TypeError, ValueError):
+        return False, 401
+    if abs(now - request_time) > CONTROL_CLOCK_SKEW:
+        return False, 401
+    try:
+        with open(HUB_TO_VS_SECRET_FILE, "rb") as fh:
+            secret = fh.read().strip()
+    except OSError:
+        return False, 503
+    if len(secret) < 32:
+        return False, 503
+    expected = _control_signature(secret, method, path, timestamp, nonce, body)
+    if not hmac.compare_digest(signature, expected):
+        return False, 401
+    if not store.claim_nonce(target, nonce):
+        return False, 409
+    return True, 200
+
+
+def _hub_v2_input(session: str, page_id: str, request_id: str, text: str) -> tuple[int, dict]:
+    if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
+        return 0, {"error": "v2 input auth unavailable"}
+    try:
+        with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+            secret = fh.read().strip()
+    except OSError as exc:
+        return 0, {"error": str(exc)}
+    if len(secret) < 32:
+        return 0, {"error": "v2 input secret too short"}
+    path = f"/internal/view-v2/{session}/input"
+    body = json.dumps({"session": session, "page_id": page_id, "request_id": request_id, "text": text},
+                      ensure_ascii=False, separators=(",", ":")).encode()
+    timestamp = str(int(time.time()))
+    nonce = secrets.token_hex(16)
+    signature = _control_signature(secret, "POST", path, timestamp, nonce, body,
+                                   direction="view-service-to-hub/v1")
+    req = urllib.request.Request(
+        HUB_INTERNAL + path, data=body, method="POST",
+        headers={"Content-Type": "application/json", "X-DW-VS-Target": VIEW_TARGET_NAME,
+                 "X-DW-Timestamp": timestamp, "X-DW-Nonce": nonce,
+                 "X-DW-Request-ID": request_id, "X-DW-Signature": signature},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as response:
+            raw = response.read().decode("utf-8", "replace")
+            return response.status, json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as exc:
+        return exc.code, {"error": exc.read().decode("utf-8", "replace")}
+    except Exception as exc:
+        return 0, {"error": str(exc)}
 
 
 def _renderer_path_for_session(session: str) -> str:
@@ -230,7 +354,7 @@ class _Handler(BaseHTTPRequestHandler):
         if hdr_sess:
             pre = "/view/" + hdr_sess.strip()
             text = body.decode("utf-8", "replace")
-            for ep in ("/events", "/input", "/interrupt", "/status"):
+            for ep in ("/events", "/input", "/interrupt", "/status", "/page"):
                 text = text.replace("'" + ep + "'", "'" + pre + ep + "'")
             body = text.encode("utf-8")
         self.send_response(200)
@@ -288,6 +412,21 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _serve_status(self):
         session = self._session()
+        if VIEW_UNLOCK_V2:
+            body = json.dumps({
+                "session": session, "session_id": session, "state": "idle", "driver": "via-hub",
+                "auth_mode": "view_page_v2", "can_write": False, "readonly": True,
+                "unlock_code": "", "cost_total": 0, "cost_last": 0, "turns": 0,
+                "mem": _read_mem(), "disk": _read_disk(),
+                "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }, ensure_ascii=False).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+            return
         st = _ensure_ready(session)  # 注册虚拟 viewer + 刷新写权(拿真码/can_write)
         body = json.dumps({
             "session": session,
@@ -312,34 +451,67 @@ class _Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if path == CONTROL_UNLOCK_PATH:
+            return self._control_unlock()
+        if path == "/page":
+            if not VIEW_UNLOCK_V2:
+                return self.send_error(404)
+            page = _get_page_store().create_page(self._session())
+            return self._json_response(201, page)
+        if path in ("/page/resume", "/page/disconnect"):
+            if not VIEW_UNLOCK_V2:
+                return self.send_error(404)
+            length = int(self.headers.get("Content-Length") or 0)
+            try:
+                payload = json.loads(self.rfile.read(length) if length else b"{}")
+            except json.JSONDecodeError:
+                return self._json_response(400, {"ok": False})
+            page_id, page_token = str(payload.get("page_id", "")), str(payload.get("page_token", ""))
+            if path == "/page/disconnect":
+                ok = _get_page_store().mark_disconnected(page_id, page_token)
+                return self._json_response(200 if ok else 403, {"ok": ok})
+            page = _get_page_store().resume_page(page_id, page_token, self._session())
+            return self._json_response(200, page) if page else self._json_response(403, {"ok": False})
         if path not in ("/input", "/interrupt"):
             return self.send_error(404)
         session = self._session()
         length = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(length) if length else b"{}"
         try:
-            request_body = json.loads(raw)
+            incoming = json.loads(raw)
+            text = incoming.get("text", "")
         except Exception:
-            request_body = {}
+            incoming = {}
+            text = ""
         if path == "/interrupt":
             st = _ensure_ready(session)
-            delivery_id = str(request_body.get("delivery_id", "")).strip()
-            turn_id = str(request_body.get("turn_id", "")).strip()
+            delivery_id = str(incoming.get("delivery_id", "")).strip()
+            turn_id = str(incoming.get("turn_id", "")).strip()
             code, result = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/interrupt", {
                 "viewer_id": st.get("viewer_id", ""), "token": st.get("token", ""),
                 "delivery_id": delivery_id, "turn_id": turn_id,
             })
-            return self._json_response({"ok": code == 200, **result})
-        text = str(request_body.get("text", "")).strip()
+            return self._json_response(200, {"ok": code == 200, **result})
         ok = False
-        if text:
-            st = _ensure_ready(session)
-            if st.get("viewer_id") and st.get("token"):
-                # pilot 按键式输入以末尾 CR 提交；内嵌 LF 由 adapter 保留为消息换行。
-                payload_text = text.replace("\r\n", "\n").replace("\r", "\n") + "\r"
-                code, _ = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/input",
-                                    {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text})
-                ok = (code == 200)
+        if isinstance(text, str) and text:
+            if VIEW_UNLOCK_V2:
+                page_id = str(incoming.get("page_id", ""))
+                page_token = str(incoming.get("page_token", ""))
+                request_id = str(incoming.get("request_id", ""))
+                store = _get_page_store()
+                if page_id and page_token and request_id and store.authorize_page(page_id, page_token, session):
+                    code, _ = _hub_v2_input(session, page_id, request_id, text)
+                    ok = code == 200
+                    if ok:
+                        store.record_successful_write(page_id, page_token)
+            else:
+                st = _ensure_ready(session)
+                if st.get("viewer_id") and st.get("token"):
+                    # pilot 按键式输入以末尾 CR 提交；内嵌 LF 由 adapter 保留为消息换行。
+                    payload_text = text.replace("\r\n", "\n").replace("\r", "\n") + "\r"
+                    code, _ = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/input",
+                                        {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text})
+                    ok = (code == 200)
         body = json.dumps({"ok": ok}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -347,21 +519,45 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _json_response(self, obj: dict):
-        body = json.dumps(obj).encode()
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
+    def _control_unlock(self):
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0 or length > 65536:
+            return self._json_response(400, {"ok": False})
+        raw = self.rfile.read(length)
+        import time
+        store = _get_page_store()
+        verified, status = _verify_control_request(
+            self.headers, "POST", CONTROL_UNLOCK_PATH, raw, store, now=time.time())
+        if not verified:
+            return self._json_response(status, {"ok": False})
+        try:
+            command = json.loads(raw)
+        except (TypeError, json.JSONDecodeError):
+            return self._json_response(400, {"ok": False})
+        status = store.unlock(command)
+        return self._json_response(status, {"ok": status == 200})
+
+    def _json_response(self, status: int, obj: dict):
+        body = json.dumps(obj, ensure_ascii=False).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
 
-
 def main():
     port = int(os.environ.get("VS_PORT", "19320"))
+    sweeper = _start_page_sweeper()
     srv = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
     print(f"[view-service] :{port} hub_internal={HUB_INTERNAL} hub_public={HUB_PUBLIC} "
           f"session={DEFAULT_SESSION or '(from X-DW-Session)'} renderer={RENDERER}", flush=True)
-    srv.serve_forever()
+    try:
+        srv.serve_forever()
+    finally:
+        if sweeper:
+            sweeper[0].set()
+            sweeper[1].join(timeout=PAGE_SWEEP_INTERVAL + 1)
 
 
 if __name__ == "__main__":
