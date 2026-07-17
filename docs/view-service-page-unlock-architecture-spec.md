@@ -253,4 +253,3 @@ Hub 是敏感发布项，变更单独 commit、单独 CR：
 - HMAC secret 的生产分发与轮换载体。
 - owner 全页 `#lock` 是否进入首批。
 - Hub 离线但持久 endpoint 存在时，是否允许先解锁 VS 页（本稿建议允许；输入仍等待 session 在线）。
-
