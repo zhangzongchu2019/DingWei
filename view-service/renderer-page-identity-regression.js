@@ -12,6 +12,7 @@ const assert = require('assert');
     }, original);
     let created = 0;
     const inputs = [];
+    let rejectNextInput = false;
     await context.route('http://renderer.test/**', async route => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
@@ -40,7 +41,9 @@ const assert = require('assert');
       }
       if (path === '/input') {
         inputs.push(request.postDataJSON());
-        return route.fulfill({ contentType: 'application/json', body: '{"ok":true}' });
+        const ok = !rejectNextInput;
+        rejectNextInput = false;
+        return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok }) });
       }
       if (path === '/events') return route.abort();
       return route.fulfill({ status: 404, body: 'not found' });
@@ -75,6 +78,13 @@ const assert = require('assert');
     assert.strictEqual(inputs[1].page_token, 'shared-token');
     assert.match(inputs[1].request_id, /^[0-9a-f]{32}$/);
     assert.strictEqual(inputs[1].text, 'multi\nline');
+    rejectNextInput = true;
+    await assert.rejects(
+      writable.evaluate(() => submitInput('must surface business rejection')),
+      /input returned ok=false/,
+      'HTTP 200 with ok=false was treated as a successful input',
+    );
+    assert.strictEqual(inputs.length, 3, 'business rejection did not reach the input endpoint exactly once');
     assert.ok(!first.url().includes('shared-token') && !second.url().includes('shared-token'), 'page token leaked into URL');
     await writable.locator('#humanInput').fill('typing survives status refresh');
     await writable.locator('#humanInput').focus();

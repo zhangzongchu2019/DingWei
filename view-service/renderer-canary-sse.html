@@ -1805,6 +1805,8 @@
         } : { text }),
       });
       if (!res.ok) throw new Error(`POST /input failed: HTTP ${res.status}`);
+      const body = await res.json().catch(() => ({}));
+      if (!body.ok) throw new Error('input returned ok=false');
     }
 
     async function interruptTurn() {
