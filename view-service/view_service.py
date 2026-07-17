@@ -487,7 +487,7 @@ class _Handler(BaseHTTPRequestHandler):
                 return self._json_response(200 if ok else 403, {"ok": ok})
             page = _get_page_store().resume_page(page_id, page_token, self._session())
             return self._json_response(200, page) if page else self._json_response(403, {"ok": False})
-        if path not in ("/input", "/interrupt"):
+        if path != "/input":
             return self.send_error(404)
         session = self._session()
         length = int(self.headers.get("Content-Length") or 0)
@@ -498,15 +498,6 @@ class _Handler(BaseHTTPRequestHandler):
         except Exception:
             incoming = {}
             text = ""
-        if path == "/interrupt":
-            st = _ensure_ready(session)
-            delivery_id = str(incoming.get("delivery_id", "")).strip()
-            turn_id = str(incoming.get("turn_id", "")).strip()
-            code, result = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/interrupt", {
-                "viewer_id": st.get("viewer_id", ""), "token": st.get("token", ""),
-                "delivery_id": delivery_id, "turn_id": turn_id,
-            })
-            return self._json_response(200, {"ok": code == 200, **result})
         ok = False
         if isinstance(text, str) and text:
             if VIEW_UNLOCK_V2:
@@ -555,6 +546,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
+
 
 def main():
     port = int(os.environ.get("VS_PORT", "19320"))
