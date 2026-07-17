@@ -128,7 +128,9 @@ class ViewUnlockV2IntegrationTest(unittest.TestCase):
             "text": "must reject", "page_id": page_c["page_id"],
             "page_token": page_c["page_token"], "request_id": "c" * 32,
         })
-        self.assertEqual((status, result["ok"]), (200, False))
+        # /input 失败返 403(与 /page/disconnect、/page/resume 同家法);此前返 200
+        # 导致前端只查 res.ok 时静默假成功。
+        self.assertEqual((status, result["ok"]), (403, False))
         self.assertEqual([item["request_id"] for item in _FakeHubHandler.received], [input_a, input_b])
 
         # VS restart: SQLite restores both independent grants and page codes.

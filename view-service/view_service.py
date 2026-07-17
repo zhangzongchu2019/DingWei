@@ -527,12 +527,7 @@ class _Handler(BaseHTTPRequestHandler):
                     code, _ = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/input",
                                         {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text})
                     ok = (code == 200)
-        body = json.dumps({"ok": ok}).encode()
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        return self._json_response(200 if ok else 403, {"ok": ok})
 
     def _control_unlock(self):
         length = int(self.headers.get("Content-Length") or 0)
