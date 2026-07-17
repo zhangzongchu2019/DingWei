@@ -27,6 +27,8 @@ const EXPECTED_RENDERER_SHA256 = '38c79d53a335cb9ec586869c457c8b0a6b70c649148945
     }, identity);
 
     let statusRequests = 0;
+    let resumeRequests = 0;
+    let lockedResumeResponses = 0;
     let inputRequests = 0;
     await context.route('http://renderer-g2.test/**', async route => {
       const request = route.request();
@@ -36,16 +38,19 @@ const EXPECTED_RENDERER_SHA256 = '38c79d53a335cb9ec586869c457c8b0a6b70c649148945
       }
       if (path === '/status') {
         statusRequests += 1;
-        const readonly = statusRequests > 1 && statusRequests % 2 === 0;
         await new Promise(resolve => setTimeout(resolve, 200));
         return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
-          session: 'alice-dev55-2642', auth_mode: 'view_page_v2', readonly,
-          session_state: readonly ? 'readonly' : 'idle',
+          session: 'alice-dev55-2642', auth_mode: 'view_page_v2', readonly: true,
+          session_state: 'readonly',
         }) });
       }
       if (path === '/page/resume') {
+        resumeRequests += 1;
+        const canWrite = !(resumeRequests > 1 && resumeRequests % 2 === 0);
+        if (!canWrite) lockedResumeResponses += 1;
         return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
-          page_id: identity.page_id, code: identity.code, state: 'unlocked', can_write: true,
+          page_id: identity.page_id, code: identity.code,
+          state: canWrite ? 'unlocked' : 'locked', can_write: canWrite,
         }) });
       }
       if (path === '/input') {
@@ -65,10 +70,14 @@ const EXPECTED_RENDERER_SHA256 = '38c79d53a335cb9ec586869c457c8b0a6b70c649148945
     await page.evaluate(() => {
       window.__focusLosses = 0;
       window.__disabledTransitions = [];
+      window.__lockBadgeTransitions = [];
       humanInput.addEventListener('blur', () => { window.__focusLosses += 1; });
       new MutationObserver(() => {
         window.__disabledTransitions.push({ disabled: humanInput.disabled, at: performance.now() });
       }).observe(humanInput, { attributes: true, attributeFilter: ['disabled'] });
+      new MutationObserver(() => {
+        window.__lockBadgeTransitions.push(lockBadge.classList.contains('readonly'));
+      }).observe(lockBadge, { attributes: true, attributeFilter: ['class'] });
     });
 
     const expected = '0123456789abcdef'.repeat(10);
@@ -81,8 +90,16 @@ const EXPECTED_RENDERER_SHA256 = '38c79d53a335cb9ec586869c457c8b0a6b70c649148945
       selectionEnd: input.selectionEnd,
       focusLosses: window.__focusLosses,
       disabledTransitions: window.__disabledTransitions,
+      lockBadgeTransitions: window.__lockBadgeTransitions,
     }));
     assert.ok(statusRequests >= 6, `expected at least six real status refreshes, got ${statusRequests}`);
+    assert.ok(resumeRequests >= 6, `expected at least six page identity refreshes, got ${resumeRequests}`);
+    assert.ok(lockedResumeResponses >= 3,
+      `expected at least three locked identity responses, got ${lockedResumeResponses}`);
+    assert.ok(focus.lockBadgeTransitions.includes(true),
+      'locked identity responses never reached the readonly renderer branch');
+    assert.ok(focus.lockBadgeTransitions.includes(false),
+      'unlocked identity responses never restored the writable renderer branch');
     assert.strictEqual(focus.value, expected, 'continuous input lost, duplicated, or reordered characters');
     assert.strictEqual(focus.active, true, 'status refresh stole input focus');
     assert.strictEqual(focus.disabled, false, 'input ended disabled while focused');
@@ -91,7 +108,7 @@ const EXPECTED_RENDERER_SHA256 = '38c79d53a335cb9ec586869c457c8b0a6b70c649148945
     assert.strictEqual(focus.focusLosses, 0, 'input blurred during status refresh');
     assert.deepStrictEqual(focus.disabledTransitions.filter(item => item.disabled), [],
       'input became disabled during continuous typing');
-    console.log(`G2 focus PASS: sha256=${EXPECTED_RENDERER_SHA256} refreshes=${statusRequests} exactChars=${expected.length}`);
+    console.log(`G2 focus PASS: sha256=${EXPECTED_RENDERER_SHA256} statusRefreshes=${statusRequests} identityRefreshes=${resumeRequests} lockedResponses=${lockedResumeResponses} exactChars=${expected.length}`);
 
     await page.locator('#sendBtn').click();
     await page.locator('.error').filter({ hasText: 'POST /input failed: HTTP 403' }).waitFor();
