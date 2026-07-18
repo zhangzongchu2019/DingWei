@@ -624,15 +624,38 @@ func (s *SQLite) GetAdmin(ctx context.Context, username string) (*model.AdminUse
 	return &u, nil
 }
 
+// resolveChatEntityOwner 查 member 表:若已有用户通过其他方式(如 key-based session)
+// 注册了相同 feishu_open_id,则自动关联 owner,避免新增 bot channel 时需人工绑 BoundOwner。
+func (s *SQLite) resolveChatEntityOwner(ctx context.Context, feishuOpenID string) string {
+	var ownerKey string
+	err := s.db.QueryRowContext(ctx,
+		`SELECT owner_key FROM member WHERE feishu_open_id=? AND active=1 ORDER BY owner_key LIMIT 1`,
+		feishuOpenID).Scan(&ownerKey)
+	if err != nil {
+		return ""
+	}
+	return ownerKey
+}
+
 func (s *SQLite) UpsertChatEntity(ctx context.Context, e model.ChatEntity) error {
 	active := boolInt(e.Active)
 	if e.ID == "" {
 		e.ID = fmt.Sprintf("%s:%s", e.BotChannelID, e.FeishuID)
 	}
+	// 新 bot channel 首次创建时自动回填 BoundOwner(查 member 表匹配 feishu_open_id)
+	if strings.TrimSpace(e.BoundOwner) == "" {
+		if owner := s.resolveChatEntityOwner(ctx, e.FeishuID); owner != "" {
+			e.BoundOwner = owner
+		}
+	}
+	// ON CONFLICT UPDATE:仅当新值非空时才覆盖,保护已有的 BoundOwner 不被空值冲掉
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO chat_entity(id, bot_channel_id, type, feishu_id, display_name, bound_owner, active)
 		 VALUES(?,?,?,?,?,?,?)
-		 ON CONFLICT(bot_channel_id, feishu_id) DO UPDATE SET type=excluded.type, display_name=excluded.display_name, bound_owner=excluded.bound_owner, active=excluded.active`,
+		 ON CONFLICT(bot_channel_id, feishu_id) DO UPDATE SET
+		   type=excluded.type, display_name=excluded.display_name,
+		   bound_owner=CASE WHEN excluded.bound_owner!='' THEN excluded.bound_owner ELSE bound_owner END,
+		   active=excluded.active`,
 		e.ID, e.BotChannelID, string(e.Type), e.FeishuID, e.DisplayName, e.BoundOwner, active)
 	return err
 }
@@ -2910,10 +2933,18 @@ WHERE id=? AND status='pending'`,
 		if entity.Type == "" {
 			entity.Type = model.ChatPersonal
 		}
+		// 新 bot channel 首次创建时自动回填 BoundOwner
+		if strings.TrimSpace(entity.BoundOwner) == "" {
+			if owner := s.resolveChatEntityOwner(ctx, entity.FeishuID); owner != "" {
+				entity.BoundOwner = owner
+			}
+		}
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO chat_entity(id, bot_channel_id, type, feishu_id, display_name, bound_owner, active)
 			 VALUES(?,?,?,?,?,?,?)
-			 ON CONFLICT(id) DO UPDATE SET bot_channel_id=excluded.bot_channel_id, type=excluded.type, feishu_id=excluded.feishu_id, active=excluded.active`,
+			 ON CONFLICT(id) DO UPDATE SET bot_channel_id=excluded.bot_channel_id, type=excluded.type, feishu_id=excluded.feishu_id,
+			   bound_owner=CASE WHEN excluded.bound_owner!='' THEN excluded.bound_owner ELSE bound_owner END,
+			   active=excluded.active`,
 			entity.ID, entity.BotChannelID, string(entity.Type), entity.FeishuID, entity.DisplayName, entity.BoundOwner, boolInt(entity.Active)); err != nil {
 			return err
 		}

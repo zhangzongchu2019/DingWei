@@ -2222,10 +2222,12 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 		// （send.py 会把地址补成发件人自己的 key，所以即便 to.KeyID==from.KeyID，目标也可能在该 owner 的另一个 key 下）
 		senderOwner := h.ownerKeyForKey(ctx, from.KeyID)
 		if senderOwner == "" {
+			log.Printf("[RouteEnvelope] sender owner not found from_key_id=%s to=%s", from.KeyID, env.To)
 			return fmt.Errorf("无法解析发件人账号 key_id=%s", from.KeyID)
 		}
 		k, ok := h.resolveOwnerSessionKey(ctx, senderOwner, to.SessionName, to.KeyID)
 		if !ok {
+			log.Printf("[RouteEnvelope] resolveOwnerSessionKey failed owner=%s session=%s hint_key=%s", senderOwner, to.SessionName, to.KeyID)
 			return errors.New("目标会话不在你的账号下或不在线：" + to.SessionName)
 		}
 		return h.routeToSession(ctx, k, to.SessionName, env, from.Kind == addressFeishu)
@@ -2494,6 +2496,20 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 	source := sourceAccount(msg)
 	keyID, found := h.lookupKeyIDForSession(source, sessionName)
 	if !found {
+		// keyAccounts 未命中(如新 bot channel 的 chat_entity 不在旧 key 的 api_key_account 表里):
+		// 兜底查 chat_entity.BoundOwner — 若与目标会话同 owner 则允许路由
+		if botChannelID, feishuID, ok := accountEntityParts(source); ok {
+			if entity, err := h.Repo.GetChatEntity(ctx, botChannelID, feishuID); err == nil && entity != nil && entity.Active && entity.BoundOwner != "" {
+				if k, ok := h.resolveOwnerSessionKey(ctx, entity.BoundOwner, sessionName, ""); ok {
+					keyID = k
+					found = true
+					log.Printf("[dispatchSelector] owner-bound route chat_entity=%s owner=%s -> session=%s key=%s", source, entity.BoundOwner, sessionName, keyID)
+				}
+			}
+		}
+	}
+	if !found {
+		log.Printf("[dispatchSelector] lookup failed source=%s session=%s", source, sessionName)
 		return model.PrefixDispatchResult{}, false, nil
 	}
 	env := model.Envelope{
@@ -2514,6 +2530,7 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 		env.Meta["sender_open_id"] = msg.SenderOpenID
 	}
 	if err := h.RouteEnvelope(ctx, env); err != nil {
+		log.Printf("[dispatchSelector] RouteEnvelope failed session=%s key=%s err=%v", sessionName, keyID, err)
 		return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, true, nil
 	}
 	return model.PrefixDispatchResult{Matched: true}, true, nil
