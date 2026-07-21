@@ -40,7 +40,11 @@ func newTestHub(t *testing.T) (*Hub, *store.SQLite, context.Context) {
 	if err := db.Migrate(ctx); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
-	return New(db), db, ctx
+	hub := New(db)
+	// Feature-specific tests enable the lightweight first-seen notification;
+	// unrelated tests keep their historical outbound-queue assumptions.
+	hub.newSessionNotice = false
+	return hub, db, ctx
 }
 
 func useTestSecOpsAdminOpenID(t *testing.T) {
@@ -3016,6 +3020,53 @@ func TestOnlineDirectorySkipsNoDirectoryPresenceBroadcast(t *testing.T) {
 		t.Fatal("visible presence should schedule online directory broadcast")
 	}
 	visibleTimer.Stop()
+}
+
+func TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.newSessionNotice = true
+	hub.onlineDebounce = time.Hour
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	sessionName := "u1-home-" + keyTail(key.ID)
+	first := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
+	msg := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if msg == nil {
+		t.Fatal("first session name did not enqueue a Feishu notice")
+	}
+	if msg.ChatEntityID != "dev:personal:ou_u1" || messageText(t, msg) != "会话 #"+sessionName+" 已上线" {
+		t.Fatalf("first-name notice=%+v text=%q", msg, messageText(t, msg))
+	}
+	_ = first.Close(websocket.StatusNormalClosure, "reconnect")
+	waitEndpointInactive(t, ctx, db, key.ID, sessionName)
+
+	for i := 0; i < 3; i++ {
+		conn := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
+		_ = conn.Close(websocket.StatusNormalClosure, "flap")
+		waitEndpointInactive(t, ctx, db, key.ID, sessionName)
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg != nil {
+		t.Fatalf("known-name reconnect/flapping must stay silent msg=%+v err=%v", msg, err)
+	}
 }
 
 func TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary(t *testing.T) {

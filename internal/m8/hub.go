@@ -72,6 +72,9 @@ type Hub struct {
 	botNames         map[string]string
 	envelopeIDs      map[string]string
 	onlineTimers     map[string]*time.Timer
+	seenSessions     map[string]bool
+	seenSessionsOnce sync.Once
+	seenSessionsOK   bool
 	terminals        map[string]*terminalState
 	terminalLastSize map[string][2]int
 	syncTargets      map[string]map[string]feishuSyncTarget
@@ -82,6 +85,7 @@ type Hub struct {
 	onboardContexts  map[string]onboardContext
 	onlineDebounce   time.Duration
 	onboardInterval  time.Duration
+	newSessionNotice bool
 	viewV2Mu         sync.Mutex
 	viewV2Nonces     map[string]time.Time
 	viewV2Requests   map[string]viewV2RequestResult
@@ -209,6 +213,7 @@ func New(repo store.Repository) *Hub {
 		botNames:         map[string]string{},
 		envelopeIDs:      map[string]string{},
 		onlineTimers:     map[string]*time.Timer{},
+		seenSessions:     map[string]bool{},
 		terminals:        map[string]*terminalState{},
 		terminalLastSize: map[string][2]int{},
 		syncTargets:      map[string]map[string]feishuSyncTarget{},
@@ -221,6 +226,7 @@ func New(repo store.Repository) *Hub {
 		viewV2Requests:   map[string]viewV2RequestResult{},
 		onlineDebounce:   2500 * time.Millisecond,
 		onboardInterval:  envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
+		newSessionNotice: true,
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,
@@ -788,6 +794,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			log.Printf("session version warning key_id=%s owner=%s session=%s version=%q required=%s: %s", keyID, ownerKey, requestedSessionName, clientVersion, dwversion.Version, versionWarn)
 		}
 	}
+	h.loadSeenSessions(r.Context())
 	sessionName, err = h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
 		KeyID:           keyID,
 		SessionName:     sessionName,
@@ -882,6 +889,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	}
 	if oldConn != nil {
 		_ = oldConn.Close(websocket.StatusPolicyViolation, "replaced")
+	}
+	if h.markSessionSeen(ownerKey, sessionName) {
+		h.notifyNewSession(r.Context(), ownerKey, sessionName)
 	}
 	timingParts = append(timingParts, fmt.Sprintf("register_lock=%s", time.Since(lockStart).Round(time.Millisecond)))
 	log.Printf("session handshake timing key_id=%s session=%s total=%s %s", keyID, sessionName, time.Since(timingStart).Round(time.Millisecond), strings.Join(timingParts, " "))
@@ -3427,6 +3437,68 @@ type onlineSessionSnapshot struct {
 	Client   *sessionClient
 	Accounts []string
 	ConnSeq  int
+}
+
+func (h *Hub) loadSeenSessions(ctx context.Context) {
+	h.seenSessionsOnce.Do(func() {
+		if h.Repo == nil {
+			return
+		}
+		endpoints, err := h.Repo.ListSessionEndpoints(ctx)
+		if err != nil {
+			return
+		}
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		for _, ep := range endpoints {
+			if ep.OwnerKey != "" && ep.SessionName != "" {
+				h.seenSessions[terminalKey(ep.OwnerKey, ep.SessionName)] = true
+			}
+		}
+		h.seenSessionsOK = true
+	})
+}
+
+func (h *Hub) markSessionSeen(ownerKey, sessionName string) bool {
+	key := terminalKey(ownerKey, sessionName)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	// Failure to load history is fail-closed: never turn a transient repository
+	// error or Hub restart into a burst of "new session" notifications.
+	if !h.seenSessionsOK || h.seenSessions[key] {
+		return false
+	}
+	h.seenSessions[key] = true
+	return true
+}
+
+func (h *Hub) notifyNewSession(ctx context.Context, ownerKey, sessionName string) {
+	if !h.newSessionNotice || h.Outbound == nil || h.Repo == nil || ownerKey == "" || sessionName == "" {
+		return
+	}
+	members, err := h.Repo.ListMembers(ctx)
+	if err != nil {
+		return
+	}
+	var openID string
+	for _, member := range members {
+		if member.Active && member.OwnerKey == ownerKey {
+			openID = member.FeishuOpenID
+			break
+		}
+	}
+	if openID == "" {
+		return
+	}
+	botChannelID := h.botChannel("UnifiedRobot")
+	content, _ := json.Marshal(map[string]string{"text": "会话 #" + sessionName + " 已上线"})
+	_ = h.Outbound.Enqueue(ctx, model.Message{
+		ID:           "session-online-" + randomHex(16),
+		ChatEntityID: botChannelID + ":personal:" + openID,
+		BotChannelID: botChannelID,
+		ChatType:     model.ChatPersonal,
+		Content:      string(content),
+	})
 }
 
 func (h *Hub) scheduleOnlineBroadcast(ctx context.Context, keyID string) {
