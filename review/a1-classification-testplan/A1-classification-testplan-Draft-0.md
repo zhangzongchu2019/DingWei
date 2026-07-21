@@ -37,7 +37,7 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 | 依赖 | 提供方 | 状态 |
 |---|---|---|
 | A0 97ab377 (component rs/vs/helper/fsch) | devof5 | FROZEN |
-| A1 3e566347 (脱敏设计) | devof5 | DRAFT (BLOCK-1 修中) |
+| A1 0e148998 (脱敏设计) | devof5 | DRAFT (BLOCK-1 修中) |
 | A0 §7 3-vector | devof5 | FROZEN |
 
 ## §2 产品锚点 [必填]
@@ -79,13 +79,13 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 
 | 项目 | 内容 |
 |---|---|
-| **Green 2.1** | `summarize("hello世界")` → `{text_len:5, code_hash:"sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}`（完整64hex），Go≡Python一致 → 追溯: A0 §7 |
+| **Green 2.1** | `summarize("hello")` → `{text_len:5, code_hash:"sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}`（完整64hex，golden #2），Go≡Python一致 → 追溯: A0 §7 |
 | **Green 2.2** | `code_hash` 正则 `^[0-9a-f]{64}$`（仅非敏感高熵）→ 追溯: A0 §7 |
 | **Green 2.3** | `text_len` = Unicode scalar 数（非 UTF-8 字节）→ 追溯: A0 §7 |
 | **Red 2.1** | Go 与 Python 对同输入产出不同 code_hash → cross-language 一致性失败 → baseline 失败 |
 | **Red 2.2** | code_hash 被截断为 16hex → baseline 失败（16hex 已作废） |
 | **Red 2.3** | text_len 误用字节数（中文"你好\n世界"=13 非 5）→ baseline 失败 |
-| **故障注入** | (a) 非法 UTF-8 → U+FFFD 替换后再计 (b) NFC/NFKC 隐式归一化 → 禁止（code_hash 应不同） |
+| **故障注入** | (a) 非法 UTF-8 canonical 规则 **PENDING 张宗楚裁**（倾向 code_hash raw-byte + 非法 ingress fail-closed；判前不锁"U+FFFD 替换"=分叉源） (b) NFC/NFKC 隐式归一化 → 禁止（code_hash 应不同） |
 | **可观测判据** | Go/Python 各跑 3 vector→diff 输出期望零差异 |
 
 **test vector（3 例，A0 §7 冻结，完整 64hex）：**
@@ -135,6 +135,7 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 | 3 | Go/Python code_hash 不一致 | 拒绝——cross-language vector 必一致 | 🔴 |
 | 4 | code_hash 截断为 16hex | 拒绝——16hex 已作废 | 🔴 |
 | 5 | classify 误判低熵为高熵 | 拒绝——落 hash = 枚举攻击面 | 🔴 |
+| 6 | 非法 UTF-8 Go≠Python code_hash/text_len | 拒绝——跨语言分叉 | 🔴（待张宗楚裁后加 test vector） |
 
 ## §5 跨切面/组合场景 [选填]
 
@@ -147,7 +148,7 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 
 | 项目 | 配置 | 获取方式 |
 |---|---|---|
-| A1 设计文档 | 3e566347 | 工蜂 review/a1-logging @ 4a058d9 |
+| A1 设计文档 | 0e148998 | 工蜂 review/a1-logging @ 4a058d9 |
 | A0 冻结契约 | 97ab377 | 工蜂 |
 | test vector | A0 §7 3 例 | 本地 fixture |
 
@@ -177,4 +178,5 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 
 | 日期 | 版本 | 变更 |
 |---|---|---|
-| 2026-07-21 | Draft-0 | A1 classification 测试方案初始版。S1a/S1b 四矩阵 + cross-language vector + component rs。对齐 A0 97ab377 FROZEN + A1 3e566347。 |
+| 2026-07-21 | Draft-0 | A1 classification 测试方案初始版。tester复审通过。 |
+| 2026-07-21 | Draft-0u1 | CR修入：A1锚全0e148998+Green2.1 hello golden#2+非法UTF-8标PENDING+加§4#6反例。shenceclaude CR。 |
