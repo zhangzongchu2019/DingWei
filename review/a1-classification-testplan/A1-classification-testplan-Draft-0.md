@@ -85,8 +85,8 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 | **Red 2.1** | Go 与 Python 对同输入产出不同 code_hash → cross-language 一致性失败 → baseline 失败 |
 | **Red 2.2** | code_hash 被截断为 16hex → baseline 失败（16hex 已作废） |
 | **Red 2.3** | text_len 误用字节数（中文"你好\n世界"=13 非 5）→ baseline 失败 |
-| **Red 2.4** | 非法 UTF-8 输入（`61 E4 B8 FF 41`）→ ingress fail-closed 拒（不进 redact）→ 拒≠续跑 → baseline 失败。判据：拒（非比 text_len/code_hash——合法 golden 不变）→ 追溯: shenceclaude 裁决 (a) |
-| **故障注入** | (a) 非法 UTF-8 → ingress fail-closed 拒（shenceclaude 08:29 裁决: code_hash=raw-byte + 非法 ingress 拒, A0 §7 version bump） (b) NFC/NFKC 隐式归一化 → 禁止（code_hash 应不同） |
+| **Red 2.4** | 非法 UTF-8 输入（`61 E4 B8 FF 41`）→ ingress fail-closed 拒 + log `invalid_utf8` + 返回"乱码无法识别" → 不进 redact。判据：ingress 拒（非比两端 redact——redact 不该见非法）→ 追溯: 张宗楚裁 (X) |
+| **故障注入** | (a) 非法 UTF-8 → ingress fail-closed 拒 + log `invalid_utf8`（张宗楚裁 X: ingress 单点拒+日志, redact 零改） (b) NFC/NFKC 隐式归一化 → 禁止（code_hash 应不同） |
 | **可观测判据** | Go/Python 各跑 3 vector→diff 输出期望零差异 |
 
 **test vector（3 例，A0 §7 冻结，完整 64hex）：**
@@ -136,7 +136,7 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 | 3 | Go/Python code_hash 不一致 | 拒绝——cross-language vector 必一致 | 🔴 |
 | 4 | code_hash 截断为 16hex | 拒绝——16hex 已作废 | 🔴 |
 | 5 | classify 误判低熵为高熵 | 拒绝——落 hash = 枚举攻击面 | 🔴 |
-| 6 | 非法 UTF-8 输入（`61 E4 B8 FF 41`）→ ingress fail-closed 拒 | 拒绝——不进 redact（shenceclaude 裁决: code_hash raw-byte + 非法 ingress 拒, A0 §7 version bump）| 🔴 |
+| 6 | 非法 UTF-8 输入（`61 E4 B8 FF 41`）→ ingress fail-closed 拒 + log `invalid_utf8` + 返回"乱码无法识别" | 拒绝——不进 redact（张宗楚裁 X） | 🔴 |
 
 ## §5 跨切面/组合场景 [选填]
 
