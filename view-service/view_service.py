@@ -184,9 +184,22 @@ def _hub_v2_input(session: str, page_id: str, request_id: str, text: str) -> tup
 
 
 def _renderer_path_for_session(session: str) -> str:
-    if CANARY_RENDERER and session in CANARY_SESSIONS:
+    if CANARY_RENDERER and _session_uses_canary_renderer(session):
         return CANARY_RENDERER
     return RENDERER
+
+
+def _session_uses_canary_renderer(session: str) -> bool:
+    if session in CANARY_SESSIONS:
+        return True
+    # manager and prodops are one operational view cohort. A rollout must not
+    # leave the two control-plane views on different renderer contracts.
+    match = re.fullmatch(r"([a-z0-9]+)-(manager|prodops)-([0-9a-f]{4})", session)
+    if not match:
+        return False
+    owner, role, key_tail = match.groups()
+    peer_role = "prodops" if role == "manager" else "manager"
+    return f"{owner}-{peer_role}-{key_tail}" in CANARY_SESSIONS
 
 
 def _read_renderer(session: str) -> bytes:

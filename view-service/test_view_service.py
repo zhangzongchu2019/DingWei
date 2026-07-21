@@ -76,6 +76,35 @@ class RendererCanaryTest(unittest.TestCase):
         with mock.patch.multiple(vs, CANARY_RENDERER="", CANARY_SESSIONS=frozenset()):
             self.assertEqual(vs._renderer_path_for_session("any-session"), vs.RENDERER)
 
+    def test_manager_and_prodops_share_one_renderer_track(self):
+        with mock.patch.multiple(
+            vs,
+            RENDERER="stable.html",
+            CANARY_RENDERER="canary.html",
+            CANARY_SESSIONS=frozenset({"zzc-manager-2642"}),
+        ):
+            self.assertEqual(vs._renderer_path_for_session("zzc-manager-2642"), "canary.html")
+            self.assertEqual(vs._renderer_path_for_session("zzc-prodops-2642"), "canary.html")
+            self.assertEqual(vs._renderer_path_for_session("zzc-tester-2642"), "stable.html")
+
+        with mock.patch.multiple(
+            vs,
+            RENDERER="stable.html",
+            CANARY_RENDERER="canary.html",
+            CANARY_SESSIONS=frozenset({"zzc-prodops-2642"}),
+        ):
+            self.assertEqual(vs._renderer_path_for_session("zzc-manager-2642"), "canary.html")
+            self.assertEqual(vs._renderer_path_for_session("zzc-prodops-2642"), "canary.html")
+
+    def test_manager_prodops_cohort_does_not_cross_owner_or_key_tail(self):
+        with mock.patch.multiple(
+            vs,
+            CANARY_RENDERER="canary.html",
+            CANARY_SESSIONS=frozenset({"alice-manager-a1b2"}),
+        ):
+            self.assertFalse(vs._session_uses_canary_renderer("bob-prodops-a1b2"))
+            self.assertFalse(vs._session_uses_canary_renderer("alice-prodops-c3d4"))
+
     def _render_for_public_base(self, public_base):
         handler = object.__new__(vs._Handler)
         handler.headers = {"X-DW-Session": "zzc-tester-2642"}
