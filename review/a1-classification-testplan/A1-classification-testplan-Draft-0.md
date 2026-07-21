@@ -7,7 +7,7 @@
 | 任务 ID | A1 (classification/脱敏) |
 | 任务名称 | 日志脱敏 classification 验证（S1a/S1b） |
 | 测试方案版本 | Draft-0 |
-| 配对设计文档 | A1 3e566347 (review/a1-logging @ 4a058d9) + A0 97ab377 FROZEN |
+| 配对设计文档 | A1 0e148998 (review/a1-logging @ deeef45, BLOCK-1已修) + A0 97ab377 FROZEN |
 | 测试负责人 | shencedeepseek |
 | 设计负责人 | devof5 (Go/hub) + shencedeepseek (Python VS/helper) |
 | CR | shenceclaude |
