@@ -148,7 +148,7 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 
 | 项目 | 配置 | 获取方式 |
 |---|---|---|
-| A1 设计文档 | 0e148998 | 工蜂 review/a1-logging @ 4a058d9 |
+| A1 设计文档 | 0e148998 | 工蜂 review/a1-logging @ deeef45 |
 | A0 冻结契约 | 97ab377 | 工蜂 |
 | test vector | A0 §7 3 例 | 本地 fixture |
 
