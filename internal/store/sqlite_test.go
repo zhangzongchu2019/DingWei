@@ -718,6 +718,9 @@ func TestEnqueueMessageRedactsContentBeforeStorage(t *testing.T) {
 
 func TestApproveKeyApplicationWithGrantCommitsCredentialAndGrantAtomically(t *testing.T) {
 	db, ctx := newTestSQLite(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "applicant", FeishuOpenID: "ou_applicant", Active: true}); err != nil {
+		t.Fatal(err)
+	}
 	app, err := db.CreateKeyApplication(ctx, model.KeyApplication{
 		ID:               "ka1",
 		ApplicantOpenID:  "ou_applicant",
@@ -748,9 +751,38 @@ func TestApproveKeyApplicationWithGrantCommitsCredentialAndGrantAtomically(t *te
 	if err != nil || len(accounts) != 1 || accounts[0] != "dev:personal:ou_applicant" {
 		t.Fatalf("accounts=%+v err=%v", accounts, err)
 	}
+	entity, err := db.GetChatEntity(ctx, "dev", "ou_applicant")
+	if err != nil || entity == nil || entity.BoundOwner != "applicant" {
+		t.Fatalf("approved entity=%+v err=%v", entity, err)
+	}
 	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
 	if err != nil || msg == nil || msg.ID != "grant-ka1" || strings.Contains(msg.Content, "wp_") {
 		t.Fatalf("grant message=%+v err=%v", msg, err)
+	}
+}
+
+func TestUpsertChatEntityAutoBindsOwnerAndPreservesBinding(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zzc", FeishuOpenID: "ou_zzc", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	entity := model.ChatEntity{ID: "dev:personal:ou_zzc", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_zzc", Active: true}
+	if err := db.UpsertChatEntity(ctx, entity); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.GetChatEntity(ctx, "dev", "ou_zzc")
+	if err != nil || got == nil || got.BoundOwner != "zzc" {
+		t.Fatalf("auto-bound entity=%+v err=%v", got, err)
+	}
+
+	// Routine ingress upserts do not carry BoundOwner and must not erase it.
+	entity.DisplayName = "Zhang"
+	if err := db.UpsertChatEntity(ctx, entity); err != nil {
+		t.Fatal(err)
+	}
+	got, err = db.GetChatEntity(ctx, "dev", "ou_zzc")
+	if err != nil || got == nil || got.BoundOwner != "zzc" || got.DisplayName != "Zhang" {
+		t.Fatalf("preserved entity=%+v err=%v", got, err)
 	}
 }
 

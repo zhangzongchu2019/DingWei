@@ -1470,6 +1470,59 @@ func TestSessionAddressingFourFlows(t *testing.T) {
 	}
 }
 
+func TestFeishuIngressNewChannelAutoBindingAndReplyToSender(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zzc", DisplayName: "Zhang", FeishuOpenID: "ou_zzc", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "manager")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The CLI key predates this bot channel and is bound through another valid
+	// account for the same member.
+	if err := hub.BindAccount(ctx, key.ID, "legacy:personal:ou_zzc"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_zzc", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_zzc", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	entity, err := db.GetChatEntity(ctx, "dev", "ou_zzc")
+	if err != nil || entity == nil || entity.BoundOwner != "zzc" {
+		t.Fatalf("ingress entity=%+v err=%v", entity, err)
+	}
+
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	managerName := "zzc-manager-" + keyTail(key.ID)
+	manager := dialSession(t, ctx, srv.URL, managerName, key.ID, secret)
+	defer manager.Close(websocket.StatusNormalClosure, "done")
+
+	selector := "#" + managerName + " ping"
+	result, err := hub.Dispatch(ctx, model.Message{ID: "feishu-in", ChatEntityID: "dev:personal:ou_zzc", BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"` + selector + `"}`}, selector)
+	if err != nil || !result.Matched || result.Reply != "" {
+		t.Fatalf("dispatch result=%+v err=%v", result, err)
+	}
+	inbound := readEnvelope(t, ctx, manager)
+	if inbound.Body != "ping" || inbound.From != "ou_zzc#"+key.ID+"#UnifiedRobot" {
+		t.Fatalf("inbound=%+v", inbound)
+	}
+	if err := writeEnvelope(ctx, manager, model.Envelope{ID: "feishu-reply", To: inbound.From, From: inbound.To, Body: "pong"}); err != nil {
+		t.Fatal(err)
+	}
+	outbound := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if outbound == nil || outbound.ChatEntityID != "dev:personal:ou_zzc" || !strings.Contains(messageText(t, outbound), "pong") {
+		t.Fatalf("reply outbound=%+v", outbound)
+	}
+}
+
 func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {

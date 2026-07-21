@@ -638,12 +638,34 @@ func (s *SQLite) UpsertChatEntity(ctx context.Context, e model.ChatEntity) error
 	if e.ID == "" {
 		e.ID = fmt.Sprintf("%s:%s", e.BotChannelID, e.FeishuID)
 	}
+	if strings.TrimSpace(e.BoundOwner) == "" {
+		e.BoundOwner = resolveChatEntityOwner(ctx, s.db, e.FeishuID)
+	}
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO chat_entity(id, bot_channel_id, type, feishu_id, display_name, bound_owner, active)
 		 VALUES(?,?,?,?,?,?,?)
-		 ON CONFLICT(bot_channel_id, feishu_id) DO UPDATE SET type=excluded.type, display_name=excluded.display_name, bound_owner=excluded.bound_owner, active=excluded.active`,
+		 ON CONFLICT(bot_channel_id, feishu_id) DO UPDATE SET type=excluded.type, display_name=excluded.display_name,
+		   bound_owner=CASE WHEN excluded.bound_owner!='' THEN excluded.bound_owner ELSE chat_entity.bound_owner END,
+		   active=excluded.active`,
 		e.ID, e.BotChannelID, string(e.Type), e.FeishuID, e.DisplayName, e.BoundOwner, active)
 	return err
+}
+
+type rowQuerier interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func resolveChatEntityOwner(ctx context.Context, q rowQuerier, feishuOpenID string) string {
+	if strings.TrimSpace(feishuOpenID) == "" {
+		return ""
+	}
+	var ownerKey string
+	if err := q.QueryRowContext(ctx,
+		`SELECT owner_key FROM member WHERE feishu_open_id=? AND active=1 ORDER BY owner_key LIMIT 1`,
+		feishuOpenID).Scan(&ownerKey); err != nil {
+		return ""
+	}
+	return ownerKey
 }
 
 func (s *SQLite) UpsertProject(ctx context.Context, p model.Project) error {
@@ -3088,10 +3110,15 @@ WHERE id=? AND status='pending'`,
 		if entity.Type == "" {
 			entity.Type = model.ChatPersonal
 		}
+		if strings.TrimSpace(entity.BoundOwner) == "" {
+			entity.BoundOwner = resolveChatEntityOwner(ctx, tx, entity.FeishuID)
+		}
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO chat_entity(id, bot_channel_id, type, feishu_id, display_name, bound_owner, active)
 			 VALUES(?,?,?,?,?,?,?)
-			 ON CONFLICT(id) DO UPDATE SET bot_channel_id=excluded.bot_channel_id, type=excluded.type, feishu_id=excluded.feishu_id, active=excluded.active`,
+			 ON CONFLICT(id) DO UPDATE SET bot_channel_id=excluded.bot_channel_id, type=excluded.type, feishu_id=excluded.feishu_id,
+			   bound_owner=CASE WHEN excluded.bound_owner!='' THEN excluded.bound_owner ELSE chat_entity.bound_owner END,
+			   active=excluded.active`,
 			entity.ID, entity.BotChannelID, string(entity.Type), entity.FeishuID, entity.DisplayName, entity.BoundOwner, boolInt(entity.Active)); err != nil {
 			return err
 		}
