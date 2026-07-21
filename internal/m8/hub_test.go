@@ -2850,7 +2850,9 @@ func TestSessionEndpointOwnerActiveUniqueIndex(t *testing.T) {
 
 func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
-	hub.onlineDebounce = 30 * time.Millisecond
+	// This test asserts one final roster snapshot, not timer behavior. Keep the
+	// presence timers out of the assertion and trigger the broadcast explicitly.
+	hub.onlineDebounce = time.Hour
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
 	hub.RegisterBot("dev", "UnifiedRobot")
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
@@ -2890,6 +2892,9 @@ func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) 
 	u1SecOpsName := "u1-secops-" + keyTail(u1Key.ID)
 	u1SecOps := dialSessionWithQuery(t, ctx, srv.URL, "secops", u1Key.ID, u1Secret, "tool=SEC&model=monitor&no_directory=1")
 	defer u1SecOps.Close(websocket.StatusNormalClosure, "done")
+	if err := hub.BroadcastOnlineDirectories(ctx); err != nil {
+		t.Fatal(err)
+	}
 
 	u1DevMsg := readEnvelope(t, ctx, u1Dev)
 	u1HomeMsg := readEnvelope(t, ctx, u1Home)
@@ -2930,14 +2935,9 @@ func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) 
 	if hidden.To != u1SecOpsName+"#"+u1Key.ID || hidden.Body != "直接派活" {
 		t.Fatalf("hidden session should still be addressable: %+v", hidden)
 	}
-	for i := 0; i < 2; i++ {
-		msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
-		if err != nil || msg == nil {
-			t.Fatalf("dm %d missing msg=%+v err=%v", i, msg, err)
-		}
-		if msg.ChatEntityID != "dev:personal:ou_u1" && msg.ChatEntityID != "dev:personal:ou_u2" {
-			t.Fatalf("unexpected dm target: %+v", msg)
-		}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg != nil {
+		t.Fatalf("directory broadcast must stay on CLI channels, msg=%+v err=%v", msg, err)
 	}
 }
 
@@ -2977,12 +2977,8 @@ func TestOnlineDirectoryDebouncesFlapping(t *testing.T) {
 	}
 	assertNoEnvelope(t, ctx, home, 120*time.Millisecond)
 	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
-	if err != nil || msg == nil || msg.ChatEntityID != "dev:personal:ou_u1" {
-		t.Fatalf("dm missing after debounce msg=%+v err=%v", msg, err)
-	}
-	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
 	if err != nil || msg != nil {
-		t.Fatalf("debounce should enqueue one dm, got msg=%+v err=%v", msg, err)
+		t.Fatalf("presence broadcast must not enqueue Feishu directory msg=%+v err=%v", msg, err)
 	}
 }
 
@@ -3050,7 +3046,7 @@ func TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary(t *testing.T) {
 	review := dialSession(t, ctx, srv.URL, "review", key.ID, secret)
 	defer review.Close(websocket.StatusNormalClosure, "done")
 
-	if err := hub.BroadcastOnlineDirectories(ctx, false); err != nil {
+	if err := hub.BroadcastOnlineDirectories(ctx); err != nil {
 		t.Fatal(err)
 	}
 	envs := []model.Envelope{
@@ -3107,7 +3103,7 @@ func TestProducerSessionMetadataAndOnlineDirectory(t *testing.T) {
 	if err != nil || len(endpoints) != 1 || !endpoints[0].Producer || endpoints[0].TargetGroup != "oc_ai" {
 		t.Fatalf("producer endpoint=%+v err=%v", endpoints, err)
 	}
-	if err := hub.BroadcastOnlineDirectories(ctx, true); err != nil {
+	if err := hub.BroadcastOnlineDirectories(ctx); err != nil {
 		t.Fatal(err)
 	}
 	got := readEnvelope(t, ctx, producer)

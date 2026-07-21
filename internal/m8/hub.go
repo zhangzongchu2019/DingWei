@@ -3453,7 +3453,7 @@ func (h *Hub) scheduleOnlineBroadcast(ctx context.Context, keyID string) {
 			delete(h.onlineTimers, ownerKey)
 		}
 		h.mu.Unlock()
-		_ = h.broadcastOnlineDirectory(bctx, ownerKey, true)
+		_ = h.broadcastOnlineDirectory(bctx, ownerKey)
 	})
 	h.mu.Unlock()
 }
@@ -3481,25 +3481,25 @@ func (h *Hub) sessionEndpointNoDirectory(ctx context.Context, keyID, sessionName
 	return false
 }
 
-func (h *Hub) BroadcastOnlineDirectories(ctx context.Context, includeFeishu bool) error {
+func (h *Hub) BroadcastOnlineDirectories(ctx context.Context) error {
 	owners, err := h.onlineOwners(ctx)
 	if err != nil {
 		return err
 	}
 	for _, owner := range owners {
-		if err := h.broadcastOnlineDirectory(ctx, owner, includeFeishu); err != nil {
+		if err := h.broadcastOnlineDirectory(ctx, owner); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h *Hub) BroadcastOnlineDirectoryForKey(ctx context.Context, keyID string, includeFeishu bool) error {
+func (h *Hub) BroadcastOnlineDirectoryForKey(ctx context.Context, keyID string) error {
 	ownerKey := h.ownerKeyForKey(ctx, keyID)
 	if ownerKey == "" {
 		return nil
 	}
-	return h.broadcastOnlineDirectory(ctx, ownerKey, includeFeishu)
+	return h.broadcastOnlineDirectory(ctx, ownerKey)
 }
 
 func (h *Hub) onlineOwners(ctx context.Context) ([]string, error) {
@@ -3598,7 +3598,7 @@ func (h *Hub) ownerKeyForKeyWithMembersAndAccounts(accounts []string, members []
 	return ""
 }
 
-func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string, includeFeishu bool) error {
+func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string) error {
 	start := time.Now()
 	items, owner, err := h.onlineDirectory(ctx, ownerKey)
 	if err != nil {
@@ -3634,23 +3634,7 @@ func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string, inc
 	}
 	wg.Wait()
 	fanoutDur := time.Since(fanoutStart)
-	enqueueDur := time.Duration(0)
-	if includeFeishu && h.Outbound != nil && owner.FeishuOpenID != "" {
-		enqueueStart := time.Now()
-		botChannelID := h.botChannel("UnifiedRobot")
-		content, _ := json.Marshal(map[string]string{"text": text})
-		if err := h.Outbound.Enqueue(ctx, model.Message{
-			ID:           "online-" + randomHex(16),
-			ChatEntityID: botChannelID + ":personal:" + owner.FeishuOpenID,
-			BotChannelID: botChannelID,
-			ChatType:     model.ChatPersonal,
-			Content:      string(content),
-		}); err != nil {
-			return err
-		}
-		enqueueDur = time.Since(enqueueStart)
-	}
-	log.Printf("online directory broadcast timing owner=%s total=%s snapshot=%s fanout=%s enqueue=%s clients=%d include_feishu=%t", owner.OwnerKey, time.Since(start).Round(time.Millisecond), snapshotDur.Round(time.Millisecond), fanoutDur.Round(time.Millisecond), enqueueDur.Round(time.Millisecond), len(items), includeFeishu)
+	log.Printf("online directory broadcast timing owner=%s total=%s snapshot=%s fanout=%s clients=%d", owner.OwnerKey, time.Since(start).Round(time.Millisecond), snapshotDur.Round(time.Millisecond), fanoutDur.Round(time.Millisecond), len(items))
 	return nil
 }
 
