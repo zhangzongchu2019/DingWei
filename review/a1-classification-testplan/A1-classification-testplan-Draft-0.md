@@ -85,8 +85,8 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 | **Red 2.1** | Go 与 Python 对同输入产出不同 code_hash → cross-language 一致性失败 → baseline 失败 |
 | **Red 2.2** | code_hash 被截断为 16hex → baseline 失败（16hex 已作废） |
 | **Red 2.3** | text_len 误用字节数（中文"你好\n世界"=13 非 5）→ baseline 失败 |
-| **Red 2.4** | 非法 UTF-8 输入（`61 E4 B8 FF 41`）→ ingress 处置（**张宗楚 X/Y PENDING**: X=拒整条不投递 / Y=ingress sanitize 到合法后投递）；raw-byte code_hash 若漏检两端同 56e416ad。判据：ingress 处置（非比两端 redact——redact 不该见非法）→ 追溯: shenceclaude 裁决 (a)=fail-closed+raw-byte |
-| **故障注入** | (a) 非法 UTF-8 → ingress 处置（shenceclaude 裁决(a): fail-closed+raw-byte, **X/Y 待张宗楚**） (b) NFC/NFKC 隐式归一化 → 禁止（code_hash 应不同） |
+| **Red 2.4** | 非法 UTF-8 输入（`61 E4 B8 FF 41`）→ ingress fail-closed 拒 + log `invalid_utf8` + 返回"乱码无法识别" → 不进 redact。判据：ingress 拒（非比两端 redact——redact 不该见非法）→ 追溯: 张宗楚裁 X (01:34) |
+| **故障注入** | (a) 非法 UTF-8 → ingress fail-closed 拒 + log `invalid_utf8`（张宗楚裁 X: ingress 单点拒+日志, redact 零改。shenceclaude A0 §7 amendment: 仅改 L189 一句） (b) NFC/NFKC 隐式归一化 → 禁止（code_hash 应不同） |
 | **可观测判据** | Go/Python 各跑 3 vector→diff 输出期望零差异 |
 
 **test vector（3 例，A0 §7 冻结，完整 64hex）：**
@@ -136,7 +136,7 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 | 3 | Go/Python code_hash 不一致 | 拒绝——cross-language vector 必一致 | 🔴 |
 | 4 | code_hash 截断为 16hex | 拒绝——16hex 已作废 | 🔴 |
 | 5 | classify 误判低熵为高熵 | 拒绝——落 hash = 枚举攻击面 | 🔴 |
-| 6 | 非法 UTF-8 输入（`61 E4 B8 FF 41`）→ ingress 处置（X/Y PENDING 张宗楚） | 拒绝——不进 redact（shenceclaude 裁决(a): fail-closed+raw-byte） | 🔴（X/Y 待 owner 裁后 lock） |
+| 6 | 非法 UTF-8 输入（`61 E4 B8 FF 41`）→ ingress fail-closed 拒 + log `invalid_utf8` + 返回"乱码无法识别" | 拒绝——不进 redact（张宗楚裁 X 01:34） | 🔴 |
 
 ## §5 跨切面/组合场景 [选填]
 
@@ -144,7 +144,7 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 |---|---|---|
 | cross-language 3-vector | Go `summarize` → Python `summarize` → diff | text_len/code_hash 逐字节相同 |
 | 三端脱敏一致性 | rs/VS/helper 各跑同输入 | 相同敏感→全零hash；相同高熵→64hex相同 |
-| 非法 UTF-8 ingress 处置 | 输入 `61 E4 B8 FF 41` → ingress adapter 检测 → 处置（X/Y PENDING 张宗楚） | 不进 redact；raw-byte code_hash 两端同 56e416ad（若漏检）；合法 3 golden 不变 |
+| 非法 UTF-8 ingress 拒 | 输入 `61 E4 B8 FF 41` → ingress adapter 检测 → fail-closed 拒 + invalid_utf8 + 返回 | 不进 redact；3 golden 不变。（张宗楚裁 X 01:34） |
 
 ## §6 测试环境 [必填]
 
@@ -183,4 +183,4 @@ A1 日志脱敏原语的 **classification 正确性**——验证三端（rs/VS/
 | 2026-07-21 | Draft-0 | A1 classification 测试方案初始版。tester复审通过。 |
 | 2026-07-21 | Draft-0u1 | CR修入：A1锚全0e148998+Green2.1 hello golden#2+非法UTF-8标PENDING+§4#6。shenceclaude PASS。 |
 | 2026-07-21 | Draft-0u2 | 非法UTF-8裁决落地：shenceclaude裁决(a)=fail-closed+raw-byte+vector 61E4B8FF41。 |
-| 2026-07-21 | Draft-0u3 | X-specific回退PENDING(shenceclaude:X/Y未裁)。保留ingress落点+raw-byte 56e416ad。X/Y待张宗楚。 |
+| 2026-07-21 | Draft-0u3 | X锁死(张宗楚01:34裁X): ingress拒+invalid_utf8+返回。shenceclaude A0 §7 amendment仅改L189一句。redact零改。 |
