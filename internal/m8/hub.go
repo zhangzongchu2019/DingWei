@@ -3088,7 +3088,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		h.unclaimEnvelope(env.ID, sig)
 		return fmt.Errorf("session %s offline", sessionName)
 	}
-	if ackInbound && h.sessionSupportsDeliveryACK(c) && h.Repo != nil {
+	if reliablePrimaryEnvelope(env) && h.sessionSupportsDeliveryACK(c) && h.Repo != nil {
 		if env.Meta == nil {
 			env.Meta = map[string]any{}
 		}
@@ -3103,10 +3103,12 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
-		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: "feishu_inbound"}); err != nil {
+		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env)}); err != nil {
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
+		h.publishInputObservation(keyID, sessionName, env, deliveryID, "hub_received", "primary", true)
+		h.publishSourceCopyObservation(env, deliveryID, "hub_received")
 		h.drainSessionDeliveries(ctx, c)
 		return nil
 	}
@@ -3114,10 +3116,45 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		h.unclaimEnvelope(env.ID, sig)
 		return err
 	}
+	if reliablePrimaryEnvelope(env) {
+		directID := "direct_" + env.ID
+		// Legacy helpers provide no injection ACK. A successful WebSocket write only
+		// proves handoff, so use the weaker pty_write/injection-unconfirmed stage.
+		h.publishInputObservation(keyID, sessionName, env, directID, "pty_write", "primary", false)
+		h.publishSourceCopyObservation(env, directID, "pty_write")
+	}
 	if ackInbound && h.Repo != nil && env.ID != "" {
 		_ = h.Repo.AckMessage(ctx, env.ID)
 	}
 	return nil
+}
+
+func reliablePrimaryEnvelope(env model.Envelope) bool {
+	if env.ID == "" || metaBool(env.Meta, "system") || metaBool(env.Meta, "no_mirror") {
+		return false
+	}
+	return metaString(env.Meta, "type") == ""
+}
+
+func deliverySourceType(env model.Envelope) string {
+	from, err := parseAddress(env.From)
+	if err == nil {
+		if from.Kind == addressFeishu {
+			return "feishu_inbound"
+		}
+		if from.Kind == addressSession && from.SessionName == "workpulse" {
+			return "view_inbound"
+		}
+	}
+	return "session_inbound"
+}
+
+func (h *Hub) publishSourceCopyObservation(env model.Envelope, deliveryID, stage string) {
+	from, err := parseAddress(env.From)
+	if err != nil || from.Kind != addressSession || from.SessionName == "" || from.SessionName == "workpulse" {
+		return
+	}
+	h.publishInputObservation(from.KeyID, from.SessionName, env, deliveryID, stage, "copy", false)
 }
 
 func (h *Hub) sessionSupportsDeliveryACK(c *sessionClient) bool {
@@ -3175,30 +3212,47 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	}
 	if state == "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
+		h.publishDeliveryUpdateForDelivery(*d, "cli_injected", "", "")
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
 		}
 		go h.drainSessionDeliveries(context.Background(), c)
 	} else if state == "busy" {
 		_ = h.Repo.UpdateSessionDeliveryBusy(ctx, id, metaString(env.Meta, "reason"), time.Now().UTC().Add(15*time.Second))
+		h.publishDeliveryUpdateForDelivery(*d, "helper_received", "", metaString(env.Meta, "reason"))
 		h.scheduleSessionDeliveryDrain(c, 15*time.Second)
 	} else if state == "failed" {
 		retryable := metaBool(env.Meta, "retryable")
 		if retryable {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "queued", metaString(env.Meta, "reason"), time.Now().UTC().Add(2*time.Second))
+			h.publishDeliveryUpdateForDelivery(*d, "helper_received", "", metaString(env.Meta, "reason"))
 			h.scheduleSessionDeliveryDrain(c, 2*time.Second)
 		} else {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "dead", metaString(env.Meta, "reason"), time.Now().UTC())
+			h.publishDeliveryUpdateForDelivery(*d, "helper_received", "failed", metaString(env.Meta, "reason"))
 			go h.drainSessionDeliveries(context.Background(), c)
 		}
 	} else if d.State != "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "delivered", "", time.Now().UTC().Add(2*time.Minute))
+		h.publishDeliveryUpdateForDelivery(*d, "helper_received", "", "")
 		h.scheduleSessionDeliveryDrain(c, 2*time.Minute)
 		if position := metaInt(env.Meta, "queue_position"); position > 0 {
 			h.notifyDeliveryQueued(ctx, *d, position)
 		}
 	}
 	return true
+}
+
+func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, stage, status, reason string) {
+	h.publishDeliveryUpdate(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, stage, status, reason)
+	var original model.Envelope
+	if json.Unmarshal([]byte(d.Envelope), &original) != nil {
+		return
+	}
+	from, err := parseAddress(original.From)
+	if err == nil && from.Kind == addressSession && from.SessionName != "" && from.SessionName != "workpulse" {
+		h.publishDeliveryUpdate(from.KeyID, from.SessionName, d.SourceMessageID, d.ID, stage, status, reason)
+	}
 }
 
 func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
@@ -3267,7 +3321,7 @@ func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope)
 		return err
 	}
 	content, _ := json.Marshal(map[string]string{"text": renderFeishuText(env, chatType)})
-	return h.Outbound.Enqueue(ctx, model.Message{
+	err = h.Outbound.Enqueue(ctx, model.Message{
 		ID:           env.ID,
 		ChatEntityID: botChannelID + ":" + entityKind + ":" + to.OpenID,
 		BotChannelID: botChannelID,
@@ -3275,6 +3329,14 @@ func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope)
 		ChatType:     chatType,
 		Content:      string(content),
 	})
+	if err != nil {
+		return err
+	}
+	from, parseErr := parseAddress(env.From)
+	if parseErr == nil && from.Kind == addressSession && from.SessionName != "" && from.SessionName != "workpulse" {
+		h.publishInputObservation(from.KeyID, from.SessionName, env, "out_"+env.ID, "cli_injected", "copy", false)
+	}
+	return nil
 }
 
 func (h *Hub) resolveFeishuBotChannel(ctx context.Context, to address, env model.Envelope, chatType model.ChatType) (string, error) {

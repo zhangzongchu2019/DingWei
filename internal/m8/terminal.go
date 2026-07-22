@@ -417,12 +417,76 @@ func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
 
 func (h *Hub) publishDeliveryCancelled(keyID, sessionName, messageID, deliveryID, stage string) {
 	event, _ := json.Marshal(map[string]any{
-		"kind": "delivery_update", "message_id": messageID,
+		"schema_version": "delivery.v2", "kind": "delivery_update", "message_id": messageID,
 		"observed_delivery_id": deliveryID, "delivery_stage": stage, "delivery_status": "cancelled",
 		"updated_at": time.Now().UTC().Format(time.RFC3339Nano), "reason": "",
 		"cancelable": false, "interruptible": false,
 	})
 	h.publishSessionEvent(keyID, sessionName, string(event))
+}
+
+func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envelope, deliveryID, stage, role string, cancellable bool) {
+	if keyID == "" || sessionName == "" || env.ID == "" || deliveryID == "" {
+		return
+	}
+	sourceKind := ""
+	displayName := metaString(env.Meta, "source_display_name")
+	if from, err := parseAddress(env.From); err == nil {
+		switch from.Kind {
+		case addressFeishu:
+			sourceKind = "feishu"
+			displayName = firstNonEmpty(displayName, from.OpenID)
+		case addressSession:
+			if from.SessionName == "workpulse" {
+				sourceKind = "view"
+				displayName = "View"
+			} else {
+				sourceKind = "agent"
+				displayName = from.SessionName
+			}
+		}
+	}
+	if sourceKind == "" {
+		sourceKind = "agent"
+	}
+	event, _ := json.Marshal(map[string]any{
+		"schema_version": "delivery.v2",
+		"kind":           "input_posted",
+		"message_id":     env.ID,
+		"delivery_id":    deliveryID,
+		"stage":          stage,
+		"payload":        strings.TrimSuffix(env.Body, "\r"),
+		"source": map[string]any{
+			"kind": sourceKind, "display_name": displayName, "trust_decision": "trusted",
+		},
+		"delivery": map[string]any{"role": role},
+		"copy_kind": func() string {
+			if role == "copy" {
+				return "route_observation"
+			}
+			return ""
+		}(),
+		"cancellable": cancellable,
+		"updated_at":  time.Now().UTC().Format(time.RFC3339Nano),
+	})
+	h.publishSessionEvent(keyID, sessionName, string(event))
+}
+
+func (h *Hub) publishDeliveryUpdate(keyID, sessionName, messageID, deliveryID, stage, status, reason string) {
+	if keyID == "" || sessionName == "" || messageID == "" || deliveryID == "" {
+		return
+	}
+	event := map[string]any{
+		"schema_version": "delivery.v2", "kind": "delivery_update", "message_id": messageID,
+		"observed_delivery_id": deliveryID, "delivery_stage": stage,
+		"updated_at": time.Now().UTC().Format(time.RFC3339Nano), "reason": reason,
+		"cancelable": false, "interruptible": false,
+	}
+	if status != "" {
+		event["delivery_status"] = status
+	}
+	raw, _ := json.Marshal(event)
+	h.publishSessionEvent(keyID, sessionName, string(raw))
 }
 
 // subscribeSessionEvents 注册一个内网事件订阅者(C2 的 SSE 端点使用):
@@ -933,9 +997,9 @@ func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID
 		From: sessionAddress("workpulse", keyID),
 		Body: data,
 		TS:   time.Now().Unix(),
-		Meta: map[string]any{"type": terminalInputType, "system": true, "no_mirror": true},
+		Meta: map[string]any{"source_kind": "user", "source_display_name": "View"},
 	}
-	return c.write(ctx, env)
+	return h.routeToSession(ctx, keyID, sessionName, env, false)
 }
 
 // routeTerminalResize 把浏览器 xterm 的实际尺寸(列/行)转发给 sessionHelper，
