@@ -291,6 +291,40 @@ def _ensure_ready_locked(session: str) -> dict:
     return st
 
 
+# 走甲最小 control:仅支持"删待提交区未注入条目"(pre-injection cancel)。
+# §5 provenance / durable / 全套 control robustness 后补(张宗楚 2026-07-21 定 A)。
+CONTROL_KINDS = frozenset({"cancel"})
+
+
+def _forward_control(session: str, kind: str, message_id: str, delivery_id: str) -> tuple[bool, int]:
+    """把 renderer 的 control(cancel)转发到 hub 内网口(dev55 做 hub 侧真删)。
+
+    - 过 page 写权(viewer_id + writer token = G-AUTH,别裸):无写权不转发。
+      写权与 /input 同源(_ensure_ready → hub /internal/view/authorize 的 writer_token,
+      hub 侧再核 token)。
+    - G-ADDR:message_id + delivery_id 定位待提交区条目;注入前无 turn_id,故不带。
+    - 走甲最小 scope:仅 kind=cancel;其余 kind 拒(400)。
+    返回 (ok, hub_status)。"""
+    if kind not in CONTROL_KINDS:
+        return False, 400
+    if not (message_id and delivery_id):
+        return False, 400
+    st = _ensure_ready(session)
+    if not (st.get("viewer_id") and st.get("token")):
+        return False, 403  # 无 page 写权 → 不转发(别裸)
+    # VS→hub 线格式(与 dev55 锁定 2026-07-21):POST /internal/view/{session}/cancel。
+    # path 即表 cancel(不带 kind);鉴权沿用 /input 的 viewer_id+writer token(hub 再核)。
+    # hub 仅对"注入前 pending"原子转 cancelled;终态/已注入 → 409(VS 视为 ok=False);
+    # renderer 更新由 hub SSE delivery_update(cancelled)驱动(单一权威源),VS 不本地改。
+    code, _ = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/cancel", {
+        "viewer_id": st["viewer_id"],
+        "token": st["token"],
+        "message_id": message_id,
+        "delivery_id": delivery_id,
+    })
+    return (code == 200), code
+
+
 def _read_mem() -> dict:
     try:
         info = {}
@@ -351,7 +385,7 @@ class _Handler(BaseHTTPRequestHandler):
         if hdr_sess:
             pre = PUBLIC_VIEW_BASE + "/" + hdr_sess.strip()
             text = body.decode("utf-8", "replace")
-            for ep in ("/events", "/input", "/interrupt", "/status", "/page"):
+            for ep in ("/events", "/input", "/interrupt", "/control", "/status", "/page"):
                 text = text.replace("'" + ep + "'", "'" + pre + ep + "'")
             body = text.encode("utf-8")
         self.send_response(200)
@@ -457,6 +491,8 @@ class _Handler(BaseHTTPRequestHandler):
         session = self._session()
         if not session:
             return self.send_error(400, "session required")
+        if path == "/control":
+            return self._handle_control(session)
         if path == "/page":
             if not VIEW_UNLOCK_V2:
                 return self.send_error(404)
@@ -534,6 +570,23 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
+
+    def _handle_control(self, session: str):
+        length = int(self.headers.get("Content-Length") or 0)
+        raw = self.rfile.read(length) if length else b"{}"
+        try:
+            obj = json.loads(raw)
+            if not isinstance(obj, dict):
+                obj = {}
+        except Exception:
+            obj = {}
+        ok, _ = _forward_control(
+            session,
+            str(obj.get("kind", "")).strip(),
+            str(obj.get("message_id", "")).strip(),
+            str(obj.get("delivery_id", "")).strip(),
+        )
+        self._json_response(200, {"ok": ok})
 
 
 def main():

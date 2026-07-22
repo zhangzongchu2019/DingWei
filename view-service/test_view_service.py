@@ -176,5 +176,52 @@ class ViewerStabilityTest(unittest.TestCase):
         self.assertTrue(result["can_write"])
 
 
+class ControlForwardTest(unittest.TestCase):
+    """走甲最小 control(pre-injection cancel):过 page 写权 → 转发 hub、G-ADDR 线格式。"""
+
+    def setUp(self):
+        with vs._state_lock:
+            vs._sessions.clear()
+
+    def test_cancel_with_write_permission_forwards_g_addr(self):
+        sess = "zzc-dev55-2642"
+        with mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": "wtok"}), \
+             mock.patch.object(vs, "_hub_post", return_value=(200, {"ok": True})) as post:
+            ok, code = vs._forward_control(sess, "cancel", "msg_abc", "d-001")
+        self.assertTrue(ok)
+        self.assertEqual(code, 200)
+        # 锁定线格式(VS→hub, dev55 2026-07-21):POST /internal/view/{session}/cancel,
+        # 写权(viewer_id+token) + G-ADDR(message_id+delivery_id,注入前无 turn_id);
+        # path 即表 cancel,不带 kind。
+        post.assert_called_once_with(vs.HUB_INTERNAL, f"/internal/view/{sess}/cancel", {
+            "viewer_id": "v1", "token": "wtok",
+            "message_id": "msg_abc", "delivery_id": "d-001",
+        })
+
+    def test_no_write_permission_does_not_forward(self):
+        # 无 writer token = 未解锁/无写权 → 不转发(别裸),403。
+        with mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": ""}), \
+             mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_control("s", "cancel", "msg_abc", "d-001")
+        self.assertFalse(ok)
+        self.assertEqual(code, 403)
+        post.assert_not_called()
+
+    def test_unknown_kind_rejected(self):
+        # 走甲最小 scope:仅 cancel;其余 control kind 拒(400),不碰 hub。
+        with mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_control("s", "resume", "msg_abc", "d-001")
+        self.assertFalse(ok)
+        self.assertEqual(code, 400)
+        post.assert_not_called()
+
+    def test_missing_g_addr_rejected(self):
+        with mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_control("s", "cancel", "", "d-001")  # 缺 message_id
+        self.assertFalse(ok)
+        self.assertEqual(code, 400)
+        post.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
