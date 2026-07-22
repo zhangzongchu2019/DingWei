@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const assert = require('assert');
 
 const RENDERER_PATH = 'renderer-canary-sse.html';
-const EXPECTED_RENDERER_SHA256 = '38c79d53a335cb9ec586869c457c8b0a6b70c64914894555d1176b03067c3f92';
+const EXPECTED_RENDERER_SHA256 = 'b19b22dad42cd5a0e4b55dc4a3f776685911c9e3f431ca3fd3a00f067e6b5d04';
 
 (async () => {
   const renderer = fs.readFileSync(RENDERER_PATH);
