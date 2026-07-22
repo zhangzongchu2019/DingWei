@@ -265,6 +265,7 @@ class CLIAdapter:
             if status == "db_missing":
                 return "（答案超时：未找到 opencode 会话库）"
             return "（答案超时：已确认 opencode user 轮落库，但未取到 assistant 回答）"
+        self.discard_pending_output()
         self.inject_text(body)
         if on_injected is not None:
             on_injected()
@@ -274,6 +275,14 @@ class CLIAdapter:
         if chunks:
             return "\n".join(chunks)
         return "已注入 CLI，等待模型输出。"
+
+    def discard_pending_output(self) -> None:
+        """Establish a reply boundary before writing a new PTY prompt."""
+        while True:
+            try:
+                self.output_q.get_nowait()
+            except queue.Empty:
+                return
 
     def not_ready_message(self) -> str:
         reason = self.last_launch_error or "启动超时"

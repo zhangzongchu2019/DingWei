@@ -1344,6 +1344,18 @@ class SessionHelperTest(unittest.TestCase):
 
         self.assertEqual(asyncio.run(run_case()), 1)
 
+    def test_cli_pty_reply_discards_output_queued_before_injection(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="cline", SH_CLI_REPLY_WAIT="0.05"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.start = lambda: True
+        adapter.output_q.put("STALE_ONBOARDING_REPLY")
+        adapter.inject_text = lambda text: adapter.output_q.put("RIG_ECHO:" + text)
+
+        reply = adapter.handle({"body": "M5-F-current-run"})
+
+        self.assertEqual(reply, "RIG_ECHO:M5-F-current-run")
+
     def test_provision_rejects_bad_source_and_audits(self):
         with tempfile.TemporaryDirectory() as tmp:
             cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
