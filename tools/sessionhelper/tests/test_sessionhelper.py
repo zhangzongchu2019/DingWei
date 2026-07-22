@@ -109,6 +109,71 @@ class SessionHelperTest(unittest.TestCase):
             self.assertEqual(delivery_id, "dlv_1")
             self.assertEqual(retried["body"], "retry")
 
+    def test_delivery_inbox_cancel_received_transitions_to_cancelled(self):
+        # 走甲最小·真删除:仅 received 态原子撤到 cancelled,并离开 FIFO(幂等)。
+        with tempfile.TemporaryDirectory() as tmp:
+            inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)
+            env = {"body": "one", "meta": {"type": "delivery", "delivery_id": "dlv_1", "message_id": "msg_1"}}
+            inbox.accept("dlv_1", env)  # received
+            self.assertEqual(inbox.cancel("msg_1", "dlv_1"), {"result": "cancelled", "state": "cancelled"})
+            self.assertIsNone(inbox.claim_next())  # cancelled 不再进注入
+            self.assertEqual(inbox.cancel("msg_1", "dlv_1")["result"], "cancelled")  # 幂等再撤
+
+    def test_delivery_inbox_cancel_after_injection_is_not_cancelable(self):
+        # 已注入(processing)/已处理(processed)拒 not_cancelable —— 避免假删除。
+        with tempfile.TemporaryDirectory() as tmp:
+            inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)
+            inbox.accept("dlv_1", {"body": "one"})
+            self.assertEqual(inbox.claim_next()[0], "dlv_1")  # received → processing
+            self.assertEqual(inbox.cancel("msg_1", "dlv_1"), {"result": "not_cancelable", "state": "processing"})
+            inbox.finish("dlv_1")  # → processed
+            self.assertEqual(inbox.cancel("msg_1", "dlv_1")["result"], "not_cancelable")
+
+    def test_delivery_inbox_cancel_unknown_is_not_found(self):
+        # 迟到/错地址:无此 (session, delivery_id) → not_found,不回退、不新建。
+        with tempfile.TemporaryDirectory() as tmp:
+            inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)
+            self.assertEqual(inbox.cancel("msg_x", "nope"), {"result": "not_found", "state": ""})
+
+    def test_delivery_cancel_ack_carries_dual_key(self):
+        # 端到端:收 delivery_cancel → cancelled ACK 带双键(message_id + delivery_id);
+        # 已注入 → not_cancelable ACK。(与 dev55 锁的 hub CAS 契约)
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            helper = SessionHelper(load_config(dict(
+                BASE_ENV, SH_MODE="cli", SH_INBOX_DB=str(Path(tmp) / "inbox.db")
+            )))
+            helper.delivery_inbox.accept(
+                "dlv_1", {"meta": {"type": "delivery", "ack_required": True, "delivery_id": "dlv_1", "message_id": "msg_1"}}
+            )  # received
+            cancel_env = {"meta": {"type": "delivery_cancel", "message_id": "msg_1", "delivery_id": "dlv_1"}}
+            self.assertTrue(helper.is_delivery_cancel(cancel_env))
+            ws = FakeWS()
+            asyncio.run(helper.handle_delivery_cancel(ws, cancel_env))
+            self.assertEqual(len(ws.sent), 1)
+            meta = ws.sent[0]["meta"]
+            self.assertEqual(meta["type"], "delivery_cancel_ack")
+            self.assertEqual(meta["message_id"], "msg_1")   # 双键 G-ADDR
+            self.assertEqual(meta["delivery_id"], "dlv_1")  # 双键 G-ADDR
+            self.assertEqual(meta["result"], "cancelled")
+            self.assertTrue(meta["no_mirror"])
+
+            # 已注入不可撤:processing → not_cancelable ACK(仍带双键)
+            helper.delivery_inbox.accept("dlv_2", {"meta": {"delivery_id": "dlv_2"}})
+            self.assertEqual(helper.delivery_inbox.claim_next()[0], "dlv_2")  # → processing
+            ws2 = FakeWS()
+            asyncio.run(helper.handle_delivery_cancel(
+                ws2, {"meta": {"type": "delivery_cancel", "message_id": "msg_2", "delivery_id": "dlv_2"}}
+            ))
+            self.assertEqual(ws2.sent[0]["meta"]["result"], "not_cancelable")
+            self.assertEqual(ws2.sent[0]["meta"]["delivery_id"], "dlv_2")
+
     def test_delivery_inbox_fifo_and_capacity_preserve_oldest(self):
         with tempfile.TemporaryDirectory() as tmp:
             inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)

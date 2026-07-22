@@ -319,6 +319,9 @@ class SessionHelper:
             if self.is_delivery(env):
                 await self.accept_delivery(ws, env)
                 continue
+            if self.is_delivery_cancel(env):
+                await self.handle_delivery_cancel(ws, env)
+                continue
             from_addr = str(env.get("from") or "")
             print(f"[recv] from={from_addr} to={env.get('to')} body={env.get('body')!r}", flush=True)
             if self.is_agent_network_skill(env):
@@ -436,6 +439,34 @@ class SessionHelper:
         meta = {"type": "delivery_ack", "delivery_id": delivery_id, "state": state, "no_mirror": True}
         meta.update(extra)
         return envelope(session_addr("workpulse", self.book.key_id), "", self.book.self_addr, meta)
+
+    def is_delivery_cancel(self, env: dict) -> bool:
+        return (env.get("meta") or {}).get("type") == "delivery_cancel"
+
+    def delivery_cancel_ack(self, message_id: str, delivery_id: str, result: str, **extra: object) -> dict:
+        # 走甲最小·真删除链末段:cancelled ACK 带双键(message_id + delivery_id),
+        # hub 据此 CAS 终态 + 发 renderer delivery_update(cancelled)。no_mirror 同 delivery_ack。
+        meta = {"type": "delivery_cancel_ack", "message_id": message_id,
+                "delivery_id": delivery_id, "result": result, "no_mirror": True}
+        meta.update(extra)
+        return envelope(session_addr("workpulse", self.book.key_id), "", self.book.self_addr, meta)
+
+    async def handle_delivery_cancel(self, ws, env: dict) -> None:
+        # 收 delivery_cancel{message_id, delivery_id}(双键 G-ADDR、注入前无 turn_id)→
+        # inbox.cancel(仅 received 态原子撤)→ 回 cancelled ACK。dev55 spec 2026-07-21。
+        meta = env.get("meta") or {}
+        message_id = str(meta.get("message_id") or "").strip()
+        delivery_id = str(meta.get("delivery_id") or "").strip()
+        if not delivery_id:
+            return  # 无 delivery_id 无法定位 → 错地址,不回退、不回 ACK
+        try:
+            outcome = await asyncio.to_thread(self.delivery_inbox.cancel, message_id, delivery_id)
+        except Exception as exc:
+            print(f"[delivery_cancel] inbox unavailable: {exc}", flush=True)
+            return  # 迟到/异常不回退、不回 ACK(避免误导 hub CAS)
+        ack = self.delivery_cancel_ack(message_id, delivery_id, outcome["result"], state=outcome["state"])
+        await ws.send(json.dumps(ack, ensure_ascii=False))
+        print(f"[delivery_cancel] delivery_id={delivery_id} result={outcome['result']}", flush=True)
 
     async def accept_delivery(self, ws, env: dict) -> None:
         delivery_id = str((env.get("meta") or {}).get("delivery_id") or "").strip()
