@@ -212,6 +212,9 @@ class CLIAdapter:
             pass
 
     def handle(self, env: dict) -> str:
+        return self.handle_delivery(env, None)
+
+    def handle_delivery(self, env: dict, on_injected=None) -> str:
         for attempt in range(max(1, self.cfg.cli_launch_retries)):
             if self.start():
                 break
@@ -238,8 +241,10 @@ class CLIAdapter:
                     confirmer(body)
                 else:
                     self.inject_text(body)
+                if on_injected is not None:
+                    on_injected()
                 return ""
-            status, reply = self.inject_and_collect_transcript_reply(body)
+            status, reply = self.inject_and_collect_transcript_reply(body, on_injected)
             if status == "ok" and reply:
                 return reply
             if status == "no_user":
@@ -248,6 +253,8 @@ class CLIAdapter:
         if self.profile.output_source == "opencode_db":
             injected_at = time.time()
             self.inject_text(body)
+            if on_injected is not None:
+                on_injected()
             if self.cfg.async_reply:
                 return ""
             status, reply = self.collect_opencode_db_reply(body, injected_at, self.cfg.cli_reply_wait)
@@ -259,6 +266,8 @@ class CLIAdapter:
                 return "（答案超时：未找到 opencode 会话库）"
             return "（答案超时：已确认 opencode user 轮落库，但未取到 assistant 回答）"
         self.inject_text(body)
+        if on_injected is not None:
+            on_injected()
         if self.cfg.async_reply:
             return ""
         chunks = self.collect_output(self.cfg.cli_reply_wait)
@@ -349,7 +358,7 @@ class CLIAdapter:
         configured = (self.cfg.tool or self.cli_name or "").strip().lower()
         return configured in BRACKETED_PASTE_CLIS or self.cli_name in BRACKETED_PASTE_CLIS
 
-    def inject_and_collect_transcript_reply(self, prompt: str) -> tuple[str, str]:
+    def inject_and_collect_transcript_reply(self, prompt: str, on_injected=None) -> tuple[str, str]:
         # Full-screen TUIs can report ready before the first input box is truly
         # able to accept send-keys. Validate the user turn in transcript; if it
         # does not land, resend the full prompt a few times instead of asking the
@@ -357,6 +366,8 @@ class CLIAdapter:
         attempts = 3
         for attempt in range(attempts):
             self.inject_text(prompt)
+            if on_injected is not None:
+                on_injected()
             status, reply = self.collect_transcript_reply(prompt, self.cfg.cli_reply_wait)
             if status != "no_user":
                 return status, reply

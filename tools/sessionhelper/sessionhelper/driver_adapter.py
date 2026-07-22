@@ -99,6 +99,9 @@ class DriverAdapter:
     # ------------------------------------------------------------ 投递(handle)
 
     def handle(self, env: dict) -> str:
+        return self.handle_delivery(env, None)
+
+    def handle_delivery(self, env: dict, on_injected=None) -> str:
         body = str(env.get("body") or "")
         if not body:
             return ""
@@ -107,6 +110,8 @@ class DriverAdapter:
         result = self.enqueue_envelope(env)
         if result.state == "rejected":
             raise OverflowError(result.reason or "queue_full")
+        if on_injected is not None:
+            on_injected()
         return ""
 
     def enqueue_envelope(self, env: dict) -> EnqueueResult:

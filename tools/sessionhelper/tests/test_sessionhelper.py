@@ -1266,6 +1266,48 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(sent[0]["meta"]["reason"], "cli_injection_failed")
         self.assertTrue(sent[0]["meta"]["retryable"])
 
+    def test_delivery_worker_acks_injected_before_slow_reply_finishes(self):
+        class SlowAdapter:
+            name = "cli"
+
+            def is_idle(self):
+                return True
+
+            def handle_delivery(self, env, on_injected):
+                on_injected()
+                time.sleep(0.25)
+                return ""
+
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        async def run_case():
+            with tempfile.TemporaryDirectory() as tmp:
+                helper = SessionHelper(load_config(dict(
+                    BASE_ENV, SH_MODE="cli", SH_INBOX_DB=str(Path(tmp) / "inbox.db")
+                )))
+                helper.adapter = SlowAdapter()
+                ws = FakeWS()
+                env = {"from": "peer#FB-2642", "to": "home#FB-2642", "body": "one",
+                       "meta": {"type": "delivery", "ack_required": True, "delivery_id": "dlv_1"}}
+                helper.delivery_inbox.accept("dlv_1", env)
+                task = asyncio.create_task(helper.delivery_worker_loop(ws))
+                deadline = asyncio.get_running_loop().time() + 1
+                while asyncio.get_running_loop().time() < deadline and len(ws.sent) < 2:
+                    await asyncio.sleep(0.02)
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                return [item["meta"]["state"] for item in ws.sent]
+
+        self.assertEqual(asyncio.run(run_case()), ["injected", "processed"])
+
     def test_provision_rejects_bad_source_and_audits(self):
         with tempfile.TemporaryDirectory() as tmp:
             cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))

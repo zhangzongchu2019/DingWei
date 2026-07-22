@@ -416,10 +416,17 @@ class SessionHelper:
                 self.busy_acked_from.clear()
             await asyncio.sleep(max(0.1, min(self.cfg.cli_settle_seconds, 1.0)))
 
-    async def process_inbound_message(self, ws, env: dict, raise_adapter_errors: bool = False) -> None:
+    async def process_inbound_message(self, ws, env: dict, raise_adapter_errors: bool = False,
+                                      on_injected=None) -> None:
         from_addr = str(env.get("from") or "")
         try:
-            reply_body = await asyncio.to_thread(self.adapter.handle, env)
+            delivery_handler = getattr(self.adapter, "handle_delivery", None)
+            if on_injected is not None and callable(delivery_handler):
+                reply_body = await asyncio.to_thread(delivery_handler, env, on_injected)
+            else:
+                reply_body = await asyncio.to_thread(self.adapter.handle, env)
+                if on_injected is not None:
+                    on_injected()
         except Exception as exc:
             if raise_adapter_errors:
                 raise
@@ -515,7 +522,22 @@ class SessionHelper:
                     await asyncio.sleep(0.75)
                     continue
             try:
-                await self.process_inbound_message(ws, env, raise_adapter_errors=True)
+                loop = asyncio.get_running_loop()
+                injected_sent = False
+
+                def acknowledge_injected() -> None:
+                    nonlocal injected_sent
+                    if injected_sent:
+                        return
+                    injected_sent = True
+                    future = asyncio.run_coroutine_threadsafe(
+                        ws.send(json.dumps(self.delivery_ack(delivery_id, "injected"), ensure_ascii=False)), loop
+                    )
+                    future.result(timeout=5)
+
+                await self.process_inbound_message(
+                    ws, env, raise_adapter_errors=True, on_injected=acknowledge_injected
+                )
             except OverflowError:
                 await asyncio.to_thread(self.delivery_inbox.release, delivery_id)
                 await ws.send(json.dumps(self.delivery_ack(

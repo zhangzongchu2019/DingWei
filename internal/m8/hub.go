@@ -3200,7 +3200,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		return true
 	}
 	state := metaString(env.Meta, "state")
-	if id == "" || (state != "delivered" && state != "processed" && state != "failed" && state != "busy") {
+	if id == "" || (state != "delivered" && state != "injected" && state != "processed" && state != "failed" && state != "busy") {
 		return true
 	}
 	d, err := h.Repo.GetSessionDelivery(ctx, id)
@@ -3210,9 +3210,18 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	if d.KeyID != c.keyID || d.SessionName != c.sessionName || d.State == "dead" || d.State == "cancelled" {
 		return true
 	}
-	if state == "processed" {
-		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
+	if state == "injected" {
+		_ = h.Repo.UpdateSessionDelivery(ctx, id, "injected", "", time.Now().UTC())
 		h.publishDeliveryUpdateForDelivery(*d, "cli_injected", "", "")
+		if d.SourceMessageID != "" {
+			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
+		}
+		go h.drainSessionDeliveries(context.Background(), c)
+	} else if state == "processed" {
+		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
+		if d.State != "injected" {
+			h.publishDeliveryUpdateForDelivery(*d, "cli_injected", "", "")
+		}
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
 		}

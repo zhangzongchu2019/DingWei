@@ -4477,6 +4477,66 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 	}
 }
 
+func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplicate(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-injected", Name: "injected", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-injected", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool { return hub.sessionSupportsDeliveryACK(hub.sessionClients[key.ID]["home"]) })
+	_, events, unsubscribe := hub.subscribeSessionEvents(key.ID, "home", "injected-ack")
+	defer unsubscribe()
+	if err := hub.RouteEnvelope(ctx, model.Envelope{ID: "injected-message", To: "home#" + key.ID,
+		From: "peer#" + key.ID, Body: "ping", TS: time.Now().Unix()}); err != nil {
+		t.Fatal(err)
+	}
+	delivery := readEnvelope(t, ctx, home)
+	deliveryID := metaString(delivery.Meta, "delivery_id")
+	<-events // input_posted
+	for _, state := range []string{"delivered", "injected", "processed"} {
+		if err := writeEnvelope(ctx, home, model.Envelope{ID: "ack-" + state, To: "workpulse#" + key.ID,
+			Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": state}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	updates := make([]string, 0, 2)
+	deadline := time.After(time.Second)
+	for len(updates) < 2 {
+		select {
+		case raw := <-events:
+			updates = append(updates, raw)
+		case <-deadline:
+			t.Fatalf("delivery updates=%v", updates)
+		}
+	}
+	if !strings.Contains(updates[0], `"delivery_stage":"helper_received"`) ||
+		!strings.Contains(updates[1], `"delivery_stage":"cli_injected"`) {
+		t.Fatalf("delivery updates=%v", updates)
+	}
+	select {
+	case raw := <-events:
+		t.Fatalf("processed duplicated cli_injected update: %s", raw)
+	case <-time.After(100 * time.Millisecond):
+	}
+	record, err := db.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || record == nil || record.State != "processed" {
+		t.Fatalf("delivery record=%+v err=%v", record, err)
+	}
+}
+
 func TestSessionToSessionReliableAdmissionPublishesBothEventRings(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-ring", Name: "ring", DeliveryType: "ws", Enabled: true}); err != nil {
