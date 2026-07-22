@@ -147,6 +147,10 @@ class SessionHelper:
         )
         self.busy_acked_from: set[str] = set()
         self.delivery_busy_acked: set[str] = set()
+        # One adapter owns one CLI/driver stream. Admission, roster, and buffered
+        # drains may arrive on different tasks, but inject+reply collection must
+        # remain a single transaction or one message can consume another's reply.
+        self.adapter_handle_lock = asyncio.Lock()
         self.provisioner = Provisioner(cfg)
         self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
@@ -420,13 +424,14 @@ class SessionHelper:
                                       on_injected=None) -> None:
         from_addr = str(env.get("from") or "")
         try:
-            delivery_handler = getattr(self.adapter, "handle_delivery", None)
-            if on_injected is not None and callable(delivery_handler):
-                reply_body = await asyncio.to_thread(delivery_handler, env, on_injected)
-            else:
-                reply_body = await asyncio.to_thread(self.adapter.handle, env)
-                if on_injected is not None:
-                    on_injected()
+            async with self.adapter_handle_lock:
+                delivery_handler = getattr(self.adapter, "handle_delivery", None)
+                if on_injected is not None and callable(delivery_handler):
+                    reply_body = await asyncio.to_thread(delivery_handler, env, on_injected)
+                else:
+                    reply_body = await asyncio.to_thread(self.adapter.handle, env)
+                    if on_injected is not None:
+                        on_injected()
         except Exception as exc:
             if raise_adapter_errors:
                 raise

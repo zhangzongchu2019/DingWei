@@ -8,6 +8,7 @@ import sqlite3
 import subprocess
 import tarfile
 import tempfile
+import threading
 import time
 from unittest import mock
 from pathlib import Path
@@ -1307,6 +1308,41 @@ class SessionHelperTest(unittest.TestCase):
                 return [item["meta"]["state"] for item in ws.sent]
 
         self.assertEqual(asyncio.run(run_case()), ["injected", "processed"])
+
+    def test_adapter_transactions_are_serialized_across_inbound_tasks(self):
+        class ConcurrentProbeAdapter:
+            name = "cli"
+
+            def __init__(self):
+                self.active = 0
+                self.max_active = 0
+                self.lock = threading.Lock()
+
+            def handle(self, env):
+                with self.lock:
+                    self.active += 1
+                    self.max_active = max(self.max_active, self.active)
+                time.sleep(0.08)
+                with self.lock:
+                    self.active -= 1
+                return ""
+
+        class FakeWS:
+            async def send(self, payload):
+                pass
+
+        async def run_case():
+            helper = SessionHelper(load_config(BASE_ENV))
+            probe = ConcurrentProbeAdapter()
+            helper.adapter = probe
+            ws = FakeWS()
+            await asyncio.gather(
+                helper.process_inbound_message(ws, {"from": "workpulse#FB-2642", "body": "roster"}),
+                helper.process_inbound_message(ws, {"from": "peer#FB-2642", "body": "delivery"}),
+            )
+            return probe.max_active
+
+        self.assertEqual(asyncio.run(run_case()), 1)
 
     def test_provision_rejects_bad_source_and_audits(self):
         with tempfile.TemporaryDirectory() as tmp:
