@@ -3406,6 +3406,62 @@ func TestDeviceIDV1RejectsDifferentDeviceWithoutEvictingHolder(t *testing.T) {
 	}
 }
 
+func TestSessionChurnDoesNotAffectOtherSessionLookupAndRoute(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-stable", Name: "stable", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-stable", "stable")
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := "unifiedrobot:personal:ou_stable"
+	if err := hub.BindAccount(ctx, key.ID, account); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	stable := dialSession(t, ctx, srv.URL, "manager", key.ID, secret)
+	defer stable.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "manager")
+
+	churnDone := make(chan struct{})
+	go func() {
+		defer close(churnDone)
+		for i := 0; i < 5000; i++ {
+			client := &sessionClient{keyID: "churn-key", sessionName: "echo", connSeq: i + 1}
+			hub.mu.Lock()
+			hub.sessionClients["churn-key"] = map[string]*sessionClient{"echo": client}
+			hub.keyAccounts["churn-key"] = map[string]bool{"unifiedrobot:personal:ou_echo": true}
+			delete(hub.sessionClients["churn-key"], "echo")
+			delete(hub.sessionClients, "churn-key")
+			delete(hub.keyAccounts, "churn-key")
+			hub.mu.Unlock()
+		}
+	}()
+
+	for i := 0; i < 100; i++ {
+		if got, ok := hub.lookupKeyIDForSession(account, "manager"); !ok || got != key.ID {
+			t.Fatalf("stable lookup lost during unrelated churn: got=%q ok=%v", got, ok)
+		}
+		env := model.Envelope{
+			ID:   fmt.Sprintf("stable-route-%d", i),
+			From: feishuAddress("ou_stable", key.ID, "UnifiedRobot"),
+			To:   sessionAddress("manager", key.ID),
+			Body: "ping",
+		}
+		if err := hub.RouteEnvelope(ctx, env); err != nil {
+			t.Fatalf("stable route failed during unrelated churn: %v", err)
+		}
+		if got := readEnvelope(t, ctx, stable); got.ID != env.ID || got.Body != env.Body {
+			t.Fatalf("stable route mismatch: got=%+v want=%+v", got, env)
+		}
+	}
+	<-churnDone
+}
+
 func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
