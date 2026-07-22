@@ -5448,8 +5448,26 @@ func TestDeliveryCancelledAckFinalizesPendingAndPublishesRendererUpdate(t *testi
 	}
 	_, updates, unsub := hub.subscribeSessionEvents("key", "s1", "cancel-ack-test")
 	defer unsub()
+	for _, meta := range []map[string]any{
+		{"type": "delivery_cancel_ack", "result": "not_cancelable", "state": "processing", "message_id": "msg_helper", "delivery_id": "dlv_helper"},
+		{"type": "delivery_cancel_ack", "result": "not_found", "state": "", "message_id": "msg_helper", "delivery_id": "dlv_helper"},
+		{"type": "delivery_cancel_ack", "result": "cancelled", "state": "cancelled", "message_id": "wrong", "delivery_id": "dlv_helper"},
+	} {
+		if !hub.handleSessionDeliveryAck(ctx, c, model.Envelope{Meta: meta}) {
+			t.Fatalf("cancel ACK was not claimed: %+v", meta)
+		}
+		got, err := db.GetSessionDelivery(ctx, "dlv_helper")
+		if err != nil || got == nil || got.State != "delivered" {
+			t.Fatalf("negative ACK changed delivery: meta=%+v got=%+v err=%v", meta, got, err)
+		}
+		select {
+		case raw := <-updates:
+			t.Fatalf("negative ACK published renderer update: meta=%+v event=%s", meta, raw)
+		default:
+		}
+	}
 	if !hub.handleSessionDeliveryAck(ctx, c, model.Envelope{Meta: map[string]any{
-		"type": "delivery_ack", "state": "cancelled", "message_id": "msg_helper", "delivery_id": "dlv_helper",
+		"type": "delivery_cancel_ack", "result": "cancelled", "state": "cancelled", "message_id": "msg_helper", "delivery_id": "dlv_helper",
 	}}) {
 		t.Fatal("cancelled delivery ACK was not handled")
 	}
