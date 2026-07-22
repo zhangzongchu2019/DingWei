@@ -9,34 +9,35 @@ const assert = require('assert');
 const RENDERER_FILE = process.env.RENDERER_FILE || 'renderer-c2.html';
 const SESSION = 'c2-test-2642';
 
-async function bootContext(browser, rendererBody, { interruptRouteHits, initScript, controlRouteHits, controlReply } = {}) {
+async function bootContext(browser, rendererBody, { interruptRouteHits, initScript, controlRouteHits, controlReply, servePath = '/renderer', apiRequestUrls } = {}) {
   const context = await browser.newContext();
   if (initScript) await context.addInitScript(initScript);
   await context.route('http://renderer.test/**', async route => {
     const path = new URL(route.request().url()).pathname;
-    if (path === '/renderer') return route.fulfill({ contentType: 'text/html', body: rendererBody });
-    if (path === '/status') {
+    if (apiRequestUrls && /\/(events|input|interrupt|control|status|page)$/.test(path)) apiRequestUrls.push(path);
+    if (path === servePath) return route.fulfill({ contentType: 'text/html', body: rendererBody });
+    if (path === '/status' || path.endsWith('/status')) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
         session: SESSION, auth_mode: 'view_page_v2', readonly: false, state: 'idle',
       }) });
     }
-    if (path === '/events') return route.abort();
-    if (path === '/interrupt') {
+    if (path === '/events' || path.endsWith('/events')) return route.abort();
+    if (path === '/interrupt' || path.endsWith('/interrupt')) {
       interruptRouteHits && interruptRouteHits.push(route.request().method());
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true }) });
     }
-    if (path === '/control' && (controlRouteHits || controlReply)) {
+    if ((path === '/control' || path.endsWith('/control')) && (controlRouteHits || controlReply)) {
       const body = route.request().postDataJSON() || {};
       controlRouteHits && controlRouteHits.push(body);
       const reply = controlReply || { ok: true };
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify(reply) });
     }
-    if (path === '/page') {
+    if (path === '/page' || path.endsWith('/page')) {
       return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({
         page_id: 'p1', page_token: 't1', code: 'c1', state: 'locked',
       }) });
     }
-    if (path === '/page/resume') {
+    if (path === '/page/resume' || path.endsWith('/page/resume')) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
         page_id: 'p1', code: 'c1', state: 'locked', can_write: true,
       }) });
@@ -44,7 +45,7 @@ async function bootContext(browser, rendererBody, { interruptRouteHits, initScri
     return route.fulfill({ status: 404, body: 'nf' });
   });
   const page = await context.newPage();
-  await page.goto('http://renderer.test/renderer', { waitUntil: 'domcontentloaded' });
+  await page.goto('http://renderer.test' + servePath, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => pageIdentity?.page_id, null, { timeout: 8000 });
   return { context, page };
 }
@@ -164,7 +165,61 @@ async function main() {
     await context.close();
   });
 
-  // ── C2.2 中断确认状态机(G-HONEST) ──
+  await T('C2.1g canonical failed 终态→摘条目(failed/cancelled 正反之正)', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    await emit(page, inputPosted('m1', '条目'));
+    await emit(page, { kind: 'delivery_update', message_id: 'm1', observed_delivery_id: 'dlv-m1',
+      delivery_stage: 'helper_received', delivery_status: 'failed' });
+    await page.waitForFunction(() => document.querySelectorAll('.waiting-item').length === 0, null, { timeout: 5000 });
+    await context.close();
+  });
+
+  await T('C2.1h input_posted role=copy(源会话出站副本)→显示但不进 waiting(grammar 冻结)', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    await emit(page, inputPosted('m1', '副本那条', { delivery: { role: 'copy', copy_kind: 'view_observation' } }));
+    await page.waitForTimeout(300);
+    assert.strictEqual(await waitingItems(page).count(), 0, 'copy 不进待提交区');
+    await context.close();
+  });
+
+  // ── C2.3 scoped base(M1):自定位 /view 前缀全保,六端点同算法 ──
+  const SCOPED_FIXTURES = [
+    ['F1 /dingwei 前缀+尾斜杠', '/dingwei/view/sess-1/', '/dingwei/view/sess-1/control'],
+    ['F2 /dingwei 前缀无尾斜杠', '/dingwei/view/sess-1', '/dingwei/view/sess-1/control'],
+    ['F3 /dingwei 前缀带页名', '/dingwei/view/sess-1/renderer', '/dingwei/view/sess-1/control'],
+    ['F4 裸 /view', '/view/sess-1/', '/view/sess-1/control'],
+  ];
+  for (const [name, servePath, expectControl] of SCOPED_FIXTURES) {
+    await T(`C2.3 ${name}:真点击删除→POST ${expectControl}+六端点同算法`, async () => {
+      const hits = [];
+      const { context, page } = await bootContext(browser, rendererBody, { servePath, controlRouteHits: hits, controlReply: { ok: true } });
+      const api = await page.evaluate(() => API);
+      const base = servePath.replace(/\/(renderer)?$/, '');
+      for (const ep of ['events', 'input', 'interrupt', 'control', 'status', 'page']) {
+        assert.strictEqual(api[ep], `${base}/${ep}`, `${name} API.${ep} 同算法`);
+      }
+      assert.strictEqual(api.tasks, '/tasks', 'tasks 全局端点不 scoped');
+      await emit(page, inputPosted('m1', '要删的那条'));
+      await page.locator('.waiting-cancel-btn').click();
+      await waitNote(page, '取消已请求');
+      assert.strictEqual(hits.length, 1, '真点击发出 1 次 control');
+      await context.close();
+    });
+  }
+
+  await T('C2.3 F5 根直出回退:base=根相对,control 404→诚实"取消未发出"(G-HONEST 不破)', async () => {
+    const { context, page } = await bootContext(browser, rendererBody, { servePath: '/renderer' });
+    const api = await page.evaluate(() => API);
+    for (const ep of ['events', 'input', 'interrupt', 'control', 'status', 'page']) {
+      assert.strictEqual(api[ep], `/${ep}`, `根直出 API.${ep}=/${ep}`);
+    }
+    await emit(page, inputPosted('m1', '要删的那条'));
+    await page.locator('.waiting-cancel-btn').click();
+    await waitNote(page, '取消未发出');
+    await context.close();
+  });
+
+
   await T('C2.2a 点中断→立即"已请求中断";无 transport 时回退 legacy /interrupt(POST 200≠已发出)', async () => {
     const hits = [];
     const { context, page } = await bootContext(browser, rendererBody, { interruptRouteHits: hits });

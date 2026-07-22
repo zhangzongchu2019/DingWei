@@ -877,14 +877,18 @@
     const turnCost = document.getElementById('turnCost');
     const totalCost = document.getElementById('totalCost');
 
+    // VS 代理端点自定位 scoped base(M1):保留 /view 前全部 pathname 前缀(/dingwei/view/<sess>/ → /dingwei/view/<sess>),
+    // 未命中(根直出/nginx)→''=根相对。VS _serve_file 字面量改写降为冗余(本处不再含 ''/ep'' 引号字面量,不会双前缀)。
+    const API_BASE = (location.pathname.match(/^(.*?\/view\/[^/]+)/) || [null, ''])[1];
+    const apiEp = p => API_BASE + '/' + p;
     const API = {
-      events: '/events',
-      input: '/input',
-      interrupt: '/interrupt',
-      control: '/control',
-      status: '/status',
-      page: '/page',
-      tasks: '/tasks',
+      events: apiEp('events'),
+      input: apiEp('input'),
+      interrupt: apiEp('interrupt'),
+      control: apiEp('control'),
+      status: apiEp('status'),
+      page: apiEp('page'),
+      tasks: '/tasks',  // 全局投影端点(C3:VS_TASKS_FILE 快照,非 session 子路径;生产 VS 尚无 handler)——不 scoped,勿拼 base
     };
     let eventSource = null;
     let eventSourceGeneration = 0;
