@@ -639,13 +639,25 @@ class SessionHelper:
         body = str(env.get("body") or "")
         if not body:
             return False
-        if self.cfg.mode in ("cli", "driver") and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
+        if self.cfg.mode == "cli":
+            try:
+                # Consume and discard the guide response inside the same adapter
+                # transaction. A bare inject_text leaves its output in output_q,
+                # where the first real delivery can incorrectly claim it.
+                async with self.adapter_handle_lock:
+                    await asyncio.to_thread(self.adapter.handle, env)
+                print("[agent_skill] injected; response drained", flush=True)
+                return True
+            except Exception as exc:
+                print(f"[agent_skill] inject failed: {exc}", flush=True)
+                return False
+        if self.cfg.mode == "driver" and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
             started = await asyncio.to_thread(self.adapter.start)
             if started:
                 await asyncio.to_thread(self.adapter.inject_text, body)
                 print("[agent_skill] injected", flush=True)
                 return True
-            return False  # CLI 未就绪，先不回执，下次重推时再试
+            return False
         try:
             await asyncio.to_thread(self.adapter.handle, env)
             return True
