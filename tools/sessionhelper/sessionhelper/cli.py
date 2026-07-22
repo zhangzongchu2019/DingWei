@@ -400,6 +400,7 @@ class CLIAdapter:
 
     def collect_output(self, wait_seconds: float) -> list[str]:
         deadline = time.time() + max(0.1, wait_seconds)
+        quiet_window = max(2.0, self.cfg.cli_settle_seconds)
         chunks: list[str] = []
         while time.time() < deadline:
             try:
@@ -408,8 +409,11 @@ class CLIAdapter:
                 continue
             if chunk:
                 chunks.append(chunk)
-                if time.time() + 0.5 < deadline:
-                    deadline = time.time() + 0.5
+                # A prompt/redraw chunk can precede the actual reply. Keep the
+                # transaction open until the PTY has been quiet long enough;
+                # otherwise the next delivery can inherit this reply.
+                if time.time() + quiet_window < deadline:
+                    deadline = time.time() + quiet_window
         return chunks
 
     def collect_transcript_reply(self, prompt: str, wait_seconds: float) -> tuple[str, str]:

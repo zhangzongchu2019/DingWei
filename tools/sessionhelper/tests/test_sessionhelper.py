@@ -1356,6 +1356,22 @@ class SessionHelperTest(unittest.TestCase):
 
         self.assertEqual(reply, "RIG_ECHO:M5-F-current-run")
 
+    def test_cli_pty_reply_waits_past_early_prompt_chunk(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="cline", SH_CLI_REPLY_WAIT="3"))
+        adapter = CLIAdapter(cfg)
+        adapter.output_q.put(">")
+
+        def delayed_reply():
+            time.sleep(0.8)
+            adapter.output_q.put("RIG_ECHO:M5-F-current-run")
+
+        thread = threading.Thread(target=delayed_reply)
+        thread.start()
+        chunks = adapter.collect_output(3)
+        thread.join()
+
+        self.assertEqual(chunks, [">", "RIG_ECHO:M5-F-current-run"])
+
     def test_provision_rejects_bad_source_and_audits(self):
         with tempfile.TemporaryDirectory() as tmp:
             cfg = load_config(dict(BASE_ENV, SH_PROVISION_AUDIT_DB=str(Path(tmp) / "audit.db")))
