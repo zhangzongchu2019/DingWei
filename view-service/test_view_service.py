@@ -53,57 +53,46 @@ class ViewStatePersistenceTest(unittest.TestCase):
         self.assertEqual(os.stat(vs.STATE_FILE).st_mode & 0o777, 0o600)
 
 
-class RendererCanaryTest(unittest.TestCase):
-    def test_canary_session_uses_canary_renderer_and_other_uses_default(self):
+class ProductionRendererTest(unittest.TestCase):
+    def test_all_sessions_use_single_production_renderer(self):
         with tempfile.TemporaryDirectory() as tmp:
-            default_renderer = os.path.join(tmp, "default.html")
-            canary_renderer = os.path.join(tmp, "canary.html")
-            with open(default_renderer, "wb") as fh:
-                fh.write(b"default renderer")
-            with open(canary_renderer, "wb") as fh:
-                fh.write(b"canary renderer")
+            renderer = os.path.join(tmp, "production-renderer.html")
+            with open(renderer, "wb") as fh:
+                fh.write(b"production renderer")
+            with mock.patch.object(vs, "RENDERER_PATH", renderer):
+                self.assertEqual(vs._read_renderer(), b"production renderer")
 
-            with mock.patch.multiple(
-                vs,
-                RENDERER=default_renderer,
-                CANARY_RENDERER=canary_renderer,
-                CANARY_SESSIONS=frozenset({"zzc-reviewer-2642"}),
-            ):
-                self.assertEqual(vs._read_renderer("zzc-reviewer-2642"), b"canary renderer")
-                self.assertEqual(vs._read_renderer("zzc-dev55-2642"), b"default renderer")
+    def test_all_html_artifacts_are_free_of_production_backdoors(self):
+        root = os.path.dirname(vs.__file__)
+        forbidden = ("useMockApi", "?mock=1", "params.get('unlocked')", "mockEvents",
+                     "mock-model", "demo-1a2b", "unlockCode: '1460'")
+        html_files = [name for name in os.listdir(root) if name.endswith(".html")]
+        self.assertEqual(html_files, ["renderer-canary-sse.html"])
+        for name in html_files:
+            with open(os.path.join(root, name), encoding="utf-8") as fh:
+                text = fh.read()
+            for token in forbidden:
+                self.assertNotIn(token, text, f"{token!r} remains in {name}")
 
-    def test_empty_canary_config_keeps_default_renderer(self):
-        with mock.patch.multiple(vs, CANARY_RENDERER="", CANARY_SESSIONS=frozenset()):
-            self.assertEqual(vs._renderer_path_for_session("any-session"), vs.RENDERER)
+    def test_session_query_cannot_select_target_and_missing_session_fails_closed(self):
+        handler = object.__new__(vs._Handler)
+        handler.path = "/status?session=attacker-manager-0000"
+        handler.headers = {}
+        with mock.patch.object(vs, "DEFAULT_SESSION", ""):
+            self.assertEqual(handler._session(), "")
+        with mock.patch.object(vs, "DEFAULT_SESSION", "fixed-manager-2642"):
+            self.assertEqual(handler._session(), "fixed-manager-2642")
+        handler.headers = {"X-DW-Session": "trusted-manager-2642"}
+        self.assertEqual(handler._session(), "trusted-manager-2642")
 
-    def test_manager_and_prodops_share_one_renderer_track(self):
-        with mock.patch.multiple(
-            vs,
-            RENDERER="stable.html",
-            CANARY_RENDERER="canary.html",
-            CANARY_SESSIONS=frozenset({"zzc-manager-2642"}),
-        ):
-            self.assertEqual(vs._renderer_path_for_session("zzc-manager-2642"), "canary.html")
-            self.assertEqual(vs._renderer_path_for_session("zzc-prodops-2642"), "canary.html")
-            self.assertEqual(vs._renderer_path_for_session("zzc-tester-2642"), "stable.html")
-
-        with mock.patch.multiple(
-            vs,
-            RENDERER="stable.html",
-            CANARY_RENDERER="canary.html",
-            CANARY_SESSIONS=frozenset({"zzc-prodops-2642"}),
-        ):
-            self.assertEqual(vs._renderer_path_for_session("zzc-manager-2642"), "canary.html")
-            self.assertEqual(vs._renderer_path_for_session("zzc-prodops-2642"), "canary.html")
-
-    def test_manager_prodops_cohort_does_not_cross_owner_or_key_tail(self):
-        with mock.patch.multiple(
-            vs,
-            CANARY_RENDERER="canary.html",
-            CANARY_SESSIONS=frozenset({"alice-manager-a1b2"}),
-        ):
-            self.assertFalse(vs._session_uses_canary_renderer("bob-prodops-a1b2"))
-            self.assertFalse(vs._session_uses_canary_renderer("alice-prodops-c3d4"))
+    def test_status_rejects_request_without_trusted_or_fixed_session(self):
+        handler = object.__new__(vs._Handler)
+        handler.path = "/status?session=attacker-manager-0000"
+        handler.headers = {}
+        handler.send_error = mock.Mock()
+        with mock.patch.object(vs, "DEFAULT_SESSION", ""):
+            handler._serve_status()
+        handler.send_error.assert_called_once_with(400, "session required")
 
     def _render_for_public_base(self, public_base):
         handler = object.__new__(vs._Handler)
@@ -162,8 +151,7 @@ class ViewerStabilityTest(unittest.TestCase):
             return 200, {"viewer_id": "viewer-stable", "can_write": False}
 
         results = []
-        with mock.patch.object(vs, "_hub_post", side_effect=fake_post), \
-                mock.patch.object(vs, "AUTO_UNLOCK", False):
+        with mock.patch.object(vs, "_hub_post", side_effect=fake_post):
             threads = [threading.Thread(target=lambda: results.append(vs._ensure_ready("reviewer"))) for _ in range(2)]
             for thread in threads:
                 thread.start()

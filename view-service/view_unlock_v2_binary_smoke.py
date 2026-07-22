@@ -156,9 +156,9 @@ def main():
         hub_env["VIEW_ROUTING_CONFIG"] = str(routing)
         vs_env = {**os.environ, "VS_PORT": str(vs_port), "VS_SESSION": SESSION,
                   "VS_VIEW_UNLOCK_V2": "1", "VS_TARGET_NAME": "canary",
-                  "VS_HUB_INTERNAL": f"http://127.0.0.1:{internal_port}", "VS_HUB_PUBLIC": hub_url,
+                  "VS_HUB_INTERNAL": f"http://127.0.0.1:{internal_port}",
                   "VS_HUB_TO_VS_SECRET_FILE": str(forward), "VS_TO_HUB_SECRET_FILE": str(reverse),
-                  "VS_PAGE_DB": str(tmp / "pages.db"), "VS_RENDERER": str(ROOT / "view-service/renderer-canary-sse.html")}
+                  "VS_PAGE_DB": str(tmp / "pages.db")}
         logs = {name: open(tmp / f"{name}.log", "w+") for name in ("hub", "vs", "helper")}
         hub = vs = helper = None
         try:
@@ -166,6 +166,9 @@ def main():
                                   stdout=logs["vs"], stderr=subprocess.STDOUT)
             hub = subprocess.Popen([binary], cwd=ROOT, env=hub_env, stdout=logs["hub"], stderr=subprocess.STDOUT)
             wait_http(f"{hub_url}/readyz"); wait_http(f"{vs_url}/status")
+            assert post(f"{hub_url}/api/terminal/mock-unlock", {"code": "0000", "session_name": SESSION})[0] == 404
+            status, fixed_page = post(f"{vs_url}/page?session=attacker-manager-0000", {})
+            assert status == 201 and fixed_page.get("code", "").startswith(SESSION + "-"), fixed_page
             cli_marker = tmp / "cli-output.txt"
             cli_program = tmp / "echo_cli.py"
             cli_program.write_text(

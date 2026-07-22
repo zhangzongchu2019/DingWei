@@ -2,14 +2,13 @@
 
 与 sidecar 的区别:sidecar 寄生在 helper 进程里、共享 driver;
 View Service 是独立进程,只跟 **hub** 打交道(不认识 driver):
-  GET  /                浏览器页面(renderer.html)
+  GET  /                浏览器页面(renderer-canary-sse.html)
   GET  /events          SSE:转发 hub /internal/view/{session}/events(C2),顺带记成本
   POST /input {text}    → hub /internal/view/{session}/input(C3),必要时先解锁
   GET  /status          状态栏数据(会话/成本/内存/磁盘/时间)
 
 会话来源:hub 入口路由器(C4)反代时带的 X-DW-Session 头;缺省用 VS_SESSION。
-鉴权:向 hub /internal/view/authorize 注册虚拟 viewer;演示用 mock-unlock(code 0000)
-自动解锁——真上线换成"页面出码→飞书 #unlock→轮询 authorize"。
+鉴权:向 hub /internal/view/authorize 注册虚拟 viewer，页面出码后由飞书 #unlock 授权。
 """
 from __future__ import annotations
 
@@ -26,22 +25,14 @@ import threading
 import urllib.request
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 
 from view_page_store import ViewPageStore
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RENDERER = os.environ.get("VS_RENDERER", os.path.join(BASE_DIR, "renderer.html"))
-CANARY_SESSIONS = frozenset(
-    session.strip()
-    for session in os.environ.get("VS_CANARY_SESSIONS", "").split(",")
-    if session.strip()
-)
-CANARY_RENDERER = os.environ.get("VS_CANARY_RENDERER", "").strip()
+RENDERER_PATH = os.path.join(BASE_DIR, "renderer-canary-sse.html")
 HUB_INTERNAL = os.environ.get("VS_HUB_INTERNAL", "http://127.0.0.1:8792").rstrip("/")
-HUB_PUBLIC = os.environ.get("VS_HUB_PUBLIC", "http://127.0.0.1:8791").rstrip("/")
 DEFAULT_SESSION = os.environ.get("VS_SESSION", "")
-AUTO_UNLOCK = os.environ.get("VS_AUTO_UNLOCK", "1") == "1"   # 演示便利:mock-unlock 自动解锁
 STATE_FILE = os.environ.get("VS_STATE_FILE", os.path.join(BASE_DIR, "view-state.json"))
 VIEW_UNLOCK_V2 = os.environ.get("VS_VIEW_UNLOCK_V2", "0") == "1"
 VIEW_TARGET_NAME = os.environ.get("VS_TARGET_NAME", "").strip()
@@ -183,28 +174,9 @@ def _hub_v2_input(session: str, page_id: str, request_id: str, text: str) -> tup
         return 0, {"error": str(exc)}
 
 
-def _renderer_path_for_session(session: str) -> str:
-    if CANARY_RENDERER and _session_uses_canary_renderer(session):
-        return CANARY_RENDERER
-    return RENDERER
-
-
-def _session_uses_canary_renderer(session: str) -> bool:
-    if session in CANARY_SESSIONS:
-        return True
-    # manager and prodops are one operational view cohort. A rollout must not
-    # leave the two control-plane views on different renderer contracts.
-    match = re.fullmatch(r"([a-z0-9]+)-(manager|prodops)-([0-9a-f]{4})", session)
-    if not match:
-        return False
-    owner, role, key_tail = match.groups()
-    peer_role = "prodops" if role == "manager" else "manager"
-    return f"{owner}-{peer_role}-{key_tail}" in CANARY_SESSIONS
-
-
-def _read_renderer(session: str) -> bytes:
-    # Per-request read keeps renderer hot updates working for both tracks.
-    with open(_renderer_path_for_session(session), "rb") as fh:
+def _read_renderer() -> bytes:
+    # Per-request read keeps the single production renderer hot-updatable.
+    with open(RENDERER_PATH, "rb") as fh:
         return fh.read()
 
 
@@ -316,8 +288,6 @@ def _ensure_ready_locked(session: str) -> dict:
             st["viewer_id"] = reg["viewer_id"]
             st["code"] = reg.get("code", "")
             _save_state_locked()
-        if AUTO_UNLOCK and st["code"]:  # 演示模式(mock-unlock 开时)才自动解锁
-            _hub_post(HUB_PUBLIC, "/api/terminal/mock-unlock", {"code": "0000", "session_name": session})
     return st
 
 
@@ -356,10 +326,7 @@ class _Handler(BaseHTTPRequestHandler):
         s = self.headers.get("X-DW-Session")  # hub 路由器反代时带
         if s:
             return s.strip()
-        q = parse_qs(urlparse(self.path).query)
-        if q.get("session"):
-            return q["session"][0]
-        return DEFAULT_SESSION
+        return DEFAULT_SESSION.strip()
 
     def do_GET(self):
         path = urlparse(self.path).path
@@ -373,7 +340,9 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _serve_file(self):
         try:
-            body = _read_renderer(self._session())
+            if not self._session():
+                return self.send_error(400, "session required")
+            body = _read_renderer()
         except Exception as exc:
             return self.send_error(500, str(exc))
         # The trusted router supplies the session. This process-level base is a deployment fact,
@@ -394,6 +363,8 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _serve_events(self):
         session = self._session()
+        if not session:
+            return self.send_error(400, "session required")
         _ensure_ready(session)
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
@@ -440,6 +411,8 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _serve_status(self):
         session = self._session()
+        if not session:
+            return self.send_error(400, "session required")
         if VIEW_UNLOCK_V2:
             body = json.dumps({
                 "session": session, "session_id": session, "state": "idle", "driver": "via-hub",
@@ -481,10 +454,13 @@ class _Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == CONTROL_UNLOCK_PATH:
             return self._control_unlock()
+        session = self._session()
+        if not session:
+            return self.send_error(400, "session required")
         if path == "/page":
             if not VIEW_UNLOCK_V2:
                 return self.send_error(404)
-            page = _get_page_store().create_page(self._session())
+            page = _get_page_store().create_page(session)
             return self._json_response(201, page)
         if path in ("/page/resume", "/page/disconnect"):
             if not VIEW_UNLOCK_V2:
@@ -498,11 +474,10 @@ class _Handler(BaseHTTPRequestHandler):
             if path == "/page/disconnect":
                 ok = _get_page_store().mark_disconnected(page_id, page_token)
                 return self._json_response(200 if ok else 403, {"ok": ok})
-            page = _get_page_store().resume_page(page_id, page_token, self._session())
+            page = _get_page_store().resume_page(page_id, page_token, session)
             return self._json_response(200, page) if page else self._json_response(403, {"ok": False})
         if path != "/input":
             return self.send_error(404)
-        session = self._session()
         length = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(length) if length else b"{}"
         try:
@@ -565,8 +540,8 @@ def main():
     port = int(os.environ.get("VS_PORT", "19320"))
     sweeper = _start_page_sweeper()
     srv = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
-    print(f"[view-service] :{port} hub_internal={HUB_INTERNAL} hub_public={HUB_PUBLIC} "
-          f"session={DEFAULT_SESSION or '(from X-DW-Session)'} renderer={RENDERER} "
+    print(f"[view-service] :{port} hub_internal={HUB_INTERNAL} "
+          f"session={DEFAULT_SESSION or '(from X-DW-Session)'} renderer={RENDERER_PATH} "
           f"public_view_base={PUBLIC_VIEW_BASE}", flush=True)
     try:
         srv.serve_forever()

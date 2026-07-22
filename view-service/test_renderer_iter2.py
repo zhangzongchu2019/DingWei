@@ -7,7 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parent
 
 class RendererIter2ContractTest(unittest.TestCase):
     def test_shared_waiting_and_progress_markup(self):
-        for name in ("renderer.html", "renderer-canary-sse.html"):
+        for name in ("renderer-canary-sse.html",):
             with self.subTest(renderer=name):
                 text = (ROOT / name).read_text()
                 self.assertNotIn('class="waiting-title"', text)
@@ -32,7 +32,7 @@ class RendererIter2ContractTest(unittest.TestCase):
         self.assertIn("if (!pageAuthorized && incomingState === 'readonly')", text)
 
     def test_shared_lock_rendering_is_idempotent_and_focus_safe(self):
-        for name in ("renderer.html", "renderer-canary-sse.html"):
+        for name in ("renderer-canary-sse.html",):
             with self.subTest(renderer=name):
                 text = (ROOT / name).read_text()
                 self.assertIn("function setHumanInputDisabled(disabled)", text)
