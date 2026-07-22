@@ -5380,6 +5380,93 @@ func TestInternalViewEventsReplaysOnSubscribe(t *testing.T) {
 	}
 }
 
+func TestInternalViewCancelRemovesPendingAndPublishesRendererUpdate(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.mu.Lock()
+	hub.sessionClients["key"] = map[string]*sessionClient{"s1": {keyID: "key", sessionName: "s1", connSeq: 1}}
+	st := hub.terminalForSession("key", "s1")
+	st.writerPage, st.writerToken, st.writerUntil = "viewer", "token", time.Now().Add(time.Minute)
+	hub.mu.Unlock()
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+		ID: "dlv_pending", KeyID: "key", SessionName: "s1", Envelope: `{}`,
+		SourceMessageID: "msg_pending", SourceType: "view",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, updates, unsub := hub.subscribeSessionEvents("key", "s1", "cancel-test")
+	defer unsub()
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /internal/view/{session}/cancel", hub.HandleInternalViewCancel)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	post := func(body string) (int, string) {
+		resp, err := http.Post(srv.URL+"/internal/view/s1/cancel", "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(b)
+	}
+	if code, _ := post(`{"viewer_id":"viewer","token":"token","message_id":"wrong","delivery_id":"dlv_pending"}`); code != http.StatusConflict {
+		t.Fatalf("mismatched G-ADDR status=%d, want 409", code)
+	}
+	code, body := post(`{"viewer_id":"viewer","token":"token","message_id":"msg_pending","delivery_id":"dlv_pending"}`)
+	if code != http.StatusOK || !strings.Contains(body, `"state":"cancelled"`) {
+		t.Fatalf("cancel response=%d %s", code, body)
+	}
+	got, err := db.GetSessionDelivery(ctx, "dlv_pending")
+	if err != nil || got == nil || got.State != "cancelled" {
+		t.Fatalf("delivery after cancel=%+v err=%v", got, err)
+	}
+	select {
+	case raw := <-updates:
+		var event map[string]any
+		if err := json.Unmarshal([]byte(raw), &event); err != nil || event["kind"] != "delivery_update" || event["delivery_status"] != "cancelled" || event["observed_delivery_id"] != "dlv_pending" || event["cancelable"] != false {
+			t.Fatalf("renderer update=%s err=%v", raw, err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("renderer did not receive cancelled update")
+	}
+	if code, _ := post(`{"viewer_id":"viewer","token":"token","message_id":"msg_pending","delivery_id":"dlv_pending"}`); code != http.StatusConflict {
+		t.Fatalf("repeat terminal cancel status=%d, want 409", code)
+	}
+}
+
+func TestDeliveryCancelledAckFinalizesPendingAndPublishesRendererUpdate(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	c := &sessionClient{keyID: "key", sessionName: "s1", connSeq: 1}
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+		ID: "dlv_helper", KeyID: "key", SessionName: "s1", Envelope: `{}`,
+		SourceMessageID: "msg_helper", SourceType: "view",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpdateSessionDelivery(ctx, "dlv_helper", "delivered", "", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	_, updates, unsub := hub.subscribeSessionEvents("key", "s1", "cancel-ack-test")
+	defer unsub()
+	if !hub.handleSessionDeliveryAck(ctx, c, model.Envelope{Meta: map[string]any{
+		"type": "delivery_ack", "state": "cancelled", "message_id": "msg_helper", "delivery_id": "dlv_helper",
+	}}) {
+		t.Fatal("cancelled delivery ACK was not handled")
+	}
+	got, err := db.GetSessionDelivery(ctx, "dlv_helper")
+	if err != nil || got == nil || got.State != "cancelled" {
+		t.Fatalf("delivery after helper ACK=%+v err=%v", got, err)
+	}
+	select {
+	case raw := <-updates:
+		if !strings.Contains(raw, `"delivery_status":"cancelled"`) || !strings.Contains(raw, `"observed_delivery_id":"dlv_helper"`) {
+			t.Fatalf("renderer update=%s", raw)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("renderer did not receive helper-confirmed cancellation")
+	}
+}
+
 // C3(feat/view-service-dock):内网鉴权/输入口 —— 注册虚拟 viewer、
 // 解锁前输入被拒(auth gate)、#unlock 后 authorize 报可写且同一 token、未知 viewer 404。
 func TestInternalViewAuthorizeAndInputAuthGate(t *testing.T) {

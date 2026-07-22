@@ -177,6 +177,7 @@ func run(logger *slog.Logger) error {
 	internalMux.HandleFunc("POST /internal/view/authorize", prefixHub.HandleInternalViewAuthorize)
 	internalMux.HandleFunc("POST /internal/view/{session}/input", prefixHub.HandleInternalViewInput)
 	internalMux.HandleFunc("POST /internal/view/{session}/interrupt", prefixHub.HandleInternalViewInterrupt)
+	internalMux.HandleFunc("POST /internal/view/{session}/cancel", prefixHub.HandleInternalViewCancel)
 	internalMux.HandleFunc("POST /internal/view-v2/{session}/input", prefixHub.HandleInternalViewV2Input)
 	if strings.EqualFold(strings.TrimSpace(os.Getenv("WP_DEBUG_HOLD_LOCK")), "true") {
 		internalMux.HandleFunc("POST /debug/hold-lock", prefixHub.HandleDebugHoldLock)

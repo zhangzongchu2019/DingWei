@@ -1438,6 +1438,37 @@ func (s *SQLite) GetSessionDelivery(ctx context.Context, id string) (*model.Sess
 	return scanSessionDelivery(s.db.QueryRowContext(ctx, sessionDeliverySelect+` WHERE id=?`, id))
 }
 
+// CancelPendingSessionDelivery is the injection-before cancellation CAS. Only a
+// delivery that has not left the Hub queue may transition to cancelled; a late
+// cancel racing a claim or processed ACK therefore fails without regressing state.
+func (s *SQLite) CancelPendingSessionDelivery(ctx context.Context, messageID, deliveryID, keyID, sessionName string) (bool, error) {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	result, err := s.db.ExecContext(ctx, `UPDATE session_delivery
+		SET state='cancelled',last_error='cancelled_by_authorized_view',lease_until=NULL,updated_at=?
+		WHERE id=? AND source_message_id=? AND key_id=? AND session_name=? AND state='queued'`,
+		now, deliveryID, messageID, keyID, sessionName)
+	if err != nil {
+		return false, err
+	}
+	rows, err := result.RowsAffected()
+	return rows == 1, err
+}
+
+// ConfirmSessionDeliveryCancelled records the helper's authoritative removal
+// acknowledgement. processed/dead records remain immutable under a late ACK.
+func (s *SQLite) ConfirmSessionDeliveryCancelled(ctx context.Context, messageID, deliveryID, keyID, sessionName string) (bool, error) {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	result, err := s.db.ExecContext(ctx, `UPDATE session_delivery
+		SET state='cancelled',last_error='cancelled_by_authorized_view',lease_until=NULL,updated_at=?
+		WHERE id=? AND source_message_id=? AND key_id=? AND session_name=? AND state IN ('sent','delivered')`,
+		now, deliveryID, messageID, keyID, sessionName)
+	if err != nil {
+		return false, err
+	}
+	rows, err := result.RowsAffected()
+	return rows == 1, err
+}
+
 func (s *SQLite) FailMessage(ctx context.Context, id, reason string) error {
 	_, err := s.db.ExecContext(ctx,
 		`UPDATE message

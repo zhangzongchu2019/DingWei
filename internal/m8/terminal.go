@@ -78,6 +78,13 @@ type viewInterruptRequest struct {
 	TurnID     string `json:"turn_id"`
 }
 
+type viewCancelRequest struct {
+	ViewerID   string `json:"viewer_id"`
+	Token      string `json:"token"`
+	MessageID  string `json:"message_id"`
+	DeliveryID string `json:"delivery_id"`
+}
+
 func terminalKey(keyID, sessionName string) string {
 	return keyID + "\x00" + sessionName
 }
@@ -384,9 +391,13 @@ func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) b
 	if metaString(env.Meta, "type") != terminalSessionEventType {
 		return false
 	}
-	data := env.Body
+	h.publishSessionEvent(c.keyID, c.sessionName, env.Body)
+	return true
+}
+
+func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
 	h.mu.Lock()
-	st := h.terminalForSession(c.keyID, c.sessionName)
+	st := h.terminalForSession(keyID, sessionName)
 	st.eventRing = append(st.eventRing, data)
 	if len(st.eventRing) > terminalEventRingCap {
 		st.eventRing = st.eventRing[len(st.eventRing)-terminalEventRingCap:]
@@ -402,7 +413,16 @@ func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) b
 		default: // 慢消费者不阻塞事件主路(与 output 扇出同纪律)
 		}
 	}
-	return true
+}
+
+func (h *Hub) publishDeliveryCancelled(keyID, sessionName, messageID, deliveryID, stage string) {
+	event, _ := json.Marshal(map[string]any{
+		"kind": "delivery_update", "message_id": messageID,
+		"observed_delivery_id": deliveryID, "delivery_stage": stage, "delivery_status": "cancelled",
+		"updated_at": time.Now().UTC().Format(time.RFC3339Nano), "reason": "",
+		"cancelable": false, "interruptible": false,
+	})
+	h.publishSessionEvent(keyID, sessionName, string(event))
 }
 
 // subscribeSessionEvents 注册一个内网事件订阅者(C2 的 SSE 端点使用):
@@ -823,6 +843,69 @@ func (h *Hub) HandleInternalViewInterrupt(w http.ResponseWriter, r *http.Request
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write([]byte(`{"ok":true,"state":"forwarded"}`))
+}
+
+// HandleInternalViewCancel removes an authorized delivery while it is still in
+// the Hub's pre-injection queue and publishes the terminal delivery update.
+func (h *Hub) HandleInternalViewCancel(w http.ResponseWriter, r *http.Request) {
+	sessionName := strings.TrimSpace(r.PathValue("session"))
+	var req viewCancelRequest
+	if sessionName == "" || strings.Contains(sessionName, "#") || json.NewDecoder(r.Body).Decode(&req) != nil ||
+		strings.TrimSpace(req.MessageID) == "" || strings.TrimSpace(req.DeliveryID) == "" {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	var keyID string
+	var c *sessionClient
+	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
+		keyID = st.keyID
+		c = h.sessionClients[st.keyID][st.sessionName]
+		st.writerUntil = time.Now().Add(terminalTokenTTL)
+	}
+	h.mu.Unlock()
+	if keyID == "" {
+		http.Error(w, "cancel not authorized or session offline", http.StatusForbidden)
+		return
+	}
+	if h.Repo == nil {
+		http.Error(w, "delivery store unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	delivery, err := h.Repo.GetSessionDelivery(r.Context(), req.DeliveryID)
+	if err != nil {
+		http.Error(w, "cancel failed", http.StatusInternalServerError)
+		return
+	}
+	if delivery == nil || delivery.SourceMessageID != req.MessageID || delivery.KeyID != keyID || delivery.SessionName != sessionName {
+		http.Error(w, "delivery not cancelable", http.StatusConflict)
+		return
+	}
+	if cancelled, err := h.Repo.CancelPendingSessionDelivery(r.Context(), req.MessageID, req.DeliveryID, keyID, sessionName); err != nil {
+		http.Error(w, "cancel failed", http.StatusInternalServerError)
+		return
+	} else if cancelled {
+		h.publishDeliveryCancelled(keyID, sessionName, req.MessageID, req.DeliveryID, "hub_received")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "state": "cancelled", "message_id": req.MessageID, "delivery_id": req.DeliveryID})
+		return
+	}
+	delivery, err = h.Repo.GetSessionDelivery(r.Context(), req.DeliveryID)
+	if err != nil || delivery == nil || (delivery.State != "sent" && delivery.State != "delivered") || c == nil {
+		http.Error(w, "delivery not cancelable", http.StatusConflict)
+		return
+	}
+	env := model.Envelope{
+		ID: randomHex(16), To: sessionAddress(sessionName, keyID), From: sessionAddress("workpulse", keyID), TS: time.Now().Unix(),
+		Meta: map[string]any{"type": "delivery_cancel", "system": true, "no_mirror": true, "message_id": req.MessageID, "delivery_id": req.DeliveryID},
+	}
+	if err := c.write(r.Context(), env); err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "state": "forwarded", "message_id": req.MessageID, "delivery_id": req.DeliveryID})
 }
 
 func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID, token, data string) error {

@@ -3145,7 +3145,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	}
 	id := metaString(env.Meta, "delivery_id")
 	state := metaString(env.Meta, "state")
-	if id == "" || (state != "delivered" && state != "processed" && state != "failed" && state != "busy") {
+	if id == "" || (state != "delivered" && state != "processed" && state != "failed" && state != "busy" && state != "cancelled") {
 		return true
 	}
 	d, err := h.Repo.GetSessionDelivery(ctx, id)
@@ -3155,7 +3155,15 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	if d.KeyID != c.keyID || d.SessionName != c.sessionName || d.State == "dead" || d.State == "cancelled" {
 		return true
 	}
-	if state == "processed" {
+	if state == "cancelled" {
+		messageID := metaString(env.Meta, "message_id")
+		if messageID != "" && messageID == d.SourceMessageID {
+			if cancelled, err := h.Repo.ConfirmSessionDeliveryCancelled(ctx, messageID, id, c.keyID, c.sessionName); err == nil && cancelled {
+				h.publishDeliveryCancelled(c.keyID, c.sessionName, messageID, id, "helper_received")
+				go h.drainSessionDeliveries(context.Background(), c)
+			}
+		}
+	} else if state == "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)

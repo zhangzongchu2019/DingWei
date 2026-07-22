@@ -92,6 +92,49 @@ func TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts(t *testing.T) {
 	}
 }
 
+func TestCancelPendingSessionDeliveryIsAddressedAndInjectionSafe(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	for _, d := range []model.SessionDelivery{
+		{ID: "dlv_pending", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_pending"},
+		{ID: "dlv_processed", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_processed"},
+		{ID: "dlv_helper", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_helper"},
+	} {
+		if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.UpdateSessionDelivery(ctx, "dlv_processed", "processed", "", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpdateSessionDelivery(ctx, "dlv_helper", "delivered", "", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := db.CancelPendingSessionDelivery(ctx, "wrong", "dlv_pending", "key", "home"); err != nil || ok {
+		t.Fatalf("mismatched message address cancelled=%v err=%v", ok, err)
+	}
+	if ok, err := db.CancelPendingSessionDelivery(ctx, "msg_processed", "dlv_processed", "key", "home"); err != nil || ok {
+		t.Fatalf("processed delivery cancelled=%v err=%v", ok, err)
+	}
+	if ok, err := db.CancelPendingSessionDelivery(ctx, "msg_pending", "dlv_pending", "key", "home"); err != nil || !ok {
+		t.Fatalf("pending delivery cancelled=%v err=%v", ok, err)
+	}
+	got, err := db.GetSessionDelivery(ctx, "dlv_pending")
+	if err != nil || got == nil || got.State != "cancelled" {
+		t.Fatalf("cancelled delivery=%+v err=%v", got, err)
+	}
+	if claimed, err := db.ClaimSessionDelivery(ctx, "key", "home", time.Now().Add(time.Second)); err != nil || claimed != nil {
+		if claimed == nil || claimed.ID != "dlv_helper" {
+			t.Fatalf("cancelled delivery remained claimable: %+v err=%v", claimed, err)
+		}
+	}
+	if ok, err := db.ConfirmSessionDeliveryCancelled(ctx, "msg_helper", "dlv_helper", "key", "home"); err != nil || !ok {
+		t.Fatalf("helper-confirmed cancel=%v err=%v", ok, err)
+	}
+	if ok, err := db.ConfirmSessionDeliveryCancelled(ctx, "msg_processed", "dlv_processed", "key", "home"); err != nil || ok {
+		t.Fatalf("late processed confirmation=%v err=%v", ok, err)
+	}
+}
+
 func TestMigrateUpgradesExistingDBWithSeenPersonAndBotSecret(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "workpulse-old.db")
 	ctx := context.Background()
