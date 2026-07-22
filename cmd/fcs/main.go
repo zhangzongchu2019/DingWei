@@ -56,9 +56,10 @@ func run(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	fatalErr := make(chan error, 1)
 	go func() {
-		if err := a.Run(ctx); err != nil && ctx.Err() == nil {
-			logger.Error("fcs inbound stopped", "error", err)
+		if err := a.Run(ctx); err != nil && ctx.Err() == nil && !errors.Is(err, context.Canceled) {
+			fatalErr <- err
 		}
 	}()
 
@@ -78,22 +79,24 @@ func run(logger *slog.Logger) error {
 		addr = ":8081"
 	}
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
-	serveErr := make(chan error, 1)
 	go func() {
 		logger.Info("fcs started", "addr", addr, "db", bs.DBPath, "transport", bs.FeishuTransport)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			serveErr <- err
+			fatalErr <- err
 		}
 	}()
 
+	var runErr error
 	select {
-	case err := <-serveErr:
+	case runErr = <-fatalErr:
 		stop()
-		return err
 	case <-ctx.Done():
 	}
 	logger.Info("fcs shutting down")
 	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return srv.Shutdown(shutCtx)
+	if err := srv.Shutdown(shutCtx); err != nil && runErr == nil {
+		runErr = err
+	}
+	return runErr
 }

@@ -28,15 +28,21 @@ type service struct {
 	rx    feishu.Receiver
 	dedup IngressDedup // ingress request_id assignment + dedup (G1-3)
 
-	mu    sync.RWMutex
-	sinks map[string]InboundSink // authenticatedHubID → sink (fanout targets)
+	mu               sync.RWMutex
+	sinks            map[string]sinkSubscription // authenticatedHubID → current subscription
+	nextSubscription uint64
+}
+
+type sinkSubscription struct {
+	id   uint64
+	sink InboundSink
 }
 
 // NewService builds the FCS server side over an existing feishu Gateway+Receiver.
 // (Extraction phase 1: same internal/feishu, just behind the FCS seam. Phase 2
 // moves this into its own process with RPC transport.)
 func NewService(gw feishu.Gateway, rx feishu.Receiver) *service {
-	return &service{gw: gw, rx: rx, dedup: newMemDedup(), sinks: map[string]InboundSink{}}
+	return &service{gw: gw, rx: rx, dedup: newMemDedup(), sinks: map[string]sinkSubscription{}}
 }
 
 // Send is the single outbound exit (converges runOutboundLoop + worker.sendReply).
@@ -70,11 +76,15 @@ func (s *service) Subscribe(authenticatedHubID string, sink InboundSink) (func()
 		return nil, fmt.Errorf("fcs: subscribe requires non-empty hub id and sink")
 	}
 	s.mu.Lock()
-	s.sinks[authenticatedHubID] = sink
+	s.nextSubscription++
+	subscriptionID := s.nextSubscription
+	s.sinks[authenticatedHubID] = sinkSubscription{id: subscriptionID, sink: sink}
 	s.mu.Unlock()
 	return func() {
 		s.mu.Lock()
-		delete(s.sinks, authenticatedHubID)
+		if current, ok := s.sinks[authenticatedHubID]; ok && current.id == subscriptionID {
+			delete(s.sinks, authenticatedHubID)
+		}
 		s.mu.Unlock()
 	}, nil
 }
@@ -122,8 +132,8 @@ func (s *service) Ingest(ctx context.Context, m model.Message) error {
 func (s *service) fanout(ctx context.Context, env InboundEnvelope) error {
 	s.mu.RLock()
 	targets := make(map[string]InboundSink, len(s.sinks))
-	for id, sink := range s.sinks {
-		targets[id] = sink
+	for id, subscription := range s.sinks {
+		targets[id] = subscription.sink
 	}
 	s.mu.RUnlock()
 

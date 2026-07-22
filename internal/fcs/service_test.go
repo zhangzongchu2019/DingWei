@@ -172,3 +172,26 @@ func TestIngressDedupDropsDuplicate(t *testing.T) {
 		t.Fatalf("duplicate native event delivered %d times, want 1 (dedup drops mirror回摄)", hub.count())
 	}
 }
+
+func TestSubscribeStaleCancelDoesNotDeleteReplacement(t *testing.T) {
+	svc := NewService(&stubGateway{}, &stubReceiver{})
+	oldSink := &recordingSink{}
+	newSink := &recordingSink{}
+	cancelOld, err := svc.Subscribe("hub-A", oldSink)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cancelNew, err := svc.Subscribe("hub-A", newSink)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cancelNew()
+	cancelOld() // old HTTP handler tears down after reconnect established
+
+	svc.mu.RLock()
+	current, ok := svc.sinks["hub-A"]
+	svc.mu.RUnlock()
+	if !ok || current.sink != newSink {
+		t.Fatalf("stale cancel removed replacement subscription: %+v", current)
+	}
+}
