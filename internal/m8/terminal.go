@@ -926,10 +926,8 @@ func (h *Hub) HandleInternalViewCancel(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	st, found := h.terminalBySessionNameLocked(sessionName)
 	var keyID string
-	var c *sessionClient
 	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
 		keyID = st.keyID
-		c = h.sessionClients[st.keyID][st.sessionName]
 		st.writerUntil = time.Now().Add(terminalTokenTTL)
 	}
 	h.mu.Unlock()
@@ -937,43 +935,69 @@ func (h *Hub) HandleInternalViewCancel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cancel not authorized or session offline", http.StatusForbidden)
 		return
 	}
-	if h.Repo == nil {
-		http.Error(w, "delivery store unavailable", http.StatusServiceUnavailable)
-		return
-	}
-	delivery, err := h.Repo.GetSessionDelivery(r.Context(), req.DeliveryID)
-	if err != nil {
-		http.Error(w, "cancel failed", http.StatusInternalServerError)
-		return
-	}
-	if delivery == nil || delivery.SourceMessageID != req.MessageID || delivery.KeyID != keyID || delivery.SessionName != sessionName {
-		http.Error(w, "delivery not cancelable", http.StatusConflict)
-		return
-	}
-	if cancelled, err := h.Repo.CancelPendingSessionDelivery(r.Context(), req.MessageID, req.DeliveryID, keyID, sessionName); err != nil {
-		http.Error(w, "cancel failed", http.StatusInternalServerError)
-		return
-	} else if cancelled {
-		h.publishDeliveryCancelled(keyID, sessionName, req.MessageID, req.DeliveryID, "hub_received")
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "state": "cancelled", "message_id": req.MessageID, "delivery_id": req.DeliveryID})
-		return
-	}
-	delivery, err = h.Repo.GetSessionDelivery(r.Context(), req.DeliveryID)
-	if err != nil || delivery == nil || (delivery.State != "sent" && delivery.State != "delivered") || c == nil {
-		http.Error(w, "delivery not cancelable", http.StatusConflict)
-		return
-	}
-	env := model.Envelope{
-		ID: randomHex(16), To: sessionAddress(sessionName, keyID), From: sessionAddress("workpulse", keyID), TS: time.Now().Unix(),
-		Meta: map[string]any{"type": "delivery_cancel", "system": true, "no_mirror": true, "message_id": req.MessageID, "delivery_id": req.DeliveryID},
-	}
-	if err := c.write(r.Context(), env); err != nil {
-		http.Error(w, err.Error(), http.StatusBadGateway)
+	result := h.cancelSessionDeliveryCore(r.Context(), keyID, sessionName, req.MessageID, req.DeliveryID)
+	writeSessionDeliveryCancelResult(w, req.MessageID, req.DeliveryID, result)
+}
+
+type sessionDeliveryCancelResult struct {
+	Status int
+	State  string
+	Error  string
+}
+
+func writeSessionDeliveryCancelResult(w http.ResponseWriter, messageID, deliveryID string, result sessionDeliveryCancelResult) {
+	if result.Status != http.StatusOK {
+		http.Error(w, result.Error, result.Status)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "state": "forwarded", "message_id": req.MessageID, "delivery_id": req.DeliveryID})
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok": true, "state": result.State, "message_id": messageID, "delivery_id": deliveryID,
+	})
+}
+
+// cancelSessionDeliveryCore contains the shared legacy and View V2 cancellation
+// behavior. It deliberately preserves the existing pre-injection race: this
+// endpoint connects cancellation to the Hub, but durable cancel intent is a
+// separate GA hardening task.
+func (h *Hub) cancelSessionDeliveryCore(ctx context.Context, keyID, sessionName, messageID, deliveryID string) sessionDeliveryCancelResult {
+	if h.Repo == nil {
+		return sessionDeliveryCancelResult{Status: http.StatusServiceUnavailable, Error: "delivery store unavailable"}
+	}
+	delivery, err := h.Repo.GetSessionDelivery(ctx, deliveryID)
+	if err != nil {
+		return sessionDeliveryCancelResult{Status: http.StatusInternalServerError, Error: "cancel failed"}
+	}
+	if delivery == nil || delivery.SourceMessageID != messageID || delivery.SessionName != sessionName || (keyID != "" && delivery.KeyID != keyID) {
+		return sessionDeliveryCancelResult{Status: http.StatusConflict, Error: "delivery not cancelable"}
+	}
+	if keyID == "" {
+		keyID = delivery.KeyID
+	}
+	if cancelled, err := h.Repo.CancelPendingSessionDelivery(ctx, messageID, deliveryID, keyID, sessionName); err != nil {
+		return sessionDeliveryCancelResult{Status: http.StatusInternalServerError, Error: "cancel failed"}
+	} else if cancelled {
+		h.publishDeliveryCancelled(keyID, sessionName, messageID, deliveryID, "hub_received")
+		return sessionDeliveryCancelResult{Status: http.StatusOK, State: "cancelled"}
+	}
+	delivery, err = h.Repo.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || delivery == nil || (delivery.State != "sent" && delivery.State != "delivered") {
+		return sessionDeliveryCancelResult{Status: http.StatusConflict, Error: "delivery not cancelable"}
+	}
+	h.mu.Lock()
+	c := h.sessionClients[keyID][sessionName]
+	h.mu.Unlock()
+	if c == nil {
+		return sessionDeliveryCancelResult{Status: http.StatusConflict, Error: "delivery not cancelable"}
+	}
+	env := model.Envelope{
+		ID: randomHex(16), To: sessionAddress(sessionName, keyID), From: sessionAddress("workpulse", keyID), TS: time.Now().Unix(),
+		Meta: map[string]any{"type": "delivery_cancel", "system": true, "no_mirror": true, "message_id": messageID, "delivery_id": deliveryID},
+	}
+	if err := c.write(ctx, env); err != nil {
+		return sessionDeliveryCancelResult{Status: http.StatusBadGateway, Error: err.Error()}
+	}
+	return sessionDeliveryCancelResult{Status: http.StatusOK, State: "forwarded"}
 }
 
 func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID, token, data string) error {
