@@ -96,8 +96,11 @@ type InboundEnvelope struct {
 // (design §0/§5.4). Field names/shape defer to B0's machine-readable schema;
 // this stub only pins WHAT FCS must supply so the seam compiles before B0 lands.
 type SourceStub struct {
-	Kind       string // "feishu"
-	Provenance string // 层① raw-event: webhook_verified|feishu_ws_authenticated|untrusted (unknown/空→untrusted, fail-closed)
+	Kind string // "feishu"
+	// Provenance is the raw enum computed by the authenticated FCS ingress adapter
+	// and preserved over RPC. It is normalized fail-closed at both ends; it is not
+	// an HTTP service attestation and never constitutes Hub trust_decision.
+	Provenance string // webhook_verified|feishu_ws_authenticated|untrusted
 	AttestedBy string // 层②: "fcs" — MUST be backed by verifiable transport evidence (Attestation)
 
 	Attestation AttestationStub

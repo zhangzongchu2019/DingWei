@@ -196,6 +196,15 @@ func TestRPCInboundFanoutThroughHubAdapters(t *testing.T) {
 	}
 }
 
+func TestEnvToMessageRejectsUnknownWireProvenance(t *testing.T) {
+	for _, provenance := range []string{"", "sender_claimed_verified", "future_unknown"} {
+		msg := envToMessage(InboundEnvelope{Source: SourceStub{Provenance: provenance}})
+		if msg.IngressProvenance != model.IngressUntrusted {
+			t.Fatalf("provenance %q normalized to %q", provenance, msg.IngressProvenance)
+		}
+	}
+}
+
 // waitSinks blocks until svc has at least n fanout sinks registered (same-package
 // access to the concrete service's subscription map).
 func waitSinks(t *testing.T, svc *service, n int) {

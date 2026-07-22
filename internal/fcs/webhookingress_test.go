@@ -54,7 +54,7 @@ func TestWebhookIngressUnsignedFeedsIngest(t *testing.T) {
 	ing := &captureIngester{}
 	srv := webhookIngressServer(t, fakeProvider{}, ing) // no keys → unsigned plaintext
 
-	body := `{"msg_id":"fm1","chat_type":"personal","open_id":"ou_1","sender_open_id":"ou_1","name":"Alice","text":"帮助"}`
+	body := `{"msg_id":"fm1","chat_type":"personal","open_id":"ou_1","sender_open_id":"ou_1","name":"Alice","text":"帮助","ingress_provenance":"webhook_verified"}`
 	resp, err := http.Post(srv.URL+"/webhook/dev", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST webhook: %v", err)
