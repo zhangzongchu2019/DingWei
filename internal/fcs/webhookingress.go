@@ -61,7 +61,7 @@ func NewWebhookIngress(provider BotChannelProvider, ingester Ingester, logger *s
 		verifier := NewWebhookVerifier(func(context.Context, string) (string, string, error) {
 			return encKey, vtoken, nil
 		})
-		data, _, err := verifier.VerifyWebhook(r.Context(), botID, raw)
+		data, provenance, err := verifier.VerifyWebhook(r.Context(), botID, raw)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -77,6 +77,7 @@ func NewWebhookIngress(provider BotChannelProvider, ingester Ingester, logger *s
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		msg.IngressProvenance = model.NormalizeIngressProvenance(model.IngressProvenance(provenance))
 		if err := ingester.Ingest(r.Context(), msg); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

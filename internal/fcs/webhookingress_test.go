@@ -70,8 +70,28 @@ func TestWebhookIngressUnsignedFeedsIngest(t *testing.T) {
 		t.Fatalf("ingested %d messages, want 1", len(ing.got))
 	}
 	m := ing.got[0]
-	if m.BotChannelID != "dev" || m.FeishuMsgID != "fm1" || m.ChatEntityID != "dev:personal:ou_1" || !strings.Contains(m.Content, "帮助") {
+	if m.BotChannelID != "dev" || m.FeishuMsgID != "fm1" || m.ChatEntityID != "dev:personal:ou_1" ||
+		!strings.Contains(m.Content, "帮助") || m.IngressProvenance != model.IngressUntrusted {
 		t.Fatalf("parsed message wrong: %+v", m)
+	}
+}
+
+func TestWebhookIngressVerifiedTokenPreservesProvenance(t *testing.T) {
+	ing := &captureIngester{}
+	srv := webhookIngressServer(t, fakeProvider{tok: "expected"}, ing)
+	body := `{"header":{"token":"expected"},"msg_id":"fm-verified","chat_type":"personal","open_id":"ou_1","text":"trusted"}`
+	resp, err := http.Post(srv.URL+"/webhook/dev", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusAccepted {
+		t.Fatalf("status=%d", resp.StatusCode)
+	}
+	ing.mu.Lock()
+	defer ing.mu.Unlock()
+	if len(ing.got) != 1 || ing.got[0].IngressProvenance != model.IngressWebhookVerified {
+		t.Fatalf("ingested=%+v", ing.got)
 	}
 }
 

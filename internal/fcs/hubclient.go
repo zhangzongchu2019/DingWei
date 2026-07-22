@@ -10,13 +10,10 @@ package fcs
 // Phase 2 (independence): svc becomes an RPC stub to a remote FCS process — this
 // file is unchanged; only the concrete Service impl changes.
 //
-// NOTE (design §0/§5, B0 dependency): InboundEnvelope carries A0 message_id/
-// request_id + the SourceStub trust-root fields, but the current model.Message has
-// no place for them (no Meta). Plumbing env.MessageID/RequestID/Source into the
-// hub's Envelope.Meta protected keys — and deriving trust_decision (§5.3) — lands
-// with B0's source object + A0/model integration. Until then this adapter converts
-// only the existing model.Message fields and drops the A0/source fields (marked
-// TODO) so hub behavior stays byte-equivalent to today.
+// NOTE (design §0/§5, B0 dependency): the existing model.IngressProvenance enum is
+// preserved across this seam so remote FCS remains behavior-equivalent to in-proc
+// Feishu ingress. Plumbing the richer MessageID/RequestID/attestation object into
+// protected Hub metadata and deriving trust_decision lands with B0.
 
 import (
 	"context"
@@ -96,8 +93,8 @@ func (r receiverClient) Start(ctx context.Context, onInbound func(ctx context.Co
 }
 
 // envToMessage converts a fanout InboundEnvelope back into the hub's model.Message.
-// TODO(B0/A0): carry env.MessageID/RequestID/Source into Envelope.Meta protected
-// keys + derive trust_decision (§5.3) once B0's source object lands.
+// TODO(B0/A0): carry env.MessageID/RequestID/full Source into Envelope.Meta
+// protected keys + derive trust_decision (§5.3) once B0's source object lands.
 func envToMessage(env InboundEnvelope) model.Message {
 	return model.Message{
 		ChatEntityID: env.ChatEntityID,
@@ -106,7 +103,10 @@ func envToMessage(env InboundEnvelope) model.Message {
 		FeishuMsgID:  env.FeishuMsgID,
 		ChatType:     model.ChatType(env.ChatType),
 		SenderOpenID: env.SenderOpenID,
-		Content:      env.Content,
+		IngressProvenance: model.NormalizeIngressProvenance(
+			model.IngressProvenance(env.Source.Provenance),
+		),
+		Content: env.Content,
 	}
 }
 

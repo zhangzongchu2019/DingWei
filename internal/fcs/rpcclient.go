@@ -78,28 +78,60 @@ func (c *rpcClient) Subscribe(authenticatedHubID string, sink InboundSink) (func
 		return nil, fmt.Errorf("fcs rpc: subscribe requires non-empty hub id and sink")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	u := c.base + RPCPathInbound + "?hub=" + url.QueryEscape(authenticatedHubID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	body, err := c.openInbound(ctx, authenticatedHubID)
 	if err != nil {
 		cancel()
 		return nil, err
 	}
+	go c.maintainInbound(ctx, body, authenticatedHubID, sink)
+	return cancel, nil
+}
+
+func (c *rpcClient) openInbound(ctx context.Context, authenticatedHubID string) (io.ReadCloser, error) {
+	u := c.base + RPCPathInbound + "?hub=" + url.QueryEscape(authenticatedHubID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := c.hc.Do(req)
 	if err != nil {
-		cancel()
 		return nil, fmt.Errorf("fcs rpc: open inbound stream: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
 		resp.Body.Close()
-		cancel()
 		return nil, fmt.Errorf("fcs rpc: inbound stream status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
-	go c.pumpInbound(ctx, resp.Body, authenticatedHubID, sink)
-	return func() {
-		cancel()
-		resp.Body.Close()
-	}, nil
+	return resp.Body, nil
+}
+
+// maintainInbound restores the subscription after a clean EOF or transport
+// failure. Events during the gap remain at-most-once until the durable ledger
+// lands, but a transient disconnect must not permanently blind the hub.
+func (c *rpcClient) maintainInbound(ctx context.Context, body io.ReadCloser, hubID string, sink InboundSink) {
+	backoff := 250 * time.Millisecond
+	for {
+		c.pumpInbound(ctx, body, hubID, sink)
+		if ctx.Err() != nil {
+			return
+		}
+		timer := time.NewTimer(backoff)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		case <-timer.C:
+		}
+		var err error
+		body, err = c.openInbound(ctx, hubID)
+		if err != nil {
+			if backoff < 5*time.Second {
+				backoff *= 2
+			}
+			continue
+		}
+		backoff = 250 * time.Millisecond
+	}
 }
 
 // pumpInbound reads NDJSON InboundEnvelope lines and delivers each to sink, posting

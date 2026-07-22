@@ -94,10 +94,6 @@ func (s *rpcServer) handleInbound(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "fcs rpc: streaming unsupported", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/x-ndjson")
-	w.WriteHeader(http.StatusOK)
-	flusher.Flush() // establish the stream so the client's Subscribe returns promptly
-
 	ch := make(chan InboundEnvelope, 64)
 	retryable := func(env InboundEnvelope) FanoutReceipt {
 		return FanoutReceipt{RequestID: env.RequestID, AuthenticatedHubID: hub, Effect: EffectRetryable, Attempt: 1}
@@ -121,6 +117,9 @@ func (s *rpcServer) handleInbound(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer cancel()
+	w.Header().Set("Content-Type", "application/x-ndjson")
+	w.WriteHeader(http.StatusOK)
+	flusher.Flush() // establish the stream so the client's Subscribe returns promptly
 	s.logger.Info("fcs hub subscribed to inbound stream", "hub", hub)
 
 	enc := json.NewEncoder(w)

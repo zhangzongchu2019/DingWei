@@ -78,14 +78,20 @@ func run(logger *slog.Logger) error {
 		addr = ":8081"
 	}
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	serveErr := make(chan error, 1)
 	go func() {
 		logger.Info("fcs started", "addr", addr, "db", bs.DBPath, "transport", bs.FeishuTransport)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("fcs http server", "error", err)
+			serveErr <- err
 		}
 	}()
 
-	<-ctx.Done()
+	select {
+	case err := <-serveErr:
+		stop()
+		return err
+	case <-ctx.Done():
+	}
 	logger.Info("fcs shutting down")
 	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

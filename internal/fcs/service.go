@@ -162,8 +162,8 @@ func (s *service) inboundEnvelope(m model.Message, requestID string) (InboundEnv
 		RequestID:    requestID, // persistent RANDOM request_id (G1-3) — NOT the native FeishuMsgID
 		Source: SourceStub{
 			Kind:       "feishu",
-			Provenance: "untrusted", // §5.1: 未定 raw provenance → untrusted fail-closed; real stamp lands with B0
-			AttestedBy: "fcs",       // §5.1 层②; MUST be backed by Attestation evidence (§5.2) — stubbed pending B0
+			Provenance: string(model.NormalizeIngressProvenance(m.IngressProvenance)),
+			AttestedBy: "fcs", // §5.1 层②; MUST be backed by Attestation evidence (§5.2) — stubbed pending B0
 			// internal sensitive addressing (design §5.4 — never to view/logs)
 			InternalBotChannelID: m.BotChannelID,
 			InternalSenderOpenID: m.SenderOpenID,

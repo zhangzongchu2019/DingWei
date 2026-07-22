@@ -9,10 +9,13 @@ package fcs
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -26,6 +29,12 @@ type errGateway struct{ *stubGateway }
 
 func (errGateway) Send(context.Context, feishu.OutMessage) (string, error) {
 	return "", errors.New("feishu send exploded")
+}
+
+type subscribeErrService struct{ Service }
+
+func (subscribeErrService) Subscribe(string, InboundSink) (func(), error) {
+	return nil, errors.New("subscription rejected")
 }
 
 func newRPCPair(t *testing.T, svc Service) Service {
@@ -78,6 +87,58 @@ func TestRPCResolveRoundtrip(t *testing.T) {
 	}
 }
 
+func TestRPCSubscribeReportsServerRejectionBeforeStreamEstablished(t *testing.T) {
+	base := NewService(&stubGateway{}, &stubReceiver{})
+	client := newRPCPair(t, subscribeErrService{Service: base})
+	_, err := client.Subscribe("hub-rejected", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
+		return FanoutReceipt{}, nil
+	}))
+	if err == nil || !strings.Contains(err.Error(), "subscription rejected") {
+		t.Fatalf("Subscribe error = %v, want server rejection", err)
+	}
+}
+
+func TestRPCInboundReconnectsAfterStreamEOF(t *testing.T) {
+	var streams atomic.Int32
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET "+RPCPathInbound, func(w http.ResponseWriter, r *http.Request) {
+		attempt := streams.Add(1)
+		w.Header().Set("Content-Type", "application/x-ndjson")
+		w.WriteHeader(http.StatusOK)
+		w.(http.Flusher).Flush()
+		if attempt == 1 {
+			return // force a clean EOF; the client must resubscribe
+		}
+		_ = json.NewEncoder(w).Encode(InboundEnvelope{RequestID: "req-after-reconnect", Content: `{"text":"restored"}`})
+		w.(http.Flusher).Flush()
+		<-r.Context().Done()
+	})
+	mux.HandleFunc("POST "+RPCPathReceipt, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	got := make(chan InboundEnvelope, 1)
+	client := NewRPCClient(srv.URL, srv.Client())
+	cancel, err := client.Subscribe("hub-reconnect", sinkFunc(func(_ context.Context, env InboundEnvelope) (FanoutReceipt, error) {
+		got <- env
+		return FanoutReceipt{RequestID: env.RequestID, AuthenticatedHubID: "hub-reconnect", Effect: EffectDelivered}, nil
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cancel()
+	select {
+	case env := <-got:
+		if env.RequestID != "req-after-reconnect" || streams.Load() < 2 {
+			t.Fatalf("env=%+v streams=%d", env, streams.Load())
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatalf("inbound did not recover after EOF; streams=%d", streams.Load())
+	}
+}
+
 // TestRPCInboundFanoutThroughHubAdapters drives a Feishu event through the FCS
 // Ingest→fanout pipeline and asserts it arrives at the hub via the REAL adapters
 // (NewHubReceiver over NewRPCClient → onInbound) — the whole inbound path over HTTP.
@@ -110,6 +171,7 @@ func TestRPCInboundFanoutThroughHubAdapters(t *testing.T) {
 	rx.inbound <- model.Message{
 		BotChannelID: "bot-a", FeishuMsgID: "fe-rpc-1", ChatType: model.ChatPersonal,
 		ChatEntityID: "bot-a:personal:ou_x", SenderOpenID: "ou_x", Content: `{"t":"hi rpc"}`,
+		IngressProvenance: model.IngressFeishuWSAuthenticated,
 	}
 
 	deadline := time.Now().Add(3 * time.Second)
@@ -128,7 +190,8 @@ func TestRPCInboundFanoutThroughHubAdapters(t *testing.T) {
 		t.Fatalf("hub received %d inbound over rpc, want 1", len(got))
 	}
 	m := got[0]
-	if m.ChatEntityID != "bot-a:personal:ou_x" || m.FeishuMsgID != "fe-rpc-1" || m.Content != `{"t":"hi rpc"}` {
+	if m.ChatEntityID != "bot-a:personal:ou_x" || m.FeishuMsgID != "fe-rpc-1" || m.Content != `{"t":"hi rpc"}` ||
+		m.IngressProvenance != model.IngressFeishuWSAuthenticated {
 		t.Fatalf("inbound not round-tripped faithfully over rpc: %+v", m)
 	}
 }
