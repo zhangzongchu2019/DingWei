@@ -32,6 +32,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/config"
 	"github.com/zhangzongchu2019/dingwei/internal/coordination"
+	"github.com/zhangzongchu2019/dingwei/internal/fcs"
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
@@ -123,9 +124,22 @@ func run(logger *slog.Logger) error {
 	prefixHub.System = schedulerSvc
 	scheduleSvc := schedule.New(st, clock.Real{}, nil)
 	scheduleSvc.Coordinator = schedulerSvc
-	feishuGateway, feishuReceiver, err := buildFeishuGateway(ctx, logger, st, bs)
-	if err != nil {
-		return err
+	var feishuGateway feishu.Gateway
+	var feishuReceiver feishu.Receiver
+	if rpcURL := strings.TrimSpace(os.Getenv("FCS_RPC_URL")); rpcURL != "" {
+		hubID, _ := os.Hostname()
+		if strings.TrimSpace(hubID) == "" {
+			hubID = "hub-local"
+		}
+		logger.Info("fcs mode: remote rpc", "url", rpcURL, "hub_id", hubID)
+		service := fcs.NewRPCClient(rpcURL, nil)
+		feishuGateway = fcs.NewHubGateway(service)
+		feishuReceiver = fcs.NewHubReceiver(service, hubID)
+	} else {
+		feishuGateway, feishuReceiver, err = buildFeishuGateway(ctx, logger, st, bs)
+		if err != nil {
+			return err
+		}
 	}
 	adm.Collector = collectorOrNil(feishuGateway)
 	if channels, err := st.ListBotChannels(ctx); err == nil {
