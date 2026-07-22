@@ -7,6 +7,7 @@ const fs = require('fs');
 const assert = require('assert');
 
 const RENDERER_FILE = process.env.RENDERER_FILE || 'renderer-c2.html';
+const HUB_V2_GOLDEN_FILE = process.env.HUB_V2_GOLDEN_FILE || 'hub-delivery-v2-golden.json';
 const SESSION = 'c2-test-2642';
 
 async function bootContext(browser, rendererBody, { interruptRouteHits, initScript, controlRouteHits, controlReply, servePath = '/renderer', apiRequestUrls } = {}) {
@@ -69,6 +70,24 @@ const controlNotes = (page, text) => page.locator(`.event-card:has-text("${text}
 // 等最终 note(跳过中间态"取消请求中…")
 const waitNote = (page, text) => page.waitForFunction(
   t => [...document.querySelectorAll('.c2-note')].some(n => n.textContent.includes(t)), text, { timeout: 8000 });
+
+// Hub canonical delivery.v2 冻结形状(与 publishInputObservation/publishDeliveryUpdate 逐字同形)
+const V2_TS = '2026-07-22T00:00:00.000Z';
+const v2src = (kind, name) => ({ kind, display_name: name, trust_decision: 'trusted' });
+const v2posted = (id, source, role, stage = 'hub_received') => ({
+  schema_version: 'delivery.v2', kind: 'input_posted', message_id: id, delivery_id: `dlv-${id}`,
+  stage, payload: `text-${id}`, source, delivery: { role },
+  ...(role === 'copy' ? { copy_kind: 'route_observation' } : {}),
+  cancellable: role === 'primary', updated_at: V2_TS,
+});
+const v2update = (id, dlvId, stage, status, reason = '') => ({
+  schema_version: 'delivery.v2', kind: 'delivery_update', message_id: id,
+  observed_delivery_id: dlvId, delivery_stage: stage,
+  ...(status ? { delivery_status: status } : {}),
+  reason, cancelable: false, interruptible: false, updated_at: V2_TS,
+});
+const hubV2Golden = JSON.parse(fs.readFileSync(HUB_V2_GOLDEN_FILE, 'utf8'));
+const goldenEvent = name => JSON.parse(JSON.stringify(hubV2Golden[name]));
 
 async function main() {
   const rendererBody = fs.readFileSync(RENDERER_FILE, 'utf8');
@@ -149,8 +168,7 @@ async function main() {
     assert.strictEqual(msgs[0].message_id, 'm1', 'G-ADDR:寻址带 message_id');
     assert.strictEqual(await waitingItems(page).count(), 1, '条目仍在等事件流确认');
     // dev55 实证 hub 真 cancel SSE 线格式:{observed_delivery_id, delivery_stage, delivery_status:cancelled}
-    await emit(page, { kind: 'delivery_update', message_id: 'm1', observed_delivery_id: 'dlv-m1',
-      delivery_stage: 'helper_received', delivery_status: 'cancelled' });
+    await emit(page, v2update('m1', 'dlv-m1', 'helper_received', 'cancelled'));
     await page.waitForFunction(() => document.querySelectorAll('.waiting-item').length === 0, null, { timeout: 5000 });
     await context.close();
   });
@@ -158,8 +176,7 @@ async function main() {
   await T('C2.1f 无 status 的 delivery_update(如 helper_received 阶段推进)不摘条目(防误摘)', async () => {
     const { context, page } = await bootContext(browser, rendererBody);
     await emit(page, inputPosted('m1', '条目'));
-    await emit(page, { kind: 'delivery_update', message_id: 'm1', observed_delivery_id: 'dlv-m1',
-      delivery_stage: 'helper_received' });
+    await emit(page, v2update('m1', 'dlv-m1', 'helper_received', ''));
     await page.waitForTimeout(300);
     assert.strictEqual(await waitingItems(page).count(), 1, '仅阶段推进不摘(需 delivery_status=cancelled)');
     await context.close();
@@ -168,8 +185,7 @@ async function main() {
   await T('C2.1g canonical failed 终态→摘条目(failed/cancelled 正反之正)', async () => {
     const { context, page } = await bootContext(browser, rendererBody);
     await emit(page, inputPosted('m1', '条目'));
-    await emit(page, { kind: 'delivery_update', message_id: 'm1', observed_delivery_id: 'dlv-m1',
-      delivery_stage: 'helper_received', delivery_status: 'failed' });
+    await emit(page, v2update('m1', 'dlv-m1', 'helper_received', 'failed'));
     await page.waitForFunction(() => document.querySelectorAll('.waiting-item').length === 0, null, { timeout: 5000 });
     await context.close();
   });
@@ -179,6 +195,87 @@ async function main() {
     await emit(page, inputPosted('m1', '副本那条', { delivery: { role: 'copy', copy_kind: 'view_observation' } }));
     await page.waitForTimeout(300);
     assert.strictEqual(await waitingItems(page).count(), 0, 'copy 不进待提交区');
+    await context.close();
+  });
+
+  // ── C2.4 Hub canonical delivery.v2 兼容门 ──
+  await T('C2.4a primary hub_received→进 waiting', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    await emit(page, goldenEvent('primary_feishu'));
+    await page.waitForSelector('.waiting-item', { timeout: 5000 });
+    assert.strictEqual(await waitingItems(page).count(), 1, 'primary hub_received 入待提交区');
+    await context.close();
+  });
+
+  await T('C2.4b copy route_observation→显示但绝不 waiting', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    await emit(page, goldenEvent('copy_agent'));
+    await page.waitForTimeout(400);
+    assert.strictEqual(await waitingItems(page).count(), 0, 'route_observation copy 绝不进 waiting');
+    const card = page.locator('.event-card[data-message-id="m-copy"]');
+    assert.strictEqual(await card.count(), 1, 'copy 显示为卡');
+    const cardText = await card.textContent();
+    assert.ok(cardText.includes('Agent·source'), '徽标显示');
+    assert.ok(cardText.includes('已同步/镜像'), 'copy 脚注(不追 ACK)');
+    await context.close();
+  });
+
+  await T('C2.4c delivery_update cli_injected(无 status)→摘 waiting+建时间线卡', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    await emit(page, goldenEvent('primary_feishu'));
+    await page.waitForSelector('.waiting-item', { timeout: 5000 });
+    await emit(page, goldenEvent('cli_injected'));
+    await page.waitForFunction(() => document.querySelectorAll('.waiting-item').length === 0, null, { timeout: 5000 });
+    assert.strictEqual(await page.locator('.event-card[data-message-id="m-primary"]').count(), 1, '注入后建时间线卡');
+    await context.close();
+  });
+
+  await T('C2.4d 三来源徽标不丢(feishu/view/agent)', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    await emit(page, goldenEvent('primary_feishu'));
+    await emit(page, goldenEvent('primary_view'));
+    await emit(page, goldenEvent('primary_agent'));
+    await page.waitForFunction(() => document.querySelectorAll('.waiting-item').length === 3, null, { timeout: 5000 });
+    const text = await page.locator('#waitingArea').textContent();
+    assert.ok(text.includes('飞书'), 'feishu 徽标');
+    assert.ok(text.includes('人工'), 'view 徽标');
+    assert.ok(text.includes('Agent·claudek3'), 'agent 徽标带 display_name');
+    await context.close();
+  });
+
+  await T('C2.4e helper_received 无 status→只推进不摘', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    await emit(page, goldenEvent('primary_feishu'));
+    await page.waitForSelector('.waiting-item', { timeout: 5000 });
+    for (const ack of ['delivered', 'busy', 'retryable']) {
+      await emit(page, { ...goldenEvent('helper_received'), ack });
+      await page.waitForTimeout(100);
+    }
+    assert.strictEqual(await waitingItems(page).count(), 1, 'ACK 三形无 status 均不摘');
+    await context.close();
+  });
+
+  await T('C2.4f v2 缺 message_id→schema_conflict fail-closed', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    const bad = goldenEvent('primary_feishu');
+    delete bad.message_id;
+    await emit(page, bad);
+    await page.waitForTimeout(300);
+    const cards = await page.locator('.event-card').allTextContents();
+    assert.ok(cards.some(t => t.includes('消息格式异常') && t.includes('v2_missing_message_id')),
+      'v2 U5 fail-closed 可观测');
+    assert.strictEqual(await page.locator('.source-badge--trusted').count(), 0, 'conflict 徽标关');
+    await context.close();
+  });
+
+  await T('C2.4g 同形去 schema_version→legacy 无 v2 conflict', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    const legacy = goldenEvent('primary_feishu');
+    delete legacy.schema_version;
+    await emit(page, legacy);
+    await page.waitForTimeout(300);
+    const cards = await page.locator('.event-card').allTextContents();
+    assert.ok(!cards.some(t => t.includes('v2_missing_message_id')), '无版本不触发 v2 专属 conflict');
     await context.close();
   });
 

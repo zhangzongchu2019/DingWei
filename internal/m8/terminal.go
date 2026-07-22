@@ -416,12 +416,7 @@ func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
 }
 
 func (h *Hub) publishDeliveryCancelled(keyID, sessionName, messageID, deliveryID, stage string) {
-	event, _ := json.Marshal(map[string]any{
-		"schema_version": "delivery.v2", "kind": "delivery_update", "message_id": messageID,
-		"observed_delivery_id": deliveryID, "delivery_stage": stage, "delivery_status": "cancelled",
-		"updated_at": time.Now().UTC().Format(time.RFC3339Nano), "reason": "",
-		"cancelable": false, "interruptible": false,
-	})
+	event, _ := json.Marshal(deliveryUpdateEvent(messageID, deliveryID, stage, "cancelled", "", time.Now().UTC()))
 	h.publishSessionEvent(keyID, sessionName, string(event))
 }
 
@@ -449,7 +444,12 @@ func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envel
 	if sourceKind == "" {
 		sourceKind = "agent"
 	}
-	event, _ := json.Marshal(map[string]any{
+	event, _ := json.Marshal(inputObservationEvent(env, deliveryID, stage, role, cancellable, sourceKind, displayName, time.Now().UTC()))
+	h.publishSessionEvent(keyID, sessionName, string(event))
+}
+
+func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, cancellable bool, sourceKind, displayName string, now time.Time) map[string]any {
+	return map[string]any{
 		"schema_version": "delivery.v2",
 		"kind":           "input_posted",
 		"message_id":     env.ID,
@@ -467,26 +467,30 @@ func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envel
 			return ""
 		}(),
 		"cancellable": cancellable,
-		"updated_at":  time.Now().UTC().Format(time.RFC3339Nano),
-	})
-	h.publishSessionEvent(keyID, sessionName, string(event))
+		"updated_at":  now.UTC().Format(time.RFC3339Nano),
+	}
 }
 
 func (h *Hub) publishDeliveryUpdate(keyID, sessionName, messageID, deliveryID, stage, status, reason string) {
 	if keyID == "" || sessionName == "" || messageID == "" || deliveryID == "" {
 		return
 	}
+	event := deliveryUpdateEvent(messageID, deliveryID, stage, status, reason, time.Now().UTC())
+	raw, _ := json.Marshal(event)
+	h.publishSessionEvent(keyID, sessionName, string(raw))
+}
+
+func deliveryUpdateEvent(messageID, deliveryID, stage, status, reason string, now time.Time) map[string]any {
 	event := map[string]any{
 		"schema_version": "delivery.v2", "kind": "delivery_update", "message_id": messageID,
 		"observed_delivery_id": deliveryID, "delivery_stage": stage,
-		"updated_at": time.Now().UTC().Format(time.RFC3339Nano), "reason": reason,
+		"updated_at": now.UTC().Format(time.RFC3339Nano), "reason": reason,
 		"cancelable": false, "interruptible": false,
 	}
 	if status != "" {
 		event["delivery_status"] = status
 	}
-	raw, _ := json.Marshal(event)
-	h.publishSessionEvent(keyID, sessionName, string(raw))
+	return event
 }
 
 // subscribeSessionEvents 注册一个内网事件订阅者(C2 的 SSE 端点使用):

@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"slices"
 	"strings"
@@ -1665,6 +1666,32 @@ func TestFeishuOutboundPublishesSourceSessionCopyObservation(t *testing.T) {
 		event["stage"] != "cli_injected" || event["copy_kind"] != "route_observation" ||
 		source["kind"] != "agent" || delivery["role"] != "copy" || event["cancellable"] != false {
 		t.Fatalf("outbound observation=%s", ring[0])
+	}
+}
+
+func TestHubDeliveryV2EventsMatchRendererGolden(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "view-service", "hub-delivery-v2-golden.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var golden map[string]map[string]any
+	if err := json.Unmarshal(raw, &golden); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 7, 22, 0, 0, 0, 0, time.UTC)
+	actual := map[string]map[string]any{
+		"primary_feishu":  inputObservationEvent(model.Envelope{ID: "m-primary", Body: "text-primary"}, "dlv-primary", "hub_received", "primary", true, "feishu", "飞书", now),
+		"primary_view":    inputObservationEvent(model.Envelope{ID: "m-view", Body: "text-view"}, "dlv-view", "hub_received", "primary", true, "view", "View", now),
+		"primary_agent":   inputObservationEvent(model.Envelope{ID: "m-agent", Body: "text-agent"}, "dlv-agent", "hub_received", "primary", true, "agent", "claudek3", now),
+		"copy_agent":      inputObservationEvent(model.Envelope{ID: "m-copy", Body: "text-copy"}, "dlv-copy", "hub_received", "copy", false, "agent", "source", now),
+		"helper_received": deliveryUpdateEvent("m-primary", "dlv-primary", "helper_received", "", "", now),
+		"cli_injected":    deliveryUpdateEvent("m-primary", "dlv-primary", "cli_injected", "", "", now),
+		"failed":          deliveryUpdateEvent("m-primary", "dlv-primary", "helper_received", "failed", "cli_injection_failed", now),
+		"cancelled":       deliveryUpdateEvent("m-primary", "dlv-primary", "helper_received", "cancelled", "", now),
+	}
+	if !reflect.DeepEqual(actual, golden) {
+		actualJSON, _ := json.MarshalIndent(actual, "", "  ")
+		t.Fatalf("Hub delivery.v2 events drifted from renderer golden:\n%s", actualJSON)
 	}
 }
 

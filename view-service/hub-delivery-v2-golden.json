@@ -1,0 +1,100 @@
+{
+  "primary_feishu": {
+    "schema_version": "delivery.v2",
+    "kind": "input_posted",
+    "message_id": "m-primary",
+    "delivery_id": "dlv-primary",
+    "stage": "hub_received",
+    "payload": "text-primary",
+    "source": {"kind": "feishu", "display_name": "飞书", "trust_decision": "trusted"},
+    "delivery": {"role": "primary"},
+    "copy_kind": "",
+    "cancellable": true,
+    "updated_at": "2026-07-22T00:00:00Z"
+  },
+  "primary_view": {
+    "schema_version": "delivery.v2",
+    "kind": "input_posted",
+    "message_id": "m-view",
+    "delivery_id": "dlv-view",
+    "stage": "hub_received",
+    "payload": "text-view",
+    "source": {"kind": "view", "display_name": "View", "trust_decision": "trusted"},
+    "delivery": {"role": "primary"},
+    "copy_kind": "",
+    "cancellable": true,
+    "updated_at": "2026-07-22T00:00:00Z"
+  },
+  "primary_agent": {
+    "schema_version": "delivery.v2",
+    "kind": "input_posted",
+    "message_id": "m-agent",
+    "delivery_id": "dlv-agent",
+    "stage": "hub_received",
+    "payload": "text-agent",
+    "source": {"kind": "agent", "display_name": "claudek3", "trust_decision": "trusted"},
+    "delivery": {"role": "primary"},
+    "copy_kind": "",
+    "cancellable": true,
+    "updated_at": "2026-07-22T00:00:00Z"
+  },
+  "copy_agent": {
+    "schema_version": "delivery.v2",
+    "kind": "input_posted",
+    "message_id": "m-copy",
+    "delivery_id": "dlv-copy",
+    "stage": "hub_received",
+    "payload": "text-copy",
+    "source": {"kind": "agent", "display_name": "source", "trust_decision": "trusted"},
+    "delivery": {"role": "copy"},
+    "copy_kind": "route_observation",
+    "cancellable": false,
+    "updated_at": "2026-07-22T00:00:00Z"
+  },
+  "helper_received": {
+    "schema_version": "delivery.v2",
+    "kind": "delivery_update",
+    "message_id": "m-primary",
+    "observed_delivery_id": "dlv-primary",
+    "delivery_stage": "helper_received",
+    "updated_at": "2026-07-22T00:00:00Z",
+    "reason": "",
+    "cancelable": false,
+    "interruptible": false
+  },
+  "cli_injected": {
+    "schema_version": "delivery.v2",
+    "kind": "delivery_update",
+    "message_id": "m-primary",
+    "observed_delivery_id": "dlv-primary",
+    "delivery_stage": "cli_injected",
+    "updated_at": "2026-07-22T00:00:00Z",
+    "reason": "",
+    "cancelable": false,
+    "interruptible": false
+  },
+  "failed": {
+    "schema_version": "delivery.v2",
+    "kind": "delivery_update",
+    "message_id": "m-primary",
+    "observed_delivery_id": "dlv-primary",
+    "delivery_stage": "helper_received",
+    "delivery_status": "failed",
+    "updated_at": "2026-07-22T00:00:00Z",
+    "reason": "cli_injection_failed",
+    "cancelable": false,
+    "interruptible": false
+  },
+  "cancelled": {
+    "schema_version": "delivery.v2",
+    "kind": "delivery_update",
+    "message_id": "m-primary",
+    "observed_delivery_id": "dlv-primary",
+    "delivery_stage": "helper_received",
+    "delivery_status": "cancelled",
+    "updated_at": "2026-07-22T00:00:00Z",
+    "reason": "",
+    "cancelable": false,
+    "interruptible": false
+  }
+}
