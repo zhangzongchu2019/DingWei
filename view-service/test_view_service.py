@@ -223,5 +223,72 @@ class ControlForwardTest(unittest.TestCase):
         post.assert_not_called()
 
 
+class ControlForwardV2Test(unittest.TestCase):
+    """V2 真删除链 control:page 授权(authorize_page)+ 签名转发 hub V2 cancel。
+    四态返回码(07-19 教训不压 403)+ 幂等 duplicate + 接通路不修竞态边界。"""
+
+    def _store(self, authorized=True):
+        store = mock.MagicMock()
+        store.authorize_page.return_value = authorized
+        return store
+
+    def test_v2_authorized_success_forwards_and_records(self):
+        store = self._store(authorized=True)
+        rid = "a" * 32
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel", return_value=(200, {"ok": True})) as hc:
+            status, ok = vs._forward_control_v2("sess", "pg", "ptok", rid, "msg", "d-001")
+        self.assertEqual((status, ok), (200, True))
+        # 签名转发线格式:hub V2 cancel = (session, page_id, request_id, message_id, delivery_id)
+        hc.assert_called_once_with("sess", "pg", rid, "msg", "d-001")
+        store.authorize_page.assert_called_once_with("pg", "ptok", "sess")
+        store.record_successful_write.assert_called_once_with("pg", "ptok")
+
+    def test_v2_duplicate_is_idempotent_ok_true(self):
+        # 幂等:重试同 request_id → hub 返 duplicate:true → 仍 ok:true(不报错、不再撤)。
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel",
+                               return_value=(200, {"ok": True, "duplicate": True})):
+            status, ok = vs._forward_control_v2("sess", "pg", "ptok", "rid", "msg", "d-001")
+        self.assertEqual((status, ok), (200, True))
+
+    def test_v2_missing_page_credentials_is_400_no_hub(self):
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel") as hc:
+            status, ok = vs._forward_control_v2("sess", "", "ptok", "rid", "msg", "d-001")
+        self.assertEqual((status, ok), (400, False))  # 缺 page 凭证 = 请求错,非未鉴权
+        hc.assert_not_called()
+        store.authorize_page.assert_not_called()
+
+    def test_v2_authorize_page_fail_is_403_distinct_no_hub(self):
+        # 真·未鉴权 → 403(与 404 路由缺失、5xx 不可达 严格区分),不转发。
+        store = self._store(authorized=False)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel") as hc:
+            status, ok = vs._forward_control_v2("sess", "pg", "ptok", "rid", "msg", "d-001")
+        self.assertEqual((status, ok), (403, False))
+        hc.assert_not_called()
+
+    def test_v2_hub_not_cancelable_409_is_ok_false_not_error(self):
+        # hub 409 = 注入前条目已终态/已注入 → 取消未生效(200 ok:false),非未发出。
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel", return_value=(409, {"error": "not cancelable"})):
+            status, ok = vs._forward_control_v2("sess", "pg", "ptok", "rid", "msg", "d-001")
+        self.assertEqual((status, ok), (200, False))
+        store.record_successful_write.assert_not_called()
+
+    def test_v2_hub_unreachable_is_502_not_403(self):
+        # hub 5xx/网络错 → 502(未发出),绝不压成 403(07-19 一个码掩三根因的教训)。
+        store = self._store(authorized=True)
+        for hub_code in (0, 500, 502, 503):
+            with mock.patch.object(vs, "_get_page_store", return_value=store), \
+                 mock.patch.object(vs, "_hub_v2_cancel", return_value=(hub_code, {"error": "x"})):
+                status, ok = vs._forward_control_v2("sess", "pg", "ptok", "rid", "msg", "d-001")
+            self.assertEqual((status, ok), (502, False), f"hub {hub_code} 应 502 未发出、不压 403")
+
+
 if __name__ == "__main__":
     unittest.main()
