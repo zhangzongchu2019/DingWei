@@ -1684,14 +1684,43 @@ func TestHubDeliveryV2EventsMatchRendererGolden(t *testing.T) {
 		"primary_view":    inputObservationEvent(model.Envelope{ID: "m-view", Body: "text-view"}, "dlv-view", "hub_received", "primary", true, "view", "View", now),
 		"primary_agent":   inputObservationEvent(model.Envelope{ID: "m-agent", Body: "text-agent"}, "dlv-agent", "hub_received", "primary", true, "agent", "claudek3", now),
 		"copy_agent":      inputObservationEvent(model.Envelope{ID: "m-copy", Body: "text-copy"}, "dlv-copy", "hub_received", "copy", false, "agent", "source", now),
-		"helper_received": deliveryUpdateEvent("m-primary", "dlv-primary", "helper_received", "", "", now),
-		"cli_injected":    deliveryUpdateEvent("m-primary", "dlv-primary", "cli_injected", "", "", now),
-		"failed":          deliveryUpdateEvent("m-primary", "dlv-primary", "helper_received", "failed", "cli_injection_failed", now),
-		"cancelled":       deliveryUpdateEvent("m-primary", "dlv-primary", "helper_received", "cancelled", "", now),
+		"helper_received": deliveryUpdateEvent("m-primary", "dlv-primary", "delivered", "helper_received", "", "", now),
+		"cli_injected":    deliveryUpdateEvent("m-primary", "dlv-primary", "processed", "cli_injected", "", "", now),
+		"failed":          deliveryUpdateEvent("m-primary", "dlv-primary", "dead", "helper_received", "failed", "cli_injection_failed", now),
+		"cancelled":       deliveryUpdateEvent("m-primary", "dlv-primary", "cancelled", "helper_received", "cancelled", "", now),
 	}
 	if !reflect.DeepEqual(actual, golden) {
 		actualJSON, _ := json.MarshalIndent(actual, "", "  ")
 		t.Fatalf("Hub delivery.v2 events drifted from renderer golden:\n%s", actualJSON)
+	}
+}
+
+func TestDeliveryUpdateCancellableUsesAuthoritativeState(t *testing.T) {
+	now := time.Date(2026, 7, 22, 0, 0, 0, 0, time.UTC)
+	for _, tc := range []struct {
+		state string
+		want  bool
+	}{
+		{state: "queued", want: true},
+		{state: "sent", want: true},
+		{state: "delivered", want: true},
+		{state: "injected", want: false},
+		{state: "processed", want: false},
+		{state: "dead", want: false},
+		{state: "cancelled", want: false},
+	} {
+		t.Run(tc.state, func(t *testing.T) {
+			event := deliveryUpdateEvent("msg", "dlv", tc.state, "helper_received", "", "", now)
+			if got := event["cancellable"]; got != tc.want {
+				t.Fatalf("state=%s cancellable=%v, want %v", tc.state, got, tc.want)
+			}
+			if _, legacy := event["cancelable"]; legacy {
+				t.Fatalf("state=%s retained legacy cancelable field", tc.state)
+			}
+			if event["message_id"] != "msg" || event["observed_delivery_id"] != "dlv" {
+				t.Fatalf("state=%s lost G-ADDR keys: %+v", tc.state, event)
+			}
+		})
 	}
 }
 
@@ -4608,7 +4637,8 @@ func TestSessionToSessionReliableAdmissionPublishesBothEventRings(t *testing.T) 
 	for name, ch := range map[string]<-chan string{"target": targetEvents, "source": sourceEvents} {
 		select {
 		case raw := <-ch:
-			if !strings.Contains(raw, `"kind":"delivery_update"`) || !strings.Contains(raw, `"delivery_stage":"helper_received"`) || strings.Contains(raw, `"delivery_status"`) {
+			if !strings.Contains(raw, `"kind":"delivery_update"`) || !strings.Contains(raw, `"delivery_stage":"helper_received"`) ||
+				!strings.Contains(raw, `"cancellable":true`) || strings.Contains(raw, `"cancelable"`) || strings.Contains(raw, `"delivery_status"`) {
 				t.Fatalf("%s delivered update=%s", name, raw)
 			}
 		case <-time.After(time.Second):
@@ -4622,7 +4652,8 @@ func TestSessionToSessionReliableAdmissionPublishesBothEventRings(t *testing.T) 
 	for name, ch := range map[string]<-chan string{"target": targetEvents, "source": sourceEvents} {
 		select {
 		case raw := <-ch:
-			if !strings.Contains(raw, `"delivery_stage":"cli_injected"`) || strings.Contains(raw, `"delivery_status"`) {
+			if !strings.Contains(raw, `"delivery_stage":"cli_injected"`) || !strings.Contains(raw, `"cancellable":false`) ||
+				strings.Contains(raw, `"cancelable"`) || strings.Contains(raw, `"delivery_status"`) {
 				t.Fatalf("%s processed update=%s", name, raw)
 			}
 		case <-time.After(time.Second):
@@ -4655,6 +4686,8 @@ func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T
 		t.Fatal(err)
 	}
 	time.Sleep(20 * time.Millisecond)
+	_, events, unsubscribe := hub.subscribeSessionEvents(key.ID, "home", "busy-ack")
+	defer unsubscribe()
 	if err := db.EnqueueMessage(ctx, model.Message{ID: "fm-busy", ChatEntityID: "dev:personal:alice",
 		Direction: model.DirectionIn, BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"#home ping"}`}); err != nil {
 		t.Fatal(err)
@@ -4668,6 +4701,16 @@ func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T
 	if deliveryID == "" {
 		t.Fatalf("missing delivery id: %+v", got)
 	}
+	select {
+	case raw := <-events:
+		var event map[string]any
+		if err := json.Unmarshal([]byte(raw), &event); err != nil || event["kind"] != "input_posted" ||
+			event["message_id"] != "fm-busy" || event["delivery_id"] != deliveryID || event["cancellable"] != true {
+			t.Fatalf("busy input observation=%s err=%v", raw, err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("missing busy input observation")
+	}
 	record, err := db.GetSessionDelivery(ctx, deliveryID)
 	if err != nil || record == nil || record.State != "sent" || record.Attempts != 1 {
 		t.Fatalf("sent delivery record=%+v err=%v", record, err)
@@ -4680,6 +4723,20 @@ func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T
 		record, _ = db.GetSessionDelivery(ctx, deliveryID)
 		return record != nil && record.State == "queued" && record.Attempts == 0 && record.LastError == "cli_busy"
 	})
+	select {
+	case raw := <-events:
+		var event map[string]any
+		if err := json.Unmarshal([]byte(raw), &event); err != nil || event["kind"] != "delivery_update" ||
+			event["message_id"] != "fm-busy" || event["observed_delivery_id"] != deliveryID ||
+			event["delivery_stage"] != "helper_received" || event["cancellable"] != true {
+			t.Fatalf("busy queued update=%s err=%v", raw, err)
+		}
+		if _, legacy := event["cancelable"]; legacy {
+			t.Fatalf("busy queued update retained legacy cancelable key: %s", raw)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("missing busy queued update")
+	}
 	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
 	if err != nil {
 		t.Fatal(err)
@@ -5704,7 +5761,7 @@ func TestInternalViewCancelRemovesPendingAndPublishesRendererUpdate(t *testing.T
 	select {
 	case raw := <-updates:
 		var event map[string]any
-		if err := json.Unmarshal([]byte(raw), &event); err != nil || event["kind"] != "delivery_update" || event["delivery_status"] != "cancelled" || event["observed_delivery_id"] != "dlv_pending" || event["cancelable"] != false {
+		if err := json.Unmarshal([]byte(raw), &event); err != nil || event["kind"] != "delivery_update" || event["delivery_status"] != "cancelled" || event["observed_delivery_id"] != "dlv_pending" || event["cancellable"] != false {
 			t.Fatalf("renderer update=%s err=%v", raw, err)
 		}
 	case <-time.After(time.Second):

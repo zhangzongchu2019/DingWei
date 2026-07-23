@@ -3212,7 +3212,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	}
 	if state == "injected" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "injected", "", time.Now().UTC())
-		h.publishDeliveryUpdateForDelivery(*d, "cli_injected", "", "")
+		h.publishDeliveryUpdateForDelivery(*d, "injected", "cli_injected", "", "")
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
 		}
@@ -3220,7 +3220,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	} else if state == "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
 		if d.State != "injected" {
-			h.publishDeliveryUpdateForDelivery(*d, "cli_injected", "", "")
+			h.publishDeliveryUpdateForDelivery(*d, "processed", "cli_injected", "", "")
 		}
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
@@ -3228,22 +3228,22 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		go h.drainSessionDeliveries(context.Background(), c)
 	} else if state == "busy" {
 		_ = h.Repo.UpdateSessionDeliveryBusy(ctx, id, metaString(env.Meta, "reason"), time.Now().UTC().Add(15*time.Second))
-		h.publishDeliveryUpdateForDelivery(*d, "helper_received", "", metaString(env.Meta, "reason"))
+		h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", metaString(env.Meta, "reason"))
 		h.scheduleSessionDeliveryDrain(c, 15*time.Second)
 	} else if state == "failed" {
 		retryable := metaBool(env.Meta, "retryable")
 		if retryable {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "queued", metaString(env.Meta, "reason"), time.Now().UTC().Add(2*time.Second))
-			h.publishDeliveryUpdateForDelivery(*d, "helper_received", "", metaString(env.Meta, "reason"))
+			h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", metaString(env.Meta, "reason"))
 			h.scheduleSessionDeliveryDrain(c, 2*time.Second)
 		} else {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "dead", metaString(env.Meta, "reason"), time.Now().UTC())
-			h.publishDeliveryUpdateForDelivery(*d, "helper_received", "failed", metaString(env.Meta, "reason"))
+			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", metaString(env.Meta, "reason"))
 			go h.drainSessionDeliveries(context.Background(), c)
 		}
 	} else if d.State != "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "delivered", "", time.Now().UTC().Add(2*time.Minute))
-		h.publishDeliveryUpdateForDelivery(*d, "helper_received", "", "")
+		h.publishDeliveryUpdateForDelivery(*d, "delivered", "helper_received", "", "")
 		h.scheduleSessionDeliveryDrain(c, 2*time.Minute)
 		if position := metaInt(env.Meta, "queue_position"); position > 0 {
 			h.notifyDeliveryQueued(ctx, *d, position)
@@ -3252,15 +3252,15 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	return true
 }
 
-func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, stage, status, reason string) {
-	h.publishDeliveryUpdate(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, stage, status, reason)
+func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, deliveryState, stage, status, reason string) {
+	h.publishDeliveryUpdate(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason)
 	var original model.Envelope
 	if json.Unmarshal([]byte(d.Envelope), &original) != nil {
 		return
 	}
 	from, err := parseAddress(original.From)
 	if err == nil && from.Kind == addressSession && from.SessionName != "" && from.SessionName != "workpulse" {
-		h.publishDeliveryUpdate(from.KeyID, from.SessionName, d.SourceMessageID, d.ID, stage, status, reason)
+		h.publishDeliveryUpdate(from.KeyID, from.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason)
 	}
 }
 
