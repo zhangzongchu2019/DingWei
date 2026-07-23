@@ -19,12 +19,18 @@ CREATE TABLE IF NOT EXISTS task (
               CHECK(status IN ('planning','running','done','failed','partial')),
   result_version INTEGER NOT NULL DEFAULT 1,
   critical_path_len INTEGER DEFAULT 0,
-  -- ★M5 治理扩展(张宗楚 07-23:看板=项目管理+调度者约束):角色四列,可空,SetTaskRoles guarded 写
-  designer    TEXT,
-  implementer TEXT,
-  tester      TEXT,
-  qa_owner    TEXT,
   created_ts  INTEGER NOT NULL, updated_ts INTEGER NOT NULL
+);
+
+-- ★M5v2 治理扩展(张宗楚 07-23:建单即填全角色,且每角色绑定 CLI/LLM,便于回溯优化)
+CREATE TABLE IF NOT EXISTS task_role (
+  task_id    TEXT NOT NULL REFERENCES task(task_id),
+  role       TEXT NOT NULL CHECK(role IN ('designer','implementer','tester','qa_owner')),
+  who        TEXT NOT NULL,                 -- 会话/人 标识(如 zzc-devo48-2642)
+  cli        TEXT NOT NULL,                 -- 所用 CLI 系(claude/codex/opencode/deepseek/human...)
+  llm        TEXT NOT NULL,                 -- 所用模型(如 claude-opus-4-8/gpt-5.6/deepseek-v4-pro)
+  updated_ts INTEGER NOT NULL,
+  PRIMARY KEY(task_id, role)
 );
 
 CREATE TABLE IF NOT EXISTS agent (

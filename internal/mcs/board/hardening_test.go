@@ -303,7 +303,7 @@ func TestCrashRecovery_ReopenAndConverge(t *testing.T) {
 	}
 	epoch, _ := b.Takeover(ctx, "board1", "orch1", 3600)
 	id := Identity{Owner: "orch1", Epoch: epoch}
-	b.CreateTask(ctx, "t1", "board1", "x")
+	b.CreateTask(ctx, "t1", "board1", "x", testRoles(), id)
 	b.RegisterAgent(ctx, "w0", "claude")
 	b.AddNode(ctx, "n1", "t1", 1, "ready", nil)
 	b.Send(ctx, "n1", 1, "rid-1", "w0", id)

@@ -430,13 +430,38 @@ VALUES(?,?,?,?,?,?) ON CONFLICT(agent_id) DO NOTHING`, agentID, driverType, agen
 	return err
 }
 
-// CreateTask 建 task(guard:board 须存在;完整 task_request 幂等属 3.5b,此为最小承载)。
-func (b *Board) CreateTask(ctx context.Context, taskID, boardID, title string) error {
+// CreateTask 建单(★M5v2 硬约束:调度者建单时【必须】填全四角色三元组 who/cli/llm,缺任一=整单拒;
+// guarded:建单者身份核验;task_created 事件带 actor)。完整 task_request 幂等属 3.5b,此为最小承载。
+func (b *Board) CreateTask(ctx context.Context, taskID, boardID, title string, ra RoleAssignments, id Identity) error {
+	tx, err := b.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 	now := b.now()
-	_, err := b.db.ExecContext(ctx, `
+	var ok int
+	if err := tx.QueryRowContext(ctx, `
+SELECT COUNT(*) FROM orchestrator WHERE board_id=? AND owner=? AND lease_expiry>=? AND epoch=?`,
+		boardID, id.Owner, now, id.Epoch).Scan(&ok); err != nil {
+		return err
+	}
+	if ok == 0 {
+		return fmt.Errorf("mcs/board: create_task %s: 调度者身份核验失败(guard)", taskID)
+	}
+	if _, err := tx.ExecContext(ctx, `
 INSERT INTO task(task_id,board_id,title,root_body,origin_addr,origin_envelope_id,created_ts,updated_ts)
-VALUES(?,?,?,?,'','',?,?)`, taskID, boardID, title, title, now, now)
-	return err
+VALUES(?,?,?,?,'','',?,?)`, taskID, boardID, title, title, now, now); err != nil {
+		return err
+	}
+	if err := upsertRoles(ctx, tx, taskID, ra, now, true); err != nil { // requireAll:建单即填全
+		return err
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO board_event(kind,task_id,agent_id,ts,data) VALUES('task_created',?,?,?,'{}')`,
+		taskID, id.Owner, now); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // AddNode 建节点(born 状态由调用方按合并图快照定:pending/ready/blocked)。
@@ -518,42 +543,79 @@ func (b *Board) Events(ctx context.Context, nodeID, kind string) (int, error) {
 	return n, err
 }
 
-// Roles 任务治理角色(★M5:看板=项目管理面——设计者/实现者/测试者/质量负责;空串=不改该列)。
-type Roles struct {
-	Designer    string
-	Implementer string
-	Tester      string
-	QAOwner     string
+// RoleBinding 角色三元组(★M5v2:who+所用 CLI+LLM,回溯优化的最小聚合键)。
+type RoleBinding struct {
+	Who string
+	CLI string
+	LLM string
 }
 
-// SetTaskRoles guarded 写:登记/更新任务角色,同事务落 task_roles_set 事件(actor=操作者)。
-func (b *Board) SetTaskRoles(ctx context.Context, taskID string, r Roles, id Identity) (Outcome, error) {
+func (r RoleBinding) complete() bool { return r.Who != "" && r.CLI != "" && r.LLM != "" }
+
+// RoleAssignments 四角色全集(建单必填全,★张宗楚 07-23:任务单生成时调度者即填写完成)。
+type RoleAssignments struct {
+	Designer    RoleBinding
+	Implementer RoleBinding
+	Tester      RoleBinding
+	QAOwner     RoleBinding
+}
+
+func (ra RoleAssignments) pairs() [][2]any {
+	return [][2]any{
+		{"designer", ra.Designer}, {"implementer", ra.Implementer},
+		{"tester", ra.Tester}, {"qa_owner", ra.QAOwner},
+	}
+}
+
+// ErrRolesIncomplete 建单时任一角色缺 who/cli/llm ⇒ 整单拒绝(结构化约束,不允许先建后补)。
+var ErrRolesIncomplete = errors.New("mcs/board: roles incomplete — 建单必须填全四角色的 who/cli/llm")
+
+func upsertRoles(ctx context.Context, tx *sql.Tx, taskID string, ra RoleAssignments, now int64, requireAll bool) error {
+	for _, p := range ra.pairs() {
+		role, rb := p[0].(string), p[1].(RoleBinding)
+		if !rb.complete() {
+			if requireAll {
+				return ErrRolesIncomplete
+			}
+			if rb.Who == "" && rb.CLI == "" && rb.LLM == "" {
+				continue // 变更场景:整组空=不动该角色
+			}
+			return ErrRolesIncomplete // 半填=拒(要么不动,要么三元组全给)
+		}
+		if _, err := tx.ExecContext(ctx, `
+INSERT INTO task_role(task_id,role,who,cli,llm,updated_ts) VALUES(?,?,?,?,?,?)
+ON CONFLICT(task_id,role) DO UPDATE SET who=excluded.who, cli=excluded.cli, llm=excluded.llm, updated_ts=excluded.updated_ts`,
+			taskID, role, rb.Who, rb.CLI, rb.LLM, now); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// SetTaskRoles guarded 角色变更(建单后调整;每角色要么整组三元给全,要么不动)+事件。
+func (b *Board) SetTaskRoles(ctx context.Context, taskID string, ra RoleAssignments, id Identity) (Outcome, error) {
 	tx, err := b.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", err
 	}
 	defer tx.Rollback()
 	now := b.now()
-	res, err := tx.ExecContext(ctx, `
-UPDATE task SET designer=COALESCE(NULLIF(?,''),designer),
-       implementer=COALESCE(NULLIF(?,''),implementer),
-       tester=COALESCE(NULLIF(?,''),tester),
-       qa_owner=COALESCE(NULLIF(?,''),qa_owner),
-       updated_ts=?
- WHERE task_id=?
-   AND EXISTS (SELECT 1 FROM orchestrator o WHERE o.board_id=task.board_id
-               AND o.owner=? AND o.lease_expiry>=? AND o.epoch=?)`,
-		r.Designer, r.Implementer, r.Tester, r.QAOwner, now, taskID, id.Owner, now, id.Epoch)
-	if err != nil {
+	var ok int
+	if err := tx.QueryRowContext(ctx, `
+SELECT COUNT(*) FROM task t JOIN orchestrator o ON o.board_id=t.board_id
+ WHERE t.task_id=? AND o.owner=? AND o.lease_expiry>=? AND o.epoch=?`,
+		taskID, id.Owner, now, id.Epoch).Scan(&ok); err != nil {
 		return "", err
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
+	if ok == 0 {
 		return OutcomeCASMiss, tx.Commit()
 	}
+	if err := upsertRoles(ctx, tx, taskID, ra, now, false); err != nil {
+		return "", err
+	}
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO board_event(kind,task_id,agent_id,ts,data) VALUES('task_roles_set',?,?,?,?)`,
-		taskID, id.Owner, now, fmt.Sprintf(`{"designer":%q,"implementer":%q,"tester":%q,"qa_owner":%q}`,
-			r.Designer, r.Implementer, r.Tester, r.QAOwner)); err != nil {
+		`INSERT INTO board_event(kind,task_id,agent_id,ts,data) VALUES('task_roles_set',?,?,?,'{}')`,
+		taskID, id.Owner, now); err != nil {
 		return "", err
 	}
 	return OutcomeApplied, tx.Commit()
@@ -561,28 +623,39 @@ UPDATE task SET designer=COALESCE(NULLIF(?,''),designer),
 
 // LedgerEntry 任务台账(项目管理观测面;只读推导,零写)。
 type LedgerEntry struct {
-	TaskID      string
-	Roles       Roles
-	CreatedTS   int64
-	StartedTS   int64 // 首个 node started(0=未开始)
-	EndedTS     int64 // 末个 node ended(仅当全部 node 终态;0=未收口)
-	NodesTotal  int
-	NodesDone   int
-	Dispatcher  string // 当前 orchestrator owner(结构化操作的问责主体)
+	TaskID     string
+	Roles      map[string]RoleBinding // designer/implementer/tester/qa_owner → who+cli+llm
+	CreatedTS  int64
+	StartedTS  int64 // 首个 node started(0=未开始)
+	EndedTS    int64 // 全部 node 终态才落(0=未收口)
+	NodesTotal int
+	NodesDone  int
+	Dispatcher string // 当前 orchestrator owner(结构化操作问责主体)
 }
 
-// TaskLedger 只读台账:角色/起止/进度/当前调度者。
+// TaskLedger 只读台账:角色(含 CLI/LLM)/起止/进度/当前调度者。
 func (b *Board) TaskLedger(ctx context.Context, taskID string) (LedgerEntry, error) {
-	var e LedgerEntry
-	e.TaskID = taskID
-	var d, im, te, qa sql.NullString
+	e := LedgerEntry{TaskID: taskID, Roles: map[string]RoleBinding{}}
 	if err := b.db.QueryRowContext(ctx, `
-SELECT t.created_ts, t.designer, t.implementer, t.tester, t.qa_owner, COALESCE(o.owner,'')
+SELECT t.created_ts, COALESCE(o.owner,'')
   FROM task t JOIN orchestrator o ON o.board_id=t.board_id WHERE t.task_id=?`, taskID).
-		Scan(&e.CreatedTS, &d, &im, &te, &qa, &e.Dispatcher); err != nil {
+		Scan(&e.CreatedTS, &e.Dispatcher); err != nil {
 		return e, err
 	}
-	e.Roles = Roles{Designer: d.String, Implementer: im.String, Tester: te.String, QAOwner: qa.String}
+	rows, err := b.db.QueryContext(ctx, `SELECT role,who,cli,llm FROM task_role WHERE task_id=?`, taskID)
+	if err != nil {
+		return e, err
+	}
+	for rows.Next() {
+		var role string
+		var rb RoleBinding
+		if err := rows.Scan(&role, &rb.Who, &rb.CLI, &rb.LLM); err != nil {
+			rows.Close()
+			return e, err
+		}
+		e.Roles[role] = rb
+	}
+	rows.Close()
 	if err := b.db.QueryRowContext(ctx, `
 SELECT COUNT(*),
        COALESCE(SUM(CASE WHEN status='done' THEN 1 ELSE 0 END),0),
@@ -594,6 +667,34 @@ SELECT COUNT(*),
 		return e, err
 	}
 	return e, nil
+}
+
+// RoleStat 回溯优化聚合行:某(角色,cli,llm)组合参与的任务量与完成量。
+type RoleStat struct {
+	Role, CLI, LLM string
+	Tasks, DoneTasks int
+}
+
+// RoleStats 回溯优化查询:按(role,cli,llm)聚合任务参与/完成——"哪种 CLI×LLM 干哪类角色最好"的数据面。
+func (b *Board) RoleStats(ctx context.Context) ([]RoleStat, error) {
+	rows, err := b.db.QueryContext(ctx, `
+SELECT r.role, r.cli, r.llm, COUNT(*),
+       SUM(CASE WHEN t.status='done' THEN 1 ELSE 0 END)
+  FROM task_role r JOIN task t ON t.task_id=r.task_id
+ GROUP BY r.role, r.cli, r.llm ORDER BY r.role, r.cli, r.llm`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []RoleStat
+	for rows.Next() {
+		var s RoleStat
+		if err := rows.Scan(&s.Role, &s.CLI, &s.LLM, &s.Tasks, &s.DoneTasks); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
 }
 
 // SetBlocker 注记原语(3.5 annotate 行最小版:guarded 置 blocker_reason,不迁 status)。

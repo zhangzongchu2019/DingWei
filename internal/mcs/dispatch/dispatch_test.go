@@ -79,7 +79,9 @@ func rig(t *testing.T) (*Dispatcher, *fakeDriver, *board.Board, context.Context)
 		t.Fatal(err)
 	}
 	id := board.Identity{Owner: "orch1", Epoch: epoch}
-	if err := b.CreateTask(ctx, "t1", "board1", "任务"); err != nil {
+	rb := func(w string) board.RoleBinding { return board.RoleBinding{Who: w, CLI: "claude", LLM: "claude-opus-4-8"} }
+	roles := board.RoleAssignments{Designer: rb("devo48"), Implementer: rb("devo48"), Tester: rb("tester"), QAOwner: rb("shence")}
+	if err := b.CreateTask(ctx, "t1", "board1", "任务", roles, id); err != nil {
 		t.Fatal(err)
 	}
 	if err := b.AddNode(ctx, "n1", "t1", 1, "ready", nil); err != nil {

@@ -9,6 +9,12 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 )
 
+
+// testRoles 建单角色 fixture(M5v2:建单必填全)。
+func testRoles() RoleAssignments {
+	rb := func(w string) RoleBinding { return RoleBinding{Who: w, CLI: "claude", LLM: "claude-opus-4-8"} }
+	return RoleAssignments{Designer: rb("devo48"), Implementer: rb("devo48"), Tester: rb("tester"), QAOwner: rb("shence")}
+}
 // rig 起一块内存 Board:orchestrator 已接管,一 task 两节点(n1 ready,n2 pending deps=[n1])。
 func rig(t *testing.T) (*Board, Identity, context.Context) {
 	t.Helper()
@@ -23,7 +29,7 @@ func rig(t *testing.T) (*Board, Identity, context.Context) {
 		t.Fatalf("takeover: %v", err)
 	}
 	id := Identity{Owner: "orch1", Epoch: epoch}
-	if err := b.CreateTask(ctx, "t1", "board1", "任务一"); err != nil {
+	if err := b.CreateTask(ctx, "t1", "board1", "任务一", testRoles(), id); err != nil {
 		t.Fatalf("task: %v", err)
 	}
 	for _, a := range []string{"w0", "w1", "w-new"} {
@@ -161,7 +167,7 @@ func TestGuard_ExpiredLeaseLosesAuthority(t *testing.T) {
 	defer b.Close()
 	epoch, _ := b.Takeover(ctx, "board1", "orch1", 60) // TTL 60s
 	id := Identity{Owner: "orch1", Epoch: epoch}
-	b.CreateTask(ctx, "t1", "board1", "x")
+	b.CreateTask(ctx, "t1", "board1", "x", testRoles(), id)
 	b.RegisterAgent(ctx, "w0", "claude")
 	b.AddNode(ctx, "n1", "t1", 1, "ready", nil)
 	fc.Advance(2 * time.Minute) // 过期
