@@ -161,6 +161,29 @@ def wait_view_delivery_processed(db, helper_db, request_id, timeout=15):
     raise AssertionError(f"View delivery did not reach processed in Hub + real helper: request_id={request_id}")
 
 
+def session_connection_sequence(db):
+    with sqlite3.connect(db) as conn:
+        row = conn.execute(
+            "SELECT conn_seq FROM session_endpoint WHERE key_id=? AND session_name=?",
+            (KEY_ID, SESSION),
+        ).fetchone()
+    return int(row[0]) if row else -1
+
+
+def wait_session_online(db, after_conn_seq, timeout=15):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            row = conn.execute(
+                "SELECT active,conn_seq FROM session_endpoint WHERE key_id=? AND session_name=?",
+                (KEY_ID, SESSION),
+            ).fetchone()
+        if row and row[0] == 1 and int(row[1]) > after_conn_seq:
+            return
+        time.sleep(.1)
+    raise AssertionError("real sessionHelper did not reconnect after Hub restart")
+
+
 def main():
     public_port, internal_port, vs_port = free_port(), free_port(), free_port()
     hub_url = f"http://127.0.0.1:{public_port}"
@@ -249,6 +272,24 @@ def main():
                 time.sleep(.05)
             time.sleep(.3)
             cli_output_ok = cli_marker.exists() and cli_marker.read_text() == "1"
+
+            # Production replacement restarts Hub and drops every WS. Wait for
+            # the real helper to reconnect before accepting the next View input.
+            old_conn_seq = session_connection_sequence(db)
+            stop(hub)
+            hub = subprocess.Popen([binary], cwd=ROOT, env=hub_env, stdout=logs["hub"], stderr=subprocess.STDOUT)
+            wait_http(f"{hub_url}/readyz")
+            wait_session_online(db, old_conn_seq)
+            restart_request_id = "b" * 32
+            _, restart_result = post(f"{vs_url}/input", {"text": "LEVEL1", "page_id": page["page_id"],
+                "page_token": page["page_token"], "request_id": restart_request_id})
+            assert restart_result.get("ok"), restart_result
+            restart_delivery_id = wait_view_delivery_processed(db, helper_inbox, restart_request_id)
+            deadline = time.time() + 15
+            while time.time() < deadline and cli_marker.read_text() != "2":
+                time.sleep(.05)
+            cli_output_ok = cli_output_ok and cli_marker.read_text() == "2"
+
             stop(helper)
             helper = subprocess.Popen([sys.executable, "-m", "sessionhelper"], cwd=ROOT, env=helper_env,
                                       stdout=logs["helper"], stderr=subprocess.STDOUT)
@@ -274,7 +315,8 @@ def main():
             assert signed_post(vs_url, "/internal/control/view-page/unlock",
                                {**unlock_body, "command_id": "off", "request_id": "off"},
                                forward_secret, "canary", "hub-to-view-service/v1") == 404
-            print(f"LEVEL1 PASS: VS /input + Hub provenance + real helper processed delivery={delivery_id} + CLI output + churn first-unlock")
+            print(f"LEVEL1 PASS: VS /input + Hub provenance + real helper processed delivery={delivery_id} "
+                  f"+ Hub-restart recovery delivery={restart_delivery_id} + CLI output + helper churn first-unlock")
         except Exception:
             for name, stream in logs.items():
                 stream.flush(); stream.seek(0)
