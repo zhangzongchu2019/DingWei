@@ -891,26 +891,50 @@ func (h *Hub) HandleInternalViewInterrupt(w http.ResponseWriter, r *http.Request
 	}
 	h.mu.Lock()
 	st, found := h.terminalBySessionNameLocked(sessionName)
-	var c *sessionClient
+	authorized := false
 	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
-		c = h.sessionClients[st.keyID][st.sessionName]
+		authorized = true
 		st.writerUntil = time.Now().Add(terminalTokenTTL)
 	}
 	h.mu.Unlock()
-	if c == nil {
+	if !authorized {
 		http.Error(w, "interrupt not authorized or session offline", http.StatusForbidden)
 		return
 	}
-	env := model.Envelope{
-		ID: randomHex(16), To: sessionAddress(sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
-		Meta: map[string]any{"type": terminalInterruptType, "system": true, "no_mirror": true, "delivery_id": req.DeliveryID, "turn_id": req.TurnID},
+	status, err := h.writeInterruptFrame(r.Context(), sessionName, req.DeliveryID, req.TurnID)
+	if status == http.StatusConflict {
+		http.Error(w, "interrupt not authorized or session offline", http.StatusForbidden)
+		return
 	}
-	if err := c.write(r.Context(), env); err != nil {
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write([]byte(`{"ok":true,"state":"forwarded"}`))
+}
+
+// writeInterruptFrame forwards an interrupt to the unique online session.
+// Authorization stays with the caller; the helper remains the stale-turn CAS authority.
+func (h *Hub) writeInterruptFrame(ctx context.Context, sessionName, deliveryID, turnID string) (int, error) {
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	var c *sessionClient
+	if found {
+		c = h.sessionClients[st.keyID][st.sessionName]
+	}
+	h.mu.Unlock()
+	if c == nil {
+		return http.StatusConflict, nil
+	}
+	env := model.Envelope{
+		ID: randomHex(16), To: sessionAddress(sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
+		Meta: map[string]any{"type": terminalInterruptType, "system": true, "no_mirror": true, "delivery_id": deliveryID, "turn_id": turnID},
+	}
+	if err := c.write(ctx, env); err != nil {
+		return http.StatusBadGateway, err
+	}
+	return http.StatusOK, nil
 }
 
 // HandleInternalViewCancel removes an authorized delivery while it is still in
