@@ -74,6 +74,21 @@ func (d *Dispatcher) DispatchOne(ctx context.Context, nodeID string, gen int64) 
 	return w.ID(), rid, nil
 }
 
+// SetOriginHint 记录节点的亲和提示(A案链①):修订节点建图时由上层调用,
+// 把【原产出 node 的最后执行 worker】继承给修订 node(M1-View §3b:仅 pick 权重,非正确性依赖)。
+func (d *Dispatcher) SetOriginHint(nodeID, workerID string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.origin[nodeID] = workerID
+}
+
+// OriginOf 读取节点当前生效的亲和提示(观测/继承用;不存在=""=链②)。
+func (d *Dispatcher) OriginOf(nodeID string) string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.origin[nodeID]
+}
+
 // OnWorkerDead J2 全链:判死 worker 的在途节点逐个 reassign(gen+1,guarded)→重派新 worker。
 // reassign 被拒的节点(delivery_unresolved 注记/steer 预留/并发换代)按 spec 留给对应收敛路径,不硬闯。
 func (d *Dispatcher) OnWorkerDead(ctx context.Context, workerID string) error {
