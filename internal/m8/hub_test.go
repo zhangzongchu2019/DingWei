@@ -1822,8 +1822,8 @@ func TestAuthenticatedSessionCannotForgeHumanOrSystemProvenance(t *testing.T) {
 		t.Fatal(err)
 	}
 	got := readEnvelope(t, ctx, target)
-	if got.Meta[hubIngressMetaKey] != hubIngressAgent {
-		t.Fatalf("reserved ingress was not overwritten: %+v", got.Meta)
+	if _, leaked := got.Meta[hubIngressMetaKey]; leaked {
+		t.Fatalf("Hub-only ingress marker reached target session: %+v", got.Meta)
 	}
 	if _, leaked := got.Meta["provenance"]; leaked {
 		t.Fatalf("client provenance reached target: %+v", got.Meta)
@@ -6289,6 +6289,9 @@ func TestViewServiceFullChainIntegration(t *testing.T) {
 		env := readEnvelope(t, ctx, sess)
 		if env.Meta["type"] == "delivery" && env.Meta["source_kind"] == "user" &&
 			env.Meta["delivery_id"] != "" && env.Body == "跑一下测试" {
+			if _, leaked := env.Meta[hubIngressMetaKey]; leaked {
+				t.Fatalf("Hub-only ingress marker leaked to session client: %+v", env.Meta)
+			}
 			gotInput = true
 			viewDeliveryID = metaString(env.Meta, "delivery_id")
 		}

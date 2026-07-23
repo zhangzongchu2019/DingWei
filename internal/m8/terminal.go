@@ -551,6 +551,23 @@ func provenanceJSON(env model.Envelope) string {
 	return string(raw)
 }
 
+// sessionClientEnvelope removes Hub-only admission evidence before an envelope
+// crosses back into an untrusted session client. The original envelope retains
+// the marker long enough for durable provenance and SSE attestation.
+func sessionClientEnvelope(env model.Envelope) model.Envelope {
+	if env.Meta == nil {
+		return env
+	}
+	wire := env
+	wire.Meta = make(map[string]any, len(env.Meta))
+	for key, value := range env.Meta {
+		if key != hubIngressMetaKey {
+			wire.Meta[key] = value
+		}
+	}
+	return wire
+}
+
 func (h *Hub) publishDeliveryUpdate(keyID, sessionName, messageID, deliveryID, deliveryState, stage, status, reason string) {
 	if keyID == "" || sessionName == "" || messageID == "" || deliveryID == "" {
 		return

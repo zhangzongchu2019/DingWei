@@ -133,6 +133,34 @@ def wait_unlock_reply(db, event_id, minimum_count, timeout=8):
     raise AssertionError(f"missing successful unlock reply for {event_id}")
 
 
+def wait_view_delivery_processed(db, helper_db, request_id, timeout=15):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            hub_row = conn.execute(
+                "SELECT id,state,provenance FROM session_delivery WHERE source_message_id=?",
+                (request_id,),
+            ).fetchone()
+        if hub_row:
+            with sqlite3.connect(helper_db) as conn:
+                helper_row = conn.execute(
+                    "SELECT state,envelope_json FROM delivery_inbox "
+                    "WHERE session_name=? AND delivery_id=?",
+                    ("reviewer", hub_row[0]),
+                ).fetchone()
+            if hub_row[1] == "processed" and helper_row and helper_row[0] == "processed":
+                provenance = json.loads(hub_row[2])
+                envelope = json.loads(helper_row[1])
+                assert provenance == {
+                    "kind": "human", "display_name": "人工",
+                    "attested_by": "hub", "trust_decision": "trusted",
+                }, provenance
+                assert "_hub_ingress_channel" not in (envelope.get("meta") or {}), envelope
+                return hub_row[0]
+        time.sleep(.1)
+    raise AssertionError(f"View delivery did not reach processed in Hub + real helper: request_id={request_id}")
+
+
 def main():
     public_port, internal_port, vs_port = free_port(), free_port(), free_port()
     hub_url = f"http://127.0.0.1:{public_port}"
@@ -181,11 +209,12 @@ def main():
                 "  marker.write_text(str(count))\n"
                 "  print('SMOKE_OUTPUT:LEVEL1', flush=True)\n"
                 "  buf=b''\n")
+            helper_inbox = tmp / "helper-inbox.db"
             helper_env = {**os.environ, "PYTHONPATH": str(ROOT / "tools/sessionhelper"), "SH_SESSION_NAME": "reviewer",
                 "SH_OWNER": "alice", "SH_KEY_ID": KEY_ID, "SH_SECRET": KEY_SECRET,
                 "SH_WS_BASE": hub_url.replace("http", "ws"), "SH_MODE": "cli", "SH_CLI_LAUNCH": "pty",
                 "SH_CLI_CMD": f"{sys.executable} -u {cli_program}",
-                "SH_PROXY": "off", "SH_INBOX_DB": str(tmp / "helper-inbox.db")}
+                "SH_PROXY": "off", "SH_INBOX_DB": str(helper_inbox)}
             helper = subprocess.Popen([sys.executable, "-m", "sessionhelper"], cwd=ROOT, env=helper_env,
                                       stdout=logs["helper"], stderr=subprocess.STDOUT)
             time.sleep(1)
@@ -214,7 +243,8 @@ def main():
             _, result = post(f"{vs_url}/input", {"text": "LEVEL1", "page_id": page["page_id"],
                                                    "page_token": page["page_token"], "request_id": request_id})
             assert result.get("ok"), result
-            deadline = time.time() + 5
+            delivery_id = wait_view_delivery_processed(db, helper_inbox, request_id)
+            deadline = time.time() + 15
             while time.time() < deadline and not cli_marker.exists():
                 time.sleep(.05)
             time.sleep(.3)
@@ -244,7 +274,7 @@ def main():
             assert signed_post(vs_url, "/internal/control/view-page/unlock",
                                {**unlock_body, "command_id": "off", "request_id": "off"},
                                forward_secret, "canary", "hub-to-view-service/v1") == 404
-            print("LEVEL1 PASS: wiring + CLI output + churn first-unlock")
+            print(f"LEVEL1 PASS: VS /input + Hub provenance + real helper processed delivery={delivery_id} + CLI output + churn first-unlock")
         except Exception:
             for name, stream in logs.items():
                 stream.flush(); stream.seek(0)

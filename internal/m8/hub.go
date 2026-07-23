@@ -3109,7 +3109,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		env.Meta["delivery_version"] = 1
 		env.Meta["ack_required"] = true
 		env.Meta["source_message_id"] = env.ID
-		payload, err := json.Marshal(env)
+		payload, err := json.Marshal(sessionClientEnvelope(env))
 		if err != nil {
 			h.unclaimEnvelope(env.ID, sig)
 			return err
@@ -3123,7 +3123,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		h.drainSessionDeliveries(ctx, c)
 		return nil
 	}
-	if err := c.write(ctx, env); err != nil {
+	if err := c.write(ctx, sessionClientEnvelope(env)); err != nil {
 		h.unclaimEnvelope(env.ID, sig)
 		return err
 	}
