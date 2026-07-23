@@ -174,6 +174,8 @@ func (d *Daemon) dispatchRound(ctx context.Context) {
 }
 
 func (d *Daemon) sweepRound(ctx context.Context) {
+	d.P.Reap(ctx)   // 判死→OnWorkerDead→failover 换代重派(J2 全链)
+	d.P.Shrink(ctx) // idle 超 TTL 缩容(I2/I3)
 	rep, err := d.B.Sweep(ctx, d.ID, int64(d.Cfg.RedeliverAfter/time.Second))
 	if err != nil {
 		return

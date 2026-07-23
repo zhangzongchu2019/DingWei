@@ -15,6 +15,13 @@ import (
 )
 
 func main() {
+	// worker 模式:被 daemon 以子进程拉起(E2 真进程边界)。
+	if os.Getenv("MCS_WORKER_SOCK") != "" {
+		if err := mcsd.RunWorker(); err != nil {
+			log.Fatalf("mcs worker: %v", err)
+		}
+		return
+	}
 	var (
 		boardPath = flag.String("board", "mcs-board.db", "Board SQLite 路径")
 		boardID   = flag.String("board-id", "board1", "board id")
