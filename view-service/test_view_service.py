@@ -290,5 +290,107 @@ class ControlForwardV2Test(unittest.TestCase):
             self.assertEqual((status, ok), (502, False), f"hub {hub_code} 应 502 未发出、不压 403")
 
 
+class InterruptForwardTest(unittest.TestCase):
+    """legacy interrupt:过 page 写权 → 转发 hub legacy interrupt、G-ADDR=delivery_id+turn_id。"""
+
+    def setUp(self):
+        with vs._state_lock:
+            vs._sessions.clear()
+
+    def test_interrupt_with_write_permission_forwards_g_addr(self):
+        sess = "zzc-dev55-2642"
+        with mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": "wtok"}), \
+             mock.patch.object(vs, "_hub_post", return_value=(200, {"ok": True})) as post:
+            ok, code = vs._forward_interrupt(sess, "d-001", "t-9")
+        self.assertTrue(ok)
+        self.assertEqual(code, 200)
+        # 线格式:POST /internal/view/{session}/interrupt,写权(viewer_id+token) +
+        # G-ADDR(delivery_id+turn_id,注入后打运行中 turn,故带 turn_id、无 message_id)。
+        post.assert_called_once_with(vs.HUB_INTERNAL, f"/internal/view/{sess}/interrupt", {
+            "viewer_id": "v1", "token": "wtok",
+            "delivery_id": "d-001", "turn_id": "t-9",
+        })
+
+    def test_no_write_permission_does_not_forward(self):
+        with mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": ""}), \
+             mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_interrupt("s", "d-001", "t-9")
+        self.assertFalse(ok)
+        self.assertEqual(code, 403)
+        post.assert_not_called()
+
+    def test_missing_g_addr_rejected(self):
+        with mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_interrupt("s", "d-001", "")  # 缺 turn_id
+        self.assertFalse(ok)
+        self.assertEqual(code, 400)
+        post.assert_not_called()
+
+
+class InterruptForwardV2Test(unittest.TestCase):
+    """V2 中断链:page 授权(authorize_page)+ 签名转发 hub V2 interrupt。
+    四态返回码(不压 403)+ 幂等 duplicate;与 _forward_control_v2 同构、地址键换 delivery_id+turn_id。"""
+
+    def _store(self, authorized=True):
+        store = mock.MagicMock()
+        store.authorize_page.return_value = authorized
+        return store
+
+    def test_v2_authorized_success_forwards_and_records(self):
+        store = self._store(authorized=True)
+        rid = "a" * 32
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt", return_value=(200, {"ok": True})) as hi:
+            status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", rid, "d-001", "t-9")
+        self.assertEqual((status, ok), (200, True))
+        # 签名转发线格式:hub V2 interrupt = (session, page_id, request_id, delivery_id, turn_id)。
+        hi.assert_called_once_with("sess", "pg", rid, "d-001", "t-9")
+        store.authorize_page.assert_called_once_with("pg", "ptok", "sess")
+        store.record_successful_write.assert_called_once_with("pg", "ptok")
+
+    def test_v2_duplicate_is_idempotent_ok_true(self):
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt",
+                               return_value=(200, {"ok": True, "duplicate": True})):
+            status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", "rid", "d-001", "t-9")
+        self.assertEqual((status, ok), (200, True))
+
+    def test_v2_missing_page_credentials_is_400_no_hub(self):
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt") as hi:
+            status, ok = vs._forward_interrupt_v2("sess", "", "ptok", "rid", "d-001", "t-9")
+        self.assertEqual((status, ok), (400, False))  # 缺 page 凭证 = 请求错,非未鉴权
+        hi.assert_not_called()
+        store.authorize_page.assert_not_called()
+
+    def test_v2_authorize_page_fail_is_403_distinct_no_hub(self):
+        store = self._store(authorized=False)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt") as hi:
+            status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", "rid", "d-001", "t-9")
+        self.assertEqual((status, ok), (403, False))
+        hi.assert_not_called()
+
+    def test_v2_hub_offline_409_is_ok_false_not_error(self):
+        # hub 409 = 会话离线/无活连接、当前不可中断 → 200 ok:false,非未发出(非错误)。
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt", return_value=(409, {"ok": False})):
+            status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", "rid", "d-001", "t-9")
+        self.assertEqual((status, ok), (200, False))
+        store.record_successful_write.assert_not_called()
+
+    def test_v2_hub_unreachable_or_sigfail_is_502_not_403(self):
+        # hub 5xx/网络/401 验签失败 → 502(未发出),绝不压成 403(07-19 教训)。401 也走 502。
+        store = self._store(authorized=True)
+        for hub_code in (0, 401, 500, 502, 503):
+            with mock.patch.object(vs, "_get_page_store", return_value=store), \
+                 mock.patch.object(vs, "_hub_v2_interrupt", return_value=(hub_code, {"error": "x"})):
+                status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", "rid", "d-001", "t-9")
+            self.assertEqual((status, ok), (502, False), f"hub {hub_code} 应 502 未发出、不压 403")
+
+
 if __name__ == "__main__":
     unittest.main()
