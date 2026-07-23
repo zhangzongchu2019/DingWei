@@ -40,6 +40,9 @@ HUB_TO_VS_SECRET_FILE = os.environ.get("VS_HUB_TO_VS_SECRET_FILE", "").strip()
 PAGE_DB_FILE = os.environ.get("VS_PAGE_DB", os.path.join(BASE_DIR, "view-pages.db"))
 VS_TO_HUB_SECRET_FILE = os.environ.get("VS_TO_HUB_SECRET_FILE", "").strip()
 PAGE_SWEEP_INTERVAL = max(5.0, float(os.environ.get("VS_PAGE_SWEEP_INTERVAL", "30")))
+# 全局任务看板投影(C3):非 session 子路径,渲染器轮询 GET /tasks 取 VS_TASKS_FILE 快照。
+# 空/缺失/坏 JSON 一律 fail-closed 返 200 {tasks:[]}——绝不 404/5xx,免背景轮询噪声污染 UI。
+VS_TASKS_FILE = os.environ.get("VS_TASKS_FILE", "").strip()
 CONTROL_CLOCK_SKEW = 60
 HUB_TO_VS_DIRECTION = "hub-to-view-service/v1"
 CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
@@ -258,6 +261,20 @@ def _read_renderer() -> bytes:
     # Per-request read keeps the single production renderer hot-updatable.
     with open(RENDERER_PATH, "rb") as fh:
         return fh.read()
+
+
+def _read_tasks_snapshot() -> dict:
+    """GET /tasks 快照读取。fail-closed:无 VS_TASKS_FILE / 读失败 / 坏 JSON / 形状不符
+    一律返 {"project":"","tasks":[]}(渲染器要 tasks 是 list),绝不抛——保证 handler 恒 200。"""
+    if VS_TASKS_FILE:
+        try:
+            with open(VS_TASKS_FILE, encoding="utf-8") as fh:
+                data = json.load(fh)
+            if isinstance(data, dict) and isinstance(data.get("tasks"), list):
+                return data
+        except Exception:
+            pass
+    return {"project": "", "tasks": []}
 
 
 def _load_state() -> None:
@@ -519,7 +536,15 @@ class _Handler(BaseHTTPRequestHandler):
             return self._serve_events()
         if path == "/status":
             return self._serve_status()
+        if path == "/tasks":
+            return self._serve_tasks()
         self.send_error(404)
+
+    def _serve_tasks(self):
+        """全局任务看板快照(GET /tasks,非 scoped)。fail-closed:无 VS_TASKS_FILE / 读失败 / 坏 JSON
+        一律返 200 {tasks:[]},绝不 404/5xx——渲染器背景轮询不产噪声、不污染取消 UI。
+        注意:该端点非 session 子路径,生产需 nginx 一并把裸 /tasks 路由到 VS 才生效。"""
+        return self._json_response(200, _read_tasks_snapshot())
 
     def _serve_file(self):
         try:

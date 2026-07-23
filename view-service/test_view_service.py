@@ -392,5 +392,51 @@ class InterruptForwardV2Test(unittest.TestCase):
             self.assertEqual((status, ok), (502, False), f"hub {hub_code} 应 502 未发出、不压 403")
 
 
+class TasksSnapshotTest(unittest.TestCase):
+    """GET /tasks 全局看板快照:fail-closed 恒返 {tasks:list}、绝不抛/404/5xx(免背景轮询噪声)。"""
+
+    def test_no_file_returns_empty_board(self):
+        with mock.patch.object(vs, "VS_TASKS_FILE", ""):
+            self.assertEqual(vs._read_tasks_snapshot(), {"project": "", "tasks": []})
+
+    def test_valid_file_returned_verbatim(self):
+        import tempfile, os, json as _json
+        payload = {"project": "DingWei", "tasks": [{"id": "t1", "status": "in_progress"}]}
+        fd, p = tempfile.mkstemp(suffix=".json")
+        try:
+            with os.fdopen(fd, "w") as fh:
+                _json.dump(payload, fh)
+            with mock.patch.object(vs, "VS_TASKS_FILE", p):
+                self.assertEqual(vs._read_tasks_snapshot(), payload)
+        finally:
+            os.unlink(p)
+
+    def test_missing_file_fails_closed(self):
+        with mock.patch.object(vs, "VS_TASKS_FILE", "/nonexistent/tasks-xyz.json"):
+            self.assertEqual(vs._read_tasks_snapshot(), {"project": "", "tasks": []})
+
+    def test_bad_json_fails_closed(self):
+        import tempfile, os
+        fd, p = tempfile.mkstemp(suffix=".json")
+        try:
+            with os.fdopen(fd, "w") as fh:
+                fh.write("{not valid json")
+            with mock.patch.object(vs, "VS_TASKS_FILE", p):
+                self.assertEqual(vs._read_tasks_snapshot(), {"project": "", "tasks": []})
+        finally:
+            os.unlink(p)
+
+    def test_wrong_shape_fails_closed(self):
+        import tempfile, os, json as _json
+        fd, p = tempfile.mkstemp(suffix=".json")
+        try:
+            with os.fdopen(fd, "w") as fh:
+                _json.dump({"tasks": "not-a-list"}, fh)  # tasks 不是 list
+            with mock.patch.object(vs, "VS_TASKS_FILE", p):
+                self.assertEqual(vs._read_tasks_snapshot(), {"project": "", "tasks": []})
+        finally:
+            os.unlink(p)
+
+
 if __name__ == "__main__":
     unittest.main()
