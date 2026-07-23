@@ -133,7 +133,12 @@ func priorOutcome(ctx context.Context, tx *sql.Tx, rid string) (Outcome, bool, e
 	return Outcome(oc), true, nil
 }
 
-func insertEvent(ctx context.Context, tx *sql.Tx, kind, nodeID string, gen, ts int64, data map[string]any) error {
+// insertEvent 每条事件强制记 actor(board_event.agent_id=执行本次 Board 写的操作者身份)——
+// ★M5 治理扩展:调度者约束/可追责,"谁做的写"结构化落账,禁匿名事件。
+func insertEvent(ctx context.Context, tx *sql.Tx, kind, nodeID string, gen, ts int64, actor string, data map[string]any) error {
+	if actor == "" {
+		return fmt.Errorf("mcs/board: event %s without actor (禁匿名事件)", kind)
+	}
 	payload := "{}"
 	if data != nil {
 		bs, err := json.Marshal(data)
@@ -143,8 +148,8 @@ func insertEvent(ctx context.Context, tx *sql.Tx, kind, nodeID string, gen, ts i
 		payload = string(bs)
 	}
 	_, err := tx.ExecContext(ctx,
-		`INSERT INTO board_event(kind,node_id,generation,ts,data) VALUES(?,?,?,?,?)`,
-		kind, nodeID, gen, ts, payload)
+		`INSERT INTO board_event(kind,node_id,agent_id,generation,ts,data) VALUES(?,?,?,?,?,?)`,
+		kind, nodeID, actor, gen, ts, payload)
 	return err
 }
 
@@ -201,11 +206,11 @@ UPDATE node SET status='dispatched', assigned_agent=?, delivery_id=?, updated_ts
 		return "", err
 	}
 	if n == 1 {
-		if err := insertEvent(ctx, tx, "node_dispatched", nodeID, gen, now, map[string]any{"agent": agentID, "rid": rid}); err != nil {
+		if err := insertEvent(ctx, tx, "node_dispatched", nodeID, gen, now, id.Owner, map[string]any{"agent": agentID, "rid": rid}); err != nil {
 			return "", err
 		}
 		if brBefore == "starved" { // ★R2 条件 clear:旧值匹配恰一条
-			if err := insertEvent(ctx, tx, "node_annotation_cleared", nodeID, gen, now, map[string]any{"reason": "starved", "trigger": "dispatch"}); err != nil {
+			if err := insertEvent(ctx, tx, "node_annotation_cleared", nodeID, gen, now, id.Owner, map[string]any{"reason": "starved", "trigger": "dispatch"}); err != nil {
 				return "", err
 			}
 		}
@@ -239,11 +244,11 @@ UPDATE node SET status='running', started_ts=?, updated_ts=?,
 	if n == 0 {
 		return OutcomeCASMiss, tx.Commit() // 旧 rid/旧代/态不符=拒,零副作用(C8 家族)
 	}
-	if err := insertEvent(ctx, tx, "node_started", nodeID, gen, now, nil); err != nil {
+	if err := insertEvent(ctx, tx, "node_started", nodeID, gen, now, id.Owner, nil); err != nil {
 		return "", err
 	}
 	if brBefore == "delivery_unresolved" { // ★附带修:SQL 显式接线,恰一条
-		if err := insertEvent(ctx, tx, "node_annotation_cleared", nodeID, gen, now, map[string]any{"reason": "delivery_unresolved", "trigger": "processing"}); err != nil {
+		if err := insertEvent(ctx, tx, "node_annotation_cleared", nodeID, gen, now, id.Owner, map[string]any{"reason": "delivery_unresolved", "trigger": "processing"}); err != nil {
 			return "", err
 		}
 	}
@@ -284,16 +289,16 @@ UPDATE node SET status=?, result_ref=?, ended_ts=?, updated_ts=?,
 	if n == 0 {
 		return OutcomeCASMiss, tx.Commit() // ★C8:旧投递/旧代/guard 任一不符=拒,零副作用
 	}
-	if err := insertEvent(ctx, tx, evt, nodeID, gen, now, map[string]any{"rid": rid}); err != nil {
+	if err := insertEvent(ctx, tx, evt, nodeID, gen, now, id.Owner, map[string]any{"rid": rid}); err != nil {
 		return "", err
 	}
 	if brBefore == "timeout" || brBefore == "delivery_unresolved" { // ★条件 clear 按 reason 恰一条
-		if err := insertEvent(ctx, tx, "node_annotation_cleared", nodeID, gen, now, map[string]any{"reason": brBefore, "trigger": "terminal"}); err != nil {
+		if err := insertEvent(ctx, tx, "node_annotation_cleared", nodeID, gen, now, id.Owner, map[string]any{"reason": brBefore, "trigger": "terminal"}); err != nil {
 			return "", err
 		}
 	}
 	if done { // ★A案:提升/恢复与 terminal 同原子提交('已 done 而后继未提升'不可达)
-		if err := fanOutLocked(ctx, tx, nodeID, now); err != nil {
+		if err := fanOutLocked(ctx, tx, nodeID, now, id.Owner); err != nil {
 			return "", err
 		}
 	}
@@ -302,7 +307,7 @@ UPDATE node SET status=?, result_ref=?, ended_ts=?, updated_ts=?,
 
 // fanOutLocked done 同事务内:对含此 dep 的同 task 兄弟节点,∀dep=done 则
 // pending→ready(event node_ready) / blocked+dep_failed→ready(event node_recovered)。
-func fanOutLocked(ctx context.Context, tx *sql.Tx, doneNode string, now int64) error {
+func fanOutLocked(ctx context.Context, tx *sql.Tx, doneNode string, now int64, actor string) error {
 	rows, err := tx.QueryContext(ctx, `
 SELECT c.node_id, c.status, c.generation, c.deps, COALESCE(c.blocker_reason,'')
   FROM node c JOIN node d ON d.node_id=? AND c.task_id=d.task_id
@@ -365,7 +370,7 @@ UPDATE node SET status='ready', blocker_reason=NULL, updated_ts=? WHERE node_id=
 			return err
 		}
 		if n, _ := res.RowsAffected(); n == 1 { // CAS 幂等防双提升(V30)
-			if err := insertEvent(ctx, tx, evtKind, c.id, c.gen, now, map[string]any{"promoted_by": doneNode}); err != nil {
+			if err := insertEvent(ctx, tx, evtKind, c.id, c.gen, now, actor, map[string]any{"promoted_by": doneNode}); err != nil {
 				return err
 			}
 		}
@@ -403,11 +408,11 @@ UPDATE node SET generation = generation + 1,
 	if n == 0 {
 		return OutcomeCASMiss, tx.Commit() // 并发双 reassign 仅一成功(C4)/注记期拒/guard 拒
 	}
-	if err := insertEvent(ctx, tx, "node_reassigned", nodeID, gen+1, now, map[string]any{"old_gen": gen, "agent": newAgent}); err != nil {
+	if err := insertEvent(ctx, tx, "node_reassigned", nodeID, gen+1, now, id.Owner, map[string]any{"old_gen": gen, "agent": newAgent}); err != nil {
 		return "", err
 	}
 	if brBefore != "" { // ★R2:逐 reason 条件 clear 恰一条
-		if err := insertEvent(ctx, tx, "node_annotation_cleared", nodeID, gen+1, now, map[string]any{"reason": brBefore, "trigger": "reassign"}); err != nil {
+		if err := insertEvent(ctx, tx, "node_annotation_cleared", nodeID, gen+1, now, id.Owner, map[string]any{"reason": brBefore, "trigger": "reassign"}); err != nil {
 			return "", err
 		}
 	}
@@ -513,6 +518,84 @@ func (b *Board) Events(ctx context.Context, nodeID, kind string) (int, error) {
 	return n, err
 }
 
+// Roles 任务治理角色(★M5:看板=项目管理面——设计者/实现者/测试者/质量负责;空串=不改该列)。
+type Roles struct {
+	Designer    string
+	Implementer string
+	Tester      string
+	QAOwner     string
+}
+
+// SetTaskRoles guarded 写:登记/更新任务角色,同事务落 task_roles_set 事件(actor=操作者)。
+func (b *Board) SetTaskRoles(ctx context.Context, taskID string, r Roles, id Identity) (Outcome, error) {
+	tx, err := b.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+	now := b.now()
+	res, err := tx.ExecContext(ctx, `
+UPDATE task SET designer=COALESCE(NULLIF(?,''),designer),
+       implementer=COALESCE(NULLIF(?,''),implementer),
+       tester=COALESCE(NULLIF(?,''),tester),
+       qa_owner=COALESCE(NULLIF(?,''),qa_owner),
+       updated_ts=?
+ WHERE task_id=?
+   AND EXISTS (SELECT 1 FROM orchestrator o WHERE o.board_id=task.board_id
+               AND o.owner=? AND o.lease_expiry>=? AND o.epoch=?)`,
+		r.Designer, r.Implementer, r.Tester, r.QAOwner, now, taskID, id.Owner, now, id.Epoch)
+	if err != nil {
+		return "", err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return OutcomeCASMiss, tx.Commit()
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO board_event(kind,task_id,agent_id,ts,data) VALUES('task_roles_set',?,?,?,?)`,
+		taskID, id.Owner, now, fmt.Sprintf(`{"designer":%q,"implementer":%q,"tester":%q,"qa_owner":%q}`,
+			r.Designer, r.Implementer, r.Tester, r.QAOwner)); err != nil {
+		return "", err
+	}
+	return OutcomeApplied, tx.Commit()
+}
+
+// LedgerEntry 任务台账(项目管理观测面;只读推导,零写)。
+type LedgerEntry struct {
+	TaskID      string
+	Roles       Roles
+	CreatedTS   int64
+	StartedTS   int64 // 首个 node started(0=未开始)
+	EndedTS     int64 // 末个 node ended(仅当全部 node 终态;0=未收口)
+	NodesTotal  int
+	NodesDone   int
+	Dispatcher  string // 当前 orchestrator owner(结构化操作的问责主体)
+}
+
+// TaskLedger 只读台账:角色/起止/进度/当前调度者。
+func (b *Board) TaskLedger(ctx context.Context, taskID string) (LedgerEntry, error) {
+	var e LedgerEntry
+	e.TaskID = taskID
+	var d, im, te, qa sql.NullString
+	if err := b.db.QueryRowContext(ctx, `
+SELECT t.created_ts, t.designer, t.implementer, t.tester, t.qa_owner, COALESCE(o.owner,'')
+  FROM task t JOIN orchestrator o ON o.board_id=t.board_id WHERE t.task_id=?`, taskID).
+		Scan(&e.CreatedTS, &d, &im, &te, &qa, &e.Dispatcher); err != nil {
+		return e, err
+	}
+	e.Roles = Roles{Designer: d.String, Implementer: im.String, Tester: te.String, QAOwner: qa.String}
+	if err := b.db.QueryRowContext(ctx, `
+SELECT COUNT(*),
+       COALESCE(SUM(CASE WHEN status='done' THEN 1 ELSE 0 END),0),
+       COALESCE(MIN(started_ts),0),
+       CASE WHEN COUNT(*)>0 AND COUNT(*)=SUM(CASE WHEN status IN ('done','failed') THEN 1 ELSE 0 END)
+            THEN COALESCE(MAX(ended_ts),0) ELSE 0 END
+  FROM node WHERE task_id=?`, taskID).
+		Scan(&e.NodesTotal, &e.NodesDone, &e.StartedTS, &e.EndedTS); err != nil {
+		return e, err
+	}
+	return e, nil
+}
+
 // SetBlocker 注记原语(3.5 annotate 行最小版:guarded 置 blocker_reason,不迁 status)。
 func (b *Board) SetBlocker(ctx context.Context, nodeID string, gen int64, reason string, id Identity) (Outcome, error) {
 	tx, err := b.db.BeginTx(ctx, nil)
@@ -530,7 +613,7 @@ UPDATE node SET blocker_reason=?, updated_ts=? WHERE node_id=? AND generation=?`
 	if n, _ := res.RowsAffected(); n == 0 {
 		return OutcomeCASMiss, tx.Commit()
 	}
-	if err := insertEvent(ctx, tx, "node_annotated", nodeID, gen, now, map[string]any{"reason": reason}); err != nil {
+	if err := insertEvent(ctx, tx, "node_annotated", nodeID, gen, now, id.Owner, map[string]any{"reason": reason}); err != nil {
 		return "", err
 	}
 	return OutcomeApplied, tx.Commit()

@@ -82,12 +82,12 @@ SELECT node_id FROM node WHERE status='dispatched' AND updated_ts <= ?
 	rows.Close()
 
 	// ④ 不变量 #15 双集兜底(本应恒空;发现=主路径缺陷,修+告警事件)
-	strayP, err := b.sweepStray(ctx, "pending", "node_ready")
+	strayP, err := b.sweepStray(ctx, "pending", "node_ready", id.Owner)
 	if err != nil {
 		return rep, err
 	}
 	rep.StrayPromoted = strayP
-	strayR, err := b.sweepStray(ctx, "blocked", "node_recovered")
+	strayR, err := b.sweepStray(ctx, "blocked", "node_recovered", id.Owner)
 	if err != nil {
 		return rep, err
 	}
@@ -96,7 +96,7 @@ SELECT node_id FROM node WHERE status='dispatched' AND updated_ts <= ?
 }
 
 // sweepStray 扫描 status∈{pending,blocked(dep_failed)} 且 ∀dep=done 的漏网节点→ready+事件+告警标记。
-func (b *Board) sweepStray(ctx context.Context, status, evtKind string) (int, error) {
+func (b *Board) sweepStray(ctx context.Context, status, evtKind, actor string) (int, error) {
 	q := `SELECT node_id, generation, deps FROM node WHERE status=?`
 	if status == "blocked" {
 		q += ` AND blocker_reason='dep_failed'`
@@ -160,7 +160,7 @@ func (b *Board) sweepStray(ctx context.Context, status, evtKind string) (int, er
 			return fixed, err
 		}
 		if n, _ := res.RowsAffected(); n == 1 {
-			if err := insertEvent(ctx, tx, evtKind, c.id, c.gen, now,
+			if err := insertEvent(ctx, tx, evtKind, c.id, c.gen, now, actor,
 				map[string]any{"by": "reconciler", "alert": "invariant15_stray"}); err != nil {
 				tx.Rollback()
 				return fixed, err

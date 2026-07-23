@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS task (
               CHECK(status IN ('planning','running','done','failed','partial')),
   result_version INTEGER NOT NULL DEFAULT 1,
   critical_path_len INTEGER DEFAULT 0,
+  -- ★M5 治理扩展(张宗楚 07-23:看板=项目管理+调度者约束):角色四列,可空,SetTaskRoles guarded 写
+  designer    TEXT,
+  implementer TEXT,
+  tester      TEXT,
+  qa_owner    TEXT,
   created_ts  INTEGER NOT NULL, updated_ts INTEGER NOT NULL
 );
 

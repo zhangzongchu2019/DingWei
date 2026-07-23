@@ -102,7 +102,7 @@ UPDATE node_request SET outcome='rejected'
 		return OutcomeCASMiss, tx.Commit()
 	}
 	if applied {
-		if err := insertEvent(ctx, tx, "node_steered", nodeID, gen, now, map[string]any{"rid": rid}); err != nil {
+		if err := insertEvent(ctx, tx, "node_steered", nodeID, gen, now, id.Owner, map[string]any{"rid": rid}); err != nil {
 			return "", err
 		}
 		return OutcomeApplied, tx.Commit()
@@ -146,7 +146,7 @@ UPDATE node_request SET outcome=?
 		return OutcomeCASMiss, tx.Commit()
 	}
 	if applied {
-		if err := insertEvent(ctx, tx, "node_interrupted", nodeID, resGen, now, map[string]any{"rid": rid, "reservation_generation": resGen}); err != nil {
+		if err := insertEvent(ctx, tx, "node_interrupted", nodeID, resGen, now, id.Owner, map[string]any{"rid": rid, "reservation_generation": resGen}); err != nil {
 			return "", err
 		}
 		return OutcomeApplied, tx.Commit()
@@ -176,7 +176,7 @@ UPDATE node SET delivery_attempt=delivery_attempt+1, updated_ts=?
 	if n, _ := res.RowsAffected(); n == 0 {
 		return OutcomeCASMiss, tx.Commit()
 	}
-	if err := insertEvent(ctx, tx, "node_redelivered", nodeID, gen, now, map[string]any{"rid": rid}); err != nil {
+	if err := insertEvent(ctx, tx, "node_redelivered", nodeID, gen, now, id.Owner, map[string]any{"rid": rid}); err != nil {
 		return "", err
 	}
 	return OutcomeApplied, tx.Commit()
@@ -207,7 +207,7 @@ UPDATE node SET status='failed', ended_ts=?, updated_ts=?
 		if n, _ := res.RowsAffected(); n == 0 {
 			return OutcomeCASMiss, tx.Commit()
 		}
-		if err := insertEvent(ctx, tx, "node_failed", nodeID, gen, now, map[string]any{"reason": "delivery_exhausted", "rid": rid}); err != nil {
+		if err := insertEvent(ctx, tx, "node_failed", nodeID, gen, now, id.Owner, map[string]any{"reason": "delivery_exhausted", "rid": rid}); err != nil {
 			return "", err
 		}
 		return OutcomeApplied, tx.Commit()
@@ -223,7 +223,7 @@ UPDATE node SET blocker_reason='delivery_unresolved', updated_ts=?
 	if n, _ := res.RowsAffected(); n == 0 {
 		return OutcomeCASMiss, tx.Commit()
 	}
-	if err := insertEvent(ctx, tx, "node_annotated", nodeID, gen, now, map[string]any{"reason": "delivery_unresolved", "rid": rid}); err != nil {
+	if err := insertEvent(ctx, tx, "node_annotated", nodeID, gen, now, id.Owner, map[string]any{"reason": "delivery_unresolved", "rid": rid}); err != nil {
 		return "", err
 	}
 	return OutcomeApplied, tx.Commit()
