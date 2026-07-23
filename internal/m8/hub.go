@@ -3269,13 +3269,23 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 		return
 	}
 	for {
+		expired, err := h.Repo.ExpireSessionDeliveries(ctx, c.keyID, c.sessionName, time.Now().UTC())
+		if err != nil {
+			return
+		}
+		for _, d := range expired {
+			h.publishDeliveryUpdateForDelivery(d, "dead", "helper_received", "failed", "delivery_expired")
+		}
 		d, err := h.Repo.ClaimSessionDelivery(ctx, c.keyID, c.sessionName, time.Now().UTC())
 		if err != nil || d == nil {
 			return
 		}
 		var env model.Envelope
 		if err := json.Unmarshal([]byte(d.Envelope), &env); err != nil {
-			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", err.Error(), time.Now().UTC())
+			if updateErr := h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "malformed_envelope", time.Now().UTC()); updateErr != nil {
+				return
+			}
+			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "malformed_envelope")
 			continue
 		}
 		if err := c.write(ctx, env); err != nil {

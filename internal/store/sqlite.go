@@ -1360,6 +1360,31 @@ func scanSessionDelivery(row rowScanner) (*model.SessionDelivery, error) {
 
 const sessionDeliverySelect = `SELECT id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at FROM session_delivery`
 
+func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName string, now time.Time) ([]model.SessionDelivery, error) {
+	nowText := now.UTC().Format(time.RFC3339Nano)
+	rows, err := s.db.QueryContext(ctx, `UPDATE session_delivery
+		SET state='dead',last_error='delivery_expired',lease_until=NULL,updated_at=?
+		WHERE key_id=? AND session_name=? AND state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?)
+		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`,
+		nowText, keyID, sessionName, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var expired []model.SessionDelivery
+	for rows.Next() {
+		d, err := scanSessionDelivery(rows)
+		if err != nil {
+			return nil, err
+		}
+		expired = append(expired, *d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return expired, nil
+}
+
 func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -1367,14 +1392,6 @@ func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName st
 	}
 	defer tx.Rollback()
 	nowText := now.UTC().Format(time.RFC3339Nano)
-	// Expired delivered records no longer hold the single in-flight slot. Prefer a
-	// never-sent FIFO item so one stuck delivery cannot starve the whole session.
-	_, err = tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',last_error='delivery_expired',updated_at=?
-		WHERE key_id=? AND session_name=? AND state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?)`,
-		nowText, keyID, sessionName, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
-	if err != nil {
-		return nil, err
-	}
 	var id string
 	err = tx.QueryRowContext(ctx, `SELECT id FROM session_delivery d
 		WHERE key_id=? AND session_name=? AND state IN ('queued','sent','delivered') AND next_attempt_at<=?

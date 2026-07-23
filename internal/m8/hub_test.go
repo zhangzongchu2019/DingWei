@@ -4525,7 +4525,12 @@ func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplic
 		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool { return hub.sessionSupportsDeliveryACK(hub.sessionClients[key.ID]["home"]) })
+	waitFor(t, time.Second, func() bool {
+		hub.mu.Lock()
+		c := hub.sessionClients[key.ID]["home"]
+		hub.mu.Unlock()
+		return c != nil && hub.sessionSupportsDeliveryACK(c)
+	})
 	_, events, unsubscribe := hub.subscribeSessionEvents(key.ID, "home", "injected-ack")
 	defer unsubscribe()
 	if err := hub.RouteEnvelope(ctx, model.Envelope{ID: "injected-message", To: "home#" + key.ID,
@@ -5769,6 +5774,63 @@ func TestInternalViewCancelRemovesPendingAndPublishesRendererUpdate(t *testing.T
 	}
 	if code, _ := post(`{"viewer_id":"viewer","token":"token","message_id":"msg_pending","delivery_id":"dlv_pending"}`); code != http.StatusConflict {
 		t.Fatalf("repeat terminal cancel status=%d, want 409", code)
+	}
+}
+
+func TestSessionDeliveryDeadPathsPublishTerminalUpdates(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		delivery   model.SessionDelivery
+		wantReason string
+	}{
+		{
+			name: "expired",
+			delivery: model.SessionDelivery{
+				ID: "dlv_expired", KeyID: "key", SessionName: "s1", Envelope: `{"id":"msg_expired"}`,
+				SourceMessageID: "msg_expired", SourceType: "view", CreatedAt: time.Now().Add(-31 * time.Minute),
+			},
+			wantReason: "delivery_expired",
+		},
+		{
+			name: "malformed_envelope",
+			delivery: model.SessionDelivery{
+				ID: "dlv_malformed", KeyID: "key", SessionName: "s1", Envelope: `{`,
+				SourceMessageID: "msg_malformed", SourceType: "view", CreatedAt: time.Now(),
+			},
+			wantReason: "malformed_envelope",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			hub, db, ctx := newTestHub(t)
+			c := &sessionClient{keyID: "key", sessionName: "s1", deliveryACKV1: true}
+			if err := db.EnqueueSessionDelivery(ctx, tc.delivery); err != nil {
+				t.Fatal(err)
+			}
+			_, updates, unsubscribe := hub.subscribeSessionEvents("key", "s1", "dead-"+tc.name)
+			defer unsubscribe()
+
+			hub.drainSessionDeliveries(ctx, c)
+
+			got, err := db.GetSessionDelivery(ctx, tc.delivery.ID)
+			if err != nil || got == nil || got.State != "dead" || got.LastError != tc.wantReason {
+				t.Fatalf("dead delivery=%+v err=%v", got, err)
+			}
+			select {
+			case raw := <-updates:
+				var event map[string]any
+				if err := json.Unmarshal([]byte(raw), &event); err != nil ||
+					event["kind"] != "delivery_update" ||
+					event["message_id"] != tc.delivery.SourceMessageID ||
+					event["observed_delivery_id"] != tc.delivery.ID ||
+					event["delivery_status"] != "failed" ||
+					event["reason"] != tc.wantReason ||
+					event["cancellable"] != false {
+					t.Fatalf("terminal update=%s err=%v", raw, err)
+				}
+			case <-time.After(time.Second):
+				t.Fatal("missing terminal update")
+			}
+		})
 	}
 }
 

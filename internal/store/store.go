@@ -60,6 +60,7 @@ type Repository interface {
 	DeleteCollectMessagesBefore(ctx context.Context, cutoff time.Time) (int64, error)
 	MessageStats(ctx context.Context) (model.MessageStats, error)
 	EnqueueSessionDelivery(ctx context.Context, d model.SessionDelivery) error
+	ExpireSessionDeliveries(ctx context.Context, keyID, sessionName string, now time.Time) ([]model.SessionDelivery, error)
 	ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error)
 	UpdateSessionDelivery(ctx context.Context, id, state, errText string, nextAttemptAt time.Time) error
 	UpdateSessionDeliveryBusy(ctx context.Context, id, errText string, nextAttemptAt time.Time) error

@@ -62,6 +62,35 @@ func TestSessionDeliveryClaimBypassesExpiredDeliveredAndIsMonotonic(t *testing.T
 	}
 }
 
+func TestExpireSessionDeliveriesReturnsOnlyNewTerminalRows(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	for _, d := range []model.SessionDelivery{
+		{ID: "dlv_old", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_old", CreatedAt: now.Add(-31 * time.Minute)},
+		{ID: "dlv_fresh", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_fresh", CreatedAt: now},
+		{ID: "dlv_other", KeyID: "key", SessionName: "other", Envelope: `{}`, SourceMessageID: "msg_other", CreatedAt: now.Add(-31 * time.Minute)},
+	} {
+		if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	expired, err := db.ExpireSessionDeliveries(ctx, "key", "home", now)
+	if err != nil || len(expired) != 1 || expired[0].ID != "dlv_old" ||
+		expired[0].State != "dead" || expired[0].LastError != "delivery_expired" {
+		t.Fatalf("expired deliveries = %+v, %v", expired, err)
+	}
+	again, err := db.ExpireSessionDeliveries(ctx, "key", "home", now)
+	if err != nil || len(again) != 0 {
+		t.Fatalf("repeat expiry = %+v, %v", again, err)
+	}
+	for id, want := range map[string]string{"dlv_old": "dead", "dlv_fresh": "queued", "dlv_other": "queued"} {
+		got, err := db.GetSessionDelivery(ctx, id)
+		if err != nil || got == nil || got.State != want {
+			t.Fatalf("%s state=%+v err=%v, want %s", id, got, err, want)
+		}
+	}
+}
+
 func TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	now := time.Now().UTC()
