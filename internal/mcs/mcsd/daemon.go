@@ -176,22 +176,43 @@ func (d *Daemon) dispatchRound(ctx context.Context) {
 func (d *Daemon) sweepRound(ctx context.Context) {
 	d.P.Reap(ctx)   // 判死→OnWorkerDead→failover 换代重派(J2 全链)
 	d.P.Shrink(ctx) // idle 超 TTL 缩容(I2/I3)
+	d.orphanSweep(ctx) // 守护崩溃恢复:在途节点指派的 agent 不在本池→按死 worker 处置(reassign→重派)
 	rep, err := d.B.Sweep(ctx, d.ID, int64(d.Cfg.RedeliverAfter/time.Second))
 	if err != nil {
 		return
 	}
 	for _, nodeID := range rep.RedeliverCandidates {
 		s, err := d.B.GetNode(ctx, nodeID)
-		if err != nil || !s.DeliveryID.Valid {
+		if err != nil || !s.DeliveryID.Valid || !s.AssignedAgent.Valid {
 			continue
 		}
 		if oc, _ := d.B.Redeliver(ctx, nodeID, s.Generation, s.DeliveryID.String, d.ID); oc == board.OutcomeApplied {
-			// 同 rid 重投外呼(执行点幂等);worker 不可得时留下一轮
-			d.mu.Lock()
-			wid := d.ridToW[s.DeliveryID.String]
-			d.mu.Unlock()
-			_ = wid // E1:进程内 loopback 由回执自愈;真实重投外呼在 E2 接 socket
+			// 同 rid 重投外呼(执行点 rid 幂等,不双执行;worker 不可得留孤儿扫描收敛)
+			if w, ok := d.P.Get(s.AssignedAgent.String); ok {
+				_ = w.Deliver(ctx, pool.Envelope{NodeID: nodeID, Generation: s.Generation, RID: s.DeliveryID.String})
+			}
 		}
+	}
+}
+
+// orphanSweep 崩溃恢复路径:上一任守护的在途节点,其 agent 不属于本池(旧池已亡)→
+// 等价死 worker,走 OnWorkerDead(guarded reassign gen+1→本池重派)。
+func (d *Daemon) orphanSweep(ctx context.Context) {
+	active, err := d.B.AllActive(ctx)
+	if err != nil {
+		return
+	}
+	ids := map[string]bool{}
+	for _, id := range d.P.IDs() {
+		ids[id] = true
+	}
+	seen := map[string]bool{}
+	for _, a := range active {
+		if a.Agent == "" || ids[a.Agent] || seen[a.Agent] {
+			continue
+		}
+		seen[a.Agent] = true
+		_ = d.D.OnWorkerDead(ctx, a.Agent)
 	}
 }
 

@@ -259,6 +259,29 @@ func (p *Pool) QueueLen() int {
 	return len(p.queue)
 }
 
+// IDs 当前池内 worker id 集(孤儿节点扫描用)。
+func (p *Pool) IDs() []string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	out := make([]string, 0, len(p.entries))
+	for _, e := range p.entries {
+		out = append(out, e.w.ID())
+	}
+	return out
+}
+
+// Get 按 id 取 worker(redeliver 外呼用;不存在=false)。
+func (p *Pool) Get(id string) (Worker, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for _, e := range p.entries {
+		if e.w.ID() == id {
+			return e.w, true
+		}
+	}
+	return nil, false
+}
+
 // Reap 健康检查:判死→移除+回调 OnWorkerDead(J2);低于下限→补拉新 worker(J3 恢复=补拉/重 Spawn 纳入)。
 // 判死的账面后果(节点重派)由 M2 的 Board guarded reassign 处理,池层零 Board 写。
 func (p *Pool) Reap(ctx context.Context) {

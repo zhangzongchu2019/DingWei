@@ -11,6 +11,8 @@ package mcsd
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -60,6 +62,7 @@ type SubprocDriver struct {
 
 	mu      sync.Mutex
 	n       int
+	token   string // 实例唯一前缀:跨守护重启不与旧亡 worker 同名(孤儿扫描正确性)
 	daemon  *Daemon
 	ln      net.Listener
 	sock    string
@@ -76,7 +79,12 @@ func (s *SubprocDriver) Listen() error {
 	if s.SockDir == "" {
 		s.SockDir = os.TempDir()
 	}
-	s.sock = filepath.Join(s.SockDir, fmt.Sprintf("mcsd-%d.sock", os.Getpid()))
+	tb := make([]byte, 4)
+	if _, err := rand.Read(tb); err != nil {
+		return err
+	}
+	s.token = hex.EncodeToString(tb)
+	s.sock = filepath.Join(s.SockDir, fmt.Sprintf("mcsd-%s.sock", s.token))
 	os.Remove(s.sock)
 	ln, err := net.Listen("unix", s.sock)
 	if err != nil {
@@ -143,7 +151,7 @@ func (s *SubprocDriver) serveConn(conn net.Conn) {
 // Spawn 实现 pool.DriverAdapter:拉真子进程。
 func (s *SubprocDriver) Spawn(ctx context.Context) (pool.Worker, error) {
 	s.mu.Lock()
-	id := fmt.Sprintf("sw%d", s.n)
+	id := fmt.Sprintf("sw-%s-%d", s.token, s.n)
 	s.n++
 	bin := s.Bin
 	sock := s.sock
@@ -263,24 +271,40 @@ func RunWorker() error {
 		return err
 	}
 	sc := bufio.NewScanner(conn)
+	seen := map[string]bool{} // 执行点 rid 幂等:同 rid 重投=只补发回执,不重复"执行"(§7 7.2)
+	var seenMu sync.Mutex
 	for sc.Scan() {
 		var env WireEnvelope
 		if err := json.Unmarshal(sc.Bytes(), &env); err != nil {
 			continue
 		}
-		go func(env WireEnvelope) {
-			if env.Behavior.DelayMS > 0 {
-				time.Sleep(time.Duration(env.Behavior.DelayMS) * time.Millisecond)
+		seenMu.Lock()
+		replay := seen[env.RID]
+		seen[env.RID] = true
+		seenMu.Unlock()
+		go func(env WireEnvelope, replay bool) {
+			if replay { // 重投:立即补发回执(幂等),零二次执行
+				if !env.Behavior.DropProcessing {
+					send(WireReceipt{Receipt: "processing", Node: env.Node, Gen: env.Gen, RID: env.RID})
+				}
+				if !env.Behavior.DropTerminal {
+					send(WireReceipt{Receipt: "terminal", Node: env.Node, Gen: env.Gen, RID: env.RID,
+						OK: !env.Behavior.Fail, Ref: "subproc://" + env.Node})
+				}
+				return
 			}
-			if !env.Behavior.DropProcessing {
+			if !env.Behavior.DropProcessing { // 先报开工(processing)——running 窗口=真实执行期
 				send(WireReceipt{Receipt: "processing", Node: env.Node, Gen: env.Gen, RID: env.RID})
+			}
+			if env.Behavior.DelayMS > 0 { // 干活
+				time.Sleep(time.Duration(env.Behavior.DelayMS) * time.Millisecond)
 			}
 			if env.Behavior.DropTerminal {
 				return
 			}
 			send(WireReceipt{Receipt: "terminal", Node: env.Node, Gen: env.Gen, RID: env.RID,
 				OK: !env.Behavior.Fail, Ref: "subproc://" + env.Node})
-		}(env)
+		}(env, replay)
 	}
 	return nil
 }

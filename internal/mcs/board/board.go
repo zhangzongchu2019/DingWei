@@ -70,6 +70,9 @@ func Open(path string, clk clock.Clock) (*Board, error) {
 	return &Board{db: db, clk: clk}, nil
 }
 
+// DB 底层句柄(只读观测/测试断言用;业务写一律走 guarded 原语,禁裸写)。
+func (b *Board) DB() *sql.DB { return b.db }
+
 // Close 关闭底层库。
 func (b *Board) Close() error { return b.db.Close() }
 
@@ -514,6 +517,32 @@ SELECT node_id, generation FROM node WHERE assigned_agent=? AND status IN ('disp
 			return nil, err
 		}
 		out[id] = gen
+	}
+	return out, rows.Err()
+}
+
+// ActiveNode 在途节点观测行。
+type ActiveNode struct {
+	Node  string
+	Gen   int64
+	Agent string
+}
+
+// AllActive 全部在途节点(dispatched/running)及其指派 agent——孤儿接管扫描输入(守护崩溃恢复)。
+func (b *Board) AllActive(ctx context.Context) ([]ActiveNode, error) {
+	rows, err := b.db.QueryContext(ctx, `
+SELECT node_id, generation, COALESCE(assigned_agent,'') FROM node WHERE status IN ('dispatched','running')`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []ActiveNode
+	for rows.Next() {
+		var a ActiveNode
+		if err := rows.Scan(&a.Node, &a.Gen, &a.Agent); err != nil {
+			return nil, err
+		}
+		out = append(out, a)
 	}
 	return out, rows.Err()
 }
