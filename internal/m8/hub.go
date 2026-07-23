@@ -988,6 +988,17 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "from 地址必须等于当前会话地址"))
 			continue
 		}
+		if env.Meta == nil {
+			env.Meta = map[string]any{}
+		}
+		// Reserved attestation fields are never accepted from a session. The
+		// authenticated WS admission below derives the canonical agent channel.
+		if _, claimed := env.Meta["provenance"]; claimed {
+			log.Printf("provenance claim dropped ingress=agent_session session=%s", sessionName)
+		}
+		delete(env.Meta, "provenance")
+		delete(env.Meta, hubIngressMetaKey)
+		env.Meta[hubIngressMetaKey] = hubIngressAgent
 		if h.handleAgentNetworkSkillAck(c, env) {
 			continue
 		}
@@ -3103,7 +3114,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
-		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env)}); err != nil {
+		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env), Provenance: provenanceJSON(env)}); err != nil {
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
@@ -3450,6 +3461,11 @@ func (h *Hub) annotateSourceContext(ctx context.Context, meta map[string]any, ms
 	meta["source_bot_channel_id"] = msg.BotChannelID
 	meta["source_chat_type"] = string(msg.ChatType)
 	meta["source_kind"] = "feishu"
+	if model.NormalizeIngressProvenance(msg.IngressProvenance) == model.IngressUntrusted {
+		meta[hubIngressMetaKey] = hubIngressFeishuUnknown
+	} else {
+		meta[hubIngressMetaKey] = hubIngressFeishu
+	}
 	source := sourceAccount(msg)
 	if openID := feishuOpenIDFromAccount(source); openID != "" {
 		meta["source_open_id"] = openID

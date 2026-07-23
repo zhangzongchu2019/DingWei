@@ -127,7 +127,8 @@ func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, reques
 		ID: requestID, To: sessionAddress(session, keyID), From: sessionAddress("workpulse", keyID),
 		Body: terminalSubmission(text), TS: time.Now().Unix(),
 		Meta: map[string]any{"source_kind": "user", "source_display_name": "View",
-			"auth_mode": "view_page_v2", "page_id": pageID, "request_id": requestID},
+			"auth_mode": "view_page_v2", "page_id": pageID, "request_id": requestID,
+			hubIngressMetaKey: hubIngressViewV2},
 	}
 	return h.routeToSession(ctx, keyID, session, env, false)
 }

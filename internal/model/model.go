@@ -107,14 +107,17 @@ type SessionDelivery struct {
 	Envelope        string
 	SourceMessageID string
 	SourceType      string
-	State           string
-	Attempts        int
-	NextAttemptAt   time.Time
-	LeaseUntil      time.Time
-	LastError       string
-	CreatedAt       time.Time
-	DeliveredAt     *time.Time
-	ProcessedAt     *time.Time
+	// Provenance is the Hub-attested display provenance JSON. Empty means the
+	// historical/unknown case and must remain fail-closed.
+	Provenance    string
+	State         string
+	Attempts      int
+	NextAttemptAt time.Time
+	LeaseUntil    time.Time
+	LastError     string
+	CreatedAt     time.Time
+	DeliveredAt   *time.Time
+	ProcessedAt   *time.Time
 }
 
 // MessageFilter 最近消息只读筛选条件。

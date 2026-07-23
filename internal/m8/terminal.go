@@ -33,7 +33,20 @@ const (
 	terminalBufferCap        = 1 << 20
 	terminalEventRingCap     = 1000
 	terminalDisconnectGrace  = 5 * time.Minute // 网页断连后保留 viewer+码 的宽限期(修解锁码失效)
+	hubIngressMetaKey        = "_hub_ingress_channel"
+	hubIngressAgent          = "agent_session"
+	hubIngressFeishu         = "feishu_verified"
+	hubIngressFeishuUnknown  = "feishu_untrusted"
+	hubIngressViewV2         = "view_v2_attested"
+	hubIngressInternal       = "hub_internal"
 )
+
+type displayProvenance struct {
+	Kind          string `json:"kind"`
+	DisplayName   string `json:"display_name"`
+	AttestedBy    string `json:"attested_by"`
+	TrustDecision string `json:"trust_decision"`
+}
 
 type terminalState struct {
 	keyID       string
@@ -391,8 +404,30 @@ func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) b
 	if metaString(env.Meta, "type") != terminalSessionEventType {
 		return false
 	}
-	h.publishSessionEvent(c.keyID, c.sessionName, env.Body)
+	// session_event is supplied by a helper. It may carry arbitrary event JSON,
+	// but only the Hub may mint the canonical provenance block.
+	sanitized, conflict := stripClientProvenance(env.Body)
+	if conflict {
+		log.Printf("provenance claim dropped ingress=agent_session session=%s", c.sessionName)
+	}
+	h.publishSessionEvent(c.keyID, c.sessionName, sanitized)
 	return true
+}
+
+func stripClientProvenance(raw string) (string, bool) {
+	var event map[string]any
+	if json.Unmarshal([]byte(raw), &event) != nil {
+		return raw, false
+	}
+	if _, claimed := event["provenance"]; !claimed {
+		return raw, false
+	}
+	delete(event, "provenance")
+	sanitized, err := json.Marshal(event)
+	if err != nil {
+		return raw, false
+	}
+	return string(sanitized), true
 }
 
 func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
@@ -449,7 +484,7 @@ func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envel
 }
 
 func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, cancellable bool, sourceKind, displayName string, now time.Time) map[string]any {
-	return map[string]any{
+	event := map[string]any{
 		"schema_version": "delivery.v2",
 		"kind":           "input_posted",
 		"message_id":     env.ID,
@@ -469,6 +504,51 @@ func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, c
 		"cancellable": cancellable,
 		"updated_at":  now.UTC().Format(time.RFC3339Nano),
 	}
+	if provenance, ok := provenanceForEnvelope(env); ok {
+		event["provenance"] = provenance
+	}
+	return event
+}
+
+func provenanceForEnvelope(env model.Envelope) (displayProvenance, bool) {
+	channel := metaString(env.Meta, hubIngressMetaKey)
+	provenance := displayProvenance{AttestedBy: "hub"}
+	switch channel {
+	case hubIngressAgent:
+		provenance.Kind = "agent"
+		if from, err := parseAddress(env.From); err == nil && from.Kind == addressSession && from.SessionName != "" {
+			provenance.DisplayName = from.SessionName
+		}
+	case hubIngressFeishu:
+		provenance.Kind = "feishu"
+		provenance.DisplayName = "飞书"
+	case hubIngressViewV2:
+		provenance.Kind = "human"
+		provenance.DisplayName = "人工"
+	case hubIngressInternal:
+		provenance.Kind = "system"
+		provenance.DisplayName = "系统"
+	default:
+		// Unknown/untrusted ingress is represented by an absent optional block.
+		return displayProvenance{}, false
+	}
+	if provenance.DisplayName == "" {
+		return displayProvenance{}, false
+	}
+	provenance.TrustDecision = "trusted"
+	return provenance, true
+}
+
+func provenanceJSON(env model.Envelope) string {
+	provenance, ok := provenanceForEnvelope(env)
+	if !ok {
+		return ""
+	}
+	raw, err := json.Marshal(provenance)
+	if err != nil {
+		return ""
+	}
+	return string(raw)
 }
 
 func (h *Hub) publishDeliveryUpdate(keyID, sessionName, messageID, deliveryID, deliveryState, stage, status, reason string) {
@@ -1058,7 +1138,8 @@ func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID
 		From: sessionAddress("workpulse", keyID),
 		Body: data,
 		TS:   time.Now().Unix(),
-		Meta: map[string]any{"source_kind": "user", "source_display_name": "View"},
+		Meta: map[string]any{"source_kind": "user", "source_display_name": "View",
+			hubIngressMetaKey: hubIngressViewV2},
 	}
 	return h.routeToSession(ctx, keyID, sessionName, env, false)
 }

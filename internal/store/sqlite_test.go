@@ -91,6 +91,31 @@ func TestExpireSessionDeliveriesReturnsOnlyNewTerminalRows(t *testing.T) {
 	}
 }
 
+func TestSessionDeliveryProvenancePersistsAndHistoricalRowsStayUnknown(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	const provenance = `{"kind":"feishu","display_name":"飞书","attested_by":"hub","trust_decision":"trusted"}`
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+		ID: "dlv_provenance", KeyID: "key", SessionName: "home", Envelope: `{}`,
+		SourceMessageID: "msg_provenance", SourceType: "feishu_inbound", Provenance: provenance,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+		ID: "dlv_historical", KeyID: "key", SessionName: "home", Envelope: `{}`,
+		SourceMessageID: "msg_historical", SourceType: "session_inbound",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.GetSessionDelivery(ctx, "dlv_provenance")
+	if err != nil || got == nil || got.Provenance != provenance {
+		t.Fatalf("attested provenance=%+v err=%v", got, err)
+	}
+	historical, err := db.GetSessionDelivery(ctx, "dlv_historical")
+	if err != nil || historical == nil || historical.Provenance != "" {
+		t.Fatalf("historical provenance=%+v err=%v", historical, err)
+	}
+}
+
 func TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	now := time.Now().UTC()
