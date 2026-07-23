@@ -184,6 +184,35 @@ def wait_session_online(db, after_conn_seq, timeout=15):
     raise AssertionError("real sessionHelper did not reconnect after Hub restart")
 
 
+def wait_session_offline(db, timeout=10):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            row = conn.execute(
+                "SELECT active FROM session_endpoint WHERE key_id=? AND session_name=?",
+                (KEY_ID, SESSION),
+            ).fetchone()
+        if row and row[0] == 0:
+            return
+        time.sleep(.1)
+    raise AssertionError("real sessionHelper did not become offline")
+
+
+def wait_view_delivery_queued(db, request_id, timeout=5):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            row = conn.execute(
+                "SELECT id,state,attempts FROM session_delivery WHERE source_message_id=?",
+                (request_id,),
+            ).fetchone()
+        if row:
+            assert row[1:] == ("queued", 0), row
+            return row[0]
+        time.sleep(.05)
+    raise AssertionError(f"offline View delivery was not durably queued: request_id={request_id}")
+
+
 def main():
     public_port, internal_port, vs_port = free_port(), free_port(), free_port()
     hub_url = f"http://127.0.0.1:{public_port}"
@@ -285,21 +314,45 @@ def main():
                 "page_token": page["page_token"], "request_id": restart_request_id})
             assert restart_result.get("ok"), restart_result
             restart_delivery_id = wait_view_delivery_processed(db, helper_inbox, restart_request_id)
-            deadline = time.time() + 15
-            while time.time() < deadline and cli_marker.read_text() != "2":
-                time.sleep(.05)
-            cli_output_ok = cli_output_ok and cli_marker.read_text() == "2"
+            assert cli_output_ok, "initial CLI output did not return through Hub events"
 
+            # Kill only the real helper while Hub + VS remain available. A View
+            # input in this disconnected window must be durably admitted, then
+            # drained exactly once after the helper reconnects and re-attests
+            # delivery_ack_v1.
+            before_offline_conn_seq = session_connection_sequence(db)
             stop(helper)
+            wait_session_offline(db)
+            offline_request_id = "c" * 32
+            _, offline_result = post(f"{vs_url}/input", {"text": "LEVEL1", "page_id": page["page_id"],
+                "page_token": page["page_token"], "request_id": offline_request_id})
+            assert offline_result.get("ok"), offline_result
+            offline_delivery_id = wait_view_delivery_queued(db, offline_request_id)
             helper = subprocess.Popen([sys.executable, "-m", "sessionhelper"], cwd=ROOT, env=helper_env,
                                       stdout=logs["helper"], stderr=subprocess.STDOUT)
-            time.sleep(1)
+            wait_session_online(db, before_offline_conn_seq)
+            assert wait_view_delivery_processed(db, helper_inbox, offline_request_id) == offline_delivery_id
+            with sqlite3.connect(db) as conn:
+                offline_row = conn.execute(
+                    "SELECT state,attempts FROM session_delivery WHERE id=?",
+                    (offline_delivery_id,),
+                ).fetchone()
+            with sqlite3.connect(helper_inbox) as conn:
+                helper_offline_row = conn.execute(
+                    "SELECT state,attempts FROM delivery_inbox WHERE session_name=? AND delivery_id=?",
+                    ("reviewer", offline_delivery_id),
+                ).fetchone()
+            # Hub may retransmit the same durable ID while the freshly started
+            # CLI reports busy. Exactly-once is asserted at the helper/CLI
+            # processing boundary, where the inbox deduplicates by delivery ID.
+            assert offline_row and offline_row[0] == "processed" and offline_row[1] >= 1, offline_row
+            assert helper_offline_row == ("processed", 1), helper_offline_row
+            assert cli_marker.read_text() == "1", cli_marker.read_text()
             assert webhook_unlock(hub_url, page["code"], "unlock-after-churn") == 202
             wait_unlocked(vs_url, page)
             wait_unlock_reply(db, "unlock-after-churn", 2)
             time.sleep(.5); logs["hub"].flush(); logs["hub"].seek(0)
             assert "未找到页面码" not in logs["hub"].read()
-            assert cli_output_ok, "CLI output did not return through Hub events"
             route_data = json.loads(routing.read_text())
             route_data["targets"]["canary"]["view_unlock_v2"] = False
             time.sleep(1.1)
@@ -316,7 +369,9 @@ def main():
                                {**unlock_body, "command_id": "off", "request_id": "off"},
                                forward_secret, "canary", "hub-to-view-service/v1") == 404
             print(f"LEVEL1 PASS: VS /input + Hub provenance + real helper processed delivery={delivery_id} "
-                  f"+ Hub-restart recovery delivery={restart_delivery_id} + CLI output + helper churn first-unlock")
+                  f"+ Hub-restart recovery delivery={restart_delivery_id}"
+                  f"+ offline durable delivery={offline_delivery_id} processed once"
+                  f"+ CLI output + helper churn first-unlock")
         except Exception:
             for name, stream in logs.items():
                 stream.flush(); stream.seek(0)

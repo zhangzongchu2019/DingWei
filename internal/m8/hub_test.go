@@ -4664,6 +4664,108 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 	}
 }
 
+func TestReliableSessionDeliveryQueuesWhileDisconnectedAndDrainsOnceAfterReconnect(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-offline", Name: "offline", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-offline", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	first := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	_ = readEnvelopeIncludingSystem(t, ctx, first)
+	if err := writeEnvelope(ctx, first, model.Envelope{ID: "caps-first", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		enabled, found, _ := db.SessionEndpointDeliveryACK(ctx, key.ID, "home")
+		return found && enabled
+	})
+	if err := first.Close(websocket.StatusNormalClosure, "offline-window"); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		return hub.sessionClients[key.ID] == nil || hub.sessionClients[key.ID]["home"] == nil
+	})
+
+	env := model.Envelope{
+		ID: "fm-offline-window", To: "home#" + key.ID,
+		From: "alice#" + key.ID + "#UnifiedRobot", Body: "queued while disconnected", TS: time.Now().Unix(),
+	}
+	if err := hub.RouteEnvelope(ctx, env); err != nil {
+		t.Fatalf("offline durable admission: %v", err)
+	}
+
+	second := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	defer second.Close(websocket.StatusNormalClosure, "done")
+	_ = readEnvelopeIncludingSystem(t, ctx, second)
+	if err := writeEnvelope(ctx, second, model.Envelope{ID: "caps-second", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, second)
+	deliveryID := metaString(got.Meta, "delivery_id")
+	if got.ID != env.ID || got.Body != env.Body || deliveryID == "" || metaString(got.Meta, "type") != "delivery" {
+		t.Fatalf("reconnected delivery=%+v", got)
+	}
+	if err := writeEnvelope(ctx, second, model.Envelope{ID: "ack-offline-window", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ := db.GetSessionDelivery(ctx, deliveryID)
+		return record != nil && record.State == "processed" && record.Attempts == 1
+	})
+
+	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	defer cancel()
+	for {
+		_, data, err := second.Read(readCtx)
+		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				break
+			}
+			t.Fatalf("read duplicate: %v", err)
+		}
+		var duplicate model.Envelope
+		if json.Unmarshal(data, &duplicate) == nil && metaString(duplicate.Meta, "delivery_id") == deliveryID {
+			t.Fatalf("delivery duplicated after processed ACK: %+v", duplicate)
+		}
+	}
+}
+
+func TestOfflineDurableAdmissionRejectsEndpointWithoutAttestedACKCapability(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{
+		KeyID: "key", SessionName: "legacy", LastSeenAt: time.Now().UTC(), Active: false,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	env := model.Envelope{
+		ID: "legacy-offline", To: "legacy#key", From: "alice#key#UnifiedRobot",
+		Body: "must not queue", TS: time.Now().Unix(),
+	}
+	if err := hub.routeToSession(ctx, "key", "legacy", env, false); err == nil || !strings.Contains(err.Error(), "offline") {
+		t.Fatalf("legacy offline route error=%v", err)
+	}
+	claimed, err := db.ClaimSessionDelivery(ctx, "key", "legacy", time.Now().UTC())
+	if err != nil || claimed != nil {
+		t.Fatalf("legacy endpoint unexpectedly queued delivery=%+v err=%v", claimed, err)
+	}
+}
+
 func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplicate(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-injected", Name: "injected", DeliveryType: "ws", Enabled: true}); err != nil {

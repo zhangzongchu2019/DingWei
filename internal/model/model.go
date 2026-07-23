@@ -265,6 +265,7 @@ type SessionEndpoint struct {
 	NoDirectory      bool
 	NoDirectoryAdmin bool
 	ConnSeq          int
+	DeliveryACKV1    bool
 }
 
 // CleanupResult 是数据清理 dry-run/confirm 的统计。

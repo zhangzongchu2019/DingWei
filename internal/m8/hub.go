@@ -2544,6 +2544,16 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 		if to.KeyID == from.KeyID && h.sessionOnline(to.KeyID, to.SessionName) {
 			return h.routeToSession(ctx, to.KeyID, to.SessionName, env, from.Kind == addressFeishu)
 		}
+		// 可靠 helper 的能力已经由 Hub 在在线握手时坐实并持久化。连接瞬断时，
+		// 同 key 的精确地址仍可安全入 durable queue；不把这一规则扩展到别名
+		// 或跨 key，避免离线状态下猜测 owner 路由。
+		if to.KeyID == from.KeyID && reliablePrimaryEnvelope(env) && h.Repo != nil {
+			if deliveryACK, found, lookupErr := h.Repo.SessionEndpointDeliveryACK(ctx, to.KeyID, to.SessionName); lookupErr != nil {
+				return lookupErr
+			} else if found && deliveryACK {
+				return h.routeToSession(ctx, to.KeyID, to.SessionName, env, from.Kind == addressFeishu)
+			}
+		}
 		// 否则按发件人账号(owner)解析真实 key：支持同账号跨 key 互通 + 容错发件人补错 key + 强制同 owner。
 		// （send.py 会把地址补成发件人自己的 key，所以即便 to.KeyID==from.KeyID，目标也可能在该 owner 的另一个 key 下）
 		senderOwner := h.ownerKeyForKey(ctx, from.KeyID)
@@ -3095,11 +3105,24 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			c = sessions[sessionName]
 		}
 	}()
-	if c == nil {
+	reliable := reliablePrimaryEnvelope(env)
+	deliveryACK := c != nil && h.sessionSupportsDeliveryACK(c)
+	endpointKnown := c != nil
+	if reliable && !deliveryACK && h.Repo != nil {
+		var err error
+		deliveryACK, endpointKnown, err = h.Repo.SessionEndpointDeliveryACK(ctx, keyID, sessionName)
+		if err != nil {
+			h.unclaimEnvelope(env.ID, sig)
+			return err
+		}
+	}
+	if c == nil && !(reliable && deliveryACK && endpointKnown && h.Repo != nil) {
+		log.Printf("session route decision=offline_rejected key_id=%s session=%s client_present=false reliable=%t endpoint_known=%t delivery_ack_v1=%t reason=session_offline",
+			keyID, sessionName, reliable, endpointKnown, deliveryACK)
 		h.unclaimEnvelope(env.ID, sig)
 		return fmt.Errorf("session %s offline", sessionName)
 	}
-	if reliablePrimaryEnvelope(env) && h.sessionSupportsDeliveryACK(c) && h.Repo != nil {
+	if reliable && deliveryACK && h.Repo != nil {
 		if env.Meta == nil {
 			env.Meta = map[string]any{}
 		}
@@ -3120,10 +3143,20 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		}
 		h.publishInputObservation(keyID, sessionName, env, deliveryID, "hub_received", "primary", true)
 		h.publishSourceCopyObservation(env, deliveryID, "hub_received")
-		h.drainSessionDeliveries(ctx, c)
+		connSeq := 0
+		if c != nil {
+			connSeq = c.connSeq
+		}
+		log.Printf("session route decision=durable_queued key_id=%s session=%s client_present=%t conn_seq=%d delivery_id=%s source_message_id=%s",
+			keyID, sessionName, c != nil, connSeq, deliveryID, env.ID)
+		if c != nil {
+			h.drainSessionDeliveries(ctx, c)
+		}
 		return nil
 	}
 	if err := c.write(ctx, sessionClientEnvelope(env)); err != nil {
+		log.Printf("session route decision=direct_write_failed key_id=%s session=%s client_present=true conn_seq=%d source_message_id=%s reason=%q",
+			keyID, sessionName, c.connSeq, env.ID, err.Error())
 		h.unclaimEnvelope(env.ID, sig)
 		return err
 	}
@@ -3181,6 +3214,12 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.stateMu.Lock()
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
 	c.stateMu.Unlock()
+	if h.Repo != nil {
+		if err := h.Repo.SetSessionEndpointDeliveryACK(context.Background(), c.keyID, c.sessionName, c.deliveryACKV1); err != nil {
+			log.Printf("session capability persist failed key_id=%s session=%s conn_seq=%d delivery_ack_v1=%t err=%v",
+				c.keyID, c.sessionName, c.connSeq, c.deliveryACKV1, err)
+		}
+	}
 	if h.sessionSupportsDeliveryACK(c) {
 		go h.drainSessionDeliveries(context.Background(), c)
 	}
@@ -3279,6 +3318,17 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 	if h.Repo == nil || !h.sessionSupportsDeliveryACK(c) {
 		return
 	}
+	h.mu.Lock()
+	var replacement *sessionClient
+	if sessions := h.sessionClients[c.keyID]; sessions != nil {
+		replacement = sessions[c.sessionName]
+	}
+	h.mu.Unlock()
+	if replacement != nil && replacement != c {
+		log.Printf("session delivery drain skipped decision=stale_client key_id=%s session=%s conn_seq=%d",
+			c.keyID, c.sessionName, c.connSeq)
+		return
+	}
 	for {
 		expired, err := h.Repo.ExpireSessionDeliveries(ctx, c.keyID, c.sessionName, time.Now().UTC())
 		if err != nil {
@@ -3301,6 +3351,8 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 		}
 		if err := c.write(ctx, env); err != nil {
 			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "queued", err.Error(), time.Now().UTC().Add(5*time.Second))
+			log.Printf("session delivery write failed decision=requeue key_id=%s session=%s conn_seq=%d delivery_id=%s reason=%q retry_after=5s",
+				c.keyID, c.sessionName, c.connSeq, d.ID, err.Error())
 			return
 		}
 		delay := time.Until(d.NextAttemptAt)

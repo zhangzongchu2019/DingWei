@@ -28,6 +28,33 @@ func newTestSQLite(t *testing.T) (*SQLite, context.Context) {
 	return db, ctx
 }
 
+func TestSessionEndpointDeliveryACKPersistsAcrossOfflineState(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	ep := model.SessionEndpoint{
+		KeyID: "key", SessionName: "home", LastSeenAt: time.Now().UTC(), Active: true,
+	}
+	if err := db.UpsertSessionEndpoint(ctx, ep); err != nil {
+		t.Fatal(err)
+	}
+	if enabled, found, err := db.SessionEndpointDeliveryACK(ctx, "key", "home"); err != nil || !found || enabled {
+		t.Fatalf("initial capability enabled=%t found=%t err=%v", enabled, found, err)
+	}
+	if err := db.SetSessionEndpointDeliveryACK(ctx, "key", "home", true); err != nil {
+		t.Fatal(err)
+	}
+	ep.Active = false
+	if err := db.UpsertSessionEndpoint(ctx, ep); err != nil {
+		t.Fatal(err)
+	}
+	enabled, found, err := db.SessionEndpointDeliveryACK(ctx, "key", "home")
+	if err != nil || !found || !enabled {
+		t.Fatalf("offline capability enabled=%t found=%t err=%v", enabled, found, err)
+	}
+	if enabled, found, err := db.SessionEndpointDeliveryACK(ctx, "key", "missing"); err != nil || found || enabled {
+		t.Fatalf("missing endpoint enabled=%t found=%t err=%v", enabled, found, err)
+	}
+}
+
 func TestSessionDeliveryClaimBypassesExpiredDeliveredAndIsMonotonic(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	now := time.Now().UTC()

@@ -132,6 +132,8 @@ type Repository interface {
 	IncrementSessionEndpointConnSeq(ctx context.Context, keyID, sessionName string) (int, error)
 	TouchSessionEndpoint(ctx context.Context, keyID, sessionName string, lastSeenAt time.Time) error
 	ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpoint, error)
+	SetSessionEndpointDeliveryACK(ctx context.Context, keyID, sessionName string, enabled bool) error
+	SessionEndpointDeliveryACK(ctx context.Context, keyID, sessionName string) (bool, bool, error)
 	SetSessionMirror(ctx context.Context, keyID, sessionName string, enabled bool, mirrorTo string) error
 	SetSessionNoDirectory(ctx context.Context, keyID, sessionName string, enabled bool) error
 

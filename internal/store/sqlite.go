@@ -2770,7 +2770,7 @@ func (s *SQLite) TouchSessionEndpoint(ctx context.Context, keyID, sessionName st
 
 func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpoint, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT key_id, session_name, COALESCE(full_session_name, ''), COALESCE(owner_key, ''), last_seen_at, active, mirror_enabled, COALESCE(mirror_to, ''), COALESCE(client_ip, ''), COALESCE(tool, ''), COALESCE(model, ''), COALESCE(version, ''), COALESCE(producer, 0), COALESCE(target_group, ''), COALESCE(no_directory, 0), COALESCE(no_directory_admin, 0), COALESCE(conn_seq, 0)
+		`SELECT key_id, session_name, COALESCE(full_session_name, ''), COALESCE(owner_key, ''), last_seen_at, active, mirror_enabled, COALESCE(mirror_to, ''), COALESCE(client_ip, ''), COALESCE(tool, ''), COALESCE(model, ''), COALESCE(version, ''), COALESCE(producer, 0), COALESCE(target_group, ''), COALESCE(no_directory, 0), COALESCE(no_directory_admin, 0), COALESCE(conn_seq, 0), COALESCE(delivery_ack_v1, 0)
 		   FROM session_endpoint ORDER BY key_id, session_name`)
 	if err != nil {
 		return nil, err
@@ -2780,8 +2780,8 @@ func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpo
 	for rows.Next() {
 		var ep model.SessionEndpoint
 		var lastSeen string
-		var active, mirrorEnabled, producer, noDirectory, noDirectoryAdmin int
-		if err := rows.Scan(&ep.KeyID, &ep.SessionName, &ep.FullSessionName, &ep.OwnerKey, &lastSeen, &active, &mirrorEnabled, &ep.MirrorTo, &ep.ClientIP, &ep.Tool, &ep.Model, &ep.Version, &producer, &ep.TargetGroup, &noDirectory, &noDirectoryAdmin, &ep.ConnSeq); err != nil {
+		var active, mirrorEnabled, producer, noDirectory, noDirectoryAdmin, deliveryACKV1 int
+		if err := rows.Scan(&ep.KeyID, &ep.SessionName, &ep.FullSessionName, &ep.OwnerKey, &lastSeen, &active, &mirrorEnabled, &ep.MirrorTo, &ep.ClientIP, &ep.Tool, &ep.Model, &ep.Version, &producer, &ep.TargetGroup, &noDirectory, &noDirectoryAdmin, &ep.ConnSeq, &deliveryACKV1); err != nil {
 			return nil, err
 		}
 		ep.LastSeenAt, _ = time.Parse(time.RFC3339, lastSeen)
@@ -2790,9 +2790,31 @@ func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpo
 		ep.Producer = producer == 1
 		ep.NoDirectory = noDirectory == 1
 		ep.NoDirectoryAdmin = noDirectoryAdmin == 1
+		ep.DeliveryACKV1 = deliveryACKV1 == 1
 		out = append(out, ep)
 	}
 	return out, rows.Err()
+}
+
+func (s *SQLite) SetSessionEndpointDeliveryACK(ctx context.Context, keyID, sessionName string, enabled bool) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE session_endpoint SET delivery_ack_v1=? WHERE key_id=? AND session_name=?`,
+		boolInt(enabled), keyID, sessionName)
+	return err
+}
+
+func (s *SQLite) SessionEndpointDeliveryACK(ctx context.Context, keyID, sessionName string) (bool, bool, error) {
+	var enabled int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT delivery_ack_v1 FROM session_endpoint WHERE key_id=? AND session_name=?`,
+		keyID, sessionName).Scan(&enabled)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, false, nil
+	}
+	if err != nil {
+		return false, false, err
+	}
+	return enabled == 1, true, nil
 }
 
 func (s *SQLite) SetSessionMirror(ctx context.Context, keyID, sessionName string, enabled bool, mirrorTo string) error {
