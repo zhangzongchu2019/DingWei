@@ -74,6 +74,17 @@
 
 A 闸链短路=TestInt_ChainShortCircuitAndSentinelActor · B default-deny=TestDefaultDeny+TestInt_UnknownOpRejectedNotLLM+TestC26_PromoteInvalidRoleRejected · C canonical=TestInt_CanonicalUnwrapsTransportAndMirror · D 并发恰一=TestC6_ConcurrentTakeoverExactlyOnce · E 键不跨 principal=TestC6_OwnerTakeover(E 段) · F 拒必落账=TestInt_ChainShortCircuit…/TestInt_UnknownOp…(audit 断言) · G 过渡窗两例=TestTransitionWindow_AllMutatingFailClosed+TestInt_TransitionWindowFailClosedReadOnlyOpen(只读放行正例)。
 
+## ★Scope 定级(shence F-INT-1,11:29Z——enforcement 触达的如实标注)
+
+P3 交付=**组件级 enforce 就绪+E2E 单测证**(五闸×Board 接线/3 caller 义务/审计,全负例过);
+**最外层生产接通不在本轮**,显式定级如下(与 criteria §1 OUT 一致,不默认已接通):
+| 未接通面 | 现状 | 归属 |
+|---|---|---|
+| transport/hub→Receiver.Handle 真消息源 | Receiver 零生产调用者 | P5 部署灰度(真投递冒烟,criteria OUT) |
+| C6 OwnerTakeover/Override 业主授权面 | 原语零非测试调用者(过渡期硬禁用=设计态) | P5 应急原语原子共切(criteria OUT) |
+| C2.6 Promote/Exemption 调度者控制面 | 原语零非测试调用者 | P4 管理面接线(攒批已记) |
+| DEA 真驱动+Q1-Q4 能力实测 | Stub only(能力全待验=fail-closed) | P4(criteria §5③) |
+
 ## 独立测试方(zzc-tester-2642)状态
 
 route 15/15 ✅ · C6 7/7 ✅(+并发 D 补)· C2.6 9/9 ✅ · DEA/集成=已派发待回。
