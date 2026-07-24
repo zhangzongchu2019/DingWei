@@ -1,9 +1,10 @@
-# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v0.4——+dev56 审#2 定稿:应急 fail-closed/竞态线性化/C1 两层口径)
+# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v0.5——dev56 7 点整合 checklist 全闭合)
 
 作者 zzc-devo48-2642 · 2026-07-23 · 长程任务 P2 段(冻结对象;两签后 C1-C5 即契约,改动须重两签)
 上游=P1 设计稿 v1.1(sha 9798c663);本稿把 §7 骨架落成可签文本。
 v0.2 修:shence 审#1(MC-1 身份真实性锚/MC-2 状态 op 授权闸/MC-3 应急幂等 epoch;A-1~A-4)+dev56 审#2(①C2 漏 2-Agent 守门/②应急原语非零新语义须诚实立原语/③合法审计 actor 悖论/④canonical 首行与可信 control op)一次攒批;应急原语升为 **C6 新原语**(纳入本次两签,C1 引用面恢复"纯引用零新语义"的诚实性)。
 v0.3 增:shence H1(C0 授权模型合章)+H2(过渡窗敞口)。
+v0.5=dev56 7 点整合清单全闭合对照(manager 定为唯一 checklist):①C2 执行席≤2/升格/豁免=C2.6;②身份真实性 hub principal(from 不作授权)=C0.1/C5 5.0;③状态 op 入账前 principal↔task_role+new 创建权=C5 gate-3;④应急 owner 鉴权/expected_epoch/idempotency/重放 no-op/线性化+事件原子+P3 新语义窗=C0.2-0.6/C6/C1 1.4b;⑤identity_rejected 合法 gate 签名/被拒 name 仅 subject=C4 4.2;⑥canonical 首行/可信 meta/control 语法+三负例=C5 5.0a;⑦三跨边界不变量(P5 原子切/每实体同构授权闸/LLM 只判路由)=C3.4a·C3.3·C5 gate-5;**+全状态 op 幂等(非仅 emergency)=C0.3**。
 v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-closed**(共享钥可伪造夺权=破坏安全不变量,风险接受消不掉,C0.4)②竞态线性化(takeover↔override 先提交者决定+同事务+重放返原 outcome,C0.5)③override directive 白名单(C0.6)④C1 两层口径(1.4a 现有全集 / 1.4b P3 新 owner emergency 扩展,勿总称零新语义)。
 
 ---
@@ -15,7 +16,11 @@ v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-clo
 - **0.2 授权双主体模型(★A-4 定义,dev56 可实现性线并置)**:
   - 常态写=调度者小组以自身 `Identity{owner,epoch}` 走 guarded 原语;
   - **业主 override 写=双 principal 授权**:业主 principal(0.1 校验)授权 + 在**调度者当前 epoch** 上执行该单条 guarded 写(不夺权、不改 owner、不裸越 fence);epoch 变则 override 上下文失效(须重取当前 epoch);竞态线性化见 C0.5,directive 白名单见 C0.6。
-- **0.3 epoch/幂等**:owner_takeover=期望 epoch CAS(e→e+1,陈旧 e 为 no-op);owner_override=带 idempotency_id(同 id 重投 no-op)。状态 op 沿引擎 rid 幂等。
+- **0.3 epoch/幂等(★dev56 整合补:全状态 op,非仅 emergency)**:**一切可变更状态的 op** 必带 request_id(幂等键)+作用于当前 epoch——重投/重放=返原 outcome no-op(治 15-40min 可重投信道)。分项:
+  - owner_takeover=期望 epoch CAS(e→e+1,陈旧 e no-op);
+  - owner_override=idempotency_id(同 id 重投 no-op);
+  - 状态入账 op(new/status/result/reject/门/收口)=沿引擎 rid 幂等(request_id∈node_request/task_request,已冻结)+经 C5 授权闸;
+  - **不变量:任何状态变更提交前必满足(幂等键去重 ∧ epoch 有效 ∧ 授权闸过),三缺一拒。**
 - **0.4 过渡窗——应急原语 fail-closed(★dev56 审#2 提级,严于 best-effort)**:hub canonical per-session principal 未就绪时——
   - **owner_takeover / owner_override = 硬禁用(fail-closed,不可启用)**:共享 FB key 下可伪造的夺权/急停若进过渡运行,攻击者可合法触发 epoch+1 fence 真调度者=直接破坏安全不变量,"风险接受"消不掉此破坏,故不接受、直接禁用;
   - **普通身份/控制路由**:可在明确 **pre-P5 warn/best-effort 迁移窗**运行,逐项列风险(①控制指令伪造发件人),业主知情;
