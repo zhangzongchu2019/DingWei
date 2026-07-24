@@ -58,7 +58,10 @@
 | 建单/变更守门(换人不绕限) | board.go `CreateTask`/`SetTaskRoles` 接线(promoted 不随 who 释放) | TestC26_RoleChangeCannotBreach+TestC26_SwapSeatThenPromote(换席放行) |
 | 幂等 | 两原语 no-op 路径 | TestC26_PromoteIdempotent |
 
-## DEA stub(dea.go,b46fc17;M0 §3.7,真驱动 Q1-Q4 留 P4)
+## DEA stub(dea.go,b46fc17;真驱动 Q1-Q4 留 P4)
+
+> **权威坐标(shence 卫生②)**:DEA 契约权威=设计冻结件 `multi-cli-scheduler-M0-board-draft.md` **§3.7 @ commit 6f1b071**(两签冻结旁支,dev56 五核#1 语义;非 P3 代码基线 18ebdb1 树内)。
+> **verdict 域脚注(shence 裁决 11:24Z,卫生①)**:三态为正;裸 NOT_APPLIED 非终局→归 UNKNOWN;唯一释放安全态=NOT_APPLIED_FENCED(未 fence 的"未执行"仍可能触发=释放即双副作用)。criteria §5③ 4 值写法系缩写歧义,其脚注修正随首件 re-freshen 批。
 
 | 契约条 | 代码点 | 负例测试 |
 |---|---|---|
