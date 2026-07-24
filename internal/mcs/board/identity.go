@@ -9,10 +9,17 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 )
 
+// hasControlChar 任何控制字符/空白(含 \n\r\t)=非法(★MC-4 注入面)。
+func hasControlChar(s string) bool {
+	return strings.IndexFunc(s, func(r rune) bool { return r < 0x20 || r == 0x7f || r == ' ' }) >= 0
+}
+
 // IdentityPattern 合法 agent/actor 身份格式(契约 C4 4.1,改动=改契约须重两签)。
-var IdentityPattern = regexp.MustCompile(`^zzc-[a-z0-9]+-[0-9]+$`)
+// ★MC-4 fullmatch(\A…\Z 等价:Go 无 ^$ 多行问题,但用 ^…$+显式拒控制字符/空白双保险)。
+var IdentityPattern = regexp.MustCompile(`\Azzc-[a-z0-9]+-[0-9]+\z`)
 
 // identityMode: true=enforce(拒收非法名);false=warn(放行但落 identity_warned 事件)。
 // 生产切换走 SetIdentityEnforce(部署配置);默认 warn。
@@ -44,7 +51,7 @@ func (e *ErrIdentityRejected) Error() string {
 // checkIdentity 校验身份;enforce 下非法=落 identity_rejected 事件(独立短事务,保证拒收也可审计)+错误。
 // warn 下非法=identity_warned 事件+放行(过渡期)。
 func (b *Board) checkIdentity(ctx context.Context, name, source string) error {
-	if IdentityPattern.MatchString(name) {
+	if !hasControlChar(name) && IdentityPattern.MatchString(name) {
 		return nil
 	}
 	kind := "identity_warned"

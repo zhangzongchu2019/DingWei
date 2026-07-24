@@ -7,6 +7,7 @@ package route
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/board"
 )
@@ -53,7 +54,13 @@ type Router struct {
 	EmergencyIDs  map[string]bool
 	Trusted       bool
 	Authz         InTaskRole
+	// TesterOf(task)=该 task 指定门方 principal(★dev56② role×op:门 PASS/FAIL 仅 tester 发);空=无。
+	TesterOf func(taskID string) string
 }
+
+var gateRe = regexp.MustCompile(`^【?(门|PASS|FAIL)`)
+
+func isGate(first string) bool { return gateRe.MatchString(first) }
 
 var (
 	// engineOps ③闸:引擎既有 op 集(§6 冻结件)。
@@ -66,8 +73,8 @@ var (
 
 // Route 对单信封执行五闸(纯函数,零 IO;入账/事件由调用方按 Result 落)。
 func (r *Router) Route(e Envelope) Result {
-	// ① 身份闸:principal 必须合 C4 格式(★读 Principal 非 from)
-	if !board.IdentityPattern.MatchString(e.Principal) {
+	// ① 身份闸:principal 合 C4 格式;★dev56⑤ 外部禁用 system:* 保留前缀(防伪造哨兵)
+	if strings.HasPrefix(e.Principal, "system:") || !board.IdentityPattern.MatchString(e.Principal) {
 		return Result{Verdict: VerdictIdentityRejected, Gate: 1}
 	}
 	isControl := controlRe.MatchString(e.FirstLine)
@@ -84,6 +91,11 @@ func (r *Router) Route(e Envelope) Result {
 	if engineOps[e.MetaOp] || statusHit {
 		if e.MetaOp == "new" {
 			if !r.DispatcherIDs[e.Principal] {
+				return Result{Verdict: VerdictDirectiveRejected, Gate: 3}
+			}
+		} else if isGate(e.FirstLine) {
+			// ★dev56② 门 PASS/FAIL 仅指定门方(tester)可发
+			if r.TesterOf == nil || r.TesterOf(e.TaskID) != e.Principal {
 				return Result{Verdict: VerdictDirectiveRejected, Gate: 3}
 			}
 		} else if r.Authz == nil || !r.Authz(e.Principal, e.TaskID) {

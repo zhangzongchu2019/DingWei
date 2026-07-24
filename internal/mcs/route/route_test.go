@@ -12,6 +12,7 @@ func newRouter(trusted bool) *Router {
 		EmergencyIDs:  map[string]bool{"zzc-owner-2642": true},
 		Trusted:       trusted,
 		Authz:         func(p, task string) bool { return roles[task][p] },
+		TesterOf:      func(task string) string { return "zzc-tester-2642" },
 	}
 }
 
@@ -26,6 +27,7 @@ func TestFiveGates_V02(t *testing.T) {
 		// ① 身份闸(读 principal)
 		{"裸名principal拒", Envelope{Principal: "developer-out"}, VerdictIdentityRejected, 1},
 		{"大写非法", Envelope{Principal: "ZZC-x-2642", MetaOp: "new"}, VerdictIdentityRejected, 1},
+		{"外部伪造system哨兵拒(dev56⑤)", Envelope{Principal: "system:identity-gate", MetaOp: "new"}, VerdictIdentityRejected, 1},
 		// ② 控制闸
 		{"非授权停任务拒", Envelope{Principal: "zzc-dev55-2642", FirstLine: "停止 t1"}, VerdictDirectiveRejected, 2},
 		{"调度者控制→无op无task落兜底", Envelope{Principal: "zzc-dispatch-2642", FirstLine: "停止"}, VerdictLLM, 5},
@@ -34,7 +36,8 @@ func TestFiveGates_V02(t *testing.T) {
 		{"task_role成员发result过", Envelope{Principal: "zzc-tester-2642", MetaOp: "result", TaskID: "t1"}, VerdictEngineOp, 4},
 		{"非调度者建单拒", Envelope{Principal: "zzc-tester-2642", MetaOp: "new", TaskID: "t2"}, VerdictDirectiveRejected, 3},
 		{"调度者建单过", Envelope{Principal: "zzc-dispatch-2642", MetaOp: "new", TaskID: "t2"}, VerdictEngineOp, 4},
-		{"task_role成员发门PASS入账", Envelope{Principal: "zzc-tester-2642", FirstLine: "【门 PASS】", TaskID: "t1"}, VerdictStatusIngest, 4},
+		{"指定门方tester发门PASS入账", Envelope{Principal: "zzc-tester-2642", FirstLine: "【门 PASS】", TaskID: "t1"}, VerdictStatusIngest, 4},
+		{"非门方task_role成员发门PASS拒(dev56②)", Envelope{Principal: "zzc-devo48-2642", FirstLine: "【门 PASS】", TaskID: "t1"}, VerdictDirectiveRejected, 3},
 		{"非task_role伪造门拒(MC-2核心)", Envelope{Principal: "zzc-dev55-2642", FirstLine: "【门 PASS】", TaskID: "t1"}, VerdictDirectiveRejected, 3},
 		// ⑤ 兜底
 		{"普通讨论升LLM", Envelope{Principal: "zzc-shenceclaude-2642", FirstLine: "有个疑问"}, VerdictLLM, 5},
