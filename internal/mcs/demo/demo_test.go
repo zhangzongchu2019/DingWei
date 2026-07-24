@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/board"
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd"
@@ -43,6 +44,41 @@ func TestPanel_ReadOnly(t *testing.T) {
 	h.ServeHTTP(rr, httptest.NewRequest("GET", "/", nil))
 	if rr.Code != 200 {
 		t.Fatalf("GET 应 200,got %d", rr.Code)
+	}
+}
+
+// 回归:Board=单连接池,面板节点时间线必须"先收集再嵌套查"——有节点行时 GET 不得自死锁。
+func TestPanel_NoDeadlockWithNodes(t *testing.T) {
+	ctx := context.Background()
+	b, err := board.Open(filepath.Join(t.TempDir(), "d.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer b.Close()
+	epoch, _ := b.Takeover(ctx, "board1", "zzc-o-1", 3600)
+	rb := func(w string) board.RoleBinding { return board.RoleBinding{Who: w, CLI: "c", LLM: "m"} }
+	ra := board.RoleAssignments{Designer: rb("zzc-d-1"), Implementer: rb("zzc-i-1"), Tester: rb("zzc-t-1"), QAOwner: rb("zzc-q-1")}
+	if err := b.CreateTask(ctx, "t1", "board1", "t", ra, board.Identity{Owner: "zzc-o-1", Epoch: epoch}); err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range []string{"na", "nb"} {
+		if err := b.AddNode(ctx, n, "t1", 1, "ready", nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	done := make(chan int, 1)
+	go func() {
+		rr := httptest.NewRecorder()
+		PanelHandler(b).ServeHTTP(rr, httptest.NewRequest("GET", "/", nil))
+		done <- rr.Code
+	}()
+	select {
+	case code := <-done:
+		if code != 200 {
+			t.Fatalf("GET 应 200,got %d", code)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("面板 GET 死锁(单连接池嵌套查询)")
 	}
 }
 
