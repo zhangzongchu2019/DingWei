@@ -29,8 +29,19 @@ CREATE TABLE IF NOT EXISTS task_role (
   who        TEXT NOT NULL,                 -- 会话/人 标识(如 zzc-devo48-2642)
   cli        TEXT NOT NULL,                 -- 所用 CLI 系(claude/codex/opencode/deepseek/human...)
   llm        TEXT NOT NULL,                 -- 所用模型(如 claude-opus-4-8/gpt-5.6/deepseek-v4-pro)
+  promoted   INTEGER NOT NULL DEFAULT 0,    -- ★C2.6:轻角色升格执行席标记(升格后占席;不随 who 变更隐式释放=fail-closed)
   updated_ts INTEGER NOT NULL,
   PRIMARY KEY(task_id, role)
+);
+
+-- C2.6 执行席豁免账(契约 2.6:豁免=调度者 guarded 写+role_exemption 事件落账,可审计不可匿名突破)。
+CREATE TABLE IF NOT EXISTS role_exemption (
+  task_id    TEXT NOT NULL REFERENCES task(task_id),
+  who        TEXT NOT NULL,
+  reason     TEXT NOT NULL,
+  granted_by TEXT NOT NULL,
+  created_ts INTEGER NOT NULL,
+  PRIMARY KEY(task_id, who)
 );
 
 CREATE TABLE IF NOT EXISTS agent (

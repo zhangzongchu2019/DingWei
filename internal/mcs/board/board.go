@@ -473,6 +473,12 @@ VALUES(?,?,?,?,'','',?,?)`, taskID, boardID, title, title, now, now); err != nil
 	if err := upsertRoles(ctx, tx, taskID, ra, now, true); err != nil { // requireAll:建单即填全
 		return err
 	}
+	// ★C2.6 建单守门:活跃执行席(非豁免 DISTINCT who)≤2,超=整单拒(轻角色不占席)
+	if n, err := execSeatCount(ctx, tx, taskID, ""); err != nil {
+		return err
+	} else if n > 2 {
+		return ErrExecSeatsExceeded
+	}
 	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO board_event(kind,task_id,agent_id,ts,data) VALUES('task_created',?,?,?,'{}')`,
 		taskID, id.Owner, now); err != nil {
@@ -655,6 +661,12 @@ SELECT COUNT(*) FROM task t JOIN orchestrator o ON o.board_id=t.board_id
 	}
 	if err := upsertRoles(ctx, tx, taskID, ra, now, false); err != nil {
 		return "", err
+	}
+	// ★C2.6:角色变更不得使非豁免执行席>2(promoted 席位不随 who 变更隐式释放)→ rejected 零写入
+	if n, err := execSeatCount(ctx, tx, taskID, ""); err != nil {
+		return "", err
+	} else if n > 2 {
+		return OutcomeRejected, nil
 	}
 	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO board_event(kind,task_id,agent_id,ts,data) VALUES('task_roles_set',?,?,?,'{}')`,
