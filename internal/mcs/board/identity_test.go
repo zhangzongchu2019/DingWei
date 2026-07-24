@@ -19,7 +19,8 @@ func TestIdentity_WarnDefaultThenEnforce(t *testing.T) {
 	}
 	defer b.Close()
 	b.Takeover(ctx, "board1", "orch1", 3600)
-	// warn(默认):裸名放行+identity_warned 恰一次(去重)
+	b.SetIdentityProvisional(false) // ★F3:默认 provisional=true(P2 非权威);本测试测权威 warn 路径,显式关。
+	// warn(principal 就绪):裸名放行+identity_warned 恰一次(去重)
 	if err := b.RegisterAgent(ctx, "w0", "claude"); err != nil {
 		t.Fatalf("warn 模式应放行:%v", err)
 	}

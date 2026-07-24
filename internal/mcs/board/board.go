@@ -71,7 +71,10 @@ func Open(path string, clk clock.Clock) (*Board, error) {
 		db.Close()
 		return nil, fmt.Errorf("mcs/board: migrate: %w", err)
 	}
-	return &Board{db: db, clk: clk}, nil
+	// ★shence F3 fail-safe:idcfg.provisional 默认 true(过渡期=启动默认态,P2 保护默认开:
+	// warn 不写权威 identity_warned)。与 Router.Trusted 零值 false 同向 fail-safe。
+	// principal 就绪(hub per-session 注入)后由部署侧 SetIdentityProvisional(false) 关。
+	return &Board{db: db, clk: clk, idcfg: identityConfig{provisional: true}}, nil
 }
 
 // DB 底层句柄(只读观测/测试断言用;业务写一律走 guarded 原语,禁裸写)。

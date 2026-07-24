@@ -73,6 +73,7 @@ func TestFiveGates_V15(t *testing.T) {
 		{"普通讨论升LLM", Envelope{Principal: "zzc-shenceclaude-2642", FirstLine: "有个疑问"}, VerdictLLM, 5},
 		{"★MC-B:status含暂停字样不误拒", Envelope{Principal: "zzc-tester-2642", MetaOp: "status", FirstLine: "阻塞：需暂停部署，等待审批", TaskID: "t1"}, VerdictEngineOp, 4},
 		{"★MC-B:自然语言停止无op→LLM不拒", Envelope{Principal: "zzc-dev55-2642", FirstLine: "我觉得该停止这个方案"}, VerdictLLM, 5},
+		{"★低注①:result正文撞门词PASS不误判为门(执行席过)", Envelope{Principal: "zzc-tester-2642", MetaOp: "result", FirstLine: "PASS 了", TaskID: "t1"}, VerdictEngineOp, 4},
 	}
 	for _, c := range cases {
 		got := r.Route(c.env)

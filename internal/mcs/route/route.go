@@ -3,6 +3,11 @@
 // 次序(C5 5.1,逐闸短路):①身份闸(C4 格式)→②控制闸(meta.op∈ControlOps)→
 // ③授权闸(role×op 矩阵,状态 op 必过、含收口/门,★shence P1 不绕 gate-4)→④状态入账→⑤LLM 兜底。
 // 规则只作用于 meta+首行(不信 body 自称,§6 冻结件同构);规则表版本化,改=改契约须重两签。
+//
+// ★shence F1 接线状态:本 Router 为纯路由逻辑(逻辑 done),【尚未接进生产收件面】(接线=集成件)。
+// 集成接线时 caller 两义务(否则逻辑对但不成 enforce):
+//   ①gate-5 LLM 判读输出(VerdictLLM)【不授权】——caller 须把 LLM 判读结论回过授权闸(gate-3)方可入账,不得直落 guarded 写(A-3);
+//   ②Authz 须拒空 taskID(本包已在 authorizeState 防御性 fail-closed 空 taskID,caller 侧 Authz 亦应如此)。
 package route
 
 import (
@@ -128,8 +133,14 @@ func (r *Router) Route(e Envelope) Result {
 // authorizeState 按 C5 5.1a role×op 矩阵逐 (角色,op) 判(★MC-2+dev56②+MC-a+shence P1)。
 // 越表 fail-closed(default-deny);"∈任一 task_role"不替代本矩阵。
 func (r *Router) authorizeState(e Envelope, isGateLine bool) bool {
-	// 门 PASS/FAIL(结构化 gate_result 或门首行):仅该段 C2.1 指定门方(★dev56 MC-a:per-段、非硬编码 tester)。
-	if e.MetaOp == "gate_result" || isGateLine {
+	// ★shence F1 义务②:task-scoped op 须载 taskID(不依赖 caller Authz 拒空,防御性 fail-closed;
+	// new=建单除外,其授权=DispatcherIDs、不需既有 task)。
+	if e.TaskID == "" && e.MetaOp != "new" {
+		return false
+	}
+	// 门 PASS/FAIL(结构化 gate_result,或【无 meta.op 时】门首行):仅该段 C2.1 指定门方(★dev56 MC-a:per-段、非硬编码 tester)。
+	// ★shence 低注①:结构化 meta.op 优先——result 等正文撞 gateRe 不被误当门判(避 result 误拒)。
+	if e.MetaOp == "gate_result" || (e.MetaOp == "" && isGateLine) {
 		if r.GateKeeperOf == nil {
 			return false // fail-closed
 		}

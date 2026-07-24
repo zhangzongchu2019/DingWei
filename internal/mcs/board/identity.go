@@ -1,8 +1,11 @@
 // identity.go —— P3:统一身份 enforce(契约 C4;张宗楚地基要求 D2=a)。
 //
 // 合法身份=统一命名格式(v1.0):^zzc-[a-z0-9]+-[0-9]+$;此字符串=全体系唯一主键。
-// enforce 点:RegisterAgent 与事件 actor 入账(insertEvent)——非法名=写入拒绝+identity_rejected 事件。
-// warn/enforce 开关:上线切换判据=收编三步完成(C4 4.3)。**默认 warn**(引擎内部 worker id/既有测试非 zzc- 格式;调度者系统上线=部署侧开 enforce,见 D2=a)。
+// enforce 点(★shence F2 与现实一致):**当前仅 RegisterAgent** 接 checkIdentity。事件 actor 入账
+// (insertEvent ~10 处)的 actor 均为内部 id.Owner(调度者小组/系统哨兵),无外部裸名路径,故暂不接 checkIdentity、无活洞;
+// 待外部 principal 直接落 actor 的路径出现(如收件面接线,后续件)时再把 checkIdentity 接进 insertEvent。
+// warn/enforce 开关:上线切换判据=收编三步完成(C4 4.3)。**默认 warn+provisional**(引擎内部 worker id/既有测试非 zzc- 格式;
+// provisional 下 warn 非权威 non-writing,见下;调度者系统上线=部署侧 SetIdentityEnforce(true)+SetIdentityProvisional(false),见 D2=a)。
 package board
 
 import (
