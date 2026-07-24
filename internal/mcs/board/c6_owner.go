@@ -138,10 +138,15 @@ func (b *Board) OwnerTakeover(ctx context.Context, boardID string, req OwnerTake
 	if curEpoch != req.ExpectedEpoch {
 		return b.recordOwnerOp(ctx, tx, req.IdempotencyID, req.OwnerPrincipal, "owner_takeover", OwnerCASMiss, "")
 	}
-	// 应用:epoch e→e+1,owner=to_owner(同事务)
-	if _, e := tx.ExecContext(ctx, `UPDATE orchestrator SET epoch=epoch+1, owner=? WHERE board_id=? AND epoch=?`,
-		req.ToOwner, boardID, curEpoch); e != nil {
+	// 应用:epoch e→e+1,owner=to_owner(同事务)。★F-C6-1:检 RowsAffected==1 让 CAS 自足——
+	// 条件 UPDATE WHERE epoch=curEpoch 若匹配 0 行(读检查后被并发改=TOCTOU),不假记 applied,退 cas_miss。
+	res, e := tx.ExecContext(ctx, `UPDATE orchestrator SET epoch=epoch+1, owner=? WHERE board_id=? AND epoch=?`,
+		req.ToOwner, boardID, curEpoch)
+	if e != nil {
 		return "", e
+	}
+	if n, _ := res.RowsAffected(); n != 1 {
+		return b.recordOwnerOp(ctx, tx, req.IdempotencyID, req.OwnerPrincipal, "owner_takeover", OwnerCASMiss, "")
 	}
 	// 事件:actor=业主 principal(★不冒充调度者 Identity);记 from/to owner+epoch
 	data := fmt.Sprintf(`json_object('from_owner',?,'to_owner',?,'from_epoch',?,'to_epoch',?,'reason',?)`)
@@ -195,9 +200,13 @@ func (b *Board) OwnerOverride(ctx context.Context, req OwnerOverrideReq) (OwnerO
 	if curEpoch != req.ExpectedEpoch || curState != req.ExpectedState {
 		return b.recordOwnerOp(ctx, tx, req.IdempotencyID, req.OwnerPrincipal, "owner_override", OwnerCASMiss, "")
 	}
-	// 应用:白名单 directive→node 状态变更(同事务)
-	if _, e := tx.ExecContext(ctx, `UPDATE node SET status=? WHERE node_id=? AND status=?`, newState, req.Target, curState); e != nil {
+	// 应用:白名单 directive→node 状态变更(同事务)。★F-C6-1:检 RowsAffected==1(TOCTOU 兜底,退 cas_miss)。
+	res, e := tx.ExecContext(ctx, `UPDATE node SET status=? WHERE node_id=? AND status=?`, newState, req.Target, curState)
+	if e != nil {
 		return "", e
+	}
+	if n, _ := res.RowsAffected(); n != 1 {
+		return b.recordOwnerOp(ctx, tx, req.IdempotencyID, req.OwnerPrincipal, "owner_override", OwnerCASMiss, "")
 	}
 	// 事件:actor=业主 principal(★不冒充调度者);acting_epoch=当前 epoch(不改)
 	data := `json_object('target',?,'directive',?,'idempotency_id',?,'reason',?,'acting_epoch',?)`

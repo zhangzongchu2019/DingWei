@@ -2,6 +2,8 @@ package board
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -104,5 +106,44 @@ func TestC6_OwnerOverride(t *testing.T) {
 	// 幂等 no-op:同 id 重投→返原 applied(不再变更)
 	if oc, _ := b.OwnerOverride(ctx, OwnerOverrideReq{OwnerPrincipal: "zzc-owner-2642", Target: "n1", Directive: "pause", ExpectedEpoch: 1, ExpectedState: "ready", IdempotencyID: "ov-ok"}); oc != OwnerApplied {
 		t.Fatalf("override 幂等重投应返原 applied,got %s", oc)
+	}
+}
+
+// ★F-C6-2/§3.6-D 并发恰一:两并发 takeover 同 expected_epoch=1(不同 idempotency_id=测 epoch-CAS 并发非幂等)
+// →恰一 applied、另一 cas_miss;epoch 只 +1 一次。
+func TestC6_ConcurrentTakeoverExactlyOnce(t *testing.T) {
+	b, ctx := c6rig(t)
+	var wg sync.WaitGroup
+	res := make([]OwnerOutcome, 2)
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			oc, _ := b.OwnerTakeover(ctx, "board1", OwnerTakeoverReq{
+				OwnerPrincipal: "zzc-owner-2642",
+				ToOwner:        "zzc-neworch-2642",
+				ExpectedEpoch:  1,
+				IdempotencyID:  fmt.Sprintf("conc-%d", idx),
+			})
+			res[idx] = oc
+		}(i)
+	}
+	wg.Wait()
+	applied, casmiss := 0, 0
+	for _, oc := range res {
+		switch oc {
+		case OwnerApplied:
+			applied++
+		case OwnerCASMiss:
+			casmiss++
+		}
+	}
+	if applied != 1 || casmiss != 1 {
+		t.Fatalf("并发恰一:applied=%d cas_miss=%d want 1/1(res=%v)", applied, casmiss, res)
+	}
+	var ep int64
+	b.db.QueryRow(`SELECT epoch FROM orchestrator WHERE board_id='board1'`).Scan(&ep)
+	if ep != 2 {
+		t.Fatalf("并发只应夺权一次,epoch=%d want 2", ep)
 	}
 }
