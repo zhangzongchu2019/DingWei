@@ -926,6 +926,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			h.closeFeishuSyncLocked(keyID, sessionName)
 		}
 		h.mu.Unlock()
+		if current && h.sessionSupportsDeliveryACK(c) {
+			h.releaseSessionDeliveryLeases(c, "session_disconnected")
+		}
 		for _, viewer := range terminalViewers {
 			_ = terminalWrite(context.Background(), viewer, map[string]any{"type": "status", "readonly": true, "message": "会话已离线"})
 			if viewer != nil && viewer.conn != nil {
@@ -3212,6 +3215,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 		return false
 	}
 	c.stateMu.Lock()
+	wasDeliveryACKV1 := c.deliveryACKV1
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
 	c.stateMu.Unlock()
 	if h.Repo != nil {
@@ -3221,9 +3225,30 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 		}
 	}
 	if h.sessionSupportsDeliveryACK(c) {
+		if !wasDeliveryACKV1 {
+			h.releaseSessionDeliveryLeases(c, "session_reconnected")
+		}
 		go h.drainSessionDeliveries(context.Background(), c)
 	}
 	return true
+}
+
+func (h *Hub) releaseSessionDeliveryLeases(c *sessionClient, reason string) {
+	if h.Repo == nil || c == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	released, err := h.Repo.ReleaseSessionDeliveryLeases(
+		ctx, c.keyID, c.sessionName, reason, time.Now().UTC(),
+	)
+	if err != nil {
+		log.Printf("session delivery lease release failed key_id=%s session=%s conn_seq=%d reason=%s error=%q",
+			c.keyID, c.sessionName, c.connSeq, reason, err.Error())
+		return
+	}
+	log.Printf("session delivery lease release decision=requeue key_id=%s session=%s conn_seq=%d reason=%s released=%d",
+		c.keyID, c.sessionName, c.connSeq, reason, released)
 }
 
 func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, env model.Envelope) bool {
@@ -3324,9 +3349,11 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 		replacement = sessions[c.sessionName]
 	}
 	h.mu.Unlock()
-	if replacement != nil && replacement != c {
-		log.Printf("session delivery drain skipped decision=stale_client key_id=%s session=%s conn_seq=%d",
-			c.keyID, c.sessionName, c.connSeq)
+	// A real WebSocket client must still be the published client. Tests may use
+	// an in-memory client without a connection to exercise the drain directly.
+	if replacement != c && c.conn != nil {
+		log.Printf("session delivery drain skipped decision=stale_or_offline_client key_id=%s session=%s conn_seq=%d client_present=%t",
+			c.keyID, c.sessionName, c.connSeq, replacement != nil)
 		return
 	}
 	for {

@@ -4746,6 +4746,96 @@ func TestReliableSessionDeliveryQueuesWhileDisconnectedAndDrainsOnceAfterReconne
 	}
 }
 
+func TestDeliveredLeaseIsReleasedOnDisconnectAndFIFOResumesAfterReconnect(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-hol", Name: "hol", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-hol", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	firstConn := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	_ = readEnvelopeIncludingSystem(t, ctx, firstConn)
+	if err := writeEnvelope(ctx, firstConn, model.Envelope{ID: "caps-first", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		enabled, found, _ := db.SessionEndpointDeliveryACK(ctx, key.ID, "home")
+		return found && enabled
+	})
+	for _, id := range []string{"hol-first", "hol-second"} {
+		if err := hub.RouteEnvelope(ctx, model.Envelope{
+			ID: id, To: "home#" + key.ID, From: "peer#" + key.ID, Body: id, TS: time.Now().Unix(),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	firstDelivery := readEnvelope(t, ctx, firstConn)
+	firstID := metaString(firstDelivery.Meta, "delivery_id")
+	if firstDelivery.ID != "hol-first" || firstID == "" {
+		t.Fatalf("first delivery=%+v", firstDelivery)
+	}
+	if err := writeEnvelope(ctx, firstConn, model.Envelope{ID: "ack-delivered", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": firstID, "state": "delivered"}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ := db.GetSessionDelivery(ctx, firstID)
+		return record != nil && record.State == "delivered" &&
+			record.NextAttemptAt.After(time.Now().UTC().Add(time.Minute))
+	})
+	if err := firstConn.Close(websocket.StatusNormalClosure, "drop-before-processed"); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ := db.GetSessionDelivery(ctx, firstID)
+		return record != nil && record.State == "queued" &&
+			!record.NextAttemptAt.After(time.Now().UTC())
+	})
+
+	reconnectStart := time.Now()
+	secondConn := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	defer secondConn.Close(websocket.StatusNormalClosure, "done")
+	_ = readEnvelopeIncludingSystem(t, ctx, secondConn)
+	if err := writeEnvelope(ctx, secondConn, model.Envelope{ID: "caps-second", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	retried := readEnvelope(t, ctx, secondConn)
+	if got := metaString(retried.Meta, "delivery_id"); got != firstID || retried.ID != "hol-first" {
+		t.Fatalf("retry must keep the exact id: got=%+v want_delivery_id=%s", retried, firstID)
+	}
+	if elapsed := time.Since(reconnectStart); elapsed >= 2*time.Second {
+		t.Fatalf("retry waited for stale two-minute lease: %s", elapsed)
+	}
+	if err := writeEnvelope(ctx, secondConn, model.Envelope{ID: "ack-first-processed", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": firstID, "state": "processed"}}); err != nil {
+		t.Fatal(err)
+	}
+	secondDelivery := readEnvelope(t, ctx, secondConn)
+	secondID := metaString(secondDelivery.Meta, "delivery_id")
+	if secondDelivery.ID != "hol-second" || secondID == "" || secondID == firstID {
+		t.Fatalf("FIFO did not immediately advance: %+v", secondDelivery)
+	}
+	if err := writeEnvelope(ctx, secondConn, model.Envelope{ID: "ack-second-processed", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": secondID, "state": "processed"}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		firstRecord, _ := db.GetSessionDelivery(ctx, firstID)
+		secondRecord, _ := db.GetSessionDelivery(ctx, secondID)
+		return firstRecord != nil && firstRecord.State == "processed" && firstRecord.Attempts == 1 &&
+			secondRecord != nil && secondRecord.State == "processed" && secondRecord.Attempts == 1
+	})
+}
+
 func TestOfflineDurableAdmissionRejectsEndpointWithoutAttestedACKCapability(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{

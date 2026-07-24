@@ -1454,6 +1454,25 @@ func (s *SQLite) UpdateSessionDeliveryBusy(ctx context.Context, id, errText stri
 	return err
 }
 
+// ReleaseSessionDeliveryLeases makes in-flight work immediately claimable after
+// the delivery-ACK WebSocket that owned the lease disappears. The delivery id
+// stays unchanged, so the helper inbox remains the idempotency authority.
+func (s *SQLite) ReleaseSessionDeliveryLeases(ctx context.Context, keyID, sessionName, reason string, now time.Time) (int64, error) {
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+	nowText := now.UTC().Format(time.RFC3339Nano)
+	result, err := s.db.ExecContext(ctx, `UPDATE session_delivery
+		SET state='queued',last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=?,
+		    attempts=CASE WHEN attempts>0 THEN attempts-1 ELSE attempts END
+		WHERE key_id=? AND session_name=? AND state IN ('sent','delivered')`,
+		reason, nowText, nowText, keyID, sessionName)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 func (s *SQLite) GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error) {
 	return scanSessionDelivery(s.db.QueryRowContext(ctx, sessionDeliverySelect+` WHERE id=?`, id))
 }

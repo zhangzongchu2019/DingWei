@@ -173,6 +173,49 @@ func TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts(t *testing.T) {
 	}
 }
 
+func TestReleaseSessionDeliveryLeasesOnlyRequeuesTargetInflightRows(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	for _, d := range []model.SessionDelivery{
+		{ID: "dlv_sent", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_sent"},
+		{ID: "dlv_delivered", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_delivered"},
+		{ID: "dlv_processed", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_processed"},
+		{ID: "dlv_other", KeyID: "key", SessionName: "other", Envelope: `{}`, SourceMessageID: "msg_other"},
+	} {
+		if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for id, state := range map[string]string{
+		"dlv_sent": "sent", "dlv_delivered": "delivered",
+		"dlv_processed": "processed", "dlv_other": "sent",
+	} {
+		if _, err := db.db.ExecContext(ctx, `UPDATE session_delivery
+			SET state=?,attempts=1,next_attempt_at=?,lease_until=? WHERE id=?`,
+			state, now.Add(2*time.Minute).Format(time.RFC3339Nano),
+			now.Add(2*time.Minute).Format(time.RFC3339Nano), id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	released, err := db.ReleaseSessionDeliveryLeases(ctx, "key", "home", "session_disconnected", now)
+	if err != nil || released != 2 {
+		t.Fatalf("released=%d err=%v", released, err)
+	}
+	for id, want := range map[string]string{
+		"dlv_sent": "queued", "dlv_delivered": "queued",
+		"dlv_processed": "processed", "dlv_other": "sent",
+	} {
+		got, err := db.GetSessionDelivery(ctx, id)
+		if err != nil || got.State != want {
+			t.Fatalf("%s=%+v err=%v want=%s", id, got, err, want)
+		}
+		if want == "queued" && (got.Attempts != 0 || got.LastError != "session_disconnected" ||
+			got.NextAttemptAt.After(now)) {
+			t.Fatalf("released row=%+v", got)
+		}
+	}
+}
+
 func TestCancelPendingSessionDeliveryIsAddressedAndInjectionSafe(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	for _, d := range []model.SessionDelivery{

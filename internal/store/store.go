@@ -64,6 +64,7 @@ type Repository interface {
 	ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error)
 	UpdateSessionDelivery(ctx context.Context, id, state, errText string, nextAttemptAt time.Time) error
 	UpdateSessionDeliveryBusy(ctx context.Context, id, errText string, nextAttemptAt time.Time) error
+	ReleaseSessionDeliveryLeases(ctx context.Context, keyID, sessionName, reason string, now time.Time) (int64, error)
 	GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error)
 	CancelPendingSessionDelivery(ctx context.Context, messageID, deliveryID, keyID, sessionName string) (bool, error)
 	ConfirmSessionDeliveryCancelled(ctx context.Context, messageID, deliveryID, keyID, sessionName string) (bool, error)

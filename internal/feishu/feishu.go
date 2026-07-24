@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	lark "github.com/larksuite/oapi-sdk-go/v3"
@@ -87,6 +88,20 @@ type LarkGateway struct {
 	appSecret    string
 	api          *lark.Client
 	logger       *slog.Logger
+	ingress      feishuIngressCounters
+}
+
+type feishuIngressCounters struct {
+	eventReceived  atomic.Uint64
+	normalized     atomic.Uint64
+	rejected       atomic.Uint64
+	enqueued       atomic.Uint64
+	enqueueError   atomic.Uint64
+	wsReady        atomic.Uint64
+	wsReconnecting atomic.Uint64
+	wsReconnected  atomic.Uint64
+	wsDisconnected atomic.Uint64
+	wsError        atomic.Uint64
 }
 
 // MultiGateway dispatches calls to per-bot gateways by bot_channel_id.
@@ -275,32 +290,105 @@ func (g *LarkGateway) Start(ctx context.Context, onInbound func(ctx context.Cont
 	disp := dispatcher.NewEventDispatcher("", "").OnP2MessageReadV1(func(ctx context.Context, ev *larkim.P2MessageReadV1) error {
 		return nil // 已读回执无需处理，注册空 handler 避免 SDK 报 "not found handler" 刷错误日志
 	}).OnP2MessageReceiveV1(func(ctx context.Context, ev *larkim.P2MessageReceiveV1) error {
-		msg, err := g.messageFromEvent(ev)
-		if err != nil {
-			return err
-		}
-		return onInbound(ctx, msg)
+		return g.observeInboundEvent(ctx, ev, onInbound)
 	})
 	wsClient := larkws.NewClient(g.appID, g.appSecret,
 		larkws.WithEventHandler(disp),
 		larkws.WithLogLevel(larkcore.LogLevelError),
 		larkws.WithOnReady(func() {
-			g.logger.Info("feishu ws ready", "bot_channel", g.botChannelID, "app_id", g.appID)
+			g.observeWSLifecycle("ready", nil)
 		}),
 		larkws.WithOnReconnecting(func() {
-			g.logger.Warn("feishu ws reconnecting", "bot_channel", g.botChannelID)
+			g.observeWSLifecycle("reconnecting", nil)
 		}),
 		larkws.WithOnReconnected(func() {
-			g.logger.Info("feishu ws reconnected", "bot_channel", g.botChannelID)
+			g.observeWSLifecycle("reconnected", nil)
 		}),
 		larkws.WithOnDisconnected(func() {
-			g.logger.Warn("feishu ws disconnected", "bot_channel", g.botChannelID)
+			g.observeWSLifecycle("disconnected", nil)
 		}),
 		larkws.WithOnError(func(err error) {
-			g.logger.Error("feishu ws error", "bot_channel", g.botChannelID, "error", err)
+			g.observeWSLifecycle("error", err)
 		}),
 	)
 	return wsClient.Start(ctx)
+}
+
+func (g *LarkGateway) observeInboundEvent(
+	ctx context.Context,
+	ev *larkim.P2MessageReceiveV1,
+	onInbound func(context.Context, model.Message) error,
+) error {
+	msgID := feishuEventMessageID(ev)
+	received := g.ingress.eventReceived.Add(1)
+	g.log().Info("feishu ingress event_received",
+		"bot_channel", g.botChannelID, "feishu_msg_id", msgID, "count", received)
+	msg, err := g.messageFromEvent(ev)
+	if err != nil {
+		rejected := g.ingress.rejected.Add(1)
+		g.log().Warn("feishu ingress rejected",
+			"bot_channel", g.botChannelID, "feishu_msg_id", msgID,
+			"reason", err.Error(), "count", rejected)
+		return err
+	}
+	normalized := g.ingress.normalized.Add(1)
+	g.log().Info("feishu ingress normalized",
+		"bot_channel", g.botChannelID, "feishu_msg_id", msg.FeishuMsgID, "count", normalized)
+	if err := onInbound(ctx, msg); err != nil {
+		failed := g.ingress.enqueueError.Add(1)
+		g.log().Error("feishu ingress message_enqueue_error",
+			"bot_channel", g.botChannelID, "feishu_msg_id", msg.FeishuMsgID,
+			"reason", err.Error(), "count", failed)
+		return err
+	}
+	enqueued := g.ingress.enqueued.Add(1)
+	g.log().Info("feishu ingress message_enqueued",
+		"bot_channel", g.botChannelID, "feishu_msg_id", msg.FeishuMsgID, "count", enqueued)
+	return nil
+}
+
+func feishuEventMessageID(ev *larkim.P2MessageReceiveV1) string {
+	if ev == nil || ev.Event == nil || ev.Event.Message == nil {
+		return ""
+	}
+	return value(ev.Event.Message.MessageId)
+}
+
+func (g *LarkGateway) log() *slog.Logger {
+	if g.logger != nil {
+		return g.logger
+	}
+	return slog.Default()
+}
+
+func (g *LarkGateway) observeWSLifecycle(state string, err error) {
+	var count uint64
+	switch state {
+	case "ready":
+		count = g.ingress.wsReady.Add(1)
+	case "reconnecting":
+		count = g.ingress.wsReconnecting.Add(1)
+	case "reconnected":
+		count = g.ingress.wsReconnected.Add(1)
+	case "disconnected":
+		count = g.ingress.wsDisconnected.Add(1)
+	case "error":
+		count = g.ingress.wsError.Add(1)
+	default:
+		g.log().Warn("feishu ws lifecycle ignored", "state", state, "bot_channel", g.botChannelID)
+		return
+	}
+	args := []any{"state", state, "bot_channel", g.botChannelID, "count", count}
+	if err != nil {
+		args = append(args, "error", err)
+		g.log().Error("feishu ws lifecycle", args...)
+		return
+	}
+	if state == "reconnecting" || state == "disconnected" {
+		g.log().Warn("feishu ws lifecycle", args...)
+		return
+	}
+	g.log().Info("feishu ws lifecycle", args...)
 }
 
 func (g *LarkGateway) messageFromEvent(ev *larkim.P2MessageReceiveV1) (model.Message, error) {
