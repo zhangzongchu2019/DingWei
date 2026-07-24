@@ -56,3 +56,34 @@ func TestIdentity_WarnDefaultThenEnforce(t *testing.T) {
 		t.Fatalf("enforce 下合法名应过:%v", err)
 	}
 }
+
+// ★shence P2:过渡期(provisional)warn 不写权威 identity_warned(防伪造 warn 污染审计/盘点);
+// principal 就绪(关 provisional)后 warn 才写权威事件。
+func TestIdentity_ProvisionalWarnNonAuthoritative(t *testing.T) {
+	ctx := context.Background()
+	b, err := Open(":memory:", &clock.Fake{T: time.Unix(10_000, 0)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer b.Close()
+	b.Takeover(ctx, "board1", "orch1", 3600)
+	// 过渡期:warn+provisional → 放行,但【零权威 identity_warned】
+	b.SetIdentityProvisional(true)
+	if err := b.RegisterAgent(ctx, "developer-out", "claude"); err != nil {
+		t.Fatalf("provisional warn 应放行:%v", err)
+	}
+	var warned int
+	b.db.QueryRow(`SELECT COUNT(*) FROM board_event WHERE kind='identity_warned'`).Scan(&warned)
+	if warned != 0 {
+		t.Fatalf("★P2 过渡期 warn 应非权威(0 identity_warned),got %d", warned)
+	}
+	// principal 就绪:关 provisional → warn 写权威 identity_warned(换新裸名避 dedup)
+	b.SetIdentityProvisional(false)
+	if err := b.RegisterAgent(ctx, "another-bare", "claude"); err != nil {
+		t.Fatal(err)
+	}
+	b.db.QueryRow(`SELECT COUNT(*) FROM board_event WHERE kind='identity_warned'`).Scan(&warned)
+	if warned != 1 {
+		t.Fatalf("★P2 principal 就绪后 warn 应写权威(1),got %d", warned)
+	}
+}
