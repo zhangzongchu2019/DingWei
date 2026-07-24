@@ -1,9 +1,10 @@
-# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v0.8——dev56 6MC+provisional 硬边界(心跳隔离非权威区)全闭合)
+# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v0.9——+manager②应急豁免后门+③盘点纳临时发信名)
 
 作者 zzc-devo48-2642 · 2026-07-23 · 长程任务 P2 段(冻结对象;两签后 C1-C5 即契约,改动须重两签)
 上游=P1 设计稿 v1.1(sha 9798c663);本稿把 §7 骨架落成可签文本。
 v0.2 修:shence 审#1(MC-1 身份真实性锚/MC-2 状态 op 授权闸/MC-3 应急幂等 epoch;A-1~A-4)+dev56 审#2(①C2 漏 2-Agent 守门/②应急原语非零新语义须诚实立原语/③合法审计 actor 悖论/④canonical 首行与可信 control op)一次攒批;应急原语升为 **C6 新原语**(纳入本次两签,C1 引用面恢复"纯引用零新语义"的诚实性)。
 v0.3 增:shence H1(C0 授权模型合章)+H2(过渡窗敞口)。
+v0.9=+manager 折入两项:②C5 gate-2 应急豁免须正向 owner principal 校验(消"标应急即绕过"后门=业主集∧走 C6,二者皆真)+③C4.3 盘点显式纳临时 *note/裸名发信名(enforce 后自伤面)。(①MC-4 fullmatch 已在 v0.6+。)
 v0.8=+dev56 provisional 硬边界(★DF-1 深化,C0.4③a):过渡期 provisional 心跳只进隔离非权威 observation 区,不参与任何状态机/计时器/决策(防伪造心跳持续阻止 failover=权威影响),复核后新 request_id 转正;最简替代=心跳也 fail-closed。
 v0.7=dev56 FINAL 6MC 一次全闭合(DF-1∪MC1 合并):①过渡窗【所有 mutating】fail-closed=C5 5.0/C0.4③;②role×op+指定门方矩阵=C5 5.1a;③OwnerOverride 专用原语【禁注入 dispatcher Identity】=C0.2/C6 6.2;④owner 请求 schema+expected epoch/state+陈旧不跨代=C6 6.1/6.2;⑤canonical control gate+内部 sentinel 保留=C5 5.0a;⑥fullmatch+拒控制字符=C4.1。
 v0.6=shence 审#1 2/2 收尾:MC-4(C4.1 fullmatch/\A\Z+拒控制字符,尾换行注入闭合)+DF-1(过渡期门/收口/result=fail-closed 不入账[防伪造假 PASS,与 C0.4 应急一致],低危心跳 provisional+敞口③枚举;C0.4/C5 5.0/C3.4a 同步)。
@@ -68,7 +69,7 @@ v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-clo
 - **4.1 合法身份格式(★MC-4:fullmatch,拒控制字符)**:模式 `zzc-[a-z0-9]+-[0-9]+`,以 **fullmatch(\A…\Z,非 ^…$)** 校验——`^…$` 下尾换行 `zzc-x-1\n` 会漏过(负例复现:re.match=True / re.fullmatch=False),身份串=台账主键/actor/RegisterAgent 校验点,带尾换行/控制字符名过闸=别名+日志注入面。**额外拒**:任何控制字符/空白(含 \n\r\t)。此字符串=全体系唯一主键(task_role.who / board_event.agent_id / 信封路由 / 台账)。
 - **4.2 enforce 语义(Board 侧,P3 实现)**:RegisterAgent 与事件 actor 入账时正则校验;非法名=写入拒绝+`identity_rejected` 事件。
   - **★dev56③ 合法审计 actor**:identity_rejected 事件本身的 actor【不是】被拒的非法名(否则"全事件强制合法 actor"与"记录非法名"自相矛盾)——用**系统哨兵身份 `system:identity-gate`**(保留主体,非 agent),被拒裸名记入 event.data 而非 actor 字段。不变量:每条事件 actor∈{合法 zzc-* 身份, 系统保留哨兵},裸名永不进 actor。
-- **4.3 收编流程**:①盘点(hub 全量活跃会话名,非合规清单+owner 认领)②迁移(改名/重建,逐项销号)③enforce(hub 命名 warn→enforce 切换)。**切换判据**:清单清零 ∧ 迁移 100% ∧ 回滚开关就绪;时点=调度者上线里程碑(P5)前完成。
+- **4.3 收编流程**:①盘点——hub 全量活跃会话名 **+ 临时/一次性发信名(★manager③:team 自己 send.py from=裸名 *note/developer-out 类,enforce 后自伤,必须纳盘点,非只在线常驻会话)**,产非合规清单+owner 认领②迁移(改名/重建,逐项销号)③enforce(hub 命名 warn→enforce 切换)。**切换判据**:清单清零 ∧ 迁移 100% ∧ 回滚开关就绪;时点=调度者上线里程碑(P5)前完成。
 - **4.4 跨系统依赖**:hub 命名 v1.0 的 enforce 开关(hub 侧配合项,P3 排入协调)。
 
 ## C5 路由契约(正则先行,LLM 兜底)
@@ -81,7 +82,7 @@ v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-clo
   - **内部 sentinel 命名空间保留(★dev56⑤)**:`system:*` 前缀(如 `system:identity-gate`)=系统保留主体,**外部发件 principal 禁用该前缀**(gate-1 对 `system:*` 来源一律拒,防伪造系统哨兵签名);sentinel 仅由 Board 内部原语在事件 actor 处使用,永不作为收件 principal。
 - **5.1 处理次序(信封到达调度者收件面;身份=5.0 principal)**:
   1. **身份闸**:发件身份不合 C4 格式→拒收+identity_rejected,终;
-  2. **控制闸**:含控制语义(停/暂停/重派/改单)且发件身份≠调度者小组∧≠应急原语→拒收+directive_rejected+回指调度者,终;
+  2. **控制闸(★manager②:豁免须正向 owner 校验,消后门)**:含控制语义→放行仅当【发件 principal∈调度者小组】∨【发件 principal∈业主集(C0.1 鉴权)∧ 该指令走 C6 应急原语路径】;否则拒收+directive_rejected+回指调度者。**"应急"不是自称标签放行——必须 principal∈业主集 ∧ 走 C6,二者皆真**(否则任何人标"应急"即绕过'须调度者'=后门);终;
   3. **授权闸(★MC-2,状态变更前必过)**:meta `op∈{new,status,result,reject}` 或状态首行——**发件 principal 必须 ∈ 目标 task_id 的 task_role**(new=须调度者小组身份);否则 directive_rejected+事件,终。不变量:任何状态变更(建单/门/收口/结果/reject)前必过授权闸,格式闸不替代它。
   4. **结构/状态入账**:过授权闸后——meta op→引擎既有 op 路由(C1);状态首行 ∧ task_id→状态机入账(门/心跳→TaskLedger+事件);均零 LLM,终。
   5. **兜底(★A-3)**:升调度者 LLM 判读——**LLM 只出路由判读、不直接授权/触发 guarded 写**(判读结论落 `route_llm{verdict}`,再经授权闸方可入账);判读输入隔离(canonical 首行,非原始 body),不得成提权路径。
