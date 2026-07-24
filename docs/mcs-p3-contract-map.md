@@ -77,7 +77,8 @@ A 闸链短路=TestInt_ChainShortCircuitAndSentinelActor · B default-deny=TestD
 ## ★Scope 定级(shence F-INT-1,11:29Z——enforcement 触达的如实标注)
 
 P3 交付=**组件级 enforce 就绪+E2E 单测证**(五闸×Board 接线/3 caller 义务/审计,全负例过);
-**最外层生产接通不在本轮**,显式定级如下(与 criteria §1 OUT 一致,不默认已接通):
+**最外层生产接通不在本轮**,显式定级如下(与 criteria §1 OUT 一致,不默认已接通)。
+**★归属已拍板(张宗楚 2026-07-24 15:51 GMT,经 manager 转达确认):真消息源/业主授权→P5,管理面/真驱动→P4。本表即终版归属,P3 IN 据此收口。**
 | 未接通面 | 现状 | 归属 |
 |---|---|---|
 | transport/hub→Receiver.Handle 真消息源 | Receiver 零生产调用者 | P5 部署灰度(真投递冒烟,criteria OUT) |
