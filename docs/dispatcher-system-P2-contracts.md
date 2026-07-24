@@ -1,9 +1,10 @@
-# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v0.3——两审 7 点+shence H1/H2 授权模型合章)
+# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v0.4——+dev56 审#2 定稿:应急 fail-closed/竞态线性化/C1 两层口径)
 
 作者 zzc-devo48-2642 · 2026-07-23 · 长程任务 P2 段(冻结对象;两签后 C1-C5 即契约,改动须重两签)
 上游=P1 设计稿 v1.1(sha 9798c663);本稿把 §7 骨架落成可签文本。
 v0.2 修:shence 审#1(MC-1 身份真实性锚/MC-2 状态 op 授权闸/MC-3 应急幂等 epoch;A-1~A-4)+dev56 审#2(①C2 漏 2-Agent 守门/②应急原语非零新语义须诚实立原语/③合法审计 actor 悖论/④canonical 首行与可信 control op)一次攒批;应急原语升为 **C6 新原语**(纳入本次两签,C1 引用面恢复"纯引用零新语义"的诚实性)。
-v0.3 增:shence H1(MC-1+MC-3+A-4 合成单一 **C0 授权模型章**,C4/C5/C6 引用不分处补丁)+H2(过渡窗风险敞口写死+业主显式接受,C0.4/C3.4a)。
+v0.3 增:shence H1(C0 授权模型合章)+H2(过渡窗敞口)。
+v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-closed**(共享钥可伪造夺权=破坏安全不变量,风险接受消不掉,C0.4)②竞态线性化(takeover↔override 先提交者决定+同事务+重放返原 outcome,C0.5)③override directive 白名单(C0.6)④C1 两层口径(1.4a 现有全集 / 1.4b P3 新 owner emergency 扩展,勿总称零新语义)。
 
 ---
 
@@ -13,16 +14,25 @@ v0.3 增:shence H1(MC-1+MC-3+A-4 合成单一 **C0 授权模型章**,C4/C5/C6 �
 - **0.1 身份真实性锚**:一切 gate/授权判定的主体=**hub 鉴权后的 per-session principal**,【非】信封自述 from(共享队钥 FB-zzc-devteam-* 下 from 可伪造)。principal 由传输层注入收件面。
 - **0.2 授权双主体模型(★A-4 定义,dev56 可实现性线并置)**:
   - 常态写=调度者小组以自身 `Identity{owner,epoch}` 走 guarded 原语;
-  - **业主 override 写=双 principal 授权**:业主 principal(0.1 校验)授权 + 在**调度者当前 epoch** 上执行该单条 guarded 写(不夺权、不改 owner、不裸越 fence);epoch 变则 override 上下文失效(须重取当前 epoch)。
+  - **业主 override 写=双 principal 授权**:业主 principal(0.1 校验)授权 + 在**调度者当前 epoch** 上执行该单条 guarded 写(不夺权、不改 owner、不裸越 fence);epoch 变则 override 上下文失效(须重取当前 epoch);竞态线性化见 C0.5,directive 白名单见 C0.6。
 - **0.3 epoch/幂等**:owner_takeover=期望 epoch CAS(e→e+1,陈旧 e 为 no-op);owner_override=带 idempotency_id(同 id 重投 no-op)。状态 op 沿引擎 rid 幂等。
-- **0.4 过渡窗(★shence H2:principal 未就绪前,风险敞口写死+业主显式接受)**:hub per-session 身份未就绪的窗内——**控制闸 / owner_takeover / owner_override 为 best-effort,共享队钥下【可被任一持钥者伪造】**;敞口逐项=①控制指令可伪造发件人②应急夺权/急停可伪造业主。**处置=此窗内高危通道整体禁用**(C5 5.0 过渡不变量),且 **C3 记"过渡窗风险敞口=上述①②,业主(张宗楚)知情并显式接受"**(限定词写死进契约,不靠传递)。principal 就位后 0.4 废止。
+- **0.4 过渡窗——应急原语 fail-closed(★dev56 审#2 提级,严于 best-effort)**:hub canonical per-session principal 未就绪时——
+  - **owner_takeover / owner_override = 硬禁用(fail-closed,不可启用)**:共享 FB key 下可伪造的夺权/急停若进过渡运行,攻击者可合法触发 epoch+1 fence 真调度者=直接破坏安全不变量,"风险接受"消不掉此破坏,故不接受、直接禁用;
+  - **普通身份/控制路由**:可在明确 **pre-P5 warn/best-effort 迁移窗**运行,逐项列风险(①控制指令伪造发件人),业主知情;
+  - 两者分级:低危通道可迁移窗过渡,**高危应急通道零过渡=要么鉴权就绪要么不可用**。
+- **0.5 竞态线性化(★dev56:takeover↔override 同 epoch 竞争,先提交者决定)**:
+  - takeover 先提交→override 的 expected_epoch miss=no-op;override 先提交→其单指令原子生效后,takeover fence 后续写;
+  - **状态变更+owner_* 事件同一事务**(原子);idempotency_id 重放=返原 outcome(不重复施加)。
+- **0.6 override 白名单(★dev56)**:owner_override 的 (target,directive) 必**唯一映射到既有控制 op 白名单**(如 reassign/steer-cancel/pause 等已定义原语),【不得】自由文本直写。
 
 ## C1 调度者↔引擎(引用契约,零新语义)
 
 - **1.1 原语集(全集,引用即冻结实现)**:CreateTask(建单硬约束:四角色三元组必填全)/AddNode/SetTaskRoles/Send/Processing/Terminal(含直达窗+fan-out)/Reassign/SteerReserve/SteerFinalize/InterruptIntent/InterruptFinalize/Redeliver/DeliverFail/EnqueueResult/AckResult/Sweep/Takeover/Renew——语义=两签冻结设计件(f41d686 家族)+引擎实现(资产头 74e5dc0,十门全绿)。
 - **1.2 身份**:调度者小组=唯一持 `Identity{owner,epoch}` 的主体;一切写走 guarded 原语并签 actor;外部只读 TaskLedger/RoleStats/board_event。
 - **1.3 变更纪律**:C1 引用面的任何语义变更=引擎设计变更,须另开窗重两签(本契约不授予捷径)。
-- **1.4 边界(★dev56②)**:应急原语(owner_takeover/owner_override)**不属 C1 引用面**——现有 Takeover 无 Identity、无 owner_takeover 事件、不满足"均 guarded+actor",无法由现有原语组合唯一映射;故它们是 **C6 新原语**(P3 实现,纳入本次两签),C1 保持"纯引用冻结引擎、零新语义"。
+- **1.4 两层口径(★dev56 审#2:勿总称零新语义)**:
+  - **1.4a C1 现有原语全集(74e5dc0 冻结接口,纯引用零新语义)**:即 1.1 所列;
+  - **1.4b P3 待新增 owner emergency 扩展(=C6,新 C1 语义)**:专用 owner_override + 带 owner-auth/事件/idempotency 的 takeover 包装,均【非】74e5dc0 当前接口(现有 Takeover 无 Identity/无 owner_takeover 事件/不满足均 guarded+actor,不能唯一映射);故诚实立为 P3 新语义,纳入本次两签,与 1.4a 分层不混称。
 
 ## C2 调度者↔执行小组(2-Agent 工作协议规格化)
 
@@ -41,7 +51,7 @@ v0.3 增:shence H1(MC-1+MC-3+A-4 合成单一 **C0 授权模型章**,C4/C5/C6 �
 - **3.1 关键决策请求格式**:`决策项 / 选项(a,b,c…) / 各选项影响一行 / 调度者建议+理由 / 不拍时的默认行为与时限`。一次一批,禁流式追问。
 - **3.2 应急原语=C6 两新原语**(D3=c;定义见 C6,均 guarded+actor+epoch 条件化+幂等)。业主(C0.1 principal 校验,非自述)专用;授权=C0.2 双主体模型;幂等/epoch=C0.3。
 - **3.3 知情义务(反向)+ 控制授权闸下沉(★A-2)**:调度者对业主=事后 flag 制;业主直连执行小组的控制指令→小组拒收+回指调度者+落 directive_rejected。**控制授权闸不只在调度者收件面(C5),而在每个可接收控制指令的实体上同构生效**(执行组边界=同一 principal+task_role 判定);不变量:控制授权闸在所有可接收控制指令的实体上生效,无缝隙。
-- **3.4a 过渡窗风险敞口(★shence H2,业主显式接受)**:hub principal 就绪前,控制/应急通道 best-effort 且共享钥下可伪造(敞口=①控制指令伪造发件人②应急夺权/急停伪造业主);**处置=该窗高危通道整体禁用(C0.4/C5 5.0),业主张宗楚知情并显式接受此残余风险**。上线(principal 就绪)即闭合。
+- **3.4a 过渡窗分级(★dev56 提级 H2)**:hub principal 就绪前——**应急原语(takeover/override)硬禁用 fail-closed**(不接受伪造夺权风险,C0.4);**普通控制/身份**在 pre-P5 warn/best-effort 迁移窗运行,敞口逐项(控制指令伪造发件人)+业主知情。**P5 上线硬门=principal 鉴权就绪 ∧ 清单清零 ∧ 两应急原语启用原子共切**(D2=a 一致)。
 - **3.5 过渡/切换原子性(★A-1)**:C3.4 补丁废止 / C4.3 enforce 切换 / C3.3 例外唯一性 **同一 P5 时点原子共切**;不变量:任一时刻指令入口恰好一套规则生效——无双路径、无真空。
 
 ## C4 身份契约(地基,D2=a:上线前收编完成,上线即 enforce)
@@ -84,8 +94,9 @@ v0.3 增:shence H1(MC-1+MC-3+A-4 合成单一 **C0 授权模型章**,C4/C5/C6 �
   - **★MC-3 幂等**:override 携 `idempotency_id`,同 id 重投=no-op(陈旧急停不二次触发);
   - 事件=`owner_override{target,directive,idempotency_id,reason,acting_epoch}`,actor=业主 principal;
   - 用途=单点急停/纠偏,不整体接管。
-- **6.3 过渡期(C5 5.0 principal 未就绪)**:C6 两原语**整体禁用**(身份不可伪造性未就位=应急通道不可信=宁缺勿滥);principal 就位后启用。
-- **6.4 变更纪律**:C6 与 C1-C5 同签同锚;任何 C6 语义变更须重两签。
+- **6.3 过渡期 fail-closed(★dev56,=C0.4)**:principal 未就绪→C6 两原语**硬禁用不可启用**(非 best-effort);P5 上线硬门=principal 鉴权就绪 ∧ 清单清零 ∧ 两应急原语启用【原子共切】(与 D2=a 一致)。
+- **6.4a 竞态/白名单/原子(=C0.5/C0.6)**:takeover↔override 同 epoch 先提交者决定;状态+owner_* 事件同事务;idempotency 重放返原 outcome;override directive∈既有控制 op 白名单,不自由文本直写。
+- **6.5 变更纪律**:C6 与 C0-C5 同签同锚;任何 C6 语义变更须重两签。
 
 ---
 
