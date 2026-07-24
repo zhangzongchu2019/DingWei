@@ -18,6 +18,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	_ "modernc.org/sqlite"
@@ -45,6 +46,9 @@ type Identity struct {
 type Board struct {
 	db  *sql.DB
 	clk clock.Clock
+
+	idmu  sync.Mutex
+	idcfg identityConfig // P3 身份 enforce(C4;默认 warn,调度者上线开 enforce)
 }
 
 // Open 打开(或建)Board 库并迁移 schema。path 可为 ":memory:"(测试)。
@@ -425,7 +429,11 @@ UPDATE node SET generation = generation + 1,
 // ---- 建图辅助(M2 测试与调度循环用;plan_nodes 全量原语属后续) ----
 
 // RegisterAgent 登记 worker(node.assigned_agent 的 FK 目标;池起 worker 后调用)。
+// ★P3 C4:身份闸——enforce 下非法名拒登记+identity_rejected 事件;warn 下放行+identity_warned。
 func (b *Board) RegisterAgent(ctx context.Context, agentID, driverType string) error {
+	if err := b.checkIdentity(ctx, agentID, "register_agent"); err != nil {
+		return err
+	}
 	now := b.now()
 	_, err := b.db.ExecContext(ctx, `
 INSERT INTO agent(agent_id,driver_type,handle,lease_ts,created_ts,updated_ts)
