@@ -83,6 +83,11 @@ var (
 
 func isExecSeat(role string) bool { return role == "implementer" || role == "tester" }
 
+// KnownOp op∈合法集(state∪control)。★§6 H2/criteria §3.6-B 入口校合法集:收件面 caller 对
+// 【非空且未知】meta.op 须 reject(unknown_op),不得 fall-through 落 gate-5 判读(additive 辅助,
+// 不改 Route 逻辑;Route 面对未知 op 的 gate-5 行为保持已签语义,拒未知 op 是入口/caller 义务)。
+func KnownOp(op string) bool { return stateOps[op] || controlOps[op] }
+
 // Route 对单信封执行五闸(纯函数,零 IO;入账/事件由调用方按 Result 落)。
 func (r *Router) Route(e Envelope) Result {
 	// ① 身份闸:principal 合 C4 格式;★dev56⑤ 外部禁用 system:* 保留前缀(防伪造哨兵)。
