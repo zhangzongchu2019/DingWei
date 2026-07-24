@@ -22,11 +22,13 @@ const (
 	VerdictLLM               Verdict = "llm"                // ⑤ 升调度者 LLM 判读
 )
 
-// Envelope 收件面输入(只含 meta+首行;body 不参与路由,C5 5.2)。
+// Envelope 收件面输入(只含 meta+canonical 首行;body 不参与路由,C5 5.2)。
 type Envelope struct {
-	From      string // 发件身份(传输层 principal 绑定,非 body 自称)
-	MetaOp    string // 信封 meta 的 op(空=无)
-	FirstLine string // 正文首行
+	// Principal=传输层鉴权后的 per-session 主体(★C5 5.0 MC-1:【非】信封自述 from,
+	// from 在共享队钥下可伪造)。gate 全读此字段。过渡期 hub 未注入=空→高危通道整体关闭(见 Router.Trusted)。
+	Principal string
+	MetaOp    string // 信封 meta 的 op(可信 control op 仅此结构化字段,C5 5.0a)
+	FirstLine string // canonical 规范化首行(剥传输头/镜像标签/引号,C5 5.0a)
 	TaskID    string // meta 载明的任务号(空=无)
 }
 
@@ -37,11 +39,20 @@ type Result struct {
 	Kind    string // 状态闸提取:里程碑|门|PASS|FAIL|在轨|阻塞(仅 VerdictStatusIngest)
 }
 
-// Router 五闸路由器。DispatcherIDs=调度者小组成员身份集(②闸授权名单);
-// EmergencyIDs=应急原语合法来源(业主,C3 3.2——②闸唯一例外)。
+// InTaskRole 授权闸(★C5 gate-3 MC-2):principal 是否 ∈ 目标 task 的 task_role。
+// 由调用方注入(读 Board task_role);nil=拒绝一切状态 op(fail-closed)。
+type InTaskRole func(principal, taskID string) bool
+
+// Router 五闸路由器。
+//   - DispatcherIDs:调度者小组成员(②闸授权+new 建单权);
+//   - EmergencyIDs:应急原语合法来源(业主,C6);
+//   - Trusted:C5 5.0 principal 是否可信(hub per-session 就位=true;过渡期 false→控制/应急通道整体关闭);
+//   - Authz:授权闸(C5 gate-3)。
 type Router struct {
 	DispatcherIDs map[string]bool
 	EmergencyIDs  map[string]bool
+	Trusted       bool
+	Authz         InTaskRole
 }
 
 var (
@@ -55,25 +66,36 @@ var (
 
 // Route 对单信封执行五闸(纯函数,零 IO;入账/事件由调用方按 Result 落)。
 func (r *Router) Route(e Envelope) Result {
-	// ① 身份闸:发件身份必须合 C4 格式
-	if !board.IdentityPattern.MatchString(e.From) {
+	// ① 身份闸:principal 必须合 C4 格式(★读 Principal 非 from)
+	if !board.IdentityPattern.MatchString(e.Principal) {
 		return Result{Verdict: VerdictIdentityRejected, Gate: 1}
 	}
+	isControl := controlRe.MatchString(e.FirstLine)
+	// 过渡期(principal 不可信):高危通道整体关闭——控制/应急一律拒(★C5 5.0 不带病放行)
+	if !r.Trusted && (isControl || r.EmergencyIDs[e.Principal]) {
+		return Result{Verdict: VerdictDirectiveRejected, Gate: 2}
+	}
 	// ② 控制闸:控制语义 × 非调度者 × 非应急来源 → 拒
-	if controlRe.MatchString(e.FirstLine) {
-		if !r.DispatcherIDs[e.From] && !r.EmergencyIDs[e.From] {
-			return Result{Verdict: VerdictDirectiveRejected, Gate: 2}
+	if isControl && !r.DispatcherIDs[e.Principal] && !r.EmergencyIDs[e.Principal] {
+		return Result{Verdict: VerdictDirectiveRejected, Gate: 2}
+	}
+	// ③ 授权闸(★MC-2):状态/结果类 op 或状态首行——principal 必须 ∈ 目标 task_role(new=调度者小组)
+	statusHit := statusRe.FindStringSubmatch(e.FirstLine) != nil && e.TaskID != ""
+	if engineOps[e.MetaOp] || statusHit {
+		if e.MetaOp == "new" {
+			if !r.DispatcherIDs[e.Principal] {
+				return Result{Verdict: VerdictDirectiveRejected, Gate: 3}
+			}
+		} else if r.Authz == nil || !r.Authz(e.Principal, e.TaskID) {
+			return Result{Verdict: VerdictDirectiveRejected, Gate: 3}
 		}
-		// 调度者/应急来源的控制指令继续向下(结构/状态/兜底按内容归位)
-	}
-	// ③ 结构闸:meta op 命中引擎集
-	if engineOps[e.MetaOp] {
-		return Result{Verdict: VerdictEngineOp, Gate: 3}
-	}
-	// ④ 状态闸:状态首行 ∧ 载明任务号
-	if m := statusRe.FindStringSubmatch(e.FirstLine); m != nil && e.TaskID != "" {
+		// ④ 过授权闸→入账
+		if engineOps[e.MetaOp] {
+			return Result{Verdict: VerdictEngineOp, Gate: 4}
+		}
+		m := statusRe.FindStringSubmatch(e.FirstLine)
 		return Result{Verdict: VerdictStatusIngest, Gate: 4, Kind: m[1]}
 	}
-	// ⑤ 兜底:升调度者 LLM(判读结论由调用方落 route_llm 事件)
+	// ⑤ 兜底:升调度者 LLM(只出判读不授权;判读后仍须过授权闸)
 	return Result{Verdict: VerdictLLM, Gate: 5}
 }
