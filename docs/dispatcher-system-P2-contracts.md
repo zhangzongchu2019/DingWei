@@ -1,9 +1,10 @@
-# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v1.0——dev56 逐字复审 5 处正文矛盾全消(C3.4a/gate-2 和谐/C6.2 新原语诚实/C5.1a 门方与收口权/C6.1 to_owner))
+# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v1.1——dev56 fe49ba5 完整复审 MC-A/MC-B 修(C3.4a/gate-2 和谐/C6.2 新原语诚实/C5.1a 门方与收口权/C6.1 to_owner))
 
 作者 zzc-devo48-2642 · 2026-07-23 · 长程任务 P2 段(冻结对象;两签后 C1-C5 即契约,改动须重两签)
 上游=P1 设计稿 v1.1(sha 9798c663);本稿把 §7 骨架落成可签文本。
 v0.2 修:shence 审#1(MC-1 身份真实性锚/MC-2 状态 op 授权闸/MC-3 应急幂等 epoch;A-1~A-4)+dev56 审#2(①C2 漏 2-Agent 守门/②应急原语非零新语义须诚实立原语/③合法审计 actor 悖论/④canonical 首行与可信 control op)一次攒批;应急原语升为 **C6 新原语**(纳入本次两签,C1 引用面恢复"纯引用零新语义"的诚实性)。
 v0.3 增:shence H1(C0 授权模型合章)+H2(过渡窗敞口)。
+v1.1=dev56 fe49ba5 完整复审两新洞:MC-A(C0.4"普通控制 best-effort"与全 fail-closed 自相矛盾→过渡面统一仅身份 warn/盘点/只读,一切 control fail-closed)+MC-B(控制判定仅 meta.op∈ControlOps,自然语言正文绝不重分类,反例 meta.op=status+"需暂停部署"合法不误拒;疑似→LLM/重投不执行不误拒)。
 v1.0=dev56 逐字复审 5 处正文矛盾修(非摘要,git show 可核):①C3.4a 普通控制过渡期改 fail-closed(对齐 C5 5.0,不留 best-effort 伪造控制口);②gate-2 自然语言控制=疑似即从严(与 5.0a 和谐);③C6.2 owner_override 诚实为 P3 新原语(非"走引擎既有 guarded 原语"——那签调度者 actor 与"actor 业主"矛盾);④C5.1a 门方=每段指定门方(C2.1)非硬编码 tester,收口=调度者唯一关闭权(P1);⑤C6.1 schema 补 to_owner。
 v0.9=+manager 折入两项:②C5 gate-2 应急豁免须正向 owner principal 校验(消"标应急即绕过"后门=业主集∧走 C6,二者皆真)+③C4.3 盘点显式纳临时 *note/裸名发信名(enforce 后自伤面)。(①MC-4 fullmatch 已在 v0.6+。)
 v0.8=+dev56 provisional 硬边界(★DF-1 深化,C0.4③a):过渡期 provisional 心跳只进隔离非权威 observation 区,不参与任何状态机/计时器/决策(防伪造心跳持续阻止 failover=权威影响),复核后新 request_id 转正;最简替代=心跳也 fail-closed。
@@ -28,7 +29,7 @@ v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-clo
   - **不变量:任何状态变更提交前必满足(幂等键去重 ∧ epoch 有效 ∧ 授权闸过),三缺一拒。**
 - **0.4 过渡窗——应急原语 fail-closed(★dev56 审#2 提级,严于 best-effort)**:hub canonical per-session principal 未就绪时——
   - **owner_takeover / owner_override = 硬禁用(fail-closed,不可启用)**:共享 FB key 下可伪造的夺权/急停若进过渡运行,攻击者可合法触发 epoch+1 fence 真调度者=直接破坏安全不变量,"风险接受"消不掉此破坏,故不接受、直接禁用;
-  - **普通身份/控制路由**:可在明确 **pre-P5 warn/best-effort 迁移窗**运行,逐项列风险(①控制指令伪造发件人),业主知情;
+  - **普通身份**:仅身份格式 warn(C4.2 warn 模式,不拒但记 identity_warned)+收编盘点(C4.3,只读)可在 pre-P5 迁移窗运行;**一切 control op = 无过渡 fail-closed**(★dev56 MC-A:删原"控制路由 best-effort",与下条③"一切 mutating fail-closed"及 C3.4a/C5 5.0 统一,不留可伪造控制口);业主接受仅"功能受限",不接受任何伪造控制;
   - **③过渡期一切 mutating 伪造(★DF-1+dev56①,统一)**:过渡期 principal 可伪造→gate-3 授权闸形同虚设→可伪造任何改状态 op(门 PASS/建单/结果/reassign…)。同一致性理由(可伪造→破坏不变量→风险接受消不掉),**处置=过渡期一切 mutating op 一律 fail-closed 不入账**(不止门/收口);仅放行只读查询。
   - **③a provisional 心跳硬边界(★dev56 补:防伪造心跳的权威影响)**:过渡期若保留心跳/状态观测,只能进**隔离的非权威 observation/audit 区**,且【不参与任何状态机/计时器/决策】——principal 复核前**不得**:刷新 agent/task 租约、抑制"静默超两间隔"失联判断、改 TaskLedger/status/blocker、满足门、驱动任何调度决策。否则伪造心跳可持续阻止 failover=仍是权威影响。复核后才以【新 request_id】转正入账。**最简替代=心跳也全 fail-closed**(过渡期不收心跳)。
 - **0.5 竞态线性化(★dev56:takeover↔override 同 epoch 竞争,先提交者决定)**:
@@ -79,11 +80,11 @@ v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-clo
   - **P3 硬依赖**:hub 提供 per-session 主体注入(连接层→收件面);列 P3 实现清单+跨系统协调项。
   - **过渡期不变量(hub 未就绪前,诚实降级;★dev56①:所有 mutating fail-closed)**:身份【非】不可伪造——此期间**禁用一切改状态的 op**(C6 应急 + 控制 op + new/status/result/reject/门/收口 + steer/interrupt/reassign 等所有 mutating,一律 fail-closed 不入账,防伪造 principal 写任何权威状态);**仅放行只读查询**;心跳观测(若保留)进隔离非权威 observation 区,【不参与任何状态机/计时器/决策】(不刷租约/不抑制失联判断/不改台账/不驱动调度,C0.4③a),复核后新 request_id 转正。"不可伪造性未就位 ⇒ 一切 mutating+心跳决策影响关闭",不带病放行。principal 就位后本条废止。
 - **5.0a canonical 输入 + control gate(★dev56④⑤)**:闸只读**规范化首行 canonical_first_line**(剥传输头 `【sender→recipient】`/镜像标签/引号后的净正文首行)+信封 meta;传输头/body 自称控制词不参与路由。
-  - **可信 control op=仅结构化 meta.op**(非首行自然语言);自然语言"停/暂停"=**疑似控制**→gate-2 按控制指令处置(需授权判定,principal∈调度者/业主应急二者之一,否则 directive_rejected),【绝不】因是自然语言而直接执行或直接放行——疑似即从严;
+  - **控制判定=仅结构化 meta.op∈ControlOps(★dev56 MC-B:自然语言正文绝不重分类)**:进入控制授权/执行的唯一条件=`meta.op∈ControlOps`(停/暂停/重派/改单等结构化 op 集);**status/result 的正文自然语言【不得】被重分类为控制**(反例:meta.op=status+首行"阻塞:需暂停部署,等待审批"=合法状态,含"暂停"字样也【不】进 gate-2,正常走状态入账授权闸);无结构化 control op 的疑似自然语言→仅交 gate-5 LLM 判读(或回执要求结构化重投),**既不执行、也不直接误拒合法状态**;
   - **内部 sentinel 命名空间保留(★dev56⑤)**:`system:*` 前缀(如 `system:identity-gate`)=系统保留主体,**外部发件 principal 禁用该前缀**(gate-1 对 `system:*` 来源一律拒,防伪造系统哨兵签名);sentinel 仅由 Board 内部原语在事件 actor 处使用,永不作为收件 principal。
 - **5.1 处理次序(信封到达调度者收件面;身份=5.0 principal)**:
   1. **身份闸**:发件身份不合 C4 格式→拒收+identity_rejected,终;
-  2. **控制闸(★manager②:豁免须正向 owner 校验,消后门)**:含控制语义→放行仅当【发件 principal∈调度者小组】∨【发件 principal∈业主集(C0.1 鉴权)∧ 该指令走 C6 应急原语路径】;否则拒收+directive_rejected+回指调度者。**"应急"不是自称标签放行——必须 principal∈业主集 ∧ 走 C6,二者皆真**(否则任何人标"应急"即绕过'须调度者'=后门);终;
+  2. **控制闸(★manager②豁免正向 owner + dev56 MC-B 仅 meta.op 触发)**:**触发=`meta.op∈ControlOps`结构化 op(【非】自然语言正文含控制词——status/result 正文不触发本闸,走 gate-3)**;命中后放行仅当【发件 principal∈调度者小组】∨【发件 principal∈业主集(C0.1 鉴权)∧走 C6 应急路径,二者皆真】;否则拒收+directive_rejected。"应急"非自称标签放行(否则任何人标应急即绕过=后门);终;
   3. **授权闸(★MC-2,状态变更前必过)**:meta `op∈{new,status,result,reject}` 或状态首行——**发件 principal 必须 ∈ 目标 task_id 的 task_role**(new=须调度者小组身份);否则 directive_rejected+事件,终。不变量:任何状态变更(建单/门/收口/结果/reject)前必过授权闸,格式闸不替代它。
   4. **结构/状态入账**:过授权闸后——meta op→引擎既有 op 路由(C1);状态首行 ∧ task_id→状态机入账(门/心跳→TaskLedger+事件);均零 LLM,终。
   5. **兜底(★A-3)**:升调度者 LLM 判读——**LLM 只出路由判读、不直接授权/触发 guarded 写**(判读结论落 `route_llm{verdict}`,再经授权闸方可入账);判读输入隔离(canonical 首行,非原始 body),不得成提权路径。
