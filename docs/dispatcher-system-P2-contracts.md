@@ -1,9 +1,10 @@
-# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v1.3——manager item① 严格版:过渡窗取消 provisional 心跳,status/心跳/一切 mutating+两 owner emergency 全 fail-closed,仅只读+warn/盘点可用)
+# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v1.4——dev56 tag-3 fresh 复审 2MC:C5 5.1a 引导句删硬编码 tester 门方/C0.2-0.3-C6 幂等键统一为单键)
 
 作者 zzc-devo48-2642 · 2026-07-23 · 长程任务 P2 段(冻结对象;两签后 C1-C5 即契约,改动须重两签)
 上游=P1 设计稿 v1.1(sha 9798c663);本稿把 §7 骨架落成可签文本。
 v0.2 修:shence 审#1(MC-1 身份真实性锚/MC-2 状态 op 授权闸/MC-3 应急幂等 epoch;A-1~A-4)+dev56 审#2(①C2 漏 2-Agent 守门/②应急原语非零新语义须诚实立原语/③合法审计 actor 悖论/④canonical 首行与可信 control op)一次攒批;应急原语升为 **C6 新原语**(纳入本次两签,C1 引用面恢复"纯引用零新语义"的诚实性)。
 v0.3 增:shence H1(C0 授权模型合章)+H2(过渡窗敞口)。
+v1.4=dev56 tag-3(be35f48)fresh 完整复审 2MC 条文级(审#2 PASS@tag-2 已撤,tag-3=CHANGES REQUESTED 仅此 2 处):**MC-a** C5 5.1a 引导句仍逐字"门方由 task_role.tester 指定,非 tester 发门=拒",与其下矩阵"门 PASS/FAIL=每段指定门方,非硬编码 tester"直接矛盾(仅改 gate-3 引用矩阵不消此冲突)→删硬编码句,门方统一=C2.1 每段 gate.门方 principal、仅该 principal 可发门、角色不固定;**MC-b** C0.3"一切 op 必带 request_id" vs C0.2"schema 含 request_id/idempotency_id" vs 实际 C6 schema 仅 idempotency_id=一键/两键无唯一答案→定死单键:owner 原语 idempotency_id 即其 request_id 角色/状态入账 op=引擎 rid=request_id,每类恰一键、C0.2 删双字段暗示、C0.3 显式映射。(item① 及 dev56 旧 5MC/shence 2 均已在,本轮仅加此 2 处。)
 v1.3=★manager item① 严格版(采 dev56 9b 审#2 MC1,覆盖旧'低危可 provisional'):过渡窗(principal 未就绪)=仅只读+warn/盘点可用;**所有 mutating op(new/status/result/reject/门/收口/控制)+两 owner emergency 全 fail-closed,取消 provisional 心跳/状态**(理由:共享钥可伪造 result/PASS/**status**污染权威 TaskLedger,即便进'非权威区'仍徒增攻击面/复杂度,且过渡窗功能受限本无活调度需心跳;业主知情=只记'功能暂不可用/迁移窗口',不给业主签伪造权威写)。落点=C0.4③a 改 fail-closed 唯一规则/C3.4a/§gate-3 过渡不变量三处同步删'隔离心跳 provisional'。(dev56 v0.8 自留'最简替代=心跳也 fail-closed'即本版采纳项。)
 v1.2=dev56 条文级复审(心智模型:条文真 enforce≠加对照表)修 2 处程序条文残留:②gate-3 步骤条文仍"∈任一 task_role"(implementer 可自签 PASS)→改"按 5.1a role×op 矩阵逐 (角色,op) 判";④C0.2 仍"epoch 变则重取"(陈旧跨代歧义)→改"陈旧 expected_epoch=CAS_MISS 拒不自动重取,须显式重发"。(①C5 5.0 全 mutating fail-closed/③C6.2 override 独立原语签业主/⑤gate-2 仅 meta.op——v0.6-v1.1 条文已真改,本轮复验在。)
 v1.1=dev56 fe49ba5 完整复审两新洞:MC-A(C0.4"普通控制 best-effort"与全 fail-closed 自相矛盾→过渡面统一仅身份 warn/盘点/只读,一切 control fail-closed)+MC-B(控制判定仅 meta.op∈ControlOps,自然语言正文绝不重分类,反例 meta.op=status+"需暂停部署"合法不误拒;疑似→LLM/重投不执行不误拒)。
@@ -23,8 +24,8 @@ v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-clo
 - **0.1 身份真实性锚**:一切 gate/授权判定的主体=**hub 鉴权后的 per-session principal**,【非】信封自述 from(共享队钥 FB-zzc-devteam-* 下 from 可伪造)。principal 由传输层注入收件面。
 - **0.2 授权双主体模型(★A-4 定义,dev56 可实现性线并置)**:
   - 常态写=调度者小组以自身 `Identity{owner,epoch}` 走 guarded 原语;
-  - **业主 override 写=双 principal 授权**:业主 principal(0.1 校验)以【专用 owner 授权面】写(★dev56③:**不注入/不冒充调度者 Identity**),guard=owner_principal 合法 ∧ expected_epoch==当前 epoch;actor 签业主 principal(非调度者);不夺权、不改 owner。**★dev56④:expected_epoch 陈旧(≠当前)=CAS_MISS/FENCED 拒,【不自动重取当前 epoch 执行旧指令】**(防陈旧 override 跨代生效);业主须以新 expected_epoch 显式重发。竞态线性化见 C0.5,directive 白名单见 C0.6,请求 schema(含 request_id/idempotency_id/expected_epoch/expected_state)见 C6 6.2。
-- **0.3 epoch/幂等(★dev56 整合补:全状态 op,非仅 emergency)**:**一切可变更状态的 op** 必带 request_id(幂等键)+作用于当前 epoch——重投/重放=返原 outcome no-op(治 15-40min 可重投信道)。分项:
+  - **业主 override 写=双 principal 授权**:业主 principal(0.1 校验)以【专用 owner 授权面】写(★dev56③:**不注入/不冒充调度者 Identity**),guard=owner_principal 合法 ∧ expected_epoch==当前 epoch;actor 签业主 principal(非调度者);不夺权、不改 owner。**★dev56④:expected_epoch 陈旧(≠当前)=CAS_MISS/FENCED 拒,【不自动重取当前 epoch 执行旧指令】**(防陈旧 override 跨代生效);业主须以新 expected_epoch 显式重发。竞态线性化见 C0.5,directive 白名单见 C0.6,请求 schema(含 **idempotency_id**[★dev56 MC-b:即该原语【唯一幂等键】,兼 request_id 角色,单键,不另设 request_id]/expected_epoch/expected_state)见 C6 6.2。
+- **0.3 epoch/幂等(★dev56 整合补:全状态 op,非仅 emergency)**:**一切可变更状态的 op** 必带【唯一幂等键】(★dev56 MC-b:每类 op 恰一个键、无双键歧义——**owner 原语=idempotency_id 即其 request_id 角色**;**状态入账 op=引擎 rid=request_id∈node_request/task_request**;二者是同一"唯一幂等键"角色的按类命名,C0.2/C6 schema 不另设第二个键)+作用于当前 epoch——重投/重放=返原 outcome no-op(治 15-40min 可重投信道)。分项:
   - owner_takeover=期望 epoch CAS(e→e+1,陈旧 e no-op);
   - owner_override=idempotency_id(同 id 重投 no-op);
   - 状态入账 op(new/status/result/reject/门/收口)=沿引擎 rid 幂等(request_id∈node_request/task_request,已冻结)+经 C5 授权闸;
@@ -90,7 +91,7 @@ v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-clo
   3. **授权闸(★MC-2+dev56②,状态变更前必过)**:meta `op∈{new,status,result,reject}` 或状态首行——**按 C5 5.1a role×op 矩阵逐 (角色,op) 判定**(【非】笼统"∈任一 task_role"——那会让 implementer 自签门 PASS):门 PASS/FAIL=仅该段指定门方/result=执行席/收口=调度者/new=调度者/status=任一角色/越表 fail-closed;否则 directive_rejected+事件,终。不变量:任何状态变更前必过 5.1a 矩阵授权闸,格式闸与"∈任一 task_role"均不替代它。
   4. **结构/状态入账**:过授权闸后——meta op→引擎既有 op 路由(C1);状态首行 ∧ task_id→状态机入账(门/心跳→TaskLedger+事件);均零 LLM,终。
   5. **兜底(★A-3)**:升调度者 LLM 判读——**LLM 只出路由判读、不直接授权/触发 guarded 写**(判读结论落 `route_llm{verdict}`,再经授权闸方可入账);判读输入隔离(canonical 首行,非原始 body),不得成提权路径。
-- **5.1a role×op 授权矩阵(★dev56②)**:授权闸(gate-3)判定按下表,principal 角色 × op → 允许/拒;门方由 task_role.tester 指定,非 tester 发门=拒:
+- **5.1a role×op 授权矩阵(★dev56②+MC-a)**:授权闸(gate-3)判定按下表,principal 角色 × op → 允许/拒;**门方=C2.1 派发信封每段 gate.门方 字段【指定的 principal】(★dev56 MC-a:角色不硬编码为 tester——某段可指定 reviewer/qa 等为门方;仅该指定 principal 可发该门,他人发门=拒)**,与下表"门 PASS/FAIL"行统一(删原"门方由 task_role.tester 指定"硬编码句,消其与矩阵行的自相矛盾):
   | op / 动作 | 允许的 principal 角色 |
   |---|---|
   | new(建单) | 调度者小组身份(DispatcherIDs) |
