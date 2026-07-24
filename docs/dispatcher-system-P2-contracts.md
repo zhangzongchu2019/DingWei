@@ -1,9 +1,10 @@
-# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v0.7——dev56 FINAL 6MC 全闭合)
+# 调度者/任务清单编排系统 · P2 契约文本(C0-C6,v0.8——dev56 6MC+provisional 硬边界(心跳隔离非权威区)全闭合)
 
 作者 zzc-devo48-2642 · 2026-07-23 · 长程任务 P2 段(冻结对象;两签后 C1-C5 即契约,改动须重两签)
 上游=P1 设计稿 v1.1(sha 9798c663);本稿把 §7 骨架落成可签文本。
 v0.2 修:shence 审#1(MC-1 身份真实性锚/MC-2 状态 op 授权闸/MC-3 应急幂等 epoch;A-1~A-4)+dev56 审#2(①C2 漏 2-Agent 守门/②应急原语非零新语义须诚实立原语/③合法审计 actor 悖论/④canonical 首行与可信 control op)一次攒批;应急原语升为 **C6 新原语**(纳入本次两签,C1 引用面恢复"纯引用零新语义"的诚实性)。
 v0.3 增:shence H1(C0 授权模型合章)+H2(过渡窗敞口)。
+v0.8=+dev56 provisional 硬边界(★DF-1 深化,C0.4③a):过渡期 provisional 心跳只进隔离非权威 observation 区,不参与任何状态机/计时器/决策(防伪造心跳持续阻止 failover=权威影响),复核后新 request_id 转正;最简替代=心跳也 fail-closed。
 v0.7=dev56 FINAL 6MC 一次全闭合(DF-1∪MC1 合并):①过渡窗【所有 mutating】fail-closed=C5 5.0/C0.4③;②role×op+指定门方矩阵=C5 5.1a;③OwnerOverride 专用原语【禁注入 dispatcher Identity】=C0.2/C6 6.2;④owner 请求 schema+expected epoch/state+陈旧不跨代=C6 6.1/6.2;⑤canonical control gate+内部 sentinel 保留=C5 5.0a;⑥fullmatch+拒控制字符=C4.1。
 v0.6=shence 审#1 2/2 收尾:MC-4(C4.1 fullmatch/\A\Z+拒控制字符,尾换行注入闭合)+DF-1(过渡期门/收口/result=fail-closed 不入账[防伪造假 PASS,与 C0.4 应急一致],低危心跳 provisional+敞口③枚举;C0.4/C5 5.0/C3.4a 同步)。
 v0.5=dev56 7 点整合清单全闭合对照(manager 定为唯一 checklist):①C2 执行席≤2/升格/豁免=C2.6;②身份真实性 hub principal(from 不作授权)=C0.1/C5 5.0;③状态 op 入账前 principal↔task_role+new 创建权=C5 gate-3;④应急 owner 鉴权/expected_epoch/idempotency/重放 no-op/线性化+事件原子+P3 新语义窗=C0.2-0.6/C6/C1 1.4b;⑤identity_rejected 合法 gate 签名/被拒 name 仅 subject=C4 4.2;⑥canonical 首行/可信 meta/control 语法+三负例=C5 5.0a;⑦三跨边界不变量(P5 原子切/每实体同构授权闸/LLM 只判路由)=C3.4a·C3.3·C5 gate-5;**+全状态 op 幂等(非仅 emergency)=C0.3**。
@@ -26,7 +27,8 @@ v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-clo
 - **0.4 过渡窗——应急原语 fail-closed(★dev56 审#2 提级,严于 best-effort)**:hub canonical per-session principal 未就绪时——
   - **owner_takeover / owner_override = 硬禁用(fail-closed,不可启用)**:共享 FB key 下可伪造的夺权/急停若进过渡运行,攻击者可合法触发 epoch+1 fence 真调度者=直接破坏安全不变量,"风险接受"消不掉此破坏,故不接受、直接禁用;
   - **普通身份/控制路由**:可在明确 **pre-P5 warn/best-effort 迁移窗**运行,逐项列风险(①控制指令伪造发件人),业主知情;
-  - **③过渡期一切 mutating 伪造(★DF-1+dev56①,统一)**:过渡期 principal 可伪造→gate-3 授权闸形同虚设→可伪造任何改状态 op(门 PASS/建单/结果/reassign…)。同一致性理由(可伪造→破坏不变量→风险接受消不掉),**处置=过渡期一切 mutating op 一律 fail-closed 不入账**(不止门/收口);**仅只读查询+心跳观测(标 provisional,不进权威台账,principal 就绪后复核)**。业主显式接受仅针对"心跳 provisional+过渡期功能受限"这一低危面,不针对任何 mutating。
+  - **③过渡期一切 mutating 伪造(★DF-1+dev56①,统一)**:过渡期 principal 可伪造→gate-3 授权闸形同虚设→可伪造任何改状态 op(门 PASS/建单/结果/reassign…)。同一致性理由(可伪造→破坏不变量→风险接受消不掉),**处置=过渡期一切 mutating op 一律 fail-closed 不入账**(不止门/收口);仅放行只读查询。
+  - **③a provisional 心跳硬边界(★dev56 补:防伪造心跳的权威影响)**:过渡期若保留心跳/状态观测,只能进**隔离的非权威 observation/audit 区**,且【不参与任何状态机/计时器/决策】——principal 复核前**不得**:刷新 agent/task 租约、抑制"静默超两间隔"失联判断、改 TaskLedger/status/blocker、满足门、驱动任何调度决策。否则伪造心跳可持续阻止 failover=仍是权威影响。复核后才以【新 request_id】转正入账。**最简替代=心跳也全 fail-closed**(过渡期不收心跳)。
 - **0.5 竞态线性化(★dev56:takeover↔override 同 epoch 竞争,先提交者决定)**:
   - takeover 先提交→override 的 expected_epoch miss=no-op;override 先提交→其单指令原子生效后,takeover fence 后续写;
   - **状态变更+owner_* 事件同一事务**(原子);idempotency_id 重放=返原 outcome(不重复施加)。
@@ -73,7 +75,7 @@ v0.4 增:dev56 审#2 定稿——①H2 提级为**应急原语过渡期 fail-clo
 
 - **5.0 身份真实性锚(★MC-1,=C0.1)**:gate 判定的发件身份=**C0.1 per-session principal**,【不是】信封自述 `from`(现行 send.py `from="{name}#{key}"` 中 name 客户端自选、key=全队共享 secret,from 可被任一持钥者伪造成业主/调度者)。C5 全部闸读此 principal。
   - **P3 硬依赖**:hub 提供 per-session 主体注入(连接层→收件面);列 P3 实现清单+跨系统协调项。
-  - **过渡期不变量(hub 未就绪前,诚实降级;★dev56①:所有 mutating fail-closed)**:身份【非】不可伪造——此期间**禁用一切改状态的 op**(C6 应急 + 控制 op + new/status/result/reject/门/收口 + steer/interrupt/reassign 等所有 mutating,一律 fail-closed 不入账,防伪造 principal 写任何权威状态);**仅放行只读查询 + 心跳观测(非台账 mutating,标 provisional 不进 TaskLedger 权威字段,principal 就绪后复核)**。"不可伪造性未就位 ⇒ 一切 mutating 关闭",不带病放行。principal 就位后本条废止。
+  - **过渡期不变量(hub 未就绪前,诚实降级;★dev56①:所有 mutating fail-closed)**:身份【非】不可伪造——此期间**禁用一切改状态的 op**(C6 应急 + 控制 op + new/status/result/reject/门/收口 + steer/interrupt/reassign 等所有 mutating,一律 fail-closed 不入账,防伪造 principal 写任何权威状态);**仅放行只读查询**;心跳观测(若保留)进隔离非权威 observation 区,【不参与任何状态机/计时器/决策】(不刷租约/不抑制失联判断/不改台账/不驱动调度,C0.4③a),复核后新 request_id 转正。"不可伪造性未就位 ⇒ 一切 mutating+心跳决策影响关闭",不带病放行。principal 就位后本条废止。
 - **5.0a canonical 输入 + control gate(★dev56④⑤)**:闸只读**规范化首行 canonical_first_line**(剥传输头 `【sender→recipient】`/镜像标签/引号后的净正文首行)+信封 meta;传输头/body 自称控制词不参与路由。
   - **可信 control op=仅结构化 meta.op**(非首行自然语言);自然语言"停/暂停"→gate-2 疑似,升授权判定不直接执行;
   - **内部 sentinel 命名空间保留(★dev56⑤)**:`system:*` 前缀(如 `system:identity-gate`)=系统保留主体,**外部发件 principal 禁用该前缀**(gate-1 对 `system:*` 来源一律拒,防伪造系统哨兵签名);sentinel 仅由 Board 内部原语在事件 actor 处使用,永不作为收件 principal。
