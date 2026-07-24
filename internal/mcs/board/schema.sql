@@ -118,3 +118,14 @@ CREATE TABLE IF NOT EXISTS result_outbox (
   next_retry_ts INTEGER,
   created_ts  INTEGER NOT NULL, updated_ts INTEGER NOT NULL
 );
+
+-- C6 应急原语幂等账(★P3 新原语;dev56 MC-b 单键:idempotency_id 即唯一幂等键)。
+-- owner_principal=★shence E 键作用域守卫:重投须 principal 匹配,跨 principal 复用同 id→拒(不返他人 outcome)。
+CREATE TABLE IF NOT EXISTS owner_op (
+  idempotency_id  TEXT PRIMARY KEY,
+  owner_principal TEXT NOT NULL,
+  op              TEXT NOT NULL CHECK(op IN ('owner_takeover','owner_override')),
+  outcome         TEXT NOT NULL CHECK(outcome IN ('applied','cas_miss','rejected')),
+  result_json     TEXT,
+  applied_ts      INTEGER NOT NULL
+);

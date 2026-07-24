@@ -49,6 +49,9 @@ type Board struct {
 
 	idmu  sync.Mutex
 	idcfg identityConfig // P3 身份 enforce(C4;默认 warn,调度者上线开 enforce)
+
+	c6mu  sync.Mutex
+	c6cfg c6Config // P3 C6 应急原语配置(默认硬禁用=过渡期 fail-closed,P5 上线开)
 }
 
 // Open 打开(或建)Board 库并迁移 schema。path 可为 ":memory:"(测试)。
