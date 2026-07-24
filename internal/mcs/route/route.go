@@ -37,7 +37,8 @@ type Envelope struct {
 type Result struct {
 	Verdict Verdict
 	Gate    int    // 命中闸位 1-5
-	Kind    string // 状态闸提取:里程碑|门|PASS|FAIL|在轨|阻塞(仅 VerdictStatusIngest)
+	Kind    string // 状态闸提取(仅 VerdictStatusIngest)
+	Suspect bool   // ★MC-B:gate-5 自然语言疑似控制(要求结构化重投,不执行不误拒)
 }
 
 // InTaskRole 授权闸(★C5 gate-3 MC-2):principal 是否 ∈ 目标 task 的 task_role。
@@ -65,8 +66,10 @@ func isGate(first string) bool { return gateRe.MatchString(first) }
 var (
 	// engineOps ③闸:引擎既有 op 集(§6 冻结件)。
 	engineOps = map[string]bool{"new": true, "status": true, "result": true, "reject": true}
-	// controlRe ②闸:控制语义词(首行或 meta op 表达的增/改/停/暂停/重派/改单)。
-	controlRe = regexp.MustCompile(`^【?(停止|暂停|重派|改单|终止|恢复任务|kill|stop|pause|reassign)`)
+	// controlOps ★dev56 MC-B:控制判定仅认结构化 meta.op,不认自然语言正文(防误拒合法 status)。
+	controlOps = map[string]bool{"stop": true, "pause": true, "reassign": true, "amend": true, "resume": true, "kill": true}
+	// suspectRe:自然语言疑似控制词——★MC-B 仅用于 gate-5 标记"疑似需结构化重投",【不】用于 gate-2 拒收(防误拒合法 status)。
+	suspectRe = regexp.MustCompile(`(停止|暂停|重派|改单|终止|kill|stop|pause)`)
 	// statusRe ④闸:状态/门/心跳首行。
 	statusRe = regexp.MustCompile(`^【?(里程碑|门|PASS|FAIL|在轨|阻塞)`)
 )
@@ -77,7 +80,7 @@ func (r *Router) Route(e Envelope) Result {
 	if strings.HasPrefix(e.Principal, "system:") || !board.IdentityPattern.MatchString(e.Principal) {
 		return Result{Verdict: VerdictIdentityRejected, Gate: 1}
 	}
-	isControl := controlRe.MatchString(e.FirstLine)
+	isControl := controlOps[e.MetaOp] // ★MC-B:仅结构化 op 触发控制闸,自然语言正文不重分类
 	// 过渡期(principal 不可信):高危通道整体关闭——控制/应急一律拒(★C5 5.0 不带病放行)
 	if !r.Trusted && (isControl || r.EmergencyIDs[e.Principal]) {
 		return Result{Verdict: VerdictDirectiveRejected, Gate: 2}
@@ -108,6 +111,8 @@ func (r *Router) Route(e Envelope) Result {
 		m := statusRe.FindStringSubmatch(e.FirstLine)
 		return Result{Verdict: VerdictStatusIngest, Gate: 4, Kind: m[1]}
 	}
-	// ⑤ 兜底:升调度者 LLM(只出判读不授权;判读后仍须过授权闸)
-	return Result{Verdict: VerdictLLM, Gate: 5}
+	// ⑤ 兜底:升调度者 LLM(只出判读不授权;判读后仍须过授权闸)。
+	// ★MC-B:自然语言疑似控制→标记 suspect(LLM 判读时要求结构化重投),既不执行也不误拒。
+	suspect := suspectRe.MatchString(e.FirstLine)
+	return Result{Verdict: VerdictLLM, Gate: 5, Suspect: suspect}
 }
