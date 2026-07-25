@@ -141,7 +141,7 @@ func TestReceiptDuplicateDualEntry(t *testing.T) {
 	if _, err := d.B.Send(ctx, "n1", 1, "rid-1", "w1", d.ID); err != nil {
 		t.Fatal(err)
 	}
-	body, _ := json.Marshal(hubdriver.WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-1", Phase: "done", OK: true, ResultRef: "ref"})
+	body, _ := json.Marshal(hubdriver.WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-1", Phase: "done", OK: true, ResultRef: "ref", From: "w1"})
 	sink := &hubdriver.ReceiptSink{B: d.B, ID: d.ID}
 	if out, err := sink.HandleBody(ctx, body); err != nil || out != board.OutcomeApplied {
 		t.Fatalf("首投应 applied: %v %v", out, err)

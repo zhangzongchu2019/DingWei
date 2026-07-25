@@ -108,7 +108,7 @@ func TestSpawnAllDeadExplicit(t *testing.T) {
 func TestStoppedWorkerRefuses(t *testing.T) {
 	fs := &fakeSender{}
 	ol := writeList(t, "zzc-w1-2642")
-	w := &Worker{full: "zzc-w1-2642", send: fs, online: ol}
+	w := &Worker{full: "zzc-w1-2642", send: fs, online: ol, from: "me"}
 	_ = w.Stop(context.Background())
 	if err := w.Deliver(context.Background(), pool.Envelope{NodeID: "n1", RID: "r"}); err == nil {
 		t.Fatal("已停用 worker 应拒投")
@@ -119,7 +119,7 @@ func TestStoppedWorkerRefuses(t *testing.T) {
 func TestSendFailurePropagates(t *testing.T) {
 	fs := &fakeSender{fail: fmt.Errorf("hub down")}
 	ol := writeList(t, "zzc-w1-2642")
-	w := &Worker{full: "zzc-w1-2642", send: fs, online: ol}
+	w := &Worker{full: "zzc-w1-2642", send: fs, online: ol, from: "me"}
 	if err := w.Deliver(context.Background(), pool.Envelope{NodeID: "n1", RID: "r"}); err == nil {
 		t.Fatal("外呼失败必须透传")
 	}
@@ -135,5 +135,18 @@ func TestSpawnSkipsDead(t *testing.T) {
 	}
 	if w.ID() != "zzc-alive-2642" {
 		t.Fatalf("应绑活会话,得 %s", w.ID())
+	}
+}
+
+// 负例(张宗楚 07-25 令):信封无明确发件人→拒发,不出线。
+func TestDeliverMissingFromRefused(t *testing.T) {
+	fs := &fakeSender{}
+	ol := writeList(t, "zzc-w1-2642")
+	w := &Worker{full: "zzc-w1-2642", send: fs, online: ol} // from 缺
+	if err := w.Deliver(context.Background(), pool.Envelope{NodeID: "n1", RID: "r"}); err == nil {
+		t.Fatal("无 from 应拒发")
+	}
+	if len(fs.sent) != 0 {
+		t.Fatal("拒发后不得外呼")
 	}
 }

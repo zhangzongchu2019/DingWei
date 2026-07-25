@@ -86,13 +86,15 @@ func (o *OnlineList) alive(fullName string) error {
 }
 
 // WireEnvelope 是 hub 信封线格式(收件面 Receiver 对偶解析;字段冻结于 M1 出件评审)。
+// 收发人强制(张宗楚 07-25 令):From/To 缺一即拒发,不出线。
 type WireEnvelope struct {
 	Kind       string `json:"kind"` // 恒 "mcs_dispatch_v1"
 	NodeID     string `json:"node_id"`
 	Generation int64  `json:"generation"`
 	RID        string `json:"rid"` // delivery_id,幂等键(执行点拦)
 	Payload    string `json:"payload,omitempty"`
-	From       string `json:"from"` // 派发方全名(冠字头对账)
+	From       string `json:"from"` // 派发方全名(必填)
+	To         string `json:"to"`   // 收件工人全名(必填,信封自含防错投取证)
 }
 
 // Worker 绑定一个既有活会话。
@@ -120,12 +122,15 @@ func (w *Worker) Health(ctx context.Context) error {
 }
 
 func (w *Worker) Deliver(ctx context.Context, env pool.Envelope) error {
+	if w.from == "" || w.full == "" {
+		return fmt.Errorf("信封收发人不全(from=%q to=%q),拒发(张宗楚 07-25 令)", w.from, w.full)
+	}
 	if err := w.Health(ctx); err != nil {
 		return fmt.Errorf("deliver 前置健康检查: %w", err)
 	}
 	body, err := json.Marshal(WireEnvelope{
 		Kind: "mcs_dispatch_v1", NodeID: env.NodeID, Generation: env.Generation,
-		RID: env.RID, Payload: string(env.Payload), From: w.from,
+		RID: env.RID, Payload: string(env.Payload), From: w.from, To: w.full,
 	})
 	if err != nil {
 		return err

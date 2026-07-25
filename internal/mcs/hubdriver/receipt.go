@@ -22,7 +22,7 @@ type WireReceipt struct {
 	Phase      string `json:"phase"`           // processing | done
 	OK         bool   `json:"ok"`              // phase=done 时有效
 	ResultRef  string `json:"result_ref"`      // phase=done 时产物指针
-	From       string `json:"from,omitempty"`  // worker 全名(对账)
+	From       string `json:"from"` // worker 全名(必填:无明确发件人拒收,张宗楚 07-25 令)
 }
 
 // ReceiptSink 把回执落账。Identity=调度者身份(owner,epoch),guard 由 board 谓词执行。
@@ -43,6 +43,9 @@ func ParseReceipt(body []byte) (WireReceipt, error) {
 	}
 	if r.NodeID == "" || r.RID == "" {
 		return r, fmt.Errorf("回执缺 node_id/rid(拒)")
+	}
+	if r.From == "" {
+		return r, fmt.Errorf("回执无明确发件人 from(拒收,张宗楚 07-25 令)")
 	}
 	if r.Phase != "processing" && r.Phase != "done" {
 		return r, fmt.Errorf("未知回执 phase %q(入口闭合,拒)", r.Phase)
@@ -67,6 +70,9 @@ func (s *ReceiptSink) Handle(ctx context.Context, r WireReceipt) (board.Outcome,
 	}
 	if r.NodeID == "" || r.RID == "" {
 		return board.OutcomeRejected, fmt.Errorf("回执缺 node_id/rid(拒)")
+	}
+	if r.From == "" {
+		return board.OutcomeRejected, fmt.Errorf("回执无明确发件人 from(拒收,张宗楚 07-25 令)")
 	}
 	switch r.Phase {
 	case "processing":

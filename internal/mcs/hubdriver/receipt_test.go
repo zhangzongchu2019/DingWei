@@ -43,11 +43,11 @@ func TestReceiptE2ELite(t *testing.T) {
 		t.Fatalf("send: %v %v", out, err)
 	}
 	sink := &ReceiptSink{B: b, ID: id}
-	out, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-1", Phase: "processing"})
+	out, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-1", Phase: "processing", From: "w1"})
 	if err != nil || out != board.OutcomeApplied {
 		t.Fatalf("processing: %v %v", out, err)
 	}
-	out, err = sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-1", Phase: "done", OK: true, ResultRef: "ref-1"})
+	out, err = sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-1", Phase: "done", OK: true, ResultRef: "ref-1", From: "w1"})
 	if err != nil || out != board.OutcomeApplied {
 		t.Fatalf("done: %v %v", out, err)
 	}
@@ -70,7 +70,7 @@ func TestReceiptUnknownKindRejected(t *testing.T) {
 func TestReceiptUnknownPhaseRejected(t *testing.T) {
 	b, id, ctx := boardRig(t)
 	sink := &ReceiptSink{B: b, ID: id}
-	if out, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", RID: "r", Phase: "half-done"}); err == nil || out != board.OutcomeRejected {
+	if out, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", RID: "r", Phase: "half-done", From: "w1"}); err == nil || out != board.OutcomeRejected {
 		t.Fatalf("未知 phase 应拒: %v %v", out, err)
 	}
 }
@@ -91,7 +91,7 @@ func TestReceiptStaleGenerationGuarded(t *testing.T) {
 		t.Fatal(err)
 	}
 	sink := &ReceiptSink{B: b, ID: id}
-	out, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 99, RID: "rid-1", Phase: "done", OK: true})
+	out, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 99, RID: "rid-1", Phase: "done", OK: true, From: "w1"})
 	if err == nil && out == board.OutcomeApplied {
 		t.Fatalf("错代回执不得 applied: %v %v", out, err)
 	}
@@ -115,12 +115,21 @@ func TestReceiptBadJSON(t *testing.T) {
 func TestReceiptBeforeDispatchRejectedExplicit(t *testing.T) {
 	b, id, ctx := boardRig(t)
 	sink := &ReceiptSink{B: b, ID: id}
-	out, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-ghost", Phase: "done", OK: true})
+	out, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-ghost", Phase: "done", OK: true, From: "w1"})
 	if err == nil && out == board.OutcomeApplied {
 		t.Fatalf("未派发 rid 的回执不得 applied: %v %v", out, err)
 	}
 	s, _ := b.GetNode(ctx, "n1")
 	if s.Status == "done" {
 		t.Fatal("幽灵回执不得改权威终态")
+	}
+}
+
+// 负例(张宗楚 07-25 令):回执无明确发件人→拒收。
+func TestReceiptMissingFromRejected(t *testing.T) {
+	b, id, ctx := boardRig(t)
+	sink := &ReceiptSink{B: b, ID: id}
+	if _, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", RID: "r", Phase: "done"}); err == nil {
+		t.Fatal("无 from 应拒收")
 	}
 }
