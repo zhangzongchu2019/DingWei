@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/mcs/board"
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver"
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/pool"
 )
@@ -112,5 +113,42 @@ func TestHubReceiptEntryClosed(t *testing.T) {
 	bad2, _ := json.Marshal(hubdriver.WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n", RID: "r", Phase: "later"})
 	if err := d.HandleHubReceipt(ctx, bad2); err == nil {
 		t.Fatal("未知 phase 应拒")
+	}
+}
+
+// 负例(tester G1):同一回执经双入口(ReceiptSink 纯账/daemon 账+池)重复投递→
+// 恰一次生效,第二次不重复改权威态(双入口语义一致性)。
+func TestReceiptDuplicateDualEntry(t *testing.T) {
+	d, err := New(Config{
+		BoardPath: filepath.Join(t.TempDir(), "board.db"),
+		Owner:     "mcsd-dup",
+		Pool:      pool.Config{Min: 1, Max: 1},
+	}, &hubEchoDriver{}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Shutdown()
+	ctx := context.Background()
+	if err := d.B.CreateTask(ctx, "t1", d.Cfg.BoardID, "seed", testRoles(), d.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.B.AddNode(ctx, "n1", "t1", 1, "ready", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.B.RegisterAgent(ctx, "w1", "claude"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.B.Send(ctx, "n1", 1, "rid-1", "w1", d.ID); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(hubdriver.WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-1", Phase: "done", OK: true, ResultRef: "ref"})
+	sink := &hubdriver.ReceiptSink{B: d.B, ID: d.ID}
+	if out, err := sink.HandleBody(ctx, body); err != nil || out != board.OutcomeApplied {
+		t.Fatalf("首投应 applied: %v %v", out, err)
+	}
+	_ = d.HandleHubReceipt(ctx, body) // 重复投递(另一入口):不得二次生效
+	s, err := d.B.GetNode(ctx, "n1")
+	if err != nil || s.Status != "done" {
+		t.Fatalf("终态应保持 done: %+v %v", s, err)
 	}
 }

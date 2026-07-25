@@ -109,3 +109,18 @@ func TestReceiptBadJSON(t *testing.T) {
 		t.Fatal("坏 JSON 应显式报错")
 	}
 }
+
+// 负例(tester G2):回执先于派发记账(rid 从未 Send)→显式拒/不 applied,不改权威态。
+// 记账先行不变量(M0 3.1)使正常时序不可能出现此况;出现即异常来路,须显式可见。
+func TestReceiptBeforeDispatchRejectedExplicit(t *testing.T) {
+	b, id, ctx := boardRig(t)
+	sink := &ReceiptSink{B: b, ID: id}
+	out, err := sink.Handle(ctx, WireReceipt{Kind: "mcs_receipt_v1", NodeID: "n1", Generation: 1, RID: "rid-ghost", Phase: "done", OK: true})
+	if err == nil && out == board.OutcomeApplied {
+		t.Fatalf("未派发 rid 的回执不得 applied: %v %v", out, err)
+	}
+	s, _ := b.GetNode(ctx, "n1")
+	if s.Status == "done" {
+		t.Fatal("幽灵回执不得改权威终态")
+	}
+}

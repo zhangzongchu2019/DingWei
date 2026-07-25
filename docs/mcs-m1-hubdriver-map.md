@@ -19,6 +19,9 @@ commit 链:dbacc79(增量1 外呼)→360e1b4(增量2 回执桥)→6547add(增量
 | 池语义:死会话不静默(I4 同款) | Adapter.Spawn 轮转跳死,全死显式错 | TestSpawnAllDeadExplicit/TestSpawnSkipsDead |
 | Terminal 归还 worker(daemon 既有) | Daemon.HandleHubReceipt→ReceiptTerminal(不旁路池归还) | TestHubReceiptE2E(线格式全往返收敛 done) |
 | 团队规约:结构化正文不过 shell 内联 | SendPy=临时文件+--file | (构造性保证,无负例) |
+| 双入口一致性(tester G1) | ParseReceipt 唯一解析权威+board 谓词恰一 | TestReceiptDuplicateDualEntry(双入口重复投递恰一生效) |
+| 回执先于派发(tester G2) | 记账先行不变量(M0 3.1)+幽灵 rid 显式拒 | TestReceiptBeforeDispatchRejectedExplicit |
+| 健康窗口漂移(tester G3) | at-least-once:窗口内投递丢失→sweep redeliver 收敛 | 既有 TestS6_LostReceiptsRedeliverConverges(daemon 层) |
 
 ## 线格式(冻结待审)
 - 派发:`mcs_dispatch_v1`{node_id,generation,rid,payload,from}
