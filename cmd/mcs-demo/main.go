@@ -5,27 +5,32 @@
 // 模拟件③【人工操作入口】=op 子命令(应急夺权/单点急停/升格/豁免,直调 guarded 原语,全留账)。
 //
 // 用法:
-//   mcs-demo run    [-db demo.db] [-listen 127.0.0.1:8646] [-replay file.jsonl] [-work-delay 2s]
-//   mcs-demo op takeover -db demo.db -owner zzc-zzc-1 -to zzc-neworch-1 -epoch 1 -idem k1 [-reason ...]
-//   mcs-demo op override -db demo.db -owner zzc-zzc-1 -target n3 -directive pause -epoch 1 -state running -idem k2
-//   mcs-demo op promote  -db demo.db -task t-demo -role designer
-//   mcs-demo op exempt   -db demo.db -task t-demo -who zzc-qa-1 -reason "阶段性第3席"
+//
+//	mcs-demo run    [-db demo.db] [-listen 127.0.0.1:8646] [-replay file.jsonl] [-work-delay 2s]
+//	mcs-demo op takeover -db demo.db -owner zzc-zzc-1 -to zzc-neworch-1 -epoch 1 -idem k1 [-reason ...]
+//	mcs-demo op override -db demo.db -owner zzc-zzc-1 -target n3 -directive pause -epoch 1 -state running -idem k2
+//	mcs-demo op promote  -db demo.db -task t-demo -role designer
+//	mcs-demo op exempt   -db demo.db -task t-demo -who zzc-qa-1 -reason "阶段性第3席"
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/board"
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/demo"
+	"github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver"
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd"
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/pool"
 )
@@ -70,6 +75,8 @@ func runDemo(args []string) {
 	replayFile := fs.String("replay", "", "回放 JSONL(空=不回放)")
 	replayEvery := fs.Duration("replay-interval", 800*time.Millisecond, "回放逐条间隔")
 	workDelay := fs.Duration("work-delay", 2*time.Second, "模拟工人单节点耗时")
+	workers := fs.String("workers", "", "M2:真工人会话全名逗号表(设=替换模拟件,经 hub 派发)")
+	spool := fs.String("receipt-spool", "", "M2:回执 spool 文件(CLI 收 mcs_receipt_v1 追加,demo 尾随入账)")
 	die(fs.Parse(args))
 
 	host, _, err := net.SplitHostPort(*listen)
@@ -78,13 +85,31 @@ func runDemo(args []string) {
 		die(fmt.Errorf("面板只允许回环地址(只读演示铁律),got %s", *listen))
 	}
 
-	drv := &mcsd.LoopbackDriver{Behavior: mcsd.LoopbackBehavior{WorkDelay: *workDelay}}
+	var drv pool.DriverAdapter
+	var loop *mcsd.LoopbackDriver
+	if *workers != "" { // M2:真工人模式(替换 demo 模拟件)
+		home, _ := os.UserHomeDir()
+		drv = &hubdriver.Adapter{
+			Registry: strings.Split(*workers, ","),
+			Send:     &hubdriver.SendPy{},
+			Online:   &hubdriver.OnlineList{Path: filepath.Join(home, ".dingwei", "devo48.DingWeiOnlineSessions.list")},
+			From:     "zzc-devo48-2642",
+		}
+	} else {
+		loop = &mcsd.LoopbackDriver{Behavior: mcsd.LoopbackBehavior{WorkDelay: *workDelay}}
+		drv = loop
+	}
 	d, err := mcsd.New(mcsd.Config{
 		BoardPath: *db, BoardID: "board1", Owner: orchPrincipal,
 		Pool: pool.Config{Min: 2, Max: 3},
 	}, drv, nil)
 	die(err)
-	drv.Bind(d)
+	if loop != nil {
+		loop.Bind(d)
+	}
+	if *spool != "" { // 回执 spool 尾随:CLI 会话收到回执落此文件,一行一 JSON
+		go tailReceipts(d, *spool)
+	}
 
 	// 鉴权盖章 mock(模拟件②):显式登记会话→身份章;未登记会话盖不了章=进不来。
 	auth := demo.NewMockAuth()
@@ -271,4 +296,33 @@ func currentOrchestrator(b *board.Board) (board.Identity, error) {
 	err := b.DB().QueryRow(`SELECT owner, epoch FROM orchestrator WHERE board_id='board1'`).
 		Scan(&id.Owner, &id.Epoch)
 	return id, err
+}
+
+// tailReceipts M2 回执桥:尾随 spool 文件(一行一 mcs_receipt_v1 JSON),入 daemon guarded 账。
+// 解析失败/未知 kind 显式打日志跳过(入口闭合),不 panic 不静默。
+func tailReceipts(d *mcsd.Daemon, path string) {
+	var off int64
+	for {
+		time.Sleep(500 * time.Millisecond)
+		f, err := os.Open(path)
+		if err != nil {
+			continue // 文件未建=还没有回执
+		}
+		if _, err := f.Seek(off, 0); err != nil {
+			f.Close()
+			continue
+		}
+		sc := bufio.NewScanner(f)
+		for sc.Scan() {
+			line := strings.TrimSpace(sc.Text())
+			off += int64(len(sc.Bytes()) + 1)
+			if line == "" || !strings.HasPrefix(line, "{") {
+				continue
+			}
+			if err := d.HandleHubReceipt(context.Background(), []byte(line)); err != nil {
+				log.Printf("spool 回执拒: %v", err)
+			}
+		}
+		f.Close()
+	}
 }
