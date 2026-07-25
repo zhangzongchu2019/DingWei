@@ -133,3 +133,16 @@ func TestReceiptMissingFromRejected(t *testing.T) {
 		t.Fatal("无 from 应拒收")
 	}
 }
+
+// M2 真信道 fixture:2026-07-25 16:23Z 经真实 DingWei hub 自环回流的原始回执样本
+// (派发→hub→工人 wkr.py 消费→回执→hub→本会话,全链真实传输)。字节级保真。
+func TestRealHubTransitFixtureParses(t *testing.T) {
+	body := []byte(`{"kind": "mcs_receipt_v1", "node_id": "m2-selftest-n1", "generation": 1, "rid": "m2-selftest-rid-001", "phase": "processing", "ok": false, "result_ref": "", "from": "devo48"}`)
+	r, err := ParseReceipt(body)
+	if err != nil {
+		t.Fatalf("真信道样本应可解析: %v", err)
+	}
+	if r.NodeID != "m2-selftest-n1" || r.RID != "m2-selftest-rid-001" || r.Phase != "processing" {
+		t.Fatalf("字段错: %+v", r)
+	}
+}
