@@ -151,6 +151,17 @@
       vertical-align: middle;
     }
     .source-badge--trusted { background: #1a7f4b; }
+    /* display-provenance v1 来源图标(灰度 flag 门控) */
+    .prov-ic { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 18%, var(--panel)); color: var(--accent); font-size: 11px; font-weight: 600; vertical-align: middle; flex: none; }
+    .prov-ic .prov-svg { width: 13px; height: 13px; display: block; }
+    .prov-ic--human { background: var(--accent); color: #fff; }
+    .prov-label { font-size: 12px; color: var(--muted, #888); margin: 0 4px 0 3px; vertical-align: middle; }
+    .prov-spin { color: var(--muted, #888); font-size: 12px; margin-right: 4px; }
+    /* 等候区在途条(张宗楚灰度反馈#2):明确「投递中」+单行截断,不与「已收到消息」混淆 */
+    .waiting-item--pending { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted, #888); }
+    .waiting-item--pending .waiting-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; min-width: 0; }
+    .waiting-item--pending .prov-spin { flex: none; }
+    .waiting-item--pending .waiting-stage { flex: none; }
     .card-stage-footer {
       margin-top: 4px;
       font-size: 12px;
@@ -879,8 +890,11 @@
 
     // VS 代理端点自定位 scoped base(M1):保留 /view 前全部 pathname 前缀(/dingwei/view/<sess>/ → /dingwei/view/<sess>),
     // 未命中(根直出/nginx)→''=根相对。VS _serve_file 字面量改写降为冗余(本处不再含 ''/ep'' 引号字面量,不会双前缀)。
-    const API_BASE = (location.pathname.match(/^(.*?\/view\/[^/]+)/) || [null, ''])[1];
-    const apiEp = p => API_BASE + '/' + p;
+    // 懒解析(生产边角实证:bare POST /control=404):每次取当前 pathname,防 init 时 URL 未就绪/未来客户端跳转;
+    // 根直出恒 ''(F5 不受影响)。注:本页不 mutate URL,空 base 另一主因=缓存旧件根绝对端点(部署侧缓存课题)。
+    const apiBase = () => (location.pathname.match(/^(.*?\/view\/[^/]+)/) || [null, ''])[1];
+    const apiEp = p => apiBase() + '/' + p;
+    // API=init 快照,仅供诊断/测试读取;请求路径一律走 apiEp() 懒解析,勿再新增 API.x 调用点。
     const API = {
       events: apiEp('events'),
       input: apiEp('input'),
@@ -901,21 +915,56 @@
     const turnGroups = new Map();
     const waitingDeliveries = new Map();
     // ── C2 control 地基(待提交区删除 + 中断确认)──
-    // 传输层:默认真接 VS POST /control(VS 85c2082 走甲最小端点,字段逐字 {kind,message_id,delivery_id},
-    // 仅 kind=cancel;VS 恒 200 {"ok":bool},ok=false=未受理/已注入/终态);window.C2_CONTROL_TRANSPORT 可注入覆盖(测试)。
+    // 传输层:默认真接 VS POST /control(仅 kind=cancel;VS 恒 200 {"ok":bool},ok=false=未受理/已注入/终态);
+    // body 契约(派单②,与 devof5 书面冻结):legacy={kind,message_id,delivery_id} 三字段;
+    // V2(生产)=补 page_id+page_token(VS authorize_page 授权,取自 pageIdentity,与 /input 同一对)+request_id(hub 幂等去重)。
+    // window.C2_CONTROL_TRANSPORT 可注入覆盖(测试)。
     // 诚实语义(G-HONEST):VS 未受理→明说"未发出";受理 ok=true→"已请求";条目消失只由事件流 cancelled 驱动。
     const C2_ACK_TIMEOUT_MS = (typeof window !== 'undefined' && window.C2_ACK_TIMEOUT_MS) || 10000;  // 测试可经 window.C2_ACK_TIMEOUT_MS 覆盖
     const c2State = { interrupt: null };  // interrupt: {state:'requested', since, timer} | null
+    // C2 中断目标上下文(契约 devof5 冻结):interrupt=注入后打运行中 turn,body 带 delivery_id+turn_id(无 message_id)。
+    // active=最新未完成 turn;turn_completed 清除。requestId=该 turn 的中断意图幂等键(一个意图一个、重试复用;新 turn 新 id)。
+    // root 精确(devof5 裁定,helper a5f7c25 双层 fence 精确匹配 delivery_id+turn_id、绝不打最新 turn):
+    // 只认注入入口 user input 的 delivery(user_input / input_posted primary);copy/assistant/tool 事件**永不钉 root**
+    // (其 delivery 非 root,错钉=stale 打不动);注入入口事件晚到即升级钉 root。**本地拦(devof5 再裁):
+    // root 未确认不发**——一个 request_id↔一份不可变 body(hub reserveViewV2Request:同 rid 换 bodyHash=409 毒化),
+    // provisional(子 delivery)恒 stale 零收益;root 未到时中断不了属诚实早报(fence 一样拦,不丢可中断性)。
+    const c2TurnCtx = { active: null };  // {turnId, deliveryId, rootPinned, requestId} | null
+    function c2TrackTurn(ev) {
+      const norm = ev._norm || {};
+      const tid = norm.turnId;
+      if (!tid) return;
+      if (ev.kind === 'state_change' && ev.data && ev.data.change === 'turn_completed') {
+        if (c2TurnCtx.active && c2TurnCtx.active.turnId === tid) c2TurnCtx.active = null;
+        return;
+      }
+      const isCopy = !!norm.copyKind || String(norm.deliveryMode || '').includes('copy');
+      const isRootInput = !isCopy && (ev.kind === 'user_input' || ev.kind === 'input_posted');
+      const dlv = ev.delivery_id || norm.deliveryId || '';
+      if (!c2TurnCtx.active || c2TurnCtx.active.turnId !== tid) {
+        c2TurnCtx.active = { turnId: tid, deliveryId: isCopy ? '' : dlv, rootPinned: isRootInput, requestId: null };
+      } else if (!c2TurnCtx.active.rootPinned && isRootInput && dlv) {
+        c2TurnCtx.active.deliveryId = dlv;  // 注入入口事件晚到→升级钉 root(requestId 不动,同意图复用)
+        c2TurnCtx.active.rootPinned = true;
+      }
+    }
     // 真 transport:renderer→VS POST /control。非 cancel 的 kind(interrupt)不支持→sent:false 让调用方回退 legacy;
     // 成功时只回 VS 响应体({ok:bool}),由 c2SendControl 统一包装(与注入 mock 同形)。
     const c2VsTransport = {
       async send(msg) {
         if (msg.kind !== 'cancel') return { sent: false, reason: 'kind_not_supported' };
+        // body 分契:legacy 三字段;V2 补 page_id+page_token+request_id(与 /input V2 同构)
+        let ctlBody = { kind: 'cancel', message_id: msg.message_id || '', delivery_id: msg.delivery_id || '' };
+        if (!ctlBody.message_id || !ctlBody.delivery_id) return { sent: false, reason: 'addr_incomplete' };  // 缺寻址字段本地拦(生产实证 15:13:28:发空串=VS 400,不如诚实早报)
+        if (stats.authMode === 'view_page_v2') {
+          if (!pageIdentity?.page_id || !pageIdentity?.page_token) return { sent: false, reason: 'no_page_identity' };  // fail-closed:无 V2 凭证不冒充,明说未发出
+          ctlBody = { ...ctlBody, page_id: pageIdentity.page_id, page_token: pageIdentity.page_token, request_id: msg.request_id || '' };
+        }
         try {
-          const res = await fetch(API.control, {
+          const res = await fetch(apiEp('control'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ kind: 'cancel', message_id: msg.message_id || '', delivery_id: msg.delivery_id || '' }),
+            body: JSON.stringify(ctlBody),
           });
           const body = await res.json().catch(() => ({}));
           if (!res.ok) return { sent: false, reason: 'http_' + res.status };
@@ -939,7 +988,7 @@
         return { sent: false, reason: String(err && err.message || err) };
       }
     }
-    function c2Note(text) { return `<span class="c2-note">${escapeHtml(text)}</span>`; }
+    function c2Note(text, cls) { return `<span class="c2-note${cls ? ' ' + cls : ''}">${escapeHtml(text)}</span>`; }
     // 待提交区删除=发起 cancel 请求;条目的真正消失只由事件流 stage=cancelled 驱动(单一事实源),绝不本地静默删(Q4 未决前的 fail-closed 选择)。
     async function c2RequestCancel(waitKey, entry) {
       const norm = entry.event?._norm || {};
@@ -948,15 +997,21 @@
       const note = entry.node.querySelector('.c2-note');
       if (note) note.remove();
       entry.node.insertAdjacentHTML('beforeend', c2Note('取消请求中…'));
-      const r = await c2SendControl({ kind: 'cancel', message_id: norm.messageId || null, delivery_id: norm.deliveryId || waitKey });
+      // 幂等(devof5 钉死):request_id=每个取消意图一个(按条目),同意图全部重试复用同一 id、整 body 逐字同
+      // →hub reserveViewV2Request 按 request_id+bodyHash 去重返 duplicate(不双撤);新 delivery 才新 id。
+      // 注意:这是取消动作自己的 id,不是被撤 delivery 的 id(与 /input 的 request_id=env.ID 不同)。
+      if (!entry.cancelRequestId) entry.cancelRequestId = newRequestId();
+      const r = await c2SendControl({ kind: 'cancel', message_id: norm.messageId || null, delivery_id: norm.deliveryId || waitKey, request_id: entry.cancelRequestId });
       const cur = entry.node.querySelector('.c2-note');
       if (cur) cur.remove();
       if (!r.sent) {
-        entry.node.insertAdjacentHTML('beforeend', c2Note('取消未发出:VS 未受理(' + (r.reason || '链路异常') + ')'));
+        entry.failNotedAt = Date.now();  // 失败尝试便签:到时自清(devof5 边界=确定性未发出,清它不动活条目)
+        entry.node.insertAdjacentHTML('beforeend', c2Note('取消未发出:VS 未受理(' + (r.reason || '链路异常') + ')', 'c2-note--fail'));
         if (btn) btn.disabled = false;
       } else if (r.ack && r.ack.ok === false) {
         // VS 恒 200 {ok:bool}:ok=false=未受理(非注入前 pending:已注入/终态/错址)
-        entry.node.insertAdjacentHTML('beforeend', c2Note('取消未生效(条目已注入或终态)'));
+        entry.failNotedAt = Date.now();
+        entry.node.insertAdjacentHTML('beforeend', c2Note('取消未生效(条目已注入或终态)', 'c2-note--fail'));
         if (btn) btn.disabled = false;
       } else {
         entry.node.insertAdjacentHTML('beforeend', c2Note('取消已请求,待确认'));
@@ -991,17 +1046,40 @@
       }
     }
     // 测试钩子(回归套件注入 mock transport / 驱动状态)
+    // C2 等待看门狗(生产实证:终态事件永不达=条目永久卡待提交区):超 C2_WAIT_STALE_MS 无推进→标「投递超时(未确认)」。
+    // 只标记不摘除——摘除仍只由事件流驱动(迟到 cli_injected 不误吞);推进重渲染自动清标记。
+    const C2_WAIT_STALE_MS = (typeof window !== 'undefined' && window.C2_WAIT_STALE_MS) || 600000;  // 测试可经 window.C2_WAIT_STALE_MS 覆盖
+    const C2_FAIL_NOTE_MS = (typeof window !== 'undefined' && window.C2_FAIL_NOTE_MS) || 120000;   // 失败便签自清窗,测试可覆盖
+    function c2MarkStaleWaiting() {
+      const now = Date.now();
+      for (const entry of waitingDeliveries.values()) {
+        // 失败尝试便签到时自清(devof5 边界:只清 r.sent=false/ok=false 的确定性失败便签;
+        // 「取消已请求,待确认」无 c2-note--fail 标记,绝不动——它仍等 cancelled 事件,保持 fail-closed)
+        if (entry.failNotedAt && now - entry.failNotedAt > C2_FAIL_NOTE_MS) {
+          entry.failNotedAt = null;
+          const fn = entry.node.querySelector('.c2-note--fail');
+          if (fn) fn.remove();
+        }
+        if (entry.staleNoted || now - (entry.touched || now) <= C2_WAIT_STALE_MS) continue;
+        entry.staleNoted = true;
+        entry.node.insertAdjacentHTML('beforeend', c2Note('投递超时(未确认)'));
+      }
+    }
+    setInterval(c2MarkStaleWaiting, 30000);
     window.__c2 = {
       setTransport(t) { window.C2_CONTROL_TRANSPORT = t; },
       requestCancel: c2RequestCancel,
       requestInterrupt: c2RequestInterrupt,
       maybeConfirm: c2MaybeConfirmInterrupt,
+      markStale: c2MarkStaleWaiting,
       state: c2State,
       waitingDeliveries,
     };
     const BOTTOM_THRESHOLD_PX = 50;
-    const REPLAY_QUIET_MS = 250;
-    const REPLAY_HARD_LIMIT_MS = 1000;
+    const REPLAY_QUIET_MS = (typeof window !== 'undefined' && window.REPLAY_QUIET_MS) || 250;
+    const REPLAY_HARD_LIMIT_MS = (typeof window !== 'undefined' && window.REPLAY_HARD_LIMIT_MS) || 1000;
+    // 页面滚动自管(生产实证:浏览器刷新后 scrollRestoration 恢复旧位,与 replay 滚底打架→停在上部)
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     let timelineAtBottom = true;
     let replayInProgress = true;
     let replayQuietTimer = null;
@@ -1156,6 +1234,14 @@
       timeline.style.scrollBehavior = previous;
       timelineAtBottom = true;
     }
+    // 确定性滚底(生产实证:刷新后单帧 snap 早于布局稳定/scrollRestoration 恢复旧位→停在上部):
+    // 双 rAF + 250ms 补拍 + 字体就绪补拍,每拍都尊重 timelineAtBottom(用户已上翻则不抢)。
+    function snapTimelineToBottomSettled() {
+      const snapIfAllowed = () => { if (timelineAtBottom) scrollTimelineToBottom(); };
+      requestAnimationFrame(() => requestAnimationFrame(snapIfAllowed));
+      setTimeout(snapIfAllowed, 250);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(snapIfAllowed);
+    }
     function scheduleTimelineToBottom() {
       if (followScrollFrame !== null) return;
       followScrollFrame = requestAnimationFrame(() => {
@@ -1170,7 +1256,7 @@
       clearTimeout(replayHardTimer);
       replayQuietTimer = null;
       replayHardTimer = null;
-      if (forceBottom) scheduleTimelineToBottom();
+      if (forceBottom) snapTimelineToBottomSettled();  // 收尾确定性滚底(等布局 settle,非单帧)
     }
     function beginTimelineReplay() {
       replayInProgress = true;
@@ -1456,14 +1542,14 @@
       hub_received: 'hub 已收', helper_received: 'helper 已收',
       cli_injected: '已注入执行', turn_admitted: '已注入执行', admitted: '已注入执行',
       pty_write: '已写入终端', busy: '暂不可投递', expired: '投递过期',
-      failed: '失败', cancelled: '已取消',
+      failed: '失败', cancelled: '已取消', dead: '已终止', dropped: '已丢弃',
     };
     const C1_STAGE_FOOTER = {
       generated: '已入队', queued: '已入队',
       hub_received: 'hub 已收', helper_received: 'helper 已收',
       cli_injected: '已注入执行', turn_admitted: '已注入执行', admitted: '已注入执行',
       pty_write: '已写入终端(注入未确认)', busy: '暂不可投递(重试中)', expired: '投递过期',
-      failed: '失败', cancelled: '已取消',
+      failed: '失败', cancelled: '已取消', dead: '已终止', dropped: '已丢弃',
     };
     const C1_REASON_TEXT = {
       target_offline: '目标不在线', queue_full: '队列已满，请稍后重试', timeout: '投递超时',
@@ -1475,6 +1561,35 @@
     };
     const c1InputCards = new Map();      // messageIdKey -> { card, footer, stageIdx, footnotes:Set }
     const c1PendingUpdates = new Map();  // messageIdKey -> [norm 更新](卡片未建时缓冲)
+    const c1DeliveryCards = new Map();   // deliveryId -> messageIdKey(display v1 copy 归并寻址:observed_delivery_id→primary 卡)
+    const c1MergeBuf = new Map();        // deliveryId -> [{ev,timer}](primary 卡未建时的归并缓冲,带 hold 窗回落)
+    const C2_MERGE_HOLD_MS = (typeof window !== 'undefined' && window.C2_MERGE_HOLD_MS) || 3000;  // 归并等待窗(copy),测试可覆盖
+    const C2_ECHO_HOLD_MS = (typeof window !== 'undefined' && window.C2_ECHO_HOLD_MS) || 800;     // 回显乱序短窗(user_input echo),测试可覆盖
+    function bufferMergeCopy(dlvId, ev, opts = {}) {
+      const buf = c1MergeBuf.get(dlvId) || [];
+      const rec = { ev, admit: !!opts.admit, footKey: opts.footKey || 'echo_merge',
+        timer: setTimeout(() => flushMergeCopy(dlvId, rec), opts.holdMs || C2_MERGE_HOLD_MS) };
+      buf.push(rec);
+      c1MergeBuf.set(dlvId, buf);
+    }
+    function flushMergeCopy(dlvId, rec) {
+      const buf = c1MergeBuf.get(dlvId) || [];
+      const i = buf.indexOf(rec);
+      if (i < 0) return;  // 窗内已归并
+      buf.splice(i, 1);
+      if (!buf.length) c1MergeBuf.delete(dlvId);
+      // hold 窗内 primary 未现(错链/链向别视图)→照常独立渲染,绝不被 buffer 吞(生产实证:错链 copy 被隐藏)
+      if (rec.admit) admitWaitingDelivery(rec.ev);
+      renderEvent(rec.ev);
+    }
+    function c1Footnote(entry, key, text) {
+      if (entry.footnotes.has(key)) return;
+      entry.footnotes.add(key);
+      const note = document.createElement('span');
+      note.className = 'card-footnote';
+      note.textContent = text;
+      entry.footer.appendChild(note);
+    }
 
     function normalizeEvent(ev) {
       const data = ev.data || {};
@@ -1489,6 +1604,7 @@
         deliveryId: ev.observed_delivery_id || data.observed_delivery_id || ev.delivery_id || data.delivery_id || '',
         copyId: ev.copy_id || data.copy_id || '',
         turnId: ev.turn_id || data.turn_id || '',
+        originDlv: ev.origin_delivery_id || data.origin_delivery_id || '',  // 归并锚(dev55 两签:helper 可信保留 hub meta.delivery_id 原样;仅相关性非鉴权)
         sourceKind: '', sourceLabel: '', sourceTrusted: false,
         stage: '', reason: '', copyKind: '', deliveryMode: '', cancellable: null,
         text: '', stageIdx: -1, conflict: '',
@@ -1503,7 +1619,23 @@
       // V2 终裁:canonical=delivery.role{primary,copy,control};delivery_mode 已废、无 legacy 兼容(read-only role)
       norm.deliveryMode = delivery.role || '';
       norm.copyKind = ev.copy_kind || delivery.copy_kind || '';
-      norm.cancellable = (ev.cancellable === undefined) ? null : Boolean(ev.cancellable);
+      const cb = ev.cancellable ?? ev.cancelable;  // 拼写容错(hub 双l/单l 并存,契约 hygiene;行为仍只认 input_posted 原值)
+      norm.cancellable = (cb === undefined) ? null : Boolean(cb);
+      // provenance 块(display-provenance v1 冻结契约):canonical 可选块,hub 按可信 ingress 坐实(非转发字符串)
+      const prov = (ev.provenance && typeof ev.provenance === 'object') ? ev.provenance : null;
+      norm.prov = { kind: 'unknown', displayName: '', trusted: false };
+      if (prov) {
+        norm.prov.kind = (typeof prov.kind === 'string' && prov.kind) ? prov.kind : 'unknown';
+        norm.prov.displayName = prov.display_name || '';
+        const chain = Array.isArray(prov.attestation_chain) ? prov.attestation_chain : [];
+        const attested = prov.attested_by === 'hub' || chain.includes('hub');
+        if (prov.trust_decision === 'trusted' && attested) {
+          norm.prov.trusted = true;
+        } else if (prov.trust_decision === 'trusted') {
+          // 块 claim trusted 但 attested_by≠hub 且 chain 不含 hub=伪造坐实 → conflict+fail-closed 不显示
+          if (!norm.conflict) norm.conflict = 'provenance_attestation_forged';
+        }
+      }
       if (isV2) {
         // U5①:v2 必填缺失或与 legacy 同义值冲突 → schema_conflict,fail-closed(不以 legacy 回填掩盖断链)
         if (!norm.messageId) norm.conflict = 'v2_missing_message_id';
@@ -1537,6 +1669,7 @@
         norm.status = ev.delivery_status || '';
         if (norm.status === 'cancelled') norm.stage = 'cancelled';        // 终态取消归一(待提交区移出/时间线终态)
         else if (norm.status === 'failed') norm.stage = 'failed';
+        else if (norm.status === 'dead' || norm.status === 'dropped') norm.stage = norm.status;  // 终态归一(dev56 分层:hub 补发 dead SSE 后走此径;兼容未来 dropped)
         norm.reason = ev.reason || data.reason || '';
       } else if (ev.kind === 'user_input') {
         // legacy 迁移:lifecycle 映射到 B0 §6 阶段枚举(admitted→cli_injected,其余→generated)
@@ -1559,12 +1692,42 @@
       return label ? `<span class="source-badge source-badge--trusted">${escapeHtml(label)}</span>` : '';
     }
 
+    // display-provenance v1:灰度 flag(VS serve 注入 window.PROVENANCE_ICONS_V1;默认关)+来源图标
+    // (仅 provenance.trusted 显示,fail-closed;inline SVG 无外部依赖,currentColor 适配主题;不认识的 kind 仅文字)
+    const provFlagOn = () => !!(typeof window !== 'undefined' && window.PROVENANCE_ICONS_V1);
+    const PROV_SVG = {
+      feishu: '<svg class="prov-svg" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 9.5c3.2-1 5.6-3.2 6.6-6.5.9 2.2.7 4.3-.4 6.2 1.7-.8 3-1 4.3-.9-1.2 3.2-4.3 5.4-7.7 5.4h-2.8V9.5z" fill="currentColor"/></svg>',
+      agent: '<svg class="prov-svg" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="2.6" r="1.1" fill="currentColor"/><path d="M8 3.7v1.8" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="5.5" width="10" height="7" rx="2" fill="currentColor"/><circle cx="5.9" cy="8.7" r="1" fill="#fff"/><circle cx="10.1" cy="8.7" r="1" fill="#fff"/><path d="M6.2 11h3.6" stroke="#fff" stroke-width=".9" stroke-linecap="round"/></svg>',
+      system: '<svg class="prov-svg" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.4" fill="currentColor"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M12.4 3.6L11 5M5 11l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+      human: '<svg class="prov-svg" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5" r="2.6" fill="currentColor"/><path d="M3 14c0-3 2.4-5 5-5s5 2 5 5v.5H3V14z" fill="currentColor"/></svg>',
+    };
+    function provenanceIconHtml(norm) {
+      if (!provFlagOn() || !norm.prov || !norm.prov.trusted) return '';
+      const fallback = { feishu: '飞书', agent: 'Agent', human: '人工', system: '系统' }[norm.prov.kind] || '';
+      const label = norm.prov.displayName || fallback;
+      // 精简(张宗楚灰度反馈):来源文字不占版面,可读性进 title/aria-label
+      if (norm.prov.kind === 'human') {
+        // 泛名(人工/human/空)=person SVG;真名=首字符头像(张宗楚→张)——泛名首字符「人」无信息量
+        const generic = !label || ['人工', '人', 'human', 'Human', 'HUMAN'].includes(label);
+        if (generic) return `<span class="prov-ic" title="人工" aria-label="来源:人工">${PROV_SVG.human}</span>`;
+        const ch = label.trim().charAt(0);
+        return `<span class="prov-ic prov-ic--human" title="${escapeHtml(label)}" aria-label="来源:人工 ${escapeHtml(label)}">${escapeHtml(ch)}</span>`;
+      }
+      const svg = PROV_SVG[norm.prov.kind];
+      if (!svg) return '';  // 未知/扩展 kind:不显示(开放扩展不 fail)
+      const kindText = { feishu: '飞书', agent: 'Agent', system: '系统' }[norm.prov.kind] || norm.prov.kind;
+      return `<span class="prov-ic" title="${escapeHtml(label || kindText)}" aria-label="来源:${escapeHtml(label || kindText)}">${svg}</span>`;
+    }
+
     function stageFooterText(norm) {
       if (norm.stage === 'failed') {
         const reason = C1_REASON_TEXT[norm.reason] || '投递失败';
         return `失败:${reason}`;
       }
-      return C1_STAGE_FOOTER[norm.stage] || '';
+      const t = C1_STAGE_FOOTER[norm.stage] || '';
+      // 投递语义措辞(张宗楚#3):「已注入执行」→「已送达」——投递状态只表「送进 CLI 没有」,
+      // 不暗示 CLI 在执行/在等结果(执行与回复=单独输出消息那路信号);flag 关=原措辞
+      return provFlagOn() ? t.replace('已注入执行', '已送达').replace('注入未确认', '送达未确认') : t;
     }
 
     function c1CardFor(norm, create) {
@@ -1592,11 +1755,16 @@
     }
 
     function c1ApplyToEntry(entry, norm) {
-      // 阶段单调:只前进,不回退(B0 ACK 单调约束)
-      if (norm.stage === 'failed' || norm.stage === 'cancelled' || norm.stageIdx > entry.stageIdx) {
+      // 阶段单调:只前进,不回退(B0 ACK 单调约束);failed/cancelled/expired=终态直通
+      if (norm.stage === 'failed' || norm.stage === 'cancelled' || norm.stage === 'expired' || norm.stage === 'dead' || norm.stage === 'dropped' || norm.stageIdx > entry.stageIdx) {
         entry.stageIdx = Math.max(entry.stageIdx, norm.stageIdx);
         const text = stageFooterText(norm);
         if (text && entry.stageEl) entry.stageEl.textContent = text;
+        if (provFlagOn() && entry.sentEl) {
+          const sl = eventStatusLabel({ kind: 'input_posted', _norm: norm });  // kind 用卡自身的(输入卡),不取 update 事件的
+          entry.sentEl.textContent = sl;
+          entry.sentEl.style.display = sl ? '' : 'none';  // 精简:常态(已注入)隐标,异常才醒目
+        }
       }
       if (norm.copyKind === 'feishu_sync' && !entry.footnotes.has('feishu_sync')) {
         entry.footnotes.add('feishu_sync');
@@ -1609,6 +1777,7 @@
 
     function handleIncomingEvent(ev) {
       ev = normalizeEvent(ev);
+      c2TrackTurn(ev);  // 中断目标:运行中 turn 跟踪(turn_completed 清除)
       if (ev._norm.conflict) {
         // U5:schema_conflict 可观测(徽标已关),事件本体按不可信继续渲染
         console.warn('[c1] schema_conflict:', ev._norm.conflict);
@@ -1618,11 +1787,13 @@
       const shouldFollow = replayInProgress || timelineAtBottom;
       scheduleTimelineReplayEnd();
       // delivery_update / copy 事件:原位更新输入卡,不产生新条目
-      if (ev.kind === 'delivery_update' || ev._norm.copyKind === 'feishu_sync') {
+      // display v1 归并去重:route_observation 带 observed_delivery_id(链 primary)时走归并分支;无链=独立占位卡(现状回落)
+      const copyMergable = provFlagOn() && ev._norm.copyKind === 'route_observation' && !!(ev.observed_delivery_id || (ev.data && ev.data.observed_delivery_id));
+      if (ev.kind === 'delivery_update' || ev._norm.copyKind === 'feishu_sync' || copyMergable) {
         const norm = ev._norm;
         const wEntry = norm.deliveryId ? waitingDeliveries.get(norm.deliveryId) : null;
-        if (wEntry && ['cli_injected', 'pty_write', 'failed', 'cancelled'].includes(norm.stage)) {
-          // 注入/终态:待提交区移出,以原输入事件建时间线卡(阶段由后续 update 推进)
+        if (wEntry && ['cli_injected', 'pty_write', 'failed', 'cancelled', 'expired', 'dead', 'dropped'].includes(norm.stage)) {
+          // 注入/终态(含 expired 投递过期/dead 终止/dropped 丢弃):待提交区移出,以原输入事件建时间线卡(阶段由后续 update 推进)
           wEntry.node.remove();
           waitingDeliveries.delete(norm.deliveryId);
           waitingArea.hidden = waitingDeliveries.size === 0;
@@ -1633,14 +1804,53 @@
           wEntry.event._norm.stage = norm.stage;
           renderWaitingDelivery(wEntry.event);
         }
+        if (copyMergable) {
+          // 归并去重(display v1):observed_delivery_id→primary 卡 footnote「已回显」;
+          // 卡未建/在等待区→带 hold 窗缓冲(超时独立占位,错链不隐藏)
+          const pKey = norm.deliveryId ? c1DeliveryCards.get(norm.deliveryId) : null;
+          const pEntry = pKey ? c1InputCards.get(pKey) : null;
+          if (pEntry && pEntry.footer) c1Footnote(pEntry, 'echo_merge', '已回显');
+          else if (norm.deliveryId) bufferMergeCopy(norm.deliveryId, ev);
+        }
         c1ApplyCardUpdate(norm);
         rendered += 1;
         updateMetrics();
         if (shouldFollow) scheduleTimelineToBottom();
         return;
       }
+      // G-LIFECYCLE(张宗楚实测「测试-你好×2」):同一 delivery 的 user_input queued/accepted 阶段事件=在途占位,
+      // 与 input_posted primary 的待提交区重复(双份正文+再生一个删除按钮)——flag 开一律不渲;
+      // admitted(带 turn)才是单一回显渲染点(生命周期幂等,renderer 自治,不依赖 helper 改)
+      if (provFlagOn() && ev.kind === 'user_input') {
+        const lc = String((ev.data && ev.data.lifecycle) || '').toLowerCase();
+        if (lc === 'queued' || lc === 'accepted') {
+          rendered += 1;
+          updateMetrics();
+          return;
+        }
+      }
       if (isWaitingDelivery(ev)) {
         renderWaitingDelivery(ev);
+        rendered += 1;
+        updateMetrics();
+        return;
+      }
+      // G-MERGE-SAME(同会话去重,dev55 设计,纯 renderer 不猜链):结构化 user_input 回显 delivery_id
+      // 精确命中本视图 primary input_posted.delivery_id → 不建第二张用户卡,primary 加「已回显」footnote;
+      // 乱序短窗缓冲(C2_ECHO_HOLD_MS);未命中/空 id/copy/legacy 无 id=照常独立。provenance 只取 primary canonical。
+      if (provFlagOn() && ev.kind === 'user_input' && (ev._norm || {}).deliveryId) {
+        const echoN = ev._norm;
+        const echoKey = echoN.originDlv || echoN.deliveryId;  // 归并锚=origin_delivery_id(两签可信字段);回退=自身 id 精确命中;绝不 trim dw- 猜链
+        const pKey = c1DeliveryCards.get(echoKey);
+        const pEntry = pKey ? c1InputCards.get(pKey) : null;
+        if (pEntry && pEntry.footer) {
+          c1Footnote(pEntry, 'echo_merge', '已回显');
+          rendered += 1;
+          updateMetrics();
+          if (shouldFollow) scheduleTimelineToBottom();
+          return;
+        }
+        bufferMergeCopy(echoKey, ev, { admit: true, holdMs: C2_ECHO_HOLD_MS, footKey: 'echo_merge' });
         rendered += 1;
         updateMetrics();
         return;
@@ -1689,12 +1899,28 @@
       } else if (ev.text) {
         entry.event = ev;
       }
+      entry.touched = Date.now();  // 看门狗心跳:创建/阶段推进都刷新
+      entry.staleNoted = false;    // 推进重渲染清超时标记(innerHTML 已重排)
+      entry.failNotedAt = null;    // 推进重渲染清失败便签标记
       const norm = ev._norm || {};
-      const badge = sourceBadgeHtml(norm);
+      // 寻址保真 tripwire(dev56 取证:hub 必发 message_id,缺=renderer 管道丢)——可取消条目缺 message_id 必须可观测
+      if (norm.cancellable && !norm.messageId) console.warn('[c2] 可取消条目缺 message_id(寻址保真破):', { deliveryId: waitKey, kind: ev.kind, stage: norm.stage, hasMsgId: 'message_id' in ev });
+      const provIc = provenanceIconHtml(norm);  // display v1:provenance 图标在场时压 legacy 文字徽标(不双标)
+      const badge = provIc ? '' : sourceBadgeHtml(norm);
       const cancelTag = norm.cancellable ? '<span class="cancellable-tag">可取消</span>' : '';
       const stageText = stageFooterText(norm);
-      entry.node.innerHTML = `${badge}<span class="waiting-text"></span>${cancelTag}${stageText ? `<span class="waiting-stage">${escapeHtml(stageText)}</span>` : ''}`;
-      entry.node.querySelector('.waiting-text').textContent = entry.event.text || ev.data?.text || `delivery ${waitKey}`;
+      if (provFlagOn()) {
+        // 精简在途条(张宗楚灰度反馈#2):明确「⏳ 投递中」+单行截断,全文进 title——不与「已收到消息」混淆;
+        // 删除寻址保留(截断足够辨认),终态仍事件驱动转出
+        entry.node.classList.add('waiting-item--pending');
+        entry.node.innerHTML = `${provIc}${badge}<span class="prov-spin" title="未达终态(注入/失败/取消/过期/终止)">⏳ 投递中</span>${stageText ? `<span class="waiting-stage">${escapeHtml(stageText)}</span>` : ''}<span class="waiting-text"></span>${cancelTag}`;
+      } else {
+        entry.node.innerHTML = `${provIc}${badge}<span class="waiting-text"></span>${cancelTag}${stageText ? `<span class="waiting-stage">${escapeHtml(stageText)}</span>` : ''}`;
+      }
+      const rawWaitText = entry.event.text || ev.data?.text || `delivery ${waitKey}`;  // flag 关=原样(与生产逐字)
+      const waitText = provFlagOn() ? (ev._norm?.text || rawWaitText) : rawWaitText;   // flag 开:在途条用 payload 解析文本(norm.text 优先)
+      entry.node.querySelector('.waiting-text').textContent = waitText;
+      entry.node.querySelector('.waiting-text').title = (provFlagOn() && !waitText.startsWith('delivery ')) ? waitText : '';  // 截断时全文 hover(仅 flag 开)
       // C2:可取消条目带删除按钮;点击=发起 cancel 请求(条目的消失只由事件流 cancelled 驱动,不本地静默删)
       if (norm.cancellable && !entry.node.querySelector('.waiting-cancel-btn')) {
         const btn = document.createElement('button');
@@ -1737,6 +1963,8 @@
     }
 
     function eventTypeLabel(ev) {
+      // 精简:flag 开,input_posted 与 user_input 一律隐类型标(有源图标表意,无则素净;治「人/👤 双标」)
+      if (provFlagOn() && (ev.kind === 'input_posted' || ev.kind === 'user_input')) return '';
       if (ev.kind === 'assistant_text') return '🤖';
       if (ev.kind === 'user_input') return '👤';
       if (ev.kind === 'tool_call') return '🔧';
@@ -1746,7 +1974,17 @@
     }
 
     function eventStatusLabel(ev) {
-      return '✓';
+      if (!provFlagOn()) return '✓';
+      // 状态标只挂投递生命周期(input_posted);assistant/tool/error/state 等输出无投递语义→不挂(治 assistant 卡常驻 ⏳)
+      if (ev.kind !== 'input_posted') return '';
+      // 精简:已注入=常态不打 ✓;仅异常/非终态醒目(⏳ 未达终态 / ✗ 失败 / 🚫 已取消 / ⏰ 已过期 / ■ 已终止·已丢弃)
+      const st = ev._norm?.stage || '';
+      if (st === 'cancelled') return '🚫';
+      if (st === 'failed') return '✗';
+      if (st === 'expired') return '⏰';
+      if (st === 'dead' || st === 'dropped') return '■';
+      if (['cli_injected', 'pty_write', 'turn_admitted', 'admitted'].includes(st)) return '';
+      return '⏳';
     }
 
     function eventDiagnostics(ev) {
@@ -1766,8 +2004,8 @@
       meta.className = 'event-meta';
       const diag = eventDiagnostics(ev);
       meta.innerHTML = `
-        <div class="event-type">${escapeHtml(eventTypeLabel(ev))}</div>
-        <div class="event-sent">${escapeHtml(eventStatusLabel(ev))}</div>
+        ${provenanceIconHtml(ev._norm || {})}${eventTypeLabel(ev) ? `<div class="event-type">${escapeHtml(eventTypeLabel(ev))}</div>` : ''}
+        ${eventStatusLabel(ev) ? `<div class="event-sent">${escapeHtml(eventStatusLabel(ev))}</div>` : ''}
         ${diag.length ? `<details class="event-diag"><summary title="诊断" aria-label="诊断"><span class="diag-icon" aria-hidden="true">i</span></summary><div class="event-diag-list">${diag.map(([k, v]) => `<code>${escapeHtml(k)} ${escapeHtml(v)}</code>`).join('')}</div></details>` : ''}
       `;
       const content = document.createElement('span');
@@ -1794,7 +2032,9 @@
 
     function eventMetaHtml(ev) {
       const diag = eventDiagnostics(ev);
-      return `<span class="event-meta"><span class="event-type">${escapeHtml(eventTypeLabel(ev))}</span><span class="event-sent">${escapeHtml(eventStatusLabel(ev))}</span>${diag.length ? `<details class="event-diag"><summary title="诊断" aria-label="诊断"><span class="diag-icon" aria-hidden="true">i</span></summary><span class="event-diag-list">${diag.map(([k, v]) => `<code>${escapeHtml(k)} ${escapeHtml(v)}</code>`).join('')}</span></details>` : ''}</span>`;
+      const tl = eventTypeLabel(ev);
+      const sl = eventStatusLabel(ev);
+      return `<span class="event-meta">${provenanceIconHtml(ev._norm || {})}${tl ? `<span class="event-type">${escapeHtml(tl)}</span>` : ''}${sl ? `<span class="event-sent">${escapeHtml(sl)}</span>` : ''}${diag.length ? `<details class="event-diag"><summary title="诊断" aria-label="诊断"><span class="diag-icon" aria-hidden="true">i</span></summary><span class="event-diag-list">${diag.map(([k, v]) => `<code>${escapeHtml(k)} ${escapeHtml(v)}</code>`).join('')}</span></details>` : ''}</span>`;
     }
 
     function renderTurnEvent(turnKey, ev) {
@@ -1894,7 +2134,8 @@
       const isCopy = String(norm.deliveryMode).includes('copy');
       const footer = document.createElement('div');
       footer.className = 'card-stage-footer';
-      const badge = sourceBadgeHtml(norm);
+      const provIc = provenanceIconHtml(norm);  // display v1:provenance 图标在场时压 legacy 文字徽标(不双标)
+      const badge = provIc ? '' : sourceBadgeHtml(norm);
       const footText = isCopy ? '已同步/镜像(不追 ACK)' : stageFooterText(norm);
       footer.innerHTML = `${badge}<span class="stage-text">${escapeHtml(footText)}</span>`;
       card.appendChild(footer);
@@ -1904,11 +2145,17 @@
         entry.content = content;
         entry.footer = footer;
         entry.stageEl = footer.querySelector('.stage-text');
+        entry.sentEl = card.querySelector('.event-sent');
         entry.stageIdx = norm.stageIdx;
+        if (norm.deliveryId) c1DeliveryCards.set(norm.deliveryId, norm.key);
         // 应用建卡前缓冲的乱序更新
         const pending = c1PendingUpdates.get(norm.key) || [];
         c1PendingUpdates.delete(norm.key);
         for (const p of pending) c1ApplyToEntry(entry, p);
+        // copy/echo 归并缓冲(display v1):先到的 route_observation/user_input 回显归并到本卡(清 timer 防回落)
+        const mergeNotes = norm.deliveryId ? c1MergeBuf.get(norm.deliveryId) || [] : [];
+        c1MergeBuf.delete(norm.deliveryId);
+        for (const rec of mergeNotes) { clearTimeout(rec.timer); c1Footnote(entry, rec.footKey || 'echo_merge', '已回显'); }
         if (!isCopy) c1ApplyToEntry(entry, norm);
       }
     }
@@ -2296,7 +2543,7 @@
       let receivedFirstEvent = false;
       beginTimelineReplay();
       setStatus('idle');
-      eventSource = new EventSource(API.events);
+      eventSource = new EventSource(apiEp('events'));
       eventSource.onopen = () => {
         if (generation !== eventSourceGeneration) return;
         opened = true;
@@ -2334,7 +2581,7 @@
 
     async function refreshStatus() {
       try {
-        const res = await fetch(API.status, { cache: 'no-store' });
+        const res = await fetch(apiEp('status'), { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         applyStatusData(await res.json());
         if (stats.authMode === 'view_page_v2') await ensurePageIdentity();
@@ -2355,7 +2602,7 @@
       updateMetrics();
     }
     async function createPageIdentity() {
-      const res = await fetch(API.page, { method: 'POST' });
+      const res = await fetch(apiEp('page'), { method: 'POST' });
       if (!res.ok) throw new Error(`POST /page failed: HTTP ${res.status}`);
       const created = await res.json();
       savePageIdentity({ page_id: created.page_id, page_token: created.page_token,
@@ -2391,7 +2638,7 @@
         setupPageIdentityChannel();
         return;
       }
-      const res = await fetch(`${API.page}/resume`, {
+      const res = await fetch(`${apiEp('page')}/resume`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page_id: pageIdentity.page_id, page_token: pageIdentity.page_token }),
       });
@@ -2467,7 +2714,7 @@
         await awaitPageIdentityUniqueness();
         if (stats.readonly) throw new Error('当前页面尚未解锁');
       }
-      const res = await fetch(API.input, {
+      const res = await fetch(apiEp('input'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(stats.authMode === 'view_page_v2' ? {
@@ -2481,7 +2728,22 @@
     }
 
     async function interruptTurn() {
-      const res = await fetch(API.interrupt, { method: 'POST' });
+      // body 契约(devof5 冻结):V2={delivery_id,turn_id,page_id,page_token,request_id}——打运行中 turn、无 message_id;
+      // page 凭证与 /input、/control cancel 同一对;request_id=中断意图幂等键(c2TurnCtx.active 上 stash,重试复用)。
+      // legacy 保持无 body(老 viewer 路,逐字节不变)。响应语义 §4:VS 恒 200 看 body.ok;ok:true=帧已下发≠turn 已停(停走正常流事件);
+      // 非 200(400/403/502)=未受理,沿用 throw→error 卡诚实呈现。
+      let intBody = null;
+      if (stats.authMode === 'view_page_v2') {
+        if (!pageIdentity?.page_id || !pageIdentity?.page_token) throw new Error('中断未发出:无 V2 page 凭证');
+        const act = c2TurnCtx.active;
+        if (!act) throw new Error('中断未发出:无运行中 turn');
+        if (!act.rootPinned || !act.deliveryId) throw new Error('中断未发出:运行中 turn 的注入入口(root)未确认');  // 本地拦:一个 request_id↔一份不可变 body,root 确认后才 POST
+        if (!act.requestId) act.requestId = newRequestId();
+        intBody = { delivery_id: act.deliveryId, turn_id: act.turnId, page_id: pageIdentity.page_id, page_token: pageIdentity.page_token, request_id: act.requestId };
+      }
+      const res = await fetch(apiEp('interrupt'), intBody
+        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(intBody) }
+        : { method: 'POST' });
       if (!res.ok) throw new Error(`POST /interrupt failed: HTTP ${res.status}`);
       const body = await res.json().catch(() => ({}));
       if (!body.ok) throw new Error('interrupt returned ok=false');
@@ -2555,7 +2817,7 @@
 
     addEventListener('pagehide', () => {
       if (stats.authMode !== 'view_page_v2' || !pageIdentity) return;
-      navigator.sendBeacon(`${API.page}/disconnect`, new Blob([JSON.stringify({
+      navigator.sendBeacon(`${apiEp('page')}/disconnect`, new Blob([JSON.stringify({
         page_id: pageIdentity.page_id, page_token: pageIdentity.page_token,
       })], { type: 'application/json' }));
     });
