@@ -1,6 +1,11 @@
 import unittest
 
-from sessionhelper.usage_probe import ContextLimitRecord, probe_claude_frame
+from sessionhelper.usage_probe import (
+    CLAUDE_CONTEXT_LIMITS_SOURCE,
+    CLAUDE_CONTEXT_LIMITS_VERSION,
+    ContextLimitRecord,
+    probe_claude_frame,
+)
 
 
 class ClaudeUsageProbeTest(unittest.TestCase):
@@ -128,6 +133,62 @@ class ClaudeUsageProbeTest(unittest.TestCase):
         }, context_limits={model: ContextLimitRecord(200_000, "official", "v1")})
         self.assertEqual(result.reason, "invalid_token_fields")
         self.assertEqual(result.state, "unknown")
+
+    def test_builtin_exact_model_table_is_versioned_and_auditable(self):
+        model = "claude-haiku-4-5-20251001"
+        result = probe_claude_frame({
+            "type": "assistant",
+            "message": {
+                "model": model,
+                "usage": {
+                    "input_tokens": 1,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0,
+                    "output_tokens": 1,
+                },
+            },
+        })
+        self.assertEqual(result.max_context, 200_000)
+        self.assertEqual(result.max_context_source, "static-table")
+        self.assertEqual(result.max_context_version, CLAUDE_CONTEXT_LIMITS_VERSION)
+        self.assertIn("platform.claude.com", CLAUDE_CONTEXT_LIMITS_SOURCE)
+        self.assertEqual(result.state, "unknown")
+
+    def test_native_conflict_uses_smaller_denominator(self):
+        model = "claude-haiku-4-5-20251001"
+        frame = {
+            "type": "assistant",
+            "message": {
+                "model": model,
+                "usage": {
+                    "input_tokens": 1,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0,
+                    "output_tokens": 1,
+                },
+            },
+        }
+        smaller = probe_claude_frame(frame, native_max_context=150_000)
+        self.assertEqual(smaller.max_context, 150_000)
+        self.assertEqual(smaller.max_context_source, "min(native,static-table)")
+        larger = probe_claude_frame(frame, native_max_context=250_000)
+        self.assertEqual(larger.max_context, 200_000)
+
+    def test_context_variant_suffix_does_not_match_static_table(self):
+        result = probe_claude_frame({
+            "type": "assistant",
+            "message": {
+                "model": "claude-haiku-4-5-20251001[1m]",
+                "usage": {
+                    "input_tokens": 1,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0,
+                    "output_tokens": 1,
+                },
+            },
+        })
+        self.assertIsNone(result.max_context)
+        self.assertEqual(result.reason, "max_context_source_missing_for_exact_model")
 
 
 if __name__ == "__main__":

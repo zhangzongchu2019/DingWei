@@ -22,6 +22,26 @@ class ContextLimitRecord:
 # after the source policy is approved; family/prefix fallback is forbidden.
 EMPTY_CONTEXT_LIMITS: Mapping[str, ContextLimitRecord] = {}
 
+CLAUDE_CONTEXT_LIMITS_VERSION = "anthropic-models-overview@2026-07-26"
+CLAUDE_CONTEXT_LIMITS_SOURCE = "https://platform.claude.com/docs/en/about-claude/models/overview"
+
+# Official exact IDs only. Aliases, family prefixes and feature suffixes do
+# not match; an unknown ID remains fail-closed.
+CLAUDE_CONTEXT_LIMITS: Mapping[str, ContextLimitRecord] = {
+    "claude-fable-5": ContextLimitRecord(
+        1_000_000, CLAUDE_CONTEXT_LIMITS_SOURCE, CLAUDE_CONTEXT_LIMITS_VERSION,
+    ),
+    "claude-opus-4-8": ContextLimitRecord(
+        1_000_000, CLAUDE_CONTEXT_LIMITS_SOURCE, CLAUDE_CONTEXT_LIMITS_VERSION,
+    ),
+    "claude-sonnet-5": ContextLimitRecord(
+        1_000_000, CLAUDE_CONTEXT_LIMITS_SOURCE, CLAUDE_CONTEXT_LIMITS_VERSION,
+    ),
+    "claude-haiku-4-5-20251001": ContextLimitRecord(
+        200_000, CLAUDE_CONTEXT_LIMITS_SOURCE, CLAUDE_CONTEXT_LIMITS_VERSION,
+    ),
+}
+
 
 @dataclass(frozen=True)
 class UsageProbeResult:
@@ -32,6 +52,8 @@ class UsageProbeResult:
     source: str = ""
     normalized_used_tokens: int | None = None
     max_context: int | None = None
+    max_context_source: str = ""
+    max_context_version: str = ""
     raw_value: dict[str, Any] | None = None
     raw_kind: str = ""
     confidence: str = "unknown"
@@ -52,7 +74,8 @@ def probe_claude_frame(
     *,
     session_id: str = "",
     model: str = "",
-    context_limits: Mapping[str, ContextLimitRecord] = EMPTY_CONTEXT_LIMITS,
+    context_limits: Mapping[str, ContextLimitRecord] = CLAUDE_CONTEXT_LIMITS,
+    native_max_context: int | None = None,
 ) -> UsageProbeResult:
     """Inspect one Claude stream-json frame without inventing max-context.
 
@@ -130,13 +153,25 @@ def probe_claude_frame(
     else:
         reason = "context_semantics_unverified"
     limit = context_limits.get(resolved_model)
+    static_max = limit.max_context if limit is not None else None
+    valid_native_max = _non_negative_int(native_max_context)
+    if valid_native_max == 0:
+        valid_native_max = None
+    if static_max is not None and valid_native_max is not None:
+        max_context = min(static_max, valid_native_max)
+        max_source = "min(native,static-table)"
+    else:
+        max_context = static_max
+        max_source = "static-table" if static_max is not None else ""
     return UsageProbeResult(
         provider="claude",
         state="unknown",
         session_id=str(frame.get("session_id") or session_id),
         model=resolved_model,
         source="claude.stream-json.assistant.message.usage",
-        max_context=limit.max_context if limit is not None else None,
+        max_context=max_context,
+        max_context_source=max_source,
+        max_context_version=limit.version if limit is not None else "",
         raw_value={name: usage.get(name) for name in token_fields},
         raw_kind="assistant_message_usage",
         confidence="partial" if reason in {

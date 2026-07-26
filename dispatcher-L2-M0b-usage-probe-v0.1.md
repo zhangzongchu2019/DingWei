@@ -24,7 +24,9 @@
 | compaction reset | `UNKNOWN` | 尚无认证后 compaction 帧实证 |
 | 75% 自动触发 | 禁用 | `max_context` 未知，按 M0 C-2 fail-safe |
 
-`max_context` 的能力矩阵须显式分层：Claude 原生帧当前不可自证该值。若后续允许外部静态表，它必须是带权威来源和版本的 exact-model-id 表；禁止模型家族/前缀回退。未知 model、空 model、表缺失或条目缺失均保持 `UNKNOWN`。该静态表是外部配置证据，不冒充 CLI native 字段。是否允许它作为自动门分母，由架构口径裁定。
+`max_context` 的能力矩阵须显式分层：Claude 原生帧当前不可自证该值。经 2026-07-26 架构初裁，允许版本化静态表作为分母，但必须满足五护栏：条目来自官方 Anthropic 文档并带版本；只 exact-model-id 全匹配，禁止家族/前缀回退；未知、空 id 或 `[1m]` 等变体后缀保持 `UNKNOWN`；native 分母与静态表冲突时取更小值；表变更作为配置变更走发版归口。报告与样本必须标记 `denominator=static-table(source,version)`，不冒充 CLI native 字段。
+
+当前静态表版本为 `anthropic-models-overview@2026-07-26`，来源为 [Anthropic Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)。表只收录该版官方页面列出的 exact ID：`claude-fable-5` / `claude-opus-4-8` / `claude-sonnet-5` 为 1,000,000，`claude-haiku-4-5-20251001` 为 200,000。
 
 ## 运行时样本规则
 
