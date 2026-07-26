@@ -146,3 +146,16 @@ func TestRealHubTransitFixtureParses(t *testing.T) {
 		t.Fatalf("字段错: %+v", r)
 	}
 }
+
+// N12(tester wkr.py 审查抓获):回执 JSON 尾部带时戳行(旧版 wkr.py 实际线上格式)
+// →首对象解析容忍,字段无损。双侧修:wkr.py 已改纯 JSON 出线,此为纵深防御。
+func TestReceiptTrailingTimestampTolerated(t *testing.T) {
+	body := []byte("{\"kind\": \"mcs_receipt_v1\", \"node_id\": \"n1\", \"generation\": 1, \"rid\": \"r-1\", \"phase\": \"done\", \"ok\": true, \"result_ref\": \"ref\", \"from\": \"w1\"}\n[2026-07-26 04:20 GMT]\n")
+	r, err := ParseReceipt(body)
+	if err != nil {
+		t.Fatalf("尾部时戳应被容忍: %v", err)
+	}
+	if r.NodeID != "n1" || r.Phase != "done" || !r.OK {
+		t.Fatalf("字段损: %+v", r)
+	}
+}

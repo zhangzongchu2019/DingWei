@@ -6,6 +6,7 @@ package hubdriver
 // 入口闭合(P3 集成件教训):未知 kind/phase 显式拒,不静默丢、不猜。
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -35,7 +36,10 @@ type ReceiptSink struct {
 // 唯一解析权威——ReceiptSink 与 mcsd daemon hub 入口共用,防两处解析漂移。
 func ParseReceipt(body []byte) (WireReceipt, error) {
 	var r WireReceipt
-	if err := json.Unmarshal(body, &r); err != nil {
+	// 首对象解析:容忍尾部非 JSON 杂质(N12:信道/工具可能附加时戳行等;
+	// 语义仍严格——首个对象必须是完整合法 JSON,字段校验不放松)
+	dec := json.NewDecoder(bytes.NewReader(body))
+	if err := dec.Decode(&r); err != nil {
 		return r, fmt.Errorf("回执解析失败: %w", err)
 	}
 	if r.Kind != "mcs_receipt_v1" {
