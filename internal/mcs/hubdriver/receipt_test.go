@@ -159,3 +159,13 @@ func TestReceiptTrailingTimestampTolerated(t *testing.T) {
 		t.Fatalf("字段损: %+v", r)
 	}
 }
+
+// M2 跨会话 fixture:2026-07-26 04:2xZ tester 会话经真实 hub 发来的首条跨会话回执
+// (新版 wkr.py:纯 JSON/全名 from)。与自环 fixture 构成两来源真线样本。
+func TestCrossSessionWireFixtureParses(t *testing.T) {
+	body := []byte(`{"kind": "mcs_receipt_v1", "node_id": "test-n1", "generation": 1, "rid": "test-rid-1", "phase": "processing", "ok": false, "result_ref": "", "from": "zzc-tester-2642"}`)
+	r, err := ParseReceipt(body)
+	if err != nil || r.From != "zzc-tester-2642" || r.Phase != "processing" {
+		t.Fatalf("跨会话样本: %+v %v", r, err)
+	}
+}
