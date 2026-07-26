@@ -8,7 +8,19 @@ an authoritative context percentage.  Callers may trigger rotation only from a
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any
+from typing import Any, Mapping
+
+
+@dataclass(frozen=True)
+class ContextLimitRecord:
+    max_context: int
+    source: str
+    version: str
+
+
+# Fail-safe default.  A deployment may inject an exact-model registry only
+# after the source policy is approved; family/prefix fallback is forbidden.
+EMPTY_CONTEXT_LIMITS: Mapping[str, ContextLimitRecord] = {}
 
 
 @dataclass(frozen=True)
@@ -35,7 +47,13 @@ def _non_negative_int(value: Any) -> int | None:
     return value
 
 
-def probe_claude_frame(frame: dict[str, Any], *, session_id: str = "", model: str = "") -> UsageProbeResult:
+def probe_claude_frame(
+    frame: dict[str, Any],
+    *,
+    session_id: str = "",
+    model: str = "",
+    context_limits: Mapping[str, ContextLimitRecord] = EMPTY_CONTEXT_LIMITS,
+) -> UsageProbeResult:
     """Inspect one Claude stream-json frame without inventing max-context.
 
     ``assistant.message.usage`` is retained as partial native evidence.  It is
@@ -53,6 +71,20 @@ def probe_claude_frame(frame: dict[str, Any], *, session_id: str = "", model: st
             raw_kind="system_init",
             confidence="partial",
             reason="usage_not_present",
+        )
+
+    if frame.get("type") == "result":
+        usage = frame.get("usage")
+        return UsageProbeResult(
+            provider="claude",
+            state="unknown",
+            session_id=str(frame.get("session_id") or session_id),
+            model=model,
+            source="claude.stream-json.result.usage",
+            raw_value=dict(usage) if isinstance(usage, dict) else None,
+            raw_kind="result_usage",
+            confidence="unknown",
+            reason="result_usage_is_turn_aggregate" if isinstance(usage, dict) else "usage_missing",
         )
 
     if frame.get("type") != "assistant":
@@ -81,6 +113,7 @@ def probe_claude_frame(frame: dict[str, Any], *, session_id: str = "", model: st
             reason="usage_missing",
         )
 
+    resolved_model = str(message.get("model") or model) if isinstance(message, dict) else model
     token_fields = (
         "input_tokens",
         "cache_creation_input_tokens",
@@ -88,18 +121,27 @@ def probe_claude_frame(frame: dict[str, Any], *, session_id: str = "", model: st
         "output_tokens",
     )
     parsed = {name: _non_negative_int(usage.get(name)) for name in token_fields}
-    if any(value is None for value in parsed.values()):
+    if not resolved_model:
+        reason = "model_missing"
+    elif resolved_model not in context_limits:
+        reason = "max_context_source_missing_for_exact_model"
+    elif any(value is None for value in parsed.values()):
         reason = "invalid_token_fields"
     else:
-        reason = "max_context_unavailable_and_context_semantics_unverified"
+        reason = "context_semantics_unverified"
+    limit = context_limits.get(resolved_model)
     return UsageProbeResult(
         provider="claude",
         state="unknown",
         session_id=str(frame.get("session_id") or session_id),
-        model=str(message.get("model") or model) if isinstance(message, dict) else model,
+        model=resolved_model,
         source="claude.stream-json.assistant.message.usage",
+        max_context=limit.max_context if limit is not None else None,
         raw_value={name: usage.get(name) for name in token_fields},
         raw_kind="assistant_message_usage",
-        confidence="partial" if reason.startswith("max_context") else "unknown",
+        confidence="partial" if reason in {
+            "max_context_source_missing_for_exact_model",
+            "context_semantics_unverified",
+        } else "unknown",
         reason=reason,
     )

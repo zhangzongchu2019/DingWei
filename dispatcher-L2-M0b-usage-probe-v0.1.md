@@ -24,13 +24,16 @@
 | compaction reset | `UNKNOWN` | 尚无认证后 compaction 帧实证 |
 | 75% 自动触发 | 禁用 | `max_context` 未知，按 M0 C-2 fail-safe |
 
+`max_context` 的能力矩阵须显式分层：Claude 原生帧当前不可自证该值。若后续允许外部静态表，它必须是带权威来源和版本的 exact-model-id 表；禁止模型家族/前缀回退。未知 model、空 model、表缺失或条目缺失均保持 `UNKNOWN`。该静态表是外部配置证据，不冒充 CLI native 字段。是否允许它作为自动门分母，由架构口径裁定。
+
 ## 运行时样本规则
 
 1. 只接受原生协议帧，不调 `/usage` / `/context` 等聊天命令。
 2. `sample_seq` 由 adapter 对同 session 递增；`turn_id` 仅溯源，不参与序比较。
-3. 缺 `session_id` / `model` / `max_context` 或 token 字段非非负整数时，产出 `UNKNOWN`，不产出虚假 `<75%`。
-4. `result.usage` 只保留取证，不归一化为 context used。
-5. 在认证后环境取得“两正常轮+一次 compaction”真帧前，Claude usage 触发门保持关闭，只允许人工升级。
+3. 缺 `session_id` / `model` / `max_context` 或 token 字段非非负整数时，产出 `UNKNOWN`，不产出虚假 `<75%`。token schema 采严格策略：四个冻结字段缺一即 invalid，可保留 raw evidence，但禁止部分归一化。
+4. `result.usage` 以 `raw_kind=result_usage` 保留取证，不归一化为 context used。
+5. session/model 线程传递、sample_seq 和 trigger gate 属 adapter 职责；probe 只产出原生证据、原因与置信度。
+6. 在认证后环境取得“两正常轮+一次 compaction”真帧前，Claude usage 触发门保持关闭，只允许人工升级。
 
 ## 待补实证
 
