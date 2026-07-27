@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/mcs/pool"
@@ -76,9 +77,14 @@ type Challenger interface {
 type ChallengeGate struct {
 	Probe Challenger
 	Now   func() time.Time
+	mu    sync.Mutex
+	last  map[string]uint64
 }
 
-func (g ChallengeGate) Check(ctx context.Context, workerID string) (pool.ProbeResult, error) {
+func (g *ChallengeGate) Check(ctx context.Context, workerID string) (pool.ProbeResult, error) {
+	if g == nil {
+		return pool.ProbeResult{}, errors.New("rotation challenge gate is required")
+	}
 	if g.Probe == nil {
 		return pool.ProbeResult{}, errors.New("rotation challenge probe is required")
 	}
@@ -96,5 +102,56 @@ func (g ChallengeGate) Check(ctx context.Context, workerID string) (pool.ProbeRe
 	if result.ExpiresAt.IsZero() || !now().Before(result.ExpiresAt) {
 		return result, errors.New("challenge result expired")
 	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if result.ProbeSeq == 0 || result.ProbeSeq <= g.last[workerID] {
+		return result, fmt.Errorf("challenge sequence replay: got=%d last=%d", result.ProbeSeq, g.last[workerID])
+	}
+	if g.last == nil {
+		g.last = make(map[string]uint64)
+	}
+	g.last[workerID] = result.ProbeSeq
 	return result, nil
+}
+
+// RetryPolicy controls coordinator retries after SB spawn or health failure.
+// It returns delays but never sleeps, keeping the coordinator clock injectable.
+type RetryPolicy struct {
+	MaxRetries int
+	BaseDelay  time.Duration
+	MaxDelay   time.Duration
+}
+
+type RetryDecision struct {
+	Retry      bool
+	Delay      time.Duration
+	FailureSeq int
+	ManualGate bool
+}
+
+// AfterFailure returns an exponential, capped retry decision. failureSeq is
+// one-based and must be persisted by the coordinator in the later durability
+// slice; this helper is deterministic and side-effect free.
+func (p RetryPolicy) AfterFailure(failureSeq int) RetryDecision {
+	if failureSeq <= 0 {
+		return RetryDecision{ManualGate: true}
+	}
+	if p.MaxRetries < 0 || p.BaseDelay <= 0 || p.MaxDelay < p.BaseDelay {
+		return RetryDecision{FailureSeq: failureSeq, ManualGate: true}
+	}
+	if failureSeq > p.MaxRetries {
+		return RetryDecision{FailureSeq: failureSeq, ManualGate: true}
+	}
+	delay := p.BaseDelay
+	for i := 1; i < failureSeq && delay < p.MaxDelay; i++ {
+		if delay > p.MaxDelay/2 {
+			delay = p.MaxDelay
+			break
+		}
+		delay *= 2
+	}
+	if delay > p.MaxDelay {
+		delay = p.MaxDelay
+	}
+	return RetryDecision{Retry: true, Delay: delay, FailureSeq: failureSeq}
 }

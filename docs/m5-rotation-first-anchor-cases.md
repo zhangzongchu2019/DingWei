@@ -16,5 +16,8 @@
 | M5-N1 | PENDING 直接 takeover、STAGING 直接 activate、RECOVERY 直接 activate | `Next` | 状态不变且 `ErrIllegalTransition` |
 | M5-H1 | M4 challenge 返回 fresh `ok` 且 worker 匹配 | `ChallengeGate.Check` | PASS |
 | M5-H2 | degraded/unknown/expired/worker mismatch | `ChallengeGate.Check` | 全部 fail closed |
+| M5-H3 | 同 worker 已接受 seq=8 | 重放 8、旧值 7、再发 9 | 8/7 拒绝，9 接受；序列按 worker 独立 |
+| M5-R1 | `MaxRetries=3,base=1s,cap=2.5s` | 连续记录四次 spawn/健康失败 | 延迟 1s/2s/2.5s；第4次不重试并转人工门 |
+| M5-R2 | 负次数、零 base、cap<base | 计算重试 | 全部 fail closed 到人工门，不热循环 |
 
 清理：纯内存测试，无子进程、端口或持久文件。

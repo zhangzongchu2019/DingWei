@@ -58,7 +58,8 @@ func (f fakeChallenger) Challenge(context.Context, string) pool.ProbeResult { re
 func TestChallengeGateRequiresFreshApplicationResult(t *testing.T) {
 	now := time.Unix(100, 0)
 	valid := pool.ProbeResult{WorkerID: "sb-1", ProbeSeq: 7, Status: "ok", ObservedAt: now, ExpiresAt: now.Add(time.Second)}
-	if _, err := (ChallengeGate{Probe: fakeChallenger{valid}, Now: func() time.Time { return now }}).Check(context.Background(), "sb-1"); err != nil {
+	gate := &ChallengeGate{Probe: fakeChallenger{valid}, Now: func() time.Time { return now }}
+	if _, err := gate.Check(context.Background(), "sb-1"); err != nil {
 		t.Fatalf("fresh challenge rejected: %v", err)
 	}
 
@@ -73,9 +74,61 @@ func TestChallengeGateRequiresFreshApplicationResult(t *testing.T) {
 		{"wrong worker", pool.ProbeResult{WorkerID: "sa-1", Status: "ok", ExpiresAt: now.Add(time.Second)}, "sb-1"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := (ChallengeGate{Probe: fakeChallenger{tc.result}, Now: func() time.Time { return now }}).Check(context.Background(), tc.worker); err == nil {
+			gate := &ChallengeGate{Probe: fakeChallenger{tc.result}, Now: func() time.Time { return now }}
+			if _, err := gate.Check(context.Background(), tc.worker); err == nil {
 				t.Fatal("invalid challenge accepted")
 			}
 		})
+	}
+}
+
+func TestChallengeGateRejectsReplayPerWorker(t *testing.T) {
+	now := time.Unix(100, 0)
+	probe := &mutableChallenger{result: pool.ProbeResult{WorkerID: "sb-1", ProbeSeq: 8, Status: "ok", ExpiresAt: now.Add(time.Second)}}
+	gate := &ChallengeGate{Probe: probe, Now: func() time.Time { return now }}
+	if _, err := gate.Check(context.Background(), "sb-1"); err != nil {
+		t.Fatalf("first sequence rejected: %v", err)
+	}
+	if _, err := gate.Check(context.Background(), "sb-1"); err == nil {
+		t.Fatal("duplicate sequence accepted")
+	}
+	probe.result.ProbeSeq = 7
+	if _, err := gate.Check(context.Background(), "sb-1"); err == nil {
+		t.Fatal("older sequence accepted")
+	}
+	probe.result.ProbeSeq = 9
+	if _, err := gate.Check(context.Background(), "sb-1"); err != nil {
+		t.Fatalf("newer sequence rejected: %v", err)
+	}
+}
+
+type mutableChallenger struct{ result pool.ProbeResult }
+
+func (f *mutableChallenger) Challenge(context.Context, string) pool.ProbeResult { return f.result }
+
+func TestRetryPolicyBoundedExponentialBackoff(t *testing.T) {
+	policy := RetryPolicy{MaxRetries: 3, BaseDelay: time.Second, MaxDelay: 2500 * time.Millisecond}
+	wants := []RetryDecision{
+		{Retry: true, Delay: time.Second, FailureSeq: 1},
+		{Retry: true, Delay: 2 * time.Second, FailureSeq: 2},
+		{Retry: true, Delay: 2500 * time.Millisecond, FailureSeq: 3},
+		{FailureSeq: 4, ManualGate: true},
+	}
+	for i, want := range wants {
+		if got := policy.AfterFailure(i + 1); got != want {
+			t.Fatalf("AfterFailure(%d)=%+v, want %+v", i+1, got, want)
+		}
+	}
+}
+
+func TestRetryPolicyInvalidConfigurationFailsClosed(t *testing.T) {
+	for _, policy := range []RetryPolicy{
+		{MaxRetries: -1, BaseDelay: time.Second, MaxDelay: time.Second},
+		{MaxRetries: 3, BaseDelay: 0, MaxDelay: time.Second},
+		{MaxRetries: 3, BaseDelay: 2 * time.Second, MaxDelay: time.Second},
+	} {
+		if got := policy.AfterFailure(1); got.Retry || !got.ManualGate {
+			t.Fatalf("invalid policy did not fail closed: %+v", got)
+		}
 	}
 }
