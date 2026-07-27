@@ -4,7 +4,8 @@
 canonical 形式=RFC 8785 (JCS):
   - object key 按 UTF-16 code units 排序(非 code point;补充平面字符经代理对参与排序);
   - 字符串最小转义(" 与 \\ 转义;控制符用 \\b \\t \\n \\f \\r 简写,其余 \\u00xx 小写;非 ASCII 字面输出);
-  - 数字按 ECMAScript Number 序列化(整值 float 输出为整数;禁 NaN/Infinity);
+  - 数字按 ECMAScript Number::toString 完整序列化(整值 float 输出为整数;-0 输出 0;
+    定点区间=10^-6≤|x|<10^21,界外指数记法 d[.ddd]e±N;最短往返数字;禁 NaN/Infinity);
   - 数组保序不排序;无空白。
 digest 输入框架(O1/F5):
   {"digest_schema":"mcs-canonical-json-v1","op_kind":<op>,
@@ -53,12 +54,37 @@ def _num(x):
         return str(x)
     if math.isnan(x) or math.isinf(x):
         raise ValueError("NaN/Infinity 禁入 canonical JSON")
+    if x == 0:
+        return "0"  # 含 -0.0(ECMAScript String(-0)="0")
     if x == int(x) and abs(x) < 2**53:
         return str(int(x))  # 1.0 → 1(ECMAScript 整值)
-    r = repr(x)  # CPython repr=最短往返,定点范围内与 ECMAScript 一致
-    if "e" in r or "E" in r:
-        raise ValueError("v1 vectors 限定定点表示范围,指数表示数入参拒: %s" % r)
-    return r
+    # ECMA-262 Number::toString(radix 10) 完整实现。
+    # CPython repr=IEEE754 double 最短往返数字,与 ECMAScript 同(均最短且最近);
+    # 差异仅在记法阈值,以下按 ECMA 规则重排。
+    r = repr(x)
+    mant, _, e = r.partition("e")
+    exp = int(e) if e else 0
+    neg = mant.startswith("-")
+    if neg:
+        mant = mant[1:]
+    ip, _, fp = mant.partition(".")
+    digits = (ip + fp).lstrip("0")
+    last_exp = exp - len(fp)  # 最末位数字的十进制位权
+    stripped = digits.rstrip("0")
+    last_exp += len(digits) - len(stripped)
+    digits = stripped
+    k = len(digits)  # 有效数字个数
+    n = last_exp + k  # 小数点应在位置:value = 0.digits × 10^n
+    if k <= n <= 21:
+        s = digits + "0" * (n - k)
+    elif 0 < n <= 21:
+        s = digits[:n] + "." + digits[n:]
+    elif -6 < n <= 0:
+        s = "0." + "0" * (-n) + digits
+    else:
+        tail = "e" + ("+" if n - 1 >= 0 else "-") + str(abs(n - 1))
+        s = (digits if k == 1 else digits[0] + "." + digits[1:]) + tail
+    return ("-" if neg else "") + s
 
 
 def canonical(o):

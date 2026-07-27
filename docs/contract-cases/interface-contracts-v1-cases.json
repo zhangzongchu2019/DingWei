@@ -8,9 +8,9 @@
  "cases": [
   {"id": "CT-F5-01", "kind": "正例", "section": "1.3/F5",
    "前置": "仓 checkout 至本 commit,python3 可用",
-   "输入": "docs/contract-cases/jcs-golden-vectors-v1.json(18 条)",
+   "输入": "docs/contract-cases/jcs-golden-vectors-v1.json(20 条,含 ECMA number 阈值 V15-V17)",
    "操作": "python3 docs/contract-cases/jcs_vectors_check.py",
-   "期望输出": "18/18 PASS,exit 0",
+   "期望输出": "20/20 PASS,exit 0",
    "判据": "任一 FAIL 或 exit≠0 即 FAIL;Go 实现须对同一 vectors 文件逐条复现 expected_canonical+expected_sha256"},
 
   {"id": "CT-F1-01", "kind": "负例", "section": "1.1/F1",

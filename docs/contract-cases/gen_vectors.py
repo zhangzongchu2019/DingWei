@@ -55,9 +55,24 @@ vectors = [
     {"id": "V13-reject-inf", "kind": "reject", "note": "Infinity 拒", "input": "inf"},
     {"id": "V14-reject-dupkey", "kind": "reject", "note": "重复 key 拒",
      "raw_json": "{\"a\":1,\"a\":2}"},
-    {"id": "V15-reject-exp-range", "kind": "reject",
-     "note": "v1 定点范围外(指数表示)入参拒=诚实边界,扩域须升 digest_schema 版本", "input": 1e-09},
+    cv("V15-num-exp-pos-threshold",
+       "ECMA 正阈值:1e20 定点(20个0),1e21 起指数 1e+21",
+       {"hi20": 1e20, "hi21": 1e21}),
+    cv("V16-num-exp-neg-threshold",
+       "ECMA 负阈值:1e-6 定点 0.000001,1e-7 起指数 1e-7(负指数无前导0)",
+       {"lo6": 1e-06, "lo7": 1e-07}),
+    cv("V17-num-extremes",
+       "极值与符号:double 最大/最小次正规/负小数指数/-0 归 0",
+       {"max": 1.7976931348623157e+308, "min": 5e-324,
+        "m": -1.5e-09, "negz": -0.0}),
 ]
+
+_c15 = [v for v in vectors if v["id"] == "V15-num-exp-pos-threshold"][0]["expected_canonical"]
+assert _c15 == '{"hi20":100000000000000000000,"hi21":1e+21}', _c15
+_c16 = [v for v in vectors if v["id"] == "V16-num-exp-neg-threshold"][0]["expected_canonical"]
+assert _c16 == '{"lo6":0.000001,"lo7":1e-7}', _c16
+_c17 = [v for v in vectors if v["id"] == "V17-num-extremes"][0]["expected_canonical"]
+assert _c17 == '{"m":-1.5e-9,"max":1.7976931348623157e+308,"min":5e-324,"negz":0}', _c17
 
 _by = {v["id"]: v for v in vectors}
 assert _by["V05-num-intfloat"]["expected_sha256"] == _by["V05b-num-int-equiv"]["expected_sha256"]
@@ -67,7 +82,8 @@ assert _by["V11-digest-op-differs"]["expected_sha256"] != _by["V10-digest-frame"
 out = {"digest_schema": "mcs-canonical-json-v1",
        "spec": "契约 v0.3 §1.3 F5;canonical=RFC 8785 (JCS);参考实现+校验器=jcs_vectors_check.py(同目录)",
        "note": "跨语言实现必须逐条复现 expected_canonical 与 expected_sha256;"
-               "V05/V05b 必须同 digest;V10/V10b 必须同 digest;V12-V15 必须拒",
+               "V05/V05b 必须同 digest;V10/V10b 必须同 digest;V12-V14 必须拒;"
+               "V15-V17=ECMAScript Number::toString 全域阈值钉点(1e20/1e21,1e-6/1e-7,极值,-0)",
        "vectors": vectors}
 with open(os.path.join(_d, "jcs-golden-vectors-v1.json"), "w") as f:
     json.dump(out, f, ensure_ascii=False, indent=1)

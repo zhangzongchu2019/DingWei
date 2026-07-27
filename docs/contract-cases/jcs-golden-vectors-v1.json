@@ -1,7 +1,7 @@
 {
  "digest_schema": "mcs-canonical-json-v1",
  "spec": "契约 v0.3 §1.3 F5;canonical=RFC 8785 (JCS);参考实现+校验器=jcs_vectors_check.py(同目录)",
- "note": "跨语言实现必须逐条复现 expected_canonical 与 expected_sha256;V05/V05b 必须同 digest;V10/V10b 必须同 digest;V12-V15 必须拒",
+ "note": "跨语言实现必须逐条复现 expected_canonical 与 expected_sha256;V05/V05b 必须同 digest;V10/V10b 必须同 digest;V12-V14 必须拒;V15-V17=ECMAScript Number::toString 全域阈值钉点(1e20/1e21,1e-6/1e-7,极值,-0)",
  "vectors": [
   {
    "id": "V01-key-order-ascii",
@@ -204,10 +204,39 @@
    "raw_json": "{\"a\":1,\"a\":2}"
   },
   {
-   "id": "V15-reject-exp-range",
-   "kind": "reject",
-   "note": "v1 定点范围外(指数表示)入参拒=诚实边界,扩域须升 digest_schema 版本",
-   "input": 1e-09
+   "id": "V15-num-exp-pos-threshold",
+   "kind": "canonical",
+   "note": "ECMA 正阈值:1e20 定点(20个0),1e21 起指数 1e+21",
+   "input": {
+    "hi20": 1e+20,
+    "hi21": 1e+21
+   },
+   "expected_canonical": "{\"hi20\":100000000000000000000,\"hi21\":1e+21}",
+   "expected_sha256": "a28d4f8f63ff67064d0764a6ce8721139b1ce08a4547ac71c4d324d2c4745476"
+  },
+  {
+   "id": "V16-num-exp-neg-threshold",
+   "kind": "canonical",
+   "note": "ECMA 负阈值:1e-6 定点 0.000001,1e-7 起指数 1e-7(负指数无前导0)",
+   "input": {
+    "lo6": 1e-06,
+    "lo7": 1e-07
+   },
+   "expected_canonical": "{\"lo6\":0.000001,\"lo7\":1e-7}",
+   "expected_sha256": "5d7f0ee369f302775285278805386fafdbcee9c95201b8bcb7e83d0da9408b44"
+  },
+  {
+   "id": "V17-num-extremes",
+   "kind": "canonical",
+   "note": "极值与符号:double 最大/最小次正规/负小数指数/-0 归 0",
+   "input": {
+    "max": 1.7976931348623157e+308,
+    "min": 5e-324,
+    "m": -1.5e-09,
+    "negz": -0.0
+   },
+   "expected_canonical": "{\"m\":-1.5e-9,\"max\":1.7976931348623157e+308,\"min\":5e-324,\"negz\":0}",
+   "expected_sha256": "eaea54c9dca532e4a204e8ed3459552cd452e2d858a832a936c03d02e67f245f"
   }
  ]
 }
