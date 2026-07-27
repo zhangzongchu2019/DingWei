@@ -2,6 +2,7 @@ package pool
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type ProbeChannel struct {
 	lastOK  time.Time
 	lastErr error
 	seq     uint64
+	mu      sync.Mutex
 }
 
 // NewProbeChannel 构造独立信道(角色必填,超时独立)。
