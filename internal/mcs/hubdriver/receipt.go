@@ -19,14 +19,20 @@ type WireReceipt struct {
 	Kind       string `json:"kind"` // 恒 "mcs_receipt_v1"
 	NodeID     string `json:"node_id"`
 	Generation int64  `json:"generation"`
-	RID        string `json:"rid"`             // 必须回传派发信封里的 rid(幂等键)
-	Phase      string `json:"phase"`           // processing | done
-	OK         bool   `json:"ok"`              // phase=done 时有效
-	ResultRef  string `json:"result_ref"`      // phase=done 时产物指针
-	From       string `json:"from"` // worker 全名(必填:无明确发件人拒收,张宗楚 07-25 令)
+	RID        string `json:"rid"`                   // 必须回传派发信封里的 rid(幂等键)
+	Phase      string `json:"phase"`                 // processing | done
+	OK         bool   `json:"ok"`                    // phase=done 时有效
+	ResultRef  string `json:"result_ref"`            // phase=done 时产物指针
+	From       string `json:"from"`                  // worker 全名(必填:无明确发件人拒收,张宗楚 07-25 令)
+	ErrorClass string `json:"error_class,omitempty"` // 契约 §2.1:retryable|fatal(omitempty 缺省=未声明)
 }
 
 // ReceiptSink 把回执落账。Identity=调度者身份(owner,epoch),guard 由 board 谓词执行。
+// RetryableFailure 判调度重试策略(契约 §2.1):fatal→不重试记 FAIL;retryable/未声明→退避重试。
+func (r WireReceipt) RetryableFailure() bool {
+	return r.ErrorClass != "fatal"
+}
+
 type ReceiptSink struct {
 	B  *board.Board
 	ID board.Identity
@@ -53,6 +59,27 @@ func ParseReceipt(body []byte) (WireReceipt, error) {
 	}
 	if r.Phase != "processing" && r.Phase != "done" {
 		return r, fmt.Errorf("未知回执 phase %q(入口闭合,拒)", r.Phase)
+	}
+	if r.ErrorClass != "" && r.ErrorClass != "retryable" && r.ErrorClass != "fatal" {
+		return r, fmt.Errorf("未知回执 error_class %q(入口闭合,拒)", r.ErrorClass)
+	}
+	return r, nil
+}
+
+// ParseReceiptStrict 严格模式(契约 §2.1:stub/测试态——首对象校验同 ParseReceipt,
+// 另拒任何尾部非空杂质,防夹具吞坏帧失真)。
+func ParseReceiptStrict(body []byte) (WireReceipt, error) {
+	r, err := ParseReceipt(body)
+	if err != nil {
+		return r, err
+	}
+	dec := json.NewDecoder(bytes.NewReader(body))
+	var first WireReceipt
+	if err := dec.Decode(&first); err != nil {
+		return r, fmt.Errorf("回执解析失败: %w", err)
+	}
+	if tail := bytes.TrimSpace(body[dec.InputOffset():]); len(tail) > 0 {
+		return r, fmt.Errorf("严格模式:回执尾部存在非空杂质(拒)")
 	}
 	return r, nil
 }

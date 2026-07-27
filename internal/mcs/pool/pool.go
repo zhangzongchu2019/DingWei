@@ -101,6 +101,7 @@ type Pool struct {
 	rr      int // round-robin 游标(J1)
 	queue   []Envelope
 	stopped bool
+	snap    snapshotter
 
 	// OnWorkerDead 在 reap 判死并移除后回调(J2)。M2 在此接 Board 侧 reassign(guarded,换代)。
 	// 池层不直接写 Board——判死→重派的账全部走 Board 原语,池只报告事实。
@@ -113,7 +114,7 @@ func New(cfg Config, drv DriverAdapter, clk clock.Clock) *Pool {
 	if clk == nil {
 		clk = clock.Real{}
 	}
-	return &Pool{cfg: cfg, drv: drv, clk: clk}
+	return &Pool{cfg: cfg, drv: drv, clk: clk, snap: snapshotter{clk: clk}}
 }
 
 // Start 起满下限个 worker(§1 起)。
