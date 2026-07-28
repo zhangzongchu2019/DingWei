@@ -1,4 +1,4 @@
-# M5 ↔ board vNext conformance 对拍 draft v0.2
+# M5 ↔ board vNext conformance 对拍 draft v0.3
 
 对拍锚：
 
@@ -6,11 +6,29 @@
 - M5：`c96d08950ccfad101731821d6e43e275f5561469`
 - board vNext 初锚：`5654ecc5`
 - board vNext 修正锚：`14df8d0c`
+- board vNext 三轮锚：`5f0c559a8e2d24d20e999b31318d26c930bbff77`
 
-复核结论：**仍为 FAIL / CHANGES REQUIRED（2 个残项）**。`14df8d0c`
-已实质修正原 C1、C2 主路、C3 主路、C4、C5 算法、C6；原有 board
-测试及 M5 合并树 race 均绿。但定向负例证明 C5 fail-closed 与 C3
-“首 outcome”边界尚未闭合，不能宣称 conformance PASS。
+三轮复核结论：**HELD（仅 1 个 R1 残口）**。`5f0c559a` 已令首次密封发生在
+CAS 前，且将 `binding_mismatch` 纳入首 outcome；原两个定向负例、M5 adapter
+全链和合并树 race 均已通过。但 CAS 后的 `vnextRecord` 仍再次调用吞错
+`sealToken`，因此尚不能宣称“所有密封成功先于状态写”。
+
+### 第三轮唯一残口：CAS 后二次密封仍吞错
+
+当前顺序是：
+
+1. `TakeoverV2` 调 `sealTokenE(token)` 成功；
+2. 执行 CAS、写事件；
+3. `vnextRecord` 再调 `sealToken(out.FenceToken)`；
+4. 第二次密封失败时 wrapper 返回 `"seal-unavailable"`，随后照常写幂等账并 commit。
+
+因此文件密钥在两次读取之间失效、第二次随机源/AEAD 失败等情况下，仍会提交
+新 epoch 和不可解封的首果。这正是 R1 所要求消除的写后密封窗口。
+
+最小修正：将步骤 1 生成的 sealed envelope 传入 `vnextRecord`，只密封一次；
+或令 `vnextRecord` 使用可返回 error 的密封函数并在失败时回滚整个事务。
+删除/禁用吞错 wrapper；补可注入的“第二次密封失败→epoch/state/event/ledger
+均零变化”负例。
 
 ## R1 密封密钥不可用时仍提交 Takeover（阻断）
 
@@ -113,13 +131,14 @@ UPDATE orchestrator SET epoch=epoch+1, owner=?, state=?, writer_instance_id=? ..
 - 同 request 异 rotation、同 rotation 异 request：PASS，均 fail closed。
 - 写失败不假成功与 fsync 顺序：PASS。
 - M5 只接受 `sealed_fence_token`：PASS。
-- `14df8d0c` 与 `wip/m5-claude@c96d089` 临时合并无冲突；
+- `5f0c559a` 与 `wip/m5-claude@c96d089` 临时合并无冲突；
   `go test -race ./internal/mcs/board ./internal/mcs/rotation`：PASS。
-- 上述 race 绿不覆盖 R1/R2；两个定向契约负例均稳定 FAIL。
+- R1 缺密钥首密封、R2 binding_mismatch 首果定向负例：PASS。
+- adapter 全链：board Takeover→取 sealed outcome→M5 durable record→FileStore
+  重启重放→board 同 request 重放→ActivateWriter：PASS。
 
 ## 重跑门槛
 
-1. 修正 R1、R2，并把上述两个定向负例纳入 board 固定测试；
-2. 原 C1-C6 专测、两个新增负例、全量 board/rotation race 同时全绿；
-3. 再执行 board 首 Takeover outcome→M5 durable record→进程重启→同 request
-   重放→ActivateWriter 的 adapter conformance test，才可宣 PASS。
+1. 消除 CAS 后二次密封吞错窗口，并固化故障注入负例；
+2. 该负例与现有 C1-C6/R1/R2、adapter、全量 board/rotation race 同时全绿，
+   即可宣 PASS；其余点位不重开。
