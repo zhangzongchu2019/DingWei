@@ -1,4 +1,4 @@
-# M5 ↔ board vNext conformance 对拍 draft v0.3
+# M5 ↔ board vNext conformance 对拍 v1.0
 
 对拍锚：
 
@@ -7,13 +7,14 @@
 - board vNext 初锚：`5654ecc5`
 - board vNext 修正锚：`14df8d0c`
 - board vNext 三轮锚：`5f0c559a8e2d24d20e999b31318d26c930bbff77`
+- board vNext 闭合锚：`38474c0dc381c44807a726125d07fe6a9773affb`
 
-三轮复核结论：**HELD（仅 1 个 R1 残口）**。`5f0c559a` 已令首次密封发生在
-CAS 前，且将 `binding_mismatch` 纳入首 outcome；原两个定向负例、M5 adapter
-全链和合并树 race 均已通过。但 CAS 后的 `vnextRecord` 仍再次调用吞错
-`sealToken`，因此尚不能宣称“所有密封成功先于状态写”。
+终轮结论：**PASS / conformance CLOSED**。`38474c0d` 将首次生成的 sealed
+envelope 直接传入 `vnextRecord`，生产路径不再二次密封；非法/缺失 sealed
+形会返回错误并回滚。原 C1-C6、R1-R3、M5 adapter 全链及 board/rotation
+合并树 race 全部通过。
 
-### 第三轮唯一残口：CAS 后二次密封仍吞错
+### 第三轮残口与终轮处置
 
 当前顺序是：
 
@@ -25,10 +26,10 @@ CAS 前，且将 `binding_mismatch` 纳入首 outcome；原两个定向负例、
 因此文件密钥在两次读取之间失效、第二次随机源/AEAD 失败等情况下，仍会提交
 新 epoch 和不可解封的首果。这正是 R1 所要求消除的写后密封窗口。
 
-最小修正：将步骤 1 生成的 sealed envelope 传入 `vnextRecord`，只密封一次；
-或令 `vnextRecord` 使用可返回 error 的密封函数并在失败时回滚整个事务。
-删除/禁用吞错 wrapper；补可注入的“第二次密封失败→epoch/state/event/ledger
-均零变化”负例。
+`38474c0d` 已采用首选修正：步骤 1 生成的 envelope 直接传入
+`vnextRecord`，不再发生步骤 3 的二次密封；token 非空但 sealed envelope
+缺失/非法时返回错误，事务回滚。`TestPersistenceReusesFirstSeal` 同时断言
+幂等账与 orchestrator 使用同一 envelope，并覆盖非法 sealed 形零泄漏。
 
 ## R1 密封密钥不可用时仍提交 Takeover（阻断）
 
@@ -131,14 +132,14 @@ UPDATE orchestrator SET epoch=epoch+1, owner=?, state=?, writer_instance_id=? ..
 - 同 request 异 rotation、同 rotation 异 request：PASS，均 fail closed。
 - 写失败不假成功与 fsync 顺序：PASS。
 - M5 只接受 `sealed_fence_token`：PASS。
-- `5f0c559a` 与 `wip/m5-claude@c96d089` 临时合并无冲突；
+- `38474c0d` 与 `wip/m5-claude@c96d089` 临时合并无冲突；
   `go test -race ./internal/mcs/board ./internal/mcs/rotation`：PASS。
 - R1 缺密钥首密封、R2 binding_mismatch 首果定向负例：PASS。
 - adapter 全链：board Takeover→取 sealed outcome→M5 durable record→FileStore
   重启重放→board 同 request 重放→ActivateWriter：PASS。
 
-## 重跑门槛
+## 闭合判据
 
-1. 消除 CAS 后二次密封吞错窗口，并固化故障注入负例；
-2. 该负例与现有 C1-C6/R1/R2、adapter、全量 board/rotation race 同时全绿，
-   即可宣 PASS；其余点位不重开。
+1. C1-C6、R1-R3 固定测试：PASS；
+2. board→M5 durable→重启重放→board replay→ActivateWriter adapter：PASS；
+3. `go test -race ./internal/mcs/board ./internal/mcs/rotation -count=1`：PASS。
