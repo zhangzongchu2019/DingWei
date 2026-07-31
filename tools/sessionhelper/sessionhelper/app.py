@@ -219,6 +219,19 @@ class SessionHelper:
         except Exception as exc:
             print(f"[sessionHelper][debug] TCP 连接失败: {exc}", flush=True)
 
+    async def _make_send_handler(self, ws):
+        """Return an async ``(to, body) -> dict`` that sends through the
+        already-authenticated WSS — reusing the same connection, no new
+        auth, no separate web-socket handshake."""
+
+        async def _send(to: str, body: str) -> dict:
+            env = envelope(to, body, self.book.self_addr)
+            await ws.send(json.dumps(env, ensure_ascii=False))
+            print(f"[ipc_send] to={to} bytes={len(body)}", flush=True)
+            return {"sent": True, "to": to}
+
+        return _send
+
     async def _run_once(self) -> None:
         import websockets, time
 
@@ -274,6 +287,17 @@ class SessionHelper:
                      "processed_semantics": "accepted_to_cli", "helper_version": __version__},
                 ), ensure_ascii=False))
                 hb = asyncio.create_task(self.online_list_heartbeat_loop())
+
+                # B3: MCP IPC listener — receives send requests from the
+                # MCP shim and forwards them through this existing WSS.
+                ipc_task: asyncio.Task | None = None
+                if self.cfg.mcp_ipc_sock:
+                    from .ipc_listener import serve_ipc
+
+                    ipc_task = asyncio.create_task(
+                        serve_ipc(self.cfg.mcp_ipc_sock, self._make_send_handler(ws),
+                                  allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock)))
+
                 try:
                     await asyncio.gather(
                         self.recv_loop(ws),
@@ -286,10 +310,12 @@ class SessionHelper:
                     )
                 finally:
                     hb.cancel()
-                    try:
-                        await hb
-                    except asyncio.CancelledError:
-                        pass
+                    if ipc_task is not None:
+                        ipc_task.cancel()
+                        try:
+                            await ipc_task
+                        except asyncio.CancelledError:
+                            pass
 
     async def recv_loop(self, ws) -> None:
         async for raw in ws:

@@ -70,6 +70,7 @@ class Config:
     provision_versions_file: str = ""
     provision_update_state_file: str = ""
     provision_rollback_timeout: int = 300
+    mcp_ipc_sock: str = ""       # B3: Unix socket path for MCP-shim→helper IPC
 
     @property
     def registered_session_name(self) -> str:
