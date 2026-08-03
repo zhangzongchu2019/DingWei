@@ -62,6 +62,37 @@ class ReplyOriginTest(unittest.TestCase):
         self.assertEqual(m["conversation_id"], "cid1")
         self.assertEqual(m["in_reply_to"], "msg9")
 
+    def test_t7_ack_with_in_reply_to_never_creates_obligation(self):
+        # B1/T7:ack 即便误带 in_reply_to + reply_policy=expect_reply,仍不生成 reply(control 短路)
+        ack = env(meta={"kind": KIND_ACK, "in_reply_to": "m1", "reply_policy": "expect_reply"})
+        d = classify_reply_decision(ack)
+        self.assertFalse(d.allow)
+        self.assertEqual(d.reason, "control")
+
+    def test_t8_t10_mcs_terminal_independent_of_conversation(self):
+        # T8/T10:mcs done(mcs_receipt_v1)=control,不产 conversation reply;且不影响独立 conversation 消息
+        mcs_done = env(body='{"kind":"mcs_receipt_v1","phase":"done"}', meta={"reply_policy": "expect_reply"})
+        self.assertFalse(classify_reply_decision(mcs_done).allow)
+        self.assertEqual(classify_reply_decision(mcs_done).reason, "control")
+        # 另一条独立 conversation 消息(expect_reply)仍可回 = 两条线独立
+        conv = env(meta={"reply_policy": "expect_reply"})
+        self.assertTrue(classify_reply_decision(conv).allow)
+
+    def test_t9_conversation_terminal_stays_conversation_class(self):
+        # T9:conversation_terminal 只关 reply obligation,不把消息变 control、不碰 M5 线
+        ct = env(meta={"conversation_terminal": True, "reply_policy": "expect_reply"})
+        self.assertFalse(is_control_envelope(ct))  # 仍是 conversation 类
+        self.assertFalse(classify_reply_decision(ct).allow)  # 但 R3 不再回
+        self.assertEqual(classify_reply_decision(ct).reason, "conversation_terminal")
+
+    def test_t6_session_reply_routes_to_origin(self):
+        # T6:session-to-session 回复回到发件人(reply-to-origin);reply_target 对 session 源回落 from_addr
+        from sessionhelper.protocol import AddressBook, reply_target
+
+        book = AddressBook(session_name="me", key_id="k")
+        to, _ = reply_target(env(from_addr="peer#k"), book)
+        self.assertEqual(to, "peer#k")
+
     def test_two_hop_termination_semantics(self):
         # A→B content(expect_reply)→ B 生成 reply(带 conversation_terminal=True)
         a_to_b = env(meta={"reply_policy": "expect_reply", "hop_count": 1}, eid="a1")
