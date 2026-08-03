@@ -17,6 +17,7 @@ from .config import Config, load_config
 from .llm import LLMProvider
 from .inbox import DeliveryInbox
 from .protocol import AddressBook, envelope, is_feishu_addr, is_mirror_control, reply_target, session_addr
+from .reply_origin import classify_reply_decision, reply_carryforward_meta
 from .provision import Provisioner, is_provision_envelope
 
 
@@ -420,9 +421,20 @@ class SessionHelper:
             if raise_adapter_errors:
                 raise
             reply_body = f"处理失败：{exc}"
-        if not reply_body or not is_feishu_addr(from_addr):
+        if not reply_body:
             return
+        carry: dict = {}
+        if not is_feishu_addr(from_addr):
+            # session-to-session reply-to-origin:过 reply-origin 双闸(§10 helper 第二道)。
+            # Feishu 源保持原行为(始终回,人不构成 A↔B 环)。
+            decision = classify_reply_decision(env)
+            if not decision.allow:
+                print(f"[reply-origin] suppress reply from={from_addr}: {decision.reason}", flush=True)
+                return
+            carry = reply_carryforward_meta(env)
         to, meta = reply_target(env, self.book)
+        if carry:
+            meta.update(carry)
         body = self.reply_body(env, reply_body)
         await ws.send(json.dumps(envelope(to, body, self.book.self_addr, meta), ensure_ascii=False))
         print(f"[reply] to={to} meta={meta}", flush=True)
