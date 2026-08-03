@@ -14,6 +14,7 @@ package m8
 //   B1 ACK 独立:ack 用 delivery_id/ack_for，绝不用 in_reply_to(现码本就零 in_reply_to,by construction 满足)。
 
 import (
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -233,4 +234,39 @@ func (d *replyDedup) size() int {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return len(d.seen)
+}
+
+// ---- 路由前钩子(段2:挂在 RouteEnvelope 顶部) ----
+
+// applyReplyOriginTermination 在 conversation-class 消息进入路由前应用终止兜底 + origin 捕获。
+// 返回 drop=true 表示应【静默丢弃】(不投递、不回错给发方——loop-protection 不该变成噪声源)。
+// 向后兼容:control 类短路透传;无新字段的 legacy 消息 hop 从 0→1、不触发丢弃,行为不变。
+func (h *Hub) applyReplyOriginTermination(env model.Envelope) (model.Envelope, bool) {
+	// B3 control 类短路:mcs/ack/board 等不进 conversation 终止/origin/hop 逻辑。
+	if isControlEnvelope(env) {
+		return env, false
+	}
+	// R4 hop 硬兜底:达 max_hops ⇒ 丢弃,即使 R1-R3 漏也绝不无限。
+	if hopBackstopExceeded(env) {
+		log.Printf("[reply-origin] R4 hop 兜底丢弃 id=%s from=%s hop=%d max=%d", env.ID, env.From, hopCountOf(env), maxHopsOf(env))
+		return env, true
+	}
+	// R5 dedup:dedup_key 已见 ⇒ 丢弃(防重复投递触发重复 reply loop)。
+	if key := dedupKeyOf(env); key != "" && h.replyDedup.SeenOrMark(key) {
+		log.Printf("[reply-origin] R5 dedup 丢弃 id=%s dedup_key=%s", env.ID, key)
+		return env, true
+	}
+	// origin 捕获:首跳(无 origin_addr)记来源,供 reply-to-origin 回程路由。
+	if env.Meta == nil {
+		env.Meta = map[string]any{}
+	}
+	if originAddrOf(env) == "" {
+		env.Meta[metaKeyOriginAddr] = env.From
+		if originKindOf(env) == "" {
+			env.Meta[metaKeyOriginKind] = originKindSessionHelper
+		}
+	}
+	// hop_count 递增(onward),作为 R4 的计数基。
+	env.Meta[metaKeyHopCount] = hopCountOf(env) + 1
+	return env, false
 }

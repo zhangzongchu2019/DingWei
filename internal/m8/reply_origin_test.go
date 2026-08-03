@@ -102,3 +102,57 @@ func TestReplyDedup(t *testing.T) {
 		t.Fatalf("size after sweep=%d want 0", d.size())
 	}
 }
+
+func TestApplyReplyOriginTermination(t *testing.T) {
+	h := &Hub{replyDedup: newReplyDedup(time.Minute)}
+
+	// control 类(mcs payload)= 短路透传:不丢、不加 origin/hop
+	ctrl := env(`{"kind":"mcs_dispatch_v1"}`, nil)
+	got, drop := h.applyReplyOriginTermination(ctrl)
+	if drop {
+		t.Fatal("control envelope should not be dropped")
+	}
+	if got.Meta != nil && (originAddrOf(got) != "" || got.Meta[metaKeyHopCount] != nil) {
+		t.Fatal("control envelope must not be origin-stamped or hop-incremented")
+	}
+
+	// R4:hop 达 max → 丢弃
+	if _, drop := h.applyReplyOriginTermination(env("x", map[string]any{"hop_count": defaultMaxHops})); !drop {
+		t.Fatal("hop at max should drop (R4)")
+	}
+
+	// R5:dedup_key 首见不丢、再见丢
+	if _, drop := h.applyReplyOriginTermination(env("x", map[string]any{"dedup_key": "dk1"})); drop {
+		t.Fatal("first dedup_key should not drop")
+	}
+	if _, drop := h.applyReplyOriginTermination(env("x", map[string]any{"dedup_key": "dk1"})); !drop {
+		t.Fatal("repeat dedup_key should drop (R5)")
+	}
+
+	// origin 捕获 + hop 递增:首跳 conversation 消息
+	conv := model.Envelope{ID: "c1", To: "a#k", From: "b#k", Body: "hi"}
+	got, drop = h.applyReplyOriginTermination(conv)
+	if drop {
+		t.Fatal("plain conversation should not drop")
+	}
+	if originAddrOf(got) != "b#k" {
+		t.Fatalf("origin_addr=%q want b#k", originAddrOf(got))
+	}
+	if originKindOf(got) != originKindSessionHelper {
+		t.Fatalf("origin_kind=%q want %s", originKindOf(got), originKindSessionHelper)
+	}
+	if hopCountOf(got) != 1 {
+		t.Fatalf("hop_count=%d want 1", hopCountOf(got))
+	}
+
+	// 已有 origin_addr 不被覆盖;hop 继续递增
+	pre := model.Envelope{ID: "c2", To: "a#k", From: "b#k", Body: "hi",
+		Meta: map[string]any{"origin_addr": "orig#k", "origin_kind": originKindFeishu, "hop_count": 2}}
+	got, _ = h.applyReplyOriginTermination(pre)
+	if originAddrOf(got) != "orig#k" || originKindOf(got) != originKindFeishu {
+		t.Fatal("existing origin must not be overwritten")
+	}
+	if hopCountOf(got) != 3 {
+		t.Fatalf("hop_count=%d want 3", hopCountOf(got))
+	}
+}
