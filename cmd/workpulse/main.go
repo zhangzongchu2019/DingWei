@@ -250,6 +250,15 @@ func run(logger *slog.Logger) error {
 }
 
 func buildFeishuGateway(ctx context.Context, logger *slog.Logger, repo store.Repository, bs config.Bootstrap) (feishu.Gateway, feishu.Receiver, error) {
+	// T17:测试 Hub 出站经 fan-out 代理(代理加[测试环境]后缀+代持凭据);fake/ws 路径零触碰
+	if strings.EqualFold(strings.TrimSpace(bs.FeishuTransport), "proxy") {
+		url := strings.TrimSpace(bs.FeishuProxyURL)
+		if url == "" {
+			return nil, nil, errors.New("FEISHU_PROXY_URL is required when FEISHU_TRANSPORT=proxy")
+		}
+		logger.Info("feishu gateway configured", "transport", "proxy", "url", url)
+		return feishu.NewProxyGateway(url, bs.FeishuProxyToken), nil, nil
+	}
 	if strings.EqualFold(strings.TrimSpace(bs.FeishuTransport), "ws") {
 		if err := seedBootstrapBotChannel(ctx, logger, repo, bs); err != nil {
 			return nil, nil, err
