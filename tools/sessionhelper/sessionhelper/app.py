@@ -221,12 +221,14 @@ class SessionHelper:
             print(f"[sessionHelper][debug] TCP 连接失败: {exc}", flush=True)
 
     async def _make_send_handler(self, ws):
-        """Return an async ``(to, body) -> dict`` that sends through the
+        """Return an async ``(to, body, meta) -> dict`` that sends through the
         already-authenticated WSS — reusing the same connection, no new
-        auth, no separate web-socket handshake."""
+        auth, no separate web-socket handshake.  *meta* carries the optional
+        reply-origin fields (reply_to/in_reply_to/reply_policy/kind) from the
+        shim IPC payload into the outbound envelope.meta verbatim."""
 
-        async def _send(to: str, body: str) -> dict:
-            env = envelope(to, body, self.book.self_addr)
+        async def _send(to: str, body: str, meta: dict | None = None) -> dict:
+            env = envelope(to, body, self.book.self_addr, meta or None)
             await ws.send(json.dumps(env, ensure_ascii=False))
             print(f"[ipc_send] to={to} bytes={len(body)}", flush=True)
             return {"sent": True, "to": to}
