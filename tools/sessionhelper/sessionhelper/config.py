@@ -168,6 +168,8 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         provision_versions_file=expand_path(env.get("SH_PROVISION_VERSIONS_FILE", default_provision_versions_file(session_name))),
         provision_update_state_file=expand_path(env.get("SH_PROVISION_STATE_FILE", default_provision_update_state_file(session_name))),
         provision_rollback_timeout=int(env.get("SH_PROVISION_ROLLBACK_TIMEOUT", "300")),
+        # B3 补漏:2ec753b 只加了字段未接 env;shim 侧读 DINGWEI_MCP_IPC_SOCK,helper 同名可用
+        mcp_ipc_sock=expand_path(env.get("SH_MCP_IPC_SOCK", env.get("DINGWEI_MCP_IPC_SOCK", ""))),
     )
 
 

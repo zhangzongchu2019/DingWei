@@ -220,7 +220,7 @@ class SessionHelper:
         except Exception as exc:
             print(f"[sessionHelper][debug] TCP 连接失败: {exc}", flush=True)
 
-    async def _make_send_handler(self, ws):
+    def _make_send_handler(self, ws):
         """Return an async ``(to, body, meta) -> dict`` that sends through the
         already-authenticated WSS — reusing the same connection, no new
         auth, no separate web-socket handshake.  *meta* carries the optional
