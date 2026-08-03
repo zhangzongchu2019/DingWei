@@ -49,6 +49,7 @@
 - 同仓新 `cmd/feishu-fanout`(Go,复用 internal/feishu 的 payload 解析/LarkGateway),独立进程/端口,systemd 单元独立。
 - 配置(env):`FANOUT_ADDR`/`FANOUT_PROD_URL`/`FANOUT_TEST_URL`/`FANOUT_WHITELIST_FILE`/`FANOUT_CHANNELS`(JSON:每 channel 的 encrypt_key/verification_token)/`FANOUT_LARK_APP_ID/SECRET`(出站测试路凭据)/`FANOUT_OUTBOUND_TOKEN`。
 - 不落库:白名单与通道配置皆文件/env,代理无状态(队列内存态,丢失可接受=best-effort 语义)。
+- **encrypt_key 旋转**(shence 审注):bot channel 轮换 encrypt_key/verification_token 时,代理侧 `FANOUT_CHANNELS` 须同步更新——重启或热重载(与白名单同一重载机制,SIGHUP/定时)生效;旋转窗口内解密失败按白名单 fail-closed 处理(只走生产路)。
 
 ## 6. 测试计划(交付物第三项,四类全覆盖)
 
