@@ -116,6 +116,24 @@ _SEND_TOOL_SCHEMA = {
             "type": "string",
             "description": "可选: 文本文件绝对路径, --file 仅二选一(body/file)",
         },
+        "reply_to": {
+            "type": "string",
+            "description": "可选: 回复目标地址(默认=origin), 填入 envelope meta.reply_to",
+        },
+        "in_reply_to": {
+            "type": "string",
+            "description": "可选: 本消息回复的 message_id(业务关联, 非 ACK), 填入 meta.in_reply_to",
+        },
+        "reply_policy": {
+            "type": "string",
+            "enum": ["expect_reply", "no_reply", "ack_only"],
+            "description": "可选: 收方处理后是否产生 content-reply, 缺省不产 auto-reply(保守)",
+        },
+        "kind": {
+            "type": "string",
+            "enum": ["content", "reply", "ack", "mirror"],
+            "description": "可选: 消息类型, 默认 content",
+        },
     },
     "required": [],
 }
@@ -137,7 +155,25 @@ def _send_message(args: dict[str, Any]) -> dict[str, Any]:
     if provided != 1:
         raise ValueError("exactly one of body or file is required")
 
+    # optional reply-origin envelope fields (design v2.5 §9)
+    reply_to = (args.get("reply_to") or "").strip()
+    in_reply_to = (args.get("in_reply_to") or "").strip()
+    reply_policy = (args.get("reply_policy") or "").strip()
+    kind = (args.get("kind") or "").strip()
+
+    for name, val in [("reply_policy", reply_policy), ("kind", kind)]:
+        if val and val not in _SEND_TOOL_SCHEMA["properties"][name].get("enum", []):
+            raise ValueError(f"{name} must be one of {_SEND_TOOL_SCHEMA['properties'][name]['enum']}")
+
     payload: dict[str, Any] = {"to": to, "body": body}
+    if reply_to:
+        payload["reply_to"] = reply_to
+    if in_reply_to:
+        payload["in_reply_to"] = in_reply_to
+    if reply_policy:
+        payload["reply_policy"] = reply_policy
+    if kind:
+        payload["kind"] = kind
     if file_path:
         try:
             with open(file_path, encoding="utf-8") as fh:
