@@ -72,6 +72,7 @@ class Config:
     provision_rollback_timeout: int = 300
     mcp_ipc_sock: str = ""       # B3: Unix socket path for MCP-shim→helper IPC
     datad_url: str = ""          # T18: datad VS API base URL (e.g. http://127.0.0.1:8796)
+    datad_token: str = ""        # T18: per-session token (DATAD_TOKEN, prodops 签发)
 
     @property
     def registered_session_name(self) -> str:

@@ -238,7 +238,7 @@ class SessionHelper:
         Helper = pure pipe, no RBAC, no path rewriting (design §7b)."""
         import aiohttp
 
-        token = self.cfg.key_id  # SH_KEY_ID = the session's authenticated identity
+        token = self.cfg.datad_token  # per-session token (prodops 签发, DATAD_TOKEN)
         datad_url = self.cfg.datad_url.rstrip("/")
 
         async def _vsapi(method: str, path: str, body: dict | None = None) -> dict:
