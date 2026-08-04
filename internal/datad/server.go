@@ -84,7 +84,12 @@ type authedHandler func(w http.ResponseWriter, r *http.Request, id Identity)
 
 func (s *Server) withAuth(h authedHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tok := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		authz := r.Header.Get("Authorization")
+		if !strings.HasPrefix(authz, "Bearer ") { // 协议严格(claudek3 nit):必带 Bearer 前缀,裸 token 拒
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		tok := strings.TrimPrefix(authz, "Bearer ")
 		s.tokMu.RLock()
 		tokens := s.tokens
 		s.tokMu.RUnlock()
