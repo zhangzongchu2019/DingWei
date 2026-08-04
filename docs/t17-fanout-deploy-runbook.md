@@ -1,25 +1,27 @@
 # T17 fan-out 代理 部署 runbook 终稿 · v2.1(两阶段+canary,可执行版)
 
 前提:设计=v1.1@1b67eec+v2.1 增补过 delta 审;实现=v1@6e612bc+v2 增量(G1-G12)全绿。
-**飞书开放平台零操作;外部依赖=发布授权唯一。**
+**生产 bot 全程零开放平台操作**;外部依赖=发布授权+阶段 0.5 隔离测试 app(现成→无额外外部动作;无现成→一次性新建,HELD 列管,见阶段 0.5 资产前提)。
 执行原则:每步给精确命令与判据;每阶段有门(gate)与自动回滚阈值;prestate 先固化后动手。
 
 ## 0. 前置(一次性,全内部)
 
 0.1 prestate 固化(prodops,动手前采集存档):生产 Hub env 快照(`systemctl show workpulse -p Environment` 或 EnvironmentFile 拷贝)、二进制 sha256、当前消息表基线(近 72h 每小时计数)、代理二进制 sha256、fanout.yaml 代次。
 0.2 投递 token:`openssl rand -hex 32` 生成→写生产 Hub unifiedrobot bot channel `verification_token`(内部共享秘密,非开放平台件)→同值入代理 sinks[prod].token。测试 Hub 同法独立 token。
-0.3 caller token×2(prod/test)、admin token 生成;fanout.yaml 按设计 §E 样例填全,`chmod 600`,owner=服务账号。
+0.3 caller token×2(prod/test)、admin token 生成;fanout.yaml 按设计 §E 样例填全,`chmod 600`,owner=服务账号;配置校验须过 sink 地址安全规则(远端必须 https,http 仅 loopback,§E)。
 0.4 凭据:FEISHU_APP_ID/SECRET 复制入代理 outbound.bots+accesses。
 0.5 部署代理 systemd(`Restart=always`,`LimitNOFILE`,日志入 journald);`curl -s localhost:8795/healthz`=200 且报配置代次;此时 **ws 接入配置为禁用**。
 0.6 告警通道实测:手动触发一条测试告警到值守群,确认可达。
 
 ## 阶段 0.5:隔离 bot canary(分流语义实证,不碰生产 bot)
 
+**资产前提(C4,先于一切)**:需一个**与生产无关、已开长连接**的测试 app。坐标/owner 候 prodops/coordinator 确认后**写入此处**(AppID 坐标与 owner,不写秘密):`<待填:app 坐标/owner/凭据注入路径>`。若无现成=新建测试 app+开长连接(一次性开放平台外部动作,HELD 列管,不触生产 bot),在此之前**本阶段不得开始、阶段 1 永不解锁**。
 **目的**:上生产前实证两假设——①同 App 多 WS 连接=事件随机单投非广播、断线全回存活连接②larkws SDK 在 handler 返回前不 ack(WAL 先于 ack 可行)。
-1. 用**隔离 bot**(测试用 app,零业务流量)配 access,起代理连接+一个对照连接(测试工装)。
+1. 用隔离 bot 配 access,起代理连接+一个对照连接(测试工装)。
 2. 注入已知 event ID 集(飞书侧发 N=100 条标号消息):核**每 ID 恰达一次**(两连接合计)、断开对照连接→后续 ID 全落代理侧、零重复。
 3. SDK ack 时序:handler 内故意 sleep+kill -9,重启后核该事件是否由飞书重推/丢失,得出 ack 语义结论。
-**门**:①②全过→进阶段 1;②不可钉序→按设计 §A HELD,替代方案报业主显式拍,**不得默认继续**。
+**sealed evidence(C4,门的凭据)**:产出两件入仓 commit——`docs/evidence/t17-phase05-conservation.md`(N 条 ID 分布表+守恒结论)+`docs/evidence/t17-phase05-sdk-ack.md`(ack 时序实验记录+结论)。**evidence commit hash 即阶段 1 pre-arm 门第⑦项的引用锚,口头通过无效**。
+**门**:①②全过且 evidence 入仓→进阶段 1;②不可钉序→按设计 §A HELD,替代方案报业主显式拍,**不得默认继续**;fallback 回调废档方案若复活=需新发布授权+delta 再审,不得自动执行。
 
 ## 阶段 1:影子并联(Hub 配置零变更;流量路径自第一条事件起改变——按生产变更对待,走发布授权)
 
@@ -30,6 +32,7 @@
 - [ ] 磁盘余量>20%
 - [ ] 告警通道 0.6 已实测
 - [ ] DLQ 空
+- [ ] 阶段 0.5 sealed evidence commit hash=`<待填>` 已入仓且两件结论均 PASS(C4:引用 hash 核对,非口头)
 
 1. 白名单=一个内部测试账号;热载开启 unifiedrobot ws 接入(管理 API PUT,代次推进)。
 2. 即时核(10min 内):`/metrics` 代理事件计数≈总量一半且 prod_delivered 吻合、spool 深度≈0、生产 Hub 端按 feishu_msg_id 抽 20 条核恰一条入库。
@@ -51,7 +54,7 @@
 
 ## 真机证据清单(prodops 审环境)
 
-- [ ] 阶段 0.5:守恒实证记录(N 条 ID 分布表)+SDK ack 时序结论
+- [ ] 阶段 0.5:sealed evidence 两件入仓(conservation+sdk-ack)+commit hash 与 pre-arm 门引用一致
 - [ ] 阶段 1:已知 ID 20 条逐条核对表+每小时守恒辅证+kill -9 无损记录
 - [ ] 阶段 2:翻转前后已知 ID 10 条+白名单 100%+出站三点关联样本×3+[测试环境]后缀实收截图
 - [ ] DLQ 演练:恒败件→退避→DLQ+告警;DLQ replay 水位门实测

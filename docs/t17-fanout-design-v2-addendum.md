@@ -29,6 +29,7 @@
 
 - `sinks[]`,每项=`{hub_url, role: authoritative|besteffort, filter: all|whitelist, suffix: none|测试环境, token}`。
 - **提交语义冻结(B3)**:默认=**ALL authoritative 必须最终成功**(非 quorum;若未来需 quorum 须显式配置项+再审)。入站事件"已接管"判定=**仅看 WAL 提交**,不依赖任何 sink 即时结果。
+- **消息全局终态(C2 修订,消除"ALL 成功"与"sink DLQ"矛盾)**:主记录状态机=`accepted→pending→delivered | blocked_dlq`。`delivered` **仅当全部 authoritative sink 均 delivered**;任一 authoritative sink 入 DLQ→主记录=`blocked_dlq`=**高优告警+healthz 报 degraded**,绝不被计为接管完成;主 WAL 记录与其余 sink 状态证据在 blocked 期间**禁止 GC**,仅当 DLQ replay 成功(→delivered)或**带审计的人工 waive**(记录 token_id/理由)才闭。besteffort 不参与主记录终态。WAL GC 规则:仅 delivered 且超保留期(默认 7d)的记录可回收。
 - **WAL 数据模型(B3)**:每消息一主记录+**每 sink 一状态行** `{sink_id, status: queued|sending|delivered|dlq, attempts, next_retry_at, last_error, terminal_at}`。各 sink 独立游标独立退避=**毒件不 head-of-line**:某消息对某 sink 连败→仅该(消息,sink)对入 sink 级 DLQ,同 sink 后续消息照走,其他 sink 不受扰。
 - besteffort 语义:同样落 WAL(崩溃可恢复),但有界=`{max_attempts, ttl}` 到界即弃(丢弃计数入 metrics),永不入告警级 DLQ,永不阻塞 authoritative。
 - **存储故障处置(B3)**:磁盘满/写失败=**fail-closed 停收**——ws 接入主动断连(分流语义下事件自动回生产直连路=天然优雅降级,阶段 1);阶段 2(独占)下=拒收出站(503)+入站停 ack+最高级告警。SQLite busy=有界重试+背压;corrupt=启动校验失败即拒起+告警,不带病跑。DLQ 重放=管理 API 显式触发+水位门(重放不得把 spool 推过高水位)。
@@ -37,7 +38,7 @@
 ## C. 出站(托管 ACK+指定来源)【B1 修订】
 
 托管契约(逐跳托管,与 A 泳道 ACK 链同构):
-1. **幂等键冻结(B1)**:Hub 每次发送携带 `request_id`(调用方生成 UUID);代理以 `(caller_id, request_id)` 唯一约束+`body_sha256`。重复请求:body hash 同→返回**同一 outbound_id**(200,幂等重放);hash 异→**409**。ProxyGateway.Send 实现侧自动生成并在重试间保持 request_id。
+1. **幂等键冻结(B1,C1 修订=稳定来源)**:`request_id` **必须源自 Hub 持久业务记录、在首次 HTTP 尝试前确定**,禁止在 Send 调用层临时生成(临时生成在 Send 超时后上层重调/进程重启时会换新键=幂等失效,dev56 C1)。冻结派生规则:**request_id=确定性派生自驱动本次发送的持久记录**——回复类=`sha256(触发消息ID+send_slot)`、计划类=`sha256(schedule项ID+occurrence)`;同一业务发送在 HTTP 内部重试/worker 重试/进程重启后派生值恒同。承载=OutMessage 新增显式 `RequestID` 字段,各调用点(schedule_worker 等)按派生规则填充(此为 Hub 加性改动之一,见 §G)。**代理侧:缺 request_id=400 拒收,禁止替调用方生成**。代理以 `(caller_id, request_id)` 唯一约束+`body_sha256`:hash 同→返回同一 outbound_id(200 幂等重放);hash 异→409。
 2. **202 语义冻结(B1)**:202=**accepted(托管开始),非 delivered**。仅在 WAL 事务提交+fsync 之后返回;崩在 202 前=Hub 重试(同 request_id,幂等吸收);崩在 202 后=WAL 重放,不丢不重。
 3. **出站状态机(B1)**:`queued→sending→sent | dlq`;`GET /outbound/{outbound_id}` 返回状态+attempts+真 Lark msg_id(sent 后)+错误(dlq);审计日志以 outbound_id 关联全链。
 4. 烂件当场拒(400/401/409/422)不进队列。
@@ -58,6 +59,7 @@
 - **并发控制(B4)**:配置代次 generation 单调递增,PUT 必带 `expected_generation`(或 If-Match ETag),不匹配=**412**(lost update 杜绝);文件手改+SIGHUP 同样推进代次;进程内文件锁串行化写。
 - 热载语义:sinks/callers/白名单=原子表交换;出站凭据=SetChannels 机制扩展;accesses=生命周期管理(增=pre-arm 门→起连;删=停收→排空在途→关);/healthz 报代次。
 - 防呆:authoritative sink 删除/降级需 `force: true` 且仅授权角色(§F),否则拒载。
+- **sink 地址安全规则(C3)**:配置校验拒绝非 TLS 远端——`hub_url` 为 http 仅允许 127.0.0.1/loopback;远端主机必须 https,否则配置拒载(热载/启动一视同仁)。
 
 ## F. 管理 API(后台管理程序对接面)【B4 修订】
 
@@ -69,12 +71,12 @@
 ## G. Hub 侧适配(改动面全清单)
 
 - 生产 Hub 采用=纯配置:`FEISHU_TRANSPORT=proxy`+PROXY_URL/TOKEN(proxy 档现码=出站 ProxyGateway+nil receiver,入站走常驻 webhook 路由 main.go:150)。
-- Hub 二进制两处加性小改(仅 transport=proxy 路径生效):①ProxyGateway 名称解析透传(stub proxygateway.go:67→调代理 /resolve);②ProxyGateway.Send:生成/保持 request_id,返回 outbound_id 记账(schedule_worker.go:406 簿记,零逻辑变更)。
+- Hub 二进制**三处加性小改**(C1/C3 后全清单,①②仅 transport=proxy 生效,③对无 v payload 零行为变化):①ProxyGateway 名称解析透传(stub proxygateway.go:67→调代理 /resolve);②OutMessage 新增 RequestID 字段+调用点确定性派生(§C1 规则,schedule_worker 等)+ProxyGateway.Send 透传并返回 outbound_id 记账;③webhook 条件严格分支(§K1:含 v→v==1+严格 schema,无 v→legacy 原样)。
 - collector:代理路=nil,阶段 2 明示接受,后续按需透传(不阻本件)。
 
 ## H. 迁移两阶段(详见 runbook 终稿;门与阈值见彼)
 
-- 阶段 0.5(新增,B2):隔离 bot canary 实证分流语义+SDK ack 时序,不过=HELD。
+- 阶段 0.5(新增,B2;C4 修订):隔离 bot canary 实证分流语义+SDK ack 时序,不过=HELD。**canary 资产前提(C4)**:需一个**与生产无关、已开长连接**的测试 app(AppID/Secret)。资产坐标/owner 候 prodops/coordinator 确认——**若现成:开放平台维持零操作;若无现成:新建测试 app+开长连接=一次性开放平台外部动作(HELD 依赖,列入外部件,不触生产 bot)**。据此 §J"零操作"措辞降级为条件式。**sealed evidence(C4)**:阶段 0.5 产出(ID 分布表+SDK ack 时序结论)=证据文件入仓 commit,阶段 1 pre-arm 门必须引用该 commit hash 核对,不接受口头通过;fallback 回调废档方案若复活=需新发布授权+delta 再审,不得自动执行。
 - 阶段 1 影子并联:Hub 配置零变更(流量路径有变,如实);pre-arm 门全绿才连;回滚=热关接入+确认连接退出与在途排空。
 - 阶段 2 接管翻转:单一 env 变更+重启;回滚=env 切回(预检旧路可起)。
 
@@ -82,7 +84,7 @@
 
 所有接口带 `"v":1`;内部流量一律 TLS 或同机 loopback;token 双活轮换窗(新旧并收≤24h)。
 
-**K1 入站投递(代理→Hub)** `POST /webhook/{channel}`,明文归一 payload(Hub fake 分支,webhook.go:42),**token 承载钉死=payload 顶层 `"token"` 字段**(Hub verifyWebhookToken 读顶层 token 或 header.token,main.go:829-833;fake 分支对多余字段容忍=Hub 零改):
+**K1 入站投递(代理→Hub)** `POST /webhook/{channel}`,明文归一 payload,**token 承载钉死=payload 顶层 `"token"` 字段**(Hub verifyWebhookToken 读顶层 token 或 header.token,main.go:829-833)。**版本执行(C3 修订,选 a=条件严格,消除装饰性 versioning)**:Hub webhook 加**条件严格分支**——payload 含 `"v"` 字段→必须 v==1(否则 400 unsupported_version)+按 v1 投递 schema 严格解码(`DisallowUnknownFields`,未知字段=400)+token 必核;payload 无 `"v"`→legacy 飞书路径原样(真回调/回滚态兼容)。代理投递恒带 v:1=恒走严格分支;未来 schema 漂移=显式 400 非静默接收。**此为 Hub 加性改动第③处(见 §G)**:
 ```json
 {"v":1,"token":"<sink token>","msg_id":"om_x","chat_type":"group|personal","chat_id":"oc_x","open_id":"ou_x","sender_open_id":"ou_x","text":"...","raw":{...},"ts":1690000000}
 ```
@@ -97,10 +99,10 @@
 
 ## I. 测试计划(G 组,v1 F 组保留)【B1-B5 扩】
 
-G1 ws 装配归一/G2 分流守恒(**已知 event ID 集**逐条核:双连守恒+断连重分配全回存活侧+零重复;receive→WAL 间 kill、WAL→sink 间 kill 各一例,不以小时总量代替)/G3 托管 ACK(202 前 fsync 实证 kill -9 重放;**响应丢失重试同 request_id→同 outbound_id 零双发;409 负例;状态机全迁移+GET status**)/G4 DLQ+告警/G5 热载防呆(烂配置/force/**412 代次冲突/写盘失败不切内存/坏 secret 旋转回退**)/G6 管理 API(掩码/审计/**未授权 401/size 413**)/G7 多 bot 出站选路/G8 /resolve 透传/G9 阶段 2 翻转+回滚演练/G10 sink 语义(**一 authoritative 败一成=败者独立重试不影响成者;besteffort 恒败不阻塞;毒件不 HOL**)/G11 存储故障(磁盘满 fail-closed=ws 断连;SQLite busy 背压)/G12 投递鉴权负例(**401 错 token/重放幂等**)。
+G1 ws 装配归一/G2 分流守恒(**已知 event ID 集**逐条核:双连守恒+断连重分配全回存活侧+零重复;receive→WAL 间 kill、WAL→sink 间 kill 各一例,不以小时总量代替)/G3 托管 ACK(202 前 fsync 实证 kill -9 重放;**响应丢失重试同 request_id→同 outbound_id 零双发;409 负例;状态机全迁移+GET status**)/G4 DLQ+告警/G5 热载防呆(烂配置/force/**412 代次冲突/写盘失败不切内存/坏 secret 旋转回退**)/G6 管理 API(掩码/审计/**未授权 401/size 413**)/G7 多 bot 出站选路/G8 /resolve 透传/G9 阶段 2 翻转+回滚演练/G10 sink 语义(**一 authoritative 败一成=败者独立重试不影响成者;一 authoritative delivered+一 authoritative DLQ→主记录=blocked_dlq 全局不成功、replay 成功后才 delivered(C2);besteffort 恒败不阻塞;毒件不 HOL**)/G11 存储故障(磁盘满 fail-closed=ws 断连;SQLite busy 背压)/G12 投递鉴权与版本负例(**401 错 token/重放幂等/v:1+未知字段=400/v:2=400/无 v=legacy 原样(C3)/远端 http sink 配置拒载**)/G13(C1)**代理已 WAL 但 202 响应丢失→Hub 进程重启→重派生同 request_id→同 outbound_id→飞书恰一发**。
 
 ## J. 披露与不做
 
-- 后台管理 UI 不在本件;collector 透传延后;开放平台全程零操作(外部依赖=发布授权唯一)。
+- 后台管理 UI 不在本件;collector 透传延后。**外部依赖措辞(C4 修订)**:**生产 bot 全程零开放平台操作**;阶段 0.5 需隔离测试 app(现成与否候确认:现成→外部依赖=发布授权唯一;无现成→+一次性新建测试 app 外部动作,HELD 列管)。
 - **HELD 项预告(B2)**:larkws SDK ack 时序若实证不可钉序→§A 替代方案交业主显式拍,不默认上。
 - 废档:回调切换方案(runbook-draft@9159734);代理独占 WS 而 Hub 不适配变体。
