@@ -3,6 +3,9 @@ package datad
 // PG 集成测试(DATAD_TEST_PG_DSN 门控;prodops 实例就绪后 CI/真机跑):
 // 同一套核心流对真 PG 走一遍——建表幂等/task 乐观锁/config CAS/自报域/审计。
 // 无 DSN=显式 Skip(如实标注,不假绿)。
+// ⚠铁律(08-04 教训:曾用生产 DSN 跑本测留 T-ITEST 残留污染生产账):
+//   DATAD_TEST_PG_DSN 必须指【独立测试库 dingwei_test】,【永不指生产库 dingwei】。
+//   本测会写 T-ITEST-* 件+config/session 行,指生产=污染真账。prodops 已建 dingwei_test 隔离。
 
 import (
 	"context"
