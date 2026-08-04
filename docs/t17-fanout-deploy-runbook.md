@@ -1,7 +1,7 @@
 # T17 fan-out 代理 部署 runbook 终稿 · v2.1(两阶段+canary,可执行版)
 
 前提:设计=v1.1@1b67eec+v2.1 增补过 delta 审;实现=v1@6e612bc+v2 增量(G1-G12)全绿。
-**生产 bot 全程零开放平台操作**;外部依赖=发布授权+阶段 0.5 隔离测试 app(现成→无额外外部动作;无现成→一次性新建,HELD 列管,见阶段 0.5 资产前提)。
+**飞书开放平台零操作(生产 bot 与 canary 均无平台侧动作;canary 资产=现成 greyTestRobot,见阶段 0.5)**;外部依赖=发布授权唯一。
 执行原则:每步给精确命令与判据;每阶段有门(gate)与自动回滚阈值;prestate 先固化后动手。
 
 ## 0. 前置(一次性,全内部)
@@ -15,7 +15,7 @@
 
 ## 阶段 0.5:隔离 bot canary(分流语义实证,不碰生产 bot)
 
-**资产前提(C4,先于一切)**:需一个**与生产无关、已开长连接**的测试 app。坐标/owner 候 prodops/coordinator 确认后**写入此处**(AppID 坐标与 owner,不写秘密):`<待填:app 坐标/owner/凭据注入路径>`。若无现成=新建测试 app+开长连接(一次性开放平台外部动作,HELD 列管,不触生产 bot),在此之前**本阶段不得开始、阶段 1 永不解锁**。
+**资产前提(C4,已落定 08-03 prodops 确认)**:canary 用现成隔离测试 app=**greyTestRobot**(bot_channel,app_id=cli_aac72db96438dcf9,长连接 WS 模式,零业务流量,owner=prodops,凭据=FEISHU_APP_ID/SECRET env 注入同生产模式独立值)——**现成资产,开放平台零操作成立(生产 bot 与 canary 均无平台侧动作)**。
 **目的**:上生产前实证两假设——①同 App 多 WS 连接=事件随机单投非广播、断线全回存活连接②larkws SDK 在 handler 返回前不 ack(WAL 先于 ack 可行)。
 1. 用隔离 bot 配 access,起代理连接+一个对照连接(测试工装)。
 2. 注入已知 event ID 集(飞书侧发 N=100 条标号消息):核**每 ID 恰达一次**(两连接合计)、断开对照连接→后续 ID 全落代理侧、零重复。

@@ -76,7 +76,7 @@
 
 ## H. 迁移两阶段(详见 runbook 终稿;门与阈值见彼)
 
-- 阶段 0.5(新增,B2;C4 修订):隔离 bot canary 实证分流语义+SDK ack 时序,不过=HELD。**canary 资产前提(C4)**:需一个**与生产无关、已开长连接**的测试 app(AppID/Secret)。资产坐标/owner 候 prodops/coordinator 确认——**若现成:开放平台维持零操作;若无现成:新建测试 app+开长连接=一次性开放平台外部动作(HELD 依赖,列入外部件,不触生产 bot)**。据此 §J"零操作"措辞降级为条件式。**sealed evidence(C4)**:阶段 0.5 产出(ID 分布表+SDK ack 时序结论)=证据文件入仓 commit,阶段 1 pre-arm 门必须引用该 commit hash 核对,不接受口头通过;fallback 回调废档方案若复活=需新发布授权+delta 再审,不得自动执行。
+- 阶段 0.5(新增,B2;C4 修订):隔离 bot canary 实证分流语义+SDK ack 时序,不过=HELD。**canary 资产前提(C4,已落定 08-03 prodops 确认)**:现成隔离测试 app=**greyTestRobot**(app_id=cli_aac72db96438dcf9,长连接 WS 模式,零业务流量,owner=prodops)——开放平台零操作成立,无 HELD 外部动作。**sealed evidence(C4)**:阶段 0.5 产出(ID 分布表+SDK ack 时序结论)=证据文件入仓 commit,阶段 1 pre-arm 门必须引用该 commit hash 核对,不接受口头通过;fallback 回调废档方案若复活=需新发布授权+delta 再审,不得自动执行。
 - 阶段 1 影子并联:Hub 配置零变更(流量路径有变,如实);pre-arm 门全绿才连;回滚=热关接入+确认连接退出与在途排空。
 - 阶段 2 接管翻转:单一 env 变更+重启;回滚=env 切回(预检旧路可起)。
 
@@ -103,6 +103,6 @@ G1 ws 装配归一/G2 分流守恒(**已知 event ID 集**逐条核:双连守恒
 
 ## J. 披露与不做
 
-- 后台管理 UI 不在本件;collector 透传延后。**外部依赖措辞(C4 修订)**:**生产 bot 全程零开放平台操作**;阶段 0.5 需隔离测试 app(现成与否候确认:现成→外部依赖=发布授权唯一;无现成→+一次性新建测试 app 外部动作,HELD 列管)。
+- 后台管理 UI 不在本件;collector 透传延后。**外部依赖(C4 落定)**:开放平台零操作(生产 bot 与 canary 均无平台侧动作,canary=现成 greyTestRobot);外部依赖=发布授权唯一。
 - **HELD 项预告(B2)**:larkws SDK ack 时序若实证不可钉序→§A 替代方案交业主显式拍,不默认上。
 - 废档:回调切换方案(runbook-draft@9159734);代理独占 WS 而 Hub 不适配变体。
