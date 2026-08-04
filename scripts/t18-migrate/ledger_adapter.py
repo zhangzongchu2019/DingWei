@@ -21,7 +21,7 @@ import sys
 # task-ledger status → datad 8 态(§2 CHECK)
 STATUS_MAP = {
     "done": "done", "completed": "done", "closed": "done",
-    "in_progress": "in_progress", "doing": "in_progress", "wip": "in_progress",
+    "in_progress": "in_progress", "doing": "in_progress", "wip": "in_progress", "active": "in_progress",
     "todo": "proposed", "pending": "proposed", "proposed": "proposed", "new": "proposed",
     "dispatched": "dispatched", "assigned": "dispatched",
     "review": "review", "testing": "review", "qa": "review",

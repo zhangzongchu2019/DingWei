@@ -704,7 +704,7 @@
         "cli": "CLAUDE-DEEPSEEK",
         "llm": "deepseek-v4-pro"
       },
-      "status": "active",
+      "status": "done",
       "nodes": [
         {
           "node_id": "G3-11-n1",
@@ -1010,7 +1010,7 @@
         "cli": "CLAUDE-DEEPSEEK",
         "llm": "deepseek-v4-pro"
       },
-      "status": "active",
+      "status": "done",
       "nodes": [
         {
           "node_id": "G3-12-n1",
