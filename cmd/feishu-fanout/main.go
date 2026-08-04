@@ -80,6 +80,7 @@ func run() error {
 			return fmt.Errorf("FANOUT_ADMIN_TOKENS bad json: %w", err)
 		}
 	}
+	cfg.TestInject = os.Getenv("FANOUT_TEST_INJECT") == "1" // 仅 e2e;生产勿设
 
 	srv := fanout.New(cfg)
 	ctx, cancel := context.WithCancel(context.Background())

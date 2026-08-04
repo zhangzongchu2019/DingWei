@@ -20,8 +20,8 @@ import (
 
 // CallerConfig 出站调用方(§C 指定来源第二维):后缀策略+审计标签按 caller。
 type CallerConfig struct {
-	Name       string `json:"name"`
-	TestSuffix bool   `json:"test_suffix"` // true=追加[测试环境](幂等)
+	Name       string `json:"name" yaml:"name"`
+	TestSuffix bool   `json:"test_suffix" yaml:"test_suffix"` // true=追加[测试环境](幂等)
 }
 
 // reUUIDv5 §K2 冻结正则:request_id 必须为 UUIDv5(派生规则=Hub 侧 §C1,代理只验不代生成)。

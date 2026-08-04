@@ -21,13 +21,13 @@ import (
 // SinkConfig 投递目标(§B)。Suffix 字段保留于配置模型(冻结设计字段);
 // 入站投递不改字节,后缀语义由出站 caller 策略承担(§C)。
 type SinkConfig struct {
-	Name    string `json:"name"`
-	HubURL  string `json:"hub_url"`
-	Channel string `json:"channel"` // POST {hub_url}/webhook/{channel}
-	Role    string `json:"role"`    // authoritative|besteffort
-	Filter  string `json:"filter"`  // all|whitelist
-	Suffix  string `json:"suffix"`
-	Token   string `json:"token"` // 内部共享秘密→payload 顶层 token(§K1)
+	Name    string `json:"name" yaml:"name"`
+	HubURL  string `json:"hub_url" yaml:"hub_url"`
+	Channel string `json:"channel" yaml:"channel"` // POST {hub_url}/webhook/{channel}
+	Role    string `json:"role" yaml:"role"`       // authoritative|besteffort
+	Filter  string `json:"filter" yaml:"filter"`   // all|whitelist
+	Suffix  string `json:"suffix" yaml:"suffix"`
+	Token   string `json:"token" yaml:"token"` // 内部共享秘密→payload 顶层 token(§K1)
 }
 
 // SinkTarget 落账用轻量对(名字+角色)。
@@ -35,10 +35,10 @@ type SinkTarget struct{ Name, Role string }
 
 // AccessConfig 接入实例(§A)。段2 实现 ws;https=v1 回调路保持原样。
 type AccessConfig struct {
-	BotChannel string `json:"bot_channel"`
-	Mode       string `json:"mode"` // ws|https
-	AppID      string `json:"app_id"`
-	AppSecret  string `json:"app_secret"`
+	BotChannel string `json:"bot_channel" yaml:"bot_channel"`
+	Mode       string `json:"mode" yaml:"mode"` // ws|https
+	AppID      string `json:"app_id" yaml:"app_id"`
+	AppSecret  string `json:"app_secret" yaml:"app_secret"`
 }
 
 // ReceiverFactory 可注入(测试用 fake;默认=真 LarkGateway)。
@@ -227,6 +227,35 @@ func (s *Server) deliverSink(ctx context.Context, job *InboundSinkJob) {
 			s.metrics.BesteffortDropped.Add(1)
 		}
 	}
+}
+
+// handleTestInject G9 e2e 专用(cfg.TestInject 才注册):模拟 ws 事件进 onWSInbound,
+// 让真二进制 e2e 无需真飞书连接即可走 WAL→sink 全链。生产恒关。
+func (s *Server) handleTestInject(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		BotChannel   string `json:"bot_channel"`
+		MsgID        string `json:"msg_id"`
+		ChatType     string `json:"chat_type"`
+		ChatID       string `json:"chat_id"`
+		SenderOpenID string `json:"sender_open_id"`
+		Text         string `json:"text"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.MsgID == "" {
+		http.Error(w, "bad inject", http.StatusBadRequest)
+		return
+	}
+	content, _ := json.Marshal(map[string]string{"text": req.Text})
+	m := model.Message{
+		ID: req.MsgID, ChatEntityID: req.BotChannel + ":" + req.ChatType + ":" + req.ChatID,
+		Direction: model.DirectionIn, BotChannelID: req.BotChannel, FeishuMsgID: req.MsgID,
+		ChatType: model.ChatType(req.ChatType), SenderOpenID: req.SenderOpenID,
+		Content: string(content), CreatedAt: time.Now().UTC(),
+	}
+	if err := s.onWSInbound(r.Context(), m); err != nil {
+		http.Error(w, err.Error(), http.StatusServiceUnavailable) // WAL 失败=不 ack 语义可见
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (s *Server) besteffortMax() int {

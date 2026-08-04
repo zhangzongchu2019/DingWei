@@ -83,6 +83,7 @@ type Config struct {
 	DiskMinFreePct   float64                  // pre-arm④,默认 10
 	ReplayWatermark  int                      // DLQ replay 水位门,默认 1000
 	SenderFactory    SenderFactory            // outbound_bots→Sender;默认真 LarkGateway
+	TestInject       bool                     // 仅测试(G9 e2e):/_test/inject 驱动 ws 管道;生产恒 false
 }
 
 // Metrics 计数器(/metrics 输出,设计 §3 可观测)。
@@ -183,6 +184,10 @@ func New(cfg Config) *Server {
 	s.mux.HandleFunc("POST /admin/reload", s.handleAdminReload)
 	s.mux.HandleFunc("POST /admin/dlq/replay", s.handleAdminDLQReplay)
 	s.mux.HandleFunc("POST /admin/dlq/waive", s.handleAdminDLQWaive)
+	if cfg.TestInject { // G9 e2e 专用面(默认关);生产配置校验不会开它
+		cfg.Logger.Warn("TEST-ONLY inject endpoint enabled (/_test/inject) — 勿在生产开启")
+		s.mux.HandleFunc("POST /_test/inject", s.handleTestInject)
+	}
 	return s
 }
 
