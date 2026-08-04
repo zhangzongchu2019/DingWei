@@ -96,6 +96,7 @@ type Store interface {
 	AppendDispatch(ctx context.Context, d Dispatch) error
 	// config(版本化 CAS)
 	GetConfig(ctx context.Context, key string, generation int64) (*ConfigEntry, error) // generation<=0=最新
+	ListConfig(ctx context.Context) ([]ConfigEntry, error)                             // 每 key 最新代次(project_context 用)
 	PutConfig(ctx context.Context, key string, value json.RawMessage, expectedGen int64, by string) (*ConfigEntry, error)
 	// sessions(行级自报)
 	PutSessionState(ctx context.Context, s SessionState) error

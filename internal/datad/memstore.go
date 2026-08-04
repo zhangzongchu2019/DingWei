@@ -131,6 +131,19 @@ func (m *MemStore) GetConfig(_ context.Context, key string, generation int64) (*
 	return nil, ErrNotFound
 }
 
+func (m *MemStore) ListConfig(_ context.Context) ([]ConfigEntry, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var out []ConfigEntry
+	for _, entries := range m.config {
+		if len(entries) > 0 {
+			out = append(out, entries[len(entries)-1]) // 每 key 最新代次
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Key < out[j].Key })
+	return out, nil
+}
+
 func (m *MemStore) PutConfig(_ context.Context, key string, value json.RawMessage, expectedGen int64, by string) (*ConfigEntry, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

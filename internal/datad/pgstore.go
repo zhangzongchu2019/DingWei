@@ -187,6 +187,27 @@ func (p *PGStore) GetConfig(ctx context.Context, key string, generation int64) (
 	return e, nil
 }
 
+func (p *PGStore) ListConfig(ctx context.Context) ([]ConfigEntry, error) {
+	// 每 key 最新代次:DISTINCT ON(key) ORDER BY key,generation DESC
+	rows, err := p.db.QueryContext(ctx, `SELECT DISTINCT ON (key) key,generation,value,updated_by,updated_at
+  FROM config ORDER BY key, generation DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []ConfigEntry
+	for rows.Next() {
+		e := ConfigEntry{}
+		var val []byte
+		if err := rows.Scan(&e.Key, &e.Generation, &val, &e.UpdatedBy, &e.UpdatedAt); err != nil {
+			return nil, err
+		}
+		e.Value = val
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
 func (p *PGStore) PutConfig(ctx context.Context, key string, value json.RawMessage, expectedGen int64, by string) (*ConfigEntry, error) {
 	// CAS:INSERT 目标代次=expected+1,主键冲突或前代不符=412
 	tx, err := p.db.BeginTx(ctx, nil)

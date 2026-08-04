@@ -60,6 +60,7 @@ func New(cfg Config) *Server {
 	m.HandleFunc("PUT /v1/tasks/{id}", s.withAuth(s.handlePutTask))
 	m.HandleFunc("POST /v1/tasks/{id}/progress", s.withAuth(s.handleProgress))
 	m.HandleFunc("POST /v1/dispatch", s.withAuth(s.handleDispatch))
+	m.HandleFunc("GET /v1/config", s.withAuth(s.handleListConfig))
 	m.HandleFunc("GET /v1/config/{key}", s.withAuth(s.handleGetConfig))
 	m.HandleFunc("PUT /v1/config/{key}", s.withAuth(s.handlePutConfig))
 	m.HandleFunc("GET /v1/sessions", s.withAuth(s.handleListSessions))
@@ -255,6 +256,16 @@ func (s *Server) handleDispatch(w http.ResponseWriter, r *http.Request, id Ident
 }
 
 // ---- config ----
+
+// handleListConfig GET /v1/config:每 key 最新代次(project_context 配置上下文用)。
+func (s *Server) handleListConfig(w http.ResponseWriter, r *http.Request, id Identity) {
+	entries, err := s.st.ListConfig(r.Context())
+	if err != nil {
+		storeErr(w, err)
+		return
+	}
+	writeJSON(w, 200, entries)
+}
 
 func (s *Server) handleGetConfig(w http.ResponseWriter, r *http.Request, id Identity) {
 	gen := int64(0)

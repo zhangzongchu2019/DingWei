@@ -145,6 +145,19 @@ func TestP3ConfigCAS(t *testing.T) {
 	if w := call(t, s, "PUT", "/v1/config/x", "tok-devo", `{}`, nil); w.Code != 403 {
 		t.Fatalf("member config want 403 got %d", w.Code)
 	}
+	// GET /v1/config 列表(project_context 用):全员读,每 key 最新代次
+	call(t, s, "PUT", "/v1/config/rules.dispatch", "tok-coord", `{"owner":"coordinator"}`, nil)
+	wl := call(t, s, "GET", "/v1/config", "tok-devo", "", nil)
+	var list []ConfigEntry
+	_ = json.Unmarshal(wl.Body.Bytes(), &list)
+	if wl.Code != 200 || len(list) != 2 { // rules.review(gen2)+rules.dispatch(gen1)
+		t.Fatalf("list config: code=%d n=%d", wl.Code, len(list))
+	}
+	for _, e := range list {
+		if e.Key == "rules.review" && e.Generation != 2 {
+			t.Fatalf("list 应返最新代次,rules.review gen=%d", e.Generation)
+		}
+	}
 }
 
 func TestTaskOptimisticLock(t *testing.T) {
