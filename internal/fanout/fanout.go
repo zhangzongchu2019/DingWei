@@ -68,16 +68,24 @@ type Config struct {
 	Bots        map[string]Sender       // bot_channel→Sender;空=退化用 Sender
 	SpoolPath   string                  // 空=不开 spool(v:1 请求得 503)
 	MaxAttempts int                     // 终败入 DLQ 阈值,默认 8
+
+	// v2.3 入站(§A/§B):接入实例+N 路 sink;ReceiverFactory 测试可注入。
+	Accesses              []AccessConfig
+	Sinks                 []SinkConfig
+	ReceiverFactory       ReceiverFactory
+	BesteffortMaxAttempts int // besteffort 有界重试,默认 5,到界=dropped
 }
 
 // Metrics 计数器(/metrics 输出,设计 §3 可观测)。
 type Metrics struct {
-	ProdForwarded, ProdFailed         atomic.Int64
+	ProdForwarded, ProdFailed          atomic.Int64
 	TestEnqueued, TestSent, TestFailed atomic.Int64
-	TestDroppedFull, WhitelistMiss    atomic.Int64
-	DecryptFailed, OutboundSent       atomic.Int64
-	OutboundAuthFailed                atomic.Int64
-	OutboundQueued, OutboundDLQ       atomic.Int64 // v2.3 托管路(§C)
+	TestDroppedFull, WhitelistMiss     atomic.Int64
+	DecryptFailed, OutboundSent        atomic.Int64
+	OutboundAuthFailed                 atomic.Int64
+	OutboundQueued, OutboundDLQ        atomic.Int64 // v2.3 托管路(§C)
+	InboundAccepted, SinkDelivered     atomic.Int64 // v2.3 入站(§A/§B)
+	SinkDLQ, BesteffortDropped         atomic.Int64
 }
 
 type queuedEvent struct {
@@ -98,13 +106,13 @@ type Server struct {
 	wlOK      bool // fail-closed 旗标:白名单不可用=测试路全停
 	channels  map[string]ChannelConfig
 
-	queue    chan queuedEvent
-	seenMu   sync.Mutex
-	seen     map[string]struct{} // 测试路 event_id 去重(LRU 粗化:满即清)
-	prodOK   atomic.Bool         // startup/周期探测生产 Hub 可达(prodops 注②)
-	testOK   atomic.Bool
-	mux      *http.ServeMux
-	spool    *Spool // v2.3 托管 spool(§D);nil=托管路 503
+	queue  chan queuedEvent
+	seenMu sync.Mutex
+	seen   map[string]struct{} // 测试路 event_id 去重(LRU 粗化:满即清)
+	prodOK atomic.Bool         // startup/周期探测生产 Hub 可达(prodops 注②)
+	testOK atomic.Bool
+	mux    *http.ServeMux
+	spool  *Spool // v2.3 托管 spool(§D);nil=托管路 503
 }
 
 func New(cfg Config) *Server {
@@ -134,6 +142,9 @@ func New(cfg Config) *Server {
 		if err != nil {
 			// fail-closed(§B):spool 起不来=托管路 503,不静默降级为立发
 			cfg.Logger.Error("spool打开失败,托管路禁用", "path", cfg.SpoolPath, "error", err)
+		} else if err := sp.initInbound(); err != nil {
+			cfg.Logger.Error("入站表初始化失败,spool禁用", "error", err)
+			_ = sp.Close()
 		} else {
 			s.spool = sp
 		}
@@ -156,6 +167,10 @@ func (s *Server) Start(ctx context.Context) {
 	go s.testWorker(ctx)
 	go s.periodic(ctx)
 	go s.custodyWorker(ctx) // v2.3 托管发送循环(spool nil 时自退出)
+	go s.sinkWorker(ctx)    // v2.3 入站 N 路投递循环
+	if err := s.StartAccesses(ctx); err != nil {
+		s.log.Error("接入启动失败(告警)", "error", err)
+	}
 }
 
 // ---- 入站(需求①③) ----
@@ -372,6 +387,13 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 		"whitelist_ok":   wlOK,
 		"outbound":       s.cfg.Sender != nil,
 	}
+	// §B/T2:blocked_dlq>0=degraded(waive/replay 后恢复 ok)
+	if s.spool != nil {
+		if blocked, err := s.spool.CountBlocked(r.Context()); err == nil {
+			st["blocked_dlq"] = blocked
+			st["degraded"] = blocked > 0
+		}
+	}
 	w.Header().Set("Content-Type", "application/json")
 	// startup 依赖检查(prodops 注②):生产 Hub 不可达=503,让编排/探针挡住上线
 	if !s.prodOK.Load() {
@@ -390,6 +412,8 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 		"whitelist_miss": m.WhitelistMiss.Load(), "decrypt_failed": m.DecryptFailed.Load(),
 		"outbound_sent": m.OutboundSent.Load(), "outbound_auth_failed": m.OutboundAuthFailed.Load(),
 		"outbound_queued": m.OutboundQueued.Load(), "outbound_dlq": m.OutboundDLQ.Load(),
+		"inbound_accepted": m.InboundAccepted.Load(), "sink_delivered": m.SinkDelivered.Load(),
+		"sink_dlq": m.SinkDLQ.Load(), "besteffort_dropped": m.BesteffortDropped.Load(),
 	})
 }
 
