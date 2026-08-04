@@ -126,11 +126,24 @@ type KBProvider interface {
 |---|---|---|
 | 团队制度查询 | GET /v1/config/rules.* + /v1/kb/query | 规约条文入 config,长文档走 kb |
 | 项目上下文 | GET /v1/tasks?owner=me + /v1/sessions | 恢复/接件一拉即得 |
-| 智能 send | (信道仍 send.py/hub)工具内建:收件人核抬头/参数序/3KB 分片 | 修三坑;寻址表 GET /v1/sessions |
+| 智能 send | (信道仍 send.py/hub)工具内建三坑修复(shence 建议具体化):**短名→全名匹配**(寻址表 GET /v1/sessions)+**在线清单刷新**(过期>2min 自动重拉)+**冠字头自动格式**(抬头=send 收件人强一致,消笔误)+3KB 自动分片 | 修 send.py 三坑 |
 | 任务读写 | GET /v1/tasks;POST /v1/tasks/{id}/progress | 写仅自报域 |
 | 知识库 | POST /v1/kb/query | provider 无感 |
 | Skill 库 | GET /v1/skills;POST 提案 | 拉取校验 sha256 |
 | 心跳自报 | POST /v1/sessions/{me}/heartbeat + PUT state | 替 hb.py;静默预告=state=silent_notice |
+
+## 7b. MCP 调用链路与 IPC 通用化(shence 输入,08-04 定契约)
+
+链路(与现 mcp_send 同构,shence 确认可行):**MCP shim→IPC(Unix socket)→helper→datad(VS API)**;shim 不持凭据,helper 以本会话 token(SH_KEY_ID 系)调 datad——**每会话一 token 可信模型天然成立**。
+
+**IPC 扩展契约(通用化,非逐工具专有 type)**:现 payload={type,to,body,...};新增**单一通用 type**:
+```json
+{"type":"vsapi_v1","request_id":"...","method":"GET|POST|PUT","path":"/v1/...","body":{...}}
+```
+- helper 职责=纯管道:附 `Authorization: Bearer <本会话token>` 转发 datad,响应原样回 IPC(不做任何权限判断——**单一执法点=datad**,helper 不长第二个 RBAC);
+- **`me` 别名**:datad 支持路径中 `me`(如 /v1/sessions/me/heartbeat、/v1/tasks?owner=me)按 token 解析会话身份——shim/工具层无需知道全名,helper 无需改写路径=真纯管道;
+- 七工具全部落在这一个 type 上(工具语义在 MCP 层,线上只有 vsapi_v1)——IPC type 枚举零膨胀,向后兼容(旧 helper 遇未知 type 拒收即可)。
+- 智能 send 例外:信道走现有 mcp_send(消息面),仅寻址表查询走 vsapi_v1。
 
 ## 8. 决策点建议案(呈业主,coordinator 已转)
 
