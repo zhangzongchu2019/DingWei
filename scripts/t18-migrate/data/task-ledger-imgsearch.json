@@ -1,0 +1,1026 @@
+{
+  "tasks": [
+    {
+      "id": "G1-1",
+      "name": "Kuikly学习+demo上手",
+      "deps": "",
+      "designer": {
+        "who": "zzc-dev5520-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "implementer": {
+        "who": "zzc-dev5520-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "tester": {
+        "who": "zzc-c2-2642",
+        "cli": "CLAUDE",
+        "llm": "glm-5.2"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G1-1-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "bring-up doc+notes done"
+    },
+    {
+      "id": "G1-2",
+      "name": "CLIENT-001收尾",
+      "deps": "",
+      "designer": {
+        "who": "zzc-c2-2642",
+        "cli": "CLAUDE",
+        "llm": "glm-5.2"
+      },
+      "implementer": {
+        "who": "zzc-c2-2642",
+        "cli": "CLAUDE",
+        "llm": "glm-5.2"
+      },
+      "tester": {
+        "who": "zzc-dev5520-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G1-2-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "CLIENT-001 R2 PASS"
+    },
+    {
+      "id": "G1-3",
+      "name": "参考版实现",
+      "deps": "G1-1",
+      "designer": {
+        "who": "zzc-dev5520-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "implementer": {
+        "who": "zzc-dev5520-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "tester": {
+        "who": "zzc-c2-2642",
+        "cli": "CLAUDE",
+        "llm": "glm-5.2"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G1-3-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "参考版实现 R2 PASS"
+    },
+    {
+      "id": "G1-4",
+      "name": "客户端字段回填契约",
+      "deps": "G1-3",
+      "designer": {
+        "who": "zzc-c2-2642",
+        "cli": "CLAUDE",
+        "llm": "glm-5.2"
+      },
+      "implementer": {
+        "who": "zzc-c2-2642",
+        "cli": "CLAUDE",
+        "llm": "glm-5.2"
+      },
+      "tester": {
+        "who": "zzc-dev5520-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G1-4-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "字段回填契约 R2 PASS dev5520复审"
+    },
+    {
+      "id": "G1-5",
+      "name": "CLIENT-002合入发版分支",
+      "deps": "G1-3",
+      "designer": {
+        "who": "zzc-dev5520-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "implementer": {
+        "who": "zzc-dev5520-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "tester": {
+        "who": "zzc-c2-2642",
+        "cli": "CLAUDE",
+        "llm": "glm-5.2"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G1-5-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "CLIENT-002 FF merged"
+    },
+    {
+      "id": "G2-1",
+      "name": "契约v3对齐",
+      "deps": "",
+      "designer": {
+        "who": "zzc-dev56-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "implementer": {
+        "who": "zzc-dev56-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "tester": {
+        "who": "zzc-shencedeepseek-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G2-1-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "契约v3清洁 tip"
+    },
+    {
+      "id": "G2-2",
+      "name": "fail-closed移植",
+      "deps": "",
+      "designer": {
+        "who": "zzc-dev56-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "implementer": {
+        "who": "zzc-dev56-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "tester": {
+        "who": "zzc-shencedeepseek-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G2-2-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "fail-closed已闭"
+    },
+    {
+      "id": "G2-3",
+      "name": "旁路采集INSTR-001",
+      "deps": "G3-7",
+      "designer": {
+        "who": "zzc-shencedeepseek-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "implementer": {
+        "who": "zzc-shencedeepseek-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "tester": {
+        "who": "zzc-dev56-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G2-3-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "INSTR-001 54/54 PASS"
+    },
+    {
+      "id": "G2-4",
+      "name": "PHASE1四类",
+      "deps": "",
+      "designer": {
+        "who": "zzc-dev56-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "implementer": {
+        "who": "zzc-dev56-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "tester": {
+        "who": "zzc-shencedeepseek-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G2-4-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "PHASE1已闭"
+    },
+    {
+      "id": "G2-5",
+      "name": "commoditySearch构建",
+      "deps": "G4-3",
+      "designer": {
+        "who": "zzc-shencedeepseek-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "implementer": {
+        "who": "zzc-shencedeepseek-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "tester": {
+        "who": "zzc-dev56-2642",
+        "cli": "CODEX",
+        "llm": "gpt-5.5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G2-5-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "commoditySearch设计+验证"
+    },
+    {
+      "id": "G3-1",
+      "name": "product折叠+fail-closed+503",
+      "deps": "",
+      "designer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-1-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "折叠+fail-closed R3 PASS"
+    },
+    {
+      "id": "G3-2",
+      "name": "级联扩召+R3-1",
+      "deps": "",
+      "designer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-2-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "级联扩召 R3 PASS"
+    },
+    {
+      "id": "G3-3",
+      "name": "响应字段contract_version等",
+      "deps": "",
+      "designer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "implementer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "tester": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-3-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "响应字段 37/37 PASS"
+    },
+    {
+      "id": "G3-4",
+      "name": "RATELIM 429/503",
+      "deps": "",
+      "designer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "implementer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "tester": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-4-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "RATELIM R2 PASS 22/22"
+    },
+    {
+      "id": "G3-5",
+      "name": "输入三选一400",
+      "deps": "",
+      "designer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "implementer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "tester": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-5-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "输入三选一 R2 PASS"
+    },
+    {
+      "id": "G3-6",
+      "name": "debug观测面+R3-2",
+      "deps": "G3-1",
+      "designer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "implementer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "tester": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-6-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "debug观测面 27/27 PASS"
+    },
+    {
+      "id": "G3-7",
+      "name": "INSTR-001埋点",
+      "deps": "G3-2",
+      "designer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "implementer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "tester": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-7-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "INSTR-001埋点 30/30 PASS"
+    },
+    {
+      "id": "G3-8",
+      "name": "Prometheus指标",
+      "deps": "",
+      "designer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "implementer": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "tester": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-8-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "Prometheus 34/34 PASS"
+    },
+    {
+      "id": "G3-9",
+      "name": "DBVAL-003关系库Schema",
+      "deps": "",
+      "designer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-9-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "DBVAL-003 R3 PASS"
+    },
+    {
+      "id": "G3-10",
+      "name": "QUALITY-002排序件",
+      "deps": "",
+      "designer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G3-10-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "QUALITY-002 R2 PASS"
+    },
+    {
+      "id": "G3-11",
+      "name": "INCR增量线",
+      "deps": "",
+      "designer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "active",
+      "nodes": [
+        {
+          "node_id": "G3-11-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "INCR V7设计PASS,候派工实施"
+    },
+    {
+      "id": "G4-1",
+      "name": "比对管线",
+      "deps": "",
+      "designer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "pending",
+      "nodes": [
+        {
+          "node_id": "G4-1-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "G4-2",
+      "name": "GT自建L1精确",
+      "deps": "",
+      "designer": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "implementer": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "tester": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G4-2-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "GT自建L1"
+    },
+    {
+      "id": "G4-3",
+      "name": "SBX API全线",
+      "deps": "",
+      "designer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "active",
+      "nodes": [
+        {
+          "node_id": "G4-3-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "沙盒部署就绪,tge0h12x直连可行"
+    },
+    {
+      "id": "G4-4",
+      "name": "不变量用例",
+      "deps": "G3-6",
+      "designer": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "implementer": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "tester": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G4-4-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "不变量用例"
+    },
+    {
+      "id": "G4-5",
+      "name": "RATELIM/回退断言",
+      "deps": "G3-4,G2-1",
+      "designer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G4-5-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "RATELIM/回退断言"
+    },
+    {
+      "id": "G4-6",
+      "name": "SHADOW-003执行",
+      "deps": "G2-2,G2-4",
+      "designer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G4-6-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "SHADOW-003 终签闭合"
+    },
+    {
+      "id": "G4-7",
+      "name": "QUALITY评测执行",
+      "deps": "G4-2",
+      "designer": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "implementer": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "tester": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "done",
+      "nodes": [
+        {
+          "node_id": "G4-7-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "QUALITY评测"
+    },
+    {
+      "id": "G4-8",
+      "name": "E2E 83场景",
+      "deps": "",
+      "designer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-qwts3poc-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-tester-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "active",
+      "nodes": [
+        {
+          "node_id": "G4-8-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "新URI路由已通errcode9,待ts3dev接口设计"
+    },
+    {
+      "id": "G3-12",
+      "name": "commoditySearch新接口/album/personal/ts3poc/search",
+      "deps": "",
+      "designer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "implementer": {
+        "who": "zzc-ts3dev-2642",
+        "cli": "CODEX",
+        "llm": "qwen3.8-max-preview"
+      },
+      "tester": {
+        "who": "zzc-dev55-2642",
+        "cli": "CLAUDE",
+        "llm": "claude-opus-5"
+      },
+      "qa_owner": {
+        "who": "zzc-coordinator-2642",
+        "cli": "CLAUDE-DEEPSEEK",
+        "llm": "deepseek-v4-pro"
+      },
+      "status": "active",
+      "nodes": [
+        {
+          "node_id": "G3-12-n1",
+          "seq": 1,
+          "deps": []
+        }
+      ],
+      "notes": "研究2.0链路+设计3.0新接口,测试tge0h12x直连"
+    }
+  ],
+  "updated": "2026-08-04T09:49:18Z",
+  "total": 30
+}

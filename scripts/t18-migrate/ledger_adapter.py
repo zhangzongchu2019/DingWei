@@ -84,7 +84,13 @@ def main():
         print(__doc__, file=sys.stderr)
         sys.exit(2)
     raw = json.load(open(sys.argv[1]))
-    items = raw if isinstance(raw, list) else [raw]
+    # 支持三种输入:裸数组 / {tasks:[...]} 包装 / 单件 dict
+    if isinstance(raw, list):
+        items = raw
+    elif isinstance(raw, dict) and isinstance(raw.get("tasks"), list):
+        items = raw["tasks"]
+    else:
+        items = [raw]
     out = [convert(it) for it in items]
     print(json.dumps(out, ensure_ascii=False, indent=2))
     warn(f"转换 {len(out)} 件 → tasks.json(dry-run 核映射后喂 import.py --tasks)")
