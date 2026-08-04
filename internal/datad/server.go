@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,20 +29,31 @@ type Config struct {
 	Store  Store
 	Tokens map[string]Identity // token→身份;空=全 401
 	Logger *slog.Logger
+	KB     KBProvider // nil=kb 端点 501
 }
 
 type Server struct {
 	st     Store
-	tokens map[string]Identity
+	tokMu  sync.RWMutex
+	tokens map[string]Identity // P8:轮换=ReloadTokens 原子换表(双活窗=新旧同在文件)
+	kb     KBProvider
 	log    *slog.Logger
 	mux    *http.ServeMux
+}
+
+// ReloadTokens P8 token 轮换:原子换表;双活窗语义=轮换期文件同含新旧 token。
+func (s *Server) ReloadTokens(tokens map[string]Identity) {
+	s.tokMu.Lock()
+	s.tokens = tokens
+	s.tokMu.Unlock()
+	s.log.Info("token 注册表已热载", "count", len(tokens))
 }
 
 func New(cfg Config) *Server {
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
 	}
-	s := &Server{st: cfg.Store, tokens: cfg.Tokens, log: cfg.Logger, mux: http.NewServeMux()}
+	s := &Server{st: cfg.Store, tokens: cfg.Tokens, kb: cfg.KB, log: cfg.Logger, mux: http.NewServeMux()}
 	m := s.mux
 	m.HandleFunc("GET /v1/tasks", s.withAuth(s.handleListTasks))
 	m.HandleFunc("GET /v1/tasks/{id}", s.withAuth(s.handleGetTask))
@@ -57,6 +69,8 @@ func New(cfg Config) *Server {
 	m.HandleFunc("POST /v1/skills", s.withAuth(s.handleProposeSkill))
 	m.HandleFunc("POST /v1/skills/{name}/{version}/approve", s.withAuth(s.handleApproveSkill))
 	m.HandleFunc("GET /v1/audit", s.withAuth(s.handleListAudit))
+	m.HandleFunc("POST /v1/kb/query", s.withAuth(s.handleKBQuery))
+	m.HandleFunc("POST /v1/kb/ingest", s.withAuth(s.handleKBIngest))
 	m.HandleFunc("GET /healthz", s.handleHealthz)
 	return s
 }
@@ -70,7 +84,10 @@ type authedHandler func(w http.ResponseWriter, r *http.Request, id Identity)
 func (s *Server) withAuth(h authedHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tok := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		for t, id := range s.tokens {
+		s.tokMu.RLock()
+		tokens := s.tokens
+		s.tokMu.RUnlock()
+		for t, id := range tokens {
 			if subtle.ConstantTimeCompare([]byte(tok), []byte(t)) == 1 {
 				h(w, r, id)
 				return

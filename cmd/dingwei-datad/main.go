@@ -58,12 +58,37 @@ func run() error {
 		return fmt.Errorf("DATAD_PG_DSN required (or DATAD_STORE_MEM=1 for dev)")
 	}
 
+	if dir := os.Getenv("DATAD_KB_DIR"); dir != "" {
+		cfg.KB = &datad.FSGrepProvider{Dir: dir}
+		logger.Info("kb provider=fsgrep", "dir", dir)
+	}
+
 	addr := os.Getenv("DATAD_ADDR")
 	if addr == "" {
 		addr = "127.0.0.1:8796"
 	}
-	srv := &http.Server{Addr: addr, Handler: datad.New(cfg), ReadHeaderTimeout: 5 * time.Second}
+	h := datad.New(cfg)
+	srv := &http.Server{Addr: addr, Handler: h, ReadHeaderTimeout: 5 * time.Second}
 	logger.Info("dingwei-datad started", "addr", addr, "tokens", len(cfg.Tokens))
+
+	// P8 token 轮换:SIGHUP 重读 tokens 文件原子换表(双活窗=文件同含新旧)
+	hup := make(chan os.Signal, 1)
+	signal.Notify(hup, syscall.SIGHUP)
+	go func() {
+		for range hup {
+			raw, err := os.ReadFile(tokensFile)
+			if err != nil {
+				logger.Error("tokens 重读失败,保旧表(告警)", "error", err)
+				continue
+			}
+			var next map[string]datad.Identity
+			if err := json.Unmarshal(raw, &next); err != nil {
+				logger.Error("tokens 解析失败,保旧表(告警)", "error", err)
+				continue
+			}
+			h.ReloadTokens(next)
+		}
+	}()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
