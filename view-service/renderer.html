@@ -296,6 +296,12 @@
       white-space: nowrap;
       flex: 0 0 auto;
     }
+    .event-time {
+      color: var(--muted, #888);
+      font-size: 12px;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
     .event-diag {
       flex: 0 0 auto;
       color: var(--muted);
@@ -1047,6 +1053,7 @@
       meta.innerHTML = `
         <div class="event-type">${escapeHtml(eventTypeLabel(ev))}</div>
         <div class="event-sent">${escapeHtml(eventStatusLabel(ev))}</div>
+        ${eventTimeHtml(ev)}
         ${diag.length ? `<details class="event-diag"><summary title="诊断" aria-label="诊断"><span class="diag-icon" aria-hidden="true">i</span></summary><div class="event-diag-list">${diag.map(([k, v]) => `<code>${escapeHtml(k)} ${escapeHtml(v)}</code>`).join('')}</div></details>` : ''}
       `;
       const content = document.createElement('span');
@@ -1070,9 +1077,18 @@
       renderUnknown(ev);
     }
 
+    function eventTimeHtml(ev) {
+      // ts=UTC epoch 毫秒(helper 打戳);按查看者本地时区渲染,悬停给完整本地时间+UTC。
+      // 旧事件(ring 回放的无 ts 存量)不显示,不兜底猜时间。
+      if (!Number.isFinite(ev?.ts)) return '';
+      const d = new Date(ev.ts);
+      const full = `${d.toLocaleString()} (${d.toISOString()} UTC)`;
+      return `<span class="event-time" data-ts="${ev.ts}" title="${escapeHtml(full)}">${escapeHtml(d.toLocaleTimeString())}</span>`;
+    }
+
     function eventMetaHtml(ev) {
       const diag = eventDiagnostics(ev);
-      return `<span class="event-meta"><span class="event-type">${escapeHtml(eventTypeLabel(ev))}</span><span class="event-sent">${escapeHtml(eventStatusLabel(ev))}</span>${diag.length ? `<details class="event-diag"><summary title="诊断" aria-label="诊断"><span class="diag-icon" aria-hidden="true">i</span></summary><span class="event-diag-list">${diag.map(([k, v]) => `<code>${escapeHtml(k)} ${escapeHtml(v)}</code>`).join('')}</span></details>` : ''}</span>`;
+      return `<span class="event-meta"><span class="event-type">${escapeHtml(eventTypeLabel(ev))}</span><span class="event-sent">${escapeHtml(eventStatusLabel(ev))}</span>${eventTimeHtml(ev)}${diag.length ? `<details class="event-diag"><summary title="诊断" aria-label="诊断"><span class="diag-icon" aria-hidden="true">i</span></summary><span class="event-diag-list">${diag.map(([k, v]) => `<code>${escapeHtml(k)} ${escapeHtml(v)}</code>`).join('')}</span></details>` : ''}</span>`;
     }
 
     function renderTurnEvent(turnKey, ev) {

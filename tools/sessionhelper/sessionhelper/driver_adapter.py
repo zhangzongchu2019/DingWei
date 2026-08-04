@@ -328,10 +328,13 @@ class DriverAdapter:
             return None
 
     def _event_json(self, ev: SessionEvent) -> str:
+        # ts=UTC epoch 毫秒,渲染端按查看者本地时区显示(mcs-demo 同款先例);
+        # 打在事件体内(而非仅信封 TS),eventRing 回放才不丢。
         return json.dumps({
             "kind": ev.kind, "text": ev.text, "data": ev.data,
             "session_id": ev.session_id, "cursor": ev.cursor,
             "delivery_id": ev.delivery_id, "turn_id": ev.turn_id,
+            "ts": int(time.time() * 1000),
         }, ensure_ascii=False)
 
     def next_session_event(self, timeout: float = 0.5):
