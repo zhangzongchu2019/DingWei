@@ -152,8 +152,8 @@ type KBProvider interface {
 ## 8b. 部署基线(prodops 输入,08-04)
 
 - 部署位=**106.52.174.122**(与 hub 同机隔离;114.132.71.70 间歇不可达弃选);/data 持久卷;datad 同机低延迟;独立 systemd unit+端口。
-- 备份=pg_dump cron→/data/backup/+WAL 归档;**devo48 建议补一条(候 prodops 定)**:dump 定期拷贝异机(磁盘单点=dump 与主库同盘则盘亡全亡,WAL 归档同理)——异机目标 prodops 选。
-- 监控=pg_exporter 或 datad /healthz 透传 PG 探活;权限=pg_hba **仅 localhost**(datad 同机,无需开任何 IP;未来 datad 分机再开单 IP——比"localhost+VS API IP"更紧,合单入口铁律)。
+- 备份=pg_dump cron→/data/backup/+WAL 归档;**异机 dump 已定(prodops AGREE 08-04)**:定期拷贝至 43.135.178.132(或对象存储,prodops 择一落地);**D4c 前置件**:该机 scp key/SSH 凭证(授权归口 coordinator/张宗楚,prodops 申请)。
+- 监控=pg_exporter 或 datad /healthz 透传 PG 探活;权限=**pg_hba 仅 localhost(prodops AGREE 定案)**;未来 datad 分机再开单 IP。
 
 ## 9. 测试计划(P 组)
 
