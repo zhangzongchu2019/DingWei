@@ -56,12 +56,18 @@ type Config struct {
 	TestURL       string                   // 测试 Hub base URL(best-effort 路)
 	Channels      map[string]ChannelConfig // channel → 验签/解密(encrypt_key 旋转=热重载本表,shence 注)
 	WhitelistFile string
-	OutboundToken string // /outbound bearer
+	OutboundToken string // /outbound bearer(legacy 无 v 路;v:1 托管路用 Callers)
 	QueueSize     int    // 测试路队列,默认 1024
 	ForwardTO     time.Duration
 	TestTO        time.Duration
 	Logger        *slog.Logger
-	Sender        Sender // nil=出站禁用(healthz 报 degraded)
+	Sender        Sender // nil=出站禁用(healthz 报 degraded);Bots 空时的退化单发送器
+
+	// v2.3 托管出站(§C):caller token→身份/后缀策略;bot_channel→发送器;spool 路径。
+	Callers     map[string]CallerConfig // token→caller;空=托管路禁用(503)
+	Bots        map[string]Sender       // bot_channel→Sender;空=退化用 Sender
+	SpoolPath   string                  // 空=不开 spool(v:1 请求得 503)
+	MaxAttempts int                     // 终败入 DLQ 阈值,默认 8
 }
 
 // Metrics 计数器(/metrics 输出,设计 §3 可观测)。
@@ -71,6 +77,7 @@ type Metrics struct {
 	TestDroppedFull, WhitelistMiss    atomic.Int64
 	DecryptFailed, OutboundSent       atomic.Int64
 	OutboundAuthFailed                atomic.Int64
+	OutboundQueued, OutboundDLQ       atomic.Int64 // v2.3 托管路(§C)
 }
 
 type queuedEvent struct {
@@ -97,6 +104,7 @@ type Server struct {
 	prodOK   atomic.Bool         // startup/周期探测生产 Hub 可达(prodops 注②)
 	testOK   atomic.Bool
 	mux      *http.ServeMux
+	spool    *Spool // v2.3 托管 spool(§D);nil=托管路 503
 }
 
 func New(cfg Config) *Server {
@@ -121,9 +129,19 @@ func New(cfg Config) *Server {
 		seen:     make(map[string]struct{}),
 	}
 	s.reloadWhitelist()
+	if cfg.SpoolPath != "" {
+		sp, err := OpenSpool(cfg.SpoolPath)
+		if err != nil {
+			// fail-closed(§B):spool 起不来=托管路 503,不静默降级为立发
+			cfg.Logger.Error("spool打开失败,托管路禁用", "path", cfg.SpoolPath, "error", err)
+		} else {
+			s.spool = sp
+		}
+	}
 	s.mux = http.NewServeMux()
 	s.mux.HandleFunc("POST /webhook/{channel}", s.handleInbound)
 	s.mux.HandleFunc("POST /outbound", s.handleOutbound)
+	s.mux.HandleFunc("GET /outbound/{id}", s.handleOutboundStatus)
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /metrics", s.handleMetrics)
 	return s
@@ -137,6 +155,7 @@ func (s *Server) Start(ctx context.Context) {
 	s.probe() // 同步先探一轮,healthz 起点即真值
 	go s.testWorker(ctx)
 	go s.periodic(ctx)
+	go s.custodyWorker(ctx) // v2.3 托管发送循环(spool nil 时自退出)
 }
 
 // ---- 入站(需求①③) ----
@@ -288,6 +307,20 @@ func (s *Server) testWorker(ctx context.Context) {
 // ---- 出站(需求②,prodops 注①审计) ----
 
 func (s *Server) handleOutbound(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		http.Error(w, "read", http.StatusBadRequest)
+		return
+	}
+	// v 判别(与 K1 条件严格同哲学):含 "v" 字段=v2.3 托管契约;无=legacy 立发路。
+	var probe struct {
+		V *int `json:"v"`
+	}
+	if json.Unmarshal(body, &probe) == nil && probe.V != nil {
+		s.handleOutboundCustody(w, r, body)
+		return
+	}
+	r.Body = io.NopCloser(strings.NewReader(string(body)))
 	if tok := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "); s.cfg.OutboundToken == "" ||
 		subtle.ConstantTimeCompare([]byte(tok), []byte(s.cfg.OutboundToken)) != 1 {
 		s.metrics.OutboundAuthFailed.Add(1)
@@ -356,6 +389,7 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 		"test_failed": m.TestFailed.Load(), "test_dropped_queue_full": m.TestDroppedFull.Load(),
 		"whitelist_miss": m.WhitelistMiss.Load(), "decrypt_failed": m.DecryptFailed.Load(),
 		"outbound_sent": m.OutboundSent.Load(), "outbound_auth_failed": m.OutboundAuthFailed.Load(),
+		"outbound_queued": m.OutboundQueued.Load(), "outbound_dlq": m.OutboundDLQ.Load(),
 	})
 }
 
