@@ -39,9 +39,12 @@ type custodyRequest struct {
 	Raw        json.RawMessage `json:"raw"`
 }
 
-// callerByToken 常数时间比对 caller token;"" = 未命中。
+// callerByToken 常数时间比对 caller token;"" = 未命中。(热载表 §E)
 func (s *Server) callerByToken(tok string) (string, CallerConfig, bool) {
-	for t, c := range s.cfg.Callers {
+	s.mu.RLock()
+	callers := s.dynCallers
+	s.mu.RUnlock()
+	for t, c := range callers {
 		if subtle.ConstantTimeCompare([]byte(tok), []byte(t)) == 1 {
 			return c.Name, c, true
 		}
@@ -50,12 +53,15 @@ func (s *Server) callerByToken(tok string) (string, CallerConfig, bool) {
 }
 
 // senderFor 多 bot 出站选路(§C 指定来源第一维):Bots 注册表按 bot_channel 选;
-// 空表=退化单 Sender(v1 兼容)。
+// 空表=退化单 Sender(v1 兼容)。(热载表 §E)
 func (s *Server) senderFor(botChannel string) (Sender, bool) {
-	if len(s.cfg.Bots) == 0 {
+	s.mu.RLock()
+	bots := s.dynBots
+	s.mu.RUnlock()
+	if len(bots) == 0 {
 		return s.cfg.Sender, s.cfg.Sender != nil
 	}
-	sd, ok := s.cfg.Bots[botChannel]
+	sd, ok := bots[botChannel]
 	return sd, ok
 }
 

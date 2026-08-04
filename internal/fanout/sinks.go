@@ -95,8 +95,11 @@ func (s *Server) onWSInbound(ctx context.Context, m model.Message) error {
 	if err != nil {
 		return err
 	}
+	s.mu.RLock()
+	sinks := s.dynSinks
+	s.mu.RUnlock()
 	var targets []SinkTarget
-	for _, sk := range s.cfg.Sinks {
+	for _, sk := range sinks {
 		if sk.Filter == "whitelist" && !s.matchWhitelist(m) {
 			s.metrics.WhitelistMiss.Add(1)
 			continue
@@ -115,32 +118,19 @@ func (s *Server) onWSInbound(ctx context.Context, m model.Message) error {
 	return nil
 }
 
-// StartAccesses 起 ws 接入实例(阻塞式 Receiver,各自 goroutine;SDK 自动重连)。
+// StartAccesses 起 ws 接入实例:ConfigPath 有=文件真源(load+validate+apply);
+// 无=注入 Config(测试/最小部署),经同一 reconcile 生命周期(§E)。
 func (s *Server) StartAccesses(ctx context.Context) error {
-	factory := s.cfg.ReceiverFactory
-	if factory == nil {
-		factory = defaultReceiverFactory
+	if s.cfg.ConfigPath != "" {
+		return s.ReloadFromFile(ctx)
 	}
-	for _, a := range s.cfg.Accesses {
-		if a.Mode != "ws" {
-			continue // https=v1 回调路(handleInbound)
-		}
-		recv, err := factory(a.BotChannel, a.AppID, a.AppSecret)
-		if err != nil {
-			return fmt.Errorf("access %s: %w", a.BotChannel, err)
-		}
-		go func(bot string, r feishu.Receiver) {
-			if err := r.Start(ctx, s.onWSInbound); err != nil && ctx.Err() == nil {
-				s.log.Error("ws接入退出(告警)", "bot_channel", bot, "error", err)
-			}
-		}(a.BotChannel, recv)
-		s.log.Info("ws接入已起", "bot_channel", a.BotChannel)
-	}
-	return nil
+	return s.reconcileAccesses(ctx, s.cfg.Accesses)
 }
 
 func (s *Server) sinkByName(name string) (SinkConfig, bool) {
-	for _, sk := range s.cfg.Sinks {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, sk := range s.dynSinks {
 		if sk.Name == name {
 			return sk, true
 		}
@@ -150,7 +140,7 @@ func (s *Server) sinkByName(name string) (SinkConfig, bool) {
 
 // sinkWorker 投递循环:独立游标取 (消息,sink) 对→POST K1→delivered|退避|终态。
 func (s *Server) sinkWorker(ctx context.Context) {
-	if s.spool == nil || len(s.cfg.Sinks) == 0 {
+	if s.spool == nil {
 		return
 	}
 	tick := time.NewTicker(200 * time.Millisecond)

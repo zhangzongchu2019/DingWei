@@ -31,6 +31,9 @@ type OutMessage struct {
 	ToName       string // 群名 / 姓名（全局唯一可免 type）
 	ToType       string // personal|group（按名发送时消歧用）
 	Text         string
+	// RequestID T17 v2.3 §C1 托管幂等键(UUIDv5,DeriveRequestID 派生,调用点填充)。
+	// 仅 transport=proxy 托管路使用;空=ProxyGateway 走 legacy 立发,直连路忽略。
+	RequestID string `json:"request_id,omitempty"`
 }
 
 // Gateway 飞书发送与解析抽象。

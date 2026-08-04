@@ -74,6 +74,15 @@ type Config struct {
 	Sinks                 []SinkConfig
 	ReceiverFactory       ReceiverFactory
 	BesteffortMaxAttempts int // besteffort 有界重试,默认 5,到界=dropped
+
+	// v2.3 配置热载+管理面(§E/§F)。
+	ConfigPath       string                   // fanout.yaml;空=纯 Config 注入(测试)
+	AdminTokens      map[string]AdminIdentity // 空=admin 端点全 401
+	AdminAllowRemote bool                     // false=仅 loopback(§F 默认)
+	SkipPreArm       bool                     // 测试用;生产恒 false
+	DiskMinFreePct   float64                  // pre-arm④,默认 10
+	ReplayWatermark  int                      // DLQ replay 水位门,默认 1000
+	SenderFactory    SenderFactory            // outbound_bots→Sender;默认真 LarkGateway
 }
 
 // Metrics 计数器(/metrics 输出,设计 §3 可观测)。
@@ -113,6 +122,15 @@ type Server struct {
 	testOK atomic.Bool
 	mux    *http.ServeMux
 	spool  *Spool // v2.3 托管 spool(§D);nil=托管路 503
+
+	// v2.3 热载动态表(§E:s.mu 保护,原子表交换):
+	dynSinks   []SinkConfig
+	dynCallers map[string]CallerConfig
+	dynBots    map[string]Sender
+	fileCfg    *FileConfig
+
+	accessMu     sync.Mutex
+	accessCancel map[string]context.CancelFunc // bot_channel→ws 接入停止
 }
 
 func New(cfg Config) *Server {
@@ -129,12 +147,16 @@ func New(cfg Config) *Server {
 		cfg.Logger = slog.Default()
 	}
 	s := &Server{
-		cfg:      cfg,
-		log:      cfg.Logger,
-		client:   &http.Client{},
-		channels: cfg.Channels,
-		queue:    make(chan queuedEvent, cfg.QueueSize),
-		seen:     make(map[string]struct{}),
+		cfg:          cfg,
+		log:          cfg.Logger,
+		client:       &http.Client{},
+		channels:     cfg.Channels,
+		queue:        make(chan queuedEvent, cfg.QueueSize),
+		seen:         make(map[string]struct{}),
+		dynSinks:     cfg.Sinks,
+		dynCallers:   cfg.Callers,
+		dynBots:      cfg.Bots,
+		accessCancel: map[string]context.CancelFunc{},
 	}
 	s.reloadWhitelist()
 	if cfg.SpoolPath != "" {
@@ -153,8 +175,14 @@ func New(cfg Config) *Server {
 	s.mux.HandleFunc("POST /webhook/{channel}", s.handleInbound)
 	s.mux.HandleFunc("POST /outbound", s.handleOutbound)
 	s.mux.HandleFunc("GET /outbound/{id}", s.handleOutboundStatus)
+	s.mux.HandleFunc("POST /resolve", s.handleResolve)
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /metrics", s.handleMetrics)
+	s.mux.HandleFunc("GET /admin/config", s.handleAdminConfigGet)
+	s.mux.HandleFunc("PUT /admin/config", s.handleAdminConfigPut)
+	s.mux.HandleFunc("POST /admin/reload", s.handleAdminReload)
+	s.mux.HandleFunc("POST /admin/dlq/replay", s.handleAdminDLQReplay)
+	s.mux.HandleFunc("POST /admin/dlq/waive", s.handleAdminDLQWaive)
 	return s
 }
 

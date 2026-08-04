@@ -27,6 +27,11 @@ func NewProxyGateway(url, token string) *ProxyGateway {
 }
 
 func (g *ProxyGateway) Send(ctx context.Context, out OutMessage) (string, error) {
+	// T17 v2.3 §C/§K2:带 RequestID=v:1 托管契约(202=代理接管,返回 outbound_id
+	// 作托管凭证记账);无 RequestID=legacy 立发(升级过渡兼容)。
+	if out.RequestID != "" {
+		return g.sendCustody(ctx, out)
+	}
 	payload, err := json.Marshal(out)
 	if err != nil {
 		return "", err
@@ -64,6 +69,66 @@ func (g *ProxyGateway) ResolveUserName(ctx context.Context, botChannelID, openID
 	return openID, nil
 }
 
+// ResolveNameToID T17 v2.3 §G/§K4:经代理 /resolve 透传(代理持凭据调 Lark 通讯录)。
+// Hub 加性改动①:transport=proxy 下"按名发信"路径由此闭合。
 func (g *ProxyGateway) ResolveNameToID(ctx context.Context, botChannelID, name, chatType string) (string, error) {
-	return "", ErrNotImplemented
+	payload, _ := json.Marshal(map[string]any{
+		"v": 1, "bot_channel": botChannelID, "name": name, "chat_type": chatType,
+	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		strings.TrimSuffix(g.url, "/outbound")+"/resolve", bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+g.token)
+	resp, err := g.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode == http.StatusNotFound {
+		return "", fmt.Errorf("feishu name %q not found via proxy", name)
+	}
+	if resp.StatusCode >= 300 {
+		return "", fmt.Errorf("proxy resolve status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+	var out struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(body, &out); err != nil {
+		return "", err
+	}
+	return out.ID, nil
+}
+
+// sendCustody §K2 v:1 托管:202/200 均成功,返回 outbound_id(托管凭证,记账用)。
+func (g *ProxyGateway) sendCustody(ctx context.Context, out OutMessage) (string, error) {
+	payload, _ := json.Marshal(map[string]any{
+		"v": 1, "request_id": out.RequestID, "bot_channel": out.BotChannelID,
+		"to_id": out.ToID, "to_name": out.ToName, "to_type": out.ToType, "text": out.Text,
+	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.url, bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+g.token)
+	resp, err := g.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("fanout custody status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+	var out2 struct {
+		OutboundID string `json:"outbound_id"`
+	}
+	if err := json.Unmarshal(body, &out2); err != nil {
+		return "", err
+	}
+	return out2.OutboundID, nil
 }

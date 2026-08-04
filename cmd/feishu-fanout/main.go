@@ -72,6 +72,15 @@ func run() error {
 		logger.Warn("outbound disabled (FANOUT_LARK_APP_ID/SECRET unset)")
 	}
 
+	// v2.3(§E/§F):声明式配置文件+spool+管理面。全部可选=v1 纯 env 部署零回归。
+	cfg.ConfigPath = os.Getenv("FANOUT_CONFIG_FILE") // fanout.yaml,文件=唯一真源
+	cfg.SpoolPath = os.Getenv("FANOUT_SPOOL_PATH")
+	if raw := os.Getenv("FANOUT_ADMIN_TOKENS"); raw != "" { // {"<token>":{"id":"ops-a","role":"admin"}}
+		if err := json.Unmarshal([]byte(raw), &cfg.AdminTokens); err != nil {
+			return fmt.Errorf("FANOUT_ADMIN_TOKENS bad json: %w", err)
+		}
+	}
+
 	srv := fanout.New(cfg)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -81,8 +90,12 @@ func run() error {
 	signal.Notify(hup, syscall.SIGHUP)
 	go func() {
 		for range hup {
-			srv.Reload()
-			logger.Info("SIGHUP: whitelist reloaded")
+			// §E:SIGHUP 与 admin PUT 同一校验管道;失败=保旧配置跑
+			if err := srv.ReloadFromFile(ctx); err != nil {
+				logger.Error("SIGHUP reload rejected (keeping old config)", "error", err)
+			} else {
+				logger.Info("SIGHUP: config+whitelist reloaded")
+			}
 		}
 	}()
 
