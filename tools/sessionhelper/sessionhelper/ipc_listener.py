@@ -21,7 +21,8 @@ from typing import Any, Callable, Awaitable
 
 # ── message type ──────────────────────────────────────────────────────
 
-IPC_SEND = "mcp_send"           # request: {type, to, body? , file? , request_id}
+IPC_SEND = "mcp_send"           # request: {type, to, body?, file?, request_id}
+IPC_VSAPI = "vsapi_v1"         # request: {type, method, path, body?, request_id}
 
 
 # ── helpers ───────────────────────────────────────────────────────────
@@ -55,24 +56,30 @@ async def _write_one(writer: asyncio.StreamWriter, payload: dict[str, Any]) -> N
 # ── IPC server ─────────────────────────────────────────────────────────
 
 _SendHandler = Callable[[str, str], Awaitable[dict[str, Any]]]
+_VsapiHandler = Callable[[str, str, dict[str, Any] | None], Awaitable[dict[str, Any]]]
 
 
 async def _handle_connection(
     reader: asyncio.StreamReader,
     writer: asyncio.StreamWriter,
     send_handler: _SendHandler,
+    vsapi_handler: _VsapiHandler | None = None,
     *,
     allowed_socket_dir: str | None = None,
 ) -> None:
-    """Serve a single Unix-socket connection: read one send request, dispatch, ack."""
+    """Serve a single Unix-socket connection: read one request, dispatch by type, ack."""
     try:
         msg = await _read_one(reader)
     except _IPCError as exc:
         await _write_one(writer, {"ok": False, "error": str(exc)})
         return
 
-    if msg.get("type") != IPC_SEND:
-        await _write_one(writer, {"ok": False, "error": f"unknown type {msg.get('type')!r}"})
+    msg_type = msg.get("type", "")
+
+    if msg_type == IPC_VSAPI:
+        return await _handle_vsapi(writer, msg, vsapi_handler)
+    if msg_type != IPC_SEND:
+        await _write_one(writer, {"ok": False, "error": f"unknown type {msg_type!r}"})
         return
 
     to = (msg.get("to") or "").strip()
@@ -114,23 +121,51 @@ async def _handle_connection(
     await _write_one(writer, {"ok": True, "outcome": outcome, "request_id": request_id})
 
 
+async def _handle_vsapi(
+    writer: asyncio.StreamWriter,
+    msg: dict[str, Any],
+    vsapi_handler: _VsapiHandler,
+) -> None:
+    """Dispatch a vsapi_v1 request to datad via the helper pipe."""
+    method = (msg.get("method") or "GET").strip().upper()
+    path = (msg.get("path") or "").strip()
+    body = msg.get("body")
+    request_id = msg.get("request_id", "")
+    if method not in ("GET", "POST", "PUT", "PATCH", "DELETE"):
+        await _write_one(writer, {"ok": False, "error": f"unsupported method {method}"})
+        return
+    if not path.startswith("/"):
+        await _write_one(writer, {"ok": False, "error": "path must start with /"})
+        return
+    try:
+        result = await vsapi_handler(method, path, body)
+    except Exception as exc:
+        await _write_one(writer, {"ok": False, "error": f"vsapi call failed: {exc}"})
+        return
+    await _write_one(writer, {"ok": True, "result": result, "request_id": request_id})
+
+
 async def serve_ipc(
     socket_path: str,
     send_handler: _SendHandler,
+    vsapi_handler: _VsapiHandler | None = None,
     *,
     allowed_socket_dir: str | None = None,
 ) -> None:
     """Start a Unix-domain socket server.
 
-    *socket_path*   – filesystem path for the listening socket.
-    *send_handler*  – async callable ``(to: str, body: str) -> dict`` that
-                      actually sends the message via the authenticated WSS.
+    *socket_path*    – filesystem path for the listening socket.
+    *send_handler*   – async callable ``(to: str, body: str) -> dict`` that
+                       actually sends the message via the authenticated WSS.
+    *vsapi_handler*  – async callable ``(method, path, body?) -> dict`` that
+                       forwards a vsapi_v1 request to datad with auth token.
     """
     if os.path.exists(socket_path):
         os.unlink(socket_path)
 
     server = await asyncio.start_unix_server(
-        lambda r, w: _handle_connection(r, w, send_handler, allowed_socket_dir=allowed_socket_dir),
+        lambda r, w: _handle_connection(r, w, send_handler, vsapi_handler,
+                                        allowed_socket_dir=allowed_socket_dir),
         path=socket_path,
     )
     addr = server.sockets[0].getsockname() if server.sockets else socket_path

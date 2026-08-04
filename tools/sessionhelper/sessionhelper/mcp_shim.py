@@ -99,7 +99,39 @@ def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
     return response.get("outcome", response)
 
 
-# ── MCP tool: send_message ───────────────────────────────────────────
+# ── IPC vsapi_v1 (T18: generic datad pipe) ────────────────────────────
+
+def _ipc_vsapi(method: str, path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "type": "vsapi_v1",
+        "request_id": _uuid.uuid4().hex[:12],
+        "method": method,
+        "path": path,
+    }
+    if body is not None:
+        payload["body"] = body
+    sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+    sock.settimeout(_IPC_TIMEOUT)
+    try:
+        sock.connect(_IPC_SOCK)
+        sock.sendall(json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n")
+        chunks: list[bytes] = []
+        while True:
+            chunk = sock.recv(4096)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            if b"\n" in chunk:
+                break
+        response = json.loads(b"".join(chunks).decode("utf-8"))
+    finally:
+        sock.close()
+    if not response.get("ok"):
+        raise RuntimeError(response.get("error", "vsapi call failed"))
+    return response.get("result", response)
+
+
+# ── MCP tools: send_message + T18 ─────────────────────────────────────
 
 _SEND_TOOL_SCHEMA = {
     "type": "object",
@@ -184,6 +216,57 @@ def _send_message(args: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"cannot read file: {exc}") from exc
 
     return _ipc_send(payload)
+
+
+# ── T18 MCP tool: heartbeat_report ────────────────────────────────────
+
+@register("heartbeat_report", "向 datad 自报心跳(状态+任务+卡点)", {
+    "type": "object",
+    "properties": {
+        "status": {"type": "string", "enum": ["active", "busy", "blocked", "idle"]},
+        "task": {"type": "string", "description": "当前任务简述"},
+        "eta": {"type": "string", "description": "预计完成时间(可选)"},
+        "blocker": {"type": "string", "description": "卡点说明(可选)"},
+    },
+    "required": ["status"],
+})
+def _heartbeat_report(args: dict[str, Any]) -> dict[str, Any]:
+    status = (args.get("status") or "").strip()
+    if status not in ("active", "busy", "blocked", "idle"):
+        raise ValueError("status must be active/busy/blocked/idle")
+    body: dict[str, Any] = {"status": status}
+    for field in ("task", "eta", "blocker"):
+        val = (args.get(field) or "").strip()
+        if val:
+            body[field] = val
+    return _ipc_vsapi("POST", "/v1/sessions/me/heartbeat", body)
+
+
+# ── T18 MCP tool: project_context ─────────────────────────────────────
+
+@register("project_context", "拉取项目上下文(任务/名册/配置)", {
+    "type": "object",
+    "properties": {
+        "scope": {"type": "string", "enum": ["tasks", "sessions", "config", "all"]},
+    },
+    "required": ["scope"],
+})
+def _project_context(args: dict[str, Any]) -> dict[str, Any]:
+    scope = (args.get("scope") or "").strip()
+    if scope not in ("tasks", "sessions", "config", "all"):
+        raise ValueError("scope must be tasks/sessions/config/all")
+    paths: list[str] = []
+    if scope in ("tasks", "all"):
+        paths.append("/v1/tasks?owner=me")
+    if scope in ("sessions", "all"):
+        paths.append("/v1/sessions")
+    if scope in ("config", "all"):
+        paths.append("/v1/config")
+    results: dict[str, Any] = {}
+    for path in paths:
+        key = path.split("?")[0].split("/")[-1]
+        results[key] = _ipc_vsapi("GET", path)
+    return results
 
 
 # ── JSON‑RPC message dispatch ────────────────────────────────────────

@@ -232,6 +232,34 @@ class SessionHelper:
 
         return _send
 
+    def _make_vsapi_handler(self):
+        """Return an async ``(method, path, body?) -> dict`` that forwards
+        a vsapi_v1 request to datad with the session token appended.
+        Helper = pure pipe, no RBAC, no path rewriting (design §7b)."""
+        import aiohttp
+
+        token = self.cfg.key_id  # SH_KEY_ID = the session's authenticated identity
+        datad_url = self.cfg.datad_url.rstrip("/")
+
+        async def _vsapi(method: str, path: str, body: dict | None = None) -> dict:
+            url = f"{datad_url}{path}"
+            async with aiohttp.ClientSession() as session:
+                async with session.request(
+                    method, url,
+                    json=body,
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=aiohttp.ClientTimeout(total=10),
+                ) as resp:
+                    data = await resp.json()
+                    if resp.status >= 400:
+                        raise RuntimeError(
+                            f"datad {method} {path}: {resp.status} "
+                            f"{data.get('error', '')}"
+                        )
+                    return data
+
+        return _vsapi
+
     async def _run_once(self) -> None:
         import websockets, time
 
@@ -294,8 +322,10 @@ class SessionHelper:
                 if self.cfg.mcp_ipc_sock:
                     from .ipc_listener import serve_ipc
 
+                    vsapi_handler = self._make_vsapi_handler() if self.cfg.datad_url else None
                     ipc_task = asyncio.create_task(
                         serve_ipc(self.cfg.mcp_ipc_sock, self._make_send_handler(ws),
+                                  vsapi_handler=vsapi_handler,
                                   allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock)))
 
                 try:
