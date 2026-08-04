@@ -21,8 +21,19 @@ from typing import Any, Callable, Awaitable
 
 # ── message type ──────────────────────────────────────────────────────
 
-IPC_SEND = "mcp_send"           # request: {type, to, body?, file?, request_id}
+IPC_SEND = "mcp_send"           # request: {type, to, body? , file? , request_id,
+                                #           reply_to?, in_reply_to?, reply_policy?, kind?}
 IPC_VSAPI = "vsapi_v1"         # request: {type, method, path, body?, request_id}
+
+# reply-origin 契约(shence 08-03 定):shim IPC payload 顶层四个 optional key,
+# 与 to/body 并列、无嵌套;存在才取,原样塞进出站 envelope.meta 同名 key。
+REPLY_ORIGIN_KEYS = ("reply_to", "in_reply_to", "reply_policy", "kind")
+
+
+def extract_reply_origin_meta(msg: dict[str, Any]) -> dict[str, Any]:
+    """Pick the four optional top-level reply-origin keys out of an IPC
+    request.  Present-and-non-null values only; nothing else is copied."""
+    return {k: msg[k] for k in REPLY_ORIGIN_KEYS if msg.get(k) is not None}
 
 
 # ── helpers ───────────────────────────────────────────────────────────
@@ -55,7 +66,7 @@ async def _write_one(writer: asyncio.StreamWriter, payload: dict[str, Any]) -> N
 
 # ── IPC server ─────────────────────────────────────────────────────────
 
-_SendHandler = Callable[[str, str], Awaitable[dict[str, Any]]]
+_SendHandler = Callable[[str, str, dict[str, Any]], Awaitable[dict[str, Any]]]
 _VsapiHandler = Callable[[str, str, dict[str, Any] | None], Awaitable[dict[str, Any]]]
 
 
@@ -86,6 +97,7 @@ async def _handle_connection(
     body = (msg.get("body") or "").strip()
     file_path = (msg.get("file") or "").strip()
     request_id = msg.get("request_id", "")
+    meta = extract_reply_origin_meta(msg)
 
     if not to:
         await _write_one(writer, {"ok": False, "error": "to is required"})
@@ -113,7 +125,7 @@ async def _handle_connection(
             return
 
     try:
-        outcome = await send_handler(to, body)
+        outcome = await send_handler(to, body, meta)
     except Exception as exc:
         await _write_one(writer, {"ok": False, "error": f"send failed: {exc}"})
         return
@@ -155,8 +167,10 @@ async def serve_ipc(
     """Start a Unix-domain socket server.
 
     *socket_path*    – filesystem path for the listening socket.
-    *send_handler*   – async callable ``(to: str, body: str) -> dict`` that
-                       actually sends the message via the authenticated WSS.
+    *send_handler*   – async callable ``(to: str, body: str, meta: dict) -> dict``
+                       that actually sends the message via the authenticated WSS;
+                       *meta* carries the optional reply-origin fields
+                       (reply_to / in_reply_to / reply_policy / kind).
     *vsapi_handler*  – async callable ``(method, path, body?) -> dict`` that
                        forwards a vsapi_v1 request to datad with auth token.
     """

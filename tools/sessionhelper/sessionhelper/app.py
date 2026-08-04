@@ -17,6 +17,7 @@ from .config import Config, load_config
 from .llm import LLMProvider
 from .inbox import DeliveryInbox
 from .protocol import AddressBook, envelope, is_feishu_addr, is_mirror_control, reply_target, session_addr
+from .reply_origin import classify_reply_decision, reply_carryforward_meta
 from .provision import Provisioner, is_provision_envelope
 
 
@@ -219,13 +220,15 @@ class SessionHelper:
         except Exception as exc:
             print(f"[sessionHelper][debug] TCP 连接失败: {exc}", flush=True)
 
-    async def _make_send_handler(self, ws):
-        """Return an async ``(to, body) -> dict`` that sends through the
+    def _make_send_handler(self, ws):
+        """Return an async ``(to, body, meta) -> dict`` that sends through the
         already-authenticated WSS — reusing the same connection, no new
-        auth, no separate web-socket handshake."""
+        auth, no separate web-socket handshake.  *meta* carries the optional
+        reply-origin fields (reply_to/in_reply_to/reply_policy/kind) from the
+        shim IPC payload into the outbound envelope.meta verbatim."""
 
-        async def _send(to: str, body: str) -> dict:
-            env = envelope(to, body, self.book.self_addr)
+        async def _send(to: str, body: str, meta: dict | None = None) -> dict:
+            env = envelope(to, body, self.book.self_addr, meta or None)
             await ws.send(json.dumps(env, ensure_ascii=False))
             print(f"[ipc_send] to={to} bytes={len(body)}", flush=True)
             return {"sent": True, "to": to}
@@ -476,9 +479,20 @@ class SessionHelper:
             if raise_adapter_errors:
                 raise
             reply_body = f"处理失败：{exc}"
-        if not reply_body or not is_feishu_addr(from_addr):
+        if not reply_body:
             return
+        carry: dict = {}
+        if not is_feishu_addr(from_addr):
+            # session-to-session reply-to-origin:过 reply-origin 双闸(§10 helper 第二道)。
+            # Feishu 源保持原行为(始终回,人不构成 A↔B 环)。
+            decision = classify_reply_decision(env)
+            if not decision.allow:
+                print(f"[reply-origin] suppress reply from={from_addr}: {decision.reason}", flush=True)
+                return
+            carry = reply_carryforward_meta(env)
         to, meta = reply_target(env, self.book)
+        if carry:
+            meta.update(carry)
         body = self.reply_body(env, reply_body)
         await ws.send(json.dumps(envelope(to, body, self.book.self_addr, meta), ensure_ascii=False))
         print(f"[reply] to={to} meta={meta}", flush=True)
