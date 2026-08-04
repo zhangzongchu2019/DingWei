@@ -29,7 +29,7 @@
 
 - `sinks[]`,每项=`{hub_url, role: authoritative|besteffort, filter: all|whitelist, suffix: none|测试环境, token}`。
 - **提交语义冻结(B3)**:默认=**ALL authoritative 必须最终成功**(非 quorum;若未来需 quorum 须显式配置项+再审)。入站事件"已接管"判定=**仅看 WAL 提交**,不依赖任何 sink 即时结果。
-- **消息全局终态(C2 修订,消除"ALL 成功"与"sink DLQ"矛盾)**:主记录状态机=`accepted→pending→delivered | blocked_dlq`。`delivered` **仅当全部 authoritative sink 均 delivered**;任一 authoritative sink 入 DLQ→主记录=`blocked_dlq`=**高优告警+healthz 报 degraded**,绝不被计为接管完成;主 WAL 记录与其余 sink 状态证据在 blocked 期间**禁止 GC**,仅当 DLQ replay 成功(→delivered)或**带审计的人工 waive**(记录 token_id/理由)才闭。besteffort 不参与主记录终态。WAL GC 规则:仅 delivered 且超保留期(默认 7d)的记录可回收。
+- **消息全局终态(C2 修订;T2 终修=waive 有合法终态)**:sink 状态增 `audited_waived`(仅 admin 角色经管理 API `POST /admin/dlq/waive` 置入,审计记录 token_id+理由,未授权=403);主记录状态机=`accepted→pending→delivered | delivered_with_waiver | blocked_dlq`。`delivered`=全部 authoritative sink 均 delivered;`delivered_with_waiver`=全部 authoritative ∈{delivered, audited_waived} 且 ≥1 为 audited_waived(合法全局终态:GC 同 delivered 规则、healthz 由 degraded 恢复 ok、`waived_total` metrics 计数、waive 审计记录**不随 WAL GC**,保留≥90d);`blocked_dlq`=存在 authoritative sink 处于 dlq 且未 waive=高优告警+degraded+禁 GC。闭合路径二选一:DLQ replay 成功(该 sink→delivered)或 waive(该 sink→audited_waived);besteffort 不参与主终态。G10 补:waive 转移(blocked→delivered_with_waiver)+未授权 waive=403 负例。
 - **WAL 数据模型(B3)**:每消息一主记录+**每 sink 一状态行** `{sink_id, status: queued|sending|delivered|dlq, attempts, next_retry_at, last_error, terminal_at}`。各 sink 独立游标独立退避=**毒件不 head-of-line**:某消息对某 sink 连败→仅该(消息,sink)对入 sink 级 DLQ,同 sink 后续消息照走,其他 sink 不受扰。
 - besteffort 语义:同样落 WAL(崩溃可恢复),但有界=`{max_attempts, ttl}` 到界即弃(丢弃计数入 metrics),永不入告警级 DLQ,永不阻塞 authoritative。
 - **存储故障处置(B3)**:磁盘满/写失败=**fail-closed 停收**——ws 接入主动断连(分流语义下事件自动回生产直连路=天然优雅降级,阶段 1);阶段 2(独占)下=拒收出站(503)+入站停 ack+最高级告警。SQLite busy=有界重试+背压;corrupt=启动校验失败即拒起+告警,不带病跑。DLQ 重放=管理 API 显式触发+水位门(重放不得把 spool 推过高水位)。
@@ -38,7 +38,7 @@
 ## C. 出站(托管 ACK+指定来源)【B1 修订】
 
 托管契约(逐跳托管,与 A 泳道 ACK 链同构):
-1. **幂等键冻结(B1,C1 修订=稳定来源)**:`request_id` **必须源自 Hub 持久业务记录、在首次 HTTP 尝试前确定**,禁止在 Send 调用层临时生成(临时生成在 Send 超时后上层重调/进程重启时会换新键=幂等失效,dev56 C1)。冻结派生规则:**request_id=确定性派生自驱动本次发送的持久记录**——回复类=`sha256(触发消息ID+send_slot)`、计划类=`sha256(schedule项ID+occurrence)`;同一业务发送在 HTTP 内部重试/worker 重试/进程重启后派生值恒同。承载=OutMessage 新增显式 `RequestID` 字段,各调用点(schedule_worker 等)按派生规则填充(此为 Hub 加性改动之一,见 §G)。**代理侧:缺 request_id=400 拒收,禁止替调用方生成**。代理以 `(caller_id, request_id)` 唯一约束+`body_sha256`:hash 同→返回同一 outbound_id(200 幂等重放);hash 异→409。
+1. **幂等键冻结(B1,C1 修订=稳定来源)**:`request_id` **必须源自 Hub 持久业务记录、在首次 HTTP 尝试前确定**,禁止在 Send 调用层临时生成(临时生成在 Send 超时后上层重调/进程重启时会换新键=幂等失效,dev56 C1)。冻结派生规则(T1 终修=全篇统一 UUIDv5,兼容 §K2 uuid schema 且确定性):**request_id=UUIDv5(NS_T17OB, name)**,`NS_T17OB=3f2504e0-4f89-41d3-9a0c-0305e82c3301`(固定常量);`name` 为**长度前缀 canonical tuple**(消除拼接歧义):`"t17ob.v1" 0x1F kind 0x1F <len₁₀>:<comp1> 0x1F <len₁₀>:<comp2>`,kind∈{reply,schedule},reply=(触发消息ID, send_slot₁₀),schedule=(schedule项ID, occurrence₁₀),len=组件字节数十进制。同一业务发送在 HTTP 内部重试/worker 重试/进程重启后派生值恒同;schema 正则=UUID v5 格式(§K2 同步)。承载=OutMessage 新增显式 `RequestID` 字段,各调用点(schedule_worker 等)按派生规则填充(此为 Hub 加性改动之一,见 §G)。**代理侧:缺 request_id=400 拒收,禁止替调用方生成**。代理以 `(caller_id, request_id)` 唯一约束+`body_sha256`:hash 同→返回同一 outbound_id(200 幂等重放);hash 异→409。
 2. **202 语义冻结(B1)**:202=**accepted(托管开始),非 delivered**。仅在 WAL 事务提交+fsync 之后返回;崩在 202 前=Hub 重试(同 request_id,幂等吸收);崩在 202 后=WAL 重放,不丢不重。
 3. **出站状态机(B1)**:`queued→sending→sent | dlq`;`GET /outbound/{outbound_id}` 返回状态+attempts+真 Lark msg_id(sent 后)+错误(dlq);审计日志以 outbound_id 关联全链。
 4. 烂件当场拒(400/401/409/422)不进队列。
@@ -91,15 +91,15 @@
 错误码:200/202=收;401=token 错(代理按 authoritative 语义重试并告警,不丢);4xx 其他=毒件入 DLQ。**重放防护(B5)**:重复注入被 Hub 幂等吸收(ID=msg_id,INSERT OR IGNORE);伪造新 ID 需持 token;token 仅内网/TLS 流转+可轮换;残余风险=持 token 者可注入,等同现状飞书回调模式凭 token 注入,不新增面。负例:401(错 token)/重放(同 msg_id 二投=库中恰一条)。
 
 **K2 出站(Hub→代理)** `POST /outbound`
-请求:`{"v":1,"request_id":"uuid","bot_channel":"unifiedrobot","to_id":"...","to_type":"group|personal","text":"...","raw":{...}}`+`Authorization: Bearer <caller token>`。
+请求:`{"v":1,"request_id":"<UUIDv5,派生规则见§C1,正则^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$>","bot_channel":"unifiedrobot","to_id":"...","to_type":"group|personal","text":"...","raw":{...}}`+`Authorization: Bearer <caller token>`。
 响应:202 `{"outbound_id":"ob_x"}`(WAL 落盘后);200 同体(幂等重放);错误码:400 schema/401 鉴权/404 bot_channel 未知/409 request_id 冲突(body hash 异)/413 超限/422 语义烂件/503 spool 故障(fail-closed)。
 **K3 状态** `GET /outbound/{outbound_id}`→`{"status":"queued|sending|sent|dlq","attempts":n,"lark_msg_id":"om_x|null","error":"..|null"}`(401 需 caller token,仅本 caller 可查)。
 **K4 名称解析** `POST /resolve` `{"v":1,"bot_channel":"..","name":"..","chat_type":".."}`→`{"id":".."}`;404=无此名;缓存 TTL 代理侧。
-**K5 管理** `GET/PUT /admin/config`(§E/§F:If-Match/412/掩码/审计);`POST /admin/reload`;`POST /admin/dlq/replay`(水位门)。
+**K5 管理** `GET/PUT /admin/config`(§E/§F:If-Match/412/掩码/审计);`POST /admin/reload`;`POST /admin/dlq/replay`(水位门);`POST /admin/dlq/waive`(admin 角色,body=消息/sink+理由,→audited_waived,§B 终态规则,403 负例)。
 
 ## I. 测试计划(G 组,v1 F 组保留)【B1-B5 扩】
 
-G1 ws 装配归一/G2 分流守恒(**已知 event ID 集**逐条核:双连守恒+断连重分配全回存活侧+零重复;receive→WAL 间 kill、WAL→sink 间 kill 各一例,不以小时总量代替)/G3 托管 ACK(202 前 fsync 实证 kill -9 重放;**响应丢失重试同 request_id→同 outbound_id 零双发;409 负例;状态机全迁移+GET status**)/G4 DLQ+告警/G5 热载防呆(烂配置/force/**412 代次冲突/写盘失败不切内存/坏 secret 旋转回退**)/G6 管理 API(掩码/审计/**未授权 401/size 413**)/G7 多 bot 出站选路/G8 /resolve 透传/G9 阶段 2 翻转+回滚演练/G10 sink 语义(**一 authoritative 败一成=败者独立重试不影响成者;一 authoritative delivered+一 authoritative DLQ→主记录=blocked_dlq 全局不成功、replay 成功后才 delivered(C2);besteffort 恒败不阻塞;毒件不 HOL**)/G11 存储故障(磁盘满 fail-closed=ws 断连;SQLite busy 背压)/G12 投递鉴权与版本负例(**401 错 token/重放幂等/v:1+未知字段=400/v:2=400/无 v=legacy 原样(C3)/远端 http sink 配置拒载**)/G13(C1)**代理已 WAL 但 202 响应丢失→Hub 进程重启→重派生同 request_id→同 outbound_id→飞书恰一发**。
+G1 ws 装配归一/G2 分流守恒(**已知 event ID 集**逐条核:双连守恒+断连重分配全回存活侧+零重复;receive→WAL 间 kill、WAL→sink 间 kill 各一例,不以小时总量代替)/G3 托管 ACK(202 前 fsync 实证 kill -9 重放;**响应丢失重试同 request_id→同 outbound_id 零双发;409 负例;状态机全迁移+GET status**)/G4 DLQ+告警/G5 热载防呆(烂配置/force/**412 代次冲突/写盘失败不切内存/坏 secret 旋转回退**)/G6 管理 API(掩码/审计/**未授权 401/size 413**)/G7 多 bot 出站选路/G8 /resolve 透传/G9 阶段 2 翻转+回滚演练/G10 sink 语义(**一 authoritative 败一成=败者独立重试不影响成者;一 authoritative delivered+一 authoritative DLQ→主记录=blocked_dlq 全局不成功、replay 成功后才 delivered(C2);waive 转移 blocked→delivered_with_waiver+未授权 waive=403 负例(T2);besteffort 恒败不阻塞;毒件不 HOL**)/G11 存储故障(磁盘满 fail-closed=ws 断连;SQLite busy 背压)/G12 投递鉴权与版本负例(**401 错 token/重放幂等/v:1+未知字段=400/v:2=400/无 v=legacy 原样(C3)/远端 http sink 配置拒载**)/G13(C1)**代理已 WAL 但 202 响应丢失→Hub 进程重启→重派生同 request_id→同 outbound_id→飞书恰一发**。
 
 ## J. 披露与不做
 
