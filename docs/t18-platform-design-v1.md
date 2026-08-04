@@ -134,7 +134,13 @@ type KBProvider interface {
 
 ## 8. 决策点建议案(呈业主,coordinator 已转)
 
-①VS=**新独立服务 dingwei-datad**(View Service 不混职责)②hub 一期**不迁**③自报域=**行级**(已入 §4 不变量)④知识库首 provider=**fsgrep**(接口可插拔,向量库后批)⑤迁移=**双写窗 1-2 段**⑥PG HA=候 prodops 定标(我方建议基线:单实例+WAL 归档+每日 dump 异机——团队规模下主备过度,datad 503 fail-closed 即安全)⑦(新增)**secret 不进 config 表**(留 env,备份不含密)。
+①VS=**新独立服务 dingwei-datad**(View Service 不混职责)②hub 一期**不迁**③自报域=**行级**(已入 §4 不变量)④知识库首 provider=**fsgrep**(接口可插拔,向量库后批)⑤迁移=**双写窗 1-2 段**⑥PG HA=**已定标(prodops 08-04)**:单实例+WAL 归档(/data/pg-wal/),主备延后——平台数据非延迟关键,WAL 覆 crash 恢复,与 hub 单容器风险平齐⑦**secret 不进 config 表**(留 env,备份不含密)。
+
+## 8b. 部署基线(prodops 输入,08-04)
+
+- 部署位=**106.52.174.122**(与 hub 同机隔离;114.132.71.70 间歇不可达弃选);/data 持久卷;datad 同机低延迟;独立 systemd unit+端口。
+- 备份=pg_dump cron→/data/backup/+WAL 归档;**devo48 建议补一条(候 prodops 定)**:dump 定期拷贝异机(磁盘单点=dump 与主库同盘则盘亡全亡,WAL 归档同理)——异机目标 prodops 选。
+- 监控=pg_exporter 或 datad /healthz 透传 PG 探活;权限=pg_hba **仅 localhost**(datad 同机,无需开任何 IP;未来 datad 分机再开单 IP——比"localhost+VS API IP"更紧,合单入口铁律)。
 
 ## 9. 测试计划(P 组)
 
