@@ -1,6 +1,7 @@
-# T18 DingWei 平台基础升级 总体设计 v1(D2)
+# T18 DingWei 平台基础升级 总体设计(D2)· D3 冻结版
 
-范围基线:t18-platform-upgrade-scope-v1.md@fb5ef8e(D1)。候 shence(MCP 面)/prodops(部署面)回执并入后提三方审。
+**冻结(08-04)**:D3 三方审全过——shence 契约面 PASS+prodops 部署面 PASS+coordinator 写权面 PASS(其审锚 cfcec9e 与本版差=§8b 两行 prodops 定案+本收口行,审围字节同,归一于本版)。coordinator 唯一提醒已入档:**自报域 token 轮转运维程序**(轮换周期/触发条件/操作步骤/回滚)=D4c 运维手册必备章,prodops 执笔 devo48 核。
+范围基线:t18-platform-upgrade-scope-v1.md@fb5ef8e(D1)。
 契约模板沿用 T17 先例:versioned API/错误码全表/token=审计主体/CAS/掩码(§K/§F 同哲学)。
 
 ## 1. 架构总览
