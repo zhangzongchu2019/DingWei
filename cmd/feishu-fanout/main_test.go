@@ -87,7 +87,7 @@ func TestF5BinarySmoke(t *testing.T) {
 	}
 	tmp := t.TempDir()
 	bin := filepath.Join(tmp, "feishu-fanout")
-	build := exec.Command("go", "build", "-o", bin, ".")
+	build := exec.Command("go", "build", "-buildvcs=false", "-o", bin, ".") // 同 g9:免 VCS stamping 假 FAIL(平行实例一并修)
 	build.Stderr = os.Stderr
 	if err := build.Run(); err != nil {
 		t.Fatal(err)

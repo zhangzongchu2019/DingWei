@@ -78,7 +78,7 @@ func TestG9CustodyAndFlipE2E(t *testing.T) {
 	}
 	tmp := t.TempDir()
 	bin := filepath.Join(tmp, "feishu-fanout")
-	build := exec.Command("go", "build", "-o", bin, ".")
+	build := exec.Command("go", "build", "-buildvcs=false", "-o", bin, ".") // 容器/detached HEAD 下免 VCS stamping 假 FAIL(claudek3 nit)
 	build.Stderr = os.Stderr
 	if err := build.Run(); err != nil {
 		t.Fatal(err)
