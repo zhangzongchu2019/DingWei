@@ -180,6 +180,10 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         provision_rollback_timeout=int(env.get("SH_PROVISION_ROLLBACK_TIMEOUT", "300")),
         # B3 补漏:2ec753b 只加了字段未接 env;shim 侧读 DINGWEI_MCP_IPC_SOCK,helper 同名可用
         mcp_ipc_sock=expand_path(env.get("SH_MCP_IPC_SOCK", env.get("DINGWEI_MCP_IPC_SOCK", ""))),
+        # T18 补漏:0f92e90/5aa58a2 只加了字段未接 env(app.py消费cfg.datad_*恒空⇒vsapi管道死禁用);
+        # DATAD_TOKEN=prodops签发的既定env名,SH_前缀同款兼容
+        datad_url=env.get("SH_DATAD_URL", env.get("DATAD_URL", "")).strip(),
+        datad_token=env.get("SH_DATAD_TOKEN", env.get("DATAD_TOKEN", "")).strip(),
     )
 
 

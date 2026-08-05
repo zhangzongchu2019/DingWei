@@ -106,3 +106,38 @@ class HandleConnectionWiringTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DatadEnvWiringTest(unittest.TestCase):
+    """T18 补漏回归钉:datad_url/datad_token 必须从 env 接入 load_config
+    (0f92e90/5aa58a2 只加字段未接 env,cfg.datad_* 恒空 ⇒ vsapi 管道死禁用)。"""
+
+    BASE = {
+        "SH_SESSION_NAME": "home",
+        "SH_OWNER": "zzc",
+        "SH_KEY_ID": "FB-2642",
+        "SH_SECRET": "secret",
+    }
+
+    def test_datad_env_wired(self):
+        from sessionhelper.config import load_config
+        cfg = load_config(dict(self.BASE,
+                               DATAD_URL="https://dingwei.wegoab.com/datad",
+                               DATAD_TOKEN="tok-abc"))
+        self.assertEqual(cfg.datad_url, "https://dingwei.wegoab.com/datad")
+        self.assertEqual(cfg.datad_token, "tok-abc")
+
+    def test_sh_prefix_takes_precedence(self):
+        from sessionhelper.config import load_config
+        cfg = load_config(dict(self.BASE,
+                               SH_DATAD_URL="http://127.0.0.1:8796",
+                               DATAD_URL="https://other",
+                               SH_DATAD_TOKEN="tok-sh", DATAD_TOKEN="tok-plain"))
+        self.assertEqual(cfg.datad_url, "http://127.0.0.1:8796")
+        self.assertEqual(cfg.datad_token, "tok-sh")
+
+    def test_absent_stays_empty(self):
+        from sessionhelper.config import load_config
+        cfg = load_config(dict(self.BASE))
+        self.assertEqual(cfg.datad_url, "")
+        self.assertEqual(cfg.datad_token, "")
