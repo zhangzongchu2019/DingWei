@@ -54,23 +54,21 @@ func (c *Client) get(ctx context.Context, path string, out any) error {
 }
 
 // ListTasks 拉取任务台账(GET /v1/tasks)。
+// 线格式=server writeJSON 裸数组(claudek3 B1 裁定:server 为既有权威线格式);
+// 空库 server 发 null→nil 切片安全。
 func (c *Client) ListTasks(ctx context.Context) ([]Task, error) {
-	var out struct {
-		Tasks []Task `json:"tasks"`
-	}
+	var out []Task
 	if err := c.get(ctx, "/v1/tasks", &out); err != nil {
 		return nil, err
 	}
-	return out.Tasks, nil
+	return out, nil
 }
 
-// ListSessions 拉取会话状态(GET /v1/sessions)。
+// ListSessions 拉取会话状态(GET /v1/sessions),线格式同上=裸数组。
 func (c *Client) ListSessions(ctx context.Context) ([]SessionState, error) {
-	var out struct {
-		Sessions []SessionState `json:"sessions"`
-	}
+	var out []SessionState
 	if err := c.get(ctx, "/v1/sessions", &out); err != nil {
 		return nil, err
 	}
-	return out.Sessions, nil
+	return out, nil
 }
