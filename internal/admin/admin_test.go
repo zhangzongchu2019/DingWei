@@ -885,9 +885,9 @@ func TestPortalDatadBoardRendersTasksAndSessions(t *testing.T) {
 		}
 		switch r.URL.Path {
 		case "/v1/tasks":
-			_, _ = w.Write([]byte(`{"tasks":[{"id":"G4-1","title":"联调","owner_session":"zzc-devo48-2642","status":"in_progress","anchor":"7b8df4c","updated_at":"2026-08-05T02:00:00Z"}]}`))
+			_, _ = w.Write([]byte(`[{"id":"G4-1","title":"联调","owner_session":"zzc-devo48-2642","status":"in_progress","anchor":"7b8df4c","updated_at":"2026-08-05T02:00:00Z"}]`))
 		case "/v1/sessions":
-			_, _ = w.Write([]byte(`{"sessions":[{"session":"zzc-devo48-2642","state":"active","watermark_pct":42,"current_task":"G4-1","updated_at":"2026-08-05T02:30:00Z"}]}`))
+			_, _ = w.Write([]byte(`[{"session":"zzc-devo48-2642","state":"active","watermark_pct":42,"current_task":"G4-1","updated_at":"2026-08-05T02:30:00Z"}]`))
 		default:
 			http.NotFound(w, r)
 		}
@@ -942,9 +942,9 @@ func TestDatadProxyEndpoints(t *testing.T) {
 		}
 		switch r.URL.Path {
 		case "/v1/tasks":
-			_, _ = w.Write([]byte(`{"tasks":[{"id":"G4-1","title":"联调","owner_session":"zzc-devo48-2642","status":"in_progress","updated_at":"2026-08-05T02:00:00Z"}]}`))
+			_, _ = w.Write([]byte(`[{"id":"G4-1","title":"联调","owner_session":"zzc-devo48-2642","status":"in_progress","updated_at":"2026-08-05T02:00:00Z"}]`))
 		case "/v1/sessions":
-			_, _ = w.Write([]byte(`{"sessions":[{"session":"zzc-devo48-2642","state":"active","updated_at":"2026-08-05T02:30:00Z"}]}`))
+			_, _ = w.Write([]byte(`[{"session":"zzc-devo48-2642","state":"active","updated_at":"2026-08-05T02:30:00Z"}]`))
 		default:
 			http.NotFound(w, r)
 		}
