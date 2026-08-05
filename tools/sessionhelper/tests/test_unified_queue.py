@@ -6,7 +6,7 @@ import unittest
 from unittest import mock
 
 from sessionhelper.config import load_config
-from sessionhelper.contract import DeliveryReceipt
+from sessionhelper.contract import DeliveryReceipt, SessionEvent
 from sessionhelper.driver_adapter import DriverAdapter
 from sessionhelper.app import SessionHelper
 from sessionhelper.unified_queue import UnifiedCommandQueue
@@ -88,6 +88,43 @@ class UnifiedCommandQueueTest(unittest.TestCase):
         self.assertIsNone(self.queue.finish(two.delivery_id, "completed"))
         self.assertEqual(self.queue.current.delivery_id, one.delivery_id)
 
+    def test_canonical_delivery_origin_is_preserved_without_rewriting(self):
+        result = self.queue.enqueue({
+            "body": "hello",
+            "meta": {
+                "type": "delivery",
+                "delivery_version": 1,
+                "ack_required": True,
+                "delivery_id": "dlv_X",
+            },
+        })
+        self.assertEqual(result.command.delivery_id, "dw-dlv_X")
+        self.assertEqual(result.command.origin_delivery_id, "dlv_X")
+        self.assertEqual(result.event["origin_delivery_id"], "dlv_X")
+
+        command = self.queue.start_next()
+        admitted = self.queue.admit(command.delivery_id, "turn-X")
+        self.assertEqual(admitted["delivery_id"], "dw-dlv_X")
+        self.assertEqual(admitted["origin_delivery_id"], "dlv_X")
+
+    def test_untrusted_or_legacy_envelopes_do_not_claim_origin(self):
+        variants = [
+            {"type": "delivery", "delivery_version": 1, "ack_required": True,
+             "delivery_id": ""},
+            {"type": "delivery", "delivery_version": 1, "ack_required": "true",
+             "delivery_id": "dlv_string_ack"},
+            {"type": "delivery", "delivery_version": 2, "ack_required": True,
+             "delivery_id": "dlv_v2"},
+            {"type": "session_event", "delivery_version": 1, "ack_required": True,
+             "delivery_id": "dlv_forged"},
+            {"type": "delivery", "ack_required": True, "delivery_id": "dlv_legacy"},
+        ]
+        for index, meta in enumerate(variants):
+            queue = UnifiedCommandQueue(1, clock=lambda: 1.0)
+            result = queue.enqueue({"id": f"fallback-{index}", "body": "x", "meta": meta})
+            self.assertEqual(result.command.origin_delivery_id, "")
+            self.assertNotIn("origin_delivery_id", result.event)
+
 
 class FakeDriver:
     def __init__(self, *, block_first: threading.Event | None = None, never_terminal: bool = False):
@@ -160,6 +197,46 @@ class DriverAdapterUnifiedQueueTest(unittest.TestCase):
         self.assertEqual(events[0]["text"], "第一行\n第二行")
         self.assertEqual(duplicate.state, "duplicate")
         self.assertEqual(len(driver.deliveries), 1)
+
+    def test_same_turn_events_carry_canonical_origin_with_real_id_shape(self):
+        driver = FakeDriver(block_first=threading.Event())
+        adapter = self.make_adapter(driver)
+        result = adapter.enqueue_envelope({
+            "body": "hello",
+            "meta": {
+                "type": "delivery",
+                "delivery_version": 1,
+                "ack_required": True,
+                "delivery_id": "dlv_X",
+            },
+        })
+        queued = json.loads(adapter.next_session_event(0.5))
+        self.assertEqual(result.command.delivery_id, "dw-dlv_X")
+        self.assertEqual(queued["delivery_id"], "dw-dlv_X")
+        self.assertEqual(queued["origin_delivery_id"], "dlv_X")
+
+        for kind, data in (
+            ("assistant_text", {}),
+            ("tool_call", {"name": "tool"}),
+            ("state_change", {"change": "turn_completed"}),
+        ):
+            payload = json.loads(adapter._event_json(SessionEvent(
+                kind=kind,
+                text="event",
+                data=data,
+                delivery_id="dw-dlv_X",
+                turn_id="turn-X",
+            )))
+            self.assertEqual(payload["origin_delivery_id"], "dlv_X")
+
+        unrelated = json.loads(adapter._event_json(SessionEvent(
+            kind="assistant_text",
+            text="legacy",
+            delivery_id="dw-other",
+            turn_id="turn-other",
+        )))
+        self.assertNotIn("origin_delivery_id", unrelated)
+        driver.block_first.set()
 
     def test_three_sources_use_one_adapter_fifo(self):
         driver = FakeDriver()

@@ -33,7 +33,20 @@ const (
 	terminalBufferCap        = 1 << 20
 	terminalEventRingCap     = 1000
 	terminalDisconnectGrace  = 5 * time.Minute // 网页断连后保留 viewer+码 的宽限期(修解锁码失效)
+	hubIngressMetaKey        = "_hub_ingress_channel"
+	hubIngressAgent          = "agent_session"
+	hubIngressFeishu         = "feishu_verified"
+	hubIngressFeishuUnknown  = "feishu_untrusted"
+	hubIngressViewV2         = "view_v2_attested"
+	hubIngressInternal       = "hub_internal"
 )
+
+type displayProvenance struct {
+	Kind          string `json:"kind"`
+	DisplayName   string `json:"display_name"`
+	AttestedBy    string `json:"attested_by"`
+	TrustDecision string `json:"trust_decision"`
+}
 
 type terminalState struct {
 	keyID       string
@@ -391,8 +404,30 @@ func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) b
 	if metaString(env.Meta, "type") != terminalSessionEventType {
 		return false
 	}
-	h.publishSessionEvent(c.keyID, c.sessionName, env.Body)
+	// session_event is supplied by a helper. It may carry arbitrary event JSON,
+	// but only the Hub may mint the canonical provenance block.
+	sanitized, conflict := stripClientProvenance(env.Body)
+	if conflict {
+		log.Printf("provenance claim dropped ingress=agent_session session=%s", c.sessionName)
+	}
+	h.publishSessionEvent(c.keyID, c.sessionName, sanitized)
 	return true
+}
+
+func stripClientProvenance(raw string) (string, bool) {
+	var event map[string]any
+	if json.Unmarshal([]byte(raw), &event) != nil {
+		return raw, false
+	}
+	if _, claimed := event["provenance"]; !claimed {
+		return raw, false
+	}
+	delete(event, "provenance")
+	sanitized, err := json.Marshal(event)
+	if err != nil {
+		return raw, false
+	}
+	return string(sanitized), true
 }
 
 func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
@@ -416,7 +451,7 @@ func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
 }
 
 func (h *Hub) publishDeliveryCancelled(keyID, sessionName, messageID, deliveryID, stage string) {
-	event, _ := json.Marshal(deliveryUpdateEvent(messageID, deliveryID, stage, "cancelled", "", time.Now().UTC()))
+	event, _ := json.Marshal(deliveryUpdateEvent(messageID, deliveryID, "cancelled", stage, "cancelled", "", time.Now().UTC()))
 	h.publishSessionEvent(keyID, sessionName, string(event))
 }
 
@@ -449,7 +484,7 @@ func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envel
 }
 
 func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, cancellable bool, sourceKind, displayName string, now time.Time) map[string]any {
-	return map[string]any{
+	event := map[string]any{
 		"schema_version": "delivery.v2",
 		"kind":           "input_posted",
 		"message_id":     env.ID,
@@ -469,23 +504,94 @@ func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, c
 		"cancellable": cancellable,
 		"updated_at":  now.UTC().Format(time.RFC3339Nano),
 	}
+	if provenance, ok := provenanceForEnvelope(env); ok {
+		event["provenance"] = provenance
+	}
+	return event
 }
 
-func (h *Hub) publishDeliveryUpdate(keyID, sessionName, messageID, deliveryID, stage, status, reason string) {
+func provenanceForEnvelope(env model.Envelope) (displayProvenance, bool) {
+	channel := metaString(env.Meta, hubIngressMetaKey)
+	provenance := displayProvenance{AttestedBy: "hub"}
+	switch channel {
+	case hubIngressAgent:
+		provenance.Kind = "agent"
+		if from, err := parseAddress(env.From); err == nil && from.Kind == addressSession && from.SessionName != "" {
+			provenance.DisplayName = from.SessionName
+		}
+	case hubIngressFeishu:
+		provenance.Kind = "feishu"
+		provenance.DisplayName = "飞书"
+	case hubIngressViewV2:
+		provenance.Kind = "human"
+		provenance.DisplayName = "人工"
+	case hubIngressInternal:
+		provenance.Kind = "system"
+		provenance.DisplayName = "系统"
+	default:
+		// Unknown/untrusted ingress is represented by an absent optional block.
+		return displayProvenance{}, false
+	}
+	if provenance.DisplayName == "" {
+		return displayProvenance{}, false
+	}
+	provenance.TrustDecision = "trusted"
+	return provenance, true
+}
+
+func provenanceJSON(env model.Envelope) string {
+	provenance, ok := provenanceForEnvelope(env)
+	if !ok {
+		return ""
+	}
+	raw, err := json.Marshal(provenance)
+	if err != nil {
+		return ""
+	}
+	return string(raw)
+}
+
+// sessionClientEnvelope removes Hub-only admission evidence before an envelope
+// crosses back into an untrusted session client. The original envelope retains
+// the marker long enough for durable provenance and SSE attestation.
+func sessionClientEnvelope(env model.Envelope) model.Envelope {
+	if env.Meta == nil {
+		return env
+	}
+	wire := env
+	wire.Meta = make(map[string]any, len(env.Meta))
+	for key, value := range env.Meta {
+		if key != hubIngressMetaKey {
+			wire.Meta[key] = value
+		}
+	}
+	return wire
+}
+
+func (h *Hub) publishDeliveryUpdate(keyID, sessionName, messageID, deliveryID, deliveryState, stage, status, reason string) {
 	if keyID == "" || sessionName == "" || messageID == "" || deliveryID == "" {
 		return
 	}
-	event := deliveryUpdateEvent(messageID, deliveryID, stage, status, reason, time.Now().UTC())
+	event := deliveryUpdateEvent(messageID, deliveryID, deliveryState, stage, status, reason, time.Now().UTC())
 	raw, _ := json.Marshal(event)
 	h.publishSessionEvent(keyID, sessionName, string(raw))
 }
 
-func deliveryUpdateEvent(messageID, deliveryID, stage, status, reason string, now time.Time) map[string]any {
+func sessionDeliveryCancellable(state string) bool {
+	switch state {
+	case "queued", "sent", "delivered":
+		return true
+	default:
+		return false
+	}
+}
+
+func deliveryUpdateEvent(messageID, deliveryID, deliveryState, stage, status, reason string, now time.Time) map[string]any {
 	event := map[string]any{
 		"schema_version": "delivery.v2", "kind": "delivery_update", "message_id": messageID,
 		"observed_delivery_id": deliveryID, "delivery_stage": stage,
 		"updated_at": now.UTC().Format(time.RFC3339Nano), "reason": reason,
-		"cancelable": false, "interruptible": false,
+		"cancellable": sessionDeliveryCancellable(deliveryState), "interruptible": false,
 	}
 	if status != "" {
 		event["delivery_status"] = status
@@ -891,26 +997,50 @@ func (h *Hub) HandleInternalViewInterrupt(w http.ResponseWriter, r *http.Request
 	}
 	h.mu.Lock()
 	st, found := h.terminalBySessionNameLocked(sessionName)
-	var c *sessionClient
+	authorized := false
 	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
-		c = h.sessionClients[st.keyID][st.sessionName]
+		authorized = true
 		st.writerUntil = time.Now().Add(terminalTokenTTL)
 	}
 	h.mu.Unlock()
-	if c == nil {
+	if !authorized {
 		http.Error(w, "interrupt not authorized or session offline", http.StatusForbidden)
 		return
 	}
-	env := model.Envelope{
-		ID: randomHex(16), To: sessionAddress(sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
-		Meta: map[string]any{"type": terminalInterruptType, "system": true, "no_mirror": true, "delivery_id": req.DeliveryID, "turn_id": req.TurnID},
+	status, err := h.writeInterruptFrame(r.Context(), sessionName, req.DeliveryID, req.TurnID)
+	if status == http.StatusConflict {
+		http.Error(w, "interrupt not authorized or session offline", http.StatusForbidden)
+		return
 	}
-	if err := c.write(r.Context(), env); err != nil {
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write([]byte(`{"ok":true,"state":"forwarded"}`))
+}
+
+// writeInterruptFrame forwards an interrupt to the unique online session.
+// Authorization stays with the caller; the helper remains the stale-turn CAS authority.
+func (h *Hub) writeInterruptFrame(ctx context.Context, sessionName, deliveryID, turnID string) (int, error) {
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	var c *sessionClient
+	if found {
+		c = h.sessionClients[st.keyID][st.sessionName]
+	}
+	h.mu.Unlock()
+	if c == nil {
+		return http.StatusConflict, nil
+	}
+	env := model.Envelope{
+		ID: randomHex(16), To: sessionAddress(sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
+		Meta: map[string]any{"type": terminalInterruptType, "system": true, "no_mirror": true, "delivery_id": deliveryID, "turn_id": turnID},
+	}
+	if err := c.write(ctx, env); err != nil {
+		return http.StatusBadGateway, err
+	}
+	return http.StatusOK, nil
 }
 
 // HandleInternalViewCancel removes an authorized delivery while it is still in
@@ -926,10 +1056,8 @@ func (h *Hub) HandleInternalViewCancel(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	st, found := h.terminalBySessionNameLocked(sessionName)
 	var keyID string
-	var c *sessionClient
 	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
 		keyID = st.keyID
-		c = h.sessionClients[st.keyID][st.sessionName]
 		st.writerUntil = time.Now().Add(terminalTokenTTL)
 	}
 	h.mu.Unlock()
@@ -937,43 +1065,69 @@ func (h *Hub) HandleInternalViewCancel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "cancel not authorized or session offline", http.StatusForbidden)
 		return
 	}
-	if h.Repo == nil {
-		http.Error(w, "delivery store unavailable", http.StatusServiceUnavailable)
-		return
-	}
-	delivery, err := h.Repo.GetSessionDelivery(r.Context(), req.DeliveryID)
-	if err != nil {
-		http.Error(w, "cancel failed", http.StatusInternalServerError)
-		return
-	}
-	if delivery == nil || delivery.SourceMessageID != req.MessageID || delivery.KeyID != keyID || delivery.SessionName != sessionName {
-		http.Error(w, "delivery not cancelable", http.StatusConflict)
-		return
-	}
-	if cancelled, err := h.Repo.CancelPendingSessionDelivery(r.Context(), req.MessageID, req.DeliveryID, keyID, sessionName); err != nil {
-		http.Error(w, "cancel failed", http.StatusInternalServerError)
-		return
-	} else if cancelled {
-		h.publishDeliveryCancelled(keyID, sessionName, req.MessageID, req.DeliveryID, "hub_received")
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "state": "cancelled", "message_id": req.MessageID, "delivery_id": req.DeliveryID})
-		return
-	}
-	delivery, err = h.Repo.GetSessionDelivery(r.Context(), req.DeliveryID)
-	if err != nil || delivery == nil || (delivery.State != "sent" && delivery.State != "delivered") || c == nil {
-		http.Error(w, "delivery not cancelable", http.StatusConflict)
-		return
-	}
-	env := model.Envelope{
-		ID: randomHex(16), To: sessionAddress(sessionName, keyID), From: sessionAddress("workpulse", keyID), TS: time.Now().Unix(),
-		Meta: map[string]any{"type": "delivery_cancel", "system": true, "no_mirror": true, "message_id": req.MessageID, "delivery_id": req.DeliveryID},
-	}
-	if err := c.write(r.Context(), env); err != nil {
-		http.Error(w, err.Error(), http.StatusBadGateway)
+	result := h.cancelSessionDeliveryCore(r.Context(), keyID, sessionName, req.MessageID, req.DeliveryID)
+	writeSessionDeliveryCancelResult(w, req.MessageID, req.DeliveryID, result)
+}
+
+type sessionDeliveryCancelResult struct {
+	Status int
+	State  string
+	Error  string
+}
+
+func writeSessionDeliveryCancelResult(w http.ResponseWriter, messageID, deliveryID string, result sessionDeliveryCancelResult) {
+	if result.Status != http.StatusOK {
+		http.Error(w, result.Error, result.Status)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "state": "forwarded", "message_id": req.MessageID, "delivery_id": req.DeliveryID})
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok": true, "state": result.State, "message_id": messageID, "delivery_id": deliveryID,
+	})
+}
+
+// cancelSessionDeliveryCore contains the shared legacy and View V2 cancellation
+// behavior. It deliberately preserves the existing pre-injection race: this
+// endpoint connects cancellation to the Hub, but durable cancel intent is a
+// separate GA hardening task.
+func (h *Hub) cancelSessionDeliveryCore(ctx context.Context, keyID, sessionName, messageID, deliveryID string) sessionDeliveryCancelResult {
+	if h.Repo == nil {
+		return sessionDeliveryCancelResult{Status: http.StatusServiceUnavailable, Error: "delivery store unavailable"}
+	}
+	delivery, err := h.Repo.GetSessionDelivery(ctx, deliveryID)
+	if err != nil {
+		return sessionDeliveryCancelResult{Status: http.StatusInternalServerError, Error: "cancel failed"}
+	}
+	if delivery == nil || delivery.SourceMessageID != messageID || delivery.SessionName != sessionName || (keyID != "" && delivery.KeyID != keyID) {
+		return sessionDeliveryCancelResult{Status: http.StatusConflict, Error: "delivery not cancelable"}
+	}
+	if keyID == "" {
+		keyID = delivery.KeyID
+	}
+	if cancelled, err := h.Repo.CancelPendingSessionDelivery(ctx, messageID, deliveryID, keyID, sessionName); err != nil {
+		return sessionDeliveryCancelResult{Status: http.StatusInternalServerError, Error: "cancel failed"}
+	} else if cancelled {
+		h.publishDeliveryCancelled(keyID, sessionName, messageID, deliveryID, "hub_received")
+		return sessionDeliveryCancelResult{Status: http.StatusOK, State: "cancelled"}
+	}
+	delivery, err = h.Repo.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || delivery == nil || (delivery.State != "sent" && delivery.State != "delivered") {
+		return sessionDeliveryCancelResult{Status: http.StatusConflict, Error: "delivery not cancelable"}
+	}
+	h.mu.Lock()
+	c := h.sessionClients[keyID][sessionName]
+	h.mu.Unlock()
+	if c == nil {
+		return sessionDeliveryCancelResult{Status: http.StatusConflict, Error: "delivery not cancelable"}
+	}
+	env := model.Envelope{
+		ID: randomHex(16), To: sessionAddress(sessionName, keyID), From: sessionAddress("workpulse", keyID), TS: time.Now().Unix(),
+		Meta: map[string]any{"type": "delivery_cancel", "system": true, "no_mirror": true, "message_id": messageID, "delivery_id": deliveryID},
+	}
+	if err := c.write(ctx, env); err != nil {
+		return sessionDeliveryCancelResult{Status: http.StatusBadGateway, Error: err.Error()}
+	}
+	return sessionDeliveryCancelResult{Status: http.StatusOK, State: "forwarded"}
 }
 
 func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID, token, data string) error {
@@ -1001,7 +1155,8 @@ func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID
 		From: sessionAddress("workpulse", keyID),
 		Body: data,
 		TS:   time.Now().Unix(),
-		Meta: map[string]any{"source_kind": "user", "source_display_name": "View"},
+		Meta: map[string]any{"source_kind": "user", "source_display_name": "View",
+			hubIngressMetaKey: hubIngressViewV2},
 	}
 	return h.routeToSession(ctx, keyID, sessionName, env, false)
 }

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import asyncio
 import json
 import os
 import socket
@@ -17,6 +18,8 @@ import time
 import urllib.request
 import urllib.error
 from pathlib import Path
+
+from sessionhelper.inbox import DeliveryInbox
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -133,6 +136,187 @@ def wait_unlock_reply(db, event_id, minimum_count, timeout=8):
     raise AssertionError(f"missing successful unlock reply for {event_id}")
 
 
+def wait_view_delivery_processed(db, helper_db, request_id, timeout=15):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            hub_row = conn.execute(
+                "SELECT id,state,provenance FROM session_delivery WHERE source_message_id=?",
+                (request_id,),
+            ).fetchone()
+        if hub_row:
+            with sqlite3.connect(helper_db) as conn:
+                helper_row = conn.execute(
+                    "SELECT state,envelope_json FROM delivery_inbox "
+                    "WHERE session_name=? AND delivery_id=?",
+                    ("reviewer", hub_row[0]),
+                ).fetchone()
+            if hub_row[1] == "processed" and helper_row and helper_row[0] == "processed":
+                provenance = json.loads(hub_row[2])
+                envelope = json.loads(helper_row[1])
+                assert provenance == {
+                    "kind": "human", "display_name": "人工",
+                    "attested_by": "hub", "trust_decision": "trusted",
+                }, provenance
+                assert "_hub_ingress_channel" not in (envelope.get("meta") or {}), envelope
+                return hub_row[0]
+        time.sleep(.1)
+    raise AssertionError(f"View delivery did not reach processed in Hub + real helper: request_id={request_id}")
+
+
+def session_connection_sequence(db):
+    with sqlite3.connect(db) as conn:
+        row = conn.execute(
+            "SELECT conn_seq FROM session_endpoint WHERE key_id=? AND session_name=?",
+            (KEY_ID, SESSION),
+        ).fetchone()
+    return int(row[0]) if row else -1
+
+
+def wait_session_online(db, after_conn_seq, timeout=15):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            row = conn.execute(
+                "SELECT active,conn_seq FROM session_endpoint WHERE key_id=? AND session_name=?",
+                (KEY_ID, SESSION),
+            ).fetchone()
+        if row and row[0] == 1 and int(row[1]) > after_conn_seq:
+            return
+        time.sleep(.1)
+    raise AssertionError("real sessionHelper did not reconnect after Hub restart")
+
+
+def wait_session_offline(db, timeout=10):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            row = conn.execute(
+                "SELECT active FROM session_endpoint WHERE key_id=? AND session_name=?",
+                (KEY_ID, SESSION),
+            ).fetchone()
+        if row and row[0] == 0:
+            return
+        time.sleep(.1)
+    raise AssertionError("real sessionHelper did not become offline")
+
+
+def wait_view_delivery_queued(db, request_id, timeout=5):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            row = conn.execute(
+                "SELECT id,state,attempts FROM session_delivery WHERE source_message_id=?",
+                (request_id,),
+            ).fetchone()
+        if row:
+            assert row[1:] == ("queued", 0), row
+            return row[0]
+        time.sleep(.05)
+    raise AssertionError(f"offline View delivery was not durably queued: request_id={request_id}")
+
+
+async def disconnect_after_delivered_smoke(hub_url, vs_url, page, db, tmp):
+    """Use a real Hub WebSocket and helper DeliveryInbox at the ACK-loss boundary."""
+    import websockets
+
+    ws_url = (
+        hub_url.replace("http", "ws")
+        + f"/ws/session/reviewer?key_id={KEY_ID}&version=0.1.2.7"
+    )
+    headers = {"Authorization": f"Bearer {KEY_SECRET}"}
+    inbox = DeliveryInbox(
+        str(tmp / "disconnect-inbox.db"), 10, "reviewer", "", SESSION, KEY_ID,
+    )
+
+    async def send_capability(ws):
+        await ws.send(json.dumps({
+            "id": secrets.token_hex(16), "to": f"workpulse#{KEY_ID}",
+            "from": f"reviewer#{KEY_ID}", "body": "", "ts": int(time.time()),
+            "meta": {"type": "session_capabilities", "delivery_ack_v1": True,
+                     "persistent_inbox_v1": True},
+        }))
+
+    async def read_delivery(ws):
+        while True:
+            env = json.loads(await asyncio.wait_for(ws.recv(), timeout=3))
+            if (env.get("meta") or {}).get("type") == "delivery":
+                return env
+
+    async def ack(ws, delivery_id, state):
+        await ws.send(json.dumps({
+            "id": secrets.token_hex(16), "to": f"workpulse#{KEY_ID}",
+            "from": f"reviewer#{KEY_ID}", "body": "", "ts": int(time.time()),
+            "meta": {"type": "delivery_ack", "delivery_id": delivery_id,
+                     "state": state, "no_mirror": True},
+        }))
+
+    request_ids = ("d" * 32, "e" * 32)
+    async with websockets.connect(ws_url, additional_headers=headers, proxy=None) as ws:
+        await send_capability(ws)
+        for request_id in request_ids:
+            _, result = await asyncio.to_thread(post, f"{vs_url}/input", {
+                "text": "LEVEL1", "page_id": page["page_id"],
+                "page_token": page["page_token"], "request_id": request_id,
+            })
+            assert result.get("ok"), result
+        first = await read_delivery(ws)
+        first_id = first["meta"]["delivery_id"]
+        assert inbox.accept(first_id, first)[0] == "delivered"
+        await ack(ws, first_id, "delivered")
+        deadline = time.time() + 2
+        while time.time() < deadline:
+            with sqlite3.connect(db) as conn:
+                row = conn.execute(
+                    "SELECT state FROM session_delivery WHERE id=?", (first_id,),
+                ).fetchone()
+            if row == ("delivered",):
+                break
+            await asyncio.sleep(.02)
+        else:
+            raise AssertionError("Hub never persisted delivered ACK")
+
+    reconnect_started = time.monotonic()
+    async with websockets.connect(ws_url, additional_headers=headers, proxy=None) as ws:
+        await send_capability(ws)
+        retried = await read_delivery(ws)
+        assert retried["meta"]["delivery_id"] == first_id, retried
+        assert time.monotonic() - reconnect_started < 2, "stale two-minute lease blocked reconnect"
+        assert inbox.accept(first_id, retried)[0] == "delivered"
+        claimed_first = inbox.claim_next()
+        assert claimed_first and claimed_first[0] == first_id, claimed_first
+        inbox.finish(first_id)
+        await ack(ws, first_id, "processed")
+
+        second = await read_delivery(ws)
+        second_id = second["meta"]["delivery_id"]
+        assert second_id != first_id and second["id"] == request_ids[1], second
+        assert inbox.accept(second_id, second)[0] == "delivered"
+        claimed_second = inbox.claim_next()
+        assert claimed_second and claimed_second[0] == second_id, claimed_second
+        inbox.finish(second_id)
+        await ack(ws, second_id, "processed")
+
+    deadline = time.time() + 3
+    while time.time() < deadline:
+        with sqlite3.connect(db) as conn:
+            rows = conn.execute(
+                "SELECT id,state FROM session_delivery WHERE id IN (?,?) ORDER BY id",
+                (first_id, second_id),
+            ).fetchall()
+        if len(rows) == 2 and all(row[1] == "processed" for row in rows):
+            break
+        await asyncio.sleep(.05)
+    else:
+        raise AssertionError(f"Hub deliveries did not finish: {rows}")
+    with sqlite3.connect(inbox.path) as conn:
+        rows = conn.execute(
+            "SELECT delivery_id,state,attempts FROM delivery_inbox ORDER BY received_at",
+        ).fetchall()
+    assert rows == [(first_id, "processed", 1), (second_id, "processed", 1)], rows
+    return first_id, second_id, time.monotonic() - reconnect_started
+
+
 def main():
     public_port, internal_port, vs_port = free_port(), free_port(), free_port()
     hub_url = f"http://127.0.0.1:{public_port}"
@@ -181,11 +365,12 @@ def main():
                 "  marker.write_text(str(count))\n"
                 "  print('SMOKE_OUTPUT:LEVEL1', flush=True)\n"
                 "  buf=b''\n")
+            helper_inbox = tmp / "helper-inbox.db"
             helper_env = {**os.environ, "PYTHONPATH": str(ROOT / "tools/sessionhelper"), "SH_SESSION_NAME": "reviewer",
                 "SH_OWNER": "alice", "SH_KEY_ID": KEY_ID, "SH_SECRET": KEY_SECRET,
                 "SH_WS_BASE": hub_url.replace("http", "ws"), "SH_MODE": "cli", "SH_CLI_LAUNCH": "pty",
                 "SH_CLI_CMD": f"{sys.executable} -u {cli_program}",
-                "SH_PROXY": "off", "SH_INBOX_DB": str(tmp / "helper-inbox.db")}
+                "SH_PROXY": "off", "SH_INBOX_DB": str(helper_inbox)}
             helper = subprocess.Popen([sys.executable, "-m", "sessionhelper"], cwd=ROOT, env=helper_env,
                                       stdout=logs["helper"], stderr=subprocess.STDOUT)
             time.sleep(1)
@@ -214,21 +399,74 @@ def main():
             _, result = post(f"{vs_url}/input", {"text": "LEVEL1", "page_id": page["page_id"],
                                                    "page_token": page["page_token"], "request_id": request_id})
             assert result.get("ok"), result
-            deadline = time.time() + 5
+            delivery_id = wait_view_delivery_processed(db, helper_inbox, request_id)
+            deadline = time.time() + 15
             while time.time() < deadline and not cli_marker.exists():
                 time.sleep(.05)
             time.sleep(.3)
             cli_output_ok = cli_marker.exists() and cli_marker.read_text() == "1"
+
+            # Production replacement restarts Hub and drops every WS. Wait for
+            # the real helper to reconnect before accepting the next View input.
+            old_conn_seq = session_connection_sequence(db)
+            stop(hub)
+            hub = subprocess.Popen([binary], cwd=ROOT, env=hub_env, stdout=logs["hub"], stderr=subprocess.STDOUT)
+            wait_http(f"{hub_url}/readyz")
+            wait_session_online(db, old_conn_seq)
+            restart_request_id = "b" * 32
+            _, restart_result = post(f"{vs_url}/input", {"text": "LEVEL1", "page_id": page["page_id"],
+                "page_token": page["page_token"], "request_id": restart_request_id})
+            assert restart_result.get("ok"), restart_result
+            restart_delivery_id = wait_view_delivery_processed(db, helper_inbox, restart_request_id)
+            assert cli_output_ok, "initial CLI output did not return through Hub events"
+
+            # Kill only the real helper while Hub + VS remain available. A View
+            # input in this disconnected window must be durably admitted, then
+            # drained exactly once after the helper reconnects and re-attests
+            # delivery_ack_v1.
+            before_offline_conn_seq = session_connection_sequence(db)
             stop(helper)
+            wait_session_offline(db)
+            offline_request_id = "c" * 32
+            _, offline_result = post(f"{vs_url}/input", {"text": "LEVEL1", "page_id": page["page_id"],
+                "page_token": page["page_token"], "request_id": offline_request_id})
+            assert offline_result.get("ok"), offline_result
+            offline_delivery_id = wait_view_delivery_queued(db, offline_request_id)
             helper = subprocess.Popen([sys.executable, "-m", "sessionhelper"], cwd=ROOT, env=helper_env,
                                       stdout=logs["helper"], stderr=subprocess.STDOUT)
-            time.sleep(1)
+            wait_session_online(db, before_offline_conn_seq)
+            assert wait_view_delivery_processed(db, helper_inbox, offline_request_id) == offline_delivery_id
+            with sqlite3.connect(db) as conn:
+                offline_row = conn.execute(
+                    "SELECT state,attempts FROM session_delivery WHERE id=?",
+                    (offline_delivery_id,),
+                ).fetchone()
+            with sqlite3.connect(helper_inbox) as conn:
+                helper_offline_row = conn.execute(
+                    "SELECT state,attempts FROM delivery_inbox WHERE session_name=? AND delivery_id=?",
+                    ("reviewer", offline_delivery_id),
+                ).fetchone()
+            # Hub may retransmit the same durable ID while the freshly started
+            # CLI reports busy. Exactly-once is asserted at the helper/CLI
+            # processing boundary, where the inbox deduplicates by delivery ID.
+            assert offline_row and offline_row[0] == "processed" and offline_row[1] >= 1, offline_row
+            assert helper_offline_row == ("processed", 1), helper_offline_row
+            assert cli_marker.read_text() == "1", cli_marker.read_text()
+
+            # Real Hub WS + real helper inbox: drop after delivered ACK but
+            # before processed, then reconnect. The same id must be retried
+            # exactly once and the next FIFO item must not wait two minutes.
+            stop(helper)
+            helper = None
+            wait_session_offline(db)
+            hol_first, hol_second, hol_elapsed = asyncio.run(
+                disconnect_after_delivered_smoke(hub_url, vs_url, page, db, tmp)
+            )
             assert webhook_unlock(hub_url, page["code"], "unlock-after-churn") == 202
             wait_unlocked(vs_url, page)
             wait_unlock_reply(db, "unlock-after-churn", 2)
             time.sleep(.5); logs["hub"].flush(); logs["hub"].seek(0)
             assert "未找到页面码" not in logs["hub"].read()
-            assert cli_output_ok, "CLI output did not return through Hub events"
             route_data = json.loads(routing.read_text())
             route_data["targets"]["canary"]["view_unlock_v2"] = False
             time.sleep(1.1)
@@ -244,7 +482,11 @@ def main():
             assert signed_post(vs_url, "/internal/control/view-page/unlock",
                                {**unlock_body, "command_id": "off", "request_id": "off"},
                                forward_secret, "canary", "hub-to-view-service/v1") == 404
-            print("LEVEL1 PASS: wiring + CLI output + churn first-unlock")
+            print(f"LEVEL1 PASS: VS /input + Hub provenance + real helper processed delivery={delivery_id} "
+                  f"+ Hub-restart recovery delivery={restart_delivery_id}"
+                  f"+ offline durable delivery={offline_delivery_id} processed once"
+                  f"+ disconnect retry={hol_first} next={hol_second} elapsed={hol_elapsed:.3f}s"
+                  f"+ CLI output + helper churn first-unlock")
         except Exception:
             for name, stream in logs.items():
                 stream.flush(); stream.seek(0)

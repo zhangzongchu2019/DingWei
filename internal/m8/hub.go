@@ -928,6 +928,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			h.closeFeishuSyncLocked(keyID, sessionName)
 		}
 		h.mu.Unlock()
+		if current && h.sessionSupportsDeliveryACK(c) {
+			h.releaseSessionDeliveryLeases(c, "session_disconnected")
+		}
 		for _, viewer := range terminalViewers {
 			_ = terminalWrite(context.Background(), viewer, map[string]any{"type": "status", "readonly": true, "message": "会话已离线"})
 			if viewer != nil && viewer.conn != nil {
@@ -990,6 +993,17 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "from 地址必须等于当前会话地址"))
 			continue
 		}
+		if env.Meta == nil {
+			env.Meta = map[string]any{}
+		}
+		// Reserved attestation fields are never accepted from a session. The
+		// authenticated WS admission below derives the canonical agent channel.
+		if _, claimed := env.Meta["provenance"]; claimed {
+			log.Printf("provenance claim dropped ingress=agent_session session=%s", sessionName)
+		}
+		delete(env.Meta, "provenance")
+		delete(env.Meta, hubIngressMetaKey)
+		env.Meta[hubIngressMetaKey] = hubIngressAgent
 		if h.handleAgentNetworkSkillAck(c, env) {
 			continue
 		}
@@ -2541,6 +2555,16 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 		if to.KeyID == from.KeyID && h.sessionOnline(to.KeyID, to.SessionName) {
 			return h.routeToSession(ctx, to.KeyID, to.SessionName, env, from.Kind == addressFeishu)
 		}
+		// 可靠 helper 的能力已经由 Hub 在在线握手时坐实并持久化。连接瞬断时，
+		// 同 key 的精确地址仍可安全入 durable queue；不把这一规则扩展到别名
+		// 或跨 key，避免离线状态下猜测 owner 路由。
+		if to.KeyID == from.KeyID && reliablePrimaryEnvelope(env) && h.Repo != nil {
+			if deliveryACK, found, lookupErr := h.Repo.SessionEndpointDeliveryACK(ctx, to.KeyID, to.SessionName); lookupErr != nil {
+				return lookupErr
+			} else if found && deliveryACK {
+				return h.routeToSession(ctx, to.KeyID, to.SessionName, env, from.Kind == addressFeishu)
+			}
+		}
 		// 否则按发件人账号(owner)解析真实 key：支持同账号跨 key 互通 + 容错发件人补错 key + 强制同 owner。
 		// （send.py 会把地址补成发件人自己的 key，所以即便 to.KeyID==from.KeyID，目标也可能在该 owner 的另一个 key 下）
 		senderOwner := h.ownerKeyForKey(ctx, from.KeyID)
@@ -3092,11 +3116,24 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			c = sessions[sessionName]
 		}
 	}()
-	if c == nil {
+	reliable := reliablePrimaryEnvelope(env)
+	deliveryACK := c != nil && h.sessionSupportsDeliveryACK(c)
+	endpointKnown := c != nil
+	if reliable && !deliveryACK && h.Repo != nil {
+		var err error
+		deliveryACK, endpointKnown, err = h.Repo.SessionEndpointDeliveryACK(ctx, keyID, sessionName)
+		if err != nil {
+			h.unclaimEnvelope(env.ID, sig)
+			return err
+		}
+	}
+	if c == nil && !(reliable && deliveryACK && endpointKnown && h.Repo != nil) {
+		log.Printf("session route decision=offline_rejected key_id=%s session=%s client_present=false reliable=%t endpoint_known=%t delivery_ack_v1=%t reason=session_offline",
+			keyID, sessionName, reliable, endpointKnown, deliveryACK)
 		h.unclaimEnvelope(env.ID, sig)
 		return fmt.Errorf("session %s offline", sessionName)
 	}
-	if reliablePrimaryEnvelope(env) && h.sessionSupportsDeliveryACK(c) && h.Repo != nil {
+	if reliable && deliveryACK && h.Repo != nil {
 		if env.Meta == nil {
 			env.Meta = map[string]any{}
 		}
@@ -3106,21 +3143,31 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		env.Meta["delivery_version"] = 1
 		env.Meta["ack_required"] = true
 		env.Meta["source_message_id"] = env.ID
-		payload, err := json.Marshal(env)
+		payload, err := json.Marshal(sessionClientEnvelope(env))
 		if err != nil {
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
-		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env)}); err != nil {
+		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env), Provenance: provenanceJSON(env)}); err != nil {
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
 		h.publishInputObservation(keyID, sessionName, env, deliveryID, "hub_received", "primary", true)
 		h.publishSourceCopyObservation(env, deliveryID, "hub_received")
-		h.drainSessionDeliveries(ctx, c)
+		connSeq := 0
+		if c != nil {
+			connSeq = c.connSeq
+		}
+		log.Printf("session route decision=durable_queued key_id=%s session=%s client_present=%t conn_seq=%d delivery_id=%s source_message_id=%s",
+			keyID, sessionName, c != nil, connSeq, deliveryID, env.ID)
+		if c != nil {
+			h.drainSessionDeliveries(ctx, c)
+		}
 		return nil
 	}
-	if err := c.write(ctx, env); err != nil {
+	if err := c.write(ctx, sessionClientEnvelope(env)); err != nil {
+		log.Printf("session route decision=direct_write_failed key_id=%s session=%s client_present=true conn_seq=%d source_message_id=%s reason=%q",
+			keyID, sessionName, c.connSeq, env.ID, err.Error())
 		h.unclaimEnvelope(env.ID, sig)
 		return err
 	}
@@ -3176,12 +3223,40 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 		return false
 	}
 	c.stateMu.Lock()
+	wasDeliveryACKV1 := c.deliveryACKV1
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
 	c.stateMu.Unlock()
+	if h.Repo != nil {
+		if err := h.Repo.SetSessionEndpointDeliveryACK(context.Background(), c.keyID, c.sessionName, c.deliveryACKV1); err != nil {
+			log.Printf("session capability persist failed key_id=%s session=%s conn_seq=%d delivery_ack_v1=%t err=%v",
+				c.keyID, c.sessionName, c.connSeq, c.deliveryACKV1, err)
+		}
+	}
 	if h.sessionSupportsDeliveryACK(c) {
+		if !wasDeliveryACKV1 {
+			h.releaseSessionDeliveryLeases(c, "session_reconnected")
+		}
 		go h.drainSessionDeliveries(context.Background(), c)
 	}
 	return true
+}
+
+func (h *Hub) releaseSessionDeliveryLeases(c *sessionClient, reason string) {
+	if h.Repo == nil || c == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	released, err := h.Repo.ReleaseSessionDeliveryLeases(
+		ctx, c.keyID, c.sessionName, reason, time.Now().UTC(),
+	)
+	if err != nil {
+		log.Printf("session delivery lease release failed key_id=%s session=%s conn_seq=%d reason=%s error=%q",
+			c.keyID, c.sessionName, c.connSeq, reason, err.Error())
+		return
+	}
+	log.Printf("session delivery lease release decision=requeue key_id=%s session=%s conn_seq=%d reason=%s released=%d",
+		c.keyID, c.sessionName, c.connSeq, reason, released)
 }
 
 func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, env model.Envelope) bool {
@@ -3220,7 +3295,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	}
 	if state == "injected" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "injected", "", time.Now().UTC())
-		h.publishDeliveryUpdateForDelivery(*d, "cli_injected", "", "")
+		h.publishDeliveryUpdateForDelivery(*d, "injected", "cli_injected", "", "")
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
 		}
@@ -3228,7 +3303,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	} else if state == "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
 		if d.State != "injected" {
-			h.publishDeliveryUpdateForDelivery(*d, "cli_injected", "", "")
+			h.publishDeliveryUpdateForDelivery(*d, "processed", "cli_injected", "", "")
 		}
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
@@ -3236,22 +3311,22 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		go h.drainSessionDeliveries(context.Background(), c)
 	} else if state == "busy" {
 		_ = h.Repo.UpdateSessionDeliveryBusy(ctx, id, metaString(env.Meta, "reason"), time.Now().UTC().Add(15*time.Second))
-		h.publishDeliveryUpdateForDelivery(*d, "helper_received", "", metaString(env.Meta, "reason"))
+		h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", metaString(env.Meta, "reason"))
 		h.scheduleSessionDeliveryDrain(c, 15*time.Second)
 	} else if state == "failed" {
 		retryable := metaBool(env.Meta, "retryable")
 		if retryable {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "queued", metaString(env.Meta, "reason"), time.Now().UTC().Add(2*time.Second))
-			h.publishDeliveryUpdateForDelivery(*d, "helper_received", "", metaString(env.Meta, "reason"))
+			h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", metaString(env.Meta, "reason"))
 			h.scheduleSessionDeliveryDrain(c, 2*time.Second)
 		} else {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "dead", metaString(env.Meta, "reason"), time.Now().UTC())
-			h.publishDeliveryUpdateForDelivery(*d, "helper_received", "failed", metaString(env.Meta, "reason"))
+			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", metaString(env.Meta, "reason"))
 			go h.drainSessionDeliveries(context.Background(), c)
 		}
 	} else if d.State != "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "delivered", "", time.Now().UTC().Add(2*time.Minute))
-		h.publishDeliveryUpdateForDelivery(*d, "helper_received", "", "")
+		h.publishDeliveryUpdateForDelivery(*d, "delivered", "helper_received", "", "")
 		h.scheduleSessionDeliveryDrain(c, 2*time.Minute)
 		if position := metaInt(env.Meta, "queue_position"); position > 0 {
 			h.notifyDeliveryQueued(ctx, *d, position)
@@ -3260,15 +3335,15 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	return true
 }
 
-func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, stage, status, reason string) {
-	h.publishDeliveryUpdate(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, stage, status, reason)
+func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, deliveryState, stage, status, reason string) {
+	h.publishDeliveryUpdate(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason)
 	var original model.Envelope
 	if json.Unmarshal([]byte(d.Envelope), &original) != nil {
 		return
 	}
 	from, err := parseAddress(original.From)
 	if err == nil && from.Kind == addressSession && from.SessionName != "" && from.SessionName != "workpulse" {
-		h.publishDeliveryUpdate(from.KeyID, from.SessionName, d.SourceMessageID, d.ID, stage, status, reason)
+		h.publishDeliveryUpdate(from.KeyID, from.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason)
 	}
 }
 
@@ -3276,18 +3351,43 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 	if h.Repo == nil || !h.sessionSupportsDeliveryACK(c) {
 		return
 	}
+	h.mu.Lock()
+	var replacement *sessionClient
+	if sessions := h.sessionClients[c.keyID]; sessions != nil {
+		replacement = sessions[c.sessionName]
+	}
+	h.mu.Unlock()
+	// A real WebSocket client must still be the published client. Tests may use
+	// an in-memory client without a connection to exercise the drain directly.
+	if replacement != c && c.conn != nil {
+		log.Printf("session delivery drain skipped decision=stale_or_offline_client key_id=%s session=%s conn_seq=%d client_present=%t",
+			c.keyID, c.sessionName, c.connSeq, replacement != nil)
+		return
+	}
 	for {
+		expired, err := h.Repo.ExpireSessionDeliveries(ctx, c.keyID, c.sessionName, time.Now().UTC())
+		if err != nil {
+			return
+		}
+		for _, d := range expired {
+			h.publishDeliveryUpdateForDelivery(d, "dead", "helper_received", "failed", "delivery_expired")
+		}
 		d, err := h.Repo.ClaimSessionDelivery(ctx, c.keyID, c.sessionName, time.Now().UTC())
 		if err != nil || d == nil {
 			return
 		}
 		var env model.Envelope
 		if err := json.Unmarshal([]byte(d.Envelope), &env); err != nil {
-			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", err.Error(), time.Now().UTC())
+			if updateErr := h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "malformed_envelope", time.Now().UTC()); updateErr != nil {
+				return
+			}
+			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "malformed_envelope")
 			continue
 		}
 		if err := c.write(ctx, env); err != nil {
 			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "queued", err.Error(), time.Now().UTC().Add(5*time.Second))
+			log.Printf("session delivery write failed decision=requeue key_id=%s session=%s conn_seq=%d delivery_id=%s reason=%q retry_after=5s",
+				c.keyID, c.sessionName, c.connSeq, d.ID, err.Error())
 			return
 		}
 		delay := time.Until(d.NextAttemptAt)
@@ -3448,6 +3548,11 @@ func (h *Hub) annotateSourceContext(ctx context.Context, meta map[string]any, ms
 	meta["source_bot_channel_id"] = msg.BotChannelID
 	meta["source_chat_type"] = string(msg.ChatType)
 	meta["source_kind"] = "feishu"
+	if model.NormalizeIngressProvenance(msg.IngressProvenance) == model.IngressUntrusted {
+		meta[hubIngressMetaKey] = hubIngressFeishuUnknown
+	} else {
+		meta[hubIngressMetaKey] = hubIngressFeishu
+	}
 	source := sourceAccount(msg)
 	if openID := feishuOpenIDFromAccount(source); openID != "" {
 		meta["source_open_id"] = openID

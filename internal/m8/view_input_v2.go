@@ -111,15 +111,28 @@ func (h *Hub) HandleInternalViewV2Input(w http.ResponseWriter, r *http.Request) 
 func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, requestID, text string) error {
 	h.mu.Lock()
 	st, found := h.terminalBySessionNameLocked(session)
-	var c *sessionClient
 	var keyID string
 	if found {
 		keyID = st.keyID
-		c = h.sessionClients[keyID][session]
 	}
 	h.mu.Unlock()
-	if c == nil {
-		return fmt.Errorf("session offline or ambiguous")
+	if !found && h.Repo != nil {
+		endpoints, err := h.Repo.ListSessionEndpoints(ctx)
+		if err != nil {
+			return err
+		}
+		for _, ep := range endpoints {
+			if ep.SessionName != session || !ep.DeliveryACKV1 {
+				continue
+			}
+			if keyID != "" && keyID != ep.KeyID {
+				return fmt.Errorf("session unavailable or ambiguous")
+			}
+			keyID = ep.KeyID
+		}
+	}
+	if keyID == "" {
+		return fmt.Errorf("session unavailable or ambiguous")
 	}
 	env := model.Envelope{
 		// Stable request ID reaches the helper queue as the delivery identity, so a
@@ -127,7 +140,8 @@ func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, reques
 		ID: requestID, To: sessionAddress(session, keyID), From: sessionAddress("workpulse", keyID),
 		Body: terminalSubmission(text), TS: time.Now().Unix(),
 		Meta: map[string]any{"source_kind": "user", "source_display_name": "View",
-			"auth_mode": "view_page_v2", "page_id": pageID, "request_id": requestID},
+			"auth_mode": "view_page_v2", "page_id": pageID, "request_id": requestID,
+			hubIngressMetaKey: hubIngressViewV2},
 	}
 	return h.routeToSession(ctx, keyID, session, env, false)
 }

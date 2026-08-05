@@ -40,6 +40,9 @@ HUB_TO_VS_SECRET_FILE = os.environ.get("VS_HUB_TO_VS_SECRET_FILE", "").strip()
 PAGE_DB_FILE = os.environ.get("VS_PAGE_DB", os.path.join(BASE_DIR, "view-pages.db"))
 VS_TO_HUB_SECRET_FILE = os.environ.get("VS_TO_HUB_SECRET_FILE", "").strip()
 PAGE_SWEEP_INTERVAL = max(5.0, float(os.environ.get("VS_PAGE_SWEEP_INTERVAL", "30")))
+# 全局任务看板投影(C3):非 session 子路径,渲染器轮询 GET /tasks 取 VS_TASKS_FILE 快照。
+# 空/缺失/坏 JSON 一律 fail-closed 返 200 {tasks:[]}——绝不 404/5xx,免背景轮询噪声污染 UI。
+VS_TASKS_FILE = os.environ.get("VS_TASKS_FILE", "").strip()
 CONTROL_CLOCK_SKEW = 60
 HUB_TO_VS_DIRECTION = "hub-to-view-service/v1"
 CONTROL_UNLOCK_PATH = "/internal/control/view-page/unlock"
@@ -174,10 +177,104 @@ def _hub_v2_input(session: str, page_id: str, request_id: str, text: str) -> tup
         return 0, {"error": str(exc)}
 
 
+def _hub_v2_cancel(session: str, page_id: str, request_id: str,
+                   message_id: str, delivery_id: str) -> tuple[int, dict]:
+    """V2 真删除链:VS 侧对 hub V2 签名 cancel 端点(dev55)的调用,镜像 _hub_v2_input。
+    body 双键 G-ADDR(message_id + delivery_id,注入前无 turn_id);request_id 幂等键
+    (每个取消意图一个、重试复用,hub 同 id+同 body 返 duplicate:true 不再进 core)。
+    hub 只验 VS 签名(VS 侧已 authorize_page),keyID 由 hub 从 delivery 记录解析。
+    返回 (hub_status, hub_body)。"""
+    if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
+        return 0, {"error": "v2 cancel auth unavailable"}
+    try:
+        with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+            secret = fh.read().strip()
+    except OSError as exc:
+        return 0, {"error": str(exc)}
+    if len(secret) < 32:
+        return 0, {"error": "v2 cancel secret too short"}
+    path = f"/internal/view-v2/{session}/cancel"
+    body = json.dumps({"session": session, "page_id": page_id, "request_id": request_id,
+                       "message_id": message_id, "delivery_id": delivery_id},
+                      ensure_ascii=False, separators=(",", ":")).encode()
+    timestamp = str(int(time.time()))
+    nonce = secrets.token_hex(16)
+    signature = _control_signature(secret, "POST", path, timestamp, nonce, body,
+                                   direction="view-service-to-hub/v1")
+    req = urllib.request.Request(
+        HUB_INTERNAL + path, data=body, method="POST",
+        headers={"Content-Type": "application/json", "X-DW-VS-Target": VIEW_TARGET_NAME,
+                 "X-DW-Timestamp": timestamp, "X-DW-Nonce": nonce,
+                 "X-DW-Request-ID": request_id, "X-DW-Signature": signature},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as response:
+            raw = response.read().decode("utf-8", "replace")
+            return response.status, json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as exc:
+        return exc.code, {"error": exc.read().decode("utf-8", "replace")}
+    except Exception as exc:
+        return 0, {"error": str(exc)}
+
+
+def _hub_v2_interrupt(session: str, page_id: str, request_id: str,
+                      delivery_id: str, turn_id: str) -> tuple[int, dict]:
+    """V2 中断链:VS 侧对 hub V2 签名 interrupt 端点(devo48)的调用,镜像 _hub_v2_cancel。
+    body 双键 delivery_id + turn_id(注入后打运行中 turn,故带 turn_id、无 message_id);
+    request_id 幂等键(每个中断意图一个、重试复用)。hub 只验 VS 签名(VS 侧已 authorize_page),
+    按 session 找在线 client 后写 terminalInterruptType 帧(无 Path A/B、无 CAS)。
+    返回 (hub_status, hub_body)。"""
+    if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
+        return 0, {"error": "v2 interrupt auth unavailable"}
+    try:
+        with open(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+            secret = fh.read().strip()
+    except OSError as exc:
+        return 0, {"error": str(exc)}
+    if len(secret) < 32:
+        return 0, {"error": "v2 interrupt secret too short"}
+    path = f"/internal/view-v2/{session}/interrupt"
+    body = json.dumps({"session": session, "page_id": page_id, "request_id": request_id,
+                       "delivery_id": delivery_id, "turn_id": turn_id},
+                      ensure_ascii=False, separators=(",", ":")).encode()
+    timestamp = str(int(time.time()))
+    nonce = secrets.token_hex(16)
+    signature = _control_signature(secret, "POST", path, timestamp, nonce, body,
+                                   direction="view-service-to-hub/v1")
+    req = urllib.request.Request(
+        HUB_INTERNAL + path, data=body, method="POST",
+        headers={"Content-Type": "application/json", "X-DW-VS-Target": VIEW_TARGET_NAME,
+                 "X-DW-Timestamp": timestamp, "X-DW-Nonce": nonce,
+                 "X-DW-Request-ID": request_id, "X-DW-Signature": signature},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as response:
+            raw = response.read().decode("utf-8", "replace")
+            return response.status, json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as exc:
+        return exc.code, {"error": exc.read().decode("utf-8", "replace")}
+    except Exception as exc:
+        return 0, {"error": str(exc)}
+
+
 def _read_renderer() -> bytes:
     # Per-request read keeps the single production renderer hot-updatable.
     with open(RENDERER_PATH, "rb") as fh:
         return fh.read()
+
+
+def _read_tasks_snapshot() -> dict:
+    """GET /tasks 快照读取。fail-closed:无 VS_TASKS_FILE / 读失败 / 坏 JSON / 形状不符
+    一律返 {"project":"","tasks":[]}(渲染器要 tasks 是 list),绝不抛——保证 handler 恒 200。"""
+    if VS_TASKS_FILE:
+        try:
+            with open(VS_TASKS_FILE, encoding="utf-8") as fh:
+                data = json.load(fh)
+            if isinstance(data, dict) and isinstance(data.get("tasks"), list):
+                return data
+        except Exception:
+            pass
+    return {"project": "", "tasks": []}
 
 
 def _load_state() -> None:
@@ -325,6 +422,75 @@ def _forward_control(session: str, kind: str, message_id: str, delivery_id: str)
     return (code == 200), code
 
 
+def _forward_control_v2(session: str, page_id: str, page_token: str, request_id: str,
+                        message_id: str, delivery_id: str) -> tuple[int, bool]:
+    """V2 真删除链 VS 侧:page 授权(authorize_page,V2 唯一写权门)+ 签名转发 hub V2 cancel。
+    返回 (http_status, ok) 供 _handle_control 直接回 renderer。四态返回码(07-19 教训:不压 403):
+      400=请求错(缺 page 凭证) / 403=真·未鉴权(authorize_page 失败,与 404/5xx 严格区分)
+      200{ok:bool}=已转发(hub 200:成功/幂等 duplicate 均 ok:true;hub 409 已注入终态→ok:false 未生效)
+      502=hub 5xx/网络/签名配置错(未发出,非未鉴权)。
+    边界:本轮只"接通被 nginx/V2 断掉的通路",不修 cancel 抢在 accept 前的静默丢竞态
+          (那是 hub durable cancel_requested 状态机、GA 前补)。"""
+    if not (page_id and page_token and request_id):
+        return 400, False
+    store = _get_page_store()
+    if not store.authorize_page(page_id, page_token, session):
+        return 403, False  # 真·未鉴权
+    code, payload = _hub_v2_cancel(session, page_id, request_id, message_id, delivery_id)
+    if code == 200:
+        # 成功 / 幂等 duplicate:true 均 ok:true;条目消失只由 hub SSE delivery_update(cancelled) 驱动。
+        ok = bool(payload.get("ok"))
+        if ok:
+            store.record_successful_write(page_id, page_token)
+        return 200, ok
+    if code == 409:
+        return 200, False  # 注入前条目已终态/已注入 → 取消未生效(非未发出)
+    return 502, False  # hub 5xx/网络/签名错 → 未发出,独立码,绝不压成 403
+
+
+def _forward_interrupt(session: str, delivery_id: str, turn_id: str) -> tuple[bool, int]:
+    """legacy(VS_VIEW_UNLOCK_V2=0):把 renderer 的 interrupt 转发到 hub legacy 内网口。
+    鉴权沿用 /input 的 viewer_id+writer token(hub 侧 HandleInternalViewInterrupt 再核 writerPage/token)。
+    G-ADDR:delivery_id + turn_id(注入后打运行中 turn)。返回 (ok, hub_status)。"""
+    if not (delivery_id and turn_id):
+        return False, 400
+    st = _ensure_ready(session)
+    if not (st.get("viewer_id") and st.get("token")):
+        return False, 403  # 无 page 写权 → 不转发(别裸)
+    code, _ = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/interrupt", {
+        "viewer_id": st["viewer_id"],
+        "token": st["token"],
+        "delivery_id": delivery_id,
+        "turn_id": turn_id,
+    })
+    return (code == 200), code
+
+
+def _forward_interrupt_v2(session: str, page_id: str, page_token: str, request_id: str,
+                          delivery_id: str, turn_id: str) -> tuple[int, bool]:
+    """V2 中断链 VS 侧:page 授权(authorize_page,V2 唯一写权门)+ 签名转发 hub V2 interrupt。
+    返回 (http_status, ok) 供 _handle_interrupt 直接回 renderer。四态返回码(07-19 教训:不压 403):
+      400=请求错(缺 page 凭证) / 403=真·未鉴权(authorize_page 失败,与 409/5xx 严格区分)
+      200{ok:bool}=已转发(hub 200:成功/幂等 duplicate 均 ok:true;hub 409 会话离线不可中断→ok:false)
+      502=hub 5xx/网络/签名配置错/401 验签失败(未发出,非未鉴权)。
+    与 _forward_control_v2 逐字节同构,仅换端点与地址键(delivery_id+turn_id,无 message_id)。"""
+    if not (page_id and page_token and request_id):
+        return 400, False
+    store = _get_page_store()
+    if not store.authorize_page(page_id, page_token, session):
+        return 403, False  # 真·未鉴权
+    code, payload = _hub_v2_interrupt(session, page_id, request_id, delivery_id, turn_id)
+    if code == 200:
+        # 成功 / 幂等 duplicate:true 均 ok:true;turn 停止由既有 turn/流事件收尾(非特殊 SSE)。
+        ok = bool(payload.get("ok"))
+        if ok:
+            store.record_successful_write(page_id, page_token)
+        return 200, ok
+    if code == 409:
+        return 200, False  # 会话离线/无活连接 → 中断未生效(非未发出)
+    return 502, False  # hub 5xx/网络/签名错/401 → 未发出,独立码,绝不压成 403
+
+
 def _read_mem() -> dict:
     try:
         info = {}
@@ -370,7 +536,15 @@ class _Handler(BaseHTTPRequestHandler):
             return self._serve_events()
         if path == "/status":
             return self._serve_status()
+        if path == "/tasks":
+            return self._serve_tasks()
         self.send_error(404)
+
+    def _serve_tasks(self):
+        """全局任务看板快照(GET /tasks,非 scoped)。fail-closed:无 VS_TASKS_FILE / 读失败 / 坏 JSON
+        一律返 200 {tasks:[]},绝不 404/5xx——渲染器背景轮询不产噪声、不污染取消 UI。
+        注意:该端点非 session 子路径,生产需 nginx 一并把裸 /tasks 路由到 VS 才生效。"""
+        return self._json_response(200, _read_tasks_snapshot())
 
     def _serve_file(self):
         try:
@@ -493,6 +667,8 @@ class _Handler(BaseHTTPRequestHandler):
             return self.send_error(400, "session required")
         if path == "/control":
             return self._handle_control(session)
+        if path == "/interrupt":
+            return self._handle_interrupt(session)
         if path == "/page":
             if not VIEW_UNLOCK_V2:
                 return self.send_error(404)
@@ -580,12 +756,52 @@ class _Handler(BaseHTTPRequestHandler):
                 obj = {}
         except Exception:
             obj = {}
-        ok, _ = _forward_control(
-            session,
-            str(obj.get("kind", "")).strip(),
-            str(obj.get("message_id", "")).strip(),
-            str(obj.get("delivery_id", "")).strip(),
-        )
+        kind = str(obj.get("kind", "")).strip()
+        message_id = str(obj.get("message_id", "")).strip()
+        delivery_id = str(obj.get("delivery_id", "")).strip()
+        # 模式门互斥(镜像 /input):V2 下走 V2 分支、legacy 分支不可达 → 无未鉴权控制入口。
+        if VIEW_UNLOCK_V2:
+            # V2 走甲最小 scope:仅 kind=cancel + G-ADDR 双键;四态返回码(不压 403)见 _forward_control_v2。
+            if kind not in CONTROL_KINDS or not (message_id and delivery_id):
+                return self._json_response(400, {"ok": False})
+            status, ok = _forward_control_v2(
+                session,
+                str(obj.get("page_id", "")).strip(),
+                str(obj.get("page_token", "")).strip(),
+                str(obj.get("request_id", "")).strip(),
+                message_id, delivery_id)
+            return self._json_response(status, {"ok": ok})
+        # legacy(VS_VIEW_UNLOCK_V2=0):直通 _forward_control(viewer_id+writer token),行为完全不变。
+        ok, _ = _forward_control(session, kind, message_id, delivery_id)
+        self._json_response(200, {"ok": ok})
+
+    def _handle_interrupt(self, session: str):
+        """中断运行中 turn。镜像 _handle_control 的模式门(V2/legacy 互斥)。
+        body:{delivery_id,turn_id,page_id?,page_token?,request_id?}。
+        interrupt 带 turn_id(注入后)、无 message_id/kind(与 cancel 相反)。"""
+        length = int(self.headers.get("Content-Length") or 0)
+        raw = self.rfile.read(length) if length else b"{}"
+        try:
+            obj = json.loads(raw)
+            if not isinstance(obj, dict):
+                obj = {}
+        except Exception:
+            obj = {}
+        delivery_id = str(obj.get("delivery_id", "")).strip()
+        turn_id = str(obj.get("turn_id", "")).strip()
+        # 模式门互斥(镜像 /input、/control):V2 下走 V2 分支、legacy 分支不可达。
+        if VIEW_UNLOCK_V2:
+            if not (delivery_id and turn_id):
+                return self._json_response(400, {"ok": False})
+            status, ok = _forward_interrupt_v2(
+                session,
+                str(obj.get("page_id", "")).strip(),
+                str(obj.get("page_token", "")).strip(),
+                str(obj.get("request_id", "")).strip(),
+                delivery_id, turn_id)
+            return self._json_response(status, {"ok": ok})
+        # legacy:直通 _forward_interrupt(viewer_id+writer token,hub legacy interrupt 端点)。
+        ok, _ = _forward_interrupt(session, delivery_id, turn_id)
         self._json_response(200, {"ok": ok})
 
 

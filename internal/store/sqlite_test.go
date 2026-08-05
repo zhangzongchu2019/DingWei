@@ -28,6 +28,33 @@ func newTestSQLite(t *testing.T) (*SQLite, context.Context) {
 	return db, ctx
 }
 
+func TestSessionEndpointDeliveryACKPersistsAcrossOfflineState(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	ep := model.SessionEndpoint{
+		KeyID: "key", SessionName: "home", LastSeenAt: time.Now().UTC(), Active: true,
+	}
+	if err := db.UpsertSessionEndpoint(ctx, ep); err != nil {
+		t.Fatal(err)
+	}
+	if enabled, found, err := db.SessionEndpointDeliveryACK(ctx, "key", "home"); err != nil || !found || enabled {
+		t.Fatalf("initial capability enabled=%t found=%t err=%v", enabled, found, err)
+	}
+	if err := db.SetSessionEndpointDeliveryACK(ctx, "key", "home", true); err != nil {
+		t.Fatal(err)
+	}
+	ep.Active = false
+	if err := db.UpsertSessionEndpoint(ctx, ep); err != nil {
+		t.Fatal(err)
+	}
+	enabled, found, err := db.SessionEndpointDeliveryACK(ctx, "key", "home")
+	if err != nil || !found || !enabled {
+		t.Fatalf("offline capability enabled=%t found=%t err=%v", enabled, found, err)
+	}
+	if enabled, found, err := db.SessionEndpointDeliveryACK(ctx, "key", "missing"); err != nil || found || enabled {
+		t.Fatalf("missing endpoint enabled=%t found=%t err=%v", enabled, found, err)
+	}
+}
+
 func TestSessionDeliveryClaimBypassesExpiredDeliveredAndIsMonotonic(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	now := time.Now().UTC()
@@ -62,6 +89,60 @@ func TestSessionDeliveryClaimBypassesExpiredDeliveredAndIsMonotonic(t *testing.T
 	}
 }
 
+func TestExpireSessionDeliveriesReturnsOnlyNewTerminalRows(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	for _, d := range []model.SessionDelivery{
+		{ID: "dlv_old", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_old", CreatedAt: now.Add(-31 * time.Minute)},
+		{ID: "dlv_fresh", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_fresh", CreatedAt: now},
+		{ID: "dlv_other", KeyID: "key", SessionName: "other", Envelope: `{}`, SourceMessageID: "msg_other", CreatedAt: now.Add(-31 * time.Minute)},
+	} {
+		if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	expired, err := db.ExpireSessionDeliveries(ctx, "key", "home", now)
+	if err != nil || len(expired) != 1 || expired[0].ID != "dlv_old" ||
+		expired[0].State != "dead" || expired[0].LastError != "delivery_expired" {
+		t.Fatalf("expired deliveries = %+v, %v", expired, err)
+	}
+	again, err := db.ExpireSessionDeliveries(ctx, "key", "home", now)
+	if err != nil || len(again) != 0 {
+		t.Fatalf("repeat expiry = %+v, %v", again, err)
+	}
+	for id, want := range map[string]string{"dlv_old": "dead", "dlv_fresh": "queued", "dlv_other": "queued"} {
+		got, err := db.GetSessionDelivery(ctx, id)
+		if err != nil || got == nil || got.State != want {
+			t.Fatalf("%s state=%+v err=%v, want %s", id, got, err, want)
+		}
+	}
+}
+
+func TestSessionDeliveryProvenancePersistsAndHistoricalRowsStayUnknown(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	const provenance = `{"kind":"feishu","display_name":"飞书","attested_by":"hub","trust_decision":"trusted"}`
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+		ID: "dlv_provenance", KeyID: "key", SessionName: "home", Envelope: `{}`,
+		SourceMessageID: "msg_provenance", SourceType: "feishu_inbound", Provenance: provenance,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+		ID: "dlv_historical", KeyID: "key", SessionName: "home", Envelope: `{}`,
+		SourceMessageID: "msg_historical", SourceType: "session_inbound",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.GetSessionDelivery(ctx, "dlv_provenance")
+	if err != nil || got == nil || got.Provenance != provenance {
+		t.Fatalf("attested provenance=%+v err=%v", got, err)
+	}
+	historical, err := db.GetSessionDelivery(ctx, "dlv_historical")
+	if err != nil || historical == nil || historical.Provenance != "" {
+		t.Fatalf("historical provenance=%+v err=%v", historical, err)
+	}
+}
+
 func TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	now := time.Now().UTC()
@@ -88,6 +169,49 @@ func TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts(t *testing.T) {
 		}
 		if got.State != "queued" || got.Attempts != 0 {
 			t.Fatalf("after busy state=%s attempts=%d, want queued attempts 0", got.State, got.Attempts)
+		}
+	}
+}
+
+func TestReleaseSessionDeliveryLeasesOnlyRequeuesTargetInflightRows(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	for _, d := range []model.SessionDelivery{
+		{ID: "dlv_sent", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_sent"},
+		{ID: "dlv_delivered", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_delivered"},
+		{ID: "dlv_processed", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_processed"},
+		{ID: "dlv_other", KeyID: "key", SessionName: "other", Envelope: `{}`, SourceMessageID: "msg_other"},
+	} {
+		if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for id, state := range map[string]string{
+		"dlv_sent": "sent", "dlv_delivered": "delivered",
+		"dlv_processed": "processed", "dlv_other": "sent",
+	} {
+		if _, err := db.db.ExecContext(ctx, `UPDATE session_delivery
+			SET state=?,attempts=1,next_attempt_at=?,lease_until=? WHERE id=?`,
+			state, now.Add(2*time.Minute).Format(time.RFC3339Nano),
+			now.Add(2*time.Minute).Format(time.RFC3339Nano), id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	released, err := db.ReleaseSessionDeliveryLeases(ctx, "key", "home", "session_disconnected", now)
+	if err != nil || released != 2 {
+		t.Fatalf("released=%d err=%v", released, err)
+	}
+	for id, want := range map[string]string{
+		"dlv_sent": "queued", "dlv_delivered": "queued",
+		"dlv_processed": "processed", "dlv_other": "sent",
+	} {
+		got, err := db.GetSessionDelivery(ctx, id)
+		if err != nil || got.State != want {
+			t.Fatalf("%s=%+v err=%v want=%s", id, got, err, want)
+		}
+		if want == "queued" && (got.Attempts != 0 || got.LastError != "session_disconnected" ||
+			got.NextAttemptAt.After(now)) {
+			t.Fatalf("released row=%+v", got)
 		}
 	}
 }

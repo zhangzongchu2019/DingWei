@@ -59,7 +59,7 @@
     "delivery_stage": "helper_received",
     "updated_at": "2026-07-22T00:00:00Z",
     "reason": "",
-    "cancelable": false,
+    "cancellable": true,
     "interruptible": false
   },
   "cli_injected": {
@@ -70,7 +70,7 @@
     "delivery_stage": "cli_injected",
     "updated_at": "2026-07-22T00:00:00Z",
     "reason": "",
-    "cancelable": false,
+    "cancellable": false,
     "interruptible": false
   },
   "failed": {
@@ -82,7 +82,7 @@
     "delivery_status": "failed",
     "updated_at": "2026-07-22T00:00:00Z",
     "reason": "cli_injection_failed",
-    "cancelable": false,
+    "cancellable": false,
     "interruptible": false
   },
   "cancelled": {
@@ -94,7 +94,7 @@
     "delivery_status": "cancelled",
     "updated_at": "2026-07-22T00:00:00Z",
     "reason": "",
-    "cancelable": false,
+    "cancellable": false,
     "interruptible": false
   }
 }
