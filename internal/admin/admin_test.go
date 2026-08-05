@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -901,7 +902,7 @@ func TestPortalDatadBoardRendersTasksAndSessions(t *testing.T) {
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	body := rec.Body.String()
-	for _, want := range []string{"任务台账(datad)", "G4-1", "zzc-devo48-2642", "in_progress", "会话状态(datad)", "active", "2026-08-05T02:00:00Z"} {
+	for _, want := range []string{"任务看板(datad)", "待办", "G4-1", "zzc-devo48-2642", "in_progress", "会话状态(datad)", "active", "2026-08-05T02:00:00Z"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("portal datad board missing %q in %s", want, body)
 		}
@@ -982,5 +983,58 @@ func TestDatadProxyEndpoints(t *testing.T) {
 	rec = authedGet("/admin/datad/sessions")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"active"`) {
 		t.Fatalf("sessions proxy code=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestWriteDatadTaskBoardLayout(t *testing.T) {
+	mk := func(id, status string, ageHours int) datad.Task {
+		return datad.Task{ID: id, Title: id + "标题", OwnerSession: "zzc-devo48-2642",
+			Status: status, UpdatedAt: time.Now().Add(-time.Duration(ageHours) * time.Hour)}
+	}
+	var tasks []datad.Task
+	tasks = append(tasks, mk("TODO-1", "in_progress", 1), mk("TODO-2", "proposed", 2))
+	tasks = append(tasks, mk("ARCH-1", "archived", 1)) // 软删不展示
+	for i := 0; i < 14; i++ {                            // 14 件 done,超 cap 10
+		tasks = append(tasks, mk(fmt.Sprintf("DONE-%02d", i), "done", i)) // i 小=新
+	}
+	var buf strings.Builder
+	writeDatadTaskBoard(&buf, tasks)
+	html := buf.String()
+
+	// ① 双列自适应网格(auto-fill grid)。
+	if !strings.Contains(html, "grid-template-columns:repeat(auto-fill,minmax(260px,1fr))") {
+		t.Fatal("双列自适应网格样式缺失")
+	}
+	// ② 待办段在已完成段之前(todo 在上)。
+	todoIdx := strings.Index(html, "待办")
+	doneIdx := strings.Index(html, "已完成")
+	if todoIdx < 0 || doneIdx < 0 || todoIdx > doneIdx {
+		t.Fatalf("待办须在已完成之前: todo=%d done=%d", todoIdx, doneIdx)
+	}
+	// ③ 已完成最多 10 条(按更新时间新→旧):DONE-00..09(最新 10)在,DONE-10..13 截。
+	if !strings.Contains(html, "显示最近 10 / 共 14") {
+		t.Fatal("超 cap 应标注总数")
+	}
+	for _, keep := range []string{"DONE-00", "DONE-09"} {
+		if !strings.Contains(html, keep) {
+			t.Fatalf("已完成前 10(新→旧)应含 %s", keep)
+		}
+	}
+	for _, cut := range []string{"DONE-10", "DONE-13"} {
+		if strings.Contains(html, cut) {
+			t.Fatalf("超 cap 的 %s 应被截断", cut)
+		}
+	}
+	// archived 不展示。
+	if strings.Contains(html, "ARCH-1") {
+		t.Fatal("archived 软删不应展示")
+	}
+	// 待办两件都在。
+	if !strings.Contains(html, "TODO-1") || !strings.Contains(html, "TODO-2") {
+		t.Fatal("待办件缺失")
+	}
+	// esc 保持(标题经 esc)。
+	if !strings.Contains(html, "TODO-1标题") {
+		t.Fatal("标题渲染缺失")
 	}
 }
