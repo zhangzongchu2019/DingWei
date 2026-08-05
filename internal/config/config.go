@@ -20,7 +20,9 @@ type Bootstrap struct {
 	AdminUser            string // 首个管理员用户名
 	AdminInitPass        string // 首个管理员初始密码（仅首次 seed 用）
 	GlobalSchedulePath   string // 全局日程导出文件路径（可选）
-	FeishuTransport      string // fake|ws
+	FeishuTransport      string // fake|ws|proxy(T17:测试 Hub 出站经 fan-out 代理)
+	FeishuProxyURL       string // T17: fan-out 代理 /outbound 完整 URL(transport=proxy 时必填)
+	FeishuProxyToken     string // T17: /outbound bearer token
 	FeishuBotChannelID   string // UnifiedRobot 默认管道 ID
 	FeishuAppID          string // 飞书自建应用 app_id
 	FeishuAppSecret      string // 飞书自建应用 app_secret（敏感）
@@ -52,6 +54,8 @@ func LoadBootstrap() Bootstrap {
 		AdminInitPass:        os.Getenv("WP_ADMIN_INIT_PASSWORD"),
 		GlobalSchedulePath:   os.Getenv("WP_GLOBAL_SCHEDULE_PATH"),
 		FeishuTransport:      env("FEISHU_TRANSPORT", "fake"),
+		FeishuProxyURL:       os.Getenv("FEISHU_PROXY_URL"),
+		FeishuProxyToken:     os.Getenv("FEISHU_PROXY_TOKEN"),
 		FeishuBotChannelID:   env("FEISHU_BOT_CHANNEL_ID", "default"),
 		FeishuAppID:          os.Getenv("FEISHU_APP_ID"),
 		FeishuAppSecret:      os.Getenv("FEISHU_APP_SECRET"),

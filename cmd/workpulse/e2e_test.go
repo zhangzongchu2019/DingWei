@@ -242,15 +242,17 @@ func TestE2E_DualLLM_Failover(t *testing.T) {
 
 type e2eSuccessProvider struct{ name string }
 
-func (p *e2eSuccessProvider) Name() string                                         { return p.name }
-func (p *e2eSuccessProvider) Complete(_ context.Context, _, _ string) (string, error) { return "ok-from-backup", nil }
+func (p *e2eSuccessProvider) Name() string { return p.name }
+func (p *e2eSuccessProvider) Complete(_ context.Context, _, _ string) (string, error) {
+	return "ok-from-backup", nil
+}
 
 type e2eSeqProvider struct {
 	outs  []string
 	calls int
 }
 
-func (p *e2eSeqProvider) Name() string                                     { return "e2e-seq" }
+func (p *e2eSeqProvider) Name() string { return "e2e-seq" }
 func (p *e2eSeqProvider) Complete(_ context.Context, _, _ string) (string, error) {
 	if p.calls >= len(p.outs) {
 		return p.outs[len(p.outs)-1], nil

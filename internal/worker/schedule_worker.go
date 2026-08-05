@@ -396,6 +396,8 @@ func (p *Processor) sendReply(ctx context.Context, msg model.Message, text strin
 		ToID:         msg.ChatEntityID,
 		ToType:       string(msg.ChatType),
 		Text:         text,
+		// T17 §C1:回复类托管幂等键=派生自触发消息(重试/重启恒同);slot=0(单回复)。
+		RequestID: feishu.DeriveRequestID("reply", msg.ID, "0"),
 	}
 	if msg.ChatType == model.ChatGroup {
 		out.ToID = strings.TrimPrefix(msg.ChatEntityID, msg.BotChannelID+":group:")
