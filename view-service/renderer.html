@@ -1063,16 +1063,23 @@
       return { card, body, content, meta };
     }
 
+    // 业主08-05定:tool_call/state_change 独立事件卡不上时间线(与会话卡重复,状态已有待提交区/状态栏)。
+    // 只挡"独立卡"出口:turn-group 数据入组、完成判定、状态栏/成本副作用均不受影响;
+    // state_change 本就不产卡(renderState 仅副作用),入集合为对齐口径。error 卡保留(无重复来源)。
+    const HIDDEN_TIMELINE_CARD_KINDS = new Set(['tool_call', 'state_change']);
+
     function renderEvent(ev) {
       if (ev.kind === 'state_change' && ev.data?.change === 'session_init') return renderState(ev);
       const turnKey = turnKeyFor(ev);
       if (turnKey && ['user_input', 'assistant_text', 'tool_call', 'state_change', 'error'].includes(ev.kind)) {
         return renderTurnEvent(turnKey, ev);
       }
+      if (HIDDEN_TIMELINE_CARD_KINDS.has(ev.kind)) {
+        if (ev.kind === 'state_change') renderState(ev);   // 状态栏/成本副作用保留,本就无卡
+        return;
+      }
       if (ev.kind === 'user_input') return renderUser(ev);
       if (ev.kind === 'assistant_text') return renderAssistant(ev);
-      if (ev.kind === 'tool_call') return renderTool(ev);
-      if (ev.kind === 'state_change') return renderState(ev);
       if (ev.kind === 'error') return renderError(ev);
       renderUnknown(ev);
     }
