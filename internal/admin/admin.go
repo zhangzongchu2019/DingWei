@@ -490,8 +490,19 @@ func (s *Server) writeDatadBoard(w http.ResponseWriter, r *http.Request) {
 	if s.Datad == nil {
 		return
 	}
-	tasks, terr := s.Datad.ListTasks(r.Context())
-	sessions, serr := s.Datad.ListSessions(r.Context())
+	// claudek3 M1:两调用并行+看板独立短超时(5s),datad 挂起时不把整页拖到 2×client 超时。
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	var (
+		tasks      []datad.Task
+		sessions   []datad.SessionState
+		terr, serr error
+		wg         sync.WaitGroup
+	)
+	wg.Add(2)
+	go func() { defer wg.Done(); tasks, terr = s.Datad.ListTasks(ctx) }()
+	go func() { defer wg.Done(); sessions, serr = s.Datad.ListSessions(ctx) }()
+	wg.Wait()
 	if terr != nil || serr != nil {
 		err := terr
 		if err == nil {

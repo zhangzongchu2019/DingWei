@@ -103,7 +103,12 @@ func run(logger *slog.Logger) error {
 	adm.Prefix = prefixHub
 	adm.SecretKey = bs.SecretKey
 	if datadURL := strings.TrimSpace(os.Getenv("DATAD_URL")); datadURL != "" {
-		adm.Datad = datad.NewClient(datadURL, strings.TrimSpace(os.Getenv("DATAD_TOKEN")))
+		datadToken := strings.TrimSpace(os.Getenv("DATAD_TOKEN"))
+		if datadToken == "" {
+			// claudek3 M3:URL 配而 token 空=对 datad 恒 401,页面只见横幅难定位,启动即警示。
+			logger.Warn("DATAD_URL set but DATAD_TOKEN empty — datad board will always 401")
+		}
+		adm.Datad = datad.NewClient(datadURL, datadToken)
 		logger.Info("portal board direct-connect datad", "url", datadURL)
 	}
 	adm.Mount(mux)                          // /healthz /readyz /admin*
