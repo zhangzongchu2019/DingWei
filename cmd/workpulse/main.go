@@ -33,6 +33,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/config"
 	"github.com/zhangzongchu2019/dingwei/internal/coordination"
+	"github.com/zhangzongchu2019/dingwei/internal/datad"
 	"github.com/zhangzongchu2019/dingwei/internal/fcs"
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
@@ -103,6 +104,10 @@ func run(logger *slog.Logger) error {
 	adm.Outbound = outbound
 	adm.Prefix = prefixHub
 	adm.SecretKey = bs.SecretKey
+	if datadURL := strings.TrimSpace(os.Getenv("DATAD_URL")); datadURL != "" {
+		adm.Datad = datad.NewClient(datadURL, strings.TrimSpace(os.Getenv("DATAD_TOKEN")))
+		logger.Info("portal board direct-connect datad", "url", datadURL)
+	}
 	adm.Mount(mux)                          // /healthz /readyz /admin*
 	portal.NewScheduleServer(st).Mount(mux) // /schedule/
 	coord := coordination.New(st, outbound, clock.Real{}, bs.GlobalSchedulePath)

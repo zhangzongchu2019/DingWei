@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
+	"github.com/zhangzongchu2019/dingwei/internal/datad"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/redact"
@@ -47,6 +48,7 @@ type Server struct {
 	Repo      store.Repository
 	Outbound  bus.Queue
 	Prefix    *m8.Hub
+	Datad     *datad.Client // T18 切换:非 nil 时看板任务/会话直连 datad(唯一活账)
 	Collector SeenPersonCollector
 	Scheduler *scheduler.Service
 	SecretKey string
@@ -66,6 +68,8 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/login", s.loginForm)
 	mux.HandleFunc("POST /admin/login", s.loginSubmit)
 	mux.HandleFunc("GET /admin", s.requireAuth(s.status))
+	mux.HandleFunc("GET /admin/datad/tasks", s.requireAuth(s.datadTasksProxy))
+	mux.HandleFunc("GET /admin/datad/sessions", s.requireAuth(s.datadSessionsProxy))
 	mux.HandleFunc("GET /admin/control-plane", s.requireAuth(s.controlPlaneDashboard))
 	mux.HandleFunc("GET /admin/messages", s.requireAuth(s.messages))
 	mux.HandleFunc("GET /admin/members", s.requireAuth(s.members))
@@ -416,6 +420,7 @@ func (s *Server) portal(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(`<!doctype html><meta charset=utf-8><title>WorkPulse 门户</title><h3>WorkPulse 团队门户</h3>`))
+	s.writeDatadBoard(w, r)
 	_, _ = w.Write([]byte(`<h4>团队排期</h4><table border=1 cellpadding=4><tr><th>成员</th><th>日期</th><th>任务</th><th>状态</th></tr>`))
 	for _, m := range members {
 		schedules, err := s.Repo.ListSchedules(r.Context(), m.OwnerKey)
@@ -443,6 +448,69 @@ func (s *Server) portal(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(`</table><h4>风险列表</h4><table border=1 cellpadding=4><tr><th>负责人</th><th>风险</th><th>状态</th></tr>`))
 	for _, risk := range risks {
 		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td></tr>`, esc(risk.OwnerKey), esc(risk.Content), esc(risk.Status))
+	}
+	_, _ = w.Write([]byte(`</table>`))
+}
+
+// datadTasksProxy / datadSessionsProxy 是只读代理端点(方案 A):datad token 留在服务端,
+// 登录态即可读;仅 GET 透传,任何写路径不经此处。
+func (s *Server) datadTasksProxy(w http.ResponseWriter, r *http.Request) {
+	s.datadProxy(w, r, func(ctx context.Context) (any, error) {
+		tasks, err := s.Datad.ListTasks(ctx)
+		return map[string]any{"tasks": tasks}, err
+	})
+}
+
+func (s *Server) datadSessionsProxy(w http.ResponseWriter, r *http.Request) {
+	s.datadProxy(w, r, func(ctx context.Context) (any, error) {
+		sessions, err := s.Datad.ListSessions(ctx)
+		return map[string]any{"sessions": sessions}, err
+	})
+}
+
+func (s *Server) datadProxy(w http.ResponseWriter, r *http.Request, fetch func(context.Context) (any, error)) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if s.Datad == nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "datad not configured"})
+		return
+	}
+	out, err := fetch(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	_ = json.NewEncoder(w).Encode(out)
+}
+
+// writeDatadBoard 渲染 datad 直连区块(任务台账+会话状态)。
+// 只读展示;拉取失败明示错误横幅,不猜旧账、不静默回退(切换后 datad 为唯一活账)。
+func (s *Server) writeDatadBoard(w http.ResponseWriter, r *http.Request) {
+	if s.Datad == nil {
+		return
+	}
+	tasks, terr := s.Datad.ListTasks(r.Context())
+	sessions, serr := s.Datad.ListSessions(r.Context())
+	if terr != nil || serr != nil {
+		err := terr
+		if err == nil {
+			err = serr
+		}
+		_, _ = fmt.Fprintf(w, `<p style="color:#b00;border:1px solid #b00;padding:6px">datad 不可达:%s</p>`, esc(err.Error()))
+		return
+	}
+	_, _ = w.Write([]byte(`<h4>任务台账(datad)</h4><table border=1 cellpadding=4><tr><th>ID</th><th>标题</th><th>负责会话</th><th>状态</th><th>锚</th><th>gate</th><th>ETA</th><th>更新时间</th></tr>`))
+	for _, t := range tasks {
+		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td data-ts="%d">%s</td></tr>`,
+			esc(t.ID), esc(t.Title), esc(t.OwnerSession), esc(t.Status), esc(t.Anchor), esc(t.Gate), esc(t.ETA),
+			t.UpdatedAt.UnixMilli(), esc(t.UpdatedAt.UTC().Format(time.RFC3339)))
+	}
+	_, _ = w.Write([]byte(`</table><h4>会话状态(datad)</h4><table border=1 cellpadding=4><tr><th>会话</th><th>状态</th><th>水位%</th><th>当前任务</th><th>备注</th><th>更新时间</th></tr>`))
+	for _, ss := range sessions {
+		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%.0f</td><td>%s</td><td>%s</td><td data-ts="%d">%s</td></tr>`,
+			esc(ss.Session), esc(ss.State), ss.WatermarkPct, esc(ss.CurrentTask), esc(ss.Note),
+			ss.UpdatedAt.UnixMilli(), esc(ss.UpdatedAt.UTC().Format(time.RFC3339)))
 	}
 	_, _ = w.Write([]byte(`</table>`))
 }
