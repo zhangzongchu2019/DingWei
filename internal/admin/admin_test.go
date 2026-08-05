@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
+	"github.com/zhangzongchu2019/dingwei/internal/datad"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/scheduler"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
@@ -873,4 +874,61 @@ func findBotChannel(channels []model.BotChannel, id string) *model.BotChannel {
 		}
 	}
 	return nil
+}
+
+func TestPortalDatadBoardRendersTasksAndSessions(t *testing.T) {
+	srv, _, mux, _ := newAdminTestServer(t)
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer read-tok" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		switch r.URL.Path {
+		case "/v1/tasks":
+			_, _ = w.Write([]byte(`{"tasks":[{"id":"G4-1","title":"联调","owner_session":"zzc-devo48-2642","status":"in_progress","anchor":"7b8df4c","updated_at":"2026-08-05T02:00:00Z"}]}`))
+		case "/v1/sessions":
+			_, _ = w.Write([]byte(`{"sessions":[{"session":"zzc-devo48-2642","state":"active","watermark_pct":42,"current_task":"G4-1","updated_at":"2026-08-05T02:30:00Z"}]}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(fake.Close)
+	srv.Datad = datad.NewClient(fake.URL, "read-tok")
+
+	srv.sessions["tok"] = "admin"
+	req := httptest.NewRequest(http.MethodGet, "/portal", nil)
+	req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	body := rec.Body.String()
+	for _, want := range []string{"任务台账(datad)", "G4-1", "zzc-devo48-2642", "in_progress", "会话状态(datad)", "active", "2026-08-05T02:00:00Z"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("portal datad board missing %q in %s", want, body)
+		}
+	}
+}
+
+func TestPortalDatadUnreachableShowsBannerNotFallback(t *testing.T) {
+	srv, _, mux, _ := newAdminTestServer(t)
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "boom", http.StatusInternalServerError)
+	}))
+	fake.Close() // 直接关掉=连接层不可达
+	srv.Datad = datad.NewClient(fake.URL, "read-tok")
+
+	srv.sessions["tok"] = "admin"
+	req := httptest.NewRequest(http.MethodGet, "/portal", nil)
+	req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	body := rec.Body.String()
+	if !strings.Contains(body, "datad 不可达") {
+		t.Fatalf("expected unreachable banner, body=%s", body)
+	}
+	if strings.Contains(body, "任务台账(datad)") {
+		t.Fatalf("must not render datad tables on failure")
+	}
+	if rec.Code != http.StatusOK || !strings.Contains(body, "团队排期") {
+		t.Fatalf("page must still render local sections, code=%d", rec.Code)
+	}
 }
