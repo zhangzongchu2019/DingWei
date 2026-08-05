@@ -47,7 +47,8 @@ func (c *Client) get(ctx context.Context, path string, out any) error {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return fmt.Errorf("datad get %s: status %d: %s", path, resp.StatusCode, strings.TrimSpace(string(body)))
 	}
-	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
+	// claudek3 M2:200 路径同样封顶(8MiB),异常超大响应不吃满内存;截断即 JSON 解码错。
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 8<<20)).Decode(out); err != nil {
 		return fmt.Errorf("datad decode %s: %w", path, err)
 	}
 	return nil
