@@ -5,6 +5,7 @@ package datad
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -48,5 +49,23 @@ func TestClientAgainstRealServerWireFormat(t *testing.T) {
 	bad := NewClient(httpSrv.URL, "wrong")
 	if _, err := bad.ListTasks(ctx); err == nil {
 		t.Fatal("bad token must error")
+	}
+}
+
+// claudek3 r2 nit 转正:钉死 base 带 /datad 子路径前缀时的拼接(生产 URL 形态
+// https://dingwei.wegoab.com/datad → /datad/v1/tasks,防 JoinPath 回归吞前缀)。
+func TestClientBaseWithSubpathPrefix(t *testing.T) {
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(srv.Close)
+	c := NewClient(srv.URL+"/datad/", "tok") // 带尾斜杠+子路径,双坑同测
+	if _, err := c.ListTasks(context.Background()); err != nil {
+		t.Fatalf("subpath base: %v", err)
+	}
+	if gotPath != "/datad/v1/tasks" {
+		t.Fatalf("path=%q want /datad/v1/tasks", gotPath)
 	}
 }
