@@ -1208,25 +1208,6 @@
       target.insertBefore(meta, target.firstChild);
     }
 
-    function renderTool(ev) {
-      const { card, content } = baseCard(ev, 'tool');
-      const name = ev.data?.name || 'Tool';
-      const input = ev.data?.input || {};
-      const preview = Object.entries(input).map(([k, v]) => `${k}: ${String(v).slice(0, 56)}`).join(' · ');
-      const detail = document.createElement('details');
-      detail.innerHTML = `
-        <summary>
-          <span class="tool-name">${escapeHtml(name)}</span>
-          <span class="tool-preview">${escapeHtml(preview)}</span>
-        </summary>
-        ${renderCode(JSON.stringify(input, null, 2), 'json')}
-      `;
-      content.appendChild(detail);
-      mergeMetaIntoFirstBlock(content, detail.querySelector('summary'));
-      timeline.appendChild(card);
-      wireCopyButtons(content);
-    }
-
     function renderState(ev) {
       if (ev.data?.change === 'session_init') {
         applyStatusData(ev.data);
