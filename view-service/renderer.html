@@ -1082,8 +1082,9 @@
       // 旧事件(ring 回放的无 ts 存量)不显示,不兜底猜时间。
       if (!Number.isFinite(ev?.ts)) return '';
       const d = new Date(ev.ts);
+      if (Number.isNaN(d.getTime())) return '';   // 超Date值域的ts同走不显示不猜,防toISOString抛RangeError丢整卡(dev55 R1 F1)
       const full = `${d.toLocaleString()} (${d.toISOString()} UTC)`;
-      return `<span class="event-time" data-ts="${ev.ts}" title="${escapeHtml(full)}">${escapeHtml(d.toLocaleTimeString())}</span>`;
+      return `<span class="event-time" data-ts="${ev.ts}" title="${escapeHtml(full)}">${escapeHtml(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }))}</span>`;
     }
 
     function eventMetaHtml(ev) {
