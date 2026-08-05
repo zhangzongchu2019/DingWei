@@ -71,6 +71,7 @@ type Hub struct {
 	botChannels      map[string]string
 	botNames         map[string]string
 	envelopeIDs      map[string]string
+	replyDedup       *replyDedup
 	onlineTimers     map[string]*time.Timer
 	seenSessions     map[string]bool
 	seenSessionsOnce sync.Once
@@ -212,6 +213,7 @@ func New(repo store.Repository) *Hub {
 		botChannels:      map[string]string{},
 		botNames:         map[string]string{},
 		envelopeIDs:      map[string]string{},
+		replyDedup:       newReplyDedup(envDuration("REPLY_ORIGIN_DEDUP_TTL", 10*time.Minute)),
 		onlineTimers:     map[string]*time.Timer{},
 		seenSessions:     map[string]bool{},
 		terminals:        map[string]*terminalState{},
@@ -2513,6 +2515,12 @@ func (h *Hub) forward(ctx context.Context, serviceID string, req ForwardRequest,
 }
 
 func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
+	// reply-origin / loop-termination:conversation 类消息先过 R4 hop / R5 dedup 兜底 + origin 捕获。
+	// control 类与无新字段的 legacy 消息透传不变(向后兼容)。drop=静默丢弃,不回错给发方。
+	env, drop := h.applyReplyOriginTermination(env)
+	if drop {
+		return nil
+	}
 	to, err := parseAddress(env.To)
 	if err != nil {
 		return err

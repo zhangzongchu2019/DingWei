@@ -73,6 +73,9 @@ class Config:
     provision_rollback_timeout: int = 300
     device_id: str = ""
     device_id_v1: bool = False
+    mcp_ipc_sock: str = ""       # B3: Unix socket path for MCP-shim→helper IPC
+    datad_url: str = ""          # T18: datad VS API base URL (e.g. http://127.0.0.1:8796)
+    datad_token: str = ""        # T18: per-session token (DATAD_TOKEN, prodops 签发)
 
     @property
     def registered_session_name(self) -> str:
@@ -175,6 +178,8 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         provision_versions_file=expand_path(env.get("SH_PROVISION_VERSIONS_FILE", default_provision_versions_file(session_name))),
         provision_update_state_file=expand_path(env.get("SH_PROVISION_STATE_FILE", default_provision_update_state_file(session_name))),
         provision_rollback_timeout=int(env.get("SH_PROVISION_ROLLBACK_TIMEOUT", "300")),
+        # B3 补漏:2ec753b 只加了字段未接 env;shim 侧读 DINGWEI_MCP_IPC_SOCK,helper 同名可用
+        mcp_ipc_sock=expand_path(env.get("SH_MCP_IPC_SOCK", env.get("DINGWEI_MCP_IPC_SOCK", ""))),
     )
 
 
