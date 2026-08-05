@@ -932,3 +932,55 @@ func TestPortalDatadUnreachableShowsBannerNotFallback(t *testing.T) {
 		t.Fatalf("page must still render local sections, code=%d", rec.Code)
 	}
 }
+
+func TestDatadProxyEndpoints(t *testing.T) {
+	srv, _, mux, _ := newAdminTestServer(t)
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer read-tok" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		switch r.URL.Path {
+		case "/v1/tasks":
+			_, _ = w.Write([]byte(`{"tasks":[{"id":"G4-1","title":"联调","owner_session":"zzc-devo48-2642","status":"in_progress","updated_at":"2026-08-05T02:00:00Z"}]}`))
+		case "/v1/sessions":
+			_, _ = w.Write([]byte(`{"sessions":[{"session":"zzc-devo48-2642","state":"active","updated_at":"2026-08-05T02:30:00Z"}]}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(fake.Close)
+
+	// 未登录:代理端点必须挡在登录门外(token 不可被无凭据外泄)。
+	unauth := httptest.NewRecorder()
+	mux.ServeHTTP(unauth, httptest.NewRequest(http.MethodGet, "/admin/datad/tasks", nil))
+	if unauth.Code != http.StatusSeeOther {
+		t.Fatalf("unauth proxy code=%d", unauth.Code)
+	}
+
+	// 未配置 datad:503 明示。
+	srv.sessions["tok"] = "admin"
+	authedGet := func(path string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec
+	}
+	if rec := authedGet("/admin/datad/tasks"); rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("unconfigured proxy code=%d body=%s", rec.Code, rec.Body.String())
+	}
+
+	srv.Datad = datad.NewClient(fake.URL, "read-tok")
+	rec := authedGet("/admin/datad/tasks")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"G4-1"`) || !strings.Contains(rec.Header().Get("Content-Type"), "application/json") {
+		t.Fatalf("tasks proxy code=%d ct=%s body=%s", rec.Code, rec.Header().Get("Content-Type"), rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), "read-tok") {
+		t.Fatalf("token must not leak into proxy response")
+	}
+	rec = authedGet("/admin/datad/sessions")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"active"`) {
+		t.Fatalf("sessions proxy code=%d body=%s", rec.Code, rec.Body.String())
+	}
+}

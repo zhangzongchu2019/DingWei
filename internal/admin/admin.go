@@ -68,6 +68,8 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/login", s.loginForm)
 	mux.HandleFunc("POST /admin/login", s.loginSubmit)
 	mux.HandleFunc("GET /admin", s.requireAuth(s.status))
+	mux.HandleFunc("GET /admin/datad/tasks", s.requireAuth(s.datadTasksProxy))
+	mux.HandleFunc("GET /admin/datad/sessions", s.requireAuth(s.datadSessionsProxy))
 	mux.HandleFunc("GET /admin/control-plane", s.requireAuth(s.controlPlaneDashboard))
 	mux.HandleFunc("GET /admin/messages", s.requireAuth(s.messages))
 	mux.HandleFunc("GET /admin/members", s.requireAuth(s.members))
@@ -448,6 +450,38 @@ func (s *Server) portal(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td></tr>`, esc(risk.OwnerKey), esc(risk.Content), esc(risk.Status))
 	}
 	_, _ = w.Write([]byte(`</table>`))
+}
+
+// datadTasksProxy / datadSessionsProxy 是只读代理端点(方案 A):datad token 留在服务端,
+// 登录态即可读;仅 GET 透传,任何写路径不经此处。
+func (s *Server) datadTasksProxy(w http.ResponseWriter, r *http.Request) {
+	s.datadProxy(w, r, func(ctx context.Context) (any, error) {
+		tasks, err := s.Datad.ListTasks(ctx)
+		return map[string]any{"tasks": tasks}, err
+	})
+}
+
+func (s *Server) datadSessionsProxy(w http.ResponseWriter, r *http.Request) {
+	s.datadProxy(w, r, func(ctx context.Context) (any, error) {
+		sessions, err := s.Datad.ListSessions(ctx)
+		return map[string]any{"sessions": sessions}, err
+	})
+}
+
+func (s *Server) datadProxy(w http.ResponseWriter, r *http.Request, fetch func(context.Context) (any, error)) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if s.Datad == nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "datad not configured"})
+		return
+	}
+	out, err := fetch(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	_ = json.NewEncoder(w).Encode(out)
 }
 
 // writeDatadBoard 渲染 datad 直连区块(任务台账+会话状态)。
