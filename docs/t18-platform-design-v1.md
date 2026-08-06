@@ -80,7 +80,9 @@ CREATE TABLE audit (           -- 全写操作审计(系统自动,任何token不
 | /v1/tasks[?status=] | GET | — | 台账列表/单件(全员读) |
 | /v1/tasks/{id} | PUT | coordinator | 建/改件(单写域);If-Match 乐观锁(updated_at)否则 409 |
 | /v1/tasks/{id}/progress | POST | **owner_session 本人** | 自报域:进度/锚推进(只可改 anchor/detail.progress/eta,不可改 status/owner=防越权),写 audit |
-| /v1/dispatch | POST | coordinator | 派工(append-only) |
+| /v1/dispatch | POST | coordinator | 派工(append-only;advisory xact 锁保 id 序=提交序) |
+| /v1/dispatch[?task_id=&since_id=&limit=] | GET | coordinator | 权威只读侧(读侧 DispatchRow 含 id/created_at;since_id 增量,limit≤1000,截断出 X-Has-More/X-Next-Since-Id 头);audit 重建不权威故设 |
+| /v1/heartbeats/latest | GET | coordinator | 每会话最新心跳(活性核;无 payload) |
 | /v1/config/{key} | GET | — | 最新代次(?generation= 取历史) |
 | /v1/config/{key} | PUT | coordinator | If-Match: <generation> CAS,不符=412(T17 同款) |
 | /v1/sessions/{name}/state | PUT | **本人**(token.session==name 否则 403) | 行级自报 |

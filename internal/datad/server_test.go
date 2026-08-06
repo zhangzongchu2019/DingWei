@@ -214,6 +214,9 @@ func TestSkillFlowAndAuditRead(t *testing.T) {
 func TestReadonlyDispatchEndpoint(t *testing.T) {
 	s, ms := testServer()
 	call(t, s, "PUT", "/v1/tasks/T99", "tok-coord", taskBody, nil)
+	// T98 也须真实建件:PG 有 dispatch.task_id FK,只在 Mem 绿=假绿(shenceclaude MC1)
+	call(t, s, "PUT", "/v1/tasks/T98", "tok-coord",
+		`{"title":"T98","owner_session":"zzc-devo48-2642","status":"in_progress"}`, nil)
 	// member 读=403 且未遂入审计;coordinator=200
 	if w := call(t, s, "GET", "/v1/dispatch", "tok-devo", "", nil); w.Code != 403 {
 		t.Fatalf("member dispatch read want 403 got %d", w.Code)

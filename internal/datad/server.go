@@ -271,15 +271,33 @@ func (s *Server) handleListDispatch(w http.ResponseWriter, r *http.Request, id I
 		return
 	}
 	q := r.URL.Query()
-	sinceID, _ := strconv.ParseInt(q.Get("since_id"), 10, 64)
-	limit, _ := strconv.Atoi(q.Get("limit"))
-	if limit <= 0 || limit > 1000 {
-		limit = 1000
+	var sinceID int64
+	if v := q.Get("since_id"); v != "" { // 解析错=400 不静默当 0(n2)
+		var err error
+		if sinceID, err = strconv.ParseInt(v, 10, 64); err != nil || sinceID < 0 {
+			http.Error(w, "since_id 须非负整数", http.StatusBadRequest)
+			return
+		}
+	}
+	limit := 1000
+	if v := q.Get("limit"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n <= 0 {
+			http.Error(w, "limit 须正整数", http.StatusBadRequest)
+			return
+		}
+		if n < limit {
+			limit = n
+		}
 	}
 	out, err := s.st.ListDispatches(r.Context(), q.Get("task_id"), sinceID, limit)
 	if err != nil {
 		storeErr(w, err)
 		return
+	}
+	if len(out) == limit { // 截断信号(n3):体保持纯数组,游标走响应头
+		w.Header().Set("X-Has-More", "true")
+		w.Header().Set("X-Next-Since-Id", strconv.FormatInt(out[len(out)-1].ID, 10))
 	}
 	writeJSON(w, 200, out)
 }

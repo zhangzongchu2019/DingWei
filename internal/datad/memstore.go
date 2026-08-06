@@ -14,7 +14,7 @@ import (
 type MemStore struct {
 	mu        sync.RWMutex
 	tasks     map[string]Task
-	dispatch  []DispatchRow // 自增 id=len+1,append-only(语义同 PG BIGSERIAL)
+	dispatch  []DispatchRow            // 自增 id=len+1,append-only(语义同 PG BIGSERIAL)
 	config    map[string][]ConfigEntry // key→按 generation 升序
 	sessions  map[string]SessionState
 	heartbeat []struct {
@@ -106,6 +106,7 @@ func (m *MemStore) UpdateProgress(_ context.Context, id string, p TaskProgress) 
 }
 
 func (m *MemStore) AppendDispatch(_ context.Context, d Dispatch) error {
+	// id 序=提交序不变量:mutex 串行天然成立(PG 侧靠 advisory xact 锁,见 pgstore)。
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.dispatch = append(m.dispatch, DispatchRow{
@@ -116,15 +117,18 @@ func (m *MemStore) AppendDispatch(_ context.Context, d Dispatch) error {
 }
 
 func (m *MemStore) ListDispatches(_ context.Context, taskID string, sinceID int64, limit int) ([]DispatchRow, error) {
+	if limit <= 0 {
+		limit = 1000 // 语义与 PG 归一(N3)
+	}
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	var out []DispatchRow
+	out := []DispatchRow{}
 	for _, r := range m.dispatch {
 		if r.ID <= sinceID || (taskID != "" && r.TaskID != taskID) {
 			continue
 		}
 		out = append(out, r)
-		if limit > 0 && len(out) >= limit {
+		if len(out) >= limit {
 			break
 		}
 	}

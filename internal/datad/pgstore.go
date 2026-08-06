@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS dispatch (
   assignee TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('executor','reviewer','advisor')),
   round INT NOT NULL DEFAULT 1, note TEXT NOT NULL DEFAULT '',
   created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS dispatch_task_id_idx ON dispatch(task_id);
 CREATE TABLE IF NOT EXISTS config (
   key TEXT NOT NULL, generation BIGINT NOT NULL, value JSONB NOT NULL,
   updated_by TEXT NOT NULL, updated_at timestamptz NOT NULL DEFAULT now(),
@@ -162,25 +163,43 @@ func (p *PGStore) UpdateProgress(ctx context.Context, id string, pr TaskProgress
 }
 
 func (p *PGStore) AppendDispatch(ctx context.Context, d Dispatch) error {
-	_, err := p.db.ExecContext(ctx, `INSERT INTO dispatch(task_id,assignee,role,round,note)
-  VALUES($1,$2,$3,$4,$5)`, d.TaskID, d.Assignee, d.Role, d.Round, d.Note)
-	return err
+	// id 序=提交序不变量(shenceclaude MC3):BIGSERIAL 分配序≠提交序,增量游标
+	// since_id 依赖"id 单调可见";advisory xact 锁串行化 append(coordinator 单写
+	// 面且低频,串行代价可忽略),锁随事务释放。
+	tx, err := p.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.ExecContext(ctx,
+		`SELECT pg_advisory_xact_lock(hashtext('datad.dispatch.append'))`); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO dispatch(task_id,assignee,role,round,note)
+  VALUES($1,$2,$3,$4,$5)`, d.TaskID, d.Assignee, d.Role, d.Round, d.Note); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (p *PGStore) ListDispatches(ctx context.Context, taskID string, sinceID int64, limit int) ([]DispatchRow, error) {
+	if limit <= 0 {
+		limit = 1000 // 与 Mem 语义归一(N3):非法/缺省=默认上限,不是 0 行
+	}
 	q := `SELECT id,task_id,assignee,role,round,note,created_at FROM dispatch WHERE id>$1`
 	args := []any{sinceID}
 	if taskID != "" {
 		q += ` AND task_id=$2`
 		args = append(args, taskID)
 	}
-	q += ` ORDER BY id LIMIT ` + strconv.Itoa(limit)
+	q += ` ORDER BY id LIMIT $` + strconv.Itoa(len(args)+1)
+	args = append(args, limit)
 	rows, err := p.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []DispatchRow
+	out := []DispatchRow{}
 	for rows.Next() {
 		var r DispatchRow
 		if err := rows.Scan(&r.ID, &r.TaskID, &r.Assignee, &r.Role, &r.Round, &r.Note, &r.CreatedAt); err != nil {
@@ -290,13 +309,15 @@ func (p *PGStore) AppendHeartbeat(ctx context.Context, session string, payload j
 }
 
 func (p *PGStore) LatestHeartbeats(ctx context.Context) ([]HeartbeatLatest, error) {
+	// GROUP BY+MAX 走 PK(session,at) index-only 扫(N4:DISTINCT ON 混合序不吃索引);
+	// 代价仍随 history 线性,真正解=retention(backlog),当前量级(会话数×心跳频)可承受。
 	rows, err := p.db.QueryContext(ctx,
-		`SELECT DISTINCT ON (session) session,at FROM heartbeat ORDER BY session, at DESC`)
+		`SELECT session, MAX(at) AS at FROM heartbeat GROUP BY session ORDER BY session`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []HeartbeatLatest
+	out := []HeartbeatLatest{}
 	for rows.Next() {
 		var h HeartbeatLatest
 		if err := rows.Scan(&h.Session, &h.At); err != nil {

@@ -71,4 +71,55 @@ func TestPGIntegration(t *testing.T) {
 	if err != nil || len(got) == 0 {
 		t.Fatalf("audit 回读: %v n=%d", err, len(got))
 	}
+
+	// 只读端点往返(shenceclaude MC2:PG SQL 须真跑,FK/advisory 锁/DISTINCT 语义 Mem 盖不住)
+	for i, d := range []Dispatch{
+		{TaskID: id, Assignee: "zzc-devo48-2642", Role: "executor", Round: 1},
+		{TaskID: id, Assignee: "zzc-claudek3-2642", Role: "reviewer", Round: 1},
+	} {
+		if err := pg.AppendDispatch(ctx, d); err != nil {
+			t.Fatalf("dispatch append #%d: %v", i, err)
+		}
+	}
+	rows, err := pg.ListDispatches(ctx, id, 0, 0)
+	if err != nil || len(rows) != 2 {
+		t.Fatalf("dispatch 回读: %v n=%d", err, len(rows))
+	}
+	if rows[0].ID >= rows[1].ID || rows[0].CreatedAt.IsZero() || rows[1].Role != "reviewer" {
+		t.Fatalf("dispatch 行序/生成列: %+v", rows)
+	}
+	// since_id 增量:下界不含
+	inc, err := pg.ListDispatches(ctx, id, rows[0].ID, 0)
+	if err != nil || len(inc) != 1 || inc[0].ID != rows[1].ID {
+		t.Fatalf("since_id 增量: %v %+v", err, inc)
+	}
+	// FK:不存在的 task=拒
+	if err := pg.AppendDispatch(ctx, Dispatch{TaskID: id + "-nofk", Assignee: "x", Role: "executor"}); err == nil {
+		t.Fatal("dispatch FK 未生效:不存在 task 应拒")
+	}
+	// heartbeat 第二跳晚于第一跳→latest 取新
+	hbSession := "zzc-itest-" + id
+	if err := pg.AppendHeartbeat(ctx, hbSession, nil, time.Now().UTC().Add(-time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	second := time.Now().UTC().Truncate(time.Microsecond) // timestamptz=微秒精度,纳秒对拍假红
+	if err := pg.AppendHeartbeat(ctx, hbSession, nil, second); err != nil {
+		t.Fatal(err)
+	}
+	hs, err := pg.LatestHeartbeats(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, h := range hs {
+		if h.Session == hbSession {
+			found = true
+			if !h.At.Equal(second) {
+				t.Fatalf("latest 未取最新跳: got %v want %v", h.At, second)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("latest 缺会话 %s: %+v", hbSession, hs)
+	}
 }
