@@ -4,6 +4,8 @@ package datad
 
 import (
 	"context"
+	"strconv"
+	"sync"
 	"testing"
 	"time"
 )
@@ -41,21 +43,42 @@ func TestA1AtomicDualRole(t *testing.T) {
 	}
 }
 
-// A2 当代唯一:重派后旧代 active=false,当代恰一双角色。
-func TestA2ActiveUnique(t *testing.T) {
+// A2 partial-unique 并发双 assign 恰一成(shenceclaude 交接:必须并发,顺序证明不了)。
+// K 并发首派同 task 各带不同 request_id → 恰一成(gen1),余全被后到者判为重派缺 expected_generation
+// 或竞态串行化;最终当代 active 恰一双角色(partial-unique 语义)。
+func TestA2ConcurrentUnique(t *testing.T) {
 	m, tok := aliteWorld(t)
-	ctx := context.Background()
-	m.Assign(ctx, "T1", req("zzc-devo48-2642", "zzc-claudek3-2642", "r1"), tok)
-	g1 := int64(1)
-	m.Assign(ctx, "T1", &AssignRequest{Executor: "zzc-shencedeepseek-2642", Reviewer: "zzc-claudek3-2642", RequestID: "r2", ExpectedGeneration: &g1}, tok)
+	const K = 8
+	res := make([]*AssignResult, K)
+	var wg sync.WaitGroup
+	for i := 0; i < K; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			r, _ := m.Assign(context.Background(), "T1",
+				req("zzc-devo48-2642", "zzc-claudek3-2642", "r"+strconv.Itoa(i)), tok)
+			res[i] = r
+		}(i)
+	}
+	wg.Wait()
+	// 恰一首派成功(gen1);当代 active 恰 2(双角色);无双 gen1
+	ok := 0
+	for _, r := range res {
+		if r != nil && r.Generation == 1 {
+			ok++
+		}
+	}
+	if ok != 1 {
+		t.Fatalf("并发首派应恰一成(gen1),got %d", ok)
+	}
 	active := 0
 	for _, a := range m.assignments {
 		if a.TaskID == "T1" && a.Active {
 			active++
 		}
 	}
-	if active != 2 { // 当代恰一 executor+一 reviewer
-		t.Fatalf("当代 active 应=2(双角色),got %d", active)
+	if active != 2 {
+		t.Fatalf("当代 active 恰 2(partial-unique),got %d", active)
 	}
 }
 
@@ -93,6 +116,25 @@ func TestA4A9A12Idempotent(t *testing.T) {
 	// A9 同 request_id 换参→409 request_conflict
 	if _, e := m.Assign(ctx, "T1", req("zzc-shencedeepseek-2642", "zzc-claudek3-2642", "r1"), tok); e == nil || e.Code != ErrRequestConflict {
 		t.Fatalf("换参应 request_conflict: %v", e)
+	}
+	_ = r1
+}
+
+// A4 第三型(shenceclaude 交接:条件已变仍原样重放,不重算)——错误首果重放。
+// r-bad 首次因 self_review 失败(记错误首果);task 状态/世界变了(已成功派 r1)后,
+// 同 r-bad 重放仍返原 self_review 错误码(读首果账,不重算=不会因世界变了而"重派成功")。
+func TestA4ThirdType(t *testing.T) {
+	m, tok := aliteWorld(t)
+	ctx := context.Background()
+	// r-bad 首次 self_review 失败→记错误首果
+	if _, e := m.Assign(ctx, "T1", req("zzc-devo48-2642", "zzc-devo48-2642", "r-bad"), tok); e == nil || e.Code != ErrSelfReview {
+		t.Fatalf("首次应 self_review: %v", e)
+	}
+	// 世界变:另一 request 成功派(条件已变)
+	m.Assign(ctx, "T1", req("zzc-devo48-2642", "zzc-claudek3-2642", "r-ok"), tok)
+	// 同 r-bad 重放(载荷相同):须原样返 self_review,不重算(不会因世界变了成功)
+	if _, e := m.Assign(ctx, "T1", req("zzc-devo48-2642", "zzc-devo48-2642", "r-bad"), tok); e == nil || e.Code != ErrSelfReview {
+		t.Fatalf("条件已变仍原样重放错误首果(非重算): %v", e)
 	}
 }
 
