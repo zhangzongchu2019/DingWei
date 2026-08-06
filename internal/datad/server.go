@@ -8,7 +8,6 @@ package datad
 // me 别名:路径/查询中的 "me" 按 token 解析(§7b:shim 不感知身份)。
 
 import (
-	"bytes"
 	"context"
 	"crypto/subtle"
 	"encoding/json"
@@ -281,22 +280,26 @@ func (s *Server) handleAssign(w http.ResponseWriter, r *http.Request, id Identit
 		s.deny(w, r, id, "assign")
 		return
 	}
-	// 原文层 UTF-8 门(R2-1④配套):encoding/json 对字符串内 invalid UTF-8 静默 U+FFFD,
-	// 会让 canonical/hash 面对被替换后的值假绿——在原文字节上先拒。
-	raw, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	// 传输门 strict(cycle2 B2,全部先于业务门=任何拒付**零首果落账**):
+	// ①整体限长:读 1MiB+1,超限=413 明确拒(不静默截断——截断体若恰为合法前缀会被执行);
+	// ②原文 UTF-8(R2-1④:防 json 静默 U+FFFD 后 canonical 假绿);
+	// ③严格单对象:重复键拒+Decode 后 EOF 验(尾随第二对象/标量拒)+未知字段拒。
+	raw, err := io.ReadAll(io.LimitReader(r.Body, 1<<20+1))
 	if err != nil {
 		http.Error(w, "read body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(raw) > 1<<20 {
+		http.Error(w, "body 超限(>1MiB)", http.StatusRequestEntityTooLarge)
 		return
 	}
 	if !utf8.Valid(raw) {
 		writeJSON(w, 422, aerr(ErrInvalidRequest, "请求体非合法 UTF-8"))
 		return
 	}
-	var req AssignRequest
-	dec := json.NewDecoder(bytes.NewReader(raw))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&req); err != nil {
-		http.Error(w, "bad schema: "+err.Error(), http.StatusBadRequest)
+	req, derr := decodeAssignStrict(raw)
+	if derr != nil {
+		http.Error(w, "bad schema: "+derr.Error(), http.StatusBadRequest)
 		return
 	}
 	as, ok := s.st.(Assigner)
@@ -311,7 +314,7 @@ func (s *Server) handleAssign(w http.ResponseWriter, r *http.Request, id Identit
 		sessions[i.Session] = true
 	}
 	s.tokMu.RUnlock()
-	res, ae := as.Assign(r.Context(), r.PathValue("id"), &req, sessions, id.Session)
+	res, ae := as.Assign(r.Context(), r.PathValue("id"), req, sessions, id.Session)
 	if ae != nil {
 		writeJSON(w, ae.HTTP, ae) // DTO 即响应体:与首果账 failFirstBody 同 struct 同 marshal
 		return

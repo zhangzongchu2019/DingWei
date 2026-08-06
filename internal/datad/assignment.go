@@ -5,10 +5,13 @@ package datad
 // 单权威 + 全错误码双射。不含竞争认领(B 案单写);与 /pull 白名单共存(§5⑥)。
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"io"
 	"regexp"
 	"strings"
 	"time"
@@ -246,4 +249,84 @@ type Assigner interface {
 	Assign(ctx context.Context, taskID string, req *AssignRequest, tokenSessions map[string]bool, actor string) (*AssignResult, *AssignErr)
 	// GetFirstResult 首果账查(幂等重放)。
 	GetFirstResult(ctx context.Context, requestID string) (*FirstResult, error)
+}
+
+// decodeAssignStrict /assign 传输门 strict 解码(cycle2 B2):①重复键拒(encoding/json
+// DisallowUnknownFields 不拒重复键——同一原始体解码时"后键覆盖",幂等 hash 只见解码后
+// struct=同一账多种原文)②严格单对象(Decode 后 Token 必须 io.EOF,尾随拒)③未知字段拒。
+// 全部先于业务门与首果账。
+func decodeAssignStrict(raw []byte) (*AssignRequest, error) {
+	if err := rejectDupKeys(raw); err != nil {
+		return nil, err
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	req := &AssignRequest{}
+	if err := dec.Decode(req); err != nil {
+		return nil, err
+	}
+	if tok, err := dec.Token(); err != io.EOF {
+		return nil, fmt.Errorf("请求体尾随内容(严格单对象): token=%v err=%v", tok, err)
+	}
+	return req, nil
+}
+
+// rejectDupKeys token 级扫描:任一对象层级出现重复键=拒(逐层键集栈)。
+func rejectDupKeys(raw []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	type level struct {
+		isObj  bool
+		keys   map[string]bool
+		expKey bool // 对象层:下一 token 是否应为键
+	}
+	var stack []*level
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if len(stack) > 0 {
+			top := stack[len(stack)-1]
+			if top.isObj && top.expKey {
+				if d, ok := tok.(json.Delim); ok && d == '}' {
+					stack = stack[:len(stack)-1]
+					if len(stack) > 0 && stack[len(stack)-1].isObj {
+						stack[len(stack)-1].expKey = true
+					}
+					continue
+				}
+				k, ok := tok.(string)
+				if !ok {
+					return fmt.Errorf("对象键非字符串: %v", tok)
+				}
+				if top.keys[k] {
+					return fmt.Errorf("重复键 %q(同一原始体多种语义,拒)", k)
+				}
+				top.keys[k] = true
+				top.expKey = false
+				continue
+			}
+		}
+		switch d, ok := tok.(json.Delim); {
+		case ok && d == '{':
+			stack = append(stack, &level{isObj: true, keys: map[string]bool{}, expKey: true})
+		case ok && d == '[':
+			stack = append(stack, &level{})
+		case ok && (d == '}' || d == ']'):
+			if len(stack) > 0 {
+				stack = stack[:len(stack)-1]
+			}
+			if len(stack) > 0 && stack[len(stack)-1].isObj {
+				stack[len(stack)-1].expKey = true
+			}
+		default: // 标量值
+			if len(stack) > 0 && stack[len(stack)-1].isObj {
+				stack[len(stack)-1].expKey = true
+			}
+		}
+	}
 }

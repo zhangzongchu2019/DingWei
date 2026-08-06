@@ -560,3 +560,80 @@ func TestHTTPA7PullGateLinkage(t *testing.T) {
 		t.Fatal("重派 force 应有 audit 记因")
 	}
 }
+
+// ---- cycle2 B2:/assign 传输门 strict 负例(全部零首果落账) ----
+func TestB2TransportStrictGate(t *testing.T) {
+	s, ms := testServer()
+	_, _ = ms.PutTask(context.Background(),
+		Task{ID: "TB2", Title: "t", OwnerSession: "zzc-coordinator-2642", Status: "proposed"}, time.Time{}, true)
+	rid := "00000000-0000-4000-8000-000000000401"
+	okBody := `{"executor":"zzc-devo48-2642","reviewer":"zzc-claudek3-2642","request_id":"` + rid + `"}`
+
+	// ① >1MiB=413(不静默截断)
+	big := okBody + strings.Repeat(" ", 1<<20)
+	rr := call(t, s, "POST", "/v1/tasks/TB2/assign", "tok-coord", big, nil)
+	if rr.Code != 413 {
+		t.Fatalf("超限应 413,got %d", rr.Code)
+	}
+	// ② 尾随第二对象/标量=400
+	for _, b := range []string{okBody + `{"x":1}`, okBody + ` 7`, okBody + ` true`} {
+		rr = call(t, s, "POST", "/v1/tasks/TB2/assign", "tok-coord", b, nil)
+		if rr.Code != 400 {
+			t.Fatalf("尾随应 400,got %d body=%q", rr.Code, b[:60])
+		}
+	}
+	// ③ 重复键=400(后键覆盖歧义体)
+	dup := `{"executor":"zzc-devo48-2642","executor":"zzc-shencedeepseek-2642","reviewer":"zzc-claudek3-2642","request_id":"` + rid + `"}`
+	rr = call(t, s, "POST", "/v1/tasks/TB2/assign", "tok-coord", dup, nil)
+	if rr.Code != 400 || !strings.Contains(rr.Body.String(), "重复键") {
+		t.Fatalf("重复键应 400,got %d %s", rr.Code, rr.Body.String())
+	}
+	// 嵌套对象重复键同拒(防只查顶层)
+	nested := `{"executor":"e","reviewer":"r","request_id":"` + rid + `","force":false}`
+	_ = nested // AssignRequest 无嵌套对象字段;直接验 rejectDupKeys 单元面
+	if err := rejectDupKeys([]byte(`{"a":{"k":1,"k":2}}`)); err == nil {
+		t.Fatal("嵌套重复键应拒")
+	}
+	if err := rejectDupKeys([]byte(`{"a":{"k":1},"b":{"k":2}}`)); err != nil {
+		t.Fatalf("异对象同名键应放行: %v", err)
+	}
+	// ④ 全部负例零首果落账
+	if fr, _ := ms.GetFirstResult(context.Background(), rid); fr != nil {
+		t.Fatalf("传输门拒付不得落首果: %+v", fr)
+	}
+	// ⑤ 合法体照常通(门不误伤)
+	rr = call(t, s, "POST", "/v1/tasks/TB2/assign", "tok-coord", okBody, nil)
+	if rr.Code != 200 {
+		t.Fatalf("合法体应 200,got %d %s", rr.Code, rr.Body.String())
+	}
+}
+
+// ---- cycle2 B3:request_id 绑定 task(跨 task 复用=稳定 request_conflict,HTTP 层) ----
+func TestB3CrossTaskRequestID(t *testing.T) {
+	s, ms := testServer()
+	for _, id := range []string{"TA", "TB"} {
+		_, _ = ms.PutTask(context.Background(),
+			Task{ID: id, Title: "t", OwnerSession: "zzc-coordinator-2642", Status: "proposed"}, time.Time{}, true)
+	}
+	rid := "00000000-0000-4000-8000-000000000501"
+	body := `{"executor":"zzc-devo48-2642","reviewer":"zzc-claudek3-2642","request_id":"` + rid + `"}`
+	rr := call(t, s, "POST", "/v1/tasks/TA/assign", "tok-coord", body, nil)
+	if rr.Code != 200 {
+		t.Fatalf("TA 首派: %d", rr.Code)
+	}
+	// 同 rid 同 body 打 TB:必须 409 request_conflict,绝不返 TA 的 200 首果
+	rr = call(t, s, "POST", "/v1/tasks/TB/assign", "tok-coord", body, nil)
+	if rr.Code != 409 || !strings.Contains(rr.Body.String(), ErrRequestConflict) {
+		t.Fatalf("跨 task 同 rid 应 409 request_conflict,got %d %s", rr.Code, rr.Body.String())
+	}
+	// TB 未被派(零 assignment/owner 未动)
+	tb, _ := ms.GetTask(context.Background(), "TB")
+	if tb.Status != "proposed" || tb.OwnerSession != "zzc-coordinator-2642" {
+		t.Fatalf("TB 不得被误派: %+v", tb)
+	}
+	// TA 原样重放仍通(绑定不误伤同 task)
+	rr = call(t, s, "POST", "/v1/tasks/TA/assign", "tok-coord", body, nil)
+	if rr.Code != 200 {
+		t.Fatalf("TA 同 task 重放应 200: %d", rr.Code)
+	}
+}

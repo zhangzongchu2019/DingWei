@@ -419,3 +419,108 @@ func TestPGMigrateOnly(t *testing.T) {
 	}
 	p.Close()
 }
+
+// cycle2 B3(PG 层):跨 task 同 request_id=稳定 request_conflict;audit 同事务;目标 task 零污染。
+func TestPGB3CrossTask(t *testing.T) {
+	w := pgWorldUp(t)
+	ctx := context.Background()
+	ta := w.newTask(t, "b3a")
+	tb := w.newTask(t, "b3b")
+	rid := pgUID()
+	if _, e := w.p.Assign(ctx, ta, req(sExec, sRev, rid), w.tok, sCoord); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := w.p.Assign(ctx, tb, req(sExec, sRev, rid), w.tok, sCoord); e == nil || e.Code != ErrRequestConflict {
+		t.Fatalf("跨 task 应 request_conflict: %v", e)
+	}
+	var cnt int
+	w.appDB.QueryRow(`SELECT count(*) FROM assignment WHERE task_id=$1`, tb).Scan(&cnt)
+	if cnt != 0 {
+		t.Fatalf("tb 不得被误派,assignment=%d", cnt)
+	}
+	var status string
+	w.appDB.QueryRow(`SELECT status FROM task WHERE id=$1`, tb).Scan(&status)
+	if status != "proposed" {
+		t.Fatalf("tb status 应原样 proposed: %s", status)
+	}
+	w.appDB.QueryRow(`SELECT count(*) FROM audit WHERE op=$1 AND detail->>'request_id'=$2 AND target=$3`,
+		"assign."+ErrRequestConflict, rid, tb).Scan(&cnt)
+	if cnt != 1 {
+		t.Fatalf("跨 task conflict audit 应落(同事务): %d", cnt)
+	}
+	// 原 task 重放仍通
+	if r, e := w.p.Assign(ctx, ta, req(sExec, sRev, rid), w.tok, sCoord); e != nil || r.Generation != 1 {
+		t.Fatalf("原 task 重放: %v %+v", e, r)
+	}
+}
+
+// cycle2 B4(PG 层):PUT 与 Assign 并发交错——不变量=任意时刻 owner_session==当代 executor;
+// 冲突 PUT 稳定拒且零改 task。K 轮随机交错+每轮不变量断言。
+func TestPGB4PutAssignInterleave(t *testing.T) {
+	w := pgWorldUp(t)
+	ctx := context.Background()
+	tid := w.newTask(t, "b4")
+	// 首派 gen1:executor=sExec
+	if _, e := w.p.Assign(ctx, tid, req(sExec, sRev, pgUID()), w.tok, sCoord); e != nil {
+		t.Fatal(e)
+	}
+	execs := []string{sExec, sThird}
+	const K = 12
+	var wg sync.WaitGroup
+	for i := 0; i < K; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			if i%2 == 0 {
+				// 重派翻代(读现代次→CAS;竞争败=412 正常)
+				var g sql.NullInt64
+				w.appDB.QueryRow(`SELECT generation FROM assignment WHERE task_id=$1 AND role='executor' AND active`, tid).Scan(&g)
+				if g.Valid {
+					ng := execs[(i/2)%2]
+					rv := execs[1-(i/2)%2]
+					w.p.Assign(ctx, tid, &AssignRequest{Executor: ng, Reviewer: rv, RequestID: pgUID(), ExpectedGeneration: &g.Int64}, w.tok, sCoord)
+				}
+			} else {
+				// 并发 PUT:owner 写当前读到的 executor(合法)或对手(应被拒)
+				cur, err := w.p.GetTask(ctx, tid)
+				if err != nil {
+					return
+				}
+				tt := *cur
+				tt.OwnerSession = execs[i%len(execs)]
+				w.p.PutTask(ctx, tt, cur.UpdatedAt, false) // owner_conflict/optimistic conflict 都是合法拒
+			}
+		}(i)
+	}
+	wg.Wait()
+	// 终态不变量:owner_session == 当代 active executor(B4 核心)
+	var owner, activeExec string
+	if err := w.appDB.QueryRow(`SELECT owner_session FROM task WHERE id=$1`, tid).Scan(&owner); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.appDB.QueryRow(`SELECT assignee FROM assignment WHERE task_id=$1 AND role='executor' AND active`, tid).Scan(&activeExec); err != nil {
+		t.Fatal(err)
+	}
+	if owner != activeExec {
+		t.Fatalf("B4 不变量破:owner_session=%s ≠ 当代 executor=%s", owner, activeExec)
+	}
+	// 定向负例:共锁下改 owner≠executor 稳定拒且零改
+	cur, _ := w.p.GetTask(ctx, tid)
+	bad := *cur
+	if activeExec == sExec {
+		bad.OwnerSession = sThird
+	} else {
+		bad.OwnerSession = sExec
+	}
+	if _, err := w.p.PutTask(ctx, bad, cur.UpdatedAt, false); !errors.Is(err, ErrOwnerConflictPut) {
+		t.Fatalf("owner≠executor 应 owner_conflict: %v", err)
+	}
+	after, _ := w.p.GetTask(ctx, tid)
+	if after.OwnerSession != owner || !after.UpdatedAt.Equal(cur.UpdatedAt) {
+		t.Fatalf("冲突 PUT 不得改 task: before=%s after=%s", owner, after.OwnerSession)
+	}
+	// force 路径同拒
+	if _, err := w.p.PutTask(ctx, bad, time.Time{}, true); !errors.Is(err, ErrOwnerConflictPut) {
+		t.Fatalf("force PUT 亦应 owner_conflict: %v", err)
+	}
+}

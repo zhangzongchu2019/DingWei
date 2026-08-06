@@ -198,37 +198,53 @@ func (p *PGStore) GetTask(ctx context.Context, id string) (*Task, error) {
 }
 
 func (p *PGStore) PutTask(ctx context.Context, t Task, ifMatch time.Time, force bool) (*Task, error) {
-	// A10 N-A2:active assignment 存续期,owner_session 须=当代 executor(assign 维护权威);
-	// PUT 改 owner≠executor=拒 owner_conflict。coordinator 单写(assign 与 PUT 同一写主体串行),
-	// 故此读后写窗对齐单写假设;改派须走 /assign 而非 PUT 旁路。force(仅首建)时无 assignment 自然放行。
+	// A10 N-A2(dev56 cycle2 B4 修):owner 校验与 task 写在**同一事务**内,并取与 Assign 相同的
+	// per-task advisory 锁——消 check-then-write 窗:并发序 "PUT 读旧 executor A→Assign 提交新
+	// executor B/owner=B→PUT 写 owner=A" 在共锁串行下不可能(PUT 的读必然见 Assign 提交后终态,
+	// 或 PUT 先完成后 Assign 覆写=正常次序)。普通与 force/UPSERT 两路径同盖。
+	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.ExecContext(ctx,
+		`SELECT pg_advisory_xact_lock(hashtext('datad.assign:'||$1::text))`, t.ID); err != nil {
+		return nil, err
+	}
 	var execA sql.NullString
-	if err := p.db.QueryRowContext(ctx,
+	if err := tx.QueryRowContext(ctx,
 		`SELECT assignee FROM assignment WHERE task_id=$1 AND role='executor' AND active`, t.ID).Scan(&execA); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
 	if execA.Valid && t.OwnerSession != execA.String {
-		return nil, ErrOwnerConflictPut
+		return nil, ErrOwnerConflictPut // 拒且不改 task(事务回滚,零写)
 	}
 	if force {
-		_, err := p.db.ExecContext(ctx, `INSERT INTO task(id,title,owner_session,status,anchor,gate,eta,detail)
+		if _, err := tx.ExecContext(ctx, `INSERT INTO task(id,title,owner_session,status,anchor,gate,eta,detail)
   VALUES($1,$2,$3,$4,$5,$6,$7,$8)
   ON CONFLICT(id) DO UPDATE SET title=$2,owner_session=$3,status=$4,anchor=$5,gate=$6,eta=$7,detail=$8,updated_at=now()`,
-			t.ID, t.Title, t.OwnerSession, t.Status, t.Anchor, t.Gate, t.ETA, nullJSON(t.Detail))
+			t.ID, t.Title, t.OwnerSession, t.Status, t.Anchor, t.Gate, t.ETA, nullJSON(t.Detail)); err != nil {
+			return nil, err
+		}
+	} else {
+		res, err := tx.ExecContext(ctx, `UPDATE task SET title=$2,owner_session=$3,status=$4,anchor=$5,
+  gate=$6,eta=$7,detail=$8,updated_at=now() WHERE id=$1 AND updated_at=$9`,
+			t.ID, t.Title, t.OwnerSession, t.Status, t.Anchor, t.Gate, t.ETA, nullJSON(t.Detail), ifMatch)
 		if err != nil {
 			return nil, err
 		}
-		return p.GetTask(ctx, t.ID)
+		if n, _ := res.RowsAffected(); n == 0 {
+			return nil, ErrConflict
+		}
 	}
-	res, err := p.db.ExecContext(ctx, `UPDATE task SET title=$2,owner_session=$3,status=$4,anchor=$5,
-  gate=$6,eta=$7,detail=$8,updated_at=now() WHERE id=$1 AND updated_at=$9`,
-		t.ID, t.Title, t.OwnerSession, t.Status, t.Anchor, t.Gate, t.ETA, nullJSON(t.Detail), ifMatch)
+	out, err := scanTask(tx.QueryRowContext(ctx, `SELECT `+taskCols+` FROM task WHERE id=$1`, t.ID))
 	if err != nil {
 		return nil, err
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return nil, ErrConflict
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
-	return p.GetTask(ctx, t.ID)
+	return out, nil
 }
 
 func (p *PGStore) UpdateProgress(ctx context.Context, id string, pr TaskProgress) (*Task, error) {

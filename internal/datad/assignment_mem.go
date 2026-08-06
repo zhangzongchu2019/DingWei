@@ -74,8 +74,15 @@ func (m *MemStore) Assign(_ context.Context, taskID string, req *AssignRequest, 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// 幂等(§3 N4):命中首果→比 request_hash;相同=原样返,不同=409 request_conflict
+	// 幂等(§3 N4):命中首果→**先比 task_id(B3:幂等绑定完整操作身份——request_hash 只盖
+	// 请求体,task_id 在 URL path;跨 task 同 request_id 同 body=hash 相同,不比 task 会把
+	// A 的首果错误重放给 B 的调用)**,再比 request_hash;任一不符=409 request_conflict。
 	if prev, ok := m.firstResults[req.RequestID]; ok {
+		if prev.TaskID != taskID {
+			e := aerr(ErrRequestConflict, "同 request_id 跨 task 复用(B3:幂等键绑定 task)")
+			m.audit = append(m.audit, assignAuditRow(actor, taskID, req, nil, e.Code, e.Sub))
+			return nil, e
+		}
 		if prev.RequestHash != hash {
 			e := aerr(ErrRequestConflict, "同 request_id 换参数(N4)")
 			m.audit = append(m.audit, assignAuditRow(actor, taskID, req, nil, e.Code, e.Sub))

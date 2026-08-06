@@ -68,14 +68,25 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 		return nil, aerr(ErrStoreDownA, err.Error())
 	}
 
-	// 幂等(§3 N4):首果账命中→比 request_hash
-	var prevOutcome, prevHash string
+	// 幂等(§3 N4):首果账命中→**先比 task_id(B3:幂等绑定完整操作身份,跨 task 同
+	// request_id=稳定 request_conflict,防把 A 的首果错误重放给 B)**,再比 request_hash。
+	var prevOutcome, prevHash, prevTask string
 	var prevCode int
 	var prevBody []byte
 	perr := tx.QueryRowContext(ctx,
-		`SELECT outcome,http_code,request_hash,body FROM assign_first_result WHERE request_id=$1`,
-		req.RequestID).Scan(&prevOutcome, &prevCode, &prevHash, &prevBody)
+		`SELECT outcome,http_code,request_hash,body,task_id FROM assign_first_result WHERE request_id=$1`,
+		req.RequestID).Scan(&prevOutcome, &prevCode, &prevHash, &prevBody, &prevTask)
 	if perr == nil {
+		if prevTask != taskID {
+			e := aerr(ErrRequestConflict, "同 request_id 跨 task 复用(B3:幂等键绑定 task)")
+			if aer := auditInTx(ctx, tx, assignAuditRow(actor, taskID, req, nil, e.Code, e.Sub)); aer != nil {
+				return nil, aerr(ErrStoreDownA, "audit 写失败(fail-closed): "+aer.Error())
+			}
+			if cer := tx.Commit(); cer != nil {
+				return nil, aerr(ErrStoreDownA, "commit 失败(fail-closed): "+cer.Error())
+			}
+			return nil, e
+		}
 		if prevHash != hash {
 			e := aerr(ErrRequestConflict, "同 request_id 换参数(N4)")
 			// request_conflict 不改首果账(首果属原参请求),audit 单独落(同事务提交)。

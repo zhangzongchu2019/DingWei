@@ -586,3 +586,40 @@ func TestA13InvalidRequestSubCauses(t *testing.T) {
 		t.Fatal("⑤幂等键应为小写规范形单键")
 	}
 }
+
+// cycle2 B3(Mem 层):跨 task 同 request_id=request_conflict;错误首果同判;条件变化后同判稳定。
+func TestB3CrossTaskMem(t *testing.T) {
+	m, tok := aliteWorld(t)
+	ctx := context.Background()
+	m.PutTask(ctx, Task{ID: "T2", Title: "t", OwnerSession: sCoord, Status: "proposed"}, time.Time{}, true)
+	// 成功首果跨 task
+	if _, e := m.Assign(ctx, "T1", req(sExec, sRev, uid(200)), tok, sCoord); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := m.Assign(ctx, "T2", req(sExec, sRev, uid(200)), tok, sCoord); e == nil || e.Code != ErrRequestConflict {
+		t.Fatalf("跨 task 应 request_conflict: %v", e)
+	}
+	// 错误首果跨 task 同判(不因首果是错误而放行)
+	if _, e := m.Assign(ctx, "T1", req(sExec, sExec, uid(201)), tok, sCoord); e == nil || e.Code != ErrSelfReview {
+		t.Fatal("预置错误首果")
+	}
+	if _, e := m.Assign(ctx, "T2", req(sExec, sExec, uid(201)), tok, sCoord); e == nil || e.Code != ErrRequestConflict {
+		t.Fatalf("错误首果跨 task 亦 request_conflict: %v", e)
+	}
+	// 条件变化(T2 被正常派)后跨 task 重放仍稳定 conflict
+	m.Assign(ctx, "T2", req(sExec, sRev, uid(202)), tok, sCoord)
+	if _, e := m.Assign(ctx, "T2", req(sExec, sRev, uid(200)), tok, sCoord); e == nil || e.Code != ErrRequestConflict {
+		t.Fatalf("条件变化后仍稳定 conflict: %v", e)
+	}
+	// T2 的 audit 有 request_conflict 记录(B3 审计面)
+	entries, _ := m.ListAudit(ctx, time.Time{}, 100)
+	found := false
+	for _, en := range entries {
+		if en.Op == "assign."+ErrRequestConflict && strings.Contains(string(en.Detail), uid(200)) {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("跨 task conflict 应有 audit")
+	}
+}
