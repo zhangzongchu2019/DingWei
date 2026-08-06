@@ -116,7 +116,7 @@ func (m *MemStore) AppendDispatch(_ context.Context, d Dispatch) error {
 	return nil
 }
 
-func (m *MemStore) ListDispatches(_ context.Context, taskID string, sinceID int64, limit int) ([]DispatchRow, error) {
+func (m *MemStore) ListDispatches(_ context.Context, taskID, assignee string, sinceID int64, limit int) ([]DispatchRow, error) {
 	if limit <= 0 {
 		limit = 1000 // 语义与 PG 归一(N3)
 	}
@@ -124,7 +124,7 @@ func (m *MemStore) ListDispatches(_ context.Context, taskID string, sinceID int6
 	defer m.mu.RUnlock()
 	out := []DispatchRow{}
 	for _, r := range m.dispatch {
-		if r.ID <= sinceID || (taskID != "" && r.TaskID != taskID) {
+		if r.ID <= sinceID || (taskID != "" && r.TaskID != taskID) || (assignee != "" && r.Assignee != assignee) {
 			continue
 		}
 		out = append(out, r)

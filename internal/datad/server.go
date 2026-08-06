@@ -263,14 +263,16 @@ func (s *Server) handleDispatch(w http.ResponseWriter, r *http.Request, id Ident
 }
 
 // handleListDispatch GET /v1/dispatch:dispatch 权威只读侧(audit 重建不权威——
-// audit 写失败仅告警不回滚,可缺行)。管理域读=coordinator,对齐 audit.read。
-// 参数:task_id(过滤)/since_id(增量下界,不含)/limit(默认与上限 1000);id 升序。
+// audit 写失败仅告警不回滚,可缺行)。coordinator=全量;member=自报域行级
+// (zzc 批 Q1:须 assignee=me/本人全名,否则 403——同 sessions 行级规)。
+// 参数:task_id/assignee(过滤)/since_id(增量下界,不含)/limit(默认与上限 1000);id 升序。
 func (s *Server) handleListDispatch(w http.ResponseWriter, r *http.Request, id Identity) {
-	if id.Role != "coordinator" {
+	q := r.URL.Query()
+	assignee := resolveMe(q.Get("assignee"), id)
+	if id.Role != "coordinator" && assignee != id.Session {
 		s.deny(w, r, id, "dispatch.read")
 		return
 	}
-	q := r.URL.Query()
 	var sinceID int64
 	if v := q.Get("since_id"); v != "" { // 解析错=400 不静默当 0(n2)
 		var err error
@@ -290,7 +292,7 @@ func (s *Server) handleListDispatch(w http.ResponseWriter, r *http.Request, id I
 			limit = n
 		}
 	}
-	out, err := s.st.ListDispatches(r.Context(), q.Get("task_id"), sinceID, limit)
+	out, err := s.st.ListDispatches(r.Context(), q.Get("task_id"), assignee, sinceID, limit)
 	if err != nil {
 		storeErr(w, err)
 		return

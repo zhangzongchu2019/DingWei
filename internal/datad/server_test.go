@@ -254,6 +254,20 @@ func TestReadonlyDispatchEndpoint(t *testing.T) {
 	if len(rows) != 2 || rows[1].Role != "reviewer" {
 		t.Fatalf("task_id 过滤:%+v", rows)
 	}
+	// member 自报域(Q1):assignee=me=200 只见本人行;越权 assignee=403
+	w := call(t, s, "GET", "/v1/dispatch?assignee=me", "tok-devo", "", nil)
+	_ = json.Unmarshal(w.Body.Bytes(), &rows)
+	if w.Code != 200 || len(rows) != 2 {
+		t.Fatalf("member assignee=me: code=%d %+v", w.Code, rows)
+	}
+	for _, r := range rows {
+		if r.Assignee != "zzc-devo48-2642" {
+			t.Fatalf("member 见他人行:%+v", r)
+		}
+	}
+	if w := call(t, s, "GET", "/v1/dispatch?assignee=zzc-claudek3-2642", "tok-devo", "", nil); w.Code != 403 {
+		t.Fatalf("member 越权 assignee want 403 got %d", w.Code)
+	}
 }
 
 func TestLatestHeartbeatsEndpoint(t *testing.T) {

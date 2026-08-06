@@ -81,7 +81,7 @@ func TestPGIntegration(t *testing.T) {
 			t.Fatalf("dispatch append #%d: %v", i, err)
 		}
 	}
-	rows, err := pg.ListDispatches(ctx, id, 0, 0)
+	rows, err := pg.ListDispatches(ctx, id, "", 0, 0)
 	if err != nil || len(rows) != 2 {
 		t.Fatalf("dispatch 回读: %v n=%d", err, len(rows))
 	}
@@ -89,7 +89,7 @@ func TestPGIntegration(t *testing.T) {
 		t.Fatalf("dispatch 行序/生成列: %+v", rows)
 	}
 	// since_id 增量:下界不含
-	inc, err := pg.ListDispatches(ctx, id, rows[0].ID, 0)
+	inc, err := pg.ListDispatches(ctx, id, "", rows[0].ID, 0)
 	if err != nil || len(inc) != 1 || inc[0].ID != rows[1].ID {
 		t.Fatalf("since_id 增量: %v %+v", err, inc)
 	}

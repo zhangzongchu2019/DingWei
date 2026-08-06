@@ -113,7 +113,7 @@ type Store interface {
 	UpdateProgress(ctx context.Context, id string, p TaskProgress) (*Task, error)
 	// dispatch(append-only;读=权威只读侧,audit 重建不权威——audit 写失败仅告警不回滚)
 	AppendDispatch(ctx context.Context, d Dispatch) error
-	ListDispatches(ctx context.Context, taskID string, sinceID int64, limit int) ([]DispatchRow, error) // id 升序;taskID 空=全部;sinceID=增量下界(不含)
+	ListDispatches(ctx context.Context, taskID, assignee string, sinceID int64, limit int) ([]DispatchRow, error) // id 升序;taskID/assignee 空=不过滤;sinceID=增量下界(不含)
 	// config(版本化 CAS)
 	GetConfig(ctx context.Context, key string, generation int64) (*ConfigEntry, error) // generation<=0=最新
 	ListConfig(ctx context.Context) ([]ConfigEntry, error)                             // 每 key 最新代次(project_context 用)

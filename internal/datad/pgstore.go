@@ -182,15 +182,19 @@ func (p *PGStore) AppendDispatch(ctx context.Context, d Dispatch) error {
 	return tx.Commit()
 }
 
-func (p *PGStore) ListDispatches(ctx context.Context, taskID string, sinceID int64, limit int) ([]DispatchRow, error) {
+func (p *PGStore) ListDispatches(ctx context.Context, taskID, assignee string, sinceID int64, limit int) ([]DispatchRow, error) {
 	if limit <= 0 {
 		limit = 1000 // 与 Mem 语义归一(N3):非法/缺省=默认上限,不是 0 行
 	}
 	q := `SELECT id,task_id,assignee,role,round,note,created_at FROM dispatch WHERE id>$1`
 	args := []any{sinceID}
 	if taskID != "" {
-		q += ` AND task_id=$2`
+		q += ` AND task_id=$` + strconv.Itoa(len(args)+1)
 		args = append(args, taskID)
+	}
+	if assignee != "" {
+		q += ` AND assignee=$` + strconv.Itoa(len(args)+1)
+		args = append(args, assignee)
 	}
 	q += ` ORDER BY id LIMIT $` + strconv.Itoa(len(args)+1)
 	args = append(args, limit)
