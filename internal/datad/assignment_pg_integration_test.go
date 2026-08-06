@@ -13,6 +13,7 @@ package datad
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -113,15 +114,16 @@ func TestPGAssignFull(t *testing.T) {
 	if err := w.appDB.QueryRow(`SELECT owner_session,status FROM task WHERE id=$1`, tid).Scan(&owner, &status); err != nil || owner != sExec || status != "dispatched" {
 		t.Fatalf("A1 owner/status SQL: %v %s %s", err, owner, status)
 	}
-	// audit 事务面:成功行 op=assign,actor=coordinator,detail 完整
-	var detail string
-	if err := w.appDB.QueryRow(`SELECT detail::text FROM audit WHERE op='assign' AND actor=$1 AND detail->>'request_id'=$2`, sCoord, rid1).Scan(&detail); err != nil {
+	// audit 事务面:成功行 op=assign,actor=coordinator,detail 完整(jsonb 字段级断言:
+	// PG jsonb 存储会规范化空白/键序,不做子串比对)。
+	var agen int
+	var aexec, arev, aoutcome string
+	if err := w.appDB.QueryRow(`SELECT (detail->>'generation')::int, detail->>'executor', detail->>'reviewer', detail->>'outcome'
+	    FROM audit WHERE op='assign' AND actor=$1 AND detail->>'request_id'=$2`, sCoord, rid1).Scan(&agen, &aexec, &arev, &aoutcome); err != nil {
 		t.Fatalf("A1 audit(事务内成功行): %v", err)
 	}
-	for _, must := range []string{`"generation":1`, sExec, sRev, `"outcome":"success"`} {
-		if !strings.Contains(detail, must) {
-			t.Fatalf("audit detail 缺 %s: %s", must, detail)
-		}
+	if agen != 1 || aexec != sExec || arev != sRev || aoutcome != "success" {
+		t.Fatalf("audit detail 字段: gen=%d exec=%s rev=%s outcome=%s", agen, aexec, arev, aoutcome)
 	}
 
 	// A3 重派 gen+1 旧代保留(SQL 行数)
@@ -238,8 +240,14 @@ func TestPGA2ConcurrentUnique(t *testing.T) {
 			t.Fatalf("loser %s 应 stale_generation/412: %+v", rids[i], e)
 		}
 		fr, ferr := w.p.GetFirstResult(context.Background(), rids[i])
-		if ferr != nil || fr == nil || fr.Outcome != ErrStaleGen || string(fr.Body) != string(failFirstBody(e)) {
+		if ferr != nil || fr == nil || fr.Outcome != ErrStaleGen {
 			t.Fatalf("loser %s 首果: %v %+v", rids[i], ferr, fr)
+		}
+		// jsonb 规范化空白/键序≠字节保真;DTO 字段级同值断言(HTTP 层字节一致性由
+		// 单一 DTO 再 marshal 保证,server_test TestHTTPAssignDTOMatchesFirstResult 逐字节证)。
+		var stored AssignErr
+		if err := json.Unmarshal(fr.Body, &stored); err != nil || stored.Code != e.Code || stored.HTTP != e.HTTP || stored.Msg != e.Msg || stored.Sub != e.Sub {
+			t.Fatalf("loser %s 首果 body DTO 不同值: %v %+v vs %+v", rids[i], err, stored, e)
 		}
 	}
 	if winners != 1 {
@@ -377,4 +385,17 @@ func TestPGGCFirstResults(t *testing.T) {
 	check(ridDel, 0, "closed+超期应删")
 	check(ridOpen, 1, "open+超期须留(重放安全)")
 	check(ridNew, 1, "closed+新须留(保留窗内)")
+}
+
+// TestPGMigrateOnly:evidence 脚本引导用——仅触发 SchemaDDL 幂等迁移(grants.sql 执行前置)。
+func TestPGMigrateOnly(t *testing.T) {
+	dsn := os.Getenv("DATAD_TEST_PG_DSN")
+	if dsn == "" {
+		t.Skip("DATAD_TEST_PG_DSN 未设")
+	}
+	p, err := OpenPG(context.Background(), dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.Close()
 }
