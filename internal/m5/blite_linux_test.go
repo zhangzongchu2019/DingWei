@@ -3,6 +3,8 @@
 package m5
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"strings"
@@ -253,25 +255,21 @@ func mustReadFile(path string) string {
 // ── N-2b: probe health endpoint — falsifiable test ───────────────────
 
 func TestProbeHealth200Falsifiable(t *testing.T) {
-	// Start a stub HTTP server that returns 503 (not 200).
-	// probeProcess must return ErrProbeFail — a process that listens
-	// but isn't healthy must NOT pass the probe (§N4).
-	stubScript := `import http.server, socketserver
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self): self.send_response(503); self.end_headers()
-s = socketserver.TCPServer(('127.0.0.1', 19999), H)
-s.serve_forever()`
-	stub := exec.Command("python3", "-c", stubScript)
-	stub.Start()
-	defer stub.Process.Kill()
-	time.Sleep(200 * time.Millisecond) // let stub start
+	// n-5: Use httptest.NewServer (in-process, no python3 dependency,
+	// random port, guaranteed to be serving before probe starts).
+	// 503 must cause probeProcess to return ErrProbeFail (§N4, N-2b).
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(503)
+	}))
+	defer srv.Close()
 
-	tuple, err := readProcTuple(stub.Process.Pid)
+	// Use our own PID: we know this process is alive with a matching tuple.
+	tuple, err := readProcTuple(os.Getpid())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = probeProcess(tuple, "http://127.0.0.1:19999/health", 3, 500*time.Millisecond)
+	err = probeProcess(tuple, srv.URL+"/health", 3, 500*time.Millisecond)
 	if err == nil {
 		t.Fatal("N-2b FAIL: probe passed with 503 response — should be ErrProbeFail")
 	}
