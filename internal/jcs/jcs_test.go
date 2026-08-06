@@ -1,191 +1,75 @@
 package jcs
 
 import (
-	"encoding/json"
+	"errors"
 	"testing"
 )
 
-// RFC 8785 Appendix A.3: official test vectors.
-// Each vector is {input JSON, expected canonical JSON, sha256 hex}.
-
-type testVector struct {
-	name    string
-	input   string
-	wantCan string // canonical form
-	wantSHA string // sha256 of canonical form
-}
-
-// rfc8785Vectors returns the official IETF test vectors.
-func rfc8785Vectors() []testVector {
-	return []testVector{
-		// A.3.1: Arrays — no whitespace
-		{
-			name:  "A.3.1 Arrays",
-			input: `[ 1,2,3 ]`,
-			wantCan: `[1,2,3]`,
-		},
-		// A.3.2: Objects — sorted keys
-		{
-			name:  "A.3.2 Objects",
-			input: `{"b":1,"a":2}`,
-			wantCan: `{"a":2,"b":1}`,
-		},
-		// A.3.3: Numbers — integer vs float
-		{
-			name:  "A.3.3 Numbers",
-			input: `[ 1.0,1 ]`,
-			wantCan: `[1,1]`,
-		},
-		// A.3.4: String escaping
-		{
-			name:  "A.3.4 Strings",
-			input: `"foo\"bar"`,
-			wantCan: `"foo\"bar"`,
-		},
-		// A.3.5: Nested
-		{
-			name:  "A.3.5 Nested",
-			input: `{"d":{"b":2,"a":1},"c":[3,2,1]}`,
-			wantCan: `{"c":[3,2,1],"d":{"a":1,"b":2}}`,
-		},
-		// A.3.6: Unicode keys (code-point order, not byte order)
-		{
-			name:  "A.3.6 Unicode keys",
-			input: `{"é":0,"é":0}`,
-			wantCan: `{"é":0,"é":0}`,
-		},
-	}
-}
-
-func TestRFC8785Vectors(t *testing.T) {
-	vectors := rfc8785Vectors()
-	for _, tv := range vectors {
-		t.Run(tv.name, func(t *testing.T) {
-			var input any
-			if err := json.Unmarshal([]byte(tv.input), &input); err != nil {
-				t.Fatalf("parse input: %v", err)
-			}
-
-			got, err := Canonicalize(input)
-			if err != nil {
-				t.Fatalf("Canonicalize: %v", err)
-			}
-
-			if tv.wantCan != "" && string(got) != tv.wantCan {
-				// Pretty-print both for diagnostics
-				t.Errorf("canonical mismatch:\n  got  %s\n  want %s", got, tv.wantCan)
-			}
-		})
-	}
-}
-
-func TestJCSDeterminism(t *testing.T) {
-	// Same logical data from different source orderings → same sha256
-	a := map[string]any{"b": 1, "a": 2}
-	b := map[string]any{"a": 2, "b": 1}
-
-	shaA, err := SHA256(a)
-	if err != nil {
-		t.Fatal(err)
-	}
-	shaB, err := SHA256(b)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if shaA != shaB {
-		t.Fatalf("JCS not deterministic: %s vs %s", shaA, shaB)
-	}
-}
-
-func TestJCSIntegerEncoding(t *testing.T) {
-	// RFC 8785 §3.2.3: integer must not have fractional part
-	integers := []float64{1, 0, -1, 42, 999999}
-	for _, n := range integers {
-		got, err := Canonicalize(n)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Should be bare integer, no decimal point
-		if string(got) == "1.0" || string(got) == "1.0e0" {
-			t.Errorf("integer %v: got %s, want integer form", n, got)
-		}
-	}
-}
-
-func TestJCSSortObjectKeys(t *testing.T) {
-	// Keys must be sorted lexicographically
-	input := map[string]any{"z": 1, "a": 2, "m": 3}
-	got := MustCanonicalize(input)
-	if string(got) != `{"a":2,"m":3,"z":1}` {
-		t.Errorf("key sort: got %s", got)
-	}
-}
-
-func TestJCSNoWhitespace(t *testing.T) {
-	tests := []any{
-		map[string]any{"a": float64(1)},
-		[]any{float64(1), float64(2)},
-	}
-	for _, v := range tests {
-		got := MustCanonicalize(v)
-		for i, c := range got {
-			if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
-				t.Errorf("whitespace at byte %d in %s", i, got)
-				break
-			}
-		}
-	}
-}
-
-func TestJCSNullBool(t *testing.T) {
-	tests := []struct {
-		v    any
+// RFC 8785 canonical 子集向量(本平台负载:object/array/string/bool/null/整数)。
+// 覆盖:键序(含 UTF-16 vs 码点区分性)、字符串转义、非 ASCII 原样、整数、嵌套、浮点拒绝。
+func TestCanonicalizeVectors(t *testing.T) {
+	cases := []struct {
+		name string
+		in   any
 		want string
 	}{
-		{nil, "null"},
-		{true, "true"},
-		{false, "false"},
+		{"键字典序", map[string]any{"b": int64(1), "a": int64(2)}, `{"a":2,"b":1}`},
+		{"非ASCII键原样+短于长", map[string]any{"ü": int64(1), "a": int64(2)}, `{"a":2,"ü":1}`},
+		{"字符串转义", "a\nb\"c\\d\te", `"a\nb\"c\\d\te"`},
+		{"控制符\\u00xx小写", "\x00\x1f", "\"\\u0000\\u001f\""},
+		{"非ASCII值原样UTF8", "é€", `"é€"`},
+		{"整数负", map[string]any{"x": int64(-5)}, `{"x":-5}`},
+		{"bool/null/数组嵌套", map[string]any{"z": []any{int64(1), "two", true, nil, false}}, `{"z":[1,"two",true,null,false]}`},
+		{"空对象空数组", map[string]any{"o": map[string]any{}, "a": []any{}}, `{"a":[],"o":{}}`},
 	}
-	for _, tc := range tests {
-		got := MustCanonicalize(tc.v)
-		if string(got) != tc.want {
-			t.Errorf("%v: got %q want %q", tc.v, got, tc.want)
+	for _, c := range cases {
+		got, err := Canonicalize(c.in)
+		if err != nil {
+			t.Fatalf("%s: err %v", c.name, err)
+		}
+		if string(got) != c.want {
+			t.Fatalf("%s:\n got %q\nwant %q", c.name, got, c.want)
 		}
 	}
 }
 
-func TestJCSRoundtrip(t *testing.T) {
-	type checkpoint struct {
-		Session  string `json:"session"`
-		Binary   string `json:"binary"`
-		State    string `json:"state"`
-		UnixTime int64  `json:"unix_time"`
+// ★RFC 8785 §3.2.3 关键:键序按 UTF-16 code unit,非 Unicode 码点。
+// 区分性向量:U+FFFD(BMP,UTF-16=0xFFFD) vs U+10000(增补面,UTF-16 代理对高位=0xD800)。
+// 码点序:0xFFFD < 0x10000 → "�" 在前;UTF-16 序:0xD800 < 0xFFFD → "\U00010000" 在前。
+// 正确实现(UTF-16)必把增补面键排在 U+FFFD 之前——朴素码点/rune 序会排反,此例钉死。
+func TestKeyOrderingUTF16NotCodepoint(t *testing.T) {
+	in := map[string]any{"�": int64(1), "\U00010000": int64(2)}
+	got, err := Canonicalize(in)
+	if err != nil {
+		t.Fatal(err)
 	}
+	want := "{\"\U00010000\":2,\"�\":1}" // 增补面键在前(UTF-16 0xD800 < 0xFFFD)
+	if string(got) != want {
+		t.Fatalf("UTF-16 键序错(疑按码点排):\n got %q\nwant %q", got, want)
+	}
+}
 
-	cp1 := checkpoint{
-		Session:  "test",
-		Binary:   "/bin/sleep",
-		State:    "active",
-		UnixTime: 1234567890,
+// 浮点显式拒绝(fail-loud,非静默误规范化)——防两侧手搓一致地错的根因。
+func TestFloatRejected(t *testing.T) {
+	for _, v := range []any{1.5, float64(3.14), map[string]any{"x": 2.5}} {
+		if _, err := Canonicalize(v); !errors.Is(err, ErrFloatUnsupported) {
+			t.Fatalf("浮点 %v 应 ErrFloatUnsupported,got %v", v, err)
+		}
 	}
-	cp2 := checkpoint{
-		State:    "active",
-		Binary:   "/bin/sleep",
-		UnixTime: 1234567890,
-		Session:  "test",
+	// 整值 float64(json.Unmarshal 常态)放行为整数。
+	got, err := Canonicalize(map[string]any{"g": float64(7)})
+	if err != nil || string(got) != `{"g":7}` {
+		t.Fatalf("整值float64应当整数: %q %v", got, err)
 	}
+}
 
-	sha1 := MustSHA256(cp1)
-	sha2 := MustSHA256(cp2)
-	if sha1 != sha2 {
-		t.Fatalf("struct field order should not affect sha: %s vs %s", sha1, sha2)
+// CanonicalizeJSON:json.Number 保精度,整数走整数路径,浮点拒。
+func TestCanonicalizeJSON(t *testing.T) {
+	got, err := CanonicalizeJSON([]byte(`{"b":1,"a":"x","c":[true,null]}`))
+	if err != nil || string(got) != `{"a":"x","b":1,"c":[true,null]}` {
+		t.Fatalf("JSON canonical: %q %v", got, err)
 	}
-
-	// Official RFC 8785 test vector for this known payload:
-	// {"binary":"/bin/sleep","session":"test","state":"active","unix_time":1234567890}
-	wantCan := `{"binary":"/bin/sleep","session":"test","state":"active","unix_time":1234567890}`
-	gotCan := MustCanonicalize(cp1)
-	if string(gotCan) != wantCan {
-		t.Errorf("struct canonical mismatch:\n  got  %s\n  want %s", gotCan, wantCan)
+	if _, err := CanonicalizeJSON([]byte(`{"f":1.5}`)); !errors.Is(err, ErrFloatUnsupported) {
+		t.Fatalf("JSON 浮点应拒: %v", err)
 	}
 }

@@ -8,6 +8,7 @@
 package m5
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -112,9 +113,14 @@ type CheckpointPayload struct {
 	CheckpointAt int64 `json:"checkpoint_at"` // unix seconds
 }
 
-// SHA256 returns the content-addressed id of the payload (JCS RFC 8785).
+// SHA256 returns the content-addressed id of the payload (JCS RFC 8785 via shared internal/jcs).
 func (p CheckpointPayload) SHA256() string {
-	return jcs.MustSHA256(p)
+	b, err := jcs.Canonicalize(p)
+	if err != nil {
+		panic(fmt.Sprintf("m5: JCS canonicalize: %v", err))
+	}
+	h := sha256.Sum256(b)
+	return fmt.Sprintf("%x", h)
 }
 
 // Validate checks that the payload's sha matches the expected id.
