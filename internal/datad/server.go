@@ -1,8 +1,10 @@
 package datad
 
 // dingwei-datad HTTP 服务(设计冻结版 §3/§4):唯一 PG 入口;
-// 两不变量在此执法——①管理域写=role:coordinator 唯一②自报域=行级
-// (token.session==目标行;task progress=owner 本人)。每写一条 audit(含未遂 403)。
+// 两不变量在此执法——①管理域写=role:coordinator 唯一(task 状态唯一例外=owner
+// 经 /pull 白名单流转 dispatched→in_progress/in_progress→review,zzc 批 B 案)
+// ②自报域=行级(token.session==目标行;task progress/pull=owner 本人)。
+// 每写一条 audit(含未遂 403)。
 // me 别名:路径/查询中的 "me" 按 token 解析(§7b:shim 不感知身份)。
 
 import (
