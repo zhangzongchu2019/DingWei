@@ -19,3 +19,7 @@
 
 ## 声明
 一次交齐,无后续补证项;B2-B4 逐条对 CR 判据闭合;证据链中间曾有一版含测试助手自身 race 的失败批(pgUID 计数器无同步,-race 抓获后改 atomic 重跑,历史留痕如实,主码零涉)。
+
+## R2 增补:C1 闭合(dev56 cycle2 R1@8eb56f06)
+- **修**:PGStore.Assign 取**双 advisory 锁**(task 锁+request_id 锁),固定全局取锁序=锁键数值升序(least 先 greatest 后;任意事务对任意键对同序⇒无死锁环;PutTask 单锁无二次获取不参与环;hashtext 键碰撞=同会话重入无害)。rid 锁把"同幂等键的首果判定"全局串行:异 task 同 request_id 并发不再双 miss,败方在 rid 锁后必见已提交首果→TaskID 比对→**首次即稳定 request_conflict/409**;PK 竞争 503 路径结构性消除(首果查与 INSERT 间无并发窗,非错误码翻译补丁)。
+- **真 PG 原证三件**(docs/evidence/cycle2,-race exit=0,TestPG* 12/12):①TestPGC1CrossTaskConcurrentSameRID=6 轮同/异 body 交替、栅栏同起,恰一提交+败方首响断言**绝非 store_down**+败方 task/assignment 零污染+首果恰一行;②TestPGC1ResponseLossRetry=赢家/败方各重试×3 逐次稳定(原样首果/稳定 409)+首果恒一份;③TestPGC1LockOrderNoDeadlock=2task×2rid 交叉 16 并发 30s 死锁门+终态不变量。

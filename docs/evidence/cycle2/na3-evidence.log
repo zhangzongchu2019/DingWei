@@ -1,5 +1,5 @@
-== N-A3 evidence run @2026-08-06T23:24:56Z host=devo48 ==
-== git anchor: 04b47ef945fd5dbdaf340099e8b57ff326e13d25 ==
+== N-A3 evidence run @2026-08-06T23:30:19Z host=devo48 ==
+== git anchor: 10898108c8b94447bee8a347edd93b958e90be55 ==
 PostgreSQL 16.14 (Ubuntu 16.14-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
 == 0) 重置测试库与角色(幂等) ==
 DROP DATABASE
@@ -10,7 +10,7 @@ ALTER ROLE
 ALTER ROLE
 CREATE DATABASE
 == 1) SchemaDDL 迁移(datad_user 生产同路径:OpenPG 幂等迁移,TestPGMigrateOnly 触发)==
-ok  	github.com/zhangzongchu2019/dingwei/internal/datad	0.066s
+ok  	github.com/zhangzongchu2019/dingwei/internal/datad	0.082s
 == 2) 授权(deploy/datad-grants.sql,超级用户执行)——先迁后授,与生产序一致 ==
 DO
 REVOKE
@@ -63,16 +63,19 @@ REVOKE
 
 == 4) PG 集成全套(-race,四 DSN 门控全开;退出码显式捕获不经管道=防掩码)==
 --- PASS: TestPGAssignFull (0.15s)
---- PASS: TestPGA2ConcurrentUnique (0.18s)
---- PASS: TestPGACLThreeRoles (0.12s)
---- PASS: TestPGRoleNoLeak (0.12s)
---- PASS: TestPGGCFirstResults (0.18s)
+--- PASS: TestPGA2ConcurrentUnique (0.17s)
+--- PASS: TestPGACLThreeRoles (0.11s)
+--- PASS: TestPGRoleNoLeak (0.11s)
+--- PASS: TestPGGCFirstResults (0.15s)
 --- PASS: TestPGMigrateOnly (0.03s)
---- PASS: TestPGB3CrossTask (0.12s)
---- PASS: TestPGB4PutAssignInterleave (0.20s)
+--- PASS: TestPGB3CrossTask (0.11s)
+--- PASS: TestPGB4PutAssignInterleave (0.19s)
+--- PASS: TestPGC1CrossTaskConcurrentSameRID (0.17s)
+--- PASS: TestPGC1ResponseLossRetry (0.12s)
+--- PASS: TestPGC1LockOrderNoDeadlock (0.22s)
 --- PASS: TestPGIntegration (0.08s)
 PASS
-ok  	github.com/zhangzongchu2019/dingwei/internal/datad	2.199s
+ok  	github.com/zhangzongchu2019/dingwei/internal/datad	2.648s
 go test exit=0
 == 5) 负向裸证(psql 直连,测试之外的第二证面)==
 ERROR:  permission denied for table assignment
