@@ -61,6 +61,7 @@ func New(cfg Config) *Server {
 	m.HandleFunc("GET /v1/tasks/{id}", s.withAuth(s.handleGetTask))
 	m.HandleFunc("PUT /v1/tasks/{id}", s.withAuth(s.handlePutTask))
 	m.HandleFunc("POST /v1/tasks/{id}/progress", s.withAuth(s.handleProgress))
+	m.HandleFunc("POST /v1/tasks/{id}/assign", s.withAuth(s.handleAssign))
 	m.HandleFunc("POST /v1/tasks/{id}/pull", s.withAuth(s.handlePullTask))
 	m.HandleFunc("GET /v1/tasks/pull-lag", s.withAuth(s.handlePullLag))
 	m.HandleFunc("POST /v1/dispatch", s.withAuth(s.handleDispatch))
@@ -264,6 +265,44 @@ func (s *Server) handleDispatch(w http.ResponseWriter, r *http.Request, id Ident
 	}
 	s.audit(r.Context(), id, "dispatch.append", d.TaskID, d)
 	writeJSON(w, 201, d)
+}
+
+// handleAssign POST /v1/tasks/{id}/assign:M5 A-lite 原子派发(契约 61e5938 §2)。
+// coordinator-only(单写不变量);force⇒reason 必填(N3);机器码→HTTP 由 AssignErr 携带。
+func (s *Server) handleAssign(w http.ResponseWriter, r *http.Request, id Identity) {
+	if id.Role != "coordinator" {
+		s.deny(w, r, id, "assign")
+		return
+	}
+	var req AssignRequest
+	if err := decodeBody(r, &req); err != nil {
+		http.Error(w, "bad schema: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if req.Force && req.Reason == "" {
+		http.Error(w, "force ⇒ reason 必填(越闸留因)", http.StatusUnprocessableEntity)
+		return
+	}
+	as, ok := s.st.(Assigner)
+	if !ok {
+		http.Error(w, "assign 不支持(store 未实现 Assigner)", http.StatusNotImplemented)
+		return
+	}
+	// tokenSessions=注册表 session 集(unknown_assignee 校验)
+	sessions := map[string]bool{}
+	s.tokMu.RLock()
+	for _, i := range s.tokens {
+		sessions[i.Session] = true
+	}
+	s.tokMu.RUnlock()
+	res, ae := as.Assign(r.Context(), r.PathValue("id"), &req, sessions)
+	if ae != nil {
+		s.audit(r.Context(), id, "assign."+ae.Code, r.PathValue("id"), map[string]string{"code": ae.Code})
+		http.Error(w, ae.Code+": "+ae.Msg, ae.HTTP)
+		return
+	}
+	s.audit(r.Context(), id, "assign", r.PathValue("id"), res)
+	writeJSON(w, 200, res)
 }
 
 // handlePullTask POST /v1/tasks/{id}/pull:自报域执行态流转(zzc 批 B 案自取)。
