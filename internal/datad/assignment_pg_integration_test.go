@@ -19,6 +19,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -79,12 +80,12 @@ func (w *pgWorld) newTask(t *testing.T, suffix string) string {
 	return id
 }
 
-// pgUID 跨轮唯一 UUID 形 request_id。
-var pgUIDSeq int
+// pgUID 跨轮唯一 UUID 形 request_id(atomic:B4 并发测多 goroutine 调用)。
+var pgUIDSeq atomic.Int64
 
 func pgUID() string {
-	pgUIDSeq++
-	return fmt.Sprintf("%08x-0000-4000-8000-%012d", time.Now().UnixNano()&0xffffffff, pgUIDSeq)
+	n := pgUIDSeq.Add(1)
+	return fmt.Sprintf("%08x-0000-4000-8000-%012d", time.Now().UnixNano()&0xffffffff, n)
 }
 
 func isPGDenied(err error) bool {
