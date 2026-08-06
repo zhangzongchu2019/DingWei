@@ -211,10 +211,11 @@ func TestA4ThirdType(t *testing.T) {
 func TestA5CAS(t *testing.T) {
 	m, tok := aliteWorld(t)
 	ctx := context.Background()
-	// 首派带 expected_generation=拒(无当代行)
+	// 首派带 expected_generation=invalid_request(v1.8r2 N2:客户端首派必须省略;
+	// stale_generation 语义不拉伸,首派竞争败者另证[A2 losers=412])
 	g0 := int64(0)
-	if _, e := m.Assign(ctx, "T1", &AssignRequest{Executor: sExec, Reviewer: sRev, RequestID: uid(20), ExpectedGeneration: &g0}, tok, sCoord); e == nil || e.Code != ErrStaleGen {
-		t.Fatalf("首派带 expected_generation 应 stale_generation: %v", e)
+	if _, e := m.Assign(ctx, "T1", &AssignRequest{Executor: sExec, Reviewer: sRev, RequestID: uid(20), ExpectedGeneration: &g0}, tok, sCoord); e == nil || e.Code != ErrInvalidRequest || e.Sub != SubExpectedGenOnFirst {
+		t.Fatalf("首派带 expected_generation 应 invalid_request/expected_generation_on_first: %v", e)
 	}
 	m.Assign(ctx, "T1", req(sExec, sRev, uid(21)), tok, sCoord)
 	bad := int64(99)
@@ -561,5 +562,27 @@ func TestA13InvalidRequestSubCauses(t *testing.T) {
 	_, e2 := m.Assign(ctx, "T1", &AssignRequest{Executor: sExec, Reviewer: sRev, RequestID: uid(121), Force: true}, tok, sCoord)
 	if e2 == nil || e2.Sub != SubForceReasonMissing || e2.Msg != e.Msg {
 		t.Fatalf("③重放保真须含 sub: %+v", e2)
+	}
+	// ④ 首派带 expected_generation:422+sub+入账(v1.8r2 N2)
+	g0 := int64(0)
+	_, e = m.Assign(ctx, "T1", &AssignRequest{Executor: sExec, Reviewer: sRev, RequestID: uid(122), ExpectedGeneration: &g0}, tok, sCoord)
+	if e == nil || e.Sub != SubExpectedGenOnFirst {
+		t.Fatalf("④sub=expected_generation_on_first: %+v", e)
+	}
+	if fr4, _ := m.GetFirstResult(ctx, uid(122)); fr4 == nil || fr4.Outcome != ErrInvalidRequest {
+		t.Fatalf("④应入账: %+v", fr4)
+	}
+	// ⑤ 大小写幂等(M1):大写形与小写形=同一把幂等键,原样重放不重执行
+	up := strings.ToUpper(uid(123))
+	r1, e5 := m.Assign(ctx, "T1", req(sExec, sRev, uid(123)), tok, sCoord)
+	if e5 != nil {
+		t.Fatalf("⑤首派: %v", e5)
+	}
+	r2, e5b := m.Assign(ctx, "T1", req(sExec, sRev, up), tok, sCoord)
+	if e5b != nil || r2.Generation != r1.Generation {
+		t.Fatalf("⑤大写形重放应同键原样返(gen 同): %v %+v vs %+v", e5b, r2, r1)
+	}
+	if fr5, _ := m.GetFirstResult(ctx, strings.ToLower(up)); fr5 == nil {
+		t.Fatal("⑤幂等键应为小写规范形单键")
 	}
 }

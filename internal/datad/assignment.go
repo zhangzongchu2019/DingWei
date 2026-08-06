@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/jcs"
@@ -77,6 +78,7 @@ const (
 	SubRequestIDMalformed = "request_id_malformed" // 不入首果账(D4:幂等键非法,PRIMARY KEY 不可满足)
 	SubNegativeGeneration = "negative_generation"
 	SubForceReasonMissing = "force_reason_missing"
+	SubExpectedGenOnFirst = "expected_generation_on_first" // v1.8r2 N2:首派带 expected(客户端首派必须省略)
 )
 
 // AssignErr A-lite 错误(机器码+HTTP+子因)=错误单一源 DTO:Mem/PG 产出、HTTP 映射、失败首果
@@ -151,6 +153,11 @@ var uuidRe = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[
 
 // validRequestID request_id 形校验。非法=invalid_request(422);此变体**不入首果账**
 // (幂等键自身非法无法记账,delta v1.8④)。
+// normalizeRequestID M1(v1.8r2):校验大小写不敏感,但幂等键/首果账主键/request_hash 一律
+// 用小写规范化形——TEXT 主键大小写敏感,不规范化则同一逻辑 UUID 两写=两把幂等键,换写法
+// 重放=重新执行 assign(幂等破)。调用点=两 Store Assign 入口,形校验通过后立即规范化。
+func normalizeRequestID(id string) string { return strings.ToLower(id) }
+
 func validRequestID(id string) *AssignErr {
 	if id == "" {
 		return aerrSub(ErrInvalidRequest, SubRequestIDMalformed, "request_id 必填(UUID 形)")

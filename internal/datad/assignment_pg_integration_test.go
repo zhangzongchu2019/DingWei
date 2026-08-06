@@ -159,11 +159,11 @@ func TestPGAssignFull(t *testing.T) {
 		t.Fatalf("A9 换参: %v", e)
 	}
 
-	// A5 首派带 expected=412;重派错 gen=412
+	// A5 首派带 expected=invalid_request(v1.8r2);重派错 gen=412
 	tid3 := w.newTask(t, "a5")
 	g0 := int64(0)
-	if _, e := w.p.Assign(ctx, tid3, &AssignRequest{Executor: sExec, Reviewer: sRev, RequestID: pgUID(), ExpectedGeneration: &g0}, w.tok, sCoord); e == nil || e.Code != ErrStaleGen {
-		t.Fatalf("A5 首派带 expected: %v", e)
+	if _, e := w.p.Assign(ctx, tid3, &AssignRequest{Executor: sExec, Reviewer: sRev, RequestID: pgUID(), ExpectedGeneration: &g0}, w.tok, sCoord); e == nil || e.Code != ErrInvalidRequest || e.Sub != SubExpectedGenOnFirst {
+		t.Fatalf("A5 首派带 expected 应 invalid_request: %v", e)
 	}
 	w.p.Assign(ctx, tid3, req(sExec, sRev, pgUID()), w.tok, sCoord)
 	bad := int64(9)
@@ -202,6 +202,26 @@ func TestPGAssignFull(t *testing.T) {
 	w.appDB.QueryRow(`SELECT count(*) FROM audit WHERE op=$1 AND detail->>'request_id'=$2`, "assign."+ErrInvalidRequest, frid).Scan(&cnt)
 	if cnt != 1 {
 		t.Fatal("A13③ 失败 audit 应与首果同事务落")
+	}
+	// A13⑤ 大小写幂等(M1,PG TEXT 主键=威胁本体):大写形重放=同一把键单行,不重执行
+	tid5 := w.newTask(t, "m1case")
+	base := pgUID()
+	r1, e1 := w.p.Assign(ctx, tid5, req(sExec, sRev, base), w.tok, sCoord)
+	if e1 != nil {
+		t.Fatalf("A13⑤ 首派: %v", e1)
+	}
+	r2, e2 := w.p.Assign(ctx, tid5, req(sExec, sRev, strings.ToUpper(base)), w.tok, sCoord)
+	if e2 != nil || r2.Generation != r1.Generation {
+		t.Fatalf("A13⑤ 大写形重放应原样返: %v %+v vs %+v", e2, r2, r1)
+	}
+	w.appDB.QueryRow(`SELECT count(*) FROM assign_first_result WHERE lower(request_id)=lower($1)`, base).Scan(&cnt)
+	if cnt != 1 {
+		t.Fatalf("A13⑤ 首果账应单行(小写规范键),got %d", cnt)
+	}
+	var storedKey string
+	w.appDB.QueryRow(`SELECT request_id FROM assign_first_result WHERE lower(request_id)=lower($1)`, base).Scan(&storedKey)
+	if storedKey != strings.ToLower(base) {
+		t.Fatalf("A13⑤ 入库键应小写形: %s", storedKey)
 	}
 }
 

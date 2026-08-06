@@ -45,10 +45,12 @@ func nullableRaw(r json.RawMessage) any {
 }
 
 func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest, tokenSessions map[string]bool, actor string) (*AssignResult, *AssignErr) {
-	// request_id 形门(delta v1.8③④):非法幂等键不开事务不记账,422 直拒。
+	// request_id 形门=步骤0(v1.8r2 N1):非法幂等键不开事务不记账,422 直拒;
+	// 通过后小写规范化(M1:幂等键/hash 用规范形,大小写两写=同一把键)。
 	if e := validRequestID(req.RequestID); e != nil {
 		return nil, e
 	}
+	req.RequestID = normalizeRequestID(req.RequestID)
 	hash, herr := canonicalRequestHash(req)
 	if herr != nil { // R2-1 fail-closed:canonical 错绝不吞错空 hash
 		return nil, herr
@@ -131,8 +133,8 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 		return nil, recordFail(e)
 	}
 	if !repl && req.ExpectedGeneration != nil {
-		// R2-2/N1:首派不带 expected_generation(无当代行,任何 expected 均不符现当代)。
-		return nil, recordFail(aerr(ErrStaleGen, "首派不带 expected_generation(无当代行)"))
+		// v1.8r2 N2:首派带 expected=请求形非法(客户端首派必须省略;stale_generation 不拉伸)。
+		return nil, recordFail(aerrSub(ErrInvalidRequest, SubExpectedGenOnFirst, "首派必须省略 expected_generation(无当代行)"))
 	}
 	// CAS(§4):重派须匹配现当代 executor generation
 	var curGen sql.NullInt64
