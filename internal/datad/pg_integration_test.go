@@ -124,8 +124,10 @@ func TestPGIntegration(t *testing.T) {
 	}
 
 	// pull 模式往返(B 案:OwnerTransition 原子闸+PullLag 监控,PG advisory 锁/单UPDATE语义须真跑)
+	// owner 须每 run 唯一:闸按 owner 全表扫,主 itest 件(上文 in_progress 同 owner)
+	// 与 dingwei_test 历史残留都会误触发 pull_gate(首跑即栽此坑)。
 	p1, p2 := id+"-P1", id+"-P2"
-	owner := "zzc-devo48-2642"
+	owner := "zzc-itest-" + id
 	for _, pid := range []string{p1, p2} {
 		if _, err := pg.PutTask(ctx, Task{ID: pid, Title: pid, OwnerSession: owner,
 			Status: "dispatched"}, time.Time{}, true); err != nil {
