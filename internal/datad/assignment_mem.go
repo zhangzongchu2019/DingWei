@@ -11,7 +11,16 @@ import (
 func (m *MemStore) GetFirstResult(_ context.Context, requestID string) (*FirstResult, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return m.firstResults[requestID], nil
+	fr := m.firstResults[requestID]
+	if fr == nil {
+		return nil, nil
+	}
+	// R1⑥深拷贝:返副本(含 Body 字节),防调用方改污染内存账(PG 侧 Scan 天然新副本)。
+	cp := *fr
+	if fr.Body != nil {
+		cp.Body = append(json.RawMessage(nil), fr.Body...)
+	}
+	return &cp, nil
 }
 
 // recordFirst 写首果账(§2 步骤5:任何路径含失败先记首果再返)。
@@ -58,11 +67,11 @@ func (m *MemStore) Assign(_ context.Context, taskID string, req *AssignRequest, 
 			_ = json.Unmarshal(prev.Body, &r)
 			return &r, nil
 		}
-		return nil, &AssignErr{Code: prev.Outcome, HTTP: prev.HTTPCode, Msg: "重放首果"}
+		return nil, replayErr(prev.Outcome, prev.HTTPCode, prev.Body) // R1②重放保真(错误 DTO)
 	}
 
 	fail := func(e *AssignErr) (*AssignResult, *AssignErr) {
-		m.recordFirst(req, taskID, e.Code, e.HTTP, nil) // 失败也记首果
+		m.recordFirst(req, taskID, e.Code, e.HTTP, failFirstBody(e)) // R1③失败首果存错误 DTO
 		return nil, e
 	}
 
@@ -103,8 +112,8 @@ func (m *MemStore) Assign(_ context.Context, taskID string, req *AssignRequest, 
 	t.Status = "dispatched"
 	t.UpdatedAt = now
 	m.tasks[taskID] = t
-	// audit
-	m.audit = append(m.audit, AuditEntry{Actor: "assign", Op: "assign", Target: taskID, At: now})
+	// R1④:审计由 handler(server.handleAssign)以真调用方 id.Session+detail 落,不在此写
+	// actor='assign' 字面重复(旧内部 audit 已删,避免假身份)。
 
 	res := &AssignResult{TaskID: taskID, Generation: newGen, Executor: req.Executor, Reviewer: req.Reviewer, Status: "dispatched"}
 	body, _ := json.Marshal(res)

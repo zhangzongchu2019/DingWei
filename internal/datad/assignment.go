@@ -70,11 +70,12 @@ type AssignResult struct {
 	Status     string `json:"status"`
 }
 
-// AssignErr A-lite 错误(机器码+HTTP)。
+// AssignErr A-lite 错误(机器码+HTTP)=错误单一源 DTO:Mem/PG 产出、HTTP 映射、失败首果
+// body 均用它,消除三处各自表示错误语义的分叉(R1②请求与错误双射)。
 type AssignErr struct {
-	Code string
-	HTTP int
-	Msg  string
+	Code string `json:"code"`
+	HTTP int    `json:"http"`
+	Msg  string `json:"msg"`
 }
 
 func (e *AssignErr) Error() string { return e.Code + ": " + e.Msg }
@@ -85,6 +86,24 @@ func aerr(code, msg string) *AssignErr {
 		h = 500
 	}
 	return &AssignErr{Code: code, HTTP: h, Msg: msg}
+}
+
+// failFirstBody 失败首果 body=错误 DTO 的 JSON(R1③:重放保真,原样返 Code/HTTP/Msg,不丢 Msg)。
+func failFirstBody(e *AssignErr) json.RawMessage {
+	b, _ := json.Marshal(e)
+	return b
+}
+
+// replayErr 从失败首果重建 AssignErr:body 为错误 DTO 则原样返(保真);无 body(旧账)退化
+// outcome+http_code。单一源=AssignErr,Mem/PG/HTTP 同套(R1②双射不再各自重构丢字段)。
+func replayErr(outcome string, httpCode int, body json.RawMessage) *AssignErr {
+	if len(body) > 0 {
+		e := &AssignErr{}
+		if json.Unmarshal(body, e) == nil && e.Code != "" {
+			return e
+		}
+	}
+	return &AssignErr{Code: outcome, HTTP: httpCode, Msg: "重放首果"}
 }
 
 // canonicalRequestHash 请求体 canonical(JCS RFC 8785 同款:字段字典序/UTF-8)sha256

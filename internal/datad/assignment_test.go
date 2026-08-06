@@ -44,10 +44,12 @@ func TestA1AtomicDualRole(t *testing.T) {
 	}
 }
 
-// A2 partial-unique 并发双 assign 恰一成(shenceclaude 交接:必须并发,顺序证明不了)。
-// K 并发首派同 task 各带不同 request_id → 恰一成(gen1),余全被后到者判为重派缺 expected_generation
-// 或竞态串行化;最终当代 active 恰一双角色(partial-unique 语义)。
-func TestA2ConcurrentUnique(t *testing.T) {
+// A2 程序级唯一(goroutine 争用下恰一成)。★R1⑤诚实边界:MemStore.Assign 用 mu.Lock 串行,
+// 故此测证的是"唯一写路径+程序判据"在 goroutine 争用下不破,**非** DB 层真并发。真并发下的
+// partial-unique(assignment_active_uniq)唯一性=PG 侧强制,由 assignment_pg.go 的 PG 集成测试
+// (DATAD_TEST_PG_DSN 门控,非 assign 角色直写被拒 + K 真并发恰一成)证——Mem 载体结构性盖不住
+// PG 语义面(shenceclaude/dev56 同点),此测不冒充并发唯一证据。
+func TestA2SerialUniqueUnderContention(t *testing.T) {
 	m, tok := aliteWorld(t)
 	const K = 8
 	res := make([]*AssignResult, K)
@@ -209,6 +211,50 @@ func TestA10OwnerConflict(t *testing.T) {
 	ok.Status = "review"
 	if _, err := m.PutTask(ctx, ok, tk.UpdatedAt, false); err != nil {
 		t.Fatalf("PUT owner=executor 应放行: %v", err)
+	}
+}
+
+// R1② 请求与错误双射完整:每个错误码在 assignCodeHTTP 有非零 HTTP,且条数对称(无孤儿码)。
+func TestR1ErrorBijection(t *testing.T) {
+	codes := []string{ErrHalfAssignment, ErrSelfReview, ErrWrongStateA, ErrStaleGen,
+		ErrUnknownAssignee, ErrRequeueState, ErrStoreDownA, ErrOwnerConflict, ErrRequestConflict}
+	for _, c := range codes {
+		if assignCodeHTTP[c] == 0 {
+			t.Fatalf("错误码 %s 无 HTTP 映射(双射不完整=孤儿码)", c)
+		}
+	}
+	if len(assignCodeHTTP) != len(codes) {
+		t.Fatalf("assignCodeHTTP 条数 %d≠错误码 %d(双射不对称)", len(assignCodeHTTP), len(codes))
+	}
+}
+
+// R1②③ 失败首果 body 存错误 DTO,重放保真(原 Code+HTTP+Msg 原样,非退化"重放首果")。
+func TestR1FailedFirstResultFaithful(t *testing.T) {
+	m, tok := aliteWorld(t)
+	ctx := context.Background()
+	_, e1 := m.Assign(ctx, "T1", req("zzc-devo48-2642", "zzc-devo48-2642", "r-bad"), tok)
+	if e1 == nil || e1.Code != ErrSelfReview {
+		t.Fatalf("首次 self_review: %v", e1)
+	}
+	_, e2 := m.Assign(ctx, "T1", req("zzc-devo48-2642", "zzc-devo48-2642", "r-bad"), tok)
+	if e2 == nil || e2.Code != ErrSelfReview || e2.HTTP != e1.HTTP || e2.Msg != e1.Msg {
+		t.Fatalf("失败重放须保真(Code/HTTP/Msg 原样,非退化): first=%+v replay=%+v", e1, e2)
+	}
+}
+
+// R1⑥ GetFirstResult 深拷贝:改返回值 Body 不污染内存账。
+func TestR1FirstResultDeepCopy(t *testing.T) {
+	m, tok := aliteWorld(t)
+	ctx := context.Background()
+	m.Assign(ctx, "T1", req("zzc-devo48-2642", "zzc-claudek3-2642", "r1"), tok)
+	fr1, _ := m.GetFirstResult(ctx, "r1")
+	if fr1 == nil || len(fr1.Body) == 0 {
+		t.Fatal("首果应有 body")
+	}
+	fr1.Body[0] = 'X' // 篡改返回副本
+	fr2, _ := m.GetFirstResult(ctx, "r1")
+	if fr2.Body[0] == 'X' {
+		t.Fatal("GetFirstResult 未深拷贝:改返回值污染了内存账")
 	}
 }
 

@@ -57,7 +57,7 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 			_ = json.Unmarshal(prevBody, &r)
 			return &r, nil
 		}
-		return nil, &AssignErr{Code: prevOutcome, HTTP: prevCode, Msg: "重放首果"}
+		return nil, replayErr(prevOutcome, prevCode, prevBody) // R1②重放保真(错误 DTO,同 Mem)
 	} else if !errors.Is(perr, sql.ErrNoRows) {
 		return nil, aerr(ErrStoreDownA, perr.Error())
 	}
@@ -66,7 +66,7 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 		_, _ = tx.ExecContext(ctx,
 			`INSERT INTO assign_first_result(request_id,outcome,http_code,request_hash,body,task_id)
        VALUES($1,$2,$3,$4,$5::jsonb,$6) ON CONFLICT DO NOTHING`,
-			req.RequestID, e.Code, e.HTTP, hash, "null", taskID)
+			req.RequestID, e.Code, e.HTTP, hash, string(failFirstBody(e)), taskID) // R1③失败首果存错误 DTO(非 null)
 		_ = tx.Commit() // 首果落账(含失败)
 		return e
 	}
@@ -128,11 +128,8 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 		req.RequestID, hash, string(body), taskID); err != nil {
 		return nil, aerr(ErrStoreDownA, err.Error())
 	}
-	// audit
-	det, _ := json.Marshal(map[string]any{"generation": newGen, "executor": req.Executor, "reviewer": req.Reviewer, "request_id": req.RequestID})
-	if _, err := tx.ExecContext(ctx, `INSERT INTO audit(actor,op,target,detail) VALUES('assign','assign',$1,$2::jsonb)`, taskID, string(det)); err != nil {
-		return nil, aerr(ErrStoreDownA, err.Error())
-	}
+	// R1④:审计由 handler(server.handleAssign)以真调用方 id.Session+detail 落,不在事务内写
+	// actor='assign' 字面(旧内部 audit 已删,避免假身份;审计非事务原子必需,写失败仅告警)。
 	if err := tx.Commit(); err != nil {
 		return nil, aerr(ErrStoreDownA, err.Error())
 	}
