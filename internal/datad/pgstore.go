@@ -71,9 +71,13 @@ CREATE TABLE IF NOT EXISTS assign_first_result (
   request_id TEXT PRIMARY KEY, outcome TEXT NOT NULL, http_code INT NOT NULL,
   request_hash TEXT NOT NULL, body JSONB NOT NULL, task_id TEXT NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now());
--- D4c 部署纵深(prodops 以超级用户执行;datad_user=运行账号):
--- REVOKE UPDATE, DELETE ON audit FROM datad_user;  -- audit 仅 INSERT/SELECT(§4)
--- 实现期 N-A3:GRANT INSERT/UPDATE ON assignment 仅授 assign 事务角色(唯一写路径收成)
+-- D4c 部署纵深(prodops 以超级用户执行;datad_user=运行账号):见 deploy/datad-grants.sql
+--   · REVOKE ALL ON assignment,assign_first_result FROM PUBLIC(防外部组件直写)
+--   · GRANT SELECT,INSERT,UPDATE ON assignment TO datad_user(无 DELETE,历史代永留)
+--   · GRANT SELECT,INSERT ON assign_first_result TO datad_user(首果账 append-only,无 UPDATE/DELETE)
+--   · REVOKE UPDATE,DELETE ON audit FROM datad_user(audit 仅 INSERT/SELECT,§4)
+-- N-A3 §5①"assign 是 assignment 唯一写路径":DB 层=上述 GRANT(挡 datad_user 之外角色);
+--   代码层=assignment_grant_test.go TestAssignSoleWritePath(挡 datad_user 进程内新端点绕过)。
 `
 
 type PGStore struct{ db *sql.DB }
