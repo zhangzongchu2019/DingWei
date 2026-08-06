@@ -142,6 +142,17 @@ func (p *PGStore) GetTask(ctx context.Context, id string) (*Task, error) {
 }
 
 func (p *PGStore) PutTask(ctx context.Context, t Task, ifMatch time.Time, force bool) (*Task, error) {
+	// A10 N-A2:active assignment 存续期,owner_session 须=当代 executor(assign 维护权威);
+	// PUT 改 owner≠executor=拒 owner_conflict。coordinator 单写(assign 与 PUT 同一写主体串行),
+	// 故此读后写窗对齐单写假设;改派须走 /assign 而非 PUT 旁路。force(仅首建)时无 assignment 自然放行。
+	var execA sql.NullString
+	if err := p.db.QueryRowContext(ctx,
+		`SELECT assignee FROM assignment WHERE task_id=$1 AND role='executor' AND active`, t.ID).Scan(&execA); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	if execA.Valid && t.OwnerSession != execA.String {
+		return nil, ErrOwnerConflictPut
+	}
 	if force {
 		_, err := p.db.ExecContext(ctx, `INSERT INTO task(id,title,owner_session,status,anchor,gate,eta,detail)
   VALUES($1,$2,$3,$4,$5,$6,$7,$8)

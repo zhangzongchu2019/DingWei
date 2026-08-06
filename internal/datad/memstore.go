@@ -69,6 +69,13 @@ func (m *MemStore) PutTask(_ context.Context, t Task, ifMatch time.Time, force b
 	if exists && !force && !old.UpdatedAt.Equal(ifMatch) {
 		return nil, ErrConflict
 	}
+	// A10 N-A2:active assignment 存续期,owner_session 须=当代 executor(assign 维护权威);
+	// PUT 改 owner≠executor=拒 owner_conflict(force 不越——改派须走 /assign 而非 PUT 旁路)。
+	if exists {
+		if execA, ok := m.activeExecutorLocked(t.ID); ok && t.OwnerSession != execA {
+			return nil, ErrOwnerConflictPut
+		}
+	}
 	if !exists {
 		t.CreatedAt = now
 	} else {
@@ -77,6 +84,16 @@ func (m *MemStore) PutTask(_ context.Context, t Task, ifMatch time.Time, force b
 	t.UpdatedAt = now
 	m.tasks[t.ID] = t
 	return &t, nil
+}
+
+// activeExecutorLocked 返回 task 当代 active executor 的 assignee(caller 须持 m.mu)。
+func (m *MemStore) activeExecutorLocked(taskID string) (string, bool) {
+	for _, a := range m.assignments {
+		if a.TaskID == taskID && a.Active && a.Role == RoleExecutor {
+			return a.Assignee, true
+		}
+	}
+	return "", false
 }
 
 func (m *MemStore) UpdateProgress(_ context.Context, id string, p TaskProgress) (*Task, error) {

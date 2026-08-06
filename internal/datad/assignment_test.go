@@ -4,6 +4,7 @@ package datad
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"sync"
 	"testing"
@@ -173,6 +174,41 @@ func TestA11ForceNotOverRequeue(t *testing.T) {
 	g1 := int64(1)
 	if _, e := m.Assign(ctx, "T1", &AssignRequest{Executor: "zzc-shencedeepseek-2642", Reviewer: "zzc-claudek3-2642", RequestID: "r2", ExpectedGeneration: &g1, Force: true, Reason: "越闸"}, tok); e == nil || e.Code != ErrRequeueState {
 		t.Fatalf("force 不越 requeue_state,在途应拒: %v", e)
+	}
+}
+
+// A10 N-A2:active assignment 存续期,PUT 改 owner_session≠当代 executor=拒 owner_conflict;
+// =executor 放行;无 active assignment 时 PUT 自由改 owner。
+func TestA10OwnerConflict(t *testing.T) {
+	m, tok := aliteWorld(t)
+	ctx := context.Background()
+	// 无 assignment:PUT 自由改 owner
+	cur, _ := m.GetTask(ctx, "T1")
+	cur.OwnerSession = "zzc-shencedeepseek-2642"
+	if _, err := m.PutTask(ctx, *cur, cur.UpdatedAt, false); err != nil {
+		t.Fatalf("无 active assignment PUT 改 owner 应放行: %v", err)
+	}
+	// assign(owner_session→executor=devo48)
+	if _, e := m.Assign(ctx, "T1", req("zzc-devo48-2642", "zzc-claudek3-2642", "r1"), tok); e != nil {
+		t.Fatalf("assign: %v", e)
+	}
+	// PUT owner≠executor→拒 owner_conflict
+	tk, _ := m.GetTask(ctx, "T1")
+	bad := *tk
+	bad.OwnerSession = "zzc-claudek3-2642" // ≠当代 executor(devo48)
+	if _, err := m.PutTask(ctx, bad, tk.UpdatedAt, false); !errors.Is(err, ErrOwnerConflictPut) {
+		t.Fatalf("PUT owner≠executor 应 owner_conflict: %v", err)
+	}
+	// force 也不越(改派须走 /assign)
+	if _, err := m.PutTask(ctx, bad, tk.UpdatedAt, true); !errors.Is(err, ErrOwnerConflictPut) {
+		t.Fatalf("force PUT owner≠executor 仍应 owner_conflict(改派走 /assign): %v", err)
+	}
+	// PUT owner=executor→放行(A7 前提维持)
+	ok := *tk
+	ok.OwnerSession = "zzc-devo48-2642"
+	ok.Status = "review"
+	if _, err := m.PutTask(ctx, ok, tk.UpdatedAt, false); err != nil {
+		t.Fatalf("PUT owner=executor 应放行: %v", err)
 	}
 }
 

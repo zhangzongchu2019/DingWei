@@ -150,6 +150,8 @@ func storeErr(w http.ResponseWriter, err error) {
 		http.Error(w, "optimistic lock conflict", http.StatusConflict)
 	case errors.Is(err, ErrCASFailed):
 		http.Error(w, "generation mismatch", http.StatusPreconditionFailed)
+	case errors.Is(err, ErrOwnerConflictPut):
+		http.Error(w, "owner_conflict", http.StatusConflict) // A10 N-A2
 	default: // PG 不可达等=503 fail-closed(P9),不静默降级
 		http.Error(w, "store unavailable", http.StatusServiceUnavailable)
 	}

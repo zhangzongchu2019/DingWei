@@ -19,6 +19,9 @@ var (
 	ErrNotOwner   = errors.New("not task owner")                           // 403
 	ErrWrongState = errors.New("wrong state for transition")               // 409 wrong_state
 	ErrPullGate   = errors.New("pull gate: owner already has in_progress") // 409 pull_gate
+	// A10 N-A2:active assignment 存续期,PUT 改 owner_session≠当代 executor=拒(owner_session
+	// 权威归 assign 维护,PUT 不得旁路改派;保 A7 前提 owner_session=当代 executor 不被一次 PUT 绕过)
+	ErrOwnerConflictPut = errors.New("owner_conflict") // 409 owner_conflict
 )
 
 type Task struct {
