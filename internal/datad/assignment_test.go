@@ -53,26 +53,43 @@ func TestA2SerialUniqueUnderContention(t *testing.T) {
 	m, tok := aliteWorld(t)
 	const K = 8
 	res := make([]*AssignResult, K)
+	errs := make([]*AssignErr, K)
 	var wg sync.WaitGroup
 	for i := 0; i < K; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			r, _ := m.Assign(context.Background(), "T1",
+			res[i], errs[i] = m.Assign(context.Background(), "T1",
 				req("zzc-devo48-2642", "zzc-claudek3-2642", "r"+strconv.Itoa(i)), tok)
-			res[i] = r
 		}(i)
 	}
 	wg.Wait()
-	// 恰一首派成功(gen1);当代 active 恰 2(双角色);无双 gen1
-	ok := 0
-	for _, r := range res {
-		if r != nil && r.Generation == 1 {
-			ok++
+	// ★R1⑤:恰一赢家(gen1,无错);其余 K-1 均 loser——**每个 loser 都断言:返错误(非 nil)
+	// 且其首果落账**(§2 步骤5 失败也记首果=重放幂等基础)。不只数赢家,把所有 loser 与首果一并断言。
+	winners, losers := 0, 0
+	for i := 0; i < K; i++ {
+		rid := "r" + strconv.Itoa(i)
+		if errs[i] == nil {
+			winners++
+			if res[i] == nil || res[i].Generation != 1 {
+				t.Fatalf("赢家 %s 应 gen1 成功: %+v", rid, res[i])
+			}
+		} else {
+			losers++
+			if res[i] != nil {
+				t.Fatalf("loser %s 有错误却也返 result: %+v", rid, res[i])
+			}
+			fr, _ := m.GetFirstResult(context.Background(), rid) // loser 首果必落账
+			if fr == nil || fr.Outcome == "success" {
+				t.Fatalf("loser %s 首果未落账或误记 success: %+v", rid, fr)
+			}
 		}
 	}
-	if ok != 1 {
-		t.Fatalf("并发首派应恰一成(gen1),got %d", ok)
+	if winners != 1 {
+		t.Fatalf("并发应恰一赢家(gen1),got %d", winners)
+	}
+	if losers != K-1 {
+		t.Fatalf("应 %d 个 loser 各带错误+首果,got %d", K-1, losers)
 	}
 	active := 0
 	for _, a := range m.assignments {
@@ -81,7 +98,7 @@ func TestA2SerialUniqueUnderContention(t *testing.T) {
 		}
 	}
 	if active != 2 {
-		t.Fatalf("当代 active 恰 2(partial-unique),got %d", active)
+		t.Fatalf("当代 active 恰 2(partial-unique 程序保证),got %d", active)
 	}
 }
 
