@@ -6,7 +6,9 @@ package datad
 import (
 	"encoding/json"
 	"net/http/httptest"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -313,9 +315,18 @@ func TestPullModeAndGate(t *testing.T) {
 	if w := call(t, s, "POST", "/v1/tasks/P2/pull", "tok-devo", `{"to":"in_progress"}`, nil); w.Code != 409 || !strings.Contains(w.Body.String(), "pull_gate") {
 		t.Fatalf("pull gate want 409 pull_gate got %d %s", w.Code, w.Body.String())
 	}
-	// 非 owner=403(coordinator 也不走此端点,越闸走 PUT)
+	// 非 owner=403(coordinator 也不走此端点,越闸走 PUT)+未遂入审计(CR n2)
 	if w := call(t, s, "POST", "/v1/tasks/P1/pull", "tok-k3", `{"to":"review"}`, nil); w.Code != 403 {
 		t.Fatalf("非owner pull want 403 got %d", w.Code)
+	}
+	denied := false
+	for _, e := range ms.audit {
+		if e.Op == "task.pull.denied" && e.Actor == "zzc-claudek3-2642" {
+			denied = true
+		}
+	}
+	if !denied {
+		t.Fatal("非owner pull 未遂 403 未入审计(P7)")
 	}
 	// 交审 P1 释放闸→拉 P2=200
 	if w := call(t, s, "POST", "/v1/tasks/P1/pull", "tok-devo", `{"to":"review"}`, nil); w.Code != 200 {
@@ -343,6 +354,43 @@ func TestPullModeAndGate(t *testing.T) {
 	}
 }
 
+func TestPullGateConcurrent(t *testing.T) {
+	// 招牌属性证据位(CR N1):同 owner 并发拉 K 件,恰 1 成功其余 pull_gate。
+	s, _ := testServer()
+	const k = 8
+	for i := 0; i < k; i++ {
+		call(t, s, "PUT", "/v1/tasks/C"+strconv.Itoa(i), "tok-coord",
+			`{"title":"c","owner_session":"zzc-devo48-2642","status":"dispatched"}`, nil)
+	}
+	codes := make(chan int, k)
+	var wg sync.WaitGroup
+	for i := 0; i < k; i++ {
+		wg.Add(1)
+		go func(n int) {
+			defer wg.Done()
+			w := call(t, s, "POST", "/v1/tasks/C"+strconv.Itoa(n)+"/pull", "tok-devo",
+				`{"to":"in_progress"}`, nil)
+			codes <- w.Code
+		}(i)
+	}
+	wg.Wait()
+	close(codes)
+	ok, gated, other := 0, 0, 0
+	for c := range codes {
+		switch c {
+		case 200:
+			ok++
+		case 409:
+			gated++
+		default:
+			other++
+		}
+	}
+	if ok != 1 || gated != k-1 || other != 0 {
+		t.Fatalf("并发闸:want 1×200+%d×409 got %d×200/%d×409/%d other", k-1, ok, gated, other)
+	}
+}
+
 func TestPullLagEndpoint(t *testing.T) {
 	s, _ := testServer()
 	call(t, s, "PUT", "/v1/tasks/L1", "tok-coord",
@@ -354,6 +402,9 @@ func TestPullLagEndpoint(t *testing.T) {
 	// 派发台账行=权威 since 时点
 	call(t, s, "POST", "/v1/dispatch", "tok-coord",
 		`{"task_id":"L1","assignee":"zzc-devo48-2642","role":"executor"}`, nil)
+	// progress 污染 updated_at(晚于派发时点),钉死 since 不退化取 updated_at(CR N3)
+	time.Sleep(2 * time.Millisecond)
+	call(t, s, "POST", "/v1/tasks/L1/progress", "tok-devo", `{"anchor":"lagx"}`, nil)
 	// member=403
 	if w := call(t, s, "GET", "/v1/tasks/pull-lag", "tok-devo", "", nil); w.Code != 403 {
 		t.Fatalf("member pull-lag want 403 got %d", w.Code)
@@ -374,6 +425,21 @@ func TestPullLagEndpoint(t *testing.T) {
 	}
 	if !rows[0].Since.Before(rows[1].Since) && !rows[0].Since.Equal(rows[1].Since) {
 		t.Fatalf("未按最久在前排序:%+v", rows)
+	}
+	// N3 钉死:L1 的 since=dispatch.created_at,非被 progress 抬高的 task.updated_at
+	var ds []DispatchRow
+	_ = json.Unmarshal(call(t, s, "GET", "/v1/dispatch?task_id=L1", "tok-coord", "", nil).Body.Bytes(), &ds)
+	var l1t Task
+	_ = json.Unmarshal(call(t, s, "GET", "/v1/tasks/L1", "tok-coord", "", nil).Body.Bytes(), &l1t)
+	for _, r := range rows {
+		if r.TaskID == "L1" {
+			if len(ds) != 1 || !r.Since.Equal(ds[0].CreatedAt) {
+				t.Fatalf("since 应=dispatch.created_at: since=%v dispatch=%+v", r.Since, ds)
+			}
+			if r.Since.Equal(l1t.UpdatedAt) || !l1t.UpdatedAt.After(r.Since) {
+				t.Fatalf("since 退化取了 updated_at: since=%v updated_at=%v", r.Since, l1t.UpdatedAt)
+			}
+		}
 	}
 }
 

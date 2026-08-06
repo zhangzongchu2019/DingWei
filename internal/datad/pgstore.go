@@ -163,6 +163,9 @@ func (p *PGStore) UpdateProgress(ctx context.Context, id string, pr TaskProgress
 }
 
 func (p *PGStore) OwnerTransition(ctx context.Context, id, owner, to string) (*Task, error) {
+	if to != "in_progress" && to != "review" { // 非法 to 在锁/事务前拒(与 Mem 时机统一,CR N4)
+		return nil, ErrWrongState
+	}
 	// 闸依赖 Read Committed:RR 快照取在 advisory 锁等待前,锁释放后 NOT EXISTS
 	// 按旧快照看不到并发已提交的 in_progress 行→闸静默穿透;显式钉 RC 不赌库默认。
 	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
@@ -176,30 +179,28 @@ func (p *PGStore) OwnerTransition(ctx context.Context, id, owner, to string) (*T
 		`SELECT pg_advisory_xact_lock(hashtext('datad.task.pull:'||$1::text))`, owner); err != nil {
 		return nil, err
 	}
-	var res sql.Result
-	switch to {
-	case "in_progress":
-		res, err = tx.ExecContext(ctx, `UPDATE task SET status='in_progress', updated_at=now()
+	// UPDATE..RETURNING 一步读回(CR n1:commit 后另读在事务外,可被并发覆盖)
+	var row *sql.Row
+	if to == "in_progress" {
+		row = tx.QueryRowContext(ctx, `UPDATE task SET status='in_progress', updated_at=now()
   WHERE id=$1 AND owner_session=$2 AND status='dispatched'
-  AND NOT EXISTS (SELECT 1 FROM task WHERE owner_session=$2 AND status='in_progress')`, id, owner)
-	case "review":
-		res, err = tx.ExecContext(ctx, `UPDATE task SET status='review', updated_at=now()
-  WHERE id=$1 AND owner_session=$2 AND status='in_progress'`, id, owner)
-	default:
-		return nil, ErrWrongState
+  AND NOT EXISTS (SELECT 1 FROM task WHERE owner_session=$2 AND status='in_progress')
+  RETURNING `+taskCols, id, owner)
+	} else {
+		row = tx.QueryRowContext(ctx, `UPDATE task SET status='review', updated_at=now()
+  WHERE id=$1 AND owner_session=$2 AND status='in_progress'
+  RETURNING `+taskCols, id, owner)
 	}
-	if err != nil {
-		return nil, err
-	}
-	if n, _ := res.RowsAffected(); n == 0 { // 消歧:404/403/wrong_state/pull_gate
+	t, err := scanTask(row)
+	if errors.Is(err, ErrNotFound) { // 0 行消歧:404/403/wrong_state/pull_gate
 		var gotOwner, gotStatus string
-		err := tx.QueryRowContext(ctx,
+		qerr := tx.QueryRowContext(ctx,
 			`SELECT owner_session,status FROM task WHERE id=$1`, id).Scan(&gotOwner, &gotStatus)
 		switch {
-		case errors.Is(err, sql.ErrNoRows):
+		case errors.Is(qerr, sql.ErrNoRows):
 			return nil, ErrNotFound
-		case err != nil:
-			return nil, err
+		case qerr != nil:
+			return nil, qerr
 		case gotOwner != owner:
 			return nil, ErrNotOwner
 		case to == "in_progress" && gotStatus == "dispatched":
@@ -208,10 +209,13 @@ func (p *PGStore) OwnerTransition(ctx context.Context, id, owner, to string) (*T
 			return nil, ErrWrongState
 		}
 	}
+	if err != nil {
+		return nil, err
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	return p.GetTask(ctx, id)
+	return t, nil
 }
 
 func (p *PGStore) PullLag(ctx context.Context) ([]PullLagRow, error) {
@@ -220,7 +224,7 @@ func (p *PGStore) PullLag(ctx context.Context) ([]PullLagRow, error) {
   FROM task t LEFT JOIN dispatch d ON d.task_id=t.id AND d.role='executor'
   WHERE t.status='dispatched'
   GROUP BY t.id, t.title, t.owner_session, t.updated_at
-  ORDER BY since`)
+  ORDER BY since, t.id`)
 	if err != nil {
 		return nil, err
 	}

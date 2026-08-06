@@ -106,6 +106,9 @@ func (m *MemStore) UpdateProgress(_ context.Context, id string, p TaskProgress) 
 }
 
 func (m *MemStore) OwnerTransition(_ context.Context, id, owner, to string) (*Task, error) {
+	if to != "in_progress" && to != "review" { // 非法 to 在锁前拒(与 PG 时机统一,CR N4)
+		return nil, ErrWrongState
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	t, ok := m.tasks[id]
@@ -129,8 +132,6 @@ func (m *MemStore) OwnerTransition(_ context.Context, id, owner, to string) (*Ta
 		if t.Status != "in_progress" {
 			return nil, ErrWrongState
 		}
-	default:
-		return nil, ErrWrongState
 	}
 	t.Status = to
 	t.UpdatedAt = time.Now().UTC()
@@ -157,7 +158,12 @@ func (m *MemStore) PullLag(_ context.Context) ([]PullLagRow, error) {
 		}
 		out = append(out, PullLagRow{TaskID: t.ID, Title: t.Title, OwnerSession: t.OwnerSession, Since: since})
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Since.Before(out[j].Since) })
+	sort.Slice(out, func(i, j int) bool { // tiebreak=task_id(CR n5,同刻多件序稳定)
+		if out[i].Since.Equal(out[j].Since) {
+			return out[i].TaskID < out[j].TaskID
+		}
+		return out[i].Since.Before(out[j].Since)
+	})
 	return out, nil
 }
 

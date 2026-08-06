@@ -297,6 +297,8 @@ func (s *Server) handlePullTask(w http.ResponseWriter, r *http.Request, id Ident
 
 // handlePullLag GET /v1/tasks/pull-lag:coordinator 监控面(zzc 令)——谁名下有
 // dispatched 停留未拉,按最久在前;age 由服务端计算。
+// 已知边界(CR n3/n4 记账):task id 恰为"pull-lag"会被本路由遮蔽取不到单件;
+// 查询无 LIMIT,dispatched 常态量级小,量涨加分页=backlog。
 func (s *Server) handlePullLag(w http.ResponseWriter, r *http.Request, id Identity) {
 	if id.Role != "coordinator" {
 		s.deny(w, r, id, "task.pull_lag.read")
@@ -309,7 +311,11 @@ func (s *Server) handlePullLag(w http.ResponseWriter, r *http.Request, id Identi
 	}
 	now := time.Now().UTC()
 	for i := range out {
-		out[i].AgeSeconds = int64(now.Sub(out[i].Since).Seconds())
+		age := int64(now.Sub(out[i].Since).Seconds())
+		if age < 0 { // 时钟回拨钳 0(CR n6),不输出负龄误导消费方
+			age = 0
+		}
+		out[i].AgeSeconds = age
 	}
 	writeJSON(w, 200, out)
 }
