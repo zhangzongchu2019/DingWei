@@ -1,0 +1,86 @@
+== N-A3 evidence run @2026-08-06T23:24:56Z host=devo48 ==
+== git anchor: 04b47ef945fd5dbdaf340099e8b57ff326e13d25 ==
+PostgreSQL 16.14 (Ubuntu 16.14-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+== 0) 重置测试库与角色(幂等) ==
+DROP DATABASE
+DO
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+CREATE DATABASE
+== 1) SchemaDDL 迁移(datad_user 生产同路径:OpenPG 幂等迁移,TestPGMigrateOnly 触发)==
+ok  	github.com/zhangzongchu2019/dingwei/internal/datad	0.066s
+== 2) 授权(deploy/datad-grants.sql,超级用户执行)——先迁后授,与生产序一致 ==
+DO
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+== 3) ACL 封存(\dp 四表)==
+                                    Access privileges
+ Schema |    Name    | Type  |      Access privileges      | Column privileges | Policies 
+--------+------------+-------+-----------------------------+-------------------+----------
+ public | assignment | table | datad_user=rxt/datad_user  +|                   | 
+        |            |       | datad_assign=arw/datad_user |                   | 
+(1 row)
+
+                                          Access privileges
+ Schema |        Name         | Type  |       Access privileges       | Column privileges | Policies 
+--------+---------------------+-------+-------------------------------+-------------------+----------
+ public | assign_first_result | table | datad_user=rxt/datad_user    +|                   | 
+        |                     |       | datad_assign=ar/datad_user   +|                   | 
+        |                     |       | datad_assign_gc=rd/datad_user |                   | 
+(1 row)
+
+                                  Access privileges
+ Schema | Name | Type  |       Access privileges       | Column privileges | Policies 
+--------+------+-------+-------------------------------+-------------------+----------
+ public | task | table | datad_user=arwdDxt/datad_user+|                   | 
+        |      |       | datad_assign=rw/datad_user   +|                   | 
+        |      |       | datad_assign_gc=r/datad_user  |                   | 
+(1 row)
+
+                                  Access privileges
+ Schema | Name  | Type  |      Access privileges      | Column privileges | Policies 
+--------+-------+-------+-----------------------------+-------------------+----------
+ public | audit | table | datad_user=arDxt/datad_user+|                   | 
+        |       |       | datad_assign=a/datad_user   |                   | 
+(1 row)
+
+== 4) PG 集成全套(-race,四 DSN 门控全开;退出码显式捕获不经管道=防掩码)==
+--- PASS: TestPGAssignFull (0.15s)
+--- PASS: TestPGA2ConcurrentUnique (0.18s)
+--- PASS: TestPGACLThreeRoles (0.12s)
+--- PASS: TestPGRoleNoLeak (0.12s)
+--- PASS: TestPGGCFirstResults (0.18s)
+--- PASS: TestPGMigrateOnly (0.03s)
+--- PASS: TestPGB3CrossTask (0.12s)
+--- PASS: TestPGB4PutAssignInterleave (0.20s)
+--- PASS: TestPGIntegration (0.08s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/datad	2.199s
+go test exit=0
+== 5) 负向裸证(psql 直连,测试之外的第二证面)==
+ERROR:  permission denied for table assignment
+ERROR:  permission denied for table assign_first_result
+ERROR:  permission denied for table assignment
+ERROR:  permission denied for table assign_first_result
+ current_user | session_user 
+--------------+--------------
+ datad_assign | datad_assign
+(1 row)
+== done ==
