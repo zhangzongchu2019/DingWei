@@ -9,8 +9,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"sort"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/jcs"
 )
 
 // AssignRole 当代 assignment 角色(§1 CHECK:无 advisor,advisor 只存 dispatch 历史流水)。
@@ -93,18 +94,12 @@ func canonicalRequestHash(req *AssignRequest) string {
 	if req.ExpectedGeneration != nil {
 		m["expected_generation"] = *req.ExpectedGeneration
 	}
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	buf := make([]byte, 0, 128)
-	for _, k := range keys {
-		kv, _ := json.Marshal(m[k])
-		buf = append(buf, k...)
-		buf = append(buf, '=')
-		buf = append(buf, kv...)
-		buf = append(buf, ';')
+	// 真 RFC 8785 JCS canonical(公共包 internal/jcs,与 B-lite checkpoint id 同一套实现,
+	// 由 jcs 包官方向量钉死;不再手搓 key=value 自造格式)。payload 无浮点,canonical 不返错;
+	// 防御性:极端返错则退化为空 canonical 的 hash(不 panic,首果账仍幂等一致)。
+	buf, err := jcs.Canonicalize(m)
+	if err != nil {
+		buf = nil
 	}
 	sum := sha256.Sum256(buf)
 	return hex.EncodeToString(sum[:])
