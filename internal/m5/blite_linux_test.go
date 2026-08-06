@@ -249,3 +249,31 @@ func mustReadFile(path string) string {
 	}
 	return string(data)
 }
+
+// ── N-2b: probe health endpoint — falsifiable test ───────────────────
+
+func TestProbeHealth200Falsifiable(t *testing.T) {
+	// Start a stub HTTP server that returns 503 (not 200).
+	// probeProcess must return ErrProbeFail — a process that listens
+	// but isn't healthy must NOT pass the probe (§N4).
+	stubScript := `import http.server, socketserver
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self): self.send_response(503); self.end_headers()
+s = socketserver.TCPServer(('127.0.0.1', 19999), H)
+s.serve_forever()`
+	stub := exec.Command("python3", "-c", stubScript)
+	stub.Start()
+	defer stub.Process.Kill()
+	time.Sleep(200 * time.Millisecond) // let stub start
+
+	tuple, err := readProcTuple(stub.Process.Pid)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = probeProcess(tuple, "http://127.0.0.1:19999/health", 3, 500*time.Millisecond)
+	if err == nil {
+		t.Fatal("N-2b FAIL: probe passed with 503 response — should be ErrProbeFail")
+	}
+	t.Logf("N-2b PASS: probe correctly rejected 503: %v", err)
+}
