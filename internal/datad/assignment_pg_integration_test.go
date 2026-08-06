@@ -525,3 +525,149 @@ func TestPGB4PutAssignInterleave(t *testing.T) {
 		t.Fatalf("force PUT 亦应 owner_conflict: %v", err)
 	}
 }
+
+// cycle2 C1:异 task 同 request_id 真并发——恰一提交,败方**首次即稳定 request_conflict/409**
+// (绝不 store_down);同 body 与异 body 两型;多轮防调度侥幸;败方 task/assignment 零污染。
+func TestPGC1CrossTaskConcurrentSameRID(t *testing.T) {
+	w := pgWorldUp(t)
+	ctx := context.Background()
+	for round := 0; round < 6; round++ {
+		sameBody := round%2 == 0
+		ta := w.newTask(t, fmt.Sprintf("c1a%d", round))
+		tb := w.newTask(t, fmt.Sprintf("c1b%d", round))
+		rid := pgUID()
+		reqA := req(sExec, sRev, rid)
+		reqB := req(sExec, sRev, rid)
+		if !sameBody {
+			reqB = req(sThird, sRev, rid) // 异 body(同 rid)
+		}
+		var ra, rb *AssignResult
+		var ea, eb *AssignErr
+		start := make(chan struct{})
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() { defer wg.Done(); <-start; ra, ea = w.p.Assign(ctx, ta, reqA, w.tok, sCoord) }()
+		go func() { defer wg.Done(); <-start; rb, eb = w.p.Assign(ctx, tb, reqB, w.tok, sCoord) }()
+		close(start)
+		wg.Wait()
+		okN := 0
+		for i, e := range []*AssignErr{ea, eb} {
+			if e == nil {
+				okN++
+				continue
+			}
+			// 败方判据:首次即 request_conflict/409;store_down=C1 复发即败
+			if e.Code == ErrStoreDownA {
+				t.Fatalf("round%d(sameBody=%v) 败方首响 store_down(C1 未闭): %+v", round, sameBody, e)
+			}
+			if e.Code != ErrRequestConflict || e.HTTP != 409 {
+				t.Fatalf("round%d 败方应 request_conflict/409,got %+v (i=%d)", round, e, i)
+			}
+		}
+		if okN != 1 {
+			t.Fatalf("round%d 应恰一成功,got %d (ea=%v eb=%v ra=%v rb=%v)", round, okN, ea, eb, ra, rb)
+		}
+		// 败方 task 零污染+首果恰一行
+		loser := tb
+		if ea != nil {
+			loser = ta
+		}
+		var cnt int
+		w.appDB.QueryRow(`SELECT count(*) FROM assignment WHERE task_id=$1`, loser).Scan(&cnt)
+		if cnt != 0 {
+			t.Fatalf("round%d 败方 task 有 assignment=%d", round, cnt)
+		}
+		var status string
+		w.appDB.QueryRow(`SELECT status FROM task WHERE id=$1`, loser).Scan(&status)
+		if status != "proposed" {
+			t.Fatalf("round%d 败方 status=%s", round, status)
+		}
+		w.appDB.QueryRow(`SELECT count(*) FROM assign_first_result WHERE request_id=$1`, rid).Scan(&cnt)
+		if cnt != 1 {
+			t.Fatalf("round%d 首果应恰一行,got %d", round, cnt)
+		}
+	}
+}
+
+// cycle2 C1 附:赢家响应丢失重试——两边各自重试,结果稳定(赢家 task 原样返首果/败方 task
+// 稳定 409),首果恒一份。
+func TestPGC1ResponseLossRetry(t *testing.T) {
+	w := pgWorldUp(t)
+	ctx := context.Background()
+	ta := w.newTask(t, "c1ra")
+	tb := w.newTask(t, "c1rb")
+	rid := pgUID()
+	r1, e1 := w.p.Assign(ctx, ta, req(sExec, sRev, rid), w.tok, sCoord)
+	if e1 != nil {
+		t.Fatal(e1)
+	}
+	if _, e := w.p.Assign(ctx, tb, req(sExec, sRev, rid), w.tok, sCoord); e == nil || e.Code != ErrRequestConflict {
+		t.Fatalf("tb 首次: %v", e)
+	}
+	// 模拟响应丢失:两边各自重试×3,结果逐次稳定
+	for i := 0; i < 3; i++ {
+		r2, e2 := w.p.Assign(ctx, ta, req(sExec, sRev, rid), w.tok, sCoord)
+		if e2 != nil || r2.Generation != r1.Generation || r2.Executor != r1.Executor || r2.TaskID != ta {
+			t.Fatalf("赢家重试#%d 应原样首果: %v %+v", i, e2, r2)
+		}
+		if _, e := w.p.Assign(ctx, tb, req(sExec, sRev, rid), w.tok, sCoord); e == nil || e.Code != ErrRequestConflict || e.HTTP != 409 {
+			t.Fatalf("败方重试#%d 应稳定 409: %v", i, e)
+		}
+	}
+	var cnt int
+	w.appDB.QueryRow(`SELECT count(*) FROM assign_first_result WHERE request_id=$1`, rid).Scan(&cnt)
+	if cnt != 1 {
+		t.Fatalf("首果恒一份,got %d", cnt)
+	}
+}
+
+// cycle2 C1 附:交叉组合无死锁——(TA,r1)(TA,r2)(TB,r1)(TB,r2)混打 K 轮,固定锁序下全部完成
+// (超时=死锁即败),终态不变量保持。
+func TestPGC1LockOrderNoDeadlock(t *testing.T) {
+	w := pgWorldUp(t)
+	ctx := context.Background()
+	ta := w.newTask(t, "dla")
+	tb := w.newTask(t, "dlb")
+	r1, r2 := pgUID(), pgUID()
+	combos := []struct {
+		task string
+		rid  string
+	}{{ta, r1}, {ta, r2}, {tb, r1}, {tb, r2}}
+	done := make(chan struct{})
+	go func() {
+		var wg sync.WaitGroup
+		for k := 0; k < 4; k++ {
+			for _, c := range combos {
+				wg.Add(1)
+				go func(task, rid string) {
+					defer wg.Done()
+					w.p.Assign(ctx, task, req(sExec, sRev, rid), w.tok, sCoord)
+				}(c.task, c.rid)
+			}
+		}
+		wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(30 * time.Second):
+		t.Fatal("交叉组合 30s 未完成=疑似死锁(固定锁序失效)")
+	}
+	// 每 rid 首果恰一行;每 task owner==当代 executor
+	for _, rid := range []string{r1, r2} {
+		var cnt int
+		w.appDB.QueryRow(`SELECT count(*) FROM assign_first_result WHERE request_id=$1`, rid).Scan(&cnt)
+		if cnt != 1 {
+			t.Fatalf("rid=%s 首果应恰一行,got %d", rid, cnt)
+		}
+	}
+	for _, task := range []string{ta, tb} {
+		var owner string
+		var execA sql.NullString
+		w.appDB.QueryRow(`SELECT owner_session FROM task WHERE id=$1`, task).Scan(&owner)
+		w.appDB.QueryRow(`SELECT assignee FROM assignment WHERE task_id=$1 AND role='executor' AND active`, task).Scan(&execA)
+		if execA.Valid && owner != execA.String {
+			t.Fatalf("task=%s owner=%s ≠ executor=%s", task, owner, execA.String)
+		}
+	}
+}

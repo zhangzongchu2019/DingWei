@@ -62,9 +62,19 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	// advisory 锁 per task:串行化同 task 的 assign(并发下 partial-unique 兜底,advisory 串行为主)
+	// 双 advisory 锁(cycle2 C1):task 锁(串行同 task 派发)+request_id 锁(串行同幂等键的
+	// 首果判定——异 task 同 request_id 并发若只有 task 锁会双双 miss 首果查,PK 竞争败方
+	// 首响 503 而非稳定 409)。**固定全局取锁序=锁键数值升序**(两键先 least 后 greatest,
+	// 任意事务对同一对键的获取序一致⇒无死锁环;PutTask 只取单一 task 锁、无二次获取,
+	// 不参与环)。键碰撞(least==greatest)=同键重入,同会话 advisory 锁可重入,无害。
 	if _, err := tx.ExecContext(ctx,
-		`SELECT pg_advisory_xact_lock(hashtext('datad.assign:'||$1::text))`, taskID); err != nil {
+		`SELECT pg_advisory_xact_lock(least(hashtext('datad.assign:'||$1::text), hashtext('datad.assign.rid:'||$2::text)))`,
+		taskID, req.RequestID); err != nil {
+		return nil, aerr(ErrStoreDownA, err.Error())
+	}
+	if _, err := tx.ExecContext(ctx,
+		`SELECT pg_advisory_xact_lock(greatest(hashtext('datad.assign:'||$1::text), hashtext('datad.assign.rid:'||$2::text)))`,
+		taskID, req.RequestID); err != nil {
 		return nil, aerr(ErrStoreDownA, err.Error())
 	}
 
