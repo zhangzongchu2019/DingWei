@@ -788,8 +788,11 @@ func (s *Supervisor) recoverRestart(e JournalEntry) error {
 	// §3b rows "stop中"/"start中": probe reality
 	ss, ok := s.sessions[e.Target]
 	if ok && !ss.Tuple.IsZero() {
-		// Might be running — probe
-		if err := probeProcess(ss.Tuple, "", 1, 1*time.Second); err == nil {
+		// Might be running — tuple-only probe during recovery.
+		// Recovery has no checkpoint to read HealthURL from;
+		// full restart will re-probe with health endpoint.
+		cur, recErr := readProcTuple(int(ss.Tuple.PID))
+		if recErr == nil && cur.Equal(ss.Tuple) {
 			// Process alive, restart done
 			s.appendJournal(JournalEntry{OpID: e.OpID, Intent: "restart", Target: e.Target, Phase: PhaseDone})
 			return nil

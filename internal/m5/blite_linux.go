@@ -204,8 +204,12 @@ func forkExec(binary string, argv []string, envp []string) (int, int, error) {
 
 // probeProcess probes a started process: tuple identity (§1.2) + health endpoint (§N4).
 // healthURL is the session's health check URL (e.g. http://127.0.0.1:PORT/health).
-// N-2b: healthURL is mandatory (zzc裁定A) — if empty, probe passes on tuple alone.
+// N-2b (zzc裁定A): healthURL is mandatory for restart/replace — empty means fail-closed.
+// Recover may pass "" with explicit justification (no checkpoint available during crash recovery).
 func probeProcess(tuple ProcTuple, healthURL string, attempts int, interval time.Duration) error {
+	if healthURL == "" {
+		return fmt.Errorf("%w: healthURL is required (N-2b: zzc裁定A, default-on)", ErrProbeFail)
+	}
 	for i := 0; i < attempts; i++ {
 		if i > 0 {
 			time.Sleep(interval)
@@ -218,11 +222,9 @@ func probeProcess(tuple ProcTuple, healthURL string, attempts int, interval time
 		if !current.Equal(tuple) {
 			return fmt.Errorf("probe: pid %d tuple changed", tuple.PID)
 		}
-		// Health endpoint check (§N4, N-2b: enabled by default)
-		if healthURL != "" {
-			if !checkHealth200(healthURL) {
-				continue // health not ready, retry
-			}
+		// Health endpoint check (§N4, N-2b: mandatory 200)
+		if !checkHealth200(healthURL) {
+			continue // health not ready, retry
 		}
 		return nil
 	}

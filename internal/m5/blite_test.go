@@ -91,11 +91,12 @@ func TestB4_RestartFullChain(t *testing.T) {
 	defer s.Unlock()
 
 	cp := CheckpointPayload{
-		Session:      "test-session",
-		BinaryPath:   "/bin/sleep",
-		State:        "active",
-		CheckpointAt: time.Now().Unix(),
-	}
+			Session:      "test-session",
+			BinaryPath:   "python3",
+			HealthURL:    "http://127.0.0.1:19998/",
+			State:        "active",
+			CheckpointAt: time.Now().Unix(),
+		}
 	sha, err := s.Checkpoint("test-session", cp)
 	if err != nil {
 		t.Fatal(err)
@@ -109,7 +110,7 @@ func TestB4_RestartFullChain(t *testing.T) {
 		t.Fatalf("checkpoint session mismatch: got %q", gotCP.Session)
 	}
 
-	err = s.Restart("test-session", "/bin/sleep", []string{"60"}, nil)
+	err = s.Restart("test-session", "python3", []string{"-m", "http.server", "19998"}, nil)
 	if err != nil {
 		t.Fatalf("restart failed: %v", err)
 	}
