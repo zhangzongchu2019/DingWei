@@ -80,10 +80,26 @@ CREATE TABLE IF NOT EXISTS assign_first_result (
 --   代码层=assignment_grant_test.go TestAssignSoleWritePath(挡 datad_user 进程内新端点绕过)。
 `
 
-type PGStore struct{ db *sql.DB }
+// PGStore 三池:db=常规应用池;assignDB=assign 角色池(N-A3 唯一 assignment 写路径);
+// gcDB=首果 GC 角色池。dev 单池时三者同指。
+type PGStore struct {
+	db       *sql.DB
+	assignDB *sql.DB
+	gcDB     *sql.DB
+}
 
-// OpenPG 连接+建表(幂等)。
+// OpenPG 连接+建表(幂等)。assign/GC 池未配时回落主池(dev/Mem 同构;生产 N-A3 要求
+// 独立角色池,用 OpenPGPools)。
 func OpenPG(ctx context.Context, dsn string) (*PGStore, error) {
+	return OpenPGPools(ctx, dsn, "", "")
+}
+
+// OpenPGPools 三池分权(N-A3):dsn=常规应用池(datad_app 谱系,对 assignment/首果账无写权);
+// assignDSN=assign 专用角色池(仅 AssignGeneration 单事务所需最小权限);gcDSN=首果 GC 角色池
+// (仅删 assign_first_result,对 assignment 零写权)。assignDSN/gcDSN 空=回落主池(dev;生产
+// 部署门要求三池三角色,见 deploy/datad-grants.sql+N-A3 真 PG 证据)。
+// 独立池=池内连接固定该角色登录,无 SET ROLE,故事务后无 role 泄漏面(池间凭据隔离)。
+func OpenPGPools(ctx context.Context, dsn, assignDSN, gcDSN string) (*PGStore, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
@@ -96,10 +112,50 @@ func OpenPG(ctx context.Context, dsn string) (*PGStore, error) {
 		db.Close()
 		return nil, fmt.Errorf("schema migrate: %w", err)
 	}
-	return &PGStore{db: db}, nil
+	p := &PGStore{db: db, assignDB: db, gcDB: db}
+	if assignDSN != "" {
+		adb, err := sql.Open("pgx", assignDSN)
+		if err != nil {
+			db.Close()
+			return nil, fmt.Errorf("assign pool: %w", err)
+		}
+		if err := adb.PingContext(ctx); err != nil {
+			db.Close()
+			adb.Close()
+			return nil, fmt.Errorf("assign pool ping: %w", err)
+		}
+		p.assignDB = adb
+	}
+	if gcDSN != "" {
+		gdb, err := sql.Open("pgx", gcDSN)
+		if err != nil {
+			p.Close()
+			return nil, fmt.Errorf("gc pool: %w", err)
+		}
+		if err := gdb.PingContext(ctx); err != nil {
+			p.Close()
+			gdb.Close()
+			return nil, fmt.Errorf("gc pool ping: %w", err)
+		}
+		p.gcDB = gdb
+	}
+	return p, nil
 }
 
-func (p *PGStore) Close() error                   { return p.db.Close() }
+func (p *PGStore) Close() error {
+	var first error
+	for _, d := range []*sql.DB{p.assignDB, p.gcDB} {
+		if d != nil && d != p.db {
+			if err := d.Close(); err != nil && first == nil {
+				first = err
+			}
+		}
+	}
+	if err := p.db.Close(); err != nil && first == nil {
+		first = err
+	}
+	return first
+}
 func (p *PGStore) Ping(ctx context.Context) error { return p.db.PingContext(ctx) }
 
 func scanTask(row interface{ Scan(...any) error }) (*Task, error) {

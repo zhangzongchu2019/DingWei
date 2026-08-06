@@ -1,30 +1,64 @@
--- datad A-lite 纵深授权(契约 61e5938 §5① N-A3):assign 是 assignment 表唯一写路径的 DB 级收成。
--- 执行者:prodops 以超级用户(或表 owner)执行,不由 datad_user 自跑的 SchemaDDL 承载
---   (datad_user 无 GRANT/REVOKE 其它角色的权)。datad_user=datad 运行连接账号。
--- 目的:防 datad 之外的平台组件(View/board/其它连接)直写 assignment,破坏 §5①
---   "=1"(当代双角色齐+代一致)不变量。partial-unique(assignment_active_uniq)只保 ≤1;
---   =1 靠"唯一写路径";此授权把"唯一写路径"从程序约定升为 DB 强制(外部角色维度)。
--- 分层如实(§5① v1.2/A-MC5,不夸大单层):
---   · DB 层(本文件):保证"datad_user 之外的角色无写"+"首果账不可变"。
---   · 代码层(assignment_grant_test.go TestAssignSoleWritePath):保证 datad_user 进程内
---     仅 Assign() 写 assignment,防新端点用同一 datad_user 角色绕过(GRANT 不辨代码路径)。
---   两层合力=唯一写路径。
+-- datad A-lite 纵深授权 v2(契约 61e5938/caa5c3a §5① + N-A3 addendum cd06d98):
+-- 三角色分权,assign 是 assignment 表唯一写路径的 DB 级强制。
+-- 执行者:prodops 以超级用户(或表 owner)执行。幂等:可重复执行。
+--
+-- 角色模型(addendum ①②③/角色最小权限与 GC):
+--   · datad_user        = 常规应用池登录角色(现网运行账号)。对 assignment/assign_first_result
+--                         **零写权**(仅 SELECT)——任何常规 API/新增端点直写=permission denied。
+--   · datad_assign      = assign 专用登录角色。仅 AssignGeneration 单事务所需最小权限;
+--                         datad 进程以独立连接池(DATAD_PG_ASSIGN_DSN)使用,不与常规池共享凭据。
+--                         独立池=池内连接固定本角色,无 SET ROLE,事务后无 role 泄漏面。
+--   · datad_assign_gc   = 首果 30d GC 专用登录角色(DATAD_PG_GC_DSN)。仅能删 assign_first_result
+--                         (且程序侧限定 task 已 closed+超保留期),对 assignment 零写权。
+-- 密码由 prodops 部署时 ALTER ROLE ... PASSWORD 设置,不入仓。
 
--- 1) 收回 PUBLIC 一切权限(新表默认对 PUBLIC 无 DML,显式收回防继承/防误授)。
+-- 0) 角色存在性(幂等)。
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='datad_assign') THEN
+    CREATE ROLE datad_assign LOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='datad_assign_gc') THEN
+    CREATE ROLE datad_assign_gc LOGIN;
+  END IF;
+END $$;
+
+-- 1) 收回 PUBLIC 与常规角色的一切 assignment/首果账写权。
 REVOKE ALL ON assignment FROM PUBLIC;
 REVOKE ALL ON assign_first_result FROM PUBLIC;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON assignment FROM datad_user;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON assign_first_result FROM datad_user;
+-- 常规池保留只读(PutTask owner_conflict 校验读 assignment;运维可读账)。
+GRANT SELECT ON assignment TO datad_user;
+GRANT SELECT ON assign_first_result TO datad_user;
 
--- 2) datad_user=唯一写者:
---    assignment 需 SELECT/INSERT/UPDATE(翻代 active=false + 新 gen 双角色 INSERT);
---    无 DELETE——历史代永留(§1 PRIMARY KEY 含 generation,重派保留旧代)。
-GRANT SELECT, INSERT, UPDATE ON assignment TO datad_user;
---    assign_first_result 首果账 append-only:SELECT/INSERT;无 UPDATE/DELETE——
---    首果不可变=幂等真相源(§3 重放读首果,绝不重算/改写)。
-GRANT SELECT, INSERT ON assign_first_result TO datad_user;
+-- 2) datad_assign 最小权限=AssignGeneration 单事务实际所需,逐句对应 assignment_pg.go:
+--    · assignment:SELECT(现当代/max gen 查)+INSERT(新代双角色)+UPDATE(旧代 active=false);
+--      **无 DELETE**(历史代永留,§1)。
+--    · assign_first_result:SELECT(幂等首查)+INSERT(首果落账);**无 UPDATE/DELETE**
+--      (首果不可变=幂等真相源;GC 删除权在 datad_assign_gc,assign 角色不得删)。
+--    · task:SELECT(状态门)+UPDATE(owner_session/status/updated_at 同事务);
+--    · audit:INSERT(R2-4 事务内审计)+序列 USAGE(audit.id BIGSERIAL)。
+--    不授其它表——本角色不得被其它 handler 复用。
+GRANT SELECT, INSERT, UPDATE ON assignment TO datad_assign;
+GRANT SELECT, INSERT ON assign_first_result TO datad_assign;
+GRANT SELECT, UPDATE ON task TO datad_assign;
+GRANT INSERT ON audit TO datad_assign;
+GRANT USAGE ON SEQUENCE audit_id_seq TO datad_assign;
 
--- 3) audit 纵深(原 §4,一并落):datad_user 对 audit 仅 INSERT/SELECT。
+-- 3) datad_assign_gc:仅首果删除面(程序侧再限 closed+超期;越界删除有负例测试)。
+--    task 只读(closed 判定);assignment 零权限。
+GRANT SELECT, DELETE ON assign_first_result TO datad_assign_gc;
+GRANT SELECT ON task TO datad_assign_gc;
+REVOKE ALL ON assignment FROM datad_assign_gc;
+
+-- 4) audit 纵深(原 §4):datad_user 对 audit 仅 INSERT/SELECT;两新角色无 UPDATE/DELETE
+--    (未授即无,显式收回防误授)。
 REVOKE UPDATE, DELETE ON audit FROM datad_user;
+REVOKE UPDATE, DELETE ON audit FROM datad_assign;
+REVOKE ALL ON audit FROM datad_assign_gc;
 
--- 4) 只读消费者(若部署了独立只读角色,如 View/board 只读面):仅 SELECT。
---    未部署独立只读角色则本段忽略——datad 自身只读端点走 datad_user 的 SELECT。
--- GRANT SELECT ON assignment, assign_first_result TO datad_readonly;
+-- 5) 验收(addendum 部署生效门,证据须来自目标 PG,grants.sql 入仓不算生效):
+--    \dp assignment / \dp assign_first_result / \dp task / \dp audit 封存 ACL;
+--    datad_user 与任一非 assign 角色直 INSERT/UPDATE assignment|assign_first_result=permission denied;
+--    datad_assign 经正式事务路径成功;datad_assign_gc 仅能删首果(不能写 assignment/改首果);
+--    连接归池复用后 current_user 各池恒为本池角色(独立池无 SET ROLE=无泄漏)。

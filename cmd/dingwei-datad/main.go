@@ -44,12 +44,16 @@ func run() error {
 	defer cancel()
 	switch dsn := os.Getenv("DATAD_PG_DSN"); {
 	case dsn != "":
-		pg, err := datad.OpenPG(ctx, dsn)
+		pg, err := datad.OpenPGPools(ctx, dsn,
+			os.Getenv("DATAD_PG_ASSIGN_DSN"), os.Getenv("DATAD_PG_GC_DSN"))
 		if err != nil {
 			return fmt.Errorf("pg: %w", err) // fail-closed:PG 不可达=不起(P9)
 		}
 		defer pg.Close()
 		cfg.Store = pg
+		if os.Getenv("DATAD_PG_ASSIGN_DSN") == "" {
+			logger.Warn("DATAD_PG_ASSIGN_DSN 未设:assign 走主池(dev 回落;生产须 N-A3 三池分权)")
+		}
 		logger.Info("store=pg")
 	case os.Getenv("DATAD_STORE_MEM") == "1": // 联调 dev 模式(易失,勿生产)
 		cfg.Store = datad.NewMemStore()

@@ -15,7 +15,7 @@ func (m *MemStore) GetFirstResult(_ context.Context, requestID string) (*FirstRe
 	if fr == nil {
 		return nil, nil
 	}
-	// R1⑥深拷贝:返副本(含 Body 字节),防调用方改污染内存账(PG 侧 Scan 天然新副本)。
+	// R1⑥读边界深拷贝:返副本(含 Body 字节),防调用方改污染内存账(PG 侧 Scan 天然新副本)。
 	cp := *fr
 	if fr.Body != nil {
 		cp.Body = append(json.RawMessage(nil), fr.Body...)
@@ -24,10 +24,15 @@ func (m *MemStore) GetFirstResult(_ context.Context, requestID string) (*FirstRe
 }
 
 // recordFirst 写首果账(§2 步骤5:任何路径含失败先记首果再返)。
-func (m *MemStore) recordFirst(req *AssignRequest, taskID, outcome string, http int, body json.RawMessage) {
+// R2-6 写边界深拷贝:传入 body 复制后入账——调用方(或其上游)事后改原 slice 不得污染权威账。
+func (m *MemStore) recordFirst(req *AssignRequest, hash, taskID, outcome string, http int, body json.RawMessage) {
+	var cp json.RawMessage
+	if body != nil {
+		cp = append(json.RawMessage(nil), body...)
+	}
 	m.firstResults[req.RequestID] = &FirstResult{
 		RequestID: req.RequestID, Outcome: outcome, HTTPCode: http,
-		RequestHash: canonicalRequestHash(req), Body: body, TaskID: taskID, CreatedAt: time.Now().UTC(),
+		RequestHash: hash, Body: cp, TaskID: taskID, CreatedAt: time.Now().UTC(),
 	}
 }
 
@@ -52,15 +57,27 @@ func (m *MemStore) maxGen(taskID string) int64 {
 	return g
 }
 
-// Assign 原子 AssignGeneration(§2)。tokenSessions=注册表(unknown_assignee 校验)。
-func (m *MemStore) Assign(_ context.Context, taskID string, req *AssignRequest, tokenSessions map[string]bool) (*AssignResult, *AssignErr) {
+// Assign 原子 AssignGeneration(§2)。tokenSessions=注册表(unknown_assignee 校验);
+// actor=真实调用方(R2-4:audit 与业务同锁原子落账,不再由 handler 事务外补记)。
+func (m *MemStore) Assign(_ context.Context, taskID string, req *AssignRequest, tokenSessions map[string]bool, actor string) (*AssignResult, *AssignErr) {
+	// request_id 形门(delta v1.8③④):非法幂等键不查账不记账,422 直拒。
+	if e := validRequestID(req.RequestID); e != nil {
+		return nil, e
+	}
+	hash, herr := canonicalRequestHash(req)
+	if herr != nil { // R2-1 fail-closed:canonical 错绝不吞错空 hash
+		return nil, herr
+	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	// 幂等(§3 N4):命中首果→比 request_hash;相同=原样返,不同=409 request_conflict
 	if prev, ok := m.firstResults[req.RequestID]; ok {
-		if prev.RequestHash != canonicalRequestHash(req) {
-			return nil, aerr(ErrRequestConflict, "同 request_id 换参数(N4)")
+		if prev.RequestHash != hash {
+			e := aerr(ErrRequestConflict, "同 request_id 换参数(N4)")
+			m.audit = append(m.audit, assignAuditRow(actor, taskID, req, nil, e.Code, e.Sub))
+			return nil, e
 		}
 		if prev.Outcome == "success" {
 			var r AssignResult
@@ -70,8 +87,10 @@ func (m *MemStore) Assign(_ context.Context, taskID string, req *AssignRequest, 
 		return nil, replayErr(prev.Outcome, prev.HTTPCode, prev.Body) // R1②重放保真(错误 DTO)
 	}
 
+	// fail:首果+audit 同锁原子落账再返(§2 步骤5/6,R2-4)。
 	fail := func(e *AssignErr) (*AssignResult, *AssignErr) {
-		m.recordFirst(req, taskID, e.Code, e.HTTP, failFirstBody(e)) // R1③失败首果存错误 DTO
+		m.recordFirst(req, hash, taskID, e.Code, e.HTTP, failFirstBody(e)) // R1③失败首果存错误 DTO
+		m.audit = append(m.audit, assignAuditRow(actor, taskID, req, nil, e.Code, e.Sub))
 		return nil, e
 	}
 
@@ -88,6 +107,10 @@ func (m *MemStore) Assign(_ context.Context, taskID string, req *AssignRequest, 
 	repl, e := assignStateGate(t.Status, req.Force, req.ExpectedGeneration != nil)
 	if e != nil {
 		return fail(e)
+	}
+	if !repl && req.ExpectedGeneration != nil {
+		// R2-2/N1:首派不带 expected_generation(无当代行,任何 expected 均不符现当代)。
+		return fail(aerr(ErrStaleGen, "首派不带 expected_generation(无当代行)"))
 	}
 	// expected_generation CAS(§4):重派须匹配现当代代次
 	if repl {
@@ -112,11 +135,11 @@ func (m *MemStore) Assign(_ context.Context, taskID string, req *AssignRequest, 
 	t.Status = "dispatched"
 	t.UpdatedAt = now
 	m.tasks[taskID] = t
-	// R1④:审计由 handler(server.handleAssign)以真调用方 id.Session+detail 落,不在此写
-	// actor='assign' 字面重复(旧内部 audit 已删,避免假身份)。
 
 	res := &AssignResult{TaskID: taskID, Generation: newGen, Executor: req.Executor, Reviewer: req.Reviewer, Status: "dispatched"}
 	body, _ := json.Marshal(res)
-	m.recordFirst(req, taskID, "success", 200, body)
+	m.recordFirst(req, hash, taskID, "success", 200, body)
+	// R2-4:audit 与 assignment/task/首果同锁边界=同原子(真 actor+完整 detail 含新代)。
+	m.audit = append(m.audit, assignAuditRow(actor, taskID, req, &newGen, "success", ""))
 	return res, nil
 }

@@ -4,6 +4,7 @@ package datad
 // P2 权限矩阵/P3 CAS/me 别名/P7 审计完整性(含未遂 403)/自报域白名单/乐观锁。
 
 import (
+	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"strconv"
@@ -454,5 +455,108 @@ func TestMeAliasInQuery(t *testing.T) {
 	}
 	if w := call(t, s, "GET", "/v1/tasks?owner=me", "tok-k3", "", nil); strings.TrimSpace(w.Body.String()) != "null" {
 		t.Fatalf("k3 的 me 不应命中 devo48 件:%s", w.Body.String())
+	}
+}
+
+// ---- R3(dev56 R2-2/R2-3)HTTP 真路径:DTO 驱动输出+首果同体+A7 pull 闸联动 ----
+
+// TestHTTPAssignDTOMatchesFirstResult:业务错 HTTP 响应体=统一 AssignErr DTO JSON,
+// 与首果账 body 逐字节同体(R2-3:存档 body 与首次/重放 HTTP body 同一权威体)。
+func TestHTTPAssignDTOMatchesFirstResult(t *testing.T) {
+	s, ms := testServer()
+	_, err := ms.PutTask(context.Background(),
+		Task{ID: "TH1", Title: "t", OwnerSession: "zzc-coordinator-2642", Status: "proposed"}, time.Time{}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rid := "00000000-0000-4000-8000-000000000201"
+	body := `{"executor":"zzc-devo48-2642","reviewer":"zzc-devo48-2642","request_id":"` + rid + `"}`
+	// 首次:422 self_review,响应体=DTO JSON
+	rr := call(t, s, "POST", "/v1/tasks/TH1/assign", "tok-coord", body, nil)
+	if rr.Code != 422 {
+		t.Fatalf("应 422,got %d %s", rr.Code, rr.Body.String())
+	}
+	var dto AssignErr
+	if err := json.Unmarshal(rr.Body.Bytes(), &dto); err != nil || dto.Code != ErrSelfReview {
+		t.Fatalf("响应体应为 AssignErr DTO: %v %s", err, rr.Body.String())
+	}
+	fr, _ := ms.GetFirstResult(context.Background(), rid)
+	if fr == nil {
+		t.Fatal("首果应落账")
+	}
+	if strings.TrimSpace(rr.Body.String()) != strings.TrimSpace(string(fr.Body)) {
+		t.Fatalf("HTTP body 与首果账 body 应同体:\n http=%s\n 账=%s", rr.Body.String(), fr.Body)
+	}
+	// 重放:同码同体
+	rr2 := call(t, s, "POST", "/v1/tasks/TH1/assign", "tok-coord", body, nil)
+	if rr2.Code != 422 || strings.TrimSpace(rr2.Body.String()) != strings.TrimSpace(string(fr.Body)) {
+		t.Fatalf("重放应同码同体: %d %s", rr2.Code, rr2.Body.String())
+	}
+	// 非法 UTF-8 原文=422 invalid_request(json 静默 U+FFFD 前置拒)
+	rr3 := call(t, s, "POST", "/v1/tasks/TH1/assign", "tok-coord",
+		"{\"executor\":\"\xff\xfe\",\"reviewer\":\"r\",\"request_id\":\""+rid+"\"}", nil)
+	if rr3.Code != 422 || !strings.Contains(rr3.Body.String(), ErrInvalidRequest) {
+		t.Fatalf("invalid UTF-8 原文应 422 invalid_request: %d %s", rr3.Code, rr3.Body.String())
+	}
+	// 非 coordinator=403(单写不变量,audit denied 由 deny 记)
+	rr4 := call(t, s, "POST", "/v1/tasks/TH1/assign", "tok-devo", body, nil)
+	if rr4.Code != 403 {
+		t.Fatalf("member assign 应 403: %d", rr4.Code)
+	}
+}
+
+// TestHTTPA7PullGateLinkage:A7 契约验收——assign 后 executor 可 pull;重派(force+audit)后
+// 旧 executor pull 拒、新 executor 可 pull(owner_session 单权威联动)。
+func TestHTTPA7PullGateLinkage(t *testing.T) {
+	s, ms := testServer()
+	_, err := ms.PutTask(context.Background(),
+		Task{ID: "TA7", Title: "t", OwnerSession: "zzc-coordinator-2642", Status: "proposed"}, time.Time{}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// assign gen1: executor=devo48
+	rr := call(t, s, "POST", "/v1/tasks/TA7/assign", "tok-coord",
+		`{"executor":"zzc-devo48-2642","reviewer":"zzc-claudek3-2642","request_id":"00000000-0000-4000-8000-000000000301"}`, nil)
+	if rr.Code != 200 {
+		t.Fatalf("assign: %d %s", rr.Code, rr.Body.String())
+	}
+	// executor pull→in_progress
+	rr = call(t, s, "POST", "/v1/tasks/TA7/pull", "tok-devo", `{"to":"in_progress"}`, nil)
+	if rr.Code != 200 {
+		t.Fatalf("executor pull 应放行: %d %s", rr.Code, rr.Body.String())
+	}
+	// drain 回可重派态(coordinator PUT status=dispatched,owner 不变)
+	tk, _ := ms.GetTask(context.Background(), "TA7")
+	rr = call(t, s, "PUT", "/v1/tasks/TA7", "tok-coord",
+		`{"title":"t","owner_session":"zzc-devo48-2642","status":"dispatched"}`,
+		map[string]string{"If-Match": tk.UpdatedAt.Format(time.RFC3339Nano)})
+	if rr.Code != 200 {
+		t.Fatalf("drain PUT: %d %s", rr.Code, rr.Body.String())
+	}
+	// 重派 gen2(force+reason,audit 记因)→executor=claudek3
+	rr = call(t, s, "POST", "/v1/tasks/TA7/assign", "tok-coord",
+		`{"executor":"zzc-claudek3-2642","reviewer":"zzc-devo48-2642","request_id":"00000000-0000-4000-8000-000000000302","expected_generation":1,"force":true,"reason":"A7 重派"}`, nil)
+	if rr.Code != 200 {
+		t.Fatalf("重派: %d %s", rr.Code, rr.Body.String())
+	}
+	// 旧 executor pull=403;新 executor pull=200
+	rr = call(t, s, "POST", "/v1/tasks/TA7/pull", "tok-devo", `{"to":"in_progress"}`, nil)
+	if rr.Code != 403 {
+		t.Fatalf("旧 executor pull 应拒: %d %s", rr.Code, rr.Body.String())
+	}
+	rr = call(t, s, "POST", "/v1/tasks/TA7/pull", "tok-k3", `{"to":"in_progress"}`, nil)
+	if rr.Code != 200 {
+		t.Fatalf("新 executor pull 应放行: %d %s", rr.Code, rr.Body.String())
+	}
+	// audit 记因:重派成功行带 force/reason
+	entries, _ := ms.ListAudit(context.Background(), time.Time{}, 100)
+	found := false
+	for _, e := range entries {
+		if e.Op == "assign" && strings.Contains(string(e.Detail), "A7 重派") && strings.Contains(string(e.Detail), `"force":true`) {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("重派 force 应有 audit 记因")
 	}
 }

@@ -8,6 +8,7 @@ package datad
 // me 别名:路径/查询中的 "me" 按 token 解析(§7b:shim 不感知身份)。
 
 import (
+	"bytes"
 	"context"
 	"crypto/subtle"
 	"encoding/json"
@@ -19,6 +20,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 // Identity token 注册表条目(datad 配置文件,PG 不存明文 token)。
@@ -270,19 +272,31 @@ func (s *Server) handleDispatch(w http.ResponseWriter, r *http.Request, id Ident
 }
 
 // handleAssign POST /v1/tasks/{id}/assign:M5 A-lite 原子派发(契约 61e5938 §2)。
-// coordinator-only(单写不变量);force⇒reason 必填(N3);机器码→HTTP 由 AssignErr 携带。
+// coordinator-only(单写不变量)。R2-2/R2-3:业务校验(含 force⇒reason)单一路径全在
+// Store.Assign 事务内;业务错 HTTP 输出=统一 AssignErr DTO JSON(与首果账 body 同一
+// encode=同字节语义,重放与首次同体);handler 只保留传输层错(400 bad schema)与鉴权。
+// R2-4:业务成功/失败 audit 由 Store 在事务内以真 actor 落;此处仅认证 denied(deny 内)。
 func (s *Server) handleAssign(w http.ResponseWriter, r *http.Request, id Identity) {
 	if id.Role != "coordinator" {
 		s.deny(w, r, id, "assign")
 		return
 	}
-	var req AssignRequest
-	if err := decodeBody(r, &req); err != nil {
-		http.Error(w, "bad schema: "+err.Error(), http.StatusBadRequest)
+	// 原文层 UTF-8 门(R2-1④配套):encoding/json 对字符串内 invalid UTF-8 静默 U+FFFD,
+	// 会让 canonical/hash 面对被替换后的值假绿——在原文字节上先拒。
+	raw, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		http.Error(w, "read body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	if req.Force && req.Reason == "" {
-		http.Error(w, "force ⇒ reason 必填(越闸留因)", http.StatusUnprocessableEntity)
+	if !utf8.Valid(raw) {
+		writeJSON(w, 422, aerr(ErrInvalidRequest, "请求体非合法 UTF-8"))
+		return
+	}
+	var req AssignRequest
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&req); err != nil {
+		http.Error(w, "bad schema: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	as, ok := s.st.(Assigner)
@@ -297,13 +311,11 @@ func (s *Server) handleAssign(w http.ResponseWriter, r *http.Request, id Identit
 		sessions[i.Session] = true
 	}
 	s.tokMu.RUnlock()
-	res, ae := as.Assign(r.Context(), r.PathValue("id"), &req, sessions)
+	res, ae := as.Assign(r.Context(), r.PathValue("id"), &req, sessions, id.Session)
 	if ae != nil {
-		s.audit(r.Context(), id, "assign."+ae.Code, r.PathValue("id"), map[string]string{"code": ae.Code})
-		http.Error(w, ae.Code+": "+ae.Msg, ae.HTTP)
+		writeJSON(w, ae.HTTP, ae) // DTO 即响应体:与首果账 failFirstBody 同 struct 同 marshal
 		return
 	}
-	s.audit(r.Context(), id, "assign", r.PathValue("id"), res)
 	writeJSON(w, 200, res)
 }
 

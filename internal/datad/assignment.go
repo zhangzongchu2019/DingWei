@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"regexp"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/jcs"
@@ -31,13 +32,14 @@ const (
 	ErrStoreDownA      = "store_down"       // 503 fail-closed
 	ErrOwnerConflict   = "owner_conflict"   // 409 N-A2 PUT 改 owner≠当代 executor
 	ErrRequestConflict = "request_conflict" // 409 N4 同 request_id 换参
+	ErrInvalidRequest  = "invalid_request"  // 422 请求形非法(契约 delta v1.8:request_id 缺失/非 UUID 形、负 expected_generation、force 空 reason)
 )
 
 // assignCodeHTTP 机器码→HTTP 双射(§3 PG 表驱动,此处代码驱动同源)。
 var assignCodeHTTP = map[string]int{
 	ErrHalfAssignment: 422, ErrSelfReview: 422, ErrWrongStateA: 409, ErrStaleGen: 412,
 	ErrUnknownAssignee: 422, ErrRequeueState: 409, ErrStoreDownA: 503,
-	ErrOwnerConflict: 409, ErrRequestConflict: 409,
+	ErrOwnerConflict: 409, ErrRequestConflict: 409, ErrInvalidRequest: 422,
 }
 
 // Assignment 当代/历史派发行(§1 assignment 表)。active=true 即当代。
@@ -70,12 +72,20 @@ type AssignResult struct {
 	Status     string `json:"status"`
 }
 
-// AssignErr A-lite 错误(机器码+HTTP)=错误单一源 DTO:Mem/PG 产出、HTTP 映射、失败首果
+// invalid_request 子因(契约 v1.8 D1:单码盖多输入条件,区分力由 sub 补,A13 逐子因验收)。
+const (
+	SubRequestIDMalformed = "request_id_malformed" // 不入首果账(D4:幂等键非法,PRIMARY KEY 不可满足)
+	SubNegativeGeneration = "negative_generation"
+	SubForceReasonMissing = "force_reason_missing"
+)
+
+// AssignErr A-lite 错误(机器码+HTTP+子因)=错误单一源 DTO:Mem/PG 产出、HTTP 映射、失败首果
 // body 均用它,消除三处各自表示错误语义的分叉(R1②请求与错误双射)。
 type AssignErr struct {
 	Code string `json:"code"`
 	HTTP int    `json:"http"`
 	Msg  string `json:"msg"`
+	Sub  string `json:"sub,omitempty"` // invalid_request 子因(v1.8 D1),其余码空
 }
 
 func (e *AssignErr) Error() string { return e.Code + ": " + e.Msg }
@@ -86,6 +96,13 @@ func aerr(code, msg string) *AssignErr {
 		h = 500
 	}
 	return &AssignErr{Code: code, HTTP: h, Msg: msg}
+}
+
+// aerrSub invalid_request 带子因(v1.8 D1)。
+func aerrSub(code, sub, msg string) *AssignErr {
+	e := aerr(code, msg)
+	e.Sub = sub
+	return e
 }
 
 // failFirstBody 失败首果 body=错误 DTO 的 JSON(R1③:重放保真,原样返 Code/HTTP/Msg,不丢 Msg)。
@@ -106,22 +123,42 @@ func replayErr(outcome string, httpCode int, body json.RawMessage) *AssignErr {
 	return &AssignErr{Code: outcome, HTTP: httpCode, Msg: "重放首果"}
 }
 
-// canonicalRequestHash 请求体 canonical(JCS RFC 8785 同款:字段字典序/UTF-8)sha256
-// (N4:检测同 request_id 换参;与 B-lite 同规范化,两端一致防误报 409)。
-func canonicalRequestHash(req *AssignRequest) string {
-	m := map[string]any{"executor": req.Executor, "reviewer": req.Reviewer, "force": req.Force, "reason": req.Reason}
+// canonicalRequestHash 完整请求体 canonical(jcs 整数子集,与 B-lite 同实现)sha256。
+// R2-1 修:①覆盖完整请求体含 request_id(缺则同 id 异参可漏检);②fail-closed——canonical
+// 错误(invalid UTF-8 等)返 invalid_request,绝不吞错 hash 空字节(吞错=多个坏请求同 hash
+// =幂等账串号)。归一化形:全字段恒在(force/reason 含零值),expected_generation 仅非 nil
+// 时在场——首写与重放同一函数计算,自身一致。payload 为类型化 struct 无浮点。
+func canonicalRequestHash(req *AssignRequest) (string, *AssignErr) {
+	m := map[string]any{
+		"request_id": req.RequestID,
+		"executor":   req.Executor, "reviewer": req.Reviewer,
+		"force": req.Force, "reason": req.Reason,
+	}
 	if req.ExpectedGeneration != nil {
 		m["expected_generation"] = *req.ExpectedGeneration
 	}
-	// 真 RFC 8785 JCS canonical(公共包 internal/jcs,与 B-lite checkpoint id 同一套实现,
-	// 由 jcs 包官方向量钉死;不再手搓 key=value 自造格式)。payload 无浮点,canonical 不返错;
-	// 防御性:极端返错则退化为空 canonical 的 hash(不 panic,首果账仍幂等一致)。
 	buf, err := jcs.Canonicalize(m)
 	if err != nil {
-		buf = nil
+		return "", aerr(ErrInvalidRequest, "请求体无法 canonical 化: "+err.Error())
 	}
 	sum := sha256.Sum256(buf)
-	return hex.EncodeToString(sum[:])
+	return hex.EncodeToString(sum[:]), nil
+}
+
+// uuidRe request_id 冻结格式=RFC 4122 UUID 形(契约 §1"调用方 UUID"机械化,delta v1.8③;
+// 大小写不敏感)。
+var uuidRe = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// validRequestID request_id 形校验。非法=invalid_request(422);此变体**不入首果账**
+// (幂等键自身非法无法记账,delta v1.8④)。
+func validRequestID(id string) *AssignErr {
+	if id == "" {
+		return aerrSub(ErrInvalidRequest, SubRequestIDMalformed, "request_id 必填(UUID 形)")
+	}
+	if !uuidRe.MatchString(id) {
+		return aerrSub(ErrInvalidRequest, SubRequestIDMalformed, "request_id 非 UUID 形(RFC 4122)")
+	}
+	return nil
 }
 
 // FirstResult 首果账行(§1 assign_first_result)。
@@ -135,7 +172,8 @@ type FirstResult struct {
 	CreatedAt   time.Time
 }
 
-// validAssignRequest 请求体基础校验(§2 步骤 1 + N3)。
+// validAssignRequest 请求体基础校验(§2 步骤 1 + N3 + delta v1.8)。request_id 形校验不在
+// 此(validRequestID,先于首果账查且不记账);此处各错均先记首果再返(§2 步骤 5)。
 func validAssignRequest(req *AssignRequest) *AssignErr {
 	if req.Executor == "" || req.Reviewer == "" {
 		return aerr(ErrHalfAssignment, "executor+reviewer 双角色齐(不派半件)")
@@ -144,7 +182,10 @@ func validAssignRequest(req *AssignRequest) *AssignErr {
 		return aerr(ErrSelfReview, "executor≠reviewer")
 	}
 	if req.Force && req.Reason == "" {
-		return aerr(ErrWrongStateA, "force ⇒ reason 必填(422 越闸留因)") // 用 422 语义:实际 handler 判 reason 空前置
+		return aerrSub(ErrInvalidRequest, SubForceReasonMissing, "force ⇒ reason 必填(N3 越闸必留因;v1.8 D2,HTTP 逐字 422)")
+	}
+	if req.ExpectedGeneration != nil && *req.ExpectedGeneration < 0 {
+		return aerrSub(ErrInvalidRequest, SubNegativeGeneration, "expected_generation 不得为负(v1.8 D1)")
 	}
 	return nil
 }
@@ -166,10 +207,36 @@ func assignStateGate(status string, force bool, hasExpectedGen bool) (repl bool,
 	}
 }
 
+// assignAuditDetail 审计 detail(R2-4:完整绑定请求与结果;成功/业务失败与 assignment+
+// 首果同原子边界落账,由 Mem 锁内/PG 事务内写,handler 只记认证 denied)。
+type assignAuditDetail struct {
+	TaskID     string `json:"task_id"`
+	Generation *int64 `json:"generation,omitempty"` // 成功=新代;失败=nil
+	Executor   string `json:"executor"`
+	Reviewer   string `json:"reviewer"`
+	RequestID  string `json:"request_id"`
+	Force      bool   `json:"force"`
+	Reason     string `json:"reason,omitempty"`
+	Outcome    string `json:"outcome"`       // success | <机器码>
+	Sub        string `json:"sub,omitempty"` // invalid_request 子因(v1.8 D1)
+}
+
+func assignAuditRow(actor, taskID string, req *AssignRequest, gen *int64, outcome, sub string) AuditEntry {
+	d := assignAuditDetail{TaskID: taskID, Generation: gen, Executor: req.Executor,
+		Reviewer: req.Reviewer, RequestID: req.RequestID, Force: req.Force, Reason: req.Reason, Outcome: outcome, Sub: sub}
+	raw, _ := json.Marshal(d)
+	op := "assign"
+	if outcome != "success" {
+		op = "assign." + outcome
+	}
+	return AuditEntry{Actor: actor, Op: op, Target: taskID, Detail: raw, At: time.Now().UTC()}
+}
+
 // Assigner Store 的 A-lite 派发面(coordinator-only 由 handler 鉴权)。
 type Assigner interface {
 	// Assign 原子 AssignGeneration(§2 单事务);幂等 request_id 首果账(§3)。
-	Assign(ctx context.Context, taskID string, req *AssignRequest, tokenSessions map[string]bool) (*AssignResult, *AssignErr)
+	// actor=真实调用方 Identity.Session(R2-4:audit 真身份,与业务同原子边界落账)。
+	Assign(ctx context.Context, taskID string, req *AssignRequest, tokenSessions map[string]bool, actor string) (*AssignResult, *AssignErr)
 	// GetFirstResult 首果账查(幂等重放)。
 	GetFirstResult(ctx context.Context, requestID string) (*FirstResult, error)
 }

@@ -3,18 +3,21 @@ package datad
 // PGStore 的 A-lite Assign 实现:单事务 AssignGeneration(§2)——advisory 锁 per task 串行化
 // (B 案单写,coordinator-only,低频);partial-unique(assignment_active_uniq)DB 强制硬门①(≤1),
 // =1 由双角色齐校验(唯一写路径,N-A3 GRANT 收成)。首果账幂等(§3)。
+// N-A3:本文件所有事务走 p.assignDB(assign 专用角色池)——常规应用池对 assignment/
+// assign_first_result 无写权(deploy/datad-grants.sql),生产上直写被 PG permission denied。
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"time"
 )
 
 func (p *PGStore) GetFirstResult(ctx context.Context, requestID string) (*FirstResult, error) {
 	fr := &FirstResult{}
 	var body []byte
-	err := p.db.QueryRowContext(ctx,
+	err := p.assignDB.QueryRowContext(ctx,
 		`SELECT request_id,outcome,http_code,request_hash,body,task_id,created_at FROM assign_first_result WHERE request_id=$1`,
 		requestID).Scan(&fr.RequestID, &fr.Outcome, &fr.HTTPCode, &fr.RequestHash, &body, &fr.TaskID, &fr.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -27,8 +30,31 @@ func (p *PGStore) GetFirstResult(ctx context.Context, requestID string) (*FirstR
 	return fr, nil
 }
 
-func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest, tokenSessions map[string]bool) (*AssignResult, *AssignErr) {
-	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+// auditInTx 事务内 audit INSERT(R2-4:与 assignment/首果同事务原子;真 actor)。
+func auditInTx(ctx context.Context, tx *sql.Tx, e AuditEntry) error {
+	_, err := tx.ExecContext(ctx, `INSERT INTO audit(actor,op,target,detail,at) VALUES($1,$2,$3,$4,$5)`,
+		e.Actor, e.Op, e.Target, nullableRaw(e.Detail), e.At)
+	return err
+}
+
+func nullableRaw(r json.RawMessage) any {
+	if len(r) == 0 {
+		return nil
+	}
+	return string(r)
+}
+
+func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest, tokenSessions map[string]bool, actor string) (*AssignResult, *AssignErr) {
+	// request_id 形门(delta v1.8③④):非法幂等键不开事务不记账,422 直拒。
+	if e := validRequestID(req.RequestID); e != nil {
+		return nil, e
+	}
+	hash, herr := canonicalRequestHash(req)
+	if herr != nil { // R2-1 fail-closed:canonical 错绝不吞错空 hash
+		return nil, herr
+	}
+
+	tx, err := p.assignDB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, aerr(ErrStoreDownA, err.Error())
 	}
@@ -41,7 +67,6 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 	}
 
 	// 幂等(§3 N4):首果账命中→比 request_hash
-	hash := canonicalRequestHash(req)
 	var prevOutcome, prevHash string
 	var prevCode int
 	var prevBody []byte
@@ -50,7 +75,15 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 		req.RequestID).Scan(&prevOutcome, &prevCode, &prevHash, &prevBody)
 	if perr == nil {
 		if prevHash != hash {
-			return nil, aerr(ErrRequestConflict, "同 request_id 换参数(N4)")
+			e := aerr(ErrRequestConflict, "同 request_id 换参数(N4)")
+			// request_conflict 不改首果账(首果属原参请求),audit 单独落(同事务提交)。
+			if aer := auditInTx(ctx, tx, assignAuditRow(actor, taskID, req, nil, e.Code, e.Sub)); aer != nil {
+				return nil, aerr(ErrStoreDownA, "audit 写失败(fail-closed): "+aer.Error())
+			}
+			if cer := tx.Commit(); cer != nil {
+				return nil, aerr(ErrStoreDownA, "commit 失败(fail-closed): "+cer.Error())
+			}
+			return nil, e
 		}
 		if prevOutcome == "success" {
 			var r AssignResult
@@ -62,12 +95,21 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 		return nil, aerr(ErrStoreDownA, perr.Error())
 	}
 
+	// recordFail:失败首果+audit 同事务持久,任一写/commit 失败=store_down fail-closed
+	// (R2-3:先持久首果再返业务错;落账失败绝不向调用方返业务错)。
 	recordFail := func(e *AssignErr) *AssignErr {
-		_, _ = tx.ExecContext(ctx,
+		if _, ierr := tx.ExecContext(ctx,
 			`INSERT INTO assign_first_result(request_id,outcome,http_code,request_hash,body,task_id)
-       VALUES($1,$2,$3,$4,$5::jsonb,$6) ON CONFLICT DO NOTHING`,
-			req.RequestID, e.Code, e.HTTP, hash, string(failFirstBody(e)), taskID) // R1③失败首果存错误 DTO(非 null)
-		_ = tx.Commit() // 首果落账(含失败)
+       VALUES($1,$2,$3,$4,$5::jsonb,$6)`,
+			req.RequestID, e.Code, e.HTTP, hash, string(failFirstBody(e)), taskID); ierr != nil {
+			return aerr(ErrStoreDownA, "失败首果落账失败(fail-closed): "+ierr.Error())
+		}
+		if aer := auditInTx(ctx, tx, assignAuditRow(actor, taskID, req, nil, e.Code, e.Sub)); aer != nil {
+			return aerr(ErrStoreDownA, "audit 写失败(fail-closed): "+aer.Error())
+		}
+		if cer := tx.Commit(); cer != nil {
+			return aerr(ErrStoreDownA, "首果 commit 失败(fail-closed): "+cer.Error())
+		}
 		return e
 	}
 
@@ -87,6 +129,10 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 	repl, e := assignStateGate(status, req.Force, req.ExpectedGeneration != nil)
 	if e != nil {
 		return nil, recordFail(e)
+	}
+	if !repl && req.ExpectedGeneration != nil {
+		// R2-2/N1:首派不带 expected_generation(无当代行,任何 expected 均不符现当代)。
+		return nil, recordFail(aerr(ErrStaleGen, "首派不带 expected_generation(无当代行)"))
 	}
 	// CAS(§4):重派须匹配现当代 executor generation
 	var curGen sql.NullInt64
@@ -128,10 +174,28 @@ func (p *PGStore) Assign(ctx context.Context, taskID string, req *AssignRequest,
 		req.RequestID, hash, string(body), taskID); err != nil {
 		return nil, aerr(ErrStoreDownA, err.Error())
 	}
-	// R1④:审计由 handler(server.handleAssign)以真调用方 id.Session+detail 落,不在事务内写
-	// actor='assign' 字面(旧内部 audit 已删,避免假身份;审计非事务原子必需,写失败仅告警)。
+	// R2-4:audit 与 assignment/task/首果同事务原子(真 actor+完整 detail 含新代)。
+	if aer := auditInTx(ctx, tx, assignAuditRow(actor, taskID, req, &newGen, "success", "")); aer != nil {
+		return nil, aerr(ErrStoreDownA, "audit 写失败(fail-closed): "+aer.Error())
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, aerr(ErrStoreDownA, err.Error())
 	}
 	return res, nil
+}
+
+// GCFirstResults 首果账 30d GC(契约 §1 S5):仅删 created_at 早于保留窗**且**对应 task 已
+// closed(done/archived)的行;未 closed task 首果永不删(重放安全)。走 p.gcDB(独立
+// datad_assign_gc 角色:仅 assign_first_result DELETE/SELECT+task SELECT,对 assignment
+// 零写权——N-A3 GC 门)。单独事务,不碰 assign 路径。返回删除行数。
+func (p *PGStore) GCFirstResults(ctx context.Context, retention time.Duration) (int64, error) {
+	res, err := p.gcDB.ExecContext(ctx,
+		`DELETE FROM assign_first_result
+      WHERE created_at < now() - make_interval(secs => $1)
+        AND task_id IN (SELECT id FROM task WHERE status IN ('done','archived'))`,
+		retention.Seconds())
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
