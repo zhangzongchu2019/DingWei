@@ -24,12 +24,15 @@ type MemStore struct {
 	}
 	skills []Skill
 	audit  []AuditEntry
+	// M5 A-lite:assignment 当代/历史行 + 首果账
+	assignments  []Assignment
+	firstResults map[string]*FirstResult
 }
 
 func NewMemStore() *MemStore {
 	return &MemStore{
 		tasks: map[string]Task{}, config: map[string][]ConfigEntry{},
-		sessions: map[string]SessionState{},
+		sessions: map[string]SessionState{}, firstResults: map[string]*FirstResult{},
 	}
 }
 
