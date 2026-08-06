@@ -8,7 +8,6 @@
 package m5
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +18,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/jcs"
 )
 
 // ── configuration ──────────────────────────────────────────────────────
@@ -111,14 +112,9 @@ type CheckpointPayload struct {
 	CheckpointAt int64 `json:"checkpoint_at"` // unix seconds
 }
 
-// SHA256 returns the content-addressed id of the payload.
+// SHA256 returns the content-addressed id of the payload (JCS RFC 8785).
 func (p CheckpointPayload) SHA256() string {
-	b, err := json.Marshal(p)
-	if err != nil {
-		panic(fmt.Sprintf("m5: JCS marshal: %v", err))
-	}
-	h := sha256.Sum256(b)
-	return fmt.Sprintf("%x", h)
+	return jcs.MustSHA256(p)
 }
 
 // Validate checks that the payload's sha matches the expected id.
@@ -336,7 +332,7 @@ func lastOpenIntent(entries []JournalEntry, session string) *JournalEntry {
 // writeCheckpoint serializes payload, writes to checkpoints/<sha>,
 // and returns the sha256 id.
 func (s *Supervisor) writeCheckpoint(p CheckpointPayload) (string, error) {
-	b, err := json.Marshal(p)
+	b, err := jcs.Canonicalize(p)
 	if err != nil {
 		return "", err
 	}
