@@ -169,6 +169,10 @@ func (s *Supervisor) writeAtomic(path string, data []byte) error {
 	return syncDir(dir)
 }
 
+// FsyncEnabled controls whether appendJournal calls f.Sync().
+// Tests toggle this for MC-4 anti-proof. Production: always true.
+var FsyncEnabled = true
+
 // readFile reads a file's full content.
 func readFile(path string) ([]byte, error) {
 	f, err := os.Open(path)
@@ -273,9 +277,11 @@ func (s *Supervisor) appendJournal(e JournalEntry) error {
 		unixFlock(int(f.Fd()), unixLOCK_UN)
 		return err
 	}
-	if err := f.Sync(); err != nil {
-		unixFlock(int(f.Fd()), unixLOCK_UN)
-		return err
+	if FsyncEnabled {
+		if err := f.Sync(); err != nil {
+			unixFlock(int(f.Fd()), unixLOCK_UN)
+			return err
+		}
 	}
 	unixFlock(int(f.Fd()), unixLOCK_UN)
 	// fsync parent directory so journal append is durable
@@ -303,8 +309,10 @@ func (s *Supervisor) readJournal() ([]JournalEntry, error) {
 			if i == len(lines)-1 {
 				return entries, fmt.Errorf("%w: line %d: %v", ErrJournalBad, i+1, err)
 			}
-			// mid-file corruption on non-last line: skip (shouldn't happen with fsync)
-			continue
+			// MC-3: any corruption -> ErrJournalBad fail-closed (§3b/§4/§5⑤).
+			// Disk corruption/fs error/human edit can corrupt any line;
+			// losing an open intent from recovery is silent data loss.
+			return entries, fmt.Errorf("%w: line %d: %v", ErrJournalBad, i+1, err)
 		}
 		entries = append(entries, e)
 	}
@@ -595,6 +603,12 @@ func (s *Supervisor) stopProcess(session string) error {
 	tuple := ss.Tuple
 	pidFd := ss.PidFd
 
+	// MC-1: pidfd is mandatory for safe process control.
+	// Without pidfd we cannot safely send signals â fail-closed.
+	if pidFd < 0 {
+		return fmt.Errorf("stopProcess: session=%s pid=%d: no pidfd (MC-1 fail-closed)", session, tuple.PID)
+	}
+
 	// Verify identity: tuple must match (§1.1)
 	current, err := readProcTuple(int(tuple.PID))
 	if err != nil {
@@ -608,19 +622,31 @@ func (s *Supervisor) stopProcess(session string) error {
 			ErrPidReuse, session, tuple.PID, current, tuple)
 	}
 
+	// N-3: drain â stop accepting new tasks before SIGTERM (Â§1.1)
+	s.drain(session)
+
 	// SIGTERM
 	if err := unixKill(pidFd, unixSIGTERM); err != nil {
-		// Process already gone
-		s.removeSession(session)
-		return nil
+		// MC-1: signal-send failure does NOT prove process exit.
+		// Only tuple disappearance proves exit. Verify.
+		if _, err2 := readProcTuple(int(tuple.PID)); err2 != nil {
+			s.removeSession(session)
+			return nil // tuple gone = process truly exited
+		}
+		return fmt.Errorf("stopProcess: session=%s pid=%d: SIGTERM failed and process still alive: %w", session, tuple.PID, err)
 	}
 
-	// Bounded wait (TTL 10s)
+	// Bounded wait (TTL 10s). N-5: compare tuple, not just /proc existence.
 	const stopTTL = 10 * time.Second
 	deadline := time.Now().Add(stopTTL)
 	for time.Now().Before(deadline) {
-		if _, err := readProcTuple(int(tuple.PID)); err != nil {
-			// Process exited
+		cur, err := readProcTuple(int(tuple.PID))
+		if err != nil {
+			s.removeSession(session)
+			return nil // process exited
+		}
+		if !cur.Equal(tuple) {
+			// PID was reused during wait â the original process is gone
 			s.removeSession(session)
 			return nil
 		}
@@ -629,8 +655,11 @@ func (s *Supervisor) stopProcess(session string) error {
 
 	// SIGKILL
 	if err := unixKill(pidFd, unixSIGKILL); err != nil {
-		s.removeSession(session)
-		return nil
+		if _, err2 := readProcTuple(int(tuple.PID)); err2 != nil {
+			s.removeSession(session)
+			return nil // tuple gone
+		}
+		return fmt.Errorf("stopProcess: session=%s pid=%d: SIGKILL failed and process still alive: %w", session, tuple.PID, err)
 	}
 
 	// Verify exit after SIGKILL (§1.1: must verify)
@@ -667,29 +696,23 @@ func (s *Supervisor) Recover() []error {
 	}
 
 	var errs []error
-	seen := map[string]bool{} // session+opID → seen
-	for _, e := range entries {
-		seen[e.Target+"/"+e.OpID] = true
-	}
 
-	// Find open intents
+	// Find open intents (N-6: removed dead seen map; linear scan is correct for journal size)
 	for _, e := range entries {
 		if e.Phase != PhaseIntent {
 			continue
 		}
-		if seen[e.Target+"/"+e.OpID] {
-			// Check if there's a closing entry
-			closed := false
-			for _, e2 := range entries {
-				if e2.Target == e.Target && e2.OpID == e.OpID &&
-					(e2.Phase == PhaseDone || e2.Phase == PhaseFailed) {
-					closed = true
-					break
-				}
+		// Check if there is a closing entry (done/failed) for this intent
+		closed := false
+		for _, e2 := range entries {
+			if e2.Target == e.Target && e2.OpID == e.OpID &&
+				(e2.Phase == PhaseDone || e2.Phase == PhaseFailed) {
+				closed = true
+				break
 			}
-			if closed {
-				continue
-			}
+		}
+		if closed {
+			continue
 		}
 
 		// This intent is open — recover based on type and reality
