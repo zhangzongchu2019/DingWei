@@ -41,7 +41,7 @@ func TestB1_FlockCrossProcess(t *testing.T) {
 	t.Logf("B1 PASS: cross-process flock rejected (err=%v)", err)
 }
 
-// ── B9: PID reuse — MC-2: falsifiable assertion (no signal to wrong process) ─
+// ── B9: PID reuse — MC-2b: walks through TUPLE gate (§1.2), not pidfd gate ─
 
 func TestB9_PIDReuseReal(t *testing.T) {
 	dir := testDir(t)
@@ -51,46 +51,64 @@ func TestB9_PIDReuseReal(t *testing.T) {
 	}
 	defer s.Unlock()
 
-	// Start a marker process that catches signals.
-	// If it receives SIGTERM or SIGKILL, it writes to a marker file.
+	// Start a marker process. Use trap on SIGTERM only (SIGKILL is uncatchable).
 	marker := filepath.Join(dir, "signal-marker")
 	markerProc := exec.Command("/bin/bash", "-c",
-		"trap 'echo GOT_SIGNAL >> "+marker+"' TERM KILL; sleep 30")
+		"trap 'echo GOT_SIGNAL >> "+marker+"' TERM; while true; do sleep 1; done")
+	markerProc.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	if err := markerProc.Start(); err != nil {
 		t.Fatal(err)
 	}
 	pid := markerProc.Process.Pid
-	defer markerProc.Process.Kill()
+	defer func() { syscall.Kill(pid, syscall.SIGKILL); markerProc.Wait() }()
 
-	// Read the real tuple of the marker process
+	// Read the REAL tuple of the marker process
 	realTuple, err := readProcTuple(pid)
 	if err != nil {
 		t.Fatalf("read real tuple: %v", err)
 	}
 
-	// Create a fake (stale) tuple with same PID but different starttime
-	fakeTuple := ProcTuple{PID: realTuple.PID, StartTime: realTuple.StartTime + 1, Exe: realTuple.Exe}
+	// Open a REAL pidfd — we need this to walk through the pidfd gate
+	// into the tuple comparison gate (§1.2)
+	realPidFd, err := unixPidfdOpen(pid)
+	if err != nil {
+		t.Fatalf("pidfd_open: %v", err)
+	}
+	defer unixClose(realPidFd)
 
-	// Register the FAKE (stale) tuple — simulating PID reuse
-	// pidfd = -1 (MC-1: will be rejected by stopProcess before any signal)
-	s.RegisterProcess("test-session", fakeTuple, -1)
+	// Create a FAKE tuple: same PID, different starttime (simulating PID reuse)
+	fakeTuple := ProcTuple{
+		PID: realTuple.PID, StartTime: realTuple.StartTime + 1,
+		Exe: realTuple.Exe, Cgroup: realTuple.Cgroup,
+	}
 
-	// Try to stop — must NOT send any signal to the real process.
-	// MC-1: stopProcess rejects pidfd < 0 (fail-closed).
+	// Register with REAL pidfd but FAKE tuple.
+	// stopProcess order: 1) pidfd≥0 ✓ → 2) readProcTuple → 3) tuple.Equal? → NO! ErrPidReuse
+	s.RegisterProcess("test-session", fakeTuple, realPidFd)
+
 	err = s.stopProcess("test-session")
+	// MC-2b assertion ①: must return ErrPidReuse (tuple mismatch, not pidfd)
 	if err == nil {
-		t.Fatal("B9: stopProcess should fail when pidfd is -1 (MC-1)")
+		t.Fatal("B9 FAIL: stopProcess should reject tuple mismatch")
 	}
-	if !strings.Contains(err.Error(), "no pidfd") {
-		t.Fatalf("B9: expected no-pidfd error, got: %v", err)
+	if !strings.Contains(err.Error(), "PidReuse") && !strings.Contains(err.Error(), "pid reuse") {
+		t.Fatalf("B9 FAIL: expected ErrPidReuse (tuple gate), got: %v", err)
 	}
 
-	// Verify marker file was NOT written — no signal was sent to the real process
+	// MC-2b assertion ②: marker file must NOT exist — no signal was sent
 	time.Sleep(200 * time.Millisecond)
 	if data, err := os.ReadFile(marker); err == nil && len(data) > 0 {
-		t.Fatalf("B9 FAIL: signal was sent to wrong process! marker: %s", string(data))
+		t.Fatalf("B9 FAIL: signal sent to wrong process! marker: %s", string(data))
 	}
-	t.Log("B9 PASS: no signal sent to PID-reused process")
+
+	// MC-2b assertion ③: the real process must STILL BE ALIVE.
+	// (SIGKILL is uncatchable; if one was sent, the process would be dead.
+	//  We can't trap KILL, so liveness confirms no KILL was sent either.)
+	if _, err := readProcTuple(pid); err != nil {
+		t.Fatalf("B9 FAIL: process is dead — may have received SIGKILL: %v", err)
+	}
+
+	t.Log("B9 PASS: ErrPidReuse + no signal + process still alive")
 }
 
 // ── B10: SIGKILL timeout — verify exit via pidfd_send_signal(ESRCH) ──
@@ -146,106 +164,47 @@ func TestB10_SigkillVerify(t *testing.T) {
 	t.Logf("B10 PASS: pidfd_send_signal(0) returned error (process dead): %v", err)
 }
 
-// ── B11: fsync durability — MC-4 anti-proof (with-fsync vs without-fsync) ─
+// ── B11: fsync anti-proof — MC-4(a): deterministic fsync-count assertion ─
+// Anti-proof: assert f.Sync() IS called (not just "data survived").
+// This prevents regression where someone removes fsync and all tests still pass.
+// Contract B11 change pending: coordinator→devo48 for contract wording update.
 
-
-
-func TestB11_FsyncDurability(t *testing.T) {
+func TestB11_FsyncCount(t *testing.T) {
 	dir := testDir(t)
+	s := New(dir)
+	if err := s.Lock(); err != nil {
+		t.Fatal(err)
+	}
+	defer s.Unlock()
 
-	// ── Phase 1: WITH fsync — write data, kill process, verify survival ──
-	func() {
-		FsyncEnabled = true
-		defer func() { FsyncEnabled = true }()
+	// ── Phase 1: WITH fsync — counter must increment ──
+	count := 0
+	oldCount := FsyncCount
+	FsyncCount = func() { count++ }
+	defer func() { FsyncCount = oldCount }()
 
-		s := New(dir)
-		if err := s.Lock(); err != nil {
-			t.Fatal(err)
-		}
-		defer s.Unlock()
+	if err := s.appendJournal(JournalEntry{
+		OpID: "op-count", Intent: "checkpoint", Target: "count-session",
+		Phase: PhaseIntent, TS: time.Now().Unix(),
+	}); err != nil {
+		t.Fatal(err)
+	}
 
-		// Write journal entries
-		if err := s.appendJournal(JournalEntry{
-			OpID: "op-fsync-on", Intent: "checkpoint", Target: "fsync-session",
-			Phase: PhaseIntent, TS: time.Now().Unix(),
-		}); err != nil {
-			t.Fatal(err)
-		}
+	if count < 1 {
+		t.Fatalf("B11 FAIL: fsync counter = %d, want >=1 per appendJournal call", count)
+	}
+	t.Logf("B11 PASS: fsync called %d times in appendJournal", count)
 
-		cp := CheckpointPayload{
-			Session: "fsync-session", BinaryPath: "/bin/true",
-			State: "active", CheckpointAt: time.Now().Unix(),
-		}
-		sha, _ := s.writeCheckpoint(cp)
-		s.updateCurrent("fsync-session", sha)
-		s.appendJournal(JournalEntry{
-			OpID: "op-fsync-on", Intent: "checkpoint", Target: "fsync-session",
-			Phase: PhaseDone,
-		})
-
-		// Verify data is on disk BEFORE any crash simulation
-		entries, err := s.readJournal()
-		if err != nil || len(entries) < 2 {
-			t.Fatalf("with-fsync: expected >=2 entries, got %d (err=%v)", len(entries), err)
-		}
-
-		// Simulate crash: re-open a new supervisor and read back
-		// (The fsync should have made the data durable)
-		s2 := New(dir)
-		entries2, err := s2.readJournal()
-		if err != nil {
-			t.Fatalf("with-fsync: re-read after simulated crash: %v", err)
-		}
-		if len(entries2) < 2 {
-			t.Fatalf("B11 FAIL with-fsync: data lost after simulated crash: got %d entries", len(entries2))
-		}
-		t.Logf("B11 with-fsync: %d entries survived simulated crash", len(entries2))
-	}()
-
-	// ── Phase 2: WITHOUT fsync — write data, verify it can be lost ──
-	func() {
-		FsyncEnabled = false
-		defer func() { FsyncEnabled = true }()
-
-		dir2 := testDir(t)
-		s := New(dir2)
-		if err := s.Lock(); err != nil {
-			t.Fatal(err)
-		}
-		defer s.Unlock()
-
-		// Write WITHOUT fsync — data may stay in page cache only
-		if err := s.appendJournal(JournalEntry{
-			OpID: "op-nofsync", Intent: "checkpoint", Target: "nofsync-session",
-			Phase: PhaseIntent, TS: time.Now().Unix(),
-		}); err != nil {
-			t.Fatal(err)
-		}
-
-		// Read back immediately (will succeed from page cache)
-		entries, err := s.readJournal()
-		if err != nil || len(entries) < 1 {
-			t.Fatalf("no-fsync: write failed: %v", err)
-		}
-
-		// Now re-open with a NEW supervisor (fresh page cache).
-		// Without fsync, data may NOT be on disk.
-		// NOTE: on the same machine without an actual crash, page cache
-		// may still serve the data. This test documents the anti-proof
-		// structure; a full kill -9 test requires a subprocess.
-		s2 := New(dir2)
-		entries2, err := s2.readJournal()
-		// MC-4: no-fsync means data MAY be lost.
-		// If it survives, that's page cache luck, not durability.
-		// If it's lost, the anti-proof is confirmed.
-		if err != nil || len(entries2) < 1 {
-			t.Logf("B11 anti-proof: without fsync, data lost (expected): %d entries, err=%v", len(entries2), err)
-		} else {
-			t.Logf("B11 anti-proof: without fsync, data in page cache survived (not a failure — kill -9 would lose it): %d entries", len(entries2))
-		}
-	}()
+	// ── Phase 2: Verify nil counter (production path, no overhead) ──
+	FsyncCount = nil
+	if err := s.appendJournal(JournalEntry{
+		OpID: "op-nil-count", Intent: "checkpoint", Target: "nil-session",
+		Phase: PhaseIntent, TS: time.Now().Unix(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	t.Log("B11 PASS: nil FsyncCount (production path) works")
 }
-
 // ── B13: CLOEXEC — real fork/exec, verify fd invisible in child ──────
 
 func TestB13_CloexecInChild(t *testing.T) {

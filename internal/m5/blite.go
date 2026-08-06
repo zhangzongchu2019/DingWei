@@ -40,7 +40,7 @@ var (
 	ErrSessHeld      = errors.New("m5: flock held or lock fd leaked")          // second supervisor or fd leak
 	ErrStopTimeout   = errors.New("m5: stop timeout: process did not exit after SIGKILL")
 	ErrProbeFail     = errors.New("m5: new process probe failed after restart")
-	ErrJournalBad    = errors.New("m5: journal tail corrupt, fail-closed")
+	ErrJournalBad    = errors.New("m5: journal line corrupt, fail-closed")
 	ErrPidReuse      = errors.New("m5: pid reuse detected, refusing signal")
 )
 
@@ -169,9 +169,10 @@ func (s *Supervisor) writeAtomic(path string, data []byte) error {
 	return syncDir(dir)
 }
 
-// FsyncEnabled controls whether appendJournal calls f.Sync().
-// Tests toggle this for MC-4 anti-proof. Production: always true.
-var FsyncEnabled = true
+// FsyncCount is called (if non-nil) each time appendJournal calls f.Sync().
+// MC-4(a): tests set this to count fsync calls, making the anti-proof deterministic.
+// Production: nil (no overhead).
+var FsyncCount func()
 
 // readFile reads a file's full content.
 func readFile(path string) ([]byte, error) {
@@ -277,11 +278,12 @@ func (s *Supervisor) appendJournal(e JournalEntry) error {
 		unixFlock(int(f.Fd()), unixLOCK_UN)
 		return err
 	}
-	if FsyncEnabled {
-		if err := f.Sync(); err != nil {
-			unixFlock(int(f.Fd()), unixLOCK_UN)
-			return err
-		}
+	if err := f.Sync(); err != nil {
+		unixFlock(int(f.Fd()), unixLOCK_UN)
+		return err
+	}
+	if FsyncCount != nil {
+		FsyncCount()
 	}
 	unixFlock(int(f.Fd()), unixLOCK_UN)
 	// fsync parent directory so journal append is durable
