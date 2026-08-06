@@ -163,7 +163,9 @@ func (p *PGStore) UpdateProgress(ctx context.Context, id string, pr TaskProgress
 }
 
 func (p *PGStore) OwnerTransition(ctx context.Context, id, owner, to string) (*Task, error) {
-	tx, err := p.db.BeginTx(ctx, nil)
+	// 闸依赖 Read Committed:RR 快照取在 advisory 锁等待前,锁释放后 NOT EXISTS
+	// 按旧快照看不到并发已提交的 in_progress 行→闸静默穿透;显式钉 RC 不赌库默认。
+	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, err
 	}
