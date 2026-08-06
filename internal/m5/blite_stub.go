@@ -37,7 +37,7 @@ func startProcess(binary string, args []string, env []string) (ProcTuple, int, e
 	return ProcTuple{}, -1, errors.New("m5: linux only")
 }
 
-func probeProcess(tuple ProcTuple, attempts int, interval time.Duration) error {
+func probeProcess(tuple ProcTuple, healthURL string, attempts int, interval time.Duration) error {
 	return errors.New("m5: linux only")
 }
 

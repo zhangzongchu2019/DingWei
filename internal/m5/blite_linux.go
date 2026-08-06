@@ -4,6 +4,7 @@ package m5
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -199,21 +200,17 @@ func forkExec(binary string, argv []string, envp []string) (int, int, error) {
 	return proc.Pid, pidFd, nil
 }
 
-// ── probe (§N4: tuple existence + health endpoint, 3 probes 2s interval) ─
+// ── probe (§N4: tuple existence + health endpoint 200, 3 probes 2s interval) ─
 
-// healthEndpoint is the URL probed after restart. Default is no-op
-// (only tuple check). Tests and production can override.
-var healthEndpoint = ""
-
-// SetHealthEndpoint sets the URL to probe after restart (§N4).
-func SetHealthEndpoint(url string) { healthEndpoint = url }
-
-func probeProcess(tuple ProcTuple, attempts int, interval time.Duration) error {
+// probeProcess probes a started process: tuple identity (§1.2) + health endpoint (§N4).
+// healthURL is the session's health check URL (e.g. http://127.0.0.1:PORT/health).
+// N-2b: healthURL is mandatory (zzc裁定A) — if empty, probe passes on tuple alone.
+func probeProcess(tuple ProcTuple, healthURL string, attempts int, interval time.Duration) error {
 	for i := 0; i < attempts; i++ {
 		if i > 0 {
 			time.Sleep(interval)
 		}
-		// N-2: tuple existence check
+		// Tuple existence check (§1.2)
 		current, err := readProcTuple(int(tuple.PID))
 		if err != nil {
 			continue // process gone, retry
@@ -221,9 +218,9 @@ func probeProcess(tuple ProcTuple, attempts int, interval time.Duration) error {
 		if !current.Equal(tuple) {
 			return fmt.Errorf("probe: pid %d tuple changed", tuple.PID)
 		}
-		// N-2: health endpoint check (optional; if not set, tuple alone suffices)
-		if healthEndpoint != "" {
-			if !checkHealth(healthEndpoint) {
+		// Health endpoint check (§N4, N-2b: enabled by default)
+		if healthURL != "" {
+			if !checkHealth200(healthURL) {
 				continue // health not ready, retry
 			}
 		}
@@ -232,14 +229,16 @@ func probeProcess(tuple ProcTuple, attempts int, interval time.Duration) error {
 	return ErrProbeFail
 }
 
-// checkHealth performs a basic TCP/TLS dial to the health endpoint.
-// This is a best-effort liveness check; the endpoint must return a
-// success response at the TCP level. (Full HTTP 200 check is a future enhancement.)
-func checkHealth(url string) bool {
-	// For now, verify the process is running by checking /proc/<pid>/status
-	// contains "State: S" or "State: R" (sleeping/running).
-	// A full HTTP probe requires knowing the port, which is session-specific.
-	return true // placeholder: tuple check above is the primary probe
+// checkHealth200 performs an HTTP GET to url and returns true on 200 OK.
+// Uses a short timeout (2s) and treats any non-200 or connection failure as unhealthy.
+func checkHealth200(url string) bool {
+	client := &http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return resp.StatusCode == 200
 }
 
 func killProcess(pidFd int, tuple ProcTuple) {

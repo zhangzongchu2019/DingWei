@@ -109,6 +109,7 @@ type CheckpointPayload struct {
 	BinarySHA   string `json:"binary_sha,omitempty"`
 	Args        string `json:"args,omitempty"`
 	Env         string `json:"env,omitempty"` // key=value\n lines, sorted
+	HealthURL   string `json:"health_url,omitempty"` // §N4: health endpoint for probe (e.g. http://127.0.0.1:PORT/health)
 	State       string `json:"state"`         // active / idle / restarting
 	CheckpointAt int64 `json:"checkpoint_at"` // unix seconds
 }
@@ -515,8 +516,8 @@ func (s *Supervisor) Restart(session string, newBinary string, args []string, en
 		return fmt.Errorf("%w: start: %v", ErrProbeFail, err)
 	}
 
-	// 4. Probe health (§N4: 3 probes, 2s interval, all must pass)
-	if err := probeProcess(tuple, 3, 2*time.Second); err != nil {
+	// 4. Probe health (§N4/N-2b: tuple + health endpoint 200, 3 probes 2s interval)
+	if err := probeProcess(tuple, cp.HealthURL, 3, 2*time.Second); err != nil {
 		// Try to kill the failed process
 		killProcess(pidFd, tuple)
 		s.appendJournal(JournalEntry{OpID: opID, Intent: "restart", Target: session, Phase: PhaseFailed, ErrCode: "ErrProbeFail"})
@@ -574,7 +575,7 @@ func (s *Supervisor) Replace(session string, newBinary string, args []string, en
 		s.appendJournal(JournalEntry{OpID: opID, Intent: "replace", Target: session, Phase: PhaseFailed, ErrCode: "ErrProbeFail"})
 		return err
 	}
-	if err := probeProcess(tuple, 3, 2*time.Second); err != nil {
+	if err := probeProcess(tuple, cp.HealthURL, 3, 2*time.Second); err != nil {
 		killProcess(pidFd, tuple)
 		s.appendJournal(JournalEntry{OpID: opID, Intent: "replace", Target: session, Phase: PhaseFailed, ErrCode: "ErrProbeFail"})
 		return err
@@ -788,7 +789,7 @@ func (s *Supervisor) recoverRestart(e JournalEntry) error {
 	ss, ok := s.sessions[e.Target]
 	if ok && !ss.Tuple.IsZero() {
 		// Might be running — probe
-		if err := probeProcess(ss.Tuple, 1, 1*time.Second); err == nil {
+		if err := probeProcess(ss.Tuple, "", 1, 1*time.Second); err == nil {
 			// Process alive, restart done
 			s.appendJournal(JournalEntry{OpID: e.OpID, Intent: "restart", Target: e.Target, Phase: PhaseDone})
 			return nil
