@@ -101,7 +101,7 @@ CREATE TABLE audit (           -- 全写操作审计(系统自动,任何token不
 
 ## 4. 安全模型
 
-- **单写不变量**:管理域(task 状态/owner/dispatch/config/skill 批准)写=role:coordinator 唯一;403+audit 记录未遂。**task 状态唯一例外(zzc 批 B 案自取)**:owner 本人经 POST /v1/tasks/{id}/pull 的白名单流转 dispatched→in_progress(每次一项闸)与 in_progress→review,归自报域行级;proposed/blocked/waiting_gate/done/archived 及 owner 变更、越闸插队仍 coordinator 唯一。
+- **单写不变量**:管理域(task 状态/owner/dispatch/config/skill 批准)写=role:coordinator 唯一;403+audit 记录未遂。**task 状态唯一例外(zzc 批 B 案自取)**:owner 本人经 POST /v1/tasks/{id}/pull 的白名单流转 dispatched→in_progress(每次一项闸)与 in_progress→review,归自报域行级;proposed/dispatched/blocked/waiting_gate/done/archived 及 owner 变更、越闸插队仍 coordinator 唯一。
 - **自报域行级不变量**:member 只能写 `token.session==目标行 session` 的 state/heartbeat/本人 owner 件的 progress;越行=403+audit。
 - audit 表无任何写端点(仅 datad 内部 insert);PG 层再加一道:datad 连接用户对 audit 仅 INSERT 无 UPDATE/DELETE 权(纵深)。
 - token 轮换:双活窗≤24h;token 明文只在 datad 配置(600)与各会话 env,PG 不存明文(存 token_id)。
