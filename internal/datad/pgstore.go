@@ -162,6 +162,78 @@ func (p *PGStore) UpdateProgress(ctx context.Context, id string, pr TaskProgress
 	return p.GetTask(ctx, id)
 }
 
+func (p *PGStore) OwnerTransition(ctx context.Context, id, owner, to string) (*Task, error) {
+	tx, err := p.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	// 每次一项闸须原子:同 owner 并发拉两件,read-committed 下 NOT EXISTS 各自过检
+	// →双 in_progress;per-owner advisory 锁串行化(锁随事务释放)。
+	if _, err := tx.ExecContext(ctx,
+		`SELECT pg_advisory_xact_lock(hashtext('datad.task.pull:'||$1::text))`, owner); err != nil {
+		return nil, err
+	}
+	var res sql.Result
+	switch to {
+	case "in_progress":
+		res, err = tx.ExecContext(ctx, `UPDATE task SET status='in_progress', updated_at=now()
+  WHERE id=$1 AND owner_session=$2 AND status='dispatched'
+  AND NOT EXISTS (SELECT 1 FROM task WHERE owner_session=$2 AND status='in_progress')`, id, owner)
+	case "review":
+		res, err = tx.ExecContext(ctx, `UPDATE task SET status='review', updated_at=now()
+  WHERE id=$1 AND owner_session=$2 AND status='in_progress'`, id, owner)
+	default:
+		return nil, ErrWrongState
+	}
+	if err != nil {
+		return nil, err
+	}
+	if n, _ := res.RowsAffected(); n == 0 { // 消歧:404/403/wrong_state/pull_gate
+		var gotOwner, gotStatus string
+		err := tx.QueryRowContext(ctx,
+			`SELECT owner_session,status FROM task WHERE id=$1`, id).Scan(&gotOwner, &gotStatus)
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNotFound
+		case err != nil:
+			return nil, err
+		case gotOwner != owner:
+			return nil, ErrNotOwner
+		case to == "in_progress" && gotStatus == "dispatched":
+			return nil, ErrPullGate
+		default:
+			return nil, ErrWrongState
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return p.GetTask(ctx, id)
+}
+
+func (p *PGStore) PullLag(ctx context.Context) ([]PullLagRow, error) {
+	rows, err := p.db.QueryContext(ctx, `SELECT t.id, t.title, t.owner_session,
+  COALESCE(MAX(d.created_at), t.updated_at) AS since
+  FROM task t LEFT JOIN dispatch d ON d.task_id=t.id AND d.role='executor'
+  WHERE t.status='dispatched'
+  GROUP BY t.id, t.title, t.owner_session, t.updated_at
+  ORDER BY since`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []PullLagRow{}
+	for rows.Next() {
+		var r PullLagRow
+		if err := rows.Scan(&r.TaskID, &r.Title, &r.OwnerSession, &r.Since); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
 func (p *PGStore) AppendDispatch(ctx context.Context, d Dispatch) error {
 	// id 序=提交序不变量(shenceclaude MC3):BIGSERIAL 分配序≠提交序,增量游标
 	// since_id 依赖"id 单调可见";advisory xact 锁串行化 append(coordinator 单写

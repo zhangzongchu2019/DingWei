@@ -15,6 +15,10 @@ var (
 	ErrNotFound  = errors.New("not found")
 	ErrConflict  = errors.New("optimistic lock conflict") // 409
 	ErrCASFailed = errors.New("generation mismatch")      // 412
+	// 自报域执行态流转(B 案自取模式)
+	ErrNotOwner   = errors.New("not task owner")                           // 403
+	ErrWrongState = errors.New("wrong state for transition")               // 409 wrong_state
+	ErrPullGate   = errors.New("pull gate: owner already has in_progress") // 409 pull_gate
 )
 
 type Task struct {
@@ -58,6 +62,17 @@ type DispatchRow struct {
 type HeartbeatLatest struct {
 	Session string    `json:"session"`
 	At      time.Time `json:"at"`
+}
+
+// PullLagRow 待拉件监控行(coordinator 面:谁名下 dispatched 停留多久未拉)。
+// Since=最近一次 executor 派发时点(dispatch.created_at,权威;无 dispatch 行退
+// task.updated_at 近似——progress 更新会污染 updated_at,故不以它为主)。
+type PullLagRow struct {
+	TaskID       string    `json:"task_id"`
+	Title        string    `json:"title"`
+	OwnerSession string    `json:"owner_session"`
+	Since        time.Time `json:"since"`
+	AgeSeconds   int64     `json:"age_seconds"` // handler 出参时计算
 }
 
 type ConfigEntry struct {
@@ -111,6 +126,10 @@ type Store interface {
 	GetTask(ctx context.Context, id string) (*Task, error)
 	PutTask(ctx context.Context, t Task, ifMatch time.Time, force bool) (*Task, error) // 乐观锁:ifMatch=updated_at;force=首建或跳锁(仅内部导入)
 	UpdateProgress(ctx context.Context, id string, p TaskProgress) (*Task, error)
+	// 自报域执行态流转(B 案自取:owner 本人,白名单仅 dispatched→in_progress[每次
+	// 一项闸]+in_progress→review;派发/终态权仍 coordinator=PUT 单写不破)
+	OwnerTransition(ctx context.Context, id, owner, to string) (*Task, error)
+	PullLag(ctx context.Context) ([]PullLagRow, error) // status=dispatched 按派发时点升序(最久未拉在前)
 	// dispatch(append-only;读=权威只读侧,audit 重建不权威——audit 写失败仅告警不回滚)
 	AppendDispatch(ctx context.Context, d Dispatch) error
 	ListDispatches(ctx context.Context, taskID, assignee string, sinceID int64, limit int) ([]DispatchRow, error) // id 升序;taskID/assignee 空=不过滤;sinceID=增量下界(不含)

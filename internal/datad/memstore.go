@@ -105,6 +105,62 @@ func (m *MemStore) UpdateProgress(_ context.Context, id string, p TaskProgress) 
 	return &t, nil
 }
 
+func (m *MemStore) OwnerTransition(_ context.Context, id, owner, to string) (*Task, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	t, ok := m.tasks[id]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	if t.OwnerSession != owner {
+		return nil, ErrNotOwner
+	}
+	switch to {
+	case "in_progress":
+		if t.Status != "dispatched" {
+			return nil, ErrWrongState
+		}
+		for _, o := range m.tasks {
+			if o.OwnerSession == owner && o.Status == "in_progress" {
+				return nil, ErrPullGate
+			}
+		}
+	case "review":
+		if t.Status != "in_progress" {
+			return nil, ErrWrongState
+		}
+	default:
+		return nil, ErrWrongState
+	}
+	t.Status = to
+	t.UpdatedAt = time.Now().UTC()
+	m.tasks[id] = t
+	return &t, nil
+}
+
+func (m *MemStore) PullLag(_ context.Context) ([]PullLagRow, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	out := []PullLagRow{}
+	for _, t := range m.tasks {
+		if t.Status != "dispatched" {
+			continue
+		}
+		var since time.Time
+		for _, d := range m.dispatch { // 权威时点=最近 executor 派发
+			if d.TaskID == t.ID && d.Role == "executor" && d.CreatedAt.After(since) {
+				since = d.CreatedAt
+			}
+		}
+		if since.IsZero() { // 无 dispatch 行退 updated_at 近似(同 PG COALESCE)
+			since = t.UpdatedAt
+		}
+		out = append(out, PullLagRow{TaskID: t.ID, Title: t.Title, OwnerSession: t.OwnerSession, Since: since})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Since.Before(out[j].Since) })
+	return out, nil
+}
+
 func (m *MemStore) AppendDispatch(_ context.Context, d Dispatch) error {
 	// id 序=提交序不变量:mutex 串行天然成立(PG 侧靠 advisory xact 锁,见 pgstore)。
 	m.mu.Lock()

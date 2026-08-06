@@ -294,6 +294,89 @@ func TestLatestHeartbeatsEndpoint(t *testing.T) {
 	}
 }
 
+func TestPullModeAndGate(t *testing.T) {
+	s, ms := testServer()
+	mk := func(id string) {
+		call(t, s, "PUT", "/v1/tasks/"+id, "tok-coord",
+			`{"title":"`+id+`","owner_session":"zzc-devo48-2642","status":"dispatched"}`, nil)
+	}
+	mk("P1")
+	mk("P2")
+	// 拉取 P1=200 → in_progress
+	w := call(t, s, "POST", "/v1/tasks/P1/pull", "tok-devo", `{"to":"in_progress"}`, nil)
+	var got Task
+	_ = json.Unmarshal(w.Body.Bytes(), &got)
+	if w.Code != 200 || got.Status != "in_progress" {
+		t.Fatalf("pull P1: %d %+v", w.Code, got)
+	}
+	// 每次一项闸:名下已有 in_progress 再拉 P2=409
+	if w := call(t, s, "POST", "/v1/tasks/P2/pull", "tok-devo", `{"to":"in_progress"}`, nil); w.Code != 409 || !strings.Contains(w.Body.String(), "pull_gate") {
+		t.Fatalf("pull gate want 409 pull_gate got %d %s", w.Code, w.Body.String())
+	}
+	// 非 owner=403(coordinator 也不走此端点,越闸走 PUT)
+	if w := call(t, s, "POST", "/v1/tasks/P1/pull", "tok-k3", `{"to":"review"}`, nil); w.Code != 403 {
+		t.Fatalf("非owner pull want 403 got %d", w.Code)
+	}
+	// 交审 P1 释放闸→拉 P2=200
+	if w := call(t, s, "POST", "/v1/tasks/P1/pull", "tok-devo", `{"to":"review"}`, nil); w.Code != 200 {
+		t.Fatalf("submit review: %d %s", w.Code, w.Body.String())
+	}
+	if w := call(t, s, "POST", "/v1/tasks/P2/pull", "tok-devo", `{"to":"in_progress"}`, nil); w.Code != 200 {
+		t.Fatalf("闸未释放: %d %s", w.Code, w.Body.String())
+	}
+	// 错误态:review 件再拉=409 wrong_state;非法 to=422
+	if w := call(t, s, "POST", "/v1/tasks/P1/pull", "tok-devo", `{"to":"in_progress"}`, nil); w.Code != 409 || !strings.Contains(w.Body.String(), "wrong_state") {
+		t.Fatalf("wrong_state want 409 got %d %s", w.Code, w.Body.String())
+	}
+	if w := call(t, s, "POST", "/v1/tasks/P1/pull", "tok-devo", `{"to":"done"}`, nil); w.Code != 422 {
+		t.Fatalf("非法 to want 422 got %d", w.Code)
+	}
+	// audit 落账
+	found := false
+	for _, e := range ms.audit {
+		if e.Op == "task.pull.in_progress" && e.Actor == "zzc-devo48-2642" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("pull 未入审计")
+	}
+}
+
+func TestPullLagEndpoint(t *testing.T) {
+	s, _ := testServer()
+	call(t, s, "PUT", "/v1/tasks/L1", "tok-coord",
+		`{"title":"L1","owner_session":"zzc-devo48-2642","status":"dispatched"}`, nil)
+	call(t, s, "PUT", "/v1/tasks/L2", "tok-coord",
+		`{"title":"L2","owner_session":"zzc-claudek3-2642","status":"dispatched"}`, nil)
+	call(t, s, "PUT", "/v1/tasks/L3", "tok-coord",
+		`{"title":"L3","owner_session":"zzc-devo48-2642","status":"in_progress"}`, nil)
+	// 派发台账行=权威 since 时点
+	call(t, s, "POST", "/v1/dispatch", "tok-coord",
+		`{"task_id":"L1","assignee":"zzc-devo48-2642","role":"executor"}`, nil)
+	// member=403
+	if w := call(t, s, "GET", "/v1/tasks/pull-lag", "tok-devo", "", nil); w.Code != 403 {
+		t.Fatalf("member pull-lag want 403 got %d", w.Code)
+	}
+	w := call(t, s, "GET", "/v1/tasks/pull-lag", "tok-coord", "", nil)
+	var rows []PullLagRow
+	_ = json.Unmarshal(w.Body.Bytes(), &rows)
+	if w.Code != 200 || len(rows) != 2 { // 仅 dispatched:L1/L2;L3 不入
+		t.Fatalf("pull-lag: code=%d %+v", w.Code, rows)
+	}
+	for _, r := range rows {
+		if r.TaskID == "L3" {
+			t.Fatalf("in_progress 件不应入监控:%+v", rows)
+		}
+		if r.Since.IsZero() || r.AgeSeconds < 0 {
+			t.Fatalf("since/age 缺:%+v", r)
+		}
+	}
+	if !rows[0].Since.Before(rows[1].Since) && !rows[0].Since.Equal(rows[1].Since) {
+		t.Fatalf("未按最久在前排序:%+v", rows)
+	}
+}
+
 func TestMeAliasInQuery(t *testing.T) {
 	s, _ := testServer()
 	call(t, s, "PUT", "/v1/tasks/T77", "tok-coord", taskBody, nil)

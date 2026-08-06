@@ -122,4 +122,51 @@ func TestPGIntegration(t *testing.T) {
 	if !found {
 		t.Fatalf("latest 缺会话 %s: %+v", hbSession, hs)
 	}
+
+	// pull 模式往返(B 案:OwnerTransition 原子闸+PullLag 监控,PG advisory 锁/单UPDATE语义须真跑)
+	p1, p2 := id+"-P1", id+"-P2"
+	owner := "zzc-devo48-2642"
+	for _, pid := range []string{p1, p2} {
+		if _, err := pg.PutTask(ctx, Task{ID: pid, Title: pid, OwnerSession: owner,
+			Status: "dispatched"}, time.Time{}, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := pg.AppendDispatch(ctx, Dispatch{TaskID: p1, Assignee: owner, Role: "executor", Round: 1}); err != nil {
+		t.Fatal(err)
+	}
+	lag, err := pg.PullLag(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lagged := 0
+	for _, r := range lag {
+		if r.TaskID == p1 || r.TaskID == p2 {
+			lagged++
+			if r.Since.IsZero() {
+				t.Fatalf("pull-lag since 缺: %+v", r)
+			}
+		}
+	}
+	if lagged != 2 {
+		t.Fatalf("pull-lag 应含两件 dispatched, got %d: %+v", lagged, lag)
+	}
+	if tk, err := pg.OwnerTransition(ctx, p1, owner, "in_progress"); err != nil || tk.Status != "in_progress" {
+		t.Fatalf("pull p1: %v %+v", err, tk)
+	}
+	if _, err := pg.OwnerTransition(ctx, p2, owner, "in_progress"); err != ErrPullGate {
+		t.Fatalf("每次一项闸 want ErrPullGate got %v", err)
+	}
+	if _, err := pg.OwnerTransition(ctx, p1, "zzc-claudek3-2642", "review"); err != ErrNotOwner {
+		t.Fatalf("非owner want ErrNotOwner got %v", err)
+	}
+	if _, err := pg.OwnerTransition(ctx, p1, owner, "review"); err != nil {
+		t.Fatalf("交审: %v", err)
+	}
+	if tk, err := pg.OwnerTransition(ctx, p2, owner, "in_progress"); err != nil || tk.Status != "in_progress" {
+		t.Fatalf("闸未释放: %v %+v", err, tk)
+	}
+	if _, err := pg.OwnerTransition(ctx, p1, owner, "in_progress"); err != ErrWrongState {
+		t.Fatalf("review 件再拉 want ErrWrongState got %v", err)
+	}
 }

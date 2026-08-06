@@ -59,6 +59,8 @@ func New(cfg Config) *Server {
 	m.HandleFunc("GET /v1/tasks/{id}", s.withAuth(s.handleGetTask))
 	m.HandleFunc("PUT /v1/tasks/{id}", s.withAuth(s.handlePutTask))
 	m.HandleFunc("POST /v1/tasks/{id}/progress", s.withAuth(s.handleProgress))
+	m.HandleFunc("POST /v1/tasks/{id}/pull", s.withAuth(s.handlePullTask))
+	m.HandleFunc("GET /v1/tasks/pull-lag", s.withAuth(s.handlePullLag))
 	m.HandleFunc("POST /v1/dispatch", s.withAuth(s.handleDispatch))
 	m.HandleFunc("GET /v1/dispatch", s.withAuth(s.handleListDispatch))
 	m.HandleFunc("GET /v1/heartbeats/latest", s.withAuth(s.handleLatestHeartbeats))
@@ -260,6 +262,56 @@ func (s *Server) handleDispatch(w http.ResponseWriter, r *http.Request, id Ident
 	}
 	s.audit(r.Context(), id, "dispatch.append", d.TaskID, d)
 	writeJSON(w, 201, d)
+}
+
+// handlePullTask POST /v1/tasks/{id}/pull:自报域执行态流转(zzc 批 B 案自取)。
+// owner 本人,白名单仅两条:to=in_progress(拉取,每次一项闸)/to=review(交审)。
+// 派发/终态/越闸插队权仍 coordinator=PUT 单写路径,此端点不给 coordinator 特权。
+func (s *Server) handlePullTask(w http.ResponseWriter, r *http.Request, id Identity) {
+	taskID := r.PathValue("id")
+	var req struct {
+		To string `json:"to"`
+	}
+	if err := decodeBody(r, &req); err != nil || (req.To != "in_progress" && req.To != "review") {
+		http.Error(w, "to 须 in_progress|review", http.StatusUnprocessableEntity)
+		return
+	}
+	t, err := s.st.OwnerTransition(r.Context(), taskID, id.Session, req.To)
+	switch {
+	case errors.Is(err, ErrNotOwner):
+		s.deny(w, r, id, "task.pull")
+		return
+	case errors.Is(err, ErrPullGate):
+		http.Error(w, "pull_gate: 名下已有 in_progress,先交审再拉", http.StatusConflict)
+		return
+	case errors.Is(err, ErrWrongState):
+		http.Error(w, "wrong_state: 仅 dispatched→in_progress / in_progress→review", http.StatusConflict)
+		return
+	case err != nil:
+		storeErr(w, err)
+		return
+	}
+	s.audit(r.Context(), id, "task.pull."+req.To, taskID, map[string]string{"to": req.To})
+	writeJSON(w, 200, t)
+}
+
+// handlePullLag GET /v1/tasks/pull-lag:coordinator 监控面(zzc 令)——谁名下有
+// dispatched 停留未拉,按最久在前;age 由服务端计算。
+func (s *Server) handlePullLag(w http.ResponseWriter, r *http.Request, id Identity) {
+	if id.Role != "coordinator" {
+		s.deny(w, r, id, "task.pull_lag.read")
+		return
+	}
+	out, err := s.st.PullLag(r.Context())
+	if err != nil {
+		storeErr(w, err)
+		return
+	}
+	now := time.Now().UTC()
+	for i := range out {
+		out[i].AgeSeconds = int64(now.Sub(out[i].Since).Seconds())
+	}
+	writeJSON(w, 200, out)
 }
 
 // handleListDispatch GET /v1/dispatch:dispatch 权威只读侧(audit 重建不权威——

@@ -80,6 +80,8 @@ CREATE TABLE audit (           -- 全写操作审计(系统自动,任何token不
 | /v1/tasks[?status=] | GET | — | 台账列表/单件(全员读) |
 | /v1/tasks/{id} | PUT | coordinator | 建/改件(单写域);If-Match 乐观锁(updated_at)否则 409 |
 | /v1/tasks/{id}/progress | POST | **owner_session 本人** | 自报域:进度/锚推进(只可改 anchor/detail.progress/eta,不可改 status/owner=防越权),写 audit |
+| /v1/tasks/{id}/pull | POST | **owner 本人** | 自报域执行态流转(zzc 批 B 案自取):to=in_progress(拉取,**每次一项闸**=名下已有 in_progress→409 pull_gate,per-owner advisory 锁原子)/to=review(交审);其余流转/越闸插队仍走 coordinator PUT(单写不破) |
+| /v1/tasks/pull-lag | GET | coordinator | 监控面(zzc 令):谁名下 dispatched 停留未拉,since=最近 executor 派发时点(dispatch.created_at 权威,无行退 updated_at),最久在前+age_seconds |
 | /v1/dispatch | POST | coordinator | 派工(append-only;advisory xact 锁保 id 序=提交序) |
 | /v1/dispatch[?task_id=&assignee=&since_id=&limit=] | GET | coordinator=全量;member=自报域(assignee=me/本人,否则 403;zzc 批 Q1) | 权威只读侧(读侧 DispatchRow 含 id/created_at;since_id 增量,limit≤1000,截断出 X-Has-More/X-Next-Since-Id 头);audit 重建不权威故设 |
 | /v1/heartbeats/latest | GET | coordinator | 每会话最新心跳(活性核;无 payload) |
