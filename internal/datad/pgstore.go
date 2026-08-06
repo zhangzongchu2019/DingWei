@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -166,6 +167,30 @@ func (p *PGStore) AppendDispatch(ctx context.Context, d Dispatch) error {
 	return err
 }
 
+func (p *PGStore) ListDispatches(ctx context.Context, taskID string, sinceID int64, limit int) ([]DispatchRow, error) {
+	q := `SELECT id,task_id,assignee,role,round,note,created_at FROM dispatch WHERE id>$1`
+	args := []any{sinceID}
+	if taskID != "" {
+		q += ` AND task_id=$2`
+		args = append(args, taskID)
+	}
+	q += ` ORDER BY id LIMIT ` + strconv.Itoa(limit)
+	rows, err := p.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []DispatchRow
+	for rows.Next() {
+		var r DispatchRow
+		if err := rows.Scan(&r.ID, &r.TaskID, &r.Assignee, &r.Role, &r.Round, &r.Note, &r.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
 func (p *PGStore) GetConfig(ctx context.Context, key string, generation int64) (*ConfigEntry, error) {
 	q := `SELECT key,generation,value,updated_by,updated_at FROM config WHERE key=$1`
 	var row *sql.Row
@@ -262,6 +287,24 @@ func (p *PGStore) AppendHeartbeat(ctx context.Context, session string, payload j
 	_, err := p.db.ExecContext(ctx, `INSERT INTO heartbeat(session,at,payload) VALUES($1,$2,$3)
   ON CONFLICT DO NOTHING`, session, at, nullJSON(payload))
 	return err
+}
+
+func (p *PGStore) LatestHeartbeats(ctx context.Context) ([]HeartbeatLatest, error) {
+	rows, err := p.db.QueryContext(ctx,
+		`SELECT DISTINCT ON (session) session,at FROM heartbeat ORDER BY session, at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []HeartbeatLatest
+	for rows.Next() {
+		var h HeartbeatLatest
+		if err := rows.Scan(&h.Session, &h.At); err != nil {
+			return nil, err
+		}
+		out = append(out, h)
+	}
+	return out, rows.Err()
 }
 
 func (p *PGStore) ListSkills(ctx context.Context) ([]Skill, error) {

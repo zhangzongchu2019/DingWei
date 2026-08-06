@@ -60,6 +60,8 @@ func New(cfg Config) *Server {
 	m.HandleFunc("PUT /v1/tasks/{id}", s.withAuth(s.handlePutTask))
 	m.HandleFunc("POST /v1/tasks/{id}/progress", s.withAuth(s.handleProgress))
 	m.HandleFunc("POST /v1/dispatch", s.withAuth(s.handleDispatch))
+	m.HandleFunc("GET /v1/dispatch", s.withAuth(s.handleListDispatch))
+	m.HandleFunc("GET /v1/heartbeats/latest", s.withAuth(s.handleLatestHeartbeats))
 	m.HandleFunc("GET /v1/config", s.withAuth(s.handleListConfig))
 	m.HandleFunc("GET /v1/config/{key}", s.withAuth(s.handleGetConfig))
 	m.HandleFunc("PUT /v1/config/{key}", s.withAuth(s.handlePutConfig))
@@ -258,6 +260,43 @@ func (s *Server) handleDispatch(w http.ResponseWriter, r *http.Request, id Ident
 	}
 	s.audit(r.Context(), id, "dispatch.append", d.TaskID, d)
 	writeJSON(w, 201, d)
+}
+
+// handleListDispatch GET /v1/dispatch:dispatch 权威只读侧(audit 重建不权威——
+// audit 写失败仅告警不回滚,可缺行)。管理域读=coordinator,对齐 audit.read。
+// 参数:task_id(过滤)/since_id(增量下界,不含)/limit(默认与上限 1000);id 升序。
+func (s *Server) handleListDispatch(w http.ResponseWriter, r *http.Request, id Identity) {
+	if id.Role != "coordinator" {
+		s.deny(w, r, id, "dispatch.read")
+		return
+	}
+	q := r.URL.Query()
+	sinceID, _ := strconv.ParseInt(q.Get("since_id"), 10, 64)
+	limit, _ := strconv.Atoi(q.Get("limit"))
+	if limit <= 0 || limit > 1000 {
+		limit = 1000
+	}
+	out, err := s.st.ListDispatches(r.Context(), q.Get("task_id"), sinceID, limit)
+	if err != nil {
+		storeErr(w, err)
+		return
+	}
+	writeJSON(w, 200, out)
+}
+
+// handleLatestHeartbeats GET /v1/heartbeats/latest:每会话最新心跳(活性核/快照)。
+// coordinator 读(planning 面;明细行不开列表,高频表全量读无消费方)。
+func (s *Server) handleLatestHeartbeats(w http.ResponseWriter, r *http.Request, id Identity) {
+	if id.Role != "coordinator" {
+		s.deny(w, r, id, "heartbeat.read")
+		return
+	}
+	out, err := s.st.LatestHeartbeats(r.Context())
+	if err != nil {
+		storeErr(w, err)
+		return
+	}
+	writeJSON(w, 200, out)
 }
 
 // ---- config ----

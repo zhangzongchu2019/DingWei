@@ -14,7 +14,7 @@ import (
 type MemStore struct {
 	mu        sync.RWMutex
 	tasks     map[string]Task
-	dispatch  []Dispatch
+	dispatch  []DispatchRow // 自增 id=len+1,append-only(语义同 PG BIGSERIAL)
 	config    map[string][]ConfigEntry // key→按 generation 升序
 	sessions  map[string]SessionState
 	heartbeat []struct {
@@ -108,8 +108,27 @@ func (m *MemStore) UpdateProgress(_ context.Context, id string, p TaskProgress) 
 func (m *MemStore) AppendDispatch(_ context.Context, d Dispatch) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.dispatch = append(m.dispatch, d)
+	m.dispatch = append(m.dispatch, DispatchRow{
+		ID: int64(len(m.dispatch) + 1), TaskID: d.TaskID, Assignee: d.Assignee,
+		Role: d.Role, Round: d.Round, Note: d.Note, CreatedAt: time.Now().UTC(),
+	})
 	return nil
+}
+
+func (m *MemStore) ListDispatches(_ context.Context, taskID string, sinceID int64, limit int) ([]DispatchRow, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var out []DispatchRow
+	for _, r := range m.dispatch {
+		if r.ID <= sinceID || (taskID != "" && r.TaskID != taskID) {
+			continue
+		}
+		out = append(out, r)
+		if limit > 0 && len(out) >= limit {
+			break
+		}
+	}
+	return out, nil
 }
 
 func (m *MemStore) GetConfig(_ context.Context, key string, generation int64) (*ConfigEntry, error) {
@@ -188,6 +207,23 @@ func (m *MemStore) AppendHeartbeat(_ context.Context, session string, payload js
 		Payload json.RawMessage
 	}{session, at, payload})
 	return nil
+}
+
+func (m *MemStore) LatestHeartbeats(_ context.Context) ([]HeartbeatLatest, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	latest := map[string]time.Time{}
+	for _, h := range m.heartbeat {
+		if h.At.After(latest[h.Session]) {
+			latest[h.Session] = h.At
+		}
+	}
+	out := make([]HeartbeatLatest, 0, len(latest))
+	for s, at := range latest {
+		out = append(out, HeartbeatLatest{Session: s, At: at})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Session < out[j].Session })
+	return out, nil
 }
 
 func (m *MemStore) ListSkills(_ context.Context) ([]Skill, error) {

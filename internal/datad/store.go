@@ -41,6 +41,25 @@ type Dispatch struct {
 	Note     string `json:"note,omitempty"`
 }
 
+// DispatchRow dispatch 读侧行:含 DB 生成列 id/created_at(快照锚 max_id/增量分页用)。
+// 读侧与写侧(Dispatch)分型:写侧不接受调用方指定 id。
+type DispatchRow struct {
+	ID        int64     `json:"id"`
+	TaskID    string    `json:"task_id"`
+	Assignee  string    `json:"assignee"`
+	Role      string    `json:"role"`
+	Round     int       `json:"round"`
+	Note      string    `json:"note,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// HeartbeatLatest 每会话最新心跳(活性核/快照用;不含 payload——payload 上限 64KB,
+// 聚合读只需时间戳)。
+type HeartbeatLatest struct {
+	Session string    `json:"session"`
+	At      time.Time `json:"at"`
+}
+
 type ConfigEntry struct {
 	Key        string          `json:"key"`
 	Generation int64           `json:"generation"`
@@ -92,8 +111,9 @@ type Store interface {
 	GetTask(ctx context.Context, id string) (*Task, error)
 	PutTask(ctx context.Context, t Task, ifMatch time.Time, force bool) (*Task, error) // 乐观锁:ifMatch=updated_at;force=首建或跳锁(仅内部导入)
 	UpdateProgress(ctx context.Context, id string, p TaskProgress) (*Task, error)
-	// dispatch(append-only)
+	// dispatch(append-only;读=权威只读侧,audit 重建不权威——audit 写失败仅告警不回滚)
 	AppendDispatch(ctx context.Context, d Dispatch) error
+	ListDispatches(ctx context.Context, taskID string, sinceID int64, limit int) ([]DispatchRow, error) // id 升序;taskID 空=全部;sinceID=增量下界(不含)
 	// config(版本化 CAS)
 	GetConfig(ctx context.Context, key string, generation int64) (*ConfigEntry, error) // generation<=0=最新
 	ListConfig(ctx context.Context) ([]ConfigEntry, error)                             // 每 key 最新代次(project_context 用)
@@ -102,6 +122,7 @@ type Store interface {
 	PutSessionState(ctx context.Context, s SessionState) error
 	ListSessions(ctx context.Context) ([]SessionState, error)
 	AppendHeartbeat(ctx context.Context, session string, payload json.RawMessage, at time.Time) error
+	LatestHeartbeats(ctx context.Context) ([]HeartbeatLatest, error) // 每 session 最新一条,session 升序
 	// skills
 	ListSkills(ctx context.Context) ([]Skill, error)
 	ProposeSkill(ctx context.Context, s Skill) error

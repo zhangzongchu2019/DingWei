@@ -211,6 +211,72 @@ func TestSkillFlowAndAuditRead(t *testing.T) {
 	}
 }
 
+func TestReadonlyDispatchEndpoint(t *testing.T) {
+	s, ms := testServer()
+	call(t, s, "PUT", "/v1/tasks/T99", "tok-coord", taskBody, nil)
+	// member 读=403 且未遂入审计;coordinator=200
+	if w := call(t, s, "GET", "/v1/dispatch", "tok-devo", "", nil); w.Code != 403 {
+		t.Fatalf("member dispatch read want 403 got %d", w.Code)
+	}
+	found := false
+	for _, e := range ms.audit {
+		if e.Op == "dispatch.read.denied" && e.Actor == "zzc-devo48-2642" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("dispatch.read 未遂 403 未入审计(P7)")
+	}
+	for _, b := range []string{
+		`{"task_id":"T99","assignee":"zzc-devo48-2642","role":"executor"}`,
+		`{"task_id":"T99","assignee":"zzc-claudek3-2642","role":"reviewer"}`,
+		`{"task_id":"T98","assignee":"zzc-devo48-2642","role":"executor","round":2}`,
+	} {
+		if w := call(t, s, "POST", "/v1/dispatch", "tok-coord", b, nil); w.Code != 201 {
+			t.Fatalf("append got %d: %s", w.Code, w.Body.String())
+		}
+	}
+	var rows []DispatchRow
+	_ = json.Unmarshal(call(t, s, "GET", "/v1/dispatch", "tok-coord", "", nil).Body.Bytes(), &rows)
+	if len(rows) != 3 || rows[0].ID != 1 || rows[2].ID != 3 || rows[0].CreatedAt.IsZero() {
+		t.Fatalf("全量读:%+v", rows)
+	}
+	// 增量:since_id=2 只返 id=3
+	_ = json.Unmarshal(call(t, s, "GET", "/v1/dispatch?since_id=2", "tok-coord", "", nil).Body.Bytes(), &rows)
+	if len(rows) != 1 || rows[0].ID != 3 || rows[0].Round != 2 {
+		t.Fatalf("since_id 增量:%+v", rows)
+	}
+	// task_id 过滤
+	_ = json.Unmarshal(call(t, s, "GET", "/v1/dispatch?task_id=T99", "tok-coord", "", nil).Body.Bytes(), &rows)
+	if len(rows) != 2 || rows[1].Role != "reviewer" {
+		t.Fatalf("task_id 过滤:%+v", rows)
+	}
+}
+
+func TestLatestHeartbeatsEndpoint(t *testing.T) {
+	s, _ := testServer()
+	// member 读=403
+	if w := call(t, s, "GET", "/v1/heartbeats/latest", "tok-devo", "", nil); w.Code != 403 {
+		t.Fatalf("member heartbeat read want 403 got %d", w.Code)
+	}
+	// 两会话各两跳,取每会话最新
+	call(t, s, "POST", "/v1/sessions/me/heartbeat", "tok-devo", `{"n":1}`, nil)
+	call(t, s, "POST", "/v1/sessions/me/heartbeat", "tok-k3", `{"n":1}`, nil)
+	time.Sleep(2 * time.Millisecond)
+	call(t, s, "POST", "/v1/sessions/me/heartbeat", "tok-devo", `{"n":2}`, nil)
+	var hs []HeartbeatLatest
+	w := call(t, s, "GET", "/v1/heartbeats/latest", "tok-coord", "", nil)
+	_ = json.Unmarshal(w.Body.Bytes(), &hs)
+	if w.Code != 200 || len(hs) != 2 {
+		t.Fatalf("latest heartbeats: code=%d %+v", w.Code, hs)
+	}
+	// session 升序:claudek3 < devo48;devo48 的 at=第二跳(晚于 claudek3 的唯一跳)
+	if hs[0].Session != "zzc-claudek3-2642" || hs[1].Session != "zzc-devo48-2642" ||
+		!hs[1].At.After(hs[0].At) {
+		t.Fatalf("每会话最新/排序错:%+v", hs)
+	}
+}
+
 func TestMeAliasInQuery(t *testing.T) {
 	s, _ := testServer()
 	call(t, s, "PUT", "/v1/tasks/T77", "tok-coord", taskBody, nil)
