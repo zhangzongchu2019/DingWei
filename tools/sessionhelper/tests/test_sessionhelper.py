@@ -582,7 +582,7 @@ class SessionHelperTest(unittest.TestCase):
         adapter.start = lambda: True
         adapter.inject_and_confirm_transcript_user = lambda _prompt: calls.__setitem__("confirm", calls["confirm"] + 1) or "ok"
 
-        def fake_collect(prompt):
+        def fake_collect(prompt, on_injected=None):
             calls["collect"] += 1
             self.assertEqual(prompt, "普通任务")
             return ("ok", "同步答案")
@@ -1065,7 +1065,9 @@ class SessionHelperTest(unittest.TestCase):
                 busy_sent = list(ws.sent)
                 fake.idle = True
                 deadline = asyncio.get_running_loop().time() + 1.5
-                while asyncio.get_running_loop().time() < deadline and len(ws.sent) < 2:
+                while asyncio.get_running_loop().time() < deadline and not any(
+                    s["meta"]["state"] == "processed" for s in ws.sent
+                ):
                     await asyncio.sleep(0.05)
                 task.cancel()
                 try:
@@ -1131,7 +1133,9 @@ class SessionHelperTest(unittest.TestCase):
                 busy_sent = list(ws.sent)
                 fake.idle = True
                 deadline = asyncio.get_running_loop().time() + 1.5
-                while asyncio.get_running_loop().time() < deadline and len(ws.sent) < 2:
+                while asyncio.get_running_loop().time() < deadline and not any(
+                    s["meta"]["state"] == "processed" for s in ws.sent
+                ):
                     await asyncio.sleep(0.05)
                 task.cancel()
                 try:

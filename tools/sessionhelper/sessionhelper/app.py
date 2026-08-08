@@ -605,10 +605,21 @@ class SessionHelper:
                     if injected_sent:
                         return
                     injected_sent = True
-                    future = asyncio.run_coroutine_threadsafe(
-                        ws.send(json.dumps(self.delivery_ack(delivery_id, "injected"), ensure_ascii=False)), loop
-                    )
-                    future.result(timeout=5)
+                    coro = ws.send(json.dumps(self.delivery_ack(delivery_id, "injected"), ensure_ascii=False))
+                    try:
+                        current = asyncio.get_running_loop()
+                    except RuntimeError:
+                        current = None
+                    if current is loop:
+                        # 在事件循环线程被同步调用(adapter 无 handle_delivery→process_inbound_message
+                        # 走 handle+on_injected 分支,on_injected 直接在 loop 上跑):run_coroutine_threadsafe
+                        # +future.result 会自死锁(阻塞 loop 等一个只有 loop 能跑的 send)。改非阻塞调度;
+                        # 保序靠 worker 在 finish(await to_thread)处让出,injected 先于 processed 落。
+                        loop.create_task(coro)
+                    else:
+                        # 从 worker 线程(handle_delivery 内 to_thread)调用:阻塞等 injected 落再返,
+                        # 保证 injected ACK 先于 handle 结果/processed。
+                        asyncio.run_coroutine_threadsafe(coro, loop).result(timeout=5)
 
                 await self.process_inbound_message(
                     ws, env, raise_adapter_errors=True, on_injected=acknowledge_injected
@@ -624,7 +635,10 @@ class SessionHelper:
                 busy = False
                 if self.cfg.mode == "cli" and hasattr(self.adapter, "is_idle"):
                     try:
-                        busy = not bool(await asyncio.to_thread(self.adapter.is_idle))
+                        # 同步读:捕获失败发生时刻的 idle 态。await/to_thread 会让出事件循环,
+                        # 期间并发的 idle→True 翻转(CLI 刚恢复)会把"注入时 CLI 忙"的瞬时失败
+                        # 误判为 busy=False→终态 failed 并 finish 掉该件(丢投递,不重试)。
+                        busy = not bool(self.adapter.is_idle())
                     except Exception:
                         busy = False
                 if busy:
