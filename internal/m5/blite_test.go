@@ -4,6 +4,7 @@ package m5
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -251,7 +252,7 @@ func TestB12_JournalTailCorruption(t *testing.T) {
 	if len(entries) < 1 {
 		t.Fatal("B12: valid entries before corruption should be returned")
 	}
-	if !strings.Contains(err.Error(), "ErrJournalBad") && !strings.Contains(err.Error(), "m5: journal tail corrupt") {
+	if !errors.Is(err, ErrJournalBad) {
 		t.Fatalf("B12: wrong error type: %v", err)
 	}
 }
@@ -370,5 +371,53 @@ func TestGCCheckpointRetention(t *testing.T) {
 
 	if _, err := os.Stat(filepath.Join(s.checkpointDir(), sha)); err != nil {
 		t.Fatalf("reachable checkpoint should survive GC: %v", err)
+	}
+}
+
+// ── drain marker (§1.1 N-3) ───────────────────────────────────────────
+
+func TestDrainMarkerLifecycle(t *testing.T) {
+	dir := testDir(t)
+	s := New(dir)
+	if err := s.Lock(); err != nil {
+		t.Fatal(err)
+	}
+	defer s.Unlock()
+
+	// drain writes marker with parseable unix ts (rename+fsync path)
+	if err := s.drain("sess1"); err != nil {
+		t.Fatalf("drain: %v", err)
+	}
+	data, err := os.ReadFile(s.drainPath("sess1"))
+	if err != nil {
+		t.Fatalf("marker missing after drain: %v", err)
+	}
+	if strings.TrimSpace(string(data)) == "" {
+		t.Fatal("marker empty")
+	}
+
+	// clearDrain removes it (new generation accepts tasks again)
+	s.clearDrain("sess1")
+	if _, err := os.Stat(s.drainPath("sess1")); !os.IsNotExist(err) {
+		t.Fatal("marker still present after clearDrain")
+	}
+}
+
+func TestDrainFailClosed(t *testing.T) {
+	dir := testDir(t)
+	s := New(dir)
+	if err := s.Lock(); err != nil {
+		t.Fatal(err)
+	}
+	defer s.Unlock()
+
+	// Make sessions/ a regular file so writeAtomic(MkdirAll) must fail —
+	// drain error must propagate (§5⑤ no silent skip of the ordering step).
+	sessPath := filepath.Join(dir, "sessions")
+	if err := os.WriteFile(sessPath, []byte("block"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.drain("sess1"); err == nil {
+		t.Fatal("drain must fail-closed when marker cannot be written")
 	}
 }

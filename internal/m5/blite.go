@@ -114,12 +114,25 @@ type CheckpointPayload struct {
 	CheckpointAt int64 `json:"checkpoint_at"` // unix seconds
 }
 
-// SHA256 returns the content-addressed id of the payload (JCS RFC 8785 via shared internal/jcs).
-func (p CheckpointPayload) SHA256() string {
-	b, err := jcs.Canonicalize(p)
+// canonicalJSON serializes the payload to JCS canonical form: encoding/json
+// first (struct → JSON text), then jcs.CanonicalizeJSON re-parse + canonicalize
+// (shared jcs intentionally rejects Go structs — JSON-value types only).
+// Payload fields are strings/int64 only — no floats, JCS-safe.
+func (p CheckpointPayload) canonicalJSON() []byte {
+	raw, err := json.Marshal(p)
+	if err != nil {
+		panic(fmt.Sprintf("m5: marshal checkpoint payload: %v", err))
+	}
+	b, err := jcs.CanonicalizeJSON(raw)
 	if err != nil {
 		panic(fmt.Sprintf("m5: JCS canonicalize: %v", err))
 	}
+	return b
+}
+
+// SHA256 returns the content-addressed id of the payload (JCS RFC 8785 via shared internal/jcs).
+func (p CheckpointPayload) SHA256() string {
+	b := p.canonicalJSON()
 	h := sha256.Sum256(b)
 	return fmt.Sprintf("%x", h)
 }
@@ -136,6 +149,9 @@ func (s *Supervisor) journalPath() string   { return filepath.Join(s.dir, "journ
 func (s *Supervisor) checkpointDir() string { return filepath.Join(s.dir, "checkpoints") }
 func (s *Supervisor) currentPath(session string) string {
 	return filepath.Join(s.dir, "sessions", session+".current")
+}
+func (s *Supervisor) drainPath(session string) string {
+	return filepath.Join(s.dir, "sessions", session+".draining")
 }
 
 // ── atomic file helpers ────────────────────────────────────────────────
@@ -349,10 +365,7 @@ func lastOpenIntent(entries []JournalEntry, session string) *JournalEntry {
 // writeCheckpoint serializes payload, writes to checkpoints/<sha>,
 // and returns the sha256 id.
 func (s *Supervisor) writeCheckpoint(p CheckpointPayload) (string, error) {
-	b, err := jcs.Canonicalize(p)
-	if err != nil {
-		return "", err
-	}
+	b := p.canonicalJSON()
 	sha := p.SHA256()
 	path := filepath.Join(s.checkpointDir(), sha)
 	// Checkpoint is immutable — write only if not exists
@@ -532,6 +545,7 @@ func (s *Supervisor) Restart(session string, newBinary string, args []string, en
 		PidFd:      pidFd,
 	}
 	s.sessions[session] = ss
+	s.clearDrain(session)
 
 	s.appendJournal(JournalEntry{OpID: opID, Intent: "restart", Target: session, Phase: PhaseDone})
 	_ = cp
@@ -588,11 +602,36 @@ func (s *Supervisor) Replace(session string, newBinary string, args []string, en
 		PidFd:      pidFd,
 	}
 	s.sessions[session] = newSS
+	s.clearDrain(session)
 
 	// Update current pointer
 	s.updateCurrent(session, sha)
 	s.appendJournal(JournalEntry{OpID: opID, Intent: "replace", Target: session, Phase: PhaseDone})
 	return nil
+}
+
+// ── drain (§1.1 N-3: stop accepting new tasks before SIGTERM) ────────
+
+// drain writes the per-session drain marker sessions/<name>.draining —
+// the supervisor-side observable of the §1.1 drain step. The dispatch layer
+// (coordinator soft gate / CLI wrapper) polls this marker to cut new-task
+// intake race-free before SIGTERM lands; the marker exists because the
+// supervisor itself owns no task-intake channel to close.
+// Storage follows the §3 spec (rename+fsync via writeAtomic).
+// Failure is fail-closed: a silently skipped drain re-opens the race the
+// ordering step exists to close (§5⑤ no silent degradation).
+func (s *Supervisor) drain(session string) error {
+	marker := []byte(fmt.Sprintf("%d\n", time.Now().Unix()))
+	if err := s.writeAtomic(s.drainPath(session), marker); err != nil {
+		return fmt.Errorf("drain: session=%s: %w", session, err)
+	}
+	return nil
+}
+
+// clearDrain removes the drain marker once a fresh process is started and
+// probed — the new generation accepts tasks again.
+func (s *Supervisor) clearDrain(session string) {
+	os.Remove(s.drainPath(session))
 }
 
 // ── stop process (§1.1: drain→SIGTERM→bounded→SIGKILL+verify) ────────
@@ -625,8 +664,10 @@ func (s *Supervisor) stopProcess(session string) error {
 			ErrPidReuse, session, tuple.PID, current, tuple)
 	}
 
-	// N-3: drain â stop accepting new tasks before SIGTERM (Â§1.1)
-	s.drain(session)
+	// N-3: drain — stop accepting new tasks before SIGTERM (§1.1); fail-closed
+	if err := s.drain(session); err != nil {
+		return err
+	}
 
 	// SIGTERM
 	if err := unixKill(pidFd, unixSIGTERM); err != nil {
