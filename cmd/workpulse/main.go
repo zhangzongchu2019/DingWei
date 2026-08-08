@@ -32,6 +32,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/config"
 	"github.com/zhangzongchu2019/dingwei/internal/coordination"
+	"github.com/zhangzongchu2019/dingwei/internal/fcs"
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
@@ -123,9 +124,22 @@ func run(logger *slog.Logger) error {
 	prefixHub.System = schedulerSvc
 	scheduleSvc := schedule.New(st, clock.Real{}, nil)
 	scheduleSvc.Coordinator = schedulerSvc
-	feishuGateway, feishuReceiver, err := buildFeishuGateway(ctx, logger, st, bs)
-	if err != nil {
-		return err
+	var feishuGateway feishu.Gateway
+	var feishuReceiver feishu.Receiver
+	if rpcURL := strings.TrimSpace(os.Getenv("FCS_RPC_URL")); rpcURL != "" {
+		hubID, _ := os.Hostname()
+		if strings.TrimSpace(hubID) == "" {
+			hubID = "hub-local"
+		}
+		logger.Info("fcs mode: remote rpc", "url", rpcURL, "hub_id", hubID)
+		service := fcs.NewRPCClient(rpcURL, nil)
+		feishuGateway = fcs.NewHubGateway(service)
+		feishuReceiver = fcs.NewHubReceiver(service, hubID)
+	} else {
+		feishuGateway, feishuReceiver, err = buildFeishuGateway(ctx, logger, st, bs)
+		if err != nil {
+			return err
+		}
 	}
 	adm.Collector = collectorOrNil(feishuGateway)
 	if channels, err := st.ListBotChannels(ctx); err == nil {
@@ -164,9 +178,6 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.HandleTerminalViewPage)
 	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.HandleTerminalViewCookie)
 	mux.HandleFunc("/view/{sessionName}/{rest...}", prefixHub.HandleViewSubPath) // 新 view 子路径(events/input/status)→ 反代 View 服务
-	if strings.EqualFold(strings.TrimSpace(os.Getenv("WP_TERMINAL_MOCK_UNLOCK")), "true") {
-		mux.HandleFunc("POST /api/terminal/mock-unlock", prefixHub.HandleTerminalMockUnlock)
-	}
 	mux.HandleFunc("GET /links/{ownerKey}", prefixHub.HandleOwnerLinksPage)
 	mux.HandleFunc("GET /dl/{file}", provisionDownload)
 
@@ -176,6 +187,11 @@ func run(logger *slog.Logger) error {
 	internalMux.HandleFunc("GET /internal/view/{session}/events", prefixHub.HandleInternalViewEvents)
 	internalMux.HandleFunc("POST /internal/view/authorize", prefixHub.HandleInternalViewAuthorize)
 	internalMux.HandleFunc("POST /internal/view/{session}/input", prefixHub.HandleInternalViewInput)
+	internalMux.HandleFunc("POST /internal/view/{session}/interrupt", prefixHub.HandleInternalViewInterrupt)
+	internalMux.HandleFunc("POST /internal/view/{session}/cancel", prefixHub.HandleInternalViewCancel)
+	internalMux.HandleFunc("POST /internal/view-v2/{session}/input", prefixHub.HandleInternalViewV2Input)
+	internalMux.HandleFunc("POST /internal/view-v2/{session}/cancel", prefixHub.HandleInternalViewV2Cancel)
+	internalMux.HandleFunc("POST /internal/view-v2/{session}/interrupt", prefixHub.HandleInternalViewV2Interrupt)
 	if strings.EqualFold(strings.TrimSpace(os.Getenv("WP_DEBUG_HOLD_LOCK")), "true") {
 		internalMux.HandleFunc("POST /debug/hold-lock", prefixHub.HandleDebugHoldLock)
 		internalMux.HandleFunc("GET /debug/lock-stats", prefixHub.HandleDebugLockStats)
@@ -731,6 +747,12 @@ func handleFeishuWebhook(ctx context.Context, logger *slog.Logger, repo store.Re
 	msg, err := feishu.WebhookMessageFromPayload(bot.ID, data)
 	if err != nil {
 		return false, err
+	}
+	// Authentication provenance is derived only from checks performed by this
+	// ingress adapter. Payload fields can never promote their own trust level.
+	msg.IngressProvenance = model.IngressUntrusted
+	if strings.TrimSpace(bot.VerificationToken) != "" || strings.TrimSpace(bot.EncryptKey) != "" {
+		msg.IngressProvenance = model.IngressWebhookVerified
 	}
 	if err := upsertInboundEntity(ctx, repo, msg); err != nil {
 		return false, err

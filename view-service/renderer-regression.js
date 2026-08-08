@@ -1,32 +1,45 @@
 const { chromium } = require('playwright');
 const assert = require('assert');
-const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer.html';
+const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-canary-sse.html';
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
     for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
       const page = await browser.newPage({ viewport });
+      await page.route('**/status', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        session: 'fixture-dev55-2642', state: 'idle', readonly: true, can_write: false,
+        owner: 'fixture', model: 'fixture-model', cost_total: 0, cost_last: 0, turns: 0,
+      }) }));
+      await page.route('**/events', route => route.fulfill({ status: 200, contentType: 'text/event-stream', body: '' }));
       await page.goto(`${baseUrl}?mock=1&unlocked=1`, { waitUntil: 'domcontentloaded' });
       await page.evaluate(() => {
-        clearTimeout(mockEventTimer);
         clearInterval(statusTimer);
       });
+      assert.strictEqual(await page.locator('#humanInput').isDisabled(), true,
+        'URL parameters must not grant write access');
       await page.evaluate(() => {
         resetConversation();
         handleIncomingEvent({ kind: 'user_input', text: '排队中的外部任务\n第二行\n第三行', data: { lifecycle: 'queued' }, delivery_id: 'd-wait', turn_id: '', cursor: '1' });
       });
       assert.strictEqual(await page.locator('#waitingArea').isVisible(), true);
+      assert.strictEqual(await page.locator('.waiting-title').count(), 0);
       assert.strictEqual(await page.locator('#waitingList > .waiting-item').count(), 1);
       assert.match(await page.locator('#waitingList').innerText(), /排队中的外部任务/);
       assert.doesNotMatch(await page.locator('#waitingList').innerText(), /等候接纳/);
       assert.strictEqual(await page.locator('#waitingList > .waiting-item').evaluate(node =>
-        getComputedStyle(node, '::before').display), 'inline');
+        getComputedStyle(node, '::before').display), 'inline-block');
+      assert.strictEqual(await page.locator('#waitingList > .waiting-item').evaluate(node =>
+        getComputedStyle(node, '::before').animationName), 'dw-waiting-spin');
       assert.strictEqual(await page.locator('#waitingList > .waiting-item').evaluate(node =>
         getComputedStyle(node).whiteSpace), 'nowrap');
       assert.strictEqual(await page.locator('#waitingList > .waiting-item').evaluate(node =>
         getComputedStyle(node).textOverflow), 'ellipsis');
       assert.ok(await page.locator('#waitingList > .waiting-item').evaluate(node => node.getBoundingClientRect().height < 50));
+      await page.evaluate(() => setStatus('running'));
+      assert.strictEqual(await page.locator('#taskProgress').isVisible(), true);
+      await page.evaluate(() => setStatus('idle'));
+      assert.strictEqual(await page.locator('#taskProgress').isVisible(), false);
       await page.evaluate(() => {
         for (let i = 0; i < 20; i += 1) {
           handleIncomingEvent({ kind: 'user_input', text: `排队任务 ${i}`, data: { lifecycle: 'queued' },

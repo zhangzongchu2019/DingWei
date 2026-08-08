@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DingWei Event View Mock</title>
+  <title>DingWei Event View</title>
   <style>
     :root {
       color-scheme: light;
@@ -139,6 +139,101 @@
       font-size: 13px;
       white-space: nowrap;
     }
+    .source-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      margin-right: 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 16px;
+      background: var(--accent, #2f6fdd);
+      color: #fff;
+      vertical-align: middle;
+    }
+    .source-badge--trusted { background: #1a7f4b; }
+    .card-stage-footer {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted, #888);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .card-footnote {
+      font-size: 11px;
+      color: var(--muted, #888);
+      border: 1px dashed var(--muted, #888);
+      border-radius: 4px;
+      padding: 0 4px;
+    }
+    .cancellable-tag {
+      font-size: 11px;
+      color: #b8860b;
+      border: 1px solid #b8860b;
+      border-radius: 4px;
+      padding: 0 4px;
+      margin-left: 6px;
+    }
+    .waiting-stage { margin-left: 6px; font-size: 11px; color: var(--muted, #888); }
+
+    /* C2 待提交区删除/中断确认 */
+    .waiting-cancel-btn {
+      font-size: 11px; line-height: 1; padding: 1px 6px; margin-left: 6px;
+      border: 1px solid var(--danger, #c00); color: var(--danger, #c00);
+      background: transparent; border-radius: 4px; cursor: pointer;
+    }
+    .waiting-cancel-btn:disabled { opacity: .5; cursor: default; }
+    .c2-note { margin-left: 6px; font-size: 11px; color: var(--muted, #888); }
+
+    /* C3 责任方任务看板 */
+    .taskboard-handle {
+      position: fixed; right: 0; top: 40%; z-index: 40;
+      writing-mode: vertical-rl; padding: 10px 6px;
+      border: 1px solid var(--line, #444); border-right: none;
+      border-radius: 8px 0 0 8px;
+      background: var(--bg-elev, #1e1e24); color: var(--fg, #ddd);
+      cursor: pointer; font-size: 13px;
+    }
+    .taskboard-panel {
+      position: fixed; right: 0; top: 0; bottom: 0; width: 320px; z-index: 39;
+      background: var(--bg-elev, #1e1e24); border-left: 1px solid var(--line, #444);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .taskboard-panel[hidden] { display: none; }
+    .taskboard-head { padding: 10px 12px; border-bottom: 1px solid var(--line, #444); }
+    .taskboard-title { font-weight: 600; font-size: 14px; }
+    .taskboard-updated { font-size: 11px; color: var(--muted, #888); margin-top: 4px; }
+    .taskboard-updated.stale { color: #b8860b; }
+    .taskboard-error { color: var(--danger, #d66); font-size: 13px; }
+    .taskboard-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+    .task-card { border: 1px solid var(--line, #444); border-radius: 8px; padding: 8px; background: var(--bg, #16161c); }
+    .task-card-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .task-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+    .task-dot.status-todo { background: #888; }
+    .task-dot.status-in_progress { background: #2f6fdd; }
+    .task-dot.status-blocked { background: #d66; }
+    .task-dot.status-in_review { background: #b8860b; }
+    .task-dot.status-done { background: #1a7f4b; }
+    .task-id { font-weight: 600; font-size: 13px; }
+    .task-title { font-size: 12px; color: var(--fg, #ddd); flex: 1; }
+    .task-owner { font-size: 11px; color: var(--muted, #888); }
+    .task-card-body { margin-top: 6px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .task-status-line { color: var(--muted, #888); font-size: 11px; }
+    .task-bar { height: 4px; border-radius: 2px; background: var(--line, #444); overflow: hidden; }
+    .task-bar-fill { height: 100%; background: var(--accent, #2f6fdd); }
+    .task-blockers { color: #d66; font-size: 11px; }
+    .task-deps { font-size: 11px; color: var(--accent, #2f6fdd); cursor: pointer; }
+    .task-note { font-size: 11px; color: var(--fg, #ccc); white-space: pre-wrap; }
+    .task-evidence { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+    .task-evidence-text { color: var(--muted, #888); word-break: break-all; flex: 1; }
+    .task-evidence-copy { font-size: 10px; padding: 1px 6px; border: 1px solid var(--line, #444); border-radius: 4px; background: transparent; color: var(--fg, #ddd); cursor: pointer; }
+    .task-card.status-blocked { border-color: #d66; }
+    @media (max-width: 768px) {
+      .taskboard-panel { width: 100%; top: auto; height: 60%; border-left: none; border-top: 1px solid var(--line, #444); }
+      .taskboard-handle { top: auto; bottom: 40%; writing-mode: horizontal-tb; border-radius: 8px 8px 0 0; border: 1px solid var(--line, #444); border-bottom: none; }
+    }
+
     .unlock-btn {
       height: 32px;
       border-radius: 6px;
@@ -152,6 +247,7 @@
       cursor: pointer;
       white-space: nowrap;
     }
+    .unlock-btn[hidden] { display: none; }
     .controls {
       display: flex;
       align-items: center;
@@ -219,14 +315,13 @@
       flex: 0 0 auto;
       margin-top: 10px;
       max-height: min(35vh, 280px);
-      border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--line));
+      border: 1px dashed var(--line);
       border-radius: 10px;
-      background: color-mix(in srgb, var(--accent) 5%, var(--panel));
+      background: color-mix(in srgb, var(--muted) 12%, var(--panel));
       overflow-y: auto;
       overscroll-behavior: contain;
     }
     .waiting-area[hidden] { display: none; }
-    .waiting-title { padding: 8px 12px; color: var(--muted); font-size: 12px; font-weight: 700; }
     .waiting-item {
       padding: 10px 12px;
       border-top: 1px solid var(--line);
@@ -234,7 +329,46 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .waiting-item::before { content: '⏳'; margin-right: 6px; color: var(--muted); }
+    .waiting-item:first-child { border-top: none; }
+    .waiting-item::before {
+      content: '';
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      margin-right: 8px;
+      vertical-align: -1px;
+      border: 2px solid color-mix(in srgb, var(--muted) 35%, transparent);
+      border-top-color: var(--muted);
+      border-radius: 50%;
+      animation: dw-waiting-spin .7s linear infinite;
+    }
+    @keyframes dw-waiting-spin { to { transform: rotate(360deg); } }
+    .task-progress {
+      flex: 0 0 auto;
+      height: 3px;
+      width: 100%;
+      overflow: hidden;
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      border-radius: 2px;
+    }
+    .task-progress[hidden] { display: none; }
+    .task-progress::before {
+      content: '';
+      display: block;
+      height: 100%;
+      width: 40%;
+      background: var(--accent);
+      border-radius: 2px;
+      animation: dw-task-indeterminate 1.1s ease-in-out infinite;
+    }
+    @keyframes dw-task-indeterminate {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(250%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .waiting-item::before { animation: none; }
+      .task-progress::before { animation-duration: 2.2s; }
+    }
     .event-card {
       flex: 0 0 auto;      /* 关键:不被 flex 压缩,事件保持原高 → 溢出由 timeline 滚动,而不是压扁内容 */
       display: block;
@@ -679,9 +813,9 @@
         <span>⚠️ 事件流连接不上——可能打开了太多 web-view 页窗口（Chrome 每个域名最多 6 个连接），请关闭多余窗口后点【重试】</span>
         <button class="text-btn" id="streamRetryBtn" type="button">重试</button>
       </section>
+      <div class="task-progress" id="taskProgress" hidden aria-hidden="true"></div>
       <section class="timeline" id="timeline" aria-live="polite"></section>
       <section class="waiting-area" id="waitingArea" aria-label="等待接纳的消息" aria-live="polite" hidden>
-        <div class="waiting-title">等待接纳</div>
         <div id="waitingList"></div>
       </section>
     </main>
@@ -733,6 +867,7 @@
     const copyUnlockBtn = document.getElementById('copyUnlockBtn');
     const sessionDot = document.getElementById('sessionDot');
     const sessionState = document.getElementById('sessionState');
+    const taskProgress = document.getElementById('taskProgress');
     const memStat = document.getElementById('memStat');
     const diskStat = document.getElementById('diskStat');
     const loadStat = document.getElementById('loadStat');
@@ -742,26 +877,128 @@
     const turnCost = document.getElementById('turnCost');
     const totalCost = document.getElementById('totalCost');
 
+    // VS 代理端点自定位 scoped base(M1):保留 /view 前全部 pathname 前缀(/dingwei/view/<sess>/ → /dingwei/view/<sess>),
+    // 未命中(根直出/nginx)→''=根相对。VS _serve_file 字面量改写降为冗余(本处不再含 ''/ep'' 引号字面量,不会双前缀)。
+    const API_BASE = (location.pathname.match(/^(.*?\/view\/[^/]+)/) || [null, ''])[1];
+    const apiEp = p => API_BASE + '/' + p;
     const API = {
-      events: '/events',
-      input: '/input',
-      interrupt: '/interrupt',
-      status: '/status',
+      events: apiEp('events'),
+      input: apiEp('input'),
+      interrupt: apiEp('interrupt'),
+      control: apiEp('control'),
+      status: apiEp('status'),
+      page: apiEp('page'),
+      tasks: '/tasks',  // 全局投影端点(C3:VS_TASKS_FILE 快照,非 session 子路径;生产 VS 尚无 handler)——不 scoped,勿拼 base
     };
-    const params = new URLSearchParams(location.search);
-    const useMockApi = params.get('mock') === '1' || location.protocol === 'file:';
-
     let eventSource = null;
     let eventSourceGeneration = 0;
     let streamConnectTimer = null;
     const STREAM_CONNECT_GRACE_MS = 7500;
-    let mockEventTimer = null;
     let statusTimer = null;
     let rendered = 0;
     const messageBuffers = new Map();
     const messageNodes = new Map();
     const turnGroups = new Map();
     const waitingDeliveries = new Map();
+    // ── C2 control 地基(待提交区删除 + 中断确认)──
+    // 传输层:默认真接 VS POST /control(VS 85c2082 走甲最小端点,字段逐字 {kind,message_id,delivery_id},
+    // 仅 kind=cancel;VS 恒 200 {"ok":bool},ok=false=未受理/已注入/终态);window.C2_CONTROL_TRANSPORT 可注入覆盖(测试)。
+    // 诚实语义(G-HONEST):VS 未受理→明说"未发出";受理 ok=true→"已请求";条目消失只由事件流 cancelled 驱动。
+    const C2_ACK_TIMEOUT_MS = (typeof window !== 'undefined' && window.C2_ACK_TIMEOUT_MS) || 10000;  // 测试可经 window.C2_ACK_TIMEOUT_MS 覆盖
+    const c2State = { interrupt: null };  // interrupt: {state:'requested', since, timer} | null
+    // 真 transport:renderer→VS POST /control。非 cancel 的 kind(interrupt)不支持→sent:false 让调用方回退 legacy;
+    // 成功时只回 VS 响应体({ok:bool}),由 c2SendControl 统一包装(与注入 mock 同形)。
+    const c2VsTransport = {
+      async send(msg) {
+        if (msg.kind !== 'cancel') return { sent: false, reason: 'kind_not_supported' };
+        try {
+          const res = await fetch(API.control, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 'cancel', message_id: msg.message_id || '', delivery_id: msg.delivery_id || '' }),
+          });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) return { sent: false, reason: 'http_' + res.status };
+          return body;
+        } catch (err) {
+          return { sent: false, reason: String(err && err.message || err) };
+        }
+      },
+    };
+    function c2Transport() {
+      return (typeof window !== 'undefined' && window.C2_CONTROL_TRANSPORT) || c2VsTransport;
+    }
+    async function c2SendControl(msg) {
+      const t = c2Transport();
+      if (!t || typeof t.send !== 'function') return { sent: false, reason: 'no_transport' };
+      try {
+        const r = await t.send(msg);
+        if (r && r.sent === false) return r;  // transport 级拒绝(kind 不支持/HTTP 错/网络错)原样上传
+        return { sent: true, ack: r };
+      } catch (err) {
+        return { sent: false, reason: String(err && err.message || err) };
+      }
+    }
+    function c2Note(text) { return `<span class="c2-note">${escapeHtml(text)}</span>`; }
+    // 待提交区删除=发起 cancel 请求;条目的真正消失只由事件流 stage=cancelled 驱动(单一事实源),绝不本地静默删(Q4 未决前的 fail-closed 选择)。
+    async function c2RequestCancel(waitKey, entry) {
+      const norm = entry.event?._norm || {};
+      const btn = entry.node.querySelector('.waiting-cancel-btn');
+      if (btn) btn.disabled = true;
+      const note = entry.node.querySelector('.c2-note');
+      if (note) note.remove();
+      entry.node.insertAdjacentHTML('beforeend', c2Note('取消请求中…'));
+      const r = await c2SendControl({ kind: 'cancel', message_id: norm.messageId || null, delivery_id: norm.deliveryId || waitKey });
+      const cur = entry.node.querySelector('.c2-note');
+      if (cur) cur.remove();
+      if (!r.sent) {
+        entry.node.insertAdjacentHTML('beforeend', c2Note('取消未发出:VS 未受理(' + (r.reason || '链路异常') + ')'));
+        if (btn) btn.disabled = false;
+      } else if (r.ack && r.ack.ok === false) {
+        // VS 恒 200 {ok:bool}:ok=false=未受理(非注入前 pending:已注入/终态/错址)
+        entry.node.insertAdjacentHTML('beforeend', c2Note('取消未生效(条目已注入或终态)'));
+        if (btn) btn.disabled = false;
+      } else {
+        entry.node.insertAdjacentHTML('beforeend', c2Note('取消已请求,待确认'));
+      }
+    }
+    // 中断:立即"已请求";流上 control/interrupt 事件到达(窗口内)升级"中断已发出";超时无回执→"中断未确认"。
+    function c2RequestInterrupt() {
+      if (c2State.interrupt && c2State.interrupt.state === 'requested') return;  // 防重复
+      const req = { state: 'requested', since: Date.now(), timer: null };
+      c2State.interrupt = req;
+      handleIncomingEvent({ kind: 'control', text: '已请求中断', data: { c2: 'interrupt_requested' } });
+      req.timer = setTimeout(() => {
+        if (c2State.interrupt === req && req.state === 'requested') {
+          req.state = 'unconfirmed';
+          handleIncomingEvent({ kind: 'control', text: '中断未确认(无回执)', data: { c2: 'interrupt_unconfirmed' } });
+        }
+      }, C2_ACK_TIMEOUT_MS);
+      c2SendControl({ kind: 'interrupt' }).then(r => {
+        if (!r.sent && c2State.interrupt === req && req.state === 'requested') {
+          // 无传输:回退 legacy /interrupt 路由(基线路径),但确认语义不变——POST 200≠已发出,升级仍只认流上事件
+          interruptTurn().catch(err => handleIncomingEvent({ kind: 'error', text: err.message, data: { code: 'interrupt_failed' } }));
+        }
+      });
+    }
+    // 流上 control 事件→若窗口内有 pending 中断请求,升级(精确 control_id 关联待 Q2,地基用时间窗)
+    function c2MaybeConfirmInterrupt(ev) {
+      const req = c2State.interrupt;
+      if (req && req.state === 'requested') {
+        req.state = 'confirmed';
+        clearTimeout(req.timer);
+        c2State.interrupt = null;
+      }
+    }
+    // 测试钩子(回归套件注入 mock transport / 驱动状态)
+    window.__c2 = {
+      setTransport(t) { window.C2_CONTROL_TRANSPORT = t; },
+      requestCancel: c2RequestCancel,
+      requestInterrupt: c2RequestInterrupt,
+      maybeConfirm: c2MaybeConfirmInterrupt,
+      state: c2State,
+      waitingDeliveries,
+    };
     const BOTTOM_THRESHOLD_PX = 50;
     const REPLAY_QUIET_MS = 250;
     const REPLAY_HARD_LIMIT_MS = 1000;
@@ -775,20 +1012,29 @@
       cost: 0,
       turnCost: 0,
       sessionState: 'idle',
-      sessionName: 'demo-1a2b',
-      owner: 'zzc · zzc-dev55',
-      model: 'mock-model',
-      readonly: params.get('unlocked') !== '1',
-      unlockCode: '1460',
-      access: params.get('unlocked') === '1' ? '可写' : '只读',
-      mem: { used: 9.8, total: 32, unit: 'GB' },
-      disk: { used: 142, total: 512, unit: 'GB' },
-      load: 0.72,
+      sessionName: '',
+      owner: '',
+      model: '',
+      readonly: true,
+      unlockCode: '',
+      access: '只读',
+      mem: { used: 0, total: 0, unit: '' },
+      disk: { used: 0, total: 0, unit: '' },
+      load: 0,
       lastTurnCostTotal: 0,
       statusDatetimeMs: 0,
       statusDatetimeReceivedAt: 0,
       statusDatetimeText: '',
+      authMode: 'hub_viewer_v1',
     };
+    let pageIdentity = null;
+    let pageIdentityChannel = null;
+    let pageIdentityFallbackApplied = false;
+    let pageIdentityUnique = false;
+    let pageIdentityUniqueTimer = null;
+    let pageIdentityEnsurePromise = null;
+    const pageInstanceNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
+      value => value.toString(16).padStart(2, '0')).join('');
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -797,6 +1043,10 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+    }
+    function newRequestId() {
+      return Array.from(crypto.getRandomValues(new Uint8Array(16)),
+        value => value.toString(16).padStart(2, '0')).join('');
     }
 
     function setStatus(value) {
@@ -814,6 +1064,7 @@
       }[value] || value;
     }
     function updateMetrics() {
+      taskProgress.hidden = stats.sessionState !== 'running';
       const stateClass = stats.readonly ? 'readonly' : (['running', 'idle', 'disconnected'].includes(stats.sessionState) ? stats.sessionState : 'idle');
       sessionDot.className = `status-dot ${stateClass}`;
       sessionState.textContent = stats.readonly ? '只读' : labelForSessionState(stats.sessionState);
@@ -856,20 +1107,43 @@
       headerSessionName.textContent = stats.sessionName;
       headerOwner.textContent = `归属 ${stats.owner}`;
       if (stats.readonly) {
-        lockBadge.className = 'lock-badge readonly';
-        lockBadge.textContent = '🔒 只读';
-        lockHelp.textContent = '🔒 只读模式 · 输入被锁';
-        copyUnlockBtn.hidden = false;
-        copyUnlockBtn.textContent = '复制解锁指令';
-        humanInput.disabled = true;
-        humanInput.placeholder = '只读模式。点击头部按钮复制 #unlock 指令，发给机器人后解锁输入。';
+        if (lockBadge.className !== 'lock-badge readonly') lockBadge.className = 'lock-badge readonly';
+        if (lockBadge.textContent !== '🔒 只读') lockBadge.textContent = '🔒 只读';
+        if (lockHelp.textContent !== '🔒 只读模式 · 输入被锁') lockHelp.textContent = '🔒 只读模式 · 输入被锁';
+        if (copyUnlockBtn.hidden) copyUnlockBtn.hidden = false;
+        if (copyUnlockBtn.textContent !== '复制解锁指令') copyUnlockBtn.textContent = '复制解锁指令';
+        setHumanInputDisabled(true);
+        const placeholder = '只读模式。点击头部按钮复制 #unlock 指令，发给机器人后解锁输入。';
+        if (humanInput.placeholder !== placeholder) humanInput.placeholder = placeholder;
       } else {
-        lockBadge.className = 'lock-badge writable';
-        lockBadge.textContent = '🔓 可输入';
-        lockHelp.textContent = '已解锁，8h 无操作自动回收';
-        copyUnlockBtn.hidden = true;
-        humanInput.disabled = false;
-        humanInput.placeholder = '输入消息；Enter 发送，Ctrl/Cmd/Shift+Enter 换行';
+        if (lockBadge.className !== 'lock-badge writable') lockBadge.className = 'lock-badge writable';
+        if (lockBadge.textContent !== '🔓 可输入') lockBadge.textContent = '🔓 可输入';
+        if (lockHelp.textContent !== '已解锁，8h 无操作自动回收') lockHelp.textContent = '已解锁，8h 无操作自动回收';
+        if (!copyUnlockBtn.hidden) copyUnlockBtn.hidden = true;
+        setHumanInputDisabled(false);
+        const placeholder = '输入消息；Enter 发送，Ctrl/Cmd/Shift+Enter 换行';
+        if (humanInput.placeholder !== placeholder) humanInput.placeholder = placeholder;
+      }
+    }
+    function setHumanInputDisabled(disabled) {
+      if (humanInput.disabled === disabled) return;
+      if (disabled && document.activeElement === humanInput) {
+        if (!setHumanInputDisabled.pendingBlur) {
+          setHumanInputDisabled.pendingBlur = true;
+          humanInput.addEventListener('blur', () => {
+            setHumanInputDisabled.pendingBlur = false;
+            if (stats.readonly && !humanInput.disabled) humanInput.disabled = true;
+          }, { once: true });
+        }
+        return;
+      }
+      const focused = document.activeElement === humanInput;
+      const selectionStart = humanInput.selectionStart;
+      const selectionEnd = humanInput.selectionEnd;
+      humanInput.disabled = disabled;
+      if (focused && !disabled) {
+        humanInput.focus();
+        humanInput.setSelectionRange(selectionStart, selectionEnd);
       }
     }
     function isTimelineNearBottom() {
@@ -964,9 +1238,407 @@
       updateMetrics();
     }
 
+    // ── C3 责任方任务看板(右侧折叠浮窗,只读)──
+    const taskBoard = {
+      handle: null, panel: null, listEl: null, headEl: null,
+      data: null, lastGood: null, lastGoodAt: 0,
+      collapsed: sessionStorage.getItem('dw-taskboard-collapsed') !== '0',
+      STALE_MS: 600000,
+    };
+
+    function taskBoardEnsureDom() {
+      if (taskBoard.handle) return;
+      const handle = document.createElement('button');
+      handle.type = 'button';
+      handle.className = 'taskboard-handle';
+      handle.setAttribute('aria-label', '任务看板');
+      const panel = document.createElement('aside');
+      panel.className = 'taskboard-panel';
+      panel.hidden = true;
+      panel.innerHTML = '<div class="taskboard-head"></div><div class="taskboard-list"></div>';
+      document.body.append(handle, panel);
+      taskBoard.handle = handle;
+      taskBoard.panel = panel;
+      taskBoard.headEl = panel.querySelector('.taskboard-head');
+      taskBoard.listEl = panel.querySelector('.taskboard-list');
+      handle.addEventListener('click', event => {
+        event.stopPropagation();
+        taskBoardSetCollapsed(!taskBoard.collapsed);
+      });
+      // 点击主区域即收起,浮层不拦截外部事件
+      document.addEventListener('click', event => {
+        if (!taskBoard.collapsed && !panel.contains(event.target) && event.target !== handle) {
+          taskBoardSetCollapsed(true);
+        }
+      });
+      taskBoardSetCollapsed(taskBoard.collapsed);
+    }
+
+    function taskBoardSetCollapsed(collapsed) {
+      taskBoard.collapsed = collapsed;
+      sessionStorage.setItem('dw-taskboard-collapsed', collapsed ? '1' : '0');
+      taskBoard.panel.hidden = collapsed;
+      taskBoardRenderHandle();
+    }
+
+    function taskBoardActiveCount() {
+      const tasks = (taskBoard.lastGood || taskBoard.data)?.tasks || [];
+      return tasks.filter(t => t.status === 'in_progress' || t.status === 'blocked').length;
+    }
+
+    function taskBoardRenderHandle() {
+      taskBoard.handle.textContent = `📋 任务看板 (${taskBoardActiveCount()})`;
+    }
+
+    const TASK_STATUS_META = {
+      todo: { label: '待办', cls: 'todo' },
+      in_progress: { label: '进行', cls: 'in_progress' },
+      blocked: { label: '阻塞', cls: 'blocked' },
+      in_review: { label: '评审', cls: 'in_review' },
+      done: { label: '完成', cls: 'done' },
+    };
+
+    function taskBoardSortTasks(tasks) {
+      const groupOrder = { a: 0, b: 1, c: 2, cross: 3 };
+      const statusOrder = { blocked: 0, in_progress: 1, in_review: 2, todo: 3, done: 4 };
+      return [...tasks].sort((x, y) =>
+        (groupOrder[x.group] ?? 9) - (groupOrder[y.group] ?? 9) ||
+        (statusOrder[x.status] ?? 9) - (statusOrder[y.status] ?? 9) ||
+        String(y.updated_at || '').localeCompare(String(x.updated_at || '')));
+    }
+
+    function taskBoardIsStale() {
+      // 新鲜度按数据 envelope.updated_at(非拉取时间)
+      const upd = (taskBoard.lastGood || taskBoard.data)?.updated_at;
+      if (!upd) return false;
+      const t = Date.parse(upd);
+      return !Number.isNaN(t) && (Date.now() - t > taskBoard.STALE_MS);
+    }
+
+    async function taskBoardRefresh() {
+      taskBoardEnsureDom();
+      try {
+        const res = await fetch(API.tasks, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data || !Array.isArray(data.tasks)) throw new Error('bad payload');
+        taskBoard.data = data;
+        taskBoard.lastGood = data;
+        taskBoard.lastGoodAt = Date.now();
+      } catch (err) {
+        // 失败保留上次数据(陈旧标记);首次失败显示错误态
+        taskBoard.data = taskBoard.lastGood ? { ...taskBoard.lastGood, __error: String(err.message || err) } : { __error: String(err.message || err), tasks: [] };
+      }
+      taskBoardRender();
+    }
+
+    function taskBoardRender() {
+      taskBoardRenderHandle();
+      const data = taskBoard.data;
+      const head = taskBoard.headEl;
+      const list = taskBoard.listEl;
+      head.textContent = '';
+      list.textContent = '';
+      if (!data || data.__error !== undefined && !data.tasks?.length) {
+        const err = document.createElement('div');
+        err.className = 'taskboard-error';
+        err.textContent = '看板数据暂不可用';
+        head.appendChild(err);
+        return;
+      }
+      const tasks = data.tasks || [];
+      const allDone = tasks.length > 0 && tasks.every(t => t.status === 'done');
+      const stale = !allDone && taskBoardIsStale();
+      const doneCount = tasks.filter(t => t.status === 'done').length;
+      const title = document.createElement('div');
+      title.className = 'taskboard-title';
+      title.textContent = `${data.project || '任务看板'} · ${doneCount}/${tasks.length} 完成`;
+      head.appendChild(title);
+      if (data.updated_at) {
+        const upd = document.createElement('div');
+        upd.className = 'taskboard-updated' + (stale ? ' stale' : '');
+        upd.textContent = `数据更新于 ${data.updated_at}${stale ? '(可能已陈旧)' : ''}`;
+        head.appendChild(upd);
+      }
+      if (data.__error) {
+        const warn = document.createElement('div');
+        warn.className = 'taskboard-updated stale';
+        warn.textContent = '刷新失败,显示上次数据';
+        head.appendChild(warn);
+      }
+      for (const task of taskBoardSortTasks(tasks)) {
+        list.appendChild(taskBoardRenderCard(task, tasks));
+      }
+    }
+
+    function taskBoardRenderCard(task, allTasks) {
+      const meta = TASK_STATUS_META[task.status] || TASK_STATUS_META.todo;
+      const card = document.createElement('div');
+      card.className = `task-card status-${meta.cls}`;
+      card.dataset.taskId = task.task_id || '';
+      const head = document.createElement('div');
+      head.className = 'task-card-head';
+      const dot = document.createElement('span');
+      dot.className = `task-dot status-${meta.cls}`;
+      const idEl = document.createElement('span');
+      idEl.className = 'task-id';
+      idEl.textContent = task.task_id || '?';
+      const titleEl = document.createElement('span');
+      titleEl.className = 'task-title';
+      titleEl.textContent = task.title || '';
+      const ownerEl = document.createElement('span');
+      ownerEl.className = 'task-owner';
+      ownerEl.textContent = task.owner_display || task.owner || '';
+      head.append(dot, idEl, titleEl, ownerEl);
+      card.appendChild(head);
+      const body = document.createElement('div');
+      body.className = 'task-card-body';
+      const statusLine = document.createElement('div');
+      statusLine.className = 'task-status-line';
+      statusLine.textContent = meta.label + (typeof task.progress_pct === 'number' ? ` · ${task.progress_pct}%` : '');
+      body.appendChild(statusLine);
+      if (typeof task.progress_pct === 'number') {
+        const bar = document.createElement('div');
+        bar.className = 'task-bar';
+        const fill = document.createElement('div');
+        fill.className = 'task-bar-fill';
+        fill.style.width = `${Math.max(0, Math.min(100, task.progress_pct))}%`;
+        bar.appendChild(fill);
+        body.appendChild(bar);
+      }
+      if (task.status === 'blocked') {
+        const blk = document.createElement('div');
+        blk.className = 'task-blockers';
+        blk.textContent = '已阻塞';   // 不渲染 raw blockers(防拓扑串),原因走 public_summary(策展)
+        body.appendChild(blk);
+      }
+      const deps = Array.isArray(task.depends_on) ? task.depends_on.filter(Boolean) : [];
+      if (deps.length) {
+        const depEl = document.createElement('div');
+        depEl.className = 'task-deps';
+        depEl.textContent = `依赖:${deps.join(', ')}`;
+        depEl.title = deps.map(d => {
+          const target = allTasks.find(t => t.task_id === d);
+          return target ? `${d}: ${target.title}` : d;
+        }).join('\n');
+        depEl.addEventListener('click', event => {
+          event.stopPropagation();
+          const first = deps[0];
+          const target = taskBoard.listEl.querySelector(`[data-task-id="${CSS.escape(first)}"]`);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+        body.appendChild(depEl);
+      }
+      if (task.public_summary) {
+        const noteEl = document.createElement('div');
+        noteEl.className = 'task-note';
+        noteEl.textContent = task.public_summary;   // 仅 manager 维护的对外摘要
+        body.appendChild(noteEl);
+      }
+      card.appendChild(body);
+      return card;
+    }
+
+    function taskBoardStart() {
+      taskBoardEnsureDom();
+      taskBoardRefresh();
+      setInterval(taskBoardRefresh, 5000);
+    }
+
+    // ── C1 三来源显示:事件规范化(B0 canonical 一等协议,legacy 仅迁移输入)──
+    // canonical: input_posted / delivery_update;legacy: user_input(lifecycle)。
+    // 优先级:canonical 受保护值永远优先,legacy 迁移值仅缺省回填,legacy source 永不带 trusted。
+    // B0 §6:pty_write 与 cli_injected 是 helper_received 后的分支,pty_write(注入未确认)弱于 cli_injected;
+    // 顺序必须 pty_write < cli_injected,否则后到的 pty_write 会把"已注入执行"降级成"注入未确认"
+    const C1_STAGE_ORDER = ['generated', 'hub_received', 'helper_received', 'pty_write', 'cli_injected'];
+    const C1_STAGE_TEXT = {
+      generated: '已入队', queued: '已入队',
+      hub_received: 'hub 已收', helper_received: 'helper 已收',
+      cli_injected: '已注入执行', turn_admitted: '已注入执行', admitted: '已注入执行',
+      pty_write: '已写入终端', busy: '暂不可投递', expired: '投递过期',
+      failed: '失败', cancelled: '已取消',
+    };
+    const C1_STAGE_FOOTER = {
+      generated: '已入队', queued: '已入队',
+      hub_received: 'hub 已收', helper_received: 'helper 已收',
+      cli_injected: '已注入执行', turn_admitted: '已注入执行', admitted: '已注入执行',
+      pty_write: '已写入终端(注入未确认)', busy: '暂不可投递(重试中)', expired: '投递过期',
+      failed: '失败', cancelled: '已取消',
+    };
+    const C1_REASON_TEXT = {
+      target_offline: '目标不在线', queue_full: '队列已满，请稍后重试', timeout: '投递超时',
+      session_unavailable: '会话不在线', page_unauthorized: '写权限失效',
+      service_unavailable: '服务临时不可用', cancelled: '已取消',
+      injection_unconfirmed: '已写入终端(注入未确认)',
+      // A0 §7-amend-1(冻结 @ 6a33540/4fbd4d61):非法 UTF-8=ingress fail-closed 拒收,诚实态文案;code=invalid_utf8 已经理核 §7 冻结文本逐字确认
+      invalid_utf8: '乱码无法识别',
+    };
+    const c1InputCards = new Map();      // messageIdKey -> { card, footer, stageIdx, footnotes:Set }
+    const c1PendingUpdates = new Map();  // messageIdKey -> [norm 更新](卡片未建时缓冲)
+
+    function normalizeEvent(ev) {
+      const data = ev.data || {};
+      const meta = ev.meta || {};
+      const src = (ev.source && typeof ev.source === 'object') ? ev.source : {};
+      // U5:按已协商版本严格二选一。v2=canonical;显式 v1/无版本=legacy 迁移输入。
+      const rawVer = ev.schema_version ?? meta.schema_version ?? '';
+      const isV2 = rawVer === 'delivery.v2' || rawVer === 2 || rawVer === '2';
+      const norm = {
+        messageId: ev.message_id || data.message_id || '',
+        // view_observation 副本自身只有 copy_id;归并/取消寻址用被观察 primary 的 observed_delivery_id
+        deliveryId: ev.observed_delivery_id || data.observed_delivery_id || ev.delivery_id || data.delivery_id || '',
+        copyId: ev.copy_id || data.copy_id || '',
+        turnId: ev.turn_id || data.turn_id || '',
+        sourceKind: '', sourceLabel: '', sourceTrusted: false,
+        stage: '', reason: '', copyKind: '', deliveryMode: '', cancellable: null,
+        text: '', stageIdx: -1, conflict: '',
+      };
+      // canonical 受保护字段
+      norm.sourceKind = src.kind || '';
+      // F3:可信徽标只认规范化 trust_decision(B0 决策层),不采信 raw provenance/attested_by(ingress 侧输入,可伪造);
+      // trust_decision 缺失或 != trusted 一律 fail-closed 不挂徽标
+      norm.sourceTrusted = src.trust_decision === 'trusted';
+      norm.sourceLabel = src.display_name || '';
+      const delivery = (ev.delivery && typeof ev.delivery === 'object') ? ev.delivery : {};
+      // V2 终裁:canonical=delivery.role{primary,copy,control};delivery_mode 已废、无 legacy 兼容(read-only role)
+      norm.deliveryMode = delivery.role || '';
+      norm.copyKind = ev.copy_kind || delivery.copy_kind || '';
+      norm.cancellable = (ev.cancellable === undefined) ? null : Boolean(ev.cancellable);
+      if (isV2) {
+        // U5①:v2 必填缺失或与 legacy 同义值冲突 → schema_conflict,fail-closed(不以 legacy 回填掩盖断链)
+        if (!norm.messageId) norm.conflict = 'v2_missing_message_id';
+        const legacyKind = typeof data.source === 'string' ? data.source : '';
+        if (!norm.conflict && norm.sourceKind && legacyKind &&
+            legacyKind !== norm.sourceKind && !(legacyKind === 'user' && norm.sourceKind === 'view')) {
+          norm.conflict = 'v2_legacy_source_conflict';
+        }
+        // raw provenance 只许审计枚举,出现 'trusted' 字面 = schema_conflict(B0:trusted 只能由 canonical trust_decision 表达)
+        if (!norm.conflict && src.provenance === 'trusted') {
+          norm.conflict = 'raw_provenance_trusted';
+        }
+        if (norm.conflict) norm.sourceTrusted = false;  // 可信徽标必须关闭
+      } else {
+        // U5②③:显式 v1 或无版本 → 仅迁移映射;legacy source 永不带 trusted
+        if (!norm.sourceKind && typeof data.source === 'string' && data.source) {
+          norm.sourceKind = data.source === 'user' ? 'human' : data.source;
+          norm.sourceLabel = norm.sourceLabel || String(data.display_name || '');
+          norm.sourceTrusted = false;
+        }
+      }
+      // 事件类别归一
+      if (ev.kind === 'input_posted') {
+        norm.stage = ev.stage || 'generated';
+        norm.text = ev.payload ?? ev.text ?? '';
+      } else if (ev.kind === 'delivery_update') {
+        // canonical B0 线格式:delivery_stage=管道阶段(generated/hub_received/helper_received/...),
+        // delivery_status=终态状态(cancelled/failed);legacy ev.stage 仅迁移输入。
+        // dev55 实证:hub 真 cancel SSE={observed_delivery_id,delivery_stage:helper_received,delivery_status:cancelled}
+        norm.stage = ev.delivery_stage || ev.stage || '';
+        norm.status = ev.delivery_status || '';
+        if (norm.status === 'cancelled') norm.stage = 'cancelled';        // 终态取消归一(待提交区移出/时间线终态)
+        else if (norm.status === 'failed') norm.stage = 'failed';
+        norm.reason = ev.reason || data.reason || '';
+      } else if (ev.kind === 'user_input') {
+        // legacy 迁移:lifecycle 映射到 B0 §6 阶段枚举(admitted→cli_injected,其余→generated)
+        const lifecycle = String(data.lifecycle || '').toLowerCase();
+        norm.stage = lifecycle === 'admitted' ? 'cli_injected' : 'generated';
+        norm.text = ev.text ?? '';
+        if (norm.cancellable === null) norm.cancellable = norm.stage === 'generated';
+      }
+      norm.stageIdx = C1_STAGE_ORDER.indexOf(norm.stage === 'turn_admitted' ? 'cli_injected' : norm.stage);
+      norm.key = norm.messageId || norm.deliveryId;
+      return { ...ev, _norm: norm };
+    }
+
+    function sourceBadgeHtml(norm) {
+      if (!norm.sourceTrusted) return '';
+      const label = {
+        feishu: '飞书', view: '人工', human: '人工', system: '系统',
+        agent: `Agent·${norm.sourceLabel || '未知'}`,
+      }[norm.sourceKind] || '';
+      return label ? `<span class="source-badge source-badge--trusted">${escapeHtml(label)}</span>` : '';
+    }
+
+    function stageFooterText(norm) {
+      if (norm.stage === 'failed') {
+        const reason = C1_REASON_TEXT[norm.reason] || '投递失败';
+        return `失败:${reason}`;
+      }
+      return C1_STAGE_FOOTER[norm.stage] || '';
+    }
+
+    function c1CardFor(norm, create) {
+      if (!norm.key) return null;
+      let entry = c1InputCards.get(norm.key);
+      if (!entry && create) {
+        entry = { card: null, footer: null, stageIdx: -1, footnotes: new Set() };
+        c1InputCards.set(norm.key, entry);
+      }
+      return entry;
+    }
+
+    function c1ApplyCardUpdate(norm) {
+      const entry = c1CardFor(norm, false);
+      if (!entry || !entry.footer) {
+        // 卡片未建:缓冲(到达乱序时,建卡后再应用最高阶段)
+        if (norm.key) {
+          const list = c1PendingUpdates.get(norm.key) || [];
+          list.push(norm);
+          c1PendingUpdates.set(norm.key, list);
+        }
+        return;
+      }
+      c1ApplyToEntry(entry, norm);
+    }
+
+    function c1ApplyToEntry(entry, norm) {
+      // 阶段单调:只前进,不回退(B0 ACK 单调约束)
+      if (norm.stage === 'failed' || norm.stage === 'cancelled' || norm.stageIdx > entry.stageIdx) {
+        entry.stageIdx = Math.max(entry.stageIdx, norm.stageIdx);
+        const text = stageFooterText(norm);
+        if (text && entry.stageEl) entry.stageEl.textContent = text;
+      }
+      if (norm.copyKind === 'feishu_sync' && !entry.footnotes.has('feishu_sync')) {
+        entry.footnotes.add('feishu_sync');
+        const note = document.createElement('span');
+        note.className = 'card-footnote';
+        note.textContent = '已同步飞书';
+        entry.footer.appendChild(note);
+      }
+    }
+
     function handleIncomingEvent(ev) {
+      ev = normalizeEvent(ev);
+      if (ev._norm.conflict) {
+        // U5:schema_conflict 可观测(徽标已关),事件本体按不可信继续渲染
+        console.warn('[c1] schema_conflict:', ev._norm.conflict);
+        renderError({ kind: 'error', text: `消息格式异常(${ev._norm.conflict}),已按不可信处理`,
+          data: { code: 'schema_conflict' } });
+      }
       const shouldFollow = replayInProgress || timelineAtBottom;
       scheduleTimelineReplayEnd();
+      // delivery_update / copy 事件:原位更新输入卡,不产生新条目
+      if (ev.kind === 'delivery_update' || ev._norm.copyKind === 'feishu_sync') {
+        const norm = ev._norm;
+        const wEntry = norm.deliveryId ? waitingDeliveries.get(norm.deliveryId) : null;
+        if (wEntry && ['cli_injected', 'pty_write', 'failed', 'cancelled'].includes(norm.stage)) {
+          // 注入/终态:待提交区移出,以原输入事件建时间线卡(阶段由后续 update 推进)
+          wEntry.node.remove();
+          waitingDeliveries.delete(norm.deliveryId);
+          waitingArea.hidden = waitingDeliveries.size === 0;
+          renderEvent(wEntry.event);
+          rendered += 1;
+        } else if (wEntry && norm.stage) {
+          // 未注入:原位推进待提交区条目的阶段显示
+          wEntry.event._norm.stage = norm.stage;
+          renderWaitingDelivery(wEntry.event);
+        }
+        c1ApplyCardUpdate(norm);
+        rendered += 1;
+        updateMetrics();
+        if (shouldFollow) scheduleTimelineToBottom();
+        return;
+      }
       if (isWaitingDelivery(ev)) {
         renderWaitingDelivery(ev);
         rendered += 1;
@@ -991,25 +1663,48 @@
     }
 
     function isWaitingDelivery(ev) {
-      if (!ev.delivery_id || ev.turn_id) return false;
+      const norm = ev._norm || {};
+      if (!norm.deliveryId || norm.turnId) return false;
+      // copy 不追 ACK,不进待提交区;control 不进输入卡/待提交区;已有卡的原位更新
+      if (String(norm.deliveryMode).includes('copy')) return false;
+      if (norm.deliveryMode === 'control') return false;
+      if (norm.key && c1InputCards.has(norm.key)) return false;
+      // canonical 注入前阶段入待提交区
+      if (['generated', 'queued', 'hub_received', 'helper_received'].includes(norm.stage)) return true;
       const lifecycle = deliveryLifecycle(ev);
       return lifecycle === 'queued' || lifecycle === 'waiting' || lifecycle === 'delivery_queued' ||
         (ev.kind === 'user_input' && (!lifecycle || lifecycle === 'accepted'));
     }
 
     function renderWaitingDelivery(ev) {
-      let entry = waitingDeliveries.get(ev.delivery_id);
+      const waitKey = ev._norm?.deliveryId || ev.delivery_id;  // 归一键:observed_delivery_id 优先(B0)
+      let entry = waitingDeliveries.get(waitKey);
       if (!entry) {
         const node = document.createElement('article');
         node.className = 'waiting-item';
-        node.dataset.deliveryId = ev.delivery_id;
+        node.dataset.deliveryId = waitKey;
         waitingList.appendChild(node);
         entry = { node, event: ev };
-        waitingDeliveries.set(ev.delivery_id, entry);
+        waitingDeliveries.set(waitKey, entry);
       } else if (ev.text) {
         entry.event = ev;
       }
-      entry.node.textContent = entry.event.text || ev.data?.text || `delivery ${ev.delivery_id}`;
+      const norm = ev._norm || {};
+      const badge = sourceBadgeHtml(norm);
+      const cancelTag = norm.cancellable ? '<span class="cancellable-tag">可取消</span>' : '';
+      const stageText = stageFooterText(norm);
+      entry.node.innerHTML = `${badge}<span class="waiting-text"></span>${cancelTag}${stageText ? `<span class="waiting-stage">${escapeHtml(stageText)}</span>` : ''}`;
+      entry.node.querySelector('.waiting-text').textContent = entry.event.text || ev.data?.text || `delivery ${waitKey}`;
+      // C2:可取消条目带删除按钮;点击=发起 cancel 请求(条目的消失只由事件流 cancelled 驱动,不本地静默删)
+      if (norm.cancellable && !entry.node.querySelector('.waiting-cancel-btn')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'waiting-cancel-btn';
+        btn.textContent = '删除';
+        btn.title = '请求取消该待提交输入';
+        btn.addEventListener('click', () => c2RequestCancel(waitKey, entry));
+        entry.node.appendChild(btn);
+      }
       waitingArea.hidden = false;
       requestAnimationFrame(() => {
         waitingArea.scrollTop = waitingArea.scrollHeight;
@@ -1017,11 +1712,12 @@
     }
 
     function admitWaitingDelivery(ev) {
-      if (!ev.delivery_id || !ev.turn_id) return;
-      const entry = waitingDeliveries.get(ev.delivery_id);
+      const waitKey = ev._norm?.deliveryId || ev.delivery_id;
+      if (!waitKey || !ev.turn_id) return;
+      const entry = waitingDeliveries.get(waitKey);
       if (!entry) return;
       entry.node.remove();
-      waitingDeliveries.delete(ev.delivery_id);
+      waitingDeliveries.delete(waitKey);
       waitingArea.hidden = waitingDeliveries.size === 0;
       if (ev.kind !== 'user_input') {
         renderTurnEvent(ev.turn_id, { ...entry.event, turn_id: ev.turn_id });
@@ -1083,6 +1779,7 @@
 
     function renderEvent(ev) {
       if (ev.kind === 'state_change' && ev.data?.change === 'session_init') return renderState(ev);
+      if (ev.kind === 'input_posted') return renderUser(ev);   // C1:canonical 输入事件,不经 turn 分组
       const turnKey = turnKeyFor(ev);
       if (turnKey && ['user_input', 'assistant_text', 'tool_call', 'state_change', 'error'].includes(ev.kind)) {
         return renderTurnEvent(turnKey, ev);
@@ -1163,10 +1860,57 @@
       return `<div class="turn-tool-item"><div class="turn-tool-head">${eventMetaHtml(ev)}<span class="tool-name">${escapeHtml(name)}</span><span class="tool-preview">${escapeHtml(preview)}</span></div>${renderCode(JSON.stringify(input, null, 2), 'json')}</div>`;
     }
 
-    function renderUser(ev) {
-      const { card, content } = baseCard(ev, 'user');
-      content.textContent = ev.text || '';
+    // control 消息按系统事件渲染:v0.6 只表达「已发起/已发出」,绝不假称「已终止/真停」(真停挂 v0.7#20)
+    function renderControlNote(ev) {
+      const { card, content } = baseCard(ev, 'system');
+      const kind = String(ev.control?.kind || ev.control_kind || '').toLowerCase();
+      const text = {
+        cancel: '已请求终止',
+        interrupt: '中断已发出',
+      }[kind] || '控制消息已下发';
+      const detail = ev.text || ev._norm?.text || '';
+      content.textContent = detail ? `${text}:${detail}` : text;
       timeline.appendChild(card);
+    }
+
+    function renderUser(ev) {
+      const norm = ev._norm || { key: '', sourceTrusted: false, stageIdx: -1 };
+      // control 消息(cancel/interrupt 等)不进输入卡/待提交区,按系统事件文案渲染
+      if (norm.deliveryMode === 'control') {
+        c2MaybeConfirmInterrupt(ev);  // C2:流上 control 事件=中断回执,升级 pending 请求为已确认
+        return renderControlNote(ev);
+      }
+      const entry = norm.key ? c1CardFor(norm, true) : null;
+      if (entry && entry.card) {
+        // 同 message_id 已有输入卡:原位更新,绝不产生第二张
+        if (norm.text && !entry.content.textContent) entry.content.textContent = norm.text;
+        c1ApplyToEntry(entry, norm);
+        return;
+      }
+      const { card, content } = baseCard(ev, 'user');
+      content.textContent = ev.text || norm.text || '';
+      if (norm.key) card.dataset.messageId = norm.key;
+      // 徽标 + 阶段脚注:trusted 才挂来源徽标(fail-closed);copy 不显示等待 ACK 态
+      const isCopy = String(norm.deliveryMode).includes('copy');
+      const footer = document.createElement('div');
+      footer.className = 'card-stage-footer';
+      const badge = sourceBadgeHtml(norm);
+      const footText = isCopy ? '已同步/镜像(不追 ACK)' : stageFooterText(norm);
+      footer.innerHTML = `${badge}<span class="stage-text">${escapeHtml(footText)}</span>`;
+      card.appendChild(footer);
+      timeline.appendChild(card);
+      if (entry) {
+        entry.card = card;
+        entry.content = content;
+        entry.footer = footer;
+        entry.stageEl = footer.querySelector('.stage-text');
+        entry.stageIdx = norm.stageIdx;
+        // 应用建卡前缓冲的乱序更新
+        const pending = c1PendingUpdates.get(norm.key) || [];
+        c1PendingUpdates.delete(norm.key);
+        for (const p of pending) c1ApplyToEntry(entry, p);
+        if (!isCopy) c1ApplyToEntry(entry, norm);
+      }
     }
 
     function renderAssistant(ev) {
@@ -1267,20 +2011,22 @@
     function applyStatusData(data) {
       if (data.session_id || data.session) stats.sessionName = data.session_id || data.session;
       if (data.owner) stats.owner = data.owner;
+      if (data.auth_mode) stats.authMode = data.auth_mode;
       if (data.model || data.driver) stats.model = data.model || data.driver;
       if (data.unlock_code || data.unlockCode) stats.unlockCode = data.unlock_code || data.unlockCode;
-      if (data.readonly !== undefined) {
+      const pageAuthorized = stats.authMode === 'view_page_v2';
+      if (!pageAuthorized && data.readonly !== undefined) {
         stats.readonly = Boolean(data.readonly);
         stats.access = stats.readonly ? '只读' : '可写';
-      } else if (!useMockApi) {
+      } else if (!pageAuthorized && data.readonly === undefined) {
         stats.readonly = false;
         stats.access = '可写';
       }
-      if (data.access) stats.access = data.access;
+      if (!pageAuthorized && data.access) stats.access = data.access;
       const incomingState = data.session_state || data.state;
       if (incomingState) {
         stats.sessionState = incomingState === 'busy' ? 'running' : incomingState;
-        if (incomingState === 'readonly') {
+        if (!pageAuthorized && incomingState === 'readonly') {
           stats.readonly = true;
           stats.access = '只读';
         }
@@ -1517,35 +2263,14 @@
       });
     }
 
-    const mockEvents = [
-      { kind: 'state_change', data: { change: 'session_init', session_id: 'demo-1a2b', owner: 'zzc · zzc-dev55', model: 'claude-opus-4-8', readonly: stats.readonly, unlock_code: '1460', session_state: stats.readonly ? 'readonly' : 'idle', mem: stats.mem, disk: stats.disk, load: stats.load, cost_total: 0 }, cursor: '1' },
-      { kind: 'user_input', text: '请给我三种水果价格', delivery_id: 'd-001', turn_id: 't-001', cursor: '1.5' },
-      { kind: 'assistant_text', text: '收到，你要的三种水果价格如下：', delivery_id: 'd-001', turn_id: 't-001', cursor: '2' },
-      { kind: 'assistant_text', text: '\n\n| 水果 | 价格 |\n|------|------|\n| 苹果 | 8 元/斤 |\n| 香蕉 | 4 元/斤 |\n| 西瓜 | 3 元/斤 |', delivery_id: 'd-001', turn_id: 't-001', cursor: '3' },
-      { kind: 'state_change', data: { change: 'turn_completed', subtype: 'success', num_turns: 1, total_cost_usd: 0.0123 }, delivery_id: 'd-001', turn_id: 't-001', cursor: '4' },
-      { kind: 'assistant_text', text: '下面帮你数当前目录文件：', delivery_id: 'd-002', turn_id: 't-002', cursor: '5' },
-      { kind: 'tool_call', data: { name: 'Bash', input: { command: 'ls -A | wc -l' } }, delivery_id: 'd-002', turn_id: 't-002', cursor: '6' },
-      { kind: 'tool_call', data: { name: 'Write', input: { file_path: 'count.txt', content: '0' } }, delivery_id: 'd-002', turn_id: 't-002', cursor: '7' },
-      { kind: 'assistant_text', text: '结果是 **0**，目录是空的。这是排序函数示例：\n\n```python\ndef quicksort(a):\n    if len(a) <= 1:\n        return a\n    p = a[len(a)//2]\n    return quicksort([x for x in a if x < p]) + [x for x in a if x == p] + quicksort([x for x in a if x > p])\n```\n\n- 平均 O(n log n)\n- 最坏 O(n²)', delivery_id: 'd-002', turn_id: 't-002', cursor: '8' },
-      { kind: 'state_change', data: { change: 'turn_completed', subtype: 'success', num_turns: 3, total_cost_usd: 0.0884 }, delivery_id: 'd-002', turn_id: 't-002', cursor: '9' },
-      { kind: 'assistant_text', text: '（这是一条来自 zzc-dev55 的【外部消息】演示——它直接进对话区，不碰你的输入框）', delivery_id: 'ext-001', turn_id: 't-003', cursor: '10' },
-      { kind: 'user_input', text: '这是一条专门验证图标内联排版的长用户输入，第一行跟在图标后面，第二行必须回到卡片左内边距，不能形成图标右侧的缩进列。', delivery_id: 'd-wrap-user-001', turn_id: 't-wrap-user-001', cursor: '10.25' },
-      { kind: 'assistant_text', text: '1. 埋点治理/对账：设计埋点 vs 线上实际采集对表，找治理缺口。\n2. 数据盘点：生产项目日均约 2.5 亿条上报，盘点平台分布和 Top 事件。\n3. 协作评审：在分析主机上跑深化分析，输出阶段性评审。', delivery_id: 'd-list-start-001', turn_id: 't-list-start-001', cursor: '10.35' },
-      { kind: 'assistant_text', text: '长 token 回归样例：`shencedeepseek-very-long-inline-token-without-breaks-dw-7bff1039aabbccddeeff00112233445566778899-ai.wegoab.com/data-analysis/root/work` 应该在卡片内强制换行，不能把卡片撑出视口。', delivery_id: 'd-long-token-001', turn_id: 't-long-token-001', cursor: '10.5' },
-      { kind: 'error', text: '示例错误：模型请求超时（演示 error 事件的样式）', data: { code: 'timeout' }, delivery_id: 'd-003', turn_id: 't-004', cursor: '11' },
-    ];
-
-    function startApp() {
+    async function startApp() {
       resetConversation();
       updateLocalTime();
       setInterval(updateLocalTime, 1000);
-      if (useMockApi) {
-        startMockApi();
-      } else {
-        connectEventStream();
-        refreshStatus();
-        statusTimer = setInterval(refreshStatus, 5000);
-      }
+      connectEventStream();
+      await refreshStatus();
+      statusTimer = setInterval(refreshStatus, 5000);
+      taskBoardStart();   // C3 看板(失败自清,不阻塞主页)
     }
 
     function clearStreamConnectTimer() {
@@ -1612,63 +2337,150 @@
         const res = await fetch(API.status, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         applyStatusData(await res.json());
+        if (stats.authMode === 'view_page_v2') await ensurePageIdentity();
       } catch {
         setStatus('disconnected');
       }
     }
 
-    function startMockApi() {
-      applyStatusData(mockStatus());
-      let i = 0;
-      const pump = () => {
-        if (i >= mockEvents.length) {
-          setStatus(stats.readonly ? 'readonly' : 'idle');
-          return;
-        }
-        handleIncomingEvent(mockEvents[i]);
-        i += 1;
-        mockEventTimer = setTimeout(pump, 620);
-      };
-      mockEventTimer = setTimeout(pump, 200);
-      statusTimer = setInterval(() => applyStatusData(mockStatus()), 5000);
+    function pageStorageKey() {
+      return `dw-view-page:${stats.sessionName}`;
     }
-
-    function mockStatus() {
-      return {
-        session_id: 'demo-1a2b',
-        owner: 'zzc · zzc-dev55',
-        model: 'claude-opus-4-8',
-        readonly: stats.readonly,
-        unlock_code: stats.unlockCode,
-        session_state: stats.readonly ? 'readonly' : stats.sessionState,
-        mem: { used: 10.1, total: 32, unit: 'GB' },
-        disk: { used: 143, total: 512, unit: 'GB' },
-        load: 0.78,
-        datetime: new Date().toISOString(),
-        cost_total: stats.cost,
+    function savePageIdentity(identity) {
+      pageIdentity = identity;
+      sessionStorage.setItem(pageStorageKey(), JSON.stringify(identity));
+      stats.unlockCode = identity.code;
+      stats.readonly = !identity.can_write;
+      stats.access = stats.readonly ? '只读' : '可写';
+      updateMetrics();
+    }
+    async function createPageIdentity() {
+      const res = await fetch(API.page, { method: 'POST' });
+      if (!res.ok) throw new Error(`POST /page failed: HTTP ${res.status}`);
+      const created = await res.json();
+      savePageIdentity({ page_id: created.page_id, page_token: created.page_token,
+        code: created.code, state: created.state, can_write: created.state === 'unlocked' });
+      announcePageIdentity();
+    }
+    function resetPageIdentityChannel() {
+      clearTimeout(pageIdentityUniqueTimer);
+      pageIdentityUnique = false;
+      if (pageIdentityChannel) pageIdentityChannel.close();
+      pageIdentityChannel = null;
+    }
+    async function ensurePageIdentity(forceNew = false) {
+      if (pageIdentityEnsurePromise) {
+        await pageIdentityEnsurePromise;
+        if (!forceNew) return;
+      }
+      const pending = ensurePageIdentityOnce(forceNew);
+      pageIdentityEnsurePromise = pending;
+      try {
+        await pending;
+      } finally {
+        if (pageIdentityEnsurePromise === pending) pageIdentityEnsurePromise = null;
+      }
+    }
+    async function ensurePageIdentityOnce(forceNew = false) {
+      if (!pageIdentity && !forceNew) {
+        try { pageIdentity = JSON.parse(sessionStorage.getItem(pageStorageKey()) || 'null'); } catch { pageIdentity = null; }
+      }
+      if (!pageIdentity || forceNew) {
+        resetPageIdentityChannel();
+        await createPageIdentity();
+        setupPageIdentityChannel();
+        return;
+      }
+      const res = await fetch(`${API.page}/resume`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page_id: pageIdentity.page_id, page_token: pageIdentity.page_token }),
+      });
+      if (!res.ok) {
+        sessionStorage.removeItem(pageStorageKey());
+        pageIdentity = null;
+        resetPageIdentityChannel();
+        await createPageIdentity();
+      } else {
+        const resumed = await res.json();
+        if (!['locked', 'unlocked'].includes(resumed.state)) {
+          sessionStorage.removeItem(pageStorageKey());
+          pageIdentity = null;
+          resetPageIdentityChannel();
+          await createPageIdentity();
+        } else {
+          savePageIdentity({ ...pageIdentity, ...resumed });
+        }
+      }
+      setupPageIdentityChannel();
+    }
+    function announcePageIdentity() {
+      if (pageIdentityChannel && pageIdentity?.page_id) {
+        pageIdentityChannel.postMessage({ type: 'claim', page_id: pageIdentity.page_id, nonce: pageInstanceNonce });
+      }
+    }
+    function settlePageIdentityUniqueness() {
+      pageIdentityUnique = false;
+      clearTimeout(pageIdentityUniqueTimer);
+      pageIdentityUniqueTimer = setTimeout(() => { pageIdentityUnique = true; }, 300);
+    }
+    async function awaitPageIdentityUniqueness() {
+      const deadline = Date.now() + 1500;
+      while (!pageIdentityUnique && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      if (!pageIdentityUnique) throw new Error('页面身份确认超时，请重试');
+    }
+    function setupPageIdentityChannel() {
+      if (pageIdentityChannel || !pageIdentity?.page_id) return;
+      if (!('BroadcastChannel' in window)) {
+        // Cannot prove a cloned sessionStorage identity is single-tab: fail safe.
+        if (!pageIdentityFallbackApplied) {
+          pageIdentityFallbackApplied = true;
+          ensurePageIdentity(true).catch(() => setStatus('disconnected'));
+        } else {
+          pageIdentityUnique = true;
+        }
+        return;
+      }
+      pageIdentityChannel = new BroadcastChannel(`dw-view-page:${stats.sessionName}`);
+      pageIdentityChannel.onmessage = event => {
+        const claim = event.data || {};
+        if (claim.type !== 'claim' || claim.page_id !== pageIdentity?.page_id || claim.nonce === pageInstanceNonce) return;
+        settlePageIdentityUniqueness();
+        // Deterministic tie-break: the lexicographically smaller instance nonce yields.
+        if (pageInstanceNonce < String(claim.nonce)) {
+          pageIdentityChannel.close();
+          pageIdentityChannel = null;
+          pageIdentityUnique = false;
+          ensurePageIdentity(true).catch(() => setStatus('disconnected'));
+        } else {
+          announcePageIdentity();
+        }
       };
+      settlePageIdentityUniqueness();
+      setTimeout(announcePageIdentity, 50);
+      setTimeout(announcePageIdentity, 250);
     }
 
     async function submitInput(text) {
-      if (useMockApi) {
-        const id = `mock-${Date.now()}`;
-        handleIncomingEvent({ kind: 'user_input', text, delivery_id: id, turn_id: 'mock-input', cursor: `${id}-user` });
-        handleIncomingEvent({ kind: 'assistant_text', text: `Mock accepted input: ${text}`, delivery_id: id, turn_id: 'mock-input', cursor: `${id}-assistant` });
-        return;
+      if (stats.authMode === 'view_page_v2') {
+        await awaitPageIdentityUniqueness();
+        if (stats.readonly) throw new Error('当前页面尚未解锁');
       }
       const res = await fetch(API.input, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify(stats.authMode === 'view_page_v2' ? {
+          text, page_id: pageIdentity?.page_id, page_token: pageIdentity?.page_token,
+          request_id: newRequestId(),
+        } : { text }),
       });
       if (!res.ok) throw new Error(`POST /input failed: HTTP ${res.status}`);
+      const body = await res.json().catch(() => ({}));
+      if (!body.ok) throw new Error('input returned ok=false');
     }
 
     async function interruptTurn() {
-      if (useMockApi) {
-        setStatus('idle');
-        return;
-      }
       const res = await fetch(API.interrupt, { method: 'POST' });
       if (!res.ok) throw new Error(`POST /interrupt failed: HTTP ${res.status}`);
       const body = await res.json().catch(() => ({}));
@@ -1680,15 +2492,8 @@
       document.body.dataset.theme = next;
     });
     reconnectBtn.addEventListener('click', () => {
-      if (useMockApi) {
-        clearTimeout(mockEventTimer);
-        clearInterval(statusTimer);
-        resetConversation();
-        startMockApi();
-      } else {
-        connectEventStream();
-        refreshStatus();
-      }
+      connectEventStream();
+      refreshStatus();
     });
     streamRetryBtn.addEventListener('click', () => {
       hideStreamAlert();
@@ -1731,12 +2536,8 @@
       else doSend();
     });
     resizeHumanInput();
-    document.getElementById('interruptBtn').addEventListener('click', async () => {
-      try {
-        await interruptTurn();
-      } catch (err) {
-        handleIncomingEvent({ kind: 'error', text: err.message, data: { code: 'interrupt_failed' } });
-      }
+    document.getElementById('interruptBtn').addEventListener('click', () => {
+      c2RequestInterrupt();  // C2:已请求→(流上 control 事件)已发出;无传输时内部回退 legacy /interrupt,确认语义不变
     });
     async function copyUnlockInstruction() {
       const command = `#unlock ${stats.unlockCode}`;
@@ -1751,6 +2552,18 @@
       }, 1100);
     }
     copyUnlockBtn.addEventListener('click', copyUnlockInstruction);
+
+    addEventListener('pagehide', () => {
+      if (stats.authMode !== 'view_page_v2' || !pageIdentity) return;
+      navigator.sendBeacon(`${API.page}/disconnect`, new Blob([JSON.stringify({
+        page_id: pageIdentity.page_id, page_token: pageIdentity.page_token,
+      })], { type: 'application/json' }));
+    });
+    addEventListener('pageshow', event => {
+      if (!event.persisted || stats.authMode !== 'view_page_v2') return;
+      resetPageIdentityChannel();
+      ensurePageIdentity().catch(() => setStatus('disconnected'));
+    });
 
     startApp();
   </script>

@@ -638,12 +638,34 @@ func (s *SQLite) UpsertChatEntity(ctx context.Context, e model.ChatEntity) error
 	if e.ID == "" {
 		e.ID = fmt.Sprintf("%s:%s", e.BotChannelID, e.FeishuID)
 	}
+	if strings.TrimSpace(e.BoundOwner) == "" {
+		e.BoundOwner = resolveChatEntityOwner(ctx, s.db, e.FeishuID)
+	}
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO chat_entity(id, bot_channel_id, type, feishu_id, display_name, bound_owner, active)
 		 VALUES(?,?,?,?,?,?,?)
-		 ON CONFLICT(bot_channel_id, feishu_id) DO UPDATE SET type=excluded.type, display_name=excluded.display_name, bound_owner=excluded.bound_owner, active=excluded.active`,
+		 ON CONFLICT(bot_channel_id, feishu_id) DO UPDATE SET type=excluded.type, display_name=excluded.display_name,
+		   bound_owner=CASE WHEN excluded.bound_owner!='' THEN excluded.bound_owner ELSE chat_entity.bound_owner END,
+		   active=excluded.active`,
 		e.ID, e.BotChannelID, string(e.Type), e.FeishuID, e.DisplayName, e.BoundOwner, active)
 	return err
+}
+
+type rowQuerier interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func resolveChatEntityOwner(ctx context.Context, q rowQuerier, feishuOpenID string) string {
+	if strings.TrimSpace(feishuOpenID) == "" {
+		return ""
+	}
+	var ownerKey string
+	if err := q.QueryRowContext(ctx,
+		`SELECT owner_key FROM member WHERE feishu_open_id=? AND active=1 ORDER BY owner_key LIMIT 1`,
+		feishuOpenID).Scan(&ownerKey); err != nil {
+		return ""
+	}
+	return ownerKey
 }
 
 func (s *SQLite) UpsertProject(ctx context.Context, p model.Project) error {
@@ -1190,9 +1212,9 @@ func (s *SQLite) EnqueueMessage(ctx context.Context, m model.Message) error {
 		feishuMsgID = m.FeishuMsgID
 	}
 	_, err := s.db.ExecContext(ctx,
-		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
-		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
-		m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339))
+		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
+		m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, string(m.IngressProvenance), m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339))
 	return err
 }
 
@@ -1205,8 +1227,8 @@ func (s *SQLite) BatchEnqueueMessages(ctx context.Context, messages []model.Mess
 		return err
 	}
 	defer tx.Rollback()
-	stmt, err := tx.PrepareContext(ctx, `INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
-		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`)
+	stmt, err := tx.PrepareContext(ctx, `INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`)
 	if err != nil {
 		return err
 	}
@@ -1217,7 +1239,7 @@ func (s *SQLite) BatchEnqueueMessages(ctx context.Context, messages []model.Mess
 		if m.FeishuMsgID != "" {
 			feishuMsgID = m.FeishuMsgID
 		}
-		if _, err := stmt.ExecContext(ctx, m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
+		if _, err := stmt.ExecContext(ctx, m.ID, m.ChatEntityID, string(m.Direction), m.BotChannelID, feishuMsgID, string(m.ChatType), m.SenderOpenID, string(m.IngressProvenance), m.Content, m.Status, m.Attempts, m.Err, m.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
 			return err
 		}
 	}
@@ -1234,6 +1256,7 @@ func (s *SQLite) prepareMessageForInsert(m model.Message) model.Message {
 	if m.CreatedAt.IsZero() {
 		m.CreatedAt = time.Now().UTC()
 	}
+	m.IngressProvenance = model.NormalizeIngressProvenance(m.IngressProvenance)
 	m.Content = redact.Content(m.Content)
 	return m
 }
@@ -1269,7 +1292,7 @@ func (s *SQLite) ClaimNextMessage(ctx context.Context, direction model.Direction
 		return nil, err
 	}
 	m, err := scanMessageRow(tx.QueryRowContext(ctx,
-		`SELECT id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at FROM message WHERE id=?`,
+		`SELECT id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at FROM message WHERE id=?`,
 		id))
 	if err != nil {
 		return nil, err
@@ -1337,6 +1360,31 @@ func scanSessionDelivery(row rowScanner) (*model.SessionDelivery, error) {
 
 const sessionDeliverySelect = `SELECT id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at FROM session_delivery`
 
+func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName string, now time.Time) ([]model.SessionDelivery, error) {
+	nowText := now.UTC().Format(time.RFC3339Nano)
+	rows, err := s.db.QueryContext(ctx, `UPDATE session_delivery
+		SET state='dead',last_error='delivery_expired',lease_until=NULL,updated_at=?
+		WHERE key_id=? AND session_name=? AND state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?)
+		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`,
+		nowText, keyID, sessionName, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var expired []model.SessionDelivery
+	for rows.Next() {
+		d, err := scanSessionDelivery(rows)
+		if err != nil {
+			return nil, err
+		}
+		expired = append(expired, *d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return expired, nil
+}
+
 func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -1344,14 +1392,6 @@ func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName st
 	}
 	defer tx.Rollback()
 	nowText := now.UTC().Format(time.RFC3339Nano)
-	// Expired delivered records no longer hold the single in-flight slot. Prefer a
-	// never-sent FIFO item so one stuck delivery cannot starve the whole session.
-	_, err = tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',last_error='delivery_expired',updated_at=?
-		WHERE key_id=? AND session_name=? AND state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?)`,
-		nowText, keyID, sessionName, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
-	if err != nil {
-		return nil, err
-	}
 	var id string
 	err = tx.QueryRowContext(ctx, `SELECT id FROM session_delivery d
 		WHERE key_id=? AND session_name=? AND state IN ('queued','sent','delivered') AND next_attempt_at<=?
@@ -1415,6 +1455,37 @@ func (s *SQLite) GetSessionDelivery(ctx context.Context, id string) (*model.Sess
 	return scanSessionDelivery(s.db.QueryRowContext(ctx, sessionDeliverySelect+` WHERE id=?`, id))
 }
 
+// CancelPendingSessionDelivery is the injection-before cancellation CAS. Only a
+// delivery that has not left the Hub queue may transition to cancelled; a late
+// cancel racing a claim or processed ACK therefore fails without regressing state.
+func (s *SQLite) CancelPendingSessionDelivery(ctx context.Context, messageID, deliveryID, keyID, sessionName string) (bool, error) {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	result, err := s.db.ExecContext(ctx, `UPDATE session_delivery
+		SET state='cancelled',last_error='cancelled_by_authorized_view',lease_until=NULL,updated_at=?
+		WHERE id=? AND source_message_id=? AND key_id=? AND session_name=? AND state='queued'`,
+		now, deliveryID, messageID, keyID, sessionName)
+	if err != nil {
+		return false, err
+	}
+	rows, err := result.RowsAffected()
+	return rows == 1, err
+}
+
+// ConfirmSessionDeliveryCancelled records the helper's authoritative removal
+// acknowledgement. processed/dead records remain immutable under a late ACK.
+func (s *SQLite) ConfirmSessionDeliveryCancelled(ctx context.Context, messageID, deliveryID, keyID, sessionName string) (bool, error) {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	result, err := s.db.ExecContext(ctx, `UPDATE session_delivery
+		SET state='cancelled',last_error='cancelled_by_authorized_view',lease_until=NULL,updated_at=?
+		WHERE id=? AND source_message_id=? AND key_id=? AND session_name=? AND state IN ('sent','delivered')`,
+		now, deliveryID, messageID, keyID, sessionName)
+	if err != nil {
+		return false, err
+	}
+	rows, err := result.RowsAffected()
+	return rows == 1, err
+}
+
 func (s *SQLite) FailMessage(ctx context.Context, id, reason string) error {
 	_, err := s.db.ExecContext(ctx,
 		`UPDATE message
@@ -1439,7 +1510,7 @@ func (s *SQLite) RecentMessages(ctx context.Context, filter model.MessageFilter)
 	if limit <= 0 || limit > 100 {
 		limit = 100
 	}
-	query := `SELECT id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at FROM message WHERE 1=1`
+	query := `SELECT id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at FROM message WHERE 1=1`
 	args := []any{}
 	if filter.BotChannelID != "" {
 		query += ` AND bot_channel_id=?`
@@ -2040,12 +2111,14 @@ func scanMessageRow(row rowScanner) (*model.Message, error) {
 	var m model.Message
 	var direction, chatType, created string
 	var feishuMsgID, errText, processed sql.NullString
-	err := row.Scan(&m.ID, &m.ChatEntityID, &direction, &m.BotChannelID, &feishuMsgID, &chatType, &m.SenderOpenID, &m.Content, &m.Status, &m.Attempts, &errText, &created, &processed)
+	var provenance string
+	err := row.Scan(&m.ID, &m.ChatEntityID, &direction, &m.BotChannelID, &feishuMsgID, &chatType, &m.SenderOpenID, &provenance, &m.Content, &m.Status, &m.Attempts, &errText, &created, &processed)
 	if err != nil {
 		return nil, err
 	}
 	m.Direction = model.Direction(direction)
 	m.ChatType = model.ChatType(chatType)
+	m.IngressProvenance = model.NormalizeIngressProvenance(model.IngressProvenance(provenance))
 	if feishuMsgID.Valid {
 		m.FeishuMsgID = feishuMsgID.String
 	}
@@ -3085,10 +3158,15 @@ WHERE id=? AND status='pending'`,
 		if entity.Type == "" {
 			entity.Type = model.ChatPersonal
 		}
+		if strings.TrimSpace(entity.BoundOwner) == "" {
+			entity.BoundOwner = resolveChatEntityOwner(ctx, tx, entity.FeishuID)
+		}
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO chat_entity(id, bot_channel_id, type, feishu_id, display_name, bound_owner, active)
 			 VALUES(?,?,?,?,?,?,?)
-			 ON CONFLICT(id) DO UPDATE SET bot_channel_id=excluded.bot_channel_id, type=excluded.type, feishu_id=excluded.feishu_id, active=excluded.active`,
+			 ON CONFLICT(id) DO UPDATE SET bot_channel_id=excluded.bot_channel_id, type=excluded.type, feishu_id=excluded.feishu_id,
+			   bound_owner=CASE WHEN excluded.bound_owner!='' THEN excluded.bound_owner ELSE chat_entity.bound_owner END,
+			   active=excluded.active`,
 			entity.ID, entity.BotChannelID, string(entity.Type), entity.FeishuID, entity.DisplayName, entity.BoundOwner, boolInt(entity.Active)); err != nil {
 			return err
 		}
@@ -3098,9 +3176,9 @@ WHERE id=? AND status='pending'`,
 		feishuMsgID = grant.FeishuMsgID
 	}
 	if _, err := tx.ExecContext(ctx,
-		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, content_json, status, attempts, error, created_at, processed_at)
-		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
-		grant.ID, grant.ChatEntityID, string(grant.Direction), grant.BotChannelID, feishuMsgID, string(grant.ChatType), grant.SenderOpenID, grant.Content, grant.Status, grant.Attempts, grant.Err, grant.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
+		`INSERT OR IGNORE INTO message(id, chat_entity_id, direction, bot_channel_id, feishu_msg_id, chat_type, sender_open_id, ingress_provenance, content_json, status, attempts, error, created_at, processed_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`,
+		grant.ID, grant.ChatEntityID, string(grant.Direction), grant.BotChannelID, feishuMsgID, string(grant.ChatType), grant.SenderOpenID, string(model.NormalizeIngressProvenance(grant.IngressProvenance)), grant.Content, grant.Status, grant.Attempts, grant.Err, grant.CreatedAt.UTC().Format(time.RFC3339)); err != nil {
 		return err
 	}
 	return tx.Commit()

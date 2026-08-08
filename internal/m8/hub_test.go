@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"slices"
 	"strings"
@@ -40,7 +41,11 @@ func newTestHub(t *testing.T) (*Hub, *store.SQLite, context.Context) {
 	if err := db.Migrate(ctx); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
-	return New(db), db, ctx
+	hub := New(db)
+	// Feature-specific tests enable the lightweight first-seen notification;
+	// unrelated tests keep their historical outbound-queue assumptions.
+	hub.newSessionNotice = false
+	return hub, db, ctx
 }
 
 func useTestSecOpsAdminOpenID(t *testing.T) {
@@ -1470,6 +1475,59 @@ func TestSessionAddressingFourFlows(t *testing.T) {
 	}
 }
 
+func TestFeishuIngressNewChannelAutoBindingAndReplyToSender(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zzc", DisplayName: "Zhang", FeishuOpenID: "ou_zzc", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "manager")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The CLI key predates this bot channel and is bound through another valid
+	// account for the same member.
+	if err := hub.BindAccount(ctx, key.ID, "legacy:personal:ou_zzc"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertChatEntity(ctx, model.ChatEntity{ID: "dev:personal:ou_zzc", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_zzc", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	entity, err := db.GetChatEntity(ctx, "dev", "ou_zzc")
+	if err != nil || entity == nil || entity.BoundOwner != "zzc" {
+		t.Fatalf("ingress entity=%+v err=%v", entity, err)
+	}
+
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	managerName := "zzc-manager-" + keyTail(key.ID)
+	manager := dialSession(t, ctx, srv.URL, managerName, key.ID, secret)
+	defer manager.Close(websocket.StatusNormalClosure, "done")
+
+	selector := "#" + managerName + " ping"
+	result, err := hub.Dispatch(ctx, model.Message{ID: "feishu-in", ChatEntityID: "dev:personal:ou_zzc", BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"` + selector + `"}`}, selector)
+	if err != nil || !result.Matched || result.Reply != "" {
+		t.Fatalf("dispatch result=%+v err=%v", result, err)
+	}
+	inbound := readEnvelope(t, ctx, manager)
+	if inbound.Body != "ping" || inbound.From != "ou_zzc#"+key.ID+"#UnifiedRobot" {
+		t.Fatalf("inbound=%+v", inbound)
+	}
+	if err := writeEnvelope(ctx, manager, model.Envelope{ID: "feishu-reply", To: inbound.From, From: inbound.To, Body: "pong"}); err != nil {
+		t.Fatal(err)
+	}
+	outbound := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if outbound == nil || outbound.ChatEntityID != "dev:personal:ou_zzc" || !strings.Contains(messageText(t, outbound), "pong") {
+		t.Fatalf("reply outbound=%+v", outbound)
+	}
+}
+
 func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
@@ -1579,6 +1637,90 @@ func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
 	msg = waitOutbound(t, ctx, outbound)
 	if msg == nil || msg.BotChannelID != "dev" || msg.ChatEntityID != "dev:personal:ou_u1" || msg.ChatType != model.ChatPersonal {
 		t.Fatalf("fallback outbound=%+v", msg)
+	}
+}
+
+func TestFeishuOutboundPublishesSourceSessionCopyObservation(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	env := model.Envelope{
+		ID: "outbound-observed", From: "source#key", To: "ou_target#key#UnifiedRobot", Body: "回飞书",
+	}
+	if err := hub.RouteEnvelope(ctx, env); err != nil {
+		t.Fatal(err)
+	}
+	hub.mu.Lock()
+	ring := append([]string(nil), hub.terminals[terminalKey("key", "source")].eventRing...)
+	hub.mu.Unlock()
+	if len(ring) != 1 {
+		t.Fatalf("source eventRing=%v", ring)
+	}
+	var event map[string]any
+	if err := json.Unmarshal([]byte(ring[0]), &event); err != nil {
+		t.Fatal(err)
+	}
+	source, _ := event["source"].(map[string]any)
+	delivery, _ := event["delivery"].(map[string]any)
+	if event["kind"] != "input_posted" || event["message_id"] != env.ID || event["payload"] != env.Body ||
+		event["stage"] != "cli_injected" || event["copy_kind"] != "route_observation" ||
+		source["kind"] != "agent" || delivery["role"] != "copy" || event["cancellable"] != false {
+		t.Fatalf("outbound observation=%s", ring[0])
+	}
+}
+
+func TestHubDeliveryV2EventsMatchRendererGolden(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "view-service", "hub-delivery-v2-golden.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var golden map[string]map[string]any
+	if err := json.Unmarshal(raw, &golden); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 7, 22, 0, 0, 0, 0, time.UTC)
+	actual := map[string]map[string]any{
+		"primary_feishu":  inputObservationEvent(model.Envelope{ID: "m-primary", Body: "text-primary"}, "dlv-primary", "hub_received", "primary", true, "feishu", "飞书", now),
+		"primary_view":    inputObservationEvent(model.Envelope{ID: "m-view", Body: "text-view"}, "dlv-view", "hub_received", "primary", true, "view", "View", now),
+		"primary_agent":   inputObservationEvent(model.Envelope{ID: "m-agent", Body: "text-agent"}, "dlv-agent", "hub_received", "primary", true, "agent", "claudek3", now),
+		"copy_agent":      inputObservationEvent(model.Envelope{ID: "m-copy", Body: "text-copy"}, "dlv-copy", "hub_received", "copy", false, "agent", "source", now),
+		"helper_received": deliveryUpdateEvent("m-primary", "dlv-primary", "delivered", "helper_received", "", "", now),
+		"cli_injected":    deliveryUpdateEvent("m-primary", "dlv-primary", "processed", "cli_injected", "", "", now),
+		"failed":          deliveryUpdateEvent("m-primary", "dlv-primary", "dead", "helper_received", "failed", "cli_injection_failed", now),
+		"cancelled":       deliveryUpdateEvent("m-primary", "dlv-primary", "cancelled", "helper_received", "cancelled", "", now),
+	}
+	if !reflect.DeepEqual(actual, golden) {
+		actualJSON, _ := json.MarshalIndent(actual, "", "  ")
+		t.Fatalf("Hub delivery.v2 events drifted from renderer golden:\n%s", actualJSON)
+	}
+}
+
+func TestDeliveryUpdateCancellableUsesAuthoritativeState(t *testing.T) {
+	now := time.Date(2026, 7, 22, 0, 0, 0, 0, time.UTC)
+	for _, tc := range []struct {
+		state string
+		want  bool
+	}{
+		{state: "queued", want: true},
+		{state: "sent", want: true},
+		{state: "delivered", want: true},
+		{state: "injected", want: false},
+		{state: "processed", want: false},
+		{state: "dead", want: false},
+		{state: "cancelled", want: false},
+	} {
+		t.Run(tc.state, func(t *testing.T) {
+			event := deliveryUpdateEvent("msg", "dlv", tc.state, "helper_received", "", "", now)
+			if got := event["cancellable"]; got != tc.want {
+				t.Fatalf("state=%s cancellable=%v, want %v", tc.state, got, tc.want)
+			}
+			if _, legacy := event["cancelable"]; legacy {
+				t.Fatalf("state=%s retained legacy cancelable field", tc.state)
+			}
+			if event["message_id"] != "msg" || event["observed_delivery_id"] != "dlv" {
+				t.Fatalf("state=%s lost G-ADDR keys: %+v", tc.state, event)
+			}
+		})
 	}
 }
 
@@ -2797,7 +2939,9 @@ func TestSessionEndpointOwnerActiveUniqueIndex(t *testing.T) {
 
 func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
-	hub.onlineDebounce = 30 * time.Millisecond
+	// This test asserts one final roster snapshot, not timer behavior. Keep the
+	// presence timers out of the assertion and trigger the broadcast explicitly.
+	hub.onlineDebounce = time.Hour
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
 	hub.RegisterBot("dev", "UnifiedRobot")
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
@@ -2837,6 +2981,9 @@ func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) 
 	u1SecOpsName := "u1-secops-" + keyTail(u1Key.ID)
 	u1SecOps := dialSessionWithQuery(t, ctx, srv.URL, "secops", u1Key.ID, u1Secret, "tool=SEC&model=monitor&no_directory=1")
 	defer u1SecOps.Close(websocket.StatusNormalClosure, "done")
+	if err := hub.BroadcastOnlineDirectories(ctx); err != nil {
+		t.Fatal(err)
+	}
 
 	u1DevMsg := readEnvelope(t, ctx, u1Dev)
 	u1HomeMsg := readEnvelope(t, ctx, u1Home)
@@ -2877,14 +3024,9 @@ func TestOnlineDirectoryBroadcastOwnerIsolationAndUnknownMetadata(t *testing.T) 
 	if hidden.To != u1SecOpsName+"#"+u1Key.ID || hidden.Body != "直接派活" {
 		t.Fatalf("hidden session should still be addressable: %+v", hidden)
 	}
-	for i := 0; i < 2; i++ {
-		msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
-		if err != nil || msg == nil {
-			t.Fatalf("dm %d missing msg=%+v err=%v", i, msg, err)
-		}
-		if msg.ChatEntityID != "dev:personal:ou_u1" && msg.ChatEntityID != "dev:personal:ou_u2" {
-			t.Fatalf("unexpected dm target: %+v", msg)
-		}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg != nil {
+		t.Fatalf("directory broadcast must stay on CLI channels, msg=%+v err=%v", msg, err)
 	}
 }
 
@@ -2924,12 +3066,8 @@ func TestOnlineDirectoryDebouncesFlapping(t *testing.T) {
 	}
 	assertNoEnvelope(t, ctx, home, 120*time.Millisecond)
 	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
-	if err != nil || msg == nil || msg.ChatEntityID != "dev:personal:ou_u1" {
-		t.Fatalf("dm missing after debounce msg=%+v err=%v", msg, err)
-	}
-	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
 	if err != nil || msg != nil {
-		t.Fatalf("debounce should enqueue one dm, got msg=%+v err=%v", msg, err)
+		t.Fatalf("presence broadcast must not enqueue Feishu directory msg=%+v err=%v", msg, err)
 	}
 }
 
@@ -2969,6 +3107,53 @@ func TestOnlineDirectorySkipsNoDirectoryPresenceBroadcast(t *testing.T) {
 	visibleTimer.Stop()
 }
 
+func TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.newSessionNotice = true
+	hub.onlineDebounce = time.Hour
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	sessionName := "u1-home-" + keyTail(key.ID)
+	first := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
+	msg := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if msg == nil {
+		t.Fatal("first session name did not enqueue a Feishu notice")
+	}
+	if msg.ChatEntityID != "dev:personal:ou_u1" || messageText(t, msg) != "会话 #"+sessionName+" 已上线" {
+		t.Fatalf("first-name notice=%+v text=%q", msg, messageText(t, msg))
+	}
+	_ = first.Close(websocket.StatusNormalClosure, "reconnect")
+	waitEndpointInactive(t, ctx, db, key.ID, sessionName)
+
+	for i := 0; i < 3; i++ {
+		conn := dialSession(t, ctx, srv.URL, sessionName, key.ID, secret)
+		_ = conn.Close(websocket.StatusNormalClosure, "flap")
+		waitEndpointInactive(t, ctx, db, key.ID, sessionName)
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || msg != nil {
+		t.Fatalf("known-name reconnect/flapping must stay silent msg=%+v err=%v", msg, err)
+	}
+}
+
 func TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.onlineDebounce = time.Hour
@@ -2997,7 +3182,7 @@ func TestOnlineDirectoryBroadcastMarksSingleMirrorPrimary(t *testing.T) {
 	review := dialSession(t, ctx, srv.URL, "review", key.ID, secret)
 	defer review.Close(websocket.StatusNormalClosure, "done")
 
-	if err := hub.BroadcastOnlineDirectories(ctx, false); err != nil {
+	if err := hub.BroadcastOnlineDirectories(ctx); err != nil {
 		t.Fatal(err)
 	}
 	envs := []model.Envelope{
@@ -3054,7 +3239,7 @@ func TestProducerSessionMetadataAndOnlineDirectory(t *testing.T) {
 	if err != nil || len(endpoints) != 1 || !endpoints[0].Producer || endpoints[0].TargetGroup != "oc_ai" {
 		t.Fatalf("producer endpoint=%+v err=%v", endpoints, err)
 	}
-	if err := hub.BroadcastOnlineDirectories(ctx, true); err != nil {
+	if err := hub.BroadcastOnlineDirectories(ctx); err != nil {
 		t.Fatal(err)
 	}
 	got := readEnvelope(t, ctx, producer)
@@ -3207,7 +3392,7 @@ func TestMirrorCommandDMControlsSessionAndGroupIgnored(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !groupResult.Matched || groupResult.Reply != "" {
+	if groupResult.Matched || groupResult.Reply != "" {
 		t.Fatalf("group mirror result = %+v", groupResult)
 	}
 	endpoints, _ = db.ListSessionEndpoints(ctx)
@@ -3230,6 +3415,136 @@ func TestMirrorCommandDMControlsSessionAndGroupIgnored(t *testing.T) {
 	if endpoints[0].MirrorEnabled || endpoints[0].MirrorTo != "" {
 		t.Fatalf("mirror state after off: %+v", endpoints[0])
 	}
+}
+
+func TestGroupExplicitIntentGate(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	msg := model.Message{ChatType: model.ChatGroup, ChatEntityID: "dev:group:oc_g", BotChannelID: "dev"}
+	if ok, err := hub.groupHasExplicitIntent(ctx, msg, "两个人继续讨论，不要理机器人"); err != nil || ok {
+		t.Fatalf("natural group language passed gate: ok=%v err=%v", ok, err)
+	}
+	if ok, err := hub.groupHasExplicitIntent(ctx, msg, "@UnifiedRobot 请处理"); err != nil || !ok {
+		t.Fatalf("bot mention rejected: ok=%v err=%v", ok, err)
+	}
+	if ok, err := hub.groupHasExplicitIntent(ctx, msg, "#home 执行任务"); err != nil || !ok {
+		t.Fatalf("selector rejected: ok=%v err=%v", ok, err)
+	}
+}
+
+func TestAnnotateSourceContextEnrichesFeishuDisplayName(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zzc", DisplayName: "张宗楚", FeishuOpenID: "ou_zzc", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	meta := map[string]any{}
+	hub.annotateSourceContext(ctx, meta, model.Message{ChatType: model.ChatGroup, BotChannelID: "dev", SenderOpenID: "ou_zzc"})
+	if meta["source_kind"] != "feishu" || meta["source_display_name"] != "张宗楚" || meta["source_sender_openid"] != "ou_zzc" {
+		t.Fatalf("source enrichment=%+v", meta)
+	}
+}
+
+func TestDeviceIDV1RejectsDifferentDeviceWithoutEvictingHolder(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	first := dialSessionWithQueryRaw(t, ctx, srv.URL, "developer", key.ID, secret, "device_id_v1=1&device_id=1111111111111111")
+	defer first.Close(websocket.StatusNormalClosure, "done")
+	var holder *sessionClient
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline) && holder == nil; {
+		hub.mu.Lock()
+		holder = hub.sessionClients[key.ID]["developer"]
+		hub.mu.Unlock()
+		if holder == nil {
+			time.Sleep(time.Millisecond)
+		}
+	}
+	body := dialSessionErrorBodyWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "device_id_v1=1&device_id=2222222222222222")
+	if !strings.Contains(body, "session held by another device") {
+		t.Fatalf("different device rejection=%q", body)
+	}
+	hub.mu.Lock()
+	stillHolder := hub.sessionClients[key.ID]["developer"]
+	hub.mu.Unlock()
+	if holder == nil || stillHolder != holder {
+		t.Fatalf("holder was evicted: before=%p after=%p", holder, stillHolder)
+	}
+	reconnect := dialSessionWithQueryRaw(t, ctx, srv.URL, "developer", key.ID, secret, "device_id_v1=1&device_id=1111111111111111")
+	defer reconnect.Close(websocket.StatusNormalClosure, "done")
+	reclaimed := holder
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline) && reclaimed == holder; {
+		hub.mu.Lock()
+		reclaimed = hub.sessionClients[key.ID]["developer"]
+		hub.mu.Unlock()
+		if reclaimed == holder {
+			time.Sleep(time.Millisecond)
+		}
+	}
+	if reclaimed == nil || reclaimed == holder || reclaimed.deviceID != holder.deviceID {
+		t.Fatalf("same device did not reclaim: holder=%p reclaimed=%p", holder, reclaimed)
+	}
+}
+
+func TestSessionChurnDoesNotAffectOtherSessionLookupAndRoute(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-stable", Name: "stable", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-stable", "stable")
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := "unifiedrobot:personal:ou_stable"
+	if err := hub.BindAccount(ctx, key.ID, account); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	stable := dialSession(t, ctx, srv.URL, "manager", key.ID, secret)
+	defer stable.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, "manager")
+
+	churnDone := make(chan struct{})
+	go func() {
+		defer close(churnDone)
+		for i := 0; i < 5000; i++ {
+			client := &sessionClient{keyID: "churn-key", sessionName: "echo", connSeq: i + 1}
+			hub.mu.Lock()
+			hub.sessionClients["churn-key"] = map[string]*sessionClient{"echo": client}
+			hub.keyAccounts["churn-key"] = map[string]bool{"unifiedrobot:personal:ou_echo": true}
+			delete(hub.sessionClients["churn-key"], "echo")
+			delete(hub.sessionClients, "churn-key")
+			delete(hub.keyAccounts, "churn-key")
+			hub.mu.Unlock()
+		}
+	}()
+
+	for i := 0; i < 100; i++ {
+		if got, ok := hub.lookupKeyIDForSession(account, "manager"); !ok || got != key.ID {
+			t.Fatalf("stable lookup lost during unrelated churn: got=%q ok=%v", got, ok)
+		}
+		env := model.Envelope{
+			ID:   fmt.Sprintf("stable-route-%d", i),
+			From: feishuAddress("ou_stable", key.ID, "UnifiedRobot"),
+			To:   sessionAddress("manager", key.ID),
+			Body: "ping",
+		}
+		if err := hub.RouteEnvelope(ctx, env); err != nil {
+			t.Fatalf("stable route failed during unrelated churn: %v", err)
+		}
+		if got := readEnvelope(t, ctx, stable); got.ID != env.ID || got.Body != env.Body {
+			t.Fatalf("stable route mismatch: got=%+v want=%+v", got, env)
+		}
+	}
+	<-churnDone
 }
 
 func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
@@ -3489,6 +3804,168 @@ func TestTerminalUnlockAllowsSameOwnerAccountWithoutExactKeyBinding(t *testing.T
 		st := hub.terminals[terminalKey(key.ID, registeredName)]
 		return st != nil && st.writerPage != "" && st.writerToken != ""
 	})
+}
+
+type recordingViewPageUnlocker struct {
+	requests []ViewPageUnlockRequest
+}
+
+func (r *recordingViewPageUnlocker) UnlockViewPage(_ context.Context, request ViewPageUnlockRequest) error {
+	r.requests = append(r.requests, request)
+	return nil
+}
+
+func TestViewUnlockV2RequiresTrustedOwnerAndPreservesCodeCase(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test-2642", SessionName: "dev55", FullSessionName: "alice-dev55-2642", OwnerKey: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	base := model.Message{ID: "m1", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_alice", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice"}
+
+	untrusted := base
+	untrusted.IngressProvenance = model.IngressUntrusted
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, untrusted, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "未通过可信入站") || len(unlocker.requests) != 0 {
+		t.Fatalf("untrusted result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+
+	trusted := base
+	trusted.IngressProvenance = model.IngressFeishuWSAuthenticated
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, trusted, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
+		t.Fatalf("trusted result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+	if got := unlocker.requests[0].Code; got != "alice-dev55-2642-a3Kf9xQ2" {
+		t.Fatalf("code case changed: %q", got)
+	}
+	bob := base
+	bob.ChatEntityID = "dev:personal:ou_bob"
+	bob.SenderOpenID = "ou_bob"
+	senderOwner, targetOwner, _, authErr := hub.authorizeViewUnlockOwner(ctx, bob, "alice-dev55-2642")
+	if authErr == nil || senderOwner != "bob" || targetOwner != "alice" {
+		t.Fatalf("owner mismatch evidence sender=%q target=%q err=%v", senderOwner, targetOwner, authErr)
+	}
+}
+
+func TestViewUnlockV2MatchesDerivedSessionNameWithEmptyFullName(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-derived", Name: "svc-derived", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-derived", "derived")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "dev55", key.ID, secret, "")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	fullName := "alice-dev55-" + keyTail(key.ID)
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 || endpoints[0].SessionName != fullName || endpoints[0].FullSessionName != "" {
+		t.Fatalf("derived endpoint=%+v err=%v", endpoints, err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	trusted := model.Message{ID: "derived", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_alice", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, trusted, "#unlock "+fullName+"-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
+		t.Fatalf("derived-name unlock result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+}
+
+func TestViewUnlockV2RejectsAmbiguousEndpointMatch(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, endpoint := range []model.SessionEndpoint{
+		{KeyID: "FB-one-2642", SessionName: "alice-dev55-2642", OwnerKey: "alice", Active: true},
+		{KeyID: "FB-two-2642", SessionName: "dev55", FullSessionName: "alice-dev55-2642", OwnerKey: "alice", Active: true},
+	} {
+		if err := db.UpsertSessionEndpoint(ctx, endpoint); err != nil {
+			t.Fatal(err)
+		}
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	trusted := model.Message{ID: "ambiguous", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_alice", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, trusted, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "页面会话不存在或不可用") || len(unlocker.requests) != 0 {
+		t.Fatalf("ambiguous result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+}
+
+func TestViewUnlockV2RejectsCrossOwnerLegacyEndpoint(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{
+		KeyID: "FB-bob-2642", SessionName: "dev55", FullSessionName: "", OwnerKey: "bob", Active: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	bob := model.Message{
+		ID: "cross-owner", BotChannelID: "dev", ChatEntityID: "dev:personal:ou_bob",
+		ChatType: model.ChatPersonal, SenderOpenID: "ou_bob", IngressProvenance: model.IngressFeishuWSAuthenticated,
+	}
+
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, bob, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "发信人不是该会话 owner") {
+		t.Fatalf("cross-owner result=%+v handled=%v err=%v", result, handled, err)
+	}
+	if len(unlocker.requests) != 0 {
+		t.Fatalf("cross-owner unlock reached view service: requests=%+v", unlocker.requests)
+	}
+}
+
+func TestViewUnlockV2RejectsGroupWithoutSenderAndSupportsLegacyShortName(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "alice", DisplayName: "Alice", FeishuOpenID: "ou_alice", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-one-2642", SessionName: "dev55", OwnerKey: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	unlocker := &recordingViewPageUnlocker{}
+	hub.ViewPageUnlocker = unlocker
+	group := model.Message{ID: "g1", BotChannelID: "dev", ChatEntityID: "dev:group:oc_group", ChatType: model.ChatGroup, IngressProvenance: model.IngressWebhookVerified}
+	result, handled, err := hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "缺少可信发信人") {
+		t.Fatalf("empty group sender result=%+v handled=%v err=%v", result, handled, err)
+	}
+	group.SenderOpenID = "ou_alice"
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁页面") || len(unlocker.requests) != 1 {
+		t.Fatalf("fallback result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
+	group.SenderOpenID = "ou_bob"
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "bob", DisplayName: "Bob", FeishuOpenID: "ou_bob", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	result, handled, err = hub.dispatchTerminalInputCommand(ctx, group, "#unlock alice-dev55-2642-a3Kf9xQ2")
+	if err != nil || !handled || !strings.Contains(result.Reply, "发信人不是该会话 owner") || len(unlocker.requests) != 1 {
+		t.Fatalf("legacy non-owner result=%+v handled=%v err=%v requests=%+v", result, handled, err, unlocker.requests)
+	}
 }
 
 func TestTerminalExplicitUnlockAllowsSameOwnerAccount(t *testing.T) {
@@ -3996,6 +4473,21 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 	if metaString(got.Meta, "type") != "delivery" || deliveryID == "" || got.ID != "fm-reliable" {
 		t.Fatalf("reliable envelope = %+v", got)
 	}
+	hub.mu.Lock()
+	ring := append([]string(nil), hub.terminals[terminalKey(key.ID, "home")].eventRing...)
+	hub.mu.Unlock()
+	var observed map[string]any
+	for _, raw := range ring {
+		var event map[string]any
+		if json.Unmarshal([]byte(raw), &event) == nil && event["kind"] == "input_posted" && event["message_id"] == "fm-reliable" {
+			observed = event
+		}
+	}
+	source, _ := observed["source"].(map[string]any)
+	delivery, _ := observed["delivery"].(map[string]any)
+	if source["kind"] != "feishu" || source["trust_decision"] != "trusted" || delivery["role"] != "primary" || observed["stage"] != "hub_received" {
+		t.Fatalf("feishu input observation=%v ring=%v", observed, ring)
+	}
 	record, err := db.GetSessionDelivery(ctx, deliveryID)
 	if err != nil || record == nil || record.State != "sent" {
 		t.Fatalf("delivery record=%+v err=%v", record, err)
@@ -4011,6 +4503,167 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
 	if err != nil || next != nil {
 		t.Fatalf("source not acked after processed: %+v err=%v", next, err)
+	}
+}
+
+func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplicate(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-injected", Name: "injected", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-injected", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	home := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer home.Close(websocket.StatusNormalClosure, "done")
+	if err := writeEnvelope(ctx, home, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		hub.mu.Lock()
+		c := hub.sessionClients[key.ID]["home"]
+		hub.mu.Unlock()
+		return c != nil && hub.sessionSupportsDeliveryACK(c)
+	})
+	_, events, unsubscribe := hub.subscribeSessionEvents(key.ID, "home", "injected-ack")
+	defer unsubscribe()
+	if err := hub.RouteEnvelope(ctx, model.Envelope{ID: "injected-message", To: "home#" + key.ID,
+		From: "peer#" + key.ID, Body: "ping", TS: time.Now().Unix()}); err != nil {
+		t.Fatal(err)
+	}
+	delivery := readEnvelope(t, ctx, home)
+	deliveryID := metaString(delivery.Meta, "delivery_id")
+	<-events // input_posted
+	for _, state := range []string{"delivered", "injected", "processed"} {
+		if err := writeEnvelope(ctx, home, model.Envelope{ID: "ack-" + state, To: "workpulse#" + key.ID,
+			Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": state}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	updates := make([]string, 0, 2)
+	deadline := time.After(time.Second)
+	for len(updates) < 2 {
+		select {
+		case raw := <-events:
+			updates = append(updates, raw)
+		case <-deadline:
+			t.Fatalf("delivery updates=%v", updates)
+		}
+	}
+	if !strings.Contains(updates[0], `"delivery_stage":"helper_received"`) ||
+		!strings.Contains(updates[1], `"delivery_stage":"cli_injected"`) {
+		t.Fatalf("delivery updates=%v", updates)
+	}
+	select {
+	case raw := <-events:
+		t.Fatalf("processed duplicated cli_injected update: %s", raw)
+	case <-time.After(100 * time.Millisecond):
+	}
+	record, err := db.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || record == nil || record.State != "processed" {
+		t.Fatalf("delivery record=%+v err=%v", record, err)
+	}
+}
+
+func TestSessionToSessionReliableAdmissionPublishesBothEventRings(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-ring", Name: "ring", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-ring", "ring")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	source := dialSession(t, ctx, srv.URL, "source", key.ID, secret)
+	defer source.Close(websocket.StatusNormalClosure, "done")
+	target := dialSession(t, ctx, srv.URL, "target", key.ID, secret)
+	defer target.Close(websocket.StatusNormalClosure, "done")
+	if err := writeEnvelope(ctx, target, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		hub.mu.Lock()
+		c := hub.sessionClients[key.ID]["target"]
+		hub.mu.Unlock()
+		return c != nil && hub.sessionSupportsDeliveryACK(c)
+	})
+	_, sourceEvents, unsubSource := hub.subscribeSessionEvents(key.ID, "source", "source-ring")
+	defer unsubSource()
+	_, targetEvents, unsubTarget := hub.subscribeSessionEvents(key.ID, "target", "target-ring")
+	defer unsubTarget()
+
+	env := model.Envelope{ID: "session-primary", From: "source#" + key.ID, To: "target#" + key.ID, Body: "跨会话消息"}
+	if err := writeEnvelope(ctx, source, env); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, target)
+	deliveryID := metaString(got.Meta, "delivery_id")
+	if metaString(got.Meta, "type") != "delivery" || deliveryID == "" {
+		t.Fatalf("target did not receive reliable delivery: %+v", got)
+	}
+	record, err := db.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || record == nil || record.SourceType != "session_inbound" {
+		t.Fatalf("session delivery=%+v err=%v", record, err)
+	}
+	assertInput := func(ch <-chan string, role string) {
+		t.Helper()
+		select {
+		case raw := <-ch:
+			var event map[string]any
+			if err := json.Unmarshal([]byte(raw), &event); err != nil {
+				t.Fatal(err)
+			}
+			delivery, _ := event["delivery"].(map[string]any)
+			if event["kind"] != "input_posted" || event["message_id"] != env.ID || event["delivery_id"] != deliveryID || event["stage"] != "hub_received" || delivery["role"] != role {
+				t.Fatalf("%s observation=%s", role, raw)
+			}
+		case <-time.After(time.Second):
+			t.Fatalf("missing %s observation", role)
+		}
+	}
+	assertInput(targetEvents, "primary")
+	assertInput(sourceEvents, "copy")
+
+	if err := writeEnvelope(ctx, target, model.Envelope{ID: "delivered", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "delivered"}}); err != nil {
+		t.Fatal(err)
+	}
+	for name, ch := range map[string]<-chan string{"target": targetEvents, "source": sourceEvents} {
+		select {
+		case raw := <-ch:
+			if !strings.Contains(raw, `"kind":"delivery_update"`) || !strings.Contains(raw, `"delivery_stage":"helper_received"`) ||
+				!strings.Contains(raw, `"cancellable":true`) || strings.Contains(raw, `"cancelable"`) || strings.Contains(raw, `"delivery_status"`) {
+				t.Fatalf("%s delivered update=%s", name, raw)
+			}
+		case <-time.After(time.Second):
+			t.Fatalf("missing %s delivered update", name)
+		}
+	}
+	if err := writeEnvelope(ctx, target, model.Envelope{ID: "processed", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
+		t.Fatal(err)
+	}
+	for name, ch := range map[string]<-chan string{"target": targetEvents, "source": sourceEvents} {
+		select {
+		case raw := <-ch:
+			if !strings.Contains(raw, `"delivery_stage":"cli_injected"`) || !strings.Contains(raw, `"cancellable":false`) ||
+				strings.Contains(raw, `"cancelable"`) || strings.Contains(raw, `"delivery_status"`) {
+				t.Fatalf("%s processed update=%s", name, raw)
+			}
+		case <-time.After(time.Second):
+			t.Fatalf("missing %s processed update", name)
+		}
 	}
 }
 
@@ -4038,6 +4691,8 @@ func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T
 		t.Fatal(err)
 	}
 	time.Sleep(20 * time.Millisecond)
+	_, events, unsubscribe := hub.subscribeSessionEvents(key.ID, "home", "busy-ack")
+	defer unsubscribe()
 	if err := db.EnqueueMessage(ctx, model.Message{ID: "fm-busy", ChatEntityID: "dev:personal:alice",
 		Direction: model.DirectionIn, BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"#home ping"}`}); err != nil {
 		t.Fatal(err)
@@ -4051,6 +4706,16 @@ func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T
 	if deliveryID == "" {
 		t.Fatalf("missing delivery id: %+v", got)
 	}
+	select {
+	case raw := <-events:
+		var event map[string]any
+		if err := json.Unmarshal([]byte(raw), &event); err != nil || event["kind"] != "input_posted" ||
+			event["message_id"] != "fm-busy" || event["delivery_id"] != deliveryID || event["cancellable"] != true {
+			t.Fatalf("busy input observation=%s err=%v", raw, err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("missing busy input observation")
+	}
 	record, err := db.GetSessionDelivery(ctx, deliveryID)
 	if err != nil || record == nil || record.State != "sent" || record.Attempts != 1 {
 		t.Fatalf("sent delivery record=%+v err=%v", record, err)
@@ -4063,6 +4728,20 @@ func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T
 		record, _ = db.GetSessionDelivery(ctx, deliveryID)
 		return record != nil && record.State == "queued" && record.Attempts == 0 && record.LastError == "cli_busy"
 	})
+	select {
+	case raw := <-events:
+		var event map[string]any
+		if err := json.Unmarshal([]byte(raw), &event); err != nil || event["kind"] != "delivery_update" ||
+			event["message_id"] != "fm-busy" || event["observed_delivery_id"] != deliveryID ||
+			event["delivery_stage"] != "helper_received" || event["cancellable"] != true {
+			t.Fatalf("busy queued update=%s err=%v", raw, err)
+		}
+		if _, legacy := event["cancelable"]; legacy {
+			t.Fatalf("busy queued update retained legacy cancelable key: %s", raw)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("missing busy queued update")
+	}
 	next, err := db.ClaimNextMessage(ctx, model.DirectionIn)
 	if err != nil {
 		t.Fatal(err)
@@ -5044,6 +5723,168 @@ func TestInternalViewEventsReplaysOnSubscribe(t *testing.T) {
 	}
 }
 
+func TestInternalViewCancelRemovesPendingAndPublishesRendererUpdate(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.mu.Lock()
+	hub.sessionClients["key"] = map[string]*sessionClient{"s1": {keyID: "key", sessionName: "s1", connSeq: 1}}
+	st := hub.terminalForSession("key", "s1")
+	st.writerPage, st.writerToken, st.writerUntil = "viewer", "token", time.Now().Add(time.Minute)
+	hub.mu.Unlock()
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+		ID: "dlv_pending", KeyID: "key", SessionName: "s1", Envelope: `{}`,
+		SourceMessageID: "msg_pending", SourceType: "view",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, updates, unsub := hub.subscribeSessionEvents("key", "s1", "cancel-test")
+	defer unsub()
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /internal/view/{session}/cancel", hub.HandleInternalViewCancel)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	post := func(body string) (int, string) {
+		resp, err := http.Post(srv.URL+"/internal/view/s1/cancel", "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(b)
+	}
+	if code, _ := post(`{"viewer_id":"viewer","token":"token","message_id":"wrong","delivery_id":"dlv_pending"}`); code != http.StatusConflict {
+		t.Fatalf("mismatched G-ADDR status=%d, want 409", code)
+	}
+	code, body := post(`{"viewer_id":"viewer","token":"token","message_id":"msg_pending","delivery_id":"dlv_pending"}`)
+	if code != http.StatusOK || !strings.Contains(body, `"state":"cancelled"`) {
+		t.Fatalf("cancel response=%d %s", code, body)
+	}
+	got, err := db.GetSessionDelivery(ctx, "dlv_pending")
+	if err != nil || got == nil || got.State != "cancelled" {
+		t.Fatalf("delivery after cancel=%+v err=%v", got, err)
+	}
+	select {
+	case raw := <-updates:
+		var event map[string]any
+		if err := json.Unmarshal([]byte(raw), &event); err != nil || event["kind"] != "delivery_update" || event["delivery_status"] != "cancelled" || event["observed_delivery_id"] != "dlv_pending" || event["cancellable"] != false {
+			t.Fatalf("renderer update=%s err=%v", raw, err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("renderer did not receive cancelled update")
+	}
+	if code, _ := post(`{"viewer_id":"viewer","token":"token","message_id":"msg_pending","delivery_id":"dlv_pending"}`); code != http.StatusConflict {
+		t.Fatalf("repeat terminal cancel status=%d, want 409", code)
+	}
+}
+
+func TestSessionDeliveryDeadPathsPublishTerminalUpdates(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		delivery   model.SessionDelivery
+		wantReason string
+	}{
+		{
+			name: "expired",
+			delivery: model.SessionDelivery{
+				ID: "dlv_expired", KeyID: "key", SessionName: "s1", Envelope: `{"id":"msg_expired"}`,
+				SourceMessageID: "msg_expired", SourceType: "view", CreatedAt: time.Now().Add(-31 * time.Minute),
+			},
+			wantReason: "delivery_expired",
+		},
+		{
+			name: "malformed_envelope",
+			delivery: model.SessionDelivery{
+				ID: "dlv_malformed", KeyID: "key", SessionName: "s1", Envelope: `{`,
+				SourceMessageID: "msg_malformed", SourceType: "view", CreatedAt: time.Now(),
+			},
+			wantReason: "malformed_envelope",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			hub, db, ctx := newTestHub(t)
+			c := &sessionClient{keyID: "key", sessionName: "s1", deliveryACKV1: true}
+			if err := db.EnqueueSessionDelivery(ctx, tc.delivery); err != nil {
+				t.Fatal(err)
+			}
+			_, updates, unsubscribe := hub.subscribeSessionEvents("key", "s1", "dead-"+tc.name)
+			defer unsubscribe()
+
+			hub.drainSessionDeliveries(ctx, c)
+
+			got, err := db.GetSessionDelivery(ctx, tc.delivery.ID)
+			if err != nil || got == nil || got.State != "dead" || got.LastError != tc.wantReason {
+				t.Fatalf("dead delivery=%+v err=%v", got, err)
+			}
+			select {
+			case raw := <-updates:
+				var event map[string]any
+				if err := json.Unmarshal([]byte(raw), &event); err != nil ||
+					event["kind"] != "delivery_update" ||
+					event["message_id"] != tc.delivery.SourceMessageID ||
+					event["observed_delivery_id"] != tc.delivery.ID ||
+					event["delivery_status"] != "failed" ||
+					event["reason"] != tc.wantReason ||
+					event["cancellable"] != false {
+					t.Fatalf("terminal update=%s err=%v", raw, err)
+				}
+			case <-time.After(time.Second):
+				t.Fatal("missing terminal update")
+			}
+		})
+	}
+}
+
+func TestDeliveryCancelledAckFinalizesPendingAndPublishesRendererUpdate(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	c := &sessionClient{keyID: "key", sessionName: "s1", connSeq: 1}
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{
+		ID: "dlv_helper", KeyID: "key", SessionName: "s1", Envelope: `{}`,
+		SourceMessageID: "msg_helper", SourceType: "view",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpdateSessionDelivery(ctx, "dlv_helper", "delivered", "", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	_, updates, unsub := hub.subscribeSessionEvents("key", "s1", "cancel-ack-test")
+	defer unsub()
+	for _, meta := range []map[string]any{
+		{"type": "delivery_cancel_ack", "result": "not_cancelable", "state": "processing", "message_id": "msg_helper", "delivery_id": "dlv_helper"},
+		{"type": "delivery_cancel_ack", "result": "not_found", "state": "", "message_id": "msg_helper", "delivery_id": "dlv_helper"},
+		{"type": "delivery_cancel_ack", "result": "cancelled", "state": "cancelled", "message_id": "wrong", "delivery_id": "dlv_helper"},
+	} {
+		if !hub.handleSessionDeliveryAck(ctx, c, model.Envelope{Meta: meta}) {
+			t.Fatalf("cancel ACK was not claimed: %+v", meta)
+		}
+		got, err := db.GetSessionDelivery(ctx, "dlv_helper")
+		if err != nil || got == nil || got.State != "delivered" {
+			t.Fatalf("negative ACK changed delivery: meta=%+v got=%+v err=%v", meta, got, err)
+		}
+		select {
+		case raw := <-updates:
+			t.Fatalf("negative ACK published renderer update: meta=%+v event=%s", meta, raw)
+		default:
+		}
+	}
+	if !hub.handleSessionDeliveryAck(ctx, c, model.Envelope{Meta: map[string]any{
+		"type": "delivery_cancel_ack", "result": "cancelled", "state": "cancelled", "message_id": "msg_helper", "delivery_id": "dlv_helper",
+	}}) {
+		t.Fatal("cancelled delivery ACK was not handled")
+	}
+	got, err := db.GetSessionDelivery(ctx, "dlv_helper")
+	if err != nil || got == nil || got.State != "cancelled" {
+		t.Fatalf("delivery after helper ACK=%+v err=%v", got, err)
+	}
+	select {
+	case raw := <-updates:
+		if !strings.Contains(raw, `"delivery_status":"cancelled"`) || !strings.Contains(raw, `"observed_delivery_id":"dlv_helper"`) {
+			t.Fatalf("renderer update=%s", raw)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("renderer did not receive helper-confirmed cancellation")
+	}
+}
+
 // C3(feat/view-service-dock):内网鉴权/输入口 —— 注册虚拟 viewer、
 // 解锁前输入被拒(auth gate)、#unlock 后 authorize 报可写且同一 token、未知 viewer 404。
 func TestInternalViewAuthorizeAndInputAuthGate(t *testing.T) {
@@ -5195,6 +6036,16 @@ func TestViewServiceFullChainIntegration(t *testing.T) {
 	// (1) 会话上线(真 WS)
 	sess := dialSession(t, ctx, srv.URL, "home", keyID, secret)
 	defer sess.Close(websocket.StatusNormalClosure, "done")
+	if err := writeEnvelope(ctx, sess, model.Envelope{ID: "caps", To: "workpulse#" + keyID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		hub.mu.Lock()
+		c := hub.sessionClients[keyID]["home"]
+		hub.mu.Unlock()
+		return c != nil && hub.sessionSupportsDeliveryACK(c)
+	})
 
 	// (2) C5/C1:会话发 session_event 信封
 	eventJSON := `{"kind":"assistant_text","text":"你好世界","delivery_id":"d1","cursor":"1"}`
@@ -5269,7 +6120,7 @@ func TestViewServiceFullChainIntegration(t *testing.T) {
 		t.Fatalf("after unlock not writable: %s", stBody)
 	}
 
-	// (5) C3 input:浏览器输入 → hub → 会话收到 terminal_input
+	// (5) C3 input:浏览器输入 → hub → 会话收到带 View 来源的 primary 输入
 	sc, ib := post("/internal/view/home/input", `{"viewer_id":"`+reg.ViewerID+`","token":"`+token+`","text":"跑一下测试"}`)
 	if sc != 200 {
 		t.Fatalf("input POST status=%d body=%s", sc, ib)
@@ -5277,12 +6128,31 @@ func TestViewServiceFullChainIntegration(t *testing.T) {
 	var gotInput bool
 	for i := 0; i < 6 && !gotInput; i++ {
 		env := readEnvelope(t, ctx, sess)
-		if env.Meta["type"] == "terminal_input" && env.Body == "跑一下测试" {
+		if env.Meta["type"] == "delivery" && env.Meta["source_kind"] == "user" &&
+			env.Meta["delivery_id"] != "" && env.Body == "跑一下测试" {
 			gotInput = true
 		}
 	}
 	if !gotInput {
-		t.Fatal("会话未收到 terminal_input(input 未回投成功)")
+		t.Fatal("会话未收到 View primary input(input 未回投成功)")
+	}
+	hub.mu.Lock()
+	ring := append([]string(nil), hub.terminals[terminalKey(keyID, "home")].eventRing...)
+	hub.mu.Unlock()
+	var sawViewPrimary bool
+	for _, raw := range ring {
+		var event map[string]any
+		if json.Unmarshal([]byte(raw), &event) != nil || event["kind"] != "input_posted" {
+			continue
+		}
+		source, _ := event["source"].(map[string]any)
+		delivery, _ := event["delivery"].(map[string]any)
+		if source["kind"] == "view" && delivery["role"] == "primary" && event["stage"] == "hub_received" {
+			sawViewPrimary = true
+		}
+	}
+	if !sawViewPrimary {
+		t.Fatalf("View primary input_posted missing from eventRing: %v", ring)
 	}
 }
 

@@ -6,6 +6,7 @@ import os
 import re
 import shlex
 import subprocess
+import time
 from dataclasses import dataclass, field
 from urllib.parse import urlencode
 
@@ -70,6 +71,8 @@ class Config:
     provision_versions_file: str = ""
     provision_update_state_file: str = ""
     provision_rollback_timeout: int = 300
+    device_id: str = ""
+    device_id_v1: bool = False
 
     @property
     def registered_session_name(self) -> str:
@@ -100,6 +103,9 @@ class Config:
             query["target_bot"] = self.target_bot
         if self.mirror_to:
             query["mirror_to"] = self.mirror_to
+        if self.device_id_v1 and self.device_id:
+            query["device_id_v1"] = "1"
+            query["device_id"] = self.device_id
         return f"{self.ws_base.rstrip('/')}/ws/session/{self.session_name}?{urlencode(query)}"
 
 
@@ -117,6 +123,8 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         key_id=key_id,
         secret=required_env("SH_SECRET", env),
         owner=owner,
+        device_id_v1=env.get("SH_DEVICE_ID_V1", "").strip().lower() in ("1", "true", "yes", "on"),
+        device_id=load_device_id(short_session_name, key_id, env) if env.get("SH_DEVICE_ID_V1", "").strip().lower() in ("1", "true", "yes", "on") else "",
         ws_base=env.get("SH_WS_BASE", "ws://127.0.0.1:8791"),
         bot_name=env.get("SH_BOT_NAME", "UnifiedRobot"),
         mode=env.get("SH_MODE", env.get("SH_ADAPTER", "echo")).lower(),
@@ -168,6 +176,34 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         provision_update_state_file=expand_path(env.get("SH_PROVISION_STATE_FILE", default_provision_update_state_file(session_name))),
         provision_rollback_timeout=int(env.get("SH_PROVISION_ROLLBACK_TIMEOUT", "300")),
     )
+
+
+def load_device_id(session_name: str, key_id: str, env: dict[str, str]) -> str:
+    """Persist a 64-bit startup identity so legitimate restarts reclaim the session."""
+    configured = env.get("SH_DEVICE_ID", "").strip().lower()
+    if re.fullmatch(r"[0-9a-f]{16}", configured):
+        return configured
+    root = os.path.expanduser(env.get("SH_STATE_DIR", "~/.dingwei"))
+    safe = INBOX_FILENAME_RE.sub("-", f"{session_name}-{key_id}").strip("-")
+    path = os.path.join(root, f"device-{safe}.id")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            existing = fh.read().strip().lower()
+        if re.fullmatch(r"[0-9a-f]{16}", existing):
+            return existing
+    except OSError:
+        pass
+    value = f"{time.time_ns() & ((1 << 64) - 1):016x}"
+    try:
+        os.makedirs(root, mode=0o700, exist_ok=True)
+        tmp = path + f".{os.getpid()}.tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            fh.write(value + "\n")
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, path)
+    except OSError:
+        pass
+    return value
 
 
 def truthy(value: str) -> bool:

@@ -62,6 +62,35 @@ func TestSessionDeliveryClaimBypassesExpiredDeliveredAndIsMonotonic(t *testing.T
 	}
 }
 
+func TestExpireSessionDeliveriesReturnsOnlyNewTerminalRows(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	now := time.Now().UTC()
+	for _, d := range []model.SessionDelivery{
+		{ID: "dlv_old", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_old", CreatedAt: now.Add(-31 * time.Minute)},
+		{ID: "dlv_fresh", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_fresh", CreatedAt: now},
+		{ID: "dlv_other", KeyID: "key", SessionName: "other", Envelope: `{}`, SourceMessageID: "msg_other", CreatedAt: now.Add(-31 * time.Minute)},
+	} {
+		if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	expired, err := db.ExpireSessionDeliveries(ctx, "key", "home", now)
+	if err != nil || len(expired) != 1 || expired[0].ID != "dlv_old" ||
+		expired[0].State != "dead" || expired[0].LastError != "delivery_expired" {
+		t.Fatalf("expired deliveries = %+v, %v", expired, err)
+	}
+	again, err := db.ExpireSessionDeliveries(ctx, "key", "home", now)
+	if err != nil || len(again) != 0 {
+		t.Fatalf("repeat expiry = %+v, %v", again, err)
+	}
+	for id, want := range map[string]string{"dlv_old": "dead", "dlv_fresh": "queued", "dlv_other": "queued"} {
+		got, err := db.GetSessionDelivery(ctx, id)
+		if err != nil || got == nil || got.State != want {
+			t.Fatalf("%s state=%+v err=%v, want %s", id, got, err, want)
+		}
+	}
+}
+
 func TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	now := time.Now().UTC()
@@ -89,6 +118,49 @@ func TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts(t *testing.T) {
 		if got.State != "queued" || got.Attempts != 0 {
 			t.Fatalf("after busy state=%s attempts=%d, want queued attempts 0", got.State, got.Attempts)
 		}
+	}
+}
+
+func TestCancelPendingSessionDeliveryIsAddressedAndInjectionSafe(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	for _, d := range []model.SessionDelivery{
+		{ID: "dlv_pending", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_pending"},
+		{ID: "dlv_processed", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_processed"},
+		{ID: "dlv_helper", KeyID: "key", SessionName: "home", Envelope: `{}`, SourceMessageID: "msg_helper"},
+	} {
+		if err := db.EnqueueSessionDelivery(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.UpdateSessionDelivery(ctx, "dlv_processed", "processed", "", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpdateSessionDelivery(ctx, "dlv_helper", "delivered", "", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := db.CancelPendingSessionDelivery(ctx, "wrong", "dlv_pending", "key", "home"); err != nil || ok {
+		t.Fatalf("mismatched message address cancelled=%v err=%v", ok, err)
+	}
+	if ok, err := db.CancelPendingSessionDelivery(ctx, "msg_processed", "dlv_processed", "key", "home"); err != nil || ok {
+		t.Fatalf("processed delivery cancelled=%v err=%v", ok, err)
+	}
+	if ok, err := db.CancelPendingSessionDelivery(ctx, "msg_pending", "dlv_pending", "key", "home"); err != nil || !ok {
+		t.Fatalf("pending delivery cancelled=%v err=%v", ok, err)
+	}
+	got, err := db.GetSessionDelivery(ctx, "dlv_pending")
+	if err != nil || got == nil || got.State != "cancelled" {
+		t.Fatalf("cancelled delivery=%+v err=%v", got, err)
+	}
+	if claimed, err := db.ClaimSessionDelivery(ctx, "key", "home", time.Now().Add(time.Second)); err != nil || claimed != nil {
+		if claimed == nil || claimed.ID != "dlv_helper" {
+			t.Fatalf("cancelled delivery remained claimable: %+v err=%v", claimed, err)
+		}
+	}
+	if ok, err := db.ConfirmSessionDeliveryCancelled(ctx, "msg_helper", "dlv_helper", "key", "home"); err != nil || !ok {
+		t.Fatalf("helper-confirmed cancel=%v err=%v", ok, err)
+	}
+	if ok, err := db.ConfirmSessionDeliveryCancelled(ctx, "msg_processed", "dlv_processed", "key", "home"); err != nil || ok {
+		t.Fatalf("late processed confirmation=%v err=%v", ok, err)
 	}
 }
 
@@ -266,6 +338,23 @@ func TestUpsertSessionEndpointPreservesMirrorToWhenReconnectOmitsIt(t *testing.T
 	}
 	if !endpoints[0].MirrorEnabled || endpoints[0].MirrorTo != mirrorTo {
 		t.Fatalf("mirror target should survive empty reconnect: %+v want=%q", endpoints[0], mirrorTo)
+	}
+}
+
+func TestUpsertSessionEndpointPreservesOwnerAndFullNameWhenReconnectOmitsThem(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "dev55", FullSessionName: "alice-dev55-test", OwnerKey: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "FB-test", SessionName: "dev55", FullSessionName: "", OwnerKey: "", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	endpoints, err := db.ListSessionEndpoints(ctx)
+	if err != nil || len(endpoints) != 1 {
+		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
+	}
+	if endpoints[0].OwnerKey != "alice" || endpoints[0].FullSessionName != "alice-dev55-test" {
+		t.Fatalf("identity metadata overwritten: %+v", endpoints[0])
 	}
 }
 
@@ -555,6 +644,59 @@ func TestMessageQueueIdempotentClaimAckAndFail(t *testing.T) {
 	}
 }
 
+func TestMessageIngressProvenanceDefaultsUntrustedAndSurvivesRetry(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.EnqueueMessage(ctx, model.Message{
+		ID: "direct", ChatEntityID: "chat1", Direction: model.DirectionIn,
+		BotChannelID: "bot1", ChatType: model.ChatPersonal, Content: `{"text":"direct"}`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil {
+		t.Fatalf("ClaimNextMessage: msg=%+v err=%v", msg, err)
+	}
+	if msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("direct provenance = %q", msg.IngressProvenance)
+	}
+	if err := db.FailMessage(ctx, msg.ID, "retry"); err != nil {
+		t.Fatal(err)
+	}
+	msg, err = db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil || msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("retry upgraded provenance: msg=%+v err=%v", msg, err)
+	}
+}
+
+func TestLegacyMessageRowDefaultsUntrusted(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	_, err := db.db.ExecContext(ctx, `INSERT INTO message
+		(id,chat_entity_id,direction,bot_channel_id,chat_type,sender_open_id,content_json,status,attempts,created_at)
+		VALUES('legacy','chat1','in','bot1','personal','','{}','queued',0,?)`, time.Now().UTC().Format(time.RFC3339))
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil || msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("legacy provenance: msg=%+v err=%v", msg, err)
+	}
+}
+
+func TestMessageIngressProvenanceRejectsUnknownValue(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.EnqueueMessage(ctx, model.Message{
+		ID: "unknown", ChatEntityID: "chat1", Direction: model.DirectionIn,
+		BotChannelID: "bot1", ChatType: model.ChatPersonal,
+		IngressProvenance: model.IngressProvenance("payload_verified"), Content: `{}`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil || msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("unknown provenance: msg=%+v err=%v", msg, err)
+	}
+}
+
 func TestSeenPersonUpsertAndMemberFlag(t *testing.T) {
 	db, ctx := newTestSQLite(t)
 	if err := db.UpsertSeenPerson(ctx, model.SeenPerson{OpenID: "ou_1", BotChannelID: "bot1", Name: "Alice", Source: "group"}); err != nil {
@@ -648,6 +790,9 @@ func TestEnqueueMessageRedactsContentBeforeStorage(t *testing.T) {
 
 func TestApproveKeyApplicationWithGrantCommitsCredentialAndGrantAtomically(t *testing.T) {
 	db, ctx := newTestSQLite(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "applicant", FeishuOpenID: "ou_applicant", Active: true}); err != nil {
+		t.Fatal(err)
+	}
 	app, err := db.CreateKeyApplication(ctx, model.KeyApplication{
 		ID:               "ka1",
 		ApplicantOpenID:  "ou_applicant",
@@ -678,9 +823,38 @@ func TestApproveKeyApplicationWithGrantCommitsCredentialAndGrantAtomically(t *te
 	if err != nil || len(accounts) != 1 || accounts[0] != "dev:personal:ou_applicant" {
 		t.Fatalf("accounts=%+v err=%v", accounts, err)
 	}
+	entity, err := db.GetChatEntity(ctx, "dev", "ou_applicant")
+	if err != nil || entity == nil || entity.BoundOwner != "applicant" {
+		t.Fatalf("approved entity=%+v err=%v", entity, err)
+	}
 	msg, err := db.ClaimNextMessage(ctx, model.DirectionOut)
 	if err != nil || msg == nil || msg.ID != "grant-ka1" || strings.Contains(msg.Content, "wp_") {
 		t.Fatalf("grant message=%+v err=%v", msg, err)
+	}
+}
+
+func TestUpsertChatEntityAutoBindsOwnerAndPreservesBinding(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "zzc", FeishuOpenID: "ou_zzc", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	entity := model.ChatEntity{ID: "dev:personal:ou_zzc", BotChannelID: "dev", Type: model.ChatPersonal, FeishuID: "ou_zzc", Active: true}
+	if err := db.UpsertChatEntity(ctx, entity); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.GetChatEntity(ctx, "dev", "ou_zzc")
+	if err != nil || got == nil || got.BoundOwner != "zzc" {
+		t.Fatalf("auto-bound entity=%+v err=%v", got, err)
+	}
+
+	// Routine ingress upserts do not carry BoundOwner and must not erase it.
+	entity.DisplayName = "Zhang"
+	if err := db.UpsertChatEntity(ctx, entity); err != nil {
+		t.Fatal(err)
+	}
+	got, err = db.GetChatEntity(ctx, "dev", "ou_zzc")
+	if err != nil || got == nil || got.BoundOwner != "zzc" || got.DisplayName != "Zhang" {
+		t.Fatalf("preserved entity=%+v err=%v", got, err)
 	}
 }
 

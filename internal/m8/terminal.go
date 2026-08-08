@@ -12,6 +12,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +25,7 @@ import (
 const (
 	terminalOutputType       = "terminal_output"
 	terminalInputType        = "terminal_input"
+	terminalInterruptType    = "terminal_interrupt"
 	terminalResizeType       = "terminal_resize"
 	terminalRefreshType      = "terminal_refresh"
 	terminalSessionEventType = "session_event"
@@ -67,6 +69,20 @@ type terminalClientMessage struct {
 
 type terminalCookieRequest struct {
 	Token string `json:"token"`
+}
+
+type viewInterruptRequest struct {
+	ViewerID   string `json:"viewer_id"`
+	Token      string `json:"token"`
+	DeliveryID string `json:"delivery_id"`
+	TurnID     string `json:"turn_id"`
+}
+
+type viewCancelRequest struct {
+	ViewerID   string `json:"viewer_id"`
+	Token      string `json:"token"`
+	MessageID  string `json:"message_id"`
+	DeliveryID string `json:"delivery_id"`
 }
 
 func terminalKey(keyID, sessionName string) string {
@@ -375,9 +391,13 @@ func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) b
 	if metaString(env.Meta, "type") != terminalSessionEventType {
 		return false
 	}
-	data := env.Body
+	h.publishSessionEvent(c.keyID, c.sessionName, env.Body)
+	return true
+}
+
+func (h *Hub) publishSessionEvent(keyID, sessionName, data string) {
 	h.mu.Lock()
-	st := h.terminalForSession(c.keyID, c.sessionName)
+	st := h.terminalForSession(keyID, sessionName)
 	st.eventRing = append(st.eventRing, data)
 	if len(st.eventRing) > terminalEventRingCap {
 		st.eventRing = st.eventRing[len(st.eventRing)-terminalEventRingCap:]
@@ -393,7 +413,93 @@ func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) b
 		default: // 慢消费者不阻塞事件主路(与 output 扇出同纪律)
 		}
 	}
-	return true
+}
+
+func (h *Hub) publishDeliveryCancelled(keyID, sessionName, messageID, deliveryID, stage string) {
+	event, _ := json.Marshal(deliveryUpdateEvent(messageID, deliveryID, "cancelled", stage, "cancelled", "", time.Now().UTC()))
+	h.publishSessionEvent(keyID, sessionName, string(event))
+}
+
+func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envelope, deliveryID, stage, role string, cancellable bool) {
+	if keyID == "" || sessionName == "" || env.ID == "" || deliveryID == "" {
+		return
+	}
+	sourceKind := ""
+	displayName := metaString(env.Meta, "source_display_name")
+	if from, err := parseAddress(env.From); err == nil {
+		switch from.Kind {
+		case addressFeishu:
+			sourceKind = "feishu"
+			displayName = firstNonEmpty(displayName, from.OpenID)
+		case addressSession:
+			if from.SessionName == "workpulse" {
+				sourceKind = "view"
+				displayName = "View"
+			} else {
+				sourceKind = "agent"
+				displayName = from.SessionName
+			}
+		}
+	}
+	if sourceKind == "" {
+		sourceKind = "agent"
+	}
+	event, _ := json.Marshal(inputObservationEvent(env, deliveryID, stage, role, cancellable, sourceKind, displayName, time.Now().UTC()))
+	h.publishSessionEvent(keyID, sessionName, string(event))
+}
+
+func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, cancellable bool, sourceKind, displayName string, now time.Time) map[string]any {
+	return map[string]any{
+		"schema_version": "delivery.v2",
+		"kind":           "input_posted",
+		"message_id":     env.ID,
+		"delivery_id":    deliveryID,
+		"stage":          stage,
+		"payload":        strings.TrimSuffix(env.Body, "\r"),
+		"source": map[string]any{
+			"kind": sourceKind, "display_name": displayName, "trust_decision": "trusted",
+		},
+		"delivery": map[string]any{"role": role},
+		"copy_kind": func() string {
+			if role == "copy" {
+				return "route_observation"
+			}
+			return ""
+		}(),
+		"cancellable": cancellable,
+		"updated_at":  now.UTC().Format(time.RFC3339Nano),
+	}
+}
+
+func (h *Hub) publishDeliveryUpdate(keyID, sessionName, messageID, deliveryID, deliveryState, stage, status, reason string) {
+	if keyID == "" || sessionName == "" || messageID == "" || deliveryID == "" {
+		return
+	}
+	event := deliveryUpdateEvent(messageID, deliveryID, deliveryState, stage, status, reason, time.Now().UTC())
+	raw, _ := json.Marshal(event)
+	h.publishSessionEvent(keyID, sessionName, string(raw))
+}
+
+func sessionDeliveryCancellable(state string) bool {
+	switch state {
+	case "queued", "sent", "delivered":
+		return true
+	default:
+		return false
+	}
+}
+
+func deliveryUpdateEvent(messageID, deliveryID, deliveryState, stage, status, reason string, now time.Time) map[string]any {
+	event := map[string]any{
+		"schema_version": "delivery.v2", "kind": "delivery_update", "message_id": messageID,
+		"observed_delivery_id": deliveryID, "delivery_stage": stage,
+		"updated_at": now.UTC().Format(time.RFC3339Nano), "reason": reason,
+		"cancellable": sessionDeliveryCancellable(deliveryState), "interruptible": false,
+	}
+	if status != "" {
+		event["delivery_status"] = status
+	}
+	return event
 }
 
 // subscribeSessionEvents 注册一个内网事件订阅者(C2 的 SSE 端点使用):
@@ -491,8 +597,11 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 // ---- C4:入口路由器(按用户三级灰度路由到不同 View 服务 / 老 xterm)----
 
 type ViewTarget struct {
-	URL     string `json:"url,omitempty"`     // View 服务地址(反代)
-	Builtin bool   `json:"builtin,omitempty"` // true ⇒ hub 内置老 xterm 页
+	URL               string `json:"url,omitempty"`                   // View 服务地址(反代)
+	Builtin           bool   `json:"builtin,omitempty"`               // true ⇒ hub 内置老 xterm 页
+	ViewUnlockV2      bool   `json:"view_unlock_v2,omitempty"`        // 显式 capability gate
+	HubToVSSecretFile string `json:"hub_to_vs_secret_file,omitempty"` // 每 target 独立密钥文件
+	VSToHubSecretFile string `json:"vs_to_hub_secret_file,omitempty"` // 反向输入独立密钥文件
 }
 
 // ViewRouting 路由策略。解析顺序:会话级 > 用户级 > 默认(命中即停)。
@@ -780,6 +889,150 @@ func (h *Hub) HandleInternalViewInput(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(`{"ok":true}`))
 }
 
+// HandleInternalViewInterrupt validates only the view write grant, then
+// forwards the requested identity. The helper is the sole stale-turn CAS authority.
+func (h *Hub) HandleInternalViewInterrupt(w http.ResponseWriter, r *http.Request) {
+	sessionName := strings.TrimSpace(r.PathValue("session"))
+	var req viewInterruptRequest
+	if sessionName == "" || strings.Contains(sessionName, "#") || json.NewDecoder(r.Body).Decode(&req) != nil || strings.TrimSpace(req.DeliveryID) == "" || strings.TrimSpace(req.TurnID) == "" {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	authorized := false
+	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
+		authorized = true
+		st.writerUntil = time.Now().Add(terminalTokenTTL)
+	}
+	h.mu.Unlock()
+	if !authorized {
+		http.Error(w, "interrupt not authorized or session offline", http.StatusForbidden)
+		return
+	}
+	status, err := h.writeInterruptFrame(r.Context(), sessionName, req.DeliveryID, req.TurnID)
+	if status == http.StatusConflict {
+		http.Error(w, "interrupt not authorized or session offline", http.StatusForbidden)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(`{"ok":true,"state":"forwarded"}`))
+}
+
+// writeInterruptFrame forwards an interrupt to the unique online session.
+// Authorization stays with the caller; the helper remains the stale-turn CAS authority.
+func (h *Hub) writeInterruptFrame(ctx context.Context, sessionName, deliveryID, turnID string) (int, error) {
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	var c *sessionClient
+	if found {
+		c = h.sessionClients[st.keyID][st.sessionName]
+	}
+	h.mu.Unlock()
+	if c == nil {
+		return http.StatusConflict, nil
+	}
+	env := model.Envelope{
+		ID: randomHex(16), To: sessionAddress(sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
+		Meta: map[string]any{"type": terminalInterruptType, "system": true, "no_mirror": true, "delivery_id": deliveryID, "turn_id": turnID},
+	}
+	if err := c.write(ctx, env); err != nil {
+		return http.StatusBadGateway, err
+	}
+	return http.StatusOK, nil
+}
+
+// HandleInternalViewCancel removes an authorized delivery while it is still in
+// the Hub's pre-injection queue and publishes the terminal delivery update.
+func (h *Hub) HandleInternalViewCancel(w http.ResponseWriter, r *http.Request) {
+	sessionName := strings.TrimSpace(r.PathValue("session"))
+	var req viewCancelRequest
+	if sessionName == "" || strings.Contains(sessionName, "#") || json.NewDecoder(r.Body).Decode(&req) != nil ||
+		strings.TrimSpace(req.MessageID) == "" || strings.TrimSpace(req.DeliveryID) == "" {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	h.mu.Lock()
+	st, found := h.terminalBySessionNameLocked(sessionName)
+	var keyID string
+	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
+		keyID = st.keyID
+		st.writerUntil = time.Now().Add(terminalTokenTTL)
+	}
+	h.mu.Unlock()
+	if keyID == "" {
+		http.Error(w, "cancel not authorized or session offline", http.StatusForbidden)
+		return
+	}
+	result := h.cancelSessionDeliveryCore(r.Context(), keyID, sessionName, req.MessageID, req.DeliveryID)
+	writeSessionDeliveryCancelResult(w, req.MessageID, req.DeliveryID, result)
+}
+
+type sessionDeliveryCancelResult struct {
+	Status int
+	State  string
+	Error  string
+}
+
+func writeSessionDeliveryCancelResult(w http.ResponseWriter, messageID, deliveryID string, result sessionDeliveryCancelResult) {
+	if result.Status != http.StatusOK {
+		http.Error(w, result.Error, result.Status)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"ok": true, "state": result.State, "message_id": messageID, "delivery_id": deliveryID,
+	})
+}
+
+// cancelSessionDeliveryCore contains the shared legacy and View V2 cancellation
+// behavior. It deliberately preserves the existing pre-injection race: this
+// endpoint connects cancellation to the Hub, but durable cancel intent is a
+// separate GA hardening task.
+func (h *Hub) cancelSessionDeliveryCore(ctx context.Context, keyID, sessionName, messageID, deliveryID string) sessionDeliveryCancelResult {
+	if h.Repo == nil {
+		return sessionDeliveryCancelResult{Status: http.StatusServiceUnavailable, Error: "delivery store unavailable"}
+	}
+	delivery, err := h.Repo.GetSessionDelivery(ctx, deliveryID)
+	if err != nil {
+		return sessionDeliveryCancelResult{Status: http.StatusInternalServerError, Error: "cancel failed"}
+	}
+	if delivery == nil || delivery.SourceMessageID != messageID || delivery.SessionName != sessionName || (keyID != "" && delivery.KeyID != keyID) {
+		return sessionDeliveryCancelResult{Status: http.StatusConflict, Error: "delivery not cancelable"}
+	}
+	if keyID == "" {
+		keyID = delivery.KeyID
+	}
+	if cancelled, err := h.Repo.CancelPendingSessionDelivery(ctx, messageID, deliveryID, keyID, sessionName); err != nil {
+		return sessionDeliveryCancelResult{Status: http.StatusInternalServerError, Error: "cancel failed"}
+	} else if cancelled {
+		h.publishDeliveryCancelled(keyID, sessionName, messageID, deliveryID, "hub_received")
+		return sessionDeliveryCancelResult{Status: http.StatusOK, State: "cancelled"}
+	}
+	delivery, err = h.Repo.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || delivery == nil || (delivery.State != "sent" && delivery.State != "delivered") {
+		return sessionDeliveryCancelResult{Status: http.StatusConflict, Error: "delivery not cancelable"}
+	}
+	h.mu.Lock()
+	c := h.sessionClients[keyID][sessionName]
+	h.mu.Unlock()
+	if c == nil {
+		return sessionDeliveryCancelResult{Status: http.StatusConflict, Error: "delivery not cancelable"}
+	}
+	env := model.Envelope{
+		ID: randomHex(16), To: sessionAddress(sessionName, keyID), From: sessionAddress("workpulse", keyID), TS: time.Now().Unix(),
+		Meta: map[string]any{"type": "delivery_cancel", "system": true, "no_mirror": true, "message_id": messageID, "delivery_id": deliveryID},
+	}
+	if err := c.write(ctx, env); err != nil {
+		return sessionDeliveryCancelResult{Status: http.StatusBadGateway, Error: err.Error()}
+	}
+	return sessionDeliveryCancelResult{Status: http.StatusOK, State: "forwarded"}
+}
+
 func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID, token, data string) error {
 	if data == "" {
 		return nil
@@ -805,9 +1058,9 @@ func (h *Hub) routeTerminalInput(ctx context.Context, keyID, sessionName, pageID
 		From: sessionAddress("workpulse", keyID),
 		Body: data,
 		TS:   time.Now().Unix(),
-		Meta: map[string]any{"type": terminalInputType, "system": true, "no_mirror": true},
+		Meta: map[string]any{"source_kind": "user", "source_display_name": "View"},
 	}
-	return c.write(ctx, env)
+	return h.routeToSession(ctx, keyID, sessionName, env, false)
 }
 
 // routeTerminalResize 把浏览器 xterm 的实际尺寸(列/行)转发给 sessionHelper，
@@ -892,7 +1145,11 @@ func (h *Hub) requestTerminalRefreshAfterInitialResize(ctx context.Context, keyI
 }
 
 func (h *Hub) dispatchTerminalInputCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
-	action, sessionName, pageCode, ok := parseTerminalInputCommand(h.stripLeadingBotMentions(msg.BotChannelID, text))
+	commandText := h.stripLeadingBotMentions(msg.BotChannelID, text)
+	if fullSessionName, pageCode, ok := parseViewUnlockV2Command(commandText); ok {
+		return h.dispatchViewUnlockV2(ctx, msg, fullSessionName, pageCode)
+	}
+	action, sessionName, pageCode, ok := parseTerminalInputCommand(commandText)
 	if !ok {
 		return model.PrefixDispatchResult{}, false, nil
 	}
@@ -929,6 +1186,108 @@ func (h *Hub) dispatchTerminalInputCommand(ctx context.Context, msg model.Messag
 	default:
 		return model.PrefixDispatchResult{}, false, nil
 	}
+}
+
+var viewUnlockV2CodePattern = regexp.MustCompile(`^([a-z0-9]+-[a-z0-9]+-[0-9a-f]{4})-([A-Za-z0-9]{8})$`)
+
+func parseViewUnlockV2Command(text string) (fullSessionName, pageCode string, ok bool) {
+	fields := strings.Fields(strings.TrimSpace(text))
+	if len(fields) != 2 || fields[0] != "#unlock" {
+		return "", "", false
+	}
+	matches := viewUnlockV2CodePattern.FindStringSubmatch(fields[1])
+	if len(matches) != 3 {
+		return "", "", false
+	}
+	return matches[1], fields[1], true
+}
+
+func trustedViewUnlockIngress(provenance model.IngressProvenance) bool {
+	provenance = model.NormalizeIngressProvenance(provenance)
+	return provenance == model.IngressWebhookVerified || provenance == model.IngressFeishuWSAuthenticated
+}
+
+func (h *Hub) dispatchViewUnlockV2(ctx context.Context, msg model.Message, fullSessionName, pageCode string) (model.PrefixDispatchResult, bool, error) {
+	routeTarget, _ := loadViewRouting().resolve(fullSessionName, ownerFromSessionName(fullSessionName))
+	if !trustedViewUnlockIngress(msg.IngressProvenance) {
+		auditViewUnlockV2(msg, "", "", "", fullSessionName, routeTarget, pageCode, "rejected", "untrusted_ingress")
+		return model.PrefixDispatchResult{Matched: true, Reply: "拒绝解锁：消息来源未通过可信入站认证。"}, true, nil
+	}
+	senderOwner, targetOwner, senderOpenID, err := h.authorizeViewUnlockOwner(ctx, msg, fullSessionName)
+	if err != nil {
+		auditViewUnlockV2(msg, senderOpenID, senderOwner, targetOwner, fullSessionName, routeTarget, pageCode, "rejected", err.Error())
+		return model.PrefixDispatchResult{Matched: true, Reply: err.Error()}, true, nil
+	}
+	unlocker := h.ViewPageUnlocker
+	if unlocker == nil {
+		unlocker = newHMACViewPageUnlocker()
+	}
+	err = unlocker.UnlockViewPage(ctx, ViewPageUnlockRequest{
+		Code: pageCode, FullSessionName: fullSessionName, OwnerKey: targetOwner,
+		SenderOpenID: senderOpenID, MessageID: msg.ID,
+	})
+	if err != nil {
+		auditViewUnlockV2(msg, senderOpenID, senderOwner, targetOwner, fullSessionName, routeTarget, pageCode, "failed", err.Error())
+		return model.PrefixDispatchResult{Matched: true, Reply: "解锁失败：" + err.Error()}, true, nil
+	}
+	auditViewUnlockV2(msg, senderOpenID, senderOwner, targetOwner, fullSessionName, routeTarget, pageCode, "granted", "")
+	return model.PrefixDispatchResult{Matched: true, Reply: "已解锁页面输入：" + fullSessionName}, true, nil
+}
+
+func auditViewUnlockV2(msg model.Message, senderOpenID, senderOwner, targetOwner, targetSession, routeTarget, pageCode, result, reason string) {
+	digest := sha256.Sum256([]byte(pageCode))
+	log.Printf("view_unlock_v2_audit message_id=%q sender_open_id=%q sender_owner=%q target_session=%q target_owner=%q route_target=%q code_sha256=%s result=%q reason=%q",
+		msg.ID, senderOpenID, senderOwner, targetSession, targetOwner, routeTarget,
+		hex.EncodeToString(digest[:8]), result, reason)
+}
+
+func (h *Hub) authorizeViewUnlockOwner(ctx context.Context, msg model.Message, fullSessionName string) (senderOwner, targetOwner, senderOpenID string, err error) {
+	senderOpenID = strings.TrimSpace(msg.SenderOpenID)
+	if msg.ChatType == model.ChatGroup && senderOpenID == "" {
+		return "", "", "", fmt.Errorf("拒绝解锁：群消息缺少可信发信人")
+	}
+	if senderOpenID == "" {
+		botID, entityID, ok := accountEntityParts(msg.ChatEntityID)
+		if !ok || botID != msg.BotChannelID || entityID == "" || msg.ChatType != model.ChatPersonal {
+			return "", "", "", fmt.Errorf("拒绝解锁：缺少可信发信人")
+		}
+		senderOpenID = entityID
+	}
+	senderOwner = h.ownerKeyForAccount(ctx, msg.BotChannelID+":personal:"+senderOpenID)
+	if senderOwner == "" {
+		return "", "", senderOpenID, fmt.Errorf("拒绝解锁：发信人未绑定会话 owner")
+	}
+
+	endpoints, listErr := h.Repo.ListSessionEndpoints(ctx)
+	if listErr != nil {
+		return senderOwner, "", senderOpenID, fmt.Errorf("解锁失败：查询会话失败")
+	}
+	parts := strings.Split(fullSessionName, "-")
+	if len(parts) < 3 {
+		return senderOwner, "", senderOpenID, fmt.Errorf("拒绝解锁：页面会话名无效")
+	}
+	shortName, keySuffix := strings.Join(parts[1:len(parts)-1], "-"), parts[len(parts)-1]
+	var matches []model.SessionEndpoint
+	for _, endpoint := range endpoints {
+		if keyTail(endpoint.KeyID) != keySuffix {
+			continue
+		}
+		if endpoint.FullSessionName == fullSessionName || endpoint.SessionName == fullSessionName ||
+			(endpoint.FullSessionName == "" && endpoint.SessionName == shortName) {
+			matches = append(matches, endpoint)
+		}
+	}
+	if len(matches) != 1 {
+		return senderOwner, "", senderOpenID, fmt.Errorf("拒绝解锁：页面会话不存在或不可用")
+	}
+	targetOwner = strings.TrimSpace(matches[0].OwnerKey)
+	if targetOwner == "" {
+		targetOwner = h.ownerKeyForKey(ctx, matches[0].KeyID)
+	}
+	if targetOwner == "" || parts[0] != targetOwner || targetOwner != senderOwner {
+		return senderOwner, targetOwner, senderOpenID, fmt.Errorf("拒绝解锁：发信人不是该会话 owner")
+	}
+	return senderOwner, targetOwner, senderOpenID, nil
 }
 
 func parseTerminalInputCommand(text string) (action, sessionName, pageCode string, ok bool) {
@@ -1256,85 +1615,6 @@ func terminalCookieSecure(r *http.Request) bool {
 		return true
 	}
 	return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
-}
-
-// terminalMockUnlockEnabled returns true when WP_TERMINAL_MOCK_UNLOCK is set to
-// "true". This gate is checked at both route registration time (production builds
-// never register the handler) and at request time (defence in depth).
-func terminalMockUnlockEnabled() bool {
-	return strings.EqualFold(strings.TrimSpace(os.Getenv("WP_TERMINAL_MOCK_UNLOCK")), "true")
-}
-
-// HandleTerminalMockUnlock is a test-only endpoint that validates a terminal
-// unlock code without going through the real Feishu bot flow. It is gated behind
-// WP_TERMINAL_MOCK_UNLOCK=true and must be disabled in production builds.
-//
-// POST /api/terminal/mock-unlock
-// Body: {"code": "1234", "session_name": "alice-home-abc1"}
-// Response: {"valid": true, "token": "<32-char-hex>"} or {"valid": false}
-//
-// The fixed test code "0000" always passes for any session that has an active
-// viewer page — this lets integration tests unlock any session without a real
-// Feishu round-trip.
-func (h *Hub) HandleTerminalMockUnlock(w http.ResponseWriter, r *http.Request) {
-	if !terminalMockUnlockEnabled() {
-		http.Error(w, "not available", http.StatusNotFound)
-		return
-	}
-	var req struct {
-		Code        string `json:"code"`
-		SessionName string `json:"session_name"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
-		return
-	}
-	code := strings.TrimSpace(req.Code)
-	sessionName := strings.TrimSpace(req.SessionName)
-	if code == "" || sessionName == "" {
-		http.Error(w, "code and session_name required", http.StatusBadRequest)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	// Fixed test code "0000" bypasses Feishu and unlocks any session.
-	if code != "0000" {
-		_, _ = w.Write([]byte(`{"valid":false}`))
-		return
-	}
-	h.mu.Lock()
-	st, ok := h.terminalBySessionNameLocked(sessionName)
-	if !ok || st == nil {
-		h.mu.Unlock()
-		_, _ = w.Write([]byte(`{"valid":false,"error":"terminal not connected"}`))
-		return
-	}
-	if len(st.viewers) == 0 {
-		h.mu.Unlock()
-		_, _ = w.Write([]byte(`{"valid":false,"error":"no viewer page open"}`))
-		return
-	}
-	// Grant input to the first viewer page.
-	token := randomHex(32)
-	until := time.Now().Add(terminalTokenTTL)
-	var target *terminalViewer
-	for _, v := range st.viewers {
-		target = v
-		st.writerPage = v.id
-		break
-	}
-	st.writerToken = token
-	st.writerUntil = until
-	st.cookieToken = token
-	st.cookieUntil = until
-	h.mu.Unlock()
-	_ = terminalWrite(context.Background(), target, map[string]any{
-		"type":      "write_granted",
-		"readonly":  false,
-		"token":     token,
-		"expiresIn": int(terminalTokenTTL.Seconds()),
-		"message":   "输入已解锁 (mock)",
-	})
-	_, _ = w.Write([]byte(`{"valid":true,"token":"` + token + `"}`))
 }
 
 const terminalPageHTML = `<!doctype html>

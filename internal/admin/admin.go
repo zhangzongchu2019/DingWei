@@ -1460,7 +1460,7 @@ func (s *Server) manageSession(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if s.Prefix != nil {
-			_ = s.Prefix.BroadcastOnlineDirectoryForKey(r.Context(), keyID, true)
+			_ = s.Prefix.BroadcastOnlineDirectoryForKey(r.Context(), keyID)
 		}
 		_ = s.Repo.WriteAudit(r.Context(), adminUser(r), "admin_session_no_directory", fmt.Sprintf("%s#%s:%t", sessionName, keyID, enabled))
 		writeOK(w, "session no_directory updated")

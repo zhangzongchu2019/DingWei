@@ -147,6 +147,10 @@ class SessionHelper:
         )
         self.busy_acked_from: set[str] = set()
         self.delivery_busy_acked: set[str] = set()
+        # One adapter owns one CLI/driver stream. Admission, roster, and buffered
+        # drains may arrive on different tasks, but inject+reply collection must
+        # remain a single transaction or one message can consume another's reply.
+        self.adapter_handle_lock = asyncio.Lock()
         self.provisioner = Provisioner(cfg)
         self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
@@ -271,6 +275,7 @@ class SessionHelper:
                     {"type": "session_capabilities", "delivery_ack_v1": True,
                      "persistent_inbox_v1": True, "agent_route_v2": True,
                      "unified_queue_v1": self.cfg.mode == "driver",
+                     "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
                      "processed_semantics": "accepted_to_cli", "helper_version": __version__},
                 ), ensure_ascii=False))
                 hb = asyncio.create_task(self.online_list_heartbeat_loop())
@@ -317,6 +322,9 @@ class SessionHelper:
                 continue
             if self.is_delivery(env):
                 await self.accept_delivery(ws, env)
+                continue
+            if self.is_delivery_cancel(env):
+                await self.handle_delivery_cancel(ws, env)
                 continue
             from_addr = str(env.get("from") or "")
             print(f"[recv] from={from_addr} to={env.get('to')} body={env.get('body')!r}", flush=True)
@@ -412,10 +420,18 @@ class SessionHelper:
                 self.busy_acked_from.clear()
             await asyncio.sleep(max(0.1, min(self.cfg.cli_settle_seconds, 1.0)))
 
-    async def process_inbound_message(self, ws, env: dict, raise_adapter_errors: bool = False) -> None:
+    async def process_inbound_message(self, ws, env: dict, raise_adapter_errors: bool = False,
+                                      on_injected=None) -> None:
         from_addr = str(env.get("from") or "")
         try:
-            reply_body = await asyncio.to_thread(self.adapter.handle, env)
+            async with self.adapter_handle_lock:
+                delivery_handler = getattr(self.adapter, "handle_delivery", None)
+                if on_injected is not None and callable(delivery_handler):
+                    reply_body = await asyncio.to_thread(delivery_handler, env, on_injected)
+                else:
+                    reply_body = await asyncio.to_thread(self.adapter.handle, env)
+                    if on_injected is not None:
+                        on_injected()
         except Exception as exc:
             if raise_adapter_errors:
                 raise
@@ -435,6 +451,34 @@ class SessionHelper:
         meta = {"type": "delivery_ack", "delivery_id": delivery_id, "state": state, "no_mirror": True}
         meta.update(extra)
         return envelope(session_addr("workpulse", self.book.key_id), "", self.book.self_addr, meta)
+
+    def is_delivery_cancel(self, env: dict) -> bool:
+        return (env.get("meta") or {}).get("type") == "delivery_cancel"
+
+    def delivery_cancel_ack(self, message_id: str, delivery_id: str, result: str, **extra: object) -> dict:
+        # 走甲最小·真删除链末段:cancelled ACK 带双键(message_id + delivery_id),
+        # hub 据此 CAS 终态 + 发 renderer delivery_update(cancelled)。no_mirror 同 delivery_ack。
+        meta = {"type": "delivery_cancel_ack", "message_id": message_id,
+                "delivery_id": delivery_id, "result": result, "no_mirror": True}
+        meta.update(extra)
+        return envelope(session_addr("workpulse", self.book.key_id), "", self.book.self_addr, meta)
+
+    async def handle_delivery_cancel(self, ws, env: dict) -> None:
+        # 收 delivery_cancel{message_id, delivery_id}(双键 G-ADDR、注入前无 turn_id)→
+        # inbox.cancel(仅 received 态原子撤)→ 回 cancelled ACK。dev55 spec 2026-07-21。
+        meta = env.get("meta") or {}
+        message_id = str(meta.get("message_id") or "").strip()
+        delivery_id = str(meta.get("delivery_id") or "").strip()
+        if not delivery_id:
+            return  # 无 delivery_id 无法定位 → 错地址,不回退、不回 ACK
+        try:
+            outcome = await asyncio.to_thread(self.delivery_inbox.cancel, message_id, delivery_id)
+        except Exception as exc:
+            print(f"[delivery_cancel] inbox unavailable: {exc}", flush=True)
+            return  # 迟到/异常不回退、不回 ACK(避免误导 hub CAS)
+        ack = self.delivery_cancel_ack(message_id, delivery_id, outcome["result"], state=outcome["state"])
+        await ws.send(json.dumps(ack, ensure_ascii=False))
+        print(f"[delivery_cancel] delivery_id={delivery_id} result={outcome['result']}", flush=True)
 
     async def accept_delivery(self, ws, env: dict) -> None:
         delivery_id = str((env.get("meta") or {}).get("delivery_id") or "").strip()
@@ -483,7 +527,22 @@ class SessionHelper:
                     await asyncio.sleep(0.75)
                     continue
             try:
-                await self.process_inbound_message(ws, env, raise_adapter_errors=True)
+                loop = asyncio.get_running_loop()
+                injected_sent = False
+
+                def acknowledge_injected() -> None:
+                    nonlocal injected_sent
+                    if injected_sent:
+                        return
+                    injected_sent = True
+                    future = asyncio.run_coroutine_threadsafe(
+                        ws.send(json.dumps(self.delivery_ack(delivery_id, "injected"), ensure_ascii=False)), loop
+                    )
+                    future.result(timeout=5)
+
+                await self.process_inbound_message(
+                    ws, env, raise_adapter_errors=True, on_injected=acknowledge_injected
+                )
             except OverflowError:
                 await asyncio.to_thread(self.delivery_inbox.release, delivery_id)
                 await ws.send(json.dumps(self.delivery_ack(
@@ -580,13 +639,25 @@ class SessionHelper:
         body = str(env.get("body") or "")
         if not body:
             return False
-        if self.cfg.mode in ("cli", "driver") and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
+        if self.cfg.mode == "cli":
+            try:
+                # Consume and discard the guide response inside the same adapter
+                # transaction. A bare inject_text leaves its output in output_q,
+                # where the first real delivery can incorrectly claim it.
+                async with self.adapter_handle_lock:
+                    await asyncio.to_thread(self.adapter.handle, env)
+                print("[agent_skill] injected; response drained", flush=True)
+                return True
+            except Exception as exc:
+                print(f"[agent_skill] inject failed: {exc}", flush=True)
+                return False
+        if self.cfg.mode == "driver" and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
             started = await asyncio.to_thread(self.adapter.start)
             if started:
                 await asyncio.to_thread(self.adapter.inject_text, body)
                 print("[agent_skill] injected", flush=True)
                 return True
-            return False  # CLI 未就绪，先不回执，下次重推时再试
+            return False
         try:
             await asyncio.to_thread(self.adapter.handle, env)
             return True

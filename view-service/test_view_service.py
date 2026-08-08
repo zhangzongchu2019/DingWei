@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import tempfile
@@ -52,28 +53,78 @@ class ViewStatePersistenceTest(unittest.TestCase):
         self.assertEqual(os.stat(vs.STATE_FILE).st_mode & 0o777, 0o600)
 
 
-class RendererCanaryTest(unittest.TestCase):
-    def test_canary_session_uses_canary_renderer_and_other_uses_default(self):
+class ProductionRendererTest(unittest.TestCase):
+    def test_all_sessions_use_single_production_renderer(self):
         with tempfile.TemporaryDirectory() as tmp:
-            default_renderer = os.path.join(tmp, "default.html")
-            canary_renderer = os.path.join(tmp, "canary.html")
-            with open(default_renderer, "wb") as fh:
-                fh.write(b"default renderer")
-            with open(canary_renderer, "wb") as fh:
-                fh.write(b"canary renderer")
+            renderer = os.path.join(tmp, "production-renderer.html")
+            with open(renderer, "wb") as fh:
+                fh.write(b"production renderer")
+            with mock.patch.object(vs, "RENDERER_PATH", renderer):
+                self.assertEqual(vs._read_renderer(), b"production renderer")
 
-            with mock.patch.multiple(
-                vs,
-                RENDERER=default_renderer,
-                CANARY_RENDERER=canary_renderer,
-                CANARY_SESSIONS=frozenset({"zzc-reviewer-2642"}),
-            ):
-                self.assertEqual(vs._read_renderer("zzc-reviewer-2642"), b"canary renderer")
-                self.assertEqual(vs._read_renderer("zzc-dev55-2642"), b"default renderer")
+    def test_all_html_artifacts_are_free_of_production_backdoors(self):
+        root = os.path.dirname(vs.__file__)
+        forbidden = ("useMockApi", "?mock=1", "params.get('unlocked')", "mockEvents",
+                     "mock-model", "demo-1a2b", "unlockCode: '1460'")
+        html_files = [name for name in os.listdir(root) if name.endswith(".html")]
+        self.assertEqual(html_files, ["renderer-canary-sse.html"])
+        for name in html_files:
+            with open(os.path.join(root, name), encoding="utf-8") as fh:
+                text = fh.read()
+            for token in forbidden:
+                self.assertNotIn(token, text, f"{token!r} remains in {name}")
 
-    def test_empty_canary_config_keeps_default_renderer(self):
-        with mock.patch.multiple(vs, CANARY_RENDERER="", CANARY_SESSIONS=frozenset()):
-            self.assertEqual(vs._renderer_path_for_session("any-session"), vs.RENDERER)
+    def test_session_query_cannot_select_target_and_missing_session_fails_closed(self):
+        handler = object.__new__(vs._Handler)
+        handler.path = "/status?session=attacker-manager-0000"
+        handler.headers = {}
+        with mock.patch.object(vs, "DEFAULT_SESSION", ""):
+            self.assertEqual(handler._session(), "")
+        with mock.patch.object(vs, "DEFAULT_SESSION", "fixed-manager-2642"):
+            self.assertEqual(handler._session(), "fixed-manager-2642")
+        handler.headers = {"X-DW-Session": "trusted-manager-2642"}
+        self.assertEqual(handler._session(), "trusted-manager-2642")
+
+    def test_status_rejects_request_without_trusted_or_fixed_session(self):
+        handler = object.__new__(vs._Handler)
+        handler.path = "/status?session=attacker-manager-0000"
+        handler.headers = {}
+        handler.send_error = mock.Mock()
+        with mock.patch.object(vs, "DEFAULT_SESSION", ""):
+            handler._serve_status()
+        handler.send_error.assert_called_once_with(400, "session required")
+
+    def _render_for_public_base(self, public_base):
+        handler = object.__new__(vs._Handler)
+        handler.headers = {"X-DW-Session": "zzc-tester-2642"}
+        handler.wfile = io.BytesIO()
+        handler.send_response = mock.Mock()
+        handler.send_header = mock.Mock()
+        handler.end_headers = mock.Mock()
+        renderer = b"const API={events:'/events',input:'/input',interrupt:'/interrupt',status:'/status',page:'/page'}"
+        with mock.patch.object(vs, "PUBLIC_VIEW_BASE", public_base), \
+                mock.patch.object(vs, "_read_renderer", return_value=renderer):
+            handler._serve_file()
+        return handler.wfile.getvalue().decode()
+
+    def test_public_view_base_rewrites_canary_api_paths_once(self):
+        rendered = self._render_for_public_base("/v2c/view")
+        for endpoint in ("events", "input", "interrupt", "status", "page"):
+            self.assertIn(f"'/v2c/view/zzc-tester-2642/{endpoint}'", rendered)
+        self.assertNotIn("'/view/zzc-tester-2642/", rendered)
+
+    def test_default_public_view_base_preserves_main_view_paths(self):
+        rendered = self._render_for_public_base("/view")
+        for endpoint in ("events", "input", "interrupt", "status", "page"):
+            self.assertIn(f"'/view/zzc-tester-2642/{endpoint}'", rendered)
+
+    def test_public_view_base_validation_fails_closed(self):
+        self.assertEqual(vs._validate_public_view_base(" /v2c/view "), "/v2c/view")
+        for value in ("", "/", "v2c/view", "/v2c/view/", "/v2c//view", "/v2c/../view",
+                      "/v2c/./view", "/v2c/view?session=x", "/v2c/view#fragment", "https://host/v2c/view"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    vs._validate_public_view_base(value)
 
 
 class ViewerStabilityTest(unittest.TestCase):
@@ -100,8 +151,7 @@ class ViewerStabilityTest(unittest.TestCase):
             return 200, {"viewer_id": "viewer-stable", "can_write": False}
 
         results = []
-        with mock.patch.object(vs, "_hub_post", side_effect=fake_post), \
-                mock.patch.object(vs, "AUTO_UNLOCK", False):
+        with mock.patch.object(vs, "_hub_post", side_effect=fake_post):
             threads = [threading.Thread(target=lambda: results.append(vs._ensure_ready("reviewer"))) for _ in range(2)]
             for thread in threads:
                 thread.start()
@@ -124,6 +174,268 @@ class ViewerStabilityTest(unittest.TestCase):
         self.assertEqual(result["code"], "6613")
         self.assertEqual(result["token"], "token")
         self.assertTrue(result["can_write"])
+
+
+class ControlForwardTest(unittest.TestCase):
+    """走甲最小 control(pre-injection cancel):过 page 写权 → 转发 hub、G-ADDR 线格式。"""
+
+    def setUp(self):
+        with vs._state_lock:
+            vs._sessions.clear()
+
+    def test_cancel_with_write_permission_forwards_g_addr(self):
+        sess = "zzc-dev55-2642"
+        with mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": "wtok"}), \
+             mock.patch.object(vs, "_hub_post", return_value=(200, {"ok": True})) as post:
+            ok, code = vs._forward_control(sess, "cancel", "msg_abc", "d-001")
+        self.assertTrue(ok)
+        self.assertEqual(code, 200)
+        # 锁定线格式(VS→hub, dev55 2026-07-21):POST /internal/view/{session}/cancel,
+        # 写权(viewer_id+token) + G-ADDR(message_id+delivery_id,注入前无 turn_id);
+        # path 即表 cancel,不带 kind。
+        post.assert_called_once_with(vs.HUB_INTERNAL, f"/internal/view/{sess}/cancel", {
+            "viewer_id": "v1", "token": "wtok",
+            "message_id": "msg_abc", "delivery_id": "d-001",
+        })
+
+    def test_no_write_permission_does_not_forward(self):
+        # 无 writer token = 未解锁/无写权 → 不转发(别裸),403。
+        with mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": ""}), \
+             mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_control("s", "cancel", "msg_abc", "d-001")
+        self.assertFalse(ok)
+        self.assertEqual(code, 403)
+        post.assert_not_called()
+
+    def test_unknown_kind_rejected(self):
+        # 走甲最小 scope:仅 cancel;其余 control kind 拒(400),不碰 hub。
+        with mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_control("s", "resume", "msg_abc", "d-001")
+        self.assertFalse(ok)
+        self.assertEqual(code, 400)
+        post.assert_not_called()
+
+    def test_missing_g_addr_rejected(self):
+        with mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_control("s", "cancel", "", "d-001")  # 缺 message_id
+        self.assertFalse(ok)
+        self.assertEqual(code, 400)
+        post.assert_not_called()
+
+
+class ControlForwardV2Test(unittest.TestCase):
+    """V2 真删除链 control:page 授权(authorize_page)+ 签名转发 hub V2 cancel。
+    四态返回码(07-19 教训不压 403)+ 幂等 duplicate + 接通路不修竞态边界。"""
+
+    def _store(self, authorized=True):
+        store = mock.MagicMock()
+        store.authorize_page.return_value = authorized
+        return store
+
+    def test_v2_authorized_success_forwards_and_records(self):
+        store = self._store(authorized=True)
+        rid = "a" * 32
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel", return_value=(200, {"ok": True})) as hc:
+            status, ok = vs._forward_control_v2("sess", "pg", "ptok", rid, "msg", "d-001")
+        self.assertEqual((status, ok), (200, True))
+        # 签名转发线格式:hub V2 cancel = (session, page_id, request_id, message_id, delivery_id)
+        hc.assert_called_once_with("sess", "pg", rid, "msg", "d-001")
+        store.authorize_page.assert_called_once_with("pg", "ptok", "sess")
+        store.record_successful_write.assert_called_once_with("pg", "ptok")
+
+    def test_v2_duplicate_is_idempotent_ok_true(self):
+        # 幂等:重试同 request_id → hub 返 duplicate:true → 仍 ok:true(不报错、不再撤)。
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel",
+                               return_value=(200, {"ok": True, "duplicate": True})):
+            status, ok = vs._forward_control_v2("sess", "pg", "ptok", "rid", "msg", "d-001")
+        self.assertEqual((status, ok), (200, True))
+
+    def test_v2_missing_page_credentials_is_400_no_hub(self):
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel") as hc:
+            status, ok = vs._forward_control_v2("sess", "", "ptok", "rid", "msg", "d-001")
+        self.assertEqual((status, ok), (400, False))  # 缺 page 凭证 = 请求错,非未鉴权
+        hc.assert_not_called()
+        store.authorize_page.assert_not_called()
+
+    def test_v2_authorize_page_fail_is_403_distinct_no_hub(self):
+        # 真·未鉴权 → 403(与 404 路由缺失、5xx 不可达 严格区分),不转发。
+        store = self._store(authorized=False)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel") as hc:
+            status, ok = vs._forward_control_v2("sess", "pg", "ptok", "rid", "msg", "d-001")
+        self.assertEqual((status, ok), (403, False))
+        hc.assert_not_called()
+
+    def test_v2_hub_not_cancelable_409_is_ok_false_not_error(self):
+        # hub 409 = 注入前条目已终态/已注入 → 取消未生效(200 ok:false),非未发出。
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_cancel", return_value=(409, {"error": "not cancelable"})):
+            status, ok = vs._forward_control_v2("sess", "pg", "ptok", "rid", "msg", "d-001")
+        self.assertEqual((status, ok), (200, False))
+        store.record_successful_write.assert_not_called()
+
+    def test_v2_hub_unreachable_is_502_not_403(self):
+        # hub 5xx/网络错 → 502(未发出),绝不压成 403(07-19 一个码掩三根因的教训)。
+        store = self._store(authorized=True)
+        for hub_code in (0, 500, 502, 503):
+            with mock.patch.object(vs, "_get_page_store", return_value=store), \
+                 mock.patch.object(vs, "_hub_v2_cancel", return_value=(hub_code, {"error": "x"})):
+                status, ok = vs._forward_control_v2("sess", "pg", "ptok", "rid", "msg", "d-001")
+            self.assertEqual((status, ok), (502, False), f"hub {hub_code} 应 502 未发出、不压 403")
+
+
+class InterruptForwardTest(unittest.TestCase):
+    """legacy interrupt:过 page 写权 → 转发 hub legacy interrupt、G-ADDR=delivery_id+turn_id。"""
+
+    def setUp(self):
+        with vs._state_lock:
+            vs._sessions.clear()
+
+    def test_interrupt_with_write_permission_forwards_g_addr(self):
+        sess = "zzc-dev55-2642"
+        with mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": "wtok"}), \
+             mock.patch.object(vs, "_hub_post", return_value=(200, {"ok": True})) as post:
+            ok, code = vs._forward_interrupt(sess, "d-001", "t-9")
+        self.assertTrue(ok)
+        self.assertEqual(code, 200)
+        # 线格式:POST /internal/view/{session}/interrupt,写权(viewer_id+token) +
+        # G-ADDR(delivery_id+turn_id,注入后打运行中 turn,故带 turn_id、无 message_id)。
+        post.assert_called_once_with(vs.HUB_INTERNAL, f"/internal/view/{sess}/interrupt", {
+            "viewer_id": "v1", "token": "wtok",
+            "delivery_id": "d-001", "turn_id": "t-9",
+        })
+
+    def test_no_write_permission_does_not_forward(self):
+        with mock.patch.object(vs, "_ensure_ready", return_value={"viewer_id": "v1", "token": ""}), \
+             mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_interrupt("s", "d-001", "t-9")
+        self.assertFalse(ok)
+        self.assertEqual(code, 403)
+        post.assert_not_called()
+
+    def test_missing_g_addr_rejected(self):
+        with mock.patch.object(vs, "_hub_post") as post:
+            ok, code = vs._forward_interrupt("s", "d-001", "")  # 缺 turn_id
+        self.assertFalse(ok)
+        self.assertEqual(code, 400)
+        post.assert_not_called()
+
+
+class InterruptForwardV2Test(unittest.TestCase):
+    """V2 中断链:page 授权(authorize_page)+ 签名转发 hub V2 interrupt。
+    四态返回码(不压 403)+ 幂等 duplicate;与 _forward_control_v2 同构、地址键换 delivery_id+turn_id。"""
+
+    def _store(self, authorized=True):
+        store = mock.MagicMock()
+        store.authorize_page.return_value = authorized
+        return store
+
+    def test_v2_authorized_success_forwards_and_records(self):
+        store = self._store(authorized=True)
+        rid = "a" * 32
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt", return_value=(200, {"ok": True})) as hi:
+            status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", rid, "d-001", "t-9")
+        self.assertEqual((status, ok), (200, True))
+        # 签名转发线格式:hub V2 interrupt = (session, page_id, request_id, delivery_id, turn_id)。
+        hi.assert_called_once_with("sess", "pg", rid, "d-001", "t-9")
+        store.authorize_page.assert_called_once_with("pg", "ptok", "sess")
+        store.record_successful_write.assert_called_once_with("pg", "ptok")
+
+    def test_v2_duplicate_is_idempotent_ok_true(self):
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt",
+                               return_value=(200, {"ok": True, "duplicate": True})):
+            status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", "rid", "d-001", "t-9")
+        self.assertEqual((status, ok), (200, True))
+
+    def test_v2_missing_page_credentials_is_400_no_hub(self):
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt") as hi:
+            status, ok = vs._forward_interrupt_v2("sess", "", "ptok", "rid", "d-001", "t-9")
+        self.assertEqual((status, ok), (400, False))  # 缺 page 凭证 = 请求错,非未鉴权
+        hi.assert_not_called()
+        store.authorize_page.assert_not_called()
+
+    def test_v2_authorize_page_fail_is_403_distinct_no_hub(self):
+        store = self._store(authorized=False)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt") as hi:
+            status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", "rid", "d-001", "t-9")
+        self.assertEqual((status, ok), (403, False))
+        hi.assert_not_called()
+
+    def test_v2_hub_offline_409_is_ok_false_not_error(self):
+        # hub 409 = 会话离线/无活连接、当前不可中断 → 200 ok:false,非未发出(非错误)。
+        store = self._store(authorized=True)
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_interrupt", return_value=(409, {"ok": False})):
+            status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", "rid", "d-001", "t-9")
+        self.assertEqual((status, ok), (200, False))
+        store.record_successful_write.assert_not_called()
+
+    def test_v2_hub_unreachable_or_sigfail_is_502_not_403(self):
+        # hub 5xx/网络/401 验签失败 → 502(未发出),绝不压成 403(07-19 教训)。401 也走 502。
+        store = self._store(authorized=True)
+        for hub_code in (0, 401, 500, 502, 503):
+            with mock.patch.object(vs, "_get_page_store", return_value=store), \
+                 mock.patch.object(vs, "_hub_v2_interrupt", return_value=(hub_code, {"error": "x"})):
+                status, ok = vs._forward_interrupt_v2("sess", "pg", "ptok", "rid", "d-001", "t-9")
+            self.assertEqual((status, ok), (502, False), f"hub {hub_code} 应 502 未发出、不压 403")
+
+
+class TasksSnapshotTest(unittest.TestCase):
+    """GET /tasks 全局看板快照:fail-closed 恒返 {tasks:list}、绝不抛/404/5xx(免背景轮询噪声)。"""
+
+    def test_no_file_returns_empty_board(self):
+        with mock.patch.object(vs, "VS_TASKS_FILE", ""):
+            self.assertEqual(vs._read_tasks_snapshot(), {"project": "", "tasks": []})
+
+    def test_valid_file_returned_verbatim(self):
+        import tempfile, os, json as _json
+        payload = {"project": "DingWei", "tasks": [{"id": "t1", "status": "in_progress"}]}
+        fd, p = tempfile.mkstemp(suffix=".json")
+        try:
+            with os.fdopen(fd, "w") as fh:
+                _json.dump(payload, fh)
+            with mock.patch.object(vs, "VS_TASKS_FILE", p):
+                self.assertEqual(vs._read_tasks_snapshot(), payload)
+        finally:
+            os.unlink(p)
+
+    def test_missing_file_fails_closed(self):
+        with mock.patch.object(vs, "VS_TASKS_FILE", "/nonexistent/tasks-xyz.json"):
+            self.assertEqual(vs._read_tasks_snapshot(), {"project": "", "tasks": []})
+
+    def test_bad_json_fails_closed(self):
+        import tempfile, os
+        fd, p = tempfile.mkstemp(suffix=".json")
+        try:
+            with os.fdopen(fd, "w") as fh:
+                fh.write("{not valid json")
+            with mock.patch.object(vs, "VS_TASKS_FILE", p):
+                self.assertEqual(vs._read_tasks_snapshot(), {"project": "", "tasks": []})
+        finally:
+            os.unlink(p)
+
+    def test_wrong_shape_fails_closed(self):
+        import tempfile, os, json as _json
+        fd, p = tempfile.mkstemp(suffix=".json")
+        try:
+            with os.fdopen(fd, "w") as fh:
+                _json.dump({"tasks": "not-a-list"}, fh)  # tasks 不是 list
+            with mock.patch.object(vs, "VS_TASKS_FILE", p):
+                self.assertEqual(vs._read_tasks_snapshot(), {"project": "", "tasks": []})
+        finally:
+            os.unlink(p)
 
 
 if __name__ == "__main__":

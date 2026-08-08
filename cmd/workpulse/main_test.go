@@ -162,10 +162,28 @@ func TestHandleFeishuWebhookVerifiesTokenWhenConfigured(t *testing.T) {
 	if _, err := handleFeishuWebhook(ctx, nilLogger(), db, bus.NewDBQueue(db, model.DirectionIn), "dev", req, httptest.NewRecorder()); err == nil {
 		t.Fatalf("handleFeishuWebhook accepted bad token")
 	}
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionIn); err != nil || msg != nil {
+		t.Fatalf("bad token reached queue: msg=%+v err=%v", msg, err)
+	}
+	bodyMissing := strings.ReplaceAll(body, `,"token":"bad-token"`, "")
+	req, _ = http.NewRequest(http.MethodPost, "/webhook/dev", strings.NewReader(bodyMissing))
+	if _, err := handleFeishuWebhook(ctx, nilLogger(), db, bus.NewDBQueue(db, model.DirectionIn), "dev", req, httptest.NewRecorder()); err == nil {
+		t.Fatalf("handleFeishuWebhook accepted missing token")
+	}
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionIn); err != nil || msg != nil {
+		t.Fatalf("missing token reached queue: msg=%+v err=%v", msg, err)
+	}
 	body = strings.ReplaceAll(body, "bad-token", "good-token")
 	req, _ = http.NewRequest(http.MethodPost, "/webhook/dev", strings.NewReader(body))
 	if handled, err := handleFeishuWebhook(ctx, nilLogger(), db, bus.NewDBQueue(db, model.DirectionIn), "dev", req, httptest.NewRecorder()); err != nil || handled {
 		t.Fatalf("handleFeishuWebhook good token handled=%t err=%v", handled, err)
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil {
+		t.Fatalf("ClaimNextMessage: msg=%+v err=%v", msg, err)
+	}
+	if msg.IngressProvenance != model.IngressWebhookVerified {
+		t.Fatalf("provenance = %q, want webhook verified", msg.IngressProvenance)
 	}
 }
 
@@ -181,7 +199,7 @@ func TestHandleFeishuWebhookPlaintextWithoutTokenWarnsOnce(t *testing.T) {
 	}
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&logs, nil))
-	body := `{"msg_id":"fm1","chat_type":"personal","open_id":"ou_1","sender_open_id":"ou_1","text":"帮助"}`
+	body := `{"msg_id":"fm1","chat_type":"personal","open_id":"ou_1","sender_open_id":"ou_1","text":"帮助","ingress_provenance":"webhook_verified"}`
 	req, err := http.NewRequest(http.MethodPost, "/webhook/plain", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("NewRequest: %v", err)
@@ -191,6 +209,13 @@ func TestHandleFeishuWebhookPlaintextWithoutTokenWarnsOnce(t *testing.T) {
 	}
 	if !strings.Contains(logs.String(), "unsigned plaintext") {
 		t.Fatalf("missing unsigned plaintext warning: %s", logs.String())
+	}
+	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
+	if err != nil || msg == nil {
+		t.Fatalf("ClaimNextMessage: msg=%+v err=%v", msg, err)
+	}
+	if msg.IngressProvenance != model.IngressUntrusted {
+		t.Fatalf("payload promoted provenance to %q", msg.IngressProvenance)
 	}
 }
 

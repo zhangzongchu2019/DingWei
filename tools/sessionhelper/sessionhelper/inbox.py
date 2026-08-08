@@ -44,7 +44,7 @@ class DeliveryInbox:
                     delivery_id TEXT NOT NULL,
                     session_name TEXT NOT NULL,
                     envelope_json TEXT NOT NULL,
-                    state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed')),
+                    state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed','cancelled')),
                     attempts INTEGER NOT NULL DEFAULT 0,
                     error TEXT,
                     received_at REAL NOT NULL,
@@ -53,6 +53,7 @@ class DeliveryInbox:
                 )"""
             )
             self._migrate_schema(db)
+            self._migrate_state_check(db)
             db.execute(
                 "CREATE INDEX IF NOT EXISTS idx_delivery_inbox_fifo ON delivery_inbox(session_name,state,received_at)"
             )
@@ -79,7 +80,7 @@ class DeliveryInbox:
                 delivery_id TEXT NOT NULL,
                 session_name TEXT NOT NULL,
                 envelope_json TEXT NOT NULL,
-                state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed')),
+                state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed','cancelled')),
                 attempts INTEGER NOT NULL DEFAULT 0,
                 error TEXT,
                 received_at REAL NOT NULL,
@@ -96,6 +97,41 @@ class DeliveryInbox:
             (self.session_name,),
         )
         db.execute("DROP TABLE delivery_inbox_legacy")
+
+    def _migrate_state_check(self, db: sqlite3.Connection) -> None:
+        """Rebuild the table if its state CHECK predates the 'cancelled' state.
+
+        SQLite CHECK constraints are immutable, so an existing DB created before the
+        真删除 chain would REJECT an UPDATE to state='cancelled'. Fresh DBs already
+        CREATE with 'cancelled' (this no-ops); only older DBs are rebuilt. Mirrors the
+        rename→create→copy→drop shape of _migrate_schema. (N1 lesson: fresh deploy vs
+        already-seeded DB — the fresh path can't be the only one that works.)"""
+        row = db.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='delivery_inbox'"
+        ).fetchone()
+        if row is None or "'cancelled'" in (row["sql"] or ""):
+            return
+        db.execute("ALTER TABLE delivery_inbox RENAME TO delivery_inbox_precancel")
+        db.execute(
+            """CREATE TABLE delivery_inbox (
+                delivery_id TEXT NOT NULL,
+                session_name TEXT NOT NULL,
+                envelope_json TEXT NOT NULL,
+                state TEXT NOT NULL CHECK(state IN ('received','processing','processed','failed','cancelled')),
+                attempts INTEGER NOT NULL DEFAULT 0,
+                error TEXT,
+                received_at REAL NOT NULL,
+                updated_at REAL NOT NULL,
+                PRIMARY KEY(session_name, delivery_id)
+            )"""
+        )
+        db.execute(
+            """INSERT OR IGNORE INTO delivery_inbox(
+                    delivery_id,session_name,envelope_json,state,attempts,error,received_at,updated_at)
+               SELECT delivery_id,session_name,envelope_json,state,attempts,error,received_at,updated_at
+               FROM delivery_inbox_precancel"""
+        )
+        db.execute("DROP TABLE delivery_inbox_precancel")
 
     def _legacy_shared_path(self) -> str:
         return os.path.join(os.path.dirname(self.path) or ".", "sessionhelper_inbox.db")
@@ -326,3 +362,44 @@ class DeliveryInbox:
                    WHERE delivery_id=? AND session_name=? AND state='processing'""",
                 (time.time(), delivery_id, self.session_name),
             )
+
+    def cancel(self, message_id: str, delivery_id: str) -> dict:
+        """走甲最小·真删除链末段 (dev55 spec 2026-07-21): pre-injection cancel.
+
+        双键 G-ADDR (message_id + delivery_id;注入前无 turn_id)。仅 'received' 态可
+        原子撤到 'cancelled';'processing'/'processed'/'failed'(已注入/已处理/终态)
+        拒 not_cancelable(避免假删除——已注入的不能撤);未知/迟到/错地址不回退、
+        不新建条目。返回 {result, state} 供上层组 cancelled ACK(带双键)。result:
+          'cancelled'      —— was 'received' → cancelled(或幂等再撤 already cancelled)
+          'not_cancelable' —— processing/processed/failed(已注入或终态,不可撤)
+          'not_found'      —— 无此 (session, delivery_id)(迟到/错地址,不回退)
+
+        以 delivery_id+session_name(PK)原子定位;message_id 随 ACK 回传供 hub CAS,
+        helper 侧不据 message_id 二次判定(delivery_id 已唯一)。竞态:'received' 被
+        claim_next 抢占后本次 UPDATE 影响 0 行 → 视为 not_cancelable(已进注入)。"""
+        now = time.time()
+        with self._lock, self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT state FROM delivery_inbox WHERE delivery_id=? AND session_name=?",
+                (delivery_id, self.session_name),
+            ).fetchone()
+            if row is None:
+                db.commit()
+                return {"result": "not_found", "state": ""}
+            state = row["state"]
+            if state == "cancelled":
+                db.commit()
+                return {"result": "cancelled", "state": "cancelled"}  # 幂等
+            if state != "received":
+                db.commit()
+                return {"result": "not_cancelable", "state": state}
+            changed = db.execute(
+                """UPDATE delivery_inbox SET state='cancelled',updated_at=?
+                   WHERE delivery_id=? AND session_name=? AND state='received'""",
+                (now, delivery_id, self.session_name),
+            ).rowcount
+            db.commit()
+            if changed != 1:  # 竞态:received 已被 claim_next 抢占 → 已进注入
+                return {"result": "not_cancelable", "state": "processing"}
+            return {"result": "cancelled", "state": "cancelled"}

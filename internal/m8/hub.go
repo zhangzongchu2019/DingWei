@@ -42,12 +42,27 @@ type aggregateWeeklyReviewHandler interface {
 	HandleAggregateWeeklyReviewCommand(ctx context.Context, body string, source model.Message) (string, bool, error)
 }
 
+// ViewPageUnlocker is the capability boundary for page-scoped view unlock v2.
+// A nil implementation keeps the capability disabled.
+type ViewPageUnlocker interface {
+	UnlockViewPage(ctx context.Context, request ViewPageUnlockRequest) error
+}
+
+type ViewPageUnlockRequest struct {
+	Code            string
+	FullSessionName string
+	OwnerKey        string
+	SenderOpenID    string
+	MessageID       string
+}
+
 type Hub struct {
-	Repo     store.Repository
-	Outbound MessageQueue
-	System   SystemHandler
-	L2       llm.Provider
-	L2Config L2Config
+	Repo             store.Repository
+	Outbound         MessageQueue
+	System           SystemHandler
+	L2               llm.Provider
+	L2Config         L2Config
+	ViewPageUnlocker ViewPageUnlocker
 
 	mu               hubMutex
 	serviceClients   map[string]*client
@@ -57,6 +72,9 @@ type Hub struct {
 	botNames         map[string]string
 	envelopeIDs      map[string]string
 	onlineTimers     map[string]*time.Timer
+	seenSessions     map[string]bool
+	seenSessionsOnce sync.Once
+	seenSessionsOK   bool
 	terminals        map[string]*terminalState
 	terminalLastSize map[string][2]int
 	syncTargets      map[string]map[string]feishuSyncTarget
@@ -67,6 +85,10 @@ type Hub struct {
 	onboardContexts  map[string]onboardContext
 	onlineDebounce   time.Duration
 	onboardInterval  time.Duration
+	newSessionNotice bool
+	viewV2Mu         sync.Mutex
+	viewV2Nonces     map[string]time.Time
+	viewV2Requests   map[string]viewV2RequestResult
 }
 
 type L2Config struct {
@@ -97,6 +119,8 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
+	deviceID       string
+	deviceIDV1     bool
 }
 
 type feishuSyncTarget struct {
@@ -176,6 +200,7 @@ var (
 	controlExceptTextRE    = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
 	bareSessionNamePattern = regexp.MustCompile(`^[a-z0-9]+$`)
 	sessionNamePattern     = regexp.MustCompile(`^[a-z0-9]+-[a-z0-9]+-[0-9a-f]{4}$`)
+	deviceIDPattern        = regexp.MustCompile(`^[0-9a-f]{16}$`)
 )
 
 func New(repo store.Repository) *Hub {
@@ -188,6 +213,7 @@ func New(repo store.Repository) *Hub {
 		botNames:         map[string]string{},
 		envelopeIDs:      map[string]string{},
 		onlineTimers:     map[string]*time.Timer{},
+		seenSessions:     map[string]bool{},
 		terminals:        map[string]*terminalState{},
 		terminalLastSize: map[string][2]int{},
 		syncTargets:      map[string]map[string]feishuSyncTarget{},
@@ -196,8 +222,11 @@ func New(repo store.Repository) *Hub {
 		linkTokens:       map[string]ownerLinkToken{},
 		onboardPushed:    map[string]time.Time{},
 		onboardContexts:  map[string]onboardContext{},
+		viewV2Nonces:     map[string]time.Time{},
+		viewV2Requests:   map[string]viewV2RequestResult{},
 		onlineDebounce:   2500 * time.Millisecond,
 		onboardInterval:  envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
+		newSessionNotice: true,
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,
@@ -718,6 +747,8 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	tool := strings.TrimSpace(r.URL.Query().Get("tool"))
 	modelName := strings.TrimSpace(r.URL.Query().Get("model"))
 	clientVersion := strings.TrimSpace(r.URL.Query().Get("version"))
+	deviceID := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("device_id")))
+	deviceIDV1 := truthyQuery(r.URL.Query().Get("device_id_v1")) && deviceIDPattern.MatchString(deviceID)
 	versionWarn := versionCompatibilityWarning(clientVersion)
 	fullSessionName := strings.TrimSpace(r.URL.Query().Get("full_session_name"))
 	producer := truthyQuery(r.URL.Query().Get("producer"))
@@ -730,6 +761,16 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	ownerKey := h.ownerKeyForKeyWithAccounts(r.Context(), keyID, accounts)
 	markTiming("owner")
 	sessionName := deriveRegisteredSessionName(requestedSessionName, keyID, ownerKey)
+	if deviceIDV1 {
+		h.mu.Lock()
+		old := h.sessionClients[keyID][sessionName]
+		occupied := old != nil && old.deviceIDV1 && old.deviceID != deviceID
+		h.mu.Unlock()
+		if occupied {
+			http.Error(w, "session held by another device", http.StatusConflict)
+			return
+		}
+	}
 	nameWarn := sessionNameRequestWarning(requestedSessionName, keyID, ownerKey)
 	switch sessionNameEnforceMode() {
 	case "enforce":
@@ -753,6 +794,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			log.Printf("session version warning key_id=%s owner=%s session=%s version=%q required=%s: %s", keyID, ownerKey, requestedSessionName, clientVersion, dwversion.Version, versionWarn)
 		}
 	}
+	h.loadSeenSessions(r.Context())
 	sessionName, err = h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
 		KeyID:           keyID,
 		SessionName:     sessionName,
@@ -805,7 +847,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	markTiming("conn_seq")
-	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName}
+	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, deviceID: deviceID, deviceIDV1: deviceIDV1}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	go h.watchSessionKeepalive(idleWatchdogCtx, c)
@@ -818,6 +860,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 	timingParts = append(timingParts, fmt.Sprintf("onboard=%s", time.Since(onboardStart).Round(time.Millisecond)))
 	lockStart := time.Now()
 	var oldConn *websocket.Conn
+	var rejectDevice bool
 	var reSize [2]int
 	h.mu.Lock()
 	func() {
@@ -826,16 +869,29 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			h.sessionClients[keyID] = map[string]*sessionClient{}
 		}
 		if old := h.sessionClients[keyID][sessionName]; old != nil {
-			oldConn = old.conn
+			if c.deviceIDV1 && old.deviceIDV1 && old.deviceID != c.deviceID {
+				rejectDevice = true
+			} else {
+				oldConn = old.conn
+			}
 		}
-		if c != nil && c.conn != nil {
+		if !rejectDevice && c != nil && c.conn != nil {
 			h.sessionClients[keyID][sessionName] = c
 		}
 		h.keyAccounts[keyID] = stringSet(accounts)
 		reSize = h.terminalLastSize[terminalKey(keyID, sessionName)]
 	}()
+	if rejectDevice {
+		stopIdleWatchdog()
+		skillCancel()
+		_ = conn.Close(websocket.StatusPolicyViolation, "session held by another device")
+		return
+	}
 	if oldConn != nil {
 		_ = oldConn.Close(websocket.StatusPolicyViolation, "replaced")
+	}
+	if h.markSessionSeen(ownerKey, sessionName) {
+		h.notifyNewSession(r.Context(), ownerKey, sessionName)
 	}
 	timingParts = append(timingParts, fmt.Sprintf("register_lock=%s", time.Since(lockStart).Round(time.Millisecond)))
 	log.Printf("session handshake timing key_id=%s session=%s total=%s %s", keyID, sessionName, time.Since(timingStart).Round(time.Millisecond), strings.Join(timingParts, " "))
@@ -1122,6 +1178,18 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 		}
 		return model.PrefixDispatchResult{Matched: true, Reply: task.Result}, nil
 	}
+	if msg.ChatType == model.ChatGroup {
+		explicit, gateErr := h.groupHasExplicitIntent(ctx, msg, text)
+		if gateErr != nil {
+			return model.PrefixDispatchResult{}, gateErr
+		}
+		if !explicit {
+			if err := h.Repo.UpdateControlTaskAfterL1(ctx, task.ID, "ignored.group_natural_language", "L1", "", "", "ignored", ""); err != nil {
+				return model.PrefixDispatchResult{}, err
+			}
+			return model.PrefixDispatchResult{Matched: false}, nil
+		}
+	}
 	result, intent, target, err := h.dispatchL1(ctx, msg, text)
 	if err != nil {
 		retried, retryErr := h.Repo.RetryControlTask(ctx, task.ID, err.Error())
@@ -1162,6 +1230,34 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 		return model.PrefixDispatchResult{Matched: false}, nil
 	}
 	return model.PrefixDispatchResult{Matched: true, Reply: ack}, nil
+}
+
+func (h *Hub) groupHasExplicitIntent(ctx context.Context, msg model.Message, text string) (bool, error) {
+	if msg.ChatType != model.ChatGroup {
+		return true, nil
+	}
+	trimmed := strings.TrimSpace(text)
+	if withoutBot := strings.TrimSpace(h.stripLeadingBotMentions(msg.BotChannelID, trimmed)); withoutBot != trimmed {
+		return true, nil
+	}
+	if _, _, ok := parseSelector(trimmed); ok {
+		return true, nil
+	}
+	if _, _, _, ok := h.parseMemberMention(msg.BotChannelID, trimmed); ok {
+		return true, nil
+	}
+	routes, err := h.Repo.ListPrefixRoutes(ctx, msg.ChatEntityID)
+	if err != nil {
+		return false, err
+	}
+	for _, route := range routes {
+		if router.MatchPrefix(route.Rule.MatchExpr, trimmed, route.Rule.CaseSensitive) {
+			return true, nil
+		}
+	}
+	// System/security/apply/sync/roster commands are explicit hash commands even
+	// when their backing route is temporarily unavailable.
+	return strings.HasPrefix(trimmed, "#"), nil
 }
 
 func (h *Hub) dispatchL1Direct(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
@@ -1300,7 +1396,7 @@ func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, t
 					"route_id":       route.Rule.ID,
 				},
 			}
-			h.annotateSourceContext(env.Meta, msg)
+			h.annotateSourceContext(ctx, env.Meta, msg)
 			if msg.ChatType == model.ChatGroup {
 				env.Meta["group_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
 				env.Meta["sender_open_id"] = msg.SenderOpenID
@@ -1634,7 +1730,7 @@ func (h *Hub) dispatchSecurityOps(ctx context.Context, msg model.Message, text s
 				"source_sender_openid": msg.SenderOpenID,
 			},
 		}
-		h.annotateSourceContext(env.Meta, msg)
+		h.annotateSourceContext(ctx, env.Meta, msg)
 		annotateBroadcastMirror(&env, broadcastKey, i == 0)
 		if msg.ChatType == model.ChatGroup {
 			env.Meta["group_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
@@ -2879,7 +2975,7 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 			"bot_channel_id": msg.BotChannelID,
 		},
 	}
-	h.annotateSourceContext(env.Meta, msg)
+	h.annotateSourceContext(ctx, env.Meta, msg)
 	if msg.ChatType == model.ChatGroup {
 		env.Meta["group_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
 		env.Meta["sender_open_id"] = msg.SenderOpenID
@@ -2916,7 +3012,7 @@ func (h *Hub) dispatchDefaultPersonalSession(ctx context.Context, msg model.Mess
 				"reply_prefix":   fmt.Sprintf("【%s】", sessions[0]),
 			},
 		}
-		h.annotateSourceContext(env.Meta, msg)
+		h.annotateSourceContext(ctx, env.Meta, msg)
 		if err := h.RouteEnvelope(ctx, env); err != nil {
 			return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, true, nil
 		}
@@ -2964,7 +3060,7 @@ func (h *Hub) dispatchMemberMention(ctx context.Context, msg model.Message, text
 			"source_sender_openid": msg.SenderOpenID,
 		},
 	}
-	h.annotateSourceContext(env.Meta, msg)
+	h.annotateSourceContext(ctx, env.Meta, msg)
 	if msg.ChatType == model.ChatGroup {
 		env.Meta["group_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
 		env.Meta["sender_open_id"] = msg.SenderOpenID
@@ -2992,7 +3088,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		h.unclaimEnvelope(env.ID, sig)
 		return fmt.Errorf("session %s offline", sessionName)
 	}
-	if ackInbound && h.sessionSupportsDeliveryACK(c) && h.Repo != nil {
+	if reliablePrimaryEnvelope(env) && h.sessionSupportsDeliveryACK(c) && h.Repo != nil {
 		if env.Meta == nil {
 			env.Meta = map[string]any{}
 		}
@@ -3007,10 +3103,12 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
-		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: "feishu_inbound"}); err != nil {
+		if err := h.Repo.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env)}); err != nil {
 			h.unclaimEnvelope(env.ID, sig)
 			return err
 		}
+		h.publishInputObservation(keyID, sessionName, env, deliveryID, "hub_received", "primary", true)
+		h.publishSourceCopyObservation(env, deliveryID, "hub_received")
 		h.drainSessionDeliveries(ctx, c)
 		return nil
 	}
@@ -3018,10 +3116,45 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		h.unclaimEnvelope(env.ID, sig)
 		return err
 	}
+	if reliablePrimaryEnvelope(env) {
+		directID := "direct_" + env.ID
+		// Legacy helpers provide no injection ACK. A successful WebSocket write only
+		// proves handoff, so use the weaker pty_write/injection-unconfirmed stage.
+		h.publishInputObservation(keyID, sessionName, env, directID, "pty_write", "primary", false)
+		h.publishSourceCopyObservation(env, directID, "pty_write")
+	}
 	if ackInbound && h.Repo != nil && env.ID != "" {
 		_ = h.Repo.AckMessage(ctx, env.ID)
 	}
 	return nil
+}
+
+func reliablePrimaryEnvelope(env model.Envelope) bool {
+	if env.ID == "" || metaBool(env.Meta, "system") || metaBool(env.Meta, "no_mirror") {
+		return false
+	}
+	return metaString(env.Meta, "type") == ""
+}
+
+func deliverySourceType(env model.Envelope) string {
+	from, err := parseAddress(env.From)
+	if err == nil {
+		if from.Kind == addressFeishu {
+			return "feishu_inbound"
+		}
+		if from.Kind == addressSession && from.SessionName == "workpulse" {
+			return "view_inbound"
+		}
+	}
+	return "session_inbound"
+}
+
+func (h *Hub) publishSourceCopyObservation(env model.Envelope, deliveryID, stage string) {
+	from, err := parseAddress(env.From)
+	if err != nil || from.Kind != addressSession || from.SessionName == "" || from.SessionName == "workpulse" {
+		return
+	}
+	h.publishInputObservation(from.KeyID, from.SessionName, env, deliveryID, stage, "copy", false)
 }
 
 func (h *Hub) sessionSupportsDeliveryACK(c *sessionClient) bool {
@@ -3044,12 +3177,30 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 }
 
 func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, env model.Envelope) bool {
-	if metaString(env.Meta, "type") != "delivery_ack" || h.Repo == nil {
+	ackType := metaString(env.Meta, "type")
+	if (ackType != "delivery_ack" && ackType != "delivery_cancel_ack") || h.Repo == nil {
 		return false
 	}
 	id := metaString(env.Meta, "delivery_id")
+	if ackType == "delivery_cancel_ack" {
+		if id == "" {
+			return true
+		}
+		d, err := h.Repo.GetSessionDelivery(ctx, id)
+		if err != nil || d == nil || d.KeyID != c.keyID || d.SessionName != c.sessionName || d.State == "dead" || d.State == "cancelled" {
+			return true
+		}
+		messageID := metaString(env.Meta, "message_id")
+		if metaString(env.Meta, "result") == "cancelled" && messageID != "" && messageID == d.SourceMessageID {
+			if cancelled, err := h.Repo.ConfirmSessionDeliveryCancelled(ctx, messageID, id, c.keyID, c.sessionName); err == nil && cancelled {
+				h.publishDeliveryCancelled(c.keyID, c.sessionName, messageID, id, "helper_received")
+				go h.drainSessionDeliveries(context.Background(), c)
+			}
+		}
+		return true
+	}
 	state := metaString(env.Meta, "state")
-	if id == "" || (state != "delivered" && state != "processed" && state != "failed" && state != "busy") {
+	if id == "" || (state != "delivered" && state != "injected" && state != "processed" && state != "failed" && state != "busy") {
 		return true
 	}
 	d, err := h.Repo.GetSessionDelivery(ctx, id)
@@ -3059,26 +3210,40 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	if d.KeyID != c.keyID || d.SessionName != c.sessionName || d.State == "dead" || d.State == "cancelled" {
 		return true
 	}
-	if state == "processed" {
+	if state == "injected" {
+		_ = h.Repo.UpdateSessionDelivery(ctx, id, "injected", "", time.Now().UTC())
+		h.publishDeliveryUpdateForDelivery(*d, "injected", "cli_injected", "", "")
+		if d.SourceMessageID != "" {
+			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
+		}
+		go h.drainSessionDeliveries(context.Background(), c)
+	} else if state == "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "processed", "", time.Now().UTC())
+		if d.State != "injected" {
+			h.publishDeliveryUpdateForDelivery(*d, "processed", "cli_injected", "", "")
+		}
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
 		}
 		go h.drainSessionDeliveries(context.Background(), c)
 	} else if state == "busy" {
 		_ = h.Repo.UpdateSessionDeliveryBusy(ctx, id, metaString(env.Meta, "reason"), time.Now().UTC().Add(15*time.Second))
+		h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", metaString(env.Meta, "reason"))
 		h.scheduleSessionDeliveryDrain(c, 15*time.Second)
 	} else if state == "failed" {
 		retryable := metaBool(env.Meta, "retryable")
 		if retryable {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "queued", metaString(env.Meta, "reason"), time.Now().UTC().Add(2*time.Second))
+			h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", metaString(env.Meta, "reason"))
 			h.scheduleSessionDeliveryDrain(c, 2*time.Second)
 		} else {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "dead", metaString(env.Meta, "reason"), time.Now().UTC())
+			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", metaString(env.Meta, "reason"))
 			go h.drainSessionDeliveries(context.Background(), c)
 		}
 	} else if d.State != "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "delivered", "", time.Now().UTC().Add(2*time.Minute))
+		h.publishDeliveryUpdateForDelivery(*d, "delivered", "helper_received", "", "")
 		h.scheduleSessionDeliveryDrain(c, 2*time.Minute)
 		if position := metaInt(env.Meta, "queue_position"); position > 0 {
 			h.notifyDeliveryQueued(ctx, *d, position)
@@ -3087,18 +3252,40 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	return true
 }
 
+func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, deliveryState, stage, status, reason string) {
+	h.publishDeliveryUpdate(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason)
+	var original model.Envelope
+	if json.Unmarshal([]byte(d.Envelope), &original) != nil {
+		return
+	}
+	from, err := parseAddress(original.From)
+	if err == nil && from.Kind == addressSession && from.SessionName != "" && from.SessionName != "workpulse" {
+		h.publishDeliveryUpdate(from.KeyID, from.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason)
+	}
+}
+
 func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 	if h.Repo == nil || !h.sessionSupportsDeliveryACK(c) {
 		return
 	}
 	for {
+		expired, err := h.Repo.ExpireSessionDeliveries(ctx, c.keyID, c.sessionName, time.Now().UTC())
+		if err != nil {
+			return
+		}
+		for _, d := range expired {
+			h.publishDeliveryUpdateForDelivery(d, "dead", "helper_received", "failed", "delivery_expired")
+		}
 		d, err := h.Repo.ClaimSessionDelivery(ctx, c.keyID, c.sessionName, time.Now().UTC())
 		if err != nil || d == nil {
 			return
 		}
 		var env model.Envelope
 		if err := json.Unmarshal([]byte(d.Envelope), &env); err != nil {
-			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", err.Error(), time.Now().UTC())
+			if updateErr := h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "malformed_envelope", time.Now().UTC()); updateErr != nil {
+				return
+			}
+			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "malformed_envelope")
 			continue
 		}
 		if err := c.write(ctx, env); err != nil {
@@ -3153,7 +3340,7 @@ func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope)
 		return err
 	}
 	content, _ := json.Marshal(map[string]string{"text": renderFeishuText(env, chatType)})
-	return h.Outbound.Enqueue(ctx, model.Message{
+	err = h.Outbound.Enqueue(ctx, model.Message{
 		ID:           env.ID,
 		ChatEntityID: botChannelID + ":" + entityKind + ":" + to.OpenID,
 		BotChannelID: botChannelID,
@@ -3161,6 +3348,14 @@ func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope)
 		ChatType:     chatType,
 		Content:      string(content),
 	})
+	if err != nil {
+		return err
+	}
+	from, parseErr := parseAddress(env.From)
+	if parseErr == nil && from.Kind == addressSession && from.SessionName != "" && from.SessionName != "workpulse" {
+		h.publishInputObservation(from.KeyID, from.SessionName, env, "out_"+env.ID, "cli_injected", "copy", false)
+	}
+	return nil
 }
 
 func (h *Hub) resolveFeishuBotChannel(ctx context.Context, to address, env model.Envelope, chatType model.ChatType) (string, error) {
@@ -3248,15 +3443,20 @@ func shouldSkipMirror(env model.Envelope) bool {
 	}
 }
 
-func (h *Hub) annotateSourceContext(meta map[string]any, msg model.Message) {
+func (h *Hub) annotateSourceContext(ctx context.Context, meta map[string]any, msg model.Message) {
 	if meta == nil {
 		return
 	}
 	meta["source_bot_channel_id"] = msg.BotChannelID
 	meta["source_chat_type"] = string(msg.ChatType)
+	meta["source_kind"] = "feishu"
 	source := sourceAccount(msg)
 	if openID := feishuOpenIDFromAccount(source); openID != "" {
 		meta["source_open_id"] = openID
+	}
+	sender := firstNonEmpty(msg.SenderOpenID, feishuOpenIDFromAccount(source))
+	if sender != "" {
+		meta["source_display_name"] = firstNonEmpty(h.displayNameForOpenID(ctx, sender, msg.BotChannelID), sender)
 	}
 	switch msg.ChatType {
 	case model.ChatGroup:
@@ -3267,6 +3467,33 @@ func (h *Hub) annotateSourceContext(meta map[string]any, msg model.Message) {
 	case model.ChatPersonal:
 		meta["source_chat_id"] = feishuOpenIDFromAccount(msg.ChatEntityID)
 	}
+}
+
+func (h *Hub) displayNameForOpenID(ctx context.Context, openID, botChannelID string) string {
+	// Every repository lookup stays outside h.mu; callers enrich before routing.
+	if h.Repo == nil {
+		return ""
+	}
+	if members, err := h.Repo.ListMembers(ctx); err == nil {
+		for _, member := range members {
+			if member.FeishuOpenID == openID && member.DisplayName != "" {
+				return member.DisplayName
+			}
+		}
+	}
+	if botChannelID != "" {
+		if entity, err := h.Repo.GetChatEntity(ctx, botChannelID, openID); err == nil && entity != nil && entity.DisplayName != "" {
+			return entity.DisplayName
+		}
+	}
+	if persons, err := h.Repo.ListSeenPersons(ctx); err == nil {
+		for _, person := range persons {
+			if person.OpenID == openID && person.Name != "" {
+				return person.Name
+			}
+		}
+	}
+	return ""
 }
 
 func replySourceAddress(meta map[string]any) (string, bool) {
@@ -3311,6 +3538,68 @@ type onlineSessionSnapshot struct {
 	ConnSeq  int
 }
 
+func (h *Hub) loadSeenSessions(ctx context.Context) {
+	h.seenSessionsOnce.Do(func() {
+		if h.Repo == nil {
+			return
+		}
+		endpoints, err := h.Repo.ListSessionEndpoints(ctx)
+		if err != nil {
+			return
+		}
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		for _, ep := range endpoints {
+			if ep.OwnerKey != "" && ep.SessionName != "" {
+				h.seenSessions[terminalKey(ep.OwnerKey, ep.SessionName)] = true
+			}
+		}
+		h.seenSessionsOK = true
+	})
+}
+
+func (h *Hub) markSessionSeen(ownerKey, sessionName string) bool {
+	key := terminalKey(ownerKey, sessionName)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	// Failure to load history is fail-closed: never turn a transient repository
+	// error or Hub restart into a burst of "new session" notifications.
+	if !h.seenSessionsOK || h.seenSessions[key] {
+		return false
+	}
+	h.seenSessions[key] = true
+	return true
+}
+
+func (h *Hub) notifyNewSession(ctx context.Context, ownerKey, sessionName string) {
+	if !h.newSessionNotice || h.Outbound == nil || h.Repo == nil || ownerKey == "" || sessionName == "" {
+		return
+	}
+	members, err := h.Repo.ListMembers(ctx)
+	if err != nil {
+		return
+	}
+	var openID string
+	for _, member := range members {
+		if member.Active && member.OwnerKey == ownerKey {
+			openID = member.FeishuOpenID
+			break
+		}
+	}
+	if openID == "" {
+		return
+	}
+	botChannelID := h.botChannel("UnifiedRobot")
+	content, _ := json.Marshal(map[string]string{"text": "会话 #" + sessionName + " 已上线"})
+	_ = h.Outbound.Enqueue(ctx, model.Message{
+		ID:           "session-online-" + randomHex(16),
+		ChatEntityID: botChannelID + ":personal:" + openID,
+		BotChannelID: botChannelID,
+		ChatType:     model.ChatPersonal,
+		Content:      string(content),
+	})
+}
+
 func (h *Hub) scheduleOnlineBroadcast(ctx context.Context, keyID string) {
 	if h.Repo == nil {
 		return
@@ -3335,7 +3624,7 @@ func (h *Hub) scheduleOnlineBroadcast(ctx context.Context, keyID string) {
 			delete(h.onlineTimers, ownerKey)
 		}
 		h.mu.Unlock()
-		_ = h.broadcastOnlineDirectory(bctx, ownerKey, true)
+		_ = h.broadcastOnlineDirectory(bctx, ownerKey)
 	})
 	h.mu.Unlock()
 }
@@ -3363,25 +3652,25 @@ func (h *Hub) sessionEndpointNoDirectory(ctx context.Context, keyID, sessionName
 	return false
 }
 
-func (h *Hub) BroadcastOnlineDirectories(ctx context.Context, includeFeishu bool) error {
+func (h *Hub) BroadcastOnlineDirectories(ctx context.Context) error {
 	owners, err := h.onlineOwners(ctx)
 	if err != nil {
 		return err
 	}
 	for _, owner := range owners {
-		if err := h.broadcastOnlineDirectory(ctx, owner, includeFeishu); err != nil {
+		if err := h.broadcastOnlineDirectory(ctx, owner); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (h *Hub) BroadcastOnlineDirectoryForKey(ctx context.Context, keyID string, includeFeishu bool) error {
+func (h *Hub) BroadcastOnlineDirectoryForKey(ctx context.Context, keyID string) error {
 	ownerKey := h.ownerKeyForKey(ctx, keyID)
 	if ownerKey == "" {
 		return nil
 	}
-	return h.broadcastOnlineDirectory(ctx, ownerKey, includeFeishu)
+	return h.broadcastOnlineDirectory(ctx, ownerKey)
 }
 
 func (h *Hub) onlineOwners(ctx context.Context) ([]string, error) {
@@ -3480,7 +3769,7 @@ func (h *Hub) ownerKeyForKeyWithMembersAndAccounts(accounts []string, members []
 	return ""
 }
 
-func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string, includeFeishu bool) error {
+func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string) error {
 	start := time.Now()
 	items, owner, err := h.onlineDirectory(ctx, ownerKey)
 	if err != nil {
@@ -3516,23 +3805,7 @@ func (h *Hub) broadcastOnlineDirectory(ctx context.Context, ownerKey string, inc
 	}
 	wg.Wait()
 	fanoutDur := time.Since(fanoutStart)
-	enqueueDur := time.Duration(0)
-	if includeFeishu && h.Outbound != nil && owner.FeishuOpenID != "" {
-		enqueueStart := time.Now()
-		botChannelID := h.botChannel("UnifiedRobot")
-		content, _ := json.Marshal(map[string]string{"text": text})
-		if err := h.Outbound.Enqueue(ctx, model.Message{
-			ID:           "online-" + randomHex(16),
-			ChatEntityID: botChannelID + ":personal:" + owner.FeishuOpenID,
-			BotChannelID: botChannelID,
-			ChatType:     model.ChatPersonal,
-			Content:      string(content),
-		}); err != nil {
-			return err
-		}
-		enqueueDur = time.Since(enqueueStart)
-	}
-	log.Printf("online directory broadcast timing owner=%s total=%s snapshot=%s fanout=%s enqueue=%s clients=%d include_feishu=%t", owner.OwnerKey, time.Since(start).Round(time.Millisecond), snapshotDur.Round(time.Millisecond), fanoutDur.Round(time.Millisecond), enqueueDur.Round(time.Millisecond), len(items), includeFeishu)
+	log.Printf("online directory broadcast timing owner=%s total=%s snapshot=%s fanout=%s clients=%d", owner.OwnerKey, time.Since(start).Round(time.Millisecond), snapshotDur.Round(time.Millisecond), fanoutDur.Round(time.Millisecond), len(items))
 	return nil
 }
 

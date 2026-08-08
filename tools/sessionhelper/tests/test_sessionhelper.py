@@ -8,6 +8,7 @@ import sqlite3
 import subprocess
 import tarfile
 import tempfile
+import threading
 import time
 from unittest import mock
 from pathlib import Path
@@ -108,6 +109,71 @@ class SessionHelperTest(unittest.TestCase):
             delivery_id, retried = inbox.claim_next()
             self.assertEqual(delivery_id, "dlv_1")
             self.assertEqual(retried["body"], "retry")
+
+    def test_delivery_inbox_cancel_received_transitions_to_cancelled(self):
+        # 走甲最小·真删除:仅 received 态原子撤到 cancelled,并离开 FIFO(幂等)。
+        with tempfile.TemporaryDirectory() as tmp:
+            inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)
+            env = {"body": "one", "meta": {"type": "delivery", "delivery_id": "dlv_1", "message_id": "msg_1"}}
+            inbox.accept("dlv_1", env)  # received
+            self.assertEqual(inbox.cancel("msg_1", "dlv_1"), {"result": "cancelled", "state": "cancelled"})
+            self.assertIsNone(inbox.claim_next())  # cancelled 不再进注入
+            self.assertEqual(inbox.cancel("msg_1", "dlv_1")["result"], "cancelled")  # 幂等再撤
+
+    def test_delivery_inbox_cancel_after_injection_is_not_cancelable(self):
+        # 已注入(processing)/已处理(processed)拒 not_cancelable —— 避免假删除。
+        with tempfile.TemporaryDirectory() as tmp:
+            inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)
+            inbox.accept("dlv_1", {"body": "one"})
+            self.assertEqual(inbox.claim_next()[0], "dlv_1")  # received → processing
+            self.assertEqual(inbox.cancel("msg_1", "dlv_1"), {"result": "not_cancelable", "state": "processing"})
+            inbox.finish("dlv_1")  # → processed
+            self.assertEqual(inbox.cancel("msg_1", "dlv_1")["result"], "not_cancelable")
+
+    def test_delivery_inbox_cancel_unknown_is_not_found(self):
+        # 迟到/错地址:无此 (session, delivery_id) → not_found,不回退、不新建。
+        with tempfile.TemporaryDirectory() as tmp:
+            inbox = DeliveryInbox(str(Path(tmp) / "inbox.db"), 2)
+            self.assertEqual(inbox.cancel("msg_x", "nope"), {"result": "not_found", "state": ""})
+
+    def test_delivery_cancel_ack_carries_dual_key(self):
+        # 端到端:收 delivery_cancel → cancelled ACK 带双键(message_id + delivery_id);
+        # 已注入 → not_cancelable ACK。(与 dev55 锁的 hub CAS 契约)
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            helper = SessionHelper(load_config(dict(
+                BASE_ENV, SH_MODE="cli", SH_INBOX_DB=str(Path(tmp) / "inbox.db")
+            )))
+            helper.delivery_inbox.accept(
+                "dlv_1", {"meta": {"type": "delivery", "ack_required": True, "delivery_id": "dlv_1", "message_id": "msg_1"}}
+            )  # received
+            cancel_env = {"meta": {"type": "delivery_cancel", "message_id": "msg_1", "delivery_id": "dlv_1"}}
+            self.assertTrue(helper.is_delivery_cancel(cancel_env))
+            ws = FakeWS()
+            asyncio.run(helper.handle_delivery_cancel(ws, cancel_env))
+            self.assertEqual(len(ws.sent), 1)
+            meta = ws.sent[0]["meta"]
+            self.assertEqual(meta["type"], "delivery_cancel_ack")
+            self.assertEqual(meta["message_id"], "msg_1")   # 双键 G-ADDR
+            self.assertEqual(meta["delivery_id"], "dlv_1")  # 双键 G-ADDR
+            self.assertEqual(meta["result"], "cancelled")
+            self.assertTrue(meta["no_mirror"])
+
+            # 已注入不可撤:processing → not_cancelable ACK(仍带双键)
+            helper.delivery_inbox.accept("dlv_2", {"meta": {"delivery_id": "dlv_2"}})
+            self.assertEqual(helper.delivery_inbox.claim_next()[0], "dlv_2")  # → processing
+            ws2 = FakeWS()
+            asyncio.run(helper.handle_delivery_cancel(
+                ws2, {"meta": {"type": "delivery_cancel", "message_id": "msg_2", "delivery_id": "dlv_2"}}
+            ))
+            self.assertEqual(ws2.sent[0]["meta"]["result"], "not_cancelable")
+            self.assertEqual(ws2.sent[0]["meta"]["delivery_id"], "dlv_2")
 
     def test_delivery_inbox_fifo_and_capacity_preserve_oldest(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -671,7 +737,7 @@ class SessionHelperTest(unittest.TestCase):
         self.assertIsNone(agent_route_envelope("普通回答", book))
         self.assertIsNone(agent_route_envelope("# 中文标题", book))
 
-    def test_agent_network_skill_injects_without_handle(self):
+    def test_agent_network_skill_drains_its_cli_response(self):
         class FakeAdapter:
             name = "cli"
 
@@ -693,8 +759,8 @@ class SessionHelperTest(unittest.TestCase):
         fake = FakeAdapter()
         helper.adapter = fake
         asyncio.run(helper.inject_agent_network_skill({"body": "指南", "meta": {"type": "agent_network_skill"}}))
-        self.assertEqual(fake.injected, ["指南"])
-        self.assertEqual(fake.handled, [])
+        self.assertEqual(fake.injected, [])
+        self.assertEqual([item["body"] for item in fake.handled], ["指南"])
 
     def test_terminal_input_writes_cli_adapter(self):
         class FakeAdapter:
@@ -1200,6 +1266,111 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(sent[0]["meta"]["state"], "failed")
         self.assertEqual(sent[0]["meta"]["reason"], "cli_injection_failed")
         self.assertTrue(sent[0]["meta"]["retryable"])
+
+    def test_delivery_worker_acks_injected_before_slow_reply_finishes(self):
+        class SlowAdapter:
+            name = "cli"
+
+            def is_idle(self):
+                return True
+
+            def handle_delivery(self, env, on_injected):
+                on_injected()
+                time.sleep(0.25)
+                return ""
+
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        async def run_case():
+            with tempfile.TemporaryDirectory() as tmp:
+                helper = SessionHelper(load_config(dict(
+                    BASE_ENV, SH_MODE="cli", SH_INBOX_DB=str(Path(tmp) / "inbox.db")
+                )))
+                helper.adapter = SlowAdapter()
+                ws = FakeWS()
+                env = {"from": "peer#FB-2642", "to": "home#FB-2642", "body": "one",
+                       "meta": {"type": "delivery", "ack_required": True, "delivery_id": "dlv_1"}}
+                helper.delivery_inbox.accept("dlv_1", env)
+                task = asyncio.create_task(helper.delivery_worker_loop(ws))
+                deadline = asyncio.get_running_loop().time() + 1
+                while asyncio.get_running_loop().time() < deadline and len(ws.sent) < 2:
+                    await asyncio.sleep(0.02)
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                return [item["meta"]["state"] for item in ws.sent]
+
+        self.assertEqual(asyncio.run(run_case()), ["injected", "processed"])
+
+    def test_adapter_transactions_are_serialized_across_inbound_tasks(self):
+        class ConcurrentProbeAdapter:
+            name = "cli"
+
+            def __init__(self):
+                self.active = 0
+                self.max_active = 0
+                self.lock = threading.Lock()
+
+            def handle(self, env):
+                with self.lock:
+                    self.active += 1
+                    self.max_active = max(self.max_active, self.active)
+                time.sleep(0.08)
+                with self.lock:
+                    self.active -= 1
+                return ""
+
+        class FakeWS:
+            async def send(self, payload):
+                pass
+
+        async def run_case():
+            helper = SessionHelper(load_config(BASE_ENV))
+            probe = ConcurrentProbeAdapter()
+            helper.adapter = probe
+            ws = FakeWS()
+            await asyncio.gather(
+                helper.process_inbound_message(ws, {"from": "workpulse#FB-2642", "body": "roster"}),
+                helper.process_inbound_message(ws, {"from": "peer#FB-2642", "body": "delivery"}),
+            )
+            return probe.max_active
+
+        self.assertEqual(asyncio.run(run_case()), 1)
+
+    def test_cli_pty_reply_discards_output_queued_before_injection(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="cline", SH_CLI_REPLY_WAIT="0.05"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.start = lambda: True
+        adapter.output_q.put("STALE_ONBOARDING_REPLY")
+        adapter.inject_text = lambda text: adapter.output_q.put("RIG_ECHO:" + text)
+
+        reply = adapter.handle({"body": "M5-F-current-run"})
+
+        self.assertEqual(reply, "RIG_ECHO:M5-F-current-run")
+
+    def test_cli_pty_reply_waits_past_early_prompt_chunk(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="cline", SH_CLI_REPLY_WAIT="3"))
+        adapter = CLIAdapter(cfg)
+        adapter.output_q.put(">")
+
+        def delayed_reply():
+            time.sleep(0.8)
+            adapter.output_q.put("RIG_ECHO:M5-F-current-run")
+
+        thread = threading.Thread(target=delayed_reply)
+        thread.start()
+        chunks = adapter.collect_output(3)
+        thread.join()
+
+        self.assertEqual(chunks, [">", "RIG_ECHO:M5-F-current-run"])
 
     def test_provision_rejects_bad_source_and_audits(self):
         with tempfile.TemporaryDirectory() as tmp:

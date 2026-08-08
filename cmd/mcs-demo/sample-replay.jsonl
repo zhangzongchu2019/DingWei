@@ -1,0 +1,9 @@
+{"session":"sess-impl","meta_op":"status","task_id":"t-demo","body":"【在轨】主链实现进行中,预计两小时"}
+{"session":"sess-tst","task_id":"t-demo","segment":"seg1","body":"【门 PASS】seg1 判据全过,基线负例绿"}
+{"session":"sess-impl","task_id":"t-demo","segment":"seg1","body":"【门 PASS】我自己测过了没问题"}
+{"session":"sess-des","task_id":"t-demo","body":"设计上有个疑问,当前进度到哪一步了?"}
+{"session":"sess-impl","meta_op":"close","task_id":"t-demo","body":"活干完了我把单子关了"}
+{"session":"sess-orch","meta_op":"close","task_id":"t-demo","body":"验收过,收口"}
+{"session":"sess-impl","meta_op":"steal_epoch","task_id":"t-demo","body":"试试未知指令"}
+{"session":"unknown-session","meta_op":"status","task_id":"t-demo","body":"我是没登记的会话"}
+{"session":"sess-impl","task_id":"t-demo","body":"建议暂停一下再继续部署"}
