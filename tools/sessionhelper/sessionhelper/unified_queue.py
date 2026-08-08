@@ -19,6 +19,7 @@ QueueState = Literal["queued", "admitting", "admitted", "completed", "interrupte
 @dataclass
 class QueuedCommand:
     delivery_id: str
+    origin_delivery_id: str
     queue_seq: int
     source: CommandSource
     display_name: str
@@ -79,6 +80,7 @@ class UnifiedCommandQueue:
             source, display_name, open_id, bot_channel_id = source_fields(env, source)
             command = QueuedCommand(
                 delivery_id=delivery_id,
+                origin_delivery_id=origin_delivery_id(env),
                 queue_seq=self._next_seq,
                 source=source,
                 display_name=display_name,
@@ -171,6 +173,7 @@ class UnifiedCommandQueue:
             "cursor": f"queue:{command.queue_seq:020d}:{lifecycle}",
             "delivery_id": command.delivery_id,
             "turn_id": command.turn_id if lifecycle == "admitted" else "",
+            **({"origin_delivery_id": command.origin_delivery_id} if command.origin_delivery_id else {}),
         }
 
     def _rejected_event(
@@ -202,6 +205,27 @@ class UnifiedCommandQueue:
             return raw if raw.startswith("dw-") else f"dw-{raw}"
         prefix = "dw-view" if source == "user" or meta.get("source_kind") == "user" else "dw"
         return f"{prefix}-{uuid.uuid4().hex}"
+
+    def origin_delivery_id(self, delivery_id: str) -> str:
+        """Return the trusted Hub correlation id retained for a queued command."""
+        with self._lock:
+            command = self._by_delivery.get(delivery_id)
+            return command.origin_delivery_id if command is not None else ""
+
+
+def origin_delivery_id(env: dict) -> str:
+    """Extract the canonical Hub id only from a reliable delivery envelope."""
+    meta = env.get("meta") or {}
+    value = meta.get("delivery_id")
+    if (
+        meta.get("type") == "delivery"
+        and meta.get("delivery_version") == 1
+        and meta.get("ack_required") is True
+        and isinstance(value, str)
+        and value
+    ):
+        return value
+    return ""
 
 
 def source_fields(env: dict, explicit: CommandSource | None = None) -> tuple[CommandSource, str, str, str]:

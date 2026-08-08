@@ -247,6 +247,7 @@ class DriverAdapter:
             "cursor": f"queue:{command.queue_seq:020d}:terminal",
             "delivery_id": command.delivery_id,
             "turn_id": command.turn_id,
+            **({"origin_delivery_id": command.origin_delivery_id} if command.origin_delivery_id else {}),
         })
 
     # ------------------------------------------------------------ 事件→文本桥(喂老 view 页)
@@ -333,11 +334,18 @@ class DriverAdapter:
             return None
 
     def _event_json(self, ev: SessionEvent) -> str:
-        return json.dumps({
+        # ts=UTC epoch 毫秒,渲染端按查看者本地时区显示(mcs-demo 同款先例);
+        # 打在事件体内(而非仅信封 TS),eventRing 回放才不丢。
+        event = {
             "kind": ev.kind, "text": ev.text, "data": ev.data,
             "session_id": ev.session_id, "cursor": ev.cursor,
             "delivery_id": ev.delivery_id, "turn_id": ev.turn_id,
-        }, ensure_ascii=False)
+            "ts": int(time.time() * 1000),
+        }
+        origin = self._commands.origin_delivery_id(ev.delivery_id)
+        if origin:
+            event["origin_delivery_id"] = origin
+        return json.dumps(event, ensure_ascii=False)
 
     def next_session_event(self, timeout: float = 0.5):
         # C5:helper 用它拉结构化事件,发 session_event 信封给 hub(新 View Service 用)

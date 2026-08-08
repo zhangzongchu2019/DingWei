@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
@@ -32,6 +33,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/config"
 	"github.com/zhangzongchu2019/dingwei/internal/coordination"
+	"github.com/zhangzongchu2019/dingwei/internal/datad"
 	"github.com/zhangzongchu2019/dingwei/internal/fcs"
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
@@ -102,6 +104,15 @@ func run(logger *slog.Logger) error {
 	adm.Outbound = outbound
 	adm.Prefix = prefixHub
 	adm.SecretKey = bs.SecretKey
+	if datadURL := strings.TrimSpace(os.Getenv("DATAD_URL")); datadURL != "" {
+		datadToken := strings.TrimSpace(os.Getenv("DATAD_TOKEN"))
+		if datadToken == "" {
+			// claudek3 M3:URL 配而 token 空=对 datad 恒 401,页面只见横幅难定位,启动即警示。
+			logger.Warn("DATAD_URL set but DATAD_TOKEN empty — datad board will always 401")
+		}
+		adm.Datad = datad.NewClient(datadURL, datadToken)
+		logger.Info("portal board direct-connect datad", "url", datadURL)
+	}
 	adm.Mount(mux)                          // /healthz /readyz /admin*
 	portal.NewScheduleServer(st).Mount(mux) // /schedule/
 	coord := coordination.New(st, outbound, clock.Real{}, bs.GlobalSchedulePath)
@@ -266,6 +277,15 @@ func run(logger *slog.Logger) error {
 }
 
 func buildFeishuGateway(ctx context.Context, logger *slog.Logger, repo store.Repository, bs config.Bootstrap) (feishu.Gateway, feishu.Receiver, error) {
+	// T17:测试 Hub 出站经 fan-out 代理(代理加[测试环境]后缀+代持凭据);fake/ws 路径零触碰
+	if strings.EqualFold(strings.TrimSpace(bs.FeishuTransport), "proxy") {
+		url := strings.TrimSpace(bs.FeishuProxyURL)
+		if url == "" {
+			return nil, nil, errors.New("FEISHU_PROXY_URL is required when FEISHU_TRANSPORT=proxy")
+		}
+		logger.Info("feishu gateway configured", "transport", "proxy", "url", url)
+		return feishu.NewProxyGateway(url, bs.FeishuProxyToken), nil, nil
+	}
 	if strings.EqualFold(strings.TrimSpace(bs.FeishuTransport), "ws") {
 		if err := seedBootstrapBotChannel(ctx, logger, repo, bs); err != nil {
 			return nil, nil, err
@@ -729,6 +749,11 @@ func handleFeishuWebhook(ctx context.Context, logger *slog.Logger, repo store.Re
 	if err := verifyWebhookToken(data, bot.VerificationToken); err != nil {
 		return false, err
 	}
+	// T17 v2.3 §K1/C3(Hub 加性改动③):条件严格分支——payload 含 "v"=代理投递契约,
+	// 须 v==1+严格 schema(未知字段拒),漂移=显式 400 非静默;无 "v"=legacy 飞书路原样。
+	if err := verifyVersionedDelivery(data); err != nil {
+		return false, err
+	}
 	if bot.VerificationToken == "" && bot.EncryptKey == "" {
 		if logger == nil {
 			logger = slog.Default()
@@ -828,6 +853,38 @@ func pkcs7Unpad(data []byte, blockSize int) ([]byte, error) {
 		}
 	}
 	return data[:len(data)-n], nil
+}
+
+// verifyVersionedDelivery T17 §K1 条件严格:含 "v" 才启用;v!=1 或未知字段=错(→400)。
+func verifyVersionedDelivery(data []byte) error {
+	var probe struct {
+		V *int `json:"v"`
+	}
+	if json.Unmarshal(data, &probe) != nil || probe.V == nil {
+		return nil // 无 v=legacy 飞书路,原样
+	}
+	if *probe.V != 1 {
+		return fmt.Errorf("unsupported delivery version %d", *probe.V)
+	}
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	var strict struct {
+		V            int             `json:"v"`
+		Token        string          `json:"token"`
+		MsgID        string          `json:"msg_id"`
+		ChatType     string          `json:"chat_type"`
+		ChatID       string          `json:"chat_id"`
+		OpenID       string          `json:"open_id"`
+		SenderOpenID string          `json:"sender_open_id"`
+		Text         string          `json:"text"`
+		Raw          json.RawMessage `json:"raw"`
+		TS           int64           `json:"ts"`
+		Challenge    string          `json:"challenge"` // pre-arm 探测(runbook 阶段1门②)
+	}
+	if err := dec.Decode(&strict); err != nil {
+		return fmt.Errorf("v1 delivery schema violation: %w", err)
+	}
+	return nil
 }
 
 func verifyWebhookToken(data []byte, want string) error {

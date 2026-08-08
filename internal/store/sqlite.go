@@ -1327,20 +1327,23 @@ func (s *SQLite) EnqueueSessionDelivery(ctx context.Context, d model.SessionDeli
 		d.NextAttemptAt = d.CreatedAt
 	}
 	_, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO session_delivery
-		(id,key_id,session_name,envelope_json,source_message_id,source_type,state,attempts,next_attempt_at,last_error,created_at,updated_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, d.ID, d.KeyID, d.SessionName, d.Envelope, nullString(d.SourceMessageID), d.SourceType, d.State, d.Attempts, d.NextAttemptAt.UTC().Format(time.RFC3339Nano), d.LastError, d.CreatedAt.UTC().Format(time.RFC3339Nano), d.CreatedAt.UTC().Format(time.RFC3339Nano))
+		(id,key_id,session_name,envelope_json,source_message_id,source_type,provenance,state,attempts,next_attempt_at,last_error,created_at,updated_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, d.ID, d.KeyID, d.SessionName, d.Envelope, nullString(d.SourceMessageID), d.SourceType, nullString(d.Provenance), d.State, d.Attempts, d.NextAttemptAt.UTC().Format(time.RFC3339Nano), d.LastError, d.CreatedAt.UTC().Format(time.RFC3339Nano), d.CreatedAt.UTC().Format(time.RFC3339Nano))
 	return err
 }
 
 func scanSessionDelivery(row rowScanner) (*model.SessionDelivery, error) {
 	var d model.SessionDelivery
 	var next, created string
-	var lease, delivered, processed sql.NullString
-	if err := row.Scan(&d.ID, &d.KeyID, &d.SessionName, &d.Envelope, &d.SourceMessageID, &d.SourceType, &d.State, &d.Attempts, &next, &lease, &d.LastError, &created, &delivered, &processed); err != nil {
+	var provenance, lease, delivered, processed sql.NullString
+	if err := row.Scan(&d.ID, &d.KeyID, &d.SessionName, &d.Envelope, &d.SourceMessageID, &d.SourceType, &provenance, &d.State, &d.Attempts, &next, &lease, &d.LastError, &created, &delivered, &processed); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
+	}
+	if provenance.Valid {
+		d.Provenance = provenance.String
 	}
 	d.NextAttemptAt, _ = time.Parse(time.RFC3339Nano, next)
 	d.CreatedAt, _ = time.Parse(time.RFC3339Nano, created)
@@ -1358,14 +1361,14 @@ func scanSessionDelivery(row rowScanner) (*model.SessionDelivery, error) {
 	return &d, nil
 }
 
-const sessionDeliverySelect = `SELECT id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at FROM session_delivery`
+const sessionDeliverySelect = `SELECT id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at FROM session_delivery`
 
 func (s *SQLite) ExpireSessionDeliveries(ctx context.Context, keyID, sessionName string, now time.Time) ([]model.SessionDelivery, error) {
 	nowText := now.UTC().Format(time.RFC3339Nano)
 	rows, err := s.db.QueryContext(ctx, `UPDATE session_delivery
 		SET state='dead',last_error='delivery_expired',lease_until=NULL,updated_at=?
 		WHERE key_id=? AND session_name=? AND state NOT IN ('processed','dead','cancelled') AND (attempts>=12 OR created_at<=?)
-		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`,
+		RETURNING id,key_id,session_name,envelope_json,COALESCE(source_message_id,''),source_type,provenance,state,attempts,next_attempt_at,lease_until,COALESCE(last_error,''),created_at,delivered_at,processed_at`,
 		nowText, keyID, sessionName, now.Add(-30*time.Minute).UTC().Format(time.RFC3339Nano))
 	if err != nil {
 		return nil, err
@@ -1449,6 +1452,25 @@ func (s *SQLite) UpdateSessionDeliveryBusy(ctx context.Context, id, errText stri
 		WHERE id=? AND state NOT IN ('processed','dead','cancelled')`,
 		errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now, id)
 	return err
+}
+
+// ReleaseSessionDeliveryLeases makes in-flight work immediately claimable after
+// the delivery-ACK WebSocket that owned the lease disappears. The delivery id
+// stays unchanged, so the helper inbox remains the idempotency authority.
+func (s *SQLite) ReleaseSessionDeliveryLeases(ctx context.Context, keyID, sessionName, reason string, now time.Time) (int64, error) {
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+	nowText := now.UTC().Format(time.RFC3339Nano)
+	result, err := s.db.ExecContext(ctx, `UPDATE session_delivery
+		SET state='queued',last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=?,
+		    attempts=CASE WHEN attempts>0 THEN attempts-1 ELSE attempts END
+		WHERE key_id=? AND session_name=? AND state IN ('sent','delivered')`,
+		reason, nowText, nowText, keyID, sessionName)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 func (s *SQLite) GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error) {
@@ -2767,7 +2789,7 @@ func (s *SQLite) TouchSessionEndpoint(ctx context.Context, keyID, sessionName st
 
 func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpoint, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT key_id, session_name, COALESCE(full_session_name, ''), COALESCE(owner_key, ''), last_seen_at, active, mirror_enabled, COALESCE(mirror_to, ''), COALESCE(client_ip, ''), COALESCE(tool, ''), COALESCE(model, ''), COALESCE(version, ''), COALESCE(producer, 0), COALESCE(target_group, ''), COALESCE(no_directory, 0), COALESCE(no_directory_admin, 0), COALESCE(conn_seq, 0)
+		`SELECT key_id, session_name, COALESCE(full_session_name, ''), COALESCE(owner_key, ''), last_seen_at, active, mirror_enabled, COALESCE(mirror_to, ''), COALESCE(client_ip, ''), COALESCE(tool, ''), COALESCE(model, ''), COALESCE(version, ''), COALESCE(producer, 0), COALESCE(target_group, ''), COALESCE(no_directory, 0), COALESCE(no_directory_admin, 0), COALESCE(conn_seq, 0), COALESCE(delivery_ack_v1, 0)
 		   FROM session_endpoint ORDER BY key_id, session_name`)
 	if err != nil {
 		return nil, err
@@ -2777,8 +2799,8 @@ func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpo
 	for rows.Next() {
 		var ep model.SessionEndpoint
 		var lastSeen string
-		var active, mirrorEnabled, producer, noDirectory, noDirectoryAdmin int
-		if err := rows.Scan(&ep.KeyID, &ep.SessionName, &ep.FullSessionName, &ep.OwnerKey, &lastSeen, &active, &mirrorEnabled, &ep.MirrorTo, &ep.ClientIP, &ep.Tool, &ep.Model, &ep.Version, &producer, &ep.TargetGroup, &noDirectory, &noDirectoryAdmin, &ep.ConnSeq); err != nil {
+		var active, mirrorEnabled, producer, noDirectory, noDirectoryAdmin, deliveryACKV1 int
+		if err := rows.Scan(&ep.KeyID, &ep.SessionName, &ep.FullSessionName, &ep.OwnerKey, &lastSeen, &active, &mirrorEnabled, &ep.MirrorTo, &ep.ClientIP, &ep.Tool, &ep.Model, &ep.Version, &producer, &ep.TargetGroup, &noDirectory, &noDirectoryAdmin, &ep.ConnSeq, &deliveryACKV1); err != nil {
 			return nil, err
 		}
 		ep.LastSeenAt, _ = time.Parse(time.RFC3339, lastSeen)
@@ -2787,9 +2809,31 @@ func (s *SQLite) ListSessionEndpoints(ctx context.Context) ([]model.SessionEndpo
 		ep.Producer = producer == 1
 		ep.NoDirectory = noDirectory == 1
 		ep.NoDirectoryAdmin = noDirectoryAdmin == 1
+		ep.DeliveryACKV1 = deliveryACKV1 == 1
 		out = append(out, ep)
 	}
 	return out, rows.Err()
+}
+
+func (s *SQLite) SetSessionEndpointDeliveryACK(ctx context.Context, keyID, sessionName string, enabled bool) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE session_endpoint SET delivery_ack_v1=? WHERE key_id=? AND session_name=?`,
+		boolInt(enabled), keyID, sessionName)
+	return err
+}
+
+func (s *SQLite) SessionEndpointDeliveryACK(ctx context.Context, keyID, sessionName string) (bool, bool, error) {
+	var enabled int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT delivery_ack_v1 FROM session_endpoint WHERE key_id=? AND session_name=?`,
+		keyID, sessionName).Scan(&enabled)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, false, nil
+	}
+	if err != nil {
+		return false, false, err
+	}
+	return enabled == 1, true, nil
 }
 
 func (s *SQLite) SetSessionMirror(ctx context.Context, keyID, sessionName string, enabled bool, mirrorTo string) error {

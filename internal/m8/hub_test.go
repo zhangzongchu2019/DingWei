@@ -1695,6 +1695,164 @@ func TestHubDeliveryV2EventsMatchRendererGolden(t *testing.T) {
 	}
 }
 
+func TestCanonicalProvenanceTrustedGateAndRedaction(t *testing.T) {
+	for _, tc := range []struct {
+		name, channel, from, kind, display string
+	}{
+		{name: "human", channel: hubIngressViewV2, from: "workpulse#key", kind: "human", display: "人工"},
+		{name: "agent", channel: hubIngressAgent, from: "claudek3#key", kind: "agent", display: "claudek3"},
+		{name: "feishu", channel: hubIngressFeishu, from: "ou_secret#key#bot", kind: "feishu", display: "飞书"},
+		{name: "system", channel: hubIngressInternal, from: "workpulse#key", kind: "system", display: "系统"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			env := model.Envelope{ID: "m", From: tc.from, Meta: map[string]any{
+				hubIngressMetaKey: tc.channel,
+				"provenance":      map[string]any{"kind": "human", "id": "sensitive", "trust_decision": "trusted"},
+			}}
+			got, ok := provenanceForEnvelope(env)
+			if !ok || got.Kind != tc.kind || got.DisplayName != tc.display ||
+				got.AttestedBy != "hub" || got.TrustDecision != "trusted" {
+				t.Fatalf("provenance=%+v ok=%v", got, ok)
+			}
+			raw := provenanceJSON(env)
+			if strings.Contains(raw, "sensitive") || strings.Contains(raw, `"id"`) {
+				t.Fatalf("stable id/client claim leaked: %s", raw)
+			}
+		})
+	}
+	for _, channel := range []string{"", hubIngressFeishuUnknown, "future_untrusted"} {
+		if got, ok := provenanceForEnvelope(model.Envelope{Meta: map[string]any{hubIngressMetaKey: channel}}); ok {
+			t.Fatalf("channel=%q unexpectedly trusted: %+v", channel, got)
+		}
+	}
+}
+
+func TestFeishuIngressAttestationUsesAuthenticatedBoundary(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	for _, tc := range []struct {
+		name       string
+		ingress    model.IngressProvenance
+		wantMarker string
+		wantBlock  bool
+	}{
+		{name: "verified_webhook", ingress: model.IngressWebhookVerified, wantMarker: hubIngressFeishu, wantBlock: true},
+		{name: "authenticated_ws", ingress: model.IngressFeishuWSAuthenticated, wantMarker: hubIngressFeishu, wantBlock: true},
+		{name: "unsigned", ingress: model.IngressUntrusted, wantMarker: hubIngressFeishuUnknown, wantBlock: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			meta := map[string]any{"provenance": map[string]any{"kind": "human", "trust_decision": "trusted"}}
+			hub.annotateSourceContext(ctx, meta, model.Message{
+				BotChannelID: "dev", ChatEntityID: "dev:personal:ou_secret",
+				ChatType: model.ChatPersonal, SenderOpenID: "ou_secret", IngressProvenance: tc.ingress,
+			})
+			if meta[hubIngressMetaKey] != tc.wantMarker {
+				t.Fatalf("marker=%v want %s", meta[hubIngressMetaKey], tc.wantMarker)
+			}
+			env := model.Envelope{From: "ou_secret#key#bot", Meta: meta}
+			_, ok := provenanceForEnvelope(env)
+			if ok != tc.wantBlock {
+				t.Fatalf("trusted block=%v want %v meta=%+v", ok, tc.wantBlock, meta)
+			}
+		})
+	}
+}
+
+func TestInputPostedCarriesOptionalCanonicalProvenance(t *testing.T) {
+	now := time.Date(2026, 7, 23, 0, 0, 0, 0, time.UTC)
+	trusted := inputObservationEvent(model.Envelope{
+		ID: "m-human", From: "workpulse#key", Body: "hello",
+		Meta: map[string]any{hubIngressMetaKey: hubIngressViewV2},
+	}, "dlv-human", "hub_received", "primary", true, "view", "View", now)
+	provenance, ok := trusted["provenance"].(displayProvenance)
+	if !ok || provenance.Kind != "human" || provenance.DisplayName != "人工" ||
+		provenance.AttestedBy != "hub" || provenance.TrustDecision != "trusted" {
+		t.Fatalf("trusted input_posted provenance=%+v", trusted["provenance"])
+	}
+	unknown := inputObservationEvent(model.Envelope{ID: "m-old"}, "dlv-old", "hub_received", "primary", true, "", "", now)
+	if _, exists := unknown["provenance"]; exists {
+		t.Fatalf("historical/unknown input_posted grew provenance: %+v", unknown)
+	}
+}
+
+func TestHelperCannotForgeCanonicalProvenance(t *testing.T) {
+	raw := `{"kind":"input_posted","payload":"x","provenance":{"kind":"human","display_name":"冒名","attested_by":"hub","trust_decision":"trusted"}}`
+	sanitized, conflict := stripClientProvenance(raw)
+	if !conflict {
+		t.Fatal("forged provenance was not reported as a conflict")
+	}
+	var event map[string]any
+	if err := json.Unmarshal([]byte(sanitized), &event); err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := event["provenance"]; exists {
+		t.Fatalf("helper provenance survived admission: %s", sanitized)
+	}
+	if event["kind"] != "input_posted" || event["payload"] != "x" {
+		t.Fatalf("sanitizer changed unrelated fields: %s", sanitized)
+	}
+}
+
+func TestAuthenticatedSessionCannotForgeHumanOrSystemProvenance(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-provenance", Name: "svc-provenance", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-provenance", "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	source := dialSession(t, ctx, srv.URL, "source", key.ID, secret)
+	defer source.Close(websocket.StatusNormalClosure, "done")
+	target := dialSession(t, ctx, srv.URL, "target", key.ID, secret)
+	defer target.Close(websocket.StatusNormalClosure, "done")
+
+	if err := writeEnvelope(ctx, source, model.Envelope{
+		ID: "agent-forgery", From: "source#" + key.ID, To: "target#" + key.ID, Body: "hello",
+		Meta: map[string]any{
+			hubIngressMetaKey: hubIngressInternal,
+			"provenance": map[string]any{
+				"kind": "human", "display_name": "冒名", "attested_by": "hub", "trust_decision": "trusted",
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, target)
+	if _, leaked := got.Meta[hubIngressMetaKey]; leaked {
+		t.Fatalf("Hub-only ingress marker reached target session: %+v", got.Meta)
+	}
+	if _, leaked := got.Meta["provenance"]; leaked {
+		t.Fatalf("client provenance reached target: %+v", got.Meta)
+	}
+	var ring []string
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+		hub.mu.Lock()
+		if st := hub.terminals[terminalKey(key.ID, "target")]; st != nil {
+			ring = append([]string(nil), st.eventRing...)
+		}
+		hub.mu.Unlock()
+		if len(ring) > 0 {
+			break
+		}
+	}
+	if len(ring) == 0 {
+		t.Fatal("target input observation missing")
+	}
+	var event map[string]any
+	if err := json.Unmarshal([]byte(ring[len(ring)-1]), &event); err != nil {
+		t.Fatal(err)
+	}
+	provenance, _ := event["provenance"].(map[string]any)
+	if provenance["kind"] != "agent" || provenance["display_name"] != "source" ||
+		provenance["attested_by"] != "hub" || provenance["trust_decision"] != "trusted" {
+		t.Fatalf("forged session provenance was not re-attested as agent: %s", ring[len(ring)-1])
+	}
+}
+
 func TestDeliveryUpdateCancellableUsesAuthoritativeState(t *testing.T) {
 	now := time.Date(2026, 7, 22, 0, 0, 0, 0, time.UTC)
 	for _, tc := range []struct {
@@ -4506,6 +4664,198 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 	}
 }
 
+func TestReliableSessionDeliveryQueuesWhileDisconnectedAndDrainsOnceAfterReconnect(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-offline", Name: "offline", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-offline", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:alice"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	first := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	_ = readEnvelopeIncludingSystem(t, ctx, first)
+	if err := writeEnvelope(ctx, first, model.Envelope{ID: "caps-first", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		enabled, found, _ := db.SessionEndpointDeliveryACK(ctx, key.ID, "home")
+		return found && enabled
+	})
+	if err := first.Close(websocket.StatusNormalClosure, "offline-window"); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		return hub.sessionClients[key.ID] == nil || hub.sessionClients[key.ID]["home"] == nil
+	})
+
+	env := model.Envelope{
+		ID: "fm-offline-window", To: "home#" + key.ID,
+		From: "alice#" + key.ID + "#UnifiedRobot", Body: "queued while disconnected", TS: time.Now().Unix(),
+	}
+	if err := hub.RouteEnvelope(ctx, env); err != nil {
+		t.Fatalf("offline durable admission: %v", err)
+	}
+
+	second := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	defer second.Close(websocket.StatusNormalClosure, "done")
+	_ = readEnvelopeIncludingSystem(t, ctx, second)
+	if err := writeEnvelope(ctx, second, model.Envelope{ID: "caps-second", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	got := readEnvelope(t, ctx, second)
+	deliveryID := metaString(got.Meta, "delivery_id")
+	if got.ID != env.ID || got.Body != env.Body || deliveryID == "" || metaString(got.Meta, "type") != "delivery" {
+		t.Fatalf("reconnected delivery=%+v", got)
+	}
+	if err := writeEnvelope(ctx, second, model.Envelope{ID: "ack-offline-window", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ := db.GetSessionDelivery(ctx, deliveryID)
+		return record != nil && record.State == "processed" && record.Attempts == 1
+	})
+
+	readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
+	defer cancel()
+	for {
+		_, data, err := second.Read(readCtx)
+		if err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				break
+			}
+			t.Fatalf("read duplicate: %v", err)
+		}
+		var duplicate model.Envelope
+		if json.Unmarshal(data, &duplicate) == nil && metaString(duplicate.Meta, "delivery_id") == deliveryID {
+			t.Fatalf("delivery duplicated after processed ACK: %+v", duplicate)
+		}
+	}
+}
+
+func TestDeliveredLeaseIsReleasedOnDisconnectAndFIFOResumesAfterReconnect(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-hol", Name: "hol", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-hol", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	firstConn := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	_ = readEnvelopeIncludingSystem(t, ctx, firstConn)
+	if err := writeEnvelope(ctx, firstConn, model.Envelope{ID: "caps-first", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		enabled, found, _ := db.SessionEndpointDeliveryACK(ctx, key.ID, "home")
+		return found && enabled
+	})
+	for _, id := range []string{"hol-first", "hol-second"} {
+		if err := hub.RouteEnvelope(ctx, model.Envelope{
+			ID: id, To: "home#" + key.ID, From: "peer#" + key.ID, Body: id, TS: time.Now().Unix(),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	firstDelivery := readEnvelope(t, ctx, firstConn)
+	firstID := metaString(firstDelivery.Meta, "delivery_id")
+	if firstDelivery.ID != "hol-first" || firstID == "" {
+		t.Fatalf("first delivery=%+v", firstDelivery)
+	}
+	if err := writeEnvelope(ctx, firstConn, model.Envelope{ID: "ack-delivered", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": firstID, "state": "delivered"}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ := db.GetSessionDelivery(ctx, firstID)
+		return record != nil && record.State == "delivered" &&
+			record.NextAttemptAt.After(time.Now().UTC().Add(time.Minute))
+	})
+	if err := firstConn.Close(websocket.StatusNormalClosure, "drop-before-processed"); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		record, _ := db.GetSessionDelivery(ctx, firstID)
+		return record != nil && record.State == "queued" &&
+			!record.NextAttemptAt.After(time.Now().UTC())
+	})
+
+	reconnectStart := time.Now()
+	secondConn := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	defer secondConn.Close(websocket.StatusNormalClosure, "done")
+	_ = readEnvelopeIncludingSystem(t, ctx, secondConn)
+	if err := writeEnvelope(ctx, secondConn, model.Envelope{ID: "caps-second", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	retried := readEnvelope(t, ctx, secondConn)
+	if got := metaString(retried.Meta, "delivery_id"); got != firstID || retried.ID != "hol-first" {
+		t.Fatalf("retry must keep the exact id: got=%+v want_delivery_id=%s", retried, firstID)
+	}
+	if elapsed := time.Since(reconnectStart); elapsed >= 2*time.Second {
+		t.Fatalf("retry waited for stale two-minute lease: %s", elapsed)
+	}
+	if err := writeEnvelope(ctx, secondConn, model.Envelope{ID: "ack-first-processed", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": firstID, "state": "processed"}}); err != nil {
+		t.Fatal(err)
+	}
+	secondDelivery := readEnvelope(t, ctx, secondConn)
+	secondID := metaString(secondDelivery.Meta, "delivery_id")
+	if secondDelivery.ID != "hol-second" || secondID == "" || secondID == firstID {
+		t.Fatalf("FIFO did not immediately advance: %+v", secondDelivery)
+	}
+	if err := writeEnvelope(ctx, secondConn, model.Envelope{ID: "ack-second-processed", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "delivery_ack", "delivery_id": secondID, "state": "processed"}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, time.Second, func() bool {
+		firstRecord, _ := db.GetSessionDelivery(ctx, firstID)
+		secondRecord, _ := db.GetSessionDelivery(ctx, secondID)
+		return firstRecord != nil && firstRecord.State == "processed" && firstRecord.Attempts == 1 &&
+			secondRecord != nil && secondRecord.State == "processed" && secondRecord.Attempts == 1
+	})
+}
+
+func TestOfflineDurableAdmissionRejectsEndpointWithoutAttestedACKCapability(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{
+		KeyID: "key", SessionName: "legacy", LastSeenAt: time.Now().UTC(), Active: false,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	env := model.Envelope{
+		ID: "legacy-offline", To: "legacy#key", From: "alice#key#UnifiedRobot",
+		Body: "must not queue", TS: time.Now().Unix(),
+	}
+	if err := hub.routeToSession(ctx, "key", "legacy", env, false); err == nil || !strings.Contains(err.Error(), "offline") {
+		t.Fatalf("legacy offline route error=%v", err)
+	}
+	claimed, err := db.ClaimSessionDelivery(ctx, "key", "legacy", time.Now().UTC())
+	if err != nil || claimed != nil {
+		t.Fatalf("legacy endpoint unexpectedly queued delivery=%+v err=%v", claimed, err)
+	}
+}
+
 func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplicate(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-injected", Name: "injected", DeliveryType: "ws", Enabled: true}); err != nil {
@@ -6015,7 +6365,7 @@ func TestViewRoutingPrecedenceAndFallback(t *testing.T) {
 // 离线全链路集成(feat/view-service-dock C1..C5):真 WS 会话发 session_event(C5)
 // → hub 中继(C1)→ 内网 SSE 订阅回放(C2)→ authorize+#unlock+input 回到会话(C3)。
 func TestViewServiceFullChainIntegration(t *testing.T) {
-	hub, _, ctx := newTestHub(t)
+	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -6126,11 +6476,16 @@ func TestViewServiceFullChainIntegration(t *testing.T) {
 		t.Fatalf("input POST status=%d body=%s", sc, ib)
 	}
 	var gotInput bool
+	var viewDeliveryID string
 	for i := 0; i < 6 && !gotInput; i++ {
 		env := readEnvelope(t, ctx, sess)
 		if env.Meta["type"] == "delivery" && env.Meta["source_kind"] == "user" &&
 			env.Meta["delivery_id"] != "" && env.Body == "跑一下测试" {
+			if _, leaked := env.Meta[hubIngressMetaKey]; leaked {
+				t.Fatalf("Hub-only ingress marker leaked to session client: %+v", env.Meta)
+			}
 			gotInput = true
+			viewDeliveryID = metaString(env.Meta, "delivery_id")
 		}
 	}
 	if !gotInput {
@@ -6147,12 +6502,20 @@ func TestViewServiceFullChainIntegration(t *testing.T) {
 		}
 		source, _ := event["source"].(map[string]any)
 		delivery, _ := event["delivery"].(map[string]any)
-		if source["kind"] == "view" && delivery["role"] == "primary" && event["stage"] == "hub_received" {
+		provenance, _ := event["provenance"].(map[string]any)
+		if source["kind"] == "view" && delivery["role"] == "primary" && event["stage"] == "hub_received" &&
+			provenance["kind"] == "human" && provenance["display_name"] == "人工" &&
+			provenance["attested_by"] == "hub" && provenance["trust_decision"] == "trusted" {
 			sawViewPrimary = true
 		}
 	}
 	if !sawViewPrimary {
 		t.Fatalf("View primary input_posted missing from eventRing: %v", ring)
+	}
+	stored, err := db.GetSessionDelivery(ctx, viewDeliveryID)
+	if err != nil || stored == nil || !strings.Contains(stored.Provenance, `"kind":"human"`) ||
+		!strings.Contains(stored.Provenance, `"attested_by":"hub"`) {
+		t.Fatalf("View provenance was not durably stored: %+v err=%v", stored, err)
 	}
 }
 

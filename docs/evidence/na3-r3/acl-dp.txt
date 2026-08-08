@@ -1,0 +1,30 @@
+                                    Access privileges
+ Schema |    Name    | Type  |      Access privileges      | Column privileges | Policies 
+--------+------------+-------+-----------------------------+-------------------+----------
+ public | assignment | table | datad_user=rxt/datad_user  +|                   | 
+        |            |       | datad_assign=arw/datad_user |                   | 
+(1 row)
+
+                                          Access privileges
+ Schema |        Name         | Type  |       Access privileges       | Column privileges | Policies 
+--------+---------------------+-------+-------------------------------+-------------------+----------
+ public | assign_first_result | table | datad_user=rxt/datad_user    +|                   | 
+        |                     |       | datad_assign=ar/datad_user   +|                   | 
+        |                     |       | datad_assign_gc=rd/datad_user |                   | 
+(1 row)
+
+                                  Access privileges
+ Schema | Name | Type  |       Access privileges       | Column privileges | Policies 
+--------+------+-------+-------------------------------+-------------------+----------
+ public | task | table | datad_user=arwdDxt/datad_user+|                   | 
+        |      |       | datad_assign=rw/datad_user   +|                   | 
+        |      |       | datad_assign_gc=r/datad_user  |                   | 
+(1 row)
+
+                                  Access privileges
+ Schema | Name  | Type  |      Access privileges      | Column privileges | Policies 
+--------+-------+-------+-----------------------------+-------------------+----------
+ public | audit | table | datad_user=arDxt/datad_user+|                   | 
+        |       |       | datad_assign=a/datad_user   |                   | 
+(1 row)
+

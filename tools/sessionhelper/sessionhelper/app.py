@@ -17,6 +17,7 @@ from .config import Config, load_config
 from .llm import LLMProvider
 from .inbox import DeliveryInbox
 from .protocol import AddressBook, envelope, is_feishu_addr, is_mirror_control, reply_target, session_addr
+from .reply_origin import classify_reply_decision, reply_carryforward_meta
 from .provision import Provisioner, is_provision_envelope
 
 
@@ -223,6 +224,49 @@ class SessionHelper:
         except Exception as exc:
             print(f"[sessionHelper][debug] TCP 连接失败: {exc}", flush=True)
 
+    def _make_send_handler(self, ws):
+        """Return an async ``(to, body, meta) -> dict`` that sends through the
+        already-authenticated WSS — reusing the same connection, no new
+        auth, no separate web-socket handshake.  *meta* carries the optional
+        reply-origin fields (reply_to/in_reply_to/reply_policy/kind) from the
+        shim IPC payload into the outbound envelope.meta verbatim."""
+
+        async def _send(to: str, body: str, meta: dict | None = None) -> dict:
+            env = envelope(to, body, self.book.self_addr, meta or None)
+            await ws.send(json.dumps(env, ensure_ascii=False))
+            print(f"[ipc_send] to={to} bytes={len(body)}", flush=True)
+            return {"sent": True, "to": to}
+
+        return _send
+
+    def _make_vsapi_handler(self):
+        """Return an async ``(method, path, body?) -> dict`` that forwards
+        a vsapi_v1 request to datad with the session token appended.
+        Helper = pure pipe, no RBAC, no path rewriting (design §7b)."""
+        import aiohttp
+
+        token = self.cfg.datad_token  # per-session token (prodops 签发, DATAD_TOKEN)
+        datad_url = self.cfg.datad_url.rstrip("/")
+
+        async def _vsapi(method: str, path: str, body: dict | None = None) -> dict:
+            url = f"{datad_url}{path}"
+            async with aiohttp.ClientSession() as session:
+                async with session.request(
+                    method, url,
+                    json=body,
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=aiohttp.ClientTimeout(total=10),
+                ) as resp:
+                    data = await resp.json()
+                    if resp.status >= 400:
+                        raise RuntimeError(
+                            f"datad {method} {path}: {resp.status} "
+                            f"{data.get('error', '')}"
+                        )
+                    return data
+
+        return _vsapi
+
     async def _run_once(self) -> None:
         import websockets, time
 
@@ -279,6 +323,19 @@ class SessionHelper:
                      "processed_semantics": "accepted_to_cli", "helper_version": __version__},
                 ), ensure_ascii=False))
                 hb = asyncio.create_task(self.online_list_heartbeat_loop())
+
+                # B3: MCP IPC listener — receives send requests from the
+                # MCP shim and forwards them through this existing WSS.
+                ipc_task: asyncio.Task | None = None
+                if self.cfg.mcp_ipc_sock:
+                    from .ipc_listener import serve_ipc
+
+                    vsapi_handler = self._make_vsapi_handler() if self.cfg.datad_url else None
+                    ipc_task = asyncio.create_task(
+                        serve_ipc(self.cfg.mcp_ipc_sock, self._make_send_handler(ws),
+                                  vsapi_handler=vsapi_handler,
+                                  allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock)))
+
                 try:
                     await asyncio.gather(
                         self.recv_loop(ws),
@@ -291,10 +348,12 @@ class SessionHelper:
                     )
                 finally:
                     hb.cancel()
-                    try:
-                        await hb
-                    except asyncio.CancelledError:
-                        pass
+                    if ipc_task is not None:
+                        ipc_task.cancel()
+                        try:
+                            await ipc_task
+                        except asyncio.CancelledError:
+                            pass
 
     async def recv_loop(self, ws) -> None:
         async for raw in ws:
@@ -436,9 +495,20 @@ class SessionHelper:
             if raise_adapter_errors:
                 raise
             reply_body = f"处理失败：{exc}"
-        if not reply_body or not is_feishu_addr(from_addr):
+        if not reply_body:
             return
+        carry: dict = {}
+        if not is_feishu_addr(from_addr):
+            # session-to-session reply-to-origin:过 reply-origin 双闸(§10 helper 第二道)。
+            # Feishu 源保持原行为(始终回,人不构成 A↔B 环)。
+            decision = classify_reply_decision(env)
+            if not decision.allow:
+                print(f"[reply-origin] suppress reply from={from_addr}: {decision.reason}", flush=True)
+                return
+            carry = reply_carryforward_meta(env)
         to, meta = reply_target(env, self.book)
+        if carry:
+            meta.update(carry)
         body = self.reply_body(env, reply_body)
         await ws.send(json.dumps(envelope(to, body, self.book.self_addr, meta), ensure_ascii=False))
         print(f"[reply] to={to} meta={meta}", flush=True)

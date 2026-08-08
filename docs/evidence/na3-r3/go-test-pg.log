@@ -1,0 +1,16 @@
+=== RUN   TestPGAssignFull
+--- PASS: TestPGAssignFull (0.14s)
+=== RUN   TestPGA2ConcurrentUnique
+--- PASS: TestPGA2ConcurrentUnique (0.18s)
+=== RUN   TestPGACLThreeRoles
+--- PASS: TestPGACLThreeRoles (0.12s)
+=== RUN   TestPGRoleNoLeak
+--- PASS: TestPGRoleNoLeak (0.11s)
+=== RUN   TestPGGCFirstResults
+--- PASS: TestPGGCFirstResults (0.16s)
+=== RUN   TestPGMigrateOnly
+--- PASS: TestPGMigrateOnly (0.03s)
+=== RUN   TestPGIntegration
+--- PASS: TestPGIntegration (0.08s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/datad	1.837s

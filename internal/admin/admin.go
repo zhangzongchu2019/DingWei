@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
+	"github.com/zhangzongchu2019/dingwei/internal/datad"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/redact"
@@ -47,6 +48,7 @@ type Server struct {
 	Repo      store.Repository
 	Outbound  bus.Queue
 	Prefix    *m8.Hub
+	Datad     *datad.Client // T18 切换:非 nil 时看板任务/会话直连 datad(唯一活账)
 	Collector SeenPersonCollector
 	Scheduler *scheduler.Service
 	SecretKey string
@@ -66,6 +68,8 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/login", s.loginForm)
 	mux.HandleFunc("POST /admin/login", s.loginSubmit)
 	mux.HandleFunc("GET /admin", s.requireAuth(s.status))
+	mux.HandleFunc("GET /admin/datad/tasks", s.requireAuth(s.datadTasksProxy))
+	mux.HandleFunc("GET /admin/datad/sessions", s.requireAuth(s.datadSessionsProxy))
 	mux.HandleFunc("GET /admin/control-plane", s.requireAuth(s.controlPlaneDashboard))
 	mux.HandleFunc("GET /admin/messages", s.requireAuth(s.messages))
 	mux.HandleFunc("GET /admin/members", s.requireAuth(s.members))
@@ -416,6 +420,7 @@ func (s *Server) portal(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(`<!doctype html><meta charset=utf-8><title>WorkPulse 门户</title><h3>WorkPulse 团队门户</h3>`))
+	s.writeDatadBoard(w, r)
 	_, _ = w.Write([]byte(`<h4>团队排期</h4><table border=1 cellpadding=4><tr><th>成员</th><th>日期</th><th>任务</th><th>状态</th></tr>`))
 	for _, m := range members {
 		schedules, err := s.Repo.ListSchedules(r.Context(), m.OwnerKey)
@@ -443,6 +448,157 @@ func (s *Server) portal(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(`</table><h4>风险列表</h4><table border=1 cellpadding=4><tr><th>负责人</th><th>风险</th><th>状态</th></tr>`))
 	for _, risk := range risks {
 		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td></tr>`, esc(risk.OwnerKey), esc(risk.Content), esc(risk.Status))
+	}
+	_, _ = w.Write([]byte(`</table>`))
+}
+
+// datadDoneStatuses = 归入"已完成"列的状态(其余活跃态=待办;archived 软删不展示)。
+var datadDoneStatuses = map[string]bool{"done": true}
+
+const datadDoneCap = 10 // 已完成列最多展示条数(业主定;最新在前)。
+
+// writeDatadTaskBoard 渲染 datad 任务看板:双列卡片自适应网格,待办在上、已完成在下,
+// 已完成最多 datadDoneCap 条(按更新时间新→旧)。archived(软删)不展示。纯前端布局,
+// 数据来自 datad。样式内联,单页自包含。
+func writeDatadTaskBoard(w io.Writer, tasks []datad.Task) {
+	var todo, done []datad.Task
+	for _, t := range tasks {
+		switch {
+		case t.Status == "archived":
+			// 软删,不展示
+		case datadDoneStatuses[t.Status]:
+			done = append(done, t)
+		default:
+			todo = append(todo, t)
+		}
+	}
+	// 已完成按更新时间新→旧,截断到 cap。
+	sort.SliceStable(done, func(i, j int) bool { return done[i].UpdatedAt.After(done[j].UpdatedAt) })
+	doneTotal := len(done)
+	if len(done) > datadDoneCap {
+		done = done[:datadDoneCap]
+	}
+
+	_, _ = io.WriteString(w, `<style>
+.tb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));grid-auto-rows:min-content;align-content:start;gap:8px;margin:8px 0}
+.tb-card{border:1px solid #d8dee7;border-radius:8px;padding:10px;background:#fff}
+.tb-card h5{margin:0 0 6px;font-size:13px}
+.tb-meta{font-size:12px;color:#5f6b7a;display:flex;flex-direction:column;gap:2px}
+.tb-badge{display:inline-block;padding:1px 7px;border-radius:10px;color:#fff;font-size:11px}
+.tb-sec{margin-top:12px}
+</style>`)
+
+	writeTaskSection := func(title string, items []datad.Task, suffix string) {
+		_, _ = fmt.Fprintf(w, `<div class=tb-sec><h4>%s%s</h4><div class=tb-grid>`, esc(title), esc(suffix))
+		for _, t := range items {
+			_, _ = fmt.Fprintf(w, `<div class=tb-card><h5>%s <span class=tb-badge style="background:%s">%s</span></h5>`+
+				`<div class=tb-meta><span>%s</span><span>负责:%s</span>%s%s%s`+
+				`<span data-ts="%d">%s</span></div></div>`,
+				esc(t.ID), statusColor(t.Status), esc(t.Status), esc(t.Title), esc(t.OwnerSession),
+				optMeta("锚", t.Anchor), optMeta("gate", t.Gate), optMeta("ETA", t.ETA),
+				t.UpdatedAt.UnixMilli(), esc(t.UpdatedAt.UTC().Format(time.RFC3339)))
+		}
+		_, _ = io.WriteString(w, `</div></div>`)
+	}
+
+	_, _ = io.WriteString(w, `<h4>任务看板(datad)</h4>`)
+	writeTaskSection("待办", todo, fmt.Sprintf("（%d）", len(todo)))
+	doneSuffix := fmt.Sprintf("（%d）", doneTotal)
+	if doneTotal > datadDoneCap {
+		doneSuffix = fmt.Sprintf("（显示最近 %d / 共 %d）", datadDoneCap, doneTotal)
+	}
+	writeTaskSection("已完成", done, doneSuffix)
+}
+
+// optMeta 渲染可选字段的一行 meta(空值不出行)。
+func optMeta(label, value string) string {
+	if value == "" {
+		return ""
+	}
+	return `<span>` + esc(label) + ":" + esc(value) + `</span>`
+}
+
+// statusColor 状态→徽章底色(与 controlPlane 色板同源风格)。
+func statusColor(status string) string {
+	switch status {
+	case "done":
+		return "#1a7f4b"
+	case "in_progress", "dispatched":
+		return "#135cc8"
+	case "review", "waiting_gate":
+		return "#b8860b"
+	case "blocked":
+		return "#c0392b"
+	default: // proposed 等
+		return "#888"
+	}
+}
+
+// datadTasksProxy / datadSessionsProxy 是只读代理端点(方案 A):datad token 留在服务端,
+// 登录态即可读;仅 GET 透传,任何写路径不经此处。
+func (s *Server) datadTasksProxy(w http.ResponseWriter, r *http.Request) {
+	s.datadProxy(w, r, func(ctx context.Context) (any, error) {
+		tasks, err := s.Datad.ListTasks(ctx)
+		return map[string]any{"tasks": tasks}, err
+	})
+}
+
+func (s *Server) datadSessionsProxy(w http.ResponseWriter, r *http.Request) {
+	s.datadProxy(w, r, func(ctx context.Context) (any, error) {
+		sessions, err := s.Datad.ListSessions(ctx)
+		return map[string]any{"sessions": sessions}, err
+	})
+}
+
+func (s *Server) datadProxy(w http.ResponseWriter, r *http.Request, fetch func(context.Context) (any, error)) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if s.Datad == nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "datad not configured"})
+		return
+	}
+	out, err := fetch(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+	_ = json.NewEncoder(w).Encode(out)
+}
+
+// writeDatadBoard 渲染 datad 直连区块(任务台账+会话状态)。
+// 只读展示;拉取失败明示错误横幅,不猜旧账、不静默回退(切换后 datad 为唯一活账)。
+func (s *Server) writeDatadBoard(w http.ResponseWriter, r *http.Request) {
+	if s.Datad == nil {
+		return
+	}
+	// claudek3 M1:两调用并行+看板独立短超时(5s),datad 挂起时不把整页拖到 2×client 超时。
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	var (
+		tasks      []datad.Task
+		sessions   []datad.SessionState
+		terr, serr error
+		wg         sync.WaitGroup
+	)
+	wg.Add(2)
+	go func() { defer wg.Done(); tasks, terr = s.Datad.ListTasks(ctx) }()
+	go func() { defer wg.Done(); sessions, serr = s.Datad.ListSessions(ctx) }()
+	wg.Wait()
+	if terr != nil || serr != nil {
+		err := terr
+		if err == nil {
+			err = serr
+		}
+		_, _ = fmt.Fprintf(w, `<p style="color:#b00;border:1px solid #b00;padding:6px">datad 不可达:%s</p>`, esc(err.Error()))
+		return
+	}
+	writeDatadTaskBoard(w, tasks)
+	_, _ = w.Write([]byte(`<h4>会话状态(datad)</h4><table border=1 cellpadding=4><tr><th>会话</th><th>状态</th><th>水位%</th><th>当前任务</th><th>备注</th><th>更新时间</th></tr>`))
+	for _, ss := range sessions {
+		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%.0f</td><td>%s</td><td>%s</td><td data-ts="%d">%s</td></tr>`,
+			esc(ss.Session), esc(ss.State), ss.WatermarkPct, esc(ss.CurrentTask), esc(ss.Note),
+			ss.UpdatedAt.UnixMilli(), esc(ss.UpdatedAt.UTC().Format(time.RFC3339)))
 	}
 	_, _ = w.Write([]byte(`</table>`))
 }

@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +21,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
+	"github.com/zhangzongchu2019/dingwei/internal/datad"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/scheduler"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
@@ -873,4 +875,166 @@ func findBotChannel(channels []model.BotChannel, id string) *model.BotChannel {
 		}
 	}
 	return nil
+}
+
+func TestPortalDatadBoardRendersTasksAndSessions(t *testing.T) {
+	srv, _, mux, _ := newAdminTestServer(t)
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer read-tok" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		switch r.URL.Path {
+		case "/v1/tasks":
+			_, _ = w.Write([]byte(`[{"id":"G4-1","title":"联调","owner_session":"zzc-devo48-2642","status":"in_progress","anchor":"7b8df4c","updated_at":"2026-08-05T02:00:00Z"}]`))
+		case "/v1/sessions":
+			_, _ = w.Write([]byte(`[{"session":"zzc-devo48-2642","state":"active","watermark_pct":42,"current_task":"G4-1","updated_at":"2026-08-05T02:30:00Z"}]`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(fake.Close)
+	srv.Datad = datad.NewClient(fake.URL, "read-tok")
+
+	srv.sessions["tok"] = "admin"
+	req := httptest.NewRequest(http.MethodGet, "/portal", nil)
+	req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	body := rec.Body.String()
+	for _, want := range []string{"任务看板(datad)", "待办", "G4-1", "zzc-devo48-2642", "in_progress", "会话状态(datad)", "active", "2026-08-05T02:00:00Z"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("portal datad board missing %q in %s", want, body)
+		}
+	}
+}
+
+func TestPortalDatadUnreachableShowsBannerNotFallback(t *testing.T) {
+	srv, _, mux, _ := newAdminTestServer(t)
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "boom", http.StatusInternalServerError)
+	}))
+	fake.Close() // 直接关掉=连接层不可达
+	srv.Datad = datad.NewClient(fake.URL, "read-tok")
+
+	srv.sessions["tok"] = "admin"
+	req := httptest.NewRequest(http.MethodGet, "/portal", nil)
+	req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	body := rec.Body.String()
+	if !strings.Contains(body, "datad 不可达") {
+		t.Fatalf("expected unreachable banner, body=%s", body)
+	}
+	if strings.Contains(body, "任务台账(datad)") {
+		t.Fatalf("must not render datad tables on failure")
+	}
+	if rec.Code != http.StatusOK || !strings.Contains(body, "团队排期") {
+		t.Fatalf("page must still render local sections, code=%d", rec.Code)
+	}
+}
+
+func TestDatadProxyEndpoints(t *testing.T) {
+	srv, _, mux, _ := newAdminTestServer(t)
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer read-tok" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		switch r.URL.Path {
+		case "/v1/tasks":
+			_, _ = w.Write([]byte(`[{"id":"G4-1","title":"联调","owner_session":"zzc-devo48-2642","status":"in_progress","updated_at":"2026-08-05T02:00:00Z"}]`))
+		case "/v1/sessions":
+			_, _ = w.Write([]byte(`[{"session":"zzc-devo48-2642","state":"active","updated_at":"2026-08-05T02:30:00Z"}]`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(fake.Close)
+
+	// 未登录:代理端点必须挡在登录门外(token 不可被无凭据外泄)。
+	unauth := httptest.NewRecorder()
+	mux.ServeHTTP(unauth, httptest.NewRequest(http.MethodGet, "/admin/datad/tasks", nil))
+	if unauth.Code != http.StatusSeeOther {
+		t.Fatalf("unauth proxy code=%d", unauth.Code)
+	}
+
+	// 未配置 datad:503 明示。
+	srv.sessions["tok"] = "admin"
+	authedGet := func(path string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec
+	}
+	if rec := authedGet("/admin/datad/tasks"); rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("unconfigured proxy code=%d body=%s", rec.Code, rec.Body.String())
+	}
+
+	srv.Datad = datad.NewClient(fake.URL, "read-tok")
+	rec := authedGet("/admin/datad/tasks")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"G4-1"`) || !strings.Contains(rec.Header().Get("Content-Type"), "application/json") {
+		t.Fatalf("tasks proxy code=%d ct=%s body=%s", rec.Code, rec.Header().Get("Content-Type"), rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), "read-tok") {
+		t.Fatalf("token must not leak into proxy response")
+	}
+	rec = authedGet("/admin/datad/sessions")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"active"`) {
+		t.Fatalf("sessions proxy code=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestWriteDatadTaskBoardLayout(t *testing.T) {
+	mk := func(id, status string, ageHours int) datad.Task {
+		return datad.Task{ID: id, Title: id + "标题", OwnerSession: "zzc-devo48-2642",
+			Status: status, UpdatedAt: time.Now().Add(-time.Duration(ageHours) * time.Hour)}
+	}
+	var tasks []datad.Task
+	tasks = append(tasks, mk("TODO-1", "in_progress", 1), mk("TODO-2", "proposed", 2))
+	tasks = append(tasks, mk("ARCH-1", "archived", 1)) // 软删不展示
+	for i := 0; i < 14; i++ {                            // 14 件 done,超 cap 10
+		tasks = append(tasks, mk(fmt.Sprintf("DONE-%02d", i), "done", i)) // i 小=新
+	}
+	var buf strings.Builder
+	writeDatadTaskBoard(&buf, tasks)
+	html := buf.String()
+
+	// ① 双列自适应网格(auto-fill grid)。
+	if !strings.Contains(html, "grid-template-columns:repeat(auto-fill,minmax(260px,1fr))") {
+		t.Fatal("双列自适应网格样式缺失")
+	}
+	// ② 待办段在已完成段之前(todo 在上)。
+	todoIdx := strings.Index(html, "待办")
+	doneIdx := strings.Index(html, "已完成")
+	if todoIdx < 0 || doneIdx < 0 || todoIdx > doneIdx {
+		t.Fatalf("待办须在已完成之前: todo=%d done=%d", todoIdx, doneIdx)
+	}
+	// ③ 已完成最多 10 条(按更新时间新→旧):DONE-00..09(最新 10)在,DONE-10..13 截。
+	if !strings.Contains(html, "显示最近 10 / 共 14") {
+		t.Fatal("超 cap 应标注总数")
+	}
+	for _, keep := range []string{"DONE-00", "DONE-09"} {
+		if !strings.Contains(html, keep) {
+			t.Fatalf("已完成前 10(新→旧)应含 %s", keep)
+		}
+	}
+	for _, cut := range []string{"DONE-10", "DONE-13"} {
+		if strings.Contains(html, cut) {
+			t.Fatalf("超 cap 的 %s 应被截断", cut)
+		}
+	}
+	// archived 不展示。
+	if strings.Contains(html, "ARCH-1") {
+		t.Fatal("archived 软删不应展示")
+	}
+	// 待办两件都在。
+	if !strings.Contains(html, "TODO-1") || !strings.Contains(html, "TODO-2") {
+		t.Fatal("待办件缺失")
+	}
+	// esc 保持(标题经 esc)。
+	if !strings.Contains(html, "TODO-1标题") {
+		t.Fatal("标题渲染缺失")
+	}
 }
