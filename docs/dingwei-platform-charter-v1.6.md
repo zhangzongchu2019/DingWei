@@ -1,4 +1,28 @@
 <!--
+SYNC IMPACT REPORT · v1.5 → v1.6
+================================
+变更性质: PATCH(断言收敛 + 纪律再强化)。主轴/四层/D1-D8 未动。
+触发: 评审方 v1.4 最终复审 (2026-08-23T14:20Z, CHANGES REQUESTED 1 实质 + 1 记录项)
+本版收敛的过度断言:
+  · §3.2「多数核心原语已闭合」→「部分原语已闭合」
+  · §3.2 穷举式「未闭合 Processing/Terminal/CreateTask/AddNode」→「已确认未闭合【至少包括】…;
+    其余 mutating op 须逐原语核验」。本席另复核补入 SetTaskRoles/Reassign/SetBlocker(连 rid 参数都没有)
+    与 SteerFinalize/InterruptFinalize(有 rid 与 node_request 但不调 priorOutcome,重放语义待验)。
+  · C0.3 缺口行由「◐ 部分」改回「❌ 未闭合」——契约要求是"一切 mutating op",整体未达成。
+本版记录项:
+  · §14 v1.2 记录里的「仅 Send」原判断改为【保留原文 + ⚠ 后于 v1.4 复核撤回,见 §15 第 4 例】,
+    按评审方口径:历史记录可留,但须标撤回、不得作为当前事实引用。
+本版纪律强化(§15):
+  · 增第 5 例:文件范围扩了但符号范围没扩
+  · 第 3 条补「范围有多个维度:文件/包/符号/实现形态/对象集合,扩了一维不等于扩够」
+  · 新增第 5 条:证据只支撑它直接覆盖的断言,不得外推全集;穷举式表述须能证明已遍历全集
+事实复述点全文核查(按 §15 第 4 条执行):
+  「多数核心原语」1 处已改;「未闭合 Processing/Terminal/CreateTask/AddNode」1 处已改;
+  「仅 Send」4 处 —— :981 已按记录项口径改,其余 3 处为错误描述正确保留。
+遗留 TODO: 同前。
+
+---
+
 SYNC IMPACT REPORT · v1.4 → v1.5
 ================================
 变更性质: PATCH(单点事实复述更正 + 纪律补强)。主轴/四层/D1-D8 未动。
@@ -90,11 +114,11 @@ SYNC IMPACT REPORT · v1.1 → v1.2
 遗留 TODO: Q1/Q2 待与 PM 收敛;Q7/Q8/Q9 待裁;§13 三条需主机通道。
 -->
 
-# DingWei 平台设计执行纲领 v1.5
+# DingWei 平台设计执行纲领 v1.6
 
 - 制定: `zzc-opus50tchangshark-2642`，据业主 2026-08-23 直接讨论整理
 - 状态: **纲领性文件**。业主指定作为今后一段时期 DingWei 平台设计与执行的依据。
-- 前身: `dingwei-spec-driven-process-design-v0.1.md`（v0.1）→ 本文 **v1.5**
+- 前身: `dingwei-spec-driven-process-design-v0.1.md`（v0.1）→ 本文 **v1.6**
 - **v1.1 修订说明（2026-08-23）**：纳入 `zzc-chatgpt56soltchangshark-2642` 设计评审
   （CHANGES REQUESTED, 07:00Z，含实跑 `go test ./internal/mcs/...` PASS）6 条意见，**全部接受**；
   并纳入本席 §13-2/§13-4/§13-6 三项验证结果。逐条变更见 §14 修订记录。
@@ -235,7 +259,13 @@ v1.0 §3.3 曾断言「门禁在引擎里根本不存在」。**该断言错误�
 | **C6 两应急原语** | `c6_owner.go` `OwnerTakeover` / `OwnerOverride`；含 C0.6 白名单（`overrideDirectives` map，非自由文本）、C0.5 同事务原子、C6.3 过渡期硬禁用（`emergencyEnabled` **默认 false**） |
 | **C4 身份闸** | `identity.go:25` `\Azzc-[a-z0-9]+-[0-9]+\z` fullmatch + `hasControlChar()` 拒 `\n\r\t`；`identity_rejected` 事件 actor 用哨兵 `system:identity-gate`、被拒裸名入 `event.data`——**dev56③「合法审计 actor 悖论」的解法已落地** |
 | **C2.6 席位控制** | `PromoteExecSeat` / `GrantRoleExemption` + `role_exemption` 表 |
-| **C0.3 幂等地基（部分）** | ⚠️ **v1.4 再更正**（v1.2 的表述仍不准确，见 §15 第 4 例）。**行为级实况（搜索范围＝`internal/mcs/board/` 全包，非单文件）**：`priorOutcome` 有 **2 个调用点**——`board.go:207`（`Send`）与 `hardening.go:35`（`reserve()`，由 **`SteerReserve`** 与 **`InterruptIntent`** 共用，且 `:41-42` 写 `node_request`）。→ **已闭合至少 5 个原语：`Send` + `SteerReserve` + `InterruptIntent` + `OwnerTakeover` + `OwnerOverride`**。`Processing`/`Terminal` **不调 `priorOutcome`**（各 0 次），其 `rid` 主要作 delivery ownership——**此判断仍成立**。`task_request` 表 Go 侧 **零写入**（仅 `board.go:463` 注释「完整 `task_request` 幂等属 **3.5b**」）。→ 表述为**幂等地基已建、多数核心原语已闭合，Processing/Terminal 与建单侧未闭合** |
+| **C0.3 幂等地基（部分）** | ⚠️ **v1.4 再更正**（v1.2 的表述仍不准确，见 §15 第 4 例）。**行为级实况（搜索范围＝`internal/mcs/board/` 全包，非单文件）**：`priorOutcome` 有 **2 个调用点**——`board.go:207`（`Send`）与 `hardening.go:35`（`reserve()`，由 **`SteerReserve`** 与 **`InterruptIntent`** 共用，且 `:41-42` 写 `node_request`）。→ **已闭合至少 5 个原语：`Send` + `SteerReserve` + `InterruptIntent` + `OwnerTakeover` + `OwnerOverride`**。`Processing`/`Terminal` **不调 `priorOutcome`**（各 0 次），其 `rid` 主要作 delivery ownership——**此判断仍成立**。`task_request` 表 Go 侧 **零写入**（仅 `board.go:463` 注释「完整 `task_request` 幂等属 **3.5b**」）。→ ⚠️ **v1.6 收敛**：只能表述为**幂等地基已建、部分原语已闭合**。
+**已确认闭合（5）**：`Send` / `SteerReserve` / `InterruptIntent` / `OwnerTakeover` / `OwnerOverride`。
+**已确认未闭合，至少包括（7）**：`Processing` / `Terminal` / `CreateTask` / `AddNode` /
+`SetTaskRoles` / `Reassign` / `SetBlocker`（后三者**连 `rid` 参数都没有**，本席复核确认）。
+**语义待验（2）**：`SteerFinalize` / `InterruptFinalize` —— 有 `rid` 参数且触及 `node_request`，
+但**不调 `priorOutcome`**，其重放是否「返原 outcome no-op」**须逐原语验证，不得由 `reserve` 的幂等外推**。
+**其余 mutating op 未核**。 |
 | **C5 路由逻辑 + 矩阵** | `route.go`，且 v1.5 的 P1 缝（收口/门绕授权闸）已修（`stateOps` 含 `gate_result`/`close`） |
 
 **主要未实现 / 未闭合项**（v1.4 更正标题——v1.2 起表内已增至 6 行，「仅三项 + 一处接线」是已撤回旧结论的残留，SYNC REPORT 未挡住，见 §15）：
@@ -246,7 +276,7 @@ v1.0 §3.3 曾断言「门禁在引擎里根本不存在」。**该断言错误�
 | **C2.1 派发信封** | ❌ `基线锚` / `交付格式` 在 Go 侧零命中 |
 | **C2.2 里程碑回执五要素** | ❌ 无构造与校验代码 |
 | **C5 接线到生产** | ❌ `route` 包自述「尚未接进生产收件面」 |
-| **C0.3 全状态 op 幂等闭合** | ◐ **部分**（v1.4 更正）：契约要求「**一切可变更状态的 op** 必带唯一幂等键」。已闭合 `Send`/`SteerReserve`/`InterruptIntent`/`OwnerTakeover`/`OwnerOverride`；**未闭合 `Processing`/`Terminal`/`CreateTask`/`AddNode`** |
+| **C0.3 全状态 op 幂等闭合** | ❌ **未闭合**（v1.6 收敛表述）：契约要求「**一切可变更状态的 op** 必带唯一幂等键」，**该要求整体未达成**。已确认闭合 5 项、已确认未闭合至少 7 项、2 项语义待验、其余未核（明细见上）。**不做未经证明的穷举闭合** |
 | **C1.2 一切写走 guarded 原语** | ❌ **v1.2 新增缺口**：`AddNode(ctx, nodeID, taskID, seq, status, deps)` **无 `Identity`、无 request_id、无 guard，是裸写**（`board.go:559-561`），与 C1.2「一切写走 guarded 原语并签 actor」有实现差距。源码自标「建图辅助…`plan_nodes` 全量原语属后续」（`:447`） |
 
 ### 3.2a 原「只在文档」条目（保留）
@@ -996,7 +1026,8 @@ docstring 首句：「给"新版事件流页"供数据的独立 HTTP 服务（**
 | 建议 | §7.1a「排期最前」→「上线启用最前置，工程可并行」 | **接受** | §7.1a 措辞 |
 
 **本席复核过程（未照单全收，逐条自验）**：
-- ~~`priorOutcome` 幂等检查**仅 `Send` 调用**~~ ⚠️ **该复述有误，v1.5 更正**：全包实为 **2 个调用点**（`board.go:207` / `hardening.go:35`），已闭合原语至少 5 个，详见 §3.2 与 §15 第 4 例。**`Processing`/`Terminal` 各 0 次这一半仍成立。**
+- `priorOutcome` 幂等检查**仅 `Send` 调用**（`board.go:200,207`）；`Processing`/`Terminal` 各 **0 次** —— 评审方判断成立
+  > ⚠️ **该判断已后于 v1.4 复核撤回**，见 §15 第 4 例。全包实为 **2 个调用点**（`board.go:207` / `hardening.go:35`）。**保留原文作历史记录，不得作为当前事实引用。**（`Processing`/`Terminal` 各 0 次这一半仍成立。）
 - `task_request` 表 Go 侧 **零写入**，仅 `board.go:463` 注释「完整 `task_request` 幂等属 3.5b」—— 成立
 - `AddNode(ctx, nodeID, taskID, seq, status, deps)` **无 Identity/request_id/guard** —— 成立，与 C1.2 有实现差距
 - 本席另**自查出第三处未同步**：`front-matter` 在 §4 图与 §6.2.6 仍为旧表述（§13-6 已定为 `**Key**: value` 头块，v1.1 只改了 §5.1）
@@ -1029,7 +1060,18 @@ v1.2 的 §15 纪律要求「必须附行为级证据（谁调用、调用几次
 四次错误的范围依次是：包目录（第 1 例）→ schema 表（第 2 例）→ 命令名与文档（第 3 例）→ 单个文件（第 4 例）。
 **每次都是「证据的搜索范围」小于「断言的作用域」。**
 
-**本文写作纪律（v1.4 强化）**：
+| 5 | 搜索范围已扩到**全包**，但**只搜 `priorOutcome` 一个符号** → 断言「多数核心原语已闭合」「未闭合仅 4 项」。实际幂等可有其他实现形态，且 `SetTaskRoles`/`Reassign`/`SetBlocker` **连 `rid` 参数都没有**，`SteerFinalize`/`InterruptFinalize` 重放语义未验 | **评审方**（v1.4 复审） |
+
+**第 5 例说明 §15 第 2 条本身还不够。**
+v1.4 把「搜索范围」从**单文件**扩到了**全包**——方向对，但**符号范围**没扩：
+只搜 `priorOutcome`，而断言的作用域是「**所有幂等实现形态 × 全部 mutating op**」。
+**范围有多个维度（文件 / 包 / 符号 / 实现形态 / 对象集合），扩了一个不等于扩够了。**
+
+**更根本的一条**：证据只能支撑它**直接覆盖**的断言。
+「查到 5 个闭合、4 个未闭合」只能得出这 9 项的结论，**不能反推"其余都闭合"**。
+v1.4 的「多数核心原语已闭合」与穷举式「未闭合仅 A/B/C/D」都是**从局部证据外推到全集**。
+
+**本文写作纪律（v1.6 再强化）**：
 
 凡形如「X 已实现 / X 不存在 / X 仅由 Y 使用」的断言，必须同时满足三条：
 
@@ -1040,6 +1082,11 @@ v1.2 的 §15 纪律要求「必须附行为级证据（谁调用、调用几次
    写进正文时应像 §3.2 那样标注「搜索范围＝`internal/mcs/board/` 全包，非单文件」。
 3. **反向亦须节制** —— 「没有 migration runner」不等于「整套都要造」。
    过头与不足是同一缺陷的两个方向；结论偏严时同样须附证据。
+   **（v1.6 补）范围有多个维度：文件 / 包 / 符号 / 实现形态 / 对象集合。扩了一维不等于扩够。**
+5. **（v1.6 新增）证据只支撑它直接覆盖的断言，不得外推到全集。**
+   查了 N 项就只能说这 N 项；未查的写「未核」，不写「其余均如何」。
+   凡穷举式表述（「未闭合的只有 A/B/C/D」）必须能证明**已遍历全集**，否则改为
+   「**已确认未闭合至少包括 A/B/C/D；其余须逐项核验**」。
 4. **（v1.5 新增）修正一处事实时，必须全文搜索该事实的所有复述点。**
    v1.4 改了 §3.2 的论断，却漏了 §14 里对同一事实的复述（「仅 `Send` 调用…评审方判断成立」），
    被评审方预判并抓出。**改论断 ≠ 改复述**；SYNC IMPACT REPORT 的逐节复核若只按「章节」走，
@@ -1103,3 +1150,24 @@ v1.2 的 §15 纪律要求「必须附行为级证据（谁调用、调用几次
 **§15 因此新增第 4 条纪律**：修正一处事实时，必须全文搜索该事实的所有复述点。
 **改论断 ≠ 改复述。** SYNC IMPACT REPORT 的逐节复核若只按「章节」走，会漏掉跨节的事实复述；
 复核维度须从「哪些章节动了」扩到「这个事实在全文哪些地方出现过」。本版已按新纪律做了全文复述点核查。
+
+### v1.6（2026-08-23）
+
+**触发**：评审方 **v1.4 最终复审**（14:20Z，CHANGES REQUESTED 1 实质 + 1 记录项）。**全部接受。**
+
+评审方同时确认：v1.3 三必改与低危项**均已正确落地**；**migration 第 14 项边界合理**；
+§15「搜索范围 ≥ 断言作用域」**认可**。
+
+| # | 意见 | 处置 |
+|---|---|---|
+| 实质 | §3.2 先写「已闭合**至少** 5 个」却在结论升级为「**多数核心原语**已闭合」，且把未闭合**穷举**为 4 项 | **接受，收敛**。复核确认其反例成立 |
+| 记录 | §14 的「仅 Send…评审方判断成立」须标撤回，避免错误归因继续被当作当前事实引用 | **接受**，按其口径改为「保留原文 + ⚠ 后于 v1.4 复核撤回」 |
+
+**本席复核（逐项自验）**：
+- `SetTaskRoles` / `Reassign` / `SetBlocker` —— **签名里连 `rid` 参数都没有**，`priorOutcome` 与 `node_request` 均 0 → 确未闭合
+- `SteerFinalize` / `InterruptFinalize` —— 有 `rid` 参数、触及 `node_request`（6 / 3 处），但 **`priorOutcome` 均为 0** → 重放语义确实**未经验证**，不能由 `reserve` 的幂等外推
+
+**这是同一方法缺陷的第 5 次。** 且它证明 v1.4 的补丁不够：
+v1.4 把范围从**单文件**扩到**全包**，方向对，但**符号范围**没扩（只搜 `priorOutcome`），
+而断言作用域是「所有幂等实现形态 × 全部 mutating op」。
+**范围是多维的，扩了一维不等于扩够。** §15 已据此增第 5 条纪律。
