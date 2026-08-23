@@ -1,8 +1,12 @@
-# DingWei 平台设计执行纲领 v1.0
+# DingWei 平台设计执行纲领 v1.1
 
 - 制定: `zzc-opus50tchangshark-2642`，据业主 2026-08-23 直接讨论整理
 - 状态: **纲领性文件**。业主指定作为今后一段时期 DingWei 平台设计与执行的依据。
-- 前身: `dingwei-spec-driven-process-design-v0.1.md`（本文取代之）
+- 前身: `dingwei-spec-driven-process-design-v0.1.md`（v0.1）→ 本文 v1.1
+- **v1.1 修订说明（2026-08-23）**：纳入 `zzc-chatgpt56soltchangshark-2642` 设计评审
+  （CHANGES REQUESTED, 07:00Z，含实跑 `go test ./internal/mcs/...` PASS）6 条意见，**全部接受**；
+  并纳入本席 §13-2/§13-4/§13-6 三项验证结果。逐条变更见 §14 修订记录。
+  **v1.0 的两处错误结论已撤回**（门禁归类、Spec Kit 强制力表述），详见 §14。
 - 证据口径: 「代码现状」均为实读 `git@git.code.tencent.com:wego-ai/dingwei.git` 三条血脉
   （`main`=`6ed4d1e8` / `cr/vs-board-scope-c5c4-integ`=`df40ae38` / `feat/dev55-t403-vs-preprod`=`416a1231`），带文件行号。
   **未实跑验证**的结论标「待核」，集中列于 §13。
@@ -107,7 +111,51 @@ worker 判死 → `Reassign(gen+1)` → 重派；CAS 不过则归还 worker 零�
 
 **直连通道地基（`tools/sessionhelper/sessionhelper/sidecar.py`，173 行，三血脉完全一致且接线均在）**：见 §10。
 
-### 3.2 只在文档，未实现：治理契约
+### 3.1a 门禁链路的准确现状（v1.1 更正）
+
+v1.0 §3.3 曾断言「门禁在引擎里根本不存在」。**该断言错误，予以撤回。**
+错因：本席 grep 范围限定在 `internal/mcs/board/*` 包内，而调用方在包外，**在包边界上做 grep 却把结论推广到包外**。
+评审方独立穿透抓出，本席复核确认。准确现状分四段：
+
+| 环节 | 状态 | 证据 |
+|---|---|---|
+| **门方授权闸（谁有资格发门结果）** | ✅ **已实现** | `route.go:68-172` `stateOps` 含 `gate_result`/`close`；role×op **default-deny**；per-段 `GateKeeperOf` |
+| **门方登记（哪一段谁把门）** | ✅ **已实现，但仅内存** | `mcsd/inbound.go:56` `gks map[string]string`；`SetGateKeeper(taskID, segment, principal)` `:77`。源码自标「P3=显式登记；**P4 接真信封解析源**」——**非台账，进程重启即丢** |
+| **门结果落账** | ✅ **已实现，但仅审计事件** | `inbound.go:142-149`：过闸后 `kind="gate_result"` → `B.AuditEvent(...)` 写 `board_event`。**载荷仅 `{kind, segment, line: env.FirstLine}`——只有首行文本，无交付物锚、无失败最小复现、无 acceptance 锚** |
+| **门结果控制 DAG** | ❌ **不存在** | `Terminal()` 不看门结果；`fanOutLocked()` 只看 `∀dep=done` |
+| **接线到生产** | ❌ **未接** | `route` 包自述「尚未接进生产收件面」；`inbound.go` 是 P3 集成件，未接 `cmd/mcsd` 生产入口 |
+| **自签拒绝** | ✅ 已有测试覆盖 | `inbound_test.go` |
+
+> **§3.4「管道严密，判据缺席」的核心论断不受影响**——评审方亦确认「评审不控制 DAG」成立。
+> 变的是缺口的**位置与形状**：不是"门不存在"，而是**"门有、且已落审计账，但门不控闸，且证据不足以支撑重放"**。
+
+### 3.2 治理契约：已实现远多于 v1.0 的评估
+
+> ⚠️ **v1.1 更正**：v1.0 把 C 系列笼统归为「只在文档未实现」，**过粗**。
+> 本席 §13-4 通读 `docs/dispatcher-system-P2-contracts.md` 全文（138 行 / 28950 字节）并逐条对代码核实后修正如下。
+> 独立佐证：评审方实跑 `go test ./internal/mcs/...` PASS；本席复跑亦 PASS（board 49 条）。
+
+**已实现（可核）**：
+
+| 契约 | 实现 |
+|---|---|
+| **C1.1 全部 18 个原语** | `CreateTask` `AddNode` `SetTaskRoles` `Send` `Processing` `Terminal` `Reassign` `SteerReserve` `SteerFinalize` `InterruptIntent` `InterruptFinalize` `Redeliver` `DeliverFail` `EnqueueResult` `AckResult` `Sweep` `Takeover` `Renew` —— **18/18 全部命中** |
+| **C6 两应急原语** | `c6_owner.go` `OwnerTakeover` / `OwnerOverride`；含 C0.6 白名单（`overrideDirectives` map，非自由文本）、C0.5 同事务原子、C6.3 过渡期硬禁用（`emergencyEnabled` **默认 false**） |
+| **C4 身份闸** | `identity.go:25` `\Azzc-[a-z0-9]+-[0-9]+\z` fullmatch + `hasControlChar()` 拒 `\n\r\t`；`identity_rejected` 事件 actor 用哨兵 `system:identity-gate`、被拒裸名入 `event.data`——**dev56③「合法审计 actor 悖论」的解法已落地** |
+| **C2.6 席位控制** | `PromoteExecSeat` / `GrantRoleExemption` + `role_exemption` 表 |
+| **C0.3 幂等键** | `node_request` / `task_request` / `owner_op` 三张幂等账表 |
+| **C5 路由逻辑 + 矩阵** | `route.go`，且 v1.5 的 P1 缝（收口/门绕授权闸）已修（`stateOps` 含 `gate_result`/`close`） |
+
+**未实现（真缺口，仅三项 + 一处接线）**：
+
+| 契约 | 状态 |
+|---|---|
+| **C0.1 hub per-session principal 注入** | ❌ `internal/m8/*.go` 中 principal **零命中** ← **头号阻塞，见 §7.1a** |
+| **C2.1 派发信封** | ❌ `基线锚` / `交付格式` 在 Go 侧零命中 |
+| **C2.2 里程碑回执五要素** | ❌ 无构造与校验代码 |
+| **C5 接线到生产** | ❌ `route` 包自述「尚未接进生产收件面」 |
+
+### 3.2a 原「只在文档」条目（保留）
 
 `docs/dispatcher-system-P2-contracts.md`：
 
@@ -142,7 +190,7 @@ worker 判死 → `Reassign(gen+1)` → 重派；CAS 不过则归还 worker 零�
 | 缺口 | 证据 |
 |---|---|
 | **分级 / 等级** | 全树 `level`/`tier`/`severity`/`risk_class`/`criticality` **零命中**；现有契约一刀切 |
-| **门禁在引擎里不存在** | `board.go` 中 `gate` **零命中**；C1.1 的 18 个原语中**没有 GateResult** |
+| **门结果不改变 node 状态、不阻断 fan-out** | `board.go` 中无 `GateResult` 原语；`gate_result` 仅作为审计事件落 `board_event`（`mcsd/inbound.go:142-149` 调 `AuditEvent`），**不写 `node.status`、不参与 `fanOutLocked` 判定**。⚠️ **v1.0 曾写「门禁在引擎里根本不存在」，该表述已撤回**——授权闸与门方登记均已实现，见 §3.1a |
 | **`acceptance` 是死字段** | 仅 `board/schema.sql:70` 声明，全 Go 代码零读取 |
 | **`context_budget` 是死字段** | 仅 `board/schema.sql:81` 声明，零使用 |
 | **`Terminal()` 零内容校验** | `board.go:288`：`UPDATE node SET status=?, result_ref=?...`，**不检查 `result_ref` 是否为空**，不验 sha256，不查文件存在性 |
@@ -197,7 +245,26 @@ worker 判死 → `Reassign(gen+1)` → 重派；CAS 不过则归还 worker 零�
 
 正向信号：`/speckit.taskstoissues` 证明「tasks 出到外部工单系统」是该工具支持的模式；`tasks → board node` 适配器是同一类接缝。
 
-**重要限制**：Spec Kit 的 constitution 是 **advisory 不是 enforced**，不设硬门。**不能替代门禁**——硬门须落在 board。
+> ⚠️ **v1.1 更正**：v1.0 写「constitution 是 advisory 不是 enforced，不设硬门」。**该表述不准确，予以更正**（本席 §13-6 实读 spec-kit v1.0.1 得出）。
+
+**实际情况比 v1.0 评估的严谨得多**：
+
+- `templates/plan-template.md:39-41` 有显式闸：`## Constitution Check` + `*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*`——**前后各检一次**
+- `plan-template.md:106-113` `Complexity Tracking`：**违规必须书面论证**（`Violation | Why Needed | Simpler Alternative Rejected Because`）
+- `templates/checklist-template.md` 写死：checklist 是 **reviewer-owned**，只有 reviewer 能打 `[x]`；IMPLEMENT 命令**读 checkbox 当 gate 且不得修改标记**
+
+> 最后一条与本纲领 §7.2「门方 ≠ 执行者、implementer 不能自签门 PASS」**是同一条纪律**。
+
+**准确表述**：Spec Kit 有明确的闸与违规论证机制，且 checklist 所有权与标记语义已写死；
+但其强制力在 **agent 侧**（由 slash command 指令约束），**没有外部系统拦截**——agent 若不遵守，无物阻止。
+故仍属 §5.3 的「自律型」，**但自律的纪律设计值得直接沿用，不必重新发明**。**硬门仍须落在 board。**
+
+另两项可直接复用（§13-6 实读）：
+- constitution 有**语义化版本 + Ratified / Last Amended 日期**，且真实实例头部有 **SYNC IMPACT REPORT** 块，
+  记录「版本变更 / bump 理由 / 新增章节 / **逐个复核了哪些下游模板并打 ✅** / 遗留 TODO」——
+  **这就是 §7.5 自检通则的同构实现，建议直接沿用该格式。**
+- 仓内有完整扩展体系（`EXTENSION-API-REFERENCE` / `RFC-EXTENSION-SYSTEM` / `presets`）→
+  **§6 分级层可实现为 Spec Kit 扩展**，让 D2 与 D3 合为一条链，PM 在同一工具内完成「填属性 → 看到该走哪些评审」。
 
 ### 5.2 三个外部件的定位
 
@@ -237,9 +304,32 @@ worker 判死 → `Reassign(gen+1)` → 重派；CAS 不过则归还 worker 零�
 
 #### 6.1.1 设计目标：不是「描述准确」，是「两个人填出来一样」
 
-这是唯一重要的判据。「影响面大不大」两人填不一样 → 不能用；「有没有新增 migration 文件」两人填一定一样 → 能用。
+> ⚠️ **v1.1 更正**：v1.0 写「两个人填出来一样」是**唯一**判据。该表述**过强**，予以放宽。
+> 评审方指出：兼容性含**语义变更**（不只 endpoint/字段增删）；migration 不必在固定目录；
+> 「影响几个顶层包」不等于「影响几个服务」；在产路径与回滚成本需 **owner/ops 的事实**才能填。
+> 这些属性**当下无法做到两人必然一致**，有的甚至事后才知。
 
-> **宁可粗（三档枚举），不可细（十档打分）。打分制一定退化成主观。**
+**修订后的判据（两条并列）：**
+
+1. **可重复判定** —— 同一份 spec，同一角色的两个人，依同一份判定说明，应得同一结果。
+2. **可由产物反证** —— 声明与最终产物不符时，**机器能查出来**（见 §6.1.3②）。
+
+第 2 条是第 1 条的兜底：**主观性无法完全消除，但可以被事后反证约束。**
+
+> **仍然成立：宁可粗（三档枚举），不可细（十档打分）。打分制一定退化成主观。**
+
+#### 6.1.1a 属性的填写归属（v1.1 新增）
+
+v1.0 隐含「属性全由 PM 填」，**不成立**——技术与发布属性 PM 无从判断。修订为**三方分填**：
+
+| 类别 | 填写方 | 属性 |
+|---|---|---|
+| 产品属性 | **PM** | 外部契约变更（业务语义层）、价值优先级 |
+| 技术属性 | **tech（设计者/实现者）** | 数据模型变更、影响范围、外部契约变更（接口层） |
+| 发布属性 | **ops / owner** | 在产影响、回滚成本、安全面 |
+| 全部 | **机器** | 事后反验，不符即告警并强制升级 |
+
+**分级仍不由执行者单方决定**（§6.2.6 不变）：执行者可补技术属性，但**不得下调**已声明的风险档；下调须走门方或调度者。
 
 #### 6.1.2 起点草案（7 个属性）
 
@@ -294,8 +384,29 @@ worker 判死 → `Reassign(gen+1)` → 重派；CAS 不过则归还 worker 零�
 理由：`安全面=是` 应强制加代码评审（且门方须为安全角色），但不一定需要架构评审；
 `外部契约=破坏性` 应强制架构评审，但对测试深度要求未必更高。合成粗级别会丢掉这种区分。
 
-**L1/L2/L3 只是并集规模的简称，供人沟通，不参与计算。**
-这正是 DMN 决策表的形状：多输入列 → 多输出列。
+> ⚠️ **v1.1 更正**：v1.0 写「L1/L2/L3 只是**并集规模**的简称」。**按数量命名会让风险语义漂移**——
+> 一个门数多但全是低风险门的任务会被叫成 L3。评审方指出此点，接受。
+
+**修订：L1/L2/L3 按「触发的最高风险档」命名，不按门的数量命名。**
+即：任一属性命中**破坏性/不可回滚/安全面=是**这类高风险取值 → L3；仅命中中风险 → L2；全无 → L1。
+**级别仍只供人沟通，不参与计算**；计算走并集。
+
+#### 6.2.2a 并集法的必备规则（v1.1 新增，评审方要求）
+
+采用并集法必须同时规定以下五项，否则规则会失控：
+
+| # | 规则 | 说明 |
+|---|---|---|
+| 1 | **DMN hit policy = COLLECT / UNION** | 多条规则同时命中时取并集而非首条，须在决策表上显式声明 |
+| 2 | **基础必过模板** | 无论属性如何，恒必过的最小环节集（如：实现 → 代码评审 → 测试执行）。并集在此基础上追加 |
+| 3 | **规则优先级与冲突消解** | 两条规则对同一环节给出不同门方时如何裁决（建议：取更严者，即更高权限角色） |
+| 4 | **可解释输出** | 每次判定必须输出 `{命中的 rule id, 规则表 version, reason}`，供事后复核与申诉 |
+| 5 | **允许跨属性组合规则** | 单属性映射不足以表达「破坏性变更 ∧ 直接影响在产」这类叠加风险，须支持组合条件 |
+
+第 4 项尤其重要：**分级结果必须可解释、可追溯到规则版本**，否则「为什么这个任务要走架构评审」无法回答，
+执行方会把它当成随机负担而设法规避。
+
+这正是 DMN 决策表的形状：多输入列 → 多输出列 + hit policy + 规则版本。
 
 #### 6.2.3 映射表（起点草案）
 
@@ -355,12 +466,28 @@ worker 判死 → `Reassign(gen+1)` → 重派；CAS 不过则归还 worker 零�
 
 | 改动 | 位置 |
 |---|---|
-| `Terminal(done=true)` 前置 `result_ref != ''` | `board.go:288` |
-| node 状态增加 `awaiting_gate`（介于 `running` 与 `done` 之间） | `schema.sql` node.status CHECK |
-| `fanOutLocked` 提升条件从 `∀dep=done` 改为 `∀dep=passed` | `board.go:335` |
-| 新增 board 原语 `GateResult(nodeID, gen, verdict, evidence, 门方 Identity)`，走 gate-3 授权 | `board.go` + C1.1 原语集 |
+> ⚠️ **v1.1 重要更正**：v1.0 曾把本层写成「四项局部改动」，并估「改动面不大」。**该估计错误，予以撤回。**
+> 评审方指出并经本席复核：**这至少是一次 board 状态机设计变更 + 数据迁移 + 回归窗**，不是四个改点。
 
-这层不存在「谁来判断」——它不可能被违反。
+**这是一次状态机设计变更。完整影响面：**
+
+| # | 必须一并重定义的东西 | 说明 |
+|---|---|---|
+| 1 | **`passed` 到底是什么** | v1.0 写「`∀dep=passed`」但**当前根本没有 `passed` 这个状态**。须先裁定：它是 `node.status` 的新枚举值，还是独立的 gate verdict 字段？——**这是本层的前置裁定项（新增 Q7）** |
+| 2 | 状态模型 | `done` / `failed` / `awaiting_gate` / `passed` 四者的完整迁移图与不变量 |
+| 3 | **worker 何时 `Release`** | 当前在 `Terminal` 时归还。若引入 `awaiting_gate`，worker 是等门结果还是立即归还？直接影响池利用率与 `OnWorkerDead` 语义 |
+| 4 | `GateResult` 原语本身 | CAS / 幂等键 / 代际 guard / gate-3 授权 / **证据持久化**（当前 `gate_result` 事件仅存首行文本，见 §3.1a） |
+| 5 | FAIL → `append_revision` | 回流路径的建图、依赖重连、origin hint 继承 |
+| 6 | reconciler stray 谓词 | `StrayPromoted` / `StrayRecovered` 的「本应恒空」判据依赖 `∀dep=done`，须同步改写 |
+| 7 | 读模型 | `ReadyNodes` / `AllActive` / `TaskLedger` / task close 判定全部依赖状态集 |
+| 8 | **SQLite CHECK 约束迁移** | `node.status` 是 CHECK 枚举，既有库需迁移脚本 |
+| 9 | **既有测试冻结** | board 现有测试（本席实跑：**49 条 PASS**）中多条**明确冻结** `dispatched→done` 与 `done` 同事务 fan-out：`TestDispatchChain_SendProcessingDoneFanOut`、`TestV42a_TerminalDirectFromPlainDispatched`、`TestC8_LateTerminalOldDeliveryRejected`、`TestFanOut_RecoverDepFailedChild`、`TestSweep_TimeoutAnnotateThenTerminalClears` |
+| 10 | **治理成本：须重两签** | 新增 `GateResult` 属 C1 原语面语义变更。契约 C1.3 明确「C1 引用面的任何语义变更 = 引擎设计变更，须**另开窗重两签**」。**这不是普通改动** |
+
+**唯一可独立先落的一项**：`Terminal(done=true)` 前置 `result_ref != ''`。
+它不改状态集、不动 fan-out，只加一条准入校验——可作为独立小 commit，风险最低。
+
+这层的性质仍成立（**违规不可能发生，不存在「谁来判断」**），但其**代价**远高于 v1.0 的估计。
 
 #### 层二：机器校验（客观、可复算、自动跑）
 
@@ -380,6 +507,19 @@ C2.2 回执五要素中，**四个机器可验**：
 #### 层三：人 / Agent 评审（主观）
 
 只剩「这东西对不对、够不够好」。由该段**指定门方**出 PASS|FAIL，FAIL 必须带**失败最小复现**。
+
+### 7.1a 执行层的上线前置（v1.1 新增，来自 P2 契约与评审）
+
+以下三项是 P2 契约已定的**硬前置**，纲领 v1.0 遗漏，须纳入执行层前置与验收：
+
+| # | 前置 | 契约出处 | 现状 |
+|---|---|---|---|
+| **P1** | **hub per-session principal 必须可信** | C0.1 / C5 5.0 | ❌ **未实现**——`internal/m8/*.go` 中 principal **零命中**。契约规定其未就绪时**一切 mutating op + 心跳/状态观测全部 fail-closed，仅放行只读查询 + warn/盘点**。→ **§7.1 的改动即使全部做完，principal 就位前也无法启用。这是排期最前置项** |
+| **P2** | **控制授权闸须在每个可接收控制指令的实体上同构生效** | C3.3「不变量：无缝隙」 | ❌ 仅调度者收件面有；执行组边界未实现 |
+| **P3** | **逐闸命中计数入台账** | C5.3「LLM 兜底占比 = 调度者健康指标」 | ❌ 未实现。与 §7.5 自检通则同源，应一并建 |
+
+> **排期含义**：P1 是地基。它解释了 `mcsd` 为何停在 E1、`route` 为何「尚未接进生产收件面」——
+> **不是没写完，是地基没就位，契约不许开。**
 
 ### 7.2 谁来判断：纪律已定，只需接线
 
@@ -515,7 +655,26 @@ Spec Kit 的 archive（`changes/archive/<日期-变更名>/`）是 **K2 → K1 �
 `SetOriginHint` 的设计目的是靠 worker 记忆支持返工，与清空方向相反。
 但 `dispatch.go` 注释已指路：亲和「**仅 pick 权重，非正确性依赖**」。
 
-> **解法：不靠 worker 记忆，靠台账重灌。**
+> ⚠️ **v1.1 更正**：解法的**原则成立，但当前实现下不成立**——评审方指出并经本席复核：
+> **没有可重灌的账。** `node` 只存 `body` / `acceptance` / `result_ref`；
+> `gate_result` 只是审计事件且载荷仅 `{kind, segment, line}`（**只有首行文本**，见 §3.1a）；
+> `SetGateKeeper` 门方映射也仅在内存。**「靠台账重灌」目前无账可灌。**
+
+**前置条件（新增，必须先建）：不可变派发快照（immutable dispatch snapshot）**
+
+修订 node 要摆脱对 worker 记忆的依赖，派发时必须持久化一份**不可变快照**，至少含：
+
+| 字段 | 用途 |
+|---|---|
+| `envelope_ref` | 该次派发的完整信封引用（C2.1 全字段） |
+| 原交付物锚 | 上一轮 `result_ref` + sha256（**锚，不是路径**） |
+| **完整 FAIL evidence + 失败最小复现** | C2.2 已要求门方 FAIL 时提供，但**当前未持久化** |
+| `acceptance` 锚 | 判据的 commit/blob sha256（判据一改锚即变，防悄改判据） |
+| 规则版本 | 分级规则表 version（§6.2.2a 第 4 项） |
+| 上下文版本 | K0/K1/K2 各层装载时的版本（§8） |
+
+> **解法（修订后）：不靠 worker 记忆，靠不可变派发快照重灌。**
+> 亲和退化为纯性能优化的结论**不变**，但它现在有了一个明确前置：**快照必须先建**。
 > 修订 node 的派发信封带上「上次 FAIL 的门结果 + 失败最小复现」（C2.2 本就要求 FAIL 带最小复现）。
 > 亲和退化为纯性能优化（省一次 Spawn），不承担正确性。
 
@@ -621,6 +780,9 @@ docstring 首句：「给"新版事件流页"供数据的独立 HTTP 服务（**
 | Q4 | sidecar 认证方案选哪个？是否列为 ops 纪律？ | 可独立推进 |
 | Q5 | `rotation`（会话轮换）在「每任务清空」前提下管什么？（§9.5） | 避免两笔投资打架 |
 | Q6 | K1 知识库首批建哪几个项目？（dingwei / 图搜3.0-poc / openAPI4AI / WSXC？） | 决定 §8 落地范围 |
+| **Q7** | **`passed` 是 `node.status` 的新枚举值，还是独立的 gate verdict 字段？** | **§7.1 层一的前置裁定项**——不定此项，状态机改动无法开工 |
+| Q8 | `awaiting_gate` 期间 worker 是否立即 `Release`？（等门 = 池利用率下降；不等 = `OnWorkerDead` 语义变） | §7.1 状态机设计 |
+| Q9 | C0.1 principal 注入由谁做、排在哪个窗口？（hub 侧改动，跨组件） | **排期最前置项** |
 
 ---
 
@@ -642,12 +804,56 @@ docstring 首句：「给"新版事件流页"供数据的独立 HTTP 服务（**
 
 | # | 不确定项 | 建议验证方式 | 成本 |
 |---|---|---|---|
-| 1 | 全部结论来自**静态读码**，未实跑。`mcsd` 能否跑通、E1 测试台当前状态如何，未核 | 按 8 个环节在 E1 loopback 跑一个真任务（不烧 LLM） | 低 |
-| 2 | **sidecar 写于 VS 之前，可能已腐坏** | 开 `SH_SIDECAR_PORT` 实跑一次 | **最低，建议先做** |
+| 1 | ~~全部结论来自静态读码，未实跑~~ → **部分闭合**：`go test ./internal/mcs/...` **PASS**（board 49 条），评审方独立实跑亦 PASS。**但仍未按 8 个环节在 E1 跑真任务** | 按 8 环节在 E1 loopback 跑一个真任务 | 低 |
+| 2 | ✅ **已闭合**（`evidence-13-2-sidecar-20260823.md`）：腐坏 2 处均为一两行（`_active` 已被 `is_idle()` 取代；renderer 路径为开发机路径）。修复后 **5/5 端点全 200**，核心链路（SSE + 输入注入）本就完好 → **D6 = 接线不是重写**。⚠️ 未验：桩非真 driver，**「扇出不抢 `_event_bridge` 事件」未验证** | 已完成 | — |
 | 3 | 灰度容器实跑文件未复核（无该主机访问权） | 需 ops 提供通道 | — |
-| 4 | `docs/dispatcher-system-P2-contracts.md` 共 28950 字节，只精读 C0–C6 主要条款，**未通读全文** | 通读并出「已定义/已实现/只在文档/完全没有」四分清单 | 中 |
-| 5 | §7.1 四项改动的改动面为估算，未经实测 | 实际动手估 | 中 |
-| 6 | Spec Kit / OpenSpec / Superpowers 均**未实跑** | 拉 Spec Kit 跑一遍，看 `constitution.md` / `checklist.md` 真实产出 | 低 |
+| 4 | ✅ **已闭合**（`evidence-13-4-p2contracts-20260823.md`）：全文通读 + 四分清单。产出两条改判：C1.1 十八原语全实现（§3.2）、**C0.1 principal 未实现 = 头号阻塞**（§7.1a） | 已完成 | — |
+| 5 | ✅ **已闭合（结论推翻原估计）**：经评审方指出并复核，这是一次 **board 状态机设计变更 + 迁移 + 回归窗**，且须**重两签**。详见 §7.1 | 已完成 | — |
+| 6 | ✅ **部分闭合**（`evidence-13-6-speckit-20260823.md`）：实读 v1.0.1 模板与真实实例，更正 §5.1 表述，确认 Q1 属性表可挂在 `**Key**: value` 头块。⚠️ 未真跑 `specify init`（容器无 `uv`/`uvx`）；`analyze`/`converge` 的**实际检出能力未实证** | 部分完成 | — |
 | 7 | `datad` 是否已部署、KB 是否有数据，未核 | 需 ops | — |
 
 **建议顺序**：2（最低成本、可立即做）→ 6（决定 PM 能否接受）→ 1（决定引擎是"接线"还是"重写"）→ 4（避免重复发明已有约束）。
+
+---
+
+## §14 修订记录
+
+### v1.1（2026-08-23）
+
+**触发**：`zzc-chatgpt56soltchangshark-2642` 设计评审 CHANGES REQUESTED（07:00Z，含实跑 `go test` PASS）+ 本席 §13-2/§13-4/§13-6 三项验证。
+
+**评审 6 条意见全部接受**：
+
+| # | 意见 | 处置 | 落点 |
+|---|---|---|---|
+| 1 | 门禁归类不准确，「完全不存在/矩阵未实现」须撤 | **接受，撤回** | §3.1a 新增、§3.3 改写 |
+| 2 | §7.1 四项不是小改，是状态机设计变更 | **接受，撤回原估计** | §7.1 改写为 10 项影响面 |
+| 3 | 并集法支持，但须定 hit policy/基础模板/优先级/可解释/组合规则；L1-L3 不应按数量命名 | **接受** | §6.2.2 命名更正、§6.2.2a 新增 |
+| 4 | §9.3 原则成立但当前无账可灌 | **接受** | §9.3 新增不可变派发快照前置 |
+| 5 | §6.1「两人填一样是唯一判据」过强；属性初填者不只 PM | **接受** | §6.1.1 放宽为「可重复判定 + 可由产物反证」、§6.1.1a 三方分填 |
+| 6 | 漏掉 P2 前置：principal fail-closed / C3.3 同构授权 / C5.3 逐闸计数 | **接受** | §7.1a 新增 |
+
+**v1.0 的两处错误结论，明确撤回**：
+
+1. **「门禁在引擎里根本不存在」** —— 错。授权闸（`route.go`）、门方登记（`SetGateKeeper`）、门结果落账（`AuditEvent` → `board_event`）**均已实现**。
+   **错因：grep 范围限定在 `internal/mcs/board/*` 包内，而调用方在包外——在包边界上做 grep，却把结论推广到包外。**
+   核心论断「评审不控制 DAG」不受影响，但缺口的位置与形状变了。
+2. **「Spec Kit constitution 是 advisory 不设硬门」** —— 不准确。它有显式 GATE、违规书面论证、checklist reviewer-owned 且 IMPLEMENT 不得改标记。
+
+**本席独立产出的两条改判**（非评审意见，来自 §13-4）：
+
+1. C1.1 十八原语**全部已实现**，C6/C4/C2.6 亦已实现 → §3.2 归类重写。
+2. **C0.1 hub per-session principal 未实现**，而契约规定其未就绪时一切 mutating fail-closed
+   → **这是排期最前置项**，§7.1a 新增，Q9 新增。
+
+**新增待裁定**：Q7（`passed` 的定义）、Q8（`awaiting_gate` 期间 worker 是否 Release）、Q9（principal 注入排期）。
+
+**D1–D8 未重开**（评审方确认）。
+
+### 评审纪律（立为通则）
+
+本轮验证了 P2 契约 v1.5 记录的那条经验——「devo48 穿透自审漏了 P1 收口，shence 独立穿透抓出 = **两独立穿透的价值**」。
+本轮同构复现：**本席自审漏了包边界 grep 的推广错误，评审方独立穿透抓出。**
+
+> **立为通则：任何纲领级结论至少经两次独立穿透；自审不替代他审。**
+> 并沿用 P2 契约与 Spec Kit `SYNC IMPACT REPORT` 的同款格式——**每版逐条记录：谁审出了什么缝、改在哪一条、旧表述为何错。**
