@@ -1,4 +1,23 @@
 <!--
+SYNC IMPACT REPORT · v1.6 → v1.7
+================================
+变更性质: EDITORIAL(仅两处非阻断编辑注)。【不含任何实质内容变更】,v1.6 的 PASS 结论适用于本版。
+触发: 评审方 v1.6 最终复审 = PASS (2026-08-23T16:00Z),附 2 个非阻断编辑注"供合入前顺手处理"
+本版仅做两件事:
+  1) §3.2 C0.3 单元格原为多行且续行不以 | 开头,CommonMark 可能断表 → 明细移出表格,
+     新建 §3.2a 独立小节承载"四段明细";表内单元格收为单行并指向 §3.2a。内容【逐字不变】。
+  2) §15 写作纪律编号原为 1/2/3/5/4 → 排正为 1/2/3/4/5。条文【逐字不变】,仅调顺序。
+【明确未做】:本席此前记下的 §15 第 6 例(验证工具覆盖面不足)【未并入本版】。
+     理由:那是实质内容,不能借"顺手处理编辑注"混过 PASS 闸。已单独向评审方提出,由其决定
+     是否需要单独一版与一次快速复审。
+逐节复核对齐:
+  ✅ §3.2 表内断言文字未变,仅位置调整;§3.2a 为新容器,内容源自原单元格
+  ✅ §15 五条纪律文字未变,仅编号顺序
+  ✅ 其余全文未动;D1-D8 未重开
+遗留 TODO: Q1/Q2 待与 PM 收敛;Q7(有推荐方案)/Q8/Q9 待裁;§13 三条需主机通道;§15 第 6 例待定。
+
+---
+
 SYNC IMPACT REPORT · v1.5 → v1.6
 ================================
 变更性质: PATCH(断言收敛 + 纪律再强化)。主轴/四层/D1-D8 未动。
@@ -114,11 +133,11 @@ SYNC IMPACT REPORT · v1.1 → v1.2
 遗留 TODO: Q1/Q2 待与 PM 收敛;Q7/Q8/Q9 待裁;§13 三条需主机通道。
 -->
 
-# DingWei 平台设计执行纲领 v1.6
+# DingWei 平台设计执行纲领 v1.7
 
 - 制定: `zzc-opus50tchangshark-2642`，据业主 2026-08-23 直接讨论整理
 - 状态: **纲领性文件**。业主指定作为今后一段时期 DingWei 平台设计与执行的依据。
-- 前身: `dingwei-spec-driven-process-design-v0.1.md`（v0.1）→ 本文 **v1.6**
+- 前身: `dingwei-spec-driven-process-design-v0.1.md`（v0.1）→ 本文 **v1.7**
 - **v1.1 修订说明（2026-08-23）**：纳入 `zzc-chatgpt56soltchangshark-2642` 设计评审
   （CHANGES REQUESTED, 07:00Z，含实跑 `go test ./internal/mcs/...` PASS）6 条意见，**全部接受**；
   并纳入本席 §13-2/§13-4/§13-6 三项验证结果。逐条变更见 §14 修订记录。
@@ -259,14 +278,19 @@ v1.0 §3.3 曾断言「门禁在引擎里根本不存在」。**该断言错误�
 | **C6 两应急原语** | `c6_owner.go` `OwnerTakeover` / `OwnerOverride`；含 C0.6 白名单（`overrideDirectives` map，非自由文本）、C0.5 同事务原子、C6.3 过渡期硬禁用（`emergencyEnabled` **默认 false**） |
 | **C4 身份闸** | `identity.go:25` `\Azzc-[a-z0-9]+-[0-9]+\z` fullmatch + `hasControlChar()` 拒 `\n\r\t`；`identity_rejected` 事件 actor 用哨兵 `system:identity-gate`、被拒裸名入 `event.data`——**dev56③「合法审计 actor 悖论」的解法已落地** |
 | **C2.6 席位控制** | `PromoteExecSeat` / `GrantRoleExemption` + `role_exemption` 表 |
-| **C0.3 幂等地基（部分）** | ⚠️ **v1.4 再更正**（v1.2 的表述仍不准确，见 §15 第 4 例）。**行为级实况（搜索范围＝`internal/mcs/board/` 全包，非单文件）**：`priorOutcome` 有 **2 个调用点**——`board.go:207`（`Send`）与 `hardening.go:35`（`reserve()`，由 **`SteerReserve`** 与 **`InterruptIntent`** 共用，且 `:41-42` 写 `node_request`）。→ **已闭合至少 5 个原语：`Send` + `SteerReserve` + `InterruptIntent` + `OwnerTakeover` + `OwnerOverride`**。`Processing`/`Terminal` **不调 `priorOutcome`**（各 0 次），其 `rid` 主要作 delivery ownership——**此判断仍成立**。`task_request` 表 Go 侧 **零写入**（仅 `board.go:463` 注释「完整 `task_request` 幂等属 **3.5b**」）。→ ⚠️ **v1.6 收敛**：只能表述为**幂等地基已建、部分原语已闭合**。
-**已确认闭合（5）**：`Send` / `SteerReserve` / `InterruptIntent` / `OwnerTakeover` / `OwnerOverride`。
-**已确认未闭合，至少包括（7）**：`Processing` / `Terminal` / `CreateTask` / `AddNode` /
-`SetTaskRoles` / `Reassign` / `SetBlocker`（后三者**连 `rid` 参数都没有**，本席复核确认）。
-**语义待验（2）**：`SteerFinalize` / `InterruptFinalize` —— 有 `rid` 参数且触及 `node_request`，
-但**不调 `priorOutcome`**，其重放是否「返原 outcome no-op」**须逐原语验证，不得由 `reserve` 的幂等外推**。
-**其余 mutating op 未核**。 |
+| **C0.3 幂等地基（部分）** | ⚠️ **v1.4 再更正**（v1.2 的表述仍不准确，见 §15 第 4 例）。**行为级实况（搜索范围＝`internal/mcs/board/` 全包，非单文件）**：`priorOutcome` 有 **2 个调用点**——`board.go:207`（`Send`）与 `hardening.go:35`（`reserve()`，由 **`SteerReserve`** 与 **`InterruptIntent`** 共用，且 `:41-42` 写 `node_request`）。→ **已闭合至少 5 个原语：`Send` + `SteerReserve` + `InterruptIntent` + `OwnerTakeover` + `OwnerOverride`**。`Processing`/`Terminal` **不调 `priorOutcome`**（各 0 次），其 `rid` 主要作 delivery ownership——**此判断仍成立**。`task_request` 表 Go 侧 **零写入**（仅 `board.go:463` 注释「完整 `task_request` 幂等属 **3.5b**」）。→ ⚠️ **v1.6 收敛**：只能表述为**幂等地基已建、部分原语已闭合**。**四段明细见表后 §3.2a。** |
 | **C5 路由逻辑 + 矩阵** | `route.go`，且 v1.5 的 P1 缝（收口/门绕授权闸）已修（`stateOps` 含 `gate_result`/`close`） |
+
+#### 3.2a C0.3 幂等闭合度四段明细（v1.7 移出表格，避免续行断表）
+
+| 分段 | 原语 | 依据 |
+|---|---|---|
+| **已确认闭合（5）** | `Send` / `SteerReserve` / `InterruptIntent` / `OwnerTakeover` / `OwnerOverride` | `priorOutcome` 2 个调用点：`board.go:207`（`Send`）、`hardening.go:35`（`reserve()`，由 `SteerReserve`/`InterruptIntent` 共用，`:41-42` 写 `node_request`）；两 owner 原语见 `c6_owner.go` |
+| **已确认未闭合，至少包括（7）** | `Processing` / `Terminal` / `CreateTask` / `AddNode` / `SetTaskRoles` / `Reassign` / `SetBlocker` | 前四者不调 `priorOutcome`（各 0 次），`rid` 主要作 delivery ownership；**后三者签名里连 `rid` 参数都没有**——无请求键则 per-request 幂等**结构上不可能**（结构性论证，非 grep 缺证） |
+| **语义待验（2）** | `SteerFinalize` / `InterruptFinalize` | 有 `rid` 参数且触及 `node_request`（6 / 3 处），但**不调 `priorOutcome`**；重放是否「返原 outcome no-op」**须逐原语验证，不得由 `reserve` 的幂等外推** |
+| **其余 mutating op** | —— | **未核** |
+
+> **不做未经证明的穷举闭合**：以上只覆盖已查的 14 项，**不构成「其余均已闭合」的任何暗示**（§15 第 5 条）。
 
 **主要未实现 / 未闭合项**（v1.4 更正标题——v1.2 起表内已增至 6 行，「仅三项 + 一处接线」是已撤回旧结论的残留，SYNC REPORT 未挡住，见 §15）：
 
@@ -1083,14 +1107,14 @@ v1.4 的「多数核心原语已闭合」与穷举式「未闭合仅 A/B/C/D」�
 3. **反向亦须节制** —— 「没有 migration runner」不等于「整套都要造」。
    过头与不足是同一缺陷的两个方向；结论偏严时同样须附证据。
    **（v1.6 补）范围有多个维度：文件 / 包 / 符号 / 实现形态 / 对象集合。扩了一维不等于扩够。**
-5. **（v1.6 新增）证据只支撑它直接覆盖的断言，不得外推到全集。**
-   查了 N 项就只能说这 N 项；未查的写「未核」，不写「其余均如何」。
-   凡穷举式表述（「未闭合的只有 A/B/C/D」）必须能证明**已遍历全集**，否则改为
-   「**已确认未闭合至少包括 A/B/C/D；其余须逐项核验**」。
 4. **（v1.5 新增）修正一处事实时，必须全文搜索该事实的所有复述点。**
    v1.4 改了 §3.2 的论断，却漏了 §14 里对同一事实的复述（「仅 `Send` 调用…评审方判断成立」），
    被评审方预判并抓出。**改论断 ≠ 改复述**；SYNC IMPACT REPORT 的逐节复核若只按「章节」走，
    会漏掉跨节的事实复述——复核维度须从「哪些章节动了」扩到「这个事实在全文哪些地方出现过」。
+5. **（v1.6 新增）证据只支撑它直接覆盖的断言，不得外推到全集。**
+   查了 N 项就只能说这 N 项；未查的写「未核」，不写「其余均如何」。
+   凡穷举式表述（「未闭合的只有 A/B/C/D」）必须能证明**已遍历全集**，否则改为
+   「**已确认未闭合至少包括 A/B/C/D；其余须逐项核验**」。
 
 > **可靠性模型（供他人评估本席产出时使用）**：
 > 本席对「存在性证据 → 行为性结论」这一步不可靠，且**自审无法补上**——
@@ -1171,3 +1195,30 @@ v1.4 的「多数核心原语已闭合」与穷举式「未闭合仅 A/B/C/D」�
 v1.4 把范围从**单文件**扩到**全包**，方向对，但**符号范围**没扩（只搜 `priorOutcome`），
 而断言作用域是「所有幂等实现形态 × 全部 mutating op」。
 **范围是多维的，扩了一维不等于扩够。** §15 已据此增第 5 条纪律。
+
+### v1.7（2026-08-23）
+
+**触发**：评审方 **v1.6 最终复审 = PASS**（16:00Z），附 2 个**非阻断编辑注**「供合入前顺手处理」。
+
+**本版仅处理这两个编辑注，不含任何实质内容变更**：
+
+| # | 编辑注 | 处置 |
+|---|---|---|
+| 1 | §3.2 C0.3 单元格跨多行、续行不以 `\|` 开头，CommonMark 可能断表 | 明细移出表格 → 新建 **§3.2a**；表内单元格收为单行并指向之。**内容逐字不变** |
+| 2 | §15 纪律编号为 1/2/3/**5**/**4** | 排正为 1/2/3/4/5。**条文逐字不变，仅调顺序** |
+
+**明确未做的一件事**：本席此前记下的 **§15 第 6 例**（验证工具覆盖面不足——那条「一次验完命令」只覆盖旧字符串，
+小于它所支撑的主张）**未并入本版**。
+理由：**那是实质内容，不能借「顺手处理编辑注」混过 PASS 闸。**
+已单独向评审方提出，由其决定是否需要单独一版与一次快速复审。
+
+**评审方 PASS 结论要点（记录备查）**：
+§3.2 已改为「确认闭合 5 / 确认未闭合至少 7 / 语义待验 2 / 其余未核」，不再从局部证据外推全集；
+C0.3 整体正确标为未闭合；§14 历史错误判断保留但标注撤回；
+§15 已覆盖行为证据、搜索范围、范围多维性、反向节制、事实复述全文同步、穷举须证明全集；
+§6.2.2b / §7.1 十五项 / 独立 gate verdict / P1 端到端判据均无新增异议；migration 第 14 项未推过头。
+D1–D8 未重开，主轴与四层方向一致。
+
+**评审方同时给出的可靠性提示（原文记录）**：
+> 未经独立他审的「已实现 / 不存在 / 仅由」断言，应默认存在证据作用域不足风险；
+> 本次 PASS 只签当前纲领方向、事实分层与诚实的不确定性边界，**不把「未核」升级为实现 PASS**。
