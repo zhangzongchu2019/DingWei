@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.12 · 依据 SpecDoc v3.13</title>
+<title>DingWei 平台原型 v1.13 · 依据 SpecDoc v3.13</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -129,7 +129,7 @@ body.uionly #uihint{display:block}
 
 <div id="top">
   <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v0.1</span></h1>
-  <span class="anchor">原型 <b>v1.12</b> · 依据 SpecDoc <b>v3.13</b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <span class="anchor">原型 <b>v1.13</b> · 依据 SpecDoc <b>v3.13</b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -213,7 +213,7 @@ body.uionly #uihint{display:block}
     <td data-edit>zzc-prodops-2642</td><td>图搜 3.0</td><td class="over">1 天 22:40</td><td class="d-mid">中</td>
     <td><button>批准</button> <button>驳回</button></td></tr>
   <tr data-t="spec-fix"><td><span class="tag t-block">spec 待完善</span></td>
-    <td data-edit><b>S4 skill / MCP 体系 v0.1</b> · 硬门 3 项不过（§4.6.2）
+    <td data-edit><b>SP4 skill / MCP 体系 v0.1</b> · 硬门 3 项不过（§4.6.2）
     <div class="mono">缺「预计数据」面（§4.7.1 ③）· 预授权含禁用词「可能」「相关」· 3 条硬性约束无探测登记</div>
     <div class="note" style="margin:6px 0 0;padding:6px 9px">📌 <b>缺项原因是结构化的，不是「不合格」三个字</b> —— 回炉方照着改即可（§4.7.3 #1）</div></td>
     <td data-edit>zzc-devo48-2642</td><td>dingwei</td><td class="over">2 天 06:30</td><td class="d-low">低</td>
@@ -280,7 +280,7 @@ body.uionly #uihint{display:block}
   <th>文档执笔</th><th>文档评审</th><th>架构评审</th><th>开发设计</th><th>实现</th><th>代码评审</th><th>测试用例</th><th>用例评审</th><th>测试执行</th><th>交付验证</th><th>业主签署</th></tr></thead>
   <tbody>
   <tr><td data-edit><b>T-1204</b> 动 tenant 派生链<div class="mono">安全面=是 · 跨服务</div></td><td class="d-high">L3</td>
-    <td class="cell-ok">✓</td><td class="cell-fail" title="交付物链路：产品定义行 门=未过">未过</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td>
+    <td class="cell-ok">✓</td><td class="cell-fail" title="交付物链路：产品定义行 门=未过">FAIL</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td>
     <td class="cell-fail">FAIL</td><td class="cell-ok" title="用例集 14 条含负向 6 条">✓</td><td class="cell-ok" title="用例评审 PASS · qa_owner">✓</td><td class="cell-wait" title="执行报告 96 行 · 8/14 通过 · 待重跑">进行 8/14</td><td class="cell-wait">待</td><td class="cell-wait">待</td></tr>
   <tr><td data-edit><b>T-1187</b> KB 加列<div class="mono">数据模型=加列 · 单模块</div></td><td class="d-mid">L2</td>
     <td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="na">N/A</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td>
@@ -332,14 +332,14 @@ body.uionly #uihint{display:block}
   <table><thead><tr><th>spec</th><th style="width:64px">版本</th><th style="width:110px">评审状态</th>
   <th>预授权条目（范围 · 用途 · 时限）</th><th style="width:120px">生命周期</th></tr></thead><tbody>
   <tr><td data-edit><b>dingwei-platform-specdoc</b><div class="mono">父 spec · 子：SP0–SP8</div></td><td>v3.13</td>
-    <td class="cell-ok">✓ PASS<div class="mono">三域 PASS 锚 040e904<br>+ 安全域快核 PASS（SA-10 闭合）<br>现锚 2ef0762</div></td>
+    <td class="cell-ok">✓ PASS<div class="mono"><b>评审记录锚</b> 040e904（v3.6 三域 PASS）<br>+ 安全域快核 PASS（SA-10 闭合）<br><b>现锚</b> 见 <code>docs/DELIVERY-STATUS.md</code><div class="mono">⚠️ 两者不同是常态：评审记录锚记「在哪一版过的审」，现锚记「现在是哪一版」；<br>压成一个数就会出现「v3.6 的锚标在 v3.13 行上」（O-3）</div></div></td>
     <td class="lock">无预授权条目</td><td class="cell-wait">⚠ <b>草案</b><div class="mono">§0.1 生命周期＝草案；生效前置未闭 2 项<br>（Spec Kit 工程结构 · checklist）</div></td></tr>
-  <tr><td data-edit><b>S1 身份与租户地基</b><div class="mono">L3 · 安全面=是</div></td><td>v0.1</td>
+  <tr><td data-edit><b>SP1 身份与租户地基</b><div class="mono">L3 · 安全面=是</div></td><td>v0.1</td>
     <td class="cell-wait">草案 · 未评审</td>
-    <td data-edit><div>① 读 <code>internal/m8</code> 会话表 · 验 principal 传播 · 至 S1 上线</div>
-    <div>② 读租户映射表（<b>只读</b>）· 验 tenant 派生 · 至 S1 上线</div></td>
+    <td data-edit><div>① 读 <code>internal/m8</code> 会话表 · 验 principal 传播 · 至 SP1 上线</div>
+    <div>② 读租户映射表（<b>只读</b>）· 验 tenant 派生 · 至 SP1 上线</div></td>
     <td class="cell-wait">研发测试期有效</td></tr>
-  <tr><td data-edit><b>S4 skill / MCP 体系</b></td><td>v0.1</td><td class="cell-wait">草案 · 未评审</td>
+  <tr><td data-edit><b>SP4 skill / MCP 体系</b></td><td>v0.1</td><td class="cell-wait">草案 · 未评审</td>
     <td data-edit><div class="cell-fail">⚠ ①「<b>可能需要</b>读取<b>相关</b>租户数据」</div>
     <div class="note bad" style="margin:6px 0 0;padding:6px 9px">§23.2 第 6 条：禁「可能」「视情况」「相关」等不可判定表述 ⇒ <b>笼统兜底视同无预授权</b>，此条不生效</div></td>
     <td class="cell-wait">研发测试期有效</td></tr>
@@ -630,7 +630,7 @@ body.uionly #uihint{display:block}
       <div class="ct" data-edit>反过来，每租户独立库<b>不存在「忘了设 context」这种失效模式</b>——某种意义上更硬。</div></div></div>
     <div class="po"><div class="sq">6</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 16:20Z</span></div>
       <div class="ct" data-edit>接受第 4 帖，撤回我第 3 帖里「机制 vs 纪律」的表述。但独立库的跨租户分析与 N 份库的备份/迁移/聚合代价怎么算？</div></div></div>
-    <div class="cur">↳ 游标：zzc-summarizer 读到 seq 6 · 已生成 digest #1</div>
+    <div class="cur">↳ 游标：zzc-summarizer-2642 读到 seq 6 · 已生成 digest #1</div>
     <div class="fold" onclick="this.nextElementSibling.classList.toggle('hid');this.textContent=this.nextElementSibling.classList.contains('hid')?'▸ 展开 seq 7–19（13 帖，双方各自重述立场 3 次）':'▾ 收起 seq 7–19'">▸ 展开 seq 7–19（13 帖，双方各自重述立场 3 次）</div>
     <div class="hid">
       <div class="po dv"><div class="sq">7–12</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642 / zzc-sec-review-2642</span><span class="ts">08-23 16:40Z – 19:05Z</span></div>
@@ -905,9 +905,9 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>子 spec 依赖图 <span class="ref">§0.3</span></h3>
   <div class="mono" style="font-size:12.5px;line-height:2">
-  S0 总则与定义层 <span style="color:var(--acc)">→</span> S1 身份与租户地基 <span style="color:var(--acc)">→</span> { S7a 存储基座 · S8 授权与平台治理 }
-  <span style="color:var(--acc)">→</span> { S2 执行层与门禁 · S3 上下文与知识库 } <span style="color:var(--acc)">→</span> { S4 skill/MCP · S5 协同与帖子流 }
-  <span style="color:var(--acc)">→</span> <b style="color:var(--tx)">S6 平台能力与界面（本原型）</b><br>
+  SP0 总则与定义层 <span style="color:var(--acc)">→</span> SP1 身份与租户地基 <span style="color:var(--acc)">→</span> { SP7a 存储基座 · SP8 授权与平台治理 }
+  <span style="color:var(--acc)">→</span> { SP2 执行层与门禁 · SP3 上下文与知识库 } <span style="color:var(--acc)">→</span> { SP4 skill/MCP · SP5 协同与帖子流 }
+  <span style="color:var(--acc)">→</span> <b style="color:var(--tx)">SP6 平台能力与界面（本原型）</b><br>
   <span style="color:var(--dim)">S7b 领域 schema 迁移随各领域走，不作统一前置</span></div>
   <div class="note warn" data-edit>⚠️ <b>本原型属 S6</b>，其前置 S1·S2·S3·S4·S8 均未开工。
   本原型只用于<b>与业主对齐界面契约</b>，不构成施工依据 —— SpecDoc §0.1 生命周期仍为「草案」，两项生效前置未闭。</div>
@@ -962,7 +962,7 @@ body.uionly #uihint{display:block}
   <tr data-p="dingwei 平台"><td data-edit><b>zzc-prodops-2642</b></td><td>云上</td><td>平台级 ops</td>
     <td><span class="s1">S1</span></td><td>平台域</td><td data-edit><span class="mono">批次 B-2026-0824-01 整理中</span></td>
     <td><div class="bar"><i style="width:23%"></i></div><span class="mono">23%</span></td><td class="cell-ok">active</td></tr>
-  <tr data-p="openAPI4AI"><td data-edit><b>zzc-api4ai-dev</b><div class="mono">本地终端 CLI</div></td><td class="cell-fail">本地</td><td>implementer</td>
+  <tr data-p="openAPI4AI"><td data-edit><b>zzc-api4ai-dev<span class="mono" title="外部渠道账号形态，非 DingWei 会话名，故不带 -2642 后缀"> ⓘ</span></b><div class="mono">本地终端 CLI</div></td><td class="cell-fail">本地</td><td>implementer</td>
     <td><span class="s2">S2</span><div class="mono cell-fail">默认仅 S2</div></td><td>openAPI4AI</td><td data-edit><span class="mono">未领件</span></td>
     <td><div class="bar"><i style="width:8%"></i></div><span class="mono">8%</span></td><td class="cell-wait">idle</td></tr>
   <tr data-p="dingwei 平台"><td data-edit><b>zzc-summarizer-2642</b></td><td>云上</td><td>摘要 agent</td>
@@ -1426,7 +1426,7 @@ body.uionly #uihint{display:block}
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0">
     <div class="card" style="flex:1;min-width:260px"><b>待完善池</b> <span class="tag t-block">3</span>
       <table style="margin-top:8px"><tbody>
-      <tr><td data-edit>S4 skill / MCP 体系 v0.1</td><td class="cell-fail">硬门 ✗</td>
+      <tr><td data-edit>SP4 skill / MCP 体系 v0.1</td><td class="cell-fail">硬门 ✗</td>
         <td class="mono">缺「预计数据」面 · 预授权含禁用词 · 3 条约束无探测登记</td></tr>
       <tr><td data-edit>渠道直连 Agent v0.2</td><td class="cell-fail">人审 ✗</td>
         <td class="mono">门方意见：可信渠道判据不可复现</td></tr>
@@ -1465,7 +1465,7 @@ body.uionly #uihint{display:block}
   <h3>T-1204 · tenant 派生链 · L3 <span class="ref">§5.6 环节 · §6.1 回执五要素</span></h3>
   <table><thead><tr><th style="width:118px">环节</th><th>交付物</th><th style="width:150px">锚 · 规模</th>
   <th style="width:88px">门</th><th style="width:104px">门方</th><th style="width:64px">看</th></tr></thead><tbody>
-  <tr><td>产品定义</td><td data-edit><b>S1 spec</b> v0.1 <div class="mono">含预授权 2 条</div></td>
+  <tr><td>产品定义</td><td data-edit><b>SP1 spec</b> v0.1 <div class="mono">含预授权 2 条</div></td>
     <td class="mono">sha256:9c1f…4b<br>412 行 / 18.2KB</td><td class="cell-fail">未过</td><td>—</td><td><button>打开</button></td></tr>
   <tr><td><b>设计方案</b></td><td data-edit><b>tenant 派生链设计</b> v0.3
     <div class="mono">三级映射 · 派生源 · fail-closed 行为 · 一对多处置</div></td>
@@ -1484,7 +1484,7 @@ body.uionly #uihint{display:block}
   <div class="note" data-edit>📌 每行的<b>锚 · 规模</b>列即 §6.1 回执五要素的机器可验部分：
   件（路径或 commit 40hex）· sha256（最终态当场算，报后不改）· 行数 ＋ 字节（<code>wc -c</code> 口径）· 自测结果。
   <b>第五要素「门结果 ＋ 失败最小复现」需要人</b> —— 故单列「门 / 门方」两列。</div>
-  <div class="note bad" data-edit>🔴 <b>A2 更正（v1.12，丙域 kimi）：本表与任务看板 T-1204 曾三项矛盾</b> ——
+  <div class="note bad" data-edit>🔴 <b>A2 更正（v1.13，丙域 kimi）：本表与任务看板 T-1204 曾三项矛盾</b> ——
   看板说「测试用例进行 / 用例评审待 / 测试执行待 / 文档评审 ✓」，本表说「用例评审 PASS / 已执行 8/14 / 产品定义门未过」。
   <div style="margin-top:6px" class="mono">⇒ <b>以本表为准</b>并回改看板：本表每行带<b>具体证据</b>（用例集 14 条、执行报告 96 行、sha256），
   看板只有状态色块。<b>有证据的一侧是权威源</b> —— 这条判据比「哪个屏更重要」可操作。</div></div>
@@ -1539,7 +1539,7 @@ body.uionly #uihint{display:block}
   <div class="kv">
     <b>人（platform_subject）</b><div class="mono">psub:7f3a91c… <span style="color:var(--dim)">平台内唯一，不可变，不复用</span></div>
     <b>租户</b><div>张宗楚（业主）· 图搜 3.0 —— <span class="mono">一对多，每次须显式选择且落账（同 §22.1a 口径）</span></div>
-    <b>会话 / Agent</b><div class="mono">zzc-opus50t · zzc-coordinator · zzc-prodops-2642 …（多个，执行挂会话）</div>
+    <b>会话 / Agent</b><div class="mono">zzc-opus50t-2642 · zzc-coordinator-2642 · zzc-prodops-2642 …（多个，执行挂会话）</div>
   </div>
   <table style="margin-top:12px"><thead><tr><th style="width:120px">渠道</th><th style="width:190px">渠道内标识</th>
   <th style="width:150px">如何判为同一人</th><th style="width:64px">因子</th><th style="width:110px">状态</th><th style="width:74px">操作</th></tr></thead><tbody>
@@ -2305,7 +2305,7 @@ body.uionly #uihint{display:block}
   </tbody></table>
   <div class="note" data-edit>📌 四个维度 <code>(tenant, project, assignee, week)</code> 都在事实层带着 ——
   三个视图<b>都是它的聚合</b>，不是三张各存一份的表。</div>
-  <div class="note bad" data-edit>🔴 <b>A1 更正（v1.12，丙域 kimi 阻断）：本表三行原先与其余五屏全面错位。</b>
+  <div class="note bad" data-edit>🔴 <b>A1 更正（v1.13，丙域 kimi 阻断）：本表三行原先与其余五屏全面错位。</b>
   <div style="margin-top:6px">本席新写这一屏时<b>直接编了示例数据</b>，没去对既有的帖子流 / 任务看板 / 交付物链路。
   于是 <code>tenant</code> / <code>project</code> / <code>assignee</code> / 内容 / 状态<b>像被整体洗牌</b> ——
   而这一屏恰恰自称「唯一事实来源」。<b>自称唯一事实来源的屏，自己是错位最严重的那个。</b></div>
@@ -2328,7 +2328,7 @@ body.uionly #uihint{display:block}
       <div style="margin-top:6px">全部项目聚合 · 建议升级 1</div>
       <div class="mono" style="margin-top:6px">归处：<b>入 D2 租户级知识库</b>，绑交付物锚（sha256 ＋ 周次）</div></div>
     <div class="card" style="flex:1;min-width:210px"><b>人视图</b> <span class="tag t-auth">新增</span>
-      <div class="mono" style="margin-top:6px">zzc-devo48-2642 · 图搜 3.0 · W34</div>
+      <div class="mono" style="margin-top:6px">zzc-devo48-2642 · <b>dingwei</b> · W34</div>
       <div style="margin-top:6px">任务 4 · 门 PASS 3 · FAIL 1</div>
       <div class="note warn" style="margin:6px 0 0;padding:6px 9px">⚠️ 按 <b>(人 × 租户)</b> 出，<b>不跨租户合并正文</b></div></div>
   </div>
@@ -2451,7 +2451,7 @@ body.uionly #uihint{display:block}
     <td class="cell-fail">未建</td></tr>
   </tbody></table>
   <div class="note" data-edit>📌 第三类的期望是<b>编译失败</b>而非运行期拒绝，这是判断第 2 项必做是否真落成的<b>唯一硬证据</b>。</div>
-  <div class="note bad" data-edit>🔴 <b>PB-01 更正（v1.12，乙域 terra 阻断）：本席上一版把「不泄漏存在性」当成了「拒绝」。</b>
+  <div class="note bad" data-edit>🔴 <b>PB-01 更正（v1.13，乙域 terra 阻断）：本席上一版把「不泄漏存在性」当成了「拒绝」。</b>
   <div style="margin-top:6px">原写「跨租户读期望<b>结果集为空</b>，非报错」。不确认资源存在这个<b>目标是对的</b>，
   但<b>手段错了</b>——一个「成功的空集合」会把 §22.1b / §22.2a 的
   <b>「跨租户默认拒、fail-closed」降格成一次看似成功的查询</b>：
@@ -2619,7 +2619,7 @@ document.getElementById('bExp').onclick=function(){
     /* 件内不再内嵌 commit:本件与 SpecDoc 同 commit,自己写不进自己的哈希(先有内容才有哈希)。
        内嵌一个上一版的哈希,看着精确其实是过期值 —— 与「精度≠稳定度」同源。
        版本号可自述,锚由 README / 提交信息承载。 */
-    依据SpecDoc版本:'v3.13', 原型版本:'v1.12',
+    依据SpecDoc版本:'v3.13', 原型版本:'v1.13',
     说明:'把本文件发回 opus50t，据此改 SpecDoc §25-§27。若改动与已裁定条款冲突，会指出条款号请业主裁定，不得两存。',
     屏:scr,改文:改文,批注:批注};
   var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
