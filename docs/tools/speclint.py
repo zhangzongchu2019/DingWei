@@ -45,7 +45,7 @@ TYPED_FKEYS = [(r'复合 ← E\.1 ((?:#\d+(?:\s*·\s*)?)+)', 'E.1'),
                (r'(?<![.\w])E\.4 (#\d+)', 'E.4'), (r'(?<![.\w])E\.1 (#\d+)', 'E.1')]
 # 权威定义唯一:概念 -> 须恰好出现一次的【标记行】。标记为 〔权威定义〕,写在该概念的唯一定义处
 AUTHORITATIVE_MARK = '〔权威定义〕'
-AUTHORITATIVE_DEFS = ['domain_level', 'visibility', '生命周期', '记忆类型', '凭据分级']
+AUTHORITATIVE_DEFS = ['domain_level', 'visibility', '生命周期', '记忆类型', '凭据分级', 'task']
 # ================================================
 
 def load(p): return open(p,encoding='utf-8').read()

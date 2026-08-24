@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-24T22:59:42Z
-分支头：`1fd84e732dc1cb8b584c5fd84e7e3937bd8cf898`
+生成时刻：2026-08-24T23:15:18Z
+分支头：`d8721471334816f48b00bb50fae5e3e0c579c6dd`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -19,7 +19,8 @@ $ python3 docs/tools/speclint.py docs/dingwei-platform-specdoc.md
 
 ```
 $ python3 docs/tools/speclint.py --selftest docs/tools/speclint-corpus.md
-  --- 语料 39 例 / 覆盖规则 14 条,全部通过
+    ❌ POS 被 authdef 误拦: ### 22.4 凭据分级 〔权威定义〕凭据分级
+  --- 语料 39 例 / 覆盖规则 14 条,1 例不符
 ```
 
 ### speclint 变异体（改坏规则，其反例须随之失守 —— 证明语料有牙）
@@ -34,7 +35,7 @@ $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
 ```
 $ scripts/arch-refcheck.sh
   本件内引用 A§ : 54 次 / 27 目标 · 悬空 0
-  SpecDoc 引用 § : 151 次 / 64 目标 · 悬空 0
+  SpecDoc 引用 § : 155 次 / 65 目标 · 悬空 0
   heading 真实重复：本件 0 · SpecDoc 0
   --- 引用核验通过
 ```
@@ -63,8 +64,8 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 115 个节号；悬空 0 ✓
   ④ 三件的版本自述是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.17 · 状态文件 v3.17 ✓
-    架构设计: 件内 v0.11 · 状态文件 v0.11 ✓
+    SpecDoc: 件内 v3.18 · 状态文件 v3.18 ✓
+    架构设计: 件内 v0.12 · 状态文件 v0.12 ✓
     原型: 件内 v1.15 · 状态文件 v1.15 ✓
   ⑤ 生效前置状态（§0.4）
     ✓ 三域 checklist 齐备（结构 / 安全 / 跨制品）—— 但【生效与否取决于门方执行结果，非文件存在】
