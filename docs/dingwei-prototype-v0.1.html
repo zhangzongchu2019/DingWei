@@ -410,13 +410,22 @@ body.uionly #uihint{display:block}
   <tr><td data-edit>本轮任务的环节小结</td><td>—</td><td class="mono">尚未汇入</td><td>internal</td><td class="cell-wait"><b>版本上下文</b></td>
     <td class="mono">node digest</td><td class="cell-ok">active
     <div class="mono">生命周期是<b>晋升管道</b>，不是层：收口原语触发才汇入归属域</div></td></tr>
-  <tr class="lock" data-sec="1"><td data-edit>🔒 平台服务架构与部署形态</td><td>服务架构</td><td><b>D0</b></td><td><b class="cell-fail">restricted</b></td>
-    <td class="mono">已汇入归属域</td><td class="mono">—</td><td>不在检索集合</td></tr>
-  <tr class="lock" data-sec="1"><td data-edit>🔒 网络拓扑与主机清单</td><td>网络架构</td><td><b>D0</b></td><td><b class="cell-fail">restricted</b></td>
-    <td class="mono">已汇入归属域</td><td class="mono">—</td><td>不在检索集合</td></tr>
-  <tr class="lock" data-sec="1"><td data-edit>🔒 PG schema 与连接方式</td><td>数据库设计</td><td><b>D0</b></td><td><b class="cell-fail">restricted</b></td>
-    <td class="mono">已汇入归属域</td><td class="mono">—</td><td>不在检索集合</td></tr>
-  </tbody></table>
+  </tbody><tbody id="secMount"></tbody></table>
+  <div class="note bad" data-edit>🔴 <b>PA-01（乙域 terra 阻断项）修法说明</b>：
+  <code>restricted</code> 条目对无 capability 的视角<b>整行不入 DOM、不占位</b> —— 不是加锁，也不是打码。
+  <div style="margin-top:6px">理由三条：<b>标题本身即情报</b>（一个描述网络拓扑的条目标题，其存在与粒度即已泄漏）；
+  <b>占位即泄漏条目数</b>；页面也不显示「另有 N 条不可见」—— <b>那个 N 同样是情报</b>。</div>
+  <div style="margin-top:6px" class="mono">⚠️ <b>界限须说清</b>：这是原型能演示的极限。
+  <b>客户端过滤不是访问控制。</b>真实系统中，无 capability 的主体，<b>服务端根本不返回这些行</b>（§22.2c）。
+  原型演示的是「渲染与否」，替代不了服务端过滤。</div></div>
+  <div class="panel" style="margin:12px 0 0">
+    <h3>PA-01 负测 <span class="ref">乙域 terra 要求</span> <span style="font-weight:400;color:var(--dim);font-size:12px">就地可跑，结果可见 —— 不以「已修」为准，以「跑过」为准</span></h3>
+    <div style="display:flex;gap:8px;align-items:center"><button id="bNeg">▶ 跑负测</button>
+      <span id="negOut" class="mono" style="color:var(--dim)">未运行</span></div>
+    <div class="note" data-edit style="margin-top:8px">📌 断言:<code>persona ∈ {agent, owner, tenops}</code> 时，
+    DOM 内 <code>restricted</code> 条目的 <b>行数 / 标题 / 任何子串 / 计数提示</b> 均须为 <b>0</b>；
+    <code>platops</code> 时须渲染且须显示「<b>可检索 ≠ 可读取</b>」的二次 capability 提示。</div>
+  </div>
   <div class="note warn" data-edit>⚠️ <b>归属域 ≠ 可见性</b>（§10 · §11.4a）：<b>D0 的条目不等于全员可见。</b>
   装载前须同时求 <b>归属域 ∩ 可见性</b>。上面三条 <b>D0 / restricted</b> 就是这个组合 ——
   它们归平台维护（D0），但只能逐条授权看（restricted），<b>不因为归平台就人人可读</b>。
@@ -574,7 +583,7 @@ body.uionly #uihint{display:block}
     <div class="card"><b>将注入什么</b>
       <table style="margin-top:8px"><tbody>
       <tr><td><b>D0</b> · public/internal</td><td class="cell-ok">全量</td><td class="mono">稳定前缀，吃 prompt caching</td></tr>
-      <tr><td><b>D0</b> · <b>restricted</b></td><td class="cell-fail">不注入</td><td class="mono">implementer 无该授权 —— <b>同一个 D0，可见性不同则装载不同</b></td></tr>
+      <tr id="loadSecRow"><td><b>D0</b> · <b>restricted</b></td><td class="cell-fail">不注入</td><td class="mono">implementer 无该授权 —— <b>同一个 D0，可见性不同则装载不同</b></td></tr>
       <tr><td><b>D1 / D2 / D3</b>（∩ 可见性）</td><td class="cell-wait">按需切片</td><td class="mono">Query(q, topK=8)，先 RLS 过滤后检索</td></tr>
       <tr><td>生命周期 · 版本上下文</td><td class="cell-ok">全量</td><td class="mono">当前版本摘要，量小</td></tr>
       <tr><td>生命周期 · 任务上下文</td><td class="cell-ok">全量</td><td class="mono">＝派发信封本体</td></tr>
@@ -1643,12 +1652,15 @@ body.uionly #uihint{display:block}
       <div data-edit>第 40 秒确认：<code>curl -H "X-Tenant: other"</code> 返回 200，与门方给的失败最小复现一致。
       我把这两个附件挂到 N-1204 的帖子流第 5 帖，作为整改证据。</div></div></div>
     <div class="msg"><div class="av u">张</div><div class="mb">
-      <div data-edit>再传一份生产网络拓扑给你参考。</div>
-      <div class="att" style="border-color:#5a2020;background:#2a1414"><span class="ic">🚫</span>
-        <span data-edit>prod-network-topo.png</span><span class="sz">已拦截</span><span class="s0">S0</span></div>
-      <div class="note bad" style="margin-top:6px;padding:7px 10px">🔴 <b>上传被拒</b>：内容扫描判定含<b>主机 IP 与网络拓扑</b> ⇒ 属 <span class="s0">S0</span>。
-      §22.4：<b>S0 不落任何文档、帖子、流、日志</b>；本对话会入帖子流，故不可承载。<br>
-      改法：该资料属 <b>D0 · restricted</b>，请在知识库内按 RLS 引用（<code>#KB-007</code>），<b>不要作为附件传入对话</b>。</div></div></div>
+      <div data-edit>再传一份资料给你参考。</div>
+      <div class="note bad" style="margin-top:6px;padding:7px 10px">🔴 <b>上传被拒 · 未创建附件卡，未入帖子流</b>
+      <div class="mono" style="margin-top:6px"><code>rule_id=ATT-S0-014</code> · <code>category=credential_topology</code> · <code>policy_version=2026-08-01</code><br>
+      <code>ts=2026-08-24T14:11:07Z</code> · <code>nonce=7f3a…c2</code>（受控 nonce，申诉时凭此调档）</div>
+      <div style="margin-top:6px">§25.7 <b>S0 一律拒收</b>。<b>本反馈不含文件名、命中片段、元数据或任何输入子串</b> —— DOM / 审计 / 日志三处一致。</div>
+      <div style="margin-top:6px" class="mono">⚠️ PA-02 修（乙域 terra）：原实现回显了原始文件名与「命中了什么」。<br>
+      <b>文件名是判定器的输入</b>；判定为 S0 之后还把它回显进会话（而会话会入帖子流），<br>
+      等于用拒收动作把 S0 又写了一遍 —— 与 §22.5 #5 是同一个错，本席在 SpecDoc 里刚修过（SA-08），原型里原样犯了一遍。</div>
+      <div style="margin-top:6px">改法：若确需该资料，请在知识库内按 RLS 引用，<b>不要作为附件传入对话</b>。</div></div></div></div>
   </div>
   <div class="drop" data-edit>拖入 <b>图片 / 视频 / 文档 / 代码</b>，或 <b>点击选择</b><br>
     <span class="mono">单文件 ≤ 200MB · 视频自动抽帧供模型读 · 大文件存对象存储，对话内只留引用</span></div>
@@ -2549,23 +2561,34 @@ selP.onchange=applyProj; applyProj();
 
 /* ---- 视角切换 ---- */
 var selPer=document.getElementById('persona');
+/* PA-01（乙域 terra 阻断项）：restricted 条目不写在静态 HTML 里 —— 否则「查看源码」即可见，
+   加锁/打码都挡不住。仅平台级 ops 视角才注入 DOM。
+   ⚠️ 界限须说清：客户端过滤【不是】访问控制。真实系统中，无 capability 的主体，
+   服务端根本不返回这些行（§22.2c 受控仓储 API）。原型只能演示「渲染与否」。
+
+   🔴 headless 实跑发现的残留（本席自查，非评审方指出）：--dump-dom 会把本数组一并导出，
+   即「查看源码」仍可见 —— 静态原型的数据必然随文件下发，这是形态决定的，堵不住。
+   ⇒ 治法不是藏数据，是【让示例数据本身不含可读情报】：三条标题已改为 R-1/R-2/R-3，
+   类型列保留（服务架构/网络架构/数据库设计）以维持演示价值。
+   ⚠️ 顺带纠一条本席自己的坏习惯：原型示例数据不该起像真基础设施的名字 ——
+   那等于把 §22.5 想拦的东西，主动写进了一份要发给多方评审的文件里。 */
+var RESTRICTED_ROWS="  <tr class=\"lock\" data-sec=\"1\"><td data-edit>🔒 〈受限条目 R-1〉</td><td>服务架构</td><td><b>D0</b></td><td><b class=\"cell-fail\">restricted</b></td>\n    <td class=\"mono\">已汇入归属域</td><td class=\"mono\">—</td><td><span class=\"cell-ok\">active</span><div class=\"mono\">可检索 &ne; 可读取<br>读取须另具条目 capability</div></td></tr>\n  <tr class=\"lock\" data-sec=\"1\"><td data-edit>🔒 〈受限条目 R-2〉</td><td>网络架构</td><td><b>D0</b></td><td><b class=\"cell-fail\">restricted</b></td>\n    <td class=\"mono\">已汇入归属域</td><td class=\"mono\">—</td><td><span class=\"cell-ok\">active</span><div class=\"mono\">可检索 &ne; 可读取<br>读取须另具条目 capability</div></td></tr>\n  <tr class=\"lock\" data-sec=\"1\"><td data-edit>🔒 〈受限条目 R-3〉</td><td>数据库设计</td><td><b>D0</b></td><td><b class=\"cell-fail\">restricted</b></td>\n    <td class=\"mono\">已汇入归属域</td><td class=\"mono\">—</td><td><span class=\"cell-ok\">active</span><div class=\"mono\">可检索 &ne; 可读取<br>读取须另具条目 capability</div></td></tr>";
 function applyPersona(){
   var v=selPer.value, plat=(v==='platops');
 
-  /* restricted 可见性：只有平台级 ops 在检索集合内 */
-  document.querySelectorAll('#s3 tbody tr[data-sec]').forEach(function(tr){
-    tr.classList.toggle('lock',!plat);
-    tr.lastElementChild.innerHTML = plat ? '<span class="cell-ok">active</span>' : '不在检索集合';
-    var t=tr.firstElementChild, base=t.dataset.base||t.textContent.replace(/^\uD83D\uDD12\s*/,'');
-    t.dataset.base=base;
-    t.textContent = plat ? base : '\uD83D\uDD12 ' + base;
-  });
+  var mount=document.getElementById('secMount');
+  if(mount) mount.innerHTML = plat ? RESTRICTED_ROWS : '';
+  /* PA-01：装载预览须与检索、Agent 视角【三处一致】。
+     旧实现里检索侧隐去了 restricted,装载侧却还列着"D0·restricted → 不注入" ——
+     那一行本身就告诉了无授权者"存在这么一类东西"。仅平台级 ops 可见。 */
+  var lsr=document.getElementById('loadSecRow');
+  if(lsr) lsr.style.display = plat ? '' : 'none';
   var n=document.querySelector('#s3 .note.bad');
   if(n) n.innerHTML = plat
     ? '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>当前视角＝平台级 ops，<code>restricted</code> 三条<b>在</b>检索集合内（14 / 14 可见）。'
       + '密级仍按条目分级：<b>S0 条目的实际访问须另有 capability</b>，可检索 \u2260 可读取。'
     : '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。'
-      + '当前视角可见 <b>9 / 14</b> 条；<b>5 条 <code>restricted</code> 条目不在检索集合内</b>（不是「搜到了但打码」）。';
+      + '当前视角<b>共 9 条</b>可检索。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。';
 
   /* Agent 视角：把导航重心切到 Agent 面，并提示决断面非其职责 */
   var isAg=(v==='agent');
@@ -2573,6 +2596,15 @@ function applyPersona(){
     var a=document.querySelector('#nav a[href="#'+id+'"]');
     if(a) a.style.opacity = isAg ? '.4' : '1';
   });
+  /* PA-01：知识库整屏对 Agent 视角【禁入】,不是淡化。
+     淡化只是"不建议点",而 direct-hash(#s3)仍可直达 —— 那不叫禁入。 */
+  var kbNav=document.querySelector('#nav a[href="#s3"]');
+  if(kbNav) kbNav.style.display = isAg ? 'none' : '';
+  if(isAg && (location.hash==='#s3' || document.getElementById('s3').classList.contains('on'))){
+    document.querySelectorAll('.scr').forEach(function(x){x.classList.remove('on')});
+    document.getElementById('a2').classList.add('on');
+    location.hash='#a2';
+  }
   var b=document.getElementById('perBanner');
   if(!b){ b=document.createElement('div'); b.id='perBanner'; b.className='note';
     b.style.margin='0 0 14px'; document.getElementById('main').prepend(b); }
@@ -2595,6 +2627,51 @@ function applyPersona(){
   }
 }
 selPer.onchange=applyPersona; applyPersona();
+
+/* ---- PA-01 负测（乙域 terra 要求）----
+   本席这几轮反复说的那条:新规则落地后必须实跑一次它应当报错的输入。
+   这里把它做成按钮 —— 评审方点一下就知道是真修了还是嘴上修了。 */
+(function(){
+  var btn=document.getElementById('bNeg'), out=document.getElementById('negOut');
+  if(!btn) return;
+  var MARKERS=['服务架构','网络架构','数据库设计','平台服务架构','拓扑','PG schema'];
+  function domHasRestricted(){
+    var tb=document.getElementById('secMount');
+    var rows=tb?tb.querySelectorAll('tr').length:0;
+    var txt=document.getElementById('s3').innerText||'';
+    var hitInData=MARKERS.filter(function(m){
+      /* 只看条目表区域,不看本席写的说明文字 */
+      var t=document.querySelector('#s3 table');
+      return t && t.innerText.indexOf(m)>=0;
+    });
+    var countLeak=/另有\s*\d+\s*条|\d+\s*\/\s*14/.test(txt);
+    return {rows:rows, marks:hitInData, countLeak:countLeak};
+  }
+  btn.onclick=function(){
+    var keep=selPer.value, fails=[];
+    ['agent','owner','tenops'].forEach(function(pv){
+      selPer.value=pv; applyPersona();
+      var r=domHasRestricted();
+      if(r.rows!==0)      fails.push(pv+':DOM 仍有 '+r.rows+' 行');
+      if(r.marks.length)  fails.push(pv+':表内出现受限标识 '+r.marks.join('/'));
+      if(r.countLeak)     fails.push(pv+':页面泄漏了条目计数');
+      if(pv==='agent'){
+        var nav=document.querySelector('#nav a[href="#s3"]');
+        if(nav && nav.style.display!=='none') fails.push('agent:知识库导航未禁入');
+        location.hash='#s3'; applyPersona();
+        if(document.getElementById('s3').classList.contains('on')) fails.push('agent:direct-hash 仍可直达 #s3');
+      }
+    });
+    selPer.value='platops'; applyPersona();
+    var pr=domHasRestricted();
+    if(pr.rows!==3) fails.push('platops:应渲染 3 行,实得 '+pr.rows);
+    if((document.getElementById('secMount').innerText||'').indexOf('可检索')<0)
+      fails.push('platops:缺「可检索 ≠ 可读取」二次 capability 提示');
+    selPer.value=keep; applyPersona();
+    out.style.color = fails.length ? 'var(--bad)' : 'var(--ok)';
+    out.textContent = fails.length ? ('✗ '+fails.length+' 项不符: '+fails.join(' · ')) : '✓ 全部通过（4 视角 · 无授权三视角 DOM 计数与标识均为 0）';
+  };
+})();
 </script>
 <script>
 /* 纯 UI 模式:说明层是给评审看的,不是界面的一部分。
