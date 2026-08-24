@@ -31,6 +31,9 @@ done
 echo "② 是否存在与仓内路径同名的投递件（按路径名找会命中它）"
 for p in $(git ls-files 'docs/*.md' 'docs/*.html' 2>/dev/null); do
   b=$(basename "$p")
+  # 状态类文件【就该同名】：它是拉取式状态源，同名才让人找得到，
+  # 且它自带「生成自 commit」可自判过期。规则对它不适用 —— 这是规则的边界，不是例外网开一面。
+  case "$b" in DELIVERY-STATUS.md|README*) continue ;; esac
   if [ -f "$D/$b" ]; then
     echo "  ✗ $b 与仓内路径同名 —— 改名带版本号，或加 SUPERSEDED- 前缀"; FAIL=1
   fi
