@@ -143,6 +143,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <a href="#a3">与 Agent 交互 <span class="mono">§25.4</span></a>
   <div class="grp">接入</div>
   <a href="#s9">渠道授权 <span class="mono">§23.5</span></a>
+  <a href="#a7">身份与渠道绑定 <span class="mono">新增</span></a>
   <a href="#s0">架构总览 <span class="mono">§3</span></a>
 </nav>
 <div id="main">
@@ -1355,6 +1356,125 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   ⇒ 拟把 §25.3 扩为 <b>§25.3 交付物与规范查阅入口</b>，覆盖 spec · 设计方案 · 测试用例设计 ·
   测试报告 · 代码变更 · 交付验证记录 · 复盘，并要求<b>按任务/版本组织成链路视图</b>而非分七个列表 ——
   理由与 §25.1「单一 typed 待决队列」同源：<b>分成七个入口，就要巡七个地方才知道哪一环缺了。</b></div>
+</div>
+</section>
+
+<!-- ============ A7 身份与渠道绑定 ============ -->
+<section class="scr" id="a7">
+<h2 data-edit>身份与渠道绑定</h2>
+<div class="sub" data-edit>一个人的多个渠道账号如何判定为同一人。<b style="color:var(--warn)">SpecDoc §21 全文未定义，见屏底</b></div>
+
+<div class="note bad" data-edit>🔴 <b>第一条红线：不得按邮箱 / 手机号自动合并。</b><br>
+§21.2 已定<b>邮箱与 SMS 是次因子</b>，主因子是企业目录账号。用次因子做合并键，等于<b>让弱因子决定强身份</b> ——
+谁控制了那个邮箱，就能把渠道挂到一个已有身份上。这是<b>账号接管</b>，不是账号合并。</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>张宗楚 · 身份卡 <span class="ref">拟 §21.4</span></h3>
+  <div class="kv">
+    <b>人（platform_subject）</b><div class="mono">psub:7f3a91c… <span style="color:var(--dim)">平台内唯一，不可变，不复用</span></div>
+    <b>租户</b><div>张宗楚（业主）· 图搜 3.0 —— <span class="mono">一对多，每次须显式选择且落账（同 §22.1a 口径）</span></div>
+    <b>会话 / Agent</b><div class="mono">zzc-opus50t · zzc-coordinator · zzc-prodops …（多个，执行挂会话）</div>
+  </div>
+  <table style="margin-top:12px"><thead><tr><th style="width:120px">渠道</th><th style="width:190px">渠道内标识</th>
+  <th style="width:150px">如何判为同一人</th><th style="width:64px">因子</th><th style="width:110px">状态</th><th style="width:74px">操作</th></tr></thead><tbody>
+  <tr><td data-edit><b>飞书</b><div class="mono">企业目录</div></td><td class="mono">ou_9b21…（IdP sub=E10237）</td>
+    <td class="cell-ok">主锚<div class="mono">本人首个强身份</div></td><td><span class="s1">主</span></td>
+    <td class="cell-ok">已绑 · 主渠道</td><td><button class="dis">解绑</button></td></tr>
+  <tr><td data-edit><b>企微</b><div class="mono">企业目录</div></td><td class="mono">wwuser_3c8f…（IdP sub=E10237）</td>
+    <td class="cell-ok"><b>IdP 断言同一 subject</b><div class="mono">自动合并（唯一允许的自动路径）</div></td>
+    <td><span class="s1">主</span></td><td class="cell-ok">已绑 · 自动</td><td><button>解绑</button></td></tr>
+  <tr><td data-edit><b>Slack</b><div class="mono">外部 workspace，未接同一 IdP</div></td><td class="mono">U04KZ…（无 IdP 断言）</td>
+    <td class="cell-wait"><b>显式绑定流程</b><div class="mono">由飞书主身份发起 + 双向确认</div></td>
+    <td><span class="s2">中</span></td><td class="cell-ok">已绑 · 人工<div class="mono">2026-08-19 落账</div></td><td><button>解绑</button></td></tr>
+  <tr><td data-edit><b>Google Chat</b></td><td class="mono">116…（Google 账号）</td>
+    <td class="cell-wait">待双向确认<div class="mono">主身份已发起，新渠道未回执</div></td>
+    <td><span class="s2">中</span></td><td class="cell-wait">待确认<div class="mono">challenge 剩 6 分钟</div></td><td><button>取消</button></td></tr>
+  <tr class="dis"><td data-edit><b>某 Slack（另一 workspace）</b></td><td class="mono">U07QX…</td>
+    <td class="cell-fail"><b>✗ 已拒</b><div class="mono">仅凭邮箱同值申请合并</div></td>
+    <td><span class="s2">中</span></td><td class="cell-fail">拒绝<div class="mono">邮箱不是合并键</div></td><td></td></tr>
+  <tr><td data-edit>SMS · 邮件</td><td class="mono">+86 138…… · tchang……</td>
+    <td class="lock">不参与身份识别</td><td><span class="s2">次</span></td><td>仅作二次验证</td><td></td></tr>
+  <tr><td data-edit>WhatsApp</td><td class="mono">+86 138……</td>
+    <td class="lock">不参与身份识别（§21.2）<div class="mono">身份锚是电话号，与 SMS 同链路</div></td>
+    <td class="lock">—</td><td>仅通信渠道</td><td></td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>三条合并路径 <span class="ref">拟 §21.4</span></h3>
+  <table><thead><tr><th style="width:150px">路径</th><th>条件</th><th style="width:120px">是否可自动</th></tr></thead><tbody>
+  <tr><td class="cell-ok"><b>A · IdP 断言</b></td>
+    <td data-edit>两渠道均由<b>同一企业 IdP</b> 断言<b>同一 subject</b>（<code>sub</code> / <code>employeeId</code>）。
+    <div class="mono">这是 IdP 说的，不是平台猜的 —— 企业目录本身就是权威源</div></td>
+    <td class="cell-ok"><b>可自动</b></td></tr>
+  <tr><td class="cell-wait"><b>B · 显式绑定</b></td>
+    <td data-edit>跨 IdP 或渠道不接 IdP。三要件缺一不可：<br>
+    ① 由<b>已认证的主身份</b>在强身份面发起（不是从新渠道发起）<br>
+    ② 新渠道出示<b>所有权证明</b>（一次性 challenge，在该渠道内回执）<br>
+    ③ <b>双向确认</b>：主渠道也须确认一次</td>
+    <td class="cell-wait">须人工 + 落账</td></tr>
+  <tr><td class="cell-fail"><b>C · 禁止</b></td>
+    <td data-edit>🔴 <b>按邮箱 / 手机号 / 显示名相同自动合并</b> —— 一律拒绝。<br>
+    这三者都不是身份锚：邮箱与手机号是<b>次因子</b>（§21.2），显示名可任意设置。</td>
+    <td class="cell-fail">永不允许</td></tr>
+  </tbody></table>
+  <div class="note bad" data-edit>🔴 <b>路径 B 的要害在第 ①：绑定必须由主身份发起，新渠道不能批准自己的绑定。</b><br>
+  否则攻击者拿下任一新渠道，就能把它自助挂进一个已有身份 —— <b>拿下一个弱渠道 = 获得该人全部权限</b>。<br>
+  这与 §24.2a 的道理同源：<b>提案方不能是批准方。</b></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 合并身份 ≠ 合并渠道强度 <span class="ref">本席认为这是本屏最要紧的一条</span></h3>
+  <div class="note bad" data-edit><b>直觉做法（错的）</b>：这人已经通过飞书强验证了，所以他从任何已绑渠道来都算强身份。<br>
+  <b>后果</b>：<b>最弱渠道继承了最强渠道的信任</b> —— 外部 Slack 一被攻破，等于拿到企业飞书级别的权限。<br><br>
+  <b>正确做法</b>：<b>身份是同一个，但每次授权按【本次实际使用的渠道】的因子强度判。</b></div>
+  <table><thead><tr><th style="width:130px">本次经由</th><th style="width:64px">因子</th><th>可终结的授权档</th></tr></thead><tbody>
+  <tr><td>飞书 / 企微</td><td><span class="s1">主</span></td><td class="cell-ok">低危可终结 · 中危 + 次因子可终结 · <b>高危仍只能发起</b></td></tr>
+  <tr><td>Slack / Google Chat<div class="mono">已绑但外部 workspace</div></td><td><span class="s2">中</span></td>
+    <td class="cell-wait">低危可终结 · <b>中危须回主渠道</b> · 高危只能发起</td></tr>
+  <tr><td>SMS / 邮件 / WhatsApp</td><td class="lock">次 / 无</td><td class="cell-fail"><b>不可发起任何授权</b> · 仅作二次验证或通知</td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ 本席须指出：这与本席在评审中被抓出的<b>「按名字判而非按效果判」是同一族错误</b> ——
+  这里若按人判而不按渠道判，就是<b>用身份的名义抹掉了渠道的实际强度</b>。<br>
+  <b>高危仍须重两签，不因身份确证而降档</b>（§21.3：双因子 ≠ 双人）。</div>
+  <div class="note" data-edit>📌 <b>审计必须记录「经哪个渠道」。</b>否则事后分不清「他从企业飞书批的」与「他从外部 Slack 批的」——
+  而这两件事的可信度完全不同。审计挂在人身上（§21.1），但<b>渠道来源是必录字段</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>解绑与吊销 <span class="ref">拟 §21.4</span></h3>
+  <table><tbody>
+  <tr><td style="width:150px">解绑严格度</td><td data-edit><b>与绑定同级</b>：由主身份在强身份面发起。
+    <div class="mono">若被解绑的正是主渠道，须先指定新主渠道，<b>不允许身份无主锚</b></div></td></tr>
+  <tr><td>企业吊销</td><td data-edit>飞书 / 企微 / Slack / Google Chat 的企业目录账号被吊销 ⇒
+    <b>该渠道绑定立即失效</b>（这正是 §21.2 选企业目录作主锚的原因：<b>可被企业吊销</b>）</td></tr>
+  <tr><td class="cell-fail">历史审计</td><td data-edit>🔴 <b>解绑不得重写历史审计。</b>
+    「某年某月某日经该渠道做过某授权」是<b>已发生的事实</b>；解绑只影响此后，不改既往。
+    <div class="mono">否则解绑会变成一条抹除痕迹的路径</div></td></tr>
+  <tr><td>紧急处置</td><td data-edit>渠道疑似失陷 ⇒ 走 §24.3a <b>单调收紧</b>：<code>revoke</code> 该渠道绑定。
+    <b>不允许经紧急通道新增绑定</b>（那是放宽）</td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 缺口：SpecDoc §21 未定义账号合并 <span class="ref">§21</span></h3>
+  <div class="note bad" data-edit>§21 全文三小节：21.1 三级映射 · 21.2 因子分级 · 21.3 双因子不等于双人。<br>
+  全文搜「合并 / 联合 / 绑定 / 同一人 / IdP / SSO / subject / 多渠道账号」——
+  <b>「绑定」的命中全部指向别的东西</b>（capability policy 绑六项、token 绑设备指纹、challenge 绑一次性凭据），
+  <b>无一处涉及渠道账号与人的绑定</b>。<br><br>
+  ⇒ <b>§21.1 的三级映射把「人」当成已解析的单一实体，但没说这个实体是怎么从四个渠道账号里认出来的。</b>
+  这是地基上的一个洞：<b>P1（per-session principal 可信）解决的是「这个会话是谁」，
+  没解决「这个『谁』和那个『谁』是不是同一个人」。</b><br><br>
+  拟回写 <b>§21.4 渠道账号与人的绑定</b>，至少含：<code>platform_subject</code> 唯一且不可变不复用 ·
+  三条合并路径（IdP 断言可自动 / 显式绑定须三要件 / 邮箱手机号显示名永不作合并键）·
+  <b>绑定须由主身份发起，新渠道不得批准自己的绑定</b> ·
+  🔴 <b>合并身份不合并渠道强度，每次授权按本次经由的渠道判</b> ·
+  审计必录渠道来源 · 解绑同级且不得重写历史 · 企业吊销即时失效 · 紧急通道只可 revoke 不可新增。</div>
 </div>
 </section>
 
