@@ -156,6 +156,7 @@ body.uionly #uihint{display:block}
   <a href="#s3">知识库 <span class="mono">§25.2</span></a>
   <a href="#b1">分级对齐 <span class="mono">业主定 · 新</span></a>
   <a href="#b2">周工作进展汇报 <span class="mono">§20.1 · 新</span></a>
+  <a href="#b3">受控仓储 API 核验 <span class="mono">§22.2c · 新</span></a>
   <div class="grp">资产与执行</div>
   <a href="#s5">skill / MCP 库 <span class="mono">§15·16</span></a>
   <a href="#s6">Agent 管理 <span class="mono">§26</span></a>
@@ -2337,6 +2338,107 @@ body.uionly #uihint{display:block}
   「冲突须在此解掉、<b>不得留给实现</b>」—— 那句话本身就否定了隐含兜底，所以这六条必须钉在本节。</div>
 </div>
 </section>
+
+<!-- ============ b3 受控仓储 API / 租户隔离核验 ============ -->
+<section class="scr" id="b3">
+<h2 data-edit>受控仓储 API · 租户隔离核验</h2>
+<div class="sub" data-edit>C.3 业主裁：受控仓储 API 单点，不做 RLS，不做每租户独立库。配套见 §22.2c</div>
+
+<div class="note bad" data-edit>🔴 <b>先把话说准，本屏不写成「已实现租户隔离」。</b>
+本方案<b>不杜绝</b>跨租户泄漏，也不试图杜绝：它拦的是<b>经由仓储 API 的路径</b>；
+不经它的代码（迁移 · 报表 · 手工 psql · 测试夹具）<b>不在保护内</b>。
+⇒ 只能表述为「<b>正常路径已收敛，异常路径由评审把关</b>」（§22.2c · E.4 #58）。
+<div style="margin-top:6px">⚠️ <b>代价须记明</b>：仅做应用层时，失效<b>不会自己现形</b>。
+独立库漏了是「查不到数据」（吵闹、立刻发现）；应用层漏一处是「<b>多查到了别人的数据</b>」（安静、可能长期不发现）。
+这正是评审必须带判据、不能只靠「看一眼」的原因。</div></div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>① 五项必做 <span class="ref">§22.2c</span> <span style="font-weight:400;color:var(--dim);font-size:12px">判据须可判，不是纪律</span></h3>
+  <table><thead><tr><th style="width:32px">#</th><th>必做</th><th style="width:220px">判据</th><th style="width:88px">现状</th></tr></thead><tbody>
+  <tr><td>1</td><td data-edit>🔴 <b>裸库句柄不出仓储包</b></td>
+    <td class="mono"><code>*sql.DB</code> / <code>*pgx.Conn</code> 不导出、任何函数不返回它</td><td class="cell-fail">未建</td></tr>
+  <tr><td>2</td><td data-edit>🔴 <b>租户上下文进类型，不进参数列表</b>
+    <div class="mono">入口签名收 <code>TenantCtx</code>，该类型<b>无可用零值</b></div></td>
+    <td class="mono">漏传是<b>编译错误</b>，不是运行期错误</td><td class="cell-fail">未建</td></tr>
+  <tr><td>3</td><td data-edit>调用方不得自带 <code>WHERE</code> 拼接</td>
+    <td class="mono">租户过滤条件由仓储层统一注入</td><td class="cell-fail">未建</td></tr>
+  <tr><td>4</td><td data-edit><b>缺租户上下文默认拒</b>（fail-closed）</td>
+    <td class="mono">同 §22.2a #1</td><td class="cell-fail">未建</td></tr>
+  <tr><td>5</td><td data-edit><b>越权负测三类</b></td>
+    <td class="mono">伪造 tenant / 跨租户读 / 缺 context</td><td class="cell-fail">未建</td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ 第 2 条是这张表的骨：若「默认必须有租户 ID」落成<b>「记得传」</b>，那是<b>纪律</b>；
+  只有落成<b>「不传就编译不过」</b>，才是<b>机制</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>② 绕仓扫描 <span class="ref">恒零计数器</span> <span style="font-weight:400;color:var(--dim);font-size:12px">实测数据，非示例</span></h3>
+  <div class="chk stop" data-edit>🔴 <b>仓储包外 <code>sql.Open</code> 处数：<b style="font-size:16px">8</b>　判据：恒为 0　⇒ <b>不达标</b></b></div>
+  <table><thead><tr><th>位置</th><th style="width:70px">引擎</th><th style="width:96px">收编优先级</th><th>理由</th></tr></thead><tbody>
+  <tr><td class="mono" data-edit>internal/datad/pgstore.go</td><td>pgx ×3</td><td class="d-high">1</td>
+    <td data-edit>PG 侧是<b>跨租户数据主场</b>，先收它</td></tr>
+  <tr><td class="mono" data-edit>internal/fanout/spool.go · inspool.go · admin.go</td><td>sqlite</td><td class="d-high">2</td>
+    <td data-edit>出站含租户数据，<b>泄漏面直接</b></td></tr>
+  <tr><td class="mono" data-edit>internal/mcs/board</td><td>sqlite</td><td class="d-mid">3</td>
+    <td data-edit>执行主干，改动风险高 ⇒ <b>放在有 conformance suite 之后</b>（§4.5）</td></tr>
+  <tr><td class="mono" data-edit>internal/store</td><td>sqlite</td><td class="d-low">4</td>
+    <td data-edit>已是仓储形态，补 <code>TenantCtx</code> 与迁移 runner 即可</td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>③ 表接入核验 <span class="ref">恒零计数器</span></h3>
+  <div class="chk stop" data-edit>🔴 <b>未被仓储包引用的表数：<b style="font-size:16px">待测</b>　判据：恒为 0</b></div>
+  <table><thead><tr><th>存储</th><th style="width:60px">引擎</th><th style="width:70px">表数</th><th>位置</th></tr></thead><tbody>
+  <tr><td data-edit>主库</td><td>SQLite</td><td>36</td><td class="mono">internal/store/migrations/（32 个迁移）</td></tr>
+  <tr><td data-edit>board</td><td>SQLite</td><td>11</td><td class="mono">internal/mcs/board/schema.sql</td></tr>
+  <tr><td data-edit>fanout</td><td>SQLite</td><td>5</td><td class="mono">内联建表（须消除的存量）</td></tr>
+  <tr><td data-edit>datad</td><td><b>PG</b></td><td>9</td><td class="mono">pgstore.go 开三个 DSN</td></tr>
+  <tr><td data-edit><b>合计</b></td><td>—</td><td><b>61 建表点<br>60 表名</b></td><td class="mono">差值来自跨存储重名 ↓</td></tr>
+  </tbody></table>
+  <div class="note bad" data-edit>🔴 <b>须在 SP7a 之前定掉的名字冲突</b>：表名 <code>task</code> 在
+  <b>board（SQLite）</b>与<b>datad（PG）</b>两处<b>各自建过一次</b>，schema 不同、生命周期不同，却同名。
+  <div style="margin-top:6px">⇒ 收编进统一仓储包时<b>会正面撞车</b>：同名不同义，仓储层无法用一个类型承载。
+  须先定「哪个是权威 <code>task</code>、另一个改名或改归属」，<b>不能等迁移时再发现</b>（同 E.3 #47b「权威定义唯一」）。</div></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>④ 三类越权负测 <span class="ref">§22.2a #3 · §22.2c #5</span></h3>
+  <table><thead><tr><th style="width:130px">负测</th><th>构造</th><th style="width:130px">期望</th><th style="width:80px">现状</th></tr></thead><tbody>
+  <tr><td data-edit><b>伪造 tenant</b></td><td class="mono" data-edit>请求头声明他租户 ID，服务端派生的 principal 不匹配</td>
+    <td class="cell-ok">拒，并落账</td><td class="cell-fail">未建</td></tr>
+  <tr><td data-edit><b>跨租户读</b></td><td class="mono" data-edit>持 A 租户 TenantCtx 查 B 租户资源</td>
+    <td class="cell-ok">结果集为空<div class="mono">非「报错」——报错本身会确认资源存在</div></td><td class="cell-fail">未建</td></tr>
+  <tr><td data-edit><b>缺 context</b></td><td class="mono" data-edit>不传 <code>TenantCtx</code> 直接调仓储入口</td>
+    <td class="cell-ok"><b>编译失败</b><div class="mono">不是运行期拒 —— 运行期才拒说明它是纪律不是机制</div></td>
+    <td class="cell-fail">未建</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 第三类的期望是<b>编译失败</b>而非运行期拒绝，这是判断第 2 项必做是否真落成的<b>唯一硬证据</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>⑤ 残余绕过面 · 代码评审判据 <span class="ref">§22.2c</span> <span style="font-weight:400;color:var(--dim);font-size:12px">业主定评审为主要把关手段 ⇒ 评审须有判据</span></h3>
+  <table><thead><tr><th style="width:32px">#</th><th>评审须逐项确认</th><th style="width:230px">近乎零成本的机器旁证</th><th style="width:76px">状态</th></tr></thead><tbody>
+  <tr><td>1</td><td data-edit>本次改动是否新增了<b>绕过仓储包的库访问</b></td>
+    <td class="mono">CI 扫「仓储包外 <code>sql.Open</code> 处数」<b>恒为 0</b></td><td class="cell-wait">待建</td></tr>
+  <tr><td>2</td><td data-edit>新增查询是否经 <code>TenantCtx</code></td>
+    <td class="mono">由类型设计保证，<b>编译期即拦</b></td><td class="cell-wait">待建</td></tr>
+  <tr><td>3</td><td data-edit>新增表是否已接入仓储层</td>
+    <td class="mono">扫「未被仓储包引用的表数」<b>恒为 0</b></td><td class="cell-wait">待建</td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ <b>这些计数器是评审的旁证，不是替代</b>：
+  它们查得出「<b>有没有新开口子</b>」，查不出「<b>这个查询的租户语义对不对</b>」—— 后者是人的活（第 IV 类）。</div>
+  <div class="note bad" data-edit>🔴 <b>本屏全部标「未建 / 待建」，是有意的。</b>
+  C.3 只裁了<b>形态</b>，SP7a 的<b>设计尚未过架构评审</b> —— 形态定了与设计过审是两回事。
+  按 §0.3 的三分法，本屏内容目前全属 <b>🎯 目标</b>，<b>不得对外陈述为「系统已具备」</b>（E.4 #58）。</div>
+</div>
+</section>
+
 
 
 </div></div>
