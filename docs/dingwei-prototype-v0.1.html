@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.8 · 依据 SpecDoc v3.12 2ef0762</title>
+<title>DingWei 平台原型 v1.11 · 依据 SpecDoc v3.13</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -129,7 +129,7 @@ body.uionly #uihint{display:block}
 
 <div id="top">
   <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v0.1</span></h1>
-  <span class="anchor">依据 SpecDoc <b>v3.12</b> 2ef0762 · 3005 行 · sha256 fa7c7251…</span>
+  <span class="anchor">原型 <b>v1.11</b> · 依据 SpecDoc <b>v3.13</b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -2587,7 +2587,10 @@ document.getElementById('bExp').onclick=function(){
       内容:st.notes[k].replace(/<[^>]+>/g,'').trim()};
   });
   var out={原型:'dingwei-prototype-v0.1.html',
-    依据SpecDoc锚:'2ef07626575ca32ea06eef9cf61195b7bbbd525f',
+    /* 件内不再内嵌 commit:本件与 SpecDoc 同 commit,自己写不进自己的哈希(先有内容才有哈希)。
+       内嵌一个上一版的哈希,看着精确其实是过期值 —— 与「精度≠稳定度」同源。
+       版本号可自述,锚由 README / 提交信息承载。 */
+    依据SpecDoc版本:'v3.13', 原型版本:'v1.11',
     说明:'把本文件发回 opus50t，据此改 SpecDoc §25-§27。若改动与已裁定条款冲突，会指出条款号请业主裁定，不得两存。',
     屏:scr,改文:改文,批注:批注};
   var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
