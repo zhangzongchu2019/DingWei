@@ -34,8 +34,18 @@ for p in $(git ls-files 'docs/*.md' 'docs/*.html' 2>/dev/null); do
   # 状态类文件【就该同名】：它是拉取式状态源，同名才让人找得到，
   # 且它自带「生成自 commit」可自判过期。规则对它不适用 —— 这是规则的边界，不是例外网开一面。
   case "$b" in DELIVERY-STATUS.md|README*) continue ;; esac
-  if [ -f "$D/$b" ]; then
-    echo "  ✗ $b 与仓内路径同名 —— 改名带版本号，或加 SUPERSEDED- 前缀"; FAIL=1
+  [ -f "$D/$b" ] || continue
+  # 同名是否有害，取决于【仓内文件名会不会烂】：
+  #   仓内名带的版本 == 该文件内容自述的版本 ⇒ 名字没烂，同名无歧义，放行；
+  #   两者不等（如 dingwei-prototype-v0.1.html 里装着 v1.13）⇒ 按路径名找会命中旧件，必须改名投递。
+  # ⚠️ 判据是「名字有没有烂」，不是「有没有版本号」——后者挡不住 v0.1 里装 v1.13 这种。
+  rnv=$(printf '%s' "$b" | grep -oE 'v[0-9]+\.[0-9]+' | head -1)
+  rcv=$(grep -m1 -oE '\*\*版本\*\*: v[0-9]+\.[0-9]+' "$p" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+')
+  [ -n "$rcv" ] || rcv=$(grep -m1 -oE '原型 v[0-9]+\.[0-9]+' "$p" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+')
+  if [ -n "$rnv" ] && [ "$rnv" = "$rcv" ]; then
+    echo "  ✓ $b 同名但仓内名未烂（名 $rnv ＝ 内容 $rcv），无歧义"
+  else
+    echo "  ✗ $b 与仓内路径同名，且仓内名已烂（名 ${rnv:-无} vs 内容 ${rcv:-未知}）—— 投递须改名"; FAIL=1
   fi
 done
 [ "$FAIL" -eq 0 ] && echo "  ✓ 无同名件"
