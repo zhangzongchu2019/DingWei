@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.7 · 依据 SpecDoc v3.11 14861da</title>
+<title>DingWei 平台原型 v1.8 · 依据 SpecDoc v3.12 2ef0762</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -122,7 +122,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
 <div id="top">
   <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v0.1</span></h1>
-  <span class="anchor">依据 SpecDoc <b>v3.11</b> 14861da · 2985 行 · sha256 26844cbf…</span>
+  <span class="anchor">依据 SpecDoc <b>v3.12</b> 2ef0762 · 3005 行 · sha256 fa7c7251…</span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -144,6 +144,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <a href="#a6">交付物链路 <span class="mono">新增</span></a>
   <a href="#s3">知识库 <span class="mono">§25.2</span></a>
   <a href="#b1">分级对齐 <span class="mono">业主定 · 新</span></a>
+  <a href="#b2">周工作进展汇报 <span class="mono">§20.1 · 新</span></a>
   <div class="grp">资产与执行</div>
   <a href="#s5">skill / MCP 库 <span class="mono">§15·16</span></a>
   <a href="#s6">Agent 管理 <span class="mono">§26</span></a>
@@ -175,13 +176,15 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>队列 <span class="ref">§25.1</span> <span style="font-weight:400;color:var(--dim);font-size:12px">按等待时长降序 · 逾期标红</span></h3>
   <div class="chips" id="qchips">
-    <div class="chip on" data-f="all">全部 8</div>
+    <div class="chip on" data-f="all">全部 13</div>
     <div class="chip" data-f="auth">授权待批 2</div>
     <div class="chip" data-f="block">当前阻塞 2</div>
     <div class="chip" data-f="noise">无效讨论 1</div>
     <div class="chip" data-f="gate">门 FAIL 待整改 1</div>
     <div class="chip" data-f="retro">复盘待定稿 1</div>
     <div class="chip" data-f="batch">平台域批次待签 1</div>
+    <div class="chip" data-f="spec-fix">spec 待完善 3</div>
+    <div class="chip" data-f="spec-claim">spec 待认领 2</div>
   </div>
   <table id="qtab"><thead><tr>
     <th style="width:112px">类型</th><th>事项</th><th style="width:130px">发起方</th>
@@ -197,11 +200,18 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
     <div class="mono">spec 预授权：<span style="color:var(--ok)">有</span> · 范围=慢查询日志 · 用途=索引服务优化 · 时限=至上线</div></td>
     <td data-edit>zzc-prodops-2642</td><td>图搜 3.0</td><td class="over">1 天 22:40</td><td class="d-mid">中</td>
     <td><button>批准</button> <button>驳回</button></td></tr>
-  <tr data-t="block"><td><span class="tag t-block">当前阻塞</span></td>
-    <td data-edit><b>node N-1187 阻塞</b> · <code>blocker_reason=awaiting_input</code>
-    <div class="mono">SLA 已过 26 小时 · 等业主确认存储选型（PG+RLS / 每租户独立库 / 受控仓储 API）</div></td>
-    <td data-edit>mcsd 引擎</td><td>dingwei</td><td class="over">1 天 02:14</td><td class="d-mid">中</td>
-    <td><button>去裁定</button> <button>改派</button></td></tr>
+  <tr data-t="spec-fix"><td><span class="tag t-block">spec 待完善</span></td>
+    <td data-edit><b>S4 skill / MCP 体系 v0.1</b> · 硬门 3 项不过（§4.6.2）
+    <div class="mono">缺「预计数据」面（§4.7.1 ③）· 预授权含禁用词「可能」「相关」· 3 条硬性约束无探测登记</div>
+    <div class="note" style="margin:6px 0 0;padding:6px 9px">📌 <b>缺项原因是结构化的，不是「不合格」三个字</b> —— 回炉方照着改即可（§4.7.3 #1）</div></td>
+    <td data-edit>zzc-devo48-2642</td><td>dingwei</td><td class="over">2 天 06:30</td><td class="d-low">低</td>
+    <td><button>看缺项</button> <button>回炉</button></td></tr>
+  <tr data-t="spec-claim"><td><span class="tag t-auth">spec 待认领</span></td>
+    <td data-edit><b>图搜 3.0 索引服务 spec v3.2</b> · 已过人审，待认领开发
+    <div class="mono">§4.7.3 #2：进本池的前提是<b>已过人审</b>，不是「机器项全过」</div>
+    <div class="note warn" style="margin:6px 0 0;padding:6px 9px">⚠️ <b>认领后正文不得再改</b>；要改须退回待完善池重走评审 —— 否则「认领的是 A、做的是 B」</div></td>
+    <td data-edit>门方已放行</td><td>图搜 3.0</td><td>08:15</td><td class="d-low">低</td>
+    <td><button>认领</button> <button>看 spec</button></td></tr>
   <tr data-t="auth"><td><span class="tag t-auth">授权待批</span></td>
     <td data-edit><b>跨租户 capability 申请</b>：图搜 3.0 → WSXC 导出对象清单
     <div class="mono">policy 六项缺 2：<span style="color:var(--bad)">用途未填 · 目标资源范围写作「整租户」</span></div>
@@ -310,7 +320,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <table><thead><tr><th>spec</th><th style="width:64px">版本</th><th style="width:110px">评审状态</th>
   <th>预授权条目（范围 · 用途 · 时限）</th><th style="width:120px">生命周期</th></tr></thead><tbody>
   <tr><td data-edit><b>dingwei-platform-specdoc</b><div class="mono">父 spec · 子：S0–S8</div></td><td>v2.8</td>
-    <td class="cell-ok">✓ PASS<div class="mono">三域 PASS 锚 040e904<br>现锚 14861da（PASS 后含业主裁定）</div></td>
+    <td class="cell-ok">✓ PASS<div class="mono">三域 PASS 锚 040e904<br>+ 安全域快核 PASS（SA-10 闭合）<br>现锚 2ef0762</div></td>
     <td class="lock">无预授权条目</td><td class="cell-ok">生效</td></tr>
   <tr><td data-edit><b>S1 身份与租户地基</b><div class="mono">L3 · 安全面=是</div></td><td>v0.1</td>
     <td class="cell-wait">草案 · 未评审</td>
@@ -333,11 +343,11 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>架构设计文档 <span class="ref">§25.3c</span> <span style="font-weight:400;color:var(--dim);font-size:12px">须显示评审等级与已过的门</span></h3>
   <table><thead><tr><th>文档</th><th style="width:60px">等级</th><th>已过的门</th><th style="width:170px">可否作为施工依据</th></tr></thead><tbody>
-  <tr><td data-edit><b>SpecDoc v3.11</b></td><td class="d-high">L3</td>
+  <tr><td data-edit><b>SpecDoc v3.12</b></td><td class="d-high">L3</td>
     <td><span class="cell-ok">✓架构评审</span> <span class="cell-ok">✓用例评审</span> <span class="cell-ok">✓交付验证</span></td>
     <td class="cell-wait">⚠ 生效前置未闭 2 项<div class="mono">Spec Kit 工程结构 · checklist</div></td></tr>
-  <tr><td data-edit><b>S7a 存储基座设计</b></td><td class="d-high">L3</td>
-    <td><span class="cell-wait">待架构评审</span></td><td class="cell-fail">✗ 否</td></tr>
+  <tr><td data-edit><b>SP7a 存储基座设计</b><div class="mono">形态已定：<b>受控仓储 API</b>（C.3 业主裁）</div></td><td class="d-high">L3</td>
+    <td><span class="cell-wait">待架构评审</span></td><td class="cell-fail">✗ 否<div class="mono">形态定了，设计未评审 —— 两回事</div></td></tr>
   <tr><td data-edit><b>帖子流载体设计</b></td><td class="d-mid">L2</td>
     <td><span class="cell-ok">✓文档评审</span></td><td class="cell-ok">✓ 可</td></tr>
   </tbody></table>
@@ -1222,7 +1232,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 <!-- ============ A5 spec 准入检查 ============ -->
 <section class="scr" id="a5">
 <h2 data-edit>spec 准入检查</h2>
-<div class="sub" data-edit>机器判结构，人判实质。<b style="color:var(--warn)">SpecDoc 全文未定义此机制，见屏底</b></div>
+<div class="sub" data-edit>机器判结构，人判实质。<b style="color:var(--ok)">已落 SpecDoc §4.6（准入检查）· §4.7（内容构成与需求池）</b></div>
 
 <div class="note bad" data-edit>🔴 <b>本席不做「评级 / 评分卡」，理由来自规范自己。</b>
 §5.1 写着：<b>「宁可粗（三档枚举），不可细（十档打分）。打分制一定退化成主观。」</b>
@@ -1232,7 +1242,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>① 硬门 · 不满足即拒收，不进人审队列 <span class="ref">拟 §4.6</span></h3>
+  <h3>① 硬门 · 不满足即拒收，进【待完善池】 <span class="ref">§4.6.2</span></h3>
   <table><thead><tr><th style="width:32px"></th><th>检查项</th><th style="width:130px">机器判据</th><th style="width:96px">S4 spec 实测</th></tr></thead><tbody>
   <tr><td class="cell-ok">✓</td><td data-edit>属性头块七项齐全，取值在枚举内</td><td class="mono">字段存在性 + 枚举匹配</td><td class="cell-ok">通过</td></tr>
   <tr><td class="cell-ok">✓</td><td data-edit>分级结果可复算：<code>rule_ids</code> ＋ 规则表 version 齐</td><td class="mono">§5.4 规则 4</td><td class="cell-ok">通过</td></tr>
@@ -1242,10 +1252,13 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <tr><td class="cell-ok">✓</td><td data-edit>父 / 子 spec 引用可解析</td><td class="mono">§4.4</td><td class="cell-ok">通过</td></tr>
   <tr><td class="cell-ok">✓</td><td data-edit>交付物锚格式合规（commit 40hex / sha256 64hex）</td><td class="mono">正则</td><td class="cell-ok">通过</td></tr>
   <tr><td class="cell-wait">—</td><td data-edit><code>/speckit.analyze</code> 跨制品一致性零冲突</td><td class="mono">§4.1</td><td class="cell-wait">未跑</td></tr>
+  <tr><td class="cell-fail">✗</td><td data-edit><b>§4.7.1 五个必备面齐全</b>：系统对接 / 运行约束 / 预计数据 / 环境要求 / 设计约束
+    <div class="mono">可写「本 spec 无外部对接」，<b>但不得留空</b> —— 否则「漏写」与「确实没有」机器侧分不出</div></td>
+    <td class="mono">E.1 #140</td><td class="cell-fail"><b>拒收</b><div class="mono">缺「预计数据」面</div></td></tr>
   <tr><td class="cell-fail">✗</td><td data-edit><b>每条硬性约束有对应探测手段登记</b>（§29 四类之一）</td>
     <td class="mono">附录 E 同构</td><td class="cell-fail"><b>拒收</b><div class="mono">3 条无登记</div></td></tr>
   </tbody></table>
-  <div class="chk stop" style="margin-top:10px">🔴 <b>S4 spec 当前判定：拒收（2 项硬门不过）。不进人审队列。</b></div>
+  <div class="chk stop" style="margin-top:10px">🔴 <b>S4 spec 当前判定：拒收（3 项硬门不过）⇒ 落入【待完善池】，带结构化缺项原因。</b></div>
   <div class="note" data-edit>📌 <b>为什么要有一票否决</b>：§6.1 已定「交付物合格约八成可自动判，<b>门方只判剩下两成</b>」——
   门方是<b>瓶颈资源</b>。让门方去审一份属性头块都没填全、预授权写着「可能需要读取相关数据」的 spec，
   是<b>把瓶颈资源花在机器能挡的事上</b>。<br>
@@ -1322,6 +1335,88 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   拟回写 <b>§4.6 spec 准入检查</b>：硬门项集合（pass/fail，不加权，不产出总分）· 参考项与其用途 ·
   人审深度与门方人选的映射 · 非语义修订通道的六条机器判据 · <b>并写明为何不设总分</b>（§5.1 + §5.2 第 1 条）。</div>
 </div>
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>spec 内容构成 · 五个必备面 <span class="ref">§4.7.1</span></h3>
+  <table><thead><tr><th style="width:96px">面</th><th>写什么</th><th style="width:150px"><b>不</b>写什么</th>
+  <th style="width:96px">S4 spec</th></tr></thead><tbody>
+  <tr><td data-edit><b>① 系统对接</b></td><td data-edit>外部契约：接口 · 数据格式 · 依赖方与被依赖方 · 兼容性承诺</td>
+    <td class="mono">内部模块间调用</td><td class="cell-ok">已写</td></tr>
+  <tr><td data-edit><b>② 运行约束</b></td><td data-edit>并发量 · 数据量 · 时限 · SLO · <b>降级与超时行为</b></td>
+    <td class="mono">「高性能」「响应快」等不可验表述</td><td class="cell-ok">已写</td></tr>
+  <tr><td data-edit><b>③ 预计数据</b></td><td data-edit>预计用户规模 · 工作时段 · 并发量约定（见下方面板）</td>
+    <td class="mono">—</td><td class="cell-fail"><b>缺</b></td></tr>
+  <tr><td data-edit><b>④ 环境要求</b></td><td data-edit>依赖的外部系统与版本 · 必需的隔离域 · 所需凭据级别</td>
+    <td class="mono">部署步骤、安装手册</td><td class="cell-ok">已写</td></tr>
+  <tr><td data-edit><b>⑤ 设计约束</b></td><td data-edit>限定解空间的<b>决策</b>：不引入 X / 必须复用 Y / 不得新增某类路径</td>
+    <td class="mono">类图 · 表结构 · 时序 · 算法（属 §25.3 架构设计文档）</td><td class="cell-ok">已写</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 <b>两条判据是这张表的骨</b>：<br>
+  <b>④ 环境要求</b> —— 「变了就得重审 spec 的」进 spec，「怎么装」进部署文档。<br>
+  <b>⑤ 设计约束</b> —— 「这东西变了，要不要重新评审 spec？」<b>要 ⇒ 是约束；不要 ⇒ 是设计。</b></div>
+  <div class="note warn" data-edit>⚠️ 五面一旦写入，即落在 <b>§4.6.5 受保护行</b>内 ——
+  改动它们属<b>语义修订</b>，走完整评审，<b>不走免审通道</b>。这是收益，也是成本。</div>
+  <div class="note bad" data-edit>🔴 <b>④ 的连带</b>：环境要求中若含<b>跨边界访问</b>，它已经是 §23.2 的<b>预授权</b>，
+  须按预授权格式写（范围 / 用途 / 时限三字段非空、无禁用词），<b>不得混在「环境要求」里含糊带过</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>预计数据 · 值 ＋ 依据 ＋ 复核点 <span class="ref">§4.7.2</span> <span style="font-weight:400;color:var(--dim);font-size:12px">业主定写进来，本席补了后两列</span></h3>
+  <table><thead><tr><th style="width:110px">项</th><th style="width:120px">预计值</th><th>依据</th>
+  <th style="width:150px">复核点</th><th style="width:88px">实测</th></tr></thead><tbody>
+  <tr><td data-edit>预计用户规模</td><td data-edit><b>120 人</b></td>
+    <td data-edit>业务方给定（研发中心在编）</td><td class="mono">上线后 4 周</td><td class="cell-wait">未到</td></tr>
+  <tr><td data-edit>工作时段</td><td data-edit><b>09:00–21:00 工作日</b></td>
+    <td data-edit>历史数据外推（近 12 周帖子流时间分布）</td><td class="mono">每季度</td><td class="cell-ok">吻合</td></tr>
+  <tr><td data-edit>并发量约定</td><td data-edit><b>峰值 30 会话</b></td>
+    <td data-edit><b class="cell-fail">无依据，暂定</b></td><td class="mono">达到 15 会话时</td>
+    <td class="cell-fail">实测 68<div class="mono">超 2 倍 ⇒ 已触发 spec 复核</div></td></tr>
+  </tbody></table>
+  <div class="note bad" data-edit>🔴 <b>为什么必须带「依据」与「复核点」</b>（本席补，非业主原话）：
+  预计数据是<b>估计值，不是测量值</b>。只写数字不写来源，它会<b>以约束的身份固化下来</b>，
+  而后续所有设计按它做 —— <b>一个拍脑袋的数字就获得了与实测同等的效力</b>，且没人知道它当初怎么来的。
+  <div style="margin-top:6px">⚠️ 标「<b>无依据，暂定</b>」<b>不是缺陷，隐瞒才是</b>：允许拍脑袋起步，不允许让人以为它是实测的。</div></div>
+  <div class="note warn" data-edit>⚠️ 上表第三行就是这条规则起作用的样子：实测 68 对预计 30，
+  超 <b>2 倍</b>阈值（附录 A）⇒ <b>自动触发 spec 复核</b>，不得默默按老数字继续做。</div>
+  <div class="note" data-edit>📌 <b>「工作时段」不只是容量参数</b> —— 它同时是<b>发版窗口与降级策略</b>的输入（§8）。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>需求池与流转 <span class="ref">§4.7.3</span> <span style="font-weight:400;color:var(--dim);font-size:12px">业主定</span></h3>
+  <div class="note" data-edit><b>spec 不是「过了或没过」两态。</b>§4.6.2 原写「不满足即拒收」——
+  <b>「拒收」之后去哪里，此前没有定义</b>。现在有池。</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0">
+    <div class="card" style="flex:1;min-width:260px"><b>待完善池</b> <span class="tag t-block">3</span>
+      <table style="margin-top:8px"><tbody>
+      <tr><td data-edit>S4 skill / MCP 体系 v0.1</td><td class="cell-fail">硬门 ✗</td>
+        <td class="mono">缺「预计数据」面 · 预授权含禁用词 · 3 条约束无探测登记</td></tr>
+      <tr><td data-edit>渠道直连 Agent v0.2</td><td class="cell-fail">人审 ✗</td>
+        <td class="mono">门方意见：可信渠道判据不可复现</td></tr>
+      <tr><td data-edit>知识库导入器 v0.1</td><td class="cell-wait" title="连续 3 次复核无进展">stale</td>
+        <td class="mono">已停留 7 周 · 第 3 次复核无进展</td></tr>
+      </tbody></table></div>
+    <div class="card" style="flex:1;min-width:260px"><b>待认领开发任务池</b> <span class="tag t-auth">2</span>
+      <table style="margin-top:8px"><tbody>
+      <tr><td data-edit>图搜 3.0 索引服务 spec v3.2</td><td class="cell-ok">已过人审</td>
+        <td><button>认领</button></td></tr>
+      <tr><td data-edit>周报三视图 spec v0.3</td><td class="cell-ok">已过人审</td>
+        <td><button>认领</button></td></tr>
+      </tbody></table></div>
+  </div>
+  <table><thead><tr><th style="width:32px">#</th><th>规定</th></tr></thead><tbody>
+  <tr><td>1</td><td data-edit>🔴 <b>待完善池条目须带【结构化缺项原因】</b>：硬门第几条不过 / 人审的具体意见。
+    <div class="mono">只写「不合格」等于没写 —— <b>回炉方无从下手，只能猜</b></div></td></tr>
+  <tr><td>2</td><td data-edit>🔴 <b>进待认领池的前提是【已过人审】</b>，不是「机器项全过」（§4.6.4）</td></tr>
+  <tr><td>3</td><td data-edit>🔴 <b>认领后 spec 正文不得再改。</b>要改 ⇒ 退回待完善池并重走评审
+    <div class="mono">否则「认领的是 A、实际做的是 B」，而 <code>node.acceptance</code> 是按 A 生成的</div></td></tr>
+  <tr><td>4</td><td data-edit><b>待完善池须有复核节奏</b>：每 2 周一次，连续 3 次无进展 ⇒ 标 <code>stale</code> 并通知提出方（附录 A）
+    <div class="mono">否则它会变成坟场：条目只进不出，久了没人记得为什么在里面</div></td></tr>
+  <tr><td>5</td><td data-edit><b>两个池都是 §25.1「单一 typed 待决队列」的 type，不另开页面</b></td></tr>
+  </tbody></table>
+</div>
+
 </section>
 
 <!-- ============ A6 交付物链路 ============ -->
@@ -2140,6 +2235,87 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 </div>
 </section>
 
+<!-- ============ b2 周工作进展汇报 ============ -->
+<section class="scr" id="b2">
+<h2 data-edit>周工作进展汇报</h2>
+<div class="sub" data-edit>事实层按<b>任务</b>，报表层按<b>主体</b>聚合。§20.1（v3.9 业主裁定粒度）</div>
+
+<div class="note bad" data-edit>🔴 <b>业主定的既不是甲也不是乙。</b>
+原来那两个选项都是在「项目表 vs 租户表」里二选一 —— 业主给的是
+<b>以【项目中的任务】为基础颗粒，向上聚合出三个主体视图：租户 / 项目 / 人</b>。
+<div style="margin-top:6px" class="mono">⛔ <b>不要改成 <code>(tenant, week)</code> 主键</b>（原乙案）：那样「人」视图仍然出不来，
+<b>换主键只是把缺的那一维换了个位置</b>。</div></div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>事实层 · 任务级记录 <span class="ref">§20.1</span> <span style="font-weight:400;color:var(--dim);font-size:12px">唯一事实来源，不重复存三份</span></h3>
+  <table><thead><tr><th>任务 / node</th><th style="width:90px">tenant</th><th style="width:96px">project</th>
+  <th style="width:104px">assignee</th><th style="width:70px">week</th><th style="width:150px">内容</th></tr></thead><tbody>
+  <tr><td data-edit>N-1204 · tenant 派生链</td><td>图搜 3.0</td><td>3.0-poc 索引服务</td><td>zzc-devo48-2642</td><td class="mono">W34</td>
+    <td class="mono">digest · 门记录 · blocker</td></tr>
+  <tr><td data-edit>N-1187 · 存储基座选型落地</td><td>dingwei</td><td>平台</td><td>zzc-prodops-2642</td><td class="mono">W34</td>
+    <td class="mono">收口产物 · 触门裁定</td></tr>
+  <tr><td data-edit>N-1163 · 受控仓储 API 收编 fanout</td><td>dingwei</td><td>平台</td><td>zzc-devo48-2642</td><td class="mono">W34</td>
+    <td class="mono">门 FAIL + 整改</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 四个维度 <code>(tenant, project, assignee, week)</code> 都在事实层带着 ——
+  三个视图<b>都是它的聚合</b>，不是三张各存一份的表。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>报表层 · 三视图 <span class="ref">§20.1</span></h3>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <div class="card" style="flex:1;min-width:210px"><b>项目视图</b>
+      <div class="mono" style="margin-top:6px">3.0-poc 索引服务 · W34</div>
+      <div style="margin-top:6px">进展 6 · 阻塞 1 · 需支援 0 · 分歧 2</div>
+      <div class="mono" style="margin-top:6px;color:var(--dim)">原 <code>project_weekly_report</code> 的位置<br>现降为<b>物化视图</b>，不再是事实层</div></div>
+    <div class="card" style="flex:1;min-width:210px"><b>租户视图</b>
+      <div class="mono" style="margin-top:6px">图搜 3.0 · W34</div>
+      <div style="margin-top:6px">全部项目聚合 · 建议升级 1</div>
+      <div class="mono" style="margin-top:6px">归处：<b>入 D2 租户级知识库</b>，绑交付物锚（sha256 ＋ 周次）</div></div>
+    <div class="card" style="flex:1;min-width:210px"><b>人视图</b> <span class="tag t-auth">新增</span>
+      <div class="mono" style="margin-top:6px">zzc-devo48-2642 · 图搜 3.0 · W34</div>
+      <div style="margin-top:6px">任务 4 · 门 PASS 3 · FAIL 1</div>
+      <div class="note warn" style="margin:6px 0 0;padding:6px 9px">⚠️ 按 <b>(人 × 租户)</b> 出，<b>不跨租户合并正文</b></div></div>
+  </div>
+  <div class="note" data-edit>📌 <b>「上周说要做的」与「本周实际做的」可逐周对账</b> ——
+  这正是 §9.2 复盘第 4 段「本阶段的判断失误」的<b>周级素材</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 跨租户个人总览 · 须按 §22.1c 办理 <span class="ref">SA-10 · 乙域 terra 阻断项</span></h3>
+  <div class="note bad" data-edit>🔴 <b>限制字段 ≠ 解决授权。</b>
+  本席上一版只钉了「只出计数与状态、不出内容」，就当这条读取安全了 ——
+  <b>那是把「减少泄漏内容」当成了「授权已解决」</b>。
+  <div style="margin-top:6px">计数与状态<b>本身就是跨租户信息</b>：某人在目标租户
+  <b>有没有参与、参与多少、进展如何</b>，这三件事<b>不需要正文就能读出来</b>。
+  ⇒ 它是一次<b>跨租户数据访问</b>，一律按 §22.1c 办理，无例外。</div></div>
+  <table><thead><tr><th style="width:32px">#</th><th>该 capability 的绑定要求（§22.1c 六项之上的本场景收窄）</th>
+  <th style="width:150px">本次申请</th></tr></thead><tbody>
+  <tr><td>1</td><td data-edit><b>resource selector</b>：被查看 person · <b>明确列举的目标 tenant 集</b>（不得写「其所在全部租户」）· 时间窗 · <b>仅 count / status 字段集</b></td>
+    <td class="cell-ok">已绑<div class="mono">person=devo48<br>tenants=[图搜 3.0, WSXC]<br>window=W34</div></td></tr>
+  <tr><td>2</td><td data-edit>🔴 <b>typed capability 专用</b> <code>cross_tenant_person_rollup</code>，<b>不得复用通用 <code>read</code> / <code>export</code></b>
+    <div class="mono">通用动词覆盖整个目标租户 —— 正是 §22.1c 当初收窄掉的写法</div></td>
+    <td class="cell-ok">专用</td></tr>
+  <tr><td>3</td><td data-edit><b>每次使用逐次落账</b>：源 principal · 被查看 person · 目标 tenant 集 · 时间窗 · 用途 · 时刻</td>
+    <td class="cell-ok">已落</td></tr>
+  <tr><td>4</td><td data-edit>🔴 <b>请求 principal 与被查看对象的关系须明确</b>：<b>本人</b>，或<b>经审批指定的主体</b>
+    <div class="mono">二者之外一律拒 —— 否则「个人总览」会变成<b>任何人查任何人</b>的通道</div></td>
+    <td class="cell-ok">其管理者<div class="mono">经审批指定</div></td></tr>
+  <tr><td>5</td><td data-edit>🔴 <b><code>status</code> 须封闭粗粒度枚举</b>，禁携带可反推项目 / node 的标签
+    <div class="mono">否则「只出状态」形同虚设 —— 一个带项目名的状态值，<b>泄漏的信息比一段正文还多</b></div></td>
+    <td class="cell-wait">枚举待定<div class="mono">E.4 #63 人审：<br>与时间窗、计数组合<br>能否反推到具体项目</div></td></tr>
+  <tr><td>6</td><td data-edit><b>有效期不得无限期</b>；policy 新增与延期走 §24，按 §24.2a 属<b>高危项</b></td>
+    <td class="cell-ok">至 W36</td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ <b>为什么不能靠全局规则隐含兜底</b>：§20.1 自己写着
+  「冲突须在此解掉、<b>不得留给实现</b>」—— 那句话本身就否定了隐含兜底，所以这六条必须钉在本节。</div>
+</div>
+</section>
+
+
 </div></div>
 
 <script>
@@ -2264,7 +2440,7 @@ document.getElementById('bExp').onclick=function(){
       内容:st.notes[k].replace(/<[^>]+>/g,'').trim()};
   });
   var out={原型:'dingwei-prototype-v0.1.html',
-    依据SpecDoc锚:'14861dae88920a5e6073a2aa1f5ac6948de2857d',
+    依据SpecDoc锚:'2ef07626575ca32ea06eef9cf61195b7bbbd525f',
     说明:'把本文件发回 opus50t，据此改 SpecDoc §25-§27。若改动与已裁定条款冲突，会指出条款号请业主裁定，不得两存。',
     屏:scr,改文:改文,批注:批注};
   var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
