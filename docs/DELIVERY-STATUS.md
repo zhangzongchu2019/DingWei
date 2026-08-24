@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `f904a9fd7872b2c47176e5300137255697b4c61e` · 分支 `design/addendum-decisions`
+生成自 commit `82501dfe01f8641137148178cb1d567f6e567594` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,11 +20,12 @@
 |---|---|---|---|---|
 | `dingwei-platform-specdoc-v2.0.md` | **v3.14** | `8173cb9ff8666c53f00bd88eadf01fe3fbf01474` | 3011 / 203223 | `934fda6f6b17fda04f2630835e9086fd8e201f535822365446537367aa736c71` |
 | `dingwei-prototype-v0.1.html` | **v1.13** | `a2bf3226e6b959786e98583c24daee1b50016eaa` | 2845 / 253250 | `cb32d24815851e5d536e6aa73029870073dd8fae6a7eb6f7621d5752b493a8cb` |
-| `dingwei-architecture-design-v0.1.md` | **v0.5** | `f904a9fd7872b2c47176e5300137255697b4c61e<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 531 / 35796 | `8be68cf3536348f36e98b734542e508557def799dac17583b96f232bc7ae83d0` |
+| `dingwei-architecture-design-v0.1.md` | **v0.6** | `82501dfe01f8641137148178cb1d567f6e567594<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 531 / 35796 | `9c9954281cde008d6274e0a91877622cc78679ffd36ea5da0e909d5f849bc6b3` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+82501df docs: 架构设计 v0.5——甲域复核 2 局部必改(修在此,前锚 f904a9f)
 f904a9f docs: 架构设计 v0.4——AD-SA-03 按方案 A 收(乙域 terra,修在此,前锚 8173cb9)
 8173cb9 docs: 架构设计 v0.3 + SpecDoc v3.14——丙域 F-1~F-5 全修(修在此,前锚 0df45c9)
 0df45c9 docs: 架构设计 v0.2——甲域 4 组 + 乙域 AD-SA-01/02 全修(修在此,前锚 f6458ea)
@@ -32,5 +33,4 @@ f904a9f docs: 架构设计 v0.4——AD-SA-03 按方案 A 收(乙域 terra,修�
 c4aa572 fix: delivery-check 同名判据改为按「仓内名有没有烂」(修在此,前锚 afaadda)
 afaadda fix: delivery-check 误判状态文件同名(修在此,前锚 a2bf322)
 a2bf322 proto: 原型 v1.13——丙域 4 条非阻断观察全处理,不挂账(修在此,前锚 a1593c0)
-a1593c0 chore: 状态文件自述「副本可能过期」及其自检法(修在此,前锚 59e9768)
 ```

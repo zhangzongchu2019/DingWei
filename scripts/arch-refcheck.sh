@@ -10,6 +10,12 @@
 set -eu
 A=${1:-docs/dingwei-architecture-design-v0.1.md}
 S=${2:-docs/dingwei-platform-specdoc-v2.0.md}
+if [ "${1:-}" = "--selftest" ]; then
+  A=docs/dingwei-architecture-design-v0.1.md; S=docs/dingwei-platform-specdoc-v2.0.md
+  # selftest 定义在文件末尾，先读完再调用
+  eval "$(sed -n '/^selftest() {/,/^}/p' "$0")"
+  selftest "$A" "$S"; exit $?
+fi
 python3 - "$A" "$S" <<'PY'
 import re,sys
 a=open(sys.argv[1],encoding='utf-8').read(); sp=open(sys.argv[2],encoding='utf-8').read()
@@ -35,7 +41,27 @@ spec_bad=sorted({r for r in spec_refs if r not in sp_set})
 print(f"本件内引用 A§ : {len(own_refs)} 次 / {len(set(own_refs))} 目标 · 悬空 {len(own_bad)}{'：'+','.join(own_bad) if own_bad else ''}")
 print(f"SpecDoc 引用 § : {len(spec_refs)} 次 / {len(set(spec_refs))} 目标 · 悬空 {len(spec_bad)}{'：'+','.join(spec_bad) if spec_bad else ''}")
 print(f"heading 真实重复：本件 {len(a_dup)}{'：'+','.join(a_dup) if a_dup else ''} · SpecDoc {len(sp_dup)}{'：'+','.join(sp_dup) if sp_dup else ''}")
-bad = own_bad or spec_bad or a_dup
+# ⚠️ sp_dup 必须在内(甲域最终复核):上一版算了它、打印了它,却没接进失败条件 ——
+# 输出显示「SpecDoc 1:1」而同一行下面写「引用核验通过」、退出码 0。
+# 这是「检测到了但没接进失败条件」,与「定义了没装上」同族,差在【打印了结果却放行】,更难察觉。
+bad = own_bad or spec_bad or a_dup or sp_dup
 print("--- " + ("引用核验通过" if not bad else "引用核验未过"))
 sys.exit(1 if bad else 0)
 PY
+
+# ---- 反测（--selftest）：四个变异必须全部被拦，且退出码为 1 ----
+# 第 4 个（SpecDoc heading 重复）是甲域最终复核抓出的漏项：
+# 上一版算了、打印了，却没接进失败条件 —— 而本席原来的三个反测【没有一个测 SpecDoc 侧】，
+# 漏洞正好落在反测的盲区里。⇒ 反测不覆盖的地方，就是闸的实际边界。
+selftest() {
+  A=$1; S=$2; T=$(mktemp -d); fail=0
+  run() { # name, arch, spec
+    scripts/arch-refcheck.sh "$2" "$3" >/dev/null 2>&1 && { echo "  ✗ 反测未被拦：$1"; fail=1; } || echo "  ✓ 拦住：$1"; }
+  cp "$A" "$T/a.md"; printf '\n见 §99.9\n' >> "$T/a.md"; run "SpecDoc 悬空 §99.9" "$T/a.md" "$S"
+  cp "$A" "$T/b.md"; printf '\n见 A§77.7\n' >> "$T/b.md"; run "本件悬空 A§77.7" "$T/b.md" "$S"
+  cp "$A" "$T/c.md"; printf '\n## A§6 重复章节号\n\n正文\n' >> "$T/c.md"; run "本件 heading 重复" "$T/c.md" "$S"
+  cp "$S" "$T/s.md"; printf '\n## §1 总纲（重复）\n\n正文\n' >> "$T/s.md"; run "SpecDoc heading 重复" "$A" "$T/s.md"
+  rm -rf "$T"
+  [ $fail -eq 0 ] && echo "--- 反测四项全过（闸有牙）" || echo "--- 反测未过"
+  return $fail
+}

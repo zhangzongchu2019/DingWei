@@ -68,6 +68,8 @@ fi
 # ⑥ 架构设计的引用核验（来源类型化解析）
 if [ -x scripts/arch-refcheck.sh ] && [ -f docs/dingwei-architecture-design-v0.1.md ]; then
   scripts/arch-refcheck.sh >/dev/null 2>&1 || { scripts/arch-refcheck.sh; echo "✗ 架构引用核验未过"; exit 1; }
-  echo "  ⑥ 架构引用核验 ✓"
+  # 闸自己也要过反测 —— 否则「核验通过」可能只是它测不出来（甲域最终复核抓出的那种）
+  scripts/arch-refcheck.sh --selftest >/dev/null 2>&1 || { scripts/arch-refcheck.sh --selftest; echo "✗ 架构引用核验的反测未过"; exit 1; }
+  echo "  ⑥ 架构引用核验 ✓（含四项反测）"
 fi
 echo "✓ 三道门全过"
