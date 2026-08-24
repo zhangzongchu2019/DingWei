@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DingWei 平台原型 v0.1 · 依据 SpecDoc cb97d0d</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
+--acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--tx)}
+#top{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;padding:10px 16px;
+background:#11141a;border-bottom:1px solid var(--line)}
+#top h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.3px}
+#top .anchor{font:11px ui-monospace,monospace;color:var(--dim)}
+#top .sp{flex:1}
+button,select{background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:6px;
+padding:6px 11px;font-size:13px;cursor:pointer;font-family:inherit}
+button:hover{border-color:var(--acc)}
+button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+#wrap{display:flex;min-height:calc(100vh - 49px)}
+#nav{width:212px;flex:none;border-right:1px solid var(--line);background:#131620;padding:10px 0}
+#nav a{display:block;padding:8px 16px;color:var(--dim);text-decoration:none;font-size:13px;border-left:2px solid transparent}
+#nav a:hover{color:var(--tx);background:#171b25}
+#nav a.on{color:var(--tx);background:#1a1f2b;border-left-color:var(--acc)}
+#nav .grp{padding:12px 16px 4px;font-size:11px;color:#5a6377;letter-spacing:1px}
+#main{flex:1;padding:20px 24px 80px;max-width:1180px}
+.scr{display:none}.scr.on{display:block}
+h2{font-size:20px;margin:0 0 4px}
+.sub{color:var(--dim);font-size:12.5px;margin-bottom:18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:16px;position:relative}
+.panel>h3{margin:0 0 10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel>h3 .ref{font:11px ui-monospace,monospace;color:var(--acc);background:#1b2436;padding:1px 6px;border-radius:4px}
+.ctl{position:absolute;top:10px;right:10px;display:none;gap:4px}
+body.edit .ctl{display:flex}
+.ctl button{padding:2px 7px;font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--dim);font-weight:500;font-size:11.5px;text-transform:uppercase;
+letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid #21262f;vertical-align:top}
+tr:hover td{background:#1b1f28}
+.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;border:1px solid}
+.t-auth{color:#ffb020;border-color:#5a4415;background:#2a2110}
+.t-block{color:#ff5c5c;border-color:#5a2020;background:#2a1414}
+.t-noise{color:#8b93a5;border-color:#3a4050;background:#1e222b}
+.t-gate{color:#c678dd;border-color:#4a2f56;background:#241a2a}
+.t-retro{color:#3ecf8e;border-color:#1d4a36;background:#12241c}
+.t-batch{color:#4c8dff;border-color:#22406e;background:#141d2e}
+.d-low{color:var(--ok)}.d-mid{color:var(--warn)}.d-high{color:var(--bad);font-weight:600}
+.over{color:var(--bad);font-weight:600}
+.s0,.s1,.s2{font:11px ui-monospace,monospace;padding:1px 5px;border-radius:3px}
+.s0{color:#fff;background:#7a1f1f}.s1{color:#2b1d00;background:var(--warn)}.s2{color:#062b1c;background:var(--ok)}
+.badge{font-size:10.5px;padding:1px 6px;border-radius:3px;margin-left:4px}
+.b-mand{background:#22406e;color:#9dc0ff}.b-imm{background:#3a2145;color:#e0aef0}
+.note{background:#1b2436;border-left:3px solid var(--acc);padding:9px 12px;border-radius:0 6px 6px 0;
+font-size:12.5px;color:#b8c4da;margin:10px 0}
+.note.warn{background:#2a2110;border-left-color:var(--warn);color:#e8d3a8}
+.note.bad{background:#2a1414;border-left-color:var(--bad);color:#f0bcbc}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:4px 10px;border:1px solid var(--line);border-radius:14px;font-size:12px;cursor:pointer;color:var(--dim)}
+.chip.on{border-color:var(--acc);color:var(--tx);background:#1b2436}
+.grid{display:grid;gap:12px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+.kv{display:grid;grid-template-columns:118px 1fr;gap:4px 10px;font-size:12.5px}
+.kv b{color:var(--dim);font-weight:500}
+.mono{font:11.5px ui-monospace,monospace;color:#93a0b8}
+.na{color:#4a5162;font-style:italic}
+.cell-ok{color:var(--ok)}.cell-wait{color:var(--warn)}.cell-fail{color:var(--bad)}
+.bar{height:6px;background:#21262f;border-radius:3px;overflow:hidden;margin:4px 0}
+.bar i{display:block;height:100%;background:var(--acc)}
+.bar.hot i{background:var(--warn)}.bar.crit i{background:var(--bad)}
+.lock{color:#5a6377}
+.sticky{background:#3a3410;border:1px solid #5a5018;border-radius:6px;padding:8px 10px;margin-top:10px;font-size:12.5px;color:#e8dca8}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.tabs div{padding:7px 14px;font-size:13px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent}
+.tabs div.on{color:var(--tx);border-bottom-color:var(--acc)}
+.tp{display:none}.tp.on{display:block}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}
+.im{background:#241a2a;border:1px dashed #4a2f56;border-radius:6px;padding:8px 10px;font-size:12.5px;color:#d5b4e2}
+.dis{opacity:.42;text-decoration:line-through}
+code{font:11.5px ui-monospace,monospace;background:#1e222b;padding:1px 5px;border-radius:3px;color:#9dc0ff}
+body.edit [data-edit]{outline:1px dashed #3a4458;outline-offset:2px;border-radius:2px}
+body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
+.hid{display:none!important}
+</style></head><body>
+
+<div id="top">
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v0.1</span></h1>
+  <span class="anchor">依据 SpecDoc cb97d0d · 1881 行</span>
+  <span class="sp"></span>
+  <select id="tenant"><option>租户：张宗楚（业主）</option><option>租户：图搜 3.0</option><option>视角：平台级 ops</option><option>视角：租户级 ops</option></select>
+  <button id="bEdit">✎ 编辑模式</button>
+  <button id="bNote">＋ 批注</button>
+  <button id="bExp">⤓ 导出改动</button>
+  <button id="bRst">↺ 重置</button>
+</div>
+
+<div id="wrap">
+<nav id="nav">
+  <div class="grp">决断面</div>
+  <a href="#s1" class="on">待决队列 <span class="mono">§25.1</span></a>
+  <a href="#s2">任务看板 <span class="mono">§5.7</span></a>
+  <a href="#s8">平台治理 <span class="mono">§24</span></a>
+  <div class="grp">依据面</div>
+  <a href="#s4">Spec 与设计文档 <span class="mono">§25.3</span></a>
+  <a href="#s3">知识库 <span class="mono">§25.2</span></a>
+  <div class="grp">资产与执行</div>
+  <a href="#s5">skill / MCP 库 <span class="mono">§15·16</span></a>
+  <a href="#s6">Agent 管理 <span class="mono">§26</span></a>
+  <a href="#s7">帖子流 <span class="mono">§18</span></a>
+  <div class="grp">接入</div>
+  <a href="#s9">渠道授权 <span class="mono">§23.5</span></a>
+  <a href="#s0">架构总览 <span class="mono">§3</span></a>
+</nav>
+<div id="main">
+
+<!-- ============ S1 待决队列 ============ -->
+<section class="scr on" id="s1">
+<h2 data-edit>待决队列</h2>
+<div class="sub" data-edit>所有「在等一个人做决断」的事，按等待时长排序。§25.1</div>
+
+<div class="note bad" data-edit>🔴 <b>此屏不得拆成多个页面。</b>SpecDoc §25.1 已裁定：授权、阻塞、无效讨论的共同点是「都在等一个人做决断」；
+做成 N 个入口就要巡 N 个地方才知道有没有事。<b>若原型要改成多页，须先改 §25.1，不得两存。</b></div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>队列 <span class="ref">§25.1</span> <span style="font-weight:400;color:var(--dim);font-size:12px">按等待时长降序 · 逾期标红</span></h3>
+  <div class="chips" id="qchips">
+    <div class="chip on" data-f="all">全部 8</div>
+    <div class="chip" data-f="auth">授权待批 2</div>
+    <div class="chip" data-f="block">当前阻塞 2</div>
+    <div class="chip" data-f="noise">无效讨论 1</div>
+    <div class="chip" data-f="gate">门 FAIL 待整改 1</div>
+    <div class="chip" data-f="retro">复盘待定稿 1</div>
+    <div class="chip" data-f="batch">平台域批次待签 1</div>
+  </div>
+  <table id="qtab"><thead><tr>
+    <th style="width:112px">类型</th><th>事项</th><th style="width:130px">发起方</th>
+    <th style="width:96px">租户·项目</th><th style="width:82px">等待</th><th style="width:70px">危险度</th><th style="width:150px">决断</th>
+  </tr></thead><tbody>
+  <tr data-t="batch"><td><span class="tag t-batch">平台域批次</span></td>
+    <td data-edit><b>批次 B-2026-0824-01</b>（3 项）<div class="mono">含：平台级 skill 晋升 ×2 · immutable 名单变更 ×1</div>
+    <div class="note bad" style="margin:6px 0 0;padding:6px 9px">含高危项 ⇒ <b>整批升重两签</b>（§24.2a）· 需两个独立 principal</div></td>
+    <td data-edit>平台级 ops</td><td>平台域</td><td class="over">3 天 04:11</td><td class="d-high">高</td>
+    <td><button>查 manifest</button> <button class="dis" title="需第二签">单签</button></td></tr>
+  <tr data-t="auth"><td><span class="tag t-auth">授权待批</span></td>
+    <td data-edit><b>平台 ops 读租户「图搜 3.0」的 DB 慢查询日志</b>
+    <div class="mono">spec 预授权：<span style="color:var(--ok)">有</span> · 范围=慢查询日志 · 用途=索引服务优化 · 时限=至上线</div></td>
+    <td data-edit>zzc-prodops-2642</td><td>图搜 3.0</td><td class="over">1 天 22:40</td><td class="d-mid">中</td>
+    <td><button>批准</button> <button>驳回</button></td></tr>
+  <tr data-t="block"><td><span class="tag t-block">当前阻塞</span></td>
+    <td data-edit><b>node N-1187 阻塞</b> · <code>blocker_reason=awaiting_input</code>
+    <div class="mono">SLA 已过 26 小时 · 等业主确认存储选型（PG+RLS / 每租户独立库 / 受控仓储 API）</div></td>
+    <td data-edit>mcsd 引擎</td><td>dingwei</td><td class="over">1 天 02:14</td><td class="d-mid">中</td>
+    <td><button>去裁定</button> <button>改派</button></td></tr>
+  <tr data-t="auth"><td><span class="tag t-auth">授权待批</span></td>
+    <td data-edit><b>跨租户 capability 申请</b>：图搜 3.0 → WSXC 导出对象清单
+    <div class="mono">policy 六项缺 2：<span style="color:var(--bad)">用途未填 · 目标资源范围写作「整租户」</span></div>
+    <div class="note warn" style="margin:6px 0 0;padding:6px 9px">§22.1c：资源范围不得为整租户，用途必填 ⇒ <b>当前不可批</b></div></td>
+    <td data-edit>租户级 ops（图搜）</td><td>图搜 3.0</td><td>18:52</td><td class="d-high">高</td>
+    <td><button>退回补齐</button></td></tr>
+  <tr data-t="gate"><td><span class="tag t-gate">门 FAIL</span></td>
+    <td data-edit><b>node N-1204 代码评审 FAIL</b> · 门方=安全角色（<code>安全面=是</code>）
+    <div class="mono">失败最小复现已附 · 待建 append_revision 修订 node</div></td>
+    <td data-edit>zzc-sec-review</td><td>dingwei</td><td>11:07</td><td class="d-high">高</td>
+    <td><button>建修订 node</button></td></tr>
+  <tr data-t="noise"><td><span class="tag t-noise">无效讨论</span></td>
+    <td data-edit><b>node N-1163 帖子流触门</b> · 帖数 <b>23</b> / 阈值 20
+    <div class="bar hot"><i style="width:57%"></i></div>
+    <div class="mono">已三段式封锁：停注入 · 禁新帖 · 受限只读</div>
+    <div class="note warn" style="margin:6px 0 0;padding:6px 9px">解封须产出：① 分歧点陈述 ② <b>同时向业主预警</b>（§18.4）· 且裁定须回写定义层</div></td>
+    <td data-edit>coordinator</td><td>dingwei</td><td>07:33</td><td class="d-mid">中</td>
+    <td><button>解封并裁定</button></td></tr>
+  <tr data-t="retro"><td><span class="tag t-retro">复盘待定稿</span></td>
+    <td data-edit><b>版本 v1.4 阶段复盘</b> · 四段完整度 3/4
+    <div class="mono"><span style="color:var(--ok)">✓事实</span> <span style="color:var(--ok)">✓可复用操作</span> <span style="color:var(--ok)">✓应固化能力</span> <span style="color:var(--bad)">✗本阶段的判断失误（空且未写明理由）</span></div>
+    <div class="note bad" style="margin:6px 0 0;padding:6px 9px">§9.2：任一段为空须写明理由 ⇒ <b>当前不得收口</b></div></td>
+    <td data-edit>执行席</td><td>dingwei</td><td>04:19</td><td class="d-low">低</td>
+    <td><button>退回补第 4 段</button></td></tr>
+  <tr data-t="block"><td><span class="tag t-block">当前阻塞</span></td>
+    <td data-edit><b>node N-1210</b> · <code>blocker_reason=starved</code> 无人可派
+    <div class="mono">所需角色：安全评审 · 当前执行席均已占满（≤2）</div></td>
+    <td data-edit>mcsd 引擎</td><td>WSXC</td><td>01:48</td><td class="d-low">低</td>
+    <td><button>扩席</button> <button>降级排期</button></td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>本屏承载的机制 <span class="ref">§25.1</span></h3>
+  <div class="grid g3">
+    <div class="card"><b data-edit>等待时长是关键字段</b><div class="sub" style="margin:6px 0 0" data-edit>按它排序，直接把「任务丢失、环节丢失、交付物丢失」变成显眼的逾期项。</div></div>
+    <div class="card"><b data-edit>高危执行面从此取授权</b><div class="sub" style="margin:6px 0 0" data-edit>所有高危执行面必须从本队列取授权凭据，不得自带审批。批准发生在队列侧，执行发生在执行面。</div></div>
+    <div class="card"><b data-edit>签数自动升级</b><div class="sub" style="margin:6px 0 0" data-edit>批次含任一高危项 ⇒ 整批升重两签（§24.2a）。不取多数、不取平均、不许拆批降签。</div></div>
+  </div>
+</div>
+</section>
+
+<!-- ============ S2 看板 ============ -->
+<section class="scr" id="s2">
+<h2 data-edit>任务看板</h2>
+<div class="sub" data-edit>环节数不固定 —— 这是分级有意义的前提。§5.7</div>
+<div class="note warn" data-edit>⚠️ <b>N/A ≠ 未完成。</b>低级别任务在某些格子是「本任务不需要这个环节」，不是「这个环节还没做」。两者必须视觉可分。</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>变长列看板 <span class="ref">§5.7 · §5.6</span></h3>
+  <table><thead><tr><th style="width:150px">任务</th><th style="width:52px">级别</th>
+  <th>文档执笔</th><th>文档评审</th><th>架构评审</th><th>开发设计</th><th>实现</th><th>代码评审</th><th>测试用例</th><th>用例评审</th><th>测试执行</th><th>交付验证</th><th>业主签署</th></tr></thead>
+  <tbody>
+  <tr><td data-edit><b>T-1204</b> 动 tenant 派生链<div class="mono">安全面=是 · 跨服务</div></td><td class="d-high">L3</td>
+    <td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td>
+    <td class="cell-fail">FAIL</td><td class="cell-wait">进行</td><td class="cell-wait">待</td><td class="cell-wait">待</td><td class="cell-wait">待</td><td class="cell-wait">待</td></tr>
+  <tr><td data-edit><b>T-1187</b> KB 加列<div class="mono">数据模型=加列 · 单模块</div></td><td class="d-mid">L2</td>
+    <td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="na">N/A</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td>
+    <td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-wait">进行</td><td class="na">N/A</td><td class="na">N/A</td></tr>
+  <tr><td data-edit><b>T-1210</b> 日志格式微调<div class="mono">全属性皆否</div></td><td class="d-low">L1</td>
+    <td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="na">N/A</td><td class="cell-ok">✓</td>
+    <td class="cell-wait">进行</td><td class="na">N/A</td><td class="na">N/A</td><td class="cell-wait">待</td><td class="na">N/A</td><td class="na">N/A</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>图例：<span class="cell-ok">✓ 已过</span> · <span class="cell-wait">进行/待</span> · <span class="cell-fail">FAIL</span> · <span class="na">N/A 本任务不需要此环节</span><br>
+  T-1204 的门数由属性并集得出（安全面=是 ⇒ 架构评审 + 代码评审且门方须安全角色；跨服务 ⇒ 架构评审），<b>级别 L3 只是标签，不参与计算</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>T-1204 的分级推演 <span class="ref">§5.2 · §5.3 · §5.6</span></h3>
+  <div class="grid g2">
+    <div class="card"><b>属性（三方分填）</b><table style="margin-top:8px"><tbody>
+      <tr><td>外部契约变更</td><td class="d-high">破坏性</td><td class="mono">tech</td></tr>
+      <tr><td>数据模型变更</td><td class="d-mid">加列加表</td><td class="mono">tech</td></tr>
+      <tr><td>影响范围</td><td class="d-high">跨服务</td><td class="mono">tech</td></tr>
+      <tr><td>在产影响</td><td class="d-high">直接影响在产</td><td class="mono">ops</td></tr>
+      <tr><td>回滚成本</td><td class="d-mid">需回滚数据</td><td class="mono">ops</td></tr>
+      <tr><td><b>安全面</b></td><td class="d-high"><b>是</b></td><td class="mono">ops/owner</td></tr>
+    </tbody></table>
+    <div class="note warn" style="margin-top:8px">安全面是<b>独立维度</b>，不得被「改动小」稀释。</div></div>
+    <div class="card"><b>并集结果</b>
+      <div style="margin-top:8px">基础必过：实现 → 代码评审 → 测试执行<br>
+      ＋ 架构评审 <span class="mono">（破坏性 / 跨服务 / 安全面）</span><br>
+      ＋ 用例评审 <span class="mono">（破坏性）</span><br>
+      ＋ 交付验证含回滚演练 <span class="mono">（数据模型 / 在产）</span><br>
+      ＋ 执行结果评审 <span class="mono">（在产）</span><br>
+      ＋ <b>代码评审门方必须是安全角色</b></div>
+      <div class="note" style="margin-top:8px">冲突消解取<b>要求集合的合取</b>，不取「更严的那一条」——责任域不同的评审互补而非可替代。<br>无法比较 ⇒ <b>fail-closed，升调度者裁定</b>。</div>
+      <div class="mono" style="margin-top:6px">判定输出：rule_ids=[R07,R12,R19,R23] · 规则表 version=2026-08-24.1</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============ S4 Spec 与设计文档 ============ -->
+<section class="scr" id="s4">
+<h2 data-edit>Spec 与架构设计文档</h2>
+<div class="sub" data-edit>规范面：约束未来。与知识库（描述现在）分开。§25.3</div>
+<div class="note" data-edit>📌 <b>spec 是授权凭据</b>（§4.3）。查阅 spec 时若看不到授权状态，等于看不到最要紧的部分 —— 故下列四字段为<b>强制显示</b>。</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>spec 列表 <span class="ref">§4.3 · §23.2</span></h3>
+  <table><thead><tr><th>spec</th><th style="width:64px">版本</th><th style="width:110px">评审状态</th>
+  <th>预授权条目（范围 · 用途 · 时限）</th><th style="width:120px">生命周期</th></tr></thead><tbody>
+  <tr><td data-edit><b>dingwei-platform-specdoc</b><div class="mono">父 spec · 子：S0–S8</div></td><td>v2.8</td>
+    <td class="cell-ok">✓ PASS<div class="mono">锚 cb97d0d</div></td>
+    <td class="lock">无预授权条目</td><td class="cell-ok">生效</td></tr>
+  <tr><td data-edit><b>S1 身份与租户地基</b><div class="mono">L3 · 安全面=是</div></td><td>v0.1</td>
+    <td class="cell-wait">草案 · 未评审</td>
+    <td data-edit><div>① 读 <code>internal/m8</code> 会话表 · 验 principal 传播 · 至 S1 上线</div>
+    <div>② 读租户映射表（<b>只读</b>）· 验 tenant 派生 · 至 S1 上线</div></td>
+    <td class="cell-wait">研发测试期有效</td></tr>
+  <tr><td data-edit><b>S4 skill / MCP 体系</b></td><td>v0.1</td><td class="cell-wait">草案 · 未评审</td>
+    <td data-edit><div class="cell-fail">⚠ ①「<b>可能需要</b>读取<b>相关</b>租户数据」</div>
+    <div class="note bad" style="margin:6px 0 0;padding:6px 9px">§23.2 第 6 条：禁「可能」「视情况」「相关」等不可判定表述 ⇒ <b>笼统兜底视同无预授权</b>，此条不生效</div></td>
+    <td class="cell-wait">研发测试期有效</td></tr>
+  <tr><td data-edit><b>图搜 3.0 索引服务 spec</b></td><td>v3.2</td><td class="cell-ok">✓ PASS</td>
+    <td data-edit><div class="dis">① 读生产索引统计 · 用于容量规划 · 至上线</div></td>
+    <td class="cell-fail">已因上线 <code>expired</code><div class="mono">失效由 v3.2 收口触发</div></td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ 上线后 spec 作用域失效（§23.2 第 3 条）。<b>此后的访问授权由「运维预案」承接</b>（K1 §12.1 第 11 类），
+  两者形式对称：都须经评审、都不自动放行、都须具体到范围·用途·时限。<b>交接点就是上线。</b></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>架构设计文档 <span class="ref">§25.3c</span> <span style="font-weight:400;color:var(--dim);font-size:12px">须显示评审等级与已过的门</span></h3>
+  <table><thead><tr><th>文档</th><th style="width:60px">等级</th><th>已过的门</th><th style="width:170px">可否作为施工依据</th></tr></thead><tbody>
+  <tr><td data-edit><b>SpecDoc v2.8</b></td><td class="d-high">L3</td>
+    <td><span class="cell-ok">✓架构评审</span> <span class="cell-ok">✓用例评审</span> <span class="cell-ok">✓交付验证</span></td>
+    <td class="cell-wait">⚠ 生效前置未闭 2 项<div class="mono">Spec Kit 工程结构 · checklist</div></td></tr>
+  <tr><td data-edit><b>S7a 存储基座设计</b></td><td class="d-high">L3</td>
+    <td><span class="cell-wait">待架构评审</span></td><td class="cell-fail">✗ 否</td></tr>
+  <tr><td data-edit><b>帖子流载体设计</b></td><td class="d-mid">L2</td>
+    <td><span class="cell-ok">✓文档评审</span></td><td class="cell-ok">✓ 可</td></tr>
+  </tbody></table>
+</div>
+</section>
+
+<!-- ============ S3 知识库 ============ -->
+<section class="scr" id="s3">
+<h2 data-edit>知识库</h2>
+<div class="sub" data-edit>事实面：描述现在。十二类 · 四根管道 · 每条绑锚。§25.2 · §12 · §13</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>检索 <span class="ref">§13.4</span></h3>
+  <div style="display:flex;gap:8px;align-items:center">
+    <input placeholder="检索知识库…" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--tx);font-family:inherit">
+    <button>检索</button>
+  </div>
+  <div class="note bad" data-edit>🔴 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
+  当前视角可见 <b>9 / 14</b> 条；<b>5 条 K0-sec 条目不在检索集合内</b>（不是「搜到了但打码」）。</div>
+  <div class="note" data-edit>排序 = <code>0.40·log(使用量) + 0.35·relevance + 0.25·importance</code>；importance 由层级给定（平台 1.0 / 租户 0.6 / 项目 0.3）；
+  <b><code>suspect</code> 条目 ×0.5 降权</b> —— 锚失配必须参与排序，标了不参与排序等于没标。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>条目 <span class="ref">§12.1 · §13.1 · §13.3</span></h3>
+  <div class="chips">
+    <div class="chip on">全部</div><div class="chip">产品定义</div><div class="chip">业务流程</div><div class="chip">代码位置</div>
+    <div class="chip">接口逻辑</div><div class="chip">对象介绍</div><div class="chip">服务架构</div><div class="chip">网络架构</div>
+    <div class="chip">数据库设计</div><div class="chip">前代与迁移</div><div class="chip">坑清单</div><div class="chip">运维预案</div><div class="chip">版本志</div>
+  </div>
+  <table><thead><tr><th>条目</th><th style="width:88px">类型</th><th style="width:74px">层</th><th style="width:52px">密级</th>
+  <th style="width:150px">锚（代码 / 部署）</th><th style="width:88px">状态</th></tr></thead><tbody>
+  <tr><td data-edit>DingWei 消息路由全流程</td><td>业务流程</td><td>K1</td><td><span class="s2">S2</span></td>
+    <td class="mono">代码 6ed4d1e<br>部署 6ed4d1e</td><td class="cell-ok">active</td></tr>
+  <tr><td data-edit>board / node DAG 与状态机</td><td>接口逻辑</td><td>K1</td><td><span class="s2">S2</span></td>
+    <td class="mono">代码 4a91c02<br>部署 6ed4d1e</td><td class="cell-wait">suspect
+    <div class="mono" style="color:var(--warn)">锚落后且 diff 覆盖所述路径</div></td></tr>
+  <tr><td data-edit>view_service 端点清单</td><td>接口逻辑</td><td>K1</td><td><span class="s2">S2</span></td>
+    <td class="mono">代码 df40ae38<br>部署 <b style="color:var(--bad)">416a1231</b></td><td class="cell-fail">suspect
+    <div class="mono" style="color:var(--bad)">文档描述灰度，线上跑 t403</div></td></tr>
+  <tr><td data-edit>研发过程主要坑（含判断失误）</td><td>坑清单</td><td>K1 → 可晋升 K0-pub</td><td><span class="s2">S2</span></td>
+    <td class="mono">发生时 5fb246b</td><td class="cell-ok">active
+    <div class="mono">晋升前须去标识化</div></td></tr>
+  <tr><td data-edit>历届版本简介</td><td>版本志</td><td>K1</td><td><span class="s2">S2</span></td><td class="mono">收口自动生成</td><td class="cell-ok">active</td></tr>
+  <tr class="lock" data-sec="1"><td data-edit>🔒 平台服务架构与部署形态</td><td>服务架构</td><td><b>K0-sec</b></td><td><span class="s1">S1</span></td>
+    <td class="mono">—</td><td>不在检索集合</td></tr>
+  <tr class="lock" data-sec="1"><td data-edit>🔒 网络拓扑与主机清单</td><td>网络架构</td><td><b>K0-sec</b></td><td><span class="s0">S0</span></td>
+    <td class="mono">—</td><td>不在检索集合</td></tr>
+  <tr class="lock" data-sec="1"><td data-edit>🔒 PG schema 与连接方式</td><td>数据库设计</td><td><b>K0-sec</b></td><td><span class="s1">S1</span></td>
+    <td class="mono">—</td><td>不在检索集合</td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ <b>K0 拆 pub / sec 的理由</b>（§11.2）：K0 全量装载 ＋ query 全员 ＝ <b>每个 Agent 的上下文里都有全平台拓扑</b>。
+  而网络架构、数据库设计、服务架构正是横向移动最想要的东西。<b>K0-sec 在完成分级脱敏前不得开放全租户只读。</b></div>
+  <div class="note" data-edit>📌 <b>知识库是四根管道，不是一根</b>（§12.2）：代码抽取 / 部署环境 / spec / 复盘 —— 权威源不同，
+  不得指望一个 code-scanner 全包。十二类里只有 4 类真正源自代码。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>为什么必须有部署锚 <span class="ref">§13.2</span></h3>
+  <div class="note bad" data-edit>代码锚检测「条目所述的代码位置变了」；<b>部署锚检测「文档描述的是 A 分支，而线上跑的是 B 分支」。前者查不出后者。</b><br>
+  上表第 3 条即实例：文档写灰度 <code>df40ae38</code>，线上 view_service 实跑 <code>416a1231</code>。
+  <b>无部署锚，「基于现网代码」的知识库无法成立</b> —— 它会精确描述一份不是线上那份的代码，比没有更危险。<br>
+  部署锚由<b>发版收口第 ⑧ 格登记</b>（组件 × 环境 × commit × 制品 sha256），不另造机制。</div>
+</div>
+</section>
+
+<!-- ============ S5 skill / MCP ============ -->
+<section class="scr" id="s5">
+<h2 data-edit>skill / MCP 库</h2>
+<div class="sub" data-edit>两条通道：平台级 push（强制）· 租户级 pull（自取）。§15 · §16</div>
+
+<div class="grid g2">
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>平台级 · push <span class="ref">§15</span></h3>
+  <div class="note" data-edit>强制推送，<b>无排序控件</b> —— 强制的东西不用挑（§15）。判据：不受具体业务影响、可独立存在于各项目之外。</div>
+  <table><tbody>
+  <tr><td data-edit><b>Spec Kit</b>（constitution + checklist + analyze）
+    <span class="badge b-mand">mandatory</span><span class="badge b-imm">immutable</span>
+    <div class="im" style="margin-top:6px">🔒 <b>immutable 首批</b>：平台级 ＋ 承载纪律 ＋ 影响授权判据。
+    <code>checklist-template.md</code> 里「checklist 是 reviewer-owned」＝ §7.2「implementer 不能自签门 PASS」——<b>一次 patch、一行 diff 即可废掉它</b>。
+    <b>Agent 连提案都不能提。</b></div></td></tr>
+  <tr><td data-edit><b>发版流程与规范</b> <span class="badge b-mand">mandatory</span><span class="badge b-imm">immutable</span></td></tr>
+  <tr><td data-edit><b>帖子投递规范</b> <span class="badge b-mand">mandatory</span><span class="badge b-imm">immutable</span></td></tr>
+  <tr><td data-edit><b>消息投递规范</b> <span class="badge b-mand">mandatory</span></td></tr>
+  <tr><td data-edit><b>交接纪律</b>（commit + sha256 + 行/字节）<span class="badge b-mand">mandatory</span></td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ <b>平台级 ≠ 一律 immutable</b>（§15.2）。mandatory（租户不可停用）与 immutable（内容不可改）是<b>两个可分离属性</b>，四种组合都有意义。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>租户级 · pull <span class="ref">§15 · §13.4</span></h3>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+    <select><option>排序：综合计分</option><option>排序：近期使用</option><option>排序：成功率</option></select>
+    <span class="mono">这里才需要排序 —— 租户要在目录里挑</span>
+  </div>
+  <table><thead><tr><th>skill</th><th style="width:52px">计分</th><th style="width:64px">操作</th></tr></thead><tbody>
+  <tr><td data-edit><b>图搜索引服务部署</b><div class="mono">用量高 · 但业务专用 ⇒ 不升平台级</div></td><td>0.81</td><td><button>拉取</button></td></tr>
+  <tr><td data-edit><b>PG 慢查询定位</b><div class="mono">跨项目出现 2 次</div></td><td>0.64</td><td><button>拉取</button></td></tr>
+  <tr><td data-edit><b>三血脉行为指纹取证</b><div class="mono">新条目 · 曝光窗口中</div></td><td>0.52</td><td><button>拉取</button></td></tr>
+  </tbody></table>
+  <div class="note bad" data-edit>🔴 <b>禁止租户 B 直接 pull 租户 A 的 skill</b>（§15.3）。skill 正文可能含项目名、内部地址、表结构、业务术语 ——
+  <b>RLS 管的是数据表，管不到一份 Markdown 正文里写了什么。</b><br>
+  唯一路径：<b>抽象化 → 脱敏 → 晋升审批 → 平台级 push</b>。租户 B 拿到的是抽象后的版本，不是 A 的原件。</div>
+</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>待批暂存区 <span class="ref">§16.2 write_approval</span></h3>
+  <div class="note" data-edit>自我进化<b>准入</b>，但必须以暂存审批模式：<b>允许 Agent 提案，不允许 Agent 批准。</b>
+  暂存件跨重启存活 · 可 diff 审阅 · <b>前台回合与后台自我改进一视同仁</b>（不给后台特权路径）。</div>
+  <table><thead><tr><th>暂存件</th><th style="width:80px">动作</th><th style="width:130px">来源</th><th style="width:140px">审阅</th></tr></thead><tbody>
+  <tr><td data-edit><code>pg-slow-query/SKILL.md</code> 第 12 行：<code>psql -c</code> → <code>psql --csv -c</code></td>
+    <td><code>patch</code></td><td>后台自我改进</td><td><button>看 diff</button> <button>批准</button></td></tr>
+  <tr><td data-edit><code>deploy-anchor/SKILL.md</code> 新建（从错误恢复中生成）</td>
+    <td><code>create</code></td><td>前台回合</td><td><button>看 diff</button> <button>批准</button></td></tr>
+  <tr><td data-edit class="dis"><code>speckit/checklist-template.md</code> 第 8 行删除「reviewer-owned」</td>
+    <td><code>patch</code></td><td>后台自我改进</td>
+    <td><span class="cell-fail">✗ 已拒</span><div class="mono">immutable 名单内，提案即拒</div></td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ 回写纪律（§16.3）：<b>何时改</b> = 只在该 skill 把本次执行带偏时；顺利则只计使用量不改内容。
+  <b>怎么改</b> = <code>patch</code> 定向替换优先，禁用整篇 <code>edit</code> 做常规修订 —— 首要理由不是省 token，是<b>整篇 diff 审不动</b>；
+  200+ Agent 并发下审批会先成瓶颈再被绕过。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>装卸对称 <span class="ref">§16.6</span></h3>
+  <div class="grid g2">
+    <div class="card"><b class="cell-ok">紧急路径可用</b>
+      <div style="margin-top:6px"><code>disable</code> 停用 · <code>quarantine</code> 隔离 · <code>revoke</code> 吊销</div>
+      <div class="note warn" style="margin-top:8px">前提：<b>必须存在 fail-closed fallback 或替代控制</b>。停用一个安全门而无兜底 = 门消失 = 权限扩大 ⇒ 该操作不合法，无论多紧急。</div></div>
+    <div class="card"><b class="cell-fail">紧急路径不可用</b>
+      <div style="margin-top:6px"><code class="dis">uninstall</code> <span class="mono">已移出允许列</span></div>
+      <div class="note bad" style="margin-top:8px">判据改为 <b>capability effect</b>，不按动作名：<b>该动作执行后是否存在任一主体权限或可达范围被扩大</b>。<br>
+      卸载鉴权 / 审计 / DLP / 安全门类制品<b>会直接扩权</b> —— 「携带有害证据」只证明制品有问题，证明不了删除后的权限效果单调。<br>
+      会移除安全控制的卸载：<b>必须先切到安全版本或兜底，再卸</b>，走事前审批。</div></div>
+  </div>
+  <div class="note" data-edit>其余：<b>tombstone / fencing</b> —— 卸载留 tombstone，重装同版本必须形成新 <code>installation_generation</code>；
+  迟到 ACK、旧任务、旧 delivery <b>不得复活已卸载的实例</b>，按 generation 栅栏丢弃。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>上下文预算 <span class="ref">§16.7 · 附录 A</span></h3>
+  <div class="kv">
+    <b>常驻成本</b><div><b>2.4k / 3k tokens</b><div class="bar"><i style="width:80%"></i></div>
+    只放 name ＋ 简要描述；<b>正文按需加载</b>。单条描述上限 1,536 字符。</div>
+    <b>为什么设闸</b><div>排序解决「列表太长怎么办」；<b>渐进披露解决「列表为什么会太长」</b>。渐进披露是主解，排序是次解。<br>
+    这是唯一能防止 skill 库随规模膨胀吃掉上下文的机制。</div>
+  </div>
+</div>
+</section>
+
+<!-- ============ S6 Agent 管理 ============ -->
+<section class="scr" id="s6">
+<h2 data-edit>Agent 管理</h2>
+<div class="sub" data-edit>三种接入形态，信任等级不同，凭据策略不同。§26</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>接入形态 <span class="ref">§26.1</span></h3>
+  <div class="tabs" data-tabs><div class="on">云上 Agent</div><div>IDE 插件</div><div>本地终端 CLI</div></div>
+  <div class="tp on">
+    <div class="kv"><b>宿主受控度</b><div class="cell-ok">平台完全受控</div>
+    <b>凭据等级</b><div><span class="s1">S1</span> 可持生产级，按角色授予</div>
+    <b>生命周期</b><div>平台可新建 / 关闭 / 重启 · 上下文由平台注入</div></div>
+    <table style="margin-top:10px"><thead><tr><th>Agent</th><th style="width:96px">角色</th><th style="width:74px">凭据</th><th style="width:82px">状态</th><th style="width:150px">操作</th></tr></thead><tbody>
+    <tr><td data-edit>zzc-opus50t-2642</td><td>设计者</td><td><span class="s1">S1</span></td><td class="cell-ok">active</td>
+      <td><button>重启</button> <button>关闭</button> <button>看上下文</button></td></tr>
+    <tr><td data-edit>zzc-prodops-2642</td><td>平台级 ops</td><td><span class="s1">S1</span></td><td class="cell-ok">active</td>
+      <td><button>重启</button> <button>关闭</button> <button>看上下文</button></td></tr>
+    <tr><td data-edit>zzc-sec-review</td><td>安全评审</td><td><span class="s1">S1</span></td><td class="cell-wait">idle</td>
+      <td><button>重启</button> <button>关闭</button> <button>看上下文</button></td></tr>
+    </tbody></table>
+  </div>
+  <div class="tp">
+    <div class="kv"><b>宿主受控度</b><div class="cell-wait">企业设备，部分受控</div>
+    <b>凭据等级</b><div><span class="s2">S2</span> 为主；<span class="s1">S1</span> 须显式授权 ＋ 时限</div></div>
+  </div>
+  <div class="tp">
+    <div class="kv"><b>宿主受控度</b><div class="cell-fail">🔴 不受控终端</div>
+    <b>凭据等级</b><div><b>默认仅 <span class="s2">S2</span></b>；S1 / S0 须逐次授权</div>
+    <b>token 属性</b><div>短时效 ＋ 可远程吊销 ＋ <b>绑定设备指纹</b></div>
+    <b>默认拒</b><div>跨租户读权 · 平台域读权</div></div>
+    <div class="note bad" style="margin-top:10px" data-edit>🔴 本地终端接入意味着<b>平台凭据离开可控边界</b>，落到一台平台无法审计、无法擦除、
+    可能同时装着别的软件的机器上。<b>不设此限，凭据分级会在最薄弱的一环失效。</b></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>新建 Agent · 上下文注入预览 <span class="ref">§26.2 · §11.3</span></h3>
+  <div class="grid g2">
+    <div class="card"><b>参数</b>
+      <div class="kv" style="margin-top:8px"><b>租户</b><div>图搜 3.0</div><b>项目</b><div>3.0-poc 索引服务</div>
+      <b>角色</b><div>implementer</div><b>接入形态</b><div>云上</div></div>
+      <button style="margin-top:10px">新建并注入</button></div>
+    <div class="card"><b>将注入什么</b>
+      <table style="margin-top:8px"><tbody>
+      <tr><td>K0-pub</td><td class="cell-ok">全量</td><td class="mono">稳定前缀，吃 prompt caching</td></tr>
+      <tr><td>K0-sec</td><td class="cell-fail">不注入</td><td class="mono">implementer 无该授权</td></tr>
+      <tr><td>K1</td><td class="cell-wait">按需切片</td><td class="mono">Query(q, topK=8)</td></tr>
+      <tr><td>K2</td><td class="cell-ok">全量</td><td class="mono">当前版本摘要，量小</td></tr>
+      <tr><td>K3</td><td class="cell-ok">全量</td><td class="mono">＝派发信封本体</td></tr>
+      <tr><td>平台级 skill</td><td class="cell-ok">全量 push</td><td class="mono">5 件 · 2.4k tokens</td></tr>
+      <tr><td>租户级 skill</td><td class="cell-wait">已拉取 2 件</td><td class="mono">按租户目录</td></tr>
+      </tbody></table></div>
+  </div>
+  <div class="note" data-edit>📌 <b>skill 是第三类记忆</b>（§10）：权限域（K0–K3）决定<b>谁能看</b>，记忆类型决定<b>怎么存、怎么取、何时清</b>。
+  skill 有 K 层归属（平台级=K0 / 租户级=K1 / 项目级=K1·K2），与知识条目<b>共用同一套晋升、装载、RLS</b> ——
+  否则会出现「复盘写进了知识库，新 Agent 却读不到」。</div>
+</div>
+</section>
+
+<!-- ============ S7 帖子流 ============ -->
+<section class="scr" id="s7">
+<h2 data-edit>帖子流</h2>
+<div class="sub" data-edit>解「作业无痕」；帖子数是分歧探测器，不是话痨指标。§18</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>node N-1163 · 已触门 <span class="ref">§18.4</span></h3>
+  <div class="kv"><b>帖数</b><div><b style="color:var(--warn)">23</b> / 阈值 A=20 · B=40
+    <div class="bar hot"><i style="width:57%"></i></div>
+    <span class="mono">用原始计数，不用「有效帖数」—— 有效性是主观判断，两人数不出同一结果</span></div>
+  <b>封锁状态</b><div class="cell-fail">三段式封锁生效</div></div>
+  <div class="grid g3" style="margin-top:12px">
+    <div class="card"><b class="cell-fail">① 停注入</b><div class="sub" style="margin:6px 0 0">停止自动推送与上下文注入，冻结 reader cursor。<br><b>这才是真正止血的一刀。</b></div></div>
+    <div class="card"><b class="cell-fail">② 禁新帖</b><div class="sub" style="margin:6px 0 0">拒绝新增 post，阻止分歧继续扩散。</div></div>
+    <div class="card"><b class="cell-wait">③ 保留受限只读</b><div class="sub" style="margin:6px 0 0">固定 digest / snapshot；按需单次读取或 break-glass；带预算与审计。</div></div>
+  </div>
+  <div class="note warn" data-edit>⚠️ <b>禁的是「注入」，不是「读取」。</b>token 在注入时就花掉了，事后禁读追不回来，
+  却会伤及可追溯、崩溃恢复、新成员接手、参与者核对摘要四项。<br>
+  读权豁免：调度者（解封权人）· 该租户业主 · 摘要 agent（只读，它正在产出解封决策所依赖的依据）。</div>
+  <div class="note bad" data-edit>🔴 <b>解封必须产出裁定物，不得只是放行。</b><br>
+  调度者（&gt;20）：① 分歧点陈述（争的是什么、双方各自的裁剪、裁定或判属产品决策升业主）② <b>同时向业主发预警</b><br>
+  业主（&gt;40）：决策记录 ＋ <b>裁定结果须回写定义层</b>（spec / constitution / 分级规则）<br>
+  <b>不回写定义层的解封，等于给同一个 bug 反复续命</b> —— 下一批帖子会重复上一批的争论。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>三层封存 <span class="ref">§18.5 · §18.6</span></h3>
+  <table><thead><tr><th style="width:130px">层级</th><th>封存时机</th><th style="width:150px">晋升产物</th><th style="width:90px">状态</th></tr></thead><tbody>
+  <tr><td>node 帖子流</td><td data-edit><code>execution done ∧ verdict ∈ {not_required, pass, fail}</code>；<b><code>pending</code> 不封</b></td>
+    <td>→ 环节小结</td><td class="cell-ok">已封 N-1140</td></tr>
+  <tr><td>task 帖子流</td><td data-edit>任务收口（调度者唯一关闭权）</td><td>→ 任务摘要 → <b>K2</b></td><td class="cell-wait">开着</td></tr>
+  <tr><td>version 帖子流</td><td data-edit>版本收口</td><td>→ 版本摘要 → <b>K1</b></td><td class="cell-wait">开着</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>「环节结束后还想讨论怎么办」有答案：<b>属于上一层</b>。node 封了 task 层还开着，task 封了 version 层还开着。<br>
+  返工天然不污染：门 FAIL 走 <code>append_revision</code> 建<b>新 node</b>，新 node 有新帖子流。<br>
+  <b>封存条件必须含 <code>fail</code></b>，否则门 FAIL 的 node 永不封存，帖子流长期可写、digest 永不生成。</div>
+  <div class="note warn" data-edit>⚠️ 承诺表述为<b>「篡改可检测（限定威胁模型）」，不是「防篡改」</b> ——
+  digest 与数据同在一个可写库，能改帖的人通常也能改 digest。<br>
+  最低配套三项：① 封存后 DB 权限/trigger 拒 UPDATE·DELETE ② digest 覆盖 tenant·node·seq·actor·ts·content 规范序列
+  ③ <b>外部或更高权限锚定 ＋ 定期核验</b>（唯一能对抗「改帖者亦可改 digest」的一层）。<br>
+  <b>未做到第 3 项前，对恶意篡改的防护为零。</b></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>摘要 agent <span class="ref">§20</span></h3>
+  <div class="kv">
+    <b>触发</b><div>事件驱动，不定时轮询：node 进终态 / 触门 / 距上次已积累 N 条新帖</div>
+    <b>模型</b><div>廉价模型 —— 任务是<b>抽取</b>，不是推理</div>
+    <b>输入</b><div>仅增量帖（游标区间）＋ node 结构化头</div>
+    <b>租户</b><div class="cell-fail">🔴 必须租户内 —— 它用廉价模型、跑得频繁、读很多帖，<b>是易被忽略的泄漏面</b></div>
+    <b>是否入帖子流</b><div><b>不入</b>，单独存 <code>node_digest</code> —— 入了会推高帖子计数、触发硬门，
+    <b>而摘要恰是解封决策的依据。工具不该污染它测量的东西。</b></div>
+    <b>输入信任级</b><div class="cell-fail">按不可信数据隔离 —— <b>帖子是 agent 写的文本，可能嵌入针对摘要器的提示注入</b></div>
+  </div>
+  <div class="note bad" data-edit>🔴 <b>关键决策不得只依赖摘要</b>：解封决策时调度者<b>必须能看原帖</b>。摘要是加速器，不是唯一依据。<br>
+  且<b>不得声称「可复算：重跑核对」</b> —— LLM 非确定性，重跑得到的是另一个输出。改为<b>存证 ＋ 引用校验</b>。</div>
+</div>
+</section>
+
+<!-- ============ S8 平台治理 ============ -->
+<section class="scr" id="s8">
+<h2 data-edit>平台治理</h2>
+<div class="sub" data-edit>ops 整理汇总 · 平台管理者集中审批。§24</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>批次 B-2026-0824-01 <span class="ref">§24.2 · §24.2a</span></h3>
+  <div class="kv">
+    <b>整理汇总</b><div>平台级 ops</div>
+    <b>集中审批</b><div>平台管理者（本部署下＝业主）</div>
+    <b>粒度</b><div><b>批为审批单位，项为追溯单位</b> —— 一次签，但批内每项事后可查</div>
+    <b>manifest</b><div class="mono">不可变 · 签名覆盖 manifest 摘要 sha256:4f1a…c8 · 非「一堆事」</div>
+  </div>
+  <table style="margin-top:12px"><thead><tr><th style="width:34px">#</th><th>项</th><th style="width:112px">谁提的</th>
+  <th>为什么</th><th style="width:60px">危险度</th></tr></thead><tbody>
+  <tr><td>1</td><td data-edit><b>平台级 skill 晋升</b>：交接纪律（commit+sha256+行/字节）</td><td>coordinator</td>
+    <td data-edit>三次版本错位事故后团队采纳，业务无关、可独立于各项目</td><td class="d-high">高</td></tr>
+  <tr><td>2</td><td data-edit><b>平台级 skill 晋升</b>：收信侧实算比对</td><td>opus50t</td>
+    <td data-edit>三次同类哈希/时间戳错，无一由发信方自发现</td><td class="d-high">高</td></tr>
+  <tr><td>3</td><td data-edit><b>immutable 名单变更</b>：Spec Kit 及其模板入首批</td><td>平台级 ops</td>
+    <td data-edit>平台级 ＋ 承载纪律 ＋ 影响授权判据，三条件同时满足</td><td class="d-high">高</td></tr>
+  </tbody></table>
+  <div class="note bad" data-edit>🔴 <b>本批含高危项 ⇒ 整批升重两签</b>（两个独立 principal）。
+  规则：<b>批次签数取批内最高危项的要求，不取多数、不取平均。</b><br>
+  为何不「把高危项拆出单走」：那会让<b>拆批本身成为一个可被用来降低审批强度的操作</b>。整批升签更简单，且没有可乘之机。
+  代价是可能因一项拖慢整批 —— <b>这是应当承担的代价，不接受为效率而降签。</b></div>
+  <div style="margin-top:10px"><button>签 1/2</button> <button class="dis" title="须另一独立 principal">签 2/2</button> <button>退回某项</button></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>紧急通道 <span class="ref">§24.3a</span></h3>
+  <div class="grid g2">
+    <div class="card"><b class="cell-ok">允许（须逐项过 capability effect 判据）</b>
+      <div style="margin-top:8px">✓ <code>disable</code> / <code>quarantine</code> / <code>revoke</code> <span class="mono">须有 fail-closed fallback</span><br>
+      ✓ 缩短凭据有效期<br>✓ 收紧或删除 capability policy<br>✓ 把件<b>加入</b> immutable 名单<br>✓ 提高门的强度</div></div>
+    <div class="card"><b class="cell-fail">禁止（增加或放宽）</b>
+      <div style="margin-top:8px" class="dis">✗ 安装或升级任何制品<br>✗ 签发凭据、延长有效期<br>✗ 新增或放宽 policy<br>✗ 把件<b>移出</b> immutable 名单<br>✗ 降低门的强度、跳过门<br>✗ <code>uninstall</code></div></div>
+  </div>
+  <div class="note warn" data-edit>⚠️ <b>判据</b>：该动作<b>在任何情形下都不可能扩大任何主体的权限或可达范围</b>，才允许走紧急通道。
+  <b>存疑即按非紧急处理（fail-closed）。</b><br>
+  紧急放行逐次落账（发起人 · 事实依据 · 时刻），且<b>必须进入下一批次补审</b>；补审否决时须给出回退动作。</div>
+  <div class="note" data-edit>为什么不新造一条紧急通道：<b>新造一条紧急通道，就是新造一条绕过点。</b>故复用已有的事后 flag 制。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>分发面 <span class="ref">§24.4 · §24.5</span></h3>
+  <table><tbody>
+  <tr><td>① 五道闸</td><td class="cell-ok">来源鉴权 · sha256 完整性 · host 白名单 · 动作白名单 · <b>不执行制品内脚本</b></td></tr>
+  <tr><td>② 只下发数据</td><td class="cell-ok">不下发指令 —— 更新逻辑固化在接收端，下发方无法改变它</td></tr>
+  <tr><td>③ 版本推进</td><td class="cell-ok">只在收到接收端 <code>ack(ok=true)</code> 后推进（下发成功 ≠ apply 成功）</td></tr>
+  <tr><td>④ 台账校验</td><td class="cell-wait">🔴 分发前须校验：target ＋ version 在台账中且状态为「已批准」，否则拒发</td></tr>
+  <tr><td>⑤ 角色模型</td><td class="cell-fail">🔴 待建 —— provision / api-keys / config 三类高危端点须与只读端点分权<div class="mono">负测：只读角色调用这三类必须被拒。「存在角色模型」不等于分权生效，全员同角色也满足「存在」</div></td></tr>
+  <tr><td>⑥ 范围闸</td><td class="cell-fail">🔴 待建 —— 单会话下发＝平台 ops 单签；<b>全网批量＝重两签 ＋ 业主知会</b></td></tr>
+  <tr><td>⑦ 装卸对称</td><td class="cell-fail">🔴 待建 —— <code>uninstall_skill</code> / <code>uninstall_mcp</code></td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 <b>批准与执行分处两个服务、两套写权</b> —— 合业主「生产系统中 git 管理员与 DB 管理员不应是同一人」的分离原则。</div>
+</div>
+</section>
+
+<!-- ============ S9 渠道授权 ============ -->
+<section class="scr" id="s9">
+<h2 data-edit>渠道授权</h2>
+<div class="sub" data-edit>可信渠道可查进展、可发起授权；高危只能发起不能终结。§23.5 · §27</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>身份模型 <span class="ref">§21</span></h3>
+  <div class="grid g2">
+    <div class="card"><b>主因子（回答「你是谁」）</b>
+      <div style="margin-top:6px">飞书 · 企微 · Slack · Google Chat</div>
+      <div class="mono">身份锚＝企业目录账号，可接 SSO，<b>可被企业吊销</b></div></div>
+    <div class="card"><b>次因子（回答「是不是本人」）</b>
+      <div style="margin-top:6px">SMS · 邮件</div>
+      <div class="mono">WhatsApp <b>不参与身份识别</b>，仅作通信渠道 —— 其身份锚是电话号，与 SMS 同链路</div></div>
+  </div>
+  <div class="note warn" data-edit>⚠️ <b>双因子 ≠ 双人。</b>双因子回答「是不是你本人」，挡冒名、伪造、账号单点失陷；
+  <b>挡不住本人被骗、判断失误、被胁迫、内部越权</b>。<br>
+  二次验证做到极致，仍然只有<b>一个人</b>在决定。故高危须重两签 —— 依据不是「因子弱」，而是<b>单人不足以承担其后果</b>。</div>
+  <div class="note" data-edit>三级映射：<b>人</b>（企业 IM 验证）→ <b>租户</b>（RLS 主体）→ <b>会话 / Agent</b>（执行主体，持 token）。
+  <b>审计与授权挂在人身上，执行挂在会话身上。</b></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>飞书卡片模拟 <span class="ref">§23.5</span></h3>
+  <div class="grid g3">
+    <div class="card"><b class="cell-ok">查询进展</b><div class="sub" style="margin:6px 0 0">只读 · <b>须 RLS 过滤后返回</b>（业主看自己租户的，不是全平台的）</div>
+      <div style="margin-top:8px;background:#101319;border:1px solid var(--line);border-radius:6px;padding:9px">
+      <div class="mono">图搜 3.0 · 版本 v3.3</div><div style="font-size:12.5px;margin-top:4px">在轨 7 / 阻塞 2 / 待你决断 <b style="color:var(--warn)">3</b></div>
+      <button style="margin-top:8px;padding:3px 9px;font-size:12px">看详情</button></div>
+      <div class="mono" style="margin-top:6px">渠道即可，无保留意见</div></div>
+    <div class="card"><b class="cell-wait">中危：渠道可发起</b><div class="sub" style="margin:6px 0 0">单会话 provision · 租户级 skill 晋升 · 跨项目读</div>
+      <div style="margin-top:8px;background:#101319;border:1px solid var(--line);border-radius:6px;padding:9px">
+      <div style="font-size:12.5px">批准「租户级 skill：PG 慢查询定位」晋升？</div>
+      <div class="mono" style="margin-top:5px">challenge <b>7K4M-92</b> · 有效 10 分钟 · 单次</div>
+      <button style="margin-top:8px;padding:3px 9px;font-size:12px">输入 challenge ＋ 次因子</button></div></div>
+    <div class="card"><b class="cell-fail">🔴 高危：只能发起</b><div class="sub" style="margin:6px 0 0">全网批量下发 · 平台级晋升 · 跨租户 · S0/S1 凭据 · 平台域基线变更 · <b>L3 node 的门 PASS</b></div>
+      <div style="margin-top:8px;background:#101319;border:1px solid var(--line);border-radius:6px;padding:9px">
+      <div style="font-size:12.5px">批次 B-2026-0824-01 待签（含 immutable 名单变更）</div>
+      <div class="mono" style="margin-top:5px;color:var(--bad)">本渠道不可终结 · 须回强身份面 ＋ 重两签</div>
+      <button style="margin-top:8px;padding:3px 9px;font-size:12px">去强身份面</button></div></div>
+  </div>
+  <div class="note bad" data-edit>🔴 <b>「同意」两个字不构成授权。</b>渠道消息可被重放、可被群内他人冒名、
+  也可能是 Agent 把引用的历史文本当成了新指令。<br>
+  <b>授权动作必须绑定一次性 challenge</b>（含待批事项摘要 ＋ 有效期 ＋ 单次使用），业主回复该 challenge 而非自由文本。</div>
+  <div class="note warn" data-edit>⚠️ <b>门 PASS 不可统一归为低危</b>：其危险度<b>继承所属 node 的分级</b>（L1→低危 / L2→中危 / L3→高危）。
+  一个 L3 node 的架构评审门 PASS，后果与该 L3 变更等价，<b>不因「只是打个勾」而变低</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>不增加 Agent 多余负担 <span class="ref">§27.1</span></h3>
+  <div class="note" data-edit><b>渠道差异必须在平台侧吸收干净，Agent 只见一种统一信封。</b><br>
+  平台侧消化：消息格式规范化 · 长度上限与分片重组 · 富文本与附件能力差异 · 回执语义归一 · 乱序与重投 · <b>幂等键贯穿</b>（重投不重执行）。<br>
+  按 §2.3 分界原则（「消息如何可靠传到」的保留），渠道接入属通信面，<b>是现有能力的扩展，不是新建</b>。</div>
+</div>
+</section>
+
+<!-- ============ S0 架构总览 ============ -->
+<section class="scr" id="s0">
+<h2 data-edit>架构总览</h2>
+<div class="sub" data-edit>四层 · 产品定义驱动，流程保障。§1 · §3</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>四层 <span class="ref">§3</span></h3>
+  <div class="grid" style="gap:8px">
+    <div class="card" style="border-left:3px solid var(--acc)"><b>定义层</b> · Spec Kit（spec / constitution / checklist）<div class="mono">↓ 产品定义</div></div>
+    <div class="card" style="border-left:3px solid var(--warn)"><b>分级层</b> · 属性表 → DMN 决策表 → 必过环节并集<div class="mono">↓ 该走哪些门</div></div>
+    <div class="card" style="border-left:3px solid var(--imm)"><b>执行层</b> · board DAG ＋ mcsd 派发 ＋ 门禁<div class="mono">↓ 交付物 ＋ 门结果</div></div>
+    <div class="card" style="border-left:3px solid var(--ok)"><b>保障层</b> · 台账 · 封存 · 晋升 · 自检计数器</div>
+  </div>
+  <div class="note" data-edit><b>三条原则</b>：① 一旦进入项目开发，驱动的是流程引擎，而不是 Agent
+  ② <b>约束必须存在于上下文之外</b> —— 存在于上下文里的约束，上下文一丢就跟着丢
+  ③ 靠机制，不靠记忆 —— 每加一条流程约束，同时加一个「本应恒为 0」的计数器。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>子 spec 依赖图 <span class="ref">§0.3</span></h3>
+  <div class="mono" style="font-size:12.5px;line-height:2">
+  S0 总则与定义层 <span style="color:var(--acc)">→</span> S1 身份与租户地基 <span style="color:var(--acc)">→</span> { S7a 存储基座 · S8 授权与平台治理 }
+  <span style="color:var(--acc)">→</span> { S2 执行层与门禁 · S3 上下文与知识库 } <span style="color:var(--acc)">→</span> { S4 skill/MCP · S5 协同与帖子流 }
+  <span style="color:var(--acc)">→</span> <b style="color:var(--tx)">S6 平台能力与界面（本原型）</b><br>
+  <span style="color:var(--dim)">S7b 领域 schema 迁移随各领域走，不作统一前置</span></div>
+  <div class="note warn" data-edit>⚠️ <b>本原型属 S6</b>，其前置 S1·S2·S3·S4·S8 均未开工。
+  本原型只用于<b>与业主对齐界面契约</b>，不构成施工依据 —— SpecDoc §0.1 生命周期仍为「草案」，两项生效前置未闭。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>本原型如何改 <span class="ref">§0.5</span></h3>
+  <div class="kv">
+    <b>编辑模式</b><div>点顶栏 <b>✎ 编辑模式</b> —— 带虚线框的文字全部可直接改；每个面板右上出现 ↑ ↓ ✕ 可调序、隐藏</div>
+    <b>批注</b><div>点 <b>＋ 批注</b> 后再点任意面板，贴一张黄条写想法</div>
+    <b>导出</b><div><b>⤓ 导出改动</b> 下载一个 JSON —— 含所有改文、隐藏项、顺序、批注。<b>把它发回本席，本席据此改 SpecDoc §25–§27</b></div>
+    <b>冲突处置</b><div class="cell-fail">🔴 若你的改动与 SpecDoc 已裁定条款冲突（如把待决队列拆成多页），
+    本席会明确指出冲突条款号，<b>由你裁定改原型还是改 SpecDoc —— 不得两存</b></div>
+  </div>
+</div>
+</section>
+
+</div></div>
+
+<script>
+var KEY='dw-proto-v01';
+var st=JSON.parse(localStorage.getItem(KEY)||'{"txt":{},"hid":[],"ord":{},"notes":{}}');
+function save(){localStorage.setItem(KEY,JSON.stringify(st))}
+
+/* ---- 稳定 id：给每个可编辑元素与面板编号 ---- */
+document.querySelectorAll('.scr').forEach(function(sc){
+  var i=0; sc.querySelectorAll('[data-edit]').forEach(function(e){e.dataset.id=sc.id+'-e'+(i++)});
+  var j=0; sc.querySelectorAll('.panel').forEach(function(p){p.dataset.pid=sc.id+'-p'+(j++)});
+});
+
+/* ---- 恢复已存改动 ---- */
+function apply(){
+  Object.keys(st.txt).forEach(function(k){var e=document.querySelector('[data-id="'+k+'"]');if(e)e.innerHTML=st.txt[k]});
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.toggle('hid',st.hid.indexOf(p.dataset.pid)>=0)});
+  Object.keys(st.ord).forEach(function(sid){
+    var sc=document.getElementById(sid); if(!sc)return;
+    st.ord[sid].forEach(function(pid){var p=sc.querySelector('[data-pid="'+pid+'"]');if(p)sc.appendChild(p)});
+  });
+  Object.keys(st.notes).forEach(function(pid){
+    var p=document.querySelector('[data-pid="'+pid+'"]'); if(!p)return;
+    if(p.querySelector('.sticky'))return;
+    var d=document.createElement('div'); d.className='sticky'; d.contentEditable='true';
+    d.innerHTML=st.notes[pid]; d.dataset.note=pid; p.appendChild(d);
+  });
+}
+apply();
+
+/* ---- 导航 ---- */
+document.querySelectorAll('#nav a').forEach(function(a){
+  a.onclick=function(ev){ev.preventDefault();
+    document.querySelectorAll('#nav a').forEach(function(x){x.classList.remove('on')});
+    document.querySelectorAll('.scr').forEach(function(x){x.classList.remove('on')});
+    a.classList.add('on'); document.querySelector(a.getAttribute('href')).classList.add('on');
+    window.scrollTo(0,0);
+  };
+});
+
+/* ---- 队列筛选 ---- */
+var chips=document.getElementById('qchips');
+if(chips) chips.onclick=function(ev){
+  var c=ev.target.closest('.chip'); if(!c)return;
+  chips.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')}); c.classList.add('on');
+  var f=c.dataset.f;
+  document.querySelectorAll('#qtab tbody tr').forEach(function(tr){
+    tr.style.display=(f==='all'||tr.dataset.t===f)?'':'none';
+  });
+};
+
+/* ---- tabs ---- */
+document.querySelectorAll('[data-tabs]').forEach(function(tb){
+  tb.onclick=function(ev){
+    var d=ev.target.closest('div'); if(!d||!tb.contains(d))return;
+    var idx=Array.prototype.indexOf.call(tb.children,d);
+    tb.querySelectorAll('div').forEach(function(x){x.classList.remove('on')}); d.classList.add('on');
+    var ps=tb.parentElement.querySelectorAll('.tp');
+    ps.forEach(function(p,i){p.classList.toggle('on',i===idx)});
+  };
+});
+
+/* ---- 编辑模式 ---- */
+var editing=false, noteArm=false;
+var bE=document.getElementById('bEdit');
+bE.onclick=function(){
+  editing=!editing; document.body.classList.toggle('edit',editing); bE.classList.toggle('on',editing);
+  document.querySelectorAll('[data-edit]').forEach(function(e){e.contentEditable=editing?'true':'false'});
+  bE.textContent=editing?'✎ 编辑中（点此退出）':'✎ 编辑模式';
+};
+document.addEventListener('input',function(ev){
+  var e=ev.target;
+  if(e.dataset&&e.dataset.id){st.txt[e.dataset.id]=e.innerHTML;save()}
+  if(e.dataset&&e.dataset.note){st.notes[e.dataset.note]=e.innerHTML;save()}
+});
+
+/* ---- 面板控制：隐藏 / 调序 ---- */
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest('.ctl button'); if(!b)return;
+  var p=b.closest('.panel'), sc=p.closest('.scr');
+  if(b.hasAttribute('data-hide')){
+    p.classList.add('hid'); if(st.hid.indexOf(p.dataset.pid)<0)st.hid.push(p.dataset.pid); save();
+  }else{
+    var up=b.hasAttribute('data-up'), sib=up?p.previousElementSibling:p.nextElementSibling;
+    while(sib&&!sib.classList.contains('panel'))sib=up?sib.previousElementSibling:sib.nextElementSibling;
+    if(!sib)return;
+    if(up)sc.insertBefore(p,sib); else sc.insertBefore(sib,p);
+    st.ord[sc.id]=Array.prototype.map.call(sc.querySelectorAll('.panel'),function(x){return x.dataset.pid});
+    save();
+  }
+});
+
+/* ---- 批注 ---- */
+var bN=document.getElementById('bNote');
+bN.onclick=function(){noteArm=!noteArm;bN.classList.toggle('on',noteArm);
+  bN.textContent=noteArm?'＋ 点一个面板贴批注':'＋ 批注'};
+document.addEventListener('click',function(ev){
+  if(!noteArm)return; var p=ev.target.closest('.panel'); if(!p)return;
+  if(ev.target.closest('.ctl'))return;
+  noteArm=false;bN.classList.remove('on');bN.textContent='＋ 批注';
+  if(p.querySelector('.sticky'))return;
+  var d=document.createElement('div'); d.className='sticky'; d.contentEditable='true';
+  d.innerHTML='批注：'; d.dataset.note=p.dataset.pid; p.appendChild(d);
+  st.notes[p.dataset.pid]=d.innerHTML; save(); d.focus();
+},true);
+
+/* ---- 导出 ---- */
+document.getElementById('bExp').onclick=function(){
+  var scr={}; document.querySelectorAll('.scr').forEach(function(s){
+    var nav=document.querySelector('#nav a[href="#'+s.id+'"]');
+    scr[s.id]={题:nav?nav.textContent.trim():s.id,
+      隐藏面板:Array.prototype.map.call(s.querySelectorAll('.panel.hid'),function(p){return p.dataset.pid+' :: '+(p.querySelector('h3')?p.querySelector('h3').textContent.trim():'')}),
+      当前顺序:Array.prototype.map.call(s.querySelectorAll('.panel:not(.hid)'),function(p){return (p.querySelector('h3')?p.querySelector('h3').textContent.trim():p.dataset.pid)})};
+  });
+  var改文={}; Object.keys(st.txt).forEach(function(k){
+    var e=document.querySelector('[data-id="'+k+'"]');
+    改文[k]={所在屏:k.split('-')[0],现文:(e?e.textContent.trim().slice(0,400):st.txt[k])};
+  });
+  var批注={}; Object.keys(st.notes).forEach(function(k){
+    var p=document.querySelector('[data-pid="'+k+'"]');
+    批注[k]={面板:(p&&p.querySelector('h3')?p.querySelector('h3').textContent.trim():k),
+      内容:st.notes[k].replace(/<[^>]+>/g,'').trim()};
+  });
+  var out={原型:'dingwei-prototype-v0.1.html',
+    依据SpecDoc锚:'cb97d0dd2856246383bfe33ee8f53db96d784646',
+    说明:'把本文件发回 opus50t，据此改 SpecDoc §25-§27。若改动与已裁定条款冲突，会指出条款号请业主裁定，不得两存。',
+    屏:scr,改文:改文,批注:批注};
+  var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='dingwei-proto-changes.json'; a.click();
+};
+
+/* ---- 重置 ---- */
+document.getElementById('bRst').onclick=function(){
+  if(!confirm('清除全部本地改动（改文 / 隐藏 / 顺序 / 批注），恢复初版？'))return;
+  localStorage.removeItem(KEY); location.reload();
+};
+
+/* ---- 视角切换（演示 K0-sec 可见性差异）---- */
+document.getElementById('tenant').onchange=function(){
+  var plat=this.value.indexOf('平台级 ops')>=0;
+  document.querySelectorAll('#s3 tbody tr[data-sec]').forEach(function(tr){
+    tr.classList.toggle('lock',!plat);
+    tr.lastElementChild.innerHTML = plat
+      ? '<span class="cell-ok">active</span>'
+      : '不在检索集合';
+    var t=tr.firstElementChild, base=t.dataset.base||t.textContent.replace(/^🔒\s*/,'');
+    t.dataset.base=base;
+    t.textContent = plat ? base : '🔒 ' + base;
+  });
+  var n=document.querySelector('#s3 .note.bad');
+  if(n) n.innerHTML = plat
+    ? '🔴 <b>先 RLS 过滤，后检索。</b>当前视角＝平台级 ops，K0-sec 三条<b>在</b>检索集合内（14 / 14 可见）。'
+      + '密级仍按条目分级：<b>S0 条目的实际访问须另有 capability</b>，可检索 ≠ 可读取。'
+    : '🔴 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。'
+      + '当前视角可见 <b>9 / 14</b> 条；<b>5 条 K0-sec 条目不在检索集合内</b>（不是「搜到了但打码」）。';
+};
+</script>
+</body></html>
