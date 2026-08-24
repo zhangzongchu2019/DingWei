@@ -249,3 +249,9 @@ ENDCASE
 CASE POS s-family
 依赖顺序 SP0 -> SP1 -> SP7a -> SP3;凭据触及 S0/S1 须重两签
 ENDCASE
+CASE POS s-family
+子 spec 编号由 S0-S8 改为 SP0-SP8;收口后裸 S3-S8 恒为 0
+ENDCASE
+CASE NEG s-family
+依赖顺序写成 SP0 -> SP1 -> S4 就是漏改
+ENDCASE

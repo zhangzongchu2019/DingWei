@@ -243,11 +243,14 @@ def check_s_family(s):
     """S 系收口后的不变量:裸 S0-S2 只表凭据分级;裸 S3-S8 恒为 0(凭据分级只定义三级);
     子 spec 一律写 SP0-SP8。写登记不写判据等于没登记 —— 故落成规则,不落成备忘。"""
     out=[]
-    for m in re.finditer(r'(?<!P)\bS[3-8][ab]?\b', s):
-        ln=s[:m.start()].count('\n')+1
+    # 区间写法(S0-S8 / `S3`-`S8`)指的是【符号族】,不是某个具体编号 —— 扫描前剥离。
+    # 不剥离的话,本规则会把「解释这条规则的文字」自己判成违例。
+    scan=re.sub(r'S\d[`\s]*[–—-][`\s]*S\d', '', s)
+    for m in re.finditer(r'(?<!P)\bS[3-8][ab]?\b', scan):
+        ln=scan[:m.start()].count('\n')+1
         out.append((ln,'s-family',
                     '裸 %s:凭据分级只定义 S0-S2,子 spec 须写 SP 系' % m.group(0),
-                    s.split('\n')[ln-1].strip()[:70]))
+                    scan.split('\n')[ln-1].strip()[:70]))
     return out
 
 ALL_CHECKS = [check_typed_refs, check_symbol_context, check_field_aliases, check_tables,
