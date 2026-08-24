@@ -85,7 +85,8 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v0.1</span></h1>
   <span class="anchor">依据 SpecDoc cb97d0d · 1881 行</span>
   <span class="sp"></span>
-  <select id="tenant"><option>租户：张宗楚（业主）</option><option>租户：图搜 3.0</option><option>视角：平台级 ops</option><option>视角：租户级 ops</option></select>
+  <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
+  <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
   <button id="bEdit">✎ 编辑模式</button>
   <button id="bNote">＋ 批注</button>
   <button id="bExp">⤓ 导出改动</button>
@@ -105,6 +106,10 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <a href="#s5">skill / MCP 库 <span class="mono">§15·16</span></a>
   <a href="#s6">Agent 管理 <span class="mono">§26</span></a>
   <a href="#s7">帖子流 <span class="mono">§18</span></a>
+  <div class="grp">Agent 面</div>
+  <a href="#a1">Agent 列表 <span class="mono">§26·新</span></a>
+  <a href="#a2">Agent 工作面 <span class="mono">新增</span></a>
+  <a href="#a3">与 Agent 交互 <span class="mono">§25.4</span></a>
   <div class="grp">接入</div>
   <a href="#s9">渠道授权 <span class="mono">§23.5</span></a>
   <a href="#s0">架构总览 <span class="mono">§3</span></a>
@@ -733,6 +738,194 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 </div>
 </section>
 
+<!-- ============ A1 Agent 列表 ============ -->
+<section class="scr" id="a1">
+<h2 data-edit>Agent 列表</h2>
+<div class="sub" data-edit>看它们在干什么，不只是能开关它们。§26 · <b style="color:var(--warn)">SpecDoc 未定义此屏，见屏底</b></div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>在线名册 <span class="ref">§26 扩</span> <span style="font-weight:400;color:var(--dim);font-size:12px">受顶栏「项目」筛选</span></h3>
+  <div class="chips">
+    <div class="chip on">全部 9</div><div class="chip">执行中 4</div><div class="chip">阻塞 2</div>
+    <div class="chip">idle 2</div><div class="chip">dead 1</div><div class="chip">水位 &gt;80% 2</div>
+  </div>
+  <table><thead><tr><th style="width:180px">会话</th><th style="width:82px">形态</th><th style="width:96px">角色</th>
+  <th style="width:50px">凭据</th><th style="width:96px">项目</th><th>当前 node</th><th style="width:96px">水位</th><th style="width:88px">状态</th></tr></thead><tbody>
+  <tr data-p="dingwei 平台"><td data-edit><b>zzc-devo48-2642</b><div class="mono">CLAUDE / opus-5</div></td><td>云上</td><td>implementer</td>
+    <td><span class="s1">S1</span></td><td>dingwei</td>
+    <td data-edit>N-1204 <span class="mono">tenant 派生链</span><div class="mono">seq 4/11 · 门 FAIL 待整改</div></td>
+    <td><div class="bar hot"><i style="width:78%"></i></div><span class="mono">78%</span></td><td class="cell-ok">active</td></tr>
+  <tr data-p="dingwei 平台"><td data-edit><b>zzc-sec-review-2642</b><div class="mono">CODEX / gpt-5.6</div></td><td>云上</td><td>安全评审（门方）</td>
+    <td><span class="s1">S1</span></td><td>dingwei</td>
+    <td data-edit>N-1204 代码评审 <span class="mono">门方席</span></td>
+    <td><div class="bar"><i style="width:31%"></i></div><span class="mono">31%</span></td><td class="cell-ok">active</td></tr>
+  <tr data-p="图搜 3.0-poc"><td data-edit><b>zzc-imgs-impl-2642</b></td><td>云上</td><td>implementer</td>
+    <td><span class="s1">S1</span></td><td>图搜 3.0</td>
+    <td data-edit>N-1187 <span class="mono">KB 加列</span><div class="mono cell-fail">阻塞 awaiting_input · SLA 超 26h</div></td>
+    <td><div class="bar"><i style="width:44%"></i></div><span class="mono">44%</span></td><td class="cell-fail">blocked</td></tr>
+  <tr data-p="图搜 3.0-poc"><td data-edit><b>zzc-imgs-qa-2642</b></td><td>IDE 插件</td><td>qa_owner</td>
+    <td><span class="s2">S2</span></td><td>图搜 3.0</td><td data-edit>N-1191 交付验证</td>
+    <td><div class="bar"><i style="width:52%"></i></div><span class="mono">52%</span></td><td class="cell-ok">active</td></tr>
+  <tr data-p="WSXC"><td data-edit><b>zzc-wsxc-impl-2642</b></td><td>云上</td><td>implementer</td>
+    <td><span class="s1">S1</span></td><td>WSXC</td>
+    <td data-edit>N-1210 <span class="mono cell-fail">starved · 无人可派（安全评审席已满 ≤2）</span></td>
+    <td><div class="bar"><i style="width:12%"></i></div><span class="mono">12%</span></td><td class="cell-fail">blocked</td></tr>
+  <tr data-p="dingwei 平台"><td data-edit><b>zzc-prodops-2642</b></td><td>云上</td><td>平台级 ops</td>
+    <td><span class="s1">S1</span></td><td>平台域</td><td data-edit><span class="mono">批次 B-2026-0824-01 整理中</span></td>
+    <td><div class="bar"><i style="width:23%"></i></div><span class="mono">23%</span></td><td class="cell-ok">active</td></tr>
+  <tr data-p="openAPI4AI"><td data-edit><b>zzc-api4ai-dev</b><div class="mono">本地终端 CLI</div></td><td class="cell-fail">本地</td><td>implementer</td>
+    <td><span class="s2">S2</span><div class="mono cell-fail">默认仅 S2</div></td><td>openAPI4AI</td><td data-edit><span class="mono">未领件</span></td>
+    <td><div class="bar"><i style="width:8%"></i></div><span class="mono">8%</span></td><td class="cell-wait">idle</td></tr>
+  <tr data-p="dingwei 平台"><td data-edit><b>zzc-summarizer-2642</b></td><td>云上</td><td>摘要 agent</td>
+    <td><span class="s2">S2</span><div class="mono">tenant+node 最小只读</div></td><td>dingwei</td>
+    <td data-edit><span class="mono">N-1163 digest 生成中</span></td>
+    <td><div class="bar"><i style="width:6%"></i></div><span class="mono">6%</span></td><td class="cell-ok">active</td></tr>
+  <tr data-p="WSXC" class="dis"><td data-edit><b>zzc-wsxc-qa-2642</b></td><td>云上</td><td>qa_owner</td>
+    <td><span class="s1">S1</span></td><td>WSXC</td><td data-edit><span class="mono">心跳 42 分钟前 · 判死待换代重派</span></td>
+    <td><div class="bar crit"><i style="width:94%"></i></div><span class="mono">94%</span></td><td class="cell-fail">dead</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>状态取值来自平台既有 <code>session_state</code>：<code>active / idle / silent_notice / restarting / dead</code>。
+  水位＝上下文占用；<b>判死后由 mcsd 换代重派</b>（<code>OnWorkerDead</code>），不靠人发现。</div>
+  <div class="note warn" data-edit>⚠️ <b>执行席 ≤ 2</b>（§4.5 mcsd 保留语义之一）。上表 N-1210 的 <code>starved</code> 正是席位占满导致，
+  不是无人愿接 —— 这个区别必须在界面上分得开，否则会被误读为「团队不配合」。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 本屏在 SpecDoc 中无对应条款 <span class="ref">缺口</span></h3>
+  <div class="note bad" data-edit>SpecDoc §26「Agent 管理」只定义了<b>管理动作</b>（新建 / 关闭 / 重启 / 上下文注入）与<b>三形态的凭据策略</b>，
+  <b>没有定义「查看 Agent 在干什么」这个面</b>。全文搜「Agent 视角 / 工作面 / 任务清单」零命中。<br>
+  ⇒ 本屏是<b>原型先行</b>。业主确认后须回写 SpecDoc（拟为 <b>§25.5 Agent 名册</b>），并走一轮评审。</div>
+</div>
+</section>
+
+<!-- ============ A2 Agent 工作面 ============ -->
+<section class="scr" id="a2">
+<h2 data-edit>Agent 工作面 · zzc-devo48-2642</h2>
+<div class="sub" data-edit>一个 Agent 自己看到的：我的件、我的阻塞、我该读什么。<b style="color:var(--warn)">SpecDoc 未定义此屏</b></div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>我的任务清单 <span class="ref">§7.3 · §9.2 引擎侧</span></h3>
+  <table><thead><tr><th style="width:78px">node</th><th style="width:62px">seq</th><th>件</th>
+  <th style="width:104px">我的角色</th><th style="width:110px">状态</th><th style="width:112px">SLA</th><th style="width:96px">动作</th></tr></thead><tbody>
+  <tr><td><b>N-1204</b></td><td>4/11</td><td data-edit>tenant 派生链实现<div class="mono">acceptance 锚 sha256:9c1f…4b · 规则表 v2026-08-24.1</div></td>
+    <td>implementer</td><td class="cell-fail">门 FAIL 待整改</td><td class="over">已超 3h12m</td><td><button>看 FAIL 复现</button></td></tr>
+  <tr><td><b>N-1206</b></td><td>5/11</td><td data-edit>tenant 派生链负向测试（伪造 tenant 必须被拒）</td>
+    <td>implementer</td><td class="cell-wait">dispatched · 未拉取</td><td>剩 19h</td><td><button>拉取</button></td></tr>
+  <tr><td><b>N-1198</b></td><td>9/9</td><td data-edit>K0 拆 pub/sec 迁移脚本</td>
+    <td>implementer</td><td class="cell-ok">已交审</td><td>—</td><td><button>看门结果</button></td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ <b>每次一项闸</b>：名下已有 <code>in_progress</code> 时拉取新件返回 409 <code>pull_gate</code>。
+  N-1204 尚未整改完，故 N-1206 的「拉取」会被拒 —— <b>界面须提前显示，而不是点了才报错</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>N-1204 派发信封 <span class="ref">§11.4 · §7.4</span></h3>
+  <div class="note bad" data-edit>🔴 <b>缺任一字段 = 无效派发，执行小组拒接。</b>信封自带完整性判据，界面须逐项显示齐否。</div>
+  <div class="kv">
+    <b>envelope_ref</b><div class="mono cell-ok">✓ env:8f2a1c… </div>
+    <b>原交付物锚</b><div class="mono cell-ok">✓ result_ref=docs/… · sha256:4b7e…（<b>锚，不是路径</b>）</div>
+    <b>FAIL evidence</b><div class="mono cell-ok">✓ 完整 · 含失败最小复现</div>
+    <b>acceptance 锚</b><div class="mono cell-ok">✓ sha256:9c1f…4b <span style="color:var(--dim)">判据一改锚即变，防悄改判据</span></div>
+    <b>规则版本</b><div class="mono cell-ok">✓ 分级规则表 v2026-08-24.1</div>
+    <b>上下文版本</b><div class="mono cell-ok">✓ K0-pub@r31 · K1@v1.4 · K2@v1.4</div>
+    <b>context_budget</b><div><div class="bar hot"><i style="width:78%"></i></div><span class="mono">已用 78% · 上限 由 node 给定</span></div>
+  </div>
+  <div class="note" data-edit>📌 修订 node <b>不依赖 worker 记忆</b>，靠这份<b>不可变派发快照</b>重灌。
+  亲和（<code>OriginHint</code>）仅 pick 权重，不承担正确性。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>我的阻塞点 <span class="ref">§7.3</span></h3>
+  <table><thead><tr><th style="width:78px">node</th><th style="width:150px">blocker_reason</th><th>说明</th><th style="width:130px">谁能解</th></tr></thead><tbody>
+  <tr><td>N-1204</td><td><code>—</code> 门 FAIL</td><td data-edit>门方＝安全角色，判定「tenant 派生缺负向测试」</td><td>我（建修订 node）</td></tr>
+  <tr><td>N-1187</td><td><code>awaiting_input</code></td><td data-edit>等业主裁存储选型（三方案并列，SpecDoc 附录 C.3 未单裁）</td><td class="cell-fail">业主</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>六值枚举：<code>retry_exhausted / awaiting_input / dep_failed / starved / delivery_unresolved / 需决策</code>。
+  <b>阻塞不是「我干不动」，是「引擎判定此处需要外部动作」</b> —— 故每行必须给出「谁能解」。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>我该读什么 <span class="ref">§18.3 · §11.3</span></h3>
+  <div class="note" data-edit><b>我不轮询、不主动读。</b>引擎在派发时把 N-1204 帖子流的<b>增量</b>（<code>cursor &gt; 我上次读到的位置</code>）
+  打包进派发信封。成本上界 = O(成功覆盖的 post-recipient 对 + 重投开销)。</div>
+  <div class="kv">
+    <b>本次增量</b><div>4 条（cursor 118 → 122）· 已 ACK</div>
+    <b>去重</b><div class="mono">按 post_id / delivery_id 幂等 —— <b>at-least-once + dedupe，不宣称恰读一次</b></div>
+    <b>已注入上下文</b><div>K0-pub 全量 · K0-sec <span class="cell-fail">不注入（我无该授权）</span> · K1 切片 topK=8 · K2/K3 全量 · 平台级 skill 5 件</div>
+  </div>
+  <div class="note warn" data-edit>⚠️ 若本 node 触门被封锁，我这里会<b>停止收到注入</b>（三段式第 ① 段），
+  但<b>仍可单次读取固定 snapshot</b>（第 ③ 段）—— 禁的是注入，不是读取。</div>
+</div>
+</section>
+
+<!-- ============ A3 与 Agent 交互 ============ -->
+<section class="scr" id="a3">
+<h2 data-edit>与 Agent 交互</h2>
+<div class="sub" data-edit>直连通道 · 统一信封 · 出站闸。§25.4（<b style="color:var(--warn)">规范仅两行，无界面定义</b>）</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>两条通道 <span class="ref">§25.4</span></h3>
+  <div class="grid g2">
+    <div class="card"><b>① 平台通道（常规）</b>
+      <div style="margin-top:6px">经平台 → 统一信封 → Agent</div>
+      <div class="mono">渠道差异在平台侧吸收干净，Agent 只见一种信封</div></div>
+    <div class="card"><b>② sidecar 旁路（常开）</b>
+      <div style="margin-top:6px">绕开平台，直连会话</div>
+      <div class="note bad" style="margin-top:8px">理由：<b>平台故障时，若唯一通道是平台自身，ops-Agent 无法恢复平台。</b>
+      故 sidecar 常开，<b>不砍 view 页</b>。</div></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>给 zzc-devo48-2642 发一条 <span class="ref">§19.2 出站闸</span></h3>
+  <div style="display:flex;gap:8px;align-items:flex-start">
+    <select style="width:200px"><option>类型：status（任务状态）</option><option>类型：gate_result</option>
+    <option>类型：C3.1 决策请求</option><option>类型：break-glass</option><option>类型：平台运维通告</option></select>
+    <div style="flex:1">
+      <textarea rows="3" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:9px;color:var(--tx);font-family:inherit" placeholder="正文…"></textarea>
+      <div class="mono" style="margin-top:4px">task=T-1204 · node=N-1204 · tenant=dingwei · version=v1.4 <span style="color:var(--ok)">结构化头齐</span></div>
+    </div>
+    <button>发送</button>
+  </div>
+  <div class="note bad" data-edit>🔴 <b>判定只读结构化头，绝不读正文。</b>出站消息若 recipient 是某 task 参与者、
+  且可信结构化头（<code>meta.op</code>/<code>event_type</code> ＋ task/node/tenant/version）不属允许集 ⇒ <b>拒发，回指帖子流</b>。<br>
+  <b>一切自由文本必须落 node 帖子流</b>，不走 agent↔agent 直接通道。<b>跨租户默认拒</b>，须 guarded capability。</div>
+  <div class="note warn" data-edit>⚠️ 调度者收件面<b>不提供任何「转述 / 转发」op</b>（L3）。
+  本阶段实战教训：善意且准确的转述<b>仍产生了两处内容丢失、九次消息错序</b> —— 故此处是机制约束，不是纪律约束。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>统一信封（Agent 实际收到的） <span class="ref">§27.1</span></h3>
+  <div style="background:#101319;border:1px solid var(--line);border-radius:6px;padding:11px" class="mono">
+{ "to":"zzc-devo48-2642", "meta":{<br>
+&nbsp;&nbsp;"op":"status", "task":"T-1204", "node":"N-1204",<br>
+&nbsp;&nbsp;"tenant":"dingwei", "version":"v1.4",<br>
+&nbsp;&nbsp;"delivery_id":"d-77a1", "cursor_range":[118,122] },<br>
+&nbsp;&nbsp;"body":"…", "posts":[ 4 条增量 ] }
+  </div>
+  <div class="note" data-edit>平台侧已消化：消息格式规范化 · 长度上限与分片重组 · 富文本与附件差异 · 回执语义归一 ·
+  乱序与重投 · <b>幂等键贯穿（重投不重执行）</b>。<br>
+  ⇒ <b>不增加 Agent 多余负担</b>：无论消息来自飞书、企微、Slack 还是平台内部，Agent 只见这一种形状。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 §25.4 在 SpecDoc 中只有两行 <span class="ref">缺口</span></h3>
+  <div class="note bad" data-edit>§25.4 全节正文仅：「不砍 view 页，sidecar 常开做旁路」＋ 一句理由。
+  <b>没有任何界面定义</b> —— 发什么、怎么发、发之前过哪些闸、Agent 收到的是什么形状，全部未写。<br>
+  ⇒ 本屏亦为<b>原型先行</b>。业主确认后回写 SpecDoc（拟扩 §25.4 或新设 <b>§25.7 交互通道界面契约</b>）。</div>
+</div>
+</section>
+
 </div></div>
 
 <script>
@@ -871,24 +1064,66 @@ document.getElementById('bRst').onclick=function(){
   localStorage.removeItem(KEY); location.reload();
 };
 
-/* ---- 视角切换（演示 K0-sec 可见性差异）---- */
-document.getElementById('tenant').onchange=function(){
-  var plat=this.value.indexOf('平台级 ops')>=0;
+/* ---- 项目筛选（全局，作用于带 data-p 的行）---- */
+var selP=document.getElementById('proj');
+function applyProj(){
+  var v=selP.value;
+  document.querySelectorAll('[data-p]').forEach(function(tr){
+    tr.style.display=(v==='all'||tr.dataset.p===v)?'':'none';
+  });
+  document.querySelectorAll('[data-projlabel]').forEach(function(e){
+    e.textContent = v==='all' ? '全部项目' : v;
+  });
+}
+selP.onchange=applyProj; applyProj();
+
+/* ---- 视角切换 ---- */
+var selPer=document.getElementById('persona');
+function applyPersona(){
+  var v=selPer.value, plat=(v==='platops');
+
+  /* K0-sec 可见性：只有平台级 ops 在检索集合内 */
   document.querySelectorAll('#s3 tbody tr[data-sec]').forEach(function(tr){
     tr.classList.toggle('lock',!plat);
-    tr.lastElementChild.innerHTML = plat
-      ? '<span class="cell-ok">active</span>'
-      : '不在检索集合';
-    var t=tr.firstElementChild, base=t.dataset.base||t.textContent.replace(/^🔒\s*/,'');
+    tr.lastElementChild.innerHTML = plat ? '<span class="cell-ok">active</span>' : '不在检索集合';
+    var t=tr.firstElementChild, base=t.dataset.base||t.textContent.replace(/^\uD83D\uDD12\s*/,'');
     t.dataset.base=base;
-    t.textContent = plat ? base : '🔒 ' + base;
+    t.textContent = plat ? base : '\uD83D\uDD12 ' + base;
   });
   var n=document.querySelector('#s3 .note.bad');
   if(n) n.innerHTML = plat
-    ? '🔴 <b>先 RLS 过滤，后检索。</b>当前视角＝平台级 ops，K0-sec 三条<b>在</b>检索集合内（14 / 14 可见）。'
-      + '密级仍按条目分级：<b>S0 条目的实际访问须另有 capability</b>，可检索 ≠ 可读取。'
-    : '🔴 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。'
+    ? '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>当前视角＝平台级 ops，K0-sec 三条<b>在</b>检索集合内（14 / 14 可见）。'
+      + '密级仍按条目分级：<b>S0 条目的实际访问须另有 capability</b>，可检索 \u2260 可读取。'
+    : '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。'
       + '当前视角可见 <b>9 / 14</b> 条；<b>5 条 K0-sec 条目不在检索集合内</b>（不是「搜到了但打码」）。';
-};
+
+  /* Agent 视角：把导航重心切到 Agent 面，并提示决断面非其职责 */
+  var isAg=(v==='agent');
+  ['s1','s8','s9'].forEach(function(id){
+    var a=document.querySelector('#nav a[href="#'+id+'"]');
+    if(a) a.style.opacity = isAg ? '.4' : '1';
+  });
+  var b=document.getElementById('perBanner');
+  if(!b){ b=document.createElement('div'); b.id='perBanner'; b.className='note';
+    b.style.margin='0 0 14px'; document.getElementById('main').prepend(b); }
+  if(isAg){
+    b.className='note warn';
+    b.innerHTML='\u26A0\uFE0F <b>当前为 Agent 视角。</b>待决队列 / 平台治理 / 渠道授权<b>不是执行席的职责面</b>（已淡化）——'
+      +'按 §7.2「执行席不得自行收口」「implementer 不能自签门 PASS」。执行席看到的是<b>自己的件与自己的阻塞</b>。';
+    location.hash='#a2';
+    var na=document.querySelector('#nav a[href="#a2"]'); if(na) na.click();
+  }else if(plat){
+    b.className='note';
+    b.innerHTML='\uD83D\uDCCC <b>平台级 ops 视角。</b>K0-sec 已进入检索集合；职责＝生产系统、平台运维、公共资源（含平台级 skill / MCP / spec 模板）。'
+      +'<b>整理汇总权，非批准权</b> —— 批准在平台管理者（§24.2）。';
+  }else if(v==='tenops'){
+    b.className='note';
+    b.innerHTML='\uD83D\uDCCC <b>租户级 ops 视角。</b>职责＝本租户业务模块开发、测试环境。'
+      +'租户级 skill 由本视角 <b>pull 自取</b>；<b>不可拉取他租户 skill</b>（§15.3）。';
+  }else{
+    b.className='note'; b.innerHTML='\uD83D\uDCCC <b>业主 / 租户视角。</b>决断面为主：待决队列按等待时长排序，逾期标红。';
+  }
+}
+selPer.onchange=applyPersona; applyPersona();
 </script>
 </body></html>
