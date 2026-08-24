@@ -36,6 +36,16 @@ COUNT_REF_EXEMPT = 'NO_HARDCODED_COUNT_REFS'
 # 历史引文:仅识别【声明式引文形态】,扫描前剥离。
 # ⚠️ 边界:自由行文里的历史陈述机器分不出(kimi ③),那仍归 E.4 人审 —— 本表不宣称能覆盖。
 HISTORICAL_QUOTES = [r'原写「[^」]*」', r'原文写「[^」]*」', r'曾写「[^」]*」', r'原作「[^」]*」']
+# 受控 ID 表:表名 -> (起始锚, 结束锚)。ID 须唯一;基数须连续(允许 12a/12b 形态的插入项)
+ID_TABLES = [('E.1','## E.1 第 I 类','## E.2'), ('E.2','## E.2 第 II 类','## E.3'),
+             ('E.3','## E.3 第 III 类','## E.4'), ('E.4','## E.4 第 IV 类','## E.5')]
+# 跨表 typed 外键:引用写法 -> 目标表。任一引用须解析到该表实际存在的 ID
+TYPED_FKEYS = [(r'复合 ← E\.1 ((?:#\d+(?:\s*·\s*)?)+)', 'E.1'),
+               (r'复合 → E\.4 ((?:#\d+(?:\s*·\s*)?)+)', 'E.4'),
+               (r'(?<![.\w])E\.4 (#\d+)', 'E.4'), (r'(?<![.\w])E\.1 (#\d+)', 'E.1')]
+# 权威定义唯一:概念 -> 须恰好出现一次的【标记行】。标记为 〔权威定义〕,写在该概念的唯一定义处
+AUTHORITATIVE_MARK = '〔权威定义〕'
+AUTHORITATIVE_DEFS = ['domain_level', 'visibility', '生命周期', '记忆类型', '凭据分级']
 # ================================================
 
 def load(p): return open(p,encoding='utf-8').read()
@@ -54,11 +64,20 @@ def check_symbol_context(s):
         if ctx is None: continue
         for i,ln in enumerate(lines,1):
             if re.search(pat,ln) and not any(c in ln for c in ctx):
-                # 向上找 3 行取语境
-                near='\n'.join(lines[max(0,i-4):i])
+                # 语境按【所属节】判,不按前 3 行 —— 前 3 行窗口太窄,把合法用法误报成漂移
+                near=_section_of(s,i)
                 if not any(c in near for c in ctx):
                     out.append((i,'symbol-context',msg,ln.strip()[:70]))
     return out
+
+def _section_of(s,lineno):
+    """取该行所属 heading 的整节正文(用于语境判定)"""
+    hs=_headings(s); lines=s.split('\n')
+    start=0; end=len(lines)
+    for _,ln,_ in hs:
+        if ln<=lineno: start=ln-1
+        elif ln>lineno: end=ln-1; break
+    return '\n'.join(lines[start:end])
 
 def check_field_aliases(s):
     """只看【字段声明位置】(表格首列的 `field`),不看正文自由提及与子字段。"""
@@ -142,31 +161,172 @@ def check_count_refs(s):
                 f'引用 §{sec}（已声明不写死条数）却带计数「{hit.group(0).strip()}」',ln.strip()[:70]))
     return out
 
+def _tbl_ids(s, a, b):
+    seg=s[s.find(a):s.find(b)]
+    return re.findall(r'^\| \*{0,2}(\d+[a-z]?)\*{0,2} \|', seg, re.M)
+
+def check_ids(s):
+    """#47b-1 受控 ID 唯一且连续(基数连续;字母后缀视为插入项,须挂在已存在的基数上)"""
+    out=[]
+    for name,a,b in ID_TABLES:
+        ids=_tbl_ids(s,a,b)
+        seen=set()
+        for x in ids:
+            if x in seen: out.append((0,'id-dup',f'{name} ID #{x} 重复',''))
+            seen.add(x)
+        # 基数集只取【纯数字 ID】:若把 7a 也算进基数,「7a 的基数 7 不存在」就永远判不出来
+        base=sorted({int(x) for x in ids if x.isdigit()})
+        for x in ids:
+            m=re.fullmatch(r'(\d+)([a-z])',x)
+            if m and int(m.group(1)) not in base:
+                out.append((0,'id-orphan',f'{name} #{x} 是插入项但基数 #{m.group(1)} 不存在',''))
+        if base:
+            miss=[n for n in range(base[0],base[-1]+1) if n not in base]
+            # 允许显式作废(行内写「已删除」「已并入」)的空号
+            for n in miss:
+                if not re.search(r'#%d\D{0,20}(已删除|已并入|已撤销)'%n, s):
+                    out.append((0,'id-gap',f'{name} 基数 #{n} 缺号且未标注作废',''))
+    return out
+
+def check_fkeys(s):
+    """#47b-2 跨表 typed 外键完整:每个引用须解析到目标表实际存在的 ID"""
+    exist={name:set(_tbl_ids(s,a,b)) for name,a,b in ID_TABLES}
+    out=[]
+    for pat,tgt in TYPED_FKEYS:
+        for m in re.finditer(pat,s):
+            for num in re.findall(r'#(\d+[a-z]?)',m.group(1)):
+                if num not in exist.get(tgt,set()):
+                    ln=s[:m.start()].count('\n')+1
+                    out.append((ln,'fkey',f'引用 {tgt} #{num},但该表无此 ID',m.group(0)[:50]))
+    return out
+
+def check_authoritative(s):
+    """#47b-3 权威定义唯一:每个受控概念的 〔权威定义〕 标记须恰好一次"""
+    out=[]
+    for c in AUTHORITATIVE_DEFS:
+        hits=[i for i,ln in enumerate(s.split('\n'),1)
+              if AUTHORITATIVE_MARK in ln and c in ln]
+        if len(hits)==0: out.append((0,'authdef',f'概念「{c}」无 {AUTHORITATIVE_MARK} 标记',''))
+        elif len(hits)>1: out.append((hits[1],'authdef',f'概念「{c}」有 {len(hits)} 处权威定义标记',f'L{hits}'))
+    return out
+
+def _headings(s):
+    return [(m.group(1), s[:m.start()].count('\n')+1, m.group(0).strip())
+            for m in re.finditer(r'^#{2,4}\s+(?:[🔴⚠️✅⛔]\s*)*(?:§\s*)?(\d+(?:\.\d+[a-z]?(?:-\d+)?)*)\s',s,re.M)]
+
+def check_heading_ids(s):
+    """#47b-4 heading 编号唯一"""
+    out=[]; seen={}
+    for num,ln,txt in _headings(s): seen.setdefault(num,[]).append((ln,txt))
+    for num,v in seen.items():
+        if len(v)>1: out.append((v[1][0],'head-dup',f'章节号 §{num} 出现 {len(v)} 次',
+                                 ' / '.join(t[:28] for _,t in v)))
+    return out
+
+def check_fences(s):
+    """#47b-5 代码围栏闭合"""
+    n=len(re.findall(r'^```',s,re.M))
+    return [] if n%2==0 else [(0,'fence',f'代码围栏 ``` 共 {n} 处,未闭合','')]
+
+def check_link_resolve(s):
+    """#47b-6 内部链接唯一解析:每个 §N 须解析到【恰好一个】heading"""
+    idx={}
+    for num,ln,_ in _headings(s): idx.setdefault(num,[]).append(ln)
+    out=[]
+    for r in sorted(set(re.findall(r'§(\d+(?:\.\d+[a-z]?(?:-\d+)?)*)',s))):
+        t=idx.get(r,[])
+        if len(t)==0: out.append((0,'link-dangling',f'§{r} 无对应章节',''))
+        elif len(t)>1: out.append((t[1],'link-ambig',f'§{r} 解析到 {len(t)} 个章节',f'L{t}'))
+    return out
+
+ALL_CHECKS = [check_typed_refs, check_symbol_context, check_field_aliases, check_tables,
+              check_refs, check_E, check_count_refs, check_ids, check_fkeys,
+              check_authoritative, check_heading_ids, check_fences, check_link_resolve]
+
+def run_all(doc):
+    out=[]
+    for f in ALL_CHECKS:
+        try: out+=f(doc)
+        except Exception as e: out.append((0,'crash',f'{f.__name__} 抛异常: {e}',''))
+    return out
+
+def parse_corpus(txt):
+    """块式语料:CASE <POS|NEG> <rule-kind> [USEFIXTURE] / <doc 多行> / ENDCASE"""
+    fx=txt[txt.find('FIXTURE\n')+8:txt.find('\nENDFIXTURE')] if 'FIXTURE\n' in txt else ''
+    cases=[]
+    for m in re.finditer(r'^CASE (POS|NEG) (\S+)( USEFIXTURE)?\n(.*?)^ENDCASE\s*$', txt, re.M|re.S):
+        kind,rule,usefx,body=m.group(1),m.group(2),bool(m.group(3)),m.group(4)
+        cases.append((kind,rule,(fx+'\n'+body) if usefx else body))
+    return cases
+
 def selftest(cpath):
-    """反例须被拦且拦在预期规则上;正例须全过。规则改动后先跑这个(E.3 #47a)。"""
-    txt=load(cpath); fx=txt[txt.find('FIXTURE\n')+8:txt.find('\nEND')]
-    bad=0; total=0
-    for ln in txt.split('\n'):
-        ln=ln.strip()
-        if not (ln.startswith('POS ') or ln.startswith('NEG ')): continue
-        total+=1
-        kind,_,rest=ln.partition(' ')
-        rule,_,body=(rest.partition('|') if kind=='POS' else rest.partition('|'))
-        rule=rule.strip(); body=body.strip()
-        out=check_count_refs(fx+'\n'+body)
-        got={o[1] for o in out}
-        if kind=='NEG':
-            if rule not in got: print(f'  ❌ 反例未拦在 {rule}: {body}  (实得 {got or "无"})'); bad+=1
-        else:
-            if got: print(f'  ❌ 正例误拦 {got}: {body}'); bad+=1
-    print(f'--- 语料 {total} 条,{"全部通过" if not bad else str(bad)+" 条不符"}')
+    """NEG 须命中【预期的那一条规则】;POS 须该规则不命中。规则改动前置门(E.3 #47a)。"""
+    cases=parse_corpus(load(cpath)); bad=0; cov={}
+    for kind,rule,doc in cases:
+        got={o[1] for o in run_all(doc)}
+        cov.setdefault(rule,[0,0]); cov[rule][0 if kind=='NEG' else 1]+=1
+        if kind=='NEG' and rule not in got:
+            print(f'  ❌ NEG 未命中 {rule}(实得 {sorted(got) or "无"}): {doc.strip().splitlines()[-1][:60]}'); bad+=1
+        if kind=='POS' and rule in got:
+            print(f'  ❌ POS 被 {rule} 误拦: {doc.strip().splitlines()[-1][:60]}'); bad+=1
+    kinds={k for _,k,_ in cases}
+    print(f'--- 语料 {len(cases)} 例 / 覆盖规则 {len(kinds)} 条,'
+          + ('全部通过' if not bad else f'{bad} 例不符'))
+    for r in sorted(cov): 
+        n,p_=cov[r]
+        if not n or not p_: print(f'  ⚠️ 规则 {r} 正反例不全(NEG {n} / POS {p_})')
     return bad
+
+# 变异体:每条规则配一处「故意改坏」,其 NEG 例必须随之失守。
+# 不失守 = 该 NEG 没在测这条规则,语料是空的(E.3 #47a「语料须有牙」)。
+MUTATIONS = [
+    ('count-ref',     "(?:\\.\\d+[a-z]?)*)\\s'", "(?:\\.\\d+[a-z]?)?)\\s'"),
+    ('id-gap',        "if not re.search(r'#%d", "if False and not re.search(r'#%d"),
+    ('id-dup',        "if x in seen: out.append", "if False: out.append"),
+    ('id-orphan',     "if m and int(m.group(1)) not in base:", "if False:"),
+    ('fkey',          "if num not in exist.get(tgt,set()):", "if False:"),
+    ('authdef',       "if len(hits)==0:", "if False:"),
+    ('head-dup',      "if len(v)>1: out.append", "if False: out.append"),
+    ('fence',         "return [] if n%2==0 else", "return [] if True else"),
+    ('link-ambig',    "elif len(t)>1: out.append", "elif False: out.append"),
+    ('link-dangling', "if len(t)==0: out.append", "if False: out.append"),
+    ('table',         "if len(blk)==1: out.append", "if False: out.append"),
+    ('symbol-context',"if not any(c in near for c in ctx):", "if False:"),
+    ('typed-symbol',  "for m in re.finditer(pat,s):\n            ln=s[:m.start()]",
+                      "for m in []:\n            ln=s[:m.start()]"),
+]
+
+def mutate(cpath, selfpath):
+    """对每条规则施加一处变异,验证其 NEG 例随之失守。"""
+    import subprocess, tempfile, os
+    src=load(selfpath); cases=parse_corpus(load(cpath)); bad=0
+    for rule,pat,repl in MUTATIONS:
+        neg=[c for c in cases if c[0]=='NEG' and c[1]==rule]
+        if not neg: print(f'  ⚠️ 规则 {rule} 无 NEG 例,变异无从验证'); bad+=1; continue
+        n=src.count(pat); mut=src.replace(pat,repl)
+        if n==0: print(f'  ❌ 变异未命中源码:{rule}({pat[:40]})'); bad+=1; continue
+        with tempfile.NamedTemporaryFile('w',suffix='.py',delete=False,encoding='utf-8') as f:
+            f.write(mut); mp=f.name
+        r=subprocess.run([sys.executable,mp,'--selftest',cpath],capture_output=True,text=True)
+        os.unlink(mp)
+        if r.returncode==0:
+            print(f'  ❌ 变异体仍通过:{rule} 的 NEG 例没在测这条规则'); bad+=1
+        elif f'NEG 未命中 {rule}' not in r.stdout:
+            print(f'  ❌ 变异体失守在别处,不是 {rule}:\n{r.stdout.strip()[:200]}'); bad+=1
+    print(f'--- 变异体 {len(MUTATIONS)} 个,'+('全部如期失守(语料有牙)' if not bad else f'{bad} 个不符'))
+    return bad
+
+if len(sys.argv)>2 and sys.argv[1]=='--mutate':
+    sys.exit(1 if mutate(sys.argv[2], __file__) else 0)
 
 if len(sys.argv)>2 and sys.argv[1]=='--selftest':
     sys.exit(1 if selftest(sys.argv[2]) else 0)
 
 s=load(sys.argv[1])
-all_out=(check_typed_refs(s)+check_field_aliases(s)+check_tables(s)+check_refs(s)+check_E(s)+check_count_refs(s))
+all_out=(check_typed_refs(s)+check_symbol_context(s)+check_field_aliases(s)+check_tables(s)
+         +check_refs(s)+check_E(s)+check_count_refs(s)
+         +check_ids(s)+check_fkeys(s)+check_authoritative(s)+check_heading_ids(s)
+         +check_fences(s)+check_link_resolve(s))
 for ln,kind,msg,ctx in sorted(all_out,key=lambda x:(x[1],x[0])):
     print(f"[{kind:14s}] L{ln:<5d} {msg}  {ctx}")
 print("---", f"{len(all_out)} 处" if all_out else "全部通过")
