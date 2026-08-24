@@ -25,3 +25,9 @@ mcs-sim:
 
 mcsd:
 	CGO_ENABLED=0 go build -trimpath -o bin/mcsd ./cmd/mcsd
+
+speclint:
+	@scripts/speclint-gate.sh
+
+speclint-hook:
+	@ln -sf ../../scripts/speclint-gate.sh .git/hooks/pre-commit && echo "已装 pre-commit 钩子 -> scripts/speclint-gate.sh"

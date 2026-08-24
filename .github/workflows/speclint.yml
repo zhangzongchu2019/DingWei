@@ -1,0 +1,20 @@
+name: speclint
+
+# 与 scripts/speclint-gate.sh 是同一道闸的两处装法：
+# 本机 pre-commit 钩子只对装了它的人生效，CI 这道对所有人生效。
+on:
+  push:
+    paths: ['docs/**']
+  pull_request:
+    paths: ['docs/**']
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: SpecDoc 三道门
+        run: scripts/speclint-gate.sh
