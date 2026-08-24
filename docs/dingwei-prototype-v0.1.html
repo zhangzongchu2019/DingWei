@@ -1495,7 +1495,11 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 <!-- ============ A8 Agent 对话（多模态） ============ -->
 <section class="scr" id="a8">
 <h2 data-edit>Agent 对话 · 多模态</h2>
-<div class="sub" data-edit>主界面内的直连对话，替代 view 页。<b style="color:var(--bad)">与 §25.4 已裁定条款相撞，见屏底</b></div>
+<div class="sub" data-edit>Agent 原生交互 —— 仅用于两类场景，其余走帖子流。<b class="cell-ok">业主 2026-08-24 已裁：砍 view，仅保留 sidecar</b></div>
+
+<div class="note" data-edit>📌 <b>业主裁定的适用范围（本屏据此收窄）</b>：Agent 原生交互能力只有两个用途 ——
+<b>① ops 场景</b>（见「ops 紧急对话」屏）· <b>② 与人开放性讨论</b>（产品定义、架构探索、技术探索等）。
+<b>其他场景都通过帖子流解决。</b></div>
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
@@ -1534,6 +1538,29 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>原生交互只用于两类场景 <span class="ref">业主定</span></h3>
+  <table><thead><tr><th style="width:150px">场景</th><th>为什么帖子流不够用</th><th style="width:130px">走哪条</th></tr></thead><tbody>
+  <tr><td class="cell-wait"><b>ops 场景</b></td>
+    <td data-edit><b>平台可能已挂，帖子流不可达</b> —— 帖子流本身就在平台上</td>
+    <td>ops 紧急对话屏</td></tr>
+  <tr><td class="cell-wait"><b>开放性讨论</b><div class="mono">产品定义 · 架构探索 · 技术探索</div></td>
+    <td data-edit>需要<b>快速来回</b>、<b>多模态</b>（图/视频）、且<b>不受 5~11 条与阶梯硬门约束</b> ——
+    帖子流的<b>形态</b>不适合探索式对话</td>
+    <td>本屏</td></tr>
+  <tr class="dis"><td>其余全部</td><td data-edit>帖子流已足够：状态通知、交付登记、门结果、澄清、跨 task 协调</td>
+    <td>帖子流</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 <b>本席建议（待裁）：开放性讨论仍应落帖子流。</b><br>
+  理由：帖子流对讨论不适合的是<b>形态</b>（回合慢、有条数闸），不是<b>记录</b>。
+  若讨论完全不落账，<b>「作业无痕」就从这个口子回来了</b> —— 而那正是 §17 要解的问题。<br>
+  ⇒ <b>原生交互是【输入形态】，帖子流是【记录形态】，两者不是二选一。</b><br>
+  落法现成：§18.4 已定<b>「开放讨论型」node</b> —— 建 node 时标记，<b>阈值放宽或不设</b>，
+  但<b>豁免须落账</b>（node · 标记人 · 理由 · 时间），且<b>不得由执行方自行标记</b>。
+  <b>讨论走原生交互，记录落该 node 的帖子流，两边都成立。</b></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>为什么这里不需要 unlock <span class="ref">业主问</span></h3>
   <div class="grid g2">
     <div class="card"><b class="cell-fail">旧 view 页</b>
@@ -1555,27 +1582,51 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 与 §25.4 相撞 —— 但核下来不是真冲突 <span class="ref">§0.5 冲突处置</span></h3>
-  <div class="note bad" data-edit>§25.4 <b>全节两行</b>：「<b>不砍 view 页，sidecar 常开做旁路。</b>
-  理由：平台故障时，若唯一通道是平台自身，ops-Agent 无法恢复平台。」</div>
-  <div class="note warn" data-edit>⚠️ <b>问题出在这一句把两件事捆在一起，却只给了其中一件的理由。</b><br>
-  那个理由（<b>需要一条不依赖平台的旁路</b>）成立，但它支持的是 <b>sidecar</b> ——
-  <b>view 页本身就是平台的一部分，它不承担这个职能</b>；平台挂了，view 页一样挂。</div>
-  <table><thead><tr><th style="width:120px"></th><th>职能</th><th style="width:100px">平台故障时</th><th style="width:96px">处置</th></tr></thead><tbody>
-  <tr><td><b>view 页</b></td><td data-edit>常规交互界面：渲染终端输出、人在上面输入、分页尾锚、<b>unlock</b></td>
-    <td class="cell-fail">一起挂</td><td class="cell-fail"><b>可砍</b></td></tr>
-  <tr><td><b>sidecar</b></td><td data-edit>各会话宿主上的本地端点（实测 5/5 可用），<b>不经平台</b></td>
-    <td class="cell-ok">仍可达</td><td class="cell-ok"><b>必须留</b></td></tr>
+  <h3>✅ §25.4 已裁定：砍 view，仅保留 sidecar <span class="ref">业主 2026-08-24</span></h3>
+  <div class="note" data-edit><b>业主原话</b>：「如果砍掉 view 页面，也是可以的，仅保留 sidecar，这里需要做一个鉴权：
+  保证 Agent 会话不会被其他人攻击。云端，可以统一汇聚到某个 Nginx 服务器的 URI，做代理转发，在 Nginx 层做统一鉴权。
+  本地电脑端运行时，如果能允许本地交互，就无需 Nginx 转发授权。」</div>
+  <table><thead><tr><th style="width:120px"></th><th>处置</th><th style="width:150px">理由</th></tr></thead><tbody>
+  <tr><td><b>view 页</b></td><td class="cell-fail" data-edit><b>砍</b> —— 其常规交互职能由本屏承担</td>
+    <td data-edit>身份已在会话中；<b>unlock 面随之消失</b></td></tr>
+  <tr><td><b>sidecar</b></td><td class="cell-ok" data-edit><b>保留</b> —— 承载原生交互与紧急通道</td>
+    <td data-edit>不经平台，平台故障时仍可达</td></tr>
   </tbody></table>
-  <div class="note" data-edit>📌 <b>本席的消解建议</b>：§25.4 拆成两条独立裁定 ——<br>
-  ① <b>sidecar 常开做旁路</b>（保留原理由，不变）<br>
-  ② <b>view 页由主界面内的 Agent 对话面替代</b>（新，理由：身份已在会话中，unlock 面随之消失）<br>
-  <b>捆在一起时看着是冲突，拆开后两条并不矛盾。</b></div>
-  <div class="note bad" data-edit>🔴 <b>本席须认一处</b>：这一句是本席从 charter §10.2 原样搬进 SpecDoc 的，
-  <b>没检查这一句里的两个断言是否共享同一个理由</b>。这是本席「<b>合并多源文档未做结论对撞</b>」缺陷的第 6 次实例
-  —— 前五次是同一主题在不同源件里打架，这次是<b>同一句话里的两个断言只有一个有依据</b>。</div>
-  <div class="chk warn2" data-edit>⚠️ <b>按 §0.5：不得两存。</b>本席不擅自改已 PASS 的 §25.4。
-  请业主裁：<b>采纳上述拆分</b>（则回写 §25.4 为两条）· 或 <b>维持原条款</b>（则本屏撤除）。</div>
+  <div class="note" data-edit>📌 原 §25.4 那一句把两个断言捆在一起、却只给了 sidecar 的理由。裁定后拆为两条，
+  <b>各自有各自的依据</b>。本席此前把这一句从 charter §10.2 原样搬入而未做对撞检查，已记为「合并未对撞」第 6 次实例。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>通道与鉴权 <span class="ref">业主定 · 拟 §25.4</span></h3>
+  <div class="grid g2">
+    <div class="card"><b>云端</b>
+      <div class="mono" style="margin-top:8px">浏览器 → <b>Nginx（统一鉴权）</b> → 转发 → 会话宿主 <code>127.0.0.1:port</code> sidecar</div>
+      <div style="margin-top:8px;font-size:12.5px">汇聚到统一 URI，如 <code>/agent/&lt;session&gt;/…</code>；
+      <b>鉴权在 Nginx 层做</b>，sidecar 侧不重复实现。</div></div>
+    <div class="card"><b>本地电脑端</b>
+      <div class="mono" style="margin-top:8px">浏览器 → <code>127.0.0.1:port</code> sidecar（直连）</div>
+      <div style="margin-top:8px;font-size:12.5px"><b>无需 Nginx 转发授权</b> —— 已在本机物理边界内。</div></div>
+  </div>
+  <div class="note" data-edit>✅ <b>这不是新设计，是既有实现 —— 只是规范从未记录。</b>
+  代码实测 <code>tools/sessionhelper/sessionhelper/sidecar.py:168-169</code> 原文：<br>
+  <span class="mono">「只绑 127.0.0.1：公网访问一律经 nginx（带 HTTP 基础认证），裸端口不可达」</span><br>
+  <code>ThreadingHTTPServer(("127.0.0.1", port), _Handler)</code><br>
+  ⇒ <b>「本地无需鉴权」这个前提在代码上已成立</b>：sidecar 只监听回环，不绑 <code>0.0.0.0</code>，裸端口从公网不可达。</div>
+  <div class="note bad" data-edit>🔴 <b>但现状鉴权有一个洞：它认不出「是谁」。</b><br>
+  代码注释写的是 <b>HTTP 基础认证</b> —— 那是<b>共享静态凭据</b>。由此两个后果：<br>
+  ① <b>与 §21 三级映射不接</b>：Basic 认证的是「知道这个密码的人」，不是「哪个人」 ⇒
+  §21.1「<b>审计与授权挂在人身上</b>」<b>落不了地</b>；<br>
+  ② 🔴 <b>共享凭据下，任一持有者可访问任一会话的 sidecar</b> ——
+  而业主本条的关切正是「<b>保证 Agent 会话不会被其他人攻击</b>」。<b>共享 Basic 恰恰保证不了这一点。</b><br><br>
+  <b>本席建议</b>：Nginx 层鉴权改为<b>校验平台签发的会话级凭据</b>（由 §21 三级映射产生，含 <code>platform_subject</code> ＋
+  目标会话 ＋ 有效期），并<b>逐次落账「谁经哪个渠道访问了哪个会话」</b>。<br>
+  ⚠️ <b>搜索范围声明</b>：以上关于「HTTP 基础认证」的判断<b>来自代码注释</b>；实际 nginx 配置本席<b>无主机权限，未核</b>。
+  若线上已用更强方式，请 prodops 指正。</div>
+  <div class="note warn" data-edit>⚠️ <b>一条不能漏的约束：Nginx 的紧急路由不得依赖平台应用层。</b><br>
+  若常规鉴权要问平台「这个凭据有效吗」，平台一挂就全拒 —— <b>那 ops 紧急通道在云端就等于不存在</b>。<br>
+  ⇒ Nginx 须支持两种模式：<b>常规</b>（校验平台签发凭据）· <b>紧急</b>（直接放行到 sidecar 的紧急端点，
+  <b>由 sidecar 本地校验临时密码</b>，全程不问平台）。</div>
 </div>
 
 <div class="panel">
