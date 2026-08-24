@@ -1,8 +1,8 @@
-# DingWei 平台架构设计 v0.2 —— 业务 / 技术 / 部署 / 数据库
+# DingWei 平台架构设计 v0.3 —— 业务 / 技术 / 部署 / 数据库
 
-**版本**: v0.2
-**依据**: SpecDoc **v3.13** —— 已三域 PASS + 安全域快核
-**参考（锚未稳定）**: 原型 —— ⚠️ **正在三域评审中，本件不以其为依据，只作参考**；收敛后再钉锚并复核本件相应处
+**版本**: v0.3
+**依据**: SpecDoc **v3.14** —— 已三域 PASS + 安全域快核（v3.14 仅修 §2.3 迁移号写死，见丙域 F-4）
+**参考**: 原型 —— **三域已 PASS 收口**（v1.13）。⚠️ 本件仍不以其为依据：界面契约变更走原型评审，不经本件
 **代码实测锚**: `github.com/zhangzongchu2019/dingwei` @ `design/addendum-decisions`
 
 > 🔴 **本件不内嵌 commit 短码。** 三件各自的末次改动锚天然不同且随时在变，
@@ -84,7 +84,7 @@
 | 🎯 **目标** | SpecDoc 已定但代码未实现 |
 | ⚠️ **差距** | 现状与目标的距离，**须有承接的子 spec** |
 
-⇒ **凡标 🎯 者，不得作为「系统已具备」对外陈述**（同 E.4 #58：断言作用域不得大于实际覆盖）。
+⇒ **凡标 🎯 者，不得作为「系统已具备」对外陈述**（同 §28「声明搜索范围，且搜索范围须 ≥ 断言作用域」；E.4 #58 是其在「所有 X」类表述上的实例）。
 
 ### 0.4 本件自身的门
 
@@ -180,7 +180,7 @@
 
 ✅ **包规模前六**（非测试行数）：`m8` 8246 · `mcs` 4859 · `store` 3684 · `admin` 2908 · `datad` 2663 · `fanout` 2202。
 
-⚠️ **差距**：`workpulse` 是**单体**，装了 **19** 个包。SpecDoc 按 **SP0–SP8 九个子 spec** 划分职责，
+⚠️ **差距**：`workpulse` 是**单体**，装了 **19** 个包。SpecDoc 按子 spec 划分职责（**SP0–SP8，共十个交付单元**：SP7 拆 SP7a / SP7b，见 §0.3），
 但**代码边界与子 spec 边界目前不对应**。这不是缺陷，是**尚未对齐**——
 对齐的时机是各子 spec 开工时，不是现在推倒重来（§2.3 的教训：证据只支持存储层重建，不支持调度逻辑重建）。
 
@@ -189,14 +189,14 @@
 | 子 spec | 职责（SpecDoc） | 现状承载 | 差距 |
 |---|---|---|---|
 | **SP0** 总则与定义层 | §1–§4 | 无代码 | 🎯 Spec Kit 工程结构（§0.4 生效前置） |
-| **SP1** 身份与租户地基 | §21 · §22.1/3/4 | `m8`（注册与路由）· `secretbox` | ⚠️ 三级映射未完整落地 |
+| **SP1** 身份与租户地基 | §21 · §22.1/3/4 · **§7.1 P1**（per-session principal 是本册地基，见 §8.1） | `m8`（注册与路由）· `secretbox` | ⚠️ 三级映射未完整落地 |
 | **SP7a** 存储基座 | 受控仓储 API · 迁移 runner · 访问抽象层 | `store`（SQLite）· `datad/pgstore`（PG） | ⚠️ **本轮最大工作量，见 §12** |
 | **SP8** 授权与平台治理 | §23 · §24 | `admin` 部分 | 🎯 待决队列与批次签署未实现 |
 | **SP2** 执行层与门禁 | §5–§9 | `mcs`（board/node）· `scheduler` · `worker` | ⚠️ 门 verdict 独立化未完成 |
 | **SP3** 上下文与知识库 | §10–§13 | `datad/kb` 雏形 | 🎯 四维模型未落库 |
 | **SP4** skill / MCP | §14–§16 | 无 | 🎯 全新 |
 | **SP5** 协同与帖子流 | §17–§20 | `bus` · `router` · `feishu` · `fanout` | ⚠️ 帖子流模型未建 |
-| **SP6** 平台能力与界面 | §25–§27 | `admin` · `portal`；view 面为 `m8` 内的 `/internal/view/*` 路由，**无独立包** | ⚠️ 设计输入待定：原型评审中，**收敛前不得据其施工** |
+| **SP6** 平台能力与界面 | §25–§27 | `admin` · `portal`；**view 无独立包** —— 为 `m8` 内的 `/internal/view/*` 路由（实测见 §6.2） | ⚠️ 设计输入＝原型 v1.13（已 PASS） |
 | **SP7b** 领域 schema 迁移与 cutover | 附录 C.3 | 无独立代码 —— **由 SP2 / SP3 / SP5 各自交付各自领域** | 🎯 **不作统一前置**（§0.3）：统一前置会与领域模型定义循环阻塞 |
 
 **依赖顺序**（§0.3）：`SP0 → SP1 → {SP7a, SP8} → {SP2, SP3} → {SP4, SP5} → SP6`；**SP7b 随各领域走**。
@@ -235,6 +235,28 @@
 
 **反查自证**：27 个 `internal` 包全部有归属；`cmd/` 下 6 个二进制的归属见 §5。
 
+### 6.2 测量命令与输出摘要（v0.2 补，丙域 kimi：评审方无仓访问，无法独立复算）
+
+> 🔴 **本节按 §28「行为证据优先」补**：正文里的每个实测数字，都给出**产出它的命令**，
+> 使**没有仓访问的评审方**也能判断该数字是怎么来的、并在拿到仓访问时逐条复算。
+> ⚠️ 此前正文只给结论不给命令 —— 那等于要求评审方**信任本席的测量**，
+> 而本席在本轮已被实测打脸两次（`internal/view` 当包依赖、手写 § 引用数）。
+
+| 断言 | 命令 | 输出摘要 |
+|---|---|---|
+| `workpulse` 装 19 包 | `grep -rhoE "<module>/internal/[a-z0-9]+" cmd/workpulse --include=*.go \| grep -v _test \| sed 's\|.*/\|\|' \| sort -u` | 19 行：admin bus clock config coordination datad evidence fcs feishu llm m8 model portal reminder schedule scheduler secretbox store worker |
+| 🔴 **`internal/view` 不存在** | `ls -d internal/view` | `No such file or directory` |
+| view 面的真实形态 | `grep -rn "internal/view" --include=*.go cmd internal \| grep -v _test` | `cmd/workpulse/main.go` 8 条路由注册（`/internal/view/*` 与 `/internal/view-v2/*`）＋ `internal/m8/terminal.go` 一处注释。**全部是 HTTP 路径，无 import** |
+| `internal` 包总数 27 | `ls -d internal/*/ \| wc -l` | `27` |
+| 四处存储 36/11/5/9 | `grep -rhoP "CREATE TABLE (IF NOT EXISTS )?\K\w+" <各路径> \| sort -u \| wc -l` | store/migrations=36 · board/schema.sql=11 · fanout=5 · datad=9 |
+| 61 建表点 / 60 表名 | 同上，全仓去重 vs 分处相加 | 相加 61、去重 60，差值＝`task` 跨存储重名（§10） |
+| 仓储包外 `sql.Open` 8 处 | `grep -rhoE 'sql\.Open\("(pgx\|sqlite)"' --include=*.go internal \| wc -l` | `8`（pgx 5 · sqlite 3） |
+| 迁移文件 32 个 | `ls internal/store/migrations/*.sql \| wc -l` | `32`（`0001`–`0032`） |
+| § 引用无悬空无歧义 | `scripts/arch-refcheck.sh` | 悬空 0 · 歧义 0（次数与目标数**不写进正文**，见 §0.1a） |
+
+🔴 **F-2 的三处冲突由此钉死**：§5 十九包清单**不含 view**、§8 拓扑**不再并列 view**、
+§6 映射表写明**view 无独立包** —— 三处现在同源于上表第 1、2、3 行，**可复算**。
+
 ## §7 关键机制（只列架构后果，规则见 SpecDoc）
 
 | 机制 | 架构后果 | 锚 |
@@ -262,7 +284,7 @@
                        ▼  127.0.0.1（不暴露裸端口）
    ┌──────────────────────────────────────────┐
    │  workpulse（主体进程）                    │  ✅ systemd: workpulse.service
-   │   admin · portal · view · m8 · bus …     │     + workpulse-livez.timer 探活
+   │   admin · portal · m8 · bus · store …    │     + workpulse-livez.timer 探活
    └───┬─────────────┬──────────────┬─────────┘
        ▼             ▼              ▼
    mcsd          dingwei-datad   feishu-fanout / fcs
@@ -476,4 +498,4 @@
 | 3 | 环境属性显式化（§22.4 放宽的前置条件） | 部署件 |
 | 4 | board conformance suite —— **无它之前不得以「重写」为由丢弃任一既有并发语义**（§4.5） | SP2 · SP7a #3 |
 | 5 | 帖子流**外部锚定**待建——未做到此项前，对恶意篡改防护为零 | SP5 |
-| 6 | 🔴 **原型锚未稳定**：原型 v1.8 正在三域评审。本件中凡涉界面的表述（SP6 行 · §2 业务主链的入口描述）<br>**评审收敛后须逐处复核并重钉锚**，不得因为「已经写进架构文档」就当成定论 | SP6 |
+| ~~6~~ | ~~原型锚未稳定~~ ✅ **已收敛**：原型三域 PASS。<br>⚠️ F-1 教训留档：本行与文件头两处曾长期写着「v1.8 正在评审中」，<br>而本件 §0.1 自己立了「写进正文即开始过期」——**散文形态下自己破了自己的原则**。<br>⇒ 凡「正在 X 中」这类**状态性表述**，与计数型表述同类，**不进正文**；现状一律指 `DELIVERY-STATUS.md` | SP6 |
