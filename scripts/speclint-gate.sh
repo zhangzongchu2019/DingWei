@@ -15,6 +15,17 @@ COR=$T/speclint-corpus.md
 LINT=$T/speclint.py
 
 [ -f "$LINT" ] || { echo "跳过：$LINT 不存在"; exit 0; }
+
+# ⓪ 自检：钩子必须【就是本脚本】，不能是它的一份旧拷贝。
+#    立此判据的直接原因：本脚本写好后，.git/hooks/pre-commit 仍是更早的独立拷贝（754 字节），
+#    于是新增的第 ④⑤ 两项【根本没执行】，而每次提交都照常打印「✓ 三道门全过」——
+#    这是「定义了却没装上」的第三次，也是最阴的一次：闸报了通过，只是它不是你以为的那道闸。
+HOOK=.git/hooks/pre-commit
+if [ -e "$HOOK" ] && [ ! -L "$HOOK" ]; then
+  echo "✗ .git/hooks/pre-commit 是拷贝不是软链 —— 它可能已落后于 scripts/speclint-gate.sh"
+  echo "  修：make speclint-hook"
+  exit 1
+fi
 command -v python3 >/dev/null 2>&1 || { echo "✗ 缺 python3"; exit 1; }
 
 FAIL=0
