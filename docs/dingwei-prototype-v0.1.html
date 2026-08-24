@@ -1912,6 +1912,65 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>知识库的定义：固化 vs 上下文 <span class="ref">业主问 · 本席部分认同、一处修正</span></h3>
+  <div class="note" data-edit><b>业主提法</b>：知识库＝不经常动、需要固化保存的记忆内容；
+  按此，知识库应只是<b>企业层级与业务线层级</b>；<b>租户层级变动频繁，不适合入知识库，可作为上下文处理</b>。</div>
+  <div class="chk pass" data-edit>✓ <b>判据本身成立，且比按层级分更根本。</b>
+  规范里已有两处佐证：§13.1「写进去的内容过期了没人知道 —— <b>比没有知识库更危险，因为它会误导</b>」；
+  §13.3 那整套 stale 状态机的存在，本身就说明<b>易变内容进知识库的维护成本极高</b>。</div>
+
+  <div class="note bad" data-edit>🔴 <b>但「切分线＝层级」这一步，规范自己的标注反驳了。</b>§11.1 的「易变」列：<br>
+  <span class="mono">K0-pub 极低 · <b style="color:var(--bad)">K0-sec 中</b> · <b style="color:var(--ok)">K1 低</b> · K2 中 · K3 高</span><br>
+  ⇒ <b>平台级的 sec 部分（中）比项目知识库（低）还易变。</b>「层级越高越稳定」不成立。</div>
+
+  <div class="note bad" data-edit>🔴 <b>§12.1 的十二类看得更清楚：易变性是【横切】层级的。</b><br>
+  <b>平台级里易变的</b>：服务架构 · 网络架构 · 数据库设计（第 6/7/8 类，权威源＝代码与部署环境）<br>
+  <b>项目级里最该固化的</b>：<b>坑清单 / 判断失误</b>（第 10 类）· <b>版本志</b>（第 12 类）· 前代系统与迁移（第 9 类）
+  —— 这三类权威源是<b>复盘、人、收口</b>，是<b>历史事实，永不过期</b><br><br>
+  <b>⇒ 若按「租户层级不入知识库」切，会把「坑清单 / 判断失误」切出去 —— 而那恰恰是最该固化的一类。</b>
+  它记录的是「默认做法是错的」，不随代码变。</div>
+
+  <h3 style="margin-top:16px">本席建议的判据：按「旧值会不会误导」切，不按层级切</h3>
+  <div class="chk pass" style="font-size:13.5px" data-edit>
+  <b>变了之后旧值【会误导】的 ⇒ 不固化，运行时取。</b><br>
+  <b>变了之后旧值【仍是有效历史】的 ⇒ 固化，入知识库。</b></div>
+  <table style="margin-top:10px"><thead><tr><th style="width:34px">#</th><th style="width:170px">类型</th>
+  <th style="width:130px">权威源</th><th style="width:104px">旧值会误导吗</th><th style="width:120px">归处</th></tr></thead><tbody>
+  <tr><td>1</td><td data-edit>产品定义（spec）</td><td>spec</td><td class="cell-ok">否 · 有版本</td><td class="cell-ok"><b>固化</b></td></tr>
+  <tr><td>2</td><td data-edit>业务流程</td><td>代码 + spec</td><td class="cell-fail">会</td><td class="cell-wait">运行时取</td></tr>
+  <tr><td>3</td><td data-edit>代码位置</td><td>代码</td><td class="cell-fail">会</td><td class="cell-wait">运行时取</td></tr>
+  <tr><td>4</td><td data-edit>各接口业务逻辑</td><td>代码</td><td class="cell-fail">会</td><td class="cell-wait">运行时取</td></tr>
+  <tr><td>5</td><td data-edit>各主要对象介绍</td><td>代码</td><td class="cell-fail">会</td><td class="cell-wait">运行时取</td></tr>
+  <tr><td>6</td><td data-edit>服务架构</td><td>代码 + 部署配置</td><td class="cell-fail">会</td><td class="cell-wait">运行时取</td></tr>
+  <tr><td>7</td><td data-edit>网络架构</td><td>部署环境</td><td class="cell-fail">会</td><td class="cell-wait">运行时取（且 S0/S1）</td></tr>
+  <tr><td>8</td><td data-edit>数据库设计</td><td><code>migrations/</code> DDL</td><td class="cell-fail">会</td><td class="cell-wait">运行时生成</td></tr>
+  <tr><td>9</td><td data-edit>前代系统与迁移</td><td>人</td><td class="cell-ok">否 · 历史事实</td><td class="cell-ok"><b>固化</b></td></tr>
+  <tr><td>10</td><td data-edit><b>坑清单 / 判断失误</b></td><td><b>复盘</b></td><td class="cell-ok">否 · 历史事实</td><td class="cell-ok"><b>固化</b>（最该固化的一类）</td></tr>
+  <tr><td>11</td><td data-edit>运维预案</td><td>人</td><td class="cell-ok">否 · 有版本有评审</td><td class="cell-ok"><b>固化</b>（还是授权依据 §23.4）</td></tr>
+  <tr><td>12</td><td data-edit>版本志</td><td>版本收口</td><td class="cell-ok">否 · 历史事实</td><td class="cell-ok"><b>固化</b></td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 <b>切完是 5 固化 / 7 运行时取。</b>且注意：<b>固化的 5 类里，有 3 类起于项目级</b>
+  （坑清单 · 版本志 · 前代系统）。<br>
+  ⇒ <b>业主直觉里对的那半</b>：租户级那些「基于现网代码」的知识确实不该固化 —— 那正是第 2–8 类。<br>
+  <b>需要修正的那半</b>：租户 / 项目级恰恰产出了<b>最该固化的东西</b>，不能整层排除。</div>
+
+  <div class="note bad" data-edit>🔴 <b>这条判据规范里已经有了，只是长在别处。</b><br>
+  §14.2：「<b>skill 不得内嵌 API schema，须在运行时经 MCP 查</b>，使 skill 轻量且不因后端变更而过期。」<br>
+  <b>那正是「易变的不固化，运行时取」的同一条原则</b> —— 只是当时只用在 skill 上，<b>从未应用到知识库</b>。<br>
+  ⇒ 本次等于把它推广到知识条目。<b>两处应写成同一条通则，不要各写各的。</b></div>
+
+  <div class="note" data-edit>📌 <b>由此还统一了一件事：MCP 分级与知识库分级不是两套。</b><br>
+  「运行时取」需要一个<b>能查的东西</b> —— 那就是 <b>MCP</b>。而业主本轮正好说 MCP 也要分级（企业/团队级 · 租户级）。<br>
+  ⇒ <b>同一份知识的两种形态</b>：<b>固化的 → 知识库</b>（按四级归属）· <b>易变的 → MCP 查询面</b>（按同一四级归属）。
+  两者共用归属轴、共用 RLS、共用晋升，<b>不必各建一套</b>。</div>
+
+  <div class="chk warn2" data-edit>⚠️ <b>待业主裁</b>：<b>甲</b> 按本席建议——保留四级归属轴，
+  另加「固化 vs 运行时取」这条正交判据，<b>逐条目判，不按层级判</b>；
+  <b>乙</b> 按业主原提法——知识库只保留 L0 / L1 两级，L2 / L3 一律作上下文（则须回答：坑清单与版本志放哪）。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>知识来源与锚定 <span class="ref">业主定 · §13 须扩</span></h3>
   <div class="note" data-edit>业主：<b>知识库源于代码和设计文档，有交付物锚定；也有企业公共库的导入（或链接）。</b></div>
   <table><thead><tr><th style="width:130px">来源</th><th>锚</th><th style="width:150px">stale 判据</th></tr></thead><tbody>
