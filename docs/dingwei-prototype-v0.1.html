@@ -188,15 +188,15 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>队列 <span class="ref">§25.1</span> <span style="font-weight:400;color:var(--dim);font-size:12px">按等待时长降序 · 逾期标红</span></h3>
   <div class="chips" id="qchips">
-    <div class="chip on" data-f="all">全部 13</div>
+    <div class="chip on" data-f="all">全部 9</div>
     <div class="chip" data-f="auth">授权待批 2</div>
-    <div class="chip" data-f="block">当前阻塞 2</div>
+    <div class="chip" data-f="block">当前阻塞 1</div>
     <div class="chip" data-f="noise">无效讨论 1</div>
     <div class="chip" data-f="gate">门 FAIL 待整改 1</div>
     <div class="chip" data-f="retro">复盘待定稿 1</div>
     <div class="chip" data-f="batch">平台域批次待签 1</div>
-    <div class="chip" data-f="spec-fix">spec 待完善 3</div>
-    <div class="chip" data-f="spec-claim">spec 待认领 2</div>
+    <div class="chip" data-f="spec-fix">spec 待完善 1</div>
+    <div class="chip" data-f="spec-claim">spec 待认领 1</div>
   </div>
   <table id="qtab"><thead><tr>
     <th style="width:112px">类型</th><th>事项</th><th style="width:130px">发起方</th>
@@ -219,8 +219,8 @@ body.uionly #uihint{display:block}
     <td data-edit>zzc-devo48-2642</td><td>dingwei</td><td class="over">2 天 06:30</td><td class="d-low">低</td>
     <td><button>看缺项</button> <button>回炉</button></td></tr>
   <tr data-t="spec-claim"><td><span class="tag t-auth">spec 待认领</span></td>
-    <td data-edit><b>图搜 3.0 索引服务 spec v3.2</b> · 已过人审，待认领开发
-    <div class="mono">§4.7.3 #2：进本池的前提是<b>已过人审</b>，不是「机器项全过」</div>
+    <td data-edit><b>图搜 3.1 增量索引 spec v0.4</b> · 已过人审，待认领开发
+    <div class="mono">§4.7.3 #2：进本池的前提是<b>已过人审</b>，不是「机器项全过」<br>⚠️ 不用 v3.2 举例：那份<b>已因上线 expired</b>（§23.2），不可能同时待认领开发</div>
     <div class="note warn" style="margin:6px 0 0;padding:6px 9px">⚠️ <b>认领后正文不得再改</b>；要改须退回待完善池重走评审 —— 否则「认领的是 A、做的是 B」</div></td>
     <td data-edit>门方已放行</td><td>图搜 3.0</td><td>08:15</td><td class="d-low">低</td>
     <td><button>认领</button> <button>看 spec</button></td></tr>
@@ -232,8 +232,8 @@ body.uionly #uihint{display:block}
     <td><button>退回补齐</button></td></tr>
   <tr data-t="gate"><td><span class="tag t-gate">门 FAIL</span></td>
     <td data-edit><b>node N-1204 代码评审 FAIL</b> · 门方=安全角色（<code>安全面=是</code>）
-    <div class="mono">失败最小复现已附 · 待建 append_revision 修订 node</div></td>
-    <td data-edit>zzc-sec-review</td><td>dingwei</td><td>11:07</td><td class="d-high">高</td>
+    <div class="mono">失败最小复现已附 · <b>已建修订 node N-1206</b>（<code>append_revision</code>，03:58Z）· 当前 <code>dispatched</code> 未拉取</div></td>
+    <td data-edit>zzc-sec-review-2642</td><td>dingwei</td><td>11:07</td><td class="d-high">高</td>
     <td><button>建修订 node</button></td></tr>
   <tr data-t="noise"><td><span class="tag t-noise">无效讨论</span></td>
     <td data-edit><b>node N-1163 帖子流触门</b> · 帖数 <b>23</b> / 阈值 20
@@ -280,8 +280,8 @@ body.uionly #uihint{display:block}
   <th>文档执笔</th><th>文档评审</th><th>架构评审</th><th>开发设计</th><th>实现</th><th>代码评审</th><th>测试用例</th><th>用例评审</th><th>测试执行</th><th>交付验证</th><th>业主签署</th></tr></thead>
   <tbody>
   <tr><td data-edit><b>T-1204</b> 动 tenant 派生链<div class="mono">安全面=是 · 跨服务</div></td><td class="d-high">L3</td>
-    <td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td>
-    <td class="cell-fail">FAIL</td><td class="cell-wait">进行</td><td class="cell-wait">待</td><td class="cell-wait">待</td><td class="cell-wait">待</td><td class="cell-wait">待</td></tr>
+    <td class="cell-ok">✓</td><td class="cell-fail" title="交付物链路：产品定义行 门=未过">未过</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td>
+    <td class="cell-fail">FAIL</td><td class="cell-ok" title="用例集 14 条含负向 6 条">✓</td><td class="cell-ok" title="用例评审 PASS · qa_owner">✓</td><td class="cell-wait" title="执行报告 96 行 · 8/14 通过 · 待重跑">进行 8/14</td><td class="cell-wait">待</td><td class="cell-wait">待</td></tr>
   <tr><td data-edit><b>T-1187</b> KB 加列<div class="mono">数据模型=加列 · 单模块</div></td><td class="d-mid">L2</td>
     <td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="na">N/A</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td>
     <td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-ok">✓</td><td class="cell-wait">进行</td><td class="na">N/A</td><td class="na">N/A</td></tr>
@@ -331,9 +331,9 @@ body.uionly #uihint{display:block}
   <h3>spec 列表 <span class="ref">§4.3 · §23.2</span></h3>
   <table><thead><tr><th>spec</th><th style="width:64px">版本</th><th style="width:110px">评审状态</th>
   <th>预授权条目（范围 · 用途 · 时限）</th><th style="width:120px">生命周期</th></tr></thead><tbody>
-  <tr><td data-edit><b>dingwei-platform-specdoc</b><div class="mono">父 spec · 子：S0–S8</div></td><td>v2.8</td>
+  <tr><td data-edit><b>dingwei-platform-specdoc</b><div class="mono">父 spec · 子：SP0–SP8</div></td><td>v3.13</td>
     <td class="cell-ok">✓ PASS<div class="mono">三域 PASS 锚 040e904<br>+ 安全域快核 PASS（SA-10 闭合）<br>现锚 2ef0762</div></td>
-    <td class="lock">无预授权条目</td><td class="cell-ok">生效</td></tr>
+    <td class="lock">无预授权条目</td><td class="cell-wait">⚠ <b>草案</b><div class="mono">§0.1 生命周期＝草案；生效前置未闭 2 项<br>（Spec Kit 工程结构 · checklist）</div></td></tr>
   <tr><td data-edit><b>S1 身份与租户地基</b><div class="mono">L3 · 安全面=是</div></td><td>v0.1</td>
     <td class="cell-wait">草案 · 未评审</td>
     <td data-edit><div>① 读 <code>internal/m8</code> 会话表 · 验 principal 传播 · 至 S1 上线</div>
@@ -369,7 +369,7 @@ body.uionly #uihint{display:block}
 <!-- ============ S3 知识库 ============ -->
 <section class="scr" id="s3">
 <h2 data-edit>知识库</h2>
-<div class="sub" data-edit>事实面：描述现在。十二类 · 四根管道 · 每条绑锚。§25.2 · §12 · §13</div>
+<div class="sub" data-edit>事实面：描述现在。十二类 · <b>四类权威源</b>（§12.5）· 三条写入管道（§11.3）· 每条绑锚。§25.2 · §12 · §13</div>
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
@@ -379,7 +379,7 @@ body.uionly #uihint{display:block}
     <button>检索</button>
   </div>
   <div class="note bad" data-edit>🔴 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
-  当前视角可见 <b>9 / 14</b> 条；<b>5 条 <code>restricted</code> 条目不在检索集合内</b>（不是「搜到了但打码」）。</div>
+  当前视角<b>共 7 条</b>可检索（＝本表实际渲染行数）。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。</div>
   <div class="note" data-edit>排序 = <code>0.40·log(使用量) + 0.35·relevance + 0.25·importance</code>；importance 由<b>归属域</b>给定（D0 1.0 / D1 0.75 / D2 0.5 / D3 0.3 —— 附录 A）；
   <b><code>suspect</code> 条目 ×0.5 降权</b> —— 锚失配必须参与排序，标了不参与排序等于没标。</div>
 </div>
@@ -433,8 +433,8 @@ body.uionly #uihint{display:block}
   <div style="margin-top:6px">🔴 <b>四维正交，任一维不得替代另一维</b>：<code>visibility</code> 的变更<b>不改变</b> <code>domain_level</code>；
   跨域是 §15 的<b>晋升</b>（须过该级准入判据），不是把可见性降到 <code>public</code>。</div>
   <div style="margin-top:6px" class="mono">⛔ 旧模型的 K0-pub / K0-sec 已于 v3.0 撤销 —— 它把「归谁」和「谁能看」压在了一列里。</div></div>
-  <div class="note" data-edit>📌 <b>知识库是四根管道，不是一根</b>（§12.2）：代码抽取 / 部署环境 / spec / 复盘 —— 权威源不同，
-  不得指望一个 code-scanner 全包。十二类里只有 4 类真正源自代码。</div>
+  <div class="note" data-edit>📌 <b>知识库有四类权威源，不是一个</b>（§12.5）：<b>设计文档 / 代码抽取 / 复盘 / 收口</b> —— 权威源不同，
+  不得指望一个 code-scanner 全包。十二类里只有 4 类真正源自代码。<div class="mono" style="margin-top:6px">⚠️ <b>「管道」一词只用于 §11.3 的三条写入入口</b>（项目生产 / 策展导入 / 人工订正）；本节说的是<b>知识从哪来</b>（权威源 4 类），二者不是一件事（§12.5 v3.2 消歧）。</div></div>
 </div>
 
 <div class="panel">
@@ -450,7 +450,7 @@ body.uionly #uihint{display:block}
 <!-- ============ S5 skill / MCP ============ -->
 <section class="scr" id="s5">
 <h2 data-edit>skill / MCP 库</h2>
-<div class="sub" data-edit>两条通道：平台级 push（强制）· 租户级 pull（自取）。§15 · §16</div>
+<div class="sub" data-edit>分发按归属域与 <code>mandatory</code> 判：D0/D1 <b>push 强制</b>；D2 <b>强制统一的 push 辖下项目、可选复用的 pull 自取</b>（§15.1c）；D3 不 push。§15 · §16</div>
 
 <div class="grid g2">
 <div class="panel">
@@ -555,7 +555,7 @@ body.uionly #uihint{display:block}
       <td><button>重启</button> <button>关闭</button> <button>看上下文</button></td></tr>
     <tr><td data-edit>zzc-prodops-2642</td><td>平台级 ops</td><td><span class="s1">S1</span></td><td class="cell-ok">active</td>
       <td><button>重启</button> <button>关闭</button> <button>看上下文</button></td></tr>
-    <tr><td data-edit>zzc-sec-review</td><td>安全评审</td><td><span class="s1">S1</span></td><td class="cell-wait">idle</td>
+    <tr><td data-edit>zzc-sec-review-2642</td><td>安全评审</td><td><span class="s1">S1</span></td><td class="cell-wait">idle</td>
       <td><button>重启</button> <button>关闭</button> <button>看上下文</button></td></tr>
     </tbody></table>
   </div>
@@ -610,11 +610,11 @@ body.uionly #uihint{display:block}
     <select id="nodeSel" style="margin-left:auto;width:290px">
       <option value="n1163">N-1163 · 存储选型 · 23 帖 · 已触门</option>
       <option value="n1140">N-1140 · K0 拆分迁移 · 6 帖 · 已封存</option>
-      <option value="n1204">N-1204 · tenant 派生链 · 4 帖 · 进行中</option>
+      <option value="n1204">N-1204 · tenant 派生链 · 4 帖 · 已封存（门 FAIL 亦封）</option>
     </select></h3>
 
-  <div class="note" data-edit>字段集 <code>post_id · tenant · node · seq · actor · ts · content</code> —— ⚠️ <b>SpecDoc 未正面定义</b>，
-  此处由 §18.6 的 digest 覆盖范围（<code>tenant/node/seq/actor/ts/content</code>）＋ §18.3 去重用的 <code>post_id</code> <b>反推</b>得出。见屏底缺口说明。</div>
+  <div class="note" data-edit>字段集以 <b>§18.1</b> 为准（12 列，含 digest 序列规则）；下方 7 列为<b>当初反推所得</b>，已被 §18.1 取代 —— ⚠️ <b>SpecDoc 未正面定义</b>，
+  此处为<b>当初</b>由 §18.6 的 digest 覆盖范围（<code>tenant/node/seq/actor/ts/content</code>）＋ §18.3 去重用的 <code>post_id</code> <b>反推</b>得出。见屏底缺口说明。</div>
 
   <div id="pn1163" class="ps">
     <div class="po"><div class="sq">1</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 14:02Z</span></div>
@@ -633,9 +633,9 @@ body.uionly #uihint{display:block}
     <div class="cur">↳ 游标：zzc-summarizer 读到 seq 6 · 已生成 digest #1</div>
     <div class="fold" onclick="this.nextElementSibling.classList.toggle('hid');this.textContent=this.nextElementSibling.classList.contains('hid')?'▸ 展开 seq 7–19（13 帖，双方各自重述立场 3 次）':'▾ 收起 seq 7–19'">▸ 展开 seq 7–19（13 帖，双方各自重述立场 3 次）</div>
     <div class="hid">
-      <div class="po dv"><div class="sq">7–12</div><div class="bd"><div class="hd"><span class="who">zzc-devo48 / zzc-sec-review</span><span class="ts">08-23 16:40Z – 19:05Z</span></div>
+      <div class="po dv"><div class="sq">7–12</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642 / zzc-sec-review-2642</span><span class="ts">08-23 16:40Z – 19:05Z</span></div>
         <div class="ct" data-edit>PG 侧列出 RLS 七项最低配套；安全侧逐项追问负测覆盖。<b>双方均未改变立场</b>，各自把同一论点重述了 2 次。</div></div></div>
-      <div class="po dv"><div class="sq">13–19</div><div class="bd"><div class="hd"><span class="who">＋ zzc-prodops 加入</span><span class="ts">08-23 19:30Z – 22:14Z</span></div>
+      <div class="po dv"><div class="sq">13–19</div><div class="bd"><div class="hd"><span class="who">＋ zzc-prodops-2642 加入</span><span class="ts">08-23 19:30Z – 22:14Z</span></div>
         <div class="ct" data-edit>ops 提第三方案「受控仓储 API」。三方各持一案，出现<b>第三次立场重述</b>。此处已是明确的分歧信号。</div></div></div>
     </div>
     <div class="po dv"><div class="sq">20</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 22:41Z</span></div>
@@ -687,7 +687,7 @@ body.uionly #uihint{display:block}
     <div class="po"><div class="sq">4</div><div class="bd"><div class="hd"><span class="who">mcsd</span><span class="rl o">引擎</span><span class="ts">08-24 03:58Z</span></div>
       <div class="ct" data-edit>门 FAIL ⇒ 建修订 node <b>N-1206</b>（<code>append_revision</code>），优先派回原 worker。
       本 node 帖子流<b>封存</b>（<code>verdict=fail</code> 亦封 —— 否则 FAIL 的 node 帖子流长期可写、digest 永不生成）。</div></div></div>
-    <div class="cur">↳ 游标：zzc-devo48 读到 seq 4 · zzc-sec-review 读到 seq 4</div>
+    <div class="cur">↳ 游标：zzc-devo48-2642 读到 seq 4 · zzc-sec-review-2642 读到 seq 4</div>
     <div class="note warn" data-edit>⚠️ 返工<b>天然不污染</b>：修订走<b>新 node</b> N-1206，有<b>新的帖子流</b>。本流已封，不可再写。</div>
   </div>
 </div>
@@ -750,7 +750,9 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 缺口：SpecDoc 未正面定义帖子结构 <span class="ref">§18.1</span></h3>
+  <h3>🕐 溯源记录：帖子结构当初为何靠反推 <span class="ref">§18.1 已正面定义</span></h3>
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §18.1 已正面定义 12 列字段集与 digest 序列规则</b>。下方保留的是<b>当初的缺口取证过程</b>（过程档案不抹，但须标时点 —— 学分级对齐屏的做法）。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div>
+  
   <div class="note bad" data-edit>§18.1 全节仅一句：「帖子正文须独立表，不得塞进事件表」——<b>没说这张表有什么列</b>。
   本屏字段集是从 §18.6 的 digest 覆盖范围 <code>tenant/node/seq/actor/ts/content</code> ＋ §18.3 去重用的 <code>post_id</code> <b>反推</b>的。<br>
   ⚠️ <b>反推有风险</b>：digest 覆盖的是「须防篡改的字段」，未必等于「表的全部列」——
@@ -979,10 +981,12 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 本屏在 SpecDoc 中无对应条款 <span class="ref">缺口</span></h3>
+  <h3>🕐 溯源记录：本屏当初无对应条款 <span class="ref">§25.5 Agent 名册已补</span></h3>
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。下方保留的是<b>当初的缺口取证过程</b>（过程档案不抹，但须标时点 —— 学分级对齐屏的做法）。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div>
+  
   <div class="note bad" data-edit>SpecDoc §26「Agent 管理」只定义了<b>管理动作</b>（新建 / 关闭 / 重启 / 上下文注入）与<b>三形态的凭据策略</b>，
   <b>没有定义「查看 Agent 在干什么」这个面</b>。全文搜「Agent 视角 / 工作面 / 任务清单」零命中。<br>
-  ⇒ 本屏是<b>原型先行</b>。业主确认后须回写 SpecDoc（拟为 <b>§25.5 Agent 名册</b>），并走一轮评审。</div>
+  ⇒ 本屏当时为<b>原型先行</b>。✅ 现已回写为 <b>§25.5 Agent 名册</b>（v3.0 起生效），并走过评审。</div>
 </div>
 </section>
 
@@ -1105,17 +1109,18 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 §25.4 在 SpecDoc 中只有两行 <span class="ref">缺口</span></h3>
+  <h3>🕐 溯源记录：§25.4 当初只有两行 <span class="ref">§25.4.1–§25.4.6 已重写</span></h3>
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.4 自 v3.0 起已重写为 §25.4.1–§25.4.6</b>（含原生交互适用范围、ops 紧急面、开放讨论落帖子流等）。下方保留当初的缺口取证过程。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div>
   <div class="note bad" data-edit>§25.4 全节正文仅：「不砍 view 页，sidecar 常开做旁路」＋ 一句理由。
   <b>没有任何界面定义</b> —— 发什么、怎么发、发之前过哪些闸、Agent 收到的是什么形状，全部未写。<br>
-  ⇒ 本屏亦为<b>原型先行</b>。业主确认后回写 SpecDoc（拟扩 §25.4 或新设 <b>§25.7 交互通道界面契约</b>）。</div>
+  ⇒ 本屏当时为<b>原型先行</b>。✅ 现已回写为 <b>§25.4.1–§25.4.6</b>（业主已确认，v3.0 起生效）（原议的另一路径 <b>§25.7</b> 现承载附件与多模态）。</div>
 </div>
 </section>
 
 <!-- ============ A4 配置新 Agent（工单） ============ -->
 <section class="scr" id="a4">
 <h2 data-edit>配置新 Agent · 工单</h2>
-<div class="sub" data-edit>在已有云资源中配置出一个可运行的 Agent。<b style="color:var(--warn)">SpecDoc 全文未定义环境供给，见屏底</b></div>
+<div class="sub" data-edit>在已有云资源中配置出一个可运行的 Agent。<b style="color:var(--ok)">已落 §26.4 运行环境供给与资源池</b></div>
 
 <div class="note" data-edit>📌 <b>整屏前提（只说一次）：工单里是【资源引用 ＋ 权限范围】，不是凭据。</b>
 凭据由平台在实例化时注入，工单侧不出现、不落账。<br>
@@ -1144,7 +1149,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>② 环境配置 · 从资源池引用 <span class="ref">缺口 · 拟 §26.4</span></h3>
+  <h3>② 环境配置 · 从资源池引用 <span class="ref">§26.4</span></h3>
   <div class="res"><div class="lb">大模型运行 VPN</div><div>
     <select id="npVpn1"><option>llm-egress-hk（#R-004）</option><option>llm-egress-sg（#R-005）</option><option>不需要（走内网直连）</option></select>
     <div class="mono" style="margin-top:4px">企业统一资源 · 平台级 ops 维护 · 工单侧只选用哪条</div></div>
@@ -1216,7 +1221,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>资源池 <span class="ref">缺口 · 拟 §26.4</span></h3>
+  <h3>资源池 <span class="ref">§26.4</span></h3>
   <table><thead><tr><th style="width:70px">编号</th><th>资源</th><th style="width:90px">类型</th><th style="width:52px">级</th>
   <th style="width:110px">归属</th><th style="width:130px">谁可引用</th></tr></thead><tbody>
   <tr><td class="mono">#R-001</td><td data-edit>corp-vpn-prod</td><td>企业 VPN</td><td class="mono" style="color:var(--dim)">ops 域</td><td>平台级 ops 维护</td><td>可引用（凭据不出 ops 手）</td></tr>
@@ -1237,14 +1242,16 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 缺口：SpecDoc 全文未定义环境供给 <span class="ref">§26</span></h3>
+  <h3>🕐 溯源记录：环境供给当初未定义 <span class="ref">§26.4 已落</span></h3>
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §26.4 及 §26.4.1–26.4.4 自 v3.0 起已落</b>。下方保留的是<b>当初的缺口取证过程</b>（过程档案不抹，但须标时点 —— 学分级对齐屏的做法）。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div>
+  
   <div class="note bad" data-edit>§26 三个小节只有：三形态的<b>信任与凭据等级</b>（26.1）、<b>K 层与 skill 的上下文注入</b>（26.2）、
   <b>管理面新建 / 下发面复用</b>（26.3）。<br>
   全文搜「VPN / 对象存储 / git 环境 / 开发测试环境 / 环境配置 / 资源池 / 工单」——
   <b>只命中一处：§22.4 把 VPN 凭据列为 S0 的例子。</b><br><br>
   ⇒ <b>规范缺的是「Agent 靠什么真的跑起来」这一层。</b>注入了 K 层和 skill，但连不上模型端点、clone 不了仓库、
   没有可写的沙盒 —— <b>Agent 仍然干不了活</b>。<br>
-  拟回写 <b>§26.4 运行环境供给与资源池</b>，内容至少含：资源池条目模型（编号 · 类型 · 密级 · 归属 · 可引用者）·
+  ✅ <b>已回写为 §26.4 运行环境供给与资源池</b>，含：资源池条目模型（编号 · 类型 · 密级 · 归属 · 可引用者）·
   工单字段集（<b>结构上不含 credentials 键</b>）· 形态 × 密级的可授予矩阵 · 引用而非填写的硬性要求 ·
   池条目新增属平台域基线变更。</div>
 </div>
@@ -1328,7 +1335,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>④ 唯一的免人审通道：非语义修订 <span class="ref">类比 §24.2a</span></h3>
+  <h3>④ 唯一的免人审通道：非语义修订 <span class="ref">§4.6.5</span> <span style="font-weight:400;color:var(--dim);font-size:12px">不写死条数，增删以本表为准</span></h3>
   <div class="note" data-edit>类比 §24.2a 已定的「未列入 immutable 名单<b>且不改变语义</b>的文案修订可单签」——
   spec 的<b>非语义修订</b>可免评审，但<b>「非语义」必须机器可判</b>，不得自述：</div>
   <table><thead><tr><th style="width:32px"></th><th>判据（全部满足才算非语义）</th></tr></thead><tbody>
@@ -1338,6 +1345,11 @@ body.uionly #uihint{display:block}
   <tr><td class="cell-ok">✓</td><td data-edit>diff <b>不触及</b>任何含「必须 / 禁止 / 不得 / 须 / 唯一 / 只有 / fail-closed」的行，以及表格规则行（附录 E.0 五形态）</td></tr>
   <tr><td class="cell-ok">✓</td><td data-edit>分级结果<b>重算后不变</b></td></tr>
   <tr><td class="cell-ok">✓</td><td data-edit>该 spec <b>不在 immutable 名单内</b></td></tr>
+  <tr><td class="cell-fail">✗</td><td data-edit>🔴 <b>diff 不触及上述受保护行【所引用的】任何对象</b>（§4.6.5 依赖闭包条，v3.1 SA-01 补）
+    <div class="mono">前几条只保护<b>行文本</b>，不保护<b>被引用的东西</b>：可在不碰任何受保护行的前提下，
+    改其引用的规则表目标 / 枚举含义 / 术语定义 / 例外条件 / 禁用词表 / immutable 名单 ——
+    受保护的「必须」行一字未动，<b>实际约束已被放宽</b></div>
+    <div class="mono">⇒ 免审判定须建立在<b>依赖闭包</b>上；<b>无法建立完整闭包 ⇒ 一律按语义修订处理</b></div></td></tr>
   </tbody></table>
   <div class="note warn" data-edit>⚠️ <b>任一不满足 ⇒ 按语义变更处理，走完整评审。存疑即按语义变更（fail-closed）。</b><br>
   且非语义修订<b>仍须落账</b>，进下一批次的追溯清单 —— 免的是评审，不是记录。</div>
@@ -1345,16 +1357,19 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 缺口：SpecDoc 未定义 spec 准入 <span class="ref">§4 · §6</span></h3>
-  <div class="note bad" data-edit>全文搜索结果（搜索范围＝specdoc 全文）：<br>
+  <h3>🕐 溯源记录：本屏当初为什么要造 <span class="ref">§4.6 已落 · 保留过程</span> <span style="font-weight:400;color:var(--dim);font-size:12px">丙域 C1：屏首说已落、屏底说未定义 —— 同屏两说，已消</span></h3>
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §4.6（准入检查）与 §4.7（内容构成与需求池）自 v3.0 / v3.11 起生效。</b>
+  下方保留的是<b>当初的缺口取证过程</b>（学分级对齐屏的做法：过程档案不抹，但须标时点）。
+  <div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的全文搜索结果，<b>非现行状态</b>：</div></div>
+  <div class="note bad" data-edit>🕐 <b>当时</b>的全文搜索结果（搜索范围＝specdoc 全文）：<br>
   「spec 评级 / 评分卡 / 质量评级 / 准入标准 / 准入门槛」→ <b>零命中</b>（唯一相关的是 §5.1「不可细（十档打分）」，
   那是对<b>属性表</b>的告诫，不是 spec 准入）<br>
   「一票否决 / 拒收 / 不予受理 / 退回补齐」→ <b>零命中</b><br>
   「免审 / 跳过评审 / 无需评审 / 自动通过」→ <b>零命中</b><br><br>
   ⇒ <b>规范定了「怎么给变更分级」（§5）与「交付物怎么验」（§6），
   但没定「一份 spec 本身合不合格、够不够格占用人审」。</b><br>
-  拟回写 <b>§4.6 spec 准入检查</b>：硬门项集合（pass/fail，不加权，不产出总分）· 参考项与其用途 ·
-  人审深度与门方人选的映射 · 非语义修订通道的六条机器判据 · <b>并写明为何不设总分</b>（§5.1 + §5.2 第 1 条）。</div>
+  ✅ <b>已回写为 §4.6 spec 准入检查</b>：硬门项集合（pass/fail，不加权，不产出总分）· 参考项与其用途 ·
+  人审深度与门方人选的映射 · 非语义修订通道的机器判据 · <b>并写明为何不设总分</b>（§5.1 + §5.2 第 1 条）。</div>
 </div>
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
@@ -1420,7 +1435,7 @@ body.uionly #uihint{display:block}
       </tbody></table></div>
     <div class="card" style="flex:1;min-width:260px"><b>待认领开发任务池</b> <span class="tag t-auth">2</span>
       <table style="margin-top:8px"><tbody>
-      <tr><td data-edit>图搜 3.0 索引服务 spec v3.2</td><td class="cell-ok">已过人审</td>
+      <tr><td data-edit>图搜 3.1 增量索引 spec v0.4</td><td class="cell-ok">已过人审</td>
         <td><button>认领</button></td></tr>
       <tr><td data-edit>周报三视图 spec v0.3</td><td class="cell-ok">已过人审</td>
         <td><button>认领</button></td></tr>
@@ -1463,12 +1478,16 @@ body.uionly #uihint{display:block}
   <tr><td><b>测试报告</b></td><td data-edit><b>执行报告</b> <span class="cell-fail">8 / 14 通过</span>
     <div class="mono">失败 6 条<b>全部是负向用例</b> —— 与门 FAIL 结论一致</div></td>
     <td class="mono">sha256:f77e…20<br>报告 96 行</td><td class="cell-wait">待重跑</td><td>qa_owner</td><td><button>打开</button></td></tr>
-  <tr><td>交付验证</td><td class="na" data-edit>N/A —— 前置环节未过</td><td class="mono">—</td><td class="na">N/A</td><td>—</td><td></td></tr>
+  <tr><td>交付验证</td><td class="cell-wait" data-edit>待 —— 前置环节未过<div class="mono">⚠️ 不写 N/A：N/A 意为「本任务不需要这个环节」，此处是「还没到」</div></td><td class="mono">—</td><td class="cell-wait">待</td><td>—</td><td></td></tr>
   <tr><td>执行结果评审</td><td class="na" data-edit>N/A</td><td class="mono">—</td><td class="na">N/A</td><td>—</td><td></td></tr>
   </tbody></table>
   <div class="note" data-edit>📌 每行的<b>锚 · 规模</b>列即 §6.1 回执五要素的机器可验部分：
   件（路径或 commit 40hex）· sha256（最终态当场算，报后不改）· 行数 ＋ 字节（<code>wc -c</code> 口径）· 自测结果。
   <b>第五要素「门结果 ＋ 失败最小复现」需要人</b> —— 故单列「门 / 门方」两列。</div>
+  <div class="note bad" data-edit>🔴 <b>A2 更正（v1.12，丙域 kimi）：本表与任务看板 T-1204 曾三项矛盾</b> ——
+  看板说「测试用例进行 / 用例评审待 / 测试执行待 / 文档评审 ✓」，本表说「用例评审 PASS / 已执行 8/14 / 产品定义门未过」。
+  <div style="margin-top:6px" class="mono">⇒ <b>以本表为准</b>并回改看板：本表每行带<b>具体证据</b>（用例集 14 条、执行报告 96 行、sha256），
+  看板只有状态色块。<b>有证据的一侧是权威源</b> —— 这条判据比「哪个屏更重要」可操作。</div></div>
   <div class="note warn" data-edit>⚠️ <b>本表的诊断价值</b>：测试报告失败的 6 条<b>全是负向用例</b>，
   与代码评审 FAIL 的理由（「缺负向测试」）指向同一处。<br>
   <b>若没有这张链路视图，这两条信息分别躺在测试报告和门结果里，要人自己去对</b> —— 而这正是「环节丢失造成项目损失」的一种。</div>
@@ -1493,7 +1512,8 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 缺口：三类交付物无查阅入口 <span class="ref">§25.3</span></h3>
+  <h3>🕐 溯源记录：三类交付物当初无查阅入口 <span class="ref">§25.3 已扩至七类</span></h3>
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.3「交付物与规范查阅入口（v3.0 扩）」已覆盖七类。</b>下方保留当初的缺口取证过程。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div>
   <div class="note bad" data-edit>§25.3 只覆盖<b>两类</b>：spec 文档、架构设计文档。<br>
   全文搜「设计方案 / 测试用例设计 / 测试报告」→ <b>零命中</b>。<br>
   它们在 §5.6 映射表里作为<b>环节名</b>出现（测试用例 / 用例评审 / 测试执行），
@@ -1507,7 +1527,7 @@ body.uionly #uihint{display:block}
 <!-- ============ A7 身份与渠道绑定 ============ -->
 <section class="scr" id="a7">
 <h2 data-edit>身份与渠道绑定</h2>
-<div class="sub" data-edit>一个人的多个渠道账号如何判定为同一人。<b style="color:var(--warn)">SpecDoc §21 全文未定义，见屏底</b></div>
+<div class="sub" data-edit>一个人的多个渠道账号如何判定为同一人。<b style="color:var(--ok)">已落 §21.4 渠道账号与人的绑定</b></div>
 
 <div class="note bad" data-edit>🔴 <b>第一条红线：不得按邮箱 / 手机号自动合并。</b><br>
 §21.2 已定<b>邮箱与 SMS 是次因子</b>，主因子是企业目录账号。用次因子做合并键，等于<b>让弱因子决定强身份</b> ——
@@ -1519,7 +1539,7 @@ body.uionly #uihint{display:block}
   <div class="kv">
     <b>人（platform_subject）</b><div class="mono">psub:7f3a91c… <span style="color:var(--dim)">平台内唯一，不可变，不复用</span></div>
     <b>租户</b><div>张宗楚（业主）· 图搜 3.0 —— <span class="mono">一对多，每次须显式选择且落账（同 §22.1a 口径）</span></div>
-    <b>会话 / Agent</b><div class="mono">zzc-opus50t · zzc-coordinator · zzc-prodops …（多个，执行挂会话）</div>
+    <b>会话 / Agent</b><div class="mono">zzc-opus50t · zzc-coordinator · zzc-prodops-2642 …（多个，执行挂会话）</div>
   </div>
   <table style="margin-top:12px"><thead><tr><th style="width:120px">渠道</th><th style="width:190px">渠道内标识</th>
   <th style="width:150px">如何判为同一人</th><th style="width:64px">因子</th><th style="width:110px">状态</th><th style="width:74px">操作</th></tr></thead><tbody>
@@ -1607,7 +1627,8 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 缺口：SpecDoc §21 未定义账号合并 <span class="ref">§21</span></h3>
+  <h3>🕐 溯源记录：§21 当初未定义账号合并 <span class="ref">§21.4 已落</span></h3>
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §21.4 / §21.4a / §21.4b 自 v3.0 起已定义渠道账号与人的绑定。</b>下方保留当初的缺口取证过程。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div>
   <div class="note bad" data-edit>§21 全文三小节：21.1 三级映射 · 21.2 因子分级 · 21.3 双因子不等于双人。<br>
   全文搜「合并 / 联合 / 绑定 / 同一人 / IdP / SSO / subject / 多渠道账号」——
   <b>「绑定」的命中全部指向别的东西</b>（capability policy 绑六项、token 绑设备指纹、challenge 绑一次性凭据），
@@ -1615,7 +1636,7 @@ body.uionly #uihint{display:block}
   ⇒ <b>§21.1 的三级映射把「人」当成已解析的单一实体，但没说这个实体是怎么从四个渠道账号里认出来的。</b>
   这是地基上的一个洞：<b>P1（per-session principal 可信）解决的是「这个会话是谁」，
   没解决「这个『谁』和那个『谁』是不是同一个人」。</b><br><br>
-  拟回写 <b>§21.4 渠道账号与人的绑定</b>，至少含：<code>platform_subject</code> 唯一且不可变不复用 ·
+  ✅ <b>已回写为 §21.4 / §21.4a / §21.4b 渠道账号与人的绑定</b>（v3.0 起），含：<code>platform_subject</code> 唯一且不可变不复用 ·
   三条合并路径（IdP 断言可自动 / 显式绑定须三要件 / 邮箱手机号显示名永不作合并键）·
   <b>绑定须由主身份发起，新渠道不得批准自己的绑定</b> ·
   🔴 <b>合并身份不合并渠道强度，每次授权按本次经由的渠道判</b> ·
@@ -1958,7 +1979,7 @@ body.uionly #uihint{display:block}
   <h3>缺口收敛：§25.4 的界面定义至此补齐 <span class="ref">§25.4</span></h3>
   <div class="note" data-edit>本席此前标 §25.4 为缺口（全节两行、只有结论无界面定义）。业主本条把它填上了：
   <b>不受平台影响 · 只要 ops-Agent 在运行就能交互 · 需输入临时 web 密码</b>。<br>
-  拟回写 <b>§25.4 直连 Agent 的交互通道</b>，扩为：两个入口的职能划分 · 临时密码的生成/轮转/取用/校验/吊销
+  ✅ <b>已回写为 §25.4.1–§25.4.6</b>（v3.0 重写），含：两个入口的职能划分 · 临时密码的生成/轮转/取用/校验/吊销
   （<b>本体在宿主本地，平台侧只是便利镜像</b>）· <b>能力收窄清单</b>（capability effect 判据，同 §24.3a）·
   <b>离线本地落账 + 恢复后强制回传补账 + 回传缺失计数器</b> · 每次启用进下一批次补审。</div>
 </div>
@@ -2275,15 +2296,23 @@ body.uionly #uihint{display:block}
   <h3>事实层 · 任务级记录 <span class="ref">§20.1</span> <span style="font-weight:400;color:var(--dim);font-size:12px">唯一事实来源，不重复存三份</span></h3>
   <table><thead><tr><th>任务 / node</th><th style="width:90px">tenant</th><th style="width:96px">project</th>
   <th style="width:104px">assignee</th><th style="width:70px">week</th><th style="width:150px">内容</th></tr></thead><tbody>
-  <tr><td data-edit>N-1204 · tenant 派生链</td><td>图搜 3.0</td><td>3.0-poc 索引服务</td><td>zzc-devo48-2642</td><td class="mono">W34</td>
-    <td class="mono">digest · 门记录 · blocker</td></tr>
-  <tr><td data-edit>N-1187 · 存储基座选型落地</td><td>dingwei</td><td>平台</td><td>zzc-prodops-2642</td><td class="mono">W34</td>
-    <td class="mono">收口产物 · 触门裁定</td></tr>
-  <tr><td data-edit>N-1163 · 受控仓储 API 收编 fanout</td><td>dingwei</td><td>平台</td><td>zzc-devo48-2642</td><td class="mono">W34</td>
-    <td class="mono">门 FAIL + 整改</td></tr>
+  <tr><td data-edit>N-1204 · 动 tenant 派生链</td><td>dingwei</td><td>dingwei 平台</td><td>zzc-devo48-2642</td><td class="mono">W34</td>
+    <td class="mono">门 FAIL ⇒ 已建修订 N-1206<div class="mono">本流已封（§18 verdict=fail 亦封）</div></td></tr>
+  <tr><td data-edit>N-1187 · KB 加列</td><td>图搜 3.0</td><td>3.0-poc 索引服务</td><td>zzc-imgs-impl-2642</td><td class="mono">W34</td>
+    <td class="mono">阻塞 <code>awaiting_input</code><div class="mono">SLA 已过 26 小时</div></td></tr>
+  <tr><td data-edit>N-1163 · 存储选型</td><td>dingwei</td><td>dingwei 平台</td><td>zzc-devo48-2642</td><td class="mono">W34</td>
+    <td class="mono">23 帖 · 已触门<div class="mono">三段式封锁待解封</div></td></tr>
   </tbody></table>
   <div class="note" data-edit>📌 四个维度 <code>(tenant, project, assignee, week)</code> 都在事实层带着 ——
   三个视图<b>都是它的聚合</b>，不是三张各存一份的表。</div>
+  <div class="note bad" data-edit>🔴 <b>A1 更正（v1.12，丙域 kimi 阻断）：本表三行原先与其余五屏全面错位。</b>
+  <div style="margin-top:6px">本席新写这一屏时<b>直接编了示例数据</b>，没去对既有的帖子流 / 任务看板 / 交付物链路。
+  于是 <code>tenant</code> / <code>project</code> / <code>assignee</code> / 内容 / 状态<b>像被整体洗牌</b> ——
+  而这一屏恰恰自称「唯一事实来源」。<b>自称唯一事实来源的屏，自己是错位最严重的那个。</b></div>
+  <div style="margin-top:6px" class="mono">⇒ 现已<b>以帖子流 / 看板 / 链路为源重新聚合</b>：
+  N-1204 归 dingwei（看板 T-1204、Agent 列表 devo48 项目=dingwei 平台）；
+  N-1187 是「KB 加列」归图搜 3.0、由 zzc-imgs-impl-2642 承担且处于 <code>awaiting_input</code> 阻塞；
+  N-1163 是「存储选型」已触门。<b>这正是「合并未对撞」——新写的件必须与既有件逐条对撞，不能只求自洽。</b></div></div>
 </div>
 
 <div class="panel">
@@ -2712,10 +2741,10 @@ function applyPersona(){
   if(lsr) lsr.style.display = plat ? '' : 'none';
   var n=document.querySelector('#s3 .note.bad');
   if(n) n.innerHTML = plat
-    ? '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>当前视角＝平台级 ops，<code>restricted</code> 三条<b>在</b>检索集合内（14 / 14 可见）。'
+    ? '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>当前视角＝平台级 ops，<code>restricted</code> 三条<b>在</b>检索集合内（共 10 条）。'
       + '密级仍按条目分级：<b>S0 条目的实际访问须另有 capability</b>，可检索 \u2260 可读取。'
     : '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。'
-      + '当前视角<b>共 9 条</b>可检索。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。';
+      + '当前视角<b>共 7 条</b>可检索（＝本表实际渲染行数）。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。';
 
   /* Agent 视角：把导航重心切到 Agent 面，并提示决断面非其职责 */
   var isAg=(v==='agent');
