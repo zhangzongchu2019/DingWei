@@ -129,6 +129,8 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <a href="#s8">平台治理 <span class="mono">§24</span></a>
   <div class="grp">依据面</div>
   <a href="#s4">Spec 与设计文档 <span class="mono">§25.3</span></a>
+  <a href="#a5">spec 准入检查 <span class="mono">新增</span></a>
+  <a href="#a6">交付物链路 <span class="mono">新增</span></a>
   <a href="#s3">知识库 <span class="mono">§25.2</span></a>
   <div class="grp">资产与执行</div>
   <a href="#s5">skill / MCP 库 <span class="mono">§15·16</span></a>
@@ -1184,6 +1186,175 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   拟回写 <b>§26.4 运行环境供给与资源池</b>，内容至少含：资源池条目模型（编号 · 类型 · 密级 · 归属 · 可引用者）·
   工单字段集（<b>结构上不含 credentials 键</b>）· 形态 × 密级的可授予矩阵 · 引用而非填写的硬性要求 ·
   池条目新增属平台域基线变更。</div>
+</div>
+</section>
+
+<!-- ============ A5 spec 准入检查 ============ -->
+<section class="scr" id="a5">
+<h2 data-edit>spec 准入检查</h2>
+<div class="sub" data-edit>机器判结构，人判实质。<b style="color:var(--warn)">SpecDoc 全文未定义此机制，见屏底</b></div>
+
+<div class="note bad" data-edit>🔴 <b>本席不做「评级 / 评分卡」，理由来自规范自己。</b>
+§5.1 写着：<b>「宁可粗（三档枚举），不可细（十档打分）。打分制一定退化成主观。」</b>
+§5.2 又写着：<b>安全面必须是独立维度，不得被「改动小」稀释</b> —— 而<b>综合评分正是把一票否决项平均掉的机器</b>。<br>
+⇒ 故设计为 <b>① 机器可判的检查项集合（pass / fail，不加权）＋ ② 硬门（一票否决）＋ ③ 人审触发规则</b>，
+<b>不产出任何总分</b>。</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>① 硬门 · 不满足即拒收，不进人审队列 <span class="ref">拟 §4.6</span></h3>
+  <table><thead><tr><th style="width:32px"></th><th>检查项</th><th style="width:130px">机器判据</th><th style="width:96px">S4 spec 实测</th></tr></thead><tbody>
+  <tr><td class="cell-ok">✓</td><td data-edit>属性头块七项齐全，取值在枚举内</td><td class="mono">字段存在性 + 枚举匹配</td><td class="cell-ok">通过</td></tr>
+  <tr><td class="cell-ok">✓</td><td data-edit>分级结果可复算：<code>rule_ids</code> ＋ 规则表 version 齐</td><td class="mono">§5.4 规则 4</td><td class="cell-ok">通过</td></tr>
+  <tr><td class="cell-fail">✗</td><td data-edit><b>预授权条目具体</b>：范围 / 用途 / 时限三字段非空，且无禁用词
+    <div class="mono">禁用词表：可能 · 视情况 · 相关 · 适当 · 如有必要</div></td>
+    <td class="mono">§23.2 第 6 条</td><td class="cell-fail"><b>拒收</b><div class="mono">命中「可能」「相关」</div></td></tr>
+  <tr><td class="cell-ok">✓</td><td data-edit>父 / 子 spec 引用可解析</td><td class="mono">§4.4</td><td class="cell-ok">通过</td></tr>
+  <tr><td class="cell-ok">✓</td><td data-edit>交付物锚格式合规（commit 40hex / sha256 64hex）</td><td class="mono">正则</td><td class="cell-ok">通过</td></tr>
+  <tr><td class="cell-wait">—</td><td data-edit><code>/speckit.analyze</code> 跨制品一致性零冲突</td><td class="mono">§4.1</td><td class="cell-wait">未跑</td></tr>
+  <tr><td class="cell-fail">✗</td><td data-edit><b>每条硬性约束有对应探测手段登记</b>（§29 四类之一）</td>
+    <td class="mono">附录 E 同构</td><td class="cell-fail"><b>拒收</b><div class="mono">3 条无登记</div></td></tr>
+  </tbody></table>
+  <div class="chk stop" style="margin-top:10px">🔴 <b>S4 spec 当前判定：拒收（2 项硬门不过）。不进人审队列。</b></div>
+  <div class="note" data-edit>📌 <b>为什么要有一票否决</b>：§6.1 已定「交付物合格约八成可自动判，<b>门方只判剩下两成</b>」——
+  门方是<b>瓶颈资源</b>。让门方去审一份属性头块都没填全、预授权写着「可能需要读取相关数据」的 spec，
+  是<b>把瓶颈资源花在机器能挡的事上</b>。<br>
+  ⇒ 硬门不是为了严，是<b>为了不浪费人审</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>② 参考项 · 不否决，供门方定深度 <span class="ref">拟 §4.6</span></h3>
+  <table><thead><tr><th>检查项</th><th style="width:150px">实测</th><th>门方可据此</th></tr></thead><tbody>
+  <tr><td data-edit>判据可机器验证的属性比例（§5.2 第 2 条要求每属性有事后可验对应物）</td>
+    <td><b class="cell-wait">5 / 7</b><div class="bar hot"><i style="width:71%"></i></div></td>
+    <td data-edit>2 项只能人验 ⇒ 交付验证须加人工核对步骤</td></tr>
+  <tr><td data-edit><code>acceptance</code> 的可执行性：有具体命令/判据，而非「质量良好」这类不可判定表述</td>
+    <td><b class="cell-fail">3 / 9 条不可执行</b></td>
+    <td data-edit>不可执行的 acceptance 会在交付验证时变成扯皮 ⇒ 建议打回细化</td></tr>
+  <tr><td data-edit>覆盖率：spec 声明的接口 / 数据变更是否都有对应测试用例设计</td>
+    <td><b class="cell-fail">4 / 6 有</b></td>
+    <td data-edit>2 处无用例 ⇒ 用例评审门方须重点看这两处</td></tr>
+  <tr><td data-edit>预授权条目数与其声明范围的宽窄</td><td><b class="cell-wait">2 条 · 1 条偏宽</b></td>
+    <td data-edit>触发 §4.3：<b>评审门方须含有权批准该访问的角色</b></td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ <b>这些项不加权、不合成总分。</b>它们的用途是<b>告诉门方该盯哪里</b>，
+  不是替门方下结论。加权合成会立刻触犯 §5.1「打分制一定退化成主观」。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>③ 满足条件后，是否一定需要人审？ <span class="ref">业主问 · 拟 §4.6</span></h3>
+  <div class="chk stop" data-edit>🔴 <b>本席答：不能因「机器项全过」而免人审。</b></div>
+  <div class="note bad" data-edit>理由一 · <b>规范已有明文</b>：§5.4 规则 2「<b>基础必过模板</b>」＝无论属性如何恒必过的最小环节集
+  （实现 → 代码评审 → 测试执行）。<b>代码评审在任何级别都不可省</b>，spec 同理不应比代码宽松。<br><br>
+  理由二 · <b>免人审会把检查项变成攻击面</b>：一旦「过检查项即免审」，就会出现<b>为过检查项而写的 spec</b> ——
+  字段填齐、禁用词避开、锚格式合法，而实质仍是空的。<br>
+  这与本席在评审中被抓出的<b>「按名字判而非按效果判」</b>是同一族错误：检查项判的是<b>形状</b>，人审判的是<b>是不是那么回事</b>。<br><br>
+  ⇒ <b>正确关系</b>：<b>机器决定「是否值得占用人审」，不决定「是否需要人审」。</b></div>
+  <h3 style="margin-top:14px">人审的深度与门方人选由检查结果决定 <span class="ref">§5.6 · §4.3</span></h3>
+  <table><thead><tr><th>条件</th><th>人审形态</th></tr></thead><tbody>
+  <tr><td data-edit>硬门有任一不过</td><td class="cell-fail"><b>不进人审</b> · 退回补齐</td></tr>
+  <tr><td data-edit>硬门全过 ＋ 无预授权条目 ＋ 属性无高风险档</td><td class="cell-ok">文档评审（单门方）</td></tr>
+  <tr><td data-edit>硬门全过 ＋ 含预授权条目</td><td class="cell-wait">文档评审，且<b>门方须含有权批准该访问的角色</b>（§4.3）</td></tr>
+  <tr><td data-edit>硬门全过 ＋ <code>安全面=是</code></td><td class="d-high"><b>架构评审 ＋ 门方必须是安全角色</b>（§5.6）</td></tr>
+  <tr><td data-edit>硬门全过 ＋ <code>回滚成本=不可回滚</code></td><td class="d-high">架构评审 ＋ <b>业主签署</b></td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>④ 唯一的免人审通道：非语义修订 <span class="ref">类比 §24.2a</span></h3>
+  <div class="note" data-edit>类比 §24.2a 已定的「未列入 immutable 名单<b>且不改变语义</b>的文案修订可单签」——
+  spec 的<b>非语义修订</b>可免评审，但<b>「非语义」必须机器可判</b>，不得自述：</div>
+  <table><thead><tr><th style="width:32px"></th><th>判据（全部满足才算非语义）</th></tr></thead><tbody>
+  <tr><td class="cell-ok">✓</td><td data-edit>diff <b>不触及</b>属性头块任一字段</td></tr>
+  <tr><td class="cell-ok">✓</td><td data-edit>diff <b>不触及</b>预授权条目段</td></tr>
+  <tr><td class="cell-ok">✓</td><td data-edit>diff <b>不触及</b><code>acceptance</code> 段</td></tr>
+  <tr><td class="cell-ok">✓</td><td data-edit>diff <b>不触及</b>任何含「必须 / 禁止 / 不得 / 须 / 唯一 / 只有 / fail-closed」的行，以及表格规则行（附录 E.0 五形态）</td></tr>
+  <tr><td class="cell-ok">✓</td><td data-edit>分级结果<b>重算后不变</b></td></tr>
+  <tr><td class="cell-ok">✓</td><td data-edit>该 spec <b>不在 immutable 名单内</b></td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ <b>任一不满足 ⇒ 按语义变更处理，走完整评审。存疑即按语义变更（fail-closed）。</b><br>
+  且非语义修订<b>仍须落账</b>，进下一批次的追溯清单 —— 免的是评审，不是记录。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 缺口：SpecDoc 未定义 spec 准入 <span class="ref">§4 · §6</span></h3>
+  <div class="note bad" data-edit>全文搜索结果（搜索范围＝specdoc 全文）：<br>
+  「spec 评级 / 评分卡 / 质量评级 / 准入标准 / 准入门槛」→ <b>零命中</b>（唯一相关的是 §5.1「不可细（十档打分）」，
+  那是对<b>属性表</b>的告诫，不是 spec 准入）<br>
+  「一票否决 / 拒收 / 不予受理 / 退回补齐」→ <b>零命中</b><br>
+  「免审 / 跳过评审 / 无需评审 / 自动通过」→ <b>零命中</b><br><br>
+  ⇒ <b>规范定了「怎么给变更分级」（§5）与「交付物怎么验」（§6），
+  但没定「一份 spec 本身合不合格、够不够格占用人审」。</b><br>
+  拟回写 <b>§4.6 spec 准入检查</b>：硬门项集合（pass/fail，不加权，不产出总分）· 参考项与其用途 ·
+  人审深度与门方人选的映射 · 非语义修订通道的六条机器判据 · <b>并写明为何不设总分</b>（§5.1 + §5.2 第 1 条）。</div>
+</div>
+</section>
+
+<!-- ============ A6 交付物链路 ============ -->
+<section class="scr" id="a6">
+<h2 data-edit>交付物链路</h2>
+<div class="sub" data-edit>一个版本从 spec 到测试报告，每个环节的交付物都能点开。<b style="color:var(--warn)">SpecDoc 未定义此入口</b></div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>T-1204 · tenant 派生链 · L3 <span class="ref">§5.6 环节 · §6.1 回执五要素</span></h3>
+  <table><thead><tr><th style="width:118px">环节</th><th>交付物</th><th style="width:150px">锚 · 规模</th>
+  <th style="width:88px">门</th><th style="width:104px">门方</th><th style="width:64px">看</th></tr></thead><tbody>
+  <tr><td>产品定义</td><td data-edit><b>S1 spec</b> v0.1 <div class="mono">含预授权 2 条</div></td>
+    <td class="mono">sha256:9c1f…4b<br>412 行 / 18.2KB</td><td class="cell-fail">未过</td><td>—</td><td><button>打开</button></td></tr>
+  <tr><td><b>设计方案</b></td><td data-edit><b>tenant 派生链设计</b> v0.3
+    <div class="mono">三级映射 · 派生源 · fail-closed 行为 · 一对多处置</div></td>
+    <td class="mono">sha256:3e8a…71<br>286 行 / 11.4KB</td><td class="cell-ok">架构评审 PASS</td><td>调度者</td><td><button>打开</button></td></tr>
+  <tr><td><b>测试用例设计</b></td><td data-edit><b>用例集</b> 14 条
+    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / SET 而非 SET LOCAL / owner 绕 RLS / BYPASSRLS 角色</div></td>
+    <td class="mono">sha256:b204…c9<br>14 用例</td><td class="cell-ok">用例评审 PASS</td><td>qa_owner</td><td><button>打开</button></td></tr>
+  <tr><td>实现</td><td data-edit>代码变更<div class="mono">6 文件 · +412 / −87</div></td>
+    <td class="mono">commit 4a91c02f…<br>+412 / −87</td><td class="cell-fail"><b>代码评审 FAIL</b></td><td>安全角色</td><td><button>打开</button></td></tr>
+  <tr><td><b>测试报告</b></td><td data-edit><b>执行报告</b> <span class="cell-fail">8 / 14 通过</span>
+    <div class="mono">失败 6 条<b>全部是负向用例</b> —— 与门 FAIL 结论一致</div></td>
+    <td class="mono">sha256:f77e…20<br>报告 96 行</td><td class="cell-wait">待重跑</td><td>qa_owner</td><td><button>打开</button></td></tr>
+  <tr><td>交付验证</td><td class="na" data-edit>N/A —— 前置环节未过</td><td class="mono">—</td><td class="na">N/A</td><td>—</td><td></td></tr>
+  <tr><td>执行结果评审</td><td class="na" data-edit>N/A</td><td class="mono">—</td><td class="na">N/A</td><td>—</td><td></td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 每行的<b>锚 · 规模</b>列即 §6.1 回执五要素的机器可验部分：
+  件（路径或 commit 40hex）· sha256（最终态当场算，报后不改）· 行数 ＋ 字节（<code>wc -c</code> 口径）· 自测结果。
+  <b>第五要素「门结果 ＋ 失败最小复现」需要人</b> —— 故单列「门 / 门方」两列。</div>
+  <div class="note warn" data-edit>⚠️ <b>本表的诊断价值</b>：测试报告失败的 6 条<b>全是负向用例</b>，
+  与代码评审 FAIL 的理由（「缺负向测试」）指向同一处。<br>
+  <b>若没有这张链路视图，这两条信息分别躺在测试报告和门结果里，要人自己去对</b> —— 而这正是「环节丢失造成项目损失」的一种。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>版本视图 · v1.4 <span class="ref">§8.2 收口四交付物</span></h3>
+  <table><thead><tr><th style="width:118px">任务</th><th style="width:52px">级别</th><th>链路完整度</th><th style="width:150px">缺口</th></tr></thead><tbody>
+  <tr><td>T-1204</td><td class="d-high">L3</td><td><div class="bar hot"><i style="width:57%"></i></div><span class="mono">4 / 7 环节有交付物</span></td>
+    <td class="cell-fail">代码评审 FAIL</td></tr>
+  <tr><td>T-1187</td><td class="d-mid">L2</td><td><div class="bar"><i style="width:86%"></i></div><span class="mono">6 / 7</span></td>
+    <td class="cell-wait">测试执行中</td></tr>
+  <tr><td>T-1210</td><td class="d-low">L1</td><td><div class="bar"><i style="width:67%"></i></div><span class="mono">2 / 3</span></td>
+    <td class="cell-wait">代码评审中</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>收口第 ⑧ 格须产出四项：<b>版本摘要 → K1</b> · <b>spec 预授权失效登记</b> ·
+  <b>部署锚登记</b>（组件×环境×commit×制品 sha256）· <b>阶段复盘</b>（四段，含「本阶段的判断失误」）。
+  <b>无复盘、无部署锚登记，不得收口。</b></div>
+  <div class="chk stop">🔴 v1.4 当前不可收口：T-1204 链路未闭 · 阶段复盘第 4 段为空且未写明理由</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 缺口：三类交付物无查阅入口 <span class="ref">§25.3</span></h3>
+  <div class="note bad" data-edit>§25.3 只覆盖<b>两类</b>：spec 文档、架构设计文档。<br>
+  全文搜「设计方案 / 测试用例设计 / 测试报告」→ <b>零命中</b>。<br>
+  它们在 §5.6 映射表里作为<b>环节名</b>出现（测试用例 / 用例评审 / 测试执行），
+  在 §6.1 里作为<b>回执要素</b>出现（自测结果），<b>但从未作为「可查阅的交付物」被定义过入口</b>。<br><br>
+  ⇒ 拟把 §25.3 扩为 <b>§25.3 交付物与规范查阅入口</b>，覆盖 spec · 设计方案 · 测试用例设计 ·
+  测试报告 · 代码变更 · 交付验证记录 · 复盘，并要求<b>按任务/版本组织成链路视图</b>而非分七个列表 ——
+  理由与 §25.1「单一 typed 待决队列」同源：<b>分成七个入口，就要巡七个地方才知道哪一环缺了。</b></div>
 </div>
 </section>
 
