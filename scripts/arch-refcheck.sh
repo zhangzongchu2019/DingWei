@@ -8,10 +8,10 @@
 # ⇒ 命名空间分开：本件自身章节写 `A§N`，SpecDoc 引用写 `§N`；校验器按来源唯一解析。
 # ⚠️ 这是「闸报了通过但它判不了」的第四次 —— 前三次见 lint-rule-must-have-teeth。
 set -eu
-A=${1:-docs/dingwei-architecture-design-v0.1.md}
-S=${2:-docs/dingwei-platform-specdoc-v2.0.md}
+A=${1:-docs/dingwei-architecture-design.md}
+S=${2:-docs/dingwei-platform-specdoc.md}
 if [ "${1:-}" = "--selftest" ]; then
-  A=docs/dingwei-architecture-design-v0.1.md; S=docs/dingwei-platform-specdoc-v2.0.md
+  A=docs/dingwei-architecture-design.md; S=docs/dingwei-platform-specdoc.md
   # selftest 定义在文件末尾，先读完再调用
   eval "$(sed -n '/^selftest() {/,/^}/p' "$0")"
   selftest "$A" "$S"; exit $?

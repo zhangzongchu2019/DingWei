@@ -10,7 +10,7 @@
 set -u
 D=docs
 T=$D/tools
-DOC=$D/dingwei-platform-specdoc-v2.0.md
+DOC=$D/dingwei-platform-specdoc.md
 COR=$T/speclint-corpus.md
 LINT=$T/speclint.py
 
@@ -42,16 +42,22 @@ fi
 #    立此判据的直接原因：delivery-check.sh 本是为「件内版本 vs 文件名版本不符」而写，
 #    可它跑在【投递时】—— 那时错已进仓。同一个错隔一个 commit 就复发了。
 #    ⇒ 闸要装在错能发生的地方，不是错被发现的地方。
-PROTO=docs/dingwei-prototype-v0.1.html
+PROTO=docs/dingwei-prototype.html
 if git diff --cached --name-only 2>/dev/null | grep -qx "$PROTO"; then
   NEW=$(grep -o "原型 v[0-9]*\.[0-9]*" "$PROTO" | head -1)
   OLD=$(git show HEAD:"$PROTO" 2>/dev/null | grep -o "原型 v[0-9]*\.[0-9]*" | head -1)
-  if [ -n "$OLD" ] && [ "$NEW" = "$OLD" ]; then
+  if [ -z "$OLD" ]; then
+    # HEAD 里取不到旧值（新增文件 / 刚改过路径）——此时【无法比对】，须明说，不得打印 ✓。
+    # 立此分支的直接原因：改名后 git show HEAD:<新路径> 取不到值，判据被跳过却仍打印「✓」，
+    # 与「检测到了但没接进失败条件」同族 —— 闸不能在自己没测的时候报通过。
+    echo "  ④ 原型版本 —— ⚠️ HEAD 无该路径旧值（新增或刚改名），本次【跳过比对】，非通过"
+  elif [ "$NEW" = "$OLD" ]; then
     echo "✗ 原型内容已改，但件内自述版本仍为 $NEW —— 请 bump 后再提交"
     echo "  （评审方打开页面看到的是标题里的版本；不 bump 等于告诉他这是旧件）"
     exit 1
+  else
+    echo "  ④ 原型版本 $OLD → $NEW ✓"
   fi
-  echo "  ④ 原型版本 $OLD → $NEW ✓"
 fi
 # ⑤ DELIVERY-STATUS.md 须与 HEAD 同步（它是单一状态源，过期即失去意义）
 if [ -x scripts/gen-status.sh ]; then
@@ -66,7 +72,7 @@ if [ -x scripts/gen-status.sh ]; then
   rm -f /tmp/.dw-status.$$
 fi
 # ⑥ 架构设计的引用核验（来源类型化解析）
-if [ -x scripts/arch-refcheck.sh ] && [ -f docs/dingwei-architecture-design-v0.1.md ]; then
+if [ -x scripts/arch-refcheck.sh ] && [ -f docs/dingwei-architecture-design.md ]; then
   scripts/arch-refcheck.sh >/dev/null 2>&1 || { scripts/arch-refcheck.sh; echo "✗ 架构引用核验未过"; exit 1; }
   # 闸自己也要过反测 —— 否则「核验通过」可能只是它测不出来（甲域最终复核抓出的那种）
   scripts/arch-refcheck.sh --selftest >/dev/null 2>&1 || { scripts/arch-refcheck.sh --selftest; echo "✗ 架构引用核验的反测未过"; exit 1; }

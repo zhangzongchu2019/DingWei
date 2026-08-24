@@ -30,7 +30,7 @@ say "> 仓内那份由 pre-commit 自动重生成，不依赖任何人记得。"
 say ""
 say "| 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |"
 say "|---|---|---|---|---|"
-for f in "$D/dingwei-platform-specdoc-v2.0.md" "$D/dingwei-prototype-v0.1.html" "$D/dingwei-architecture-design-v0.1.md"; do
+for f in "$D/dingwei-platform-specdoc.md" "$D/dingwei-prototype.html" "$D/dingwei-architecture-design.md"; do
   [ -f "$f" ] || continue
   v=$(grep -m1 -oE '\*\*版本\*\*: v[0-9]+\.[0-9]+' "$f" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+' || true)
   [ -n "$v" ] || v=$(grep -m1 -oE '原型 v[0-9]+\.[0-9]+' "$f" | grep -oE 'v[0-9]+\.[0-9]+' || true)

@@ -2,8 +2,8 @@
 # 投递目录自检 —— 防「同名歧义」与「文件名与内容版本不符」。
 #
 # 立此闸的直接原因（2026-08-24，两次）：
-#   ① 共享目录里 dingwei-prototype-v0.1.html 装的是 v1.6，而该名与仓内路径同名 ⇒ 按路径名找会命中旧件
-#   ② 同一个坑在 SpecDoc 侧还有一份（dingwei-platform-specdoc-v2.0.md 装的是 v3.3），
+#   ① 共享目录里 dingwei-prototype.html 装的是 v1.6，而该名与仓内路径同名 ⇒ 按路径名找会命中旧件
+#   ② 同一个坑在 SpecDoc 侧还有一份（dingwei-platform-specdoc.md 装的是 v3.3），
 #      本席修完原型侧没回头扫 —— 「改了规矩没同步引用点」。
 # 靠记性会漏第二处，靠这个脚本不会。
 #
@@ -37,7 +37,7 @@ for p in $(git ls-files 'docs/*.md' 'docs/*.html' 2>/dev/null); do
   [ -f "$D/$b" ] || continue
   # 同名是否有害，取决于【仓内文件名会不会烂】：
   #   仓内名带的版本 == 该文件内容自述的版本 ⇒ 名字没烂，同名无歧义，放行；
-  #   两者不等（如 dingwei-prototype-v0.1.html 里装着 v1.13）⇒ 按路径名找会命中旧件，必须改名投递。
+  #   两者不等（如 dingwei-prototype.html 里装着 v1.13）⇒ 按路径名找会命中旧件，必须改名投递。
   # ⚠️ 判据是「名字有没有烂」，不是「有没有版本号」——后者挡不住 v0.1 里装 v1.13 这种。
   rnv=$(printf '%s' "$b" | grep -oE 'v[0-9]+\.[0-9]+' | head -1)
   rcv=$(grep -m1 -oE '\*\*版本\*\*: v[0-9]+\.[0-9]+' "$p" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+')

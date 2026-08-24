@@ -2615,7 +2615,7 @@ document.getElementById('bExp').onclick=function(){
     批注[k]={面板:(p&&p.querySelector('h3')?p.querySelector('h3').textContent.trim():k),
       内容:st.notes[k].replace(/<[^>]+>/g,'').trim()};
   });
-  var out={原型:'dingwei-prototype-v0.1.html',
+  var out={原型:'dingwei-prototype.html',
     /* 件内不再内嵌 commit:本件与 SpecDoc 同 commit,自己写不进自己的哈希(先有内容才有哈希)。
        内嵌一个上一版的哈希,看着精确其实是过期值 —— 与「精度≠稳定度」同源。
        版本号可自述,锚由 README / 提交信息承载。 */
