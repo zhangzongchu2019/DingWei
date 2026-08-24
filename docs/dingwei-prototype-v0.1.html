@@ -118,6 +118,13 @@ padding:5px 9px;margin:5px 6px 0 0;font-size:12px}
 body.edit [data-edit]{outline:1px dashed #3a4458;outline-offset:2px;border-radius:2px}
 body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 .hid{display:none!important}
+
+/* ---- 纯 UI 模式:隐去说明层 ---- */
+body.uionly .note, body.uionly .chk, body.uionly .ref { display:none !important }
+body.uionly .sub { opacity:.55 }
+#uihint{display:none;margin:10px 0;padding:9px 12px;border:1px dashed var(--line);
+  border-radius:8px;color:var(--dim);font-size:12px;line-height:1.7}
+body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
@@ -126,6 +133,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
+  <button id="bUI" title="隐去全部说明层，只看界面本身">◐ 纯 UI</button>
   <button id="bEdit">✎ 编辑模式</button>
   <button id="bNote">＋ 批注</button>
   <button id="bExp">⤓ 导出改动</button>
@@ -133,6 +141,9 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 </div>
 
 <div id="wrap">
+<div id="uihint">◐ <b>纯 UI 模式</b>：已隐去全部说明层（note / 判据引用 / §编号）。
+此模式下看到的才是<b>界面本身</b> —— 说明层属 SpecDoc，不属界面；
+两处都写规则会漂移，故此处只<b>锚</b>不<b>述</b>。再点一次「◐ 纯 UI」还原。</div>
 <nav id="nav">
   <div class="grp">决断面</div>
   <a href="#s1" class="on">待决队列 <span class="mono">§25.1</span></a>
@@ -2584,5 +2595,18 @@ function applyPersona(){
   }
 }
 selPer.onchange=applyPersona; applyPersona();
+</script>
+<script>
+/* 纯 UI 模式:说明层是给评审看的,不是界面的一部分。
+   分开看,才判得出"界面本身够不够用" —— 混在一起时,说明的密度会被误当成界面的完备度。 */
+(function(){
+  var b=document.getElementById('bUI'); if(!b)return;
+  b.onclick=function(){
+    var on=document.body.classList.toggle('uionly');
+    b.textContent = on ? '◑ 显示说明' : '◐ 纯 UI';
+    try{ localStorage.setItem('dw_uionly', on?'1':'0'); }catch(e){}
+  };
+  try{ if(localStorage.getItem('dw_uionly')==='1') b.onclick(); }catch(e){}
+})();
 </script>
 </body></html>
