@@ -1,6 +1,6 @@
 # DingWei 纲领需求增补 R2 · 业主 2026-08-23 十条
 
-> **状态**：v0.3（业主 2026-08-23 就 R2-1/2/3/5/9 表态后修订）。
+> **状态**：v0.4（业主 2026-08-23 就 R2-1/2/3/5/9 表态后修订）。
 > **来源**：业主 2026-08-23 直述十条，「一并纳入纲领性文件」。
 > **与既有件的关系**：本件是**需求层**增补，须在纲领 v2.0 合并时并入正文；
 > 其中多条与 `dingwei-charter-addendum-forum-v1.7.md`、`dingwei-addendum-decisions-20260824.md` 已有条款直接咬合，逐条标注。
@@ -421,6 +421,119 @@ Claude Code 文档中一条实战记录（关于自动记录的 `/verify` skill�
 [MCP registry 目录与排名实践](https://nordicapis.com/7-mcp-registries-worth-checking-out/) ·
 [Skills vs MCP 实践边界](https://www.developersdigest.tech/blog/mcp-servers-vs-agent-skills-2026)
 
+### 甲.4e 二次调研 —— 业主提供的 Harness 资料核实（2026-08-23）
+
+业主提供了一段关于「DeepSeek Harness 如何管理 Skill」的资料。**本席逐条核实，结论如下。**
+
+#### 甲.4e-0 先厘清一处事实：这段资料把**两个不同的 Harness**并成了一个
+
+| | **A · DeepSeek Harness** | **B · Harness.io** |
+|---|---|---|
+| 是什么 | **Agent 执行脚手架**（`github.com/deepseek-ai/deepseek-harness`） | **CI/CD 平台**（`github.com/harness/harness-skills`、`harness/mcp-server`） |
+| 核心 | **Cordis 微内核**、一切皆插件、可逆卸载、热重载 | 平台资源的 Agent Skill 层 + MCP v2 服务器 |
+| 资料中归它的内容 | 「一切皆插件」「可逆效应」「运行时热重载」「Creator Mode」 | 🔴 **`/create-pipeline`、`/debug-pipeline`、`harness_describe`、「新微服务上线工作流」、「管理用户权限」** |
+
+> **两者都真实存在，但不是同一个项目。** 业主资料中列在「Harness 技能目录与自动化工作流」
+> 和「与 MCP 协议深度集成」两节下的内容，实际来自 **B（Harness.io 的 CI/CD 平台）**，不是 A。
+>
+> **本席起初怀疑「DeepSeek Harness」不存在——这一点本席判断错了，它是真的。**
+> 错的只是把 B 的内容归到了 A 名下。**而分开看，A 与 B 各自都给了我们有用的东西**，见下。
+
+#### 甲.4e-1 A 线（DeepSeek Harness / Cordis）的可用之处 —— 以及一处必须精确的地方
+
+**已核实为真**：Cordis 是「一个小型运行时，其中每一项能力——工具、LLM 适配器、文件访问、
+**乃至 agent 主循环本身**——都是挂载到共享 context 上的插件」；
+**「Cordis 托管的注册项会在其插件卸载时被撤销」**；配置文件即插件树，支持热重载。
+
+⚠️ **一处必须精确**：业主资料称**Skill** 具备「可逆卸载」。
+**本席核到的官方文档中，可逆性是描述在【插件】层面的，未见 skill 专属的撤销机制。**
+Skill 是**由插件提供的能力之一**（官方原文列举：models、tools、**skills**、sessions、sandboxes、storage、loops、scheduling、UI）。
+
+> **这个区别对 DingWei 是有意义的，不是咬文嚼字**：
+> **可逆性是内核属性，skill 因为经由插件交付而继承它。**
+> ⇒ **想要「可热插拔、可干净下架」的 skill，前提是底下有一个带可逆效应的插件内核；
+> 无法在一个扁平的 skill 目录上事后加装可逆性。**
+
+#### 甲.4e-2 🔴 由此核出 DingWei 一处具体缺口：**provision 能装不能卸**
+
+**已核实（代码级，两侧一致）**：
+
+| 位置 | 事实 |
+|---|---|
+| `tools/sessionhelper/sessionhelper/provision.py:77-84` | 动作仅三种：`update_self` / `install_skill` / `install_mcp`；其余 `unsupported action` |
+| `internal/admin/admin.go:1828-1832` | 同样三种；其余 `invalid provision action` |
+| `provision.py:132` `is_installed()` | 幂等检查按 `action:target` 记版本，**只进不退**（版本单调，防降级） |
+| `provision.py:186` `rollback_stale_update_if_needed()` | **是自更新失败的回滚，不是 skill 卸载** |
+
+> 🔴 **⇒ DingWei 现有分发通道没有 `uninstall_skill` / `uninstall_mcp`。**
+>
+> **这与业主要求 9 的三级晋升直接冲突**：晋升机制必然包含**降级与下架**——
+> 一个 skill 被判定为坏的、被平台级版本取代、或因安全问题需召回时，**必须能收回**。
+> **没有卸载动作 = 晋升是单向的 = 坏 skill 一旦推出去就收不回来。**
+>
+> 且注意：**防降级的版本单调闸会让「推一个空版本覆盖」这条土办法也走不通**
+> （新版本号更高才接受，而「卸载」在语义上不是一个更高的版本）。
+>
+> **⇒ 新增 R2-15**：分发通道须补 `uninstall_skill` / `uninstall_mcp`，
+> **且卸载须与安装同等审批**（否则「卸载掉安全类 skill」会成为绕过管控的路径）。
+> ⚠️ **卸载的幂等与审计语义须一并设计**：卸载后再装同版本，`is_installed` 不应误判为「已装」。
+
+#### 甲.4e-3 B 线（Harness.io）—— 两条一手模式，对 DingWei 直接可用
+
+**模式一：🔴 Skill 不内嵌 schema，运行时经 MCP 查**
+
+> 官方原文：「Skills **do not embed API schemas directly**; instead, they use the `harness_describe`
+> MCP tool to **discover resource schemas at runtime**, keeping skills **lightweight and always up to date**.」
+
+**这一条正好是本席 §甲.2a「知识会漂移」问题的 skill 版解法**：
+
+| 做法 | 后果 |
+|---|---|
+| skill 内嵌 schema | 后端一改，skill 即过期，且**没人知道它过期了** |
+| **skill 运行时查 schema** | **后端变更自动生效，skill 永不因此过期** |
+
+> **⇒ 这给 §甲.0 的 skill/MCP 判据补上了第二个维度**：
+> 分界不只是**「有没有状态与认证」**（甲.4d 发现四），还有**「变不变」**——
+> **易变的放 MCP（运行时查），稳定的放 skill（流程判断）。**
+> 两条判据同向：有状态的东西通常也是易变的。
+
+**模式二：MCP 工具数收敛到「通用动词」，不随资源数增长**
+
+> 已核实：Harness.io 的 MCP v2 用 **10~11 个工具**
+> （`harness_list` / `get` / `create` / `update` / `delete` / `execute` / `search` / `describe` / `schema` / `diagnose` / `status`）
+> 覆盖 **119~240 种资源类型**。
+
+> **⇒ 对 DingWei 的直接启示**：MCP 工具应设计为**动词 × 资源类型**，
+> **工具数量收敛到动词集，不随资源数量线性增长**。
+>
+> 🔴 **而 DingWei 自己已经用过这个模式**：`docs/t18-platform-design-v1.md` §7b 原文——
+> 「**七工具全部落在这一个 type 上**（工具语义在 MCP 层，线上只有 `vsapi_v1`）——**IPC type 枚举零膨胀**，向后兼容」。
+> **⇒ 这不是要引进的新东西，是把本平台已有的正确做法，向上贯彻到 MCP 工具面。**
+
+#### 甲.4e-4 「Skill 自我进化 / Creator Mode」—— 本席建议**暂不纳入纲领**
+
+业主资料提到 Agent 可在运行时检查、实验插件并创作新预设，指向「skill 自我进化」。
+
+**本席建议本期不纳入，理由是它与已定条款直接冲突，而非它不好**：
+
+| 冲突点 | 依据 |
+|---|---|
+| **平台级 skill 晋升 = 平台域基线变更，须审批**（甲.4a、§C.4e） | Agent 自行创建/修改 skill，绕过了「谁准的」 |
+| **自动回写须设负反馈闸**（甲.4d 发现五、R2-13） | 自我进化是**更强版本**的自动回写，噪声与冲突风险更高 |
+| **200+ Agent 并行** | 单 Agent 的自我进化可控；200 个并发自我进化，收敛性无保证 |
+
+> **⇒ 建议措辞**：自我进化**作为方向记入纲领的"未来方向"，不进入本期实施范围**；
+> 若要试，**限定在租户级以下 + 沙盒环境（S2）+ 产出仍须经晋升审批**。
+> **即：允许 Agent 提案，不允许 Agent 批准。** 这与 datad 现有的 `skill` 表设计一致
+> （**提案全员，批准=coordinator**）——**该表本来就是按「提案与批准分离」建的。**
+
+**参考来源（本节）**：
+[DeepSeek Harness 官方](https://deepseek.com/harness/en/) ·
+[deepseek-ai/deepseek-harness · Cordis 教程](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cordis-tutorial/index.md) ·
+[harness/harness-skills](https://github.com/harness/harness-skills) ·
+[Harness MCP server](https://github.com/harness/mcp-server) ·
+[Harness Skills 概览](https://developer.harness.io/docs/platform/harness-ai/govern-ai-output/overview/)
+
 ---
 
 ## 乙组 · 管理与查阅入口（要求 3 / 4）
@@ -551,9 +664,9 @@ Claude Code 文档中一条实战记录（关于自动记录的 `/verify` skill�
 > ⇒ **WhatsApp 的身份锚与 SMS 是同一个东西——电话号**，因此**同一次 SIM swap 可同时攻破主因子与次因子**。
 > 其余四家不存在这个问题（主因子在企业目录，次因子在电话/邮箱，**两条独立链路**）。
 >
-> **本席建议（待裁 R2-11）**：WhatsApp 归入**通信渠道**（要求 7）可以；
-> 归入**身份识别**（要求 6）时降一档，或**要求其次因子改用邮件**而非 SMS，以恢复双链路独立。
-> **若业主的实际使用场景中 WhatsApp 仅用于外部联络而非内部身份，此条自动不适用**——请业主一句话说明。
+> ✅ **业主已裁（2026-08-23）**：「**拿掉 what's 身份验证，其与电话 SMS 重叠了**。」
+> ⇒ **WhatsApp 仅作通信渠道（要求 7），不参与身份识别（要求 6）。**
+> 要求 6 的主身份平台确定为：**飞书 / 企微 / Slack / Google Chat**（均为企业目录锚，可被企业吊销）。
 
 ---
 
@@ -697,7 +810,10 @@ Claude Code 文档中一条实战记录（关于自动记录的 `/verify` skill�
 | **R2-8** | 知识库检索**须先 RLS 后检索**（甲.2b） | 建议列为硬性；先检索后过滤会经摘要片段泄露 |
 | ~~R2-9~~ | GitHub harness 调研 | ✅ **业主已批启动**（2026-08-23）。结果另出，见甲.4d |
 | **R2-10** | 审批入口做成**单一 typed 待决队列**（乙.1a） | 建议采纳；三个入口 = 三处可丢事 |
-| **R2-11**（新增） | **WhatsApp 的身份锚是电话号**，与 SMS 次因子同链路（丙.1b-2） | 归通信渠道可；归身份识别建议降一档或次因子改邮件。**若 WhatsApp 仅用于外部联络，此条不适用** |
+| ~~R2-11~~ | WhatsApp 身份锚与 SMS 同链路 | ✅ **业主已裁**：拿掉 WhatsApp 身份验证，仅作通信渠道 |
 | **R2-12**（新增） | **要求 2「基于现网代码」难在哪** —— 业主问 | 见甲.2d：**不难在抽取，难在「现网」的可确定性**；而 **F4' 第 ⑧ 格收口已有这个位置** |
 | **R2-13**（新增，源自调研） | **skill 自动更新须设负反馈闸**（甲.4d 发现五） | 只在 skill 把执行带偏时才回写；顺利则只计使用量不改内容。**200+ Agent 并发下，无闸的自动回写会制造持续冲突** |
 | **R2-14**（新增，源自调研） | **三级晋升的冲突解析方向**（甲.4d 发现三） | 建议「**治理优先 + 命名空间逃生舱**」：平台级覆盖租户级，同时允许租户特化版以命名空间并存 |
+| **R2-15**（新增，源自二次调研） | 🔴 **provision 能装不能卸**（甲.4e-2，代码级已核） | 须补 `uninstall_skill`/`uninstall_mcp`；**卸载须与安装同等审批**（否则卸掉安全类 skill 成为绕管路径）；卸载的幂等与审计语义一并设计 |
+| **R2-16**（新增，源自二次调研） | **skill 不内嵌 schema，运行时经 MCP 查**（甲.4e-3） | 建议采纳为 skill 编写规范；由此给 skill/MCP 判据补第二维「变不变」 |
+| **R2-17**（新增，源自二次调研） | **skill 自我进化 / Creator Mode 是否纳入本期**（甲.4e-4） | 建议**记为未来方向，不进本期**；若试则限租户级以下 + S2 沙盒 + 产出仍须晋升审批。**允许 Agent 提案，不允许 Agent 批准** |
