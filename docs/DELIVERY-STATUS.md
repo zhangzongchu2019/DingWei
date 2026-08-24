@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `645bf369fcdf34b4631a62b5733c6280f3e08164` · 分支 `design/addendum-decisions`
+生成自 commit `f2c497fc9f49cc2afd2edb5c874bec7e5edd0d66` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -18,13 +18,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.14** | `<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3011 / 203223 | `934fda6f6b17fda04f2630835e9086fd8e201f535822365446537367aa736c71` |
-| `dingwei-prototype.html` | **v1.13** | `<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2845 / 253245 | `f0c4bea8d857c79ed226b4aa478518561ba123562aef8e9f0dd88f32f3b475d6` |
-| `dingwei-architecture-design.md` | **v0.7** | `<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 537 / 36304 | `9e8406ede1900045a58c86e95c20a05868fa53e1bf935e82f867f7a910bd5247` |
+| `dingwei-platform-specdoc.md` | **v3.14** | `f2c497fc9f49cc2afd2edb5c874bec7e5edd0d66` | 3011 / 203223 | `934fda6f6b17fda04f2630835e9086fd8e201f535822365446537367aa736c71` |
+| `dingwei-prototype.html` | **v1.13** | `f2c497fc9f49cc2afd2edb5c874bec7e5edd0d66` | 2845 / 253245 | `f0c4bea8d857c79ed226b4aa478518561ba123562aef8e9f0dd88f32f3b475d6` |
+| `dingwei-architecture-design.md` | **v0.8** | `f2c497fc9f49cc2afd2edb5c874bec7e5edd0d66<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 548 / 37352 | `37245685775fba88cb5550fae8d0f7f58b3311be3d4687d064dcaef078d748cb` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+f2c497f chore: 收官后清两件挂账——仓内文件名去版本号 + task 表定名分析入仓(修在此,前锚 645bf36)
 645bf36 docs: 架构设计 v0.7——A§ 切分反向漏改一处(丙域 kimi,修在此,前锚 d01e12c)
 d01e12c fix: arch-refcheck 失败条件漏 sp_dup——「检测到了但没接进失败条件」(修在此,前锚 82501df)
 82501df docs: 架构设计 v0.5——甲域复核 2 局部必改(修在此,前锚 f904a9f)
@@ -32,5 +33,4 @@ f904a9f docs: 架构设计 v0.4——AD-SA-03 按方案 A 收(乙域 terra,修�
 8173cb9 docs: 架构设计 v0.3 + SpecDoc v3.14——丙域 F-1~F-5 全修(修在此,前锚 0df45c9)
 0df45c9 docs: 架构设计 v0.2——甲域 4 组 + 乙域 AD-SA-01/02 全修(修在此,前锚 f6458ea)
 7f75539 docs: 架构设计 v0.2——修 AD-SA-01/AD-SA-02(乙域 terra 阻断,修在此,前锚 f6458ea)
-c4aa572 fix: delivery-check 同名判据改为按「仓内名有没有烂」(修在此,前锚 afaadda)
 ```
