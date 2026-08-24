@@ -1,4 +1,4 @@
-# 增补提案待裁项 · 业主裁定记录与团队建议（v0.9）
+# 增补提案待裁项 · 业主裁定记录与团队建议（v1.0）
 
 - 整理: `zzc-opus50tchangshark-2642` / 2026-08-24
 - 依据: 业主 2026-08-24 对 §10 待裁 16 条的逐条回应
@@ -67,6 +67,104 @@
 > 建议四（`requireAuth` 加角色）若走新开发，则**不是「加」而是「一开始就有」**，成本从横切改造降为设计选择。
 
 **本节须在纲领 v2.0 合并时上提到纲领正文**（现落在裁定记录中，但其作用域是全文）。
+
+---
+
+### A0.4 根因 —— 业主 2026-08-23 补充（**本席核出三层字面证据**）
+
+> **业主原话**：「因为现有平台的实现是基于**通讯能力**的基础上实现的，而不是基于**项目/任务管理**的角度实现的。」
+
+**本席核实：这不是概括，是可以逐表指认的事实。** 搜索范围：`internal/store/migrations/` 全部 31 个迁移、
+`internal/datad/pgstore.go` 建表段、`internal/mcs/board/schema.sql` 全文。
+
+#### 证据一：`project` 表里没有一个字段是项目管理的
+
+`internal/store/migrations/0008_projects.sql` 原文：
+
+```sql
+CREATE TABLE IF NOT EXISTS project (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL,
+  notify_chat_id  TEXT NOT NULL DEFAULT '',            -- 通知去哪个群
+  notify_bot_id   TEXT NOT NULL DEFAULT 'unifiedrobot',-- 用哪个机器人
+  transcript_dirs TEXT NOT NULL DEFAULT '',            -- 从哪读会话记录
+  evidence_cron   TEXT NOT NULL DEFAULT '',            -- 什么时候取证
+  evidence_tz     TEXT NOT NULL DEFAULT '',
+  active INTEGER NOT NULL DEFAULT 1, created_at TEXT, updated_at TEXT);
+```
+
+**无 spec、无里程碑、无阶段、无交付物、无验收、无任务关联。**
+全部字段是「通知路由 + 取证配置」。周边表同源：`project_weekly_report`（汇报产物）、
+`project_aggregate_source`（把几个项目的通知汇到一起）、`project_member(project_id, owner_key)`（`owner_key`=通信 key）。
+
+> ⇒ **「project」在现有平台里的实义是「一个通知分组 + 一份取证配置」。**
+
+#### 证据二：`task` 的归属维度是**会话**，且 task 与 project **不相连**
+
+`internal/datad/pgstore.go` 原文：
+
+```sql
+CREATE TABLE IF NOT EXISTS task (
+  id TEXT PRIMARY KEY, title TEXT NOT NULL, owner_session TEXT NOT NULL, ...);
+```
+
+**归属维度 = `owner_session`（会话），不是人、不是角色、不是项目。**
+且该表**无 `project_id` 字段**——**平台里的 task 与 project 之间没有任何外键**。
+
+#### 证据三：任务的起源锚是**一个信封**
+
+`internal/mcs/board/schema.sql:11` 原文：
+
+```sql
+CREATE TABLE IF NOT EXISTS task (
+  task_id TEXT PRIMARY KEY, board_id TEXT NOT NULL REFERENCES orchestrator(board_id),
+  title TEXT NOT NULL, root_body TEXT NOT NULL,
+  origin_addr TEXT NOT NULL, origin_envelope_id TEXT NOT NULL, ...);
+```
+
+**`origin_envelope_id` 是铁证：任务由消息产生，任务的身份锚就是消息的身份。**
+`task_role.who` 的注释也写着「会话/人 标识(如 `zzc-devo48-2642`)」——**先是会话，才是人**。
+
+#### 证据四（结构层）：三个模型分处三个库，互不引用
+
+| 概念 | 落在 | 存储 |
+|---|---|---|
+| project | `internal/store/` | hub SQLite |
+| task（台账） | `internal/datad/` | PG |
+| task（DAG 执行） | `internal/mcs/board/` | 另一个 SQLite |
+
+**三库三模型、零外键。** 若当初是从项目/任务管理出发建的，这三者会是**同一棵树**；
+现在它们是**三条通信链各自长出来的附属账**。
+
+#### A0.4a 由此得到的结论 —— 以及一处必须讲公道的地方
+
+**⚠️ 先讲公道**：以上不说明现有实现质量差。**恰恰相反——它对自己所建模的东西建得很好**：
+provision 作为**消息通道**安全模型扎实；board 的单写者串行化作为**投递线性化点**是正确设计；
+`origin_envelope_id` 作为**消息溯源锚**恰如其分。**问题不在质量，在建模中心。**
+
+**⇒ 差距的准确表述**：
+
+> **现有平台：消息是一等公民，任务/项目是消息的附属账。**
+> **纲领要求：项目 / 任务 / 交付物是一等公民，消息是它们的投影。**
+>
+> **这不是加字段能改的，是把主外键关系倒过来。**
+
+这也解释了 §C.4e 五处缺口**为什么会同时出现**——它们不是五个独立疏漏，
+而是**同一个建模中心的一致后果**：消息没有「审批」这个概念（消息只有投递保证），
+所以 provision 有完整性、有审计、有防降级，**唯独没有「谁准的」**。
+
+#### A0.4b 与 §A0.1 的收敛（本席的分界与业主的根因指向同一条线）
+
+本席在 §A0.1 是**逐组件按证据**划的保留/重建线，事后对照业主根因，**两条线重合**：
+
+| §A0.1 判断 | 该组件建模的是 | 与根因的关系 |
+|---|---|---|
+| ✅ 保留 provision / sidecar / `store` 迁移框架 | **通信面** | 建模中心与其职责**相符** ⇒ 留 |
+| ⚠️ 重构 datad | 台账（骑在通信身份上：`owner_session`） | **半相符** ⇒ 改 schema |
+| ❌ 重建 board / mcsd | **任务面**（却以信封为锚） | 建模中心与其职责**错位** ⇒ 换 |
+
+> **⇒ 本席据此把 §A0.1 的分界原则明确化，供实施期直接使用：**
+> **凡建模的是「消息如何可靠传到」的，保留；凡建模的是「工作如何被定义、被验收、被追责」的，重建。**
+> 新内核以项目/任务/交付物为主体，**现有通信层作为其投影与传输面保留**——两者不是取舍关系，是分层关系。
 
 ---
 
