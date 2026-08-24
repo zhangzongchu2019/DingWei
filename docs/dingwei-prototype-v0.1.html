@@ -2407,17 +2407,34 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>④ 三类越权负测 <span class="ref">§22.2a #3 · §22.2c #5</span></h3>
+  <h3>④ 三类越权负测 <span class="ref">§22.2a #2a · #2b · #3 · §22.2c #5</span></h3>
   <table><thead><tr><th style="width:130px">负测</th><th>构造</th><th style="width:130px">期望</th><th style="width:80px">现状</th></tr></thead><tbody>
   <tr><td data-edit><b>伪造 tenant</b></td><td class="mono" data-edit>请求头声明他租户 ID，服务端派生的 principal 不匹配</td>
     <td class="cell-ok">拒，并落账</td><td class="cell-fail">未建</td></tr>
-  <tr><td data-edit><b>跨租户读</b></td><td class="mono" data-edit>持 A 租户 TenantCtx 查 B 租户资源</td>
-    <td class="cell-ok">结果集为空<div class="mono">非「报错」——报错本身会确认资源存在</div></td><td class="cell-fail">未建</td></tr>
+  <tr><td data-edit><b>跨租户读</b></td><td class="mono" data-edit>持 A 租户 <code>TenantCtx</code> 查 B 租户资源</td>
+    <td class="cell-ok"><b>PEP 在 selector / 资源查询【之前】拒绝</b>
+    <div class="mono">对外返回<b>不区分资源存在与否的统一 deny / not-found</b>；<br>
+    🔴 <b>绝不返回「成功的空集合」</b><br>
+    并<b>落拒绝审计</b>：源 principal · 派生 tenant · 请求 op · capability/policy 判定 · 时刻（内容仍最小化）</div></td>
+    <td class="cell-fail">未建</td></tr>
   <tr><td data-edit><b>缺 context</b></td><td class="mono" data-edit>不传 <code>TenantCtx</code> 直接调仓储入口</td>
     <td class="cell-ok"><b>编译失败</b><div class="mono">不是运行期拒 —— 运行期才拒说明它是纪律不是机制</div></td>
     <td class="cell-fail">未建</td></tr>
   </tbody></table>
   <div class="note" data-edit>📌 第三类的期望是<b>编译失败</b>而非运行期拒绝，这是判断第 2 项必做是否真落成的<b>唯一硬证据</b>。</div>
+  <div class="note bad" data-edit>🔴 <b>PB-01 更正（v1.11，乙域 terra 阻断）：本席上一版把「不泄漏存在性」当成了「拒绝」。</b>
+  <div style="margin-top:6px">原写「跨租户读期望<b>结果集为空</b>，非报错」。不确认资源存在这个<b>目标是对的</b>，
+  但<b>手段错了</b>——一个「成功的空集合」会把 §22.1b / §22.2a 的
+  <b>「跨租户默认拒、fail-closed」降格成一次看似成功的查询</b>：
+  调用方完全可能当作合法空集继续往下走，而且那一行<b>没有「拒并落账」</b>。</div>
+  <div style="margin-top:6px">⇒ 正解是<b>分开做两件事</b>：<b>拒绝</b>由 PEP 在资源解析<b>之前</b>完成；
+  <b>不泄漏存在性</b>由「统一 deny / not-found、对存在与不存在给同一个回答」保证。
+  <b>不能用「装作查到了但是空的」去同时糊弄这两件事。</b></div>
+  <div style="margin-top:6px">🔴 <b>规则已回写 SpecDoc §22.2a #2a / #2b / #3</b>（v3.13）——
+  <b>本屏只锚不述</b>：若规则只写在原型里，原型就成了规则来源，那正好反了。</div>
+  <div style="margin-top:6px" class="mono">⚠️ 这与 SA-10 是同一个滑坡的两种形态：
+  那次把「<b>限制输出</b>」当成「解决授权」，这次把「<b>不泄漏存在性</b>」当成「拒绝」——
+  都是拿一个安全属性的达成，冒充另一个安全属性的达成。</div></div>
 </div>
 
 <div class="panel">
@@ -2431,6 +2448,11 @@ body.uionly #uihint{display:block}
   <tr><td>3</td><td data-edit>新增表是否已接入仓储层</td>
     <td class="mono">扫「未被仓储包引用的表数」<b>恒为 0</b></td><td class="cell-wait">待建</td></tr>
   </tbody></table>
+  <div class="note" data-edit>📌 <b>跨租户读负测须【同时】验四条</b>（PB-01，terra 给）：
+  ① <b>仓储查询未执行</b>（不是执行了但返回空）　② 调用语义为 <b>deny</b>，非 200 空集
+  ③ <b>无目标资源存在性泄漏</b>——存在与不存在须得到同一个回答　④ <b>拒绝审计存在</b>
+  <div style="margin-top:6px" class="mono">① 与 ② 分开验是关键：只验 ② 会漏掉「先查了再拒」——
+  那种实现虽然对外拒了，但<b>查询已经落到库上</b>，跨租户读实际发生过。</div></div>
   <div class="note warn" data-edit>⚠️ <b>这些计数器是评审的旁证，不是替代</b>：
   它们查得出「<b>有没有新开口子</b>」，查不出「<b>这个查询的租户语义对不对</b>」—— 后者是人的活（第 IV 类）。</div>
   <div class="note bad" data-edit>🔴 <b>本屏全部标「未建 / 待建」，是有意的。</b>
