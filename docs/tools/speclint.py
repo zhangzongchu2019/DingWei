@@ -105,7 +105,19 @@ def check_tables(s):
         else: i+=1
     return out
 
+# 🔴 跨文档引用带来源类型时，闸也得认识那个类型（结构域重走实测）：
+#    正文写 `A§0.0`（架构设计的节号），闸剥掉 A 后当成本件的 §0.0 → 误报悬空。
+#    ⇒ 带来源前缀者不纳入本件判定。这不是放行，是【判定范围】：
+#      本件的闸只管本件的编号空间；A§ 由 scripts/arch-refcheck.sh 管，两边不重叠也不留空。
+# ⚠️ 抽成共用函数，是因为扫 §N 的地方有两处（check_refs / check_link_resolve）——
+#    只改一处就是「改一处漏一处」，本轮已犯四次。
+FOREIGN_PREFIXES = [r'A§(?:\d+(?:\.\d+[a-z]?)*)']
+def _drop_foreign(s):
+    for p in FOREIGN_PREFIXES: s = re.sub(p, '', s)
+    return s
+
 def check_refs(s):
+    s = _drop_foreign(s)
     secs=set()
     for m in re.finditer(r'^#{2,4}\s+(?:[🔴⚠️✅⛔]\s*)*(?:§\s*)?(\d+(?:\.\d+[a-z]?(?:-\d+)?)?)\s',s,re.M):
         secs.add('§'+m.group(1))
@@ -233,7 +245,7 @@ def check_link_resolve(s):
     idx={}
     for num,ln,_ in _headings(s): idx.setdefault(num,[]).append(ln)
     out=[]
-    for r in sorted(set(re.findall(r'§(\d+(?:\.\d+[a-z]?(?:-\d+)?)*)',s))):
+    for r in sorted(set(re.findall(r'§(\d+(?:\.\d+[a-z]?(?:-\d+)?)*)', _drop_foreign(s)))):
         t=idx.get(r,[])
         if len(t)==0: out.append((0,'link-dangling',f'§{r} 无对应章节',''))
         elif len(t)>1: out.append((t[1],'link-ambig',f'§{r} 解析到 {len(t)} 个章节',f'L{t}'))
