@@ -94,6 +94,16 @@ code{font:11.5px ui-monospace,monospace;background:#1e222b;padding:1px 5px;borde
 .fold{padding:6px 0 6px 54px;font-size:12px;color:var(--dim);cursor:pointer;border-bottom:1px solid #21262f}
 .fold:hover{color:var(--tx)}
 .sealed{background:#101319;border:1px solid #1d4a36;border-radius:6px;padding:9px 11px;font:11.5px ui-monospace,monospace;color:#8fe3bd}
+.res{display:grid;grid-template-columns:150px 1fr 96px;gap:8px;align-items:start;padding:9px 0;border-bottom:1px solid #21262f}
+.res .lb{font-size:12.5px;color:var(--dim);padding-top:6px}
+.res select,.res input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+padding:6px 9px;color:var(--tx);font:inherit;font-size:12.5px}
+.res .sc{padding-top:6px;text-align:right}
+.nocred{background:#2a1414;border:1px dashed #5a2020;border-radius:6px;padding:7px 10px;font-size:12px;color:#f0bcbc}
+.chk{padding:8px 11px;border-radius:6px;font-size:12.5px;margin-top:6px}
+.chk.pass{background:#12241c;border-left:3px solid var(--ok);color:#a8e6c8}
+.chk.stop{background:#2a1414;border-left:3px solid var(--bad);color:#f0bcbc}
+.chk.warn2{background:#2a2110;border-left:3px solid var(--warn);color:#e8d3a8}
 body.edit [data-edit]{outline:1px dashed #3a4458;outline-offset:2px;border-radius:2px}
 body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 .hid{display:none!important}
@@ -127,6 +137,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <div class="grp">Agent 面</div>
   <a href="#a1">Agent 列表 <span class="mono">§26·新</span></a>
   <a href="#a2">Agent 工作面 <span class="mono">新增</span></a>
+  <a href="#a4">配置新 Agent（工单） <span class="mono">新增</span></a>
   <a href="#a3">与 Agent 交互 <span class="mono">§25.4</span></a>
   <div class="grp">接入</div>
   <a href="#s9">渠道授权 <span class="mono">§23.5</span></a>
@@ -1038,6 +1049,140 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 </div>
 </section>
 
+<!-- ============ A4 配置新 Agent（工单） ============ -->
+<section class="scr" id="a4">
+<h2 data-edit>配置新 Agent · 工单</h2>
+<div class="sub" data-edit>在已有云资源中配置出一个可运行的 Agent。<b style="color:var(--warn)">SpecDoc 全文未定义环境供给，见屏底</b></div>
+
+<div class="note bad" data-edit>🔴 <b>本工单不收任何凭据。</b>§22.4 定 VPN 凭据 / 签名私钥 / 根证书为 <b>S0：不落任何文档、帖子、流、日志</b>；
+而工单是一份<b>会流经审批并落账</b>的记录。<br>
+⇒ 工单里只出现<b>资源池引用 ＋ 权限范围声明</b>；<b>凭据由平台在实例化时注入</b>，工单侧永不可见。
+一个照常识画的表单会有「VPN 账号 / 密码」输入框 —— <b>那就直接违反 §22.4</b>。</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>① 基本信息 <span class="ref">§26.1</span></h3>
+  <div class="res"><div class="lb">租户 · 项目</div><div style="display:flex;gap:8px">
+    <select><option>租户：图搜 3.0</option><option>租户：张宗楚（业主）</option></select>
+    <select><option>项目：3.0-poc 索引服务</option><option>项目：WSXC</option></select></div><div class="sc"></div></div>
+  <div class="res"><div class="lb">角色</div><div><select id="npRole">
+    <option>implementer</option><option>designer</option><option>tester</option><option>qa_owner（门方）</option>
+    <option>安全评审（门方）</option><option>租户级 ops</option><option>平台级 ops</option></select></div><div class="sc"></div></div>
+  <div class="res"><div class="lb">接入形态</div><div><select id="npForm">
+    <option value="cloud">云上（平台完全受控）</option><option value="ide">IDE 插件（企业设备，部分受控）</option>
+    <option value="local">本地笔记本 / 台式机 CLI（不受控终端）</option></select>
+    <div class="mono" id="npFormNote" style="margin-top:4px">凭据上限：<b class="cell-ok">S1</b>（可持生产级，按角色授予）</div></div><div class="sc"></div></div>
+  <div class="res"><div class="lb">CLI · 模型</div><div style="display:flex;gap:8px">
+    <select><option>CLAUDE</option><option>CODEX</option><option>OPENCODE</option><option>DEEPSEEK</option></select>
+    <select><option>opus-5</option><option>sonnet-5</option><option>gpt-5.6</option><option>deepseek-v4-pro</option></select></div><div class="sc"></div></div>
+  <div class="res"><div class="lb">执行席</div><div><span class="mono">该项目安全评审席 <b class="cell-fail">2 / 2 已满</b> · implementer 席 <b class="cell-ok">1 / 2</b>
+    <div style="color:var(--dim)">§4.5 执行席 ≤ 2 —— 若申请门方角色，本工单会因席位满而排队，不是被拒</div></span></div><div class="sc"></div></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>② 环境配置 · 从资源池引用 <span class="ref">缺口 · 拟 §26.4</span></h3>
+  <div class="res"><div class="lb">大模型运行 VPN</div><div>
+    <select id="npVpn1"><option value="s0">llm-egress-hk（资源池 #R-004）</option><option value="none">不需要（走内网直连）</option></select>
+    <div class="nocred" style="margin-top:5px">🔒 凭据等级 <span class="s0">S0</span> · <b>本工单不显示、不接受凭据</b> —— 仅记录引用 <code>#R-004</code>；
+    实例化时由平台注入到运行时环境变量，<b>不落工单、不落帖子流、不落日志</b></div></div><div class="sc"><span class="s0">S0</span></div></div>
+
+  <div class="res"><div class="lb">企业环境 VPN</div><div>
+    <select><option>corp-vpn-prod（#R-001）</option><option>corp-vpn-devtest（#R-002）</option><option>不需要</option></select>
+    <div class="nocred" style="margin-top:5px">🔒 同上 <span class="s0">S0</span> · 仅引用</div></div><div class="sc"><span class="s0">S0</span></div></div>
+
+  <div class="res"><div class="lb">对象存储</div><div>
+    <select id="npOss"><option value="s2">cos-devtest / 前缀 imgsearch-poc/（#R-011）</option>
+    <option value="s1">cos-prod / 前缀 imgsearch/（#R-010）</option><option value="none">不需要</option></select>
+    <div style="display:flex;gap:12px;margin-top:5px;font-size:12.5px">
+      <label><input type="checkbox" checked> 读</label><label><input type="checkbox" id="npOssW"> 写</label>
+      <label><input type="checkbox"> 删</label><span class="mono">权限范围须逐项声明，不给整桶</span></div></div>
+    <div class="sc"><span class="s2" id="npOssTag">S2</span></div></div>
+
+  <div class="res"><div class="lb">git 环境</div><div>
+    <select><option>wego-ai/dingwei（私有）</option><option>wego-ai/imgsearch-3p0（私有）</option><option>github 公开仓</option></select>
+    <div style="display:flex;gap:10px;margin-top:5px;font-size:12.5px;align-items:center">
+      <span>提交身份：</span><select style="width:auto"><option>zhangzongchu &lt;zzc@zhangzongchu.com&gt;（私有仓）</option>
+      <option>zhangzongchu2019 &lt;tchangshark@outlook.com&gt;（公开仓）</option></select></div>
+    <div style="margin-top:5px;font-size:12.5px"><label><input type="checkbox" id="npSign"> 需要提交签名（签名私钥 <span class="s0">S0</span>）</label></div>
+    <div class="mono" style="margin-top:4px">写权默认关；<b>push 到 protected branch 须另行授权</b></div></div>
+    <div class="sc"><span class="s2">S2</span></div></div>
+
+  <div class="res"><div class="lb">开发测试环境</div><div>
+    <select id="npEnv"><option value="s2">ts3poc-testenv（沙盒 · 可重置）</option>
+    <option value="s1">preprod（准生产 · 不可重置）</option><option value="none">不需要</option></select>
+    <div class="mono" style="margin-top:4px">判据是<b>爆炸半径可否重置</b>，不是看起来敏感不敏感（§22.4）</div></div>
+    <div class="sc"><span class="s2" id="npEnvTag">S2</span></div></div>
+
+  <div class="res"><div class="lb">工作区与 sidecar</div><div style="display:flex;gap:8px">
+    <input value="/data/ai-dev-data" placeholder="工作区路径">
+    <input value="SH_SIDECAR_PORT=auto" placeholder="sidecar 端口"></div>
+    <div class="mono" style="margin-top:4px">sidecar 常开做旁路（§25.4）—— 平台故障时的唯一恢复通道</div><div class="sc"></div></div>
+
+  <div class="res"><div class="lb">时区 · 语言</div><div style="display:flex;gap:8px">
+    <select><option>UTC（团队统一）</option><option>Asia/Shanghai</option></select>
+    <select><option>zh-CN</option><option>en-US</option></select></div>
+    <div class="mono" style="margin-top:4px">时间统一 UTC，<code>date -u</code> 实取 —— 本阶段因手写时间戳出过 5 小时偏差</div><div class="sc"></div></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>③ 校验 <span class="ref">§26.1 · §22.4 · §23.5</span></h3>
+  <div id="npChk"></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>④ 工单落成什么 <span class="ref">§25.1 · §22.4</span></h3>
+  <div style="background:#101319;border:1px solid var(--line);border-radius:6px;padding:11px" class="mono">
+{ "ticket":"WO-2026-0824-07", "tenant":"imgsearch", "project":"3p0-poc",<br>
+&nbsp;&nbsp;"role":"implementer", "form":"cloud", "cli":"CLAUDE", "model":"opus-5",<br>
+&nbsp;&nbsp;"env_refs":[ "#R-004", "#R-002", "#R-011", "#R-021" ],<br>
+&nbsp;&nbsp;"scopes":{ "cos":["read"], "git":["read"], "env":"sandbox" },<br>
+&nbsp;&nbsp;"derived_cred_max":"S2", "requires_owner_auth":false,<br>
+&nbsp;&nbsp;<span style="color:var(--bad)">"credentials": —— 该键不存在，且不允许存在</span> }
+  </div>
+  <div class="note" data-edit>📌 <b>工单里只有引用与范围，没有凭据。</b>这不是「小心处理」，是<b>结构上不给它位置</b> ——
+  按 §29 的说法：前者是纪律，后者才是机制。</div>
+  <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+    <button id="npSubmit">提交工单</button>
+    <span class="mono" id="npDest">提交后落入 → <b>待决队列 · 授权待批</b>（§25.1）；所有高危执行面须从队列取授权凭据</span>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>资源池 <span class="ref">缺口 · 拟 §26.4</span></h3>
+  <table><thead><tr><th style="width:70px">编号</th><th>资源</th><th style="width:90px">类型</th><th style="width:52px">级</th>
+  <th style="width:110px">归属</th><th style="width:130px">谁可引用</th></tr></thead><tbody>
+  <tr><td class="mono">#R-001</td><td data-edit>corp-vpn-prod</td><td>企业 VPN</td><td><span class="s0">S0</span></td><td>平台域</td><td>平台级 ops · 逐次授权</td></tr>
+  <tr><td class="mono">#R-002</td><td data-edit>corp-vpn-devtest</td><td>企业 VPN</td><td><span class="s0">S0</span></td><td>平台域</td><td>租户级 ops 可申请</td></tr>
+  <tr><td class="mono">#R-004</td><td data-edit>llm-egress-hk</td><td>大模型出口 VPN</td><td><span class="s0">S0</span></td><td>平台域</td><td>全租户（凭据不外露）</td></tr>
+  <tr><td class="mono">#R-010</td><td data-edit>cos-prod</td><td>对象存储</td><td><span class="s1">S1</span></td><td>租户</td><td class="cell-fail">云上形态 + 显式授权</td></tr>
+  <tr><td class="mono">#R-011</td><td data-edit>cos-devtest</td><td>对象存储</td><td><span class="s2">S2</span></td><td>租户</td><td>全形态</td></tr>
+  <tr><td class="mono">#R-021</td><td data-edit>ts3poc-testenv</td><td>开发测试环境</td><td><span class="s2">S2</span></td><td>租户</td><td>全形态</td></tr>
+  <tr><td class="mono">#R-022</td><td data-edit>preprod</td><td>准生产环境</td><td><span class="s1">S1</span></td><td>租户</td><td class="cell-fail">云上形态 + 显式授权</td></tr>
+  <tr><td class="mono">#R-030</td><td data-edit>git-signing-key</td><td>签名私钥</td><td><span class="s0">S0</span></td><td>平台域</td><td class="cell-fail">业主逐次授权</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 <b>资源池是引用的唯一来源。</b>工单不得填写池外资源 —— 否则等于绕过分级与授权。
+  新增池条目本身是<b>平台域基线变更</b>（§24），走 ops 汇总 + 平台管理者审批。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 缺口：SpecDoc 全文未定义环境供给 <span class="ref">§26</span></h3>
+  <div class="note bad" data-edit>§26 三个小节只有：三形态的<b>信任与凭据等级</b>（26.1）、<b>K 层与 skill 的上下文注入</b>（26.2）、
+  <b>管理面新建 / 下发面复用</b>（26.3）。<br>
+  全文搜「VPN / 对象存储 / git 环境 / 开发测试环境 / 环境配置 / 资源池 / 工单」——
+  <b>只命中一处：§22.4 把 VPN 凭据列为 S0 的例子。</b><br><br>
+  ⇒ <b>规范缺的是「Agent 靠什么真的跑起来」这一层。</b>注入了 K 层和 skill，但连不上模型端点、clone 不了仓库、
+  没有可写的沙盒 —— <b>Agent 仍然干不了活</b>。<br>
+  拟回写 <b>§26.4 运行环境供给与资源池</b>，内容至少含：资源池条目模型（编号 · 类型 · 密级 · 归属 · 可引用者）·
+  工单字段集（<b>结构上不含 credentials 键</b>）· 形态 × 密级的可授予矩阵 · 引用而非填写的硬性要求 ·
+  池条目新增属平台域基线变更。</div>
+</div>
+</section>
+
 </div></div>
 
 <script>
@@ -1176,6 +1321,66 @@ document.getElementById('bRst').onclick=function(){
   localStorage.removeItem(KEY); location.reload();
 };
 
+
+
+/* ---- 配置新 Agent：形态×密级校验 ---- */
+(function(){
+  var f=document.getElementById('npForm'); if(!f)return;
+  var role=document.getElementById('npRole'), oss=document.getElementById('npOss'),
+      ossW=document.getElementById('npOssW'), env=document.getElementById('npEnv'),
+      sign=document.getElementById('npSign'), chk=document.getElementById('npChk'),
+      note=document.getElementById('npFormNote'), dest=document.getElementById('npDest');
+  var CAP={cloud:'S1',ide:'S2',local:'S2'};
+  var TXT={cloud:'凭据上限：<b class="cell-ok">S1</b>（可持生产级，按角色授予）',
+    ide:'凭据上限：<b class="cell-wait">S2</b> 为主；S1 须显式授权 ＋ 时限',
+    local:'凭据上限：<b class="cell-fail">S2</b> —— 不受控终端，默认仅沙盒级；token 短时效 ＋ 可远程吊销 ＋ 绑设备指纹'};
+  function run(){
+    var fv=f.value, cap=CAP[fv], out=[], stop=false, maxLv='S2';
+    note.innerHTML=TXT[fv];
+    document.getElementById('npOssTag').className = oss.value==='s1'?'s1':'s2';
+    document.getElementById('npOssTag').textContent = oss.value==='s1'?'S1':'S2';
+    document.getElementById('npEnvTag').className = env.value==='s1'?'s1':'s2';
+    document.getElementById('npEnvTag').textContent = env.value==='s1'?'S1':'S2';
+
+    if(oss.value==='s1'||env.value==='s1') maxLv='S1';
+    if(sign.checked) maxLv='S0';
+
+    if(fv!=='cloud' && (oss.value==='s1'||env.value==='s1')){
+      out.push(['stop','🔴 <b>拒绝</b>：'+(fv==='local'?'本地不受控终端':'IDE 插件')
+        +'请求 <span class="s1">S1</span> 资源（'+(oss.value==='s1'?'cos-prod':'preprod')
+        +'）。§26.1 定本地<b>默认仅 S2</b>；IDE 的 S1 须显式授权 ＋ 时限。<br>改法：换 S2 资源，或另开一张<b>逐次授权</b>工单。']); stop=true;
+    }
+    if(sign.checked){
+      out.push(['stop','🔴 <b>须业主逐次授权</b>：签名私钥属 <span class="s0">S0</span>（§22.4）。'
+        +'本工单不可自助放行，且<b>私钥永不进工单</b> —— 仅记录引用 <code>#R-030</code>。']); stop=true;
+    }
+    if(ossW.checked && oss.value==='s1'){
+      out.push(['stop','🔴 <b>拒绝</b>：对生产对象存储请求<b>写权</b>。写权爆炸半径不可重置 ⇒ 属高危，'
+        +'须走 §23.5 高危档：<b>渠道只能发起、不能终结</b>，须回强身份面 ＋ 重两签。']); stop=true;
+    }
+    if(role.value.indexOf('门方')>=0 || role.value.indexOf('安全评审')>=0){
+      out.push(['warn2','⚠️ 申请<b>门方</b>角色：该项目安全评审席 <b>2/2 已满</b>（§4.5 执行席 ≤ 2）。'
+        +'工单将<b>排队</b>而非被拒 —— 界面须把「席满排队」与「无人愿接」分开显示。']);
+    }
+    if(role.value==='平台级 ops'){
+      out.push(['warn2','⚠️ 平台级 ops 属<b>公共资源</b>职责域。新建此角色的 Agent 本身是<b>平台域基线变更</b>（§24），'
+        +'须 ops 汇总 ＋ 平台管理者审批；<b>整理汇总权 ≠ 批准权</b>。']);
+    }
+    out.push(['pass','✓ 工单结构合规：<b>无 credentials 键</b>，仅资源池引用 ＋ 权限范围声明（§22.4 S0 不落任何记录）。']);
+    if(!stop) out.push(['pass','✓ 派生凭据上限 <b>'+maxLv+'</b>，未超形态上限 <b>'+cap+'</b>。']);
+    chk.innerHTML=out.map(function(x){return '<div class="chk '+x[0]+'">'+x[1]+'</div>'}).join('');
+    dest.innerHTML = stop
+      ? '<b class="cell-fail">当前不可提交</b> —— 先消解上方 🔴 项'
+      : (maxLv==='S2'
+        ? '提交后落入 → <b>待决队列 · 授权待批</b>（§25.1）· 危险度 <b class="d-low">低</b> · 项目管理方可批'
+        : '提交后落入 → <b>待决队列 · 授权待批</b>（§25.1）· 危险度 <b class="d-high">高</b> · <b>须重两签</b>');
+  }
+  [f,role,oss,ossW,env,sign].forEach(function(e){e.addEventListener('change',run)});
+  run();
+  document.getElementById('npSubmit').onclick=function(){
+    alert('工单 WO-2026-0824-07 已提交。\n\n已落入待决队列（§25.1），按危险度分档等待批准。\n凭据不在工单中：实例化时由平台注入。');
+  };
+})();
 
 /* ---- 帖子流 node 切换 ---- */
 var ns=document.getElementById('nodeSel');
