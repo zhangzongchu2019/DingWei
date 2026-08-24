@@ -1,0 +1,37 @@
+#!/bin/sh
+# 生成 DELIVERY-STATUS.md —— 单一状态源,随时可拉,不靠消息传递。
+#
+# 立此件的直接原因（2026-08-24）：一天内交叉七次，且本席的澄清信本身也在交叉。
+# 锚标注解决「收信方能否判断这条是否过时」，解决不了消息延迟。
+# 根因是老问题的新形态：**状态存在消息里**。⇒ 让状态存在一个固定位置，谁都能随时拉。
+set -eu
+B=$(git rev-parse --abbrev-ref HEAD)
+H=$(git rev-parse HEAD)
+D=docs
+say() { printf '%s\n' "$*"; }
+
+say "# DingWei 交付状态（机器生成，勿手改）"
+say ""
+say "生成自 commit \`$H\` · 分支 \`$B\`"
+say "生成命令：\`scripts/gen-status.sh\`（内容全部由 git 实取，无手写值）"
+say ""
+say "> 🔴 **本文件是单一状态源。** 消息会延迟、会交叉；本文件不会——它随仓库走。"
+say "> 判断一条评审意见是否已被处理：看该件「末次改动锚」是否晚于意见所针对的锚。"
+say ""
+say "| 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |"
+say "|---|---|---|---|---|"
+for f in "$D/dingwei-platform-specdoc-v2.0.md" "$D/dingwei-prototype-v0.1.html" "$D/dingwei-architecture-design-v0.1.md"; do
+  [ -f "$f" ] || continue
+  v=$(grep -m1 -oE '\*\*版本\*\*: v[0-9]+\.[0-9]+' "$f" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+' || true)
+  [ -n "$v" ] || v=$(grep -m1 -oE '原型 v[0-9]+\.[0-9]+' "$f" | grep -oE 'v[0-9]+\.[0-9]+' || true)
+  c=$(git log -1 --format=%H -- "$f")
+  lb=$(wc -l -c < "$f" | tr -s ' ' | sed 's/^ //;s/ / \/ /')
+  s=$(sha256sum "$f" | cut -d' ' -f1)
+  say "| \`$(basename "$f")\` | **$v** | \`$c\` | $lb | \`$s\` |"
+done
+say ""
+say "## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）"
+say ""
+say '```'
+git log --oneline -8
+say '```'

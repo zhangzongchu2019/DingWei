@@ -42,4 +42,16 @@ if git diff --cached --name-only 2>/dev/null | grep -qx "$PROTO"; then
   fi
   echo "  ④ 原型版本 $OLD → $NEW ✓"
 fi
+# ⑤ DELIVERY-STATUS.md 须与 HEAD 同步（它是单一状态源，过期即失去意义）
+if [ -x scripts/gen-status.sh ]; then
+  scripts/gen-status.sh > /tmp/.dw-status.$$ 2>/dev/null || true
+  if ! diff -q /tmp/.dw-status.$$ docs/DELIVERY-STATUS.md >/dev/null 2>&1; then
+    scripts/gen-status.sh > docs/DELIVERY-STATUS.md
+    git add docs/DELIVERY-STATUS.md 2>/dev/null || true
+    echo "  ⑤ DELIVERY-STATUS.md 已自动重生成并入暂存区"
+  else
+    echo "  ⑤ DELIVERY-STATUS.md 已是最新 ✓"
+  fi
+  rm -f /tmp/.dw-status.$$
+fi
 echo "✓ 三道门全过"
