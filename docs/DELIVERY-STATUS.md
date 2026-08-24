@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `185d23af0a42866374d07b05fca27e90cf678857` · 分支 `design/addendum-decisions`
+生成自 commit `51cec1dde8ed0819b6c1d3a3745e46c917a33dab` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,11 +20,12 @@
 |---|---|---|---|---|
 | `dingwei-platform-specdoc.md` | **v3.14** | `f2c497fc9f49cc2afd2edb5c874bec7e5edd0d66` | 3011 / 203223 | `934fda6f6b17fda04f2630835e9086fd8e201f535822365446537367aa736c71` |
 | `dingwei-prototype.html` | **v1.15** | `185d23af0a42866374d07b05fca27e90cf678857` | 2845 / 253294 | `fa386312caa2bc78ee81e7d02a9f404dbcf34a3e0d2397f1584b0d918387048b` |
-| `dingwei-architecture-design.md` | **v0.9** | `185d23af0a42866374d07b05fca27e90cf678857` | 555 / 38115 | `81bb6cd2699cc1cbe575b022ff12e5ab314c2a09abcbe18457764ad19ecc8bdd` |
+| `dingwei-architecture-design.md` | **v0.10** | `185d23af0a42866374d07b05fca27e90cf678857<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 559 / 38600 | `ba6280f2b62ee7c2d62f4ea93fe862bdf6f37f9c4ffe48a23cc5de9a63dd3a6b` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+51cec1d feat: 快照包清单改由 git 导出,不手写(丙域 kimi m 类,修在此,前锚 185d23a)
 185d23a fix: 丙域终审 3 阻断 + 6 次要全修(修在此,前锚 26ecb6e)
 26ecb6e chore: 三域 checklist 齐备入仓 + 索引(修在此,前锚 8b173b7)
 8b173b7 chore: 收安全门方 checklist(18 项) + 备重走轮的证据包(修在此,前锚 2f2a1cd)
@@ -32,5 +33,4 @@
 b6b9a18 docs: 架构设计 v0.8——A§0.0 同步三域 PASS,并写明两个门是分开的(修在此,前锚 f2c497f)
 f2c497f chore: 收官后清两件挂账——仓内文件名去版本号 + task 表定名分析入仓(修在此,前锚 645bf36)
 645bf36 docs: 架构设计 v0.7——A§ 切分反向漏改一处(丙域 kimi,修在此,前锚 d01e12c)
-d01e12c fix: arch-refcheck 失败条件漏 sp_dup——「检测到了但没接进失败条件」(修在此,前锚 82501df)
 ```
