@@ -1631,6 +1631,62 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>Nginx 鉴权动态化 · 三种落法 <span class="ref">业主问 · 待裁</span></h3>
+  <table><thead><tr><th style="width:150px">做法</th><th>机制</th><th style="width:130px">平台挂了</th><th style="width:88px">开源版</th></tr></thead><tbody>
+  <tr><td><b>甲 · auth_request 子请求</b></td>
+    <td data-edit>每个请求先向内部端点发子请求，200 放行 / 401 拒。可携带 cookie，逻辑任意</td>
+    <td class="cell-fail"><b>全拒</b><div class="mono">除非子请求打到独立于平台应用层的校验服务</div></td>
+    <td class="cell-ok">✓ 原生</td></tr>
+  <tr><td class="cell-ok"><b>乙 · 签名令牌本地验签</b><div class="mono">本席推荐</div></td>
+    <td data-edit>cookie 里放<b>签名令牌</b>（JWT / PASETO），Nginx 用<b>公钥本地验签</b>，<b>不问任何后端</b></td>
+    <td class="cell-ok"><b>仍可用</b><div class="mono">验签是本地计算</div></td>
+    <td class="cell-wait">须 njs 或 lua<div class="mono">auth_jwt 是 Plus 版</div></td></tr>
+  <tr><td><b>丙 · cookie 回查</b></td>
+    <td data-edit>Nginx 拿 cookie 去问平台 / Redis「这个会话有效吗」</td>
+    <td class="cell-fail"><b>全拒</b></td><td class="cell-ok">✓</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 <b>本席推荐乙</b>：它是唯一让<b>常规通道也不依赖平台在线</b>的做法。
+  甲和丙都把「平台是否在线」变成了「能不能连上自己的 Agent」的前提 —— 而这正是我们要避免的耦合。<br>
+  ⚠️ 落地注意：<b>nginx 开源版无原生 JWT 模块</b>（<code>auth_jwt</code> 属 NGINX Plus），
+  开源版须用 <b>njs</b>（官方 JS 模块）或 <b>OpenResty / lua</b> 手写验签。这是选型时要算进去的成本。</div>
+
+  <div class="note bad" data-edit>🔴 <b>但业主问的「从 dingwei 页面 cookie 中获得 token」，有一个必须先分开的点：</b><br>
+  平台页面的 cookie 装的是<b>平台会话 token</b> —— 它代表该用户<b>在平台上的全部权限</b>。
+  若直接拿它当 sidecar 访问凭据，就成了<b>一个 token 通吃平台与所有会话终端</b>。<br>
+  <b>而业主本轮的关切正是「保证 Agent 会话不会被其他人攻击」—— 通用凭据恰恰做不到。</b><br><br>
+  <b>⇒ 正确做法：不复用平台 cookie，而是【拿它去换一个受限令牌】。</b></div>
+  <div class="grid g2">
+    <div class="card"><b class="cell-fail">直接复用平台 cookie</b>
+      <div class="mono" style="margin-top:6px">claims: { subject, 平台全部权限 }</div>
+      <div style="margin-top:6px;font-size:12.5px">一处泄露 ⇒ 平台 ＋ 全部会话终端同时失守</div></div>
+    <div class="card"><b class="cell-ok">换取受限令牌（推荐）</b>
+      <div class="mono" style="margin-top:6px">claims: {<br>
+      &nbsp;&nbsp;platform_subject, <b>target_session</b>,<br>
+      &nbsp;&nbsp;<b>scope: "sidecar.interact"</b>,<br>
+      &nbsp;&nbsp;channel（本次经由，§21.4）,<br>
+      &nbsp;&nbsp;exp（分钟级） }</div>
+      <div style="margin-top:6px;font-size:12.5px">一处泄露 ⇒ 只影响<b>那一个会话</b>，且分钟级过期</div></div>
+  </div>
+  <div class="note" data-edit>📌 这与 §22.1c 的 capability policy 六项绑定<b>是同一个思路</b>：
+  <b>不给通用凭据，给限定作用域的能力</b>。<code>target_session</code> 这一项就是那里的「目标资源范围，不得是整租户」。</div>
+
+  <h3 style="margin-top:16px">连带须定的四条</h3>
+  <table><tbody>
+  <tr><td style="width:130px" class="cell-fail"><b>cookie 作用域</b></td>
+    <td data-edit>🔴 若代理与平台<b>同域</b>（<code>dingwei.wegoab.com/agent/&lt;session&gt;/</code>），cookie 自动带上，最简单。<br>
+    若放到子域并把 <code>Domain</code> 放宽到 <code>.wegoab.com</code>，<b>该域下所有服务都能拿到这个 token</b> —— 暴露面被扩大。
+    <b>建议同域路径前缀，不放宽 cookie 域。</b></td></tr>
+  <tr><td><b>CSRF</b></td><td data-edit>cookie 自动携带 ⇒ 存在 CSRF 面，而 sidecar 端点<b>有副作用</b>（能给 Agent 发指令）。
+    须 <code>SameSite=Strict</code> ＋ <code>HttpOnly</code> ＋ CSRF token；<b>换取受限令牌这一步本身也须防 CSRF</b>。</td></tr>
+  <tr><td><b>撤销</b></td><td data-edit>无状态签名令牌<b>签出去就撤不回</b>。缓解：<b>分钟级有效期</b> ＋ 平台在线时可查吊销名单（离线降级为只靠过期）。
+    ⇒ <b>高危操作不靠这个令牌</b>，仍走待决队列与重两签。</td></tr>
+  <tr><td class="cell-fail"><b>紧急路由</b></td><td data-edit>🔴 <b>无论常规鉴权多动态，紧急路由必须独立</b> ——
+    平台挂了就签不出令牌，故紧急端点<b>不走这套</b>，由 sidecar 本地校验临时密码。<b>两条路径在 Nginx 配置上就要分开。</b></td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>多模态上传的治理问题 <span class="ref">缺口 · 拟 §25.8</span></h3>
   <div class="note bad" data-edit>🔴 <b>全文搜「多模态 / 上传 / 图片 / 视频 / 附件」——零命中。</b>
   唯一沾边的是 §27.1「富文本与附件能力差异」，那是<b>平台侧要吸收的渠道差异</b>，不是 Agent 侧的上传能力。</div>
