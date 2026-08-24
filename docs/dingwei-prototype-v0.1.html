@@ -1986,9 +1986,9 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <tr><td><b>数据</b></td><td class="cell-ok" data-edit><b>数据架构</b> 🆕<div class="mono">数据模型 · 分库分表策略 · 数据流向</div></td>
     <td class="cell-wait" data-edit><b>数据量</b> · 慢查询 · 连接数 · 复制延迟</td></tr>
   <tr><td><b>运行日志</b></td><td class="lock">—</td><td class="cell-wait" data-edit><b>日志</b><div class="mono">⚠️ 可能含 token / IP，须按内容定级</div></td></tr>
-  <tr><td class="cell-fail"><b>网络</b></td><td class="cell-fail" data-edit><b>网络架构</b>（拓扑 · 分段 · 出口）
-    <div class="mono cell-fail">⚠️ 业主未把它列入「可公开全员」—— 本席理解它仍受限，<b>请确认</b></div></td>
-    <td class="cell-wait" data-edit>实际连通性 · 出口状态</td></tr>
+  <tr><td><b>网络</b></td><td class="cell-ok" data-edit><b>网络架构 · 逻辑视图</b>
+    <div class="mono">有哪些系统 · 怎么连 · 边界在哪 —— <b>够理解即可</b></div></td>
+    <td class="cell-wait" data-edit>真实 IP · 代理链 · 隔离网段 · 连通性<div class="mono">高频且受限</div></td></tr>
   </tbody></table>
 
   <div class="note bad" data-edit>🔴 <b>由此本席须收回一处过度收紧。</b>本席原来把「服务架构 / 网络架构 / 数据库设计」
@@ -1998,14 +1998,21 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
   <h3 style="margin-top:16px">三处落位</h3>
   <table><thead><tr><th style="width:130px">类别</th><th>归处</th><th>为什么</th></tr></thead><tbody>
-  <tr><td class="cell-ok"><b>设计层</b></td><td data-edit><b>L0 知识库</b>（业务/服务/数据架构，全员可读）<br>
-    网络架构<b>另置受限域</b></td><td data-edit>低频 · 有版本 · 旧值仍是有效历史（当时确实那么设计的）</td></tr>
+  <tr><td class="cell-ok"><b>设计层</b></td><td data-edit><b>L0 知识库</b> —— 业务 / 服务 / 数据 / <b>网络逻辑视图</b>，全员可读</td>
+    <td data-edit>低频 · 有版本 · 旧值仍是有效历史（当时确实那么设计的）</td></tr>
   <tr><td class="cell-wait"><b>运行态</b></td><td data-edit>🔴 <b>不属知识库任何一层</b> ——
     走 <b>MCP 查询面</b>，数据源＝运维系统（k8s API · 日志系统 · DB 指标）</td>
     <td data-edit>高频 · <b>旧值立刻误导</b>（「昨天 3 个 pod」对今天毫无意义）</td></tr>
-  <tr><td class="cell-fail"><b>受限设计层</b></td><td data-edit>网络架构 → 受限查询作用域，RLS + S0/S1 分级</td>
-    <td data-edit>低频，但<b>爆炸半径大</b> —— 密级与频率是两个独立维度</td></tr>
+  <tr><td class="cell-fail"><b>受限运行态</b></td><td data-edit>真实 IP · 代理链 · 隔离网段 · 敏感日志
+    → <b>受限 MCP 查询面</b>，RLS + S0/S1 分级</td>
+    <td data-edit>高频<b>且</b>爆炸半径大 —— 两个理由叠加，最不该固化的一类</td></tr>
   </tbody></table>
+
+  <div class="note" data-edit>📌 <b>由业主那个例子提炼出一条通则：架构描述停在【能支撑理解与决策】的抽象层，不下沉到实现细节。</b><br>
+  「数据库也有独立代理组成的隔离网络，但不影响我们认为是一套数据库系统」——
+  <b>抽象层的旧值不误导</b>（还是那一套 DB），<b>实现层的旧值会误导</b>（那个代理已经下线了）。<br>
+  ⇒ 这是同一条判据的<b>第三个应用面</b>：① §14.2 skill 不内嵌 schema（用在 skill）·
+  ② 固化 vs 运行时取（用在条目类型）· ③ <b>本条：用在同一条目内部的抽象层次</b>。<b>三处应写成同一条通则。</b></div>
 
   <div class="note" data-edit>📌 <b>MCP 动词已经在了，缺的是「查什么」。</b>
   §14.3 定的动词集含 <code>list · get · describe · <b>status</b> · <b>diagnose</b></code> ——
@@ -2022,9 +2029,13 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   ② <b>运行态查询整个概念零命中</b> —— 全文搜「pod / 日志 / 数据量 / 指标 / 可观测 / 实时查询」，
   仅命中「指标」但全指自检计数器与摘要质量，<b>无一处涉及运行态可观测数据</b>。</div>
 
-  <div class="chk warn2" data-edit>⚠️ <b>一处请业主确认</b>：网络架构（主机 IP · 拓扑 · 分段）未被列入「可公开全员」，
-  <b>本席理解它仍须受限</b>（这也是本席当初造 K0-sec 的原始动因：防「每个 Agent 上下文里都有全平台拓扑」）。
-  <b>若业主认为它也可全员，请明说</b> —— 那 K0-sec 这个概念就可以整个撤掉了。</div>
+  <div class="chk pass" data-edit>✅ <b>业主已答，且这条把 K0-sec 解掉了。</b><br>
+  业主：「网络架构不用细说，只要方便理解即可。<b>实际运行态的网络架构很复杂</b> —— 比如数据库也有独立的代理
+  组成的隔离网络，<b>但不影响我们认为是一套数据库系统</b>。」<br><br>
+  ⇒ 网络架构也按同一条线拆：<b>逻辑视图</b>（够理解，低频，可公开）入 L0 知识库；
+  <b>真实 IP / 代理链 / 隔离网段</b>（高频，受限）不入知识库，走 MCP 受限查询面。<br>
+  ⇒ 🔴 <b>K0-sec 作为「知识库的一层」可以撤掉。</b>本席造它的原始动因（防「每个 Agent 上下文里都有全平台拓扑」）
+  <b>仍被满足</b> —— 因为真实拓扑<b>根本不进知识库了</b>，它在受 RLS 的 MCP 面上。</div>
 </div>
 
 <div class="panel">
