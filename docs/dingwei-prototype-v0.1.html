@@ -1971,6 +1971,64 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>K0-sec 重切 <span class="ref">业主修正 · 本席上一轮拆错了</span></h3>
+  <div class="note bad" data-edit>🔴 <b>本席上一轮的错</b>：识别出「K0-sec 混了两种性质不同的东西」是对的，
+  但<b>拆的刀口下错了</b> —— 本席按<b>类型整块搬</b>（服务架构 / 网络架构 / 数据库设计这三类<b>全部</b>归运行时取），
+  而正确的是<b>每一类内部都要拆</b>：<b>设计层固化，运行态实时查</b>。<br>
+  业主的拆法对。本席那种拆法会把「服务架构设计」这种明明该固化的东西一起扔进运行时。</div>
+
+  <table><thead><tr><th style="width:96px"></th><th>设计层 · 低频 · <b class="cell-ok">可公开全员</b> · <b>固化</b></th>
+  <th>运行态 · 高频 · <b class="cell-wait">实时 / 准实时查</b></th></tr></thead><tbody>
+  <tr><td><b>业务</b></td><td class="cell-ok" data-edit><b>业务架构</b> 🆕<div class="mono">领域模型 · 业务能力划分 · 边界上下文</div></td>
+    <td class="cell-wait" data-edit>业务量 · 转化指标</td></tr>
+  <tr><td><b>服务</b></td><td class="cell-ok" data-edit><b>服务架构</b><div class="mono">由哪些服务组成 · 职责划分 · 依赖关系</div></td>
+    <td class="cell-wait" data-edit><b>运行 pod / 实例</b> · 在哪台机 · 跑哪个版本 · 健康状态</td></tr>
+  <tr><td><b>数据</b></td><td class="cell-ok" data-edit><b>数据架构</b> 🆕<div class="mono">数据模型 · 分库分表策略 · 数据流向</div></td>
+    <td class="cell-wait" data-edit><b>数据量</b> · 慢查询 · 连接数 · 复制延迟</td></tr>
+  <tr><td><b>运行日志</b></td><td class="lock">—</td><td class="cell-wait" data-edit><b>日志</b><div class="mono">⚠️ 可能含 token / IP，须按内容定级</div></td></tr>
+  <tr><td class="cell-fail"><b>网络</b></td><td class="cell-fail" data-edit><b>网络架构</b>（拓扑 · 分段 · 出口）
+    <div class="mono cell-fail">⚠️ 业主未把它列入「可公开全员」—— 本席理解它仍受限，<b>请确认</b></div></td>
+    <td class="cell-wait" data-edit>实际连通性 · 出口状态</td></tr>
+  </tbody></table>
+
+  <div class="note bad" data-edit>🔴 <b>由此本席须收回一处过度收紧。</b>本席原来把「服务架构 / 网络架构 / 数据库设计」
+  <b>一律划进 K0-sec（RLS + 分级 + 不得全员）</b>。按业主本条，<b>业务架构 / 服务架构 / 数据架构的【设计层】可公开全员</b> ——
+  它们是团队都该知道的东西，划进 sec 是<b>本席过度收紧</b>。<br>
+  <b>真正必须受限的，是网络架构那一类（主机 IP、拓扑、凭据相关）</b>，以及可能含敏感内容的日志。</div>
+
+  <h3 style="margin-top:16px">三处落位</h3>
+  <table><thead><tr><th style="width:130px">类别</th><th>归处</th><th>为什么</th></tr></thead><tbody>
+  <tr><td class="cell-ok"><b>设计层</b></td><td data-edit><b>L0 知识库</b>（业务/服务/数据架构，全员可读）<br>
+    网络架构<b>另置受限域</b></td><td data-edit>低频 · 有版本 · 旧值仍是有效历史（当时确实那么设计的）</td></tr>
+  <tr><td class="cell-wait"><b>运行态</b></td><td data-edit>🔴 <b>不属知识库任何一层</b> ——
+    走 <b>MCP 查询面</b>，数据源＝运维系统（k8s API · 日志系统 · DB 指标）</td>
+    <td data-edit>高频 · <b>旧值立刻误导</b>（「昨天 3 个 pod」对今天毫无意义）</td></tr>
+  <tr><td class="cell-fail"><b>受限设计层</b></td><td data-edit>网络架构 → 受限查询作用域，RLS + S0/S1 分级</td>
+    <td data-edit>低频，但<b>爆炸半径大</b> —— 密级与频率是两个独立维度</td></tr>
+  </tbody></table>
+
+  <div class="note" data-edit>📌 <b>MCP 动词已经在了，缺的是「查什么」。</b>
+  §14.3 定的动词集含 <code>list · get · describe · <b>status</b> · <b>diagnose</b></code> ——
+  <b><code>status</code> 与 <code>diagnose</code> 正是为运行态查询准备的</b>，只是规范从未说它们查什么。
+  本次把「运行 pod / 日志 / 数据量」接上去，<b>不必新造动词</b>。</div>
+
+  <div class="note" data-edit>📌 <b>这也给出了 MCP 分级的第二个用途。</b>运行态查询本身必须分级：
+  <b>租户只能查自己的 pod 与日志，平台级 ops 才能查全平台</b>。
+  ⇒ 业主本轮定的 MCP 四级归属，正好承载这个 —— <b>MCP 分级不只是「工具归谁」，也是「能查到谁的运行态」</b>。</div>
+
+  <div class="note bad" data-edit>🔴 <b>两处规范缺口（本轮新增）</b>：<br>
+  ① <b>业务架构 · 数据架构 是新条目类型</b> —— §12.1 十二类里只有「业务流程」（＝具体流转，非领域模型）
+  与「数据库设计」（＝<code>migrations/</code> DDL，物理表结构，非数据架构）。<b>两者都不能替代。</b><br>
+  ② <b>运行态查询整个概念零命中</b> —— 全文搜「pod / 日志 / 数据量 / 指标 / 可观测 / 实时查询」，
+  仅命中「指标」但全指自检计数器与摘要质量，<b>无一处涉及运行态可观测数据</b>。</div>
+
+  <div class="chk warn2" data-edit>⚠️ <b>一处请业主确认</b>：网络架构（主机 IP · 拓扑 · 分段）未被列入「可公开全员」，
+  <b>本席理解它仍须受限</b>（这也是本席当初造 K0-sec 的原始动因：防「每个 Agent 上下文里都有全平台拓扑」）。
+  <b>若业主认为它也可全员，请明说</b> —— 那 K0-sec 这个概念就可以整个撤掉了。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>知识来源与锚定 <span class="ref">业主定 · §13 须扩</span></h3>
   <div class="note" data-edit>业主：<b>知识库源于代码和设计文档，有交付物锚定；也有企业公共库的导入（或链接）。</b></div>
   <table><thead><tr><th style="width:130px">来源</th><th>锚</th><th style="width:150px">stale 判据</th></tr></thead><tbody>
