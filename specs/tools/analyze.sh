@@ -13,10 +13,14 @@ PROTO=docs/dingwei-prototype.html
 FAIL=0
 
 echo "① 各件单件闸"
-[ -x scripts/speclint-gate.sh ] && { python3 docs/tools/speclint.py "$SPEC" >/dev/null 2>&1 \
-  && echo "  ✓ SpecDoc speclint" || { echo "  ✗ SpecDoc speclint"; FAIL=1; }; }
-[ -x scripts/arch-refcheck.sh ] && { scripts/arch-refcheck.sh >/dev/null 2>&1 \
-  && echo "  ✓ 架构引用核验" || { echo "  ✗ 架构引用核验"; FAIL=1; }; }
+# 🔴 工具缺席＝检查未执行，不得静默跳过（丙域 kimi 终审次要项）
+for t in docs/tools/speclint.py scripts/arch-refcheck.sh; do
+  [ -e "$t" ] || { echo "  ✗ 依赖缺失：$t"; FAIL=1; }
+done
+python3 docs/tools/speclint.py "$SPEC" >/dev/null 2>&1 \
+  && echo "  ✓ SpecDoc speclint" || { echo "  ✗ SpecDoc speclint"; FAIL=1; }
+scripts/arch-refcheck.sh >/dev/null 2>&1 \
+  && echo "  ✓ 架构引用核验" || { echo "  ✗ 架构引用核验"; FAIL=1; }
 
 echo "② 架构设计引用的 SpecDoc 节号是否都存在（跨制品悬空）"
 scripts/arch-refcheck.sh >/dev/null 2>&1 && echo "  ✓ 无悬空" || { echo "  ✗ 有悬空，详见 arch-refcheck"; FAIL=1; }
@@ -54,10 +58,16 @@ PY
 [ $? -ne 0 ] && FAIL=1
 
 echo "⑤ 生效前置状态（§0.4）"
-if [ -f specs/platform/checklist.PENDING.md ]; then
-  echo "  ⛔ checklist 未产出（reviewer-owned，执笔方不得代写）⇒ SpecDoc 仍为草案，不得被子 spec 引用"
+# 🔴 不得由「PENDING 文件不在」推定「checklist 已就位」——那是缺席推定（丙域 kimi）
+N=0
+for c in specs/platform/checklist.md specs/platform/checklist.security-reviewer.md \
+         specs/platform/checklist.crossartifact-reviewer.md; do
+  [ -f "$c" ] && N=$((N+1)) || echo "  ✗ 缺 $c"
+done
+if [ "$N" -eq 3 ]; then
+  echo "  ✓ 三域 checklist 齐备（结构 / 安全 / 跨制品）—— 但【生效与否取决于门方执行结果，非文件存在】"
 else
-  echo "  ✓ checklist 已就位"
+  echo "  ⛔ checklist 未齐（$N/3）⇒ SpecDoc 仍为草案"; FAIL=1
 fi
 
 echo "---"

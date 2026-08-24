@@ -14,7 +14,12 @@ DOC=$D/dingwei-platform-specdoc.md
 COR=$T/speclint-corpus.md
 LINT=$T/speclint.py
 
-[ -f "$LINT" ] || { echo "跳过：$LINT 不存在"; exit 0; }
+# 🔴 T-1（丙域 kimi 终审）：工具缺席【不是通过】。
+#    原写 exit 0 —— speclint.py 一旦不在，三道门直接报「通过」并放行提交。
+#    这正是本轮刚归纳的第六种形态「没测却报通过」，而它就在本席自己的闸里。
+#    ⇒ 闸的依赖缺失是【闸坏了】，不是【本次不用检】。
+[ -f "$LINT" ] || { echo "✗ 闸依赖缺失：$LINT 不存在 —— 这是闸坏了，不是本次免检"; exit 1; }
+[ -f "$COR" ]  || { echo "✗ 闸依赖缺失：$COR 不存在 —— 无语料即无法证明规则有牙"; exit 1; }
 
 # ⓪ 自检：钩子必须【就是本脚本】，不能是它的一份旧拷贝。
 #    立此判据的直接原因：本脚本写好后，.git/hooks/pre-commit 仍是更早的独立拷贝（754 字节），
@@ -60,7 +65,10 @@ if git diff --cached --name-only 2>/dev/null | grep -qx "$PROTO"; then
   fi
 fi
 # ⑤ DELIVERY-STATUS.md 须与 HEAD 同步（它是单一状态源，过期即失去意义）
-if [ -x scripts/gen-status.sh ]; then
+if [ ! -x scripts/gen-status.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/gen-status.sh 不可执行 —— 状态源无法刷新，不得放行"; exit 1
+fi
+if true; then
   scripts/gen-status.sh > /tmp/.dw-status.$$ 2>/dev/null || true
   if ! diff -q /tmp/.dw-status.$$ docs/DELIVERY-STATUS.md >/dev/null 2>&1; then
     scripts/gen-status.sh > docs/DELIVERY-STATUS.md
@@ -72,7 +80,10 @@ if [ -x scripts/gen-status.sh ]; then
   rm -f /tmp/.dw-status.$$
 fi
 # ⑥ 架构设计的引用核验（来源类型化解析）
-if [ -x scripts/arch-refcheck.sh ] && [ -f docs/dingwei-architecture-design.md ]; then
+if [ ! -x scripts/arch-refcheck.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/arch-refcheck.sh 不可执行"; exit 1
+fi
+if [ -f docs/dingwei-architecture-design.md ]; then
   scripts/arch-refcheck.sh >/dev/null 2>&1 || { scripts/arch-refcheck.sh; echo "✗ 架构引用核验未过"; exit 1; }
   # 闸自己也要过反测 —— 否则「核验通过」可能只是它测不出来（甲域最终复核抓出的那种）
   scripts/arch-refcheck.sh --selftest >/dev/null 2>&1 || { scripts/arch-refcheck.sh --selftest; echo "✗ 架构引用核验的反测未过"; exit 1; }

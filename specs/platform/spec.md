@@ -38,5 +38,7 @@ Spec Kit 惯例是 `specs/<feature>/spec.md` 放正文。本席**没有搬**，�
 执行层只读取该引用；checklist 内容与 checkbox 仅由 reviewer 修改。
 
 🔴 **SpecDoc 生命周期仍为「草案」**：§0.4 两项生效前置中，第 1 项（本工程结构）本次落成，
-**第 2 项的输入已产出，但须按 `checklist.md` 重走架构评审并取得新的 gate verdict**；在此之前，
+**第 2 项的输入已产出，但须按 `checklist.md` 重走架构评审并取得新的 gate verdict**；
+⚠️ 本口径与 `docs/dingwei-architecture-design.md` A§0.0 **已统一**（丙域 kimi P-1）——
+此前 A§0.0 写「架构评审 ✓ 可作设计依据」与本句冲突，现以本句为准。在此之前，
 **本 spec 尚不得被任何子 spec 引用为依据**。

@@ -9,7 +9,10 @@ specs/
   constitution.md              治理原则的【唯一】载体（§4.1）
   platform/
     spec.md                    装载点 —— 指向 docs/ 的正文，不复制、不搬动
-    checklist.PENDING.md       ⛔ checklist 未产出，且执笔方不得代写（§4.1 · §7.2）
+    checklist.md                    结构域（sol 主笔，26 项）
+    checklist.security-reviewer.md  安全域（terra，18 项）
+    checklist.crossartifact-reviewer.md 跨制品域（kimi，12 项）
+    checklist.INDEX.md              作者维护的登记，不判定
   tools/
     analyze.sh                 /speckit.analyze —— 跨制品一致性检查
 ```
@@ -20,7 +23,7 @@ specs/
 |---|---|---|
 | `constitution.md` 治理原则唯一载体 | `specs/constitution.md` | ✅ |
 | `/speckit.analyze` 跨制品一致性检查 | `specs/tools/analyze.sh` | ✅ |
-| `/speckit.checklist` → `node.acceptance` | `specs/platform/checklist.PENDING.md` | ⛔ **须门方产出** |
+| `/speckit.checklist` → `node.acceptance` | `specs/platform/checklist.md`（+ 安全 / 跨制品两份） | ✅ 三域已产出；⛔ **尚未执行**，须按其重走架构评审取得新 verdict |
 
 ## 用法
 
