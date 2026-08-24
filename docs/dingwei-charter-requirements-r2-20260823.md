@@ -1,6 +1,6 @@
 # DingWei 纲领需求增补 R2 · 业主 2026-08-23 十条
 
-> **状态**：v0.4（业主 2026-08-23 就 R2-1/2/3/5/9 表态后修订）。
+> **状态**：v0.5（业主 2026-08-23 就 R2-1/2/3/5/9 表态后修订）。
 > **来源**：业主 2026-08-23 直述十条，「一并纳入纲领性文件」。
 > **与既有件的关系**：本件是**需求层**增补，须在纲领 v2.0 合并时并入正文；
 > 其中多条与 `dingwei-charter-addendum-forum-v1.7.md`、`dingwei-addendum-decisions-20260824.md` 已有条款直接咬合，逐条标注。
@@ -534,6 +534,135 @@ Skill 是**由插件提供的能力之一**（官方原文列举：models、tool
 [Harness MCP server](https://github.com/harness/mcp-server) ·
 [Harness Skills 概览](https://developer.harness.io/docs/platform/harness-ai/govern-ai-output/overview/)
 
+### 甲.4f 三次调研 —— Hermes Agent（业主提供，2026-08-23）
+
+**核实结论：这段资料的主体属实**，且一手文档比资料更细。本席按「一手已核 / 二手待核 / 未能核实」三档标注。
+
+#### 甲.4f-1 ✅ 一手已核（NousResearch 官方文档）
+
+**① `skill_manage` 四动作 —— 关键在 `patch` 与 `delete`**
+
+| 动作 | 官方定义 | 用途 |
+|---|---|---|
+| `create` | New skill from scratch | 从零建 |
+| **`patch`** | 🔴 **Targeted fixes (preferred)**，old_string/new_string 替换 | **定向修复，官方首选** |
+| `edit` | Major structural rewrites，整篇替换 | 大结构重写 |
+| **`delete`** | **Remove a skill entirely** | **完全移除** |
+
+（另有文件级 `write_file` / `remove_file`）**官方给 `patch` 首选的理由是省 token。**
+
+**② `write_approval` —— 提案与批准分离的现成实现**
+
+> 官方：当 `skills.write_approval: true`，**所有 `skill_manage` 操作转为暂存**而不落地：
+> 暂存件**跨重启存活**于 `~/.hermes/pending/skills/`；
+> 用 `/skills pending`、`/skills diff <id>` 及批准/拒绝命令审阅；
+> 🔴 **「前台回合与后台自我改进审阅一视同仁」**。
+
+**③ 自动创建的触发条件（官方措辞是定性的，无数字）**
+
+> 系统提示词指示 Agent 在以下情形用 `skill_manage` 记录：
+> ① 发现**值得重复的非平凡工作流** ② **错误恢复或死胡同脱困** ③ **用户纠正揭示了正确做法**
+
+**④ 运行时检索 = 渐进披露（第二个独立一手样本）**
+
+> `skills_list()` 先返回简要元数据（**约 3k tokens**）→ 需要时才 `skill_view(name)` 载入全文
+> → 还可 `skill_view(name, path)` 定向取单个文件。
+
+**⑤ 官方原话**：**「Skills that aren't maintained become liabilities.」**（未维护的技能会变成负债）
+
+#### 甲.4f-2 ⚠️ 二手来源所述，一手页未复核（**引用时请标明**）
+
+- **「5 次以上工具调用」这个数字**：见于两处二手报道；**官方 skills 页的措辞是「非平凡工作流」，没有数字。**
+- **自主 Curator 生命周期**：每 7 天运行（需 ≥2 小时空闲），未用 skill 经 **active → stale（30 天）→ archived（90 天）**。
+- **三层记忆体系**（短期工作记忆 / 过程性技能记忆 / 可检索长期记忆）：**本席未能在一手文档中核到。**
+
+#### 甲.4f-3 🔴 最有分量的一条：Hermes 自己有一个**开放议题**在要求这个保护
+
+> **`NousResearch/hermes-agent` Issue #25083：
+> 「Immutable/protected skills — prevent agent from modifying critical skills without user approval」**
+> （不可变/受保护的技能——防止 Agent 未经用户批准修改关键技能）
+
+**这条的含义**：**一个以自我进化为卖点的平台，自己承认「审批暂存」还不够。**
+
+> **⇒ 因为 `write_approval` 只保证「有人看」，不保证「看的人看得出来」。**
+> 一个被巧妙 `patch` 的安全类 skill，在 diff 里**可能只是一行**。
+>
+> ⇒ **对 DingWei 的直接映射**：**安全类 / 合规类 / 平台域基线类 skill 应标为 immutable——
+> Agent 连提案都不能提**，而不是提了再审。
+> **这与 §C.4e 的「谁准的」是同一问题的下一层**：先有审批，再有「有些东西连审批流都不该走」。
+>
+> **⇒ 新增 R2-18。** ⚠️ 且**免疫范围本身的变更须是重两签级**，否则「把某 skill 移出 immutable 名单」会成为新的绕过点。
+
+#### 甲.4f-4 由此修正本席自己的三条建议
+
+**修正一：R2-17 从「不进本期」改为「可进本期，但须以 `write_approval` 模式进」**
+
+本席 v0.4 建议自我进化「记为未来方向，不进本期」，理由是它绕过「谁准的」。
+**Hermes 证明了自我进化与审批可以共存**，且其形态恰好就是 **datad `skill` 表已有的设计
+（提案全员，批准=coordinator）**——**本席原判过严，现修正。**
+
+| | 本席 v0.4 | v0.5 修正 |
+|---|---|---|
+| 自我进化 | 记为方向，不进本期 | **可进本期** |
+| 前提 | — | **`write_approval` 在平台级与租户级默认开启**；暂存须跨重启存活、须可 diff 审阅；**前台与后台自我改进同等对待**（不给后台特权路径） |
+| 边界 | — | **叠加 R2-18 的 immutable 名单**（审批之外还需一层不可触碰） |
+
+**修正二：R2-13 得到补全 —— 「何时改」与「怎么改」是两件事**
+
+| 来源 | 回答 |
+|---|---|
+| Claude Code（甲.4d 发现五） | **何时改**：只在该 skill 把这次执行带偏时才回写 |
+| **Hermes** | **怎么改**：**`patch` 定向替换 > `edit` 整篇重写** |
+
+> 二者正交，合起来才是完整的回写纪律。
+> **本席须补一个比「省 token」更要紧的理由**：**`patch` 的 diff 小，可审；`edit` 的 diff 是整篇，审不动。**
+> 在 **200+ Agent 并发 + `write_approval`** 的场景下，**可审性比 token 成本更关键**——
+> 若每次自我改进都要人审一篇全文 diff，**审批会先成为瓶颈，然后被绕过**。
+
+**修正三：R2-15 得到反证支持 —— 别人有 `delete`，我们没有**
+
+Hermes 的 `skill_manage` 有 `delete`（完全移除）；
+**DingWei 的 provision 动作白名单只有装，没有卸**（甲.4e-2，代码级已核）。
+**⇒ R2-15 不是本席吹毛求疵，是同类系统有而本平台缺。**
+
+#### 甲.4f-5 渐进披露：第二个独立一手样本，可给出量纲
+
+| 系统 | 常驻成本 | 全文加载 |
+|---|---|---|
+| Claude Code | `description`+`when_to_use` **硬截断 1,536 字符** | 用到才载入 |
+| **Hermes** | `skills_list()` **约 3k tokens** | `skill_view(name)` 按需 |
+
+> **⇒ 两个独立实现、同一模式、都给了具体预算。**
+> 这把本席甲.4d 的「主解 = 渐进披露」从建议变成**业界共识**，
+> 并给 DingWei 一个可直接采用的量纲：**skill 目录的常驻上下文成本应锁定在 1.5k–3k tokens 量级。**
+> **这个数字应当写成硬预算**，因为它是唯一能防止 skill 库随规模膨胀吃掉上下文的机制。
+
+#### 甲.4f-6 触发条件：数字之争其实不重要，第三条触发才重要
+
+业主定 8 次，二手来源说 Hermes 是 5 次，**而 Hermes 官方措辞根本没有数字**（「非平凡工作流」）。
+
+> **⇒ 本席建议：把次数当作可配置的启发式，不当判据。**
+> 判据是各家一致的那两点：**成功**（Voyager 自验证 / Claude Code 跑通后记录）+ **值得重复**。
+
+**🔴 但 Hermes 三条触发里的第三条，本席认为最有价值，且业主方案中没有**：
+
+> **「用户纠正揭示了正确做法」**（User corrections reveal the working approach）
+
+**理由**：顺利走通的路径只证明「这样可行」；**被纠正过的路径额外编码了一个信息——「默认做法是错的」**。
+后者对下一个 Agent 的价值更高，因为**它拦住的是一个会重复发生的错误**，而不只是省一次摸索。
+
+> **⇒ 这与业主已批的复盘第四段「本阶段的判断失误」（甲.1）是同一个洞见的两个尺度**：
+> 复盘第四段是**阶段级**的，Hermes 第三条触发是**单次操作级**的。**建议两者都要。**
+> **本席自身十四轮评审中 9 次由他审抓出的方法缺陷，正属此类**——
+> 若当时有「被纠正即固化」的机制，第 2 次之后就该进库了。**新增 R2-19。**
+
+**参考来源（本节）**：
+[NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) ·
+[Skills System 官方文档](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills) ·
+[Working with Skills](https://hermes-agent.nousresearch.com/docs/guides/work-with-skills) ·
+[Issue #25083 · Immutable/protected skills](https://github.com/NousResearch/hermes-agent/issues/25083) ·
+[/learn 命令报道](https://www.marktechpost.com/2026/06/24/nous-research-adds-learn-to-hermes-agents-skills-system-capturing-workflows-as-slash-commands-without-hand-writing-skill-md/)
+
 ---
 
 ## 乙组 · 管理与查阅入口（要求 3 / 4）
@@ -816,4 +945,8 @@ Skill 是**由插件提供的能力之一**（官方原文列举：models、tool
 | **R2-14**（新增，源自调研） | **三级晋升的冲突解析方向**（甲.4d 发现三） | 建议「**治理优先 + 命名空间逃生舱**」：平台级覆盖租户级，同时允许租户特化版以命名空间并存 |
 | **R2-15**（新增，源自二次调研） | 🔴 **provision 能装不能卸**（甲.4e-2，代码级已核） | 须补 `uninstall_skill`/`uninstall_mcp`；**卸载须与安装同等审批**（否则卸掉安全类 skill 成为绕管路径）；卸载的幂等与审计语义一并设计 |
 | **R2-16**（新增，源自二次调研） | **skill 不内嵌 schema，运行时经 MCP 查**（甲.4e-3） | 建议采纳为 skill 编写规范；由此给 skill/MCP 判据补第二维「变不变」 |
-| **R2-17**（新增，源自二次调研） | **skill 自我进化 / Creator Mode 是否纳入本期**（甲.4e-4） | 建议**记为未来方向，不进本期**；若试则限租户级以下 + S2 沙盒 + 产出仍须晋升审批。**允许 Agent 提案，不允许 Agent 批准** |
+| **R2-17**（v0.5 **本席修正**） | skill 自我进化是否纳入本期（甲.4e-4 → 甲.4f-4） | ⚠️ **本席原判过严，现改为「可进本期」**：Hermes 证明自我进化与审批可共存，其形态即 datad `skill` 表已有的「提案全员/批准=coordinator」。前提：**`write_approval` 平台级与租户级默认开启** + 暂存跨重启 + 可 diff 审阅 + **前台与后台同等对待** + 叠加 R2-18 |
+| **R2-18**（新增，源自三次调研） | 🔴 **immutable skill 名单**（甲.4f-3） | 安全/合规/平台域基线类 skill 标为**不可变——Agent 连提案都不能提**。依据：Hermes 开放议题 #25083 承认「审批暂存」不足，因为**巧妙 patch 的安全 skill 在 diff 里可能只有一行**。⚠️ **免疫名单本身的变更须重两签** |
+| **R2-19**（新增，源自三次调研） | **「被用户纠正」应作为 skill 化触发条件**（甲.4f-6） | 建议采纳。顺利路径只证明「可行」；**被纠正的路径额外编码了「默认做法是错的」**，拦的是会重复发生的错误。与业主已批的复盘第四段是同一洞见的两个尺度（阶段级 / 单次操作级），**建议两者都要** |
+| **R2-20**（新增，源自三次调研） | **skill 目录常驻上下文硬预算**（甲.4f-5） | 建议锁定 **1.5k–3k tokens** 量级（Claude Code 1,536 字符 / Hermes ~3k tokens 两个独立样本）。**这是唯一能防止 skill 库随规模膨胀吃掉上下文的机制** |
+| **R2-21**（新增，源自三次调研） | **回写须用 `patch` 而非 `edit`**（甲.4f-4 修正二） | 官方理由是省 token；**本席补一个更要紧的：`patch` 的 diff 小可审，`edit` 的 diff 是整篇审不动**。200+ Agent 并发 + write_approval 下，审批会先成瓶颈再被绕过 |
