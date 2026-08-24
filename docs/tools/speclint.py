@@ -239,9 +239,20 @@ def check_link_resolve(s):
         elif len(t)>1: out.append((t[1],'link-ambig',f'§{r} 解析到 {len(t)} 个章节',f'L{t}'))
     return out
 
+def check_s_family(s):
+    """S 系收口后的不变量:裸 S0-S2 只表凭据分级;裸 S3-S8 恒为 0(凭据分级只定义三级);
+    子 spec 一律写 SP0-SP8。写登记不写判据等于没登记 —— 故落成规则,不落成备忘。"""
+    out=[]
+    for m in re.finditer(r'(?<!P)\bS[3-8][ab]?\b', s):
+        ln=s[:m.start()].count('\n')+1
+        out.append((ln,'s-family',
+                    '裸 %s:凭据分级只定义 S0-S2,子 spec 须写 SP 系' % m.group(0),
+                    s.split('\n')[ln-1].strip()[:70]))
+    return out
+
 ALL_CHECKS = [check_typed_refs, check_symbol_context, check_field_aliases, check_tables,
               check_refs, check_E, check_count_refs, check_ids, check_fkeys,
-              check_authoritative, check_heading_ids, check_fences, check_link_resolve]
+              check_authoritative, check_heading_ids, check_fences, check_link_resolve, check_s_family]
 
 def run_all(doc):
     out=[]
@@ -292,6 +303,7 @@ MUTATIONS = [
     ('link-dangling', "if len(t)==0: out.append", "if False: out.append"),
     ('table',         "if len(blk)==1: out.append", "if False: out.append"),
     ('symbol-context',"if not any(c in near for c in ctx):", "if False:"),
+    ('s-family',      "for m in re.finditer(r'(?<!P)\\bS[3-8]", "for m in re.finditer(r'(?<!P)\\bZZ[3-8]"),
     ('typed-symbol',  "for m in re.finditer(pat,s):\n            ln=s[:m.start()]",
                       "for m in []:\n            ln=s[:m.start()]"),
 ]
@@ -326,7 +338,7 @@ s=load(sys.argv[1])
 all_out=(check_typed_refs(s)+check_symbol_context(s)+check_field_aliases(s)+check_tables(s)
          +check_refs(s)+check_E(s)+check_count_refs(s)
          +check_ids(s)+check_fkeys(s)+check_authoritative(s)+check_heading_ids(s)
-         +check_fences(s)+check_link_resolve(s))
+         +check_fences(s)+check_link_resolve(s)+check_s_family(s))
 for ln,kind,msg,ctx in sorted(all_out,key=lambda x:(x[1],x[0])):
     print(f"[{kind:14s}] L{ln:<5d} {msg}  {ctx}")
 print("---", f"{len(all_out)} 处" if all_out else "全部通过")
