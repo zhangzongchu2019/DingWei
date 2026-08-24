@@ -28,9 +28,15 @@ Spec Kit 惯例是 `specs/<feature>/spec.md` 放正文。本席**没有搬**，�
 |---|---|
 | 文档执笔 | ✓ |
 | 架构评审 | ✓ 2026-08-24 三域 PASS |
-| **checklist** | ⛔ **未产出** —— 见 `checklist.PENDING.md` |
+| **checklist** | ✓ **已由架构评审门方产出** —— 见 `checklist.md`；尚未执行，checkbox 不预填 |
 | 用例评审 | ✗ |
 | 交付验证 | ✗ |
 
+**`node.acceptance` 引用**：`specs/platform/checklist.md`，Git blob
+`1b1ae1c440dfabc47c027c8497fd8e3e67825cf9`，sha256
+`fae14d4e87fc77d4003af791527ed7dff0c18d6ef002444066296c3b1af4e103`。
+执行层只读取该引用；checklist 内容与 checkbox 仅由 reviewer 修改。
+
 🔴 **SpecDoc 生命周期仍为「草案」**：§0.4 两项生效前置中，第 1 项（本工程结构）本次落成，
-**第 2 项 checklist 未闭** ⇒ 按 §0.4，**本 spec 尚不得被任何子 spec 引用为依据**。
+**第 2 项的输入已产出，但须按 `checklist.md` 重走架构评审并取得新的 gate verdict**；在此之前，
+**本 spec 尚不得被任何子 spec 引用为依据**。

@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `2f2a1cd5c04a33b179eff6e02c153f480a5182ee` · 分支 `design/addendum-decisions`
+生成自 commit `8b173b7118423f587b05acb04dcbbb2d16d84da2` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -25,6 +25,7 @@
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+8b173b7 chore: 收安全门方 checklist(18 项) + 备重走轮的证据包(修在此,前锚 2f2a1cd)
 2f2a1cd feat: 落 SpecDoc §0.4 第 1 项生效前置——Spec Kit 工程结构(修在此,前锚 b6b9a18)
 b6b9a18 docs: 架构设计 v0.8——A§0.0 同步三域 PASS,并写明两个门是分开的(修在此,前锚 f2c497f)
 f2c497f chore: 收官后清两件挂账——仓内文件名去版本号 + task 表定名分析入仓(修在此,前锚 645bf36)
@@ -32,5 +33,4 @@ f2c497f chore: 收官后清两件挂账——仓内文件名去版本号 + task 
 d01e12c fix: arch-refcheck 失败条件漏 sp_dup——「检测到了但没接进失败条件」(修在此,前锚 82501df)
 82501df docs: 架构设计 v0.5——甲域复核 2 局部必改(修在此,前锚 f904a9f)
 f904a9f docs: 架构设计 v0.4——AD-SA-03 按方案 A 收(乙域 terra,修在此,前锚 8173cb9)
-8173cb9 docs: 架构设计 v0.3 + SpecDoc v3.14——丙域 F-1~F-5 全修(修在此,前锚 0df45c9)
 ```
