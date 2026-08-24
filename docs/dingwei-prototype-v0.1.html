@@ -104,6 +104,17 @@ padding:6px 9px;color:var(--tx);font:inherit;font-size:12.5px}
 .chk.pass{background:#12241c;border-left:3px solid var(--ok);color:#a8e6c8}
 .chk.stop{background:#2a1414;border-left:3px solid var(--bad);color:#f0bcbc}
 .chk.warn2{background:#2a2110;border-left:3px solid var(--warn);color:#e8d3a8}
+.chat{background:#101319;border:1px solid var(--line);border-radius:8px;padding:12px;max-height:420px;overflow:auto}
+.msg{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid #1c212b}
+.msg .av{width:26px;height:26px;border-radius:5px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.av.u{background:#22406e;color:#9dc0ff}.av.a{background:#3a2145;color:#e0aef0}
+.msg .mb{flex:1;min-width:0;font-size:13px}
+.att{display:inline-flex;align-items:center;gap:6px;background:#1b2436;border:1px solid #2b3a52;border-radius:6px;
+padding:5px 9px;margin:5px 6px 0 0;font-size:12px}
+.att .ic{font-size:14px}
+.att .sz{color:var(--dim);font:11px ui-monospace,monospace}
+.drop{border:1px dashed #3a4458;border-radius:8px;padding:14px;text-align:center;color:var(--dim);font-size:12.5px;margin-top:8px}
+.drop b{color:var(--tx)}
 body.edit [data-edit]{outline:1px dashed #3a4458;outline-offset:2px;border-radius:2px}
 body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 .hid{display:none!important}
@@ -136,6 +147,8 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <a href="#s5">skill / MCP 库 <span class="mono">§15·16</span></a>
   <a href="#s6">Agent 管理 <span class="mono">§26</span></a>
   <a href="#s7">帖子流 <span class="mono">§18</span></a>
+  <div class="grp">主界面</div>
+  <a href="#a8">Agent 对话（多模态） <span class="mono">§25.4 改</span></a>
   <div class="grp">Agent 面</div>
   <a href="#a1">Agent 列表 <span class="mono">§26·新</span></a>
   <a href="#a2">Agent 工作面 <span class="mono">新增</span></a>
@@ -1475,6 +1488,116 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <b>绑定须由主身份发起，新渠道不得批准自己的绑定</b> ·
   🔴 <b>合并身份不合并渠道强度，每次授权按本次经由的渠道判</b> ·
   审计必录渠道来源 · 解绑同级且不得重写历史 · 企业吊销即时失效 · 紧急通道只可 revoke 不可新增。</div>
+</div>
+</section>
+
+<!-- ============ A8 Agent 对话（多模态） ============ -->
+<section class="scr" id="a8">
+<h2 data-edit>Agent 对话 · 多模态</h2>
+<div class="sub" data-edit>主界面内的直连对话，替代 view 页。<b style="color:var(--bad)">与 §25.4 已裁定条款相撞，见屏底</b></div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>zzc-devo48-2642 · N-1204 <span class="ref">拟 §25.4 改</span>
+    <span style="margin-left:auto;font-weight:400;font-size:12px" class="cell-ok">🔓 已登录认证 · 无需 unlock</span></h3>
+  <div class="chat">
+    <div class="msg"><div class="av u">张</div><div class="mb">
+      <div data-edit>N-1204 的负向测试，先看下现在这个拓扑对不对。</div>
+      <div class="att"><span class="ic">🖼</span><span data-edit>tenant-derive-topology.png</span><span class="sz">412 KB · 1920×1080</span>
+        <span class="s2">S2</span></div></div></div>
+    <div class="msg"><div class="av a">A</div><div class="mb">
+      <div data-edit>图收到。派生链画的是 <code>hub → 信封 → Receiver</code>，但缺了 <b>trusted 开关原子切换</b>那一步 ——
+      P1 的闭合判据里这条是必须的。另外右下角那个框写的是「缺 principal 时取默认租户」，
+      与 §22.1a <b>fail-closed，不得回退默认或匿名租户</b>直接冲突。</div></div></div>
+    <div class="msg"><div class="av u">张</div><div class="mb">
+      <div data-edit>对，那个框是旧版。这段录屏是复现过程，你看下第 40 秒。</div>
+      <div class="att"><span class="ic">🎬</span><span data-edit>repro-fake-tenant.mp4</span><span class="sz">18.4 MB · 1分12秒</span>
+        <span class="s2">S2</span></div></div></div>
+    <div class="msg"><div class="av a">A</div><div class="mb">
+      <div data-edit>第 40 秒确认：<code>curl -H "X-Tenant: other"</code> 返回 200，与门方给的失败最小复现一致。
+      我把这两个附件挂到 N-1204 的帖子流第 5 帖，作为整改证据。</div></div></div>
+    <div class="msg"><div class="av u">张</div><div class="mb">
+      <div data-edit>再传一份生产网络拓扑给你参考。</div>
+      <div class="att" style="border-color:#5a2020;background:#2a1414"><span class="ic">🚫</span>
+        <span data-edit>prod-network-topo.png</span><span class="sz">已拦截</span><span class="s0">S0</span></div>
+      <div class="note bad" style="margin-top:6px;padding:7px 10px">🔴 <b>上传被拒</b>：内容扫描判定含<b>主机 IP 与网络拓扑</b> ⇒ 属 <span class="s0">S0</span>。
+      §22.4：<b>S0 不落任何文档、帖子、流、日志</b>；本对话会入帖子流，故不可承载。<br>
+      改法：该资料属 <b>K0-sec</b>，请在知识库内按 RLS 引用（<code>#KB-007</code>），<b>不要作为附件传入对话</b>。</div></div></div>
+  </div>
+  <div class="drop" data-edit>拖入 <b>图片 / 视频 / 文档 / 代码</b>，或 <b>点击选择</b><br>
+    <span class="mono">单文件 ≤ 200MB · 视频自动抽帧供模型读 · 大文件存对象存储，对话内只留引用</span></div>
+  <div style="display:flex;gap:8px;margin-top:10px">
+    <input placeholder="说点什么…" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:9px 11px;color:var(--tx);font-family:inherit">
+    <button>发送</button></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>为什么这里不需要 unlock <span class="ref">业主问</span></h3>
+  <div class="grid g2">
+    <div class="card"><b class="cell-fail">旧 view 页</b>
+      <div style="margin-top:6px;font-size:12.5px">页面本身<b>不含身份</b> ⇒ 只能靠一个 unlock 码放行。<br>
+      本席此前实测：<code>VS_AUTO_UNLOCK</code> <b>默认为 "1"</b>，代码会自动 POST <code>{"code":"0000"}</code>
+      到 <code>/api/terminal/mock-unlock</code>。</div>
+      <div class="note bad" style="margin-top:8px">🔴 本席当时的判定：该后门<b>当前是哑的，但「哑」是意外</b> ——
+      组件不匹配（Go 的 <code>404 page not found</code> 与 nginx 的 HTML 404 不同源），<b>不是配置出来的</b>。
+      <b>配置一变就活。</b></div></div>
+    <div class="card"><b class="cell-ok">主界面内对话</b>
+      <div style="margin-top:6px;font-size:12.5px">进来的人<b>已经过三级映射认证</b>（人 → 租户 → 会话，§21.1），
+      且本次经由的渠道强度已知（§21.4）。<br><b>身份在会话里，不在一个码里。</b></div>
+      <div class="note" style="margin-top:8px">✅ <b>砍掉 view 页 ⇒ unlock 这个面整个消失</b>，
+      连带关掉本席清单上那条悬项「<code>VS_AUTO_UNLOCK=0</code> 应显式设置」——
+      该项一直卡在需要 prodops 执行、本席无主机权限。<br>
+      <b>不需要设 0 了，因为没有那个开关了。</b></div></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 与 §25.4 相撞 —— 但核下来不是真冲突 <span class="ref">§0.5 冲突处置</span></h3>
+  <div class="note bad" data-edit>§25.4 <b>全节两行</b>：「<b>不砍 view 页，sidecar 常开做旁路。</b>
+  理由：平台故障时，若唯一通道是平台自身，ops-Agent 无法恢复平台。」</div>
+  <div class="note warn" data-edit>⚠️ <b>问题出在这一句把两件事捆在一起，却只给了其中一件的理由。</b><br>
+  那个理由（<b>需要一条不依赖平台的旁路</b>）成立，但它支持的是 <b>sidecar</b> ——
+  <b>view 页本身就是平台的一部分，它不承担这个职能</b>；平台挂了，view 页一样挂。</div>
+  <table><thead><tr><th style="width:120px"></th><th>职能</th><th style="width:100px">平台故障时</th><th style="width:96px">处置</th></tr></thead><tbody>
+  <tr><td><b>view 页</b></td><td data-edit>常规交互界面：渲染终端输出、人在上面输入、分页尾锚、<b>unlock</b></td>
+    <td class="cell-fail">一起挂</td><td class="cell-fail"><b>可砍</b></td></tr>
+  <tr><td><b>sidecar</b></td><td data-edit>各会话宿主上的本地端点（实测 5/5 可用），<b>不经平台</b></td>
+    <td class="cell-ok">仍可达</td><td class="cell-ok"><b>必须留</b></td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 <b>本席的消解建议</b>：§25.4 拆成两条独立裁定 ——<br>
+  ① <b>sidecar 常开做旁路</b>（保留原理由，不变）<br>
+  ② <b>view 页由主界面内的 Agent 对话面替代</b>（新，理由：身份已在会话中，unlock 面随之消失）<br>
+  <b>捆在一起时看着是冲突，拆开后两条并不矛盾。</b></div>
+  <div class="note bad" data-edit>🔴 <b>本席须认一处</b>：这一句是本席从 charter §10.2 原样搬进 SpecDoc 的，
+  <b>没检查这一句里的两个断言是否共享同一个理由</b>。这是本席「<b>合并多源文档未做结论对撞</b>」缺陷的第 6 次实例
+  —— 前五次是同一主题在不同源件里打架，这次是<b>同一句话里的两个断言只有一个有依据</b>。</div>
+  <div class="chk warn2" data-edit>⚠️ <b>按 §0.5：不得两存。</b>本席不擅自改已 PASS 的 §25.4。
+  请业主裁：<b>采纳上述拆分</b>（则回写 §25.4 为两条）· 或 <b>维持原条款</b>（则本屏撤除）。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>多模态上传的治理问题 <span class="ref">缺口 · 拟 §25.8</span></h3>
+  <div class="note bad" data-edit>🔴 <b>全文搜「多模态 / 上传 / 图片 / 视频 / 附件」——零命中。</b>
+  唯一沾边的是 §27.1「富文本与附件能力差异」，那是<b>平台侧要吸收的渠道差异</b>，不是 Agent 侧的上传能力。</div>
+  <table><thead><tr><th style="width:130px">问题</th><th>本席建议</th></tr></thead><tbody>
+  <tr><td>存哪</td><td data-edit>存对象存储（§26.4 资源池的 <code>cos-*</code> 条目）；<b>对话与帖子流内只留引用 + sha256</b>，不内联大 blob</td></tr>
+  <tr><td class="cell-fail"><b>密级</b></td><td data-edit>🔴 <b>上传前须做内容扫描定级</b>。
+    一张运维截图可能含<b>主机 IP、token、拓扑</b> ⇒ 属 <span class="s0">S0</span>，
+    而 §22.4 定 <b>S0 不落任何文档、帖子、流、日志</b>，对话入帖子流 ⇒ <b>直接违反</b>。<br>
+    上例第 5 条即演示此拦截。<b>这不是可选的体验优化，是规范硬性要求的必然推论。</b></td></tr>
+  <tr><td>跨租户</td><td data-edit>附件继承所在 node 的租户；<b>禁止跨租户流动</b>，同 §15.3 ——
+    <b>RLS 管数据表，管不到一张图里画了什么</b></td></tr>
+  <tr><td class="cell-fail"><b>入 digest</b></td><td data-edit>🔴 附件是帖子的一部分 ⇒ 须入封存 digest。
+    但 §18.6 的规范序列只列了 <code>tenant/node/seq/actor/ts/content</code> ——
+    <b>附件引用是否算 content 的一部分，规范未定</b>。<br>
+    这正好接上本席上一轮标的「<b>帖子表列未定义</b>」缺口：两处须一并补</td></tr>
+  <tr><td>视频处理</td><td data-edit>自动抽帧供模型读；<b>抽帧结果也是派生物</b>，同样受密级与租户约束，
+    <b>不得因「只是缩略图」而降级</b></td></tr>
+  <tr><td>体积闸</td><td data-edit>单文件上限 + 单 node 累计上限；<b>超限不静默截断，明确拒收并说明</b></td></tr>
+  </tbody></table>
 </div>
 </section>
 
