@@ -149,6 +149,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <a href="#s7">帖子流 <span class="mono">§18</span></a>
   <div class="grp">主界面</div>
   <a href="#a8">Agent 对话（多模态） <span class="mono">§25.4 改</span></a>
+  <a href="#a9">ops 紧急对话 <span class="mono">§25.4 补</span></a>
   <div class="grp">Agent 面</div>
   <a href="#a1">Agent 列表 <span class="mono">§26·新</span></a>
   <a href="#a2">Agent 工作面 <span class="mono">新增</span></a>
@@ -1598,6 +1599,127 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
     <b>不得因「只是缩略图」而降级</b></td></tr>
   <tr><td>体积闸</td><td data-edit>单文件上限 + 单 node 累计上限；<b>超限不静默截断，明确拒收并说明</b></td></tr>
   </tbody></table>
+</div>
+</section>
+
+<!-- ============ A9 ops 紧急对话 ============ -->
+<section class="scr" id="a9">
+<h2 data-edit>ops 紧急对话</h2>
+<div class="sub" data-edit>不受平台影响；只要 ops-Agent 在运行就能交互。<b style="color:var(--warn)">§25.4 只给了理由，未给界面定义</b></div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>ops-Agent 的两个入口 <span class="ref">业主定 · 拟 §25.4</span></h3>
+  <div class="grid g2">
+    <div class="card"><b class="cell-ok">① 常规交互面</b>
+      <div class="kv" style="margin-top:8px"><b>经过</b><div>平台</div><b>身份</b><div>三级映射（人 → 租户 → 会话）</div>
+      <b>凭据</b><div class="cell-ok">不需要额外的码</div><b>平台故障时</b><div class="cell-fail">不可用</div>
+      <b>能力</b><div>全量（按角色与授权）</div></div></div>
+    <div class="card" style="border-color:#5a4415"><b class="cell-wait">② ops 紧急对话面</b>
+      <div class="kv" style="margin-top:8px"><b>经过</b><div class="cell-ok"><b>不经平台</b> · 跑在 sidecar 上</div>
+      <b>身份</b><div class="cell-fail">三级映射<b>不可用</b>（平台可能已挂）</div>
+      <b>凭据</b><div class="cell-wait"><b>临时 web 密码</b>（带外）</div>
+      <b>平台故障时</b><div class="cell-ok"><b>仍可用</b> —— 这是它存在的全部理由</div>
+      <b>能力</b><div class="cell-fail">收窄，见下</div></div></div>
+  </div>
+  <div class="note" data-edit>📌 <b>为什么这里用密码不算倒退。</b>本席在 A8 屏说「view 的 unlock 是缺陷」，
+  与本屏用密码<b>并不矛盾，因为前提不同</b>：<br>
+  <b>常规面</b>——身份基础设施在线，<b>有身份却不用、改用一个码</b>，那是缺陷；<br>
+  <b>紧急面</b>——平台已挂，三级映射<b>本来就不可用</b>，<b>没有身份可依</b> ⇒ 必须有带外凭据。<br>
+  <b>同一个机制，前提不同：一个是漏洞，一个是必需。</b></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>紧急面 · 登录 <span class="ref">拟 §25.4</span></h3>
+  <div style="max-width:420px;margin:0 auto;background:#101319;border:1px solid #4a3a10;border-radius:8px;padding:18px">
+    <div style="text-align:center;font-size:13px;color:var(--warn);margin-bottom:4px">⚠️ ops 紧急通道</div>
+    <div style="text-align:center;font-size:11.5px;color:var(--dim);margin-bottom:14px" class="mono">zzc-prodops-2642 @ 本机 sidecar · 不经平台</div>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:5px">临时 web 密码</div>
+    <input type="password" value="••••••••••••" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:9px 11px;color:var(--tx);font-family:inherit">
+    <div class="mono" style="margin-top:6px;color:var(--dim)">本机 <code>~/.dingwei/emergency.pass</code> · 仅 ops 可读 · 每 24h 轮转</div>
+    <button style="width:100%;margin-top:12px">进入</button>
+    <div class="mono" style="margin-top:10px;color:var(--dim)">失败 3 次锁定 15 分钟 · 限速 1 次/秒 · 每次尝试本地落账</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>临时密码怎么下发 <span class="ref">本席建议 · 待裁</span></h3>
+  <div class="note bad" data-edit>🔴 <b>核心约束：密码不能只存在平台侧。</b>平台挂了还要靠平台校验密码，那这条通道就是假的。</div>
+  <table><thead><tr><th style="width:130px">环节</th><th>做法</th><th style="width:160px">平台挂了还成立吗</th></tr></thead><tbody>
+  <tr><td>生成</td><td data-edit><b>由本机 sidecar 本地生成</b>，写入 <code>~/.dingwei/emergency.pass</code>（仅 ops 可读）</td>
+    <td class="cell-ok">✓ 不依赖平台</td></tr>
+  <tr><td>轮转</td><td data-edit>每 24h 自动轮转；<b>轮转不依赖平台在线</b></td><td class="cell-ok">✓</td></tr>
+  <tr><td>取用 · 路径甲</td><td data-edit><b>宿主本地读取</b>（ops 有主机访问权）</td><td class="cell-ok">✓ <b>平台挂时用这条</b></td></tr>
+  <tr><td>取用 · 路径乙</td><td data-edit>平台正常时，<b>镜像一份到 ops 的强身份渠道</b>（飞书/企微），方便日常取用</td>
+    <td class="cell-fail">✗ 仅平台在线时可用</td></tr>
+  <tr><td>校验</td><td data-edit><b>sidecar 本地校验</b>，不回平台</td><td class="cell-ok">✓</td></tr>
+  <tr><td>吊销</td><td data-edit>平台在线时可远程吊销；<b>离线时以本地轮转为准</b></td><td class="cell-ok">✓ 降级但可用</td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ <b>路径乙不能成为唯一路径。</b>若只从飞书取密码，平台一挂就取不到 ——
+  这条通道就退化成「平台好的时候才能用的应急通道」，等于没有。<b>路径甲是本体，路径乙只是便利。</b></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 能力必须收窄 —— 紧急通道不是全权通道 <span class="ref">§24.3a 同源</span></h3>
+  <div class="note bad" data-edit>这个面绕开了平台的<b>全部</b>管控：无三级映射、无 RLS、无出站闸、无待决队列、无重两签。
+  <b>若它是全权的，它就是一个带密码的后门。</b><br>
+  ⇒ 按 §24.3a 已定的同一逻辑：<b>紧急通道只允许单调收紧。</b></div>
+  <div class="grid g2">
+    <div class="card"><b class="cell-ok">允许</b>
+      <div style="margin-top:8px;font-size:12.5px">✓ 查看会话状态、日志、水位<br>✓ 诊断：跑只读检查命令<br>
+      ✓ <code>disable</code> / <code>quarantine</code> / <code>revoke</code>（须有 fallback）<br>
+      ✓ 重启本会话 / 拉起挂掉的组件<br>✓ 与本 ops-Agent 对话，让它去恢复平台</div></div>
+    <div class="card"><b class="cell-fail">禁止</b>
+      <div style="margin-top:8px;font-size:12.5px" class="dis">✗ 安装 / 升级任何制品<br>✗ 签发凭据、延长有效期<br>
+      ✗ 新增或放宽 capability policy<br>✗ 跨租户任何操作<br>✗ 收口 node / 签门 / 批准批次<br>
+      ✗ 读取 S0 / S1 内容<br>✗ 修改 immutable 件</div></div>
+  </div>
+  <div class="note warn" data-edit>⚠️ <b>判据仍是 capability effect，不是动作名</b>（§24.3a）：
+  该动作执行后<b>是否存在任一主体的权限或可达范围被扩大</b>。存疑即拒。<br>
+  <b>「让 ops-Agent 去恢复平台」是允许的</b> —— 因为恢复动作本身仍受平台恢复后的管控约束；
+  <b>紧急面给的是「够到它」的能力，不是「替它做决定」的能力。</b></div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>平台挂了，怎么落账 <span class="ref">本席认为这是最容易漏的一条</span></h3>
+  <div class="note bad" data-edit>🔴 <b>不能因为平台挂了就没有审计。</b>否则「先把平台弄挂，再走紧急通道」
+  就成了一条<b>清空审计的路径</b> —— 这与 §21.4「解绑不得重写历史审计」是同一个道理。</div>
+  <table><tbody>
+  <tr><td style="width:150px">离线期间</td><td data-edit><b>本地 append-only 落账</b>：每次登录尝试、每条指令、每个结果，
+    写入宿主本地不可改日志（<code>~/.dingwei/emergency.audit</code>）</td></tr>
+  <tr><td>平台恢复后</td><td data-edit><b>强制回传补账</b>，并入正式审计流；<b>回传前该 ops-Agent 不得领新件</b></td></tr>
+  <tr><td class="cell-fail">回传缺失</td><td data-edit>🔴 计数器「<b>紧急通道使用后未完成回传补账的次数</b>」应恒为 0；
+    &gt;0 即告警 —— <b>这正是「先弄挂再操作」这条攻击路径的探测点</b></td></tr>
+  <tr><td>事后</td><td data-edit>每次紧急通道启用<b>必须进入下一批次补审</b>（§24.3 事后 flag 制，不新造通道）</td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>⚠️ 一处需业主明确的读法 <span class="ref">与 A8 屏相关</span></h3>
+  <div class="note warn" data-edit>业主本条说「ops-Agent 应有两个入口：<b>view 提供的正常交互页面</b>，还应有紧急对话页」，
+  而上一条说「view 页不应再保留」。两句在字面上不一致，本席不猜，列两读法：<br><br>
+  <b>读法甲</b>：「view 提供的正常交互页面」指的是<b>常规交互入口</b>这一职能，
+  它现在由主界面内的 Agent 对话面（A8 屏）承担 ⇒ <b>view 页仍砍</b>，ops-Agent 的两个入口 = 主界面对话 + 紧急页。<br>
+  <b>读法乙</b>：<b>ops-Agent 是例外</b>，为其保留 view 页 ⇒ §25.4「不砍 view」对 ops-Agent 有效，对其余 Agent 失效。<br><br>
+  <b>本席倾向甲</b>，理由：读法乙会让 unlock 这个面<b>在 ops-Agent 上继续存在</b>，
+  而 ops-Agent 恰恰是权限最高的一类 —— <b>把后门留在权限最高的地方，是最坏的一种保留法</b>。
+  且甲不损失任何能力：常规走主界面，故障走紧急页，两条都在。<br>
+  <b>请业主一句话定。</b>这直接决定 §25.4 怎么改写。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>缺口收敛：§25.4 的界面定义至此补齐 <span class="ref">§25.4</span></h3>
+  <div class="note" data-edit>本席此前标 §25.4 为缺口（全节两行、只有结论无界面定义）。业主本条把它填上了：
+  <b>不受平台影响 · 只要 ops-Agent 在运行就能交互 · 需输入临时 web 密码</b>。<br>
+  拟回写 <b>§25.4 直连 Agent 的交互通道</b>，扩为：两个入口的职能划分 · 临时密码的生成/轮转/取用/校验/吊销
+  （<b>本体在宿主本地，平台侧只是便利镜像</b>）· <b>能力收窄清单</b>（capability effect 判据，同 §24.3a）·
+  <b>离线本地落账 + 恢复后强制回传补账 + 回传缺失计数器</b> · 每次启用进下一批次补审。</div>
 </div>
 </section>
 
