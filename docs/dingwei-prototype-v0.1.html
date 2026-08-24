@@ -1054,10 +1054,10 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 <h2 data-edit>配置新 Agent · 工单</h2>
 <div class="sub" data-edit>在已有云资源中配置出一个可运行的 Agent。<b style="color:var(--warn)">SpecDoc 全文未定义环境供给，见屏底</b></div>
 
-<div class="note bad" data-edit>🔴 <b>本工单不收任何凭据。</b>§22.4 定 VPN 凭据 / 签名私钥 / 根证书为 <b>S0：不落任何文档、帖子、流、日志</b>；
-而工单是一份<b>会流经审批并落账</b>的记录。<br>
-⇒ 工单里只出现<b>资源池引用 ＋ 权限范围声明</b>；<b>凭据由平台在实例化时注入</b>，工单侧永不可见。
-一个照常识画的表单会有「VPN 账号 / 密码」输入框 —— <b>那就直接违反 §22.4</b>。</div>
+<div class="note" data-edit>📌 <b>整屏前提（只说一次）：工单里是【资源引用 ＋ 权限范围】，不是凭据。</b>
+凭据由平台在实例化时注入，工单侧不出现、不落账。<br>
+<b>企业统一资源</b>（VPN 等）由<b>平台级 ops 统一维护</b> —— 工单侧只决定<b>用不用、用哪条</b>，
+不涉及配置与凭据。这也顺带满足 §22.4（S0 不落任何文档/帖子/流/日志）：<b>结构上没给它位置</b>。</div>
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
@@ -1083,13 +1083,14 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>② 环境配置 · 从资源池引用 <span class="ref">缺口 · 拟 §26.4</span></h3>
   <div class="res"><div class="lb">大模型运行 VPN</div><div>
-    <select id="npVpn1"><option value="s0">llm-egress-hk（资源池 #R-004）</option><option value="none">不需要（走内网直连）</option></select>
-    <div class="nocred" style="margin-top:5px">🔒 凭据等级 <span class="s0">S0</span> · <b>本工单不显示、不接受凭据</b> —— 仅记录引用 <code>#R-004</code>；
-    实例化时由平台注入到运行时环境变量，<b>不落工单、不落帖子流、不落日志</b></div></div><div class="sc"><span class="s0">S0</span></div></div>
+    <select id="npVpn1"><option>llm-egress-hk（#R-004）</option><option>llm-egress-sg（#R-005）</option><option>不需要（走内网直连）</option></select>
+    <div class="mono" style="margin-top:4px">企业统一资源 · 平台级 ops 维护 · 工单侧只选用哪条</div></div>
+    <div class="sc"><span class="mono" style="color:var(--dim)">ops 域</span></div></div>
 
   <div class="res"><div class="lb">企业环境 VPN</div><div>
     <select><option>corp-vpn-prod（#R-001）</option><option>corp-vpn-devtest（#R-002）</option><option>不需要</option></select>
-    <div class="nocred" style="margin-top:5px">🔒 同上 <span class="s0">S0</span> · 仅引用</div></div><div class="sc"><span class="s0">S0</span></div></div>
+    <div class="mono" style="margin-top:4px">同上 · 选哪条决定可达哪些内网段，具体网段由 ops 侧维护</div></div>
+    <div class="sc"><span class="mono" style="color:var(--dim)">ops 域</span></div></div>
 
   <div class="res"><div class="lb">对象存储</div><div>
     <select id="npOss"><option value="s2">cos-devtest / 前缀 imgsearch-poc/（#R-011）</option>
@@ -1155,17 +1156,20 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <h3>资源池 <span class="ref">缺口 · 拟 §26.4</span></h3>
   <table><thead><tr><th style="width:70px">编号</th><th>资源</th><th style="width:90px">类型</th><th style="width:52px">级</th>
   <th style="width:110px">归属</th><th style="width:130px">谁可引用</th></tr></thead><tbody>
-  <tr><td class="mono">#R-001</td><td data-edit>corp-vpn-prod</td><td>企业 VPN</td><td><span class="s0">S0</span></td><td>平台域</td><td>平台级 ops · 逐次授权</td></tr>
-  <tr><td class="mono">#R-002</td><td data-edit>corp-vpn-devtest</td><td>企业 VPN</td><td><span class="s0">S0</span></td><td>平台域</td><td>租户级 ops 可申请</td></tr>
-  <tr><td class="mono">#R-004</td><td data-edit>llm-egress-hk</td><td>大模型出口 VPN</td><td><span class="s0">S0</span></td><td>平台域</td><td>全租户（凭据不外露）</td></tr>
+  <tr><td class="mono">#R-001</td><td data-edit>corp-vpn-prod</td><td>企业 VPN</td><td class="mono" style="color:var(--dim)">ops 域</td><td>平台级 ops 维护</td><td>可引用（凭据不出 ops 手）</td></tr>
+  <tr><td class="mono">#R-002</td><td data-edit>corp-vpn-devtest</td><td>企业 VPN</td><td class="mono" style="color:var(--dim)">ops 域</td><td>平台级 ops 维护</td><td>可引用</td></tr>
+  <tr><td class="mono">#R-004</td><td data-edit>llm-egress-hk</td><td>大模型出口 VPN</td><td class="mono" style="color:var(--dim)">ops 域</td><td>平台级 ops 维护</td><td>可引用</td></tr>
+  <tr><td class="mono">#R-005</td><td data-edit>llm-egress-sg</td><td>大模型出口 VPN</td><td class="mono" style="color:var(--dim)">ops 域</td><td>平台级 ops 维护</td><td>可引用</td></tr>
   <tr><td class="mono">#R-010</td><td data-edit>cos-prod</td><td>对象存储</td><td><span class="s1">S1</span></td><td>租户</td><td class="cell-fail">云上形态 + 显式授权</td></tr>
   <tr><td class="mono">#R-011</td><td data-edit>cos-devtest</td><td>对象存储</td><td><span class="s2">S2</span></td><td>租户</td><td>全形态</td></tr>
   <tr><td class="mono">#R-021</td><td data-edit>ts3poc-testenv</td><td>开发测试环境</td><td><span class="s2">S2</span></td><td>租户</td><td>全形态</td></tr>
   <tr><td class="mono">#R-022</td><td data-edit>preprod</td><td>准生产环境</td><td><span class="s1">S1</span></td><td>租户</td><td class="cell-fail">云上形态 + 显式授权</td></tr>
   <tr><td class="mono">#R-030</td><td data-edit>git-signing-key</td><td>签名私钥</td><td><span class="s0">S0</span></td><td>平台域</td><td class="cell-fail">业主逐次授权</td></tr>
   </tbody></table>
-  <div class="note" data-edit>📌 <b>资源池是引用的唯一来源。</b>工单不得填写池外资源 —— 否则等于绕过分级与授权。
-  新增池条目本身是<b>平台域基线变更</b>（§24），走 ops 汇总 + 平台管理者审批。</div>
+  <div class="note" data-edit>📌 <b>「级」列＝该资源对【工单申请方】的授权含义</b>，不是资源自身的密级。<br>
+  标 <span class="mono" style="color:var(--dim)">ops 域</span> 的（VPN 等企业统一资源）：<b>密级与配置由平台级 ops 承担，工单侧只是选用哪条</b>；
+  标 <span class="s1">S1</span> / <span class="s2">S2</span> 的（对象存储、环境）：<b>授权范围由工单声明，故需按形态与权限判</b>。<br>
+  资源池是引用的唯一来源，工单不得填池外资源。新增池条目本身是<b>平台域基线变更</b>（§24）。</div>
 </div>
 
 <div class="panel">
@@ -1343,7 +1347,7 @@ document.getElementById('bRst').onclick=function(){
     document.getElementById('npEnvTag').textContent = env.value==='s1'?'S1':'S2';
 
     if(oss.value==='s1'||env.value==='s1') maxLv='S1';
-    if(sign.checked) maxLv='S0';
+
 
     if(fv!=='cloud' && (oss.value==='s1'||env.value==='s1')){
       out.push(['stop','🔴 <b>拒绝</b>：'+(fv==='local'?'本地不受控终端':'IDE 插件')
@@ -1351,8 +1355,8 @@ document.getElementById('bRst').onclick=function(){
         +'）。§26.1 定本地<b>默认仅 S2</b>；IDE 的 S1 须显式授权 ＋ 时限。<br>改法：换 S2 资源，或另开一张<b>逐次授权</b>工单。']); stop=true;
     }
     if(sign.checked){
-      out.push(['stop','🔴 <b>须业主逐次授权</b>：签名私钥属 <span class="s0">S0</span>（§22.4）。'
-        +'本工单不可自助放行，且<b>私钥永不进工单</b> —— 仅记录引用 <code>#R-030</code>。']); stop=true;
+      out.push(['warn2','⚠️ 勾了<b>提交签名</b>：签名私钥与 VPN 不同 —— 它产出<b>可归因的制品</b>（签名 commit），'
+        +'故须<b>业主授权</b>一次，之后按项目有效。仅记录引用 <code>#R-030</code>。']);
     }
     if(ossW.checked && oss.value==='s1'){
       out.push(['stop','🔴 <b>拒绝</b>：对生产对象存储请求<b>写权</b>。写权爆炸半径不可重置 ⇒ 属高危，'
