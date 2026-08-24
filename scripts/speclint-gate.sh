@@ -27,4 +27,19 @@ if [ "$FAIL" -ne 0 ]; then
   echo "  且须在提交信息里写明绕过理由 —— 堵死绕行不如让绕行留痕。"
   exit 1
 fi
+# ④ 原型改了就必须 bump 件内自述版本。
+#    立此判据的直接原因：delivery-check.sh 本是为「件内版本 vs 文件名版本不符」而写，
+#    可它跑在【投递时】—— 那时错已进仓。同一个错隔一个 commit 就复发了。
+#    ⇒ 闸要装在错能发生的地方，不是错被发现的地方。
+PROTO=docs/dingwei-prototype-v0.1.html
+if git diff --cached --name-only 2>/dev/null | grep -qx "$PROTO"; then
+  NEW=$(grep -o "原型 v[0-9]*\.[0-9]*" "$PROTO" | head -1)
+  OLD=$(git show HEAD:"$PROTO" 2>/dev/null | grep -o "原型 v[0-9]*\.[0-9]*" | head -1)
+  if [ -n "$OLD" ] && [ "$NEW" = "$OLD" ]; then
+    echo "✗ 原型内容已改，但件内自述版本仍为 $NEW —— 请 bump 后再提交"
+    echo "  （评审方打开页面看到的是标题里的版本；不 bump 等于告诉他这是旧件）"
+    exit 1
+  fi
+  echo "  ④ 原型版本 $OLD → $NEW ✓"
+fi
 echo "✓ 三道门全过"
