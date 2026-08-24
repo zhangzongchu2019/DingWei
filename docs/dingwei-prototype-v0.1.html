@@ -143,6 +143,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <a href="#a5">spec 准入检查 <span class="mono">新增</span></a>
   <a href="#a6">交付物链路 <span class="mono">新增</span></a>
   <a href="#s3">知识库 <span class="mono">§25.2</span></a>
+  <a href="#b1">分级对齐 <span class="mono">业主定 · 新</span></a>
   <div class="grp">资产与执行</div>
   <a href="#s5">skill / MCP 库 <span class="mono">§15·16</span></a>
   <a href="#s6">Agent 管理 <span class="mono">§26</span></a>
@@ -1827,6 +1828,155 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   拟回写 <b>§25.4 直连 Agent 的交互通道</b>，扩为：两个入口的职能划分 · 临时密码的生成/轮转/取用/校验/吊销
   （<b>本体在宿主本地，平台侧只是便利镜像</b>）· <b>能力收窄清单</b>（capability effect 判据，同 §24.3a）·
   <b>离线本地落账 + 恢复后强制回传补账 + 回传缺失计数器</b> · 每次启用进下一批次补审。</div>
+</div>
+</section>
+
+<!-- ============ B1 分级对齐 ============ -->
+<section class="scr" id="b1">
+<h2 data-edit>分级对齐 · 知识库 / skill / MCP</h2>
+<div class="sub" data-edit>业主 2026-08-24 对齐。<b style="color:var(--bad)">与现 SpecDoc §11 结构不一致，须重构</b></div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 先说结构：现 K0–K3 混了两个轴 <span class="ref">§11.1</span></h3>
+  <div class="note bad" data-edit>现 §11.1 五层：K0-pub · K0-sec · K1 项目知识库 · K2 版本上下文 · K3 任务上下文。<br>
+  <b>但 K0/K1 分的是【组织归属】，K2/K3 分的是【生命周期粒度】——两个不同的轴被排成了一列。</b><br>
+  业主本次给的四级（平台 / 业务 / 租户 / 租户项目）<b>纯粹是组织归属轴</b>，
+  <b>所以不该往 K0–K3 里塞，该把两轴分开。</b></div>
+  <div class="grid g2">
+    <div class="card"><b>轴一 · 组织归属</b>（业主定，知识的归属与可见域）
+      <div class="mono" style="margin-top:8px;line-height:1.9">
+      L0 <b>平台级</b>（企业级 / 团队）<br>
+      L1 <b>业务级</b>（线 / 部门-团队）<span class="cell-fail"> ← 现 SpecDoc 完全没有这一层</span><br>
+      L2 <b>租户级</b><span class="cell-wait"> ← 现 K1 未分出</span><br>
+      L3 <b>租户项目级</b><span class="cell-wait"> ← 现 K1 只有这一粒度</span></div></div>
+    <div class="card"><b>轴二 · 生命周期</b>（现 K2/K3，暂存与晋升）
+      <div class="mono" style="margin-top:8px;line-height:1.9">
+      版本上下文 —— 任务收口时汇入<br>
+      任务上下文 —— 实时<br><br>
+      <b>它们不是「层」，是晋升管道</b>：<br>
+      任务 → 版本 → <b>汇入轴一的某一级</b></div>
+      <div class="note" style="margin-top:8px">这与 §11.1 已有的晋升链一致，只是<b>终点从「K1 一层」改为「轴一四级」</b>。</div></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>四级 × 三类资产 <span class="ref">业主定 · 拟 §11 重写</span></h3>
+  <table><thead><tr><th style="width:130px">级</th><th>知识库</th><th>skill</th><th>MCP</th><th style="width:110px">分发</th></tr></thead><tbody>
+  <tr><td><b>L0 平台级</b><div class="mono">企业级 / 团队</div></td>
+    <td data-edit>企业规范 · 平台架构 · 网络 · DB 设计（<b>密级仍拆 pub/sec</b>）</td>
+    <td data-edit>产品定义规范 · 发版流程 · 帖子投递 · 交接纪律</td>
+    <td data-edit class="cell-ok"><b>企业 / 团队级 MCP</b></td>
+    <td class="cell-ok"><b>push 全体</b><div class="mono">强制</div></td></tr>
+  <tr><td class="cell-fail"><b>L1 业务级</b><div class="mono">线 / 部门-团队</div></td>
+    <td data-edit>该业务线共通：业务域模型 · 线内接口约定 · 线内前代系统</td>
+    <td data-edit>线内通用操作（如该线统一的发布检查）</td>
+    <td data-edit>线内共用 MCP</td>
+    <td class="cell-wait"><b>push 其辖下租户</b><div class="mono">线外不可见</div></td></tr>
+  <tr><td><b>L2 租户级</b></td>
+    <td data-edit>该租户共通：技术栈约定 · 环境清单 · 租户级运维预案</td>
+    <td data-edit>租户内通用操作</td>
+    <td data-edit class="cell-ok"><b>租户级 MCP</b></td>
+    <td class="cell-wait"><b>push 其辖下项目</b></td></tr>
+  <tr><td><b>L3 租户项目级</b></td>
+    <td data-edit>§12.1 十二类条目（产品定义 · 业务流程 · 代码位置 · 接口 · 对象 · 坑清单 · 运维预案 · 版本志…）</td>
+    <td data-edit>项目专用操作</td>
+    <td data-edit>项目专用（少见，多数应升 L2）</td>
+    <td>不 push</td></tr>
+  </tbody></table>
+  <div class="note" data-edit>📌 <b>MCP 分级是全新的。</b>现 SpecDoc §14 只定了<b>判型</b>（skill 还是 MCP），
+  <b>从未定过 MCP 归属哪一级</b>（全文搜「MCP 分级 / 平台级 MCP / 租户级 MCP」仅命中 §23.5 授权表一处）。
+  业主本次把它补上了。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>push / pull 的分界要重定 <span class="ref">§15 须改</span></h3>
+  <div class="note warn" data-edit>⚠️ 现 §15 定的是<b>两级两通道</b>：平台级 push 强制 · 租户级 pull 自取。
+  <b>四级之后，业务级走哪条？</b>这必须定，否则实施时会各做各的。</div>
+  <div class="note" data-edit>📌 <b>本席建议（待裁）：push / pull 的分界不在层级高低，在【辖域】。</b><br>
+  <b>push 的作用域 ＝ 该层级的辖域</b>：L0 push 全体 · L1 push 其辖下租户 · L2 push 其辖下项目 · L3 不 push。<br>
+  <b>pull 只能向上取，不能横向取</b> —— 这是 §15.3「禁止租户 B 直接 pull 租户 A」的推广：
+  <b>横向取用会绕过归属边界</b>，无论那个边界是租户之间还是业务线之间。</div>
+  <table><thead><tr><th style="width:150px">动作</th><th>是否允许</th></tr></thead><tbody>
+  <tr><td>L3 项目 pull L2 租户的</td><td class="cell-ok">✓ 向上取</td></tr>
+  <tr><td>L2 租户 pull L1 业务线的</td><td class="cell-ok">✓ 向上取</td></tr>
+  <tr><td>租户 A 项目 pull 租户 B 项目的</td><td class="cell-fail">✗ 横向 —— 须经抽象化 → 脱敏 → 晋升 → 上级 push（§15.3）</td></tr>
+  <tr><td>业务线甲 pull 业务线乙的</td><td class="cell-fail">✗ 横向 —— 同上，须升到 L0 再下发</td></tr>
+  </tbody></table>
+  <div class="note warn" data-edit>⚠️ <b>连带：§15.1 平台级准入三判据要按四级重写。</b>
+  现三判据（不引用具体业务概念 / 移出任一项目后仍完整可用 / 描述怎么做而非做什么）是<b>为 L0 写的</b>；
+  <b>L1 业务级按定义就受业务限制</b>，它过不了这三条 —— 所以 L1 需要<b>自己的准入判据</b>（如「不引用具体项目概念，但可引用业务域概念」）。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>知识来源与锚定 <span class="ref">业主定 · §13 须扩</span></h3>
+  <div class="note" data-edit>业主：<b>知识库源于代码和设计文档，有交付物锚定；也有企业公共库的导入（或链接）。</b></div>
+  <table><thead><tr><th style="width:130px">来源</th><th>锚</th><th style="width:150px">stale 判据</th></tr></thead><tbody>
+  <tr><td>代码</td><td class="mono">代码锚 <code>baseline_anchor</code>（commit 40hex / blob sha256）</td>
+    <td>锚落后且 diff 覆盖所述路径</td></tr>
+  <tr><td class="cell-wait"><b>设计文档 / 交付物</b></td>
+    <td class="mono cell-wait"><b>交付物锚</b> —— spec / 设计方案 / 测试报告的 <b>sha256 ＋ 版本</b></td>
+    <td>所锚交付物出新版本</td></tr>
+  <tr><td>部署环境</td><td class="mono">部署锚（组件 × 环境 × commit × 制品 sha256）</td>
+    <td>两锚不一致</td></tr>
+  <tr><td class="cell-fail"><b>企业公共库</b></td>
+    <td class="mono cell-fail"><b>外部源无我们的锚</b> —— 须定</td><td class="cell-fail">未定</td></tr>
+  </tbody></table>
+  <div class="note bad" data-edit>🔴 <b>「交付物锚」是第三种锚，现 SpecDoc 没有。</b>
+  §13.1 只定了 <code>baseline_anchor</code>＝commit/blob（<b>代码锚</b>）；「交付物锚」一词只在 §11.4 的
+  <b>派发快照</b>里出现过（「原交付物锚 ＝ 上一轮 <code>result_ref</code> ＋ sha256」），<b>从未用在知识条目上</b>。<br>
+  ⇒ 一条源于设计方案的知识，其新鲜度应随<b>那份设计方案</b>变，而不是随代码变 —— 这两者会各自独立漂移。</div>
+  <div class="note bad" data-edit>🔴 <b>企业公共库的导入 / 链接是全新的一类，全文零命中。</b>四个必须先定的点：<br>
+  ① <b>导入还是链接</b>：导入＝拷贝（可锚可控，但会漂移且要同步）；链接＝引用（永远最新，但<b>可用性与权限受制于人</b>）<br>
+  ② <b>锚</b>：外部库没有我们的 commit —— 用其版本号？内容 sha256？还是快照时刻？<b>无锚则 §13.3 的 stale 状态机失效</b><br>
+  ③ <b>密级</b>：外部内容进来后按谁的分级？<b>本席建议：按落入的层级重新定级，不继承外部标注</b><br>
+  ④ <b>可信度</b>：外部库内容<b>不受本平台的评审与门约束</b> ⇒ 不得直接作为施工依据，须标注来源</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>每周 · 租户级工作进展汇报 <span class="ref">业主定 · 拟 §20 扩</span></h3>
+  <div class="grid g2">
+    <div class="card"><b>输入（全部现成）</b>
+      <div style="margin-top:8px;font-size:12.5px">该租户下<b>全部项目</b>的：node digest（§20 摘要产物）·
+      门记录（含 FAIL 与整改）· blocker 记录 · 收口产物 · 帖子流触门与解封裁定</div>
+      <div class="note" style="margin-top:8px">与 §9.1 阶段复盘同源：<b>输入是现成的，不需要人回忆</b></div></div>
+    <div class="card"><b>产出</b>
+      <div style="margin-top:8px;font-size:12.5px">进展 · 阻塞项 · 需支援 · 分歧点 · 建议升级<br>
+      <b>廉价模型生成草稿</b>（同 §20），租户级 ops 或项目管理方定稿</div>
+      <div class="note warn" style="margin-top:8px">⚠️ <b>必须租户内</b> —— 周报聚合会读很多帖，
+      是与摘要 agent 同级的<b>易被忽略的泄漏面</b>（§20）</div></div>
+  </div>
+  <div class="note bad" data-edit>🔴 <b>粒度不一致，须先解决。</b>hub 侧已有 <code>project_weekly_report</code> 表
+  （<code>project_id · week · content</code>，<code>UNIQUE(project_id, week)</code>）—— 那是<b>按项目</b>；
+  业主要的是<b>按租户</b>。<br>
+  ⇒ 两种改法：<b>甲</b> 保留项目级周报，另加租户级聚合层（项目周报 → 租户周报）；
+  <b>乙</b> 改主键为 <code>(tenant, week)</code>，项目粒度降为周报内的分节。<br>
+  <b>本席倾向甲</b> —— 项目周报本身有用（项目管理方要看），且聚合比拆分容易；<b>请业主定。</b></div>
+  <div class="note" data-edit>📌 <b>周报本身是交付物 ⇒ 应入 L2 租户级知识库</b>，并绑<b>交付物锚</b>（其 sha256 ＋ 周次）。
+  这样「上周说要做的事」与「本周实际做的」可以逐周对账 —— 而这正是 §9.2 复盘第 4 段「判断失误」的周级素材。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>本次对齐要改动的 SpecDoc 条款 <span class="ref">汇总</span></h3>
+  <table><thead><tr><th style="width:110px">条款</th><th>改什么</th><th style="width:88px">规模</th></tr></thead><tbody>
+  <tr><td>§11 全节</td><td data-edit><b>重写</b>：两轴分离；组织归属轴四级；K2/K3 改述为晋升管道而非层</td><td class="cell-fail">大</td></tr>
+  <tr><td>§12</td><td data-edit>十二类条目按四级重新归位；补企业公共库导入/链接一类</td><td class="cell-wait">中</td></tr>
+  <tr><td>§13</td><td data-edit>补<b>交付物锚</b>（第三种）；补外部源的锚与 stale 判据</td><td class="cell-wait">中</td></tr>
+  <tr><td>§15</td><td data-edit><b>push/pull 按辖域重定</b>；L1 需自己的准入判据；横向 pull 禁令推广到业务线之间</td><td class="cell-fail">大</td></tr>
+  <tr><td>§14 / §16</td><td data-edit><b>补 MCP 分级</b>（现仅有判型，无归属层级）</td><td class="cell-wait">中</td></tr>
+  <tr><td>§20</td><td data-edit>扩出<b>租户级周报</b>；定粒度（甲/乙待裁）</td><td class="cell-wait">中</td></tr>
+  <tr><td>§22</td><td data-edit>RLS 策略按四级重算 —— 现只有租户一层边界</td><td class="cell-fail">大</td></tr>
+  <tr><td>§10</td><td data-edit>「权限域 × 记忆类型」二维中的<b>权限域改为四级</b></td><td>小</td></tr>
+  </tbody></table>
+  <div class="note bad" data-edit>🔴 <b>这是本轮所有对齐里改动面最大的一次。</b>前十二处缺口是「补没写的」，
+  本次是<b>「改已写的」</b> —— §11 的层级结构是 §12 / §13 / §15 / §22 共同依赖的底座。<br>
+  按 §28 第 4 条：<b>改规则须同步全部引用点，且依赖点未必与复述点用同一词汇</b>。
+  本席回写时会先做<b>依赖点全文扫描</b>，不直接改。</div>
 </div>
 </section>
 
