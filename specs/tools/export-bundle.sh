@@ -17,7 +17,7 @@ docs/tools/speclint.py docs/tools/speclint-corpus.md
 specs/constitution.md specs/README.md specs/platform/spec.md
 specs/platform/checklist.md specs/platform/checklist.security-reviewer.md
 specs/platform/checklist.crossartifact-reviewer.md specs/platform/checklist.INDEX.md
-specs/evidence/EVIDENCE.md specs/evidence/collect.sh
+specs/evidence/EVIDENCE.md specs/evidence/collect.sh specs/evidence/reference-index.md
 specs/tools/analyze.sh specs/tools/export-bundle.sh
 scripts/speclint-gate.sh scripts/arch-refcheck.sh scripts/delivery-check.sh scripts/gen-status.sh'
 
