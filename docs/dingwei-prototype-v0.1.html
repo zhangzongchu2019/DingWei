@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v0.1 · 依据 SpecDoc cb97d0d</title>
+<title>DingWei 平台原型 v1.7 · 依据 SpecDoc v3.11 14861da</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -122,7 +122,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
 <div id="top">
   <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v0.1</span></h1>
-  <span class="anchor">依据 SpecDoc cb97d0d · 1881 行</span>
+  <span class="anchor">依据 SpecDoc <b>v3.11</b> 14861da · 2985 行 · sha256 26844cbf…</span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -310,7 +310,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <table><thead><tr><th>spec</th><th style="width:64px">版本</th><th style="width:110px">评审状态</th>
   <th>预授权条目（范围 · 用途 · 时限）</th><th style="width:120px">生命周期</th></tr></thead><tbody>
   <tr><td data-edit><b>dingwei-platform-specdoc</b><div class="mono">父 spec · 子：S0–S8</div></td><td>v2.8</td>
-    <td class="cell-ok">✓ PASS<div class="mono">锚 cb97d0d</div></td>
+    <td class="cell-ok">✓ PASS<div class="mono">三域 PASS 锚 040e904<br>现锚 14861da（PASS 后含业主裁定）</div></td>
     <td class="lock">无预授权条目</td><td class="cell-ok">生效</td></tr>
   <tr><td data-edit><b>S1 身份与租户地基</b><div class="mono">L3 · 安全面=是</div></td><td>v0.1</td>
     <td class="cell-wait">草案 · 未评审</td>
@@ -325,7 +325,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
     <td data-edit><div class="dis">① 读生产索引统计 · 用于容量规划 · 至上线</div></td>
     <td class="cell-fail">已因上线 <code>expired</code><div class="mono">失效由 v3.2 收口触发</div></td></tr>
   </tbody></table>
-  <div class="note warn" data-edit>⚠️ 上线后 spec 作用域失效（§23.2 第 3 条）。<b>此后的访问授权由「运维预案」承接</b>（K1 §12.1 第 11 类），
+  <div class="note warn" data-edit>⚠️ 上线后 spec 作用域失效（§23.2 第 3 条）。<b>此后的访问授权由「运维预案」承接</b>（<b>D2</b> 知识库 · §12.1「运维预案」类），
   两者形式对称：都须经评审、都不自动放行、都须具体到范围·用途·时限。<b>交接点就是上线。</b></div>
 </div>
 
@@ -333,7 +333,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>架构设计文档 <span class="ref">§25.3c</span> <span style="font-weight:400;color:var(--dim);font-size:12px">须显示评审等级与已过的门</span></h3>
   <table><thead><tr><th>文档</th><th style="width:60px">等级</th><th>已过的门</th><th style="width:170px">可否作为施工依据</th></tr></thead><tbody>
-  <tr><td data-edit><b>SpecDoc v2.8</b></td><td class="d-high">L3</td>
+  <tr><td data-edit><b>SpecDoc v3.11</b></td><td class="d-high">L3</td>
     <td><span class="cell-ok">✓架构评审</span> <span class="cell-ok">✓用例评审</span> <span class="cell-ok">✓交付验证</span></td>
     <td class="cell-wait">⚠ 生效前置未闭 2 项<div class="mono">Spec Kit 工程结构 · checklist</div></td></tr>
   <tr><td data-edit><b>S7a 存储基座设计</b></td><td class="d-high">L3</td>
@@ -357,8 +357,8 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
     <button>检索</button>
   </div>
   <div class="note bad" data-edit>🔴 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
-  当前视角可见 <b>9 / 14</b> 条；<b>5 条 K0-sec 条目不在检索集合内</b>（不是「搜到了但打码」）。</div>
-  <div class="note" data-edit>排序 = <code>0.40·log(使用量) + 0.35·relevance + 0.25·importance</code>；importance 由层级给定（平台 1.0 / 租户 0.6 / 项目 0.3）；
+  当前视角可见 <b>9 / 14</b> 条；<b>5 条 <code>restricted</code> 条目不在检索集合内</b>（不是「搜到了但打码」）。</div>
+  <div class="note" data-edit>排序 = <code>0.40·log(使用量) + 0.35·relevance + 0.25·importance</code>；importance 由<b>归属域</b>给定（D0 1.0 / D1 0.75 / D2 0.5 / D3 0.3 —— 附录 A）；
   <b><code>suspect</code> 条目 ×0.5 降权</b> —— 锚失配必须参与排序，标了不参与排序等于没标。</div>
 </div>
 
@@ -370,29 +370,38 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
     <div class="chip">接口逻辑</div><div class="chip">对象介绍</div><div class="chip">服务架构</div><div class="chip">网络架构</div>
     <div class="chip">数据库设计</div><div class="chip">前代与迁移</div><div class="chip">坑清单</div><div class="chip">运维预案</div><div class="chip">版本志</div>
   </div>
-  <table><thead><tr><th>条目</th><th style="width:88px">类型</th><th style="width:74px">层</th><th style="width:52px">密级</th>
-  <th style="width:150px">锚（代码 / 部署）</th><th style="width:88px">状态</th></tr></thead><tbody>
-  <tr><td data-edit>DingWei 消息路由全流程</td><td>业务流程</td><td>K1</td><td><span class="s2">S2</span></td>
+  <table><thead><tr><th>条目</th><th style="width:88px">类型</th><th style="width:66px">归属域</th><th style="width:74px">可见性</th>
+  <th style="width:86px">生命周期</th><th style="width:150px">锚（代码 / 部署）</th><th style="width:88px">状态</th></tr></thead><tbody>
+  <tr><td data-edit>DingWei 消息路由全流程</td><td>业务流程</td><td><b>D2</b></td><td>internal</td><td class="mono">已汇入归属域</td>
     <td class="mono">代码 6ed4d1e<br>部署 6ed4d1e</td><td class="cell-ok">active</td></tr>
-  <tr><td data-edit>board / node DAG 与状态机</td><td>接口逻辑</td><td>K1</td><td><span class="s2">S2</span></td>
+  <tr><td data-edit>board / node DAG 与状态机</td><td>接口逻辑</td><td><b>D2</b></td><td>internal</td><td class="mono">已汇入归属域</td>
     <td class="mono">代码 4a91c02<br>部署 6ed4d1e</td><td class="cell-wait">suspect
     <div class="mono" style="color:var(--warn)">锚落后且 diff 覆盖所述路径</div></td></tr>
-  <tr><td data-edit>view_service 端点清单</td><td>接口逻辑</td><td>K1</td><td><span class="s2">S2</span></td>
+  <tr><td data-edit>view_service 端点清单</td><td>接口逻辑</td><td><b>D3</b></td><td>internal</td><td class="mono">已汇入归属域</td>
     <td class="mono">代码 df40ae38<br>部署 <b style="color:var(--bad)">416a1231</b></td><td class="cell-fail">suspect
     <div class="mono" style="color:var(--bad)">文档描述灰度，线上跑 t403</div></td></tr>
-  <tr><td data-edit>研发过程主要坑（含判断失误）</td><td>坑清单</td><td>K1 → 可晋升 K0-pub</td><td><span class="s2">S2</span></td>
+  <tr><td data-edit>研发过程主要坑（含判断失误）</td><td>坑清单</td><td><b>D2</b> <span class="cell-wait">→ 可晋升 D0</span></td><td>internal</td>
+    <td class="mono">已汇入归属域</td>
     <td class="mono">发生时 5fb246b</td><td class="cell-ok">active
+    <div class="mono">晋升＝跨 domain（§15 准入判据），<b>不是把 visibility 降到 public</b></div>
     <div class="mono">晋升前须去标识化</div></td></tr>
-  <tr><td data-edit>历届版本简介</td><td>版本志</td><td>K1</td><td><span class="s2">S2</span></td><td class="mono">收口自动生成</td><td class="cell-ok">active</td></tr>
-  <tr class="lock" data-sec="1"><td data-edit>🔒 平台服务架构与部署形态</td><td>服务架构</td><td><b>K0-sec</b></td><td><span class="s1">S1</span></td>
-    <td class="mono">—</td><td>不在检索集合</td></tr>
-  <tr class="lock" data-sec="1"><td data-edit>🔒 网络拓扑与主机清单</td><td>网络架构</td><td><b>K0-sec</b></td><td><span class="s0">S0</span></td>
-    <td class="mono">—</td><td>不在检索集合</td></tr>
-  <tr class="lock" data-sec="1"><td data-edit>🔒 PG schema 与连接方式</td><td>数据库设计</td><td><b>K0-sec</b></td><td><span class="s1">S1</span></td>
-    <td class="mono">—</td><td>不在检索集合</td></tr>
+  <tr><td data-edit>历届版本简介</td><td>版本志</td><td><b>D2</b></td><td>public</td><td class="mono">已汇入归属域</td><td class="mono">收口自动生成</td><td class="cell-ok">active</td></tr>
+  <tr><td data-edit>本轮任务的环节小结</td><td>—</td><td class="mono">尚未汇入</td><td>internal</td><td class="cell-wait"><b>版本上下文</b></td>
+    <td class="mono">node digest</td><td class="cell-ok">active
+    <div class="mono">生命周期是<b>晋升管道</b>，不是层：收口原语触发才汇入归属域</div></td></tr>
+  <tr class="lock" data-sec="1"><td data-edit>🔒 平台服务架构与部署形态</td><td>服务架构</td><td><b>D0</b></td><td><b class="cell-fail">restricted</b></td>
+    <td class="mono">已汇入归属域</td><td class="mono">—</td><td>不在检索集合</td></tr>
+  <tr class="lock" data-sec="1"><td data-edit>🔒 网络拓扑与主机清单</td><td>网络架构</td><td><b>D0</b></td><td><b class="cell-fail">restricted</b></td>
+    <td class="mono">已汇入归属域</td><td class="mono">—</td><td>不在检索集合</td></tr>
+  <tr class="lock" data-sec="1"><td data-edit>🔒 PG schema 与连接方式</td><td>数据库设计</td><td><b>D0</b></td><td><b class="cell-fail">restricted</b></td>
+    <td class="mono">已汇入归属域</td><td class="mono">—</td><td>不在检索集合</td></tr>
   </tbody></table>
-  <div class="note warn" data-edit>⚠️ <b>K0 拆 pub / sec 的理由</b>（§11.2）：K0 全量装载 ＋ query 全员 ＝ <b>每个 Agent 的上下文里都有全平台拓扑</b>。
-  而网络架构、数据库设计、服务架构正是横向移动最想要的东西。<b>K0-sec 在完成分级脱敏前不得开放全租户只读。</b></div>
+  <div class="note warn" data-edit>⚠️ <b>归属域 ≠ 可见性</b>（§10 · §11.4a）：<b>D0 的条目不等于全员可见。</b>
+  装载前须同时求 <b>归属域 ∩ 可见性</b>。上面三条 <b>D0 / restricted</b> 就是这个组合 ——
+  它们归平台维护（D0），但只能逐条授权看（restricted），<b>不因为归平台就人人可读</b>。
+  <div style="margin-top:6px">🔴 <b>四维正交，任一维不得替代另一维</b>：<code>visibility</code> 的变更<b>不改变</b> <code>domain_level</code>；
+  跨域是 §15 的<b>晋升</b>（须过该级准入判据），不是把可见性降到 <code>public</code>。</div>
+  <div style="margin-top:6px" class="mono">⛔ 旧模型的 K0-pub / K0-sec 已于 v3.0 撤销 —— 它把「归谁」和「谁能看」压在了一列里。</div></div>
   <div class="note" data-edit>📌 <b>知识库是四根管道，不是一根</b>（§12.2）：代码抽取 / 部署环境 / spec / 复盘 —— 权威源不同，
   不得指望一个 code-scanner 全包。十二类里只有 4 类真正源自代码。</div>
 </div>
@@ -543,17 +552,17 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
       <button style="margin-top:10px">新建并注入</button></div>
     <div class="card"><b>将注入什么</b>
       <table style="margin-top:8px"><tbody>
-      <tr><td>K0-pub</td><td class="cell-ok">全量</td><td class="mono">稳定前缀，吃 prompt caching</td></tr>
-      <tr><td>K0-sec</td><td class="cell-fail">不注入</td><td class="mono">implementer 无该授权</td></tr>
-      <tr><td>K1</td><td class="cell-wait">按需切片</td><td class="mono">Query(q, topK=8)</td></tr>
-      <tr><td>K2</td><td class="cell-ok">全量</td><td class="mono">当前版本摘要，量小</td></tr>
-      <tr><td>K3</td><td class="cell-ok">全量</td><td class="mono">＝派发信封本体</td></tr>
+      <tr><td><b>D0</b> · public/internal</td><td class="cell-ok">全量</td><td class="mono">稳定前缀，吃 prompt caching</td></tr>
+      <tr><td><b>D0</b> · <b>restricted</b></td><td class="cell-fail">不注入</td><td class="mono">implementer 无该授权 —— <b>同一个 D0，可见性不同则装载不同</b></td></tr>
+      <tr><td><b>D1 / D2 / D3</b>（∩ 可见性）</td><td class="cell-wait">按需切片</td><td class="mono">Query(q, topK=8)，先 RLS 过滤后检索</td></tr>
+      <tr><td>生命周期 · 版本上下文</td><td class="cell-ok">全量</td><td class="mono">当前版本摘要，量小</td></tr>
+      <tr><td>生命周期 · 任务上下文</td><td class="cell-ok">全量</td><td class="mono">＝派发信封本体</td></tr>
       <tr><td>平台级 skill</td><td class="cell-ok">全量 push</td><td class="mono">5 件 · 2.4k tokens</td></tr>
       <tr><td>租户级 skill</td><td class="cell-wait">已拉取 2 件</td><td class="mono">按租户目录</td></tr>
       </tbody></table></div>
   </div>
-  <div class="note" data-edit>📌 <b>skill 是第三类记忆</b>（§10）：权限域（K0–K3）决定<b>谁能看</b>，记忆类型决定<b>怎么存、怎么取、何时清</b>。
-  skill 有 K 层归属（平台级=K0 / 租户级=K1 / 项目级=K1·K2），与知识条目<b>共用同一套晋升、装载、RLS</b> ——
+  <div class="note" data-edit>📌 <b>skill 是过程性记忆</b>（§10 第 4 维）：<b>归属域</b>决定<b>归谁</b>、<b>可见性</b>决定<b>谁能看</b>，记忆类型决定<b>怎么存、怎么取、何时清</b>。
+  skill 有<b>归属域</b>（平台级=D0 / 业务级=D1 / 租户级=D2 / 项目级=D3），与知识条目<b>共用同一套晋升、装载、RLS</b> ——
   否则会出现「复盘写进了知识库，新 Agent 却读不到」。</div>
 </div>
 </section>
@@ -627,7 +636,12 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
       <div class="ct" data-edit><code>execution done ∧ verdict=pass</code> ⇒ 自动封存。顺序：先落 gate result，再算 digest。</div></div></div>
     <div class="sealed" style="margin-top:10px">🔒 已封存 · digest = sha256(JCS(tenant,node,seq,actor,ts,content)) = <b>a71c93e4…5f</b><br>
     DB 权限/trigger 拒 UPDATE·DELETE · 外部锚定待建（<b>未做到此项前，对恶意篡改防护为零</b>）<br>
-    → 晋升产物：环节小结（已入 K2）</div>
+    → 晋升产物：环节小结（已入<b>版本上下文</b>）</div>
+    <div class="note warn" data-edit style="margin-top:10px">⚠️ <b>后续说明（新 revision，原帖一字未改）</b>：
+    本 node 的结论「K0 拆 pub / sec」<b>已于 SpecDoc v3.0 撤销</b> —— 该拆分把「归谁」和「谁能看」压在了一列里，
+    现改为 <code>domain_level</code> 与 <code>visibility</code> <b>两个正交维度</b>（§10 · §11.4a）。
+    <div style="margin-top:6px" class="mono">🔴 <b>为什么不直接把帖子改对</b>：帖子流已封存，<b>§13 管道 3 与 §21.4b 都定「走新 revision，不得原地改历史」</b>。
+    改了历史，「当时为什么这么决定」就没了，而那正是 §9.2 复盘要的东西。</div></div>
     <div class="note" data-edit>📌 <b>6 帖不代表敷衍，代表没有分歧。</b>帖子数是分歧探测器，不是话痨指标 —— 界面不得把低帖数显示为负面。</div>
   </div>
 
@@ -674,8 +688,8 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <table><thead><tr><th style="width:130px">层级</th><th>封存时机</th><th style="width:150px">晋升产物</th><th style="width:90px">状态</th></tr></thead><tbody>
   <tr><td>node 帖子流</td><td data-edit><code>execution done ∧ verdict ∈ {not_required, pass, fail}</code>；<b><code>pending</code> 不封</b></td>
     <td>→ 环节小结</td><td class="cell-ok">已封 N-1140</td></tr>
-  <tr><td>task 帖子流</td><td data-edit>任务收口（调度者唯一关闭权）</td><td>→ 任务摘要 → <b>K2</b></td><td class="cell-wait">开着</td></tr>
-  <tr><td>version 帖子流</td><td data-edit>版本收口</td><td>→ 版本摘要 → <b>K1</b></td><td class="cell-wait">开着</td></tr>
+  <tr><td>task 帖子流</td><td data-edit>任务收口（调度者唯一关闭权）</td><td>→ 任务摘要 → <b>版本上下文</b></td><td class="cell-wait">开着</td></tr>
+  <tr><td>version 帖子流</td><td data-edit>版本收口</td><td>→ 版本摘要 → <b>汇入归属域</b></td><td class="cell-wait">开着</td></tr>
   </tbody></table>
   <div class="note" data-edit>「环节结束后还想讨论怎么办」有答案：<b>属于上一层</b>。node 封了 task 层还开着，task 封了 version 层还开着。<br>
   返工天然不污染：门 FAIL 走 <code>append_revision</code> 建<b>新 node</b>，新 node 有新帖子流。<br>
@@ -972,7 +986,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
     <b>FAIL evidence</b><div class="mono cell-ok">✓ 完整 · 含失败最小复现</div>
     <b>acceptance 锚</b><div class="mono cell-ok">✓ sha256:9c1f…4b <span style="color:var(--dim)">判据一改锚即变，防悄改判据</span></div>
     <b>规则版本</b><div class="mono cell-ok">✓ 分级规则表 v2026-08-24.1</div>
-    <b>上下文版本</b><div class="mono cell-ok">✓ K0-pub@r31 · K1@v1.4 · K2@v1.4</div>
+    <b>上下文版本</b><div class="mono cell-ok">✓ D0@r31 · D2@v1.4 · 版本上下文@v1.4</div>
     <b>context_budget</b><div><div class="bar hot"><i style="width:78%"></i></div><span class="mono">已用 78% · 上限 由 node 给定</span></div>
   </div>
   <div class="note" data-edit>📌 修订 node <b>不依赖 worker 记忆</b>，靠这份<b>不可变派发快照</b>重灌。
@@ -998,7 +1012,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <div class="kv">
     <b>本次增量</b><div>4 条（cursor 118 → 122）· 已 ACK</div>
     <b>去重</b><div class="mono">按 post_id / delivery_id 幂等 —— <b>at-least-once + dedupe，不宣称恰读一次</b></div>
-    <b>已注入上下文</b><div>K0-pub 全量 · K0-sec <span class="cell-fail">不注入（我无该授权）</span> · K1 切片 topK=8 · K2/K3 全量 · 平台级 skill 5 件</div>
+    <b>已注入上下文</b><div>D0·public/internal 全量 · D0·<code>restricted</code> <span class="cell-fail">不注入（我无该授权）</span> · D2 切片 topK=8 · 版本上下文 / 任务上下文 全量 · 平台级 skill 5 件</div>
   </div>
   <div class="note warn" data-edit>⚠️ 若本 node 触门被封锁，我这里会<b>停止收到注入</b>（三段式第 ① 段），
   但<b>仍可单次读取固定 snapshot</b>（第 ③ 段）—— 禁的是注入，不是读取。</div>
@@ -1355,7 +1369,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   <tr><td>T-1210</td><td class="d-low">L1</td><td><div class="bar"><i style="width:67%"></i></div><span class="mono">2 / 3</span></td>
     <td class="cell-wait">代码评审中</td></tr>
   </tbody></table>
-  <div class="note" data-edit>收口第 ⑧ 格须产出四项：<b>版本摘要 → K1</b> · <b>spec 预授权失效登记</b> ·
+  <div class="note" data-edit>收口第 ⑧ 格须产出四项：<b>版本摘要 → 汇入归属域</b> · <b>spec 预授权失效登记</b> ·
   <b>部署锚登记</b>（组件×环境×commit×制品 sha256）· <b>阶段复盘</b>（四段，含「本阶段的判断失误」）。
   <b>无复盘、无部署锚登记，不得收口。</b></div>
   <div class="chk stop">🔴 v1.4 当前不可收口：T-1204 链路未闭 · 阶段复盘第 4 段为空且未写明理由</div>
@@ -1528,7 +1542,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
         <span data-edit>prod-network-topo.png</span><span class="sz">已拦截</span><span class="s0">S0</span></div>
       <div class="note bad" style="margin-top:6px;padding:7px 10px">🔴 <b>上传被拒</b>：内容扫描判定含<b>主机 IP 与网络拓扑</b> ⇒ 属 <span class="s0">S0</span>。
       §22.4：<b>S0 不落任何文档、帖子、流、日志</b>；本对话会入帖子流，故不可承载。<br>
-      改法：该资料属 <b>K0-sec</b>，请在知识库内按 RLS 引用（<code>#KB-007</code>），<b>不要作为附件传入对话</b>。</div></div></div>
+      改法：该资料属 <b>D0 · restricted</b>，请在知识库内按 RLS 引用（<code>#KB-007</code>），<b>不要作为附件传入对话</b>。</div></div></div>
   </div>
   <div class="drop" data-edit>拖入 <b>图片 / 视频 / 文档 / 代码</b>，或 <b>点击选择</b><br>
     <span class="mono">单文件 ≤ 200MB · 视频自动抽帧供模型读 · 大文件存对象存储，对话内只留引用</span></div>
@@ -1838,6 +1852,12 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <div class="note warn" data-edit style="margin-bottom:12px">🕐 <b>本屏是【推演记录】，不是现行口径</b>（v2.x → v3.0 期间）。
+  结论已并入 §10 四个正交维度与 §11 归属分层，<b>屏内符号一律为当时写法，保留不改</b> ——
+  它记的是「当初为什么这么想、哪一步想错了」，抹掉就没了。
+  <div style="margin-top:6px" class="mono">🔴 <b>特别提示两处已被后续推翻的旧写法，勿照抄</b>：
+  ① 下方用 <b>L2 / L3</b> 表示归属域 —— SpecDoc v3.2 判定「同一符号三义」（风险级 L / 归属域 D / 出站闸 G），
+  归属域已改用 <b>D0–D3</b>；② <b>K0-sec</b> 作为「知识库的一层」已于 v3.0 撤销。</div></div>
   <h3>🔴 先说结构：现 K0–K3 混了两个轴 <span class="ref">§11.1</span></h3>
   <div class="note bad" data-edit>现 §11.1 五层：K0-pub · K0-sec · K1 项目知识库 · K2 版本上下文 · K3 任务上下文。<br>
   <b>但 K0/K1 分的是【组织归属】，K2/K3 分的是【生命周期粒度】——两个不同的轴被排成了一列。</b><br>
@@ -1920,7 +1940,7 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   §13.3 那整套 stale 状态机的存在，本身就说明<b>易变内容进知识库的维护成本极高</b>。</div>
 
   <div class="note bad" data-edit>🔴 <b>但「切分线＝层级」这一步，规范自己的标注反驳了。</b>§11.1 的「易变」列：<br>
-  <span class="mono">K0-pub 极低 · <b style="color:var(--bad)">K0-sec 中</b> · <b style="color:var(--ok)">K1 低</b> · K2 中 · K3 高</span><br>
+  <span class="mono">D0·public 极低 · <b style="color:var(--bad)">D0·restricted 中</b> · <b style="color:var(--ok)">D2 低</b> · K2 中 · K3 高</span><br>
   ⇒ <b>平台级的 sec 部分（中）比项目知识库（低）还易变。</b>「层级越高越稳定」不成立。</div>
 
   <div class="note bad" data-edit>🔴 <b>§12.1 的十二类看得更清楚：易变性是【横切】层级的。</b><br>
@@ -2244,7 +2264,7 @@ document.getElementById('bExp').onclick=function(){
       内容:st.notes[k].replace(/<[^>]+>/g,'').trim()};
   });
   var out={原型:'dingwei-prototype-v0.1.html',
-    依据SpecDoc锚:'cb97d0dd2856246383bfe33ee8f53db96d784646',
+    依据SpecDoc锚:'14861dae88920a5e6073a2aa1f5ac6948de2857d',
     说明:'把本文件发回 opus50t，据此改 SpecDoc §25-§27。若改动与已裁定条款冲突，会指出条款号请业主裁定，不得两存。',
     屏:scr,改文:改文,批注:批注};
   var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
@@ -2345,7 +2365,7 @@ var selPer=document.getElementById('persona');
 function applyPersona(){
   var v=selPer.value, plat=(v==='platops');
 
-  /* K0-sec 可见性：只有平台级 ops 在检索集合内 */
+  /* restricted 可见性：只有平台级 ops 在检索集合内 */
   document.querySelectorAll('#s3 tbody tr[data-sec]').forEach(function(tr){
     tr.classList.toggle('lock',!plat);
     tr.lastElementChild.innerHTML = plat ? '<span class="cell-ok">active</span>' : '不在检索集合';
@@ -2355,10 +2375,10 @@ function applyPersona(){
   });
   var n=document.querySelector('#s3 .note.bad');
   if(n) n.innerHTML = plat
-    ? '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>当前视角＝平台级 ops，K0-sec 三条<b>在</b>检索集合内（14 / 14 可见）。'
+    ? '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>当前视角＝平台级 ops，<code>restricted</code> 三条<b>在</b>检索集合内（14 / 14 可见）。'
       + '密级仍按条目分级：<b>S0 条目的实际访问须另有 capability</b>，可检索 \u2260 可读取。'
     : '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。'
-      + '当前视角可见 <b>9 / 14</b> 条；<b>5 条 K0-sec 条目不在检索集合内</b>（不是「搜到了但打码」）。';
+      + '当前视角可见 <b>9 / 14</b> 条；<b>5 条 <code>restricted</code> 条目不在检索集合内</b>（不是「搜到了但打码」）。';
 
   /* Agent 视角：把导航重心切到 Agent 面，并提示决断面非其职责 */
   var isAg=(v==='agent');
@@ -2377,7 +2397,7 @@ function applyPersona(){
     var na=document.querySelector('#nav a[href="#a2"]'); if(na) na.click();
   }else if(plat){
     b.className='note';
-    b.innerHTML='\uD83D\uDCCC <b>平台级 ops 视角。</b>K0-sec 已进入检索集合；职责＝生产系统、平台运维、公共资源（含平台级 skill / MCP / spec 模板）。'
+    b.innerHTML='\uD83D\uDCCC <b>平台级 ops 视角。</b><code>restricted</code> 条目已进入检索集合；职责＝生产系统、平台运维、公共资源（含平台级 skill / MCP / spec 模板）。'
       +'<b>整理汇总权，非批准权</b> —— 批准在平台管理者（§24.2）。';
   }else if(v==='tenops'){
     b.className='note';
