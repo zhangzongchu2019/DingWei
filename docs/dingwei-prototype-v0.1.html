@@ -76,6 +76,24 @@ font-size:12.5px;color:#b8c4da;margin:10px 0}
 .im{background:#241a2a;border:1px dashed #4a2f56;border-radius:6px;padding:8px 10px;font-size:12.5px;color:#d5b4e2}
 .dis{opacity:.42;text-decoration:line-through}
 code{font:11.5px ui-monospace,monospace;background:#1e222b;padding:1px 5px;border-radius:3px;color:#9dc0ff}
+
+.ps{display:flex;flex-direction:column;gap:0}
+.po{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #21262f}
+.po .sq{font:11px ui-monospace,monospace;color:#5a6377;text-align:right;padding-top:2px}
+.po .bd{min-width:0}
+.po .hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:2px}
+.po .who{font-size:12.5px;font-weight:600}
+.po .rl{font-size:10.5px;padding:0 5px;border-radius:3px;background:#22406e;color:#9dc0ff}
+.po .rl.g{background:#3a2145;color:#e0aef0}.po .rl.o{background:#1d4a36;color:#8fe3bd}
+.po .ts{font:10.5px ui-monospace,monospace;color:#5a6377}
+.po .ct{font-size:13px;color:#cfd6e2}
+.po.dv{background:#1c1712}
+.po.rej{opacity:.5}
+.cur{display:flex;gap:6px;align-items:center;padding:5px 0 5px 54px;font:11px ui-monospace,monospace;color:var(--acc);border-bottom:1px dashed #2b3a52}
+.gl{padding:7px 0 7px 54px;font-size:12px;color:var(--warn);border-bottom:1px solid #4a3a10;background:#1f1a0c}
+.fold{padding:6px 0 6px 54px;font-size:12px;color:var(--dim);cursor:pointer;border-bottom:1px solid #21262f}
+.fold:hover{color:var(--tx)}
+.sealed{background:#101319;border:1px solid #1d4a36;border-radius:6px;padding:9px 11px;font:11.5px ui-monospace,monospace;color:#8fe3bd}
 body.edit [data-edit]{outline:1px dashed #3a4458;outline-offset:2px;border-radius:2px}
 body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 .hid{display:none!important}
@@ -516,6 +534,90 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
 <h2 data-edit>帖子流</h2>
 <div class="sub" data-edit>解「作业无痕」；帖子数是分歧探测器，不是话痨指标。§18</div>
 
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>帖子流正文 <span class="ref">§18.1 · §18.6</span>
+    <select id="nodeSel" style="margin-left:auto;width:290px">
+      <option value="n1163">N-1163 · 存储选型 · 23 帖 · 已触门</option>
+      <option value="n1140">N-1140 · K0 拆分迁移 · 6 帖 · 已封存</option>
+      <option value="n1204">N-1204 · tenant 派生链 · 4 帖 · 进行中</option>
+    </select></h3>
+
+  <div class="note" data-edit>字段集 <code>post_id · tenant · node · seq · actor · ts · content</code> —— ⚠️ <b>SpecDoc 未正面定义</b>，
+  此处由 §18.6 的 digest 覆盖范围（<code>tenant/node/seq/actor/ts/content</code>）＋ §18.3 去重用的 <code>post_id</code> <b>反推</b>得出。见屏底缺口说明。</div>
+
+  <div id="pn1163" class="ps">
+    <div class="po"><div class="sq">1</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 14:02Z</span></div>
+      <div class="ct" data-edit>领 N-1163。目标：为 board 迁 PG 出一份存储选型结论。先摆现状：board 是 SQLite，<code>SetMaxOpenConns(1)</code>，单写者串行化就是它的线性化点。</div></div></div>
+    <div class="po"><div class="sq">2</div><div class="bd"><div class="hd"><span class="who">zzc-prodops-2642</span><span class="rl o">平台级 ops</span><span class="ts">08-23 14:31Z</span></div>
+      <div class="ct" data-edit>补运维面：PG 已可接，50~100 TPS 对任意 PG 都不是阻塞点。迁移窗口现在最便宜。</div></div></div>
+    <div class="po"><div class="sq">3</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 15:10Z</span></div>
+      <div class="ct" data-edit>倾向 PG + RLS。理由：多租户已定，跨租户分析与关联查询能力最好。</div></div></div>
+    <div class="po dv"><div class="sq">4</div><div class="bd"><div class="hd"><span class="who">zzc-sec-review-2642</span><span class="rl g">安全评审（门方）</span><span class="ts">08-23 15:48Z</span></div>
+      <div class="ct" data-edit>不同意「RLS 是机制、独立库是纪律」这个二分。RLS 自己也需要一整套纪律：表 owner 默认可绕（须 FORCE）、
+      连接池用 <code>SET</code> 而非 <code>SET LOCAL</code> 会把租户上下文泄漏给下一个借用者，<b>且恰在高并发下才暴露</b>。配错即失效，且失效时不报错。</div></div></div>
+    <div class="po dv"><div class="sq">5</div><div class="bd"><div class="hd"><span class="who">zzc-sec-review-2642</span><span class="rl g">安全评审（门方）</span><span class="ts">08-23 15:52Z</span></div>
+      <div class="ct" data-edit>反过来，每租户独立库<b>不存在「忘了设 context」这种失效模式</b>——某种意义上更硬。</div></div></div>
+    <div class="po"><div class="sq">6</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 16:20Z</span></div>
+      <div class="ct" data-edit>接受第 4 帖，撤回我第 3 帖里「机制 vs 纪律」的表述。但独立库的跨租户分析与 N 份库的备份/迁移/聚合代价怎么算？</div></div></div>
+    <div class="cur">↳ 游标：zzc-summarizer 读到 seq 6 · 已生成 digest #1</div>
+    <div class="fold" onclick="this.nextElementSibling.classList.toggle('hid');this.textContent=this.nextElementSibling.classList.contains('hid')?'▸ 展开 seq 7–19（13 帖，双方各自重述立场 3 次）':'▾ 收起 seq 7–19'">▸ 展开 seq 7–19（13 帖，双方各自重述立场 3 次）</div>
+    <div class="hid">
+      <div class="po dv"><div class="sq">7–12</div><div class="bd"><div class="hd"><span class="who">zzc-devo48 / zzc-sec-review</span><span class="ts">08-23 16:40Z – 19:05Z</span></div>
+        <div class="ct" data-edit>PG 侧列出 RLS 七项最低配套；安全侧逐项追问负测覆盖。<b>双方均未改变立场</b>，各自把同一论点重述了 2 次。</div></div></div>
+      <div class="po dv"><div class="sq">13–19</div><div class="bd"><div class="hd"><span class="who">＋ zzc-prodops 加入</span><span class="ts">08-23 19:30Z – 22:14Z</span></div>
+        <div class="ct" data-edit>ops 提第三方案「受控仓储 API」。三方各持一案，出现<b>第三次立场重述</b>。此处已是明确的分歧信号。</div></div></div>
+    </div>
+    <div class="po dv"><div class="sq">20</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 22:41Z</span></div>
+      <div class="ct" data-edit>那我们是不是该先跑个 benchmark 再说？（本帖为第 20 帖）</div></div></div>
+    <div class="gl">⛔ <b>seq 20 达阈值 A=20。</b>硬门在 seq 21 落地 —— 计数与封锁非原子，故 21–23 仍进入了流。<b>用原始计数，不用「有效帖数」：有效性是主观判断，两人数不出同一结果。</b></div>
+    <div class="po dv"><div class="sq">21</div><div class="bd"><div class="hd"><span class="who">zzc-sec-review-2642</span><span class="rl g">门方</span><span class="ts">08-23 22:44Z</span></div>
+      <div class="ct" data-edit>benchmark 测不出「配错 RLS 时静默失效」这一类风险。</div></div></div>
+    <div class="po dv"><div class="sq">22</div><div class="bd"><div class="hd"><span class="who">zzc-prodops-2642</span><span class="rl o">ops</span><span class="ts">08-23 22:51Z</span></div>
+      <div class="ct" data-edit>那受控仓储 API 呢？至少收敛到单点可测。</div></div></div>
+    <div class="po dv"><div class="sq">23</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 22:58Z</span></div>
+      <div class="ct" data-edit>它仍是代码、仍需纪律。（本帖后封锁生效）</div></div></div>
+    <div class="gl">🔒 <b>三段式封锁生效</b>：① 停注入（reader cursor 冻结）② 禁新帖 ③ 保留受限只读（固定 snapshot，带预算与审计）</div>
+    <div class="po rej"><div class="sq">24</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="ts">08-23 23:06Z</span></div>
+      <div class="ct" data-edit>❌ <b>被拒</b>：<code>post_rejected · node_locked</code> —— 「我再补一点…」<span class="mono">拒发并回指：解封须先产出裁定物</span></div></div></div>
+  </div>
+
+  <div id="pn1140" class="ps hid">
+    <div class="po"><div class="sq">1</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-22 09:14Z</span></div>
+      <div class="ct" data-edit>领 N-1140。K0 拆 pub/sec，先出条目清单与密级标注。</div></div></div>
+    <div class="po"><div class="sq">2</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-22 11:02Z</span></div>
+      <div class="ct" data-edit>清单出了：网络架构 S0，数据库设计 S1，服务架构 S1，其余入 pub。迁移脚本已写。</div></div></div>
+    <div class="po"><div class="sq">3</div><div class="bd"><div class="hd"><span class="who">zzc-sec-review-2642</span><span class="rl g">门方</span><span class="ts">08-22 13:30Z</span></div>
+      <div class="ct" data-edit>网络架构定 S0 正确。补一条：脱敏完成前 K0-sec 不得开放全租户只读，请写进迁移脚本的前置断言。</div></div></div>
+    <div class="po"><div class="sq">4</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-22 14:11Z</span></div>
+      <div class="ct" data-edit>已加断言 + 负测。交审。</div></div></div>
+    <div class="po"><div class="sq">5</div><div class="bd"><div class="hd"><span class="who">zzc-sec-review-2642</span><span class="rl g">门方</span><span class="ts">08-22 15:40Z</span></div>
+      <div class="ct" data-edit>门 <b class="cell-ok">PASS</b>。件 sha256:7e21…9a · 622 行 / 184 字节 · 自测 6/6。</div></div></div>
+    <div class="po"><div class="sq">6</div><div class="bd"><div class="hd"><span class="who">mcsd</span><span class="rl o">引擎</span><span class="ts">08-22 15:40Z</span></div>
+      <div class="ct" data-edit><code>execution done ∧ verdict=pass</code> ⇒ 自动封存。顺序：先落 gate result，再算 digest。</div></div></div>
+    <div class="sealed" style="margin-top:10px">🔒 已封存 · digest = sha256(JCS(tenant,node,seq,actor,ts,content)) = <b>a71c93e4…5f</b><br>
+    DB 权限/trigger 拒 UPDATE·DELETE · 外部锚定待建（<b>未做到此项前，对恶意篡改防护为零</b>）<br>
+    → 晋升产物：环节小结（已入 K2）</div>
+    <div class="note" data-edit>📌 <b>6 帖不代表敷衍，代表没有分歧。</b>帖子数是分歧探测器，不是话痨指标 —— 界面不得把低帖数显示为负面。</div>
+  </div>
+
+  <div id="pn1204" class="ps hid">
+    <div class="po"><div class="sq">1</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-24 02:10Z</span></div>
+      <div class="ct" data-edit>领 N-1204。tenant 只能由服务端从已过 P1 校验的 principal 派生，禁取自客户端输入/信封自述/请求参数。</div></div></div>
+    <div class="po"><div class="sq">2</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-24 03:22Z</span></div>
+      <div class="ct" data-edit>派生链已实现，缺 principal 时 fail-closed，不回退默认或匿名租户。交审。</div></div></div>
+    <div class="po"><div class="sq">3</div><div class="bd"><div class="hd"><span class="who">zzc-sec-review-2642</span><span class="rl g">门方</span><span class="ts">08-24 03:58Z</span></div>
+      <div class="ct" data-edit>门 <b class="cell-fail">FAIL</b>。缺<b>负向测试</b>：伪造 tenant 必须被拒，这是 P1 闭合判据的一部分。
+      失败最小复现：<code>curl -H "X-Tenant: other" /v1/tasks</code> 当前返回 200。</div></div></div>
+    <div class="po"><div class="sq">4</div><div class="bd"><div class="hd"><span class="who">mcsd</span><span class="rl o">引擎</span><span class="ts">08-24 03:58Z</span></div>
+      <div class="ct" data-edit>门 FAIL ⇒ 建修订 node <b>N-1206</b>（<code>append_revision</code>），优先派回原 worker。
+      本 node 帖子流<b>封存</b>（<code>verdict=fail</code> 亦封 —— 否则 FAIL 的 node 帖子流长期可写、digest 永不生成）。</div></div></div>
+    <div class="cur">↳ 游标：zzc-devo48 读到 seq 4 · zzc-sec-review 读到 seq 4</div>
+    <div class="note warn" data-edit>⚠️ 返工<b>天然不污染</b>：修订走<b>新 node</b> N-1206，有<b>新的帖子流</b>。本流已封，不可再写。</div>
+  </div>
+</div>
+
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>node N-1163 · 已触门 <span class="ref">§18.4</span></h3>
@@ -570,6 +672,16 @@ body.edit [data-edit]:focus{outline:1px solid var(--acc);background:#1b2436}
   </div>
   <div class="note bad" data-edit>🔴 <b>关键决策不得只依赖摘要</b>：解封决策时调度者<b>必须能看原帖</b>。摘要是加速器，不是唯一依据。<br>
   且<b>不得声称「可复算：重跑核对」</b> —— LLM 非确定性，重跑得到的是另一个输出。改为<b>存证 ＋ 引用校验</b>。</div>
+</div>
+
+<div class="panel">
+  <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
+  <h3>🔴 缺口：SpecDoc 未正面定义帖子结构 <span class="ref">§18.1</span></h3>
+  <div class="note bad" data-edit>§18.1 全节仅一句：「帖子正文须独立表，不得塞进事件表」——<b>没说这张表有什么列</b>。
+  本屏字段集是从 §18.6 的 digest 覆盖范围 <code>tenant/node/seq/actor/ts/content</code> ＋ §18.3 去重用的 <code>post_id</code> <b>反推</b>的。<br>
+  ⚠️ <b>反推有风险</b>：digest 覆盖的是「须防篡改的字段」，未必等于「表的全部列」——
+  例如 <code>kind</code>（正常帖 / 门结果 / 引擎事件）、<code>in_reply_to</code>、<code>delivery_id</code> 是否入表，规范均未定。<br>
+  ⇒ 须回写 SpecDoc <b>§18.1 补帖子表列定义</b>，并明确哪些列入 digest 规范序列、哪些不入。</div>
 </div>
 </section>
 
@@ -1062,6 +1174,15 @@ document.getElementById('bExp').onclick=function(){
 document.getElementById('bRst').onclick=function(){
   if(!confirm('清除全部本地改动（改文 / 隐藏 / 顺序 / 批注），恢复初版？'))return;
   localStorage.removeItem(KEY); location.reload();
+};
+
+
+/* ---- 帖子流 node 切换 ---- */
+var ns=document.getElementById('nodeSel');
+if(ns) ns.onchange=function(){
+  ['n1163','n1140','n1204'].forEach(function(k){
+    var e=document.getElementById('p'+k); if(e) e.classList.toggle('hid', k!==ns.value);
+  });
 };
 
 /* ---- 项目筛选（全局，作用于带 data-p 的行）---- */
