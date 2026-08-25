@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `e0ce00d50d578199211bd7a3f6c53146a83a2e86` · 分支 `design/addendum-decisions`
+生成自 commit `e083f819e9450fb0203fc564f5ced76a0c802edd` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.23** | `591c585b24444a852898057a470c3d94d36647da` | 3225 / 218523 | `4f3efef246e7597635332d14c98eddade6e13c6777a1023b9594e202808e49f3` |
-| `dingwei-prototype.html` | **v1.21** | `e0ce00d50d578199211bd7a3f6c53146a83a2e86<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2853 / 256453 | `a4b2137ba3f995aaa92bab93687e8d814d4d28960d751f5314c3093a1a13232c` |
-| `dingwei-architecture-design.md` | **v0.22** | `82f9af1f10cdfddbaabb1ddd776cb9f0d177442d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 895 / 61702 | `9510696948d6a88527090d1cec62f1750e8446e7f5c1fa4d0bc8b0d87f308425` |
+| `dingwei-platform-specdoc.md` | **v3.23** | `93394151f3d97b8a8828c4a8c59c3ea41b4bf639` | 3233 / 220228 | `083d3b011d27603a7e96ec3ea6d208be4eaadac34b0374cf39d6d2c22713d5aa` |
+| `dingwei-prototype.html` | **v1.21** | `e083f819e9450fb0203fc564f5ced76a0c802edd` | 2853 / 257348 | `daa5703954df056179f0b641745c388b80edb8491eb87572d110ef4996d4e178` |
+| `dingwei-architecture-design.md` | **v0.22** | `e083f819e9450fb0203fc564f5ced76a0c802edd` | 895 / 61958 | `ba878abdce39c4cb85e05509e0149f01dafb9b0242e4eb2ea972fd98ec2eac9e` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+e083f81 Merge remote-tracking branch 'origin/design/addendum-decisions' into design/addendum-decisions
+f93fa01 gate+docs: 评审前预修 —— 快照包三缺 · analyze 覆盖面 · checklist 落账闸(前锚 e0ce00d)
+9339415 review: 丙域 R2 轮1 评审标注 9 条（8 未决 + 1 采纳）——跨制品一致域（kimi30kqtuxerh）
 e0ce00d docs: 原型 R2 —— 四套互斥身份收敛 · 导出戳去假基准 · 痕迹 59→0(前锚 591c585)
 591c585 docs: SpecDoc 落九条概念裁定 + 修 kimi F-5；体例闸修与 RV 互不打架(前锚 6f4a4e0)
 6f4a4e0 docs: SpecDoc 体例分离完成 90→0 + C.3 重裁为 C.3a(前锚 9ebe153)
 9ebe153 docs(wip): SpecDoc 体例分离进行中 90→43 + RV 标注首次实用(前锚 82f9af1)
 82f9af1 docs: 架构件落业主九条概念裁定 + C.3a 存储重裁(前锚 2829a2a)
-2829a2a docs: 架构件体例分离 + R1 修项 —— 正文过程痕迹 37→0，新建沿革记录件(前锚 c6a514c)
-c6a514c gate: 立体例合规闸 + RV 评审标注机制(前锚 6211504)
-6211504 merge: SA 批（SA-11/12/13/14）合入主线，作为 R2 出稿的基底
 ```
