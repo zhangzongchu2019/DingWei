@@ -101,6 +101,26 @@ check() {
     else
       echo "  ✓ $f 正文无过程痕迹指纹"
     fi
+    # 🔴 跨企业不得出现 capability/白名单通路（甲域 sol delta ②）：
+    #   §22.1c 明定「跨企业在 §22.0/§15.5 下**没有任何 capability 路径**」，
+    #   而执笔方按节机械分类做「跨租户→跨企业」映射时，把**描述 capability 通路**的条款
+    #   （§22.1b「默认拒，白名单放行」、§22.2a #2「须经 guarded capability」、E.4 #18/#40…）
+    #   一并判成了跨企业 —— **自己造出 7 处现行正面冲突**。
+    #   ⚠️ 机械替换看的是「这一节大致属哪类」，不是「这一句在说什么」。
+    #   ⇒ 判据：跨企业与 capability/白名单/放行 同句出现即拒，
+    #     除非该句是**否定式**（无…路径 / 不存在 / 恒为 0 / 禁止 / 误读）。
+    case "$f" in
+      *.md|*.html)
+        _xc=$(grep -nE '跨企业[^。；]{0,24}(白名单放行|guarded capability|capability policy|capability 放行)' "$f" 2>/dev/null \
+              | grep -vE '无[^。；]{0,6}capability 路径|不存在|恒为 0|恒 0|禁止|误读|无此路径' || true)
+        if [ -n "$_xc" ]; then
+          echo "✗ $f：出现【跨企业 ＋ capability/白名单通路】的现行表述 —— 与 §22.1c 直接冲突"
+          printf '%s\n' "$_xc" | cut -c1-130
+          echo "  🔴 跨企业在 §22.0/§15.5 下无任何 capability 路径；描述通路的条款其对象只能是【跨人】。"
+          return 1
+        fi ;;
+    esac
+
   done
   if [ "$rc" -ne 0 ]; then
     echo "  🔴 剥离【不是删】：痕迹里若含现行规范内容（能力边界声明 · 口径收窄的结果表等），"
@@ -241,6 +261,16 @@ selftest() {
   # ⚠️ 不误伤：第 4 列与处置内记号一致时须放行
   mk; printf '\n【RV-甲53|甲|阻断|挂账】某条　　⟹ **【挂账】** 责任人=X；时点＝2026-09-01\n' >> "$T/d/a.md"; rv   # rv-fixture
   [ $? -eq 0 ] && ok "不误伤：处置内记号与第 4 列一致时放行" || bad "一致的状态被误拦"
+
+  # 🔴 跨企业 capability 冲突须拦（甲域 delta ②，执笔方机械替换造出 7 处）
+  mk; printf '\n- 跨企业 → **默认拒**，白名单放行（须满足 §22.1c）\n' >> "$T/d/a.md"
+  DOCS="$T/d/a.md" HIST="$T/d/h.md" check >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "拦住：跨企业 ＋ 白名单放行（与 §22.1c 直接冲突）" || bad "跨企业 capability 通路被放行"
+
+  # ⚠️ 不误伤：否定式是判据本身，不是冲突
+  mk; printf '\n`跨企业` 没有任何 capability 路径，故不存在「跨企业白名单」这种东西。\n' >> "$T/d/a.md"
+  DOCS="$T/d/a.md" HIST="$T/d/h.md" check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "不误伤：否定式表述（无路径/不存在）不算冲突" || bad "判据自身被误判为冲突"
 
   # 🔴 代码件里标注拼进命令行须拦（甲域 RV-甲47 的真实形态）
   mk; printf 'echo hi > x.md　　【RV-甲60|甲|阻断|采纳】说明文字\n' > "$T/d/g.sh"   # rv-fixture

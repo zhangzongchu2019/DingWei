@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `f978f02f580e229ac38eb3a52f8d53039e07102d` · 分支 `design/addendum-decisions`
+生成自 commit `d67848357bc7c945d152a55d3e08a898c6c27d0a` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.38** | `f978f02f580e229ac38eb3a52f8d53039e07102d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3470 / 240478 | `4b5961e0d204ae6e0533f74a8bfbc488a48854b3849a62c96e5e073577d977d3` |
+| `dingwei-platform-specdoc.md` | **v3.39** | `d67848357bc7c945d152a55d3e08a898c6c27d0a<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3471 / 240838 | `d09aa84e5ec3ab96343616df8e0168d6b7787c64589949c4708d2a571f0b7ba3` |
 | `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
 | `dingwei-architecture-design.md` | **v0.33** | `61ad4390902debbc268aee03d1172e1a93108937` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+d678483 RV-乙13：fixture 三 role 补齐、去明文口令（v3.38）
 f978f02 Merge commit 'bf1a48a2' into design/addendum-decisions
 e9df5dd ㉑ 重写：从「按行计数」改为「AST 按对象分类计数」（v3.37）
 c077f1a C.3a.1c 特权面归平台 ops，不下放企业（业主裁定，v3.36）
@@ -34,5 +35,4 @@ c077f1a C.3a.1c 特权面归平台 ops，不下放企业（业主裁定，v3.36�
 bf1a48a review: add RLS fixture security finding
 f78aabd RV-乙12：人层 RLS 四条硬合同补齐 + 三条 fixture（🔴 未实跑）
 568cdf9 Merge commit 'cdc8270d' into design/addendum-decisions
-516efb1 C.3a.1b principal 是软身份（业主裁定，v3.33）—— 并补上我漏的 actor 层
 ```
