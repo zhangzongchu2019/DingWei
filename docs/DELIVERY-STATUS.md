@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `d9e74c6cab851a6e1aa146539c7b8c7aa4d5749b` · 分支 `design/addendum-decisions`
+生成自 commit `e2574ea430adb374c892e0d935b39835cae13f6b` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -25,6 +25,7 @@
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+e2574ea gate: _test.go 口径改为可切换,生产码 6 / 含测试 8 两值并存(前锚 d9e74c6)
 d9e74c6 fix: specs/README 的结构表漏列 8 件,改为可校验表并立闸 ⑧(前锚 a80a7f4)
 a80a7f4 fix: 快照包作用域仍是手写的,SP7a 那道闸导不进评审包(前锚 6723be4b)
 6723be4 fix: 状态源钉了一个被 amend 抛弃的幽灵锚,并立 ⑤a 判据(前锚 1baa230)
@@ -32,5 +33,4 @@ a80a7f4 fix: 快照包作用域仍是手写的,SP7a 那道闸导不进评审包(
 709c44e gate: SP7a 收口判据立闸——仓储包外库句柄棘轮,基线 8 起(前锚 626af15)
 626af15 docs: 会话交接件入仓,准备重启会话(前锚 dcc7c04)
 dcc7c04 docs: SpecDoc v3.21 转【生效】——§0.4 两项生效前置均已闭合(前锚 0150f7b)
-0150f7b fix: rule-sync 扩为逐行内容比较(结构域非阻断注 ②,前锚 e8c4f13)
 ```
