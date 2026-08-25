@@ -24,6 +24,9 @@
 | `specs/tools/export-bundle.sh` | 导出锚定快照包；作用域由 `git ls-tree` 整棵导出，不手写 |
 | `specs/tools/export-exclude.txt` | 快照包的显式排除清单，每条须带理由；缺理由或漂移即导出失败 |
 | `specs/tools/handle-escape/main.go` | 裸库句柄逃逸检测器（Go AST）—— 判据二的权威 detector；覆盖换行签名 · import alias · 类型别名链 · 导出字段 · 匿名嵌入 · 接口方法 |
+| `specs/gates/checklist-execution-exceptions.txt` | checklist 未落账的**登记例外** —— 🔴 登记 ≠ 修复；闸打印「登记债务」时**不是 PASS**；例外的新增与批准属 owner/门方评审面，执笔方不得自增自批 |
+| `scripts/checklist-executed-gate.sh` | checklist 执行落账闸 —— 宣称「已按 checklist 执行」时机器要求 checkbox 已勾**且证据栏非空**；未落账可登记例外，但输出明说**这不是 PASS** |
+| `specs/tools/foreign-version-check.py` | 正文他件旧版本号检查（analyze ④b）—— ④a 只读头块一处，正文里的假版本看不见；本脚本补正文面，只在与该件称谓同行时才判 |
 | `scripts/prose-style-gate.sh` | 体例合规闸 —— 正文不得含评审过程痕迹（指向特定评审轮次/版本/评审方的表述）；含 **RV 评审标注**模式：轮内可标、收官须逐条落到 采纳/驳回(带理由)/挂账，且正文清零 |
 | `specs/tools/pending-debt/main.go` | 「尚未租户化」债的检测器（Go AST）—— **按效果判**：谁返回 `PendingTenantCtx` 造的上下文谁就是债源，其调用点全部计入，helper 叫什么与判据无关（乙域 terra SA-12b）；按 `(domain, ownerSP)` 分组供闸逐领域棘轮 |
 | `specs/evidence/EVIDENCE.md` | 证据包产出（作者侧旁证，非门方结论） |

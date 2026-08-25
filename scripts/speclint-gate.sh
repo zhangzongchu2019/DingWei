@@ -161,9 +161,26 @@ scripts/tenant-isolation-gate.sh || exit 1
 scripts/tenant-isolation-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/tenant-isolation-gate.sh --selftest; echo "✗ 租户隔离前置闸的反测未过"; exit 1; }
 echo "  ⑩ 租户隔离前置闸的反测 ✓"
+# ⑪ checklist 执行落账(甲域 sol):宣称「已按 checklist 执行」时,机器要求 checkbox 已勾且证据非空
+if [ ! -x scripts/checklist-executed-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/checklist-executed-gate.sh 不可执行"; exit 1
+fi
+scripts/checklist-executed-gate.sh || exit 1
+scripts/checklist-executed-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/checklist-executed-gate.sh --selftest; echo "✗ checklist 落账闸的反测未过"; exit 1; }
+echo "  ⑪ checklist 落账闸的反测 ✓"
+# ⑫ 体例合规(R1 执笔方 G-1 / 丙域 F-7):正文不得含评审过程痕迹;RV 标注字段须合法
+if [ ! -x scripts/prose-style-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/prose-style-gate.sh 不可执行"; exit 1
+fi
+scripts/prose-style-gate.sh || exit 1
+scripts/prose-style-gate.sh --rv || exit 1
+scripts/prose-style-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/prose-style-gate.sh --selftest; echo "✗ 体例合规闸的反测未过"; exit 1; }
+echo "  ⑫ 体例合规闸的反测 ✓"
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–⑩）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–⑫）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–⑩）"
+  echo "✓ 提交闸全过（①–⑫）"
 fi

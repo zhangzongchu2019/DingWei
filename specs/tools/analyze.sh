@@ -37,7 +37,7 @@ sys.exit(1 if dang else 0)
 PY
 [ $? -ne 0 ] && FAIL=1
 
-echo "④ 三件的版本自述是否与 DELIVERY-STATUS 一致"
+echo "④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致"
 python3 - <<'PY'
 import re,sys
 st=open('docs/DELIVERY-STATUS.md',encoding='utf-8').read()
@@ -55,6 +55,12 @@ for name,path,pat in [
     if not ok: bad=1
 sys.exit(bad)
 PY
+[ $? -ne 0 ] && FAIL=1
+
+# 🔴 甲域 sol：④a 只读头块一处，正文里的假版本一个都看不见 ——
+#   它输出的「三件版本自述一致」实际只是「被挑中的一处一致」。④b 补正文面。
+echo "④b 正文是否出现【他件】的旧版本号"
+python3 specs/tools/foreign-version-check.py
 [ $? -ne 0 ] && FAIL=1
 
 echo "⑤ 生效前置状态（§0.4）"

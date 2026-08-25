@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `591c585b24444a852898057a470c3d94d36647da` · 分支 `design/addendum-decisions`
+生成自 commit `e0ce00d50d578199211bd7a3f6c53146a83a2e86` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -21,12 +21,13 @@
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
 | `dingwei-platform-specdoc.md` | **v3.23** | `591c585b24444a852898057a470c3d94d36647da` | 3225 / 218523 | `4f3efef246e7597635332d14c98eddade6e13c6777a1023b9594e202808e49f3` |
-| `dingwei-prototype.html` | **v1.20** | `e4abe0a27460711d1e96fa88630c70fee77e11a0<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2853 / 255503 | `80ba3865213b2186007eec2d36ca0751630676bf889b488bfb32cd8e0e808d79` |
-| `dingwei-architecture-design.md` | **v0.22** | `82f9af1f10cdfddbaabb1ddd776cb9f0d177442d` | 895 / 61683 | `17406bbb3bb8e0c9a90dd2fab93ad1b66a809bf6a4630a5ee02886b39b4b722f` |
+| `dingwei-prototype.html` | **v1.21** | `e0ce00d50d578199211bd7a3f6c53146a83a2e86<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2853 / 256453 | `a4b2137ba3f995aaa92bab93687e8d814d4d28960d751f5314c3093a1a13232c` |
+| `dingwei-architecture-design.md` | **v0.22** | `82f9af1f10cdfddbaabb1ddd776cb9f0d177442d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 895 / 61702 | `9510696948d6a88527090d1cec62f1750e8446e7f5c1fa4d0bc8b0d87f308425` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+e0ce00d docs: 原型 R2 —— 四套互斥身份收敛 · 导出戳去假基准 · 痕迹 59→0(前锚 591c585)
 591c585 docs: SpecDoc 落九条概念裁定 + 修 kimi F-5；体例闸修与 RV 互不打架(前锚 6f4a4e0)
 6f4a4e0 docs: SpecDoc 体例分离完成 90→0 + C.3 重裁为 C.3a(前锚 9ebe153)
 9ebe153 docs(wip): SpecDoc 体例分离进行中 90→43 + RV 标注首次实用(前锚 82f9af1)
@@ -34,5 +35,4 @@
 2829a2a docs: 架构件体例分离 + R1 修项 —— 正文过程痕迹 37→0，新建沿革记录件(前锚 c6a514c)
 c6a514c gate: 立体例合规闸 + RV 评审标注机制(前锚 6211504)
 6211504 merge: SA 批（SA-11/12/13/14）合入主线，作为 R2 出稿的基底
-e94844c fix: SA 批二轮 —— terra 四条阻断一次性修完(SA-12a/12b/13/14)(前锚 23fb6bf)
 ```

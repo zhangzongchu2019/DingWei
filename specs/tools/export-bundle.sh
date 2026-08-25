@@ -31,12 +31,28 @@ DEF_EXCL=specs/tools/export-exclude.txt
 #   ⚠️ 何时该扩：若将来 conformance suite 本身成为评审对象，再扩 ROOTS **并同期在此注明理由**。
 #   ⇒ 这一条是把「人定边界」落成「声明式边界」：边界仍由人定，但**理由与脚本同在**，
 #     下一个想改它的人能看到当初为什么这么定，而不必去翻消息记录。
+# 🔴 扩面条件已达成并已扩（甲域 sol：脚本自定「若 conformance suite 成为评审对象，再扩 ROOTS」，
+#   而 C.3a 硬前置 #2 已把 board conformance suite 定为换库的不可绕前置 —— 它已是被依赖的评审对象）。
+#   ⚠️ 只扩到 conformance 件本身，不把 internal/ 整棵收进来：
+#     实现代码的事实由架构设计 A§6.2 的测量命令与 specs/evidence/collect.sh 承载，
+#     整棵进包只会把评审面稀释成代码仓。
 ROOTS='docs/tools specs scripts'
+CONFORMANCE=${CONFORMANCE:-'internal/mcs/board/conformance_test.go'}
+
+# 🔴 basename 压平的同名冲突：不再静默覆盖（甲域 sol）。
+#   原实现 b=$(basename "$f") 后写 $D/$b —— 两个不同子树的同名件，后者覆盖前者，
+#   而 MANIFEST 照旧列两行 ⇒ 自检时必有一行 sha256 对不上。
+#   ⚠️ sol 当时判【非阻断】，理由是「34 件恰好无 basename 冲突」；
+#     SA 批新增 specs/tools/pending-debt/main.go 后，与 handle-escape/main.go 同名，
+#     **「恰好」变成了「已发生」** —— 一条以「目前恰好成立」为由降级的 finding，
+#     在下一次改动后就成了阻断。故本次改为【结构上不可能冲突】：目录层用 __ 连进文件名。
+_flat() { printf '%s' "$1" | sed 's|/|__|g'; }
 # DOCS 允许由环境覆盖 —— 仅为【可测性】,默认值不变。
 # 没有这个钩子,「具名件缺失须报错」这条就只能靠读代码相信,无法用反测证明。
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md
 docs/dingwei-prototype.html docs/task-table-collision-analysis.md docs/DELIVERY-STATUS.md
-docs/reference/not-adopted-pg-rls.md docs/SESSION-HANDOFF.md'}
+docs/reference/not-adopted-pg-rls.md docs/SESSION-HANDOFF.md
+docs/dingwei-revision-history.md'}
 
 # 读排除清单 -> 每行「路径 理由」；校验存在性与理由非空
 excl_paths() { sed 's/#.*//' "$1" | awk 'NF>0 {print $1}'; }
@@ -61,7 +77,7 @@ excl_check() { # excl_check 锚 清单文件
 
 build_list() { # build_list 锚 排除清单 -> 逐行路径
   _r=$1; _f=$2
-  git ls-tree -r --name-only "$_r" -- $ROOTS $DOCS | sort > "$TMP/all"
+  git ls-tree -r --name-only "$_r" -- $ROOTS $DOCS $CONFORMANCE | sort > "$TMP/all"
   excl_paths "$_f" | sort > "$TMP/exc"
   comm -23 "$TMP/all" "$TMP/exc"
 }
@@ -74,6 +90,14 @@ selftest() {
   ok()  { n=$((n+1)); echo "  ✓ $1"; }
   bad() { echo "  ✗ 反测未过：$1"; fail=1; }
   R=HEAD
+
+  # 🔴 同名冲突（甲域 sol）：两个不同子树的同名件不得静默覆盖。
+  #   判据是【结构上不可能】而非【当前恰好没有】—— 后者会在下一次改动时失效，本仓已实证。
+  _c=$(build_list HEAD "$DEF_EXCL" | while read -r f; do _flat "$f"; echo; done | sort | uniq -d | wc -l | tr -d ' ')
+  [ "$_c" -eq 0 ] && ok "压平后无同名冲突（结构上不可能，非「恰好没有」）" \
+    || bad "压平后仍有 $_c 组同名冲突"
+  _a=$(_flat 'specs/tools/handle-escape/main.go'); _b=$(_flat 'specs/tools/pending-debt/main.go')
+  [ "$_a" != "$_b" ] && ok "拦住：两处 main.go 压平后仍可区分" || bad "两处 main.go 压平后同名"
 
   # ① 作用域是整棵导出：ROOTS 下未被排除的件必须【全部】在清单里，未分类件恒为 0
   build_list "$R" "$DEF_EXCL" > "$TMP/list"
@@ -170,7 +194,7 @@ NX=$(excl_paths "$EXCL" | wc -l | tr -d ' ')
   echo "| 文件 | 仓内路径 | 行 | 字节 | sha256 |"
   echo "|---|---|---|---|---|"
   for f in $LIST; do
-    b=$(basename "$f")
+    b=$(_flat "$f")
     git show "$R:$f" > "$D/$b"
     printf '| `%s` | `%s` | %s | %s | `%s` |\n' "$b" "$f" \
       "$(wc -l < "$D/$b")" "$(wc -c < "$D/$b")" "$(sha256sum "$D/$b" | cut -d' ' -f1)"
