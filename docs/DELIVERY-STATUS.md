@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `00fcbf9d8e4ed1ae9aeb93b34a686dabd04562ea` · 分支 `design/addendum-decisions`
+生成自 commit `89777b484a434a71f3cfa1507255d827bd1d1954` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.41** | `cf348680094a6594fbec79a744e5b67d25f7a8a1<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3497 / 244787 | `fa9b5a226474b5454db8f8dffe2122edc6cc2b269f10ff99f676bf711d719c84` |
+| `dingwei-platform-specdoc.md` | **v3.41** | `89777b484a434a71f3cfa1507255d827bd1d1954` | 3497 / 244787 | `fa9b5a226474b5454db8f8dffe2122edc6cc2b269f10ff99f676bf711d719c84` |
 | `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
 | `dingwei-architecture-design.md` | **v0.33** | `61ad4390902debbc268aee03d1172e1a93108937` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+89777b4 C.3a.1c 改判：平台 ops 建库、企业 ops 管表（v3.41）
 00fcbf9 ㉒ 评审状态落进仓 —— 对「转述交叉五次」的结构性修法
 02e3fa8 fixture 注释去掉 LOGIN PASSWORD 字面量 —— 门方 grep 会把沿革说明误计为残留凭据
 cf34868 RV-乙14：乙域比甲域多抓到两处漏网冲突（v3.40）
@@ -34,5 +35,4 @@ cf34868 RV-乙14：乙域比甲域多抓到两处漏网冲突（v3.40）
 fbf67ef 甲域 delta ②：跨企业 capability 现行冲突 7 处清零（v3.39）
 d678483 RV-乙13：fixture 三 role 补齐、去明文口令（v3.38）
 f978f02 Merge commit 'bf1a48a2' into design/addendum-decisions
-e9df5dd ㉑ 重写：从「按行计数」改为「AST 按对象分类计数」（v3.37）
 ```
