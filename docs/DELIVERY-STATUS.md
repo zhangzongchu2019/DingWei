@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `722ac8230611ef230eb58a00c93949748f6fdbe7` · 分支 `design/addendum-decisions`
+生成自 commit `552e92e93bdf4a8f9bf44faf1e3c00b50414437b` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -25,6 +25,7 @@
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+552e92e docs: 实现阶段总览交底(SP0-SP8 · 依赖图 · 并行判断)入仓(前锚 722ac82)
 722ac82 SP7a: 建受控仓储包 internal/repo,收编 datad 的 3 处建库,判据一 8→6(前锚 b6db59b)
 b6db59b gate: 按业主裁定拆掉 _test.go 开关,回严口径基线 8,并立防回潮判据(前锚 e2574ea)
 e2574ea gate: _test.go 口径改为可切换,生产码 6 / 含测试 8 两值并存(前锚 d9e74c6)
@@ -32,5 +33,4 @@ d9e74c6 fix: specs/README 的结构表漏列 8 件,改为可校验表并立闸 �
 a80a7f4 fix: 快照包作用域仍是手写的,SP7a 那道闸导不进评审包(前锚 6723be4b)
 6723be4 fix: 状态源钉了一个被 amend 抛弃的幽灵锚,并立 ⑤a 判据(前锚 1baa230)
 1baa230 gate: 补齐 §22.2c #1 的后半句——裸库句柄逃逸另立判据,基线 escape=1(前锚 709c44e)
-709c44e gate: SP7a 收口判据立闸——仓储包外库句柄棘轮,基线 8 起(前锚 626af15)
 ```
