@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.37 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.38 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.37</span></h1>
-  <span class="anchor">原型 <b>v1.37</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.38</span></h1>
+  <span class="anchor">原型 <b>v1.38</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -568,7 +568,7 @@ body.uionly #uihint{display:block}
     <div class="kv"><b>宿主受控度</b><div class="cell-fail">🔴 不受控终端</div>
     <b>凭据等级</b><div><b>默认仅 <span class="s2">S2</span></b>；S1 / S0 须逐次授权</div>
     <b>token 属性</b><div>短时效 ＋ 可远程吊销 ＋ <b>绑定设备指纹</b></div>
-    <b>默认拒</b><div>跨租户读权 · 平台域读权</div></div>
+    <b>默认拒</b><div>跨企业读权 · 平台域读权</div></div>
     <div class="note bad" style="margin-top:10px" data-edit>🔴 本地终端接入意味着<b>平台凭据离开可控边界</b>，落到一台平台无法审计、无法擦除、
     可能同时装着别的软件的机器上。<b>不设此限，凭据分级会在最薄弱的一环失效。</b></div>
   </div>
@@ -623,14 +623,14 @@ body.uionly #uihint{display:block}
     <div class="po"><div class="sq">2</div><div class="bd"><div class="hd"><span class="who">zzc-prodops-2642</span><span class="rl o">平台级 ops</span><span class="ts">08-23 14:31Z</span></div>
       <div class="ct" data-edit>补运维面：PG 已可接，50~100 TPS 对任意 PG 都不是阻塞点。迁移窗口现在最便宜。</div></div></div>
     <div class="po"><div class="sq">3</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 15:10Z</span></div>
-      <div class="ct" data-edit>倾向 PG + RLS。理由：多租户已定，跨租户分析与关联查询能力最好。</div></div></div>
+      <div class="ct" data-edit>倾向 PG + RLS。理由：多租户已定，跨企业分析与关联查询能力最好。</div></div></div>
     <div class="po dv"><div class="sq">4</div><div class="bd"><div class="hd"><span class="who">zzc-sec-review-2642</span><span class="rl g">安全评审（门方）</span><span class="ts">08-23 15:48Z</span></div>
       <div class="ct" data-edit>不同意「RLS 是机制、独立库是纪律」这个二分。RLS 自己也需要一整套纪律：表 owner 默认可绕（须 FORCE）、
       连接池用 <code>SET</code> 而非 <code>SET LOCAL</code> 会把租户上下文泄漏给下一个借用者，<b>且恰在高并发下才暴露</b>。配错即失效，且失效时不报错。</div></div></div>
     <div class="po dv"><div class="sq">5</div><div class="bd"><div class="hd"><span class="who">zzc-sec-review-2642</span><span class="rl g">安全评审（门方）</span><span class="ts">08-23 15:52Z</span></div>
       <div class="ct" data-edit>反过来，每租户独立库<b>不存在「忘了设 context」这种失效模式</b>——某种意义上更硬。</div></div></div>
     <div class="po"><div class="sq">6</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 16:20Z</span></div>
-      <div class="ct" data-edit>接受第 4 帖，撤回我第 3 帖里「机制 vs 纪律」的表述。但独立库的跨租户分析与 N 份库的备份/迁移/聚合代价怎么算？</div></div></div>
+      <div class="ct" data-edit>接受第 4 帖，撤回我第 3 帖里「机制 vs 纪律」的表述。但独立库的跨企业分析与 N 份库的备份/迁移/聚合代价怎么算？</div></div></div>
     <div class="cur">↳ 游标：zzc-summarizer-2642 读到 seq 6 · 已生成 digest #1</div>
     <div class="fold" onclick="this.nextElementSibling.classList.toggle('hid');this.textContent=this.nextElementSibling.classList.contains('hid')?'▸ 展开 seq 7–19（13 帖，双方各自重述立场 3 次）':'▾ 收起 seq 7–19'">▸ 展开 seq 7–19（13 帖，双方各自重述立场 3 次）</div>
     <div class="hid">
@@ -866,7 +866,7 @@ body.uionly #uihint{display:block}
       <div style="font-size:12.5px">批准「租户级 skill：PG 慢查询定位」晋升？</div>
       <div class="mono" style="margin-top:5px">challenge <b>7K4M-92</b> · 有效 10 分钟 · 单次</div>
       <button style="margin-top:8px;padding:3px 9px;font-size:12px">输入 challenge ＋ 次因子</button></div></div>
-    <div class="card"><b class="cell-fail">🔴 高危：只能发起</b><div class="sub" style="margin:6px 0 0">全网批量下发 · 平台级晋升 · 跨租户 · S0/S1 凭据 · 平台域基线变更 · <b>L3 node 的门 PASS</b></div>
+    <div class="card"><b class="cell-fail">🔴 高危：只能发起</b><div class="sub" style="margin:6px 0 0">全网批量下发 · 平台级晋升 · 跨企业 · S0/S1 凭据 · 平台域基线变更 · <b>L3 node 的门 PASS</b></div>
       <div style="margin-top:8px;background:#101319;border:1px solid var(--line);border-radius:6px;padding:9px">
       <div style="font-size:12.5px">批次 B-2026-0824-01 待签（含 immutable 名单变更）</div>
       <div class="mono" style="margin-top:5px;color:var(--bad)">本渠道不可终结 · 须回强身份面 ＋ 重两签</div>
@@ -1094,7 +1094,7 @@ body.uionly #uihint{display:block}
   </div>
   <div class="note bad" data-edit>🔴 <b>判定只读结构化头，绝不读正文。</b>出站消息若 recipient 是某 task 参与者、
   且可信结构化头（<code>meta.op</code>/<code>event_type</code> ＋ task/node/tenant/version）不属允许集 ⇒ <b>拒发，回指帖子流</b>。<br>
-  <b>一切自由文本必须落 node 帖子流</b>，不走 agent↔agent 直接通道。<b>跨租户默认拒</b>，须 guarded capability。</div>
+  <b>一切自由文本必须落 node 帖子流</b>，不走 agent↔agent 直接通道。<b>跨企业禁止</b>（无 capability 路径，§22.0/§15.5）；<b>跨人默认拒</b>，须 guarded capability。</div>
   <div class="note warn" data-edit>⚠️ 调度者收件面<b>不提供任何「转述 / 转发」op</b>（L3）。
   🔴 <b>转述即使善意且准确，仍会产生内容丢失与消息错序</b> —— 故此处是机制约束，不是纪律约束。</div>
 </div>
@@ -1471,7 +1471,7 @@ body.uionly #uihint{display:block}
     <div class="mono">§21.1 双层结构 · 派生源 · fail-closed 行为 · 一对多处置</div></td>
     <td class="mono">sha256:3e8a…71<br>286 行 / 11.4KB</td><td class="cell-ok">架构评审 PASS</td><td>调度者</td><td><button>打开</button></td></tr>
   <tr><td><b>测试用例设计</b></td><td data-edit><b>用例集</b> 14 条
-    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / <b>绕仓储包直连库</b> / <b>持有效 TenantCtx 跨租户读</b> / <b>拒绝未落审计</b><!-- style-ok: 下句为负测覆盖面说明,「不做 RLS」属跨行误命中 --><br>⚠️ 原三条（SET 而非 SET LOCAL / owner 绕 RLS / BYPASSRLS）随 C.3 裁定「不做 RLS」失效，已换为受控仓储 API 的等价负测（§22.2a #3）</div></td>
+    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / <b>绕仓储包直连库</b> / <b>持有效 TenantCtx 跨企业读</b> / <b>拒绝未落审计</b><!-- style-ok: 下句为负测覆盖面说明,「不做 RLS」属跨行误命中 --><br>⚠️ 原三条（SET 而非 SET LOCAL / owner 绕 RLS / BYPASSRLS）随 C.3 裁定「不做 RLS」失效，已换为受控仓储 API 的等价负测（§22.2a #3）</div></td>
     <td class="mono">sha256:b204…c9<br>14 用例</td><td class="cell-ok">用例评审 PASS</td><td>qa_owner</td><td><button>打开</button></td></tr>
   <tr><td>实现</td><td data-edit>代码变更<div class="mono">6 文件 · +412 / −87</div></td>
     <td class="mono">commit 4a91c02f…<br>+412 / −87</td><td class="cell-fail"><b>代码评审 FAIL</b></td><td>安全角色</td><td><button>打开</button></td></tr>
@@ -1852,7 +1852,7 @@ body.uionly #uihint{display:block}
     一张运维截图可能含<b>主机 IP、token、拓扑</b> ⇒ 属 <span class="s0">S0</span>，
     而 §22.4 定 <b>S0 不落任何文档、帖子、流、日志</b>，对话入帖子流 ⇒ <b>直接违反</b>。<br>
     上例第 5 条即演示此拦截。<b>这不是可选的体验优化，是规范硬性要求的必然推论。</b></td></tr>
-  <tr><td>跨租户</td><td data-edit>附件继承所在 node 的租户；<b>禁止跨租户流动</b>，同 §15.3 ——
+  <tr><td>跨企业</td><td data-edit>附件继承所在 node 的租户；<b>禁止跨企业流动</b>，同 §15.3 ——
     <b>RLS 管数据表，管不到一张图里画了什么</b></td></tr>
   <tr><td class="cell-fail"><b>入 digest</b></td><td data-edit>🔴 附件是帖子的一部分 ⇒ 须入封存 digest。
     但 §18.6 的规范序列只列了 <code>tenant/node/seq/actor/ts/content</code> ——
@@ -1937,7 +1937,7 @@ body.uionly #uihint{display:block}
       ✓ 重启本会话 / 拉起挂掉的组件<br>✓ 与本 ops-Agent 对话，让它去恢复平台</div></div>
     <div class="card"><b class="cell-fail">禁止</b>
       <div style="margin-top:8px;font-size:12.5px" class="dis">✗ 安装 / 升级任何制品<br>✗ 签发凭据、延长有效期<br>
-      ✗ 新增或放宽 capability policy<br>✗ 跨租户任何操作<br>✗ 收口 node / 签门 / 批准批次<br>
+      ✗ 新增或放宽 capability policy<br>✗ 跨企业任何操作<br>✗ 收口 node / 签门 / 批准批次<br>
       ✗ 读取 S0 / S1 内容<br>✗ 修改 immutable 件</div></div>
   </div>
   <div class="note warn" data-edit>⚠️ <b>判据仍是 capability effect，不是动作名</b>（§24.3a）：
@@ -2330,7 +2330,7 @@ body.uionly #uihint{display:block}
     <div class="card" style="flex:1;min-width:210px"><b>人视图</b> <span class="tag t-auth">新增</span>
       <div class="mono" style="margin-top:6px">zzc-devo48-2642 · <b>dingwei</b> · W34</div>
       <div style="margin-top:6px">任务 4 · 门 PASS 3 · FAIL 1</div>
-      <div class="note warn" style="margin:6px 0 0;padding:6px 9px">⚠️ 按 <b>(人 × 租户)</b> 出，<b>不跨租户合并正文</b></div></div>
+      <div class="note warn" style="margin:6px 0 0;padding:6px 9px">⚠️ 按 <b>(人 × 租户)</b> 出，<b>不跨人合并正文</b></div></div>
   </div>
   <div class="note" data-edit>📌 <b>「上周说要做的」与「本周实际做的」可逐周对账</b> ——
   这正是 §9.2 复盘第 4 段「本阶段的判断失误」的<b>周级素材</b>。</div>
@@ -2338,12 +2338,12 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 跨租户个人总览 · 须按 §22.1c 办理 <span class="ref">SA-10 · 安全面阻断项</span></h3>
+  <h3>🔴 跨人个人总览 · 须按 §22.1c 办理 <span class="ref">SA-10 · 安全面阻断项</span></h3>
   <div class="note bad" data-edit>🔴 <b>限制字段 ≠ 解决授权。</b>
   <b>「只出计数与状态、不出内容」不构成读取安全</b> —— 那是把「减少泄漏内容」当成了「授权已解决」。
-  <div style="margin-top:6px">计数与状态<b>本身就是跨租户信息</b>：某人在目标租户
+  <div style="margin-top:6px">计数与状态<b>本身就是跨人信息</b>：某人在目标租户
   <b>有没有参与、参与多少、进展如何</b>，这三件事<b>不需要正文就能读出来</b>。
-  ⇒ 它是一次<b>跨租户数据访问</b>，一律按 §22.1c 办理，无例外。</div></div>
+  ⇒ 它是一次<b>跨人数据访问</b>，一律按 §22.1c 办理，无例外。</div></div>
   <table><thead><tr><th style="width:32px">#</th><th>该 capability 的绑定要求（§22.1c 六项之上的本场景收窄）</th>
   <th style="width:150px">本次申请</th></tr></thead><tbody>
   <tr><td>1</td><td data-edit><b>resource selector</b>：被查看 person · <b>明确列举的目标 tenant 集</b>（不得写「其所在全部租户」）· 时间窗 · <b>仅 count / status 字段集</b></td>
@@ -2374,7 +2374,7 @@ body.uionly #uihint{display:block}
 
 
 <div class="note bad" data-edit>🔴 <b>先把话说准，本屏不写成「已实现租户隔离」。</b>
-本方案<b>不杜绝</b>跨租户泄漏，也不试图杜绝：它拦的是<b>经由仓储 API 的路径</b>；
+本方案<b>不杜绝</b>跨企业泄漏，也不试图杜绝：它拦的是<b>经由仓储 API 的路径</b>；
 不经它的代码（迁移 · 报表 · 手工 psql · 测试夹具）<b>不在保护内</b>。
 ⇒ 只能表述为「<b>正常路径已收敛，异常路径由评审把关</b>」（§22.2c · E.4 #58）。
 <div style="margin-top:6px">⚠️ <b>代价须记明</b>：仅做应用层时，失效<b>不会自己现形</b>。
@@ -2395,7 +2395,7 @@ body.uionly #uihint{display:block}
   <tr><td>4</td><td data-edit><b>缺租户上下文默认拒</b>（fail-closed）</td>
     <td class="mono">同 §22.2a #1</td><td class="cell-fail">未建</td></tr>
   <tr><td>5</td><td data-edit><b>越权负测三类</b></td>
-    <td class="mono">伪造 tenant / 跨租户读 / 缺 context</td><td class="cell-fail">未建</td></tr>
+    <td class="mono">伪造 tenant / 跨企业读 / 缺 context</td><td class="cell-fail">未建</td></tr>
   </tbody></table>
   <div class="note warn" data-edit>⚠️ 第 2 条是这张表的骨：若「默认必须有租户 ID」落成<b>「记得传」</b>，那是<b>纪律</b>；
   只有落成<b>「不传就编译不过」</b>，才是<b>机制</b>。</div>
@@ -2407,7 +2407,7 @@ body.uionly #uihint{display:block}
   <div class="chk stop" data-edit>🔴 <b>仓储包外建库调用＋句柄逃逸　判据：恒为 0　⇒ <b>未达标</b>（现行值以 <code>repo-boundary-gate</code> 输出为准，不写死实数）</b></div>
   <table><thead><tr><th>位置</th><th style="width:70px">引擎</th><th style="width:96px">收编优先级</th><th>理由</th></tr></thead><tbody>
   <tr><td class="mono" data-edit>internal/datad/pgstore.go</td><td>pgx ×3</td><td class="d-high">1</td>
-    <td data-edit>PG 侧是<b>跨租户数据主场</b>，先收它</td></tr>
+    <td data-edit>PG 侧是<b>跨企业数据主场</b>，先收它</td></tr>
   <tr><td class="mono" data-edit>internal/fanout/spool.go · inspool.go · admin.go</td><td>sqlite</td><td class="d-high">2</td>
     <td data-edit>出站含租户数据，<b>泄漏面直接</b></td></tr>
   <tr><td class="mono" data-edit>internal/mcs/board</td><td>sqlite</td><td class="d-mid">3</td>
@@ -2440,7 +2440,7 @@ body.uionly #uihint{display:block}
   <table><thead><tr><th style="width:130px">负测</th><th>构造</th><th style="width:130px">期望</th><th style="width:80px">现状</th></tr></thead><tbody>
   <tr><td data-edit><b>伪造 tenant</b></td><td class="mono" data-edit>请求头声明他租户 ID，服务端派生的 principal 不匹配</td>
     <td class="cell-ok">拒，并落账</td><td class="cell-fail">未建</td></tr>
-  <tr><td data-edit><b>跨租户读</b></td><td class="mono" data-edit>持 A 租户 <code>TenantCtx</code> 查 B 租户资源</td>
+  <tr><td data-edit><b>跨企业读</b></td><td class="mono" data-edit>持 A 租户 <code>TenantCtx</code> 查 B 租户资源</td>
     <td class="cell-ok"><b>PEP 在 selector / 资源查询【之前】拒绝</b>
     <div class="mono">对外返回<b>不区分资源存在与否的统一 deny / not-found</b>；<br>
     🔴 <b>绝不返回「成功的空集合」</b><br>
@@ -2452,9 +2452,9 @@ body.uionly #uihint{display:block}
   </tbody></table>
   <div class="note" data-edit>📌 第三类的期望是<b>编译失败</b>而非运行期拒绝，这是判断第 2 项必做是否真落成的<b>唯一硬证据</b>。</div>
   <div class="note bad" data-edit>🔴 <b>PB-01：「不泄漏存在性」不得当成「拒绝」。</b>
-  <div style="margin-top:6px">原写「跨租户读期望<b>结果集为空</b>，非报错」。不确认资源存在这个<b>目标是对的</b>，
+  <div style="margin-top:6px">原写「跨企业读期望<b>结果集为空</b>，非报错」。不确认资源存在这个<b>目标是对的</b>，
   但<b>手段错了</b>——一个「成功的空集合」会把 §22.1b / §22.2a 的
-  <b>「跨租户默认拒、fail-closed」降格成一次看似成功的查询</b>：
+  <b>「跨企业默认拒、fail-closed」降格成一次看似成功的查询</b>：
   调用方完全可能当作合法空集继续往下走，而且那一行<b>没有「拒并落账」</b>。</div>
   <div style="margin-top:6px">⇒ 正解是<b>分开做两件事</b>：<b>拒绝</b>由 PEP 在资源解析<b>之前</b>完成；
   <b>不泄漏存在性</b>由「统一 deny / not-found、对存在与不存在给同一个回答」保证。
@@ -2477,11 +2477,11 @@ body.uionly #uihint{display:block}
   <tr><td>3</td><td data-edit>新增表是否已接入仓储层</td>
     <td class="mono">扫「未被仓储包引用的表数」<b>恒为 0</b></td><td class="cell-wait">待建</td></tr>
   </tbody></table>
-  <div class="note" data-edit>📌 <b>跨租户读负测须【同时】验四条</b>（PB-01，terra 给）：
+  <div class="note" data-edit>📌 <b>跨企业读负测须【同时】验四条</b>（PB-01，terra 给）：
   ① <b>仓储查询未执行</b>（不是执行了但返回空）　② 调用语义为 <b>deny</b>，非 200 空集
   ③ <b>无目标资源存在性泄漏</b>——存在与不存在须得到同一个回答　④ <b>拒绝审计存在</b>
   <div style="margin-top:6px" class="mono">① 与 ② 分开验是关键：只验 ② 会漏掉「先查了再拒」——
-  那种实现虽然对外拒了，但<b>查询已经落到库上</b>，跨租户读实际发生过。</div></div>
+  那种实现虽然对外拒了，但<b>查询已经落到库上</b>，跨企业读实际发生过。</div></div>
   <div class="note warn" data-edit>⚠️ <b>这些计数器是评审的旁证，不是替代</b>：
   它们查得出「<b>有没有新开口子</b>」，查不出「<b>这个查询的租户语义对不对</b>」—— 后者是人的活（第 IV 类）。</div>
   <div class="note bad" data-edit>🔴 <b>本屏是目标合同：各项以逐行状态为准。</b>

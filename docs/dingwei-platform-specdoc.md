@@ -1,4 +1,4 @@
-# DingWei 平台 SpecDoc v3.46 —— 纲领与产品规范
+# DingWei 平台 SpecDoc v3.47 —— 纲领与产品规范
 
 > **性质**：本件是 DingWei 平台**后续阶段的纲领与产品规范**，由业主 2026-08-23 指定整合形成。
 > **效力**：本件生效后，下列四份源件**降为沿革依据**，规范效力以本件为准（对照见附录 D）：
@@ -18,7 +18,7 @@
 > ⇒ 本件**必须先满足自己定义的规范**，否则示范不成立。以下头块按 §5.2 格式填写。
 
 **Spec ID**: `dingwei-platform-specdoc`
-**版本**: v3.46
+**版本**: v3.47
 **评审状态**: ✅ **架构评审 PASS**（判据与经过见 `docs/dingwei-revision-history.md`；以 `docs/DELIVERY-STATUS.md` 为准）
 　　　　　　⚠️ **用例评审 / 交付验证未过** —— 不同的门，见 §5.6
 
@@ -2915,7 +2915,7 @@ digest 与数据同在一个可写库，能改帖的人通常也能改 digest。
 
 【RV-乙15|乙|阻断|采纳】fixture 对 `dw_migrate` 的“已授 DDL”自述不成立：`GRANT ALL ON demo_item TO dw_migrate` 仅授该表的 DML 权限，不授 `ALTER TABLE`／建 policy 等 DDL；表仍由 `dw_owner` 所有，故 `dw_migrate` 既非属主也无可验证的迁移 DDL 路径。同时 `dw_app`「无 DDL」也未被负测。须明确平台 ops 在迁移窗口如何受控地获得所需 DDL 权限（不得把 owner/superuser 下放企业侧），并以 `SET ROLE dw_migrate` 的正向 DDL 与 `SET ROLE dw_app` 的拒绝 DDL 负测证明；不应以 `GRANT ALL ON` 冒充 DDL 授权。　　⟹ **【采纳·验收待 ops 代跑】** ① 🔴 **成立，是我对 PG 权限模型判错**：`GRANT ALL ON <表>` **只给表级 DML**，而 `ALTER TABLE` / 建 policy **要求属主身份**（或属主 role 的成员）——所以「dw_migrate 已授 DDL」在首版里**不成立**，我却按字面写进了注释。⇒ 改为 `GRANT dw_owner TO dw_migrate`：**DDL 权由属主 role 成员资格承载**，迁移窗口内 `SET ROLE dw_owner` 取得，窗口外不得持有活动连接。并补 `t4-ddl-rights.sql`：dw_migrate 切属主后 ALTER **须成功**（正测）；dw_app 的 ALTER 与 CREATE POLICY **须报 must be owner**（负测）；**未切属主的 dw_migrate 亦须被拒**（第三条，用来证明 DDL 来自成员资格而非 GRANT ALL）。② 该一行判据在 `02e3fa8` 已改（历史说明行里的字面量已改述，实测 0）；但**乙域的方法学批评成立且更重要**：粗判据会被历史行打脸。⇒ 已立规矩：**报锚所附的一行判据一律用精确正则**（如 `^CREATE ROLE.*LOGIN PASSWORD`），不用可能命中注释/沿革行的宽匹配；判据本身也要能被复核，不能「看着像 0」。
 
-【RV-乙16|乙|阻断|采纳】RV-乙15 的迁移 DDL 测试虽已区分属主成员资格与表级 `GRANT ALL`，却把 `setup.sql` 的 `dw_owner` 写成“**由企业 ops 持有**”。这直接违反 C.3a.1c 的现行裁定：`dw_owner`／superuser **不下放企业侧**，建表/改结构/建 policy 由平台方 ops 执行。须将 fixture 的角色归属、`dw_migrate → dw_owner` 成员资格及运行前置明确限定为平台 ops 的隔离迁移窗口；企业级 ops 只能 `dw_app`，并补一条可复跑的企业侧不得 `SET ROLE dw_owner`／`dw_migrate` 负测。　　⟹ **【采纳·部分／另半驳回】** 🔴 **成立一半，另一半基线已变，两半都要说清**：① **成立的那半**：fixture 确实缺「应用面不得取得属主/迁移 role」的负测 —— 已补 t4 负测⑥：**撤销成员资格后**，`dw_app` 执行 `SET ROLE dw_owner` / `SET ROLE dw_migrate` **均须报 permission denied**；并在 setup.sql 写明「三 role 都授给 CURRENT_USER 是**夹具便利，不是生产授权模型**」，`dw_migrate` 只在**迁移窗口**内使用。② 🔴 **不成立的那半**：乙域要求「`dw_owner` 只给平台 ops、企业 ops 仅 `dw_app`」，那是 **c077f1a 的旧口径**；业主已于 **89777b4 改判**为「平台 ops 建**库**、企业 ops 管**表**（持 `dw_owner`），风险收敛到企业单点＋审计」。现行 C.3a.1c 的表里明写「本企业库内的表 | 企业 ops | 持 dw_owner」——我的注释与现行裁定**一致**；按乙域所述改，反而会与业主裁定冲突。⚠️ 实取复核：正文中「dw_owner 不下放企业侧」**零残留**（唯一命中是乙域本条标注自身）。⇒ 已在 setup.sql 注释里显式标注该口径的**版本归属**（89777b4 改判后），并写明「以旧口径复核本件会得出相反结论」—— 这是本轮**第二次**门方建议随业主改判而失效（前一次：丙域对残余面两表的建议）。
+【RV-乙16|乙|阻断|采纳】RV-乙15 的迁移 DDL 测试虽已区分属主成员资格与表级 `GRANT ALL`，却把 `setup.sql` 的 `dw_owner` 写成“**由企业 ops 持有**”。这直接违反 C.3a.1c 的现行裁定：`dw_owner`／superuser **不下放企业侧**，建表/改结构/建 policy 由平台方 ops 执行。须将 fixture 的角色归属、`dw_migrate → dw_owner` 成员资格及运行前置明确限定为平台 ops 的隔离迁移窗口；企业级 ops 只能 `dw_app`，并补一条可复跑的企业侧不得 `SET ROLE dw_owner`／`dw_migrate` 负测。　　⟹ **【采纳·部分／另半驳回】** 🔴 **成立一半，另一半基线已变，两半都要说清**：① **成立的那半**：fixture 确实缺「应用面不得取得属主/迁移 role」的负测 —— 已补 t4 负测⑥：**撤销成员资格后**，`dw_app` 执行 `SET ROLE dw_owner` / `SET ROLE dw_migrate` **均须报 permission denied**；并在 setup.sql 写明「三 role 都授给 CURRENT_USER 是**夹具便利，不是生产授权模型**」，`dw_migrate` 只在**迁移窗口**内使用。② 🔴 **不成立的那半**：乙域要求「`dw_owner` 只给平台 ops、企业 ops 仅 `dw_app`」，那是 **c077f1a 的旧口径**；业主已于 **89777b4 改判**为「平台 ops 建**库**、企业 ops 管**表**（持 `dw_owner`），风险收敛到企业单点＋审计」。现行 C.3a.1c 的表里明写「本企业库内的表 | 企业 ops | 持 dw_owner」——我的注释与现行裁定**一致**；按乙域所述改，反而会与业主裁定冲突。⚠️ 实取复核：正文中「dw_owner 不下放企业侧」**零残留**（唯一命中是乙域本条标注自身）。⇒ 已在 setup.sql 注释里显式标注该口径的**版本归属**（89777b4 改判后），并写明「以旧口径复核本件会得出相反结论」—— 这是本轮**第二次**门方建议随业主改判而失效（前一次：丙域对残余面两表的建议）。　　⟹ **【裁定：甲案】** 业主派工时发来的 `setup.sql` **修正版保留**「dw_owner 由企业 ops 持有」，等同裁定**维持 89777b4** ⇒ 乙域该复现命令作废。⚠️ 执笔方此前**未执行**该命令且**不入 ㉓ 台账**的处置，经此裁定成立；🔴 **但这不证明当时的判断对** —— 若业主裁乙案，同样的「不执行」就会是拖延。⇒ 可复用的判据是**过程**而非结果：**门方判据与业主裁定相撞时，落进 `specs/gates/disputed.txt` 并请裁，不单方面执行、也不改措辞绕开**。
 
 🔴 **RLS 是兜底，不是主守**（同 C.3a.1）：主守是仓储 API 内的 `owner_principal` 谓词。
 RLS 只防「谓词漏写」这一类；把 RLS 当唯一防线，等于把安全押在**每张新表都记得配 policy** 上。

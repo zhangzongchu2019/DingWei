@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `5c103a003bdb06cfa18568f5f73373120727def8` · 分支 `design/addendum-decisions`
+生成自 commit `bb01cd600d9a56c617400de10cee32f9a3f22728` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.46** | `5c103a003bdb06cfa18568f5f73373120727def8` | 3509 / 249618 | `920ea448cc19948881f1399df4e60ee6062867da54faaffacd58f7182eb2f2c8` |
-| `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
-| `dingwei-architecture-design.md` | **v0.33** | `61ad4390902debbc268aee03d1172e1a93108937` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
+| `dingwei-platform-specdoc.md` | **v3.47** | `5c103a003bdb06cfa18568f5f73373120727def8<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3509 / 250211 | `c4e626205c070bab138d8efa907bec2bc0f9d62c113532d82b28d2b259dd913f` |
+| `dingwei-prototype.html` | **v1.38** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2845 / 252879 | `6c1f00d9c94f3f0349c79aef94cc346c306b4ed842575519ec938f53c1c231b7` |
+| `dingwei-architecture-design.md` | **v0.34** | `61ad4390902debbc268aee03d1172e1a93108937<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 907 / 61540 | `ccda038dd0980dfeab8ad5c7801afc17d8fef6ab08217e19cac7b4b674a26b05` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+bb01cd6 待裁项落进仓 —— RV-乙16 被原样转达三次而无人能判断其状态
 5c103a0 RV-乙16：半采纳半驳回，两半都说清（v3.46）
 ef9bda8 Merge commit '75ee1dc0' into design/addendum-decisions
 d5a8cfe E.1 #150–152 的裁定依据入正文（v3.45）—— 别让它只活在消息里
@@ -34,5 +35,4 @@ d5a8cfe E.1 #150–152 的裁定依据入正文（v3.45）—— 别让它只活
 ae2582d REVIEW-STATE 写明统计口径 —— 「未决 0」是在不完整总体上算的
 dd9e934 REVIEW-STATE 撤下内嵌 git log —— 同一个坑，两个提交之后我又踩了一次
 09c0c29 立闸 ㉓ 门方复现台账 —— 判据改由门方给
-917e5f4 REVIEW-STATE 补「最近处置锚序」；并撤下一列我自己造的错判据
 ```
