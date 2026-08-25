@@ -26,6 +26,26 @@ echo "> 🔴 **本包不含任何门方结论。** 每行给出【命令】与�
 echo "> ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。"
 echo "> 语义层判断（引对号是否引错义、枚举是否可反推、effect 是否真的单调收紧）**机器判不了**，归人审。"
 echo
+
+# 🔴 评审对象内容指纹（乙域 terra R2 轮4 · RV-乙08）：
+#   原先只盖一个「分支头」commit 锚，而证据包在 pre-commit 生成 ——
+#   它盖的是【父提交】，随后的提交又改了三件正文与分析工具，
+#   于是「证据锚」与「被评审的内容」根本不是同一份东西，提交距离 ≤1 只是**代理判据**。
+#   ⇒ 直接记被分析对象的 sha256：指纹对得上，就与提交拓扑无关地证明了「这份证据analyzed 的就是这份内容」。
+echo "## 评审对象内容指纹（本包分析的就是这些字节）"
+echo
+echo '```'
+for _f in docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md \
+          docs/dingwei-prototype.html $(ls scripts/*.sh 2>/dev/null) \
+          $(ls specs/tools/*.py specs/tools/*.sh 2>/dev/null); do
+  [ -f "$_f" ] && echo "REVIEWED $(sha256sum "$_f" | cut -d' ' -f1)  $_f"
+done
+echo '```'
+echo
+echo "> 🔴 **指纹对不上即本包非当期产出** —— 与「分支头」是两个不同的保证："
+echo "> 分支头说的是【在哪个提交上跑的】，指纹说的是【跑的是哪些字节】。"
+echo "> 提交距离只是前者的代理，改动落在那一个提交里时它判不出来（乙域 RV-乙08）。"
+echo
 run() { # 标题, 命令
   echo "### $1"; echo; echo '```'; echo "\$ $2"; sh -c "$2" 2>&1 | sed 's/^/  /'; echo '```'; echo
 }

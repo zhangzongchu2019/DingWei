@@ -36,16 +36,45 @@ check() {
   # ⚠️ 不用 `rev-list --count`：**合并历史上它会把并入的分支一并计数** —— 实测 merge 后
   #   「证据锚 → 其子提交」的距离变成 2，判据当场失效。改用【第一父链】判相邻，
   #   它才对应「证据在 pre-commit 生成，锚 = 该提交的父」这一真实形态。
-  _n=$(git rev-list --count --first-parent "$_a..$_last" 2>/dev/null || echo 99)
-  if [ -z "$_last" ] || [ "${_n:-99}" -le 1 ] || git merge-base --is-ancestor "$_last" "$_a" 2>/dev/null; then
-    echo "  ✓ 证据包为当期产出（证据锚 $(echo "$_a"|cut -c1-12)，距评审对象末次改动 ${_n:-0} 个提交 ≤1）"
-    echo "  ⚠️ 本闸判不了【内容是否真由该锚跑出】—— 那要重跑 collect.sh 比对，归门方抽验。"
-    return 0
+  # 🔴 乙域 terra R2 轮4（RV-乙08）：提交距离 ≤1 是**代理判据**，
+  #   而落后的那一个提交恰好改了三件正文与分析工具时，代理正好失效 ——
+  #   「证据锚」与「被评审的内容」不是同一份东西，闸却放行。
+  #   ⇒ 判据换成【内容指纹】：证据包自报它分析的每个文件的 sha256，逐个与现值比。
+  #     指纹对得上，就与提交拓扑无关地证明了「这份证据分析的就是这份字节」。
+  #   ⚠️ terra 给的两条修法本席都没有直接取，理由写在这里以便复核：
+  #     其一「重跑 collect --write 后再冻结」是**循环的** —— collect 在 pre-commit 盖父提交，
+  #       提交完成后证据又落后一个，永远追不上自己；
+  #     其二「未触及评审对象的 diff 闭包豁免」只在落后那一提交没动评审对象时成立，
+  #       而冻结提交通常就是改正文的那一次。
+  #     指纹判据同时满足这两条想要的东西，且不依赖提交拓扑。
+  _fp=$(grep -c '^REVIEWED ' "$EV" 2>/dev/null || true)
+  if [ "${_fp:-0}" -eq 0 ]; then
+    echo "✗ $EV 无「评审对象内容指纹」段（REVIEWED 行）—— 无可比对象，闸坏了"
+    echo "  ⇒ 重跑 specs/evidence/collect.sh --write（该段由乙域 RV-乙08 引入）"
+    return 2
   fi
-  echo "✗ 证据包早于最后一次评审对象改动：证据锚 $(echo "$_a"|cut -c1-12)，评审对象末次改动 $(echo "$_last"|cut -c1-12)，其间 $_n 个提交。"
-  echo "  🔴 **快照指纹一致只证明该文件没被篡改，不证明其内容是当期产出** —— 两者是不同的保证。"
-  echo "  ⇒ 重跑 specs/evidence/collect.sh 后再提交。"
-  return 1
+  _bad=0
+  while read -r _kw _want _file; do
+    [ "$_kw" = "REVIEWED" ] || continue
+    if [ ! -f "$_file" ]; then
+      echo "✗ 证据包声称分析过 $_file，而该文件现已不存在"; _bad=$((_bad+1)); continue
+    fi
+    _got=$(sha256sum "$_file" | cut -d' ' -f1)
+    if [ "$_got" != "$_want" ]; then
+      [ "$_bad" -eq 0 ] && echo "✗ 证据包非当期产出：以下文件在证据生成后又被改过"
+      echo "    $_file"
+      echo "      证据记 $(echo "$_want"|cut -c1-16)… · 现值 $(echo "$_got"|cut -c1-16)…"
+      _bad=$((_bad+1))
+    fi
+  done < "$EV"
+  if [ "$_bad" -gt 0 ]; then
+    echo "  🔴 **提交距离 ≤1 判不出这一类** —— 改动就落在那一个提交里（乙域 RV-乙08）。"
+    echo "  ⇒ 重跑 specs/evidence/collect.sh --write 后再提交。"
+    return 1
+  fi
+  echo "  ✓ 证据包为当期产出（证据锚 $(echo "$_a"|cut -c1-12)；$_fp 个评审对象指纹逐个比对一致）"
+  echo "  ⚠️ 指纹证明【分析的是这些字节】，不证明【分析得对】—— 后者归门方抽验。"
+  return 0
 }
 
 selftest() {
@@ -53,35 +82,47 @@ selftest() {
   n=0; fail=0
   ok(){ n=$((n+1)); echo "  ✓ $1"; }; bad(){ echo "  ✗ 反测未过：$1"; fail=1; }
   _h=$(git rev-parse HEAD)
+  _f1="$T/obj1.md"; _f2="$T/obj2.md"
+  printf 'AAA\n' > "$_f1"; printf 'BBB\n' > "$_f2"
+  _mk(){ # 造一份证据包：$1=锚，其余为「被分析对象」
+    _anchor=$1; shift
+    printf '生成时刻：X\n分支头：`%s`\n' "$_anchor" > "$T/e.md"
+    for _x in "$@"; do printf 'REVIEWED %s  %s\n' "$(sha256sum "$_x"|cut -d" " -f1)" "$_x" >> "$T/e.md"; done
+  }
 
+  _mk "$_h" "$_f1" "$_f2"
+  EV="$T/e.md" check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "不误伤：全部指纹一致时放行" || bad "当期证据包被误拦"
+
+  # 🔴 RV-乙08 的形态本身：证据生成后评审对象又被改了
+  _mk "$_h" "$_f1" "$_f2"; printf 'CHANGED\n' > "$_f2"
+  EV="$T/e.md" check >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "🔴 拦住：证据生成后评审对象被改（正是乙域 RV-乙08）" || bad "被改过的评审对象放行了"
+  printf 'BBB\n' > "$_f2"
+
+  # 🔴 判据须与提交拓扑无关：锚取仓库首个提交（落后极多），指纹一致仍须放行。
+  #   旧判据在这里恒 FAIL —— 那正是「提交距离」作为代理判据的失效点。
+  _mk "$(git rev-list --max-parents=0 HEAD | head -1)" "$_f1" "$_f2"
+  EV="$T/e.md" check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "不误伤：锚落后极多但指纹一致仍放行（判据不再依赖提交拓扑）" \
+    || bad "指纹一致却因拓扑被拦 —— 代理判据的残留"
+
+  # 🔴 反向：锚等于 HEAD 但指纹不符，仍须拦 —— 防「锚对了就算数」
+  _mk "$_h" "$_f1" "$_f2"; printf 'X\n' > "$_f1"
+  EV="$T/e.md" check >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "拦住：锚等于 HEAD 但指纹不符（锚对不能替代内容对）" || bad "锚对就放行了"
+  printf 'AAA\n' > "$_f1"
+
+  _mk "$_h" "$_f1"; printf 'REVIEWED %s  %s\n' "$(sha256sum "$_f1"|cut -d" " -f1)" "$T/gone.md" >> "$T/e.md"
+  EV="$T/e.md" check >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "拦住：证据声称分析过的文件已不存在" || bad "文件消失被放行"
+
+  # 🔴 无指纹段＝无可比对象，须判【闸坏】而不是【通过】
   printf '生成时刻：X\n分支头：`%s`\n' "$_h" > "$T/e.md"
   EV="$T/e.md" check >/dev/null 2>&1
-  [ $? -eq 0 ] && ok "不误伤：锚等于 HEAD 时放行" || bad "当期证据包被误拦"
+  [ $? -eq 2 ] && ok "拦住：证据包无 REVIEWED 指纹段判闸坏（非免检）" || bad "无指纹段被当通过"
 
-  printf '生成时刻：X\n分支头：`%s`\n' "$(git rev-list --max-parents=0 HEAD | head -1)" > "$T/e.md"
-  EV="$T/e.md" check >/dev/null 2>&1
-  [ $? -eq 1 ] && ok "🔴 拦住：证据锚早于评审对象末次改动（非当期产出）" || bad "过期证据包被放行"
-
-  # 🔴 乙域 terra 指出的结构性缺陷：证据锚天然比其所在提交少一个（pre-commit 生成），
-  #   若判据要求「不落后于评审对象末次改动」，则在**任何冻结锚上恒 FAIL**。
-  # 构造需与判据同源：取【评审对象末次改动】的父提交作证据锚 —— 那正是冻结锚上的真实形态
-  #（证据在 pre-commit 生成，锚 = 该提交的父）。
-  #   ⚠️ 首版反测用 HEAD~1，而 HEAD~1 未必改过评审对象 ⇒ 距离 >1，反测自己构造错了。
-  _lastc=$(git log -1 --format=%H -- docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md \
-             docs/dingwei-prototype.html scripts specs/tools 2>/dev/null)
-  printf '生成时刻：X\n分支头：`%s`\n' "$(git rev-parse "$_lastc^" 2>/dev/null || git rev-parse HEAD)" > "$T/e.md"
-  EV="$T/e.md" check >/dev/null 2>&1
-  [ $? -eq 0 ] && ok "🔴 不误伤：证据锚为【评审对象末次改动】的父（冻结锚上的正常形态）须放行" \
-    || bad "冻结锚上恒判 FAIL —— 闸在评审时点系统性误判"
-
-  # 🔴 钉住首版的死循环：pre-commit 时 HEAD 尚是上一个提交，
-  #   若判据写成「锚 == HEAD」则证据包永远追不上，闸把自己卡死。
-  printf '生成时刻：X\n分支头：`%s`\n' "$(git rev-parse HEAD)" > "$T/e.md"
-  EV="$T/e.md" check >/dev/null 2>&1
-  [ $? -eq 0 ] && ok "不误伤：证据锚 == HEAD 时放行（不得因 pre-commit 时序把自己卡死）" \
-    || bad "证据锚等于 HEAD 却被拦 —— 判据把自己卡死了"
-
-  printf '生成时刻：X\n没有锚\n' > "$T/e.md"
+  printf '生成时刻：X\n没有锚\nREVIEWED x  y\n' > "$T/e.md"
   EV="$T/e.md" check >/dev/null 2>&1
   [ $? -eq 2 ] && ok "拦住：头块无锚判闸坏（非免检）" || bad "无锚被当免检"
 
