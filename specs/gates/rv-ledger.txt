@@ -57,7 +57,7 @@ RV-甲31	甲	阻断	未决	采纳	dingwei-architecture-design.md	终审实跑新
 RV-乙08	乙	阻断	未决	采纳	dingwei-architecture-design.md	RV-乙06 不能据当前终审锚判闭：证据包钉 `1459e4`，而冻结锚 `a96c219` 的随后提交仍改了三件正文、
 RV-乙09	乙	阻断	未决	采纳	dingwei-architecture-design.md	复核结论：内容指纹方向成立，但 RV-乙08 尚不可采纳。`collect.sh` 的命令输出依赖 `specs/evi
 RV-乙10	乙	阻断	未决	采纳	dingwei-architecture-design.md	冻结锚实跑仍拒绝 `evidence-fresh-gate.sh`：本包生成后 `scripts/prose-style
-RV-乙11	乙	阻断	未决	未处置	dingwei-architecture-design.md	⑭双侧比对漏暂存区删除：实测 git rm --cached 一个 REVIEWED 件而保留工作区后，⑭仍 rc=0。REVIEWED 路径不存在于暂存区须拒绝／判闸坏，并补反测；此前不得判 RV-乙10 闭合。
+RV-乙11	乙	阻断	未决	采纳	dingwei-architecture-design.md	⑭的双侧比对仍漏“暂存区删除”分支：实测 `git rm --cached -- docs/dingwei-protot
 RV-乙04	乙	阻断	挂账	挂账	dingwei-architecture-design.md	“加 `owner_principal` ＋ RLS 兜底”尚不是可实现、可验收的隔离合同：未定义受控 DB role／
 RV-甲10	甲	阻断	挂账	挂账	dingwei-architecture-design.md	这还不足以构成“一企业一库＋人层 RLS”的可施工数据库架构。至少缺：可信 principal→企业库注册项/DSN s
 RV-甲16	甲	阻断	未决	采纳	dingwei-architecture-design.md	体例挂账 #6 的逐段判定：待办表 #6 整格是旧事故与教训，且自己宣称“不进正文”却仍在正文；移沿革。正文若需约束，只

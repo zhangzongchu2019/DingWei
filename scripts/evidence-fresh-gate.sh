@@ -74,7 +74,22 @@ check() {
     if git cat-file -e ":$_file" 2>/dev/null; then
       _idx=$(git cat-file blob ":$_file" 2>/dev/null | sha256sum | cut -d' ' -f1)
     else
-      _idx=""
+      # 🔴 乙域 terra R2 轮5（RV-乙11）：这里原来直接 _idx="" 跳过 ——
+      #   于是 `git rm --cached <REVIEWED 件>`（工作区保留）后本闸仍 rc=0：
+      #   **提交会丢掉一个评审对象，而闸说当期**。
+      #   ⚠️ 这正是我上一轮自陈的「取不到就判空」的**又一形态**：
+      #     前两次是「命令失败的输出不是空」，这次是「不在暂存区」被当成「不必判」。
+      #     ⇒ 判据：**「取不到」有两种含义 —— 不适用 / 缺失，必须分开。**
+      #   · 相对路径 ⇒ 仓内评审对象，缺失即拒（提交会丢件）；
+      #   · 绝对路径 ⇒ 仓外（反测夹具），本就不入索引，跳过。
+      case "$_file" in
+        /*) _idx="" ;;
+        *)
+          echo "✗ 评审对象 $_file 不在暂存区 —— 本次提交会丢掉一个 REVIEWED 件，而证据包仍声称分析过它"
+          echo "  🔴 「取不到」不等于「不必判」：不在索引 ＝ 缺失，不是不适用。"
+          echo "  ⇒ 若确要删除该件，先 collect --write 重出证据（新包不再含它），再提交。"
+          return 1 ;;
+      esac
     fi
     if [ -n "$_idx" ] && [ "$_idx" != "$_want" ] && [ "$_got" = "$_want" ]; then
       [ "$_bad" -eq 0 ] && echo "✗ 证据包非当期产出：以下文件【暂存区】与证据不符（工作区却是对的）"
@@ -148,6 +163,17 @@ selftest() {
     [ $? -eq 1 ] && ok "🔴 拦住：工作区对而暂存区旧（先 add 后 collect 的形态，乙域 RV-乙10）" \
       || bad "暂存区与证据不符却放行 —— 闸测的不是将要被提交的东西"
     git add "$_probe" 2>/dev/null; rm -f "$_sv"
+  fi
+
+  # 🔴 RV-乙11 的形态：暂存区删掉 REVIEWED 件（工作区保留）须拒，不得当空值跳过
+  _probe2=specs/gates/rv-ledger.txt
+  if [ -f "$_probe2" ] && git rev-parse --git-dir >/dev/null 2>&1; then
+    _mk "$_h" "$_probe2"
+    git rm --cached -q -- "$_probe2" 2>/dev/null
+    EV="$T/e.md" check >/dev/null 2>&1
+    [ $? -eq 1 ] && ok "🔴 拦住：暂存区缺 REVIEWED 路径（git rm --cached，乙域 RV-乙11）" \
+      || bad "暂存区缺 REVIEWED 件却放行 —— 提交会丢件而闸说当期"
+    git add -- "$_probe2" 2>/dev/null
   fi
 
   _mk "$_h" "$_f1"; printf 'REVIEWED %s  %s\n' "$(sha256sum "$_f1"|cut -d" " -f1)" "$T/gone.md" >> "$T/e.md"
