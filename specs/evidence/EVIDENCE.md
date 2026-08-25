@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T15:45:31Z
-分支头：`405d33a86780f4b0ba71bac283712c0332ed295a`
+生成时刻：2026-08-25T16:17:08Z
+分支头：`737a77bc3be738e34edd8fc0e618f1758c1f4aab`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -11,9 +11,9 @@
 
 ```
 REVIEWED b00b38fc0c26615377ab1c3c3bb2fa589984bded65d4c7ace35b863b117ce712  docs/dingwei-platform-specdoc.md
-REVIEWED ccda038dd0980dfeab8ad5c7801afc17d8fef6ab08217e19cac7b4b674a26b05  docs/dingwei-architecture-design.md
+REVIEWED be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79  docs/dingwei-architecture-design.md
 REVIEWED 6c1f00d9c94f3f0349c79aef94cc346c306b4ed842575519ec938f53c1c231b7  docs/dingwei-prototype.html
-REVIEWED 6ac85857f07905aea5a0c4167a55682b59dbbf8e3426e86db5dc7d91e2f99ed1  docs/DELIVERY-STATUS.md
+REVIEWED cb482590f24390f933f70537585a46ed6191daab1eefa2ec78fde270edfc3ff4  docs/DELIVERY-STATUS.md
 REVIEWED a1fe9843b31755f89f241d80a39b57a15e72f3384c5af0219e284ca1ae9135eb  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -32,11 +32,12 @@ REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scrip
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
 REVIEWED 679e8c6f73f15972895348cab70bf184c4b3763e64efb05ab1de0f716c661a6b  scripts/reviewer-repro-gate.sh
 REVIEWED bf1e2ba70efd82d87bd7b39c9cd75ddbc20ed636374aed3c7488c71f01eab451  scripts/rv-integrity-gate.sh
-REVIEWED ce3b28d3193c5d3bc36397652f71fd5d5284db9055c483cec2df43cba94d48bc  scripts/speclint-gate.sh
+REVIEWED 66efabce81c47a14da1af1fb563700f5a7ff27f27da7f89d38c0a66413098820  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
 REVIEWED 04a61a19321b7a35a78a5a886b1bc915dd5012fcf1dbd8636627e058c966eb3e  scripts/status-consistency-check.sh
 REVIEWED 4c41cb0ccd5452a7eadd8f5eddad986660d9cf51cdc461d51235eb0894100023  scripts/superseded-claims-gate.sh
 REVIEWED a5fcd7cfbd7194d44a10fd7bba42c27f0b7258c09861d6ecf39a7337e294f66f  scripts/tenant-isolation-gate.sh
+REVIEWED 05ea1686dcc89b8a2538d6b6b2ed221c2184bd49f8d7742cd7d86fefb3802865  scripts/title-version-gate.sh
 REVIEWED 91102ae852827ee0b7ecfe122d29f13c95ff73d49752be29f3991f2ca93b2832  specs/tools/analyze.sh
 REVIEWED fa2e42ef5aabe1418512e2e3b4cf4a103c978a4bcfd80e0c06db4c536ee092d6  specs/tools/disposition-audit.py
 REVIEWED 49a9eab11f34bdef4c65e1c4c6f0ac969cfa28faa834aa52d7f84d5d453bc8e7  specs/tools/export-bundle.sh

@@ -300,6 +300,17 @@ scripts/reviewer-repro-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/reviewer-repro-gate.sh --selftest; echo "✗ 门方复现闸的反测未过"; exit 1; }
 echo "  ㉓ 门方复现台账的反测 ✓"
 
+# ㉔ 标题/版本字段一致（交付前实取三件版本时发现架构件标题 v0.33 vs 字段 v0.34）：
+#    闸 ① 的 hdr-state **只覆盖 SpecDoc**，架构件与原型不在其判据面内
+#    ⇒ 该不一致一路带到交付前才被人工发现。属「**断言作用域小于实际需要**」。
+if [ ! -x scripts/title-version-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/title-version-gate.sh 不可执行"; exit 1
+fi
+scripts/title-version-gate.sh || exit 1
+scripts/title-version-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/title-version-gate.sh --selftest; echo "✗ 标题/版本一致闸的反测未过"; exit 1; }
+echo "  ㉔ 标题/版本一致闸的反测 ✓"
+
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
 #    **没有一次是执笔方自查出来的**。
@@ -311,7 +322,7 @@ python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
 python3 specs/tools/disposition-audit.py || true
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–㉓ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–㉔ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–㉓ ＋ ⑱ triage）"
+  echo "✓ 提交闸全过（①–㉔ ＋ ⑱ triage）"
 fi

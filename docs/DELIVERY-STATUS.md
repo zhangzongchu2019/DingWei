@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `405d33a86780f4b0ba71bac283712c0332ed295a` · 分支 `design/addendum-decisions`
+生成自 commit `737a77bc3be738e34edd8fc0e618f1758c1f4aab` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.49** | `405d33a86780f4b0ba71bac283712c0332ed295a` | 3509 / 251148 | `b00b38fc0c26615377ab1c3c3bb2fa589984bded65d4c7ace35b863b117ce712` |
+| `dingwei-platform-specdoc.md` | **v3.49** | `737a77bc3be738e34edd8fc0e618f1758c1f4aab` | 3509 / 251148 | `b00b38fc0c26615377ab1c3c3bb2fa589984bded65d4c7ace35b863b117ce712` |
 | `dingwei-prototype.html` | **v1.38** | `9d70c867f5ed20052e53a274565fb941177c48fe` | 2845 / 252879 | `6c1f00d9c94f3f0349c79aef94cc346c306b4ed842575519ec938f53c1c231b7` |
-| `dingwei-architecture-design.md` | **v0.34** | `9d70c867f5ed20052e53a274565fb941177c48fe` | 907 / 61540 | `ccda038dd0980dfeab8ad5c7801afc17d8fef6ab08217e19cac7b4b674a26b05` |
+| `dingwei-architecture-design.md` | **v0.34** | `9d70c867f5ed20052e53a274565fb941177c48fe<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 907 / 61540 | `be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+737a77b 失败日志入仓（v3.49）—— 它抓出了两处派工转述里没有的东西
 405d33a 证据日志改回原名 —— 改名会让证据与来源对不上
 9430718 PG17 实跑原始日志入仓（v3.48）—— 「已实跑」终于有了载体
 0cc20ea 按业主派工：fixture 实跑修正 ＋ 26 处跨租户重判 ＋ 丙域落勾合入（v3.47）
@@ -34,5 +35,4 @@
 9d70c86 按业主派工：fixture 实跑修正 ＋ 26 处跨租户重判 ＋ RV-乙16 裁定入案（v3.47）
 5d7c3b9 checklist: 丙域跨制品清单执行落勾——10 PASS + 2 FAIL（CAC-4/5 跨制品术语依赖未同步，附可复跑证据）
 bb01cd6 待裁项落进仓 —— RV-乙16 被原样转达三次而无人能判断其状态
-5c103a0 RV-乙16：半采纳半驳回，两半都说清（v3.46）
 ```

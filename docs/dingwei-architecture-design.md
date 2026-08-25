@@ -1,4 +1,4 @@
-# DingWei 平台架构设计 v0.33 —— 业务 / 技术 / 部署 / 数据库
+# DingWei 平台架构设计 v0.34 —— 业务 / 技术 / 部署 / 数据库
 
 **版本**: v0.34
 **依据**: SpecDoc —— 版本与门状态见 `docs/DELIVERY-STATUS.md`

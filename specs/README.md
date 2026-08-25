@@ -42,6 +42,7 @@
 | `scripts/gen-review-state.sh` | 评审状态生成件（提交闸 ㉒）—— 从台账与闸实跑派生 `docs/REVIEW-STATE.md`。🔴 立项原因：评审转述与推锚已**交叉五次**，根子是「我推锚快于转述、而状态只活在消息里」⇒ 状态落进仓，门方 checkout 即可读 |
 | `specs/gates/disputed.txt` | 待裁项 —— 门方判据与业主裁定相撞、执笔方不得单方面决定的条目。🔴 立件原因：争议只活在消息里，被原样转达三次而无人能判断其状态 |
 | `specs/gates/reviewer-repro.txt` | 门方复现台账的数据（㉓）—— 每行：<发现ID> TAB <期望> TAB <门方原命令> |
+| `scripts/title-version-gate.sh` | 标题/版本字段一致闸（提交闸 ㉔）—— 三件各自标题版本号须与版本字段一致。🔴 立闸原因：交付前实取发现**架构件标题 v0.33 vs 字段 v0.34**；闸 ① 的 hdr-state **只覆盖 SpecDoc**，架构件与原型不在其判据面内 ⇒ 属「断言作用域小于实际需要」 |
 | `scripts/reviewer-repro-gate.sh` | 门方复现台账（提交闸 ㉓）——每条发现记**门方自己给的复现命令**与期望值，闸每次实跑比对。🔴 立闸原因：执笔方报「已修」时自拟的一行判据，多次证明的是**上一轮修复还在**，而非这一轮的洞已修 ⇒ **他问什么，闸就跑什么** |
 | `specs/tools/legacy-name/main.go` | 上闸的计数器（Go AST）—— 逐 Ident 计数；注释按 **Go 标识符边界切词后精确相等**匹配（子串会让 `PendingTenantCtx` 再命中 `TenantCtx`）；扫描根不可用 / 遍历出错一律 **exit 2**（走不到就不能报数）；复合标识符（`tenantCtxKey`）不计：判**受控符号集合**，不判子串 |
 | `specs/gates/legacy-name-baseline.txt` | 旧模型名棘轮的基线（㉑）—— `legacy_TenantCtx=40`，只许降不许升，终值 0；改完一批须同步下调 |
