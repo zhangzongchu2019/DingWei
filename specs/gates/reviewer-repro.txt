@@ -26,4 +26,4 @@ RV-乙13	3	grep -c '^CREATE ROLE' specs/fixtures/rls/setup.sql
 RV-乙13b	0	grep -c '^CREATE ROLE.*LOGIN PASSWORD' specs/fixtures/rls/setup.sql
 RV-乙14	0	grep -aE '跨企业[^。；]{0,26}(白名单|capability)' docs/dingwei-platform-specdoc.md | grep -avE '(无|没有)[^。；]{0,8}capability 路径|不存在|恒为 0|恒 0|禁止|误读|无此路径|无白名单|冲突」|勿再按|不构成矛盾' | wc -l | tr -d ' '
 RV-乙12v	13	awk -F'|' '/^\| (setup|t[1-4])/ && /✅/ {n++} END{print n+0}' specs/fixtures/rls/EXPECTED.md
-RV-乙15v	1	grep -c 'must be owner of table demo_item' specs/fixtures/rls/logs/pg17-run-20260825T151003Z.log | awk '{print ($1>=3)?1:0}'
+RV-乙15v	1	grep -c 'must be owner of table demo_item' specs/fixtures/rls/logs/pg17-noinherit-run-20260825T151003Z.log | awk '{print ($1>=3)?1:0}'
