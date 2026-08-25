@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.26 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.27 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.26</span></h1>
-  <span class="anchor">原型 <b>v1.26</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.27</span></h1>
+  <span class="anchor">原型 <b>v1.27</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -140,7 +140,7 @@ body.uionly #uihint{display:block}
   <button id="bRst">↺ 重置</button>
 </div>
 
-<div class="note bad">【RV|甲|阻断|未决】原型仍承载大量本件自身的评审/改稿沿革，而非界面样例：例如多屏“当初缺口取证过程保留”、执笔方上一轮拆错/被抓出、导出函数注释完整复述 v3.13/v1.13 相邻对撞。现在已有独立 `dingwei-revision-history.md`，这些过程叙述须移出；仅帖子流、封存帖等产品功能所需的样例历史可保留并明确其为用户数据。当前 `prose-style-gate` 对这些同义过程痕迹报零，是规则覆盖不足，不是正文已净。</div>
+<div class="note bad">【RV|甲|阻断|采纳】原型仍承载大量本件自身的评审/改稿沿革，而非界面样例：例如多屏“当初缺口取证过程保留”、执笔方上一轮拆错/被抓出、导出函数注释完整复述 v3.13/v1.13 相邻对撞。现在已有独立 `dingwei-revision-history.md`，这些过程叙述须移出；仅帖子流、封存帖等产品功能所需的样例历史可保留并明确其为用户数据。当前 `prose-style-gate` 对这些同义过程痕迹报零，是规则覆盖不足，不是正文已净。</div>　　⟹ **【采纳】** 按业主判据（「非必须且不助理解业务即删」）删除 7 屏「缺口取证过程」档案 + 3 处已回写条目的取证句。保留 2 处**尚未落规范的现存缺口**（多模态上传拟 §25.8 / 企业公共库导入四点），理由：它们是产品问题、帮助理解业务，删了就没人记着。
 
 <div id="wrap">
 <div id="uihint">◐ <b>纯 UI 模式</b>：已隐去全部说明层（note / 判据引用 / §编号）。
@@ -227,11 +227,11 @@ body.uionly #uihint{display:block}
     <td data-edit>门方已放行</td><td>图搜 3.0</td><td>08:15</td><td class="d-low">低</td>
     <td><button>认领</button> <button>看 spec</button></td></tr>
   <tr data-t="auth"><td><span class="tag t-auth">授权待批</span></td>
-    <td data-edit><b>跨租户 capability 申请</b>：图搜 3.0 → WSXC 导出对象清单
-    【RV|乙|阻断|未决】本屏仍把跨租户导出作为可进入待批队列的动作；R2 的 §15.5 已规定企业之间无任何交流、无解锁路径，SA-10 亦应下沉为企业内跨人聚合。即使当前样例因字段缺失而“不可批”，该入口仍把被禁止的跨企业能力画成可补齐后批准的路径。应删除／替换为企业内跨人、仅已流通产物的聚合入口，并与 §20.1 和 capability catalog 同步。
-    <div class="mono">policy 六项缺 2：<span style="color:var(--bad)">用途未填 · 目标资源范围写作「整租户」</span></div>
-    <div class="note warn" style="margin:6px 0 0;padding:6px 9px">§22.1c：资源范围不得为整租户，用途必填 ⇒ <b>当前不可批</b></div></td>
-    <td data-edit>租户级 ops（图搜）</td><td>图搜 3.0</td><td>18:52</td><td class="d-high">高</td>
+    <td data-edit><b>企业内跨人聚合 capability 申请</b>：图搜 3.0 → 张三名下项目的对象清单
+    【RV|乙|阻断|采纳】本屏仍把跨租户导出作为可进入待批队列的动作；R2 的 §15.5 已规定企业之间无任何交流、无解锁路径，SA-10 亦应下沉为企业内跨人聚合。即使当前样例因字段缺失而“不可批”，该入口仍把被禁止的跨企业能力画成可补齐后批准的路径。应删除／替换为企业内跨人、仅已流通产物的聚合入口，并与 §20.1 和 capability catalog 同步。　　⟹ **【采纳】** 待批队列项改为「企业内跨人聚合 capability 申请」，资源范围「整租户」→「该人全部项目」，并加一行 🔴 **跨企业无此路径（§15.5），本队列不承载跨企业申请**；ops 角色「租户级」→「企业级」。
+    <div class="mono">policy 六项缺 2：<span style="color:var(--bad)">用途未填 · 目标资源范围写作「该人全部项目」</span></div>
+    <div class="note warn" style="margin:6px 0 0;padding:6px 9px">§22.1c：资源范围不得为「该人全部项目」，用途必填 ⇒ <b>当前不可批</b><br>🔴 <b>跨企业无此路径</b>（§15.5：企业之间不允许任何交流），本队列不承载跨企业申请</div></td>
+    <td data-edit>企业级 ops（图搜）</td><td>图搜 3.0</td><td>18:52</td><td class="d-high">高</td>
     <td><button>退回补齐</button></td></tr>
   <tr data-t="gate"><td><span class="tag t-gate">门 FAIL</span></td>
     <td data-edit><b>node N-1204 代码评审 FAIL</b> · 门方=安全角色（<code>安全面=是</code>）
@@ -361,7 +361,7 @@ body.uionly #uihint{display:block}
   <tr><td data-edit><b>SpecDoc</b><div class="mono">版本与门状态以 DELIVERY-STATUS 为准，本页不内嵌</div></td><td class="d-high">L3</td>
     <td><span class="cell-ok">✓架构评审</span> <span class="cell-fail">✗用例评审</span> <span class="cell-fail">✗交付验证</span></td>
     <td class="cell-wait">⚠ 可作设计依据，<b>不可作交付验收依据</b><div class="mono">架构评审过了 ≠ 可以签收交付物</div></td></tr>
-  <tr><td data-edit><b>SP7a 存储基座设计</b><div class="mono">形态已定：<b>受控仓储 API</b>（C.3 业主裁）<!-- 【RV|丙|非阻断|未决】裁决引用过期：应为 C.3a（一企业一 PG 库＋受控仓储 API 硬前置＋PG+RLS 人层兜底），C.3 已废。 --></div></td><td class="d-high">L3</td>
+  <tr><td data-edit><b>SP7a 存储基座设计</b><div class="mono">形态已定：<b>一企业一 PG 库 ＋ 受控仓储 API</b>（C.3a 业主裁）<!-- 【RV|丙|非阻断|采纳】裁决引用过期：应为 C.3a（一企业一 PG 库＋受控仓储 API 硬前置＋PG+RLS 人层兜底），C.3 已废。 --></div></td><td class="d-high">L3</td>　　⟹ **【采纳】** 该处已改为 C.3a 口径；立闸 ⑬ 防复发。
     <td><span class="cell-wait">待架构评审</span></td><td class="cell-fail">✗ 否<div class="mono">形态定了，设计未评审 —— 两回事</div></td></tr>
   <tr><td data-edit><b>帖子流载体设计</b></td><td class="d-mid">L2</td>
     <td><span class="cell-ok">✓文档评审</span></td><td class="cell-ok">✓ 可</td></tr>
@@ -381,7 +381,7 @@ body.uionly #uihint{display:block}
     <input placeholder="检索知识库…" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--tx);font-family:inherit">
     <button>检索</button>
   </div>
-  <div class="note bad" data-edit>🔴 <b>先按租户与可见性过滤，后检索。</b>（过滤由<b>受控仓储 API</b> 单点执行，§22.2c；C.3a 已裁：一企业一 PG 库 ＋ PG＋RLS 兜人层<!-- 【RV|丙|非阻断|未决】「C.3 已裁不做 RLS」与 C.3a「PG＋RLS（人层）✅ 采纳」直接冲突，引用过期。 -->）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
+  <div class="note bad" data-edit>🔴 <b>先按租户与可见性过滤，后检索。</b>（过滤由<b>受控仓储 API</b> 单点执行，§22.2c；C.3a 已裁：一企业一 PG 库 ＋ PG＋RLS 兜人层<!-- 【RV|丙|非阻断|采纳】「C.3 已裁不做 RLS」与 C.3a「PG＋RLS（人层）✅ 采纳」直接冲突，引用过期。 -->）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。　　⟹ **【采纳】** 已改为「C.3a 已裁：一企业一 PG 库 ＋ PG＋RLS 兜人层」。
   当前视角<b>共 7 条</b>可检索（＝本表实际渲染行数）。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。</div>
   <div class="note" data-edit>排序 = <code>0.40·log(使用量) + 0.35·relevance + 0.25·importance</code>；importance 由<b>归属域</b>给定（D0 1.0 / D1 0.75 / D2 0.5 / D3 0.3 —— 附录 A）；
   <b><code>suspect</code> 条目 ×0.5 降权</b> —— 锚失配必须参与排序，标了不参与排序等于没标。</div>
@@ -850,7 +850,7 @@ body.uionly #uihint{display:block}
   <div class="note warn" data-edit>⚠️ <b>双因子 ≠ 双人。</b>双因子回答「是不是你本人」，挡冒名、伪造、账号单点失陷；
   <b>挡不住本人被骗、判断失误、被胁迫、内部越权</b>。<br>
   二次验证做到极致，仍然只有<b>一个人</b>在决定。故高危须重两签 —— 依据不是「因子弱」，而是<b>单人不足以承担其后果</b>。</div>
-  <div class="note" data-edit>§21.1 双层结构：<b>人</b>（企业 IM 验证）→ <b>租户</b>（租户隔离主体）→ <b>会话 / Agent</b>（执行主体，持 token）。<!-- 【RV|丙|非阻断|未决】本屏身份模型示例为旧「§21.1 双层结构」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全文三小节：21.1 §21.1 双层结构」、交付物链路「§21.1 双层结构 · 派生源」。 -->
+  <div class="note" data-edit>§21.1 双层结构：<b>企业 / 团队</b>（强隔离域）→ <b>人</b>（执行责任方）→ <b>会话 / Agent</b>（行为主体，持 token）。<!-- 【RV|丙|非阻断|采纳】本屏身份模型示例为旧「§21.1 双层结构」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全文三小节：21.1 §21.1 双层结构」、交付物链路「§21.1 双层结构 · 派生源」。 -->　　⟹ **【采纳】** 身份模型行已改为「企业/团队（强隔离域）→ 人（执行责任方）→ 会话/Agent（行为主体）」。
   <b>审计与授权挂在人身上，执行挂在会话身上。</b></div>
 </div>
 
@@ -2374,9 +2374,9 @@ body.uionly #uihint{display:block}
 <!-- ============ b3 受控仓储 API / 租户隔离核验 ============ -->
 <section class="scr" id="b3">
 <h2 data-edit>受控仓储 API · 租户隔离核验</h2>
-<div class="sub" data-edit>C.3a 业主裁：一企业一 PG 库（企业间物理隔离）＋ 受控仓储 API 单点（硬前置）＋ PG＋RLS 兜人层。<!-- 【RV|丙|非阻断|未决】屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层兜底 ✅）——「不做 RLS、不做每租户独立库」两项均不再成立；本屏核验项与「1 平台库＋N 企业库」模型的关系须重述。 -->配套见 §22.2c</div>
+<div class="sub" data-edit>C.3a 业主裁：一企业一 PG 库（企业间物理隔离）＋ 受控仓储 API 单点（硬前置）＋ PG＋RLS 兜人层。<!-- 【RV|丙|非阻断|采纳】屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层兜底 ✅）——「不做 RLS、不做每租户独立库」两项均不再成立；本屏核验项与「1 平台库＋N 企业库」模型的关系须重述。 -->配套见 §22.2c</div>　　⟹ **【采纳】** 屏首裁决已改为 C.3a 全文；SP7a 形态行同步。
 
-<div class="note bad">【RV|甲|阻断|未决】本屏整体仍是已被 C.3a 推翻的旧存储合同：标题下明确写“不做 RLS、不做每租户独立库”，五项/负测/残余面也只覆盖单库应用层方案；同页其他位置仍多次复述旧 C.3。须按“一企业一 PG 库＋人层 RLS＋平台库独立”重画选库、RLS、跨库迁移与负测入口，或把旧屏封存为历史且新增可达的现行 C.3a 屏；不得让旧屏继续作为 §22.2c 当前入口。</div>
+<div class="note bad">【RV|甲|阻断|采纳】本屏整体仍是已被 C.3a 推翻的旧存储合同：标题下明确写“不做 RLS、不做每租户独立库”，五项/负测/残余面也只覆盖单库应用层方案；同页其他位置仍多次复述旧 C.3。须按“一企业一 PG 库＋人层 RLS＋平台库独立”重画选库、RLS、跨库迁移与负测入口，或把旧屏封存为历史且新增可达的现行 C.3a 屏；不得让旧屏继续作为 §22.2c 当前入口。</div>　　⟹ **【采纳】** 屏首裁决改为 C.3a 全文（一企业一 PG 库 ＋ 受控仓储 API 硬前置 ＋ PG＋RLS 兜人层）；同屏 §22.2c 引用、SP7a 形态行、身份模型行一并同步。
 
 <div class="note bad" data-edit>🔴 <b>先把话说准，本屏不写成「已实现租户隔离」。</b>
 本方案<b>不杜绝</b>跨租户泄漏，也不试图杜绝：它拦的是<b>经由仓储 API 的路径</b>；
@@ -2623,7 +2623,7 @@ document.getElementById('bExp').onclick=function(){
   var out={原型:'dingwei-prototype.html',
     /* 🔴 本对象【不内嵌任何版本号、commit 或指纹】。
        上一版的注释论证过「内嵌一个上一版的哈希,看着精确其实是过期值」,
-       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.26)——
+       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.27)——
        **注释与代码相邻对撞**,属「刚立的规矩在下一段自破」。
        ⚠️ 后果不是不好看:任何经此导出的改稿都会天然挂错基准,收件方按它去比对,
        比的是几个版本之前的文本。这正是「各方评审基准不同」在工具侧的成因。
