@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T09:46:34Z
-分支头：`4054b9a2dd84c8a8fe7f734c84cda94c4ed6825f`
+生成时刻：2026-08-25T09:53:31Z
+分支头：`3348b51a03fdf722bd630f4ee3853a18f15cacd6`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -33,8 +33,8 @@ $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
 
 ```
 $ scripts/arch-refcheck.sh
-  本件内引用 A§ : 70 次 / 27 目标 · 悬空 0
-  SpecDoc 引用 § : 173 次 / 68 目标 · 悬空 0
+  本件内引用 A§ : 78 次 / 28 目标 · 悬空 0
+  SpecDoc 引用 § : 175 次 / 68 目标 · 悬空 0
   heading 真实重复：本件 0 · SpecDoc 0
   --- 引用核验通过
 ```
@@ -138,7 +138,7 @@ $ for p in internal/store/migrations internal/mcs/board/schema.sql internal/fano
 ### task 表跨存储重名（须在 SP7a 前定名，见 docs/task-table-collision-analysis.md）
 
 ```
-$ grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task\b' internal/mcs/board/schema.sql internal/datad/pgstore.go
+$ grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task' internal/mcs/board/schema.sql internal/datad/pgstore.go
   internal/mcs/board/schema.sql
   internal/datad/pgstore.go
 ```
