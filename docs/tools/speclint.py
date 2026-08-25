@@ -265,9 +265,32 @@ def check_s_family(s):
                     scan.split('\n')[ln-1].strip()[:70]))
     return out
 
+def check_rule_table_sync(s):
+    """🔴 §5.4a（权威，带 rule_id）与 §5.6（便读视图）须【逐行等同】。
+    立此规则的直接原因（结构域 FLOW-01 重跑）：新增权威表时没与既有 §5.6 对撞，
+    同一输入得出两个门集。⇒ 「两处同一内容」这件事必须机器判，不能靠人记得对齐。"""
+    def rows(a,b):
+        seg=s[s.find(a):s.find(b)]
+        out={}
+        for m in re.finditer(r'^\|\s*`?(R-[A-Z]+-\d+|R-NONE)`?\s*\|(.*)$', seg, re.M):
+            cells=[c.strip() for c in m.group(2).split('|')]
+            out[m.group(1)]=cells
+        for m in re.finditer(r'^\|([^|]+)\|([^|]+)\|\s*`(R-[A-Z]+-\d+|R-NONE)`\s*\|', seg, re.M):
+            out.setdefault(m.group(3), [m.group(1).strip(), m.group(2).strip()])
+        return out
+    auth = rows('### 5.4a', '### 5.5')
+    view = rows('### 5.6 映射表', '### 5.6a')
+    out=[]
+    if not auth or not view:
+        return [(0,'rule-sync','§5.4a 或 §5.6 未取到规则行 —— 检查失效，非通过','')]
+    for k in sorted(set(auth)|set(view)):
+        if k not in auth: out.append((0,'rule-sync',f'{k} 只在 §5.6 有，§5.4a 缺',''))
+        elif k not in view: out.append((0,'rule-sync',f'{k} 只在 §5.4a 有，§5.6 缺',''))
+    return out
+
 ALL_CHECKS = [check_typed_refs, check_symbol_context, check_field_aliases, check_tables,
               check_refs, check_E, check_count_refs, check_ids, check_fkeys,
-              check_authoritative, check_heading_ids, check_fences, check_link_resolve, check_s_family]
+              check_authoritative, check_heading_ids, check_fences, check_link_resolve, check_s_family, check_rule_table_sync]
 
 def run_all(doc):
     out=[]
@@ -319,6 +342,10 @@ MUTATIONS = [
     ('table',         "if len(blk)==1: out.append", "if False: out.append"),
     ('symbol-context',"if not any(c in near for c in ctx):", "if False:"),
     ('s-family',      "for m in re.finditer(r'(?<!P)\\bS[3-8]", "for m in re.finditer(r'(?<!P)\\bZZ[3-8]"),
+    # ⚠️ 变异须打在【两条分支的共同上游】:原来只改「只在 §5.6 有」那支,
+    #    而反例测的是「只在 §5.4a 有」那支 —— 变异与反例走的不是同一条路,变异体因此不失守。
+    #    这正是「反测有盲区」在【变异侧】的形态。
+    ('rule-sync',      "for k in sorted(set(auth)|set(view)):", "for k in []:"),
     ('typed-symbol',  "for m in re.finditer(pat,s):\n            ln=s[:m.start()]",
                       "for m in []:\n            ln=s[:m.start()]"),
 ]
@@ -353,7 +380,7 @@ s=load(sys.argv[1])
 all_out=(check_typed_refs(s)+check_symbol_context(s)+check_field_aliases(s)+check_tables(s)
          +check_refs(s)+check_E(s)+check_count_refs(s)
          +check_ids(s)+check_fkeys(s)+check_authoritative(s)+check_heading_ids(s)
-         +check_fences(s)+check_link_resolve(s)+check_s_family(s))
+         +check_fences(s)+check_link_resolve(s)+check_s_family(s)+check_rule_table_sync(s))
 for ln,kind,msg,ctx in sorted(all_out,key=lambda x:(x[1],x[0])):
     print(f"[{kind:14s}] L{ln:<5d} {msg}  {ctx}")
 print("---", f"{len(all_out)} 处" if all_out else "全部通过")

@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `681917a1495c0e78f32497bbd34f5b621415d486` · 分支 `design/addendum-decisions`
+生成自 commit `05ccf171d3d45ebd25f24495af32563eb79b61b5` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -18,13 +18,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.19** | `681917a1495c0e78f32497bbd34f5b621415d486<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3077 / 209261 | `191177bafd475d0f6f3e11e9e56ff4728628d61329c51333c5d1c4c79a184c3f` |
-| `dingwei-prototype.html` | **v1.16** | `185d23af0a42866374d07b05fca27e90cf678857<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2849 / 254430 | `c9e4e0257c7ef916cf341675e69aa45de0cc39c8edd47bc5f53380d9d5795ce2` |
-| `dingwei-architecture-design.md` | **v0.13** | `681917a1495c0e78f32497bbd34f5b621415d486<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 793 / 56161 | `42e289fb692e2851e71cd4cf0b498e79de25a881927d369fe5b280461a738f7b` |
+| `dingwei-platform-specdoc.md` | **v3.19** | `05ccf171d3d45ebd25f24495af32563eb79b61b5<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3092 / 210729 | `20ae2e1e348653f377dd5a5260389bbb3d0f7380828a3c02fc7872d8a8d672f5` |
+| `dingwei-prototype.html` | **v1.16** | `05ccf171d3d45ebd25f24495af32563eb79b61b5` | 2849 / 254430 | `c9e4e0257c7ef916cf341675e69aa45de0cc39c8edd47bc5f53380d9d5795ce2` |
+| `dingwei-architecture-design.md` | **v0.14** | `05ccf171d3d45ebd25f24495af32563eb79b61b5<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 796 / 56515 | `2c22da8df450a34ce9bebba8bfba67d9fa28b94b0b2e17ea240c8648deb0977e` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+05ccf17 docs: 结构域重跑 FLOW-01/FLOW-05 全修;RLS 全扫暴露 C.3 裁定后 26 处未同步(修在此,前锚 681917a)
 681917a docs: 组 2 task 定名已裁并落三处(SpecDoc v3.18 + 架构 v0.12 + 分析件,修在此,前锚 d872147)
 d872147 docs: 架构设计 v0.11——按 sol 扩后 scope 落设计合同(组5全量+组6设计半+组4设计半+组3枚举半)
 1fd84e7 docs: 结构域重走 12 FAIL 分类 + 组 1 已修(修在此,前锚 62951fc)
@@ -32,5 +33,4 @@ d872147 docs: 架构设计 v0.11——按 sol 扩后 scope 落设计合同(组5�
 bfac466 docs: SpecDoc v3.15——把「是否起重走轮」登记进 C.2(修在此,前锚 dd88734)
 dd88734 docs: 架构设计 v0.10——P-1 残留三处全清(丙域 kimi 复核 R-1/R-2 + 本席自查第三处,修在此,前锚 51cec1d)
 51cec1d feat: 快照包清单改由 git 导出,不手写(丙域 kimi m 类,修在此,前锚 185d23a)
-185d23a fix: 丙域终审 3 阻断 + 6 次要全修(修在此,前锚 26ecb6e)
 ```
