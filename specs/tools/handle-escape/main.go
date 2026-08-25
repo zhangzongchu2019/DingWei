@@ -115,7 +115,11 @@ func scan(fset *token.FileSet, af *ast.File, rel string) []finding {
 	}
 	// 2) 本地别名/定义：type DB = *sql.DB / type myDB *sql.DB
 	local := map[string]bool{}
-	for pass := 0; pass < 2; pass++ { // 两遍，允许别名链
+	// 迭代至不动点，不用固定遍数：Go 同包类型可前向引用，别名链的声明顺序任意，
+	// 固定 N 遍只覆盖「顺序声明且链长 <= N」的链，逆序声明的三级链会漏
+	// （乙域 terra SA-11）。local 只增不减、上界为本文件 TypeSpec 数，故必然收敛。
+	for {
+		before := len(local)
 		ast.Inspect(af, func(n ast.Node) bool {
 			ts, ok := n.(*ast.TypeSpec)
 			if !ok {
@@ -126,6 +130,9 @@ func scan(fset *token.FileSet, af *ast.File, rel string) []finding {
 			}
 			return true
 		})
+		if len(local) == before {
+			break
+		}
 	}
 	handle := func(e ast.Expr) bool { return isHandle(e, isHandleSel, local) }
 

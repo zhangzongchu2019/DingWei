@@ -231,6 +231,16 @@ selftest() {
   esc 'package pkg\n\nimport "database/sql"\n\ntype H = *sql.DB\ntype H2 = H\n\nfunc Chain() H2 { return nil }\n'
   [ $? -eq 1 ] && ok "拦住:本地类型别名链 type H2 = H = *sql.DB" || bad "别名链未被拦"
 
+  # 🔴 乙域 terra SA-11:上面那条【顺序声明、链长 2】在旧实现(固定两遍)下也过,
+  #    于是「本地别名链已覆盖」被当成全称结论 —— 取证面窄于断言的又一例。
+  #    Go 同包类型可前向引用,逆序声明的三级链旧实现输出 0,主闸照样打印「持平 ✓」。
+  #    已改为迭代至不动点;下面两条按【声明顺序】和【链长】两个维度各钉一条。
+  esc 'package pkg\n\nimport "database/sql"\n\ntype H3 = H2\ntype H2 = H\ntype H = *sql.DB\n\nfunc Leak3() H3 { return nil }\n'
+  [ $? -eq 1 ] && ok "拦住:【逆序声明】三级别名链 H3=H2=H=*sql.DB(SA-11)" || bad "逆序三级别名链未被拦(固定遍数回潮)"
+
+  esc 'package pkg\n\nimport "database/sql"\n\ntype A4 = A3\ntype A3 = A2\ntype A2 = A1\ntype A1 = *sql.DB\n\nfunc Leak4() A4 { return nil }\n'
+  [ $? -eq 1 ] && ok "拦住:【逆序四级】别名链(证明是不动点,不是多加一遍)" || bad "逆序四级别名链未被拦"
+
   esc 'package pkg\n\nimport "database/sql"\n\ntype S struct {\n\tPool *sql.DB\n}\n'
   [ $? -eq 1 ] && ok "拦住:导出字段持句柄" || bad "导出字段未被拦"
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // pgx database/sql 驱动
 	_ "modernc.org/sqlite"             // sqlite database/sql 驱动
@@ -147,10 +148,37 @@ func (c *CommitFailed) Unwrap() error { return c.Err }
 //	例：fanout/spool 有 `SetMaxOpenConns(1)`，原注释写「面板自死锁教训:单连接串行,杜绝游标互等」。
 //	若仓储包只提供一个无参 Open，收编就会静悄悄丢掉这条 —— 那正是 §4.5 说的
 //	「不得以【重写】为由丢弃任一既有并发语义」。⇒ 先让仓储包能表达它，再动那些包。
-type Option func(*sql.DB)
+type Option func(PoolTuner)
+
+// PoolTuner 是 Option 能碰到的【全部】能力面：只调池参数,不交出裸句柄。
+//
+// 🔴 甲域 sol CR #6:上一版写的是 `type Option func(*sql.DB)`。
+//
+//	那不是普通的「句柄作入参」(调用方 -> 包内,句柄没出去);方向是反的 ——
+//	仓储包把裸句柄【交给包外提供的回调】,调用方一句 `func(d *sql.DB){ stolen = d }`
+//	就把句柄搬出了包。判据二按「导出函数/字段/接口方法【返回】句柄」判,
+//	对这条回调外泄输出 0,且主闸照样打印「持平 ✓」—— 又一处「闸没起作用但看得见 ✓」。
+//	现在传进 Option 的具体类型是本包【未导出】的 tuner,不是 *sql.DB,
+//	故包外 `func(t repo.PoolTuner){ d := t.(*sql.DB) }` 断言必失败:
+//	这条收口靠类型系统成立,不靠自觉。
+//	保证范围:不含 reflect / unsafe(与判据二的既定作用域一致,不互相冒充)。
+type PoolTuner interface {
+	SetMaxOpenConns(n int)
+	SetMaxIdleConns(n int)
+	SetConnMaxLifetime(d time.Duration)
+	SetConnMaxIdleTime(d time.Duration)
+}
+
+// tuner 未导出:包外拿到的是它的接口值,断不回 *sql.DB。
+type tuner struct{ db *sql.DB }
+
+func (t tuner) SetMaxOpenConns(n int)              { t.db.SetMaxOpenConns(n) }
+func (t tuner) SetMaxIdleConns(n int)              { t.db.SetMaxIdleConns(n) }
+func (t tuner) SetConnMaxLifetime(d time.Duration) { t.db.SetConnMaxLifetime(d) }
+func (t tuner) SetConnMaxIdleTime(d time.Duration) { t.db.SetConnMaxIdleTime(d) }
 
 // MaxOpenConns 固定池上限。n=1 即单连接串行。
-func MaxOpenConns(n int) Option { return func(d *sql.DB) { d.SetMaxOpenConns(n) } }
+func MaxOpenConns(n int) Option { return func(t PoolTuner) { t.SetMaxOpenConns(n) } }
 
 // OpenSQLite 打开 SQLite 池。dsn 由调用方给全（含 pragma），本包不代为拼装 ——
 // pragma 属被收编包的既有行为，代拼即改语义。
@@ -160,7 +188,7 @@ func OpenSQLite(ctx context.Context, dsn string, opts ...Option) (*Pool, error) 
 		return nil, err
 	}
 	for _, o := range opts {
-		o(db)
+		o(tuner{db: db})
 	}
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
