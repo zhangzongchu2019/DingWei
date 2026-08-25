@@ -20,6 +20,7 @@ RV-甲02	甲	阻断	采纳	采纳	dingwei-platform-specdoc.md	该恒零判据仍
 RV-执笔01	执笔	阻断	挂账	挂账	dingwei-platform-specdoc.md	🔴 **本节的生效判定与本节自身的判据对撞，且第 2 项的闭合无载体证据，待归口裁定。** ⟹ **【挂账】** **
 RV-乙01	乙	阻断	挂账	采纳	dingwei-platform-specdoc.md	本规范头块仍把“已过几轮评审”、此前字段写错的经过、具体日期与三域结论写进正文；这正是本件头部禁止的评审过程／状态性内容
 RV-乙06	乙	阻断	采纳	采纳	dingwei-platform-specdoc.md	本轮冻结锚上 `bash scripts/evidence-fresh-gate.sh` 实测拒绝：`specs/evi
+RV-乙08	乙	阻断	未决	未处置	dingwei-architecture-design.md	RV-乙06 不能据当前终审锚判闭：证据包钉 `1459e4`，而冻结锚 `a96c219` 的随后提交仍改了三件正文、`speclint-gate.sh` 与跨制品检查工具；证据包自身输出的版本也落后一版。⑭容许落后一提交不能证明该包是终审对象产出，须重跑 collect --write 后再冻结，或用未触及评审对象的 diff 闭包豁免。
 RV-丙01	丙	阻断	未决	挂账	dingwei-platform-specdoc.md	佐证执笔上条（可复跑）：①三份 checklist 56 个 checkbox 实算全 `[ ]`（`grep -c "
 RV-甲18	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	体例挂账 #6 的逐段判定：本节“本轮已定／加新权威表未对撞／自造缺陷／已过多轮旧表”等是修订史；正文应只留唯一权威表、
 RV-甲03	甲	阻断	采纳	采纳	dingwei-platform-specdoc.md	D0 禁止企业内容晋升的依赖点未同步：§9.2 第 4 段仍写判断失误 `D3→D2→D1→D0`，§12.4 第 7
