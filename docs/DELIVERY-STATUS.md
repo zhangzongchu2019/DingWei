@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `ec233efc6b9c536f8041e4968f072fcc99b25ce6` · 分支 `design/addendum-decisions`
+生成自 commit `2ed414fca73e8a80430c14b7bacef0d756c5e5d9` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -21,12 +21,13 @@
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
 | `dingwei-platform-specdoc.md` | **v3.25** | `a96c21937b9348f7fd25470963bf7ec16857eb2d` | 3285 / 241319 | `964ad5994040a7dc56b951da4918ebbe745ae3ff04d6ba88566b1b3bbf19ce49` |
-| `dingwei-prototype.html` | **v1.33** | `a96c21937b9348f7fd25470963bf7ec16857eb2d` | 2867 / 264171 | `895706541163a9a4a349be66b73e340d04bf64fac31c7fa0e39e8df968716663` |
-| `dingwei-architecture-design.md` | **v0.25** | `ec233efc6b9c536f8041e4968f072fcc99b25ce6` | 915 / 74063 | `d739c2f5aa30638484f9020c60990ec0881c5ce390e813822c91fa1602fc7062` |
+| `dingwei-prototype.html` | **v1.33** | `2ed414fca73e8a80430c14b7bacef0d756c5e5d9` | 2867 / 264171 | `895706541163a9a4a349be66b73e340d04bf64fac31c7fa0e39e8df968716663` |
+| `dingwei-architecture-design.md` | **v0.26** | `2ed414fca73e8a80430c14b7bacef0d756c5e5d9<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 915 / 74063 | `eed399a9fb79a4b9f27d93da57e489b94a5f958973cd8b509e8cdb1f1e8af00d` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+2ed414f RV-乙08：⑭ 判据由「提交距离」换为「内容指纹」
 ec233ef review: mark security evidence closure gap
 a96c219 R2 轮4 丙域 kimi 4 条处置；analyze 接入提交闸（⑰）
 1459e4c review: 丙域 R2 轮4 复核标注 4 条（丙14/15/17/18）——以正文实取为准，不用处置列（kimi30kqtuxerh）
@@ -34,5 +35,4 @@ a96c219 R2 轮4 丙域 kimi 4 条处置；analyze 接入提交闸（⑰）
 9d66342 R2 轮3：三域 20 条评审意见归口处置，RV 台账拆列，闸 ⑫/⑯ 补三条判据
 43f49e6 fix: 丙域 R2 轮3 全采纳 —— 标注被工具改写(立闸⑯) + 体例二轮 16 处(前锚 baf724f)
 baf724f fix: 乙域 terra R2 轮3 三条全采纳 —— 证据闸结构性误判 · §22.2c 自我推翻(前锚 f64b2c4)
-ec07d1d review: 丙域 R2 轮3 终审标注 4 条——体例分离二轮门方先标（挂账 #6）+ 标注被工具改写 1 处（kimi30kqtuxerh）
 ```

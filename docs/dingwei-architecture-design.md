@@ -1,6 +1,6 @@
 # DingWei 平台架构设计 v0.22 —— 业务 / 技术 / 部署 / 数据库
 
-**版本**: v0.25
+**版本**: v0.26
 **依据**: SpecDoc —— 版本与门状态见 `docs/DELIVERY-STATUS.md`
 **参考**: 原型 —— ⚠️ 本件**不以其为依据**：界面契约变更走原型评审，不经本件
 **代码实测锚**: `github.com/zhangzongchu2019/dingwei` @ `design/addendum-decisions`
@@ -800,7 +800,7 @@ rule_ids = [R-SEC-01, R-DM-02]
 | `cross_person_rollup` | **企业内**跨人读计数与状态（🔴 跨企业无此路径，§15.5） | §22.1c guarded | 幂等 | 逐次落账（SA-10 六条） |
 | `platform_notice` | 跨租户广播 | 平台域基线（§24） | 去重键幂等 | 批次落账 |
 
-**反例（本轮设计，非运行样本）**
+**反例（设计示例，非运行样本）**
 
 | # | 构造 | 期望 |
 |---|---|---|

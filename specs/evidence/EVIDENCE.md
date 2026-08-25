@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T10:53:57Z
-分支头：`ec233efc6b9c536f8041e4968f072fcc99b25ce6`
+生成时刻：2026-08-25T10:58:11Z
+分支头：`2ed414fca73e8a80430c14b7bacef0d756c5e5d9`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -11,7 +11,7 @@
 
 ```
 REVIEWED 964ad5994040a7dc56b951da4918ebbe745ae3ff04d6ba88566b1b3bbf19ce49  docs/dingwei-platform-specdoc.md
-REVIEWED d739c2f5aa30638484f9020c60990ec0881c5ce390e813822c91fa1602fc7062  docs/dingwei-architecture-design.md
+REVIEWED eed399a9fb79a4b9f27d93da57e489b94a5f958973cd8b509e8cdb1f1e8af00d  docs/dingwei-architecture-design.md
 REVIEWED 895706541163a9a4a349be66b73e340d04bf64fac31c7fa0e39e8df968716663  docs/dingwei-prototype.html
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -25,12 +25,13 @@ REVIEWED c60ac4b58086910fac87b63b101f041e1e9f1afbc1fdcb77870ae77aeb49b2c2  scrip
 REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scripts/reliable_delivery_canary.sh
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
 REVIEWED 63199d779c607e4c1ab1305eeb4a1b3f7455a0215f15296040689014da608f55  scripts/rv-integrity-gate.sh
-REVIEWED 73b3d20a55593f913e5f10ef9ca8f89f74e0013cea24455ca1f55820330d8aff  scripts/speclint-gate.sh
+REVIEWED 730e995234e371a402806c46be499ef89be6cd01c3955f62b6c0c4a7ec9ba3fc  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
 REVIEWED 04a61a19321b7a35a78a5a886b1bc915dd5012fcf1dbd8636627e058c966eb3e  scripts/status-consistency-check.sh
 REVIEWED 4c41cb0ccd5452a7eadd8f5eddad986660d9cf51cdc461d51235eb0894100023  scripts/superseded-claims-gate.sh
 REVIEWED a5fcd7cfbd7194d44a10fd7bba42c27f0b7258c09861d6ecf39a7337e294f66f  scripts/tenant-isolation-gate.sh
 REVIEWED 91102ae852827ee0b7ecfe122d29f13c95ff73d49752be29f3991f2ca93b2832  specs/tools/analyze.sh
+REVIEWED 86ddb9fa0044b7a96114ebe7f57891fca497c9dc73f620b9b8e83a648ecaf551  specs/tools/disposition-audit.py
 REVIEWED 49a9eab11f34bdef4c65e1c4c6f0ac969cfa28faa834aa52d7f84d5d453bc8e7  specs/tools/export-bundle.sh
 REVIEWED 41e915d3132b580332d7fa984979c6740ad6a892733f57d14d1192ddce83c778  specs/tools/foreign-version-check.py
 REVIEWED c2f82d1eedd1d8f367930bb388ad8a781de2df515a5a89547ba5803660290b98  specs/tools/safe-replace.py
@@ -97,8 +98,8 @@ $ specs/tools/analyze.sh
     原型引用 114 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
     SpecDoc: 件内 v3.25 · 状态文件 v3.25 ✓
-    架构设计: 件内 v0.25 · 状态文件 v0.24 ✗
-    原型: 件内 v1.33 · 状态文件 v1.32 ✗
+    架构设计: 件内 v0.26 · 状态文件 v0.25 ✗
+    原型: 件内 v1.33 · 状态文件 v1.33 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-architecture-design.md: 正文无他件旧版本号
