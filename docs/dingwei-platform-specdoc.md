@@ -2891,6 +2891,8 @@ digest 与数据同在一个可写库，能改帖的人通常也能改 digest。
 | 6 | **新建表默认带 policy** | 建表模板 / 迁移检查中断言；无 policy 的领域表视为漏配 |
 | 7 | 三类负测就位 | 伪造 principal 读不到他人行 · 不设 `dw.principal` 时**读到 0 行而非全部** · 属主连接被禁用于应用路径 |
 
+【RV-乙12|乙|阻断|未决】本合同尚未把人层 RLS 的写授权与连接池执行边界写成不可误解的硬条件：#4 仅列 `USING (...)`，未要求每个适用命令同时具有等价的 `WITH CHECK (...)`，故“能读到谁”不等于“能以谁插入／更新”；#5 说“取连接后 SET LOCAL”，却未要求**先开启同一事务、SET LOCAL 为该事务第一条数据库语句、所有领域 SQL 均经该事务、禁止 pool/DB 直查**。`SET LOCAL` 若落在自动提交语句中会在下一查询前失效，迫使实现者自行猜测或以残留型 `SET` 绕开。须补为上述强制合同，并以 fixture 表复跑：`dw_app` 在 `BEGIN; SET LOCAL dw.principal='alice';` 后，尝试 INSERT/UPDATE 将 `owner_principal` 写为 `bob` 必须拒绝；缺 `dw.principal` 的 SELECT/INSERT/UPDATE 均默认拒；事务提交后同一物理连接不得保留 `dw.principal`。
+
 🔴 **RLS 是兜底，不是主守**（同 C.3a.1）：主守是仓储 API 内的 `owner_principal` 谓词。
 RLS 只防「谓词漏写」这一类；把 RLS 当唯一防线，等于把安全押在**每张新表都记得配 policy** 上。
 
