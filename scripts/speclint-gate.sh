@@ -1,5 +1,5 @@
 #!/bin/sh
-# 提交闸 ①–⑨ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步+锚可达 / 架构引用核验 / 仓储包边界 / specs 索引 / 状态一致性。任一不过即失败。
+# 提交闸 ①–⑩ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步+锚可达 / 架构引用核验 / 仓储包边界 / specs 索引 / 状态一致性 / 租户隔离前置。任一不过即失败。
 #
 # 立此闸的直接原因：2026-08-24，本席在 speclint 退出码为 1 的状态下推了 a165521。
 # 当时 lint 与 commit 写在同一批命令里、没有用 && 串，照跑不误。
@@ -153,4 +153,12 @@ scripts/status-consistency-check.sh || exit 1
 scripts/status-consistency-check.sh --selftest >/dev/null 2>&1 || {
   scripts/status-consistency-check.sh --selftest; echo "✗ 状态一致性闸的反测未过"; exit 1; }
 echo "  ⑨ 状态一致性闸的反测 ✓"
-echo "✓ 提交闸全过（①–⑨）"
+# ⑩ 乙组隔离判据的前置依赖(乙域 terra 裁定):领域表一旦出现租户列,四项负测须同时就位
+if [ ! -x scripts/tenant-isolation-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/tenant-isolation-gate.sh 不可执行"; exit 1
+fi
+scripts/tenant-isolation-gate.sh || exit 1
+scripts/tenant-isolation-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/tenant-isolation-gate.sh --selftest; echo "✗ 租户隔离前置闸的反测未过"; exit 1; }
+echo "  ⑩ 租户隔离前置闸的反测 ✓"
+echo "✓ 提交闸全过（①–⑩）"
