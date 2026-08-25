@@ -9,35 +9,63 @@
 # 每行：<稳定ID> TAB <域> TAB <严重度> TAB <状态> TAB <件> TAB <摘要>
 # 状态：未决 | 采纳 | 驳回 | 挂账　　🔴 驳回须在正文带理由；挂账须在正文带责任人
 # 🔴 本台账 reviewer-owned：执笔方可增行（新标注入账），**不得改他域已有行的状态**。
-RV-甲01	甲	阻断	挂账	dingwei-platform-specdoc.md	体例重生成仍未闭合。`prose-style-gate` 只清除了带特定指纹的句子，正文仍有大量过程叙述，例如本件 §0
-RV-甲02	甲	阻断	采纳	dingwei-platform-specdoc.md	该恒零判据仍无承载：E.1–E.4 没有 `owner_sp` 列，全文也没有独立 `E-ID → SP0–SP8` 映
-RV-执笔01	执笔	阻断	挂账	dingwei-platform-specdoc.md	🔴 **本节的生效判定与本节自身的判据对撞，且第 2 项的闭合无载体证据，待归口裁定。**　　⟹ **【挂账】** 责任
-RV-乙01	乙	阻断	挂账	dingwei-platform-specdoc.md	本规范头块仍把“已过几轮评审”、此前字段写错的经过、具体日期与三域结论写进正文；这正是本件头部禁止的评审过程／状态性内容
-RV-丙01	丙	阻断	挂账	dingwei-platform-specdoc.md	佐证执笔上条（可复跑）：①三份 checklist 56 个 checkbox 实算全 `[ ]`（`grep -c "
-RV-甲03	甲	阻断	采纳	dingwei-platform-specdoc.md	D0 禁止企业内容晋升的依赖点未同步：§9.2 第 4 段仍写判断失误 `D3→D2→D1→D0`，§12.4 第 7
-RV-甲04	甲	阻断	采纳	dingwei-platform-specdoc.md	本节仍是被新裁定推翻的旧模型：它允许租户 A 的 skill 经抽象/脱敏晋升 D0 后 push 给租户 B，并称这是
-RV-甲05	甲	阻断	采纳	dingwei-platform-specdoc.md	周报仍保留跨企业读取通道：本节先允许“跨租户个人总览”经 capability 输出计数/状态，输入表又明确列“跨企业视
-RV-乙02	乙	阻断	挂账	dingwei-platform-specdoc.md	SA-10 的对象尚未随新模型下沉 ／ 本表仍允许“跨企业视图”，上方仍定义 `cross_tenant_person_
-RV-丙02	丙	阻断	采纳	dingwei-platform-specdoc.md	本节已改「双层结构」，但「三级映射」旧模型名仍作现行引用留存于：§21.4 引述（「§21.1 的三级映射把『人』当成已
-RV-甲06	甲	阻断	挂账	dingwei-platform-specdoc.md	把“租户”定义成企业＋人两层后，全文仍把 `tenant/TenantCtx/跨租户/租户级 ops/D2 租户级` 当
-RV-乙03	乙	阻断	采纳	dingwei-platform-specdoc.md	本节仍写“C.3 已裁：不做 RLS／不做每企业独立库”及“只做受控仓储 API”，与现行 C.3a 的“一企业一 PG
-RV-甲07	甲	阻断	采纳	dingwei-platform-specdoc.md	本节与新 C.3a 正面两存：本节仍声明“受控仓储 API 单点、不做 RLS、不做每租户独立库”，§22.2c 仍以“
-RV-丙03	丙	阻断	采纳	dingwei-platform-specdoc.md	本行「只做受控仓储 API，不叠 RLS」与 C.3a「PG ＋ RLS（人层）✅ 采纳」直接冲突；C.3a 自称「配套
-RV-甲08	甲	阻断	挂账	dingwei-platform-specdoc.md	仓储边界“不可逆”仍只有注释纪律：`repo-packages.txt` 与 `boundary-baseline.tx
-RV-执笔02	执笔	非阻断	采纳	dingwei-platform-specdoc.md	🔴 **丙域 F-6「A§ 跨件引用缺机器可判形态」实测不成立，标此待复核。**　　⟹ **【采纳】** **丙域已于
-RV-丙04	丙	非阻断	采纳	dingwei-platform-specdoc.md	复核：执笔实测成立。speclint 的 `FOREIGN_PREFIXES`/`_drop_foreign` 在 R1
-RV-丙05	丙	非阻断	采纳	dingwei-architecture-design.md	本行「§21.1 双层结构」沿用旧模型名——SpecDoc §21.1 已改双层结构（企业→人，业主裁定），「§21.1
-RV-甲09	甲	阻断	采纳	dingwei-architecture-design.md	R2 评审包中的作者证据件并非冻结锚产物：`specs/evidence/EVIDENCE.md` 头仍写生成自 `d0
-RV-乙04	乙	阻断	挂账	dingwei-architecture-design.md	“加 `owner_principal` ＋ RLS 兜底”尚不是可实现、可验收的隔离合同：未定义受控 DB role／
-RV-甲10	甲	阻断	挂账	dingwei-architecture-design.md	这还不足以构成“一企业一库＋人层 RLS”的可施工数据库架构。至少缺：可信 principal→企业库注册项/DSN s
-RV-甲11	甲	非阻断	采纳	dingwei-architecture-design.md	R1 的评审包机制缺口仍在：`export-bundle.sh` 用 basename 压平路径且无同名拒绝，未来两个子
-RV-甲12	甲	阻断	采纳	dingwei-prototype.html	原型仍承载大量本件自身的评审/改稿沿革，而非界面样例：例如多屏“当初缺口取证过程保留”、执笔方上一轮拆错/被抓出、导出函
-RV-乙05	乙	阻断	采纳	dingwei-prototype.html	本屏仍把跨租户导出作为可进入待批队列的动作；R2 的 §15.5 已规定企业之间无任何交流、无解锁路径，SA-10 亦应
-RV-丙06	丙	非阻断	采纳	dingwei-prototype.html	裁决引用过期：应为 C.3a（一企业一 PG 库＋受控仓储 API 硬前置＋PG+RLS 人层兜底），C.3 已废。 -
-RV-丙07	丙	非阻断	采纳	dingwei-prototype.html	「C.3 已裁不做 RLS」与 C.3a「PG＋RLS（人层）✅ 采纳」直接冲突，引用过期。 -->）禁止先检索后过滤
-RV-丙08	丙	非阻断	采纳	dingwei-prototype.html	本屏身份模型示例为旧「§21.1 双层结构」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全
-RV-丙09	丙	非阻断	采纳	dingwei-prototype.html	屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层
-RV-甲13	甲	阻断	采纳	dingwei-prototype.html	本屏整体仍是已被 C.3a 推翻的旧存储合同：标题下明确写“不做 RLS、不做每租户独立库”，五项/负测/残余面也只覆盖
-RV-乙06	乙	阻断	采纳	dingwei-platform-specdoc.md	本轮冻结锚上 `bash scripts/evidence-fresh-gate.sh` 实测拒绝：`specs/evi
-RV-乙07	乙	阻断	采纳	dingwei-platform-specdoc.md	上句仍把 RLS 写为“业主不采纳”的现行理由，直接推翻其前一行 C.3a“PG＋RLS 兜人层”的现行裁定；紧随其后的
-RV-甲14	甲	阻断	采纳	prose-style-gate.sh	`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直
+# 每行：<稳定ID> TAB <域> TAB <严重度> TAB <评审方状态> TAB <执笔方处置> TAB <件> TAB <摘要>
+# 🔴 两列分开的原因：原表只有一列「状态」，执笔方回应「采纳」时只能【覆盖评审方的判】——
+#   而本表头自己写着「不得改他域已有行的状态」。一列的表结构逼着人破这条规矩，故拆列。
+# 评审方状态 reviewer-owned，执笔方只增行不改列；执笔方处置由执笔方填，评审方在下一轮据此复核。
+RV-甲01	甲	阻断	挂账	采纳	dingwei-platform-specdoc.md	体例重生成仍未闭合。`prose-style-gate` 只清除了带特定指纹的句子，正文仍有大量过程叙述，例如本件 §0
+RV-丙11	丙	阻断	未决	采纳	dingwei-platform-specdoc.md	〔体例分离二轮·门方先标，落实挂账 #6〕本件正文仍存过程叙述（体例「一律不入正文」的对象），按段开列： ⟹ **【采
+RV-甲17	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	体例挂账 #6 的逐段判定：本段“此前一直写／过四轮／本次自己看见／不是门方抓出”全部是评审过程，不是现行效力规则；移沿
+RV-甲02	甲	阻断	采纳	采纳	dingwei-platform-specdoc.md	该恒零判据仍无承载：E.1–E.4 没有 `owner_sp` 列，全文也没有独立 `E-ID → SP0–SP8` 映
+RV-执笔01	执笔	阻断	挂账	挂账	dingwei-platform-specdoc.md	🔴 **本节的生效判定与本节自身的判据对撞，且第 2 项的闭合无载体证据，待归口裁定。** ⟹ **【挂账】** **
+RV-乙01	乙	阻断	挂账	采纳	dingwei-platform-specdoc.md	本规范头块仍把“已过几轮评审”、此前字段写错的经过、具体日期与三域结论写进正文；这正是本件头部禁止的评审过程／状态性内容
+RV-乙06	乙	阻断	采纳	采纳	dingwei-platform-specdoc.md	本轮冻结锚上 `bash scripts/evidence-fresh-gate.sh` 实测拒绝：`specs/evi
+RV-丙01	丙	阻断	未决	挂账	dingwei-platform-specdoc.md	佐证执笔上条（可复跑）：①三份 checklist 56 个 checkbox 实算全 `[ ]`（`grep -c "
+RV-甲18	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	体例挂账 #6 的逐段判定：本节“本轮已定／加新权威表未对撞／自造缺陷／已过多轮旧表”等是修订史；正文应只留唯一权威表、
+RV-甲03	甲	阻断	采纳	采纳	dingwei-platform-specdoc.md	D0 禁止企业内容晋升的依赖点未同步：§9.2 第 4 段仍写判断失误 `D3→D2→D1→D0`，§12.4 第 7
+RV-甲19	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	体例挂账 #6 的逐段判定：本段机器化尝试、误报数量、失败与撤回经过属于沿革；正文只需保留“标题/行文计数的语义对应归
+RV-甲04	甲	阻断	采纳	采纳	dingwei-platform-specdoc.md	本节仍是被新裁定推翻的旧模型：它允许租户 A 的 skill 经抽象/脱敏晋升 D0 后 push 给租户 B，并称这是
+RV-甲05	甲	阻断	采纳	采纳	dingwei-platform-specdoc.md	周报仍保留跨企业读取通道：本节先允许“跨租户个人总览”经 capability 输出计数/状态，输入表又明确列“跨企业视
+RV-甲20	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	体例挂账 #6 的逐段判定：“本轮新增／v3.0 缺／原乙案”等版本比较与方案史移沿革；正文只留现行事实层和三视图定义。
+RV-乙02	乙	阻断	挂账	采纳	dingwei-platform-specdoc.md	SA-10 的对象尚未随新模型下沉 本表仍允许“跨企业视图”，上方仍定义 `cross_tenant_person_ro
+RV-丙02	丙	阻断	采纳	采纳	dingwei-platform-specdoc.md	本节已改「双层结构」，但「三级映射」旧模型名仍作现行引用留存于：§21.4 引述（「§21.1 的三级映射把『人』当成已
+RV-甲06	甲	阻断	挂账	挂账	dingwei-platform-specdoc.md	把“租户”定义成企业＋人两层后，全文仍把 `tenant/TenantCtx/跨租户/租户级 ops/D2 租户级` 当
+RV-乙03	乙	阻断	采纳	采纳	dingwei-platform-specdoc.md	本节仍写“C.3 已裁：不做 RLS／不做每企业独立库”及“只做受控仓储 API”，与现行 C.3a 的“一企业一 PG
+RV-甲07	甲	阻断	采纳	采纳	dingwei-platform-specdoc.md	本节与新 C.3a 正面两存：本节仍声明“受控仓储 API 单点、不做 RLS、不做每租户独立库”，§22.2c 仍以“
+RV-丙03	丙	阻断	采纳	采纳	dingwei-platform-specdoc.md	本行「只做受控仓储 API，不叠 RLS」与 C.3a「PG ＋ RLS（人层）✅ 采纳」直接冲突；C.3a 自称「配套
+RV-丙16	丙	阻断	未决	采纳	dingwei-platform-specdoc.md	本行「只做受控仓储 API，不叠 RLS」与 C.3a「PG ＋ RLS（人层）✅ 采纳」直接冲突；C.3a 自称「配套
+RV-甲30	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	本句是已撤销断言的现行残留：同件 C.3a 已明确采纳 PG＋RLS（人层），而这里仍说“不采纳／本节按该裁定写”。此前
+RV-乙07	乙	阻断	采纳	采纳	dingwei-platform-specdoc.md	上句仍把 RLS 写为“业主不采纳”的现行理由，直接推翻其前一行 C.3a“PG＋RLS 兜人层”的现行裁定；紧随其后的
+RV-甲08	甲	阻断	挂账	挂账	dingwei-platform-specdoc.md	仓储边界“不可逆”仍只有注释纪律：`repo-packages.txt` 与 `boundary-baseline.tx
+RV-甲21	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	体例挂账 #6 的逐段判定：#36b 中“曾实现、6 处误报、已撤回”的实验史移沿革；规则行只留不可机器化的语义边界、机
+RV-执笔02	执笔	非阻断	采纳	采纳	dingwei-platform-specdoc.md	🔴 **丙域 F-6「A§ 跨件引用缺机器可判形态」实测不成立，标此待复核。** ⟹ **【采纳】** **丙域已于
+RV-丙04	丙	非阻断	采纳	采纳	dingwei-platform-specdoc.md	复核：执笔实测成立。speclint 的 `FOREIGN_PREFIXES`/`_drop_foreign` 在 R1
+RV-丙12	丙	阻断	未决	采纳	dingwei-architecture-design.md	〔体例分离二轮·门方先标〕本件仍存过程叙述：本行（A§0 版本对撞叙述）；A§6 SP7a 行「本轮最大工作量」；A§6
+RV-甲15	甲	阻断	未决	采纳	dingwei-architecture-design.md	体例挂账 #6 的逐段判定：本段“曾同时写 v3.14/v3.23、自相矛盾、原型落后两版”是修订史；正文只留“不内嵌跨
+RV-丙05	丙	非阻断	采纳	采纳	dingwei-architecture-design.md	本行「§21.1 双层结构」沿用旧模型名——SpecDoc §21.1 已改双层结构（企业→人，业主裁定），「§21.1
+RV-丙10	丙	非阻断	未决	采纳	dingwei-architecture-design.md	我上一条 RV 的正文被闸 ⑬ 清理工具改写：「三级映射」连标注内引文一并替换为「§21.1 双层结构」，标注语已成语义
+RV-甲09	甲	阻断	采纳	采纳	dingwei-architecture-design.md	R2 评审包中的作者证据件并非冻结锚产物：`specs/evidence/EVIDENCE.md` 头仍写生成自 `d0
+RV-甲33	甲	阻断	未决	采纳	dingwei-architecture-design.md	R2 评审包中的作者证据件并非冻结锚产物：`specs/evidence/EVIDENCE.md` 头仍写生成自 `d0
+RV-甲31	甲	阻断	未决	采纳	dingwei-architecture-design.md	终审实跑新增闸⑭失败：`evidence-fresh-gate.sh` 报证据锚 `4054b9a` 早于评审对象末次改
+RV-乙04	乙	阻断	挂账	挂账	dingwei-architecture-design.md	“加 `owner_principal` ＋ RLS 兜底”尚不是可实现、可验收的隔离合同：未定义受控 DB role／
+RV-甲10	甲	阻断	挂账	挂账	dingwei-architecture-design.md	这还不足以构成“一企业一库＋人层 RLS”的可施工数据库架构。至少缺：可信 principal→企业库注册项/DSN s
+RV-甲16	甲	阻断	未决	采纳	dingwei-architecture-design.md	体例挂账 #6 的逐段判定：待办表 #6 整格是旧事故与教训，且自己宣称“不进正文”却仍在正文；移沿革。正文若需约束，只
+RV-甲11	甲	非阻断	采纳	采纳	dingwei-architecture-design.md	R1 的评审包机制缺口仍在：`export-bundle.sh` 用 basename 压平路径且无同名拒绝，未来两个子
+RV-甲12	甲	阻断	采纳	采纳	dingwei-prototype.html	原型仍承载大量本件自身的评审/改稿沿革，而非界面样例：例如多屏“当初缺口取证过程保留”、执笔方上一轮拆错/被抓出、导出函
+RV-乙05	乙	阻断	采纳	采纳	dingwei-prototype.html	本屏仍把跨租户导出作为可进入待批队列的动作；R2 的 §15.5 已规定企业之间无任何交流、无解锁路径，SA-10 亦应
+RV-丙06	丙	非阻断	采纳	采纳	dingwei-prototype.html	裁决引用过期：应为 C.3a（一企业一 PG 库＋受控仓储 API 硬前置＋PG+RLS 人层兜底），C.3 已废。 -
+RV-丙07	丙	非阻断	采纳	采纳	dingwei-prototype.html	「C.3 已裁不做 RLS」与 C.3a「PG＋RLS（人层）✅ 采纳」直接冲突，引用过期。 -->）禁止先检索后过滤
+RV-甲23	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是“当初为何靠反推／已回写”的评审沿革，不是产品界面；整 panel 移 `dingwe
+RV-丙08	丙	非阻断	采纳	采纳	dingwei-prototype.html	本屏身份模型示例为旧「§21.1 双层结构」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全
+RV-甲24	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 仅说明 §25.5 在 v3.0 补入及当初缺口，属沿革；整 panel 移出。该段也是
+RV-甲25	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是 §25.4 旧正文与回写版本史，整段移沿革；当前入口只保留现行界面契约。</div>
+RV-甲26	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是 §26.4 未定义→已落的取证史，整段移沿革；它也是 `analyze.sh` 报出
+RV-甲27	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：“保留过程／同屏两说已消”与规范体分离要求相反；本 panel 整段移沿革，只留当前待完善池/待认领池界
+RV-甲28	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是 §25.3 从两类到七类的修订史，整段移沿革；它也是 `analyze.sh` 的旧
+RV-甲29	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是账号合并缺口取证与回写史，整段移沿革；它也是 `analyze.sh` 的旧 v3.0
+RV-甲22	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：标题和正文围绕“上一轮拆错”展开，属修订史；当前模型保留为独立现行说明，错误过程移沿革。</div>
+RV-丙09	丙	非阻断	采纳	采纳	dingwei-prototype.html	屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层
+RV-甲13	甲	阻断	采纳	采纳	dingwei-prototype.html	本屏整体仍是已被 C.3a 推翻的旧存储合同：标题下明确写“不做 RLS、不做每租户独立库”，五项/负测/残余面也只覆盖
+RV-丙13	丙	非阻断	未决	采纳	dingwei-prototype.html	〔体例分离二轮·门方先标〕本件仍存过程叙述：与 Agent 交互屏「本阶段实战教训：…九次消息错序」；spec 准入检查
+RV-甲14	甲	阻断	采纳	采纳	prose-style-gate.sh	`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直
+RV-甲32	甲	阻断	未决	采纳	prose-style-gate.sh	终审确认该缺口未修且未被 29 条统计：上条脚本内 RV 仍为“未决”，但 `--rv/--final` 的 DOCS

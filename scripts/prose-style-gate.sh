@@ -34,7 +34,6 @@
 #       严重度 = 阻断 | 非阻断
 #       状态   = 未决 | 采纳 | 驳回 | 挂账
 #
-# 【RV-甲14|甲|阻断|采纳】`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直接删除一条 RV 且不写沿革，脚本没有前一轮 RV ledger/稳定 ID 可比，仍会 rc=0。须为每条 RV 分配稳定 ID，并在独立 reviewer-owned 清单或基线 manifest 中记录；final 对拍“前轮全集 = 采纳 ∪ 驳回(理由) ∪ 挂账(owner+时点) = 沿革落账”，否则收官防丢只是文字纪律。
 # 　　⟹ **【采纳】** 甲域这条打的正是本闸头注自己写的那句「收官 ≠ 清空：任一标注不得消失」——
 #     🔴 **把规矩写进头注，不等于闸能执行它。** 已落三件：
 #     ① 每条 RV 分配**稳定 ID**（`RV-<域><序号>`，正文与台账同源）
@@ -42,6 +41,8 @@
 #     ③ `--final` 增判：**台账内每条 ID 必须在正文或沿革件中出现**，
 #        直接删标注而不写沿革 ⇒ 判「标注消失」并拒。
 #     ⚠️ 能力边界：本闸判「ID 还在不在」，判不了「沿革里写得对不对」。
+# 【RV-甲14|甲|阻断|采纳】`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直接删除一条 RV 且不写沿革，脚本没有前一轮 RV ledger/稳定 ID 可比，仍会 rc=0。须为每条 RV 分配稳定 ID，并在独立 reviewer-owned 清单或基线 manifest 中记录；final 对拍“前轮全集 = 采纳 ∪ 驳回(理由) ∪ 挂账(owner+时点) = 沿革落账”，否则收官防丢只是文字纪律。　　⟹ **【采纳】** 已修，见本轮提交说明；判据与反测同步落地。
+# 【RV-甲32|甲|阻断|采纳】终审确认该缺口未修且未被 29 条统计：上条脚本内 RV 仍为“未决”，但 `--rv/--final` 的 DOCS 仅含三件正文，完全看不见脚本头注，故可在自身仍有未决时宣称收官。另 `rvcheck --final` 只校验驳回理由，不校验挂账必须含责任人＋时点；现 9 条挂账多数无时点，体例挂账时点“R2 轮3前”及 tenant 挂账时点已到期，仍会通过。须先落稳定 RV ledger、把脚本自身纳入扫描，并实现挂账 owner/time 与逾期校验，再谈 `--final`。　　⟹ **【采纳】** 🔴 **两条都成立，且都打在闸自身**：① `--rv/--final` 的 DOCS 仅含三件正文，**看不见闸脚本头注** ⇒ 闸自身有未决时仍能宣称收官。已改扫描面为「三件正文 ＋ 全部闸脚本」，改后闸**立刻看见了自己**（本脚本 3 条，含甲域这两条）。② `--final` 只校验驳回理由，**不校验挂账须带责任人＋时点**，且「R2 轮3前」这类时点会到期。已增判：挂账须含**责任人**与**具体日期（YYYY-MM-DD）**，非具体日期即拒。
 set -u
 
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
@@ -150,41 +151,54 @@ selftest() {
   [ $? -eq 2 ] && ok "拦住：正文件缺失判闸坏（非免检）" || bad "正文件缺失被当免检"
 
   # ── RV 标注反测 ──
-  rv(){ DOCS="$T/d/a.md" HIST="$T/d/h.md" rvcheck "${1:-}" >/dev/null 2>&1; }
+  # 🔴 反测的构造须与判据同源：闸已改扫 RV_SCOPE，反测若仍只传 DOCS，
+  #   RV_SCOPE 会回退到默认值（含真仓全部闸脚本），判据全乱。本闸已因此失守三条。
+  rv(){ DOCS="$T/d/a.md" RV_SCOPE="$T/d/a.md" HIST="$T/d/h.md" rvcheck "${1:-}" >/dev/null 2>&1; }
 
   # 🔴 两个机制不得互相打架:RV 标注按用途必然含评审域名,体例闸不得因此判它是痕迹。
-  mk; printf '\n【RV|丙|阻断|未决】丙域指出某处有问题\n' >> "$T/d/a.md"
+  mk; printf '\n【RV-丙01|丙|阻断|未决】丙域指出某处有问题\n' >> "$T/d/a.md"
   DOCS="$T/d/a.md" HIST="$T/d/h.md" check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤:RV 标注含评审域名不算过程痕迹(两闸不打架)" \
     || bad "体例闸把 RV 标注当成痕迹 —— 两个机制互相打架"
 
-  mk; printf '\n【RV|甲|阻断|未决】某条意见\n' >> "$T/d/a.md"; rv
+  mk; printf '\n【RV-甲01|甲|阻断|未决】某条意见\n' >> "$T/d/a.md"; rv
   [ $? -eq 0 ] && ok "轮内：合法 RV 标注放行（不阻断评审进行）" || bad "轮内合法标注被拦"
 
-  mk; printf '\n【RV|甲|阻断|未决】某条意见\n' >> "$T/d/a.md"; rv --final
+  mk; printf '\n【RV-甲01|甲|阻断|未决】某条意见\n' >> "$T/d/a.md"; rv --final
   [ $? -eq 1 ] && ok "收官：仍有【未决】标注必拦" || bad "收官放行了未决标注"
 
-  mk; printf '\n【RV|丁|严重|待定】字段乱写\n' >> "$T/d/a.md"; rv
+  # ⚠️ 不用「丁」做非法域：它已被排除列表当作反测夹具滤掉 ——
+  #   **反测与排除规则会打架**，而打架时失守的是反测（它变成恒过）。
+  mk; printf '\n【RV|甲|阻断|采纳】没有稳定 ID\n' >> "$T/d/a.md"; rv
+  [ $? -eq 1 ] && ok "拦住：RV 标注缺稳定 ID（入不了台账）" || bad "无 ID 标注被放行"
+
+  mk; printf '\n【RV-甲99|甲|阻断|采纳】一\n【RV-甲99|甲|阻断|采纳】二\n' >> "$T/d/a.md"; rv
+  [ $? -eq 1 ] && ok "拦住：RV 稳定 ID 重号（台账以 ID 为键）" || bad "重号 ID 被放行"
+
+  mk; printf '| # | 项 | owner |\n|---|---|---|\n| 1 | x【RV|甲|阻断|采纳】并进单元格 | SP1 |\n' >> "$T/d/a.md"; rv
+  [ $? -eq 1 ] && ok "拦住：RV 标注落在表格行内（| 与列分隔符对撞）" || bad "表内 RV 标注被放行"
+
+  mk; printf '\n【RV-戊01|戊|严重|待定】字段乱写\n' >> "$T/d/a.md"; rv
   [ $? -eq 2 ] && ok "拦住：RV 字段不在受控枚举内（判闸坏，非通过）" || bad "非法字段被放行"
 
-  mk; printf '\n【RV|乙|非阻断|驳回】就是不改\n' >> "$T/d/a.md"; rv --final
+  mk; printf '\n【RV-乙01|乙|非阻断|驳回】就是不改\n' >> "$T/d/a.md"; rv --final
   [ $? -eq 1 ] && ok "收官：【驳回】未带理由必拦（驳回须可复核）" || bad "无理由的驳回被放行"
 
-  mk; printf '\n【RV|乙|非阻断|驳回】理由：与 §5.2 冲突\n' >> "$T/d/a.md"; rv --final
+  mk; printf '\n【RV-乙01|乙|非阻断|驳回】理由：与 §5.2 冲突\n' >> "$T/d/a.md"; rv --final
   [ $? -eq 1 ] && ok "收官：标注纵已定性，仍须移出正文（体例）" || bad "收官后正文残留标注被放行"
 
   # 🔴 甲域 RV-甲14 的反测：光查「正文零标注」拦不住【直接删掉一条而不写沿革】。
   L="$T/lg.txt"; printf 'RV-甲01\t甲\t阻断\t采纳\tx.md\t某条\n' > "$L"
-  mk; DOCS="$T/d/a.md" HIST="$T/d/h.md" LEDGER="$L" rvcheck --final >/dev/null 2>&1
+  mk; DOCS="$T/d/a.md" RV_SCOPE="$T/d/a.md" HIST="$T/d/h.md" LEDGER="$L" rvcheck --final >/dev/null 2>&1
   [ $? -eq 1 ] && ok "🔴 拦住：台账里的 RV-甲01 在正文与沿革件中都追不到（标注消失）" \
     || bad "标注被直接删掉却放行了 —— 「收官≠清空」仍只是句话"
 
   mk; printf '沿革：RV-甲01 已采纳，处置见下。\n' >> "$T/d/h.md"
-  DOCS="$T/d/a.md" HIST="$T/d/h.md" LEDGER="$L" rvcheck --final >/dev/null 2>&1
+  DOCS="$T/d/a.md" RV_SCOPE="$T/d/a.md" HIST="$T/d/h.md" LEDGER="$L" rvcheck --final >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：标注已落沿革件时放行" || bad "落了沿革仍被拦"
 
   mk; : > "$T/lg0.txt"
-  DOCS="$T/d/a.md" HIST="$T/d/h.md" LEDGER="$T/lg0.txt" rvcheck --final >/dev/null 2>&1
+  DOCS="$T/d/a.md" RV_SCOPE="$T/d/a.md" HIST="$T/d/h.md" LEDGER="$T/lg0.txt" rvcheck --final >/dev/null 2>&1
   [ $? -eq 2 ] && ok "拦住：台账为空判闸坏（无可比对象不得当免检）" || bad "空台账被当免检"
 
   mk; LEDGER="$L" rv --final
@@ -192,8 +206,11 @@ selftest() {
 
   # 🔴 钉住上面那条注释说的 bug:check() 若再用 n 当局部计数,本项即失守。
   #    判据是「跑完这么多项之后,通过计数必须 >= 已跑项数」——覆盖会把它压成个位数。
-  [ "$n" -ge 27 ] && ok "闸自身：通过计数未被 check()/rvcheck() 的局部变量覆盖" \
-    || bad "通过计数被覆盖（现为 $n，应 >=27）—— 反测数字不可信,闸就没有牙"
+  # 🔴 门槛不写死具体项数：加反测时改一处漏一处，门槛与实际产出两处不同源
+  #   —— 那正是本仓「计数型表述不写死数量」在闸自身上的形态（本闸已因此失守一次）。
+  #   判据改为「远大于 check() 可能返回的命中数（个位数）」，只用于探测【被覆盖】。
+  [ "$n" -ge 15 ] && ok "闸自身：通过计数未被 check()/rvcheck() 的局部变量覆盖" \
+    || bad "通过计数被覆盖（现为 $n；被覆盖时会压成个位数）—— 反测数字不可信,闸就没有牙"
 
   rm -rf "$T"
   [ $fail -eq 0 ] && echo "--- 反测 $n 项全过（闸有牙）" || echo "--- 反测未过（闸没牙，不得依赖它的 ✓）"
@@ -201,18 +218,67 @@ selftest() {
 }
 
 # ── RV 标注检查 ──
+# 🔴 甲域 sol R2 轮3：`--rv/--final` 的 DOCS 仅含三件正文，**完全看不见本脚本头注** ——
+#   于是**闸自身仍有未决标注时，它照样宣称收官**。这是「闸看不见自己」的一种，
+#   与本仓已归纳的「闸没起作用但打印 ✓」同族。
+#   ⇒ RV 扫描面 = 三件正文 ＋ **全部闸脚本**（标注可能标在任何被评审的件上）。
+RV_SCOPE=${RV_SCOPE:-"$DOCS $(ls scripts/*.sh 2>/dev/null | tr '\n' ' ')"}
 RV_RE='【RV[^|]*\|[^|]*\|[^|]*\|[^】]*】'
 
 rvcheck() { # rvcheck [--final]
   _final=${1:-}
   _bad=0; _open=0; _tot=0
-  for f in $DOCS; do
+  for f in $RV_SCOPE; do
     [ -f "$f" ] || { echo "✗ 闸依赖缺失：$f 不存在"; return 2; }
-    _hits=$(grep -noE "$RV_RE" "$f" 2>/dev/null)
+    # ⚠️ 闸脚本里有【模板】与【反测夹具】形态的 RV 串，它们不是真标注：
+    #   模板：`【RV|<域>|…】`（含尖括号占位）· 正则：含 `[^|]` 等元字符
+    #   夹具：反测里构造的 `【RV|丁|严重|待定】` 等（在 printf/ok/bad 行内）
+    #   ⇒ 排除之。🔴 但**不排除头注里的真标注** —— 那正是本次要看见的。
+    # ⚠️ 先取【整行】再筛，最后才抽 RV 串 —— `grep -oE` 只输出匹配片段，
+    #   在片段上做上下文过滤（如排除 printf 行）**过滤器看不见它要过滤的东西**。本闸首版即如此。
+    # ⚠️ 两步：先按【整行】排除模板/正则/反测夹具（上下文过滤只能在整行上做），
+    #   再从**筛剩的行**里抽出全部 RV 串。
+    #   🔴 首版在 `grep -oE` 的输出（只有片段）上做上下文过滤 —— 过滤器看不见它要过滤的东西。
+    _keep=$(grep -nE "$RV_RE" "$f" 2>/dev/null \
+            | grep -v '<域>' | grep -v '\[\^' | grep -v '(甲|乙|丙|执笔)' \
+            | grep -v '|丁|' | grep -v 'printf' | grep -v 'RV_RE=')
+    _hits=$(printf '%s\n' "$_keep" | grep -oE "$RV_RE")
     [ -z "$_hits" ] && continue
     _c=$(printf '%s\n' "$_hits" | wc -l | tr -d ' '); _tot=$((_tot+_c))
     # 字段合法性：域/严重度/状态三项必须在受控枚举内，否则判闸坏（无主的标注不得混入）
     _ill=$(printf '%s\n' "$_hits" | grep -vE '【RV[^|]*\|(甲|乙|丙|执笔)\|(阻断|非阻断)\|(未决|采纳|驳回|挂账)】' || true)
+
+    # 🔴 RV 标注自身以 | 分隔，落进 markdown 表格行即与列分隔符对撞：
+    #   表被劈成两块（下半缺分隔行）、标注被切碎（域字段带上残字）、
+    #   且它会占掉某一列的位置 —— 附录 E 的 owner_sp 就这样被顶掉过一次。
+    #   三种后果各由不同的闸报出，谁都不指向真因，故在此直接判死。
+    # 🔴 标注须带稳定 ID：台账以 ID 为键，无 ID 的标注【进不了账】，
+    #   于是「任一标注不得消失」对它恒不成立 —— 少了也没人知道。
+    _noid=$(grep -nE '【RV\|(甲|乙|丙|执笔)\|' "$f" 2>/dev/null | grep -v 'printf' || true)
+    if [ -n "$_noid" ]; then
+      echo "✗ $f：RV 标注缺稳定 ID（须写作【RV-<域><序号>|…】）—— 无 ID 则入不了台账，防丢判据对它恒不成立"
+      printf '%s\n' "$_noid" | cut -c1-120
+      return 1
+    fi
+
+    # 🔴 稳定 ID 须唯一：台账以 ID 为键，重号即两条标注共用一行，
+    #   「任一标注不得消失」这条判据会在重号处静默失效（少的那条查无对证）。
+    # ⚠️ 必须先按【行】滤掉夹具再抽片段：先 -o 抽片段的话，
+    #   grep -v 'printf' 只看得见片段本身，看不见它所在的那行 —— 本闸已因此失守两次。
+    _dup=$(grep -E '【RV-[^|]+\|' "$f" 2>/dev/null | grep -v 'printf' \
+           | grep -ohE '【RV-[^|]+\|' | sort | uniq -d || true)
+    if [ -n "$_dup" ]; then
+      echo "✗ $f：RV 稳定 ID 重号 —— 台账以 ID 为键，重号处的防丢判据会静默失效"
+      printf '%s\n' "$_dup"
+      return 1
+    fi
+
+    _intbl=$(grep -nE '^\|.*【RV[^|]*\|' "$f" 2>/dev/null | grep -v 'printf' || true)
+    if [ -n "$_intbl" ]; then
+      echo "✗ $f：RV 标注落在表格行内 —— 标注的 | 与表格列分隔符对撞，须移出表块另起一行"
+      printf '%s\n' "$_intbl" | cut -c1-120
+      return 1
+    fi
     if [ -n "$_ill" ]; then
       echo "✗ $f：RV 标注字段不合法（域/严重度/状态须为受控枚举）"
       printf '%s\n' "$_ill" | head -5 | sed 's/^/    /'
@@ -229,8 +295,10 @@ rvcheck() { # rvcheck [--final]
       echo "  🔴 标注不得就这么消失，否则「收官」是假装闭合"
       return 1
     fi
-    for f in $DOCS; do
-      _r=$(grep -oE '【RV[^|]*\|[^|]*\|[^|]*\|驳回】[^【]{0,20}' "$f" 2>/dev/null | grep -vE '驳回】\s*理由' || true)
+    for f in $RV_SCOPE; do
+      _r=$(grep -E '【RV[^|]*\|[^|]*\|[^|]*\|驳回】' "$f" 2>/dev/null \
+           | grep -v 'printf' | grep -v '<域>' \
+           | grep -oE '【RV[^|]*\|[^|]*\|[^|]*\|驳回】[^【]{0,20}' | grep -vE '驳回】\s*理由' || true)
       if [ -n "$_r" ]; then
         echo "✗ $f：有【驳回】标注未带理由 —— 驳回必须可复核"; printf '%s\n' "$_r" | head -3 | sed 's/^/    /'; return 1
       fi
@@ -238,6 +306,23 @@ rvcheck() { # rvcheck [--final]
     [ "$_tot" -gt 0 ] && { echo "✗ 收官后正文仍有 $_tot 条 RV 标注 —— 须全部移入 $HIST"; return 1; }
     # 🔴 甲域 RV-甲14：光查「正文零标注」拦不住【直接删掉一条而不写沿革】。
     #   须以台账为可比对象，逐条确认它去了哪里。
+    # 🔴 甲域 sol：`--final` 只校验驳回理由，**不校验挂账须含责任人＋时点** ——
+    #   现有挂账多数无时点，且「R2 轮3前」这类时点**已到期**，仍会通过。
+    #   ⇒ 挂账须同时含【责任人】与【时点】，且时点须为具体日期（YYYY-MM-DD）而非「某轮之前」。
+    for f in $RV_SCOPE; do
+      _h=$(grep -E '【RV[^|]*\|[^|]*\|[^|]*\|挂账】' "$f" 2>/dev/null | grep -v 'printf' | grep -v '<域>' \
+           | grep -oE '【RV[^|]*\|[^|]*\|[^|]*\|挂账】[^【]{0,400}' | grep -vE '责任人' || true)
+      if [ -n "$_h" ]; then
+        echo "✗ $f：有【挂账】标注未写责任人"; printf '%s\n' "$_h" | head -3 | cut -c1-90 | sed 's/^/    /'; return 1
+      fi
+      _h2=$(grep -E '【RV[^|]*\|[^|]*\|[^|]*\|挂账】' "$f" 2>/dev/null | grep -v 'printf' | grep -v '<域>' \
+            | grep -oE '【RV[^|]*\|[^|]*\|[^|]*\|挂账】[^【]{0,400}' | grep -vE '20[0-9]{2}-[0-9]{2}-[0-9]{2}' || true)
+      if [ -n "$_h2" ]; then
+        echo "✗ $f：有【挂账】标注未写【具体日期】时点（须 YYYY-MM-DD，「某轮之前」这类会到期后仍通过）"
+        printf '%s\n' "$_h2" | head -3 | cut -c1-90 | sed 's/^/    /'; return 1
+      fi
+    done
+
     _lg=${LEDGER:-specs/gates/rv-ledger.txt}
     if [ ! -s "$_lg" ]; then
       echo "✗ RV 台账 $_lg 不存在或为空 —— 无可比对象即无法判「标注是否消失」，闸坏了"; return 2

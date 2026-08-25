@@ -43,7 +43,7 @@ check() {
   fi
   echo "  附录 E 可认领行：$_t · 无主或 owner 非法：$_b"
   if [ "${_b:-0}" -gt 0 ]; then
-    printf '%s\n' "$_out" | grep -v 'TOTAL='
+    printf '%s\n' "$_out" | grep -av 'TOTAL='
     echo "✗ 「附录 E 中无任何子 spec 认领的行数」应恒为 0，实为 $_b。"
     echo "  🔴 恒零判据须有数据承载 —— 没有 owner_sp 列时，该判据在结构上无从计算。"
     echo "  ⚠️ owner_sp 取值须在受控枚举内：$OWNERS（多主用 · 连接）"

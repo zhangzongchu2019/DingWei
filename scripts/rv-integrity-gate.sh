@@ -25,7 +25,7 @@ GATES=${GATES:-'scripts/prose-style-gate.sh'}
 check() {
   [ -s "$LEDGER" ] || { echo "✗ 闸依赖缺失：$LEDGER 不存在或为空 —— 无可比对象，闸坏了"; return 2; }
   _bad=0; _n=0
-  while IFS="$(printf '\t')" read -r id dom sev st file brief; do
+  while IFS="$(printf '\t')" read -r id dom sev st disp file brief; do
     case "$id" in ''|'#'*) continue;; esac
     _n=$((_n+1))
     [ -z "$brief" ] && continue
@@ -53,7 +53,7 @@ selftest() {
   n=0; fail=0
   ok(){ n=$((n+1)); echo "  ✓ $1"; }; bad(){ echo "  ✗ 反测未过：$1"; fail=1; }
   L="$T/l.txt"
-  printf 'RV-丙05\t丙\t非阻断\t采纳\tx.md\t本行「三级映射」沿用旧模型名——后略\n' > "$L"
+  printf 'RV-丙05\t丙\t非阻断\t未决\t采纳\tx.md\t本行「三级映射」沿用旧模型名——后略\n' > "$L"
   mk(){ : > "$T/h.md"; : > "$T/g.sh"; }
 
   mk; printf '【RV-丙05|丙|非阻断|采纳】本行「三级映射」沿用旧模型名——后略\n' > "$T/a.md"
