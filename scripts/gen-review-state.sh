@@ -101,6 +101,16 @@ for g in prose-style evidence-fresh path-anchor conflict-marker rv-integrity leg
 done
 echo '```'
 echo
+echo "## 🔴 待裁项（门方判据与业主裁定相撞，执笔方不得单方面决定）"
+echo
+if [ -s specs/gates/disputed.txt ]; then
+  echo '```'
+  sed 's/^/  /' specs/gates/disputed.txt
+  echo '```'
+else
+  echo "（无）"
+fi
+echo
 echo "## 不在执笔方权限内的阻塞"
 echo
 echo "| # | 事 | 归谁 | 现状 |"

@@ -40,6 +40,7 @@
 | `scripts/path-anchor-gate.sh` | 路径锚解析闸（提交闸 ⑳）—— 正文反引号包起的仓内路径须解析得到。🔴 立闸原因：#36b 的 reviewer owner 锚被写成仓内不存在的路径，人工判据落点指向空文件而 ①–⑲ 全绿 |
 | `scripts/legacy-name-gate.sh` | 旧模型名棘轮（提交闸 ㉑）—— 受控符号集合的 **AST 出现数**，prod/test/comment **三类分别**只许降不许升，prod 终值 0。🔴 首版用 `grep -c` 数【含词行数】被甲域抓出：同行两次只记一次、删注释可抵新增生产用法 |
 | `scripts/gen-review-state.sh` | 评审状态生成件（提交闸 ㉒）—— 从台账与闸实跑派生 `docs/REVIEW-STATE.md`。🔴 立项原因：评审转述与推锚已**交叉五次**，根子是「我推锚快于转述、而状态只活在消息里」⇒ 状态落进仓，门方 checkout 即可读 |
+| `specs/gates/disputed.txt` | 待裁项 —— 门方判据与业主裁定相撞、执笔方不得单方面决定的条目。🔴 立件原因：争议只活在消息里，被原样转达三次而无人能判断其状态 |
 | `specs/gates/reviewer-repro.txt` | 门方复现台账的数据（㉓）—— 每行：<发现ID> TAB <期望> TAB <门方原命令> |
 | `scripts/reviewer-repro-gate.sh` | 门方复现台账（提交闸 ㉓）——每条发现记**门方自己给的复现命令**与期望值，闸每次实跑比对。🔴 立闸原因：执笔方报「已修」时自拟的一行判据，多次证明的是**上一轮修复还在**，而非这一轮的洞已修 ⇒ **他问什么，闸就跑什么** |
 | `specs/tools/legacy-name/main.go` | 上闸的计数器（Go AST）—— 逐 Ident 计数；注释按 **Go 标识符边界切词后精确相等**匹配（子串会让 `PendingTenantCtx` 再命中 `TenantCtx`）；扫描根不可用 / 遍历出错一律 **exit 2**（走不到就不能报数）；复合标识符（`tenantCtxKey`）不计：判**受控符号集合**，不判子串 |
