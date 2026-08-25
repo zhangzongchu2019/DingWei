@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `9d6634278da26e4512ceb1b8583fd48f52135b91` · 分支 `design/addendum-decisions`
+生成自 commit `62ffc0137858e2ab916f72134c80359bf9f6e049` · 分支 `HEAD`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.24** | `9d6634278da26e4512ceb1b8583fd48f52135b91` | 3285 / 241319 | `6f89c78a08e32a13c28d692ca24e18160b2f28590fce47fcd2e500d162cee5f3` |
-| `dingwei-prototype.html` | **v1.31** | `9d6634278da26e4512ceb1b8583fd48f52135b91` | 2867 / 262307 | `08702685db37d83b3016adb4b6f5dc8e8b3bb457c9b3a28576ff8a87da47cc52` |
-| `dingwei-architecture-design.md` | **v0.23** | `9d6634278da26e4512ceb1b8583fd48f52135b91` | 911 / 70478 | `c860bcf9127a07cacdae060b8ec8302ff356577dc8dc50d4fa731fd88179cb15` |
+| `dingwei-platform-specdoc.md` | **v3.24** | `62ffc0137858e2ab916f72134c80359bf9f6e049` | 3285 / 241319 | `6f89c78a08e32a13c28d692ca24e18160b2f28590fce47fcd2e500d162cee5f3` |
+| `dingwei-prototype.html` | **v1.31** | `9d6634278da26e4512ceb1b8583fd48f52135b91` | 2867 / 262983 | `a98dd732181431941f5807867e24469faee2289c82b32575ec7cef3d6956372a` |
+| `dingwei-architecture-design.md` | **v0.23** | `62ffc0137858e2ab916f72134c80359bf9f6e049` | 913 / 70982 | `0bf489ad0845fe05f02188fdf0ef4c012af103464d957e561560cb86bff5a129` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+62ffc01 R2 轮3 丙域 kimi 4 条处置 + 更正上一提交的两处不实断言
 9d66342 R2 轮3：三域 20 条评审意见归口处置，RV 台账拆列，闸 ⑫/⑯ 补三条判据
 43f49e6 fix: 丙域 R2 轮3 全采纳 —— 标注被工具改写(立闸⑯) + 体例二轮 16 处(前锚 baf724f)
 baf724f fix: 乙域 terra R2 轮3 三条全采纳 —— 证据闸结构性误判 · §22.2c 自我推翻(前锚 f64b2c4)
@@ -34,5 +35,4 @@ ec07d1d review: 丙域 R2 轮3 终审标注 4 条——体例分离二轮门方�
 94d19aa review: 标注 R2 轮3甲域终审意见
 0b19c85 review: mark security final findings
 f64b2c4 fix: 采纳甲域 RV-甲14 —— 「收官≠清空」从头注变成可执行判据(前锚 3348b51)
-3348b51 docs: R2 轮2 收口 —— 29 条标注状态全部回填，未决归零(前锚 4054b9a)
 ```

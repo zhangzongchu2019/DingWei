@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T10:28:43Z
-分支头：`9d6634278da26e4512ceb1b8583fd48f52135b91`
+生成时刻：2026-08-25T10:38:06Z
+分支头：`62ffc0137858e2ab916f72134c80359bf9f6e049`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -34,7 +34,7 @@ $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
 ```
 $ scripts/arch-refcheck.sh
   本件内引用 A§ : 75 次 / 28 目标 · 悬空 0
-  SpecDoc 引用 § : 174 次 / 68 目标 · 悬空 0
+  SpecDoc 引用 § : 175 次 / 68 目标 · 悬空 0
   heading 真实重复：本件 0 · SpecDoc 0
   --- 引用核验通过
 ```
@@ -69,7 +69,8 @@ $ specs/tools/analyze.sh
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-architecture-design.md: 正文无他件旧版本号
-    ✗ dingwei-prototype.html: 正文含他件旧版本号 5 处
+    ✗ dingwei-prototype.html: 正文含他件旧版本号 6 处
+        L995 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.24
         L995 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.24
         L1125 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.24
         L1260 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.24

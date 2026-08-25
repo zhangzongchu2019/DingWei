@@ -992,7 +992,7 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：本屏当初无对应条款 <span class="ref">§25.5 Agent 名册已补</span></h3>
   <div class="note bad">【RV-甲24|甲|阻断|采纳】体例挂账 #6：本 panel 仅说明 §25.5 在 v3.0 补入及当初缺口，属沿革；整 panel 移出。该段也是 `analyze.sh` 终审报出的旧他件版本命中之一。</div>　　⟹ **【采纳】** 该 panel 属评审沿革非产品界面，已按业主判据（非必须且不助理解业务即删）整段删除，非以 style-ok 留在正文。
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。<!-- 【RV-丙17|丙|非阻断|未决】④b 误报的修复落错了闸：「闸⑫扩指纹按归属句式判」修的是 prose-style-gate，而误报在 analyze.sh ④b——它仍裸匹配版本号，仍把本类「自 v3.0 起已落」历史落地表述判为他件旧版本号（本屏 5 处同形），analyze 现仍因此 FAIL。「自 vX 起」是落地时点，④b 的作用域须豁免该句式。 -->
 </div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   
   <div class="note bad" data-edit>SpecDoc §26「Agent 管理」只定义了<b>管理动作</b>（新建 / 关闭 / 重启 / 上下文注入）与<b>三形态的凭据策略</b>，
@@ -1336,7 +1336,7 @@ body.uionly #uihint{display:block}
   （实现 → 代码评审 → 测试执行）。<b>代码评审在任何级别都不可省</b>，spec 同理不应比代码宽松。<br><br>
   理由二 · <b>免人审会把检查项变成攻击面</b>：一旦「过检查项即免审」，就会出现<b>为过检查项而写的 spec</b> ——
   字段填齐、禁用词避开、锚格式合法，而实质仍是空的。<br>
-  这与执笔方在评审中被抓出的<b>「按名字判而非按效果判」</b>是同一族错误：检查项判的是<b>形状</b>，人审判的是<b>是不是那么回事</b>。<br><br>
+  这与执笔方在评审中被抓出的<b>「按名字判而非按效果判」</b>是同一族错误：检查项判的是<b>形状</b>，人审判的是<b>是不是那么回事</b>。<!-- 【RV-丙18|丙|非阻断|未决】本处与身份绑定屏「执笔方须指出：这与执笔方在评审中被抓出的…同一族错误」两处过程叙述仍在正文——RV-丙13 处置称「已按该清单逐段改完」，实际文本未动。 --><br><br>
   ⇒ <b>正确关系</b>：<b>机器决定「是否值得占用人审」，不决定「是否需要人审」。</b></div>
   <h3 style="margin-top:14px">人审的深度与门方人选由检查结果决定 <span class="ref">§5.6 · §4.3</span></h3>
   <table><thead><tr><th>条件</th><th>人审形态</th></tr></thead><tbody>
