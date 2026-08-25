@@ -10,6 +10,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -68,18 +70,8 @@ func (s *SQLite) Ping(ctx context.Context) error { return s.db.PingContext(ctx) 
 
 // Migrate 按文件名顺序执行内嵌迁移。
 func (s *SQLite) Migrate(ctx context.Context) error {
-	entries, err := migrationFS.ReadDir("migrations")
-	if err != nil {
+	if err := s.runMigrations(ctx); err != nil {
 		return err
-	}
-	for _, e := range entries {
-		b, err := migrationFS.ReadFile("migrations/" + e.Name())
-		if err != nil {
-			return err
-		}
-		if err := s.execMigration(ctx, string(b)); err != nil {
-			return fmt.Errorf("migrate %s: %w", e.Name(), err)
-		}
 	}
 	if err := s.ensureSessionEndpointColumns(ctx); err != nil {
 		return err
@@ -108,31 +100,400 @@ func (s *SQLite) Migrate(ctx context.Context) error {
 	return s.ensureDefaultProject(ctx)
 }
 
-func (s *SQLite) execMigration(ctx context.Context, sqlText string) error {
-	if _, err := s.db.ExecContext(ctx, sqlText); err == nil {
-		return nil
-	} else if !isDuplicateColumnError(err) {
+// ---------------------------------------------------------------------------
+// 迁移账（SA-13，乙域 terra 提出，本席实测复现后按其修法落地）
+//
+// 🔴 修之前的实际行为，两条，都不是理论风险：
+//
+//	① **逐启动全量重放**：Migrate() 每次把 migrations/ 下全部文件重跑一遍，没有任何账。
+//	   于是一次性的数据迁移语句变成了【每次重启执行一次】。实测复现：
+//	   0025 的 `UPDATE l1_decision_rule SET pattern=... WHERE id='l1_command_roster'`
+//	   是无条件覆盖，管理员在后台改过这条规则后，**重启一次就被静默回滚**，
+//	   且顺带盖上一个新的 updated_at —— 审计上看是「有人改过」，而没有任何人改过。
+//	   同族的还有 0017 的回填 UPDATE、0005 的三条 DELETE（会删掉后来重建的同名服务）。
+//	② **通配吞 duplicate column**：整块执行失败后逐语句重试，凡报 "duplicate column name"
+//	   一律 continue。于是「库里已有同名但【不等价】的列」会被当成迁移已应用，
+//	   而进程**启动成功** —— 授权类的 ADD COLUMN 没落成预期语义，上层却照常跑。
+//	   🔴 启动成功被当成了「schema 如预期」。
+//
+// ⇒ 现在：每个迁移按内容 digest 记账，只跑一次；已应用而内容变了 ⇒ 拒绝启动；
+//
+//	不再吞任何错误。
+//
+// ⚠️ 保证范围（不夸大）：本账保证的是【经由本 runner 的路径】。
+//
+//	手工 psql/sqlite3 改库、外部工具建表不在其内 —— 与 repo 包同款免责。
+const migrationLedgerDDL = `CREATE TABLE IF NOT EXISTS schema_migrations(
+	version    TEXT PRIMARY KEY,
+	digest     TEXT NOT NULL,
+	applied_at TEXT NOT NULL
+)`
+
+// migrationObjState 是 legacy 库里某个迁移的「对象是否已存在」的判定结果。
+type migrationObjState int
+
+const (
+	objAllMissing   migrationObjState = iota // 一个都不在 ⇒ 该迁移确实没跑过，正常执行
+	objAllPresent                            // 全在 ⇒ 已跑过，补账、不执行
+	objPartial                               // 一半一半 ⇒ 🔴 半迁移，拒绝启动
+	objUnverifiable                          // 纯数据迁移，无 DDL 对象可查
+)
+
+func (s *SQLite) runMigrations(ctx context.Context) error {
+	if _, err := s.db.ExecContext(ctx, migrationLedgerDDL); err != nil {
+		return fmt.Errorf("migrate: 建迁移账失败: %w", err)
+	}
+
+	applied, err := s.appliedMigrations(ctx)
+	if err != nil {
 		return err
 	}
 
-	for _, stmt := range strings.Split(sqlText, ";") {
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" {
-			continue
-		}
-		if _, err := s.db.ExecContext(ctx, stmt); err != nil {
-			if isDuplicateColumnError(err) {
-				continue
-			}
+	entries, err := migrationFS.ReadDir("migrations")
+	if err != nil {
+		return err
+	}
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	// 不依赖 ReadDir 的排序实现细节：迁移顺序是语义的一部分，显式排。
+	sort.Strings(names)
+
+	// legacy 库判定：账是空的，但库里已经有业务表 ⇒ 这是一个在跑的旧库，
+	// 它的迁移【早就应用过】，只是没有账。此时绝不能重跑数据语句（那正是 ① 的伤害）。
+	legacy := false
+	if len(applied) == 0 {
+		has, err := s.hasUserTables(ctx)
+		if err != nil {
 			return err
 		}
+		legacy = has
+	}
+	backfilled := 0
+
+	for _, name := range names {
+		body, err := migrationFS.ReadFile("migrations/" + name)
+		if err != nil {
+			return err
+		}
+		sum := sha256.Sum256(body)
+		digest := hex.EncodeToString(sum[:])
+
+		if old, ok := applied[name]; ok {
+			if old != digest {
+				// 已应用的迁移，文件内容后来被改过。改了什么无从得知，
+				// 库里是按【旧内容】迁的 —— 继续跑等于拿新账认旧事实。
+				return fmt.Errorf(
+					"migrate %s: 已应用的迁移内容已变更（账内 digest=%s，当前文件 digest=%s）—— 拒绝启动。"+
+						"迁移文件应视为不可变；如确需修正，请新增一个迁移", name, old, digest)
+			}
+			continue
+		}
+
+		if legacy {
+			state, err := s.migrationObjState(ctx, string(body))
+			if err != nil {
+				return fmt.Errorf("migrate %s: legacy 核验失败: %w", name, err)
+			}
+			switch state {
+			case objAllPresent:
+				// 受控 legacy 补账：核验过该迁移的 DDL 对象确实都在。
+				// 🔴 只写账，不执行 —— 执行才是伤害本身。
+				if err := s.recordMigration(ctx, name, digest); err != nil {
+					return err
+				}
+				backfilled++
+				continue
+			case objUnverifiable:
+				// 🔴 terra SA-13 二轮：一轮把「纯数据迁移」直接当作已应用补账 ——
+				//   那是拿【无法核验】当【核验通过】。0025 是纯 UPDATE，一个账为空、
+				//   且从未执行过它的旧库，会被标成已应用：既不重放、也不拒启动，
+				//   于是该迁移的效果永远不会落地，而启动照样成功。
+				//   ⇒ 纯数据迁移必须逐版本有 verifier；没有就拒启动，不得自动补账。
+				ok, err := s.verifyDataMigration(ctx, name)
+				if err != nil {
+					return fmt.Errorf("migrate %s: 纯数据迁移核验失败: %w", name, err)
+				}
+				if ok {
+					if err := s.recordMigration(ctx, name, digest); err != nil {
+						return err
+					}
+					backfilled++
+					continue
+				}
+				return fmt.Errorf(
+					"migrate %s: 这是【纯数据迁移】，legacy 库无法自动判定它是否已执行 —— 拒绝启动。\n"+
+						"  · 若已登记 verifier 而核验为「未生效」：重放数据语句可能覆盖人工改动，故不自动执行；\n"+
+						"  · 若未登记 verifier：本迁移无稳定效果签名，机器判不了。\n"+
+						"  ⇒ 人工核验实际数据后，用受控确认放行：%s=%s（可逗号分隔多个版本）",
+					name, legacyAckEnv, name)
+			case objPartial:
+				return fmt.Errorf(
+					"migrate %s: legacy 库处于【半迁移】状态（该迁移的对象一部分已存在、一部分缺失）—— 拒绝启动。"+
+						"这正是旧实现吞 duplicate column 会掩盖的情形，须人工核验实际 schema 后再补账", name)
+			}
+			// objAllMissing 落到下面正常执行
+		}
+
+		if err := s.applyMigration(ctx, name, string(body), digest); err != nil {
+			return err
+		}
+		// 🔴 一旦本轮【真执行】过一个迁移，其后的版本必然也没被应用过 ——
+		//    迁移是有序的，version N 缺失就意味着 N 之后的都缺失。
+		//    ⇒ 此后不再走 legacy 判定，纯数据迁移照常执行，不去要什么人工确认。
+		//    （否则一个只 seed 了半张旧表的库，会在第一个纯数据迁移上被拒，
+		//      而那个迁移显然从未跑过 —— 把「判不出」错用到了「明确没跑过」的情形上。）
+		legacy = false
+	}
+
+	if backfilled > 0 {
+		fmt.Fprintf(os.Stderr, "store: legacy 迁移补账 %d 件（已核验对象存在，未重放语句）\n", backfilled)
 	}
 	return nil
 }
 
-func isDuplicateColumnError(err error) bool {
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "duplicate column name")
+// applyMigration 在一个事务里执行迁移并记账：要么都成，要么都不成。
+// 🔴 不再吞任何错误 —— duplicate column 现在就是失败。
+func (s *SQLite) applyMigration(ctx context.Context, name, body, digest string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("migrate %s: 开事务失败: %w", name, err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.ExecContext(ctx, body); err != nil {
+		return fmt.Errorf("migrate %s: %w", name, err)
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO schema_migrations(version, digest, applied_at) VALUES(?,?,?)`,
+		name, digest, s.now()); err != nil {
+		return fmt.Errorf("migrate %s: 记账失败: %w", name, err)
+	}
+	return tx.Commit()
+}
+
+// legacyAckEnv 是【受控人工确认】的入口：运维在部署件里显式列出已人工核验过的
+// 纯数据迁移版本。🔴 刻意做成环境变量而非代码常量——它属于部署侧声明（架构 A§8.2：
+// 环境属性由部署件声明、服务端取得），且每次使用都留在部署配置里可被审。
+const legacyAckEnv = "DINGWEI_MIGRATION_LEGACY_ACK"
+
+// dataMigrationVerifier 判定某个纯数据迁移的【效果】是否已经在库里。
+//
+// 🔴 判据必须是**稳定效果签名**：即「这个迁移干过一次」留下的、
+//
+//	不会被正常运维改动抹掉的痕迹。若一个迁移没有这样的签名（例如它只是把某个
+//	可编辑字段设成某值——管理员随时可以改），**就不要硬凑一个 verifier**，
+//	让它落到「拒启动 + 人工确认」那条路上。硬凑出来的 verifier 会把
+//	「管理员改过」误判成「迁移没跑过」，那比没有 verifier 更坏。
+type dataMigrationVerifier func(ctx context.Context, db *sql.DB) (bool, error)
+
+var dataMigrationVerifiers = map[string]dataMigrationVerifier{
+	// 0024 把旧 owner key 全量改名为 systemtaskintl。稳定签名：**旧 key 已不存在**。
+	// 正常运维不会把 'system-v-task-internal' 重新写回去，故该签名稳定。
+	"0024_session_naming_b.sql": func(ctx context.Context, db *sql.DB) (bool, error) {
+		const old = "system-v-task-internal"
+		for _, q := range []string{
+			`SELECT COUNT(*) FROM service_api_key WHERE service_id=?`,
+			`SELECT COUNT(*) FROM api_key_account WHERE chat_entity_id=?`,
+			`SELECT COUNT(*) FROM session_endpoint WHERE owner_key=?`,
+			`SELECT COUNT(*) FROM member WHERE owner_key=?`,
+			`SELECT COUNT(*) FROM registered_service WHERE id=?`,
+		} {
+			var n int
+			if err := db.QueryRowContext(ctx, q, old).Scan(&n); err != nil {
+				return false, err
+			}
+			if n > 0 {
+				return false, nil
+			}
+		}
+		return true, nil
+	},
+
+	// 🔴 0025_owner_links_page.sql 【故意不登记】：它只是把 l1_command_roster 的 pattern
+	//    设成某个值，而那个字段管理员随时可改 —— 没有稳定效果签名。
+	//    任何“verifier”都会把「管理员改过」读成「迁移没跑过」。
+	//    ⇒ 让它走拒启动 + DINGWEI_MIGRATION_LEGACY_ACK 人工确认，这是诚实的那条路。
+}
+
+// verifyDataMigration 先看受控人工确认，再看 verifier。
+func (s *SQLite) verifyDataMigration(ctx context.Context, name string) (bool, error) {
+	for _, v := range strings.Split(os.Getenv(legacyAckEnv), ",") {
+		if strings.TrimSpace(v) == name {
+			fmt.Fprintf(os.Stderr, "store: 纯数据迁移 %s 由 %s 人工确认放行（仅补账，不执行）\n", name, legacyAckEnv)
+			return true, nil
+		}
+	}
+	vf, ok := dataMigrationVerifiers[name]
+	if !ok {
+		return false, nil // 无 verifier ⇒ 交给调用方拒启动
+	}
+	return vf(ctx, s.db)
+}
+
+func (s *SQLite) recordMigration(ctx context.Context, name, digest string) error {
+	if _, err := s.db.ExecContext(ctx,
+		`INSERT INTO schema_migrations(version, digest, applied_at) VALUES(?,?,?)`,
+		name, digest, s.now()); err != nil {
+		return fmt.Errorf("migrate %s: 补账失败: %w", name, err)
+	}
+	return nil
+}
+
+func (s *SQLite) appliedMigrations(ctx context.Context) (map[string]string, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT version, digest FROM schema_migrations`)
+	if err != nil {
+		return nil, fmt.Errorf("migrate: 读迁移账失败: %w", err)
+	}
+	defer rows.Close()
+	out := map[string]string{}
+	for rows.Next() {
+		var v, d string
+		if err := rows.Scan(&v, &d); err != nil {
+			return nil, err
+		}
+		out[v] = d
+	}
+	return out, rows.Err()
+}
+
+// hasUserTables 判断库里除迁移账与 sqlite 内部表之外，是否已有业务表。
+func (s *SQLite) hasUserTables(ctx context.Context) (bool, error) {
+	var n int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM sqlite_master
+		  WHERE type='table' AND name<>'schema_migrations' AND name NOT LIKE 'sqlite_%'`).Scan(&n)
+	if err != nil {
+		return false, fmt.Errorf("migrate: 探测既有表失败: %w", err)
+	}
+	return n > 0, nil
+}
+
+// 迁移语料里【实际出现过】的三种 DDL 形态（已在 review-r1 锚上全量普查：
+// CREATE TABLE 36 · ALTER TABLE ... ADD 27 · CREATE [UNIQUE] INDEX 16，
+// CREATE 全部带 IF NOT EXISTS，ALTER 全部是 ADD）。
+// ⚠️ 这是正则，不是 SQL 解析器；它的作用域【只在 legacy 补账这一条路径上】，
+// 且判不出来时走 objPartial/objAllMissing 两条保守分支，不会静默放行。
+var (
+	reCreateTable = regexp.MustCompile(`(?i)\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["'` + "`" + `]?(\w+)`)
+	reCreateIndex = regexp.MustCompile(`(?i)\bCREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?["'` + "`" + `]?(\w+)`)
+	reAlterAdd    = regexp.MustCompile(`(?i)\bALTER\s+TABLE\s+["'` + "`" + `]?(\w+)["'` + "`" + `]?\s+ADD\s+(?:COLUMN\s+)?["'` + "`" + `]?(\w+)`)
+)
+
+// reData 判「本迁移是否含数据语句」。词边界必须有：`updated_at` 以 "update" 开头，
+// 没有 \b 会把一堆列定义误判成 UPDATE 语句（本席写这条时先踩了一次）。
+var reData = regexp.MustCompile(`(?im)^\s*(INSERT|UPDATE|DELETE)\b`)
+
+// migrationObjState 核验某个迁移声明的 DDL 对象在当前库里是否已存在。
+//
+// 🔴 判据按【幂等性】分两类，不能一视同仁：
+//
+//	· ALTER TABLE ... ADD COLUMN —— **非幂等**，重跑即报错。故它是权威信号：
+//	  全在 ⇒ 该迁移跑过；全不在 ⇒ 没跑过；一半一半 ⇒ 真半迁移，拒绝启动。
+//	· CREATE TABLE/INDEX IF NOT EXISTS —— **幂等**，重跑无害。故「一部分表还没有」
+//	  只说明这个旧库年代更早，不构成半迁移。⚠️ 本仓既有的 legacy 升级用例
+//	  （只 seed 了一张旧 bot_channel 的库）走的正是这条，一律判 fail 会误伤。
+//	· 数据语句（INSERT/UPDATE/DELETE）—— **重跑就是伤害本身**（SA-13 ①）。
+//	  故只要 DDL 显示该迁移跑过，就只补账、不执行。
+func (s *SQLite) migrationObjState(ctx context.Context, body string) (migrationObjState, error) {
+	tally := func(present, missing int) migrationObjState {
+		switch {
+		case present == 0 && missing == 0:
+			return objUnverifiable
+		case missing == 0:
+			return objAllPresent
+		case present == 0:
+			return objAllMissing
+		default:
+			return objPartial
+		}
+	}
+
+	// ① 非幂等的 ALTER ADD COLUMN —— 权威信号
+	aPresent, aMissing := 0, 0
+	for _, m := range reAlterAdd.FindAllStringSubmatch(body, -1) {
+		ok, err := s.columnExists(ctx, m[1], m[2])
+		if err != nil {
+			return objPartial, err
+		}
+		if ok {
+			aPresent++
+		} else {
+			aMissing++
+		}
+	}
+	if st := tally(aPresent, aMissing); st != objUnverifiable {
+		return st, nil
+	}
+
+	// ② 幂等的 CREATE —— 只用来判「跑没跑过」，mixed 不算半迁移
+	cPresent, cMissing := 0, 0
+	for _, m := range reCreateTable.FindAllStringSubmatch(body, -1) {
+		ok, err := s.objectExists(ctx, "table", m[1])
+		if err != nil {
+			return objPartial, err
+		}
+		if ok {
+			cPresent++
+		} else {
+			cMissing++
+		}
+	}
+	for _, m := range reCreateIndex.FindAllStringSubmatch(body, -1) {
+		ok, err := s.objectExists(ctx, "index", m[1])
+		if err != nil {
+			return objPartial, err
+		}
+		if ok {
+			cPresent++
+		} else {
+			cMissing++
+		}
+	}
+	switch tally(cPresent, cMissing) {
+	case objAllPresent:
+		return objAllPresent, nil
+	case objAllMissing:
+		return objAllMissing, nil
+	case objPartial:
+		// CREATE 是幂等的，重跑安全 —— 但若本迁移还带数据语句，重跑就会重放它们。
+		if reData.MatchString(body) {
+			return objPartial, nil
+		}
+		return objAllMissing, nil // 纯 DDL：照常执行，IF NOT EXISTS 兜底
+	}
+
+	// ③ 无任何 DDL 对象 ⇒ 纯数据迁移，legacy 库一律视为已应用，只补账
+	return objUnverifiable, nil
+}
+
+func (s *SQLite) objectExists(ctx context.Context, kind, name string) (bool, error) {
+	var n int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM sqlite_master WHERE type=? AND name=?`, kind, name).Scan(&n)
+	return n > 0, err
+}
+
+func (s *SQLite) columnExists(ctx context.Context, table, col string) (bool, error) {
+	rows, err := s.db.QueryContext(ctx, `PRAGMA table_info(`+table+`)`)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt any
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return false, err
+		}
+		if strings.EqualFold(name, col) {
+			return true, nil
+		}
+	}
+	return false, rows.Err()
 }
 
 func (s *SQLite) ensureBotChannelColumns(ctx context.Context) error {

@@ -40,9 +40,9 @@ type Spool struct {
 // 🔴 不要换成 repo.SystemCtx()：SystemCtx 表示「本就与租户无关」，
 //
 //	而出站队列里装的是租户数据，它只是【还没有租户列】可过滤（领域 schema 归 SP7b）。
-//	混用会用「与租户无关」冒充「已做隔离」。保留占位是为了让这笔债可清点：grep ftx() 即知欠多少处。
+//	混用会用「与租户无关」冒充「已做隔离」。保留占位是为了让这笔债可清点——由 specs/tools/pending-debt 按效果发现并计数，不按名字判（SA-12b）。
 func ftx() repo.TenantCtx {
-	return repo.PendingTenantCtx("fanout 出站/入站表尚无租户列,待 SP7b 领域 schema 落地")
+	return repo.PendingTenantCtx("fanout", "SP7b", "fanout 出站/入站表尚无租户列,待 SP7b 领域 schema 落地")
 }
 
 // OpenSpool 打开/初始化 spool 库。synchronous=FULL:COMMIT 返回=已 fsync,

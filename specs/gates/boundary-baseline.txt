@@ -5,11 +5,24 @@
 #            🔴 不设双值、不留 INCLUDE_TESTS 开关；include_tests/open_prod/open_all 三键回潮即判闸坏。
 # escape  —— 裸库句柄逃出包外（导出函数返回 / 导出字段持有 / 接口方法 / 匿名嵌入，Go AST 判）。
 #            🔴 允许清单【不】豁免本条：仓储包自己导出 DB() 正是「句柄出了仓储包」本身。
-# pending —— 尚未租户化的调用点（dtx/ftx/PendingTenantCtx）。**SP7b 的显式债**，只许还不许添，终值 0。
+# pending —— 尚未租户化的调用点。**SP7b 的显式债**，只许还不许添，终值 0。
+#            🔴 由 specs/tools/pending-debt 按【效果】判：谁返回 PendingTenantCtx 造的上下文，
+#               谁就是债源，其调用点全部计入 —— 不按 helper 名字判（乙域 terra SA-12b）。
+#            🔴 **按领域各记各的**（pending:<domain>）：只有一个总数就回答不了
+#               「datad 归零了没有」，SP7b 逐领域收口没有可复核的判据（SA-12a）。
+#               总数不变而「一个领域降、另一个升」同样必须拒。
+#            ⚠️ 领域判不出（domain 非字面量）⇒ 闸 fail-closed，不许无主的债混入。
 # system  —— 显式 SystemCtx 调用点。每一处都是评审面（「这个操作真的与租户无关吗」），不许悄悄增长。
+#
+# 🔴 **59 → 55 是【计数口径修正】，不是还债**（务必不要读成进展）：
+#    旧正则 `\b(dtx|ftx)\(\)|repo\.PendingTenantCtx\(` 的 59 = 53 真实调用点 + 2 构造点
+#    + 2 行**注释**（"grep dtx() 即知欠多少处"）+ 2 行**函数声明**（`func dtx()` 也匹配 \bdtx\(\)）。
+#    真实债一直是 55，一处未还。
 #
 # ⚠️ pending 非零【不等于】隔离已实现 —— 甲域 sol 明确要求：不得借 allowlist 批准宣称隔离已完成。
 open 4
 escape 1
-pending 59
+pending 55
+pending:datad 25
+pending:fanout 30
 system 12

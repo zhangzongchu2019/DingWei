@@ -142,11 +142,33 @@ check() {
   #   PendingTenantCtx 允许「有上下文标记但尚无租户过滤」的调用继续跑 —— 这是 SP7b 的显式债，
   #   **不得借 allowlist 批准宣称租户隔离已实现**。故把它做成可清点、只许下行的棘轮。
   #   SystemCtx 同样计数:它每一处都是评审面(「这个操作真的与租户无关吗」),不许悄悄增长。
-  OUT_pending=$(grep -rnE '\b(dtx|ftx)\(\)|repo\.PendingTenantCtx\(' --include=*.go "$_root/internal" 2>/dev/null \
-                | grep -v '/repo/' | sed "s|^$_root/||")
+  #   🔴 SA-12b：本条曾硬编码 `grep -E '\b(dtx|ftx)\(\)'` —— **按名字判**。
+  #     dtx/ftx 只是 datad/fanout 各自的局部 helper 名，无任何注册表约束：
+  #     SP7a 收编 board 时谁写个 btx()，闸认不得，债凭空消失而计数不变、照打「持平 ✓」。
+  #     现改为 specs/tools/pending-debt 按【效果】判：谁返回 PendingTenantCtx 造的上下文，
+  #     谁就是债源，其调用点全部计入 —— helper 叫什么与判据无关。
+  #   🔴 SA-12a：旧口径把【债源】与【调用点】两种单位相加，且正则还误计了
+  #     2 行注释（"grep dtx() 即知欠多少处"）与 2 行函数声明（`func dtx()` 也匹配 \bdtx\(\)）。
+  #     旧值 59 = 53 调用点 + 2 构造点 + 2 注释 + 2 声明。真实债为 55，且**按领域分记**。
+  if [ -z "${PDBIN:-}" ]; then
+    echo "✗ 闸依赖缺失：pending 债检测器未构建（闸坏，非通过）"; return 2
+  fi
+  OUT_pending=$("$PDBIN" "$_root/internal" 2>"$_root/.pd.err")
+  if [ $? -ne 0 ]; then
+    echo "✗ pending 债检测器失败（闸坏，非通过）："; sed 's/^/    /' "$_root/.pd.err"
+    rm -f "$_root/.pd.err"; return 2
+  fi
+  rm -f "$_root/.pd.err"
+  # 领域判不出（非字面量）⇒ fail-closed，不许一笔无主的债混进来。
+  if printf '%s\n' "$OUT_pending" | awk -F'\t' '$2=="?"{f=1} END{exit !f}'; then
+    echo "✗ 存在【领域判不出】的 pending 债（domain 非字面量）—— 无主的债不得计入，先写明 domain"
+    printf '%s\n' "$OUT_pending" | awk -F'\t' '$2=="?"' | sed 's/^/    /'
+    return 2
+  fi
   OUT_system=$(grep -rnE 'repo\.SystemCtx\(\)' --include=*.go "$_root/internal" 2>/dev/null \
                 | grep -v '/repo/' | sed "s|^$_root/||")
   CUR_pending=$(_count "$OUT_pending"); CUR_system=$(_count "$OUT_system")
+  PD_DOMAINS=$(printf '%s\n' "$OUT_pending" | awk -F'\t' 'NF>1{print $2}' | sort -u)
   CUR_open=$(_count_matches "$OUT_open" "$PAT_OPEN")
   # AST 输出每行恰为一处逃逸,按行即按处。
   CUR_escape=$(_count "$OUT_escape")
@@ -163,16 +185,44 @@ check() {
     echo "  判据一·仓储包外建库句柄：$CUR_open 处（基线 $BASE_open，终值 0）"
     [ -n "$OUT_open" ] && printf '%s\n' "$OUT_open" | sed 's/^/    /'
     echo "  债·尚未租户化的调用点：$CUR_pending 处（基线 $BASE_pending，终值 0，随 SP7b 归零）"
+    echo "    ↳ 按效果判（specs/tools/pending-debt），按领域各记各的棘轮："
+    for d in $PD_DOMAINS; do
+      _c=$(printf '%s\n' "$OUT_pending" | awk -F'\t' -v d="$d" '$2==d' | wc -l | tr -d ' ')
+      _b=$(_baseval "$_basef" "pending:$d")
+      echo "       · $d：$_c 处（基线 $_b，SP7b 收口时本领域须归零）"
+    done
     echo "  债·显式 SystemCtx 调用点：$CUR_system 处（基线 $BASE_system；每处都是评审面，不许悄悄增长）"
     echo "  判据二·裸库句柄逃出包外：$CUR_escape 处（基线 $BASE_escape，终值 0；允许清单对本条不豁免）"
     [ -n "$OUT_escape" ] && printf '%s\n' "$OUT_escape" | sed 's/^/    /'
   fi
 
-  # 🔴 两条判据【各判各的】，不看和 —— 合成一个总数就允许「一个降一个升」蒙混过关。
+  # RATCHET_KEYS/RATCHET_CUR 是【全部】棘轮键与其当前值,供下方收紧段复用。
+  # 🔴 terra SA-12a:一轮的收紧段只处理 open/escape,pending / pending:<domain> / system
+  #    只拒「当前值 > 旧基线」。于是债 55→54 时基线不更新、随后加回 55 仍然通过 ——
+  #    「只许还、单调归零」是**表述**不是闸。四类键必须走同一套逻辑。
+  RATCHET_KEYS="open escape pending system"
+  RATCHET_CUR="$CUR_open $CUR_escape $CUR_pending $CUR_system"
+  for d in $PD_DOMAINS; do
+    _c=$(printf '%s\n' "$OUT_pending" | awk -F'\t' -v d="$d" '$2==d' | wc -l | tr -d ' ')
+    RATCHET_KEYS="$RATCHET_KEYS pending:$d"
+    RATCHET_CUR="$RATCHET_CUR $_c"
+  done
+
+  # 🔴 每条判据【各判各的】，不看和 —— 合成一个总数就允许「一个降一个升」蒙混过关。
   rc=0
   [ "$CUR_open"   -gt "$BASE_open" ]   && rc=1
   [ "$CUR_escape" -gt "$BASE_escape" ] && rc=1
   [ "$CUR_pending" -gt "$BASE_pending" ] && rc=1
+  # 🔴 分领域棘轮：总数不变而「datad 降 3、fanout 升 3」必须拒 —— 与「两条判据各判各的」同理。
+  for d in $PD_DOMAINS; do
+    _c=$(printf '%s\n' "$OUT_pending" | awk -F'\t' -v d="$d" '$2==d' | wc -l | tr -d ' ')
+    _b=$(_baseval "$_basef" "pending:$d")
+    if [ "$_b" = "ABSENT" ]; then
+      echo "✗ 出现【基线里没有的领域】pending:$d（$_c 处）—— 新领域的债须先立基线，不得静默计入"
+      return 2
+    fi
+    [ "$_c" -gt "$_b" ] && rc=1
+  done
   [ "$CUR_system"  -gt "$BASE_system"  ] && rc=1
   return $rc
 }
@@ -235,6 +285,43 @@ selftest() {
   #    于是「本地别名链已覆盖」被当成全称结论 —— 取证面窄于断言的又一例。
   #    Go 同包类型可前向引用,逆序声明的三级链旧实现输出 0,主闸照样打印「持平 ✓」。
   #    已改为迭代至不动点;下面两条按【声明顺序】和【链长】两个维度各钉一条。
+  # ⑤b pending 债按【效果】判（乙域 terra SA-12b）—— 这一组钉的是「换个名字绕不过」。
+  pd() { # pd <base 内容> <b.go 内容>；返回 check 的 rc
+    mk; printf "$1" > "$T/base"; printf "$2" > "$T/r/internal/pkg/b.go"; run; }
+
+  PD_HELPER='package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx(); _ = btx() }\n'
+
+  # 🔴 本组的骨：helper 叫 btx 而不是 dtx/ftx。旧闸硬编码 `\b(dtx|ftx)\(\)`，
+  #    对它输出 0 —— 债凭空消失而主闸照打「持平 ✓」。
+  pd 'open 0\nescape 0\npending 0\nsystem 0\npending:testdom 0\n' "$PD_HELPER"
+  [ $? -eq 1 ] && [ "$CUR_pending" -eq 3 ] \
+    && ok "拦住：改名的 helper(btx) 仍按效果计入 pending（不按名字判）" \
+    || bad "改名的 helper 未被计入（pending=$CUR_pending，期望 3）"
+
+  # 新领域没有基线 ⇒ 闸坏(2)，不是「多一个领域不要紧」。无主的债不得静默计入。
+  pd 'open 0\nescape 0\npending 0\nsystem 0\n' "$PD_HELPER"
+  [ $? -eq 2 ] && ok "拦住：出现基线里没有的领域 ⇒ fail-closed（非通过）" || bad "新领域无基线却放行了"
+
+  # domain 非字面量 ⇒ 判不出归属 ⇒ fail-closed。
+  pd 'open 0\nescape 0\npending 0\nsystem 0\npending:testdom 0\n' \
+     'package pkg\n\nimport "x/internal/repo"\n\nvar d = "x"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx(d, "SP7b", "r") }\n'
+  [ $? -eq 2 ] && ok "拦住：domain 非字面量（判不出归属）⇒ fail-closed" || bad "无主的债被静默计入"
+
+  # 🔴 分领域棘轮：总数不变而「一个领域降、另一个升」必须拒 —— 与「两条判据各判各的」同理。
+  mk
+  printf 'open 0\nescape 0\npending 2\nsystem 0\npending:doma 2\npending:domb 0\n' > "$T/base"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc atx() repo.TenantCtx { return repo.PendingTenantCtx("doma", "SP7b", "r") }\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("domb", "SP7b", "r") }\n' > "$T/r/internal/pkg/b.go"
+  run
+  [ $? -eq 1 ] && [ "$CUR_pending" -eq 2 ] \
+    && ok "拦住：pending 总数不变但某领域回升（分领域各记各的）" \
+    || bad "分领域棘轮失效（pending=$CUR_pending）"
+
+  # 不误伤：注释里提到 helper 名不算债。旧正则把 2 行注释 + 2 行函数声明也算了进去（SA-12a）。
+  pd 'open 0\nescape 0\npending 0\nsystem 0\n' \
+     'package pkg\n\n// 说明:grep dtx() 即知欠多少处;btx() 亦然。\nfunc F() {}\n'
+  [ $? -eq 0 ] && [ "$CUR_pending" -eq 0 ] \
+    && ok "不误伤：注释里提到 helper 名不计入 pending" || bad "注释被当成债（pending=$CUR_pending）"
+
   esc 'package pkg\n\nimport "database/sql"\n\ntype H3 = H2\ntype H2 = H\ntype H = *sql.DB\n\nfunc Leak3() H3 { return nil }\n'
   [ $? -eq 1 ] && ok "拦住:【逆序声明】三级别名链 H3=H2=H=*sql.DB(SA-11)" || bad "逆序三级别名链未被拦(固定遍数回潮)"
 
@@ -332,6 +419,53 @@ selftest() {
   # BASE≠DEF_BASE 时不自动落盘(避免反测污染真基线),故此处仍应 FAIL 而非静默通过
   [ $? -eq 1 ] && ok "钩子内但基线非默认路径时仍不静默通过" || bad "非默认基线路径被静默收紧"
 
+  # 🔴 SA-12a（terra 二轮）：一轮的收紧段只覆盖 open/escape，pending/system/分领域
+  #    降了不收紧基线 ⇒「还掉一处、下次加回来」全程不被拒，棘轮对债那一半是空转的。
+  #    下面三条按「债」「评审面」「分领域」各钉一条。
+  mk; printf 'open 0\nescape 0\npending 3\nsystem 0\npending:testdom 3\n' > "$T/base"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx() }\n' > "$T/r/internal/pkg/b.go"
+  env -u GIT_INDEX_FILE sh "$SELF" "$T/r" "$T/allow" "$T/base" >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "钩子外 pending 可收紧判 FAIL（债与收口同权，不许空转）" || bad "pending 可收紧被放行（棘轮空转）"
+  BV=$(awk '$1=="pending"{print $2}' "$T/base")
+  [ "$BV" = "3" ] && ok "钩子外不偷改 pending 基线" || bad "钩子外偷改了 pending 基线(现为 $BV)"
+
+  mk; printf 'open 0\nescape 0\npending 0\nsystem 5\n' > "$T/base"   # 实际 0，可收紧
+  env -u GIT_INDEX_FILE sh "$SELF" "$T/r" "$T/allow" "$T/base" >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "钩子外 system 可收紧判 FAIL（评审面同样是棘轮）" || bad "system 可收紧被放行"
+
+  # 分领域：总 pending 与基线持平，但某个领域降了 —— 同样必须落盘，不许空转。
+  mk; printf 'open 0\nescape 0\npending 2\nsystem 0\npending:testdom 5\n' > "$T/base"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx() }\n' > "$T/r/internal/pkg/b.go"
+  env -u GIT_INDEX_FILE sh "$SELF" "$T/r" "$T/allow" "$T/base" >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "钩子外 pending:<domain> 可收紧判 FAIL（分领域也走同一逻辑）" || bad "分领域可收紧被放行"
+
+  # 🔴 「降后加回旧基线仍拒」——terra 点名要的那条。基线未随下降而收紧时，
+  #    加回旧值必须仍被拒；这里用「已收紧到 1、又回到 2」表达。
+  mk; printf 'open 0\nescape 0\npending 1\nsystem 0\npending:testdom 1\n' > "$T/base"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx() }\n' > "$T/r/internal/pkg/b.go"
+  run
+  [ $? -eq 1 ] && ok "拦住：还掉后又加回来（收紧后的基线不许再涨）" || bad "债降后加回旧值仍被放行"
+
+  # 🔴 SA-12b（terra 二轮）：一轮只登记普通函数债源、只数 ast.Ident 调用，
+  #    换成方法 `func (x *X) btx()` 及其 `x.btx()` 调用一处不计 —— 用方法名即可把债拿掉。
+  mk; printf 'open 0\nescape 0\npending 0\nsystem 0\npending:mdom 0\n' > "$T/base"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\ntype X struct{}\n\nfunc (x *X) btx() repo.TenantCtx { return repo.PendingTenantCtx("mdom", "SP7b", "r") }\n\nfunc (x *X) Use() { _ = x.btx(); _ = x.btx() }\n' > "$T/r/internal/pkg/b.go"
+  run
+  [ $? -eq 1 ] && [ "$CUR_pending" -eq 3 ] \
+    && ok "拦住：【方法】债源及其 x.btx() 调用全部计入（换方法名绕不过）" \
+    || bad "方法债源未被计入（pending=$CUR_pending，期望 3）"
+
+  # ownerSP 必须是受控枚举字面量，否则「这笔债归谁还」可以是动态值 ⇒ 归责没了。
+  mk; printf 'open 0\nescape 0\npending 0\nsystem 0\npending:d2 0\n' > "$T/base"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nvar dyn = "SP7b"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("d2", dyn, "r") }\n' > "$T/r/internal/pkg/b.go"
+  run >/dev/null 2>&1
+  [ $? -eq 2 ] && ok "拦住：ownerSP 非受控字面量 ⇒ fail-closed（归责不得动态）" || bad "动态 ownerSP 被静默计入"
+
+  mk; printf 'open 0\nescape 0\npending 0\nsystem 0\npending:d3 0\n' > "$T/base"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("d3", "SP-not-an-sp", "r") }\n' > "$T/r/internal/pkg/b.go"
+  run >/dev/null 2>&1
+  [ $? -eq 2 ] && ok "拦住：ownerSP 不在受控枚举内 ⇒ fail-closed" || bad "枚举外的 ownerSP 被放行"
+
   # ⑬ 允许清单漂移须判「闸坏了」
   mk; printf 'internal/nosuchpkg\n' > "$T/allow"; run >/dev/null 2>&1
   [ $? -eq 2 ] && ok "允许清单漂移判为闸坏（非通过）" || bad "允许清单漂移被放行"
@@ -346,10 +480,15 @@ selftest() {
 command -v go >/dev/null 2>&1 || { echo "✗ 闸依赖缺失:未找到 go —— 判据二由 Go AST 判,无 go 即闸坏,不是免检"; exit 1; }
 ESCSRC=specs/tools/handle-escape
 [ -d "$ESCSRC" ] || { echo "✗ 闸依赖缺失:$ESCSRC 不存在"; exit 1; }
-ESCDIR=$(mktemp -d); ESCBIN=$ESCDIR/handle-escape
+PDSRC=specs/tools/pending-debt
+[ -d "$PDSRC" ] || { echo "✗ 闸依赖缺失:$PDSRC 不存在"; exit 1; }
+ESCDIR=$(mktemp -d); ESCBIN=$ESCDIR/handle-escape; PDBIN=$ESCDIR/pending-debt
 trap 'rm -rf "$ESCDIR"' EXIT
 if ! go build -o "$ESCBIN" ./"$ESCSRC" 2>"$ESCDIR/build.err"; then
   echo "✗ 句柄逃逸检测器构建失败(闸坏,非通过)："; sed 's/^/    /' "$ESCDIR/build.err"; exit 1
+fi
+if ! go build -o "$PDBIN" ./"$PDSRC" 2>"$ESCDIR/pdbuild.err"; then
+  echo "✗ pending 债检测器构建失败(闸坏,非通过)："; sed 's/^/    /' "$ESCDIR/pdbuild.err"; exit 1
 fi
 
 case "${1:-}" in --selftest) selftest; exit $? ;; esac
@@ -372,14 +511,28 @@ fi
 #   于是「基线 8、当前 7」的提交能过 CI 而远端仍是 8,下一次把第 8 处加回来照样过 —— 棘轮空转。
 #   ⇒ 「写过文件」不等于「已落盘」。钩子外一律 FAIL,要求提交者显式带上收紧后的基线。
 #   判据:git 在执行钩子时会设置 GIT_INDEX_FILE,以此区分钩子上下文与手动/CI 运行。
-if [ "$CUR_open" -lt "$BASE_open" ] || [ "$CUR_escape" -lt "$BASE_escape" ]; then
+# 🔴 terra SA-12a:本段一轮只覆盖 open/escape。pending / pending:<domain> / system 降了
+#   却不收紧基线,于是「还掉一处、再加回来」全程不被拒 —— 棘轮对债这一半是空转的。
+#   现在【全部棘轮键】走同一套：任一键可收紧 ⇒ 钩子内自动落盘并入暂存区,钩子外一律 FAIL。
+TIGHTEN=""; NEWVALS=""
+_i=1
+for k in $RATCHET_KEYS; do
+  _cur=$(echo "$RATCHET_CUR" | cut -d' ' -f$_i); _i=$((_i+1))
+  _b=$(_baseval "$BASE" "$k")
+  [ "$_b" = "ABSENT" ] && continue
+  if [ "$_cur" -lt "$_b" ]; then
+    TIGHTEN="$TIGHTEN $k=$_b→$_cur"
+    NEWVALS="$NEWVALS$k $_cur\n"
+  fi
+done
+if [ -n "$TIGHTEN" ]; then
   if [ -n "${GIT_INDEX_FILE:-}" ] && [ "$BASE" = "$DEF_BASE" ]; then
-    NO=$CUR_open; NE=$CUR_escape
-    awk -v o="$NO" -v e="$NE" '
-      /^#/ || NF==0 {print; next}
-      $1=="open"   {print "open " o; next}
-      $1=="escape" {print "escape " e; next}
-      {print}' "$BASE" > "$BASE.tmp" && mv "$BASE.tmp" "$BASE"
+    printf "$NEWVALS" > "$BASE.new"
+    awk 'NR==FNR{v[$1]=$2; next}
+         /^#/ || NF==0 {print; next}
+         ($1 in v) {print $1" "v[$1]; next}
+         {print}' "$BASE.new" "$BASE" > "$BASE.tmp" && mv "$BASE.tmp" "$BASE"
+    rm -f "$BASE.new"
     if ! git add "$BASE" 2>/dev/null; then
       echo "✗ 基线可收紧但 git add 失败 —— 不得以「写过文件」当「已落盘」"; exit 1
     fi
@@ -387,12 +540,13 @@ if [ "$CUR_open" -lt "$BASE_open" ] || [ "$CUR_escape" -lt "$BASE_escape" ]; the
     if ! git diff --quiet -- "$BASE" 2>/dev/null; then
       echo "✗ 基线收紧后仍有未暂存差异,拒绝放行"; exit 1
     fi
-    echo "  ⑦ 收编进展:建库 $BASE_open→$NO · 逃逸 $BASE_escape→$NE,基线已收紧【并确认入暂存区】"
+    echo "  ⑦ 棘轮收紧:$TIGHTEN,基线已收紧【并确认入暂存区】"
     exit 0
   fi
-  echo "✗ 基线可收紧(建库 $BASE_open→$CUR_open · 逃逸 $BASE_escape→$CUR_escape),但当前不在 pre-commit 钩子上下文。"
+  echo "✗ 基线可收紧($TIGHTEN),但当前不在 pre-commit 钩子上下文。"
   echo "  棘轮不接受「跑一次就算收紧」——请在 $BASE 里显式写入收紧后的值并随本次改动一起提交。"
   echo "  (钩子内会自动收紧并入暂存区;CI/手动运行一律要求显式落盘,否则远端基线不会变,棘轮空转。)"
+  echo "  🔴 债(pending/system)与收口(open/escape)同权:还掉一处不落盘,下次加回来就不会被拒。"
   exit 1
 fi
 # 达标宣布 —— 🔴 口径未裁时不得宣布达标;此处口径已由业主钉死为严口径。
