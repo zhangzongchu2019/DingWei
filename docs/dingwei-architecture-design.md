@@ -343,6 +343,8 @@
 
 【RV-乙09|乙|阻断|采纳】复核结论：内容指纹方向成立，但 RV-乙08 尚不可采纳。`collect.sh` 的命令输出依赖 `specs/evidence/collect.sh`、`docs/tools/speclint.py` 与 `docs/DELIVERY-STATUS.md`，三者均未列入 REVIEWED；本包保存的 `analyze.sh` 输出也实际为失败（架构／原型版本与当时状态源不一致），而当前实跑才通过。故现有指纹只能证明 24 个枚举文件相同，既证明不了生成器/单件 lint 是否为同一版本，也证明不了包内输出对应当前输入。REVIEWED 覆盖集必须由 collect 的实际运行依赖生成或至少纳入上述三件；重跑 `collect.sh --write` 的包内各应通过命令须与当前实跑一致，随后再冻结复核。⑭应继续保留“字节一致不证明运行真实性”的抽验边界。　　⟹ **【采纳】** 🔴 两处都成立。① 指纹面漏了**实际影响输出**的三类件：`collect.sh` 自身、`docs/tools/speclint.py`、`DELIVERY-STATUS.md` —— 判据应是「凡影响输出者皆须指纹」，而首版按**目录**列举，于是**生成器自身**这个最该记的反而不在里面。现覆盖 35 件（另含 `specs/gates/*.txt` 基线：基线一改 ⑦ 的输出就变）。② `run()` 原**丢弃退出码**，包里存着的 analyze 输出实际是一次 FAIL 而无人看得出。现每项记 `rc=`，`--write` 在有非预期失败时**拒绝写入**（实测有牙：插一条 `exit 3` 即拒，原件不动）；本包 13 项命令 rc 全 0。⚠️ 乙域要保留的边界照旧写在包内与闸内：**字节一致 ≠ 运行真实性**，手改 EVIDENCE.md 并同步改指纹仍能通过，该项归门方抽验（重跑 collect --write 后 diff）。
 
+【RV-乙10|乙|阻断|未决】冻结锚实跑仍拒绝 `evidence-fresh-gate.sh`：本包生成后 `scripts/prose-style-gate.sh` 与 `specs/gates/rv-ledger.txt` 已变，二者均在 REVIEWED 集，故 RV-乙09 不能在本锚标采纳。处置应遵守收口顺序：先冻结所有被 REVIEWED 的正文／闸／工具／基线，后执行 `collect.sh --write`，最终提交只带证据包及不在 REVIEWED 集的状态元信息；重检⑭通过后再打评审锚。否则任何“全部处置”提交都会再次令本包失效。
+
 🔴 **F-2 的三处冲突由此钉死**：A§5 十九包清单**不含 view**、A§8 拓扑**不再并列 view**、
 A§6 映射表写明**view 无独立包** —— 三处现在同源于上表第 1、2、3 行，**可复算**。
 
