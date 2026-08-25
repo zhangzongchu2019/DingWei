@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T14:14:52Z
-分支头：`cf348680094a6594fbec79a744e5b67d25f7a8a1`
+生成时刻：2026-08-25T14:17:52Z
+分支头：`02e3fa85c79fcf6e263863f527432fe3782258f3`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -13,7 +13,7 @@
 REVIEWED c6cfb269aa7a3222db2a1a9ca4437178f06cef8f2bbd35aedf513e53b4baf391  docs/dingwei-platform-specdoc.md
 REVIEWED e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c  docs/dingwei-architecture-design.md
 REVIEWED 222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e  docs/dingwei-prototype.html
-REVIEWED 0fe1da0575f76a5115b3d1d65651a968c156e025fef901734ed5e83a68bf4345  docs/DELIVERY-STATUS.md
+REVIEWED 6435390870cd3796ca694db3a755d48707ecc021152dcd8e9ad9460c419c929f  docs/DELIVERY-STATUS.md
 REVIEWED a1fe9843b31755f89f241d80a39b57a15e72f3384c5af0219e284ca1ae9135eb  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -22,6 +22,7 @@ REVIEWED 451fa8171c5460ef6ff723d68f902d756469b90d06dbcd4f924886ce6b885f0f  scrip
 REVIEWED 69b60fda965d49479f0390a583810b082c1f049b30b4d04af2127f3eb13d43c3  scripts/conflict-marker-gate.sh
 REVIEWED 687300bc3e8a56f491c533116b6cccc6da256f4e7aaf300607cd32cb6274e78e  scripts/delivery-check.sh
 REVIEWED 33d372ff3b1dcda466476c113af888b55e02dee8479a894c8b0c48d8e9a45013  scripts/evidence-fresh-gate.sh
+REVIEWED 4f4f8b374224dbaa19cbdc9c7d00fc8af098f419cfef366f583def016fc4d251  scripts/gen-review-state.sh
 REVIEWED 156c626fe5e069606e07f642d5f7fd3477b5ce42f1173d28b40e425f4556b883  scripts/gen-status.sh
 REVIEWED 05c1663dc7e360affed152699323c961ac40acd384597ff117f17290d08415b0  scripts/legacy-name-gate.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh
@@ -29,8 +30,8 @@ REVIEWED 19c187d91bff0d18a734582e6c278cca4f87596a59a87b824ea0acbabdc0d5be  scrip
 REVIEWED 620e50973908fd9e181f28305195e79be1535b5b6acbfb7459dd02b0e9a04557  scripts/prose-style-gate.sh
 REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scripts/reliable_delivery_canary.sh
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
-REVIEWED 8e8795b9c2b21d7c2b0de09a69f8b1b7049f0f0b7c71cccf119e9156a4c8e323  scripts/rv-integrity-gate.sh
-REVIEWED de9b01637825f3a459e882ee6a24467e692ed67fabbeab261ed27becc511c6ab  scripts/speclint-gate.sh
+REVIEWED bf1e2ba70efd82d87bd7b39c9cd75ddbc20ed636374aed3c7488c71f01eab451  scripts/rv-integrity-gate.sh
+REVIEWED 79f345eecfcc3ee4bfc1757155434c7399f5c340658233eb2008b4fc72cb68c3  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
 REVIEWED 04a61a19321b7a35a78a5a886b1bc915dd5012fcf1dbd8636627e058c966eb3e  scripts/status-consistency-check.sh
 REVIEWED 4c41cb0ccd5452a7eadd8f5eddad986660d9cf51cdc461d51235eb0894100023  scripts/superseded-claims-gate.sh
@@ -46,7 +47,7 @@ REVIEWED 2ca28e44ad27f466487859548c69cf3f321a2f03200fbe1731fe36ca75651e5a  specs
 REVIEWED 16e5ba25e2b662a97269723d229d138cd7f0e2ebc7bd5177f9575eb2470fdbae  specs/gates/checklist-execution-exceptions.txt
 REVIEWED 08c31423801eeb5b0b94496b242500658145572f9cd1ae1049859125996e3c46  specs/gates/legacy-name-baseline.txt
 REVIEWED 861f36f0dfeda164e4047bfd75ea78e5977d3ad352c8e1c5cafff6a790945530  specs/gates/repo-packages.txt
-REVIEWED 328656e2fb01c91b36925a25b4cdd29e784e0e203d9d062529274728826c4d6f  specs/gates/rv-ledger.txt
+REVIEWED 5d91ce7d4cfc4748bac2bad6e0e6be91a9b0fcb5e35482c793b1354c7566383e  specs/gates/rv-ledger.txt
 REVIEWED e7a91c5e523a367419df93ea42bb570bbb33a08479ff8e5ec4ff3d01fa7e2789  specs/gates/status-stale-exceptions.txt
 REVIEWED 77103d4b6275652f23eaaea5f075e159073432eee5c2253f0cf42ea8592cc011  specs/gates/superseded-claims.txt
 ```

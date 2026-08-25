@@ -271,6 +271,23 @@ scripts/legacy-name-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/legacy-name-gate.sh --selftest; echo "✗ 旧模型名棘轮的反测未过"; exit 1; }
 echo "  ㉑ 旧模型名棘轮的反测 ✓"
 
+# ㉒ 评审状态生成件（docs/REVIEW-STATE.md）须与仓内实况同步。
+#    🔴 立项原因：评审转述与推锚已交叉**五次**，每次都是门方按较早的锚复核、
+#    报回的缺口在更新的锚上已修。根子不是谁疏忽 —— **我推锚快于转述，而状态只活在消息里**。
+#    ⇒ 状态落进仓：门方 checkout 任一锚即可读到该锚上各条 RV 的处置，不必与消息比对。
+#    ⚠️ 本件说的是【执笔方处置到哪一步】，**不是【门方是否认可】**。
+if [ ! -x scripts/gen-review-state.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/gen-review-state.sh 不可执行"; exit 1
+fi
+scripts/gen-review-state.sh > /tmp/.rvstate.$$ 2>/dev/null
+if ! diff -q /tmp/.rvstate.$$ docs/REVIEW-STATE.md >/dev/null 2>&1; then
+  echo "✗ docs/REVIEW-STATE.md 与实况不符 —— 重跑 scripts/gen-review-state.sh > docs/REVIEW-STATE.md"
+  diff /tmp/.rvstate.$$ docs/REVIEW-STATE.md | head -6
+  rm -f /tmp/.rvstate.$$; exit 1
+fi
+rm -f /tmp/.rvstate.$$
+echo "  ㉒ 评审状态件与实况一致 ✓（门方可直接读 docs/REVIEW-STATE.md 判断本锚状态）"
+
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
 #    **没有一次是执笔方自查出来的**。
@@ -282,7 +299,7 @@ python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
 python3 specs/tools/disposition-audit.py || true
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–㉑ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–㉒ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–㉑ ＋ ⑱ triage）"
+  echo "✓ 提交闸全过（①–㉒ ＋ ⑱ triage）"
 fi

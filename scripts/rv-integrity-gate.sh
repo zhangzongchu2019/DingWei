@@ -47,6 +47,23 @@ check() {
     echo "  ⇒ 从评审方分支取回原文，或在沿革件中原样保留后再改。"
     return 1
   fi
+  # 🔴 台账第 5 列（执笔方处置）须与正文标记同步 ——
+  #   执笔方落完处置只跑了闸、没重生成台账，于是台账停在「未处置」而正文已是「采纳」。
+  #   ⚠️ 是新建的 docs/REVIEW-STATE.md 第一次运行时抓出来的：
+  #     **状态一旦有两份，就必然有一份是旧的。**
+  _desync=0
+  while IFS="$(printf '\t')" read -r id dom sev st disp file brief; do
+    case "$id" in ''|'#'*) continue;; esac
+    _doc=$(grep -ohE "【$id\|[^|]+\|[^|]+\|(未决|采纳|驳回|挂账)】" $DOCS "$HIST" $GATES 2>/dev/null \
+           | head -1 | sed 's/.*|//; s/】//')
+    [ -z "$_doc" ] && continue
+    if [ "$_doc" != "$disp" ]; then
+      [ "$_desync" -eq 0 ] && echo "✗ 台账第 5 列与正文标记不同步（状态有两份，必有一份是旧的）："
+      echo "    $id 正文=【$_doc】 台账=【$disp】"
+      _desync=$((_desync+1))
+    fi
+  done < "$LEDGER"
+  [ "$_desync" -gt 0 ] && { echo "  ⇒ 重生成台账后再提交。"; return 1; }
   echo "  ✓ 台账内 $_n 条 RV 的原文均未被改写"
   echo "  ⚠️ 本闸判「摘要前缀是否原样存在」，判不了「整段一字未改」—— 它抓的是被工具批量改写这一类。"
   return 0
