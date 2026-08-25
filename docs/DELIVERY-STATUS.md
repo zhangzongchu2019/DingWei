@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `0150f7bd08e1907456ec948942b918ca94a6aed6` · 分支 `design/addendum-decisions`
+生成自 commit `dcc7c0413551a37281c3d1e7a5c07212185ff9c3` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -18,13 +18,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.21** | `0150f7bd08e1907456ec948942b918ca94a6aed6<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3091 / 211151 | `726dabee36ed29441b351a896ed3ffe000c5735f6ba759d3bcc4c2568b9cbac4` |
+| `dingwei-platform-specdoc.md` | **v3.21** | `dcc7c0413551a37281c3d1e7a5c07212185ff9c3` | 3091 / 211151 | `726dabee36ed29441b351a896ed3ffe000c5735f6ba759d3bcc4c2568b9cbac4` |
 | `dingwei-prototype.html` | **v1.16** | `05ccf171d3d45ebd25f24495af32563eb79b61b5` | 2849 / 254430 | `c9e4e0257c7ef916cf341675e69aa45de0cc39c8edd47bc5f53380d9d5795ce2` |
-| `dingwei-architecture-design.md` | **v0.15** | `4acd5d762f6ae08254691a4061f54c7b8c62706d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 799 / 56456 | `3957b04075a8601b4167754cd08071c3992ef8e685cf26d2ce9b8c740b33614d` |
+| `dingwei-architecture-design.md` | **v0.15** | `dcc7c0413551a37281c3d1e7a5c07212185ff9c3` | 799 / 56456 | `3957b04075a8601b4167754cd08071c3992ef8e685cf26d2ce9b8c740b33614d` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+dcc7c04 docs: SpecDoc v3.21 转【生效】——§0.4 两项生效前置均已闭合(前锚 0150f7b)
 0150f7b fix: rule-sync 扩为逐行内容比较(结构域非阻断注 ②,前锚 e8c4f13)
 e8c4f13 docs: SpecDoc v3.20——未采纳方案移出正文入参考资料(业主裁,前锚 4acd5d7)
 4acd5d7 fix(FLOW-01): §5.4a 与 §5.6 对撞已解——按 §5.6 为准改回,并把「两表一致」机器化(前锚 05ccf17)
@@ -32,5 +33,4 @@ e8c4f13 docs: SpecDoc v3.20——未采纳方案移出正文入参考资料(业�
 681917a docs: 组 2 task 定名已裁并落三处(SpecDoc v3.18 + 架构 v0.12 + 分析件,修在此,前锚 d872147)
 d872147 docs: 架构设计 v0.11——按 sol 扩后 scope 落设计合同(组5全量+组6设计半+组4设计半+组3枚举半)
 1fd84e7 docs: 结构域重走 12 FAIL 分类 + 组 1 已修(修在此,前锚 62951fc)
-62951fc docs: SpecDoc v3.16——业主裁定「重走」,架构评审重走轮起(修在此,前锚 bfac466)
 ```
