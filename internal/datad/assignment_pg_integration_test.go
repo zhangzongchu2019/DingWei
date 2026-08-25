@@ -21,6 +21,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -283,7 +285,7 @@ func TestPGA2ConcurrentUnique(t *testing.T) {
 		t.Fatalf("终态 active=%d gens=%d ex=%d rv=%d(应 2/1/1/1)", active, gens, exN, rvN)
 	}
 	// partial-unique 硬门直证:即便 assign 角色直 INSERT 第二行 active executor 也被索引拒。
-	_, err := w.p.assignDB.Exec(`INSERT INTO assignment(task_id,role,assignee,generation,active,request_id) VALUES($1,'executor','evil',99,true,$2)`, tid, pgUID())
+	_, err := w.p.assignDB.Exec(context.Background(), repo.SystemCtx(), `INSERT INTO assignment(task_id,role,assignee,generation,active,request_id) VALUES($1,'executor','evil',99,true,$2)`, tid, pgUID())
 	var pe *pgconn.PgError
 	if !errors.As(err, &pe) || pe.Code != "23505" {
 		t.Fatalf("partial-unique 应拒第二 active executor(23505),got %v", err)
@@ -322,15 +324,15 @@ func TestPGACLThreeRoles(t *testing.T) {
 		"gc UPDATE first_result": `UPDATE assign_first_result SET outcome='tamper' WHERE request_id='` + rid + `'`,
 		"gc INSERT first_result": `INSERT INTO assign_first_result(request_id,outcome,http_code,request_hash,body,task_id) VALUES('x2','y',1,'h','{}','t')`,
 	} {
-		if _, err := w.p.gcDB.Exec(q); !isPGDenied(err) {
+		if _, err := w.p.gcDB.Exec(context.Background(), repo.SystemCtx(), q); !isPGDenied(err) {
 			t.Errorf("%s 应 permission denied,got %v", name, err)
 		}
 	}
 	// assign 角色:无 DELETE 首果(GC 权限不在 assign)
-	if _, err := w.p.assignDB.Exec(`DELETE FROM assign_first_result WHERE request_id='` + rid + `'`); !isPGDenied(err) {
+	if _, err := w.p.assignDB.Exec(context.Background(), repo.SystemCtx(), `DELETE FROM assign_first_result WHERE request_id='`+rid+`'`); !isPGDenied(err) {
 		t.Errorf("assign DELETE first_result 应 denied,got %v", err)
 	}
-	if _, err := w.p.assignDB.Exec(`UPDATE audit SET actor='tamper' WHERE detail->>'request_id'='` + rid + `'`); !isPGDenied(err) {
+	if _, err := w.p.assignDB.Exec(context.Background(), repo.SystemCtx(), `UPDATE audit SET actor='tamper' WHERE detail->>'request_id'='`+rid+`'`); !isPGDenied(err) {
 		t.Errorf("assign UPDATE audit 应 denied,got %v", err)
 	}
 }
@@ -350,11 +352,19 @@ func TestPGRoleNoLeak(t *testing.T) {
 		if u == "datad_assign" || u == "datad_assign_gc" {
 			t.Fatalf("app 池串到 %s(role 泄漏)", u)
 		}
-		w.p.assignDB.QueryRow(`SELECT current_user`).Scan(&u)
+		if row, err := w.p.assignDB.QueryRow(context.Background(), repo.SystemCtx(), `SELECT current_user`); err != nil {
+			t.Fatalf("assignDB QueryRow: %v", err)
+		} else {
+			_ = row.Scan(&u)
+		}
 		if u != "datad_assign" {
 			t.Fatalf("assign 池 current_user=%s(应 datad_assign)", u)
 		}
-		w.p.gcDB.QueryRow(`SELECT current_user`).Scan(&u)
+		if row, err := w.p.gcDB.QueryRow(context.Background(), repo.SystemCtx(), `SELECT current_user`); err != nil {
+			t.Fatalf("gcDB QueryRow: %v", err)
+		} else {
+			_ = row.Scan(&u)
+		}
 		if u != "datad_assign_gc" {
 			t.Fatalf("gc 池 current_user=%s(应 datad_assign_gc)", u)
 		}

@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
 const SchemaDDL = `
@@ -83,9 +83,22 @@ CREATE TABLE IF NOT EXISTS assign_first_result (
 // PGStore 三池:db=常规应用池;assignDB=assign 角色池(N-A3 唯一 assignment 写路径);
 // gcDB=首果 GC 角色池。dev 单池时三者同指。
 type PGStore struct {
-	db       *sql.DB
-	assignDB *sql.DB
-	gcDB     *sql.DB
+	db       *repo.Pool
+	assignDB *repo.Pool
+	gcDB     *repo.Pool
+}
+
+// dtx 是 datad 【尚未租户化】的统一占位上下文。
+//
+// 🔴 不要把它换成 repo.SystemCtx()。两者的区别是本次收编的要点:
+//
+//	SystemCtx = 这个操作本就与租户无关(建表、迁移、健康检查);
+//	dtx       = 这个操作【本该有租户】,只是 datad 的表还没有租户列(领域 schema 归 SP7b)。
+//	若把 dtx 写成 SystemCtx,判据一照样达标,却会留下一批「看起来已收编、实则全是系统调用」
+//	的调用点 —— 用「与租户无关」冒充「已做隔离」,即本仓已归纳的「安全属性互相冒充」。
+//	保留 dtx 是为了让这笔债【可清点、可棘轮】:grep dtx() 即知还欠多少处。
+func dtx() repo.TenantCtx {
+	return repo.PendingTenantCtx("datad 领域表尚无租户列,待 SP7b 各领域 schema 落地")
 }
 
 // OpenPG 连接+建表(幂等)。assign/GC 池未配时回落主池(dev/Mem 同构;生产 N-A3 要求
@@ -100,42 +113,30 @@ func OpenPG(ctx context.Context, dsn string) (*PGStore, error) {
 // 部署门要求三池三角色,见 deploy/datad-grants.sql+N-A3 真 PG 证据)。
 // 独立池=池内连接固定该角色登录,无 SET ROLE,故事务后无 role 泄漏面(池间凭据隔离)。
 func OpenPGPools(ctx context.Context, dsn, assignDSN, gcDSN string) (*PGStore, error) {
-	db, err := sql.Open("pgx", dsn)
+	// 建库句柄一律由 repo 包创建(§22.2c #1);repo.OpenPG 内已含 Ping,故此处不再另 ping。
+	pool, err := repo.OpenPG(ctx, dsn)
 	if err != nil {
 		return nil, err
 	}
-	if err := db.PingContext(ctx); err != nil {
-		db.Close()
-		return nil, err
-	}
-	if _, err := db.ExecContext(ctx, SchemaDDL); err != nil {
-		db.Close()
+	// 建表是 DDL,本就无租户语义 -> 显式 SystemCtx,不用 dtx。
+	if _, err := pool.Exec(ctx, repo.SystemCtx(), SchemaDDL); err != nil {
+		_ = pool.Close()
 		return nil, fmt.Errorf("schema migrate: %w", err)
 	}
-	p := &PGStore{db: db, assignDB: db, gcDB: db}
+	p := &PGStore{db: pool, assignDB: pool, gcDB: pool}
 	if assignDSN != "" {
-		adb, err := sql.Open("pgx", assignDSN)
+		adb, err := repo.OpenPG(ctx, assignDSN)
 		if err != nil {
-			db.Close()
+			_ = pool.Close()
 			return nil, fmt.Errorf("assign pool: %w", err)
-		}
-		if err := adb.PingContext(ctx); err != nil {
-			db.Close()
-			adb.Close()
-			return nil, fmt.Errorf("assign pool ping: %w", err)
 		}
 		p.assignDB = adb
 	}
 	if gcDSN != "" {
-		gdb, err := sql.Open("pgx", gcDSN)
+		gdb, err := repo.OpenPG(ctx, gcDSN)
 		if err != nil {
-			p.Close()
+			_ = p.Close()
 			return nil, fmt.Errorf("gc pool: %w", err)
-		}
-		if err := gdb.PingContext(ctx); err != nil {
-			p.Close()
-			gdb.Close()
-			return nil, fmt.Errorf("gc pool ping: %w", err)
 		}
 		p.gcDB = gdb
 	}
@@ -144,7 +145,7 @@ func OpenPGPools(ctx context.Context, dsn, assignDSN, gcDSN string) (*PGStore, e
 
 func (p *PGStore) Close() error {
 	var first error
-	for _, d := range []*sql.DB{p.assignDB, p.gcDB} {
+	for _, d := range []*repo.Pool{p.assignDB, p.gcDB} {
 		if d != nil && d != p.db {
 			if err := d.Close(); err != nil && first == nil {
 				first = err
@@ -156,7 +157,9 @@ func (p *PGStore) Close() error {
 	}
 	return first
 }
-func (p *PGStore) Ping(ctx context.Context) error { return p.db.PingContext(ctx) }
+
+// Ping 健康检查:无租户语义,显式 SystemCtx。
+func (p *PGStore) Ping(ctx context.Context) error { return p.db.Ping(ctx, repo.SystemCtx()) }
 
 func scanTask(row interface{ Scan(...any) error }) (*Task, error) {
 	t := &Task{}
@@ -176,7 +179,7 @@ func scanTask(row interface{ Scan(...any) error }) (*Task, error) {
 const taskCols = `id, title, owner_session, status, anchor, gate, eta, detail, created_at, updated_at`
 
 func (p *PGStore) ListTasks(ctx context.Context, status, owner string) ([]Task, error) {
-	rows, err := p.db.QueryContext(ctx, `SELECT `+taskCols+` FROM task
+	rows, err := p.db.Query(ctx, dtx(), `SELECT `+taskCols+` FROM task
   WHERE ($1='' OR status=$1) AND ($2='' OR owner_session=$2) ORDER BY id`, status, owner)
 	if err != nil {
 		return nil, err
@@ -194,7 +197,11 @@ func (p *PGStore) ListTasks(ctx context.Context, status, owner string) ([]Task, 
 }
 
 func (p *PGStore) GetTask(ctx context.Context, id string) (*Task, error) {
-	return scanTask(p.db.QueryRowContext(ctx, `SELECT `+taskCols+` FROM task WHERE id=$1`, id))
+	row, err := p.db.QueryRow(ctx, dtx(), `SELECT `+taskCols+` FROM task WHERE id=$1`, id)
+	if err != nil {
+		return nil, err
+	}
+	return scanTask(row)
 }
 
 func (p *PGStore) PutTask(ctx context.Context, t Task, ifMatch time.Time, force bool) (*Task, error) {
@@ -202,46 +209,45 @@ func (p *PGStore) PutTask(ctx context.Context, t Task, ifMatch time.Time, force 
 	// per-task advisory 锁——消 check-then-write 窗:并发序 "PUT 读旧 executor A→Assign 提交新
 	// executor B/owner=B→PUT 写 owner=A" 在共锁串行下不可能(PUT 的读必然见 Assign 提交后终态,
 	// 或 PUT 先完成后 Assign 覆写=正常次序)。普通与 force/UPSERT 两路径同盖。
-	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.ExecContext(ctx,
-		`SELECT pg_advisory_xact_lock(hashtext('datad.assign:'||$1::text))`, t.ID); err != nil {
-		return nil, err
-	}
-	var execA sql.NullString
-	if err := tx.QueryRowContext(ctx,
-		`SELECT assignee FROM assignment WHERE task_id=$1 AND role='executor' AND active`, t.ID).Scan(&execA); err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, err
-	}
-	if execA.Valid && t.OwnerSession != execA.String {
-		return nil, ErrOwnerConflictPut // 拒且不改 task(事务回滚,零写)
-	}
-	if force {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO task(id,title,owner_session,status,anchor,gate,eta,detail)
+	// 事务改回调式(repo.InTx):*sql.Tx 因此无从逃出仓储包(§22.2c #1 后半句)。
+	// 语义不变 —— fn 返回错误即回滚,返回 nil 即提交,与原「defer Rollback + 末尾 Commit」等价。
+	var out *Task
+	err := p.db.InTx(ctx, dtx(), &sql.TxOptions{Isolation: sql.LevelReadCommitted}, func(tx repo.Tx) error {
+		if _, err := tx.Exec(ctx,
+			`SELECT pg_advisory_xact_lock(hashtext('datad.assign:'||$1::text))`, t.ID); err != nil {
+			return err
+		}
+		var execA sql.NullString
+		if err := tx.QueryRow(ctx,
+			`SELECT assignee FROM assignment WHERE task_id=$1 AND role='executor' AND active`, t.ID).Scan(&execA); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		if execA.Valid && t.OwnerSession != execA.String {
+			return ErrOwnerConflictPut // 拒且不改 task(回调返错=回滚,零写)
+		}
+		if force {
+			if _, err := tx.Exec(ctx, `INSERT INTO task(id,title,owner_session,status,anchor,gate,eta,detail)
   VALUES($1,$2,$3,$4,$5,$6,$7,$8)
   ON CONFLICT(id) DO UPDATE SET title=$2,owner_session=$3,status=$4,anchor=$5,gate=$6,eta=$7,detail=$8,updated_at=now()`,
-			t.ID, t.Title, t.OwnerSession, t.Status, t.Anchor, t.Gate, t.ETA, nullJSON(t.Detail)); err != nil {
-			return nil, err
-		}
-	} else {
-		res, err := tx.ExecContext(ctx, `UPDATE task SET title=$2,owner_session=$3,status=$4,anchor=$5,
+				t.ID, t.Title, t.OwnerSession, t.Status, t.Anchor, t.Gate, t.ETA, nullJSON(t.Detail)); err != nil {
+				return err
+			}
+		} else {
+			res, err := tx.Exec(ctx, `UPDATE task SET title=$2,owner_session=$3,status=$4,anchor=$5,
   gate=$6,eta=$7,detail=$8,updated_at=now() WHERE id=$1 AND updated_at=$9`,
-			t.ID, t.Title, t.OwnerSession, t.Status, t.Anchor, t.Gate, t.ETA, nullJSON(t.Detail), ifMatch)
-		if err != nil {
-			return nil, err
+				t.ID, t.Title, t.OwnerSession, t.Status, t.Anchor, t.Gate, t.ETA, nullJSON(t.Detail), ifMatch)
+			if err != nil {
+				return err
+			}
+			if n, _ := res.RowsAffected(); n == 0 {
+				return ErrConflict
+			}
 		}
-		if n, _ := res.RowsAffected(); n == 0 {
-			return nil, ErrConflict
-		}
-	}
-	out, err := scanTask(tx.QueryRowContext(ctx, `SELECT `+taskCols+` FROM task WHERE id=$1`, t.ID))
+		var serr error
+		out, serr = scanTask(tx.QueryRow(ctx, `SELECT `+taskCols+` FROM task WHERE id=$1`, t.ID))
+		return serr
+	})
 	if err != nil {
-		return nil, err
-	}
-	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -252,7 +258,7 @@ func (p *PGStore) UpdateProgress(ctx context.Context, id string, pr TaskProgress
 	if prog == nil {
 		prog = json.RawMessage("null")
 	}
-	res, err := p.db.ExecContext(ctx, `UPDATE task SET
+	res, err := p.db.Exec(ctx, dtx(), `UPDATE task SET
   anchor=CASE WHEN $2<>'' THEN $2 ELSE anchor END,
   eta=CASE WHEN $3<>'' THEN $3 ELSE eta END,
   detail=CASE WHEN $4::jsonb IS NOT NULL AND $4::text<>'null'
@@ -273,58 +279,55 @@ func (p *PGStore) OwnerTransition(ctx context.Context, id, owner, to string) (*T
 	}
 	// 闸依赖 Read Committed:RR 快照取在 advisory 锁等待前,锁释放后 NOT EXISTS
 	// 按旧快照看不到并发已提交的 in_progress 行→闸静默穿透;显式钉 RC 不赌库默认。
-	tx, err := p.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = tx.Rollback() }()
-	// 每次一项闸须原子:同 owner 并发拉两件,read-committed 下 NOT EXISTS 各自过检
-	// →双 in_progress;per-owner advisory 锁串行化(锁随事务释放)。
-	if _, err := tx.ExecContext(ctx,
-		`SELECT pg_advisory_xact_lock(hashtext('datad.task.pull:'||$1::text))`, owner); err != nil {
-		return nil, err
-	}
-	// UPDATE..RETURNING 一步读回(CR n1:commit 后另读在事务外,可被并发覆盖)
-	var row *sql.Row
-	if to == "in_progress" {
-		row = tx.QueryRowContext(ctx, `UPDATE task SET status='in_progress', updated_at=now()
+	var t *Task
+	err := p.db.InTx(ctx, dtx(), &sql.TxOptions{Isolation: sql.LevelReadCommitted}, func(tx repo.Tx) error {
+		// 每次一项闸须原子:同 owner 并发拉两件,read-committed 下 NOT EXISTS 各自过检
+		// →双 in_progress;per-owner advisory 锁串行化(锁随事务释放)。
+		if _, err := tx.Exec(ctx,
+			`SELECT pg_advisory_xact_lock(hashtext('datad.task.pull:'||$1::text))`, owner); err != nil {
+			return err
+		}
+		// UPDATE..RETURNING 一步读回(CR n1:commit 后另读在事务外,可被并发覆盖)
+		var row *sql.Row
+		if to == "in_progress" {
+			row = tx.QueryRow(ctx, `UPDATE task SET status='in_progress', updated_at=now()
   WHERE id=$1 AND owner_session=$2 AND status='dispatched'
   AND NOT EXISTS (SELECT 1 FROM task WHERE owner_session=$2 AND status='in_progress')
   RETURNING `+taskCols, id, owner)
-	} else {
-		row = tx.QueryRowContext(ctx, `UPDATE task SET status='review', updated_at=now()
+		} else {
+			row = tx.QueryRow(ctx, `UPDATE task SET status='review', updated_at=now()
   WHERE id=$1 AND owner_session=$2 AND status='in_progress'
   RETURNING `+taskCols, id, owner)
-	}
-	t, err := scanTask(row)
-	if errors.Is(err, ErrNotFound) { // 0 行消歧:404/403/wrong_state/pull_gate
-		var gotOwner, gotStatus string
-		qerr := tx.QueryRowContext(ctx,
-			`SELECT owner_session,status FROM task WHERE id=$1`, id).Scan(&gotOwner, &gotStatus)
-		switch {
-		case errors.Is(qerr, sql.ErrNoRows):
-			return nil, ErrNotFound
-		case qerr != nil:
-			return nil, qerr
-		case gotOwner != owner:
-			return nil, ErrNotOwner
-		case to == "in_progress" && gotStatus == "dispatched":
-			return nil, ErrPullGate
-		default:
-			return nil, ErrWrongState
 		}
-	}
+		var serr error
+		t, serr = scanTask(row)
+		if errors.Is(serr, ErrNotFound) { // 0 行消歧:404/403/wrong_state/pull_gate
+			var gotOwner, gotStatus string
+			qerr := tx.QueryRow(ctx,
+				`SELECT owner_session,status FROM task WHERE id=$1`, id).Scan(&gotOwner, &gotStatus)
+			switch {
+			case errors.Is(qerr, sql.ErrNoRows):
+				return ErrNotFound
+			case qerr != nil:
+				return qerr
+			case gotOwner != owner:
+				return ErrNotOwner
+			case to == "in_progress" && gotStatus == "dispatched":
+				return ErrPullGate
+			default:
+				return ErrWrongState
+			}
+		}
+		return serr
+	})
 	if err != nil {
-		return nil, err
-	}
-	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
 func (p *PGStore) PullLag(ctx context.Context) ([]PullLagRow, error) {
-	rows, err := p.db.QueryContext(ctx, `SELECT t.id, t.title, t.owner_session,
+	rows, err := p.db.Query(ctx, dtx(), `SELECT t.id, t.title, t.owner_session,
   COALESCE(MAX(d.created_at), t.updated_at) AS since
   FROM task t LEFT JOIN dispatch d ON d.task_id=t.id AND d.role='executor'
   WHERE t.status='dispatched'
@@ -349,20 +352,15 @@ func (p *PGStore) AppendDispatch(ctx context.Context, d Dispatch) error {
 	// id 序=提交序不变量(shenceclaude MC3):BIGSERIAL 分配序≠提交序,增量游标
 	// since_id 依赖"id 单调可见";advisory xact 锁串行化 append(coordinator 单写
 	// 面且低频,串行代价可忽略),锁随事务释放。
-	tx, err := p.db.BeginTx(ctx, nil)
-	if err != nil {
+	return p.db.InTx(ctx, dtx(), nil, func(tx repo.Tx) error {
+		if _, err := tx.Exec(ctx,
+			`SELECT pg_advisory_xact_lock(hashtext('datad.dispatch.append'))`); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `INSERT INTO dispatch(task_id,assignee,role,round,note)
+  VALUES($1,$2,$3,$4,$5)`, d.TaskID, d.Assignee, d.Role, d.Round, d.Note)
 		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.ExecContext(ctx,
-		`SELECT pg_advisory_xact_lock(hashtext('datad.dispatch.append'))`); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO dispatch(task_id,assignee,role,round,note)
-  VALUES($1,$2,$3,$4,$5)`, d.TaskID, d.Assignee, d.Role, d.Round, d.Note); err != nil {
-		return err
-	}
-	return tx.Commit()
+	})
 }
 
 func (p *PGStore) ListDispatches(ctx context.Context, taskID, assignee string, sinceID int64, limit int) ([]DispatchRow, error) {
@@ -381,7 +379,7 @@ func (p *PGStore) ListDispatches(ctx context.Context, taskID, assignee string, s
 	}
 	q += ` ORDER BY id LIMIT $` + strconv.Itoa(len(args)+1)
 	args = append(args, limit)
-	rows, err := p.db.QueryContext(ctx, q, args...)
+	rows, err := p.db.Query(ctx, dtx(), q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -400,10 +398,14 @@ func (p *PGStore) ListDispatches(ctx context.Context, taskID, assignee string, s
 func (p *PGStore) GetConfig(ctx context.Context, key string, generation int64) (*ConfigEntry, error) {
 	q := `SELECT key,generation,value,updated_by,updated_at FROM config WHERE key=$1`
 	var row *sql.Row
+	var qerr error
 	if generation > 0 {
-		row = p.db.QueryRowContext(ctx, q+` AND generation=$2`, key, generation)
+		row, qerr = p.db.QueryRow(ctx, dtx(), q+` AND generation=$2`, key, generation)
 	} else {
-		row = p.db.QueryRowContext(ctx, q+` ORDER BY generation DESC LIMIT 1`, key)
+		row, qerr = p.db.QueryRow(ctx, dtx(), q+` ORDER BY generation DESC LIMIT 1`, key)
+	}
+	if qerr != nil {
+		return nil, qerr
 	}
 	e := &ConfigEntry{}
 	var val []byte
@@ -420,7 +422,7 @@ func (p *PGStore) GetConfig(ctx context.Context, key string, generation int64) (
 
 func (p *PGStore) ListConfig(ctx context.Context) ([]ConfigEntry, error) {
 	// 每 key 最新代次:DISTINCT ON(key) ORDER BY key,generation DESC
-	rows, err := p.db.QueryContext(ctx, `SELECT DISTINCT ON (key) key,generation,value,updated_by,updated_at
+	rows, err := p.db.Query(ctx, dtx(), `SELECT DISTINCT ON (key) key,generation,value,updated_by,updated_at
   FROM config ORDER BY key, generation DESC`)
 	if err != nil {
 		return nil, err
@@ -441,30 +443,31 @@ func (p *PGStore) ListConfig(ctx context.Context) ([]ConfigEntry, error) {
 
 func (p *PGStore) PutConfig(ctx context.Context, key string, value json.RawMessage, expectedGen int64, by string) (*ConfigEntry, error) {
 	// CAS:INSERT 目标代次=expected+1,主键冲突或前代不符=412
-	tx, err := p.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-	var cur int64
-	err = tx.QueryRowContext(ctx,
-		`SELECT COALESCE(MAX(generation),0) FROM config WHERE key=$1`, key).Scan(&cur)
-	if err != nil {
-		return nil, err
-	}
-	if cur != expectedGen {
-		return nil, ErrCASFailed
-	}
-	e := &ConfigEntry{Key: key, Generation: cur + 1, Value: value, UpdatedBy: by, UpdatedAt: time.Now().UTC()}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO config(key,generation,value,updated_by,updated_at)
+	var e *ConfigEntry
+	err := p.db.InTx(ctx, dtx(), nil, func(tx repo.Tx) error {
+		var cur int64
+		if err := tx.QueryRow(ctx,
+			`SELECT COALESCE(MAX(generation),0) FROM config WHERE key=$1`, key).Scan(&cur); err != nil {
+			return err
+		}
+		if cur != expectedGen {
+			return ErrCASFailed
+		}
+		e = &ConfigEntry{Key: key, Generation: cur + 1, Value: value, UpdatedBy: by, UpdatedAt: time.Now().UTC()}
+		if _, err := tx.Exec(ctx, `INSERT INTO config(key,generation,value,updated_by,updated_at)
   VALUES($1,$2,$3,$4,$5)`, key, e.Generation, string(value), by, e.UpdatedAt); err != nil {
-		return nil, ErrCASFailed // 并发同代次插入=主键冲突,归 412
+			return ErrCASFailed // 并发同代次插入=主键冲突,归 412
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	return e, tx.Commit()
+	return e, nil
 }
 
 func (p *PGStore) PutSessionState(ctx context.Context, s SessionState) error {
-	_, err := p.db.ExecContext(ctx, `INSERT INTO session_state(session,state,watermark_pct,current_task,note,updated_at)
+	_, err := p.db.Exec(ctx, dtx(), `INSERT INTO session_state(session,state,watermark_pct,current_task,note,updated_at)
   VALUES($1,$2,$3,$4,$5,now())
   ON CONFLICT(session) DO UPDATE SET state=$2,watermark_pct=$3,current_task=$4,note=$5,updated_at=now()`,
 		s.Session, s.State, s.WatermarkPct, s.CurrentTask, s.Note)
@@ -472,7 +475,7 @@ func (p *PGStore) PutSessionState(ctx context.Context, s SessionState) error {
 }
 
 func (p *PGStore) ListSessions(ctx context.Context) ([]SessionState, error) {
-	rows, err := p.db.QueryContext(ctx,
+	rows, err := p.db.Query(ctx, dtx(),
 		`SELECT session,state,COALESCE(watermark_pct,0),current_task,note,updated_at FROM session_state ORDER BY session`)
 	if err != nil {
 		return nil, err
@@ -490,7 +493,7 @@ func (p *PGStore) ListSessions(ctx context.Context) ([]SessionState, error) {
 }
 
 func (p *PGStore) AppendHeartbeat(ctx context.Context, session string, payload json.RawMessage, at time.Time) error {
-	_, err := p.db.ExecContext(ctx, `INSERT INTO heartbeat(session,at,payload) VALUES($1,$2,$3)
+	_, err := p.db.Exec(ctx, dtx(), `INSERT INTO heartbeat(session,at,payload) VALUES($1,$2,$3)
   ON CONFLICT DO NOTHING`, session, at, nullJSON(payload))
 	return err
 }
@@ -498,7 +501,7 @@ func (p *PGStore) AppendHeartbeat(ctx context.Context, session string, payload j
 func (p *PGStore) LatestHeartbeats(ctx context.Context) ([]HeartbeatLatest, error) {
 	// GROUP BY+MAX 走 PK(session,at) index-only 扫(N4:DISTINCT ON 混合序不吃索引);
 	// 代价仍随 history 线性,真正解=retention(backlog),当前量级(会话数×心跳频)可承受。
-	rows, err := p.db.QueryContext(ctx,
+	rows, err := p.db.Query(ctx, dtx(),
 		`SELECT session, MAX(at) AS at FROM heartbeat GROUP BY session ORDER BY session`)
 	if err != nil {
 		return nil, err
@@ -516,7 +519,7 @@ func (p *PGStore) LatestHeartbeats(ctx context.Context) ([]HeartbeatLatest, erro
 }
 
 func (p *PGStore) ListSkills(ctx context.Context) ([]Skill, error) {
-	rows, err := p.db.QueryContext(ctx,
+	rows, err := p.db.Query(ctx, dtx(),
 		`SELECT name,version,status,content,sha256,proposed_by,approved_by FROM skill ORDER BY name,version`)
 	if err != nil {
 		return nil, err
@@ -534,13 +537,13 @@ func (p *PGStore) ListSkills(ctx context.Context) ([]Skill, error) {
 }
 
 func (p *PGStore) ProposeSkill(ctx context.Context, s Skill) error {
-	_, err := p.db.ExecContext(ctx, `INSERT INTO skill(name,version,status,content,sha256,proposed_by)
+	_, err := p.db.Exec(ctx, dtx(), `INSERT INTO skill(name,version,status,content,sha256,proposed_by)
   VALUES($1,$2,'proposed',$3,$4,$5)`, s.Name, s.Version, s.Content, s.SHA256, s.ProposedBy)
 	return err
 }
 
 func (p *PGStore) SetSkillStatus(ctx context.Context, name, version, status, by string) error {
-	res, err := p.db.ExecContext(ctx,
+	res, err := p.db.Exec(ctx, dtx(),
 		`UPDATE skill SET status=$3, approved_by=$4 WHERE name=$1 AND version=$2`, name, version, status, by)
 	if err != nil {
 		return err
@@ -552,13 +555,13 @@ func (p *PGStore) SetSkillStatus(ctx context.Context, name, version, status, by 
 }
 
 func (p *PGStore) AppendAudit(ctx context.Context, e AuditEntry) error {
-	_, err := p.db.ExecContext(ctx, `INSERT INTO audit(actor,op,target,detail,at)
+	_, err := p.db.Exec(ctx, dtx(), `INSERT INTO audit(actor,op,target,detail,at)
   VALUES($1,$2,$3,$4,$5)`, e.Actor, e.Op, e.Target, nullJSON(e.Detail), e.At)
 	return err
 }
 
 func (p *PGStore) ListAudit(ctx context.Context, since time.Time, limit int) ([]AuditEntry, error) {
-	rows, err := p.db.QueryContext(ctx, `SELECT actor,op,target,COALESCE(detail,'null'),at FROM audit
+	rows, err := p.db.Query(ctx, dtx(), `SELECT actor,op,target,COALESCE(detail,'null'),at FROM audit
   WHERE at>$1 ORDER BY at LIMIT $2`, since, limit)
 	if err != nil {
 		return nil, err
