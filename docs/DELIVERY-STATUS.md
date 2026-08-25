@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `4054b9a2dd84c8a8fe7f734c84cda94c4ed6825f` · 分支 `design/addendum-decisions`
+生成自 commit `3348b51a03fdf722bd630f4ee3853a18f15cacd6` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.23** | `7399c685025eb73fd0144f2cc91c2c8c87f1ced4<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3257 / 231732 | `03a5ed260cd72d508f21b3679945b6ffd5c642785f2735c5740a1225f5e6dfce` |
-| `dingwei-prototype.html` | **v1.27** | `4054b9a2dd84c8a8fe7f734c84cda94c4ed6825f<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2854 / 257927 | `00ef14109612536ec44b98cf4d7437d863df37478af98b547b9debde50849eb8` |
-| `dingwei-architecture-design.md` | **v0.22** | `435bbbf24e57a9f4e36e5092bfd8fd339c2ef47e<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 903 / 65756 | `b42df17ccc25369adc27ecc0df9397a061e8808b2ce546f26190c0a359515cae` |
+| `dingwei-platform-specdoc.md` | **v3.23** | `3348b51a03fdf722bd630f4ee3853a18f15cacd6<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3257 / 231840 | `a763acf4d71e0a11ddc74729e78f4e3eacea553a6ae81d81acdde9bf6ce345aa` |
+| `dingwei-prototype.html` | **v1.28** | `3348b51a03fdf722bd630f4ee3853a18f15cacd6<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2854 / 257969 | `c008082922f8e50dd38146c050abf38f81e33b4beb0d7eacd3494154f56582ba` |
+| `dingwei-architecture-design.md` | **v0.22** | `3348b51a03fdf722bd630f4ee3853a18f15cacd6<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 903 / 65786 | `7439ff9f1638535324601d2f7a3a106a09615c301cc539766974003df4f1a574` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+3348b51 docs: R2 轮2 收口 —— 29 条标注状态全部回填，未决归零(前锚 4054b9a)
 4054b9a docs: 原型删「缺口取证过程」档案（业主判据：非必须且不助理解即删）(前锚 7399c68)
 7399c68 fix: 附录 E 加 owner_sp 列（269 行全部认领）+ 立闸 ⑮ · §9.2/§15.3 同步(前锚 435bbbf)
 435bbbf fix: 修闸的盲区 + EVIDENCE 重生成 + 立证据时效闸 ⑭(前锚 6d8ae86)
@@ -34,5 +35,4 @@
 9b4ea3f Merge remote-tracking branch 'origin/review/r2-sol-structure-round1' into design/addendum-decisions
 92936db Merge remote-tracking branch 'origin/review/security-r2-r1' into design/addendum-decisions
 e714a11 chore: DELIVERY-STATUS 随丙域标注合并重生成（机器生成，勿手改）
-e083f81 Merge remote-tracking branch 'origin/design/addendum-decisions' into design/addendum-decisions
 ```

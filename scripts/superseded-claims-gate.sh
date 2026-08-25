@@ -17,7 +17,7 @@ set -u
 
 LIST=${LIST:-specs/gates/superseded-claims.txt}
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
-SKIP='沿革|历史时点|style-ok:|STYLEOK_KEEP|已被取代|已撤销|重裁|旧模型名|旧口径'
+SKIP='沿革|历史时点|style-ok:|STYLEOK_KEEP|【RV|已被取代|已撤销|重裁|旧模型名|旧口径'
 # 🔴 RV 标注常写成【行内注释】,与旧断言同在一行。
 #   首版按行跳过含「【RV|」的行 ⇒ **评审方标注「这里有旧断言」这个动作本身,
 #   把那处旧断言从闸的视野里抹掉了** —— 标得越对,闸越看不见。
@@ -25,7 +25,7 @@ SKIP='沿革|历史时点|style-ok:|STYLEOK_KEEP|已被取代|已撤销|重裁|�
 #   ⚠️ 剥离时【不得连 style-ok 一起剥掉】—— 它常写在同一个 HTML 注释里；
 #     剥了就把「已声明的正当例外」也抹了，等于修一个洞造另一个（首版即如此）。
 _strip_rv() {
-  sed 's/【RV|[^】]*】[^<]*//g' \
+  sed 's/【RV[^】]*】[^<]*//g' \
     | sed 's/<!--\([^>]*style-ok:[^>]*\)-->/STYLEOK_KEEP\1/g' \
     | sed 's/<!--[^>]*-->//g'
 }

@@ -263,7 +263,7 @@
 | 子 spec | 职责（SpecDoc） | 现状承载 | 差距 |
 |---|---|---|---|
 | **SP0** 总则与定义层 | §1–§4 | 无代码 | 🎯 Spec Kit 工程结构（§0.4 生效前置） |
-| **SP1** 身份与租户地基 | §21 · §22.1/3/4 · **§7.1 P1**（per-session principal 是本册地基，见 A§8.1） | `m8`（注册与路由）· `secretbox` | ⚠️ §21.1 双层结构未完整落地【RV|丙|非阻断|采纳】本行「§21.1 双层结构」沿用旧模型名——SpecDoc §21.1 已改双层结构（企业→人，业主裁定），「§21.1 双层结构」在 SpecDoc 内亦不再定义；本行及 A§8.1 等处若引同一模型名须一并核。 |　　⟹ **【采纳】** 「三级映射」旧模型名已按闸 ⑬ 输出全文清零（SpecDoc 5 + 原型 12 + 架构 3）。
+| **SP1** 身份与租户地基 | §21 · §22.1/3/4 · **§7.1 P1**（per-session principal 是本册地基，见 A§8.1） | `m8`（注册与路由）· `secretbox` | ⚠️ §21.1 双层结构未完整落地【RV-丙05|丙|非阻断|采纳】本行「§21.1 双层结构」沿用旧模型名——SpecDoc §21.1 已改双层结构（企业→人，业主裁定），「§21.1 双层结构」在 SpecDoc 内亦不再定义；本行及 A§8.1 等处若引同一模型名须一并核。 |　　⟹ **【采纳】** 「三级映射」旧模型名已按闸 ⑬ 输出全文清零（SpecDoc 5 + 原型 12 + 架构 3）。
 | **SP7a** 存储基座 | 受控仓储 API · 迁移 runner · 访问抽象层 | `store`（SQLite）· `datad/pgstore`（PG） | ⚠️ **本轮最大工作量，见 A§12** |
 | **SP8** 授权与平台治理 | §23 · §24 | `admin` 部分 | 🎯 待决队列与批次签署未实现 |
 | **SP2** 执行层与门禁 | §5–§9 | `mcs`（board/node）· `scheduler` · `worker` | ⚠️ 门 verdict 独立化未完成 |
@@ -328,7 +328,7 @@
 | 迁移文件 32 个 | `ls internal/store/migrations/*.sql \| wc -l` | `32`（`0001`–`0032`） |
 | § 引用无悬空无歧义 | `scripts/arch-refcheck.sh` | 悬空 0 · 歧义 0（次数与目标数**不写进正文**，见 A§0.1a） |
 
-【RV|甲|阻断|采纳】R2 评审包中的作者证据件并非冻结锚产物：`specs/evidence/EVIDENCE.md` 头仍写生成自 `d0322c6`，而本轮是 `review-r2=e0ce00d`；其后 detector、TenantCtx、SQLite 迁移、棘轮与三件正文均已变化。MANIFEST 只能证明这份旧 EVIDENCE 文件未被篡改，不能证明它描述 R2。当轮证据须在冻结锚重生成，或逐条声明哪些输出仍可复用并给差异闭包。　　⟹ **【采纳】** EVIDENCE 已重跑 collect.sh 重生成；立闸 ⑭ `evidence-fresh-gate.sh`（反测 5 项）。🔴 照录 sol 的区分：「快照 MANIFEST 只能证明过期文件没被篡改，不能证明其内容是冻结锚产出」—— 指纹一致 ≠ 内容当期。⚠️ 闸首版判据写成「锚==HEAD」，而它在 pre-commit 跑，恒不相等把自己卡死，已修并钉成反测。
+【RV-甲09|甲|阻断|采纳】R2 评审包中的作者证据件并非冻结锚产物：`specs/evidence/EVIDENCE.md` 头仍写生成自 `d0322c6`，而本轮是 `review-r2=e0ce00d`；其后 detector、TenantCtx、SQLite 迁移、棘轮与三件正文均已变化。MANIFEST 只能证明这份旧 EVIDENCE 文件未被篡改，不能证明它描述 R2。当轮证据须在冻结锚重生成，或逐条声明哪些输出仍可复用并给差异闭包。　　⟹ **【采纳】** EVIDENCE 已重跑 collect.sh 重生成；立闸 ⑭ `evidence-fresh-gate.sh`（反测 5 项）。🔴 照录 sol 的区分：「快照 MANIFEST 只能证明过期文件没被篡改，不能证明其内容是冻结锚产出」—— 指纹一致 ≠ 内容当期。⚠️ 闸首版判据写成「锚==HEAD」，而它在 pre-commit 跑，恒不相等把自己卡死，已修并钉成反测。
 
 🔴 **F-2 的三处冲突由此钉死**：A§5 十九包清单**不含 view**、A§8 拓扑**不再并列 view**、
 A§6 映射表写明**view 无独立包** —— 三处现在同源于上表第 1、2、3 行，**可复算**。
@@ -531,7 +531,7 @@ A§6 映射表写明**view 无独立包** —— 三处现在同源于上表第 
 🔴 **平台库不接入企业运营内容**，只管企业平台数据。
 🔴 **`org_id` 列不需要**：企业隔离由库边界给。领域 schema 只加 **`owner_principal` 一列**（人层）。
 
-【RV|乙|阻断|挂账】“加 `owner_principal` ＋ RLS 兜底”尚不是可实现、可验收的隔离合同：未定义受控 DB role／表 owner 与 `BYPASSRLS` 禁止、`FORCE ROW LEVEL SECURITY`、每张人层表／新表的 policy 强制接入，以及连接池中由 P1 principal 派生并事务作用域清理的 RLS 上下文。缺这些，RLS 可被表属主绕过、漏新表，或把上一个请求的主体留给下一个请求。C.3a cutover 前置与 A§12 乙组应把上述机制和企业内跨人四项负测列为同一组可验收条件。　　⟹ **【挂账】** 责任人=**乙域 terra 定判据 + SP1 接手人实现**。terra 点的「受控 DB role / 表 owner / BYPASSRLS 禁用」属安全验收面，该由安全域给判据；实现归 SP1。
+【RV-乙04|乙|阻断|挂账】“加 `owner_principal` ＋ RLS 兜底”尚不是可实现、可验收的隔离合同：未定义受控 DB role／表 owner 与 `BYPASSRLS` 禁止、`FORCE ROW LEVEL SECURITY`、每张人层表／新表的 policy 强制接入，以及连接池中由 P1 principal 派生并事务作用域清理的 RLS 上下文。缺这些，RLS 可被表属主绕过、漏新表，或把上一个请求的主体留给下一个请求。C.3a cutover 前置与 A§12 乙组应把上述机制和企业内跨人四项负测列为同一组可验收条件。　　⟹ **【挂账】** 责任人=**乙域 terra 定判据 + SP1 接手人实现**。terra 点的「受控 DB role / 表 owner / BYPASSRLS 禁用」属安全验收面，该由安全域给判据；实现归 SP1。
 
 **三条硬前置，缺任一不得 cutover**：
 
@@ -541,7 +541,7 @@ A§6 映射表写明**view 无独立包** —— 三处现在同源于上表第 
 | 2 | **board conformance suite 完成** | §4.5 明禁：无它不得以「重写」为由丢弃任一既有并发语义。SQLite 单写者串行化是 board 现在的**线性化点**，换库即换该不变量的实现方式 |
 | 3 | **跨库 schema 版本一致性闸** | N 库须同版本，否则同一份代码在两个企业行为不同 |
 
-【RV|甲|阻断|挂账】这还不足以构成“一企业一库＋人层 RLS”的可施工数据库架构。至少缺：可信 principal→企业库注册项/DSN secret ref 的选库链；连接池缓存、吊销与错库 fail-closed；企业开户/停用/删除与备份恢复；N 库迁移 fan-out 的部分失败、重试、回滚和版本偏斜处置；object-owner/runtime/bypass 角色分离、`FORCE ROW LEVEL SECURITY`、每事务 tenant/owner context 与缺 context 默认拒；平台库与企业库之间允许的唯一数据流。当前只有目标表和三条前置，照此实现仍会在最危险的“选错整库”处自行补设计。　　⟹ **【挂账】** 责任人=**SP1 接手人**（业主待定）。缺的「可信 principal→企业库注册项/DSN secret」正是 principal 链的下游，**同一人做才不会两套口径**。
+【RV-甲10|甲|阻断|挂账】这还不足以构成“一企业一库＋人层 RLS”的可施工数据库架构。至少缺：可信 principal→企业库注册项/DSN secret ref 的选库链；连接池缓存、吊销与错库 fail-closed；企业开户/停用/删除与备份恢复；N 库迁移 fan-out 的部分失败、重试、回滚和版本偏斜处置；object-owner/runtime/bypass 角色分离、`FORCE ROW LEVEL SECURITY`、每事务 tenant/owner context 与缺 context 默认拒；平台库与企业库之间允许的唯一数据流。当前只有目标表和三条前置，照此实现仍会在最危险的“选错整库”处自行补设计。　　⟹ **【挂账】** 责任人=**SP1 接手人**（业主待定）。缺的「可信 principal→企业库注册项/DSN secret」正是 principal 链的下游，**同一人做才不会两套口径**。
 
 ⚠️ **数据 cutover 属不可回滚迁移**（§5.2 `回滚成本 = 不可回滚`）⇒ 按 §5.6 须过架构评审 ＋ 用例评审 ＋ 交付验证。
 
@@ -900,4 +900,4 @@ rule_ids = [R-SEC-01, R-DM-02]
 | 3 | 新增 ⏭️ 项须同时补齐本表五列，**缺任一列不得转交** |
 | 4 | 🔴 **序号即稳定 ID**：本表按序号升序排列，序号一经分配不得复用、不得因增删重排。<br>⚠️ 口头与文件里的「第 N 项」须指向同一行 —— 曾出现表内实际排序为 `…9 10 12 11` 而序号被单独引用的情形 |
 
-【RV|甲|非阻断|采纳】R1 的评审包机制缺口仍在：`export-bundle.sh` 用 basename 压平路径且无同名拒绝，未来两个子树同名文件会静默覆盖；脚本自己声明“conformance suite 成为评审对象时扩 ROOTS”，而本件已用 suite 作为多项验收依据，快照仍不含 `internal/mcs/board/conformance_test.go` 及其输出。请补同 basename 反测/保留相对路径，并明确 conformance suite 是否进入评审包；若不进入，须在 EVIDENCE 中给冻结锚测试输出和范围理由。　　⟹ **【采纳】** basename 压平改为**结构上不可能冲突**（目录层用 `__` 连进文件名），补两条反测。🔴 记明：sol 原判非阻断的理由是「34 件恰好无冲突」，而 SA 批新增 `pending-debt/main.go` 后与 `handle-escape/main.go` 同名，**「恰好」变成了「已发生」** —— 以「目前恰好成立」为由降级的 finding，会在下一次改动后成为阻断。同批还扩了 ROOTS 收 conformance suite、DOCS 加沿革件，现导出 41 件、delivery-check 通过。
+【RV-甲11|甲|非阻断|采纳】R1 的评审包机制缺口仍在：`export-bundle.sh` 用 basename 压平路径且无同名拒绝，未来两个子树同名文件会静默覆盖；脚本自己声明“conformance suite 成为评审对象时扩 ROOTS”，而本件已用 suite 作为多项验收依据，快照仍不含 `internal/mcs/board/conformance_test.go` 及其输出。请补同 basename 反测/保留相对路径，并明确 conformance suite 是否进入评审包；若不进入，须在 EVIDENCE 中给冻结锚测试输出和范围理由。　　⟹ **【采纳】** basename 压平改为**结构上不可能冲突**（目录层用 `__` 连进文件名），补两条反测。🔴 记明：sol 原判非阻断的理由是「34 件恰好无冲突」，而 SA 批新增 `pending-debt/main.go` 后与 `handle-escape/main.go` 同名，**「恰好」变成了「已发生」** —— 以「目前恰好成立」为由降级的 finding，会在下一次改动后成为阻断。同批还扩了 ROOTS 收 conformance suite、DOCS 加沿革件，现导出 41 件、delivery-check 通过。

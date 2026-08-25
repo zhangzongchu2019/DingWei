@@ -34,7 +34,14 @@
 #       严重度 = 阻断 | 非阻断
 #       状态   = 未决 | 采纳 | 驳回 | 挂账
 #
-# 【RV|甲|阻断|未决】`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直接删除一条 RV 且不写沿革，脚本没有前一轮 RV ledger/稳定 ID 可比，仍会 rc=0。须为每条 RV 分配稳定 ID，并在独立 reviewer-owned 清单或基线 manifest 中记录；final 对拍“前轮全集 = 采纳 ∪ 驳回(理由) ∪ 挂账(owner+时点) = 沿革落账”，否则收官防丢只是文字纪律。
+# 【RV-甲14|甲|阻断|采纳】`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直接删除一条 RV 且不写沿革，脚本没有前一轮 RV ledger/稳定 ID 可比，仍会 rc=0。须为每条 RV 分配稳定 ID，并在独立 reviewer-owned 清单或基线 manifest 中记录；final 对拍“前轮全集 = 采纳 ∪ 驳回(理由) ∪ 挂账(owner+时点) = 沿革落账”，否则收官防丢只是文字纪律。
+# 　　⟹ **【采纳】** 甲域这条打的正是本闸头注自己写的那句「收官 ≠ 清空：任一标注不得消失」——
+#     🔴 **把规矩写进头注，不等于闸能执行它。** 已落三件：
+#     ① 每条 RV 分配**稳定 ID**（`RV-<域><序号>`，正文与台账同源）
+#     ② 新增 reviewer-owned 台账 `specs/gates/rv-ledger.txt`
+#     ③ `--final` 增判：**台账内每条 ID 必须在正文或沿革件中出现**，
+#        直接删标注而不写沿革 ⇒ 判「标注消失」并拒。
+#     ⚠️ 能力边界：本闸判「ID 还在不在」，判不了「沿革里写得对不对」。
 set -u
 
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
@@ -54,7 +61,7 @@ scan() { # scan <file> -> 命中行
   #   两个机制若不互相认识就会打架 —— 本闸立起来后第一次真用 RV 就撞上了。
   #   ⚠️ 这不是给 RV 开后门:RV 有自己的判据(rvcheck:字段受控枚举、收官须清零)。
   #     排除的是【重复管辖】,不是【不管】。
-  grep -nE "$PAT_ALL" "$1" 2>/dev/null | grep -v 'style-ok:' | grep -v '【RV|'
+  grep -nE "$PAT_ALL" "$1" 2>/dev/null | grep -v 'style-ok:' | grep -v '【RV'
 }
 
 check() {
@@ -154,13 +161,27 @@ selftest() {
   mk; printf '\n【RV|乙|非阻断|驳回】理由：与 §5.2 冲突\n' >> "$T/d/a.md"; rv --final
   [ $? -eq 1 ] && ok "收官：标注纵已定性，仍须移出正文（体例）" || bad "收官后正文残留标注被放行"
 
-  mk; rv --final
-  [ $? -eq 0 ] && ok "收官：正文零标注放行" || bad "干净正文收官被误拦"
+  # 🔴 甲域 RV-甲14 的反测：光查「正文零标注」拦不住【直接删掉一条而不写沿革】。
+  L="$T/lg.txt"; printf 'RV-甲01\t甲\t阻断\t采纳\tx.md\t某条\n' > "$L"
+  mk; DOCS="$T/d/a.md" HIST="$T/d/h.md" LEDGER="$L" rvcheck --final >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "🔴 拦住：台账里的 RV-甲01 在正文与沿革件中都追不到（标注消失）" \
+    || bad "标注被直接删掉却放行了 —— 「收官≠清空」仍只是句话"
+
+  mk; printf '沿革：RV-甲01 已采纳，处置见下。\n' >> "$T/d/h.md"
+  DOCS="$T/d/a.md" HIST="$T/d/h.md" LEDGER="$L" rvcheck --final >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "不误伤：标注已落沿革件时放行" || bad "落了沿革仍被拦"
+
+  mk; : > "$T/lg0.txt"
+  DOCS="$T/d/a.md" HIST="$T/d/h.md" LEDGER="$T/lg0.txt" rvcheck --final >/dev/null 2>&1
+  [ $? -eq 2 ] && ok "拦住：台账为空判闸坏（无可比对象不得当免检）" || bad "空台账被当免检"
+
+  mk; LEDGER="$L" rv --final
+  [ $? -eq 1 ] && ok "收官：台账未追平时不得放行" || bad "台账未追平却放行"
 
   # 🔴 钉住上面那条注释说的 bug:check() 若再用 n 当局部计数,本项即失守。
   #    判据是「跑完这么多项之后,通过计数必须 >= 已跑项数」——覆盖会把它压成个位数。
-  [ "$n" -ge 19 ] && ok "闸自身：通过计数未被 check()/rvcheck() 的局部变量覆盖" \
-    || bad "通过计数被覆盖（现为 $n，应 >=19）—— 反测数字不可信,闸就没有牙"
+  [ "$n" -ge 23 ] && ok "闸自身：通过计数未被 check()/rvcheck() 的局部变量覆盖" \
+    || bad "通过计数被覆盖（现为 $n，应 >=23）—— 反测数字不可信,闸就没有牙"
 
   rm -rf "$T"
   [ $fail -eq 0 ] && echo "--- 反测 $n 项全过（闸有牙）" || echo "--- 反测未过（闸没牙，不得依赖它的 ✓）"
@@ -168,7 +189,7 @@ selftest() {
 }
 
 # ── RV 标注检查 ──
-RV_RE='【RV\|[^|]*\|[^|]*\|[^】]*】'
+RV_RE='【RV[^|]*\|[^|]*\|[^|]*\|[^】]*】'
 
 rvcheck() { # rvcheck [--final]
   _final=${1:-}
@@ -179,7 +200,7 @@ rvcheck() { # rvcheck [--final]
     [ -z "$_hits" ] && continue
     _c=$(printf '%s\n' "$_hits" | wc -l | tr -d ' '); _tot=$((_tot+_c))
     # 字段合法性：域/严重度/状态三项必须在受控枚举内，否则判闸坏（无主的标注不得混入）
-    _ill=$(printf '%s\n' "$_hits" | grep -vE '【RV\|(甲|乙|丙|执笔)\|(阻断|非阻断)\|(未决|采纳|驳回|挂账)】' || true)
+    _ill=$(printf '%s\n' "$_hits" | grep -vE '【RV[^|]*\|(甲|乙|丙|执笔)\|(阻断|非阻断)\|(未决|采纳|驳回|挂账)】' || true)
     if [ -n "$_ill" ]; then
       echo "✗ $f：RV 标注字段不合法（域/严重度/状态须为受控枚举）"
       printf '%s\n' "$_ill" | head -5 | sed 's/^/    /'
@@ -197,13 +218,32 @@ rvcheck() { # rvcheck [--final]
       return 1
     fi
     for f in $DOCS; do
-      _r=$(grep -oE '【RV\|[^|]*\|[^|]*\|驳回】[^【]{0,20}' "$f" 2>/dev/null | grep -vE '驳回】\s*理由' || true)
+      _r=$(grep -oE '【RV[^|]*\|[^|]*\|[^|]*\|驳回】[^【]{0,20}' "$f" 2>/dev/null | grep -vE '驳回】\s*理由' || true)
       if [ -n "$_r" ]; then
         echo "✗ $f：有【驳回】标注未带理由 —— 驳回必须可复核"; printf '%s\n' "$_r" | head -3 | sed 's/^/    /'; return 1
       fi
     done
     [ "$_tot" -gt 0 ] && { echo "✗ 收官后正文仍有 $_tot 条 RV 标注 —— 须全部移入 $HIST"; return 1; }
-    echo "  ✓ 收官：正文零 RV 标注"
+    # 🔴 甲域 RV-甲14：光查「正文零标注」拦不住【直接删掉一条而不写沿革】。
+    #   须以台账为可比对象，逐条确认它去了哪里。
+    _lg=${LEDGER:-specs/gates/rv-ledger.txt}
+    if [ ! -s "$_lg" ]; then
+      echo "✗ RV 台账 $_lg 不存在或为空 —— 无可比对象即无法判「标注是否消失」，闸坏了"; return 2
+    fi
+    _lost=0
+    while IFS="$(printf '\t')" read -r id rest; do
+      case "$id" in ''|'#'*) continue;; esac
+      if ! grep -qF "$id" $DOCS "$HIST" 2>/dev/null; then
+        [ "$_lost" -eq 0 ] && echo "✗ 收官：有标注【消失】—— 既不在正文也不在沿革件："
+        echo "    $id"; _lost=$((_lost+1))
+      fi
+    done < "$_lg"
+    if [ "$_lost" -gt 0 ]; then
+      echo "  🔴 收官 ≠ 清空：$_lost 条标注被删而未落沿革。每条须落到 采纳／驳回(带理由)／挂账(带责任人) 之一。"
+      return 1
+    fi
+    echo "  ✓ 收官：正文零 RV 标注，且台账内每条 ID 均可在正文或沿革件中追到"
+    echo "  ⚠️ 本闸判「ID 还在不在」，判不了「沿革里写得对不对」—— 后者归门方。"
   fi
   return 0
 }
