@@ -63,7 +63,7 @@
 ## 闸反测条数（抽锚核对用）
 
 ```
-prose-style      --- 反测 49 项全过（闸有牙）
+prose-style      --- 反测 50 项全过（闸有牙）
 evidence-fresh   --- 反测 13 项全过（闸有牙）
 path-anchor      --- 反测 9 项全过（闸有牙）
 conflict-marker  --- 反测 7 项全过（闸有牙）

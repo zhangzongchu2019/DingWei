@@ -116,7 +116,7 @@ check() {
     case "$f" in
       *.md|*.html)
         _xc=$(grep -nE '跨企业[^。；]{0,26}(白名单|capability)' "$f" 2>/dev/null \
-              | grep -vE '(无|没有)[^。；]{0,8}capability 路径|不存在|恒为 0|恒 0|禁止|误读|无此路径|无白名单' || true)
+              | grep -vE '(无|没有)[^。；]{0,8}capability 路径|不存在|恒为 0|恒 0|禁止|误读|无此路径|无白名单|冲突」|勿再按|不构成矛盾' || true)
         if [ -n "$_xc" ]; then
           echo "✗ $f：出现【跨企业 ＋ capability/白名单通路】的现行表述 —— 与 §22.1c 直接冲突"
           printf '%s\n' "$_xc" | cut -c1-130
@@ -275,6 +275,11 @@ selftest() {
   mk; printf '\n| 14 | 跨企业白名单条目的**必要性与最小化**是否成立 |\n' >> "$T/d/a.md"
   DOCS="$T/d/a.md" HIST="$T/d/h.md" check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "拦住：跨企业【白名单条目】名词形态（动词形态模式抓不到）" || bad "名词形态漏网"
+
+  # ⚠️ 不误伤：指称这类冲突本身的句子（第五次同形，见判据注释）
+  mk; printf '\n⇒ 复核者见此三行请勿再按「跨企业 capability 冲突」处理。\n' >> "$T/d/a.md"
+  DOCS="$T/d/a.md" HIST="$T/d/h.md" check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "不误伤：指称「跨企业 capability 冲突」这一类别的句子" || bad "谈论该冲突的句子被判成冲突"
 
   # ⚠️ 不误伤：否定式是判据本身，不是冲突
   mk; printf '\n`跨企业` 没有任何 capability 路径，故不存在「跨企业白名单」这种东西。\n' >> "$T/d/a.md"
