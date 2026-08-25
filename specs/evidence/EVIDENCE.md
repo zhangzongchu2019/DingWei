@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T09:53:47Z
-分支头：`f64b2c4b0cb4c734a665cc2674804469ff50d21c`
+生成时刻：2026-08-25T09:58:52Z
+分支头：`baf724fd5684b2ea531d09ff333a8e56bfb75c92`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -33,8 +33,8 @@ $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
 
 ```
 $ scripts/arch-refcheck.sh
-  本件内引用 A§ : 70 次 / 27 目标 · 悬空 0
-  SpecDoc 引用 § : 173 次 / 68 目标 · 悬空 0
+  本件内引用 A§ : 76 次 / 28 目标 · 悬空 0
+  SpecDoc 引用 § : 175 次 / 68 目标 · 悬空 0
   heading 真实重复：本件 0 · SpecDoc 0
   --- 引用核验通过
 ```
@@ -65,7 +65,7 @@ $ specs/tools/analyze.sh
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
     SpecDoc: 件内 v3.23 · 状态文件 v3.23 ✓
     架构设计: 件内 v0.22 · 状态文件 v0.22 ✓
-    原型: 件内 v1.29 · 状态文件 v1.28 ✗
+    原型: 件内 v1.30 · 状态文件 v1.29 ✗
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-architecture-design.md: 正文无他件旧版本号

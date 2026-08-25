@@ -202,9 +202,17 @@ scripts/appendix-e-owner-gate.sh || exit 1
 scripts/appendix-e-owner-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/appendix-e-owner-gate.sh --selftest; echo "✗ 附录 E 认领闸的反测未过"; exit 1; }
 echo "  ⑮ 附录 E 认领闸的反测 ✓"
+# ⑯ RV 标注完整性(丙域 kimi R2 轮3):标注是 reviewer-owned 的证据,不得被清理工具改写
+if [ ! -x scripts/rv-integrity-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/rv-integrity-gate.sh 不可执行"; exit 1
+fi
+scripts/rv-integrity-gate.sh || exit 1
+scripts/rv-integrity-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/rv-integrity-gate.sh --selftest; echo "✗ RV 完整性闸的反测未过"; exit 1; }
+echo "  ⑯ RV 完整性闸的反测 ✓"
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–⑮）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–⑯）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–⑮）"
+  echo "✓ 提交闸全过（①–⑯）"
 fi

@@ -38,6 +38,6 @@ RV-丙07	丙	非阻断	采纳	dingwei-prototype.html	「C.3 已裁不做 RLS」�
 RV-丙08	丙	非阻断	采纳	dingwei-prototype.html	本屏身份模型示例为旧「§21.1 双层结构」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全
 RV-丙09	丙	非阻断	采纳	dingwei-prototype.html	屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层
 RV-甲13	甲	阻断	采纳	dingwei-prototype.html	本屏整体仍是已被 C.3a 推翻的旧存储合同：标题下明确写“不做 RLS、不做每租户独立库”，五项/负测/残余面也只覆盖
-RV-乙06	乙	阻断	采纳	dingwei-platform-specdoc.md	evidence-fresh-gate 在冻结锚实测拒绝（结构性）
-RV-乙07	乙	阻断	采纳	dingwei-platform-specdoc.md	§22.2c「业主不采纳 RLS」推翻 C.3a
-RV-甲14	甲	阻断	采纳	prose-style-gate.sh	--final 实现不了「任一标注不得消失」
+RV-乙06	乙	阻断	采纳	dingwei-platform-specdoc.md	本轮冻结锚上 `bash scripts/evidence-fresh-gate.sh` 实测拒绝：`specs/evi
+RV-乙07	乙	阻断	采纳	dingwei-platform-specdoc.md	上句仍把 RLS 写为“业主不采纳”的现行理由，直接推翻其前一行 C.3a“PG＋RLS 兜人层”的现行裁定；紧随其后的
+RV-甲14	甲	阻断	采纳	prose-style-gate.sh	`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直

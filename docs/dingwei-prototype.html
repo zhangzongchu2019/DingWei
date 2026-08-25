@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.29 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.30 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.29</span></h1>
-  <span class="anchor">原型 <b>v1.29</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.30</span></h1>
+  <span class="anchor">原型 <b>v1.30</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -1098,7 +1098,7 @@ body.uionly #uihint{display:block}
   且可信结构化头（<code>meta.op</code>/<code>event_type</code> ＋ task/node/tenant/version）不属允许集 ⇒ <b>拒发，回指帖子流</b>。<br>
   <b>一切自由文本必须落 node 帖子流</b>，不走 agent↔agent 直接通道。<b>跨租户默认拒</b>，须 guarded capability。</div>
   <div class="note warn" data-edit>⚠️ 调度者收件面<b>不提供任何「转述 / 转发」op</b>（L3）。
-  本阶段实战教训：善意且准确的转述<b>仍产生了两处内容丢失、九次消息错序</b> —— 故此处是机制约束，不是纪律约束。</div>
+  🔴 <b>转述即使善意且准确，仍会产生内容丢失与消息错序</b> —— 故此处是机制约束，不是纪律约束。</div>
 </div>
 
 <div class="panel">
@@ -2198,7 +2198,7 @@ body.uionly #uihint{display:block}
   <b>租户只能查自己的 pod 与日志，平台级 ops 才能查全平台</b>。
   ⇒ 业主本轮定的 MCP 四级归属，正好承载这个 —— <b>MCP 分级不只是「工具归谁」，也是「能查到谁的运行态」</b>。</div>
 
-  <div class="note bad" data-edit>🔴 <b>两处规范缺口（本轮新增）</b>：<br>
+  <div class="note bad" data-edit>🔴 <b>两处规范缺口</b>：<br>
   ① <b>业务架构 · 数据架构 是新条目类型</b> —— §12.1 十二类里只有「业务流程」（＝具体流转，非领域模型）
   与「数据库设计」（＝<code>migrations/</code> DDL，物理表结构，非数据架构）。<b>两者都不能替代。</b><br>
   ② <b>运行态查询是全新概念</b> ——
@@ -2277,7 +2277,7 @@ body.uionly #uihint{display:block}
   <tr><td>§10</td><td data-edit>「权限域 × 记忆类型」二维中的<b>权限域改为四级</b></td><td>小</td></tr>
   </tbody></table>
   <div class="note bad" data-edit>🔴 <b>这是本轮所有对齐里改动面最大的一次。</b>前十二处缺口是「补没写的」，
-  本次是<b>「改已写的」</b> —— §11 的层级结构是 §12 / §13 / §15 / §22 共同依赖的底座。<br>
+  本项属<b>「改已写的」</b> —— §11 的层级结构是 §12 / §13 / §15 / §22 共同依赖的底座。<br>
   按 §28 第 4 条：<b>改规则须同步全部引用点，且依赖点未必与复述点用同一词汇</b>。
   执笔方回写时会先做<b>依赖点全文扫描</b>，不直接改。</div>
 </div>
@@ -2623,8 +2623,13 @@ document.getElementById('bExp').onclick=function(){
   var out={原型:'dingwei-prototype.html',
     /* 🔴 本对象【不内嵌任何版本号、commit 或指纹】。
        上一版的注释论证过「内嵌一个上一版的哈希,看着精确其实是过期值」,
-       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.29)——
+<<<<<<< HEAD
+       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.30)——
        **注释与代码相邻对撞**,属「刚立的规矩在下一段自破」。
+=======
+       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.27)——
+       **注释与代码相邻对撞**,属「刚立的规矩在下一段自破」。<!-- 【RV|丙|非阻断|未决】〔体例分离二轮·门方先标〕本件仍存过程叙述：与 Agent 交互屏「本阶段实战教训：…九次消息错序」；spec 准入检查屏与身份绑定屏两处「执笔方在评审中被抓出的『按名字判而非按效果判』是同一族错误」；本处导出函数注释整段复述（sol 已举）。另注：多处「本轮/本次」（本次经由/本次增量/本轮设计合同类）为通用操作语义，非过程痕迹，不在此列。 -->
+>>>>>>> origin/design/addendum-decisions
        ⚠️ 后果不是不好看:任何经此导出的改稿都会天然挂错基准,收件方按它去比对,
        比的是几个版本之前的文本。这正是「各方评审基准不同」在工具侧的成因。
        ⇒ 基准由 git 锚承载,导出时不写死;需要基准时取 docs/DELIVERY-STATUS.md。 */

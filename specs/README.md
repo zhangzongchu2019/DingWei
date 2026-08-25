@@ -25,6 +25,7 @@
 | `specs/tools/export-exclude.txt` | 快照包的显式排除清单，每条须带理由；缺理由或漂移即导出失败 |
 | `specs/tools/handle-escape/main.go` | 裸库句柄逃逸检测器（Go AST）—— 判据二的权威 detector；覆盖换行签名 · import alias · 类型别名链 · 导出字段 · 匿名嵌入 · 接口方法 |
 | `specs/gates/checklist-execution-exceptions.txt` | checklist 未落账的**登记例外** —— 🔴 登记 ≠ 修复；闸打印「登记债务」时**不是 PASS**；例外的新增与批准属 owner/门方评审面，执笔方不得自增自批 |
+| `scripts/rv-integrity-gate.sh` | RV 完整性闸 —— 标注是 **reviewer-owned 的证据**，执笔方的清理/替换工具不得改写其正文；🔴 与「改一处漏一处」互为镜像：那是该改的没改，这是**不该改的改了** |
 | `specs/gates/rv-ledger.txt` | RV 标注台账（reviewer-owned）—— 稳定 ID ＋ 最终状态；`--final` 以它为可比对象判「标注是否消失」。🔴 执笔方可增行，**不得改他域已有行的状态** |
 | `scripts/appendix-e-owner-gate.sh` | 附录 E 认领闸 —— 「未认领恒为 0」须有 `owner_sp` 列承载；🔴 判「每行有没有主」，**判不了认领得对不对** |
 | `scripts/evidence-fresh-gate.sh` | 证据包时效闸 —— 证据必须产自被评审的那个锚；🔴 **快照指纹一致只证明文件没被篡改，不证明内容是当期产出**，两者是不同的保证 |

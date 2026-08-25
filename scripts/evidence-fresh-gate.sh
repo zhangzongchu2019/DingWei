@@ -33,7 +33,10 @@ check() {
   #     且自证据锚起、除【生成证据包的那一个提交】外，评审对象无其他改动。
   _last=$(git log -1 --format=%H -- docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md \
             docs/dingwei-prototype.html scripts specs/tools 2>/dev/null)
-  _n=$(git rev-list --count "$_a..$_last" 2>/dev/null || echo 99)
+  # ⚠️ 不用 `rev-list --count`：**合并历史上它会把并入的分支一并计数** —— 实测 merge 后
+  #   「证据锚 → 其子提交」的距离变成 2，判据当场失效。改用【第一父链】判相邻，
+  #   它才对应「证据在 pre-commit 生成，锚 = 该提交的父」这一真实形态。
+  _n=$(git rev-list --count --first-parent "$_a..$_last" 2>/dev/null || echo 99)
   if [ -z "$_last" ] || [ "${_n:-99}" -le 1 ] || git merge-base --is-ancestor "$_last" "$_a" 2>/dev/null; then
     echo "  ✓ 证据包为当期产出（证据锚 $(echo "$_a"|cut -c1-12)，距评审对象末次改动 ${_n:-0} 个提交 ≤1）"
     echo "  ⚠️ 本闸判不了【内容是否真由该锚跑出】—— 那要重跑 collect.sh 比对，归门方抽验。"
@@ -61,9 +64,14 @@ selftest() {
 
   # 🔴 乙域 terra 指出的结构性缺陷：证据锚天然比其所在提交少一个（pre-commit 生成），
   #   若判据要求「不落后于评审对象末次改动」，则在**任何冻结锚上恒 FAIL**。
-  printf '生成时刻：X\n分支头：`%s`\n' "$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)" > "$T/e.md"
+  # 构造需与判据同源：取【评审对象末次改动】的父提交作证据锚 —— 那正是冻结锚上的真实形态
+  #（证据在 pre-commit 生成，锚 = 该提交的父）。
+  #   ⚠️ 首版反测用 HEAD~1，而 HEAD~1 未必改过评审对象 ⇒ 距离 >1，反测自己构造错了。
+  _lastc=$(git log -1 --format=%H -- docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md \
+             docs/dingwei-prototype.html scripts specs/tools 2>/dev/null)
+  printf '生成时刻：X\n分支头：`%s`\n' "$(git rev-parse "$_lastc^" 2>/dev/null || git rev-parse HEAD)" > "$T/e.md"
   EV="$T/e.md" check >/dev/null 2>&1
-  [ $? -eq 0 ] && ok "🔴 不误伤：证据锚为 HEAD 的父（冻结锚上的正常形态）须放行" \
+  [ $? -eq 0 ] && ok "🔴 不误伤：证据锚为【评审对象末次改动】的父（冻结锚上的正常形态）须放行" \
     || bad "冻结锚上恒判 FAIL —— 闸在评审时点系统性误判"
 
   # 🔴 钉住首版的死循环：pre-commit 时 HEAD 尚是上一个提交，
