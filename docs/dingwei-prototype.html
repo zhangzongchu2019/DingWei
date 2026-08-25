@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.35 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.36 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.35</span></h1>
-  <span class="anchor">原型 <b>v1.35</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.36</span></h1>
+  <span class="anchor">原型 <b>v1.36</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -1330,7 +1330,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>③ 满足条件后，是否一定需要人审？ <span class="ref">业主问 · 拟 §4.6</span></h3>
+  <h3>③ 满足条件后，是否一定需要人审？ <span class="ref">拟 §4.6</span></h3>
   <div class="chk stop" data-edit>🔴 <b>不能因「机器项全过」而免人审。</b></div>
   <div class="note bad" data-edit>理由一 · <b>规范已有明文</b>：§5.4 规则 2「<b>基础必过模板</b>」＝无论属性如何恒必过的最小环节集
   （实现 → 代码评审 → 测试执行）。<b>代码评审在任何级别都不可省</b>，spec 同理不应比代码宽松。<br><br>
@@ -1726,7 +1726,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>为什么这里不需要 unlock <span class="ref">业主问</span></h3>
+  <h3>为什么这里不需要 unlock</h3>
   <div class="grid g2">
     <div class="card"><b class="cell-fail">旧 view 页</b>
       <div style="margin-top:6px;font-size:12.5px">页面本身<b>不含身份</b> ⇒ 只能靠一个 unlock 码放行。<br>
@@ -1783,7 +1783,7 @@ body.uionly #uihint{display:block}
   ① <b>与 §21 §21.1 双层结构不接</b>：Basic 认证的是「知道这个密码的人」，不是「哪个人」 ⇒
   §21.1「<b>审计与授权挂在人身上</b>」<b>落不了地</b>；<br>
   ② 🔴 <b>共享凭据下，任一持有者可访问任一会话的 sidecar</b> ——
-  而业主本条的关切正是「<b>保证 Agent 会话不会被其他人攻击</b>」。<b>共享 Basic 恰恰保证不了这一点。</b><br><br>
+  关切在于「<b>保证 Agent 会话不会被其他人攻击</b>」。<b>共享 Basic 恰恰保证不了这一点。</b><br><br>
   <b>建议</b>：Nginx 层鉴权改为<b>校验平台签发的会话级凭据</b>（由 §21 §21.1 双层结构产生，含 <code>platform_subject</code> ＋
   目标会话 ＋ 有效期），并<b>逐次落账「谁经哪个渠道访问了哪个会话」</b>。<br>
   ⚠️ <b>搜索范围声明</b>：以上关于「HTTP 基础认证」的判断<b>来自代码注释</b>；实际 nginx 配置<b>未核</b>（无主机权限）。
@@ -1796,7 +1796,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>Nginx 鉴权动态化 · 三种落法 <span class="ref">业主问 · 待裁</span></h3>
+  <h3>Nginx 鉴权动态化 · 三种落法 <span class="ref">待裁</span></h3>
   <table><thead><tr><th style="width:150px">做法</th><th>机制</th><th style="width:130px">平台挂了</th><th style="width:88px">开源版</th></tr></thead><tbody>
   <tr><td><b>甲 · auth_request 子请求</b></td>
     <td data-edit>每个请求先向内部端点发子请求，200 放行 / 401 拒。可携带 cookie，逻辑任意</td>
@@ -1815,10 +1815,10 @@ body.uionly #uihint{display:block}
   ⚠️ 落地注意：<b>nginx 开源版无原生 JWT 模块</b>（<code>auth_jwt</code> 属 NGINX Plus），
   开源版须用 <b>njs</b>（官方 JS 模块）或 <b>OpenResty / lua</b> 手写验签。这是选型时要算进去的成本。</div>
 
-  <div class="note bad" data-edit>🔴 <b>但业主问的「从 dingwei 页面 cookie 中获得 token」，有一个必须先分开的点：</b><br>
+  <div class="note bad" data-edit>🔴 <b>「从 dingwei 页面 cookie 中获得 token」有一个必须先分开的点：</b><br>
   平台页面的 cookie 装的是<b>平台会话 token</b> —— 它代表该用户<b>在平台上的全部权限</b>。
   若直接拿它当 sidecar 访问凭据，就成了<b>一个 token 通吃平台与所有会话终端</b>。<br>
-  <b>而业主本轮的关切正是「保证 Agent 会话不会被其他人攻击」—— 通用凭据恰恰做不到。</b><br><br>
+  <b>关切在于「保证 Agent 会话不会被其他人攻击」—— 通用凭据做不到。</b><br><br>
   <b>⇒ 正确做法：不复用平台 cookie，而是【拿它去换一个受限令牌】。</b></div>
   <div class="grid g2">
     <div class="card"><b class="cell-fail">直接复用平台 cookie</b>
@@ -1973,7 +1973,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>⚠️ 一处需业主明确的读法 <span class="ref">与 A8 屏相关</span></h3>
-  <div class="note warn" data-edit>业主本条说「ops-Agent 应有两个入口：<b>view 提供的正常交互页面</b>，还应有紧急对话页」，
+  <div class="note warn" data-edit>🔴 <b>ops-Agent 有两个入口</b>：<b>view 提供的正常交互页面</b> ＋ 紧急对话页；
   而上一条说「view 页不应再保留」。两句在字面上不一致，此处不猜，列两读法：<br><br>
   <b>读法甲</b>：「view 提供的正常交互页面」指的是<b>常规交互入口</b>这一职能，
   它现在由主界面内的 Agent 对话面（A8 屏）承担 ⇒ <b>view 页仍砍</b>，ops-Agent 的两个入口 = 主界面对话 + 紧急页。<br>
@@ -2130,7 +2130,7 @@ body.uionly #uihint{display:block}
   ⇒ 本次等于把它推广到知识条目。<b>两处应写成同一条通则，不要各写各的。</b></div>
 
   <div class="note" data-edit>📌 <b>由此还统一了一件事：MCP 分级与知识库分级不是两套。</b><br>
-  「运行时取」需要一个<b>能查的东西</b> —— 那就是 <b>MCP</b>。而业主本轮正好说 MCP 也要分级（企业/团队级 · 租户级）。<br>
+  「运行时取」需要一个<b>能查的东西</b> —— 那就是 <b>MCP</b>。而 MCP 同样分级（企业/团队级 · 租户级）。<br>
   ⇒ <b>同一份知识的两种形态</b>：<b>固化的 → 知识库</b>（按四级归属）· <b>易变的 → MCP 查询面</b>（按同一四级归属）。
   两者共用归属轴、共用 RLS、共用晋升，<b>不必各建一套</b>。</div>
 
@@ -2145,7 +2145,7 @@ body.uionly #uihint{display:block}
   <div class="note bad">【RV-甲22|甲|阻断|采纳】体例挂账 #6：标题和正文围绕“上一轮拆错”展开，属修订史；当前模型保留为独立现行说明，错误过程移沿革。</div>　　⟹ **【采纳】** 已按甲域逐段清单改完：体例闸扩 `PAT_PROC` 指纹（抓不点名的过程叙述），扩面后 16 处全部改写为现行断言。🔴 **一轮报「痕迹 90→0」是错的** —— 一轮指纹只抓「谁在第几版说了什么」，抓不到「本轮已定」「本次为初版」这类，**闸的口径不等于事实的口径**。
   <div class="note bad">【RV-甲39|甲|阻断|采纳】RV-甲22 的“已改完”与本 panel 实取相反：标题仍写“上一轮拆错”，下方整段仍复盘执笔方的错误与收回过程。同类过程叙述还残留在 sidecar/unlock、企业公共库、知识分级对齐与导出函数等 panel。按已采纳的体例判据，只保留理解产品所必需的现行界面契约，执笔/评审过程移沿革。</div>　　⟹ **【采纳】** panel 标题改为「K0-sec 分层 · 设计层/运行态 · 业主裁定」；正文改写为现行判据（拆分刀口在每一类内部，不在类型之间）。同类残留一并清：SA-10 panel 的「执笔方上一版只钉了…」、附件屏的「接上执笔方上一轮标的…」。
   <div class="note bad">【RV-甲45|甲|阻断|采纳】RV-甲39 只修了 K0-sec 主段与两句旁支，未闭合其明确列出的同类残留。实取仍见：sidecar/unlock 屏复盘“执笔方此前实测/当时判定/从纲领搬入未对撞”；知识分级区域保留“执笔方建议/须收回/业主本轮/本次对齐改动最大”；示例数据屏保留“执笔方直接编了数据/合并未对撞”；文件尾仍有多段执笔过程自述。须按 panel 逐段判现行产品语义与修订过程，前者改写为无过程态契约，后者移沿革；不能以修两句宣称“同类残留一并清”。</div>　　⟹ **【采纳】** 🔴 **成立，我上一轮说「同类残留一并清」是假的** —— 只改了两句。实取复扫：正文含「执笔方」自述 **40 行**，本轮全部改写为无过程态契约（建议→待裁/判据、此前实测→实测、须收回→直接给现行结论、直接编了示例数据→改为「须与既有链路逐条对撞」等）。🔴 更该记的是**为什么它们能连过四轮**：体例闸的 `PAT_ROLE` **根本不含「执笔方」**，只认甲域/乙域/丙域/本席 —— 最常见的过程叙述标记，闸从来没在看。已加入，按【自述句式】判（执笔方＋建议/认为/倾向/此前/当时/自查…），并钉反测「关于执笔方的**规定句式**（不得/须）不算自述」防误伤 §0.1／§4.1。
-  <div class="note bad">【RV-甲48|甲|阻断|未决】RV-甲45 仍未完全闭合：虽清理“执笔方”自述，知识分级/对齐区域仍保留“业主本轮正好说”“业主本轮定”“本次对齐要改动”“这是本轮所有对齐里改动面最大”等轮次与改稿过程；这些正是甲45 明列的同类残留，只是换了主语后绕过新增 PAT_ROLE。须按语义移沿革或改写为无轮次的现行契约，并给“业主本轮／本次对齐／本轮所有对齐”句式正反测；不得把清掉一个主语外推为过程叙述全清。</div>
+  <div class="note bad">【RV-甲48|甲|阻断|采纳】RV-甲45 仍未完全闭合：虽清理“执笔方”自述，知识分级/对齐区域仍保留“业主本轮正好说”“业主本轮定”“本次对齐要改动”“这是本轮所有对齐里改动面最大”等轮次与改稿过程；这些正是甲45 明列的同类残留，只是换了主语后绕过新增 PAT_ROLE。须按语义移沿革或改写为无轮次的现行契约，并给“业主本轮／本次对齐／本轮所有对齐”句式正反测；不得把清掉一个主语外推为过程叙述全清。</div>　　⟹ **【采纳】** 🔴 成立。轮5 我清的是「执笔方…」自述，而**同族的另一批**仍在：「业主本轮／业主本条／业主问／本次对齐／本轮所有对齐」共 **12 处**，已全部改写（裁定内容留正文，「谁在哪一轮问的/定的」不留）。⚠️ 它们与「执笔方…」是同一件事的两面：**把某一次评审会话的语境写进现行契约**。已加入 ⑫ 的 `PAT_PROC`，并钉反测「『业主裁定』不带轮次语境、不得误伤」。
   <div class="note" data-edit>🔴 <b>拆分刀口在每一类内部，不在类型之间</b>：业务 / 服务 / 数据 / 网络等每一类
   <b>都同时有设计层与运行态</b> —— 设计层固化（低频、可公开全员），运行态实时查（高频、按内容定级）。<br>
   ⚠️ <b>按类型整块归属是错的</b>：那会把「服务架构设计」这种应固化的内容一并划入运行时取。</div>
@@ -2165,7 +2165,7 @@ body.uionly #uihint{display:block}
   </tbody></table>
 
   <div class="note bad" data-edit>🔴 <b>「服务架构 / 网络架构 / 数据库设计」不划入 sec。</b>把它们
-  <b>一律划进 K0-sec（RLS + 分级 + 不得全员）</b>。按业主本条，<b>业务架构 / 服务架构 / 数据架构的【设计层】可公开全员</b> ——
+  <b>一律划进 K0-sec（RLS + 分级 + 不得全员）</b>。<b>业务架构 / 服务架构 / 数据架构的【设计层】可公开全员</b> ——
   它们是团队都该知道的东西，划进 sec 属<b>过度收紧</b>。<br>
   <b>真正必须受限的，是网络架构那一类（主机 IP、拓扑、凭据相关）</b>，以及可能含敏感内容的日志。</div>
 
@@ -2206,7 +2206,7 @@ body.uionly #uihint{display:block}
 
   <div class="note" data-edit>📌 <b>这也给出了 MCP 分级的第二个用途。</b>运行态查询本身必须分级：
   <b>租户只能查自己的 pod 与日志，平台级 ops 才能查全平台</b>。
-  ⇒ 业主本轮定的 MCP 四级归属，正好承载这个 —— <b>MCP 分级不只是「工具归谁」，也是「能查到谁的运行态」</b>。</div>
+  ⇒ MCP 四级归属正好承载这个 —— <b>MCP 分级不只是「工具归谁」，也是「能查到谁的运行态」</b>。</div>
 
   <div class="note bad" data-edit>🔴 <b>两处规范缺口</b>：<br>
   ① <b>业务架构 · 数据架构 是新条目类型</b> —— §12.1 十二类里只有「业务流程」（＝具体流转，非领域模型）
@@ -2275,7 +2275,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>本次对齐要改动的 SpecDoc 条款 <span class="ref">汇总</span></h3>
+  <h3>须改动的 SpecDoc 条款 <span class="ref">汇总</span></h3>
   <table><thead><tr><th style="width:110px">条款</th><th>改什么</th><th style="width:88px">规模</th></tr></thead><tbody>
   <tr><td>§11 全节</td><td data-edit><b>重写</b>：两轴分离；组织归属轴四级；K2/K3 改述为晋升管道而非层</td><td class="cell-fail">大</td></tr>
   <tr><td>§12</td><td data-edit>十二类条目按四级重新归位；补企业公共库导入/链接一类</td><td class="cell-wait">中</td></tr>
@@ -2286,7 +2286,7 @@ body.uionly #uihint{display:block}
   <tr><td>§22</td><td data-edit>RLS 策略按四级重算 —— 现只有租户一层边界</td><td class="cell-fail">大</td></tr>
   <tr><td>§10</td><td data-edit>「权限域 × 记忆类型」二维中的<b>权限域改为四级</b></td><td>小</td></tr>
   </tbody></table>
-  <div class="note bad" data-edit>🔴 <b>这是本轮所有对齐里改动面最大的一次。</b>前十二处缺口是「补没写的」，
+  <div class="note bad" data-edit>🔴 <b>本组改动面最大。</b>前十二处缺口是「补没写的」，
   本项属<b>「改已写的」</b> —— §11 的层级结构是 §12 / §13 / §15 / §22 共同依赖的底座。<br>
   按 §28 第 4 条：<b>改规则须同步全部引用点，且依赖点未必与复述点用同一词汇</b>。
   回写时须先做<b>依赖点全文扫描</b>，不直接改。</div>

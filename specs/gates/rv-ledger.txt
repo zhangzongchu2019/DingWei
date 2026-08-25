@@ -80,13 +80,14 @@ RV-甲29	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 p
 RV-甲22	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：标题和正文围绕“上一轮拆错”展开，属修订史；当前模型保留为独立现行说明，错误过程移沿革。</div>
 RV-甲39	甲	阻断	未决	采纳	dingwei-prototype.html	RV-甲22 的“已改完”与本 panel 实取相反：标题仍写“上一轮拆错”，下方整段仍复盘执笔方的错误与收回过程。同类
 RV-甲45	甲	阻断	未决	采纳	dingwei-prototype.html	RV-甲39 只修了 K0-sec 主段与两句旁支，未闭合其明确列出的同类残留。实取仍见：sidecar/unlock
+RV-甲48	甲	阻断	未决	采纳	dingwei-prototype.html	RV-甲45 仍未完全闭合：虽清理“执笔方”自述，知识分级/对齐区域仍保留“业主本轮正好说”“业主本轮定”“本次对齐要改
 RV-丙09	丙	非阻断	采纳	采纳	dingwei-prototype.html	屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层
 RV-甲13	甲	阻断	采纳	采纳	dingwei-prototype.html	本屏整体仍是已被 C.3a 推翻的旧存储合同：标题下明确写“不做 RLS、不做每租户独立库”，五项/负测/残余面也只覆盖
 RV-甲40	甲	阻断	未决	采纳	dingwei-prototype.html	原型正文已提交 Git 合并冲突标记（<<<<<<< / ======= / >>>>>>>），导出函数的 JavaSc
 RV-丙13	丙	非阻断	未决	采纳	dingwei-prototype.html	〔体例分离二轮·门方先标〕本件仍存过程叙述：与 Agent 交互屏「本阶段实战教训：…九次消息错序」；spec 准入检查
+RV-甲47	甲	阻断	未决	采纳	path-anchor-gate.sh	本反测源码已被 RV 处置文本直接拼到 shell 命令行：第 91 行在重定向目标后跟着“⟹【采纳】…”及多个反引号，
 RV-甲14	甲	阻断	采纳	采纳	prose-style-gate.sh	`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直
 RV-甲32	甲	阻断	未决	采纳	prose-style-gate.sh	终审确认该缺口未修且未被 29 条统计：上条脚本内 RV 仍为“未决”，但 `--rv/--final` 的 DOCS
 RV-甲42	甲	阻断	未决	采纳	prose-style-gate.sh	RV“评审状态／执笔处置”仍可互相冲突而闸不拒：SpecDoc RV-甲01 的第 4 列为“采纳”，处置文本却又内嵌“
 RV-甲46	甲	阻断	未决	采纳	prose-style-gate.sh	真实 `--rv` 扫描出现可复跑的性能/终止缺陷：在本冻结锚执行 `timeout 60 bash scripts/p
-RV-甲99	甲	阻断	未决	采纳	prose-style-gate.sh	一\n【RV-甲99|甲|阻断|采纳】二\n' >> "$T/d/a.md"; rv
 RV-甲41	甲	阻断	未决	采纳	collect.sh	本证据项的标签仍声称“C.3 裁定不做 RLS”，已被现行 C.3a“PG＋RLS（人层）采纳”推翻；而命令只搜 row

@@ -75,7 +75,7 @@ if __name__ == '__main__':
         open(HIST, 'w', encoding='utf-8').write('沿革\n')
         open(FILES[0], 'w', encoding='utf-8').write(
             '这里写着本轮已定的口径。\n'
-            '【RV-甲01|甲|阻断|采纳】本段「本轮已定的口径」是过程叙述　　⟹ **【采纳】** 已删。\n')
+            '【RV-甲01|甲|阻断|采纳】本段「本轮已定的口径」是过程叙述　　⟹ **【采纳】** 已删。\n')  # rv-fixture
         n = len(audit())
         os.chdir(cwd)
         print('  ✓ 反测：称已删而正文仍在 → 命中' if n == 1 else f'  ✗ 反测未过：应命中 1 处，实得 {n}')

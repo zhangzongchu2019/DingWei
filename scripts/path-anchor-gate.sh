@@ -67,43 +67,78 @@ selftest() {
   T=$(mktemp -d) || return 2
   n=0; fail=0
   ok(){ n=$((n+1)); echo "  ✓ $1"; }; bad(){ echo "  ✗ 反测未过：$1"; fail=1; }
+  # 🔴 甲域 sol R2 轮6（RV-甲47）：本反测曾在**夹具构造命令连续失败**的情况下
+  #   仍打印「8 项全过」并 rc=0 —— 处置文本被拼进 printf 行，反引号触发命令替换，
+  #   实跑连出 Permission denied / No such file / command not found，而通过计数毫无感知。
+  #   ⚠️ **夹具没造出来，后面测的就不是它该测的东西** —— 通过计数只统计了断言，
+  #     没统计断言所依赖的前置动作。
+  #   ⇒ mkfx：夹具构造必须自己判成败；任何非预期 stderr 也算失败。
+  FXERR="$T/fx.err"; : > "$FXERR"
+  mkfx(){ # 用法：mkfx <目标文件> <内容> [probe]
+    #   probe 模式只回退出码，不打印、不置 fail —— 用于「证明 mkfx 真会失败」那一条，
+    #   否则屏幕上会先出现一行 ✗ 再出现一行 ✓，读的人分不清哪个是真的。
+    #   ⚠️ **看不清的输出本身就是假通过的温床**（本闸就是这么混过去的）。
+    if ! printf '%s' "$2" > "$1" 2>>"$FXERR"; then
+      [ "${3:-}" = probe ] || { echo "  ✗ 反测未过：夹具构造失败（$1）"; fail=1; }
+      return 1
+    fi
+    if [ ! -s "$1" ]; then
+      [ "${3:-}" = probe ] || { echo "  ✗ 反测未过：夹具构造出空文件（$1）"; fail=1; }
+      return 1
+    fi
+    return 0
+  }
   cd "$T" || return 2
   mkdir -p docs specs/platform scripts internal/repo
   : > specs/platform/checklist.md; : > internal/repo/tenant.go
 
-  printf '见 `specs/platform/checklist.md`。\n' > docs/a.md
+  mkfx docs/a.md '见 `specs/platform/checklist.md`。\n' || return 1
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：存在的文件路径放行" || bad "存在的路径被拦"
 
-  printf '见 `specs/checklists/checklist.md`。\n' > docs/a.md
+  mkfx docs/a.md '见 `specs/checklists/checklist.md`。\n' || return 1
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "🔴 拦住：不存在的路径锚（正是甲域 RV-甲44）" || bad "空锚被放行"
 
-  printf '收编进 `internal/repo`。\n' > docs/a.md
+  mkfx docs/a.md '收编进 `internal/repo`。\n' || return 1
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：目录路径算解析得到（ls-files 只列文件）" || bad "目录被误判为空锚"
 
-  printf '见 `specs/gates/*.txt` 各基线。\n' > docs/a.md
+  mkfx docs/a.md '见 `specs/gates/*.txt` 各基线。\n' || return 1
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：含通配符的示例路径不判" || bad "通配示例被误判"
 
-  # 【RV-甲47|甲|阻断|未决】本反测源码已被 RV 处置文本直接拼到 shell 命令行：第 91 行在重定向目标后跟着“⟹【采纳】…”及多个反引号，实跑会尝试执行 specs/platform/checklist.md、scripts/path-anchor-gate.sh、path-ok:，连续打印 Permission denied / No such file / command not found，却最终仍报“8 项全过”并 rc=0。即反测夹具自身执行失败而通过计数未感知。须把 RV 标注与处置放在纯注释行、恢复原夹具写入命令，并让 selftest 捕获任何非预期 stderr/子命令失败；另加一条“夹具构造命令失败 ⇒ selftest FAIL”反测。
+  # 【RV-甲47|甲|阻断|采纳】本反测源码已被 RV 处置文本直接拼到 shell 命令行：第 91 行在重定向目标后跟着“⟹【采纳】…”及多个反引号，实跑会尝试执行 specs/platform/checklist.md、scripts/path-anchor-gate.sh、path-ok:，连续打印 Permission denied / No such file / command not found，却最终仍报“8 项全过”并 rc=0。即反测夹具自身执行失败而通过计数未感知。须把 RV 标注与处置放在纯注释行、恢复原夹具写入命令，并让 selftest 捕获任何非预期 stderr/子命令失败；另加一条“夹具构造命令失败 ⇒ selftest FAIL”反测。　　⟹ **【采纳】** 🔴 **成立，而且是最坏的一类：闸自己的反测在报假通过。** 真因：我的批量落处置脚本把处置文本**拼进了 shell 命令行**，其中的反引号触发命令替换，实跑连出 Permission denied / No such file / command not found，而 selftest 仍打印 8/8 全过 —— **通过计数只统计了断言，没统计断言所依赖的前置动作**。已按甲域三条全做：① 标注与处置移到纯注释行、恢复原夹具写入命令（stderr 实测清零）；② 夹具构造走 `mkfx`，自己判成败，并收集非预期 stderr（不干净即 FAIL）；③ 新增反测「夹具构造失败 ⇒ selftest FAIL」，并做变异体验证（把夹具目标改成不存在的目录，反测如期失守）。🔴 **更根本的一层我另立了判据**：根因不在某一次手滑，而在于【RV 标注可以合法出现在代码件里却没有位置约束】——我的脚本已四次写进代码行（两次续行、一次 printf 夹具、这次拼进命令）。⑫ 现增判：`.sh`／`.py` 内的 RV 标注只允许独占注释行，带正反两向反测。
   # 🔴 评审方在标注里【引述】错路径，不得被判
-  printf '【RV-甲44|甲|阻断|采纳】owner 锚写成 `specs/checklists/checklist.md`，仓内不存在\n' > docs/a.md　　⟹ **【采纳】** 🔴 成立：`specs/checklists/checklist.md` 是我**凭印象写的路径**，仓内不存在（真实路径 `specs/platform/checklist.md`），于是人工判据的落点指向空文件而 ①–⑲ 全绿。已改真实路径，并按甲域要求立闸 ⑳ `scripts/path-anchor-gate.sh`：正文反引号包起的仓内路径须解析得到，8 项反测（含「目录算解析得到」「通配示例不判」「标注内引述的错路径不判」三向不误伤）。⚠️ 全文复扫另发现 A§ 一行内容**本身就是断言该路径不存在**（实测取证表），按仓内惯例给行内 `path-ok:` 例外并强制带理由。
+  # 【RV-甲44|甲|阻断|采纳】owner 锚写成 specs/checklists/checklist.md，仓内不存在（处置见 SpecDoc 内同 ID 标注；此处只留注释，不得拼进命令行）
+  mkfx docs/a.md '【RV-甲44|甲|阻断|采纳】owner 锚写成 `specs/checklists/checklist.md`，仓内不存在\n' || return 1   # rv-fixture
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：RV 标注段内引述的错路径不判（否则等于判指出问题的那句话）" || bad "标注内引述被误判"
 
-  printf '| 🔴 `internal/view` 不存在 | 实测 | path-ok: 本行断言该路径不存在，是取证结果 |\n' > docs/a.md
+  mkfx docs/a.md '| 🔴 `internal/view` 不存在 | 实测 | path-ok: 本行断言该路径不存在，是取证结果 |\n' || return 1
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：path-ok 例外行（内容本身即「该路径不存在」）" || bad "带理由的例外被拦"
 
-  printf '| 🔴 `internal/view` 不存在 | 实测 | path-ok: |\n' > docs/a.md
+  mkfx docs/a.md '| 🔴 `internal/view` 不存在 | 实测 | path-ok: |\n' || return 1
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "拦住：path-ok 例外未写理由（例外必须可被审）" || bad "空理由的例外被放行"
 
-  printf '见 `https://example.com/x.md` 与 `go build ./...`。\n' > docs/a.md
+  mkfx docs/a.md '见 `https://example.com/x.md` 与 `go build ./...`。\n' || return 1
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：URL 与命令不算仓内路径" || bad "非仓内路径被误判"
+
+  # 🔴 甲域 RV-甲47 要求的那条：夹具构造失败必须让 selftest FAIL，而不是照样报全过
+  if mkfx "$T/nodir/x.md" 'x' probe 2>/dev/null; then
+    bad "夹具构造失败未被感知（写入不存在的目录竟报成功）"
+  else
+    ok "🔴 夹具构造失败 ⇒ selftest FAIL（甲域 RV-甲47：曾在连续 shell error 下仍报 8/8）"
+  fi
+  : > "$FXERR"   # probe 是预期失败，其 stderr 不算环境不干净
+  if [ -s "$FXERR" ]; then
+    echo "  ✗ 反测未过：夹具构造期间出现非预期 stderr —— 反测环境本身不干净"
+    head -5 "$FXERR" | sed 's/^/      /'
+    fail=1
+  fi
 
   cd / ; rm -rf "$T"
   [ $fail -eq 0 ] && echo "--- 反测 $n 项全过（闸有牙）" || echo "--- 反测未过（闸没牙）"
