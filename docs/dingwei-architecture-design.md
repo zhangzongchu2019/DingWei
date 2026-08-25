@@ -1,6 +1,6 @@
-# DingWei 平台架构设计 v0.17 —— 业务 / 技术 / 部署 / 数据库
+# DingWei 平台架构设计 v0.18 —— 业务 / 技术 / 部署 / 数据库
 
-**版本**: v0.17
+**版本**: v0.18
 **依据**: SpecDoc **v3.14**（基线）—— 已三域 PASS + 安全域快核；**§22.2c 按 v3.23 同源口径同步**（本件 v0.17：机器旁证指向唯一执行处 repo-boundary-gate）
 **参考**: 原型 —— **三域已 PASS 收口**（v1.13）。⚠️ 本件仍不以其为依据：界面契约变更走原型评审，不经本件
 **代码实测锚**: `github.com/zhangzongchu2019/dingwei` @ `design/addendum-decisions`
@@ -247,6 +247,7 @@
 |---|---|---|
 | `m8` · `secretbox` | **SP1** | 服务注册与前缀路由；静态密文 |
 | `store` · `datad`（pgstore 部分） | **SP7a** | 存储基座本体 |
+| `repo` | **SP7a** | 受控仓储 API 本体（`TenantCtx` · 裸句柄不出包）——SP7a 收编的落点，2026-08-25 新增 |
 | `admin`（治理面）· `portal` | **SP8** / **SP6** | 待决队列与批次签署 / 查阅入口 |
 | `mcs`（board · demo）· `scheduler` · `worker` · `coordination` | **SP2** | 编排 · 调度 · 执行 · 变更联动 |
 | `datad`（kb 部分）· `redact` | **SP3** | 知识条目；入库前脱敏属知识面前置 |
@@ -268,7 +269,7 @@
 ⚠️ 尤其 `jcs` —— 它决定 digest 怎么算，**改它等于改全部已封存帖子的可验证性**，
 应在 SP0 开工时即列入 immutable 名单评估（§16.5）。
 
-**反查自证**：27 个 `internal` 包全部有归属；`cmd/` 下 6 个二进制的归属见 A§5。
+**反查自证**：28 个 `internal` 包全部有归属（与实际目录集合双向核过：正查每包在表、反查表无多列）；`cmd/` 下 6 个二进制的归属见 A§5。
 
 ### A§6.2 测量命令与输出摘要（v0.2 补，丙域 kimi：评审方无仓访问，无法独立复算）
 
@@ -282,7 +283,7 @@
 | `workpulse` 装 19 包 | `grep -rhoE "<module>/internal/[a-z0-9]+" cmd/workpulse --include=*.go \| grep -v _test \| sed 's\|.*/\|\|' \| sort -u` | 19 行：admin bus clock config coordination datad evidence fcs feishu llm m8 model portal reminder schedule scheduler secretbox store worker |
 | 🔴 **`internal/view` 不存在** | `ls -d internal/view` | `No such file or directory` |
 | view 面的真实形态 | `grep -rn "internal/view" --include=*.go cmd internal \| grep -v _test` | `cmd/workpulse/main.go` 8 条路由注册（`/internal/view/*` 与 `/internal/view-v2/*`）＋ `internal/m8/terminal.go` 一处注释。**全部是 HTTP 路径，无 import** |
-| `internal` 包总数 27 | `ls -d internal/*/ \| wc -l` | `27` |
+| `internal` 包总数 28 | `ls -d internal/*/ \| wc -l` | `28`（含 `repo`，SP7a 落点） |
 | 四处存储 36/11/5/9 | `grep -rhoP "CREATE TABLE (IF NOT EXISTS )?\K\w+" <各路径> \| sort -u \| wc -l` | store/migrations=36 · board/schema.sql=11 · fanout=5 · datad=9 |
 | 61 建表点 / 60 表名 | 同上，全仓去重 vs 分处相加 | 相加 61、去重 60，差值＝`task` 跨存储重名（A§10） |
 | 仓储包外建库调用与句柄逃逸 | `scripts/repo-boundary-gate.sh` | **现行值以闸输出为准**——不写死实数（随 SP7a 收编逐日下降，写死即过期。2026-08-24 时点曾测 `sql.Open` 8 处，仅作历史参照） |

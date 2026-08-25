@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.18 · 依据 SpecDoc v3.14（§22.2c 同步 v3.23）</title>
+<title>DingWei 平台原型 v1.19 · 依据 SpecDoc v3.14（§22.2c 同步 v3.23）</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -129,7 +129,7 @@ body.uionly #uihint{display:block}
 
 <div id="top">
   <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v0.1</span></h1>
-  <span class="anchor">原型 <b>v1.18</b> · 基线 SpecDoc <b>v3.14</b>（§22.2c 同步 <b>v3.23</b>）<span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <span class="anchor">原型 <b>v1.19</b> · 基线 SpecDoc <b>v3.14</b>（§22.2c 同步 <b>v3.23</b>）<span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -2488,9 +2488,9 @@ body.uionly #uihint{display:block}
   那种实现虽然对外拒了，但<b>查询已经落到库上</b>，跨租户读实际发生过。</div></div>
   <div class="note warn" data-edit>⚠️ <b>这些计数器是评审的旁证，不是替代</b>：
   它们查得出「<b>有没有新开口子</b>」，查不出「<b>这个查询的租户语义对不对</b>」—— 后者是人的活（第 IV 类）。</div>
-  <div class="note bad" data-edit>🔴 <b>本屏全部标「未建 / 待建」，是有意的。</b>
-  C.3 只裁了<b>形态</b>，SP7a 的<b>设计尚未过架构评审</b> —— 形态定了与设计过审是两回事。
-  按 §0.3 的三分法，本屏内容目前全属 <b>🎯 目标</b>，<b>不得对外陈述为「系统已具备」</b>（E.4 #58）。</div>
+  <div class="note bad" data-edit>🔴 <b>本屏是目标合同：各项以逐行状态为准。</b>
+  部分机制<b>已建</b>（仓储包 · 边界闸 · conformance suite 在建）但<b>目标未达标</b>（建库调用与句柄逃逸未为 0）——
+  <b>不得把「已建」升级成「已实现隔离」</b>，也不得把「未达标」降读为「未建」；对外陈述以闸输出与逐行状态为准（E.4 #58）。</div>
 </div>
 </section>
 
