@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `92936db893389ef49a957ecc847c8882de9a5a3c` · 分支 `design/addendum-decisions`
+生成自 commit `9b4ea3f28f5999cd65a2f2ac767288842a5f7024` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.23** | `92936db893389ef49a957ecc847c8882de9a5a3c<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3252 / 225807 | `061b922e8928ea17d4998eded9d794a1edf9e8844b1462f54fd33f3c4b66d107` |
-| `dingwei-prototype.html` | **v1.23** | `92936db893389ef49a957ecc847c8882de9a5a3c<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2858 / 258888 | `9369aa7270940f612af7b56613991ad37bf7f61a07c0e2eef8b1f77ab063854e` |
-| `dingwei-architecture-design.md` | **v0.22** | `92936db893389ef49a957ecc847c8882de9a5a3c<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 903 / 64180 | `c65218d79c15c78b3ccd1a963bdd41bac7b98fb522471784c3b3581f57172766` |
+| `dingwei-platform-specdoc.md` | **v3.23** | `9b4ea3f28f5999cd65a2f2ac767288842a5f7024<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3253 / 226236 | `3ef532a8e342d6a700a9abc2eb43339331dc417d92a0d1e3e0b5797b0dfb5fe7` |
+| `dingwei-prototype.html` | **v1.24** | `9b4ea3f28f5999cd65a2f2ac767288842a5f7024<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2858 / 259079 | `64eac68d9914061dd76699fd605a3e78e1e3e8fa9d160222dddd4a08c0104861` |
+| `dingwei-architecture-design.md` | **v0.22** | `9b4ea3f28f5999cd65a2f2ac767288842a5f7024<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 903 / 64224 | `22bd05fbbd343609e241f88cce1ae826395d113ced5358e73e9e2a5540cfa2ba` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+9b4ea3f Merge remote-tracking branch 'origin/review/r2-sol-structure-round1' into design/addendum-decisions
 92936db Merge remote-tracking branch 'origin/review/security-r2-r1' into design/addendum-decisions
 e714a11 chore: DELIVERY-STATUS 随丙域标注合并重生成（机器生成，勿手改）
 e083f81 Merge remote-tracking branch 'origin/design/addendum-decisions' into design/addendum-decisions
 f93fa01 gate+docs: 评审前预修 —— 快照包三缺 · analyze 覆盖面 · checklist 落账闸(前锚 e0ce00d)
 9339415 review: 丙域 R2 轮1 评审标注 9 条（8 未决 + 1 采纳）——跨制品一致域（kimi30kqtuxerh）
+1a3c735 review: 标注 R2 甲域第一轮结构意见
 7c0d5df review: R2 乙域首轮标注
-e0ce00d docs: 原型 R2 —— 四套互斥身份收敛 · 导出戳去假基准 · 痕迹 59→0(前锚 591c585)
-591c585 docs: SpecDoc 落九条概念裁定 + 修 kimi F-5；体例闸修与 RV 互不打架(前锚 6f4a4e0)
 ```

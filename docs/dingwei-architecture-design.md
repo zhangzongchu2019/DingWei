@@ -785,7 +785,7 @@ rule_ids = [R-SEC-01, R-DM-02]
 | `skill.install` | 向某归属域**增**过程性记忆 | 该域 ops | 同 digest 重复安装＝无操作 | 落账 + digest |
 | `skill.uninstall` | 🔴 **看似只减，实则可扩权**——卸掉鉴权类 skill 即放宽 | **同级审批**，不得因「只是卸载」降档 | tombstone 幂等 | 落账 + **卸前 effect 判定记录** |
 | `mcp.invoke` | 依 MCP 自身 effect 而定，**不得笼统授权** | 逐 MCP 判 | 依 MCP | 逐次落账 |
-| `cross_tenant_person_rollup` | 跨租户读计数与状态 | §22.1c guarded | 幂等 | 逐次落账（SA-10 六条） |
+| `cross_person_rollup` | **企业内**跨人读计数与状态（🔴 跨企业无此路径，§15.5） | §22.1c guarded | 幂等 | 逐次落账（SA-10 六条） |
 | `platform_notice` | 跨租户广播 | 平台域基线（§24） | 去重键幂等 | 批次落账 |
 
 **反例（本轮设计，非运行样本）**

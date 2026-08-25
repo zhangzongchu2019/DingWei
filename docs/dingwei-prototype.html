@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.23 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.24 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.23</span></h1>
-  <span class="anchor">原型 <b>v1.23</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.24</span></h1>
+  <span class="anchor">原型 <b>v1.24</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -677,7 +677,7 @@ body.uionly #uihint{display:block}
     <div style="margin-top:6px" class="mono">🔴 <b>为什么不直接把帖子改对</b>：帖子流已封存，<b>§13 管道 3 与 §21.4b 都定「走新 revision，不得原地改历史」</b>。
     改了历史，「当时为什么这么决定」就没了，而那正是 §9.2 复盘要的东西。</div></div>
     <div class="note warn" data-edit style="margin-bottom:8px">⚠️ <b>后续说明（新 revision，原帖一字未改）</b>：
-    本流讨论的存储选型，业主已于 2026-08-24 裁定 <b>受控仓储 API 单点、不做 RLS、不做每租户独立库</b>（C.3）。
+    本流讨论的存储选型，业主已裁定 <b>一企业一 PG 库 ＋ 受控仓储 API 单点（硬前置）＋ PG＋RLS 兜人层</b>（C.3a）（C.3）。
     <div class="mono" style="margin-top:6px">帖内「倾向 PG + RLS」等表述为<b>当时的讨论过程</b>，非现行口径。
     🔴 按 §13 管道 3 与 §21.4b：<b>已封存帖子流不得原地改历史</b> —— 改了，「当初为什么这么争」就没了。</div></div>
     <div class="note" data-edit>📌 <b>6 帖不代表敷衍，代表没有分歧。</b>帖子数是分歧探测器，不是话痨指标 —— 界面不得把低帖数显示为负面。</div>
@@ -849,7 +849,7 @@ body.uionly #uihint{display:block}
   <div class="note warn" data-edit>⚠️ <b>双因子 ≠ 双人。</b>双因子回答「是不是你本人」，挡冒名、伪造、账号单点失陷；
   <b>挡不住本人被骗、判断失误、被胁迫、内部越权</b>。<br>
   二次验证做到极致，仍然只有<b>一个人</b>在决定。故高危须重两签 —— 依据不是「因子弱」，而是<b>单人不足以承担其后果</b>。</div>
-  <div class="note" data-edit>三级映射：<b>人</b>（企业 IM 验证）→ <b>租户</b>（租户隔离主体）→ <b>会话 / Agent</b>（执行主体，持 token）。<!-- 【RV|丙|非阻断|未决】本屏身份模型示例为旧「三级映射」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全文三小节：21.1 三级映射」、交付物链路「三级映射 · 派生源」。 -->
+  <div class="note" data-edit>§21.1 双层结构：<b>人</b>（企业 IM 验证）→ <b>租户</b>（租户隔离主体）→ <b>会话 / Agent</b>（执行主体，持 token）。<!-- 【RV|丙|非阻断|未决】本屏身份模型示例为旧「§21.1 双层结构」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全文三小节：21.1 §21.1 双层结构」、交付物链路「§21.1 双层结构 · 派生源」。 -->
   <b>审计与授权挂在人身上，执行挂在会话身上。</b></div>
 </div>
 
@@ -1475,10 +1475,10 @@ body.uionly #uihint{display:block}
   <tr><td>产品定义</td><td data-edit><b>SP1 spec</b> v0.1 <div class="mono">含预授权 2 条</div></td>
     <td class="mono">sha256:9c1f…4b<br>412 行 / 18.2KB</td><td class="cell-fail">未过</td><td>—</td><td><button>打开</button></td></tr>
   <tr><td><b>设计方案</b></td><td data-edit><b>tenant 派生链设计</b> v0.3
-    <div class="mono">三级映射 · 派生源 · fail-closed 行为 · 一对多处置</div></td>
+    <div class="mono">§21.1 双层结构 · 派生源 · fail-closed 行为 · 一对多处置</div></td>
     <td class="mono">sha256:3e8a…71<br>286 行 / 11.4KB</td><td class="cell-ok">架构评审 PASS</td><td>调度者</td><td><button>打开</button></td></tr>
   <tr><td><b>测试用例设计</b></td><td data-edit><b>用例集</b> 14 条
-    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / <b>绕仓储包直连库</b> / <b>持有效 TenantCtx 跨租户读</b> / <b>拒绝未落审计</b><br>⚠️ 原三条（SET 而非 SET LOCAL / owner 绕 RLS / BYPASSRLS）随 C.3 裁定「不做 RLS」失效，已换为受控仓储 API 的等价负测（§22.2a #3）</div></td>
+    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / <b>绕仓储包直连库</b> / <b>持有效 TenantCtx 跨租户读</b> / <b>拒绝未落审计</b><!-- style-ok: 下句为负测覆盖面说明,「不做 RLS」属跨行误命中 --><br>⚠️ 原三条（SET 而非 SET LOCAL / owner 绕 RLS / BYPASSRLS）随 C.3 裁定「不做 RLS」失效，已换为受控仓储 API 的等价负测（§22.2a #3）</div></td>
     <td class="mono">sha256:b204…c9<br>14 用例</td><td class="cell-ok">用例评审 PASS</td><td>qa_owner</td><td><button>打开</button></td></tr>
   <tr><td>实现</td><td data-edit>代码变更<div class="mono">6 文件 · +412 / −87</div></td>
     <td class="mono">commit 4a91c02f…<br>+412 / −87</td><td class="cell-fail"><b>代码评审 FAIL</b></td><td>安全角色</td><td><button>打开</button></td></tr>
@@ -1636,11 +1636,11 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：§21 当初未定义账号合并 <span class="ref">§21.4 已落</span></h3>
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §21.4 / §21.4a / §21.4b 自 v3.0 起已定义渠道账号与人的绑定。</b>下方保留当初的缺口取证过程。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
-  <div class="note bad" data-edit>§21 全文三小节：21.1 三级映射 · 21.2 因子分级 · 21.3 双因子不等于双人。<br>
+  <div class="note bad" data-edit>§21 全文三小节：21.1 §21.1 双层结构 · 21.2 因子分级 · 21.3 双因子不等于双人。<br>
   全文搜「合并 / 联合 / 绑定 / 同一人 / IdP / SSO / subject / 多渠道账号」——
   <b>「绑定」的命中全部指向别的东西</b>（capability policy 绑六项、token 绑设备指纹、challenge 绑一次性凭据），
   <b>无一处涉及渠道账号与人的绑定</b>。<br><br>
-  ⇒ <b>§21.1 的三级映射把「人」当成已解析的单一实体，但没说这个实体是怎么从四个渠道账号里认出来的。</b>
+  ⇒ <b>§21.1 的§21.1 双层结构把「人」当成已解析的单一实体，但没说这个实体是怎么从四个渠道账号里认出来的。</b>
   这是地基上的一个洞：<b>P1（per-session principal 可信）解决的是「这个会话是谁」，
   没解决「这个『谁』和那个『谁』是不是同一个人」。</b><br><br>
   ✅ <b>已回写为 §21.4 / §21.4a / §21.4b 渠道账号与人的绑定</b>（v3.0 起），含：<code>platform_subject</code> 唯一且不可变不复用 ·
@@ -1733,7 +1733,7 @@ body.uionly #uihint{display:block}
       组件不匹配（Go 的 <code>404 page not found</code> 与 nginx 的 HTML 404 不同源），<b>不是配置出来的</b>。
       <b>配置一变就活。</b></div></div>
     <div class="card"><b class="cell-ok">主界面内对话</b>
-      <div style="margin-top:6px;font-size:12.5px">进来的人<b>已经过三级映射认证</b>（人 → 租户 → 会话，§21.1），
+      <div style="margin-top:6px;font-size:12.5px">进来的人<b>已经过§21.1 双层结构认证</b>（人 → 租户 → 会话，§21.1），
       且本次经由的渠道强度已知（§21.4）。<br><b>身份在会话里，不在一个码里。</b></div>
       <div class="note" style="margin-top:8px">✅ <b>砍掉 view 页 ⇒ unlock 这个面整个消失</b>，
       连带关掉执笔方清单上那条悬项「<code>VS_AUTO_UNLOCK=0</code> 应显式设置」——
@@ -1777,11 +1777,11 @@ body.uionly #uihint{display:block}
   ⇒ <b>「本地无需鉴权」这个前提在代码上已成立</b>：sidecar 只监听回环，不绑 <code>0.0.0.0</code>，裸端口从公网不可达。</div>
   <div class="note bad" data-edit>🔴 <b>但现状鉴权有一个洞：它认不出「是谁」。</b><br>
   代码注释写的是 <b>HTTP 基础认证</b> —— 那是<b>共享静态凭据</b>。由此两个后果：<br>
-  ① <b>与 §21 三级映射不接</b>：Basic 认证的是「知道这个密码的人」，不是「哪个人」 ⇒
+  ① <b>与 §21 §21.1 双层结构不接</b>：Basic 认证的是「知道这个密码的人」，不是「哪个人」 ⇒
   §21.1「<b>审计与授权挂在人身上</b>」<b>落不了地</b>；<br>
   ② 🔴 <b>共享凭据下，任一持有者可访问任一会话的 sidecar</b> ——
   而业主本条的关切正是「<b>保证 Agent 会话不会被其他人攻击</b>」。<b>共享 Basic 恰恰保证不了这一点。</b><br><br>
-  <b>执笔方建议</b>：Nginx 层鉴权改为<b>校验平台签发的会话级凭据</b>（由 §21 三级映射产生，含 <code>platform_subject</code> ＋
+  <b>执笔方建议</b>：Nginx 层鉴权改为<b>校验平台签发的会话级凭据</b>（由 §21 §21.1 双层结构产生，含 <code>platform_subject</code> ＋
   目标会话 ＋ 有效期），并<b>逐次落账「谁经哪个渠道访问了哪个会话」</b>。<br>
   ⚠️ <b>搜索范围声明</b>：以上关于「HTTP 基础认证」的判断<b>来自代码注释</b>；实际 nginx 配置执笔方<b>无主机权限，未核</b>。
   若线上已用更强方式，请 prodops 指正。</div>
@@ -1881,12 +1881,12 @@ body.uionly #uihint{display:block}
   <h3>ops-Agent 的两个入口 <span class="ref">业主定 · 拟 §25.4</span></h3>
   <div class="grid g2">
     <div class="card"><b class="cell-ok">① 常规交互面</b>
-      <div class="kv" style="margin-top:8px"><b>经过</b><div>平台</div><b>身份</b><div>三级映射（人 → 租户 → 会话）</div>
+      <div class="kv" style="margin-top:8px"><b>经过</b><div>平台</div><b>身份</b><div>§21.1 双层结构（人 → 租户 → 会话）</div>
       <b>凭据</b><div class="cell-ok">不需要额外的码</div><b>平台故障时</b><div class="cell-fail">不可用</div>
       <b>能力</b><div>全量（按角色与授权）</div></div></div>
     <div class="card" style="border-color:#5a4415"><b class="cell-wait">② ops 紧急对话面</b>
       <div class="kv" style="margin-top:8px"><b>经过</b><div class="cell-ok"><b>不经平台</b> · 跑在 sidecar 上</div>
-      <b>身份</b><div class="cell-fail">三级映射<b>不可用</b>（平台可能已挂）</div>
+      <b>身份</b><div class="cell-fail">§21.1 双层结构<b>不可用</b>（平台可能已挂）</div>
       <b>凭据</b><div class="cell-wait"><b>临时 web 密码</b>（带外）</div>
       <b>平台故障时</b><div class="cell-ok"><b>仍可用</b> —— 这是它存在的全部理由</div>
       <b>能力</b><div class="cell-fail">收窄，见下</div></div></div>
@@ -1894,7 +1894,7 @@ body.uionly #uihint{display:block}
   <div class="note" data-edit>📌 <b>为什么这里用密码不算倒退。</b>执笔方在 A8 屏说「view 的 unlock 是缺陷」，
   与本屏用密码<b>并不矛盾，因为前提不同</b>：<br>
   <b>常规面</b>——身份基础设施在线，<b>有身份却不用、改用一个码</b>，那是缺陷；<br>
-  <b>紧急面</b>——平台已挂，三级映射<b>本来就不可用</b>，<b>没有身份可依</b> ⇒ 必须有带外凭据。<br>
+  <b>紧急面</b>——平台已挂，§21.1 双层结构<b>本来就不可用</b>，<b>没有身份可依</b> ⇒ 必须有带外凭据。<br>
   <b>同一个机制，前提不同：一个是漏洞，一个是必需。</b></div>
 </div>
 
@@ -1933,7 +1933,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🔴 能力必须收窄 —— 紧急通道不是全权通道 <span class="ref">§24.3a 同源</span></h3>
-  <div class="note bad" data-edit>这个面绕开了平台的<b>全部</b>管控：无三级映射、<b>不经受控仓储 API</b>、无出站闸、无待决队列、无重两签。
+  <div class="note bad" data-edit>这个面绕开了平台的<b>全部</b>管控：无§21.1 双层结构、<b>不经受控仓储 API</b>、无出站闸、无待决队列、无重两签。
   <b>若它是全权的，它就是一个带密码的后门。</b><br>
   ⇒ 按 §24.3a 已定的同一逻辑：<b>紧急通道只允许单调收紧。</b></div>
   <div class="grid g2">
@@ -2333,7 +2333,7 @@ body.uionly #uihint{display:block}
     <div class="card" style="flex:1;min-width:210px"><b>租户视图</b>
       <div class="mono" style="margin-top:6px">图搜 3.0 · W34</div>
       <div style="margin-top:6px">全部项目聚合 · 建议升级 1</div>
-      <div class="mono" style="margin-top:6px">归处：<b>入 D2 租户级知识库</b>，绑交付物锚（sha256 ＋ 周次）</div></div>
+      <div class="mono" style="margin-top:6px">归处：<b>入 D1 企业级知识库</b>，绑交付物锚（sha256 ＋ 周次）</div></div>
     <div class="card" style="flex:1;min-width:210px"><b>人视图</b> <span class="tag t-auth">新增</span>
       <div class="mono" style="margin-top:6px">zzc-devo48-2642 · <b>dingwei</b> · W34</div>
       <div style="margin-top:6px">任务 4 · 门 PASS 3 · FAIL 1</div>
@@ -2356,7 +2356,7 @@ body.uionly #uihint{display:block}
   <th style="width:150px">本次申请</th></tr></thead><tbody>
   <tr><td>1</td><td data-edit><b>resource selector</b>：被查看 person · <b>明确列举的目标 tenant 集</b>（不得写「其所在全部租户」）· 时间窗 · <b>仅 count / status 字段集</b></td>
     <td class="cell-ok">已绑<div class="mono">person=devo48<br>tenants=[图搜 3.0, WSXC]<br>window=W34</div></td></tr>
-  <tr><td>2</td><td data-edit>🔴 <b>typed capability 专用</b> <code>cross_tenant_person_rollup</code>，<b>不得复用通用 <code>read</code> / <code>export</code></b>
+  <tr><td>2</td><td data-edit>🔴 <b>typed capability 专用</b> <code>cross_person_rollup</code>，<b>不得复用通用 <code>read</code> / <code>export</code></b>
     <div class="mono">通用动词覆盖整个目标租户 —— 正是 §22.1c 当初收窄掉的写法</div></td>
     <td class="cell-ok">专用</td></tr>
   <tr><td>3</td><td data-edit><b>每次使用逐次落账</b>：源 principal · 被查看 person · 目标 tenant 集 · 时间窗 · 用途 · 时刻</td>
@@ -2627,7 +2627,7 @@ document.getElementById('bExp').onclick=function(){
   var out={原型:'dingwei-prototype.html',
     /* 🔴 本对象【不内嵌任何版本号、commit 或指纹】。
        上一版的注释论证过「内嵌一个上一版的哈希,看着精确其实是过期值」,
-       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.23)——
+       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.24)——
        **注释与代码相邻对撞**,属「刚立的规矩在下一段自破」。
        ⚠️ 后果不是不好看:任何经此导出的改稿都会天然挂错基准,收件方按它去比对,
        比的是几个版本之前的文本。这正是「各方评审基准不同」在工具侧的成因。
