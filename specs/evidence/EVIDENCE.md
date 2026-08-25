@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T03:18:38Z
-分支头：`d0322c6663772f0098802a050a8b28cc08d053b5`
+生成时刻：2026-08-25T09:22:18Z
+分支头：`6d8ae86ab1b7bf748e53bab800307b5dbdbaa41b`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -33,8 +33,8 @@ $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
 
 ```
 $ scripts/arch-refcheck.sh
-  本件内引用 A§ : 56 次 / 27 目标 · 悬空 0
-  SpecDoc 引用 § : 163 次 / 67 目标 · 悬空 0
+  本件内引用 A§ : 70 次 / 27 目标 · 悬空 0
+  SpecDoc 引用 § : 173 次 / 68 目标 · 悬空 0
   heading 真实重复：本件 0 · SpecDoc 0
   --- 引用核验通过
 ```
@@ -61,11 +61,15 @@ $ specs/tools/analyze.sh
   ② 架构设计引用的 SpecDoc 节号是否都存在（跨制品悬空）
     ✓ 无悬空
   ③ 原型引用的 SpecDoc 节号是否都存在
-    原型引用 115 个节号；悬空 0 ✓
-  ④ 三件的版本自述是否与 DELIVERY-STATUS 一致
+    原型引用 116 个节号；悬空 0 ✓
+  ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
     SpecDoc: 件内 v3.23 · 状态文件 v3.23 ✓
-    架构设计: 件内 v0.20 · 状态文件 v0.20 ✓
-    原型: 件内 v1.19 · 状态文件 v1.19 ✓
+    架构设计: 件内 v0.22 · 状态文件 v0.22 ✓
+    原型: 件内 v1.24 · 状态文件 v1.24 ✓
+  ④b 正文是否出现【他件】的旧版本号
+    ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
+    ✓ dingwei-architecture-design.md: 正文无他件旧版本号
+    ✓ dingwei-prototype.html: 正文无他件旧版本号
   ⑤ 生效前置状态（§0.4）
     ✓ 三域 checklist 齐备（结构 / 安全 / 跨制品）—— 但【生效与否取决于门方执行结果，非文件存在】
   ---
@@ -102,11 +106,14 @@ $ scripts/repo-boundary-gate.sh
     仓储包允许清单（本次生效的全部条目）：
       - internal/repo
     判据一·仓储包外建库句柄：4 处（基线 4，终值 0）
-      internal/store/sqlite.go:51:	db, err := sql.Open("sqlite", dsn)
+      internal/store/sqlite.go:53:	db, err := sql.Open("sqlite", dsn)
       internal/mcs/board/board.go:62:	db, err := sql.Open("sqlite", path)
       internal/datad/assignment_pg_integration_test.go:58:	w.appDB, err = sql.Open("pgx", dsn)
       internal/datad/assignment_pg_integration_test.go:64:		w.setupDB, err = sql.Open("pgx", sup)
-    债·尚未租户化的调用点：59 处（基线 59，终值 0，随 SP7b 归零）
+    债·尚未租户化的调用点：55 处（基线 55，终值 0，随 SP7b 归零）
+      ↳ 按效果判（specs/tools/pending-debt），按领域各记各的棘轮：
+         · datad：25 处（基线 25，SP7b 收口时本领域须归零）
+         · fanout：30 处（基线 30，SP7b 收口时本领域须归零）
     债·显式 SystemCtx 调用点：12 处（基线 12；每处都是评审面，不许悄悄增长）
     判据二·裸库句柄逃出包外：1 处（基线 1，终值 0；允许清单对本条不豁免）
       internal/mcs/board/board.go:84:func-returns-handle DB
@@ -126,7 +133,7 @@ $ for p in internal/store/migrations internal/mcs/board/schema.sql internal/fano
 ### task 表跨存储重名（须在 SP7a 前定名，见 docs/task-table-collision-analysis.md）
 
 ```
-$ grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task' internal/mcs/board/schema.sql internal/datad/pgstore.go
+$ grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task\b' internal/mcs/board/schema.sql internal/datad/pgstore.go
   internal/mcs/board/schema.sql
   internal/datad/pgstore.go
 ```

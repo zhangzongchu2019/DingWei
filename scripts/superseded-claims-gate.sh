@@ -17,7 +17,18 @@ set -u
 
 LIST=${LIST:-specs/gates/superseded-claims.txt}
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
-SKIP='沿革|历史时点|style-ok:|【RV\||已被取代|已撤销|重裁|旧模型名|旧口径'
+SKIP='沿革|历史时点|style-ok:|STYLEOK_KEEP|已被取代|已撤销|重裁|旧模型名|旧口径'
+# 🔴 RV 标注常写成【行内注释】,与旧断言同在一行。
+#   首版按行跳过含「【RV|」的行 ⇒ **评审方标注「这里有旧断言」这个动作本身,
+#   把那处旧断言从闸的视野里抹掉了** —— 标得越对,闸越看不见。
+#   ⇒ 改为【先剥掉标注、再判剩余部分】。
+#   ⚠️ 剥离时【不得连 style-ok 一起剥掉】—— 它常写在同一个 HTML 注释里；
+#     剥了就把「已声明的正当例外」也抹了，等于修一个洞造另一个（首版即如此）。
+_strip_rv() {
+  sed 's/【RV|[^】]*】[^<]*//g' \
+    | sed 's/<!--\([^>]*style-ok:[^>]*\)-->/STYLEOK_KEEP\1/g' \
+    | sed 's/<!--[^>]*-->//g'
+}
 
 check() {
   [ -f "$LIST" ] || { echo "✗ 闸依赖缺失：$LIST 不存在 —— 闸坏了，不是免检"; return 2; }
@@ -30,7 +41,7 @@ check() {
     _hit=0
     while IFS="$(printf '\t')" read -r old cur why; do
       case "$old" in ''|'#'*) continue;; esac
-      _lines=$(grep -nF "$old" "$f" 2>/dev/null | grep -vE "$SKIP")
+      _lines=$(cat -n "$f" | _strip_rv | grep -F "$old" 2>/dev/null | grep -vE "$SKIP" | sed 's/^[[:space:]]*\([0-9]*\)[[:space:]]*/\1:/')
       [ -z "$_lines" ] && continue
       _c=$(printf '%s\n' "$_lines" | wc -l | tr -d ' ')
       [ "$_hit" -eq 0 ] && { echo "✗ $f：出现已撤销的断言"; _hit=1; _bad=1; }
@@ -74,6 +85,16 @@ selftest() {
 
   mk; printf '【RV|甲|阻断|未决】本节仍写旧说法，须改\n' >> "$T/a.md"; run
   [ $? -eq 0 ] && ok "不误伤：RV 标注里引述旧断言不算违规（两闸不打架）" || bad "RV 标注被当违规"
+
+  # 🔴 钉住首版的真缺口：标注写成【行内注释】与旧断言同行时，
+  #   按行跳过会让「标注这个动作」把旧断言从视野里抹掉 —— 标得越对，闸越看不见。
+  mk; printf '本节仍写旧说法 <!-- style-ok: 引述历史 -->\n' >> "$T/a.md"; run
+  [ $? -eq 0 ] && ok "不误伤：style-ok 写在 HTML 注释里也须生效（剥标注不得连它一起剥）" \
+    || bad "剥 RV 标注时把 style-ok 一起剥掉了"
+
+  mk; printf '本节采用旧说法处理。<!-- 【RV|丙|非阻断|未决】此处引用过期，须改 -->\n' >> "$T/a.md"; run
+  [ $? -eq 1 ] && ok "🔴 拦住：旧断言与 RV 行内注释同行时仍须被判（不得被标注遮蔽）" \
+    || bad "行内 RV 注释把同行的旧断言遮蔽了"
 
   : > "$L"; mk; run
   [ $? -eq 2 ] && ok "拦住：清单为空判闸坏（空清单不得当免检）" || bad "空清单被当免检"

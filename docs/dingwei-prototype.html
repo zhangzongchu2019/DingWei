@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.24 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.25 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.24</span></h1>
-  <span class="anchor">原型 <b>v1.24</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.25</span></h1>
+  <span class="anchor">原型 <b>v1.25</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -381,7 +381,7 @@ body.uionly #uihint{display:block}
     <input placeholder="检索知识库…" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--tx);font-family:inherit">
     <button>检索</button>
   </div>
-  <div class="note bad" data-edit>🔴 <b>先按租户与可见性过滤，后检索。</b>（过滤由<b>受控仓储 API</b> 单点执行，§22.2c；C.3 已裁不做 RLS<!-- 【RV|丙|非阻断|未决】「C.3 已裁不做 RLS」与 C.3a「PG＋RLS（人层）✅ 采纳」直接冲突，引用过期。 -->）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
+  <div class="note bad" data-edit>🔴 <b>先按租户与可见性过滤，后检索。</b>（过滤由<b>受控仓储 API</b> 单点执行，§22.2c；C.3a 已裁：一企业一 PG 库 ＋ PG＋RLS 兜人层<!-- 【RV|丙|非阻断|未决】「C.3 已裁不做 RLS」与 C.3a「PG＋RLS（人层）✅ 采纳」直接冲突，引用过期。 -->）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
   当前视角<b>共 7 条</b>可检索（＝本表实际渲染行数）。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。</div>
   <div class="note" data-edit>排序 = <code>0.40·log(使用量) + 0.35·relevance + 0.25·importance</code>；importance 由<b>归属域</b>给定（D0 1.0 / D1 0.75 / D2 0.5 / D3 0.3 —— 附录 A）；
   <b><code>suspect</code> 条目 ×0.5 降权</b> —— 锚失配必须参与排序，标了不参与排序等于没标。</div>
@@ -2378,7 +2378,7 @@ body.uionly #uihint{display:block}
 <!-- ============ b3 受控仓储 API / 租户隔离核验 ============ -->
 <section class="scr" id="b3">
 <h2 data-edit>受控仓储 API · 租户隔离核验</h2>
-<div class="sub" data-edit>C.3 业主裁：受控仓储 API 单点，不做 RLS，不做每租户独立库。<!-- 【RV|丙|非阻断|未决】屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层兜底 ✅）——「不做 RLS、不做每租户独立库」两项均不再成立；本屏核验项与「1 平台库＋N 企业库」模型的关系须重述。 -->配套见 §22.2c</div>
+<div class="sub" data-edit>C.3a 业主裁：一企业一 PG 库（企业间物理隔离）＋ 受控仓储 API 单点（硬前置）＋ PG＋RLS 兜人层。<!-- 【RV|丙|非阻断|未决】屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层兜底 ✅）——「不做 RLS、不做每租户独立库」两项均不再成立；本屏核验项与「1 平台库＋N 企业库」模型的关系须重述。 -->配套见 §22.2c</div>
 
 <div class="note bad">【RV|甲|阻断|未决】本屏整体仍是已被 C.3a 推翻的旧存储合同：标题下明确写“不做 RLS、不做每租户独立库”，五项/负测/残余面也只覆盖单库应用层方案；同页其他位置仍多次复述旧 C.3。须按“一企业一 PG 库＋人层 RLS＋平台库独立”重画选库、RLS、跨库迁移与负测入口，或把旧屏封存为历史且新增可达的现行 C.3a 屏；不得让旧屏继续作为 §22.2c 当前入口。</div>
 
@@ -2627,7 +2627,7 @@ document.getElementById('bExp').onclick=function(){
   var out={原型:'dingwei-prototype.html',
     /* 🔴 本对象【不内嵌任何版本号、commit 或指纹】。
        上一版的注释论证过「内嵌一个上一版的哈希,看着精确其实是过期值」,
-       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.24)——
+       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.25)——
        **注释与代码相邻对撞**,属「刚立的规矩在下一段自破」。
        ⚠️ 后果不是不好看:任何经此导出的改稿都会天然挂错基准,收件方按它去比对,
        比的是几个版本之前的文本。这正是「各方评审基准不同」在工具侧的成因。

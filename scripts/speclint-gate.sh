@@ -186,9 +186,17 @@ scripts/superseded-claims-gate.sh || exit 1
 scripts/superseded-claims-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/superseded-claims-gate.sh --selftest; echo "✗ 已撤销断言闸的反测未过"; exit 1; }
 echo "  ⑬ 已撤销断言闸的反测 ✓"
+# ⑭ 证据包时效(甲域 sol):证据必须产自被评审的那个锚
+if [ ! -x scripts/evidence-fresh-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/evidence-fresh-gate.sh 不可执行"; exit 1
+fi
+scripts/evidence-fresh-gate.sh || exit 1
+scripts/evidence-fresh-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/evidence-fresh-gate.sh --selftest; echo "✗ 证据包时效闸的反测未过"; exit 1; }
+echo "  ⑭ 证据包时效闸的反测 ✓"
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–⑬）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–⑭）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–⑬）"
+  echo "✓ 提交闸全过（①–⑭）"
 fi
