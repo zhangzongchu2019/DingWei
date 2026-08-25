@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `01640ec324e46a00be1263fe9bc4f2a7add1cac7` · 分支 `design/addendum-decisions`
+生成自 commit `b7036d68178b2bb282167bf431ebc4abf28b69fd` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -25,6 +25,7 @@
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+b7036d6 docs: 交接件 SP7a 收编面写清作用域(coordinator 撤回第 3 条指令后的定论,前锚 01640ec)
 01640ec gate: 按甲域 sol CR 修四条绕过 + 收窄两处过度宣称(前锚 552e92e)
 552e92e docs: 实现阶段总览交底(SP0-SP8 · 依赖图 · 并行判断)入仓(前锚 722ac82)
 722ac82 SP7a: 建受控仓储包 internal/repo,收编 datad 的 3 处建库,判据一 8→6(前锚 b6db59b)
@@ -32,5 +33,4 @@ b6db59b gate: 按业主裁定拆掉 _test.go 开关,回严口径基线 8,并立�
 e2574ea gate: _test.go 口径改为可切换,生产码 6 / 含测试 8 两值并存(前锚 d9e74c6)
 d9e74c6 fix: specs/README 的结构表漏列 8 件,改为可校验表并立闸 ⑧(前锚 a80a7f4)
 a80a7f4 fix: 快照包作用域仍是手写的,SP7a 那道闸导不进评审包(前锚 6723be4b)
-6723be4 fix: 状态源钉了一个被 amend 抛弃的幽灵锚,并立 ⑤a 判据(前锚 1baa230)
 ```
