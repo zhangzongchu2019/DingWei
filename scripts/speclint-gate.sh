@@ -79,6 +79,31 @@ if true; then
   fi
   rm -f /tmp/.dw-status.$$
 fi
+# ⑤a 状态源钉的锚必须【在分支历史里】。
+#    立此判据的直接原因：2026-08-25，本席为修一句提交信里的编号口径对已过闸的提交做了 --amend。
+#    amend 时 HEAD 仍是【被替换的那个提交】，pre-commit 把它写进了状态源，随即它被 amend 抛弃 ——
+#    于是 origin 上的单一事实源钉着一个复核方 clone 后根本不存在的坐标。
+#    ⚠️ 为修一个小瑕疵，在【单一事实源】里制造了一个幽灵坐标 —— 代价远大于所修。
+STATUS=docs/DELIVERY-STATUS.md
+anchor_of() { sed -n 's/^生成自 commit `\([0-9a-f]\{40\}\)`.*/\1/p' | head -1; }
+PREV_ANCHOR=$(git show HEAD:"$STATUS" 2>/dev/null | anchor_of)
+if [ -z "$PREV_ANCHOR" ]; then
+  # 取不到就是【无法比对】，须明说，不得打印 ✓（与 ④ 的同名分支同一条理由）
+  echo "  ⑤a ⚠️ HEAD 的状态源取不到锚，本次【跳过比对】，非通过"
+elif git merge-base --is-ancestor "$PREV_ANCHOR" HEAD 2>/dev/null; then
+  echo "  ⑤a 状态源锚在分支历史内 ✓"
+else
+  echo "🔴 ⑤a HEAD 的状态源钉着一个【不在分支历史里】的锚：$PREV_ANCHOR"
+  echo "     成因几乎总是对已过闸的提交做了 --amend。此后请勿 amend 已过闸的提交；"
+  echo "     要改提交信，另起一个提交说明，或 --no-verify 后手工重生成状态源。"
+  # 有牙的部分：本次提交必须【确实在修】它，否则拒绝放行。
+  STAGED_ANCHOR=$(git show :"$STATUS" 2>/dev/null | anchor_of)
+  if [ "$STAGED_ANCHOR" = "$(git rev-parse HEAD)" ]; then
+    echo "     ✓ 本次提交已把状态源修回当前 HEAD，放行这一次。"
+  else
+    echo "✗ 本次提交并未修复该锚（暂存区记的是 ${STAGED_ANCHOR:-空}），拒绝放行"; exit 1
+  fi
+fi
 # ⑥ 架构设计的引用核验（来源类型化解析）
 if [ ! -x scripts/arch-refcheck.sh ]; then
   echo "✗ 闸依赖缺失：scripts/arch-refcheck.sh 不可执行"; exit 1
