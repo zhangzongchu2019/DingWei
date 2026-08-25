@@ -37,8 +37,11 @@ run "internal 包总数" "ls -d internal/*/ | wc -l"
 run "workpulse 装载的包（架构设计称 19）" \
     "grep -rhoE 'zhangzongchu2019/dingwei/internal/[a-z0-9]+' cmd/workpulse --include=*.go | grep -v _test | sed 's|.*/||' | sort -u | paste -sd' '"
 run "internal/view 是否存在（架构设计称不存在）" "ls -d internal/view 2>&1 || true"
-run "仓储包外 sql.Open 处数（判据：恒为 0；现为 8 ⇒ 不达标）" \
-    "grep -rhoE 'sql\\.Open\\(\"(pgx|sqlite)\"' --include=*.go internal | wc -l"
+# 🔴 原来这一行把「现为 8」写死在标签里，而数字由右边的命令实算 —— 两处不同源，
+#    数一变标签就说谎。且旧命令只数 pgx|sqlite 两个字面 driver 名（按名字判非按效果判），
+#    换 driver 或改用 pgxpool 就数不到。两处一并改：标签不带数，口径统一交给闸。
+run "仓储包外的库句柄处数（判据：恒为 0；口径与实数均出自 scripts/repo-boundary-gate.sh）" \
+    "scripts/repo-boundary-gate.sh"
 run "四处存储的建表点（36 / 11 / 5 / 9）" \
     "for p in internal/store/migrations internal/mcs/board/schema.sql internal/fanout internal/datad; do printf '%-34s ' \$p; grep -rhoP 'CREATE TABLE (IF NOT EXISTS )?\\K\\w+' \$p | sort -u | wc -l; done"
 run "task 表跨存储重名（须在 SP7a 前定名，见 docs/task-table-collision-analysis.md）" \

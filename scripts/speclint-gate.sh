@@ -1,5 +1,5 @@
 #!/bin/sh
-# SpecDoc 三道门 —— 正文 lint / 语料 selftest / 变异体。任一不过即失败。
+# 提交闸 ①–⑦ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步 / 架构引用核验 / 仓储包边界。任一不过即失败。
 #
 # 立此闸的直接原因：2026-08-24，本席在 speclint 退出码为 1 的状态下推了 a165521。
 # 当时 lint 与 commit 写在同一批命令里、没有用 && 串，照跑不误。
@@ -39,7 +39,7 @@ echo "② 语料 selftest";   python3 "$LINT" --selftest "$COR" || FAIL=1
 echo "③ 变异体";          python3 "$LINT" --mutate   "$COR" || FAIL=1
 
 if [ "$FAIL" -ne 0 ]; then
-  echo "✗ 三道门未过。修完再提交；确需绕过用 git commit --no-verify，"
+  echo "✗ ①–③ 未过。修完再提交；确需绕过用 git commit --no-verify，"
   echo "  且须在提交信息里写明绕过理由 —— 堵死绕行不如让绕行留痕。"
   exit 1
 fi
@@ -89,4 +89,16 @@ if [ -f docs/dingwei-architecture-design.md ]; then
   scripts/arch-refcheck.sh --selftest >/dev/null 2>&1 || { scripts/arch-refcheck.sh --selftest; echo "✗ 架构引用核验的反测未过"; exit 1; }
   echo "  ⑥ 架构引用核验 ✓（含四项反测）"
 fi
-echo "✓ 三道门全过"
+# ⑦ 仓储包边界（SP7a 甲组·收口判据的执行处）
+#    立此项的直接原因：判据「仓储包外 sql.Open 恒零」此前只写在架构设计与证据脚本里，
+#    没有任何闸执行它 —— specs/evidence/collect.sh 只记录数字、整篇无非零退出，本闸也没调过它。
+#    ⇒ 判据不接进失败条件，等于没有判据。
+if [ ! -x scripts/repo-boundary-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/repo-boundary-gate.sh 不可执行 —— 收口判据无人执行，不得放行"; exit 1
+fi
+scripts/repo-boundary-gate.sh || exit 1
+# 闸自己也要过反测 —— 否则它的 ✓ 可能只是它测不出来。
+scripts/repo-boundary-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/repo-boundary-gate.sh --selftest; echo "✗ 仓储包边界闸的反测未过"; exit 1; }
+echo "  ⑦ 仓储包边界闸的反测 ✓"
+echo "✓ 提交闸全过（①–⑦）"
