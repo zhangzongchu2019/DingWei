@@ -9,12 +9,12 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 )
 
-
 // testRoles 建单角色 fixture(M5v2:建单必填全)。
 func testRoles() RoleAssignments {
 	rb := func(w string) RoleBinding { return RoleBinding{Who: w, CLI: "claude", LLM: "claude-opus-4-8"} }
 	return RoleAssignments{Designer: rb("devo48"), Implementer: rb("devo48"), Tester: rb("tester"), QAOwner: rb("shence")}
 }
+
 // rig 起一块内存 Board:orchestrator 已接管,一 task 两节点(n1 ready,n2 pending deps=[n1])。
 func rig(t *testing.T) (*Board, Identity, context.Context) {
 	t.Helper()

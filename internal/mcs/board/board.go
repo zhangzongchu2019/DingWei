@@ -14,8 +14,8 @@ package board
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -726,7 +726,7 @@ SELECT COUNT(*),
 
 // RoleStat 回溯优化聚合行:某(角色,cli,llm)组合参与的任务量与完成量。
 type RoleStat struct {
-	Role, CLI, LLM string
+	Role, CLI, LLM   string
 	Tasks, DoneTasks int
 }
 

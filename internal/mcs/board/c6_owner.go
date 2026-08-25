@@ -52,9 +52,9 @@ type OwnerOutcome string
 
 const (
 	OwnerApplied  OwnerOutcome = "applied"
-	OwnerCASMiss  OwnerOutcome = "cas_miss"  // 陈旧 expected_epoch/expected_state
-	OwnerRejected OwnerOutcome = "rejected"  // 授权/schema/白名单/跨principal劫持
-	OwnerDisabled OwnerOutcome = "disabled"  // ★C6.3 过渡期硬禁用(不执行,fail-closed)
+	OwnerCASMiss  OwnerOutcome = "cas_miss" // 陈旧 expected_epoch/expected_state
+	OwnerRejected OwnerOutcome = "rejected" // 授权/schema/白名单/跨principal劫持
+	OwnerDisabled OwnerOutcome = "disabled" // ★C6.3 过渡期硬禁用(不执行,fail-closed)
 )
 
 // OwnerTakeoverReq owner_takeover 请求 schema(★dev56④⑤:显式字段,含 to_owner)。

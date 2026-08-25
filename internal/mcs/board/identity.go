@@ -72,6 +72,7 @@ func (e *ErrIdentityRejected) Error() string {
 //   - enforce→落 identity_rejected 事件(独立短事务,拒收也可审计)+错误;
 //   - warn+非过渡期→落 identity_warned 事件+放行;
 //   - warn+过渡期(provisional,★shence P2)→仅放行、【不写权威 identity_warned】(防伪造 warn 污染审计/盘点)。
+//
 // 审计事件 actor 落系统哨兵(违规者本身无合法身份可签,dev56③);data 记裸名与来源。
 func (b *Board) checkIdentity(ctx context.Context, name, source string) error {
 	if !hasControlChar(name) && IdentityPattern.MatchString(name) {
