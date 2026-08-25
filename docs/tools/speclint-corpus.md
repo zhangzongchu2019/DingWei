@@ -286,3 +286,11 @@ CASE NEG rule-sync
 | 乙 | 文档评审 | `R-BBB-01` |
 ### 5.6a 再下一节
 ENDCASE
+CASE NEG rule-sync
+### 5.4a 规则表
+| `R-AAA-01` | 甲 | L3 | 架构评审 |
+### 5.5 下一节
+### 5.6 映射表
+| 甲 | 文档评审 | `R-AAA-01` |
+### 5.6a 再下一节
+ENDCASE

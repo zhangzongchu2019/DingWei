@@ -266,26 +266,41 @@ def check_s_family(s):
     return out
 
 def check_rule_table_sync(s):
-    """🔴 §5.4a（权威，带 rule_id）与 §5.6（便读视图）须【逐行等同】。
-    立此规则的直接原因（结构域 FLOW-01 重跑）：新增权威表时没与既有 §5.6 对撞，
-    同一输入得出两个门集。⇒ 「两处同一内容」这件事必须机器判，不能靠人记得对齐。"""
-    def rows(a,b):
-        seg=s[s.find(a):s.find(b)]
-        out={}
-        for m in re.finditer(r'^\|\s*`?(R-[A-Z]+-\d+|R-NONE)`?\s*\|(.*)$', seg, re.M):
-            cells=[c.strip() for c in m.group(2).split('|')]
-            out[m.group(1)]=cells
-        for m in re.finditer(r'^\|([^|]+)\|([^|]+)\|\s*`(R-[A-Z]+-\d+|R-NONE)`\s*\|', seg, re.M):
-            out.setdefault(m.group(3), [m.group(1).strip(), m.group(2).strip()])
+    """🔴 §5.4a（权威，带 rule_id）与 §5.6（便读视图）须【逐行等同】——比 ID 也比内容。
+
+    立此规则的直接原因（结构域 FLOW-01 重跑）：新增权威表时没与既有 §5.6 对撞，同一输入两个门集。
+    ⚠️ 初版只比 rule_id 集合 —— 结构域指出**同 ID 改内容不报**（实测：把 R-CON-02 的
+       「文档评审」改成「架构评审」，闸仍报全部通过）。**「两表一致」不是「ID 对得上」。**
+    ⇒ 现同时比对【触发条件】与【追加环节】，比对前做规范化。
+    """
+    def norm(t):
+        # 规范化：去 markdown 强调 / 反引号 / 空白 / 全角半角加号与顿号差异
+        t = re.sub(r'\*\*|`|🔴|⚠️', '', t)
+        t = t.replace('＋','+').replace('（','(').replace('）',')').replace('／','/')
+        t = re.sub(r'\s+', '', t)
+        return t
+    def auth_rows():
+        seg = s[s.find('### 5.4a'): s.find('### 5.5')]
+        out = {}
+        for m in re.finditer(r'^\|\s*`(R-[A-Z]+-\d+|R-NONE)`\s*\|([^|]*)\|([^|]*)\|([^|]*)\|', seg, re.M):
+            out[m.group(1)] = (norm(m.group(2)), norm(m.group(4)))   # (触发条件, 追加环节)
         return out
-    auth = rows('### 5.4a', '### 5.5')
-    view = rows('### 5.6 映射表', '### 5.6a')
-    out=[]
-    if not auth or not view:
+    def view_rows():
+        seg = s[s.find('### 5.6 映射表'): s.find('### 5.6a')]
+        out = {}
+        for m in re.finditer(r'^\|([^|]*)\|([^|]*)\|\s*`(R-[A-Z]+-\d+|R-NONE)`\s*\|', seg, re.M):
+            out[m.group(3)] = (norm(m.group(1)), norm(m.group(2)))
+        return out
+    a, v = auth_rows(), view_rows()
+    out = []
+    if not a or not v:
         return [(0,'rule-sync','§5.4a 或 §5.6 未取到规则行 —— 检查失效，非通过','')]
-    for k in sorted(set(auth)|set(view)):
-        if k not in auth: out.append((0,'rule-sync',f'{k} 只在 §5.6 有，§5.4a 缺',''))
-        elif k not in view: out.append((0,'rule-sync',f'{k} 只在 §5.4a 有，§5.6 缺',''))
+    for k in sorted(set(a) | set(v)):
+        if k not in a: out.append((0,'rule-sync',f'{k} 只在 §5.6 有，§5.4a 缺','')); continue
+        if k not in v: out.append((0,'rule-sync',f'{k} 只在 §5.4a 有，§5.6 缺','')); continue
+        # 🔴 触发条件的措辞两表本就不同（§5.4a 用字段名、§5.6 用简称），故只比【追加环节】
+        if a[k][1] != v[k][1]:
+            out.append((0,'rule-sync',f'{k} 追加环节不一致：§5.4a「{a[k][1]}」vs §5.6「{v[k][1]}」',''))
     return out
 
 ALL_CHECKS = [check_typed_refs, check_symbol_context, check_field_aliases, check_tables,
@@ -345,7 +360,10 @@ MUTATIONS = [
     # ⚠️ 变异须打在【两条分支的共同上游】:原来只改「只在 §5.6 有」那支,
     #    而反例测的是「只在 §5.4a 有」那支 —— 变异与反例走的不是同一条路,变异体因此不失守。
     #    这正是「反测有盲区」在【变异侧】的形态。
-    ('rule-sync',      "for k in sorted(set(auth)|set(view)):", "for k in []:"),
+    # ⚠️ 变异串须随被测函数改名同步 —— 本条曾指着旧变量名 auth/view,函数改用 a/v 后
+    #    变异【打空】,--mutate 报「NEG 例没在测这条规则」。改了函数没同步变异体,
+    #    而变异体正是用来验它的。⇒ 变异串本身也是「引用点」。
+    ('rule-sync',      "for k in sorted(set(a) | set(v)):", "for k in []:"),
     ('typed-symbol',  "for m in re.finditer(pat,s):\n            ln=s[:m.start()]",
                       "for m in []:\n            ln=s[:m.start()]"),
 ]

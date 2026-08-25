@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `4acd5d762f6ae08254691a4061f54c7b8c62706d` · 分支 `design/addendum-decisions`
+生成自 commit `e8c4f139f6bb51ea43c000ff813df704504b1591` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -18,13 +18,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.20** | `4acd5d762f6ae08254691a4061f54c7b8c62706d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3076 / 209890 | `404246ee065487a79059d6ef7e75d6d2c1f731ccecf6e910e1fa284b323dbc21` |
+| `dingwei-platform-specdoc.md` | **v3.20** | `e8c4f139f6bb51ea43c000ff813df704504b1591<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3076 / 209898 | `03515954372165966bf9be65d10e8b4fc55b0df857c46c49ad390cf0de97cb69` |
 | `dingwei-prototype.html` | **v1.16** | `05ccf171d3d45ebd25f24495af32563eb79b61b5` | 2849 / 254430 | `c9e4e0257c7ef916cf341675e69aa45de0cc39c8edd47bc5f53380d9d5795ce2` |
 | `dingwei-architecture-design.md` | **v0.14** | `4acd5d762f6ae08254691a4061f54c7b8c62706d` | 796 / 56515 | `2c22da8df450a34ce9bebba8bfba67d9fa28b94b0b2e17ea240c8648deb0977e` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+e8c4f13 docs: SpecDoc v3.20——未采纳方案移出正文入参考资料(业主裁,前锚 4acd5d7)
 4acd5d7 fix(FLOW-01): §5.4a 与 §5.6 对撞已解——按 §5.6 为准改回,并把「两表一致」机器化(前锚 05ccf17)
 05ccf17 docs: 结构域重跑 FLOW-01/FLOW-05 全修;RLS 全扫暴露 C.3 裁定后 26 处未同步(修在此,前锚 681917a)
 681917a docs: 组 2 task 定名已裁并落三处(SpecDoc v3.18 + 架构 v0.12 + 分析件,修在此,前锚 d872147)
@@ -32,5 +33,4 @@ d872147 docs: 架构设计 v0.11——按 sol 扩后 scope 落设计合同(组5�
 1fd84e7 docs: 结构域重走 12 FAIL 分类 + 组 1 已修(修在此,前锚 62951fc)
 62951fc docs: SpecDoc v3.16——业主裁定「重走」,架构评审重走轮起(修在此,前锚 bfac466)
 bfac466 docs: SpecDoc v3.15——把「是否起重走轮」登记进 C.2(修在此,前锚 dd88734)
-dd88734 docs: 架构设计 v0.10——P-1 残留三处全清(丙域 kimi 复核 R-1/R-2 + 本席自查第三处,修在此,前锚 51cec1d)
 ```

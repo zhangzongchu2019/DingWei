@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T00:32:40Z
-分支头：`4acd5d762f6ae08254691a4061f54c7b8c62706d`
+生成时刻：2026-08-25T00:35:42Z
+分支头：`e8c4f139f6bb51ea43c000ff813df704504b1591`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -19,7 +19,7 @@ $ python3 docs/tools/speclint.py docs/dingwei-platform-specdoc.md
 
 ```
 $ python3 docs/tools/speclint.py --selftest docs/tools/speclint-corpus.md
-  --- 语料 42 例 / 覆盖规则 15 条,全部通过
+  --- 语料 43 例 / 覆盖规则 15 条,全部通过
 ```
 
 ### speclint 变异体（改坏规则，其反例须随之失守 —— 证明语料有牙）
