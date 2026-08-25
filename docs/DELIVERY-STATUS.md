@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `09c0c29a0a85c90236f23203625a245ff8d04934` · 分支 `design/addendum-decisions`
+生成自 commit `dd9e9342740c50acf871938d298faf624a1f13d1` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -27,6 +27,7 @@
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+dd9e934 REVIEW-STATE 撤下内嵌 git log —— 同一个坑，两个提交之后我又踩了一次
 09c0c29 立闸 ㉓ 门方复现台账 —— 判据改由门方给
 917e5f4 REVIEW-STATE 补「最近处置锚序」；并撤下一列我自己造的错判据
 d09c2f3 RV-乙15：DDL 权的归属判错了（v3.44）
@@ -34,5 +35,4 @@ c23c06d Merge commit 'd35b68cb' into design/addendum-decisions
 b4c9fe7 REVIEW-STATE 不再内嵌 commit 锚 —— 产物写不进自己的哈希
 252e69d ㉑ 探测器两处同源阻断已修（v3.43）
 7acfb50 残余面两表同步 C.3a.1c 改判（v3.42）—— 但改法与丙域建议不同，理由写明
-2de6d29 REVIEW-STATE 未闭项补「归谁」列 —— 让「我能修而没修」的行无处可藏
 ```
