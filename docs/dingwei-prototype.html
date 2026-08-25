@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.33 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.34 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.33</span></h1>
-  <span class="anchor">原型 <b>v1.33</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.34</span></h1>
+  <span class="anchor">原型 <b>v1.34</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -1866,7 +1866,7 @@ body.uionly #uihint{display:block}
   <tr><td class="cell-fail"><b>入 digest</b></td><td data-edit>🔴 附件是帖子的一部分 ⇒ 须入封存 digest。
     但 §18.6 的规范序列只列了 <code>tenant/node/seq/actor/ts/content</code> ——
     <b>附件引用是否算 content 的一部分，规范未定</b>。<br>
-    这正好接上执笔方上一轮标的「<b>帖子表列未定义</b>」缺口：两处须一并补</td></tr>
+    ⚠️ 与「<b>帖子表列未定义</b>」是同一缺口的两面，须一并补</td></tr>
   <tr><td>视频处理</td><td data-edit>自动抽帧供模型读；<b>抽帧结果也是派生物</b>，同样受密级与租户约束，
     <b>不得因「只是缩略图」而降级</b></td></tr>
   <tr><td>体积闸</td><td data-edit>单文件上限 + 单 node 累计上限；<b>超限不静默截断，明确拒收并说明</b></td></tr>
@@ -2141,13 +2141,12 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>K0-sec 重切 <span class="ref">业主修正 · 执笔方上一轮拆错了</span></h3>
+  <h3>K0-sec 分层 <span class="ref">设计层 / 运行态 · 业主裁定</span></h3>
   <div class="note bad">【RV-甲22|甲|阻断|采纳】体例挂账 #6：标题和正文围绕“上一轮拆错”展开，属修订史；当前模型保留为独立现行说明，错误过程移沿革。</div>　　⟹ **【采纳】** 已按甲域逐段清单改完：体例闸扩 `PAT_PROC` 指纹（抓不点名的过程叙述），扩面后 16 处全部改写为现行断言。🔴 **一轮报「痕迹 90→0」是错的** —— 一轮指纹只抓「谁在第几版说了什么」，抓不到「本轮已定」「本次为初版」这类，**闸的口径不等于事实的口径**。
-  <div class="note bad">【RV-甲39|甲|阻断|未决】RV-甲22 的“已改完”与本 panel 实取相反：标题仍写“上一轮拆错”，下方整段仍复盘执笔方的错误与收回过程。同类过程叙述还残留在 sidecar/unlock、企业公共库、知识分级对齐与导出函数等 panel。按已采纳的体例判据，只保留理解产品所必需的现行界面契约，执笔/评审过程移沿革。</div>
-  <div class="note bad" data-edit>🔴 <b>执笔方上一轮的错</b>：识别出「K0-sec 混了两种性质不同的东西」是对的，
-  但<b>拆的刀口下错了</b> —— 执笔方按<b>类型整块搬</b>（服务架构 / 网络架构 / 数据库设计这三类<b>全部</b>归运行时取），
-  而正确的是<b>每一类内部都要拆</b>：<b>设计层固化，运行态实时查</b>。<br>
-  业主的拆法对。执笔方那种拆法会把「服务架构设计」这种明明该固化的东西一起扔进运行时。</div>
+  <div class="note bad">【RV-甲39|甲|阻断|采纳】RV-甲22 的“已改完”与本 panel 实取相反：标题仍写“上一轮拆错”，下方整段仍复盘执笔方的错误与收回过程。同类过程叙述还残留在 sidecar/unlock、企业公共库、知识分级对齐与导出函数等 panel。按已采纳的体例判据，只保留理解产品所必需的现行界面契约，执笔/评审过程移沿革。</div>　　⟹ **【采纳】** panel 标题改为「K0-sec 分层 · 设计层/运行态 · 业主裁定」；正文改写为现行判据（拆分刀口在每一类内部，不在类型之间）。同类残留一并清：SA-10 panel 的「执笔方上一版只钉了…」、附件屏的「接上执笔方上一轮标的…」。
+  <div class="note" data-edit>🔴 <b>拆分刀口在每一类内部，不在类型之间</b>：业务 / 服务 / 数据 / 网络等每一类
+  <b>都同时有设计层与运行态</b> —— 设计层固化（低频、可公开全员），运行态实时查（高频、按内容定级）。<br>
+  ⚠️ <b>按类型整块归属是错的</b>：那会把「服务架构设计」这种应固化的内容一并划入运行时取。</div>
 
   <table><thead><tr><th style="width:96px"></th><th>设计层 · 低频 · <b class="cell-ok">可公开全员</b> · <b>固化</b></th>
   <th>运行态 · 高频 · <b class="cell-wait">实时 / 准实时查</b></th></tr></thead><tbody>
@@ -2352,8 +2351,7 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🔴 跨租户个人总览 · 须按 §22.1c 办理 <span class="ref">SA-10 · 安全面阻断项</span></h3>
   <div class="note bad" data-edit>🔴 <b>限制字段 ≠ 解决授权。</b>
-  执笔方上一版只钉了「只出计数与状态、不出内容」，就当这条读取安全了 ——
-  <b>那是把「减少泄漏内容」当成了「授权已解决」</b>。
+  <b>「只出计数与状态、不出内容」不构成读取安全</b> —— 那是把「减少泄漏内容」当成了「授权已解决」。
   <div style="margin-top:6px">计数与状态<b>本身就是跨租户信息</b>：某人在目标租户
   <b>有没有参与、参与多少、进展如何</b>，这三件事<b>不需要正文就能读出来</b>。
   ⇒ 它是一次<b>跨租户数据访问</b>，一律按 §22.1c 办理，无例外。</div></div>
@@ -2631,18 +2629,10 @@ document.getElementById('bExp').onclick=function(){
   });
   var out={原型:'dingwei-prototype.html',
     /* 🔴 本对象【不内嵌任何版本号、commit 或指纹】。
-       上一版的注释论证过「内嵌一个上一版的哈希,看着精确其实是过期值」,
-<!-- 【RV-甲40|甲|阻断|未决】原型正文已提交 Git 合并冲突标记（<<<<<<< / ======= / >>>>>>>），导出函数的 JavaScript 不再是有效单一版本；但提交闸 ①–⑰ 与 analyze 仍全绿。须先解冲突、保留唯一现行实现，再为三件正文及受控脚本增加 conflict-marker 恒零闸与正反测；否则“全闸通过”仍可放行不可执行原型。 -->
-<<<<<<< HEAD
-       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.30)——
-       **注释与代码相邻对撞**,属「刚立的规矩在下一段自破」。
-=======
-       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.27)——
-       **注释与代码相邻对撞**,属「刚立的规矩在下一段自破」。<!-- 【RV-丙13|丙|非阻断|采纳】〔体例分离二轮·门方先标〕本件仍存过程叙述：与 Agent 交互屏「本阶段实战教训：…九次消息错序」；spec 准入检查屏与身份绑定屏两处「执笔方在评审中被抓出的『按名字判而非按效果判』是同一族错误」；本处导出函数注释整段复述（sol 已举）。另注：多处「本轮/本次」（本次经由/本次增量/本轮设计合同类）为通用操作语义，非过程痕迹，不在此列。 -->　　⟹ **【采纳】** 已按该清单逐段改完（体例闸扩 `PAT_PROC` 指纹后 16 处全部改写为现行断言）；panel 类按业主判据整段删除。🔴 **一轮报「痕迹 90→0」是错的** —— 闸的口径不等于事实的口径。
->>>>>>> origin/design/addendum-decisions
-       ⚠️ 后果不是不好看:任何经此导出的改稿都会天然挂错基准,收件方按它去比对,
-       比的是几个版本之前的文本。这正是「各方评审基准不同」在工具侧的成因。
-       ⇒ 基准由 git 锚承载,导出时不写死;需要基准时取 docs/DELIVERY-STATUS.md。 */
+       ⚠️ 内嵌值一旦过期，经此导出的改稿会天然挂错基准，收件方比的是几个版本之前的文本。
+       ⇒ 基准由 git 锚承载，导出时不写死；需要基准时取 docs/DELIVERY-STATUS.md。 */
+<!-- 【RV-甲40|甲|阻断|采纳】原型正文已提交 Git 合并冲突标记（<<<<<<< / ======= / >>>>>>>），导出函数的 JavaScript 不再是有效单一版本；但提交闸 ①–⑰ 与 analyze 仍全绿。须先解冲突、保留唯一现行实现，再为三件正文及受控脚本增加 conflict-marker 恒零闸与正反测；否则“全闸通过”仍可放行不可执行原型。 -->　　⟹ **【采纳】** 🔴 **成立，且这条最该记**：冲突标记落在 JS 块注释内 ⇒ **语法不坏、闸也不看**，「①–⑰ 全绿」在此只意味着没有一道闸看这里。已解冲突（两变体仅差 v1.30/v1.27，其叙述本就是丙13 要求移沿革的过程史，故整段移出、正文只留判据），并立闸 ⑲ conflict-marker-gate（7 项反测，含「标记藏在块注释内」与「32 个 = 的分隔线不得误报」两向）。
+<!-- 【RV-丙13|丙|非阻断|采纳】〔体例分离二轮·门方先标〕本件仍存过程叙述：与 Agent 交互屏「本阶段实战教训：…九次消息错序」；spec 准入检查屏与身份绑定屏两处「执笔方在评审中被抓出的『按名字判而非按效果判』是同一族错误」；本处导出函数注释整段复述（sol 已举）。另注：多处「本轮/本次」（本次经由/本次增量/本轮设计合同类）为通用操作语义，非过程痕迹，不在此列。 -->　　⟹ **【采纳】** 已按该清单逐段改完（体例闸扩 `PAT_PROC` 指纹后 16 处全部改写为现行断言）；panel 类按业主判据整段删除。🔴 **一轮报「痕迹 90→0」是错的** —— 闸的口径不等于事实的口径。
     基准说明:'本导出不含版本号；请以导出时仓库的 git 锚与 docs/DELIVERY-STATUS.md 为基准',
     说明:'把本文件发回 opus50t，据此改 SpecDoc §25-§27。若改动与已裁定条款冲突，会指出条款号请业主裁定，不得两存。',
     屏:scr,改文:改文,批注:批注};

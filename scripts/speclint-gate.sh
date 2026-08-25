@@ -236,6 +236,18 @@ python3 specs/tools/foreign-version-check.py --selftest >/dev/null 2>&1 || {
   echo "✗ ④b 他件旧版本号检查的反测未过"; exit 1; }
 echo "  ⑰ 跨制品一致性 ✓（含 ④b 反测；语义层不在其内，见 analyze 头注）"
 
+# ⑲ 冲突标记恒零（甲域 sol R2 轮4 · RV-甲40）：
+#    原型导出函数里提交了未解决的合并冲突，而 ①–⑰ 与 analyze 全绿 ——
+#    标记恰好落在 JS 块注释内，语法不坏，于是连「还能不能跑」都没暴露它。
+#    🔴 「全闸通过」在那里的含义是【没有一道闸看这个】。
+if [ ! -x scripts/conflict-marker-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/conflict-marker-gate.sh 不可执行"; exit 1
+fi
+scripts/conflict-marker-gate.sh || exit 1
+scripts/conflict-marker-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/conflict-marker-gate.sh --selftest; echo "✗ 冲突标记闸的反测未过"; exit 1; }
+echo "  ⑲ 冲突标记闸的反测 ✓"
+
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
 #    **没有一次是执笔方自查出来的**。
@@ -247,7 +259,7 @@ python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
 python3 specs/tools/disposition-audit.py || true
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–⑰ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–⑲ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–⑰ ＋ ⑱ triage）"
+  echo "✓ 提交闸全过（①–⑲ ＋ ⑱ triage）"
 fi

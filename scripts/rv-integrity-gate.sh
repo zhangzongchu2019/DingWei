@@ -20,7 +20,11 @@ set -u
 LEDGER=${LEDGER:-specs/gates/rv-ledger.txt}
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
 HIST=${HIST:-docs/dingwei-revision-history.md}
-GATES=${GATES:-'scripts/prose-style-gate.sh'}
+# 🔴 扫描面须按【标注实际住在哪】定，不按目录习惯定：
+#   甲域 RV-甲41 标在 `specs/evidence/collect.sh` 上，而本闸原只扫 scripts/prose-style-gate.sh
+#   ⇒ 台账里有它、正文里也有它，闸却报「原文被改写」（它根本没看那个文件）。
+#   ⚠️ 与 sol R2 轮3 抓的「闸看不见自己的头注」是同一形态，只是换了目录。
+GATES=${GATES:-"$(ls scripts/*.sh specs/evidence/*.sh specs/tools/*.sh specs/tools/*.py 2>/dev/null | tr '\n' ' ')"}
 
 check() {
   [ -s "$LEDGER" ] || { echo "✗ 闸依赖缺失：$LEDGER 不存在或为空 —— 无可比对象，闸坏了"; return 2; }

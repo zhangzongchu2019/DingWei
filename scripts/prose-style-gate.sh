@@ -43,7 +43,7 @@
 #     ⚠️ 能力边界：本闸判「ID 还在不在」，判不了「沿革里写得对不对」。
 # 【RV-甲14|甲|阻断|采纳】`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直接删除一条 RV 且不写沿革，脚本没有前一轮 RV ledger/稳定 ID 可比，仍会 rc=0。须为每条 RV 分配稳定 ID，并在独立 reviewer-owned 清单或基线 manifest 中记录；final 对拍“前轮全集 = 采纳 ∪ 驳回(理由) ∪ 挂账(owner+时点) = 沿革落账”，否则收官防丢只是文字纪律。　　⟹ **【采纳】** 已修，见本轮提交说明；判据与反测同步落地。
 # 【RV-甲32|甲|阻断|采纳】终审确认该缺口未修且未被 29 条统计：上条脚本内 RV 仍为“未决”，但 `--rv/--final` 的 DOCS 仅含三件正文，完全看不见脚本头注，故可在自身仍有未决时宣称收官。另 `rvcheck --final` 只校验驳回理由，不校验挂账必须含责任人＋时点；现 9 条挂账多数无时点，体例挂账时点“R2 轮3前”及 tenant 挂账时点已到期，仍会通过。须先落稳定 RV ledger、把脚本自身纳入扫描，并实现挂账 owner/time 与逾期校验，再谈 `--final`。　　⟹ **【采纳】** 🔴 **两条都成立，且都打在闸自身**：① `--rv/--final` 的 DOCS 仅含三件正文，**看不见闸脚本头注** ⇒ 闸自身有未决时仍能宣称收官。已改扫描面为「三件正文 ＋ 全部闸脚本」，改后闸**立刻看见了自己**（本脚本 3 条，含甲域这两条）。② `--final` 只校验驳回理由，**不校验挂账须带责任人＋时点**，且「R2 轮3前」这类时点会到期。已增判：挂账须含**责任人**与**具体日期（YYYY-MM-DD）**，非具体日期即拒。
-# 【RV-甲42|甲|阻断|未决】RV“评审状态／执笔处置”仍可互相冲突而闸不拒：SpecDoc RV-甲01 的第 4 列为“采纳”，处置文本却又内嵌“【挂账】…时点=R2 轮3前”；RV-甲06 虽有新的绝对日期，同一行仍保留已到期的“时点=R2 轮3前”。当前闸只看第 4 列及是否出现一个绝对日期，故仍全绿。须使第 5 列处置不得冒充/重复评审状态，挂账只能由第 4 列表达；并拒绝同一 RV 多时点、相对时点与已到期残留。
+# 【RV-甲42|甲|阻断|采纳】RV“评审状态／执笔处置”仍可互相冲突而闸不拒：SpecDoc RV-甲01 的第 4 列为“采纳”，处置文本却又内嵌“【挂账】…时点=R2 轮3前”；RV-甲06 虽有新的绝对日期，同一行仍保留已到期的“时点=R2 轮3前”。当前闸只看第 4 列及是否出现一个绝对日期，故仍全绿。须使第 5 列处置不得冒充/重复评审状态，挂账只能由第 4 列表达；并拒绝同一 RV 多时点、相对时点与已到期残留。　　⟹ **【采纳】** 🔴 成立。已加三条判据（各带反测）：处置文本不得出现与第 4 列不同的状态记号（状态只由第 4 列表达）、同一 RV 不得多个时点、相对时点一律拒。实取抓出**三处**（甲01／甲06／乙01），比甲域列的多一条。⚠️ 首版实现会把甲域标注中**引述**的「时点=R2 轮3前」当成真时点 —— 改为先剥引文（「」『』“”）再判，并补钉「引述不得被误判」反测。
 set -u
 
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
@@ -182,6 +182,23 @@ selftest() {
 
   # ⚠️ 不用「丁」做非法域：它已被排除列表当作反测夹具滤掉 ——
   #   **反测与排除规则会打架**，而打架时失守的是反测（它变成恒过）。
+  # 🔴 评审方引述缺陷文本不得被误判（甲域 RV-甲42 正文即引着「时点=R2 轮3前」）
+  mk; printf '\n【RV-甲54|甲|阻断|采纳】闸只查一个绝对日期，故「时点=R2 轮3 前」这类仍全绿　　⟹ **【采纳】** 已修\n' >> "$T/d/a.md"; rv   # rv-fixture
+  [ $? -eq 0 ] && ok "不误伤：标注中【引述】的相对时点不算真时点（先剥引文再判）" || bad "引述的相对时点被误判"
+
+  mk; printf '\n【RV-甲50|甲|阻断|采纳】某条　　⟹ **【挂账】** 责任人=X；时点＝2026-09-01\n' >> "$T/d/a.md"; rv   # rv-fixture
+  [ $? -eq 1 ] && ok "拦住：处置文本冒充状态列（第4列采纳 vs 文内挂账，甲域 RV-甲42）" || bad "状态互相矛盾被放行"
+
+  mk; printf '\n【RV-甲51|甲|阻断|挂账】某条　　⟹ **【挂账】** 责任人=X；时点＝2026-09-01；时点=R2 轮3 前\n' >> "$T/d/a.md"; rv   # rv-fixture
+  [ $? -eq 1 ] && ok "拦住：同一 RV 出现多个时点" || bad "多时点被放行"
+
+  mk; printf '\n【RV-甲52|甲|阻断|挂账】某条　　⟹ **【挂账】** 责任人=X；时点=R2 轮3 前\n' >> "$T/d/a.md"; rv   # rv-fixture
+  [ $? -eq 1 ] && ok "拦住：相对时点（会到期）" || bad "相对时点被放行"
+
+  # ⚠️ 不误伤：第 4 列与处置内记号一致时须放行
+  mk; printf '\n【RV-甲53|甲|阻断|挂账】某条　　⟹ **【挂账】** 责任人=X；时点＝2026-09-01\n' >> "$T/d/a.md"; rv   # rv-fixture
+  [ $? -eq 0 ] && ok "不误伤：处置内记号与第 4 列一致时放行" || bad "一致的状态被误拦"
+
   mk; printf '\n【RV|甲|阻断|采纳】没有稳定 ID\n' >> "$T/d/a.md"; rv
   [ $? -eq 1 ] && ok "拦住：RV 标注缺稳定 ID（入不了台账）" || bad "无 ID 标注被放行"
 
@@ -235,7 +252,10 @@ selftest() {
 #   于是**闸自身仍有未决标注时，它照样宣称收官**。这是「闸看不见自己」的一种，
 #   与本仓已归纳的「闸没起作用但打印 ✓」同族。
 #   ⇒ RV 扫描面 = 三件正文 ＋ **全部闸脚本**（标注可能标在任何被评审的件上）。
-RV_SCOPE=${RV_SCOPE:-"$DOCS $(ls scripts/*.sh 2>/dev/null | tr '\n' ' ')"}
+# ⚠️ 标注住哪就扫哪：RV-甲41 住在 specs/evidence/collect.sh，RV 也会落在工具件上。
+#   🔴 夹具排除改用显式标记 `rv-fixture` —— 此前按「行内含 printf」猜，
+#     那是**按名字判不按效果判**：夹具之所以是夹具，在于它被标了，不在于它含哪个词。
+RV_SCOPE=${RV_SCOPE:-"$DOCS $(ls scripts/*.sh specs/evidence/*.sh specs/tools/*.sh specs/tools/*.py 2>/dev/null | tr '\n' ' ')"}
 RV_RE='【RV[^|]*\|[^|]*\|[^|]*\|[^】]*】'
 
 rvcheck() { # rvcheck [--final]
@@ -254,7 +274,7 @@ rvcheck() { # rvcheck [--final]
     #   🔴 首版在 `grep -oE` 的输出（只有片段）上做上下文过滤 —— 过滤器看不见它要过滤的东西。
     _keep=$(grep -nE "$RV_RE" "$f" 2>/dev/null \
             | grep -v '<域>' | grep -v '\[\^' | grep -v '(甲|乙|丙|执笔)' \
-            | grep -v '|丁|' | grep -v 'printf' | grep -v 'RV_RE=')
+            | grep -v '|丁|' | grep -v 'printf' | grep -v 'rv-fixture' | grep -v 'RV_RE=')
     _hits=$(printf '%s\n' "$_keep" | grep -oE "$RV_RE")
     [ -z "$_hits" ] && continue
     _c=$(printf '%s\n' "$_hits" | wc -l | tr -d ' '); _tot=$((_tot+_c))
@@ -265,9 +285,51 @@ rvcheck() { # rvcheck [--final]
     #   表被劈成两块（下半缺分隔行）、标注被切碎（域字段带上残字）、
     #   且它会占掉某一列的位置 —— 附录 E 的 owner_sp 就这样被顶掉过一次。
     #   三种后果各由不同的闸报出，谁都不指向真因，故在此直接判死。
+    # 🔴 处置列不得冒充状态列（甲域 sol R2 轮4 · RV-甲42）：
+    #   RV-甲01 第 4 列写「采纳」，处置文本里却还嵌着「【挂账】…时点=R2 轮3 前」；
+    #   RV-甲06 已有绝对日期，同一行仍留着已到期的「时点=R2 轮3 前」。
+    #   原闸只看第 4 列、只查「有没有出现一个绝对日期」⇒ 两条都全绿。
+    #   ⚠️ **状态只能由第 4 列表达**；处置文本里再出现状态记号即两处可互相矛盾，
+    #     而读的人不知道该信哪一个。
+    while IFS= read -r _line; do
+      case "$_line" in *printf*) continue;; esac
+      # 🔴 先剥【引文】再判：评审方引述缺陷文本是常态 ——
+      #   sol 的 RV-甲42 正文里就引着「时点=R2 轮3前」作为它要指出的问题，
+      #   不剥引文的话，闸会把【指出问题的那句话】当成问题本身。
+      #   ⚠️ 这与 ⑬ 当初「标注把旧断言从闸的视野里抹掉」是镜像：那次是剥多了，这次是剥少了。
+      _l=$(printf '%s' "$_line" | sed 's/「[^」]*」//g; s/“[^”]*”//g; s/『[^』]*』//g')
+      _st=$(printf '%s' "$_l" | grep -oE '【RV-[^|]+\|[^|]+\|[^|]+\|(未决|采纳|驳回|挂账)】' | head -1 \
+            | sed 's/.*|//; s/】//')
+      [ -n "$_st" ] || continue
+      _rid=$(printf '%s' "$_l" | grep -oE '【RV-[^|]+' | head -1 | sed 's/【//')
+      # 处置段 = ⟹ 之后；其中出现的状态记号必须与第 4 列一致
+      _tail=${_l#*⟹}
+      [ "$_tail" = "$_l" ] && _tail=''
+      _emb=$(printf '%s' "$_tail" | grep -oE '【(未决|采纳|驳回|挂账)】' | sed 's/【//; s/】//' | sort -u)
+      for _e in $_emb; do
+        if [ "$_e" != "$_st" ]; then
+          echo "✗ $f：$_rid 第 4 列为【$_st】，处置文本里却又写着【$_e】—— 两处互相矛盾，读的人不知信哪个"
+          echo "  🔴 状态只能由第 4 列表达；处置列只写【做了什么】。"
+          return 1
+        fi
+      done
+      # 同一 RV 不得有多个时点，且不得用相对时点（会到期）
+      _tp=$(printf '%s' "$_l" | grep -oE '时点[=＝][^（，。；*]{0,20}' | sort -u)
+      _tpn=$(printf '%s\n' "$_tp" | grep -c '时点' || true)
+      if [ "${_tpn:-0}" -gt 1 ]; then
+        echo "✗ $f：$_rid 同一条 RV 出现多个时点 —— 无法判定以哪个为准"
+        printf '%s\n' "$_tp" | sed 's/^/    /'
+        return 1
+      fi
+      if printf '%s' "$_tp" | grep -qE '轮[0-9一二三四五六七八九]+ ?前|本轮|下轮|收官前'; then
+        echo "✗ $f：$_rid 用了相对时点（$_tp）—— 相对时点会到期，须写具体日期 YYYY-MM-DD"
+        return 1
+      fi
+    done < "$f"
+
     # 🔴 标注须带稳定 ID：台账以 ID 为键，无 ID 的标注【进不了账】，
     #   于是「任一标注不得消失」对它恒不成立 —— 少了也没人知道。
-    _noid=$(grep -nE '【RV\|(甲|乙|丙|执笔)\|' "$f" 2>/dev/null | grep -v 'printf' || true)
+    _noid=$(grep -nE '【RV\|(甲|乙|丙|执笔)\|' "$f" 2>/dev/null | grep -v 'printf' | grep -v 'rv-fixture' || true)
     if [ -n "$_noid" ]; then
       echo "✗ $f：RV 标注缺稳定 ID（须写作【RV-<域><序号>|…】）—— 无 ID 则入不了台账，防丢判据对它恒不成立"
       printf '%s\n' "$_noid" | cut -c1-120
@@ -278,7 +340,7 @@ rvcheck() { # rvcheck [--final]
     #   「任一标注不得消失」这条判据会在重号处静默失效（少的那条查无对证）。
     # ⚠️ 必须先按【行】滤掉夹具再抽片段：先 -o 抽片段的话，
     #   grep -v 'printf' 只看得见片段本身，看不见它所在的那行 —— 本闸已因此失守两次。
-    _dup=$(grep -E '【RV-[^|]+\|' "$f" 2>/dev/null | grep -v 'printf' \
+    _dup=$(grep -E '【RV-[^|]+\|' "$f" 2>/dev/null | grep -v 'printf' | grep -v 'rv-fixture' \
            | grep -ohE '【RV-[^|]+\|' | sort | uniq -d || true)
     if [ -n "$_dup" ]; then
       echo "✗ $f：RV 稳定 ID 重号 —— 台账以 ID 为键，重号处的防丢判据会静默失效"
@@ -286,7 +348,7 @@ rvcheck() { # rvcheck [--final]
       return 1
     fi
 
-    _intbl=$(grep -nE '^\|.*【RV[^|]*\|' "$f" 2>/dev/null | grep -v 'printf' || true)
+    _intbl=$(grep -nE '^\|.*【RV[^|]*\|' "$f" 2>/dev/null | grep -v 'printf' | grep -v 'rv-fixture' || true)
     if [ -n "$_intbl" ]; then
       echo "✗ $f：RV 标注落在表格行内 —— 标注的 | 与表格列分隔符对撞，须移出表块另起一行"
       printf '%s\n' "$_intbl" | cut -c1-120
@@ -310,7 +372,7 @@ rvcheck() { # rvcheck [--final]
     fi
     for f in $RV_SCOPE; do
       _r=$(grep -E '【RV[^|]*\|[^|]*\|[^|]*\|驳回】' "$f" 2>/dev/null \
-           | grep -v 'printf' | grep -v '<域>' \
+           | grep -v 'printf' | grep -v 'rv-fixture' | grep -v '<域>' \
            | grep -oE '【RV[^|]*\|[^|]*\|[^|]*\|驳回】[^【]{0,20}' | grep -vE '驳回】\s*理由' || true)
       if [ -n "$_r" ]; then
         echo "✗ $f：有【驳回】标注未带理由 —— 驳回必须可复核"; printf '%s\n' "$_r" | head -3 | sed 's/^/    /'; return 1
@@ -323,12 +385,12 @@ rvcheck() { # rvcheck [--final]
     #   现有挂账多数无时点，且「R2 轮3前」这类时点**已到期**，仍会通过。
     #   ⇒ 挂账须同时含【责任人】与【时点】，且时点须为具体日期（YYYY-MM-DD）而非「某轮之前」。
     for f in $RV_SCOPE; do
-      _h=$(grep -E '【RV[^|]*\|[^|]*\|[^|]*\|挂账】' "$f" 2>/dev/null | grep -v 'printf' | grep -v '<域>' \
+      _h=$(grep -E '【RV[^|]*\|[^|]*\|[^|]*\|挂账】' "$f" 2>/dev/null | grep -v 'printf' | grep -v 'rv-fixture' | grep -v '<域>' \
            | grep -oE '【RV[^|]*\|[^|]*\|[^|]*\|挂账】[^【]{0,400}' | grep -vE '责任人' || true)
       if [ -n "$_h" ]; then
         echo "✗ $f：有【挂账】标注未写责任人"; printf '%s\n' "$_h" | head -3 | cut -c1-90 | sed 's/^/    /'; return 1
       fi
-      _h2=$(grep -E '【RV[^|]*\|[^|]*\|[^|]*\|挂账】' "$f" 2>/dev/null | grep -v 'printf' | grep -v '<域>' \
+      _h2=$(grep -E '【RV[^|]*\|[^|]*\|[^|]*\|挂账】' "$f" 2>/dev/null | grep -v 'printf' | grep -v 'rv-fixture' | grep -v '<域>' \
             | grep -oE '【RV[^|]*\|[^|]*\|[^|]*\|挂账】[^【]{0,400}' | grep -vE '20[0-9]{2}-[0-9]{2}-[0-9]{2}' || true)
       if [ -n "$_h2" ]; then
         echo "✗ $f：有【挂账】标注未写【具体日期】时点（须 YYYY-MM-DD，「某轮之前」这类会到期后仍通过）"

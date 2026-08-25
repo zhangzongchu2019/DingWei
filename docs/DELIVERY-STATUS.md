@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `2ed414fca73e8a80430c14b7bacef0d756c5e5d9` · 分支 `design/addendum-decisions`
+生成自 commit `84276a6a56d5039c9b6cf3040940073014db1a34` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.25** | `a96c21937b9348f7fd25470963bf7ec16857eb2d` | 3285 / 241319 | `964ad5994040a7dc56b951da4918ebbe745ae3ff04d6ba88566b1b3bbf19ce49` |
-| `dingwei-prototype.html` | **v1.33** | `2ed414fca73e8a80430c14b7bacef0d756c5e5d9` | 2867 / 264171 | `895706541163a9a4a349be66b73e340d04bf64fac31c7fa0e39e8df968716663` |
-| `dingwei-architecture-design.md` | **v0.26** | `2ed414fca73e8a80430c14b7bacef0d756c5e5d9<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 915 / 74063 | `eed399a9fb79a4b9f27d93da57e489b94a5f958973cd8b509e8cdb1f1e8af00d` |
+| `dingwei-platform-specdoc.md` | **v3.26** | `16ff70ac66ffb4216dda49b982b4f93207034e04<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3290 / 243040 | `1b8a35e2cf8acd960ef28a58ea14d6ba3f758b35bd08686e9386b1869dfb6fac` |
+| `dingwei-prototype.html` | **v1.34** | `82fc88ef0404c264adf39152eda772e4741f446b<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2859 / 265016 | `1faa018347bdcb9be629827535f57c7b83c2fabc568ef0aff63c698faa6ecd12` |
+| `dingwei-architecture-design.md` | **v0.27** | `84276a6a56d5039c9b6cf3040940073014db1a34<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 919 / 76150 | `43f382b4e182f65da4f6982dbf07b89794e0b97002bdec95ce54b574d1e4e117` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+84276a6 Merge commit 'c351ab21' into design/addendum-decisions
+82fc88e Merge commit '16ff70a' into design/addendum-decisions
+9412991 处置兑现 triage（⑱）+ arch 一处过程叙述
+c351ab2 review: keep evidence closure open
 2ed414f RV-乙08：⑭ 判据由「提交距离」换为「内容指纹」
+16ff70a review: 标注 R2 轮4甲域复核意见
 ec233ef review: mark security evidence closure gap
 a96c219 R2 轮4 丙域 kimi 4 条处置；analyze 接入提交闸（⑰）
-1459e4c review: 丙域 R2 轮4 复核标注 4 条（丙14/15/17/18）——以正文实取为准，不用处置列（kimi30kqtuxerh）
-62ffc01 R2 轮3 丙域 kimi 4 条处置 + 更正上一提交的两处不实断言
-9d66342 R2 轮3：三域 20 条评审意见归口处置，RV 台账拆列，闸 ⑫/⑯ 补三条判据
-43f49e6 fix: 丙域 R2 轮3 全采纳 —— 标注被工具改写(立闸⑯) + 体例二轮 16 处(前锚 baf724f)
-baf724f fix: 乙域 terra R2 轮3 三条全采纳 —— 证据闸结构性误判 · §22.2c 自我推翻(前锚 f64b2c4)
 ```
