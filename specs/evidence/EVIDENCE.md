@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T09:29:35Z
-分支头：`435bbbf24e57a9f4e36e5092bfd8fd339c2ef47e`
+生成时刻：2026-08-25T09:39:08Z
+分支头：`7399c685025eb73fd0144f2cc91c2c8c87f1ced4`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -61,19 +61,24 @@ $ specs/tools/analyze.sh
   ② 架构设计引用的 SpecDoc 节号是否都存在（跨制品悬空）
     ✓ 无悬空
   ③ 原型引用的 SpecDoc 节号是否都存在
-    原型引用 116 个节号；悬空 0 ✓
+    原型引用 114 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
     SpecDoc: 件内 v3.23 · 状态文件 v3.23 ✓
     架构设计: 件内 v0.22 · 状态文件 v0.22 ✓
-    原型: 件内 v1.25 · 状态文件 v1.25 ✓
+    原型: 件内 v1.26 · 状态文件 v1.26 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-architecture-design.md: 正文无他件旧版本号
-    ✓ dingwei-prototype.html: 正文无他件旧版本号
+    ✗ dingwei-prototype.html: 正文含他件旧版本号 5 处
+        L993 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
+        L1122 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
+        L1256 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
+        L1518 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
+        L1633 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
   ⑤ 生效前置状态（§0.4）
     ✓ 三域 checklist 齐备（结构 / 安全 / 跨制品）—— 但【生效与否取决于门方执行结果，非文件存在】
   ---
-  跨制品一致性检查通过（不含语义层，见脚本头注）
+  跨制品一致性检查未过
 ```
 
 ## 三、代码现状实测（架构设计 A§6.2 所载数字的来源）

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.25 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.26 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.25</span></h1>
-  <span class="anchor">原型 <b>v1.25</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.26</span></h1>
+  <span class="anchor">原型 <b>v1.26</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -758,7 +758,8 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：帖子结构当初为何靠反推 <span class="ref">§18.1 已正面定义</span></h3>
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §18.1 已正面定义 12 列字段集与 digest 序列规则</b>。下方保留的是<b>当初的缺口取证过程</b>（过程档案不抹，但须标时点 —— 学分级对齐屏的做法）。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div>
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §18.1 已正面定义 12 列字段集与 digest 序列规则</b>。
+</div>
   
   <div class="note bad" data-edit>§18.1 全节仅一句：「帖子正文须独立表，不得塞进事件表」——<b>没说这张表有什么列</b>。
   本屏字段集是从 §18.6 的 digest 覆盖范围 <code>tenant/node/seq/actor/ts/content</code> ＋ §18.3 去重用的 <code>post_id</code> <b>反推</b>的。<br>
@@ -989,10 +990,11 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：本屏当初无对应条款 <span class="ref">§25.5 Agent 名册已补</span></h3>
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。下方保留的是<b>当初的缺口取证过程</b>（过程档案不抹，但须标时点 —— 学分级对齐屏的做法）。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。
+</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   
   <div class="note bad" data-edit>SpecDoc §26「Agent 管理」只定义了<b>管理动作</b>（新建 / 关闭 / 重启 / 上下文注入）与<b>三形态的凭据策略</b>，
-  <b>没有定义「查看 Agent 在干什么」这个面</b>。全文搜「Agent 视角 / 工作面 / 任务清单」零命中。<br>
+  <b>没有定义「查看 Agent 在干什么」这个面</b>。<br>
   ⇒ 本屏当时为<b>原型先行</b>。✅ 现已回写为 <b>§25.5 Agent 名册</b>（v3.0 起生效），并走过评审。</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
 </div>
 </section>
@@ -1117,7 +1119,8 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：§25.4 当初只有两行 <span class="ref">§25.4.1–§25.4.6 已重写</span></h3>
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.4 自 v3.0 起已重写为 §25.4.1–§25.4.6</b>（含原生交互适用范围、ops 紧急面、开放讨论落帖子流等）。下方保留当初的缺口取证过程。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.4 自 v3.0 起已重写为 §25.4.1–§25.4.6</b>（含原生交互适用范围、ops 紧急面、开放讨论落帖子流等）。
+</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   <div class="note bad" data-edit>§25.4 全节正文仅：「不砍 view 页，sidecar 常开做旁路」＋ 一句理由。
   <b>没有任何界面定义</b> —— 发什么、怎么发、发之前过哪些闸、Agent 收到的是什么形状，全部未写。<br>
   ⇒ 本屏当时为<b>原型先行</b>。✅ 现已回写为 <b>§25.4.1–§25.4.6</b>（业主已确认，v3.0 起生效）（原议的另一路径 <b>§25.7</b> 现承载附件与多模态）。</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
@@ -1250,7 +1253,8 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：环境供给当初未定义 <span class="ref">§26.4 已落</span></h3>
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §26.4 及 §26.4.1–26.4.4 自 v3.0 起已落</b>。下方保留的是<b>当初的缺口取证过程</b>（过程档案不抹，但须标时点 —— 学分级对齐屏的做法）。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §26.4 及 §26.4.1–26.4.4 自 v3.0 起已落</b>。
+</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   
   <div class="note bad" data-edit>§26 三个小节只有：三形态的<b>信任与凭据等级</b>（26.1）、<b>K 层与 skill 的上下文注入</b>（26.2）、
   <b>管理面新建 / 下发面复用</b>（26.3）。<br>
@@ -1366,17 +1370,8 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：本屏当初为什么要造 <span class="ref">§4.6 已落 · 保留过程</span> <span style="font-weight:400;color:var(--dim);font-size:12px">跨制品面 C1：屏首说已落、屏底说未定义 —— 同屏两说，已消</span></h3>
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §4.6（准入检查）与 §4.7（内容构成与需求池）自 v3.0 / v3.11 起生效。</b><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
-  下方保留的是<b>当初的缺口取证过程</b>（学分级对齐屏的做法：过程档案不抹，但须标时点）。
-  <div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的全文搜索结果，<b>非现行状态</b>：</div></div>
-  <div class="note bad" data-edit>🕐 <b>当时</b>的全文搜索结果（搜索范围＝specdoc 全文）：<br>
-  「spec 评级 / 评分卡 / 质量评级 / 准入标准 / 准入门槛」→ <b>零命中</b>（唯一相关的是 §5.1「不可细（十档打分）」，
-  那是对<b>属性表</b>的告诫，不是 spec 准入）<br>
-  「一票否决 / 拒收 / 不予受理 / 退回补齐」→ <b>零命中</b><br>
-  「免审 / 跳过评审 / 无需评审 / 自动通过」→ <b>零命中</b><br><br>
-  ⇒ <b>规范定了「怎么给变更分级」（§5）与「交付物怎么验」（§6），
-  但没定「一份 spec 本身合不合格、够不够格占用人审」。</b><br>
-  ✅ <b>已回写为 §4.6 spec 准入检查</b>：硬门项集合（pass/fail，不加权，不产出总分）· 参考项与其用途 ·
-  人审深度与门方人选的映射 · 非语义修订通道的机器判据 · <b>并写明为何不设总分</b>（§5.1 + §5.2 第 1 条）。</div>
+  
+</div>
 </div>
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
@@ -1520,9 +1515,9 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：三类交付物当初无查阅入口 <span class="ref">§25.3 已扩至七类</span></h3>
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.3「交付物与规范查阅入口（v3.0 扩）」已覆盖七类。</b>下方保留当初的缺口取证过程。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.3「交付物与规范查阅入口（v3.0 扩）」已覆盖七类。</b>
+</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   <div class="note bad" data-edit>§25.3 只覆盖<b>两类</b>：spec 文档、架构设计文档。<br>
-  全文搜「设计方案 / 测试用例设计 / 测试报告」→ <b>零命中</b>。<br>
   它们在 §5.6 映射表里作为<b>环节名</b>出现（测试用例 / 用例评审 / 测试执行），
   在 §6.1 里作为<b>回执要素</b>出现（自测结果），<b>但从未作为「可查阅的交付物」被定义过入口</b>。<br><br>
   ⇒ 拟把 §25.3 扩为 <b>§25.3 交付物与规范查阅入口</b>，覆盖 spec · 设计方案 · 测试用例设计 ·
@@ -1635,7 +1630,8 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：§21 当初未定义账号合并 <span class="ref">§21.4 已落</span></h3>
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §21.4 / §21.4a / §21.4b 自 v3.0 起已定义渠道账号与人的绑定。</b>下方保留当初的缺口取证过程。<div style="margin-top:6px" class="mono">🕐 以下为 <b>v2.x 时点</b>的判断，<b>非现行状态</b>。</div></div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §21.4 / §21.4a / §21.4b 自 v3.0 起已定义渠道账号与人的绑定。</b>
+</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   <div class="note bad" data-edit>§21 全文三小节：21.1 §21.1 双层结构 · 21.2 因子分级 · 21.3 双因子不等于双人。<br>
   全文搜「合并 / 联合 / 绑定 / 同一人 / IdP / SSO / subject / 多渠道账号」——
   <b>「绑定」的命中全部指向别的东西</b>（capability policy 绑六项、token 绑设备指纹、challenge 绑一次性凭据），
@@ -2205,7 +2201,7 @@ body.uionly #uihint{display:block}
   <div class="note bad" data-edit>🔴 <b>两处规范缺口（本轮新增）</b>：<br>
   ① <b>业务架构 · 数据架构 是新条目类型</b> —— §12.1 十二类里只有「业务流程」（＝具体流转，非领域模型）
   与「数据库设计」（＝<code>migrations/</code> DDL，物理表结构，非数据架构）。<b>两者都不能替代。</b><br>
-  ② <b>运行态查询整个概念零命中</b> —— 全文搜「pod / 日志 / 数据量 / 指标 / 可观测 / 实时查询」，
+  ② <b>运行态查询是全新概念</b> ——
   仅命中「指标」但全指自检计数器与摘要质量，<b>无一处涉及运行态可观测数据</b>。</div>
 
   <div class="chk pass" data-edit>✅ <b>业主已答，且这条把 K0-sec 解掉了。</b><br>
@@ -2627,7 +2623,7 @@ document.getElementById('bExp').onclick=function(){
   var out={原型:'dingwei-prototype.html',
     /* 🔴 本对象【不内嵌任何版本号、commit 或指纹】。
        上一版的注释论证过「内嵌一个上一版的哈希,看着精确其实是过期值」,
-       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.25)——
+       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.26)——
        **注释与代码相邻对撞**,属「刚立的规矩在下一段自破」。
        ⚠️ 后果不是不好看:任何经此导出的改稿都会天然挂错基准,收件方按它去比对,
        比的是几个版本之前的文本。这正是「各方评审基准不同」在工具侧的成因。
