@@ -37,6 +37,11 @@ type TenantCtx struct {
 	// sys = 本就与租户无关;pending = 本该有租户、但领域 schema 还没到(SP7b)。
 	// 两者混为一谈,就等于用「与租户无关」冒充「已做隔离」。
 	pending bool
+	// domain / ownerSP 是这笔债的【结构化身份】,不是自由文本(乙域 terra SA-12)。
+	// 🔴 只有 reason 一行字时,机器无法按领域归并、也判不出「datad 归零了没有」——
+	//    于是 SP7b 逐领域收口就没有可复核的判据,只能靠人 grep。
+	domain  string // 归属领域,如 "datad" / "fanout";与闸的分组键同源
+	ownerSP string // 该债由哪个 SP 还,如 "SP7b"
 	reason  string
 }
 
@@ -80,15 +85,29 @@ func (t TenantCtx) check() error {
 //	⇒ 故另立本构造器:调用照常能跑,但它与 SystemCtx() 在类型内部可区分、可清点、可棘轮,
 //	  由闸盯着它随 SP7b 逐个归零。**把债做成可计数的,而不是隐形的。**
 //
-// reason 必填且不得为空:每个待办都要说明它在等哪个领域的 schema。
-func PendingTenantCtx(reason string) TenantCtx {
-	if reason == "" {
-		// 空理由等于没登记。这里不返回错误是为了不让调用点被迫改签名,
-		// 但返回【不可用】的零值 —— 于是它会在入口处 fail-closed,而不是悄悄放行。
+// domain / ownerSP / reason 三者必填。
+//
+// 🔴 为什么把 domain 与 ownerSP 从 reason 里拆出来(乙域 terra SA-12):
+//
+//	原签名只有一个自由文本 reason,于是全仓只能报一个总数(当时 59)。
+//	那个数既不是「有几笔债」也不是「有多少处要改」——它是【债源数 + 调用点数】相加,
+//	两种单位加在一起。SP7b 按领域收口时,它回答不了「datad 归零了没有」。
+//	⇒ 结构化成 (domain, ownerSP),闸即可【按领域各记各的棘轮、各自归零】。
+//
+// 缺任一项返回【不可用】的零值:于是它在入口处 fail-closed,而不是悄悄放行。
+// 这里不返回 error 是为了不让调用点被迫改签名 —— 代价是必须靠零值兜底,故三项都校验。
+func PendingTenantCtx(domain, ownerSP, reason string) TenantCtx {
+	if domain == "" || ownerSP == "" || reason == "" {
 		return TenantCtx{}
 	}
-	return TenantCtx{ok: true, pending: true, reason: reason}
+	return TenantCtx{ok: true, pending: true, domain: domain, ownerSP: ownerSP, reason: reason}
 }
+
+// Domain 该笔债的归属领域(仅 pending 时非空)。
+func (t TenantCtx) Domain() string { return t.domain }
+
+// OwnerSP 该笔债由哪个 SP 归还(仅 pending 时非空)。
+func (t TenantCtx) OwnerSP() string { return t.ownerSP }
 
 // IsPending 该上下文是否为尚未租户化的占位。
 func (t TenantCtx) IsPending() bool { return t.pending }

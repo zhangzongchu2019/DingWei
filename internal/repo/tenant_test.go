@@ -70,7 +70,7 @@ func TestNewTenantCtx(t *testing.T) {
 func TestContextKindsDoNotImpersonateEachOther(t *testing.T) {
 	var zero TenantCtx
 	sys := SystemCtx()
-	pend := PendingTenantCtx("等 SP7b 的 datad 领域 schema")
+	pend := PendingTenantCtx("datad", "SP7b", "等 SP7b 的 datad 领域 schema")
 
 	if zero.check() == nil {
 		t.Fatal("零值必须不可用")
@@ -92,11 +92,31 @@ func TestContextKindsDoNotImpersonateEachOther(t *testing.T) {
 	if pend.Reason() == "" {
 		t.Fatal("pending 必须带理由")
 	}
+	// 🔴 SA-12a:债的身份必须是结构化的,不能只有一行自由文本 ——
+	// 否则闸只能报一个总数,回答不了「datad 归零了没有」。
+	if pend.Domain() != "datad" || pend.OwnerSP() != "SP7b" {
+		t.Fatalf("pending 必须带结构化的 (domain, ownerSP):得到 (%q,%q)", pend.Domain(), pend.OwnerSP())
+	}
+	if sys.Domain() != "" || zero.Domain() != "" {
+		t.Fatal("只有 pending 才有 domain —— 否则又是一次「取值互相冒充」")
+	}
 }
 
-// 空理由的 pending 等于没登记,必须退化成【不可用】而非悄悄放行。
-func TestPendingWithoutReasonIsUnusable(t *testing.T) {
-	if PendingTenantCtx("").check() == nil {
-		t.Fatal("空理由的 pending 必须不可用 —— 否则登记制度形同虚设")
+// 三项任一为空的 pending 等于没登记,必须退化成【不可用】而非悄悄放行。
+// 🔴 三项各钉一条:只测 reason 会让「domain 空着也能过」溜过去,
+// 而 domain 空正是 SA-12a 要堵的「无主的债」。
+func TestPendingWithoutFullRegistrationIsUnusable(t *testing.T) {
+	cases := []struct {
+		name             string
+		dom, owner, reas string
+	}{
+		{"缺 domain", "", "SP7b", "r"},
+		{"缺 ownerSP", "datad", "", "r"},
+		{"缺 reason", "datad", "SP7b", ""},
+	}
+	for _, c := range cases {
+		if PendingTenantCtx(c.dom, c.owner, c.reas).check() == nil {
+			t.Errorf("%s 的 pending 必须不可用 —— 否则登记制度形同虚设", c.name)
+		}
 	}
 }
