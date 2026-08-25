@@ -100,7 +100,7 @@ check() {
   [ -f "$_allow" ] || { echo "✗ 闸依赖缺失：允许清单 $_allow 不存在"; return 2; }
   [ -f "$_basef" ] || { echo "✗ 闸依赖缺失：基线 $_basef 不存在 —— 无基线即无棘轮，不得放行"; return 2; }
 
-  for k in open escape; do
+  for k in open escape pending system; do
     v=$(_baseval "$_basef" "$k")
     case "$v" in
       ABSENT) echo "✗ 闸依赖损坏：基线缺键 $k —— 判据少一条即少一半，不得放行"; return 2;;
@@ -138,6 +138,15 @@ check() {
     rm -f "$_root/.esc.err"; return 2
   fi
   rm -f "$_root/.esc.err"
+  # 🔴 pending / system 两条棘轮（甲域 sol 合并 verdict 的建议）：
+  #   PendingTenantCtx 允许「有上下文标记但尚无租户过滤」的调用继续跑 —— 这是 SP7b 的显式债，
+  #   **不得借 allowlist 批准宣称租户隔离已实现**。故把它做成可清点、只许下行的棘轮。
+  #   SystemCtx 同样计数:它每一处都是评审面(「这个操作真的与租户无关吗」),不许悄悄增长。
+  OUT_pending=$(grep -rnE '\b(dtx|ftx)\(\)|repo\.PendingTenantCtx\(' --include=*.go "$_root/internal" 2>/dev/null \
+                | grep -v '/repo/' | sed "s|^$_root/||")
+  OUT_system=$(grep -rnE 'repo\.SystemCtx\(\)' --include=*.go "$_root/internal" 2>/dev/null \
+                | grep -v '/repo/' | sed "s|^$_root/||")
+  CUR_pending=$(_count "$OUT_pending"); CUR_system=$(_count "$OUT_system")
   CUR_open=$(_count_matches "$OUT_open" "$PAT_OPEN")
   # AST 输出每行恰为一处逃逸,按行即按处。
   CUR_escape=$(_count "$OUT_escape")
@@ -153,6 +162,8 @@ check() {
     [ "$_n" -eq 0 ] && echo "    （空：仓储包尚未建立，故「仓储包外」＝全仓）"
     echo "  判据一·仓储包外建库句柄：$CUR_open 处（基线 $BASE_open，终值 0）"
     [ -n "$OUT_open" ] && printf '%s\n' "$OUT_open" | sed 's/^/    /'
+    echo "  债·尚未租户化的调用点：$CUR_pending 处（基线 $BASE_pending，终值 0，随 SP7b 归零）"
+    echo "  债·显式 SystemCtx 调用点：$CUR_system 处（基线 $BASE_system；每处都是评审面，不许悄悄增长）"
     echo "  判据二·裸库句柄逃出包外：$CUR_escape 处（基线 $BASE_escape，终值 0；允许清单对本条不豁免）"
     [ -n "$OUT_escape" ] && printf '%s\n' "$OUT_escape" | sed 's/^/    /'
   fi
@@ -161,6 +172,8 @@ check() {
   rc=0
   [ "$CUR_open"   -gt "$BASE_open" ]   && rc=1
   [ "$CUR_escape" -gt "$BASE_escape" ] && rc=1
+  [ "$CUR_pending" -gt "$BASE_pending" ] && rc=1
+  [ "$CUR_system"  -gt "$BASE_system"  ] && rc=1
   return $rc
 }
 
@@ -178,7 +191,7 @@ selftest() {
     rm -rf "$T/r"; mkdir -p "$T/r/internal/pkg" "$T/r/internal/store"
     printf 'package pkg\n\nfunc F() {}\n'   > "$T/r/internal/pkg/a.go"
     printf 'package store\n\nfunc G() {}\n' > "$T/r/internal/store/s.go"
-    : > "$T/allow"; printf 'open 0\nescape 0\n' > "$T/base"
+    : > "$T/allow"; printf 'open 0\nescape 0\npending 0\nsystem 0\n' > "$T/base"
   }
   run() { check "$T/r" "$T/allow" "$T/base" 1; }
 
@@ -255,7 +268,7 @@ selftest() {
 
   # ⑪ 🔴 两条判据不得合并看总数：一降一升必须拒。
   #    合并成一个总数就允许「收了一处建库、同时新开一个 DB() 访问器」而总数不变地过闸。
-  mk; printf 'open 1\nescape 0\n' > "$T/base"
+  mk; printf 'open 1\nescape 0\npending 0\nsystem 0\n' > "$T/base"
   printf 'package pkg\n\nimport "database/sql"\n\ntype B struct{ db *sql.DB }\n\nfunc (b *B) DB() *sql.DB { return b.db }\n' > "$T/r/internal/pkg/b.go"
   run  # open 实为 0（降），escape 实为 1（升）；若看总数则 1 vs 1 持平会放行
   [ $? -eq 1 ] && ok "一降一升必拒（两条判据各判各的，不看总和）" || bad "一降一升被放行 —— 判据被合并了"
@@ -263,7 +276,7 @@ selftest() {
   # ⑫ 基线缺失 / 非数字 / 缺键 须判「闸坏了」，不得当成通过（第六种失效形态）
   mk; rm -f "$T/base"; run >/dev/null 2>&1
   [ $? -eq 2 ] && ok "基线缺失判为闸坏（非通过）" || bad "基线缺失被当成通过"
-  mk; printf 'open eight\nescape 0\n' > "$T/base"; run >/dev/null 2>&1
+  mk; printf 'open eight\nescape 0\npending 0\nsystem 0\n' > "$T/base"; run >/dev/null 2>&1
   [ $? -eq 2 ] && ok "基线值非数字判为闸坏（非通过）" || bad "基线非数字被当成通过"
   mk; printf 'open 0\n' > "$T/base"; run >/dev/null 2>&1
   [ $? -eq 2 ] && ok "基线缺 escape 键判为闸坏（判据少一半即不得放行）" || bad "基线缺键被当成通过"
@@ -271,14 +284,14 @@ selftest() {
   # ⑫a 已裁撤的开关键若回潮，须判「闸坏了」——业主裁定「不留逃生开关」要有牙，
   #     否则谁都可以再加一个 include_tests 回来，闸照旧打印通过。
   for k in include_tests open_prod open_all; do
-    mk; printf "open 0\nescape 0\n$k 0\n" > "$T/base"; run >/dev/null 2>&1
+    mk; printf "open 0\nescape 0\npending 0\nsystem 0\n$k 0\n" > "$T/base"; run >/dev/null 2>&1
     [ $? -eq 2 ] && ok "拦住：已裁撤的键 $k 回潮（判闸坏，非通过）" || bad "$k 回潮被放行"
   done
 
   # ⑫b 甲域 sol CR 的四条,逐条补反测 —— 反测不覆盖的地方就是闸的实际边界。
   # #3 同一行多处调用须按【处】计:原按行计数,一行两个 sql.Open 只算 1。
   mk; printf 'package pkg\n\nfunc F(){ a,_ := sql.Open("pgx","x"); b,_ := sql.Open("pgx","y"); _,_ = a,b }\n' > "$T/r/internal/pkg/b.go"
-  printf 'open 1\nescape 0\n' > "$T/base"
+  printf 'open 1\nescape 0\npending 0\nsystem 0\n' > "$T/base"
   run; [ $? -eq 1 ] && ok "拦住:同一行两处调用按处计(不按行)" || bad "同一行两处调用仍只算 1 处(CUR=$CUR_open)"
 
   # #4 允许项须卡目录边界:internal/store 不得连带豁免 internal/storeevil。
@@ -297,14 +310,14 @@ selftest() {
   # 🔴 本项必须调【真正的驱动段】,不能调 check() —— 收紧逻辑在 check 之外。
   #    上一版这里调的是 run(=check),测的根本不是它以为的东西,连带旁边那条
   #    「不改动基线」也成了假通过(文件本就没机会被改)。与本仓反复点的同一类。
-  mk; printf 'open 3\nescape 0\n' > "$T/base"   # 实际为 0,可收紧
+  mk; printf 'open 3\nescape 0\npending 0\nsystem 0\n' > "$T/base"   # 实际为 0,可收紧
   env -u GIT_INDEX_FILE sh "$SELF" "$T/r" "$T/allow" "$T/base" >/dev/null 2>&1
   [ $? -eq 1 ] && ok "钩子外「可收紧」判 FAIL(不以写文件当落盘)" || bad "钩子外可收紧被放行"
   BV=$(awk '$1=="open"{print $2}' "$T/base")
   [ "$BV" = "3" ] && ok "钩子外不改动基线文件(无副作用)" || bad "钩子外偷改了基线(现为 $BV)"
 
   # #2 反向:钩子上下文里可收紧则应自动落盘并返回 0(否则修法把正常路径堵死)。
-  mk; printf 'open 3\nescape 0\n' > "$T/base"
+  mk; printf 'open 3\nescape 0\npending 0\nsystem 0\n' > "$T/base"
   GIT_INDEX_FILE=/nonexistent sh "$SELF" "$T/r" "$T/allow" "$T/base" >/dev/null 2>&1
   # BASE≠DEF_BASE 时不自动落盘(避免反测污染真基线),故此处仍应 FAIL 而非静默通过
   [ $? -eq 1 ] && ok "钩子内但基线非默认路径时仍不静默通过" || bad "非默认基线路径被静默收紧"
@@ -338,6 +351,8 @@ rc=$?
 [ $rc -eq 2 ] && exit 1
 if [ $rc -eq 1 ]; then
   [ "$CUR_open"   -gt "$BASE_open" ]   && echo "✗ 判据一由 $BASE_open 升至 $CUR_open —— 棘轮只许下行。新代码请走仓储包。"
+  [ "$CUR_pending" -gt "$BASE_pending" ] && echo "✗ 尚未租户化的调用点由 $BASE_pending 升至 $CUR_pending —— SP7b 的债只许还，不许添。"
+  [ "$CUR_system" -gt "$BASE_system" ] && echo "✗ SystemCtx 调用点由 $BASE_system 升至 $CUR_system —— 每处都是评审面，新增须经评审。"
   [ "$CUR_escape" -gt "$BASE_escape" ] && echo "✗ 判据二由 $BASE_escape 升至 $CUR_escape —— 裸库句柄不得逃出包外（§22.2c #1）。"
   echo "  确需例外，改的是 $ALLOW —— 这是【纪律】不是闸(本闸识别不了谁批准)；且它对判据二不豁免。"
   exit 1

@@ -27,7 +27,7 @@
 | `specs/evidence/EVIDENCE.md` | 证据包产出（作者侧旁证，非门方结论） |
 | `specs/evidence/collect.sh` | 生成证据包：每条断言附产出它的命令，供门方复算 |
 | `specs/evidence/reference-index.md` | 引用索引 |
-| `specs/gates/repo-packages.txt` | SP7a 仓储包允许清单；加条目＝放宽判据，属评审面 |
+| `specs/gates/repo-packages.txt` | SP7a 仓储包允许清单（现含 `internal/repo`，甲域 sol 附条件授权）；加条目＝放宽判据，属评审面 |
 | `specs/gates/boundary-baseline.txt` | SP7a 边界棘轮基线（`open` / `escape` 各记各的，不合并） |
 | `specs/gates/status-stale-exceptions.txt` | 状态一致性闸的显式例外清单，每条须带理由与归属；例外是债不是豁免 |
 
