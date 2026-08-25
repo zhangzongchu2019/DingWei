@@ -35,6 +35,7 @@
 #       状态   = 未决 | 采纳 | 驳回 | 挂账
 #
 # 【RV|甲|阻断|未决】`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直接删除一条 RV 且不写沿革，脚本没有前一轮 RV ledger/稳定 ID 可比，仍会 rc=0。须为每条 RV 分配稳定 ID，并在独立 reviewer-owned 清单或基线 manifest 中记录；final 对拍“前轮全集 = 采纳 ∪ 驳回(理由) ∪ 挂账(owner+时点) = 沿革落账”，否则收官防丢只是文字纪律。
+# 【RV|甲|阻断|未决】终审确认该缺口未修且未被 29 条统计：上条脚本内 RV 仍为“未决”，但 `--rv/--final` 的 DOCS 仅含三件正文，完全看不见脚本头注，故可在自身仍有未决时宣称收官。另 `rvcheck --final` 只校验驳回理由，不校验挂账必须含责任人＋时点；现 9 条挂账多数无时点，体例挂账时点“R2 轮3前”及 tenant 挂账时点已到期，仍会通过。须先落稳定 RV ledger、把脚本自身纳入扫描，并实现挂账 owner/time 与逾期校验，再谈 `--final`。
 set -u
 
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
