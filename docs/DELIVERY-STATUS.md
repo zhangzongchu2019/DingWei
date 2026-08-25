@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `e083f819e9450fb0203fc564f5ced76a0c802edd` · 分支 `design/addendum-decisions`
+生成自 commit `e714a1159246a06d71a14edb6de5669467baf628` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.23** | `93394151f3d97b8a8828c4a8c59c3ea41b4bf639` | 3233 / 220228 | `083d3b011d27603a7e96ec3ea6d208be4eaadac34b0374cf39d6d2c22713d5aa` |
-| `dingwei-prototype.html` | **v1.21** | `e083f819e9450fb0203fc564f5ced76a0c802edd` | 2853 / 257348 | `daa5703954df056179f0b641745c388b80edb8491eb87572d110ef4996d4e178` |
-| `dingwei-architecture-design.md` | **v0.22** | `e083f819e9450fb0203fc564f5ced76a0c802edd` | 895 / 61958 | `ba878abdce39c4cb85e05509e0149f01dafb9b0242e4eb2ea972fd98ec2eac9e` |
+| `dingwei-platform-specdoc.md` | **v3.23** | `93394151f3d97b8a8828c4a8c59c3ea41b4bf639<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3238 / 221780 | `b2f2a4406856c286f585b6d17cbb85f175c7d69266e19f285c65572095b55e9f` |
+| `dingwei-prototype.html` | **v1.22** | `e083f819e9450fb0203fc564f5ced76a0c802edd<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2854 / 257814 | `cdcb64cf5fa83f74065ba18e93a31daa38571b5c4a5d2a0296044b66cb64ba6c` |
+| `dingwei-architecture-design.md` | **v0.22** | `e083f819e9450fb0203fc564f5ced76a0c802edd<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 897 / 62523 | `a463b71c33fe663f98b9d95fd155f13427b1857bf07a7ed8fb31e53da37b8ddf` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+e714a11 chore: DELIVERY-STATUS 随丙域标注合并重生成（机器生成，勿手改）
 e083f81 Merge remote-tracking branch 'origin/design/addendum-decisions' into design/addendum-decisions
 f93fa01 gate+docs: 评审前预修 —— 快照包三缺 · analyze 覆盖面 · checklist 落账闸(前锚 e0ce00d)
 9339415 review: 丙域 R2 轮1 评审标注 9 条（8 未决 + 1 采纳）——跨制品一致域（kimi30kqtuxerh）
@@ -34,5 +35,4 @@ e0ce00d docs: 原型 R2 —— 四套互斥身份收敛 · 导出戳去假基准
 591c585 docs: SpecDoc 落九条概念裁定 + 修 kimi F-5；体例闸修与 RV 互不打架(前锚 6f4a4e0)
 6f4a4e0 docs: SpecDoc 体例分离完成 90→0 + C.3 重裁为 C.3a(前锚 9ebe153)
 9ebe153 docs(wip): SpecDoc 体例分离进行中 90→43 + RV 标注首次实用(前锚 82f9af1)
-82f9af1 docs: 架构件落业主九条概念裁定 + C.3a 存储重裁(前锚 2829a2a)
 ```

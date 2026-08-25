@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.21 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.22 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.21</span></h1>
-  <span class="anchor">原型 <b>v1.21</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.22</span></h1>
+  <span class="anchor">原型 <b>v1.22</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -226,6 +226,7 @@ body.uionly #uihint{display:block}
     <td><button>认领</button> <button>看 spec</button></td></tr>
   <tr data-t="auth"><td><span class="tag t-auth">授权待批</span></td>
     <td data-edit><b>跨租户 capability 申请</b>：图搜 3.0 → WSXC 导出对象清单
+    【RV|乙|阻断|未决】本屏仍把跨租户导出作为可进入待批队列的动作；R2 的 §15.5 已规定企业之间无任何交流、无解锁路径，SA-10 亦应下沉为企业内跨人聚合。即使当前样例因字段缺失而“不可批”，该入口仍把被禁止的跨企业能力画成可补齐后批准的路径。应删除／替换为企业内跨人、仅已流通产物的聚合入口，并与 §20.1 和 capability catalog 同步。
     <div class="mono">policy 六项缺 2：<span style="color:var(--bad)">用途未填 · 目标资源范围写作「整租户」</span></div>
     <div class="note warn" style="margin:6px 0 0;padding:6px 9px">§22.1c：资源范围不得为整租户，用途必填 ⇒ <b>当前不可批</b></div></td>
     <td data-edit>租户级 ops（图搜）</td><td>图搜 3.0</td><td>18:52</td><td class="d-high">高</td>
@@ -2622,7 +2623,7 @@ document.getElementById('bExp').onclick=function(){
   var out={原型:'dingwei-prototype.html',
     /* 🔴 本对象【不内嵌任何版本号、commit 或指纹】。
        上一版的注释论证过「内嵌一个上一版的哈希,看着精确其实是过期值」,
-       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.21)——
+       却在紧接着的下一行内嵌了两个过期版本号(v3.13/v1.13,彼时实为 v3.23/v1.22)——
        **注释与代码相邻对撞**,属「刚立的规矩在下一段自破」。
        ⚠️ 后果不是不好看:任何经此导出的改稿都会天然挂错基准,收件方按它去比对,
        比的是几个版本之前的文本。这正是「各方评审基准不同」在工具侧的成因。
