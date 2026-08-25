@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `2829a2a257fa7a0eada5ad0056ce985e82f12077` · 分支 `design/addendum-decisions`
+生成自 commit `82f9af1f10cdfddbaabb1ddd776cb9f0d177442d` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.23** | `3bcbaf16a43dfe772bcd55430c08eb0bb8689915` | 3091 / 211591 | `8d28b62b260595a3330a224fea13140ee0491b33f8e246e19dd59a2a10b3f016` |
+| `dingwei-platform-specdoc.md` | **v3.23** | `3bcbaf16a43dfe772bcd55430c08eb0bb8689915<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3080 / 209330 | `70803c328c3926ddad5f79850ceb8656bbb41df1efb19f24dd662472b3e8b5f3` |
 | `dingwei-prototype.html` | **v1.19** | `e4abe0a27460711d1e96fa88630c70fee77e11a0` | 2849 / 254727 | `2cdcd14be84b31758f8834faf54fa4445f6b21e6868fbd61ce3a109657eb1d16` |
-| `dingwei-architecture-design.md` | **v0.22** | `2829a2a257fa7a0eada5ad0056ce985e82f12077<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 895 / 61683 | `17406bbb3bb8e0c9a90dd2fab93ad1b66a809bf6a4630a5ee02886b39b4b722f` |
+| `dingwei-architecture-design.md` | **v0.22** | `82f9af1f10cdfddbaabb1ddd776cb9f0d177442d` | 895 / 61683 | `17406bbb3bb8e0c9a90dd2fab93ad1b66a809bf6a4630a5ee02886b39b4b722f` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+82f9af1 docs: 架构件落业主九条概念裁定 + C.3a 存储重裁(前锚 2829a2a)
 2829a2a docs: 架构件体例分离 + R1 修项 —— 正文过程痕迹 37→0，新建沿革记录件(前锚 c6a514c)
 c6a514c gate: 立体例合规闸 + RV 评审标注机制(前锚 6211504)
 6211504 merge: SA 批（SA-11/12/13/14）合入主线，作为 R2 出稿的基底
@@ -34,5 +35,4 @@ e94844c fix: SA 批二轮 —— terra 四条阻断一次性修完(SA-12a/12b/13
 23fb6bf fix: SA 批一次性整改 —— SA-12(pending 债按效果判·分领域棘轮) + SA-13(迁移账·拒绝静默重放)(前锚 110de2b)
 110de2b chore: 移除仓根误提交的 handle-escape 构建产物(前锚 8b6fbbc)
 8b6fbbc fix: 闭两条门方 FAIL——AST 别名解析改不动点(乙域 terra SA-11) + Option 不再外泄裸句柄(甲域 sol #6)(前锚 3a25403)
-3a25403 docs: arch 附录待办表第 1 行同步——「未过架构评审」改「已过；用例评审/交付验证未过 ⇒ 不得签收交付物」（丙域 kimi，前锚 d0322c6）
 ```
