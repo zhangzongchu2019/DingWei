@@ -1,5 +1,5 @@
 #!/bin/sh
-# 提交闸 ①–⑦ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步 / 架构引用核验 / 仓储包边界。任一不过即失败。
+# 提交闸 ①–⑧ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步+锚可达 / 架构引用核验 / 仓储包边界 / specs 索引。任一不过即失败。
 #
 # 立此闸的直接原因：2026-08-24，本席在 speclint 退出码为 1 的状态下推了 a165521。
 # 当时 lint 与 commit 写在同一批命令里、没有用 && 串，照跑不误。
@@ -126,4 +126,12 @@ scripts/repo-boundary-gate.sh || exit 1
 scripts/repo-boundary-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/repo-boundary-gate.sh --selftest; echo "✗ 仓储包边界闸的反测未过"; exit 1; }
 echo "  ⑦ 仓储包边界闸的反测 ✓"
-echo "✓ 提交闸全过（①–⑦）"
+# ⑧ specs/ 索引与实际一致（README 的结构表不许再靠人手维护）
+if [ ! -x scripts/specs-index-check.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/specs-index-check.sh 不可执行"; exit 1
+fi
+scripts/specs-index-check.sh || exit 1
+scripts/specs-index-check.sh --selftest >/dev/null 2>&1 || {
+  scripts/specs-index-check.sh --selftest; echo "✗ specs 索引闸的反测未过"; exit 1; }
+echo "  ⑧ specs 索引闸的反测 ✓"
+echo "✓ 提交闸全过（①–⑧）"
