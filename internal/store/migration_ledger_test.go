@@ -132,12 +132,32 @@ func TestMigrationLedger_DuplicateColumnFailsInsteadOfBeingSwallowed(t *testing.
 }
 
 // legacy 库补账：账为空但库里已有业务表 ⇒ 核验后只写账、不重放数据语句。
-func TestMigrationLedger_LegacyBackfillDoesNotReplayData(t *testing.T) {
+//
+// 🔴 terra SA-13 二轮：纯数据迁移不再自动补账。0025 无稳定效果签名（它设的字段
+// 管理员随时可改），故必须走【受控人工确认】。本测试同时钉住两半：
+// 没有确认 ⇒ 拒启动；有确认 ⇒ 只补账、不重放。
+func TestMigrationLedger_LegacyRefusesUnverifiableDataMigration(t *testing.T) {
 	ctx := context.Background()
-	path := filepath.Join(t.TempDir(), "legacy.db")
+	s := openMigrated(t, filepath.Join(t.TempDir(), "legacy-noack.db"))
+	if _, err := s.db.ExecContext(ctx, `DROP TABLE schema_migrations`); err != nil {
+		t.Fatal(err)
+	}
+	err := s.Migrate(ctx)
+	if err == nil {
+		t.Fatal("纯数据迁移在 legacy 库上被自动补账了 —— 拿「无法核验」当「核验通过」")
+	}
+	if !strings.Contains(err.Error(), "0025_owner_links_page.sql") {
+		t.Fatalf("拒的不是那条无 verifier 的纯数据迁移：%v", err)
+	}
+	if !strings.Contains(err.Error(), legacyAckEnv) {
+		t.Fatalf("拒绝信息没告诉运维怎么受控放行：%v", err)
+	}
+}
 
-	// 先正常迁到最新，再把账整个删掉，伪造成「一个在跑但没有账的旧库」。
-	s := openMigrated(t, path)
+func TestMigrationLedger_LegacyAckBackfillsWithoutReplay(t *testing.T) {
+	ctx := context.Background()
+	s := openMigrated(t, filepath.Join(t.TempDir(), "legacy-ack.db"))
+
 	const edited = "#legacy 库里被改过的"
 	if _, err := s.db.ExecContext(ctx,
 		`UPDATE l1_decision_rule SET pattern=? WHERE id='l1_command_roster'`, edited); err != nil {
@@ -147,8 +167,9 @@ func TestMigrationLedger_LegacyBackfillDoesNotReplayData(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Setenv(legacyAckEnv, "0025_owner_links_page.sql")
 	if err := s.Migrate(ctx); err != nil {
-		t.Fatalf("legacy 补账失败: %v", err)
+		t.Fatalf("受控确认后仍拒: %v", err)
 	}
 
 	var got string
@@ -157,13 +178,43 @@ func TestMigrationLedger_LegacyBackfillDoesNotReplayData(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got != edited {
-		t.Fatalf("legacy 补账重放了数据语句：期望保持 %q，实得 %q", edited, got)
+		t.Fatalf("补账重放了数据语句：期望保持 %q，实得 %q", edited, got)
 	}
 	var n int
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations`).Scan(&n); err != nil {
 		t.Fatal(err)
 	}
-	if n == 0 {
-		t.Fatal("legacy 补账没写账")
+	entries, _ := migrationFS.ReadDir("migrations")
+	if n != len(entries) {
+		t.Fatalf("补账不全：账 %d 行，迁移 %d 个", n, len(entries))
+	}
+}
+
+// 0024 有稳定效果签名（旧 owner key 已不存在）⇒ 无需人工确认即可补账。
+// 🔴 反过来也要钉：签名【不成立】时不得补账 —— 否则 verifier 是个恒真的摆设。
+func TestMigrationLedger_DataVerifierJudgesByStableSignature(t *testing.T) {
+	ctx := context.Background()
+	s := openMigrated(t, filepath.Join(t.TempDir(), "verify.db"))
+
+	ok, err := s.verifyDataMigration(ctx, "0024_session_naming_b.sql")
+	if err != nil || !ok {
+		t.Fatalf("迁过的库上 0024 的签名应成立：ok=%v err=%v", ok, err)
+	}
+
+	// 把旧 key 塞回去 ⇒ 签名不再成立 ⇒ verifier 必须判「未生效」。
+	if _, err := s.db.ExecContext(ctx,
+		`INSERT INTO registered_service(id, name) VALUES('system-v-task-internal','x')`); err != nil {
+		// 表结构不同则换一处签名点，不让本反测因无关原因变绿。
+		if _, err2 := s.db.ExecContext(ctx,
+			`INSERT INTO member(id, owner_key) VALUES('zz','system-v-task-internal')`); err2 != nil {
+			t.Fatalf("两处签名点都塞不进旧 key，本反测无法成立: %v / %v", err, err2)
+		}
+	}
+	ok, err = s.verifyDataMigration(ctx, "0024_session_naming_b.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Fatal("旧 key 仍在，verifier 却判「已生效」—— 它是个恒真的摆设")
 	}
 }

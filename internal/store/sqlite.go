@@ -197,14 +197,37 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 				return fmt.Errorf("migrate %s: legacy 核验失败: %w", name, err)
 			}
 			switch state {
-			case objAllPresent, objUnverifiable:
-				// 受控 legacy 补账：核验过 DDL 对象确实都在（或该迁移纯数据、无对象可核）。
+			case objAllPresent:
+				// 受控 legacy 补账：核验过该迁移的 DDL 对象确实都在。
 				// 🔴 只写账，不执行 —— 执行才是伤害本身。
 				if err := s.recordMigration(ctx, name, digest); err != nil {
 					return err
 				}
 				backfilled++
 				continue
+			case objUnverifiable:
+				// 🔴 terra SA-13 二轮：一轮把「纯数据迁移」直接当作已应用补账 ——
+				//   那是拿【无法核验】当【核验通过】。0025 是纯 UPDATE，一个账为空、
+				//   且从未执行过它的旧库，会被标成已应用：既不重放、也不拒启动，
+				//   于是该迁移的效果永远不会落地，而启动照样成功。
+				//   ⇒ 纯数据迁移必须逐版本有 verifier；没有就拒启动，不得自动补账。
+				ok, err := s.verifyDataMigration(ctx, name)
+				if err != nil {
+					return fmt.Errorf("migrate %s: 纯数据迁移核验失败: %w", name, err)
+				}
+				if ok {
+					if err := s.recordMigration(ctx, name, digest); err != nil {
+						return err
+					}
+					backfilled++
+					continue
+				}
+				return fmt.Errorf(
+					"migrate %s: 这是【纯数据迁移】，legacy 库无法自动判定它是否已执行 —— 拒绝启动。\n"+
+						"  · 若已登记 verifier 而核验为「未生效」：重放数据语句可能覆盖人工改动，故不自动执行；\n"+
+						"  · 若未登记 verifier：本迁移无稳定效果签名，机器判不了。\n"+
+						"  ⇒ 人工核验实际数据后，用受控确认放行：%s=%s（可逗号分隔多个版本）",
+					name, legacyAckEnv, name)
 			case objPartial:
 				return fmt.Errorf(
 					"migrate %s: legacy 库处于【半迁移】状态（该迁移的对象一部分已存在、一部分缺失）—— 拒绝启动。"+
@@ -216,6 +239,12 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 		if err := s.applyMigration(ctx, name, string(body), digest); err != nil {
 			return err
 		}
+		// 🔴 一旦本轮【真执行】过一个迁移，其后的版本必然也没被应用过 ——
+		//    迁移是有序的，version N 缺失就意味着 N 之后的都缺失。
+		//    ⇒ 此后不再走 legacy 判定，纯数据迁移照常执行，不去要什么人工确认。
+		//    （否则一个只 seed 了半张旧表的库，会在第一个纯数据迁移上被拒，
+		//      而那个迁移显然从未跑过 —— 把「判不出」错用到了「明确没跑过」的情形上。）
+		legacy = false
 	}
 
 	if backfilled > 0 {
@@ -242,6 +271,65 @@ func (s *SQLite) applyMigration(ctx context.Context, name, body, digest string) 
 		return fmt.Errorf("migrate %s: 记账失败: %w", name, err)
 	}
 	return tx.Commit()
+}
+
+// legacyAckEnv 是【受控人工确认】的入口：运维在部署件里显式列出已人工核验过的
+// 纯数据迁移版本。🔴 刻意做成环境变量而非代码常量——它属于部署侧声明（架构 A§8.2：
+// 环境属性由部署件声明、服务端取得），且每次使用都留在部署配置里可被审。
+const legacyAckEnv = "DINGWEI_MIGRATION_LEGACY_ACK"
+
+// dataMigrationVerifier 判定某个纯数据迁移的【效果】是否已经在库里。
+//
+// 🔴 判据必须是**稳定效果签名**：即「这个迁移干过一次」留下的、
+//
+//	不会被正常运维改动抹掉的痕迹。若一个迁移没有这样的签名（例如它只是把某个
+//	可编辑字段设成某值——管理员随时可以改），**就不要硬凑一个 verifier**，
+//	让它落到「拒启动 + 人工确认」那条路上。硬凑出来的 verifier 会把
+//	「管理员改过」误判成「迁移没跑过」，那比没有 verifier 更坏。
+type dataMigrationVerifier func(ctx context.Context, db *sql.DB) (bool, error)
+
+var dataMigrationVerifiers = map[string]dataMigrationVerifier{
+	// 0024 把旧 owner key 全量改名为 systemtaskintl。稳定签名：**旧 key 已不存在**。
+	// 正常运维不会把 'system-v-task-internal' 重新写回去，故该签名稳定。
+	"0024_session_naming_b.sql": func(ctx context.Context, db *sql.DB) (bool, error) {
+		const old = "system-v-task-internal"
+		for _, q := range []string{
+			`SELECT COUNT(*) FROM service_api_key WHERE service_id=?`,
+			`SELECT COUNT(*) FROM api_key_account WHERE chat_entity_id=?`,
+			`SELECT COUNT(*) FROM session_endpoint WHERE owner_key=?`,
+			`SELECT COUNT(*) FROM member WHERE owner_key=?`,
+			`SELECT COUNT(*) FROM registered_service WHERE id=?`,
+		} {
+			var n int
+			if err := db.QueryRowContext(ctx, q, old).Scan(&n); err != nil {
+				return false, err
+			}
+			if n > 0 {
+				return false, nil
+			}
+		}
+		return true, nil
+	},
+
+	// 🔴 0025_owner_links_page.sql 【故意不登记】：它只是把 l1_command_roster 的 pattern
+	//    设成某个值，而那个字段管理员随时可改 —— 没有稳定效果签名。
+	//    任何“verifier”都会把「管理员改过」读成「迁移没跑过」。
+	//    ⇒ 让它走拒启动 + DINGWEI_MIGRATION_LEGACY_ACK 人工确认，这是诚实的那条路。
+}
+
+// verifyDataMigration 先看受控人工确认，再看 verifier。
+func (s *SQLite) verifyDataMigration(ctx context.Context, name string) (bool, error) {
+	for _, v := range strings.Split(os.Getenv(legacyAckEnv), ",") {
+		if strings.TrimSpace(v) == name {
+			fmt.Fprintf(os.Stderr, "store: 纯数据迁移 %s 由 %s 人工确认放行（仅补账，不执行）\n", name, legacyAckEnv)
+			return true, nil
+		}
+	}
+	vf, ok := dataMigrationVerifiers[name]
+	if !ok {
+		return false, nil // 无 verifier ⇒ 交给调用方拒启动
+	}
+	return vf(ctx, s.db)
 }
 
 func (s *SQLite) recordMigration(ctx context.Context, name, digest string) error {
