@@ -22,10 +22,16 @@
 #     (CODEOWNERS / 受保护分支要求甲域批准,或门方签名的 manifest 由 CI 验签)。
 #     ⇒ 在仓侧保护落地之前,「清单变更属评审面」是一条【纪律】,不是一道【闸】。不得混称。
 #
-#  ② **保证范围＝本文件 PAT 列明 API 的直接字面调用。** import alias、跨行调用、
-#     以及未列入的新库仍可绕过。本闸是正则 detector,不是 Go AST 分析。
-#     ⇒ 不得宣称「已按全部 effect 闭合」。别名与新 driver 目前由代码评审兜底;
-#     若要真闭合,须换 AST 实现,那是另一件事,不在本闸的断言范围内。
+#  ② **判据一(建库调用)仍是正则**:保证范围＝PAT 列明 API 的直接字面调用。
+#     import alias、跨行调用、未列入的新库仍可绕过 ⇒ **不得宣称「已按全部 effect 闭合」**。
+#     ⚠️ 判据二已于 v3 换成 Go AST(见下),判据一尚未 —— 两条判据的强度【不一样】,不要一并宣称。
+#
+#  ③ **判据二(句柄逃逸)自 v3 起由 Go AST 判**(specs/tools/handle-escape),
+#     因甲域 sol CR v2 #5:逐行正则被「导出函数签名换行」整个绕过,而 SpecDoc 写的是
+#     「**任何**函数不返回它」—— 正则能看的只有一行,作用域远小于该句。
+#     AST 版覆盖:换行签名 · import alias · 本地类型别名链 · 导出字段 · 匿名嵌入 · 接口方法。
+#     已知不覆盖(写明不假装):跨包类型别名 · 经 interface{}/反射/unsafe 传出 ·
+#     经导出函数【入参】交出句柄(§22.2c #1 只写「不返回」,不擅自扩严)。
 #
 #  以上两条按 SpecDoc E.4 #58「断言作用域不得大于实际覆盖」写明,不藏。
 #
@@ -120,12 +126,21 @@ check() {
 
   # 判据一：仓储包外直接建库句柄 —— 允许清单豁免（清单内就是仓储包，它本来就该开库）
   OUT_open=$(_scan "$_root" "$PAT_OPEN" | _drop_allowed "$_allow")
-  # 判据二：裸库句柄逃出包外 —— 🔴 允许清单【不】豁免。
+  # 判据二：裸库句柄逃出包外 —— 由 Go AST 判(v3)。🔴 允许清单【不】豁免:
   #   仓储包自己导出一个 DB() 访问器，正是「句柄出了仓储包」本身；豁免它等于把这条判据豁免掉。
-  OUT_escape=$( { _scan "$_root" "$PAT_ESC_FUNC"; _scan "$_root" "$PAT_ESC_FIELD"; } | sort -u )
+  if [ -z "${ESCBIN:-}" ]; then
+    echo "✗ 闸内部错误:句柄逃逸检测器未就绪"; return 2
+  fi
+  OUT_escape=$("$ESCBIN" "$_root" 2>"$_root/.esc.err")
+  if [ -s "$_root/.esc.err" ]; then
+    # 🔴 解析失败是【闸坏了】,不是「本次少检几个文件」。
+    echo "✗ 句柄逃逸检测器报错(判为闸坏,非通过)："; sed 's/^/    /' "$_root/.esc.err"
+    rm -f "$_root/.esc.err"; return 2
+  fi
+  rm -f "$_root/.esc.err"
   CUR_open=$(_count_matches "$OUT_open" "$PAT_OPEN")
-  # 逃逸判据一行一处(函数签名/字段声明),按行即按处;仍走同一函数以免两套口径。
-  CUR_escape=$(_count_matches "$OUT_escape" "$H")
+  # AST 输出每行恰为一处逃逸,按行即按处。
+  CUR_escape=$(_count "$OUT_escape")
 
   if [ "$_quiet" -eq 0 ]; then
     echo "  仓储包允许清单（本次生效的全部条目）："
@@ -186,22 +201,46 @@ selftest() {
   mk; printf 'package pkg\n\nfunc TestX() { db, _ := sql.Open("pgx", "x"); _ = db }\n' > "$T/r/internal/pkg/b_test.go"
   run; [ $? -eq 1 ] && ok "拦住：_test.go 内的建库（判据含测试文件）" || bad "_test.go 内的建库被漏过"
 
-  # ⑤ 判据二：导出方法返回裸句柄 —— 这正是 v1 漏掉、board.DB() 钻过去的那半句
-  mk; printf 'package pkg\n\ntype B struct{ db *sql.DB }\n\nfunc (b *B) DB() *sql.DB { return b.db }\n' > "$T/r/internal/pkg/b.go"
-  run; [ $? -eq 1 ] && ok "拦住：导出方法返回 *sql.DB（v1 的漏洞）" || bad "导出方法返回 *sql.DB 未被拦"
+  # ⑤ 判据二(AST 版)六种形态必须全拦 —— 甲域 sol CR v2 #5 点名的那几类。
+  esc() { # esc <文件内容> ; 返回 check 的 rc
+    mk; printf "$1" > "$T/r/internal/pkg/b.go"; run; }
 
-  # ⑥ 判据二：多返回值形态也得拦（(*sql.DB, error) 是最常见的写法）
-  mk; printf 'package pkg\n\nfunc Handle() (*sql.DB, error) { return nil, nil }\n' > "$T/r/internal/pkg/b.go"
-  run; [ $? -eq 1 ] && ok "拦住：导出函数返回 (*sql.DB, error)" || bad "多返回值形态未被拦"
+  esc 'package pkg\n\nimport "database/sql"\n\ntype B struct{ db *sql.DB }\n\nfunc (b *B) DB() *sql.DB { return b.db }\n'
+  [ $? -eq 1 ] && ok "拦住:导出方法返回 *sql.DB(单行)" || bad "单行导出方法未被拦"
 
-  # ⑦ 判据二：导出字段持裸句柄
-  mk; printf 'package pkg\n\ntype B struct {\n\tDB *sql.DB\n}\n' > "$T/r/internal/pkg/b.go"
-  run; [ $? -eq 1 ] && ok "拦住：导出字段持 *sql.DB" || bad "导出字段持句柄未被拦"
+  # 🔴 这一条是 v2 的阻断:逐行正则被换行签名整个绕过,且当时打印「达标」。
+  esc 'package pkg\n\nimport "database/sql"\n\ntype B struct{ db *sql.DB }\n\nfunc (b *B) DB(\n) *sql.DB {\n\treturn b.db\n}\n'
+  [ $? -eq 1 ] && ok "拦住:导出方法【签名换行】(正则盲区,AST 才看得见)" || bad "换行签名未被拦"
 
-  # ⑧ 判据二不得误伤【未导出】的包内用法 —— 句柄留在包内不算逃逸，
-  #    误伤会逼人把仓储包写不出来，闸就会被绕过而不是被满足。
-  mk; printf 'package pkg\n\ntype b struct{ db *sql.DB }\n\nfunc (x *b) handle() *sql.DB { return x.db }\n\nfunc use(tx *sql.Tx) {}\n' > "$T/r/internal/pkg/b.go"
-  run; [ $? -eq 0 ] && [ "$CUR_escape" -eq 0 ] && ok "不误伤：未导出的包内句柄用法（含 *sql.Tx 作参数）" || bad "误伤包内未导出用法（escape=$CUR_escape）"
+  esc 'package pkg\n\nimport dbx "database/sql"\n\nfunc Alias() *dbx.Tx { return nil }\n'
+  [ $? -eq 1 ] && ok "拦住:import alias(按导入路径判,不按包名字面)" || bad "import alias 未被拦"
+
+  esc 'package pkg\n\nimport "database/sql"\n\ntype H = *sql.DB\ntype H2 = H\n\nfunc Chain() H2 { return nil }\n'
+  [ $? -eq 1 ] && ok "拦住:本地类型别名链 type H2 = H = *sql.DB" || bad "别名链未被拦"
+
+  esc 'package pkg\n\nimport "database/sql"\n\ntype S struct {\n\tPool *sql.DB\n}\n'
+  [ $? -eq 1 ] && ok "拦住:导出字段持句柄" || bad "导出字段未被拦"
+
+  esc 'package pkg\n\nimport "database/sql"\n\ntype S struct {\n\t*sql.Conn\n}\n'
+  [ $? -eq 1 ] && ok "拦住:匿名嵌入句柄(字段名即类型名,包外可访问)" || bad "匿名嵌入未被拦"
+
+  esc 'package pkg\n\nimport "database/sql"\n\ntype I interface {\n\tHandle() *sql.DB\n}\n'
+  [ $? -eq 1 ] && ok "拦住:接口方法返回句柄" || bad "接口方法未被拦"
+
+  # ⑧ 三类【不得误报】—— 误伤会逼人绕过闸而不是满足它。
+  esc 'package pkg\n\nimport "database/sql"\n\ntype b struct{ db *sql.DB }\n\nfunc (x *b) handle() *sql.DB { return x.db }\n'
+  [ $? -eq 0 ] && [ "$CUR_escape" -eq 0 ] && ok "不误伤:未导出函数返回句柄(留在包内)" || bad "误伤未导出函数(escape=$CUR_escape)"
+
+  esc 'package pkg\n\nimport "database/sql"\n\nfunc Take(tx *sql.Tx) error { return nil }\n'
+  [ $? -eq 0 ] && [ "$CUR_escape" -eq 0 ] && ok "不误伤:句柄作【入参】(§22.2c #1 只写不返回,不擅自扩严)" || bad "误伤入参形态"
+
+  esc 'package pkg\n\nimport "database/sql"\n\ntype I interface {\n\thidden() *sql.DB\n}\n'
+  [ $? -eq 0 ] && [ "$CUR_escape" -eq 0 ] && ok "不误伤:未导出接口方法" || bad "误伤未导出接口方法"
+
+  # ⑧b 解析失败须判【闸坏了】,不得当成「本次少检几个文件」。
+  mk; printf 'package pkg\n\nfunc broken( {\n' > "$T/r/internal/pkg/b.go"
+  run >/dev/null 2>&1
+  [ $? -eq 2 ] && ok "语法错文件判为闸坏(非通过,也非跳过)" || bad "语法错文件被放行"
 
   # ⑨ 允许清单豁免判据一
   mk; printf 'package store\n\nfunc G() { db, _ := sql.Open("sqlite", "x"); _ = db }\n' > "$T/r/internal/store/s.go"
@@ -210,14 +249,14 @@ selftest() {
 
   # ⑩ 🔴 允许清单【不】豁免判据二 —— 否则把仓储包加进清单，DB() 访问器就地合法化，
   #    判据二等于被清单豁免掉了。这一项是本条设计的骨。
-  mk; printf 'package store\n\ntype B struct{ db *sql.DB }\n\nfunc (b *B) DB() *sql.DB { return b.db }\n' > "$T/r/internal/store/s.go"
+  mk; printf 'package store\n\nimport "database/sql"\n\ntype B struct{ db *sql.DB }\n\nfunc (b *B) DB() *sql.DB { return b.db }\n' > "$T/r/internal/store/s.go"
   printf 'internal/store\n' > "$T/allow"
   run; [ $? -eq 1 ] && ok "允许清单【不】豁免判据二（仓储包也不许导出句柄）" || bad "允许清单把判据二一起豁免了"
 
   # ⑪ 🔴 两条判据不得合并看总数：一降一升必须拒。
   #    合并成一个总数就允许「收了一处建库、同时新开一个 DB() 访问器」而总数不变地过闸。
   mk; printf 'open 1\nescape 0\n' > "$T/base"
-  printf 'package pkg\n\ntype B struct{ db *sql.DB }\n\nfunc (b *B) DB() *sql.DB { return b.db }\n' > "$T/r/internal/pkg/b.go"
+  printf 'package pkg\n\nimport "database/sql"\n\ntype B struct{ db *sql.DB }\n\nfunc (b *B) DB() *sql.DB { return b.db }\n' > "$T/r/internal/pkg/b.go"
   run  # open 实为 0（降），escape 实为 1（升）；若看总数则 1 vs 1 持平会放行
   [ $? -eq 1 ] && ok "一降一升必拒（两条判据各判各的，不看总和）" || bad "一降一升被放行 —— 判据被合并了"
 
@@ -278,6 +317,17 @@ selftest() {
   if [ $fail -eq 0 ]; then echo "--- 反测 $pass_n 项全过（闸有牙）"; else echo "--- 反测未过（闸没牙，不得依赖它的 ✓）"; fi
   return $fail
 }
+
+# —— 构建句柄逃逸检测器(一次,供后续所有 check 复用;反测会调 check 二十余次) ——
+# 🔴 依赖缺失是【闸坏了】,不是【本次免检】。
+command -v go >/dev/null 2>&1 || { echo "✗ 闸依赖缺失:未找到 go —— 判据二由 Go AST 判,无 go 即闸坏,不是免检"; exit 1; }
+ESCSRC=specs/tools/handle-escape
+[ -d "$ESCSRC" ] || { echo "✗ 闸依赖缺失:$ESCSRC 不存在"; exit 1; }
+ESCDIR=$(mktemp -d); ESCBIN=$ESCDIR/handle-escape
+trap 'rm -rf "$ESCDIR"' EXIT
+if ! go build -o "$ESCBIN" ./"$ESCSRC" 2>"$ESCDIR/build.err"; then
+  echo "✗ 句柄逃逸检测器构建失败(闸坏,非通过)："; sed 's/^/    /' "$ESCDIR/build.err"; exit 1
+fi
 
 case "${1:-}" in --selftest) selftest; exit $? ;; esac
 

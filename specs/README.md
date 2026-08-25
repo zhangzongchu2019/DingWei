@@ -23,6 +23,7 @@
 | `specs/tools/analyze.sh` | `/speckit.analyze` —— 跨制品一致性检查 |
 | `specs/tools/export-bundle.sh` | 导出锚定快照包；作用域由 `git ls-tree` 整棵导出，不手写 |
 | `specs/tools/export-exclude.txt` | 快照包的显式排除清单，每条须带理由；缺理由或漂移即导出失败 |
+| `specs/tools/handle-escape/main.go` | 裸库句柄逃逸检测器（Go AST）—— 判据二的权威 detector；覆盖换行签名 · import alias · 类型别名链 · 导出字段 · 匿名嵌入 · 接口方法 |
 | `specs/evidence/EVIDENCE.md` | 证据包产出（作者侧旁证，非门方结论） |
 | `specs/evidence/collect.sh` | 生成证据包：每条断言附产出它的命令，供门方复算 |
 | `specs/evidence/reference-index.md` | 引用索引 |

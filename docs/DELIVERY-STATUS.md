@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `835b92ba92f49a09ab6dd1d5c210f1da6b0534e9` · 分支 `design/addendum-decisions`
+生成自 commit `c07bb2c446831514c84f31937b9ecd3caa665b14` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -25,6 +25,7 @@
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+c07bb2c SP7a: 收编 internal/fanout 三文件进仓储包(前锚 835b92b)
 835b92b docs: SP7a 设计短件——仓储包形状与 TenantCtx 落法(前锚 b7036d6)
 b7036d6 docs: 交接件 SP7a 收编面写清作用域(coordinator 撤回第 3 条指令后的定论,前锚 01640ec)
 01640ec gate: 按甲域 sol CR 修四条绕过 + 收窄两处过度宣称(前锚 552e92e)
@@ -32,5 +33,4 @@ b7036d6 docs: 交接件 SP7a 收编面写清作用域(coordinator 撤回第 3 �
 722ac82 SP7a: 建受控仓储包 internal/repo,收编 datad 的 3 处建库,判据一 8→6(前锚 b6db59b)
 b6db59b gate: 按业主裁定拆掉 _test.go 开关,回严口径基线 8,并立防回潮判据(前锚 e2574ea)
 e2574ea gate: _test.go 口径改为可切换,生产码 6 / 含测试 8 两值并存(前锚 d9e74c6)
-d9e74c6 fix: specs/README 的结构表漏列 8 件,改为可校验表并立闸 ⑧(前锚 a80a7f4)
 ```
