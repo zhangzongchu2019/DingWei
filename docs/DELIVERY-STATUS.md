@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `b7036d68178b2bb282167bf431ebc4abf28b69fd` · 分支 `design/addendum-decisions`
+生成自 commit `835b92ba92f49a09ab6dd1d5c210f1da6b0534e9` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -25,6 +25,7 @@
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+835b92b docs: SP7a 设计短件——仓储包形状与 TenantCtx 落法(前锚 b7036d6)
 b7036d6 docs: 交接件 SP7a 收编面写清作用域(coordinator 撤回第 3 条指令后的定论,前锚 01640ec)
 01640ec gate: 按甲域 sol CR 修四条绕过 + 收窄两处过度宣称(前锚 552e92e)
 552e92e docs: 实现阶段总览交底(SP0-SP8 · 依赖图 · 并行判断)入仓(前锚 722ac82)
@@ -32,5 +33,4 @@ b7036d6 docs: 交接件 SP7a 收编面写清作用域(coordinator 撤回第 3 �
 b6db59b gate: 按业主裁定拆掉 _test.go 开关,回严口径基线 8,并立防回潮判据(前锚 e2574ea)
 e2574ea gate: _test.go 口径改为可切换,生产码 6 / 含测试 8 两值并存(前锚 d9e74c6)
 d9e74c6 fix: specs/README 的结构表漏列 8 件,改为可校验表并立闸 ⑧(前锚 a80a7f4)
-a80a7f4 fix: 快照包作用域仍是手写的,SP7a 那道闸导不进评审包(前锚 6723be4b)
 ```

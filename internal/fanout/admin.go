@@ -295,13 +295,13 @@ func (s *Server) handleResolve(w http.ResponseWriter, r *http.Request) {
 
 // ReplayDLQ spool 侧:出站 dlq 归队+入站 sink dlq 归队(全局态重算)。
 func (sp *Spool) ReplayDLQ(ctx context.Context) (outbound, inbound int64, err error) {
-	res, err := sp.db.ExecContext(ctx,
+	res, err := sp.db.Exec(ctx, ftx(),
 		`UPDATE outbound SET status='queued', attempts=0, next_retry=0 WHERE status='dlq'`)
 	if err != nil {
 		return 0, 0, err
 	}
 	outbound, _ = res.RowsAffected()
-	rows, err := sp.db.QueryContext(ctx,
+	rows, err := sp.db.Query(ctx, ftx(),
 		`SELECT DISTINCT msg_key FROM inbound_sink WHERE status='dlq'`)
 	if err != nil {
 		return outbound, 0, err
@@ -314,7 +314,7 @@ func (sp *Spool) ReplayDLQ(ctx context.Context) (outbound, inbound int64, err er
 		}
 	}
 	rows.Close()
-	res, err = sp.db.ExecContext(ctx,
+	res, err = sp.db.Exec(ctx, ftx(),
 		`UPDATE inbound_sink SET status='queued', attempts=0, next_retry=0 WHERE status='dlq'`)
 	if err != nil {
 		return outbound, 0, err
@@ -330,19 +330,22 @@ func (sp *Spool) ReplayDLQ(ctx context.Context) (outbound, inbound int64, err er
 
 // SelfCheck pre-arm③:真写读删一轮(证 fsync 路活)。
 func (sp *Spool) SelfCheck(ctx context.Context) error {
-	if _, err := sp.db.ExecContext(ctx,
+	if _, err := sp.db.Exec(ctx, ftx(),
 		`CREATE TABLE IF NOT EXISTS selfcheck(k TEXT PRIMARY KEY, v TEXT)`); err != nil {
 		return err
 	}
-	if _, err := sp.db.ExecContext(ctx,
+	if _, err := sp.db.Exec(ctx, ftx(),
 		`INSERT OR REPLACE INTO selfcheck(k,v) VALUES('probe','ok')`); err != nil {
 		return err
 	}
 	var v string
-	if err := sp.db.QueryRowContext(ctx,
-		`SELECT v FROM selfcheck WHERE k='probe'`).Scan(&v); err != nil || v != "ok" {
+	row, qErr := sp.db.QueryRow(ctx, ftx(), `SELECT v FROM selfcheck WHERE k='probe'`)
+	if qErr != nil {
+		return fmt.Errorf("selfcheck read: %v", qErr)
+	}
+	if err := row.Scan(&v); err != nil || v != "ok" {
 		return fmt.Errorf("selfcheck read: %v v=%q", err, v)
 	}
-	_, err := sp.db.ExecContext(ctx, `DELETE FROM selfcheck WHERE k='probe'`)
+	_, err := sp.db.Exec(ctx, ftx(), `DELETE FROM selfcheck WHERE k='probe'`)
 	return err
 }

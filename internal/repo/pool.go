@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // pgx database/sql 驱动
+	_ "modernc.org/sqlite"             // sqlite database/sql 驱动
 )
 
 // Pool 持有裸库句柄。
@@ -138,3 +139,32 @@ type CommitFailed struct{ Err error }
 
 func (c *CommitFailed) Error() string { return "commit failed: " + c.Err.Error() }
 func (c *CommitFailed) Unwrap() error { return c.Err }
+
+// Option 是建池选项。
+//
+// 🔴 存在的理由：被收编的包各自带着【已经用事故换来的】连接层语义，收编不得把它们抹掉。
+//
+//	例：fanout/spool 有 `SetMaxOpenConns(1)`，原注释写「面板自死锁教训:单连接串行,杜绝游标互等」。
+//	若仓储包只提供一个无参 Open，收编就会静悄悄丢掉这条 —— 那正是 §4.5 说的
+//	「不得以【重写】为由丢弃任一既有并发语义」。⇒ 先让仓储包能表达它，再动那些包。
+type Option func(*sql.DB)
+
+// MaxOpenConns 固定池上限。n=1 即单连接串行。
+func MaxOpenConns(n int) Option { return func(d *sql.DB) { d.SetMaxOpenConns(n) } }
+
+// OpenSQLite 打开 SQLite 池。dsn 由调用方给全（含 pragma），本包不代为拼装 ——
+// pragma 属被收编包的既有行为，代拼即改语义。
+func OpenSQLite(ctx context.Context, dsn string, opts ...Option) (*Pool, error) {
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return nil, err
+	}
+	for _, o := range opts {
+		o(db)
+	}
+	if err := db.PingContext(ctx); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	return &Pool{db: db}, nil
+}

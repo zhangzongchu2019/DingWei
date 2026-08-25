@@ -9,6 +9,8 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
 // sink 行状态:queued|delivered|dlq|audited_waived|dropped(besteffort 到界弃)
@@ -23,7 +25,8 @@ type InboundSinkJob struct {
 }
 
 func (s *Spool) initInbound() error {
-	_, err := s.db.Exec(`CREATE TABLE IF NOT EXISTS inbound_msg(
+	// 建表是 DDL,本就无租户语义 -> 显式 SystemCtx。
+	_, err := s.db.Exec(context.Background(), repo.SystemCtx(), `CREATE TABLE IF NOT EXISTS inbound_msg(
   msg_key    TEXT PRIMARY KEY,
   body       BLOB NOT NULL,
   status     TEXT NOT NULL DEFAULT 'pending',
@@ -52,43 +55,48 @@ CREATE TABLE IF NOT EXISTS waive_audit(
 // 幂等:同 msg_key 二投=已在账,返回 (false,nil) 不重复建行(at-least-once 吸收)。
 func (s *Spool) AcceptInbound(ctx context.Context, msgKey string, body []byte, sinks []SinkTarget) (fresh bool, err error) {
 	now := time.Now().UTC().Unix()
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return false, err
-	}
-	defer tx.Rollback()
-	res, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO inbound_msg
+	// 事务改回调式(repo.InTx):*sql.Tx 因此不出仓储包。语义逐条对应 ——
+	// fn 返回 nil 即提交(含「重复投递:幂等吸收」那条原本也是 Commit 的路径),返回错误即回滚。
+	fresh = false
+	err = s.db.InTx(ctx, ftx(), nil, func(tx repo.Tx) error {
+		res, err := tx.Exec(ctx, `INSERT OR IGNORE INTO inbound_msg
   (msg_key, body, status, created_at, updated_at) VALUES(?,?,'pending',?,?)`,
-		msgKey, body, now, now)
-	if err != nil {
-		return false, err
-	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return false, tx.Commit() // 重复投递:账已在,幂等吸收
-	}
-	for _, t := range sinks {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO inbound_sink
+			msgKey, body, now, now)
+		if err != nil {
+			return err
+		}
+		n, _ := res.RowsAffected()
+		if n == 0 {
+			return nil // 重复投递:账已在,幂等吸收 —— fresh 保持 false 并提交
+		}
+		for _, t := range sinks {
+			if _, err := tx.Exec(ctx, `INSERT INTO inbound_sink
   (msg_key, sink_name, role, status, updated_at) VALUES(?,?,?,'queued',?)`,
-			msgKey, t.Name, t.Role, now); err != nil {
-			return false, err
+				msgKey, t.Name, t.Role, now); err != nil {
+				return err
+			}
 		}
-	}
-	if len(sinks) == 0 { // 无目标(如纯白名单消息无命中)=直接终态
-		if _, err := tx.ExecContext(ctx,
-			`UPDATE inbound_msg SET status='delivered', updated_at=? WHERE msg_key=?`,
-			now, msgKey); err != nil {
-			return false, err
+		if len(sinks) == 0 { // 无目标(如纯白名单消息无命中)=直接终态
+			if _, err := tx.Exec(ctx,
+				`UPDATE inbound_msg SET status='delivered', updated_at=? WHERE msg_key=?`,
+				now, msgKey); err != nil {
+				return err
+			}
 		}
-	}
-	return true, tx.Commit()
+		fresh = true
+		return nil
+	})
+	return fresh, err
 }
 
 // NextDueInbound 取一件到期 sink 投递对(独立游标:不同 sink/消息互不 HOL)。
 func (s *Spool) NextDueInbound(ctx context.Context, now time.Time) (*InboundSinkJob, error) {
-	row := s.db.QueryRowContext(ctx, `SELECT k.msg_key, k.sink_name, k.role, m.body, k.attempts
+	row, qErr := s.db.QueryRow(ctx, ftx(), `SELECT k.msg_key, k.sink_name, k.role, m.body, k.attempts
   FROM inbound_sink k JOIN inbound_msg m ON m.msg_key=k.msg_key
   WHERE k.status='queued' AND k.next_retry<=? ORDER BY k.updated_at LIMIT 1`, now.UTC().Unix())
+	if qErr != nil {
+		return nil, qErr
+	}
 	j := &InboundSinkJob{}
 	if err := row.Scan(&j.MsgKey, &j.SinkName, &j.Role, &j.Body, &j.Attempts); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -97,14 +105,14 @@ func (s *Spool) NextDueInbound(ctx context.Context, now time.Time) (*InboundSink
 		return nil, err
 	}
 	// 乐观置忙:next_retry 前挪防同轮重取(单 worker 下等效)
-	_, err := s.db.ExecContext(ctx, `UPDATE inbound_sink SET next_retry=?, updated_at=?
+	_, err := s.db.Exec(ctx, ftx(), `UPDATE inbound_sink SET next_retry=?, updated_at=?
   WHERE msg_key=? AND sink_name=?`, now.Add(time.Minute).UTC().Unix(), now.UTC().Unix(),
 		j.MsgKey, j.SinkName)
 	return j, err
 }
 
 func (s *Spool) MarkSinkDelivered(ctx context.Context, msgKey, sinkName string) error {
-	if _, err := s.db.ExecContext(ctx, `UPDATE inbound_sink SET status='delivered', last_error='',
+	if _, err := s.db.Exec(ctx, ftx(), `UPDATE inbound_sink SET status='delivered', last_error='',
   updated_at=? WHERE msg_key=? AND sink_name=?`,
 		time.Now().UTC().Unix(), msgKey, sinkName); err != nil {
 		return err
@@ -122,7 +130,7 @@ func (s *Spool) MarkSinkFailed(ctx context.Context, j *InboundSinkJob, sendErr s
 		if j.Role != "authoritative" {
 			terminal = "dropped"
 		}
-		_, err = s.db.ExecContext(ctx, `UPDATE inbound_sink SET status=?, attempts=?, last_error=?,
+		_, err = s.db.Exec(ctx, ftx(), `UPDATE inbound_sink SET status=?, attempts=?, last_error=?,
   updated_at=? WHERE msg_key=? AND sink_name=?`,
 			terminal, att, sendErr, now.Unix(), j.MsgKey, j.SinkName)
 		if err != nil {
@@ -130,7 +138,7 @@ func (s *Spool) MarkSinkFailed(ctx context.Context, j *InboundSinkJob, sendErr s
 		}
 		return terminal, s.recomputeGlobal(ctx, j.MsgKey)
 	}
-	_, err = s.db.ExecContext(ctx, `UPDATE inbound_sink SET status='queued', attempts=?, last_error=?,
+	_, err = s.db.Exec(ctx, ftx(), `UPDATE inbound_sink SET status='queued', attempts=?, last_error=?,
   next_retry=?, updated_at=? WHERE msg_key=? AND sink_name=?`,
 		att, sendErr, now.Add(backoff).Unix(), now.Unix(), j.MsgKey, j.SinkName)
 	return "", err
@@ -138,7 +146,7 @@ func (s *Spool) MarkSinkFailed(ctx context.Context, j *InboundSinkJob, sendErr s
 
 // WaiveSink T2:仅 admin 经管理 API 调用;dlq→audited_waived+审计行+全局重算。
 func (s *Spool) WaiveSink(ctx context.Context, msgKey, sinkName, actor, reason string) error {
-	res, err := s.db.ExecContext(ctx, `UPDATE inbound_sink SET status='audited_waived', updated_at=?
+	res, err := s.db.Exec(ctx, ftx(), `UPDATE inbound_sink SET status='audited_waived', updated_at=?
   WHERE msg_key=? AND sink_name=? AND status='dlq'`,
 		time.Now().UTC().Unix(), msgKey, sinkName)
 	if err != nil {
@@ -147,7 +155,7 @@ func (s *Spool) WaiveSink(ctx context.Context, msgKey, sinkName, actor, reason s
 	if n, _ := res.RowsAffected(); n == 0 {
 		return errors.New("no dlq row to waive")
 	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO waive_audit(msg_key,sink_name,actor,reason,at)
+	if _, err := s.db.Exec(ctx, ftx(), `INSERT INTO waive_audit(msg_key,sink_name,actor,reason,at)
   VALUES(?,?,?,?,?)`, msgKey, sinkName, actor, reason, time.Now().UTC().Unix()); err != nil {
 		return err
 	}
@@ -158,7 +166,7 @@ func (s *Spool) WaiveSink(ctx context.Context, msgKey, sinkName, actor, reason s
 // delivered_with_waiver=全部 auth∈{delivered,audited_waived}且≥1 waived;
 // blocked_dlq=存在 auth dlq 未 waive;否则 pending。besteffort 不参与。
 func (s *Spool) recomputeGlobal(ctx context.Context, msgKey string) error {
-	rows, err := s.db.QueryContext(ctx,
+	rows, err := s.db.Query(ctx, ftx(),
 		`SELECT status FROM inbound_sink WHERE msg_key=? AND role='authoritative'`, msgKey)
 	if err != nil {
 		return err
@@ -190,15 +198,19 @@ func (s *Spool) recomputeGlobal(ctx context.Context, msgKey string) error {
 	case total > 0 && delivered+waived == total && waived > 0:
 		global = "delivered_with_waiver"
 	}
-	_, err = s.db.ExecContext(ctx, `UPDATE inbound_msg SET status=?, updated_at=? WHERE msg_key=?`,
+	_, err = s.db.Exec(ctx, ftx(), `UPDATE inbound_msg SET status=?, updated_at=? WHERE msg_key=?`,
 		global, time.Now().UTC().Unix(), msgKey)
 	return err
 }
 
 func (s *Spool) InboundGlobalStatus(ctx context.Context, msgKey string) (string, error) {
 	var st string
-	err := s.db.QueryRowContext(ctx,
-		`SELECT status FROM inbound_msg WHERE msg_key=?`, msgKey).Scan(&st)
+	row, qErr := s.db.QueryRow(ctx, ftx(),
+		`SELECT status FROM inbound_msg WHERE msg_key=?`, msgKey)
+	if qErr != nil {
+		return "", qErr
+	}
+	err := row.Scan(&st)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -208,7 +220,11 @@ func (s *Spool) InboundGlobalStatus(ctx context.Context, msgKey string) (string,
 // CountBlocked healthz degraded 判据(§B:blocked_dlq>0=degraded)。
 func (s *Spool) CountBlocked(ctx context.Context) (int64, error) {
 	var n int64
-	err := s.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM inbound_msg WHERE status='blocked_dlq'`).Scan(&n)
+	row, qErr := s.db.QueryRow(ctx, ftx(),
+		`SELECT COUNT(*) FROM inbound_msg WHERE status='blocked_dlq'`)
+	if qErr != nil {
+		return 0, qErr
+	}
+	err := row.Scan(&n)
 	return n, err
 }
