@@ -23,6 +23,7 @@ package board_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -216,4 +217,101 @@ func contains(xs []string, x string) bool {
 		}
 	}
 	return false
+}
+
+// ============================================================
+// 第二批：从既有 47 个内部测试移植而来（移植＝把内部断言改写成导出契约断言）
+// ============================================================
+
+// —— 族①+② 并发 × 代际：并发 Reassign 恰一次生效，代际恰 +1 ——
+//
+// §4.5 点名的是「既有【并发】与代际语义」，故并发用例是本套件的骨，不是可选项。
+func TestConformance_Concurrency_ReassignExactlyOneWins(t *testing.T) {
+	b, id, ctx := newRig(t)
+	chk(t, board.OutcomeApplied, "send")(b.Send(ctx, "n1", 1, "rid-1", "w0", id))
+
+	const n = 2
+	var wg sync.WaitGroup
+	res := make([]board.Outcome, n)
+	errs := make([]error, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			res[i], errs[i] = b.Reassign(ctx, "n1", 1, "w-new", id)
+		}(i)
+	}
+	wg.Wait()
+
+	applied := 0
+	for i := range res {
+		if errs[i] != nil {
+			t.Fatalf("reassign %d: %v", i, errs[i])
+		}
+		if res[i] == board.OutcomeApplied {
+			applied++
+		}
+	}
+	if applied != 1 {
+		t.Fatalf("并发 Reassign applied=%d want 1（恰一次换代）：%v", applied, res)
+	}
+	s, _ := b.GetNode(ctx, "n1")
+	if s.Generation != 2 {
+		t.Fatalf("代际=%d want 2 —— 并发换代必须恰 +1，不得叠加", s.Generation)
+	}
+}
+
+// —— 族③ 迟到结果处置：结果外发按 (信封,版本) 恰一次；旧版 ACK 不得销掉新版 ——
+func TestConformance_LateResult_OutboxExactlyOncePerVersion(t *testing.T) {
+	b, _, ctx := newRig(t)
+	k1 := board.ResultKey("t1", "env-1", 1)
+
+	if ok, err := b.EnqueueResult(ctx, k1, "t1", "addr", "ref1"); err != nil || !ok {
+		t.Fatalf("首次入队应成功：ok=%v err=%v", ok, err)
+	}
+	if ok, _ := b.EnqueueResult(ctx, k1, "t1", "addr", "ref1"); ok {
+		t.Fatal("同 key 重复入队必须幂等 no-op")
+	}
+	// 🔴 顺序要紧：新版必须在【旧版 ACK 之前】就已入队，否则「旧 ACK 不销新版」这条性质
+	//    根本不会被触发 —— 我第一版照搬既有测试的顺序（先 ack 再入 v2），
+	//    结果把 AckResult 改成「按 task 无差别销 pending」的变异**没被抓住**。
+	//    既有测试的注释写着这条性质，但它的调用顺序同样没验到它。
+	k2 := board.ResultKey("t1", "env-1", 2)
+	if ok, err := b.EnqueueResult(ctx, k2, "t1", "addr", "ref2"); err != nil || !ok {
+		t.Fatalf("v2 入队应成功：ok=%v err=%v", ok, err)
+	}
+	if ok, _ := b.AckResult(ctx, k1); !ok {
+		t.Fatal("首次 ack 应成功")
+	}
+	if ok, _ := b.AckResult(ctx, k1); ok {
+		t.Fatal("重复 ack 必须 no-op（恰一次）")
+	}
+
+	pend, err := b.PendingResults(ctx)
+	if err != nil {
+		t.Fatalf("pending: %v", err)
+	}
+	if len(pend) != 1 || pend[0] != k2 {
+		t.Fatalf("待发=%v want 恰 [%v] —— 版本隔离已失效", pend, k2)
+	}
+}
+
+// —— 族① 幂等键基线：同 rid 重放返回【首次】结果，不产生第二次投递 ——
+//
+// ⚠️ 这里固化的是**当前基线行为**，不是理想行为：
+//
+//	board 现在看不到 payload/digest，故「同 rid 换 payload」它无从分辨，一律按重放返回首 outcome。
+//	既有测试 TestTCN5b 把「digest 冲突检测」标了 Skip，契约锚 §1.3@28f09dae，属 vNext。
+//	⇒ 本用例只钉「重放返首 outcome」这一半，**不钉**「换 payload 应报冲突」——
+//	   把未实现的期望写进 conformance 会让套件从第一天起就是红的，那不是固化，是许愿。
+func TestConformance_Idempotency_SameRidReplayReturnsFirstOutcome(t *testing.T) {
+	b, id, ctx := newRig(t)
+	chk(t, board.OutcomeApplied, "首次 send")(b.Send(ctx, "n1", 1, "rid-1", "w0", id))
+	chk(t, board.OutcomeApplied, "同 rid 重放")(b.Send(ctx, "n1", 1, "rid-1", "w1", id))
+
+	// 重放不得改变承派对象（否则「重放」变成了「改派」）
+	s, _ := b.GetNode(ctx, "n1")
+	if s.Generation != 1 {
+		t.Fatalf("同 rid 重放把代际推到了 %d —— 重放不是改派", s.Generation)
+	}
 }

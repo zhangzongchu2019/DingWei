@@ -13,11 +13,11 @@ import (
 
 // SweepReport 一轮兜底扫描的动作账(观测/告警用)。
 type SweepReport struct {
-	ExpiredReservations int // pending→uncertain 降级数
-	TimeoutAnnotated    int // running 超时注记数
+	ExpiredReservations int      // pending→uncertain 降级数
+	TimeoutAnnotated    int      // running 超时注记数
 	RedeliverCandidates []string // dispatched 超 T 无回执的 (node) —— 由调用方对每个执行 Redeliver+重投外呼
-	StrayPromoted       int // #15 兜底:pending∧∀dep=done → ready(本应恒空,>0=主路径缺陷告警)
-	StrayRecovered      int // #15 兜底:blocked(dep_failed)∧∀dep=done → ready(同上)
+	StrayPromoted       int      // #15 兜底:pending∧∀dep=done → ready(本应恒空,>0=主路径缺陷告警)
+	StrayRecovered      int      // #15 兜底:blocked(dep_failed)∧∀dep=done → ready(同上)
 }
 
 // Sweep 执行一轮兜底扫描。redeliverAfterSec/timeoutSlaCheck 由调用方给(D15 数值域)。
