@@ -2909,6 +2909,8 @@ digest 与数据同在一个可写库，能改帖的人通常也能改 digest。
 
 【RV-乙13|乙|阻断|采纳】`specs/fixtures/rls/setup.sql` 的头注称验证“三个 role 分离”，实际只创建 `dw_owner`、`dw_app`，遗漏合同列出的 `dw_migrate`；同时为两角色创建 `LOGIN PASSWORD` 明文口令。该 fixture 在可由管理员 `SET ROLE` 的一次性验证中不需要可登录角色或口令，且不能以缺失第三角色的夹具支撑“三者不得为同一个 role”的验收。须改为三个具名 `NOLOGIN` role（无口令），并在跑法中明确使用具有建 role 权限的隔离测试库；随后再贴真实 PG 输出。　　⟹ **【采纳·验收待 ops 代跑】** 🔴 **成立：件的自述与件的内容不符** —— `setup.sql` 头注写「三 role 分离」，实际只 CREATE 了 `dw_owner`/`dw_app`，**漏 `dw_migrate`**；且用 `LOGIN PASSWORD` 把明文口令写进了仓内文件。⚠️ 与「标了处置而事没做」同族，只是这次是**自己打脸自己**。已改：三具名 role 一律 **NOLOGIN、无口令**（fixture 不得在仓内留任何凭据，只用于 `SET ROLE` 切换权限面）；`dw_migrate` 补建并授 DDL，`dw_app` 无 DDL 权；补执行前置三条（只在隔离测试库跑 · 执行账号须 CREATEROLE · 三 role NOLOGIN 无口令）；末尾加建面自检（三 role 存在且 `rolcanlogin`/`rolbypassrls` 均为 f）。⚠️ **乙域指出他自己也没有 PG 环境**（psql/postgres/pg_ctl/pg_isready 均无、docker rc=1），故其四条命令同样未执行 ⇒ **代跑须落到有 PG 环境的 ops**，不能默认「门方自然会跑」。在有人贴出输出前，C.3a.1a **仍不得称已验收**。
 
+【RV-乙15|乙|阻断|未决】fixture 对 `dw_migrate` 的“已授 DDL”自述不成立：`GRANT ALL ON demo_item TO dw_migrate` 仅授该表的 DML 权限，不授 `ALTER TABLE`／建 policy 等 DDL；表仍由 `dw_owner` 所有，故 `dw_migrate` 既非属主也无可验证的迁移 DDL 路径。同时 `dw_app`「无 DDL」也未被负测。须明确平台 ops 在迁移窗口如何受控地获得所需 DDL 权限（不得把 owner/superuser 下放企业侧），并以 `SET ROLE dw_migrate` 的正向 DDL 与 `SET ROLE dw_app` 的拒绝 DDL 负测证明；不应以 `GRANT ALL ON` 冒充 DDL 授权。
+
 🔴 **RLS 是兜底，不是主守**（同 C.3a.1）：主守是仓储 API 内的 `owner_principal` 谓词。
 RLS 只防「谓词漏写」这一类；把 RLS 当唯一防线，等于把安全押在**每张新表都记得配 policy** 上。
 
