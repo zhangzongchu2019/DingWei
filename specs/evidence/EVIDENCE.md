@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T14:48:21Z
-分支头：`dd9e9342740c50acf871938d298faf624a1f13d1`
+生成时刻：2026-08-25T14:53:28Z
+分支头：`ae2582d5c67d2efe7d695c51fb5bbd7dd16a0c45`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -13,7 +13,7 @@
 REVIEWED 6ab60ba51adca37a0607536e614b8ac10f9f475359134f8d527238bdef6e5918  docs/dingwei-platform-specdoc.md
 REVIEWED e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c  docs/dingwei-architecture-design.md
 REVIEWED 222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e  docs/dingwei-prototype.html
-REVIEWED fbbe81b98b80c0b1525a038112c6bbd8eea9e6c820b2318078097b51b27a7147  docs/DELIVERY-STATUS.md
+REVIEWED d4ef24be05dae5aded541f769cba7a0bb7f7044782336881b9f81a3e5a666338  docs/DELIVERY-STATUS.md
 REVIEWED a1fe9843b31755f89f241d80a39b57a15e72f3384c5af0219e284ca1ae9135eb  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
