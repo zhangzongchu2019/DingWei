@@ -77,6 +77,7 @@ run "四处存储的建表点（36 / 11 / 5 / 9）" \
     "for p in internal/store/migrations internal/mcs/board/schema.sql internal/fanout internal/datad; do printf '%-34s ' \$p; grep -rhoP 'CREATE TABLE (IF NOT EXISTS )?\\K\\w+' \$p | sort -u | wc -l; done"
 run "task 表跨存储重名（须在 SP7a 前定名，见 docs/task-table-collision-analysis.md）" \
     "grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task\\b' internal/mcs/board/schema.sql internal/datad/pgstore.go"
+# 【RV-甲41|甲|阻断|未决】本证据项的标签仍声称“C.3 裁定不做 RLS”，已被现行 C.3a“PG＋RLS（人层）采纳”推翻；而命令只搜 row_level_security / SET LOCAL / app.tenant，不足代表 RLS 合同的全部实现形态。改为现行裁定下的客观探测名称，扩充 detector 或明示仅覆盖的字面子集；不得以该零命中外推“RLS 零实现”。
 run "RLS 相关代码（C.3 裁定不做 RLS；实测本就零实现）" \
     "grep -rn 'row_level_security\\|SET LOCAL\\|app\\.tenant' --include=*.go --include=*.sql . | wc -l"
 echo "## 四、本包未覆盖的（明说，不留白）"
