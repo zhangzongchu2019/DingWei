@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.31 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.32 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.31</span></h1>
-  <span class="anchor">原型 <b>v1.31</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.32</span></h1>
+  <span class="anchor">原型 <b>v1.32</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -992,7 +992,7 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：本屏当初无对应条款 <span class="ref">§25.5 Agent 名册已补</span></h3>
   <div class="note bad">【RV-甲24|甲|阻断|采纳】体例挂账 #6：本 panel 仅说明 §25.5 在 v3.0 补入及当初缺口，属沿革；整 panel 移出。该段也是 `analyze.sh` 终审报出的旧他件版本命中之一。</div>　　⟹ **【采纳】** 该 panel 属评审沿革非产品界面，已按业主判据（非必须且不助理解业务即删）整段删除，非以 style-ok 留在正文。
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。<!-- 【RV-丙17|丙|非阻断|未决】④b 误报的修复落错了闸：「闸⑫扩指纹按归属句式判」修的是 prose-style-gate，而误报在 analyze.sh ④b——它仍裸匹配版本号，仍把本类「自 v3.0 起已落」历史落地表述判为他件旧版本号（本屏 5 处同形），analyze 现仍因此 FAIL。「自 vX 起」是落地时点，④b 的作用域须豁免该句式。 -->
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。<!-- 【RV-丙17|丙|非阻断|采纳】④b 误报的修复落错了闸：「闸⑫扩指纹按归属句式判」修的是 prose-style-gate，而误报在 analyze.sh ④b——它仍裸匹配版本号，仍把本类「自 v3.0 起已落」历史落地表述判为他件旧版本号（本屏 5 处同形），analyze 现仍因此 FAIL。「自 vX 起」是落地时点，④b 的作用域须豁免该句式。 　　⟹ **【采纳】** 🔴 **成立，且是本轮最该记的一条：我把误报「修」到了另一个闸上。** 丙域点的是 `analyze.sh` ④b（`foreign-version-check.py`），我上一轮改的是 `prose-style-gate` 的 `PAT_ROLE`——两件事毫无关系，④b 一直原样 FAIL 而我报了「已修」。已按丙域判据豁免**历史落地表述**（「自 vX 起已补/已落/已重写」说的是何时落的，不是他件现在哪版），原型 6 处误报清零，analyze 由 FAIL 转 rc=0。⚠️ 实现第一版按【整行】豁免，被自带反测当场抓出：一行里既有落地句式又有真旧依据时会一起放走，已改为按【该处出现】豁免并补钉「豁免不过宽」一条反测。⇒ **改闸前先确认报错的是哪个闸。**-->
 </div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   
   <div class="note bad" data-edit>SpecDoc §26「Agent 管理」只定义了<b>管理动作</b>（新建 / 关闭 / 重启 / 上下文注入）与<b>三形态的凭据策略</b>，
@@ -1336,7 +1336,7 @@ body.uionly #uihint{display:block}
   （实现 → 代码评审 → 测试执行）。<b>代码评审在任何级别都不可省</b>，spec 同理不应比代码宽松。<br><br>
   理由二 · <b>免人审会把检查项变成攻击面</b>：一旦「过检查项即免审」，就会出现<b>为过检查项而写的 spec</b> ——
   字段填齐、禁用词避开、锚格式合法，而实质仍是空的。<br>
-  这与执笔方在评审中被抓出的<b>「按名字判而非按效果判」</b>是同一族错误：检查项判的是<b>形状</b>，人审判的是<b>是不是那么回事</b>。<!-- 【RV-丙18|丙|非阻断|未决】本处与身份绑定屏「执笔方须指出：这与执笔方在评审中被抓出的…同一族错误」两处过程叙述仍在正文——RV-丙13 处置称「已按该清单逐段改完」，实际文本未动。 --><br><br>
+  <b>按名字判而非按效果判</b>是同一族错误：检查项判的是<b>形状</b>，人审判的是<b>是不是那么回事</b>。<!-- 【RV-丙18|丙|非阻断|采纳】本处与身份绑定屏「执笔方须指出：这与执笔方在评审中被抓出的…同一族错误」两处过程叙述仍在正文——RV-丙13 处置称「已按该清单逐段改完」，实际文本未动。 　　⟹ **【采纳】** 两处过程叙述已删，判据本身留在正文（检查项判形状、人审判是不是那么回事；按名字判非按效果判）。🔴 **丙域的核对方式值得照录**：RV-丙13 我标了「已按该清单逐段改完」而文本未动——门方是**实取正文**发现的，不是看处置列。本次改动走 `specs/tools/safe-replace.py`，故同屏标注内引用的原话原样保留（工具报「RV 段内保留 0 处／正文替换 1 处」）。--><br><br>
   ⇒ <b>正确关系</b>：<b>机器决定「是否值得占用人审」，不决定「是否需要人审」。</b></div>
   <h3 style="margin-top:14px">人审的深度与门方人选由检查结果决定 <span class="ref">§5.6 · §4.3</span></h3>
   <table><thead><tr><th>条件</th><th>人审形态</th></tr></thead><tbody>
@@ -1610,7 +1610,7 @@ body.uionly #uihint{display:block}
     <td class="cell-wait">低危可终结 · <b>中危须回主渠道</b> · 高危只能发起</td></tr>
   <tr><td>SMS / 邮件 / WhatsApp</td><td class="lock">次 / 无</td><td class="cell-fail"><b>不可发起任何授权</b> · 仅作二次验证或通知</td></tr>
   </tbody></table>
-  <div class="note warn" data-edit>⚠️ 执笔方须指出：这与执笔方在评审中被抓出的<b>「按名字判而非按效果判」是同一族错误</b> ——
+  <div class="note warn" data-edit>⚠️ <b>按名字判而非按效果判</b>是同一族错误 ——
   这里若按人判而不按渠道判，就是<b>用身份的名义抹掉了渠道的实际强度</b>。<br>
   <b>高危仍须重两签，不因身份确证而降档</b>（§21.3：双因子 ≠ 双人）。</div>
   <div class="note" data-edit>📌 <b>审计必须记录「经哪个渠道」。</b>否则事后分不清「他从企业飞书批的」与「他从外部 Slack 批的」——

@@ -39,6 +39,23 @@ NAMES = {
 }
 SKIP = ('沿革', '历史时点', 'style-ok:', '曾同时写着', '曾写', '原写')
 
+# 🔴 【历史落地表述】不是【现行依据表述】（丙域 kimi R2 轮4 · RV-丙17）：
+#   「SpecDoc §25.5 自 v3.0 起已补」说的是**这件事什么时候落的**，
+#   不是**他件现在是哪版**。④b 判的是后者，前者不在其作用域内。
+#   原实现只按 SKIP 关键词切分，抓不到这一类句式 ⇒ 原型 6 处同形全部误报。
+#   ⚠️ 执笔方上一轮把这条误报「修」到了 prose-style-gate 的 PAT_ROLE 上 ——
+#     **修到了另一个闸**，④b 一直原样 FAIL。改闸前先确认报错的是哪个闸。
+#   ⚠️ 豁免必须按【该处出现】判，不能整行跳过：一行里既有落地句式又有真旧依据时，
+#     整行跳过会把真的那处一起放走。本件的反测正是这样抓到第一版实现的。
+LANDED_BEFORE = re.compile(r'自\s*$')                      # 「自 v3.0 起」的前半
+LANDED_AFTER  = re.compile(r'^\s*(起|扩|补入|落入|新增于)')  # 后半
+
+
+def _is_landed(line, m):
+    return bool(LANDED_BEFORE.search(line[:m.start()][-4:])
+                and LANDED_AFTER.match(line[m.end():])) or \
+           bool(LANDED_AFTER.match(line[m.end():]) and '（' in line[:m.start()][-2:])
+
 
 def current_versions(status_path='docs/DELIVERY-STATUS.md'):
     st = open(status_path, encoding='utf-8').read()
@@ -56,7 +73,10 @@ def scan(path, cur):
     for ln, line in enumerate(body.split('\n'), 1):
         if any(k in line for k in SKIP):
             continue
-        for maj, minor in re.findall(r'\bv(\d+)\.(\d+)\b', line):
+        for m in re.finditer(r'\bv(\d+)\.(\d+)\b', line):
+            if _is_landed(line, m):
+                continue                      # 历史落地表述，按【该处】豁免
+            maj, minor = m.group(1), m.group(2)
             if maj == seg:
                 continue                      # 本件自述号段，归 ④a
             owner = next((p for p, q in OWN.items() if q == maj), None)
@@ -116,6 +136,13 @@ if __name__ == '__main__':
         open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
             '沿革：曾依据 SpecDoc v3.14\n')
         chk(main() == 0, '不误伤：沿革表述里的旧版本号放行')
+        open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
+            'SpecDoc §25.5「Agent 名册」自 v3.0 起已补\n')
+        chk(main() == 0, '不误伤：历史落地表述「自 vX 起已补」放行（丙域 RV-丙17）')
+        # 🔴 豁免不得把闸豁免掉：同屏若真写「依据 SpecDoc v3.0」仍须被拦
+        open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
+            'SpecDoc §25.5 自 v3.0 起已补；本件依据 SpecDoc v3.0 基线\n')
+        chk(main() == 1, '豁免不过宽：同行有落地句式也不放过真的旧依据')
         open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
             '依据 SpecDoc v3.23\n')
         chk(main() == 0, '不误伤：他件【现值】不算旧')

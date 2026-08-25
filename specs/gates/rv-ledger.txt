@@ -42,8 +42,9 @@ RV-执笔02	执笔	非阻断	采纳	采纳	dingwei-platform-specdoc.md	🔴 **�
 RV-丙04	丙	非阻断	采纳	采纳	dingwei-platform-specdoc.md	复核：执笔实测成立。speclint 的 `FOREIGN_PREFIXES`/`_drop_foreign` 在 R1
 RV-丙12	丙	阻断	未决	采纳	dingwei-architecture-design.md	〔体例分离二轮·门方先标〕本件仍存过程叙述：本行（A§0 版本对撞叙述）；A§6 SP7a 行「本轮最大工作量」；A§6
 RV-甲15	甲	阻断	未决	采纳	dingwei-architecture-design.md	体例挂账 #6 的逐段判定：本段“曾同时写 v3.14/v3.23、自相矛盾、原型落后两版”是修订史；正文只留“不内嵌跨
-RV-丙05	丙	非阻断	采纳	采纳	dingwei-architecture-design.md	本行「§21.1 双层结构」沿用旧模型名——SpecDoc §21.1 已改双层结构（企业→人，业主裁定），「§21.1
+RV-丙05	丙	非阻断	采纳	采纳	dingwei-architecture-design.md	本行「三级映射」沿用旧模型名——SpecDoc §21.1 已改双层结构（企业→人，业主裁定），「三级映射」在 Spec
 RV-丙10	丙	非阻断	未决	采纳	dingwei-architecture-design.md	我上一条 RV 的正文被闸 ⑬ 清理工具改写：「三级映射」连标注内引文一并替换为「§21.1 双层结构」，标注语已成语义
+RV-丙14	丙	非阻断	未决	采纳	dingwei-architecture-design.md	肯定 ⑯/safe-replace.py 的预防（已接 ⑯a）。但 RV-丙05 的**原文恢复仍未发生**：本处内联与
 RV-甲09	甲	阻断	采纳	采纳	dingwei-architecture-design.md	R2 评审包中的作者证据件并非冻结锚产物：`specs/evidence/EVIDENCE.md` 头仍写生成自 `d0
 RV-甲33	甲	阻断	未决	采纳	dingwei-architecture-design.md	R2 评审包中的作者证据件并非冻结锚产物：`specs/evidence/EVIDENCE.md` 头仍写生成自 `d0
 RV-甲31	甲	阻断	未决	采纳	dingwei-architecture-design.md	终审实跑新增闸⑭失败：`evidence-fresh-gate.sh` 报证据锚 `4054b9a` 早于评审对象末次改
@@ -58,8 +59,10 @@ RV-丙07	丙	非阻断	采纳	采纳	dingwei-prototype.html	「C.3 已裁不做 
 RV-甲23	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是“当初为何靠反推／已回写”的评审沿革，不是产品界面；整 panel 移 `dingwe
 RV-丙08	丙	非阻断	采纳	采纳	dingwei-prototype.html	本屏身份模型示例为旧「§21.1 双层结构」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全
 RV-甲24	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 仅说明 §25.5 在 v3.0 补入及当初缺口，属沿革；整 panel 移出。该段也是
+RV-丙17	丙	非阻断	未决	采纳	dingwei-prototype.html	④b 误报的修复落错了闸：「闸⑫扩指纹按归属句式判」修的是 prose-style-gate，而误报在 analyze.
 RV-甲25	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是 §25.4 旧正文与回写版本史，整段移沿革；当前入口只保留现行界面契约。</div>
 RV-甲26	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是 §26.4 未定义→已落的取证史，整段移沿革；它也是 `analyze.sh` 报出
+RV-丙18	丙	非阻断	未决	采纳	dingwei-prototype.html	本处与身份绑定屏「执笔方须指出：这与执笔方在评审中被抓出的…同一族错误」两处过程叙述仍在正文——RV-丙13 处置称「已
 RV-甲27	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：“保留过程／同屏两说已消”与规范体分离要求相反；本 panel 整段移沿革，只留当前待完善池/待认领池界
 RV-甲28	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是 §25.3 从两类到七类的修订史，整段移沿革；它也是 `analyze.sh` 的旧
 RV-甲29	甲	阻断	未决	采纳	dingwei-prototype.html	体例挂账 #6：本 panel 是账号合并缺口取证与回写史，整段移沿革；它也是 `analyze.sh` 的旧 v3.0

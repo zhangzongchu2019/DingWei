@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `62ffc0137858e2ab916f72134c80359bf9f6e049` · 分支 `HEAD`
+生成自 commit `1459e4ca04d2e8203d3e469c419134e4b66d3cfd` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.24** | `62ffc0137858e2ab916f72134c80359bf9f6e049` | 3285 / 241319 | `6f89c78a08e32a13c28d692ca24e18160b2f28590fce47fcd2e500d162cee5f3` |
-| `dingwei-prototype.html` | **v1.31** | `9d6634278da26e4512ceb1b8583fd48f52135b91` | 2867 / 262983 | `a98dd732181431941f5807867e24469faee2289c82b32575ec7cef3d6956372a` |
-| `dingwei-architecture-design.md` | **v0.23** | `62ffc0137858e2ab916f72134c80359bf9f6e049` | 913 / 70982 | `0bf489ad0845fe05f02188fdf0ef4c012af103464d957e561560cb86bff5a129` |
+| `dingwei-platform-specdoc.md` | **v3.25** | `62ffc0137858e2ab916f72134c80359bf9f6e049<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3285 / 241319 | `964ad5994040a7dc56b951da4918ebbe745ae3ff04d6ba88566b1b3bbf19ce49` |
+| `dingwei-prototype.html` | **v1.32** | `1459e4ca04d2e8203d3e469c419134e4b66d3cfd<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2867 / 264171 | `da4ee9262436bac6a624fd8fe8df935027481a04a12863d8785f233448f23551` |
+| `dingwei-architecture-design.md` | **v0.24** | `1459e4ca04d2e8203d3e469c419134e4b66d3cfd<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 913 / 72202 | `7544f601289a327e42446ff47fd4307c211c4c36293c9a53d9e64183c5fe1bd1` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+1459e4c review: 丙域 R2 轮4 复核标注 4 条（丙14/15/17/18）——以正文实取为准，不用处置列（kimi30kqtuxerh）
 62ffc01 R2 轮3 丙域 kimi 4 条处置 + 更正上一提交的两处不实断言
 9d66342 R2 轮3：三域 20 条评审意见归口处置，RV 台账拆列，闸 ⑫/⑯ 补三条判据
 43f49e6 fix: 丙域 R2 轮3 全采纳 —— 标注被工具改写(立闸⑯) + 体例二轮 16 处(前锚 baf724f)
@@ -34,5 +35,4 @@ baf724f fix: 乙域 terra R2 轮3 三条全采纳 —— 证据闸结构性误�
 ec07d1d review: 丙域 R2 轮3 终审标注 4 条——体例分离二轮门方先标（挂账 #6）+ 标注被工具改写 1 处（kimi30kqtuxerh）
 94d19aa review: 标注 R2 轮3甲域终审意见
 0b19c85 review: mark security final findings
-f64b2c4 fix: 采纳甲域 RV-甲14 —— 「收官≠清空」从头注变成可执行判据(前锚 3348b51)
 ```

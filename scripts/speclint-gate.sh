@@ -220,9 +220,24 @@ fi
 python3 specs/tools/safe-replace.py --selftest >/dev/null 2>&1 || {
   python3 specs/tools/safe-replace.py --selftest; echo "✗ RV 段免疫替换件的反测未过"; exit 1; }
 echo "  ⑯a RV 段免疫替换件的反测 ✓（批量清理一律走该件，不得直接 sed）"
+
+# ⑰ 跨制品一致性(analyze)——🔴 立此项的直接原因(丙域 kimi R2 轮4·RV-丙17):
+#    analyze.sh 此前【不在提交闸内】,于是它的 ④b 可以整轮 FAIL,
+#    而每次提交照常打印「①–⑯a 全过」。执笔方甚至把该误报「修」到了另一个闸上,
+#    因为提交闸从来没告诉过他是哪个闸在响。
+#    ⚠️ 闸外的检查不是检查,是一个需要有人记得去跑的建议。
+if [ ! -f specs/tools/analyze.sh ]; then
+  echo "✗ 闸依赖缺失：specs/tools/analyze.sh 不存在"; exit 1
+fi
+sh specs/tools/analyze.sh >/dev/null 2>&1 || {
+  sh specs/tools/analyze.sh; echo "✗ ⑰ 跨制品一致性检查未过（analyze）"; exit 1; }
+python3 specs/tools/foreign-version-check.py --selftest >/dev/null 2>&1 || {
+  python3 specs/tools/foreign-version-check.py --selftest
+  echo "✗ ④b 他件旧版本号检查的反测未过"; exit 1; }
+echo "  ⑰ 跨制品一致性 ✓（含 ④b 反测；语义层不在其内，见 analyze 头注）"
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–⑯a）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–⑰）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–⑯a）"
+  echo "✓ 提交闸全过（①–⑰）"
 fi
