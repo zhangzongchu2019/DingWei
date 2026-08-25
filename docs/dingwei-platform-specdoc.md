@@ -1,4 +1,4 @@
-# DingWei 平台 SpecDoc v3.37 —— 纲领与产品规范
+# DingWei 平台 SpecDoc v3.38 —— 纲领与产品规范
 
 > **性质**：本件是 DingWei 平台**后续阶段的纲领与产品规范**，由业主 2026-08-23 指定整合形成。
 > **效力**：本件生效后，下列四份源件**降为沿革依据**，规范效力以本件为准（对照见附录 D）：
@@ -18,7 +18,7 @@
 > ⇒ 本件**必须先满足自己定义的规范**，否则示范不成立。以下头块按 §5.2 格式填写。
 
 **Spec ID**: `dingwei-platform-specdoc`
-**版本**: v3.37
+**版本**: v3.38
 **评审状态**: ✅ **架构评审 PASS**（判据与经过见 `docs/dingwei-revision-history.md`；以 `docs/DELIVERY-STATUS.md` 为准）
 　　　　　　⚠️ **用例评审 / 交付验证未过** —— 不同的门，见 §5.6
 
@@ -2907,7 +2907,7 @@ digest 与数据同在一个可写库，能改帖的人通常也能改 digest。
 
 【RV-乙12|乙|阻断|采纳】本合同尚未把人层 RLS 的写授权与连接池执行边界写成不可误解的硬条件：#4 仅列 `USING (...)`，未要求每个适用命令同时具有等价的 `WITH CHECK (...)`，故“能读到谁”不等于“能以谁插入／更新”；#5 说“取连接后 SET LOCAL”，却未要求**先开启同一事务、SET LOCAL 为该事务第一条数据库语句、所有领域 SQL 均经该事务、禁止 pool/DB 直查**。`SET LOCAL` 若落在自动提交语句中会在下一查询前失效，迫使实现者自行猜测或以残留型 `SET` 绕开。须补为上述强制合同，并以 fixture 表复跑：`dw_app` 在 `BEGIN; SET LOCAL dw.principal='alice';` 后，尝试 INSERT/UPDATE 将 `owner_principal` 写为 `bob` 必须拒绝；缺 `dw.principal` 的 SELECT/INSERT/UPDATE 均默认拒；事务提交后同一物理连接不得保留 `dw.principal`。　　⟹ **【采纳·验收待代跑】** ①**成立且是我漏的最实的一处**：`USING` 只管「读得到谁」，`WITH CHECK` 才管「能以谁的名义写」——只有 USING 时 `dw_app` 可把 `owner_principal` 写成他人。已补 #4a（每个适用命令须有等价 WITH CHECK）与 #4b（逐命令声明，不靠 FOR ALL 蒙混）。②③④ 一并补为 #5/#5a/#5b/#5c：`BEGIN` → `SET LOCAL` 为该事务**第一条**语句 → 领域 SQL；全部领域 SQL 须经该事务；禁 pool/DB 直查；提交后同一物理连接不得残留 principal。乙域指出的机理照录：**`SET LOCAL` 落在自动提交语句里会在下一查询前失效**，那会逼实现者改用残留型 `SET` 绕开 —— 等于把身份留在物理连接上。负测由四类扩为七类。🔴 **三条 fixture 已落 `specs/fixtures/rls/`，但我跑不了**：本机无 `psql`／`postgres`，`docker` 守护进程不可达（`permission denied … /var/run/docker.sock`）。**期望输出写在 `EXPECTED.md`，那是期望不是实测** —— 在有人真跑过并贴出输出前，不得据此宣称 C.3a.1a 已验收。⚠️ 这与「ops 无主机权限」属同一类阻塞，须门方或 ops 代跑。
 
-【RV-乙13|乙|阻断|未决】`specs/fixtures/rls/setup.sql` 的头注称验证“三个 role 分离”，实际只创建 `dw_owner`、`dw_app`，遗漏合同列出的 `dw_migrate`；同时为两角色创建 `LOGIN PASSWORD` 明文口令。该 fixture 在可由管理员 `SET ROLE` 的一次性验证中不需要可登录角色或口令，且不能以缺失第三角色的夹具支撑“三者不得为同一个 role”的验收。须改为三个具名 `NOLOGIN` role（无口令），并在跑法中明确使用具有建 role 权限的隔离测试库；随后再贴真实 PG 输出。
+【RV-乙13|乙|阻断|采纳】`specs/fixtures/rls/setup.sql` 的头注称验证“三个 role 分离”，实际只创建 `dw_owner`、`dw_app`，遗漏合同列出的 `dw_migrate`；同时为两角色创建 `LOGIN PASSWORD` 明文口令。该 fixture 在可由管理员 `SET ROLE` 的一次性验证中不需要可登录角色或口令，且不能以缺失第三角色的夹具支撑“三者不得为同一个 role”的验收。须改为三个具名 `NOLOGIN` role（无口令），并在跑法中明确使用具有建 role 权限的隔离测试库；随后再贴真实 PG 输出。　　⟹ **【采纳·验收待 ops 代跑】** 🔴 **成立：件的自述与件的内容不符** —— `setup.sql` 头注写「三 role 分离」，实际只 CREATE 了 `dw_owner`/`dw_app`，**漏 `dw_migrate`**；且用 `LOGIN PASSWORD` 把明文口令写进了仓内文件。⚠️ 与「标了处置而事没做」同族，只是这次是**自己打脸自己**。已改：三具名 role 一律 **NOLOGIN、无口令**（fixture 不得在仓内留任何凭据，只用于 `SET ROLE` 切换权限面）；`dw_migrate` 补建并授 DDL，`dw_app` 无 DDL 权；补执行前置三条（只在隔离测试库跑 · 执行账号须 CREATEROLE · 三 role NOLOGIN 无口令）；末尾加建面自检（三 role 存在且 `rolcanlogin`/`rolbypassrls` 均为 f）。⚠️ **乙域指出他自己也没有 PG 环境**（psql/postgres/pg_ctl/pg_isready 均无、docker rc=1），故其四条命令同样未执行 ⇒ **代跑须落到有 PG 环境的 ops**，不能默认「门方自然会跑」。在有人贴出输出前，C.3a.1a **仍不得称已验收**。
 
 🔴 **RLS 是兜底，不是主守**（同 C.3a.1）：主守是仓储 API 内的 `owner_principal` 谓词。
 RLS 只防「谓词漏写」这一类；把 RLS 当唯一防线，等于把安全押在**每张新表都记得配 policy** 上。

@@ -14,7 +14,7 @@
 #   而本表头自己写着「不得改他域已有行的状态」。一列的表结构逼着人破这条规矩，故拆列。
 # 评审方状态 reviewer-owned，执笔方只增行不改列；执笔方处置由执笔方填，评审方在下一轮据此复核。
 RV-乙12	乙	阻断	未决	采纳	dingwei-platform-specdoc.md	本合同尚未把人层 RLS 的写授权与连接池执行边界写成不可误解的硬条件：#4 仅列 `USING (...)`，未要求每
-RV-乙13	乙	阻断	未决	未处置	dingwei-platform-specdoc.md	RLS fixture 声称验证三个 role 分离，却只创建 dw_owner/dw_app，且创建 LOGIN PASSWORD 明文口令；须改为三个 NOLOGIN role、无口令，并明确隔离测试库与建 role 权限后实跑。
+RV-乙13	乙	阻断	未决	采纳	dingwei-platform-specdoc.md	`specs/fixtures/rls/setup.sql` 的头注称验证“三个 role 分离”，实际只创建 `dw_
 RV-丙15	丙	非阻断	未决	采纳	dingwei-revision-history.md	「二、SpecDoc」「三、原型」占位节与下方同名实节仍重复未去重，且占位节自称的指纹数（90/59 处）已是过期值——
 RV-甲01	甲	阻断	挂账	采纳	dingwei-revision-history.md	体例重生成仍未闭合。`prose-style-gate` 只清除了带特定指纹的句子，正文仍有大量过程叙述，例如本件 §0
 RV-丙11	丙	阻断	未决	采纳	dingwei-revision-history.md	〔体例分离二轮·门方先标，落实挂账 #6〕本件正文仍存过程叙述（体例「一律不入正文」的对象），按段开列： ⟹ **【采
