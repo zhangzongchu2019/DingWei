@@ -2907,6 +2907,8 @@ digest 与数据同在一个可写库，能改帖的人通常也能改 digest。
 
 【RV-乙12|乙|阻断|采纳】本合同尚未把人层 RLS 的写授权与连接池执行边界写成不可误解的硬条件：#4 仅列 `USING (...)`，未要求每个适用命令同时具有等价的 `WITH CHECK (...)`，故“能读到谁”不等于“能以谁插入／更新”；#5 说“取连接后 SET LOCAL”，却未要求**先开启同一事务、SET LOCAL 为该事务第一条数据库语句、所有领域 SQL 均经该事务、禁止 pool/DB 直查**。`SET LOCAL` 若落在自动提交语句中会在下一查询前失效，迫使实现者自行猜测或以残留型 `SET` 绕开。须补为上述强制合同，并以 fixture 表复跑：`dw_app` 在 `BEGIN; SET LOCAL dw.principal='alice';` 后，尝试 INSERT/UPDATE 将 `owner_principal` 写为 `bob` 必须拒绝；缺 `dw.principal` 的 SELECT/INSERT/UPDATE 均默认拒；事务提交后同一物理连接不得保留 `dw.principal`。　　⟹ **【采纳·验收待代跑】** ①**成立且是我漏的最实的一处**：`USING` 只管「读得到谁」，`WITH CHECK` 才管「能以谁的名义写」——只有 USING 时 `dw_app` 可把 `owner_principal` 写成他人。已补 #4a（每个适用命令须有等价 WITH CHECK）与 #4b（逐命令声明，不靠 FOR ALL 蒙混）。②③④ 一并补为 #5/#5a/#5b/#5c：`BEGIN` → `SET LOCAL` 为该事务**第一条**语句 → 领域 SQL；全部领域 SQL 须经该事务；禁 pool/DB 直查；提交后同一物理连接不得残留 principal。乙域指出的机理照录：**`SET LOCAL` 落在自动提交语句里会在下一查询前失效**，那会逼实现者改用残留型 `SET` 绕开 —— 等于把身份留在物理连接上。负测由四类扩为七类。🔴 **三条 fixture 已落 `specs/fixtures/rls/`，但我跑不了**：本机无 `psql`／`postgres`，`docker` 守护进程不可达（`permission denied … /var/run/docker.sock`）。**期望输出写在 `EXPECTED.md`，那是期望不是实测** —— 在有人真跑过并贴出输出前，不得据此宣称 C.3a.1a 已验收。⚠️ 这与「ops 无主机权限」属同一类阻塞，须门方或 ops 代跑。
 
+【RV-乙13|乙|阻断|未决】`specs/fixtures/rls/setup.sql` 的头注称验证“三个 role 分离”，实际只创建 `dw_owner`、`dw_app`，遗漏合同列出的 `dw_migrate`；同时为两角色创建 `LOGIN PASSWORD` 明文口令。该 fixture 在可由管理员 `SET ROLE` 的一次性验证中不需要可登录角色或口令，且不能以缺失第三角色的夹具支撑“三者不得为同一个 role”的验收。须改为三个具名 `NOLOGIN` role（无口令），并在跑法中明确使用具有建 role 权限的隔离测试库；随后再贴真实 PG 输出。
+
 🔴 **RLS 是兜底，不是主守**（同 C.3a.1）：主守是仓储 API 内的 `owner_principal` 谓词。
 RLS 只防「谓词漏写」这一类；把 RLS 当唯一防线，等于把安全押在**每张新表都记得配 policy** 上。
 
