@@ -1,6 +1,6 @@
-# DingWei 平台架构设计 v0.15 —— 业务 / 技术 / 部署 / 数据库
+# DingWei 平台架构设计 v0.16 —— 业务 / 技术 / 部署 / 数据库
 
-**版本**: v0.15
+**版本**: v0.16
 **依据**: SpecDoc **v3.14** —— 已三域 PASS + 安全域快核（v3.14 仅修 §2.3 迁移号写死，见丙域 F-4）
 **参考**: 原型 —— **三域已 PASS 收口**（v1.13）。⚠️ 本件仍不以其为依据：界面契约变更走原型评审，不经本件
 **代码实测锚**: `github.com/zhangzongchu2019/dingwei` @ `design/addendum-decisions`
@@ -285,7 +285,7 @@
 | `internal` 包总数 27 | `ls -d internal/*/ \| wc -l` | `27` |
 | 四处存储 36/11/5/9 | `grep -rhoP "CREATE TABLE (IF NOT EXISTS )?\K\w+" <各路径> \| sort -u \| wc -l` | store/migrations=36 · board/schema.sql=11 · fanout=5 · datad=9 |
 | 61 建表点 / 60 表名 | 同上，全仓去重 vs 分处相加 | 相加 61、去重 60，差值＝`task` 跨存储重名（A§10） |
-| 仓储包外 `sql.Open` 8 处 | `grep -rhoE 'sql\.Open\("(pgx\|sqlite)"' --include=*.go internal \| wc -l` | `8`（pgx 5 · sqlite 3） |
+| 仓储包外建库调用与句柄逃逸 | `scripts/repo-boundary-gate.sh` | **现行值以闸输出为准**——不写死实数（随 SP7a 收编逐日下降，写死即过期。2026-08-24 时点曾测 `sql.Open` 8 处，仅作历史参照） |
 | 迁移文件 32 个 | `ls internal/store/migrations/*.sql \| wc -l` | `32`（`0001`–`0032`） |
 | § 引用无悬空无歧义 | `scripts/arch-refcheck.sh` | 悬空 0 · 歧义 0（次数与目标数**不写进正文**，见 A§0.1a） |
 
@@ -478,7 +478,7 @@ A§6 映射表写明**view 无独立包** —— 三处现在同源于上表第 
 | datad | **PG** | **9** | `internal/datad/`（`pgstore.go` 开三个 DSN） |
 | **合计** | | **61 个建表点 / 60 个表名** | 差值来自下方跨存储重名 |
 
-⚠️ **`sql.Open` 实测：`pgx` 5 处、`sqlite` 3 处，共 8 处，全部在仓储包之外**。
+⚠️ **仓储包外建库调用与句柄逃逸：现行值以 `scripts/repo-boundary-gate.sh` 输出为准**（2026-08-24 时点曾测 `sql.Open` 共 8 处、全部在仓储包之外；该数随收编下降，不写入判据）。
 
 ✅ **`task` 同名冲突已裁（业主 2026-08-24；权威定义见 SpecDoc §5.6a）**
 
@@ -525,7 +525,7 @@ A§6 映射表写明**view 无独立包** —— 三处现在同源于上表第 
 **验收判据**（§22.2c · §22.2a，机器可判）：
 
 **甲组 · 收口是否完成**
-- 仓储包外 `sql.Open` 处数 **恒为 0**（现为 8）
+- **建库调用集 + 句柄逃逸恒为 0**（唯一判定处 `scripts/repo-boundary-gate.sh`，与 SpecDoc §22.2c 同源）
 - 未被仓储包引用的表数 **恒为 0**
 - 漏传 `TenantCtx` **编译失败**（负测须存在）
 

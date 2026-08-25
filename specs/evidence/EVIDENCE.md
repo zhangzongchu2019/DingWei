@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T00:38:33Z
-分支头：`0150f7bd08e1907456ec948942b918ca94a6aed6`
+生成时刻：2026-08-25T02:38:04Z
+分支头：`09848f15e4ef0d9b0b5dcf850080bce079424407`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -34,7 +34,7 @@ $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
 ```
 $ scripts/arch-refcheck.sh
   本件内引用 A§ : 54 次 / 27 目标 · 悬空 0
-  SpecDoc 引用 § : 161 次 / 66 目标 · 悬空 0
+  SpecDoc 引用 § : 162 次 / 66 目标 · 悬空 0
   heading 真实重复：本件 0 · SpecDoc 0
   --- 引用核验通过
 ```
@@ -63,13 +63,13 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 115 个节号；悬空 0 ✓
   ④ 三件的版本自述是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.21 · 状态文件 v3.21 ✓
-    架构设计: 件内 v0.15 · 状态文件 v0.15 ✓
-    原型: 件内 v1.16 · 状态文件 v1.16 ✓
+    SpecDoc: 件内 v3.22 · 状态文件 v3.21 ✗
+    架构设计: 件内 v0.16 · 状态文件 v0.15 ✗
+    原型: 件内 v1.17 · 状态文件 v1.16 ✗
   ⑤ 生效前置状态（§0.4）
     ✓ 三域 checklist 齐备（结构 / 安全 / 跨制品）—— 但【生效与否取决于门方执行结果，非文件存在】
   ---
-  跨制品一致性检查通过（不含语义层，见脚本头注）
+  跨制品一致性检查未过
 ```
 
 ## 三、代码现状实测（架构设计 A§6.2 所载数字的来源）
@@ -77,7 +77,7 @@ $ specs/tools/analyze.sh
 
 ```
 $ ls -d internal/*/ | wc -l
-  27
+  28
 ```
 
 ### workpulse 装载的包（架构设计称 19）
@@ -94,11 +94,23 @@ $ ls -d internal/view 2>&1 || true
   ls: cannot access 'internal/view': No such file or directory
 ```
 
-### 仓储包外 sql.Open 处数（判据：恒为 0；现为 8 ⇒ 不达标）
+### 仓储包外的库句柄处数（判据：恒为 0；口径与实数均出自 scripts/repo-boundary-gate.sh）
 
 ```
-$ grep -rhoE 'sql\.Open\("(pgx|sqlite)"' --include=*.go internal | wc -l
-  8
+$ scripts/repo-boundary-gate.sh
+  ⑦ 仓储包边界（SP7a 甲组·收口 / §22.2c #1 两半）
+    仓储包允许清单（本次生效的全部条目）：
+      （空：仓储包尚未建立，故「仓储包外」＝全仓）
+    判据一·仓储包外建库句柄：6 处（基线 6，终值 0）
+      internal/repo/pool.go:25:	db, err := sql.Open("pgx", dsn)
+      internal/repo/pool.go:158:	db, err := sql.Open("sqlite", dsn)
+      internal/store/sqlite.go:51:	db, err := sql.Open("sqlite", dsn)
+      internal/mcs/board/board.go:62:	db, err := sql.Open("sqlite", path)
+      internal/datad/assignment_pg_integration_test.go:58:	w.appDB, err = sql.Open("pgx", dsn)
+      internal/datad/assignment_pg_integration_test.go:64:		w.setupDB, err = sql.Open("pgx", sup)
+    判据二·裸库句柄逃出包外：1 处（基线 1，终值 0；允许清单对本条不豁免）
+      internal/mcs/board/board.go:84:func-returns-handle DB
+    ⑦ 持平（建库 6 · 逃逸 1）✓ 未回升；终值均为 0，尚未达标
 ```
 
 ### 四处存储的建表点（36 / 11 / 5 / 9）

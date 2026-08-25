@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.16 · 依据 SpecDoc v3.14</title>
+<title>DingWei 平台原型 v1.17 · 依据 SpecDoc v3.14</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -2408,7 +2408,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>② 绕仓扫描 <span class="ref">恒零计数器</span> <span style="font-weight:400;color:var(--dim);font-size:12px">实测数据，非示例</span></h3>
-  <div class="chk stop" data-edit>🔴 <b>仓储包外 <code>sql.Open</code> 处数：<b style="font-size:16px">8</b>　判据：恒为 0　⇒ <b>不达标</b></b></div>
+  <div class="chk stop" data-edit>🔴 <b>仓储包外建库调用＋句柄逃逸　判据：恒为 0　⇒ <b>未达标</b>（现行值以 <code>repo-boundary-gate</code> 输出为准，不写死实数）</b></div>
   <table><thead><tr><th>位置</th><th style="width:70px">引擎</th><th style="width:96px">收编优先级</th><th>理由</th></tr></thead><tbody>
   <tr><td class="mono" data-edit>internal/datad/pgstore.go</td><td>pgx ×3</td><td class="d-high">1</td>
     <td data-edit>PG 侧是<b>跨租户数据主场</b>，先收它</td></tr>
@@ -2475,7 +2475,7 @@ body.uionly #uihint{display:block}
   <h3>⑤ 残余绕过面 · 代码评审判据 <span class="ref">§22.2c</span> <span style="font-weight:400;color:var(--dim);font-size:12px">业主定评审为主要把关手段 ⇒ 评审须有判据</span></h3>
   <table><thead><tr><th style="width:32px">#</th><th>评审须逐项确认</th><th style="width:230px">近乎零成本的机器旁证</th><th style="width:76px">状态</th></tr></thead><tbody>
   <tr><td>1</td><td data-edit>本次改动是否新增了<b>绕过仓储包的库访问</b></td>
-    <td class="mono">CI 扫「仓储包外 <code>sql.Open</code> 处数」<b>恒为 0</b></td><td class="cell-wait">待建</td></tr>
+    <td class="mono">建库调用集＋句柄逃逸<b>恒为 0</b>（唯一判定处 <code>repo-boundary-gate</code>）</td><td class="cell-wait">待建</td></tr>
   <tr><td>2</td><td data-edit>新增查询是否经 <code>TenantCtx</code></td>
     <td class="mono">由类型设计保证，<b>编译期即拦</b></td><td class="cell-wait">待建</td></tr>
   <tr><td>3</td><td data-edit>新增表是否已接入仓储层</td>

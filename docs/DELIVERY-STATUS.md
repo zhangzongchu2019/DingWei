@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `c07bb2c446831514c84f31937b9ecd3caa665b14` · 分支 `design/addendum-decisions`
+生成自 commit `09848f15e4ef0d9b0b5dcf850080bce079424407` · 分支 `HEAD`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -12,25 +12,27 @@
 
 > ⚠️ **若你是在共享目录读到本文件，它是副本，可能已过期。**
 > 副本自身也是「第二事实源」—— 本席这几轮反复栽的正是这一类。
-> **自检办法（不必问本席）**：把上方「生成自 commit」与分支最新比一次——
-> `git -C <repo> rev-parse origin/design/addendum-decisions` 不等于它，就说明本副本落后，以仓内 `docs/DELIVERY-STATUS.md` 为准。
-> 仓内那份由 pre-commit 自动重生成，不依赖任何人记得。
+> **自检办法（不必问本席，也不要拿「生成自 commit」当判据）**：
+> 把下表的 **sha256 行** 与你自己检出里的同名件实算一次（`sha256sum <file>`）——
+> 对得上即内容同源，对不上才是副本落后。
+> 🔴 **不要用顶部「生成自 commit」判落后**：它天然滞后一格（本文件在 pre-commit 生成，
+> 那一刻本次提交尚不存在），拿它当落后判据【必然误报】。
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.21** | `dcc7c0413551a37281c3d1e7a5c07212185ff9c3` | 3091 / 211151 | `726dabee36ed29441b351a896ed3ffe000c5735f6ba759d3bcc4c2568b9cbac4` |
-| `dingwei-prototype.html` | **v1.16** | `05ccf171d3d45ebd25f24495af32563eb79b61b5` | 2849 / 254430 | `c9e4e0257c7ef916cf341675e69aa45de0cc39c8edd47bc5f53380d9d5795ce2` |
-| `dingwei-architecture-design.md` | **v0.15** | `dcc7c0413551a37281c3d1e7a5c07212185ff9c3` | 799 / 56456 | `3957b04075a8601b4167754cd08071c3992ef8e685cf26d2ce9b8c740b33614d` |
+| `dingwei-platform-specdoc.md` | **v3.22** | `dcc7c0413551a37281c3d1e7a5c07212185ff9c3` | 3091 / 211288 | `ed9a5df88228e0f59a94025972c7004496a2a8b7a2356247687efab121fa1771` |
+| `dingwei-prototype.html` | **v1.17** | `05ccf171d3d45ebd25f24495af32563eb79b61b5` | 2849 / 254505 | `70f68991ca010b8c2ffa751c65fad37b7ecc47e9246e7200a49eec37761ac57f` |
+| `dingwei-architecture-design.md` | **v0.16** | `dcc7c0413551a37281c3d1e7a5c07212185ff9c3` | 799 / 56762 | `206eefed2ba02db71f232d01987f37d734ee50a89fd3b1139a306a785a6ca003` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+09848f1 fix: 按丙域 kimi 复核落两条——DOCS 具名件存在性校验 + ROOTS 边界理由入头注(前锚 a6ba5a3)
+a6ba5a3 fix: 状态源在干净检出上跑一次闸就变脏——闸 ⑤ 改为只比内容列(前锚 215d066)
+215d066 gate: 判据二换 Go AST,堵住甲域 CR v2 #5(换行签名绕过)(前锚 c07bb2c)
 c07bb2c SP7a: 收编 internal/fanout 三文件进仓储包(前锚 835b92b)
 835b92b docs: SP7a 设计短件——仓储包形状与 TenantCtx 落法(前锚 b7036d6)
 b7036d6 docs: 交接件 SP7a 收编面写清作用域(coordinator 撤回第 3 条指令后的定论,前锚 01640ec)
 01640ec gate: 按甲域 sol CR 修四条绕过 + 收窄两处过度宣称(前锚 552e92e)
 552e92e docs: 实现阶段总览交底(SP0-SP8 · 依赖图 · 并行判断)入仓(前锚 722ac82)
-722ac82 SP7a: 建受控仓储包 internal/repo,收编 datad 的 3 处建库,判据一 8→6(前锚 b6db59b)
-b6db59b gate: 按业主裁定拆掉 _test.go 开关,回严口径基线 8,并立防回潮判据(前锚 e2574ea)
-e2574ea gate: _test.go 口径改为可切换,生产码 6 / 含测试 8 两值并存(前锚 d9e74c6)
 ```
