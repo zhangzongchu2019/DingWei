@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `568cdf997daa1fd9031526051f9a0e284578398f` · 分支 `design/addendum-decisions`
+生成自 commit `f78aabd3bd65518b5602ec364f2c23578776bb34` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.34** | `568cdf997daa1fd9031526051f9a0e284578398f<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3431 / 235673 | `139b95f4e08905ce0f454f94d3f3c482907543f7a44341b39a2771576547da6c` |
+| `dingwei-platform-specdoc.md` | **v3.35** | `f78aabd3bd65518b5602ec364f2c23578776bb34` | 3439 / 236737 | `72edbc35481d23a4fdcb97eb0f04c4fd09f5df0acbf6c79fb0b8f9a473343c26` |
 | `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
 | `dingwei-architecture-design.md` | **v0.33** | `61ad4390902debbc268aee03d1172e1a93108937` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+f78aabd RV-乙12：人层 RLS 四条硬合同补齐 + 三条 fixture（🔴 未实跑）
 568cdf9 Merge commit 'cdc8270d' into design/addendum-decisions
 516efb1 C.3a.1b principal 是软身份（业主裁定，v3.33）—— 并补上我漏的 actor 层
 65b33d0 甲域 delta 三组阻断补齐（v3.32）；立闸 ㉑ 旧模型名棘轮
@@ -34,5 +35,4 @@ cdc8270 review: require RLS write and transaction contract
 cd96a13 业主裁定四条落成正文条款（v3.31）——须三域 delta 复核
 61ad439 甲域最终 verdict：多行 RV 续行残留（1 项阻断）已修
 53f4033 R2 收官件：78 条 RV 标注逐字移入沿革件，--final 首次通过
-d940b17 ⑭ 补按暂存区【模式】判：内容哈希相同的符号链接条目此前会被放行
 ```
