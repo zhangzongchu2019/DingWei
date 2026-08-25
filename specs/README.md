@@ -40,6 +40,11 @@
 | `scripts/path-anchor-gate.sh` | 路径锚解析闸（提交闸 ⑳）—— 正文反引号包起的仓内路径须解析得到。🔴 立闸原因：#36b 的 reviewer owner 锚被写成仓内不存在的路径，人工判据落点指向空文件而 ①–⑲ 全绿 |
 | `scripts/legacy-name-gate.sh` | 旧模型名棘轮（提交闸 ㉑）—— `TenantCtx` 出现数只许降不许升，终值 0。🔴 立闸原因：§21.1c 称该规矩由 ⑦ 执行，**而 ⑦ 只按效果统计 PendingTenantCtx**，一般 TenantCtx 出现它不看 —— **规矩没有执行者就等于没写** |
 | `specs/gates/legacy-name-baseline.txt` | 旧模型名棘轮的基线（㉑）—— `legacy_TenantCtx=40`，只许降不许升，终值 0；改完一批须同步下调 |
+| `specs/fixtures/rls/setup.sql` | 人层 RLS fixture 建面（乙域 RV-乙12）—— 三 role 分离 · FORCE RLS · 逐命令 policy（写命令带 WITH CHECK）|
+| `specs/fixtures/rls/t1-write-as-other.sql` | 负测①：`dw_app` 不得把 `owner_principal` 写成他人（🔴 `USING` 只管读、`WITH CHECK` 才管写）|
+| `specs/fixtures/rls/t2-no-context-deny.sql` | 负测②：缺 `dw.principal` 时读**0 行**而非全部、写被拒（fail-closed）|
+| `specs/fixtures/rls/t3-no-residue.sql` | 负测③：事务提交后同一物理连接不得残留 principal（`SET LOCAL` 而非 `SET` 的唯一理由）|
+| `specs/fixtures/rls/EXPECTED.md` | 上述三条的**期望**输出。🔴 **尚未在真实 PG 上跑过**（本机无 psql、docker daemon 不可达）—— 期望≠实测，不得据此宣称已验收 |
 | `specs/tools/rv-state-check.py` | RV 状态/时点一致性单次解析 —— 替代原逐行 shell 循环（47s → 0.49s）。🔴 立件原因：原实现每行起四个进程，七千行两万余次 fork，门方 `timeout 60` 跑不完。⚠️ 自带**时限反测**（合成 2 万行断言 <5s）：selftest 夹具只有几行，覆盖不到**输入规模**这一维 |
 | `specs/tools/disposition-audit.py` | 处置兑现 triage（提交闸 ⑱，**不判门**）—— 对账「RV 标了采纳」与「正文真改了」。🔴 立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，**没有一次是执笔方自查出来的**。⚠️ 误报率高（首跑 4 命中 3 误报：「一律不入正文」是规则本身、「移出表格」≠「移入沿革」），命中须逐条人判；判不了没被「」引起来的诉求 |
 | `specs/evidence/EVIDENCE.md` | 证据包产出（作者侧旁证，非门方结论） |

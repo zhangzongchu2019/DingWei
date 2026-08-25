@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T13:47:37Z
-分支头：`65b33d01a673898081872473958236cf4c3df3ad`
+生成时刻：2026-08-25T13:52:20Z
+分支头：`568cdf997daa1fd9031526051f9a0e284578398f`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,10 +10,10 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED 48a2d7fd78eeadc74ee1159449073d3578201cd0a2be19043c4328efa3850e07  docs/dingwei-platform-specdoc.md
+REVIEWED 139b95f4e08905ce0f454f94d3f3c482907543f7a44341b39a2771576547da6c  docs/dingwei-platform-specdoc.md
 REVIEWED e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c  docs/dingwei-architecture-design.md
 REVIEWED 222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e  docs/dingwei-prototype.html
-REVIEWED 7c624b98241ae83a7d5b0b09337a685d0e2fc16aae4566157d8a0166dd6d6046  docs/DELIVERY-STATUS.md
+REVIEWED 7ab0d1a0d07b99447eb786bc1bdfab084556cc73f9df674355aef18f61438139  docs/DELIVERY-STATUS.md
 REVIEWED a1fe9843b31755f89f241d80a39b57a15e72f3384c5af0219e284ca1ae9135eb  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -46,7 +46,7 @@ REVIEWED 2ca28e44ad27f466487859548c69cf3f321a2f03200fbe1731fe36ca75651e5a  specs
 REVIEWED 16e5ba25e2b662a97269723d229d138cd7f0e2ebc7bd5177f9575eb2470fdbae  specs/gates/checklist-execution-exceptions.txt
 REVIEWED ebd8a61e1cae31fea9dd2f3cddfc8317484ba5641a3dc52ad41f7f12ef3f00e4  specs/gates/legacy-name-baseline.txt
 REVIEWED 861f36f0dfeda164e4047bfd75ea78e5977d3ad352c8e1c5cafff6a790945530  specs/gates/repo-packages.txt
-REVIEWED d8e7483c6e6e6eca99de9d2015bc6d0425ed184744c7e6df276d4eda8140e23c  specs/gates/rv-ledger.txt
+REVIEWED e4a49c11eaea7ede3b3161f6b256de94c67047df5d48ee95cbb66b892ad296ca  specs/gates/rv-ledger.txt
 REVIEWED e7a91c5e523a367419df93ea42bb570bbb33a08479ff8e5ec4ff3d01fa7e2789  specs/gates/status-stale-exceptions.txt
 REVIEWED 77103d4b6275652f23eaaea5f075e159073432eee5c2253f0cf42ea8592cc011  specs/gates/superseded-claims.txt
 ```
@@ -116,7 +116,7 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 114 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.33 · 状态文件 v3.33 ✓
+    SpecDoc: 件内 v3.34 · 状态文件 v3.34 ✓
     架构设计: 件内 v0.33 · 状态文件 v0.33 ✓
     原型: 件内 v1.37 · 状态文件 v1.37 ✓
   ④b 正文是否出现【他件】的旧版本号
@@ -202,7 +202,7 @@ $ grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task' internal/mcs/board/schema.sql 
 
 ```
 $ grep -rn 'row_level_security\|SET LOCAL\|app\.tenant' --include=*.go --include=*.sql . | wc -l
-  0
+  6
   (rc=0)
 ```
 

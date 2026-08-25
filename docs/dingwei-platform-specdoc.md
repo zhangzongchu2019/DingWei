@@ -1,4 +1,4 @@
-# DingWei 平台 SpecDoc v3.33 —— 纲领与产品规范
+# DingWei 平台 SpecDoc v3.34 —— 纲领与产品规范
 
 > **性质**：本件是 DingWei 平台**后续阶段的纲领与产品规范**，由业主 2026-08-23 指定整合形成。
 > **效力**：本件生效后，下列四份源件**降为沿革依据**，规范效力以本件为准（对照见附录 D）：
@@ -18,7 +18,7 @@
 > ⇒ 本件**必须先满足自己定义的规范**，否则示范不成立。以下头块按 §5.2 格式填写。
 
 **Spec ID**: `dingwei-platform-specdoc`
-**版本**: v3.33
+**版本**: v3.34
 **评审状态**: ✅ **架构评审 PASS**（判据与经过见 `docs/dingwei-revision-history.md`；以 `docs/DELIVERY-STATUS.md` 为准）
 　　　　　　⚠️ **用例评审 / 交付验证未过** —— 不同的门，见 §5.6
 
@@ -2888,11 +2888,16 @@ digest 与数据同在一个可写库，能改帖的人通常也能改 digest。
 | 2 | 表属主**不是** `dw_app` | 属主为 `dw_owner`；⚠️ **属主天然绕过 RLS**，这是最易漏的一处 |
 | 3 | `dw_app` **无 BYPASSRLS** | `SELECT rolbypassrls FROM pg_roles WHERE rolname='dw_app'` 须为 `f` |
 | 4 | policy 以**会话变量**取 principal，不取参数 | `USING (owner_principal = current_setting('dw.principal', true))` |
-| 5 | 每次取连接后**必设** `dw.principal`，且 `SET LOCAL`（随事务结束失效） | 连接池复用下不得残留上一个人的身份 |
+| 4a | 🔴 **每个适用命令须同时具备等价的 `WITH CHECK`** | `WITH CHECK (owner_principal = current_setting('dw.principal', true))`；⚠️ **`USING` 只管「读得到谁」，`WITH CHECK` 才管「能以谁的名义写」** —— 只有 `USING` 时 `dw_app` 可把 `owner_principal` 写成他人 |
+| 4b | INSERT / UPDATE / DELETE **逐命令**声明，不靠 `FOR ALL` 蒙混 | 逐命令核对：无 `WITH CHECK` 的写命令一律视为漏配 |
+| 5 | 🔴 **同一事务内 `SET LOCAL` 先行**：`BEGIN` → `SET LOCAL dw.principal=…`（该事务**第一条**数据库语句）→ 领域 SQL | ⚠️ **`SET LOCAL` 落在自动提交语句里会在下一查询前失效** —— 那会逼实现者改用残留型 `SET` 绕开，等于把身份留在物理连接上 |
+| 5a | 🔴 **全部领域 SQL 必须经该事务** | 不经事务的领域查询无 `SET LOCAL` 可依附，等同无上下文 |
+| 5b | 🔴 **禁止 pool / DB 直查** | 任何绕过事务包装的原始连接查询即为越界；受控仓储 API 之外不得持有可执行句柄（§22.2c）|
+| 5c | 事务提交后同一**物理连接**不得保留 `dw.principal` | 连接归还池中前身份必须已失效 —— 这是 `SET LOCAL` 而非 `SET` 的唯一理由 |
 | 6 | **新建表默认带 policy** | 建表模板 / 迁移检查中断言；无 policy 的领域表视为漏配 |
-| 7 | 四类负测就位 | 伪造 principal 读不到他人行 · 不设 `dw.principal` 时**读到 0 行而非全部** · 属主连接被禁用于应用路径 · **把 `dw.actor` 写进 policy 谓词时负测须失败**（actor 不得参与可见性判定，C.3a.1b）|
+| 7 | 七类负测就位 | 伪造 principal 读不到他人行 · 不设 `dw.principal` 时**读到 0 行而非全部** · 属主连接被禁用于应用路径 · **把 `dw.actor` 写进 policy 谓词时负测须失败**（actor 不得参与可见性判定，C.3a.1b）· **以他人身份写入被拒**（#4a）· **无上下文的读写默认拒**（#5）· **提交后同一物理连接无 principal 残留**（#5c）—— 后三条见 `specs/fixtures/rls/`|
 
-【RV-乙12|乙|阻断|未决】本合同尚未把人层 RLS 的写授权与连接池执行边界写成不可误解的硬条件：#4 仅列 `USING (...)`，未要求每个适用命令同时具有等价的 `WITH CHECK (...)`，故“能读到谁”不等于“能以谁插入／更新”；#5 说“取连接后 SET LOCAL”，却未要求**先开启同一事务、SET LOCAL 为该事务第一条数据库语句、所有领域 SQL 均经该事务、禁止 pool/DB 直查**。`SET LOCAL` 若落在自动提交语句中会在下一查询前失效，迫使实现者自行猜测或以残留型 `SET` 绕开。须补为上述强制合同，并以 fixture 表复跑：`dw_app` 在 `BEGIN; SET LOCAL dw.principal='alice';` 后，尝试 INSERT/UPDATE 将 `owner_principal` 写为 `bob` 必须拒绝；缺 `dw.principal` 的 SELECT/INSERT/UPDATE 均默认拒；事务提交后同一物理连接不得保留 `dw.principal`。
+【RV-乙12|乙|阻断|采纳】本合同尚未把人层 RLS 的写授权与连接池执行边界写成不可误解的硬条件：#4 仅列 `USING (...)`，未要求每个适用命令同时具有等价的 `WITH CHECK (...)`，故“能读到谁”不等于“能以谁插入／更新”；#5 说“取连接后 SET LOCAL”，却未要求**先开启同一事务、SET LOCAL 为该事务第一条数据库语句、所有领域 SQL 均经该事务、禁止 pool/DB 直查**。`SET LOCAL` 若落在自动提交语句中会在下一查询前失效，迫使实现者自行猜测或以残留型 `SET` 绕开。须补为上述强制合同，并以 fixture 表复跑：`dw_app` 在 `BEGIN; SET LOCAL dw.principal='alice';` 后，尝试 INSERT/UPDATE 将 `owner_principal` 写为 `bob` 必须拒绝；缺 `dw.principal` 的 SELECT/INSERT/UPDATE 均默认拒；事务提交后同一物理连接不得保留 `dw.principal`。　　⟹ **【采纳·验收待代跑】** ①**成立且是我漏的最实的一处**：`USING` 只管「读得到谁」，`WITH CHECK` 才管「能以谁的名义写」——只有 USING 时 `dw_app` 可把 `owner_principal` 写成他人。已补 #4a（每个适用命令须有等价 WITH CHECK）与 #4b（逐命令声明，不靠 FOR ALL 蒙混）。②③④ 一并补为 #5/#5a/#5b/#5c：`BEGIN` → `SET LOCAL` 为该事务**第一条**语句 → 领域 SQL；全部领域 SQL 须经该事务；禁 pool/DB 直查；提交后同一物理连接不得残留 principal。乙域指出的机理照录：**`SET LOCAL` 落在自动提交语句里会在下一查询前失效**，那会逼实现者改用残留型 `SET` 绕开 —— 等于把身份留在物理连接上。负测由四类扩为七类。🔴 **三条 fixture 已落 `specs/fixtures/rls/`，但我跑不了**：本机无 `psql`／`postgres`，`docker` 守护进程不可达（`permission denied … /var/run/docker.sock`）。**期望输出写在 `EXPECTED.md`，那是期望不是实测** —— 在有人真跑过并贴出输出前，不得据此宣称 C.3a.1a 已验收。⚠️ 这与「ops 无主机权限」属同一类阻塞，须门方或 ops 代跑。
 
 🔴 **RLS 是兜底，不是主守**（同 C.3a.1）：主守是仓储 API 内的 `owner_principal` 谓词。
 RLS 只防「谓词漏写」这一类；把 RLS 当唯一防线，等于把安全押在**每张新表都记得配 policy** 上。
