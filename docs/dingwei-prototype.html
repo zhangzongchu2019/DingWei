@@ -358,7 +358,7 @@ body.uionly #uihint{display:block}
   <tr><td data-edit><b>SpecDoc</b><div class="mono">版本与门状态以 DELIVERY-STATUS 为准，本页不内嵌</div></td><td class="d-high">L3</td>
     <td><span class="cell-ok">✓架构评审</span> <span class="cell-fail">✗用例评审</span> <span class="cell-fail">✗交付验证</span></td>
     <td class="cell-wait">⚠ 可作设计依据，<b>不可作交付验收依据</b><div class="mono">架构评审过了 ≠ 可以签收交付物</div></td></tr>
-  <tr><td data-edit><b>SP7a 存储基座设计</b><div class="mono">形态已定：<b>受控仓储 API</b>（C.3 业主裁）</div></td><td class="d-high">L3</td>
+  <tr><td data-edit><b>SP7a 存储基座设计</b><div class="mono">形态已定：<b>受控仓储 API</b>（C.3 业主裁）<!-- 【RV|丙|非阻断|未决】裁决引用过期：应为 C.3a（一企业一 PG 库＋受控仓储 API 硬前置＋PG+RLS 人层兜底），C.3 已废。 --></div></td><td class="d-high">L3</td>
     <td><span class="cell-wait">待架构评审</span></td><td class="cell-fail">✗ 否<div class="mono">形态定了，设计未评审 —— 两回事</div></td></tr>
   <tr><td data-edit><b>帖子流载体设计</b></td><td class="d-mid">L2</td>
     <td><span class="cell-ok">✓文档评审</span></td><td class="cell-ok">✓ 可</td></tr>
@@ -378,7 +378,7 @@ body.uionly #uihint{display:block}
     <input placeholder="检索知识库…" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--tx);font-family:inherit">
     <button>检索</button>
   </div>
-  <div class="note bad" data-edit>🔴 <b>先按租户与可见性过滤，后检索。</b>（过滤由<b>受控仓储 API</b> 单点执行，§22.2c；C.3 已裁不做 RLS）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
+  <div class="note bad" data-edit>🔴 <b>先按租户与可见性过滤，后检索。</b>（过滤由<b>受控仓储 API</b> 单点执行，§22.2c；C.3 已裁不做 RLS<!-- 【RV|丙|非阻断|未决】「C.3 已裁不做 RLS」与 C.3a「PG＋RLS（人层）✅ 采纳」直接冲突，引用过期。 -->）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
   当前视角<b>共 7 条</b>可检索（＝本表实际渲染行数）。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。</div>
   <div class="note" data-edit>排序 = <code>0.40·log(使用量) + 0.35·relevance + 0.25·importance</code>；importance 由<b>归属域</b>给定（D0 1.0 / D1 0.75 / D2 0.5 / D3 0.3 —— 附录 A）；
   <b><code>suspect</code> 条目 ×0.5 降权</b> —— 锚失配必须参与排序，标了不参与排序等于没标。</div>
@@ -846,7 +846,7 @@ body.uionly #uihint{display:block}
   <div class="note warn" data-edit>⚠️ <b>双因子 ≠ 双人。</b>双因子回答「是不是你本人」，挡冒名、伪造、账号单点失陷；
   <b>挡不住本人被骗、判断失误、被胁迫、内部越权</b>。<br>
   二次验证做到极致，仍然只有<b>一个人</b>在决定。故高危须重两签 —— 依据不是「因子弱」，而是<b>单人不足以承担其后果</b>。</div>
-  <div class="note" data-edit>三级映射：<b>人</b>（企业 IM 验证）→ <b>租户</b>（租户隔离主体）→ <b>会话 / Agent</b>（执行主体，持 token）。
+  <div class="note" data-edit>三级映射：<b>人</b>（企业 IM 验证）→ <b>租户</b>（租户隔离主体）→ <b>会话 / Agent</b>（执行主体，持 token）。<!-- 【RV|丙|非阻断|未决】本屏身份模型示例为旧「三级映射」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全文三小节：21.1 三级映射」、交付物链路「三级映射 · 派生源」。 -->
   <b>审计与授权挂在人身上，执行挂在会话身上。</b></div>
 </div>
 
@@ -2375,7 +2375,7 @@ body.uionly #uihint{display:block}
 <!-- ============ b3 受控仓储 API / 租户隔离核验 ============ -->
 <section class="scr" id="b3">
 <h2 data-edit>受控仓储 API · 租户隔离核验</h2>
-<div class="sub" data-edit>C.3 业主裁：受控仓储 API 单点，不做 RLS，不做每租户独立库。配套见 §22.2c</div>
+<div class="sub" data-edit>C.3 业主裁：受控仓储 API 单点，不做 RLS，不做每租户独立库。<!-- 【RV|丙|非阻断|未决】屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层兜底 ✅）——「不做 RLS、不做每租户独立库」两项均不再成立；本屏核验项与「1 平台库＋N 企业库」模型的关系须重述。 -->配套见 §22.2c</div>
 
 <div class="note bad" data-edit>🔴 <b>先把话说准，本屏不写成「已实现租户隔离」。</b>
 本方案<b>不杜绝</b>跨租户泄漏，也不试图杜绝：它拦的是<b>经由仓储 API 的路径</b>；
