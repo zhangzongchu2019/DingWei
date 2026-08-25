@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `1085ff0609ebadd951f59226632e401c4f2f769d` · 分支 `design/addendum-decisions`
+生成自 commit `d940b17c8cda2fbf12c6fda5bd856070faf9b52a` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.28** | `1085ff0609ebadd951f59226632e401c4f2f769d` | 3289 / 244389 | `4b58e21ba6fc473f63e2321b19ebbed31e42de0a07b7e7f5d2dd842c20a8f712` |
-| `dingwei-prototype.html` | **v1.36** | `1085ff0609ebadd951f59226632e401c4f2f769d` | 2861 / 266500 | `5063e08cd07baa70d5eb25ff1184fa51e7ed030056bf4c0cebc3be9c1c233a44` |
-| `dingwei-architecture-design.md` | **v0.31** | `7480f928a1185ad167ff550bdd8b895d31b5a301` | 923 / 79448 | `25955af1c8ed6065756dbf64f7afad111ea270e1587ac86b3441a344d5d6af05` |
+| `dingwei-platform-specdoc.md` | **v3.29** | `1085ff0609ebadd951f59226632e401c4f2f769d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3256 / 221329 | `0dc2141f07ccf3bd9ef26176ac718a3ce5ef8556a3a36eab5388fbacebbbc6f2` |
+| `dingwei-prototype.html` | **v1.37** | `1085ff0609ebadd951f59226632e401c4f2f769d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
+| `dingwei-architecture-design.md` | **v0.32** | `d940b17c8cda2fbf12c6fda5bd856070faf9b52a<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 907 / 61534 | `605396fed102de54ee950bdbbdba61ec5355f553ff26d3d5a892af55cfc25ecc` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+d940b17 ⑭ 补按暂存区【模式】判：内容哈希相同的符号链接条目此前会被放行
 1085ff0 R2 轮6 甲域 2 条：⑳ selftest 假通过（甲47）+ 原型会话语境残留（甲48）
 c74f246 Merge commit '20bd1d8b' into design/addendum-decisions
 20bd1d8 review: 标注 R2 甲域轮5复核剩项
@@ -34,5 +35,4 @@ c74f246 Merge commit '20bd1d8b' into design/addendum-decisions
 b71000a Merge commit '1666d2d6' into design/addendum-decisions
 4633e6d R2 轮5 甲域 sol 4 条处置；立闸 ⑳（路径锚）；--rv 47s → 0.49s
 1666d2d review: cover staged deletion in evidence gate
-0840d7b Merge commit 'ae758a7d' into design/addendum-decisions
 ```

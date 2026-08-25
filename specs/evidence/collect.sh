@@ -108,7 +108,6 @@ run "四处存储的建表点（36 / 11 / 5 / 9）" \
     "for p in internal/store/migrations internal/mcs/board/schema.sql internal/fanout internal/datad; do printf '%-34s ' \$p; grep -rhoP 'CREATE TABLE (IF NOT EXISTS )?\\K\\w+' \$p | sort -u | wc -l; done"
 run "task 表跨存储重名（须在 SP7a 前定名，见 docs/task-table-collision-analysis.md）" \
     "grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task\\b' internal/mcs/board/schema.sql internal/datad/pgstore.go"
-# 【RV-甲41|甲|阻断|采纳】本证据项的标签仍声称“C.3 裁定不做 RLS”，已被现行 C.3a“PG＋RLS（人层）采纳”推翻；而命令只搜 row_level_security / SET LOCAL / app.tenant，不足代表 RLS 合同的全部实现形态。改为现行裁定下的客观探测名称，扩充 detector 或明示仅覆盖的字面子集；不得以该零命中外推“RLS 零实现”。　　⟹ **【采纳】** 证据项标签已改为客观探测名「RLS 字面标记出现次数（仅覆盖三个字面量）」，并在包内显式写明**零命中不得外推为「RLS 零实现」**、现行裁定为 C.3a「PG ＋ RLS（人层）采纳」、合同验收面见 A§12 与 §22.2c。原标签替一个已被推翻的裁定作证。
 # ⚠️ 标签只描述【这条命令搜了什么】，不描述裁定，也不外推结论 ——
 #   原标签写「C.3 裁定不做 RLS」，而现行裁定是 C.3a「PG ＋ RLS（人层）采纳」，
 #   标签在证据包里替一个已被推翻的裁定作证（甲域 RV-甲41）。

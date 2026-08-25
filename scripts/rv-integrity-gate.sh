@@ -60,11 +60,11 @@ selftest() {
   printf 'RV-丙05\t丙\t非阻断\t未决\t采纳\tx.md\t本行「三级映射」沿用旧模型名——后略\n' > "$L"
   mk(){ : > "$T/h.md"; : > "$T/g.sh"; }
 
-  mk; printf '【RV-丙05|丙|非阻断|采纳】本行「三级映射」沿用旧模型名——后略\n' > "$T/a.md"
+  mk; printf '【RV-丙05|丙|非阻断|采纳】本行「三级映射」沿用旧模型名——后略\n' > "$T/a.md"   # rv-fixture
   LEDGER="$L" DOCS="$T/a.md" HIST="$T/h.md" GATES="$T/g.sh" check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "原文未改时放行" || bad "原文未改却被拦"
 
-  mk; printf '【RV-丙05|丙|非阻断|采纳】本行「§21.1 双层结构」沿用旧模型名——后略\n' > "$T/a.md"
+  mk; printf '【RV-丙05|丙|非阻断|采纳】本行「§21.1 双层结构」沿用旧模型名——后略\n' > "$T/a.md"   # rv-fixture
   LEDGER="$L" DOCS="$T/a.md" HIST="$T/h.md" GATES="$T/g.sh" check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "🔴 拦住：标注正文被全文替换改写（正是丙域抓到的那一类）" || bad "被改写的标注放行了"
 

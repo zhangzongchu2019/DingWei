@@ -108,9 +108,7 @@ selftest() {
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：含通配符的示例路径不判" || bad "通配示例被误判"
 
-  # 【RV-甲47|甲|阻断|采纳】本反测源码已被 RV 处置文本直接拼到 shell 命令行：第 91 行在重定向目标后跟着“⟹【采纳】…”及多个反引号，实跑会尝试执行 specs/platform/checklist.md、scripts/path-anchor-gate.sh、path-ok:，连续打印 Permission denied / No such file / command not found，却最终仍报“8 项全过”并 rc=0。即反测夹具自身执行失败而通过计数未感知。须把 RV 标注与处置放在纯注释行、恢复原夹具写入命令，并让 selftest 捕获任何非预期 stderr/子命令失败；另加一条“夹具构造命令失败 ⇒ selftest FAIL”反测。　　⟹ **【采纳】** 🔴 **成立，而且是最坏的一类：闸自己的反测在报假通过。** 真因：我的批量落处置脚本把处置文本**拼进了 shell 命令行**，其中的反引号触发命令替换，实跑连出 Permission denied / No such file / command not found，而 selftest 仍打印 8/8 全过 —— **通过计数只统计了断言，没统计断言所依赖的前置动作**。已按甲域三条全做：① 标注与处置移到纯注释行、恢复原夹具写入命令（stderr 实测清零）；② 夹具构造走 `mkfx`，自己判成败，并收集非预期 stderr（不干净即 FAIL）；③ 新增反测「夹具构造失败 ⇒ selftest FAIL」，并做变异体验证（把夹具目标改成不存在的目录，反测如期失守）。🔴 **更根本的一层我另立了判据**：根因不在某一次手滑，而在于【RV 标注可以合法出现在代码件里却没有位置约束】——我的脚本已四次写进代码行（两次续行、一次 printf 夹具、这次拼进命令）。⑫ 现增判：`.sh`／`.py` 内的 RV 标注只允许独占注释行，带正反两向反测。
   # 🔴 评审方在标注里【引述】错路径，不得被判
-  # 【RV-甲44|甲|阻断|采纳】owner 锚写成 specs/checklists/checklist.md，仓内不存在（处置见 SpecDoc 内同 ID 标注；此处只留注释，不得拼进命令行）
   mkfx docs/a.md '【RV-甲44|甲|阻断|采纳】owner 锚写成 `specs/checklists/checklist.md`，仓内不存在\n' || return 1   # rv-fixture
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：RV 标注段内引述的错路径不判（否则等于判指出问题的那句话）" || bad "标注内引述被误判"

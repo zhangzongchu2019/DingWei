@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.36 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.37 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.36</span></h1>
-  <span class="anchor">原型 <b>v1.36</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.37</span></h1>
+  <span class="anchor">原型 <b>v1.37</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -140,7 +140,6 @@ body.uionly #uihint{display:block}
   <button id="bRst">↺ 重置</button>
 </div>
 
-<div class="note bad">【RV-甲12|甲|阻断|采纳】原型仍承载大量本件自身的评审/改稿沿革，而非界面样例：例如多屏“当初缺口取证过程保留”、执笔方上一轮拆错/被抓出、导出函数注释完整复述 v3.13/v1.13 相邻对撞。现在已有独立 `dingwei-revision-history.md`，这些过程叙述须移出；仅帖子流、封存帖等产品功能所需的样例历史可保留并明确其为用户数据。当前 `prose-style-gate` 对这些同义过程痕迹报零，是规则覆盖不足，不是正文已净。</div>　　⟹ **【采纳】** 按业主判据（「非必须且不助理解业务即删」）删除 7 屏「缺口取证过程」档案 + 3 处已回写条目的取证句。保留 2 处**尚未落规范的现存缺口**（多模态上传拟 §25.8 / 企业公共库导入四点），理由：它们是产品问题、帮助理解业务，删了就没人记着。
 
 <div id="wrap">
 <div id="uihint">◐ <b>纯 UI 模式</b>：已隐去全部说明层（note / 判据引用 / §编号）。
@@ -228,7 +227,6 @@ body.uionly #uihint{display:block}
     <td><button>认领</button> <button>看 spec</button></td></tr>
   <tr data-t="auth"><td><span class="tag t-auth">授权待批</span></td>
     <td data-edit><b>企业内跨人聚合 capability 申请</b>：图搜 3.0 → 张三名下项目的对象清单
-    【RV-乙05|乙|阻断|采纳】本屏仍把跨租户导出作为可进入待批队列的动作；R2 的 §15.5 已规定企业之间无任何交流、无解锁路径，SA-10 亦应下沉为企业内跨人聚合。即使当前样例因字段缺失而“不可批”，该入口仍把被禁止的跨企业能力画成可补齐后批准的路径。应删除／替换为企业内跨人、仅已流通产物的聚合入口，并与 §20.1 和 capability catalog 同步。　　⟹ **【采纳】** 待批队列项改为「企业内跨人聚合 capability 申请」，资源范围「整租户」→「该人全部项目」，并加一行 🔴 **跨企业无此路径（§15.5），本队列不承载跨企业申请**；ops 角色「租户级」→「企业级」。
     <div class="mono">policy 六项缺 2：<span style="color:var(--bad)">用途未填 · 目标资源范围写作「该人全部项目」</span></div>
     <div class="note warn" style="margin:6px 0 0;padding:6px 9px">§22.1c：资源范围不得为「该人全部项目」，用途必填 ⇒ <b>当前不可批</b><br>🔴 <b>跨企业无此路径</b>（§15.5：企业之间不允许任何交流），本队列不承载跨企业申请</div></td>
     <td data-edit>企业级 ops（图搜）</td><td>图搜 3.0</td><td>18:52</td><td class="d-high">高</td>
@@ -361,7 +359,7 @@ body.uionly #uihint{display:block}
   <tr><td data-edit><b>SpecDoc</b><div class="mono">版本与门状态以 DELIVERY-STATUS 为准，本页不内嵌</div></td><td class="d-high">L3</td>
     <td><span class="cell-ok">✓架构评审</span> <span class="cell-fail">✗用例评审</span> <span class="cell-fail">✗交付验证</span></td>
     <td class="cell-wait">⚠ 可作设计依据，<b>不可作交付验收依据</b><div class="mono">架构评审过了 ≠ 可以签收交付物</div></td></tr>
-  <tr><td data-edit><b>SP7a 存储基座设计</b><div class="mono">形态已定：<b>一企业一 PG 库 ＋ 受控仓储 API</b>（C.3a 业主裁）<!-- 【RV-丙06|丙|非阻断|采纳】裁决引用过期：应为 C.3a（一企业一 PG 库＋受控仓储 API 硬前置＋PG+RLS 人层兜底），C.3 已废。 --></div></td><td class="d-high">L3</td>　　⟹ **【采纳】** 该处已改为 C.3a 口径；立闸 ⑬ 防复发。
+  <tr><td data-edit><b>SP7a 存储基座设计</b><div class="mono">形态已定：<b>一企业一 PG 库 ＋ 受控仓储 API</b>（C.3a 业主裁）</div></td><td class="d-high">L3</td>　　⟹ **【采纳】** 该处已改为 C.3a 口径；立闸 ⑬ 防复发。
     <td><span class="cell-wait">待架构评审</span></td><td class="cell-fail">✗ 否<div class="mono">形态定了，设计未评审 —— 两回事</div></td></tr>
   <tr><td data-edit><b>帖子流载体设计</b></td><td class="d-mid">L2</td>
     <td><span class="cell-ok">✓文档评审</span></td><td class="cell-ok">✓ 可</td></tr>
@@ -381,7 +379,7 @@ body.uionly #uihint{display:block}
     <input placeholder="检索知识库…" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--tx);font-family:inherit">
     <button>检索</button>
   </div>
-  <div class="note bad" data-edit>🔴 <b>先按租户与可见性过滤，后检索。</b>（过滤由<b>受控仓储 API</b> 单点执行，§22.2c；C.3a 已裁：一企业一 PG 库 ＋ PG＋RLS 兜人层<!-- 【RV-丙07|丙|非阻断|采纳】「C.3 已裁不做 RLS」与 C.3a「PG＋RLS（人层）✅ 采纳」直接冲突，引用过期。 -->）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。　　⟹ **【采纳】** 已改为「C.3a 已裁：一企业一 PG 库 ＋ PG＋RLS 兜人层」。
+  <div class="note bad" data-edit>🔴 <b>先按租户与可见性过滤，后检索。</b>（过滤由<b>受控仓储 API</b> 单点执行，§22.2c；C.3a 已裁：一企业一 PG 库 ＋ PG＋RLS 兜人层）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。　　⟹ **【采纳】** 已改为「C.3a 已裁：一企业一 PG 库 ＋ PG＋RLS 兜人层」。
   当前视角<b>共 7 条</b>可检索（＝本表实际渲染行数）。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。</div>
   <div class="note" data-edit>排序 = <code>0.40·log(使用量) + 0.35·relevance + 0.25·importance</code>；importance 由<b>归属域</b>给定（D0 1.0 / D1 0.75 / D2 0.5 / D3 0.3 —— 附录 A）；
   <b><code>suspect</code> 条目 ×0.5 降权</b> —— 锚失配必须参与排序，标了不参与排序等于没标。</div>
@@ -758,7 +756,6 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：帖子结构当初为何靠反推 <span class="ref">§18.1 已正面定义</span></h3>
-  <div class="note bad">【RV-甲23|甲|阻断|采纳】体例挂账 #6：本 panel 是“当初为何靠反推／已回写”的评审沿革，不是产品界面；整 panel 移 `dingwei-revision-history.md`，不要以 `style-ok` 留在原型正文。</div>　　⟹ **【采纳】** 该 panel 属评审沿革非产品界面，已按业主判据（非必须且不助理解业务即删）整段删除，非以 style-ok 留在正文。
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §18.1 已正面定义 12 列字段集与 digest 序列规则</b>。
 </div>
   
@@ -851,7 +848,7 @@ body.uionly #uihint{display:block}
   <div class="note warn" data-edit>⚠️ <b>双因子 ≠ 双人。</b>双因子回答「是不是你本人」，挡冒名、伪造、账号单点失陷；
   <b>挡不住本人被骗、判断失误、被胁迫、内部越权</b>。<br>
   二次验证做到极致，仍然只有<b>一个人</b>在决定。故高危须重两签 —— 依据不是「因子弱」，而是<b>单人不足以承担其后果</b>。</div>
-  <div class="note" data-edit>§21.1 双层结构：<b>企业 / 团队</b>（强隔离域）→ <b>人</b>（执行责任方）→ <b>会话 / Agent</b>（行为主体，持 token）。<!-- 【RV-丙08|丙|非阻断|采纳】本屏身份模型示例为旧「§21.1 双层结构」；§21.1 已改双层结构（企业→人）。同批旧名另见：身份绑定屏「§21 全文三小节：21.1 §21.1 双层结构」、交付物链路「§21.1 双层结构 · 派生源」。 -->　　⟹ **【采纳】** 身份模型行已改为「企业/团队（强隔离域）→ 人（执行责任方）→ 会话/Agent（行为主体）」。
+  <div class="note" data-edit>§21.1 双层结构：<b>企业 / 团队</b>（强隔离域）→ <b>人</b>（执行责任方）→ <b>会话 / Agent</b>（行为主体，持 token）。　　⟹ **【采纳】** 身份模型行已改为「企业/团队（强隔离域）→ 人（执行责任方）→ 会话/Agent（行为主体）」。
   <b>审计与授权挂在人身上，执行挂在会话身上。</b></div>
 </div>
 
@@ -991,8 +988,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：本屏当初无对应条款 <span class="ref">§25.5 Agent 名册已补</span></h3>
-  <div class="note bad">【RV-甲24|甲|阻断|采纳】体例挂账 #6：本 panel 仅说明 §25.5 在 v3.0 补入及当初缺口，属沿革；整 panel 移出。该段也是 `analyze.sh` 终审报出的旧他件版本命中之一。</div>　　⟹ **【采纳】** 该 panel 属评审沿革非产品界面，已按业主判据（非必须且不助理解业务即删）整段删除，非以 style-ok 留在正文。
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。<!-- 【RV-丙17|丙|非阻断|采纳】④b 误报的修复落错了闸：「闸⑫扩指纹按归属句式判」修的是 prose-style-gate，而误报在 analyze.sh ④b——它仍裸匹配版本号，仍把本类「自 v3.0 起已落」历史落地表述判为他件旧版本号（本屏 5 处同形），analyze 现仍因此 FAIL。「自 vX 起」是落地时点，④b 的作用域须豁免该句式。 　　⟹ **【采纳】** 🔴 **成立，且是本轮最该记的一条：我把误报「修」到了另一个闸上。** 丙域点的是 `analyze.sh` ④b（`foreign-version-check.py`），我上一轮改的是 `prose-style-gate` 的 `PAT_ROLE`——两件事毫无关系，④b 一直原样 FAIL 而我报了「已修」。已按丙域判据豁免**历史落地表述**（「自 vX 起已补/已落/已重写」说的是何时落的，不是他件现在哪版），原型 6 处误报清零，analyze 由 FAIL 转 rc=0。⚠️ 实现第一版按【整行】豁免，被自带反测当场抓出：一行里既有落地句式又有真旧依据时会一起放走，已改为按【该处出现】豁免并补钉「豁免不过宽」一条反测。⇒ **改闸前先确认报错的是哪个闸。**-->
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。
 </div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   
   <div class="note bad" data-edit>SpecDoc §26「Agent 管理」只定义了<b>管理动作</b>（新建 / 关闭 / 重启 / 上下文注入）与<b>三形态的凭据策略</b>，
@@ -1121,7 +1117,6 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：§25.4 当初只有两行 <span class="ref">§25.4.1–§25.4.6 已重写</span></h3>
-  <div class="note bad">【RV-甲25|甲|阻断|采纳】体例挂账 #6：本 panel 是 §25.4 旧正文与回写版本史，整段移沿革；当前入口只保留现行界面契约。</div>　　⟹ **【采纳】** 该 panel 属评审沿革非产品界面，已按业主判据（非必须且不助理解业务即删）整段删除，非以 style-ok 留在正文。
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.4 自 v3.0 起已重写为 §25.4.1–§25.4.6</b>（含原生交互适用范围、ops 紧急面、开放讨论落帖子流等）。
 </div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   <div class="note bad" data-edit>§25.4 全节正文仅：「不砍 view 页，sidecar 常开做旁路」＋ 一句理由。
@@ -1256,7 +1251,6 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：环境供给当初未定义 <span class="ref">§26.4 已落</span></h3>
-  <div class="note bad">【RV-甲26|甲|阻断|采纳】体例挂账 #6：本 panel 是 §26.4 未定义→已落的取证史，整段移沿革；它也是 `analyze.sh` 报出的旧 v3.0 命中。</div>　　⟹ **【采纳】** 该 panel 属评审沿革非产品界面，已按业主判据（非必须且不助理解业务即删）整段删除，非以 style-ok 留在正文。
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §26.4 及 §26.4.1–26.4.4 自 v3.0 起已落</b>。
 </div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   
@@ -1336,7 +1330,7 @@ body.uionly #uihint{display:block}
   （实现 → 代码评审 → 测试执行）。<b>代码评审在任何级别都不可省</b>，spec 同理不应比代码宽松。<br><br>
   理由二 · <b>免人审会把检查项变成攻击面</b>：一旦「过检查项即免审」，就会出现<b>为过检查项而写的 spec</b> ——
   字段填齐、禁用词避开、锚格式合法，而实质仍是空的。<br>
-  <b>按名字判而非按效果判</b>是同一族错误：检查项判的是<b>形状</b>，人审判的是<b>是不是那么回事</b>。<!-- 【RV-丙18|丙|非阻断|采纳】本处与身份绑定屏「执笔方须指出：这与执笔方在评审中被抓出的…同一族错误」两处过程叙述仍在正文——RV-丙13 处置称「已按该清单逐段改完」，实际文本未动。 　　⟹ **【采纳】** 两处过程叙述已删，判据本身留在正文（检查项判形状、人审判是不是那么回事；按名字判非按效果判）。🔴 **丙域的核对方式值得照录**：RV-丙13 我标了「已按该清单逐段改完」而文本未动——门方是**实取正文**发现的，不是看处置列。本次改动走 `specs/tools/safe-replace.py`，故同屏标注内引用的原话原样保留（工具报「RV 段内保留 0 处／正文替换 1 处」）。--><br><br>
+  <b>按名字判而非按效果判</b>是同一族错误：检查项判的是<b>形状</b>，人审判的是<b>是不是那么回事</b>。<br><br>
   ⇒ <b>正确关系</b>：<b>机器决定「是否值得占用人审」，不决定「是否需要人审」。</b></div>
   <h3 style="margin-top:14px">人审的深度与门方人选由检查结果决定 <span class="ref">§5.6 · §4.3</span></h3>
   <table><thead><tr><th>条件</th><th>人审形态</th></tr></thead><tbody>
@@ -1373,7 +1367,6 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：本屏当初为什么要造 <span class="ref">§4.6 已落 · 保留过程</span> <span style="font-weight:400;color:var(--dim);font-size:12px">跨制品面 C1：屏首说已落、屏底说未定义 —— 同屏两说，已消</span></h3>
-  <div class="note bad">【RV-甲27|甲|阻断|采纳】体例挂账 #6：“保留过程／同屏两说已消”与规范体分离要求相反；本 panel 整段移沿革，只留当前待完善池/待认领池界面。</div>　　⟹ **【采纳】** 该 panel 属评审沿革非产品界面，已按业主判据（非必须且不助理解业务即删）整段删除，非以 style-ok 留在正文。
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §4.6（准入检查）与 §4.7（内容构成与需求池）自 v3.0 / v3.11 起生效。</b><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   
 </div>
@@ -1520,7 +1513,6 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：三类交付物当初无查阅入口 <span class="ref">§25.3 已扩至七类</span></h3>
-  <div class="note bad">【RV-甲28|甲|阻断|采纳】体例挂账 #6：本 panel 是 §25.3 从两类到七类的修订史，整段移沿革；它也是 `analyze.sh` 的旧 v3.0 命中。</div>　　⟹ **【采纳】** 该 panel 属评审沿革非产品界面，已按业主判据（非必须且不助理解业务即删）整段删除，非以 style-ok 留在正文。
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.3「交付物与规范查阅入口（v3.0 扩）」已覆盖七类。</b>
 </div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   <div class="note bad" data-edit>§25.3 只覆盖<b>两类</b>：spec 文档、架构设计文档。<br>
@@ -1636,7 +1628,6 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：§21 当初未定义账号合并 <span class="ref">§21.4 已落</span></h3>
-  <div class="note bad">【RV-甲29|甲|阻断|采纳】体例挂账 #6：本 panel 是账号合并缺口取证与回写史，整段移沿革；它也是 `analyze.sh` 的旧 v3.0 命中。</div>　　⟹ **【采纳】** 该 panel 属评审沿革非产品界面，已按业主判据（非必须且不助理解业务即删）整段删除，非以 style-ok 留在正文。
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §21.4 / §21.4a / §21.4b 自 v3.0 起已定义渠道账号与人的绑定。</b>
 </div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
   <div class="note bad" data-edit>§21 全文三小节：21.1 §21.1 双层结构 · 21.2 因子分级 · 21.3 双因子不等于双人。<br>
@@ -2142,10 +2133,6 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>K0-sec 分层 <span class="ref">设计层 / 运行态 · 业主裁定</span></h3>
-  <div class="note bad">【RV-甲22|甲|阻断|采纳】体例挂账 #6：标题和正文围绕“上一轮拆错”展开，属修订史；当前模型保留为独立现行说明，错误过程移沿革。</div>　　⟹ **【采纳】** 已按甲域逐段清单改完：体例闸扩 `PAT_PROC` 指纹（抓不点名的过程叙述），扩面后 16 处全部改写为现行断言。🔴 **一轮报「痕迹 90→0」是错的** —— 一轮指纹只抓「谁在第几版说了什么」，抓不到「本轮已定」「本次为初版」这类，**闸的口径不等于事实的口径**。
-  <div class="note bad">【RV-甲39|甲|阻断|采纳】RV-甲22 的“已改完”与本 panel 实取相反：标题仍写“上一轮拆错”，下方整段仍复盘执笔方的错误与收回过程。同类过程叙述还残留在 sidecar/unlock、企业公共库、知识分级对齐与导出函数等 panel。按已采纳的体例判据，只保留理解产品所必需的现行界面契约，执笔/评审过程移沿革。</div>　　⟹ **【采纳】** panel 标题改为「K0-sec 分层 · 设计层/运行态 · 业主裁定」；正文改写为现行判据（拆分刀口在每一类内部，不在类型之间）。同类残留一并清：SA-10 panel 的「执笔方上一版只钉了…」、附件屏的「接上执笔方上一轮标的…」。
-  <div class="note bad">【RV-甲45|甲|阻断|采纳】RV-甲39 只修了 K0-sec 主段与两句旁支，未闭合其明确列出的同类残留。实取仍见：sidecar/unlock 屏复盘“执笔方此前实测/当时判定/从纲领搬入未对撞”；知识分级区域保留“执笔方建议/须收回/业主本轮/本次对齐改动最大”；示例数据屏保留“执笔方直接编了数据/合并未对撞”；文件尾仍有多段执笔过程自述。须按 panel 逐段判现行产品语义与修订过程，前者改写为无过程态契约，后者移沿革；不能以修两句宣称“同类残留一并清”。</div>　　⟹ **【采纳】** 🔴 **成立，我上一轮说「同类残留一并清」是假的** —— 只改了两句。实取复扫：正文含「执笔方」自述 **40 行**，本轮全部改写为无过程态契约（建议→待裁/判据、此前实测→实测、须收回→直接给现行结论、直接编了示例数据→改为「须与既有链路逐条对撞」等）。🔴 更该记的是**为什么它们能连过四轮**：体例闸的 `PAT_ROLE` **根本不含「执笔方」**，只认甲域/乙域/丙域/本席 —— 最常见的过程叙述标记，闸从来没在看。已加入，按【自述句式】判（执笔方＋建议/认为/倾向/此前/当时/自查…），并钉反测「关于执笔方的**规定句式**（不得/须）不算自述」防误伤 §0.1／§4.1。
-  <div class="note bad">【RV-甲48|甲|阻断|采纳】RV-甲45 仍未完全闭合：虽清理“执笔方”自述，知识分级/对齐区域仍保留“业主本轮正好说”“业主本轮定”“本次对齐要改动”“这是本轮所有对齐里改动面最大”等轮次与改稿过程；这些正是甲45 明列的同类残留，只是换了主语后绕过新增 PAT_ROLE。须按语义移沿革或改写为无轮次的现行契约，并给“业主本轮／本次对齐／本轮所有对齐”句式正反测；不得把清掉一个主语外推为过程叙述全清。</div>　　⟹ **【采纳】** 🔴 成立。轮5 我清的是「执笔方…」自述，而**同族的另一批**仍在：「业主本轮／业主本条／业主问／本次对齐／本轮所有对齐」共 **12 处**，已全部改写（裁定内容留正文，「谁在哪一轮问的/定的」不留）。⚠️ 它们与「执笔方…」是同一件事的两面：**把某一次评审会话的语境写进现行契约**。已加入 ⑫ 的 `PAT_PROC`，并钉反测「『业主裁定』不带轮次语境、不得误伤」。
   <div class="note" data-edit>🔴 <b>拆分刀口在每一类内部，不在类型之间</b>：业务 / 服务 / 数据 / 网络等每一类
   <b>都同时有设计层与运行态</b> —— 设计层固化（低频、可公开全员），运行态实时查（高频、按内容定级）。<br>
   ⚠️ <b>按类型整块归属是错的</b>：那会把「服务架构设计」这种应固化的内容一并划入运行时取。</div>
@@ -2383,9 +2370,8 @@ body.uionly #uihint{display:block}
 <!-- ============ b3 受控仓储 API / 租户隔离核验 ============ -->
 <section class="scr" id="b3">
 <h2 data-edit>受控仓储 API · 租户隔离核验</h2>
-<div class="sub" data-edit>C.3a 业主裁：一企业一 PG 库（企业间物理隔离）＋ 受控仓储 API 单点（硬前置）＋ PG＋RLS 兜人层。<!-- 【RV-丙09|丙|非阻断|采纳】屏首裁决引用过期：C.3 已被 C.3a 推翻（一企业一 PG 库 ✅＋受控仓储 API 硬前置 ✅＋PG＋RLS 人层兜底 ✅）——「不做 RLS、不做每租户独立库」两项均不再成立；本屏核验项与「1 平台库＋N 企业库」模型的关系须重述。 -->配套见 §22.2c</div>　　⟹ **【采纳】** 屏首裁决已改为 C.3a 全文；SP7a 形态行同步。
+<div class="sub" data-edit>C.3a 业主裁：一企业一 PG 库（企业间物理隔离）＋ 受控仓储 API 单点（硬前置）＋ PG＋RLS 兜人层。配套见 §22.2c</div>　　⟹ **【采纳】** 屏首裁决已改为 C.3a 全文；SP7a 形态行同步。
 
-<div class="note bad">【RV-甲13|甲|阻断|采纳】本屏整体仍是已被 C.3a 推翻的旧存储合同：标题下明确写“不做 RLS、不做每租户独立库”，五项/负测/残余面也只覆盖单库应用层方案；同页其他位置仍多次复述旧 C.3。须按“一企业一 PG 库＋人层 RLS＋平台库独立”重画选库、RLS、跨库迁移与负测入口，或把旧屏封存为历史且新增可达的现行 C.3a 屏；不得让旧屏继续作为 §22.2c 当前入口。</div>　　⟹ **【采纳】** 屏首裁决改为 C.3a 全文（一企业一 PG 库 ＋ 受控仓储 API 硬前置 ＋ PG＋RLS 兜人层）；同屏 §22.2c 引用、SP7a 形态行、身份模型行一并同步。
 
 <div class="note bad" data-edit>🔴 <b>先把话说准，本屏不写成「已实现租户隔离」。</b>
 本方案<b>不杜绝</b>跨租户泄漏，也不试图杜绝：它拦的是<b>经由仓储 API 的路径</b>；
@@ -2633,8 +2619,6 @@ document.getElementById('bExp').onclick=function(){
     /* 🔴 本对象【不内嵌任何版本号、commit 或指纹】。
        ⚠️ 内嵌值一旦过期，经此导出的改稿会天然挂错基准，收件方比的是几个版本之前的文本。
        ⇒ 基准由 git 锚承载，导出时不写死；需要基准时取 docs/DELIVERY-STATUS.md。 */
-<!-- 【RV-甲40|甲|阻断|采纳】原型正文已提交 Git 合并冲突标记（<<<<<<< / ======= / >>>>>>>），导出函数的 JavaScript 不再是有效单一版本；但提交闸 ①–⑰ 与 analyze 仍全绿。须先解冲突、保留唯一现行实现，再为三件正文及受控脚本增加 conflict-marker 恒零闸与正反测；否则“全闸通过”仍可放行不可执行原型。 -->　　⟹ **【采纳】** 🔴 **成立，且这条最该记**：冲突标记落在 JS 块注释内 ⇒ **语法不坏、闸也不看**，「①–⑰ 全绿」在此只意味着没有一道闸看这里。已解冲突（两变体仅差 v1.30/v1.27，其叙述本就是丙13 要求移沿革的过程史，故整段移出、正文只留判据），并立闸 ⑲ conflict-marker-gate（7 项反测，含「标记藏在块注释内」与「32 个 = 的分隔线不得误报」两向）。
-<!-- 【RV-丙13|丙|非阻断|采纳】〔体例分离二轮·门方先标〕本件仍存过程叙述：与 Agent 交互屏「本阶段实战教训：…九次消息错序」；spec 准入检查屏与身份绑定屏两处「执笔方在评审中被抓出的『按名字判而非按效果判』是同一族错误」；本处导出函数注释整段复述（sol 已举）。另注：多处「本轮/本次」（本次经由/本次增量/本轮设计合同类）为通用操作语义，非过程痕迹，不在此列。 -->　　⟹ **【采纳】** 已按该清单逐段改完（体例闸扩 `PAT_PROC` 指纹后 16 处全部改写为现行断言）；panel 类按业主判据整段删除。🔴 **一轮报「痕迹 90→0」是错的** —— 闸的口径不等于事实的口径。
     基准说明:'本导出不含版本号；请以导出时仓库的 git 锚与 docs/DELIVERY-STATUS.md 为基准',
     说明:'把本文件发回 opus50t，据此改 SpecDoc §25-§27。若改动与已裁定条款冲突，会指出条款号请业主裁定，不得两存。',
     屏:scr,改文:改文,批注:批注};

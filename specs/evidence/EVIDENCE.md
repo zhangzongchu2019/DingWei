@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T11:59:58Z
-分支头：`1085ff0609ebadd951f59226632e401c4f2f769d`
+生成时刻：2026-08-25T12:05:22Z
+分支头：`d940b17c8cda2fbf12c6fda5bd856070faf9b52a`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,25 +10,25 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED 4b58e21ba6fc473f63e2321b19ebbed31e42de0a07b7e7f5d2dd842c20a8f712  docs/dingwei-platform-specdoc.md
-REVIEWED 25955af1c8ed6065756dbf64f7afad111ea270e1587ac86b3441a344d5d6af05  docs/dingwei-architecture-design.md
-REVIEWED 5063e08cd07baa70d5eb25ff1184fa51e7ed030056bf4c0cebc3be9c1c233a44  docs/dingwei-prototype.html
-REVIEWED cf290778007cc7b2502b7af101a4d68b87b55a2bb17fdbeae07c36784ea9a928  docs/DELIVERY-STATUS.md
-REVIEWED b4baa10d91b45b4e0e1a91041327b41ea6e0d0f6928eb11c7c5e1d4f2438268d  specs/evidence/collect.sh
+REVIEWED 0dc2141f07ccf3bd9ef26176ac718a3ce5ef8556a3a36eab5388fbacebbbc6f2  docs/dingwei-platform-specdoc.md
+REVIEWED 605396fed102de54ee950bdbbdba61ec5355f553ff26d3d5a892af55cfc25ecc  docs/dingwei-architecture-design.md
+REVIEWED 222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e  docs/dingwei-prototype.html
+REVIEWED 17b1aeb1b70fea36b1901acc8889409dd0ac44fac71666f1eeb51619a48ab4e4  docs/DELIVERY-STATUS.md
+REVIEWED a1fe9843b31755f89f241d80a39b57a15e72f3384c5af0219e284ca1ae9135eb  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
 REVIEWED 253a59f6e85c9a1438beeac339efdc2294b21ae3bba46aaf30e7d1ee9befb521  scripts/check-sensitive.sh
 REVIEWED 451fa8171c5460ef6ff723d68f902d756469b90d06dbcd4f924886ce6b885f0f  scripts/checklist-executed-gate.sh
-REVIEWED ec1d83e2dfba4a6a8755e503905f1f1532c8594f91949ede16c37c2dc6d2673b  scripts/conflict-marker-gate.sh
+REVIEWED 69b60fda965d49479f0390a583810b082c1f049b30b4d04af2127f3eb13d43c3  scripts/conflict-marker-gate.sh
 REVIEWED 687300bc3e8a56f491c533116b6cccc6da256f4e7aaf300607cd32cb6274e78e  scripts/delivery-check.sh
 REVIEWED 33d372ff3b1dcda466476c113af888b55e02dee8479a894c8b0c48d8e9a45013  scripts/evidence-fresh-gate.sh
 REVIEWED 156c626fe5e069606e07f642d5f7fd3477b5ce42f1173d28b40e425f4556b883  scripts/gen-status.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh
-REVIEWED 46f34de01e0f17fea7a6c3d1bf1cb2c34da79e5bb6cb57458f7b631ef2470ca7  scripts/path-anchor-gate.sh
-REVIEWED fbe775f71a612a64c56948530c4001c39ccec3d267b052c25bb1e2542fd59e6c  scripts/prose-style-gate.sh
+REVIEWED 19c187d91bff0d18a734582e6c278cca4f87596a59a87b824ea0acbabdc0d5be  scripts/path-anchor-gate.sh
+REVIEWED 315105ce9fbde286c2e4a04c8032735df3c1d6a43993c304c3bad1fb788a9ec7  scripts/prose-style-gate.sh
 REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scripts/reliable_delivery_canary.sh
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
-REVIEWED 5fa44b88e6b4b14acf2795194112a2e6257b01c72bcf6eca035b6aaf24b2cde4  scripts/rv-integrity-gate.sh
+REVIEWED 8e8795b9c2b21d7c2b0de09a69f8b1b7049f0f0b7c71cccf119e9156a4c8e323  scripts/rv-integrity-gate.sh
 REVIEWED 729093843d0d058b1f3aef88081e27e5daa6f527feb5bb60fbcb8be2dd865a40  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
 REVIEWED 04a61a19321b7a35a78a5a886b1bc915dd5012fcf1dbd8636627e058c966eb3e  scripts/status-consistency-check.sh
@@ -82,8 +82,8 @@ $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
 
 ```
 $ scripts/arch-refcheck.sh
-  本件内引用 A§ : 77 次 / 28 目标 · 悬空 0
-  SpecDoc 引用 § : 173 次 / 68 目标 · 悬空 0
+  本件内引用 A§ : 65 次 / 27 目标 · 悬空 0
+  SpecDoc 引用 § : 169 次 / 68 目标 · 悬空 0
   heading 真实重复：本件 0 · SpecDoc 0
   --- 引用核验通过
   (rc=0)
@@ -114,9 +114,9 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 114 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.28 · 状态文件 v3.28 ✓
-    架构设计: 件内 v0.31 · 状态文件 v0.31 ✓
-    原型: 件内 v1.36 · 状态文件 v1.36 ✓
+    SpecDoc: 件内 v3.29 · 状态文件 v3.29 ✓
+    架构设计: 件内 v0.32 · 状态文件 v0.32 ✓
+    原型: 件内 v1.37 · 状态文件 v1.37 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-architecture-design.md: 正文无他件旧版本号
