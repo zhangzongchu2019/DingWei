@@ -73,6 +73,22 @@ check() {
     #   于是「取不到」又变成一个非空值。用 cat-file -e，它只以退出码回答。
     if git cat-file -e ":$_file" 2>/dev/null; then
       _idx=$(git cat-file blob ":$_file" 2>/dev/null | sha256sum | cut -d' ' -f1)
+      # 🔴 内容比对**不含模式**：把 REVIEWED 件在暂存区换成【内容哈希相同的符号链接】
+      #   （blob 一样、mode 120000），哈希逐个对得上，闸照样放行 ——
+      #   而提交进去的是一个符号链接，评审对象实际已被换掉。
+      #   ⚠️ 这一形态乙域没测到（他测的是删除/gitlink/内容不同的符号链接，
+      #     那三种都因**内容不同**被拒 —— 拒对了，但**理由不是模式**）。
+      #   本判据由变异体验证暴露：去掉「不在暂存区」分支后反测竟不失守，
+      #   说明那两条反测通过的**理由不对**，于是补了这一条按模式判的。
+      _mode=$(git ls-files --stage -- "$_file" 2>/dev/null | awk '{print $1}' | head -1)
+      case "${_mode:-100644}" in
+        100644|100755) : ;;
+        *)
+          [ "$_bad" -eq 0 ] && echo "✗ 证据包非当期产出：以下 REVIEWED 件在暂存区不是普通文件"
+          echo "    $_file  暂存区模式 $_mode（120000=符号链接 · 160000=子模块）"
+          echo "      ⇒ 内容哈希可以对得上，但提交进去的已不是那个文件本身。"
+          _bad=$((_bad+1)); continue ;;
+      esac
     else
       # 🔴 乙域 terra R2 轮5（RV-乙11）：这里原来直接 _idx="" 跳过 ——
       #   于是 `git rm --cached <REVIEWED 件>`（工作区保留）后本闸仍 rc=0：
@@ -163,6 +179,37 @@ selftest() {
     [ $? -eq 1 ] && ok "🔴 拦住：工作区对而暂存区旧（先 add 后 collect 的形态，乙域 RV-乙10）" \
       || bad "暂存区与证据不符却放行 —— 闸测的不是将要被提交的东西"
     git add "$_probe" 2>/dev/null; rm -f "$_sv"
+  fi
+
+  # 🔴 乙域没测到的第四形态：内容哈希【相同】而模式是符号链接 ——
+  #   前三种都因内容不同被拒，**拒对了但理由不是模式**（变异体验证暴露）。
+  _p4=specs/gates/rv-ledger.txt
+  if [ -f "$_p4" ] && git rev-parse --git-dir >/dev/null 2>&1; then
+    _mk "$_h" "$_p4"
+    _b4=$(git hash-object -w "$_p4" 2>/dev/null)
+    git rm --cached -q -- "$_p4" 2>/dev/null
+    git update-index --add --cacheinfo "120000,$_b4,$_p4" 2>/dev/null
+    EV="$T/e.md" check >/dev/null 2>&1
+    [ $? -eq 1 ] && ok "🔴 拦住：内容哈希相同但暂存区模式为符号链接（只比内容不比模式的洞）" \
+      || bad "内容相同的符号链接条目被放行 —— 闸只比内容不比模式"
+    git rm --cached -q -- "$_p4" 2>/dev/null; git add -- "$_p4" 2>/dev/null
+  fi
+
+  # 🔴 乙域 terra 在 7480f92 上手测过的另两种暂存区形态（gitlink / 符号链接）——
+  #   他测完的结论是「无需第三形态」，但**手测过的东西不该只活在他的终端里**：
+  #   闸改了实现就可能悄悄回潮，而没人会再手测一遍。⇒ 钉成反测。
+  _probe3=specs/gates/rv-ledger.txt
+  if [ -f "$_probe3" ] && git rev-parse --git-dir >/dev/null 2>&1; then
+    for _mode in 160000 120000; do
+      _mk "$_h" "$_probe3"
+      _blobx=$(printf 'x' | git hash-object -w --stdin 2>/dev/null)
+      git rm --cached -q -- "$_probe3" 2>/dev/null
+      git update-index --add --cacheinfo "$_mode,$_blobx,$_probe3" 2>/dev/null
+      EV="$T/e.md" check >/dev/null 2>&1
+      [ $? -eq 1 ] && ok "拦住：REVIEWED 件在暂存区被换成 $_mode（$( [ "$_mode" = 160000 ] && echo gitlink || echo 符号链接 )）" \
+        || bad "暂存区 $_mode 形态被放行"
+      git rm --cached -q -- "$_probe3" 2>/dev/null; git add -- "$_probe3" 2>/dev/null
+    done
   fi
 
   # 🔴 RV-乙11 的形态：暂存区删掉 REVIEWED 件（工作区保留）须拒，不得当空值跳过
