@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `d0322c6663772f0098802a050a8b28cc08d053b5` · 分支 `HEAD`
+生成自 commit `c6a514c7eba89fe19bbeca8b05410bb2cba156d7` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -22,17 +22,17 @@
 |---|---|---|---|---|
 | `dingwei-platform-specdoc.md` | **v3.23** | `3bcbaf16a43dfe772bcd55430c08eb0bb8689915` | 3091 / 211591 | `8d28b62b260595a3330a224fea13140ee0491b33f8e246e19dd59a2a10b3f016` |
 | `dingwei-prototype.html` | **v1.19** | `e4abe0a27460711d1e96fa88630c70fee77e11a0` | 2849 / 254727 | `2cdcd14be84b31758f8834faf54fa4445f6b21e6868fbd61ce3a109657eb1d16` |
-| `dingwei-architecture-design.md` | **v0.20** | `d0322c6663772f0098802a050a8b28cc08d053b5` | 803 / 58170 | `cb128a9ab7a68d9e9083388cf7b2b4ca6ea78afe5745e2c8ffe6639ca79cba2c` |
+| `dingwei-architecture-design.md` | **v0.21** | `3a254032dc969605c349c0f187b98bc1c0caeb43<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 791 / 55015 | `3a0b12ebd111b97e23add3f55cef8817a8c84d0cee98eb89ecfe6e443c5c3eb4` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
-d0322c6 docs: arch A§0.0 语义依赖点全量同步门已形成现状——sol 复核 4949e3b ①的剩余 4 处+grep 补抓第 5 处（丙域 kimi，前锚 3bcbaf1）
-3bcbaf1 docs: SpecDoc 评审状态机械转入 PASS——§22.2c 同源 delta 三域新判齐（coordinator 归口执行，前锚 3946553）
-0fb1dcd docs: 重生成证据包(甲域 CR 增补第 ⑥ 项;前五项已由前序锚修毕,附实证分类)(前锚 3946553)
-3946553 docs+gate: 按甲域 sol 复核 4949e3b 三项整改（丙域 kimi 出稿，与 126bf85 第三轮组分开，前锚 e4abe0a）
-78a91ab gate: 按甲域 sol 授权把 internal/repo 落允许清单(open 4) + 立 pending/system 两条债棘轮(前锚 e82e083)
-e4abe0a docs: 按甲域 sol 二轮全量 findings 整改 ②③④（丙域 kimi，前锚 5db18f2）
-e82e083 gate: 按乙域 terra 裁定,把 SP7b 的隔离依赖做成【提前布防】的验收闸 ⑩(前锚 4949e3b)
-5db18f2 docs: 原型页顶可见锚同步 v1.18（§22.2c 同步 v3.23）——甲域三轮前最后一处（丙域 kimi，前锚 126bf85）
+c6a514c gate: 立体例合规闸 + RV 评审标注机制(前锚 6211504)
+6211504 merge: SA 批（SA-11/12/13/14）合入主线，作为 R2 出稿的基底
+e94844c fix: SA 批二轮 —— terra 四条阻断一次性修完(SA-12a/12b/13/14)(前锚 23fb6bf)
+23fb6bf fix: SA 批一次性整改 —— SA-12(pending 债按效果判·分领域棘轮) + SA-13(迁移账·拒绝静默重放)(前锚 110de2b)
+110de2b chore: 移除仓根误提交的 handle-escape 构建产物(前锚 8b6fbbc)
+8b6fbbc fix: 闭两条门方 FAIL——AST 别名解析改不动点(乙域 terra SA-11) + Option 不再外泄裸句柄(甲域 sol #6)(前锚 3a25403)
+3a25403 docs: arch 附录待办表第 1 行同步——「未过架构评审」改「已过；用例评审/交付验证未过 ⇒ 不得签收交付物」（丙域 kimi，前锚 d0322c6）
+d1cb0e9 board: conformance 移植第三批 + 登记一处【导出面能力不足】的覆盖缺口(前锚 0fb1dcd)
 ```
