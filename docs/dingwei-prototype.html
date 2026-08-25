@@ -140,6 +140,8 @@ body.uionly #uihint{display:block}
   <button id="bRst">↺ 重置</button>
 </div>
 
+<div class="note bad">【RV|甲|阻断|未决】原型仍承载大量本件自身的评审/改稿沿革，而非界面样例：例如多屏“当初缺口取证过程保留”、执笔方上一轮拆错/被抓出、导出函数注释完整复述 v3.13/v1.13 相邻对撞。现在已有独立 `dingwei-revision-history.md`，这些过程叙述须移出；仅帖子流、封存帖等产品功能所需的样例历史可保留并明确其为用户数据。当前 `prose-style-gate` 对这些同义过程痕迹报零，是规则覆盖不足，不是正文已净。</div>
+
 <div id="wrap">
 <div id="uihint">◐ <b>纯 UI 模式</b>：已隐去全部说明层（note / 判据引用 / §编号）。
 此模式下看到的才是<b>界面本身</b> —— 说明层属 SpecDoc，不属界面；
@@ -2376,6 +2378,8 @@ body.uionly #uihint{display:block}
 <section class="scr" id="b3">
 <h2 data-edit>受控仓储 API · 租户隔离核验</h2>
 <div class="sub" data-edit>C.3 业主裁：受控仓储 API 单点，不做 RLS，不做每租户独立库。配套见 §22.2c</div>
+
+<div class="note bad">【RV|甲|阻断|未决】本屏整体仍是已被 C.3a 推翻的旧存储合同：标题下明确写“不做 RLS、不做每租户独立库”，五项/负测/残余面也只覆盖单库应用层方案；同页其他位置仍多次复述旧 C.3。须按“一企业一 PG 库＋人层 RLS＋平台库独立”重画选库、RLS、跨库迁移与负测入口，或把旧屏封存为历史且新增可达的现行 C.3a 屏；不得让旧屏继续作为 §22.2c 当前入口。</div>
 
 <div class="note bad" data-edit>🔴 <b>先把话说准，本屏不写成「已实现租户隔离」。</b>
 本方案<b>不杜绝</b>跨租户泄漏，也不试图杜绝：它拦的是<b>经由仓储 API 的路径</b>；
