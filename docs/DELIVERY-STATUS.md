@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `5db18f2bb56d055e7659578c561fe84a26906698` · 分支 `HEAD`
+生成自 commit `e4abe0a27460711d1e96fa88630c70fee77e11a0` · 分支 `HEAD`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.23** | `126bf85cce6bf061c6856a3ed9884d37dd109b12` | 3091 / 211657 | `9e4d3b548d112db3f9b81d6fb066cde65de3ac00894da375def8b718244623c1` |
-| `dingwei-prototype.html` | **v1.19** | `5db18f2bb56d055e7659578c561fe84a26906698` | 2849 / 254727 | `2cdcd14be84b31758f8834faf54fa4445f6b21e6868fbd61ce3a109657eb1d16` |
-| `dingwei-architecture-design.md` | **v0.18** | `126bf85cce6bf061c6856a3ed9884d37dd109b12` | 800 / 57077 | `e8939098f384d9c87ba36de54976f7af93d62caf755d23cce32c90477d2ca4f0` |
+| `dingwei-platform-specdoc.md` | **v3.23** | `e4abe0a27460711d1e96fa88630c70fee77e11a0` | 3091 / 211657 | `9e4d3b548d112db3f9b81d6fb066cde65de3ac00894da375def8b718244623c1` |
+| `dingwei-prototype.html` | **v1.19** | `e4abe0a27460711d1e96fa88630c70fee77e11a0` | 2849 / 254727 | `2cdcd14be84b31758f8834faf54fa4445f6b21e6868fbd61ce3a109657eb1d16` |
+| `dingwei-architecture-design.md` | **v0.19** | `e4abe0a27460711d1e96fa88630c70fee77e11a0` | 800 / 57212 | `7c5e621c27c050be50c9d33d92b600e30313a56a4d57599db20eb74e37c3adff` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+e4abe0a docs: 按甲域 sol 二轮全量 findings 整改 ②③④（丙域 kimi，前锚 5db18f2）
+e82e083 gate: 按乙域 terra 裁定,把 SP7b 的隔离依赖做成【提前布防】的验收闸 ⑩(前锚 4949e3b)
 5db18f2 docs: 原型页顶可见锚同步 v1.18（§22.2c 同步 v3.23）——甲域三轮前最后一处（丙域 kimi，前锚 126bf85）
 4949e3b fix: 按甲域 sol 定性整改状态两存 + 立闸 ⑨ 状态一致性(前锚 126bf85)
 126bf85 docs: §22.2c 同源改稿按甲域结构复核整改（丙域 kimi 出稿，修在此，前锚 e1b9946）
 fcddfe7 board: conformance suite 移植第二批(并发/版本恰一/幂等重放)+ 两次变异未命中的修正(前锚 e1b9946)
 e1b9946 docs: §22.2c 文档与闸同源——机器旁证按效果写、唯一判定处 repo-boundary-gate（丙域 kimi 出稿，归口定）
 7ca8335 board: 建可验重写的 conformance suite(§4.5 五族),并用变异测试证明它有牙(前锚 09848f1)
-09848f1 fix: 按丙域 kimi 复核落两条——DOCS 具名件存在性校验 + ROOTS 边界理由入头注(前锚 a6ba5a3)
-a6ba5a3 fix: 状态源在干净检出上跑一次闸就变脏——闸 ⑤ 改为只比内容列(前锚 215d066)
 ```

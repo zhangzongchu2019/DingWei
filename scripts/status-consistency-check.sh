@@ -103,8 +103,18 @@ check() {
     echo "  修法二选一：① 把该处改成与权威源一致；② 若属不应由执笔方改的件，登记进 $EXC 并写明理由与归属。"
     return 1
   fi
+  # 🔴 status-ok 标记必须带【成形】理由：只写标记不写理由＝用标记把断言洗白
+  #   （甲域 sol 实测：此前只 grep -v 整行跳过，空理由仍 rc=0 —— 声明大于实现）。
+  _badmark=$(grep -rn 'status-ok:' specs docs/dingwei-architecture-design.md --include=*.md 2>/dev/null \
+    | awk '{ r=$0; sub(/.*status-ok:/,"",r); gsub(/[ \t]/,"",r); if (length(r)<8) print }')
+  if [ -n "$_badmark" ]; then
+    echo "✗ status-ok 标记后理由为空或过短（<8 个非空白字符）——标记必须带理由，否则它本身就是一条洗白通道："
+    printf '%s\n' "$_badmark" | head -5
+    return 1
+  fi
   _mk=$(grep -rc 'status-ok:' specs docs/dingwei-architecture-design.md --include=*.md 2>/dev/null | awk -F: '{t+=$2} END{print t+0}')
-  echo "  ⑨ 无未登记的过期状态断言 ✓（行内 status-ok 标记 $_mk 处，均须带理由）"
+  echo "  ⑨ 无未登记的过期状态断言 ✓（行内 status-ok 标记 $_mk 处，理由非空已校验）"
+  [ "$_n" -gt 0 ] && echo "  ⑨ ⚠️ PASS WITH REGISTERED DEBT：状态例外 $_n 条——登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（本闸只验登记、理由与漂移，不验批准）。"
   return 0
 }
 
@@ -139,6 +149,26 @@ selftest() {
   printf 'specs/README.md:1 反测用,该行并无过期断言\n' >> "$EXC"
   if check >/dev/null 2>&1; then bad "死例外被放行"; else ok "拦住:已失效的例外(须删除)"; fi
   cp "$T/exc.bak" "$EXC"
+
+  # ⑦ status-ok 空理由 -> 必拦（此前只 grep -v 跳过，空理由也过）
+  printf '随便一句正常话 <!-- status-ok: -->\n' > specs/.sc-selftest2.md
+  if check >/dev/null 2>&1; then bad "status-ok 空理由被放行"; else ok "拦住：status-ok 空理由"; fi
+  rm -f specs/.sc-selftest2.md
+
+  # ⑧ status-ok 理由过短/纯符号 -> 必拦
+  printf '随便一句正常话 <!-- status-ok: 嗯 -->\n' > specs/.sc-selftest2.md
+  if check >/dev/null 2>&1; then bad "status-ok 过短理由被放行"; else ok "拦住：status-ok 理由过短"; fi
+  rm -f specs/.sc-selftest2.md
+
+  # ⑨ 登记债务时输出须亮明 REGISTERED DEBT（不得无条件「全过」）
+  echo '本件生命周期仍为「草案」，尚未执行。' > specs/.sc-selftest.md
+  printf 'specs/.sc-selftest.md:1 反测用,债务登记示例\n' >> "$EXC"
+  out=$(check 2>/dev/null); rc_=$?
+  cp "$T/exc.bak" "$EXC"; rm -f specs/.sc-selftest.md
+  case "$out" in
+    *"REGISTERED DEBT"*) [ $rc_ -eq 0 ] && ok "登记债务时亮明 PASS WITH REGISTERED DEBT" || bad "债务亮明但退出码不对";;
+    *) bad "登记债务时未亮明 REGISTERED DEBT";;
+  esac
 
   rm -rf "$T"
   [ $fail -eq 0 ] && echo "--- 反测 $n 项全过（闸有牙）" || echo "--- 反测未过"
