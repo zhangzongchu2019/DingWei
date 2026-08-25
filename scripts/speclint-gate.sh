@@ -248,6 +248,17 @@ scripts/conflict-marker-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/conflict-marker-gate.sh --selftest; echo "✗ 冲突标记闸的反测未过"; exit 1; }
 echo "  ⑲ 冲突标记闸的反测 ✓"
 
+# ⑳ 路径锚解析（甲域 sol R2 轮5 · RV-甲44）：
+#    #36b 的 reviewer owner 锚被写成一个仓内不存在的路径，人工判据的落点
+#    因此指向空文件，而 ①–⑲ 全绿。⚠️ 交代责任落点的引用最需要能被打开。
+if [ ! -x scripts/path-anchor-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/path-anchor-gate.sh 不可执行"; exit 1
+fi
+scripts/path-anchor-gate.sh || exit 1
+scripts/path-anchor-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/path-anchor-gate.sh --selftest; echo "✗ 路径锚闸的反测未过"; exit 1; }
+echo "  ⑳ 路径锚闸的反测 ✓"
+
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
 #    **没有一次是执笔方自查出来的**。
@@ -259,7 +270,7 @@ python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
 python3 specs/tools/disposition-audit.py || true
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–⑲ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–⑳ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–⑲ ＋ ⑱ triage）"
+  echo "✓ 提交闸全过（①–⑳ ＋ ⑱ triage）"
 fi

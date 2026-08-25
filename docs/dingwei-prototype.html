@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.34 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.35 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.34</span></h1>
-  <span class="anchor">原型 <b>v1.34</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.35</span></h1>
+  <span class="anchor">原型 <b>v1.35</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -928,9 +928,9 @@ body.uionly #uihint{display:block}
   <div class="kv">
     <b>编辑模式</b><div>点顶栏 <b>✎ 编辑模式</b> —— 带虚线框的文字全部可直接改；每个面板右上出现 ↑ ↓ ✕ 可调序、隐藏</div>
     <b>批注</b><div>点 <b>＋ 批注</b> 后再点任意面板，贴一张黄条写想法</div>
-    <b>导出</b><div><b>⤓ 导出改动</b> 下载一个 JSON —— 含所有改文、隐藏项、顺序、批注。<b>把它发回执笔方，执笔方据此改 SpecDoc §25–§27</b></div>
+    <b>导出</b><div><b>⤓ 导出改动</b> 下载一个 JSON —— 含所有改文、隐藏项、顺序、批注。<b>把它发回规范执笔侧，据此改 SpecDoc §25–§27</b></div>
     <b>冲突处置</b><div class="cell-fail">🔴 若你的改动与 SpecDoc 已裁定条款冲突（如把待决队列拆成多页），
-    执笔方会明确指出冲突条款号，<b>由你裁定改原型还是改 SpecDoc —— 不得两存</b></div>
+    回写时会明确指出冲突条款号，<b>由你裁定改原型还是改 SpecDoc —— 不得两存</b></div>
   </div>
 </div>
 </section>
@@ -1277,7 +1277,7 @@ body.uionly #uihint{display:block}
 <h2 data-edit>spec 准入检查</h2>
 <div class="sub" data-edit>机器判结构，人判实质。<b style="color:var(--ok)">已落 SpecDoc §4.6（准入检查）· §4.7（内容构成与需求池）</b></div>
 
-<div class="note bad" data-edit>🔴 <b>执笔方不做「评级 / 评分卡」，理由来自规范自己。</b>
+<div class="note bad" data-edit>🔴 <b>本平台不做「评级 / 评分卡」，理由来自规范自己。</b>
 §5.1 写着：<b>「宁可粗（三档枚举），不可细（十档打分）。打分制一定退化成主观。」</b>
 §5.2 又写着：<b>安全面必须是独立维度，不得被「改动小」稀释</b> —— 而<b>综合评分正是把一票否决项平均掉的机器</b>。<br>
 ⇒ 故设计为 <b>① 机器可判的检查项集合（pass / fail，不加权）＋ ② 硬门（一票否决）＋ ③ 人审触发规则</b>，
@@ -1331,7 +1331,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>③ 满足条件后，是否一定需要人审？ <span class="ref">业主问 · 拟 §4.6</span></h3>
-  <div class="chk stop" data-edit>🔴 <b>执笔方答：不能因「机器项全过」而免人审。</b></div>
+  <div class="chk stop" data-edit>🔴 <b>不能因「机器项全过」而免人审。</b></div>
   <div class="note bad" data-edit>理由一 · <b>规范已有明文</b>：§5.4 规则 2「<b>基础必过模板</b>」＝无论属性如何恒必过的最小环节集
   （实现 → 代码评审 → 测试执行）。<b>代码评审在任何级别都不可省</b>，spec 同理不应比代码宽松。<br><br>
   理由二 · <b>免人审会把检查项变成攻击面</b>：一旦「过检查项即免审」，就会出现<b>为过检查项而写的 spec</b> ——
@@ -1405,7 +1405,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>预计数据 · 值 ＋ 依据 ＋ 复核点 <span class="ref">§4.7.2</span> <span style="font-weight:400;color:var(--dim);font-size:12px">业主定写进来，执笔方补了后两列</span></h3>
+  <h3>预计数据 · 值 ＋ 依据 ＋ 复核点 <span class="ref">§4.7.2</span> <span style="font-weight:400;color:var(--dim);font-size:12px">业主裁定</span></h3>
   <table><thead><tr><th style="width:110px">项</th><th style="width:120px">预计值</th><th>依据</th>
   <th style="width:150px">复核点</th><th style="width:88px">实测</th></tr></thead><tbody>
   <tr><td data-edit>预计用户规模</td><td data-edit><b>120 人</b></td>
@@ -1416,7 +1416,7 @@ body.uionly #uihint{display:block}
     <td data-edit><b class="cell-fail">无依据，暂定</b></td><td class="mono">达到 15 会话时</td>
     <td class="cell-fail">实测 68<div class="mono">超 2 倍 ⇒ 已触发 spec 复核</div></td></tr>
   </tbody></table>
-  <div class="note bad" data-edit>🔴 <b>为什么必须带「依据」与「复核点」</b>（执笔方补，非业主原话）：
+  <div class="note bad" data-edit>🔴 <b>为什么必须带「依据」与「复核点」</b>：
   预计数据是<b>估计值，不是测量值</b>。只写数字不写来源，它会<b>以约束的身份固化下来</b>，
   而后续所有设计按它做 —— <b>一个拍脑袋的数字就获得了与实测同等的效力</b>，且没人知道它当初怎么来的。
   <div style="margin-top:6px">⚠️ 标「<b>无依据，暂定</b>」<b>不是缺陷，隐瞒才是</b>：允许拍脑袋起步，不允许让人以为它是实测的。</div></div>
@@ -1600,7 +1600,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>🔴 合并身份 ≠ 合并渠道强度 <span class="ref">执笔方认为这是本屏最要紧的一条</span></h3>
+  <h3>🔴 合并身份 ≠ 合并渠道强度 <span class="ref">本屏要点</span></h3>
   <div class="note bad" data-edit><b>直觉做法（错的）</b>：这人已经通过飞书强验证了，所以他从任何已绑渠道来都算强身份。<br>
   <b>后果</b>：<b>最弱渠道继承了最强渠道的信任</b> —— 外部 Slack 一被攻破，等于拿到企业飞书级别的权限。<br><br>
   <b>正确做法</b>：<b>身份是同一个，但每次授权按【本次实际使用的渠道】的因子强度判。</b></div>
@@ -1691,7 +1691,7 @@ body.uionly #uihint{display:block}
       <div style="margin-top:6px">§25.7 <b>S0 一律拒收</b>。<b>本反馈不含文件名、命中片段、元数据或任何输入子串</b> —— DOM / 审计 / 日志三处一致。</div>
       <div style="margin-top:6px" class="mono">⚠️ PA-02：原实现回显了原始文件名与「命中了什么」。<br>
       <b>文件名是判定器的输入</b>；判定为 S0 之后还把它回显进会话（而会话会入帖子流），<br>
-      等于用拒收动作把 S0 又写了一遍 —— 与 §22.5 #5 是同一个错，执笔方在 SpecDoc 里刚修过（SA-08），原型里原样犯了一遍。</div>
+      等于用拒收动作把 S0 又写了一遍 —— 与 §22.5 #5 是同一个错（同 §22.5 #5，SA-08）。</div>
       <div style="margin-top:6px">改法：若确需该资料，请在知识库内按<b>受控仓储 API 的租户与可见性</b>引用，<b>不要作为附件传入对话</b>。</div></div></div></div>
   </div>
   <div class="drop" data-edit>拖入 <b>图片 / 视频 / 文档 / 代码</b>，或 <b>点击选择</b><br>
@@ -1715,7 +1715,7 @@ body.uionly #uihint{display:block}
   <tr class="dis"><td>其余全部</td><td data-edit>帖子流已足够：状态通知、交付登记、门结果、澄清、跨 task 协调</td>
     <td>帖子流</td></tr>
   </tbody></table>
-  <div class="note" data-edit>📌 <b>执笔方建议（待裁）：开放性讨论仍应落帖子流。</b><br>
+  <div class="note" data-edit>📌 <b>待裁：开放性讨论仍应落帖子流。</b><br>
   理由：帖子流对讨论不适合的是<b>形态</b>（回合慢、有条数闸），不是<b>记录</b>。
   若讨论完全不落账，<b>「作业无痕」就从这个口子回来了</b> —— 而那正是 §17 要解的问题。<br>
   ⇒ <b>原生交互是【输入形态】，帖子流是【记录形态】，两者不是二选一。</b><br>
@@ -1730,17 +1730,17 @@ body.uionly #uihint{display:block}
   <div class="grid g2">
     <div class="card"><b class="cell-fail">旧 view 页</b>
       <div style="margin-top:6px;font-size:12.5px">页面本身<b>不含身份</b> ⇒ 只能靠一个 unlock 码放行。<br>
-      执笔方此前实测：<code>VS_AUTO_UNLOCK</code> <b>默认为 "1"</b>，代码会自动 POST <code>{"code":"0000"}</code>
+      实测：<code>VS_AUTO_UNLOCK</code> <b>默认为 "1"</b>，代码会自动 POST <code>{"code":"0000"}</code>
       到 <code>/api/terminal/mock-unlock</code>。</div>
-      <div class="note bad" style="margin-top:8px">🔴 执笔方当时的判定：该后门<b>当前是哑的，但「哑」是意外</b> ——
+      <div class="note bad" style="margin-top:8px">🔴 判定：该后门<b>当前是哑的，但「哑」是意外</b> ——
       组件不匹配（Go 的 <code>404 page not found</code> 与 nginx 的 HTML 404 不同源），<b>不是配置出来的</b>。
       <b>配置一变就活。</b></div></div>
     <div class="card"><b class="cell-ok">主界面内对话</b>
       <div style="margin-top:6px;font-size:12.5px">进来的人<b>已经过§21.1 双层结构认证</b>（人 → 租户 → 会话，§21.1），
       且本次经由的渠道强度已知（§21.4）。<br><b>身份在会话里，不在一个码里。</b></div>
       <div class="note" style="margin-top:8px">✅ <b>砍掉 view 页 ⇒ unlock 这个面整个消失</b>，
-      连带关掉执笔方清单上那条悬项「<code>VS_AUTO_UNLOCK=0</code> 应显式设置」——
-      该项一直卡在需要 prodops 执行、执笔方无主机权限。<br>
+      连带关掉悬项「<code>VS_AUTO_UNLOCK=0</code> 应显式设置」——
+      该项须 prodops 执行（规范执笔侧无主机权限）。<br>
       <b>不需要设 0 了，因为没有那个开关了。</b></div></div>
   </div>
 </div>
@@ -1758,7 +1758,7 @@ body.uionly #uihint{display:block}
     <td data-edit>不经平台，平台故障时仍可达</td></tr>
   </tbody></table>
   <div class="note" data-edit>📌 原 §25.4 那一句把两个断言捆在一起、却只给了 sidecar 的理由。裁定后拆为两条，
-  <b>各自有各自的依据</b>。执笔方此前把这一句从<b>纲领件</b>（另一份文档，非本 SpecDoc）的对应节原样搬入而未做对撞检查，已记为「合并未对撞」第 6 次实例。</div>
+  <b>各自有各自的依据</b>。⚠️ 跨件搬入的条款须逐条对撞，不得原样搬。</div>
 </div>
 
 <div class="panel">
@@ -1784,9 +1784,9 @@ body.uionly #uihint{display:block}
   §21.1「<b>审计与授权挂在人身上</b>」<b>落不了地</b>；<br>
   ② 🔴 <b>共享凭据下，任一持有者可访问任一会话的 sidecar</b> ——
   而业主本条的关切正是「<b>保证 Agent 会话不会被其他人攻击</b>」。<b>共享 Basic 恰恰保证不了这一点。</b><br><br>
-  <b>执笔方建议</b>：Nginx 层鉴权改为<b>校验平台签发的会话级凭据</b>（由 §21 §21.1 双层结构产生，含 <code>platform_subject</code> ＋
+  <b>建议</b>：Nginx 层鉴权改为<b>校验平台签发的会话级凭据</b>（由 §21 §21.1 双层结构产生，含 <code>platform_subject</code> ＋
   目标会话 ＋ 有效期），并<b>逐次落账「谁经哪个渠道访问了哪个会话」</b>。<br>
-  ⚠️ <b>搜索范围声明</b>：以上关于「HTTP 基础认证」的判断<b>来自代码注释</b>；实际 nginx 配置执笔方<b>无主机权限，未核</b>。
+  ⚠️ <b>搜索范围声明</b>：以上关于「HTTP 基础认证」的判断<b>来自代码注释</b>；实际 nginx 配置<b>未核</b>（无主机权限）。
   若线上已用更强方式，请 prodops 指正。</div>
   <div class="note warn" data-edit>⚠️ <b>一条不能漏的约束：Nginx 的紧急路由不得依赖平台应用层。</b><br>
   若常规鉴权要问平台「这个凭据有效吗」，平台一挂就全拒 —— <b>那 ops 紧急通道在云端就等于不存在</b>。<br>
@@ -1802,7 +1802,7 @@ body.uionly #uihint{display:block}
     <td data-edit>每个请求先向内部端点发子请求，200 放行 / 401 拒。可携带 cookie，逻辑任意</td>
     <td class="cell-fail"><b>全拒</b><div class="mono">除非子请求打到独立于平台应用层的校验服务</div></td>
     <td class="cell-ok">✓ 原生</td></tr>
-  <tr><td class="cell-ok"><b>乙 · 签名令牌本地验签</b><div class="mono">执笔方推荐</div></td>
+  <tr><td class="cell-ok"><b>乙 · 签名令牌本地验签</b><div class="mono">推荐</div></td>
     <td data-edit>cookie 里放<b>签名令牌</b>（JWT / PASETO），Nginx 用<b>公钥本地验签</b>，<b>不问任何后端</b></td>
     <td class="cell-ok"><b>仍可用</b><div class="mono">验签是本地计算</div></td>
     <td class="cell-wait">须 njs 或 lua<div class="mono">auth_jwt 是 Plus 版</div></td></tr>
@@ -1810,7 +1810,7 @@ body.uionly #uihint{display:block}
     <td data-edit>Nginx 拿 cookie 去问平台 / Redis「这个会话有效吗」</td>
     <td class="cell-fail"><b>全拒</b></td><td class="cell-ok">✓</td></tr>
   </tbody></table>
-  <div class="note" data-edit>📌 <b>执笔方推荐乙</b>：它是唯一让<b>常规通道也不依赖平台在线</b>的做法。
+  <div class="note" data-edit>📌 <b>推荐乙</b>：它是唯一让<b>常规通道也不依赖平台在线</b>的做法。
   甲和丙都把「平台是否在线」变成了「能不能连上自己的 Agent」的前提 —— 而这正是我们要避免的耦合。<br>
   ⚠️ 落地注意：<b>nginx 开源版无原生 JWT 模块</b>（<code>auth_jwt</code> 属 NGINX Plus），
   开源版须用 <b>njs</b>（官方 JS 模块）或 <b>OpenResty / lua</b> 手写验签。这是选型时要算进去的成本。</div>
@@ -1855,7 +1855,7 @@ body.uionly #uihint{display:block}
   <h3>多模态上传的治理问题 <span class="ref">缺口 · 拟 §25.8</span></h3>
   <div class="note bad" data-edit>🔴 <b>全文搜「多模态 / 上传 / 图片 / 视频 / 附件」——零命中。</b>
   唯一沾边的是 §27.1「富文本与附件能力差异」，那是<b>平台侧要吸收的渠道差异</b>，不是 Agent 侧的上传能力。</div>
-  <table><thead><tr><th style="width:130px">问题</th><th>执笔方建议</th></tr></thead><tbody>
+  <table><thead><tr><th style="width:130px">问题</th><th>建议</th></tr></thead><tbody>
   <tr><td>存哪</td><td data-edit>存对象存储（§26.4 资源池的 <code>cos-*</code> 条目）；<b>对话与帖子流内只留引用 + sha256</b>，不内联大 blob</td></tr>
   <tr><td class="cell-fail"><b>密级</b></td><td data-edit>🔴 <b>上传前须做内容扫描定级</b>。
     一张运维截图可能含<b>主机 IP、token、拓扑</b> ⇒ 属 <span class="s0">S0</span>，
@@ -1894,7 +1894,7 @@ body.uionly #uihint{display:block}
       <b>平台故障时</b><div class="cell-ok"><b>仍可用</b> —— 这是它存在的全部理由</div>
       <b>能力</b><div class="cell-fail">收窄，见下</div></div></div>
   </div>
-  <div class="note" data-edit>📌 <b>为什么这里用密码不算倒退。</b>执笔方在 A8 屏说「view 的 unlock 是缺陷」，
+  <div class="note" data-edit>📌 <b>为什么这里用密码不算倒退。</b>A8 屏已判「view 的 unlock 是缺陷」，
   与本屏用密码<b>并不矛盾，因为前提不同</b>：<br>
   <b>常规面</b>——身份基础设施在线，<b>有身份却不用、改用一个码</b>，那是缺陷；<br>
   <b>紧急面</b>——平台已挂，§21.1 双层结构<b>本来就不可用</b>，<b>没有身份可依</b> ⇒ 必须有带外凭据。<br>
@@ -1917,7 +1917,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>临时密码怎么下发 <span class="ref">执笔方建议 · 待裁</span></h3>
+  <h3>临时密码怎么下发 <span class="ref">建议 · 待裁</span></h3>
   <div class="note bad" data-edit>🔴 <b>核心约束：密码不能只存在平台侧。</b>平台挂了还要靠平台校验密码，那这条通道就是假的。</div>
   <table><thead><tr><th style="width:130px">环节</th><th>做法</th><th style="width:160px">平台挂了还成立吗</th></tr></thead><tbody>
   <tr><td>生成</td><td data-edit><b>由本机 sidecar 本地生成</b>，写入 <code>~/.dingwei/emergency.pass</code>（仅 ops 可读）</td>
@@ -1957,7 +1957,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>平台挂了，怎么落账 <span class="ref">执笔方认为这是最容易漏的一条</span></h3>
+  <h3>平台挂了，怎么落账 <span class="ref">最容易漏的一条</span></h3>
   <div class="note bad" data-edit>🔴 <b>不能因为平台挂了就没有审计。</b>否则「先把平台弄挂，再走紧急通道」
   就成了一条<b>清空审计的路径</b> —— 这与 §21.4「解绑不得重写历史审计」是同一个道理。</div>
   <table><tbody>
@@ -1974,11 +1974,11 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>⚠️ 一处需业主明确的读法 <span class="ref">与 A8 屏相关</span></h3>
   <div class="note warn" data-edit>业主本条说「ops-Agent 应有两个入口：<b>view 提供的正常交互页面</b>，还应有紧急对话页」，
-  而上一条说「view 页不应再保留」。两句在字面上不一致，执笔方不猜，列两读法：<br><br>
+  而上一条说「view 页不应再保留」。两句在字面上不一致，此处不猜，列两读法：<br><br>
   <b>读法甲</b>：「view 提供的正常交互页面」指的是<b>常规交互入口</b>这一职能，
   它现在由主界面内的 Agent 对话面（A8 屏）承担 ⇒ <b>view 页仍砍</b>，ops-Agent 的两个入口 = 主界面对话 + 紧急页。<br>
   <b>读法乙</b>：<b>ops-Agent 是例外</b>，为其保留 view 页 ⇒ §25.4「不砍 view」对 ops-Agent 有效，对其余 Agent 失效。<br><br>
-  <b>执笔方倾向甲</b>，理由：读法乙会让 unlock 这个面<b>在 ops-Agent 上继续存在</b>，
+  <b>倾向甲</b>，理由：读法乙会让 unlock 这个面<b>在 ops-Agent 上继续存在</b>，
   而 ops-Agent 恰恰是权限最高的一类 —— <b>把后门留在权限最高的地方，是最坏的一种保留法</b>。
   且甲不损失任何能力：常规走主界面，故障走紧急页，两条都在。<br>
   <b>请业主一句话定。</b>这直接决定 §25.4 怎么改写。</div>
@@ -1987,7 +1987,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>缺口收敛：§25.4 的界面定义至此补齐 <span class="ref">§25.4</span></h3>
-  <div class="note" data-edit>执笔方此前标 §25.4 为缺口（全节两行、只有结论无界面定义）。业主本条把它填上了：
+  <div class="note" data-edit>§25.4 原为缺口（全节两行、只有结论无界面定义），本条填上：
   <b>不受平台影响 · 只要 ops-Agent 在运行就能交互 · 需输入临时 web 密码</b>。<br>
   ✅ <b>已回写为 §25.4.1–§25.4.6</b>（v3.0 重写），含：两个入口的职能划分 · 临时密码的生成/轮转/取用/校验/吊销
   （<b>本体在宿主本地，平台侧只是便利镜像</b>）· <b>能力收窄清单</b>（capability effect 判据，同 §24.3a）·
@@ -2065,7 +2065,7 @@ body.uionly #uihint{display:block}
   <h3>push / pull 的分界要重定 <span class="ref">§15 须改</span></h3>
   <div class="note warn" data-edit>⚠️ 现 §15 定的是<b>两级两通道</b>：平台级 push 强制 · 租户级 pull 自取。
   <b>四级之后，业务级走哪条？</b>这必须定，否则实施时会各做各的。</div>
-  <div class="note" data-edit>📌 <b>执笔方建议（待裁）：push / pull 的分界不在层级高低，在【辖域】。</b><br>
+  <div class="note" data-edit>📌 <b>待裁：push / pull 的分界不在层级高低，在【辖域】。</b><br>
   <b>push 的作用域 ＝ 该层级的辖域</b>：L0 push 全体 · L1 push 其辖下租户 · L2 push 其辖下项目 · L3 不 push。<br>
   <b>pull 只能向上取，不能横向取</b> —— 这是 §15.3「禁止租户 B 直接 pull 租户 A」的推广：
   <b>横向取用会绕过归属边界</b>，无论那个边界是租户之间还是业务线之间。</div>
@@ -2082,7 +2082,7 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>知识库的定义：固化 vs 上下文 <span class="ref">业主问 · 执笔方部分认同、一处修正</span></h3>
+  <h3>知识库的定义：固化 vs 上下文 <span class="ref">业主裁定</span></h3>
   <div class="note" data-edit><b>业主提法</b>：知识库＝不经常动、需要固化保存的记忆内容；
   按此，知识库应只是<b>企业层级与业务线层级</b>；<b>租户层级变动频繁，不适合入知识库，可作为上下文处理</b>。</div>
   <div class="chk pass" data-edit>✓ <b>判据本身成立，且比按层级分更根本。</b>
@@ -2100,7 +2100,7 @@ body.uionly #uihint{display:block}
   <b>⇒ 若按「租户层级不入知识库」切，会把「坑清单 / 判断失误」切出去 —— 而那恰恰是最该固化的一类。</b>
   它记录的是「默认做法是错的」，不随代码变。</div>
 
-  <h3 style="margin-top:16px">执笔方建议的判据：按「旧值会不会误导」切，不按层级切</h3>
+  <h3 style="margin-top:16px">判据：按「旧值会不会误导」切，不按层级切</h3>
   <div class="chk pass" style="font-size:13.5px" data-edit>
   <b>变了之后旧值【会误导】的 ⇒ 不固化，运行时取。</b><br>
   <b>变了之后旧值【仍是有效历史】的 ⇒ 固化，入知识库。</b></div>
@@ -2134,7 +2134,7 @@ body.uionly #uihint{display:block}
   ⇒ <b>同一份知识的两种形态</b>：<b>固化的 → 知识库</b>（按四级归属）· <b>易变的 → MCP 查询面</b>（按同一四级归属）。
   两者共用归属轴、共用 RLS、共用晋升，<b>不必各建一套</b>。</div>
 
-  <div class="chk warn2" data-edit>⚠️ <b>待业主裁</b>：<b>甲</b> 按执笔方建议——保留四级归属轴，
+  <div class="chk warn2" data-edit>⚠️ <b>待业主裁</b>：<b>甲</b> 保留四级归属轴，
   另加「固化 vs 运行时取」这条正交判据，<b>逐条目判，不按层级判</b>；
   <b>乙</b> 按业主原提法——知识库只保留 L0 / L1 两级，L2 / L3 一律作上下文（则须回答：坑清单与版本志放哪）。</div>
 </div>
@@ -2144,7 +2144,7 @@ body.uionly #uihint{display:block}
   <h3>K0-sec 分层 <span class="ref">设计层 / 运行态 · 业主裁定</span></h3>
   <div class="note bad">【RV-甲22|甲|阻断|采纳】体例挂账 #6：标题和正文围绕“上一轮拆错”展开，属修订史；当前模型保留为独立现行说明，错误过程移沿革。</div>　　⟹ **【采纳】** 已按甲域逐段清单改完：体例闸扩 `PAT_PROC` 指纹（抓不点名的过程叙述），扩面后 16 处全部改写为现行断言。🔴 **一轮报「痕迹 90→0」是错的** —— 一轮指纹只抓「谁在第几版说了什么」，抓不到「本轮已定」「本次为初版」这类，**闸的口径不等于事实的口径**。
   <div class="note bad">【RV-甲39|甲|阻断|采纳】RV-甲22 的“已改完”与本 panel 实取相反：标题仍写“上一轮拆错”，下方整段仍复盘执笔方的错误与收回过程。同类过程叙述还残留在 sidecar/unlock、企业公共库、知识分级对齐与导出函数等 panel。按已采纳的体例判据，只保留理解产品所必需的现行界面契约，执笔/评审过程移沿革。</div>　　⟹ **【采纳】** panel 标题改为「K0-sec 分层 · 设计层/运行态 · 业主裁定」；正文改写为现行判据（拆分刀口在每一类内部，不在类型之间）。同类残留一并清：SA-10 panel 的「执笔方上一版只钉了…」、附件屏的「接上执笔方上一轮标的…」。
-  <div class="note bad">【RV-甲45|甲|阻断|未决】RV-甲39 只修了 K0-sec 主段与两句旁支，未闭合其明确列出的同类残留。实取仍见：sidecar/unlock 屏复盘“执笔方此前实测/当时判定/从纲领搬入未对撞”；知识分级区域保留“执笔方建议/须收回/业主本轮/本次对齐改动最大”；示例数据屏保留“执笔方直接编了数据/合并未对撞”；文件尾仍有多段执笔过程自述。须按 panel 逐段判现行产品语义与修订过程，前者改写为无过程态契约，后者移沿革；不能以修两句宣称“同类残留一并清”。</div>
+  <div class="note bad">【RV-甲45|甲|阻断|采纳】RV-甲39 只修了 K0-sec 主段与两句旁支，未闭合其明确列出的同类残留。实取仍见：sidecar/unlock 屏复盘“执笔方此前实测/当时判定/从纲领搬入未对撞”；知识分级区域保留“执笔方建议/须收回/业主本轮/本次对齐改动最大”；示例数据屏保留“执笔方直接编了数据/合并未对撞”；文件尾仍有多段执笔过程自述。须按 panel 逐段判现行产品语义与修订过程，前者改写为无过程态契约，后者移沿革；不能以修两句宣称“同类残留一并清”。</div>　　⟹ **【采纳】** 🔴 **成立，我上一轮说「同类残留一并清」是假的** —— 只改了两句。实取复扫：正文含「执笔方」自述 **40 行**，本轮全部改写为无过程态契约（建议→待裁/判据、此前实测→实测、须收回→直接给现行结论、直接编了示例数据→改为「须与既有链路逐条对撞」等）。🔴 更该记的是**为什么它们能连过四轮**：体例闸的 `PAT_ROLE` **根本不含「执笔方」**，只认甲域/乙域/丙域/本席 —— 最常见的过程叙述标记，闸从来没在看。已加入，按【自述句式】判（执笔方＋建议/认为/倾向/此前/当时/自查…），并钉反测「关于执笔方的**规定句式**（不得/须）不算自述」防误伤 §0.1／§4.1。
   <div class="note" data-edit>🔴 <b>拆分刀口在每一类内部，不在类型之间</b>：业务 / 服务 / 数据 / 网络等每一类
   <b>都同时有设计层与运行态</b> —— 设计层固化（低频、可公开全员），运行态实时查（高频、按内容定级）。<br>
   ⚠️ <b>按类型整块归属是错的</b>：那会把「服务架构设计」这种应固化的内容一并划入运行时取。</div>
@@ -2163,9 +2163,9 @@ body.uionly #uihint{display:block}
     <td class="cell-wait" data-edit>真实 IP · 代理链 · 隔离网段 · 连通性<div class="mono">高频且受限</div></td></tr>
   </tbody></table>
 
-  <div class="note bad" data-edit>🔴 <b>由此执笔方须收回一处过度收紧。</b>执笔方原来把「服务架构 / 网络架构 / 数据库设计」
+  <div class="note bad" data-edit>🔴 <b>「服务架构 / 网络架构 / 数据库设计」不划入 sec。</b>把它们
   <b>一律划进 K0-sec（RLS + 分级 + 不得全员）</b>。按业主本条，<b>业务架构 / 服务架构 / 数据架构的【设计层】可公开全员</b> ——
-  它们是团队都该知道的东西，划进 sec 是<b>执笔方过度收紧</b>。<br>
+  它们是团队都该知道的东西，划进 sec 属<b>过度收紧</b>。<br>
   <b>真正必须受限的，是网络架构那一类（主机 IP、拓扑、凭据相关）</b>，以及可能含敏感内容的日志。</div>
 
   <h3 style="margin-top:16px">三处落位</h3>
@@ -2218,7 +2218,7 @@ body.uionly #uihint{display:block}
   组成的隔离网络，<b>但不影响我们认为是一套数据库系统</b>。」<br><br>
   ⇒ 网络架构也按同一条线拆：<b>逻辑视图</b>（够理解，低频，可公开）入 L0 知识库；
   <b>真实 IP / 代理链 / 隔离网段</b>（高频，受限）不入知识库，走 MCP 受限查询面。<br>
-  ⇒ 🔴 <b>K0-sec 作为「知识库的一层」可以撤掉。</b>执笔方造它的原始动因（防「每个 Agent 上下文里都有全平台拓扑」）
+  ⇒ 🔴 <b>K0-sec 作为「知识库的一层」可以撤掉。</b>它的原始动因（防「每个 Agent 上下文里都有全平台拓扑」）
   <b>仍被满足</b> —— 因为真实拓扑<b>根本不进知识库了</b>，它在受 RLS 的 MCP 面上。</div>
 </div>
 
@@ -2244,7 +2244,7 @@ body.uionly #uihint{display:block}
   <div class="note bad" data-edit>🔴 <b>企业公共库的导入 / 链接是全新的一类，全文零命中。</b>四个必须先定的点：<br>
   ① <b>导入还是链接</b>：导入＝拷贝（可锚可控，但会漂移且要同步）；链接＝引用（永远最新，但<b>可用性与权限受制于人</b>）<br>
   ② <b>锚</b>：外部库没有我们的 commit —— 用其版本号？内容 sha256？还是快照时刻？<b>无锚则 §13.3 的 stale 状态机失效</b><br>
-  ③ <b>密级</b>：外部内容进来后按谁的分级？<b>执笔方建议：按落入的层级重新定级，不继承外部标注</b><br>
+  ③ <b>密级</b>：外部内容进来后按谁的分级？<b>按落入的层级重新定级，不继承外部标注</b><br>
   ④ <b>可信度</b>：外部库内容<b>不受本平台的评审与门约束</b> ⇒ 不得直接作为施工依据，须标注来源</div>
 </div>
 
@@ -2267,7 +2267,7 @@ body.uionly #uihint{display:block}
   业主要的是<b>按租户</b>。<br>
   ⇒ 两种改法：<b>甲</b> 保留项目级周报，另加租户级聚合层（项目周报 → 租户周报）；
   <b>乙</b> 改主键为 <code>(tenant, week)</code>，项目粒度降为周报内的分节。<br>
-  <b>执笔方倾向甲</b> —— 项目周报本身有用（项目管理方要看），且聚合比拆分容易；<b>请业主定。</b></div>
+  <b>倾向甲</b> —— 项目周报本身有用（项目管理方要看），且聚合比拆分容易；<b>请业主定。</b></div>
   <div class="note" data-edit>📌 <b>周报本身是交付物 ⇒ 应入 L2 租户级知识库</b>，并绑<b>交付物锚</b>（其 sha256 ＋ 周次）。
   这样「上周说要做的事」与「本周实际做的」可以逐周对账 —— 而这正是 §9.2 复盘第 4 段「判断失误」的周级素材。</div>
 </div>
@@ -2288,7 +2288,7 @@ body.uionly #uihint{display:block}
   <div class="note bad" data-edit>🔴 <b>这是本轮所有对齐里改动面最大的一次。</b>前十二处缺口是「补没写的」，
   本项属<b>「改已写的」</b> —— §11 的层级结构是 §12 / §13 / §15 / §22 共同依赖的底座。<br>
   按 §28 第 4 条：<b>改规则须同步全部引用点，且依赖点未必与复述点用同一词汇</b>。
-  执笔方回写时会先做<b>依赖点全文扫描</b>，不直接改。</div>
+  回写时须先做<b>依赖点全文扫描</b>，不直接改。</div>
 </div>
 </section>
 
@@ -2318,7 +2318,7 @@ body.uionly #uihint{display:block}
   <div class="note" data-edit>📌 四个维度 <code>(tenant, project, assignee, week)</code> 都在事实层带着 ——
   三个视图<b>都是它的聚合</b>，不是三张各存一份的表。</div>
   <div class="note bad" data-edit>🔴 <b>本表三行原先与其余五屏全面错位。</b>
-  <div style="margin-top:6px">执笔方新写这一屏时<b>直接编了示例数据</b>，没去对既有的帖子流 / 任务看板 / 交付物链路。
+  <div style="margin-top:6px">⚠️ 本屏示例数据须与既有的帖子流 / 任务看板 / 交付物链路逐条对撞，不得自造。
   于是 <code>tenant</code> / <code>project</code> / <code>assignee</code> / 内容 / 状态<b>像被整体洗牌</b> ——
   而这一屏恰恰自称「唯一事实来源」。<b>自称唯一事实来源的屏，自己是错位最严重的那个。</b></div>
   <div style="margin-top:6px" class="mono">⇒ 现已<b>以帖子流 / 看板 / 链路为源重新聚合</b>：
@@ -2737,11 +2737,11 @@ var selPer=document.getElementById('persona');
    ⚠️ 界限须说清：客户端过滤【不是】访问控制。真实系统中，无 capability 的主体，
    服务端根本不返回这些行（§22.2c 受控仓储 API）。原型只能演示「渲染与否」。
 
-   🔴 headless 实跑发现的残留（执笔方自查，非评审方指出）：--dump-dom 会把本数组一并导出，
+   🔴 headless 实跑发现的残留：--dump-dom 会把本数组一并导出，
    即「查看源码」仍可见 —— 静态原型的数据必然随文件下发，这是形态决定的，堵不住。
    ⇒ 治法不是藏数据，是【让示例数据本身不含可读情报】：三条标题已改为 R-1/R-2/R-3，
    类型列保留（服务架构/网络架构/数据库设计）以维持演示价值。
-   ⚠️ 顺带纠一条执笔方自己的坏习惯：原型示例数据不该起像真基础设施的名字 ——
+   ⚠️ 原型示例数据不得起像真基础设施的名字 ——
    那等于把 §22.5 想拦的东西，主动写进了一份要发给多方评审的文件里。 */
 var RESTRICTED_ROWS="  <tr class=\"lock\" data-sec=\"1\"><td data-edit>🔒 〈受限条目 R-1〉</td><td>服务架构</td><td><b>D0</b></td><td><b class=\"cell-fail\">restricted</b></td>\n    <td class=\"mono\">已汇入归属域</td><td class=\"mono\">—</td><td><span class=\"cell-ok\">active</span><div class=\"mono\">可检索 &ne; 可读取<br>读取须另具条目 capability</div></td></tr>\n  <tr class=\"lock\" data-sec=\"1\"><td data-edit>🔒 〈受限条目 R-2〉</td><td>网络架构</td><td><b>D0</b></td><td><b class=\"cell-fail\">restricted</b></td>\n    <td class=\"mono\">已汇入归属域</td><td class=\"mono\">—</td><td><span class=\"cell-ok\">active</span><div class=\"mono\">可检索 &ne; 可读取<br>读取须另具条目 capability</div></td></tr>\n  <tr class=\"lock\" data-sec=\"1\"><td data-edit>🔒 〈受限条目 R-3〉</td><td>数据库设计</td><td><b>D0</b></td><td><b class=\"cell-fail\">restricted</b></td>\n    <td class=\"mono\">已汇入归属域</td><td class=\"mono\">—</td><td><span class=\"cell-ok\">active</span><div class=\"mono\">可检索 &ne; 可读取<br>读取须另具条目 capability</div></td></tr>";
 function applyPersona(){
@@ -2800,7 +2800,7 @@ function applyPersona(){
 selPer.onchange=applyPersona; applyPersona();
 
 /* ---- PA-01 负测（安全面要求）----
-   执笔方这几轮反复说的那条:新规则落地后必须实跑一次它应当报错的输入。
+   判据:新规则落地后必须实跑一次它应当报错的输入。
    这里把它做成按钮 —— 评审方点一下就知道是真修了还是嘴上修了。 */
 (function(){
   var btn=document.getElementById('bNeg'), out=document.getElementById('negOut');
@@ -2811,7 +2811,7 @@ selPer.onchange=applyPersona; applyPersona();
     var rows=tb?tb.querySelectorAll('tr').length:0;
     var txt=document.getElementById('s3').innerText||'';
     var hitInData=MARKERS.filter(function(m){
-      /* 只看条目表区域,不看执笔方写的说明文字 */
+      /* 只看条目表区域,不看说明文字 */
       var t=document.querySelector('#s3 table');
       return t && t.innerText.indexOf(m)>=0;
     });

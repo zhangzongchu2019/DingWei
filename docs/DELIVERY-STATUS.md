@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `c704eb53d58e70912f1b1b6aa0e1902d0f5f9f91` · 分支 `design/addendum-decisions`
+生成自 commit `0840d7b5fec519c3e3a767a18ce21f92a5ec119d` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.26** | `e72a5a05563f6e152127c5379b7bf054711f8ccb` | 3290 / 243040 | `1b8a35e2cf8acd960ef28a58ea14d6ba3f758b35bd08686e9386b1869dfb6fac` |
-| `dingwei-prototype.html` | **v1.34** | `e72a5a05563f6e152127c5379b7bf054711f8ccb` | 2859 / 265016 | `1faa018347bdcb9be629827535f57c7b83c2fabc568ef0aff63c698faa6ecd12` |
-| `dingwei-architecture-design.md` | **v0.28** | `c704eb53d58e70912f1b1b6aa0e1902d0f5f9f91<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 921 / 77858 | `4a6484347e3f70e1030672704eae4a5914b1e8ca996402f7d234607d9b5c34f9` |
+| `dingwei-platform-specdoc.md` | **v3.27** | `ae758a7dbc271efcc888036d6ca9f7d02bf7885e<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3289 / 244389 | `1f06d22b28045362057498cdc71e14bde0911d840f80410bbcc8f801fe784f3f` |
+| `dingwei-prototype.html` | **v1.35** | `ae758a7dbc271efcc888036d6ca9f7d02bf7885e<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2860 / 265624 | `75e4867c59704a4123fce43886a260972e305efe1a523cc18e6c1704962a5e0a` |
+| `dingwei-architecture-design.md` | **v0.29** | `fa9d6f4639a8d484b0a44b89ed94b82fee9bd56b<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 921 / 77944 | `07cf43fa1afd9990778a541bcad3ae97db72e9e2b4c56a59d64b9b1b6f614583` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+0840d7b Merge commit 'ae758a7d' into design/addendum-decisions
+fa9d6f4 RV-乙10：⑭ 改为工作区＋暂存区两侧比对；证据按乙域给的顺序重出
+ae758a7 review: 标注 R2 甲域整改复核剩项
 c704eb5 review: record evidence package still stale
 e72a5a0 R2 轮4：甲域 sol 9 条 + 乙域 terra RV-乙09 处置；立闸 ⑲（冲突标记）
 84276a6 Merge commit 'c351ab21' into design/addendum-decisions
 82fc88e Merge commit '16ff70a' into design/addendum-decisions
 9412991 处置兑现 triage（⑱）+ arch 一处过程叙述
-c351ab2 review: keep evidence closure open
-2ed414f RV-乙08：⑭ 判据由「提交距离」换为「内容指纹」
-16ff70a review: 标注 R2 轮4甲域复核意见
 ```

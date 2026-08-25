@@ -1,6 +1,6 @@
 # DingWei 平台架构设计 v0.22 —— 业务 / 技术 / 部署 / 数据库
 
-**版本**: v0.28
+**版本**: v0.29
 **依据**: SpecDoc —— 版本与门状态见 `docs/DELIVERY-STATUS.md`
 **参考**: 原型 —— ⚠️ 本件**不以其为依据**：界面契约变更走原型评审，不经本件
 **代码实测锚**: `github.com/zhangzongchu2019/dingwei` @ `design/addendum-decisions`
@@ -326,7 +326,7 @@
 | 断言 | 命令 | 输出摘要 |
 |---|---|---|
 | `workpulse` 装 19 包 | `grep -rhoE "<module>/internal/[a-z0-9]+" cmd/workpulse --include=*.go \| grep -v _test \| sed 's\|.*/\|\|' \| sort -u` | 19 行：admin bus clock config coordination datad evidence fcs feishu llm m8 model portal reminder schedule scheduler secretbox store worker |
-| 🔴 **`internal/view` 不存在** | `ls -d internal/view` | `No such file or directory` |
+| 🔴 **`internal/view` 不存在** | `ls -d internal/view` | `No such file or directory`  path-ok: 本行的断言内容就是「该路径不存在」，是实测取证结果 |
 | view 面的真实形态 | `grep -rn "internal/view" --include=*.go cmd internal \| grep -v _test` | `cmd/workpulse/main.go` 8 条路由注册（`/internal/view/*` 与 `/internal/view-v2/*`）＋ `internal/m8/terminal.go` 一处注释。**全部是 HTTP 路径，无 import** |
 | `internal` 包总数 28 | `ls -d internal/*/ \| wc -l` | `28`（含 `repo`，SP7a 落点） |
 | 四处存储 36/11/5/9 | `grep -rhoP "CREATE TABLE (IF NOT EXISTS )?\K\w+" <各路径> \| sort -u \| wc -l` | store/migrations=36 · board/schema.sql=11 · fanout=5 · datad=9 |
