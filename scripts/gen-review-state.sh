@@ -17,7 +17,14 @@ echo "本件由 \`scripts/gen-review-state.sh\` 从 \`specs/gates/rv-ledger.txt\
 echo "🔴 **门方请以本件为准判断「这个锚上某条是否已处置」**，不必与消息比对。"
 echo "⚠️ 本件说的是【执笔方处置到哪一步】，**不是【门方是否认可】** —— 认可只由门方给。"
 echo
-echo "锚：\`$(git rev-parse HEAD 2>/dev/null || echo '(非 git)')\`"
+# 🔴 **本件不内嵌 commit 锚**（同 A§0.1「能过期的东西都不写」）：
+#   本件在 pre-commit 生成，此刻 HEAD 还是**父提交** ⇒ 写进去的锚在它自己所在的那个
+#   提交上就是错的，克隆到该提交后闸 ㉒ 立刻不一致。
+#   ⚠️ 与证据包「分支头」当初踩的是同一个坑（⑭ 已因此改判据）——
+#     **产物写不进自己的哈希。**
+#   ⇒ 锚由读者自取：`git rev-parse HEAD`。本件只说「在这个锚上各条处于什么状态」。
+echo "> 🔴 本件**不写 commit 锚** —— 它在 pre-commit 生成，写进去的必然是父提交。"
+echo "> 锚请自取：\`git rev-parse HEAD\`。"
 echo
 echo "## 计数"
 echo
