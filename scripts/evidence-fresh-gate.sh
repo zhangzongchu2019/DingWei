@@ -24,15 +24,21 @@ check() {
   # 🔴 判据不能是「锚 == HEAD」：本闸在 pre-commit 跑，此刻 HEAD 还是上一个提交，
   #   而证据包是【本次提交中】重生成的 ⇒ 恒不相等，形成死循环。本闸首版即如此，当场卡住自己。
   #   ⇒ 改判「证据锚不落后于**最后一次改动评审对象**的提交」——评审对象＝三件正文 + 闸与工具。
+  # 🔴 乙域 terra R2 轮3：本闸在【冻结锚】上实测拒绝 —— 且那是结构性的，不是偶发。
+  #   证据包在 pre-commit 生成，那一刻 HEAD 尚是上一个提交 ⇒ 它记的锚
+  #   **永远比它所在的那个提交少一个**。而「打锚那次提交」本身通常就改了评审对象，
+  #   于是判据「不落后于评审对象末次改动」在**任何冻结锚上恒为 FAIL**。
+  #   ⚠️ 执笔方只在 pre-commit 上下文验过它，**没在评审上下文验过** —— 又一次「验了一部分报成全部」。
+  #   ⇒ 判据改为：证据锚须为 HEAD **或 HEAD 的直接父**（即「本次提交中生成」这一形态），
+  #     且自证据锚起、除【生成证据包的那一个提交】外，评审对象无其他改动。
   _last=$(git log -1 --format=%H -- docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md \
             docs/dingwei-prototype.html scripts specs/tools 2>/dev/null)
-  if [ -z "$_last" ] || git merge-base --is-ancestor "$_last" "$_a" 2>/dev/null \
-     || [ "$_a" = "$(echo "$_h" | cut -c1-${#_a})" ]; then
-    echo "  ✓ 证据包不落后于最后一次评审对象改动（证据锚 $(echo "$_a"|cut -c1-12)）"
+  _n=$(git rev-list --count "$_a..$_last" 2>/dev/null || echo 99)
+  if [ -z "$_last" ] || [ "${_n:-99}" -le 1 ] || git merge-base --is-ancestor "$_last" "$_a" 2>/dev/null; then
+    echo "  ✓ 证据包为当期产出（证据锚 $(echo "$_a"|cut -c1-12)，距评审对象末次改动 ${_n:-0} 个提交 ≤1）"
     echo "  ⚠️ 本闸判不了【内容是否真由该锚跑出】—— 那要重跑 collect.sh 比对，归门方抽验。"
     return 0
   fi
-  _n=$(git rev-list --count "$_a..$_last" 2>/dev/null || echo '?')
   echo "✗ 证据包早于最后一次评审对象改动：证据锚 $(echo "$_a"|cut -c1-12)，评审对象末次改动 $(echo "$_last"|cut -c1-12)，其间 $_n 个提交。"
   echo "  🔴 **快照指纹一致只证明该文件没被篡改，不证明其内容是当期产出** —— 两者是不同的保证。"
   echo "  ⇒ 重跑 specs/evidence/collect.sh 后再提交。"
@@ -52,6 +58,13 @@ selftest() {
   printf '生成时刻：X\n分支头：`%s`\n' "$(git rev-list --max-parents=0 HEAD | head -1)" > "$T/e.md"
   EV="$T/e.md" check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "🔴 拦住：证据锚早于评审对象末次改动（非当期产出）" || bad "过期证据包被放行"
+
+  # 🔴 乙域 terra 指出的结构性缺陷：证据锚天然比其所在提交少一个（pre-commit 生成），
+  #   若判据要求「不落后于评审对象末次改动」，则在**任何冻结锚上恒 FAIL**。
+  printf '生成时刻：X\n分支头：`%s`\n' "$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)" > "$T/e.md"
+  EV="$T/e.md" check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "🔴 不误伤：证据锚为 HEAD 的父（冻结锚上的正常形态）须放行" \
+    || bad "冻结锚上恒判 FAIL —— 闸在评审时点系统性误判"
 
   # 🔴 钉住首版的死循环：pre-commit 时 HEAD 尚是上一个提交，
   #   若判据写成「锚 == HEAD」则证据包永远追不上，闸把自己卡死。
