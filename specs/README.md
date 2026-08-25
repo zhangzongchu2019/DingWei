@@ -29,6 +29,7 @@
 | `specs/evidence/reference-index.md` | 引用索引 |
 | `specs/gates/repo-packages.txt` | SP7a 仓储包允许清单；加条目＝放宽判据，属评审面 |
 | `specs/gates/boundary-baseline.txt` | SP7a 边界棘轮基线（`open` / `escape` 各记各的，不合并） |
+| `specs/gates/status-stale-exceptions.txt` | 状态一致性闸的显式例外清单，每条须带理由与归属；例外是债不是豁免 |
 
 ## 三项与 §4.1 的对应
 
@@ -36,7 +37,7 @@
 |---|---|---|
 | `constitution.md` 治理原则唯一载体 | `specs/constitution.md` | ✅ |
 | `/speckit.analyze` 跨制品一致性检查 | `specs/tools/analyze.sh` | ✅ |
-| `/speckit.checklist` → `node.acceptance` | `specs/platform/checklist.md`（+ 安全 / 跨制品两份） | ✅ 三域已产出；⛔ **尚未执行**，须按其重走架构评审取得新 verdict |
+| `/speckit.checklist` → `node.acceptance` | `specs/platform/checklist.md`（+ 安全 / 跨制品两份） | ✅ **三域已产出【并执行完毕】**（26＋18＋12＝56 项），按其重走的架构评审 **verdict 全 PASS**；⇒ §0.4 第 2 项已闭 |
 
 ## 用法
 
