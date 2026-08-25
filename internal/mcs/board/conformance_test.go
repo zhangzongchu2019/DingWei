@@ -315,3 +315,74 @@ func TestConformance_Idempotency_SameRidReplayReturnsFirstOutcome(t *testing.T) 
 		t.Fatalf("同 rid 重放把代际推到了 %d —— 重放不是改派", s.Generation)
 	}
 }
+
+// ============================================================
+// 第三批
+// ============================================================
+
+// —— 族②+③ 换代后旧 rid 的迟到终结必须被拒，且不得扰动当前投递 ——
+//
+// 这是「迟到结果处置」里最要紧的一条：failover 换代后，上一代的回执可能【任意晚】地到达。
+func TestConformance_LateResult_OldRidAfterFailoverRejected(t *testing.T) {
+	b, id, ctx := newRig(t)
+	chk(t, board.OutcomeApplied, "send gen1")(b.Send(ctx, "n1", 1, "rid-1", "w0", id))
+	chk(t, board.OutcomeApplied, "reassign→gen2")(b.Reassign(ctx, "n1", 1, "w1", id))
+	chk(t, board.OutcomeApplied, "send gen2")(b.Send(ctx, "n1", 2, "rid-2", "w1", id))
+
+	// 旧 rid-1 的迟到终结：必须拒
+	chk(t, board.OutcomeCASMiss, "旧 rid 的迟到 terminal")(b.Terminal(ctx, "n1", 2, "rid-1", true, "", id))
+	s, _ := b.GetNode(ctx, "n1")
+	if s.Status != "dispatched" || s.Generation != 2 {
+		t.Fatalf("旧 rid 扰动了当前投递：status=%s gen=%d want dispatched/2", s.Status, s.Generation)
+	}
+	// 当前 rid-2 仍能正常销账 —— 拒旧不得连带拒新
+	chk(t, board.OutcomeApplied, "当前 rid terminal")(b.Terminal(ctx, "n1", 2, "rid-2", true, "", id))
+}
+
+// —— 族④ blocked(dep_failed) 的子节点，须随依赖 done 自动 recover ——
+//
+// ⚠️ 既有内部用例是用裸 SQL 把 n2 置成 blocked/dep_failed 的；本文件不碰内部状态，
+//
+//	改用导出面等价构造：AddNode 直接以 status="blocked" 建点 + SetBlocker 置 reason。
+//	—— 这一步本身也是对导出面的检验：**若导出 API 连测试前置都构造不出来，
+//	   它就不足以支撑一份能验重写的 conformance suite。**
+func TestConformance_FanOut_DepFailedChildRecovers(t *testing.T) {
+	b, id, ctx := newRig(t)
+	if err := b.AddNode(ctx, "n3", "t1", 3, "blocked", []string{"n1"}); err != nil {
+		t.Fatalf("add n3: %v", err)
+	}
+	chk(t, board.OutcomeApplied, "置 dep_failed")(b.SetBlocker(ctx, "n3", 1, "dep_failed", id))
+
+	chk(t, board.OutcomeApplied, "send")(b.Send(ctx, "n1", 1, "rid-1", "w0", id))
+	chk(t, board.OutcomeApplied, "processing")(b.Processing(ctx, "n1", 1, "rid-1", id))
+	chk(t, board.OutcomeApplied, "terminal")(b.Terminal(ctx, "n1", 1, "rid-1", true, "", id))
+
+	s, err := b.GetNode(ctx, "n3")
+	if err != nil {
+		t.Fatalf("get n3: %v", err)
+	}
+	if s.Status != "ready" {
+		t.Fatalf("blocked(dep_failed) 未随依赖 done 自动 recover：status=%s want ready", s.Status)
+	}
+	if s.BlockerReason.Valid {
+		t.Fatalf("recover 后 blocker_reason 未清：%q", s.BlockerReason.String)
+	}
+	if n := kindCount(t, b, ctx, "n3", "node_recovered"); n != 1 {
+		t.Fatalf("node_recovered=%d want 1", n)
+	}
+}
+
+// —— 覆盖缺口登记：SLA 超时注记 ——
+//
+// 🔴 既有用例 TestSweep_TimeoutAnnotateThenTerminalClears 靠裸 SQL 设 `sla_deadline` 造前置，
+//
+//	而**导出面没有任何设置 SLA 的入口**（实测：board 包内无导出的 sla 设置函数）。
+//	⇒ 该场景**当前无法进入本 conformance suite**。这不是遗漏，是导出面能力不足。
+//	⚠️ 记在这里而不是默默跳过：conformance suite 的覆盖上限＝导出面能表达的前置状态上限。
+//	   要覆盖它，须先给 board 一个受控的 SLA 设置入口（属契约变更，归门方判），
+//	   或接受「该语义只能由内部测试固化、重写时无法用同一套套件验证」。
+func TestConformance_GAP_SLATimeoutAnnotate(t *testing.T) {
+	t.Skip("覆盖缺口（有意登记，非遗漏）：导出面无 SLA 设置入口，" +
+		"既有 TestSweep_TimeoutAnnotateThenTerminalClears 依赖裸 SQL 造前置，" +
+		"故该语义暂无法用外部包 conformance 固化。须先扩导出面（契约变更，归门方判）。")
+}
