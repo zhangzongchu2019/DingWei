@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `57a804a231a185cf0bede404b041c342c91d8c97` · 分支 `design/addendum-decisions`
+生成自 commit `c077f1a0244e7437174e0cc421e593d60b92f8fe` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.36** | `57a804a231a185cf0bede404b041c342c91d8c97` | 3468 / 238650 | `eeca8c6d612321d80874fe448a8702069570040312d2dc95cf1295110d701e3d` |
+| `dingwei-platform-specdoc.md` | **v3.37** | `c077f1a0244e7437174e0cc421e593d60b92f8fe` | 3468 / 238829 | `53596d4c2d276dc66c19cbfeb9998c631e296421e0683a829ba120bcbeafb229` |
 | `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
 | `dingwei-architecture-design.md` | **v0.33** | `61ad4390902debbc268aee03d1172e1a93108937` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+c077f1a C.3a.1c 特权面归平台 ops，不下放企业（业主裁定，v3.36）
 57a804a 丙域 delta ③④：跨租户 51 处逐处重判 + §22.1c 存在前提修正（v3.35）
 f78aabd RV-乙12：人层 RLS 四条硬合同补齐 + 三条 fixture（🔴 未实跑）
 568cdf9 Merge commit 'cdc8270d' into design/addendum-decisions
@@ -34,5 +35,4 @@ f78aabd RV-乙12：人层 RLS 四条硬合同补齐 + 三条 fixture（🔴 未�
 65b33d0 甲域 delta 三组阻断补齐（v3.32）；立闸 ㉑ 旧模型名棘轮
 cdc8270 review: require RLS write and transaction contract
 cd96a13 业主裁定四条落成正文条款（v3.31）——须三域 delta 复核
-61ad439 甲域最终 verdict：多行 RV 续行残留（1 项阻断）已修
 ```

@@ -1,3 +1,7 @@
-# 旧模型名棘轮基线（甲域 delta ②）——只许降不许升，终值 0
-# 迁移执行归 SP1；改完一批请同步下调本值
-legacy_TenantCtx=40
+# 旧模型名棘轮基线（㉑，甲域 delta-b 后改为分类计数）
+# 🔴 三类【分别】棘轮：合计一个数会让「注释减一、生产加一」互相抵消。
+# 判据对象＝受控符号集合 {TenantCtx, PendingTenantCtx, NewTenantCtx} 的 AST 出现数。
+# 迁移执行归 SP1；改完一批请同步下调。
+legacy_prod=28
+legacy_test=7
+legacy_comment=6

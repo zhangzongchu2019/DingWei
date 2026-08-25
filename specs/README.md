@@ -38,7 +38,8 @@
 | `specs/tools/safe-replace.py` | RV 段免疫的批量替换（提交闸 ⑯a）—— 替换前遮蔽【RV…】标注段及其处置行，模式若**只**命中标注段则判误操作并拒绝（静默零命中会被读成「已清理干净」）。🔴 立件原因：闸 ⑯ 是**事后检测**，丙域 kimi 要的是「作用域排除 ＋ 防复发」，检测不是预防 |
 | `scripts/conflict-marker-gate.sh` | 冲突标记恒零闸（提交闸 ⑲）—— 交付件不得含未解决的 Git 合并冲突标记。🔴 立闸原因：原型导出函数里提交了冲突段而 ①–⑰ 与 analyze 全绿（标记落在 JS 块注释内，语法不坏）。⚠️ 按【行首精确 7 字符】判：本仓 charter 件用 32 个 `=` 作分隔线，子串判据会全部误报 |
 | `scripts/path-anchor-gate.sh` | 路径锚解析闸（提交闸 ⑳）—— 正文反引号包起的仓内路径须解析得到。🔴 立闸原因：#36b 的 reviewer owner 锚被写成仓内不存在的路径，人工判据落点指向空文件而 ①–⑲ 全绿 |
-| `scripts/legacy-name-gate.sh` | 旧模型名棘轮（提交闸 ㉑）—— `TenantCtx` 出现数只许降不许升，终值 0。🔴 立闸原因：§21.1c 称该规矩由 ⑦ 执行，**而 ⑦ 只按效果统计 PendingTenantCtx**，一般 TenantCtx 出现它不看 —— **规矩没有执行者就等于没写** |
+| `scripts/legacy-name-gate.sh` | 旧模型名棘轮（提交闸 ㉑）—— 受控符号集合的 **AST 出现数**，prod/test/comment **三类分别**只许降不许升，prod 终值 0。🔴 首版用 `grep -c` 数【含词行数】被甲域抓出：同行两次只记一次、删注释可抵新增生产用法 |
+| `specs/tools/legacy-name/main.go` | 上闸的计数器（Go AST）—— 逐 Ident 计数，注释另行词法统计；复合标识符（`tenantCtxKey`）不计：判**受控符号集合**，不判子串 |
 | `specs/gates/legacy-name-baseline.txt` | 旧模型名棘轮的基线（㉑）—— `legacy_TenantCtx=40`，只许降不许升，终值 0；改完一批须同步下调 |
 | `specs/fixtures/rls/setup.sql` | 人层 RLS fixture 建面（乙域 RV-乙12）—— 三 role 分离 · FORCE RLS · 逐命令 policy（写命令带 WITH CHECK）|
 | `specs/fixtures/rls/t1-write-as-other.sql` | 负测①：`dw_app` 不得把 `owner_principal` 写成他人（🔴 `USING` 只管读、`WITH CHECK` 才管写）|

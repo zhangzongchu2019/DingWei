@@ -1,4 +1,4 @@
-# DingWei 平台 SpecDoc v3.36 —— 纲领与产品规范
+# DingWei 平台 SpecDoc v3.37 —— 纲领与产品规范
 
 > **性质**：本件是 DingWei 平台**后续阶段的纲领与产品规范**，由业主 2026-08-23 指定整合形成。
 > **效力**：本件生效后，下列四份源件**降为沿革依据**，规范效力以本件为准（对照见附录 D）：
@@ -18,7 +18,7 @@
 > ⇒ 本件**必须先满足自己定义的规范**，否则示范不成立。以下头块按 §5.2 格式填写。
 
 **Spec ID**: `dingwei-platform-specdoc`
-**版本**: v3.36
+**版本**: v3.37
 **评审状态**: ✅ **架构评审 PASS**（判据与经过见 `docs/dingwei-revision-history.md`；以 `docs/DELIVERY-STATUS.md` 为准）
 　　　　　　⚠️ **用例评审 / 交付验证未过** —— 不同的门，见 §5.6
 
@@ -1868,7 +1868,7 @@ digest 与数据同在一个可写库，能改帖的人通常也能改 digest。
 2. **`Org()` 决定连哪个库，`Principal()` 决定看得见哪些行** —— 两者不可互相替代。
    只校验 `Org()` 而不带 `Principal()` 的读路径，等于**企业内全员可见**，属漏配。
 
-⚠️ **迁移执行归 SP1，不在本次文档面**：该改名涉及 Go 代码中 **40 处** `TenantCtx` 出现（实测：`repo/tenant.go` 19 · `tenant_test.go` 11 · `pool.go` 6 · `fanout/spool.go` 2 · `datad/pgstore.go` 2 —— 即闸 ㉑ 的基线值），且与
+⚠️ **迁移执行归 SP1，不在本次文档面**：该改名涉及受控符号集合 `{TenantCtx, PendingTenantCtx, NewTenantCtx}` 的 **AST 出现数 prod 28 · test 7 · comment 6**（闸 ㉑ 分类基线；🔴 **三类分别棘轮** —— 合计一个数会让「注释减一、生产加一」互相抵消）。⚠️ 早前写的「40 处」是**按含词行数**得来的，与出现数不是一回事：同一行两次只记一次。且与
 `principal → 企业库` 注册表（C.3a.3a）、人层 RLS 合同（C.3a.1a）同属一条链，
 **须同一接手人一并做** —— 分开做必出两套 principal 口径。
 ⚠️ 迁移期间**不得新增** `TenantCtx`：由**旧模型名棘轮**（`scripts/legacy-name-gate.sh`）按出现数只许降不许升，终值 0；新写代码一律用新名。
