@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `61ad4390902debbc268aee03d1172e1a93108937` · 分支 `design/addendum-decisions`
+生成自 commit `cd96a137aabdc04f406eb99937071ebaf7302edd` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.31** | `61ad4390902debbc268aee03d1172e1a93108937` | 3373 / 227704 | `4f6677e9f5d871b6c19dca75888256b8c97a29b2da26d61fafe6034d0cbbcdd1` |
+| `dingwei-platform-specdoc.md` | **v3.32** | `cd96a137aabdc04f406eb99937071ebaf7302edd<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3385 / 229249 | `98ee8d70aa9e9826bda19f3505c0cd9f189d2e7004cd3babc6a74bf95e264bf5` |
 | `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
 | `dingwei-architecture-design.md` | **v0.33** | `61ad4390902debbc268aee03d1172e1a93108937` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+cd96a13 业主裁定四条落成正文条款（v3.31）——须三域 delta 复核
 61ad439 甲域最终 verdict：多行 RV 续行残留（1 项阻断）已修
 53f4033 R2 收官件：78 条 RV 标注逐字移入沿革件，--final 首次通过
 d940b17 ⑭ 补按暂存区【模式】判：内容哈希相同的符号链接条目此前会被放行
@@ -34,5 +35,4 @@ d940b17 ⑭ 补按暂存区【模式】判：内容哈希相同的符号链接�
 c74f246 Merge commit '20bd1d8b' into design/addendum-decisions
 20bd1d8 review: 标注 R2 甲域轮5复核剩项
 7480f92 RV-乙11：暂存区缺 REVIEWED 路径由「跳过」改为「拒绝」
-b71000a Merge commit '1666d2d6' into design/addendum-decisions
 ```

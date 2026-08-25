@@ -39,7 +39,7 @@ RV-丙03	丙	阻断	采纳	采纳	dingwei-platform-specdoc.md	本行「只做受
 RV-丙16	丙	阻断	未决	采纳	dingwei-platform-specdoc.md	本行「只做受控仓储 API，不叠 RLS」与 C.3a「PG ＋ RLS（人层）✅ 采纳」直接冲突；C.3a 自称「配套
 RV-甲30	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	本句是已撤销断言的现行残留：同件 C.3a 已明确采纳 PG＋RLS（人层），而这里仍说“不采纳／本节按该裁定写”。此前
 RV-乙07	乙	阻断	采纳	采纳	dingwei-platform-specdoc.md	上句仍把 RLS 写为“业主不采纳”的现行理由，直接推翻其前一行 C.3a“PG＋RLS 兜人层”的现行裁定；紧随其后的
-RV-甲08	甲	阻断	挂账	挂账	dingwei-platform-specdoc.md	仓储边界“不可逆”仍只有注释纪律：`repo-packages.txt` 与 `boundary-baseline.tx
+RV-甲08	甲	阻断	挂账	挂账·已按业主裁定重述(preprod/prod受保护分支+ops唯一合入权,可审计)	dingwei-platform-specdoc.md	仓储边界“不可逆”仍只有注释纪律：`repo-packages.txt` 与 `boundary-baseline.tx
 RV-甲36	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	C.3a.1 整节仍以“为什么重开／原裁定／本次重裁”叙述裁定过程，与 RV-甲01/丙11 的采纳处置相反。原前提及其
 RV-甲21	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	体例挂账 #6 的逐段判定：#36b 中“曾实现、6 处误报、已撤回”的实验史移沿革；规则行只留不可机器化的语义边界、机
 RV-甲37	甲	阻断	未决	采纳	dingwei-platform-specdoc.md	RV-甲21 的“已改完”与 E.3 #36b 实取不符：表行仍保留 head-count 的实现、6 处误报、撤回与“

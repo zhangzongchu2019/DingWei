@@ -259,6 +259,18 @@ scripts/path-anchor-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/path-anchor-gate.sh --selftest; echo "✗ 路径锚闸的反测未过"; exit 1; }
 echo "  ⑳ 路径锚闸的反测 ✓"
 
+# ㉑ 旧模型名棘轮（甲域 sol delta ②）：
+#    §21.1c 写着「迁移期不得新增 TenantCtx」，而执笔方称该规矩由 ⑦ 执行 —— **那句是假的**：
+#    ⑦ 按效果只统计 PendingTenantCtx 造出的上下文债，不看一般的 TenantCtx 出现。
+#    ⚠️ 规矩没有执行者就等于没写。本项即那个执行者。
+if [ ! -x scripts/legacy-name-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/legacy-name-gate.sh 不可执行"; exit 1
+fi
+scripts/legacy-name-gate.sh || exit 1
+scripts/legacy-name-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/legacy-name-gate.sh --selftest; echo "✗ 旧模型名棘轮的反测未过"; exit 1; }
+echo "  ㉑ 旧模型名棘轮的反测 ✓"
+
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
 #    **没有一次是执笔方自查出来的**。
@@ -270,7 +282,7 @@ python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
 python3 specs/tools/disposition-audit.py || true
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–⑳ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–㉑ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–⑳ ＋ ⑱ triage）"
+  echo "✓ 提交闸全过（①–㉑ ＋ ⑱ triage）"
 fi
