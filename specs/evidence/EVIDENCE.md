@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T09:58:52Z
-分支头：`baf724fd5684b2ea531d09ff333a8e56bfb75c92`
+生成时刻：2026-08-25T10:28:43Z
+分支头：`9d6634278da26e4512ceb1b8583fd48f52135b91`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -33,8 +33,8 @@ $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
 
 ```
 $ scripts/arch-refcheck.sh
-  本件内引用 A§ : 76 次 / 28 目标 · 悬空 0
-  SpecDoc 引用 § : 175 次 / 68 目标 · 悬空 0
+  本件内引用 A§ : 75 次 / 28 目标 · 悬空 0
+  SpecDoc 引用 § : 174 次 / 68 目标 · 悬空 0
   heading 真实重复：本件 0 · SpecDoc 0
   --- 引用核验通过
 ```
@@ -63,18 +63,18 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 114 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.23 · 状态文件 v3.23 ✓
-    架构设计: 件内 v0.22 · 状态文件 v0.22 ✓
-    原型: 件内 v1.30 · 状态文件 v1.29 ✗
+    SpecDoc: 件内 v3.24 · 状态文件 v3.24 ✓
+    架构设计: 件内 v0.23 · 状态文件 v0.23 ✓
+    原型: 件内 v1.31 · 状态文件 v1.31 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-architecture-design.md: 正文无他件旧版本号
     ✗ dingwei-prototype.html: 正文含他件旧版本号 5 处
-        L993 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
-        L1122 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
-        L1256 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
-        L1518 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
-        L1633 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.23
+        L995 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.24
+        L1125 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.24
+        L1260 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.24
+        L1524 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.24
+        L1640 写 v3.0，而 dingwei-platform-specdoc.md 现为 v3.24
   ⑤ 生效前置状态（§0.4）
     ✓ 三域 checklist 齐备（结构 / 安全 / 跨制品）—— 但【生效与否取决于门方执行结果，非文件存在】
   ---
@@ -138,7 +138,7 @@ $ for p in internal/store/migrations internal/mcs/board/schema.sql internal/fano
 ### task 表跨存储重名（须在 SP7a 前定名，见 docs/task-table-collision-analysis.md）
 
 ```
-$ grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task\b' internal/mcs/board/schema.sql internal/datad/pgstore.go
+$ grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task' internal/mcs/board/schema.sql internal/datad/pgstore.go
   internal/mcs/board/schema.sql
   internal/datad/pgstore.go
 ```

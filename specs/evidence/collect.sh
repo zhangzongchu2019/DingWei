@@ -6,6 +6,17 @@
 #   本脚本只做一件事：把每条断言与【产出它的命令】一起摆出来，让门方能自己跑一遍。
 #   ⚠️ 作者不得代填 checklist 的任何勾选 —— 那是 reviewer-owned（§4.1 · §7.2）。
 set -u
+
+# 🔴 本件往 stdout 打。执笔方曾写成 `collect.sh >/dev/null` 并在提交信息里
+#   声称「证据包已重出」—— rc=0，而文件一个字没变。是闸 ⑭（证据锚时效）抓出来的。
+#   ⇒ 给出 --write：把「重出证据包」这件事变成一个不可能只做一半的动作。
+if [ "${1:-}" = "--write" ]; then
+  _out=specs/evidence/EVIDENCE.md
+  "$0" > "$_out".tmp || { rm -f "$_out".tmp; echo "✗ 证据包生成失败，原件未动"; exit 1; }
+  mv "$_out".tmp "$_out"
+  echo "✓ 已写入 $_out（分支头 $(git rev-parse --short=12 HEAD)）"
+  exit 0
+fi
 echo "# 评审证据包（作者产出，供门方复算）"
 echo
 echo "生成时刻：$(date -u +%Y-%m-%dT%H:%M:%SZ)"

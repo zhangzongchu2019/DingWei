@@ -35,6 +35,7 @@
 | `specs/tools/foreign-version-check.py` | 正文他件旧版本号检查（analyze ④b）—— ④a 只读头块一处，正文里的假版本看不见；本脚本补正文面，只在与该件称谓同行时才判 |
 | `scripts/prose-style-gate.sh` | 体例合规闸 —— 正文不得含评审过程痕迹（指向特定评审轮次/版本/评审方的表述）；含 **RV 评审标注**模式：轮内可标、收官须逐条落到 采纳/驳回(带理由)/挂账，且正文清零 |
 | `specs/tools/pending-debt/main.go` | 「尚未租户化」债的检测器（Go AST）—— **按效果判**：谁返回 `PendingTenantCtx` 造的上下文谁就是债源，其调用点全部计入，helper 叫什么与判据无关（乙域 terra SA-12b）；按 `(domain, ownerSP)` 分组供闸逐领域棘轮 |
+| `specs/tools/safe-replace.py` | RV 段免疫的批量替换（提交闸 ⑯a）—— 替换前遮蔽【RV…】标注段及其处置行，模式若**只**命中标注段则判误操作并拒绝（静默零命中会被读成「已清理干净」）。🔴 立件原因：闸 ⑯ 是**事后检测**，丙域 kimi 要的是「作用域排除 ＋ 防复发」，检测不是预防 |
 | `specs/evidence/EVIDENCE.md` | 证据包产出（作者侧旁证，非门方结论） |
 | `specs/evidence/collect.sh` | 生成证据包：每条断言附产出它的命令，供门方复算 |
 | `specs/evidence/reference-index.md` | 引用索引 |

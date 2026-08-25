@@ -210,9 +210,19 @@ scripts/rv-integrity-gate.sh || exit 1
 scripts/rv-integrity-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/rv-integrity-gate.sh --selftest; echo "✗ RV 完整性闸的反测未过"; exit 1; }
 echo "  ⑯ RV 完整性闸的反测 ✓"
+
+# ⑯a 防复发件：丙域要的是「检测 ＋ 作用域排除」两条，⑯ 只实现了检测。
+#    批量替换须走 specs/tools/safe-replace.py（遮蔽 RV 段）；此处只保证它【装着且有牙】——
+#    工具在仓里不等于有人用它，但反测不过的工具连被用的资格都没有。
+if [ ! -x specs/tools/safe-replace.py ]; then
+  echo "✗ 闸依赖缺失：specs/tools/safe-replace.py 不可执行（RV 段免疫替换件）"; exit 1
+fi
+python3 specs/tools/safe-replace.py --selftest >/dev/null 2>&1 || {
+  python3 specs/tools/safe-replace.py --selftest; echo "✗ RV 段免疫替换件的反测未过"; exit 1; }
+echo "  ⑯a RV 段免疫替换件的反测 ✓（批量清理一律走该件，不得直接 sed）"
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–⑯）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–⑯a）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–⑯）"
+  echo "✓ 提交闸全过（①–⑯a）"
 fi

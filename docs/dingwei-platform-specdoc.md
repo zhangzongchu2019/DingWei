@@ -26,7 +26,7 @@ C.3a.1「为什么重开」整节（过程史，但其内容同时是重裁的�
 
 **Spec ID**: `dingwei-platform-specdoc`
 **版本**: v3.24
-**评审状态**: ✅ **架构评审 PASS**（2026-08-25 重走轮，三域：甲 sol · 乙 terra · 丙 kimi；v3.22–v3.23 §22.2c 同源 delta 经三域新判齐 PASS，2026-08-25 由 coordinator 机械转入）
+**评审状态**: ✅ **架构评审 PASS**（判据与经过见 `docs/dingwei-revision-history.md`；以 `docs/DELIVERY-STATUS.md` 为准）
 　　　　　　⚠️ **用例评审 / 交付验证未过** —— 不同的门，见 §5.6
 
 > 🔴 **本行是状态性表述**：门状态一变必须同步，且以 `docs/DELIVERY-STATUS.md` 为准。

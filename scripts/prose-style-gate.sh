@@ -52,7 +52,10 @@ HIST=${HIST:-'docs/dingwei-revision-history.md'}
 # 痕迹指纹 —— 只取指向【特定评审轮次 / 版本 / 评审方】的表述。
 #   刻意【不】收「复核」「评审」等词:它们在规范里是正当术语
 #   （如「不可回滚迁移的复核要求」），收进来就是误伤,会逼人绕过闸。
-PAT_ROLE='甲域|乙域|丙域|本席'
+# ⚠️ 只认「甲域/乙域/丙域」认不出评审人真名：「本部回应 sol 的总则」「照录 sol 的区分」
+#   就是这样活过两轮的（丙域 R2 轮3 抓出）。真名须按【归属句式】判，不能裸匹配 ——
+#   sol 是 solid/console/resolve 的子串，裸匹配会在 CSS 里误报 15 次以上（实测）。
+PAT_ROLE='甲域|乙域|丙域|本席|(sol|terra|kimi)[ 　]*的|照录[ 　]*(sol|terra|kimi)|回应[ 　]*(sol|terra|kimi)'
 PAT_VER='v[0-9]+\.[0-9]+[[:space:]]*(更正|补|压缩|删去|收窄|改写|新增|撤回|再次)'
 PAT_HIST='打脸|撤回为|原句已撤回|此前写|本段此前|原文写成|原表|已是第[二三四五六七八九]次|第[二三四五六七八九]次'
 # 🔴 二轮扩面（丙域 kimi R2 轮3「体例分离二轮·门方先标」）：
@@ -154,6 +157,15 @@ selftest() {
   # 🔴 反测的构造须与判据同源：闸已改扫 RV_SCOPE，反测若仍只传 DOCS，
   #   RV_SCOPE 会回退到默认值（含真仓全部闸脚本），判据全乱。本闸已因此失守三条。
   rv(){ DOCS="$T/d/a.md" RV_SCOPE="$T/d/a.md" HIST="$T/d/h.md" rvcheck "${1:-}" >/dev/null 2>&1; }
+
+  mk; printf '\n本部回应 sol 的总则：转交须有设计合同。\n' >> "$T/d/a.md"
+  DOCS="$T/d/a.md" HIST="$T/d/h.md" check >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "拦住：正文指名评审人（归属句式「sol 的」）" || bad "正文指名评审人被放行"
+
+  # 🔴 真名不得裸匹配：sol 是 solid/console/resolve 的子串
+  mk; printf '\n<div style="border:1px solid var(--x)">console.log(resolveMember)</div>\n' >> "$T/d/a.md"
+  DOCS="$T/d/a.md" HIST="$T/d/h.md" check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "不误伤：CSS solid / console / resolve 不算指名评审人" || bad "真名裸匹配误伤了 solid/console"
 
   # 🔴 两个机制不得互相打架:RV 标注按用途必然含评审域名,体例闸不得因此判它是痕迹。
   mk; printf '\n【RV-丙01|丙|阻断|未决】丙域指出某处有问题\n' >> "$T/d/a.md"

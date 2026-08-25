@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `43f49e66a916052361c808747cb78d0ff5a2d107` · 分支 `design/addendum-decisions`
+生成自 commit `9d6634278da26e4512ceb1b8583fd48f52135b91` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.24** | `43f49e66a916052361c808747cb78d0ff5a2d107<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3285 / 241394 | `2386ecea5fd5c8a9466bf11bd07f8b5f9b528ca462c6313ed48fcea20e8020f2` |
-| `dingwei-prototype.html` | **v1.31** | `43f49e66a916052361c808747cb78d0ff5a2d107<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2867 / 262307 | `08702685db37d83b3016adb4b6f5dc8e8b3bb457c9b3a28576ff8a87da47cc52` |
-| `dingwei-architecture-design.md` | **v0.23** | `43f49e66a916052361c808747cb78d0ff5a2d107<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 911 / 70815 | `bc36b46b296ee0093f46e0f3c2facc959d185c8945d7604bfc59bd9f3856046f` |
+| `dingwei-platform-specdoc.md` | **v3.24** | `9d6634278da26e4512ceb1b8583fd48f52135b91` | 3285 / 241319 | `6f89c78a08e32a13c28d692ca24e18160b2f28590fce47fcd2e500d162cee5f3` |
+| `dingwei-prototype.html` | **v1.31** | `9d6634278da26e4512ceb1b8583fd48f52135b91` | 2867 / 262307 | `08702685db37d83b3016adb4b6f5dc8e8b3bb457c9b3a28576ff8a87da47cc52` |
+| `dingwei-architecture-design.md` | **v0.23** | `9d6634278da26e4512ceb1b8583fd48f52135b91` | 911 / 70478 | `c860bcf9127a07cacdae060b8ec8302ff356577dc8dc50d4fa731fd88179cb15` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+9d66342 R2 轮3：三域 20 条评审意见归口处置，RV 台账拆列，闸 ⑫/⑯ 补三条判据
 43f49e6 fix: 丙域 R2 轮3 全采纳 —— 标注被工具改写(立闸⑯) + 体例二轮 16 处(前锚 baf724f)
 baf724f fix: 乙域 terra R2 轮3 三条全采纳 —— 证据闸结构性误判 · §22.2c 自我推翻(前锚 f64b2c4)
 ec07d1d review: 丙域 R2 轮3 终审标注 4 条——体例分离二轮门方先标（挂账 #6）+ 标注被工具改写 1 处（kimi30kqtuxerh）
+94d19aa review: 标注 R2 轮3甲域终审意见
 0b19c85 review: mark security final findings
 f64b2c4 fix: 采纳甲域 RV-甲14 —— 「收官≠清空」从头注变成可执行判据(前锚 3348b51)
 3348b51 docs: R2 轮2 收口 —— 29 条标注状态全部回填，未决归零(前锚 4054b9a)
-4054b9a docs: 原型删「缺口取证过程」档案（业主判据：非必须且不助理解即删）(前锚 7399c68)
-7399c68 fix: 附录 E 加 owner_sp 列（269 行全部认领）+ 立闸 ⑮ · §9.2/§15.3 同步(前锚 435bbbf)
 ```
