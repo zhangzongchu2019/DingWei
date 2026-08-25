@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `bb01cd600d9a56c617400de10cee32f9a3f22728` · 分支 `design/addendum-decisions`
+生成自 commit `3c7ef59d599e48a2eb9f67cf7eaed14c0b3a941d` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.47** | `5c103a003bdb06cfa18568f5f73373120727def8<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3509 / 250211 | `c4e626205c070bab138d8efa907bec2bc0f9d62c113532d82b28d2b259dd913f` |
-| `dingwei-prototype.html` | **v1.38** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2845 / 252879 | `6c1f00d9c94f3f0349c79aef94cc346c306b4ed842575519ec938f53c1c231b7` |
-| `dingwei-architecture-design.md` | **v0.34** | `61ad4390902debbc268aee03d1172e1a93108937<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 907 / 61540 | `ccda038dd0980dfeab8ad5c7801afc17d8fef6ab08217e19cac7b4b674a26b05` |
+| `dingwei-platform-specdoc.md` | **v3.47** | `9d70c867f5ed20052e53a274565fb941177c48fe` | 3509 / 250211 | `c4e626205c070bab138d8efa907bec2bc0f9d62c113532d82b28d2b259dd913f` |
+| `dingwei-prototype.html` | **v1.38** | `9d70c867f5ed20052e53a274565fb941177c48fe` | 2845 / 252879 | `6c1f00d9c94f3f0349c79aef94cc346c306b4ed842575519ec938f53c1c231b7` |
+| `dingwei-architecture-design.md` | **v0.34** | `9d70c867f5ed20052e53a274565fb941177c48fe` | 907 / 61540 | `ccda038dd0980dfeab8ad5c7801afc17d8fef6ab08217e19cac7b4b674a26b05` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+3c7ef59 Merge remote-tracking branch 'origin/design/addendum-decisions' into design/addendum-decisions
+9d70c86 按业主派工：fixture 实跑修正 ＋ 26 处跨租户重判 ＋ RV-乙16 裁定入案（v3.47）
+5d7c3b9 checklist: 丙域跨制品清单执行落勾——10 PASS + 2 FAIL（CAC-4/5 跨制品术语依赖未同步，附可复跑证据）
 bb01cd6 待裁项落进仓 —— RV-乙16 被原样转达三次而无人能判断其状态
 5c103a0 RV-乙16：半采纳半驳回，两半都说清（v3.46）
 ef9bda8 Merge commit '75ee1dc0' into design/addendum-decisions
 d5a8cfe E.1 #150–152 的裁定依据入正文（v3.45）—— 别让它只活在消息里
 2d6d9b8 RLS fixture 一键代跑件 —— RV-乙15 的两问只能由有 PG 的一方回答
-ae2582d REVIEW-STATE 写明统计口径 —— 「未决 0」是在不完整总体上算的
-dd9e934 REVIEW-STATE 撤下内嵌 git log —— 同一个坑，两个提交之后我又踩了一次
-09c0c29 立闸 ㉓ 门方复现台账 —— 判据改由门方给
 ```

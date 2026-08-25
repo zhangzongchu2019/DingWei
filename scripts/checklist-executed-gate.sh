@@ -81,8 +81,20 @@ check() {
   for f in "$CKDIR"/checklist*.md; do
     [ -f "$f" ] || continue
     case "$(basename "$f")" in *INDEX*) continue;; esac
-    _n=$(grep -E '^[[:space:]]*[-|][[:space:]]*\[[xX]\]' "$f" 2>/dev/null \
-         | grep -vE '(sha256|锚|commit|命令|复现|证据|https?://|`[^`]+`)' | wc -l | tr -d ' ')
+    # 🔴 按【条目块】判，不按单行（丙域首次落勾时暴露）：
+    #   门方的格式是 `- [x] 标题` 换行后再写「证据（时点，锚…）：…」——
+    #   原实现只在 **checkbox 那一行**找证据关键词 ⇒ 把**证据齐全**的 8 项判成「证据栏为空」。
+    #   ⚠️ 又一次「判据回答的问题不是要问的那个」：
+    #     要问的是「这一项有没有证据」，判的却是「这一行里有没有证据词」。
+    #   ⇒ 条目块 ＝ 该 checkbox 行起，至下一个 checkbox 行（或文件末）为止。
+    _n=$(awk '
+      /^[[:space:]]*[-|][[:space:]]*\[[xX]\]/ {
+        if (open && !ev) bad++
+        open=1; ev=0; blk=$0
+      }
+      open { if ($0 ~ /(sha256|锚|commit|命令|复现|证据|https?:\/\/|`[^`]+`)/) ev=1 }
+      END { if (open && !ev) bad++; print bad+0 }
+    ' "$f" 2>/dev/null)
     _noev=$((_noev+_n))
   done
   if [ "$_noev" -gt 0 ]; then
@@ -99,6 +111,16 @@ selftest() {
   T=$(mktemp -d) || return 2
   n=0; fail=0
   ok(){ n=$((n+1)); echo "  ✓ $1"; }; bad(){ echo "  ✗ 反测未过：$1"; fail=1; }
+
+  # 🔴 证据写在【下一行】时不得判成「证据栏为空」（丙域首次落勾时暴露）
+  mkdir -p "$T/ck1"; printf -- '- [x] **CAC-1 标题**\n  证据（2026-08-25，锚 abc1234）：实取输出如下。\n' > "$T/ck1/checklist.a.md"
+  printf 'checklist 三域产出并执行完毕\n' > "$T/spec.md"; CKDIR="$T/ck1" SPECDOC="$T/spec.md" check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "不误伤：证据在条目块的下一行（门方实际格式）" || bad "证据写下一行被判成空"
+
+  # ⚠️ 真的没证据仍须拦
+  mkdir -p "$T/ck2"; printf -- '- [x] **CAC-2 标题**\n  这里只有说明，没有任何。\n' > "$T/ck2/checklist.a.md"
+  printf 'checklist 三域产出并执行完毕\n' > "$T/spec.md"; CKDIR="$T/ck2" SPECDOC="$T/spec.md" check >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "拦住：条目块内确无证据" || bad "无证据被放行"
   # 🔴 反测必须与真仓的例外清单隔离:否则真仓登记了例外,
   #   「该拦」的反测就会走进登记分支而假通过 —— 本闸第一版即栽此。
   mk(){ rm -rf "$T/p"; mkdir -p "$T/p"; printf '# spec\n\n正文\n' > "$T/s.md"; : > "$T/exc0.txt"; }
