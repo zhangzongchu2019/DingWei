@@ -13,6 +13,7 @@ mkdir -p "$D"
 
 INCLUDE='docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md
 docs/dingwei-prototype.html docs/task-table-collision-analysis.md docs/DELIVERY-STATUS.md
+docs/reference/not-adopted-pg-rls.md
 docs/tools/speclint.py docs/tools/speclint-corpus.md
 specs/constitution.md specs/README.md specs/platform/spec.md
 specs/platform/checklist.md specs/platform/checklist.security-reviewer.md
