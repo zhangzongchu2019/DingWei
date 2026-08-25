@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T00:35:42Z
-分支头：`e8c4f139f6bb51ea43c000ff813df704504b1591`
+生成时刻：2026-08-25T00:38:33Z
+分支头：`0150f7bd08e1907456ec948942b918ca94a6aed6`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -19,14 +19,14 @@ $ python3 docs/tools/speclint.py docs/dingwei-platform-specdoc.md
 
 ```
 $ python3 docs/tools/speclint.py --selftest docs/tools/speclint-corpus.md
-  --- 语料 43 例 / 覆盖规则 15 条,全部通过
+  --- 语料 45 例 / 覆盖规则 16 条,全部通过
 ```
 
 ### speclint 变异体（改坏规则，其反例须随之失守 —— 证明语料有牙）
 
 ```
 $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
-  --- 变异体 15 个,全部如期失守(语料有牙)
+  --- 变异体 16 个,全部如期失守(语料有牙)
 ```
 
 ### 架构设计引用核验（A§ 本件 / § SpecDoc 分别解析）
@@ -63,8 +63,8 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 115 个节号；悬空 0 ✓
   ④ 三件的版本自述是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.20 · 状态文件 v3.20 ✓
-    架构设计: 件内 v0.14 · 状态文件 v0.14 ✓
+    SpecDoc: 件内 v3.21 · 状态文件 v3.21 ✓
+    架构设计: 件内 v0.15 · 状态文件 v0.15 ✓
     原型: 件内 v1.16 · 状态文件 v1.16 ✓
   ⑤ 生效前置状态（§0.4）
     ✓ 三域 checklist 齐备（结构 / 安全 / 跨制品）—— 但【生效与否取决于门方执行结果，非文件存在】

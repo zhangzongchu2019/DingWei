@@ -303,9 +303,26 @@ def check_rule_table_sync(s):
             out.append((0,'rule-sync',f'{k} 追加环节不一致：§5.4a「{a[k][1]}」vs §5.6「{v[k][1]}」',''))
     return out
 
+def check_header_state(s):
+    """🔴 属性头块的【状态性字段】须与正文一致 —— 它们分处两地，最容易只改一处。
+    本轮实测三次:版本号(标题 vs 版本字段)、生命周期(头块 vs §0.4)、评审状态(头块 vs 正文)。
+    ⚠️ 本规则只判【机器判得了的那部分】:标题版本 == 版本字段;
+       「生命周期/评审状态」与正文的语义一致性判不了,归人审 —— 不宣称覆盖它。"""
+    out=[]
+    t=re.search(r'^#\s+.*SpecDoc\s+(v[\d.]+)', s, re.M)
+    f=re.search(r'^\*\*版本\*\*:\s*(v[\d.]+)', s, re.M)
+    if not t or not f:
+        return [(0,'hdr-state','标题或版本字段未取到 —— 检查失效，非通过','')]
+    if t.group(1)!=f.group(1):
+        out.append((0,'hdr-state',f'标题 {t.group(1)} 与版本字段 {f.group(1)} 不一致',''))
+    for k in ['生命周期','评审状态']:
+        if not re.search(r'^\*\*'+k+r'\*\*:', s, re.M):
+            out.append((0,'hdr-state',f'属性头块缺「{k}」字段',''))
+    return out
+
 ALL_CHECKS = [check_typed_refs, check_symbol_context, check_field_aliases, check_tables,
               check_refs, check_E, check_count_refs, check_ids, check_fkeys,
-              check_authoritative, check_heading_ids, check_fences, check_link_resolve, check_s_family, check_rule_table_sync]
+              check_authoritative, check_heading_ids, check_fences, check_link_resolve, check_s_family, check_rule_table_sync, check_header_state]
 
 def run_all(doc):
     out=[]
@@ -364,6 +381,7 @@ MUTATIONS = [
     #    变异【打空】,--mutate 报「NEG 例没在测这条规则」。改了函数没同步变异体,
     #    而变异体正是用来验它的。⇒ 变异串本身也是「引用点」。
     ('rule-sync',      "for k in sorted(set(a) | set(v)):", "for k in []:"),
+    ('hdr-state',      "if t.group(1)!=f.group(1):", "if False:"),
     ('typed-symbol',  "for m in re.finditer(pat,s):\n            ln=s[:m.start()]",
                       "for m in []:\n            ln=s[:m.start()]"),
 ]
@@ -398,7 +416,7 @@ s=load(sys.argv[1])
 all_out=(check_typed_refs(s)+check_symbol_context(s)+check_field_aliases(s)+check_tables(s)
          +check_refs(s)+check_E(s)+check_count_refs(s)
          +check_ids(s)+check_fkeys(s)+check_authoritative(s)+check_heading_ids(s)
-         +check_fences(s)+check_link_resolve(s)+check_s_family(s)+check_rule_table_sync(s))
+         +check_fences(s)+check_link_resolve(s)+check_s_family(s)+check_rule_table_sync(s)+check_header_state(s))
 for ln,kind,msg,ctx in sorted(all_out,key=lambda x:(x[1],x[0])):
     print(f"[{kind:14s}] L{ln:<5d} {msg}  {ctx}")
 print("---", f"{len(all_out)} 处" if all_out else "全部通过")

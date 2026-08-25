@@ -294,3 +294,17 @@ CASE NEG rule-sync
 | 甲 | 文档评审 | `R-AAA-01` |
 ### 5.6a 再下一节
 ENDCASE
+
+# ============ hdr-state：标题版本 与 版本字段 须一致 ============
+CASE NEG hdr-state
+# DingWei 平台 SpecDoc v9.9 —— 标题
+**版本**: v9.8
+**生命周期**: 生效
+**评审状态**: PASS
+ENDCASE
+CASE POS hdr-state
+# DingWei 平台 SpecDoc v9.9 —— 标题
+**版本**: v9.9
+**生命周期**: 生效
+**评审状态**: PASS
+ENDCASE
