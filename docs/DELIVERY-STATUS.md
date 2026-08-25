@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `d940b17c8cda2fbf12c6fda5bd856070faf9b52a` · 分支 `design/addendum-decisions`
+生成自 commit `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.29** | `1085ff0609ebadd951f59226632e401c4f2f769d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3256 / 221329 | `0dc2141f07ccf3bd9ef26176ac718a3ce5ef8556a3a36eab5388fbacebbbc6f2` |
-| `dingwei-prototype.html` | **v1.37** | `1085ff0609ebadd951f59226632e401c4f2f769d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
-| `dingwei-architecture-design.md` | **v0.32** | `d940b17c8cda2fbf12c6fda5bd856070faf9b52a<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 907 / 61534 | `605396fed102de54ee950bdbbdba61ec5355f553ff26d3d5a892af55cfc25ecc` |
+| `dingwei-platform-specdoc.md` | **v3.30** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 3251 / 220301 | `e866bcbc2face920198cb5da9c447e3ee9ba3857ba8f5bfb82c1a6bffa7ad8ea` |
+| `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
+| `dingwei-architecture-design.md` | **v0.33** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+53f4033 R2 收官件：78 条 RV 标注逐字移入沿革件，--final 首次通过
 d940b17 ⑭ 补按暂存区【模式】判：内容哈希相同的符号链接条目此前会被放行
 1085ff0 R2 轮6 甲域 2 条：⑳ selftest 假通过（甲47）+ 原型会话语境残留（甲48）
 c74f246 Merge commit '20bd1d8b' into design/addendum-decisions
@@ -34,5 +35,4 @@ c74f246 Merge commit '20bd1d8b' into design/addendum-decisions
 7480f92 RV-乙11：暂存区缺 REVIEWED 路径由「跳过」改为「拒绝」
 b71000a Merge commit '1666d2d6' into design/addendum-decisions
 4633e6d R2 轮5 甲域 sol 4 条处置；立闸 ⑳（路径锚）；--rv 47s → 0.49s
-1666d2d review: cover staged deletion in evidence gate
 ```

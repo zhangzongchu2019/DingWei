@@ -1,6 +1,6 @@
-# DingWei 平台架构设计 v0.22 —— 业务 / 技术 / 部署 / 数据库
+# DingWei 平台架构设计 v0.33 —— 业务 / 技术 / 部署 / 数据库
 
-**版本**: v0.32
+**版本**: v0.33
 **依据**: SpecDoc —— 版本与门状态见 `docs/DELIVERY-STATUS.md`
 **参考**: 原型 —— ⚠️ 本件**不以其为依据**：界面契约变更走原型评审，不经本件
 **代码实测锚**: `github.com/zhangzongchu2019/dingwei` @ `design/addendum-decisions`

@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T12:05:22Z
-分支头：`d940b17c8cda2fbf12c6fda5bd856070faf9b52a`
+生成时刻：2026-08-25T12:12:22Z
+分支头：`53f4033dac84c797f72ac6f01363ed6fc3a6bca1`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,10 +10,10 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED 0dc2141f07ccf3bd9ef26176ac718a3ce5ef8556a3a36eab5388fbacebbbc6f2  docs/dingwei-platform-specdoc.md
-REVIEWED 605396fed102de54ee950bdbbdba61ec5355f553ff26d3d5a892af55cfc25ecc  docs/dingwei-architecture-design.md
+REVIEWED e866bcbc2face920198cb5da9c447e3ee9ba3857ba8f5bfb82c1a6bffa7ad8ea  docs/dingwei-platform-specdoc.md
+REVIEWED e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c  docs/dingwei-architecture-design.md
 REVIEWED 222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e  docs/dingwei-prototype.html
-REVIEWED 17b1aeb1b70fea36b1901acc8889409dd0ac44fac71666f1eeb51619a48ab4e4  docs/DELIVERY-STATUS.md
+REVIEWED 3fa86dc4e01433393245d1b00cef569ff5c11d9b0a793f4de60de1d75d5b5700  docs/DELIVERY-STATUS.md
 REVIEWED a1fe9843b31755f89f241d80a39b57a15e72f3384c5af0219e284ca1ae9135eb  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -25,7 +25,7 @@ REVIEWED 33d372ff3b1dcda466476c113af888b55e02dee8479a894c8b0c48d8e9a45013  scrip
 REVIEWED 156c626fe5e069606e07f642d5f7fd3477b5ce42f1173d28b40e425f4556b883  scripts/gen-status.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh
 REVIEWED 19c187d91bff0d18a734582e6c278cca4f87596a59a87b824ea0acbabdc0d5be  scripts/path-anchor-gate.sh
-REVIEWED 315105ce9fbde286c2e4a04c8032735df3c1d6a43993c304c3bad1fb788a9ec7  scripts/prose-style-gate.sh
+REVIEWED 5bbb2d1fc390a00e7a2d12c13dd0c591081d1210dfaacaa732e91cae2795f62e  scripts/prose-style-gate.sh
 REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scripts/reliable_delivery_canary.sh
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
 REVIEWED 8e8795b9c2b21d7c2b0de09a69f8b1b7049f0f0b7c71cccf119e9156a4c8e323  scripts/rv-integrity-gate.sh
@@ -114,8 +114,8 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 114 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.29 · 状态文件 v3.29 ✓
-    架构设计: 件内 v0.32 · 状态文件 v0.32 ✓
+    SpecDoc: 件内 v3.30 · 状态文件 v3.30 ✓
+    架构设计: 件内 v0.33 · 状态文件 v0.33 ✓
     原型: 件内 v1.37 · 状态文件 v1.37 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
