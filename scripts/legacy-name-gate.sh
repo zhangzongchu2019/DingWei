@@ -69,6 +69,16 @@ var b TenantCtx'
   _mk 'var a TenantCtx'; _base 5 5 5; _run
   [ $? -eq 0 ] && ok "不误伤：低于基线（已改掉一批）放行" || bad "下降被误拦"
 
+  # 🔴 甲域 sol（㉑ 复核）：扫描根不存在时原实现计 0 并放行 ——
+  #   「走不到」被当成「走过了，没有」。**缺失与不适用必须分开。**
+  _base 1 0 0
+  BASE="$T/b.txt" SRC="$T/nosuch-root" TOOL="$(pwd)/specs/tools/legacy-name" check >/dev/null 2>&1
+  [ $? -eq 2 ] && ok "拦住：扫描根不存在判闸坏（非「计 0 放行」）" || bad "缺根目录被当成零命中放行"
+
+  # 🔴 重叠名称：PendingTenantCtx 内含 TenantCtx，子串计数会把一处计两次
+  _mk '// PendingTenantCtx 只应计一次'; _base 0 0 1; _run
+  [ $? -eq 0 ] && ok "不误伤：重叠名称按标识符边界精确匹配（一处只归一个目标）" || bad "重叠名称被重复计数"
+
   _mk 'var a tenantCtxKey'; _base 0 0 0; _run
   [ $? -eq 0 ] && ok "不误伤：复合标识符 tenantCtxKey 不算（判受控符号集合，不判子串）" || bad "子串被误计"
 
