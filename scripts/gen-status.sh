@@ -10,6 +10,25 @@ H=$(git rev-parse HEAD)
 D=docs
 say() { printf '%s\n' "$*"; }
 
+# --stable：只输出【内容列】（件·版本·行/字节·sha256），用于提交闸做「是否需要重生成」的比较。
+#
+# 🔴 立此模式的直接原因（复核方实测、coordinator 归口记账）：
+#   本文件在 pre-commit 生成，那时本次提交尚不存在，故顶部「生成自 commit」、尾部 git log 列表、
+#   以及「本次提交中」标注三者【天然与检出后不同】。于是**任何人在干净检出上跑一次闸，
+#   这个文件必然变脏** —— 复核方会以为自己动过。
+#   ⚠️ 假信号是这类「单一事实源」最贵的成本：它让人不敢信这份文件，也让真变化淹没在噪声里。
+#   ⇒ 闸只比内容列；内容没变就【不碰这个文件】，易变的元信息随内容变化时一并更新。
+if [ "${1:-}" = "--stable" ]; then
+  for f in "$D/dingwei-platform-specdoc.md" "$D/dingwei-prototype.html" "$D/dingwei-architecture-design.md"; do
+    [ -f "$f" ] || continue
+    v=$(grep -m1 -oE '\*\*版本\*\*: v[0-9]+\.[0-9]+' "$f" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+' || true)
+    [ -n "$v" ] || v=$(grep -m1 -oE '原型 v[0-9]+\.[0-9]+' "$f" | grep -oE 'v[0-9]+\.[0-9]+' || true)
+    lb=$(wc -l -c < "$f" | tr -s ' ' | sed 's/^ //;s/ / \/ /')
+    printf '%s|%s|%s|%s\n' "$(basename "$f")" "$v" "$lb" "$(sha256sum "$f" | cut -d' ' -f1)"
+  done
+  exit 0
+fi
+
 say "# DingWei 交付状态（机器生成，勿手改）"
 say ""
 say "生成自 commit \`$H\` · 分支 \`$B\`"
@@ -24,9 +43,11 @@ say "> 判断一条评审意见是否已被处理：看该件「末次改动锚�
 say ""
 say "> ⚠️ **若你是在共享目录读到本文件，它是副本，可能已过期。**"
 say "> 副本自身也是「第二事实源」—— 本席这几轮反复栽的正是这一类。"
-say "> **自检办法（不必问本席）**：把上方「生成自 commit」与分支最新比一次——"
-say "> \`git -C <repo> rev-parse origin/$B\` 不等于它，就说明本副本落后，以仓内 \`$D/DELIVERY-STATUS.md\` 为准。"
-say "> 仓内那份由 pre-commit 自动重生成，不依赖任何人记得。"
+say "> **自检办法（不必问本席，也不要拿「生成自 commit」当判据）**："
+say "> 把下表的 **sha256 行** 与你自己检出里的同名件实算一次（\`sha256sum <file>\`）——"
+say "> 对得上即内容同源，对不上才是副本落后。"
+say "> 🔴 **不要用顶部「生成自 commit」判落后**：它天然滞后一格（本文件在 pre-commit 生成，"
+say "> 那一刻本次提交尚不存在），拿它当落后判据【必然误报】。"
 say ""
 say "| 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |"
 say "|---|---|---|---|---|"

@@ -68,16 +68,27 @@ fi
 if [ ! -x scripts/gen-status.sh ]; then
   echo "✗ 闸依赖缺失：scripts/gen-status.sh 不可执行 —— 状态源无法刷新，不得放行"; exit 1
 fi
+# 🔴 只比【内容列】，不比整份文件（复核方实测 + coordinator 归口记账）：
+#    本文件在 pre-commit 生成,那时本次提交尚不存在,故顶部「生成自 commit」、尾部 git log 列表、
+#    「本次提交中」标注三者天然与检出后不同 ⇒ 原来「整份 diff」的写法会让
+#    **任何人在干净检出上跑一次闸,这个文件就变脏**,复核方以为自己动过。
+#    假信号是单一事实源最贵的成本:它让人不敢信这份文件,也让真变化淹没在噪声里。
+#    ⇒ 内容没变就【不碰这个文件】;内容一变,易变的元信息随之一并更新。
 if true; then
-  scripts/gen-status.sh > /tmp/.dw-status.$$ 2>/dev/null || true
-  if ! diff -q /tmp/.dw-status.$$ docs/DELIVERY-STATUS.md >/dev/null 2>&1; then
+  NEWC=$(scripts/gen-status.sh --stable 2>/dev/null || true)
+  # 从仓内现文件里抽同样的内容列（件|版本|行 / 字节|sha256），锚列不参与比较
+  OLDC=$(sed -n 's/^| `\([^`]*\)` | \*\*\([^*]*\)\*\* | .* | \([0-9]* \/ [0-9]*\) | `\([0-9a-f]*\)` |$/\1|\2|\3|\4/p' \
+           docs/DELIVERY-STATUS.md 2>/dev/null || true)
+  if [ -z "$NEWC" ]; then
+    # 取不到就是【无法比对】,须明说,不得打印 ✓（与 ④ 同一条理由）
+    echo "  ⑤ ⚠️ 状态源内容列生成为空,本次【跳过比对】,非通过"
+  elif [ "$NEWC" != "$OLDC" ]; then
     scripts/gen-status.sh > docs/DELIVERY-STATUS.md
     git add docs/DELIVERY-STATUS.md 2>/dev/null || true
-    echo "  ⑤ DELIVERY-STATUS.md 已自动重生成并入暂存区"
+    echo "  ⑤ DELIVERY-STATUS.md 内容列已变,已重生成并入暂存区"
   else
-    echo "  ⑤ DELIVERY-STATUS.md 已是最新 ✓"
+    echo "  ⑤ DELIVERY-STATUS.md 内容列一致 ✓（元信息滞后一格属设计内,不据此重写）"
   fi
-  rm -f /tmp/.dw-status.$$
 fi
 # ⑤a 状态源钉的锚必须【在分支历史里】。
 #    立此判据的直接原因：2026-08-25，本席为修一句提交信里的编号口径对已过闸的提交做了 --amend。
