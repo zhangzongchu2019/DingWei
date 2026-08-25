@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T11:24:15Z
-分支头：`84276a6a56d5039c9b6cf3040940073014db1a34`
+生成时刻：2026-08-25T11:35:09Z
+分支头：`c704eb53d58e70912f1b1b6aa0e1902d0f5f9f91`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -11,9 +11,9 @@
 
 ```
 REVIEWED 1b8a35e2cf8acd960ef28a58ea14d6ba3f758b35bd08686e9386b1869dfb6fac  docs/dingwei-platform-specdoc.md
-REVIEWED 43f382b4e182f65da4f6982dbf07b89794e0b97002bdec95ce54b574d1e4e117  docs/dingwei-architecture-design.md
+REVIEWED 4a6484347e3f70e1030672704eae4a5914b1e8ca996402f7d234607d9b5c34f9  docs/dingwei-architecture-design.md
 REVIEWED 1faa018347bdcb9be629827535f57c7b83c2fabc568ef0aff63c698faa6ecd12  docs/dingwei-prototype.html
-REVIEWED a9cc54063434a906047eff2809981cd53f3c2acc280e21ea59fb25ac7c74bfeb  docs/DELIVERY-STATUS.md
+REVIEWED eb8adc89df1793aeae5c83fbb8d2ba9bce875cf99c1524ccb530f56a8243f9cb  docs/DELIVERY-STATUS.md
 REVIEWED b4baa10d91b45b4e0e1a91041327b41ea6e0d0f6928eb11c7c5e1d4f2438268d  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -21,10 +21,10 @@ REVIEWED 253a59f6e85c9a1438beeac339efdc2294b21ae3bba46aaf30e7d1ee9befb521  scrip
 REVIEWED 451fa8171c5460ef6ff723d68f902d756469b90d06dbcd4f924886ce6b885f0f  scripts/checklist-executed-gate.sh
 REVIEWED ec1d83e2dfba4a6a8755e503905f1f1532c8594f91949ede16c37c2dc6d2673b  scripts/conflict-marker-gate.sh
 REVIEWED 687300bc3e8a56f491c533116b6cccc6da256f4e7aaf300607cd32cb6274e78e  scripts/delivery-check.sh
-REVIEWED e3b64c4c1c9f5057f5a53ea0143c43e20f9d9451392e7741c700fb008f7aa939  scripts/evidence-fresh-gate.sh
+REVIEWED 9e6e1061ed21dd61081e039a4edb8e45270c44c1ba58b4d702f3ea2177f97a9f  scripts/evidence-fresh-gate.sh
 REVIEWED 156c626fe5e069606e07f642d5f7fd3477b5ce42f1173d28b40e425f4556b883  scripts/gen-status.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh
-REVIEWED 2757dc8d259aea09c28390ff7fda4e3f67985d43f351f399deef7c3e410ddb35  scripts/prose-style-gate.sh
+REVIEWED 3611c2c7277f25dbdc33747d39b63641814f395d2ca54574967b1363b9d43e31  scripts/prose-style-gate.sh
 REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scripts/reliable_delivery_canary.sh
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
 REVIEWED 5fa44b88e6b4b14acf2795194112a2e6257b01c72bcf6eca035b6aaf24b2cde4  scripts/rv-integrity-gate.sh
@@ -42,7 +42,7 @@ REVIEWED 9328cd8abaf6e6ceacf8e0968e8431ae28080ca67044c32457c9283ef467b552  docs/
 REVIEWED 2ca28e44ad27f466487859548c69cf3f321a2f03200fbe1731fe36ca75651e5a  specs/gates/boundary-baseline.txt
 REVIEWED 16e5ba25e2b662a97269723d229d138cd7f0e2ebc7bd5177f9575eb2470fdbae  specs/gates/checklist-execution-exceptions.txt
 REVIEWED 861f36f0dfeda164e4047bfd75ea78e5977d3ad352c8e1c5cafff6a790945530  specs/gates/repo-packages.txt
-REVIEWED d89af6f425bf70e6becd200150e3330b80defa406eb5cb5b665a5dd6d806f748  specs/gates/rv-ledger.txt
+REVIEWED 96816670520d61a58a8b14e55669fae256623cd66ed941502a9c6ba773f7e852  specs/gates/rv-ledger.txt
 REVIEWED e7a91c5e523a367419df93ea42bb570bbb33a08479ff8e5ec4ff3d01fa7e2789  specs/gates/status-stale-exceptions.txt
 REVIEWED 77103d4b6275652f23eaaea5f075e159073432eee5c2253f0cf42ea8592cc011  specs/gates/superseded-claims.txt
 ```
@@ -113,7 +113,7 @@ $ specs/tools/analyze.sh
     原型引用 114 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
     SpecDoc: 件内 v3.26 · 状态文件 v3.26 ✓
-    架构设计: 件内 v0.27 · 状态文件 v0.27 ✓
+    架构设计: 件内 v0.28 · 状态文件 v0.28 ✓
     原型: 件内 v1.34 · 状态文件 v1.34 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号

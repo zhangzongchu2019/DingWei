@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `84276a6a56d5039c9b6cf3040940073014db1a34` · 分支 `design/addendum-decisions`
+生成自 commit `c704eb53d58e70912f1b1b6aa0e1902d0f5f9f91` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.26** | `16ff70ac66ffb4216dda49b982b4f93207034e04<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3290 / 243040 | `1b8a35e2cf8acd960ef28a58ea14d6ba3f758b35bd08686e9386b1869dfb6fac` |
-| `dingwei-prototype.html` | **v1.34** | `82fc88ef0404c264adf39152eda772e4741f446b<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2859 / 265016 | `1faa018347bdcb9be629827535f57c7b83c2fabc568ef0aff63c698faa6ecd12` |
-| `dingwei-architecture-design.md` | **v0.27** | `84276a6a56d5039c9b6cf3040940073014db1a34<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 919 / 76150 | `43f382b4e182f65da4f6982dbf07b89794e0b97002bdec95ce54b574d1e4e117` |
+| `dingwei-platform-specdoc.md` | **v3.26** | `e72a5a05563f6e152127c5379b7bf054711f8ccb` | 3290 / 243040 | `1b8a35e2cf8acd960ef28a58ea14d6ba3f758b35bd08686e9386b1869dfb6fac` |
+| `dingwei-prototype.html` | **v1.34** | `e72a5a05563f6e152127c5379b7bf054711f8ccb` | 2859 / 265016 | `1faa018347bdcb9be629827535f57c7b83c2fabc568ef0aff63c698faa6ecd12` |
+| `dingwei-architecture-design.md` | **v0.28** | `c704eb53d58e70912f1b1b6aa0e1902d0f5f9f91<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 921 / 77858 | `4a6484347e3f70e1030672704eae4a5914b1e8ca996402f7d234607d9b5c34f9` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+c704eb5 review: record evidence package still stale
+e72a5a0 R2 轮4：甲域 sol 9 条 + 乙域 terra RV-乙09 处置；立闸 ⑲（冲突标记）
 84276a6 Merge commit 'c351ab21' into design/addendum-decisions
 82fc88e Merge commit '16ff70a' into design/addendum-decisions
 9412991 处置兑现 triage（⑱）+ arch 一处过程叙述
 c351ab2 review: keep evidence closure open
 2ed414f RV-乙08：⑭ 判据由「提交距离」换为「内容指纹」
 16ff70a review: 标注 R2 轮4甲域复核意见
-ec233ef review: mark security evidence closure gap
-a96c219 R2 轮4 丙域 kimi 4 条处置；analyze 接入提交闸（⑰）
 ```

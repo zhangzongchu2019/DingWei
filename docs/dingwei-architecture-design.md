@@ -1,6 +1,6 @@
 # DingWei 平台架构设计 v0.22 —— 业务 / 技术 / 部署 / 数据库
 
-**版本**: v0.27
+**版本**: v0.28
 **依据**: SpecDoc —— 版本与门状态见 `docs/DELIVERY-STATUS.md`
 **参考**: 原型 —— ⚠️ 本件**不以其为依据**：界面契约变更走原型评审，不经本件
 **代码实测锚**: `github.com/zhangzongchu2019/dingwei` @ `design/addendum-decisions`
@@ -343,7 +343,7 @@
 
 【RV-乙09|乙|阻断|采纳】复核结论：内容指纹方向成立，但 RV-乙08 尚不可采纳。`collect.sh` 的命令输出依赖 `specs/evidence/collect.sh`、`docs/tools/speclint.py` 与 `docs/DELIVERY-STATUS.md`，三者均未列入 REVIEWED；本包保存的 `analyze.sh` 输出也实际为失败（架构／原型版本与当时状态源不一致），而当前实跑才通过。故现有指纹只能证明 24 个枚举文件相同，既证明不了生成器/单件 lint 是否为同一版本，也证明不了包内输出对应当前输入。REVIEWED 覆盖集必须由 collect 的实际运行依赖生成或至少纳入上述三件；重跑 `collect.sh --write` 的包内各应通过命令须与当前实跑一致，随后再冻结复核。⑭应继续保留“字节一致不证明运行真实性”的抽验边界。　　⟹ **【采纳】** 🔴 两处都成立。① 指纹面漏了**实际影响输出**的三类件：`collect.sh` 自身、`docs/tools/speclint.py`、`DELIVERY-STATUS.md` —— 判据应是「凡影响输出者皆须指纹」，而首版按**目录**列举，于是**生成器自身**这个最该记的反而不在里面。现覆盖 35 件（另含 `specs/gates/*.txt` 基线：基线一改 ⑦ 的输出就变）。② `run()` 原**丢弃退出码**，包里存着的 analyze 输出实际是一次 FAIL 而无人看得出。现每项记 `rc=`，`--write` 在有非预期失败时**拒绝写入**（实测有牙：插一条 `exit 3` 即拒，原件不动）；本包 13 项命令 rc 全 0。⚠️ 乙域要保留的边界照旧写在包内与闸内：**字节一致 ≠ 运行真实性**，手改 EVIDENCE.md 并同步改指纹仍能通过，该项归门方抽验（重跑 collect --write 后 diff）。
 
-【RV-乙10|乙|阻断|未决】冻结锚实跑仍拒绝 `evidence-fresh-gate.sh`：本包生成后 `scripts/prose-style-gate.sh` 与 `specs/gates/rv-ledger.txt` 已变，二者均在 REVIEWED 集，故 RV-乙09 不能在本锚标采纳。处置应遵守收口顺序：先冻结所有被 REVIEWED 的正文／闸／工具／基线，后执行 `collect.sh --write`，最终提交只带证据包及不在 REVIEWED 集的状态元信息；重检⑭通过后再打评审锚。否则任何“全部处置”提交都会再次令本包失效。
+【RV-乙10|乙|阻断|采纳】冻结锚实跑仍拒绝 `evidence-fresh-gate.sh`：本包生成后 `scripts/prose-style-gate.sh` 与 `specs/gates/rv-ledger.txt` 已变，二者均在 REVIEWED 集，故 RV-乙09 不能在本锚标采纳。处置应遵守收口顺序：先冻结所有被 REVIEWED 的正文／闸／工具／基线，后执行 `collect.sh --write`，最终提交只带证据包及不在 REVIEWED 集的状态元信息；重检⑭通过后再打评审锚。否则任何“全部处置”提交都会再次令本包失效。　　⟹ **【采纳】** 🔴 **成立，且真因比乙域描述的更具体**：我跑的是 `git add -A && collect --write && 提交` —— `collect` 写的新证据**没进暂存区**，⑭ 看**工作区**（新的）判通过，而提交进去的是暂存区里那份**旧证据**。⚠️ **闸测的东西必须是【将要被提交的东西】，不是【我手边这份】** —— 这是本轮第 N 次「测了一部分报成全部」。两处都改了：① ⑭ 现在**工作区与暂存区两侧都比**，任一侧不符即拒，并指出「典型成因：先 add 后 collect」；② 出证据改按乙域给的顺序：冻结全部 REVIEWED 输入 → collect --write → 只提交证据包与非 REVIEWED 元信息 → ⑭ 过后再打锚。⚠️ 实现中连踩两个同形坑，都被自带反测抓出：`git show` 失败时管道里是空输入，`sha256sum` 照样给出空串哈希；改用 `git rev-parse` 后，它**失败时把参数原样打回 stdout**，「取不到」又成了非空值。最终用 `git cat-file -e`（只以退出码回答）。⇒ **凡「取不到」要判空的地方，先问它失败时到底输出什么。**
 
 🔴 **F-2 的三处冲突由此钉死**：A§5 十九包清单**不含 view**、A§8 拓扑**不再并列 view**、
 A§6 映射表写明**view 无独立包** —— 三处现在同源于上表第 1、2、3 行，**可复算**。

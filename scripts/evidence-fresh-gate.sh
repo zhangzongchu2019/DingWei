@@ -60,6 +60,29 @@ check() {
       echo "✗ 证据包声称分析过 $_file，而该文件现已不存在"; _bad=$((_bad+1)); continue
     fi
     _got=$(sha256sum "$_file" | cut -d' ' -f1)
+    # 🔴 乙域 terra R2 轮5（RV-乙10）：只比【工作区】是不够的 ——
+    #   执笔方跑成 `git add -A && collect --write && 提交`：
+    #   collect 写的新证据**没进暂存区**，闸看工作区（新的）判通过，
+    #   而提交进去的是暂存区里那份**旧证据** ⇒ 冻结锚上再次失效。
+    #   ⚠️ 闸测的东西必须是【将要被提交的东西】，不是【我手边这份】。
+    #   ⇒ 工作区与暂存区两侧都要对上；任一侧不符即拒。
+    # ⚠️ 不能写成 `git show ":$f" | sha256sum`：git 失败时管道里是**空输入**，
+    #   sha256sum 照样输出空串的哈希（e3b0c442…），于是「取不到」被当成「取到了一个不同的值」。
+    #   ⇒ 先用 rev-parse 判该路径在暂存区里到底有没有。
+    # ⚠️ 也不能用 `git rev-parse ":$f"` 判存在：**失败时它把参数原样打回 stdout**，
+    #   于是「取不到」又变成一个非空值。用 cat-file -e，它只以退出码回答。
+    if git cat-file -e ":$_file" 2>/dev/null; then
+      _idx=$(git cat-file blob ":$_file" 2>/dev/null | sha256sum | cut -d' ' -f1)
+    else
+      _idx=""
+    fi
+    if [ -n "$_idx" ] && [ "$_idx" != "$_want" ] && [ "$_got" = "$_want" ]; then
+      [ "$_bad" -eq 0 ] && echo "✗ 证据包非当期产出：以下文件【暂存区】与证据不符（工作区却是对的）"
+      echo "    $_file"
+      echo "      证据记 $(echo "$_want"|cut -c1-16)… · 暂存区 $(echo "$_idx"|cut -c1-16)…"
+      echo "      ⇒ 典型成因：先 git add 后 collect --write，新证据没进暂存区。"
+      _bad=$((_bad+1)); continue
+    fi
     if [ "$_got" != "$_want" ]; then
       [ "$_bad" -eq 0 ] && echo "✗ 证据包非当期产出：以下文件在证据生成后又被改过"
       echo "    $_file"
@@ -112,6 +135,20 @@ selftest() {
   EV="$T/e.md" check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "拦住：锚等于 HEAD 但指纹不符（锚对不能替代内容对）" || bad "锚对就放行了"
   printf 'AAA\n' > "$_f1"
+
+  # 🔴 RV-乙10 的形态：工作区对、暂存区旧 —— 闸只看工作区就会放行
+  #   （构造：在真仓里取一个 REVIEWED 件，令其暂存区内容与工作区不同）
+  _probe=specs/gates/rv-ledger.txt
+  if [ -f "$_probe" ] && git rev-parse --git-dir >/dev/null 2>&1; then
+    _sv=$(mktemp); cp "$_probe" "$_sv"
+    printf '\n# rv-fixture 反测临时行\n' >> "$_probe"; git add "$_probe" 2>/dev/null
+    cp "$_sv" "$_probe"                       # 工作区还原，暂存区留着改动
+    _mk "$_h" "$_probe"                        # 证据按【工作区】现值记指纹
+    EV="$T/e.md" check >/dev/null 2>&1
+    [ $? -eq 1 ] && ok "🔴 拦住：工作区对而暂存区旧（先 add 后 collect 的形态，乙域 RV-乙10）" \
+      || bad "暂存区与证据不符却放行 —— 闸测的不是将要被提交的东西"
+    git add "$_probe" 2>/dev/null; rm -f "$_sv"
+  fi
 
   _mk "$_h" "$_f1"; printf 'REVIEWED %s  %s\n' "$(sha256sum "$_f1"|cut -d" " -f1)" "$T/gone.md" >> "$T/e.md"
   EV="$T/e.md" check >/dev/null 2>&1
