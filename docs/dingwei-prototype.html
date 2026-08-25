@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.15 · 依据 SpecDoc v3.14</title>
+<title>DingWei 平台原型 v1.16 · 依据 SpecDoc v3.14</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -129,7 +129,7 @@ body.uionly #uihint{display:block}
 
 <div id="top">
   <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v0.1</span></h1>
-  <span class="anchor">原型 <b>v1.15</b> · 依据 SpecDoc <b>v3.14</b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <span class="anchor">原型 <b>v1.16</b> · 依据 SpecDoc <b>v3.14</b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -378,7 +378,7 @@ body.uionly #uihint{display:block}
     <input placeholder="检索知识库…" style="flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--tx);font-family:inherit">
     <button>检索</button>
   </div>
-  <div class="note bad" data-edit>🔴 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
+  <div class="note bad" data-edit>🔴 <b>先按租户与可见性过滤，后检索。</b>（过滤由<b>受控仓储 API</b> 单点执行，§22.2c；C.3 已裁不做 RLS）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。
   当前视角<b>共 7 条</b>可检索（＝本表实际渲染行数）。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。</div>
   <div class="note" data-edit>排序 = <code>0.40·log(使用量) + 0.35·relevance + 0.25·importance</code>；importance 由<b>归属域</b>给定（D0 1.0 / D1 0.75 / D2 0.5 / D3 0.3 —— 附录 A）；
   <b><code>suspect</code> 条目 ×0.5 降权</b> —— 锚失配必须参与排序，标了不参与排序等于没标。</div>
@@ -484,7 +484,7 @@ body.uionly #uihint{display:block}
   <tr><td data-edit><b>三血脉行为指纹取证</b><div class="mono">新条目 · 曝光窗口中</div></td><td>0.52</td><td><button>拉取</button></td></tr>
   </tbody></table>
   <div class="note bad" data-edit>🔴 <b>禁止租户 B 直接 pull 租户 A 的 skill</b>（§15.3）。skill 正文可能含项目名、内部地址、表结构、业务术语 ——
-  <b>RLS 管的是数据表，管不到一份 Markdown 正文里写了什么。</b><br>
+  <b>租户过滤管的是数据表，管不到一份 Markdown 正文里写了什么。</b><br>
   唯一路径：<b>抽象化 → 脱敏 → 晋升审批 → 平台级 push</b>。租户 B 拿到的是抽象后的版本，不是 A 的原件。</div>
 </div>
 </div>
@@ -585,7 +585,7 @@ body.uionly #uihint{display:block}
       <table style="margin-top:8px"><tbody>
       <tr><td><b>D0</b> · public/internal</td><td class="cell-ok">全量</td><td class="mono">稳定前缀，吃 prompt caching</td></tr>
       <tr id="loadSecRow"><td><b>D0</b> · <b>restricted</b></td><td class="cell-fail">不注入</td><td class="mono">implementer 无该授权 —— <b>同一个 D0，可见性不同则装载不同</b></td></tr>
-      <tr><td><b>D1 / D2 / D3</b>（∩ 可见性）</td><td class="cell-wait">按需切片</td><td class="mono">Query(q, topK=8)，先 RLS 过滤后检索</td></tr>
+      <tr><td><b>D1 / D2 / D3</b>（∩ 可见性）</td><td class="cell-wait">按需切片</td><td class="mono">Query(q, topK=8)，先按租户与可见性过滤后检索（受控仓储 API）</td></tr>
       <tr><td>生命周期 · 版本上下文</td><td class="cell-ok">全量</td><td class="mono">当前版本摘要，量小</td></tr>
       <tr><td>生命周期 · 任务上下文</td><td class="cell-ok">全量</td><td class="mono">＝派发信封本体</td></tr>
       <tr><td>平台级 skill</td><td class="cell-ok">全量 push</td><td class="mono">5 件 · 2.4k tokens</td></tr>
@@ -593,7 +593,7 @@ body.uionly #uihint{display:block}
       </tbody></table></div>
   </div>
   <div class="note" data-edit>📌 <b>skill 是过程性记忆</b>（§10 第 4 维）：<b>归属域</b>决定<b>归谁</b>、<b>可见性</b>决定<b>谁能看</b>，记忆类型决定<b>怎么存、怎么取、何时清</b>。
-  skill 有<b>归属域</b>（平台级=D0 / 业务级=D1 / 租户级=D2 / 项目级=D3），与知识条目<b>共用同一套晋升、装载、RLS</b> ——
+  skill 有<b>归属域</b>（平台级=D0 / 业务级=D1 / 租户级=D2 / 项目级=D3），与知识条目<b>共用同一套晋升、装载、租户过滤</b> ——
   否则会出现「复盘写进了知识库，新 Agent 却读不到」。</div>
 </div>
 </section>
@@ -673,6 +673,10 @@ body.uionly #uihint{display:block}
     现改为 <code>domain_level</code> 与 <code>visibility</code> <b>两个正交维度</b>（§10 · §11.4a）。
     <div style="margin-top:6px" class="mono">🔴 <b>为什么不直接把帖子改对</b>：帖子流已封存，<b>§13 管道 3 与 §21.4b 都定「走新 revision，不得原地改历史」</b>。
     改了历史，「当时为什么这么决定」就没了，而那正是 §9.2 复盘要的东西。</div></div>
+    <div class="note warn" data-edit style="margin-bottom:8px">⚠️ <b>后续说明（新 revision，原帖一字未改）</b>：
+    本流讨论的存储选型，业主已于 2026-08-24 裁定 <b>受控仓储 API 单点、不做 RLS、不做每租户独立库</b>（C.3）。
+    <div class="mono" style="margin-top:6px">帖内「倾向 PG + RLS」等表述为<b>当时的讨论过程</b>，非现行口径。
+    🔴 按 §13 管道 3 与 §21.4b：<b>已封存帖子流不得原地改历史</b> —— 改了，「当初为什么这么争」就没了。</div></div>
     <div class="note" data-edit>📌 <b>6 帖不代表敷衍，代表没有分歧。</b>帖子数是分歧探测器，不是话痨指标 —— 界面不得把低帖数显示为负面。</div>
   </div>
 
@@ -842,7 +846,7 @@ body.uionly #uihint{display:block}
   <div class="note warn" data-edit>⚠️ <b>双因子 ≠ 双人。</b>双因子回答「是不是你本人」，挡冒名、伪造、账号单点失陷；
   <b>挡不住本人被骗、判断失误、被胁迫、内部越权</b>。<br>
   二次验证做到极致，仍然只有<b>一个人</b>在决定。故高危须重两签 —— 依据不是「因子弱」，而是<b>单人不足以承担其后果</b>。</div>
-  <div class="note" data-edit>三级映射：<b>人</b>（企业 IM 验证）→ <b>租户</b>（RLS 主体）→ <b>会话 / Agent</b>（执行主体，持 token）。
+  <div class="note" data-edit>三级映射：<b>人</b>（企业 IM 验证）→ <b>租户</b>（租户隔离主体）→ <b>会话 / Agent</b>（执行主体，持 token）。
   <b>审计与授权挂在人身上，执行挂在会话身上。</b></div>
 </div>
 
@@ -850,7 +854,7 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>飞书卡片模拟 <span class="ref">§23.5</span></h3>
   <div class="grid g3">
-    <div class="card"><b class="cell-ok">查询进展</b><div class="sub" style="margin:6px 0 0">只读 · <b>须 RLS 过滤后返回</b>（业主看自己租户的，不是全平台的）</div>
+    <div class="card"><b class="cell-ok">查询进展</b><div class="sub" style="margin:6px 0 0">只读 · <b>须经受控仓储 API 过滤后返回</b>（业主看自己租户的，不是全平台的）</div>
       <div style="margin-top:8px;background:#101319;border:1px solid var(--line);border-radius:6px;padding:9px">
       <div class="mono">图搜 3.0 · 版本 v3.3</div><div style="font-size:12.5px;margin-top:4px">在轨 7 / 阻塞 2 / 待你决断 <b style="color:var(--warn)">3</b></div>
       <button style="margin-top:8px;padding:3px 9px;font-size:12px">看详情</button></div>
@@ -1471,7 +1475,7 @@ body.uionly #uihint{display:block}
     <div class="mono">三级映射 · 派生源 · fail-closed 行为 · 一对多处置</div></td>
     <td class="mono">sha256:3e8a…71<br>286 行 / 11.4KB</td><td class="cell-ok">架构评审 PASS</td><td>调度者</td><td><button>打开</button></td></tr>
   <tr><td><b>测试用例设计</b></td><td data-edit><b>用例集</b> 14 条
-    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / SET 而非 SET LOCAL / owner 绕 RLS / BYPASSRLS 角色</div></td>
+    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / <b>绕仓储包直连库</b> / <b>持有效 TenantCtx 跨租户读</b> / <b>拒绝未落审计</b><br>⚠️ 原三条（SET 而非 SET LOCAL / owner 绕 RLS / BYPASSRLS）随 C.3 裁定「不做 RLS」失效，已换为受控仓储 API 的等价负测（§22.2a #3）</div></td>
     <td class="mono">sha256:b204…c9<br>14 用例</td><td class="cell-ok">用例评审 PASS</td><td>qa_owner</td><td><button>打开</button></td></tr>
   <tr><td>实现</td><td data-edit>代码变更<div class="mono">6 文件 · +412 / −87</div></td>
     <td class="mono">commit 4a91c02f…<br>+412 / −87</td><td class="cell-fail"><b>代码评审 FAIL</b></td><td>安全角色</td><td><button>打开</button></td></tr>
@@ -1682,7 +1686,7 @@ body.uionly #uihint{display:block}
       <div style="margin-top:6px" class="mono">⚠️ PA-02 修（乙域 terra）：原实现回显了原始文件名与「命中了什么」。<br>
       <b>文件名是判定器的输入</b>；判定为 S0 之后还把它回显进会话（而会话会入帖子流），<br>
       等于用拒收动作把 S0 又写了一遍 —— 与 §22.5 #5 是同一个错，本席在 SpecDoc 里刚修过（SA-08），原型里原样犯了一遍。</div>
-      <div style="margin-top:6px">改法：若确需该资料，请在知识库内按 RLS 引用，<b>不要作为附件传入对话</b>。</div></div></div></div>
+      <div style="margin-top:6px">改法：若确需该资料，请在知识库内按<b>受控仓储 API 的租户与可见性</b>引用，<b>不要作为附件传入对话</b>。</div></div></div></div>
   </div>
   <div class="drop" data-edit>拖入 <b>图片 / 视频 / 文档 / 代码</b>，或 <b>点击选择</b><br>
     <span class="mono">单文件 ≤ 200MB · 视频自动抽帧供模型读 · 大文件存对象存储，对话内只留引用</span></div>
@@ -1926,7 +1930,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🔴 能力必须收窄 —— 紧急通道不是全权通道 <span class="ref">§24.3a 同源</span></h3>
-  <div class="note bad" data-edit>这个面绕开了平台的<b>全部</b>管控：无三级映射、无 RLS、无出站闸、无待决队列、无重两签。
+  <div class="note bad" data-edit>这个面绕开了平台的<b>全部</b>管控：无三级映射、<b>不经受控仓储 API</b>、无出站闸、无待决队列、无重两签。
   <b>若它是全权的，它就是一个带密码的后门。</b><br>
   ⇒ 按 §24.3a 已定的同一逻辑：<b>紧急通道只允许单调收紧。</b></div>
   <div class="grid g2">
@@ -2741,9 +2745,9 @@ function applyPersona(){
   if(lsr) lsr.style.display = plat ? '' : 'none';
   var n=document.querySelector('#s3 .note.bad');
   if(n) n.innerHTML = plat
-    ? '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>当前视角＝平台级 ops，<code>restricted</code> 三条<b>在</b>检索集合内（共 10 条）。'
+    ? '\uD83D\uDD34 <b>先按租户与可见性过滤，后检索。</b>（受控仓储 API 单点，§22.2c）当前视角＝平台级 ops，<code>restricted</code> 三条<b>在</b>检索集合内（共 10 条）。'
       + '密级仍按条目分级：<b>S0 条目的实际访问须另有 capability</b>，可检索 \u2260 可读取。'
-    : '\uD83D\uDD34 <b>先 RLS 过滤，后检索。</b>禁止先检索后过滤 —— 后者会经摘要片段泄露正文。'
+    : '\uD83D\uDD34 <b>先按租户与可见性过滤，后检索。</b>（受控仓储 API 单点，§22.2c）禁止先检索后过滤 —— 后者会经摘要片段泄露正文。'
       + '当前视角<b>共 7 条</b>可检索（＝本表实际渲染行数）。<b>不显示「另有 N 条不可见」</b> —— 那个 N 本身就是情报（PA-01）。';
 
   /* Agent 视角：把导航重心切到 Agent 面，并提示决断面非其职责 */

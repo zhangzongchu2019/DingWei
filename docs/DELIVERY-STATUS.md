@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `d8721471334816f48b00bb50fae5e3e0c579c6dd` · 分支 `design/addendum-decisions`
+生成自 commit `681917a1495c0e78f32497bbd34f5b621415d486` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -18,13 +18,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.18** | `1fd84e732dc1cb8b584c5fd84e7e3937bd8cf898<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3046 / 206505 | `f140f3c9b1f6a16c8c755a20e92daed09b05404ca7d0045d0089fdc7b3836e75` |
-| `dingwei-prototype.html` | **v1.15** | `185d23af0a42866374d07b05fca27e90cf678857` | 2845 / 253294 | `fa386312caa2bc78ee81e7d02a9f404dbcf34a3e0d2397f1584b0d918387048b` |
-| `dingwei-architecture-design.md` | **v0.12** | `d8721471334816f48b00bb50fae5e3e0c579c6dd<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 784 / 55399 | `60117a854809e03246f1030afefb116f789d73e361942d3b668ca9624bef29d0` |
+| `dingwei-platform-specdoc.md` | **v3.19** | `681917a1495c0e78f32497bbd34f5b621415d486<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3077 / 209261 | `191177bafd475d0f6f3e11e9e56ff4728628d61329c51333c5d1c4c79a184c3f` |
+| `dingwei-prototype.html` | **v1.16** | `185d23af0a42866374d07b05fca27e90cf678857<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2849 / 254430 | `c9e4e0257c7ef916cf341675e69aa45de0cc39c8edd47bc5f53380d9d5795ce2` |
+| `dingwei-architecture-design.md` | **v0.13** | `681917a1495c0e78f32497bbd34f5b621415d486<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 793 / 56161 | `42e289fb692e2851e71cd4cf0b498e79de25a881927d369fe5b280461a738f7b` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+681917a docs: 组 2 task 定名已裁并落三处(SpecDoc v3.18 + 架构 v0.12 + 分析件,修在此,前锚 d872147)
 d872147 docs: 架构设计 v0.11——按 sol 扩后 scope 落设计合同(组5全量+组6设计半+组4设计半+组3枚举半)
 1fd84e7 docs: 结构域重走 12 FAIL 分类 + 组 1 已修(修在此,前锚 62951fc)
 62951fc docs: SpecDoc v3.16——业主裁定「重走」,架构评审重走轮起(修在此,前锚 bfac466)
@@ -32,5 +33,4 @@ bfac466 docs: SpecDoc v3.15——把「是否起重走轮」登记进 C.2(修在
 dd88734 docs: 架构设计 v0.10——P-1 残留三处全清(丙域 kimi 复核 R-1/R-2 + 本席自查第三处,修在此,前锚 51cec1d)
 51cec1d feat: 快照包清单改由 git 导出,不手写(丙域 kimi m 类,修在此,前锚 185d23a)
 185d23a fix: 丙域终审 3 阻断 + 6 次要全修(修在此,前锚 26ecb6e)
-26ecb6e chore: 三域 checklist 齐备入仓 + 索引(修在此,前锚 8b173b7)
 ```

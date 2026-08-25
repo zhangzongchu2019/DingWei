@@ -1,6 +1,6 @@
-# DingWei 平台架构设计 v0.12 —— 业务 / 技术 / 部署 / 数据库
+# DingWei 平台架构设计 v0.13 —— 业务 / 技术 / 部署 / 数据库
 
-**版本**: v0.12
+**版本**: v0.13
 **依据**: SpecDoc **v3.14** —— 已三域 PASS + 安全域快核（v3.14 仅修 §2.3 迁移号写死，见丙域 F-4）
 **参考**: 原型 —— **三域已 PASS 收口**（v1.13）。⚠️ 本件仍不以其为依据：界面契约变更走原型评审，不经本件
 **代码实测锚**: `github.com/zhangzongchu2019/dingwei` @ `design/addendum-decisions`
@@ -645,16 +645,25 @@ A§6 映射表写明**view 无独立包** —— 三处现在同源于上表第 
 **复算链**（任何人可独立重跑）：
 
 ```
-安全面=是            → rule_id R-SEC-01 → 级别 L3 · 门 +arch.review(含安全角色) +code.review
-数据模型=加列加表     → rule_id R-DM-02  → 级别 L2
-影响范围=跨模块       → rule_id R-SCOPE-02 → 级别 L2 · 门 +arch.review
-回滚成本=需回滚数据   → rule_id R-RB-02  → 级别 L2
+规则表 version = RULES-2026.08          ← 权威定义见 SpecDoc §5.4a
+安全面=是            → R-SEC-01   → L3 · 门 +arch.review(含安全角色) +code.review
+数据模型=加列加表     → R-DM-02    → L2 · 门 +code.review
+影响范围=跨模块       → R-SCOPE-02 → L2 · 门 +arch.review
+在产影响=灰度可回滚   → R-PROD-02  → L2 · 门 ——
+回滚成本=需回滚数据   → R-RB-02    → L2 · 门 +delivery.verify
+外部契约变更=无       → 无命中
                      ────────────────────────────────
-级别 = max(L3,L2,L2,L2) = **L3**
-门集 = 并集 = {doc.author, doc.review, arch.review(安全角色), code.review,
-              test.case.review, test.exec, delivery.verify}
-rule_ids = [R-SEC-01, R-DM-02, R-SCOPE-02, R-RB-02] · 规则表 version = 见 §5.4
+级别 = max(L3, L2, L2, L2, L2) = **L3**
+门集 = 各规则门集并集 ∪ 基础必过模板（§5.4 规则 2：实现 → code.review → test.exec）
+     = {doc.author, doc.review, arch.review(安全角色), code.review,
+        test.case.review, test.exec, delivery.verify}
+rule_ids = [R-SEC-01, R-DM-02, R-SCOPE-02, R-PROD-02, R-RB-02]
 ```
+
+🔴 **本链现在可独立重跑**：每个 `rule_id` 与 `version` 在 **SpecDoc §5.4a** 有权威定义，
+任何人拿 §5.4a 的表 ＋ 上方七项属性，应得出**逐项相同**的结果。
+⚠️ 结构域 FLOW-01 此前判「规则 ID 是空中楼阁、worked example 不可复算」——**成立**：
+本席当时凭手感写了 ID，而规范里没有那些 ID。**一个不能被独立重跑的样例，不构成可重复判定的证据。**
 
 🔴 **可重复判定的判据在这里**：两人对**七项属性中的六项**一致；
 唯一不一致的 `预估节点数` 是**规模属性、不参与定级**，故**结论仍一致**。
@@ -710,7 +719,7 @@ rule_ids = [R-SEC-01, R-DM-02, R-SCOPE-02, R-RB-02] · 规则表 version = 见 �
 |---|---|---|
 | 帖子正文含「忽略以上指令」类内容 | 用户可写的帖子 | 🔴 **摘要 agent 的输入须结构化包裹**，正文只作 data 不作 instruction |
 | 附件文件名/元数据携带指令 | 上传面 | 文件名不进模型上下文（同 §22.5 #5 不回显判定器输入） |
-| 跨租户内容混入 | 聚合读 | 先 RLS 过滤后检索（§13.4）；聚合读本身是 §22.1c 的受限面 |
+| 跨租户内容混入 | 聚合读 | **先经受控仓储 API 按租户过滤、后检索**（§13.4 · §22.2c）；聚合读本身是 §22.1c 的受限面 |
 | 摘要结论被当成事实回写知识库 | 回写链 | 摘要入库须标 `derived`，**不得与实测事实同权**（§12.5 权威源） |
 
 ## A§19 外部锚设计合同（组 6 · 设计半）
