@@ -48,3 +48,7 @@ tools/sessionhelper/config
 dingwei-onboard/
 /workpulse
 .aider*
+
+# 判据二检测器的构建产物：闸自己 go build 到 mktemp -d，仓内这份从来没人用。
+# 215d066 误提交过一次，且它会随源码修复而失效——见该次提交说明。
+/handle-escape
