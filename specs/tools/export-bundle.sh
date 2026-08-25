@@ -22,10 +22,21 @@ DEF_EXCL=specs/tools/export-exclude.txt
 
 # 作用域：这三棵子树整棵进，加上具名的正文件。
 # 新增任何闸 / 工具 / 语料 / 基线，落在 ROOTS 里就自动进清单，不需要有人记得来改这里。
+#
+# 🔴 **ROOTS 为什么是这三棵 —— 丙域 kimi 2026-08-25 裁定，理由写在这里而不是留在消息里**：
+#   本包服务的是「规范 / 设计 / 界面契约 / 闸」的评审。
+#   **不扩 cmd/ 与 internal/**：实现代码的事实由架构设计 A§6.2 的测量命令与
+#   specs/evidence/collect.sh 承载（丙域已在真仓逐条复现），把实现代码收进包里
+#   只会把评审面稀释成代码仓。
+#   ⚠️ 何时该扩：若将来 conformance suite 本身成为评审对象，再扩 ROOTS **并同期在此注明理由**。
+#   ⇒ 这一条是把「人定边界」落成「声明式边界」：边界仍由人定，但**理由与脚本同在**，
+#     下一个想改它的人能看到当初为什么这么定，而不必去翻消息记录。
 ROOTS='docs/tools specs scripts'
-DOCS='docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md
+# DOCS 允许由环境覆盖 —— 仅为【可测性】,默认值不变。
+# 没有这个钩子,「具名件缺失须报错」这条就只能靠读代码相信,无法用反测证明。
+DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md
 docs/dingwei-prototype.html docs/task-table-collision-analysis.md docs/DELIVERY-STATUS.md
-docs/reference/not-adopted-pg-rls.md docs/SESSION-HANDOFF.md'
+docs/reference/not-adopted-pg-rls.md docs/SESSION-HANDOFF.md'}
 
 # 读排除清单 -> 每行「路径 理由」；校验存在性与理由非空
 excl_paths() { sed 's/#.*//' "$1" | awk 'NF>0 {print $1}'; }
@@ -95,6 +106,23 @@ selftest() {
     ok "排除确实生效（件数 $before → $after，该件已不在清单）"
   else bad "排除未生效（$before → $after）"; fi
 
+  # ⑥ DOCS 具名件缺失须报错，不得静默少导（丙域 kimi 观察 ①）
+  # ⚠️ 必须写成 if !，不能写成「命令换行后再判 $?」—— 本脚本 set -e，
+  #    一个【预期失败】的命令会直接终止整个反测,后面几项根本不跑,而结尾那句
+  #    「N 项全过」也不会打印。上一版我就这么写的,反测静悄悄少跑两项。
+  #    if 条件里的命令豁免于 set -e,这是唯一正确的写法。
+  if ! DOCS="docs/nosuch-file-for-selftest.md" sh "$0" HEAD "$TMP/out6" >/dev/null 2>&1; then
+    ok "拦住:具名正文件在锚上不存在(不静默少导)"
+  else
+    bad "具名件缺失被静默少导"
+  fi
+  # 反向:默认 DOCS 全部存在时必须正常导出,否则修法把正常路径堵死了。
+  if sh "$0" HEAD "$TMP/out7" >/dev/null 2>&1; then
+    ok "不误伤:默认 DOCS 齐全时正常导出"
+  else
+    bad "默认路径被堵死"
+  fi
+
   [ $fail -eq 0 ] && echo "--- 反测 $n 项全过" || echo "--- 反测未过"
   return $fail
 }
@@ -104,6 +132,21 @@ case "${1:-}" in --selftest) selftest; exit $? ;; esac
 R=$1; D=$2; EXCL=${3:-$DEF_EXCL}
 [ -f "$EXCL" ] || { echo "✗ 排除清单不存在：$EXCL —— 无清单则「全部」无从判定"; exit 1; }
 excl_check "$R" "$EXCL"
+
+# 🔴 DOCS 具名件的存在性校验（丙域 kimi 观察 ①）：
+#   ROOTS 是整棵导出，少一件会被反测①（未分类件恒 0）兜住；但 DOCS 是【具名清单】——
+#   某件若在该锚上不存在，git ls-tree 只会**静默少给一件**，MANIFEST 照样自称「完整评审件清单」。
+#   与 v1 那条「手写清单声称全部」同类，只是范围更小。⇒ 具名即须校验存在。
+_missing=''
+for f in $DOCS; do
+  git cat-file -e "$R:$f" 2>/dev/null || _missing="$_missing $f"
+done
+if [ -n "$_missing" ]; then
+  echo "✗ 具名正文件在锚 $R 上不存在：$_missing"
+  echo "  —— 具名清单少件必须报错，不得静默少导（否则 MANIFEST 会自称完整而实际缺件）。"
+  echo "  若确要导出该件尚未入仓的历史锚，请先从 DOCS 中显式移除并说明，不要靠「反正它导不出来」。"
+  exit 1
+fi
 mkdir -p "$D"
 LIST=$(build_list "$R" "$EXCL")
 N=$(printf '%s\n' "$LIST" | wc -l | tr -d ' ')
