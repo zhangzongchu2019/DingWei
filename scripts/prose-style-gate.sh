@@ -33,6 +33,8 @@
 #       域     = 甲 | 乙 | 丙 | 执笔
 #       严重度 = 阻断 | 非阻断
 #       状态   = 未决 | 采纳 | 驳回 | 挂账
+#
+# 【RV|甲|阻断|未决】`--final` 目前不能实现上文“任一标注不得消失”。它只检查【当前】三件中未决数、驳回理由和最终零标注；提交者若直接删除一条 RV 且不写沿革，脚本没有前一轮 RV ledger/稳定 ID 可比，仍会 rc=0。须为每条 RV 分配稳定 ID，并在独立 reviewer-owned 清单或基线 manifest 中记录；final 对拍“前轮全集 = 采纳 ∪ 驳回(理由) ∪ 挂账(owner+时点) = 沿革落账”，否则收官防丢只是文字纪律。
 set -u
 
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
