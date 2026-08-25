@@ -28,17 +28,23 @@
 
 ## 三、下一件技术工作：SP7a
 
-**收编仓储包外的裸 `sql.Open`**（判据：恒为 0；现状不达标，实数见 `specs/evidence/EVIDENCE.md`）。
+**把仓储包外的直接库访问收编进仓储包。**
+判据恒为 0；**口径与实数均以 `scripts/repo-boundary-gate.sh` 为单一来源**，本文件不复述数字与 API 清单
+（复述一份就多一套口径 —— 本轮已在 `collect.sh` 标签、快照包作用域、`specs/README` 索引上栽过三次）。
+
+> 🔴 **收编面由甲组【三条】判据共同定义，不是由 `sql.Open` 单一指标定义。**
+> 2026-08-25 本席曾用单指标去推整个收编面，得出「fanout 只有 spool.go、交接件过列」——**是错的**，
+> 差点把一份正确的表改错。用哪条判据看，收编面就不一样；报「与记载不符」前先问自己证据是否覆盖全部三条。
 
 | 序 | 对象 | 要点 |
 |---|---|---|
 | 1 | `internal/datad/pgstore.go` | PG 是跨租户数据主场，先收 |
-| 2 | `internal/fanout/{spool,inspool,admin}.go` | 出站含租户数据，泄漏面直接 |
+| 2 | `internal/fanout/{spool,inspool,admin}.go` | 出站含租户数据，泄漏面直接。**本行三名按【建表】与【裸 SQL】入列；其中仅 `spool.go` 持库句柄** —— `inspool.go` 与 `admin.go` 虽不持句柄，但各有建表点与裸 SQL，**三名均在收编面内**，勿据「谁持句柄」缩小它。<br>实数现取：`grep -c "CREATE TABLE" internal/fanout/*.go` 与 `grep -cE "\.(Exec\|Query\|QueryRow)" internal/fanout/*.go` |
 | 3 | `internal/mcs/board` | 🔴 **须待 conformance suite**（§4.5：无它之前不得以「重写」为由丢弃任一既有并发语义）|
 | 4 | `internal/store` | 已是仓储形态，补 `TenantCtx` 与迁移 runner |
 
 **验收判据两组**（架构设计 A§12）：
-- 甲组·收口：仓储包外 `sql.Open` 恒零 · 未被仓储包引用的表恒零 · 漏传 `TenantCtx` **编译失败**
+- 甲组·收口：仓储包外**直接库访问**恒零（口径见闸）· 未被仓储包引用的表恒零 · 漏传 `TenantCtx` **编译失败**
 - 乙组·隔离：跨租户读**四项同时**验（PEP 在资源解析前拒且 query spy=0 · 语义 deny 禁成功空集 · 存在/不存在不可区分 · 最小化拒绝审计）
   🔴 **①②须分开验**，否则漏掉「先查了再拒」
 
