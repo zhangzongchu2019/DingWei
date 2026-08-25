@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T03:06:51Z
-分支头：`e4abe0a27460711d1e96fa88630c70fee77e11a0`
+生成时刻：2026-08-25T03:10:22Z
+分支头：`3946553947e3344f397199a04365ce384541164e`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -100,17 +100,17 @@ $ ls -d internal/view 2>&1 || true
 $ scripts/repo-boundary-gate.sh
   ⑦ 仓储包边界（SP7a 甲组·收口 / §22.2c #1 两半）
     仓储包允许清单（本次生效的全部条目）：
-      （空：仓储包尚未建立，故「仓储包外」＝全仓）
-    判据一·仓储包外建库句柄：6 处（基线 6，终值 0）
-      internal/repo/pool.go:25:	db, err := sql.Open("pgx", dsn)
-      internal/repo/pool.go:158:	db, err := sql.Open("sqlite", dsn)
+      - internal/repo
+    判据一·仓储包外建库句柄：4 处（基线 4，终值 0）
       internal/store/sqlite.go:51:	db, err := sql.Open("sqlite", dsn)
       internal/mcs/board/board.go:62:	db, err := sql.Open("sqlite", path)
       internal/datad/assignment_pg_integration_test.go:58:	w.appDB, err = sql.Open("pgx", dsn)
       internal/datad/assignment_pg_integration_test.go:64:		w.setupDB, err = sql.Open("pgx", sup)
+    债·尚未租户化的调用点：59 处（基线 59，终值 0，随 SP7b 归零）
+    债·显式 SystemCtx 调用点：12 处（基线 12；每处都是评审面，不许悄悄增长）
     判据二·裸库句柄逃出包外：1 处（基线 1，终值 0；允许清单对本条不豁免）
       internal/mcs/board/board.go:84:func-returns-handle DB
-    ⑦ 持平（建库 6 · 逃逸 1）✓ 未回升；终值均为 0，尚未达标
+    ⑦ 持平（建库 4 · 逃逸 1）✓ 未回升；终值均为 0，尚未达标
 ```
 
 ### 四处存储的建表点（36 / 11 / 5 / 9）
