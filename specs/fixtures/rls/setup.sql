@@ -8,7 +8,7 @@
 --   3. 🔴 **三个 role 一律 NOLOGIN、无口令** —— fixture 不得在仓内留任何凭据；
 --      它们只用于 `SET ROLE` 切换权限面，不用于真实连接（乙域 RV-乙13）。
 --
--- ⚠️ 首版只建了 dw_owner / dw_app 却在头注自称「三 role 分离」，且用 LOGIN PASSWORD
+-- ⚠️ 首版只建了 dw_owner / dw_app 却在头注自称「三 role 分离」，且用可登录 role ＋明文口令
 --   写了明文口令 —— **件的自述与件的内容不符**，由乙域 RV-乙13 抓出。
 
 DROP TABLE IF EXISTS demo_item;

@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `6ac6f8cb59c4f875b5383d73f517b595bf2bb97e` · 分支 `design/addendum-decisions`
+生成自 commit `cf348680094a6594fbec79a744e5b67d25f7a8a1` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.40** | `6ac6f8cb59c4f875b5383d73f517b595bf2bb97e` | 3473 / 242843 | `c6cfb269aa7a3222db2a1a9ca4437178f06cef8f2bbd35aedf513e53b4baf391` |
+| `dingwei-platform-specdoc.md` | **v3.40** | `cf348680094a6594fbec79a744e5b67d25f7a8a1` | 3473 / 242843 | `c6cfb269aa7a3222db2a1a9ca4437178f06cef8f2bbd35aedf513e53b4baf391` |
 | `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
 | `dingwei-architecture-design.md` | **v0.33** | `61ad4390902debbc268aee03d1172e1a93108937` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+cf34868 RV-乙14：乙域比甲域多抓到两处漏网冲突（v3.40）
 6ac6f8c merge: 取回乙域 RV-乙14（台账两行均保留，非二选一）
 fbf67ef 甲域 delta ②：跨企业 capability 现行冲突 7 处清零（v3.39）
 d678483 RV-乙13：fixture 三 role 补齐、去明文口令（v3.38）
@@ -34,5 +35,4 @@ f978f02 Merge commit 'bf1a48a2' into design/addendum-decisions
 e9df5dd ㉑ 重写：从「按行计数」改为「AST 按对象分类计数」（v3.37）
 c077f1a C.3a.1c 特权面归平台 ops，不下放企业（业主裁定，v3.36）
 e5e4ba1 review: flag cross-enterprise exception conflict
-57a804a 丙域 delta ③④：跨租户 51 处逐处重判 + §22.1c 存在前提修正（v3.35）
 ```
