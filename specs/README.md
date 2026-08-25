@@ -50,6 +50,7 @@
 | `specs/fixtures/rls/t2-no-context-deny.sql` | 负测②：缺 `dw.principal` 时读**0 行**而非全部、写被拒（fail-closed）|
 | `specs/fixtures/rls/t3-no-residue.sql` | 负测③：事务提交后同一物理连接不得残留 principal（`SET LOCAL` 而非 `SET` 的唯一理由）|
 | `specs/fixtures/rls/t4-ddl-rights.sql` | 负测⑤/正测：DDL 权归属须实证 —— 🔴 `GRANT ALL ON <表>` **只给表级 DML**，`ALTER TABLE`/建 policy **要求属主身份**；dw_migrate 经**属主 role 成员资格**取得 DDL，dw_app 与「未切属主的 dw_migrate」均须被拒（乙域 RV-乙15）|
+| `specs/fixtures/rls/logs/pg17-run-20260825T151003Z.log` | **实跑原始日志**（⚠️ 仓内 `.gitignore` 含 `logs/` 与 `*.log`，本件须 `git add -f`；**证据差点被静默忽略**）（PG 17.11，ops 代跑，逐字入仓）—— 「已实跑」这一事实的载体；EXPECTED.md 的实测对照表据此写 |
 | `specs/fixtures/rls/RUN.sh` | 一键代跑（交 ops 执行）—— 🔴 立件原因：RV-乙15 的两问只能由**有 PG 的一方**跑出，执笔方与乙域门方均无 PG；本件把门槛压到一条命令 |
 | `specs/fixtures/rls/EXPECTED.md` | 上述三条的**期望**输出。🔴 **尚未在真实 PG 上跑过**（本机无 psql、docker daemon 不可达）—— 期望≠实测，不得据此宣称已验收 |
 | `specs/tools/rv-state-check.py` | RV 状态/时点一致性单次解析 —— 替代原逐行 shell 循环（47s → 0.49s）。🔴 立件原因：原实现每行起四个进程，七千行两万余次 fork，门方 `timeout 60` 跑不完。⚠️ 自带**时限反测**（合成 2 万行断言 <5s）：selftest 夹具只有几行，覆盖不到**输入规模**这一维 |

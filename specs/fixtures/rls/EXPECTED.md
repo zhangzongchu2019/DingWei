@@ -1,29 +1,39 @@
 # 人层 RLS 三条负测的期望输出（乙域 RV-乙12）
 
-✅ **本目录的 fixture 已在真实 PG16/17 上实跑**（2026-08-25，业主派工代跑）。
-🔴 **首版失败三处，全部是执笔方的错**（详见 setup.sql 头注）：
-  ① PG15+ public schema 不再默认授 CREATE；② GRANT 成员资格写在 SET ROLE 之后缺 ADMIN OPTION；
-  ③ dw_migrate 未设 NOINHERIT ⇒ 自动继承 dw_owner，**t4 第三条负测根本不成立**。
-兼容版跑 t4/t1/t2/t3 **全符合预期**，RLS 语义本身验证通过。
-⚠️ **执笔方未持有原始日志**：`/data/dw-rls-fixture/logs/*.log` 在本机不可达，
-  故本节据**派工转述**记录，**非执笔方自取**。原始日志入仓前，
-  「已实跑」这一事实的载体仍在代跑方手上。
+✅ **已在真实 PostgreSQL 17.11 上实跑**（2026-08-25T15:10:03Z，代跑方 ops）
+原始日志入仓：`specs/fixtures/rls/logs/pg17-run-20260825T151003Z.log`（2709 字节，逐字保留）。
 
-⚠️ 以下为历史说明（首版时的阻塞，留档）：
-· 执笔方环境：无 `psql`／`postgres` 二进制，`docker` 守护进程不可达
-  （`permission denied … /var/run/docker.sock`）；
-· 🔴 **乙域门方环境同样没有**：`command -v psql/postgres/pg_ctl/pg_isready` 均无输出、
-  `docker` rc=1 —— 其自报的四条 PG 命令**也未执行**。
-⇒ **代跑须落到有 PG 环境的一方（ops）**，不是「门方自然会跑」。
-🔴 **故本节只是【期望】，不是【实测结果】**；在有人真跑过并贴出输出之前，
-**不得据此声称 C.3a.1a 已验收**。这与本仓「ops 无主机权限」属同一类阻塞。
+## 期望 vs 实得（逐条对照，取自上述日志）
 
-**执行前置（乙域 RV-乙13）**：
-1. 🔴 **只在隔离的测试库里跑**（`createdb dw_rls_fixture`），**不得对任何真实环境执行** ——
-   `setup.sql` 会 DROP ROLE / DROP TABLE。
-2. 执行账号须有 **CREATEROLE** 权限，并能 `SET ROLE`（脚本内已 `GRANT … TO CURRENT_USER`）。
-3. 🔴 三个 role 一律 **NOLOGIN、无口令** —— **fixture 不得在仓内留任何凭据**；
-   它们只用于 `SET ROLE` 切换权限面，不用于真实连接。
+| 项 | 期望 | 实得 | |
+|---|---|---|---|
+| setup 建面自检 | 3 行，`rolcanlogin`/`rolbypassrls` 均 `f` | `dw_app/dw_migrate/dw_owner` 三行，两列均 `f` | ✅ |
+| t4 正测 | dw_migrate 切属主后 ALTER **成功** | `ALTER TABLE` ×2 | ✅ |
+| t4 拒测 dw_app ALTER | `must be owner of table demo_item` | 同左（:17）| ✅ |
+| t4 拒测 dw_app CREATE POLICY | 同上 | 同左（:20）| ✅ |
+| t4 拒测 **未切属主的 dw_migrate** | 同上 | 同左（:27）| ✅ 🔴 **靠 NOINHERIT 才成立** |
+| t1 以他人身份 INSERT | RLS 违规 | `new row violates row-level security policy` | ✅ |
+| t1 以他人身份 UPDATE | 拒或 0 行 | 同上（ERROR）| ✅ |
+| t2 无上下文 SELECT | **0 行**而非全部 | `must_be_zero = 0` | ✅ |
+| t2 无上下文 INSERT | RLS 违规 | 同左 | ✅ |
+| t3 `alice_rows` | 1 | 1 | ✅ |
+| t3 `must_be_unset` | **空**（PG17 返空串非 NULL）| 空 | ✅ |
+| t3 `must_be_zero` | 0 ⇐ **判「无残留」以此为准** | 0 | ✅ |
+| t3 负测④ 属主可自解除 | `owner_sees_before=0` → ALTER 成功 → `after=2` | 0 → `ALTER TABLE` → 2 | ✅ |
+
+🔴 **本次实跑【未覆盖】的部分，须写明**：
+1. **负测⑥（应用面不得取得属主/迁移 role）未跑** ——
+   日志 `fixture_sha=d5a8cfe`，而负测⑥ 加在其后的 **5c103a0**。
+   ⇒ 「t1/t2/t3/t4 全符合预期」这句**只对 d5a8cfe 那版 t4 成立**，不含负测⑥。
+   ⚠️ 不得据此宣称 RV-乙16 的负测已验。
+2. 代跑用的是**兼容版建面** `setup.pg15plus-noinherit.sql`（日志 note 自述），
+   该文件**不在本仓**；本仓 `setup.sql` 已把三处修正**并入正文**。
+   ⇒ 下次复跑请直接用 `specs/fixtures/rls/setup.sql`，并核对其输出与本表一致。
+3. 仅在 **PG 17.11** 上跑过；PG16 未见日志（派工称 16/17，实测日志只有 17）。
+
+⇒ **结论（按证据说，不外推）**：RLS 语义面（写入越权 · 无上下文 fail-closed ·
+  事务后无残留 · DDL 权归属 · 属主可自解除）**已在 PG17 上验证**；
+  **负测⑥、PG16、以及本仓 setup.sql 本身的实跑，尚未取得证据**。
 
 跑法（任一 PG ≥ 13）：
 ```

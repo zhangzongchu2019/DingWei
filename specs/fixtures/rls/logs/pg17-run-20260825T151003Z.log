@@ -1,0 +1,142 @@
+host=VM-0-4-ubuntu
+container=dw-rls-postgres17
+image=postgres:17-alpine
+postgres_version=17.11
+fixture_branch=tencent/design/addendum-decisions
+fixture_sha=d5a8cfe3033f1a052e7e2d8504ca112c71cfdaa3
+setup_file=specs/fixtures/rls/setup.pg15plus-noinherit.sql
+note=Compatibility setup only; t1/t2/t3/t4 scripts are original fixture files.
+
+===== createdb dw_rls_fixture =====
+
+===== psql -d dw_rls_fixture -f specs/fixtures/rls/setup.pg15plus-noinherit.sql =====
+psql:/fixtures/setup.pg15plus-noinherit.sql:14: NOTICE:  table "demo_item" does not exist, skipping
+DROP TABLE
+DROP ROLE
+DROP ROLE
+DROP ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+GRANT ROLE
+GRANT
+GRANT ROLE
+SET
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+GRANT
+GRANT
+GRANT
+RESET
+SET
+BEGIN
+SET
+INSERT 0 1
+COMMIT
+BEGIN
+SET
+INSERT 0 1
+COMMIT
+RESET
+  rolname   | rolcanlogin | rolbypassrls
+------------+-------------+--------------
+ dw_app     | f           | f
+ dw_migrate | f           | f
+ dw_owner   | f           | f
+(3 rows)
+
+===== done setup.pg15plus-noinherit.sql =====
+
+===== psql -d dw_rls_fixture -f specs/fixtures/rls/t4-ddl-rights.sql =====
+SET
+BEGIN
+SET
+ALTER TABLE
+ALTER TABLE
+ROLLBACK
+RESET
+SET
+BEGIN
+psql:/fixtures/t4-ddl-rights.sql:17: ERROR:  must be owner of table demo_item
+ROLLBACK
+BEGIN
+psql:/fixtures/t4-ddl-rights.sql:20: ERROR:  must be owner of table demo_item
+ROLLBACK
+RESET
+SET
+BEGIN
+psql:/fixtures/t4-ddl-rights.sql:27: ERROR:  must be owner of table demo_item
+ROLLBACK
+RESET
+===== done t4-ddl-rights.sql =====
+
+===== psql -d dw_rls_fixture -f specs/fixtures/rls/t1-write-as-other.sql =====
+SET
+BEGIN
+SET
+psql:/fixtures/t1-write-as-other.sql:7: ERROR:  new row violates row-level security policy for table "demo_item"
+ROLLBACK
+BEGIN
+SET
+psql:/fixtures/t1-write-as-other.sql:12: ERROR:  new row violates row-level security policy for table "demo_item"
+ROLLBACK
+RESET
+===== done t1-write-as-other.sql =====
+
+===== psql -d dw_rls_fixture -f specs/fixtures/rls/t2-no-context-deny.sql =====
+SET
+BEGIN
+ must_be_zero
+--------------
+            0
+(1 row)
+
+psql:/fixtures/t2-no-context-deny.sql:6: ERROR:  new row violates row-level security policy for table "demo_item"
+ROLLBACK
+RESET
+===== done t2-no-context-deny.sql =====
+
+===== psql -d dw_rls_fixture -f specs/fixtures/rls/t3-no-residue.sql =====
+SET
+BEGIN
+SET
+ alice_rows
+------------
+          1
+(1 row)
+
+COMMIT
+ must_be_unset
+---------------
+
+(1 row)
+
+BEGIN
+ must_be_zero
+--------------
+            0
+(1 row)
+
+ROLLBACK
+RESET
+SET
+BEGIN
+ owner_sees_before
+-------------------
+                 0
+(1 row)
+
+ALTER TABLE
+ owner_sees_after
+------------------
+                2
+(1 row)
+
+ROLLBACK
+RESET
+===== done t3-no-residue.sql =====

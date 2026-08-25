@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T15:27:40Z
-分支头：`3c7ef59d599e48a2eb9f67cf7eaed14c0b3a941d`
+生成时刻：2026-08-25T15:39:08Z
+分支头：`0cc20ea006be190095f421b6029617f2e1d4c779`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,10 +10,10 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED c4e626205c070bab138d8efa907bec2bc0f9d62c113532d82b28d2b259dd913f  docs/dingwei-platform-specdoc.md
+REVIEWED f1665ba7653b657eddbd692351051fc2a9ffd3de200cbfdc32f987dad58b53bd  docs/dingwei-platform-specdoc.md
 REVIEWED ccda038dd0980dfeab8ad5c7801afc17d8fef6ab08217e19cac7b4b674a26b05  docs/dingwei-architecture-design.md
 REVIEWED 6c1f00d9c94f3f0349c79aef94cc346c306b4ed842575519ec938f53c1c231b7  docs/dingwei-prototype.html
-REVIEWED ad35891882efefe387d5462fd51c71ca97fc67fe385a4f29f8b85fcf815c96e0  docs/DELIVERY-STATUS.md
+REVIEWED 27db7ba60f0d99d45c43c9f6691e38756ee8583f89c18750c87c2dc0d26334a5  docs/DELIVERY-STATUS.md
 REVIEWED a1fe9843b31755f89f241d80a39b57a15e72f3384c5af0219e284ca1ae9135eb  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -49,7 +49,7 @@ REVIEWED 16e5ba25e2b662a97269723d229d138cd7f0e2ebc7bd5177f9575eb2470fdbae  specs
 REVIEWED fecc8c2f2a3e8ddfd515d492cac5c2d2560f88cc3729c53fad31c0f2a46665b9  specs/gates/disputed.txt
 REVIEWED 377197b6f96de93701b7200290f574ab485015bfcd6cef1bb98e1432ec830461  specs/gates/legacy-name-baseline.txt
 REVIEWED 861f36f0dfeda164e4047bfd75ea78e5977d3ad352c8e1c5cafff6a790945530  specs/gates/repo-packages.txt
-REVIEWED 0918c8a09bad917515cf15f7ae3d1aca88891b975990188db1879668209636ac  specs/gates/reviewer-repro.txt
+REVIEWED 54e81956fd8a4d925820dc63988a22bf3692f12f5cd183cc584dd0ff61e80521  specs/gates/reviewer-repro.txt
 REVIEWED 706c97c396a087fcdedd8f4a85d12403426ebd8fdce31f1b7f952012f2260d40  specs/gates/rv-ledger.txt
 REVIEWED e7a91c5e523a367419df93ea42bb570bbb33a08479ff8e5ec4ff3d01fa7e2789  specs/gates/status-stale-exceptions.txt
 REVIEWED 77103d4b6275652f23eaaea5f075e159073432eee5c2253f0cf42ea8592cc011  specs/gates/superseded-claims.txt
@@ -120,7 +120,7 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 115 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.47 · 状态文件 v3.47 ✓
+    SpecDoc: 件内 v3.48 · 状态文件 v3.48 ✓
     架构设计: 件内 v0.34 · 状态文件 v0.34 ✓
     原型: 件内 v1.38 · 状态文件 v1.38 ✓
   ④b 正文是否出现【他件】的旧版本号
