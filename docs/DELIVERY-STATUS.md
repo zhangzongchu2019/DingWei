@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `3bcbaf16a43dfe772bcd55430c08eb0bb8689915` · 分支 `HEAD`
+生成自 commit `d0322c6663772f0098802a050a8b28cc08d053b5` · 分支 `HEAD`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -22,11 +22,12 @@
 |---|---|---|---|---|
 | `dingwei-platform-specdoc.md` | **v3.23** | `3bcbaf16a43dfe772bcd55430c08eb0bb8689915` | 3091 / 211591 | `8d28b62b260595a3330a224fea13140ee0491b33f8e246e19dd59a2a10b3f016` |
 | `dingwei-prototype.html` | **v1.19** | `e4abe0a27460711d1e96fa88630c70fee77e11a0` | 2849 / 254727 | `2cdcd14be84b31758f8834faf54fa4445f6b21e6868fbd61ce3a109657eb1d16` |
-| `dingwei-architecture-design.md` | **v0.20** | `3946553947e3344f397199a04365ce384541164e` | 803 / 58059 | `e75c341c70fb6048f21629e15c003b79f5fd8ab31b5f07a34fb4933cba011371` |
+| `dingwei-architecture-design.md` | **v0.20** | `d0322c6663772f0098802a050a8b28cc08d053b5` | 803 / 58170 | `cb128a9ab7a68d9e9083388cf7b2b4ca6ea78afe5745e2c8ffe6639ca79cba2c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+d0322c6 docs: arch A§0.0 语义依赖点全量同步门已形成现状——sol 复核 4949e3b ①的剩余 4 处+grep 补抓第 5 处（丙域 kimi，前锚 3bcbaf1）
 3bcbaf1 docs: SpecDoc 评审状态机械转入 PASS——§22.2c 同源 delta 三域新判齐（coordinator 归口执行，前锚 3946553）
 0fb1dcd docs: 重生成证据包(甲域 CR 增补第 ⑥ 项;前五项已由前序锚修毕,附实证分类)(前锚 3946553)
 3946553 docs+gate: 按甲域 sol 复核 4949e3b 三项整改（丙域 kimi 出稿，与 126bf85 第三轮组分开，前锚 e4abe0a）
@@ -34,5 +35,4 @@
 e4abe0a docs: 按甲域 sol 二轮全量 findings 整改 ②③④（丙域 kimi，前锚 5db18f2）
 e82e083 gate: 按乙域 terra 裁定,把 SP7b 的隔离依赖做成【提前布防】的验收闸 ⑩(前锚 4949e3b)
 5db18f2 docs: 原型页顶可见锚同步 v1.18（§22.2c 同步 v3.23）——甲域三轮前最后一处（丙域 kimi，前锚 126bf85）
-4949e3b fix: 按甲域 sol 定性整改状态两存 + 立闸 ⑨ 状态一致性(前锚 126bf85)
 ```
