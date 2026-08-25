@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `09848f15e4ef0d9b0b5dcf850080bce079424407` · 分支 `HEAD`
+生成自 commit `e1b99463ce64e7c121a449287c6bed71878c03b6` · 分支 `HEAD`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.22** | `dcc7c0413551a37281c3d1e7a5c07212185ff9c3` | 3091 / 211288 | `ed9a5df88228e0f59a94025972c7004496a2a8b7a2356247687efab121fa1771` |
-| `dingwei-prototype.html` | **v1.17** | `05ccf171d3d45ebd25f24495af32563eb79b61b5` | 2849 / 254505 | `70f68991ca010b8c2ffa751c65fad37b7ecc47e9246e7200a49eec37761ac57f` |
-| `dingwei-architecture-design.md` | **v0.16** | `dcc7c0413551a37281c3d1e7a5c07212185ff9c3` | 799 / 56762 | `206eefed2ba02db71f232d01987f37d734ee50a89fd3b1139a306a785a6ca003` |
+| `dingwei-platform-specdoc.md` | **v3.23** | `e1b99463ce64e7c121a449287c6bed71878c03b6` | 3091 / 211488 | `d259c21a403621e91418ed88d90ff2fc911885f37e5223f1cb2a5604d6a0056d` |
+| `dingwei-prototype.html` | **v1.18** | `e1b99463ce64e7c121a449287c6bed71878c03b6` | 2849 / 254625 | `cdc18e84367467074527dacc7ae62db4379b44b518e517776dc4330a51a75a35` |
+| `dingwei-architecture-design.md` | **v0.17** | `e1b99463ce64e7c121a449287c6bed71878c03b6` | 799 / 56833 | `f138e15d6f5c6466605927384a176b9a19d01bd5735a006029e5fd3e85cf4f25` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+e1b9946 docs: §22.2c 文档与闸同源——机器旁证按效果写、唯一判定处 repo-boundary-gate（丙域 kimi 出稿，归口定）
+7ca8335 board: 建可验重写的 conformance suite(§4.5 五族),并用变异测试证明它有牙(前锚 09848f1)
 09848f1 fix: 按丙域 kimi 复核落两条——DOCS 具名件存在性校验 + ROOTS 边界理由入头注(前锚 a6ba5a3)
 a6ba5a3 fix: 状态源在干净检出上跑一次闸就变脏——闸 ⑤ 改为只比内容列(前锚 215d066)
 215d066 gate: 判据二换 Go AST,堵住甲域 CR v2 #5(换行签名绕过)(前锚 c07bb2c)
 c07bb2c SP7a: 收编 internal/fanout 三文件进仓储包(前锚 835b92b)
 835b92b docs: SP7a 设计短件——仓储包形状与 TenantCtx 落法(前锚 b7036d6)
 b7036d6 docs: 交接件 SP7a 收编面写清作用域(coordinator 撤回第 3 条指令后的定论,前锚 01640ec)
-01640ec gate: 按甲域 sol CR 修四条绕过 + 收窄两处过度宣称(前锚 552e92e)
-552e92e docs: 实现阶段总览交底(SP0-SP8 · 依赖图 · 并行判断)入仓(前锚 722ac82)
 ```

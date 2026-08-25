@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.17 · 依据 SpecDoc v3.14</title>
+<title>DingWei 平台原型 v1.18 · 依据 SpecDoc v3.14（§22.2c 同步 v3.23）</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -2475,7 +2475,7 @@ body.uionly #uihint{display:block}
   <h3>⑤ 残余绕过面 · 代码评审判据 <span class="ref">§22.2c</span> <span style="font-weight:400;color:var(--dim);font-size:12px">业主定评审为主要把关手段 ⇒ 评审须有判据</span></h3>
   <table><thead><tr><th style="width:32px">#</th><th>评审须逐项确认</th><th style="width:230px">近乎零成本的机器旁证</th><th style="width:76px">状态</th></tr></thead><tbody>
   <tr><td>1</td><td data-edit>本次改动是否新增了<b>绕过仓储包的库访问</b></td>
-    <td class="mono">建库调用集＋句柄逃逸<b>恒为 0</b>（唯一判定处 <code>repo-boundary-gate</code>）</td><td class="cell-wait">待建</td></tr>
+    <td class="mono">建库调用集＋句柄逃逸<b>恒为 0</b>（唯一执行处 <code>repo-boundary-gate</code>；覆盖以其 detector 声明为准）</td><td><b>已建</b> · 棘轮运行中 · 当前未达标（实数以闸输出为准）</td></tr>
   <tr><td>2</td><td data-edit>新增查询是否经 <code>TenantCtx</code></td>
     <td class="mono">由类型设计保证，<b>编译期即拦</b></td><td class="cell-wait">待建</td></tr>
   <tr><td>3</td><td data-edit>新增表是否已接入仓储层</td>
