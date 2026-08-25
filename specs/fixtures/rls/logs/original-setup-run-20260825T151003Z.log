@@ -1,0 +1,58 @@
+host=VM-0-4-ubuntu
+container=dw-rls-postgres17
+image=postgres:17-alpine
+postgres_version=17.11
+fixture_branch=tencent/design/addendum-decisions
+fixture_sha=d5a8cfe3033f1a052e7e2d8504ca112c71cfdaa3
+note=Original setup.sql run, expected to expose PG15+ setup incompatibilities.
+
+===== createdb dw_rls_fixture =====
+===== psql -d dw_rls_fixture -f specs/fixtures/rls/setup.sql =====
+DROP TABLE
+psql:/fixtures/setup.sql:14: NOTICE:  table "demo_item" does not exist, skipping
+psql:/fixtures/setup.sql:15: NOTICE:  role "dw_app" does not exist, skipping
+DROP ROLE
+psql:/fixtures/setup.sql:16: NOTICE:  role "dw_migrate" does not exist, skipping
+DROP ROLE
+psql:/fixtures/setup.sql:17: NOTICE:  role "dw_owner" does not exist, skipping
+DROP ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+GRANT ROLE
+SET
+psql:/fixtures/setup.sql:36: ERROR:  permission denied for schema public
+LINE 1: CREATE TABLE demo_item (
+                     ^
+psql:/fixtures/setup.sql:37: ERROR:  relation "demo_item" does not exist
+psql:/fixtures/setup.sql:38: ERROR:  relation "demo_item" does not exist
+psql:/fixtures/setup.sql:43: ERROR:  relation "demo_item" does not exist
+psql:/fixtures/setup.sql:45: ERROR:  relation "demo_item" does not exist
+psql:/fixtures/setup.sql:48: ERROR:  relation "demo_item" does not exist
+psql:/fixtures/setup.sql:50: ERROR:  relation "demo_item" does not exist
+psql:/fixtures/setup.sql:58: ERROR:  relation "demo_item" does not exist
+psql:/fixtures/setup.sql:59: ERROR:  relation "demo_item_id_seq" does not exist
+psql:/fixtures/setup.sql:60: ERROR:  relation "demo_item" does not exist
+psql:/fixtures/setup.sql:61: ERROR:  permission denied to grant role "dw_owner"
+DETAIL:  Only roles with the ADMIN option on role "dw_owner" may grant this role.
+RESET
+SET
+BEGIN
+SET
+psql:/fixtures/setup.sql:67: ERROR:  relation "demo_item" does not exist
+LINE 1: INSERT INTO demo_item(owner_principal, body) VALUES ('alice'...
+                    ^
+ROLLBACK
+BEGIN
+SET
+psql:/fixtures/setup.sql:70: ERROR:  relation "demo_item" does not exist
+LINE 1: INSERT INTO demo_item(owner_principal, body) VALUES ('bob','...
+                    ^
+ROLLBACK
+RESET
+  rolname   | rolcanlogin | rolbypassrls
+------------+-------------+--------------
+ dw_app     | f           | f
+ dw_migrate | f           | f
+ dw_owner   | f           | f
+(3 rows)

@@ -72,6 +72,31 @@ BEGIN; SET LOCAL dw.principal = 'bob';
 COMMIT;
 RESET ROLE;
 
--- 建面自检：三 role 均须存在、NOLOGIN、NOBYPASSRLS（期望 3 行且三列均为 f/f）
+-- 建面自检
+-- 🔴 **首版自检只查 role 属性，于是建面【全线失败】时它仍打印 3 行 f/f，看起来像通过。**
+--   实证：`logs/original-setup-run-20260825T151003Z.log` —— 该次运行报 13 个 ERROR
+--   （CREATE TABLE 被拒 ⇒ 后续 relation 全不存在 ⇒ policy/GRANT/INSERT 连锁失败），
+--   而末尾自检照样输出「三 role 齐、两列均 f」。
+--   ⚠️ **自检只覆盖了它碰巧看得见的那一部分** —— 与本仓「闸报了通过其实没测」同族，
+--     这次出现在 fixture 自己身上。
+-- ⇒ 自检须覆盖**建面的产物**，不只是 role 属性：表在否 · RLS 启用且强制 · 四条 policy 齐 · 预置两行在否。
 SELECT rolname, rolcanlogin, rolbypassrls
   FROM pg_roles WHERE rolname IN ('dw_owner','dw_migrate','dw_app') ORDER BY rolname;
+-- 期望：3 行，rolcanlogin / rolbypassrls 均为 f
+
+SELECT to_regclass('public.demo_item') IS NOT NULL AS table_exists;
+-- 期望：t（首版失败时此处为 f —— 这一行就是「自检没覆盖产物」的补丁）
+
+SELECT relrowsecurity, relforcerowsecurity
+  FROM pg_class WHERE relname = 'demo_item';
+-- 期望：1 行，两列均 t（ENABLE ＋ FORCE，C.3a.1a #1/#2）
+
+SELECT count(*) AS policy_count FROM pg_policies WHERE tablename = 'demo_item';
+-- 期望：4（p_sel / p_ins / p_upd / p_del —— 逐命令声明，C.3a.1a #4b）
+
+SELECT count(*) AS seeded_rows FROM demo_item;
+-- 期望：2（alice / bob 各一行；🔴 属主在 FORCE RLS 下无上下文本应看不到，
+--        故本行须在 `SET LOCAL dw.principal` 缺省时返回 0 —— 见下）
+BEGIN; SET LOCAL dw.principal = 'alice';
+  SELECT count(*) AS alice_seeded FROM demo_item;   -- 期望：1
+COMMIT;
