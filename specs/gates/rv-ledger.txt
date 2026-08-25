@@ -17,7 +17,7 @@ RV-乙14	乙	阻断	未决	采纳	dingwei-platform-specdoc.md	跨人／跨企业
 RV-乙12	乙	阻断	未决	采纳	dingwei-platform-specdoc.md	本合同尚未把人层 RLS 的写授权与连接池执行边界写成不可误解的硬条件：#4 仅列 `USING (...)`，未要求每
 RV-乙13	乙	阻断	未决	采纳	dingwei-platform-specdoc.md	`specs/fixtures/rls/setup.sql` 的头注称验证“三个 role 分离”，实际只创建 `dw_
 RV-乙15	乙	阻断	未决	采纳	dingwei-platform-specdoc.md	fixture 对 `dw_migrate` 的“已授 DDL”自述不成立：`GRANT ALL ON demo_ite
-RV-乙16	乙	阻断	未决	未处置	dingwei-platform-specdoc.md	fixture 称 dw_owner 由企业 ops 持有，与 C.3a.1c 禁止向企业侧下放 dw_owner/superuser 相反；须限定平台 ops 迁移窗口并负测企业侧不可 SET ROLE。
+RV-乙16	乙	阻断	未决	采纳	dingwei-platform-specdoc.md	RV-乙15 的迁移 DDL 测试虽已区分属主成员资格与表级 `GRANT ALL`，却把 `setup.sql` 的
 RV-丙15	丙	非阻断	未决	采纳	dingwei-revision-history.md	「二、SpecDoc」「三、原型」占位节与下方同名实节仍重复未去重，且占位节自称的指纹数（90/59 处）已是过期值——
 RV-甲01	甲	阻断	挂账	采纳	dingwei-revision-history.md	体例重生成仍未闭合。`prose-style-gate` 只清除了带特定指纹的句子，正文仍有大量过程叙述，例如本件 §0
 RV-丙11	丙	阻断	未决	采纳	dingwei-revision-history.md	〔体例分离二轮·门方先标，落实挂账 #6〕本件正文仍存过程叙述（体例「一律不入正文」的对象），按段开列： ⟹ **【采

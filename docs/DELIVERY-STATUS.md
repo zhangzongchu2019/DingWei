@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `2d6d9b843141c4c6dcad75adf038918d59c6d29f` · 分支 `design/addendum-decisions`
+生成自 commit `ef9bda8c3494a641ed7a96927781c6449811a040` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.45** | `d09c2f31b5e83fd4a18713cc446b45dde8ca88a4<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 3507 / 247630 | `761e793d2b304c524b9a789ddc90c26b7c7f106202b1adc22b2092f142403efb` |
+| `dingwei-platform-specdoc.md` | **v3.46** | `ef9bda8c3494a641ed7a96927781c6449811a040` | 3509 / 249618 | `920ea448cc19948881f1399df4e60ee6062867da54faaffacd58f7182eb2f2c8` |
 | `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
 | `dingwei-architecture-design.md` | **v0.33** | `61ad4390902debbc268aee03d1172e1a93108937` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+ef9bda8 Merge commit '75ee1dc0' into design/addendum-decisions
+d5a8cfe E.1 #150–152 的裁定依据入正文（v3.45）—— 别让它只活在消息里
 2d6d9b8 RLS fixture 一键代跑件 —— RV-乙15 的两问只能由有 PG 的一方回答
 ae2582d REVIEW-STATE 写明统计口径 —— 「未决 0」是在不完整总体上算的
 dd9e934 REVIEW-STATE 撤下内嵌 git log —— 同一个坑，两个提交之后我又踩了一次
 09c0c29 立闸 ㉓ 门方复现台账 —— 判据改由门方给
 917e5f4 REVIEW-STATE 补「最近处置锚序」；并撤下一列我自己造的错判据
-d09c2f3 RV-乙15：DDL 权的归属判错了（v3.44）
-c23c06d Merge commit 'd35b68cb' into design/addendum-decisions
-b4c9fe7 REVIEW-STATE 不再内嵌 commit 锚 —— 产物写不进自己的哈希
+75ee1dc review: flag fixture owner locus conflict
 ```

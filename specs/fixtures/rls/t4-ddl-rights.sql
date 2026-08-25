@@ -27,3 +27,18 @@ BEGIN;
   ALTER TABLE demo_item ADD COLUMN IF NOT EXISTS bad_col2 text;    -- 期望 ERROR
 ROLLBACK;
 RESET ROLE;
+
+-- 负测 ⑥（乙域 RV-乙16）：应用面不得取得属主/迁移 role
+-- 🔴 生产中 dw_app 的持有者**不得是** dw_owner / dw_migrate 的成员。
+--   本 fixture 为使 SET ROLE 可用把三 role 都授给了 CURRENT_USER（夹具便利），
+--   故此处**先撤销**再验，验完还原 —— 不撤销就测不出真实边界。
+REVOKE dw_owner, dw_migrate FROM CURRENT_USER;
+SET ROLE dw_app;
+BEGIN;
+  SET ROLE dw_owner;      -- 期望 ERROR：permission denied to set role "dw_owner"
+ROLLBACK;
+BEGIN;
+  SET ROLE dw_migrate;    -- 期望 ERROR：permission denied to set role "dw_migrate"
+ROLLBACK;
+RESET ROLE;
+GRANT dw_owner, dw_migrate TO CURRENT_USER;   -- 还原夹具便利，供后续脚本使用

@@ -17,7 +17,10 @@ DROP ROLE IF EXISTS dw_migrate;
 DROP ROLE IF EXISTS dw_owner;
 
 -- 三具名 role，职责分离（C.3a.1a / C.3a.1c）：
---   dw_owner   建面（**由企业 ops 持有**：库内建表/改结构/建 policy）
+--   dw_owner   建面 —— **由该企业的 ops 持有**（C.3a.1c〔业主裁定 89777b4〕：
+--              平台 ops 建【库】，库内的【表】由企业 ops 管理；风险收敛到企业单点＋审计）
+--              ⚠️ 该口径是 89777b4 **改判后**的；改判前（c077f1a）曾写「dw_owner 不下放企业侧」，
+--                以旧口径复核本件会得出相反结论 —— 请以本仓现行 C.3a.1c 为准。
 --   dw_migrate 迁移期 DDL
 --   dw_app     只跑领域 SQL（NOBYPASSRLS · 非属主 · 无 DDL）
 -- ⚠️ 库本身由**平台 ops** 建（本 fixture 假定库已存在）；
@@ -59,6 +62,11 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON demo_item TO dw_app;
 GRANT USAGE, SELECT ON SEQUENCE demo_item_id_seq TO dw_app;
 GRANT ALL ON demo_item TO dw_migrate;          -- 表级 DML（仅此，不含 DDL）
 GRANT dw_owner TO dw_migrate;                 -- 🔴 DDL 权由【属主 role 成员资格】承载，非 GRANT ALL
+-- 🔴 成员关系的**边界**（乙域 RV-乙16）：
+--   `dw_migrate` 只在**迁移窗口**内由持有它的一方使用；**应用面（dw_app）永不得取得它**。
+--   ⚠️ 本 fixture 为使 `SET ROLE` 可用，把三 role 都授给了 CURRENT_USER（见上）——
+--     那是**夹具便利**，不是生产授权模型：生产中 dw_app 的持有者不得是 dw_owner/dw_migrate 的成员。
+--   ⇒ 该边界由 t4 的第四条负测实证。
 RESET ROLE;
 
 -- 预置两人各一行（属主身份插入，故须临时给上下文）
