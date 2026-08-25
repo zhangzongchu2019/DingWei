@@ -50,9 +50,15 @@ CREATE POLICY p_del ON demo_item FOR DELETE
   USING (owner_principal = current_setting('dw.principal', true));
 
 -- 🔴 迁移期 DDL 归 dw_migrate；dw_app 无 DDL 权（C.3a.1a role 表）
+-- ⚠️ **`GRANT ALL ON <表>` 只给表级 DML，不给 DDL** —— PostgreSQL 里
+--   `ALTER TABLE` / 建 policy **要求属主身份**（或属主 role 的成员）。
+--   首版写 `GRANT ALL ON demo_item TO dw_migrate` 并自称「已授 DDL」，**那是不成立的**
+--   （乙域 RV-乙15）。⇒ 正确做法：让 dw_migrate 成为 **dw_owner 的成员**，
+--   迁移窗口内 `SET ROLE dw_owner` 取得 DDL 权；窗口外不得持有活动连接。
 GRANT SELECT, INSERT, UPDATE, DELETE ON demo_item TO dw_app;
 GRANT USAGE, SELECT ON SEQUENCE demo_item_id_seq TO dw_app;
-GRANT ALL ON demo_item TO dw_migrate;
+GRANT ALL ON demo_item TO dw_migrate;          -- 表级 DML（仅此，不含 DDL）
+GRANT dw_owner TO dw_migrate;                 -- 🔴 DDL 权由【属主 role 成员资格】承载，非 GRANT ALL
 RESET ROLE;
 
 -- 预置两人各一行（属主身份插入，故须临时给上下文）
