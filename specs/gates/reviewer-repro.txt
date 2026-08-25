@@ -1,0 +1,19 @@
+# 门方复现台账 —— 每条发现记【门方自己给的复现命令】与【期望值】，由闸 ㉓ 实跑比对。
+#
+# 🔴 立此台账的直接原因（归口方，第九次交叉后）：
+#   我报「已修」时给的一行判据（`grep -c 'go run'→1`、`CREATE ROLE→3`）
+#   **证明的是上一轮修复还在，不是这一轮的洞已修** ——
+#   归口方原话：「只是证明还是 Go AST 版，没证明 Walk 错误/子串计数已修」。
+#   ⚠️ **判据回答的问题与要问的问题不是同一个** —— 两天内第三次（前两次：
+#     `git log -S <RV-ID>` 指向搬迁提交 · 粗 grep 命中历史说明行）。
+#   ⇒ 判据不再由我临时想，改用**门方原命令**：他问什么，闸就跑什么。
+#
+# 每行：<发现ID> TAB <期望> TAB <命令>
+# ⚠️ 命令须在仓根可跑、无副作用；期望为命令 stdout 的**完整**匹配串。
+RV-甲46a	2	SRC=/tmp/__missing_root__ BASE=specs/gates/legacy-name-baseline.txt TOOL=./specs/tools/legacy-name sh scripts/legacy-name-gate.sh >/dev/null 2>&1; echo $?
+RV-甲46b	comment=1	D=$(mktemp -d); printf 'package p\n\n// PendingTenantCtx\n' > $D/a.go; go run ./specs/tools/legacy-name $D 2>/dev/null | grep '^comment'; rm -rf $D
+RV-乙15a	1	grep -c '^GRANT dw_owner TO dw_migrate' specs/fixtures/rls/setup.sql
+RV-乙15b	1	ls specs/fixtures/rls/t4-ddl-rights.sql >/dev/null 2>&1 && echo 1 || echo 0
+RV-乙13	3	grep -c '^CREATE ROLE' specs/fixtures/rls/setup.sql
+RV-乙13b	0	grep -c '^CREATE ROLE.*LOGIN PASSWORD' specs/fixtures/rls/setup.sql
+RV-乙14	0	grep -aE '跨企业[^。；]{0,26}(白名单|capability)' docs/dingwei-platform-specdoc.md | grep -avE '(无|没有)[^。；]{0,8}capability 路径|不存在|恒为 0|恒 0|禁止|误读|无白名单' | wc -l | tr -d ' '

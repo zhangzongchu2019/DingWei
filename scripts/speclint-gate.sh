@@ -288,6 +288,18 @@ fi
 rm -f /tmp/.rvstate.$$
 echo "  ㉒ 评审状态件与实况一致 ✓（门方可直接读 docs/REVIEW-STATE.md 判断本锚状态）"
 
+# ㉓ 门方复现台账（归口方第九次交叉后立）：
+#    执笔方报「已修」时给的一行判据，多次**证明的是上一轮修复还在**而非这一轮的洞已修
+#    （归口原话：「只是证明还是 Go AST 版，没证明 Walk 错误/子串计数已修」）。
+#    ⇒ 判据改由门方给：**他问什么，闸就跑什么**。
+if [ ! -x scripts/reviewer-repro-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/reviewer-repro-gate.sh 不可执行"; exit 1
+fi
+scripts/reviewer-repro-gate.sh || exit 1
+scripts/reviewer-repro-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/reviewer-repro-gate.sh --selftest; echo "✗ 门方复现闸的反测未过"; exit 1; }
+echo "  ㉓ 门方复现台账的反测 ✓"
+
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
 #    **没有一次是执笔方自查出来的**。
@@ -299,7 +311,7 @@ python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
 python3 specs/tools/disposition-audit.py || true
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–㉒ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–㉓ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–㉒ ＋ ⑱ triage）"
+  echo "✓ 提交闸全过（①–㉓ ＋ ⑱ triage）"
 fi

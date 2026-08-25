@@ -59,6 +59,15 @@ echo '```'
 git log --oneline -14 2>/dev/null | sed 's/^/  /'
 echo '```'
 echo
+echo "## 门方复现台账（用**门方自己的命令**验，非执笔方自拟判据）"
+echo
+echo "🔴 **「已修/未修」以本节为准** —— 每条记门方给的复现命令与期望值，闸 ㉓ 每次提交实跑。"
+echo "⚠️ 它证明【那条命令现在给出期望值】，**不证明【语义诉求已完全满足】** —— 后者归门方。"
+echo
+echo '```'
+sh scripts/reviewer-repro-gate.sh 2>/dev/null | sed 's/^/  /'
+echo '```'
+echo
 echo "## 闸反测条数（抽锚核对用）"
 echo
 echo '```'
