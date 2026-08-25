@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-25T14:34:45Z
-分支头：`c23c06d7ab7efcb2636c48faeb7c49db56a47ee8`
+生成时刻：2026-08-25T14:39:23Z
+分支头：`d09c2f31b5e83fd4a18713cc446b45dde8ca88a4`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -13,7 +13,7 @@
 REVIEWED 6ab60ba51adca37a0607536e614b8ac10f9f475359134f8d527238bdef6e5918  docs/dingwei-platform-specdoc.md
 REVIEWED e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c  docs/dingwei-architecture-design.md
 REVIEWED 222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e  docs/dingwei-prototype.html
-REVIEWED 9cffe3728e64e8ccecc513819b42ea0c41b7e608b3c3d0af44df3214a9edad9b  docs/DELIVERY-STATUS.md
+REVIEWED d94cd5c09f15843c8c73cff35c9a74085019dcb79e4da9def4efae5dfc07132b  docs/DELIVERY-STATUS.md
 REVIEWED a1fe9843b31755f89f241d80a39b57a15e72f3384c5af0219e284ca1ae9135eb  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -22,7 +22,7 @@ REVIEWED 451fa8171c5460ef6ff723d68f902d756469b90d06dbcd4f924886ce6b885f0f  scrip
 REVIEWED 69b60fda965d49479f0390a583810b082c1f049b30b4d04af2127f3eb13d43c3  scripts/conflict-marker-gate.sh
 REVIEWED 687300bc3e8a56f491c533116b6cccc6da256f4e7aaf300607cd32cb6274e78e  scripts/delivery-check.sh
 REVIEWED 33d372ff3b1dcda466476c113af888b55e02dee8479a894c8b0c48d8e9a45013  scripts/evidence-fresh-gate.sh
-REVIEWED 192b6f50d96ccd8267b271445924b5cb1ba6e1badf3f7ac7e17c7ff4767381f7  scripts/gen-review-state.sh
+REVIEWED 85ffde5c252c7e2628922114ebe00df97dbfbef92585e2faa5d37acdc304a7e8  scripts/gen-review-state.sh
 REVIEWED 156c626fe5e069606e07f642d5f7fd3477b5ce42f1173d28b40e425f4556b883  scripts/gen-status.sh
 REVIEWED 510ae09c71ca9ac2f4d44ef74d1530cbe03d5a3560179fc4ad03c280c9f30d3f  scripts/legacy-name-gate.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh

@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `c23c06d7ab7efcb2636c48faeb7c49db56a47ee8` · 分支 `design/addendum-decisions`
+生成自 commit `d09c2f31b5e83fd4a18713cc446b45dde8ca88a4` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.44** | `c23c06d7ab7efcb2636c48faeb7c49db56a47ee8` | 3501 / 247118 | `6ab60ba51adca37a0607536e614b8ac10f9f475359134f8d527238bdef6e5918` |
+| `dingwei-platform-specdoc.md` | **v3.44** | `d09c2f31b5e83fd4a18713cc446b45dde8ca88a4` | 3501 / 247118 | `6ab60ba51adca37a0607536e614b8ac10f9f475359134f8d527238bdef6e5918` |
 | `dingwei-prototype.html` | **v1.37** | `53f4033dac84c797f72ac6f01363ed6fc3a6bca1` | 2845 / 252826 | `222eccb1b650ef3132fd97bc0b7fb334037cf76948dc63bdb35be31478a1249e` |
 | `dingwei-architecture-design.md` | **v0.33** | `61ad4390902debbc268aee03d1172e1a93108937` | 907 / 61534 | `e64dca22a7263ecf17cf0977cc14297d89e8ba196d913b5dea0c33ce82c47b7c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+d09c2f3 RV-乙15：DDL 权的归属判错了（v3.44）
 c23c06d Merge commit 'd35b68cb' into design/addendum-decisions
 b4c9fe7 REVIEW-STATE 不再内嵌 commit 锚 —— 产物写不进自己的哈希
 252e69d ㉑ 探测器两处同源阻断已修（v3.43）
@@ -34,5 +35,4 @@ b4c9fe7 REVIEW-STATE 不再内嵌 commit 锚 —— 产物写不进自己的哈�
 2de6d29 REVIEW-STATE 未闭项补「归谁」列 —— 让「我能修而没修」的行无处可藏
 89777b4 C.3a.1c 改判：平台 ops 建库、企业 ops 管表（v3.41）
 00fcbf9 ㉒ 评审状态落进仓 —— 对「转述交叉五次」的结构性修法
-02e3fa8 fixture 注释去掉 LOGIN PASSWORD 字面量 —— 门方 grep 会把沿革说明误计为残留凭据
 ```

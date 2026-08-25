@@ -29,6 +29,27 @@
 🔴 **归谁＝⚠️ 执笔方 的行，是【我能修而没修】的** —— 若出现，即为我的欠账，不得算进
 「不在我手上」那四条。本表存在的意义之一就是让这一栏无处可藏。
 
+## 最近处置锚序（门方核对「你说的修在哪个锚」用）
+
+🔴 **门方报的缺口若在此列某锚之前，说明抽早了**；本节由 git log 实取，非人工记录。
+
+```
+  d09c2f3 RV-乙15：DDL 权的归属判错了（v3.44）
+  c23c06d Merge commit 'd35b68cb' into design/addendum-decisions
+  b4c9fe7 REVIEW-STATE 不再内嵌 commit 锚 —— 产物写不进自己的哈希
+  252e69d ㉑ 探测器两处同源阻断已修（v3.43）
+  7acfb50 残余面两表同步 C.3a.1c 改判（v3.42）—— 但改法与丙域建议不同，理由写明
+  2de6d29 REVIEW-STATE 未闭项补「归谁」列 —— 让「我能修而没修」的行无处可藏
+  89777b4 C.3a.1c 改判：平台 ops 建库、企业 ops 管表（v3.41）
+  00fcbf9 ㉒ 评审状态落进仓 —— 对「转述交叉五次」的结构性修法
+  02e3fa8 fixture 注释去掉 LOGIN PASSWORD 字面量 —— 门方 grep 会把沿革说明误计为残留凭据
+  cf34868 RV-乙14：乙域比甲域多抓到两处漏网冲突（v3.40）
+  6ac6f8c merge: 取回乙域 RV-乙14（台账两行均保留，非二选一）
+  fbf67ef 甲域 delta ②：跨企业 capability 现行冲突 7 处清零（v3.39）
+  d35b68c review: flag unproven migration DDL fixture grant
+  d678483 RV-乙13：fixture 三 role 补齐、去明文口令（v3.38）
+```
+
 ## 闸反测条数（抽锚核对用）
 
 ```
