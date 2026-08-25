@@ -16,7 +16,13 @@ DROP ROLE IF EXISTS dw_app;
 DROP ROLE IF EXISTS dw_migrate;
 DROP ROLE IF EXISTS dw_owner;
 
--- 三具名 role，职责分离（C.3a.1a）：owner 建面 · migrate 迁移期 DDL · app 只跑领域 SQL
+-- 三具名 role，职责分离（C.3a.1a / C.3a.1c）：
+--   dw_owner   建面（**由企业 ops 持有**：库内建表/改结构/建 policy）
+--   dw_migrate 迁移期 DDL
+--   dw_app     只跑领域 SQL（NOBYPASSRLS · 非属主 · 无 DDL）
+-- ⚠️ 库本身由**平台 ops** 建（本 fixture 假定库已存在）；
+--   🔴 属主可自解除 FORCE RLS（NO FORCE / DROP POLICY / OWNER TO）⇒
+--     该风险**收敛到企业 ops 单点并以审计承载**，不是被消除（C.3a.1c）。
 CREATE ROLE dw_owner   NOLOGIN NOBYPASSRLS;
 CREATE ROLE dw_migrate NOLOGIN NOBYPASSRLS;
 CREATE ROLE dw_app     NOLOGIN NOBYPASSRLS;

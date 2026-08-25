@@ -29,6 +29,7 @@ psql -f t3-no-residue.sql
 | `t1-write-as-other.sql` | 两条 DML **均被拒**：INSERT 报 `new row violates row-level security policy`；UPDATE 报同样错误或影响 **0 行** |
 | `t2-no-context-deny.sql` | `must_be_zero` = **0**（🔴 不是全部）；INSERT 报 RLS 违规 |
 | `setup.sql` 末尾自检 | 返回 **3 行**（dw_app / dw_migrate / dw_owner），`rolcanlogin` 与 `rolbypassrls` **均为 `f`** |
+| `t3-no-residue.sql` 负测④ | `owner_sees_before` = **0**（FORCE 下属主也受约束）· `ALTER … NO FORCE` **成功** · `owner_sees_after` = **2**。🔴 **这不是缺陷，是要记录的事实**：属主可自解除 ⇒ FORCE RLS 防误操作、不防有意绕过；唯一防线是**审计留痕**（C.3a.1c） |
 | `t3-no-residue.sql` | `alice_rows` = **1**；`must_be_unset` = **`<unset>`**；`must_be_zero` = **0** |
 
 🔴 **若 t3 的 `must_be_unset` 不是 `<unset>`**，说明实现用了残留型 `SET` 而非 `SET LOCAL`，
