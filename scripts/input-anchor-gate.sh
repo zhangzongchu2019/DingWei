@@ -45,7 +45,14 @@ check() {
     _files=$((_files+1))
     # 只在标了「输入锚」的行上抽反引号内容（不全文扫，避免误伤）
     _lines=$(grep -n "$SECT" "$f" 2>/dev/null | grep -v 'input-anchor-ok:' || true)
-    [ -z "$_lines" ] && continue
+    # 🔴 空集不得当通过（specs/gates/GATE-CONTRACT.md）：
+    #   受检件里【一处 ⑥ 面标识都没有】，不是「锚都解析得到」，是**整面缺失**。
+    #   §4.7.1 铁律：允许声明「无」，**不允许不提** ⇒ 此情形须 FAIL，不得 continue。
+    #   ⚠️ 本行原写 `[ -z "$_lines" ] && continue` —— 一份连第六面都没有的 spec 一路绿到底。
+    if [ -z "$_lines" ]; then
+      echo "✗ $f 未见任何「$SECT」面标识 —— §4.7.1 ⑥ 整面缺失（允许声明「无上游输入，系首发」，但不允许不提）"
+      continue
+    fi
     echo "$_lines" | while IFS= read -r _l; do
       _ln=${_l%%:*}
       _body=${_l#*:}
@@ -68,6 +75,7 @@ check() {
   #    `||` 再补一个「0」⇒ 变量成了两行，`[ -gt ]` 报 Illegal number。
   #    **那次它仍打印了 ✓** —— 报错与 ✓ 同时出现，正是本仓反复记的形态。
   _bad=$(grep '^✗' /tmp/.iag.$$ 2>/dev/null | wc -l | tr -d ' \n')
+  # 空集判 FAIL 的那行也写在同一个临时件里，故一并计入 _bad
   case "${_bad:-}" in ''|*[!0-9]*) echo "✗ 计数异常（_bad=$_bad）—— 算不出就不能报通过"; rm -f /tmp/.iag.$$; return 2 ;; esac
   cat /tmp/.iag.$$ 2>/dev/null | sed 's/^/  /'
   rm -f /tmp/.iag.$$
@@ -76,7 +84,9 @@ check() {
     echo "  ⇒ 锚解析不到 ⇒ §4.7.1a「范围不扩 / 共识不变」两条默认约束落空。修锚或改声明。"
     return 1
   fi
-  echo "  ✓ 输入锚全部解析得到（受检件 $_files）"
+  echo "  ✓ 输入锚全部解析得到"
+  echo "     受检范围：$_files 件（$DOCS）；命中 ⑥ 面标识的行已逐行解析"   # GATE-CONTRACT 三-1：范围句
+  echo "     空集处置：受检件无任何 ⑥ 面标识 ⇒ 判 FAIL，不折叠为 PASS"    # GATE-CONTRACT 三-3
   echo "  ⚠️ 本闸判【锚是否解析得到】，🔴 判不了【陈述追不追得到锚】—— 后者是语义判断，归门方（E.4 #66）。"
   echo "     锚都解析得到 ≠ 陈述都有出处。"
   return 0
@@ -118,6 +128,19 @@ selftest() {
   _err=$( ( cd "$T" && DOCS=docs/a.md sh "$SELF" >/dev/null ) 2>&1 )
   [ -z "$_err" ] && ok "🔴 通过时 stderr 干净（报错不得与 ✓ 同时出现）" \
                  || bad "通过时有 stderr 输出：$_err"
+
+  # ⑧ 🔴 空集不得当通过（GATE-CONTRACT §二）——本闸曾在此漏判：
+  #    一份连第六面都没有的 spec，命中集为空 ⇒ 原实现 continue ⇒ rc=0 一路绿到底。
+  #    甲域 sol 报、coordinator 独立实跑复现。
+  printf '# spec\n\n本件没有任何第六面标识\n' > "$T/docs/z.md"
+  ( cd "$T" && DOCS=docs/z.md sh "$SELF" >/dev/null 2>&1 )
+  [ $? -eq 1 ] && ok "🔴 空集判 FAIL：受检件无任何 ⑥ 面标识 ⇒ 拦（不是「全部解析得到」）" \
+                || bad "整面缺失被判通过 —— 空集又被当成已检查且合格"
+
+  # ⑨ 但「显式声明无上游输入」仍须放行（允许声明无，不允许不提）
+  printf '# spec\n\n输入锚：本 spec 无上游输入，系首发\n' > "$T/docs/y.md"
+  ( cd "$T" && DOCS=docs/y.md sh "$SELF" >/dev/null 2>&1 )
+  [ $? -eq 0 ] && ok "不误伤：显式声明「无上游输入」放行（与空集区分开）" || bad "合法声明被当空集拦"
 
   # ⑦ 真有失败项时：计数正确 ＋ 明确打印该锚
   printf '输入锚：`docs/ghost-a.md` 与 `docs/ghost-b.md`\n' > "$T/docs/e.md"

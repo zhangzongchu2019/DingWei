@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-26T06:00:33Z
-分支头：`cc3032ec9010203d2536bef11d75813af4e2f231`
+生成时刻：2026-08-26T06:06:16Z
+分支头：`b60f1717bdfb03902f9c05b4bbf7d43c7ecdd224`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,10 +10,10 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED 7096cb476abf9062286f8037fb558c618cff08600df8170d21e5a9008e730326  docs/dingwei-platform-specdoc.md
+REVIEWED 64a0d81e63cbd00bc03d53e6f961f9e7ab475ea4e63c57baa53b9c7f2d10a910  docs/dingwei-platform-specdoc.md
 REVIEWED be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79  docs/dingwei-architecture-design.md
 REVIEWED 9d85ade305f860a93a7e74711790df7076f2a25834479e041610e5b2c8b4e4f4  docs/dingwei-prototype.html
-REVIEWED c8b1d5363170050bc8819513dd69ae78f2caf7bd9e17338b053d4254f14193d1  docs/DELIVERY-STATUS.md
+REVIEWED 350e55b17d14e0354dc7cd839afe414988e6150685ee2ae56d6f24bbafbb11f3  docs/DELIVERY-STATUS.md
 REVIEWED 8996a7df3ae0e99db2aaef56d2d13126ded09c01787167ecebcf47c7f3372798  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -25,7 +25,7 @@ REVIEWED 14158e52ea0e4a0e5d21766e438d31a0a069008e8ec9b3fcc742599ca43aa93a  scrip
 REVIEWED 33d372ff3b1dcda466476c113af888b55e02dee8479a894c8b0c48d8e9a45013  scripts/evidence-fresh-gate.sh
 REVIEWED 8be0b821c0ad2574722f3e4032f8d91f599fc623bc42f1334dd491aed20e868e  scripts/gen-review-state.sh
 REVIEWED 156c626fe5e069606e07f642d5f7fd3477b5ce42f1173d28b40e425f4556b883  scripts/gen-status.sh
-REVIEWED f340815c95649c7acc17eb462c6212d4c7db3646947c211eedd47bd435b0137e  scripts/input-anchor-gate.sh
+REVIEWED 04a276fb68874edcb5b0bab84f132463d56961d30cc31e50ac4ee28b8ff821f4  scripts/input-anchor-gate.sh
 REVIEWED 510ae09c71ca9ac2f4d44ef74d1530cbe03d5a3560179fc4ad03c280c9f30d3f  scripts/legacy-name-gate.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh
 REVIEWED 19c187d91bff0d18a734582e6c278cca4f87596a59a87b824ea0acbabdc0d5be  scripts/path-anchor-gate.sh
@@ -127,7 +127,7 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 119 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.68 · 状态文件 v3.68 ✓
+    SpecDoc: 件内 v3.69 · 状态文件 v3.69 ✓
     架构设计: 件内 v0.34 · 状态文件 v0.34 ✓
     原型: 件内 v1.41 · 状态文件 v1.41 ✓
   ④b 正文是否出现【他件】的旧版本号
