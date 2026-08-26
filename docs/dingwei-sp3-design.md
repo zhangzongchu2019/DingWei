@@ -1,21 +1,22 @@
-# DingWei SP3 上下文与知识库设计 v1.2
+# DingWei SP3 上下文与知识库设计 v1.3
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp3-design` |
-| **版本** | v1.2 |
+| **版本** | v1.3 |
 | **状态** | draft，待三方全文评审 |
-| **冻结施工锚** | 组合冻结：SpecDoc `4fb34f2`；其余输入 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
-| **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.3 |
-| **合同** | `specs/sp3/spec.md` v1.3 |
+| **冻结施工锚** | 组合冻结：SpecDoc `a5abc57`；其余输入 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
+| **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.4 |
+| **合同** | `specs/sp3/spec.md` v1.4 |
 | **范围** | SpecDoc §10–§13；owner_sp=SP3 的附录 E 行 |
 | **主责域** | `KNO` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
 
 > 本件定义 KNO 目标设计和 KNO 的 SP7b 迁移合同，不声称数据库、RLS、provider、迁移或真实上下文装载已实现。
-> SpecDoc v3.70 §11.6 派发快照字段表是字段全集唯一权威源；§11.6a 是 FAIL evidence 权威形状。
+> SpecDoc v3.71 §11.6 派发快照字段表是字段全集唯一权威源；§11.6a 是 FAIL evidence 权威形状与 repro 分类判据。
 > v1.1：按业主裁定承认 AccessCtxRef/task/node/generation/spec_ref，并补 FAIL evidence 持久化判据；仍不接真实派发。
 > v1.2：补 memory_type 持久化、坑清单晋升去标识化 evidence 门、双现网参数化抽取及 §11.4 墓碑标记。
+> v1.3：重锚 SpecDoc v3.71；FAIL repro 按机器可复跑类与 gate_fail 人审门两类判定。
 
 ## D-SP3-01 范围、四维模型与域边界
 
@@ -203,7 +204,7 @@ anchor resolver、permission domain、redaction rule version、deployment source
 
 ### 6.1 权威字段与 fixture
 
-字段全集唯一来自 SpecDoc v3.70 §11.6 表，增删以该表为准；本轮按表逐项 fixture，不接真实 WRK 派发：
+字段全集唯一来自 SpecDoc v3.71 §11.6 表，增删以该表为准；本轮按表逐项 fixture，不接真实 WRK 派发：
 
 | §11.6 字段 | 构造来源 | 缺失判据 | 重灌用途 |
 |---|---|---|---|
@@ -226,12 +227,13 @@ SP2 是本表引用侧；不得另立第二份字段全集或复述条数。fixt
 |---|---|---|---|
 | `failure_class` | execution_failed/gate_fail/dependency_unavailable/effect_unknown/timeout/cancelled | 自由文本或未知枚举拒绝 | 先于 digest 写 immutable evidence version |
 | `expected`/`actual` | 各一份可复算值、计数或 sha256 | 缺任一，或仅写「不符合预期」拒绝 | 门方按同输入重算对撞 |
-| `repro` | 一条可复跑命令，或 commit/blob sha/envelope_ref 不可变输入锚 | 空、不可取、依赖执行方会话记忆、空上下文不可复跑均不成立 | 记录实际重跑 rc/摘要与 reviewer evidence |
+| `repro`（execution_failed/timeout/effect_unknown/dependency_unavailable/cancelled） | 可复跑命令+不可变输入锚 | 空，或空上下文跑不起来则不成立 | 记录实际重跑 rc/摘要与 evidence |
+| `repro`（gate_fail） | 门方判定所据全部不可变锚：commit/blob sha/envelope_ref/acceptance 锚 | 锚集缺项、任一不可解析，或 expected/actual 不可复算则不成立 | 记录锚解析结果与门方 evidence；不要求另一 principal 得同 verdict |
 | `artifacts[]` | 日志/产物/诊断 ref+sha256；确无则显式「无」 | 留空、裸路径、无指纹拒绝 | 只存引用，正文不内联敏感日志 |
 | `at_generation` | failure generation+evidence_version | 任一缺失或与 node/gate generation 不符拒绝 | fence 迟到结果与 evidence supersedes |
 
 判定失败时先落完整 evidence，再生成 digest；未落齐不得封存或放行。evidence 正文不可改，更正新增 version+supersedes。
-本表只判证据形状与复跑性，判不了失败诊断是否正确；后者归门方/执行方人审。
+本表只判证据形状、机器类复跑性与人审类锚完整性，判不了失败诊断是否正确；后者归门方/执行方人审。
 
 ### 6.3 构建、清空与不可变性
 
@@ -249,7 +251,8 @@ SP2 是本表引用侧；不得另立第二份字段全集或复述条数。fixt
 
 字段齐只证明结构齐，不证明信息足。人审须以空上下文 worker 重灌完成任务为判据。负测：删每个 §11.6 字段、
 篡改 snapshot、复用上一任务 snapshot、restricted 全量装载、运行态注入、锚漂移、规则版本撤销，均须拒绝或重建。
-FAIL evidence 另逐项变异 failure_class、expected/actual、repro、artifacts、at_generation；尤其 repro 空或不可复跑必须失败。
+FAIL evidence 逐项变异 failure_class、expected/actual、repro、artifacts、at_generation。机器类 repro 空/命令不可复跑必须失败；
+gate_fail 锚集缺项/不可解析或 expected/actual 不可复算必须失败，但不得要求不同 principal 复判出同一 verdict。
 
 ## D-SP3-07 anchors 与新鲜度状态机
 
@@ -322,7 +325,7 @@ mutating command 带 request_id、AccessCtxRef、DataScopeGrant、expected `vers
 |---|---|---|---|---|
 | `KNO-CMD-IngestItem` | content/ref+Meta+pipeline refs→item revision | KNO tx 写 item/meta/anchors/audit | curator/closeout principal；request_id+version | 无锚/旁路管道/非法visibility/memory_type拒绝；缺失分别物化restricted/factual |
 | `KNO-QRY-Search` | query+scope+cursor→filtered hits | 受控 repository 只读 | AccessCtx+grant；cursor绑定principal/policy | deny非成功空集；记retrieval audit |
-| `KNO-CMD-BuildContextSnapshot` | v3.70 §11.6 fixture+§11.6a evidence（适用时）+role→snapshot ref | KNO tx 写immutable snapshot+audit/outbox | service+AccessCtx；request_id+task generation | 字段/evidence缺失、repro不可复跑、锚漂移/版本撤销拒绝 |
+| `KNO-CMD-BuildContextSnapshot` | v3.71 §11.6 fixture+§11.6a evidence（适用时）+role→snapshot ref | KNO tx 写immutable snapshot+audit/outbox | service+AccessCtx；request_id+task generation | 字段/evidence缺失；机器repro不可复跑或gate_fail锚集无效拒绝 |
 | `KNO-CMD-MarkLifecycle` | item/version+target+evidence→record | 新 lifecycle record，不改历史 | verifier/curator；request_id+version | 非法转换/证据不足/stale version |
 
 ### 9.3 错误词表
@@ -486,7 +489,7 @@ provider error、崩溃恢复、迁移/rollback。每项至少正反例；变异
 | `AC-SP3-05` | 四维模型与KBDoc.Meta | 四维不互推，字段/枚举/默认/约束齐 | 数据已迁移与否 |
 | `AC-SP3-06` | 三条ingest与revision | 成功写入均追管道；订正不改历史 | curator判断质量 |
 | `AC-SP3-07` | visibility授权/继承 | 默认restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
-| `AC-SP3-08` | v3.70 §11.6字段表+§11.6a子字段逐项 | 每字段构造/缺失拒绝/重灌；repro空/不可复跑则evidence不成立；snapshot/evidence不可变 | 字段齐后诊断是否正确 |
+| `AC-SP3-08` | v3.71 §11.6字段表+§11.6a子字段逐项 | 机器类命令可复跑；gate_fail锚集完整可解析且expected/actual可复算；snapshot/evidence不可变 | 不要求不同principal得同一人审verdict；诊断正确性归人审 |
 | `AC-SP3-09` | anchors/lifecycle | 四锚分判、多锚OR、连续两版本archived | 替代锚质量 |
 | `AC-SP3-10` | 检索全链 | 先过滤、suspect降权、deny非空集、cursor隔离 | relevance质量 |
 | `AC-SP3-11` | 4接口与复用映射 | auth/idempotency/generation/tx/error/audit及正反例齐 | provider性能 |

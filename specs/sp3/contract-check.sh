@@ -1,10 +1,10 @@
 #!/bin/sh
 set -eu
 BASE_ANCHOR=53e4a2aed1569eef91e4048e7da2a1cd32db3ec2
-SPECDOC_ANCHOR=4fb34f2
+SPECDOC_ANCHOR=a5abc57
 SPEC=specs/sp3/spec.md
 got=$(git show "$SPECDOC_ANCHOR:docs/dingwei-platform-specdoc.md" | sha256sum | awk '{print $1}')
-[ "$got" = 'e5c59a4ac3e8a7a44aa1ed647e24b9fcbb20d8ea53c789fe78e27eae49e9d7df' ] || { echo '✗ v3.70 SpecDoc 输入漂移'; exit 2; }
+[ "$got" = 'e54599968828fef0182c2e910700807b5ae83b525849ccab4b5f848d5a620619' ] || { echo '✗ v3.71 SpecDoc 输入漂移'; exit 2; }
 for item in \
  'docs/dingwei-platform-architecture.md:0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc' \
  'docs/dingwei-prototype.html:eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8' \
@@ -23,9 +23,11 @@ grep -q '<!-- EVENT-SET-SP3: NOT_APPLICABLE -->' "$SPEC" || { echo '✗ KNO even
 EVENT_N=$(git show "$BASE_ANCHOR:docs/dingwei-platform-architecture.md" | grep -Ec '^\| `EV-KNO-[^`]+` \| KNO \|' || true)
 [ "$EVENT_N" -eq 0 ] || { echo "✗ KNO event 空面与架构实数冲突：$EVENT_N"; exit 2; }
 for dep in SP1 SP7a SP7b SP2; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置处置缺 $dep"; exit 1; }; done
-grep -q '§11.6 派发快照表为字段全集唯一权威源' "$SPEC" || { echo '✗ snapshot 字段权威源未钉为 §11.6'; exit 1; }
+grep -Eq '§11\.6 .*唯一权威源' "$SPEC" || { echo '✗ snapshot 字段权威源未钉为 §11.6'; exit 1; }
 grep -q 'SpecDoc §11.6 与 SP2 §3.3 snapshot 字段不一致' "$SPEC" || { echo '✗ snapshot 字段冲突未登记'; exit 1; }
 for token in memory_type deidentification_evidence_ref ExtractionProfile; do grep -q "$token" "$SPEC" || { echo "✗ 正文合同缺 $token"; exit 1; }; done
+grep -q 'gate_fail repro=完整不可变锚集' "$SPEC" || { echo '✗ v3.71 gate_fail repro 分类未落合同'; exit 1; }
+grep -q '机器类 repro=命令+输入锚' "$SPEC" || { echo '✗ v3.71 机器类 repro 分类未落合同'; exit 1; }
 ACTIVE=$(sed -n '/^### 4\.1 评审协议/,/^## 5\./p' "$SPEC")
 printf '%s\n' "$ACTIVE" | grep -q '最多 4 轮' || { echo '✗ 生效协议缺 4 轮上限'; exit 1; }
 ! printf '%s\n' "$ACTIVE" | grep -q '6 轮' || { echo '✗ 生效协议残留 6 轮'; exit 1; }

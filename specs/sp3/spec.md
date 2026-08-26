@@ -7,11 +7,11 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp3-design` |
-| **合同版本** | v1.3 |
+| **合同版本** | v1.4 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
-| **冻结施工锚** | 组合冻结：SpecDoc `4fb34f2`；架构/原型/SP0–SP2/代码基线 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
+| **冻结施工锚** | 组合冻结：SpecDoc `a5abc57`；架构/原型/SP0–SP2/代码基线 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
 | **权威范围** | SpecDoc §10–§13；owner_sp=SP3 的附录 E 行 |
 | **目标架构域** | `KNO`；消费 `IDN/PLT/WRK`，向 `WRK/CAP/COL/AGT` 提供受控知识与上下文 snapshot |
 | **目标件** | `docs/dingwei-sp3-design.md` |
@@ -28,6 +28,8 @@ KNO 只消费既有 WRK dispatch 事件，并经四个 KNO command/query 与 rep
 **v1.2 同步**：业主已裁 §11.6 按 SP2 更新并补 §11.6a FAIL evidence；SpecDoc 输入重锚 v3.70，其他输入不回退。
 
 **v1.3 同步**：正文评审补 memory_type 第四维、坑清单晋升去标识化 evidence 门、平台/企业现网参数化抽取与墓碑口径。
+
+**v1.4 同步**：SpecDoc 重锚 v3.71；§11.6a repro 按机器可复跑类与 gate_fail 人审门分判，不再用一条命令要求覆盖两类。
 
 ### 0.1 范围判定
 
@@ -106,7 +108,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 
 | 输入 | sha256 | 用途 |
 |---|---|---|
-| `docs/dingwei-platform-specdoc.md` @ `4fb34f2` | `e5c59a4ac3e8a7a44aa1ed647e24b9fcbb20d8ea53c789fe78e27eae49e9d7df` | v3.70 §10–§13、§11.6/§11.6a、owner_sp=SP3 附录 E |
+| `docs/dingwei-platform-specdoc.md` @ `a5abc57` | `e54599968828fef0182c2e910700807b5ae83b525849ccab4b5f848d5a620619` | v3.71 §10–§13、§11.6/§11.6a repro 分类、owner_sp=SP3 附录 E |
 | `docs/dingwei-platform-architecture.md` | `0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc` | KNO 边界、4 接口、数据、迁移、原型入口 |
 | `docs/dingwei-prototype.html` | `eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8` | 知识库与 Agent 工作面的交互输入 |
 | `docs/dingwei-sp0-design.md` | `f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec` | GOV 规则/评审 seam 的冻结输入 |
@@ -123,7 +125,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `D-SP3-03` | domain 与生命周期 | D0–D3、三条 ingest、晋升/订正、不可变历史；坑清单晋升 D2/D1 必带 `deidentification_evidence_ref` |
 | `D-SP3-04` | visibility 与授权 | 默认 restricted、降级审批、继承取严、放行审计、负测 |
 | `D-SP3-05` | 固化判型与来源 | 条目类型、四类权威源、运行时取边界、导入/链接；平台/企业现网抽取共用受控 `ExtractionProfile` 参数化 |
-| `D-SP3-06` | 上下文装载 | 新 Spawn；以 v3.70 §11.6 派发快照表为字段全集唯一权威源；正文按表逐字段给拒绝/重灌判据，并按 §11.6a 五子字段定义 FAIL evidence；snapshot/evidence 不可变 |
+| `D-SP3-06` | 上下文装载 | 新 Spawn；以 v3.71 §11.6 字段表为唯一权威源；按 §11.6a 五子字段定义 FAIL evidence，机器类 repro=命令+输入锚，gate_fail repro=完整不可变锚集；snapshot/evidence 不可变 |
 | `D-SP3-07` | 锚与生命周期 | 四锚判据、多锚 OR、active/suspect/archived、reverify |
 | `D-SP3-08` | 检索与排序 | 先过滤、scope∩visibility、降权、cursor、拒绝语义、审计 |
 | `D-SP3-09` | 四接口合同 | schema/effect/auth/idempotency/generation/tx/error/audit |
@@ -158,7 +160,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `AC-SP3-05` | 四维模型与 KBDoc.Meta | memory_type 等四维分别持久化且不互推；字段/枚举/默认值/约束齐 | 数据是否已迁移 |
 | `AC-SP3-06` | 三条 ingest、revision 与坑清单晋升 | 无旁路写入；订正不改历史；D2/D1 晋升缺去标识化 evidence ref 拒绝 | curator/脱敏判断质量 |
 | `AC-SP3-07` | visibility 与引用 | 默认 restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
-| `AC-SP3-08` | v3.70 §11.6 字段表逐项 + §11.6a FAIL evidence 子字段逐项 | 每字段有构造/缺失拒绝/重灌判据；repro 空/不可复跑则 evidence 不成立；snapshot/evidence 不可变 | 字段齐备后诊断是否正确的人审结论 |
+| `AC-SP3-08` | v3.71 §11.6 字段表逐项 + §11.6a FAIL evidence 子字段逐项 | 机器类 repro 空/命令不可复跑则不成立；gate_fail 锚集缺项/不可解析或 expected/actual 不可复算则不成立 | 不要求不同 principal 必得同一人审 verdict；诊断正确性归人审 |
 | `AC-SP3-09` | anchors 与生命周期 | 四锚分判、多锚 OR、连续两版本 archived | 外部替代锚质量 |
 | `AC-SP3-10` | 检索全链 | 过滤先于检索、suspect 降权、deny 不伪装空集 | relevance 质量 |
 | `AC-SP3-11` | 4 接口与复用映射 | auth/idempotency/generation/tx/error/audit 及正反例齐 | provider 性能 |
