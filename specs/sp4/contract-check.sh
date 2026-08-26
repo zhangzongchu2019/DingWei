@@ -4,20 +4,53 @@ BASE_ANCHOR=6a98629
 SPECDOC_ANCHOR=4220195
 SP8_ANCHOR=970effe
 SPEC=specs/sp4/spec.md
-got=$(git show "$SPECDOC_ANCHOR:docs/dingwei-platform-specdoc.md" | sha256sum | awk '{print $1}')
-[ "$got" = '66df042ec49e6c7345e5c5cdbe1cf4e7f5c3bbdc94a1c671bb35c588532e8e0f' ] || { echo '✗ v3.73 SpecDoc 输入漂移'; exit 2; }
-for item in \
- 'docs/dingwei-platform-architecture.md:0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc' \
- 'docs/dingwei-prototype.html:eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8' \
- 'docs/dingwei-sp0-design.md:f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec' \
- 'docs/dingwei-sp1-design.md:8fafe6c5bac5595eaa771543dfc4199ba3670081786f1769f39833dc616e27bf' \
- 'docs/dingwei-sp2-design.md:37d2c17cc0761914aae91abd20273746231d894c50163cb89b8123cc03d76a86' \
- 'docs/dingwei-sp3-design.md:e6317b5c7257eb86b405d355b3bbcdb72751eb8c677fa2f388891c1d307b1e97'; do
- f=${item%%:*}; want=${item#*:}; got=$(git show "$BASE_ANCHOR:$f" | sha256sum | awk '{print $1}')
- [ "$got" = "$want" ] || { echo "✗ 冻结输入漂移：$f"; exit 2; }
-done
-got8=$(git show "$SP8_ANCHOR:docs/dingwei-sp8-design.md" 2>/dev/null | sha256sum | awk '{print $1}')
-[ "$got8" = '4f5e4e06d29d4a9fffcdb46f413fbc37bcfd615e9af9b04215e0a6c20205a98a' ] || { echo '✗ SP8 设计件不可取或漂移（本件"真接线"的权威来源）'; exit 2; }
+[ -f "$SPEC" ] || { echo "✗ 缺 $SPEC"; exit 2; }
+# 冻结输入的唯一常量源在下面这段 python 里；它同时做三件事：
+#   ① 在各自锚上实取并校验 sha256；② 与合同 ⑥ 表逐项对撞；③ 与 check.sh 的 PATHS 逐项对撞。
+# 三方任一处写错（含 ⑥ 表把 sha 写成 64 个 0）即 exit 2，杜绝"表里写错机器不响"。
+python3 - "$SPEC" "$BASE_ANCHOR" "$SPECDOC_ANCHOR" "$SP8_ANCHOR" <<'PYIN'
+import hashlib,re,subprocess,sys
+spec_path,base,specdoc,sp8=sys.argv[1:]
+CONST={
+ 'docs/dingwei-platform-specdoc.md':(specdoc,'66df042ec49e6c7345e5c5cdbe1cf4e7f5c3bbdc94a1c671bb35c588532e8e0f'),
+ 'docs/dingwei-platform-architecture.md':(base,'0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc'),
+ 'docs/dingwei-prototype.html':(base,'eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8'),
+ 'docs/dingwei-sp0-design.md':(base,'f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec'),
+ 'docs/dingwei-sp1-design.md':(base,'8fafe6c5bac5595eaa771543dfc4199ba3670081786f1769f39833dc616e27bf'),
+ 'docs/dingwei-sp2-design.md':(base,'37d2c17cc0761914aae91abd20273746231d894c50163cb89b8123cc03d76a86'),
+ 'docs/dingwei-sp3-design.md':(base,'e6317b5c7257eb86b405d355b3bbcdb72751eb8c677fa2f388891c1d307b1e97'),
+ 'docs/dingwei-sp8-design.md':(sp8,'4f5e4e06d29d4a9fffcdb46f413fbc37bcfd615e9af9b04215e0a6c20205a98a'),
+}
+# ① 实取校验
+for path,(anchor,want) in sorted(CONST.items()):
+    try: b=subprocess.check_output(['git','show',f'{anchor}:{path}'],stderr=subprocess.DEVNULL)
+    except subprocess.CalledProcessError: print(f'✗ 冻结输入不可取：{anchor}:{path}'); raise SystemExit(2)
+    if hashlib.sha256(b).hexdigest()!=want: print(f'✗ 冻结输入漂移：{anchor}:{path}'); raise SystemExit(2)
+# ② ⑥ 表对撞
+spec=open(spec_path,encoding='utf8').read()
+m=re.search(r'### ⑥ 输入来源(.*?)(?=\n## )',spec,re.S)
+if not m: print('✗ 找不到 ⑥ 输入来源节，无法与常量对撞'); raise SystemExit(2)
+table={}
+for l in m.group(1).splitlines():
+    r=re.match(r'^\| `(docs/[^`]+)`(?: @ `([0-9a-f]{7,40})`)? \| `([0-9a-f]{64})` \|',l)
+    if r: table[r.group(1)]=(r.group(2) or base, r.group(3))
+if table!=CONST:
+    for k in sorted(set(table)|set(CONST)):
+        if table.get(k)!=CONST.get(k): print(f'✗ ⑥ 表与 checker 常量不一致：{k} 表={table.get(k)} 常量={CONST.get(k)}')
+    raise SystemExit(2)
+# ③ check.sh PATHS 对撞
+src=open('specs/sp4/check.sh',encoding='utf8').read()
+VAR={'base_anchor':base,'spec_anchor':specdoc,'sp8_anchor':sp8}
+paths={}
+for r in re.finditer(r"'(docs/[^']+)':\((\w+),'([0-9a-f]{64})'\)",src):
+    if r.group(2) not in VAR: print(f'✗ check.sh 用了未知锚变量 {r.group(2)}'); raise SystemExit(2)
+    paths[r.group(1)]=(VAR[r.group(2)],r.group(3))
+if paths!=CONST:
+    for k in sorted(set(paths)|set(CONST)):
+        if paths.get(k)!=CONST.get(k): print(f'✗ check.sh PATHS 与 contract 常量不一致：{k} check={paths.get(k)} 常量={CONST.get(k)}')
+    raise SystemExit(2)
+print(f'冻结输入三方对撞：{len(CONST)} 件 × (实取 sha256 · ⑥ 表 · check.sh PATHS) 全一致')
+PYIN
 [ -f "$SPEC" ] || { echo "✗ 缺 $SPEC"; exit 2; }
 for face in ① ② ③ ④ ⑤ ⑥; do grep -q "^### $face" "$SPEC" || { echo "✗ 缺必备面 $face"; exit 1; }; done
 for n in 01 02 03 04 05 06 07 08 09 10 11 12; do grep -q "D-SP4-$n" "$SPEC" || { echo "✗ 缺 D-SP4-$n"; exit 1; }; done
@@ -38,6 +71,13 @@ grep -q 'docs/dingwei-sp8-design.md` @ `970effe`' "$SPEC" || { echo '✗ SP8 件
 # 依赖点必须同步：D 表与 AC 都要落 permit 语义，不得只写旧 approval_ref 形状
 grep -qE '^\| `D-SP4-08` \|.*execute permit' "$SPEC" || { echo '✗ D-SP4-08 未落 §11.5a 五项与 execute permit'; exit 1; }
 grep -qE '^\| `AC-SP4-07` \|.*execute permit' "$SPEC" || { echo '✗ AC-SP4-07 仍是旧弱语义（缺 permit 判据）'; exit 1; }
+# §11.5a 第 ⑥ 项（接管须持新 fence_token 且先对账）必须有落点，不得只写前五项
+grep -qE '^\| `D-SP4-08` \|.*retry_after' "$SPEC" || { echo '✗ D-SP4-08 未落重放 IN_PROGRESS 的等待/重查语义'; exit 1; }
+grep -qE '^\| `D-SP4-11` \|.*新 `fence_token`' "$SPEC" || { echo '✗ D-SP4-11 未落 lease 过期接管须持新 fence_token'; exit 1; }
+grep -qE '^\| `D-SP4-11` \|.*先对账' "$SPEC" || { echo '✗ D-SP4-11 未落接管前先对账再决定是否执行'; exit 1; }
+grep -qE '^\| `D-SP4-11` \|.*CAP-CMD-RequestPromotion' "$SPEC" || { echo '✗ D-SP4-11 外部 effect 接口举例缺 RequestPromotion（§0.3 明列的晋升路径）'; exit 1; }
+grep -qE '^\| `AC-SP4-07` \|.*先对账' "$SPEC" || { echo '✗ AC-SP4-07 未把接管对账写成判据'; exit 1; }
+! grep -q '五项独立复算' "$SPEC" || { echo '✗ 仍残留旧分母「五项独立复算」（所锚 970effe 实为 6 项）'; exit 1; }
 ! grep -q '缺 SP8 定义时 fail-closed' "$SPEC" || { echo '✗ 验收仍允许"SP8 未定义"的旧口径'; exit 1; }
 ! grep -q '前置 SP8 未设计' "$SPEC" || { echo '✗ 冲突表仍写 SP8 未设计'; exit 1; }
 ! grep -q '回执 §0.4 三项待裁' "$SPEC" || { echo '✗ 开工门仍挂旧待裁回执'; exit 1; }
@@ -78,6 +118,10 @@ ACTIVE=$(sed -n '/^### 4\.1 评审协议/,/^## 5\./p' "$SPEC")
 printf '%s\n' "$ACTIVE" | grep -q '最多 4 轮' || { echo '✗ 生效协议缺 4 轮上限'; exit 1; }
 ! printf '%s\n' "$ACTIVE" | grep -q '6 轮' || { echo '✗ 生效协议残留 6 轮'; exit 1; }
 # 机器派生分母：只要求非空并打印实算值，不与手写常数比对
+XREF_OUT=$(sh specs/sp4/xref-check.sh) || { echo '✗ 跨件引用门未过（合同所称项数与目标锚现算不符）'; exit 2; }
+XREF_N=$(printf '%s\n' "$XREF_OUT" | sed -n 's/^--- SP4 跨件引用门 \([0-9][0-9]*\) 条.*$/\1/p')
+[ -n "$XREF_N" ] && [ "$XREF_N" -ge 3 ] || { echo '✗ 跨件引用台账条目不足（至少须覆盖 §11.5a 项数、CAP 接口数、CAP 事件数）'; exit 2; }
+sh specs/sp4/xref-check.sh --selftest >/dev/null 2>&1 || { echo '✗ 跨件引用门反测未过（分母写错不转红）'; exit 2; }
 SELFTEST_OUT=$(specs/sp4/check.sh --selftest) || { echo '✗ SP4 coverage checker 反测未过'; exit 1; }
 SELFTEST_N=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP4 覆盖反测 \([0-9][0-9]*\) 项全过$/\1/p')
 [ -n "$SELFTEST_N" ] || { echo '✗ coverage checker 未报告实算反测数'; exit 2; }
@@ -88,7 +132,7 @@ if DOC=docs/definitely-missing-sp4-design.md specs/sp4/check.sh >/dev/null 2>&1;
 else
  rc=$?; [ "$rc" -eq 2 ] || { echo "✗ 目标件缺失应 rc=2，实际 $rc"; exit 1; }
 fi
-echo "预期集合：六面 + D/AC各12 + CAP接口5 + CAP事件2 + 四轮 + 三票 + 前置6 + 机器派生($SETS)"
-echo "实检集合：6/6 + 12/12 + 12/12 + 5/5 + 2/2 + 1/1 + 3/3 + 6/6 + selftest=$SELFTEST_N + 缺件rc2"
+echo "预期集合：六面 + D/AC各12 + CAP接口5 + CAP事件2 + 四轮 + 三票 + 前置6 + 机器派生($SETS) + 跨件引用台账${XREF_N}条"
+echo "实检集合：6/6 + 12/12 + 12/12 + 5/5 + 2/2 + 1/1 + 3/3 + 6/6 + selftest=$SELFTEST_N + xref=${XREF_N}/${XREF_N} + 缺件rc2"
 echo '未知集合：0'
 echo '✓ SP4 设计合同与组合冻结输入通过'
