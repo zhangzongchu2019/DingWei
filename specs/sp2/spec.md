@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp2-design` |
-| **合同版本** | v1.2 |
+| **合同版本** | v1.3 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -36,7 +36,12 @@ SpecDoc §0.3 对 SP2 的定义唯一且与目标架构一致：
 - 将 SP0、SP1、SP7a、SP7b 的当前状态、设计期处理和实现期开工门分列，防止把“设计已定”升级成“前置已履约”。
 - 冻结锚实算口径写入 checker：§5–§9 heading=29；owner_sp=SP2 的 E 行=30（E.1=16、E.3=3、E.4=11）。
 
-### 0.4 前置依赖的当前状态与处置
+### 0.4 SYNC IMPACT REPORT（v1.2 → v1.3）
+
+将评审方预公布的十条判据固化为 `specs/sp2/check.sh`：四类预期集合全由冻结输入派生，只认
+`COVERAGE-SP2` 块内两列表格与真实 `D-SP2-*` 落点；缺块/空预期/输入不可取均 exit 2；自带正交变异反测。
+
+### 0.5 前置依赖的当前状态与处置
 
 | 前置/责任 | 当前可用事实 | SP2 设计期处理 | SP2 实现期开工门 |
 |---|---|---|---|
@@ -128,8 +133,10 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 | `D-SP2-11` | 复用映射 | mcsd/board/dispatch/result_outbox 等 retain/adapt/rewrite/new/retire 与依据 |
 | `D-SP2-12` | 追踪验收 | §5–§9、owner_sp=SP2 的附录 E 行、原型入口、负测与证据出口 |
 
-同时交付 `specs/sp2/check.sh`：预期集合从冻结 SpecDoc/架构/原型机器派生，只认结构化覆盖块；
-须有“删真落点转红、块外散文补 token 仍红”的变异反测。
+`specs/sp2/check.sh` 已随合同先落，正文必须提供 `COVERAGE-SP2-BEGIN/END` 块。检查器只认块内严格两列表格：
+第一列为派生 token，第二列须含真实 `D-SP2-xx`；块外提及、块内散文、空落点、“见全文”均不计。
+检查器输出四类预期/实检/未知集合；未知非空不得宣称覆盖完成，预期空/块缺失/输入不可取均 exit 2。
+`--selftest` 固化：正常放行、删真落点转红、块外补同 token 仍红、缺块 exit 2。
 
 ## 3. 明确不交付
 
@@ -145,10 +152,10 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 
 | ID | 判据 |
 |---|---|
-| `AC-SP2-01` | `D-SP2-01..12` 唯一齐全；§5–§9 heading 未知 0 |
-| `AC-SP2-02` | owner_sp=SP2 的附录 E 行逐项映射，未知 0 |
-| `AC-SP2-03` | 原型相关可达入口逐项映射，未知 0 |
-| `AC-SP2-04` | 8 个 WRK 接口均有落点；目标架构新增接口 ID 0 |
+| `AC-SP2-01` | `specs/sp2/check.sh` 派生的 SpecDoc 来源集合全部具有结构化落点；未知 0 |
+| `AC-SP2-02` | checker 派生的 owner_sp=SP2 附录 E 集合逐项落点；未知 0 |
+| `AC-SP2-03` | checker 派生的原型入口集合逐项落点；未知 0 |
+| `AC-SP2-04` | checker 派生的目标架构 WRK 接口集合逐项落点；目标架构新增接口 ID 0 |
 
 ### 4.2 语义
 
@@ -182,7 +189,8 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 
 | 冲突 | 处置 |
 |---|---|
-| SpecDoc 内部/与架构冲突 | 登记双方精确章节与后果，交 coordinator/业主，不自行取舍 |
+| SpecDoc 自身矛盾 | 登记冲突双方的精确章节、两种后果与建议，交 coordinator/业主，不自行取舍 |
+| SpecDoc 与目标架构冲突 | 登记双方精确章节与后果，交 coordinator/业主，不自行设优先级 |
 | 新设计与已 PASS SP0/SP1 对撞 | 停止该路径，登记接口/语义差异，不改上游件 |
 | 目标与代码现状冲突 | 记迁移差距；不得把旧实现提升为目标规则 |
 | 合同范围变化 | bump 合同并重走三方评审，未过不写正文 |
@@ -193,4 +201,5 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 - [ ] deepseek 合同 PASS；
 - [ ] opus50tczc2000 合同 PASS；
 - [ ] `specs/sp2/contract-check.sh` PASS；
+- [ ] `specs/sp2/check.sh --selftest` PASS（正文未创建前普通 check 应 exit 2，不算通过）；
 - [ ] coordinator 登记施工锚与合同锚。

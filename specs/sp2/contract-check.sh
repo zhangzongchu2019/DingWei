@@ -43,7 +43,13 @@ for l in ls:
 print(h,e["E.1"],e["E.3"],e["E.4"])
 ')
 [ "$1:$2:$3:$4" = '29:16:3:11' ] || { echo "✗ 冻结范围漂移：headings/E.1/E.3/E.4=$1/$2/$3/$4"; exit 1; }
-echo '预期集合：六面 + D-SP2-01..12 + AC-SP2-01..12 + WRK接口8 + 四轮 + 三票 + 前置4 + heading/E分母'
-echo '实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + 29/(16+3+11)'
+specs/sp2/check.sh --selftest >/dev/null || { echo '✗ SP2 coverage checker 反测未过'; exit 1; }
+if DOC=docs/definitely-missing-sp2-design.md specs/sp2/check.sh >/dev/null 2>&1; then
+ echo '✗ 目标件缺失被 coverage checker 当通过'; exit 1
+else
+ rc=$?; [ "$rc" -eq 2 ] || { echo "✗ 目标件缺失应 rc=2，实际 $rc"; exit 1; }
+fi
+echo '预期集合：六面 + D/AC各12 + WRK接口8 + 四轮 + 三票 + 前置4 + heading/E分母 + coverage反测/缺件'
+echo '实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + 29/(16+3+11) + 4/4 + rc2'
 echo '未知集合：0'
 echo '✓ SP2 设计合同与冻结输入通过'
