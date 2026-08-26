@@ -25,7 +25,10 @@ set -u
 SPECDOC=docs/dingwei-platform-specdoc.md
 EXC=specs/gates/status-stale-exceptions.txt
 EXLIST=${EXLIST:-specs/gates/status-consistency-exceptions.txt}
-BASELINE=${BASELINE:-specs/gates/status-suppression-baseline.txt}
+# 🔴 **冻结基线已删除**（乙域 terra 收尾裁定 2026-08-26 第三条）：
+#   「冻结基线不容作为通过条件：**待批准 ＝ 拒绝**；`PASS WITH REGISTERED DEBT`
+#     不能返回成功、也不能被聚合为合规 PASS。」
+#   ⇒ 本闸此前那条旧抑制已**在源头消掉**（不是被批准，也不是记成债务），故基线件一并删除。
 
 # 🔴 乙域 terra 全闸契约（2026-08-26）：三类抑制（style-ok / status-ok / path-ok）均属特权例外。
 #   本闸原先 `grep -v 'status-ok:'` **整行跳过**，另校「理由 ≥8 个非空白字符」——
@@ -87,7 +90,7 @@ check() {
         | grep -v '^specs/gates/' \
         | grep -v '^specs/evidence/reference-index.md:' \
         | grep -v '^scripts/')
-  rc=0; left=''; _exn=0; _debt=0; _unkn=0; _unk=''; _inert=0
+  rc=0; left=''; _exn=0; _unkn=0; _unk=''; _inert=0
   for h in $(printf '%s\n' "$HITS" | awk -F: 'NF>0 {print $1":"$2}'); do
     excepted "$h" && continue
     # 🔴 逐【短语】判受控例外 —— 一行可能同时命中多个短语（实例：
@@ -100,7 +103,6 @@ check() {
       exc_decide "$EXLIST" "$_pp" "$_hf" "$_hl"; _erc=$?
       [ "$_erc" -eq 0 ] && { _exn=$((_exn+1)); continue; }
       [ "$_erc" -eq 2 ] && { _unk="$_unk $_hf:$_hl($_pp)"; _unkn=$((_unkn+1)); continue; }
-      if exc_baseline_hit "$BASELINE" "$_pp" "$_hf" "$_hl"; then _debt=$((_debt+1)); continue; fi
       _left_phr="$_left_phr $_pp"
     done
     [ -z "$(printf '%s' "$_left_phr" | tr -d '[:space:]')" ] && continue
@@ -154,11 +156,12 @@ check() {
     echo "  ⚠️ 其中 $_exn 处经【受控例外】放行（$EXLIST，approval_ref 已解析核验）"
     echo "     🔴 闸只验了批准记录存在且四元组对得上；**这条豁免该不该给，仍归门方**。"
   fi
-  if [ "$_debt" -gt 0 ]; then
-    echo "  ⚠️ PASS WITH REGISTERED DEBT：另有 $_debt 处命中【冻结基线】放行（$BASELINE）"
-    echo "     🔴 基线**不是批准**；基线数 $(exc_count "$BASELINE") / 当前 $_debt / 增减 $((_debt - $(exc_count "$BASELINE")))"
+  # 🔴 乙域收尾裁定：登记而未获逐项批准的例外，**不得返回成功、不得被聚合为合规 PASS**。
+  if [ "$_n" -gt 0 ]; then
+    echo "✗ 状态例外 $_n 条已登记但**未获逐项批准** ⇒ 本闸不报通过（待批准 ＝ 拒绝）"
+    echo "  ⇒ 二选一：把该处改成与权威源一致；或按 specs/gates/approvals/TRUST-ROOT.md 取门方 approval_ref。"
+    return 1
   fi
-  [ "$_n" -gt 0 ] && echo "  ⑨ ⚠️ PASS WITH REGISTERED DEBT：状态例外 $_n 条——登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面。"
   echo "  🔴 过了只等于「清单形态内的过期断言已清零」；**绝不等于**语义层一致，也不等于例外已获批准。"
   return 0
 }
@@ -195,87 +198,72 @@ selftest() {
   if check >/dev/null 2>&1; then bad "死例外被放行"; else ok "拦住:已失效的例外(须删除)"; fi
   cp "$T/exc.bak" "$EXC"
 
-  # ===== 受控例外组（乙域 terra 全闸契约 2026-08-26）=====
+  # ===== 受控例外组（丙机制精确版：门方独占仓 ＋ 受保护 ref ＋ 不可变 commit）=====
   # 🔴 **改契约必须回头删掉为旧契约写的反测**：原 ⑦⑧ 测的是「status-ok 理由是否够长」，
   #   而该通道已整体关闭 —— 留着它们，读者会以为长度校验仍是这条通道的把关人。
   REV=zzc-chatgpt56terrazhangzongchu-2642
-  _OA=$EXC_APPROVALS; _OR=$EXC_REVIEWERS; _OT=$EXC_TRUSTROOT
-  mkdir -p "$T/appr"; EXC_APPROVALS="$T/appr"; EXC_REVIEWERS="$T/rev.txt"; EXC_TRUSTROOT="$T/trust.md"
-  printf '%s\n' "$REV" > "$T/rev.txt"; printf 'ACTIVE: reviewer-owned-file\n' > "$T/trust.md"
+  . specs/gates/lib/approval-fixture.sh
+  _OT=$EXC_TRUSTROOT; _OG=${EXC_GITDIR:-.}
+  EXC_TRUSTROOT="$T/trust.md"; EXC_GITDIR="$T/appro"
   _fps(){ sed -n "$2p" "$1" | tr -d '[:space:]' | sha256sum | cut -c1-16; }
-  # 🔴 反测**不得**把真实基线换成空文件：仓内本就有 3 处基线债务（specs/platform/spec.md 两行），
-  #   换空之后每条反测都会因为**那三处**而红 —— 测的就不再是本条想测的东西。
-  #   ⚠️ 本轮已在此踩过一次：⑧⑫ 报「被误拦/未亮明」，真因是夹具把仓内实况一起打掉了。
-  BL0=$BASELINE
 
   # ⑦ 🔴 真实违规 ＋ 行内编造抑制 ⇒ 必拒（terra 点名要的那一半）
   printf '本件生命周期仍为「草案」，尚未执行。<!-- status-ok: 我说这只是提及而已 -->\n' > specs/.sc-selftest2.md
-  EXLIST="$T/none.txt" BASELINE="$BL0" check >/dev/null 2>&1
+  EXLIST="$T/none.txt" check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "🔴 拦住：真实的过期状态断言 ＋ 行内编造的 status-ok ⇒ 拒（自由文本不再豁免）" \
                 || bad "行内 status-ok 仍能整行跳过"
 
-  # ⑧ 经受控例外的合法对象 ⇒ 过（另一半）；码 mention-not-assertion 的后置条件＝短语落在「」内
+  # ⑧ 经受控例外的合法对象 ⇒ 过；码 mention-not-assertion 的后置条件＝短语落在「」内
   printf '此前「尚未执行」的限制随生效解除。\n' > specs/.sc-selftest2.md
   _f8=$(_fps specs/.sc-selftest2.md 1)
-  printf '# OWNER: %s\n' "$REV" > "$T/appr/$REV.approvals"
-  printf 'AP-S1\tST-TEST-01\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s\t2026-08-26T00:00:00Z\n' "$_f8" "$REV" >> "$T/appr/$REV.approvals"
-  printf 'ST-TEST-01\t尚未执行\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s#AP-S1\n' "$_f8" "$REV" > "$T/ex.txt"
-  EXLIST="$T/ex.txt" BASELINE="$BL0" check >/dev/null 2>&1
-  [ $? -eq 0 ] && ok "经受控例外的合法对象放行（短语落在「」内 ＋ 批准可解析 ＋ 授权根 ACTIVE）" || bad "合规受控例外被误拦"
+  _CMT=$(exc_fixture_make "$T" "$REV" ST-TEST-01 尚未执行 specs/.sc-selftest2.md "$_f8" mention-not-assertion)
+  [ -n "$_CMT" ] || bad "🔴 批准夹具没造出来 —— 下列反测全部无效"
+  printf 'ST-TEST-01\t尚未执行\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s@%s#AP-01\n' "$_f8" "$REV" "$_CMT" > "$T/ex.txt"
+  EXLIST="$T/ex.txt" check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "经受控例外的合法对象放行（短语落在「」内 ＋ 受保护 ref 可达 ＋ 四元组匹配）" || bad "合规受控例外被误拦"
 
   # ⑨ 🔴 码的后置条件有牙：同一条例外，短语**不在引号内**时必拒
   printf '本件尚未执行，须重走。\n' > specs/.sc-selftest2.md
   _f9=$(_fps specs/.sc-selftest2.md 1)
-  printf 'AP-S2\tST-TEST-02\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s\t2026-08-26T00:00:00Z\n' "$_f9" "$REV" >> "$T/appr/$REV.approvals"
-  printf 'ST-TEST-02\t尚未执行\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s#AP-S2\n' "$_f9" "$REV" > "$T/ex.txt"
-  EXLIST="$T/ex.txt" BASELINE="$BL0" check >/dev/null 2>&1
+  _C9=$(exc_fixture_make "$T" "$REV" ST-TEST-02 尚未执行 specs/.sc-selftest2.md "$_f9" mention-not-assertion)
+  printf 'ST-TEST-02\t尚未执行\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s@%s#AP-01\n' "$_f9" "$REV" "$_C9" > "$T/ex.txt"
+  EXLIST="$T/ex.txt" check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "🔴 拦住：报「提及而非断言」但短语并不在引号内（码有后置条件）" || bad "码选错仍放行"
 
   # ⑩ 🔴 一行两命中，例外只绑其中一个 ⇒ 另一个**不得搭便车**
-  #    （terra：「内容变更或新增第二命中即失配」的同族 —— 例外的粒度是短语，不是行）
   printf '此处却仍写「仍为草案」，并且本件尚未执行。\n' > specs/.sc-selftest2.md
   _fa=$(_fps specs/.sc-selftest2.md 1)
-  printf 'AP-S3\tST-TEST-03\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s\t2026-08-26T00:00:00Z\n' "$_fa" "$REV" >> "$T/appr/$REV.approvals"
-  printf 'ST-TEST-03\t仍为草案\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s#AP-S3\n' "$_fa" "$REV" > "$T/ex.txt"
-  EXLIST="$T/ex.txt" BASELINE="$BL0" check >/dev/null 2>&1
+  _CA=$(exc_fixture_make "$T" "$REV" ST-TEST-03 仍为草案 specs/.sc-selftest2.md "$_fa" mention-not-assertion)
+  printf 'ST-TEST-03\t仍为草案\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s@%s#AP-01\n' "$_fa" "$REV" "$_CA" > "$T/ex.txt"
+  EXLIST="$T/ex.txt" check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "🔴 拦住：同一行第二个短语命中不被第一个的例外一并豁免（粒度是短语，不是行）" \
                 || bad "一条例外把整行的所有命中一起豁免了"
 
   # ⑪ 🔴 授权根无 ACTIVE 后端（＝仓内当前实况）⇒ exit 2
   printf '此前「尚未执行」的限制随生效解除。\n' > specs/.sc-selftest2.md
   _fc=$(_fps specs/.sc-selftest2.md 1)
-  printf 'ST-TEST-01\t尚未执行\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s#AP-S1\n' "$_fc" "$REV" > "$T/ex.txt"
-  printf 'AP-S1\tST-TEST-01\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s\t2026-08-26T00:00:00Z\n' "$_fc" "$REV" >> "$T/appr/$REV.approvals"
-  : > "$T/trust.md"
-  EXLIST="$T/ex.txt" BASELINE="$BL0" check >/dev/null 2>&1
+  _CC=$(exc_fixture_make "$T" "$REV" ST-TEST-01 尚未执行 specs/.sc-selftest2.md "$_fc" mention-not-assertion)
+  printf 'ST-TEST-01\t尚未执行\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t%s@%s#AP-01\n' "$_fc" "$REV" "$_CC" > "$T/ex.txt"
+  exc_fixture_trust "$T" "$REV" ''
+  EXLIST="$T/ex.txt" check >/dev/null 2>&1
   [ $? -eq 2 ] && ok "🔴 授权根不可得 ⇒ UNKNOWN exit 2（不是 PASS，也不是 FAIL）" || bad "授权根不可得时闸给了结论"
-  printf 'ACTIVE: reviewer-owned-file\n' > "$T/trust.md"
+  exc_fixture_trust "$T" "$REV" reviewer-owned-protected-ref
 
-  # ⑫ 🔴 冻结基线：命中亮 REGISTERED DEBT；指纹漂移即掉出基线
-  cp "$BL0" "$T/bl.txt"
-  printf 'ST-BL-01\t尚未执行\tspecs/.sc-selftest2.md\t%s\tmention-not-assertion\t反测用基线\n' "$_fc" >> "$T/bl.txt"
-  _o=$(EXLIST="$T/none.txt" BASELINE="$T/bl.txt" check 2>&1); _r=$?
-  case "$_o" in
-    *"REGISTERED DEBT"*) [ $_r -eq 0 ] && ok "🔴 冻结基线放行时亮明 PASS WITH REGISTERED DEBT（基线≠批准）" || bad "基线亮明但退出码不对";;
-    *) bad "命中基线时未亮明 REGISTERED DEBT";;
-  esac
-  cp "$BL0" "$T/bl.txt"
-  printf 'ST-BL-01\t尚未执行\tspecs/.sc-selftest2.md\t0000000000000000\tmention-not-assertion\t指纹已漂移\n' >> "$T/bl.txt"
-  EXLIST="$T/none.txt" BASELINE="$T/bl.txt" check >/dev/null 2>&1
-  [ $? -eq 1 ] && ok "🔴 基线按行指纹绑定：该行一改即掉出基线（基线不可新增）" || bad "基线在指纹漂移后仍放行"
-
-  EXC_APPROVALS=$_OA; EXC_REVIEWERS=$_OR; EXC_TRUSTROOT=$_OT
+  EXC_TRUSTROOT=$_OT; EXC_GITDIR=$_OG
+  rm -f specs/.sc-selftest2.md
   rm -f specs/.sc-selftest2.md
 
-  # ⑨ 登记债务时输出须亮明 REGISTERED DEBT（不得无条件「全过」）
+  # ⑨ 🔴 **本条随乙域收尾裁定反转**（2026-08-26）：
+  #   原写「登记债务时亮明 PASS WITH REGISTERED DEBT ⇒ rc 0 ⇒ ok」——
+  #   terra：「待批准 ＝ 拒绝；`PASS WITH REGISTERED DEBT` 不能返回成功、
+  #   也不能被聚合为合规 PASS。」⇒ 登记而未获逐项批准的例外，闸**不得报通过**。
+  #   ⚠️ **改契约必须回头改为旧契约写的反测** —— 留着它就等于把「登记即放行」锁定成期望语义。
   echo '本件生命周期仍为「草案」，尚未执行。' > specs/.sc-selftest.md
   printf 'specs/.sc-selftest.md:1 反测用,债务登记示例\n' >> "$EXC"
   out=$(check 2>/dev/null); rc_=$?
   cp "$T/exc.bak" "$EXC"; rm -f specs/.sc-selftest.md
-  case "$out" in
-    *"REGISTERED DEBT"*) [ $rc_ -eq 0 ] && ok "登记债务时亮明 PASS WITH REGISTERED DEBT" || bad "债务亮明但退出码不对";;
-    *) bad "登记债务时未亮明 REGISTERED DEBT";;
-  esac
+  [ $rc_ -ne 0 ] && ok "🔴 登记例外但未获逐项批准 ⇒ 不得报通过（待批准＝拒绝）" \
+                 || bad "登记即放行 —— PASS WITH REGISTERED DEBT 仍被当成通过"
 
   rm -rf "$T"
   [ $fail -eq 0 ] && echo "--- 反测 $n 项全过（闸有牙）" || echo "--- 反测未过"

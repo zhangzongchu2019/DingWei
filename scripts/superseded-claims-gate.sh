@@ -18,7 +18,10 @@ set -u
 LIST=${LIST:-specs/gates/superseded-claims.txt}
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
 EXLIST=${EXLIST:-specs/gates/superseded-claims-exceptions.txt}
-BASELINE=${BASELINE:-specs/gates/superseded-suppression-baseline.txt}
+# 🔴 **冻结基线已删除**（乙域 terra 收尾裁定 2026-08-26 第三条）：
+#   「冻结基线不容作为通过条件：**待批准 ＝ 拒绝**；`PASS WITH REGISTERED DEBT`
+#     不能返回成功、也不能被聚合为合规 PASS。」
+#   ⇒ 本闸此前那条旧抑制已**在源头消掉**（不是被批准，也不是记成债务），故基线件一并删除。
 
 # 🔴 v3（乙域 terra 复验 fix @ 434b8fe）：例外判据整体移入**三闸共用**的公共库。
 #   移的原因不是复用省事，是 terra 那条裁定的字面要求 ——
@@ -54,7 +57,7 @@ check() {
   _n=$(sed 's/#.*//' "$LIST" | awk -F'\t' 'NF>=3' | wc -l | tr -d ' ')
   [ "$_n" -eq 0 ] && { echo "✗ $LIST 无有效条目（须 <旧断言> TAB <现行> TAB <依据>）—— 闸坏了"; return 2; }
 
-  _bad=0; _exn=0; _debt=0; _unkn=0; _unk=''; _seen=0
+  _bad=0; _exn=0; _unkn=0; _unk=''; _seen=0
   for f in $DOCS; do
     [ -f "$f" ] || { echo "✗ 闸依赖缺失：$f 不存在"; return 2; }
     _seen=$((_seen+1))
@@ -78,9 +81,6 @@ check() {
         #   —— 又一次「判据落在了别的东西上」，本轮第 N 次，故写死在此。
         [ "$_erc" -eq 0 ] && { _exn=$((_exn+1)); continue; }
         [ "$_erc" -eq 2 ] && { _unk="$_unk $f:$_one(「$old」)"; _unkn=$((_unkn+1)); continue; }
-        if exc_baseline_hit "$BASELINE" "$old" "$f" "$_one"; then
-          _debt=$((_debt+1)); continue
-        fi
         _remain="$_remain $_one"
       done
       _lines=$(printf '%s\n' "$_lines" | awk -v keep="$_remain" '
@@ -123,11 +123,6 @@ EOF
     echo "  ⚠️ 其中 $_exn 处经【受控例外】放行（$EXLIST，approval_ref 已解析核验）"
     echo "     🔴 闸只验了批准记录**存在且四元组对得上**；**这条豁免该不该给，仍归门方**。"
   fi
-  if [ "$_debt" -gt 0 ]; then
-    echo "  ⚠️ PASS WITH REGISTERED DEBT：另有 $_debt 处命中【冻结基线】放行（$BASELINE）"
-    echo "     🔴 基线**不是批准**，是「已知未治理」的可见化；基线数 $(exc_count "$BASELINE") / 当前 $_debt / 增减 $((_debt - $(exc_count "$BASELINE")))"
-    echo "     基线按行指纹绑定、不可新增：该行一改即掉出基线，必须走批准。"
-  fi
   echo "  ⚠️ 本闸判不了【清单是否完备】—— 漏登记的旧断言它看不见，那仍归门方。"
   echo "  🔴 过了只等于「清单内短语在正文已清零」；**绝不等于**清单完备、或例外已获批准。"
   return 0
@@ -167,14 +162,9 @@ selftest() {
   #   ⇒ **旧反测覆盖不到它们，不是因为条数不够，是因为契约本身把「字符串」当成了「证据」。**
   _fp0(){ sed -n "$2p" "$1" | tr -d '[:space:]' | sha256sum | cut -c1-16; }
   REV=zzc-chatgpt56terrazhangzongchu-2642
-  _OA=$EXC_APPROVALS; _OR=$EXC_REVIEWERS; _OT=$EXC_TRUSTROOT
-  mkdir -p "$T/appr"
-  EXC_APPROVALS="$T/appr"; EXC_REVIEWERS="$T/reviewers.txt"; EXC_TRUSTROOT="$T/trust.md"
-  printf '%s\n' "$REV" > "$T/reviewers.txt"
-  _root(){ : > "$T/trust.md"; [ -n "${1:-}" ] && printf 'ACTIVE: %s\n' "$1" >> "$T/trust.md"; return 0; }
-  _led(){ # <台账号> <claim_id> <件> <指纹> <码> <批准方>
-    printf '# OWNER: %s\n' "$6" > "$T/appr/$6.approvals"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t2026-08-26T00:00:00Z\n' "$1" "$2" "$3" "$4" "$5" "$6" >> "$T/appr/$6.approvals"; }
+  . specs/gates/lib/approval-fixture.sh
+  _OT=$EXC_TRUSTROOT; _OG=${EXC_GITDIR:-.}
+  EXC_TRUSTROOT="$T/trust.md"; EXC_GITDIR="$T/appro"
   _ex(){  # <claim_id> <对象> <件> <指纹> <码> <approval_ref>
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" "$5" "$6" > "$T/ex.txt"; }
   _runex(){ EXLIST="$T/ex.txt" run; }
@@ -182,126 +172,115 @@ selftest() {
   # 夹具：一处**真实命中**（明确时点表述，故 historical-narrative 的后置条件成立）
   # ⚠️ 此处不能用「沿革：…」开头 —— 那个词在 $SKIP 里，整行会被跳过，
   #   于是本组每一条测的都不是例外机制，而是「命中集为空」。
-  #   🔴 **反测夹具没造出真命中，后面测的就不是它该测的东西**（同甲域 RV-甲47 那次）。
   mk; printf '本节 v3.2 之前采用旧说法处理。\n' >> "$T/a.md"
   _lh=$(grep -n 'v3.2 之前' "$T/a.md" | cut -d: -f1); _fh=$(_fp0 "$T/a.md" "$_lh")
-  # 自检：夹具必须真的构成一处命中（无例外时闸须 FAIL），否则本组全部结论无效
   EXLIST="$T/none.txt" run
   [ $? -eq 1 ] || bad "🔴 本组夹具未构成真命中 —— 下列受控例外反测全部无效"
 
-  # ① 🔴 terra 要的正例：受控例外**齐备**（六列 ＋ 台账可解析 ＋ 四元组匹配 ＋ ACTIVE 授权根）⇒ 过
-  _root reviewer-owned-file
-  _led AP-01 SC-TEST-01 "$T/a.md" "$_fh" historical-narrative "$REV"
-  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV#AP-01"
-  _runex; [ $? -eq 0 ] && ok "经受控例外的合法对象放行（键齐 ＋ 批准可解析 ＋ 授权根 ACTIVE）" \
+  _CMT=$(exc_fixture_make "$T" "$REV" SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative)
+  [ -n "$_CMT" ] || bad "🔴 批准夹具（门方独占仓）没造出来 —— 下列反测全部无效"
+
+  # ① 🔴 terra 要的正例：approval_ref 解析到【不可变 commit ＋ 记录 ID】且四元组逐项对上 ⇒ 过
+  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV@$_CMT#AP-01"
+  _runex; [ $? -eq 0 ] && ok "经受控例外的合法对象放行（受保护 ref 可达 ＋ 不可变 commit ＋ 四元组匹配）" \
                        || bad "合规受控例外被误拦"
 
-  # ② 🔴 变异 1（terra 实测）：approval_ref 只写门方**名字**，仓内无其台账 ⇒ 必拒
-  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV#AP-NOSUCH"
-  _runex; [ $? -eq 1 ] && ok "🔴 变异1 拦住：approval_ref 指向不存在的批准记录（写个门方的名字不算批准）" \
-                       || bad "伪造门方显示名仍能豁免 —— 批准仍是字符串比对"
-  _led AP-01 SC-TEST-01 "$T/a.md" "$_fh" historical-narrative "$REV"
+  # ② 🔴 变异 1（terra 实测）：approval_ref 只写门方**名字**、不指 commit ⇒ 形状即拒
+  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV"
+  _runex; [ $? -eq 1 ] && ok "🔴 变异1 拦住：approval_ref 只有门方名字（写个名字不算批准）" || bad "伪造门方显示名仍能豁免"
 
-  # ③ 🔴 四元组失配（台账在，但绑的是另一处/另一码）⇒ 必拒
-  _led AP-01 SC-TEST-01 "$T/a.md" 0000000000000000 historical-narrative "$REV"
-  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV#AP-01"
-  _runex; [ $? -eq 1 ] && ok "🔴 拦住：批准记录与四元组失配（批准是对某一处的批准，不是对某个人的信任）" \
-                       || bad "失配的批准记录仍放行"
-  _led AP-01 SC-TEST-01 "$T/a.md" "$_fh" historical-narrative "$REV"
+  # ③ 🔴 指到一个**不可达**的 commit（合法 40 位 hex，但不在受保护 ref 上）⇒ UNKNOWN
+  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV@0123456789abcdef0123456789abcdef01234567#AP-01"
+  _runex; [ $? -eq 2 ] && ok "🔴 commit 在受保护 ref 上不可达 ⇒ 验证失败 ＝ UNKNOWN(2)，不是 PASS" || bad "不可达 commit 被放行或被判成 FAIL"
 
-  # ④ 🔴 变异 2（terra 实测）：覆盖 AUTHOR_SESSION 环境变量后，执笔方仍不能自批
-  #    —— 执笔方会话名在库内写死；这条测的是「规则的开关不在被规则约束的一方手里」。
-  _led AP-SELF SC-TEST-01 "$T/a.md" "$_fh" historical-narrative zzc-opus50tchangshark-2642
-  printf '%s\n' zzc-opus50tchangshark-2642 >> "$T/reviewers.txt"
-  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "zzc-opus50tchangshark-2642#AP-SELF"
+  # ④ 🔴 分支名 / 短 sha 不是不可变引用 ⇒ 拒
+  for _bad_ref in "$REV@review/approvals-test#AP-01" "$REV@$(printf '%s' "$_CMT" | cut -c1-8)#AP-01"; do
+    _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$_bad_ref"
+    _runex; [ $? -eq 1 ] || { bad "非不可变引用 [$_bad_ref] 竟被受理"; break; }
+  done
+  [ $fail -eq 0 ] && ok "🔴 分支名 / 短 sha 均不构成【不可变 commit】⇒ 拒"
+
+  # ⑤ 🔴 四元组失配（记录绑的是另一处指纹）⇒ 拒
+  _CMT2=$(exc_fixture_make "$T" "$REV" SC-TEST-01 旧说法 "$T/a.md" 0000000000000000 historical-narrative)
+  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV@$_CMT2#AP-01"
+  _runex; [ $? -eq 1 ] && ok "🔴 拦住：批准记录与四元组失配（批准是对某一处的批准，不是对某个人的信任）" || bad "失配的批准记录仍放行"
+
+  # ⑥ 🔴 变异 2（terra 实测）：覆盖 AUTHOR_SESSION 环境变量后，执笔方仍不能自批
+  _CMT3=$(exc_fixture_make "$T" zzc-opus50tchangshark-2642 SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative)
+  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "zzc-opus50tchangshark-2642@$_CMT3#AP-01"
   AUTHOR_SESSION=not-the-author _runex
   [ $? -eq 1 ] && ok "🔴 变异2 拦住：覆盖 AUTHOR_SESSION 仍不能自批（执笔方名写死，不读环境变量）" \
                || bad "改环境变量即可自批 —— 判据落在被判方可控的面上"
-  printf '%s\n' "$REV" > "$T/reviewers.txt"; rm -f "$T/appr/zzc-opus50tchangshark-2642.approvals"
+  _CMT=$(exc_fixture_make "$T" "$REV" SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative)
 
-  # ⑤ approval_ref 为空 / 未决词 ⇒ 必拒（「登记 ≠ 获批准」要有执行者）
-  for _ref in "" "待门方批准" "$REV#pending"; do
+  # ⑦ approval_ref 为空 / 未决词 ⇒ 拒
+  for _ref in "" "待门方批准" "$REV@$_CMT#pending"; do
     _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$_ref"
     _runex; [ $? -eq 1 ] || { bad "approval_ref=[$_ref] 竟构成批准"; break; }
   done
   [ $fail -eq 0 ] && ok "🔴 拦住：approval_ref 空 / 未决 / pending 均不构成批准"
 
-  # ⑥ 台账 OWNER 与批准方不一致 ⇒ 必拒（台账须自报归属，且归属须与批准方同一）
-  printf '# OWNER: %s\n' zzc-somebody-else-2642 > "$T/appr/$REV.approvals"
-  printf 'AP-01\tSC-TEST-01\t%s\t%s\thistorical-narrative\t%s\t2026-08-26T00:00:00Z\n' "$T/a.md" "$_fh" "$REV" >> "$T/appr/$REV.approvals"
-  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV#AP-01"
-  _runex; [ $? -eq 1 ] && ok "🔴 拦住：台账 OWNER ≠ 批准方（台账不能替别人签）" || bad "OWNER 不一致仍放行"
-  _led AP-01 SC-TEST-01 "$T/a.md" "$_fh" historical-narrative "$REV"
+  # ⑧ 🔴 批准人不在【同一 commit 内的】门方名册 ⇒ 拒
+  #    名册也取自受保护 ref 的同一 commit —— 不取工作区那份（工作区在执笔方写权内）
+  git -C "$T/appro" rm -q --cached reviewers.txt >/dev/null 2>&1
+  : > "$T/appro/reviewers.txt"
+  git -C "$T/appro" add -A >/dev/null 2>&1
+  git -C "$T/appro" -c user.name=fx -c user.email=fx@example.invalid commit -q -m empty-roster >/dev/null 2>&1
+  _CMT4=$(git -C "$T/appro" rev-parse HEAD)
+  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV@$_CMT4#AP-01"
+  _runex; [ $? -eq 1 ] && ok "🔴 拦住：批准人不在同一 commit 内的门方名册中" || bad "名册外的人也能批准"
+  _CMT=$(exc_fixture_make "$T" "$REV" SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative)
 
-  # ⑦ 批准方不在门方名册 ⇒ 必拒
-  : > "$T/reviewers.txt"
-  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV#AP-01"
-  _runex; [ $? -eq 1 ] && ok "🔴 拦住：批准方不在门方名册内" || bad "名册外的人也能批准"
-  printf '%s\n' "$REV" > "$T/reviewers.txt"
-
-  # ⑧ 🔴🔴 授权根无 ACTIVE 后端（＝仓内当前实况）⇒ **exit 2（UNKNOWN），不是 0 也不是 1**
-  #    这条钉住的是本轮最核心的一条：**「我验不了」不得折算成「验过了」，也不等于「不合格」。**
-  _root ''
-  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV#AP-01"
+  # ⑨ 🔴🔴 授权根无 ACTIVE 后端（＝仓内当前实况）⇒ **exit 2（UNKNOWN）**
+  #    钉住本轮最核心的一条：**「我验不了」不得折算成「验过了」，也不等于「不合格」。**
+  exc_fixture_trust "$T" "$REV" ''
+  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV@$_CMT#AP-01"
   _runex; [ $? -eq 2 ] && ok "🔴 授权根不可得（无 ACTIVE 后端）⇒ UNKNOWN exit 2，不折算为 PASS" \
                        || bad "授权根不可得时闸给了结论（应为 exit 2）"
-  _root reviewer-owned-file
+  # 🔴 该门方无 REF 声明（受保护 ref 不可取）⇒ 同样 UNKNOWN
+  printf 'ACTIVE: reviewer-owned-protected-ref\n' > "$T/trust.md"
+  _runex; [ $? -eq 2 ] && ok "🔴 该门方无受保护 ref 声明 ⇒ 取不到 ⇒ UNKNOWN exit 2" || bad "无 REF 声明时给了结论"
+  exc_fixture_trust "$T" "$REV" reviewer-owned-protected-ref
 
-  # ⑨ 行指纹不匹配 ⇒ 例外失效（内容一改须重新批准）
-  _ex SC-TEST-01 旧说法 "$T/a.md" 0000000000000000 historical-narrative "$REV#AP-01"
+  # ⑩ 行指纹不匹配 ⇒ 例外失效（内容一改须重新批准）
+  _ex SC-TEST-01 旧说法 "$T/a.md" 0000000000000000 historical-narrative "$REV@$_CMT#AP-01"
   _runex; [ $? -eq 1 ] && ok "🔴 行指纹不匹配 ⇒ 例外失效（内容哈希，非行号）" || bad "指纹不匹配仍放行"
 
-  # ⑩ 跨件泛化 ⇒ 拒
-  _ex SC-TEST-01 旧说法 "$T/别的件.md" "$_fh" historical-narrative "$REV#AP-01"
+  # ⑪ 跨件泛化 ⇒ 拒
+  _ex SC-TEST-01 旧说法 "$T/别的件.md" "$_fh" historical-narrative "$REV@$_CMT#AP-01"
   _runex; [ $? -eq 1 ] && ok "🔴 拦住：例外【件不匹配】不放行（例外不得跨件泛化）" || bad "跨件泛化被放行"
 
-  # ⑪ 未知码 / 空码 ⇒ 拒（码不在表内即拒，不做「未知即放行」）
+  # ⑫ 未知码 / 空码 ⇒ 拒（码不在表内即拒，不做「未知即放行」）
   for _c in "no-such-code：随便写的" ""; do
-    _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" "$_c" "$REV#AP-01"
+    _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" "$_c" "$REV@$_CMT#AP-01"
     _runex; [ $? -eq 1 ] || { bad "理由码=[$_c] 竟被放行"; break; }
   done
   [ $fail -eq 0 ] && ok "🔴 未知码 / 空码一律拒（空码 ＝ 没码）"
 
-  # ⑫ 🔴 码与行形态不符：行内真实命中却报「跨行误命中」⇒ 必拒
-  #    这正是执笔方 6d8ae86 那次编造理由的形态，本条把它当场拆穿。
+  # ⑬ 🔴 码与行形态不符：行内真实命中却报「跨行误命中」⇒ 必拒
   mk; printf '本节采用旧说法处理。\n' >> "$T/a.md"
   _lz=$(grep -n '本节采用' "$T/a.md" | cut -d: -f1); _fz=$(_fp0 "$T/a.md" "$_lz")
-  _led AP-02 SC-TEST-02 "$T/a.md" "$_fz" cross-line-false-positive "$REV"
-  _ex SC-TEST-02 旧说法 "$T/a.md" "$_fz" cross-line-false-positive "$REV#AP-02"
+  _C5=$(exc_fixture_make "$T" "$REV" SC-TEST-02 旧说法 "$T/a.md" "$_fz" cross-line-false-positive)
+  _ex SC-TEST-02 旧说法 "$T/a.md" "$_fz" cross-line-false-positive "$REV@$_C5#AP-01"
   _runex; [ $? -eq 1 ] && ok "🔴 行内真实命中 ＋ 码称「跨行误命中」⇒ 必拒（拆穿那次编造的理由）" \
                        || bad "编造的跨行理由仍能豁免 —— 码没有后置条件"
 
-  # ⑬ 🔴 沿革码 ＋ 现在时写旧状态 ⇒ 拒（沿革不得用现在时描述旧状态）
+  # ⑭ 🔴 沿革码 ＋ 现在时写旧状态 ⇒ 拒
   mk; printf '本节现有旧说法 的写法。\n' >> "$T/a.md"
   _ln2=$(grep -n '本节现有' "$T/a.md" | cut -d: -f1); _f2=$(_fp0 "$T/a.md" "$_ln2")
-  _led AP-03 SC-TEST-03 "$T/a.md" "$_f2" historical-narrative "$REV"
-  _ex SC-TEST-03 旧说法 "$T/a.md" "$_f2" historical-narrative "$REV#AP-03"
+  _C6=$(exc_fixture_make "$T" "$REV" SC-TEST-03 旧说法 "$T/a.md" "$_f2" historical-narrative)
+  _ex SC-TEST-03 旧说法 "$T/a.md" "$_f2" historical-narrative "$REV@$_C6#AP-01"
   _runex; [ $? -eq 1 ] && ok "🔴 沿革码 ＋ 现在时（现有/现为/目前）⇒ 拒" || bad "现在时旧状态被当沿革放行"
 
-  # ⑭ 🔴 变异 A（v2 立、v3 保留）：同件内【合法句 ＋ 真残留】各一处，例外只绑合法句那一行
+  # ⑮ 🔴 变异 A：同件内【合法句 ＋ 真残留】各一处，例外只绑合法句那一行
   mk; printf '合法句：v3.2 之前旧说法 曾为口径\n本节仍按旧说法 的旧模型描述归属链\n' >> "$T/a.md"
   _l1=$(grep -n '合法句' "$T/a.md" | cut -d: -f1); _f1=$(_fp0 "$T/a.md" "$_l1")
-  _led AP-04 SC-TEST-04 "$T/a.md" "$_f1" historical-narrative "$REV"
-  _ex SC-TEST-04 旧说法 "$T/a.md" "$_f1" historical-narrative "$REV#AP-04"
+  _C7=$(exc_fixture_make "$T" "$REV" SC-TEST-04 旧说法 "$T/a.md" "$_f1" historical-narrative)
+  _ex SC-TEST-04 旧说法 "$T/a.md" "$_f1" historical-narrative "$REV@$_C7#AP-01"
   _runex; [ $? -eq 1 ] && ok "🔴 变异A 拦住：同件内真残留【不被】合法句的例外一并豁免" \
                        || bad "例外仍按件级泛化 —— 真残留被一起放行"
 
-  # ⑮ 🔴 冻结基线：命中基线 ⇒ 放行但必须亮 REGISTERED DEBT；不在基线的新抑制 ⇒ 拒
-  mk; printf '本节采用旧说法处理。\n' >> "$T/a.md"
-  _lb=$(grep -n '本节采用' "$T/a.md" | cut -d: -f1); _fb=$(_fp0 "$T/a.md" "$_lb")
-  printf 'SC-BL-01\t旧说法\t%s\t%s\thistorical-narrative\t反测用基线\n' "$T/a.md" "$_fb" > "$T/bl.txt"
-  _out=$(EXLIST="$T/none.txt" BASELINE="$T/bl.txt" LIST="$L" DOCS="$T/a.md" check 2>&1); _brc=$?
-  case "$_out" in
-    *"REGISTERED DEBT"*) [ $_brc -eq 0 ] && ok "🔴 冻结基线放行时亮明 PASS WITH REGISTERED DEBT（基线≠批准）" \
-                                         || bad "基线亮明但退出码不对";;
-    *) bad "命中基线时未亮明 REGISTERED DEBT";;
-  esac
-  printf 'SC-BL-01\t旧说法\t%s\t0000000000000000\thistorical-narrative\t指纹已漂移\n' "$T/a.md" > "$T/bl.txt"
-  EXLIST="$T/none.txt" BASELINE="$T/bl.txt" LIST="$L" DOCS="$T/a.md" check >/dev/null 2>&1
-  [ $? -eq 1 ] && ok "🔴 基线按行指纹绑定：该行一改即掉出基线（基线不可新增，天然单调）" \
-               || bad "基线在指纹漂移后仍放行"
-
-  EXC_APPROVALS=$_OA; EXC_REVIEWERS=$_OR; EXC_TRUSTROOT=$_OT
+  EXC_TRUSTROOT=$_OT; EXC_GITDIR=$_OG
 
   mk; printf '【RV|甲|阻断|未决】本节仍写旧说法，须改\n' >> "$T/a.md"; run
   [ $? -eq 0 ] && ok "不误伤：RV 标注里引述旧断言不算违规（两闸不打架）" || bad "RV 标注被当违规"

@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `7a5eb75e7c62667ac69ef7d4d95ea4eb4d7755c4` · 分支 `fix/e-registry-and-18-1`
+生成自 commit `ad10d98d6a88dd6cd782103e077683dfb9a1b375` · 分支 `fix/e-registry-and-18-1`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -21,18 +21,18 @@
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
 | `dingwei-platform-specdoc.md` | **v3.69** | `434b8fefc1422001ac7cd588e634d14535976f52` | 5133 / 363198 | `4fb89aa958c784b963e59f9f1ad49a8c9ee5693a90e662a9dfecf1627148e950` |
-| `dingwei-prototype.html` | **v1.43** | `2f620634a99f727edd4254fdbe061817a03fa50b<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2905 / 260945 | `6003718242079f24862c3cc635f6b2f35d709130c2c8c176048e7df56e73149e` |
-| `dingwei-architecture-design.md` | **v0.34** | `5aa4a951f49b09da9a584aefd3d04313e4f4b9f0` | 907 / 61540 | `be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79` |
+| `dingwei-prototype.html` | **v1.44** | `a26efb0ad3056a04420e65b2a4c7ff0ad05a6ac7<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2905 / 261096 | `3fb6da73ecec59ab8ec89e3659acb6bdfe8b08aa7ed2797deb7406a4dcbc43d6` |
+| `dingwei-architecture-design.md` | **v0.34** | `5aa4a951f49b09da9a584aefd3d04313e4f4b9f0<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 907 / 61596 | `ef54ad86fa9763ef29510ef60a98b5471be0bfadc56b17a1c0fb22d1f593d3e7` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+ad10d98 ㉙ 接入侧分支的提交闸/CI 链路（coordinator 裁）—— 一律实跑，只有阻断随分支不同
+a26efb0 受控例外统一到四个使用点 ＋ approval_ref 可验证批准锚（乙域复验 434b8fe 的四件）
 7a5eb75 乙域跨闸硬契约四条逐字采纳 ＋ 立覆盖见证元闸 ㉙ ＋ 实测债务 18/20
 2e7d043 表态件权威副本迁至侧分支 —— 乙域驳回执笔方对冻结边界的解释
 2f62063 闸 ㉘ v2：本席自己的闸在「空集当通过」——刚立的通则自己就在违反
 2ca0c11 补豁免契约的判据来源：丙域的两分法（标注豁免 vs 内容豁免）
 5ef2098 「闸过 ≠ 批准」升为 GATE-CONTRACT 通则（乙域裁定认可为待写入契约）
 434b8fe ㉕ v3：判据由「词汇命中」改为「结构化⑥面声明」—— 甲域 sol 抓出两个洞
-29e418a 计数口径立为全局约定：凡报残留计数须注明是否剥 RV 标注段
-846607d 受控理由码落地（乙域裁定归执笔方实现）—— 判据交给码，叙述留给人
 ```

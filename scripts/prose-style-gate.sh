@@ -47,7 +47,10 @@ DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.
 # 沿革记录件是【专门存放】过程痕迹的地方,本闸不扫它。
 HIST=${HIST:-'docs/dingwei-revision-history.md'}
 EXLIST=${EXLIST:-specs/gates/prose-style-exceptions.txt}
-BASELINE=${BASELINE:-specs/gates/prose-style-suppression-baseline.txt}
+# 🔴 **冻结基线已删除**（乙域 terra 收尾裁定 2026-08-26 第三条）：
+#   「冻结基线不容作为通过条件：**待批准 ＝ 拒绝**；`PASS WITH REGISTERED DEBT`
+#     不能返回成功、也不能被聚合为合规 PASS。」
+#   ⇒ 本闸此前那条旧抑制已**在源头消掉**（不是被批准，也不是记成债务），故基线件一并删除。
 
 # 🔴 乙域 terra 全闸契约（2026-08-26）：`style-ok` / `status-ok` / `path-ok` 等抑制均属特权例外。
 #   本闸是 `style-ok` 的**第二个**使用者（第一个是已撤销断言闸，已于 RV-乙18 完成受控化）。
@@ -106,7 +109,6 @@ suppressed() {
   exc_decide "$EXLIST" "$_obj" "$_sf" "$_sl"; _src=$?
   [ "$_src" -eq 0 ] && return 0
   [ "$_src" -eq 2 ] && { _SUP_UNK=$((_SUP_UNK+1)); return 2; }
-  exc_baseline_hit "$BASELINE" "$_obj" "$_sf" "$_sl" && { _DEBT=$((${_DEBT:-0}+1)); return 0; }
   return 1
 }
 
@@ -114,7 +116,7 @@ check() {
   # 🔴 局部计数一律加 _ 前缀:sh 无函数局部变量,叫 n 会覆盖 selftest 的通过计数,
   #    于是「反测 N 项全过」印出来的是最后一次命中数 —— 一个看着合理、其实是别的东西的数字。
   #    本闸自己先栽过这一次,注在此处防复发。
-  rc=0; _total=0; _DEBT=0; _SUP_UNK=0
+  rc=0; _total=0; _SUP_UNK=0
   for f in $DOCS; do
     [ -f "$f" ] || { echo "✗ 闸依赖缺失：$f 不存在 —— 闸坏了，不是免检"; return 2; }
     hits=$(scan "$f")
@@ -182,11 +184,6 @@ check() {
   echo "  ✓ 体例合规（正文 $_total 处痕迹指纹；沿革件在 $HIST）"
   echo "     受检范围（预期集合）：$(printf '%s' "$DOCS" | wc -w | tr -d ' ') 件；口径＝排除 【RV 标注段（标注豁免，自动）"
   echo "     未知集合：$_SUP_UNK"
-  if [ "${_DEBT:-0}" -gt 0 ]; then
-    echo "  ⚠️ PASS WITH REGISTERED DEBT：$_DEBT 处命中【冻结基线】放行（$BASELINE）"
-    echo "     🔴 基线**不是批准**；基线数 $(exc_count "$BASELINE") / 当前 $_DEBT / 增减 $((_DEBT - $(exc_count "$BASELINE")))"
-    echo "     基线按行指纹绑定、不可新增 —— 该行一改即掉出基线，须走门方批准。"
-  fi
   return 0
 }
 
@@ -238,35 +235,30 @@ selftest() {
 
   # 经受控例外的合法对象 ⇒ 过（terra 要求的成对反测的另一半）
   _REV=zzc-chatgpt56terrazhangzongchu-2642
-  _OA=$EXC_APPROVALS; _OR=$EXC_REVIEWERS; _OT=$EXC_TRUSTROOT
-  mkdir -p "$T/appr"; EXC_APPROVALS="$T/appr"; EXC_REVIEWERS="$T/rev.txt"; EXC_TRUSTROOT="$T/trust.md"
-  printf '%s\n' "$_REV" > "$T/rev.txt"; printf 'ACTIVE: reviewer-owned-file\n' > "$T/trust.md"
+  . specs/gates/lib/approval-fixture.sh
+  _OT=$EXC_TRUSTROOT; _OG=${EXC_GITDIR:-.}
+  EXC_TRUSTROOT="$T/trust.md"; EXC_GITDIR="$T/appro"
   _lp=$(grep -n '本席保留此句' "$T/d/a.md" | cut -d: -f1)
   _fpp=$(sed -n "${_lp}p" "$T/d/a.md" | tr -d '[:space:]' | sha256sum | cut -c1-16)
   _objp=$(sed -n "${_lp}p" "$T/d/a.md" | grep -oE "$PAT_ALL" | head -1)
-  printf '# OWNER: %s\n' "$_REV" > "$T/appr/$_REV.approvals"
-  printf 'AP-PS1\tPS-TEST-01\t%s/d/a.md\t%s\tnormative-not-process\t%s\t2026-08-26T00:00:00Z\n' "$T" "$_fpp" "$_REV" >> "$T/appr/$_REV.approvals"
-  printf 'PS-TEST-01\t%s\t%s/d/a.md\t%s\tnormative-not-process\t%s#AP-PS1\n' "$_objp" "$T" "$_fpp" "$_REV" > "$T/psex.txt"
-  EXLIST="$T/psex.txt" BASELINE="$T/none.txt" run
-  [ $? -eq 0 ] && ok "经受控例外的合法对象放行（键齐 ＋ 批准可解析 ＋ 授权根 ACTIVE）" || bad "合规受控例外被误拦"
+  _CMT=$(exc_fixture_make "$T" "$_REV" PS-TEST-01 "$_objp" "$T/d/a.md" "$_fpp" normative-not-process)
+  [ -n "$_CMT" ] || bad "🔴 批准夹具没造出来 —— 下列反测全部无效"
+  printf 'PS-TEST-01\t%s\t%s/d/a.md\t%s\tnormative-not-process\t%s@%s#AP-01\n' "$_objp" "$T" "$_fpp" "$_REV" "$_CMT" > "$T/psex.txt"
+  EXLIST="$T/psex.txt" run
+  [ $? -eq 0 ] && ok "经受控例外的合法对象放行（受保护 ref 可达 ＋ 不可变 commit ＋ 四元组匹配）" || bad "合规受控例外被误拦"
 
   # 🔴 授权根无 ACTIVE 后端（＝仓内当前实况）⇒ exit 2
-  : > "$T/trust.md"
-  EXLIST="$T/psex.txt" BASELINE="$T/none.txt" run
+  exc_fixture_trust "$T" "$_REV" ''
+  EXLIST="$T/psex.txt" run
   [ $? -eq 2 ] && ok "🔴 授权根不可得 ⇒ UNKNOWN exit 2（不折算为 PASS）" || bad "授权根不可得时闸给了结论"
-  printf 'ACTIVE: reviewer-owned-file\n' > "$T/trust.md"
+  exc_fixture_trust "$T" "$_REV" reviewer-owned-protected-ref
 
-  # 🔴 冻结基线：命中亮 REGISTERED DEBT；指纹漂移即掉出基线
-  printf 'PS-BL-T1\t%s\t%s/d/a.md\t%s\tnormative-not-process\t反测用基线\n' "$_objp" "$T" "$_fpp" > "$T/psbl.txt"
-  _po=$(EXLIST="$T/none.txt" BASELINE="$T/psbl.txt" DOCS="$T/d/a.md" HIST="$T/d/h.md" check 2>&1); _pr=$?
-  case "$_po" in
-    *"REGISTERED DEBT"*) [ $_pr -eq 0 ] && ok "🔴 冻结基线放行时亮明 PASS WITH REGISTERED DEBT（基线≠批准）" || bad "基线亮明但退出码不对";;
-    *) bad "命中基线时未亮明 REGISTERED DEBT";;
-  esac
-  printf 'PS-BL-T1\t%s\t%s/d/a.md\t0000000000000000\tnormative-not-process\t指纹已漂移\n' "$_objp" "$T" > "$T/psbl.txt"
-  EXLIST="$T/none.txt" BASELINE="$T/psbl.txt" run
-  [ $? -eq 1 ] && ok "🔴 基线按行指纹绑定：该行一改即掉出基线（基线不可新增）" || bad "基线在指纹漂移后仍放行"
-  EXC_APPROVALS=$_OA; EXC_REVIEWERS=$_OR; EXC_TRUSTROOT=$_OT
+  # 🔴 commit 不可达 ⇒ UNKNOWN
+  printf 'PS-TEST-01\t%s\t%s/d/a.md\t%s\tnormative-not-process\t%s@0123456789abcdef0123456789abcdef01234567#AP-01\n' "$_objp" "$T" "$_fpp" "$_REV" > "$T/psex2.txt"
+  EXLIST="$T/psex2.txt" run
+  [ $? -eq 2 ] && ok "🔴 commit 在受保护 ref 上不可达 ⇒ 验证失败 ＝ UNKNOWN(2)" || bad "不可达 commit 未判 UNKNOWN"
+
+  EXC_TRUSTROOT=$_OT; EXC_GITDIR=$_OG
 
   # 🔴 剥离必须有去处:沿革件空 ⇒ 判闸坏,防「只删不存」
   mk; : > "$T/d/h.md"; run

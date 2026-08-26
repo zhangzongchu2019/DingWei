@@ -6,5 +6,6 @@
 # 🔴 approval_ref 须解析到 reviewer-owned 台账（specs/gates/approvals/），
 #   缺失/未决/不可解析/审批人＝作者 ⇒ 拒；授权根不可得 ⇒ UNKNOWN(2)，不是 PASS。
 #
-# ⚠️ 本表当前为空 —— 仓内既有的 1 处 path-ok 抑制未获批准，按【冻结基线债务】处置，
-#   见 specs/gates/path-anchor-suppression-baseline.txt。登记≠获批准，基线≠批准。
+# ⚠️ 本表当前为空 —— 仓内原有的 1 处 path-ok 抑制**已在源头消掉**（架构 A§ 取证行去掉反引号：
+#   反引号在本仓表示「须能解析的路径锚」，而该行断言的正是它不存在）。
+#   🔴 冻结基线机制已按乙域收尾裁定删除（**待批准 ＝ 拒绝**，债务不得作为通过条件）。

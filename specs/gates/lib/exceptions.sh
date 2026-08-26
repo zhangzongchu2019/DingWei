@@ -53,44 +53,78 @@ exc_trust_backends() {
 }
 
 # exc_approval_verify <approval_ref> <claim_id> <件> <行指纹> <理由码>
-#   rc 0 = 批准有效 ｜ 1 = 拒 ｜ 2 = UNKNOWN（授权根不可得）
+#   rc 0 = 批准有效 ｜ 1 = 拒（记录本身不成立）｜ 2 = UNKNOWN（取不到 / 验不了）
+#
+# 🔴 **丙机制精确版**（乙域 terra 收尾裁定 2026-08-26，逐条实现）：
+#   · 批准记录落 **reviewer-owned 独占件 / 独占受保护分支**；
+#   · `approval_ref` 解析到 **不可变 commit ＋ 记录 ID**，形如 `<门方会话>@<40位commit>#<记录ID>`；
+#   · 记录逐项绑定 claim_id · 对象 · 件 · 行指纹 · 理由码 · 批准人 · UTC；
+#   · **CI 从远端受保护 ref 验其可达**，且批准人 ＝ 该记录 owner / 门方；执笔**无写权、无自批权**；
+#   · **ACTIVE 后端缺失 / 不可取 / 验证失败 ＝ UNKNOWN(exit 2)**，例外与依赖它的闸一律不得 PASS。
+#   ⚠️ 甲（git blame）只是**元数据、非授权**，不作后端；
+#     乙（GPG）可日后**叠加**，但**无密钥信任/撤销根时不可单独作后端**。
+#
+# 🔴 为什么用「不可变 commit」而不是「读工作区的台账文件」：
+#   工作区那份文件在执笔方的写权范围内 —— 上一版正是靠它，于是「批准」这件事的证据
+#   仍落在被判方可改的面上。**指到一个 commit，就把证据钉在了历史里，改不动也删不掉。**
 exc_approval_verify() {
   _ref=$1; _cid=$2; _af=$3; _afp=$4; _acode=$5
   [ -n "$_ref" ] || return 1                                   # 缺失 ⇒ 拒
   case "$_ref" in *待*|*未*|*pending*|*PENDING*|*Pending*|*TODO*) return 1 ;; esac   # 未决 ⇒ 拒
-  case "$_ref" in *'#'*) : ;; *) return 1 ;; esac               # 须形如 <门方会话>#<台账号>
-  _rev=${_ref%%#*}; _lid=${_ref#*#}
-  [ -n "$_rev" ] && [ -n "$_lid" ] || return 1
+  case "$_ref" in *@*'#'*) : ;; *) return 1 ;; esac             # 形状：<门方会话>@<commit>#<记录ID>
+  _rev=${_ref%%@*}; _rest=${_ref#*@}
+  _cmt=${_rest%%#*}; _rid=${_rest#*#}
+  [ -n "$_rev" ] && [ -n "$_cmt" ] && [ -n "$_rid" ] || return 1
   [ "$_rev" = "$EXC_AUTHOR" ] && return 1                       # 审批人＝作者 ⇒ 拒（自批）
-  _led="$EXC_APPROVALS/$_rev.approvals"
-  [ -f "$_led" ] || return 1                                    # 🔴 不可解析 ⇒ 拒
-  #   —— terra 变异 1 就死在这一行：第 5 列写字面「terra」而仓内无其台账，
-  #      旧实现把「名字对得上」当成了「批准存在」。
-  _row=$(awk -F'\t' -v i="$_lid" '$0 !~ /^#/ && $1==i {print; exit}' "$_led" 2>/dev/null)
-  [ -n "$_row" ] || return 1
-  # 台账列：<台账号> <claim_id> <件> <行指纹> <理由码> <批准方会话> <批准时刻UTC>
-  _a_cid=$(printf '%s' "$_row" | cut -f2)
-  _a_f=$(printf '%s' "$_row" | cut -f3)
-  _a_fp=$(printf '%s' "$_row" | cut -f4)
-  _a_code=$(printf '%s' "$_row" | cut -f5)
-  _a_by=$(printf '%s' "$_row" | cut -f6)
-  # 🔴 四元组必须逐项对上 —— 批准是对**某一处**的批准，不是对某个人的信任。
-  [ "$_a_cid" = "$_cid" ] || return 1
-  [ "$_a_f"   = "$_af"  ] || return 1
-  [ "$_a_fp"  = "$_afp" ] || return 1
-  [ "$_a_code" = "$_acode" ] || return 1
-  [ "$_a_by"  = "$_rev" ] || return 1
-  [ "$_a_by"  = "$EXC_AUTHOR" ] && return 1
-  # 台账须自报 owner，owner 须与批准方一致、在门方名册内、且非执笔方
-  _own=$(sed -n 's/^#[[:space:]]*OWNER:[[:space:]]*\([^[:space:]]*\).*/\1/p' "$_led" | head -1)
-  [ -n "$_own" ] && [ "$_own" = "$_a_by" ] || return 1
-  [ -f "$EXC_REVIEWERS" ] || return 2
-  grep -qx "$_own" "$EXC_REVIEWERS" 2>/dev/null || return 1
-  [ "$_own" = "$EXC_AUTHOR" ] && return 1
-  # 🔴 最后一道：台账「是门方所有」这件事，须有**已启用的授权根后端**能证明。
-  #   没有 ⇒ UNKNOWN。**不得因为前面每一步都对上了，就把「我验不了归属」折算成 PASS。**
+  # commit 须是 40 位十六进制 —— 🔴 短 sha / 分支名 / tag 都**不是不可变引用**
+  case "$_cmt" in
+    ????????????????????????????????????????) : ;;
+    *) return 1 ;;
+  esac
+  printf '%s' "$_cmt" | grep -qE '^[0-9a-f]{40}$' || return 1
+
+  # ===== 授权根：须有 ACTIVE 后端 =====
   _bk=$(exc_trust_backends) || return 2
-  [ -n "$_bk" ] || return 2
+  [ -n "$_bk" ] || return 2                                     # 无 ACTIVE 后端 ⇒ UNKNOWN
+  case " $_bk " in
+    *" reviewer-owned-protected-ref "*) : ;;
+    *) return 2 ;;                                              # 其它后端尚未实现 ⇒ 验不了 ⇒ UNKNOWN
+  esac
+
+  # ===== 该门方的受保护 ref 与记录路径（由授权根声明，不由执笔方在例外里指定）=====
+  #   TRUST-ROOT 行格式：REF: <门方会话> <远端受保护 ref> <记录在该 ref 内的路径>
+  _cfg=$(awk -v r="$_rev" '$1=="REF:" && $2==r {print $3" "$4; exit}' "$EXC_TRUSTROOT" 2>/dev/null)
+  [ -n "$_cfg" ] || return 2                                    # 该门方无受保护 ref 声明 ⇒ 取不到 ⇒ UNKNOWN
+  _pref=$(printf '%s' "$_cfg" | awk '{print $1}')
+  _ppath=$(printf '%s' "$_cfg" | awk '{print $2}')
+  [ -n "$_pref" ] && [ -n "$_ppath" ] || return 2
+
+  _G="git -C ${EXC_GITDIR:-.}"
+  $_G rev-parse --verify --quiet "$_pref" >/dev/null 2>&1 || return 2   # 受保护 ref 不可取 ⇒ UNKNOWN
+  $_G merge-base --is-ancestor "$_cmt" "$_pref" >/dev/null 2>&1 || return 2  # 不可达 ⇒ 验证失败 ⇒ UNKNOWN
+  _blob=$($_G show "$_cmt:$_ppath" 2>/dev/null) || return 2             # 记录读不出 ⇒ UNKNOWN
+  [ -n "$_blob" ] || return 2
+
+  # 记录列：<记录ID> <claim_id> <被抑制对象> <件> <行指纹> <理由码> <批准人> <批准时刻UTC>
+  _row=$(printf '%s\n' "$_blob" | awk -F'\t' -v i="$_rid" '$0 !~ /^#/ && $1==i {print; exit}')
+  [ -n "$_row" ] || return 1                                    # 该 commit 内无此记录 ID ⇒ 拒（明确的否定）
+  _a_cid=$(printf '%s' "$_row" | cut -f2)
+  _a_f=$(printf '%s'   "$_row" | cut -f4)
+  _a_fp=$(printf '%s'  "$_row" | cut -f5)
+  _a_code=$(printf '%s' "$_row" | cut -f6)
+  _a_by=$(printf '%s'  "$_row" | cut -f7)
+  _a_ts=$(printf '%s'  "$_row" | cut -f8)
+  # 🔴 逐项绑定：批准是对**某一处**的批准，不是对某个人的信任
+  [ "$_a_cid"  = "$_cid"   ] || return 1
+  [ "$_a_f"    = "$_af"    ] || return 1
+  [ "$_a_fp"   = "$_afp"   ] || return 1
+  [ "$_a_code" = "$_acode" ] || return 1
+  [ "$_a_by"   = "$_rev"   ] || return 1
+  [ "$_a_by"   = "$EXC_AUTHOR" ] && return 1
+  [ -n "$_a_ts" ] || return 1
+  # 批准人须在门方名册内 —— 名册本身也取自同一受保护 ref 的同一 commit（不取工作区那份）
+  _reg=$($_G show "$_cmt:${EXC_REVIEWERS_INREF:-reviewers.txt}" 2>/dev/null) || return 2
+  printf '%s\n' "$_reg" | grep -qx "$_a_by" || return 1
   return 0
 }
 
@@ -171,24 +205,15 @@ exc_decide() {
   exc_approval_verify "$_d_ref" "$_d_cid" "$_df" "$_dfp" "$_d_code"
 }
 
-# exc_baseline_hit <基线件> <被抑制对象> <件> <行号>
-#   rc 0 = 命中冻结基线（按【已登记债务】放行）｜ 1 = 未命中
-# 🔴 基线的存在理由（棘轮，同乙域给 ㉙ 的处置）：
-#   三类抑制统一为受控例外之日，仓内已有 3 处旧抑制；而**有效批准现在拿不到**（授权根待裁）。
-#   若一刀切，闸当天就红，等于用「全仓停摆」代替「治理」。⇒ 冻结这 3 处为基线债务：
-#     · 基线**按行指纹绑定** —— 那一行内容一改，它就掉出基线，必须走批准；
-#     · 基线**不可新增** —— 不在基线里的新抑制一律拒（fail-closed，天然单调）；
-#     · 每次运行**打印基线数 / 当前数 / 增减**，债务看得见。
-#   ⚠️ 基线**不是批准**：它是「已知未治理」的可见化，输出里必须与 PASS 分开写。
-exc_baseline_hit() {
-  _bl=$1; _bobj=$2; _bf=$3; _blno=$4
-  [ -f "$_bl" ] || return 1
-  _bfp=$(exc_fp "$_bf" "$_blno")
-  awk -F'\t' -v o="$_bobj" -v f="$_bf" -v p="$_bfp" '
-      $0 !~ /^[[:space:]]*#/ && $2==o && $3==f && $4==p {found=1} END{exit !found}' "$_bl" 2>/dev/null
-}
+# 🔴 **冻结基线机制已整体删除**（乙域 terra 收尾裁定 2026-08-26 第三条）：
+#   「冻结基线不容作为通过条件：**待批准 ＝ 拒绝**；`PASS WITH REGISTERED DEBT`
+#     不能返回成功、也不能被聚合为合规 PASS。」
+#   ⇒ 上一版用它让四处旧抑制在授权根落地前继续放行 —— 那实质是**用一个新名字继续放行未获批准的内容豁免**。
+#   ⚠️ 本轮的正解不是「批准它们」，也不是「记成债务」，而是**把它们消掉**：
+#     · 架构 A§ 取证行去掉反引号（该行断言的正是那个路径不存在，本就不该是路径锚）；
+#     · spec.md 两行改述（不再字面出现清单短语）；
+#     · 原型帖子样例数据改写（不再撞痕迹指纹）。
+#   🔴 **能靠收窄判据或改写正文消掉的豁免，就不该存在。** 四处现已全部为零，基线件随之删除。
 
-exc_count() {   # 有效数据行数
-  [ -f "$1" ] || { echo 0; return; }
-  awk -F'\t' '$0 !~ /^[[:space:]]*#/ && NF>=4 {n++} END{print n+0}' "$1"
-}
+# ⚠️ 原 `exc_count()`（数基线有效行）随冻结基线机制一并删除 ——
+#   **死代码会被下一个人当成还在生效的机制**，本轮已在「改契约不删旧反测」上踩过同族。

@@ -361,7 +361,10 @@ if [ ! -x scripts/gate-witness-gate.sh ]; then
 fi
 scripts/gate-witness-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/gate-witness-gate.sh --selftest; echo "✗ ㉙ 覆盖见证元闸的反测未过"; exit 1; }
-scripts/gate-witness-gate.sh; _wrc=$?
+_wout=$(scripts/gate-witness-gate.sh 2>&1); _wrc=$?
+printf '%s\n' "$_wout"
+_wdebt=$(printf '%s\n' "$_wout" | sed -n 's/.*WITNESS_DEBT_COUNT=\([0-9]*\).*/\1/p' | head -1)
+case "$_wdebt" in ''|*[!0-9]*) _wdebt=0 ;; esac
 echo "  ㉙ 覆盖见证元闸的反测 ✓"
 _wbr=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || _wbr=''
 [ -n "$_wbr" ] || _wbr='(取不到分支名)'
@@ -381,6 +384,10 @@ fi
 _W_ADVISORY_RED=${_W_ADVISORY_RED:-0}
 _wsuffix=''
 [ "$_W_ADVISORY_RED" -ne 0 ] && _wsuffix="　⚠️ 🔴 但 ㉙ 本次为红（rc=$_W_ADVISORY_RED，只报不拦）—— **㉙ 不在「全过」之列**"
+# 🔴 乙域收尾裁定：债务**不得被聚合为合规 PASS**。
+#   ⇒ ㉙ 带未清债务时，末行必须写出来 —— 否则「全过」这三个字就把 15 项债务吞掉了。
+#   ⚠️ 这正是本轮反复治的形态：**摘要行比它下面那些行说得宽**。
+[ "${_wdebt:-0}" -gt 0 ] && _wsuffix="${_wsuffix}　⚠️ 🔴 ㉙ 另带 ${_wdebt} 项未清覆盖见证债务（棘轮未回升，但**不计入合规**）"
 
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
@@ -391,9 +398,4 @@ _wsuffix=''
 python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
   python3 specs/tools/disposition-audit.py --selftest; echo "✗ ⑱ 处置兑现 triage 的反测未过（它连响都不会响）"; exit 1; }
 python3 specs/tools/disposition-audit.py || true
-_debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
-if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–㉙ ＋ ⑱ triage）${_wsuffix}⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
-else
-  echo "✓ 提交闸全过（①–㉙ ＋ ⑱ triage）${_wsuffix}"
-fi
+echo "✓ 提交闸全过（①–㉙ ＋ ⑱ triage）${_wsuffix}"

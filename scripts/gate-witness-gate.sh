@@ -88,9 +88,15 @@ check() {
     echo "  🔴 恒零只有在「完整覆盖面已验且值为 0」时才能 PASS；不给范围，✓ 就无法与「没查/没触发」区分开。"
     return 1; }
   if [ "$_nn" -gt 0 ]; then
-    echo "  ⚠️ PASS WITH REGISTERED DEBT：$_nn 个闸仍未给覆盖见证（基线 $_b，未增长）"
-    echo "     🔴 **这不是「全闸合规」** —— 乙域原话：现有合规项不构成全闸合规声明。"
+    # 🔴 措辞按乙域收尾裁定改（2026-08-26）：
+    #   「`PASS WITH REGISTERED DEBT` **不能返回成功、也不能被聚合为合规 PASS**；
+    #     可保留棘轮作**纯诊断 / 债务可见化**，但必须**与门结论隔离**。」
+    #   ⇒ 本闸此处只报**诊断**，并显式声明它不是合规结论；
+    #     rc=0 仅表示**棘轮未回升**，调用方不得把它聚合成「㉙ 合规」。
+    echo "  ⚠️ 【债务可见化·诊断，非门结论】$_nn 个闸未给覆盖见证（基线 $_b，未增长）"
+    echo "     🔴 **这不是合规 PASS，也不是「全闸合规」** —— rc=0 只表示棘轮未回升。"
     echo "     🔴 债务不是豁免：每条都有 owner ＋ 到期里程碑，逾期须由门方处置。"
+    echo "  WITNESS_DEBT_COUNT=$_nn"
     return 0
   fi
   echo "  ✓ 全部 $_en 个闸均给出覆盖见证"
@@ -123,10 +129,17 @@ selftest() {
   # 🔴 棘轮：登记了 owner/到期，且未超基线 ⇒ 放行为 REGISTERED DEBT（不是「全闸合规」）
   mkbl 1 1; mkdebt c.sh
   _wo=$( cd "$T" && env WITNESS_BASELINE="$T/bl.txt" WITNESS_DEBT="$T/debt.txt" DRIVER=drv.sh sh "$SELF" 2>&1 ); _wr=$?
+  # 🔴 反测随乙域收尾裁定同步改：措辞不再是 `PASS WITH REGISTERED DEBT`（那个形态已被裁掉），
+  #   现须同时满足三件：① rc=0（棘轮未回升）② 打印【债务可见化·诊断，非门结论】
+  #   ③ 显式声明「不是合规 PASS」。**少任何一件，调用方就可能把它聚合成合规。**
   case "$_wo" in
-    *"REGISTERED DEBT"*) [ $_wr -eq 0 ] && ok "🔴 棘轮：债务已登记且未增长 ⇒ 放行但亮 REGISTERED DEBT（非全闸合规）" \
-                                        || bad "债务亮明但退出码不对";;
-    *) bad "债务未增长时未亮明 REGISTERED DEBT";;
+    *"债务可见化·诊断，非门结论"*)
+      case "$_wo" in
+        *"不是合规 PASS"*) [ $_wr -eq 0 ] && ok "🔴 棘轮：债务未增长 ⇒ rc=0，但输出显式声明【非门结论 · 不是合规 PASS】" \
+                                          || bad "诊断亮明但退出码不对";;
+        *) bad "债务诊断未声明「不是合规 PASS」—— 会被聚合成合规";;
+      esac;;
+    *) bad "债务未增长时未打印【债务可见化·诊断】";;
   esac
 
   # 🔴 阻断①：缺见证数**增加**即拒（棘轮只许降不许升）

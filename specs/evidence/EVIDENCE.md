@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-26T08:42:53Z
-分支头：`a26efb0ad3056a04420e65b2a4c7ff0ad05a6ac7`
+生成时刻：2026-08-26T08:56:19Z
+分支头：`ad10d98d6a88dd6cd782103e077683dfb9a1b375`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -11,9 +11,9 @@
 
 ```
 REVIEWED 4fb89aa958c784b963e59f9f1ad49a8c9ee5693a90e662a9dfecf1627148e950  docs/dingwei-platform-specdoc.md
-REVIEWED be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79  docs/dingwei-architecture-design.md
-REVIEWED 6003718242079f24862c3cc635f6b2f35d709130c2c8c176048e7df56e73149e  docs/dingwei-prototype.html
-REVIEWED 01c962eabf6df51a880a7104b928383f914e3f0966e8cf8bc7b5a7dbe855bc64  docs/DELIVERY-STATUS.md
+REVIEWED ef54ad86fa9763ef29510ef60a98b5471be0bfadc56b17a1c0fb22d1f593d3e7  docs/dingwei-architecture-design.md
+REVIEWED 3fb6da73ecec59ab8ec89e3659acb6bdfe8b08aa7ed2797deb7406a4dcbc43d6  docs/dingwei-prototype.html
+REVIEWED ce9050255023590ad2a27f52b83b8d82677e2b1e4cbf6971008e647d3a313150  docs/DELIVERY-STATUS.md
 REVIEWED 8996a7df3ae0e99db2aaef56d2d13126ded09c01787167ecebcf47c7f3372798  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -23,23 +23,23 @@ REVIEWED 69b60fda965d49479f0390a583810b082c1f049b30b4d04af2127f3eb13d43c3  scrip
 REVIEWED 687300bc3e8a56f491c533116b6cccc6da256f4e7aaf300607cd32cb6274e78e  scripts/delivery-check.sh
 REVIEWED 14158e52ea0e4a0e5d21766e438d31a0a069008e8ec9b3fcc742599ca43aa93a  scripts/dependency-ratchet.sh
 REVIEWED 33d372ff3b1dcda466476c113af888b55e02dee8479a894c8b0c48d8e9a45013  scripts/evidence-fresh-gate.sh
-REVIEWED 97ad3840fa91f6f739fea89dc507f88f1a4071fdf7856f208126f39e2cc1883f  scripts/gate-witness-gate.sh
+REVIEWED 566208fc33a196c2cc44947b892fda11d3c5feee5c63a55e910df9b071badfad  scripts/gate-witness-gate.sh
 REVIEWED 8be0b821c0ad2574722f3e4032f8d91f599fc623bc42f1334dd491aed20e868e  scripts/gen-review-state.sh
 REVIEWED 156c626fe5e069606e07f642d5f7fd3477b5ce42f1173d28b40e425f4556b883  scripts/gen-status.sh
 REVIEWED 6dd8dd1441776bde1b3f6b79ed9dde7f7fdb353e6b6105a604f1e9b4b40a36e6  scripts/input-anchor-gate.sh
 REVIEWED 510ae09c71ca9ac2f4d44ef74d1530cbe03d5a3560179fc4ad03c280c9f30d3f  scripts/legacy-name-gate.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh
-REVIEWED 3ad200b42177d6035dd7010f6d3ac93453888637977386b3614772c91758de9d  scripts/path-anchor-gate.sh
+REVIEWED 1aedacbf1ae7596d2130e13b8854dd83fca1f2177aee338908be1798a1f18bd8  scripts/path-anchor-gate.sh
 REVIEWED 1d2c1ef512417b70760dbe2a4bd314935f319fae23fbe39f8d20ea4202cbd138  scripts/post-columns-gate.sh
-REVIEWED fb7fb00cfa2014aab8c2c9e252a50ee9425995eec3f1c937765a519e1b398ec8  scripts/prose-style-gate.sh
+REVIEWED 0cb1cce593c8ff9157357138e4ac6957ba8a3764359ab542dcb8dbb553be5181  scripts/prose-style-gate.sh
 REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scripts/reliable_delivery_canary.sh
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
 REVIEWED 679e8c6f73f15972895348cab70bf184c4b3763e64efb05ab1de0f716c661a6b  scripts/reviewer-repro-gate.sh
 REVIEWED bf1e2ba70efd82d87bd7b39c9cd75ddbc20ed636374aed3c7488c71f01eab451  scripts/rv-integrity-gate.sh
-REVIEWED d5353f8f007d8046cca07ca3fdfa47bf282a38d1f1e5bfca12fdeb57aa4a6b97  scripts/speclint-gate.sh
+REVIEWED f863fff7f106543542d7d88fba0dcc02f4fccbf439364bddadf5e90bd0c44005  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
-REVIEWED 520edd4fa3e440f205e38931749429c79962bb0a27324162a2c362a586594714  scripts/status-consistency-check.sh
-REVIEWED e70f8ffe8fa0099cc7d83dcbf63006531149c4ca685605b0ae7ea5dd4e800e18  scripts/superseded-claims-gate.sh
+REVIEWED d06ad5b94bf542f15e7d9b775eabbc84dbc81f1bd35489522adbc23afde49f63  scripts/status-consistency-check.sh
+REVIEWED ff31ff671666d407f86a0a886f6860c873f6182426baa63894ad2fe6fc5fca54  scripts/superseded-claims-gate.sh
 REVIEWED a5fcd7cfbd7194d44a10fd7bba42c27f0b7258c09861d6ecf39a7337e294f66f  scripts/tenant-isolation-gate.sh
 REVIEWED 71f0a4d5a35746101e540521df36975adf57803faa233fb0d27bcd0c73fa86f8  scripts/title-version-gate.sh
 REVIEWED 74c9a7fcd8a2b81cfb8150e9e8caf8ae507ba2efd0d5214e097d8c62873cd8c1  scripts/workflow-coverage-gate.sh
@@ -57,20 +57,16 @@ REVIEWED fecc8c2f2a3e8ddfd515d492cac5c2d2560f88cc3729c53fad31c0f2a46665b9  specs
 REVIEWED 5f5a725e0536ec20bb07ee5fd0dd0820c8545ad871cfd5e0dece61ce1edb1670  specs/gates/gate-witness-baseline.txt
 REVIEWED ba6921e8c0eee7ff9ae0de1a910ac4a5041ecd7c44290e9c6897bad194f9d52c  specs/gates/gate-witness-debt.txt
 REVIEWED 377197b6f96de93701b7200290f574ab485015bfcd6cef1bb98e1432ec830461  specs/gates/legacy-name-baseline.txt
-REVIEWED c018da4f493698bbae2b8a0a122845867de79328d59304f3df202083ec68d34c  specs/gates/path-anchor-exceptions.txt
-REVIEWED ec07bbba5e69f6794072de96ed04fd17d15aea1a9664c4d0a20da283dd24a322  specs/gates/path-anchor-suppression-baseline.txt
-REVIEWED 8b9462995408ffbd9c4e5cbf3c3000e485ddd854f08db046445018d004cdcec5  specs/gates/prose-style-exceptions.txt
-REVIEWED 94ffbd1b3558270275844d09762ce9fa176d367eadafa7ca9dc182d001a8ad3c  specs/gates/prose-style-suppression-baseline.txt
+REVIEWED d7c98179543bba4c4cba6d32a76866ec5b9f597606896e3d04d84f1181842f27  specs/gates/path-anchor-exceptions.txt
+REVIEWED 33c8ff7692409e497bc4f9a8041a284269e293baf96373641e2552704a52582f  specs/gates/prose-style-exceptions.txt
 REVIEWED 861f36f0dfeda164e4047bfd75ea78e5977d3ad352c8e1c5cafff6a790945530  specs/gates/repo-packages.txt
 REVIEWED a9c3bab0c5dc512ddc901e0ce298a6e17626243c62130b47810cfd49e4425311  specs/gates/reviewer-repro.txt
 REVIEWED f586d7e0438528aadc0d61ac18402223a6bd7123d474a2e327fff11011493c7a  specs/gates/reviewers.txt
 REVIEWED 706c97c396a087fcdedd8f4a85d12403426ebd8fdce31f1b7f952012f2260d40  specs/gates/rv-ledger.txt
-REVIEWED bf0f4bc8b748be02979d9ec124ec39511a42752e4a9476cbf3aae9881054b410  specs/gates/status-consistency-exceptions.txt
+REVIEWED 55ad013e6cc145efeb4d991710de331aa1e9e9b88676db50a1011c142468eda0  specs/gates/status-consistency-exceptions.txt
 REVIEWED e7a91c5e523a367419df93ea42bb570bbb33a08479ff8e5ec4ff3d01fa7e2789  specs/gates/status-stale-exceptions.txt
-REVIEWED 480c24cb5e1ee6a6499543f99261df205b8a22ffcc6e846b473b6a583332a739  specs/gates/status-suppression-baseline.txt
 REVIEWED 90953e322cb6563fc29462030cf5654106279b889c3aa422fe9e9d0c28905f80  specs/gates/superseded-claims-exceptions.txt
 REVIEWED e1d988fcb25de950f740fb3b249ed1b8979c8eaf4cd79d9689a46e4679400ac0  specs/gates/superseded-claims.txt
-REVIEWED c7f67c9f43a5c5e149bf7282dd1b65bfb840b353e2950940d952d8b1326b4689  specs/gates/superseded-suppression-baseline.txt
 ```
 
 > 🔴 **指纹对不上即本包非当期产出** —— 与「分支头」是两个不同的保证：
@@ -140,7 +136,7 @@ $ specs/tools/analyze.sh
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
     SpecDoc: 件内 v3.69 · 状态文件 v3.69 ✓
     架构设计: 件内 v0.34 · 状态文件 v0.34 ✓
-    原型: 件内 v1.43 · 状态文件 v1.43 ✓
+    原型: 件内 v1.44 · 状态文件 v1.44 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-architecture-design.md: 正文无他件旧版本号
