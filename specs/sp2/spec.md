@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp2-design` |
-| **合同版本** | v1.6 |
+| **合同版本** | v1.7 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -64,6 +64,12 @@ SpecDoc §0.3 对 SP2 的定义唯一且与目标架构一致：
 - B1 更正：冻结 SP0/SP1 头块均为 `draft，待双评审`，故只作待确认输入；评审票与实现欠账分别留在开工门，不倒签 PASS。
 - 原型预期集合改由冻结架构 §13 中主责域含 `WRK` 的行机器派生，不再按导航文案猜“相关入口”。
 - 新增附录 F 判据集合，承接 F.1.2、F.1.3、F.2 #4；A§21 悬空引用登记后上交，不自行补造。
+
+### 0.8 SYNC IMPACT REPORT（v1.5/v1.6 → v1.7）
+
+- B1 按冻结证据把 SP0/SP1 收紧为 draft 待确认输入，并由 contract-check 禁止宽写为 PASS。
+- WRK 接口派生同时限定在架构 §6 接口目录与 `WRK-(CMD|QRY|CAP)-*` 稳定 ID；责任主题和事件表不再混入。
+- 新增反测：§6 外 `RT-03` / `EV-WRK-*` 即使第二列为 WRK，也不得进入接口预期集合。
 
 ## 1. 六个必备面
 

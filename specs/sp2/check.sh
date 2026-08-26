@@ -23,6 +23,16 @@ def get(path):
 spec=get('docs/dingwei-platform-specdoc.md'); arch=get('docs/dingwei-platform-architecture.md'); proto=get('docs/dingwei-prototype.html')
 get('docs/dingwei-sp0-design.md'); get('docs/dingwei-sp1-design.md')
 
+def derive_interfaces(text):
+    out=set(); in_s6=False
+    for l in text.splitlines():
+        if re.match(r'^## 6\.',l): in_s6=True; continue
+        if in_s6 and re.match(r'^## ',l): in_s6=False
+        if not in_s6: continue
+        m=re.match(r'^\| `(WRK-(?:CMD|QRY|CAP)-[^`]+)` \| WRK \|',l)
+        if m: out.add(m.group(1))
+    return out
+
 def expected_sets():
     src=[]; on=False
     for l in spec.splitlines():
@@ -39,10 +49,7 @@ def expected_sets():
         if sec and l.startswith('|'):
             c=[re.sub(r'[*`]','',x.strip()) for x in l.strip().strip('|').split('|')]
             if c and re.fullmatch(r'\d+[a-z]?',c[0]) and 'SP2' in c[-1].split('·'): e.append(f'E:{sec}#{c[0]}')
-    iface=[]
-    for l in arch.splitlines():
-        m=re.match(r'^\| `([^`]+)` \| WRK \|',l)
-        if m: iface.append('IF:'+m.group(1))
+    iface=['IF:'+x for x in derive_interfaces(arch)]
     ui=[]; in_s13=False
     for l in arch.splitlines():
         if re.match(r'^## 13\.',l): in_s13=True; continue
@@ -129,6 +136,12 @@ if mode=='--selftest':
         changed='\n'.join(l for l in base.splitlines() if not l.startswith(f'| `{token}` |'))+'\n'
         test(f'删除 {kind} 真落点必须转红',changed,1)
         test(f'{kind} 块外散文提及不得转绿',changed+f'正文提及 {token} 已考虑。\n',1)
+    n+=1
+    noisy='| `RT-03` | WRK | 非接口 |\n| `EV-WRK-NodeDispatched` | WRK | 非接口 |\n'+arch
+    if derive_interfaces(noisy)=={x[3:] for x in expected['interface']}:
+        print('  ✓ §6 外 WRK 责任/事件行不得混入接口集合')
+    else:
+        print('  ✗ §6 外 WRK 责任/事件行污染接口集合'); fail=1
     test('缺结构化块判闸坏',base.replace('<!-- COVERAGE-SP2-BEGIN -->',''),2)
     print(f'--- SP2 覆盖反测 {n} 项全过' if not fail else '--- SP2 覆盖反测失败')
     raise SystemExit(fail)
