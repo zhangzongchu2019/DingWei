@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-26T05:29:22Z
-分支头：`2818502229fc48121ca62465b4c15feaeca06758`
+生成时刻：2026-08-26T05:35:24Z
+分支头：`cae5235f09818701724c3515c585f8740e85c188`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,10 +10,10 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED dfef2a8c917cf6a1e0231230384f7e6b755c393cb08804a44f3f14944f802763  docs/dingwei-platform-specdoc.md
+REVIEWED ff5a21ef621c14e168037a04a05b67db2ea0e028134c9f29d6d88d2d5925f9ee  docs/dingwei-platform-specdoc.md
 REVIEWED be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79  docs/dingwei-architecture-design.md
 REVIEWED 734eb62292342b4d8d58c53b5f4c6e8d124691238f3331fa5ad643ca64fe8431  docs/dingwei-prototype.html
-REVIEWED 57153e6cdcaf87504ff7170b8e784e1545110b00202d1926fc28b2dc1e8df191  docs/DELIVERY-STATUS.md
+REVIEWED f825491fba11311957662dcd69ebdf9ead177ac78718507eed57ab645ce828ca  docs/DELIVERY-STATUS.md
 REVIEWED 8996a7df3ae0e99db2aaef56d2d13126ded09c01787167ecebcf47c7f3372798  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -34,12 +34,13 @@ REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scrip
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
 REVIEWED 679e8c6f73f15972895348cab70bf184c4b3763e64efb05ab1de0f716c661a6b  scripts/reviewer-repro-gate.sh
 REVIEWED bf1e2ba70efd82d87bd7b39c9cd75ddbc20ed636374aed3c7488c71f01eab451  scripts/rv-integrity-gate.sh
-REVIEWED e6c79ce51d9dbd52ef3e9be5e58a8f1490c3dc7a1422ba77cf3db8d4bec30b8f  scripts/speclint-gate.sh
+REVIEWED 44ad36b47d92f100f2ca26025724fcb76ca70155defd2d4019259ec0ca29de5f  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
 REVIEWED 04a61a19321b7a35a78a5a886b1bc915dd5012fcf1dbd8636627e058c966eb3e  scripts/status-consistency-check.sh
 REVIEWED 4c41cb0ccd5452a7eadd8f5eddad986660d9cf51cdc461d51235eb0894100023  scripts/superseded-claims-gate.sh
 REVIEWED a5fcd7cfbd7194d44a10fd7bba42c27f0b7258c09861d6ecf39a7337e294f66f  scripts/tenant-isolation-gate.sh
 REVIEWED 05ea1686dcc89b8a2538d6b6b2ed221c2184bd49f8d7742cd7d86fefb3802865  scripts/title-version-gate.sh
+REVIEWED 74c9a7fcd8a2b81cfb8150e9e8caf8ae507ba2efd0d5214e097d8c62873cd8c1  scripts/workflow-coverage-gate.sh
 REVIEWED 91102ae852827ee0b7ecfe122d29f13c95ff73d49752be29f3991f2ca93b2832  specs/tools/analyze.sh
 REVIEWED fa2e42ef5aabe1418512e2e3b4cf4a103c978a4bcfd80e0c06db4c536ee092d6  specs/tools/disposition-audit.py
 REVIEWED 4846536afab7911f005f9dd35c657b03f083da3ec3c3a377d6d0c1b392b03b68  specs/tools/export-bundle.sh
@@ -124,7 +125,7 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 119 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.65 · 状态文件 v3.65 ✓
+    SpecDoc: 件内 v3.66 · 状态文件 v3.66 ✓
     架构设计: 件内 v0.34 · 状态文件 v0.34 ✓
     原型: 件内 v1.40 · 状态文件 v1.40 ✓
   ④b 正文是否出现【他件】的旧版本号

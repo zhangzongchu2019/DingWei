@@ -1,5 +1,5 @@
 #!/bin/sh
-# 提交闸 ①–㉖ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步+锚可达 / 架构引用核验 / 仓储包边界 / specs 索引 / 状态一致性 / 租户隔离前置。任一不过即失败。
+# 提交闸 ①–㉗ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步+锚可达 / 架构引用核验 / 仓储包边界 / specs 索引 / 状态一致性 / 租户隔离前置。任一不过即失败。
 #
 # 立此闸的直接原因：2026-08-24，本席在 speclint 退出码为 1 的状态下推了 a165521。
 # 当时 lint 与 commit 写在同一批命令里、没有用 && 串，照跑不误。
@@ -325,6 +325,15 @@ scripts/dependency-ratchet.sh --selftest >/dev/null 2>&1 || {
   scripts/dependency-ratchet.sh --selftest; echo "✗ 依赖清单棘轮的反测未过"; exit 1; }
 echo "  ㉖ 依赖清单棘轮的反测 ✓"
 
+# ㉗ workflow 触发面覆盖闸：CI 的 paths 必须覆盖【闸的载体本身】。
+#    立闸原因（ops 2026-08-26 实测）：触发面曾只有 docs/**，而闸脚本在 scripts/、基线在 specs/gates/
+#    ⇒ 闸的载体不在自己的触发面内，改动它们时 CI 一声不响。
+#    🔴 本闸过 ≠ 仓侧不可逆保护已落地 —— 触发面对了只是「红得出来」，不是「挡得住」。
+scripts/workflow-coverage-gate.sh || exit 1
+scripts/workflow-coverage-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/workflow-coverage-gate.sh --selftest; echo "✗ 触发面覆盖闸的反测未过"; exit 1; }
+echo "  ㉗ 触发面覆盖闸的反测 ✓"
+
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
 #    **没有一次是执笔方自查出来的**。
@@ -336,7 +345,7 @@ python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
 python3 specs/tools/disposition-audit.py || true
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–㉖ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–㉗ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–㉖ ＋ ⑱ triage）"
+  echo "✓ 提交闸全过（①–㉗ ＋ ⑱ triage）"
 fi
