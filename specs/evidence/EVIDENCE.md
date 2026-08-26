@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-26T10:42:09Z
-分支头：`3fb95540d03c27ca1615a6aebc34c5fadb1a15ad`
+生成时刻：2026-08-26T11:50:49Z
+分支头：`14f4058ddc29e8fd31063bc90eba09d9db8f88d1`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,43 +10,43 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED 8ae715df69eb2eb4fb817f55c2bcb934512d7b7bdfffdcaabe96311293115843  docs/dingwei-platform-specdoc.md
-REVIEWED ef54ad86fa9763ef29510ef60a98b5471be0bfadc56b17a1c0fb22d1f593d3e7  docs/dingwei-architecture-design.md
-REVIEWED 0308a24f878a39faf20bb5c1204ec5c0989c6455be105d9eb3ab450a1a0e0269  docs/dingwei-prototype.html
-REVIEWED 9c7cf104bae3095e0b3e87c298fb27fab069c10b194cdb226d973e69ed77440f  docs/DELIVERY-STATUS.md
-REVIEWED 8996a7df3ae0e99db2aaef56d2d13126ded09c01787167ecebcf47c7f3372798  specs/evidence/collect.sh
+REVIEWED 8b0b20b97af85bf1c42c1b8dd5a7c94a0e73d1de3100666c5acb2370ae56c61e  docs/dingwei-platform-specdoc.md
+REVIEWED 0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc  docs/dingwei-platform-architecture.md
+REVIEWED eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8  docs/dingwei-prototype.html
+REVIEWED 93065ae5569ffc5ab1f55f0f42e3b68a8b0b61c0ed852f9c3979f64ff8d0195b  docs/DELIVERY-STATUS.md
+REVIEWED 0d564164092ba326a02de944c3b903531e54763006033819d3b3f1553d7a3061  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
-REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
+REVIEWED 1e082148049b505073f71888f837aff3d364d378f28d60ab13319abe0745baf3  scripts/arch-refcheck.sh
 REVIEWED 253a59f6e85c9a1438beeac339efdc2294b21ae3bba46aaf30e7d1ee9befb521  scripts/check-sensitive.sh
 REVIEWED 3cb2373018a75efa47200d682761a2ff965d54af57fdf37539ae8d04bd13de6e  scripts/checklist-executed-gate.sh
-REVIEWED 69b60fda965d49479f0390a583810b082c1f049b30b4d04af2127f3eb13d43c3  scripts/conflict-marker-gate.sh
+REVIEWED f27017844893fd5678daf3e4e50c858215c0048e6f5bef05aa3eb5658ce33e39  scripts/conflict-marker-gate.sh
 REVIEWED 687300bc3e8a56f491c533116b6cccc6da256f4e7aaf300607cd32cb6274e78e  scripts/delivery-check.sh
 REVIEWED 14158e52ea0e4a0e5d21766e438d31a0a069008e8ec9b3fcc742599ca43aa93a  scripts/dependency-ratchet.sh
-REVIEWED 33d372ff3b1dcda466476c113af888b55e02dee8479a894c8b0c48d8e9a45013  scripts/evidence-fresh-gate.sh
+REVIEWED 3c6c9168529c0eef64f1cecaa8184a4808ab9b14bc6a010314268e791bf1a1c2  scripts/evidence-fresh-gate.sh
 REVIEWED 566208fc33a196c2cc44947b892fda11d3c5feee5c63a55e910df9b071badfad  scripts/gate-witness-gate.sh
 REVIEWED 00e2a7106e622c697a9b3c4e718110bdd7d51a6d75fe6bd59429de92201f2d28  scripts/gen-review-state.sh
-REVIEWED 156c626fe5e069606e07f642d5f7fd3477b5ce42f1173d28b40e425f4556b883  scripts/gen-status.sh
+REVIEWED 189cbe8280dc2a89006e0fd6495ffd7cd79a74d646667c4dcd93868ba1f8df75  scripts/gen-status.sh
 REVIEWED 6dd8dd1441776bde1b3f6b79ed9dde7f7fdb353e6b6105a604f1e9b4b40a36e6  scripts/input-anchor-gate.sh
 REVIEWED 510ae09c71ca9ac2f4d44ef74d1530cbe03d5a3560179fc4ad03c280c9f30d3f  scripts/legacy-name-gate.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh
-REVIEWED 1aedacbf1ae7596d2130e13b8854dd83fca1f2177aee338908be1798a1f18bd8  scripts/path-anchor-gate.sh
+REVIEWED 1b3f7a7bebaddd2315bef2c62c0b60bff4f5b666d0419068f2aa3b4edaef8b01  scripts/path-anchor-gate.sh
 REVIEWED 1d2c1ef512417b70760dbe2a4bd314935f319fae23fbe39f8d20ea4202cbd138  scripts/post-columns-gate.sh
-REVIEWED 0cb1cce593c8ff9157357138e4ac6957ba8a3764359ab542dcb8dbb553be5181  scripts/prose-style-gate.sh
+REVIEWED 668c60263af6cc277bed585cb29f119c4e25e050176a94fb188f147eca0d7932  scripts/prose-style-gate.sh
 REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scripts/reliable_delivery_canary.sh
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
 REVIEWED 679e8c6f73f15972895348cab70bf184c4b3763e64efb05ab1de0f716c661a6b  scripts/reviewer-repro-gate.sh
-REVIEWED bf1e2ba70efd82d87bd7b39c9cd75ddbc20ed636374aed3c7488c71f01eab451  scripts/rv-integrity-gate.sh
-REVIEWED f863fff7f106543542d7d88fba0dcc02f4fccbf439364bddadf5e90bd0c44005  scripts/speclint-gate.sh
+REVIEWED e0aba3236b58915d416809d4e53b90244a0cc4a3f12e19212a3a07d7d1802f36  scripts/rv-integrity-gate.sh
+REVIEWED 5e514f9491b33e506691bc559038c39f8611e240b1ab76e59b58f8c7b72b7880  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
-REVIEWED d06ad5b94bf542f15e7d9b775eabbc84dbc81f1bd35489522adbc23afde49f63  scripts/status-consistency-check.sh
-REVIEWED e9a1c2a2d0b427631f151b9d15fe83204d654f79acf2bd7046fe1fecfd87d18f  scripts/superseded-claims-gate.sh
+REVIEWED 8ada7fc95e2e60bf1c566723d8ba54326f07b314970f90a1d4ed2066ee2fa879  scripts/status-consistency-check.sh
+REVIEWED fe3933da644dce4430efbf359fa4a8bb5ef93708ffab8f63bdecac6c8d110793  scripts/superseded-claims-gate.sh
 REVIEWED a5fcd7cfbd7194d44a10fd7bba42c27f0b7258c09861d6ecf39a7337e294f66f  scripts/tenant-isolation-gate.sh
-REVIEWED 71f0a4d5a35746101e540521df36975adf57803faa233fb0d27bcd0c73fa86f8  scripts/title-version-gate.sh
+REVIEWED fe0c2678f583e2fd7350442f3a3408816d6b9553f2dc3bdb08b849f6c3429d44  scripts/title-version-gate.sh
 REVIEWED 74c9a7fcd8a2b81cfb8150e9e8caf8ae507ba2efd0d5214e097d8c62873cd8c1  scripts/workflow-coverage-gate.sh
-REVIEWED 91102ae852827ee0b7ecfe122d29f13c95ff73d49752be29f3991f2ca93b2832  specs/tools/analyze.sh
-REVIEWED fa2e42ef5aabe1418512e2e3b4cf4a103c978a4bcfd80e0c06db4c536ee092d6  specs/tools/disposition-audit.py
-REVIEWED 4846536afab7911f005f9dd35c657b03f083da3ec3c3a377d6d0c1b392b03b68  specs/tools/export-bundle.sh
-REVIEWED 41e915d3132b580332d7fa984979c6740ad6a892733f57d14d1192ddce83c778  specs/tools/foreign-version-check.py
+REVIEWED fa79c3b52eb11badaed9c86831414b1a5bab8dbdae8ff394164632e67613f5e2  specs/tools/analyze.sh
+REVIEWED e1a579471cd08c41bd64ac9798783232dca43488b6f584b5a1b172fa27d64b7a  specs/tools/disposition-audit.py
+REVIEWED b615f76834a3e435d18437f6ac450b2647dc6086d9070cadff491b0428769cf8  specs/tools/export-bundle.sh
+REVIEWED 9b25ffcb37bb674d76453e4f0dc2a83418a06c2c584f4f12f1cfc66c96a2fc74  specs/tools/foreign-version-check.py
 REVIEWED c598b3199e0c418af5d6f207fff5a4b2e093edf0e3412562bccd8524612a337b  specs/tools/rv-state-check.py
 REVIEWED 49b6196087629e5500f99da9b11a74a7bf035f79e0db24988e9194839d264288  specs/tools/safe-replace.py
 REVIEWED 9328cd8abaf6e6ceacf8e0968e8431ae28080ca67044c32457c9283ef467b552  docs/tools/speclint.py
@@ -98,13 +98,13 @@ $ python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md
   (rc=0)
 ```
 
-### 架构设计引用核验（A§ 本件 / § SpecDoc 分别解析）
+### 目标架构引用核验（数字 heading / § SpecDoc 分别解析）
 
 ```
 $ scripts/arch-refcheck.sh
-  本件内引用 A§ : 65 次 / 27 目标 · 悬空 0
-  SpecDoc 引用 § : 169 次 / 68 目标 · 悬空 0
-  heading 真实重复：本件 0 · SpecDoc 0
+  目标架构 heading：89 个 · 重复 0
+  SpecDoc 引用 §：72 次 / 50 目标 · 悬空 0
+  旧 A§ 引用：0
   --- 引用核验通过
   (rc=0)
 ```
@@ -113,11 +113,11 @@ $ scripts/arch-refcheck.sh
 
 ```
 $ scripts/arch-refcheck.sh --selftest
-    ✓ 拦住：SpecDoc 悬空 §99.9
-    ✓ 拦住：本件悬空 A§77.7
-    ✓ 拦住：本件 heading 重复
-    ✓ 拦住：SpecDoc heading 重复
-  --- 反测四项全过（闸有牙）
+    ✓ 拦住：SpecDoc 悬空引用
+    ✓ 拦住：旧 A§ 命名空间回流
+    ✓ 拦住：目标架构 heading 重复
+    ✓ 正常件放行
+  --- 反测 4 项全过（闸有牙）
   (rc=0)
 ```
 
@@ -135,11 +135,11 @@ $ specs/tools/analyze.sh
     原型引用 119 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
     SpecDoc: 件内 v3.69 · 状态文件 v3.69 ✓
-    架构设计: 件内 v0.34 · 状态文件 v0.34 ✓
-    原型: 件内 v1.46 · 状态文件 v1.46 ✓
+    架构设计: 件内 v1.3 · 状态文件 v1.3 ✓
+    原型: 件内 v1.47 · 状态文件 v1.47 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
-    ✓ dingwei-architecture-design.md: 正文无他件旧版本号
+    ✓ dingwei-platform-architecture.md: 正文无他件旧版本号
     ✓ dingwei-prototype.html: 正文无他件旧版本号
   ⑤ 生效前置状态（§0.4）
     ✓ 三域 checklist 齐备（结构 / 安全 / 跨制品）—— 但【生效与否取决于门方执行结果，非文件存在】
@@ -148,7 +148,7 @@ $ specs/tools/analyze.sh
   (rc=0)
 ```
 
-## 三、代码现状实测（架构设计 A§6.2 所载数字的来源）
+## 三、代码现状实测（目标架构第 12 节现状映射的证据来源）
 ### internal 包总数
 
 ```
@@ -181,8 +181,8 @@ $ scripts/repo-boundary-gate.sh
     仓储包允许清单（本次生效的全部条目）：
       - internal/repo
     判据一·仓储包外建库句柄：4 处（基线 4，终值 0）
-      internal/store/sqlite.go:53:	db, err := sql.Open("sqlite", dsn)
       internal/mcs/board/board.go:62:	db, err := sql.Open("sqlite", path)
+      internal/store/sqlite.go:53:	db, err := sql.Open("sqlite", dsn)
       internal/datad/assignment_pg_integration_test.go:58:	w.appDB, err = sql.Open("pgx", dsn)
       internal/datad/assignment_pg_integration_test.go:64:		w.setupDB, err = sql.Open("pgx", sup)
     债·尚未租户化的调用点：55 处（基线 55，终值 0，随 SP7b 归零）
@@ -225,13 +225,13 @@ $ grep -rn 'row_level_security\|SET LOCAL\|app\.tenant' --include=*.go --include
 ```
 
 > 🔴 **本项零命中不得外推为「RLS 零实现」** —— 它只说明这三个字面量没出现。
-> 现行裁定为 C.3a「PG ＋ RLS（人层）✅ 采纳」；RLS 合同的验收判据见架构 A§12 与 SpecDoc §22.2c，
+> 现行裁定为 C.3a「PG ＋ RLS（人层）✅ 采纳」；RLS 合同的验收判据见目标架构第 8.3 节与 SpecDoc §22.2c，
 > **其覆盖面远大于本项**。扩 detector 或改判据前，本项只作字面子集旁证（甲域 RV-甲41）。
 
 ## 四、本包未覆盖的（明说，不留白）
 | 项 | 为什么本包给不出 |
 |---|---|
-| 三类越权负测（伪造 tenant / 跨租户读 / 缺 context） | 🔴 **受控仓储 API 尚未实现**，负测无被测对象。架构设计 A§12 已标「未建」 |
+| 三类越权负测（伪造 tenant / 跨租户读 / 缺 context） | 🔴 **受控仓储 API 尚未实现**，负测无被测对象。目标架构第 8.2、18.3 节保留为交付验证项 |
 | 紧急面平台不可用负测 | 需实际部署环境，本包为静态仓库分析 |
 | 敏感内容判定器覆盖面 | 判定器未实现（§22.5 为目标态） |
 | 语义层的一切 | 机器判不了，见本文件头注 |

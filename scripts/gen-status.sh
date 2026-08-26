@@ -19,9 +19,10 @@ say() { printf '%s\n' "$*"; }
 #   ⚠️ 假信号是这类「单一事实源」最贵的成本：它让人不敢信这份文件，也让真变化淹没在噪声里。
 #   ⇒ 闸只比内容列；内容没变就【不碰这个文件】，易变的元信息随内容变化时一并更新。
 if [ "${1:-}" = "--stable" ]; then
-  for f in "$D/dingwei-platform-specdoc.md" "$D/dingwei-prototype.html" "$D/dingwei-architecture-design.md"; do
+  for f in "$D/dingwei-platform-specdoc.md" "$D/dingwei-prototype.html" "$D/dingwei-platform-architecture.md"; do
     [ -f "$f" ] || continue
     v=$(grep -m1 -oE '\*\*版本\*\*: v[0-9]+\.[0-9]+' "$f" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+' || true)
+    [ -n "$v" ] || v=$(sed -n 's/^| \*\*版本\*\* | \(v[0-9][0-9]*\.[0-9][0-9]*\) |$/\1/p' "$f" | head -1)
     [ -n "$v" ] || v=$(grep -m1 -oE '原型 v[0-9]+\.[0-9]+' "$f" | grep -oE 'v[0-9]+\.[0-9]+' || true)
     lb=$(wc -l -c < "$f" | tr -s ' ' | sed 's/^ //;s/ / \/ /')
     printf '%s|%s|%s|%s\n' "$(basename "$f")" "$v" "$lb" "$(sha256sum "$f" | cut -d' ' -f1)"
@@ -51,9 +52,10 @@ say "> 那一刻本次提交尚不存在），拿它当落后判据【必然误�
 say ""
 say "| 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |"
 say "|---|---|---|---|---|"
-for f in "$D/dingwei-platform-specdoc.md" "$D/dingwei-prototype.html" "$D/dingwei-architecture-design.md"; do
+for f in "$D/dingwei-platform-specdoc.md" "$D/dingwei-prototype.html" "$D/dingwei-platform-architecture.md"; do
   [ -f "$f" ] || continue
   v=$(grep -m1 -oE '\*\*版本\*\*: v[0-9]+\.[0-9]+' "$f" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+' || true)
+  [ -n "$v" ] || v=$(sed -n 's/^| \*\*版本\*\* | \(v[0-9][0-9]*\.[0-9][0-9]*\) |$/\1/p' "$f" | head -1)
   [ -n "$v" ] || v=$(grep -m1 -oE '原型 v[0-9]+\.[0-9]+' "$f" | grep -oE 'v[0-9]+\.[0-9]+' || true)
   c=$(git log -1 --format=%H -- "$f")
   # ⚠️ 本文件由 pre-commit 生成，那时【本次提交尚不存在】，git log 只能看到上一次改动。

@@ -49,7 +49,7 @@ CONFORMANCE=${CONFORMANCE:-'internal/mcs/board/conformance_test.go'}
 _flat() { printf '%s' "$1" | sed 's|/|__|g'; }
 # DOCS 允许由环境覆盖 —— 仅为【可测性】,默认值不变。
 # 没有这个钩子,「具名件缺失须报错」这条就只能靠读代码相信,无法用反测证明。
-DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md
+DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-platform-architecture.md
 docs/dingwei-prototype.html docs/v0.1/task-table-collision-analysis.md docs/DELIVERY-STATUS.md
 docs/v0.1/reference/not-adopted-pg-rls.md docs/SESSION-HANDOFF.md
 docs/dingwei-revision-history.md'}

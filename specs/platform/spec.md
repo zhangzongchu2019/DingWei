@@ -19,7 +19,7 @@ Spec Kit 惯例是 `specs/<feature>/spec.md` 放正文。本席**没有搬**，�
 |---|---|
 | 正文 | `docs/dingwei-platform-specdoc.md` |
 | 版本 / 末次改动锚 / sha256 | 见 `docs/DELIVERY-STATUS.md`（机器生成，随提交自动刷新） |
-| 架构设计 | `docs/dingwei-architecture-design.md` |
+| 架构设计 | `docs/dingwei-platform-architecture.md` |
 | 界面契约（原型） | `docs/dingwei-prototype.html` |
 
 ## 门与状态

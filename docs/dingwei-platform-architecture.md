@@ -1,14 +1,14 @@
-# DingWei 平台目标架构 v1.2
+# DingWei 平台目标架构 v1.3
 
 > 本件从新版 SpecDoc 与原型重新设计目标架构，同时承载分域定义、接口设计与技术架构设计。
-> 旧 `docs/dingwei-architecture-design.md` 已降为历史参考，不是本件输入，也不是本件的修改对象。
+> 旧件已移至 `docs/v0.1/dingwei-architecture-design-v0.34.md`，仅作历史参考，不是本件输入，也不是本件的修改对象。
 
 ## 0. 文档头块
 
 | 项 | 值 |
 |---|---|
 | **Architecture ID** | `dingwei-platform-target-architecture` |
-| **版本** | v1.2 |
+| **版本** | v1.3 |
 | **状态** | draft，待全文评审 |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
@@ -51,6 +51,11 @@ SpecDoc、原型、代码三件之间**不自设优先级**：任一语义冲突
   `IF-01`–`IF-10` 均有可解析落点。
 - 现状/目标映射全部使用五态受控 token，移除 transition/consolidate 等自由状态。
 - 跨件冲突不再由本件自排优先级；统一登记后交 coordinator/业主裁定。
+
+### 0.1.3 SYNC IMPACT REPORT（v1.2 → v1.3）
+
+- 本件接管 `DELIVERY-STATUS`、评审包、证据采集与架构引用核验，成为现行架构唯一事实源。
+- 旧件移入 `docs/v0.1/`；现行 SpecDoc / 原型依赖点改指本件，旧式架构节号只存在于历史件。
 
 ### 0.2 重做边界
 
@@ -1148,7 +1153,7 @@ F.15
 | `AC-M04` | command 幂等、generation fencing、outbox/ACK 与业务结果边界明确 |
 | `AC-M05` | 外部副作用没有被模板/数据包装成免审路径 |
 | `AC-M06` | 平台故障不扩权，紧急面只允许单调收紧 effect |
-| `AC-M07` | 跨企业无 capability；企业内跨人仅按显式 policy |
+| `AC-M07` | 跨企业路径恒无；企业内跨人仅按显式 policy |
 
 ### 18.3 证据与交付
 

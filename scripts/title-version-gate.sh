@@ -12,10 +12,11 @@ set -u
 
 check() {
   _bad=0
-  for f in docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md; do
+  for f in docs/dingwei-platform-specdoc.md docs/dingwei-platform-architecture.md; do
     [ -f "$f" ] || { echo "✗ 闸依赖缺失：$f"; return 2; }
     _t=$(head -1 "$f" | grep -oE 'v[0-9]+\.[0-9]+' | head -1)
-    _v=$(grep -m1 -oE '^\*\*版本\*\*: v[0-9]+\.[0-9]+' "$f" | grep -oE 'v[0-9]+\.[0-9]+')
+    _v=$(grep -m1 -oE '^\*\*版本\*\*: v[0-9]+\.[0-9]+' "$f" | grep -oE 'v[0-9]+\.[0-9]+' || true)
+    [ -n "$_v" ] || _v=$(sed -n 's/^| \*\*版本\*\* | \(v[0-9][0-9]*\.[0-9][0-9]*\) |$/\1/p' "$f" | head -1)
     [ -n "$_t" ] && [ -n "$_v" ] || { echo "✗ $f：标题或版本字段取不到 —— 取不到就不能报通过"; return 2; }
     if [ "$_t" != "$_v" ]; then
       echo "✗ $f：标题 $_t 与版本字段 $_v 不一致"; _bad=$((_bad+1))
@@ -51,7 +52,7 @@ selftest() {
   ok(){ n=$((n+1)); echo "  ✓ $1"; }; bad(){ echo "  ✗ 反测未过：$1"; fail=1; }
   cd "$T" || return 2; mkdir -p docs
   _mk(){ printf '# X %s —— y\n\n**版本**: %s\n' "$1" "$2" > docs/dingwei-platform-specdoc.md
-         printf '# Y %s —— y\n\n**版本**: %s\n' "$3" "$4" > docs/dingwei-architecture-design.md
+         printf '# Y %s —— y\n\n| **版本** | %s |\n' "$3" "$4" > docs/dingwei-platform-architecture.md
          printf '<title>原型 %s</title>\n<b>原型 %s</b>\n' "$5" "$6" > docs/dingwei-prototype.html; }
   _mk v3.1 v3.1 v0.1 v0.1 v1.1 v1.1; check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：三件均一致时放行" || bad "一致被拦"
@@ -72,7 +73,7 @@ selftest() {
   printf '<title>DingWei 平台原型 v1.43</title>\n<h1>DingWei 平台原型 <span class="x">v1.43</span></h1>\n' > docs/dingwei-prototype.html
   check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：剥标签后版本一致即放行" || bad "一致的版本被误拦"
-  rm -f docs/dingwei-architecture-design.md; check >/dev/null 2>&1
+  rm -f docs/dingwei-platform-architecture.md; check >/dev/null 2>&1
   [ $? -eq 2 ] && ok "拦住：件缺失判闸坏（非免检）" || bad "件缺失被当免检"
   cd /; rm -rf "$T"
   [ $fail -eq 0 ] && echo "--- 反测 $n 项全过（闸有牙）" || echo "--- 反测未过（闸没牙）"

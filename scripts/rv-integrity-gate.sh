@@ -18,7 +18,7 @@
 set -u
 
 LEDGER=${LEDGER:-specs/gates/rv-ledger.txt}
-DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
+DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-platform-architecture.md docs/dingwei-prototype.html'}
 HIST=${HIST:-docs/dingwei-revision-history.md}
 # 🔴 扫描面须按【标注实际住在哪】定，不按目录习惯定：
 #   甲域 RV-甲41 标在 `specs/evidence/collect.sh` 上，而本闸原只扫 scripts/prose-style-gate.sh

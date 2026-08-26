@@ -31,7 +31,7 @@ check() {
   #   ⚠️ 执笔方只在 pre-commit 上下文验过它，**没在评审上下文验过** —— 又一次「验了一部分报成全部」。
   #   ⇒ 判据改为：证据锚须为 HEAD **或 HEAD 的直接父**（即「本次提交中生成」这一形态），
   #     且自证据锚起、除【生成证据包的那一个提交】外，评审对象无其他改动。
-  _last=$(git log -1 --format=%H -- docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md \
+  _last=$(git log -1 --format=%H -- docs/dingwei-platform-specdoc.md docs/dingwei-platform-architecture.md \
             docs/dingwei-prototype.html scripts specs/tools 2>/dev/null)
   # ⚠️ 不用 `rev-list --count`：**合并历史上它会把并入的分支一并计数** —— 实测 merge 后
   #   「证据锚 → 其子提交」的距离变成 2，判据当场失效。改用【第一父链】判相邻，
