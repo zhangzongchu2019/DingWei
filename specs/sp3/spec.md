@@ -17,6 +17,12 @@
 | **目标件** | `docs/dingwei-sp3-design.md` |
 | **分级** | L2 |
 
+<!-- EVENT-SET-SP3: NOT_APPLICABLE -->
+
+**事件集合处置**：本轮不设 event 面。冻结架构 §4.2 的 owner=KNO 事件为 0，`EV-KNO-*` 亦为 0；
+KNO 只消费既有 WRK dispatch 事件，并经四个 KNO command/query 与 repository outbox seam 协作。
+若未来需要 KNO 作为事件 producer，须先修改目标架构 §4.2、bump 本合同并重新评审，不能在正文私造事件 ID。
+
 ### 0.1 范围判定
 
 SpecDoc §0.3 对 SP3 定义清晰且与目标架构一致：
@@ -122,6 +128,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 正文须提供 `COVERAGE-SP3-BEGIN/END` 严格两列表格；checker 只从块内第二列真实 `D-SP3-*` 取实检集合。
 块外提及、块内散文、空落点与「见全文」不计。预期集合从冻结锚机器派生，输出预期/实检/未知；
 块缺失、冻结输入漂移或任一预期集合为空均 exit 2。
+例外只有上方机器标记声明的 event 不适用面；checker 同时验证架构 KNO owner 事件确为 0。标记缺失或实数非 0 均 exit 2。
 
 正文另须提供 `ACCEPTANCE-SP3-BEGIN/END` 四列表，每条验收独立写受检范围、判据与判不了什么。
 

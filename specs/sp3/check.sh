@@ -22,6 +22,8 @@ def get(path):
     return b.decode()
 spec=get('docs/dingwei-platform-specdoc.md'); arch=get('docs/dingwei-platform-architecture.md'); proto=get('docs/dingwei-prototype.html')
 get('docs/dingwei-sp0-design.md'); get('docs/dingwei-sp1-design.md'); get('docs/dingwei-sp2-design.md')
+try: contract=open('specs/sp3/spec.md',encoding='utf8').read()
+except OSError: print('✗ SP3 合同不可取，无法确认 event 空面声明'); raise SystemExit(2)
 
 def derive_interfaces(text):
     out=set(); on=False
@@ -60,6 +62,10 @@ def expected_sets():
     proto_ids=set(re.findall(r'<section\s+class="scr"\s+id="([^"]+)"',proto))
     absent=sorted(x for x in ui if x[4:] not in proto_ids)
     if absent: print('✗ 架构 §13 KNO 入口在原型不存在：'+','.join(absent)); raise SystemExit(2)
+    kno_events=re.findall(r'^\| `(EV-KNO-[^`]+)` \| KNO \|',arch,re.M)
+    declared='<!-- EVENT-SET-SP3: NOT_APPLICABLE -->' in contract
+    if kno_events or not declared:
+        print(f'✗ KNO event 空面契约不成立：declared={declared} actual={len(kno_events)}'); raise SystemExit(2)
     out={'spec':set(src),'E':set(e),'interface':derive_interfaces(arch),'prototype':set(ui)}
     if any(not v for v in out.values()): print('✗ 预期集合为空：'+','.join(k for k,v in out.items() if not v)); raise SystemExit(2)
     return out
@@ -98,7 +104,7 @@ def inspect(text,quiet=False):
     if not quiet:
         print(f'[delivery] 预期=12 实检={12-len(miss)} 未知={len(miss)} {miss}')
         print(f'[acceptance] 预期=12 实检={12-len(ac_miss)} 未知={len(ac_miss)} {ac_miss}')
-        print('受检范围：冻结 SpecDoc §10–§13 heading、owner_sp=SP3 E 行、架构 §6 KNO 接口、§13 KNO 原型入口。')
+        print('受检范围：冻结 SpecDoc §10–§13 heading、owner_sp=SP3 E 行、架构 §6 KNO 接口、§13 KNO 原型入口；event 面显式不适用且实算为 0。')
         print('能力边界：判结构化来源→D-SP3 落点与 ID 形状；判不了语义正确性、授权充分性或实现状态。')
     return 1 if bad else 0
 

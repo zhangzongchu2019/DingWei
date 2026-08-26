@@ -17,6 +17,9 @@ for face in ① ② ③ ④ ⑤ ⑥; do grep -q "^### $face" "$SPEC" || { echo "
 for n in 01 02 03 04 05 06 07 08 09 10 11 12; do grep -q "D-SP3-$n" "$SPEC" || { echo "✗ 缺 D-SP3-$n"; exit 1; }; done
 for n in 01 02 03 04 05 06 07 08 09 10 11 12; do grep -q "AC-SP3-$n" "$SPEC" || { echo "✗ 缺 AC-SP3-$n"; exit 1; }; done
 for id in IngestItem Search BuildContextSnapshot MarkLifecycle; do grep -q "KNO-.*-$id" "$SPEC" || { echo "✗ 缺 KNO 接口 $id"; exit 1; }; done
+grep -q '<!-- EVENT-SET-SP3: NOT_APPLICABLE -->' "$SPEC" || { echo '✗ KNO event 空面未机器声明'; exit 2; }
+EVENT_N=$(git show "$ANCHOR:docs/dingwei-platform-architecture.md" | grep -Ec '^\| `EV-KNO-[^`]+` \| KNO \|' || true)
+[ "$EVENT_N" -eq 0 ] || { echo "✗ KNO event 空面与架构实数冲突：$EVENT_N"; exit 2; }
 for dep in SP1 SP7a SP7b SP2; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置处置缺 $dep"; exit 1; }; done
 ACTIVE=$(sed -n '/^### 4\.1 评审协议/,/^## 5\./p' "$SPEC")
 printf '%s\n' "$ACTIVE" | grep -q '最多 4 轮' || { echo '✗ 生效协议缺 4 轮上限'; exit 1; }
