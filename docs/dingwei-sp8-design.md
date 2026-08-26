@@ -1,9 +1,9 @@
-# DingWei SP8 授权与平台治理设计 v1.5
+# DingWei SP8 授权与平台治理设计 v1.6
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp8-design` |
-| **版本** | v1.5 |
+| **版本** | v1.6 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | 组合冻结：SpecDoc `4220195`（v3.73）；架构/原型/SP0–SP3/代码基线 `6a98629` |
 | **合同锚** | `5241152`（`specs/sp8/spec.md` v1.4 ＋ 证据件） |
@@ -303,7 +303,7 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
 - 🔴 **配额 claim ≠ 执行许可**（上一版把两者混为一谈：做到了"不重复扣额"，没做到"不重复执行 effect"）。
   `grant_use` 因此有**自己的生命周期**与**唯一执行权**：
 
-  `claimed → executing → succeeded | failed | unknown`（后三者为终态）
+  `claimed → executing → succeeded | failed | unknown`，另有 `claimed → aborted`（被吊销且未发起，终态、无 effect）
   列：`state`、`execution_owner`（唯一执行权持有者）、`fence_token BIGINT`（单调，接管即 +1）、
   `lease_expires_at`、`payload_digest`、`effect_result`、`outcome_ref`。
 
@@ -329,7 +329,27 @@ RETURNING used_count, state;
 ```
   影响行数为 0 ⇒ **整笔回滚**（含 ①），返回 `GRANT_UNAVAILABLE`。
   提交成功后**仅向该 `execution_owner` 返回 execute permit**（含 `use_id` ＋ `fence_token`）——
-  🔴 **permit 是唯一执行凭据，外部 effect 只允许持 permit 者发起**，且发起前须 CAS `claimed→executing`。
+  🔴 **permit 是唯一执行凭据**，且**permit 不是一张长期通行证**：发起 effect 前必须过下面这道 CAS，
+  它同时校验**持证人**与**授权在发起时刻仍然有效**：
+
+```sql
+UPDATE grant_use gu
+   SET state = 'executing', lease_expires_at = now() + :lease
+ WHERE gu.use_id = :u
+   AND gu.execution_owner = :owner          -- 持证人
+   AND gu.fence_token   = :t                -- 未被接管/未被吊销 bump
+   AND gu.state         = 'claimed'
+   AND gu.lease_expires_at > now()          -- 租约未过期
+   AND EXISTS (SELECT 1 FROM effect_grant g  -- 🔴 发起时刻授权仍有效
+                WHERE g.grant_id = gu.grant_id
+                  AND g.state IN ('issued','exhausted')   -- 已扣额者仍可执行本次
+                  AND g.revoked_at IS NULL
+                  AND g.expires_at > now()
+                  AND g.generation = :gen)
+RETURNING gu.use_id;
+```
+  **影响 0 行 ⇒ 一律不得发起 effect**（返回 `PERMIT_INVALID`）。
+  ⇒ 「claim 时有效、execute 时已被吊销/过期/代际变更」这一格由 `EXISTS` 子句堵死，**旧 permit 不再是通行证**。
 
 - **① 无返回（冲突）⇒ 重放**：读既有行，先比 `payload_digest`：
   - **载荷不同** ⇒ `IDEMPOTENCY_CONFLICT`（不扣额、不覆盖、不发 permit）；
@@ -380,6 +400,21 @@ RETURNING used_count, state;
 
    - revoke 先成功 ⇒ 后续新 claim 的条件更新影响 0 行 ⇒ 拒绝（重放分支仍返回既有 outcome，不复活配额）；
    - claim 先成功、revoke 后到 ⇒ **不回滚已发生的 effect**，按上表落 `revoked_after_use` 并挂回退义务。
+
+🔴 **revoke 必须在同一事务内处理"已发出但未执行"的 permit**，否则旧 permit 仍能启动 effect：
+
+```sql
+-- 同一事务，顺序执行
+UPDATE effect_grant SET state='revoked', revoked_at=now() WHERE grant_id=:g AND generation=:gen;
+UPDATE grant_use SET state='aborted', fence_token=fence_token+1, lease_expires_at=now()
+ WHERE grant_id=:g AND state='claimed';        -- 尚未发起：直接作废并 bump，旧 permit 立即失效
+UPDATE grant_use SET revoke_pending=true
+ WHERE grant_id=:g AND state='executing';      -- 已在途：不 bump（否则其合法回填会被 FENCED），改挂回退义务
+```
+- `claimed` ⇒ `aborted`（**终态，无 effect 发生**）：其旧 permit 因 `fence_token` 变化与 `state≠'claimed'` **双重失效**，
+  上面的发起 CAS **必然影响 0 行**；
+- `executing` ⇒ 保留其 fence 以接受**真实结果回填**（事实不能被抹掉），回填后按 `revoked_after_use` 挂**回退义务**。
+🔴 恒零：**「claim 后、execute 前发生 revoke，而旧 permit 仍启动了 effect」的次数**。
 
 ### 11.4 跨 GOV/WRK 的「同一事务」：outbox 不能当判定依据
 
@@ -465,7 +500,8 @@ fence 查询超时 ⇒ 必须被拒；补偿落账后重放同一授权 ⇒ 仍�
 | `batch_item` | `(batch_id, item_seq)` | `batch_id` | `(batch_id, item_ref)` | `risk ∈ {normal,high}`；`impact_report_ref` NOT NULL | `(batch_id)` | append-only |
 | `batch_signature` | `signature_id` | `batch_id` | **`(batch_id, signer_principal)`** | 行级 CHECK 只约束本行（签名格式、`manifest_digest` 非空、`assurance_ref` 非空）；**`signer ≠ proposer` 与「签数达标」是跨行/跨表条件，归 §12.2b，不由行 CHECK 承担** | `(batch_id)` | append-only |
 | `effect_grant` | `grant_id` | `batch_id`、`enterprise_id` | `(batch_id, audience, effect_target_digest)` | `state ∈ {issued,exhausted,revoked,expired}`；`use_limit>=1`；`used_count<=use_limit`；`expires_at` NOT NULL | `(state, expires_at)`、`(audience)` | 签发后 scope/audience/target 不可改 |
-| `grant_use` | `use_id` | `grant_id` | **`(grant_id, claim_key)`** | `state ∈ {claimed,executing,succeeded,failed,unknown}`；`effect_result ∈ {succeeded,failed,unknown}`；`fence_token>=1`；`lease_expires_at` NOT NULL | `(grant_id)`、`(state, lease_expires_at)`（扫过期 lease）、`(effect_result)` | append-only；**结果按 fence_token 回填一次**，旧 owner 回填拒绝 |
+| `grant_use` | `use_id` | `grant_id` | **`(grant_id, claim_key)`** | `state ∈ {claimed,executing,succeeded,failed,unknown,aborted}`；`fence_token>=1`；`lease_expires_at` NOT NULL；**一致性**：`state ∈ {claimed,executing,aborted} ⇒ effect_result IS NULL AND outcome_ref IS NULL`；`state ∈ {succeeded,failed,unknown} ⇒ effect_result = state` | `(grant_id)`、`(state, lease_expires_at)`、`(effect_result)` | 🔴 **不是 append-only，是受控单调状态更新**：普通角色无 `UPDATE` 权，只有受控写路径可改；状态只能按 §11.1 的转换图前进（触发器或写路径断言），每次变更 append 一行 `grant_use_history` |
+| `grant_use_history` | `history_id` | `use_id` | `(use_id, seq)` | `from_state`/`to_state` 属状态枚举且为合法转换；`actor`、`fence_token`、`reason` NOT NULL | `(use_id, seq)` | **append-only（真正的 append-only）** |
 | `grant_revocation` | `revocation_id` | `grant_id` | `(grant_id)` | `reason` NOT NULL；`revoked_after_use` bool | `(grant_id)` | append-only |
 | `emergency_release` | `release_id` | `grant_id?` | `(action_ref)` | `action ∈ {disable,quarantine,revoke}`；`fallback_ref` NOT NULL | `(reviewed)` | append-only |
 | `emergency_review` | `review_id` | `release_id`、`batch_id` | `(release_id)` | `outcome ∈ {upheld,overturned}`；`overturned ⇒ rollback_action_ref` NOT NULL | `(batch_id)` | append-only |
@@ -480,6 +516,22 @@ fence 查询超时 ⇒ 必须被拒；补偿落账后重放同一授权 ⇒ 仍�
 3. `emergency_release` 必有对应 `emergency_review`，否则计入"未进入下一批次补审"恒零计数器；
 4. 任一 `challenge` 消费必对应一条 `authorization_decision`；
 5. `preauth_expiry` 存在 ⇒ 该 `preauth` 的读侧一律按 `expired` 处理（D-SP8-11 §11.4 的读侧 fail-closed）。
+
+### 12.2c 「append-only」与「状态机」不可并存，本件的分工
+
+上一版把 `grant_use` 标成 append-only，同时又给它 `claimed→executing→终态` 的状态机、lease 接管改 owner/token/expiry、
+结果回填——**这三件事都要 UPDATE，与 append-only 直接矛盾**（sol 指出，成立）。本件的分工：
+
+| 对象 | 可变性 | 手段 |
+|---|---|---|
+| `grant_use` | **受控单调状态更新** | 普通角色**无 `UPDATE` 权**；只有受控写路径/函数可改；转换合法性由触发器或写路径断言（非终态→终态、终态不可再改）；`fence_token` 单调不减 |
+| `grant_use_history` | **append-only** | 每次状态变更写一行（`from_state`/`to_state`/`actor`/`fence_token`/`reason`/时刻），**它才是不可篡改的那一份** |
+| `gov_audit` | **append-only** | 同上，且落点不得在企业 ops 可写介质 |
+
+⇒ 「不可篡改」由**历史表 ＋ 审计**承担，「当前态」由**受控单调更新**承担；
+🔴 **两者分工不得互换**——把当前态写成 append-only 会逼实现方要么违约、要么把状态塞进别处。
+一致性对账（恒零）：`grant_use` 的当前态与其 `grant_use_history` 末行 `to_state` 不一致的行数；
+非终态却有 `effect_result` 的行数；终态却与 `effect_result` 不匹配的行数。
 
 ### 12.2b 跨行/跨表条件由受控写路径保证，不冒充行级 CHECK
 
