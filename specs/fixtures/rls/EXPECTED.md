@@ -75,5 +75,5 @@ psql -f t4-ddl-rights.sql
 | `t3-no-residue.sql` 负测④ | `owner_sees_before` = **0**（FORCE 下属主也受约束）· `ALTER … NO FORCE` **成功** · `owner_sees_after` = **2**。🔴 **这不是缺陷，是要记录的事实**：属主可自解除 ⇒ FORCE RLS 防误操作、不防有意绕过；唯一防线是**审计留痕**（C.3a.1c） |
 | `t3-no-residue.sql` | `alice_rows` = **1**；`must_be_unset` = **空字符串**（🔴 实跑修正：PG17 下 `current_setting(…,true)` 事务后返回**空串**而非 NULL，coalesce 取不到默认值 —— 原写 `<unset>` 是我按 NULL 想当然）；`must_be_zero` = **0** ⇐ **判「无残留」以此为准** |
 
-🔴 **若 t3 的 `must_be_unset` 不是 `<unset>`**，说明实现用了残留型 `SET` 而非 `SET LOCAL`，
+🔴 **若 t3 的 `must_be_unset` 非空**（即取到了 principal 值），说明实现用了残留型 `SET` 而非 `SET LOCAL`，
 或领域 SQL 未经事务 —— 直接对应 C.3a.1a #5 / #5a / #5c，属阻断。
