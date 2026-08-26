@@ -19,6 +19,8 @@
 | `specs/platform-architecture/spec.md` | 新版平台架构设计的施工与验收合同；冻结分域、接口与技术架构三类输出，旧架构件只作历史参考 |
 | `specs/platform-architecture/check.sh` | 新版架构件的非门控形状检查：反查包/进程、原型入口与接口 ID；明确不替代语义评审 |
 | `specs/platform-architecture/cutover-check.sh` | 架构唯一事实源切换核验：机器派生预期/实检/未知集合，未知非空即失败 |
+| `specs/sp0-1/spec.md` | SP0-1（SP0 设计阶段）施工与验收合同；范围固定为 SpecDoc §1–§4、附录 A |
+| `specs/sp0-1/contract-check.sh` | SP0-1 合同六面、交付/验收 ID 与冻结输入指纹核验 |
 | `specs/platform/checklist.md` | 结构域（sol 主笔，26 项） |
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |
