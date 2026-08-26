@@ -1,4 +1,4 @@
-# DingWei 平台目标架构 v1.1
+# DingWei 平台目标架构 v1.2
 
 > 本件从新版 SpecDoc 与原型重新设计目标架构，同时承载分域定义、接口设计与技术架构设计。
 > 旧 `docs/dingwei-architecture-design.md` 已降为历史参考，不是本件输入，也不是本件的修改对象。
@@ -8,7 +8,7 @@
 | 项 | 值 |
 |---|---|
 | **Architecture ID** | `dingwei-platform-target-architecture` |
-| **版本** | v1.1 |
+| **版本** | v1.2 |
 | **状态** | draft，待全文评审 |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
@@ -34,8 +34,9 @@
 
 本件不复述产品规则；规则由 SpecDoc 权威定义。本件只在需要确定责任边界、接口 effect 或技术不变量时引用它。
 
-输入冲突按以下顺序处理：SpecDoc 正文现行定义与 F.0 索引 > 原型交互 > 代码现状。附录 F 中被 F.0 标为撤销/改判的过程记录
-不进入目标设计；原型或代码与现行定义冲突时记录迁移差距，不静默降低现行定义。
+SpecDoc 正文现行定义与 F.0 索引用于识别其自身现行/撤销条款；附录 F 中已撤销/改判的过程记录不进入目标设计。
+SpecDoc、原型、代码三件之间**不自设优先级**：任一语义冲突均按施工合同 §7.3 登记精确锚与两种后果，
+交 coordinator/业主裁定。代码只证明现状，但这条事实边界不能替代对冲突目标的裁定。
 
 ### 0.1.1 SYNC IMPACT REPORT（v1.0 → v1.1）
 
@@ -43,13 +44,21 @@
 - 增加目标态 `new` 单元表，补齐迁移状态；原 8 域、40 接口、数据/运行/安全/迁移结论不变。
 - 覆盖检查由 `specs/platform-architecture/check.sh` 产出四集合；UNKNOWN 非空不能宣称覆盖闭合。
 
+### 0.1.2 SYNC IMPACT REPORT（v1.1 → v1.2）
+
+- SpecDoc 责任覆盖扩至全部二级附录项；责任表逐项补 B2/C/E/F 主责。
+- 接口目录新增 PLT 的 access transaction、migration、RLS conformance、audit、health、metrics 与 reconcile 稳定接口；
+  `IF-01`–`IF-10` 均有可解析落点。
+- 现状/目标映射全部使用五态受控 token，移除 transition/consolidate 等自由状态。
+- 跨件冲突不再由本件自排优先级；统一登记后交 coordinator/业主裁定。
+
 ### 0.2 重做边界
 
 - 不沿用旧架构的章节、域表、接口表、包归属或部署结论。
 - 不以现有目录命名目标域；目录只在第 12 节映射到已经定义好的目标域。
 - 不把代码现状包装为目标设计；现状与目标分栏记录。
 - 不实施代码、schema、部署与 cutover。
-- 新件通过并切换后，`DELIVERY-STATUS` 的“架构设计”行替换为本件；旧件转历史，不形成双权威源。
+- 新件通过并切换后，`DELIVERY-STATUS` 的「架构设计」行替换为本件；旧件转历史，不形成双权威源。
 
 ## 1. 架构总览
 
@@ -254,7 +263,7 @@ DingWei 的业务一致性集中在企业、人、项目、任务、门、知识
 |---|---|---|
 | 按 `internal/` 包直接成域 | 包是历史实现与技术切面，`datad/m8/model` 均跨多项责任 | 先按责任/数据/事务定八域，再映射包 |
 | 按 SP0–SP8 一一成域 | SP 是交付拆分与依赖阶段；SP7 是机制、SP6 横跨多个业务责任 | SP 作为交付 owner，不作为领域边界 |
-| GOV 与 WRK 合并 | 规则/批准的生命周期与任务/node 的高频状态机不同；合并会让执行状态改写政策事实 | GOV 管“可不可以”，WRK 管“做到了哪” |
+| GOV 与 WRK 合并 | 规则/批准的生命周期与任务/node 的高频状态机不同；合并会让执行状态改写政策事实 | GOV 管「可不可以」，WRK 管「做到了哪」 |
 | AGT 与 MSG 合并 | Agent 资源生命周期与会话/投递的扩缩容、故障和一致性键不同 | AGT 管实例，MSG 管连接与交付 |
 | MSG 只作无状态基础设施 | session generation、delivery/ACK、route 与去重本身有权威状态和不变量 | MSG 作为明确责任域，但不做业务授权 |
 | 每业务域独立数据库/微服务 | 当前无容量或监管证据支撑，且会引入跨服务事务与运维成本 | 企业内共享 PG，schema/接口守模块边界 |
@@ -303,7 +312,7 @@ resource 与 policy 为准。
 
 - 使用独立入口、独立 DB role、独立连接池与独立审计；
 - 不接受 enterprise/principal 的半空组合；
-- 不可作为“暂时没有 AccessCtx”的兼容回退；
+- 不可作为「暂时没有 AccessCtx」的兼容回退；
 - 每个调用点必须登记 effect、owner 与为何确实无人/无企业语义。
 
 `PendingCtx` 是迁移债，不是运行权限。其 prod/test/comment 数分别棘轮，终值为 0。
@@ -441,6 +450,28 @@ InterfaceCall {
 | `MSG-CMD-RouteDelivery` | MSG | APP/domain outbox | canonical envelope + target selector | service + AccessCtx；delivery_id | MSG tx；selector 先验；不可读正文授权 |
 | `MSG-CMD-AcknowledgeDelivery` | MSG | recipient | delivery_id + generation + receipt | session principal；delivery_id | MSG tx；迟到 ACK FENCED；不等于业务成功 |
 | `MSG-QRY-OnlineSessions` | MSG | scheduler/UI | enterprise/project scoped online snapshot | AccessCtx；只读 | 元数据过滤；不返回他企业存在性 |
+| `PLT-CMD-RunInAccessTx` | PLT | 全部企业业务域 / in-process port | AccessCtxRef + DataScopeGrant + domain operation → committed result | service identity + principal；request_id；grant generation | 企业库 tx；第一条 SET LOCAL；同事务 outbox/audit；失败 rollback |
+| `PLT-CMD-RunMigration` | PLT | migration runner / in-process port | migration grant + enterprise + artifact digest + from/to version | migration service + approval；request_id+schema generation | 独立迁移 tx；失败停止后续企业；留恢复点 |
+| `PLT-QRY-RLSConformance` | PLT | SP7a/ops verifier | enterprise/schema → role/owner/policy/FORCE/WITH CHECK 核验结果 | verifier service；只读；`N/A(NA-READONLY)` | 只读 catalog tx；取不到对象 INCONCLUSIVE，不报全绿 |
+| `PLT-CMD-AppendAudit` | PLT | 全域 / in-process or outbox | canonical AuditRecord → append receipt | service identity；audit_id 幂等；`N/A(NA-IMMUTABLE)` | 企业/平台审计 tx；只追加；sink 失败进入有界重试 |
+| `PLT-QRY-HealthSnapshot` | PLT | GOV/AGT/ops UI | component + dependency refs → live/ready/degraded/safe_mode | authorized ops/service；只读；`N/A(NA-READONLY)` | 不读业务行；依赖未知明确返回 unknown |
+| `PLT-QRY-MetricsWindow` | PLT | GOV/ops UI | metric ID + scoped window → bounded aggregates | authorized ops/service；只读；`N/A(NA-READONLY)` | 脱敏聚合；不返回跨企业正文/高基数字段 |
+| `PLT-CMD-ReconcileEffect` | PLT | JOB/各 capability owner | request/result refs + observed state → reconciled outcome | owner service；request_id+effect generation | reconcile ledger tx；状态仍未知则保持 unknown，不猜成功 |
+
+<!-- INTERFACE-FAMILY-COVERAGE-BEGIN -->
+| 族 | 稳定接口 ID |
+|---|---|
+| `IF-01` | `IDN-CMD-AuthenticateChannel` · `IDN-CMD-OpenSession` · `MSG-CMD-AcceptEnvelope` |
+| `IF-02` | `IDN-QRY-ResolveAccess` · `IDN-QRY-ResolveDataScope` · `PLT-CMD-RunInAccessTx` |
+| `IF-03` | `WRK-CMD-CreateTaskPlan` · `WRK-CMD-DispatchNode` · `WRK-CMD-RecordExecution` · `WRK-QRY-TaskSnapshot` |
+| `IF-04` | `GOV-CMD-DecidePending` · `GOV-CMD-IssueEffectGrant` · `WRK-CMD-RecordGateVerdict` · `WRK-CAP-DeployRelease` |
+| `IF-05` | `PLT-CMD-RunInAccessTx` · `PLT-CMD-RunMigration` · `PLT-QRY-RLSConformance` |
+| `IF-06` | `KNO-CMD-IngestItem` · `KNO-QRY-Search` · `KNO-CMD-BuildContextSnapshot` |
+| `IF-07` | `CAP-CMD-RegisterAsset` · `CAP-CMD-Distribute` · `CAP-CMD-AcknowledgeInstall` · `CAP-CMD-Uninstall` |
+| `IF-08` | `COL-CMD-AppendPost` · `COL-CMD-EmitNotification` · `COL-QRY-ReadIncrement` · `COL-CMD-SealDigest` |
+| `IF-09` | `AGT-CMD-CreateRuntimeOrder` · `AGT-CMD-ActivateInstance` · `AGT-CAP-EmergencyAction` |
+| `IF-10` | `PLT-CMD-AppendAudit` · `PLT-QRY-HealthSnapshot` · `PLT-QRY-MetricsWindow` · `PLT-CMD-ReconcileEffect` |
+<!-- INTERFACE-FAMILY-COVERAGE-END -->
 
 ### 6.1 接口兼容策略
 
@@ -467,7 +498,7 @@ InterfaceCall {
 11 清理连接；SET LOCAL 随事务失效
 ```
 
-任何一步缺失均不进入下一步。不存在“先查后补 AccessCtx”或“先用默认库再换库”。
+任何一步缺失均不进入下一步。不存在「先查后补 AccessCtx」或「先用默认库再换库」。
 
 ### 7.2 Agent 绑定与派发
 
@@ -588,7 +619,7 @@ outbox/audit 同事务、commit/rollback。包外不持有 pool/DB/Tx 原始句�
 | 跨企业 rollout | migration orchestrator | 小批 → 验证 → 扩批；任一企业失败停止后续 |
 
 迁移记录包含 enterprise、from/to version、artifact digest、approval、started/finished、result、rollbackability。
-不可逆迁移须先备份与恢复演练；“脚本成功”不等于数据语义正确，另做领域一致性查询。
+不可逆迁移须先备份与恢复演练；「脚本成功」不等于数据语义正确，另做领域一致性查询。
 
 ### 8.5 时间与不可变证据
 
@@ -612,7 +643,7 @@ outbox/audit 同事务、commit/rollback。包外不持有 pool/DB/Tx 原始句�
 | `DATA-01` | repository library/service seam | DB registry、pool、transaction、migration | 数据边界单点；初期库内模块，不急拆网络服务 |
 
 `DATA-01` 初期是同进程库与受控 port，不是独立网络服务；只有连接池需独立扩缩容、语言边界或审计隔离出现实证时才拆。
-拆出后接口语义不变，且不得把裸 SQL/Tx 暴露为远程“万能查询”。
+拆出后接口语义不变，且不得把裸 SQL/Tx 暴露为远程「万能查询」。
 
 ### 9.2 部署视图
 
@@ -649,7 +680,7 @@ Internet / Enterprise IM
 |---|---|---|
 | IDN 不可用 | 已签发且未吊销的短期 session 继续至到期；只读静态帮助 | 新会话、主体切换、权限提升 |
 | 企业 DB 不可用 | 排队有界 outbox 意图、显示明确不可用 | 切到平台库/其他企业库 |
-| MSG 不可用 | 领域事务继续落 outbox | 把“已入队”报成“已送达” |
+| MSG 不可用 | 领域事务继续落 outbox | 把「已入队」报成「已送达」 |
 | KNO/LLM 不可用 | 不带摘要执行显式任务、回退原帖读取 | 伪造摘要或跳过必需上下文 |
 | GOV 不可用 | 已批准且未过期 token 可在范围内消费 | 默认批准、降低门数 |
 | 平台整体不可用 | SIDE 紧急 allowlist + 本地审计 | 全权管理、读企业正文、签门 |
@@ -724,7 +755,7 @@ delivery retry/ACK、gate pending age、context build failure、thread gate、di
 - `ready`：必需依赖、schema 与 policy version 匹配，可接新请求；
 - `degraded`：明确列禁用 capability，不等同 ready；
 - `safe_mode`：只允许只读/收紧 effect；
-- 健康检查不得使用 SystemCtx 读取业务行证明“数据库正常”。
+- 健康检查不得使用 SystemCtx 读取业务行证明「数据库正常」。
 
 ## 12. 现状包到目标架构映射
 
@@ -734,64 +765,65 @@ delivery retry/ACK、gate pending age、context build failure、thread gate、di
 
 | 现有包 | 目标归处 | 状态 | 说明 |
 |---|---|---|---|
-| `admin` | ADP + GOV/AGT/WRK application | rewrite/split | 角色、页面、配置与业务操作拆 handler |
-| `bridge` | ADP legacy | retire | mock unlock 不进入目标常规身份链 |
-| `bus` | PLT.EventBus | adapt | 只传 domain event，不承载业务 owner |
-| `clock` | PLT.Clock | retain | 统一可注入时钟，DB ts 仍由 DB 给 |
-| `config` | PLT.Config | adapt | 环境 profile/secret ref 分开，禁止客户端自述 |
-| `coordination` | WRK application | adapt | 协调 use case，不直接改其他域表 |
-| `datad` | GOV/WRK/KNO/CAP read models + adapters | rewrite/split | 现大包按目标域拆 repository/application |
-| `evidence` | GOV/Audit adapter | adapt | 证据引用，不成为第二事实源 |
-| `fanout` | MSG channel delivery | adapt | spool/outbox 归 MSG，业务 recipient 由上游给 |
-| `fcs` | MSG channel adapter | retain/adapt | canonical channel boundary |
-| `feishu` | ADP IM | retain/adapt | 只做 provider protocol |
-| `jcs` | PLT canonical serialization | retain | digest/event canonicalization |
-| `llm` | KNO/COL external adapter | adapt | 无权限提升，输入隔离 |
-| `m5` | AGT provision adapter | adapt | 资产下发由 CAP manifest 驱动 |
-| `m8` | MSG session router + ADP terminal | rewrite/split | 路由与管理/UI 分开；身份从 SessionAuthRef 取 |
-| `mcs` | WRK runtime family | adapt/rewrite | 子包见 12.2 |
-| `model` | 各业务域 | rewrite/split | 删除全局共享业务模型，保留跨域 DTO 于接口包 |
-| `portal` | ADP UI | adapt | 只调 application interfaces |
-| `redact` | PLT Security | retain/adapt | 规则版本统一用于多 sink |
-| `reminder` | COL notification application | adapt | taxonomy/outbox 驱动 |
-| `repo` | PLT Repository | adapt | 演进为 AccessCtx 与企业库 registry |
-| `router` | MSG routing | adapt | 只读可信头，不读正文授权 |
-| `schedule` | WRK scheduling | adapt | 计划属于 WRK |
-| `scheduler` | WRK scheduling application | adapt | 通过 WRK command，不裸改状态 |
-| `secretbox` | PLT Secret | retain/adapt | 只持 secret ref/加解密，不输出 secret |
-| `store` | legacy persistence | rewrite/retire | 迁入 repo + 各域 repository；迁移 runner 可复用 |
-| `version` | PLT BuildInfo | retain | 不作业务 schema version |
-| `worker` | JOB application | adapt | 消费 outbox，按域 handler 分派 |
+| `admin` | ADP + GOV/AGT/WRK application | `state:rewrite` | 拆分角色、页面、配置与业务 handler |
+| `bridge` | ADP legacy | `state:retire` | mock unlock 不进入目标常规身份链 |
+| `bus` | PLT.EventBus | `state:adapt` | 只传 domain event，不承载业务 owner |
+| `clock` | PLT.Clock | `state:retain` | 统一可注入时钟，DB ts 仍由 DB 给 |
+| `config` | PLT.Config | `state:adapt` | 环境 profile/secret ref 分开，禁止客户端自述 |
+| `coordination` | WRK application | `state:adapt` | 协调 use case，不直接改其他域表 |
+| `datad` | GOV/WRK/KNO/CAP read models + adapters | `state:rewrite` | 按目标域拆 repository/application |
+| `evidence` | GOV/Audit adapter | `state:adapt` | 证据引用，不成为第二事实源 |
+| `fanout` | MSG channel delivery | `state:adapt` | spool/outbox 归 MSG，业务 recipient 由上游给 |
+| `fcs` | MSG channel adapter | `state:adapt` | 保留 canonical channel 语义，收紧边界 |
+| `feishu` | ADP IM | `state:adapt` | 只做 provider protocol |
+| `jcs` | PLT canonical serialization | `state:retain` | digest/event canonicalization |
+| `llm` | KNO/COL external adapter | `state:adapt` | 无权限提升，输入隔离 |
+| `m5` | AGT provision adapter | `state:adapt` | 资产下发由 CAP manifest 驱动 |
+| `m8` | MSG session router + ADP terminal | `state:rewrite` | 路由与管理/UI 分开；身份从 SessionAuthRef 取 |
+| `mcs` | WRK runtime family | `state:adapt` | 子包见 12.2，保留经验证语义 |
+| `model` | 各业务域 | `state:rewrite` | 删除全局共享业务模型，保留跨域 DTO 于接口包 |
+| `portal` | ADP UI | `state:adapt` | 只调 application interfaces |
+| `redact` | PLT Security | `state:adapt` | 规则版本统一用于多 sink |
+| `reminder` | COL notification application | `state:adapt` | taxonomy/outbox 驱动 |
+| `repo` | PLT Repository | `state:adapt` | 演进为 AccessCtx 与企业库 registry |
+| `router` | MSG routing | `state:adapt` | 只读可信头，不读正文授权 |
+| `schedule` | WRK scheduling | `state:adapt` | 计划属于 WRK |
+| `scheduler` | WRK scheduling application | `state:adapt` | 通过 WRK command，不裸改状态 |
+| `secretbox` | PLT Secret | `state:adapt` | 保留加密能力，禁止输出 secret |
+| `store` | legacy persistence | `state:rewrite` | 迁入 repo + 各域 repository；迁移 runner 可复用 |
+| `version` | PLT BuildInfo | `state:retain` | 不作业务 schema version |
+| `worker` | JOB application | `state:adapt` | 消费 outbox，按域 handler 分派 |
 
 ### 12.2 `internal/mcs/` 子包
 
 | 包 | 目标归处 | 状态 | 说明 |
 |---|---|---|---|
-| `board` | WRK domain/repository | rewrite storage/state machine | 以 conformance suite 守语义，去裸 DB |
-| `dea` | WRK/GOV rule adapter | adapt | 决策表版本来自 GOV |
-| `demo` | demo only | retire from production | 不作目标能力 |
-| `dispatch` | WRK→MSG adapter | adapt | 派发先落 WRK outbox |
-| `hubdriver` | WRK→MSG adapter | adapt | 不拥有 session principal |
-| `mcsd` | WRK application/runtime | retain semantics, adapt boundary | 保留调度语义，命令走 WRK 接口 |
-| `pool` | AGT assignment read model | adapt | 与 AGT instance/lease 对账 |
-| `rotation` | WRK/AGT application | adapt | 代际/fencing 明确 |
-| `route` | WRK routing policy | adapt | 与 MSG 传输路由分名分责 |
+| `board` | WRK domain/repository | `state:rewrite` | 重写 storage/state machine，以 conformance suite 守语义 |
+| `dea` | WRK/GOV rule adapter | `state:adapt` | 决策表版本来自 GOV |
+| `demo` | demo only | `state:retire` | 不作目标能力 |
+| `dispatch` | WRK→MSG adapter | `state:adapt` | 派发先落 WRK outbox |
+| `hubdriver` | WRK→MSG adapter | `state:adapt` | 不拥有 session principal |
+| `mcsd` | WRK application/runtime | `state:adapt` | 保留调度语义，命令改走 WRK 接口 |
+| `pool` | AGT assignment read model | `state:adapt` | 与 AGT instance/lease 对账 |
+| `rotation` | WRK/AGT application | `state:adapt` | 代际/fencing 明确 |
+| `route` | WRK routing policy | `state:adapt` | 与 MSG 传输路由分名分责 |
 
 ### 12.3 `cmd/` 进程
 
 | 现有进程 | 目标运行单元 | 状态 |
 |---|---|---|
-| `workpulse` | `CTRL-01` composition root | rewrite wiring |
-| `dingwei-datad` | 并回 CTRL/JOB 或保留只读投影进程 | transition；不保留“大数据域” |
-| `fcs` | `FCS-01` | retain/adapt |
-| `feishu-fanout` | `FCS-01/MSG-01` worker | consolidate |
-| `mcsd` | `CTRL-01` WRK runtime 或独立 WRK worker | retain semantics |
-| `mcs-demo` | demo/test | 不部署生产 |
+| `workpulse` | `CTRL-01` composition root | `state:rewrite`（重写 wiring） |
+| `dingwei-datad` | 并回 CTRL/JOB 或保留只读投影进程 | `state:rewrite`（拆分后不保留「大数据域」） |
+| `fcs` | `FCS-01` | `state:adapt`（保留协议语义） |
+| `feishu-fanout` | `FCS-01/MSG-01` worker | `state:adapt`（合并重复运行职责） |
+| `mcsd` | `CTRL-01` WRK runtime 或独立 WRK worker | `state:adapt`（保留调度语义） |
+| `mcs-demo` | demo/test | `state:retire`（不部署生产） |
 
 ### 12.4 映射完备性
 
-冻结锚下顶层 `internal/` 28 个目录、`internal/mcs/` 9 个子包、`cmd/` 6 个进程均在本节有归处。
-该计数是本次冻结锚的测量值，不作为未来权威常量；后续由包清单脚本双向核对新增/遗漏。
+完备性分母不取「顶层目录 + 子目录」的手写和（`internal/mcs` 只是容器目录，直接相加会重复/串单位）。
+唯一口径为冻结锚中**含至少一个非测试 Go 文件的唯一目录**；由 `check.sh` 从 Git 输入派生预期集合，
+与下方实检集合双向比较并输出 UNKNOWN/EXTRA。
 
 <!-- COVERAGE-IMPLEMENTATION-BEGIN -->
 cmd/dingwei-datad
@@ -842,12 +874,12 @@ internal/worker
 
 | 新单元 | 状态 | 责任 | 为什么不能只适配既有件 |
 |---|---|---|---|
-| IDN domain module | `new` | enterprise/principal/channel/session/agent binding | 现有身份散在 m8/admin/datad，无唯一 owner |
-| GOV domain module | `new` | spec/rule/approval/typed pending | 现有管理 handler 与任务状态混杂 |
-| `AccessCtx` / `DataScopeGrant` | `new` | 双层访问上下文与限时数据范围 | 现有 `TenantCtx` 只有单层 ID |
-| domain interface packages | `new` | 40 项接口的 schema 与 ports | 现有全局 model 不能表达 owner 边界 |
-| enterprise registry projection for Repository | `new` | opaque DB key 到受控池映射 | 现有 repo 无企业注册投影 |
-| unified domain outbox/inbox | `new` | 跨域事实与幂等消费 | 现有 outbox 形态未覆盖全部域 |
+| IDN domain module | `state:new` | enterprise/principal/channel/session/agent binding | 现有身份散在 m8/admin/datad，无唯一 owner |
+| GOV domain module | `state:new` | spec/rule/approval/typed pending | 现有管理 handler 与任务状态混杂 |
+| `AccessCtx` / `DataScopeGrant` | `state:new` | 双层访问上下文与限时数据范围 | 现有 `TenantCtx` 只有单层 ID |
+| domain interface packages | `state:new` | 接口 schema 与 ports | 现有全局 model 不能表达 owner 边界 |
+| enterprise registry projection for Repository | `state:new` | opaque DB key 到受控池映射 | 现有 repo 无企业注册投影 |
+| unified domain outbox/inbox | `state:new` | 跨域事实与幂等消费 | 现有 outbox 形态未覆盖全部域 |
 
 ## 13. 原型入口到架构能力
 
@@ -955,7 +987,7 @@ node generation 7 已因 revision 升为 8，generation 7 的 GateResult 到达�
 
 ### 15.7 紧急面越权
 
-sidecar 紧急用户请求“安装新 skill”。effect 不在收紧 allowlist，sidecar 本地拒绝，即便平台/GOV 不可用也不降级放行；失败写本地 append-only，恢复后补账。
+sidecar 紧急用户请求「安装新 skill」。effect 不在收紧 allowlist，sidecar 本地拒绝，即便平台/GOV 不可用也不降级放行；失败写本地 append-only，恢复后补账。
 
 ## 16. 未实测与待验证
 
@@ -971,7 +1003,7 @@ sidecar 紧急用户请求“安装新 skill”。effect 不在收紧 allowlist�
 
 ## 17. SpecDoc 责任追踪
 
-“主责”每行只列一个 owner；其他域只能作为协作者或机制提供者，不能借“共同负责”形成双 owner。
+「主责」每行只列一个 owner；其他域只能作为协作者或机制提供者，不能借「共同负责」形成双 owner。
 
 | SpecDoc | 主责域/层 | 协作者 | 本件落点 |
 |---|---|---|---|
@@ -1005,12 +1037,30 @@ sidecar 紧急用户请求“安装新 skill”。effect 不在收紧 allowlist�
 | §27 渠道接入 | MSG | IDN | 2.2.8、6、9 |
 | §28–§29 工作纪律/自检 | GOV | PLT·门方 | 11、16、18 |
 | 附录 B 新建清单 | GOV | 各 owner SP | 14 |
-| 附录 B2 变更台账 | WRK | COL·GOV | 6、8、14 |
-| 附录 C.1/C.2 前置/外部确认 | GOV | 各 owner | 16 |
-| 附录 C.3a 企业库/RLS | PLT | IDN·各领域 SP7b | 8、14 |
+| B2.1 项目产品线台账 | WRK | GOV | 6、14 |
+| B2.2 团队/产品线映射 | WRK | IDN·GOV | 6、14 |
+| B2.3 导出落账 | COL | GOV | 6、8、14 |
+| C.1 硬前置 | GOV | 各 owner | 16 |
+| C.2 外部确认 | GOV | 各 owner | 16 |
+| C.3a 企业库/RLS | PLT | IDN·各领域 SP7b | 8、14 |
 | 附录 D 沿革 | GOV | —— | 0 |
-| 附录 E 探测映射 | GOV | PLT·门方·各 SP | 11、18 |
-| 附录 F.0 现行裁定索引 | GOV | 全域 | 本表各落点；撤销项不作目标输入 |
+| E.0–E.5 探测映射 | GOV | PLT·门方·各 SP | 11、18 |
+| F.0 现行裁定索引 | GOV | 全域 | 本表各落点；撤销项不作目标输入 |
+| F.1 Agent 承接 | AGT | IDN·WRK | 2.2.7、7.2 |
+| F.2 落点记录 | GOV | 各 owner | 17 |
+| F.3 协同依据/帖子归属 | COL | WRK·GOV | 2.2.6、8.5 |
+| F.4 接口承载/冗余存 | COL | GOV·本件 | 6、8.5 |
+| F.5 业务线/团队 | WRK | IDN | 2.2.3、17 |
+| F.6 产品线属性 | WRK | COL | 2.2.3、8.5 |
+| F.7 版本/聚合/时间 | WRK | COL·GOV | 7.3、8.5 |
+| F.8 帖子 Agent 溯源 | COL | IDN·AGT | 2.2.6、3.2 |
+| F.9 版本收口/帖子不可编辑 | WRK | COL | 7.3、8.5 |
+| F.10 密级/接口合并 | GOV | COL·本件 | 0、10.4 |
+| F.11 输入来源 | GOV | 本件 | 0、17 |
+| F.12 默认设计约束 | GOV | 全域 | 0、18 |
+| F.13 原型规范对接 | GOV | ADP·各域 | 13 |
+| F.14 周报导出 | COL | WRK | 2.2.6、13 |
+| F.15 skill/MCP 归属鉴权 | CAP | IDN·GOV | 2.2.5、6 |
 
 <!-- COVERAGE-SPECDOC-BEGIN -->
 §0
@@ -1045,6 +1095,34 @@ sidecar 紧急用户请求“安装新 skill”。effect 不在收紧 allowlist�
 §27
 §28
 §29
+B2.1
+B2.2
+B2.3
+C.1
+C.2
+C.3a
+E.0
+E.1
+E.2
+E.3
+E.4
+E.5
+F.0
+F.1
+F.2
+F.3
+F.4
+F.5
+F.6
+F.7
+F.8
+F.9
+F.10
+F.11
+F.12
+F.13
+F.14
+F.15
 <!-- COVERAGE-SPECDOC-END -->
 
 ## 18. 验收矩阵
@@ -1054,9 +1132,9 @@ sidecar 紧急用户请求“安装新 skill”。effect 不在收紧 allowlist�
 | ID | 判据 |
 |---|---|
 | `AC-S01` | 八业务域均有使命、权威数据、不变量、禁止职责与接口；无双 owner |
-| `AC-S02` | SpecDoc 全章节主责覆盖，无无人认领 |
-| `AC-S03` | 28 顶层包、9 个 mcs 子包、6 个 cmd 均有目标归处 |
-| `AC-S04` | 原型全部可达入口均追到接口与失败/空态 |
+| `AC-S02` | `check.sh` 派生的全部 SpecDoc 二级标题 ID 均有主责落点，UNKNOWN/EXTRA 为 0 |
+| `AC-S03` | 冻结锚中含非测试 Go 文件的实现目录均有目标归处，UNKNOWN/EXTRA 为 0 |
+| `AC-S04` | 原型 nav 派生的全部入口均追到接口与失败/空态，UNKNOWN/EXTRA 为 0 |
 | `AC-S05` | 接口目录覆盖平台边界、跨域、稳定 seam，稳定 ID 唯一 |
 | `AC-S06` | 旧架构件未修改、未作为设计依据，目标件切换规则明确 |
 
@@ -1085,7 +1163,7 @@ sidecar 紧急用户请求“安装新 skill”。effect 不在收紧 allowlist�
 ## 19. 评审与后续
 
 评审按全文一次性提交 findings，不做逐点消息拉扯；最多三轮。机器检查只证明形状与已编码判据，
-不能代替“域是否合理、接口 effect 是否完整、引用是否引对义”的人审。
+不能代替「域是否合理、接口 effect 是否完整、引用是否引对义」的人审。
 
 本件 PASS 后，各 SP 以本件域与接口为共同边界分别写实现 spec；任何 SP 若要改变域 owner、跨域方向、
 AccessCtx、接口 major schema、数据拓扑或信任边界，须重开架构评审，而不是在实现 PR 中顺手改。

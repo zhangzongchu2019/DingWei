@@ -8,7 +8,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-platform-architecture-redesign` |
-| **合同版本** | v1.1 |
+| **合同版本** | v1.2 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
@@ -29,6 +29,14 @@ DOCS/ARCH 默认值、证据收集、状态生成、导出与版本检查逐项�
 - 统一文档 verdict 为 `PASS/NO/INCONCLUSIVE`，三轮未闭合升级 coordinator/业主。
 - 责任主题增加稳定 ID 与验收挂钩；N/A 改受控理由码；现状映射由四态扩为含 `new` 的五态。
 - 新增合同自身变更纪律；正文的领域、接口与技术结论未因这些修订改变，只增加可复算覆盖块与新增单元表。
+
+### 0.2 SYNC IMPACT REPORT（v1.1 → v1.2）
+
+- SpecDoc 覆盖从 32 个 `§N` 扩为全部二级标题稳定 ID，纳入 B2、C、E 与 F.0–F.15。
+- 强制接口族获得 `IF-01`–`IF-10` 稳定 ID；正文补 PLT 仓储/RLS 与管理/审计/指标/健康/恢复接口。
+- 检查器改从冻结 commit 读取输入并核 sha256，新增 9 项变异反测、接口族引用校验与迁移五态校验。
+- 所有迁移标签收回 `new/retain/adapt/rewrite/retire`；正文弯引号清零。
+- 删除正文自定的 SpecDoc/原型/代码优先级，任何跨件冲突统一回合同 §7.3 交裁。
 
 ## 1. 六个必备面
 
@@ -186,18 +194,23 @@ DOCS/ARCH 默认值、证据收集、状态生成、导出与版本检查逐项�
 
 ### 4.3 强制接口族
 
-架构正文至少逐族建立目录并指向权威定义：
+架构正文至少逐族建立目录并指向稳定接口 ID。`check.sh` 从本表派生预期族 ID，再与目标件
+`INTERFACE-FAMILY-COVERAGE` 块比较；不能因某族在散文中出现就算接口已定义。
 
-1. 认证器 → 连接 → 信封 → Receiver 的可信主体传播；
-2. `principal → enterprise database` 注册映射与 `AccessCtx`；
-3. 项目/任务/node 与 board/mcsd 的命令、查询、事件；
-4. 门结果、待决队列、发版与回滚 capability；
-5. 受控仓储 API、企业库事务包装与 RLS 上下文；
-6. 上下文/知识 ingest、query、visibility 与运行态 MCP；
-7. skill/MCP catalog、push/pull、provision、ack 与卸载；
-8. 帖子/通知/outbox/cursor/digest/附件；
-9. Agent 生命周期、渠道接入、环境供给与紧急 sidecar；
-10. 管理、审计、指标、健康与恢复接口。
+<!-- INTERFACE-FAMILIES-BEGIN -->
+| 族 ID | 必须覆盖 |
+|---|---|
+| `IF-01` | 认证器 → 连接 → 信封 → Receiver 的可信主体传播 |
+| `IF-02` | `principal → enterprise database` 注册映射与 `AccessCtx` |
+| `IF-03` | 项目/任务/node 与 board/mcsd 的命令、查询、事件 |
+| `IF-04` | 门结果、待决队列、发版与回滚 capability |
+| `IF-05` | 受控仓储 API、企业库事务包装与 RLS 上下文 |
+| `IF-06` | 上下文/知识 ingest、query、visibility 与运行态 MCP |
+| `IF-07` | skill/MCP catalog、push/pull、provision、ack 与卸载 |
+| `IF-08` | 帖子/通知/outbox/cursor/digest/附件 |
+| `IF-09` | Agent 生命周期、渠道接入、环境供给与紧急 sidecar |
+| `IF-10` | 管理、审计、指标、健康与恢复接口 |
+<!-- INTERFACE-FAMILIES-END -->
 
 ### 4.4 接口级红线
 
@@ -274,7 +287,7 @@ DOCS/ARCH 默认值、证据收集、状态生成、导出与版本检查逐项�
 
 - [ ] 新件完全独立，不引用旧 A§ 作为设计依据；旧件未修改。
 - [ ] 第 3–7 节所列字段与视图齐全，无「待补」占位冒充完成。
-- [ ] **SpecDoc 预期集合**＝输入件中匹配 `^## §[0-9]+(\.[0-9]+)?` 的唯一二级标题 ID；目标件的
+- [ ] **SpecDoc 预期集合**＝输入件中全部 `^## ` 二级标题的首个稳定 ID（含 `§N`、B2、C、E、F）；目标件的
       `COVERAGE-SPECDOC` 声明为实检集合。检查器输出预期/实检/未知/多余四集合，未知或多余非空即不通过。
 - [ ] **实现单元预期集合**＝冻结锚下 `internal/` 与 `cmd/` 中含非测试 Go 文件的唯一目录；
       `COVERAGE-IMPLEMENTATION` 为实检集合，同样输出四集合，不用「28/36」等手写分母。
