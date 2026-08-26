@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp2-design` |
-| **合同版本** | v1.7 |
+| **合同版本** | v1.8 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -70,6 +70,11 @@ SpecDoc §0.3 对 SP2 的定义唯一且与目标架构一致：
 - B1 按冻结证据把 SP0/SP1 收紧为 draft 待确认输入，并由 contract-check 禁止宽写为 PASS。
 - WRK 接口派生同时限定在架构 §6 接口目录与 `WRK-(CMD|QRY|CAP)-*` 稳定 ID；责任主题和事件表不再混入。
 - 新增反测：§6 外 `RT-03` / `EV-WRK-*` 即使第二列为 WRK，也不得进入接口预期集合。
+
+### 0.9 SYNC IMPACT REPORT（v1.7 → v1.8）
+
+- 正文首轮评审发现三个 WRK owner 事件从 interface 集合剔除后无人承接；新增架构 §4.2 WRK 事件预期集合。
+- coverage checker 只从 §4.2 事件表机器派生 `EV-WRK-*`，并补删真落点/块外提及不得救绿的正交反测。
 
 ## 1. 六个必备面
 
@@ -153,7 +158,7 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 
 `specs/sp2/check.sh` 已随合同先落，正文必须提供 `COVERAGE-SP2-BEGIN/END` 块。检查器只认块内严格两列表格：
 第一列为派生 token，第二列须含真实 `D-SP2-xx`；块外提及、块内散文、空落点、“见全文”均不计。
-检查器输出五类预期/实检/未知集合；未知非空不得宣称覆盖完成，预期空/块缺失/输入不可取均 exit 2。
+检查器输出六类预期/实检/未知集合；未知非空不得宣称覆盖完成，预期空/块缺失/输入不可取均 exit 2。
 `--selftest` 固化：正常放行、删真落点转红、块外补同 token 仍红、缺块 exit 2。
 正文另须提供 `ACCEPTANCE-SP2-BEGIN/END` 四列表格；每条 `AC-SP2-*` 独立填写受检范围与能力边界，
 不得用全局边界句代替逐条说明，也不得写空值或“见全文”。
@@ -177,7 +182,7 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 | `AC-SP2-01` | checker 从冻结 SpecDoc 派生的 §5–§9 heading 集合 | 每个 token 在 COVERAGE 块有 D-SP2 落点，未知 0 | 落点语义是否正确 |
 | `AC-SP2-02` | checker 派生的 owner_sp=SP2 附录 E 集合 | 逐项结构化落点，未知 0 | 探测手段是否足够 |
 | `AC-SP2-03` | checker 从冻结架构 §13 主责域含 WRK 的行派生、并在冻结原型核存在的入口集合 | 逐项结构化落点，未知 0 | UI 是否好用或实现 |
-| `AC-SP2-04` | checker 派生的目标架构 WRK 接口集合 | 逐项落点；新增接口 ID 0 | 接口字段语义是否完整 |
+| `AC-SP2-04` | checker 从目标架构 §6/§4.2 派生的 WRK 接口与事件集合 | 8 接口+3 事件逐项落点；非接口 RT/EV 不污染接口集 | 接口字段与事件语义是否完整 |
 
 ### 4.2 语义
 

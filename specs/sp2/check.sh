@@ -33,6 +33,16 @@ def derive_interfaces(text):
         if m: out.add(m.group(1))
     return out
 
+def derive_events(text):
+    out=set(); in_s42=False
+    for l in text.splitlines():
+        if re.match(r'^### 4\.2\b',l): in_s42=True; continue
+        if in_s42 and re.match(r'^#{2,3} ',l): in_s42=False
+        if not in_s42: continue
+        m=re.match(r'^\| `(EV-WRK-[^`]+)` \| WRK \|',l)
+        if m: out.add(m.group(1))
+    return out
+
 def expected_sets():
     src=[]; on=False
     for l in spec.splitlines():
@@ -50,6 +60,7 @@ def expected_sets():
             c=[re.sub(r'[*`]','',x.strip()) for x in l.strip().strip('|').split('|')]
             if c and re.fullmatch(r'\d+[a-z]?',c[0]) and 'SP2' in c[-1].split('·'): e.append(f'E:{sec}#{c[0]}')
     iface=['IF:'+x for x in derive_interfaces(arch)]
+    events=['EVENT:'+x for x in derive_events(arch)]
     ui=[]; in_s13=False
     for l in arch.splitlines():
         if re.match(r'^## 13\.',l): in_s13=True; continue
@@ -72,7 +83,7 @@ def expected_sets():
         if in_f2 and l.startswith('|'):
             c=[x.strip() for x in l.strip().strip('|').split('|')]
             if c and c[0]=='4': f.append('F:F.2#4')
-    out={'spec':set(src),'E':set(e),'interface':set(iface),'prototype':set(ui),'F':set(f)}
+    out={'spec':set(src),'E':set(e),'interface':set(iface),'event':set(events),'prototype':set(ui),'F':set(f)}
     if any(not v for v in out.values()): print('✗ 预期集合为空：'+','.join(k for k,v in out.items() if not v)); raise SystemExit(2)
     return out
 expected=expected_sets()
@@ -111,7 +122,7 @@ def inspect(text,quiet=False):
     if not quiet:
         print(f'[delivery] 预期=12 实检={12-len(miss)} 未知={len(miss)} {miss}')
         print(f'[acceptance] 预期=12 实检={12-len(ac_miss)} 未知={len(ac_miss)} {ac_miss}')
-        print('受检范围：冻结 SpecDoc §5–§9 heading/owner_sp=SP2 E 行/F.1.2/F.1.3/F.2#4、目标架构 WRK 接口、架构 §13 WRK 原型入口。')
+        print('受检范围：冻结 SpecDoc §5–§9 heading/owner_sp=SP2 E 行/F.1.2/F.1.3/F.2#4、目标架构 WRK 接口/WRK 事件、架构 §13 WRK 原型入口。')
         print('能力边界：只判结构化来源→D-SP2 落点与 ID 形状；判不了映射语义、接口充分性或实现状态。')
     return 1 if bad else 0
 
@@ -131,7 +142,7 @@ if mode=='--selftest':
     missing='\n'.join(l for l in base.splitlines() if not l.startswith(f'| `{first}` |'))+'\n'
     test('删除真落点必须转红',missing,1)
     test('块外散文追加同 token 仍红',missing+f'正文提及 {first} 已考虑。\n',1)
-    for kind in ('prototype','F'):
+    for kind in ('prototype','F','event'):
         token=sorted(expected[kind])[0]
         changed='\n'.join(l for l in base.splitlines() if not l.startswith(f'| `{token}` |'))+'\n'
         test(f'删除 {kind} 真落点必须转红',changed,1)

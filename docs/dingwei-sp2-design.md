@@ -1,9 +1,9 @@
-# DingWei SP2 执行层与门禁设计 v1.0
+# DingWei SP2 执行层与门禁设计 v1.1
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp2-design` |
-| **版本** | v1.0 |
+| **版本** | v1.1 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | `53d91aedd158c0a8618f0196f013cfee5cfd44aa` |
 | **合同锚** | `fa60efa1977188ca2061cd1ec4929a363cdd6a99` |
@@ -14,6 +14,9 @@
 
 > 本件只定义 SP2 目标设计与 SP7b 的 WRK 迁移合同，不声称实现、迁移、部署或运行验证已经完成。
 > 冻结 SP0/SP1 设计件均为 draft 待评审输入；若其 verdict 改变接口，本件按冲突流程重审，不倒签依赖 PASS。
+
+> v1.1：按正文首轮三方评审一次性闭合 WRK 事件、condition 轴、状态动作接口、附录 E 语义映射、
+> §6.2 四项与治理成本、多 required gate 全称不变量；未扩 SP2 产品范围或架构接口 ID。
 
 ## D-SP2-01 范围、边界与权威事实
 
@@ -73,13 +76,20 @@ AccessCtx、GateSetSnapshot、effect grant 或 enterprise transaction 任一不�
 
 `execution_state` 仅允许 `planned/ready/dispatched/running/done/failed/blocked/cancelled`；
 `gate_verdict` 仅允许 `not_required/pending/pass/fail`。两轴不得合成一个 status。
+`retry_exhausted/dep_failed/starved/delivery_unresolved/awaiting_input/awaiting_gate` 不是 execution 枚举值，
+而是独立 `node_condition(kind,state=open|resolved,generation,evidence_ref)` 轴，可同时存在多个 condition：
+
+- `retry_exhausted/dep_failed/starved/awaiting_input` 打开时 execution 转 `blocked`；解消后按 guard 回 `ready`；
+- `delivery_unresolved` 打开时 execution 保持 `dispatched`，由 redeliver/reconcile 关闭；
+- `awaiting_gate` 打开时 execution 保持 `done`，资源租约释放，gate evidence 与恢复游标持久化；全部 required gate 终结后关闭。
 
 ```text
 DAG eligible = execution_state == done
-               AND gate_verdict IN {not_required, pass}
+               AND FOR ALL required gates: verdict IN {not_required, pass}
 ```
 
-gate `fail` 的 node 已终结并封存，但不放行下游；返工只能 `AppendRevision` 新建 node。
+任一 required gate 为 `pending` 时 node 不 eligible 且不封存；任一 required gate 为 `fail` 时 node 终结并封存、
+但不放行下游；全部 required gate 均为 `not_required/pass` 才 eligible。返工只能 `AppendRevision` 新建 node。
 execution `failed` 不等于 gate `fail`，前者是执行结果，后者是评审结论。
 
 ### 2.3 时间与不可变性
@@ -98,16 +108,17 @@ execution `failed` 不等于 gate `fail`，前者是执行结果，后者是评�
 | dispatched | receiver ACK | running | lease 未过期、同 owner epoch | late/fenced |
 | running | RecordExecution(success) | done | evidence/result ref 齐 | 重复不同 outcome |
 | running | RecordExecution(failure) | failed | failure evidence 齐 | 空失败理由 |
-| ready/running | SetBlocker | blocked | blocker ref 可解析 | 自述 blocker |
-| 非终态 | cancel | cancelled | 有权 principal + reason | 已终态 |
+| ready/running | RecordExecution(action=block) | blocked | blocker ref 可解析 | 自述 blocker |
+| blocked | RecordExecution(action=resolve_blocker) | ready | blocker generation CAS、resolution evidence | stale/无权解阻 |
+| 非终态 | RecordExecution(action=cancel) | cancelled | 有权 principal + reason | 已终态 |
 
 同一 `(node,generation,request_id)` 重投返回原 outcome；相同 request_id 载荷不同返回 `IDEMPOTENCY_CONFLICT`。
 
 ### 3.2 gate 与封存
 
-gate evaluation 只在 execution evidence 已落账后开始。verdict `pending→pass|fail` 必须携带 gate id、GateSet version、
-reviewer principal、evidence version。封存条件为 execution 已终结且 verdict 属于
-`not_required/pass/fail`；pending 不封。FAIL 先落 gate result 与失败最小复现，再生成 digest。
+gate evaluation 只在 execution evidence 已落账后开始。每个 required gate 的 `pending→pass|fail` 必须携带 gate id、
+GateSet version、reviewer principal、evidence version。任一 required gate pending 时不封；任一 gate fail 时先落该 gate
+result 与失败最小复现，再封存 node 并生成 digest；无 fail 时须全部 gate 为 `not_required/pass` 才封存并放行。
 
 ### 3.3 F.1.2 delivery.verify
 
@@ -124,6 +135,8 @@ WRK 不重算风险等级。`CreateTaskPlan` 固定 `GateSetSnapshotRef(rule_ver
 subsumption_version)`；后续命令必须引用同一 snapshot。规则版本缺失、已撤销或互斥时 fail-closed 并交 GOV 裁定。
 snapshot 同时保留七项属性的声明值、填写 principal 与来源锚；WRK 只执行 GOV 产出的门并集，不以级别标签反推门。
 交付 diff 与属性声明不符时生成升级请求，执行者无权单方下调风险档。
+snapshot 必须声明 `hit_policy=COLLECT/UNION`、基础必过模板与命中 rule id/reason；属性值只能使用 §5.2 的三档
+枚举（节点数除外）。属性定义的可重复性、基础模板是否最小、subsumption 是否专业正确均由门方人审，WRK 只验结构。
 
 ### 4.2 gate catalog 与 subsumption
 
@@ -136,6 +149,8 @@ snapshot 同时保留七项属性的声明值、填写 principal 与来源锚；
 | execution-result | run report + environment ref | pass/fail | 与代码评审分轴 |
 
 subsumption 只允许 GOV snapshot 明列的高门覆盖低门；无表不推断覆盖。批次 verdict 取最高固有风险，不能捆绑稀释。
+每个 task 固定 `gate_assignment(task,node,gate_key,responsibility_domain,reviewer_principal,generation)` 台账；
+这是门方映射的权威台账；内存映射不构成门方指派。变更指派须受权 command、CAS 与审计，历史 verdict 保留原 reviewer。
 
 ### 4.3 防绕过矩阵
 
@@ -143,6 +158,7 @@ subsumption 只允许 GOV snapshot 明列的高门覆盖低门；无表不推断
 - `principal` 不同：仍须核 reviewer role 与真实批准权，角色字符串不自动授予权力；
 - Agent 只入 audit provenance，永不进入授权或门判定链；
 - template/node 数据不能改变批准权或产生外部 effect，不能以「只是数据」免审。
+- reviewer role 匹配仍不足以证明专业能力；门方须独立确认其对责任域具有真实判断力，并将依据落账。
 
 ### 4.4 变长环节
 
@@ -175,6 +191,26 @@ N/A 渲染成未完成。门方是每个 gate 实例指定的 principal；「评
 `IDEMPOTENCY_CONFLICT`、`INVALID_TRANSITION`、`DEPENDENCY_UNAVAILABLE`、`EFFECT_UNKNOWN`。
 错误不得以成功空集掩盖 deny；跨企业对象在 query 前拒绝并最小审计。
 
+### 5.4 `RecordExecution` 的状态动作变体
+
+不新增架构接口 ID；`WRK-CMD-RecordExecution` 用受控 `action` 判别执行结果与状态动作：
+
+| action | 必填 schema | 授权 | 幂等/代际 | 错误与审计 |
+|---|---|---|---|---|
+| `finish` | outcome、result_ref（done 时非空）、evidence_ref | 当前 lease principal | request_id+node generation+owner epoch | 空 result、fenced、重复冲突 |
+| `block` | blocker_code、blocker_ref、reason | 当前 owner 或 coordinator | request_id+node generation | invalid blocker/forbidden |
+| `resolve_blocker` | blocker generation、resolution evidence | coordinator 或 blocker owner | request_id+blocker generation CAS | stale blocker/forbidden |
+| `cancel` | reason、effect disposition | coordinator/owner grant | request_id+node generation | terminal/effect unknown |
+
+每种动作同 tx 写 node、condition/outcome（若有）、audit 与 outbox；done 且 `result_ref=''` 由 schema/guard 双重拒绝。
+
+### 5.5 读模型
+
+`WRK-QRY-TaskSnapshot` 的读模型由同企业库事实投影，至少含 task generation、node execution/conditions、
+required gate 全集及逐 gate verdict、DAG eligibility、revision lineage、release/rollback、outbox unresolved 摘要。
+投影携带 `projection_version/source_high_water`；落后时明确返回 stale，不把缺行当不存在。看板、ingress、driver、
+reconciler、KNO/COL 投影均消费该 typed 读模型，不直读内部表或自行重算 eligibility。
+
 ## D-SP2-06 调度并发与 agent 择人
 
 ### 6.1 mcsd/board seam
@@ -196,6 +232,20 @@ mcsd 保留调度语义，WRK repository 取代 board 裸 DB 访问。scheduler 
 企业/项目范围、availability、冲突隔离；再按 owner affinity、负载与最近失败作确定性排序。`OriginHint` 只作权重。
 每次选择持久化 candidate set version、过滤原因、排序输入和 winner，允许重算。无候选进入 starved，不默选任意 Agent。
 
+### 6.4 WRK 域事件
+
+所有事件公共头为 `event_id`、`occurred_at`、`producer=WRK`、`schema_version`、`enterprise_id`、
+`principal_id?`、`correlation_id`、`causation_id`。事件与产生它的 WRK 事实、outbox 同事务写入；消费者按
+`event_id` 幂等，未知 major schema version 拒绝并报警，新增 optional 字段只升 minor version。
+
+| 事件 | 触发与 payload | 消费者 | 幂等/兼容 |
+|---|---|---|---|
+| `EV-WRK-NodeDispatched` | lease+snapshot 冻结后；task/node/generation/owner_epoch/context_ref | AGT、MSG、KNO、COL | event_id 去重；旧 epoch fenced |
+| `EV-WRK-ExecutionFinished` | outcome 持久化后；node/generation/outcome/result/evidence refs | COL、GOV | 同 outcome 只发一逻辑事件；重投同 event_id |
+| `EV-WRK-GateVerdictRecorded` | 单 gate verdict 持久化后；gate_key/verdict/evidence_version/reviewer | COL、GOV | `(node,gate,generation)` 可重算；未知 verdict version 拒绝 |
+
+事件表示事实已落账，不表示下游消费成功，也不代替 command response。新增消费者不得改变 producer transaction。
+
 ## D-SP2-07 失败、返工与短程小任务
 
 ### 7.1 分流
@@ -209,7 +259,7 @@ mcsd 保留调度语义，WRK repository 取代 board 裸 DB 访问。scheduler 
 | cancel | 终结并审计 | 已发生 effect 仍须 reconcile/rollback |
 
 其余非终态处理固定为：重试耗尽→`retry_exhausted/blocked`；依赖失败→下游 `dep_failed/blocked`；无人可派→
-`starved`；投递悬空→`delivery_unresolved` 后由 redeliver 收敛；等人输入→`awaiting_input`；需产品决策→
+`starved/blocked`；投递悬空→`delivery_unresolved` 后由 redeliver 收敛；等人输入→`awaiting_input/blocked`；需产品决策→
 调度者再升业主。`owner_override/takeover` 只映射白名单 command，不接受自由文本直写状态。
 
 ### 7.2 F.1.3 短程小任务判据
@@ -254,6 +304,7 @@ decision principal；效果未知时先 reconcile。reject/stop/resume 不天然
 输入固定为该阶段帖子流、交付物清单、全部 gate 记录（含 FAIL 与整改）、blocker 记录；可由模型生成草稿，但须由
 执行者/评审者定稿，禁止从聊天记忆补事实。每个 task/version 输出恰四段：沉淀事实、可复用操作、应固化能力、
 本阶段判断失误。任一段为空必须写理由；不得用「目标与结果」等另一套四段替换权威结构。
+第 4 段进入知识库逐级晋升前必须去标识化，并由门方检查是否仍可反推出具体人、会话或事故。
 
 ### 9.2 回写 SP0
 
@@ -303,6 +354,8 @@ WRK repository/schema new；裸 DB accessor retire。不得以 transition/consol
 
 conformance 断言业务事件按 kind 与语义，不要求所有事件总数不变；新实现可合法增加簿记事件。每项至少一正一反，
 变异必须改变被测出口并使对应测试失败；只看到 rc 非零不证明因正确理由失败。
+回归矩阵必须覆盖 ingress、driver、scheduler、Receiver、所有读取 node 状态的消费者和三类 WRK 事件投影；
+不能只测 repository。`awaiting_gate` 下 worker lease 已释放、门方台账和恢复游标可重建也须有崩溃恢复用例。
 
 ## D-SP2-12 追踪、验收与证据出口
 
@@ -317,6 +370,8 @@ conformance 断言业务事件按 kind 与语义，不要求所有事件总数�
 
 每次交付回执还必须带：可取件路径或 40 位 commit、最终 sha256、行数与 `wc -c` 字节、自测命令+摘要、
 门结果+失败最小复现。前四项机器可复算，门结果由评审方判断；机器全绿不能代签语义 PASS。
+本设计引入/改写 GateResult、condition、封存和回流等 C1 原语语义，进入实现前须按 §24 攒批完成重两签；
+该治理成本登记在 SP2 实现开工门，不得因设计评审 PASS 自动消失。
 
 ### 12.2 结构化覆盖
 
@@ -338,12 +393,12 @@ conformance 断言业务事件按 kind 与语义，不要求所有事件总数�
 | `SRC:§5.9` | `D-SP2-04` |
 | `SRC:§6` | `D-SP2-05` |
 | `SRC:§6.1` | `D-SP2-05` |
-| `SRC:§6.2` | `D-SP2-05` |
-| `SRC:§7` | `D-SP2-03` |
-| `SRC:§7.1` | `D-SP2-03` |
-| `SRC:§7.2` | `D-SP2-03` |
-| `SRC:§7.3` | `D-SP2-06` |
-| `SRC:§7.4` | `D-SP2-07` |
+| `SRC:§6.2` | `D-SP2-03`、`D-SP2-04`、`D-SP2-05`、`D-SP2-11`、`D-SP2-12` |
+| `SRC:§7` | `D-SP2-04`、`D-SP2-07` |
+| `SRC:§7.1` | `D-SP2-01`、`D-SP2-05` |
+| `SRC:§7.2` | `D-SP2-04`、`D-SP2-08` |
+| `SRC:§7.3` | `D-SP2-07` |
+| `SRC:§7.4` | `D-SP2-03`、`D-SP2-07` |
 | `SRC:§8` | `D-SP2-08` |
 | `SRC:§8.1` | `D-SP2-08` |
 | `SRC:§8.1a` | `D-SP2-08` |
@@ -352,36 +407,36 @@ conformance 断言业务事件按 kind 与语义，不要求所有事件总数�
 | `SRC:§9` | `D-SP2-09` |
 | `SRC:§9.1` | `D-SP2-09` |
 | `SRC:§9.2` | `D-SP2-09` |
-| `E:E.1#1` | `D-SP2-03` |
-| `E:E.1#2` | `D-SP2-03` |
-| `E:E.1#3` | `D-SP2-03` |
+| `E:E.1#1` | `D-SP2-04` |
+| `E:E.1#2` | `D-SP2-04` |
+| `E:E.1#3` | `D-SP2-04` |
 | `E:E.1#4` | `D-SP2-04` |
-| `E:E.1#5` | `D-SP2-04` |
-| `E:E.1#6` | `D-SP2-05` |
-| `E:E.1#7` | `D-SP2-05` |
-| `E:E.1#8` | `D-SP2-06` |
-| `E:E.1#9` | `D-SP2-07` |
-| `E:E.1#62` | `D-SP2-06` |
-| `E:E.1#63` | `D-SP2-06` |
-| `E:E.1#66` | `D-SP2-05` |
-| `E:E.1#70` | `D-SP2-07` |
-| `E:E.1#73` | `D-SP2-08` |
-| `E:E.1#74` | `D-SP2-08` |
-| `E:E.1#186` | `D-SP2-10` |
-| `E:E.3#11` | `D-SP2-03` |
+| `E:E.1#5` | `D-SP2-08` |
+| `E:E.1#6` | `D-SP2-04` |
+| `E:E.1#7` | `D-SP2-03`、`D-SP2-05` |
+| `E:E.1#8` | `D-SP2-08` |
+| `E:E.1#9` | `D-SP2-09` |
+| `E:E.1#62` | `D-SP2-03` |
+| `E:E.1#63` | `D-SP2-04` |
+| `E:E.1#66` | `D-SP2-09` |
+| `E:E.1#70` | `D-SP2-04` |
+| `E:E.1#73` | `D-SP2-09` |
+| `E:E.1#74` | `D-SP2-12` |
+| `E:E.1#186` | `D-SP2-04` |
+| `E:E.3#11` | `D-SP2-04` |
 | `E:E.3#13` | `D-SP2-04` |
-| `E:E.3#14` | `D-SP2-05` |
-| `E:E.4#1` | `D-SP2-01` |
-| `E:E.4#2` | `D-SP2-02` |
-| `E:E.4#6` | `D-SP2-04` |
-| `E:E.4#7` | `D-SP2-05` |
-| `E:E.4#12` | `D-SP2-06` |
-| `E:E.4#18` | `D-SP2-07` |
-| `E:E.4#20` | `D-SP2-08` |
-| `E:E.4#21` | `D-SP2-09` |
-| `E:E.4#23` | `D-SP2-10` |
-| `E:E.4#28` | `D-SP2-11` |
-| `E:E.4#32` | `D-SP2-12` |
+| `E:E.3#14` | `D-SP2-04` |
+| `E:E.4#1` | `D-SP2-04` |
+| `E:E.4#2` | `D-SP2-04` |
+| `E:E.4#6` | `D-SP2-09` |
+| `E:E.4#7` | `D-SP2-09` |
+| `E:E.4#12` | `D-SP2-04` |
+| `E:E.4#18` | `D-SP2-04` |
+| `E:E.4#20` | `D-SP2-12` |
+| `E:E.4#21` | `D-SP2-04` |
+| `E:E.4#23` | `D-SP2-04` |
+| `E:E.4#28` | `D-SP2-08` |
+| `E:E.4#32` | `D-SP2-04` |
 | `IF:WRK-CMD-CreateProject` | `D-SP2-05` |
 | `IF:WRK-CMD-CreateTaskPlan` | `D-SP2-05` |
 | `IF:WRK-CMD-DispatchNode` | `D-SP2-05` |
@@ -390,6 +445,9 @@ conformance 断言业务事件按 kind 与语义，不要求所有事件总数�
 | `IF:WRK-CMD-AppendRevision` | `D-SP2-05` |
 | `IF:WRK-CAP-DeployRelease` | `D-SP2-05` |
 | `IF:WRK-QRY-TaskSnapshot` | `D-SP2-05` |
+| `EVENT:EV-WRK-NodeDispatched` | `D-SP2-06` |
+| `EVENT:EV-WRK-ExecutionFinished` | `D-SP2-06` |
+| `EVENT:EV-WRK-GateVerdictRecorded` | `D-SP2-06` |
 | `UI:#s2` | `D-SP2-03` |
 | `UI:#s4` | `D-SP2-04` |
 | `UI:#a5` | `D-SP2-04` |
@@ -409,7 +467,7 @@ conformance 断言业务事件按 kind 与语义，不要求所有事件总数�
 | `AC-SP2-01` | checker 派生的 §5–§9 heading | COVERAGE 逐项 D 落点，未知 0 | 落点语义正确性 |
 | `AC-SP2-02` | owner_sp=SP2 的附录 E 行 | 逐项落点，未知 0 | 探测手段充分性 |
 | `AC-SP2-03` | 架构 §13 WRK 行派生并在原型存在的入口 | 逐项落点，未知 0 | UI 可用性与实现状态 |
-| `AC-SP2-04` | 架构 §6 WRK 稳定接口 | 八项逐项落点，无 RT/EV 污染 | 字段语义充分性 |
+| `AC-SP2-04` | 架构 §6 WRK 稳定接口与 §4.2 WRK 事件 | 8 接口+3 事件逐项落点，无 RT/非接口 EV 污染 | 字段与事件语义充分性 |
 | `AC-SP2-05` | execution/gate/eligibility/seal | 两轴独立，FAIL 与封存无矛盾 | 代码实现 |
 | `AC-SP2-06` | 八个接口中的 mutating command | request_id/generation/principal/tx/audit 齐 | handler 漏传 |
 | `AC-SP2-07` | 门方冲突与身份反例 | verified principal 比对；Agent/session/display name 拒作身份 | reviewer 专业能力 |

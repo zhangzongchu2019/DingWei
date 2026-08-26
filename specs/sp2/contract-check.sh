@@ -77,6 +77,18 @@ for l in sys.stdin:
 print(len(ids))
 ')
 [ "$UI_N" -gt 0 ] || { echo '✗ 架构 §13 WRK 原型入口预期集合为空'; exit 2; }
+EVENT_N=$(git show "$ANCHOR:docs/dingwei-platform-architecture.md" | python3 -c '
+import re,sys
+on=False; ids=set()
+for l in sys.stdin:
+ if re.match(r"^### 4\.2\b",l): on=True; continue
+ if on and re.match(r"^#{2,3} ",l): on=False
+ if on:
+  m=re.match(r"^\| `(EV-WRK-[^`]+)` \| WRK \|",l)
+  if m: ids.add(m.group(1))
+print(len(ids))
+')
+[ "$EVENT_N" -gt 0 ] || { echo '✗ 架构 §4.2 WRK 事件预期集合为空'; exit 2; }
 SELFTEST_OUT=$(specs/sp2/check.sh --selftest) || { echo '✗ SP2 coverage checker 反测未过'; exit 1; }
 SELFTEST_N=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP2 覆盖反测 \([0-9][0-9]*\) 项全过$/\1/p')
 [ -n "$SELFTEST_N" ] || { echo '✗ SP2 coverage checker 未报告实算反测数'; exit 2; }
@@ -86,6 +98,6 @@ else
  rc=$?; [ "$rc" -eq 2 ] || { echo "✗ 目标件缺失应 rc=2，实际 $rc"; exit 1; }
 fi
 echo '预期集合：六面 + D/AC各12 + WRK接口8 + 四轮 + 三票 + 前置4 + 机器派生 heading/E + coverage反测/缺件'
-echo "实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + headings=$1 / E=$(( $2+$3+$4 ))（$2+$3+$4）/ 架构§13-WRK入口=$UI_N + selftest=$SELFTEST_N + rc2"
+echo "实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + headings=$1 / E=$(( $2+$3+$4 ))（$2+$3+$4）/ 架构§13-WRK入口=$UI_N / 架构§4.2-WRK事件=$EVENT_N + selftest=$SELFTEST_N + rc2"
 echo '未知集合：0'
 echo '✓ SP2 设计合同与冻结输入通过'
