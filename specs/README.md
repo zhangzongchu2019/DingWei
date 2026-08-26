@@ -17,6 +17,7 @@
 | `specs/constitution.md` | 治理原则的【唯一】载体（§4.1） |
 | `specs/platform/spec.md` | 装载点 —— 指向 `docs/` 的正文，不复制、不搬动 |
 | `specs/platform-architecture/spec.md` | 新版平台架构设计的施工与验收合同；冻结分域、接口与技术架构三类输出，旧架构件只作历史参考 |
+| `specs/platform-architecture/check.sh` | 新版架构件的非门控形状检查：反查包/进程、原型入口与接口 ID；明确不替代语义评审 |
 | `specs/platform/checklist.md` | 结构域（sol 主笔，26 项） |
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |
