@@ -27,6 +27,8 @@
 | `specs/sp1/spec.md` | SP1 身份与租户地基独立设计合同（四项业主点名范围） |
 | `specs/sp1/contract-check.sh` | SP1 独立范围、六面、交付 ID、四项点名范围与目标路径核验 |
 | `specs/sp1/check.sh` | SP1 正文章节、附录 E、原型入口、交付 ID 与合同红线覆盖核验 |
+| `specs/sp2/spec.md` | SP2 执行层与门禁设计合同（§5–§9，含 WRK schema 的 SP7b 责任） |
+| `specs/sp2/contract-check.sh` | SP2 六面、交付/验收 ID、WRK 接口与冻结输入核验 |
 | `specs/platform/checklist.md` | 结构域（sol 主笔，26 项） |
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |
