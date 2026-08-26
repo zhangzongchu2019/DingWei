@@ -58,6 +58,15 @@ def derive_src(text,start=r'^## §14\b',stop=r'^## §17\b'):
             if m: out.append('SRC:§'+m.group(1))
     return out
 
+def recusal_scan(text,label):
+    """B1：全量扫描（仅排除 RECUSAL 声明区）。引用与逐条标记必须成对出现。"""
+    body=re.sub(r'<!-- RECUSAL-DECL-BEGIN -->.*?<!-- RECUSAL-DECL-END -->','',text,flags=re.S)
+    refs=re.findall(r'§11\.6[ab]',body)
+    marks=re.findall(r'<!-- RECUSAL-SP4-REF: (AC-SP4-\d{2}) -->',body)
+    if refs and not marks: return f'✗ {label}引用 §11.6a/b {len(refs)} 处却无 RECUSAL-SP4-REF 标记（opus50 回避范围不明）'
+    if marks and not refs: return f'✗ {label}标了 RECUSAL-SP4-REF 却无实际引用，标记不得空挂'
+    return ''
+
 def expected_sets():
     src=derive_src(spec)
     for canary in ('SRC:§15.4','SRC:§15.5'):
@@ -79,7 +88,7 @@ def expected_sets():
         c=[x.strip() for x in l.strip().strip('|').split('|')]
         if len(c)>=2 and 'CAP' in c[1].split('/'):
             for group in re.findall(r'`([^`]+)`',c[0]): ui.extend('UI:#'+x for x in group.split('/'))
-    proto_ids=set(re.findall(r'<section\s+class="scr"\s+id="([^"]+)"',proto))
+    proto_ids=set(re.findall(r'<section\s+class="scr[^"]*"\s+id="([^"]+)"',proto))
     absent=sorted(x for x in ui if x[4:] not in proto_ids)
     if absent: print('✗ 架构 §13 CAP 入口在原型不存在：'+','.join(absent)); raise SystemExit(2)
     out={'spec':set(src),'E':set(e),'interface':derive_interfaces(arch),'event':derive_events(arch),'prototype':set(ui)}
@@ -103,6 +112,10 @@ def inspect(text,quiet=False):
     for k,want in expected.items():
         got=actual & want; unknown=sorted(want-got); bad|=bool(unknown)
         if not quiet: print(f'[{k}] 预期={len(want)} 实检={len(got)} 未知={len(unknown)} {unknown}')
+    err=recusal_scan(text,'正文')
+    if err:
+        if not quiet: print(err)
+        bad=True
     ids=re.findall(r'^## (D-SP4-\d+)',text,re.M)
     miss=[f'D-SP4-{i:02d}' for i in range(1,13) if ids.count(f'D-SP4-{i:02d}')!=1]; bad|=bool(miss)
     am=re.search(r'<!-- ACCEPTANCE-SP4-BEGIN -->(.*?)<!-- ACCEPTANCE-SP4-END -->',text,re.S)
@@ -158,6 +171,9 @@ if mode=='--selftest':
     ac_bad=base.replace('| `AC-SP4-07` | fixture scope | fixture criterion | fixture boundary |','| `AC-SP4-07` | 见全文 | 见全文 | 见全文 |')
     if inspect(ac_bad,True)==1: print('  ✓ AC 四列写「见全文」必须转红')
     else: print('  ✗ AC 占位值未被拦'); fail=1
+    test('正文普通段引用 §11.6a 而无回避标记必须转红',base+'\n② 运行约束：本节依赖 §11.6a 的证据形状。\n',1)
+    test('引用 §11.6b ＋ 逐条回避标记可放行',base+'\n本节依赖 §11.6b。\n<!-- RECUSAL-SP4-REF: AC-SP4-11 -->\n',0)
+    test('空挂回避标记而无引用必须转红',base+'\n<!-- RECUSAL-SP4-REF: AC-SP4-11 -->\n',1)
     test('缺覆盖块判闸坏',base.replace('<!-- COVERAGE-SP4-BEGIN -->',''),2)
     print('--- SP4 预期集合实算 '+' '.join(f'{k}={len(v)}' for k,v in expected.items()))
     print(f'--- SP4 覆盖反测 {n} 项全过' if not fail else '--- SP4 覆盖反测失败')

@@ -29,7 +29,10 @@ grep -q '<!-- EVENT-SET-SP4: DERIVED -->' "$SPEC" || { echo '✗ CAP event 面�
 EVENT_N=$(git show "$BASE_ANCHOR:docs/dingwei-platform-architecture.md" | grep -Ec '^\| `EV-CAP-[^`]+` \| CAP \|' || true)
 [ "$EVENT_N" -eq 2 ] || { echo "✗ CAP 事件实数与合同不符：$EVENT_N"; exit 2; }
 for dep in SP1 SP3 SP8 SP7a SP2 SP7b; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置/协作处置缺 $dep"; exit 1; }; done
-grep -q '不自造批准权' "$SPEC" || { echo '✗ SP8 未设计时的批准权处置未落合同'; exit 1; }
+grep -q '不自造批准权' "$SPEC" || { echo '✗ 批准权处置未落合同'; exit 1; }
+grep -q 'SP8 §11.5a 消费侧合同接线' "$SPEC" || { echo '✗ SP8 已收口后未按其消费侧合同接线'; exit 1; }
+grep -q 'AGT-CAP-EmergencyAction' "$SPEC" || { echo '✗ 紧急执行入口的跨件登记缺失'; exit 1; }
+grep -q '紧急路径一律 fail-closed' "$SPEC" || { echo '✗ SP6 未定义前的紧急路径处置未写死'; exit 1; }
 grep -q 'SpecDoc §15.4 / §15.5 排版位置落在 §16 之后' "$SPEC" || { echo '✗ SpecDoc 排版异常未登记'; exit 1; }
 grep -q '按 capability effect 判' "$SPEC" || { echo '✗ 紧急路径判据未按 capability effect 落合同'; exit 1; }
 grep -q 'installation_generation' "$SPEC" || { echo '✗ 装卸 fencing 代际口径未落合同'; exit 1; }
@@ -47,18 +50,17 @@ for l in t.splitlines():
 print(len([x for x in ("§15.4","§15.5") if x not in out]))
 ')
 [ "$LOST" -eq 2 ] || { echo "✗ 排版异常前提已变（分段取丢节数=$LOST），单区间判据须重核"; exit 2; }
-# 回避边界：判据行（D 表与 ACCEPTANCE 块）不得引用 §11.6a/§11.6b；声明段可以提它
+# 回避边界（B1）：剥离 RECUSAL 声明区后，合同全部生效内容不得出现 §11.6a/§11.6b
 grep -q '<!-- RECUSAL-SP4: NO-REF-11.6AB -->' "$SPEC" || { echo '✗ 回避边界未在合同以机器标记点明'; exit 1; }
+grep -q '<!-- RECUSAL-DECL-BEGIN -->' "$SPEC" && grep -q '<!-- RECUSAL-DECL-END -->' "$SPEC" || { echo '✗ 回避声明区围栏缺失，无法界定唯一豁免区'; exit 1; }
 REF=$(python3 - "$SPEC" <<'PY2'
 import re,sys
 t=open(sys.argv[1],encoding='utf8').read()
-rows=[l for l in t.splitlines() if re.match(r'^\| `(D|AC)-SP4-\d{2}`',l)]
-blk=re.search(r'ACCEPTANCE-SP4-BEGIN -->(.*?)<!-- ACCEPTANCE-SP4-END',t,re.S)
-rows+= (blk.group(1).splitlines() if blk else [])
-print(sum(1 for l in rows if re.search(r'§11\.6[ab]',l)))
+body=re.sub(r'<!-- RECUSAL-DECL-BEGIN -->.*?<!-- RECUSAL-DECL-END -->','',t,flags=re.S)
+print(len(re.findall(r'§11\.6[ab]',body)))
 PY2
 )
-[ "$REF" -eq 0 ] || { echo "✗ 有 $REF 条 D/AC 判据引用 §11.6a/§11.6b，须显式标注 opus50 对该条回避"; exit 1; }
+[ "$REF" -eq 0 ] || { echo "✗ 合同生效内容中有 $REF 处引用 §11.6a/§11.6b（声明区已排除），须 bump 并逐条标注 opus50 回避"; exit 1; }
 for reviewer in zzc-chatgpt56soltchangshark-2642 zzc-opus50tchangshark-2642 zzc-deepseekv4pro08130ca16c13-2642; do
  grep -q "$reviewer" "$SPEC" || { echo "✗ 缺评审票：$reviewer"; exit 1; }; done
 grep -q '3/3' "$SPEC" && grep -q 'AC-E05' "$SPEC" || { echo '✗ 三票门未落 AC-E05'; exit 1; }

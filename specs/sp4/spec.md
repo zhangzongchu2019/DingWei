@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp4-design` |
-| **合同版本** | v1.1 |
+| **合同版本** | v1.2 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-opus50tczc2000-2642` |
 | **评审** | `zzc-chatgpt56soltchangshark-2642`、`zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
@@ -45,10 +45,17 @@
 并有一条专门的陷阱反测证明分段取法会被拦下。
 
 <!-- RECUSAL-SP4: NO-REF-11.6AB -->
+<!-- RECUSAL-DECL-BEGIN -->
 
-🔴 **本件（合同与正文）不引用 SpecDoc `§11.6a` / `§11.6b`**：实测冻结锚上 §14–§16 全文引用该两节 **0 次**，
-故评审方 opus50 无需回避任一条 AC。若正文后续确需引用，**必须在 bump 时于本节点明并标注受影响的 AC 须其回避**，
-不得等到投票时才发现；`contract-check.sh` 对此有反向断言（合同内出现该引用即红）。
+**回避边界（判据，不只是声明）**：实测冻结锚上 §14–§16 全文引用 `§11.6a` / `§11.6b` **0 次**。
+🔴 判据覆盖**合同与目标正文的全部生效内容**（散文段、表格、清单一律在内），**仅排除本声明区**
+（`RECUSAL-DECL-BEGIN/END` 之间这几行）——**声明区是唯一可以提这两节的地方**。
+- 合同侧：`contract-check.sh` 剥离本声明区后全文扫描，出现即红；
+- 正文侧：`check.sh` 全文扫描；若正文确需引用，**必须同时**写 `<!-- RECUSAL-SP4-REF: AC-SP4-xx -->`
+  逐条点名受影响的 AC（该 AC 由 opus50 回避），**只引用不标记＝红，只标记不引用亦红**。
+⚠️ v1.1 此处只扫 D/AC 判据行，普通段落可绕过——**声明大于实现**；本版按 SP8 的同一套围栏收窄为全量扫描并补普通段反测。
+
+<!-- RECUSAL-DECL-END -->
 
 ### 0.3 前置依赖的当前状态与处置
 
@@ -56,20 +63,23 @@
 |---|---|---|---|
 | **SP1** | 冻结 SP1 设计件头为 `draft，待双评审`；coordinator 已在本轮外告知其收口 | 只消费 AccessCtx/principal/企业边界既有 seam；不把消息 verdict 倒签进冻结件 | SP1 verdict 锚与 AccessCtx/隔离负测未落账前，CAP 只做 contract test，不上线分发与运行态查询 |
 | **SP3** | 冻结 SP3 设计件头为 `draft，待三方全文评审`；coordinator 已告知收口，本席已投 PASS | 复用其 domain/visibility/晋升/装载语义；**CAP 只持 asset/version 与 KNO ref，不另造旁路**（SP3 §3.3 已定） | SP3 verdict 锚与四维/装载负测未落账前，不接真实 KNO 装载 |
-| **SP8（§0.3 明列前置）** | 🔴 **SP8 尚未设计**：`§23–§24` 无设计件，平台级晋升审批（§16.1b、§15.1a、§24）的批准权无权威定义 | **不自造批准权**：只定义 CAP 侧消费 `approval_ref` 的形状、校验与拒绝路径；批准语义留 GOV/SP8 | SP8 批准权与 §24 重两签路径未定义前，平台级晋升与 immutable 名单变更**一律拒绝**，不得以 CAP 本地审批替代 |
+| **SP8（§0.3 明列前置）** | ✅ **已收口**：合同 `a8066f5`、正文 `970effe` 均 3/3 PASS；批准权、`approval_ref`、grant/challenge 状态机与消费侧合同（SP8 §11.5a）已定义 | **不自造批准权**：平台级晋升与 immutable 名单变更**按 SP8 §11.5a 消费侧合同接线**——五项独立复算（签名集合含 ≥required 个互不相同合格 principal · audience/enterprise 一致 · scope 含本 effect 且 `effect_target_digest` 逐位相同 · 未过期未吊销 · **通过原子 claim 取 execute permit**）；🔴 **无 permit 不得发起外部 effect**，重放非终态只得 `IN_PROGRESS` | SP8 实现侧 grant conformance（并发 claim / fence 接管 / revoke×pending）未过前，CAP 只用 fixture，不接真实 grant |
 | **SP7a/PLT（协作输入，非 §0.3 前置）** | 受控仓储 API、migration runner 未在本分支交付 | CAP schema 与 repository port 并行设计；不自建 DB 句柄、不在应用层补租户过滤 | 受控 transaction、隔离与 migration runner conformance 未过，不得 cutover |
 | **SP2（协作输入，非 §0.3 前置）** | SP2 正文已收口，锚 `53e4a2a` | 分发目标与执行侧 seam 只读消费；不得改 WRK 状态语义或派发信封定义 | 接口 conformance 未就绪时用固定 fixture，不接真实派发 |
 | **SP7b（SP4 自交）** | CAP 最终 schema 未设计 | 本件须交 CAP schema/migration/cutover/rollback 五列合同 | SP4 实现批次履约，不拿 SP7a PASS 代签 |
 
 冻结证据与消息状态分层：设计可在 seam 明确时推进；实现开工门必须有可取 verdict/接口证据，不以本合同代填。
 
-### 0.4 已上报待裁项〔本合同不自行取舍〕
+ 已上报待裁项〔本合同不自行取舍〕
 
-| # | 事项 | 本合同的临时处置 |
+### 0.4 待裁项的处置结果〔业主已裁，随本版落地〕
+
+| # | 事项 | 处置 |
 |---|---|---|
-| 1 | **SP8 未设计而 §0.3 列其为前置** | 按 §0.3 表 SP8 行处理：设计期只定 approval_ref 消费侧，平台级晋升在实现期 fail-closed；若业主裁定改为「等 SP8」，本合同 bump 重走三票 |
-| 2 | **SpecDoc §15.4 / §15.5 物理位置落在 §16 与 §16.1 之后** | 只登记不修改（冻结窗内不擅改上游）：本件用单区间取法 ＋ 两条硬断言 ＋ 一条陷阱反测把它挡成机器可判，见 §0.2；SpecDoc 侧是否调序交执笔方与业主 |
-| 3 | **§14.5a 统一 PDP/PEP 与 §22/§23 授权语义的边界** | 本件只定义 MCP 运行态查询的 **PEP 接入点、判据来源与拒绝语义**；PDP 策略与授权权力归 SP1/SP8，本件不定义策略内容 |
+| 1 | **前置 SP8** | ✅ **已解除**：SP8 全流程收口（合同 `a8066f5`、正文 `970effe`，均 3/3）。本件由"批准权无权威定义时 fail-closed"改为**按 SP8 §11.5a 消费侧合同接线**，见 §0.3 SP8 行 |
+| 2 | **SpecDoc §15.4 / §15.5 排版位置落在 §16 之后** | ✅ 按裁定**不改 SpecDoc**：单区间取法 ＋ canary 硬断言 ＋ 陷阱反测已把它挡成机器可判（§0.2） |
+| 3 | **§14.5a PDP/PEP 边界** | ✅ 按裁定：**本件定义 PEP**（MCP 运行态查询的接入点、判据来源与拒绝语义）；**PDP 策略与授权权力归 SP1/SP8**，本件不定义策略内容 |
+| 4 | **§16.6 紧急路径的执行入口在 SP6**〔新增登记〕 | 冻结架构中唯一紧急执行入口 `AGT-CAP-EmergencyAction` 属 `AGT`（SP6 范围），**SP6 前置写 SP4、只能晚于本件**。⇒ 本件**不等 SP6、也不自造入口**：只定义 capability-effect 判据与拒绝语义，并把入口侧登记为**跨件义务**；🔴 **在 SP6 定义该入口的强制执行之前，CAP 侧紧急路径一律 fail-closed**（`disable`/`quarantine`/`revoke` 只走常规同级同期审批路径），不得以"紧急"为由绕开 |
 
 ## 1. 六个必备面
 
