@@ -48,6 +48,21 @@ def count_gov_events(text):
         if re.match(r'^\| `EV-GOV-[^`]+` \| GOV \|',l): n+=1
     return n
 
+def sp0_claims(text):
+    """拆 SP0 的原型入口认领：完整认领 vs 部分认领（认的只是入口内某几类条目）。
+    判据取自认领单元格 id 之后的限定词：带「中的/仅/部分/两类/之一」者判为切片认领。"""
+    m=re.search(r'COVERAGE-SP0-BEGIN -->(.*?)<!-- COVERAGE-SP0-END',text,re.S)
+    if not m: print('✗ 差集减数不可取：SP0 正文缺 COVERAGE 块'); raise SystemExit(2)
+    full,partial=set(),set()
+    for l in m.group(1).splitlines():
+        if not l.startswith('|') or 'D-SP0-' not in l: continue
+        cell=l.split('|')[1].strip()
+        mm=re.match(r'`?#([a-z]\w*)`?(.*)',cell)
+        if not mm: continue
+        tok='UI:#'+mm.group(1)
+        (partial if re.search(r'中的|仅|部分|两类|之一',mm.group(2)) else full).add(tok)
+    return full,partial
+
 def derive_src(text,start=r'^## §23\b',stop=r'^## §25\b'):
     # 单区间取：§23 起 §25 止。§23/§24 在冻结件中顺序正常，但仍以单区间取并加 canary，
     # 避免后续有人按章分段拼接（SP4 已在 §15.4/§15.5 上吃过这个亏）。
@@ -83,16 +98,15 @@ def expected_sets():
             for group in re.findall(r'`([^`]+)`',c[0]): ui.extend('UI:#'+x for x in group.split('/'))
     # 🔴 同域差集：GOV 由 SP0（定义层 §1–§4）与 SP8（治理面 §23–§24）共用，架构域列无法区分。
     # 原型入口 = 架构 §13 GOV 全集 − 已收口 SP0 正文 COVERAGE 已认领的入口。两个输入均带 sha256 校验。
-    m0=re.search(r'COVERAGE-SP0-BEGIN -->(.*?)<!-- COVERAGE-SP0-END',sp0,re.S)
-    if not m0: print('✗ 差集减数不可取：SP0 正文缺 COVERAGE 块'); raise SystemExit(2)
-    claimed=set()
-    for l in m0.group(1).splitlines():
-        if not l.startswith('|') or 'D-SP0-' not in l: continue
-        mm=re.match(r'#([a-z]\w*)',l.split('|')[1].strip().strip('`'))
-        if mm: claimed.add('UI:#'+mm.group(1))
-    if not claimed: print('✗ 差集减数为空：SP0 未认领任何原型入口，差集规则失去意义'); raise SystemExit(2)
-    ui=[x for x in ui if x not in claimed]
-    proto_ids=set(re.findall(r'<section\s+class="scr"\s+id="([^"]+)"',proto))
+    full,partial=sp0_claims(sp0)
+    if not full and not partial: print('✗ 差集减数为空：SP0 未认领任何原型入口，差集规则失去意义'); raise SystemExit(2)
+    # 🔴 只扣「完整认领」的入口。部分认领（SP0 认的是入口内的某几类条目）不得整块扣除，
+    # 否则该入口内切片之外的部分两边都不认领，双方却都报未知 0。
+    ui=[x for x in ui if x not in full]
+    lost=[x for x in partial if x not in ui]
+    if lost:
+        print('✗ 部分认领的入口被整块扣除：'+','.join(sorted(lost))+'（切片之外将无人认领）'); raise SystemExit(2)
+    proto_ids=set(re.findall(r'<section\s+class="scr[^"]*"\s+id="([^"]+)"',proto))
     absent=sorted(x for x in ui if x[4:] not in proto_ids)
     if absent: print('✗ 架构 §13 GOV 入口在原型不存在：'+','.join(absent)); raise SystemExit(2)
     ev_n=count_gov_events(arch)
@@ -103,7 +117,7 @@ def expected_sets():
     if any(not v for v in out.values()): print('✗ 预期集合为空：'+','.join(k for k,v in out.items() if not v)); raise SystemExit(2)
     return out
 SCOPE_LINE=('受检范围：冻结 SpecDoc §23–§24 heading（单区间取）、owner_sp 含 SP8 的 E 行、'
-            '架构 §6 GOV 接口、§13 GOV 入口减 SP0 已认领的差集；GOV 事件面实算为 0，按不适用处理。')
+            '架构 §6 GOV 接口、§13 GOV 入口减 SP0【完整认领】的差集（部分认领入口不扣除）；GOV 事件面实算为 0，按不适用处理。')
 expected=expected_sets()
 
 def recusal_scan(text,label):
@@ -180,6 +194,14 @@ if mode=='--selftest':
         print('  ✓ §6 外 GOV 行不得污染接口集合；GOV 事件面实算恒为 0')
     else:
         print('  ✗ 跨表行污染 GOV 接口集合或事件实算异常'); fail=1
+    n+=1
+    f0,p0=sp0_claims(sp0)
+    stripped=sp0.replace('typed 待决队列中的 spec_fix/spec_claim','typed 待决队列')
+    f1,p1=sp0_claims(stripped)
+    if p0 and not p1 and (f1-f0)==p0:
+        print(f'  ✓ 部分认领守卫反测：{sorted(p0)} 带限定词时不参与扣除；去掉限定词才会被整块扣')
+    else:
+        print('  ✗ 部分认领守卫失效：限定词变化未改变扣除行为'); fail=1
     n+=1
     all_gov=set(); on=False
     for l in arch.splitlines():

@@ -36,6 +36,10 @@ grep -q 'AGT-CAP-EmergencyAction' "$SPEC" || { echo '✗ §24.3a 执行入口的
 grep -q 'SP4 阻断①的 SP6 侧不因 SP8 收口而闭' "$SPEC" || { echo '✗ 未登记「SP8 收口不闭 SP6 侧」'; exit 1; }
 # 同域差集规则必须写成判据，并复算「SP0 已认领入口非空、且差集真扣掉了东西」
 grep -q '差集派生' "$SPEC" || { echo '✗ GOV 同域差集派生规则未落为判据'; exit 1; }
+# 首轮阻断①：部分认领的入口不得整块扣除，必须落成通则与判据
+grep -q '部分认领的入口不得整块扣除' "$SPEC" || { echo '✗ 「部分认领不得整块扣除」未落为判据'; exit 1; }
+grep -q '`s1`' "$SPEC" || { echo '✗ 合同未点名 s1 的归属处置'; exit 1; }
+grep -q '只读消费、不改其语义' "$SPEC" || { echo '✗ 未写明对 SP0 已认领切片的只读口径'; exit 1; }
 DIFF=$(git show "$BASE_ANCHOR:docs/dingwei-sp0-design.md" | python3 -c '
 import re,sys
 t=sys.stdin.read(); m=re.search(r"COVERAGE-SP0-BEGIN -->(.*?)<!-- COVERAGE-SP0-END",t,re.S)
@@ -78,7 +82,7 @@ SELFTEST_N=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP8 覆盖反测 \([
 SETS=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP8 预期集合实算 //p')
 SCOPE=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- 受检范围：//p')
 [ -n "$SCOPE" ] || { echo '✗ coverage checker 未报告受检范围'; exit 2; }
-for tok in '§23–§24' 'GOV 接口' '差集'; do
+for tok in '§23–§24' 'GOV 接口' '差集' '完整认领'; do
  printf '%s\n' "$SCOPE" | grep -q "$tok" || { echo "✗ 受检范围文案缺 $tok，与实际派生不符"; exit 1; }; done
 for bad in '§14–§16' 'CAP'; do
  ! printf '%s\n' "$SCOPE" | grep -q "$bad" || { echo "✗ 受检范围文案残留 SP4 口径：$bad"; exit 1; }; done
