@@ -3,11 +3,12 @@
 set -u
 BASE_ANCHOR=${BASE_ANCHOR:-6a98629}
 SPECDOC_ANCHOR=${SPECDOC_ANCHOR:-4220195}
+SP8_ANCHOR=${SP8_ANCHOR:-970effe}
 DOC=${DOC:-docs/dingwei-sp4-design.md}
 MODE=${1:-check}
-python3 - "$BASE_ANCHOR" "$SPECDOC_ANCHOR" "$DOC" "$MODE" <<'PY'
+python3 - "$BASE_ANCHOR" "$SPECDOC_ANCHOR" "$SP8_ANCHOR" "$DOC" "$MODE" <<'PY'
 import hashlib,re,subprocess,sys,os
-base_anchor,spec_anchor,doc,mode=sys.argv[1:]
+base_anchor,spec_anchor,sp8_anchor,doc,mode=sys.argv[1:]
 PATHS={
  'docs/dingwei-platform-specdoc.md':(spec_anchor,'66df042ec49e6c7345e5c5cdbe1cf4e7f5c3bbdc94a1c671bb35c588532e8e0f'),
  'docs/dingwei-platform-architecture.md':(base_anchor,'0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc'),
@@ -16,6 +17,7 @@ PATHS={
  'docs/dingwei-sp1-design.md':(base_anchor,'8fafe6c5bac5595eaa771543dfc4199ba3670081786f1769f39833dc616e27bf'),
  'docs/dingwei-sp2-design.md':(base_anchor,'37d2c17cc0761914aae91abd20273746231d894c50163cb89b8123cc03d76a86'),
  'docs/dingwei-sp3-design.md':(base_anchor,'e6317b5c7257eb86b405d355b3bbcdb72751eb8c677fa2f388891c1d307b1e97'),
+ 'docs/dingwei-sp8-design.md':(sp8_anchor,'4f5e4e06d29d4a9fffcdb46f413fbc37bcfd615e9af9b04215e0a6c20205a98a'),
 }
 def get(path):
     anchor,want=PATHS[path]
@@ -24,7 +26,7 @@ def get(path):
     if hashlib.sha256(b).hexdigest()!=want: print(f'✗ 冻结输入漂移：{anchor}:{path}'); raise SystemExit(2)
     return b.decode()
 spec=get('docs/dingwei-platform-specdoc.md'); arch=get('docs/dingwei-platform-architecture.md'); proto=get('docs/dingwei-prototype.html')
-for p in ('docs/dingwei-sp0-design.md','docs/dingwei-sp1-design.md','docs/dingwei-sp2-design.md','docs/dingwei-sp3-design.md'): get(p)
+for p in ('docs/dingwei-sp0-design.md','docs/dingwei-sp1-design.md','docs/dingwei-sp2-design.md','docs/dingwei-sp3-design.md','docs/dingwei-sp8-design.md'): get(p)
 
 def derive_interfaces(text):
     out=set(); on=False

@@ -7,11 +7,11 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp4-design` |
-| **合同版本** | v1.2 |
+| **合同版本** | v1.3 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-opus50tczc2000-2642` |
 | **评审** | `zzc-chatgpt56soltchangshark-2642`、`zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
-| **冻结施工锚** | 组合冻结：SpecDoc `4220195`（v3.73）；架构/原型/SP0–SP3/代码基线 `6a98629` |
+| **冻结施工锚** | 组合冻结：SpecDoc `4220195`（v3.73）；**SP8 设计件 `970effe`**；架构/原型/SP0–SP3/代码基线 `6a98629` |
 | **权威范围** | SpecDoc §14–§16；owner_sp 含 SP4 的附录 E 行 |
 | **目标架构域** | `CAP`；消费 `IDN/GOV/KNO/PLT`，向 `AGT/MSG/WRK` 提供受控资产分发与运行态查询面 |
 | **目标件** | `docs/dingwei-sp4-design.md` |
@@ -69,8 +69,6 @@
 | **SP7b（SP4 自交）** | CAP 最终 schema 未设计 | 本件须交 CAP schema/migration/cutover/rollback 五列合同 | SP4 实现批次履约，不拿 SP7a PASS 代签 |
 
 冻结证据与消息状态分层：设计可在 seam 明确时推进；实现开工门必须有可取 verdict/接口证据，不以本合同代填。
-
- 已上报待裁项〔本合同不自行取舍〕
 
 ### 0.4 待裁项的处置结果〔业主已裁，随本版落地〕
 
@@ -139,7 +137,7 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 
 ### ⑥ 输入来源
 
-组合冻结锚：SpecDoc `4220195`；其余 `6a98629`。
+组合冻结锚：SpecDoc `4220195`；**SP8 设计件 `970effe`**；其余 `6a98629`。
 
 | 输入 | sha256 | 用途 |
 |---|---|---|
@@ -150,6 +148,7 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 | `docs/dingwei-sp1-design.md` | `8fafe6c5bac5595eaa771543dfc4199ba3670081786f1769f39833dc616e27bf` | AccessCtx/企业边界的冻结输入 |
 | `docs/dingwei-sp2-design.md` | `37d2c17cc0761914aae91abd20273746231d894c50163cb89b8123cc03d76a86` | generation/幂等/派发 seam 的已收口输入 |
 | `docs/dingwei-sp3-design.md` | `e6317b5c7257eb86b405d355b3bbcdb72751eb8c677fa2f388891c1d307b1e97` | 四维、晋升与装载语义的已收口输入 |
+| `docs/dingwei-sp8-design.md` @ `970effe` | `4f5e4e06d29d4a9fffcdb46f413fbc37bcfd615e9af9b04215e0a6c20205a98a` | 🔴 **本件"真接线"的权威来源**：§11.5a 消费侧合同（五项独立复算 ＋ 原子 claim ＋ execute permit ＋ `IN_PROGRESS`）；两个 checker 均校验其 sha256，取不到或漂移 **rc=2** |
 | 冻结代码 | 同 `6a98629` | 只证现状差距与可复用形状，不决定目标语义 |
 
 ## 2. 必须交付
@@ -163,10 +162,10 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 | `D-SP4-05` | MCP 准入三层 | 三层判据、证据、拒绝路径与复核点 |
 | `D-SP4-06` | 分发与辖域 | 辖域判据、push/pull 形态、三类资产、D2 口径、上下文预算与渐进披露 |
 | `D-SP4-07` | 流通与跨企业 | 沉淀面流通、跨企业交流边界、跨人扩散唯一合法路径 |
-| `D-SP4-08` | 生命周期与晋升 | 三件事分判、候选触发、晋升与创建解耦、`approval_ref` 消费侧 |
+| `D-SP4-08` | 生命周期与晋升 | 三件事分判、候选触发、晋升与创建解耦；**按 SP8 §11.5a 落消费侧**：五项独立复算（签名集合 ≥required 个互不相同合格 principal · audience/enterprise 一致 · scope 含本 effect 且 `effect_target_digest` 逐位相同 · 未过期未吊销 · **原子 claim 取 execute permit**）、**无 permit 不得发起外部 effect**、**重放非终态只得 `IN_PROGRESS` 不得二次执行** |
 | `D-SP4-09` | 自我进化与回写 | 提案不批准、暂存审批、回写纪律、SYNC IMPACT REPORT |
 | `D-SP4-10` | immutable 与装卸对称 | 名单与重两签、对称审批、capability-effect 判据、紧急原语与 fallback |
-| `D-SP4-11` | 接口与事件合同 | 5 接口 + 2 事件逐项 schema/effect/auth/idempotency/generation/tx/error/audit；tombstone 与 `installation_generation` fencing |
+| `D-SP4-11` | 接口与事件合同 | 5 接口 + 2 事件逐项 schema/effect/auth/idempotency/generation/tx/error/audit；tombstone 与 `installation_generation` fencing；**凡产生外部 effect 的接口（`Distribute`/`Uninstall`/`CAP-CMD-*` 派发面）须在合同列写明其 `approval_ref` 与 execute permit 的取用点** |
 | `D-SP4-12` | 复用、CAP 数据与追踪验收 | 现状 retain/adapt/rewrite/new/retire + conformance；CAP schema 与 SP7b 五列；§14–§16、E、接口、事件、原型入口的覆盖与证据出口 |
 
 正文须提供 `COVERAGE-SP4-BEGIN/END` 严格两列表格；checker 只从块内第二列真实 `D-SP4-*` 取实检集合。
@@ -195,7 +194,7 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 | `AC-SP4-04` | 架构 §4.2 owner=CAP 事件 | 2 事件逐项落点；新增事件 ID 0 | 消费方实现状态 |
 | `AC-SP4-05` | 架构 §13 主责域含 CAP 的原型入口 | 逐项落点且冻结原型中存在 | UI 可用性与实现状态 |
 | `AC-SP4-06` | 判型三判据与归属分级 | 三判据各自可判、互不替代；分级按 §14.3a | 某具体资产该判哪类 |
-| `AC-SP4-07` | 准入三层与晋升审批 seam | 消费 `approval_ref`；CAP 不自造批准权；平台级晋升缺 SP8 定义时 fail-closed | 批准决定是否恰当 |
+| `AC-SP4-07` | 准入三层与 SP8 §11.5a 接线 | CAP 不自造批准权；**五项独立复算齐**；**外部 effect 前必持 execute permit**（`claimed→executing` CAS 失败即拒）；**重放非终态返 `IN_PROGRESS` 且不发起第二次 effect**；lease 过期须受栅栏接管或置 `unknown`，**不得盲重执行** | 批准决定是否恰当、SP8 实现是否正确 |
 | `AC-SP4-08` | 分发、辖域与流通 | 辖域判据、push/pull 形态、跨人扩散唯一路径、跨企业边界齐 | 分发时延与容量 |
 | `AC-SP4-09` | 生命周期三分与自我进化 | 三件事分判、晋升与创建解耦、提案不批准、暂存审批与回写纪律齐 | 提案内容质量 |
 | `AC-SP4-10` | immutable 与紧急路径 | 名单变更重两签；**按 capability effect 判不按动作名**；无 fallback 的停用判非法 | 兜底机制实际有效性 |
@@ -220,7 +219,7 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 | SpecDoc 自身矛盾 | 登记冲突双方的精确章节、两种后果与建议，交 coordinator/业主，不自行取舍 |
 | SpecDoc 与目标架构冲突 | 登记双方精确章节与后果，交裁，不自设优先级 |
 | **SpecDoc §15.4 / §15.5 排版位置落在 §16 之后** | 已登记（§0.4 #2）：单区间取法为判据，checker 硬断言 ＋ 陷阱反测；不改 SpecDoc、不因排版顺序改归属 |
-| **前置 SP8 未设计** | 已登记（§0.4 #1）：只消费 `approval_ref`，不自造批准权；平台级晋升在实现期 fail-closed，不以 CAP 本地审批替代 |
+| **与已收口 SP8 的接口差异** | SP8 已收口（合同 `a8066f5`、正文 `970effe`）。本件按其 §11.5a 接线；**若发现该合同与本件所需不符，停止该路径并登记差异交 coordinator/业主裁**，不改已收口件、也不在 CAP 侧自造等价物 |
 | 与已收口 SP1/SP2/SP3 seam 对撞 | 停止该路径，登记接口差异并交裁；不改已收口件，也不单方给上游产物加必填字段 |
 | 目标与现状代码冲突 | 记 retain/adapt/rewrite 差距；旧实现不升级为目标规则 |
 | 合同范围或机器集合变化 | bump 合同并重走三方评审，未过不写正文 |
@@ -232,4 +231,4 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 - [ ] deepseek 合同 PASS；
 - [ ] `specs/sp4/contract-check.sh` PASS；
 - [ ] `specs/sp4/check.sh --selftest` PASS（正文未创建前普通 check 应 exit 2，不算通过）；
-- [ ] coordinator 登记组合冻结锚与合同锚，并回执 §0.4 三项待裁的裁定结果。
+- [ ] coordinator 登记**本版三锚组合冻结**（SpecDoc `4220195` ＋ SP8 件 `970effe` ＋ 基线 `6a98629`）与合同锚。

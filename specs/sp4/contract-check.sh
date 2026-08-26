@@ -2,6 +2,7 @@
 set -eu
 BASE_ANCHOR=6a98629
 SPECDOC_ANCHOR=4220195
+SP8_ANCHOR=970effe
 SPEC=specs/sp4/spec.md
 got=$(git show "$SPECDOC_ANCHOR:docs/dingwei-platform-specdoc.md" | sha256sum | awk '{print $1}')
 [ "$got" = '66df042ec49e6c7345e5c5cdbe1cf4e7f5c3bbdc94a1c671bb35c588532e8e0f' ] || { echo '✗ v3.73 SpecDoc 输入漂移'; exit 2; }
@@ -15,6 +16,8 @@ for item in \
  f=${item%%:*}; want=${item#*:}; got=$(git show "$BASE_ANCHOR:$f" | sha256sum | awk '{print $1}')
  [ "$got" = "$want" ] || { echo "✗ 冻结输入漂移：$f"; exit 2; }
 done
+got8=$(git show "$SP8_ANCHOR:docs/dingwei-sp8-design.md" 2>/dev/null | sha256sum | awk '{print $1}')
+[ "$got8" = '4f5e4e06d29d4a9fffcdb46f413fbc37bcfd615e9af9b04215e0a6c20205a98a' ] || { echo '✗ SP8 设计件不可取或漂移（本件"真接线"的权威来源）'; exit 2; }
 [ -f "$SPEC" ] || { echo "✗ 缺 $SPEC"; exit 2; }
 for face in ① ② ③ ④ ⑤ ⑥; do grep -q "^### $face" "$SPEC" || { echo "✗ 缺必备面 $face"; exit 1; }; done
 for n in 01 02 03 04 05 06 07 08 09 10 11 12; do grep -q "D-SP4-$n" "$SPEC" || { echo "✗ 缺 D-SP4-$n"; exit 1; }; done
@@ -31,6 +34,13 @@ EVENT_N=$(git show "$BASE_ANCHOR:docs/dingwei-platform-architecture.md" | grep -
 for dep in SP1 SP3 SP8 SP7a SP2 SP7b; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置/协作处置缺 $dep"; exit 1; }; done
 grep -q '不自造批准权' "$SPEC" || { echo '✗ 批准权处置未落合同'; exit 1; }
 grep -q 'SP8 §11.5a 消费侧合同接线' "$SPEC" || { echo '✗ SP8 已收口后未按其消费侧合同接线'; exit 1; }
+grep -q 'docs/dingwei-sp8-design.md` @ `970effe`' "$SPEC" || { echo '✗ SP8 件未列为冻结输入'; exit 1; }
+# 依赖点必须同步：D 表与 AC 都要落 permit 语义，不得只写旧 approval_ref 形状
+grep -qE '^\| `D-SP4-08` \|.*execute permit' "$SPEC" || { echo '✗ D-SP4-08 未落 §11.5a 五项与 execute permit'; exit 1; }
+grep -qE '^\| `AC-SP4-07` \|.*execute permit' "$SPEC" || { echo '✗ AC-SP4-07 仍是旧弱语义（缺 permit 判据）'; exit 1; }
+! grep -q '缺 SP8 定义时 fail-closed' "$SPEC" || { echo '✗ 验收仍允许"SP8 未定义"的旧口径'; exit 1; }
+! grep -q '前置 SP8 未设计' "$SPEC" || { echo '✗ 冲突表仍写 SP8 未设计'; exit 1; }
+! grep -q '回执 §0.4 三项待裁' "$SPEC" || { echo '✗ 开工门仍挂旧待裁回执'; exit 1; }
 grep -q 'AGT-CAP-EmergencyAction' "$SPEC" || { echo '✗ 紧急执行入口的跨件登记缺失'; exit 1; }
 grep -q '紧急路径一律 fail-closed' "$SPEC" || { echo '✗ SP6 未定义前的紧急路径处置未写死'; exit 1; }
 grep -q 'SpecDoc §15.4 / §15.5 排版位置落在 §16 之后' "$SPEC" || { echo '✗ SpecDoc 排版异常未登记'; exit 1; }
