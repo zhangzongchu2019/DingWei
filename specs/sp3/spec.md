@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp3-design` |
-| **合同版本** | v1.0 |
+| **合同版本** | v1.1 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -22,6 +22,8 @@
 **事件集合处置**：本轮不设 event 面。冻结架构 §4.2 的 owner=KNO 事件为 0，`EV-KNO-*` 亦为 0；
 KNO 只消费既有 WRK dispatch 事件，并经四个 KNO command/query 与 repository outbox seam 协作。
 若未来需要 KNO 作为事件 producer，须先修改目标架构 §4.2、bump 本合同并重新评审，不能在正文私造事件 ID。
+
+**v1.1 同步**：派发快照字段全集的唯一权威源钉为 SpecDoc §11.6 表；SP2 是引用侧而非定义源。
 
 ### 0.1 范围判定
 
@@ -40,7 +42,7 @@ SpecDoc §0.3 对 SP3 定义清晰且与目标架构一致：
 | **SP1** | 冻结 SP1 设计件头仍为 `draft，待双评审`；coordinator 已在本轮外告知其收口 | 只消费 AccessCtx/企业库/Agent provenance 已定义 seam；不把消息 verdict 倒签进冻结件 | SP1 verdict 锚、AccessCtx 与一企业一库/RLS 负测未落账前，KNO 仅做 contract test，不上线 query/ingest |
 | **SP7a** | 受控仓储 API、migration runner、访问抽象尚未在本分支交付 | KNO schema 与 repository port 可并行设计；不得自建 DB 句柄或应用层补 tenant 过滤 | 受控 transaction、先过滤后检索、迁移 runner conformance 未过，不得 cutover |
 | **SP7b（SP3 自交）** | KNO 最终 schema 未设计，不能由统一 SP7 先做 | 本件须交 KNO schema/migration/cutover/rollback 五列合同 | SP3 实现批次履约，不推回统一 SP7 |
-| **SP2（协作输入，非 §0.3 前置）** | SP2 正文已 3/3 PASS，锚 `53e4a2a` | 消费 immutable dispatch snapshot 与 WRK task snapshot；不得改 WRK 状态语义 | 接口 conformance 未就绪时用固定 fixture，不接真实派发 |
+| **SP2（协作输入，非 §0.3 前置）** | SP2 正文已 3/3 PASS，锚 `53e4a2a`；其 §3.3 是 §11.6 快照的引用侧 | SP3 以 SpecDoc §11.6 表为字段全集权威源；消费 WRK task snapshot，但不采信 SP2 自列字段替代 §11.6 | SP2 与 §11.6 字段差异未裁前，用 §11.6 表逐项 fixture，不接真实派发 |
 
 冻结证据与消息状态分层：设计可在 seam 明确时推进；实现开工门必须有可取 verdict/接口证据，不以本合同代填。
 
@@ -117,7 +119,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `D-SP3-03` | domain 与生命周期 | D0–D3、三条 ingest、晋升/订正、不可变历史 |
 | `D-SP3-04` | visibility 与授权 | 默认 restricted、降级审批、继承取严、放行审计、负测 |
 | `D-SP3-05` | 固化判型与来源 | 条目类型、四类权威源、运行时取边界、导入/链接 |
-| `D-SP3-06` | 上下文装载 | 新 Spawn、dispatch 字段全集、重灌、snapshot 不可变 |
+| `D-SP3-06` | 上下文装载 | 新 Spawn；以 SpecDoc §11.6 派发快照表为字段全集唯一权威源，增删以该表为准；正文按表逐字段给拒绝/重灌判据；snapshot 不可变 |
 | `D-SP3-07` | 锚与生命周期 | 四锚判据、多锚 OR、active/suspect/archived、reverify |
 | `D-SP3-08` | 检索与排序 | 先过滤、scope∩visibility、降权、cursor、拒绝语义、审计 |
 | `D-SP3-09` | 四接口合同 | schema/effect/auth/idempotency/generation/tx/error/audit |
@@ -152,7 +154,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `AC-SP3-05` | 四维模型与 KBDoc.Meta | 四维不互推；字段/枚举/默认值/约束齐 | 数据是否已迁移 |
 | `AC-SP3-06` | 三条 ingest 与 revision | 无旁路写入；订正不改历史 | curator 判断质量 |
 | `AC-SP3-07` | visibility 与引用 | 默认 restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
-| `AC-SP3-08` | context snapshot | 字段全集、不可变、空上下文重灌、缺字段拒绝 | 信息是否足够的人审结论 |
+| `AC-SP3-08` | SpecDoc §11.6 派发快照字段表逐项（增删以该表为准） | 每字段有构造/缺失拒绝/重灌判据；snapshot 不可变 | 字段齐备后信息是否足够的人审结论 |
 | `AC-SP3-09` | anchors 与生命周期 | 四锚分判、多锚 OR、连续两版本 archived | 外部替代锚质量 |
 | `AC-SP3-10` | 检索全链 | 过滤先于检索、suspect 降权、deny 不伪装空集 | relevance 质量 |
 | `AC-SP3-11` | 4 接口与复用映射 | auth/idempotency/generation/tx/error/audit 及正反例齐 | provider 性能 |
@@ -174,6 +176,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | SpecDoc 自身矛盾 | 登记精确章节、两种后果与建议，交 coordinator/业主，不自行取舍 |
 | SpecDoc 与目标架构冲突 | 登记双方锚与影响，交裁，不设私有优先级 |
 | 与 SP1/SP2 seam 对撞 | 停止该路径，登记接口差异；不改已收口件 |
+| SpecDoc §11.6 与 SP2 §3.3 snapshot 字段不一致 | 已登记：§11.6 有 `envelope_ref`、acceptance 锚、上下文版本等，SP2 另列 AccessCtxRef/task/node/generation；交 coordinator/业主裁定由 SP2 补齐或更新 §11.6，SP3 不自行取舍 |
 | 目标与 datad/kb 现状冲突 | 记 retain/adapt/rewrite 差距；旧实现不升级为目标规则 |
 | 合同范围或机器集合变化 | bump 合同并重走三方评审，未过不写正文 |
 

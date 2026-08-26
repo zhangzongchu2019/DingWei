@@ -21,6 +21,8 @@ grep -q '<!-- EVENT-SET-SP3: NOT_APPLICABLE -->' "$SPEC" || { echo '✗ KNO even
 EVENT_N=$(git show "$ANCHOR:docs/dingwei-platform-architecture.md" | grep -Ec '^\| `EV-KNO-[^`]+` \| KNO \|' || true)
 [ "$EVENT_N" -eq 0 ] || { echo "✗ KNO event 空面与架构实数冲突：$EVENT_N"; exit 2; }
 for dep in SP1 SP7a SP7b SP2; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置处置缺 $dep"; exit 1; }; done
+grep -q '§11.6 派发快照表为字段全集唯一权威源' "$SPEC" || { echo '✗ snapshot 字段权威源未钉为 §11.6'; exit 1; }
+grep -q 'SpecDoc §11.6 与 SP2 §3.3 snapshot 字段不一致' "$SPEC" || { echo '✗ snapshot 字段冲突未登记'; exit 1; }
 ACTIVE=$(sed -n '/^### 4\.1 评审协议/,/^## 5\./p' "$SPEC")
 printf '%s\n' "$ACTIVE" | grep -q '最多 4 轮' || { echo '✗ 生效协议缺 4 轮上限'; exit 1; }
 ! printf '%s\n' "$ACTIVE" | grep -q '6 轮' || { echo '✗ 生效协议残留 6 轮'; exit 1; }
