@@ -1,9 +1,9 @@
-# DingWei SP8 授权与平台治理设计 v1.3
+# DingWei SP8 授权与平台治理设计 v1.4
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp8-design` |
-| **版本** | v1.3 |
+| **版本** | v1.4 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | 组合冻结：SpecDoc `4220195`（v3.73）；架构/原型/SP0–SP3/代码基线 `6a98629` |
 | **合同锚** | `5241152`（`specs/sp8/spec.md` v1.4 ＋ 证据件） |
@@ -12,6 +12,8 @@
 | **评审** | `zzc-chatgpt56soltchangshark-2642`、`zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
 
 > 本件定义 GOV 治理面的目标设计与 SP7b 迁移合同，不声称批准链、grant 签发、分发闸或迁移已实现。
+> v1.4：高危固定 dual＋second_factor 且按 signer 逐人判；claim 幂等与扣额分两支、revoke 覆盖三态；
+> 跨库改为「同步权威 fence，否则只允许同库 UoW」；跨行条件移出行 CHECK 并各配对账。
 > v1.3：补回 §23.5「范围」列（动作→档位）并做成全序可求值的 classify 函数，未命中 fail-closed 按高危。
 > v1.2：把审批层级从单枚举拆成 `signature_count`＋`factor_requirement` 两个正交分量，三档逐档映射、次因子不再悬空。
 > v1.1：按首轮评审补 GOV 目标 schema（D-SP8-12 §12.2/§12.2a）与 grant/challenge 状态机、原子 claim、
@@ -66,11 +68,14 @@ Agent 只入 audit provenance。缺 AccessCtx、缺 grant、grant 过期/吊销/
 |---|---|---|---|
 | 单签 | `single` | `single_factor` | 低危：可终结（＋一次性 challenge）|
 | **次因子** | `single` | **`second_factor`** | 中危：**渠道可发起，须次因子确认后方可终结** |
-| 重两签 | **`dual`**（两个独立合格 principal）| 由敏感度另定，至少 `single_factor` | 高危：**渠道只能发起、不能终结**，须回强身份面 |
+| 重两签 | **`dual`**（两个独立合格 principal）| 🔴 **`second_factor`，且两名 signer 各自满足** | 高危：**渠道只能发起、不能终结**，须回强身份面 |
 
 🔴 **两个分量各自取严，不得互相抵扣**：
 **次因子不是重两签的替代品**——「已做次因子确认」**不得**用来把 `dual` 降回 `single`。
 恒零：以次因子为由跳过重两签而生效的次数。
+🔴 **高危固定 `dual` ＋ `second_factor`，且 assurance 按 signer 逐人判**——「回强身份面」是对**每个签字人**的要求，
+不是对批次整体的一句话。恒零：**以 `dual` ＋ `single_factor` 终结高危的次数**；
+负测：两名单因子 principal 联合签高危批次 → 必拒；一名达 `second_factor`、另一名未达 → 同样必拒。
 
 ### 2.2 反例（恒零）
 
@@ -293,11 +298,32 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
 - **单次与限次统一表达**：`use_limit INT NOT NULL DEFAULT 1 CHECK(use_limit>=1)`、`used_count INT NOT NULL DEFAULT 0 CHECK(used_count<=use_limit)`；
   `remaining = use_limit - used_count`；**不再有 `single_use` 布尔**（`single_use` ≡ `use_limit=1`），消除上一版"宣称限次、形状只有布尔"的自相矛盾；
 - **绑定面**（缺一不可）：`enterprise_id`、`audience`（消费主体：principal 或受控 service identity）、`effect_target_digest`（待执行 effect 的规范化摘要）、`scope`、`expires_at`、`generation`；
-- **消费是原子 claim，不是"检查未消费"**：
-  `INSERT INTO grant_use(grant_id, claim_key, claimed_by, claimed_at) VALUES(...) ON CONFLICT (grant_id, claim_key) DO NOTHING` 与
-  `UPDATE effect_grant SET used_count=used_count+1 WHERE grant_id=:g AND state='issued' AND used_count<use_limit AND expires_at>now() AND generation=:gen`
-  **在同一事务内**，两句任一影响行数为 0 ⇒ 整笔拒绝。⇒ **两个并发消费者不可能同时通过**：`grant_use` 的唯一键与 `used_count<use_limit` 的条件更新共同构成串行化点。
-- `claim_key` 由消费侧的 `request_id` 派生 ⇒ **同一 request 重放得到同一 claim**（幂等），不同 request 各占一次配额。
+- **消费路径分两支，先判是否新 claim，再决定要不要扣额**（上一版把两支写成一句，自相矛盾，本版拆开）：
+
+```sql
+-- ① 尝试登记 claim（payload_digest 为消费侧规范化载荷的摘要）
+INSERT INTO grant_use(grant_id, claim_key, payload_digest, claimed_by)
+VALUES (:g, :k, :d, :p)
+ON CONFLICT (grant_id, claim_key) DO NOTHING
+RETURNING use_id;
+```
+
+- **① 返回行 ⇒ 新 claim**：同事务内原子扣额，**达上限在同一语句内置 `exhausted`**：
+```sql
+UPDATE effect_grant
+   SET used_count = used_count + 1,
+       state = CASE WHEN used_count + 1 >= use_limit THEN 'exhausted' ELSE state END
+ WHERE grant_id = :g AND state = 'issued'
+   AND used_count < use_limit AND expires_at > now() AND generation = :gen
+RETURNING used_count, state;
+```
+  影响行数为 0 ⇒ **整笔回滚**（含 ①），返回 `GRANT_UNAVAILABLE`（超限/过期/已吊销/代际不符）。
+- **① 无返回（冲突）⇒ 重放**：读取既有 `grant_use` 行，比对 `payload_digest`：
+  - **相同** ⇒ 返回**既有 claim 与其 outcome**，🔴 **不再扣额**（这才是幂等，且与"新 claim 才扣额"不冲突）；
+  - **不同** ⇒ `IDEMPOTENCY_CONFLICT`，不扣额、不覆盖既有行。
+
+⇒ 两个并发**新** claim：`(grant_id, claim_key)` 唯一键 ＋ 条件更新构成串行化点，只有一个能扣到最后一份配额；
+两个并发**重放**：都走冲突分支，返回同一既有 outcome，`used_count` 不变。
 
 **authorization_decision**：`draft → decided(approved|rejected)`，`path_axis` 与层级两分量 `signature_count`／`factor_requirement` 分列（D-SP8-02 §2.1a），决定后不可改，更正走新版本 ＋ `supersedes`。
 
@@ -315,18 +341,39 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
 1. 消费域先 **claim**（11.1 原子块）→ 拿到 `grant_use.id`；
 2. 执行 effect，把 `grant_use.effect_result` 置 `succeeded | failed | unknown`；
 3. **`unknown` 不猜成功**：进入 reconcile，由消费域按其既有 reconcile 语义收敛（WRK/CAP 各自已有），GOV 侧只保留 claim 事实与最终回填；
-4. **revoke 与 consume 的竞态**：`revoke` 用 CAS `WHERE state='issued'`；
-   - revoke 先成功 ⇒ 后续 claim 的条件更新影响行数为 0 ⇒ 拒绝；
-   - claim 先成功、revoke 后到 ⇒ **不回滚已发生的 effect**，而是记 `revoked_after_use` 并**要求消费域给出回退动作**（与紧急通道补审否决同一处理路径）；**不得静默丢弃**。
+4. **revoke 必须覆盖三态**（上一版只写 `WHERE state='issued'`，把"部分已用/已耗尽"漏在外面）：
 
-### 11.4 跨 GOV/WRK 的"同一事务"到底是什么
+| 吊销时的实际态 | 判别 | CAS 与记录 | 后续义务 |
+|---|---|---|---|
+| **未用** | `state='issued' AND used_count=0` | `UPDATE … SET state='revoked' WHERE grant_id=:g AND state='issued' AND used_count=0 AND generation=:gen` | 无 effect 发生，仅落账 |
+| **部分已用** | `state='issued' AND used_count>0` | 同上但条件 `used_count>0`；`grant_revocation` 记 `prior_state`、`used_count_at_revoke`、`revoked_after_use=true` | 🔴 **消费域必须给出回退动作**（与紧急通道补审否决同一路径），不得静默丢弃 |
+| **已耗尽** | `state='exhausted'` | `WHERE state='exhausted' AND generation=:gen` ⇒ `revoked` | 同上；**"已耗尽"不等于"不用管"** |
 
-SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在同一库，故本件给**两形态合同**，实现期二选一并在交付回执写明选了哪个：
-- **形态 A（同库 unit-of-work）**：收口与 `spec_preauth` 置 `expired` 在同一 DB 事务内提交；
-- **形态 B（transactional outbox ＋ 幂等消费）**：WRK 收口在其事务内写 outbox 事件；GOV 消费者以
-  `(spec_preauth_id, closeout_ref)` 为幂等键 CAS 置 `expired`；**在消费落地之前，读侧一律 fail-closed**——
-  即"存在收口事实但尚未落 expired"时，消费侧**按已失效处理**，不得放行。
-🔴 两形态的共同不变量：**不存在"收口已发生而预授权仍可用"的可观察窗口**。
+   - revoke 先成功 ⇒ 后续新 claim 的条件更新影响 0 行 ⇒ 拒绝（重放分支仍返回既有 outcome，不复活配额）；
+   - claim 先成功、revoke 后到 ⇒ **不回滚已发生的 effect**，按上表落 `revoked_after_use` 并挂回退义务。
+
+### 11.4 跨 GOV/WRK 的「同一事务」：outbox 不能当判定依据
+
+SpecDoc 要求发版收口与预授权失效「同一事务」。上一版给的形态 B（transactional outbox ＋ 幂等消费）
+**证明不了「不存在收口后预授权仍可用的窗口」**——outbox 只保证**最终**投递；
+WRK 已提交 closeout 而 GOV 尚未消费的那段时间里，GOV 既看不到 closeout 事实、也还没有 `preauth_expiry` 行，
+读侧的「fail-closed」**根本没有触发条件**。这是上一版的实质错误，本版改掉。
+
+**形态 A（默认，且是唯一无条件允许的形态）**：收口与 `spec_preauth` 置 `expired` 在**同一 DB 事务**内提交。
+
+**形态 B（跨库，仅在同时满足下列条件时允许）**：
+1. 🔴 **判定依据不是 outbox，而是同步权威 fence**：授权读取路径在**判定时刻**对 WRK 侧做**可线性化**查询
+   （`closeout_exists(spec_ref, version_anchor)` 或读取权威 `closeout_high_water`），**以该结果为准**；
+2. 🔴 **fence 查询失败、超时或结果不确定 ⇒ fail-closed 拒绝授权**，不得回退到「本地没看到 expiry 就放行」；
+3. outbox 仅用于**补偿落账**（补齐 `preauth_expiry` 行，供审计与对账），**不作为判定依据**；
+4. 对账恒零：存在 closeout 事实但缺 `preauth_expiry` 行且已超过补偿 SLA 的条目数。
+
+> **等价的第三条路**（若两库确实无法同步查询）：**closeout 侧延后可见**——
+> WRK 的 closeout 在收到 GOV 失效 ack 之前对外不可见。该路把窗口挪到 WRK 侧并由其承担，
+> 需 SP2 同意并登记，**本件不单方指定**。
+
+负测：**注入 outbox 延迟窗口**（closeout 已提交、消费未落地）时发起授权 ⇒ **必须被拒**；
+fence 查询超时 ⇒ 必须被拒；补偿落账后重放同一授权 ⇒ 仍按已失效处理。
 
 ### 11.5 四接口逐项合同
 
@@ -385,7 +432,7 @@ SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在�
 | `challenge` | `challenge_id` | `pending_ref` | `(pending_ref, state) WHERE state='issued'`（同一待批项同时只允许一个可用凭据） | `state ∈ {issued,consumed,expired,superseded}`；`expires_at` NOT NULL | `(state, expires_at)` | 状态只前进，不回退 |
 | `batch` | `batch_id` | —— | `manifest_digest` | `state ∈ {draft,pending,approved,rejected}`；`required_signatures ∈ {1,2}` | `(state)` | `manifest` 冻结后不可改 |
 | `batch_item` | `(batch_id, item_seq)` | `batch_id` | `(batch_id, item_ref)` | `risk ∈ {normal,high}`；`impact_report_ref` NOT NULL | `(batch_id)` | append-only |
-| `batch_signature` | `signature_id` | `batch_id` | **`(batch_id, signer_principal)`** | `signer_principal ≠ batch.proposer` ；签名覆盖 `manifest_digest` | `(batch_id)` | append-only |
+| `batch_signature` | `signature_id` | `batch_id` | **`(batch_id, signer_principal)`** | 行级 CHECK 只约束本行（签名格式、`manifest_digest` 非空、`assurance_ref` 非空）；**`signer ≠ proposer` 与「签数达标」是跨行/跨表条件，归 §12.2b，不由行 CHECK 承担** | `(batch_id)` | append-only |
 | `effect_grant` | `grant_id` | `batch_id`、`enterprise_id` | `(batch_id, audience, effect_target_digest)` | `state ∈ {issued,exhausted,revoked,expired}`；`use_limit>=1`；`used_count<=use_limit`；`expires_at` NOT NULL | `(state, expires_at)`、`(audience)` | 签发后 scope/audience/target 不可改 |
 | `grant_use` | `use_id` | `grant_id` | **`(grant_id, claim_key)`** | `effect_result ∈ {succeeded,failed,unknown}` | `(grant_id)`、`(effect_result)` | append-only；结果回填一次 |
 | `grant_revocation` | `revocation_id` | `grant_id` | `(grant_id)` | `reason` NOT NULL；`revoked_after_use` bool | `(grant_id)` | append-only |
@@ -401,6 +448,22 @@ SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在�
 3. `emergency_release` 必有对应 `emergency_review`，否则计入"未进入下一批次补审"恒零计数器；
 4. 任一 `challenge` 消费必对应一条 `authorization_decision`；
 5. `preauth_expiry` 存在 ⇒ 该 `preauth` 的读侧一律按 `expired` 处理（D-SP8-11 §11.4 的读侧 fail-closed）。
+
+### 12.2b 跨行/跨表条件由受控写路径保证，不冒充行级 CHECK
+
+PG 的行级 `CHECK` **看不到别的行、也看不到别的表**，故下列条件**不得**写成 CHECK
+（上一版把 `signer ≠ proposer` 放进 CHECK 列，是形状错误）：
+
+| 条件 | 强制手段（写路径 / 触发器，二选一但须明写选哪个） | 兜底对账（恒零） |
+|---|---|---|
+| `signer_principal ≠ batch.proposer` | 同事务 `SELECT proposer FROM batch WHERE batch_id=:b FOR SHARE` 后断言；或 `AFTER INSERT` 触发器校验并 `RAISE` | 存在 `signer = proposer` 的签名行数 |
+| 同一 principal 不得凑两签 | **唯一键 `(batch_id, signer_principal)`**——这一条确实是可靠约束 | —— |
+| `count(distinct signer) >= required_signatures` 才能进 `approved` | 条件更新：`UPDATE batch SET state='approved' WHERE batch_id=:b AND state='pending' AND (SELECT count(*) FROM batch_signature WHERE batch_id=:b) >= required_signatures`，**影响 0 行即拒**；或触发器推进 | 处于 `approved` 但签名数不足的批次数 |
+| 高危批次每名 signer 各自达 `second_factor` | 写路径校验 SP1 assurance 结论并落 `assurance_ref` | 高危批次中 `assurance` 未达标的签名行数 |
+| `effect_grant` 只能由已 `approved` 且签数达标的批次派生 | 签发路径同事务复算上述条件 | 来源批次非 `approved` 的 grant 数 |
+
+🔴 **约束、触发器、对账三者分工不得互相冒充**：能用唯一键的用唯一键；跨行的写路径或触发器兜；
+无论选哪种，**对账查询都要有**——它是"实现是否真按写路径走"的唯一事后证据。
 
 ### 12.2a SP7b 五列：逐对象对应上表
 
@@ -421,9 +484,14 @@ SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在�
 - 预授权：禁用词与三字段空缺扫描、失效三触发用例；
 - challenge：重放 / 摘要不符 / 过期三类负测；
 - 签数：含高危项批次单签必拒、**同一 principal 凑双签必拒**、拆批不降级用例；
-- 并发：**两个消费者同时 claim 同一 grant，只有一个成功**；`use_limit` 用尽后再 claim 必拒；
+- 并发：**两个消费者同时新 claim，只有一个扣到最后一份配额**；**同 `claim_key` ＋ 同载荷重放 ⇒ 返既有 outcome 且 `used_count` 不变**；
+  **同 `claim_key` ＋ 异载荷 ⇒ `IDEMPOTENCY_CONFLICT` 且不扣额**；用尽后再 claim 必拒且 `state='exhausted'`；
+  **claim↔revoke 两个顺序各自期望**（revoke 先 ⇒ 新 claim 拒；claim 先 ⇒ 记 `revoked_after_use` 并挂回退义务）；
   challenge 重放/过期/摘要不符三类在同一 CAS 谓词内被拒；revoke 与 claim 交叉的两个顺序各有期望；
-- 跨域事务：形态 A/B 二选一的实证（同库 unit-of-work 或 outbox 幂等消费），并证明**不存在"收口已发生而预授权仍可用"的窗口**；
+- 跨域事务：形态 A（同库 UoW）为默认；若选形态 B，须实证**同步权威 fence 生效**——
+  **注入 outbox 延迟窗口后授权必须被拒**、**fence 超时必须被拒**，并给对账（closeout 有而 expiry 缺超 SLA 的条目恒零）；
+- 高危认证强度：**`dual` ＋ `single_factor` 终结高危必拒**；一名达 `second_factor`、另一名未达 ⇒ 同样必拒；
+- 批签跨行条件：`signer = proposer` 必拒；签名数不足而进入 `approved` 必拒（两者另有恒零对账）；
 - 紧急通道：允许/禁止两张表逐项用例、`uninstall` 必拒、fallback 缺失必拒；
 - 分发面：五闸各一正一反、只读角色调高危端点必拒、未批准即下发必拒；
 - 职责分离：审计 `dw.actor`、属主单点、审计介质不可写、备份/副本加密与审批；
@@ -523,6 +591,6 @@ SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在�
 | `AC-SP8-08` | 渠道分级（范围×可达步骤）、challenge 与门 PASS 层级 | **四档均给「动作→档位」范围枚举**，`classify(action)` 全序可求值且未命中者 fail-closed 按高危；「渠道终结高危授权数恒零」对四档均可求值；分级与可达步骤对应；challenge 三要素齐且重放/摘要不符/过期必拒；门 PASS 层级继承 node 分级、L3 不得由渠道终结 | 危险度评估是否准确 |
 | `AC-SP8-09` | 基线范围与签数 | §24.1 范围可判；签数取批内最高危项、拆批不降级 | 高危认定是否遗漏（人审） |
 | `AC-SP8-10` | 紧急通道 | 按 capability effect 判而非动作名；uninstall 不在允许列；无 fallback 即拒；补审闭环 | 兜底机制实际有效性 |
-| `AC-SP8-11` | 分发面、职责分离与 grant/challenge 并发合同 | 未批准即拒发；批准与执行分权；五闸与角色模型负测齐；**challenge 与 grant 的消费均为原子 CAS/唯一 claim（并发只许一个成功）**；单次≡`use_limit=1`、超限/过期/已吊销必拒；双签为签名集合且两个独立合格 principal；revoke↔consume 竞态与 `unknown` 效果各有定义路径 | 真实并发下的实现正确性 |
-| `AC-SP8-12` | GOV 目标 schema ＋ SP7b 五列与证据出口 | 目标表逐表给 PK/FK/unique/check/index/RLS 与不可变性，五条跨表不变量成立；五列逐对象对应目标表；设计 PASS 不升级实现 PASS | 实际迁移与运行结果 |
+| `AC-SP8-11` | 分发面、职责分离与 grant/challenge 并发合同 | 未批准即拒发；批准与执行分权；五闸与角色模型负测齐；**新 claim 才扣额、重放同载荷返既有 outcome 不再扣额、异载荷报 `IDEMPOTENCY_CONFLICT`**；达上限在同一语句置 `exhausted`；**revoke 覆盖未用/部分已用/已耗尽三态**并挂回退义务；双签为签名集合、两名 signer 各自达 `second_factor`；**跨行条件由写路径或触发器保证并各有对账，不冒充行 CHECK** | 真实并发下的实现正确性 |
+| `AC-SP8-12` | GOV 目标 schema ＋ SP7b 五列与证据出口 | 目标表逐表给 PK/FK/unique/check/index/RLS 与不可变性；**跨行/跨表条件另列强制手段与对账（§12.2b），不写成行 CHECK**；五条跨表不变量成立；五列逐对象对应目标表；设计 PASS 不升级实现 PASS | 实际迁移与运行结果 |
 <!-- ACCEPTANCE-SP8-END -->
