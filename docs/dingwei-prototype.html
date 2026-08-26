@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.41 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.42 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -621,7 +621,7 @@ body.uionly #uihint{display:block}
       <option value="n1204">N-1204 · tenant 派生链 · 4 帖 · 已封存（门 FAIL 亦封）</option>
     </select></h3>
 
-  <div class="note" data-edit>字段集以 <b>§18.1</b> 为准（12 列，含 digest 序列规则）；下方 7 列为<b>当初反推所得</b>，已被 §18.1 取代 —— ⚠️ <b>SpecDoc 未正面定义</b>，
+  <div class="note" data-edit>字段集以 <b>§18.1</b> 的 <code>POST-COLUMNS</code> 权威块为准（<b>19 列</b>，含 digest 序列规则）；下方为<b>当初反推所得的旧字段集</b>，已被 §18.1 取代 —— ⚠️ <b>SpecDoc 未正面定义</b>，
   此处为<b>当初</b>由 §18.6 的 digest 覆盖范围（<code>tenant/node/seq/actor/ts/content</code>）＋ §18.3 去重用的 <code>post_id</code> <b>反推</b>得出。见屏底缺口说明。</div>
 
   <div id="pn1163" class="ps">
@@ -763,7 +763,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：帖子结构当初为何靠反推 <span class="ref">§18.1 已正面定义</span></h3>
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §18.1 已正面定义 12 列字段集与 digest 序列规则</b>。
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §18.1 已正面定义 <b>19 列</b>字段集与 digest 序列规则，且列集由 <code>POST-COLUMNS</code> 权威块唯一提取</b>。
 </div>
   
   <div class="note bad" data-edit>§18.1 全节仅一句：「帖子正文须独立表，不得塞进事件表」——<b>没说这张表有什么列</b>。

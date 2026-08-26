@@ -44,14 +44,26 @@ check() {
     _bad=1
   fi
   if [ -f "$PROTO" ]; then
-    _pn=$(grep -oE '以 §18\.1 为准[^0-9]{0,12}([0-9]+) *列' "$PROTO" | grep -oE '[0-9]+ *列' | grep -oE '[0-9]+' | head -1)
-    if [ -n "${_pn:-}" ] && [ "$_pn" != "$_an" ]; then
-      echo "✗ 原型自述列数 $_pn ≠ §18.1 权威清单列数 $_an —— 「以 §18.1 为准」无处落"
-      _bad=1
+    # 🔴 v2（丙域升阻断 ＋ 归口方复核后自查）：v1 只认「以 §18.1 为准（N 列」这一种写法，
+    #   而原型实际有两种（"以 §18.1 为准（12 列" / "§18.1 已正面定义 12 列"），**一处都没匹配上**；
+    #   更坏的是 v1 在零命中时**跳过并打印「原型自述 $(printf "%s" "$_pl" | tr "\n" "/") 列逐个已核」** —— 🔴 **空集当通过，还自称已核**。
+    #   本席刚立的 GATE-CONTRACT 通则，本席自己的闸就在违反。
+    #   ⇒ v2 改为：取【与 §18.1 同行】的所有「N 列」，逐个比对；**一处都取不到即 UNKNOWN(exit 2)**，不折叠为 PASS。
+    _pl=$(grep -n '§18\.1' "$PROTO" | grep -oE '[0-9]+ *列' | grep -oE '[0-9]+' | sort -u)
+    if [ -z "$_pl" ]; then
+      echo "✗ 原型中未取到任何与 §18.1 同行的列数自述 —— 取不到就不能报「已核」（GATE-CONTRACT 三态：UNKNOWN 不折叠为 PASS）"
+      rm -f /tmp/.pc$$ /tmp/.pa$$ 2>/dev/null
+      return 2
     fi
+    for _pn in $_pl; do
+      if [ "$_pn" != "$_an" ]; then
+        echo "✗ 原型自述列数 $_pn ≠ §18.1 权威清单列数 $_an —— 「以 §18.1 为准」无处落"
+        _bad=1
+      fi
+    done
   fi
   [ "$_bad" -gt 0 ] && { echo "  ⇒ 🔴 判据与被判物必须同源可算：清单是唯一提取点，表格与原型都须与它对齐。"; return 1; }
-  echo "  ✓ §18.1 列集三处一致（权威清单 $_an 列，表格 $_tn 列，原型自述已核）"
+  echo "  ✓ §18.1 列集三处一致（权威清单 $_an 列，表格 $_tn 列，原型自述 $(printf "%s" "$_pl" | tr "\n" "/") 列逐个已核）"
   echo "  ⚠️ 本闸判【三处是否一致】，🔴 判不了【列定义对不对】（该不该有某列、该不该入 digest）—— 归门方。"
   return 0
 }
@@ -83,6 +95,19 @@ selftest() {
 
   mk "a b c" ""; mkp 3; SPEC="$T/s.md" PROTO="$T/p.html" sh "$SELF" >/dev/null 2>&1
   [ $? -eq 2 ] && ok "🔴 清单块为空 ⇒ exit 2（取不到就不能报通过）" || bad "空清单却报通过"
+
+  # 🔴 v2 反测：原型有【多种写法】时须逐个比对（v1 只认一种，两处都没匹配上）
+  mk "a b c" "a b c"
+  { printf '以 §18.1 为准（3 列）\n'; printf '§18.1 已正面定义 12 列字段集\n'; } > "$T/p.html"
+  SPEC="$T/s.md" PROTO="$T/p.html" sh "$SELF" >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "🔴 原型多种写法：只要有一处列数不符即拒（v1 漏检了另一种写法）" \
+                || bad "另一种写法的过期列数被漏检"
+
+  # 🔴 v2 反测：原型中一处列数自述都取不到 ⇒ UNKNOWN(exit 2)，不得报「已核」
+  mk "a b c" "a b c"; printf '本屏不提列数\n' > "$T/p.html"
+  SPEC="$T/s.md" PROTO="$T/p.html" sh "$SELF" >/dev/null 2>&1
+  [ $? -eq 2 ] && ok "🔴 原型列数自述取不到 ⇒ exit 2，不折叠为 PASS（v1 在此跳过并打印「已核」）" \
+                || bad "零命中却报已核 —— 空集当通过"
 
   SPEC="$T/nofile.md" sh "$SELF" >/dev/null 2>&1
   [ $? -eq 2 ] && ok "🔴 件缺失 ⇒ exit 2" || bad "件缺失却报通过"
