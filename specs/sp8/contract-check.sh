@@ -40,6 +40,9 @@ grep -q '差集派生' "$SPEC" || { echo '✗ GOV 同域差集派生规则未落
 grep -q '部分认领的入口不得整块扣除' "$SPEC" || { echo '✗ 「部分认领不得整块扣除」未落为判据'; exit 1; }
 grep -q '`s1`' "$SPEC" || { echo '✗ 合同未点名 s1 的归属处置'; exit 1; }
 grep -q '只读消费、不改其语义' "$SPEC" || { echo '✗ 未写明对 SP0 已认领切片的只读口径'; exit 1; }
+# opus50 复核要求①：s1 的批准权那一片必须有实体落点（不能只进集合）
+grep -qE '^\| `D-SP8-08` \|.*`s1`' "$SPEC" || { echo '✗ `s1` 批准决策屏在 D 表无实体落点'; exit 1; }
+grep -q '只把 `s1` 放进集合不算认领' "$SPEC" || { echo '✗ 未写明「进集合≠有落点」的落点约束'; exit 1; }
 DIFF=$(git show "$BASE_ANCHOR:docs/dingwei-sp0-design.md" | python3 -c '
 import re,sys
 t=sys.stdin.read(); m=re.search(r"COVERAGE-SP0-BEGIN -->(.*?)<!-- COVERAGE-SP0-END",t,re.S)

@@ -48,6 +48,11 @@ def count_gov_events(text):
         if re.match(r'^\| `EV-GOV-[^`]+` \| GOV \|',l): n+=1
     return n
 
+def partial_guard(ui_after,partial):
+    """守卫：部分认领的入口必须仍在集合内。返回错误串或空串。"""
+    lost=sorted(x for x in partial if x not in ui_after)
+    return ('✗ 部分认领的入口被整块扣除：'+','.join(lost)+'（切片之外将无人认领）') if lost else ''
+
 def sp0_claims(text):
     """拆 SP0 的原型入口认领：完整认领 vs 部分认领（认的只是入口内某几类条目）。
     判据取自认领单元格 id 之后的限定词：带「中的/仅/部分/两类/之一」者判为切片认领。"""
@@ -103,9 +108,8 @@ def expected_sets():
     # 🔴 只扣「完整认领」的入口。部分认领（SP0 认的是入口内的某几类条目）不得整块扣除，
     # 否则该入口内切片之外的部分两边都不认领，双方却都报未知 0。
     ui=[x for x in ui if x not in full]
-    lost=[x for x in partial if x not in ui]
-    if lost:
-        print('✗ 部分认领的入口被整块扣除：'+','.join(sorted(lost))+'（切片之外将无人认领）'); raise SystemExit(2)
+    bad_lost=partial_guard(ui,partial)
+    if bad_lost: print(bad_lost); raise SystemExit(2)
     proto_ids=set(re.findall(r'<section\s+class="scr[^"]*"\s+id="([^"]+)"',proto))
     absent=sorted(x for x in ui if x[4:] not in proto_ids)
     if absent: print('✗ 架构 §13 GOV 入口在原型不存在：'+','.join(absent)); raise SystemExit(2)
@@ -134,17 +138,25 @@ def inspect(text,quiet=False):
     if not m:
         if not quiet: print('✗ COVERAGE-SP8 结构化块缺失')
         return 2
-    actual=set()
+    actual=set(); land={}
     for l in m.group(1).splitlines():
         if not l.startswith('|'): continue
         c=[x.strip() for x in l.strip().strip('|').split('|')]
         if len(c)!=2: continue
         token=c[0].lstrip('`').split('`',1)[0]
-        if re.search(r'\bD-SP8-\d{2}\b',c[1]): actual.add(token)
+        if re.search(r'\bD-SP8-\d{2}\b',c[1]):
+            actual.add(token); land[token]=set(re.findall(r'D-SP8-\d{2}',c[1]))
     bad=False
     for k,want in expected.items():
         got=actual & want; unknown=sorted(want-got); bad|=bool(unknown)
         if not quiet: print(f'[{k}] 预期={len(want)} 实检={len(got)} 未知={len(unknown)} {unknown}')
+    # 🔴 s1 是批准/待决决策发生的屏：只把它放进集合不算认领，落点必须落在批准面的 D 块上。
+    APPROVAL_BLOCKS={'D-SP8-08','D-SP8-11'}
+    if 'UI:#s1' in expected['prototype']:
+        got=land.get('UI:#s1',set())
+        if got and not (got & APPROVAL_BLOCKS):
+            if not quiet: print(f'✗ `s1` 落点 {sorted(got)} 不在批准面（须含 {sorted(APPROVAL_BLOCKS)} 之一）：批准决策屏无实体落点')
+            bad=True
     err=recusal_scan(text,'正文')
     if err:
         if not quiet: print(err)
@@ -171,7 +183,7 @@ def inspect(text,quiet=False):
     return 1 if bad else 0
 
 def fixture():
-    rows=[f'| `{x}` | `D-SP8-12` |' for g in expected.values() for x in sorted(g)]
+    rows=[f'| `{x}` | `D-SP8-08` |' if x=='UI:#s1' else f'| `{x}` | `D-SP8-12` |' for g in expected.values() for x in sorted(g)]
     heads='\n'.join(f'## D-SP8-{i:02d} fixture' for i in range(1,13))
     ac='\n'.join(f'| `AC-SP8-{i:02d}` | fixture scope | fixture criterion | fixture boundary |' for i in range(1,13))
     return heads+'\n<!-- COVERAGE-SP8-BEGIN -->\n| 来源 | 设计落点 |\n|---|---|\n'+'\n'.join(rows)+\
@@ -194,6 +206,14 @@ if mode=='--selftest':
         print('  ✓ §6 外 GOV 行不得污染接口集合；GOV 事件面实算恒为 0')
     else:
         print('  ✗ 跨表行污染 GOV 接口集合或事件实算异常'); fail=1
+    n+=1
+    synth=sp0.replace('| `#b1` 分级对齐 |','| `#s8` 平台治理中的 batch decision 一类 |',1)
+    fS,pS=sp0_claims(synth)
+    buggy=[x for x in ('UI:#s1','UI:#s8','UI:#s8r','UI:#s8h') if x not in (fS|pS)]  # 模拟旧口径：连部分认领一起扣
+    if 'UI:#s8' in pS and partial_guard(buggy,pS) and not partial_guard(['UI:#s1','UI:#s8','UI:#s8r','UI:#s8h'],pS):
+        print('  ✓ 合成样例：上游只认领 `s8` 的一个切片时，整块扣除会被闸拦下；不扣则放行')
+    else:
+        print('  ✗ 合成样例未拦住：部分认领守卫无牙'); fail=1
     n+=1
     f0,p0=sp0_claims(sp0)
     stripped=sp0.replace('typed 待决队列中的 spec_fix/spec_claim','typed 待决队列')
@@ -222,6 +242,8 @@ if mode=='--selftest':
     test('正文普通段引用 §11.6a 而无回避标记必须转红',base+'\n② 运行约束：本节依赖 §11.6a 的证据形状。\n',1)
     test('引用 §11.6b ＋ 逐条回避标记可放行',base+'\n本节依赖 §11.6b。\n<!-- RECUSAL-SP8-REF: AC-SP8-11 -->\n',0)
     test('空挂回避标记而无引用必须转红',base+'\n<!-- RECUSAL-SP8-REF: AC-SP8-11 -->\n',1)
+    s1_bad='\n'.join(l.replace('| `D-SP8-08` |','| `D-SP8-12` |') if l.startswith('| `UI:#s1`') else l for l in base.splitlines())+'\n'
+    test('`s1` 落点挪出批准面必须转红',s1_bad,1)
     test('缺覆盖块判闸坏',base.replace('<!-- COVERAGE-SP8-BEGIN -->',''),2)
     print('--- '+SCOPE_LINE)
     print('--- SP8 预期集合实算 '+' '.join(f'{k}={len(v)}' for k,v in expected.items()))
