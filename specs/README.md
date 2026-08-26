@@ -23,8 +23,10 @@
 | `specs/sp0-1/contract-check.sh` | SP0、SP1 独立合同/目标路径、交付 ID 与冻结输入核验 |
 | `specs/sp0/spec.md` | SP0 总则与定义层独立设计合同（§1–§4、附录 A） |
 | `specs/sp0/contract-check.sh` | SP0 独立范围、六面、交付 ID 与目标路径核验 |
+| `specs/sp0/check.sh` | SP0 正文章节、附录 E、原型入口及交付 ID 的机器派生覆盖核验 |
 | `specs/sp1/spec.md` | SP1 身份与租户地基独立设计合同（四项业主点名范围） |
 | `specs/sp1/contract-check.sh` | SP1 独立范围、六面、交付 ID、四项点名范围与目标路径核验 |
+| `specs/sp1/check.sh` | SP1 正文章节、附录 E、原型入口、交付 ID 与合同红线覆盖核验 |
 | `specs/platform/checklist.md` | 结构域（sol 主笔，26 项） |
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |
