@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `a5abc57ef44960d026e168b63c41a444d7bdce7a` · 分支 `design/addendum-decisions`
+生成自 commit `fcfec9a1f43769ddd831eb4071a2a787624936ea` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.72** | `a5abc57ef44960d026e168b63c41a444d7bdce7a<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5204 / 369567 | `bb4cf7becda882e3bafe35b3c293e0577783c4880b756e013ef861b088d8dcaa` |
+| `dingwei-platform-specdoc.md` | **v3.73** | `fcfec9a1f43769ddd831eb4071a2a787624936ea` | 5204 / 369769 | `66df042ec49e6c7345e5c5cdbe1cf4e7f5c3bbdc94a1c671bb35c588532e8e0f` |
 | `dingwei-prototype.html` | **v1.46** | `f5d0fdafe352ad7bcb08460ca9a5add7133f6c69` | 2905 / 260431 | `0308a24f878a39faf20bb5c1204ec5c0989c6455be105d9eb3ab450a1a0e0269` |
 | `dingwei-architecture-design.md` | **v0.34** | `6aef49bc4859b7c53855f1dfeb3c6132c4cb8134` | 907 / 61596 | `ef54ad86fa9763ef29510ef60a98b5471be0bfadc56b17a1c0fb22d1f593d3e7` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+fcfec9a 收窄 failure_class ＋ 立 §11.6b 终结与未知的证据形态（v3.71 → v3.72）—— 采纳 deepseek 阻断，选 (a)
 a5abc57 §11.6a 补 repro 分类判据（v3.70 → v3.71）—— 采纳 opus50tczc2000 阻断，选方案 2
 4fb34f2 §11.6 按业主裁定更新：字段表对齐实际需要 ＋ FAIL evidence 落成已定义（v3.69 → v3.70）
 f5d0fda 清理失效的 style-ok 注释 8 处 —— 原报 11 处，其中 3 处不是失效，是判据
@@ -34,5 +35,4 @@ f5d0fda 清理失效的 style-ok 注释 8 处 —— 原报 11 处，其中 3 �
 181d7ee 授权根的机器面与散文面分家 —— 文档里的【示例】把后端激活了
 6aef49b 批准锚改丙精确版（不可变 commit ＋ 受保护 ref）＋ 冻结基线整体删除（乙域收尾裁定四件）
 ad10d98 ㉙ 接入侧分支的提交闸/CI 链路（coordinator 裁）—— 一律实跑，只有阻断随分支不同
-a26efb0 受控例外统一到四个使用点 ＋ approval_ref 可验证批准锚（乙域复验 434b8fe 的四件）
 ```

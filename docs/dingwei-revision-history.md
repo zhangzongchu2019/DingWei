@@ -828,3 +828,23 @@ architecture / use-case 判 FAIL 时 `repro` 只能是锚集，而「空上下�
 🔴 **我一路在别人件里治「手写分母／复述条数」，转头就在自己写的规范里写了个「三类」。**
 已改为不带计数的表述（枚举照列，数不写）。**闸比作者可靠，这句不是客套。**
 
+
+### §11.6a 补一句「repro 不得以重发外部 effect 充当」（v3.72 → v3.73）
+
+opus50tczc2000 复核 v3.71 时提了两条**非阻断建议**：
+① `cancelled` 归「机器可复跑类」有问题——主动终止交不出可复跑命令，按字面每个 cancel 都封不了节点；
+② `effect_unknown` 的「复跑」若被读成重发外部 effect，与「未知 effect 进 reconcile 不直接重发」相撞。
+
+🔴 **① 与 ② 在 v3.72 已被【结构性消掉】，不是补丁式修好的**：
+v3.72 采 deepseek 的方案 (a)，把 `cancelled` / `timeout` / `effect_unknown` **整体移出 `failure_class`**，
+另立 §11.6b 各定必填（cancel ＝ 取消 command ref ＋ 受权 principal ＋ reason ＋ effect disposition；
+effect_unknown ＝ reconcile 锚 ＋ 禁止猜 success）。
+⇒ 这三态**已经没有 `repro` 字段**，所以「交不出可复跑命令」与「复跑被读成重发」**都不再可能发生**。
+⚠️ 两位评审各自从不同角度指到了**同一个根**：把非失败态塞进失败枚举。
+**同一个根因被两条独立意见指到，说明它是真的；而结构性收窄比逐条打补丁更省后续轮次。**
+
+**但 ② 背后的隐患对【剩下的】机器可复跑类仍然成立**，故本次补一句：
+`execution_failed` / `dependency_unavailable` 的 `repro` **须是诊断/复现命令，
+不得以「重发那个带外部副作用的操作」充当复现** —— 🔴 **重发是处置手段，不是证据**；
+若 `repro` 内容实为重发外部 effect，该 evidence **不成立**。
+（否则会出现「为了证明失败而再触发一次生产副作用」这种最坏的复现方式。）

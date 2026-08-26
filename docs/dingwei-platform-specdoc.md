@@ -1,4 +1,4 @@
-# DingWei 平台 SpecDoc v3.72 —— 纲领与产品规范
+# DingWei 平台 SpecDoc v3.73 —— 纲领与产品规范
 
 > **性质**：本件是 DingWei 平台**后续阶段的纲领与产品规范**，由业主 2026-08-23 指定整合形成。
 > **效力**：本件生效后，下列四份源件**降为沿革依据**，规范效力以本件为准（对照见附录 D）：
@@ -18,7 +18,7 @@
 > ⇒ 本件**必须先满足自己定义的规范**，否则示范不成立。以下头块按 §5.2 格式填写。
 
 **Spec ID**: `dingwei-platform-specdoc`
-**版本**: v3.72
+**版本**: v3.73
 **评审状态**: ✅ **架构评审 PASS**（判据与经过见 `docs/dingwei-revision-history.md`；以 `docs/DELIVERY-STATUS.md` 为准）
 　　　　　　⚠️ **用例评审 / 交付验证未过** —— 不同的门，见 §5.6
 
@@ -1097,7 +1097,7 @@ architecture / use-case 这类门判 FAIL 时，`repro` 只能是锚集，而「
 
 | `failure_class` | `repro` 可采形态 | 🔴 **不成立**（＝未落账，不得封存、不得放行下游） |
 |---|---|---|
-| `execution_failed` · `dependency_unavailable`〔**机器可复跑类**〕 | 一条**可复跑命令** ＋ 其不可变输入锚 | `repro` 为空，**或**在空上下文中跑不起来 |
+| `execution_failed` · `dependency_unavailable`〔**机器可复跑类**〕 | 一条**可复跑命令** ＋ 其不可变输入锚。🔴 **该命令须是【诊断/复现】命令；不得以「重发那个带外部副作用的操作」充当复现** —— 重发是处置手段，不是证据 | `repro` 为空、在空上下文中跑不起来，**或**其内容实为重发外部 effect |
 | `gate_fail`〔**人审型门**〕 | 一组**不可变输入锚**（`commit` / `blob sha256` / `envelope_ref` / `acceptance` 锚），指向门方作判时所依据的全部材料 | 锚集**缺项**、任一锚**不可解析**，或 `expected`/`actual` **不可复算** |
 
 🔴 **明确不写进规则的一条**：**不要求「另一 principal 依该锚集必得出同一判定」。**
