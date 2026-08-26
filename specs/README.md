@@ -33,6 +33,9 @@
 | `specs/sp3/spec.md` | SP3 上下文与知识库设计合同（§10–§13，含 KNO schema 的 SP7b 责任） |
 | `specs/sp3/contract-check.sh` | SP3 六面、交付/验收 ID、KNO 接口、三票与冻结输入核验 |
 | `specs/sp3/check.sh` | SP3 四类覆盖集合机器派生、结构化落点与正交变异反测；目标件未建时 exit 2 |
+| `specs/sp4/spec.md` | SP4 skill/MCP 体系设计合同（§14–§16，含 CAP schema 的 SP7b 责任）|
+| `specs/sp4/contract-check.sh` | SP4 六面、交付/验收 ID、CAP 接口与事件、前置处置与组合冻结输入核验 |
+| `specs/sp4/check.sh` | SP4 五类覆盖集合机器派生、结构化落点与正交变异反测；目标件未建时 exit 2 |
 | `specs/platform/checklist.md` | 结构域（sol 主笔，26 项） |
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |
