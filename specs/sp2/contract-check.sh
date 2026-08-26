@@ -42,6 +42,8 @@ for reviewer in zzc-opus50tchangshark-2642 zzc-deepseekv4pro08130ca16c13-2642 zz
 done
 grep -q '3/3' "$SPEC" && grep -q 'AC-E05' "$SPEC" || { echo '✗ 三票门未落 AC-E05'; exit 1; }
 for dep in SP0 SP1 SP7a SP7b; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置处置表缺 $dep"; exit 1; }; done
+grep -q '架构 §13.*WRK' "$SPEC" || { echo '✗ 原型入口派生源未钉为架构 §13 WRK 行'; exit 1; }
+for token in 'F.1.2' 'F.1.3' 'F.2 #4' 'delivery.verify' 'A§21'; do grep -q "$token" "$SPEC" || { echo "✗ 附录 F 承接/冲突登记缺 $token"; exit 1; }; done
 
 # 冻结锚派生范围分母；只要求各集合非空并报告实算值，不拿手写分母作真值。
 set -- $(git show "$ANCHOR:docs/dingwei-platform-specdoc.md" | python3 -c '
@@ -60,13 +62,15 @@ for l in ls:
 print(h,e["E.1"],e["E.3"],e["E.4"])
 ')
 for n in "$1" "$2" "$3" "$4"; do [ "$n" -gt 0 ] || { echo '✗ 冻结预期集合为空'; exit 2; }; done
-specs/sp2/check.sh --selftest >/dev/null || { echo '✗ SP2 coverage checker 反测未过'; exit 1; }
+SELFTEST_OUT=$(specs/sp2/check.sh --selftest) || { echo '✗ SP2 coverage checker 反测未过'; exit 1; }
+SELFTEST_N=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP2 覆盖反测 \([0-9][0-9]*\) 项全过$/\1/p')
+[ -n "$SELFTEST_N" ] || { echo '✗ SP2 coverage checker 未报告实算反测数'; exit 2; }
 if DOC=docs/definitely-missing-sp2-design.md specs/sp2/check.sh >/dev/null 2>&1; then
  echo '✗ 目标件缺失被 coverage checker 当通过'; exit 1
 else
  rc=$?; [ "$rc" -eq 2 ] || { echo "✗ 目标件缺失应 rc=2，实际 $rc"; exit 1; }
 fi
 echo '预期集合：六面 + D/AC各12 + WRK接口8 + 四轮 + 三票 + 前置4 + 机器派生 heading/E + coverage反测/缺件'
-echo "实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + headings=$1 / E=$(( $2+$3+$4 ))（$2+$3+$4）+ 4/4 + rc2"
+echo "实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + headings=$1 / E=$(( $2+$3+$4 ))（$2+$3+$4）+ selftest=$SELFTEST_N + rc2"
 echo '未知集合：0'
 echo '✓ SP2 设计合同与冻结输入通过'

@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp2-design` |
-| **合同版本** | v1.4 |
+| **合同版本** | v1.5 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -58,6 +58,12 @@ SpecDoc §0.3 对 SP2 的定义唯一且与目标架构一致：
 
 上述“设计已通过”只允许作为接口设计输入，不构成实现 PASS。若某前置的 reviewer/coordinator 落账尚未齐，
 该缺口留在对应包的开工门；SP2 不代填、不倒签，也不因此停止自身设计。
+
+### 0.7 SYNC IMPACT REPORT（v1.4 → v1.5）
+
+- B1 确认：SP0/SP1 设计 PASS 只作输入，未履约项仍留对应实现开工门，不倒签前置完成。
+- 原型预期集合改由冻结架构 §13 中主责域含 `WRK` 的行机器派生，不再按导航文案猜“相关入口”。
+- 新增附录 F 判据集合，承接 F.1.2、F.1.3、F.2 #4；A§21 悬空引用登记后上交，不自行补造。
 
 ## 1. 六个必备面
 
@@ -131,17 +137,17 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 | `D-SP2-03` | 状态机 | execution/gate/DAG eligibility/封存分轴及全部转换 guard |
 | `D-SP2-04` | 分级与门 | GateSetSnapshot 消费、gate catalog、冲突/subsumption、门方矩阵与防绕过 |
 | `D-SP2-05` | 接口 | 8 个 WRK 接口逐项 schema/effect/auth/idempotency/generation/tx/error/audit |
-| `D-SP2-06` | 调度并发 | mcsd/board seam、owner epoch、CAS、fan-out、迟到结果、outbox/reconcile |
-| `D-SP2-07` | 失败与返工 | execution failed/gate FAIL/blocked/timeout/cancel/revision 分流 |
+| `D-SP2-06` | 调度并发 | mcsd/board seam、owner epoch、CAS、fan-out、迟到结果、outbox/reconcile；承接 F.2 #4 的 agent 择人算法与可复核判据 |
+| `D-SP2-07` | 失败与返工 | execution failed/gate FAIL/blocked/timeout/cancel/revision 分流；承接 F.1.3 短程小任务的可复核交付验证判据 |
 | `D-SP2-08` | 发版 | 八格 node 模板、preprod/prod、观察期门、rollback 判据与七项记录 |
 | `D-SP2-09` | 复盘 | §9 输入与四段输出、版本/锚、回写 SP0 定义层的边界 |
 | `D-SP2-10` | WRK 数据与 SP7b | schema、约束、migration/cutover/rollback、双写/回读、验收门 |
 | `D-SP2-11` | 复用映射 | mcsd/board/dispatch/result_outbox 等 retain/adapt/rewrite/new/retire 与依据 |
-| `D-SP2-12` | 追踪验收 | §5–§9、owner_sp=SP2 的附录 E 行、原型入口、负测与证据出口 |
+| `D-SP2-12` | 追踪验收 | §5–§9、owner_sp=SP2 的附录 E 行、架构 §13 WRK 原型入口、F.1.2 `delivery.verify` 验收门、负测与证据出口 |
 
 `specs/sp2/check.sh` 已随合同先落，正文必须提供 `COVERAGE-SP2-BEGIN/END` 块。检查器只认块内严格两列表格：
 第一列为派生 token，第二列须含真实 `D-SP2-xx`；块外提及、块内散文、空落点、“见全文”均不计。
-检查器输出四类预期/实检/未知集合；未知非空不得宣称覆盖完成，预期空/块缺失/输入不可取均 exit 2。
+检查器输出五类预期/实检/未知集合；未知非空不得宣称覆盖完成，预期空/块缺失/输入不可取均 exit 2。
 `--selftest` 固化：正常放行、删真落点转红、块外补同 token 仍红、缺块 exit 2。
 正文另须提供 `ACCEPTANCE-SP2-BEGIN/END` 四列表格；每条 `AC-SP2-*` 独立填写受检范围与能力边界，
 不得用全局边界句代替逐条说明，也不得写空值或“见全文”。
@@ -164,7 +170,7 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 |---|---|---|---|
 | `AC-SP2-01` | checker 从冻结 SpecDoc 派生的 §5–§9 heading 集合 | 每个 token 在 COVERAGE 块有 D-SP2 落点，未知 0 | 落点语义是否正确 |
 | `AC-SP2-02` | checker 派生的 owner_sp=SP2 附录 E 集合 | 逐项结构化落点，未知 0 | 探测手段是否足够 |
-| `AC-SP2-03` | checker 派生的原型直接入口集合 | 逐项结构化落点，未知 0 | UI 是否好用或实现 |
+| `AC-SP2-03` | checker 从冻结架构 §13 主责域含 WRK 的行派生、并在冻结原型核存在的入口集合 | 逐项结构化落点，未知 0 | UI 是否好用或实现 |
 | `AC-SP2-04` | checker 派生的目标架构 WRK 接口集合 | 逐项落点；新增接口 ID 0 | 接口字段语义是否完整 |
 
 ### 4.2 语义
@@ -203,6 +209,7 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 |---|---|
 | SpecDoc 自身矛盾 | 登记冲突双方的精确章节、两种后果与建议，交 coordinator/业主，不自行取舍 |
 | SpecDoc 与目标架构冲突 | 登记双方精确章节与后果，交 coordinator/业主，不自行设优先级 |
+| SpecDoc F.1.2 引用不存在的“架构 A§21 转交合同” | 登记为悬空引用；本件只承接明确写出的 `delivery.verify` 门，不臆造 A§21 内容，交 coordinator/业主修权威引用 |
 | 新设计与已 PASS SP0/SP1 对撞 | 停止该路径，登记接口/语义差异，不改上游件 |
 | 目标与代码现状冲突 | 记迁移差距；不得把旧实现提升为目标规则 |
 | 合同范围变化 | bump 合同并重走三方评审，未过不写正文 |

@@ -43,10 +43,29 @@ def expected_sets():
     for l in arch.splitlines():
         m=re.match(r'^\| `([^`]+)` \| WRK \|',l)
         if m: iface.append('IF:'+m.group(1))
-    ui=[]; labels=('待决队列','任务看板','分级对齐','交付物链路')
-    for href,label in re.findall(r'<a href="#([^"]+)"[^>]*>(.*?)</a>',proto,re.S):
-        if any(x in re.sub('<[^>]+>','',label) for x in labels): ui.append('UI:#'+href)
-    out={'spec':set(src),'E':set(e),'interface':set(iface),'prototype':set(ui)}
+    ui=[]; in_s13=False
+    for l in arch.splitlines():
+        if re.match(r'^## 13\.',l): in_s13=True; continue
+        if in_s13 and re.match(r'^## ',l): in_s13=False
+        if not in_s13 or not l.startswith('|'): continue
+        c=[x.strip() for x in l.strip().strip('|').split('|')]
+        if len(c)>=2 and 'WRK' in c[1].split('/'):
+            for group in re.findall(r'`([^`]+)`',c[0]):
+                ui.extend('UI:#'+x for x in group.split('/'))
+    proto_ids=set(re.findall(r'<section\s+class="scr"\s+id="([^"]+)"',proto))
+    absent=sorted(x for x in ui if x[4:] not in proto_ids)
+    if absent: print('✗ 架构 §13 WRK 入口在原型不存在：'+','.join(absent)); raise SystemExit(2)
+    f=[]; f12=re.search(r'^### F\.1\.2\b',spec,re.M); f13=re.search(r'^### F\.1\.3\b',spec,re.M)
+    if f12: f.append('F:§F.1.2')
+    if f13: f.append('F:§F.1.3')
+    in_f2=False
+    for l in spec.splitlines():
+        if re.match(r'^## F\.2\b',l): in_f2=True; continue
+        if in_f2 and re.match(r'^## ',l): in_f2=False
+        if in_f2 and l.startswith('|'):
+            c=[x.strip() for x in l.strip().strip('|').split('|')]
+            if c and c[0]=='4': f.append('F:F.2#4')
+    out={'spec':set(src),'E':set(e),'interface':set(iface),'prototype':set(ui),'F':set(f)}
     if any(not v for v in out.values()): print('✗ 预期集合为空：'+','.join(k for k,v in out.items() if not v)); raise SystemExit(2)
     return out
 expected=expected_sets()
@@ -85,7 +104,7 @@ def inspect(text,quiet=False):
     if not quiet:
         print(f'[delivery] 预期=12 实检={12-len(miss)} 未知={len(miss)} {miss}')
         print(f'[acceptance] 预期=12 实检={12-len(ac_miss)} 未知={len(ac_miss)} {ac_miss}')
-        print('受检范围：冻结 SpecDoc §5–§9 heading/owner_sp=SP2 E 行、目标架构 WRK 接口、原型直接入口。')
+        print('受检范围：冻结 SpecDoc §5–§9 heading/owner_sp=SP2 E 行/F.1.2/F.1.3/F.2#4、目标架构 WRK 接口、架构 §13 WRK 原型入口。')
         print('能力边界：只判结构化来源→D-SP2 落点与 ID 形状；判不了映射语义、接口充分性或实现状态。')
     return 1 if bad else 0
 
@@ -105,6 +124,11 @@ if mode=='--selftest':
     missing='\n'.join(l for l in base.splitlines() if not l.startswith(f'| `{first}` |'))+'\n'
     test('删除真落点必须转红',missing,1)
     test('块外散文追加同 token 仍红',missing+f'正文提及 {first} 已考虑。\n',1)
+    for kind in ('prototype','F'):
+        token=sorted(expected[kind])[0]
+        changed='\n'.join(l for l in base.splitlines() if not l.startswith(f'| `{token}` |'))+'\n'
+        test(f'删除 {kind} 真落点必须转红',changed,1)
+        test(f'{kind} 块外散文提及不得转绿',changed+f'正文提及 {token} 已考虑。\n',1)
     test('缺结构化块判闸坏',base.replace('<!-- COVERAGE-SP2-BEGIN -->',''),2)
     print(f'--- SP2 覆盖反测 {n} 项全过' if not fail else '--- SP2 覆盖反测失败')
     raise SystemExit(fail)
