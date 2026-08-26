@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.38 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.39 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -456,7 +456,8 @@ body.uionly #uihint{display:block}
 <div class="grid g2">
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>平台级 · push <span class="ref">§15</span></h3>
+  <h3>平台级 <span class="mono">D0</span> · push 强制 <span class="ref">§15 · §24</span></h3>
+  <div class="note bad" data-edit>🔴 <b>本块内容的变更须经平台鉴权，与平台治理同一条路径</b>（<a href="#s8">见平台治理屏</a>）：<b>ops 整理汇总 → 平台管理者集中审批 → 含高危项则整批升重两签</b>（§24.2 · §24.2a）。<br>⚠️ <b>immutable 标的是【属性】，不是【路径】</b> —— 「Agent 连提案都不能提」说的是<b>谁不能改</b>；<b>谁能改、走哪条路</b>即本行。<b>平台级 skill 晋升</b>与 <b>immutable 名单变更</b>本就是 §24 批次里的条目。</div>
   <div class="note" data-edit>强制推送，<b>无排序控件</b> —— 强制的东西不用挑（§15）。判据：不受具体业务影响、可独立存在于各项目之外。</div>
   <table><tbody>
   <tr><td data-edit><b>Spec Kit</b>（constitution + checklist + analyze）
@@ -474,7 +475,11 @@ body.uionly #uihint{display:block}
 
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
-  <h3>租户级 · pull <span class="ref">§15 · §13.4</span></h3>
+  <h3>企业级 <span class="mono">D1</span> · push 强制 <span class="ref">§11.2 · §15.1</span></h3>
+  <div class="note bad" data-edit>🔴 <b><code>D1</code> 是 push 强制，不是 pull。</b>§11.2〔权威定义〕：<code>D1</code> 企业级由<b>企业级 ops</b> 维护，<b>push 其辖下的人</b>。<br>⚠️ 本块此前与个人级合并在「租户级 · pull」一块内，<b>把分发方向画反了</b>。<b>企业级条目无「拉取」按钮</b> —— 强制推送的东西不用挑（同平台级）。</div>
+
+  <h3>个人级 <span class="mono">D2</span> · 依 mandatory 判 push / pull <span class="ref">§15.1c · §13.4</span></h3>
+  <div class="note" data-edit>📌 <b>强制统一的</b> push 辖下项目；<b>可选复用的</b> pull 自取。🔴 <b>须流通者先过 §15.4 ops 核准，「拉取」不得直接可点。</b><br>⚠️ <b>每个条目须标归属级</b>（<code>D1</code>/<code>D2</code>/<code>D3</code>）—— <b>这一维决定它该 push 还是该 pull</b>。</div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
     <select><option>排序：综合计分</option><option>排序：近期使用</option><option>排序：成功率</option></select>
     <span class="mono">这里才需要排序 —— 租户要在目录里挑</span>
@@ -1271,6 +1276,8 @@ body.uionly #uihint{display:block}
 <h2 data-edit>spec 准入检查</h2>
 <div class="sub" data-edit>机器判结构，人判实质。<b style="color:var(--ok)">已落 SpecDoc §4.6（准入检查）· §4.7（内容构成与需求池）</b></div>
 
+<div class="note" data-edit>📌 <b>被检对象取件坐标</b>（§19.3：每一次评审 / 转述 / 交接必须带 <code>commit + sha256 + 行数/字节</code>）：<br><span class="mono">件 <b>SP4 skill / MCP 体系</b> · 版本 <b>v0.1</b> · 路径 <code>specs/sp4/spec.md</code> · commit <code>4a91c02f…</code> · sha256 <code>9c7e51ab…</code> · 1042 行 / 71336 字节</span><br>🔴 <b>无锚的判定不算评审结论</b> —— 回炉方不知道被拒的是哪一版，改完无从判断基线。本行格式与「交付物链路」屏一致，不另立。</div>
+
 <div class="note bad" data-edit>🔴 <b>本平台不做「评级 / 评分卡」，理由来自规范自己。</b>
 §5.1 写着：<b>「宁可粗（三档枚举），不可细（十档打分）。打分制一定退化成主观。」</b>
 §5.2 又写着：<b>安全面必须是独立维度，不得被「改动小」稀释</b> —— 而<b>综合评分正是把一票否决项平均掉的机器</b>。<br>
@@ -1280,7 +1287,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>① 硬门 · 不满足即拒收，进【待完善池】 <span class="ref">§4.6.2</span></h3>
-  <table><thead><tr><th style="width:32px"></th><th>检查项</th><th style="width:130px">机器判据</th><th style="width:96px">S4 spec 实测</th></tr></thead><tbody>
+  <table><thead><tr><th style="width:32px"></th><th>检查项</th><th style="width:130px">机器判据</th><th style="width:96px">SP4 v0.1 实测</th></tr></thead><tbody>
   <tr><td class="cell-ok">✓</td><td data-edit>属性头块七项齐全，取值在枚举内</td><td class="mono">字段存在性 + 枚举匹配</td><td class="cell-ok">通过</td></tr>
   <tr><td class="cell-ok">✓</td><td data-edit>分级结果可复算：<code>rule_ids</code> ＋ 规则表 version 齐</td><td class="mono">§5.4 规则 4</td><td class="cell-ok">通过</td></tr>
   <tr><td class="cell-fail">✗</td><td data-edit><b>预授权条目具体</b>：范围 / 用途 / 时限三字段非空，且无禁用词
@@ -1295,7 +1302,7 @@ body.uionly #uihint{display:block}
   <tr><td class="cell-fail">✗</td><td data-edit><b>每条硬性约束有对应探测手段登记</b>（§29 四类之一）</td>
     <td class="mono">附录 E 同构</td><td class="cell-fail"><b>拒收</b><div class="mono">3 条无登记</div></td></tr>
   </tbody></table>
-  <div class="chk stop" style="margin-top:10px">🔴 <b>S4 spec 当前判定：拒收（3 项硬门不过）⇒ 落入【待完善池】，带结构化缺项原因。</b></div>
+  <div class="chk stop" style="margin-top:10px">🔴 <b>SP4 v0.1 当前判定：拒收（3 项硬门不过）⇒ 落入【待完善池】，带结构化缺项原因。</b></div>
   <div class="note" data-edit>📌 <b>为什么要有一票否决</b>：§6.1 已定「交付物合格约八成可自动判，<b>门方只判剩下两成</b>」——
   门方是<b>瓶颈资源</b>。让门方去审一份属性头块都没填全、预授权写着「可能需要读取相关数据」的 spec，
   是<b>把瓶颈资源花在机器能挡的事上</b>。<br>
@@ -1375,7 +1382,7 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>spec 内容构成 · 五个必备面 <span class="ref">§4.7.1</span></h3>
   <table><thead><tr><th style="width:96px">面</th><th>写什么</th><th style="width:150px"><b>不</b>写什么</th>
-  <th style="width:96px">S4 spec</th></tr></thead><tbody>
+  <th style="width:96px">SP4 v0.1</th></tr></thead><tbody>
   <tr><td data-edit><b>① 系统对接</b></td><td data-edit>外部契约：接口 · 数据格式 · 依赖方与被依赖方 · 兼容性承诺</td>
     <td class="mono">内部模块间调用</td><td class="cell-ok">已写</td></tr>
   <tr><td data-edit><b>② 运行约束</b></td><td data-edit>并发量 · 数据量 · 时限 · SLO · <b>降级与超时行为</b></td>
