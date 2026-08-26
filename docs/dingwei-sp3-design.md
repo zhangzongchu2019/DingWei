@@ -1,13 +1,13 @@
-# DingWei SP3 上下文与知识库设计 v1.1
+# DingWei SP3 上下文与知识库设计 v1.2
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp3-design` |
-| **版本** | v1.1 |
+| **版本** | v1.2 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | 组合冻结：SpecDoc `4fb34f2`；其余输入 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
-| **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.2（业主裁定后的输入重锚修订） |
-| **合同** | `specs/sp3/spec.md` v1.2 |
+| **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.3 |
+| **合同** | `specs/sp3/spec.md` v1.3 |
 | **范围** | SpecDoc §10–§13；owner_sp=SP3 的附录 E 行 |
 | **主责域** | `KNO` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -15,6 +15,7 @@
 > 本件定义 KNO 目标设计和 KNO 的 SP7b 迁移合同，不声称数据库、RLS、provider、迁移或真实上下文装载已实现。
 > SpecDoc v3.70 §11.6 派发快照字段表是字段全集唯一权威源；§11.6a 是 FAIL evidence 权威形状。
 > v1.1：按业主裁定承认 AccessCtxRef/task/node/generation/spec_ref，并补 FAIL evidence 持久化判据；仍不接真实派发。
+> v1.2：补 memory_type 持久化、坑清单晋升去标识化 evidence 门、双现网参数化抽取及 §11.4 墓碑标记。
 
 ## D-SP3-01 范围、四维模型与域边界
 
@@ -55,10 +56,11 @@ principal、owner 或 visibility。缺 AccessCtx、grant、企业库映射或授
 
 | 对象 | 主键/版本 | 核心字段 | 不变量 |
 |---|---|---|---|
-| `knowledge_item` | `item_id,item_version` | canonical content/ref、meta、source revision | append revision，不原地改历史 |
-| `knowledge_revision` | `(item_id,item_version)` | supersedes、reason、curator、created_at | version 单调；旧版可追 |
-| `knowledge_anchor` | `(item_id,item_version,ordinal)` | anchor_type、value、observed ref | anchors 为数组；至少一条 |
+| `knowledge_item` | `item_id,version` | canonical content/ref、meta、source revision | append revision，不原地改历史 |
+| `knowledge_revision` | `(item_id,version)` | supersedes、reason、curator、created_at | version 单调；旧版可追 |
+| `knowledge_anchor` | `(item_id,version,ordinal)` | anchor_type、value、observed ref | anchors 为数组；至少一条 |
 | `visibility_grant_ref` | `grant_ref,generation` | item/scope/principal/expiry/approval | KNO 不自造批准权 |
+| `promotion_record` | `promotion_id,generation` | source/target domain、approval、deidentification_evidence_ref | 晋升不靠改 Meta 原地完成 |
 | `retrieval_audit` | `query_id` | principal、scope、filter/result refs、reason | 不存越权正文；可复算顺序 |
 | `context_snapshot` | `snapshot_id,generation` | §11.6 字段引用、resolved item versions、digest | 不可变；任务间不复用 |
 
@@ -69,6 +71,7 @@ KBDoc.Meta {
   domain_level: D0|D1|D2|D3
   owner_key: stable owner identifier
   visibility: public|internal|restricted   // 输入缺失时服务端物化 restricted，存储不得为 NULL
+  memory_type: working|procedural|factual  // 输入缺失时物化 factual；不得由其它维度推导
   type: SpecDoc §12.4 controlled type
   anchors[]: [{anchor_type: code|deploy|artifact|external, value, observed_ref?}]
   version: immutable item version
@@ -80,6 +83,10 @@ KBDoc.Meta {
 
 `anchor_type` 单值字段禁止；`anchors[]` 非空且 ordinal 唯一。`owner_key` 形状随 domain 校验，D0 不允许企业内容晋升生成。
 DB 自动写 UTC；调用方时间只作 observation metadata。
+
+`memory_type` 是第四维的持久化字段：缺失时服务端物化 `factual` 并落 `memory_type_defaulted=true`；procedural 必须带
+CAP asset/ref，working 只允许任务上下文/快照且不得晋升为长期 domain item。domain_level、visibility、type 均不得推出
+memory_type，反向亦然。负测对任意单维变更断言其余三维不变，并拒绝「D0⇒factual」「type=skill⇒procedural」等暗推。
 
 ### 2.3 内容与引用
 
@@ -99,6 +106,10 @@ DB 自动写 UTC；调用方时间只作 observation metadata。
 
 domain 变更是晋升 command，不是 visibility 降级。平台只有一个企业时呈现可合并，存储标识仍分开。
 
+§12.4 #7 坑清单/判断失误从 D3 晋升 D2 或 D1 前必须带 `deidentification_evidence_ref`，其证据至少记录扫描手段、
+规则/依据版本、结论、执行 principal 与产物 sha256。缺证据、证据不可取或扫描仍命中人名/会话名/事故稳定标识时拒绝。
+正例是去标识化后证据可复算且门方批准；负例覆盖原文人名、session 全名、事故 ID 和仅声称「已脱敏」无证据。
+
 ### 3.2 三条 ingest 管道
 
 | pipeline | 触发/授权 | 写入 | 防旁路 |
@@ -113,7 +124,8 @@ E.1 #98 的机器判据是所有成功 ingest 均能追到其中一条管道。
 ### 3.3 生命周期
 
 任务上下文实时使用，不直接成为长期知识；版本收口生成 version summary proposal；通过 domain 准入后形成 KBDoc revision。
-订正/晋升都产生新 revision 与 audit，不重写历史。KNO 不承担 CAP skill/MCP 晋升，但两者消费同一 domain/visibility 语义。
+订正/晋升都产生新 revision 与 audit，不重写历史。KNO 不承担 CAP skill/MCP 资产审批，但 skill 与知识条目共用
+同一套 domain 晋升、同一套上下文装载、同一套企业过滤/visibility 判定；CAP 只持 asset/version 与 KNO ref，不另造旁路。
 
 ## D-SP3-04 visibility、授权与继承
 
@@ -145,6 +157,13 @@ visibility 变更带 domain 变更、放行不落账。deny 必须在 selector/q
 
 ## D-SP3-05 固化判型、权威源与企业公共库
 
+### 5.0 §11.4 墓碑
+
+<!-- SOURCE-SP3-§11.4: NOT_APPLICABLE-TOMBSTONE -->
+
+`K0-sec` 已撤销，不形成目标字段、表、接口或迁移项。其原安全目的由 visibility 维度与「运行态不入知识库」承接；
+正文/代码新增 `K0-sec/K0-pub` 应判旧模型回退，而不是将墓碑当待实现需求。
+
 ### 5.1 固化还是运行时取
 
 判据是「变后旧值是否误导」：仍是有效历史则固化；旧值会误导则运行时取。定义/契约与当前实例分别判断：
@@ -170,6 +189,15 @@ visibility 变更带 domain 变更、放行不落账。deny 必须在 selector/q
 4. 标记外部来源，不得直接作施工依据。
 
 外部锚质量由人审；默认导入会增加 suspect 复核量，计入运维容量而不是隐藏成本。
+
+### 5.4 平台现网/企业现网的参数化抽取
+
+抽取/导入使用统一 pipeline 与受控 `ExtractionProfile`，按可信配置注入：enterprise_id（平台态显式 platform scope）、
+anchor resolver、permission domain、redaction rule version、deployment source、environment。平台现网与企业现网分别取
+自己的部署锚来源、权限域与脱敏规则；不得用平台锚描述企业现网，也不得把企业内容写平台库。
+
+每个企业只配置 profile，不复制一套抽取代码/任务。profile 来自 ops 注册表而非请求自述；缺 profile、锚 resolver 或
+脱敏规则时 fail-closed。负测覆盖企业 A profile 读 B、platform scope 携企业正文、不同企业各自 fork 实现绕过统一闸。
 
 ## D-SP3-06 上下文装载与不可变 snapshot
 
@@ -285,22 +313,23 @@ audit 记录 query_id、principal、scope/policy/grant refs、候选/命中计�
 
 ### 9.1 公共 envelope
 
-mutating command 带 request_id、AccessCtxRef、DataScopeGrant、expected item/snapshot version、source/approval refs；
+mutating command 带 request_id、AccessCtxRef、DataScopeGrant、expected `version`/snapshot generation、source/approval refs；
 服务端派生 enterprise/principal/DB UTC。相同 request_id+同 payload 返回原 outcome；载荷不同报 `IDEMPOTENCY_CONFLICT`。
 
 ### 9.2 接口目录
 
 | ID | 输入/输出 | effect/tx | auth/幂等/代际 | error/audit |
 |---|---|---|---|---|
-| `KNO-CMD-IngestItem` | content/ref+Meta+pipeline refs→item revision | KNO tx 写 item/meta/anchors/audit | curator/closeout principal；request_id+item version | 无锚/旁路管道/非法visibility拒绝；缺失物化restricted |
+| `KNO-CMD-IngestItem` | content/ref+Meta+pipeline refs→item revision | KNO tx 写 item/meta/anchors/audit | curator/closeout principal；request_id+version | 无锚/旁路管道/非法visibility/memory_type拒绝；缺失分别物化restricted/factual |
 | `KNO-QRY-Search` | query+scope+cursor→filtered hits | 受控 repository 只读 | AccessCtx+grant；cursor绑定principal/policy | deny非成功空集；记retrieval audit |
 | `KNO-CMD-BuildContextSnapshot` | v3.70 §11.6 fixture+§11.6a evidence（适用时）+role→snapshot ref | KNO tx 写immutable snapshot+audit/outbox | service+AccessCtx；request_id+task generation | 字段/evidence缺失、repro不可复跑、锚漂移/版本撤销拒绝 |
-| `KNO-CMD-MarkLifecycle` | item/version+target+evidence→record | 新 lifecycle record，不改历史 | verifier/curator；request_id+item version | 非法转换/证据不足/stale version |
+| `KNO-CMD-MarkLifecycle` | item/version+target+evidence→record | 新 lifecycle record，不改历史 | verifier/curator；request_id+version | 非法转换/证据不足/stale version |
 
 ### 9.3 错误词表
 
 `INVALID_ARGUMENT`、`FORBIDDEN`、`NOT_FOUND_OR_HIDDEN`、`STALE_VERSION`、`IDEMPOTENCY_CONFLICT`、
 `ANCHOR_REQUIRED`、`ANCHOR_SUSPECT`、`INVALID_LIFECYCLE`、`DEPENDENCY_UNAVAILABLE`、`SNAPSHOT_INCOMPLETE`。
+坑清单晋升缺少或未通过去标识化证据返回 `DEIDENTIFICATION_REQUIRED`。
 数据库/adapter 错误不伪装业务拒绝；拒绝审计不含越权内容。
 
 ### 9.4 事件边界
@@ -322,7 +351,7 @@ KNO 采用两类受控驻留，不做跨企业全文索引：
 KNO schema 包含 item、revision、anchor、visibility grant ref、lifecycle record、retrieval audit、context snapshot、
 snapshot item、domain outbox/audit。企业库所有人层表含 owner_principal；应用显式谓词为主守，RLS 为漏谓词兜底。
 
-约束：受控四维枚举、anchors 非空/ordinal 唯一、visibility 缺失拒绝、item version 单调、snapshot immutable、
+约束：受控四维枚举（含 memory_type）、anchors 非空/ordinal 唯一、visibility/memory_type 服务端默认后非空、version 单调、snapshot immutable、
 request_id 唯一、状态转换合法。index 先服务 domain/owner/visibility selector，再服务检索；不得建跨企业全文索引。
 
 ### 10.2 migration/cutover/rollback 五列合同
@@ -332,7 +361,7 @@ request_id 唯一、状态转换合法。index 先服务 domain/owner/visibility
 | KNO DDL/RLS | 空企业库+schema version | 表/约束/index/policy 齐 | schema dump+越权负测 | SP7a conformance+SP3 delivery |
 | D0 catalog DDL | 空平台库+schema version | 仅平台自产知识表；企业正文列/行0 | schema dump+跨域负测 | 平台治理+SP3 delivery |
 | fsgrep inventory | 现有 source/content/meta | 每件分类为 migrate/quarantine/runtime-reject | manifest+理由 | curation review |
-| metadata backfill | 可迁 item+owner evidence | 四维、anchors、source/pipeline 齐 | before/after keyed diff | semantic migration gate |
+| metadata backfill | 可迁 item+owner evidence | 四维（含memory_type）、anchors、source/pipeline 齐 | before/after keyed diff | semantic migration gate |
 | dual read | fsgrep+KNO repository | 授权内结果可解释；无越权回归 | query corpus+diff | search conformance |
 | write cutover | generation fence | 新写仅 KNO repository；旧 ingest 拒绝 | mutation negative test | release approval |
 | rollback/forward fix | backup ref+cutover point | 可恢复旧读或前滚，不丢 revision/audit | rehearsal report | ops+SP3 gate |
@@ -394,10 +423,10 @@ provider error、崩溃恢复、迁移/rollback。每项至少正反例；变异
 | `SRC:§12.2` | `D-SP3-05` |
 | `SRC:§12.3` | `D-SP3-05` |
 | `SRC:§12.3a` | `D-SP3-05` |
-| `SRC:§12.4` | `D-SP3-05` |
+| `SRC:§12.4` | `D-SP3-03`、`D-SP3-05` |
 | `SRC:§12.5` | `D-SP3-05` |
 | `SRC:§12.6` | `D-SP3-05` |
-| `SRC:§12.7` | `D-SP3-05`、`D-SP3-07` |
+| `SRC:§12.7` | `D-SP3-05` |
 | `SRC:§13` | `D-SP3-07` |
 | `SRC:§13.1` | `D-SP3-02`、`D-SP3-07` |
 | `SRC:§13.2` | `D-SP3-07` |

@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp3-design` |
-| **合同版本** | v1.2 |
+| **合同版本** | v1.3 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -26,6 +26,8 @@ KNO 只消费既有 WRK dispatch 事件，并经四个 KNO command/query 与 rep
 **v1.1 同步**：派发快照字段全集的唯一权威源钉为 SpecDoc §11.6 表；SP2 是引用侧而非定义源。
 
 **v1.2 同步**：业主已裁 §11.6 按 SP2 更新并补 §11.6a FAIL evidence；SpecDoc 输入重锚 v3.70，其他输入不回退。
+
+**v1.3 同步**：正文评审补 memory_type 第四维、坑清单晋升去标识化 evidence 门、平台/企业现网参数化抽取与墓碑口径。
 
 ### 0.1 范围判定
 
@@ -89,7 +91,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 
 1. 仅设计 §10–§13，不把 skill/MCP/帖子/界面内部实现并入 KNO。
 2. 四维分别持久化与判定；符号固定 L=风险、D=domain、G=出站闸。
-3. KBDoc.Meta 必有 domain_level、owner_key、visibility、type、anchors[]、version、updated_at。
+3. KBDoc.Meta 必有 domain_level、owner_key、visibility、memory_type、type、anchors[]、version、updated_at。
 4. anchors[] 是数组；code/deploy/artifact/external 分判，任一失配即 suspect。
 5. query 必须经受控仓储 API 先过滤后检索；deny 不伪装成功空集。
 6. D0 仅 public 可全量；D0 internal/restricted 与 D1–D3 一律检索式。
@@ -117,10 +119,10 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | ID | 交付块 | 最低内容 |
 |---|---|---|
 | `D-SP3-01` | 范围与四维模型 | KNO 所有/不所有、上下游、四维正交不变量 |
-| `D-SP3-02` | KBDoc 领域模型 | item/revision/meta/anchors/visibility grant/audit/context snapshot |
-| `D-SP3-03` | domain 与生命周期 | D0–D3、三条 ingest、晋升/订正、不可变历史 |
+| `D-SP3-02` | KBDoc 领域模型 | item/revision/meta（含 memory_type）/anchors/visibility grant/audit/context snapshot；四维分别判定 |
+| `D-SP3-03` | domain 与生命周期 | D0–D3、三条 ingest、晋升/订正、不可变历史；坑清单晋升 D2/D1 必带 `deidentification_evidence_ref` |
 | `D-SP3-04` | visibility 与授权 | 默认 restricted、降级审批、继承取严、放行审计、负测 |
-| `D-SP3-05` | 固化判型与来源 | 条目类型、四类权威源、运行时取边界、导入/链接 |
+| `D-SP3-05` | 固化判型与来源 | 条目类型、四类权威源、运行时取边界、导入/链接；平台/企业现网抽取共用受控 `ExtractionProfile` 参数化 |
 | `D-SP3-06` | 上下文装载 | 新 Spawn；以 v3.70 §11.6 派发快照表为字段全集唯一权威源；正文按表逐字段给拒绝/重灌判据，并按 §11.6a 五子字段定义 FAIL evidence；snapshot/evidence 不可变 |
 | `D-SP3-07` | 锚与生命周期 | 四锚判据、多锚 OR、active/suspect/archived、reverify |
 | `D-SP3-08` | 检索与排序 | 先过滤、scope∩visibility、降权、cursor、拒绝语义、审计 |
@@ -153,8 +155,8 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `AC-SP3-02` | owner_sp=SP3 的附录 E 行 | 逐项语义落点，未知 0 | 人工判据是否专业正确 |
 | `AC-SP3-03` | 架构 §6 KNO 接口 | 4 接口逐项落点，无跨表污染 | 字段语义充分性 |
 | `AC-SP3-04` | 架构 §13 主责域含 KNO 的原型入口 | 逐项落点且冻结原型入口存在 | UI 可用性与实现状态 |
-| `AC-SP3-05` | 四维模型与 KBDoc.Meta | 四维不互推；字段/枚举/默认值/约束齐 | 数据是否已迁移 |
-| `AC-SP3-06` | 三条 ingest 与 revision | 无旁路写入；订正不改历史 | curator 判断质量 |
+| `AC-SP3-05` | 四维模型与 KBDoc.Meta | memory_type 等四维分别持久化且不互推；字段/枚举/默认值/约束齐 | 数据是否已迁移 |
+| `AC-SP3-06` | 三条 ingest、revision 与坑清单晋升 | 无旁路写入；订正不改历史；D2/D1 晋升缺去标识化 evidence ref 拒绝 | curator/脱敏判断质量 |
 | `AC-SP3-07` | visibility 与引用 | 默认 restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
 | `AC-SP3-08` | v3.70 §11.6 字段表逐项 + §11.6a FAIL evidence 子字段逐项 | 每字段有构造/缺失拒绝/重灌判据；repro 空/不可复跑则 evidence 不成立；snapshot/evidence 不可变 | 字段齐备后诊断是否正确的人审结论 |
 | `AC-SP3-09` | anchors 与生命周期 | 四锚分判、多锚 OR、连续两版本 archived | 外部替代锚质量 |
