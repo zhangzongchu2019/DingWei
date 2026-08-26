@@ -28,6 +28,8 @@ grep -q 'SpecDoc §11.6 与 SP2 §3.3 snapshot 字段不一致' "$SPEC" || { ech
 for token in memory_type deidentification_evidence_ref ExtractionProfile; do grep -q "$token" "$SPEC" || { echo "✗ 正文合同缺 $token"; exit 1; }; done
 grep -q '§11.6a 仅 execution_failed/dependency_unavailable 与 gate_fail' "$SPEC" || { echo '✗ v3.72 failure_class 收窄未落合同'; exit 1; }
 grep -q 'cancelled/timeout/effect_unknown 按 §11.6b' "$SPEC" || { echo '✗ v3.72 终结/未知分类未落合同'; exit 1; }
+grep -q 'envelope_ref.prior_state_evidence_ref' "$SPEC" || { echo '✗ §11.6b 前序证据未落装载合同'; exit 1; }
+grep -q 'N/A:not_failure' "$SPEC" || { echo '✗ §11.6b 非失败槽位判别值未落合同'; exit 1; }
 ACTIVE=$(sed -n '/^### 4\.1 评审协议/,/^## 5\./p' "$SPEC")
 printf '%s\n' "$ACTIVE" | grep -q '最多 4 轮' || { echo '✗ 生效协议缺 4 轮上限'; exit 1; }
 ! printf '%s\n' "$ACTIVE" | grep -q '6 轮' || { echo '✗ 生效协议残留 6 轮'; exit 1; }

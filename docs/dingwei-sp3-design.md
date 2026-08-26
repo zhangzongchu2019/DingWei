@@ -1,13 +1,13 @@
-# DingWei SP3 上下文与知识库设计 v1.4
+# DingWei SP3 上下文与知识库设计 v1.5
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp3-design` |
-| **版本** | v1.4 |
+| **版本** | v1.5 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | 组合冻结：SpecDoc `fcfec9a`；其余输入 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
-| **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.5 |
-| **合同** | `specs/sp3/spec.md` v1.5 |
+| **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.6 |
+| **合同** | `specs/sp3/spec.md` v1.6 |
 | **范围** | SpecDoc §10–§13；owner_sp=SP3 的附录 E 行 |
 | **主责域** | `KNO` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -18,6 +18,7 @@
 > v1.2：补 memory_type 持久化、坑清单晋升去标识化 evidence 门、双现网参数化抽取及 §11.4 墓碑标记。
 > v1.3：重锚 SpecDoc v3.71；FAIL repro 按机器可复跑类与 gate_fail 人审门两类判定。
 > v1.4：重锚 SpecDoc v3.72；FAIL 只留真失败类，cancelled/timeout/effect_unknown 迁入独立终结/未知证据合同。
+> v1.5：补齐 §11.6b 前序态的派发装载：不伪造 FAIL repro，经既有 envelope_ref 类型化携带不可变终结/未知证据。
 
 ## D-SP3-01 范围、四维模型与域边界
 
@@ -211,16 +212,20 @@ anchor resolver、permission domain、redaction rule version、deployment source
 |---|---|---|---|
 | `task`/`node`/`generation` | WRK task/node/generation fixture | 任一缺失或 generation 非预期拒绝 | 标识派发对象并 fence 迟到结果 |
 | `AccessCtxRef` | SP1 签发的可信主体引用 fixture | 缺失、过期、issuer/audience/generation 不符拒绝 | 固定企业轴+人轴；Agent/session/display name 不得替代 |
-| `envelope_ref` | WRK immutable envelope ref fixture | 空/不可解析拒绝 | 还原派发指令与主体引用 |
+| `envelope_ref` | WRK immutable envelope ref fixture；前序为 §11.6b 三态时，信封内须有类型化 `prior_state_evidence_ref` | 空/不可解析；三态下引用缺失、类型或 state 不符均拒绝 | 还原派发指令与主体引用；解析前序不可变终结/未知证据 |
 | `spec_ref` | 本次执行所据 spec version ref fixture | 不可取或版本/指纹漂移拒绝 | 固定目标、范围与输入语义 |
 | 原交付物锚 | 上轮 `result_ref+sha256` fixture | 任一缺失/sha 不符拒绝 | 取得待修/待审产物 |
-| 完整 FAIL evidence+失败最小复现 | §11.6a evidence fixture | FAIL 场景对象缺失或任一必需子字段不成立则拒绝 | 空上下文复跑失败并先落证据后 digest |
+| 完整 FAIL evidence+失败最小复现 | 真失败取 §11.6a evidence fixture；前序为 §11.6b 三态时显式写 `N/A:not_failure` | FAIL 场景对象缺失或任一必需子字段不成立；非失败三态留空或伪造 repro 均拒绝 | 真失败空上下文复跑；非失败三态改由 `prior_state_evidence_ref` 复核，不伪装 FAIL |
 | acceptance 锚 | 判据 commit/blob sha fixture | 不可取/指纹漂移拒绝 | 固定验收标准 |
 | 规则版本（权威名=`GateSet version`） | GOV GateSet version fixture | 缺失/撤销/同物异值拒绝 | 固定门集与规则解释语义 |
 | 上下文版本 | 各 domain 装载 version fixture | 任一已选 domain 缺版本拒绝 | 复算装载结果 |
 
 SP2 是本表引用侧；不得另立第二份字段全集或复述条数。fixture 中 `AccessCtxRef` 同时作为构建授权上下文验证，
 但 snapshot 只存完整性保护引用，不复制其内部身份字段。
+
+前序结果采用判别联合，不新增 §11.6 顶层字段：`previous_outcome.kind` 属 §11.6a 三类时，FAIL evidence ref 必填且
+`prior_state_evidence_ref` 必须不存在；属 §11.6b 三态时，FAIL evidence 槽必须为 `N/A:not_failure`，且
+`envelope_ref.prior_state_evidence_ref` 必须指向同态、同 task/node/generation 的不可变证据。两者同时存在、同时缺失或态不匹配均拒绝。
 
 ### 6.2 FAIL evidence 权威子字段
 
@@ -247,12 +252,14 @@ SP2 是本表引用侧；不得另立第二份字段全集或复述条数。fixt
 | effect_unknown | reconcile 锚：对账对象、reconciler 句柄/游标、下次对账时点 | 无 reconcile 锚，或以「已发出」记 success |
 
 它们不因缺 repro 而不成立；判据须对准被判物。证据正文同样 immutable，更正新增 version+supersedes。
+该证据以类型化 immutable record 持久化，并由下一次派发信封的 `prior_state_evidence_ref` 携带；引用只证明记录完整、同态且同代，
+不把取消、超时或 effect_unknown 改写成失败，也不把 reconcile 判断质量冒充机器结论。
 
 ### 6.4 构建、清空与不可变性
 
 新 Spawn 是新一轮上下文装载，与会话进程是否长活无关。`BuildContextSnapshot`：
 
-1. 验 AccessCtx/DataScopeGrant、§11.6 fixture 与适用时的 §11.6a evidence；
+1. 验 AccessCtx/DataScopeGrant、§11.6 fixture，并按 `previous_outcome.kind` 二选一验证 §11.6a FAIL evidence 或 §11.6b `prior_state_evidence_ref`；
 2. 装当前版本摘要和本任务信封；
 3. 对 KNO 内容先 domain∩visibility 过滤后检索；
 4. 固定 item_id/version、source_high_water、规则/上下文版本并计算 digest；
@@ -267,7 +274,8 @@ SP2 是本表引用侧；不得另立第二份字段全集或复述条数。fixt
 FAIL evidence 逐项变异 failure_class、expected/actual、repro、artifacts、at_generation。execution/dependency 的 repro 空/命令不可复跑必须失败；
 gate_fail 锚集缺项/不可解析或 expected/actual 不可复算必须失败，但不得要求不同 principal 复判出同一 verdict。
 §11.6b 另逐态删除 cancel command/effect disposition、timeout lease/effect 判定、effect_unknown reconcile 锚；
-并做反向用例证明三者不因缺 repro 被拒，防又塞回 failure_class。
+并做反向用例证明三者不因缺 repro 被拒，防又塞回 failure_class。另钉四条装载负测：三态证据引用齐且 FAIL 槽为
+`N/A:not_failure` 可通过；FAIL 槽留空拒绝；FAIL evidence 与 `prior_state_evidence_ref` 同时存在拒绝；引用 state 或 generation 不符拒绝。
 
 ## D-SP3-07 anchors 与新鲜度状态机
 
@@ -505,7 +513,7 @@ provider error、崩溃恢复、迁移/rollback。每项至少正反例；变异
 | `AC-SP3-05` | 四维模型与KBDoc.Meta | 四维不互推，字段/枚举/默认/约束齐 | 数据已迁移与否 |
 | `AC-SP3-06` | 三条ingest与revision | 成功写入均追管道；订正不改历史 | curator判断质量 |
 | `AC-SP3-07` | visibility授权/继承 | 默认restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
-| `AC-SP3-08` | v3.72 §11.6/§11.6a/§11.6b逐项 | execution/dependency命令可复跑；gate_fail锚集有效；cancelled/timeout/effect_unknown各自必填齐且不误套repro | 诊断/effect判定正确性归人审 |
+| `AC-SP3-08` | v3.72 §11.6/§11.6a/§11.6b逐项 | execution/dependency命令可复跑；gate_fail锚集有效；cancelled/timeout/effect_unknown各自必填齐，经 envelope_ref.prior_state_evidence_ref 装载且 FAIL 槽显式 N/A:not_failure，不误套repro | 诊断/effect判定正确性归人审 |
 | `AC-SP3-09` | anchors/lifecycle | 四锚分判、多锚OR、连续两版本archived | 替代锚质量 |
 | `AC-SP3-10` | 检索全链 | 先过滤、suspect降权、deny非空集、cursor隔离 | relevance质量 |
 | `AC-SP3-11` | 4接口与复用映射 | auth/idempotency/generation/tx/error/audit及正反例齐 | provider性能 |

@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp3-design` |
-| **合同版本** | v1.5 |
+| **合同版本** | v1.6 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -32,6 +32,8 @@ KNO 只消费既有 WRK dispatch 事件，并经四个 KNO command/query 与 rep
 **v1.4 同步**：SpecDoc 重锚 v3.71；§11.6a repro 按机器可复跑类与 gate_fail 人审门分判，不再用一条命令要求覆盖两类。
 
 **v1.5 同步**：SpecDoc 重锚 v3.72；§11.6a 只留真失败类，cancelled/timeout/effect_unknown 改按 §11.6b 各自证据合同。
+
+**v1.6 同步**：§11.6b 前序态不伪装 FAIL；经既有 envelope_ref 内类型化 prior_state_evidence_ref 携带，FAIL evidence 槽显式 N/A:not_failure。
 
 ### 0.1 范围判定
 
@@ -127,7 +129,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `D-SP3-03` | domain 与生命周期 | D0–D3、三条 ingest、晋升/订正、不可变历史；坑清单晋升 D2/D1 必带 `deidentification_evidence_ref` |
 | `D-SP3-04` | visibility 与授权 | 默认 restricted、降级审批、继承取严、放行审计、负测 |
 | `D-SP3-05` | 固化判型与来源 | 条目类型、四类权威源、运行时取边界、导入/链接；平台/企业现网抽取共用受控 `ExtractionProfile` 参数化 |
-| `D-SP3-06` | 上下文装载 | 以 v3.72 §11.6 字段表为唯一权威源；§11.6a 仅 execution_failed/dependency_unavailable 与 gate_fail；cancelled/timeout/effect_unknown 按 §11.6b 各自必填，不套 repro；snapshot/evidence 不可变 |
+| `D-SP3-06` | 上下文装载 | 以 v3.72 §11.6 字段表为唯一权威源；§11.6a 仅 execution_failed/dependency_unavailable 与 gate_fail；cancelled/timeout/effect_unknown 按 §11.6b 各自必填，不套 repro；下一派发经 `envelope_ref.prior_state_evidence_ref` 携带同态同代不可变记录，FAIL 槽显式 `N/A:not_failure`；两类证据同时存在/缺失均拒绝 |
 | `D-SP3-07` | 锚与生命周期 | 四锚判据、多锚 OR、active/suspect/archived、reverify |
 | `D-SP3-08` | 检索与排序 | 先过滤、scope∩visibility、降权、cursor、拒绝语义、审计 |
 | `D-SP3-09` | 四接口合同 | schema/effect/auth/idempotency/generation/tx/error/audit |
@@ -162,7 +164,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `AC-SP3-05` | 四维模型与 KBDoc.Meta | memory_type 等四维分别持久化且不互推；字段/枚举/默认值/约束齐 | 数据是否已迁移 |
 | `AC-SP3-06` | 三条 ingest、revision 与坑清单晋升 | 无旁路写入；订正不改历史；D2/D1 晋升缺去标识化 evidence ref 拒绝 | curator/脱敏判断质量 |
 | `AC-SP3-07` | visibility 与引用 | 默认 restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
-| `AC-SP3-08` | v3.72 §11.6/§11.6a/§11.6b 逐项 | execution/dependency 命令可复跑；gate_fail 锚集有效；cancelled/timeout/effect_unknown 各自必填齐且不误套 repro | 诊断/effect 判定正确性归人审 |
+| `AC-SP3-08` | v3.72 §11.6/§11.6a/§11.6b 逐项 | execution/dependency 命令可复跑；gate_fail 锚集有效；cancelled/timeout/effect_unknown 各自必填齐，经 `envelope_ref.prior_state_evidence_ref` 装载且 FAIL 槽为 `N/A:not_failure`，不误套 repro | 诊断/effect 判定正确性归人审 |
 | `AC-SP3-09` | anchors 与生命周期 | 四锚分判、多锚 OR、连续两版本 archived | 外部替代锚质量 |
 | `AC-SP3-10` | 检索全链 | 过滤先于检索、suspect 降权、deny 不伪装空集 | relevance 质量 |
 | `AC-SP3-11` | 4 接口与复用映射 | auth/idempotency/generation/tx/error/audit 及正反例齐 | provider 性能 |
