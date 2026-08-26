@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-26T05:39:53Z
-分支头：`11efc6a94cdbc3db656400a1f1a864425e9a5fa0`
+生成时刻：2026-08-26T05:48:04Z
+分支头：`31beb82e5c3ea9e45b662492daaa9bbe49c291ca`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -37,7 +37,7 @@ REVIEWED bf1e2ba70efd82d87bd7b39c9cd75ddbc20ed636374aed3c7488c71f01eab451  scrip
 REVIEWED 44ad36b47d92f100f2ca26025724fcb76ca70155defd2d4019259ec0ca29de5f  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
 REVIEWED 04a61a19321b7a35a78a5a886b1bc915dd5012fcf1dbd8636627e058c966eb3e  scripts/status-consistency-check.sh
-REVIEWED 4c41cb0ccd5452a7eadd8f5eddad986660d9cf51cdc461d51235eb0894100023  scripts/superseded-claims-gate.sh
+REVIEWED c6f2202a00cbc62dc013e1d6cc21da31b4e720c6a40ba5b6cdcd15fd78ee2507  scripts/superseded-claims-gate.sh
 REVIEWED a5fcd7cfbd7194d44a10fd7bba42c27f0b7258c09861d6ecf39a7337e294f66f  scripts/tenant-isolation-gate.sh
 REVIEWED 05ea1686dcc89b8a2538d6b6b2ed221c2184bd49f8d7742cd7d86fefb3802865  scripts/title-version-gate.sh
 REVIEWED 74c9a7fcd8a2b81cfb8150e9e8caf8ae507ba2efd0d5214e097d8c62873cd8c1  scripts/workflow-coverage-gate.sh
@@ -57,6 +57,7 @@ REVIEWED 861f36f0dfeda164e4047bfd75ea78e5977d3ad352c8e1c5cafff6a790945530  specs
 REVIEWED a9c3bab0c5dc512ddc901e0ce298a6e17626243c62130b47810cfd49e4425311  specs/gates/reviewer-repro.txt
 REVIEWED 706c97c396a087fcdedd8f4a85d12403426ebd8fdce31f1b7f952012f2260d40  specs/gates/rv-ledger.txt
 REVIEWED e7a91c5e523a367419df93ea42bb570bbb33a08479ff8e5ec4ff3d01fa7e2789  specs/gates/status-stale-exceptions.txt
+REVIEWED bf445114c0c59d26da1db3b59da3e3e849963596d019ea3bde71117d30d50150  specs/gates/superseded-claims-exceptions.txt
 REVIEWED d6b70fd32e934f6ccd1ba6f5f266d968d1f28068e2f7cebcc8cd45bc1bbd11d7  specs/gates/superseded-claims.txt
 ```
 

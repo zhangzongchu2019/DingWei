@@ -31,6 +31,7 @@
 | `scripts/appendix-e-owner-gate.sh` | 附录 E 认领闸 —— 「未认领恒为 0」须有 `owner_sp` 列承载；🔴 判「每行有没有主」，**判不了认领得对不对** |
 | `scripts/evidence-fresh-gate.sh` | 证据包时效闸 —— 证据必须产自被评审的那个锚；🔴 **快照指纹一致只证明文件没被篡改，不证明内容是当期产出**，两者是不同的保证 |
 | `scripts/superseded-claims-gate.sh` | 已撤销断言闸 —— 裁定改了引用点必须跟着改；🔴 判「清单内旧断言还在不在」，**判不了清单是否完备** |
+| `specs/gates/superseded-claims-exceptions.txt` | 已撤销断言闸的**结构化登记例外**（短语 TAB 件 TAB 理由 TAB 批准方）。🔴 立件原因（乙域 RV-乙18）：原以行内自由文本 `style-ok:` 豁免，而**闸不看理由、只看有没有那四个字** ⇒ 以「跨行误命中」为由压住行内就有的旧断言，闸照旧返回 0。⚠️ **登记 ≠ 获批准**，执笔方不得自增自批；**例外是债不是豁免**，闸每次把登记数打印出来 |
 | `specs/gates/superseded-claims.txt` | 「旧断言 → 现行断言 → 撤销依据」清单，本闸的数据源 |
 | `scripts/checklist-executed-gate.sh` | checklist 执行落账闸 —— 宣称「已按 checklist 执行」时机器要求 checkbox 已勾**且证据栏非空**；未落账可登记例外，但输出明说**这不是 PASS** |
 | `specs/tools/foreign-version-check.py` | 正文他件旧版本号检查（analyze ④b）—— ④a 只读头块一处，正文里的假版本看不见；本脚本补正文面，只在与该件称谓同行时才判 |
