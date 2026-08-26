@@ -1,9 +1,9 @@
-# DingWei SP8 授权与平台治理设计 v1.0
+# DingWei SP8 授权与平台治理设计 v1.1
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp8-design` |
-| **版本** | v1.0 |
+| **版本** | v1.1 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | 组合冻结：SpecDoc `4220195`（v3.73）；架构/原型/SP0–SP3/代码基线 `6a98629` |
 | **合同锚** | `5241152`（`specs/sp8/spec.md` v1.4 ＋ 证据件） |
@@ -12,6 +12,8 @@
 | **评审** | `zzc-chatgpt56soltchangshark-2642`、`zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
 
 > 本件定义 GOV 治理面的目标设计与 SP7b 迁移合同，不声称批准链、grant 签发、分发闸或迁移已实现。
+> v1.1：按首轮评审补 GOV 目标 schema（D-SP8-12 §12.2/§12.2a）与 grant/challenge 状态机、原子 claim、
+> 双签集合、revoke↔consume 竞态、跨 GOV/WRK 事务两形态（D-SP8-11 §11.1–§11.5）。
 > 批准**主体**一律取 SP1 的 verified principal；本件不自造批准权，也不改 SP0 定义层语义。
 
 ## D-SP8-01 范围、边界与权威事实
@@ -125,7 +127,7 @@ spec 一改锚即变 ⇒ 预授权自动失去其绑定对象（见 D-SP8-04）�
 
 ### 6.3 一次性挑战（challenge）
 
-授权动作必须绑定一次性凭据：平台生成 `challenge(digest_of_pending_item, expires_at, single_use)`，
+授权动作必须绑定一次性凭据：平台生成 `challenge(digest_of_pending_item, expires_at)`，**单次性由 D-SP8-11 §11.1 的原子 CAS 保证**（不是一个布尔字段），
 业主**回复该 challenge 而非自由文本**。三类必拒：**重放**（已消费的 challenge 再次出现）、
 **摘要不符**（回复所绑摘要与当前待批事项不一致）、**过期**。
 🔴 **「同意」两个字不构成授权**——可被重放、可被群内他人冒名、也可能是 Agent 把历史文本当成新指令。
@@ -232,31 +234,80 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
 - 平台 ops 持有的备份 / 只读副本 / 逻辑复制槽**未经介质加密或访问审批**的数恒零；
 - CI workflow 的**触发面必须覆盖闸的载体**（`scripts/`、`specs/gates/`），配置漏覆盖数恒零。
 
-## D-SP8-11 GOV 接口与 grant 合同
+## D-SP8-11 GOV 接口、grant 状态机与并发合同
 
-### 11.1 公共约束
+### 11.1 三个状态机（先定状态与原子转换，再谈接口）
 
-所有 mutating command 带 `request_id`、`AccessCtxRef`、`expected_generation`、`approval_ref?`；
-服务端派生 principal 与 DB UTC。相同 `request_id` ＋ 同 payload 返回原 outcome；载荷不同报 `IDEMPOTENCY_CONFLICT`。
-迟到的批准/吊销按 `generation` 栅栏丢弃，不得复活已终结的批准。
+**challenge**：`issued → consumed | expired | superseded`
+- 唯一键 `(pending_ref, challenge_id)`；`digest` 绑定待批事项摘要；`expires_at` 必填；
+- **消费是一次原子 CAS**：`UPDATE challenge SET state='consumed', consumed_by=:p, consumed_at=now() WHERE challenge_id=:c AND state='issued' AND expires_at>now() AND digest=:d` —— **受影响行数为 0 即拒绝**（重放／过期／摘要不符三类在同一条谓词里判掉，不靠先查后改）；
+- 同一 `pending_ref` 重新签发 challenge 时，旧条目 CAS 置 `superseded`，不留两个可用凭据。
 
-### 11.2 四接口
+**effect_grant**：`issued → (claim…) → exhausted | revoked | expired`
+- **单次与限次统一表达**：`use_limit INT NOT NULL DEFAULT 1 CHECK(use_limit>=1)`、`used_count INT NOT NULL DEFAULT 0 CHECK(used_count<=use_limit)`；
+  `remaining = use_limit - used_count`；**不再有 `single_use` 布尔**（`single_use` ≡ `use_limit=1`），消除上一版"宣称限次、形状只有布尔"的自相矛盾；
+- **绑定面**（缺一不可）：`enterprise_id`、`audience`（消费主体：principal 或受控 service identity）、`effect_target_digest`（待执行 effect 的规范化摘要）、`scope`、`expires_at`、`generation`；
+- **消费是原子 claim，不是"检查未消费"**：
+  `INSERT INTO grant_use(grant_id, claim_key, claimed_by, claimed_at) VALUES(...) ON CONFLICT (grant_id, claim_key) DO NOTHING` 与
+  `UPDATE effect_grant SET used_count=used_count+1 WHERE grant_id=:g AND state='issued' AND used_count<use_limit AND expires_at>now() AND generation=:gen`
+  **在同一事务内**，两句任一影响行数为 0 ⇒ 整笔拒绝。⇒ **两个并发消费者不可能同时通过**：`grant_use` 的唯一键与 `used_count<use_limit` 的条件更新共同构成串行化点。
+- `claim_key` 由消费侧的 `request_id` 派生 ⇒ **同一 request 重放得到同一 claim**（幂等），不同 request 各占一次配额。
 
-| ID | 本件的定位 | 输入/输出 | auth / 幂等 / 代际 | error / audit |
-|---|---|---|---|---|
-| `GOV-CMD-IssueEffectGrant` | **本件主责** | approval_ref ＋ effect manifest → grant（范围/时限/单次或限次） | 批准方 principal ＋ 批次签名；`request_id` ＋ grant generation | 超范围拒绝；签发与消费状态逐次落账 |
-| `GOV-CMD-DecidePending` | **本件主责（治理面）** | 批次/待批项 ＋ challenge 回复 → 批准或拒绝记录 | 批准方 ≠ 执行者；高危须二次签 | 重放/摘要不符/过期拒绝；拒绝理由落账 |
-| `GOV-CMD-SubmitSpec` | **seam（语义归 SP0）** | 只读消费其 spec 版本与锚 | 不改其 auth 语义 | 本件不定义其错误面 |
-| `GOV-QRY-ResolveGateSet` | **seam（语义归 SP0）** | 只读消费规则版本用于层级判定 | 不改其解析语义 | 规则缺失时本件按 fail-closed 拒绝授权 |
+**authorization_decision**：`draft → decided(approved|rejected)`，`path_axis` 与 `level_axis` 分列（D-SP8-02），决定后不可改，更正走新版本 ＋ `supersedes`。
 
-### 11.3 grant 的消费侧合同（对各 effect owner，含挂起中的 SP4）
+### 11.2 重两签：签名是集合，不是一个字段
 
-`approval_ref` 交付形状：`{grant_id, generation, scope, effect_manifest_digest, expires_at, single_use, issuer_principal, signature_ref}`。
-消费侧**必须独立复算**：校验签名、范围包含待执行 effect、未过期、未吊销、未被消费（单次）；
-任一不过 ⇒ 拒绝执行并落账。**不接受"上游说批了"**。
-**新增消费域自动适用本合同**，无需改本件。
+高危批次的批准由 **`batch_signature` 集合**承载，不是 `signature_ref` 单值（上一版的形状错误）：
+- 唯一键 `(batch_id, signer_principal)` ⇒ **同一 principal 不能凑两签**；
+- 有效性判据：`count(distinct signer_principal) >= required_signatures`，且每个 signer 均为**合格批准主体**
+  （verified principal、具该责任域批准权、**不是该批次的提出者或执行者**）；
+- `required_signatures` 由批内最高危项决定（D-SP8-08），写入 `batch` 行并随 manifest 摘要一起被签名覆盖；
+- 未达签数前 `batch.state` 不得进入 `approved`；grant 只能由已 `approved` 的批次派生。
 
-### 11.4 事件面
+### 11.3 claim → effect → result 的幂等与未知路径
+
+1. 消费域先 **claim**（11.1 原子块）→ 拿到 `grant_use.id`；
+2. 执行 effect，把 `grant_use.effect_result` 置 `succeeded | failed | unknown`；
+3. **`unknown` 不猜成功**：进入 reconcile，由消费域按其既有 reconcile 语义收敛（WRK/CAP 各自已有），GOV 侧只保留 claim 事实与最终回填；
+4. **revoke 与 consume 的竞态**：`revoke` 用 CAS `WHERE state='issued'`；
+   - revoke 先成功 ⇒ 后续 claim 的条件更新影响行数为 0 ⇒ 拒绝；
+   - claim 先成功、revoke 后到 ⇒ **不回滚已发生的 effect**，而是记 `revoked_after_use` 并**要求消费域给出回退动作**（与紧急通道补审否决同一处理路径）；**不得静默丢弃**。
+
+### 11.4 跨 GOV/WRK 的"同一事务"到底是什么
+
+SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在同一库，故本件给**两形态合同**，实现期二选一并在交付回执写明选了哪个：
+- **形态 A（同库 unit-of-work）**：收口与 `spec_preauth` 置 `expired` 在同一 DB 事务内提交；
+- **形态 B（transactional outbox ＋ 幂等消费）**：WRK 收口在其事务内写 outbox 事件；GOV 消费者以
+  `(spec_preauth_id, closeout_ref)` 为幂等键 CAS 置 `expired`；**在消费落地之前，读侧一律 fail-closed**——
+  即"存在收口事实但尚未落 expired"时，消费侧**按已失效处理**，不得放行。
+🔴 两形态的共同不变量：**不存在"收口已发生而预授权仍可用"的可观察窗口**。
+
+### 11.5 四接口逐项合同
+
+| ID | schema | effect / tx | auth | idempotency / generation | error | audit |
+|---|---|---|---|---|---|---|
+| `GOV-CMD-IssueEffectGrant` | in: `approval_ref`(batch ＋ 签名集合)、`audience`、`effect_target_digest`、`scope`、`use_limit`、`expires_at`；out: `grant_id`＋`generation` | 单事务写 `effect_grant`＋审计＋outbox；**仅当批次 `approved` 且签数达标**才允许 | 批准主体 principal；签发者 ≠ 执行者 | `request_id` 唯一；grant `generation` 单调 | `FORBIDDEN` / `SCOPE_EXCEEDED` / `BATCH_NOT_APPROVED` / `IDEMPOTENCY_CONFLICT` | 签发、每次 claim、吊销各自落账 |
+| `GOV-CMD-DecidePending` | in: `pending_ref`、`challenge_id`＋回复、`decision`、`signer`；out: 决定记录 ＋ 批次签名行 | 同事务：challenge CAS ＋ 写 `batch_signature` ＋ 决定记录；达签数则批次转 `approved` | 批准方 ≠ 执行者；同一 principal 只计一票 | `request_id` 唯一；`(batch_id, signer_principal)` 唯一 | `CHALLENGE_INVALID`（重放/过期/摘要不符）/ `FORBIDDEN` / `DUPLICATE_SIGNER` | 每票与拒绝理由落账 |
+| `GOV-CMD-SubmitSpec` | **seam（语义归 SP0）**：只读消费 spec 版本与锚 | 不在本件事务内 | 不改其 auth | 本件只按 `spec_version_anchor` 判绑定是否仍有效 | 规则缺失 ⇒ 本件 fail-closed 拒绝授权 | 引用关系落账 |
+| `GOV-QRY-ResolveGateSet` | **seam（语义归 SP0）**：只读消费规则版本 | 只读 | 不改其解析语义 | 规则版本进入 `level_axis` 判定输入 | 版本缺失/撤销 ⇒ 拒绝授权 | 判定输入落账 |
+
+### 11.5a 消费侧合同（对各 effect owner，含挂起中的 SP4）
+
+`approval_ref` 交付形状：
+`{grant_id, generation, enterprise_id, audience, scope, effect_target_digest, use_limit, remaining, expires_at, batch_ref, signature_set_ref}`
+（**无 `single_use` 布尔**；单次 ≡ `use_limit=1`；`signature_set_ref` 指向签名**集合**，不是单个签名）。
+
+消费侧**必须独立复算**，任一不过即拒绝并落账：
+1. 签名集合可验、且含 **≥ `required_signatures` 个互不相同的合格 principal**；
+2. `audience` 与 `enterprise_id` 与本次执行主体一致；
+3. `scope` 包含本次 effect，且 `effect_target_digest` 与待执行 effect 的规范化摘要**逐位相同**；
+4. 未过期、未吊销；
+5. **通过原子 claim 取得配额**（§11.1），不是"读一下 remaining 再执行"。
+
+🔴 **不接受"上游说批了"**；🔴 **新增消费域自动适用本合同，无需改本件**。
+消费失败或效果 `unknown` 时按 §11.3 走，GOV 侧不替消费域猜结果。
+
+### 11.6 事件面
 
 冻结架构 §4.2 中 owner=GOV 的事件实算为 **0**，本件**不产出** `EV-GOV-*`；批准结论经 grant 与各域既有事件面传播。
 未来若需 GOV 作为 producer，须先改目标架构 §4.2 并重走评审。
@@ -274,15 +325,47 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
 | grant 签发与消费 | **new** | 本件 §11.3 合同 | 范围/时限/单次/吊销四类负测 |
 | CI 闸触发面配置 | **adapt** | 覆盖 `scripts/` 与 `specs/gates/` | 漏覆盖即红 |
 
-### 12.2 GOV 治理面 schema 与 SP7b 五列
+### 12.2 GOV 治理面目标 schema（最小集，逐表可判）
+
+所有表驻**平台库**（治理面是平台自身事实）；含企业维度的行带 `enterprise_id`，
+人层表带 `owner_principal`，**应用显式谓词为主守、RLS 为漏谓词兜底**；事务由 SP7a `RunInAccessTx` 提供。
+时间列一律 DB 生成 UTC；`*_ref` 一律锚（id ＋ sha256），不是路径。
+
+| 表 | PK | FK | unique | check / 枚举 | index | 不可变性 |
+|---|---|---|---|---|---|---|
+| `spec_preauth` | `preauth_id` | `spec_ref`→SP0 只读锚 | `(spec_ref, spec_version_anchor, scope_digest)` | `state ∈ {active,expired,revoked}`；`scope/purpose/deadline` NOT NULL 且非空串 | `(state, deadline)`、`(spec_ref)` | 正文不可改；更正新版本 ＋ `supersedes` |
+| `preauth_expiry` | `expiry_id` | `preauth_id` | `(preauth_id, trigger_kind, trigger_ref)` | `trigger_kind ∈ {closeout,version_change,deadline}` | `(preauth_id)` | append-only |
+| `authorization_decision` | `decision_id` | `subject_ref`、`preauth_id?` | `(subject_ref, request_id)` | `path_axis ∈ {preclaimed,owner_auth}`；`level_axis ∈ {single,second_factor,dual_sign}`；`outcome ∈ {approved,rejected}` | `(subject_ref)`、`(decided_at)` | decided 后不可改 |
+| `challenge` | `challenge_id` | `pending_ref` | `(pending_ref, state) WHERE state='issued'`（同一待批项同时只允许一个可用凭据） | `state ∈ {issued,consumed,expired,superseded}`；`expires_at` NOT NULL | `(state, expires_at)` | 状态只前进，不回退 |
+| `batch` | `batch_id` | —— | `manifest_digest` | `state ∈ {draft,pending,approved,rejected}`；`required_signatures ∈ {1,2}` | `(state)` | `manifest` 冻结后不可改 |
+| `batch_item` | `(batch_id, item_seq)` | `batch_id` | `(batch_id, item_ref)` | `risk ∈ {normal,high}`；`impact_report_ref` NOT NULL | `(batch_id)` | append-only |
+| `batch_signature` | `signature_id` | `batch_id` | **`(batch_id, signer_principal)`** | `signer_principal ≠ batch.proposer` ；签名覆盖 `manifest_digest` | `(batch_id)` | append-only |
+| `effect_grant` | `grant_id` | `batch_id`、`enterprise_id` | `(batch_id, audience, effect_target_digest)` | `state ∈ {issued,exhausted,revoked,expired}`；`use_limit>=1`；`used_count<=use_limit`；`expires_at` NOT NULL | `(state, expires_at)`、`(audience)` | 签发后 scope/audience/target 不可改 |
+| `grant_use` | `use_id` | `grant_id` | **`(grant_id, claim_key)`** | `effect_result ∈ {succeeded,failed,unknown}` | `(grant_id)`、`(effect_result)` | append-only；结果回填一次 |
+| `grant_revocation` | `revocation_id` | `grant_id` | `(grant_id)` | `reason` NOT NULL；`revoked_after_use` bool | `(grant_id)` | append-only |
+| `emergency_release` | `release_id` | `grant_id?` | `(action_ref)` | `action ∈ {disable,quarantine,revoke}`；`fallback_ref` NOT NULL | `(reviewed)` | append-only |
+| `emergency_review` | `review_id` | `release_id`、`batch_id` | `(release_id)` | `outcome ∈ {upheld,overturned}`；`overturned ⇒ rollback_action_ref` NOT NULL | `(batch_id)` | append-only |
+| `ops_role_binding` | `binding_id` | `principal` | `(principal, endpoint_class)` | `endpoint_class ∈ {provision,api_keys,config,readonly}` | `(endpoint_class)` | 变更走批次审批 |
+| `gov_audit` | `audit_id` | 各事实 ref | `(source_table, source_id, event_seq)` | `dw_actor` NOT NULL（回答"哪个 Agent 干的"） | `(recorded_at)` | **append-only，且落点不得位于企业 ops 有写权的介质** |
+| `gov_outbox` | `outbox_id` | 各事实 ref | `(aggregate_ref, event_seq)` | `state ∈ {pending,delivered}` | `(state)` | append-only |
+
+**跨表不变量**（实现须由约束或受控写路径保证，不靠调用方自觉）：
+1. `effect_grant` 只能由 `batch.state='approved'` 且 `count(batch_signature) >= required_signatures` 的批次派生；
+2. `grant_use` 行数 ＝ `effect_grant.used_count`（对账判据）；
+3. `emergency_release` 必有对应 `emergency_review`，否则计入"未进入下一批次补审"恒零计数器；
+4. 任一 `challenge` 消费必对应一条 `authorization_decision`；
+5. `preauth_expiry` 存在 ⇒ 该 `preauth` 的读侧一律按 `expired` 处理（D-SP8-11 §11.4 的读侧 fail-closed）。
+
+### 12.2a SP7b 五列：逐对象对应上表
 
 | 被测对象 | 输入 | 期望 | 证据形态 | 验收门 |
 |---|---|---|---|---|
-| GOV 治理面 DDL | 空库 ＋ schema version | 表/约束/index/policy 齐；批准记录不可变 | schema dump ＋ 越权负测 | SP7a conformance ＋ SP8 delivery |
-| 预授权条目 backfill | 现有 spec 与其锚 | 三字段齐、禁用词 0、state 正确 | before/after keyed diff | semantic migration gate |
-| 批次与签名迁移 | 现有审批记录 | manifest 不可变、签名覆盖摘要 | manifest ＋ 验签报告 | 平台治理 review |
-| grant 台账 cutover | generation fence | 新写只入受控表；旧路径拒绝 | mutation negative test | release approval |
-| rollback | 备份 ref ＋ cutover point | 可恢复旧读或前滚，不丢批准与审计 | rehearsal report | ops ＋ SP8 gate |
+| GOV 治理面 DDL（上表全部） | 空平台库 ＋ schema version | 表/PK/FK/unique/check/index/RLS policy 齐；append-only 表无 UPDATE 权 | schema dump ＋ 越权写负测 | SP7a conformance ＋ SP8 delivery |
+| `spec_preauth` backfill | 现有 spec 与其锚 | 三字段齐、禁用词 0、state 正确 | before/after keyed diff | semantic migration gate |
+| `batch`/`batch_item`/`batch_signature` 迁移 | 现有审批记录 | manifest 不可变；签名集合唯一键成立；单人凑双签被拒 | manifest ＋ 验签报告 ＋ 负测 | 平台治理 review |
+| `effect_grant`/`grant_use` cutover | generation fence ＋ 并发 claim 用例 | 新写只入受控表；**并发 claim 只有一个成功**；超限/过期/已吊销必拒 | mutation ＋ 并发负测 | release approval |
+| `gov_audit` 介质与属主 | 现有审计落点 | 落点不在企业 ops 可写介质；`dw_actor` 非空；属主单点 | 介质权限清单 ＋ 负测 | ops ＋ SP8 gate |
+| rollback | 备份 ref ＋ cutover point | 可恢复旧读或前滚，不丢批准、签名与审计 | rehearsal report | ops ＋ SP8 gate |
 
 ### 12.3 证据出口
 
@@ -290,7 +373,10 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
 - 授权两轴负测：预声明降层级必拒；
 - 预授权：禁用词与三字段空缺扫描、失效三触发用例；
 - challenge：重放 / 摘要不符 / 过期三类负测；
-- 签数：含高危项批次单签必拒、拆批不降级用例；
+- 签数：含高危项批次单签必拒、**同一 principal 凑双签必拒**、拆批不降级用例；
+- 并发：**两个消费者同时 claim 同一 grant，只有一个成功**；`use_limit` 用尽后再 claim 必拒；
+  challenge 重放/过期/摘要不符三类在同一 CAS 谓词内被拒；revoke 与 claim 交叉的两个顺序各有期望；
+- 跨域事务：形态 A/B 二选一的实证（同库 unit-of-work 或 outbox 幂等消费），并证明**不存在"收口已发生而预授权仍可用"的窗口**；
 - 紧急通道：允许/禁止两张表逐项用例、`uninstall` 必拒、fallback 缺失必拒；
 - 分发面：五闸各一正一反、只读角色调高危端点必拒、未批准即下发必拒；
 - 职责分离：审计 `dw.actor`、属主单点、审计介质不可写、备份/副本加密与审批；
@@ -390,6 +476,6 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
 | `AC-SP8-08` | 渠道分级、challenge 与门 PASS 层级 | 分级与可达步骤对应；challenge 三要素齐且重放/摘要不符/过期必拒；门 PASS 层级继承 node 分级、L3 不得由渠道终结 | 危险度评估是否准确 |
 | `AC-SP8-09` | 基线范围与签数 | §24.1 范围可判；签数取批内最高危项、拆批不降级 | 高危认定是否遗漏（人审） |
 | `AC-SP8-10` | 紧急通道 | 按 capability effect 判而非动作名；uninstall 不在允许列；无 fallback 即拒；补审闭环 | 兜底机制实际有效性 |
-| `AC-SP8-11` | 分发面、职责分离与 grant 合同 | 未批准即拒发；批准与执行分权；五闸与角色模型负测齐；grant 消费侧独立复算 | 真实并发下的实现正确性 |
-| `AC-SP8-12` | SP7b 五列与证据出口 | 对象/输入/期望/证据/门齐；设计 PASS 不升级实现 PASS | 实际迁移与运行结果 |
+| `AC-SP8-11` | 分发面、职责分离与 grant/challenge 并发合同 | 未批准即拒发；批准与执行分权；五闸与角色模型负测齐；**challenge 与 grant 的消费均为原子 CAS/唯一 claim（并发只许一个成功）**；单次≡`use_limit=1`、超限/过期/已吊销必拒；双签为签名集合且两个独立合格 principal；revoke↔consume 竞态与 `unknown` 效果各有定义路径 | 真实并发下的实现正确性 |
+| `AC-SP8-12` | GOV 目标 schema ＋ SP7b 五列与证据出口 | 目标表逐表给 PK/FK/unique/check/index/RLS 与不可变性，五条跨表不变量成立；五列逐对象对应目标表；设计 PASS 不升级实现 PASS | 实际迁移与运行结果 |
 <!-- ACCEPTANCE-SP8-END -->
