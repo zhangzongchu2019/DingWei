@@ -1,9 +1,9 @@
-# DingWei SP8 授权与平台治理设计 v1.4
+# DingWei SP8 授权与平台治理设计 v1.5
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp8-design` |
-| **版本** | v1.4 |
+| **版本** | v1.5 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | 组合冻结：SpecDoc `4220195`（v3.73）；架构/原型/SP0–SP3/代码基线 `6a98629` |
 | **合同锚** | `5241152`（`specs/sp8/spec.md` v1.4 ＋ 证据件） |
@@ -12,6 +12,8 @@
 | **评审** | `zzc-chatgpt56soltchangshark-2642`、`zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
 
 > 本件定义 GOV 治理面的目标设计与 SP7b 迁移合同，不声称批准链、grant 签发、分发闸或迁移已实现。
+> v1.5：把「配额 claim」与「执行许可」分开——grant_use 加 claimed/executing 生命周期、唯一 execution_owner、
+> lease 与 fence_token；重放非终态只返 IN_PROGRESS 不发第二张 permit；崩溃走受栅栏接管或 unknown。
 > v1.4：高危固定 dual＋second_factor 且按 signer 逐人判；claim 幂等与扣额分两支、revoke 覆盖三态；
 > 跨库改为「同步权威 fence，否则只允许同库 UoW」；跨行条件移出行 CHECK 并各配对账。
 > v1.3：补回 §23.5「范围」列（动作→档位）并做成全序可求值的 classify 函数，未命中 fail-closed 按高危。
@@ -298,14 +300,22 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
 - **单次与限次统一表达**：`use_limit INT NOT NULL DEFAULT 1 CHECK(use_limit>=1)`、`used_count INT NOT NULL DEFAULT 0 CHECK(used_count<=use_limit)`；
   `remaining = use_limit - used_count`；**不再有 `single_use` 布尔**（`single_use` ≡ `use_limit=1`），消除上一版"宣称限次、形状只有布尔"的自相矛盾；
 - **绑定面**（缺一不可）：`enterprise_id`、`audience`（消费主体：principal 或受控 service identity）、`effect_target_digest`（待执行 effect 的规范化摘要）、`scope`、`expires_at`、`generation`；
-- **消费路径分两支，先判是否新 claim，再决定要不要扣额**（上一版把两支写成一句，自相矛盾，本版拆开）：
+- 🔴 **配额 claim ≠ 执行许可**（上一版把两者混为一谈：做到了"不重复扣额"，没做到"不重复执行 effect"）。
+  `grant_use` 因此有**自己的生命周期**与**唯一执行权**：
+
+  `claimed → executing → succeeded | failed | unknown`（后三者为终态）
+  列：`state`、`execution_owner`（唯一执行权持有者）、`fence_token BIGINT`（单调，接管即 +1）、
+  `lease_expires_at`、`payload_digest`、`effect_result`、`outcome_ref`。
+
+- **消费路径分两支：先判是否新 claim，再决定扣额与是否发执行许可**：
 
 ```sql
 -- ① 尝试登记 claim（payload_digest 为消费侧规范化载荷的摘要）
-INSERT INTO grant_use(grant_id, claim_key, payload_digest, claimed_by)
-VALUES (:g, :k, :d, :p)
+INSERT INTO grant_use(grant_id, claim_key, payload_digest, claimed_by,
+                      state, execution_owner, fence_token, lease_expires_at)
+VALUES (:g, :k, :d, :p, 'claimed', :owner, 1, now() + :lease)
 ON CONFLICT (grant_id, claim_key) DO NOTHING
-RETURNING use_id;
+RETURNING use_id, fence_token;
 ```
 
 - **① 返回行 ⇒ 新 claim**：同事务内原子扣额，**达上限在同一语句内置 `exhausted`**：
@@ -317,13 +327,31 @@ UPDATE effect_grant
    AND used_count < use_limit AND expires_at > now() AND generation = :gen
 RETURNING used_count, state;
 ```
-  影响行数为 0 ⇒ **整笔回滚**（含 ①），返回 `GRANT_UNAVAILABLE`（超限/过期/已吊销/代际不符）。
-- **① 无返回（冲突）⇒ 重放**：读取既有 `grant_use` 行，比对 `payload_digest`：
-  - **相同** ⇒ 返回**既有 claim 与其 outcome**，🔴 **不再扣额**（这才是幂等，且与"新 claim 才扣额"不冲突）；
-  - **不同** ⇒ `IDEMPOTENCY_CONFLICT`，不扣额、不覆盖既有行。
+  影响行数为 0 ⇒ **整笔回滚**（含 ①），返回 `GRANT_UNAVAILABLE`。
+  提交成功后**仅向该 `execution_owner` 返回 execute permit**（含 `use_id` ＋ `fence_token`）——
+  🔴 **permit 是唯一执行凭据，外部 effect 只允许持 permit 者发起**，且发起前须 CAS `claimed→executing`。
 
-⇒ 两个并发**新** claim：`(grant_id, claim_key)` 唯一键 ＋ 条件更新构成串行化点，只有一个能扣到最后一份配额；
-两个并发**重放**：都走冲突分支，返回同一既有 outcome，`used_count` 不变。
+- **① 无返回（冲突）⇒ 重放**：读既有行，先比 `payload_digest`：
+  - **载荷不同** ⇒ `IDEMPOTENCY_CONFLICT`（不扣额、不覆盖、不发 permit）；
+  - **载荷相同且 `state` 为终态** ⇒ 返回**既有 outcome**，不扣额、**不发 permit**；
+  - 🔴 **载荷相同且 `state` 非终态**（`claimed`/`executing`）⇒ 返回 **`IN_PROGRESS`（附 `retry_after`）**，
+    **既不扣额，也绝不授权第二次 effect**——这正是上一版缺的那一格：两个重放者据同一 claim 各执行一次副作用。
+
+- **崩溃与接管（lease ＋ fencing）**：`lease_expires_at` 过期后，该 claim **不会自动作废**（配额已扣、effect 可能已发生）：
+  - 若该 effect 在 SP2/SP4 侧被**声明为可对账**（有 reconcile 句柄）⇒ CAS 接管：
+    `UPDATE grant_use SET execution_owner=:new, fence_token=fence_token+1, lease_expires_at=now()+:lease
+     WHERE use_id=:u AND state IN ('claimed','executing') AND lease_expires_at < now()`，
+    接管者拿到**新 fence_token**；**旧 owner 的任何回填一律按 fence 校验拒绝**（`FENCED_OWNER`）；
+    接管者**先对账再决定是否执行**，🔴 **不得盲目重执行**；
+  - 若该 effect **不可对账** ⇒ 直接置 `unknown` 并进 reconcile；**永不自动重发**。
+  ⇒ 「claim 后崩溃永久占配额且无恢复状态」因此不再存在：要么被受栅栏接管，要么落 `unknown` 由 reconcile 收敛。
+
+- **revoke 与非终态 claim 交叉**：吊销后 **`claimed`/`executing` 的 claim 一律不得取得新的 permit**；
+  该 claim 转入 **rollback/reconcile 义务**（与 §11.3 的 `revoked_after_use` 同一路径），
+  已在途的执行由其 owner 按 fence 回填结果，回填后仍计回退义务。
+
+⇒ 三个不变量：**同一 `claim_key` 至多一次扣额** · **同一时刻至多一个有效 `execution_owner`** ·
+**任何时刻至多一条执行路径持有 permit**（fence_token 单调保证旧路径被隔离）。
 
 **authorization_decision**：`draft → decided(approved|rejected)`，`path_axis` 与层级两分量 `signature_count`／`factor_requirement` 分列（D-SP8-02 §2.1a），决定后不可改，更正走新版本 ＋ `supersedes`。
 
@@ -338,8 +366,9 @@ RETURNING used_count, state;
 
 ### 11.3 claim → effect → result 的幂等与未知路径
 
-1. 消费域先 **claim**（11.1 原子块）→ 拿到 `grant_use.id`；
-2. 执行 effect，把 `grant_use.effect_result` 置 `succeeded | failed | unknown`；
+1. 消费域先 **claim**（11.1 原子块）→ 仅 `execution_owner` 拿到 **execute permit**（`use_id` ＋ `fence_token`）；
+2. 发起前 CAS `claimed→executing`；执行后**按 fence 回填** `effect_result`（`succeeded|failed|unknown`）与 `outcome_ref`——
+   `UPDATE … WHERE use_id=:u AND fence_token=:t AND state='executing'`，fence 不符即 `FENCED_OWNER` 拒绝；
 3. **`unknown` 不猜成功**：进入 reconcile，由消费域按其既有 reconcile 语义收敛（WRK/CAP 各自已有），GOV 侧只保留 claim 事实与最终回填；
 4. **revoke 必须覆盖三态**（上一版只写 `WHERE state='issued'`，把"部分已用/已耗尽"漏在外面）：
 
@@ -395,7 +424,9 @@ fence 查询超时 ⇒ 必须被拒；补偿落账后重放同一授权 ⇒ 仍�
 2. `audience` 与 `enterprise_id` 与本次执行主体一致；
 3. `scope` 包含本次 effect，且 `effect_target_digest` 与待执行 effect 的规范化摘要**逐位相同**；
 4. 未过期、未吊销；
-5. **通过原子 claim 取得配额**（§11.1），不是"读一下 remaining 再执行"。
+5. **通过原子 claim 取得配额并拿到 execute permit**（§11.1），不是"读一下 remaining 再执行"；
+6. 🔴 **无 permit 不得发起外部 effect**：重放拿到 `IN_PROGRESS` 时**只能等待或按 `retry_after` 重试查询**，
+   **不得据同一 claim 再执行一次**；lease 过期后的接管须持**新 `fence_token`**，且**先对账再决定是否执行**。
 
 🔴 **不接受"上游说批了"**；🔴 **新增消费域自动适用本合同，无需改本件**。
 消费失败或效果 `unknown` 时按 §11.3 走，GOV 侧不替消费域猜结果。
@@ -434,7 +465,7 @@ fence 查询超时 ⇒ 必须被拒；补偿落账后重放同一授权 ⇒ 仍�
 | `batch_item` | `(batch_id, item_seq)` | `batch_id` | `(batch_id, item_ref)` | `risk ∈ {normal,high}`；`impact_report_ref` NOT NULL | `(batch_id)` | append-only |
 | `batch_signature` | `signature_id` | `batch_id` | **`(batch_id, signer_principal)`** | 行级 CHECK 只约束本行（签名格式、`manifest_digest` 非空、`assurance_ref` 非空）；**`signer ≠ proposer` 与「签数达标」是跨行/跨表条件，归 §12.2b，不由行 CHECK 承担** | `(batch_id)` | append-only |
 | `effect_grant` | `grant_id` | `batch_id`、`enterprise_id` | `(batch_id, audience, effect_target_digest)` | `state ∈ {issued,exhausted,revoked,expired}`；`use_limit>=1`；`used_count<=use_limit`；`expires_at` NOT NULL | `(state, expires_at)`、`(audience)` | 签发后 scope/audience/target 不可改 |
-| `grant_use` | `use_id` | `grant_id` | **`(grant_id, claim_key)`** | `effect_result ∈ {succeeded,failed,unknown}` | `(grant_id)`、`(effect_result)` | append-only；结果回填一次 |
+| `grant_use` | `use_id` | `grant_id` | **`(grant_id, claim_key)`** | `state ∈ {claimed,executing,succeeded,failed,unknown}`；`effect_result ∈ {succeeded,failed,unknown}`；`fence_token>=1`；`lease_expires_at` NOT NULL | `(grant_id)`、`(state, lease_expires_at)`（扫过期 lease）、`(effect_result)` | append-only；**结果按 fence_token 回填一次**，旧 owner 回填拒绝 |
 | `grant_revocation` | `revocation_id` | `grant_id` | `(grant_id)` | `reason` NOT NULL；`revoked_after_use` bool | `(grant_id)` | append-only |
 | `emergency_release` | `release_id` | `grant_id?` | `(action_ref)` | `action ∈ {disable,quarantine,revoke}`；`fallback_ref` NOT NULL | `(reviewed)` | append-only |
 | `emergency_review` | `review_id` | `release_id`、`batch_id` | `(release_id)` | `outcome ∈ {upheld,overturned}`；`overturned ⇒ rollback_action_ref` NOT NULL | `(batch_id)` | append-only |
@@ -445,6 +476,7 @@ fence 查询超时 ⇒ 必须被拒；补偿落账后重放同一授权 ⇒ 仍�
 **跨表不变量**（实现须由约束或受控写路径保证，不靠调用方自觉）：
 1. `effect_grant` 只能由 `batch.state='approved'` 且 `count(batch_signature) >= required_signatures` 的批次派生；
 2. `grant_use` 行数 ＝ `effect_grant.used_count`（对账判据）；
+2a. 🔴 **任一 `grant_use` 在任一时刻至多一个有效 `execution_owner`**；非终态且 lease 过期者必须要么被受栅栏接管、要么置 `unknown`——恒零：**「非终态且 lease 过期超过 SLA 仍无接管也无 `unknown`」的 claim 数**；
 3. `emergency_release` 必有对应 `emergency_review`，否则计入"未进入下一批次补审"恒零计数器；
 4. 任一 `challenge` 消费必对应一条 `authorization_decision`；
 5. `preauth_expiry` 存在 ⇒ 该 `preauth` 的读侧一律按 `expired` 处理（D-SP8-11 §11.4 的读侧 fail-closed）。
@@ -487,6 +519,11 @@ PG 的行级 `CHECK` **看不到别的行、也看不到别的表**，故下列�
 - 并发：**两个消费者同时新 claim，只有一个扣到最后一份配额**；**同 `claim_key` ＋ 同载荷重放 ⇒ 返既有 outcome 且 `used_count` 不变**；
   **同 `claim_key` ＋ 异载荷 ⇒ `IDEMPOTENCY_CONFLICT` 且不扣额**；用尽后再 claim 必拒且 `state='exhausted'`；
   **claim↔revoke 两个顺序各自期望**（revoke 先 ⇒ 新 claim 拒；claim 先 ⇒ 记 `revoked_after_use` 并挂回退义务）；
+- **执行许可三类并发负测**（本轮新增）：
+  ① **首个 claim 未回填 outcome 时两个重放者同时到** ⇒ 二者均得 `IN_PROGRESS`，**外部 effect 只发生一次**；
+  ② **claim 后崩溃**（owner 死、lease 过期）⇒ 要么受栅栏接管（新 `fence_token`、旧 owner 回填被 `FENCED_OWNER` 拒、接管者先对账）、
+     要么置 `unknown` 进 reconcile；**恒零：非终态且 lease 超 SLA 仍无接管无 `unknown` 的 claim 数**；
+  ③ **revoke 与 pending claim 交叉** ⇒ 该 claim 不得取得新 permit，转 rollback/reconcile；在途执行按 fence 回填后仍计回退义务；
   challenge 重放/过期/摘要不符三类在同一 CAS 谓词内被拒；revoke 与 claim 交叉的两个顺序各有期望；
 - 跨域事务：形态 A（同库 UoW）为默认；若选形态 B，须实证**同步权威 fence 生效**——
   **注入 outbox 延迟窗口后授权必须被拒**、**fence 超时必须被拒**，并给对账（closeout 有而 expiry 缺超 SLA 的条目恒零）；
@@ -591,6 +628,6 @@ PG 的行级 `CHECK` **看不到别的行、也看不到别的表**，故下列�
 | `AC-SP8-08` | 渠道分级（范围×可达步骤）、challenge 与门 PASS 层级 | **四档均给「动作→档位」范围枚举**，`classify(action)` 全序可求值且未命中者 fail-closed 按高危；「渠道终结高危授权数恒零」对四档均可求值；分级与可达步骤对应；challenge 三要素齐且重放/摘要不符/过期必拒；门 PASS 层级继承 node 分级、L3 不得由渠道终结 | 危险度评估是否准确 |
 | `AC-SP8-09` | 基线范围与签数 | §24.1 范围可判；签数取批内最高危项、拆批不降级 | 高危认定是否遗漏（人审） |
 | `AC-SP8-10` | 紧急通道 | 按 capability effect 判而非动作名；uninstall 不在允许列；无 fallback 即拒；补审闭环 | 兜底机制实际有效性 |
-| `AC-SP8-11` | 分发面、职责分离与 grant/challenge 并发合同 | 未批准即拒发；批准与执行分权；五闸与角色模型负测齐；**新 claim 才扣额、重放同载荷返既有 outcome 不再扣额、异载荷报 `IDEMPOTENCY_CONFLICT`**；达上限在同一语句置 `exhausted`；**revoke 覆盖未用/部分已用/已耗尽三态**并挂回退义务；双签为签名集合、两名 signer 各自达 `second_factor`；**跨行条件由写路径或触发器保证并各有对账，不冒充行 CHECK** | 真实并发下的实现正确性 |
+| `AC-SP8-11` | 分发面、职责分离与 grant/challenge 并发合同 | 未批准即拒发；批准与执行分权；五闸与角色模型负测齐；**新 claim 才扣额且仅其 owner 得 execute permit；重放：终态返既有 outcome、非终态返 `IN_PROGRESS` 且不发第二张 permit；异载荷报 `IDEMPOTENCY_CONFLICT`**；**lease 过期须受栅栏接管或置 `unknown`，接管者先对账不得盲重执行**；达上限在同一语句置 `exhausted`；**revoke 覆盖未用/部分已用/已耗尽三态**并挂回退义务；双签为签名集合、两名 signer 各自达 `second_factor`；**跨行条件由写路径或触发器保证并各有对账，不冒充行 CHECK** | 真实并发下的实现正确性 |
 | `AC-SP8-12` | GOV 目标 schema ＋ SP7b 五列与证据出口 | 目标表逐表给 PK/FK/unique/check/index/RLS 与不可变性；**跨行/跨表条件另列强制手段与对账（§12.2b），不写成行 CHECK**；五条跨表不变量成立；五列逐对象对应目标表；设计 PASS 不升级实现 PASS | 实际迁移与运行结果 |
 <!-- ACCEPTANCE-SP8-END -->
