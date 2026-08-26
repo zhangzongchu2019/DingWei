@@ -19,6 +19,34 @@ LIST=${LIST:-specs/gates/superseded-claims.txt}
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
 EXLIST=${EXLIST:-specs/gates/superseded-claims-exceptions.txt}
 AUTHOR_SESSION=${AUTHOR_SESSION:-zzc-opus50tchangshark-2642}   # 执笔方；批准方不得为它（不得自增自批）
+CODES='cross-line-false-positive historical-narrative rv-annotation is-current-rule evidence-of-absence'
+
+# 🔴 受控理由码的后置条件（specs/gates/REASON-CODES.md）——乙域裁定归执笔方实现。
+#   立此机制的原因：理由此前是自由文本、只校非空；执笔方曾以「跨行误命中」为由
+#   压住两处【行内就有】的旧断言而闸返 0。⇒ 判据交给码，叙述留给人。
+#   ⚠️ 判【码与行形态是否相符】，🔴 判不了【豁免该不该给】，也判不了【码选得对不对】——归门方。
+_code_ok() {   # $1=code  $2=件  $3=行号  $4=被抑制短语
+  _c=$1; _cf=$2; _cl=$3; _cp=$4
+  _line=$(sed -n "${_cl}p" "$_cf")
+  case " $CODES " in *" $_c "*) : ;; *) return 1 ;; esac        # 未知码一律拒
+  case "$_c" in
+    cross-line-false-positive)
+      # 🔴 该行【行内不得】含被抑制短语——执笔方那次编的理由会被这条拆穿
+      printf '%s' "$_line" | grep -qF "$_cp" && return 1 || return 0 ;;
+    historical-narrative)
+      printf '%s' "$_line" | grep -qE '现有|现为|目前' && return 1
+      printf '%s' "$_line" | grep -qE 'v[0-9]+\.[0-9]+|[0-9]{4}-[0-9]{2}|之前|当时|原[为写]' && return 0 || return 1 ;;
+    rv-annotation)
+      printf '%s' "$_line" | grep -q '【RV' && return 0 || return 1 ;;
+    is-current-rule)
+      grep -n '〔权威定义〕' "$_cf" >/dev/null 2>&1 || return 1
+      awk -v p="$_cp" '/〔权威定义〕/{f=1} f && index($0,p){hit=1} END{exit !hit}' "$_cf" && return 0 || return 1 ;;
+    evidence-of-absence)
+      _obj=$(printf '%s' "$_line" | grep -oE '`[^`]+`' | head -1 | tr -d '`')
+      [ -n "$_obj" ] && [ ! -e "$_obj" ] && return 0 || return 1 ;;
+  esac
+  return 1
+}
 # 🔴 **`style-ok:` 已从本 SKIP 中移除**（乙域 RV-乙18）：
 #   自由文本豁免＝闸有一个没人看的后门 —— 闸只看有没有那四个字，不看理由是否属实。
 #   实例：以「跨行误命中」为由压住两处【行内就有】的旧断言，闸照旧返回 0。
@@ -64,10 +92,11 @@ check() {
         for _one in $(printf '%s\n' "$_lines" | cut -d: -f1); do
           _txt=$(sed -n "${_one}p" "$f" | tr -d '[:space:]')
           _fp=$(printf '%s' "$_txt" | sha256sum | cut -c1-16)
-          if awk -F'\t' -v o="$old" -v ff="$f" -v fp="$_fp" -v me="$AUTHOR_SESSION" '
+          _rc=$(awk -F'\t' -v o="$old" -v ff="$f" -v fp="$_fp" -v me="$AUTHOR_SESSION" '
                 $1==o && $2==ff && $3==fp && $4!="" && $5!="" \
-                && $5 !~ /待|未|pending|PENDING|TODO/ && $5 != me {found=1} END{exit !found}' \
-                "$EXLIST" 2>/dev/null; then
+                && $5 !~ /待|未|pending|PENDING|TODO/ && $5 != me {print $4; exit}' "$EXLIST" 2>/dev/null)
+          _code=$(printf '%s' "$_rc" | sed 's/：.*//; s/:.*//' | tr -d ' ')
+          if [ -n "$_code" ] && _code_ok "$_code" "$f" "$_one" "$old"; then
             _exn=$((${_exn:-0}+1))
           else
             _remain="$_remain $_one"
@@ -133,16 +162,50 @@ selftest() {
   # ⚠️ 本组随 v2 改契约同步重写 —— 🔴 **改契约必须回头改为旧契约写的反测**，
   #    否则它要么误报，要么把旧行为再拉回来。（v1 三列 → v2 五列，含行指纹与批准方。）
   _fp0(){ sed -n "$2p" "$1" | tr -d '[:space:]' | sha256sum | cut -c1-16; }
-  mk; printf '本节采用旧说法处理。\n' >> "$T/a.md"
+  mk; printf '沿革：v3.2 之前本节采用旧说法处理。\n' >> "$T/a.md"
   _l0=$(grep -n '本节采用' "$T/a.md" | cut -d: -f1); _f0=$(_fp0 "$T/a.md" "$_l0")
 
-  printf '旧说法\t%s\t%s\t确属现行禁令本身\t门方sol\n' "$T/a.md" "$_f0" > "$T/ex.txt"
+  # ⚠️ 随 v3 同步：理由字段已由自由文本改为【受控码】。**改契约必须回头改旧反测**——本轮第二次踩。
+  printf '旧说法\t%s\t%s\thistorical-narrative：沿革叙述\t门方sol\n' "$T/a.md" "$_f0" > "$T/ex.txt"
   EXLIST="$T/ex.txt" run
-  [ $? -eq 0 ] && ok "登记例外五列齐（短语＋件＋行指纹＋理由＋真批准方）放行" || bad "合规登记例外被误拦"
+  [ $? -eq 0 ] && ok "登记例外五列齐（短语＋件＋行指纹＋受控码＋真批准方）放行" || bad "合规登记例外被误拦"
 
-  printf '旧说法\t%s\t%s\t\t门方sol\n' "$T/a.md" "$_f0" > "$T/ex2.txt"
-  EXLIST="$T/ex2.txt" run
-  [ $? -eq 1 ] && ok "🔴 拦住：登记例外【理由为空】不放行（空理由＝没理由）" || bad "空理由被放行"
+  # ⚠️ 原此处另有一条「空理由」反测 —— **与 v3 的「空码一律拒」测的是同一维，已删**。
+  #    🔴 改契约时不仅要改旧反测，**重复维度的旧条目该删就删**：
+  #    两条测同一维，会让人以为覆盖面更宽，而实际没有；且其中一条失效时另一条仍绿。
+
+  # ===== v3 反测：受控理由码（乙域点名要的四条 ＋ 拆穿执笔方那次编造理由的一条）=====
+  _fpz(){ sed -n "$2p" "$1" | tr -d '[:space:]' | sha256sum | cut -c1-16; }
+  _mkex(){ printf '旧说法\t%s\t%s\t%s\t门方sol\n' "$T/a.md" "$2" "$1" > "$T/exC.txt"; }
+
+  # 🔴 ① 未知码一律拒（不做「未知即放行」）
+  mk; printf '本节采用旧说法处理。\n' >> "$T/a.md"
+  _lz=$(grep -n '本节采用' "$T/a.md" | cut -d: -f1); _fz=$(_fpz "$T/a.md" "$_lz")
+  _mkex "no-such-code：随便写的" "$_fz"; EXLIST="$T/exC.txt" run
+  [ $? -eq 1 ] && ok "🔴 未知理由码一律拒（不做「未知即放行」）" || bad "未知码被放行"
+
+  # 🔴 ② 空码一律拒（空码＝没码）
+  _mkex "：只有补充说明没有码" "$_fz"; EXLIST="$T/exC.txt" run
+  [ $? -eq 1 ] && ok "🔴 空码一律拒（空码 ＝ 没码）" || bad "空码被放行"
+
+  # 🔴 ③ 行内真实命中：码写 cross-line-false-positive，而短语【就在本行】⇒ 必拒
+  #    这正是执笔方 6d8ae86 那次编造理由的形态，本条把它当场拆穿。
+  _mkex "cross-line-false-positive：编造的理由" "$_fz"; EXLIST="$T/exC.txt" run
+  [ $? -eq 1 ] && ok "🔴 行内真实命中 ＋ 码称「跨行误命中」⇒ 必拒（拆穿执笔方那次编造的理由）" \
+                || bad "编造的跨行理由仍能豁免 —— 码没有后置条件"
+
+  # ④ 码与行形态相符时放行：historical-narrative ＋ 明确时点表述
+  mk; printf '沿革：v3.2 之前曾采用旧说法。\n' >> "$T/a.md"
+  _lh=$(grep -n 'v3.2 之前' "$T/a.md" | cut -d: -f1)
+  _mkex "historical-narrative：沿革叙述" "$(_fpz "$T/a.md" "$_lh")"; EXLIST="$T/exC.txt" run
+  [ $? -eq 0 ] && ok "不误伤：historical-narrative ＋ 明确时点表述 ⇒ 放行" || bad "合规码被误拦"
+
+  # 🔴 ⑤ historical-narrative 但用【现在时】写旧状态 ⇒ 拒（沿革通则）
+  mk; printf '本节现有旧说法 的写法。\n' >> "$T/a.md"
+  _ln2=$(grep -n '本节现有' "$T/a.md" | cut -d: -f1)
+  _mkex "historical-narrative：沿革叙述" "$(_fpz "$T/a.md" "$_ln2")"; EXLIST="$T/exC.txt" run
+  [ $? -eq 1 ] && ok "🔴 沿革码 ＋ 现在时（现有/现为/目前）⇒ 拒（沿革不得用现在时描述旧状态）" \
+                || bad "现在时旧状态被当沿革放行"
 
   # ===== v2 反测：归口方两个变异测试的固化（2026-08-26） =====
   _fp(){ sed -n "$2p" "$1" | tr -d '[:space:]' | sha256sum | cut -c1-16; }
