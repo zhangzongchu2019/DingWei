@@ -42,6 +42,8 @@ for reviewer in zzc-opus50tchangshark-2642 zzc-deepseekv4pro08130ca16c13-2642 zz
 done
 grep -q '3/3' "$SPEC" && grep -q 'AC-E05' "$SPEC" || { echo '✗ 三票门未落 AC-E05'; exit 1; }
 for dep in SP0 SP1 SP7a SP7b; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置处置表缺 $dep"; exit 1; }; done
+! grep -Eq 'SP[01].*已通过本轮评审|已通过设计输入|上述“设计已通过”' "$SPEC" || { echo '✗ SP0/SP1 draft 被宽写为已通过'; exit 1; }
+grep -q 'draft，待双评审' "$SPEC" || { echo '✗ SP0/SP1 冻结状态未按实取写明'; exit 1; }
 grep -q '架构 §13.*WRK' "$SPEC" || { echo '✗ 原型入口派生源未钉为架构 §13 WRK 行'; exit 1; }
 for token in 'F.1.2' 'F.1.3' 'F.2 #4' 'delivery.verify' 'A§21'; do grep -q "$token" "$SPEC" || { echo "✗ 附录 F 承接/冲突登记缺 $token"; exit 1; }; done
 
@@ -62,6 +64,19 @@ for l in ls:
 print(h,e["E.1"],e["E.3"],e["E.4"])
 ')
 for n in "$1" "$2" "$3" "$4"; do [ "$n" -gt 0 ] || { echo '✗ 冻结预期集合为空'; exit 2; }; done
+UI_N=$(git show "$ANCHOR:docs/dingwei-platform-architecture.md" | python3 -c '
+import re,sys
+on=False; ids=set()
+for l in sys.stdin:
+ if re.match(r"^## 13\.",l): on=True; continue
+ if on and re.match(r"^## ",l): on=False
+ if not on or not l.startswith("|"): continue
+ c=[x.strip() for x in l.strip().strip("|").split("|")]
+ if len(c)>=2 and "WRK" in c[1].split("/"):
+  for group in re.findall(r"`([^`]+)`",c[0]): ids.update(group.split("/"))
+print(len(ids))
+')
+[ "$UI_N" -gt 0 ] || { echo '✗ 架构 §13 WRK 原型入口预期集合为空'; exit 2; }
 SELFTEST_OUT=$(specs/sp2/check.sh --selftest) || { echo '✗ SP2 coverage checker 反测未过'; exit 1; }
 SELFTEST_N=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP2 覆盖反测 \([0-9][0-9]*\) 项全过$/\1/p')
 [ -n "$SELFTEST_N" ] || { echo '✗ SP2 coverage checker 未报告实算反测数'; exit 2; }
@@ -71,6 +86,6 @@ else
  rc=$?; [ "$rc" -eq 2 ] || { echo "✗ 目标件缺失应 rc=2，实际 $rc"; exit 1; }
 fi
 echo '预期集合：六面 + D/AC各12 + WRK接口8 + 四轮 + 三票 + 前置4 + 机器派生 heading/E + coverage反测/缺件'
-echo "实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + headings=$1 / E=$(( $2+$3+$4 ))（$2+$3+$4）+ selftest=$SELFTEST_N + rc2"
+echo "实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + headings=$1 / E=$(( $2+$3+$4 ))（$2+$3+$4）/ 架构§13-WRK入口=$UI_N + selftest=$SELFTEST_N + rc2"
 echo '未知集合：0'
 echo '✓ SP2 设计合同与冻结输入通过'

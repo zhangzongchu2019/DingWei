@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp2-design` |
-| **合同版本** | v1.5 |
+| **合同版本** | v1.6 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -51,17 +51,17 @@ SpecDoc §0.3 对 SP2 的定义唯一且与目标架构一致：
 
 | 前置/责任 | 当前可用事实 | SP2 设计期处理 | SP2 实现期开工门 |
 |---|---|---|---|
-| **SP0** | SpecDoc 产品规则已生效；SP0 设计件已通过本轮评审 | 消费 GateSet/评审 seam，不能改其规则语义 | SP0 对应实现开工门和接口 conformance 未闭前，SP2 只允许 mock/contract test，不接真实 GOV 写面 |
-| **SP1** | AccessCtx、主体传播、Agent provenance 设计已通过本轮评审 | 所有 actor/reviewer schema 依该设计；不回退 TenantCtx/agent/session 身份 | P1/AccessCtx/agent binding 的实现与负测未闭前，SP2 mutating/status observation 均不得上线 |
+| **SP0** | SpecDoc 产品规则已生效；冻结 SP0 设计件状态为 `draft，待双评审`，评审票未在冻结输入落账 | 暂按其 GateSet/评审 seam 作待确认输入；不得把 draft 当权威 PASS，若后续 verdict 改接口则按 §5 登记冲突 | SP0 设计 verdict、实现开工门和接口 conformance 未闭前，SP2 只允许 mock/contract test，不接真实 GOV 写面 |
+| **SP1** | 冻结 SP1 设计件状态为 `draft，待双评审`，评审票未在冻结输入落账 | 暂按其 AccessCtx、主体传播、Agent provenance 作待确认输入；不倒签 PASS | SP1 设计 verdict 及 P1/AccessCtx/agent binding 实现负测未闭前，SP2 mutating/status observation 均不得上线 |
 | **SP7a** | 目标架构接口已定，**实现尚未交付** | 只依赖 `RunInAccessTx`/migration runner/仓储 port 合同；与 SP2 详细设计并行 | 受控 transaction、隔离与 migration runner conformance 未过，不得执行 WRK schema cutover |
 | **SP7b（SP2 责任）** | 尚未设计/实施 | 本件必须给 WRK schema、migration、cutover、rollback 五列合同 | 由 SP2 实现批次履约；不得推给“统一 SP7”或拿 SP7a PASS 代签 |
 
-上述“设计已通过”只允许作为接口设计输入，不构成实现 PASS。若某前置的 reviewer/coordinator 落账尚未齐，
-该缺口留在对应包的开工门；SP2 不代填、不倒签，也不因此停止自身设计。
+上述 draft 设计件只允许作为待确认接口输入，不构成设计或实现 PASS。reviewer/coordinator 落账未齐的缺口
+留在对应包及 SP2 开工门；SP2 不代填、不倒签，也不因此停止自身设计。
 
 ### 0.7 SYNC IMPACT REPORT（v1.4 → v1.5）
 
-- B1 确认：SP0/SP1 设计 PASS 只作输入，未履约项仍留对应实现开工门，不倒签前置完成。
+- B1 更正：冻结 SP0/SP1 头块均为 `draft，待双评审`，故只作待确认输入；评审票与实现欠账分别留在开工门，不倒签 PASS。
 - 原型预期集合改由冻结架构 §13 中主责域含 `WRK` 的行机器派生，不再按导航文案猜“相关入口”。
 - 新增附录 F 判据集合，承接 F.1.2、F.1.3、F.2 #4；A§21 悬空引用登记后上交，不自行补造。
 
@@ -124,8 +124,8 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 | `docs/dingwei-platform-specdoc.md` | v3.69 / `8b0b20b97af85bf1c42c1b8dd5a7c94a0e73d1de3100666c5acb2370ae56c61e` | §5–§9、附录 E owner_sp=SP2 |
 | `docs/dingwei-platform-architecture.md` | v1.3 / `0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc` | WRK 边界、接口、数据、迁移与验收方向 |
 | `docs/dingwei-prototype.html` | v1.47 / `eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8` | 看板、分级、待决、发版/回滚与复盘交互输入 |
-| `docs/dingwei-sp0-design.md` | v1.1 / `f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec` | 规则/GateSet 与评审 seam 的已通过设计输入 |
-| `docs/dingwei-sp1-design.md` | v1.1 / `8fafe6c5bac5595eaa771543dfc4199ba3670081786f1769f39833dc616e27bf` | AccessCtx/企业边界/Agent provenance 的已通过设计输入 |
+| `docs/dingwei-sp0-design.md` | v1.1 / `f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec` | draft 待双评审的规则/GateSet seam 输入，不作 PASS 证据 |
+| `docs/dingwei-sp1-design.md` | v1.1 / `8fafe6c5bac5595eaa771543dfc4199ba3670081786f1769f39833dc616e27bf` | draft 待双评审的 AccessCtx/企业边界/Agent provenance 输入，不作 PASS 证据 |
 | 冻结代码 | 同 commit | 只证现状、复用 seam 与迁移差距，不决定目标语义 |
 
 ## 2. 必须交付
@@ -210,7 +210,7 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 | SpecDoc 自身矛盾 | 登记冲突双方的精确章节、两种后果与建议，交 coordinator/业主，不自行取舍 |
 | SpecDoc 与目标架构冲突 | 登记双方精确章节与后果，交 coordinator/业主，不自行设优先级 |
 | SpecDoc F.1.2 引用不存在的“架构 A§21 转交合同” | 登记为悬空引用；本件只承接明确写出的 `delivery.verify` 门，不臆造 A§21 内容，交 coordinator/业主修权威引用 |
-| 新设计与已 PASS SP0/SP1 对撞 | 停止该路径，登记接口/语义差异，不改上游件 |
+| 新设计与冻结 SP0/SP1 draft 输入对撞 | 停止该路径，登记接口/语义差异并交裁；不自行把任一 draft 提升为权威 |
 | 目标与代码现状冲突 | 记迁移差距；不得把旧实现提升为目标规则 |
 | 合同范围变化 | bump 合同并重走三方评审，未过不写正文 |
 
