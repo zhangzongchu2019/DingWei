@@ -242,6 +242,16 @@ selftest() {
   _runex; [ $? -eq 2 ] && ok "🔴 该门方无受保护 ref 声明 ⇒ 取不到 ⇒ UNKNOWN exit 2" || bad "无 REF 声明时给了结论"
   exc_fixture_trust "$T" "$REV" reviewer-owned-protected-ref
 
+  # 🔴 授权根的【注释行】不得生效 —— 钉住 2026-08-26 那个自造缺陷：
+  #   上一版闸直接读散文件 TRUST-ROOT.md，其「启用方式」示例的行首形态与真配置一样，
+  #   于是**文档示例把后端激活了**，而文档同一页还写着「当前零 ACTIVE」。
+  #   ⚠️ 判据与被判物必须同源；散文件里写着的东西不该能改变机器的判定。
+  printf '# ACTIVE: reviewer-owned-protected-ref\n#REF: %s review/approvals-test approvals/rec.approvals\n' "$REV" > "$T/trust.md"
+  _ex SC-TEST-01 旧说法 "$T/a.md" "$_fh" historical-narrative "$REV@$_CMT#AP-01"
+  _runex; [ $? -eq 2 ] && ok "🔴 授权根里【注释掉的】ACTIVE/REF 行不生效（文档示例不得激活后端）" \
+                       || bad "注释行竟激活了后端 —— 散文能改变机器判定"
+  exc_fixture_trust "$T" "$REV" reviewer-owned-protected-ref
+
   # ⑩ 行指纹不匹配 ⇒ 例外失效（内容一改须重新批准）
   _ex SC-TEST-01 旧说法 "$T/a.md" 0000000000000000 historical-narrative "$REV@$_CMT#AP-01"
   _runex; [ $? -eq 1 ] && ok "🔴 行指纹不匹配 ⇒ 例外失效（内容哈希，非行号）" || bad "指纹不匹配仍放行"

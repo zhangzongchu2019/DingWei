@@ -38,16 +38,14 @@
 
 ## 三、启用方式（🔴 由门方或 coordinator 加，不由执笔方加）
 
-```
-ACTIVE: reviewer-owned-protected-ref
-REF: <门方会话名> <远端受保护 ref> <记录在该 ref 内的路径>
-```
+🔴 **本件是散文说明，闸【不读】它。** 机器读取面是 `specs/gates/approvals/ACTIVE.conf`，
+格式与示例都写在那里，启用也在那里改。
 
-例（**示例，当前未启用**）：
-
-```
-REF: zzc-chatgpt56terrazhangzongchu-2642 refs/remotes/origin/review/approvals-terra approvals/terra.approvals
-```
+⚠️ **为什么要分家**（2026-08-26 实取抓出的自造缺陷）：
+上一版让闸直接读本件，而本节原本写着启用方式的**示例**；
+示例虽在围栏代码块内，**行首形态与真配置一模一样** ⇒ **闸把文档示例读成了启用配置**。
+于是「当前零 ACTIVE 后端」这句话**在文档里是真的、在机器面是假的**。
+🔴 **判据与被判物必须同源** —— 散文件里写着的东西，不该能改变机器的判定。
 
 记录行格式（TAB 分隔八列）：
 
@@ -57,7 +55,8 @@ REF: zzc-chatgpt56terrazhangzongchu-2642 refs/remotes/origin/review/approvals-te
 
 门方名册取自**同一 commit** 内的 `reviewers.txt`（不取工作区那份 —— 同上一条理由）。
 
-**本件当前的 ACTIVE 行：无。REF 行：无。**
+**当前生效配置见 `specs/gates/approvals/ACTIVE.conf`：ACTIVE 行 0 条、REF 行 0 条**
+（该件内两行示例均已注释掉，注释行一律不生效，闸的反测钉住了这一点）。
 
 ## 四、能力边界（写明不假装）
 

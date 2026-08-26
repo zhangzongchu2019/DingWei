@@ -34,7 +34,7 @@ EXC_AUTHOR='zzc-opus50tchangshark-2642'
 #   ⇒ 故本库对「授权根是否成立」的默认答案是 **UNKNOWN，不是 PASS**（见 exc_trust_backends）。
 EXC_APPROVALS=${EXC_APPROVALS:-specs/gates/approvals}
 EXC_REVIEWERS=${EXC_REVIEWERS:-specs/gates/reviewers.txt}
-EXC_TRUSTROOT=${EXC_TRUSTROOT:-specs/gates/approvals/TRUST-ROOT.md}
+EXC_TRUSTROOT=${EXC_TRUSTROOT:-specs/gates/approvals/ACTIVE.conf}
 
 # 行指纹 = 该行去空白后 sha256 前 16 位。
 # 🔴 用**内容哈希**而非行号：行号会随上游插入一行而整体漂移，
@@ -47,6 +47,12 @@ exc_fp() { sed -n "$2p" "$1" | tr -d '[:space:]' | sha256sum | cut -c1-16; }
 # 🔴 当前仓内 TRUST-ROOT.md **一个 ACTIVE 后端都没有** —— 这是实况，不是疏漏：
 #   「reviewer-owned 怎么验证」（甲 git blame / 乙 GPG / 丙 门方独占件）属门方裁量，尚未裁定。
 #   ⇒ 在裁定落地前，任何**已登记的例外**都判 UNKNOWN(2)，不判 PASS。键结构先落，机制等门方。
+# 🔴 只读**机器面配置件**（specs/gates/approvals/ACTIVE.conf），**不读散文件 TRUST-ROOT.md**。
+#   起因（2026-08-26 实取）：上一版直接读 TRUST-ROOT.md，而该件写着启用方式的**示例**，
+#   示例虽在围栏代码块内，行首形态却与真配置一模一样 ⇒ **闸把文档示例读成了启用配置**。
+#   ⚠️ 于是「当前零 ACTIVE 后端」这句话在文档里是真的、在机器面是假的 ——
+#     **判据与被判物不同源**，本轮同族第 N 次。
+#   ⇒ 机器面与散文面分家；且注释行（行首 #）一律不生效。
 exc_trust_backends() {
   [ -f "$EXC_TRUSTROOT" ] || return 2
   sed -n 's/^ACTIVE:[[:space:]]*\([A-Za-z0-9_-]*\).*/\1/p' "$EXC_TRUSTROOT"

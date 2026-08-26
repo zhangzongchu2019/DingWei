@@ -37,6 +37,7 @@
 | `specs/gates/superseded-claims-exceptions.txt` | 已撤销断言闸的**受控例外**（六列：`claim_id` TAB 被抑制对象 TAB 件 TAB 行指纹 TAB 理由码 TAB `approval_ref`）。🔴 立件原因（乙域 RV-乙18）：原以行内自由文本 `style-ok:` 豁免，而**闸不看理由、只看有没有那四个字**。v3 再修一层（乙域复验 @ `434b8fe`）：**「批准方」是一次字符串比对，不是一次批准核验** —— 填字面「terra」即放行、覆盖 `AUTHOR_SESSION` 即可自批。现改为 `approval_ref` 须解析到门方台账并四元组匹配。⚠️ **登记 ≠ 获批准**；**授权根不可得 ⇒ UNKNOWN(2)，不是 PASS** |
 | `specs/gates/lib/exceptions.sh` | **受控例外公共库（四个使用点共用）** —— 行指纹（内容哈希）· 理由码后置条件 · `approval_ref` 解析核验（受保护 ref ＋ 不可变 commit）。⚠️ 冻结基线棘轮**已按乙域收尾裁定删除**（待批准＝拒绝）。🔴 执笔方会话名**写死在库内、不读环境变量**：否则「不得自批」这条规则的开关就握在被规则约束的一方手里 |
 | `specs/gates/approvals/TRUST-ROOT.md` | 批准记录的**授权根**声明 —— 机制＝**丙（门方独占受保护 ref ＋ 不可变 commit ＋ 记录 ID ＋ CI 验可达）**，乙域收尾裁定精确版；甲（git blame）只是元数据非授权，乙（GPG）可日后叠加但无密钥信任/撤销根时不可单独作后端。🔴 **当前无任何 ACTIVE 后端**⇒ 已登记的受控例外与**依赖它的那个闸**一律 **UNKNOWN(2)**，均不得 PASS |
+| `specs/gates/approvals/ACTIVE.conf` | 授权根的**机器读取面**（闸只读本件，不读散文件）。🔴 立件原因：上一版闸直接读 `TRUST-ROOT.md`，其「启用方式」**示例**的行首形态与真配置一样 ⇒ **文档示例把后端激活了**，而同一页还写着「当前零 ACTIVE」。**判据与被判物必须同源。** 当前 ACTIVE 0 条 / REF 0 条；注释行不生效（有反测钉住）|
 | `specs/gates/reviewers.txt` | 门方会话名册（**工作区副本，仅供人读**）。🔴 判定时**不读本件** —— 名册取自受保护 ref 的**同一 commit**，因为工作区这份在执笔方写权内 |
 | `specs/gates/lib/approval-fixture.sh` | 四闸反测共用的**批准夹具**（造门方独占仓 ＋ 受保护 ref ＋ 不可变 commit）。⚠️ 只供 `--selftest`，真实判定路径不读它 |
 | `specs/gates/path-anchor-exceptions.txt` | 路径锚闸（`path-ok` 通道）的受控例外，格式同上。🔴 行内 `path-ok:` 自由文本**已不再构成豁免** |
