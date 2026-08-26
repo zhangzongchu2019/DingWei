@@ -2,14 +2,14 @@
 # SP3 设计覆盖检查：预期集合从冻结锚派生；正文缺失/块缺失/预期空/输入漂移均 exit 2。
 set -u
 BASE_ANCHOR=${BASE_ANCHOR:-53e4a2aed1569eef91e4048e7da2a1cd32db3ec2}
-SPECDOC_ANCHOR=${SPECDOC_ANCHOR:-a5abc57}
+SPECDOC_ANCHOR=${SPECDOC_ANCHOR:-fcfec9a}
 DOC=${DOC:-docs/dingwei-sp3-design.md}
 MODE=${1:-check}
 python3 - "$BASE_ANCHOR" "$SPECDOC_ANCHOR" "$DOC" "$MODE" <<'PY'
 import hashlib,re,subprocess,sys,os
 base_anchor,spec_anchor,doc,mode=sys.argv[1:]
 PATHS={
- 'docs/dingwei-platform-specdoc.md':(spec_anchor,'e54599968828fef0182c2e910700807b5ae83b525849ccab4b5f848d5a620619'),
+ 'docs/dingwei-platform-specdoc.md':(spec_anchor,'bb4cf7becda882e3bafe35b3c293e0577783c4880b756e013ef861b088d8dcaa'),
  'docs/dingwei-platform-architecture.md':(base_anchor,'0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc'),
  'docs/dingwei-prototype.html':(base_anchor,'eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8'),
  'docs/dingwei-sp0-design.md':(base_anchor,'f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec'),
