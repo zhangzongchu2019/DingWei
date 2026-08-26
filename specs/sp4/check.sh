@@ -28,36 +28,39 @@ def get(path):
 spec=get('docs/dingwei-platform-specdoc.md'); arch=get('docs/dingwei-platform-architecture.md'); proto=get('docs/dingwei-prototype.html')
 for p in ('docs/dingwei-sp0-design.md','docs/dingwei-sp1-design.md','docs/dingwei-sp2-design.md','docs/dingwei-sp3-design.md','docs/dingwei-sp8-design.md'): get(p)
 
-def derive_interfaces(text):
-    out=set(); on=False
+class Boundary(Exception): pass
+
+def slice_lines(text,start,stop,label,keep_start=False):
+    # 🔴 通用不变量①：起界与止界都必须实证命中，任一未命中即 Boundary。
+    # 不得靠"结果非 0"兜底——止界不命中时切片会一路取到 EOF，分母仍非 0 却已不可信。
+    out=[]; on=False; start_seen=False; stop_seen=False
     for l in text.splitlines():
-        if re.match(r'^## 6\.',l): on=True; continue
-        if on and re.match(r'^## ',l): on=False
-        if not on: continue
-        m=re.match(r'^\| `(CAP-(?:CMD|QRY|CAP)-[^`]+)` \| CAP \|',l)
-        if m: out.add('IF:'+m.group(1))
+        if not on and re.match(start,l):
+            on=True; start_seen=True
+            if keep_start: out.append(l)
+            continue
+        if on and re.match(stop,l): stop_seen=True; break
+        if on: out.append(l)
+    if not start_seen: raise Boundary(f'起界未命中：{label}')
+    if not stop_seen:  raise Boundary(f'止界未命中：{label}（切片取到 EOF，分母不可信）')
     return out
+
+def derive_interfaces(text):
+    return {'IF:'+m.group(1) for l in slice_lines(text,r'^## 6\.(?![0-9])',r'^## ','架构 ^## 6. … 下一个 ^##')
+            for m in [re.match(r'^\| `(CAP-(?:CMD|QRY|CAP)-[^`]+)` \| CAP \|',l)] if m}
 
 def derive_events(text):
-    out=set(); on=False
-    for l in text.splitlines():
-        if re.match(r'^## 4\.',l): on=True; continue
-        if on and re.match(r'^## ',l): on=False
-        if not on: continue
-        m=re.match(r'^\| `(EV-CAP-[^`]+)` \| CAP \|',l)
-        if m: out.add('EVENT:'+m.group(1))
-    return out
+    # N4 同族：收窄到 §4.2（§0.2 与 AC-SP4-04 都称 §4.2），与 xref-check 的派生器同口径
+    return {'EVENT:'+m.group(1) for l in slice_lines(text,r'^### 4\.2(?![0-9])',r'^## ','架构 ^### 4.2 … 下一个 ^##')
+            for m in [re.match(r'^\| `(EV-CAP-[^`]+)` \| CAP \|',l)] if m}
 
-def derive_src(text,start=r'^## §14\b',stop=r'^## §17\b'):
+def derive_src(text,start=r'^## §14\b',stop=r'^## §17\b',label='SpecDoc ^## §14 … ^## §17'):
     # 🔴 单区间取：§14 起 §17 止。SpecDoc 排版异常使 §15.4/§15.5 物理落在 ## §16 之内，
     # 按章分段（§14 段+§15 段+§16 段）拼接会静悄悄丢掉这两节，故此处只允许单区间。
-    out=[]; on=False
-    for l in text.splitlines():
-        if re.match(start,l): on=True
-        if re.match(stop,l): on=False
-        if on:
-            m=re.match(r'^#{2,4}\s+(?:§)?(\d+(?:\.\d+[a-z]?)*)\b',l)
-            if m: out.append('SRC:§'+m.group(1))
+    out=[]
+    for l in slice_lines(text,start,stop,label,keep_start=True):
+        m=re.match(r'^#{2,4}\s+(?:§)?(\d+(?:\.\d+[a-z]?)*)\b',l)
+        if m: out.append('SRC:§'+m.group(1))
     return out
 
 def recusal_scan(text,label):
@@ -70,7 +73,8 @@ def recusal_scan(text,label):
     return ''
 
 def expected_sets():
-    src=derive_src(spec)
+    try: src=derive_src(spec)
+    except Boundary as e: print(f'✗ 冻结输入节界不可信：{e}'); raise SystemExit(2)
     for canary in ('SRC:§15.4','SRC:§15.5'):
         if canary not in src:
             print(f'✗ heading 取法丢节：{canary} 不在派生集合内（是否按章分段取？）'); raise SystemExit(2)
@@ -93,7 +97,8 @@ def expected_sets():
     proto_ids=set(re.findall(r'<section\s+class="scr[^"]*"\s+id="([^"]+)"',proto))
     absent=sorted(x for x in ui if x[4:] not in proto_ids)
     if absent: print('✗ 架构 §13 CAP 入口在原型不存在：'+','.join(absent)); raise SystemExit(2)
-    out={'spec':set(src),'E':set(e),'interface':derive_interfaces(arch),'event':derive_events(arch),'prototype':set(ui)}
+    try: out={'spec':set(src),'E':set(e),'interface':derive_interfaces(arch),'event':derive_events(arch),'prototype':set(ui)}
+    except Boundary as ex: print(f'✗ 冻结输入节界不可信：{ex}'); raise SystemExit(2)
     if any(not v for v in out.values()): print('✗ 预期集合为空：'+','.join(k for k,v in out.items() if not v)); raise SystemExit(2)
     return out
 expected=expected_sets()
@@ -114,6 +119,11 @@ def inspect(text,quiet=False):
     for k,want in expected.items():
         got=actual & want; unknown=sorted(want-got); bad|=bool(unknown)
         if not quiet: print(f'[{k}] 预期={len(want)} 实检={len(got)} 未知={len(unknown)} {unknown}')
+    # 🔴 通用不变量②：集合精确相等——只判 want-got 会放过 actual 里多出的伪落点
+    extra=sorted(actual-set().union(*expected.values()))
+    if extra:
+        bad=True
+        if not quiet: print(f'[extra] COVERAGE 块含 {len(extra)} 个不属于任一派生集合的来源 token：{extra}')
     err=recusal_scan(text,'正文')
     if err:
         if not quiet: print(err)
@@ -124,14 +134,19 @@ def inspect(text,quiet=False):
     if not am:
         if not quiet: print('✗ ACCEPTANCE-SP4 结构化块缺失')
         return 2
-    ac={}
+    ac={}; ac_dup=[]
     for l in am.group(1).splitlines():
         if not l.startswith('|'): continue
         c=[x.strip() for x in l.strip().strip('|').split('|')]
         if len(c)!=4: continue
         aid=c[0].strip('`')
-        if re.fullmatch(r'AC-SP4-\d{2}',aid) and all(x and x not in ('—','见全文') for x in c[1:]): ac[aid]=c[1:]
+        if re.fullmatch(r'AC-SP4-\d{2}',aid) and all(x and x not in ('—','见全文') for x in c[1:]):
+            # 🔴 通用不变量③：唯一性强校——dict 赋值会让同一 AC 的第二行静默覆盖第一行
+            if aid in ac: ac_dup.append(aid)
+            ac[aid]=c[1:]
     ac_miss=[f'AC-SP4-{i:02d}' for i in range(1,13) if f'AC-SP4-{i:02d}' not in ac]; bad|=bool(ac_miss)
+    ac_dup=sorted(set(ac_dup)); bad|=bool(ac_dup)
+    if ac_dup and not quiet: print(f'✗ ACCEPTANCE 块内 AC 重复定义（后者会静默覆盖前者）：{ac_dup}')
     if not quiet:
         print(f'[delivery] 预期=12 实检={12-len(miss)} 未知={len(miss)} {miss}')
         print(f'[acceptance] 预期=12 实检={12-len(ac_miss)} 未知={len(ac_miss)} {ac_miss}')
@@ -164,7 +179,7 @@ if mode=='--selftest':
     else:
         print('  ✗ 跨表行污染 CAP 接口或事件集合'); fail=1
     n+=1
-    trap=derive_src(spec,r'^## §15\b',r'^## §16\b')
+    trap=derive_src(spec,r'^## §15\b',r'^## §16\b','SpecDoc ^## §15 … ^## §16')
     if 'SRC:§15.4' not in trap and 'SRC:§15.5' not in trap:
         print('  ✓ 陷阱反测：按章分段取会丢 §15.4/§15.5，故只允许单区间取')
     else:
@@ -177,6 +192,29 @@ if mode=='--selftest':
     test('引用 §11.6b ＋ 逐条回避标记可放行',base+'\n本节依赖 §11.6b。\n<!-- RECUSAL-SP4-REF: AC-SP4-11 -->\n',0)
     test('空挂回避标记而无引用必须转红',base+'\n<!-- RECUSAL-SP4-REF: AC-SP4-11 -->\n',1)
     test('缺覆盖块判闸坏',base.replace('<!-- COVERAGE-SP4-BEGIN -->',''),2)
+    # 🔴 三条通用不变量各自的常驻反测：不加固就必须能证明它会红
+    tok=sorted(expected['spec'])[0]
+    test('COVERAGE 含不属于任一派生集合的伪落点必须转红',
+         base.replace('<!-- COVERAGE-SP4-END -->','| `SRC:§99.9` | `D-SP4-12` |\n<!-- COVERAGE-SP4-END -->'),1)
+    test('同一 AC 写两行（后者会静默覆盖前者）必须转红',
+         base.replace('| `AC-SP4-07` | fixture scope | fixture criterion | fixture boundary |',
+                      '| `AC-SP4-07` | fixture scope | fixture criterion | fixture boundary |\n'
+                      '| `AC-SP4-07` | 另一套范围 | 另一套判据 | 另一套边界 |'),1)
+    n+=1
+    try:
+        derive_src('\n'.join(l for l in spec.splitlines() if not re.match(r'^## §17\b',l)))
+        print('  ✗ 止界不命中未抛错（切片取到 EOF，派生集合会由 28 撑到 114 而不报错）'); fail=1
+    except Boundary: print('  ✓ 止界不命中必抛错（原缺陷：删 SpecDoc ## §17 后集合 28→114 静默通过）')
+    n+=1
+    try:
+        derive_src(spec.replace('## §14','## §14X'))
+        print('  ✗ 起界不命中未抛错'); fail=1
+    except Boundary: print('  ✓ 起界不命中必抛错')
+    n+=1
+    try:
+        derive_interfaces(arch.split('\n## 7.')[0])   # §6 之后全部截断 ⇒ 泛化止界 ^## 永不命中
+        print('  ✗ 架构 §6 止界不命中未抛错'); fail=1
+    except Boundary: print('  ✓ 架构 §6 止界不命中必抛错')
     print('--- SP4 预期集合实算 '+' '.join(f'{k}={len(v)}' for k,v in expected.items()))
     print(f'--- SP4 覆盖反测 {n} 项全过' if not fail else '--- SP4 覆盖反测失败')
     raise SystemExit(fail)
