@@ -16,6 +16,7 @@
 | `specs/README.md` | 本文件：`specs/` 的结构说明与取舍记录 |
 | `specs/constitution.md` | 治理原则的【唯一】载体（§4.1） |
 | `specs/platform/spec.md` | 装载点 —— 指向 `docs/` 的正文，不复制、不搬动 |
+| `specs/platform-architecture/spec.md` | 新版平台架构设计的施工与验收合同；冻结分域、接口与技术架构三类输出，旧架构件只作历史参考 |
 | `specs/platform/checklist.md` | 结构域（sol 主笔，26 项） |
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |
