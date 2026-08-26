@@ -1,6 +1,6 @@
 # C-P0 集成自测收口报告(C-P0-5;devo48 执笔,prodops 组内审)
 
-细案=docs/c-p0-plan-v1.md@fc3a9a1(prodops AGREE sha8d40da81)。契约=interface-contracts-v1(tag^{commit}=107015744b0e56c9645c84eb6ed97bf479c7d918)§2.2/§2.3。
+细案=docs/v0.1/c-p0-plan-v1.md@fc3a9a1(prodops AGREE sha8d40da81)。契约=interface-contracts-v1(tag^{commit}=107015744b0e56c9645c84eb6ed97bf479c7d918)§2.2/§2.3。
 
 ## 一、交付锚(两仓线)
 

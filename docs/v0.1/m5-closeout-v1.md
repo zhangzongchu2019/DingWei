@@ -35,7 +35,7 @@ M5 实现、组内 sign-grade 与 board vNext conformance 均已闭合。
 
 - board 闭合锚：`38474c0dc381c44807a726125d07fe6a9773affb`
 - conformance 报告：`76beaf4`，文件
-  `docs/m5-board-vnext-conformance-draft.md`
+  `docs/v0.1/m5-board-vnext-conformance-draft.md`
 - 结论：PASS / conformance CLOSED。
 - 覆盖：C1-C6、R1-R3，以及
   board Takeover → M5 durable record → FileStore 重启重放 →

@@ -202,7 +202,7 @@ provision 作为**消息通道**安全模型扎实；board 的单写者串行化
 
 ### B.1 F10 —— 「C1 的概念是什么？」
 
-**C1** 是 `docs/dispatcher-system-P2-contracts.md` 的章节号：**「C1 调度者↔引擎（引用契约，零新语义）」**，
+**C1** 是 `docs/v0.1/dispatcher-system-P2-contracts.md` 的章节号：**「C1 调度者↔引擎（引用契约，零新语义）」**，
 定义调度者与 board 引擎之间的**原语集**（18 个：`CreateTask` / `AddNode` / `SetTaskRoles` / `Send` /
 `Processing` / `Terminal` / `Reassign` / `SteerReserve` / `SteerFinalize` / `InterruptIntent` /
 `InterruptFinalize` / `Redeliver` / `DeliverFail` / `EnqueueResult` / `AckResult` / `Sweep` /
@@ -687,9 +687,9 @@ provision 作为**消息通道**安全模型扎实；board 的单写者串行化
 
 | 件 | 内容 | 状态 |
 |---|---|---|
-| `docs/设计-provision自动升级通道.md` v1（2026-07-13，manager，业主当日拍板） | 下发**代码包**不下发脚本；5 道安全闸；动作白名单 `update_self` / `install_skill` / `install_mcp` | 已设计**且已实作** |
-| `docs/sessionHelper-provision-通道-spec.md` v0.1 | provision 信封格式 + 安全模型六条 | 已实作（`tools/sessionhelper/sessionhelper/provision.py`） |
-| `docs/t18-platform-upgrade-scope-v1.md`@`fb5ef8e`（D1）+ `docs/t18-platform-design-v1.md`（D2/D3 冻结 08-04，三方审全过） | PG 单一数据中心七表 + datad 唯一入口；含 **`skill` 表（提案全员，批准=coordinator）**；「后台管理 UI（后期）」 | 已实作（`internal/datad/`、`cmd/dingwei-datad/`） |
+| `docs/v0.1/设计-provision自动升级通道.md` v1（2026-07-13，manager，业主当日拍板） | 下发**代码包**不下发脚本；5 道安全闸；动作白名单 `update_self` / `install_skill` / `install_mcp` | 已设计**且已实作** |
+| `docs/v0.1/sessionHelper-provision-通道-spec.md` v0.1 | provision 信封格式 + 安全模型六条 | 已实作（`tools/sessionhelper/sessionhelper/provision.py`） |
+| `docs/v0.1/t18-platform-upgrade-scope-v1.md`@`fb5ef8e`（D1）+ `docs/v0.1/t18-platform-design-v1.md`（D2/D3 冻结 08-04，三方审全过） | PG 单一数据中心七表 + datad 唯一入口；含 **`skill` 表（提案全员，批准=coordinator）**；「后台管理 UI（后期）」 | 已实作（`internal/datad/`、`cmd/dingwei-datad/`） |
 | `internal/admin/admin.go`（`03c50be`，2908 行，在 `main`=hub 所跑血脉） | 后台管理，~40 端点，含 **`GET/POST /admin/provision`** | **已实作** |
 
 > **结论：业主记忆准确，且比记忆中走得更远——后台管理不是「后期」，已经建成了。**

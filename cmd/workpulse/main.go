@@ -1,6 +1,6 @@
 // Command workpulse 是 WorkPulse 飞书工作管理机器人 / 消息路由平台 的入口。
 //
-// 详见 docs/产品规范.md。本文件负责装配：加载 bootstrap → 打开 SQLite → 迁移 →
+// 详见 docs/v0.1/产品规范.md。本文件负责装配：加载 bootstrap → 打开 SQLite → 迁移 →
 // seed 管理员 → 启动 HTTP（webhook + M9 后台 + healthz）→ 优雅退出。
 package main
 

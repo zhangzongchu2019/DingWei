@@ -1,6 +1,6 @@
 package bridge
 
-// BR-01~14 可执行用例(冻结骨架=docs/bridge-contract-face-v0.1.md §三,d56cf15d)。
+// BR-01~14 可执行用例(冻结骨架=docs/v0.1/bridge-contract-face-v0.1.md §三,d56cf15d)。
 // 测试名=BR 编号;判据逐字落断言。真 hub 实现(C-P0-2/3b)须通过同一套测试(conformance)。
 
 import (

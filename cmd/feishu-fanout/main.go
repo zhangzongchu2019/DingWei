@@ -1,4 +1,4 @@
-// feishu-fanout — T17 飞书消息 fan-out 代理(独立服务,设计 docs/t17-feishu-fanout-proxy-design-v1.md)。
+// feishu-fanout — T17 飞书消息 fan-out 代理(独立服务,设计 docs/v0.1/t17-feishu-fanout-proxy-design-v1.md)。
 // 配置全 env(设计 §5);SIGHUP=热重载白名单;encrypt_key 旋转=更新 FANOUT_CHANNELS 后重启(或后续接热重载)。
 package main
 

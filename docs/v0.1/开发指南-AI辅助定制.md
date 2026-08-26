@@ -117,7 +117,7 @@ bash deploy/smoke.sh                        # 冒烟
 ---
 
 ## 8. 让 AI 帮你定制开发（推荐姿势）
-1. **给 AI 上下文**：把本文 + `docs/产品规范.md` + 你要改的那个包（如 `internal/m8/`）一起给它。
+1. **给 AI 上下文**：把本文 + `docs/v0.1/产品规范.md` + 你要改的那个包（如 `internal/m8/`）一起给它。
 2. **说清意图 + 约束**：例如"在 `m8/hub.go` 加一个 `#广播` 关键词，把消息发给本租户所有在线会话，回复各自带会话名头；照 `dispatchSelector` 的写法；新迁移别改旧的；改完能 `go build`"。
 3. **让它先读后改**：要求它先定位相关函数（`dispatchSelector`/`RouteEnvelope`/`ListSessionEndpoints`）再动手。
 4. **验证闭环**：让它 `go build/vet/test` + 给一条冒烟命令（如 `curl POST /webhook/unifiedrobot` 造消息）自测。

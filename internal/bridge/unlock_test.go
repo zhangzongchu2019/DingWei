@@ -1,6 +1,6 @@
 package bridge
 
-// BR-12:mock unlock 登记制 fail-closed(契约 §2.3;冻结骨架 docs/bridge-contract-face-v0.1.md)。
+// BR-12:mock unlock 登记制 fail-closed(契约 §2.3;冻结骨架 docs/v0.1/bridge-contract-face-v0.1.md)。
 
 import (
 	"context"

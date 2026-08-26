@@ -60,4 +60,4 @@
 Go: `internal/m8/{reply_origin.go(+272),reply_origin_test.go(+158),reply_origin_integration_test.go(+73),hub.go(+8)}`
 Python: `tools/sessionhelper/sessionhelper/{reply_origin.py(+158),app.py(+50),ipc_listener.py(+154),config.py(+3),mcp_shim.py(+241,shence 泳道)}`
 测试: `tools/sessionhelper/tests/{test_reply_origin.py(+108),test_mcp_send_wiring.py(+108),reply_origin_binary_smoke.py(+252)}`
-文档: `docs/mcp-send-config-v1.md(+99,shence 泳道)`、`review/a1-...(+186,shence 泳道历史件)`
+文档: `docs/v0.1/mcp-send-config-v1.md(+99,shence 泳道)`、`review/a1-...(+186,shence 泳道历史件)`

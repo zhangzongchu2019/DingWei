@@ -46,7 +46,7 @@
 | C6.3 过渡期硬禁用 | `c6Config`(默认 emergencyEnabled=false) | TestC6_TransitionHardDisabled |
 | actor=业主不冒充调度者(dev56③/A-4) | 两原语事件 INSERT(agent_id=OwnerPrincipal) | TestC6_OwnerTakeover/Override(actor 断言) |
 | C0.6 directive 白名单 | `overrideDirectives` | TestC6_OwnerOverride(白名单外拒) |
-| 操作段手册(criteria §1) | docs/mcs-c6-emergency-runbook.md | (文档件,评审即门) |
+| 操作段手册(criteria §1) | docs/v0.1/mcs-c6-emergency-runbook.md | (文档件,评审即门) |
 
 ## C2.6 2-Agent 守门(c26_seats.go,047e575)
 

@@ -1,4 +1,4 @@
-// Package fanout 实现 T17 飞书消息 fan-out 代理(设计 docs/t17-feishu-fanout-proxy-design-v1.md,冻结 1b67eec)。
+// Package fanout 实现 T17 飞书消息 fan-out 代理(设计 docs/v0.1/t17-feishu-fanout-proxy-design-v1.md,冻结 1b67eec)。
 //
 // 入站:POST /webhook/{channel} 收飞书原始事件——生产路原样字节同步转发(生产 Hub 响应
 // 即对飞书的响应=权威);测试路仅白名单命中,异步 best-effort(有界队列,满丢最旧)。

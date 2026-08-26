@@ -2,7 +2,7 @@
 
 > 测试者: zzc-tester | 日期: 2026-07-09 | 被测分支: feat/session-naming-v1
 >
-> 规范依据: `dingwei/docs/会话命名强制规范-v1.0.md`
+> 规范依据: `dingwei/docs/v0.1/会话命名强制规范-v1.0.md`
 > 用例依据: `TASK-session-naming-v1.md` tester 节
 >
 > **测试基线**: `5fe5591` (修复发信临时会话命名) — 二轮验证

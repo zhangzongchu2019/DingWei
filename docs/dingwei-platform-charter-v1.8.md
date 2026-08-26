@@ -161,7 +161,7 @@ SYNC IMPACT REPORT · v1.1 → v1.2
   （`main`=`6ed4d1e8` / `cr/vs-board-scope-c5c4-integ`=`df40ae38` / `feat/dev55-t403-vs-preprod`=`416a1231`），带文件行号。
   **未实跑验证**的结论标「待核」，集中列于 §13。
 - 关联: `dingwei-platform-feature-list-20260823.md`(614行) / `dingwei-version-gap-report-20260823.md`(174行) /
-  `dingwei-arch-position-20260823.md`(224行) / 仓内 `docs/dispatcher-system-P2-contracts.md`(28950字节)
+  `dingwei-arch-position-20260823.md`(224行) / 仓内 `docs/v0.1/dispatcher-system-P2-contracts.md`(28950字节)
 
 ---
 
@@ -282,7 +282,7 @@ v1.0 §3.3 曾断言「门禁在引擎里根本不存在」。**该断言错误�
 ### 3.2 治理契约：已实现远多于 v1.0 的评估
 
 > ⚠️ **v1.1 更正**：v1.0 把 C 系列笼统归为「只在文档未实现」，**过粗**。
-> 本席 §13-4 通读 `docs/dispatcher-system-P2-contracts.md` 全文（138 行 / 28950 字节）并逐条对代码核实后修正如下。
+> 本席 §13-4 通读 `docs/v0.1/dispatcher-system-P2-contracts.md` 全文（138 行 / 28950 字节）并逐条对代码核实后修正如下。
 > 独立佐证：评审方实跑 `go test ./internal/mcs/...` PASS；本席复跑亦 PASS（board 49 条）。
 
 **已实现（可核）**：
@@ -320,7 +320,7 @@ v1.0 §3.3 曾断言「门禁在引擎里根本不存在」。**该断言错误�
 
 ### 3.2b 原「只在文档」条目（保留）
 
-`docs/dispatcher-system-P2-contracts.md`：
+`docs/v0.1/dispatcher-system-P2-contracts.md`：
 
 **C2.1 派发信封**（缺任一字段 = 无效派发，执行小组拒接 + 回指调度者）：
 > `task_id / title / 验收标准(acceptance) / 角色绑定(四角色三元组 who,cli,llm) / **里程碑分段(每段：名称+门定义+门方)** / 基线锚(commit 40hex 或 blob sha256) / 交付格式引用`

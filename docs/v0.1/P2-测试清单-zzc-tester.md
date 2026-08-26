@@ -3,7 +3,7 @@
 **测试方**: zzc-tester  
 **预备日期**: 2026-07-08  
 **被测范围**: feat/control-plane-p1（P2 L2 最小分诊增量）  
-**规格依据**: docs/DingWei总控路由架构规格-v0.1.md §四(L2分诊接口) + §五(保交付) + §八(关键决策)  
+**规格依据**: docs/v0.1/DingWei总控路由架构规格-v0.1.md §四(L2分诊接口) + §五(保交付) + §八(关键决策)  
 **测试方法**: LLM mock + 真机 `go test ./...`  
 **前置条件**: developer 回执 P2 完成 + manager 通知开跑
 

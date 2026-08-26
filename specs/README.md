@@ -20,6 +20,7 @@
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |
 | `specs/platform/checklist.INDEX.md` | 作者维护的登记，不判定 |
+| `specs/templates/spec-draft-selfcheck.md` | **产品方**起草 spec 时的自查件 —— 属性头块（§5.2 三方分填）＋ 内容五面（§4.7.1）＋ 内部自相矛盾自查。🔴 **不判门**（硬门 §4.6.2 / 人审 §4.6.4），**通篇不用 `[ ]` 形态** —— 起草方自备带勾选框的表自己勾，形式上与自签门 PASS 无法区分（§4.1 · §7.2）。⚠️ 本件是 DingWei 侧附加件，**不是 Spec Kit 模板**（后者 immutable，§4.2 要求 2 · §16.5，连提案都不能提）|
 | `specs/tools/analyze.sh` | `/speckit.analyze` —— 跨制品一致性检查 |
 | `specs/tools/export-bundle.sh` | 导出锚定快照包；作用域由 `git ls-tree` 整棵导出，不手写 |
 | `specs/tools/export-exclude.txt` | 快照包的显式排除清单，每条须带理由；缺理由或漂移即导出失败 |

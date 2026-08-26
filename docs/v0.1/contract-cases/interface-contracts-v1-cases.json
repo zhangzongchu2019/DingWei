@@ -1,6 +1,6 @@
 {
  "meta": {
-  "contract": "docs/interface-contracts-v0.3.md",
+  "contract": "docs/v0.1/interface-contracts-v0.3.md",
   "contract_sha256": "28f09dae98ad15e6d415fdfcda0840e63fdbb08c64549516a02c2f30823e2807",
   "format": "规约23:每条=前置/输入/操作/期望输出/判据;kind=正例|负例|边界;可判 PASS/FAIL",
   "note": "本文件=契约级冻结用例(组间接口点);各 owner conformance suite(G1)逐条实现并引用 case id。CT-F5 当下即可执行。"
@@ -8,8 +8,8 @@
  "cases": [
   {"id": "CT-F5-01", "kind": "正例", "section": "1.3/F5",
    "前置": "仓 checkout 至本 commit,python3 可用",
-   "输入": "docs/contract-cases/jcs-golden-vectors-v1.json(20 条,含 ECMA number 阈值 V15-V17)",
-   "操作": "python3 docs/contract-cases/jcs_vectors_check.py",
+   "输入": "docs/v0.1/contract-cases/jcs-golden-vectors-v1.json(20 条,含 ECMA number 阈值 V15-V17)",
+   "操作": "python3 docs/v0.1/contract-cases/jcs_vectors_check.py",
    "期望输出": "20/20 PASS,exit 0",
    "判据": "任一 FAIL 或 exit≠0 即 FAIL;Go 实现须对同一 vectors 文件逐条复现 expected_canonical+expected_sha256"},
 

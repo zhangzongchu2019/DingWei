@@ -11,10 +11,10 @@
 
 | 件 | path | blob | 文件 sha256 |
 |---|---|---|---|
-| 契约正文 | docs/interface-contracts-v0.3.md | `efafd9d88f030540d2a39864673ad4361e1386c4` | `28f09dae98ad15e6d415fdfcda0840e63fdbb08c64549516a02c2f30823e2807` |
-| F5 golden vectors(20条) | docs/contract-cases/jcs-golden-vectors-v1.json | `ff0fc6593caf4f2f9e15a88ee02874e844f9151e` | `b45763ef32973470f9a2dd7330e981eecf0f0ef145cf2cb9db411cd78e1db58a` |
-| JCS 参考实现+校验器 | docs/contract-cases/jcs_vectors_check.py | `40697f84406e4685901c153bbf45b8c7fe71cbad` | `be587e7cb8c3f3404b19e09d7a6bfd39385a95ab5a3ef4ee1475cde3f5a1e99a` |
-| 契约级用例(23条) | docs/contract-cases/interface-contracts-v1-cases.json | `771c26d8b21514d0d7c454ed7dfeffb581575cee` | `41ed58fafeb794aeb4bf8f541c43ee3d581be34ffcdca2816f075ab034fb66d7` |
+| 契约正文 | docs/v0.1/interface-contracts-v0.3.md | `efafd9d88f030540d2a39864673ad4361e1386c4` | `28f09dae98ad15e6d415fdfcda0840e63fdbb08c64549516a02c2f30823e2807` |
+| F5 golden vectors(20条) | docs/v0.1/contract-cases/jcs-golden-vectors-v1.json | `ff0fc6593caf4f2f9e15a88ee02874e844f9151e` | `b45763ef32973470f9a2dd7330e981eecf0f0ef145cf2cb9db411cd78e1db58a` |
+| JCS 参考实现+校验器 | docs/v0.1/contract-cases/jcs_vectors_check.py | `40697f84406e4685901c153bbf45b8c7fe71cbad` | `be587e7cb8c3f3404b19e09d7a6bfd39385a95ab5a3ef4ee1475cde3f5a1e99a` |
+| 契约级用例(23条) | docs/v0.1/contract-cases/interface-contracts-v1-cases.json | `771c26d8b21514d0d7c454ed7dfeffb581575cee` | `41ed58fafeb794aeb4bf8f541c43ee3d581be34ffcdca2816f075ab034fb66d7` |
 
 ### 分契约条目
 
