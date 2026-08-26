@@ -1,4 +1,4 @@
-# DingWei 平台 SpecDoc v3.71 —— 纲领与产品规范
+# DingWei 平台 SpecDoc v3.72 —— 纲领与产品规范
 
 > **性质**：本件是 DingWei 平台**后续阶段的纲领与产品规范**，由业主 2026-08-23 指定整合形成。
 > **效力**：本件生效后，下列四份源件**降为沿革依据**，规范效力以本件为准（对照见附录 D）：
@@ -18,7 +18,7 @@
 > ⇒ 本件**必须先满足自己定义的规范**，否则示范不成立。以下头块按 §5.2 格式填写。
 
 **Spec ID**: `dingwei-platform-specdoc`
-**版本**: v3.71
+**版本**: v3.72
 **评审状态**: ✅ **架构评审 PASS**（判据与经过见 `docs/dingwei-revision-history.md`；以 `docs/DELIVERY-STATUS.md` 为准）
 　　　　　　⚠️ **用例评审 / 交付验证未过** —— 不同的门，见 §5.6
 
@@ -1082,7 +1082,7 @@ D3  项目级       ＝ 该人负责的单个项目
 
 | 子字段 | 定义 |
 |---|---|
-| `failure_class` | 受控枚举：`execution_failed` / `gate_fail` / `dependency_unavailable` / `effect_unknown` / `timeout` / `cancelled`；**不接受自由文本类别** |
+| `failure_class` | 受控枚举，**只含真失败类**：`execution_failed` / `gate_fail` / `dependency_unavailable`；**不接受自由文本类别**。🔴 `cancelled` / `timeout` / `effect_unknown` **不属本节**，见 **§11.6b** |
 | `expected` / `actual` | 判据的期望值与实得值各一份，均为可复算表述（值、计数或 sha256），**不写「不符合预期」这类无从复算的话** |
 | `repro` | **失败最小复现**。🔴 **可采形态与成立条件按 `failure_class` 分两类，见下表** —— 不是一条通用要求 |
 | `artifacts[]` | 日志、产物、诊断的引用 ＋ sha256（**锚，不是路径**）；无则显式写「无」，不留空 |
@@ -1097,7 +1097,7 @@ architecture / use-case 这类门判 FAIL 时，`repro` 只能是锚集，而「
 
 | `failure_class` | `repro` 可采形态 | 🔴 **不成立**（＝未落账，不得封存、不得放行下游） |
 |---|---|---|
-| `execution_failed` · `timeout` · `effect_unknown` · `dependency_unavailable` · `cancelled`〔**机器可复跑类**〕 | 一条**可复跑命令** ＋ 其不可变输入锚 | `repro` 为空，**或**在空上下文中跑不起来 |
+| `execution_failed` · `dependency_unavailable`〔**机器可复跑类**〕 | 一条**可复跑命令** ＋ 其不可变输入锚 | `repro` 为空，**或**在空上下文中跑不起来 |
 | `gate_fail`〔**人审型门**〕 | 一组**不可变输入锚**（`commit` / `blob sha256` / `envelope_ref` / `acceptance` 锚），指向门方作判时所依据的全部材料 | 锚集**缺项**、任一锚**不可解析**，或 `expected`/`actual` **不可复算** |
 
 🔴 **明确不写进规则的一条**：**不要求「另一 principal 依该锚集必得出同一判定」。**
@@ -1111,6 +1111,30 @@ architecture / use-case 这类门判 FAIL 时，`repro` 只能是锚集，而「
 
 🔴 **能力边界，写明不假装**：本节定义的是**证据的形状与写入时点**，
 **判不了「这条失败诊断得对不对」** —— 那仍归门方与执行方的人审（E.4 #20）。
+
+### 11.6b 终结与未知的证据形态〔2026-08-26 复核补〕
+
+🔴 **立本节的原因**：上一版把 `cancelled` / `timeout` / `effect_unknown` 塞进了 `failure_class`，
+并对它们一并施加「`repro` 不成立 ⇒ 不得封存、不得放行」。**这是一次分类错误**：
+· `cancelled` **根本不是失败**，是受权终结；
+· `timeout` / `effect_unknown` 是**未决/未知**，其正解是**判定与对账**，不是「复现一个缺陷」。
+⚠️ 三者**没有可复现的失败**，硬套只会逼实现方**伪造一个 `repro`，或把正常终态判成「证据不成立」** ——
+**判据对不上被判物时，压力会转成造假或误判，而不是转成质量。**
+
+**⇒ 它们移出 FAIL evidence，各自定必填项。三者均【不触发】「repro 不成立 ⇒ 不得封存/不得放行」。**
+
+| 态 | 必填 | **不成立**（缺任一 ⇒ 该记录不成立，等同未落账）|
+|---|---|---|
+| `cancelled` | 取消 command ref · 受权 principal · reason · **effect disposition**（已发生外部 effect 的处置：`none` / `rolled_back` / `in_reconcile` ＋ 其锚）| 任一缺失；或 effect disposition 写「未知」而未给 reconcile 锚 |
+| `timeout` | lease 状态判定 · **外部 effect 状态判定**（已发/未发/未知）· 下一步（`redeliver` / `reconcile` / `terminate`）｜🔴 **未判定 effect 状态前不得直接重发** | 未给 effect 状态判定，或直接写「重发」而无该判定 |
+| `effect_unknown` | **reconcile 锚**：对账对象 · reconciler 句柄或游标 · 下次对账时点 ｜🔴 **禁止猜 success** | 无 reconcile 锚；或以「已发出」记为成功 |
+
+⚠️ **同等严格，只是判据换成对得上的那个**：这三类缺必填同样**不成立、不得封存**；
+但它们**不因缺 `repro` 而不成立** —— 它们本就没有 `repro`。
+
+🔴 **与 SP2 的关系**：SP2 §7.1 分流表已按此语义处置（timeout 先判 lease/effect 再定重发或 reconcile、
+cancel 终结并审计且已发生 effect 仍须 reconcile/rollback、未知 effect 进 reconciler 不猜成功）。
+**本节是把 SpecDoc 侧对齐到那个语义**，不是新造一套；SP2 是引用侧。
 
 ## §12 知识库
 
