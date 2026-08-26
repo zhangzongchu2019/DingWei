@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `cae5235f09818701724c3515c585f8740e85c188` · 分支 `design/addendum-decisions`
+生成自 commit `11efc6a94cdbc3db656400a1f1a864425e9a5fa0` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.66** | `8ac5ad911038d8425a0f31cd269bfbbf3683251e<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5099 / 358975 | `ff5a21ef621c14e168037a04a05b67db2ea0e028134c9f29d6d88d2d5925f9ee` |
-| `dingwei-prototype.html` | **v1.40** | `8ac5ad911038d8425a0f31cd269bfbbf3683251e` | 2905 / 260303 | `734eb62292342b4d8d58c53b5f4c6e8d124691238f3331fa5ad643ca64fe8431` |
+| `dingwei-platform-specdoc.md` | **v3.67** | `11efc6a94cdbc3db656400a1f1a864425e9a5fa0<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5099 / 359047 | `1f9c6c0a83850596de95c1a2e1a95f4426774da3224e302e330339a19570fe75` |
+| `dingwei-prototype.html` | **v1.41** | `8ac5ad911038d8425a0f31cd269bfbbf3683251e<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2905 / 260443 | `9d85ade305f860a93a7e74711790df7076f2a25834479e041610e5b2c8b4e4f4` |
 | `dingwei-architecture-design.md` | **v0.34** | `5aa4a951f49b09da9a584aefd3d04313e4f4b9f0` | 907 / 61540 | `be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+11efc6a CI 触发面扩至闸的载体 ＋ 立触发面覆盖闸 ㉗（v3.66）
 cae5235 EXPECTED.md：t3 判据句与已修正的期望值对齐（改一处漏一处）
 2818502 同步 REVIEW-STATE（丙域 10→12 勾）—— 这是仓侧保护缺口的第一个实例
 38d4c46 checklist: 丙域 CAC-4/5 翻 [x]——26 处跨租户重判闭合，复判证据附（kimi30kqtuxerh）
@@ -34,5 +35,4 @@ cae5235 EXPECTED.md：t3 判据句与已修正的期望值对齐（改一处漏�
 8ac5ad9 工程件落地：提交闸扩至 ①–㉖ · 三类台账列定义 · 原型两新屏（v3.65 · 原型 v1.40）
 9148345 业主界面复核裁定集中并入正文（v3.64 · 原型 v1.39）
 ae8f817 五条默认设计约束立为 §4.7.1 ⑤ 默认值（v3.61）＋ 其余文档归入 v0.1
-364f95a 业主逐条裁定收口（v3.60）＋ docs 分期归档 —— 附录 F 加 F.0 收口索引
 ```

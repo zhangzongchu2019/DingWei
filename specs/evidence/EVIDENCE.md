@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-26T05:35:24Z
-分支头：`cae5235f09818701724c3515c585f8740e85c188`
+生成时刻：2026-08-26T05:39:53Z
+分支头：`11efc6a94cdbc3db656400a1f1a864425e9a5fa0`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,10 +10,10 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED ff5a21ef621c14e168037a04a05b67db2ea0e028134c9f29d6d88d2d5925f9ee  docs/dingwei-platform-specdoc.md
+REVIEWED 1f9c6c0a83850596de95c1a2e1a95f4426774da3224e302e330339a19570fe75  docs/dingwei-platform-specdoc.md
 REVIEWED be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79  docs/dingwei-architecture-design.md
-REVIEWED 734eb62292342b4d8d58c53b5f4c6e8d124691238f3331fa5ad643ca64fe8431  docs/dingwei-prototype.html
-REVIEWED f825491fba11311957662dcd69ebdf9ead177ac78718507eed57ab645ce828ca  docs/DELIVERY-STATUS.md
+REVIEWED 9d85ade305f860a93a7e74711790df7076f2a25834479e041610e5b2c8b4e4f4  docs/dingwei-prototype.html
+REVIEWED 1d0a04d4f36c85d908735b0eee58d331cc3a439921845583971e863964a534cf  docs/DELIVERY-STATUS.md
 REVIEWED 8996a7df3ae0e99db2aaef56d2d13126ded09c01787167ecebcf47c7f3372798  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -57,7 +57,7 @@ REVIEWED 861f36f0dfeda164e4047bfd75ea78e5977d3ad352c8e1c5cafff6a790945530  specs
 REVIEWED a9c3bab0c5dc512ddc901e0ce298a6e17626243c62130b47810cfd49e4425311  specs/gates/reviewer-repro.txt
 REVIEWED 706c97c396a087fcdedd8f4a85d12403426ebd8fdce31f1b7f952012f2260d40  specs/gates/rv-ledger.txt
 REVIEWED e7a91c5e523a367419df93ea42bb570bbb33a08479ff8e5ec4ff3d01fa7e2789  specs/gates/status-stale-exceptions.txt
-REVIEWED 77103d4b6275652f23eaaea5f075e159073432eee5c2253f0cf42ea8592cc011  specs/gates/superseded-claims.txt
+REVIEWED d6b70fd32e934f6ccd1ba6f5f266d968d1f28068e2f7cebcc8cd45bc1bbd11d7  specs/gates/superseded-claims.txt
 ```
 
 > 🔴 **指纹对不上即本包非当期产出** —— 与「分支头」是两个不同的保证：
@@ -125,9 +125,9 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 119 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.66 · 状态文件 v3.66 ✓
+    SpecDoc: 件内 v3.67 · 状态文件 v3.67 ✓
     架构设计: 件内 v0.34 · 状态文件 v0.34 ✓
-    原型: 件内 v1.40 · 状态文件 v1.40 ✓
+    原型: 件内 v1.41 · 状态文件 v1.41 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-architecture-design.md: 正文无他件旧版本号
