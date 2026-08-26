@@ -1,10 +1,10 @@
 #!/bin/sh
 set -eu
 BASE_ANCHOR=6a98629
-SPECDOC_ANCHOR=fcfec9a
+SPECDOC_ANCHOR=4220195
 SPEC=specs/sp4/spec.md
 got=$(git show "$SPECDOC_ANCHOR:docs/dingwei-platform-specdoc.md" | sha256sum | awk '{print $1}')
-[ "$got" = 'bb4cf7becda882e3bafe35b3c293e0577783c4880b756e013ef861b088d8dcaa' ] || { echo '✗ v3.72 SpecDoc 输入漂移'; exit 2; }
+[ "$got" = '66df042ec49e6c7345e5c5cdbe1cf4e7f5c3bbdc94a1c671bb35c588532e8e0f' ] || { echo '✗ v3.73 SpecDoc 输入漂移'; exit 2; }
 for item in \
  'docs/dingwei-platform-architecture.md:0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc' \
  'docs/dingwei-prototype.html:eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8' \
@@ -33,6 +33,32 @@ grep -q '不自造批准权' "$SPEC" || { echo '✗ SP8 未设计时的批准权
 grep -q 'SpecDoc §15.4 / §15.5 排版位置落在 §16 之后' "$SPEC" || { echo '✗ SpecDoc 排版异常未登记'; exit 1; }
 grep -q '按 capability effect 判' "$SPEC" || { echo '✗ 紧急路径判据未按 capability effect 落合同'; exit 1; }
 grep -q 'installation_generation' "$SPEC" || { echo '✗ 装卸 fencing 代际口径未落合同'; exit 1; }
+# heading 单区间取法必须写成判据；并复算「按章分段取会丢节」以证明该判据非空谈
+grep -q '禁止按章分段' "$SPEC" || { echo '✗ heading 单区间取法未落为判据'; exit 1; }
+LOST=$(git show "$SPECDOC_ANCHOR:docs/dingwei-platform-specdoc.md" | python3 -c '
+import re,sys
+t=sys.stdin.read(); out=[]; on=False
+for l in t.splitlines():
+ if re.match(r"^## §15\b",l): on=True
+ if re.match(r"^## §16\b",l): on=False
+ if on:
+  m=re.match(r"^#{2,4}\s+(?:§)?(\d+(?:\.\d+[a-z]?)*)\b",l)
+  if m: out.append("§"+m.group(1))
+print(len([x for x in ("§15.4","§15.5") if x not in out]))
+')
+[ "$LOST" -eq 2 ] || { echo "✗ 排版异常前提已变（分段取丢节数=$LOST），单区间判据须重核"; exit 2; }
+# 回避边界：判据行（D 表与 ACCEPTANCE 块）不得引用 §11.6a/§11.6b；声明段可以提它
+grep -q '<!-- RECUSAL-SP4: NO-REF-11.6AB -->' "$SPEC" || { echo '✗ 回避边界未在合同以机器标记点明'; exit 1; }
+REF=$(python3 - "$SPEC" <<'PY2'
+import re,sys
+t=open(sys.argv[1],encoding='utf8').read()
+rows=[l for l in t.splitlines() if re.match(r'^\| `(D|AC)-SP4-\d{2}`',l)]
+blk=re.search(r'ACCEPTANCE-SP4-BEGIN -->(.*?)<!-- ACCEPTANCE-SP4-END',t,re.S)
+rows+= (blk.group(1).splitlines() if blk else [])
+print(sum(1 for l in rows if re.search(r'§11\.6[ab]',l)))
+PY2
+)
+[ "$REF" -eq 0 ] || { echo "✗ 有 $REF 条 D/AC 判据引用 §11.6a/§11.6b，须显式标注 opus50 对该条回避"; exit 1; }
 for reviewer in zzc-chatgpt56soltchangshark-2642 zzc-opus50tchangshark-2642 zzc-deepseekv4pro08130ca16c13-2642; do
  grep -q "$reviewer" "$SPEC" || { echo "✗ 缺评审票：$reviewer"; exit 1; }; done
 grep -q '3/3' "$SPEC" && grep -q 'AC-E05' "$SPEC" || { echo '✗ 三票门未落 AC-E05'; exit 1; }

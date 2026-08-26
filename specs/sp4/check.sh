@@ -2,14 +2,14 @@
 # SP4 设计覆盖检查：预期集合从组合冻结锚派生；正文缺失/块缺失/预期空/输入漂移均 exit 2。
 set -u
 BASE_ANCHOR=${BASE_ANCHOR:-6a98629}
-SPECDOC_ANCHOR=${SPECDOC_ANCHOR:-fcfec9a}
+SPECDOC_ANCHOR=${SPECDOC_ANCHOR:-4220195}
 DOC=${DOC:-docs/dingwei-sp4-design.md}
 MODE=${1:-check}
 python3 - "$BASE_ANCHOR" "$SPECDOC_ANCHOR" "$DOC" "$MODE" <<'PY'
 import hashlib,re,subprocess,sys,os
 base_anchor,spec_anchor,doc,mode=sys.argv[1:]
 PATHS={
- 'docs/dingwei-platform-specdoc.md':(spec_anchor,'bb4cf7becda882e3bafe35b3c293e0577783c4880b756e013ef861b088d8dcaa'),
+ 'docs/dingwei-platform-specdoc.md':(spec_anchor,'66df042ec49e6c7345e5c5cdbe1cf4e7f5c3bbdc94a1c671bb35c588532e8e0f'),
  'docs/dingwei-platform-architecture.md':(base_anchor,'0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc'),
  'docs/dingwei-prototype.html':(base_anchor,'eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8'),
  'docs/dingwei-sp0-design.md':(base_anchor,'f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec'),
@@ -46,14 +46,23 @@ def derive_events(text):
         if m: out.add('EVENT:'+m.group(1))
     return out
 
-def expected_sets():
-    src=[]; on=False
-    for l in spec.splitlines():
-        if re.match(r'^## §14\b',l): on=True
-        if re.match(r'^## §17\b',l): on=False
+def derive_src(text,start=r'^## §14\b',stop=r'^## §17\b'):
+    # 🔴 单区间取：§14 起 §17 止。SpecDoc 排版异常使 §15.4/§15.5 物理落在 ## §16 之内，
+    # 按章分段（§14 段+§15 段+§16 段）拼接会静悄悄丢掉这两节，故此处只允许单区间。
+    out=[]; on=False
+    for l in text.splitlines():
+        if re.match(start,l): on=True
+        if re.match(stop,l): on=False
         if on:
             m=re.match(r'^#{2,4}\s+(?:§)?(\d+(?:\.\d+[a-z]?)*)\b',l)
-            if m: src.append('SRC:§'+m.group(1))
+            if m: out.append('SRC:§'+m.group(1))
+    return out
+
+def expected_sets():
+    src=derive_src(spec)
+    for canary in ('SRC:§15.4','SRC:§15.5'):
+        if canary not in src:
+            print(f'✗ heading 取法丢节：{canary} 不在派生集合内（是否按章分段取？）'); raise SystemExit(2)
     e=[]; sec=''
     for l in spec.splitlines():
         m=re.match(r'^##\s+(E\.[134])\b',l)
@@ -139,6 +148,12 @@ if mode=='--selftest':
         print('  ✓ §6/§4 外行与他域事件不得污染接口/事件集合')
     else:
         print('  ✗ 跨表行污染 CAP 接口或事件集合'); fail=1
+    n+=1
+    trap=derive_src(spec,r'^## §15\b',r'^## §16\b')
+    if 'SRC:§15.4' not in trap and 'SRC:§15.5' not in trap:
+        print('  ✓ 陷阱反测：按章分段取会丢 §15.4/§15.5，故只允许单区间取')
+    else:
+        print('  ✗ 陷阱反测失效：分段取未复现丢节现象，需重查 SpecDoc 排版'); fail=1
     n+=1
     ac_bad=base.replace('| `AC-SP4-07` | fixture scope | fixture criterion | fixture boundary |','| `AC-SP4-07` | 见全文 | 见全文 | 见全文 |')
     if inspect(ac_bad,True)==1: print('  ✓ AC 四列写「见全文」必须转红')
