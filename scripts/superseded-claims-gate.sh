@@ -18,6 +18,7 @@ set -u
 LIST=${LIST:-specs/gates/superseded-claims.txt}
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
 EXLIST=${EXLIST:-specs/gates/superseded-claims-exceptions.txt}
+AUTHOR_SESSION=${AUTHOR_SESSION:-zzc-opus50tchangshark-2642}   # 执笔方；批准方不得为它（不得自增自批）
 # 🔴 **`style-ok:` 已从本 SKIP 中移除**（乙域 RV-乙18）：
 #   自由文本豁免＝闸有一个没人看的后门 —— 闸只看有没有那四个字，不看理由是否属实。
 #   实例：以「跨行误命中」为由压住两处【行内就有】的旧断言，闸照旧返回 0。
@@ -48,10 +49,33 @@ check() {
       case "$old" in ''|'#'*) continue;; esac
       _lines=$(cat -n "$f" | _strip_rv | grep -F "$old" 2>/dev/null | grep -vE "$SKIP" | sed 's/^[[:space:]]*\([0-9]*\)[[:space:]]*/\1:/')
       [ -z "$_lines" ] && continue
-      # 🔴 结构化登记例外：须【短语 ＋ 件】同时匹配才放行；自由文本 style-ok 不再豁免。
-      if [ -f "$EXLIST" ] && awk -F'\t' -v o="$old" -v ff="$f" '$1==o && $2==ff && $3!="" {found=1} END{exit !found}' "$EXLIST" 2>/dev/null; then
-        _exn=$((${_exn:-0}+1)); continue
+      # 🔴 结构化登记例外 v2（归口方变异验证抓出 v1 两个洞，2026-08-26）：
+      #   洞 A：v1 只匹配【短语＋件】，无位置维度 ⇒ 一条例外豁免该件内该短语的**所有出现**，
+      #        包括未来新写进去的真残留。⇒ v2 **逐处绑定行指纹**，行一改例外即失效（fail-closed）。
+      #   洞 B：v1 **从不校验批准方**，而输出印着「执笔方不得自增自批」。
+      #        ⇒ v2 **批准方须实**：空 / 含未决词 / 为执笔方本人，**均不构成批准**。
+      #   🔴 规则没有执行者 ＝ 没有规则 —— 这个病此前正出现在修这个病的件里。
+      _exhit=0
+      if [ -f "$EXLIST" ]; then
+        _n=1
+        printf '%s\n' "$_lines" | while IFS= read -r _ln; do :; done
+        # 逐条命中行分别查例外：行指纹须匹配
+        _remain=""
+        for _one in $(printf '%s\n' "$_lines" | cut -d: -f1); do
+          _txt=$(sed -n "${_one}p" "$f" | tr -d '[:space:]')
+          _fp=$(printf '%s' "$_txt" | sha256sum | cut -c1-16)
+          if awk -F'\t' -v o="$old" -v ff="$f" -v fp="$_fp" -v me="$AUTHOR_SESSION" '
+                $1==o && $2==ff && $3==fp && $4!="" && $5!="" \
+                && $5 !~ /待|未|pending|PENDING|TODO/ && $5 != me {found=1} END{exit !found}' \
+                "$EXLIST" 2>/dev/null; then
+            _exn=$((${_exn:-0}+1))
+          else
+            _remain="$_remain $_one"
+          fi
+        done
+        [ -z "$(printf '%s' "$_remain" | tr -d ' ')" ] && _exhit=1
       fi
+      [ "$_exhit" -eq 1 ] && continue
       _c=$(printf '%s\n' "$_lines" | wc -l | tr -d ' ')
       [ "$_hit" -eq 0 ] && { echo "✗ $f：出现已撤销的断言"; _hit=1; _bad=1; }
       echo "    「$old」$_c 处 ⇒ 现行：$cur"
@@ -106,16 +130,48 @@ selftest() {
   [ $? -eq 1 ] && ok "🔴 拦住：仅有行内 style-ok【不再】豁免（RV-乙18 反转此断言）" \
                 || bad "自由文本 style-ok 仍能绕过 —— 契约未真正改掉"
 
-  # 登记例外须【短语 ＋ 件】同时匹配，且理由非空
-  printf '旧说法\t%s\t确属现行禁令本身\t门方批准\n' "$T/a.md" > "$T/ex.txt"
-  EXLIST="$T/ex.txt" run
-  [ $? -eq 0 ] && ok "登记例外（短语＋件＋理由齐）放行" || bad "合规登记例外被误拦"
+  # ⚠️ 本组随 v2 改契约同步重写 —— 🔴 **改契约必须回头改为旧契约写的反测**，
+  #    否则它要么误报，要么把旧行为再拉回来。（v1 三列 → v2 五列，含行指纹与批准方。）
+  _fp0(){ sed -n "$2p" "$1" | tr -d '[:space:]' | sha256sum | cut -c1-16; }
+  mk; printf '本节采用旧说法处理。\n' >> "$T/a.md"
+  _l0=$(grep -n '本节采用' "$T/a.md" | cut -d: -f1); _f0=$(_fp0 "$T/a.md" "$_l0")
 
-  printf '旧说法\t%s\t\t门方批准\n' "$T/a.md" > "$T/ex2.txt"
+  printf '旧说法\t%s\t%s\t确属现行禁令本身\t门方sol\n' "$T/a.md" "$_f0" > "$T/ex.txt"
+  EXLIST="$T/ex.txt" run
+  [ $? -eq 0 ] && ok "登记例外五列齐（短语＋件＋行指纹＋理由＋真批准方）放行" || bad "合规登记例外被误拦"
+
+  printf '旧说法\t%s\t%s\t\t门方sol\n' "$T/a.md" "$_f0" > "$T/ex2.txt"
   EXLIST="$T/ex2.txt" run
   [ $? -eq 1 ] && ok "🔴 拦住：登记例外【理由为空】不放行（空理由＝没理由）" || bad "空理由被放行"
 
-  printf '旧说法\t%s/别的件.md\t理由\t门方\n' "$T" > "$T/ex3.txt"
+  # ===== v2 反测：归口方两个变异测试的固化（2026-08-26） =====
+  _fp(){ sed -n "$2p" "$1" | tr -d '[:space:]' | sha256sum | cut -c1-16; }
+
+  # 🔴 变异 A：同件内【合法句 ＋ 真残留】各一处，例外只登记合法句那一行
+  #    v1 因粒度只到「短语＋件」，把两处一起放行；v2 须只放行被指纹绑定的那一处。
+  mk; printf '合法句：旧说法 在此为现行禁令本身\n本节仍按旧说法 的旧模型描述归属链\n' >> "$T/a.md"
+  _l1=$(grep -n '合法句' "$T/a.md" | cut -d: -f1)
+  printf '旧说法\t%s\t%s\t现行禁令本身\t门方sol\n' "$T/a.md" "$(_fp "$T/a.md" "$_l1")" > "$T/exA.txt"
+  EXLIST="$T/exA.txt" run
+  [ $? -eq 1 ] && ok "🔴 变异A 拦住：同件内真残留【不被】合法句的例外一并豁免（v1 在此放行）" \
+                || bad "例外仍按件级泛化 —— 真残留被一起放行"
+
+  # 🔴 变异 B：批准方留空 / 写未决词 / 写执笔方本人 —— 三者均不构成批准
+  mk; printf '本节采用旧说法处理。\n' >> "$T/a.md"
+  _l2=$(grep -n '本节采用' "$T/a.md" | cut -d: -f1); _f2=$(_fp "$T/a.md" "$_l2")
+  for _who in "" "待门方批准（执笔方迁入，未自批）" "zzc-opus50tchangshark-2642"; do
+    printf '旧说法\t%s\t%s\t理由在\t%s\n' "$T/a.md" "$_f2" "$_who" > "$T/exB.txt"
+    EXLIST="$T/exB.txt" run
+    [ $? -eq 1 ] || { bad "批准方=[$_who] 竟构成批准"; break; }
+  done
+  [ $fail -eq 0 ] && ok "🔴 变异B 拦住：批准方为空 / 未决词 / 执笔方本人，均不构成批准（登记≠获批准）"
+
+  # 行指纹绑定：行内容一改，例外即失效（fail-closed，须重新批准）
+  printf '旧说法\t%s\t0000000000000000\t理由在\t门方sol\n' "$T/a.md" > "$T/exC.txt"
+  EXLIST="$T/exC.txt" run
+  [ $? -eq 1 ] && ok "🔴 行指纹不匹配 ⇒ 例外失效（行一改须重新批准）" || bad "指纹不匹配仍放行"
+
+  printf '旧说法\t%s/别的件.md\t%s\t理由\t门方sol\n' "$T" "$_f2" > "$T/ex3.txt"
   EXLIST="$T/ex3.txt" run
   [ $? -eq 1 ] && ok "🔴 拦住：登记例外【件不匹配】不放行（例外不得跨件泛化）" || bad "跨件泛化被放行"
 
