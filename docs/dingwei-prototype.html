@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.39 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.40 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -150,6 +150,8 @@ body.uionly #uihint{display:block}
   <a href="#s1" class="on">待决队列 <span class="mono">§25.1</span></a>
   <a href="#s2">任务看板 <span class="mono">§5.7</span></a>
   <a href="#s8">平台治理 <span class="mono">§24</span></a>
+  <a href="#s8r">管理面角色模型 <span class="mono">新增·SP8前置</span></a>
+  <a href="#s8h">平台健康 · 自检计数器 <span class="mono">新增·§7.1 P3</span></a>
   <div class="grp">依据面</div>
   <a href="#s4">Spec 与设计文档 <span class="mono">§25.3</span></a>
   <a href="#a5">spec 准入检查 <span class="mono">新增</span></a>
@@ -770,6 +772,57 @@ body.uionly #uihint{display:block}
   例如 <code>kind</code>（正常帖 / 门结果 / 引擎事件）、<code>in_reply_to</code>、<code>delivery_id</code> 是否入表，规范均未定。<br>
   ⇒ 须回写 SpecDoc <b>§18.1 补帖子表列定义</b>，并明确哪些列入 digest 规范序列、哪些不入。</div>
 </div>
+</section>
+
+<!-- ============ S8R 管理面角色模型 ============ -->
+<section class="scr" id="s8r">
+<h2 data-edit>管理面角色模型</h2>
+<div class="sub" data-edit>谁能做什么。§2.3「admin 后台＝重建管理面，<b>无角色模型</b>」· 附录 B #19 · <b style="color:var(--acc)">SP8（L3·安全面=是）的施工前置</b></div>
+
+<div class="note bad" data-edit>🔴 <b>本屏此前不存在，是缺口不是省略。</b>
+原型全文「角色模型」仅出现于分发面并标着「待建」；<b>没有「按角色列能力」的任何一屏</b> ——
+故读者只能从「平台治理」屏去猜权限，而那屏画的是<b>「一类变更怎么过审」，不是「某个角色能做什么」</b>。</div>
+
+<div class="note bad" data-edit>🔴 <b>验收判据（原文照抄，已经够硬）：</b>
+「<b>存在角色模型」不等于分权生效，全员同角色也满足「存在」</b>。<br>
+⇒ <b>负测</b>：只读角色调用 <code>provision</code> / <code>api-keys</code> / <code>config</code> 三类高危端点<b>必须被拒</b>（恒零，附录 E.1 #179）。</div>
+
+<h3>角色 × 能力矩阵 <span class="ref">§24.4 ⑤ · §23.5</span></h3>
+<table><thead><tr><th>角色</th><th>只读诊断</th><th><code>provision</code></th><th><code>api-keys</code></th><th><code>config</code></th><th>批准 §24 批次</th></tr></thead><tbody>
+<tr><td>只读观察者</td><td>✓</td><td class="cell-fail">拒</td><td class="cell-fail">拒</td><td class="cell-fail">拒</td><td class="cell-fail">拒</td></tr>
+<tr><td>平台级 ops</td><td>✓</td><td>✓</td><td class="cell-fail">拒</td><td>✓</td><td class="cell-fail">拒<span class="mono">（整理汇总，不批准）</span></td></tr>
+<tr><td>企业级 ops</td><td>✓<span class="mono">（本企业）</span></td><td class="cell-fail">拒</td><td class="cell-fail">拒</td><td class="cell-fail">拒</td><td class="cell-fail">拒</td></tr>
+<tr><td>平台管理者<span class="mono">（本部署下＝业主）</span></td><td>✓</td><td class="cell-fail">拒</td><td>✓</td><td class="cell-fail">拒</td><td>✓<span class="mono">（含高危 ⇒ 重两签）</span></td></tr>
+</tbody></table>
+<div class="note" data-edit>📌 <b>批准与执行分处两套写权</b>（§24 设计前提）—— 故「平台级 ops」能执行不能批准，「平台管理者」能批准不能执行。
+合业主「git 管理员与 DB 管理员不应是同一人」的分离原则。<br>
+⚠️ <b>本矩阵是形态示例，值须随 SP8 落地时按 capability catalog（架构设计 A§16）逐项对齐</b>，不得据此直接施工。</div>
+</section>
+
+<!-- ============ S8H 平台健康 · 自检计数器 ============ -->
+<section class="scr" id="s8h">
+<h2 data-edit>平台健康 · 自检计数器</h2>
+<div class="sub" data-edit>§7.1 <b>P3「逐闸命中计数入台账」</b>（附录 C.1 实测：❌ 未实现）· §3 保障层「自检计数器」</div>
+
+<div class="note bad" data-edit>🔴 <b>本屏只装【运行态】计数器。</b>
+附录 E 第 I 类恒零计数器分两种判据面，<b>不可混为一屏</b>：<br>
+· <b>代码结构面</b>（绕仓扫描 · 表接入 · 依赖棘轮）⇒ 跑在<b>提交闸</b>，产出落 <code>docs/REVIEW-STATE.md</code>，<b>不进本屏</b>——
+再放一份就是<b>第二事实源</b>，正是评审状态生成件当初要消除的东西。<br>
+· <b>运行态面</b>（下表）⇒ 持续为 0，<b>这才是产品该有的</b>。</div>
+
+<table><thead><tr><th>计数器</th><th>判据</th><th>锚</th><th>现状</th></tr></thead><tbody>
+<tr><td>缺租户上下文而放行数</td><td>恒 0（fail-closed）</td><td class="mono">§22.2c #4</td><td class="cell-fail">未实现</td></tr>
+<tr><td>跨企业读被放行数</td><td>恒 0</td><td class="mono">§22.0 · §15.5</td><td class="cell-fail">未实现</td></tr>
+<tr><td>以 <code>agent</code> 而非 <code>actor</code> 作判定基准数</td><td>恒 0</td><td class="mono">E.1 #176</td><td class="cell-fail">未实现</td></tr>
+<tr><td>只读角色调用三类高危端点被放行数</td><td>恒 0</td><td class="mono">E.1 #179</td><td class="cell-fail">未实现</td></tr>
+<tr><td>周报导出以通用 <code>export</code> 放行数 / 跨企业导出数</td><td>恒 0</td><td class="mono">E.1 #178</td><td class="cell-fail">未实现</td></tr>
+<tr><td>收口后仍被新 task 采用的已封存版本值数</td><td>恒 0</td><td class="mono">E.1 #177</td><td class="cell-fail">未实现</td></tr>
+<tr><td>LLM 兜底占比</td><td>趋势指标（非恒零）</td><td class="mono">§7.1 P3</td><td class="cell-fail">未实现</td></tr>
+</tbody></table>
+<div class="note" data-edit>⚠️ <b>「未实现」不是排版占位</b> —— P3 在附录 C.1 的实测状态就是 ❌。
+<b>本屏现在的价值是让这件事可见</b>，而不是显示一排绿勾。<br>
+🔴 <b>计数器全绿 ≠ 隔离已实现</b>：恒零只说明「没记录到违规」，
+若判定点本身没埋，它天然恒零 —— <b>看到 0 先问它测了没有</b>。</div>
 </section>
 
 <!-- ============ S8 平台治理 ============ -->

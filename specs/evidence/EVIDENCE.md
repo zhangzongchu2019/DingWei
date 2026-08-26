@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-26T04:32:59Z
-分支头：`ae8f81784b17af41fb8536d35338a595d428e6dc`
+生成时刻：2026-08-26T05:15:17Z
+分支头：`91483450a6974088e5fed41da76b35d91d4352c7`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,10 +10,10 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED 4f616a02ad6b3e3939d8a4ef6cf6aae3a717b53949ce5f83375eacfd2c0f149a  docs/dingwei-platform-specdoc.md
+REVIEWED dfef2a8c917cf6a1e0231230384f7e6b755c393cb08804a44f3f14944f802763  docs/dingwei-platform-specdoc.md
 REVIEWED be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79  docs/dingwei-architecture-design.md
-REVIEWED ac777de2db6191d8773b51c086be02ebc6fa5264d6b7512c1f9db6a18582c2a2  docs/dingwei-prototype.html
-REVIEWED d60d1d531c73e4c68a4a079ecc784e859b4d3373d0995376a3eddf48dfc1abbc  docs/DELIVERY-STATUS.md
+REVIEWED 734eb62292342b4d8d58c53b5f4c6e8d124691238f3331fa5ad643ca64fe8431  docs/dingwei-prototype.html
+REVIEWED 57153e6cdcaf87504ff7170b8e784e1545110b00202d1926fc28b2dc1e8df191  docs/DELIVERY-STATUS.md
 REVIEWED 8996a7df3ae0e99db2aaef56d2d13126ded09c01787167ecebcf47c7f3372798  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
@@ -21,9 +21,11 @@ REVIEWED 253a59f6e85c9a1438beeac339efdc2294b21ae3bba46aaf30e7d1ee9befb521  scrip
 REVIEWED 3cb2373018a75efa47200d682761a2ff965d54af57fdf37539ae8d04bd13de6e  scripts/checklist-executed-gate.sh
 REVIEWED 69b60fda965d49479f0390a583810b082c1f049b30b4d04af2127f3eb13d43c3  scripts/conflict-marker-gate.sh
 REVIEWED 687300bc3e8a56f491c533116b6cccc6da256f4e7aaf300607cd32cb6274e78e  scripts/delivery-check.sh
+REVIEWED 14158e52ea0e4a0e5d21766e438d31a0a069008e8ec9b3fcc742599ca43aa93a  scripts/dependency-ratchet.sh
 REVIEWED 33d372ff3b1dcda466476c113af888b55e02dee8479a894c8b0c48d8e9a45013  scripts/evidence-fresh-gate.sh
 REVIEWED 8be0b821c0ad2574722f3e4032f8d91f599fc623bc42f1334dd491aed20e868e  scripts/gen-review-state.sh
 REVIEWED 156c626fe5e069606e07f642d5f7fd3477b5ce42f1173d28b40e425f4556b883  scripts/gen-status.sh
+REVIEWED 5af6be34dc879878264d9c3681ff3682374b3f92d07a58055ca212c65629771d  scripts/input-anchor-gate.sh
 REVIEWED 510ae09c71ca9ac2f4d44ef74d1530cbe03d5a3560179fc4ad03c280c9f30d3f  scripts/legacy-name-gate.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh
 REVIEWED 19c187d91bff0d18a734582e6c278cca4f87596a59a87b824ea0acbabdc0d5be  scripts/path-anchor-gate.sh
@@ -32,7 +34,7 @@ REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scrip
 REVIEWED 29fefc4850804f2f9250241b8c9584d19dfc183e7987c90c25819f2e58a10ed9  scripts/repo-boundary-gate.sh
 REVIEWED 679e8c6f73f15972895348cab70bf184c4b3763e64efb05ab1de0f716c661a6b  scripts/reviewer-repro-gate.sh
 REVIEWED bf1e2ba70efd82d87bd7b39c9cd75ddbc20ed636374aed3c7488c71f01eab451  scripts/rv-integrity-gate.sh
-REVIEWED 66efabce81c47a14da1af1fb563700f5a7ff27f27da7f89d38c0a66413098820  scripts/speclint-gate.sh
+REVIEWED e6c79ce51d9dbd52ef3e9be5e58a8f1490c3dc7a1422ba77cf3db8d4bec30b8f  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
 REVIEWED 04a61a19321b7a35a78a5a886b1bc915dd5012fcf1dbd8636627e058c966eb3e  scripts/status-consistency-check.sh
 REVIEWED 4c41cb0ccd5452a7eadd8f5eddad986660d9cf51cdc461d51235eb0894100023  scripts/superseded-claims-gate.sh
@@ -47,6 +49,7 @@ REVIEWED 49b6196087629e5500f99da9b11a74a7bf035f79e0db24988e9194839d264288  specs
 REVIEWED 9328cd8abaf6e6ceacf8e0968e8431ae28080ca67044c32457c9283ef467b552  docs/tools/speclint.py
 REVIEWED 2ca28e44ad27f466487859548c69cf3f321a2f03200fbe1731fe36ca75651e5a  specs/gates/boundary-baseline.txt
 REVIEWED 16e5ba25e2b662a97269723d229d138cd7f0e2ebc7bd5177f9575eb2470fdbae  specs/gates/checklist-execution-exceptions.txt
+REVIEWED 659cb7dd7e4a9ae1c57ea5575f52f008595b5fd55eec319f8ed697e71b7d2760  specs/gates/dependency-baseline.txt
 REVIEWED fecc8c2f2a3e8ddfd515d492cac5c2d2560f88cc3729c53fad31c0f2a46665b9  specs/gates/disputed.txt
 REVIEWED 377197b6f96de93701b7200290f574ab485015bfcd6cef1bb98e1432ec830461  specs/gates/legacy-name-baseline.txt
 REVIEWED 861f36f0dfeda164e4047bfd75ea78e5977d3ad352c8e1c5cafff6a790945530  specs/gates/repo-packages.txt
@@ -119,11 +122,11 @@ $ specs/tools/analyze.sh
   ② 架构设计引用的 SpecDoc 节号是否都存在（跨制品悬空）
     ✓ 无悬空
   ③ 原型引用的 SpecDoc 节号是否都存在
-    原型引用 118 个节号；悬空 0 ✓
+    原型引用 119 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.64 · 状态文件 v3.64 ✓
+    SpecDoc: 件内 v3.65 · 状态文件 v3.65 ✓
     架构设计: 件内 v0.34 · 状态文件 v0.34 ✓
-    原型: 件内 v1.39 · 状态文件 v1.39 ✓
+    原型: 件内 v1.40 · 状态文件 v1.40 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-architecture-design.md: 正文无他件旧版本号

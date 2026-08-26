@@ -1,5 +1,5 @@
 #!/bin/sh
-# 提交闸 ①–⑩ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步+锚可达 / 架构引用核验 / 仓储包边界 / specs 索引 / 状态一致性 / 租户隔离前置。任一不过即失败。
+# 提交闸 ①–㉖ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步+锚可达 / 架构引用核验 / 仓储包边界 / specs 索引 / 状态一致性 / 租户隔离前置。任一不过即失败。
 #
 # 立此闸的直接原因：2026-08-24，本席在 speclint 退出码为 1 的状态下推了 a165521。
 # 当时 lint 与 commit 写在同一批命令里、没有用 && 串，照跑不误。
@@ -311,6 +311,20 @@ scripts/title-version-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/title-version-gate.sh --selftest; echo "✗ 标题/版本一致闸的反测未过"; exit 1; }
 echo "  ㉔ 标题/版本一致闸的反测 ✓"
 
+# ㉕ 输入锚解析闸（§4.7.1 ⑥）：锚解析不到 ⇒「范围不扩 / 共识不变」两条默认约束落空，
+#    而六面都填了、正文看着合规。🔴 本闸判【锚是否解析得到】，判不了【陈述追不追得到锚】（E.4 #66）。
+scripts/input-anchor-gate.sh || exit 1
+scripts/input-anchor-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/input-anchor-gate.sh --selftest; echo "✗ 输入锚解析闸的反测未过"; exit 1; }
+echo "  ㉕ 输入锚解析闸的反测 ✓"
+
+# ㉖ 依赖清单棘轮（§4.7.1a「依赖不增」的对应物）：不声明即生效的约束若无可机器验证的对应物，
+#    就退化成「记得少加依赖」——那是纪律不是机制。🔴 判数不判换，等价替换只提示不判门。
+scripts/dependency-ratchet.sh || exit 1
+scripts/dependency-ratchet.sh --selftest >/dev/null 2>&1 || {
+  scripts/dependency-ratchet.sh --selftest; echo "✗ 依赖清单棘轮的反测未过"; exit 1; }
+echo "  ㉖ 依赖清单棘轮的反测 ✓"
+
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
 #    **没有一次是执笔方自查出来的**。
@@ -322,7 +336,7 @@ python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
 python3 specs/tools/disposition-audit.py || true
 _debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
 if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–㉔ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
+  echo "✓ 提交闸通过（①–㉖ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
 else
-  echo "✓ 提交闸全过（①–㉔ ＋ ⑱ triage）"
+  echo "✓ 提交闸全过（①–㉖ ＋ ⑱ triage）"
 fi

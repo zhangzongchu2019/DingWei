@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `ae8f81784b17af41fb8536d35338a595d428e6dc` · 分支 `design/addendum-decisions`
+生成自 commit `91483450a6974088e5fed41da76b35d91d4352c7` · 分支 `design/addendum-decisions`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.64** | `ae8f81784b17af41fb8536d35338a595d428e6dc<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5034 / 355220 | `4f616a02ad6b3e3939d8a4ef6cf6aae3a717b53949ce5f83375eacfd2c0f149a` |
-| `dingwei-prototype.html` | **v1.39** | `9d70c867f5ed20052e53a274565fb941177c48fe<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2852 / 255042 | `ac777de2db6191d8773b51c086be02ebc6fa5264d6b7512c1f9db6a18582c2a2` |
+| `dingwei-platform-specdoc.md` | **v3.65** | `91483450a6974088e5fed41da76b35d91d4352c7<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5098 / 358599 | `dfef2a8c917cf6a1e0231230384f7e6b755c393cb08804a44f3f14944f802763` |
+| `dingwei-prototype.html` | **v1.40** | `91483450a6974088e5fed41da76b35d91d4352c7<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2905 / 260303 | `734eb62292342b4d8d58c53b5f4c6e8d124691238f3331fa5ad643ca64fe8431` |
 | `dingwei-architecture-design.md` | **v0.34** | `5aa4a951f49b09da9a584aefd3d04313e4f4b9f0` | 907 / 61540 | `be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+9148345 业主界面复核裁定集中并入正文（v3.64 · 原型 v1.39）
 ae8f817 五条默认设计约束立为 §4.7.1 ⑤ 默认值（v3.61）＋ 其余文档归入 v0.1
 364f95a 业主逐条裁定收口（v3.60）＋ docs 分期归档 —— 附录 F 加 F.0 收口索引
 5aa4a95 架构件标题 v0.33 vs 版本字段 v0.34 —— 交付前实取才发现（立闸 ㉔）
@@ -34,5 +35,4 @@ ae8f817 五条默认设计约束立为 §4.7.1 ⑤ 默认值（v3.61）＋ 其�
 405d33a 证据日志改回原名 —— 改名会让证据与来源对不上
 9430718 PG17 实跑原始日志入仓（v3.48）—— 「已实跑」终于有了载体
 0cc20ea 按业主派工：fixture 实跑修正 ＋ 26 处跨租户重判 ＋ 丙域落勾合入（v3.47）
-3c7ef59 Merge remote-tracking branch 'origin/design/addendum-decisions' into design/addendum-decisions
 ```

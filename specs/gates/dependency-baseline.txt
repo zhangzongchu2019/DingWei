@@ -1,0 +1,4 @@
+# 依赖清单棘轮基线（scripts/dependency-ratchet.sh）——「依赖不增」默认约束的对应物（§4.7.1a）
+# 🔴 上调基线＝放宽判据，属评审面，须随 spec §4.7.1 ⑤ 的突破论证一并提交，不得静默改。
+direct_count=6
+direct_sha256=af0fb4d1916764b84b5f3dd58d2e8fddc6fdc19e4f6b1d0a74ae66086bc50e8c
