@@ -1,9 +1,9 @@
-# DingWei SP2 执行层与门禁设计 v1.2
+# DingWei SP2 执行层与门禁设计 v1.3
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp2-design` |
-| **版本** | v1.2 |
+| **版本** | v1.3 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | `53d91aedd158c0a8618f0196f013cfee5cfd44aa` |
 | **合同锚** | `fa60efa1977188ca2061cd1ec4929a363cdd6a99` |
@@ -18,6 +18,7 @@
 > v1.1：按正文首轮三方评审一次性闭合 WRK 事件、condition 轴、状态动作接口、附录 E 语义映射、
 > §6.2 四项与治理成本、多 required gate 全称不变量；未扩 SP2 产品范围或架构接口 ID。
 > v1.2：统一 fail+pending 混合态：fail 立即锁死下游，全部 required gate 终结后才关闭 awaiting_gate 并封存 node。
+> v1.3：将 `gate_failed` 钉为 required gate verdict 全集的只读派生字段，不新增状态轴或可写枚举。
 
 ## D-SP2-01 范围、边界与权威事实
 
@@ -89,7 +90,9 @@ DAG eligible = execution_state == done
                AND FOR ALL required gates: verdict IN {not_required, pass}
 ```
 
-任一 required gate 为 `fail` 时立即把 node 标为 `gate_failed` 并永久锁死下游；但只要仍有 required gate 为 `pending`，
+`TaskSnapshot.node_gate_summary.gate_failed` 是只读派生布尔值，定义为
+`EXISTS required gate: verdict=fail`；它不持久化、不接受 command 写入、不是独立状态轴，也不属于 execution、verdict
+或 condition 词表。任一 required gate 为 `fail` 时该派生值立即为 true 并永久锁死下游；但只要仍有 gate 为 `pending`，
 node 就不封存，剩余 gate 继续落账。全部 required gate 终结后才关闭 `awaiting_gate`：存在 fail 则封存且不放行，
 否则全部 verdict 为 `not_required/pass`，封存并 eligible。返工只能 `AppendRevision` 新建 node。
 execution `failed` 不等于 gate `fail`，前者是执行结果，后者是评审结论。
@@ -120,7 +123,8 @@ execution `failed` 不等于 gate `fail`，前者是执行结果，后者是评�
 
 gate evaluation 只在 execution evidence 已落账后开始。每个 required gate 的 `pending→pass|fail` 必须携带 gate id、
 GateSet version、reviewer principal、evidence version。任一 gate fail 时先落该 gate result 与失败最小复现，并立即
-写 `gate_failed` 锁死下游；其他 pending gate 仍须完成或以受权 verdict 终结。只有全部 required gate 均已终结，才关闭
+使只读派生 `node_gate_summary.gate_failed=true`、锁死下游；其他 pending gate 仍须完成或以受权 verdict 终结。
+只有全部 required gate 均已终结，才关闭
 `awaiting_gate`、封存 node 并生成覆盖全部 gate result 的 digest；存在任一 fail 则不放行，否则 eligible。
 
 ### 3.3 F.1.2 delivery.verify
@@ -210,7 +214,8 @@ N/A 渲染成未完成。门方是每个 gate 实例指定的 principal；「评
 ### 5.5 读模型
 
 `WRK-QRY-TaskSnapshot` 的读模型由同企业库事实投影，至少含 task generation、node execution/conditions、
-required gate 全集及逐 gate verdict、DAG eligibility、revision lineage、release/rollback、outbox unresolved 摘要。
+required gate 全集及逐 gate verdict、只读 `node_gate_summary.gate_failed`、DAG eligibility、revision lineage、
+release/rollback、outbox unresolved 摘要。
 投影携带 `projection_version/source_high_water`；落后时明确返回 stale，不把缺行当不存在。看板、ingress、driver、
 reconciler、KNO/COL 投影均消费该 typed 读模型，不直读内部表或自行重算 eligibility。
 
