@@ -1,7 +1,7 @@
 # SP8 正文评审：四条阻断的闭合证据 —— 拉取式，不必与消息比对
 
 > 与 `EVIDENCE-blocker1.md` 同一理由：消息会交叉，仓不会。全部可自跑复算。
-> **当前正文锚 `1f703b8`（v1.3）**，四条阻断全部在此锚内闭合。
+> **当前正文锚 `496c952`（v1.4）**。首轮四条 ＋ 复审四条，全部在此锚内闭合。
 
 | # | 提出方 | 阻断 | 闭合锚 | 闭在哪（file:line @ `1f703b8`） |
 |---|---|---|---|---|
@@ -26,3 +26,16 @@ git show 1f703b8:docs/dingwei-sp8-design.md | grep -n "^| \`gov_audit\`\|^| \`ef
 
 ## 正文锚序
 `3af1bfa`(v1.0) → `7382f51`(v1.1：B1＋B2) → `d3aceac`(v1.2：次因子) → **`1f703b8`(v1.3：范围列)**
+
+## 复审（第 2 轮）四条 —— 闭在 `496c952`(v1.4)
+
+| # | 阻断 | 闭在哪 |
+|---|---|---|
+| B1 | 高危认证强度弱于 §23.5（允许两个单因子 principal 终结高危）| §2.1a 重两签行改为 `dual` ＋ **`second_factor`，两名 signer 各自满足**；恒零「以 `dual`＋`single_factor` 终结高危的次数」；负测含「一人达标一人不达标」同样必拒 |
+| B2 | claim 原子性与幂等自相矛盾、状态不闭合 | §11.1 消费**拆两支**：新 claim（`RETURNING` 有行）才扣额，**达上限在同一 UPDATE 语句内置 `exhausted`**，影响 0 行整笔回滚；冲突分支比对 `payload_digest`，同载荷返既有 outcome **不再扣额**、异载荷 `IDEMPOTENCY_CONFLICT`；§11.3 表格化 **revoke 三态**（未用/部分已用/已耗尽）各自 CAS 条件、记录与回退义务 |
+| B3 | 形态 B 证明不了「无窗口」 | §11.4 重写：**默认只允许同库 UoW**；形态 B 须**同步权威 fence**（判定时刻对 WRK 可线性化查询），**fence 失败/超时 fail-closed**，**outbox 降为补偿落账、不作判定依据**；另给「closeout 延后可见」第三路但须 SP2 同意；负测**注入 outbox 延迟窗口必须被拒** |
+| B4 | 批签跨表条件冒充行 CHECK | 新增 **§12.2b**：`signer ≠ proposer`、`count>=required` 等跨行条件由**写路径或触发器**保证（明写选哪个）＋**各自对账恒零**；`batch_signature` 的 CHECK 列改为只约束本行 |
+
+复算：`git checkout 496c952 && sh specs/sp8/check.sh | head -6 && sh specs/sp8/contract-check.sh | tail -2`
+快速核对：`grep -n "second_factor，且两名 signer\|payload_digest\|同步权威 fence\|12.2b" docs/dingwei-sp8-design.md`
+正文锚序：`3af1bfa` → `7382f51` → `d3aceac` → `1f703b8` → **`496c952`**
