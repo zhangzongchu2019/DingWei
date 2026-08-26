@@ -106,7 +106,7 @@ run "仓储包外的库句柄处数（判据：恒为 0；口径与实数均出�
     "scripts/repo-boundary-gate.sh"
 run "四处存储的建表点（36 / 11 / 5 / 9）" \
     "for p in internal/store/migrations internal/mcs/board/schema.sql internal/fanout internal/datad; do printf '%-34s ' \$p; grep -rhoP 'CREATE TABLE (IF NOT EXISTS )?\\K\\w+' \$p | sort -u | wc -l; done"
-run "task 表跨存储重名（须在 SP7a 前定名，见 docs/task-table-collision-analysis.md）" \
+run "task 表跨存储重名（须在 SP7a 前定名，见 docs/v0.1/task-table-collision-analysis.md）" \
     "grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task\\b' internal/mcs/board/schema.sql internal/datad/pgstore.go"
 # ⚠️ 标签只描述【这条命令搜了什么】，不描述裁定，也不外推结论 ——
 #   原标签写「C.3 裁定不做 RLS」，而现行裁定是 C.3a「PG ＋ RLS（人层）采纳」，

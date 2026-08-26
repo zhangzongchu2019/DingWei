@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-26T02:58:57Z
-分支头：`5aa4a951f49b09da9a584aefd3d04313e4f4b9f0`
+生成时刻：2026-08-26T03:14:53Z
+分支头：`364f95afcf1258763384a9cd74b25dd527927914`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -10,11 +10,11 @@
 ## 评审对象内容指纹（本包分析的就是这些字节）
 
 ```
-REVIEWED c29c85c630ca48c572a29ab44d1c492dc6ad51cd934ad2dbf520368a46f68143  docs/dingwei-platform-specdoc.md
+REVIEWED 7b0bf673b9ac2782491cdc2d2bd105d7b71be31d27fb4b5096a1a59934dae552  docs/dingwei-platform-specdoc.md
 REVIEWED be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79  docs/dingwei-architecture-design.md
 REVIEWED 6c1f00d9c94f3f0349c79aef94cc346c306b4ed842575519ec938f53c1c231b7  docs/dingwei-prototype.html
-REVIEWED 91bf5d547290edc9a6d6d5f71654c36c72981b870272bc557fa386487bdd09be  docs/DELIVERY-STATUS.md
-REVIEWED a1fe9843b31755f89f241d80a39b57a15e72f3384c5af0219e284ca1ae9135eb  specs/evidence/collect.sh
+REVIEWED b531b6c82b3015616f7794ee8abf5c7fff7e53346417c63f08b5718fd0adfea1  docs/DELIVERY-STATUS.md
+REVIEWED 8996a7df3ae0e99db2aaef56d2d13126ded09c01787167ecebcf47c7f3372798  specs/evidence/collect.sh
 REVIEWED 51ae52b28d3d3b0af6f5114bedc246c497179c6035bfd519611d30b86d72e125  scripts/appendix-e-owner-gate.sh
 REVIEWED 2c1688e8431b0819e9ac6fc58d254c983284d788d86250562195345dffcc9a9b  scripts/arch-refcheck.sh
 REVIEWED 253a59f6e85c9a1438beeac339efdc2294b21ae3bba46aaf30e7d1ee9befb521  scripts/check-sensitive.sh
@@ -40,7 +40,7 @@ REVIEWED a5fcd7cfbd7194d44a10fd7bba42c27f0b7258c09861d6ecf39a7337e294f66f  scrip
 REVIEWED 05ea1686dcc89b8a2538d6b6b2ed221c2184bd49f8d7742cd7d86fefb3802865  scripts/title-version-gate.sh
 REVIEWED 91102ae852827ee0b7ecfe122d29f13c95ff73d49752be29f3991f2ca93b2832  specs/tools/analyze.sh
 REVIEWED fa2e42ef5aabe1418512e2e3b4cf4a103c978a4bcfd80e0c06db4c536ee092d6  specs/tools/disposition-audit.py
-REVIEWED 49a9eab11f34bdef4c65e1c4c6f0ac969cfa28faa834aa52d7f84d5d453bc8e7  specs/tools/export-bundle.sh
+REVIEWED 4846536afab7911f005f9dd35c657b03f083da3ec3c3a377d6d0c1b392b03b68  specs/tools/export-bundle.sh
 REVIEWED 41e915d3132b580332d7fa984979c6740ad6a892733f57d14d1192ddce83c778  specs/tools/foreign-version-check.py
 REVIEWED c598b3199e0c418af5d6f207fff5a4b2e093edf0e3412562bccd8524612a337b  specs/tools/rv-state-check.py
 REVIEWED 49b6196087629e5500f99da9b11a74a7bf035f79e0db24988e9194839d264288  specs/tools/safe-replace.py
@@ -121,7 +121,7 @@ $ specs/tools/analyze.sh
   ③ 原型引用的 SpecDoc 节号是否都存在
     原型引用 115 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
-    SpecDoc: 件内 v3.60 · 状态文件 v3.60 ✓
+    SpecDoc: 件内 v3.61 · 状态文件 v3.61 ✓
     架构设计: 件内 v0.34 · 状态文件 v0.34 ✓
     原型: 件内 v1.38 · 状态文件 v1.38 ✓
   ④b 正文是否出现【他件】的旧版本号
@@ -194,7 +194,7 @@ $ for p in internal/store/migrations internal/mcs/board/schema.sql internal/fano
   (rc=0)
 ```
 
-### task 表跨存储重名（须在 SP7a 前定名，见 docs/task-table-collision-analysis.md）
+### task 表跨存储重名（须在 SP7a 前定名，见 docs/v0.1/task-table-collision-analysis.md）
 
 ```
 $ grep -rlP 'CREATE TABLE (IF NOT EXISTS )?task' internal/mcs/board/schema.sql internal/datad/pgstore.go

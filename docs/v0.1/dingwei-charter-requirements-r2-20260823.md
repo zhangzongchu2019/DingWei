@@ -1061,7 +1061,7 @@ Hermes 的 `skill_manage` 有 `delete`（完全移除）；
 渐进披露、三因子检索、分层记忆、运行时取 schema，无一例外。
 **业主点出的这一层，本席自己没做完。** 本节补上。
 
-**搜索范围**：`docs/dingwei-platform-charter-v1.8.md` §8 全节 + §9 全节 + 全文 `skill|技能|topK|排序|检索` 命中。
+**搜索范围**：`docs/v0.1/dingwei-platform-charter-v1.8.md` §8 全节 + §9 全节 + 全文 `skill|技能|topK|排序|检索` 命中。
 
 ### 丁.0 先说一处纲领已经做得比参考对象好的
 

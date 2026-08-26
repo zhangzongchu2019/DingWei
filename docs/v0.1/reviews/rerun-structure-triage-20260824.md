@@ -31,7 +31,7 @@ SpecDoc §0.4 仍写「本件是单一 Markdown / 无 checklist / 第 1、2 项�
 ### 组 2 · 权威命名未裁（ARCH-01）⚖️ 待业主裁
 
 `board.task` 与 `datad.task` 同名不同义（schema、主键、状态枚举无一重合，唯一交集是 `done`）。
-`docs/task-table-collision-analysis.md` 只是**工程建议**，sol 判它「不能当权威定义」——**正确**。
+`docs/v0.1/task-table-collision-analysis.md` 只是**工程建议**，sol 判它「不能当权威定义」——**正确**。
 
 ⇒ **须业主一句裁定**：本席建议 `datad` 留名、`board` 改 `board_task`，
 判据是**语义匹配**（SpecDoc 的「任务」＝带门、带锚、可派发，datad 字段逐项对得上）
