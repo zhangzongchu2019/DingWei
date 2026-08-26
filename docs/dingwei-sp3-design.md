@@ -1,9 +1,9 @@
-# DingWei SP3 上下文与知识库设计 v1.5
+# DingWei SP3 上下文与知识库设计 v1.6
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp3-design` |
-| **版本** | v1.5 |
+| **版本** | v1.6 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | 组合冻结：SpecDoc `fcfec9a`；其余输入 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
 | **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.6 |
@@ -19,6 +19,7 @@
 > v1.3：重锚 SpecDoc v3.71；FAIL repro 按机器可复跑类与 gate_fail 人审门两类判定。
 > v1.4：重锚 SpecDoc v3.72；FAIL 只留真失败类，cancelled/timeout/effect_unknown 迁入独立终结/未知证据合同。
 > v1.5：补齐 §11.6b 前序态的派发装载：不伪造 FAIL repro，经既有 envelope_ref 类型化携带不可变终结/未知证据。
+> v1.6：登记 WRK 信封新增消费侧要求与 v3.73 repro 收紧项；两项未确认/吸收前均不冒充已交付。
 
 ## D-SP3-01 范围、四维模型与域边界
 
@@ -212,7 +213,7 @@ anchor resolver、permission domain、redaction rule version、deployment source
 |---|---|---|---|
 | `task`/`node`/`generation` | WRK task/node/generation fixture | 任一缺失或 generation 非预期拒绝 | 标识派发对象并 fence 迟到结果 |
 | `AccessCtxRef` | SP1 签发的可信主体引用 fixture | 缺失、过期、issuer/audience/generation 不符拒绝 | 固定企业轴+人轴；Agent/session/display name 不得替代 |
-| `envelope_ref` | WRK immutable envelope ref fixture；前序为 §11.6b 三态时，信封内须有类型化 `prior_state_evidence_ref` | 空/不可解析；三态下引用缺失、类型或 state 不符均拒绝 | 还原派发指令与主体引用；解析前序不可变终结/未知证据 |
+| `envelope_ref` | WRK immutable envelope ref fixture；前序为 §11.6b 三态时，消费侧要求信封内有类型化 `prior_state_evidence_ref`（SP2/§11.6 尚未定义，见 §12.4 挂账） | 空/不可解析；三态下引用缺失、类型或 state 不符均拒绝 | 未经 WRK 确认前只用于 fixture；确认后还原派发指令、主体引用与前序不可变终结/未知证据 |
 | `spec_ref` | 本次执行所据 spec version ref fixture | 不可取或版本/指纹漂移拒绝 | 固定目标、范围与输入语义 |
 | 原交付物锚 | 上轮 `result_ref+sha256` fixture | 任一缺失/sha 不符拒绝 | 取得待修/待审产物 |
 | 完整 FAIL evidence+失败最小复现 | 真失败取 §11.6a evidence fixture；前序为 §11.6b 三态时显式写 `N/A:not_failure` | FAIL 场景对象缺失或任一必需子字段不成立；非失败三态留空或伪造 repro 均拒绝 | 真失败空上下文复跑；非失败三态改由 `prior_state_evidence_ref` 复核，不伪装 FAIL |
@@ -407,6 +408,8 @@ request_id 唯一、状态转换合法。index 先服务 domain/owner/visibility
 | `handleKBQuery query=全员` | retire | AccessCtx+grant+受控 repository | 跨企业/跨人/visibility 负测 |
 | coordinator-only ingest | rewrite | 三管道+真实批准权，不按角色字符串 | 提案者/批准者、旁路管道负测 |
 | KNO repository/schema | new | 企业 PG+RLS+outbox/audit | SP7a/SP7b conformance |
+| `envelope_ref.prior_state_evidence_ref` | new / 待上游确认 | 本件对 WRK 派发信封的新增消费侧要求；SP2 与 SpecDoc §11.6 均未定义，已登记交 coordinator 转 SP2/WRK 确认；未确认前只用 fixture | SP2/WRK 确认字段形状、同态同代校验与版本兼容后方可接真实派发 |
+| SpecDoc v3.73 机器类 repro 收紧句 | adapt / 挂账 | 「不得以重发带外部副作用的操作充当复现」随 SP3 下一批或实现批次吸收；本件冻结锚仍为 v3.72 `fcfec9a` | 实现批次补带副作用命令拒绝负测，未吸收前不得宣称满足 v3.73 |
 
 ### 11.2 conformance suite
 
