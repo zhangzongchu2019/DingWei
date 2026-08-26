@@ -20,7 +20,30 @@ for id in CreateProject CreateTaskPlan DispatchNode RecordExecution RecordGateVe
 done
 grep -q '最多 4 轮' "$SPEC" || { echo '✗ 未落实业主 4 轮上限'; exit 1; }
 ! grep -q '最多 6 轮' "$SPEC" || { echo '✗ 残留旧 6 轮口径'; exit 1; }
-echo '预期集合：六面 + D-SP2-01..12 + AC-SP2-01..12 + WRK 接口 8 + 四轮上限'
-echo '实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1'
+for reviewer in zzc-opus50tchangshark-2642 zzc-deepseekv4pro08130ca16c13-2642 zzc-opus50tczc2000-2642; do
+ grep -q "$reviewer" "$SPEC" || { echo "✗ 缺评审票：$reviewer"; exit 1; }
+done
+grep -q '3/3' "$SPEC" && grep -q 'AC-E05' "$SPEC" || { echo '✗ 三票门未落 AC-E05'; exit 1; }
+for dep in SP0 SP1 SP7a SP7b; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置处置表缺 $dep"; exit 1; }; done
+
+# 冻结锚派生范围分母；与合同参考数不符即输入漂移，不得继续按旧分母评审。
+set -- $(git show "$ANCHOR:docs/dingwei-platform-specdoc.md" | python3 -c '
+import re,sys
+ls=sys.stdin.read().splitlines(); on=False; h=0; sec=""; e={"E.1":0,"E.3":0,"E.4":0}
+for l in ls:
+ if re.match(r"^## §5\b",l): on=True
+ if re.match(r"^## §10\b",l): on=False
+ if on and re.match(r"^#{2,4} ",l): h+=1
+ m=re.match(r"^##\s+(E\.[134])\b",l)
+ if m: sec=m.group(1)
+ elif re.match(r"^##\s+E\.",l): sec=""
+ if sec and l.startswith("|"):
+  c=[re.sub(r"[*`]","",x.strip()) for x in l.strip("|").split("|")]
+  if c and re.fullmatch(r"\d+[a-z]?",c[0]) and "SP2" in c[-1].split("·"): e[sec]+=1
+print(h,e["E.1"],e["E.3"],e["E.4"])
+')
+[ "$1:$2:$3:$4" = '29:16:3:11' ] || { echo "✗ 冻结范围漂移：headings/E.1/E.3/E.4=$1/$2/$3/$4"; exit 1; }
+echo '预期集合：六面 + D-SP2-01..12 + AC-SP2-01..12 + WRK接口8 + 四轮 + 三票 + 前置4 + heading/E分母'
+echo '实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + 29/(16+3+11)'
 echo '未知集合：0'
 echo '✓ SP2 设计合同与冻结输入通过'

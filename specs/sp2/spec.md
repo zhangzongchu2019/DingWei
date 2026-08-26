@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp2-design` |
-| **合同版本** | v1.1 |
+| **合同版本** | v1.2 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -29,6 +29,24 @@ SpecDoc §0.3 对 SP2 的定义唯一且与目标架构一致：
 ### 0.2 SYNC IMPACT REPORT（v1.0 → v1.1）
 
 业主将评审上限从 6 轮收紧为 4 轮。本次只改评审收敛协议，SP2 范围、交付物、验收项和技术约束不变。
+
+### 0.3 SYNC IMPACT REPORT（v1.1 → v1.2）
+
+- 开工门与证据验收写死三位评审者，要求 3/3 独立 PASS，不以多数票替代。
+- 将 SP0、SP1、SP7a、SP7b 的当前状态、设计期处理和实现期开工门分列，防止把“设计已定”升级成“前置已履约”。
+- 冻结锚实算口径写入 checker：§5–§9 heading=29；owner_sp=SP2 的 E 行=30（E.1=16、E.3=3、E.4=11）。
+
+### 0.4 前置依赖的当前状态与处置
+
+| 前置/责任 | 当前可用事实 | SP2 设计期处理 | SP2 实现期开工门 |
+|---|---|---|---|
+| **SP0** | SpecDoc 产品规则已生效；SP0 设计件已通过本轮评审 | 消费 GateSet/评审 seam，不能改其规则语义 | SP0 对应实现开工门和接口 conformance 未闭前，SP2 只允许 mock/contract test，不接真实 GOV 写面 |
+| **SP1** | AccessCtx、主体传播、Agent provenance 设计已通过本轮评审 | 所有 actor/reviewer schema 依该设计；不回退 TenantCtx/agent/session 身份 | P1/AccessCtx/agent binding 的实现与负测未闭前，SP2 mutating/status observation 均不得上线 |
+| **SP7a** | 目标架构接口已定，**实现尚未交付** | 只依赖 `RunInAccessTx`/migration runner/仓储 port 合同；与 SP2 详细设计并行 | 受控 transaction、隔离与 migration runner conformance 未过，不得执行 WRK schema cutover |
+| **SP7b（SP2 责任）** | 尚未设计/实施 | 本件必须给 WRK schema、migration、cutover、rollback 五列合同 | 由 SP2 实现批次履约；不得推给“统一 SP7”或拿 SP7a PASS 代签 |
+
+上述“设计已通过”只允许作为接口设计输入，不构成实现 PASS。若某前置的 reviewer/coordinator 落账尚未齐，
+该缺口留在对应包的开工门；SP2 不代填、不倒签，也不因此停止自身设计。
 
 ## 1. 六个必备面
 
@@ -145,9 +163,15 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 | `AC-SP2-11` | conformance suite 覆盖既有并发语义；未覆盖项不宣称保留/替换完成 |
 | `AC-SP2-12` | WRK schema migration/cutover/rollback 五列转交齐；设计 PASS 不升级实现 PASS |
 
-### 4.3 证据与评审
+### 4.3 评审证据门
 
-- checker 结构通过只作旁证；三位评审者各自全文判断，不以多数票掩盖未闭阻断；
+| ID | 判据 |
+|---|---|
+| `AC-E05` | 三位评审者 `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` 均对同一锚独立给 PASS（3/3）；缺任一票即未过，不以 2/3 多数替代 |
+
+### 4.4 证据与评审
+
+- checker 结构通过只作旁证；三位评审者各自全文判断，须 3/3 PASS，不以多数票掩盖未闭阻断；
 - verdict 使用 PASS/NO/INCONCLUSIVE，任一阻断未闭即 NO；
 - **最多 4 轮**：每轮全文一次性给全量阻断，不拆成逐点往返；
 - 第 3 轮仍有范围/语义争议即交 coordinator/业主裁定；第 4 轮只签 PASS/NO，不再追加细节讨论；
