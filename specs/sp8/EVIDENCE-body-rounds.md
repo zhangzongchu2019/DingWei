@@ -1,7 +1,7 @@
 # SP8 正文评审：四条阻断的闭合证据 —— 拉取式，不必与消息比对
 
 > 与 `EVIDENCE-blocker1.md` 同一理由：消息会交叉，仓不会。全部可自跑复算。
-> **当前正文锚 `496c952`（v1.4）**。首轮四条 ＋ 复审四条，全部在此锚内闭合。
+> **当前正文锚 `704d4d9`（v1.5）**。首轮四条 ＋ 复审四条 ＋ 三审一条，全部在此锚内闭合。
 
 | # | 提出方 | 阻断 | 闭合锚 | 闭在哪（file:line @ `1f703b8`） |
 |---|---|---|---|---|
@@ -39,3 +39,11 @@ git show 1f703b8:docs/dingwei-sp8-design.md | grep -n "^| \`gov_audit\`\|^| \`ef
 复算：`git checkout 496c952 && sh specs/sp8/check.sh | head -6 && sh specs/sp8/contract-check.sh | tail -2`
 快速核对：`grep -n "second_factor，且两名 signer\|payload_digest\|同步权威 fence\|12.2b" docs/dingwei-sp8-design.md`
 正文锚序：`3af1bfa` → `7382f51` → `d3aceac` → `1f703b8` → **`496c952`**
+
+## 三审（第 3 轮）一条 —— 闭在 `704d4d9`(v1.5)
+
+| 阻断 | 闭在哪 |
+|---|---|
+| claim 只防重复扣额、不防**重复执行 effect**；无 claimed/executing 状态与 lease/fencing/执行令牌 | §11.1：`grant_use` 生命周期 `claimed→executing→succeeded|failed|unknown` ＋ `execution_owner`／`fence_token`／`lease_expires_at`；**仅新 claim 的 owner 得 execute permit**；重放**终态返 outcome、非终态返 `IN_PROGRESS` 且不发第二张 permit**；lease 过期**受栅栏接管（先对账、不得盲重执行）或置 `unknown`**；revoke 与非终态 claim 交叉不得取得新 permit、转 rollback/reconcile。schema 行、跨表不变量 **2a**（至多一个有效 owner ＋ 恒零"超 SLA 无接管无 unknown"）、`AC-SP8-11`、消费侧合同第 6 条、**三类并发负测**同步 |
+
+快速核对：`git show 704d4d9:docs/dingwei-sp8-design.md | grep -n "execute permit\|fence_token\|IN_PROGRESS\|lease_expires_at"`
