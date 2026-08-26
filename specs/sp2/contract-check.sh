@@ -18,7 +18,9 @@ for n in 01 02 03 04 05 06 07 08 09 10 11 12; do grep -q "AC-SP2-$n" "$SPEC" || 
 for id in CreateProject CreateTaskPlan DispatchNode RecordExecution RecordGateVerdict AppendRevision DeployRelease TaskSnapshot; do
  grep -q "WRK-.*-$id" "$SPEC" || { echo "✗ 缺 WRK 接口：$id"; exit 1; }
 done
-echo '预期集合：六面 + D-SP2-01..12 + AC-SP2-01..12 + WRK 接口 8'
-echo '实检集合：6/6 + 12/12 + 12/12 + 8/8'
+grep -q '最多 4 轮' "$SPEC" || { echo '✗ 未落实业主 4 轮上限'; exit 1; }
+! grep -q '最多 6 轮' "$SPEC" || { echo '✗ 残留旧 6 轮口径'; exit 1; }
+echo '预期集合：六面 + D-SP2-01..12 + AC-SP2-01..12 + WRK 接口 8 + 四轮上限'
+echo '实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1'
 echo '未知集合：0'
 echo '✓ SP2 设计合同与冻结输入通过'

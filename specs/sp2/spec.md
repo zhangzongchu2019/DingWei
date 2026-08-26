@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp2-design` |
-| **合同版本** | v1.0 |
+| **合同版本** | v1.1 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -25,6 +25,10 @@ SpecDoc §0.3 对 SP2 的定义唯一且与目标架构一致：
 2. 前置为 SP0、SP1、SP7a；
 3. WRK 领域 schema migration/cutover 由 SP2 自己作为 SP7b 交付；
 4. 本轮只做设计，前置“已设计”不升级为“已实现”；凡运行依赖未就绪均列转交门，不倒签 PASS。
+
+### 0.2 SYNC IMPACT REPORT（v1.0 → v1.1）
+
+业主将评审上限从 6 轮收紧为 4 轮。本次只改评审收敛协议，SP2 范围、交付物、验收项和技术约束不变。
 
 ## 1. 六个必备面
 
@@ -145,7 +149,9 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 
 - checker 结构通过只作旁证；三位评审者各自全文判断，不以多数票掩盖未闭阻断；
 - verdict 使用 PASS/NO/INCONCLUSIVE，任一阻断未闭即 NO；
-- 最多 6 轮，全文评审→一次性整改→全文复审，不逐项往返；
+- **最多 4 轮**：每轮全文一次性给全量阻断，不拆成逐点往返；
+- 第 3 轮仍有范围/语义争议即交 coordinator/业主裁定；第 4 轮只签 PASS/NO，不再追加细节讨论；
+- 同一轮内晚到的补充意见并入该轮全量清单；作者一次性整改，不边收边推版；
 - 只判本轮阻断，不翻旧账；发现旧问题仅在直接破坏本设计时入阻断。
 
 ## 5. 冲突与变更纪律
@@ -164,4 +170,3 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 - [ ] opus50tczc2000 合同 PASS；
 - [ ] `specs/sp2/contract-check.sh` PASS；
 - [ ] coordinator 登记施工锚与合同锚。
-
