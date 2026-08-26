@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp8-design` |
-| **合同版本** | v1.1 |
+| **合同版本** | v1.2 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-opus50tczc2000-2642` |
 | **评审** | `zzc-chatgpt56soltchangshark-2642`、`zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
@@ -59,12 +59,17 @@ GOV 的批准结论经 `GOV-CMD-IssueEffectGrant` 的 grant 与各 effect owner 
 
 ### 0.3 前置依赖的当前状态与处置
 
+🔴 **本表不是穷举**：架构 §17 给 SP8 的协作方写的是「IDN · **各 effect owner**」——**通配，不是清单**。
+故本表**第二行是通则**，覆盖现在与将来所有消费方；其余行只是**通则的具体化或本件特有义务**，
+**不得据本表反推"未列出的域不适用"**。
+
 | 前置/输入 | 冻结锚可见事实 | SP8 设计期处理 | SP8 实现期开工门 |
 |---|---|---|---|
 | **SP1（§0.3 唯一明列前置）** | 冻结 SP1 设计件头为 `draft，待双评审`；coordinator 已在本轮外告知其收口 | 批准与 grant 的主体一律取 SP1 的 verified principal；不接受角色字符串、Agent、session 或显示名作批准主体 | SP1 verdict 锚与身份负测未落账前，批准链只做 contract test，不签发真实 grant |
+| **各 effect owner（架构 §17 的通配协作方 · 通则）** | 架构 §17 写「IDN·各 effect owner」；冻结架构 §6 现有 `WRK/CAP/KNO/COL/AGT/MSG/PLT` 等域均可能消费批准 | **一律同一 seam**：批准结论只能由本件签发的 grant 承载；消费侧**独立复算**、不接受调用方自述已批准；缺 grant、校验不过、范围/时限越界一律 **fail-closed**。本件**不逐域列举**，也不替任一域定义其业务判据 | 每个消费域各自的 grant conformance（复算、越界拒绝、代际丢弃）未过前，不接真实 grant；**新增域自动适用本行，不需 bump 本合同** |
 | **SP0（协作输入，非前置）** | SP0 正文已收口（`draft` 头，coordinator 已告知收口） | 复用其 spec 版本、评审 round、pending item 与规则版本语义；**不改其定义层语义**，只在其上加授权判据 | SP0 verdict 锚未落账前，spec 预授权只用 fixture |
-| **SP2（协作输入）** | 已收口，锚 `53e4a2a` | 消费其 gate/verdict 与 generation 口径；§24 的重两签对 C1 原语面变更适用，本件定义签数与形态，不改 WRK 状态语义 | 接口 conformance 未就绪时用 fixture |
-| **SP3（协作输入）** | 已收口，锚 `6a98629` | 复用其四维与晋升语义；知识条目的批准不另造一套 | 同上 |
+| **SP2（通则的具体化）** | 已收口，锚 `53e4a2a` | 消费其 gate/verdict 与 generation 口径；§24 的重两签对 C1 原语面变更适用，本件定义签数与形态，不改 WRK 状态语义 | 接口 conformance 未就绪时用 fixture |
+| **SP3（通则的具体化）** | 已收口，锚 `6a98629` | 复用其四维与晋升语义；知识条目的批准不另造一套 | 同上 |
 | **SP4（下游，当前挂起等本件）** | SP4 合同 v1.1 `aa8d83b` 已挂起：其平台级晋升与 immutable 名单变更等本件定义批准权 | 本件必须交出可被 CAP 消费的 `approval_ref` 形状、校验与拒绝语义，**不把批准语义留白** | SP4 解冻后按本件 grant/approval 合同接线 |
 | **SP7a/PLT（协作输入）** | 受控仓储 API、migration runner 未在本分支交付 | GOV 治理面 schema 与 repository port 并行设计；不自建 DB 句柄 | 受控 transaction 与 migration runner conformance 未过，不得 cutover |
 | **SP7b（SP8 自交）** | GOV 治理面最终 schema 未设计 | 本件须交 schema/migration/cutover/rollback 五列合同 | SP8 实现批次履约，不拿 SP7a PASS 代签 |
@@ -76,6 +81,15 @@ GOV 的批准结论经 `GOV-CMD-IssueEffectGrant` 的 grant 与各 effect owner 
 | # | 事项 | 本合同的临时处置 |
 |---|---|---|
 | 1 | **四个 GOV 接口的归属**：`SubmitSpec`/`DecidePending`/`ResolveGateSet` 的语义属 SP0 定义层，`IssueEffectGrant` 属本件；但 §23–§24 正文**不点名任何接口 ID**（实测 0 次），已收口 SP0 正文的 COVERAGE 也**不含接口类 token**（其 checker 未派生接口集合），差集规则因此会把 4 个全给 SP8 | 接口集合取 **§6 GOV 全集 4**，并在 `AC-SP8-03` 写死分工：本件只对**授权/批准/effect grant 面**给落点，`SubmitSpec`/`ResolveGateSet` 的定义层语义只写 seam、不改 SP0；若业主裁定改为"只认领 `IssueEffectGrant`（＋`DecidePending`）"，请一并给出**非硬编码的判据**，否则我不接受手挑清单（同 SP3 合同 B2 的口径） |
+
+### 0.5 跨件登记：§24.3a 紧急通道的执行入口不在本件
+
+🔴 本件是 §24.3a **紧急通道判据**的权威方（准入、单调收紧、fallback、事后补审），
+但冻结架构中**唯一的紧急执行入口 `AGT-CAP-EmergencyAction` 属 `AGT` 域（SP6 范围）**，本件**定不了它的行为**。
+⇒ 本件只交判据与拒绝语义，并把入口侧作为**跨件义务登记**：
+- 该入口必须在执行前校验本件的判据，**不得自建一套紧急许可**；
+- ⚠️ **SP4 阻断①的 SP6 侧不因 SP8 收口而闭** —— SP8 PASS 只闭"判据无权威定义"那一半，
+  "谁在入口处强制执行"仍悬在 SP6；派 SP6 时须把这条带上，不得当作已消。
 
 ## 1. 六个必备面
 

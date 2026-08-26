@@ -27,6 +27,13 @@ grep -q '<!-- EVENT-SET-SP8: NOT_APPLICABLE -->' "$SPEC" || { echo '✗ GOV even
 EVENT_N=$(git show "$BASE_ANCHOR:docs/dingwei-platform-architecture.md" | grep -Ec '^\| `EV-GOV-[^`]+` \| GOV \|' || true)
 [ "$EVENT_N" -eq 0 ] || { echo "✗ GOV event 空面与架构实数冲突：$EVENT_N"; exit 2; }
 for dep in SP1 SP0 SP2 SP3 SP4 SP7a SP7b; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置/协作处置缺 $dep"; exit 1; }; done
+# ③ 协作方是通配：必须有通则行且明说本表非穷举，否则枚举必然漏域
+grep -q '本表不是穷举' "$SPEC" || { echo '✗ 前置表未声明非穷举（架构 §17 协作方是通配）'; exit 1; }
+grep -q '各 effect owner（架构 §17 的通配协作方 · 通则）' "$SPEC" || { echo '✗ 缺 effect owner 通则行'; exit 1; }
+grep -q '新增域自动适用本行，不需 bump 本合同' "$SPEC" || { echo '✗ 通则未覆盖将来新增域'; exit 1; }
+# ⑤ SP6 侧跨件登记不得丢
+grep -q 'AGT-CAP-EmergencyAction' "$SPEC" || { echo '✗ §24.3a 执行入口的跨件登记缺失'; exit 1; }
+grep -q 'SP4 阻断①的 SP6 侧不因 SP8 收口而闭' "$SPEC" || { echo '✗ 未登记「SP8 收口不闭 SP6 侧」'; exit 1; }
 # 同域差集规则必须写成判据，并复算「SP0 已认领入口非空、且差集真扣掉了东西」
 grep -q '差集派生' "$SPEC" || { echo '✗ GOV 同域差集派生规则未落为判据'; exit 1; }
 DIFF=$(git show "$BASE_ANCHOR:docs/dingwei-sp0-design.md" | python3 -c '
