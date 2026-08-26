@@ -18,47 +18,72 @@
 set -u
 
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
+EXLIST=${EXLIST:-specs/gates/path-anchor-exceptions.txt}
+# 🔴 **冻结基线已删除**（乙域 terra 收尾裁定 2026-08-26 第三条）：
+#   「冻结基线不容作为通过条件：**待批准 ＝ 拒绝**；`PASS WITH REGISTERED DEBT`
+#     不能返回成功、也不能被聚合为合规 PASS。」
+#   ⇒ 本闸此前那条旧抑制已**在源头消掉**（不是被批准，也不是记成债务），故基线件一并删除。
+
+# 🔴 乙域 terra 全闸契约（2026-08-26）：
+#   「`style-ok` / `status-ok` / `path-ok` 等抑制**均属特权例外**；每个例外须精确绑定
+#     被豁免对象、理由、reviewer approval，**不能由执笔自由文本生效**。」
+#   ⇒ 本闸原先 `grep -v 'path-ok:'` **整行跳过**，只校「理由非空」——
+#     那是**长度**，不是批准；且整行跳过意味着同一行上**其它**路径锚也一起被抹掉。
+#   ⇒ 改为与已撤销断言闸**同一套**受控例外（公共库 specs/gates/lib/exceptions.sh）。
+_LIB=${EXC_LIB:-specs/gates/lib/exceptions.sh}
+[ -f "$_LIB" ] || { echo "✗ 闸依赖缺失：$_LIB 不存在 —— 闸坏了，不是免检"; exit 2; }
+. "$_LIB"
 
 check() {
-  _bad=0; _n=0
+  _bad=0; _n=0; _exn=0; _unkn=0; _unk=''; _inert=0; _seen=0
   for f in $DOCS; do
     [ -f "$f" ] || { echo "✗ 闸依赖缺失：$f 不存在"; return 2; }
-    # 剥 RV 标注段后再抽路径
-    # ⚠️ 有一类行的【内容本身】就是「该路径不存在」（架构 A§ 的实测取证表）——
-    #   闸判对了形态、判错了意图。按仓内既有惯例给行内例外 `path-ok:<理由>`，
-    #   理由非空且可被审；例外**可见**，不是静默豁免。
-    _paths=$(grep -v 'path-ok:' "$f" 2>/dev/null | sed 's/【RV[^】]*】[^\n]*//g' \
-             | grep -oE '`(docs|specs|scripts|internal)/[A-Za-z0-9_.@/-]+`' \
-             | tr -d '`' | sort -u)
-    for p in $_paths; do
-      case "$p" in *'*'*|*'?'*) continue;; esac
+    _seen=$((_seen+1))
+    # 逐行取路径锚（先剥 RV 标注段）—— 🔴 **保留行号**，因为受控例外要逐处绑定。
+    #   旧实现先 `grep -v path-ok:` 再抽路径，等于用一个自由文本标记把整行从视野里抹掉。
+    _hits=$(sed 's/【RV[^】]*】[^\n]*//g' "$f" 2>/dev/null \
+            | grep -noE '`(docs|specs|scripts|internal)/[A-Za-z0-9_.@/-]+`' | tr -d '`')
+    for h in $_hits; do
+      _ln=${h%%:*}; _p=${h#*:}
+      case "$_p" in *'*'*|*'?'*) continue;; esac
       _n=$((_n+1))
-      if [ ! -e "$p" ]; then
-        [ "$_bad" -eq 0 ] && echo "✗ 正文引用的仓内路径解析不到（人工判据的落点指向空文件）："
-        echo "    $f  →  $p"
-        _bad=$((_bad+1))
+      [ -e "$_p" ] && continue
+      exc_decide "$EXLIST" "$_p" "$f" "$_ln"; _erc=$?
+      [ "$_erc" -eq 0 ] && { _exn=$((_exn+1)); continue; }
+      [ "$_erc" -eq 2 ] && { _unk="$_unk $f:$_ln($_p)"; _unkn=$((_unkn+1)); continue; }
+      [ "$_bad" -eq 0 ] && echo "✗ 正文引用的仓内路径解析不到（人工判据的落点指向空文件）："
+      echo "    $f:$_ln  →  $_p"
+      # 🔴 行内 path-ok 已失效 —— 说清楚，否则读的人会以为闸坏了
+      if sed -n "${_ln}p" "$f" | grep -q 'path-ok:'; then
+        echo "       ⚠️ 本行有行内 \`path-ok:\` 标记，但它对本闸**已不再构成豁免**（乙域全闸契约）："
+        echo "          自由文本理由无人核 ⇒ 须到 $EXLIST 登记受控例外并取门方 approval_ref。"
+        _inert=$((_inert+1))
       fi
+      _bad=$((_bad+1))
     done
   done
+  if [ "$_unkn" -gt 0 ]; then
+    echo "✗ UNKNOWN（exit 2）：$_unkn 处受控例外的【批准】无从核验 —— 授权根不可得"
+    for u in $_unk; do echo "    $u"; done
+    echo "  ⇒ 见 specs/gates/approvals/TRUST-ROOT.md：当前无 ACTIVE 后端（门方待裁）。"
+    return 2
+  fi
   if [ "$_bad" -gt 0 ]; then
     echo "  🔴 **交代责任落点的引用最需要能被打开** —— 写错路径时闸不报，读的人才发现是空的。"
-    echo "  ⇒ 用 git ls-files 核对后再写，不要凭印象。"
+    echo "  ⇒ 用 git ls-files 核对后再写，不要凭印象；确属「断言该路径不存在」者，"
+    echo "     到 $EXLIST 登记（六列：claim_id ＋ 路径 ＋ 件 ＋ 行指纹 ＋ 理由码 ＋ approval_ref）。"
+    [ "$_inert" -gt 0 ] && echo "  ⚠️ 其中 $_inert 处仍在用行内 path-ok —— 那条通道已关闭。"
     return 1
   fi
-  _ex=0
-  for f in $DOCS; do
-    [ -f "$f" ] || continue
-    # ⚠️ 例外校验同样要先剥 RV 标注段：处置文本里会**提到** path-ok 这个词
-    #   （RV-甲44 的处置就写着「按仓内惯例给行内 `path-ok:` 例外」），
-    #   不剥就会把「说明例外机制的那句话」判成一个空理由的例外。
-    #   —— 与「判到了指出问题的那句话」同形，本轮第三次。
-    _stripped=$(sed 's/【RV[^】]*】[^\n]*//g' "$f" 2>/dev/null)
-    _e=$(printf '%s\n' "$_stripped" | grep -c 'path-ok:' 2>/dev/null || true); _ex=$((_ex + ${_e:-0}))
-    if printf '%s\n' "$_stripped" | grep -qE 'path-ok:[[:space:]]*(\||$)'; then
-      echo "✗ $f：有 path-ok 例外未写理由 —— 例外必须可被审"; return 1
-    fi
-  done
-  echo "  ✓ 正文仓内路径锚全部解析得到（$_n 个引用；另有 $_ex 行标 path-ok 例外，理由非空已校验）"
+  echo "  ✓ 正文仓内路径锚全部解析得到"
+  # 覆盖见证（GATE-CONTRACT 一之二·第 4 条）
+  echo "     受检范围（预期集合）：$_seen 件 / $_n 处路径锚（口径＝已剥 RV 标注段；含通配符者不判）"
+  echo "     实检集合：$_n 处逐处实查（test -e）"
+  echo "     未知集合：$_unkn"
+  if [ "$_exn" -gt 0 ]; then
+    echo "  ⚠️ 其中 $_exn 处经【受控例外】放行（$EXLIST，approval_ref 已解析核验）"
+    echo "     🔴 闸只验了批准记录存在且四元组对得上；**这条豁免该不该给，仍归门方**。"
+  fi
   echo "  ⚠️ 本闸判【路径存在】，判不了【引对了没有】—— 指向一个存在但不相干的文件它看不出来。"
   return 0
 }
@@ -88,6 +113,7 @@ selftest() {
     fi
     return 0
   }
+  REPO=$(pwd)
   cd "$T" || return 2
   mkdir -p docs specs/platform scripts internal/repo
   : > specs/platform/checklist.md; : > internal/repo/tenant.go
@@ -113,13 +139,50 @@ selftest() {
   DOCS=docs/a.md check >/dev/null 2>&1
   [ $? -eq 0 ] && ok "不误伤：RV 标注段内引述的错路径不判（否则等于判指出问题的那句话）" || bad "标注内引述被误判"
 
-  mkfx docs/a.md '| 🔴 `internal/view` 不存在 | 实测 | path-ok: 本行断言该路径不存在，是取证结果 |\n' || return 1
-  DOCS=docs/a.md check >/dev/null 2>&1
-  [ $? -eq 0 ] && ok "不误伤：path-ok 例外行（内容本身即「该路径不存在」）" || bad "带理由的例外被拦"
+  # ===== 受控例外组（丙机制精确版：门方独占仓 ＋ 受保护 ref ＋ 不可变 commit）=====
+  # 🔴 **改契约必须回头改为旧契约写的反测**：原两条测的是「path-ok 理由非空即放行 / 空则拦」，
+  #   而该通道已整体关闭 —— 留着它们就等于把绕过面重新锁定成期望语义。
+  REV=zzc-chatgpt56terrazhangzongchu-2642
+  _SRC=$(cd "$OLDPWD" 2>/dev/null && pwd); [ -n "$_SRC" ] || _SRC=$REPO
+  . "$_SRC/specs/gates/lib/approval-fixture.sh"
+  _OT=$EXC_TRUSTROOT; _OG=${EXC_GITDIR:-.}
+  EXC_TRUSTROOT="$T/trust.md"; EXC_GITDIR="$T/appro"
+  _fpx(){ sed -n "$2p" "$1" | tr -d '[:space:]' | sha256sum | cut -c1-16; }
 
-  mkfx docs/a.md '| 🔴 `internal/view` 不存在 | 实测 | path-ok: |\n' || return 1
-  DOCS=docs/a.md check >/dev/null 2>&1
-  [ $? -eq 1 ] && ok "拦住：path-ok 例外未写理由（例外必须可被审）" || bad "空理由的例外被放行"
+  # ① 🔴 真实违规 ＋ 行内编造抑制 ⇒ 必拒（terra 点名要的那一半）
+  mkfx docs/a.md '| 🔴 `internal/view` 不存在 | 实测 | path-ok: 本行断言该路径不存在，是取证结果 |\n' || return 1
+  DOCS=docs/a.md EXLIST="$T/none.txt" check >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "🔴 拦住：行内 path-ok 自由文本【已不再豁免】（自由文本理由无人核）" \
+                || bad "行内 path-ok 仍能整行跳过 —— 通则只落到一条通道里就不是通则"
+
+  # ② 经受控例外的合法对象 ⇒ 过（另一半）
+  _fx=$(_fpx docs/a.md 1)
+  _CMT=$(exc_fixture_make "$T" "$REV" PA-TEST-01 internal/view docs/a.md "$_fx" evidence-of-absence)
+  [ -n "$_CMT" ] || bad "🔴 批准夹具没造出来 —— 下列反测全部无效"
+  printf 'PA-TEST-01\tinternal/view\tdocs/a.md\t%s\tevidence-of-absence\t%s@%s#AP-01\n' "$_fx" "$REV" "$_CMT" > "$T/ex.txt"
+  DOCS=docs/a.md EXLIST="$T/ex.txt" check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "经受控例外的合法对象放行（受保护 ref 可达 ＋ 不可变 commit ＋ 四元组匹配）" || bad "合规受控例外被误拦"
+
+  # ③ 🔴 授权根无 ACTIVE 后端（＝仓内当前实况）⇒ exit 2，不折算为 PASS
+  exc_fixture_trust "$T" "$REV" ''
+  DOCS=docs/a.md EXLIST="$T/ex.txt" check >/dev/null 2>&1
+  [ $? -eq 2 ] && ok "🔴 授权根不可得 ⇒ UNKNOWN exit 2（不是 PASS，也不是 FAIL）" || bad "授权根不可得时闸给了结论"
+  exc_fixture_trust "$T" "$REV" reviewer-owned-protected-ref
+
+  # ④ 🔴 commit 不可达（合法 40 位 hex 但不在受保护 ref 上）⇒ UNKNOWN
+  printf 'PA-TEST-01\tinternal/view\tdocs/a.md\t%s\tevidence-of-absence\t%s@0123456789abcdef0123456789abcdef01234567#AP-01\n' "$_fx" "$REV" > "$T/ex3.txt"
+  DOCS=docs/a.md EXLIST="$T/ex3.txt" check >/dev/null 2>&1
+  [ $? -eq 2 ] && ok "🔴 commit 在受保护 ref 上不可达 ⇒ 验证失败 ＝ UNKNOWN(2)" || bad "不可达 commit 未判 UNKNOWN"
+
+  # ⑤ 🔴 码选错 ⇒ 必拒（码不是摆设：后置条件不成立就不放行）
+  #   ⚠️ 写明本通道的一处能力边界，不假装：`evidence-of-absence` 在本闸上**天然成立**
+  #   —— 闸只在路径确实不存在时才走到判码这一步。⇒ 本通道真正的判断量全在 approval。
+  _C2=$(exc_fixture_make "$T" "$REV" PA-TEST-02 internal/view docs/a.md "$_fx" historical-narrative)
+  printf 'PA-TEST-02\tinternal/view\tdocs/a.md\t%s\thistorical-narrative\t%s@%s#AP-01\n' "$_fx" "$REV" "$_C2" > "$T/ex2.txt"
+  DOCS=docs/a.md EXLIST="$T/ex2.txt" check >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "🔴 拦住：码与行形态不符（本行无时点表述却报 historical-narrative）" \
+                || bad "码选错仍放行 —— 码没有后置条件"
+  EXC_TRUSTROOT=$_OT; EXC_GITDIR=$_OG
 
   mkfx docs/a.md '见 `https://example.com/x.md` 与 `go build ./...`。\n' || return 1
   DOCS=docs/a.md check >/dev/null 2>&1

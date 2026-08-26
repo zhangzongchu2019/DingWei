@@ -1,5 +1,5 @@
 #!/bin/sh
-# 提交闸 ①–㉗ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步+锚可达 / 架构引用核验 / 仓储包边界 / specs 索引 / 状态一致性 / 租户隔离前置。任一不过即失败。
+# 提交闸 ①–㉘ —— 正文 lint / 语料 selftest / 变异体 / 原型 bump / 状态源同步+锚可达 / 架构引用核验 / 仓储包边界 / specs 索引 / 状态一致性 / 租户隔离前置。任一不过即失败。
 #
 # 立此闸的直接原因：2026-08-24，本席在 speclint 退出码为 1 的状态下推了 a165521。
 # 当时 lint 与 commit 写在同一批命令里、没有用 && 串，照跑不误。
@@ -334,6 +334,61 @@ scripts/workflow-coverage-gate.sh --selftest >/dev/null 2>&1 || {
   scripts/workflow-coverage-gate.sh --selftest; echo "✗ 触发面覆盖闸的反测未过"; exit 1; }
 echo "  ㉗ 触发面覆盖闸的反测 ✓"
 
+# ㉘ §18.1 列集一致闸：列清单须机器可唯一提取，且【清单块 / 表格 / 原型自述】三处一致。
+#    立闸原因（coordinator 实测）：同一节三种抽取法得 19/19/21，原型另述一个数
+#    ⇒ 「以 §18.1 为准」无处落，下游各取一份。问题不是哪个数对，是判据与被判物不同源。
+#    🔴 本闸判【三处是否一致】，判不了【列定义对不对】——那是设计判断，归门方。
+scripts/post-columns-gate.sh || exit 1
+scripts/post-columns-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/post-columns-gate.sh --selftest; echo "✗ 列集一致闸的反测未过"; exit 1; }
+echo "  ㉘ 列集一致闸的反测 ✓"
+
+# ㉙ 覆盖见证元闸 —— 「每闸须给覆盖见证：预期集合 · 实检集合 · 未知集合」（乙域跨闸硬契约第 4 条），
+#    fail-closed **棘轮**模式（乙域 2026-08-26：不接受当前 18 项债务，也不让全仓一次性停摆）。
+#
+# 🔴 接入范围由 coordinator 裁（2026-08-26）：
+#    「元闸㉙ ＝ 接入侧分支 fix 的提交闸/CI 链路；**不接主评审面硬提交闸**，主闸接入等并锚后再定。」
+#
+# ⚠️ 实现方式写死在此，防止被读成更宽或更窄：
+#    · **一律实跑、一律打印**，只有【是否阻断】随分支不同；
+#    · 🔴 **不做成「别的分支上根本不跑」** —— 那会让它悄悄变成一个空集：
+#      **一个不跑的闸和一个不存在的闸，在输出里长得一模一样。**
+#      （本轮反复出现的那一族：没查 / 没触发 / 没登记，都会印成一片安静。）
+#    · 非侧分支上打印「只报不拦」时**必须同时写明这不是通过**，否则读者会把它当成绿的。
+_WGATE_BRANCH=${WGATE_ENFORCE_BRANCH:-fix/e-registry-and-18-1}
+if [ ! -x scripts/gate-witness-gate.sh ]; then
+  echo "✗ 闸依赖缺失：scripts/gate-witness-gate.sh 不可执行"; exit 1
+fi
+scripts/gate-witness-gate.sh --selftest >/dev/null 2>&1 || {
+  scripts/gate-witness-gate.sh --selftest; echo "✗ ㉙ 覆盖见证元闸的反测未过"; exit 1; }
+_wout=$(scripts/gate-witness-gate.sh 2>&1); _wrc=$?
+printf '%s\n' "$_wout"
+_wdebt=$(printf '%s\n' "$_wout" | sed -n 's/.*WITNESS_DEBT_COUNT=\([0-9]*\).*/\1/p' | head -1)
+case "$_wdebt" in ''|*[!0-9]*) _wdebt=0 ;; esac
+echo "  ㉙ 覆盖见证元闸的反测 ✓"
+_wbr=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || _wbr=''
+[ -n "$_wbr" ] || _wbr='(取不到分支名)'
+if [ "$_wbr" = "$_WGATE_BRANCH" ]; then
+  echo "  ㉙ 接入态：**阻断**（当前分支 $_wbr ＝ 侧分支，coordinator 已裁本分支接入提交闸/CI）"
+  [ "$_wrc" -ne 0 ] && { echo "✗ ㉙ 在侧分支阻断（rc=$_wrc）—— 按棘轮四条：缺见证增加 / 合规退化 / 新增闸无见证 / 缺 owner 或到期"; exit "$_wrc"; }
+else
+  echo "  ㉙ 接入态：**只报不拦**（当前分支 $_wbr ≠ 侧分支 $_WGATE_BRANCH；本次 rc=$_wrc）"
+  echo "     🔴 **这不是「通过」** —— 主评审面的硬接入等并锚后由 coordinator 再定；"
+  echo "     ⚠️ 取不到分支名时也走本支路（fail-open 仅限阻断决定，检查本身照跑照印）。"
+  # 🔴 只报不拦时若 ㉙ 是红的，**末行的「全过」必须改口** ——
+  #   否则就出现本轮反复治的那个形态：闸红着，而摘要行印着 ✓。
+  #   ⚠️ 这个洞是我把「只报不拦」接上去之后【实跑非侧分支】才看见的：
+  #     rc=1 的 ㉙ 后面照样跟着一行「提交闸全过」。**接入方式本身也要被反测。**
+  [ "$_wrc" -ne 0 ] && _W_ADVISORY_RED=$_wrc
+fi
+_W_ADVISORY_RED=${_W_ADVISORY_RED:-0}
+_wsuffix=''
+[ "$_W_ADVISORY_RED" -ne 0 ] && _wsuffix="　⚠️ 🔴 但 ㉙ 本次为红（rc=$_W_ADVISORY_RED，只报不拦）—— **㉙ 不在「全过」之列**"
+# 🔴 乙域收尾裁定：债务**不得被聚合为合规 PASS**。
+#   ⇒ ㉙ 带未清债务时，末行必须写出来 —— 否则「全过」这三个字就把 15 项债务吞掉了。
+#   ⚠️ 这正是本轮反复治的形态：**摘要行比它下面那些行说得宽**。
+[ "${_wdebt:-0}" -gt 0 ] && _wsuffix="${_wsuffix}　⚠️ 🔴 ㉙ 另带 ${_wdebt} 项未清覆盖见证债务（棘轮未回升，但**不计入合规**）"
+
 # ⑱ 处置兑现 triage —— 🔴 **本项不判门**，只把「标了采纳 vs 正文真改了」的可疑处印出来。
 #    立项原因：R2 轮3–轮4 三域独立抓到四次「标采纳而正文未动／改在了别处」，
 #    **没有一次是执笔方自查出来的**。
@@ -343,9 +398,4 @@ echo "  ㉗ 触发面覆盖闸的反测 ✓"
 python3 specs/tools/disposition-audit.py --selftest >/dev/null 2>&1 || {
   python3 specs/tools/disposition-audit.py --selftest; echo "✗ ⑱ 处置兑现 triage 的反测未过（它连响都不会响）"; exit 1; }
 python3 specs/tools/disposition-audit.py || true
-_debt=$(sed 's/#.*//' specs/gates/status-stale-exceptions.txt 2>/dev/null | awk 'NF>0' | wc -l | tr -d ' ')
-if [ "${_debt:-0}" -gt 0 ]; then
-  echo "✓ 提交闸通过（①–㉗ ＋ ⑱ triage）⚠️ PASS WITH REGISTERED DEBT：状态例外 ${_debt} 条登记在 specs/gates/status-stale-exceptions.txt —— 登记是债务可见化，不是修复；例外的新增与批准属 owner/门方评审面（与 repo allowlist 同形：登记≠获批准）。"
-else
-  echo "✓ 提交闸全过（①–㉗ ＋ ⑱ triage）"
-fi
+echo "✓ 提交闸全过（①–㉙ ＋ ⑱ triage）${_wsuffix}"

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.41 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.44 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.38</span></h1>
-  <span class="anchor">原型 <b>v1.38</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.44</span></h1>
+  <span class="anchor">原型 <b>v1.44</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -621,7 +621,7 @@ body.uionly #uihint{display:block}
       <option value="n1204">N-1204 · tenant 派生链 · 4 帖 · 已封存（门 FAIL 亦封）</option>
     </select></h3>
 
-  <div class="note" data-edit>字段集以 <b>§18.1</b> 为准（12 列，含 digest 序列规则）；下方 7 列为<b>当初反推所得</b>，已被 §18.1 取代 —— ⚠️ <b>SpecDoc 未正面定义</b>，
+  <div class="note" data-edit>字段集以 <b>§18.1</b> 的 <code>POST-COLUMNS</code> 权威块为准（<b>19 列</b>，含 digest 序列规则）；下方为<b>当初反推所得的旧字段集</b>，已被 §18.1 取代 —— ⚠️ <b>SpecDoc 未正面定义</b>，
   此处为<b>当初</b>由 §18.6 的 digest 覆盖范围（<code>tenant/node/seq/actor/ts/content</code>）＋ §18.3 去重用的 <code>post_id</code> <b>反推</b>得出。见屏底缺口说明。</div>
 
   <div id="pn1163" class="ps">
@@ -644,7 +644,7 @@ body.uionly #uihint{display:block}
       <div class="po dv"><div class="sq">7–12</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642 / zzc-sec-review-2642</span><span class="ts">08-23 16:40Z – 19:05Z</span></div>
         <div class="ct" data-edit>PG 侧列出 RLS 七项最低配套；安全侧逐项追问负测覆盖。<b>双方均未改变立场</b>，各自把同一论点重述了 2 次。</div></div></div>
       <div class="po dv"><div class="sq">13–19</div><div class="bd"><div class="hd"><span class="who">＋ zzc-prodops-2642 加入</span><span class="ts">08-23 19:30Z – 22:14Z</span></div>
-        <div class="ct" data-edit>ops 提第三方案「受控仓储 API」。三方各持一案，出现<b>第三次立场重述</b>。此处已是明确的分歧信号。<!-- style-ok: 本行为帖子流【样例数据】,演示 §18.4 分歧探测器如何计数,非本件自身的评审沿革 --></div></div></div>
+        <div class="ct" data-edit>ops 提第三方案「受控仓储 API」。三方各持一案，<b>立场重述计数 ＝ 3</b>。此处已是明确的分歧信号。</div></div></div>
     </div>
     <div class="po dv"><div class="sq">20</div><div class="bd"><div class="hd"><span class="who">zzc-devo48-2642</span><span class="rl">implementer</span><span class="ts">08-23 22:41Z</span></div>
       <div class="ct" data-edit>那我们是不是该先跑个 benchmark 再说？（本帖为第 20 帖）</div></div></div>
@@ -763,7 +763,7 @@ body.uionly #uihint{display:block}
 <div class="panel">
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：帖子结构当初为何靠反推 <span class="ref">§18.1 已正面定义</span></h3>
-  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §18.1 已正面定义 12 列字段集与 digest 序列规则</b>。
+  <div class="note" data-edit>✅ <b>本条已落：SpecDoc §18.1 已正面定义 <b>19 列</b>字段集与 digest 序列规则，且列集由 <code>POST-COLUMNS</code> 权威块唯一提取</b>。
 </div>
   
   <div class="note bad" data-edit>§18.1 全节仅一句：「帖子正文须独立表，不得塞进事件表」——<b>没说这张表有什么列</b>。
@@ -1531,7 +1531,7 @@ body.uionly #uihint{display:block}
     <div class="mono">§21.1 双层结构 · 派生源 · fail-closed 行为 · 一对多处置</div></td>
     <td class="mono">sha256:3e8a…71<br>286 行 / 11.4KB</td><td class="cell-ok">架构评审 PASS</td><td>调度者</td><td><button>打开</button></td></tr>
   <tr><td><b>测试用例设计</b></td><td data-edit><b>用例集</b> 14 条
-    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / <b>绕仓储包直连库</b> / <b>持有效 TenantCtx 跨企业读</b> / <b>拒绝未落审计</b><br>⚠️ 🔴 <b>C.3a 已裁：PG ＋ RLS 作 <code>owner_principal</code> 谓词的 DB 级兜底</b>（不兜企业层——那是库边界的事）。⇒ 原三条（<code>SET</code> 而非 <code>SET LOCAL</code> / owner 绕 RLS / <code>BYPASSRLS</code>）<b>仍然有效</b>，见 <code>specs/fixtures/rls/</code> 的 t1–t4 负测；另加受控仓储 API 的等价负测（§22.2a #3）</div></td>
+    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / <b>绕仓储包直连库</b> / <b>持有效 TenantCtx 跨企业读</b> / <b>拒绝未落审计</b><br>⚠️ 🔴 <b>C.3a 已裁：PG ＋ RLS 作 <code>owner_principal</code> 谓词的 DB 级兜底</b>（不兜企业层——那是库边界的事）。⇒ 原三条（<code>SET</code> 而非 <code>SET LOCAL</code> / owner 绕 RLS / <code>BYPASSRLS</code>）<b>仍然有效</b>，见 <code>specs/fixtures/rls/</code>：<b><code>t3-no-residue.sql</code></b> 同时实证两项 —— #5c（<code>SET LOCAL</code> 而非 <code>SET</code>：事务后 <code>must_be_zero=0</code>）与 #2（owner 绕 RLS：FORCE 下 <code>owner_sees_before=0</code>，<code>NO FORCE</code> 成功后 <code>owner_sees_after=2</code> ⇒ 属主可自解除，唯一防线是审计留痕）；#3（<code>NOBYPASSRLS</code>）由 <b><code>setup.sql</code> 自检</b>覆盖（三 role <code>rolbypassrls</code> 均为 f）—— 🔴 <b>#3 是配置自检项，不在 t1–t4 之列</b>。<code>t4-ddl-rights.sql</code> 另证角色边界：dw_app 非属主，<code>ALTER</code> 与 <code>CREATE POLICY</code> 均被拒。另加受控仓储 API 的等价负测（§22.2a #3）</div></td>
     <td class="mono">sha256:b204…c9<br>14 用例</td><td class="cell-ok">用例评审 PASS</td><td>qa_owner</td><td><button>打开</button></td></tr>
   <tr><td>实现</td><td data-edit>代码变更<div class="mono">6 文件 · +412 / −87</div></td>
     <td class="mono">commit 4a91c02f…<br>+412 / −87</td><td class="cell-fail"><b>代码评审 FAIL</b></td><td>安全角色</td><td><button>打开</button></td></tr>

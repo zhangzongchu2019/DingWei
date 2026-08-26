@@ -322,7 +322,7 @@
 | 断言 | 命令 | 输出摘要 |
 |---|---|---|
 | `workpulse` 装 19 包 | `grep -rhoE "<module>/internal/[a-z0-9]+" cmd/workpulse --include=*.go \| grep -v _test \| sed 's\|.*/\|\|' \| sort -u` | 19 行：admin bus clock config coordination datad evidence fcs feishu llm m8 model portal reminder schedule scheduler secretbox store worker |
-| 🔴 **`internal/view` 不存在** | `ls -d internal/view` | `No such file or directory`  path-ok: 本行的断言内容就是「该路径不存在」，是实测取证结果 |
+| 🔴 **internal/view 不存在**（实测取证行，**刻意不加反引号**：反引号在本仓表示「须能解析的路径锚」，而本行断言的正是它不存在）| `ls -d internal/view` | `No such file or directory` |
 | view 面的真实形态 | `grep -rn "internal/view" --include=*.go cmd internal \| grep -v _test` | `cmd/workpulse/main.go` 8 条路由注册（`/internal/view/*` 与 `/internal/view-v2/*`）＋ `internal/m8/terminal.go` 一处注释。**全部是 HTTP 路径，无 import** |
 | `internal` 包总数 28 | `ls -d internal/*/ \| wc -l` | `28`（含 `repo`，SP7a 落点） |
 | 四处存储 36/11/5/9 | `grep -rhoP "CREATE TABLE (IF NOT EXISTS )?\K\w+" <各路径> \| sort -u \| wc -l` | store/migrations=36 · board/schema.sql=11 · fanout=5 · datad=9 |

@@ -46,6 +46,20 @@ set -u
 DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
 # 沿革记录件是【专门存放】过程痕迹的地方,本闸不扫它。
 HIST=${HIST:-'docs/dingwei-revision-history.md'}
+EXLIST=${EXLIST:-specs/gates/prose-style-exceptions.txt}
+# 🔴 **冻结基线已删除**（乙域 terra 收尾裁定 2026-08-26 第三条）：
+#   「冻结基线不容作为通过条件：**待批准 ＝ 拒绝**；`PASS WITH REGISTERED DEBT`
+#     不能返回成功、也不能被聚合为合规 PASS。」
+#   ⇒ 本闸此前那条旧抑制已**在源头消掉**（不是被批准，也不是记成债务），故基线件一并删除。
+
+# 🔴 乙域 terra 全闸契约（2026-08-26）：`style-ok` / `status-ok` / `path-ok` 等抑制均属特权例外。
+#   本闸是 `style-ok` 的**第二个**使用者（第一个是已撤销断言闸，已于 RV-乙18 完成受控化）。
+#   ⚠️ 上一轮把「三类抑制」读成了「三个闸各一类」，于是漏掉了本闸 ——
+#     **同一个标记被两个闸各自解释，改了一个不等于改了这个标记。**
+#   ⇒ 本闸的 style-ok 同样改为受控例外（同一套公共库）。
+_LIB=${EXC_LIB:-specs/gates/lib/exceptions.sh}
+[ -f "$_LIB" ] || { echo "✗ 闸依赖缺失：$_LIB 不存在 —— 闸坏了，不是免检"; exit 2; }
+. "$_LIB"
 
 # 痕迹指纹 —— 只取指向【特定评审轮次 / 版本 / 评审方】的表述。
 #   刻意【不】收「复核」「评审」等词:它们在规范里是正当术语
@@ -80,17 +94,39 @@ scan() { # scan <file> -> 命中行
   #   两个机制若不互相认识就会打架 —— 本闸立起来后第一次真用 RV 就撞上了。
   #   ⚠️ 这不是给 RV 开后门:RV 有自己的判据(rvcheck:字段受控枚举、收官须清零)。
   #     排除的是【重复管辖】,不是【不管】。
-  grep -nE "$PAT_ALL" "$1" 2>/dev/null | grep -v 'style-ok:' | grep -v '【RV'
+  # 🔴 `grep -v 'style-ok:'` **已删除**（乙域全闸契约）：自由文本标记不再构成豁免。
+  #   ⚠️ `【RV` 仍排除 —— 那是**标注豁免**（评审标注引述本就是它的用途），
+  #     按 REASON-CODES 的两分法属**自动、无需登记批准**的一类，与内容豁免不同族。
+  grep -nE "$PAT_ALL" "$1" 2>/dev/null | grep -v '【RV'
+}
+
+# suppressed <件> <行号> -> 0=经受控例外或冻结基线放行；1=不放行；2=UNKNOWN
+_SUP_UNK=0
+suppressed() {
+  _sf=$1; _sl=$2
+  _obj=$(sed -n "${_sl}p" "$_sf" | grep -oE "$PAT_ALL" | head -1)
+  [ -n "$_obj" ] || return 1
+  exc_decide "$EXLIST" "$_obj" "$_sf" "$_sl"; _src=$?
+  [ "$_src" -eq 0 ] && return 0
+  [ "$_src" -eq 2 ] && { _SUP_UNK=$((_SUP_UNK+1)); return 2; }
+  return 1
 }
 
 check() {
   # 🔴 局部计数一律加 _ 前缀:sh 无函数局部变量,叫 n 会覆盖 selftest 的通过计数,
   #    于是「反测 N 项全过」印出来的是最后一次命中数 —— 一个看着合理、其实是别的东西的数字。
   #    本闸自己先栽过这一次,注在此处防复发。
-  rc=0; _total=0
+  rc=0; _total=0; _SUP_UNK=0
   for f in $DOCS; do
     [ -f "$f" ] || { echo "✗ 闸依赖缺失：$f 不存在 —— 闸坏了，不是免检"; return 2; }
     hits=$(scan "$f")
+    # 逐处判受控例外 / 冻结基线 —— 例外的粒度是【某件某行的某个痕迹指纹】，不是整行标记
+    _keep=''
+    for _hl in $(printf '%s\n' "$hits" | awk -F: 'NF>0 {print $1}'); do
+      suppressed "$f" "$_hl" || _keep="$_keep $_hl"
+    done
+    hits=$(printf '%s\n' "$hits" | awk -v k="$_keep" 'BEGIN{n=split(k,a," "); for(i=1;i<=n;i++) m[a[i]]=1}
+                                                      { split($0,b,":"); if (b[1] in m) print }')
     _n=$(if [ -z "$hits" ]; then echo 0; else printf '%s\n' "$hits" | wc -l | tr -d ' '; fi)
     _total=$((_total+_n))
     if [ "$_n" -gt 0 ]; then
@@ -126,10 +162,19 @@ check() {
     esac
 
   done
+  # 🔴 UNKNOWN 先于 FAIL 判：授权根不可得时，闸没有资格给结论。
+  #   ⚠️ 首版把这段写在 FAIL 之后 —— 于是「例外存在但批准验不了」被判成了 FAIL，
+  #     **把「我不知道」讲成了「它不合格」**，正是 GATE-CONTRACT 一之二第 1/2 条的分界。
+  if [ "$_SUP_UNK" -gt 0 ]; then
+    echo "✗ UNKNOWN（exit 2）：$_SUP_UNK 处受控例外的【批准】无从核验 —— 授权根不可得"
+    echo "  ⇒ 见 specs/gates/approvals/TRUST-ROOT.md：当前无 ACTIVE 后端（门方待裁）。"
+    return 2
+  fi
   if [ "$rc" -ne 0 ]; then
     echo "  🔴 剥离【不是删】：痕迹里若含现行规范内容（能力边界声明 · 口径收窄的结果表等），"
     echo "     内容留正文、沿革移入 $HIST。逐条判断，不得机械替换。"
-    echo "  ⚠️ 确有正当理由须留在正文者，行内加 style-ok: <理由> 标记；理由为空视同未标。"
+    echo "  ⚠️ 确有正当理由须留在正文者：🔴 **行内 style-ok 标记对本闸已不再构成豁免**（乙域全闸契约），"
+    echo "     须到 $EXLIST 登记受控例外（六列 ＋ 门方 approval_ref）。"
     return 1
   fi
   # 沿革件必须存在且非空 —— 否则「剥离到沿革件」只是把它删了。
@@ -137,6 +182,8 @@ check() {
     echo "✗ 沿革记录件 $HIST 不存在或为空 —— 剥离必须有去处,不得只删不存"; return 2
   fi
   echo "  ✓ 体例合规（正文 $_total 处痕迹指纹；沿革件在 $HIST）"
+  echo "     受检范围（预期集合）：$(printf '%s' "$DOCS" | wc -w | tr -d ' ') 件；口径＝排除 【RV 标注段（标注豁免，自动）"
+  echo "     未知集合：$_SUP_UNK"
   return 0
 }
 
@@ -175,8 +222,43 @@ selftest() {
   [ $? -eq 0 ] && ok "不误伤：规范术语「复核 / 评审」不算痕迹" || bad "误伤了规范术语"
 
   # 例外须带理由
-  mk; printf '# 正文\n\n本席保留此句 style-ok: 该句为能力边界声明,属规范内容\n' >> "$T/d/a.md"; run
-  [ $? -eq 0 ] && ok "不误伤：带 style-ok 理由的例外放行" || bad "带理由的例外被误拦"
+  # 🔴 **本条随乙域全闸契约反转**（2026-08-26）：
+  #   原写「不误伤：带 style-ok 理由的例外放行 ⇒ ok」——
+  #   **那把绕过面锁定成了期望语义**：闸不看理由是否属实，只看有没有那几个字，
+  #   而反测又把这个行为断言为正确 ⇒ **再加多少条反测都测不出来，除非改契约本身。**
+  #   ⚠️ 这与已撤销断言闸在 RV-乙18 时反转的是**同一条**，而本闸当时没跟着改 ——
+  #     同一个 `style-ok` 标记被两个闸各自解释，改了一个不等于改了这个标记。
+  mk; printf '# 正文\n\n本席保留此句 style-ok: 该句为能力边界声明,属规范内容\n' >> "$T/d/a.md"
+  EXLIST="$T/none.txt" BASELINE="$T/none.txt" run
+  [ $? -eq 1 ] && ok "🔴 拦住：仅有行内 style-ok【不再】豁免（乙域全闸契约反转此断言）" \
+                || bad "自由文本 style-ok 仍能绕过本闸 —— 通则只落到一个闸就不是通则"
+
+  # 经受控例外的合法对象 ⇒ 过（terra 要求的成对反测的另一半）
+  _REV=zzc-chatgpt56terrazhangzongchu-2642
+  . specs/gates/lib/approval-fixture.sh
+  _OT=$EXC_TRUSTROOT; _OG=${EXC_GITDIR:-.}
+  EXC_TRUSTROOT="$T/trust.md"; EXC_GITDIR="$T/appro"
+  _lp=$(grep -n '本席保留此句' "$T/d/a.md" | cut -d: -f1)
+  _fpp=$(sed -n "${_lp}p" "$T/d/a.md" | tr -d '[:space:]' | sha256sum | cut -c1-16)
+  _objp=$(sed -n "${_lp}p" "$T/d/a.md" | grep -oE "$PAT_ALL" | head -1)
+  _CMT=$(exc_fixture_make "$T" "$_REV" PS-TEST-01 "$_objp" "$T/d/a.md" "$_fpp" normative-not-process)
+  [ -n "$_CMT" ] || bad "🔴 批准夹具没造出来 —— 下列反测全部无效"
+  printf 'PS-TEST-01\t%s\t%s/d/a.md\t%s\tnormative-not-process\t%s@%s#AP-01\n' "$_objp" "$T" "$_fpp" "$_REV" "$_CMT" > "$T/psex.txt"
+  EXLIST="$T/psex.txt" run
+  [ $? -eq 0 ] && ok "经受控例外的合法对象放行（受保护 ref 可达 ＋ 不可变 commit ＋ 四元组匹配）" || bad "合规受控例外被误拦"
+
+  # 🔴 授权根无 ACTIVE 后端（＝仓内当前实况）⇒ exit 2
+  exc_fixture_trust "$T" "$_REV" ''
+  EXLIST="$T/psex.txt" run
+  [ $? -eq 2 ] && ok "🔴 授权根不可得 ⇒ UNKNOWN exit 2（不折算为 PASS）" || bad "授权根不可得时闸给了结论"
+  exc_fixture_trust "$T" "$_REV" reviewer-owned-protected-ref
+
+  # 🔴 commit 不可达 ⇒ UNKNOWN
+  printf 'PS-TEST-01\t%s\t%s/d/a.md\t%s\tnormative-not-process\t%s@0123456789abcdef0123456789abcdef01234567#AP-01\n' "$_objp" "$T" "$_fpp" "$_REV" > "$T/psex2.txt"
+  EXLIST="$T/psex2.txt" run
+  [ $? -eq 2 ] && ok "🔴 commit 在受保护 ref 上不可达 ⇒ 验证失败 ＝ UNKNOWN(2)" || bad "不可达 commit 未判 UNKNOWN"
+
+  EXC_TRUSTROOT=$_OT; EXC_GITDIR=$_OG
 
   # 🔴 剥离必须有去处:沿革件空 ⇒ 判闸坏,防「只删不存」
   mk; : > "$T/d/h.md"; run

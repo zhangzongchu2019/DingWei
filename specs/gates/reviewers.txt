@@ -1,0 +1,13 @@
+# 门方会话名册 —— approval_ref 的批准方须在本名册内，且不得为执笔方。
+#
+# 🔴 权属：本件应由 coordinator / 门方维护。执笔方此版仅按已知域划分填入初值，
+#   **待 coordinator 确认**。⚠️ 名册在执笔方可写路径下这件事本身，正是
+#   `approvals/TRUST-ROOT.md` 第三节要解决的问题 —— 在授权根落地前，
+#   本名册不构成任何放行依据（无 ACTIVE 后端 ⇒ 一律 UNKNOWN）。
+#
+# 一行一个会话全名。
+zzc-chatgpt56terrazhangzongchu-2642
+zzc-chatgpt56solzhangzongchu-2642
+zzc-chatgpt56soltchangshark-2642
+zzc-kimi30kqtuxerh-2642
+zzc-coordinator-2642
