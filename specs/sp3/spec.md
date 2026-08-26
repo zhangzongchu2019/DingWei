@@ -7,11 +7,11 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp3-design` |
-| **合同版本** | v1.1 |
+| **合同版本** | v1.2 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
-| **冻结施工锚** | `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
+| **冻结施工锚** | 组合冻结：SpecDoc `4fb34f2`；架构/原型/SP0–SP2/代码基线 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
 | **权威范围** | SpecDoc §10–§13；owner_sp=SP3 的附录 E 行 |
 | **目标架构域** | `KNO`；消费 `IDN/PLT/WRK`，向 `WRK/CAP/COL/AGT` 提供受控知识与上下文 snapshot |
 | **目标件** | `docs/dingwei-sp3-design.md` |
@@ -24,6 +24,8 @@ KNO 只消费既有 WRK dispatch 事件，并经四个 KNO command/query 与 rep
 若未来需要 KNO 作为事件 producer，须先修改目标架构 §4.2、bump 本合同并重新评审，不能在正文私造事件 ID。
 
 **v1.1 同步**：派发快照字段全集的唯一权威源钉为 SpecDoc §11.6 表；SP2 是引用侧而非定义源。
+
+**v1.2 同步**：业主已裁 §11.6 按 SP2 更新并补 §11.6a FAIL evidence；SpecDoc 输入重锚 v3.70，其他输入不回退。
 
 ### 0.1 范围判定
 
@@ -102,7 +104,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 
 | 输入 | sha256 | 用途 |
 |---|---|---|
-| `docs/dingwei-platform-specdoc.md` | `8b0b20b97af85bf1c42c1b8dd5a7c94a0e73d1de3100666c5acb2370ae56c61e` | §10–§13、owner_sp=SP3 附录 E |
+| `docs/dingwei-platform-specdoc.md` @ `4fb34f2` | `e5c59a4ac3e8a7a44aa1ed647e24b9fcbb20d8ea53c789fe78e27eae49e9d7df` | v3.70 §10–§13、§11.6/§11.6a、owner_sp=SP3 附录 E |
 | `docs/dingwei-platform-architecture.md` | `0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc` | KNO 边界、4 接口、数据、迁移、原型入口 |
 | `docs/dingwei-prototype.html` | `eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8` | 知识库与 Agent 工作面的交互输入 |
 | `docs/dingwei-sp0-design.md` | `f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec` | GOV 规则/评审 seam 的冻结输入 |
@@ -119,7 +121,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `D-SP3-03` | domain 与生命周期 | D0–D3、三条 ingest、晋升/订正、不可变历史 |
 | `D-SP3-04` | visibility 与授权 | 默认 restricted、降级审批、继承取严、放行审计、负测 |
 | `D-SP3-05` | 固化判型与来源 | 条目类型、四类权威源、运行时取边界、导入/链接 |
-| `D-SP3-06` | 上下文装载 | 新 Spawn；以 SpecDoc §11.6 派发快照表为字段全集唯一权威源，增删以该表为准；正文按表逐字段给拒绝/重灌判据；snapshot 不可变 |
+| `D-SP3-06` | 上下文装载 | 新 Spawn；以 v3.70 §11.6 派发快照表为字段全集唯一权威源；正文按表逐字段给拒绝/重灌判据，并按 §11.6a 五子字段定义 FAIL evidence；snapshot/evidence 不可变 |
 | `D-SP3-07` | 锚与生命周期 | 四锚判据、多锚 OR、active/suspect/archived、reverify |
 | `D-SP3-08` | 检索与排序 | 先过滤、scope∩visibility、降权、cursor、拒绝语义、审计 |
 | `D-SP3-09` | 四接口合同 | schema/effect/auth/idempotency/generation/tx/error/audit |
@@ -154,7 +156,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `AC-SP3-05` | 四维模型与 KBDoc.Meta | 四维不互推；字段/枚举/默认值/约束齐 | 数据是否已迁移 |
 | `AC-SP3-06` | 三条 ingest 与 revision | 无旁路写入；订正不改历史 | curator 判断质量 |
 | `AC-SP3-07` | visibility 与引用 | 默认 restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
-| `AC-SP3-08` | SpecDoc §11.6 派发快照字段表逐项（增删以该表为准） | 每字段有构造/缺失拒绝/重灌判据；snapshot 不可变 | 字段齐备后信息是否足够的人审结论 |
+| `AC-SP3-08` | v3.70 §11.6 字段表逐项 + §11.6a FAIL evidence 子字段逐项 | 每字段有构造/缺失拒绝/重灌判据；repro 空/不可复跑则 evidence 不成立；snapshot/evidence 不可变 | 字段齐备后诊断是否正确的人审结论 |
 | `AC-SP3-09` | anchors 与生命周期 | 四锚分判、多锚 OR、连续两版本 archived | 外部替代锚质量 |
 | `AC-SP3-10` | 检索全链 | 过滤先于检索、suspect 降权、deny 不伪装空集 | relevance 质量 |
 | `AC-SP3-11` | 4 接口与复用映射 | auth/idempotency/generation/tx/error/audit 及正反例齐 | provider 性能 |
@@ -176,7 +178,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | SpecDoc 自身矛盾 | 登记精确章节、两种后果与建议，交 coordinator/业主，不自行取舍 |
 | SpecDoc 与目标架构冲突 | 登记双方锚与影响，交裁，不设私有优先级 |
 | 与 SP1/SP2 seam 对撞 | 停止该路径，登记接口差异；不改已收口件 |
-| SpecDoc §11.6 与 SP2 §3.3 snapshot 字段不一致 | 已登记：§11.6 有 `envelope_ref`、acceptance 锚、上下文版本等，SP2 另列 AccessCtxRef/task/node/generation；交 coordinator/业主裁定由 SP2 补齐或更新 §11.6，SP3 不自行取舍 |
+| SpecDoc §11.6 与 SP2 §3.3 snapshot 字段不一致 | ✅ 业主已裁并在 v3.70 落地：§11.6 承认 SP2 所需字段且仍为唯一权威表；SP3 按新表与 §11.6a 设计，SP2 为引用侧 |
 | 目标与 datad/kb 现状冲突 | 记 retain/adapt/rewrite 差距；旧实现不升级为目标规则 |
 | 合同范围或机器集合变化 | bump 合同并重走三方评审，未过不写正文 |
 

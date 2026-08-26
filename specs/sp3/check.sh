@@ -1,24 +1,26 @@
 #!/bin/sh
 # SP3 设计覆盖检查：预期集合从冻结锚派生；正文缺失/块缺失/预期空/输入漂移均 exit 2。
 set -u
-ANCHOR=${ANCHOR:-53e4a2aed1569eef91e4048e7da2a1cd32db3ec2}
+BASE_ANCHOR=${BASE_ANCHOR:-53e4a2aed1569eef91e4048e7da2a1cd32db3ec2}
+SPECDOC_ANCHOR=${SPECDOC_ANCHOR:-4fb34f2}
 DOC=${DOC:-docs/dingwei-sp3-design.md}
 MODE=${1:-check}
-python3 - "$ANCHOR" "$DOC" "$MODE" <<'PY'
+python3 - "$BASE_ANCHOR" "$SPECDOC_ANCHOR" "$DOC" "$MODE" <<'PY'
 import hashlib,re,subprocess,sys,os
-anchor,doc,mode=sys.argv[1:]
+base_anchor,spec_anchor,doc,mode=sys.argv[1:]
 PATHS={
- 'docs/dingwei-platform-specdoc.md':'8b0b20b97af85bf1c42c1b8dd5a7c94a0e73d1de3100666c5acb2370ae56c61e',
- 'docs/dingwei-platform-architecture.md':'0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc',
- 'docs/dingwei-prototype.html':'eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8',
- 'docs/dingwei-sp0-design.md':'f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec',
- 'docs/dingwei-sp1-design.md':'8fafe6c5bac5595eaa771543dfc4199ba3670081786f1769f39833dc616e27bf',
- 'docs/dingwei-sp2-design.md':'37d2c17cc0761914aae91abd20273746231d894c50163cb89b8123cc03d76a86',
+ 'docs/dingwei-platform-specdoc.md':(spec_anchor,'e5c59a4ac3e8a7a44aa1ed647e24b9fcbb20d8ea53c789fe78e27eae49e9d7df'),
+ 'docs/dingwei-platform-architecture.md':(base_anchor,'0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc'),
+ 'docs/dingwei-prototype.html':(base_anchor,'eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8'),
+ 'docs/dingwei-sp0-design.md':(base_anchor,'f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec'),
+ 'docs/dingwei-sp1-design.md':(base_anchor,'8fafe6c5bac5595eaa771543dfc4199ba3670081786f1769f39833dc616e27bf'),
+ 'docs/dingwei-sp2-design.md':(base_anchor,'37d2c17cc0761914aae91abd20273746231d894c50163cb89b8123cc03d76a86'),
 }
 def get(path):
+    anchor,want=PATHS[path]
     try: b=subprocess.check_output(['git','show',f'{anchor}:{path}'],stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError: print(f'✗ 冻结输入不可取：{anchor}:{path}'); raise SystemExit(2)
-    if hashlib.sha256(b).hexdigest()!=PATHS[path]: print(f'✗ 冻结输入漂移：{path}'); raise SystemExit(2)
+    if hashlib.sha256(b).hexdigest()!=want: print(f'✗ 冻结输入漂移：{anchor}:{path}'); raise SystemExit(2)
     return b.decode()
 spec=get('docs/dingwei-platform-specdoc.md'); arch=get('docs/dingwei-platform-architecture.md'); proto=get('docs/dingwei-prototype.html')
 get('docs/dingwei-sp0-design.md'); get('docs/dingwei-sp1-design.md'); get('docs/dingwei-sp2-design.md')

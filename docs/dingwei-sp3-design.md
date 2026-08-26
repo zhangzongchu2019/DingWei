@@ -1,19 +1,20 @@
-# DingWei SP3 上下文与知识库设计 v1.0
+# DingWei SP3 上下文与知识库设计 v1.1
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp3-design` |
-| **版本** | v1.0 |
+| **版本** | v1.1 |
 | **状态** | draft，待三方全文评审 |
-| **冻结施工锚** | `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
-| **合同锚** | `7ee2c30223a8c117f1f131626ff89a1e29d36a8f` |
-| **合同** | `specs/sp3/spec.md` v1.1 |
+| **冻结施工锚** | 组合冻结：SpecDoc `4fb34f2`；其余输入 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
+| **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.2（业主裁定后的输入重锚修订） |
+| **合同** | `specs/sp3/spec.md` v1.2 |
 | **范围** | SpecDoc §10–§13；owner_sp=SP3 的附录 E 行 |
 | **主责域** | `KNO` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
 
 > 本件定义 KNO 目标设计和 KNO 的 SP7b 迁移合同，不声称数据库、RLS、provider、迁移或真实上下文装载已实现。
-> SpecDoc §11.6 派发快照字段表是字段全集唯一权威源；与 SP2 §3.3 的差异保持登记态，本轮不接真实派发。
+> SpecDoc v3.70 §11.6 派发快照字段表是字段全集唯一权威源；§11.6a 是 FAIL evidence 权威形状。
+> v1.1：按业主裁定承认 AccessCtxRef/task/node/generation/spec_ref，并补 FAIL evidence 持久化判据；仍不接真实派发。
 
 ## D-SP3-01 范围、四维模型与域边界
 
@@ -174,25 +175,41 @@ visibility 变更带 domain 变更、放行不落账。deny 必须在 selector/q
 
 ### 6.1 权威字段与 fixture
 
-字段全集唯一来自 SpecDoc §11.6 表，增删以该表为准；本轮按表逐项 fixture，不接真实 WRK 派发：
+字段全集唯一来自 SpecDoc v3.70 §11.6 表，增删以该表为准；本轮按表逐项 fixture，不接真实 WRK 派发：
 
 | §11.6 字段 | 构造来源 | 缺失判据 | 重灌用途 |
 |---|---|---|---|
+| `task`/`node`/`generation` | WRK task/node/generation fixture | 任一缺失或 generation 非预期拒绝 | 标识派发对象并 fence 迟到结果 |
+| `AccessCtxRef` | SP1 签发的可信主体引用 fixture | 缺失、过期、issuer/audience/generation 不符拒绝 | 固定企业轴+人轴；Agent/session/display name 不得替代 |
 | `envelope_ref` | WRK immutable envelope ref fixture | 空/不可解析拒绝 | 还原派发指令与主体引用 |
+| `spec_ref` | 本次执行所据 spec version ref fixture | 不可取或版本/指纹漂移拒绝 | 固定目标、范围与输入语义 |
 | 原交付物锚 | 上轮 `result_ref+sha256` fixture | 任一缺失/sha 不符拒绝 | 取得待修/待审产物 |
-| 完整 FAIL evidence+失败最小复现 | gate fixture | FAIL 场景缺任一拒绝 | 不依赖 worker 记忆复现失败 |
+| 完整 FAIL evidence+失败最小复现 | §11.6a evidence fixture | FAIL 场景对象缺失或任一必需子字段不成立则拒绝 | 空上下文复跑失败并先落证据后 digest |
 | acceptance 锚 | 判据 commit/blob sha fixture | 不可取/指纹漂移拒绝 | 固定验收标准 |
-| 规则版本 | GOV rule version fixture | 缺失/撤销拒绝 | 固定 GateSet/解释语义 |
+| 规则版本（权威名=`GateSet version`） | GOV GateSet version fixture | 缺失/撤销/同物异值拒绝 | 固定门集与规则解释语义 |
 | 上下文版本 | 各 domain 装载 version fixture | 任一已选 domain 缺版本拒绝 | 复算装载结果 |
 
-SP2 §3.3 另列 AccessCtxRef/task/node/generation；与本表的差异已登记交裁。SP3 不把这些新增为字段全集，也不删除；
-构建服务的 AccessCtx 作为授权调用上下文使用，不在裁定前改写 snapshot schema。
+SP2 是本表引用侧；不得另立第二份字段全集或复述条数。fixture 中 `AccessCtxRef` 同时作为构建授权上下文验证，
+但 snapshot 只存完整性保护引用，不复制其内部身份字段。
 
-### 6.2 构建、清空与不可变性
+### 6.2 FAIL evidence 权威子字段
+
+| §11.6a 子字段 | 构造/受控形状 | 不成立判据 | 持久化/重算 |
+|---|---|---|---|
+| `failure_class` | execution_failed/gate_fail/dependency_unavailable/effect_unknown/timeout/cancelled | 自由文本或未知枚举拒绝 | 先于 digest 写 immutable evidence version |
+| `expected`/`actual` | 各一份可复算值、计数或 sha256 | 缺任一，或仅写「不符合预期」拒绝 | 门方按同输入重算对撞 |
+| `repro` | 一条可复跑命令，或 commit/blob sha/envelope_ref 不可变输入锚 | 空、不可取、依赖执行方会话记忆、空上下文不可复跑均不成立 | 记录实际重跑 rc/摘要与 reviewer evidence |
+| `artifacts[]` | 日志/产物/诊断 ref+sha256；确无则显式「无」 | 留空、裸路径、无指纹拒绝 | 只存引用，正文不内联敏感日志 |
+| `at_generation` | failure generation+evidence_version | 任一缺失或与 node/gate generation 不符拒绝 | fence 迟到结果与 evidence supersedes |
+
+判定失败时先落完整 evidence，再生成 digest；未落齐不得封存或放行。evidence 正文不可改，更正新增 version+supersedes。
+本表只判证据形状与复跑性，判不了失败诊断是否正确；后者归门方/执行方人审。
+
+### 6.3 构建、清空与不可变性
 
 新 Spawn 是新一轮上下文装载，与会话进程是否长活无关。`BuildContextSnapshot`：
 
-1. 验 AccessCtx/DataScopeGrant 与 §11.6 fixture；
+1. 验 AccessCtx/DataScopeGrant、§11.6 fixture 与适用时的 §11.6a evidence；
 2. 装当前版本摘要和本任务信封；
 3. 对 KNO 内容先 domain∩visibility 过滤后检索；
 4. 固定 item_id/version、source_high_water、规则/上下文版本并计算 digest；
@@ -200,10 +217,11 @@ SP2 §3.3 另列 AccessCtxRef/task/node/generation；与本表的差异已登记
 
 运行态不灌；D0 只全量 public；其余检索式。修订 node 必须用 snapshot 重灌，OriginHint 只作调度权重。
 
-### 6.3 充分性与负测
+### 6.4 充分性与负测
 
 字段齐只证明结构齐，不证明信息足。人审须以空上下文 worker 重灌完成任务为判据。负测：删每个 §11.6 字段、
 篡改 snapshot、复用上一任务 snapshot、restricted 全量装载、运行态注入、锚漂移、规则版本撤销，均须拒绝或重建。
+FAIL evidence 另逐项变异 failure_class、expected/actual、repro、artifacts、at_generation；尤其 repro 空或不可复跑必须失败。
 
 ## D-SP3-07 anchors 与新鲜度状态机
 
@@ -276,7 +294,7 @@ mutating command 带 request_id、AccessCtxRef、DataScopeGrant、expected item/
 |---|---|---|---|---|
 | `KNO-CMD-IngestItem` | content/ref+Meta+pipeline refs→item revision | KNO tx 写 item/meta/anchors/audit | curator/closeout principal；request_id+item version | 无锚/旁路管道/非法visibility拒绝；缺失物化restricted |
 | `KNO-QRY-Search` | query+scope+cursor→filtered hits | 受控 repository 只读 | AccessCtx+grant；cursor绑定principal/policy | deny非成功空集；记retrieval audit |
-| `KNO-CMD-BuildContextSnapshot` | §11.6 fixture+role→snapshot ref | KNO tx 写immutable snapshot+audit/outbox | service+AccessCtx；request_id+task generation | 字段缺失/锚漂移/版本撤销拒绝 |
+| `KNO-CMD-BuildContextSnapshot` | v3.70 §11.6 fixture+§11.6a evidence（适用时）+role→snapshot ref | KNO tx 写immutable snapshot+audit/outbox | service+AccessCtx；request_id+task generation | 字段/evidence缺失、repro不可复跑、锚漂移/版本撤销拒绝 |
 | `KNO-CMD-MarkLifecycle` | item/version+target+evidence→record | 新 lifecycle record，不改历史 | verifier/curator；request_id+item version | 非法转换/证据不足/stale version |
 
 ### 9.3 错误词表
@@ -370,6 +388,7 @@ provider error、崩溃恢复、迁移/rollback。每项至少正反例；变异
 | `SRC:§11.4b` | `D-SP3-04` |
 | `SRC:§11.5` | `D-SP3-04`、`D-SP3-06` |
 | `SRC:§11.6` | `D-SP3-06` |
+| `SRC:§11.6a` | `D-SP3-06` |
 | `SRC:§12` | `D-SP3-02` |
 | `SRC:§12.1` | `D-SP3-05` |
 | `SRC:§12.2` | `D-SP3-05` |
@@ -438,7 +457,7 @@ provider error、崩溃恢复、迁移/rollback。每项至少正反例；变异
 | `AC-SP3-05` | 四维模型与KBDoc.Meta | 四维不互推，字段/枚举/默认/约束齐 | 数据已迁移与否 |
 | `AC-SP3-06` | 三条ingest与revision | 成功写入均追管道；订正不改历史 | curator判断质量 |
 | `AC-SP3-07` | visibility授权/继承 | 默认restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
-| `AC-SP3-08` | SpecDoc§11.6表逐项 | 每字段构造/缺失拒绝/重灌判据；snapshot不可变 | 字段齐后信息是否足够 |
+| `AC-SP3-08` | v3.70 §11.6字段表+§11.6a子字段逐项 | 每字段构造/缺失拒绝/重灌；repro空/不可复跑则evidence不成立；snapshot/evidence不可变 | 字段齐后诊断是否正确 |
 | `AC-SP3-09` | anchors/lifecycle | 四锚分判、多锚OR、连续两版本archived | 替代锚质量 |
 | `AC-SP3-10` | 检索全链 | 先过滤、suspect降权、deny非空集、cursor隔离 | relevance质量 |
 | `AC-SP3-11` | 4接口与复用映射 | auth/idempotency/generation/tx/error/audit及正反例齐 | provider性能 |
@@ -447,7 +466,7 @@ provider error、崩溃恢复、迁移/rollback。每项至少正反例；变异
 
 ### 12.4 挂账与冲突
 
-1. §11.6 与 SP2 §3.3 的 snapshot 字段不一致：已上交；本轮 fixture 只按 §11.6 表，不接真实派发。
+1. §11.6 与 SP2 §3.3 差异已由业主裁定并在 v3.70 闭合：§11.6 承认 SP2 字段且保持唯一权威；本轮仍只用 fixture，不接真实派发。
 2. SP1 冻结件头仍 draft，而 coordinator 已告知收口：设计消费 seam，实现门须补可取 verdict/负测证据。
 3. SP7a 未交付：先过滤后检索、RLS、migration runner 只写合同，不宣称已具备。
 4. KNO event 面为 NOT_APPLICABLE；正文不产出 `EV-KNO-*`，未来新增先改目标架构。
