@@ -102,7 +102,18 @@ def expected_sets():
     out={'spec':set(src),'E':set(e),'interface':derive_interfaces(arch),'prototype':set(ui)}
     if any(not v for v in out.values()): print('✗ 预期集合为空：'+','.join(k for k,v in out.items() if not v)); raise SystemExit(2)
     return out
+SCOPE_LINE=('受检范围：冻结 SpecDoc §23–§24 heading（单区间取）、owner_sp 含 SP8 的 E 行、'
+            '架构 §6 GOV 接口、§13 GOV 入口减 SP0 已认领的差集；GOV 事件面实算为 0，按不适用处理。')
 expected=expected_sets()
+
+def recusal_scan(text,label):
+    """B1：全量扫描（仅排除 RECUSAL 声明区）。引用与逐条标记必须成对出现。"""
+    body=re.sub(r'<!-- RECUSAL-DECL-BEGIN -->.*?<!-- RECUSAL-DECL-END -->','',text,flags=re.S)
+    refs=re.findall(r'§11\.6[ab]',body)
+    marks=re.findall(r'<!-- RECUSAL-SP8-REF: (AC-SP8-\d{2}) -->',body)
+    if refs and not marks: return f'✗ {label}引用 §11.6a/b {len(refs)} 处却无 RECUSAL-SP8-REF 标记（opus50 回避范围不明）'
+    if marks and not refs: return f'✗ {label}标了 RECUSAL-SP8-REF 却无实际引用，标记不得空挂'
+    return ''
 
 def inspect(text,quiet=False):
     m=re.search(r'<!-- COVERAGE-SP8-BEGIN -->(.*?)<!-- COVERAGE-SP8-END -->',text,re.S)
@@ -120,6 +131,10 @@ def inspect(text,quiet=False):
     for k,want in expected.items():
         got=actual & want; unknown=sorted(want-got); bad|=bool(unknown)
         if not quiet: print(f'[{k}] 预期={len(want)} 实检={len(got)} 未知={len(unknown)} {unknown}')
+    err=recusal_scan(text,'正文')
+    if err:
+        if not quiet: print(err)
+        bad=True
     ids=re.findall(r'^## (D-SP8-\d+)',text,re.M)
     miss=[f'D-SP8-{i:02d}' for i in range(1,13) if ids.count(f'D-SP8-{i:02d}')!=1]; bad|=bool(miss)
     am=re.search(r'<!-- ACCEPTANCE-SP8-BEGIN -->(.*?)<!-- ACCEPTANCE-SP8-END -->',text,re.S)
@@ -137,8 +152,8 @@ def inspect(text,quiet=False):
     if not quiet:
         print(f'[delivery] 预期=12 实检={12-len(miss)} 未知={len(miss)} {miss}')
         print(f'[acceptance] 预期=12 实检={12-len(ac_miss)} 未知={len(ac_miss)} {ac_miss}')
-        print('受检范围：冻结 SpecDoc §14–§16 heading、owner_sp 含 SP8 的 E 行、架构 §6 CAP 接口、§4.2 CAP 事件、§13 CAP 原型入口。')
-        print('能力边界：只判结构化来源→D-SP8 落点与 ID 形状；判不了判型是否判对、批准是否恰当或实现状态。')
+        print(SCOPE_LINE)
+        print('能力边界：只判结构化来源→D-SP8 落点与 ID 形状；判不了批准是否恰当、危险度评估是否准确或实现状态。')
     return 1 if bad else 0
 
 def fixture():
@@ -182,7 +197,11 @@ if mode=='--selftest':
     ac_bad=base.replace('| `AC-SP8-07` | fixture scope | fixture criterion | fixture boundary |','| `AC-SP8-07` | 见全文 | 见全文 | 见全文 |')
     if inspect(ac_bad,True)==1: print('  ✓ AC 四列写「见全文」必须转红')
     else: print('  ✗ AC 占位值未被拦'); fail=1
+    test('正文普通段引用 §11.6a 而无回避标记必须转红',base+'\n② 运行约束：本节依赖 §11.6a 的证据形状。\n',1)
+    test('引用 §11.6b ＋ 逐条回避标记可放行',base+'\n本节依赖 §11.6b。\n<!-- RECUSAL-SP8-REF: AC-SP8-11 -->\n',0)
+    test('空挂回避标记而无引用必须转红',base+'\n<!-- RECUSAL-SP8-REF: AC-SP8-11 -->\n',1)
     test('缺覆盖块判闸坏',base.replace('<!-- COVERAGE-SP8-BEGIN -->',''),2)
+    print('--- '+SCOPE_LINE)
     print('--- SP8 预期集合实算 '+' '.join(f'{k}={len(v)}' for k,v in expected.items()))
     print(f'--- SP8 覆盖反测 {n} 项全过' if not fail else '--- SP8 覆盖反测失败')
     raise SystemExit(fail)

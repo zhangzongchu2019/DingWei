@@ -42,21 +42,22 @@ print(len(c))
 [ "$DIFF" -gt 0 ] || { echo '✗ 差集减数为空：SP0 未认领任何入口，差集规则失效'; exit 2; }
 grep -q 'capability effect' "$SPEC" || { echo '✗ 紧急通道判据未按 capability effect 落合同'; exit 1; }
 grep -q '签数由批内最高危项决定' "$SPEC" || { echo '✗ 批次签数判据未落合同'; exit 1; }
+for tok in '待批事项摘要' '单次使用' '门 PASS 的授权层级' 'L3 门'; do
+ grep -q "$tok" "$SPEC" || { echo "✗ §23.5 硬约束未进 D/AC：缺「$tok」"; exit 1; }; done
 grep -q '不把批准语义留白' "$SPEC" || { echo '✗ 对下游 SP4 的交付义务未落合同'; exit 1; }
 # heading 单区间取法必须写成判据
 grep -q '单区间' "$SPEC" || { echo '✗ heading 单区间取法未落为判据'; exit 1; }
-# 回避边界：判据行（D 表与 ACCEPTANCE 块）不得引用 §11.6a/§11.6b；声明段可以提它
+# 回避边界（B1）：剥离 RECUSAL 声明区后，合同全部生效内容不得出现 §11.6a/§11.6b
 grep -q '<!-- RECUSAL-SP8: NO-REF-11.6AB -->' "$SPEC" || { echo '✗ 回避边界未在合同以机器标记点明'; exit 1; }
+grep -q '<!-- RECUSAL-DECL-BEGIN -->' "$SPEC" && grep -q '<!-- RECUSAL-DECL-END -->' "$SPEC" || { echo '✗ 回避声明区围栏缺失，无法界定唯一豁免区'; exit 1; }
 REF=$(python3 - "$SPEC" <<'PY2'
 import re,sys
 t=open(sys.argv[1],encoding='utf8').read()
-rows=[l for l in t.splitlines() if re.match(r'^\| `(D|AC)-SP8-\d{2}`',l)]
-blk=re.search(r'ACCEPTANCE-SP8-BEGIN -->(.*?)<!-- ACCEPTANCE-SP8-END',t,re.S)
-rows+= (blk.group(1).splitlines() if blk else [])
-print(sum(1 for l in rows if re.search(r'§11\.6[ab]',l)))
+body=re.sub(r'<!-- RECUSAL-DECL-BEGIN -->.*?<!-- RECUSAL-DECL-END -->','',t,flags=re.S)
+print(len(re.findall(r'§11\.6[ab]',body)))
 PY2
 )
-[ "$REF" -eq 0 ] || { echo "✗ 有 $REF 条 D/AC 判据引用 §11.6a/§11.6b，须显式标注 opus50 对该条回避"; exit 1; }
+[ "$REF" -eq 0 ] || { echo "✗ 合同生效内容中有 $REF 处引用 §11.6a/§11.6b（声明区已排除），须 bump 并逐条标注 opus50 回避"; exit 1; }
 for reviewer in zzc-chatgpt56soltchangshark-2642 zzc-opus50tchangshark-2642 zzc-deepseekv4pro08130ca16c13-2642; do
  grep -q "$reviewer" "$SPEC" || { echo "✗ 缺评审票：$reviewer"; exit 1; }; done
 grep -q '3/3' "$SPEC" && grep -q 'AC-E05' "$SPEC" || { echo '✗ 三票门未落 AC-E05'; exit 1; }
@@ -68,6 +69,12 @@ SELFTEST_OUT=$(specs/sp8/check.sh --selftest) || { echo '✗ SP8 coverage checke
 SELFTEST_N=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP8 覆盖反测 \([0-9][0-9]*\) 项全过$/\1/p')
 [ -n "$SELFTEST_N" ] || { echo '✗ coverage checker 未报告实算反测数'; exit 2; }
 SETS=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP8 预期集合实算 //p')
+SCOPE=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- 受检范围：//p')
+[ -n "$SCOPE" ] || { echo '✗ coverage checker 未报告受检范围'; exit 2; }
+for tok in '§23–§24' 'GOV 接口' '差集'; do
+ printf '%s\n' "$SCOPE" | grep -q "$tok" || { echo "✗ 受检范围文案缺 $tok，与实际派生不符"; exit 1; }; done
+for bad in '§14–§16' 'CAP'; do
+ ! printf '%s\n' "$SCOPE" | grep -q "$bad" || { echo "✗ 受检范围文案残留 SP4 口径：$bad"; exit 1; }; done
 [ -n "$SETS" ] || { echo '✗ coverage checker 未报告预期集合实算值'; exit 2; }
 if DOC=docs/definitely-missing-sp8-design.md specs/sp8/check.sh >/dev/null 2>&1; then
  echo '✗ 目标件缺失被 coverage checker 当通过'; exit 1
