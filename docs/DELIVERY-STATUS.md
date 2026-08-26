@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `b60f1717bdfb03902f9c05b4bbf7d43c7ecdd224` · 分支 `fix/e-registry-and-18-1`
+生成自 commit `f125ef38c7e76e649c0df3bee415b67f062707d3` · 分支 `fix/e-registry-and-18-1`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.69** | `b60f1717bdfb03902f9c05b4bbf7d43c7ecdd224<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5128 / 362511 | `64a0d81e63cbd00bc03d53e6f961f9e7ab475ea4e63c57baa53b9c7f2d10a910` |
+| `dingwei-platform-specdoc.md` | **v3.69** | `39fcfa1abf73eb42cf7a65fe36f3a9ef70bc231e` | 5129 / 362652 | `1d4c527c73353868446d0caf0ff1937e60c44ce83ed2c497b94f1815b0b66dcc` |
 | `dingwei-prototype.html` | **v1.41** | `31beb82e5c3ea9e45b662492daaa9bbe49c291ca` | 2905 / 260443 | `9d85ade305f860a93a7e74711790df7076f2a25834479e041610e5b2c8b4e4f4` |
 | `dingwei-architecture-design.md` | **v0.34** | `5aa4a951f49b09da9a584aefd3d04313e4f4b9f0` | 907 / 61540 | `be8345feb9b471e69c8387e5970ffc37635f9cb5dc3ffe1a2f2e1e2ef75b6d79` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+f125ef3 例外契约 v2：逐处行指纹绑定 ＋ 批准方实校 —— 归口方变异验证抓出 v1 两个洞
+39fcfa1 立闸的返回契约：空集不得当通过（v3.69）—— coordinator 归纳的四条同根因
 b60f171 SP1 两条禁令落文 ＋ 附录 E 补登记 11 条 ＋ §18.1 列集权威化（v3.68）
 cc3032e RV-乙18：已撤销断言闸的自由文本豁免改为结构化登记例外（改契约，非补反测）
 31beb82 甲乙两域不顺延所据的三处，全部实取属实并已修（v3.67 · 原型 v1.41）
 11efc6a CI 触发面扩至闸的载体 ＋ 立触发面覆盖闸 ㉗（v3.66）
 cae5235 EXPECTED.md：t3 判据句与已修正的期望值对齐（改一处漏一处）
 2818502 同步 REVIEW-STATE（丙域 10→12 勾）—— 这是仓侧保护缺口的第一个实例
-38d4c46 checklist: 丙域 CAC-4/5 翻 [x]——26 处跨租户重判闭合，复判证据附（kimi30kqtuxerh）
-63ff8f2 修 ㉕ 输入锚闸：报错与 ✓ 同时出现
 ```
