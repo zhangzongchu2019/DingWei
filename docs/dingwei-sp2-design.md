@@ -1,9 +1,9 @@
-# DingWei SP2 执行层与门禁设计 v1.1
+# DingWei SP2 执行层与门禁设计 v1.2
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp2-design` |
-| **版本** | v1.1 |
+| **版本** | v1.2 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | `53d91aedd158c0a8618f0196f013cfee5cfd44aa` |
 | **合同锚** | `fa60efa1977188ca2061cd1ec4929a363cdd6a99` |
@@ -17,6 +17,7 @@
 
 > v1.1：按正文首轮三方评审一次性闭合 WRK 事件、condition 轴、状态动作接口、附录 E 语义映射、
 > §6.2 四项与治理成本、多 required gate 全称不变量；未扩 SP2 产品范围或架构接口 ID。
+> v1.2：统一 fail+pending 混合态：fail 立即锁死下游，全部 required gate 终结后才关闭 awaiting_gate 并封存 node。
 
 ## D-SP2-01 范围、边界与权威事实
 
@@ -88,8 +89,9 @@ DAG eligible = execution_state == done
                AND FOR ALL required gates: verdict IN {not_required, pass}
 ```
 
-任一 required gate 为 `pending` 时 node 不 eligible 且不封存；任一 required gate 为 `fail` 时 node 终结并封存、
-但不放行下游；全部 required gate 均为 `not_required/pass` 才 eligible。返工只能 `AppendRevision` 新建 node。
+任一 required gate 为 `fail` 时立即把 node 标为 `gate_failed` 并永久锁死下游；但只要仍有 required gate 为 `pending`，
+node 就不封存，剩余 gate 继续落账。全部 required gate 终结后才关闭 `awaiting_gate`：存在 fail 则封存且不放行，
+否则全部 verdict 为 `not_required/pass`，封存并 eligible。返工只能 `AppendRevision` 新建 node。
 execution `failed` 不等于 gate `fail`，前者是执行结果，后者是评审结论。
 
 ### 2.3 时间与不可变性
@@ -117,8 +119,9 @@ execution `failed` 不等于 gate `fail`，前者是执行结果，后者是评�
 ### 3.2 gate 与封存
 
 gate evaluation 只在 execution evidence 已落账后开始。每个 required gate 的 `pending→pass|fail` 必须携带 gate id、
-GateSet version、reviewer principal、evidence version。任一 required gate pending 时不封；任一 gate fail 时先落该 gate
-result 与失败最小复现，再封存 node 并生成 digest；无 fail 时须全部 gate 为 `not_required/pass` 才封存并放行。
+GateSet version、reviewer principal、evidence version。任一 gate fail 时先落该 gate result 与失败最小复现，并立即
+写 `gate_failed` 锁死下游；其他 pending gate 仍须完成或以受权 verdict 终结。只有全部 required gate 均已终结，才关闭
+`awaiting_gate`、封存 node 并生成覆盖全部 gate result 的 digest；存在任一 fail 则不放行，否则 eligible。
 
 ### 3.3 F.1.2 delivery.verify
 
@@ -253,7 +256,7 @@ mcsd 保留调度语义，WRK repository 取代 board 裸 DB 访问。scheduler 
 | 事件 | 当前 node | 后续 |
 |---|---|---|
 | execution failed | 封存失败 evidence | 可 AppendRevision 新 node；不得改 outcome |
-| gate FAIL | 封存 verdict+最小复现 | 下游不放行；revision 新 node |
+| gate FAIL | 锁定该 verdict+最小复现，立即锁死下游；node 待全部 gate 终结后封存 | revision 新 node |
 | blocked | 保留 blocker ref | 解阻须受权 command+新 generation |
 | timeout | 先判 lease/effect 状态 | 未知 effect 进 reconcile，不直接重发 |
 | cancel | 终结并审计 | 已发生 effect 仍须 reconcile/rollback |
