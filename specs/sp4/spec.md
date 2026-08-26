@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp4-design` |
-| **合同版本** | v1.4 |
+| **合同版本** | v1.5 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-opus50tczc2000-2642` |
 | **评审** | `zzc-chatgpt56soltchangshark-2642`、`zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
@@ -40,26 +40,40 @@
 
 🔴 **heading 取法本身是判据，不是实现细节**：**必须以「`## §14` 起、`## §17` 止」的单区间取**，
 **禁止按章分段（§14 段 ＋ §15 段 ＋ §16 段）拼接** —— SpecDoc 排版异常使 §15.4 / §15.5 物理落在 `## §16` 之内，
-分段取会**静悄悄丢掉这两节**（实测：按章取 §15 段只得 7 项，缺 `§15.4`、`§15.5`）。
+分段取会**静悄悄丢掉这两节**（实测：按章取 §15 段只得 7 个 heading，缺 `§15.4`、`§15.5`）。
 `specs/sp4/check.sh` 已把「派生集合必须含 `SRC:§15.4` 与 `SRC:§15.5`」写成硬断言（缺任一即 exit 2），
 并有一条专门的陷阱反测证明分段取法会被拦下。
 
 ### 0.2a 跨件引用台账〔判据：凡称「N 项 / N 个接口 / N 个事件」，一律按目标锚精确节界机器派生〕
 
-🔴 **v1.3 的教训**：本合同 4 处称 SP8 §11.5a 为「五项」，那是更早锚 `1f703b8` 的计数；
-所锚 `970effe` 上该节实为 **6 项**，锚换了分母没跟，两个 checker 都不响。
-⇒ 本版起，**任何跨件计数不得手写**：下表每行的「声称实数」必须等于 `specs/sp4/xref-check.sh`
-在该行所记**目标锚 + 精确节界**上现算的实数；「正文短语」必须在本合同实际出现，且**全合同不得残留其它数词的同形短语**。
-台账与 checker **双向对撞**：台账登记 checker 没有的派生器＝红，checker 有派生器未被台账登记＝红（防止分母绕过）。
-目标件不可取、节界取空、声称数≠派生数、节界声明与派生器不符 —— 一律 **exit 2**。
+<!-- XREF-NOTE-BEGIN -->
+
+🔴 **两轮的教训**：v1.3 里本合同 4 处称 SP8 §11.5a 为「五项」，那是更早锚 `1f703b8` 的计数，
+所锚 `970effe` 上该节实为 6 项 —— **分母手写**；v1.4 建了本门来防它，门自己却把**锚**留成手写、
+把台账自身算作正文命中、只验起界不验止界 —— **手写只是上移了一层**。本版按三票的 B1–B5 收窄到下述可判形态。
+
+**「一律」的确切含义（声明＝实现，不留未覆盖面）**：`specs/sp4/xref-check.sh` 对**生效正文**
+（＝本合同全文剥离台账块与说明区之后的部分）做**全域穷举扫描**，
+数词形态族 `[0-9一二两三四五六七八九十]+ ?(项|个?接口|个?事件)` 的**每一处命中**都必须归属下表某一行的「正文形态」；
+**未归属即 exit 2**。说明区（`XREF-NOTE-BEGIN/END`，即本段与 §0.5）是唯一豁免区，
+且**判据行不得划入说明区**（划入即红）。故本合同**不存在**「声称一律、实际只覆盖几条」的余地。
+
+**逐条判据**：① 台账「锚」列必须与 ⑥ 输入表所冻结的锚**逐字一致**，不得手写任意 commit（锚不合法 ⇒ rc=2）；
+② 切片的**起界与止界都必须实证命中**，任一未命中 ⇒ rc=2（不靠「结果非 0」兜底）；
+③ 台账**行号与派生器各自唯一**，且台账派生器集合与 checker 派生器集合**精确相等**（双向差集均空）；
+④ 「正文形态」必须在**生效正文**中命中 ≥1 次 —— **台账自己那一格不算命中**；
+⑤ 块内以数字开头却解析不出 8 列的行 ⇒ 报「有行未被解析」并 rc=2，不得静默跳过；
+⑥ 旧数词残留扫描同时覆盖 `spec.md` 与三个 checker 自身。
+
+<!-- XREF-NOTE-END -->
 
 <!-- XREF-SP4-BEGIN -->
 
-| # | 派生器 | 目标件 | 锚 | 节界 | 计数对象 | 声称实数 | 正文短语 |
+| # | 派生器 | 目标件 | 锚 | 节界 | 计数对象 | 声称实数 | 正文形态 |
 |---|---|---|---|---|---|---|---|
 | 1 | `sp8-11.5a-items` | `docs/dingwei-sp8-design.md` | `970effe` | `^### 11.5a … ^### 11.6` | 行首编号条目 | 6 | 六项独立复算 |
 | 2 | `arch-cap-interfaces` | `docs/dingwei-platform-architecture.md` | `6a98629` | `^## 6. … 下一个 ^##` | owner=CAP 的接口行 | 5 | 五个既有接口 |
-| 3 | `arch-cap-events` | `docs/dingwei-platform-architecture.md` | `6a98629` | `^## 4. … 下一个 ^##` | owner=CAP 的事件行 | 2 | 两个既有域事件 |
+| 3 | `arch-cap-events` | `docs/dingwei-platform-architecture.md` | `6a98629` | `^### 4.2 … 下一个 ^##` | owner=CAP 的事件行 | 2 | 两个既有域事件 |
 
 <!-- XREF-SP4-END -->
 
@@ -98,23 +112,36 @@
 | 3 | **§14.5a PDP/PEP 边界** | ✅ 按裁定：**本件定义 PEP**（MCP 运行态查询的接入点、判据来源与拒绝语义）；**PDP 策略与授权权力归 SP1/SP8**，本件不定义策略内容 |
 | 4 | **§16.6 紧急路径的执行入口在 SP6**〔新增登记〕 | 冻结架构中唯一紧急执行入口 `AGT-CAP-EmergencyAction` 属 `AGT`（SP6 范围），**SP6 前置写 SP4、只能晚于本件**。⇒ 本件**不等 SP6、也不自造入口**：只定义 capability-effect 判据与拒绝语义，并把入口侧登记为**跨件义务**；🔴 **在 SP6 定义该入口的强制执行之前，CAP 侧紧急路径一律 fail-closed**（`disable`/`quarantine`/`revoke` 只走常规同级同期审批路径），不得以"紧急"为由绕开 |
 
-### 0.5 v1.4 变更说明〔定向 bump，供门方一轮判完〕
+### 0.5 v1.5 变更说明〔定向 bump 第 2 轮，供门方一轮判完〕
 
-v1.3 已 3/3 PASS（锚 `4006cbe`，coordinator 已登记）。本版**不动范围、不动冻结锚、不改评审协议**，
-只清 v1.3 遗留的一笔债（业主已裁"正文开工前先 bump"）与三条非阻断，逐条如下：
+<!-- XREF-NOTE-BEGIN -->
 
-| # | 改了什么 | 为什么 | 如何自证（命令 → 期望） |
+v1.4 三票均 NO，但三家一致认定：v1.4 相对 v1.3 **严格变好**（旧债全闭），判 NO 只因**新长出来的那道门自身证不到它自称在证的东西**。
+本版**只加固那道门**，不动范围、不动三锚组合冻结、不动 §4.1 评审协议、不动 `check.sh`。
+
+| # | findings | 处置 | 如何自证 |
 |---|---|---|---|
-| 1 | 全合同 4 处「五项」→「六项」（§0.3 SP8 行、⑥ 表 SP8 行、`D-SP4-08`、`AC-SP4-07`） | 「五」是更早锚 `1f703b8` 的计数；所锚 `970effe` 上 §11.5a 实为 **6 项**，锚换了分母没跟 | `git show 970effe:docs/dingwei-sp8-design.md \| awk '/^### 11\.5a/,/^### 11\.6/' \| grep -cE '^[0-9]+\. '` → `6`；同命令换 `1f703b8` → `5` |
-| 2 | 第 ⑥ 项落设计与验收：`D-SP4-08` 落重放 `IN_PROGRESS`／`retry_after` 等待语义；`D-SP4-11` 落**接管须持新 `fence_token` 且先对账再决定是否执行**、对账不可判置 `unknown` 转 reconcile；`AC-SP4-07` 同步入判据 | v1.3 只承接了第 ⑥ 项的前半句（无 permit 不得发 effect），后半句"接管 + 对账"**全合同无落点** | `sh specs/sp4/contract-check.sh` → rc=0；删掉 `D-SP4-11` 的「先对账」再跑 → rc=1 并报缺 |
-| 3 | 新增 §0.2a **跨件引用台账** ＋ `specs/sp4/xref-check.sh`：凡称「N 项／N 个接口／N 个事件」一律按目标锚精确节界现算；台账与 checker 双向对撞；旧数词残留即红 | 这次踩的正是"分母手写、锚换了分母没跟"；v0.2 整合方案将新增同名门，本版先自带以免建好被拦 | `sh specs/sp4/xref-check.sh` → rc=0 且列 3 条实算；`sh specs/sp4/xref-check.sh --selftest` → 10 项全过（含"换锚到 `1f703b8` 而声称仍 6 必红"） |
-| 4 | `contract-check.sh` 改为**单一常量源 ＋ 三方对撞**：冻结输入实取 sha256 ⇄ ⑥ 表 ⇄ `check.sh` 的 `PATHS`，任一处不符 **rc=2** | 非阻断：v1.3 里 ⑥ 表数值与 checker 常量之间**无对撞**，表里写成 64 个 0 两个 checker 仍 rc=0 | 把 ⑥ 表某条 sha 改成 64 个 0 再跑 `contract-check.sh` → rc=2 并逐项打印"表=… 常量=…" |
-| 5 | `D-SP4-11` 外部 effect 接口举例补 `CAP-CMD-RequestPromotion` | 非阻断：§0.3 说按 §11.5a 接线的正是平台级晋升那条路，举例却漏了它 | `grep -c 'CAP-CMD-RequestPromotion' specs/sp4/spec.md` ≥ 1；contract-check 已把它写成断言 |
+| B1 三票 | 正文形态绑定是死检查（台账自身在 `spec.md` 内 ⇒ 恒真） | **采纳**：判命中前先剥离台账块与说明区；selftest 改成「只改正文、不改台账」的真脱节变异 | `xref-check.sh --selftest` 的「B1 真脱节」一项 |
+| B2 两票 | §0.2a 称「一律」但只覆盖三条中文数词，阿拉伯形态 0 覆盖 | **甲＋乙都做**：判据行阿拉伯分母改写为已登记形态（`D-SP4-11`／`AC-SP4-03`／`AC-SP4-04`／⑥ 表用途列）＋ 新增**全域穷举扫描**，每处命中须归属台账行，未归属 rc=2 | 正文插入「9 接口」→ rc=2；见「B2 未登记数词形态」一项 |
+| B3 一票 | 台账「锚」列不受冻结集约束，锚仍是手写 | **采纳**：台账锚须与 ⑥ 输入表逐字一致，不一致 rc=2；⑥ 表本身已与两个 checker 常量三方对撞 | 台账锚改 `c7ac0c3` → rc=2；见「B3 台账锚与 ⑥ 表不一致」 |
+| B4 一票 | `_slice` 只记 start，不验 stop 真命中 | **采纳**：`_slice` 强校 `start_seen`/`stop_seen`，任一未命中抛错 | 见「B4 止界／起界不命中必抛错」两项 |
+| B5 一票 | 台账不拒重复行号／重复派生器 | **采纳**：行号与派生器各自唯一 ＋ 与 checker 派生器集合精确相等 | 见「B5 重复整行／重复行号／孤儿派生器」三项 |
+| N1 | 报错文案停在旧分母；残留扫描不扫 checker 自身 | **采纳**：文案改正；残留扫描纳入三个 checker 文件 | 见「N1 checker 自身残留旧数词必红」 |
+| N2 | 台账列数 ≠8 的行静默跳过 | **采纳**：块内数字开头行解析失败即报「有行未被解析」rc=2 | 见「N2 台账行列数写坏」 |
+| N3 | `D-SP4-11`／`AC-SP4-07` 四处语义无断言 | **采纳**：逐条补 `grep -qE` 断言 | 删任一处 → `contract-check.sh` rc=1 |
+| N4 | 台账第 3 行节界写 `^## 4.`，而 §0.2／`AC-SP4-04` 称 §4.2 | **采纳**：派生器与节界一并收窄到 `^### 4.2`，实数仍为 2 | 台账「节界」列与 checker label 逐字对撞 |
+| N5 | `EVENT_N -eq 2` 手写，与台账同源双写 | **采纳**：改为取 `xref-check.sh` 输出的 `XREF-VALUE arch-cap-events` | `contract-check.sh` 内已无手写事件数 |
 
-**未处理且不必由本件处理**：`970effe` 无 tag、非 `4006cbe` 祖先、仅 SP8 分支可达 —— 已由 v0.2 整合门接管（coordinator 裁）。
+**另行加固（同族自查，非门方所提）**：§0.2 的机器派生快照（`28/45/5/2/1`）此前只是文字，
+本版由 `contract-check.sh` 与 `check.sh --selftest` 的实算值**逐项对撞**，快照写错即 rc=2 —— 收掉「§0.2 快照可随意改」这一面。
 
-一轮全跑：`sh specs/sp4/contract-check.sh && sh specs/sp4/xref-check.sh --selftest && sh specs/sp4/check.sh --selftest`；
-`sh specs/sp4/check.sh` 仍应 **rc=2**（正文 `docs/dingwei-sp4-design.md` 未创建，合同 PASS 前不写正文）。
+🔴 **本版登记但未收的同族问题（`check.sh`，本轮按 coordinator 指示不动该件）**：
+① `derive_src` 同样只验起界不验止界 —— 删掉 SpecDoc 的 `## §17` 标题后派生集合由 28 撑到 114 而不报错；
+② COVERAGE 比对只算 `want-got`，`actual` 中多出的伪 token 不判，非精确相等；
+③ AC 解析用字典赋值，同一 `AC-SP4-xx` 写两行后者静默覆盖前者（相邻的 D 行用 `!=1` 强校了「恰好一次」，故此处是遗漏而非取法所限）。
+以上三条与 B4/B5 同族，**落点定在 SP4 下一次 bump 或正文期首版**，与「登记件 sha256 机器化」一并做。
+
+<!-- XREF-NOTE-END -->
 
 
 ## 1. 六个必备面
@@ -180,7 +207,7 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 | 输入 | sha256 | 用途 |
 |---|---|---|
 | `docs/dingwei-platform-specdoc.md` @ `4220195` | `66df042ec49e6c7345e5c5cdbe1cf4e7f5c3bbdc94a1c671bb35c588532e8e0f` | v3.73 §14–§16、owner_sp 含 SP4 的附录 E |
-| `docs/dingwei-platform-architecture.md` | `0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc` | CAP 边界、5 接口、2 事件、数据与原型入口 |
+| `docs/dingwei-platform-architecture.md` | `0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc` | CAP 边界、五个既有接口、两个既有域事件、数据与原型入口 |
 | `docs/dingwei-prototype.html` | `eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8` | skill/MCP 入口 `s5` 的交互输入 |
 | `docs/dingwei-sp0-design.md` | `f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec` | 规则版本与评审 seam 的冻结输入 |
 | `docs/dingwei-sp1-design.md` | `8fafe6c5bac5595eaa771543dfc4199ba3670081786f1769f39833dc616e27bf` | AccessCtx/企业边界的冻结输入 |
@@ -203,7 +230,7 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 | `D-SP4-08` | 生命周期与晋升 | 三件事分判、候选触发、晋升与创建解耦；**按 SP8 §11.5a 落消费侧**：**六项独立复算**（①签名集合 ≥`required_signatures` 个互不相同合格 principal · ②`audience`/`enterprise_id` 一致 · ③`scope` 含本 effect 且 `effect_target_digest` 逐位相同 · ④未过期未吊销 · ⑤**原子 claim 取 execute permit** · ⑥**无 permit 不得发起外部 effect**）；**重放非终态只得 `IN_PROGRESS`，只能等待或按 `retry_after` 重试查询，不得据同一 claim 二次执行**；接管路径的 `fence_token` 与对账义务见 `D-SP4-11` |
 | `D-SP4-09` | 自我进化与回写 | 提案不批准、暂存审批、回写纪律、SYNC IMPACT REPORT |
 | `D-SP4-10` | immutable 与装卸对称 | 名单与重两签、对称审批、capability-effect 判据、紧急原语与 fallback |
-| `D-SP4-11` | 接口与事件合同 | 5 接口 + 2 事件逐项 schema/effect/auth/idempotency/generation/tx/error/audit；tombstone 与 `installation_generation` fencing；**凡产生外部 effect 的接口（`CAP-CMD-RequestPromotion`〔§0.3 明列的平台级晋升正是这条路〕/`CAP-CMD-Distribute`/`CAP-CMD-Uninstall` 及其派发面）须在合同列写明其 `approval_ref` 与 execute permit 的取用点**；并落 **SP8 §11.5a 第 ⑥ 项的接管语义**：`claimed→executing` CAS 须校验 `execution_owner`＋`fence_token`＋grant 仍有效同代；**lease 过期后的接管必须持新 `fence_token`，且先对账（查既有 `effect_result`/外部副作用是否已发生）再决定是否执行，不得盲重执行**；对账不可判时置 `unknown` 并转 reconcile，不得默认重发 |
+| `D-SP4-11` | 接口与事件合同 | 五个既有接口 ＋ 两个既有域事件逐项 schema/effect/auth/idempotency/generation/tx/error/audit；tombstone 与 `installation_generation` fencing；**凡产生外部 effect 的接口（`CAP-CMD-RequestPromotion`〔§0.3 明列的平台级晋升正是这条路〕/`CAP-CMD-Distribute`/`CAP-CMD-Uninstall` 及其派发面）须在合同列写明其 `approval_ref` 与 execute permit 的取用点**；并落 **SP8 §11.5a 第 ⑥ 项的接管语义**：`claimed→executing` CAS 须校验 `execution_owner`＋`fence_token`＋grant 仍有效同代；**lease 过期后的接管必须持新 `fence_token`，且先对账（查既有 `effect_result`/外部副作用是否已发生）再决定是否执行，不得盲重执行**；对账不可判时置 `unknown` 并转 reconcile，不得默认重发 |
 | `D-SP4-12` | 复用、CAP 数据与追踪验收 | 现状 retain/adapt/rewrite/new/retire + conformance；CAP schema 与 SP7b 五列；§14–§16、E、接口、事件、原型入口的覆盖与证据出口 |
 
 正文须提供 `COVERAGE-SP4-BEGIN/END` 严格两列表格；checker 只从块内第二列真实 `D-SP4-*` 取实检集合。
@@ -228,8 +255,8 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 |---|---|---|---|
 | `AC-SP4-01` | checker 派生的 §14–§16 heading | COVERAGE 逐项 D 落点，未知 0 | 落点语义正确性 |
 | `AC-SP4-02` | owner_sp 含 SP4 的附录 E 行 | 逐项语义落点，未知 0 | 人工判据是否专业正确 |
-| `AC-SP4-03` | 架构 §6 CAP 接口 | 5 接口逐项落点，无 RT/EV 跨表污染 | 字段语义充分性 |
-| `AC-SP4-04` | 架构 §4.2 owner=CAP 事件 | 2 事件逐项落点；新增事件 ID 0 | 消费方实现状态 |
+| `AC-SP4-03` | 架构 §6 CAP 接口 | 五个既有接口逐项落点，无 RT/EV 跨表污染 | 字段语义充分性 |
+| `AC-SP4-04` | 架构 §4.2 owner=CAP 事件 | 两个既有域事件逐项落点；新增事件 ID 0 | 消费方实现状态 |
 | `AC-SP4-05` | 架构 §13 主责域含 CAP 的原型入口 | 逐项落点且冻结原型中存在 | UI 可用性与实现状态 |
 | `AC-SP4-06` | 判型三判据与归属分级 | 三判据各自可判、互不替代；分级按 §14.3a | 某具体资产该判哪类 |
 | `AC-SP4-07` | 准入三层与 SP8 §11.5a 接线 | CAP 不自造批准权；**六项独立复算齐**（项数按 §0.2a 台账在 `970effe` 上机器派生，手写分母漂移即红）；**外部 effect 前必持 execute permit**（`claimed→executing` CAS 校验 owner＋`fence_token`＋grant 同代，失败即拒）；**重放非终态返 `IN_PROGRESS` 且不发起第二次 effect**（只等待或按 `retry_after` 重查）；**lease 过期接管须持新 `fence_token` 且先对账再决定是否执行**，对账不可判置 `unknown` 转 reconcile，**不得盲重执行** | 批准决定是否恰当、SP8 实现是否正确 |
@@ -260,7 +287,7 @@ CAP 不拥有 principal、批准权、知识内容、Agent runtime、企业库�
 | **与已收口 SP8 的接口差异** | SP8 已收口（合同 `a8066f5`、正文 `970effe`）。本件按其 §11.5a 接线；**若发现该合同与本件所需不符，停止该路径并登记差异交 coordinator/业主裁**，不改已收口件、也不在 CAP 侧自造等价物 |
 | 与已收口 SP1/SP2/SP3 seam 对撞 | 停止该路径，登记接口差异并交裁；不改已收口件，也不单方给上游产物加必填字段 |
 | 目标与现状代码冲突 | 记 retain/adapt/rewrite 差距；旧实现不升级为目标规则 |
-| **跨件引用计数漂移**〔本版新增〕 | 合同所称「N 项/N 个接口/N 个事件」与目标锚现算不符时，`xref-check.sh` **exit 2**；一律**以目标锚现算为准更正合同**（并同步 §0.2a 台账与全部正文短语），不得改台账迁就旧数字、也不得为凑数字换锚 |
+| **跨件引用计数漂移**〔本版新增〕 | 合同所称「N 项/N 个接口/N 个事件」与目标锚现算不符时，`xref-check.sh` **exit 2**；一律**以目标锚现算为准更正合同**（并同步 §0.2a 台账与全部正文形态），不得改台账迁就旧数字；**「为凑数字换锚」已由机器挡住**：台账锚须与 ⑥ 输入表逐字一致，改锚必先改 ⑥ 表，而 ⑥ 表与两个 checker 常量三方对撞 |
 | 合同范围或机器集合变化 | bump 合同并重走三方评审，未过不写正文 |
 
 ## 6. 开工门
