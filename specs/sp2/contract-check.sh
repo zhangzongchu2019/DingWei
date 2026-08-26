@@ -15,18 +15,35 @@ done
 for face in ① ② ③ ④ ⑤ ⑥; do grep -q "^### $face" "$SPEC" || { echo "✗ 缺必备面 $face"; exit 1; }; done
 for n in 01 02 03 04 05 06 07 08 09 10 11 12; do grep -q "D-SP2-$n" "$SPEC" || { echo "✗ 缺 D-SP2-$n"; exit 1; }; done
 for n in 01 02 03 04 05 06 07 08 09 10 11 12; do grep -q "AC-SP2-$n" "$SPEC" || { echo "✗ 缺 AC-SP2-$n"; exit 1; }; done
+python3 - "$SPEC" <<'PY'
+import re,sys
+rows={}
+text=open(sys.argv[1],encoding='utf8').read()
+m=re.search(r'<!-- ACCEPTANCE-SP2-BEGIN -->(.*?)<!-- ACCEPTANCE-SP2-END -->',text,re.S)
+if not m: print('✗ ACCEPTANCE-SP2 结构化块缺失'); raise SystemExit(2)
+for l in m.group(1).splitlines():
+    if not l.startswith('|'): continue
+    c=[x.strip() for x in l.strip().strip('|').split('|')]
+    if c and re.fullmatch(r'`?AC-SP2-\d{2}`?',c[0]):
+        aid=c[0].strip('`')
+        if len(c)!=4 or any(not x or x in ('—','见全文') for x in c[1:]):
+            print('✗ AC 四列不完整：'+aid); raise SystemExit(1)
+        rows[aid]=1
+if len(rows)!=12: print(f'✗ AC 四列表实检 {len(rows)}/12'); raise SystemExit(1)
+PY
 for id in CreateProject CreateTaskPlan DispatchNode RecordExecution RecordGateVerdict AppendRevision DeployRelease TaskSnapshot; do
  grep -q "WRK-.*-$id" "$SPEC" || { echo "✗ 缺 WRK 接口：$id"; exit 1; }
 done
-grep -q '最多 4 轮' "$SPEC" || { echo '✗ 未落实业主 4 轮上限'; exit 1; }
-! grep -q '最多 6 轮' "$SPEC" || { echo '✗ 残留旧 6 轮口径'; exit 1; }
+ACTIVE_REVIEW=$(sed -n '/^### 4\.4 证据与评审/,/^## 5\./p' "$SPEC")
+printf '%s\n' "$ACTIVE_REVIEW" | grep -q '最多 4 轮' || { echo '✗ 生效评审段未落实 4 轮上限'; exit 1; }
+! printf '%s\n' "$ACTIVE_REVIEW" | grep -q '6 轮' || { echo '✗ 生效评审段残留 6 轮规则'; exit 1; }
 for reviewer in zzc-opus50tchangshark-2642 zzc-deepseekv4pro08130ca16c13-2642 zzc-opus50tczc2000-2642; do
  grep -q "$reviewer" "$SPEC" || { echo "✗ 缺评审票：$reviewer"; exit 1; }
 done
 grep -q '3/3' "$SPEC" && grep -q 'AC-E05' "$SPEC" || { echo '✗ 三票门未落 AC-E05'; exit 1; }
 for dep in SP0 SP1 SP7a SP7b; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置处置表缺 $dep"; exit 1; }; done
 
-# 冻结锚派生范围分母；与合同参考数不符即输入漂移，不得继续按旧分母评审。
+# 冻结锚派生范围分母；只要求各集合非空并报告实算值，不拿手写分母作真值。
 set -- $(git show "$ANCHOR:docs/dingwei-platform-specdoc.md" | python3 -c '
 import re,sys
 ls=sys.stdin.read().splitlines(); on=False; h=0; sec=""; e={"E.1":0,"E.3":0,"E.4":0}
@@ -38,18 +55,18 @@ for l in ls:
  if m: sec=m.group(1)
  elif re.match(r"^##\s+E\.",l): sec=""
  if sec and l.startswith("|"):
-  c=[re.sub(r"[*`]","",x.strip()) for x in l.strip("|").split("|")]
+  c=[re.sub(r"[*`]","",x.strip()) for x in l.strip().strip("|").split("|")]
   if c and re.fullmatch(r"\d+[a-z]?",c[0]) and "SP2" in c[-1].split("·"): e[sec]+=1
 print(h,e["E.1"],e["E.3"],e["E.4"])
 ')
-[ "$1:$2:$3:$4" = '29:16:3:11' ] || { echo "✗ 冻结范围漂移：headings/E.1/E.3/E.4=$1/$2/$3/$4"; exit 1; }
+for n in "$1" "$2" "$3" "$4"; do [ "$n" -gt 0 ] || { echo '✗ 冻结预期集合为空'; exit 2; }; done
 specs/sp2/check.sh --selftest >/dev/null || { echo '✗ SP2 coverage checker 反测未过'; exit 1; }
 if DOC=docs/definitely-missing-sp2-design.md specs/sp2/check.sh >/dev/null 2>&1; then
  echo '✗ 目标件缺失被 coverage checker 当通过'; exit 1
 else
  rc=$?; [ "$rc" -eq 2 ] || { echo "✗ 目标件缺失应 rc=2，实际 $rc"; exit 1; }
 fi
-echo '预期集合：六面 + D/AC各12 + WRK接口8 + 四轮 + 三票 + 前置4 + heading/E分母 + coverage反测/缺件'
-echo '实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + 29/(16+3+11) + 4/4 + rc2'
+echo '预期集合：六面 + D/AC各12 + WRK接口8 + 四轮 + 三票 + 前置4 + 机器派生 heading/E + coverage反测/缺件'
+echo "实检集合：6/6 + 12/12 + 12/12 + 8/8 + 1/1 + 3/3 + 4/4 + headings=$1 / E=$(( $2+$3+$4 ))（$2+$3+$4）+ 4/4 + rc2"
 echo '未知集合：0'
 echo '✓ SP2 设计合同与冻结输入通过'

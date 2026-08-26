@@ -37,7 +37,7 @@ def expected_sets():
         if m: sec=m.group(1)
         elif re.match(r'^##\s+E\.',l): sec=''
         if sec and l.startswith('|'):
-            c=[re.sub(r'[*`]','',x.strip()) for x in l.strip('|').split('|')]
+            c=[re.sub(r'[*`]','',x.strip()) for x in l.strip().strip('|').split('|')]
             if c and re.fullmatch(r'\d+[a-z]?',c[0]) and 'SP2' in c[-1].split('·'): e.append(f'E:{sec}#{c[0]}')
     iface=[]
     for l in arch.splitlines():
@@ -59,7 +59,7 @@ def inspect(text,quiet=False):
     actual=set()
     for l in m.group(1).splitlines():
         if not l.startswith('|'): continue
-        c=[x.strip() for x in l.strip('|').split('|')]
+        c=[x.strip() for x in l.strip().strip('|').split('|')]
         if len(c)!=2: continue
         token=c[0].lstrip('`').split('`',1)[0]
         if re.search(r'\bD-SP2-\d{2}\b',c[1]): actual.add(token)
@@ -69,8 +69,22 @@ def inspect(text,quiet=False):
         if not quiet: print(f'[{k}] 预期={len(want)} 实检={len(got)} 未知={len(unknown)} {unknown}')
     ids=re.findall(r'^## (D-SP2-\d+)',text,re.M); miss=[f'D-SP2-{i:02d}' for i in range(1,13) if ids.count(f'D-SP2-{i:02d}')!=1]
     bad|=bool(miss)
+    am=re.search(r'<!-- ACCEPTANCE-SP2-BEGIN -->(.*?)<!-- ACCEPTANCE-SP2-END -->',text,re.S)
+    if not am:
+        if not quiet: print('✗ ACCEPTANCE-SP2 结构化块缺失')
+        return 2
+    ac={}
+    for l in am.group(1).splitlines():
+        if not l.startswith('|'): continue
+        c=[x.strip() for x in l.strip().strip('|').split('|')]
+        if len(c)!=4: continue
+        aid=c[0].strip('`')
+        if re.fullmatch(r'AC-SP2-\d{2}',aid) and all(x and x not in ('—','见全文') for x in c[1:]): ac[aid]=c[1:]
+    ac_miss=[f'AC-SP2-{i:02d}' for i in range(1,13) if f'AC-SP2-{i:02d}' not in ac]
+    bad|=bool(ac_miss)
     if not quiet:
         print(f'[delivery] 预期=12 实检={12-len(miss)} 未知={len(miss)} {miss}')
+        print(f'[acceptance] 预期=12 实检={12-len(ac_miss)} 未知={len(ac_miss)} {ac_miss}')
         print('受检范围：冻结 SpecDoc §5–§9 heading/owner_sp=SP2 E 行、目标架构 WRK 接口、原型直接入口。')
         print('能力边界：只判结构化来源→D-SP2 落点与 ID 形状；判不了映射语义、接口充分性或实现状态。')
     return 1 if bad else 0
@@ -78,7 +92,9 @@ def inspect(text,quiet=False):
 def fixture():
     rows=[f'| `{x}` | `D-SP2-12` |' for g in expected.values() for x in sorted(g)]
     heads='\n'.join(f'## D-SP2-{i:02d} fixture' for i in range(1,13))
-    return heads+'\n<!-- COVERAGE-SP2-BEGIN -->\n| 来源 | 设计落点 |\n|---|---|\n'+'\n'.join(rows)+'\n<!-- COVERAGE-SP2-END -->\n'
+    ac='\n'.join(f'| `AC-SP2-{i:02d}` | fixture scope | fixture criterion | fixture boundary |' for i in range(1,13))
+    return heads+'\n<!-- COVERAGE-SP2-BEGIN -->\n| 来源 | 设计落点 |\n|---|---|\n'+'\n'.join(rows)+\
+      '\n<!-- COVERAGE-SP2-END -->\n<!-- ACCEPTANCE-SP2-BEGIN -->\n| ID | 受检范围 | 判据 | 判不了什么 |\n|---|---|---|---|\n'+ac+'\n<!-- ACCEPTANCE-SP2-END -->\n'
 if mode=='--selftest':
     base=fixture(); first=sorted(expected['spec'])[0]; n=0; fail=0
     def test(name,text,want):

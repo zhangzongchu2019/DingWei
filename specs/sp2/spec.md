@@ -7,7 +7,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp2-design` |
-| **合同版本** | v1.3 |
+| **合同版本** | v1.4 |
 | **状态** | `draft-for-review` |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
@@ -41,7 +41,13 @@ SpecDoc §0.3 对 SP2 的定义唯一且与目标架构一致：
 将评审方预公布的十条判据固化为 `specs/sp2/check.sh`：四类预期集合全由冻结输入派生，只认
 `COVERAGE-SP2` 块内两列表格与真实 `D-SP2-*` 落点；缺块/空预期/输入不可取均 exit 2；自带正交变异反测。
 
-### 0.5 前置依赖的当前状态与处置
+### 0.5 SYNC IMPACT REPORT（v1.3 → v1.4）
+
+- 沿革中的“6 轮”不再参与生效规则检查；checker 只检查当前评审协议段为最多 4 轮。
+- 删除冻结范围的手写 29/30 比较；只要求四类机器派生集合非空并打印该次实算值。
+- 每条正文 AC 固定为“ID / 受检范围 / 判据 / 判不了什么”四列，并由 checker 校验结构化验收块。
+
+### 0.6 前置依赖的当前状态与处置
 
 | 前置/责任 | 当前可用事实 | SP2 设计期处理 | SP2 实现期开工门 |
 |---|---|---|---|
@@ -137,6 +143,8 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 第一列为派生 token，第二列须含真实 `D-SP2-xx`；块外提及、块内散文、空落点、“见全文”均不计。
 检查器输出四类预期/实检/未知集合；未知非空不得宣称覆盖完成，预期空/块缺失/输入不可取均 exit 2。
 `--selftest` 固化：正常放行、删真落点转红、块外补同 token 仍红、缺块 exit 2。
+正文另须提供 `ACCEPTANCE-SP2-BEGIN/END` 四列表格；每条 `AC-SP2-*` 独立填写受检范围与能力边界，
+不得用全局边界句代替逐条说明，也不得写空值或“见全文”。
 
 ## 3. 明确不交付
 
@@ -148,33 +156,37 @@ execution/gate outcome、revision、release/rollback、复盘记录、outbox/aud
 
 ## 4. 验收合同
 
+<!-- ACCEPTANCE-SP2-BEGIN -->
+
 ### 4.1 结构
 
-| ID | 判据 |
-|---|---|
-| `AC-SP2-01` | `specs/sp2/check.sh` 派生的 SpecDoc 来源集合全部具有结构化落点；未知 0 |
-| `AC-SP2-02` | checker 派生的 owner_sp=SP2 附录 E 集合逐项落点；未知 0 |
-| `AC-SP2-03` | checker 派生的原型入口集合逐项落点；未知 0 |
-| `AC-SP2-04` | checker 派生的目标架构 WRK 接口集合逐项落点；目标架构新增接口 ID 0 |
+| ID | 受检范围 | 判据 | 判不了什么 |
+|---|---|---|---|
+| `AC-SP2-01` | checker 从冻结 SpecDoc 派生的 §5–§9 heading 集合 | 每个 token 在 COVERAGE 块有 D-SP2 落点，未知 0 | 落点语义是否正确 |
+| `AC-SP2-02` | checker 派生的 owner_sp=SP2 附录 E 集合 | 逐项结构化落点，未知 0 | 探测手段是否足够 |
+| `AC-SP2-03` | checker 派生的原型直接入口集合 | 逐项结构化落点，未知 0 | UI 是否好用或实现 |
+| `AC-SP2-04` | checker 派生的目标架构 WRK 接口集合 | 逐项落点；新增接口 ID 0 | 接口字段语义是否完整 |
 
 ### 4.2 语义
 
-| ID | 判据 |
-|---|---|
-| `AC-SP2-05` | execution 与 gate 两轴独立，DAG eligibility/封存/FAIL 逐项无矛盾 |
-| `AC-SP2-06` | 每个 mutating command 有 request_id、generation/state、principal、tx/audit |
-| `AC-SP2-07` | 门方≠执行者按 principal 判；Agent/session/显示名反例均拒绝 |
-| `AC-SP2-08` | gate FAIL、execution failed、blocked、timeout、cancel 的返工与终结路径互不混淆 |
-| `AC-SP2-09` | deploy/rollback capability 不被 node/template 绕过授权、幂等和审计 |
-| `AC-SP2-10` | 迟到、重投、外部 effect 未知、部分失败有 fencing/reconcile；不猜成功 |
-| `AC-SP2-11` | conformance suite 覆盖既有并发语义；未覆盖项不宣称保留/替换完成 |
-| `AC-SP2-12` | WRK schema migration/cutover/rollback 五列转交齐；设计 PASS 不升级实现 PASS |
+| ID | 受检范围 | 判据 | 判不了什么 |
+|---|---|---|---|
+| `AC-SP2-05` | node execution/gate/eligibility/seal 状态与 guard | 两轴独立，eligibility/封存/FAIL 无矛盾 | 代码状态机是否实现 |
+| `AC-SP2-06` | 正文列出的全部 WRK mutating command | request_id、generation/state、principal、tx/audit 齐 | SDK/handler 是否漏传 |
+| `AC-SP2-07` | reviewer/implementer 冲突与 Agent/session/display-name 反例 | 比对 verified principal，反例均拒绝 | 真实 reviewer 是否具备专业能力 |
+| `AC-SP2-08` | gate FAIL/execution failed/blocked/timeout/cancel | 返工、终结与证据路径分别定义 | 运行异常是否穷尽 |
+| `AC-SP2-09` | deploy/rollback node、effect grant、capability、result | node/template 不绕授权、幂等、审计 | 外部部署器是否可靠 |
+| `AC-SP2-10` | 迟到、重投、未知 effect、部分失败 | fencing/reconcile 齐且不猜成功 | 生产网络故障覆盖率 |
+| `AC-SP2-11` | 合同列出的既有并发语义与 conformance 用例 | 每项有正反例；未覆盖项不宣称已判 | 未观测隐藏语义 |
+| `AC-SP2-12` | WRK schema migration/cutover/rollback 转交表 | 被测对象/输入/期望/证据/验收门齐 | 实际迁移与回滚结果 |
 
 ### 4.3 评审证据门
 
-| ID | 判据 |
-|---|---|
-| `AC-E05` | 三位评审者 `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` 均对同一锚独立给 PASS（3/3）；缺任一票即未过，不以 2/3 多数替代 |
+| ID | 受检范围 | 判据 | 判不了什么 |
+|---|---|---|---|
+| `AC-E05` | 同一正文锚上的三份独立 verdict | 三位评审者均 PASS（3/3）；缺任一票即未过 | 票的专业质量与判断正确性 |
+
+<!-- ACCEPTANCE-SP2-END -->
 
 ### 4.4 证据与评审
 
