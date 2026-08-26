@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.44 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.46 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.44</span></h1>
-  <span class="anchor">原型 <b>v1.44</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.46</span></h1>
+  <span class="anchor">原型 <b>v1.46</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -1047,11 +1047,11 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：本屏当初无对应条款 <span class="ref">§25.5 Agent 名册已补</span></h3>
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.5「Agent 名册」自 v3.0 起已补</b>。
-</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+</div>
   
   <div class="note bad" data-edit>SpecDoc §26「Agent 管理」只定义了<b>管理动作</b>（新建 / 关闭 / 重启 / 上下文注入）与<b>三形态的凭据策略</b>，
   <b>没有定义「查看 Agent 在干什么」这个面</b>。<br>
-  ⇒ 本屏当时为<b>原型先行</b>。✅ 现已回写为 <b>§25.5 Agent 名册</b>（v3.0 起生效），并走过评审。</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+  ⇒ 本屏当时为<b>原型先行</b>。✅ 现已回写为 <b>§25.5 Agent 名册</b>（v3.0 起生效），并走过评审。</div>
 </div>
 </section>
 
@@ -1176,10 +1176,10 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：§25.4 当初只有两行 <span class="ref">§25.4.1–§25.4.6 已重写</span></h3>
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.4 自 v3.0 起已重写为 §25.4.1–§25.4.6</b>（含原生交互适用范围、ops 紧急面、开放讨论落帖子流等）。
-</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+</div>
   <div class="note bad" data-edit>§25.4 全节正文仅：「不砍 view 页，sidecar 常开做旁路」＋ 一句理由。
   <b>没有任何界面定义</b> —— 发什么、怎么发、发之前过哪些闸、Agent 收到的是什么形状，全部未写。<br>
-  ⇒ 本屏当时为<b>原型先行</b>。✅ 现已回写为 <b>§25.4.1–§25.4.6</b>（业主已确认，v3.0 起生效）（原议的另一路径 <b>§25.7</b> 现承载附件与多模态）。</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+  ⇒ 本屏当时为<b>原型先行</b>。✅ 现已回写为 <b>§25.4.1–§25.4.6</b>（业主已确认，v3.0 起生效）（原议的另一路径 <b>§25.7</b> 现承载附件与多模态）。</div>
 </div>
 </section>
 
@@ -1310,7 +1310,7 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：环境供给当初未定义 <span class="ref">§26.4 已落</span></h3>
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §26.4 及 §26.4.1–26.4.4 自 v3.0 起已落</b>。
-</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+</div>
   
   <div class="note bad" data-edit>§26 三个小节只有：三形态的<b>信任与凭据等级</b>（26.1）、<b>K 层与 skill 的上下文注入</b>（26.2）、
   <b>管理面新建 / 下发面复用</b>（26.3）。<br>
@@ -1574,7 +1574,7 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：三类交付物当初无查阅入口 <span class="ref">§25.3 已扩至七类</span></h3>
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §25.3「交付物与规范查阅入口（v3.0 扩）」已覆盖七类。</b>
-</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+</div>
   <div class="note bad" data-edit>§25.3 只覆盖<b>两类</b>：spec 文档、架构设计文档。<br>
   它们在 §5.6 映射表里作为<b>环节名</b>出现（测试用例 / 用例评审 / 测试执行），
   在 §6.1 里作为<b>回执要素</b>出现（自测结果），<b>但从未作为「可查阅的交付物」被定义过入口</b>。<br><br>
@@ -1689,7 +1689,7 @@ body.uionly #uihint{display:block}
   <div class="ctl"><button data-up>↑</button><button data-dn>↓</button><button data-hide>✕</button></div>
   <h3>🕐 溯源记录：§21 当初未定义账号合并 <span class="ref">§21.4 已落</span></h3>
   <div class="note" data-edit>✅ <b>本条已落：SpecDoc §21.4 / §21.4a / §21.4b 自 v3.0 起已定义渠道账号与人的绑定。</b>
-</div><!-- style-ok: 沿革表述(描述某规则在哪一版引入/撤销),非现行依据表述 -->
+</div>
   <div class="note bad" data-edit>§21 全文三小节：21.1 §21.1 双层结构 · 21.2 因子分级 · 21.3 双因子不等于双人。<br>
   全文搜「合并 / 联合 / 绑定 / 同一人 / IdP / SSO / subject / 多渠道账号」——
   <b>「绑定」的命中全部指向别的东西</b>（capability policy 绑六项、token 绑设备指纹、challenge 绑一次性凭据），
