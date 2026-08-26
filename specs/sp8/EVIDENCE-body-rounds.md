@@ -1,7 +1,7 @@
 # SP8 正文评审：四条阻断的闭合证据 —— 拉取式，不必与消息比对
 
 > 与 `EVIDENCE-blocker1.md` 同一理由：消息会交叉，仓不会。全部可自跑复算。
-> **当前正文锚 `704d4d9`（v1.5）**。首轮四条 ＋ 复审四条 ＋ 三审一条，全部在此锚内闭合。
+> **当前正文锚 `970effe`（v1.6）**。首轮 4 ＋ 复审 4 ＋ 三审 1 ＋ 四审 2，全部在此锚内闭合。
 
 | # | 提出方 | 阻断 | 闭合锚 | 闭在哪（file:line @ `1f703b8`） |
 |---|---|---|---|---|
@@ -47,3 +47,12 @@ git show 1f703b8:docs/dingwei-sp8-design.md | grep -n "^| \`gov_audit\`\|^| \`ef
 | claim 只防重复扣额、不防**重复执行 effect**；无 claimed/executing 状态与 lease/fencing/执行令牌 | §11.1：`grant_use` 生命周期 `claimed→executing→succeeded|failed|unknown` ＋ `execution_owner`／`fence_token`／`lease_expires_at`；**仅新 claim 的 owner 得 execute permit**；重放**终态返 outcome、非终态返 `IN_PROGRESS` 且不发第二张 permit**；lease 过期**受栅栏接管（先对账、不得盲重执行）或置 `unknown`**；revoke 与非终态 claim 交叉不得取得新 permit、转 rollback/reconcile。schema 行、跨表不变量 **2a**（至多一个有效 owner ＋ 恒零"超 SLA 无接管无 unknown"）、`AC-SP8-11`、消费侧合同第 6 条、**三类并发负测**同步 |
 
 快速核对：`git show 704d4d9:docs/dingwei-sp8-design.md | grep -n "execute permit\|fence_token\|IN_PROGRESS\|lease_expires_at"`
+
+## 四审（第 4 轮）两处 —— 闭在 `970effe`(v1.6)
+
+| 缺口 | 闭在哪 |
+|---|---|
+| ① revoke×pending 未机械闭合：已发出的 permit 在 revoke 后仍可能启动 effect | §11.1 发起 CAS 补精确条件（`execution_owner` ＋ `fence_token` ＋ `state='claimed'` ＋ lease 未过期 ＋ `EXISTS`(grant 未吊销/未过期/同 generation)），影响 0 行 ⇒ `PERMIT_INVALID`；§11.3 revoke **同事务**把 `claimed` 置 **`aborted`** 并 `fence_token+1`（旧 permit 双重失效）、`executing` 保留 fence 以接受真实回填并挂回退义务；恒零「revoke 后旧 permit 仍启动 effect」 |
+| ② `grant_use` 标 append-only 与状态机/lease/回填自相矛盾 | schema 行改为 **受控单调状态更新**（普通角色无 `UPDATE` 权、转换合法性由触发器或写路径断言）＋ 新增真正 append-only 的 **`grant_use_history`**；新增 **§12.2c** 写明「不可篡改由历史表＋审计承担、当前态由受控更新承担，分工不得互换」；补 `state ↔ effect_result` 一致性约束与三条对账恒零 |
+
+快速核对：`git show 970effe:docs/dingwei-sp8-design.md | grep -n "PERMIT_INVALID\|aborted\|grant_use_history\|12.2c"`
