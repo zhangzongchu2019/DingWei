@@ -64,7 +64,11 @@ check() {
       done
     done
   done > /tmp/.iag.$$ 2>/dev/null
-  _bad=$(grep -c '^✗' /tmp/.iag.$$ 2>/dev/null || echo 0)
+  # 🔴 不用 `grep -c ... || echo 0` —— 空文件时 grep 既输出「0」又退出 1，
+  #    `||` 再补一个「0」⇒ 变量成了两行，`[ -gt ]` 报 Illegal number。
+  #    **那次它仍打印了 ✓** —— 报错与 ✓ 同时出现，正是本仓反复记的形态。
+  _bad=$(grep '^✗' /tmp/.iag.$$ 2>/dev/null | wc -l | tr -d ' \n')
+  case "${_bad:-}" in ''|*[!0-9]*) echo "✗ 计数异常（_bad=$_bad）—— 算不出就不能报通过"; rm -f /tmp/.iag.$$; return 2 ;; esac
   cat /tmp/.iag.$$ 2>/dev/null | sed 's/^/  /'
   rm -f /tmp/.iag.$$
   [ "$_files" -eq 0 ] && { echo "✗ 受检件为 0 —— 走不到就不能报数"; return 2; }
@@ -108,6 +112,20 @@ selftest() {
   # ⑤ 🔴 走不到就不能报数：受检件不存在须 exit 2，不得报「全过」
   ( cd "$T" && DOCS=docs/nofile.md sh "$SELF" >/dev/null 2>&1 )
   [ $? -eq 2 ] && ok "🔴 受检件缺失 ⇒ exit 2（走不到就不能报数），不报全过" || bad "件缺失却报通过"
+
+  # ⑥ 🔴 通过时【stderr 必须干净】—— 首版曾在报 ✓ 的同时打印 shell 报错
+  #    （`[: Illegal number`）。**报错与 ✓ 同时出现 ⇒ 读者只看见 ✓。**
+  _err=$( ( cd "$T" && DOCS=docs/a.md sh "$SELF" >/dev/null ) 2>&1 )
+  [ -z "$_err" ] && ok "🔴 通过时 stderr 干净（报错不得与 ✓ 同时出现）" \
+                 || bad "通过时有 stderr 输出：$_err"
+
+  # ⑦ 真有失败项时：计数正确 ＋ 明确打印该锚
+  printf '输入锚：`docs/ghost-a.md` 与 `docs/ghost-b.md`\n' > "$T/docs/e.md"
+  _out=$( ( cd "$T" && DOCS=docs/e.md sh "$SELF" ) 2>&1 ); _rc=$?
+  _cnt=$(printf '%s' "$_out" | grep -c '输入锚解析不到')
+  { [ $_rc -eq 1 ] && [ "$_cnt" -eq 2 ]; } \
+    && ok "两个悬空锚：均被点名且 return 1（计数正确）" \
+    || bad "多锚失败计数不对（rc=$_rc cnt=$_cnt）"
 
   rm -rf "$T"
   [ $fail -eq 0 ] && { echo "  输入锚闸反测 $n/$n ✓"; return 0; }
