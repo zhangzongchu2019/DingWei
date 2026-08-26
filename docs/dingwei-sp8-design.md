@@ -1,9 +1,9 @@
-# DingWei SP8 授权与平台治理设计 v1.1
+# DingWei SP8 授权与平台治理设计 v1.2
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp8-design` |
-| **版本** | v1.1 |
+| **版本** | v1.2 |
 | **状态** | draft，待三方全文评审 |
 | **冻结施工锚** | 组合冻结：SpecDoc `4220195`（v3.73）；架构/原型/SP0–SP3/代码基线 `6a98629` |
 | **合同锚** | `5241152`（`specs/sp8/spec.md` v1.4 ＋ 证据件） |
@@ -12,6 +12,7 @@
 | **评审** | `zzc-chatgpt56soltchangshark-2642`、`zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
 
 > 本件定义 GOV 治理面的目标设计与 SP7b 迁移合同，不声称批准链、grant 签发、分发闸或迁移已实现。
+> v1.2：把审批层级从单枚举拆成 `signature_count`＋`factor_requirement` 两个正交分量，三档逐档映射、次因子不再悬空。
 > v1.1：按首轮评审补 GOV 目标 schema（D-SP8-12 §12.2/§12.2a）与 grant/challenge 状态机、原子 claim、
 > 双签集合、revoke↔consume 竞态、跨 GOV/WRK 事务两形态（D-SP8-11 §11.1–§11.5）。
 > 批准**主体**一律取 SP1 的 verified principal；本件不自造批准权，也不改 SP0 定义层语义。
@@ -50,11 +51,31 @@ Agent 只入 audit provenance。缺 AccessCtx、缺 grant、grant 过期/吊销/
 判定：有预声明 ⇒ 路径为项目管理方逐次判断；无预声明 ⇒ 路径升为业主授权；
 **无论有无预声明，层级仍由敏感度与爆炸半径独立决定**；二者冲突取更严。
 
+#### 2.1a 层级三档是两个正交分量，不是一个枚举〔首轮评审阻断的闭法〕
+
+上一版把层级写成单枚举 `{single, second_factor, dual_sign}`，导致「**次因子**」在签数面**悬空**——
+它根本不是"签几次"，而是"**认证强度**"。本版拆成两个正交分量，三档由二者组合表达，**无悬空值**：
+
+| 分量 | 取值 | 谁给结论 | 语义 |
+|---|---|---|---|
+| `signature_count` | `single` / `dual` | 本件（批准链） | **签几个独立 principal** |
+| `factor_requirement` | `single_factor` / `second_factor` | **SP1/IDN 的 assurance 面**（本件只消费结论，不定义认证方式） | **认证强度** |
+
+| §23.1 的层级档 | ＝ `signature_count` | ＋ `factor_requirement` | 渠道可终结？ |
+|---|---|---|---|
+| 单签 | `single` | `single_factor` | 低危：可终结（＋一次性 challenge）|
+| **次因子** | `single` | **`second_factor`** | 中危：**渠道可发起，须次因子确认后方可终结** |
+| 重两签 | **`dual`**（两个独立合格 principal）| 由敏感度另定，至少 `single_factor` | 高危：**渠道只能发起、不能终结**，须回强身份面 |
+
+🔴 **两个分量各自取严，不得互相抵扣**：
+**次因子不是重两签的替代品**——「已做次因子确认」**不得**用来把 `dual` 降回 `single`。
+恒零：以次因子为由跳过重两签而生效的次数。
+
 ### 2.2 反例（恒零）
 
 🔴 **预声明不得被用于降低层级**——一句预声明把 S0/S1 访问降成低危，是本节要恒零的那件事。
-`authorization_decision` 必须分别持久化 `path_axis`（预声明结论）与 `level_axis`（敏感度结论）**两个字段**，
-禁止合成一个 status；层级字段的输入只能是敏感度/爆炸半径，**schema 上不接受预声明作为其输入**。
+`authorization_decision` 必须分别持久化 `path_axis`（预声明结论）与层级的**两个分量** `signature_count` / `factor_requirement`（见 §2.1a），
+禁止合成一个 status；层级两列的输入只能是敏感度/爆炸半径与 assurance 结论，**schema 上不接受预声明作为其输入**。
 负测：以「已预声明」为由把 S0 访问判为低危 → 必须拒绝并落账；人审面另判「预授权是否企图降低固有风险等级」。
 
 ## D-SP8-03 spec 预授权
@@ -171,6 +192,12 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
 | **含任一高危项**（平台级 skill/MCP 晋升任何形式 / immutable 名单变更 / S0·S1 凭据 / 跨人 capability / 全网批量下发 / C1 原语面语义变更） | **整批升重两签**（两个**独立** principal） |
 
 🔴 **取批内最高危项的要求，不取多数、不取平均**；判据是「**是否在 immutable 名单内 ＋ 是否属高危枚举**」，**不举具体件为例**。
+
+🔴 **为什么批次面只有两档、而层级有三档**（与 §2.1a 的对应，避免读成"少了一档"）：
+`signature_count` 只有 `single`/`dual` 两值，批次签数表因此只有两行；**「次因子」是 `factor_requirement`，不是签数**，
+它作用在**授权动作的认证强度**上（§23.5 中危：渠道可发起、须次因子确认），**不改变批次要签几个人**。
+§24.1 范围内的项非"普通"即"高危"：**中危项若进入批次，按普通项计签数**（除非命中高危枚举，则整批升 `dual`），
+而其**次因子要求随该动作本身走，不因进了批次而消失**。⇒ 三档全部有落点，无悬空。
 拆批不得成为降低审批强度的手段：拆分后的每一批各自按本规则定签数，**拆批本身不降级**。
 恒零：批次含高危项而仅单签通过数。人审面另判：高危项认定是否遗漏、批次是否把互不相关或不同风险项捆绑以稀释逐项审查。
 
@@ -253,7 +280,7 @@ visibility 的语义与降级审批规则归 **SP3 §11.4b**，本件不改，�
   **在同一事务内**，两句任一影响行数为 0 ⇒ 整笔拒绝。⇒ **两个并发消费者不可能同时通过**：`grant_use` 的唯一键与 `used_count<use_limit` 的条件更新共同构成串行化点。
 - `claim_key` 由消费侧的 `request_id` 派生 ⇒ **同一 request 重放得到同一 claim**（幂等），不同 request 各占一次配额。
 
-**authorization_decision**：`draft → decided(approved|rejected)`，`path_axis` 与 `level_axis` 分列（D-SP8-02），决定后不可改，更正走新版本 ＋ `supersedes`。
+**authorization_decision**：`draft → decided(approved|rejected)`，`path_axis` 与层级两分量 `signature_count`／`factor_requirement` 分列（D-SP8-02 §2.1a），决定后不可改，更正走新版本 ＋ `supersedes`。
 
 ### 11.2 重两签：签名是集合，不是一个字段
 
@@ -289,7 +316,7 @@ SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在�
 | `GOV-CMD-IssueEffectGrant` | in: `approval_ref`(batch ＋ 签名集合)、`audience`、`effect_target_digest`、`scope`、`use_limit`、`expires_at`；out: `grant_id`＋`generation` | 单事务写 `effect_grant`＋审计＋outbox；**仅当批次 `approved` 且签数达标**才允许 | 批准主体 principal；签发者 ≠ 执行者 | `request_id` 唯一；grant `generation` 单调 | `FORBIDDEN` / `SCOPE_EXCEEDED` / `BATCH_NOT_APPROVED` / `IDEMPOTENCY_CONFLICT` | 签发、每次 claim、吊销各自落账 |
 | `GOV-CMD-DecidePending` | in: `pending_ref`、`challenge_id`＋回复、`decision`、`signer`；out: 决定记录 ＋ 批次签名行 | 同事务：challenge CAS ＋ 写 `batch_signature` ＋ 决定记录；达签数则批次转 `approved` | 批准方 ≠ 执行者；同一 principal 只计一票 | `request_id` 唯一；`(batch_id, signer_principal)` 唯一 | `CHALLENGE_INVALID`（重放/过期/摘要不符）/ `FORBIDDEN` / `DUPLICATE_SIGNER` | 每票与拒绝理由落账 |
 | `GOV-CMD-SubmitSpec` | **seam（语义归 SP0）**：只读消费 spec 版本与锚 | 不在本件事务内 | 不改其 auth | 本件只按 `spec_version_anchor` 判绑定是否仍有效 | 规则缺失 ⇒ 本件 fail-closed 拒绝授权 | 引用关系落账 |
-| `GOV-QRY-ResolveGateSet` | **seam（语义归 SP0）**：只读消费规则版本 | 只读 | 不改其解析语义 | 规则版本进入 `level_axis` 判定输入 | 版本缺失/撤销 ⇒ 拒绝授权 | 判定输入落账 |
+| `GOV-QRY-ResolveGateSet` | **seam（语义归 SP0）**：只读消费规则版本 | 只读 | 不改其解析语义 | 规则版本进入层级两分量的判定输入 | 版本缺失/撤销 ⇒ 拒绝授权 | 判定输入落账 |
 
 ### 11.5a 消费侧合同（对各 effect owner，含挂起中的 SP4）
 
@@ -335,7 +362,7 @@ SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在�
 |---|---|---|---|---|---|---|
 | `spec_preauth` | `preauth_id` | `spec_ref`→SP0 只读锚 | `(spec_ref, spec_version_anchor, scope_digest)` | `state ∈ {active,expired,revoked}`；`scope/purpose/deadline` NOT NULL 且非空串 | `(state, deadline)`、`(spec_ref)` | 正文不可改；更正新版本 ＋ `supersedes` |
 | `preauth_expiry` | `expiry_id` | `preauth_id` | `(preauth_id, trigger_kind, trigger_ref)` | `trigger_kind ∈ {closeout,version_change,deadline}` | `(preauth_id)` | append-only |
-| `authorization_decision` | `decision_id` | `subject_ref`、`preauth_id?` | `(subject_ref, request_id)` | `path_axis ∈ {preclaimed,owner_auth}`；`level_axis ∈ {single,second_factor,dual_sign}`；`outcome ∈ {approved,rejected}` | `(subject_ref)`、`(decided_at)` | decided 后不可改 |
+| `authorization_decision` | `decision_id` | `subject_ref`、`preauth_id?` | `(subject_ref, request_id)` | `path_axis ∈ {preclaimed,owner_auth}`；**`signature_count ∈ {single,dual}`**；**`factor_requirement ∈ {single_factor,second_factor}`**（两列，非单枚举）；`outcome ∈ {approved,rejected}` | `(subject_ref)`、`(decided_at)` | decided 后不可改 |
 | `challenge` | `challenge_id` | `pending_ref` | `(pending_ref, state) WHERE state='issued'`（同一待批项同时只允许一个可用凭据） | `state ∈ {issued,consumed,expired,superseded}`；`expires_at` NOT NULL | `(state, expires_at)` | 状态只前进，不回退 |
 | `batch` | `batch_id` | —— | `manifest_digest` | `state ∈ {draft,pending,approved,rejected}`；`required_signatures ∈ {1,2}` | `(state)` | `manifest` 冻结后不可改 |
 | `batch_item` | `(batch_id, item_seq)` | `batch_id` | `(batch_id, item_ref)` | `risk ∈ {normal,high}`；`impact_report_ref` NOT NULL | `(batch_id)` | append-only |
@@ -370,7 +397,8 @@ SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在�
 ### 12.3 证据出口
 
 - coverage checker：来源集合 / 实检集合 / 未知集合；
-- 授权两轴负测：预声明降层级必拒；
+- 授权两轴负测：预声明降层级必拒；**以「已做次因子确认」为由把 `dual` 降为 `single` 必拒**；
+  三档映射用例：低危(single+single_factor) / 中危(single+second_factor，渠道须次因子后方可终结) / 高危(dual，渠道不得终结)；
 - 预授权：禁用词与三字段空缺扫描、失效三触发用例；
 - challenge：重放 / 摘要不符 / 过期三类负测；
 - 签数：含高危项批次单签必拒、**同一 principal 凑双签必拒**、拆批不降级用例；
@@ -471,7 +499,7 @@ SpecDoc 要求发版收口与预授权失效"同一事务"。二者可能不在�
 | `AC-SP8-03` | 架构 §6 GOV 接口 | 4 接口逐项落点；本件只对授权/批准/grant 面给实体判据，SubmitSpec/ResolveGateSet 只写 seam | 定义层语义是否恰当（归 SP0） |
 | `AC-SP8-04` | §13 GOV 入口减 SP0 完整认领（含 `s1`） | 差集逐项落点且原型中存在；`s1` 落点在批准面 | UI 可用性与实现状态 |
 | `AC-SP8-05` | 事件面 | `EV-GOV-*` 实算 0 且正文不产出事件 ID | 未来是否该有事件 |
-| `AC-SP8-06` | 授权两轴与预授权 | 两轴分别持久化、层级不接受预声明为输入；预授权三字段齐且无禁用词 | 某次授权决定是否恰当 |
+| `AC-SP8-06` | 授权两轴、层级两分量与预授权 | 两轴分别持久化；**层级落成 `signature_count` ＋ `factor_requirement` 两列**，§23.1 三档逐档有映射、无悬空值；**次因子不得抵扣重两签**（以次因子为由跳过 `dual` 必拒）；层级两列不接受预声明为输入；预授权三字段齐且无禁用词 | 某次授权决定是否恰当 |
 | `AC-SP8-07` | 失效触发 ＋ 预案承接 | 收口/版本/时限三类机制触发且按条目×作用域判；上线后依据为预案条目 | 运维是否照做 |
 | `AC-SP8-08` | 渠道分级、challenge 与门 PASS 层级 | 分级与可达步骤对应；challenge 三要素齐且重放/摘要不符/过期必拒；门 PASS 层级继承 node 分级、L3 不得由渠道终结 | 危险度评估是否准确 |
 | `AC-SP8-09` | 基线范围与签数 | §24.1 范围可判；签数取批内最高危项、拆批不降级 | 高危认定是否遗漏（人审） |
