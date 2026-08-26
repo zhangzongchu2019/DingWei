@@ -1,4 +1,4 @@
-# DingWei 平台目标架构 v1.0
+# DingWei 平台目标架构 v1.1
 
 > 本件从新版 SpecDoc 与原型重新设计目标架构，同时承载分域定义、接口设计与技术架构设计。
 > 旧 `docs/dingwei-architecture-design.md` 已降为历史参考，不是本件输入，也不是本件的修改对象。
@@ -8,7 +8,7 @@
 | 项 | 值 |
 |---|---|
 | **Architecture ID** | `dingwei-platform-target-architecture` |
-| **版本** | v1.0 |
+| **版本** | v1.1 |
 | **状态** | draft，待全文评审 |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
@@ -36,6 +36,12 @@
 
 输入冲突按以下顺序处理：SpecDoc 正文现行定义与 F.0 索引 > 原型交互 > 代码现状。附录 F 中被 F.0 标为撤销/改判的过程记录
 不进入目标设计；原型或代码与现行定义冲突时记录迁移差距，不静默降低现行定义。
+
+### 0.1.1 SYNC IMPACT REPORT（v1.0 → v1.1）
+
+- 增加 SpecDoc、生产 Go 包目录、原型 nav、责任主题四组机器覆盖声明，不再依赖手写分母。
+- 增加目标态 `new` 单元表，补齐迁移状态；原 8 域、40 接口、数据/运行/安全/迁移结论不变。
+- 覆盖检查由 `specs/platform-architecture/check.sh` 产出四集合；UNKNOWN 非空不能宣称覆盖闭合。
 
 ### 0.2 重做边界
 
@@ -106,6 +112,21 @@ DingWei 的业务一致性集中在企业、人、项目、任务、门、知识
 | `MSG` | 会话与投递域 | 管 canonical envelope、在线会话、寻址、投递、ACK、渠道适配 | session endpoint、envelope、delivery、route、channel receipt | SP6（通信基座） |
 
 `PLT` 不是业务域；它是所有业务域共用的受控机制层，由 SP7a/SP7b 提供仓储与迁移能力。
+
+### 2.1.1 责任主题覆盖
+
+<!-- RESPONSIBILITY-COVERAGE-BEGIN -->
+| 主题 | 主责域/层 | 接口族 | 验收 |
+|---|---|---|---|
+| `RT-01` | IDN | `IDN-*`、`MSG-CMD-AcceptEnvelope` | `AC-S01`、`AC-S02` |
+| `RT-02` | GOV | `GOV-*` | `AC-S01`、`AC-S02` |
+| `RT-03` | WRK | `WRK-*` | `AC-S01`、`AC-S02` |
+| `RT-04` | KNO | `KNO-*` | `AC-S01`、`AC-S02` |
+| `RT-05` | CAP | `CAP-*`、`AGT-CMD-ActivateInstance` | `AC-S01`、`AC-S02` |
+| `RT-06` | COL | `COL-*` | `AC-S01`、`AC-S02` |
+| `RT-07` | AGT | `AGT-*`、`MSG-*` | `AC-S01`、`AC-S02` |
+| `RT-08` | PLT | `IDN-QRY-ResolveDataScope`、Repository ports | `AC-S01`、`AC-S02` |
+<!-- RESPONSIBILITY-COVERAGE-END -->
 
 ### 2.2 域边界与禁止职责
 
@@ -772,6 +793,62 @@ delivery retry/ACK、gate pending age、context build failure、thread gate、di
 冻结锚下顶层 `internal/` 28 个目录、`internal/mcs/` 9 个子包、`cmd/` 6 个进程均在本节有归处。
 该计数是本次冻结锚的测量值，不作为未来权威常量；后续由包清单脚本双向核对新增/遗漏。
 
+<!-- COVERAGE-IMPLEMENTATION-BEGIN -->
+cmd/dingwei-datad
+cmd/fcs
+cmd/feishu-fanout
+cmd/mcs-demo
+cmd/mcsd
+cmd/workpulse
+internal/admin
+internal/bridge
+internal/bus
+internal/clock
+internal/config
+internal/coordination
+internal/datad
+internal/evidence
+internal/fanout
+internal/fcs
+internal/feishu
+internal/jcs
+internal/llm
+internal/m5
+internal/m8
+internal/mcs/board
+internal/mcs/dea
+internal/mcs/demo
+internal/mcs/dispatch
+internal/mcs/hubdriver
+internal/mcs/mcsd
+internal/mcs/pool
+internal/mcs/rotation
+internal/mcs/route
+internal/model
+internal/portal
+internal/redact
+internal/reminder
+internal/repo
+internal/router
+internal/schedule
+internal/scheduler
+internal/secretbox
+internal/store
+internal/version
+internal/worker
+<!-- COVERAGE-IMPLEMENTATION-END -->
+
+### 12.5 目标态新增单元
+
+| 新单元 | 状态 | 责任 | 为什么不能只适配既有件 |
+|---|---|---|---|
+| IDN domain module | `new` | enterprise/principal/channel/session/agent binding | 现有身份散在 m8/admin/datad，无唯一 owner |
+| GOV domain module | `new` | spec/rule/approval/typed pending | 现有管理 handler 与任务状态混杂 |
+| `AccessCtx` / `DataScopeGrant` | `new` | 双层访问上下文与限时数据范围 | 现有 `TenantCtx` 只有单层 ID |
+| domain interface packages | `new` | 40 项接口的 schema 与 ports | 现有全局 model 不能表达 owner 边界 |
+| enterprise registry projection for Repository | `new` | opaque DB key 到受控池映射 | 现有 repo 无企业注册投影 |
+| unified domain outbox/inbox | `new` | 跨域事实与幂等消费 | 现有 outbox 形态未覆盖全部域 |
+
 ## 13. 原型入口到架构能力
 
 | 原型入口 | 主责域 | 主要接口 | 必须显示的失败/空态 |
@@ -794,6 +871,33 @@ delivery retry/ACK、gate pending age、context build failure、thread gate、di
 | 架构总览 `s0` | GOV/本件 | artifact query | 当前设计未过门 |
 
 UI 只展示后端判定结果，不在浏览器重算权限、门集、visibility 或归属链。
+
+<!-- COVERAGE-PROTOTYPE-BEGIN -->
+s1
+s2
+s8
+s8r
+s8h
+s4
+a5
+a6
+s3
+b1
+b2
+b3
+s5
+s6
+s7
+a8
+a9
+a1
+a2
+a4
+a3
+s9
+a7
+s0
+<!-- COVERAGE-PROTOTYPE-END -->
 
 ## 14. 迁移路线
 
@@ -907,6 +1011,41 @@ sidecar 紧急用户请求“安装新 skill”。effect 不在收紧 allowlist�
 | 附录 D 沿革 | GOV | —— | 0 |
 | 附录 E 探测映射 | GOV | PLT·门方·各 SP | 11、18 |
 | 附录 F.0 现行裁定索引 | GOV | 全域 | 本表各落点；撤销项不作目标输入 |
+
+<!-- COVERAGE-SPECDOC-BEGIN -->
+§0
+§1
+§2
+§3
+§4
+§4.6
+§4.7
+§5
+§6
+§7
+§8
+§9
+§10
+§11
+§12
+§13
+§14
+§15
+§16
+§17
+§18
+§19
+§20
+§21
+§22
+§23
+§24
+§25
+§26
+§27
+§28
+§29
+<!-- COVERAGE-SPECDOC-END -->
 
 ## 18. 验收矩阵
 
