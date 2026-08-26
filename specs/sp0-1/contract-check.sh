@@ -16,8 +16,10 @@ bad=0
 for n in ① ② ③ ④ ⑤ ⑥; do grep -q "^### $n" "$SPEC" || { echo "✗ 缺必备面 $n"; bad=1; }; done
 for n in $(seq -w 1 11); do grep -q "D-SP0-$n" "$SPEC" || { echo "✗ 缺交付 ID D-SP0-$n"; bad=1; }; done
 for n in $(seq -w 1 11); do grep -q "AC-SP0-$n" "$SPEC" || { echo "✗ 缺验收 ID AC-SP0-$n"; bad=1; }; done
+for n in 01 02 03 04 05 06 07 08; do grep -q "D-SP1-$n" "$SPEC" || { echo "✗ 缺交付 ID D-SP1-$n"; bad=1; }; done
+for n in $(seq -w 1 10); do grep -q "AC-SP1-$n" "$SPEC" || { echo "✗ 缺验收 ID AC-SP1-$n"; bad=1; }; done
 [ "$bad" -eq 0 ] || exit 1
-echo '预期集合：六面 + D-SP0-01..11 + AC-SP0-01..11'
-echo '实检集合：六面 6/6 · 交付 11/11 · 验收 11/11'
+echo '预期集合：六面 + D-SP0-01..11 + D-SP1-01..08 + AC-SP0-01..11 + AC-SP1-01..10'
+echo '实检集合：六面 6/6 · SP0 交付 11/11 · SP1 交付 8/8 · SP0 验收 11/11 · SP1 验收 10/10'
 echo '未知集合：0'
 echo '✓ SP0-1 设计合同形状与冻结输入通过'
