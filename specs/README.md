@@ -34,7 +34,19 @@
 | `scripts/gate-witness-gate.sh` | **覆盖见证元闸**（乙域跨闸硬契约第 4 条的**执行者**）—— 核每个闸是否给出「预期集合 · 实检集合 · 未知集合」。清单由 `speclint-gate.sh` **机器派生，非手写**。🔴 立件原因：**契约没有执行者 ＝ 没有契约**（本轮已有三个实例）。⚠️ **实测债务：20 个闸中仅 2 个合规、18 个缺见证** —— 故**暂未接入提交闸**，接入时机报归口方；**债务可见先于债务清零**。判【有没有见证】，🔴 判不了【见证里的数对不对】 |
 | `specs/gates/GATE-CONTRACT.md` | **闸的返回契约〔通则〕—— 空集不得当通过**。🔴 立件原因（coordinator 由三域各报一角摆在一起看出）：RV-乙18 跳过 · ㉕ 缺面 · CI 不触发 · 附录 E 未登记，**四条不是四个缺陷，是一个** —— **被检对象不存在时闸返回 PASS 而非 UNKNOWN/FAIL，「空集」被当成「已检查且合格」**。定三态（PASS/FAIL/**UNKNOWN 不得折叠为 PASS**，默认 fail-closed）＋ 输出三要素（**受检范围** · 判不了什么 · 空集如何处置）。⚠️ **范围句是本轮普遍缺的那项**，边界句 ≠ 范围句 |
 | `specs/gates/REASON-CODES.md` | **抑制/豁免的受控理由码与其机器可判后置条件**（乙域 2026-08-26 裁定归执笔方实现）。🔴 立件原因：理由此前是自由文本、闸只校非空 —— **执笔方曾以「跨行误命中」为由压住两处【行内就有】的旧断言而闸返 0**。**判据交给码，叙述留给人**：码不在表内即拒，码在表内则跑后置条件（如 `cross-line-false-positive` ⇒ **该行行内不得含被抑制短语**，正好拆穿那次编造的理由）。⚠️ 判**码与行形态是否相符**，🔴 **判不了豁免该不该给、也判不了码选得对不对** —— 归门方 |
-| `specs/gates/superseded-claims-exceptions.txt` | 已撤销断言闸的**结构化登记例外**（短语 TAB 件 TAB 理由 TAB 批准方）。🔴 立件原因（乙域 RV-乙18）：原以行内自由文本 `style-ok:` 豁免，而**闸不看理由、只看有没有那四个字** ⇒ 以「跨行误命中」为由压住行内就有的旧断言，闸照旧返回 0。⚠️ **登记 ≠ 获批准**，执笔方不得自增自批；**例外是债不是豁免**，闸每次把登记数打印出来 |
+| `specs/gates/superseded-claims-exceptions.txt` | 已撤销断言闸的**受控例外**（六列：`claim_id` TAB 被抑制对象 TAB 件 TAB 行指纹 TAB 理由码 TAB `approval_ref`）。🔴 立件原因（乙域 RV-乙18）：原以行内自由文本 `style-ok:` 豁免，而**闸不看理由、只看有没有那四个字**。v3 再修一层（乙域复验 @ `434b8fe`）：**「批准方」是一次字符串比对，不是一次批准核验** —— 填字面「terra」即放行、覆盖 `AUTHOR_SESSION` 即可自批。现改为 `approval_ref` 须解析到门方台账并四元组匹配。⚠️ **登记 ≠ 获批准**；**授权根不可得 ⇒ UNKNOWN(2)，不是 PASS** |
+| `specs/gates/lib/exceptions.sh` | **受控例外公共库（四个使用点共用）** —— 行指纹（内容哈希）· 理由码后置条件 · `approval_ref` 解析核验 · 冻结基线棘轮。🔴 执笔方会话名**写死在库内、不读环境变量**：否则「不得自批」这条规则的开关就握在被规则约束的一方手里 |
+| `specs/gates/approvals/TRUST-ROOT.md` | 批准记录的**授权根**声明。🔴 **当前无任何 ACTIVE 后端**（「reviewer-owned 怎么验证」属门方裁量，待裁）⇒ 任何已登记的受控例外一律判 **UNKNOWN(2)**，不判 PASS |
+| `specs/gates/reviewers.txt` | 门方会话名册 —— `approval_ref` 的批准方须在其中且非执笔方。⚠️ 应由 coordinator/门方维护，执笔方此版仅填初值待确认 |
+| `specs/gates/path-anchor-exceptions.txt` | 路径锚闸（`path-ok` 通道）的受控例外，格式同上。🔴 行内 `path-ok:` 自由文本**已不再构成豁免** |
+| `specs/gates/status-consistency-exceptions.txt` | 状态一致性闸（`status-ok` 通道）的受控例外。🔴 原实现只校「理由 ≥8 个非空白字符」——**那是长度，不是批准** |
+| `specs/gates/prose-style-exceptions.txt` | 体例合规闸（`style-ok` 通道）的受控例外。⚠️ `style-ok` 有**两个**使用者，RV-乙18 当时只改了已撤销断言闸那一个 |
+| `specs/gates/superseded-suppression-baseline.txt` | 已撤销断言闸的抑制**冻结基线**（当前为空 —— 该通道的正文命中已由收窄清单短语消掉，**能靠收窄判据消掉的豁免就不该存在**）|
+| `specs/gates/path-anchor-suppression-baseline.txt` | `path-ok` 通道的冻结基线（1 条）|
+| `specs/gates/status-suppression-baseline.txt` | `status-ok` 通道的冻结基线（3 条）|
+| `specs/gates/prose-style-suppression-baseline.txt` | `style-ok`（体例闸）通道的冻结基线（1 条）|
+| `specs/gates/gate-witness-baseline.txt` | 覆盖见证元闸（㉙）的**冻结基线**（`missing_witness=18` / `compliant=2`，乙域给定值）。🔴 上调＝放宽判据，属评审面；执笔方不得自行下调 |
+| `specs/gates/gate-witness-debt.txt` | ㉙ 的**债务清单** —— 逐闸 `owner ＋ 到期里程碑`；🔴 **无 owner / 无到期即 FAIL**（乙域 2026-08-26）|
 | `specs/gates/superseded-claims.txt` | 「旧断言 → 现行断言 → 撤销依据」清单，本闸的数据源 |
 | `scripts/checklist-executed-gate.sh` | checklist 执行落账闸 —— 宣称「已按 checklist 执行」时机器要求 checkbox 已勾**且证据栏非空**；未落账可登记例外，但输出明说**这不是 PASS** |
 | `specs/tools/foreign-version-check.py` | 正文他件旧版本号检查（analyze ④b）—— ④a 只读头块一处，正文里的假版本看不见；本脚本补正文面，只在与该件称谓同行时才判 |

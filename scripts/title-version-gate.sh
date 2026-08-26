@@ -24,11 +24,20 @@ check() {
   # 原型：标题 title 与页内自述锚须一致
   _p=docs/dingwei-prototype.html
   if [ -f "$_p" ]; then
-    _a=$(grep -oE '原型 v[0-9]+\.[0-9]+' "$_p" | sort -u | wc -l | tr -d ' ')
+    # 🔴 **先剥 HTML 标签再匹配**（2026-08-26 实取抓出的漏网）：
+    #   原实现直接 grep `原型 v[0-9]+\.[0-9]+`，而页内两处自述写作
+    #     `<h1>DingWei 平台原型 <span …>v1.38</span></h1>` / `原型 <b>v1.38</b>`
+    #   —— 版本号与「原型」二字之间**隔着标签**，字面模式匹配不到。
+    #   ⇒ 于是 title 写 v1.42、页内写 v1.38 时，本闸照报「三件标题与版本自述一致 ✓」。
+    #   ⚠️ **这是「闸看不见被检对象 ⇒ 空集当通过」的又一投影**：不是判错，是根本没判到。
+    _vs=$(sed 's/<[^>]*>//g' "$_p" | grep -oE '原型 v[0-9]+\.[0-9]+' | sort -u)
+    _a=$(printf '%s\n' "$_vs" | awk 'NF>0' | wc -l | tr -d ' ')
     if [ "${_a:-0}" -gt 1 ]; then
-      echo "✗ $_p：页内出现 $_a 个不同的「原型 vX.Y」自述"; grep -oE '原型 v[0-9]+\.[0-9]+' "$_p" | sort -u | sed 's/^/    /'
+      echo "✗ $_p：页内出现 $_a 个不同的「原型 vX.Y」自述（口径＝已剥 HTML 标签）"
+      printf '%s\n' "$_vs" | sed 's/^/    /'
       _bad=$((_bad+1))
     fi
+    [ "${_a:-0}" -eq 0 ] && { echo "✗ $_p：剥标签后一个「原型 vX.Y」自述都找不到 —— 判闸坏，非通过"; return 2; }
   fi
   [ "$_bad" -gt 0 ] && { echo "  ⇒ bump 时两处一起改；只改字段不改标题，读者按标题读到的就是旧版。"; return 1; }
   echo "  ✓ 三件标题与版本自述一致"
@@ -52,6 +61,17 @@ selftest() {
   [ $? -eq 1 ] && ok "🔴 拦住：架构件标题 v0.33 vs 字段 v0.34（本闸的立项实例）" || bad "架构件不一致被放行"
   _mk v3.1 v3.1 v0.1 v0.1 v1.1 v1.2; check >/dev/null 2>&1
   [ $? -eq 1 ] && ok "拦住：原型页内出现两个不同自述版本" || bad "原型多版本被放行"
+
+  # 🔴 版本号与「原型」之间隔着 HTML 标签时，闸仍须看得见（2026-08-26 实取漏网）
+  printf '<title>DingWei 平台原型 v1.42</title>\n<h1>DingWei 平台原型 <span class="x">v1.38</span></h1>\n' > docs/dingwei-prototype.html
+  check >/dev/null 2>&1
+  [ $? -eq 1 ] && ok "🔴 拦住：版本号被 <span>/<b> 隔开时的不一致（原实现字面匹配看不见 ⇒ 空集当通过）" \
+                || bad "标签隔开的自述版本仍漏网 —— 闸没判到被检对象"
+
+  # 不误伤：剥标签后一致
+  printf '<title>DingWei 平台原型 v1.43</title>\n<h1>DingWei 平台原型 <span class="x">v1.43</span></h1>\n' > docs/dingwei-prototype.html
+  check >/dev/null 2>&1
+  [ $? -eq 0 ] && ok "不误伤：剥标签后版本一致即放行" || bad "一致的版本被误拦"
   rm -f docs/dingwei-architecture-design.md; check >/dev/null 2>&1
   [ $? -eq 2 ] && ok "拦住：件缺失判闸坏（非免检）" || bad "件缺失被当免检"
   cd /; rm -rf "$T"

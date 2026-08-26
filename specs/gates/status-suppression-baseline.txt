@@ -1,0 +1,6 @@
+# 【冻结基线·债务】状态一致性闸的既有抑制 —— 不是批准。
+#   列：<claim_id> TAB <被抑制对象(短语)> TAB <件> TAB <行指纹> TAB <理由码> TAB <备注>
+# 棘轮语义同 path-anchor-suppression-baseline.txt。
+EXC-STATUS-01	尚不得被	specs/platform/spec.md	e554a1b33b3309b2	mention-not-assertion	引述旧措辞以说明其已解除（短语落在「」内）
+EXC-STATUS-02	仍为草案	specs/platform/spec.md	f9824107b68a4f85	mention-not-assertion	复述历史缺陷（短语落在「」内）
+EXC-STATUS-03	须重走	specs/platform/spec.md	f9824107b68a4f85	mention-not-assertion	同上行，第二个短语命中

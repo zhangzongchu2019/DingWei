@@ -1,0 +1,10 @@
+# 【受控例外·登记】路径锚闸（path-ok 通道）—— TAB 分隔六列：
+#   <claim_id> TAB <被抑制对象(路径)> TAB <件> TAB <行指纹> TAB <理由码> TAB <approval_ref>
+#
+# 🔴 行内 `path-ok:` 自由文本对本闸【已不再构成豁免】（乙域 terra 全闸契约 2026-08-26）：
+#   与 RV-乙18 治 style-ok 同因 —— 闸只看有没有那几个字，不看理由是否属实、也没人批准。
+# 🔴 approval_ref 须解析到 reviewer-owned 台账（specs/gates/approvals/），
+#   缺失/未决/不可解析/审批人＝作者 ⇒ 拒；授权根不可得 ⇒ UNKNOWN(2)，不是 PASS。
+#
+# ⚠️ 本表当前为空 —— 仓内既有的 1 处 path-ok 抑制未获批准，按【冻结基线债务】处置，
+#   见 specs/gates/path-anchor-suppression-baseline.txt。登记≠获批准，基线≠批准。

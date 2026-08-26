@@ -1,0 +1,25 @@
+# 覆盖见证债务清单（㉙ fail-closed 棘轮的第 ④ 条：**无 owner / 无到期即 FAIL**）
+#   列：<闸脚本> TAB <owner> TAB <到期里程碑>
+#
+# 🔴 乙域 terra 2026-08-26：「18 项须在机器派生清单中逐闸附 owner 与到期里程碑；无 owner/到期即 FAIL。
+#   现有 2 项合规不构成『全闸合规』声明。」
+# ⚠️ owner 一律先记**执笔方** —— 这些闸都是执笔方写的，补覆盖见证是实现缺陷的修复，不是运维事项。
+#   🔴 门方可改派；改派属评审面，请直接改本表并在回执里说明。
+# ⚠️ 到期里程碑取 **SP7a 收口**（绑里程碑而非绑日期：本轮已实测「相对时点会到期」这一族问题，
+#   而里程碑是可判定的事件，不会因为拖期变成一个已过期的假时点）。
+#   若门方要求绝对日期，请在本表直接改写。
+scripts/appendix-e-owner-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/checklist-executed-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/conflict-marker-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/dependency-ratchet.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/evidence-fresh-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/gen-review-state.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/legacy-name-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/post-columns-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/repo-boundary-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/reviewer-repro-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/rv-integrity-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/specs-index-check.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/tenant-isolation-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/title-version-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口
+scripts/workflow-coverage-gate.sh	执笔方 zzc-opus50tchangshark-2642	SP7a 收口

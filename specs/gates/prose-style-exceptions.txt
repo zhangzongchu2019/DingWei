@@ -1,0 +1,6 @@
+# 【受控例外·登记】体例合规闸（style-ok 通道）—— TAB 分隔六列：
+#   <claim_id> TAB <被抑制对象(命中的痕迹指纹)> TAB <件> TAB <行指纹> TAB <理由码> TAB <approval_ref>
+#
+# 🔴 行内 `style-ok:` 自由文本对本闸【已不再构成豁免】（乙域 terra 全闸契约 2026-08-26）。
+# ⚠️ 本表当前为空 —— 仓内既有抑制未获批准，按【冻结基线债务】处置，
+#   见 specs/gates/prose-style-suppression-baseline.txt。

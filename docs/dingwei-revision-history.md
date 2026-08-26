@@ -587,3 +587,49 @@ C.3a.1「为什么重开」整节（过程史，但其内容同时是重裁的�
 （deny 而非空集 · 拒绝须落审计 · 不得先查再拒），是**禁令的验收出口，非放行通路**。
 判据已写进正文 E.1 #150 上方，出处留此。
 🔴 落此一笔的原因：该确认原本只存在于消息里；不入仓，下一轮复核者会再判一次这三行是矛盾。
+
+### RV-乙22（非阻断·精度）：t1–t4 负测的覆盖面写宽了
+
+原型 T-1204 屏原写「原三条（`SET` 而非 `SET LOCAL` / owner 绕 RLS / `BYPASSRLS`）
+仍然有效，见 `specs/fixtures/rls/` 的 **t1–t4 负测**」。
+门方指出 `BYPASSRLS` 是 **`setup.sql` 的配置自检项**，不在 t1–t4 之列。
+
+实取核对（`specs/fixtures/rls/`）：
+
+| 项 | 实际由谁覆盖 |
+|---|---|
+| #5c `SET LOCAL` 而非 `SET`（跨事务残留）| `t3-no-residue.sql` 的 `must_be_zero` |
+| #2 owner 绕 RLS（ENABLE ＋ FORCE）| `setup.sql` 自检：`relrowsecurity` / `relforcerowsecurity` 均为 `t` |
+| #3 `NOBYPASSRLS` | `setup.sql` 自检：三 role `rolbypassrls` 均为 `f` |
+
+⇒ 正文措辞已按上表改写。
+🔴 **两处与门方转述不同，按实取为准并在此留痕**：
+① #2 也**不在** t1–t4，同样是 `setup.sql` 自检项（转述写的是「t1–t4 覆盖 #5/#2」）；
+② 编号取仓内实际写法 **#5c**（见 `t3-no-residue.sql` 首行注释），非 #5。
+
+### t4 负测⑥ 重做：prodops 真机不符的真因是【夹具错】
+
+`t4-ddl-rights.sql` 负测⑥ 原在 `REVOKE … FROM CURRENT_USER` 之后仍用 `SET ROLE dw_app` 验，
+而代跑会话是 **superuser** —— superuser 的 `SET ROLE` 不受成员资格约束，
+`permission denied` 永远不会出现，故该负测**恒判不符**。
+门方裁定：**夹具错，不是实现错，也不是 PG17 行为差异。**
+
+⚠️ **用 superuser 会话假扮应用面，测的就不是应用面。**
+已改为 `SET SESSION AUTHORIZATION dw_app`，并加夹具自检（`session_user` 必须是 `dw_app`、
+成员资格必须已撤销，否则抛 `FIXTURE ERROR` 使本组结论作废）；
+另给出 NOLOGIN 不可作 session authorization 时的 **surrogate login 角色**回退方案。
+🔴 **未改 EXPECTED 的期望值去迁就实测** —— 那是把「测错了」写成「本该如此」。
+本组仍待用新版 t4 复跑；复跑前该项记 **未验**，不记 **不符**。
+
+### 原型自述版本 v1.42 / v1.38 并存 —— 顺带抓出的一处「闸看不见」
+
+bump 原型时实取发现：`<title>` 写 **v1.42**，而页内两处自述锚（`<h1>` 与 anchor 行）仍写 **v1.38**。
+`scripts/title-version-gate.sh` 本应拦这一类，却报「三件标题与版本自述一致 ✓」。
+
+🔴 **真因不是判错，是根本没判到**：原实现字面 grep `原型 v[0-9]+\.[0-9]+`，
+而页内写作 `原型 <span …>v1.38</span>` / `原型 <b>v1.38</b>` —— **版本号与「原型」二字之间隔着标签**，
+字面模式匹配不到 ⇒ 命中集为空 ⇒ 报「一致」。
+⚠️ **这是「空集当通过」的又一个投影**（见 `specs/gates/GATE-CONTRACT.md`）。
+
+已修：判定前先 `sed 's/<[^>]*>//g'` 剥标签；剥后若一个自述都找不到，判**闸坏（exit 2）**而非通过；
+补两条反测（标签隔开的不一致必拦 · 剥后一致不误伤）。三处版本统一为 **v1.43**。
