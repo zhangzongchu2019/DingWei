@@ -48,7 +48,7 @@ echo '```'
 #   ⚠️ 判据是【凡影响输出者皆须指纹】，不是【我想到的那几个目录】：
 #     首版按目录列举，于是「生成器自身」这个最该记的反而不在里面。
 #   基线件（specs/gates/*.txt）同理 —— 棘轮基线一改，⑦ 的输出就变。
-for _f in docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md \
+for _f in docs/dingwei-platform-specdoc.md docs/dingwei-platform-architecture.md \
           docs/dingwei-prototype.html docs/DELIVERY-STATUS.md \
           specs/evidence/collect.sh \
           $(ls scripts/*.sh 2>/dev/null) \
@@ -87,14 +87,14 @@ run "speclint 语料自检（正反例须拦在预期规则上）" \
     "python3 docs/tools/speclint.py --selftest docs/tools/speclint-corpus.md"
 run "speclint 变异体（改坏规则，其反例须随之失守 —— 证明语料有牙）" \
     "python3 docs/tools/speclint.py --mutate docs/tools/speclint-corpus.md"
-run "架构设计引用核验（A§ 本件 / § SpecDoc 分别解析）" \
+run "目标架构引用核验（数字 heading / § SpecDoc 分别解析）" \
     "scripts/arch-refcheck.sh"
 run "引用核验的反测四项（含 SpecDoc heading 重复 —— 曾漏接失败条件）" \
     "scripts/arch-refcheck.sh --selftest"
 echo "## 二、跨制品"
 run "analyze 跨制品一致性（件与件之间；单件自洽由上节负责）" \
     "specs/tools/analyze.sh"
-echo "## 三、代码现状实测（架构设计 A§6.2 所载数字的来源）"
+echo "## 三、代码现状实测（目标架构第 12 节现状映射的证据来源）"
 run "internal 包总数" "ls -d internal/*/ | wc -l"
 run "workpulse 装载的包（架构设计称 19）" \
     "grep -rhoE 'zhangzongchu2019/dingwei/internal/[a-z0-9]+' cmd/workpulse --include=*.go | grep -v _test | sed 's|.*/||' | sort -u | paste -sd' '"
@@ -114,14 +114,14 @@ run "task 表跨存储重名（须在 SP7a 前定名，见 docs/v0.1/task-table-
 run "RLS 字面标记出现次数（仅覆盖下列三个字面量，**不足以代表 RLS 合同的全部实现形态**）" \
     "grep -rn 'row_level_security\\|SET LOCAL\\|app\\.tenant' --include=*.go --include=*.sql . | wc -l"
 echo "> 🔴 **本项零命中不得外推为「RLS 零实现」** —— 它只说明这三个字面量没出现。"
-echo "> 现行裁定为 C.3a「PG ＋ RLS（人层）✅ 采纳」；RLS 合同的验收判据见架构 A§12 与 SpecDoc §22.2c，"
+echo "> 现行裁定为 C.3a「PG ＋ RLS（人层）✅ 采纳」；RLS 合同的验收判据见目标架构第 8.3 节与 SpecDoc §22.2c，"
 echo "> **其覆盖面远大于本项**。扩 detector 或改判据前，本项只作字面子集旁证（甲域 RV-甲41）。"
 echo
 echo "## 四、本包未覆盖的（明说，不留白）"
 cat <<'TXT'
 | 项 | 为什么本包给不出 |
 |---|---|
-| 三类越权负测（伪造 tenant / 跨租户读 / 缺 context） | 🔴 **受控仓储 API 尚未实现**，负测无被测对象。架构设计 A§12 已标「未建」 |
+| 三类越权负测（伪造 tenant / 跨租户读 / 缺 context） | 🔴 **受控仓储 API 尚未实现**，负测无被测对象。目标架构第 8.2、18.3 节保留为交付验证项 |
 | 紧急面平台不可用负测 | 需实际部署环境，本包为静态仓库分析 |
 | 敏感内容判定器覆盖面 | 判定器未实现（§22.5 为目标态） |
 | 语义层的一切 | 机器判不了，见本文件头注 |

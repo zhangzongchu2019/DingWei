@@ -14,19 +14,14 @@
   ④b 本脚本  —— 正文不得出现【他件】的、且与现值不符的版本号
 
 ⚠️ 能力边界，写明不假装：
-  · 按号段归属（SpecDoc=v3.x · 架构=v0.x · 原型=v1.x）判「这个号是谁的」。
-    号段是约定，不是语法；若将来号段跨界，本判据须同步改，否则会漏判。
+  · 按同行的受控件称谓判「这个号是谁的」，不按主版本号段猜测；架构与原型现均为 v1.x。
   · 含「沿革」「历史时点」或 `style-ok:` 的行**跳过** —— 描述历史的版本号是合法的。
     🔴 **区分「沿革表述」与「现行依据表述」属语义**，本脚本按上述标记切分，
        标记打错就判错 ⇒ 该切分本身归人审。
 """
 import re, sys
 
-OWN = {  # 件 -> 它自己的主版本号段
-    'dingwei-platform-specdoc.md': '3',
-    'dingwei-architecture-design.md': '0',
-    'dingwei-prototype.html': '1',
-}
+OWN = ('dingwei-platform-specdoc.md', 'dingwei-platform-architecture.md', 'dingwei-prototype.html')
 # 指向【某个真实件】的称谓。🔴 只有版本号与这些称谓同行时才判 ——
 #   否则会把界面样例数据、文件名里的版本号一并误报。
 #   ⚠️ 首版没有这一层，实跑 42 处命中里绝大多数是误报：
@@ -34,10 +29,10 @@ OWN = {  # 件 -> 它自己的主版本号段
 #   🔴 **误伤会逼人绕过闸，而不是满足它** —— 宁可收窄判据，也不要一个没人信的闸。
 NAMES = {
     'dingwei-platform-specdoc.md': ('SpecDoc', 'dingwei-platform-specdoc', '规范正文'),
-    'dingwei-architecture-design.md': ('架构设计', 'dingwei-architecture-design', 'A§'),
+    'dingwei-platform-architecture.md': ('目标架构', '平台架构', 'dingwei-platform-architecture'),
     'dingwei-prototype.html': ('原型', 'dingwei-prototype'),
 }
-SKIP = ('沿革', '历史时点', 'style-ok:', '曾同时写着', '曾写', '原写')
+SKIP = ('沿革', '历史时点', '冻结指纹', 'sha256', 'style-ok:', '曾同时写着', '曾写', '原写')
 
 # 🔴 【历史落地表述】不是【现行依据表述】（丙域 kimi R2 轮4 · RV-丙17）：
 #   「SpecDoc §25.5 自 v3.0 起已补」说的是**这件事什么时候落的**，
@@ -67,7 +62,6 @@ def current_versions(status_path='docs/DELIVERY-STATUS.md'):
 
 
 def scan(path, cur):
-    seg = OWN[path]
     body = open('docs/' + path, encoding='utf-8').read()
     hits = []
     for ln, line in enumerate(body.split('\n'), 1):
@@ -77,16 +71,13 @@ def scan(path, cur):
             if _is_landed(line, m):
                 continue                      # 历史落地表述，按【该处】豁免
             maj, minor = m.group(1), m.group(2)
-            if maj == seg:
-                continue                      # 本件自述号段，归 ④a
-            owner = next((p for p, q in OWN.items() if q == maj), None)
-            if owner is None:
-                continue                      # 不属任何已知件的号段，不判
+            owners = [p for p in OWN if p != path and any(nm in line for nm in NAMES[p])
+                      and cur.get(p, '').startswith('v' + maj + '.')]
+            if len(owners) != 1:
+                continue                      # 未具名他件或同句多件，归人审
+            owner = owners[0]
             # 文件名里的版本（如 xxx-v1.8.md）不是跨件引用
             if re.search(r'[-_]v' + maj + r'\.' + minor + r'\b', line):
-                continue
-            # 🔴 只有与【该件的称谓】同行时才算跨件引用
-            if not any(nm in line for nm in NAMES[owner]):
                 continue
             want = cur.get(owner)
             got = f'v{maj}.{minor}'
@@ -119,7 +110,7 @@ if __name__ == '__main__':
         t = tempfile.mkdtemp(); os.makedirs(t + '/docs')
         open(t + '/docs/DELIVERY-STATUS.md', 'w', encoding='utf-8').write(
             '| `dingwei-platform-specdoc.md` | **v3.23** |\n'
-            '| `dingwei-architecture-design.md` | **v0.22** |\n'
+            '| `dingwei-platform-architecture.md` | **v1.2** |\n'
             '| `dingwei-prototype.html` | **v1.20** |\n')
         cwd = os.getcwd(); os.chdir(t)
         n = 0; fail = 0
@@ -130,26 +121,26 @@ if __name__ == '__main__':
         for p in OWN:
             open(t + '/docs/' + p, 'w', encoding='utf-8').write('干净正文\n')
         chk(main() == 0, '干净正文放行（不误报）')
-        open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
+        open(t + '/docs/dingwei-platform-architecture.md', 'w', encoding='utf-8').write(
             '依据 SpecDoc v3.14 基线\n')
         chk(main() == 1, '拦住：架构正文写他件旧版本 v3.14（现为 v3.23）')
-        open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
+        open(t + '/docs/dingwei-platform-architecture.md', 'w', encoding='utf-8').write(
             '沿革：曾依据 SpecDoc v3.14\n')
         chk(main() == 0, '不误伤：沿革表述里的旧版本号放行')
-        open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
+        open(t + '/docs/dingwei-platform-architecture.md', 'w', encoding='utf-8').write(
             'SpecDoc §25.5「Agent 名册」自 v3.0 起已补\n')
         chk(main() == 0, '不误伤：历史落地表述「自 vX 起已补」放行（丙域 RV-丙17）')
         # 🔴 豁免不得把闸豁免掉：同屏若真写「依据 SpecDoc v3.0」仍须被拦
-        open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
+        open(t + '/docs/dingwei-platform-architecture.md', 'w', encoding='utf-8').write(
             'SpecDoc §25.5 自 v3.0 起已补；本件依据 SpecDoc v3.0 基线\n')
         chk(main() == 1, '豁免不过宽：同行有落地句式也不放过真的旧依据')
-        open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
+        open(t + '/docs/dingwei-platform-architecture.md', 'w', encoding='utf-8').write(
             '依据 SpecDoc v3.23\n')
         chk(main() == 0, '不误伤：他件【现值】不算旧')
-        open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
+        open(t + '/docs/dingwei-platform-architecture.md', 'w', encoding='utf-8').write(
             '本件 v0.19 曾如何\n')
         chk(main() == 0, '不误伤：本件自述号段归 ④a，本脚本不判')
-        open(t + '/docs/dingwei-architecture-design.md', 'w', encoding='utf-8').write(
+        open(t + '/docs/dingwei-platform-architecture.md', 'w', encoding='utf-8').write(
             '源件 `dingwei-platform-charter-v1.8.md` 已降为沿革依据\n')
         chk(main() == 0, '不误伤：文件名里的版本号不算跨件引用')
         open(t + '/docs/dingwei-prototype.html', 'w', encoding='utf-8').write(

@@ -16,6 +16,23 @@
 | `specs/README.md` | 本文件：`specs/` 的结构说明与取舍记录 |
 | `specs/constitution.md` | 治理原则的【唯一】载体（§4.1） |
 | `specs/platform/spec.md` | 装载点 —— 指向 `docs/` 的正文，不复制、不搬动 |
+| `specs/platform-architecture/spec.md` | 新版平台架构设计的施工与验收合同；冻结分域、接口与技术架构三类输出，旧架构件只作历史参考 |
+| `specs/platform-architecture/check.sh` | 新版架构件的非门控形状检查：反查包/进程、原型入口与接口 ID；明确不替代语义评审 |
+| `specs/platform-architecture/cutover-check.sh` | 架构唯一事实源切换核验：机器派生预期/实检/未知集合，未知非空即失败 |
+| `specs/sp0-1/spec.md` | SP0 / SP1 两包分开同时做的协调合同；冻结共同输入与独立开工门 |
+| `specs/sp0-1/contract-check.sh` | SP0、SP1 独立合同/目标路径、交付 ID 与冻结输入核验 |
+| `specs/sp0/spec.md` | SP0 总则与定义层独立设计合同（§1–§4、附录 A） |
+| `specs/sp0/contract-check.sh` | SP0 独立范围、六面、交付 ID 与目标路径核验 |
+| `specs/sp0/check.sh` | SP0 正文章节、附录 E、原型入口及交付 ID 的机器派生覆盖核验 |
+| `specs/sp1/spec.md` | SP1 身份与租户地基独立设计合同（四项业主点名范围） |
+| `specs/sp1/contract-check.sh` | SP1 独立范围、六面、交付 ID、四项点名范围与目标路径核验 |
+| `specs/sp1/check.sh` | SP1 正文章节、附录 E、原型入口、交付 ID 与合同红线覆盖核验 |
+| `specs/sp2/spec.md` | SP2 执行层与门禁设计合同（§5–§9，含 WRK schema 的 SP7b 责任） |
+| `specs/sp2/contract-check.sh` | SP2 六面、交付/验收 ID、WRK 接口与冻结输入核验 |
+| `specs/sp2/check.sh` | SP2 六类覆盖集合机器派生、结构化落点与正交变异反测；目标件未建时 exit 2 |
+| `specs/sp3/spec.md` | SP3 上下文与知识库设计合同（§10–§13，含 KNO schema 的 SP7b 责任） |
+| `specs/sp3/contract-check.sh` | SP3 六面、交付/验收 ID、KNO 接口、三票与冻结输入核验 |
+| `specs/sp3/check.sh` | SP3 四类覆盖集合机器派生、结构化落点与正交变异反测；目标件未建时 exit 2 |
 | `specs/platform/checklist.md` | 结构域（sol 主笔，26 项） |
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |

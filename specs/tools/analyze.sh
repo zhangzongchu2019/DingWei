@@ -8,7 +8,7 @@
 # 那归人审（SpecDoc E.4 #60 lint 覆盖不到项之①）—— 本脚本不宣称能覆盖它。
 set -u
 SPEC=docs/dingwei-platform-specdoc.md
-ARCH=docs/dingwei-architecture-design.md
+ARCH=docs/dingwei-platform-architecture.md
 PROTO=docs/dingwei-prototype.html
 FAIL=0
 
@@ -44,10 +44,10 @@ st=open('docs/DELIVERY-STATUS.md',encoding='utf-8').read()
 bad=0
 for name,path,pat in [
   ('SpecDoc','dingwei-platform-specdoc.md',r'\*\*版本\*\*: (v[\d.]+)'),
-  ('架构设计','dingwei-architecture-design.md',r'\*\*版本\*\*: (v[\d.]+)'),
+  ('架构设计','dingwei-platform-architecture.md',r'^\| \*\*版本\*\* \| (v[\d.]+) \|$'),
   ('原型','dingwei-prototype.html',r'原型 (v[\d.]+)')]:
     body=open('docs/'+path,encoding='utf-8').read()
-    m=re.search(pat,body); v=m.group(1) if m else None
+    m=re.search(pat,body,re.M); v=m.group(1) if m else None
     row=re.search(r'\|\s*`'+re.escape(path)+r'`\s*\|\s*\*\*(v[\d.]+)\*\*',st)
     sv=row.group(1) if row else None
     ok = v and sv and v==sv

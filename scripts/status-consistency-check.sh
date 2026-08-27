@@ -83,7 +83,7 @@ check() {
   esac
 
   # 先算全部命中,再据此做两件事:①判未登记的;②判【已失效的例外】。
-  HITS=$(grep -rnE "$PAT" specs docs/dingwei-architecture-design.md --include=*.md 2>/dev/null \
+  HITS=$(grep -rnE "$PAT" specs docs/dingwei-platform-architecture.md --include=*.md 2>/dev/null \
         | grep -v '/checklist' \
         | grep -v "^$SPECDOC:" \
         | grep -v "^$EXC:" \
@@ -144,11 +144,11 @@ check() {
   # 🔴 原「status-ok 标记须带 ≥8 字理由」的校验**已删除** —— 它测的是长度，不是批准。
   #   ⚠️ **改契约必须回头删掉为旧契约写的校验**：留着它，读者会以为这条通道仍有人把关。
   #   现行内 status-ok 一律不构成豁免，仅作人读注释；仍在用它的行会照常被判（见上）。
-  _mk=$(grep -rc 'status-ok:' specs docs/dingwei-architecture-design.md --include=*.md 2>/dev/null | awk -F: '{t+=$2} END{print t+0}')
+  _mk=$(grep -rc 'status-ok:' specs docs/dingwei-platform-architecture.md --include=*.md 2>/dev/null | awk -F: '{t+=$2} END{print t+0}')
   echo "  ⑨ 无未登记的过期状态断言 ✓"
   # 覆盖见证（GATE-CONTRACT 一之二·第 4 条）
   _hn=$(printf '%s\n' "$HITS" | awk 'NF>0' | wc -l | tr -d ' ')
-  echo "     受检范围（预期集合）：specs/**.md ＋ docs/dingwei-architecture-design.md，短语 $(printf '%s' "$PAT" | awk -F'|' '{print NF}') 种"
+  echo "     受检范围（预期集合）：specs/**.md ＋ docs/dingwei-platform-architecture.md，短语 $(printf '%s' "$PAT" | awk -F'|' '{print NF}') 种"
   echo "     实检集合：$_hn 处短语命中逐处判（口径：不扫 reviewer-owned checklist*，不扫 specs/gates/、scripts/）"
   echo "     未知集合：$_unkn"
   echo "     行内 status-ok 标记 $_mk 处 —— 🔴 **已不构成豁免**，仅供人读"

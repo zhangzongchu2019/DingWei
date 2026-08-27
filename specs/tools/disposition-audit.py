@@ -23,7 +23,7 @@ import re, sys
 
 RV_SEG = re.compile(r'【RV[^】]*】[^\n]*')
 FILES = ['docs/dingwei-platform-specdoc.md',
-         'docs/dingwei-architecture-design.md',
+         'docs/dingwei-platform-architecture.md',
          'docs/dingwei-prototype.html']
 HIST = 'docs/dingwei-revision-history.md'
 # ⚠️ `移出` 不在表内：它同样匹配「移出表格」，是首次实跑两个误报的来源。

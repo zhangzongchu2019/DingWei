@@ -13,7 +13,7 @@
 #   若写成「含 ======= 即命中」会把它们全部误报。冲突标记是**行首、恰好 7 个字符**。
 set -u
 
-SCOPE=${SCOPE:-"docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html docs/dingwei-revision-history.md docs/DELIVERY-STATUS.md $(ls scripts/*.sh 2>/dev/null) $(ls specs/tools/*.py specs/tools/*.sh 2>/dev/null) $(ls specs/evidence/*.sh 2>/dev/null)"}
+SCOPE=${SCOPE:-"docs/dingwei-platform-specdoc.md docs/dingwei-platform-architecture.md docs/dingwei-prototype.html docs/dingwei-revision-history.md docs/DELIVERY-STATUS.md $(ls scripts/*.sh 2>/dev/null) $(ls specs/tools/*.py specs/tools/*.sh 2>/dev/null) $(ls specs/evidence/*.sh 2>/dev/null)"}
 RE='^(<<<<<<< |=======$|>>>>>>> )'
 
 check() {

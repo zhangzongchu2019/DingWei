@@ -17,7 +17,7 @@
 #     判它等于把「指出问题的那句话」当成问题本身。
 set -u
 
-DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
+DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-platform-architecture.md docs/dingwei-prototype.html'}
 EXLIST=${EXLIST:-specs/gates/path-anchor-exceptions.txt}
 # 🔴 **冻结基线已删除**（乙域 terra 收尾裁定 2026-08-26 第三条）：
 #   「冻结基线不容作为通过条件：**待批准 ＝ 拒绝**；`PASS WITH REGISTERED DEBT`

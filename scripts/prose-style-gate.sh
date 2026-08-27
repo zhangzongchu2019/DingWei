@@ -43,7 +43,7 @@
 #     ⚠️ 能力边界：本闸判「ID 还在不在」，判不了「沿革里写得对不对」。
 set -u
 
-DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-architecture-design.md docs/dingwei-prototype.html'}
+DOCS=${DOCS:-'docs/dingwei-platform-specdoc.md docs/dingwei-platform-architecture.md docs/dingwei-prototype.html'}
 # 沿革记录件是【专门存放】过程痕迹的地方,本闸不扫它。
 HIST=${HIST:-'docs/dingwei-revision-history.md'}
 EXLIST=${EXLIST:-specs/gates/prose-style-exceptions.txt}

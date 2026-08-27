@@ -119,7 +119,7 @@ fi
 if [ ! -x scripts/arch-refcheck.sh ]; then
   echo "✗ 闸依赖缺失：scripts/arch-refcheck.sh 不可执行"; exit 1
 fi
-if [ -f docs/dingwei-architecture-design.md ]; then
+if [ -f docs/dingwei-platform-architecture.md ]; then
   scripts/arch-refcheck.sh >/dev/null 2>&1 || { scripts/arch-refcheck.sh; echo "✗ 架构引用核验未过"; exit 1; }
   # 闸自己也要过反测 —— 否则「核验通过」可能只是它测不出来（甲域最终复核抓出的那种）
   scripts/arch-refcheck.sh --selftest >/dev/null 2>&1 || { scripts/arch-refcheck.sh --selftest; echo "✗ 架构引用核验的反测未过"; exit 1; }
