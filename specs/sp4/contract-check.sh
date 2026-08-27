@@ -61,6 +61,8 @@ for ev in EV-CAP-DistributionRequested EV-CAP-InstallAcknowledged; do
  grep -q "$ev" "$SPEC" || { echo "✗ 缺 CAP 事件 $ev"; exit 1; }; done
 # 事件面：本域有事件 ⇒ 必须声明 DERIVED，且与架构实数一致；不得误抄 SP3 的 NOT_APPLICABLE
 grep -q '<!-- EVENT-SET-SP4: DERIVED -->' "$SPEC" || { echo '✗ CAP event 面未机器声明为 DERIVED'; exit 2; }
+# P2：§0 头块曾手写「实算 EV-CAP-* 为 2」——N5 撤掉 EVENT_N 常量后此处将再无机器约束，故禁写
+! grep -qE '`EV-CAP-\*` 为 [0-9]' "$SPEC" || { echo '✗ 合同手写了 EV-CAP 事件实数（须由 arch-cap-events 派生器现算）'; exit 1; }
 ! grep -q 'EVENT-SET-SP4: NOT_APPLICABLE' "$SPEC" || { echo '✗ 本域有事件却声明为不适用'; exit 2; }
 # N5：事件实数不再手写，取自跨件引用台账的机器派生值（见下方 XREF_OUT）
 for dep in SP1 SP3 SP8 SP7a SP2 SP7b; do grep -q "| \*\*$dep" "$SPEC" || { echo "✗ 前置/协作处置缺 $dep"; exit 1; }; done
@@ -134,10 +136,16 @@ sh specs/sp4/xref-check.sh --selftest >/dev/null 2>&1 || { echo '✗ 跨件引�
 SELFTEST_OUT=$(specs/sp4/check.sh --selftest) || { echo '✗ SP4 coverage checker 反测未过'; exit 1; }
 SELFTEST_N=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP4 覆盖反测 \([0-9][0-9]*\) 项全过$/\1/p')
 [ -n "$SELFTEST_N" ] || { echo '✗ coverage checker 未报告实算反测数'; exit 2; }
+DERIVERS_CHECK=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP4 区间派生器 [0-9]* 个：//p')
+DERIVERS_XREF=$(sh specs/sp4/xref-check.sh --selftest 2>&1 | sed -n 's/^--- SP4 区间派生器 [0-9]* 个：//p')
+[ -n "$DERIVERS_CHECK" ] && [ -n "$DERIVERS_XREF" ] || { echo '✗ checker 未报告区间派生器清单'; exit 2; }
+E_PARTS=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP4 E 分项实算 //p')
+[ -n "$E_PARTS" ] || { echo '✗ coverage checker 未报告 E 分项实算'; exit 2; }
 SETS=$(printf '%s\n' "$SELFTEST_OUT" | sed -n 's/^--- SP4 预期集合实算 //p')
 [ -n "$SETS" ] || { echo '✗ coverage checker 未报告预期集合实算值'; exit 2; }
 # §0.2 的机器派生快照不得只是文字：与 check.sh 实算、与跨件引用门派生值逐项对撞
-SPEC="$SPEC" SETS="$SETS" IFACE_N="$IFACE_N" EVENT_N="$EVENT_N" python3 - <<'PYSNAP' || exit 2
+SPEC="$SPEC" SETS="$SETS" IFACE_N="$IFACE_N" EVENT_N="$EVENT_N" E_PARTS="$E_PARTS" \
+DERIVERS="$DERIVERS_CHECK $DERIVERS_XREF" python3 - <<'PYSNAP' || exit 2
 import os,re,sys
 spec=open(os.environ['SPEC'],encoding='utf8').read()
 sets=dict(kv.split('=') for kv in os.environ['SETS'].split())
@@ -153,8 +161,25 @@ pairs=[(g(r'§14–§16 heading = (\d+)','heading'),sets['spec'],'§14–§16 he
        (g(r'架构 §6 CAP 接口 = (\d+)','CAP 接口'),os.environ['IFACE_N'],'CAP 接口'),
        (g(r'架构 §4\.2 CAP 事件 = (\d+)','CAP 事件'),os.environ['EVENT_N'],'CAP 事件'),
        (g(r'架构 §13 主责域含 CAP 的原型入口 = (\d+)','原型入口'),sets['prototype'],'原型入口')]
+# P1：E 分项（E.1/E.3/E.4）也要对撞，不能只对总数
+parts=dict(kv.split('=') for kv in os.environ['E_PARTS'].split())
+for k in ('E.1','E.3','E.4'):
+    r=re.search(re.escape(k)+r'=(\d+)',snap)
+    if not r: print(f'✗ §0.2 快照缺分项 {k}'); sys.exit(2)
+    pairs.append((r.group(1),parts[k],f'E 分项 {k}'))
 bad=[(l,a,b) for a,b,l in pairs if a!=b]
 for l,a,b in bad: print(f'✗ §0.2 快照与实算不符：{l} 快照={a} 实算={b}')
+# BX：区间派生器台账 §0.2b ⇄ 两个 checker 现算清单，双向差集须均空（个数不手写）
+m2=re.search(r'<!-- DERIVERS-SP4-BEGIN -->(.*?)<!-- DERIVERS-SP4-END -->',spec,re.S)
+if not m2: print('✗ §0.2b 区间派生器台账缺失'); sys.exit(2)
+led=set()
+for l in m2.group(1).splitlines():
+    c=[x.strip().strip('`') for x in l.strip().strip('|').split('|')]
+    if len(c)==5 and re.fullmatch(r'\d+',c[0]): led.add(c[1])
+run=set(os.environ['DERIVERS'].split())
+if led!=run:
+    print(f'✗ §0.2b 台账与 checker 现算派生器清单不一致：台账多={sorted(led-run)} checker 多={sorted(run-led)}')
+    bad=bad or [1]
 sys.exit(2 if bad else 0)
 PYSNAP
 if DOC=docs/definitely-missing-sp4-design.md specs/sp4/check.sh >/dev/null 2>&1; then

@@ -51,7 +51,22 @@ CN={1:('一',),2:('两','二'),3:('三',),4:('四',),5:('五',),6:('六',),
 ALL_CN=[c for v in CN.values() for c in v]
 UNIT=re.compile(r'[0-9]+|['+''.join(ALL_CN)+r']+')
 # B2：全域穷举的数词形态族（与门槛给的字面一致）
-FORM=re.compile(r'(?:[0-9]+|['+''.join(ALL_CN)+r']+)\s?(?:项|个?(?:既有)?接口|个?(?:既有)?(?:域)?事件)')
+# P4：形态族加宽到「数词 + 项/条/个(+可选单位名词)」，覆盖倒装「共 5 个」与换单位「6 条要求」；
+# 族内每处命中须归属台账行，或落在 §0.2c 豁免台账（逐条字面量 + 理由，不是整块豁免）。
+FORM=re.compile(r'(?:[0-9]+|['+''.join(ALL_CN)+r']+)\s?(?:(?:项|条|个)?(?:既有)?(?:域)?(?:接口|事件)|项|条|个)')
+EXEMPT=re.compile(r'<!-- XREF-EXEMPT-BEGIN -->(.*?)<!-- XREF-EXEMPT-END -->',re.S)
+
+def parse_exempt(spec):
+    m=EXEMPT.search(spec)
+    if not m: return None,['✗ XREF-EXEMPT 形态豁免台账缺失']
+    out=[];errs=[]
+    for l in m.group(1).splitlines():
+        if not l.startswith('|'): continue
+        c=[x.strip().strip('`') for x in l.strip().strip('|').split('|')]
+        if not c or not re.fullmatch(r'\d+',c[0]): continue
+        if len(c)!=3: errs.append(f'✗ 豁免台账有行未被解析（应为 3 列，实为 {len(c)} 列）：{l.strip()[:70]}'); continue
+        out.append({'lit':c[1],'why':c[2]})
+    return out,errs
 
 LEDGER=re.compile(r'<!-- XREF-SP4-BEGIN -->(.*?)<!-- XREF-SP4-END -->',re.S)
 NOTE=re.compile(r'<!-- XREF-NOTE-BEGIN -->.*?<!-- XREF-NOTE-END -->',re.S)
@@ -79,11 +94,15 @@ def parse_input_table(spec):
     for l in m.group(1).splitlines():
         r=re.match(r'^\| `(docs/[^`]+)`(?: @ `([0-9a-f]{7,40})`)? \| `([0-9a-f]{64})` \|',l)
         if r: t[r.group(1)]=r.group(2)
-    return t
+    return t   # 值可能为 None（该行未显式标锚）——调用方必须 fail-closed，不得跳过比对
+
+DERIVERS_BLK=re.compile(r'<!-- DERIVERS-SP4-BEGIN -->.*?<!-- DERIVERS-SP4-END -->',re.S)
 
 def scan_body(spec):
-    """B1：剥离台账块与说明区后的『生效正文』，判命中只认这里。"""
-    return NOTE.sub('',LEDGER.sub('',spec))
+    """B1：剥离全部机器台账块与说明区后的『生效正文』，判命中只认这里。
+    台账（跨件引用／区间派生器／形态豁免）自身是判据载体，不得算作正文命中。"""
+    for blk in (LEDGER,DERIVERS_BLK,EXEMPT): spec=blk.sub('',spec)
+    return NOTE.sub('',spec)
 
 def run(spec,checkers=None):
     errs=[]
@@ -97,6 +116,16 @@ def run(spec,checkers=None):
         if bad: errs.append(f'✗ 说明区内含 {len(bad)} 条判据行，判据行不得进豁免区')
     if spec.count('<!-- XREF-NOTE-BEGIN -->')!=spec.count('<!-- XREF-NOTE-END -->'):
         errs.append('✗ 说明区围栏不配对')
+    # P3：豁免区必须有界——只允许 §0.2a 与 §0.5 各一个，且须落在该节之内
+    ALLOWED=('0.2a','0.5'); seen_sec=[]
+    for m in re.finditer(r'<!-- XREF-NOTE-BEGIN -->',spec):
+        heads=re.findall(r'^### (\S+)',spec[:m.start()],re.M)
+        sec=heads[-1] if heads else '(无所属节)'
+        seen_sec.append(sec)
+        if sec not in ALLOWED:
+            errs.append(f'✗ 说明区出现在 §{sec}，豁免区只允许在 §0.2a 与 §0.5 各一个')
+    for a in ALLOWED:
+        if seen_sec.count(a)>1: errs.append(f'✗ §{a} 内出现 {seen_sec.count(a)} 个说明区，每节至多一个')
 
     itab=parse_input_table(spec)
     if itab is None: errs.append('✗ 找不到 ⑥ 输入来源表，台账锚无从校验')
@@ -119,7 +148,10 @@ def run(spec,checkers=None):
             if r['file'] not in itab:
                 errs.append(f"{tag} ✗ 目标件不在 ⑥ 输入表：{r['file']}"); continue
             want=itab[r['file']]
-            if want is not None and r['anchor']!=want:
+            if want is None:
+                # BY：原实现在此跳过比对 ⇒ ⑥ 表 8 行里 6 行无 @锚，台账第 2/3 行的锚可写任意 commit 而全绿
+                errs.append(f"{tag} ✗ ⑥ 表中 `{r['file']}` 未显式标注 `@锚`，台账锚无从校验（须在 ⑥ 表补 `@ 锚`）"); continue
+            if r['anchor']!=want:
                 errs.append(f"{tag} ✗ 台账锚 `{r['anchor']}` 与 ⑥ 表所冻结的 `{want}` 不一致（锚不得手写）"); continue
         try: b=subprocess.check_output(['git','show',f"{r['anchor']}:{r['file']}"],stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
@@ -149,10 +181,14 @@ def run(spec,checkers=None):
 
     # B2：全域穷举——生效正文里每一处数词形态都须归属某已登记形态
     forms=[f for f,_ in registered]
+    ex,eerr=parse_exempt(spec); errs+=eerr
+    lits=[e['lit'] for e in (ex or [])]
+    for e in (ex or []):
+        if e['lit'] not in body: errs.append(f"✗ 豁免台账登记了生效正文中不存在的字面量「{e['lit']}」（豁免不得空挂）")
     if forms:
         unattr=[]
         for m in FORM.finditer(body):
-            if not any(body.startswith(f,m.start()) for f in forms):
+            if not any(body.startswith(f,m.start()) for f in forms) and not any(body.startswith(x,m.start()) for x in lits):
                 ctx=body[max(0,m.start()-28):m.end()+18].replace('\n',' ')
                 unattr.append(f'「{m.group(0)}」… {ctx.strip()}')
         if unattr:
@@ -226,32 +262,33 @@ t('N1 checker 自身残留旧数词必红',spec,True,{'specs/sp4/fake.sh':f'echo
 t('N1 checker 无残留则不红',spec,False,{'specs/sp4/fake.sh':'echo ok'})
 
 # B4：止界不命中必须抛错（目标件在 git 里不可变，故直接对派生器喂截断文本）
-n+=1
+# 🔴 区间派生器台账（§0.2b）：个数不手写，由本清单现算；每个派生器起界／止界各一条反测并断言覆盖齐全
 raw=subprocess.check_output(['git','show','970effe:docs/dingwei-sp8-design.md']).decode()
-trunc=raw.split('### 11.6')[0]
-try:
-    d_sp8_items(trunc); print('  ✗ B4 止界不命中未抛错（切片取到 EOF 仍判过）'); fail=1
-except Boundary: print('  ✓ B4 止界不命中必抛错')
-n+=1
-try:
-    d_sp8_items(raw.replace('### 11.5a ','### 11.5X ')); print('  ✗ B4 起界不命中未抛错'); fail=1
-except Boundary: print('  ✓ B4 起界不命中必抛错')
-# 🔴 通用判据：每个区间派生器起界／止界各一条反测（本文件共 3 个派生器 ⇒ 6 条）
 arch=subprocess.check_output(['git','show','6a98629:docs/dingwei-platform-architecture.md']).decode()
-def bcase(name,fn,text):
-    global n,fail; n+=1
-    try:
-        fn(text); print(f'  ✗ {name} 未抛错'); fail=1
-    except Boundary: print(f'  ✓ {name}')
-bcase('架构 §6 起界不命中必抛错',d_arch_interfaces,arch.replace('## 6.','## 6X.'))
-bcase('架构 §6 止界不命中必抛错',d_arch_interfaces,arch.split('\n## 7.')[0])
-bcase('架构 §4.2 起界不命中必抛错',d_arch_events,arch.replace('### 4.2','### 4.2X'))
-bcase('架构 §4.2 止界不命中必抛错',d_arch_events,arch.split('\n## 5.')[0])
-
+INTERVALS=[
+ ('xref:sp8-11.5a-items',     d_sp8_items,       raw,
+  lambda t: t.replace('### 11.5a ','### 11.5X '), lambda t: t.split('### 11.6')[0]),
+ ('xref:arch-cap-interfaces', d_arch_interfaces, arch,
+  lambda t: t.replace('## 6.','## 6X.'),          lambda t: t.split('\n## 7.')[0]),
+ ('xref:arch-cap-events',     d_arch_events,     arch,
+  lambda t: t.replace('### 4.2','### 4.2X'),      lambda t: t.split('\n## 5.')[0]),
+]
+covered=set()
+for name,fn,text,mut_start,mut_stop in INTERVALS:
+    for end,mut in (('起界',mut_start),('止界',mut_stop)):
+        n+=1
+        try:
+            fn(mut(text)); print(f'  ✗ {name} {end}不命中未抛错'); fail=1
+        except Boundary: print(f'  ✓ {name} {end}不命中必抛错'); covered.add((name,end))
+n+=1
+want_cov={(nm,e) for nm,*_ in INTERVALS for e in ('起界','止界')}
+if covered==want_cov: print(f'  ✓ 两端反测覆盖齐全：{len(INTERVALS)} 个区间派生器 × 2 端 = {len(want_cov)} 条')
+else: print(f'  ✗ 两端反测覆盖不全，缺：{sorted(want_cov-covered)}'); fail=1
 n+=1
 try:
-    d_sp8_items(raw.replace('### 11.5a ','### 11.5abc ')); print('  ✗ 起界正则误命中同前缀更长标题（11.5abc 被当成 11.5a）'); fail=1
+    d_sp8_items(raw.replace('### 11.5a ','### 11.5abc ')); print('  ✗ 起界正则误命中同前缀更长标题'); fail=1
 except Boundary: print('  ✓ 起界正则不误命中同前缀更长标题')
+print('--- SP4 区间派生器 '+str(len(INTERVALS))+' 个：'+' '.join(nm for nm,*_ in INTERVALS))
 print(f'--- SP4 跨件引用反测 {n} 项全过' if not fail else '--- SP4 跨件引用反测失败')
 raise SystemExit(fail)
 PY
