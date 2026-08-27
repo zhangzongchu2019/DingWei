@@ -33,11 +33,11 @@ def d_sp8_items(text):
                 if re.match(r'^[0-9]+\. ',l)])
 
 def d_arch_interfaces(text):
-    return len({m.group(1) for l in _slice(text,r'^## 6\.(?![0-9])',r'^## ','^## 6. … 下一个 ^##')
+    return len({m.group(1) for l in _slice(text,r'^## 6\.(?![0-9A-Za-z])',r'^## ','^## 6. … 下一个 ^##')
                 for m in [re.match(r'^\| `(CAP-(?:CMD|QRY|CAP)-[^`]+)` \| CAP \|',l)] if m})
 
 def d_arch_events(text):
-    return len({m.group(1) for l in _slice(text,r'^### 4\.2(?![0-9])',r'^## ','^### 4.2 … 下一个 ^##')
+    return len({m.group(1) for l in _slice(text,r'^### 4\.2(?![0-9A-Za-z])',r'^## ','^### 4.2 … 下一个 ^##')
                 for m in [re.match(r'^\| `(EV-CAP-[^`]+)` \| CAP \|',l)] if m})
 
 DERIVERS={
@@ -236,6 +236,17 @@ n+=1
 try:
     d_sp8_items(raw.replace('### 11.5a ','### 11.5X ')); print('  ✗ B4 起界不命中未抛错'); fail=1
 except Boundary: print('  ✓ B4 起界不命中必抛错')
+# 🔴 通用判据：每个区间派生器起界／止界各一条反测（本文件共 3 个派生器 ⇒ 6 条）
+arch=subprocess.check_output(['git','show','6a98629:docs/dingwei-platform-architecture.md']).decode()
+def bcase(name,fn,text):
+    global n,fail; n+=1
+    try:
+        fn(text); print(f'  ✗ {name} 未抛错'); fail=1
+    except Boundary: print(f'  ✓ {name}')
+bcase('架构 §6 起界不命中必抛错',d_arch_interfaces,arch.replace('## 6.','## 6X.'))
+bcase('架构 §6 止界不命中必抛错',d_arch_interfaces,arch.split('\n## 7.')[0])
+bcase('架构 §4.2 起界不命中必抛错',d_arch_events,arch.replace('### 4.2','### 4.2X'))
+bcase('架构 §4.2 止界不命中必抛错',d_arch_events,arch.split('\n## 5.')[0])
 
 n+=1
 try:

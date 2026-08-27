@@ -46,12 +46,12 @@ def slice_lines(text,start,stop,label,keep_start=False):
     return out
 
 def derive_interfaces(text):
-    return {'IF:'+m.group(1) for l in slice_lines(text,r'^## 6\.(?![0-9])',r'^## ','架构 ^## 6. … 下一个 ^##')
+    return {'IF:'+m.group(1) for l in slice_lines(text,r'^## 6\.(?![0-9A-Za-z])',r'^## ','架构 ^## 6. … 下一个 ^##')
             for m in [re.match(r'^\| `(CAP-(?:CMD|QRY|CAP)-[^`]+)` \| CAP \|',l)] if m}
 
 def derive_events(text):
     # N4 同族：收窄到 §4.2（§0.2 与 AC-SP4-04 都称 §4.2），与 xref-check 的派生器同口径
-    return {'EVENT:'+m.group(1) for l in slice_lines(text,r'^### 4\.2(?![0-9])',r'^## ','架构 ^### 4.2 … 下一个 ^##')
+    return {'EVENT:'+m.group(1) for l in slice_lines(text,r'^### 4\.2(?![0-9A-Za-z])',r'^## ','架构 ^### 4.2 … 下一个 ^##')
             for m in [re.match(r'^\| `(EV-CAP-[^`]+)` \| CAP \|',l)] if m}
 
 def derive_src(text,start=r'^## §14\b',stop=r'^## §17\b',label='SpecDoc ^## §14 … ^## §17'):
@@ -210,11 +210,34 @@ if mode=='--selftest':
         derive_src(spec.replace('## §14','## §14X'))
         print('  ✗ 起界不命中未抛错'); fail=1
     except Boundary: print('  ✓ 起界不命中必抛错')
+    # 🔴 通用判据：每个区间派生器起界／止界各一条反测，只报一端不算证明有牙
+    def boundary_case(name,fn,text):
+        global n,fail; n+=1
+        try:
+            fn(text); print(f'  ✗ {name} 未抛错'); fail=1
+        except Boundary: print(f'  ✓ {name}')
+    boundary_case('架构 §6 止界不命中必抛错',derive_interfaces,arch.split('\n## 7.')[0])
+    boundary_case('架构 §6 起界不命中必抛错',derive_interfaces,arch.replace('## 6.','## 6X.'))
+    boundary_case('架构 §4.2 止界不命中必抛错',derive_events,arch.split('\n## 5.')[0])
+    boundary_case('架构 §4.2 起界不命中必抛错',derive_events,arch.replace('### 4.2','### 4.2X'))
+    # 🔴 直接断言集合数：证明未加固取法在止界失守时把 28 撑成 113 且 canary 仍在
     n+=1
-    try:
-        derive_interfaces(arch.split('\n## 7.')[0])   # §6 之后全部截断 ⇒ 泛化止界 ^## 永不命中
-        print('  ✗ 架构 §6 止界不命中未抛错'); fail=1
-    except Boundary: print('  ✓ 架构 §6 止界不命中必抛错')
+    def unhardened_src(text,start=r'^## §14\b',stop=r'^## §17\b'):
+        out=[];on=False
+        for l in text.splitlines():
+            if re.match(start,l): on=True
+            if re.match(stop,l): on=False
+            if on:
+                m=re.match(r'^#{2,4}\s+(?:§)?(\d+(?:\.\d+[a-z]?)*)\b',l)
+                if m: out.append('SRC:§'+m.group(1))
+        return out
+    no17='\n'.join(l for l in spec.splitlines() if not re.match(r'^## §17\b',l))
+    raw=unhardened_src(no17)
+    ok = len(set(unhardened_src(spec)))==28 and len(set(raw))==113 and len(raw)==114 \
+         and 'SRC:§15.4' in raw and 'SRC:§15.5' in raw
+    if ok: print('  ✓ 断言集合数：未加固取法删 ## §17 后 集合=113（列表=114，重复 SRC:§21.4）且 canary 仍在 ⇒ 原判据不报错')
+    else:
+        print(f'  ✗ 集合数断言不符：原样集合={len(set(unhardened_src(spec)))} 删止界后 集合={len(set(raw))} 列表={len(raw)}'); fail=1
     print('--- SP4 预期集合实算 '+' '.join(f'{k}={len(v)}' for k,v in expected.items()))
     print(f'--- SP4 覆盖反测 {n} 项全过' if not fail else '--- SP4 覆盖反测失败')
     raise SystemExit(fail)
