@@ -1,16 +1,16 @@
-# DingWei SP1 身份与隔离地基设计 v1.5
+# DingWei SP1 身份与隔离地基设计 v1.6
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp1-design` |
-| **版本** | v1.5 |
-| **状态** | candidate，待 sonnet50tchangshark＋deepseekv4pro 双评审及 coordinator 归口确认 |
+| **版本** | v1.6 |
+| **状态** | accepted；deepseekv4pro＋opus50tchangshark 2/2 PASS，coordinator 已归口确认 |
 | **输入基线** | `acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` |
 | **合同** | `specs/sp1/spec.md` |
 | **范围** | P1 主体链、一企业一 PG 库、RLS 隔离合同、AccessCtx 改名、Agent 绑定 |
 | **目标架构** | `IDN` 主责，消费 `MSG/PLT` 既有接口；不增加架构接口 ID |
 
-> v1.5：收窄 checker 能力声明：甲10 只机器核关键字面与两条已知反转句式；换词后的散文语义反转归人审。
+> v1.6：登记 2/2 PASS 与归口确认；checker 的 §7.1 分母改从合同权威章节派生，不再手写。
 
 输入锚：`acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` · `docs/dingwei-platform-specdoc.md` ·
 `docs/dingwei-platform-architecture.md` · `docs/dingwei-prototype.html`

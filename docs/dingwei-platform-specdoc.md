@@ -1,4 +1,4 @@
-# DingWei 平台 SpecDoc v3.75 —— 纲领与产品规范
+# DingWei 平台 SpecDoc v3.76 —— 纲领与产品规范
 
 > **性质**：本件是 DingWei 平台**后续阶段的纲领与产品规范**，由业主 2026-08-23 指定整合形成。
 > **效力**：本件生效后，下列四份源件**降为沿革依据**，规范效力以本件为准（对照见附录 D）：
@@ -18,7 +18,7 @@
 > ⇒ 本件**必须先满足自己定义的规范**，否则示范不成立。以下头块按 §5.2 格式填写。
 
 **Spec ID**: `dingwei-platform-specdoc`
-**版本**: v3.75
+**版本**: v3.76
 **评审状态**: ✅ **架构评审 PASS**（判据与经过见 `docs/dingwei-revision-history.md`；以 `docs/DELIVERY-STATUS.md` 为准）
 　　　　　　⚠️ **用例评审 / 交付验证未过** —— 不同的门，见 §5.6
 
@@ -2103,7 +2103,7 @@ digest 与数据同在一个可写库，能改帖的人通常也能改 digest。
 2. **`Org()` 决定连哪个库，`Principal()` 决定看得见哪些行** —— 两者不可互相替代。
    只校验 `Org()` 而不带 `Principal()` 的读路径，等于**企业内全员可见**，属漏配。
 
-**SP1 执笔候选，待 sonnet50tchangshark＋deepseekv4pro 双评审及 coordinator 归口确认**：
+✅ **SP1 已由 deepseekv4pro＋opus50tchangshark 2/2 PASS，并经 coordinator 归口确认**：
 三个受控旧标识的 AST 出现数已由 prod 28 / test 7 / comment 4 降为 **0 / 0 / 0**；
 `scripts/legacy-name-gate.sh` 的三类基线同步钉 0，任何回流即红。此次不是机械替换：构造器要求 Org 与 Principal
 同时非空，仓储入口在触库前验证双轴，pending/system 两种显式上下文互不冒充。

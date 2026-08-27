@@ -7,6 +7,7 @@ check() {
 python3 - "$ANCHOR" "$DOC" <<'PY'
 import re,subprocess,sys
 a,doc=sys.argv[1:]; text=open(doc,encoding='utf8').read()
+contract=open('specs/sp1/spec.md',encoding='utf8').read()
 spec=subprocess.check_output(['git','show',f'{a}:docs/dingwei-platform-specdoc.md'],text=True)
 proto=subprocess.check_output(['git','show',f'{a}:docs/dingwei-prototype.html'],text=True)
 m=re.search(r'<!-- COVERAGE-SP1-BEGIN -->(.*?)<!-- COVERAGE-SP1-END -->',text,re.S)
@@ -21,7 +22,9 @@ def mapped(pattern):
         if len(c)>=2 and 'D-SP1-' in c[1] and re.fullmatch(pattern,token): out.add(token)
     return out
 
-expected=['§7.1']
+authority=re.search(r'^\| \*\*权威章节\*\* \|(.+?)\|$',contract,re.M)
+if not authority: print('✗ SP1 合同缺权威章节结构化行'); sys.exit(2)
+expected=re.findall(r'§\d+(?:\.\d+(?:[-a-z0-9]*)?)*',authority.group(1))
 for l in spec.splitlines():
     q=re.match(r'^#{2,4}\s+(?:§)?(21(?:\.\d+(?:[-a-z0-9]*)?)?|22\.(?:1|3|4)(?:[a-z0-9.-]*)?)\b',l)
     if q: expected.append('§'+q.group(1))

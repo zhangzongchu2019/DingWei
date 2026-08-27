@@ -5,8 +5,8 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp1-design` |
-| **版本** | v1.4 |
-| **状态** | `draft-for-review` |
+| **版本** | v1.5 |
+| **状态** | `accepted`（deepseekv4pro＋opus50tchangshark 2/2 PASS；coordinator 已归口） |
 | **范围** | 乙04 隔离合同、甲10 一企业一库、甲06 改名、`agent → principal` 绑定 |
 | **权威章节** | SpecDoc §21、§22.1、§22.3、§22.4、§7.1 P1 |
 | **分级** | L3（安全面＝是） |
