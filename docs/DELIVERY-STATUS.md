@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `fe9061bccfadc430cb7cba23a9cfe7f0d80f4bef` · 分支 `design/v0.2`
+生成自 commit `709307bccf2cb615c5f1edeeb8bb08d642b5e46c` · 分支 `design/v0.2`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,13 +20,14 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.77** | `fe9061bccfadc430cb7cba23a9cfe7f0d80f4bef<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5244 / 372769 | `d3a96752fa0bbf063aed003e59786d8fe5c416228c7d9be5f2dd7004e79715db` |
+| `dingwei-platform-specdoc.md` | **v3.77** | `709307bccf2cb615c5f1edeeb8bb08d642b5e46c<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5244 / 372834 | `8889a2e8fc73ffccee17555362a4e9be8da9f700c15273b4092c3a9c0b38baff` |
 | `dingwei-prototype.html` | **v1.48** | `42cf8c954bdfcbcbdd19db391cb01bf92c40d69d` | 2905 / 260448 | `f2995730ca986ae38993f62391312982e7ed5026dab990c78ff29a6bb00ef9cb` |
-| `dingwei-platform-architecture.md` | **v1.4** | `fe9061bccfadc430cb7cba23a9cfe7f0d80f4bef<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 1174 / 65320 | `4aefb99cb99a0db262e5b43537f98f484632a953377c0d482db36f633e50e954` |
+| `dingwei-platform-architecture.md` | **v1.4** | `709307bccf2cb615c5f1edeeb8bb08d642b5e46c<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 1174 / 65320 | `94b067f8de0c38e81fc3ffb6594b695357286b794223e5d2ae7c78a03ade8d2c` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+709307b docs: bump SpecDoc v3.77 COL read exception
 fe9061b docs: 登记 SP1 双票通过与归口收口
 ce0f6ce docs: 收窄 SP1 甲10 checker 能力声明
 6f44052 test: 闭合 SP1 映射语义反转与证据边界
@@ -34,5 +35,4 @@ e43b897 docs: 精确化 dw_owner 受控成员资格范围
 9cbc4e0 docs: 将 SP1 收口状态改为待归口确认
 d6d13ba design: 对齐 SP1 dw_owner 企业 ops 归属裁定
 42cf8c9 design: 收口 SP1 双轴身份与数据库隔离合同
-acc531e review: 重跑 v0.2 跨制品十二项并登记阻断
 ```
