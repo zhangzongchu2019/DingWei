@@ -27,6 +27,7 @@ check() {
   _bad=0
   for k in prod test comment; do
     _n=$(printf '%s\n' "$_out" | grep -oE "^$k=[0-9]+" | cut -d= -f2)
+    [ "$k" = prod ] && _prod=$_n
     _b=$(grep -oE "^legacy_$k=[0-9]+" "$BASE" | cut -d= -f2)
     [ -n "$_b" ] || { echo "✗ $BASE 缺 legacy_$k 基线项 —— 闸坏了（合计一个数会让三类互相抵消）"; return 2; }
     echo "  $k：$_n（基线 $_b$( [ "$k" = prod ] && echo "，终值 0" )）"
@@ -36,7 +37,11 @@ check() {
     fi
   done
   [ "$_bad" -gt 0 ] && { echo "  🔴 **三类分别棘轮**：合计持平不算数 —— 一降一升会互相抵消。"; return 1; }
-  echo "  ✓ 三类均未回升；prod 终值 0，尚未达标（迁移执行归 SP1）"
+  if [ "${_prod:-0}" -eq 0 ]; then
+    echo "  ✓ 三类均未回升；prod 已达终值 0"
+  else
+    echo "  ✓ 三类均未回升；prod 尚未达终值 0（迁移执行归 SP1）"
+  fi
   echo "  ⚠️ 本闸判【出现数】，判不了【改对了没有】—— 改名而语义仍单层，它看不出来。"
   return 0
 }

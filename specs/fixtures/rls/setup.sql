@@ -84,8 +84,12 @@ SELECT rolname, rolcanlogin, rolbypassrls
   FROM pg_roles WHERE rolname IN ('dw_owner','dw_migrate','dw_app') ORDER BY rolname;
 -- 期望：3 行，rolcanlogin / rolbypassrls 均为 f
 
-SELECT pg_has_role(CURRENT_USER, 'dw_owner', 'USAGE') AS enterprise_ops_surrogate_holds_owner;
--- 期望：t（CURRENT_USER 仅在本 fixture 兼作企业 ops 测试替身；应用面拒绝见 t4）
+SELECT session_user, current_user,
+       (SELECT usesuper FROM pg_user WHERE usename = session_user) AS usesuper;
+-- 记录实际执行身份；usesuper=t 时，后续 owner 正测不具成员资格归因力。
+
+SELECT pg_has_role(CURRENT_USER, 'dw_owner', 'USAGE') AS fixture_runner_has_owner;
+-- 期望：t，仅证明夹具执行者可切 owner；不作为 C.3a.1c 企业 ops 正向归因证据。
 
 SELECT to_regclass('public.demo_item') IS NOT NULL AS table_exists;
 -- 期望：t（首版失败时此处为 f —— 这一行就是「自检没覆盖产物」的补丁）

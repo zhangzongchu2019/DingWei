@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-27T07:37:32Z
-分支头：`9cbc4e064b0f626ab341df759b9b1b980058aeca`
+生成时刻：2026-08-27T07:55:24Z
+分支头：`e43b89736282e60b23fe03982544b26b81b2ee0b`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -27,7 +27,7 @@ REVIEWED 566208fc33a196c2cc44947b892fda11d3c5feee5c63a55e910df9b071badfad  scrip
 REVIEWED 00e2a7106e622c697a9b3c4e718110bdd7d51a6d75fe6bd59429de92201f2d28  scripts/gen-review-state.sh
 REVIEWED 189cbe8280dc2a89006e0fd6495ffd7cd79a74d646667c4dcd93868ba1f8df75  scripts/gen-status.sh
 REVIEWED 6dd8dd1441776bde1b3f6b79ed9dde7f7fdb353e6b6105a604f1e9b4b40a36e6  scripts/input-anchor-gate.sh
-REVIEWED 510ae09c71ca9ac2f4d44ef74d1530cbe03d5a3560179fc4ad03c280c9f30d3f  scripts/legacy-name-gate.sh
+REVIEWED ca7853acbe8a958124bc1200ae89027881ccad3f1cdde9bd8933ad9f6cb41ba9  scripts/legacy-name-gate.sh
 REVIEWED e671108564fa7d404c2b6b53340ed202a55beb6351c293196a0668f82108e05f  scripts/na3-pg-evidence.sh
 REVIEWED 1b3f7a7bebaddd2315bef2c62c0b60bff4f5b666d0419068f2aa3b4edaef8b01  scripts/path-anchor-gate.sh
 REVIEWED 1d2c1ef512417b70760dbe2a4bd314935f319fae23fbe39f8d20ea4202cbd138  scripts/post-columns-gate.sh

@@ -11,7 +11,8 @@ BEGIN;
 ROLLBACK;
 RESET ROLE;
 
--- 正测（C.3a.1c）：企业 ops 持本企业库 dw_owner，可切属主执行表 DDL
+-- 可执行性回归（非 C.3a.1c 归因证据）：夹具执行者往往是 superuser 且兼持三 role，
+-- ALTER 成功不能证明“仅因企业 ops 持 dw_owner”；这里只防 DDL 语句本身退化。
 BEGIN;
   SET ROLE dw_owner;
   ALTER TABLE demo_item ADD COLUMN IF NOT EXISTS enterprise_ops_probe text; -- 期望成功
