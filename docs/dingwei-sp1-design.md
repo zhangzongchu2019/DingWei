@@ -1,16 +1,16 @@
-# DingWei SP1 身份与隔离地基设计 v1.4
+# DingWei SP1 身份与隔离地基设计 v1.5
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp1-design` |
-| **版本** | v1.4 |
+| **版本** | v1.5 |
 | **状态** | candidate，待 sonnet50tchangshark＋deepseekv4pro 双评审及 coordinator 归口确认 |
 | **输入基线** | `acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` |
 | **合同** | `specs/sp1/spec.md` |
 | **范围** | P1 主体链、一企业一 PG 库、RLS 隔离合同、AccessCtx 改名、Agent 绑定 |
 | **目标架构** | `IDN` 主责，消费 `MSG/PLT` 既有接口；不增加架构接口 ID |
 
-> v1.4：精确化 owner 成员资格：本企业 ops 持有，受控 migration role 仅迁移窗口可切；应用面始终不可切。
+> v1.5：收窄 checker 能力声明：甲10 只机器核关键字面与两条已知反转句式；换词后的散文语义反转归人审。
 
 输入锚：`acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` · `docs/dingwei-platform-specdoc.md` ·
 `docs/dingwei-platform-architecture.md` · `docs/dingwei-prototype.html`
@@ -370,7 +370,7 @@ resource_ref, request_id, outcome, reason_code, ts`。敏感 credential/DSN 不�
 |---|---|---|
 | RV-甲06 | §3、§7；`internal/repo` 的 `AccessCtx{Org, Principal}`；原型仓储入口同步 | `scripts/legacy-name-gate.sh` 报 prod/test/comment=0；`go test ./internal/repo` 验双轴缺一触库前拒 |
 | RV-乙04 | §5 三个受控 role、FORCE/WITH CHECK/SET LOCAL；`specs/fixtures/rls/` | `specs/fixtures/rls/RUN.sh`（有 PG 环境时）；无环境不得冒充已实跑 |
-| RV-甲10 | §4 enterprise registry、opaque database key、0/1/多映射、企业专池 | `specs/sp1/contract-check.sh` 对字段/顺序/拒绝语义精确断言并跑变异反测 |
+| RV-甲10 | §4 enterprise registry、opaque database key、0/1/多映射、企业专池 | `specs/sp1/contract-check.sh` 断言关键字面量存在＋两条已知反转句式黑名单；**改写措辞的语义反转本闸挡不住，由人审承担** |
 
 三条在设计与当前仓储 port 层闭合；真实企业 registry、DSN secret resolver、PG DDL/RLS 部署仍归 SP7a 实现门，
 不得以本设计 PASS 倒签实现 PASS。

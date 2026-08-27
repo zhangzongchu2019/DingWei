@@ -32,6 +32,7 @@ echo '预期集合：SP1 六面 + D-SP1-01..09 + 四项点名范围 + 三阻断�
 echo '实检集合：6/6 + 9/9 + 4/4 + 三role/归属/审计/registry/路由 10/10 + AccessCtx 双轴 4/4 + 旧名 0/0/0'
 echo '未知集合：0'
 echo '✓ SP1 独立合同通过'
+echo '⚠️ 能力边界：甲10 仅核关键字面与两条已知反转句式；改写措辞的语义反转本闸挡不住，由人审承担。'
 }
 
 selftest() {
@@ -51,7 +52,10 @@ selftest() {
     '0 或多结果即拒。' \
     '0 或多结果即拒；已改为取第一条继续。'
   if check >/dev/null 2>&1; then echo '  ✓ 正常件放行'; tested=$((tested+1)); else echo '  ✗ 正常件被拦'; fail=1; fi
-  [ "$fail" -eq 0 ] && echo "--- SP1 合同语义反测 $tested/3 全过"
+  if [ "$fail" -eq 0 ]; then
+    echo "--- SP1 字面/已知句式反测 $tested/3 全过"
+    echo '⚠️ 能力边界：改写措辞的语义反转本闸挡不住，由人审承担。'
+  fi
   return "$fail"
 }
 
