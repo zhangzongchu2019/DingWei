@@ -1,0 +1,16 @@
+# DingWei 设计仓 CODEOWNERS —— 待业主确认后启用分支保护
+#
+# ⚠️ 本仓所有提交共用 git 身份 zhangzongchu（各会话无独立 GitHub 账号）。
+# 以下 @zhangzongchu 是「可由业主补映射为各会话账号」的占位，
+# 真实评审人映射待业主裁定。分支保护设置由业主后置操作。
+
+# 设计文档 —— 甲域（sol）主审
+docs/dingwei-platform-specdoc.md
+docs/dingwei-platform-architecture.md
+docs/dingwei-sp*-design.md
+
+# 规格与闸 —— coordinator 归口
+specs/gates/
+
+# 兜底（其余路径）
+*                        @zhangzongchu
