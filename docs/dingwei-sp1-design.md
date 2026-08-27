@@ -4,7 +4,7 @@
 |---|---|
 | **Design ID** | `dingwei-sp1-design` |
 | **版本** | v1.3 |
-| **状态** | candidate，待 terra＋deepseekv4pro 双评审 |
+| **状态** | candidate，待 sonnet50tchangshark＋deepseekv4pro 双评审及 coordinator 归口确认 |
 | **输入基线** | `acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` |
 | **合同** | `specs/sp1/spec.md` |
 | **范围** | P1 主体链、一企业一 PG 库、RLS 隔离合同、AccessCtx 改名、Agent 绑定 |

@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` · 分支 `design/v0.2`
+生成自 commit `d6d13bac734273ee680cf503ad3e609a7c5b88d6` · 分支 `design/v0.2`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.74** | `184813fc229caad857014c175e2c12b3d23f9f03<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5203 / 369487 | `47f46ef35f20d56c46e39e3f3e013cc57990517b386d5bd9aac24f61e1a4b615` |
-| `dingwei-prototype.html` | **v1.48** | `46b79ab0022b0686a23455f328c9316d7f87281f<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2905 / 260448 | `f2995730ca986ae38993f62391312982e7ed5026dab990c78ff29a6bb00ef9cb` |
-| `dingwei-platform-architecture.md` | **v1.4** | `46b79ab0022b0686a23455f328c9316d7f87281f<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 1174 / 65320 | `7a350cb72aa5e3e0b850666944947b35e166b24500e3423313c70d80ecc16e4d` |
+| `dingwei-platform-specdoc.md` | **v3.75** | `42cf8c954bdfcbcbdd19db391cb01bf92c40d69d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5204 / 369570 | `7f27ecf27a435d34bbdef3fb221c3838d9924e4a29487b3396278d415d5c11ac` |
+| `dingwei-prototype.html` | **v1.48** | `42cf8c954bdfcbcbdd19db391cb01bf92c40d69d` | 2905 / 260448 | `f2995730ca986ae38993f62391312982e7ed5026dab990c78ff29a6bb00ef9cb` |
+| `dingwei-platform-architecture.md` | **v1.4** | `42cf8c954bdfcbcbdd19db391cb01bf92c40d69d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 1174 / 65320 | `88e3d654f446ae36be2c2efc003d54f60cc15cbe9907e4037fa9f4cae6fc8cf6` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+d6d13ba design: 对齐 SP1 dw_owner 企业 ops 归属裁定
+42cf8c9 design: 收口 SP1 双轴身份与数据库隔离合同
 acc531e review: 重跑 v0.2 跨制品十二项并登记阻断
 ccccd4f design: 落地 v0.2 域主轴统一基准与跨域义务门
 27e4084 merge: 整合已收口 SP4 v1.8 合同
 8b3afc5 merge: 整合已收口 SP8 设计与证据
 184813f merge: 整合新版架构与 SP0-SP3 基线
 486fa4a 移除无效 CODEOWNERS，避免工作组权限误导
-8b902ad chore: 建 design/v0.2 基准分支并置 CODEOWNERS（待业主确认后启用保护）
-16028ac SP4 合同 v1.8：闭 BX/BY/BZ 三阻断 + P1–P5 五条非阻断（P6 按门方意见只登记不改）
 ```
