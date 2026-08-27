@@ -1,0 +1,6 @@
+# sp	primary_domain	legacy_scope_regex
+SP0	GOV	^§1–§4、附录 A$
+SP2	WRK	^§[5-9](?:\D|$)
+SP3	KNO	^§1[0-3](?:\D|$)
+SP4	CAP	^§1[4-6](?:\D|$)
+SP8	GOV	^§2[34](?:\D|$)

@@ -1,0 +1,4 @@
+# id	sp	legacy_scope	declared_domain	architecture_owner	obligation	status
+DM-SP2-01	SP2	§5 分级与门集	WRK	GOV	GOV owns classification/gate-set semantics; WRK consumes the frozen decision contract	registered
+DM-SP2-02	SP2	§6.1 判定/回执	WRK	GOV	GOV owns verdict/receipt semantics; WRK owns execution recording and transport seam	registered
+DM-SP2-03	SP2	§7 门禁纪律	WRK	GOV	GOV owns gate discipline; WRK enforces it through declared command/query seams	registered

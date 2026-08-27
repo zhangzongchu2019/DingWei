@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `fcfec9a1f43769ddd831eb4071a2a787624936ea` · 分支 `design/addendum-decisions`
+生成自 commit `27e4084b142e1f985d6863616186a6a02c6fec2f` · 分支 `design/v0.2`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -20,19 +20,19 @@
 
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
-| `dingwei-platform-specdoc.md` | **v3.73** | `fcfec9a1f43769ddd831eb4071a2a787624936ea` | 5204 / 369769 | `66df042ec49e6c7345e5c5cdbe1cf4e7f5c3bbdc94a1c671bb35c588532e8e0f` |
-| `dingwei-prototype.html` | **v1.46** | `f5d0fdafe352ad7bcb08460ca9a5add7133f6c69` | 2905 / 260431 | `0308a24f878a39faf20bb5c1204ec5c0989c6455be105d9eb3ab450a1a0e0269` |
-| `dingwei-architecture-design.md` | **v0.34** | `6aef49bc4859b7c53855f1dfeb3c6132c4cb8134` | 907 / 61596 | `ef54ad86fa9763ef29510ef60a98b5471be0bfadc56b17a1c0fb22d1f593d3e7` |
+| `dingwei-platform-specdoc.md` | **v3.73** | `184813fc229caad857014c175e2c12b3d23f9f03` | 5204 / 369946 | `772220830b47a1dbbab69b2740efac1992f6681f73f92d0821476fa516c6a655` |
+| `dingwei-prototype.html` | **v1.47** | `46b79ab0022b0686a23455f328c9316d7f87281f` | 2905 / 260434 | `eeb71a5a77a53990569e08f9745165903bcf9e34cf6ce0a5047824167e1df4b8` |
+| `dingwei-platform-architecture.md` | **v1.3** | `46b79ab0022b0686a23455f328c9316d7f87281f` | 1174 / 65297 | `0a2288c7b9e245eded06944cd063a6d0d458c6b1f45a3a9534d29817b6c58fdc` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
-fcfec9a 收窄 failure_class ＋ 立 §11.6b 终结与未知的证据形态（v3.71 → v3.72）—— 采纳 deepseek 阻断，选 (a)
-a5abc57 §11.6a 补 repro 分类判据（v3.70 → v3.71）—— 采纳 opus50tczc2000 阻断，选方案 2
-4fb34f2 §11.6 按业主裁定更新：字段表对齐实际需要 ＋ FAIL evidence 落成已定义（v3.69 → v3.70）
-f5d0fda 清理失效的 style-ok 注释 8 处 —— 原报 11 处，其中 3 处不是失效，是判据
-3fb9554 并锚：fix/e-registry-and-18-1 合入评审面，形成新基准
-181d7ee 授权根的机器面与散文面分家 —— 文档里的【示例】把后端激活了
-6aef49b 批准锚改丙精确版（不可变 commit ＋ 受保护 ref）＋ 冻结基线整体删除（乙域收尾裁定四件）
-ad10d98 ㉙ 接入侧分支的提交闸/CI 链路（coordinator 裁）—— 一律实跑，只有阻断随分支不同
+27e4084 merge: 整合已收口 SP4 v1.8 合同
+8b3afc5 merge: 整合已收口 SP8 设计与证据
+184813f merge: 整合新版架构与 SP0-SP3 基线
+486fa4a 移除无效 CODEOWNERS，避免工作组权限误导
+8b902ad chore: 建 design/v0.2 基准分支并置 CODEOWNERS（待业主确认后启用保护）
+16028ac SP4 合同 v1.8：闭 BX/BY/BZ 三阻断 + P1–P5 五条非阻断（P6 按门方意见只登记不改）
+4b40a1f SP4 合同 v1.7：更正 113/114 分母、按新通用判据把区间派生的两端反测补全
+56fcca1 SP4 合同 v1.6：并入 check.sh 三处同族缺陷（C1–C3），check.sh 进入评审面
 ```

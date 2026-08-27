@@ -5,6 +5,11 @@ SPECDOC_ANCHOR=4220195
 SP8_ANCHOR=970effe
 SPEC=specs/sp4/spec.md
 [ -f "$SPEC" ] || { echo "✗ 缺 $SPEC"; exit 2; }
+REG=specs/sp4/REVIEW-REGISTRATION-v1.8.md
+[ -f "$REG" ] || { echo "✗ 缺 SP4 v1.8 评审登记件"; exit 2; }
+REG_SHA=$(sha256sum "$REG" | awk '{print $1}')
+[ "$REG_SHA" = '1167be6eadd79cef0bb1f9d010b691d8c9e2c632bd0c1f8023f5412899a3a0b1' ] || { echo '✗ SP4 v1.8 评审登记件漂移'; exit 2; }
+grep -q '16028ac41ad7aab2779bba0c6395dd37494cac96' "$REG" && grep -q '3/3 PASS' "$REG" || { echo '✗ SP4 v1.8 评审登记信息不完整'; exit 2; }
 # 冻结输入的唯一常量源在下面这段 python 里；它同时做三件事：
 #   ① 在各自锚上实取并校验 sha256；② 与合同 ⑥ 表逐项对撞；③ 与 check.sh 的 PATHS 逐项对撞。
 # 三方任一处写错（含 ⑥ 表把 sha 写成 64 个 0）即 exit 2，杜绝"表里写错机器不响"。

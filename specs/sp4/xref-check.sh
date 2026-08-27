@@ -183,8 +183,12 @@ def run(spec,checkers=None):
     forms=[f for f,_ in registered]
     ex,eerr=parse_exempt(spec); errs+=eerr
     lits=[e['lit'] for e in (ex or [])]
+    # v0.2 OBL-07：豁免不得承载派生器正在计数的单位，否则错分母可被搬进豁免表。
+    derived_units=('heading','接口','事件','项')
     for e in (ex or []):
         if e['lit'] not in body: errs.append(f"✗ 豁免台账登记了生效正文中不存在的字面量「{e['lit']}」（豁免不得空挂）")
+        if any(u in e['lit'] for u in derived_units):
+            errs.append(f"✗ 豁免字面「{e['lit']}」的单位属于派生器计数对象，不得豁免错分母")
     if forms:
         unattr=[]
         for m in FORM.finditer(body):

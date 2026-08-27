@@ -1,0 +1,5 @@
+# package	primary_domain	range_source	status
+SP5-COL	COL	architecture §17 rows with owner COL	planned
+SP6-AGT	AGT	architecture §17 rows with owner AGT	planned
+SP6-MSG	MSG	architecture §17 rows with owner MSG	planned
+SP7-PLT	PLT	architecture §17 rows with owner PLT or PLT.Security	planned

@@ -36,11 +36,22 @@
 | `specs/sp8/spec.md` | SP8 授权与平台治理设计合同（§23、§24，含 GOV 治理面 schema 的 SP7b 责任）|
 | `specs/sp8/contract-check.sh` | SP8 六面、交付/验收 ID、GOV 接口、同域差集与组合冻结输入核验 |
 | `specs/sp8/check.sh` | SP8 四类覆盖集合机器派生（含 GOV 同域差集）、结构化落点与正交变异反测 |
+| `specs/sp8/EVIDENCE-blocker1.md` | SP8 合同阻断的拉取式闭合证据 |
+| `specs/sp8/EVIDENCE-body-rounds.md` | SP8 正文各轮 findings 与闭合锨对照卷 |
 | `specs/sp4/spec.md` | SP4 skill/MCP 体系设计合同（§14–§16，含 CAP schema 的 SP7b 责任）|
 | `specs/sp4/contract-check.sh` | SP4 六面、交付/验收 ID、CAP 接口与事件、前置处置与组合冻结输入核验 |
 | `specs/sp4/check.sh` | SP4 五类覆盖集合机器派生、结构化落点与正交变异反测；目标件未建时 exit 2 |
 | `specs/sp4/xref-check.sh` | SP4 跨件数量引用、冻结锨和区间派生器的机器门 |
 | `specs/sp4/REVIEW-REGISTRATION-v1.3.md` | SP4 v1.3 合同 3/3 PASS 的历史登记卷 |
+| `specs/sp4/REVIEW-REGISTRATION-v1.8.md` | SP4 v1.8 合同 3/3 PASS 的冻结登记卷；只记被评件指纹，不内嵌自身哈希 |
+| `specs/v0.2/spec.md` | v0.2 域主轴＋SP 交付封套的统一基准合同 |
+| `specs/v0.2/check.sh` | v0.2 可达性、域等价性、错配登记、七条义务与 RV 完整性总门 |
+| `specs/v0.2/check.py` | v0.2 总门实现 |
+| `specs/v0.2/domain-baseline.tsv` | 存量 SP 章节范围与 primary domain 的机器基线 |
+| `specs/v0.2/baseline-manifest.tsv` | v0.2 当前树权威件的路径、sha256 与来源锨棘轮 |
+| `specs/v0.2/domain-mismatches.tsv` | §17 域 owner 与存量 SP 声明域的逐行错配登记 |
+| `specs/v0.2/future-domain-packages.tsv` | SP5-COL、SP6-AGT、SP6-MSG、SP7-PLT 的域派生起件清单 |
+| `specs/v0.2/obligations.tsv` | v0.2 整合的七条跨件义务台账 |
 | `specs/platform/checklist.md` | 结构域（sol 主笔，26 项） |
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |

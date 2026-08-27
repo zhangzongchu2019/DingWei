@@ -1,0 +1,8 @@
+# id	owner	consumer	source	resolution	status
+V02-OBL-01	CAP/SP4	GOV/SP8	docs/dingwei-platform-specdoc.md:F.15	SP4 owns the whole row and domain-level half; auth half is GOV/SP8 §24 and fail-closed; F.15.5 #4 remains a CAP prototype obligation	closed-by-v0.2
+V02-OBL-02	coordinator	SP4	specs/sp4:opening-gate	contract-check requires REVIEW-REGISTRATION-v1.8.md at its frozen sha256; record contains reviewed artifact fingerprints and no self hash	closed-by-v0.2
+V02-OBL-03	CAP/SP4	SP4-review	specs/sp4/spec.md:§0.2a-P6	Keep registered only; changing the at-least-once wording requires a reviewed contract bump	registered
+V02-OBL-04	v0.2	SP4	specs/sp4:*:970effe	16028ac and c7ac0c3 ancestry plus freeze tags keep 970effe reachable	closed-by-v0.2
+V02-OBL-05	CAP/SP4	SP4-checkers	slice_lines-call-sites	v0.2 checker scans interval helper call sites and requires each enclosing deriver in §0.2b	closed-by-v0.2
+V02-OBL-06	CAP/SP4	SP4-checkers	specs/sp4/spec.md:§⑥	Every docs input row carries an explicit immutable commit anchor	closed-by-v0.2
+V02-OBL-07	CAP/SP4	SP4-checkers	specs/sp4/spec.md:§0.2c	Exemption literals whose unit is a registered derivation count object are forbidden	closed-by-v0.2
