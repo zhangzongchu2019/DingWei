@@ -4,7 +4,7 @@
 # 立此闸的直接原因（甲域 sol · 乙域 terra 同指，R1→R2）：
 #   §0.3 写「每个子 spec **必须认领**附录 E 中属于自己的行」，
 #   并把「附录 E 中无任何子 spec 认领的行数」定为**恒零判据**。
-#   而 E.1–E.4 的表**没有 owner 列**，全文也无独立 `E-ID → SP` 映射
+#   而 E.1–E.4 的表曾**没有 owner 列**，全文也无独立 `E-ID → SP` 映射
 #   ⇒ **该判据在结构上无从计算**，作不了 gate、验不了 SP0–SP8 全覆盖。
 #
 # 🔴 与本仓已归纳的「判据在结构上恒为假/无法成立」同族（前例：用 set 去 count 重复）。
@@ -23,7 +23,7 @@ check() {
   [ -f "$DOC" ] || { echo "✗ 闸依赖缺失：$DOC 不存在 —— 闸坏了，不是免检"; return 2; }
   _out=$(awk -v owners="$OWNERS" '
     BEGIN{ n=split(owners,O," "); for(i=1;i<=n;i++) ok[O[i]]=1 }
-    /^## E\.[134]([^0-9]|$)/ { intbl=1; next }
+    /^## E\.[1234]([^0-9]|$)/ { intbl=1; next }
     /^## E\.[0-9]/ || /^# /   { intbl=0 }
     intbl && /^\|[[:space:]]*\*?\*?[0-9]/ {
       total++
@@ -39,7 +39,7 @@ check() {
   _b=$(printf '%s\n' "$_out" | grep -o 'BAD=[0-9]*' | cut -d= -f2)
 
   if [ "${_t:-0}" -eq 0 ]; then
-    echo "✗ 未在 $DOC 中找到附录 E.1/E.3/E.4 的数据行 —— 闸坏了，不是免检"; return 2
+    echo "✗ 未在 $DOC 中找到附录 E.1–E.4 的数据行 —— 闸坏了，不是免检"; return 2
   fi
   echo "  附录 E 可认领行：$_t · 无主或 owner 非法：$_b"
   if [ "${_b:-0}" -gt 0 ]; then
@@ -77,6 +77,19 @@ selftest() {
 
   mk; printf '| 1 | 甲 | §5.2 | SP3·SP4 |\n## E.5 尾\n' >> "$T/d.md"; run
   [ $? -eq 0 ] && ok "不误伤：多主（SP3·SP4）合法" || bad "多主被误拦"
+
+  # E.2 曾被取法 E.[134] 整段漏掉；三种变异专打 E.2，防本闸只保护别的三段。
+  printf '## E.2 x\n\n| # | 指标 | 出处 | 用途 | owner_sp |\n|---|---|---|---|---|\n| 9 | 观测 | §21.1c | 分列 | SP5 |\n## E.5 尾\n' > "$T/d.md"; run
+  [ $? -eq 0 ] && ok "E.2 合法 owner 纳入受检集合" || bad "E.2 合法行不可见"
+
+  printf '## E.2 x\n\n| # | 指标 | 出处 | 用途 | owner_sp |\n|---|---|---|---|---|\n| 9 | 观测 | §21.1c | 分列 | SP99 |\n## E.5 尾\n' > "$T/d.md"; run
+  [ $? -eq 1 ] && ok "🔴 E.2 非法 owner 必红" || bad "E.2 非法 owner 被放行"
+
+  printf '## E.2 x\n\n| # | 指标 | 出处 | 用途 | owner_sp |\n|---|---|---|---|---|\n| 9 | 观测 | §21.1c | 分列 |\n## E.5 尾\n' > "$T/d.md"; run
+  [ $? -eq 1 ] && ok "🔴 E.2 缺 owner 必红" || bad "E.2 缺 owner 被放行"
+
+  printf '## E.2 x\n\n| # | 指标 | 出处 | 用途 | owner_sp |\n|---|---|---|---|---|\n| 9 | 观测 | §21.1c | 分列 | SP3·SP4 |\n## E.5 尾\n' > "$T/d.md"; run
+  [ $? -eq 0 ] && ok "E.2 合法多主纳入受检集合" || bad "E.2 合法多主被误拦"
 
   mk; printf '## E.5 尾\n' >> "$T/d.md"; run
   [ $? -eq 2 ] && ok "拦住：找不到数据行判闸坏（空表不得当免检）" || bad "空表被当免检"

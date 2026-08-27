@@ -65,7 +65,7 @@
 | `specs/gates/checklist-execution-exceptions.txt` | checklist 未落账的**登记例外** —— 🔴 登记 ≠ 修复；闸打印「登记债务」时**不是 PASS**；例外的新增与批准属 owner/门方评审面，执笔方不得自增自批 |
 | `scripts/rv-integrity-gate.sh` | RV 完整性闸 —— 标注是 **reviewer-owned 的证据**，执笔方的清理/替换工具不得改写其正文；🔴 与「改一处漏一处」互为镜像：那是该改的没改，这是**不该改的改了** |
 | `specs/gates/rv-ledger.txt` | RV 标注台账（reviewer-owned）—— 稳定 ID ＋ 最终状态；`--final` 以它为可比对象判「标注是否消失」。🔴 执笔方可增行，**不得改他域已有行的状态** |
-| `scripts/appendix-e-owner-gate.sh` | 附录 E 认领闸 —— 「未认领恒为 0」须有 `owner_sp` 列承载；🔴 判「每行有没有主」，**判不了认领得对不对** |
+| `scripts/appendix-e-owner-gate.sh` | 附录 E.1–E.4 全段认领闸 —— 「未认领恒为 0」须有 `owner_sp` 列承载；🔴 判「每行有没有主」，**判不了认领得对不对** |
 | `scripts/evidence-fresh-gate.sh` | 证据包时效闸 —— 证据必须产自被评审的那个锚；🔴 **快照指纹一致只证明文件没被篡改，不证明内容是当期产出**，两者是不同的保证 |
 | `scripts/superseded-claims-gate.sh` | 已撤销断言闸 —— 裁定改了引用点必须跟着改；🔴 判「清单内旧断言还在不在」，**判不了清单是否完备** |
 | `scripts/gate-witness-gate.sh` | **覆盖见证元闸**（乙域跨闸硬契约第 4 条的**执行者**）—— 核每个闸是否给出「预期集合 · 实检集合 · 未知集合」。清单由 `speclint-gate.sh` **机器派生，非手写**。🔴 立件原因：**契约没有执行者 ＝ 没有契约**（本轮已有三个实例）。⚠️ **实测债务：20 个闸中仅 2 个合规、18 个缺见证** —— 故**暂未接入提交闸**，接入时机报归口方；**债务可见先于债务清零**。判【有没有见证】，🔴 判不了【见证里的数对不对】　🔴 **接入范围**（coordinator 2026-08-26 裁）：接入**侧分支** `fix/e-registry-and-18-1` 的提交闸/CI 链路（`scripts/speclint-gate.sh` ㉙ 段）；**不接主评审面硬提交闸**，主闸接入等并锚后再定。⚠️ 实现上**一律实跑、一律打印**，只有【是否阻断】随分支不同 —— 不做成「别的分支上不跑」，因为**一个不跑的闸和一个不存在的闸，在输出里长得一模一样**；非侧分支上 ㉙ 若为红，末行摘要必须改口（不得印「全过」）。棘轮四条阻断＋基线件＋逐闸 owner/到期见 `specs/gates/gate-witness-baseline.txt` 与 `gate-witness-debt.txt` |
