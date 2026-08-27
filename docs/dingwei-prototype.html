@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.47 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.48 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -128,8 +128,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.47</span></h1>
-  <span class="anchor">原型 <b>v1.47</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.48</span></h1>
+  <span class="anchor">原型 <b>v1.48</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -1531,7 +1531,7 @@ body.uionly #uihint{display:block}
     <div class="mono">§21.1 双层结构 · 派生源 · fail-closed 行为 · 一对多处置</div></td>
     <td class="mono">sha256:3e8a…71<br>286 行 / 11.4KB</td><td class="cell-ok">架构评审 PASS</td><td>调度者</td><td><button>打开</button></td></tr>
   <tr><td><b>测试用例设计</b></td><td data-edit><b>用例集</b> 14 条
-    <div class="mono">含 <b>负向 6 条</b>：伪造 tenant / 缺 principal / 一对多静默取首 / <b>绕仓储包直连库</b> / <b>持有效 TenantCtx 跨企业读</b> / <b>拒绝未落审计</b><br>⚠️ 🔴 <b>C.3a 已裁：PG ＋ RLS 作 <code>owner_principal</code> 谓词的 DB 级兜底</b>（不兜企业层——那是库边界的事）。⇒ 原三条（<code>SET</code> 而非 <code>SET LOCAL</code> / owner 绕 RLS / <code>BYPASSRLS</code>）<b>仍然有效</b>，见 <code>specs/fixtures/rls/</code>：<b><code>t3-no-residue.sql</code></b> 同时实证两项 —— #5c（<code>SET LOCAL</code> 而非 <code>SET</code>：事务后 <code>must_be_zero=0</code>）与 #2（owner 绕 RLS：FORCE 下 <code>owner_sees_before=0</code>，<code>NO FORCE</code> 成功后 <code>owner_sees_after=2</code> ⇒ 属主可自解除，唯一防线是审计留痕）；#3（<code>NOBYPASSRLS</code>）由 <b><code>setup.sql</code> 自检</b>覆盖（三 role <code>rolbypassrls</code> 均为 f）—— 🔴 <b>#3 是配置自检项，不在 t1–t4 之列</b>。<code>t4-ddl-rights.sql</code> 另证角色边界：dw_app 非属主，<code>ALTER</code> 与 <code>CREATE POLICY</code> 均被拒。另加受控仓储 API 的等价负测（§22.2a #3）</div></td>
+    <div class="mono">含 <b>负向 6 条</b>：伪造 enterprise / 缺 principal / 一对多静默取首 / <b>绕仓储包直连库</b> / <b>持有效 AccessCtx 跨企业读</b> / <b>拒绝未落审计</b><br>⚠️ 🔴 <b>C.3a 已裁：PG ＋ RLS 作 <code>owner_principal</code> 谓词的 DB 级兜底</b>（不兜企业层——那是库边界的事）。⇒ 原三条（<code>SET</code> 而非 <code>SET LOCAL</code> / owner 绕 RLS / <code>BYPASSRLS</code>）<b>仍然有效</b>，见 <code>specs/fixtures/rls/</code>：<b><code>t3-no-residue.sql</code></b> 同时实证两项 —— #5c（<code>SET LOCAL</code> 而非 <code>SET</code>：事务后 <code>must_be_zero=0</code>）与 #2（owner 绕 RLS：FORCE 下 <code>owner_sees_before=0</code>，<code>NO FORCE</code> 成功后 <code>owner_sees_after=2</code> ⇒ 属主可自解除，唯一防线是审计留痕）；#3（<code>NOBYPASSRLS</code>）由 <b><code>setup.sql</code> 自检</b>覆盖（三 role <code>rolbypassrls</code> 均为 f）—— 🔴 <b>#3 是配置自检项，不在 t1–t4 之列</b>。<code>t4-ddl-rights.sql</code> 另证角色边界：dw_app 非属主，<code>ALTER</code> 与 <code>CREATE POLICY</code> 均被拒。另加受控仓储 API 的等价负测（§22.2a #3）</div></td>
     <td class="mono">sha256:b204…c9<br>14 用例</td><td class="cell-ok">用例评审 PASS</td><td>qa_owner</td><td><button>打开</button></td></tr>
   <tr><td>实现</td><td data-edit>代码变更<div class="mono">6 文件 · +412 / −87</div></td>
     <td class="mono">commit 4a91c02f…<br>+412 / −87</td><td class="cell-fail"><b>代码评审 FAIL</b></td><td>安全角色</td><td><button>打开</button></td></tr>
@@ -2448,7 +2448,7 @@ body.uionly #uihint{display:block}
   <tr><td>1</td><td data-edit>🔴 <b>裸库句柄不出仓储包</b></td>
     <td class="mono"><code>*sql.DB</code> / <code>*pgx.Conn</code> 不导出、任何函数不返回它</td><td class="cell-fail">未建</td></tr>
   <tr><td>2</td><td data-edit>🔴 <b>租户上下文进类型，不进参数列表</b>
-    <div class="mono">入口签名收 <code>TenantCtx</code>，该类型<b>无可用零值</b></div></td>
+    <div class="mono">入口签名收 <code>AccessCtx</code>，企业与 principal 双轴缺一即拒</div></td>
     <td class="mono">漏传是<b>编译错误</b>，不是运行期错误</td><td class="cell-fail">未建</td></tr>
   <tr><td>3</td><td data-edit>调用方不得自带 <code>WHERE</code> 拼接</td>
     <td class="mono">租户过滤条件由仓储层统一注入</td><td class="cell-fail">未建</td></tr>
@@ -2473,7 +2473,7 @@ body.uionly #uihint{display:block}
   <tr><td class="mono" data-edit>internal/mcs/board</td><td>sqlite</td><td class="d-mid">3</td>
     <td data-edit>执行主干，改动风险高 ⇒ <b>放在有 conformance suite 之后</b>（§4.5）</td></tr>
   <tr><td class="mono" data-edit>internal/store</td><td>sqlite</td><td class="d-low">4</td>
-    <td data-edit>已是仓储形态，补 <code>TenantCtx</code> 与迁移 runner 即可</td></tr>
+    <td data-edit>已是仓储形态，补 <code>AccessCtx</code> 与迁移 runner 即可</td></tr>
   </tbody></table>
 </div>
 
@@ -2500,13 +2500,13 @@ body.uionly #uihint{display:block}
   <table><thead><tr><th style="width:130px">负测</th><th>构造</th><th style="width:130px">期望</th><th style="width:80px">现状</th></tr></thead><tbody>
   <tr><td data-edit><b>伪造 tenant</b></td><td class="mono" data-edit>请求头声明他租户 ID，服务端派生的 principal 不匹配</td>
     <td class="cell-ok">拒，并落账</td><td class="cell-fail">未建</td></tr>
-  <tr><td data-edit><b>跨企业读</b></td><td class="mono" data-edit>持 A 租户 <code>TenantCtx</code> 查 B 租户资源</td>
+  <tr><td data-edit><b>跨企业读</b></td><td class="mono" data-edit>持企业 A 的 <code>AccessCtx</code> 查企业 B 资源</td>
     <td class="cell-ok"><b>PEP 在 selector / 资源查询【之前】拒绝</b>
     <div class="mono">对外返回<b>不区分资源存在与否的统一 deny / not-found</b>；<br>
     🔴 <b>绝不返回「成功的空集合」</b><br>
     并<b>落拒绝审计</b>：源 principal · 派生 tenant · 请求 op · capability/policy 判定 · 时刻（内容仍最小化）</div></td>
     <td class="cell-fail">未建</td></tr>
-  <tr><td data-edit><b>缺 context</b></td><td class="mono" data-edit>不传 <code>TenantCtx</code> 直接调仓储入口</td>
+  <tr><td data-edit><b>缺 context</b></td><td class="mono" data-edit>不传 <code>AccessCtx</code> 直接调仓储入口</td>
     <td class="cell-ok"><b>编译失败</b><div class="mono">不是运行期拒 —— 运行期才拒说明它是纪律不是机制</div></td>
     <td class="cell-fail">未建</td></tr>
   </tbody></table>
@@ -2532,7 +2532,7 @@ body.uionly #uihint{display:block}
   <table><thead><tr><th style="width:32px">#</th><th>评审须逐项确认</th><th style="width:230px">近乎零成本的机器旁证</th><th style="width:76px">状态</th></tr></thead><tbody>
   <tr><td>1</td><td data-edit>本次改动是否新增了<b>绕过仓储包的库访问</b></td>
     <td class="mono">建库调用集＋句柄逃逸<b>恒为 0</b>（唯一执行处 <code>repo-boundary-gate</code>；覆盖以其 detector 声明为准）</td><td><b>已建</b> · 棘轮运行中 · 当前未达标（实数以闸输出为准）</td></tr>
-  <tr><td>2</td><td data-edit>新增查询是否经 <code>TenantCtx</code></td>
+  <tr><td>2</td><td data-edit>新增查询是否经 <code>AccessCtx</code></td>
     <td class="mono">由类型设计保证，<b>编译期即拦</b></td><td class="cell-wait">待建</td></tr>
   <tr><td>3</td><td data-edit>新增表是否已接入仓储层</td>
     <td class="mono">扫「未被仓储包引用的表数」<b>恒为 0</b></td><td class="cell-wait">待建</td></tr>

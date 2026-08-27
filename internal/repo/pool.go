@@ -38,7 +38,7 @@ func OpenPG(ctx context.Context, dsn string) (*Pool, error) {
 func (p *Pool) Close() error { return p.db.Close() }
 
 // Ping 健康检查:本就无租户语义,故要求显式 SystemCtx,不接受零值。
-func (p *Pool) Ping(ctx context.Context, t TenantCtx) error {
+func (p *Pool) Ping(ctx context.Context, t AccessCtx) error {
 	if err := t.check(); err != nil {
 		return err
 	}
@@ -52,14 +52,14 @@ func (p *Pool) Ping(ctx context.Context, t TenantCtx) error {
 //	因为领域表里还没有租户列(领域 schema 归 SP7b,由各领域 spec 自交,不作统一前置)。
 //	注入位就在这里:租户列一旦落地,过滤在本函数内单点注入,调用方不改。
 //	🔴 不得因为「调用没报错」就认为跨租户读已被拦住 —— 现在拦不住,本注释不掩盖这一点。
-func (p *Pool) Exec(ctx context.Context, t TenantCtx, query string, args ...any) (sql.Result, error) {
+func (p *Pool) Exec(ctx context.Context, t AccessCtx, query string, args ...any) (sql.Result, error) {
 	if err := t.check(); err != nil {
 		return nil, err
 	}
 	return p.db.ExecContext(ctx, query, args...)
 }
 
-func (p *Pool) Query(ctx context.Context, t TenantCtx, query string, args ...any) (*sql.Rows, error) {
+func (p *Pool) Query(ctx context.Context, t AccessCtx, query string, args ...any) (*sql.Rows, error) {
 	if err := t.check(); err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (p *Pool) Query(ctx context.Context, t TenantCtx, query string, args ...any
 // QueryRow 返回 (*sql.Row, error) 而非裸 *sql.Row:
 // sql.Row 的错误只能在 Scan 时暴露,缺上下文这类【拒绝】不该被推迟到 Scan,
 // 否则调用方很容易写成「拒绝＝一次扫不出行」,即把 deny 降格成空结果集(§22.2a #2a 禁止)。
-func (p *Pool) QueryRow(ctx context.Context, t TenantCtx, query string, args ...any) (*sql.Row, error) {
+func (p *Pool) QueryRow(ctx context.Context, t AccessCtx, query string, args ...any) (*sql.Row, error) {
 	if err := t.check(); err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (p *Pool) QueryRow(ctx context.Context, t TenantCtx, query string, args ...
 // Tx 事务包装:同样不把 *sql.Tx 交出去。
 type Tx struct {
 	tx *sql.Tx
-	t  TenantCtx
+	t  AccessCtx
 }
 
 func (x Tx) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
@@ -96,7 +96,7 @@ func (x Tx) QueryRow(ctx context.Context, query string, args ...any) *sql.Row {
 
 // InTx 以回调形态提供事务 —— 回调式而非「返回一个 Tx 让你自己 Commit」,
 // 是为了让 *sql.Tx 无从逃出本包(判据二)。fn 返回错误即回滚。
-func (p *Pool) InTx(ctx context.Context, t TenantCtx, opts *sql.TxOptions, fn func(Tx) error) error {
+func (p *Pool) InTx(ctx context.Context, t AccessCtx, opts *sql.TxOptions, fn func(Tx) error) error {
 	if err := t.check(); err != nil {
 		return err
 	}

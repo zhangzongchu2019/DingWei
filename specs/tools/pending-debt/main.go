@@ -7,12 +7,12 @@
 //	主闸照打「持平 ✓」。那正是本仓已归纳的「按名字判非按效果判」，
 //	而且发生在专门用来防「安全属性互相冒充」的那道闸自己身上。
 //
-// 本工具的判据是效果：**任何函数，只要它返回的是 repo.PendingTenantCtx 造出来的上下文，
+// 本工具的判据是效果：**任何函数，只要它返回的是 repo.PendingCtx 造出来的上下文，
 // 它就是一个债源**；它的全部调用点都计入债。helper 叫什么与判据无关。
 //
 // 🔴 二轮（terra SA-12b）：一轮只把 `cur.Recv == nil` 的 FuncDecl 注册为债源、调用统计只收
 //
-//	ast.Ident —— 于是 `func (x *X) btx() repo.TenantCtx` 这种**方法债源**及其 `x.btx()` 调用
+//	ast.Ident —— 于是 `func (x *X) btx() repo.AccessCtx` 这种**方法债源**及其 `x.btx()` 调用
 //	一处都不计。断言写的是「任何函数 / 全部调用点」，实现只覆盖了普通函数，
 //	**换成方法名就能把债从计数里拿掉**。与一轮那条「按名字判」是同一个病的第二种形状：
 //	断言的作用域大于实现的覆盖面。本轮把方法债源与 SelectorExpr 调用一并纳入。
@@ -145,7 +145,7 @@ func scanPkg(files []string) ([]site, error) {
 		ps = append(ps, parsed{path: f, af: af, repoName: name})
 	}
 
-	// ① 找债源：直接调用 repo.PendingTenantCtx 的地方；并记下【包裹它的函数或方法】。
+	// ① 找债源：直接调用 repo.PendingCtx 的地方；并记下【包裹它的函数或方法】。
 	//    按导入路径识别，不按包名字面 —— alias 绕不过。
 	//
 	// 🔴 函数与方法**分开登记**：普通函数按 `f()` 调用（ast.Ident），
@@ -160,7 +160,7 @@ func scanPkg(files []string) ([]site, error) {
 			return false
 		}
 		sel, ok := e.(*ast.SelectorExpr)
-		if !ok || sel.Sel.Name != "PendingTenantCtx" {
+		if !ok || sel.Sel.Name != "PendingCtx" {
 			return false
 		}
 		id, ok := sel.X.(*ast.Ident)

@@ -1,4 +1,4 @@
-# DingWei 平台目标架构 v1.3
+# DingWei 平台目标架构 v1.4
 
 > 本件从新版 SpecDoc 与原型重新设计目标架构，同时承载分域定义、接口设计与技术架构设计。
 > 旧件已移至 `docs/v0.1/dingwei-architecture-design-v0.34.md`，仅作历史参考，不是本件输入，也不是本件的修改对象。
@@ -8,20 +8,20 @@
 | 项 | 值 |
 |---|---|
 | **Architecture ID** | `dingwei-platform-target-architecture` |
-| **版本** | v1.3 |
+| **版本** | v1.4 |
 | **状态** | draft，待全文评审 |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
 | **施工合同** | `specs/platform-architecture/spec.md` |
-| **冻结施工锚** | `f5d0fdafe352ad7bcb08460ca9a5add7133f6c69` |
+| **输入基线** | `acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` |
 | **可否施工** | **否**；全文评审 PASS 前仅可作设计评审输入 |
 
-输入锚：`f5d0fdafe352ad7bcb08460ca9a5add7133f6c69` · `docs/dingwei-platform-specdoc.md` · `docs/dingwei-prototype.html`
+输入锚：`acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` · `docs/dingwei-platform-specdoc.md` · `docs/dingwei-prototype.html`
 
 | 输入 | 冻结指纹 | 用途 |
 |---|---|---|
-| SpecDoc v3.69 | sha256 `8ae715df69eb2eb4fb817f55c2bcb934512d7b7bdfffdcaabe96311293115843` | 规范、业主裁定、约束与验收来源 |
-| 原型 v1.46 | sha256 `0308a24f878a39faf20bb5c1204ec5c0989c6455be105d9eb3ab450a1a0e0269` | 可达入口、操作者视角与交互状态来源 |
+| SpecDoc v3.74 | sha256 `47f46ef35f20d56c46e39e3f3e013cc57990517b386d5bd9aac24f61e1a4b615` | 规范、业主裁定、约束与验收来源 |
+| 原型 v1.48 | sha256 `f2995730ca986ae38993f62391312982e7ed5026dab990c78ff29a6bb00ef9cb` | 可达入口、操作者视角与交互状态来源 |
 | 当前代码 | 冻结 commit 中的 `cmd/`、`internal/` | 只证实现现状与迁移面，不决定目标域 |
 
 ### 0.1 本件回答什么
@@ -881,7 +881,7 @@ internal/worker
 |---|---|---|---|
 | IDN domain module | `state:new` | enterprise/principal/channel/session/agent binding | 现有身份散在 m8/admin/datad，无唯一 owner |
 | GOV domain module | `state:new` | spec/rule/approval/typed pending | 现有管理 handler 与任务状态混杂 |
-| `AccessCtx` / `DataScopeGrant` | `state:new` | 双层访问上下文与限时数据范围 | 现有 `TenantCtx` 只有单层 ID |
+| `AccessCtx` / `DataScopeGrant` | `state:adapt` | 双层访问上下文与限时数据范围 | AccessCtx 双轴 port 已落；registry/RLS 实现待 SP7a |
 | domain interface packages | `state:new` | 接口 schema 与 ports | 现有全局 model 不能表达 owner 边界 |
 | enterprise registry projection for Repository | `state:new` | opaque DB key 到受控池映射 | 现有 repo 无企业注册投影 |
 | unified domain outbox/inbox | `state:new` | 跨域事实与幂等消费 | 现有 outbox 形态未覆盖全部域 |

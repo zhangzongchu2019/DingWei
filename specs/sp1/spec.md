@@ -5,12 +5,12 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp1-design` |
-| **版本** | v1.0 |
+| **版本** | v1.1 |
 | **状态** | `draft-for-review` |
 | **范围** | 乙04 隔离合同、甲10 一企业一库、甲06 改名、`agent → principal` 绑定 |
 | **权威章节** | SpecDoc §21、§22.1、§22.3、§22.4、§7.1 P1 |
 | **分级** | L3（安全面＝是） |
-| **冻结施工锚** | `46b79ab0022b0686a23455f328c9316d7f87281f` |
+| **输入基线** | `acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` |
 | **目标件** | `docs/dingwei-sp1-design.md` |
 
 ## 1. 六个必备面
@@ -63,6 +63,7 @@ agent provenance 模型，`AccessCtx`，ops 注册的 principal→企业库映�
 | `D-SP1-06` | bind/rebind/generation/audit 与 Agent 两条长期禁令 |
 | `D-SP1-07` | TenantCtx/PendingTenantCtx/NewTenantCtx 迁移阶段、独立棘轮与完成判据 |
 | `D-SP1-08` | SP7a 转交五列：被测对象/输入/期望/证据形态/验收门 |
+| `D-SP1-09` | RV-甲06／乙04／甲10 收口载体、可复跑判据与设计/实现效力边界 |
 
 同时交付 `specs/sp1/check.sh`，机器派生 SP1 章节、owner_sp=SP1 行、身份接口与旧名现状集合。
 
@@ -84,4 +85,3 @@ agent provenance 模型，`AccessCtx`，ops 注册的 principal→企业库映�
 ## 4. 不交付
 
 SP0 或 SP2–SP8 详细设计、仓储实现、DDL/migration、真实 PG 验证、部署、生产配置、新外部依赖。
-

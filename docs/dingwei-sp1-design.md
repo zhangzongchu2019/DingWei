@@ -1,18 +1,18 @@
-# DingWei SP1 身份与租户地基设计 v1.1
+# DingWei SP1 身份与隔离地基设计 v1.2
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp1-design` |
-| **版本** | v1.1 |
-| **状态** | draft，待双评审 |
-| **冻结施工锚** | `46b79ab0022b0686a23455f328c9316d7f87281f` |
+| **版本** | v1.2 |
+| **状态** | candidate，待 terra＋deepseekv4pro 双评审 |
+| **输入基线** | `acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` |
 | **合同** | `specs/sp1/spec.md` |
 | **范围** | P1 主体链、一企业一 PG 库、RLS 隔离合同、AccessCtx 改名、Agent 绑定 |
 | **目标架构** | `IDN` 主责，消费 `MSG/PLT` 既有接口；不增加架构接口 ID |
 
-> v1.1：章节、附录 E 与原型入口逐项映射进 `COVERAGE-SP1` 结构化块；checker 只认块内落点并加入正交变异反测。
+> v1.2：在统一 v0.2 基线收 RV-甲06／乙04／甲10；完成 AccessCtx 双轴代码迁移、三 role 合同与 enterprise registry/opaque database key 路由合同。
 
-输入锚：`46b79ab0022b0686a23455f328c9316d7f87281f` · `docs/dingwei-platform-specdoc.md` ·
+输入锚：`acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` · `docs/dingwei-platform-specdoc.md` ·
 `docs/dingwei-platform-architecture.md` · `docs/dingwei-prototype.html`
 
 ## D-SP1-01 P1 可信主体传播
@@ -359,3 +359,14 @@ resource_ref, request_id, outcome, reason_code, ts`。敏感 credential/DSN 不�
 ### 8.4 验收结论边界
 
 本件 PASS 只表示 SP1 身份与隔离设计闭合，不表示注册表、AccessCtx、RLS、企业库或 Agent 绑定已经实现。
+
+## D-SP1-09 三阻断收口登记
+
+| RV | 收口载体 | 可复跑判据 |
+|---|---|---|
+| RV-甲06 | §3、§7；`internal/repo` 的 `AccessCtx{Org, Principal}`；原型仓储入口同步 | `scripts/legacy-name-gate.sh` 报 prod/test/comment=0；`go test ./internal/repo` 验双轴缺一触库前拒 |
+| RV-乙04 | §5 三个受控 role、FORCE/WITH CHECK/SET LOCAL；`specs/fixtures/rls/` | `specs/fixtures/rls/RUN.sh`（有 PG 环境时）；无环境不得冒充已实跑 |
+| RV-甲10 | §4 enterprise registry、opaque database key、0/1/多映射、企业专池 | `specs/sp1/contract-check.sh` 对字段/顺序/拒绝语义精确断言并跑变异反测 |
+
+三条在设计与当前仓储 port 层闭合；真实企业 registry、DSN secret resolver、PG DDL/RLS 部署仍归 SP7a 实现门，
+不得以本设计 PASS 倒签实现 PASS。

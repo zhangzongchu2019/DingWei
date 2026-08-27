@@ -139,13 +139,13 @@ check() {
   fi
   rm -f "$_root/.esc.err"
   # 🔴 pending / system 两条棘轮（甲域 sol 合并 verdict 的建议）：
-  #   PendingTenantCtx 允许「有上下文标记但尚无租户过滤」的调用继续跑 —— 这是 SP7b 的显式债，
+  #   PendingCtx 允许「有上下文标记但尚无双轴过滤」的调用继续跑 —— 这是显式领域债，
   #   **不得借 allowlist 批准宣称租户隔离已实现**。故把它做成可清点、只许下行的棘轮。
   #   SystemCtx 同样计数:它每一处都是评审面(「这个操作真的与租户无关吗」),不许悄悄增长。
   #   🔴 SA-12b：本条曾硬编码 `grep -E '\b(dtx|ftx)\(\)'` —— **按名字判**。
   #     dtx/ftx 只是 datad/fanout 各自的局部 helper 名，无任何注册表约束：
   #     SP7a 收编 board 时谁写个 btx()，闸认不得，债凭空消失而计数不变、照打「持平 ✓」。
-  #     现改为 specs/tools/pending-debt 按【效果】判：谁返回 PendingTenantCtx 造的上下文，
+  #     现改为 specs/tools/pending-debt 按【效果】判：谁返回 PendingCtx 造的上下文，
   #     谁就是债源，其调用点全部计入 —— helper 叫什么与判据无关。
   #   🔴 SA-12a：旧口径把【债源】与【调用点】两种单位相加，且正则还误计了
   #     2 行注释（"grep dtx() 即知欠多少处"）与 2 行函数声明（`func dtx()` 也匹配 \bdtx\(\)）。
@@ -289,7 +289,7 @@ selftest() {
   pd() { # pd <base 内容> <b.go 内容>；返回 check 的 rc
     mk; printf "$1" > "$T/base"; printf "$2" > "$T/r/internal/pkg/b.go"; run; }
 
-  PD_HELPER='package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx(); _ = btx() }\n'
+  PD_HELPER='package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.AccessCtx { return repo.PendingCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx(); _ = btx() }\n'
 
   # 🔴 本组的骨：helper 叫 btx 而不是 dtx/ftx。旧闸硬编码 `\b(dtx|ftx)\(\)`，
   #    对它输出 0 —— 债凭空消失而主闸照打「持平 ✓」。
@@ -304,13 +304,13 @@ selftest() {
 
   # domain 非字面量 ⇒ 判不出归属 ⇒ fail-closed。
   pd 'open 0\nescape 0\npending 0\nsystem 0\npending:testdom 0\n' \
-     'package pkg\n\nimport "x/internal/repo"\n\nvar d = "x"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx(d, "SP7b", "r") }\n'
+     'package pkg\n\nimport "x/internal/repo"\n\nvar d = "x"\n\nfunc btx() repo.AccessCtx { return repo.PendingCtx(d, "SP7b", "r") }\n'
   [ $? -eq 2 ] && ok "拦住：domain 非字面量（判不出归属）⇒ fail-closed" || bad "无主的债被静默计入"
 
   # 🔴 分领域棘轮：总数不变而「一个领域降、另一个升」必须拒 —— 与「两条判据各判各的」同理。
   mk
   printf 'open 0\nescape 0\npending 2\nsystem 0\npending:doma 2\npending:domb 0\n' > "$T/base"
-  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc atx() repo.TenantCtx { return repo.PendingTenantCtx("doma", "SP7b", "r") }\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("domb", "SP7b", "r") }\n' > "$T/r/internal/pkg/b.go"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc atx() repo.AccessCtx { return repo.PendingCtx("doma", "SP7b", "r") }\nfunc btx() repo.AccessCtx { return repo.PendingCtx("domb", "SP7b", "r") }\n' > "$T/r/internal/pkg/b.go"
   run
   [ $? -eq 1 ] && [ "$CUR_pending" -eq 2 ] \
     && ok "拦住：pending 总数不变但某领域回升（分领域各记各的）" \
@@ -423,7 +423,7 @@ selftest() {
   #    降了不收紧基线 ⇒「还掉一处、下次加回来」全程不被拒，棘轮对债那一半是空转的。
   #    下面三条按「债」「评审面」「分领域」各钉一条。
   mk; printf 'open 0\nescape 0\npending 3\nsystem 0\npending:testdom 3\n' > "$T/base"
-  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx() }\n' > "$T/r/internal/pkg/b.go"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.AccessCtx { return repo.PendingCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx() }\n' > "$T/r/internal/pkg/b.go"
   env -u GIT_INDEX_FILE sh "$SELF" "$T/r" "$T/allow" "$T/base" >/dev/null 2>&1
   [ $? -eq 1 ] && ok "钩子外 pending 可收紧判 FAIL（债与收口同权，不许空转）" || bad "pending 可收紧被放行（棘轮空转）"
   BV=$(awk '$1=="pending"{print $2}' "$T/base")
@@ -435,21 +435,21 @@ selftest() {
 
   # 分领域：总 pending 与基线持平，但某个领域降了 —— 同样必须落盘，不许空转。
   mk; printf 'open 0\nescape 0\npending 2\nsystem 0\npending:testdom 5\n' > "$T/base"
-  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx() }\n' > "$T/r/internal/pkg/b.go"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.AccessCtx { return repo.PendingCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx() }\n' > "$T/r/internal/pkg/b.go"
   env -u GIT_INDEX_FILE sh "$SELF" "$T/r" "$T/allow" "$T/base" >/dev/null 2>&1
   [ $? -eq 1 ] && ok "钩子外 pending:<domain> 可收紧判 FAIL（分领域也走同一逻辑）" || bad "分领域可收紧被放行"
 
   # 🔴 「降后加回旧基线仍拒」——terra 点名要的那条。基线未随下降而收紧时，
   #    加回旧值必须仍被拒；这里用「已收紧到 1、又回到 2」表达。
   mk; printf 'open 0\nescape 0\npending 1\nsystem 0\npending:testdom 1\n' > "$T/base"
-  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx() }\n' > "$T/r/internal/pkg/b.go"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.AccessCtx { return repo.PendingCtx("testdom", "SP7b", "r") }\n\nfunc Use() { _ = btx() }\n' > "$T/r/internal/pkg/b.go"
   run
   [ $? -eq 1 ] && ok "拦住：还掉后又加回来（收紧后的基线不许再涨）" || bad "债降后加回旧值仍被放行"
 
   # 🔴 SA-12b（terra 二轮）：一轮只登记普通函数债源、只数 ast.Ident 调用，
   #    换成方法 `func (x *X) btx()` 及其 `x.btx()` 调用一处不计 —— 用方法名即可把债拿掉。
   mk; printf 'open 0\nescape 0\npending 0\nsystem 0\npending:mdom 0\n' > "$T/base"
-  printf 'package pkg\n\nimport "x/internal/repo"\n\ntype X struct{}\n\nfunc (x *X) btx() repo.TenantCtx { return repo.PendingTenantCtx("mdom", "SP7b", "r") }\n\nfunc (x *X) Use() { _ = x.btx(); _ = x.btx() }\n' > "$T/r/internal/pkg/b.go"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\ntype X struct{}\n\nfunc (x *X) btx() repo.AccessCtx { return repo.PendingCtx("mdom", "SP7b", "r") }\n\nfunc (x *X) Use() { _ = x.btx(); _ = x.btx() }\n' > "$T/r/internal/pkg/b.go"
   run
   [ $? -eq 1 ] && [ "$CUR_pending" -eq 3 ] \
     && ok "拦住：【方法】债源及其 x.btx() 调用全部计入（换方法名绕不过）" \
@@ -457,12 +457,12 @@ selftest() {
 
   # ownerSP 必须是受控枚举字面量，否则「这笔债归谁还」可以是动态值 ⇒ 归责没了。
   mk; printf 'open 0\nescape 0\npending 0\nsystem 0\npending:d2 0\n' > "$T/base"
-  printf 'package pkg\n\nimport "x/internal/repo"\n\nvar dyn = "SP7b"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("d2", dyn, "r") }\n' > "$T/r/internal/pkg/b.go"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nvar dyn = "SP7b"\n\nfunc btx() repo.AccessCtx { return repo.PendingCtx("d2", dyn, "r") }\n' > "$T/r/internal/pkg/b.go"
   run >/dev/null 2>&1
   [ $? -eq 2 ] && ok "拦住：ownerSP 非受控字面量 ⇒ fail-closed（归责不得动态）" || bad "动态 ownerSP 被静默计入"
 
   mk; printf 'open 0\nescape 0\npending 0\nsystem 0\npending:d3 0\n' > "$T/base"
-  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.TenantCtx { return repo.PendingTenantCtx("d3", "SP-not-an-sp", "r") }\n' > "$T/r/internal/pkg/b.go"
+  printf 'package pkg\n\nimport "x/internal/repo"\n\nfunc btx() repo.AccessCtx { return repo.PendingCtx("d3", "SP-not-an-sp", "r") }\n' > "$T/r/internal/pkg/b.go"
   run >/dev/null 2>&1
   [ $? -eq 2 ] && ok "拦住：ownerSP 不在受控枚举内 ⇒ fail-closed" || bad "枚举外的 ownerSP 被放行"
 

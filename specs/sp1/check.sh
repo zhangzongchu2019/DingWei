@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-ANCHOR=${ANCHOR:-46b79ab0022b0686a23455f328c9316d7f87281f}
+ANCHOR=${ANCHOR:-acc531e55dce80e8c0e11db9abb4a5b6e86fb08d}
 DOC=${DOC:-docs/dingwei-sp1-design.md}
 
 check() {
@@ -42,13 +42,13 @@ p=[]
 for href,label in re.findall(r'<a href="#([^"]+)"[^>]*>(.*?)</a>',proto,re.S):
     if any(x in re.sub('<[^>]+>','',label) for x in labels): p.append('#'+href)
 p_actual=mapped(r'#[a-z]\w*'); p_unknown=sorted(set(p)-p_actual)
-ids=re.findall(r'^## (D-SP1-\d+)',text,re.M); id_unknown=[f'D-SP1-{i:02d}' for i in range(1,9) if ids.count(f'D-SP1-{i:02d}')!=1]
+ids=re.findall(r'^## (D-SP1-\d+)',text,re.M); id_unknown=[f'D-SP1-{i:02d}' for i in range(1,10) if ids.count(f'D-SP1-{i:02d}')!=1]
 required=('agent → principal','AccessCtx','一企业一 PG 库','FORCE ROW LEVEL SECURITY','SET LOCAL','TenantCtx','SP7a 五列转交')
 r_unknown=[x for x in required if x not in text]
 print(f'[spec] 预期={len(set(expected))} 实检={len(actual & set(expected))} 未知={len(unknown)} {unknown}')
 print(f'[E] 预期={len(set(e))} 实检={len(e_actual & set(e))} 未知={len(e_unknown)} {e_unknown}')
 print(f'[prototype] 预期={len(set(p))} 实检={len(p_actual & set(p))} 未知={len(p_unknown)} {p_unknown}')
-print(f'[delivery] 预期=8 实检={8-len(id_unknown)} 未知={len(id_unknown)} {id_unknown}')
+print(f'[delivery] 预期=9 实检={9-len(id_unknown)} 未知={len(id_unknown)} {id_unknown}')
 print(f'[contract] 预期={len(required)} 实检={len(required)-len(r_unknown)} 未知={len(r_unknown)} {r_unknown}')
 sys.exit(1 if unknown or e_unknown or p_unknown or id_unknown or r_unknown else 0)
 PY

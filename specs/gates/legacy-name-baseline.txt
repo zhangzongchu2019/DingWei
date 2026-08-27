@@ -3,6 +3,6 @@
 # 判据对象＝受控符号集合 {TenantCtx, PendingTenantCtx, NewTenantCtx} 的 AST 出现数；
 # 注释按 Go 标识符边界切词后**精确相等**匹配（子串会让重叠名称串味，甲域 ㉑ 复核）。
 # 迁移执行归 SP1；改完一批请同步下调。
-legacy_prod=28
-legacy_test=7
-legacy_comment=4
+legacy_prod=0
+legacy_test=0
+legacy_comment=0

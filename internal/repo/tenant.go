@@ -13,22 +13,23 @@ package repo
 
 import "errors"
 
-// ErrNoTenant 缺租户上下文。§22.2c #4:缺租户上下文默认拒(fail-closed)。
-var ErrNoTenant = errors.New("repo: 缺租户上下文,拒绝执行(fail-closed)")
+// ErrNoAccess 缺双轴访问上下文。企业或主体任一缺失均默认拒绝。
+var ErrNoAccess = errors.New("repo: 缺企业/主体访问上下文,拒绝执行(fail-closed)")
 
-// TenantCtx 租户上下文(§22.2c #2:租户上下文进类型,不进参数列表)。
+// AccessCtx 双轴访问上下文：Org 决定企业库，Principal 决定 owner/RLS。
 //
 // 🔴 关于「无可用零值」的准确说法 —— 不夸大:
 //
 //	Go 里没法让一个 struct 的零值【无法编译】。本类型做到的是两条,分开说:
-//	  ① **漏传是编译错误**:本包所有查询入口都以 TenantCtx 为必填形参,
+//	  ① **漏传是编译错误**:本包所有查询入口都以 AccessCtx 为必填形参,
 //	     少传一个实参编译就不过 —— 这正是 §22.2c #2 要的「不是运行期错误」。
-//	  ② **零值不可用**:零值 ok=false,任何入口拿到它一律返回 ErrNoTenant,
+//	  ② **零值不可用**:零值 ok=false,任何入口拿到它一律返回 ErrNoAccess,
 //	     绝不退化成「当作系统调用放行」。
 //	⚠️ 把 ② 说成「零值编译错」是不实的,本注释在此钉死,免得后来者据此写出过强的验收断言。
-type TenantCtx struct {
-	id string
-	ok bool
+type AccessCtx struct {
+	org       string
+	principal string
+	ok        bool
 	// sys 标记显式的系统上下文(建表/迁移/健康检查)。它必须【显式取】,
 	// 不能由零值滑进来 —— 否则「缺上下文」和「系统调用」就互相冒充了,
 	// 而「安全属性互相冒充」正是本仓已归纳的自造缺陷之一。
@@ -45,12 +46,12 @@ type TenantCtx struct {
 	reason  string
 }
 
-// NewTenantCtx 构造租户上下文。空租户号即拒,不接受「稍后再填」。
-func NewTenantCtx(tenantID string) (TenantCtx, error) {
-	if tenantID == "" {
-		return TenantCtx{}, ErrNoTenant
+// NewAccessCtx 构造双轴上下文。企业或主体任一为空均拒绝。
+func NewAccessCtx(orgID, principalID string) (AccessCtx, error) {
+	if orgID == "" || principalID == "" {
+		return AccessCtx{}, ErrNoAccess
 	}
-	return TenantCtx{id: tenantID, ok: true}, nil
+	return AccessCtx{org: orgID, principal: principalID, ok: true}, nil
 }
 
 // SystemCtx 系统上下文:仅用于建表、迁移、健康检查这类【本就无租户语义】的操作。
@@ -58,23 +59,27 @@ func NewTenantCtx(tenantID string) (TenantCtx, error) {
 // 🔴 它是一个评审面,不是一个方便入口:每一处 SystemCtx() 调用都应在代码评审里
 //
 //	被问一句「这个操作真的与租户无关吗」。故意做成必须显式写出来的样子,便于 grep 清点。
-func SystemCtx() TenantCtx { return TenantCtx{ok: true, sys: true} }
+func SystemCtx() AccessCtx { return AccessCtx{ok: true, sys: true} }
 
-// ID 返回租户号;系统上下文返回空串。
-func (t TenantCtx) ID() string { return t.id }
+// Org 返回企业边界；Principal 返回人层 owner/actor。系统上下文均返回空串。
+func (t AccessCtx) Org() string       { return t.org }
+func (t AccessCtx) Principal() string { return t.principal }
 
 // IsSystem 是否为系统上下文。
-func (t TenantCtx) IsSystem() bool { return t.sys }
+func (t AccessCtx) IsSystem() bool { return t.sys }
 
 // check 是所有入口的统一闸口:零值一律拒。
-func (t TenantCtx) check() error {
+func (t AccessCtx) check() error {
 	if !t.ok {
-		return ErrNoTenant
+		return ErrNoAccess
+	}
+	if !t.sys && !t.pending && (t.org == "" || t.principal == "") {
+		return ErrNoAccess
 	}
 	return nil
 }
 
-// PendingTenantCtx 是【尚未租户化】的调用点标记,不是方便入口。
+// PendingCtx 是【尚未双轴化】的调用点标记,不是方便入口。
 //
 // 🔴 为什么要有它 —— 这是本包最要紧的一条设计:
 //
@@ -96,21 +101,21 @@ func (t TenantCtx) check() error {
 //
 // 缺任一项返回【不可用】的零值:于是它在入口处 fail-closed,而不是悄悄放行。
 // 这里不返回 error 是为了不让调用点被迫改签名 —— 代价是必须靠零值兜底,故三项都校验。
-func PendingTenantCtx(domain, ownerSP, reason string) TenantCtx {
+func PendingCtx(domain, ownerSP, reason string) AccessCtx {
 	if domain == "" || ownerSP == "" || reason == "" {
-		return TenantCtx{}
+		return AccessCtx{}
 	}
-	return TenantCtx{ok: true, pending: true, domain: domain, ownerSP: ownerSP, reason: reason}
+	return AccessCtx{ok: true, pending: true, domain: domain, ownerSP: ownerSP, reason: reason}
 }
 
 // Domain 该笔债的归属领域(仅 pending 时非空)。
-func (t TenantCtx) Domain() string { return t.domain }
+func (t AccessCtx) Domain() string { return t.domain }
 
 // OwnerSP 该笔债由哪个 SP 归还(仅 pending 时非空)。
-func (t TenantCtx) OwnerSP() string { return t.ownerSP }
+func (t AccessCtx) OwnerSP() string { return t.ownerSP }
 
 // IsPending 该上下文是否为尚未租户化的占位。
-func (t TenantCtx) IsPending() bool { return t.pending }
+func (t AccessCtx) IsPending() bool { return t.pending }
 
 // Reason 占位理由(仅 pending 时非空)。
-func (t TenantCtx) Reason() string { return t.reason }
+func (t AccessCtx) Reason() string { return t.reason }

@@ -56,6 +56,7 @@
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |
 | `specs/platform/checklist.crossartifact-reviewer.md` | 跨制品域（kimi，12 项） |
 | `specs/platform/checklist.INDEX.md` | 作者维护的登记，不判定 |
+| `specs/evidence/CROSSARTIFACT-REVIEW-v0.2.md` | `ccccd4f` 统一树上的 CAC-1～12 复跑证据；记录 9 PASS / 3 FAIL 及其后续 SP1/CAC-6 收口入口 |
 | `specs/templates/spec-draft-selfcheck.md` | **产品方**起草 spec 时的自查件 —— 属性头块（§5.2 三方分填）＋ 内容五面（§4.7.1）＋ 内部自相矛盾自查。🔴 **不判门**（硬门 §4.6.2 / 人审 §4.6.4），**通篇不用 `[ ]` 形态** —— 起草方自备带勾选框的表自己勾，形式上与自签门 PASS 无法区分（§4.1 · §7.2）。⚠️ 本件是 DingWei 侧附加件，**不是 Spec Kit 模板**（后者 immutable，§4.2 要求 2 · §16.5，连提案都不能提）|
 | `specs/tools/analyze.sh` | `/speckit.analyze` —— 跨制品一致性检查 |
 | `specs/tools/export-bundle.sh` | 导出锚定快照包；作用域由 `git ls-tree` 整棵导出，不手写 |
@@ -85,7 +86,7 @@
 | `scripts/checklist-executed-gate.sh` | checklist 执行落账闸 —— 宣称「已按 checklist 执行」时机器要求 checkbox 已勾**且证据栏非空**；未落账可登记例外，但输出明说**这不是 PASS** |
 | `specs/tools/foreign-version-check.py` | 正文他件旧版本号检查（analyze ④b）—— ④a 只读头块一处，正文里的假版本看不见；本脚本补正文面，只在与该件称谓同行时才判 |
 | `scripts/prose-style-gate.sh` | 体例合规闸 —— 正文不得含评审过程痕迹（指向特定评审轮次/版本/评审方的表述）；含 **RV 评审标注**模式：轮内可标、收官须逐条落到 采纳/驳回(带理由)/挂账，且正文清零 |
-| `specs/tools/pending-debt/main.go` | 「尚未租户化」债的检测器（Go AST）—— **按效果判**：谁返回 `PendingTenantCtx` 造的上下文谁就是债源，其调用点全部计入，helper 叫什么与判据无关（乙域 terra SA-12b）；按 `(domain, ownerSP)` 分组供闸逐领域棘轮 |
+| `specs/tools/pending-debt/main.go` | 「尚未双轴化」债的检测器（Go AST）—— **按效果判**：谁返回 `PendingCtx` 造的上下文谁就是债源，其调用点全部计入，helper 叫什么与判据无关（乙域 terra SA-12b）；按 `(domain, ownerSP)` 分组供闸逐领域棘轮 |
 | `specs/tools/safe-replace.py` | RV 段免疫的批量替换（提交闸 ⑯a）—— 替换前遮蔽【RV…】标注段及其处置行，模式若**只**命中标注段则判误操作并拒绝（静默零命中会被读成「已清理干净」）。🔴 立件原因：闸 ⑯ 是**事后检测**，丙域 kimi 要的是「作用域排除 ＋ 防复发」，检测不是预防 |
 | `scripts/conflict-marker-gate.sh` | 冲突标记恒零闸（提交闸 ⑲）—— 交付件不得含未解决的 Git 合并冲突标记。🔴 立闸原因：原型导出函数里提交了冲突段而 ①–⑰ 与 analyze 全绿（标记落在 JS 块注释内，语法不坏）。⚠️ 按【行首精确 7 字符】判：本仓 charter 件用 32 个 `=` 作分隔线，子串判据会全部误报 |
 | `scripts/path-anchor-gate.sh` | 路径锚解析闸（提交闸 ⑳）—— 正文反引号包起的仓内路径须解析得到。🔴 立闸原因：#36b 的 reviewer owner 锚被写成仓内不存在的路径，人工判据落点指向空文件而 ①–⑲ 全绿 |
@@ -101,7 +102,7 @@
 | `specs/gates/dependency-baseline.txt` | 依赖棘轮基线（㉖）—— `direct_count` ＋ 依赖名集合 sha256。🔴 **上调基线＝放宽判据**，属评审面，须随 spec §4.7.1 ⑤ 的突破论证一并提交，不得静默改 |
 | `scripts/reviewer-repro-gate.sh` | 门方复现台账（提交闸 ㉓）——每条发现记**门方自己给的复现命令**与期望值，闸每次实跑比对。🔴 立闸原因：执笔方报「已修」时自拟的一行判据，多次证明的是**上一轮修复还在**，而非这一轮的洞已修 ⇒ **他问什么，闸就跑什么** |
 | `specs/tools/legacy-name/main.go` | 上闸的计数器（Go AST）—— 逐 Ident 计数；注释按 **Go 标识符边界切词后精确相等**匹配（子串会让 `PendingTenantCtx` 再命中 `TenantCtx`）；扫描根不可用 / 遍历出错一律 **exit 2**（走不到就不能报数）；复合标识符（`tenantCtxKey`）不计：判**受控符号集合**，不判子串 |
-| `specs/gates/legacy-name-baseline.txt` | 旧模型名棘轮的基线（㉑）—— `legacy_TenantCtx=40`，只许降不许升，终值 0；改完一批须同步下调 |
+| `specs/gates/legacy-name-baseline.txt` | 旧模型名棘轮的基线（㉑）—— prod/test/comment 已钉 `0/0/0`，任一旧标识回流即红 |
 | `specs/fixtures/rls/setup.sql` | 人层 RLS fixture 建面（乙域 RV-乙12）—— 三 role 分离 · FORCE RLS · 逐命令 policy（写命令带 WITH CHECK）|
 | `specs/fixtures/rls/t1-write-as-other.sql` | 负测①：`dw_app` 不得把 `owner_principal` 写成他人（🔴 `USING` 只管读、`WITH CHECK` 才管写）|
 | `specs/fixtures/rls/t2-no-context-deny.sql` | 负测②：缺 `dw.principal` 时读**0 行**而非全部、写被拒（fail-closed）|

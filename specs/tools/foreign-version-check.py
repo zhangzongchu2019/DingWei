@@ -19,7 +19,7 @@
     🔴 **区分「沿革表述」与「现行依据表述」属语义**，本脚本按上述标记切分，
        标记打错就判错 ⇒ 该切分本身归人审。
 """
-import re, sys
+import hashlib, re, sys
 
 OWN = ('dingwei-platform-specdoc.md', 'dingwei-platform-architecture.md', 'dingwei-prototype.html')
 # 指向【某个真实件】的称谓。🔴 只有版本号与这些称谓同行时才判 ——
@@ -86,6 +86,21 @@ def scan(path, cur):
     return hits
 
 
+def scan_arch_input_table(cur):
+    """架构 §0 的冻结输入表必须逐项等于当前 SpecDoc/原型件。"""
+    arch = open('docs/dingwei-platform-architecture.md', encoding='utf-8').read()
+    bad = []
+    for label, path in (('SpecDoc', 'dingwei-platform-specdoc.md'),
+                        ('原型', 'dingwei-prototype.html')):
+        m = re.search(r'^\| ' + re.escape(label) + r' (v[\d.]+) \| sha256 `([0-9a-f]{64})` \|', arch, re.M)
+        got_v, got_h = m.groups() if m else (None, None)
+        want_v = cur[path]
+        want_h = hashlib.sha256(open('docs/' + path, 'rb').read()).hexdigest()
+        if (got_v, got_h) != (want_v, want_h):
+            bad.append((label, got_v, got_h, want_v, want_h))
+    return bad
+
+
 def main():
     cur = current_versions()
     bad = 0
@@ -100,6 +115,14 @@ def main():
                 print(f'      …（共 {len(hits)} 处）')
         else:
             print(f'  ✓ {path}: 正文无他件旧版本号')
+    if '--selftest' not in sys.argv:
+        table_bad = scan_arch_input_table(cur)
+        if table_bad:
+            bad = 1
+            for label, got_v, got_h, want_v, want_h in table_bad:
+                print(f'  ✗ 架构输入表 {label}: 写 {got_v}/{(got_h or "缺")[:12]}…，当前 {want_v}/{want_h[:12]}…')
+        else:
+            print('  ✓ 架构输入表：SpecDoc/原型版本与 sha256 逐项等于当前件')
     return bad
 
 

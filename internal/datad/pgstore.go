@@ -98,8 +98,8 @@ type PGStore struct {
 //	的调用点 —— 用「与租户无关」冒充「已做隔离」,即本仓已归纳的「安全属性互相冒充」。
 //	保留 dtx 是为了让这笔债【可清点、可棘轮】——由 specs/tools/pending-debt 按【效果】
 //	发现「返回 pending 上下文的 helper」并数其调用点,不按 helper 的名字判(SA-12b)。
-func dtx() repo.TenantCtx {
-	return repo.PendingTenantCtx("datad", "SP7b", "datad 领域表尚无租户列,待 SP7b 各领域 schema 落地")
+func dtx() repo.AccessCtx {
+	return repo.PendingCtx("datad", "SP7b", "datad 领域表尚无双轴列,待领域 schema 落地")
 }
 
 // OpenPG 连接+建表(幂等)。assign/GC 池未配时回落主池(dev/Mem 同构;生产 N-A3 要求

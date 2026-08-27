@@ -227,10 +227,10 @@ def check_archive_and_ledger():
     if len(ids) != 84 or len(set(ids)) != 84:
         fail(f"RV ledger 行/ID 不是 84/84：{len(ids)}/{len(set(ids))}")
     open_ids = {row[0] for row in ledger if row[4] in ("挂账", "未决", "未处置")}
-    expected_open = {"RV-执笔01", "RV-丙01", "RV-甲06", "RV-甲08", "RV-乙04", "RV-甲10"}
+    expected_open = {"RV-执笔01", "RV-丙01", "RV-甲08"}
     if open_ids != expected_open:
-        fail(f"RV 六条未闭集合漂移：{sorted(open_ids)}")
-    print("RV ledger：84/84 unique · 未闭 6/6 原样保留")
+        fail(f"RV 未闭集合漂移（SP1 三条已由 v1.2 收口）：{sorted(open_ids)}")
+    print("RV ledger：84/84 unique · SP1 三条已闭 · 其余未闭 3/3 原样保留")
 
 
 def main():
