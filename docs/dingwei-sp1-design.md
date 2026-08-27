@@ -233,7 +233,7 @@ resource_ref, request_id, outcome, reason_code, ts`。敏感 credential/DSN 不�
 
 | 阶段 | 动作 | 完成门 |
 |---|---|---|
-| M0 inventory | AST 列出定义、构造、传播、Org-only 判定、测试/注释 | 三分类基线可复算 |
+| M0 inventory | AST 列出定义、构造、传播、Org-only 分类（一般漏配／COL 登记豁免）、测试/注释 | 三分类基线可复算；豁免命中与违规数分列 |
 | M1 introduce | 新增 AccessCtx port 与 adapter，不改业务语义 | P1 传播正负测通过 |
 | M2 dual-read | 旧调用经 adapter 显式补 principal；禁止默认值 | Org()/Principal() 缺一拒绝 |
 | M3 migrate | 逐域替换生产调用；每批有 conformance | prod 棘轮单调下降 |

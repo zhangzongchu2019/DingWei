@@ -1,9 +1,9 @@
 # path	sha256	source
-docs/dingwei-platform-specdoc.md	3a7da9bd2c7c225e13fb9e26379fb4a9ba19ba9029c491208c5eb32354635371	4220195+v0.2-architecture-cutover+SP1-accepted
-docs/dingwei-platform-architecture.md	84a4fe45294c57d024904a509bae761d3d6e4fd95c492c0515dbd273c6771d4a	6a98629+SP1-accepted
+docs/dingwei-platform-specdoc.md	d3a96752fa0bbf063aed003e59786d8fe5c416228c7d9be5f2dd7004e79715db	4220195+v0.2-architecture-cutover+SP1-accepted+v3.77-COL-read-exception
+docs/dingwei-platform-architecture.md	4aefb99cb99a0db262e5b43537f98f484632a953377c0d482db36f633e50e954	6a98629+SP1-accepted+v3.77-input-refresh
 docs/dingwei-prototype.html	f2995730ca986ae38993f62391312982e7ed5026dab990c78ff29a6bb00ef9cb	6a98629+SP1-v1.2
 docs/dingwei-sp0-design.md	f635b96e6c3574319d2e8df7e6a1c41e9693a66d7581504df60a6801531b8bec	6a98629
-docs/dingwei-sp1-design.md	52a8b8e2c40ed9dff43d03423905b24fe35db5d07ccafde1c33df880270abecf	6a98629+SP1-v1.6-accepted
+docs/dingwei-sp1-design.md	638308e27ce53ce123bcd0d3ea2416fe6261100b1d3457fb494ad7ca51b64dd7	6a98629+SP1-v1.6-accepted+v3.77-metric-classification
 docs/dingwei-sp2-design.md	37d2c17cc0761914aae91abd20273746231d894c50163cb89b8123cc03d76a86	6a98629
 docs/dingwei-sp3-design.md	e6317b5c7257eb86b405d355b3bbcdb72751eb8c677fa2f388891c1d307b1e97	6a98629
 docs/dingwei-sp8-design.md	4f5e4e06d29d4a9fffcdb46f413fbc37bcfd615e9af9b04215e0a6c20205a98a	970effe
