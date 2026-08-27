@@ -32,9 +32,9 @@ DROP ROLE IF EXISTS dw_owner;
 CREATE ROLE dw_owner   NOLOGIN NOBYPASSRLS;
 CREATE ROLE dw_migrate NOLOGIN NOINHERIT NOBYPASSRLS;
 CREATE ROLE dw_app     NOLOGIN NOBYPASSRLS;
-GRANT dw_owner, dw_migrate, dw_app TO CURRENT_USER;   -- 仅为本 fixture 能 SET ROLE
+GRANT dw_owner, dw_migrate, dw_app TO CURRENT_USER; -- fixture 中 CURRENT_USER 兼作企业 ops 测试替身
 GRANT CREATE ON SCHEMA public TO dw_owner;      -- PG15+ default public schema no longer grants CREATE
-GRANT dw_owner TO dw_migrate;                   -- platform ops establishes migration owner-role membership before SET ROLE
+GRANT dw_owner TO dw_migrate;                   -- 迁移窗口成员资格；不改变企业 ops 对本库表的日常归属
 
 SET ROLE dw_owner;
 CREATE TABLE demo_item (
@@ -83,6 +83,9 @@ RESET ROLE;
 SELECT rolname, rolcanlogin, rolbypassrls
   FROM pg_roles WHERE rolname IN ('dw_owner','dw_migrate','dw_app') ORDER BY rolname;
 -- 期望：3 行，rolcanlogin / rolbypassrls 均为 f
+
+SELECT pg_has_role(CURRENT_USER, 'dw_owner', 'USAGE') AS enterprise_ops_surrogate_holds_owner;
+-- 期望：t（CURRENT_USER 仅在本 fixture 兼作企业 ops 测试替身；应用面拒绝见 t4）
 
 SELECT to_regclass('public.demo_item') IS NOT NULL AS table_exists;
 -- 期望：t（首版失败时此处为 f —— 这一行就是「自检没覆盖产物」的补丁）

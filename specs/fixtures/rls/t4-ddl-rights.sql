@@ -11,6 +11,14 @@ BEGIN;
 ROLLBACK;
 RESET ROLE;
 
+-- 正测（C.3a.1c）：企业 ops 持本企业库 dw_owner，可切属主执行表 DDL
+BEGIN;
+  SET ROLE dw_owner;
+  ALTER TABLE demo_item ADD COLUMN IF NOT EXISTS enterprise_ops_probe text; -- 期望成功
+  ALTER TABLE demo_item DROP COLUMN IF EXISTS enterprise_ops_probe;
+ROLLBACK;
+RESET ROLE;
+
 -- 负测：dw_app 无 DDL 权（期望**两条均报 must be owner of table demo_item**）
 SET ROLE dw_app;
 BEGIN;
@@ -62,7 +70,7 @@ BEGIN;
 ROLLBACK;
 
 RESET SESSION AUTHORIZATION;
-GRANT dw_owner, dw_migrate TO CURRENT_USER;   -- 还原夹具便利，供后续脚本使用
+GRANT dw_owner, dw_migrate TO CURRENT_USER; -- 还原夹具便利，供后续脚本使用
 
 -- 🔴 回退方案（乙域指定）：若本机 PG 不允许对 **NOLOGIN** 角色做 session authorization，
 --   则**显式建立一个无任何成员资格的临时应用 login 角色**，并经该会话执行本组：

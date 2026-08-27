@@ -5,7 +5,7 @@
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp1-design` |
-| **版本** | v1.1 |
+| **版本** | v1.2 |
 | **状态** | `draft-for-review` |
 | **范围** | 乙04 隔离合同、甲10 一企业一库、甲06 改名、`agent → principal` 绑定 |
 | **权威章节** | SpecDoc §21、§22.1、§22.3、§22.4、§7.1 P1 |
@@ -25,7 +25,7 @@ agent provenance 模型，`AccessCtx`，ops 注册的 principal→企业库映�
 
 - enterprise 由可信 principal 经 ops 注册表派生；0/多映射、请求自报、域名猜测均拒绝。
 - SQL/selector 前完成企业库选择；取连接后第一条事务语句 `SET LOCAL` principal context。
-- `dw_owner`/`dw_app`/`dw_migrate` 分离，runtime 非属主/非 superuser/无 BYPASSRLS，表 FORCE RLS。
+- `dw_owner`/`dw_app`/`dw_migrate` 分离；平台 ops 建库/建 role，**企业 ops 持本企业库 `dw_owner` 管表**；runtime 非属主/非 superuser/无 BYPASSRLS，表 FORCE RLS。
 - 绑定未闭前 agent 不作审计交叉证据；任何时期 Agent 都不进授权或门判定。
 
 ### ③ 预计数据
@@ -75,7 +75,7 @@ agent provenance 模型，`AccessCtx`，ops 注册的 principal→企业库映�
 | `AC-SP1-02` | connection/envelope/Receiver principal 同源；伪造/缺失/吊销 fail-closed |
 | `AC-SP1-03` | 企业仅由服务端注册映射得出；0/多结果、请求自带 org/tenant 均拒绝 |
 | `AC-SP1-04` | 一企业一库、平台库独立；错库不得伪装成功空集 |
-| `AC-SP1-05` | role/owner/BYPASSRLS/FORCE/SET LOCAL/WITH CHECK 逐项有正反合同 |
+| `AC-SP1-05` | role/owner/BYPASSRLS/FORCE/SET LOCAL/WITH CHECK 逐项有正反合同；企业 ops 可切本库 `dw_owner`，应用面不可切 owner/migrate；属主绕过动作外发审计 |
 | `AC-SP1-06` | 池复用残留、缺 context、谓词错、跨人越权均有负测 |
 | `AC-SP1-07` | Agent 不提升权限；绑定前审计交叉证据拒绝，授权/门输入永久拒绝 |
 | `AC-SP1-08` | 三类旧名独立棘轮只降；归零后双轴语义负测仍须 PASS |

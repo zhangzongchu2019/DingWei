@@ -43,6 +43,9 @@
 | t3 负测④ 属主可自解除 | `owner_sees_before=0` → ALTER 成功 → `after=2` | 0 → `ALTER TABLE` → 2 | ✅ |
 
 🔴 **本次实跑【未覆盖】的部分，须写明**：
+0. **C.3a.1c 企业 ops 正向归属是本轮新增夹具，尚未实跑**：当前 `setup.sql` 以 CURRENT_USER
+   作为企业 ops 测试替身并断言其持 `dw_owner`，`t4` 新增“可切属主执行本库表 DDL”正测。旧日志无该断言，
+   不得用旧日志替这条背书；须与负测⑥一起由有 PG 环境的 ops 复跑。
 1. **负测⑥（应用面不得取得属主/迁移 role）未跑** ——
    日志 `fixture_sha=d5a8cfe`，而负测⑥ 加在其后的 **5c103a0**。
    ⇒ 「t1/t2/t3/t4 全符合预期」这句**只对 d5a8cfe 那版 t4 成立**，不含负测⑥。
@@ -77,9 +80,9 @@ psql -f t4-ddl-rights.sql
 |---|---|
 | `t1-write-as-other.sql` | 两条 DML **均被拒**：INSERT 报 `new row violates row-level security policy`；UPDATE 报同样错误或影响 **0 行** |
 | `t2-no-context-deny.sql` | `must_be_zero` = **0**（🔴 不是全部）；INSERT 报 RLS 违规 |
-| `setup.sql` 末尾自检 | 返回 **3 行**（dw_app / dw_migrate / dw_owner），`rolcanlogin` 与 `rolbypassrls` **均为 `f`** |
+| `setup.sql` 末尾自检 | 返回 **3 行**（dw_app / dw_migrate / dw_owner），`rolcanlogin` 与 `rolbypassrls` **均为 `f`**；`enterprise_ops_surrogate_holds_owner=t` |
 | `t4-ddl-rights.sql` 负测⑥ | **撤销成员资格后**先 `SET SESSION AUTHORIZATION dw_app`，`session_user` 与 `current_user` **均须为 `dw_app`**；随后 `SET ROLE dw_owner` 与 `SET ROLE dw_migrate` **均须报 `permission denied to set role`**；末尾 `RESET SESSION AUTHORIZATION` 后还原授权。🔴 若 `session_user` 不是 `dw_app`、或成员资格仍在，脚本内的 `DO` 块会抛 **`FIXTURE ERROR`** —— **那是夹具错，本组结论无效，不得记成实现通过或不通过**（乙域 RV-乙16 · 2026-08-26 重做）|
-| `t4-ddl-rights.sql` | 🔴 **dw_migrate `SET ROLE dw_owner` 后 ALTER 成功**（DDL 来自**属主 role 成员资格**）· **dw_app 的 ALTER 与 CREATE POLICY 均报 `must be owner of table demo_item`** · **dw_migrate 不切属主时 ALTER 亦报错** —— 证明 `GRANT ALL ON <表>` 不含 DDL（乙域 RV-乙15）|
+| `t4-ddl-rights.sql` | 🔴 **dw_migrate `SET ROLE dw_owner` 后 ALTER 成功**；**企业 ops 测试替身可切 `dw_owner` 执行本库表 DDL**（C.3a.1c）；**dw_app 的 ALTER 与 CREATE POLICY 均报 `must be owner of table demo_item`**；**dw_migrate 不切属主时 ALTER 亦报错** |
 | `t3-no-residue.sql` 负测④ | `owner_sees_before` = **0**（FORCE 下属主也受约束）· `ALTER … NO FORCE` **成功** · `owner_sees_after` = **2**。🔴 **这不是缺陷，是要记录的事实**：属主可自解除 ⇒ FORCE RLS 防误操作、不防有意绕过；唯一防线是**审计留痕**（C.3a.1c） |
 | `t3-no-residue.sql` | `alice_rows` = **1**；`must_be_unset` = **空字符串**（🔴 实跑修正：PG17 下 `current_setting(…,true)` 事务后返回**空串**而非 NULL，coalesce 取不到默认值 —— 原写 `<unset>` 是我按 NULL 想当然）；`must_be_zero` = **0** ⇐ **判「无残留」以此为准** |
 

@@ -1,16 +1,16 @@
-# DingWei SP1 身份与隔离地基设计 v1.2
+# DingWei SP1 身份与隔离地基设计 v1.3
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp1-design` |
-| **版本** | v1.2 |
+| **版本** | v1.3 |
 | **状态** | candidate，待 terra＋deepseekv4pro 双评审 |
 | **输入基线** | `acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` |
 | **合同** | `specs/sp1/spec.md` |
 | **范围** | P1 主体链、一企业一 PG 库、RLS 隔离合同、AccessCtx 改名、Agent 绑定 |
 | **目标架构** | `IDN` 主责，消费 `MSG/PLT` 既有接口；不增加架构接口 ID |
 
-> v1.2：在统一 v0.2 基线收 RV-甲06／乙04／甲10；完成 AccessCtx 双轴代码迁移、三 role 合同与 enterprise registry/opaque database key 路由合同。
+> v1.3：对齐 C.3a.1c 业主甲案：平台 ops 建库/建 role，企业 ops 持本企业库 dw_owner 管表；同步正向归属与应用面拒绝夹具。
 
 输入锚：`acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` · `docs/dingwei-platform-specdoc.md` ·
 `docs/dingwei-platform-architecture.md` · `docs/dingwei-prototype.html`
@@ -153,11 +153,13 @@ deny/not-found 的状态、响应体大小和可观察时延不得泄露目标�
 
 | role | 权限 | 禁止 |
 |---|---|---|
-| `dw_owner` | NOLOGIN object owner，平台 DDL 流程使用 | 不下放企业侧、不作 runtime login |
+| `dw_owner` | NOLOGIN object owner；**由本企业 ops 持有**，负责本企业库内建表/改结构/policy | 不用于应用连接；权限止于本企业库；全部 DDL 与任何 DML 外发审计 |
 | `dw_app` | runtime DML，经 policy | 非 superuser、无 BYPASSRLS、非 table owner、无 DDL |
-| `dw_migrate` | 受控 migration service role | 非日常 ops；短时、审批、审计、不可被应用池使用 |
+| `dw_migrate` | 平台创建的受控 migration service role；迁移窗口经成员资格切 `dw_owner` | 非日常 ops；窗口外无活动连接；不可被应用池使用 |
 
-企业级 ops 至多获得 `dw_app` 级能力；平台 ops 特权风险被移到平台治理面，并未消失，须重两签、时限和审计。
+平台 ops 只建集群/库/三个 role 并把每库 `dw_owner` 分配给对应企业 ops，不介入企业日常表管理。
+企业 ops 是本企业内的特权单点：可自行解除 FORCE RLS，故 FORCE 只防误操作；其 `NO FORCE`、policy/owner 变更及
+以 `dw_owner` 执行的任何 DML，必须外发到企业 ops 无写权的审计落点。此权力不得扩散到普通应用主体。
 
 ### 5.2 表级强制项
 
@@ -171,6 +173,7 @@ deny/not-found 的状态、响应体大小和可观察时延不得泄露目标�
 6. 缺 context 的 current_setting 路径默认拒绝，不回退空串/公共用户；
 7. runtime role 不是属主且不能切 role 绕过；
 8. policy/version 进入 conformance evidence。
+9. `dw_owner` 成员资格只授本企业 ops；企业 ops 可在本企业库 `SET ROLE dw_owner`，`dw_app` 不可切 `dw_owner`/`dw_migrate`。
 
 ### 5.3 事务包装
 
