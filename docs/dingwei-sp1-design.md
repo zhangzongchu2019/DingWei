@@ -1,16 +1,16 @@
-# DingWei SP1 身份与隔离地基设计 v1.3
+# DingWei SP1 身份与隔离地基设计 v1.4
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp1-design` |
-| **版本** | v1.3 |
+| **版本** | v1.4 |
 | **状态** | candidate，待 sonnet50tchangshark＋deepseekv4pro 双评审及 coordinator 归口确认 |
 | **输入基线** | `acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` |
 | **合同** | `specs/sp1/spec.md` |
 | **范围** | P1 主体链、一企业一 PG 库、RLS 隔离合同、AccessCtx 改名、Agent 绑定 |
 | **目标架构** | `IDN` 主责，消费 `MSG/PLT` 既有接口；不增加架构接口 ID |
 
-> v1.3：对齐 C.3a.1c 业主甲案：平台 ops 建库/建 role，企业 ops 持本企业库 dw_owner 管表；同步正向归属与应用面拒绝夹具。
+> v1.4：精确化 owner 成员资格：本企业 ops 持有，受控 migration role 仅迁移窗口可切；应用面始终不可切。
 
 输入锚：`acc531e55dce80e8c0e11db9abb4a5b6e86fb08d` · `docs/dingwei-platform-specdoc.md` ·
 `docs/dingwei-platform-architecture.md` · `docs/dingwei-prototype.html`
@@ -173,7 +173,8 @@ deny/not-found 的状态、响应体大小和可观察时延不得泄露目标�
 6. 缺 context 的 current_setting 路径默认拒绝，不回退空串/公共用户；
 7. runtime role 不是属主且不能切 role 绕过；
 8. policy/version 进入 conformance evidence。
-9. `dw_owner` 成员资格只授本企业 ops；企业 ops 可在本企业库 `SET ROLE dw_owner`，`dw_app` 不可切 `dw_owner`/`dw_migrate`。
+9. `dw_owner` 成员资格只授**本企业 ops 与受控 migration role**；企业 ops 可在本企业库 `SET ROLE dw_owner`，
+   migration role 仅在受控窗口可切；`dw_app` 永久不可切 `dw_owner`/`dw_migrate`。
 
 ### 5.3 事务包装
 

@@ -11,7 +11,7 @@ for term in 'agent → principal' '一企业一 PG 库' 'TenantCtx' 'RLS'; do
 done
 ! grep -q 'docs/dingwei-sp0-design.md' "$SPEC" || { echo '✗ SP1 合同串入 SP0 目标件'; exit 1; }
 DOC=docs/dingwei-sp1-design.md
-for term in 'dw_owner' 'dw_app' 'dw_migrate' '由本企业 ops 持有' '平台 ops 只建集群/库/三个 role' '企业 ops 无写权的审计落点' 'database_key' '0 或多结果即拒' '连接池按 database key 隔离' 'D-SP1-09'; do
+for term in 'dw_owner' 'dw_app' 'dw_migrate' '由本企业 ops 持有' '本企业 ops 与受控 migration role' 'dw_app` 永久不可切' '平台 ops 只建集群/库/三个 role' '企业 ops 无写权的审计落点' 'database_key' '0 或多结果即拒' '连接池按 database key 隔离' 'D-SP1-09'; do
   grep -q "$term" "$DOC" || { echo "✗ SP1 可施工合同缺：$term"; exit 1; }
 done
 for term in 'type AccessCtx struct' 'org       string' 'principal string' 'func NewAccessCtx(orgID, principalID string)'; do
