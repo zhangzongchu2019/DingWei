@@ -38,7 +38,7 @@ Every domain SP7b handoff contains:
 
 SP7a validates the envelope but does not invent the domain object or expected invariant. Board migration remains blocked until its concurrency conformance suite exists.
 
-The SP7b acceptance owners are explicit: IDN/SP1, WRK/SP2, KNO/SP3, CAP/SP4, COL/SP5, AGT and MSG/SP6, and GOV/SP8 each own their domain schema/policy/backfill/consistency/cutover/rollback. The corresponding domain reviewer accepts semantic correctness; SP7a accepts only runner-envelope conformance and cross-enterprise rollout safety. Until both accept, that domain migration is not ready.
+The SP7b acceptance owners are explicit: IDN=SP1, WRK=SP2, KNO=SP3, CAP=SP4, COL=SP5, AGT_MSG=SP6, and GOV=SP8. Each owns its domain schema/policy/backfill/consistency/cutover/rollback. The corresponding domain reviewer accepts semantic correctness; SP7a accepts only runner-envelope conformance and cross-enterprise rollout safety. Until both accept, that domain migration is not ready.
 
 ## 5. Other PLT mechanisms
 

@@ -48,6 +48,22 @@ Frozen baseline: `design/v0.2` at `15bc4a4fe60f95b8236a94f8d650cbe34232ec78`.
 
 The design body must contain one `COVERAGE-SP6-BEGIN/END` table mapping every derived architecture §17 AGT/MSG row, every AGT/MSG interface and every SP6-owned Appendix E row to a real deliverable ID.
 
+<!-- COVERAGE-LOCAL-SP6-BEGIN -->
+| token | type |
+|---|---|
+| `BOUNDARY:SP6` | `local_boundary` |
+<!-- COVERAGE-LOCAL-SP6-END -->
+
+The local boundary token is the only coverage source not derived from a frozen parent artifact. It maps this contract's explicit AGT/MSG envelope boundary. No coverage source may map to all deliverables; such a full fan-out is a degenerate non-discriminating mapping.
+
+<!-- CROSS-SEAM-SP6-BEGIN -->
+| key | value |
+|---|---|
+| `authority_section` | `§24.3a` |
+| `enforcement_interface` | `AGT-CAP-EmergencyAction` |
+| `failure_mode` | `fail_closed_before_effect` |
+<!-- CROSS-SEAM-SP6-END -->
+
 ## 3. Hard invariants
 
 - Agent provenance never substitutes for principal authorization.

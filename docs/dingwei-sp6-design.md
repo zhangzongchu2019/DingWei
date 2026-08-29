@@ -25,6 +25,7 @@ SP6 is a delivery envelope, not a domain. `SP6-AGT` owns runtime order, instance
 `EmergencyAction` is a local-sidecar capability, not a second policy engine. Before effect it verifies local principal, allowlisted operation, current SP8 decision, non-expanding capability effect, target generation and redaction/audit availability. Any unknown rejects the effect. The sidecar binds loopback only, uses a route independent from the platform application, and appends a local tamper-evident audit record. Platform-down may still work; policy/redaction-down may not.
 
 This explicitly closes the SP8 §24.3a consumer-side obligation: `docs/dingwei-sp8-design.md` remains the authority for emergency admission and monotonic tightening, while `AGT-CAP-EmergencyAction` is the only SP6 execution seam. A PASS on SP8 never substitutes for this enforcement. Absence, mismatch or unavailability of the SP8 decision is fail-closed before effect.
+<!-- FAILURE-MODE: fail_closed_before_effect -->
 
 ## 3. MSG package
 

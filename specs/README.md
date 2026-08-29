@@ -50,6 +50,7 @@
 | `specs/sp7/spec.md` | SP7-PLT 合同；覆盖 SP7a 机制基座并钉死 SP7b 领域迁移边界 |
 | `specs/sp7/check.sh` | SP7 正文覆盖、PLT 接口全集与非空预期集合核验 |
 | `specs/sp7/check.py` | SP7 checker 实现 |
+| `specs/sp6-sp7/DECISIONS.md` | SP6/SP7 合同依赖的仓外 DingWei 业主裁定索引与验证边界 |
 | `specs/tools/domain-package-check.py` | SP6/SP7 共用域包 checker：冻结输入、按列派生、结构映射、三态与常驻变异反测 |
 | `specs/v0.2/spec.md` | v0.2 域主轴＋SP 交付封套的统一基准合同 |
 | `specs/v0.2/check.sh` | v0.2 可达性、域等价性、错配登记、七条义务与 RV 完整性总门 |

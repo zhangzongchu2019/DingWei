@@ -45,6 +45,26 @@ Frozen baseline: `design/v0.2` at `15bc4a4fe60f95b8236a94f8d650cbe34232ec78`.
 
 ## 3. Hard invariants
 
+<!-- COVERAGE-LOCAL-SP7-BEGIN -->
+| token | type |
+|---|---|
+| `BOUNDARY:SP7` | `local_boundary` |
+<!-- COVERAGE-LOCAL-SP7-END -->
+
+The local boundary token is the only coverage source not derived from a frozen parent artifact. No coverage source may map to all deliverables; such a full fan-out is a degenerate non-discriminating mapping.
+
+<!-- CROSS-SEAM-SP7-BEGIN -->
+| domain | owner |
+|---|---|
+| `IDN` | `SP1` |
+| `WRK` | `SP2` |
+| `KNO` | `SP3` |
+| `CAP` | `SP4` |
+| `COL` | `SP5` |
+| `AGT_MSG` | `SP6` |
+| `GOV` | `SP8` |
+<!-- CROSS-SEAM-SP7-END -->
+
 - Package-external raw `sql.DB`, pool or transaction handles are zero. Escape through fields, aliases, interfaces, callbacks or return values is forbidden.
 - Missing AccessCtx/DataScopeGrant, unknown enterprise mapping, unavailable policy, unavailable audit protection or unresolvable migration object fails closed.
 - `WithAccess` selects the enterprise pool through opaque registry data, begins a transaction, applies access settings as the first statement, executes domain work, and commits outbox/audit atomically.

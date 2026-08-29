@@ -24,9 +24,9 @@ CFG = {
 class Unknown(RuntimeError): pass
 
 def section(text: str, start: str, end: str) -> str:
-    m = re.search(start + r"(?P<body>.*?)" + end, text, re.S | re.M)
-    if not m: raise Unknown(f"missing structured section: {start}")
-    return m.group("body")
+    matches = list(re.finditer(start + r"(?P<body>.*?)" + end, text, re.S | re.M))
+    if len(matches) != 1: raise Unknown(f"structured section must occur exactly once: {start}; actual={len(matches)}")
+    return matches[0].group("body")
 
 def cells(line: str) -> list[str]:
     return [x.strip() for x in line.strip().strip("|").split("|")]
@@ -82,7 +82,7 @@ def derive_interfaces(arch: str, prefixes: set[str]) -> set[str]:
 def derive_appendix(spec: str, owners: set[str]) -> set[str]:
     sec = ""; out = set()
     for line in spec.splitlines():
-        m = re.match(r"^## (E\.[1234])\b", line)
+        m = re.match(r"^## (E\.\d+)\b", line)
         if m: sec = m.group(1); continue
         if re.match(r"^## E\.", line): sec = ""; continue
         if not sec or not line.startswith("|"): continue
@@ -118,6 +118,18 @@ def coverage_rows(body: str, pkg: str) -> dict[str, set[str]]:
     if not data: raise Unknown("coverage mapping table has no data rows")
     return rows
 
+def key_values(text: str, begin: str, end: str) -> dict[str, str]:
+    block = section(text, rf"^<!-- {re.escape(begin)} -->$", rf"^<!-- {re.escape(end)} -->$")
+    out = {}
+    for line in block.splitlines():
+        c = cells(line) if line.startswith("|") else []
+        if len(c) == 2 and c[0].startswith("`") and c[1].startswith("`"):
+            key, value = c[0].strip("`"), c[1].strip("`")
+            if key in out: raise Unknown(f"duplicate structured key: {key}")
+            out[key] = value
+    if not out: raise Unknown(f"structured ledger is empty: {begin}")
+    return out
+
 def acceptance(body_contract: str, pkg: str) -> None:
     block = section(body_contract, fr"^<!-- ACCEPTANCE-{pkg.upper()}-BEGIN -->$", fr"^<!-- ACCEPTANCE-{pkg.upper()}-END -->$")
     ids = []
@@ -132,11 +144,7 @@ def acceptance(body_contract: str, pkg: str) -> None:
         raise Unknown(f"acceptance ledger malformed: missing={sorted(canonical-actual)} unknown={sorted(actual-canonical)} duplicates={len(ids)-len(actual)}")
 
 def review_protocol(contract: str) -> None:
-    block = section(contract, r"^<!-- REVIEW-PROTOCOL-BEGIN -->$", r"^<!-- REVIEW-PROTOCOL-END -->$")
-    got = {}
-    for line in block.splitlines():
-        c = cells(line) if line.startswith("|") else []
-        if len(c) == 2 and c[0].startswith("`") and c[1].startswith("`"): got[c[0].strip("`")] = c[1].strip("`")
+    got = key_values(contract, "REVIEW-PROTOCOL-BEGIN", "REVIEW-PROTOCOL-END")
     want = {"max_rounds":"6", "reviewers_per_round":"1", "rotation":"alternating", "scope":"full_document", "exchange":"whole_round", "decision_ref":"DECISION-20260829T070251Z"}
     if got != want: raise Unknown(f"review protocol ledger mismatch: want={want} got={got}")
 
@@ -148,23 +156,35 @@ def inspect(pkg: str, contract: str, body: str, frozen: dict[str, str], quiet=Fa
         "appendix_e": derive_appendix(spec, cfg["eowners"]),
     }
     ids = contract_ids(contract, pkg, cfg["count"]); rows = coverage_rows(body, pkg); actual = set(rows)
+    local = key_values(contract, f"COVERAGE-LOCAL-{pkg.upper()}-BEGIN", f"COVERAGE-LOCAL-{pkg.upper()}-END")
+    local_tokens = {k for k, v in local.items() if v == "local_boundary"}
+    if local_tokens != {f"BOUNDARY:{pkg.upper()}"}: raise Unknown(f"local coverage token ledger mismatch: {local_tokens}")
     missing = sorted(set().union(*expected.values()) - actual)
-    unknown = sorted(actual - set().union(*expected.values()) - {f"BOUNDARY:{pkg.upper()}"})
+    unknown = sorted(actual - set().union(*expected.values()) - local_tokens)
     mapped = set().union(*rows.values()) if rows else set()
     unmapped_ids = sorted(ids - mapped); bad_ids = sorted(mapped - ids)
+    degenerate = sorted(token for token, targets in rows.items() if targets == ids)
     acceptance(contract, pkg); review_protocol(contract)
+    decision_path = ROOT / "specs/sp6-sp7/DECISIONS.md"
+    if not decision_path.exists(): raise Unknown("review decision record is unavailable")
+    decisions = decision_path.read_text()
+    if "DECISION-20260829T070251Z" not in decisions: raise Unknown("review decision record is unavailable")
+    seam = key_values(contract, f"CROSS-SEAM-{pkg.upper()}-BEGIN", f"CROSS-SEAM-{pkg.upper()}-END")
     if pkg == "sp6":
         sp8 = frozen.get("docs/dingwei-sp8-design.md", "")
-        if "§24.3a" not in sp8 or "AGT-CAP-EmergencyAction" not in body or "fail-closed before effect" not in body:
+        if seam != {"authority_section":"§24.3a", "enforcement_interface":"AGT-CAP-EmergencyAction", "failure_mode":"fail_closed_before_effect"}:
+            raise Unknown("SP6 cross-seam ledger mismatch")
+        if seam["authority_section"] not in sp8 or seam["enforcement_interface"] not in body or f'<!-- FAILURE-MODE: {seam["failure_mode"]} -->' not in body:
             raise Unknown("SP8 emergency authority to SP6 enforcement seam is incomplete")
-    if pkg == "sp7" and not all(x in body for x in ("IDN/SP1", "WRK/SP2", "KNO/SP3", "CAP/SP4", "COL/SP5", "MSG/SP6", "GOV/SP8")):
-        raise Unknown("SP7b domain-owner handoff ledger is incomplete")
+    if pkg == "sp7":
+        want_owners = {"IDN":"SP1", "WRK":"SP2", "KNO":"SP3", "CAP":"SP4", "COL":"SP5", "AGT_MSG":"SP6", "GOV":"SP8"}
+        if seam != want_owners or any(f"{k}={v}" not in body for k,v in seam.items()): raise Unknown("SP7b domain-owner handoff ledger is incomplete")
     if not quiet:
         for k, v in expected.items(): print(f"[{k}] expected={len(v)} mapped={len(v & actual)} missing={sorted(v-actual)}")
-        print(f"[coverage] unknown={unknown} deliverables_unmapped={unmapped_ids} bad_ids={bad_ids}")
+        print(f"[coverage] unknown={unknown} deliverables_unmapped={unmapped_ids} bad_ids={bad_ids} degenerate={degenerate}")
         print("scope: frozen input bytes; exact architecture owner column; stable interfaces; Appendix E owner_sp rows; structured two-column mappings")
         print("boundary: proves mapping shape and frozen provenance, not semantic correctness or implementation state")
-    if missing or unknown or unmapped_ids or bad_ids: return 1
+    if missing or unknown or unmapped_ids or bad_ids or degenerate: return 1
     return 0
 
 def selftest(pkg: str, contract: str, body: str, frozen: dict[str, str]) -> int:
@@ -189,6 +209,16 @@ def selftest(pkg: str, contract: str, body: str, frozen: dict[str, str]) -> int:
     test("acceptance deletion breaks canonical ledger", contract.replace(ac8, ""), body, 2)
     test("acceptance unknown ID breaks canonical ledger", contract.replace(ac8, ac8.replace("-08`", "-99`")), body, 2)
     test("acceptance duplicate ID breaks canonical ledger", contract.replace(ac8, ac8 + "\n" + ac8), body, 2)
+    marker = f"<!-- COVERAGE-{pkg.upper()}-END -->"
+    duplicate_block = section(body, fr"^<!-- COVERAGE-{pkg.upper()}-BEGIN -->$", fr"^<!-- COVERAGE-{pkg.upper()}-END -->$")
+    test("duplicate coverage block is UNKNOWN", contract, body + f"\n<!-- COVERAGE-{pkg.upper()}-BEGIN -->{duplicate_block}<!-- COVERAGE-{pkg.upper()}-END -->\n", 2)
+    acceptance_block = section(contract, fr"^<!-- ACCEPTANCE-{pkg.upper()}-BEGIN -->$", fr"^<!-- ACCEPTANCE-{pkg.upper()}-END -->$")
+    test("duplicate acceptance block is UNKNOWN", contract + f"\n<!-- ACCEPTANCE-{pkg.upper()}-BEGIN -->\n{acceptance_block}\n<!-- ACCEPTANCE-{pkg.upper()}-END -->\n", body, 2)
+    protocol_block = section(contract, r"^<!-- REVIEW-PROTOCOL-BEGIN -->$", r"^<!-- REVIEW-PROTOCOL-END -->$")
+    test("duplicate review protocol block is UNKNOWN", contract + f"\n<!-- REVIEW-PROTOCOL-BEGIN -->\n{protocol_block}\n<!-- REVIEW-PROTOCOL-END -->\n", body, 2)
+    all_ids = " ".join(f"`D-{pkg.upper()}-{i:02d}`" for i in range(1, cfg["count"]+1))
+    first_mapping = next(x for x in body.splitlines() if x.startswith("| `BOUNDARY:"))
+    test("all-deliverable mapping is degenerate", contract, body.replace(first_mapping, first_mapping.split("|")[0] + "| `BOUNDARY:" + pkg.upper() + f"` | {all_ids} |"), 1)
     bad_arch = re.sub(rf"`({'|'.join(cfg['interfaces'])})-(CMD|QRY|CAP)-", r"`ZZZ-\2-", frozen["docs/dingwei-platform-architecture.md"])
     bad_frozen = dict(frozen); bad_frozen["docs/dingwei-platform-architecture.md"] = bad_arch
     try: derive_interfaces(bad_arch, cfg["interfaces"]); got = 0
@@ -196,14 +226,16 @@ def selftest(pkg: str, contract: str, body: str, frozen: dict[str, str]) -> int:
     n += 1
     if got == 2: print("  ✓ empty interface derivation is UNKNOWN")
     else: print("  ✗ empty interface derivation passed"); failed = True
+    anchor, ledger = frozen_inputs(contract); path, want = next(iter(ledger.items()))
+    bad_want = ("0" if want[0] != "0" else "1") + want[1:]
+    bad_contract = contract.replace(want, bad_want, 1)
     n += 1
     try:
-        anchor, ledger = frozen_inputs(contract); path, want = next(iter(ledger.items()))
-        got = hashlib.sha256(git_bytes(anchor, path) + b"tamper").hexdigest()
-        assert got != want
-        print("  ✓ frozen digest tamper is detectable")
-    except Exception:
-        print("  ✗ frozen digest tamper test failed"); failed = True
+        bad_frozen = verify_frozen(bad_contract)
+        inspect(pkg, bad_contract, body, bad_frozen, True)
+        print("  ✗ frozen digest tamper passed production path"); failed = True
+    except Unknown:
+        print("  ✓ frozen digest tamper is UNKNOWN on production path")
     print(f"--- {pkg.upper()} mutation selftests={n} result={'FAIL' if failed else 'PASS'}")
     return 1 if failed else 0
 
