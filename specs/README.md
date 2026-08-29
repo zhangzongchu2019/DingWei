@@ -44,6 +44,14 @@
 | `specs/sp4/xref-check.sh` | SP4 跨件数量引用、冻结锨和区间派生器的机器门 |
 | `specs/sp4/REVIEW-REGISTRATION-v1.3.md` | SP4 v1.3 合同 3/3 PASS 的历史登记卷 |
 | `specs/sp4/REVIEW-REGISTRATION-v1.8.md` | SP4 v1.8 合同 3/3 PASS 的冻结登记卷；只记被评件指纹，不内嵌自身哈希 |
+| `specs/sp6/spec.md` | SP6 交付合同；按 v0.2 域轴拆出 SP6-AGT 与 SP6-MSG 两个包 |
+| `specs/sp6/check.sh` | SP6 正文覆盖、AGT/MSG 接口全集与非空预期集合核验 |
+| `specs/sp6/check.py` | SP6 checker 实现 |
+| `specs/sp7/spec.md` | SP7-PLT 合同；覆盖 SP7a 机制基座并钉死 SP7b 领域迁移边界 |
+| `specs/sp7/check.sh` | SP7 正文覆盖、PLT 接口全集与非空预期集合核验 |
+| `specs/sp7/check.py` | SP7 checker 实现 |
+| `specs/sp6-sp7/DECISIONS.md` | SP6/SP7 合同依赖的仓外 DingWei 业主裁定索引与验证边界 |
+| `specs/tools/domain-package-check.py` | SP6/SP7 共用域包 checker：冻结输入、按列派生、结构映射、三态与常驻变异反测 |
 | `specs/v0.2/spec.md` | v0.2 域主轴＋SP 交付封套的统一基准合同 |
 | `specs/v0.2/check.sh` | v0.2 可达性、域等价性、错配登记、七条义务与 RV 完整性总门 |
 | `specs/v0.2/check.py` | v0.2 总门实现 |
