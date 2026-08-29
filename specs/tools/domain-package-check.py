@@ -120,13 +120,16 @@ def coverage_rows(body: str, pkg: str) -> dict[str, set[str]]:
 
 def acceptance(body_contract: str, pkg: str) -> None:
     block = section(body_contract, fr"^<!-- ACCEPTANCE-{pkg.upper()}-BEGIN -->$", fr"^<!-- ACCEPTANCE-{pkg.upper()}-END -->$")
-    n = 0
+    ids = []
     for line in block.splitlines():
         c = cells(line) if line.startswith("|") else []
         if len(c) == 4 and re.fullmatch(fr"`AC-{pkg.upper()}-\d{{2}}`", c[0]):
             if any(not x or x == "—" or x == "见全文" for x in c[1:]): raise Unknown(f"empty acceptance cell: {c[0]}")
-            n += 1
-    if n == 0: raise Unknown("acceptance table is empty")
+            ids.append(c[0].strip("`"))
+    canonical = {f"AC-{pkg.upper()}-{i:02d}" for i in range(1, 9)}
+    actual = set(ids)
+    if actual != canonical or len(ids) != len(actual):
+        raise Unknown(f"acceptance ledger malformed: missing={sorted(canonical-actual)} unknown={sorted(actual-canonical)} duplicates={len(ids)-len(actual)}")
 
 def review_protocol(contract: str) -> None:
     block = section(contract, r"^<!-- REVIEW-PROTOCOL-BEGIN -->$", r"^<!-- REVIEW-PROTOCOL-END -->$")
@@ -134,7 +137,7 @@ def review_protocol(contract: str) -> None:
     for line in block.splitlines():
         c = cells(line) if line.startswith("|") else []
         if len(c) == 2 and c[0].startswith("`") and c[1].startswith("`"): got[c[0].strip("`")] = c[1].strip("`")
-    want = {"max_rounds":"6", "reviewers_per_round":"1", "rotation":"alternating", "scope":"full_document", "exchange":"whole_round"}
+    want = {"max_rounds":"6", "reviewers_per_round":"1", "rotation":"alternating", "scope":"full_document", "exchange":"whole_round", "decision_ref":"DECISION-20260829T070251Z"}
     if got != want: raise Unknown(f"review protocol ledger mismatch: want={want} got={got}")
 
 def inspect(pkg: str, contract: str, body: str, frozen: dict[str, str], quiet=False) -> int:
@@ -182,9 +185,12 @@ def selftest(pkg: str, contract: str, body: str, frozen: dict[str, str]) -> int:
     test("naked ID list is not a mapping", contract, naked, 2)
     first = f"D-{pkg.upper()}-01"
     test("contract deliverable deletion breaks ledger", contract.replace(next(x for x in contract.splitlines() if x.startswith(f"| `{first}`")), ""), body, 2)
+    ac8 = next(x for x in contract.splitlines() if x.startswith(f"| `AC-{pkg.upper()}-08`"))
+    test("acceptance deletion breaks canonical ledger", contract.replace(ac8, ""), body, 2)
+    test("acceptance unknown ID breaks canonical ledger", contract.replace(ac8, ac8.replace("-08`", "-99`")), body, 2)
+    test("acceptance duplicate ID breaks canonical ledger", contract.replace(ac8, ac8 + "\n" + ac8), body, 2)
     bad_arch = re.sub(rf"`({'|'.join(cfg['interfaces'])})-(CMD|QRY|CAP)-", r"`ZZZ-\2-", frozen["docs/dingwei-platform-architecture.md"])
     bad_frozen = dict(frozen); bad_frozen["docs/dingwei-platform-architecture.md"] = bad_arch
-    test("empty interface derivation is UNKNOWN", contract, body, 2) if False else None
     try: derive_interfaces(bad_arch, cfg["interfaces"]); got = 0
     except Unknown: got = 2
     n += 1

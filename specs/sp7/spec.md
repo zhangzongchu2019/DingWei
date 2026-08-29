@@ -75,6 +75,8 @@ Frozen baseline: `design/v0.2` at `15bc4a4fe60f95b8236a94f8d650cbe34232ec78`.
 
 Each round selects exactly one of `opus50tczc2000` and `qwen38max`, alternating between rounds. The reviewer reads the entire contract/body/checker set and returns one complete findings list plus `PASS`, `NO`, or `INCONCLUSIVE`. The author addresses a whole round before the next full review. No single-detail ping-pong. At most six rounds.
 
+The frozen architecture's general policy caps ordinary review at three rounds before escalation. A later owner decision, relayed by coordinator at `2026-08-29T07:02:51Z`, explicitly permits this newly organized one-to-one SP review to continue for at most six alternating full-document rounds when efficient. `DECISION-20260829T070251Z` is a scoped exception for this SP6/SP7 assignment; it does not rewrite the platform-wide three-round rule. A material authority dispute still escalates immediately rather than waiting for round six.
+
 <!-- REVIEW-PROTOCOL-BEGIN -->
 | key | value |
 |---|---|
@@ -83,4 +85,5 @@ Each round selects exactly one of `opus50tczc2000` and `qwen38max`, alternating 
 | `rotation` | `alternating` |
 | `scope` | `full_document` |
 | `exchange` | `whole_round` |
+| `decision_ref` | `DECISION-20260829T070251Z` |
 <!-- REVIEW-PROTOCOL-END -->
