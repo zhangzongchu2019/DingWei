@@ -38,6 +38,8 @@ Every domain SP7b handoff contains:
 
 SP7a validates the envelope but does not invent the domain object or expected invariant. Board migration remains blocked until its concurrency conformance suite exists.
 
+The SP7b acceptance owners are explicit: IDN/SP1, WRK/SP2, KNO/SP3, CAP/SP4, COL/SP5, AGT and MSG/SP6, and GOV/SP8 each own their domain schema/policy/backfill/consistency/cutover/rollback. The corresponding domain reviewer accepts semantic correctness; SP7a accepts only runner-envelope conformance and cross-enterprise rollout safety. Until both accept, that domain migration is not ready.
+
 ## 5. Other PLT mechanisms
 
 AppendAudit accepts a canonical record and produces an idempotent append receipt. It never stores credentials or raw enterprise bodies in the platform audit stream. Protection failure follows the protected action's policy; it cannot merely suppress the record while allowing a protected effect.
@@ -62,14 +64,27 @@ HealthSnapshot and MetricsWindow are bounded, scoped and redacted. Unknown depen
 
 | Source obligation | Deliverable |
 |---|---|
-| SP7a mechanism and SP7b domain handoff boundary | `D-SP7-01` |
-| architecture §17 owner PLT rows | `D-SP7-02` `D-SP7-03` `D-SP7-04` `D-SP7-05` `D-SP7-06` |
-| architecture §17 owner PLT.Security rows | `D-SP7-07` `D-SP7-08` `D-SP7-10` |
-| architecture stable interfaces `PLT-*` | `D-SP7-03` `D-SP7-05` `D-SP7-06` `D-SP7-07` `D-SP7-08` `D-SP7-09` |
-| SpecDoc §22.2/C.3a SP7a mechanism | `D-SP7-02` `D-SP7-03` `D-SP7-04` `D-SP7-05` `D-SP7-06` |
-| per-domain SP7b migration/cutover | `D-SP7-11` |
-| raw-handle and repository boundary | `D-SP7-10` |
-| Appendix E rows owner SP7a/SP7b | `D-SP7-12` |
+| `BOUNDARY:SP7` | `D-SP7-01` `D-SP7-10` `D-SP7-11` `D-SP7-12` |
+| `ARCH17:§22.2 存储隔离机制` | `D-SP7-02` `D-SP7-03` `D-SP7-04` `D-SP7-05` `D-SP7-06` |
+| `ARCH17:§22.5 内容识别` | `D-SP7-07` `D-SP7-10` |
+| `ARCH17:C.3a 企业库/RLS` | `D-SP7-04` `D-SP7-05` `D-SP7-06` `D-SP7-11` |
+| `IF:PLT-CMD-RunInAccessTx` | `D-SP7-03` `D-SP7-04` |
+| `IF:PLT-CMD-RunMigration` | `D-SP7-06` `D-SP7-11` |
+| `IF:PLT-QRY-RLSConformance` | `D-SP7-05` |
+| `IF:PLT-CMD-AppendAudit` | `D-SP7-07` |
+| `IF:PLT-QRY-HealthSnapshot` | `D-SP7-08` |
+| `IF:PLT-QRY-MetricsWindow` | `D-SP7-08` |
+| `IF:PLT-CMD-ReconcileEffect` | `D-SP7-09` |
+| `E:E.1#11` | `D-SP7-12` |
+| `E:E.1#51` | `D-SP7-12` |
+| `E:E.1#153` | `D-SP7-12` |
+| `E:E.1#154` | `D-SP7-12` |
+| `E:E.1#155` | `D-SP7-12` |
+| `E:E.1#156` | `D-SP7-12` |
+| `E:E.1#157` | `D-SP7-12` |
+| `E:E.1#158` | `D-SP7-12` |
+| `E:E.1#165` | `D-SP7-12` |
+| `E:E.1#166` | `D-SP7-12` |
 
 <!-- COVERAGE-SP7-END -->
 

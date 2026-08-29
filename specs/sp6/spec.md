@@ -79,3 +79,13 @@ The design body must contain one `COVERAGE-SP6-BEGIN/END` table mapping every de
 ## 5. Review protocol
 
 Each round selects exactly one of `opus50tczc2000` and `qwen38max`, alternating between rounds. The reviewer reads the entire contract/body/checker set and returns one complete findings list plus `PASS`, `NO`, or `INCONCLUSIVE`. The author addresses a whole round before the next full review. No single-detail ping-pong. At most six rounds.
+
+<!-- REVIEW-PROTOCOL-BEGIN -->
+| key | value |
+|---|---|
+| `max_rounds` | `6` |
+| `reviewers_per_round` | `1` |
+| `rotation` | `alternating` |
+| `scope` | `full_document` |
+| `exchange` | `whole_round` |
+<!-- REVIEW-PROTOCOL-END -->

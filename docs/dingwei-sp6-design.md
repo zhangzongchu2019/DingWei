@@ -24,6 +24,8 @@ SP6 is a delivery envelope, not a domain. `SP6-AGT` owns runtime order, instance
 
 `EmergencyAction` is a local-sidecar capability, not a second policy engine. Before effect it verifies local principal, allowlisted operation, current SP8 decision, non-expanding capability effect, target generation and redaction/audit availability. Any unknown rejects the effect. The sidecar binds loopback only, uses a route independent from the platform application, and appends a local tamper-evident audit record. Platform-down may still work; policy/redaction-down may not.
 
+This explicitly closes the SP8 §24.3a consumer-side obligation: `docs/dingwei-sp8-design.md` remains the authority for emergency admission and monotonic tightening, while `AGT-CAP-EmergencyAction` is the only SP6 execution seam. A PASS on SP8 never substitutes for this enforcement. Absence, mismatch or unavailability of the SP8 decision is fail-closed before effect.
+
 ## 3. MSG package
 
 At ingress, the adapter converts channel input to a canonical envelope. Authenticated connection metadata supplies sender identity; user-controlled `from`, tenant, principal or session claims are discarded. Attachments are scoped references with digest, never inline authority.
@@ -57,16 +59,52 @@ SP6 supplies adapters for Agent roster/work surface, direct Agent interaction an
 
 | Source obligation | Deliverable |
 |---|---|
-| SP6 envelope and AGT/MSG authority boundary | `D-SP6-01` |
-| architecture §17 owner AGT rows | `D-SP6-02` `D-SP6-03` `D-SP6-04` `D-SP6-05` `D-SP6-06` |
-| architecture §17 owner MSG rows | `D-SP6-07` `D-SP6-08` `D-SP6-09` `D-SP6-10` |
-| architecture stable interfaces `AGT-*` | `D-SP6-02` `D-SP6-03` `D-SP6-04` `D-SP6-05` |
-| architecture stable interfaces `MSG-*` | `D-SP6-07` `D-SP6-08` `D-SP6-09` |
-| SpecDoc §25 UI composition | `D-SP6-11` |
-| SpecDoc §26 Agent management | `D-SP6-02` `D-SP6-03` `D-SP6-06` |
-| SpecDoc §27 channel access | `D-SP6-07` `D-SP6-08` `D-SP6-09` `D-SP6-10` |
-| SP8 emergency enforcement seam | `D-SP6-05` |
-| Appendix E rows owner SP6 | `D-SP6-12` |
+| `BOUNDARY:SP6` | `D-SP6-01` `D-SP6-11` |
+| `ARCH17:§25.4/§25.8 交互入口` | `D-SP6-07` `D-SP6-08` `D-SP6-10` |
+| `ARCH17:§25.5–§25.6 Agent 面` | `D-SP6-02` `D-SP6-03` `D-SP6-04` `D-SP6-11` |
+| `ARCH17:§26 Agent 管理` | `D-SP6-02` `D-SP6-03` `D-SP6-04` `D-SP6-06` |
+| `ARCH17:§27 渠道接入` | `D-SP6-07` `D-SP6-08` `D-SP6-09` `D-SP6-10` |
+| `ARCH17:F.1 Agent 承接` | `D-SP6-02` `D-SP6-11` |
+| `IF:AGT-CMD-CreateRuntimeOrder` | `D-SP6-02` |
+| `IF:AGT-CMD-ActivateInstance` | `D-SP6-03` |
+| `IF:AGT-CMD-ReportHealth` | `D-SP6-04` |
+| `IF:AGT-CAP-EmergencyAction` | `D-SP6-05` `D-SP6-06` |
+| `IF:MSG-CMD-AcceptEnvelope` | `D-SP6-07` `D-SP6-10` |
+| `IF:MSG-CMD-RouteDelivery` | `D-SP6-08` |
+| `IF:MSG-CMD-AcknowledgeDelivery` | `D-SP6-09` |
+| `IF:MSG-QRY-OnlineSessions` | `D-SP6-08` `D-SP6-11` |
+| `E:E.1#31` | `D-SP6-12` |
+| `E:E.1#92` | `D-SP6-12` |
+| `E:E.1#93` | `D-SP6-12` |
+| `E:E.1#94` | `D-SP6-12` |
+| `E:E.1#95` | `D-SP6-12` |
+| `E:E.1#96` | `D-SP6-12` |
+| `E:E.1#97` | `D-SP6-12` |
+| `E:E.1#100` | `D-SP6-12` |
+| `E:E.1#108` | `D-SP6-12` |
+| `E:E.1#109` | `D-SP6-12` |
+| `E:E.1#110` | `D-SP6-12` |
+| `E:E.1#111` | `D-SP6-12` |
+| `E:E.1#112` | `D-SP6-12` |
+| `E:E.1#113` | `D-SP6-12` |
+| `E:E.1#114` | `D-SP6-12` |
+| `E:E.1#124` | `D-SP6-12` |
+| `E:E.1#133` | `D-SP6-12` |
+| `E:E.3#15` | `D-SP6-12` |
+| `E:E.3#24` | `D-SP6-12` |
+| `E:E.3#25` | `D-SP6-12` |
+| `E:E.3#26` | `D-SP6-12` |
+| `E:E.3#27` | `D-SP6-12` |
+| `E:E.3#29` | `D-SP6-12` |
+| `E:E.3#30` | `D-SP6-12` |
+| `E:E.3#31` | `D-SP6-12` |
+| `E:E.3#41` | `D-SP6-12` |
+| `E:E.3#43` | `D-SP6-12` |
+| `E:E.4#27` | `D-SP6-12` |
+| `E:E.4#45` | `D-SP6-12` |
+| `E:E.4#47` | `D-SP6-12` |
+| `E:E.4#51` | `D-SP6-12` |
+| `E:E.4#62` | `D-SP6-12` |
 
 <!-- COVERAGE-SP6-END -->
 
