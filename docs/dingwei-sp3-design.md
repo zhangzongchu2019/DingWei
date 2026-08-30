@@ -1,16 +1,17 @@
-# DingWei SP3 上下文与知识库设计 v1.6
+# DingWei SP3 上下文与知识库设计 v1.9
 
 | 项 | 值 |
 |---|---|
 | **Design ID** | `dingwei-sp3-design` |
-| **版本** | v1.6 |
-| **状态** | draft，待三方全文评审 |
+| **版本** | v1.9 |
+| **状态** | draft，待新协议轮换全文评审 |
 | **冻结施工锚** | 组合冻结：SpecDoc `fcfec9a`；其余输入 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
-| **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.6 |
-| **合同** | `specs/sp3/spec.md` v1.6 |
+| **合同锚** | 本提交同批 `specs/sp3/spec.md` v1.9 |
+| **合同** | `specs/sp3/spec.md` v1.9 |
 | **范围** | SpecDoc §10–§13；owner_sp=SP3 的附录 E 行 |
 | **主责域** | `KNO` |
-| **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
+| **唯一 owner / 执笔** | `zzc-chatgpt56solzhangzongchu-2642` |
+| **轮换主评审** | `zzc-opus50tchangshark-2642`、`zzc-kimi30kqtuxerh-2642` |
 
 > 本件定义 KNO 目标设计和 KNO 的 SP7b 迁移合同，不声称数据库、RLS、provider、迁移或真实上下文装载已实现。
 > SpecDoc v3.72 §11.6 派发快照字段表是字段全集唯一权威源；§11.6a/§11.6b 分别定义真失败与终结/未知证据。
@@ -20,6 +21,10 @@
 > v1.4：重锚 SpecDoc v3.72；FAIL 只留真失败类，cancelled/timeout/effect_unknown 迁入独立终结/未知证据合同。
 > v1.5：补齐 §11.6b 前序态的派发装载：不伪造 FAIL repro，经既有 envelope_ref 类型化携带不可变终结/未知证据。
 > v1.6：登记 WRK 信封新增消费侧要求与 v3.73 repro 收紧项；两项未确认/吸收前均不冒充已交付。
+> v1.7：round3/4 收准 prior_state fixture 消费边界、挂账坐标与 SP2 协作行唯一性。
+> v1.8：新组织由本席唯一接管；按 SP3 固定席 opus/kimi 单主轮换，最多 8 轮，第 9 轮及以上禁止；opus 对 AC-SP3-08 永久 recused，窄票替代池 qwen→sonnet 且当轮只认一张无涉票；旧票归档不转移。
+>
+> v1.9：闭合 N1 全量意见：评审名单单源派生、owner 禁投窄票、票据锚绑定、逐判据反测与格数棘轮；AC-SP3-08 验收行 canonical 对撞；补验收面来源映射及无涉声明的人审边界。
 
 ## D-SP3-01 范围、四维模型与域边界
 
@@ -213,7 +218,7 @@ anchor resolver、permission domain、redaction rule version、deployment source
 |---|---|---|---|
 | `task`/`node`/`generation` | WRK task/node/generation fixture | 任一缺失或 generation 非预期拒绝 | 标识派发对象并 fence 迟到结果 |
 | `AccessCtxRef` | SP1 签发的可信主体引用 fixture | 缺失、过期、issuer/audience/generation 不符拒绝 | 固定企业轴+人轴；Agent/session/display name 不得替代 |
-| `envelope_ref` | WRK immutable envelope ref fixture；前序为 §11.6b 三态时，消费侧要求信封内有类型化 `prior_state_evidence_ref`（SP2/§11.6 尚未定义，见 §12.4 挂账） | 空/不可解析；三态下引用缺失、类型或 state 不符均拒绝 | 未经 WRK 确认前只用于 fixture；确认后还原派发指令、主体引用与前序不可变终结/未知证据 |
+| `envelope_ref` | WRK immutable envelope ref fixture；前序为 §11.6b 三态时，消费侧要求信封内有类型化 `prior_state_evidence_ref`（SP2/§11.6 尚未定义，见 §11.1 映射表挂账） | 空/不可解析；三态下引用缺失、类型或 state 不符均拒绝 | 未经 WRK 确认前只用于 fixture；确认后还原派发指令、主体引用与前序不可变终结/未知证据 |
 | `spec_ref` | 本次执行所据 spec version ref fixture | 不可取或版本/指纹漂移拒绝 | 固定目标、范围与输入语义 |
 | 原交付物锚 | 上轮 `result_ref+sha256` fixture | 任一缺失/sha 不符拒绝 | 取得待修/待审产物 |
 | 完整 FAIL evidence+失败最小复现 | 真失败取 §11.6a evidence fixture；前序为 §11.6b 三态时显式写 `N/A:not_failure` | FAIL 场景对象缺失或任一必需子字段不成立；非失败三态留空或伪造 repro 均拒绝 | 真失败空上下文复跑；非失败三态改由 `prior_state_evidence_ref` 复核，不伪装 FAIL |
@@ -516,7 +521,7 @@ provider error、崩溃恢复、迁移/rollback。每项至少正反例；变异
 | `AC-SP3-05` | 四维模型与KBDoc.Meta | 四维不互推，字段/枚举/默认/约束齐 | 数据已迁移与否 |
 | `AC-SP3-06` | 三条ingest与revision | 成功写入均追管道；订正不改历史 | curator判断质量 |
 | `AC-SP3-07` | visibility授权/继承 | 默认restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
-| `AC-SP3-08` | v3.72 §11.6/§11.6a/§11.6b逐项 | execution/dependency命令可复跑；gate_fail锚集有效；cancelled/timeout/effect_unknown各自必填齐，经 envelope_ref.prior_state_evidence_ref 装载且 FAIL 槽显式 N/A:not_failure，不误套repro | 诊断/effect判定正确性归人审 |
+| `AC-SP3-08` | v3.72 §11.6/§11.6a/§11.6b逐项 | execution/dependency命令可复跑；gate_fail锚集有效；cancelled/timeout/effect_unknown各自必填齐且 FAIL 槽显式 N/A:not_failure，不误套repro；envelope_ref.prior_state_evidence_ref 仅按 fixture 消费合同判定——该字段冻结 SpecDoc §11.6 未定义，真实装载列为集成前置挂账（见 §11.1 映射表） | 诊断/effect判定正确性归人审；prior_state_evidence_ref 的真实装载、上游字段形状与版本兼容不在本件判定面内 |
 | `AC-SP3-09` | anchors/lifecycle | 四锚分判、多锚OR、连续两版本archived | 替代锚质量 |
 | `AC-SP3-10` | 检索全链 | 先过滤、suspect降权、deny非空集、cursor隔离 | relevance质量 |
 | `AC-SP3-11` | 4接口与复用映射 | auth/idempotency/generation/tx/error/audit及正反例齐 | provider性能 |
@@ -526,6 +531,7 @@ provider error、崩溃恢复、迁移/rollback。每项至少正反例；变异
 ### 12.4 挂账与冲突
 
 1. §11.6 与 SP2 §3.3 差异已由业主裁定并在 v3.70 闭合：§11.6 承认 SP2 字段且保持唯一权威；本轮仍只用 fixture，不接真实派发。
+   `envelope_ref.prior_state_evidence_ref` 的真实集成挂账落在本文 §11.1 映射表；本节只保留指针，不复制第二份事实。
 2. SP1 冻结件头仍 draft，而 coordinator 已告知收口：设计消费 seam，实现门须补可取 verdict/负测证据。
 3. SP7a 未交付：先过滤后检索、RLS、migration runner 只写合同，不宣称已具备。
 4. KNO event 面为 NOT_APPLICABLE；正文不产出 `EV-KNO-*`，未来新增先改目标架构。

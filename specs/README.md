@@ -31,8 +31,11 @@
 | `specs/sp2/contract-check.sh` | SP2 六面、交付/验收 ID、WRK 接口与冻结输入核验 |
 | `specs/sp2/check.sh` | SP2 六类覆盖集合机器派生、结构化落点与正交变异反测；目标件未建时 exit 2 |
 | `specs/sp3/spec.md` | SP3 上下文与知识库设计合同（§10–§13，含 KNO schema 的 SP7b 责任） |
-| `specs/sp3/contract-check.sh` | SP3 六面、交付/验收 ID、KNO 接口、三票与冻结输入核验 |
+| `specs/sp3/contract-check.sh` | SP3 六面、交付/验收 ID、KNO 接口、新轮换协议与冻结输入核验 |
 | `specs/sp3/check.sh` | SP3 四类覆盖集合机器派生、结构化落点与正交变异反测；目标件未建时 exit 2 |
+| `specs/sp3/REVIEW-HISTORY.md` | SP3 旧轮次只归档不转效力、新 N1–N8 轮换与 recused 窄票边界 |
+| `specs/sp3/review-aggregate.py` | SP3 单主票与 recused 面恰一张无涉窄票的聚合门及 N1–N8 夹具 |
+| `specs/sp3/review-aggregate.sh` | SP3 票据聚合门入口 |
 | `specs/sp8/spec.md` | SP8 授权与平台治理设计合同（§23、§24，含 GOV 治理面 schema 的 SP7b 责任）|
 | `specs/sp8/contract-check.sh` | SP8 六面、交付/验收 ID、GOV 接口、同域差集与组合冻结输入核验 |
 | `specs/sp8/check.sh` | SP8 四类覆盖集合机器派生（含 GOV 同域差集）、结构化落点与正交变异反测 |

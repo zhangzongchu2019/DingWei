@@ -1,16 +1,16 @@
 # DingWei SP3 上下文与知识库设计合同
 
-> 本件冻结 SP3 的范围、前置、交付物与验收口径；合同 3/3 PASS 且 coordinator 登记前不写正文。
+> 本件冻结 SP3 的范围、前置、交付物与验收口径；新协议有效票全部 PASS 且 coordinator 登记前不收口。
 
 ## 0. 合同头块
 
 | 项 | 值 |
 |---|---|
 | **Spec ID** | `dingwei-sp3-design` |
-| **合同版本** | v1.6 |
+| **合同版本** | v1.9 |
 | **状态** | `draft-for-review` |
-| **执笔** | `zzc-chatgpt56soltchangshark-2642` |
-| **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642`、`zzc-opus50tczc2000-2642` |
+| **唯一 owner / 执笔** | `zzc-chatgpt56solzhangzongchu-2642` |
+| **轮换主评审** | `zzc-opus50tchangshark-2642`、`zzc-kimi30kqtuxerh-2642` |
 | **冻结施工锚** | 组合冻结：SpecDoc `fcfec9a`；架构/原型/SP0–SP2/代码基线 `53e4a2aed1569eef91e4048e7da2a1cd32db3ec2` |
 | **权威范围** | SpecDoc §10–§13；owner_sp=SP3 的附录 E 行 |
 | **目标架构域** | `KNO`；消费 `IDN/PLT/WRK`，向 `WRK/CAP/COL/AGT` 提供受控知识与上下文 snapshot |
@@ -34,6 +34,11 @@ KNO 只消费既有 WRK dispatch 事件，并经四个 KNO command/query 与 rep
 **v1.5 同步**：SpecDoc 重锚 v3.72；§11.6a 只留真失败类，cancelled/timeout/effect_unknown 改按 §11.6b 各自证据合同。
 
 **v1.6 同步**：§11.6b 前序态不伪装 FAIL；经既有 envelope_ref 内类型化 prior_state_evidence_ref 携带，FAIL evidence 槽显式 N/A:not_failure。
+**v1.7 同步（round3 收准）**：上条的 `prior_state_evidence_ref` **仅按 fixture 消费合同判定**——该字段在冻结 SpecDoc §11.6 未定义，真实装载列为集成前置挂账（正文 §11.1 映射表）；本件不声称其已完成真实装载。
+
+**v1.8 同步（新组织接管）**：唯一 owner 改为 `zzc-chatgpt56solzhangzongchu-2642`；旧 R1–R4 票只归档、不转移效力；新轮次 N1–N8 由 SP3 固定席 opus/kimi 单主评审轮换，第 9 轮及以上禁止。同步闭合旧 R4 三项非阻断：版本字段、§12.4 挂账指针、评审与计票口径。
+
+**v1.9 同步（N1 整轮闭合）**：票据聚合名单改为从本合同单一派生，补 owner 排除、冻结锚绑定、逐判据反测与格数棘轮；AC-SP3-08 验收行改为恰一行 canonical 对撞；新增验收面来源映射。`no_involvement` 仅作评审人声明与 coordinator 留痕，机器不声称验证其真实性。
 
 ### 0.1 范围判定
 
@@ -52,7 +57,7 @@ SpecDoc §0.3 对 SP3 定义清晰且与目标架构一致：
 | **SP1** | 冻结 SP1 设计件头仍为 `draft，待双评审`；coordinator 已在本轮外告知其收口 | 只消费 AccessCtx/企业库/Agent provenance 已定义 seam；不把消息 verdict 倒签进冻结件 | SP1 verdict 锚、AccessCtx 与一企业一库/RLS 负测未落账前，KNO 仅做 contract test，不上线 query/ingest |
 | **SP7a** | 受控仓储 API、migration runner、访问抽象尚未在本分支交付 | KNO schema 与 repository port 可并行设计；不得自建 DB 句柄或应用层补 tenant 过滤 | 受控 transaction、先过滤后检索、迁移 runner conformance 未过，不得 cutover |
 | **SP7b（SP3 自交）** | KNO 最终 schema 未设计，不能由统一 SP7 先做 | 本件须交 KNO schema/migration/cutover/rollback 五列合同 | SP3 实现批次履约，不推回统一 SP7 |
-| **SP2（协作输入，非 §0.3 前置）** | SP2 正文已 3/3 PASS，锚 `53e4a2a`；其 §3.3 是 §11.6 快照的引用侧 | SP3 以 SpecDoc §11.6 表为字段全集权威源；消费 WRK task snapshot，但不采信 SP2 自列字段替代 §11.6 | SP2 与 §11.6 字段差异未裁前，用 §11.6 表逐项 fixture，不接真实派发 |
+| **SP2（协作输入，非 §0.3 前置）** | 冻结锚 `53e4a2a` 上 SP2 正文候选件字节可取；**其评审效力不由本合同自证**，以 SP2 归口登记与有效票为准；其 §3.3 是 §11.6 快照的引用侧 | SP3 以 SpecDoc §11.6 表为字段全集权威源；消费 WRK task snapshot，但不采信 SP2 自列字段替代 §11.6 | SP2 与 §11.6 字段差异未裁前，用 §11.6 表逐项 fixture，不接真实派发 |
 
 冻结证据与消息状态分层：设计可在 seam 明确时推进；实现开工门必须有可取 verdict/接口证据，不以本合同代填。
 
@@ -129,7 +134,7 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `D-SP3-03` | domain 与生命周期 | D0–D3、三条 ingest、晋升/订正、不可变历史；坑清单晋升 D2/D1 必带 `deidentification_evidence_ref` |
 | `D-SP3-04` | visibility 与授权 | 默认 restricted、降级审批、继承取严、放行审计、负测 |
 | `D-SP3-05` | 固化判型与来源 | 条目类型、四类权威源、运行时取边界、导入/链接；平台/企业现网抽取共用受控 `ExtractionProfile` 参数化 |
-| `D-SP3-06` | 上下文装载 | 以 v3.72 §11.6 字段表为唯一权威源；§11.6a 仅 execution_failed/dependency_unavailable 与 gate_fail；cancelled/timeout/effect_unknown 按 §11.6b 各自必填，不套 repro；下一派发经 `envelope_ref.prior_state_evidence_ref` 携带同态同代不可变记录，FAIL 槽显式 `N/A:not_failure`；两类证据同时存在/缺失均拒绝 |
+| `D-SP3-06` | 上下文装载 | 以 v3.72 §11.6 字段表为唯一权威源；§11.6a 仅 execution_failed/dependency_unavailable 与 gate_fail；cancelled/timeout/effect_unknown 按 §11.6b 各自必填，不套 repro；下一派发经 `envelope_ref.prior_state_evidence_ref` 携带同态同代不可变记录，FAIL 槽显式 `N/A:not_failure`；两类证据同时存在/缺失均拒绝。🔴 本轮**仅按 fixture 消费合同判定**该引用：该字段冻结 SpecDoc §11.6 未定义，真实装载列为集成前置挂账（正文 §11.1 映射表），不得据本行声称已完成真实装载 |
 | `D-SP3-07` | 锚与生命周期 | 四锚判据、多锚 OR、active/suspect/archived、reverify |
 | `D-SP3-08` | 检索与排序 | 先过滤、scope∩visibility、降权、cursor、拒绝语义、审计 |
 | `D-SP3-09` | 四接口合同 | schema/effect/auth/idempotency/generation/tx/error/audit |
@@ -164,20 +169,60 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | `AC-SP3-05` | 四维模型与 KBDoc.Meta | memory_type 等四维分别持久化且不互推；字段/枚举/默认值/约束齐 | 数据是否已迁移 |
 | `AC-SP3-06` | 三条 ingest、revision 与坑清单晋升 | 无旁路写入；订正不改历史；D2/D1 晋升缺去标识化 evidence ref 拒绝 | curator/脱敏判断质量 |
 | `AC-SP3-07` | visibility 与引用 | 默认 restricted、降级审批、继承取严、放行审计齐 | 定级是否恰当 |
-| `AC-SP3-08` | v3.72 §11.6/§11.6a/§11.6b 逐项 | execution/dependency 命令可复跑；gate_fail 锚集有效；cancelled/timeout/effect_unknown 各自必填齐，经 `envelope_ref.prior_state_evidence_ref` 装载且 FAIL 槽为 `N/A:not_failure`，不误套 repro | 诊断/effect 判定正确性归人审 |
+| `AC-SP3-08` | v3.72 §11.6/§11.6a/§11.6b 逐项 | execution/dependency 命令可复跑；gate_fail 锚集有效；cancelled/timeout/effect_unknown 各自必填齐且 FAIL 槽为 `N/A:not_failure`，不误套 repro；`envelope_ref.prior_state_evidence_ref` **仅按 fixture 消费合同判定**——该字段在冻结 SpecDoc §11.6 未定义（全文命中 0），其真实装载列为集成前置挂账，见正文 §11.1 映射表 | 诊断/effect 判定正确性归人审；`prior_state_evidence_ref` 的真实装载、上游字段形状与版本兼容均不在本件判定面内 |
 | `AC-SP3-09` | anchors 与生命周期 | 四锚分判、多锚 OR、连续两版本 archived | 外部替代锚质量 |
 | `AC-SP3-10` | 检索全链 | 过滤先于检索、suspect 降权、deny 不伪装空集 | relevance 质量 |
 | `AC-SP3-11` | 4 接口与复用映射 | auth/idempotency/generation/tx/error/audit 及正反例齐 | provider 性能 |
 | `AC-SP3-12` | SP7b 五列合同与证据 | 对象/输入/期望/证据/门齐；设计 PASS 不升级实现 PASS | 实际 cutover/rollback |
-| `AC-E05` | 同一正文锚三份 verdict | 三位评审者 3/3 PASS；缺任一票即未过 | verdict 专业质量 |
+| `AC-E05` | 同一冻结锚的新协议有效票 | 当轮恰一张全文主票；所有非 recused 面均 PASS；每个 recused 面恰一张无涉窄票且 PASS；旧票与多余票不转移效力 | verdict 专业质量；`no_involvement` 仅为评审人自我声明与 coordinator 留痕，机器不证明其真实性 |
 <!-- ACCEPTANCE-SP3-END -->
 
 ### 4.1 评审协议
 
 - verdict 词表仅 `PASS/NO/INCONCLUSIVE`；任一阻断未闭即 NO；
-- 最多 4 轮：每轮全文一次性给全量阻断，作者一次性整改，不逐条往返；
-- 第 3 轮仍有产品/范围争议交 coordinator/业主，第 4 轮只签最终 verdict；
-- 三位评审者须对同一 commit 独立 PASS（3/3），不以多数票替代。
+- 新轮次最多 8 轮（N1–N8）：每轮全文一次性给全量 findings，作者整轮整改，不逐条往返；
+- 每轮恰一位全文主评审，按 `zzc-opus50tchangshark-2642` → `zzc-kimi30kqtuxerh-2642` 交替；不得同轮双主评审；第 9 轮及以上禁止；
+- `zzc-opus50tchangshark-2642` 对 `AC-SP3-08` 永久 recused；该面窄票替代顺序为 `zzc-qwen38maxkhovvob4-2642` → `zzc-sonnet50tchangshark-2642`，每轮仍只能登记其中恰一张无涉票；
+- 主评审若对某验收面 recused，该面须恰一张无涉窄票：窄票评审不得参与该面的设计、执笔或本轮修改，且不得是本件 owner；`no_involvement` 是评审人自报并由 coordinator 留痕，不是 Git/机器可证明事实；缺票、多票、非无涉或非 PASS 均不得收口；
+- 旧 R1–R4 verdict 全部只作归档证据，不转移到新锚、不计入新轮收口；新一轮只认该轮冻结锚产生的有效票；
+- 最终 PASS 要求同一冻结锚上：主评审对全部非 recused 面 PASS，且每个 recused 面的唯一无涉窄票 PASS；不以多数票替代；
+- 任一产品/范围/授权争议立即交 coordinator/业主，不因还有剩余轮次而拖延。
+
+<!-- REVIEW-PROTOCOL-SP3-BEGIN -->
+| key | value |
+|---|---|
+| `owner` | `zzc-chatgpt56solzhangzongchu-2642` |
+| `max_rounds` | `8` |
+| `round_ids` | `N1,N2,N3,N4,N5,N6,N7,N8` |
+| `primary_reviewers` | `zzc-opus50tchangshark-2642,zzc-kimi30kqtuxerh-2642` |
+| `primary_per_round` | `1` |
+| `rotation` | `alternating` |
+| `review_scope` | `full_document` |
+| `recused_narrow_vote_per_surface` | `1` |
+| `narrow_reviewer_requirement` | `no_involvement` |
+| `legacy_vote_effect` | `archive_only_no_transfer` |
+| `round9_effect` | `forbidden` |
+| `permanent_recusal` | `zzc-opus50tchangshark-2642:AC-SP3-08` |
+| `narrow_replacement_pool` | `zzc-qwen38maxkhovvob4-2642,zzc-sonnet50tchangshark-2642` |
+| `registry_encoding` | `authorization_ALL_or_surface_no_ballot_kind` |
+<!-- REVIEW-PROTOCOL-SP3-END -->
+
+<!-- REVIEW-SURFACE-MAP-SP3-BEGIN -->
+| surface | 判据来源 |
+|---|---|
+| `AC-SP3-01` | `specs/sp3/check.sh:headings` |
+| `AC-SP3-02` | `specs/sp3/check.sh:appendix_e` |
+| `AC-SP3-03` | `specs/sp3/check.sh:interfaces` |
+| `AC-SP3-04` | `specs/sp3/check.sh:prototype` |
+| `AC-SP3-05` | `specs/sp3/spec.md:four_dimensions` |
+| `AC-SP3-06` | `specs/sp3/spec.md:ingest_revision` |
+| `AC-SP3-07` | `specs/sp3/spec.md:visibility` |
+| `AC-SP3-08` | `specs/sp3/check.sh:prior_state_gate;specs/sp3/contract-check.sh:ac08_acceptance_row` |
+| `AC-SP3-09` | `specs/sp3/spec.md:anchors_lifecycle` |
+| `AC-SP3-10` | `specs/sp3/spec.md:retrieval_chain` |
+| `AC-SP3-11` | `specs/sp3/spec.md:interfaces_reuse` |
+| `AC-SP3-12` | `specs/sp3/spec.md:sp7b_handoff` |
+<!-- REVIEW-SURFACE-MAP-SP3-END -->
 
 ## 5. 冲突与变更纪律
 
@@ -188,13 +233,14 @@ snapshot 大小与构建耗时、拒绝与审计量。无实测写 unknown；不
 | 与 SP1/SP2 seam 对撞 | 停止该路径，登记接口差异；不改已收口件 |
 | SpecDoc §11.6 与 SP2 §3.3 snapshot 字段不一致 | ✅ 业主已裁并在 v3.70 落地：§11.6 承认 SP2 所需字段且仍为唯一权威表；SP3 按新表与 §11.6a 设计，SP2 为引用侧 |
 | 目标与 datad/kb 现状冲突 | 记 retain/adapt/rewrite 差距；旧实现不升级为目标规则 |
-| 合同范围或机器集合变化 | bump 合同并重走三方评审，未过不写正文 |
+| 合同范围或机器集合变化 | bump 合同并按新协议重走全文评审，未过不收口 |
 
 ## 6. 开工门
 
-- [ ] opus50 合同 PASS；
-- [ ] deepseek 合同 PASS；
-- [ ] opus50tczc2000 合同 PASS；
+- [ ] 当前冻结锚的单一主评审全文 PASS；
+- [ ] 所有 recused 面各有且仅有一张无涉窄票 PASS；无 recused 面时窄票数须为 0；
+- [ ] 旧票仅归档且未被计入当前锚；
 - [ ] `specs/sp3/contract-check.sh` PASS；
 - [ ] `specs/sp3/check.sh --selftest` PASS；
+- [ ] `specs/sp3/review-aggregate.sh --selftest` PASS；当前轮 registry 经聚合门 PASS；
 - [ ] coordinator 登记冻结施工锚与合同锚。
