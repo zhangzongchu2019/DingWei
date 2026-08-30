@@ -58,7 +58,7 @@
 | `specs/v0.2/domain-baseline.tsv` | 存量 SP 章节范围与 primary domain 的机器基线 |
 | `specs/v0.2/baseline-manifest.tsv` | v0.2 当前树权威件的路径、sha256 与来源锨棘轮 |
 | `specs/v0.2/domain-mismatches.tsv` | §17 域 owner 与存量 SP 声明域的逐行错配登记 |
-| `specs/v0.2/future-domain-packages.tsv` | SP5-COL、SP6-AGT、SP6-MSG、SP7-PLT 的域派生起件清单 |
+| `specs/v0.2/future-domain-packages.tsv` | SP5-COL、SP6-AGT、SP6-MSG、SP7-PLT 的域派生包与设计收口状态清单 |
 | `specs/v0.2/obligations.tsv` | v0.2 整合的七条跨件义务台账 |
 | `specs/platform/checklist.md` | 结构域（sol 主笔，26 项） |
 | `specs/platform/checklist.security-reviewer.md` | 安全域（terra，18 项） |

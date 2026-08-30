@@ -113,16 +113,16 @@ def check_domain_equivalence():
     print("未登记错配：0")
 
 
-def check_future_packages():
+def check_domain_packages():
     arch_domains = {owner.split(".")[0] for _, owner in architecture_rows()}
     packages = rows(ROOT / "specs/v0.2/future-domain-packages.tsv", 4)
     names = [row[0] for row in packages]
     if names != ["SP5-COL", "SP6-AGT", "SP6-MSG", "SP7-PLT"]:
-        fail(f"未起件分包集合不符裁定：{names}")
+        fail(f"域分包集合不符裁定：{names}")
     for _, domain, _, status in packages:
-        if domain not in arch_domains or status != "planned":
-            fail(f"未起件域映射非法：{domain}/{status}")
-    print("未起件域包：SP5-COL · SP6-AGT · SP6-MSG · SP7-PLT")
+        if domain not in arch_domains or status != "design-closed":
+            fail(f"域分包映射或设计状态非法：{domain}/{status}")
+    print("设计已收口域包：SP5-COL · SP6-AGT · SP6-MSG · SP7-PLT")
 
 
 def function_calls(source, call_name):
@@ -237,12 +237,12 @@ def main():
     check_ancestry()
     check_manifest()
     check_domain_equivalence()
-    check_future_packages()
+    check_domain_packages()
     check_interval_callsites()
     check_sp4_inputs_and_exemptions()
     check_obligations()
     check_archive_and_ledger()
-    print("预期集合：历史锚6 + 存量SP5 + 未起域包4 + 义务7 + RV84")
+    print("预期集合：历史锚6 + 存量SP5 + 设计已收口域包4 + 义务7 + RV84")
     print("实检集合：6/6 + 5/5 + 4/4 + 7/7 + 84/84")
     print("未知集合：0")
     print("✓ design/v0.2 域主轴统一基准通过")
