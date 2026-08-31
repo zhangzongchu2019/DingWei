@@ -30,7 +30,7 @@ F.15 is owned as a complete traceability row by CAP/SP4. CAP designs domain clas
 
 ## 4. Reachability and provenance
 
-The baseline must retain ancestry for every complete source commit in `baseline-manifest.tsv`, plus historical interval anchor `c7ac0c3` and historical SP4 verdict anchor `4006cbe`. Every manifest source is a 40-hex commit that reproduces the recorded path digest; free-text verdicts do not belong in the source column. Protected immutable freeze tags are a second guard; they do not replace merge ancestry.
+The baseline must retain ancestry for every complete source commit in `baseline-manifest.tsv`, the two integration parent lines `4220195` and `6a98629`, historical interval anchor `c7ac0c3`, and historical SP4 verdict anchor `4006cbe`. Every manifest source is a 40-hex commit that reproduces the recorded path digest; free-text verdicts or semantic labels do not belong in the source column and remain in commit messages or reviewer-owned evidence. Protected immutable freeze tags are a second guard; they do not replace merge ancestry.
 
 ## 5. `docs/v0.1/` meaning
 

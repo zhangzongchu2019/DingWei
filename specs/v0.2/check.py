@@ -55,6 +55,8 @@ def check_ancestry():
             fail(f"manifest source 非完整 commit 锚：{path} source={source}")
         manifest_anchors.append(source)
     historical_anchors = (
+        "4220195b311ca9b9b734706ce80d8b3fcc1abfae",
+        "6a98629fefd91e69b146516291491cbc6d1136da",
         "c7ac0c3a191167ab7652fbddb712578dbe579a12",
         "4006cbeeda3edd986d6a9da53268e68aa01c9c9e",
     )
@@ -84,6 +86,9 @@ def check_manifest():
     bad_content = []
     bad_source = []
     source_unreachable = []
+    source_path_missing = []
+    unlabelled = 0
+    unknown = 0
     verified = 0
     for path, want, source in manifest:
         target = ROOT / path
@@ -95,12 +100,18 @@ def check_manifest():
             bad_content.append((path, got, want))
             continue
         if not re.fullmatch(r"[0-9a-f]{40}", source):
+            unlabelled += 1
             bad_source.append((path, f"invalid-source:{source}", "完整 40 位 commit 锚"))
+            continue
+        try:
+            git("cat-file", "-e", f"{source}^{{commit}}")
+        except subprocess.CalledProcessError:
+            source_unreachable.append((path, source))
             continue
         try:
             anchored = git("show", f"{source}:{path}")
         except subprocess.CalledProcessError:
-            source_unreachable.append((path, source))
+            source_path_missing.append((path, source))
             continue
         anchored_hash = hashlib.sha256(anchored).hexdigest()
         if anchored_hash != want:
@@ -111,12 +122,14 @@ def check_manifest():
         fail(f"v0.2 当前树权威件漂移：{bad_content}")
     if source_unreachable:
         fail(f"v0.2 manifest source 锚不可达（可能为浅克隆或锚未受保护）：{source_unreachable}")
+    if source_path_missing:
+        fail(f"v0.2 manifest source 锚存在但该锚缺少目标路径：{source_path_missing}")
     if bad_source:
         fail(f"v0.2 manifest provenance 非法或与内容不符：{bad_source}")
     print(f"v0.2 manifest：{len(manifest)}/{len(manifest)} 路径指纹一致")
     print(f"provenance 预期集合：{len(manifest)} 行")
     print(f"provenance 实检集合：{verified}/{len(manifest)} source 锚已复算且为 HEAD ancestor")
-    print("provenance 未标注：0 · 未知集合：0")
+    print(f"provenance 未标注：{unlabelled} · 未知集合：{unknown}")
 
 
 def check_domain_equivalence():
@@ -275,8 +288,8 @@ def main():
     check_sp4_inputs_and_exemptions()
     check_obligations()
     check_archive_and_ledger()
-    print("预期集合：manifest source锚9 + 历史锚2 + 存量SP5 + 设计已收口域包4 + 义务7 + RV84")
-    print("实检集合：9/9 + 2/2 + 5/5 + 4/4 + 7/7 + 84/84")
+    print("预期集合：manifest source锚9 + 历史锚4 + 存量SP5 + 设计已收口域包4 + 义务7 + RV84")
+    print("实检集合：9/9 + 4/4 + 5/5 + 4/4 + 7/7 + 84/84")
     print("未知集合：0")
     print("✓ design/v0.2 域主轴统一基准通过")
 
