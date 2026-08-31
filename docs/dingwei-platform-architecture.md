@@ -1,4 +1,4 @@
-# DingWei 平台目标架构 v1.4
+# DingWei 平台目标架构 v1.5
 
 > 本件从新版 SpecDoc 与原型重新设计目标架构，同时承载分域定义、接口设计与技术架构设计。
 > 旧件已移至 `docs/v0.1/dingwei-architecture-design-v0.34.md`，仅作历史参考，不是本件输入，也不是本件的修改对象。
@@ -8,7 +8,7 @@
 | 项 | 值 |
 |---|---|
 | **Architecture ID** | `dingwei-platform-target-architecture` |
-| **版本** | v1.4 |
+| **版本** | v1.5 |
 | **状态** | draft，待全文评审 |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
@@ -21,7 +21,7 @@
 | 输入 | 冻结指纹 | 用途 |
 |---|---|---|
 | SpecDoc v3.77 | sha256 `8889a2e8fc73ffccee17555362a4e9be8da9f700c15273b4092c3a9c0b38baff` | 规范、业主裁定、约束与验收来源 |
-| 原型 v1.48 | sha256 `f2995730ca986ae38993f62391312982e7ed5026dab990c78ff29a6bb00ef9cb` | 可达入口、操作者视角与交互状态来源 |
+| 原型 v1.49 | sha256 `9ea7c49dd9bb7979fdd24e5373c04468495c05868ad31e817b474408d9f734c5` | 可达入口、操作者视角与交互状态来源 |
 | 当前代码 | 冻结 commit 中的 `cmd/`、`internal/` | 只证实现现状与迁移面，不决定目标域 |
 
 ### 0.1 本件回答什么
@@ -892,9 +892,9 @@ internal/worker
 |---|---|---|---|
 | 待决队列 `s1` | GOV | `GOV-QRY/CMD-DecidePending` | 无批准权、过期、代际冲突、空队列 |
 | 任务看板 `s2` | WRK | task snapshot / dispatch / revision | starved、无人愿接、gate pending/fail |
-| 平台治理 `s8/s8r/s8h` | GOV | batch/policy/health queries | 缺第二签、闸债务、依赖不可用 |
+| 平台治理 `s8/s8r/s8h` | GOV | batch/policy/health queries | `s8`：缺第二签、闸债务摘要/链接；`s8h`：运行态依赖不可用、计数器未埋 |
 | Spec/准入/交付链 `s4/a5/a6` | GOV/WRK | submit spec / artifact chain | 缺面、锚悬空、门未过 |
-| 知识库 `s3` | KNO | search/ingest/lifecycle | 过滤拒绝、suspect、无结果 |
+| 知识库 `s3` | KNO | search/ingest/lifecycle | 无可见结果（不显示被过滤对象/数量）、suspect |
 | 分级对齐 `b1` | GOV | rule set query | 规则版本缺失/冲突 |
 | 周报 `b2` | COL/WRK | weekly report query/export | 数据截止时刻、部分项目缺数 |
 | 仓储核验 `b3` | PLT/IDN | conformance/negative evidence | 未达标、负测缺失、旁路命中 |
@@ -905,7 +905,7 @@ internal/worker
 | 常规对话 `a8/a3` | MSG/COL | envelope/post | session fenced、内容拒收 |
 | ops 紧急对话 `a9` | AGT | emergency capability | 本地认证失败、effect 不在 allowlist |
 | 渠道授权/绑定 `s9/a7` | IDN | authenticate/bind/revoke | 弱渠道、challenge 过期、rebind 冲突 |
-| 架构总览 `s0` | GOV/本件 | artifact query | 当前设计未过门 |
+| 架构总览 `s0` | GOV/本件 | artifact query | 状态源不可达/状态未同步；未过门时显示阻断 |
 
 UI 只展示后端判定结果，不在浏览器重算权限、门集、visibility 或归属链。
 

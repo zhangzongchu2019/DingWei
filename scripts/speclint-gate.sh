@@ -125,6 +125,14 @@ if [ -f docs/dingwei-platform-architecture.md ]; then
   scripts/arch-refcheck.sh --selftest >/dev/null 2>&1 || { scripts/arch-refcheck.sh --selftest; echo "✗ 架构引用核验的反测未过"; exit 1; }
   echo "  ⑥ 架构引用核验 ✓（含四项反测）"
 fi
+# ⑥a 现行原型设计门：原型不再只作他包的冻结输入，须以目标件身份核导航、状态源与失败/空态。
+if [ ! -x specs/prototype/check.sh ]; then
+  echo "✗ 闸依赖缺失：specs/prototype/check.sh 不可执行"; exit 1
+fi
+specs/prototype/check.sh || exit 1
+specs/prototype/check.sh --selftest >/dev/null 2>&1 || {
+  specs/prototype/check.sh --selftest; echo "✗ 现行原型设计门的反测未过"; exit 1; }
+echo "  ⑥a 现行原型设计门的反测 ✓"
 # ⑦ 仓储包边界（SP7a 甲组·收口判据的执行处）
 #    立此项的直接原因：判据「仓储包外 sql.Open 恒零」此前只写在架构设计与证据脚本里，
 #    没有任何闸执行它 —— specs/evidence/collect.sh 只记录数字、整篇无非零退出，本闸也没调过它。

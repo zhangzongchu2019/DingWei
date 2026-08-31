@@ -19,6 +19,9 @@
 | `specs/platform-architecture/spec.md` | 新版平台架构设计的施工与验收合同；冻结分域、接口与技术架构三类输出，旧架构件只作历史参考 |
 | `specs/platform-architecture/check.sh` | 新版架构件的非门控形状检查：反查包/进程、原型入口与接口 ID；明确不替代语义评审 |
 | `specs/platform-architecture/cutover-check.sh` | 架构唯一事实源切换核验：机器派生预期/实检/未知集合，未知非空即失败 |
+| `specs/prototype/spec.md` | 现行原型设计合同：界定导航/屏体/架构对撞、状态源、取件坐标、失败空态与窄屏边界 |
+| `specs/prototype/check.py` | 现行原型的结构、跨件语义键、取件坐标、manifest 指纹与常驻反测 |
+| `specs/prototype/check.sh` | 现行原型设计门入口 |
 | `specs/sp0-1/spec.md` | SP0 / SP1 两包分开同时做的协调合同；冻结共同输入与独立开工门 |
 | `specs/sp0-1/contract-check.sh` | SP0、SP1 独立合同/目标路径、交付 ID 与冻结输入核验 |
 | `specs/sp0/spec.md` | SP0 总则与定义层独立设计合同（§1–§4、附录 A） |

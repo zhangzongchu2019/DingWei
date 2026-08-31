@@ -61,7 +61,7 @@ def expected_sets():
         c=[x.strip() for x in l.strip().strip('|').split('|')]
         if len(c)>=2 and 'KNO' in c[1].split('/'):
             for group in re.findall(r'`([^`]+)`',c[0]): ui.extend('UI:#'+x for x in group.split('/'))
-    proto_ids=set(re.findall(r'<section\s+class="scr"\s+id="([^"]+)"',proto))
+    proto_ids=set(re.findall(r'<section\s+class="[^"]*\bscr\b[^"]*"\s+id="([^"]+)"',proto))
     absent=sorted(x for x in ui if x[4:] not in proto_ids)
     if absent: print('✗ 架构 §13 KNO 入口在原型不存在：'+','.join(absent)); raise SystemExit(2)
     kno_events=re.findall(r'^\| `(EV-KNO-[^`]+)` \| KNO \|',arch,re.M)

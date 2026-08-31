@@ -21,8 +21,8 @@
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
 | `dingwei-platform-specdoc.md` | **v3.77** | `709307bccf2cb615c5f1edeeb8bb08d642b5e46c<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 5244 / 372834 | `8889a2e8fc73ffccee17555362a4e9be8da9f700c15273b4092c3a9c0b38baff` |
-| `dingwei-prototype.html` | **v1.48** | `42cf8c954bdfcbcbdd19db391cb01bf92c40d69d` | 2905 / 260448 | `f2995730ca986ae38993f62391312982e7ed5026dab990c78ff29a6bb00ef9cb` |
-| `dingwei-platform-architecture.md` | **v1.4** | `709307bccf2cb615c5f1edeeb8bb08d642b5e46c<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 1174 / 65320 | `94b067f8de0c38e81fc3ffb6594b695357286b794223e5d2ae7c78a03ade8d2c` |
+| `dingwei-prototype.html` | **v1.49** | `42cf8c954bdfcbcbdd19db391cb01bf92c40d69d<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2919 / 262501 | `9ea7c49dd9bb7979fdd24e5373c04468495c05868ad31e817b474408d9f734c5` |
+| `dingwei-platform-architecture.md` | **v1.5** | `709307bccf2cb615c5f1edeeb8bb08d642b5e46c<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 1174 / 65443 | `d2616c460db0f8987e2201a124c3feec2dfdc896a53c59a1c1e85e97a4326415` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
