@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-31T02:51:30Z
-分支头：`2711e77a8aff0925555409730e4277c24aa2a7bb`
+生成时刻：2026-08-31T03:07:31Z
+分支头：`733a1dded6fe4746279f431f97381c28310dbfe3`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -36,7 +36,7 @@ REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scrip
 REVIEWED ca0bea89991080cb1c4a512b5f83fb00c20475602d4bfd3c4165d4d04cbebbb4  scripts/repo-boundary-gate.sh
 REVIEWED 679e8c6f73f15972895348cab70bf184c4b3763e64efb05ab1de0f716c661a6b  scripts/reviewer-repro-gate.sh
 REVIEWED e0aba3236b58915d416809d4e53b90244a0cc4a3f12e19212a3a07d7d1802f36  scripts/rv-integrity-gate.sh
-REVIEWED 70192ec5e027fd488ff819d79a20630e57eb460117cd6ed537e14e068f1ddcc0  scripts/speclint-gate.sh
+REVIEWED 43060f3d3a5064b2e5c93c68526cd6cefbe2cb301a8c0c8e94abcf45ba40085c  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
 REVIEWED 8ada7fc95e2e60bf1c566723d8ba54326f07b314970f90a1d4ed2066ee2fa879  scripts/status-consistency-check.sh
 REVIEWED fe3933da644dce4430efbf359fa4a8bb5ef93708ffab8f63bdecac6c8d110793  scripts/superseded-claims-gate.sh

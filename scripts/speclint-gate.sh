@@ -90,6 +90,19 @@ if true; then
     echo "  ⑤ DELIVERY-STATUS.md 内容列一致 ✓（元信息滞后一格属设计内,不据此重写）"
   fi
 fi
+# 若本次暂存了状态源，则必须与生成器的【整件】输出逐字节一致。
+# 干净检出不做此比较：本件的元信息按设计滞后一个提交；但一旦本次声称在更新它，就不得手改内容列绕过生成器。
+if git diff --cached --name-only 2>/dev/null | grep -qx docs/DELIVERY-STATUS.md; then
+  STATUS_EXPECTED=$(mktemp)
+  scripts/gen-status.sh > "$STATUS_EXPECTED" || { rm -f "$STATUS_EXPECTED"; echo "✗ 状态源整件生成失败"; exit 1; }
+  if ! cmp -s "$STATUS_EXPECTED" docs/DELIVERY-STATUS.md; then
+    rm -f "$STATUS_EXPECTED"
+    echo "✗ DELIVERY-STATUS.md 已暂存但不是 gen-status.sh 的逐字节产物；禁止手改凑列"
+    exit 1
+  fi
+  rm -f "$STATUS_EXPECTED"
+  echo "  ⑤b DELIVERY-STATUS.md 暂存件与生成器整件逐字节一致 ✓"
+fi
 # ⑤a 状态源钉的锚必须【在分支历史里】。
 #    立此判据的直接原因：2026-08-25，本席为修一句提交信里的编号口径对已过闸的提交做了 --amend。
 #    amend 时 HEAD 仍是【被替换的那个提交】，pre-commit 把它写进了状态源，随即它被 amend 抛弃 ——
