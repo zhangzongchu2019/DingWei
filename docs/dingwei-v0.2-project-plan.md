@@ -8,7 +8,7 @@
 >
 > 评审稿冻结锚：`cd1d08fa0137ca12be668792aee23556605beb8f`
 >
-> 设计输入单一事实源：`specs/v0.2/baseline-manifest.tsv`；实施期间不得在本件另抄一套输入哈希
+> 设计输入：`specs/v0.2/baseline-manifest.tsv` 所列权威件，加上由 `specs/v0.2/check.py` 自守的域主轴合同 `specs/v0.2/spec.md`；manifest 的 source 若给出完整 commit 锚，必须可从该锚复算对应文件指纹，不可复算即视为未标注
 
 ## 1. 目的与边界
 
@@ -22,7 +22,7 @@
 - `VERSION`：hub/sessionHelper 运行时版本唯一真相；当前值及兼容规则从仓根文件实取，不与本计划阶段号换算。
 - `P0.2`～`P1.0`：本计划的产品交付阶段号，仅用于路线和资源规划。
 - `DW02-*`：第一版实施 WBS 编号，避免与 `V02-OBL-*` 义务编号混淆。
-- `V02-P0`～`V02-P5`：本计划第一版里程碑，不等同于目标架构 §14 的 `M0`～`M6` 迁移阶段。
+- `DW02-M0`～`DW02-M5`：本计划第一版里程碑，不等同于目标架构 §14 的 `M0`～`M6` 迁移阶段，也不与 `V02-OBL-*` 义务共用前缀。
 
 本计划不是 greenfield 替换令。`P0.2` 在 ts3poc 与既有 v0.1 链路并存，使用独立路径、容器、数据库和 deployment anchor；未完成双轨比对、回滚演练和独立 cutover 授权前，不停用旧链路、不迁移旧写权威、不触碰目标架构 §14.3 的不可逆点。
 
@@ -35,6 +35,7 @@
   → 飞书事件接入
   → 身份绑定与认证
   → DingWei canonical envelope
+  → 从受信结构化输入解析 recipient set
   → 路由到指定 Agent
   → Agent 收取并处理
   → 回复进入可靠投递
@@ -48,7 +49,7 @@
 2. 三个小组可以基于冻结合同独立开发和 Mock 测试。
 3. 三组完成后按 3、10、30 Agent 分级集成联测。
 4. UI 以原型 v1.51 为基础，补齐真实系统需要的加载、错误、确认、权限和投递状态交互。
-5. 第一版保证 30 个 Agent 正常在线并可可靠收发消息。
+5. 第一版保证 30 个 Agent 正常在线并可可靠收发消息；按 `DW02-M0` 冻结的真实/模拟比例验收，默认真实 3 + 模拟 27，验收报告必须写明比例与可主张的结论范围。
 6. 第一版外部渠道只接飞书；其他渠道保留适配边界，不进入交付范围。
 7. 外部身份字段在 EDGE 被剥离；internal API 不暴露到公网且缺 AccessCtx 时 fail-closed。
 8. 入站正文默认不进入普通日志和审计；最小 secret detector 失败时拒绝对应落盘 effect。
@@ -72,7 +73,7 @@
 
 | 产品阶段 | 定位 | 核心交付 | 对应架构迁移/未实测项 | 退出条件 |
 |---|---|---|---|---|
-| `P0.2` | 最小可运行 | 飞书、30 Agent、统一信封、可靠投递、基础任务、核心 UI、Docker 部署 | 新建面覆盖 §14 M0～M2 的必要地基；关闭 `U-01`，启动 `U-03` 验证 | 30 Agent 分级联测和 24 小时稳定性验证通过 |
+| `P0.2` | 最小可运行 | 飞书、30 Agent、统一信封、可靠投递、基础任务、核心 UI、Docker 部署 | 新建面覆盖 §14 M0～M2 的必要地基；启动 `U-01` 测量并向原 owner 提交关闭证据，启动 `U-03` 验证 | 按 `DW02-M0` 冻结比例完成 30 Agent 分级联测和 24 小时稳定性验证，报告明确真实/模拟比例与结论边界 |
 | `P0.3` | 协作闭环 | 项目/任务 DAG、执行与门分离、帖子、通知、摘要、证据和返工 | 对应 §14 M3；关闭 `U-03`，验证 `U-05` 单活 consumer | 一个真实小项目在 DingWei 内完成全生命周期 |
 | `P0.4` | 知识与能力 | 分层知识、上下文快照、检索审计、skill/MCP 目录及安装撤销 | 对应 §14 M4；验证 `U-06` 外部 digest anchor | 新 Agent 可按授权取得任务上下文与能力，结束后不越权继承 |
 | `P0.5` | 治理与多租户 | 企业隔离、principal/角色、待决审批、规则版本、RLS 和安全审计 | 补齐 §14 M1/M2 多租户实证；关闭 `U-02` | 至少两个企业通过数据、权限、消息和 Agent 隔离测试 |
@@ -83,6 +84,7 @@
 
 - 单企业、单飞书应用。
 - 飞书私聊和群聊显式 `@机器人`。
+- P0.2 收件人只来自两类受信结构化输入：UI 显式选择产生的 `agent_id` command，或由 IDN/AGT 权威行维护的飞书会话/群绑定；正文、别名和自然语言不得改变 recipient set。
 - Agent 注册、心跳、上线、下线、寻址和连接代际。
 - 消息入站、路由、投递、ACK、重试、死信与去重。
 - 基础项目、任务、指派和结果回传。
@@ -173,7 +175,7 @@
 4. 创建 PostgreSQL、备份任务、日志轮转和健康检查。
 5. 执行受控启停、升级、回滚和故障演练。
 
-勘察前不把单一总数作为采购承诺。`V02-P0` 必须输出以下两张容量表并由业主签收：
+勘察前不把单一总数作为采购承诺。`DW02-M0` 只输出并由业主签收容量方法件：公式、单位、分母、安全系数、取数锚、真实/模拟三档测量方案、降级规则、追加节点触发线和签收模板；此时不宣称 P0.2 实测容量。以下两张实测表由 `DW02-M1` 骨架压测首次回填，并在 `DW02-M3` 的 3/10/30 曲线后定稿，作为扩至 10/30 Agent 的前置门：
 
 | 平台服务 | CPU/内存取值依据 | 磁盘分项 | 是否可降级 |
 |---|---|---|---|
@@ -183,11 +185,11 @@
 
 | Agent 档位 | 单 Agent 单位资源 | 3/10/30 计算方式 | 验收用途 |
 |---|---|---|---|
-| 模拟 Agent | V02-P0 实测 CPU、RSS、连接和消息率 | 单位 p95 × 数量 × 1.5 | 协议、寻址和可靠性 |
+| 模拟 Agent | `DW02-M1` 实测 CPU、RSS、连接和消息率 | 单位 p95 × 数量 × 1.5 | 协议、寻址和可靠性 |
 | 轻量真实 Agent | 真实 CLI 空闲/工作 p95 | 单位 p95 × 数量 × 1.5 | 小规模真实链路 |
 | 完整真实 Agent | 模型 CLI、side process 和工作目录 p95 | 单位 p95 × 数量 × 1.5 | 业主要求的全真实验收 |
 
-磁盘必须分别预算 PG/WAL、日志、审计 ref、Agent 工作目录、镜像和备份。若 3/10 实测推算表明单机不足，全真实 30 Agent 的前置资源是追加节点；在资源未提供时，允许的降级验收只能是“真实 3 + 模拟 27”，不得宣称 30 个真实模型 Agent PASS。
+磁盘必须分别预算 PG/WAL、日志、审计 ref、Agent 工作目录、镜像和备份。若 3/10 实测推算表明单机不足，全真实 30 Agent 的前置资源是追加节点；在资源未提供时，允许的降级验收只能是“真实 3 + 模拟 27”，不得宣称 30 个真实模型 Agent PASS。`U-01` 只在 `DW02-M3` 形成 3/10/30 实测曲线后产出本计划侧关闭证据，并提交架构登记的原 owner 判定；本计划不越权自闭。
 
 #### 飞书
 
@@ -205,12 +207,12 @@
 - 30 个 Agent 的稳定全名、角色、所属组和环境 profile。
 - 明确 30 Agent 验收是全真实，还是允许真实 Agent 与模拟 Agent 分阶段完成。
 
-建议先以 3 个真实 Agent 闭合业务链，扩至 10 个真实/轻量 Agent，再以 30 个 Agent 验证容量；若要求 30 个均为真实模型会话，必须同步提供模型并发额度、费用和更高内存资源。
+真实/模拟比例、模型并发额度、费用与追加节点门统一以本节容量方法件和 §10 为准，不采用更弱的口头或“建议值”口径。
 
 #### 产品裁定与验收
 
 - 是否确认 P0.2 为单企业、飞书单渠道。
-- 普通用户是否可直接选择 Agent。
+- 普通用户是否可直接选择 Agent，以及 UI 显式选择/飞书会话绑定两类结构化寻址机制的权限边界。
 - Agent 新建、关闭、重启权限。
 - 项目创建、任务指派和人工审批权限。
 - 第一版必须上线的原型页面。
@@ -274,7 +276,7 @@
 |---|---|---|---|
 | enterprise、principal、channel binding、AccessCtx | IDN | 第一组 | `AccessCtxRef` 与服务端签发的不可变上下文 |
 | project、task、assignment、execution result | WRK | 第一组 | task/node ID、版本快照、result ref |
-| post、notification、audit timeline | COL/PLT Audit | 第一组 | thread/post/audit ref；第三组只展示，不写权威行 |
+| post、audit timeline；notification 在 P0.3 实现 | COL/PLT Audit | 第一组 | thread/post/audit ref；第三组只展示，不写权威行 |
 | Agent instance、runtime order、health | AGT | 第二组 | 第一组只持 `agent_id`、assignment ref 和查询快照 |
 | session、envelope、delivery、ACK、channel receipt | MSG | 第二组 | 其他组只持 envelope/delivery ref |
 | outbox relay、retry、reconcile worker state | JOB/PLT | 第二组 | 第一组只在业务事务写 outbox，不直接投递 |
@@ -285,7 +287,9 @@ KNO、CAP 在 `P0.2` 不实现，分别由 `P0.4` 承载。PLT 是共用机制�
 
 ### 4.2 第一组：控制平面与数据基础
 
-责任范围：`EDGE-01 + CTRL-01` 内的 `IDN/GOV-lite/WRK-lite/COL-lite` application/domain，以及 `DATA-01` 受控仓储 seam。
+交付责任：`EDGE-01`，以及 `CTRL-01` 内的 `IDN/GOV-lite/WRK-lite/COL-lite` application/domain 和 `DATA-01` 受控仓储 seam。
+
+运行单元：第一组交付代码运行于 `edge` 与 `control`；`control` 承载包括 AGT 在内的 application/domain 包，AGT 包由第二组交付但不得部署进 `message`。`message` 只承载 session/envelope/routing/delivery/ACK。
 
 交付任务：
 
@@ -319,20 +323,22 @@ MVP API：
 2. 所有写接口以 `request_id` 幂等。
 3. 入站自述的 `enterprise/principal/org/tenant/actor` 字段在 EDGE 被剥离，下游不可见；伪造 principal 负测通过。
 4. outbox 在进程重启后不丢事件，且业务事务只写 outbox、不直接投递。
-5. 所有数据访问经 Repository `WithAccess` 与 DB registry；裸 DB/Tx 不逃逸仓储层，并复用现有 handle-escape detector。
-6. 任务和 Agent façade 状态变更以 expected generation/state 做 CAS；并发只一胜，其余返回 `FENCED/CONFLICT`。
+5. 所有数据访问经 Repository `WithAccess` 与 DB registry；裸 DB/Tx 不逃逸仓储层，并复用现有 handle-escape detector。P0.2 同一 PostgreSQL 实例内至少分 `dingwei_platform` 与 `dingwei_ent_<code>` 两个 database，registry 落平台库，应用只以 opaque database key 选库、禁止硬编码企业 DSN；企业 A `AccessCtx` 访问企业 B resource 时企业库 query count 为 0，并返回 `NOT_FOUND` 或 `TENANT_NOT_BOUND`。
+6. 第一组权威对象（project、task、assignment、execution result、COL-lite）的状态变更以 expected generation/state 做 CAS，并发只一胜，其余返回 `FENCED/CONFLICT`；Agent 代际由第二组持有，façade 只透传 `expected_generation` 并原样映射 `FENCED`，不本地判定或缓存代际。
 7. audit/log 不出现原始正文和 secret；redaction 判定器失败时拒绝落盘 effect。
 8. API 合同和 PostgreSQL 集成测试通过。
 
 ### 4.3 第二组：消息、Agent 运行与飞书渠道
 
-责任范围：`MSG-01 + AGT application/domain + FCS-01 + JOB-01 + sessionHelper/Agent runtime`；`P0.2` 不交付 SIDE-01 紧急面。
+交付责任：`AGT application/domain + MSG-01 + FCS-01 + JOB-01 + sessionHelper/Agent runtime`；`P0.2` 不交付 SIDE-01 紧急面。
+
+运行单元：AGT application/domain 包由第二组交付、集成进 `control`；`message` 只运行 MSG session/envelope/routing/delivery/ACK，`worker` 运行 JOB，`feishu-adapter` 运行 FCS，Agent runtime 独立运行。
 
 交付任务：
 
 - canonical envelope 编解码。
 - Agent 稳定全名、连接代际、在线目录和心跳。
-- 消息寻址、队列、投递、ACK、重试和死信。
+- 从受信结构化 command 或 IDN/AGT 会话绑定取得 recipient set，再执行寻址、队列、投递、ACK、重试和死信；不得读取正文决定权限或跨边界投递。
 - 重复消息、重连和迟到 ACK fencing。
 - 飞书 webhook 验签、challenge 和事件去重。
 - 飞书消息与 canonical envelope 双向转换。
@@ -352,7 +358,7 @@ MVP API：
 - `POST /internal/v1/agents/{id}/commands`
 - `GET /healthz`、`GET /readyz`
 
-组内 Mock：第一组 AccessCtx/Agent/Task API、飞书 OpenAPI 的 200/429/5xx/超时、Agent 在线/忙/重连/重复 ACK/迟到 ACK。
+组内 Mock：第一组 AccessCtx/Agent/Task API、飞书 OpenAPI 的 200/429/5xx/超时、Agent 在线/忙/重连/重复 ACK/迟到 ACK，以及 outbox port fake（可注入 lease 过期、并发抢占和迟到 ACK）。
 
 完成门：
 
@@ -365,6 +371,8 @@ MVP API：
 7. `agents/{id}/commands` 必须命中 GOV-lite effect policy；缺政策或缺业主权限裁定即 fail-closed。
 8. 杀死并替换 worker 后，旧 lease owner 不得提交 ACK。
 9. audit/log 不出现原始正文和 secret；Agent ID 只作溯源，直接用 Agent ID 请求受保护 effect 返回 `FORBIDDEN`。
+10. 正文中出现任意 Agent 全名或别名时 recipient set 不变；只有结构化 binding/command 可改变收件人。无 binding 且无显式 recipient 时返回明确错误，不默认投递、不广播。
+11. 同一连接产出的 envelope 携带同一不可变 `SessionAuthRef`；连接换代后旧 ref 不复用、不续期；receiver 对 ref 与 assignment/binding 不一致的 envelope 拒绝并记审计。
 
 ### 4.4 第三组：Web UI 与展示适配
 
@@ -402,26 +410,36 @@ MVP API：
 3. 关键页面有组件测试和端到端测试。
 4. UI 不把“已入队”显示成“已送达”，所有状态来自结构化后端结果。
 5. UI 可见 `live/ready/degraded`、依赖、禁用 capability 和失败信息。
+6. 前端 console、错误上报和埋点不含消息正文、secret 或原始身份材料，只允许 `correlation_id` 与结构化错误码。
 
 ### 4.5 共享发布工作流
 
 Docker Compose、nginx、指标告警、备份、升级和回滚不压给第三组，由总集成负责人归口、目标服务器运维执行、三组提供各自镜像与 health contract。该工作流不是第四开发组，不拥有业务域；其任务为 `DW02-040`、`DW02-041`、`DW02-053`。
 
+完成门：
+
+1. 空环境按文档执行 Compose 可拉起全部服务（含 `mock-*` 开发 profile），健康检查全绿，命令与输出留证。
+2. 三组镜像均带 commit、构建时间和制品 SHA，registry 中可按 digest 取回；`latest` 不作部署锚。
+3. 每个容器的健康检查、资源限制与日志轮转均在 Compose 中可机器核验。
+4. 备份可在空库恢复并通过 migration 一致性检查；回滚命令在演练环境实跑成功，现有 vhost location 回归通过。
+
 ## 5. 跨组合同与 Mock 纪律
 
-总集成负责人是 `contracts/v0.2-mvp1` 的唯一 owner。`V02-P0` 先产出合同，三组逐一签收后才开始实现；各组只按合同实现 handler、codec 和 consumer，不各造 schema 或 fixture。
+总集成负责人是 `contracts/v0.2-mvp1` 的唯一 owner。`DW02-M0` 先产出合同，三组逐一签收后才开始实现；各组只按合同实现 handler、codec 和 consumer，不各造 schema 或 fixture。
 
 冻结目录包含：
 
 - `openapi.yaml`
 - `asyncapi.yaml` 或等价事件 schema
 - `canonical-envelope.schema.json`
+- `routing-recipient.schema.json`，限定 `recipient_source=ui_explicit|channel_binding`，正文不得改变 recipient set
 - `access-context.schema.json`
 - `agent-status.schema.json`
 - `error.schema.json`
 - `internal-call-envelope.schema.json`
+- `outbox-port` 合同，定义 claim/lease/renew/ack/dead-letter/fencing token、错误码和可注入 fake
 - `audit-record.schema.json`
-- `interface-registry.tsv`，记录 HTTP/WS path、目标架构 interface ID、owner 域和 effect
+- `interface-registry.tsv`，记录 HTTP/WS path、目标架构 interface ID、owner 域、effect 和 `public|internal-only` exposure；EDGE location 由 exposure 列生成
 - `redaction-rules.version`
 - `mock-fixtures/`
 - 合同版本与兼容规则
@@ -448,6 +466,8 @@ Docker Compose、nginx、指标告警、备份、升级和回滚不压给第三�
 8. 错误合同覆盖目标架构 §5.3 的完整错误集合；缺少政策或身份一律 fail-closed。
 9. `mock-control` 和 `mock-fixtures` 只由总集成负责人发布；第一、三组不得各造不一致的假控制面。
 10. 正文、secret 和原始身份材料不得进入普通 AuditRecord；审计只落结构化 metadata/ref 与 redaction version。
+11. `SessionAuthRef` 在 connection → envelope → receiver 全程不可变；换代后旧 ref 不复用。
+12. outbox port 由第一组定义并 owner，第二组 owner 消费实现；worker 只能经该受控 port 访问 outbox，不取得裸 DB/Tx。
 
 ## 6. P0.2 部署拓扑
 
@@ -460,17 +480,14 @@ ts3poc.wegoab.com
    │
 [dingwei-edge]
    ├── [dingwei-ui]
-   ├── [dingwei-control]
-   ├── [dingwei-message]
-   └── [feishu-adapter]
-            │          │
-       [dingwei-worker]│
-            │          └──> [agent-runtime-01 ... agent-runtime-30]
-            │
- [PLATFORM_DB + ENTERPRISE_DB]
+   ├── [dingwei-control] ───────┐
+   ├── [dingwei-message] ───────┼──> [PLATFORM_DB + ENTERPRISE_DB]
+   │        └──> [agent-runtime-01 ... agent-runtime-30]
+   ├── [feishu-adapter] ────────┤
+   └── [dingwei-worker] ────────┘
 ```
 
-Agent runtime 只经 `message`/受控 Agent 协议通信，不直连 PostgreSQL。`P0.2` 不画、不部署 SIDE-01 紧急旁路；该能力在 `P0.6` 整体交付。
+`message ↔ agent-runtime` 只走受控 Agent 协议；`control/worker/feishu-adapter` 经受控 Repository/DB registry 访问数据库；Agent runtime 不直连 PostgreSQL。`P0.2` 不画、不部署 SIDE-01 紧急旁路；该能力在 `P0.6` 整体交付。
 
 Compose 服务建议：
 
@@ -481,7 +498,7 @@ Compose 服务建议：
 - `message`
 - `worker`
 - `feishu-adapter`
-- `postgres`
+- `postgres`，同一实例内至少建 `dingwei_platform` 与 `dingwei_ent_<code>` 两个 database，registry 落平台库
 - `agent-runtime`，通过 profile 或生成配置启动 30 个实例
 - `mock-feishu`、`mock-control`、`mock-agent`，仅开发 profile
 - `prometheus`、`grafana`，在 MVP 后半段纳入
@@ -490,7 +507,7 @@ Compose 服务建议：
 
 持久化 volume：PostgreSQL、消息恢复数据、Agent 工作目录、审计导出和备份。证书与 secret 只引用宿主受控路径。
 
-部署门：
+以下部署门是 §4.5 共享发布工作流的动作纪律；交付出口以 §4.5 完成门为准：
 
 1. 镜像带 commit、构建时间和制品 SHA，不以 `latest` 作正式部署锚。
 2. migration 独立执行；失败时应用不得带病启动。
@@ -498,22 +515,23 @@ Compose 服务建议：
 4. 发布前登记组件、环境、commit 和镜像 digest。
 5. 未经授权不得直接操作目标服务器或飞书正式应用。
 6. nginx 变更前备份到 `/etc/nginx/backups/`，变更后依次执行 `nginx -t`、受控 reload 和现有 location 回归；回滚恢复备份并再次 `nginx -t`。
+7. migration 采用 expand-contract：任一发布的 schema 同时兼容当前版与前一版镜像；删列、删表和收紧约束延后至少一个发布并按目标架构 §14.3 另立不可逆门。回滚到 N-1 镜像后 smoke 必须通过。
 
 ## 7. P0.2 里程碑与集成计划
 
-### V02-P0：实施准备，计划 2～3 个工作日
+### DW02-M0：实施准备，计划 2～3 个工作日
 
-- 前置：§10 的服务器只读勘察授权、飞书开发应用/管理员/测试群和 Agent 启停权限裁定已到位；否则里程碑不开始计时。
+- 前置：§10 的服务器只读勘察授权和飞书开发应用/管理员/测试群已到位；否则里程碑不开始计时。Agent 启停/选择与寻址机制在本里程碑内裁定，逾期按 §10 fail-closed。
 - 总集成负责人产出并冻结 MVP 范围、API、事件、canonical envelope、internal call、audit/redaction 和 interface registry。
 - 三组分别签收合同；缺任一签收不得进入实现。
-- 建立三个组的目录、CI、Mock profile 和合同测试。
+- 建立三个组的目录、CI、Mock profile 和合同测试；将本计划纳入文档闸，并为计划产物建立存在性/状态检查。
 - 只读勘察目标服务器，输出资源、现有 nginx server/location、端口和 volume 清单。
-- 冻结流量模型：消息/分钟、峰值倍数、消息大小分布、24h 总量、真实/模拟 Agent 比例。
-- 输出平台服务和三档 Agent 容量表；关闭架构 `U-01`。
+- 冻结流量模型：消息/分钟、峰值倍数、消息大小分布、24h 总量、真实/模拟 Agent 比例，以及首投/终态 SLO 目标值和 24h 趋势阈值。
+- 输出容量方法件与 `U-01` 关闭判据/取数口径；不在无 P0.2 实测数据时关闭 `U-01`。
 
-退出条件：合同目录有总集成 owner 和三组签收，三组只依赖统一 Mock 均能启动；资源/流量模型和外部授权清单由业主签收。
+退出条件：合同目录有总集成 owner 和三组签收，三组只依赖统一 Mock 均能启动；容量方法件、资源上限、流量模型、SLO/趋势阈值和外部授权清单由业主签收。由总集成负责人判定并留锚。
 
-### V02-P1：最小骨架，计划 3～5 个工作日
+### DW02-M1：最小骨架与地基，计划 5～8 个工作日
 
 - 控制面可启动并连接 PostgreSQL。
 - 消息面可接受模拟 Agent。
@@ -521,29 +539,31 @@ Compose 服务建议：
 - Compose 可拉起开发环境。
 - 飞书 webhook challenge 通过。
 - EDGE 剥离伪造身份字段，internal API 无公网暴露，redaction 负测通过。
+- Repository seam、generation/CAS、outbox port/relay 与受信结构化 recipient set 的最小纵切可运行。
+- 以骨架 + 模拟 Agent 回填首版容量实测表，业主签收后才进入 10/30 Agent 扩容。
 
-退出条件：模拟飞书消息能够穿过系统并由模拟 Agent 回应。
+退出条件：模拟飞书消息能够按结构化 recipient set 穿过系统并由模拟 Agent 回应；首版容量实测表、地基负测和合同测试留锚。由总集成负责人判定并留锚。
 
 若正式回调授权延迟，允许使用飞书开发应用和受控临时回调完成组内验证，但不得把临时入口登记为部署锚。
 
-### V02-P2a：数据面与合同实现，计划 3～5 个工作日
+### DW02-M2a：数据面与合同实现，计划 3～5 个工作日
 
 - 第一组完成身份、Repository seam、任务、COL-lite 和 outbox 写侧。
 - 第二组完成 Agent/session、消息、worker、飞书和 Agent runtime 基座。
 - 第三组完成 P0 UI：登录、Agent 列表、Agent 对话、健康页。
 - 共享发布工作流完成 Compose、nginx 开发配置和核心指标采集。
 
-退出条件：schema/migration、codec、handler、mock consumer/provider contract tests 全绿；generation/CAS、worker fencing 和 handle-escape 负测通过。
+退出条件：schema/migration、codec、handler、mock consumer/provider contract tests 全绿；generation/CAS、worker fencing、handle-escape、跨库隔离、recipient 正文不生效与 SessionAuthRef 不可变负测通过。由总集成负责人判定并留锚。
 
-### V02-P2b：业务面与组内 E2E，计划 3～5 个工作日
+### DW02-M2b：业务面与组内 E2E，计划 3～5 个工作日
 
 - 三组完成剩余 P0 业务面。
 - 第三组 P1 页面（工作面、任务看板、渠道、投递/审计）在不影响主链出口时完成；未完成项不得阻断核心链，但须明确标“未启用”。
 - 各组在不依赖其他组临时环境的前提下通过组内 E2E。
 
-退出条件：单元测试、集成测试、合同测试和组内 E2E 全绿。
+退出条件：单元测试、集成测试、合同测试和组内 E2E 全绿；`live/ready/degraded` 三态及企业 DB、MSG 两行降级各有一次实跑证据。由总集成负责人判定并留锚。
 
-### V02-P3：组合集成，计划 3～5 个工作日
+### DW02-M3：组合集成，计划 3～5 个工作日
 
 按以下顺序接真：
 
@@ -557,28 +577,28 @@ Compose 服务建议：
 
 任一级失败，先在当前规模修复，不跳级掩盖问题。
 
-退出条件：七级全部通过，每一级均留 commit、镜像 digest、命令、日志/指标和判定人；`U-03` 的 PG 并发语义有明确 PASS/FAIL/INCONCLUSIVE。
+退出条件：七级全部通过，每一级均留 commit、镜像 digest、命令、日志/指标和判定人；形成 3/10/30 实测容量曲线、核定正式配额并产出 `U-01` 本计划侧关闭证据交原 owner 判定；`U-03` 的 PG 并发语义有明确 PASS/FAIL/INCONCLUSIVE。
 
-### V02-P4：30 Agent 稳定性验证，至少 24 小时
+### DW02-M4：30 Agent 稳定性验证，至少 24 小时
 
 - 30 Agent 同时在线并可分别寻址。
 - 30 Agent 同时收消息不串线。
-- 首投成功率＝一次投递即 ACK 的 delivery/总 delivery，目标值由 V02-P0 冻结。
-- 终态成功率＝成功终态 delivery/总 delivery；永久失败必须进入可查询死信，静默丢失数恒为 0。
+- 首投成功率＝一次投递即 ACK 的 delivery/总 delivery，目标值由 `DW02-M0` 冻结。
+- 终态成功率＝成功终态 delivery/总 delivery；永久失败必须进入可查询死信。对账恒等式：总 delivery＝成功终态＋死信＋观察窗关闭时仍在重试队列且低于冻结上界的 in-flight；四项分别取自 delivery ledger、dead-letter ledger 和 retry queue 指标，差值即静默丢失，判据为 0。in-flight 超上界即延长窗口或判 INCONCLUSIVE，不得吸收为成功。
 - 以 `correlation_id` 对账每 Agent 应收集合与实收集合，两者相等，且不同 Agent 实收集合交集为空。
 - 重复事件不产生重复业务 effect。
 - 重启 message、worker、PostgreSQL 客户端连接和单 Agent 后可恢复。
 - 飞书 429、短时 5xx 和超时可退避恢复。
 - 日志可按 `request_id/correlation_id/delivery_id` 串联。
-- 每分钟采样 RSS、goroutine、连接、队列深度和磁盘；24h 线性趋势阈值由 V02-P0 流量模型冻结，越界即 FAIL/INCONCLUSIVE，不凭肉眼判 PASS。
+- 每分钟采样 RSS、goroutine、连接、队列深度和磁盘；24h 线性趋势阈值由 `DW02-M0` 流量模型冻结，越界即 FAIL/INCONCLUSIVE，不凭肉眼判 PASS。
 
-最终数值 SLO 由业主在 `V02-P0` 冻结；测试报告必须写对象、公式、分母、取数锚、观察窗口和判定人。
+最终数值 SLO 由业主在 `DW02-M0` 冻结；测试报告必须写对象、公式、分母、取数锚、观察窗口和判定人。
 
-### V02-P5：ts3poc 第一版发布，计划 1～2 个工作日
+### DW02-M5：ts3poc 第一版发布，计划 1～2 个工作日
 
 冻结 release set：Git commit、镜像 digest、Compose、env 模板、migration、飞书权限、健康检查、备份点、回滚命令和 30 Agent 验收报告。
 
-本次只做与 v0.1 并存的 ts3poc 部署，不切换旧写权威、不停旧 outbox、不吊销旧 Agent generation。退出条件：release set 全项登记、回滚演练成功、现有 vhost location 回归通过、业务验收人和总集成负责人签收。任何 cutover 另立授权与计划。
+本次只做与 v0.1 并存的 ts3poc 部署，不切换旧写权威、不停旧 outbox、不吊销旧 Agent generation。退出条件：release set 全项登记、回滚到 N-1 镜像后 smoke 通过、备份恢复与回滚演练成功、现有 vhost location 回归通过、业务验收人和总集成负责人签收。任何 cutover 另立授权与计划。
 
 ## 8. P0.2 工作分解编号
 
@@ -586,7 +606,7 @@ Compose 服务建议：
 |---|---|---|
 | `DW02-000a` | 合同件产出与统一 Mock | 总集成负责人 |
 | `DW02-000b` | 合同评审与三组签收 | 三组负责人 |
-| `DW02-001` | 仓库、目录、CI 和开发 profile | 总集成负责人 |
+| `DW02-001` | 仓库、目录、CI、开发 profile；计划文档闸及计划产物存在性/状态检查 | 总集成负责人 |
 | `DW02-002` | EDGE 头清洗、限流、路由与信任边界 | 第一组 |
 | `DW02-010` | AccessCtx、接口信封和错误模型 | 第一组 |
 | `DW02-011` | enterprise、principal 与飞书身份绑定 | 第一组 |
@@ -630,14 +650,15 @@ Compose 服务建议：
 
 | 风险 | 影响 | 控制措施 |
 |---|---|---|
-| 30 个真实模型 Agent 的资源与费用未确定 | P0.2 容量口径不清 | V02-P0 冻结真实/模拟比例、供应商并发、预算和追加节点门 |
+| 30 个真实模型 Agent 的资源与费用未确定 | P0.2 容量口径不清 | `DW02-M0` 冻结真实/模拟比例、供应商并发、预算和追加节点门；`DW02-M1/M3` 分两次回填实测 |
 | 单机资源不足或与现有服务冲突 | 无法稳定部署 | 部署前只读勘察，按 3/10/30 曲线分配资源 |
 | 三组接口漂移 | 集成延迟 | 先冻结合同，consumer-driven contract test 阻断不兼容变更 |
+| 实现范围增长而工期未重估 | 地基被压缩、退出门降格 | `DW02-M0` 由总集成负责人按冻结范围重估；`DW02-M1` 已为 EDGE/PEP、redaction、Repository seam、CAS、outbox relay 增至 5～8 天 |
 | 飞书限流、重试和重复事件 | 重复 effect 或消息堆积 | 快速 ACK、异步处理、幂等、退避和死信 |
 | UI 原型直接照搬静态状态 | 真实错误和权限面缺失 | 补齐加载、失败、权限、确认、重试和审计交互 |
 | MVP 把后续完整治理提前做完 | 版本失控 | 严格执行第一版不做清单，后续只保留接口边界 |
 | 既有 v0.1 与新链路关系不清 | 误切写权威或破坏回滚 | P0.2 仅并存；cutover 另立计划和授权 |
-| `RV-执笔01/RV-丙01/RV-甲08` 仍未闭 | 设计/仓储边界不能被实施计划代签 | V02-P0 实取 REVIEW-STATE；各原 owner 裁定，计划只登记不越权闭项 |
+| `RV-执笔01/RV-丙01/RV-甲08` 仍未闭 | 设计/仓储边界不能被实施计划代签 | `DW02-M0` 实取 REVIEW-STATE；各原 owner 裁定，计划只登记不越权闭项 |
 | ts3poc 既有 vhost location 冲突 | noVNC/共享目录回归 | 独立路径、全量 location 勘察、备份、nginx -t、reload 与回滚 |
 
 ## 10. 开工前业主确认清单
@@ -646,18 +667,18 @@ Compose 服务建议：
 
 | # | 确认项 | 责任角色 | 截止 | 逾期默认 |
 |---|---|---|---|---|
-| 1 | 指定三个开发小组及负责人 | 业主 | V02-P0 前 | 不开工 |
-| 2 | 指定总集成负责人、独立测试和 24h on-call | 业主 | V02-P0 前 | 不开工 |
-| 3 | 授权 `193.112.157.47` 只读勘察 | 业主 + ops | V02-P0 前 | 不接触服务器 |
-| 4 | 勘察后逐项授权 Docker/nginx/PostgreSQL | 业主 + ops | V02-P1 前 | 仅本地/Mock |
-| 5 | 准备飞书开发应用、管理员、权限、测试群与回调 | 业主侧飞书管理员 | V02-P0 前 | V02-P0 不起算 |
-| 6 | 确定 30 Agent 全真实或分阶段比例 | 业主 | V02-P0 | 默认真实 3 + 模拟 27，只能验协议容量 |
-| 7 | 确定 Agent 类型、模型并发、预算和追加节点门 | 业主 | V02-P0 | 不承诺 30 个真实模型 Agent |
-| 8 | 指定试用人员和业务验收人 | 业主 | V02-P2a 前 | 不进入真实业务联测 |
-| 9 | 确认 P0.2 单企业、飞书单渠道、仅 ts3poc 试点 | 业主 | V02-P0 | 按最小范围，禁止生产转述 |
-| 10 | 冻结流量模型、SLO、24h 窗口和演练范围 | 业主 + 总集成负责人 | V02-P0 | 不进入 V02-P4 |
-| 11 | 裁定 Agent 新建/关闭/重启及普通用户选 Agent 权限 | 业主 | V02-P0 | 对应 effect fail-closed |
-| 12 | 对 `RV-甲08` 给出原 owner 裁定，并确认另两条 RV 归口状态 | 业主 + ops/coordinator | V02-P0 | 保持阻断可见，不由本计划代闭 |
+| 1 | 指定三个开发小组及负责人 | 业主 | `DW02-M0` 前 | 不开工 |
+| 2 | 指定总集成负责人、独立测试和 24h on-call | 业主 | `DW02-M0` 前 | 不开工 |
+| 3 | 授权 `193.112.157.47` 只读勘察 | 业主 + ops | `DW02-M0` 前 | 不接触服务器 |
+| 4 | 勘察后逐项授权 Docker/nginx/PostgreSQL | 业主 + ops | `DW02-M1` 前 | 仅本地/Mock |
+| 5 | 准备飞书开发应用、管理员、权限、测试群与回调 | 业主侧飞书管理员 | `DW02-M0` 前 | `DW02-M0` 不起算 |
+| 6 | 确定 30 Agent 全真实或分阶段比例 | 业主 | `DW02-M0` | 默认真实 3 + 模拟 27，只能验协议容量 |
+| 7 | 确定 Agent 类型、模型并发、预算和追加节点门；M0 签方法/上限，M1/M3 签实测 | 业主 | `DW02-M0/M1/M3` | 不承诺 30 个真实模型 Agent |
+| 8 | 指定试用人员和业务验收人 | 业主 | `DW02-M2a` 前 | 不进入真实业务联测 |
+| 9 | 确认 P0.2 单企业、飞书单渠道、仅 ts3poc 试点 | 业主 | `DW02-M0` | 按最小范围，禁止生产转述 |
+| 10 | M0 冻结流量模型、SLO、24h 窗口、趋势阈值和演练范围；M1/M3 回填实测 | 业主 + 总集成负责人 | `DW02-M0/M1/M3` | 不进入 `DW02-M4` |
+| 11 | 裁定 Agent 新建/关闭/重启、普通用户选 Agent 权限，以及 UI 显式选择/飞书会话绑定两类结构化寻址机制 | 业主 | `DW02-M0` | effect fail-closed；寻址只允许 UI 显式选择，不从正文推断 |
+| 12 | 对 `RV-甲08` 给出原 owner 裁定，并确认另两条 RV 归口状态 | 业主 + ops/coordinator | `DW02-M0` | 保持阻断可见，不由本计划代闭 |
 
 ## 11. 评审收拢与处置
 
@@ -665,7 +686,7 @@ Compose 服务建议：
 
 | 评审席 | 结论 | 主要发现 | 执行版处置 |
 |---|---|---|---|
-| `zzc-opus50tchangshark-2642` | NO；3 阻断、12 重要/建议 | worker 无 owner、权威对象双 owner、EDGE/sidecar 不一致；设计锚、版本轴、COL 分层、CAS、Repository seam、SLO、第三组过载、授权前置、vhost、资源、Mock、健康语义 | 全部采纳或显式后移；阻断均在 §§1、4～8 闭合 |
+| `zzc-opus50tchangshark-2642` | NO；3 阻断、12 重要、6 建议 | worker 无 owner、权威对象双 owner、EDGE/sidecar 不一致；设计锚、版本轴、COL 分层、CAS、Repository seam、SLO、第三组过载、授权前置、vhost、资源、Mock、健康语义 | 全部采纳或显式后移；阻断均在 §§1、4～8 闭合 |
 | `zzc-opus50tczc2000-2642` | NO；5 阻断、12 重要、7 建议 | EDGE 剥离不足、internal PEP 缺失、里程碑撞名/无迁移、合同双 owner、redaction 缺失；worker、拓扑、CAS、SLO、资源、值守、降级、对象存储、RV/编号 | 全部采纳或显式后移；最小闭合集均进入正文与 WBS |
 | `zzc-chatgpt56solzhangzongchu-2642` | NO（自审） | Agent runtime 拓扑误画成依赖 DB、资源建议值不可作采购承诺、SLO 缺公式、授权门与执行门未分离 | 与两席意见合并，分别落 §§3、6、7、10 |
 
@@ -677,19 +698,39 @@ Compose 服务建议：
 | worker/JOB 无 owner | 采纳，唯一 owner 第二组 | §§4.1、4.3、8 `DW02-025` |
 | 权威对象双 owner、COL 错层 | 采纳 | §4.1 唯一 owner 表；第三组只读展示 |
 | sidecar 半实现 | 后移，不做半套 | §§1.3、2.5、4.3、6；整体进入 P0.6 |
-| 合同与 Mock 双 owner | 采纳，总集成唯一 owner | §§5、7 V02-P0、8 `DW02-000a/b` |
+| 合同与 Mock 双 owner | 采纳，总集成唯一 owner | §§5、7 `DW02-M0`、8 `DW02-000a/b` |
 | CAS、DATA-01 seam、worker fencing | 采纳 | §§4.2、4.3、7、8 |
 | redaction/AuditRecord | 采纳最小集 | §§1.2、4、5、9 |
 | 里程碑/版本轴撞名 | 采纳并消歧 | §§1.1、2、7、8 |
-| v0.1 双轨/cutover 缺失 | P0.2 仅并存；cutover 另立计划 | §§1.1、2.6、7 V02-P5、9 |
-| SLO/30 Agent 不可复算 | 采纳公式、流量模型和集合对账 | §§3.2、7 V02-P0/P4、10 |
+| v0.1 双轨/cutover 缺失 | P0.2 仅并存；cutover 另立计划 | §§1.1、2.6、7 `DW02-M5`、9 |
+| SLO/30 Agent 不可复算 | 采纳公式、流量模型和集合对账 | §§3.2、7 `DW02-M0/M4`、10 |
 | 第三组过载、发布责任错误 | 采纳，UI 分 P0/P1；共享发布归总集成+ops | §§4.4、4.5、7、8 |
 | vhost 冲突与 nginx 回滚 | 采纳独立路径与勘察回归 | §§3.2、6、7、9 |
 | 健康/降级语义缺失 | P0.2 做 live/ready/degraded 与 DB/MSG 两行；safe_mode 后移 | §§1.3、2.1、4.4、7、9 |
 | 对象存储时点 | P0.3 只存 ref；保存 blob 时资源前移 | §3.3 |
 | 设计锚、基线闸、未闭 RV | 引用单一 manifest，不复制第二真相源；RV 保持原 owner | 文档头、§§9、10 |
-| 计划入闸与路径锚 | 采纳为后续机械任务；待建路径不冒充现存锚 | `DW02-001` 在 V02-P0 将本件纳入合适文档闸，并为计划产物建存在性/状态检查 |
+| 计划入闸与路径锚 | 采纳为机械任务；待建路径不冒充现存锚 | `DW02-001` 在 `DW02-M0` 将本件纳入合适文档闸，并为计划产物建存在性/状态检查 |
 
-### 11.2 执行版效力
+### 11.2 第二轮全文评审收拢
 
-本执行版完成“任务可分派”的结构收口，但不代替 §10 的业主资源与权限确认，也不构成服务器、飞书正式应用、生产、cutover 或不可逆 migration 的授权。只有 `V02-P0` 退出条件满足后，三个小组才进入实现。
+第二轮冻结对象为 `c5571bf5a775abc464adb7e4a13c91f4dcbe789c`。两份 reviewer-owned 全文意见分别位于专用评审分支，均以该锚为唯一父提交；本轮按两份全量 findings 一次性修订，不做单点往返。
+
+| 归并发现 | 决定 | 本轮落点 |
+|---|---|---|
+| M0 容量实测门自锁、`U-01` 越权关闭 | 拆为 M0 方法件、M1 首测、M3 定稿；只向原 owner 交关闭证据 | §§2、3.2、7、10 |
+| recipient 来源缺失、正文可能参与路由 | 只允许 UI 显式 command 与 IDN/AGT 会话绑定；新增结构化合同与负测 | §§1.2、2.1、3.2、4.3、5、7、10 |
+| outbox port 未冻结、第二组无法独立 Mock | 第一组 owner port 合同，第二组 owner consumer；新增 fake 与 fencing 语义 | §§4.1、4.3、5、7 |
+| 拓扑边错误、AGT 交付责任与运行单元混用 | 重画拓扑；AGT 包由第二组交付但运行于 control，message 只承载 MSG | §§4.2、4.3、6 |
+| façade CAS 门不可证伪 | CAS 只覆盖第一组权威对象；Agent 代际由第二组判定并透传错误 | §4.2 |
+| baseline provenance 错标且无机器校验 | 改为 R4 PASS 锚，并为完整 commit source 增指纹复算 | 文档头、`baseline-manifest.tsv`、`check.py` |
+| 单 postgres 与 DB registry/跨库边界不闭 | 同实例双 database、opaque key 选库、跨库 query-count 负测 | §§4.2、6 |
+| SessionAuthRef 不可变传播无门 | 加入 envelope 合同和第二组完成门 | §§4.3、5 |
+| 发布工作流无完成门、migration N-1 回滚无规则 | 新增四项发布完成门与 expand-contract/N-1 smoke | §§4.5、6、7 |
+| 静默丢失为 0 不可计量 | 增 delivery 对账恒等式、取数锚和 in-flight 关窗规则 | §7 `DW02-M4` |
+| 计划入闸、健康演练处置表宣称但正文无落点 | 补 WBS/M0 机械任务与 M2b 三态/降级实跑出口 | §§7、8 |
+| 30 Agent 目标口径、工期、里程碑前缀、判定人不闭 | 统一比例声明；M1 地基加时；改用 `DW02-M*`；各出口留锚 | §§1～3、7、9、10 |
+| UI redaction、EDGE exposure、notification 时点 | 加 UI 泄漏门、registry exposure 列、notification 后移标注 | §§4、5 |
+
+### 11.3 执行版效力
+
+本执行版完成“任务可分派”的结构收口，但不代替 §10 的业主资源与权限确认，也不构成服务器、飞书正式应用、生产、cutover 或不可逆 migration 的授权。只有 `DW02-M0` 退出条件满足后，三个小组才进入实现。

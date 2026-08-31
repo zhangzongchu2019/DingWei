@@ -73,7 +73,7 @@ def check_manifest():
     if len(paths) != len(set(paths)) or not manifest:
         fail("v0.2 baseline manifest 为空或路径重复")
     bad = []
-    for path, want, _source in manifest:
+    for path, want, source in manifest:
         target = ROOT / path
         if not target.is_file():
             bad.append((path, "missing", want))
@@ -81,6 +81,18 @@ def check_manifest():
         got = hashlib.sha256(target.read_bytes()).hexdigest()
         if got != want:
             bad.append((path, got, want))
+            continue
+        source_anchor = re.match(r"^([0-9a-f]{40})(?:\+|$)", source)
+        if source_anchor:
+            anchor = source_anchor.group(1)
+            try:
+                anchored = git("show", f"{anchor}:{path}")
+            except subprocess.CalledProcessError:
+                bad.append((path, f"source-anchor-unreadable:{anchor}", want))
+                continue
+            anchored_hash = hashlib.sha256(anchored).hexdigest()
+            if anchored_hash != want:
+                bad.append((path, f"source-anchor-mismatch:{anchor}:{anchored_hash}", want))
     if bad:
         fail(f"v0.2 当前树权威件漂移：{bad}")
     print(f"v0.2 manifest：{len(manifest)}/{len(manifest)} 路径指纹一致")
