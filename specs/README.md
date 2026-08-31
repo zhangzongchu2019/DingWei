@@ -20,6 +20,7 @@
 | `specs/platform-architecture/check.sh` | 新版架构件的非门控形状检查：反查包/进程、原型入口与接口 ID；明确不替代语义评审 |
 | `specs/platform-architecture/cutover-check.sh` | 架构唯一事实源切换核验：机器派生预期/实检/未知集合，未知非空即失败 |
 | `specs/prototype/spec.md` | 现行原型设计合同：界定导航/屏体/架构对撞、状态源、取件坐标、失败空态与窄屏边界 |
+| `specs/prototype/DECISIONS.md` | 原型 v1.49 四项业主裁定的仓内索引、落点与仓外真实性边界 |
 | `specs/prototype/check.py` | 现行原型的结构、跨件语义键、取件坐标、manifest 指纹与常驻反测 |
 | `specs/prototype/check.sh` | 现行原型设计门入口 |
 | `specs/sp0-1/spec.md` | SP0 / SP1 两包分开同时做的协调合同；冻结共同输入与独立开工门 |

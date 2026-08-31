@@ -1,4 +1,4 @@
-# DingWei 平台目标架构 v1.5
+# DingWei 平台目标架构 v1.6
 
 > 本件从新版 SpecDoc 与原型重新设计目标架构，同时承载分域定义、接口设计与技术架构设计。
 > 旧件已移至 `docs/v0.1/dingwei-architecture-design-v0.34.md`，仅作历史参考，不是本件输入，也不是本件的修改对象。
@@ -8,7 +8,7 @@
 | 项 | 值 |
 |---|---|
 | **Architecture ID** | `dingwei-platform-target-architecture` |
-| **版本** | v1.5 |
+| **版本** | v1.6 |
 | **状态** | draft，待全文评审 |
 | **执笔** | `zzc-chatgpt56soltchangshark-2642` |
 | **评审** | `zzc-opus50tchangshark-2642`、`zzc-deepseekv4pro08130ca16c13-2642` |
@@ -21,7 +21,7 @@
 | 输入 | 冻结指纹 | 用途 |
 |---|---|---|
 | SpecDoc v3.77 | sha256 `8889a2e8fc73ffccee17555362a4e9be8da9f700c15273b4092c3a9c0b38baff` | 规范、业主裁定、约束与验收来源 |
-| 原型 v1.49 | sha256 `9ea7c49dd9bb7979fdd24e5373c04468495c05868ad31e817b474408d9f734c5` | 可达入口、操作者视角与交互状态来源 |
+| 原型 v1.50 | sha256 `3a85ec687e1a01ad9e81b09210ecba3c10200b4a485e8d4211983fe543b9c6fb` | 可达入口、操作者视角与交互状态来源 |
 | 当前代码 | 冻结 commit 中的 `cmd/`、`internal/` | 只证实现现状与迁移面，不决定目标域 |
 
 ### 0.1 本件回答什么
