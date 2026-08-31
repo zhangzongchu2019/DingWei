@@ -48,23 +48,32 @@ def git(*args):
 
 
 def check_ancestry():
-    anchors = (
-        "4220195b311ca9b9b734706ce80d8b3fcc1abfae",
-        "6a98629fefd91e69b146516291491cbc6d1136da",
+    manifest = rows(ROOT / "specs/v0.2/baseline-manifest.tsv", 3)
+    manifest_anchors = []
+    for path, _want, source in manifest:
+        if not re.fullmatch(r"[0-9a-f]{40}", source):
+            fail(f"manifest source 非完整 commit 锚：{path} source={source}")
+        manifest_anchors.append(source)
+    historical_anchors = (
         "c7ac0c3a191167ab7652fbddb712578dbe579a12",
-        "16028ac41ad7aab2779bba0c6395dd37494cac96",
         "4006cbeeda3edd986d6a9da53268e68aa01c9c9e",
-        "970effe3fdcc52b43e455597dd877a39341f9cba",
     )
     head = git("rev-parse", "HEAD").decode().strip()
-    for anchor in anchors:
+    for anchor in dict.fromkeys(manifest_anchors):
+        try:
+            git("cat-file", "-e", f"{anchor}^{{commit}}")
+            subprocess.check_call(["git", "merge-base", "--is-ancestor", anchor, head], cwd=ROOT,
+                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            fail(f"manifest source 锚不可达或不是 v0.2 ancestor：{anchor}")
+    for anchor in historical_anchors:
         try:
             git("cat-file", "-e", f"{anchor}^{{commit}}")
             subprocess.check_call(["git", "merge-base", "--is-ancestor", anchor, head], cwd=ROOT,
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except (subprocess.CalledProcessError, FileNotFoundError):
             fail(f"历史锚不可达或不是 v0.2 ancestor：{anchor}")
-    print(f"可达性：{len(anchors)}/{len(anchors)} 历史锚均为 HEAD ancestor")
+    print(f"可达性：manifest source {len(set(manifest_anchors))}/{len(set(manifest_anchors))} + 历史锚 {len(historical_anchors)}/{len(historical_anchors)} 均为 HEAD ancestor")
 
 
 def check_manifest():
@@ -72,30 +81,42 @@ def check_manifest():
     paths = [row[0] for row in manifest]
     if len(paths) != len(set(paths)) or not manifest:
         fail("v0.2 baseline manifest 为空或路径重复")
-    bad = []
+    bad_content = []
+    bad_source = []
+    source_unreachable = []
+    verified = 0
     for path, want, source in manifest:
         target = ROOT / path
         if not target.is_file():
-            bad.append((path, "missing", want))
+            bad_content.append((path, "missing", want))
             continue
         got = hashlib.sha256(target.read_bytes()).hexdigest()
         if got != want:
-            bad.append((path, got, want))
+            bad_content.append((path, got, want))
             continue
-        source_anchor = re.match(r"^([0-9a-f]{40})(?:\+|$)", source)
-        if source_anchor:
-            anchor = source_anchor.group(1)
-            try:
-                anchored = git("show", f"{anchor}:{path}")
-            except subprocess.CalledProcessError:
-                bad.append((path, f"source-anchor-unreadable:{anchor}", want))
-                continue
-            anchored_hash = hashlib.sha256(anchored).hexdigest()
-            if anchored_hash != want:
-                bad.append((path, f"source-anchor-mismatch:{anchor}:{anchored_hash}", want))
-    if bad:
-        fail(f"v0.2 当前树权威件漂移：{bad}")
+        if not re.fullmatch(r"[0-9a-f]{40}", source):
+            bad_source.append((path, f"invalid-source:{source}", "完整 40 位 commit 锚"))
+            continue
+        try:
+            anchored = git("show", f"{source}:{path}")
+        except subprocess.CalledProcessError:
+            source_unreachable.append((path, source))
+            continue
+        anchored_hash = hashlib.sha256(anchored).hexdigest()
+        if anchored_hash != want:
+            bad_source.append((path, f"source-mismatch:{source}:{anchored_hash}", want))
+            continue
+        verified += 1
+    if bad_content:
+        fail(f"v0.2 当前树权威件漂移：{bad_content}")
+    if source_unreachable:
+        fail(f"v0.2 manifest source 锚不可达（可能为浅克隆或锚未受保护）：{source_unreachable}")
+    if bad_source:
+        fail(f"v0.2 manifest provenance 非法或与内容不符：{bad_source}")
     print(f"v0.2 manifest：{len(manifest)}/{len(manifest)} 路径指纹一致")
+    print(f"provenance 预期集合：{len(manifest)} 行")
+    print(f"provenance 实检集合：{verified}/{len(manifest)} source 锚已复算且为 HEAD ancestor")
+    print("provenance 未标注：0 · 未知集合：0")
 
 
 def check_domain_equivalence():
@@ -254,8 +275,8 @@ def main():
     check_sp4_inputs_and_exemptions()
     check_obligations()
     check_archive_and_ledger()
-    print("预期集合：历史锚6 + 存量SP5 + 设计已收口域包4 + 义务7 + RV84")
-    print("实检集合：6/6 + 5/5 + 4/4 + 7/7 + 84/84")
+    print("预期集合：manifest source锚9 + 历史锚2 + 存量SP5 + 设计已收口域包4 + 义务7 + RV84")
+    print("实检集合：9/9 + 2/2 + 5/5 + 4/4 + 7/7 + 84/84")
     print("未知集合：0")
     print("✓ design/v0.2 域主轴统一基准通过")
 
