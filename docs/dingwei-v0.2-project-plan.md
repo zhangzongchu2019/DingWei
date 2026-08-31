@@ -45,14 +45,14 @@
 
 同时满足：
 
-1. 系统可在目标服务器以 Docker Compose 最小化运行。
-2. 四个开发小组可以基于冻结合同独立开发和 Mock 测试。
-3. 四组完成后按 3、10、30 Agent 分级集成联测。
-4. UI 以原型 v1.51 为基础，补齐真实系统需要的加载、错误、确认、权限和投递状态交互。
-5. 第一版保证 30 个 Agent 正常在线并可可靠收发消息；按 `DW02-M0` 冻结的真实/模拟比例验收，默认真实 3 + 模拟 27，验收报告必须写明比例与可主张的结论范围。
-6. 第一版外部渠道只接飞书；其他渠道保留适配边界，不进入交付范围。
-7. 外部身份字段在 EDGE 被剥离；internal API 不暴露到公网且缺 AccessCtx 时 fail-closed。
-8. 入站正文默认不进入普通日志和审计；最小 secret detector 失败时拒绝对应落盘 effect。
+1. `REQ-P02-01`：系统可在目标服务器以 Docker Compose 最小化运行。
+2. `REQ-P02-02`：四个开发小组可以基于冻结合同独立开发和 Mock 测试。
+3. `REQ-P02-03`：四组完成后按 3、10、30 Agent 分级集成联测。
+4. `REQ-P02-04`：UI 以原型 v1.51 为基础，补齐真实系统需要的加载、错误、确认、权限和投递状态交互。
+5. `REQ-P02-05`：第一版保证 30 个 Agent 正常在线并可可靠收发消息；按 `DW02-M0` 冻结的真实/模拟比例验收，默认真实 3 + 模拟 27，验收报告必须写明比例与可主张的结论范围。
+6. `REQ-P02-06`：第一版外部渠道只接飞书；其他渠道保留适配边界，不进入交付范围。
+7. `REQ-P02-07`：外部身份字段在 EDGE 被剥离；internal API 不暴露到公网且缺 AccessCtx 时 fail-closed。
+8. `REQ-P02-08`：入站正文默认不进入普通日志和审计；最小 secret detector 失败时拒绝对应落盘 effect。
 
 ### 1.3 第一版明确不做
 
@@ -153,18 +153,14 @@
 
 ### 3.2 P0.2 资源
 
-#### 人员
+#### 人员与能力要求
 
-- 第一组：建议 2 名后端。
-- 第二组：建议 2 名后端/基础设施开发。
-- 第三组：建议 1 名前端和 1 名全栈或 DevOps。
-- 第四组：2 名平台集成/测试工程人员，负责合同、Mock、CI、测试资产和发布工程。
-- 1 名不兼任主要开发的独立测试人员。
-- 1 名总集成负责人，负责合同冻结、跨组门禁和 release set。
-- 1 名业务验收人，3～5 名飞书试用人员。
+具体人选以 §4.0 为唯一编组事实源。能力要求为：1-a 具备控制面/数据与安全边界能力；1-b 具备消息、Agent、飞书和可靠投递能力；1-c 具备前端、交互和 UI 自动化能力；1-d 具备合同、Mock、CI、集成测试与发布工程能力。每组固定两席，分别以“设计开发”和“测试验收”为主角色并互为能力备份。
+
+另设 1 名独立版本测试负责人、2 名独立设计评审、1 名主运维、1 名业务验收人和 3～5 名飞书试用人员。总集成负责人由 1-d 设计开发席兼任，不另计第七名开发者。
 - 24 小时稳定性窗口采用自动告警 + 至少 1 名 on-call；独立测试不承担单人连续值守。
 
-每组缩减为 1 人仍可施工，但会增加单点风险并延长 Mock、实现和测试周期。
+任一开发组缺一席时不得把组内测试验收标为完成；可继续低风险实现，但出组门顺延。独立测试或独立设计评审缺席时不得代签，相关版本/设计变更顺延或记 INCONCLUSIVE。
 
 #### 目标服务器
 
@@ -273,7 +269,7 @@ P0.2 业务范围仍是单企业，但隔离负测额外创建 `dingwei_ent_test
 
 ### 4.0 正式编组与授权边界
 
-| 组 | 负责人 | 组员 | 主责 |
+| 组/角色 | 设计开发/负责人 | 测试验收/组员 | 主责 |
 |---|---|---|---|
 | 1-a 控制与数据组 | `zzc-chatgpt56solzhangzongchu-2642` | `zzc-sonnet50tczc2000-2642` | EDGE/control、IDN/WRK/COL-lite、Repository、数据库 |
 | 1-b 消息与 Agent 组 | `zzc-opus50tczc2000-2642` | `zzc-kimi30kqtuxerh-2642` | MSG/AGT/FCS/JOB、飞书、Agent runtime |
@@ -281,10 +277,15 @@ P0.2 业务范围仍是单企业，但隔离负测额外创建 `dingwei_ent_test
 | 1-d 平台集成与测试工程组 | `zzc-chatgpt56soltchangshark-2642` | `zzc-sonnet50tchangshark-2642` | 合同、统一 Mock、测试资产、CI、Compose、可观测、集成与 release set |
 | 运维组 | `zzc-chatgpt56terrazhangzongchu-2642` | — | 经授权的环境勘察、部署、回滚和运行证据 |
 | 独立测试 | `zzc-chatgpt56terratchangshark-2642` | — | 测试计划审核、独立执行、证据抽验与版本测试 verdict |
+| 独立设计评审 | `zzc-deepseekv4pro08130ca16c13-2642` | `zzc-shencedeepseek-2642` | 后续设计变更全文评审、架构/计划一致性与独立 verdict；不得承担 1-a～1-d 交付 |
 
-1-a 只写控制/数据与其镜像，不改消息、UI 或目标服务器；1-b 只写消息/Agent/飞书/worker，不取得裸 DB/Tx、不改 nginx；1-c 只写 UI 与前端测试，不拥有业务权威数据或自行解释权限；1-d 可写合同、Mock、测试计划/用例模板、CI/Compose/部署与集成脚本，但不得单方面改业务语义、代替业务组签收或直接操作目标服务器；运维组不改业务源码，只能在 §10 授权后执行对应环境动作。任何组均无权自行 cutover、停旧链路、使用生产凭据或执行不可逆 migration。
+组名映射固定为 `1-a ≡ 第一组`、`1-b ≡ 第二组`、`1-c ≡ 第三组`、`1-d ≡ 第四组`，并由 `DW02-001` 对撞全文称谓；新正文优先使用 1-a～1-d。1-a 只写控制/数据与其镜像，不改消息、UI 或目标服务器；1-b 只写消息/Agent/飞书/worker，不取得裸 DB/Tx、不改 nginx；1-c 只写 UI 与前端测试，不拥有业务权威数据或自行解释权限；1-d 可写合同、Mock、测试计划/用例模板、CI/Compose/部署与集成脚本，但不得单方面改业务语义、代替业务组签收或直接操作目标服务器；运维组不改业务源码，只能在 §10 授权后执行对应环境动作。任何组均无权自行 cutover、停旧链路、使用生产凭据或执行不可逆 migration。
 
-独立测试负责人为 `zzc-chatgpt56terratchangshark-2642`，不得参与被测功能的主要开发，也不归 1-d 开发负责人代签。1-d 负责测试工程与计划编排，独立测试负责人拥有执行报告的 PASS/FAIL/INCONCLUSIVE 签字权；运维负责人不得代签测试 verdict，独立测试负责人不得执行目标环境变更。
+1-d 设计开发席 `zzc-chatgpt56soltchangshark-2642` 兼任总集成负责人，不新增独立第七席。其拥有合同发布、跨组门禁与 release set 归口权，但不得单独签收自己或 1-d 产出的合同、Mock、测试资产和镜像；业务语义由受影响业务组签收，测试可执行性由独立测试签收，设计变化由独立设计评审签收，资源/发布门由业主和运维签收。
+
+独立测试负责人为 `zzc-chatgpt56terratchangshark-2642`，不得参与被测功能的主要开发，也不归 1-d 开发负责人代签。1-d 负责测试工程与计划编排，独立测试负责人拥有执行报告的 PASS/FAIL/INCONCLUSIVE 签字权；运维负责人不得代签测试 verdict，独立测试负责人不得执行目标环境变更。24h 窗口由运维 on-call 连续记录，独立测试按交接点抽验并作最终判定；独立测试缺席时窗口顺延或结论为 INCONCLUSIVE，不允许临时代签。
+
+两名独立设计评审不得承担 1-a～1-d 的设计、实现、组内验收或发布职责；任何后续计划/合同/架构实质变更至少由其中一席全文评审，触及其回避面时改由另一席，二者均回避时由业主另派门方。
 
 ### 4.1 权威对象与唯一 owner
 
@@ -337,14 +338,14 @@ MVP API：
 
 完成门：
 
-1. 空库可一键 migration。
-2. 所有写接口以 `request_id` 幂等。
-3. 入站自述的 `enterprise/principal/org/tenant/actor` 字段在 EDGE 被剥离，下游不可见；伪造 principal 负测通过。
-4. outbox 在进程重启后不丢事件，且业务事务只写 outbox、不直接投递。
-5. 所有数据访问经 Repository `WithAccess` 与 DB registry；裸 DB/Tx 不逃逸仓储层，并复用现有 handle-escape detector。P0.2 同一 PostgreSQL 实例内至少分 `dingwei_platform`、业务库 `dingwei_ent_<code>` 与仅供隔离负测的 `dingwei_ent_test`，registry 落平台库，应用只以 opaque database key 选库、禁止硬编码企业 DSN；企业 A `AccessCtx` 访问测试企业 resource 时目标企业库 query count 为 0，并返回 `NOT_FOUND` 或 `TENANT_NOT_BOUND`。
-6. 第一组权威对象（project、task、assignment、execution result、COL-lite）的状态变更以 expected generation/state 做 CAS，并发只一胜，其余返回 `FENCED/CONFLICT`；Agent 代际由第二组持有，façade 只透传 `expected_generation` 并原样映射 `FENCED`，不本地判定或缓存代际。
-7. audit/log 不出现原始正文和 secret；redaction 判定器失败时拒绝落盘 effect。
-8. API 合同和 PostgreSQL 集成测试通过。
+1. `AC-1A-01 [integration]`：空库可一键 migration。
+2. `AC-1A-02 [component]`：所有写接口以 `request_id` 幂等。
+3. `AC-1A-03 [security-negative]`：入站自述的 `enterprise/principal/org/tenant/actor` 字段在 EDGE 被剥离，下游不可见；伪造 principal 负测通过。
+4. `AC-1A-04 [recovery/rollback]`：outbox 在进程重启后不丢事件，且业务事务只写 outbox、不直接投递。
+5. `AC-1A-05 [security-negative,integration]`：所有数据访问经 Repository `WithAccess` 与 DB registry；裸 DB/Tx 不逃逸仓储层，并复用现有 handle-escape detector。P0.2 同一 PostgreSQL 实例内至少分 `dingwei_platform`、业务库 `dingwei_ent_<code>` 与仅供隔离负测的 `dingwei_ent_test`，registry 落平台库，应用只以 opaque database key 选库、禁止硬编码企业 DSN；企业 A `AccessCtx` 访问测试企业 resource 时目标企业库 query count 为 0，并返回 `NOT_FOUND` 或 `TENANT_NOT_BOUND`。
+6. `AC-1A-06 [component,security-negative]`：1-a 权威对象（project、task、assignment、execution result、COL-lite）的状态变更以 expected generation/state 做 CAS，并发只一胜，其余返回 `FENCED/CONFLICT`；Agent 代际由 1-b 持有，façade 只透传 `expected_generation` 并原样映射 `FENCED`，不本地判定或缓存代际。
+7. `AC-1A-07 [security-negative]`：audit/log 不出现原始正文和 secret；redaction 判定器失败时拒绝落盘 effect。
+8. `AC-1A-08 [contract,integration]`：API 合同和 PostgreSQL 集成测试通过。
 
 ### 4.3 第二组：消息、Agent 运行与飞书渠道
 
@@ -380,17 +381,17 @@ MVP API：
 
 完成门：
 
-1. 同一飞书事件重复到达不产生重复业务 effect。
-2. 旧连接不能 ACK 新 generation 的投递。
-3. 服务重启后未完成投递可以恢复。
-4. 单 Agent 故障不阻塞其他 Agent。
-5. 30 Agent 模拟连接稳定运行至少 2 小时。
-6. `/internal/v1/*` 只在容器内网络开放，EDGE/nginx 不代理；缺 `access_ctx_ref` 返回 `UNAUTHENTICATED`。
-7. `agents/{id}/commands` 必须命中 GOV-lite effect policy；缺政策或缺业主权限裁定即 fail-closed。
-8. 杀死并替换 worker 后，旧 lease owner 不得提交 ACK。
-9. audit/log 不出现原始正文和 secret；Agent ID 只作溯源，直接用 Agent ID 请求受保护 effect 返回 `FORBIDDEN`。
-10. 正文中出现任意 Agent 全名或别名时 recipient set 不变；只有结构化 binding/command 可改变收件人。无 binding 且无显式 recipient 时返回明确错误，不默认投递、不广播。
-11. 同一连接产出的 envelope 携带同一不可变 `SessionAuthRef`；连接换代后旧 ref 不复用、不续期；receiver 对 ref 与 assignment/binding 不一致的 envelope 拒绝并记审计。
+1. `AC-1B-01 [component,Mock]`：同一飞书事件重复到达不产生重复业务 effect。
+2. `AC-1B-02 [security-negative]`：旧连接不能 ACK 新 generation 的投递。
+3. `AC-1B-03 [recovery/rollback]`：服务重启后未完成投递可以恢复。
+4. `AC-1B-04 [integration]`：单 Agent 故障不阻塞其他 Agent。
+5. `AC-1B-05 [capacity]`：30 Agent 模拟连接稳定运行至少 2 小时。
+6. `AC-1B-06 [security-negative]`：`/internal/v1/*` 只在容器内网络开放，EDGE/nginx 不代理；缺 `access_ctx_ref` 返回 `UNAUTHENTICATED`。
+7. `AC-1B-07 [security-negative]`：`agents/{id}/commands` 必须命中 GOV-lite effect policy；缺政策或缺业主权限裁定即 fail-closed。
+8. `AC-1B-08 [recovery/rollback]`：杀死并替换 worker 后，旧 lease owner 不得提交 ACK。
+9. `AC-1B-09 [security-negative]`：audit/log 不出现原始正文和 secret；Agent ID 只作溯源，直接用 Agent ID 请求受保护 effect 返回 `FORBIDDEN`。
+10. `AC-1B-10 [security-negative,Mock]`：正文中出现任意 Agent 全名或别名时 recipient set 不变；只有结构化 binding/command 可改变收件人。无 binding 且无显式 recipient 时返回明确错误，不默认投递、不广播。
+11. `AC-1B-11 [contract,security-negative]`：同一连接产出的 envelope 携带同一不可变 `SessionAuthRef`；连接换代后旧 ref 不复用、不续期；receiver 对 ref 与 assignment/binding 不一致的 envelope 拒绝并记审计。
 
 ### 4.4 第三组：Web UI 与展示适配
 
@@ -423,12 +424,12 @@ MVP API：
 
 完成门：
 
-1. 不依赖真实飞书和真实 Agent 即可完整演示。
-2. 所有写操作正确处理重复点击和后端冲突。
-3. 关键页面有组件测试和端到端测试。
-4. UI 不把“已入队”显示成“已送达”，所有状态来自结构化后端结果。
-5. UI 可见 `live/ready/degraded`、依赖、禁用 capability 和失败信息。
-6. 前端 console、错误上报和埋点不含消息正文、secret 或原始身份材料，只允许 `correlation_id` 与结构化错误码。
+1. `AC-1C-01 [Mock,E2E]`：不依赖真实飞书和真实 Agent 即可完整演示。
+2. `AC-1C-02 [component]`：所有写操作正确处理重复点击和后端冲突。
+3. `AC-1C-03 [component,E2E]`：关键页面有组件测试和端到端测试。
+4. `AC-1C-04 [integration]`：UI 不把“已入队”显示成“已送达”，所有状态来自结构化后端结果。
+5. `AC-1C-05 [integration]`：UI 可见 `live/ready/degraded`、依赖、禁用 capability 和失败信息。
+6. `AC-1C-06 [security-negative]`：前端 console、错误上报和埋点不含消息正文、secret 或原始身份材料，只允许 `correlation_id` 与结构化错误码。
 
 ### 4.5 第四组：平台集成、测试工程与发布工程
 
@@ -438,11 +439,11 @@ MVP API：
 
 完成门：
 
-1. 空环境按文档执行 Compose 可拉起全部服务（含 `mock-*` 开发 profile），健康检查全绿，命令与输出留证。
-2. 每个运行单元镜像均带 commit、构建时间、制品 SHA 与所含跨组包版本，registry 中可按 digest 取回；`latest` 不作部署锚。
-3. 每个容器的健康检查、资源限制与日志轮转均在 Compose 中可机器核验。
-4. 备份可在空库恢复并通过 migration 一致性检查；回滚命令在演练环境实跑成功，现有 vhost location 回归通过。
-5. 每个产品版本的测试计划、Mock 测试计划、集成测试计划、测试用例集和追踪矩阵均已冻结；独立测试负责人签收测试范围，但不代替各业务组签收合同语义。
+1. `AC-1D-01 [integration]`：空环境按文档执行 Compose 可拉起全部服务（含 `mock-*` 开发 profile），健康检查全绿，命令与输出留证。
+2. `AC-1D-02 [contract]`：每个运行单元镜像均带 commit、构建时间、制品 SHA 与所含跨组包版本，registry 中可按 digest 取回；`latest` 不作部署锚。
+3. `AC-1D-03 [component]`：每个容器的健康检查、资源限制与日志轮转均在 Compose 中可机器核验。
+4. `AC-1D-04 [recovery/rollback]`：备份可在空库恢复并通过 migration 一致性检查；回滚命令在演练环境实跑成功，现有 vhost location 回归通过。
+5. `AC-1D-05 [contract,integration]`：每个产品版本的测试计划、Mock 测试计划、集成测试计划、测试用例集和追踪矩阵均已冻结；独立测试负责人签收测试范围，但不代替各业务组签收合同语义。
 
 ## 5. 跨组合同与 Mock 纪律
 
@@ -633,7 +634,7 @@ Compose 服务建议：
 |---|---|---|
 | `DW02-000a` | 合同件产出与统一 Mock | 总集成负责人 |
 | `DW02-000b` | 合同评审与四组签收 | 四组负责人 |
-| `DW02-001` | 仓库、目录、CI、开发 profile；计划文档闸及计划产物存在性/状态检查（含拓扑服务/边集与正文枚举对撞） | 总集成负责人 |
+| `DW02-001` | 仓库、目录、CI、开发 profile；计划文档闸及计划产物存在性/状态检查（含组名映射、拓扑服务/边集与正文枚举对撞） | 总集成负责人 |
 | `DW02-002` | EDGE 头清洗、限流、路由与信任边界 | 第一组 |
 | `DW02-010` | AccessCtx、接口信封和错误模型 | 第一组 |
 | `DW02-011` | enterprise、principal 与飞书身份绑定 | 第一组 |
@@ -679,7 +680,7 @@ Compose 服务建议：
 | 测试证据清单 | `tests/<version>/evidence/manifest.tsv` | case ID、commit、镜像、命令、日志/指标/截图路径、SHA256、执行人和时间 | 执行者写入；独立测试抽验 |
 | 版本测试报告 | `tests/<version>/test-report.md` | PASS/FAIL/INCONCLUSIVE、覆盖率、未测项、缺陷、风险接受、复测记录 | 独立测试负责人唯一签字 |
 
-`test-cases.tsv` 至少区分 unit、component、contract、Mock、integration、E2E、security-negative、capacity、recovery/rollback 九类。每个 blocker/important 风险、每个对外或 internal interface、每个允许/禁止 effect 都必须落到至少一个 case ID；无用例、无证据或无追踪关系不得计为已测试。
+`test-cases.tsv` 至少区分 unit、component、contract、Mock、integration、E2E、security-negative、capacity、recovery/rollback 九类。`REQ-P02-*` 与 `AC-1A-*`～`AC-1D-*` 是稳定追踪 ID，各组完成门方括号内为最低测试类别；每个稳定 ID、blocker/important 风险、对外或 internal interface、允许/禁止 effect 都必须落到至少一个 case ID。`DW02-054` 必须机器核验稳定 ID 无重复、无遗漏且每个 ID 至少映射一个用例；无用例、无证据或无追踪关系不得计为已测试。
 
 Mock 测试不是开发自测的附注，而是正式测试输出：必须覆盖正常、超时、429、5xx、重复、乱序、迟到 ACK、断线重连、lease 过期、fencing、权限拒绝、redaction 失败和部分依赖降级。Mock 与真实实现必须运行同一 consumer/provider contract tests；Mock PASS 不等于集成 PASS。
 
@@ -708,6 +709,8 @@ Mock 测试不是开发自测的附注，而是正式测试输出：必须覆盖
 | 30 个真实模型 Agent 的资源与费用未确定 | P0.2 容量口径不清 | `DW02-M0` 冻结真实/模拟比例、供应商并发、预算和追加节点门；`DW02-M1/M3` 分两次回填实测 |
 | 单机资源不足或与现有服务冲突 | 无法稳定部署 | 部署前只读勘察，按 3/10/30 曲线分配资源 |
 | 四组接口漂移 | 集成延迟 | 先冻结合同，consumer-driven contract test 阻断不兼容变更 |
+| 独立测试单席不可用 | 版本 verdict 无人可签、24h 窗口中断 | 运维 on-call 连续记录并交接；独立测试抽验和终判；其缺席时顺延或记 INCONCLUSIVE，任何角色不得代签 |
+| 独立设计评审席冲突或回避 | 设计变更失去独立门 | 两席互为回避替代；二者均回避时由业主另派未参与交付的门方 |
 | 实现范围增长而工期未重估 | 地基被压缩、退出门降格 | `DW02-M0` 由总集成负责人按冻结范围重估；`DW02-M1` 已增至 5～8 天，`DW02-M2a/M2b` 的天数须在 M0 按冻结负测/演练范围重估后回写正文，不沿用评审稿数值 |
 | 飞书限流、重试和重复事件 | 重复 effect 或消息堆积 | 快速 ACK、异步处理、幂等、退避和死信 |
 | UI 原型直接照搬静态状态 | 真实错误和权限面缺失 | 补齐加载、失败、权限、确认、重试和审计交互 |
@@ -723,7 +726,7 @@ Mock 测试不是开发自测的附注，而是正式测试输出：必须覆盖
 | # | 确认项 | 责任角色 | 截止 | 逾期默认 |
 |---|---|---|---|---|
 | 1 | 指定四个开发小组及负责人 | 业主 | `DW02-M0` 前 | 不开工 |
-| 2 | 指定总集成负责人、独立测试和 24h on-call | 业主 | `DW02-M0` 前 | 不开工 |
+| 2 | 确认 1-d 负责人兼总集成负责人、独立测试、两席独立设计评审和 24h on-call | 业主 | `DW02-M0` 前 | 不开工 |
 | 3 | 授权 `193.112.157.47` 只读勘察 | 业主 + ops | `DW02-M0` 前 | 不接触服务器 |
 | 4 | 勘察后逐项授权 Docker/nginx/PostgreSQL | 业主 + ops | `DW02-M1` 前 | 仅本地/Mock；M1 容量表降为 provisional，不放行扩容 |
 | 5 | 准备飞书开发应用、管理员、权限、测试群与回调 | 业主侧飞书管理员 | `DW02-M0` 前 | `DW02-M0` 不起算 |
@@ -817,6 +820,19 @@ Mock 测试不是开发自测的附注，而是正式测试输出：必须覆盖
 | 四组并行编制 | 采纳 1-a/1-b/1-c/1-d 正式编组，运维独立 | §4.0～4.5、§§7～10 |
 | 每版本必须有专门测试输出 | 采纳测试计划、用例集、Mock 计划、集成计划、追踪矩阵、证据清单和独立报告 | §9.1、`DW02-054`～`058` |
 
-### 11.5 执行版效力
+### 11.5 四组/测试体系评审与业主裁定
+
+冻结锚 `11be2c9e09a14f812b57ab46a40e0ce30ad6fff2` 获独立测试门方 PASS、计划门方 NO；整轮按 NO 收拢。计划门方对自身席位去向回避，业主随后明确组内双角色、1-d 负责人兼总集成、独立测试单席及两席组外独立设计评审。
+
+| 发现 | 决定 | 落点 |
+|---|---|---|
+| 既有评审席全部进入交付组 | 新增 `deepseekv4pro08130ca16c13` 与 `shencedeepseek` 两席独立设计评审，与 1-a～1-d 互斥 | §§3.2、4.0、9.3、10 |
+| 总集成负责人不在编组表且身份双解 | 明确由 1-d 设计开发席兼任，并限制不得自签 | §§3.2、4.0 |
+| 1-a～1-d 与第一～第四组双名无映射 | 固定等价映射并加入 `DW02-001` 对撞 | §§4.0、8 |
+| §3.2 人数建议与 §4.0 点名双轴 | §3.2 只保留能力要求，§4.0 为唯一人选事实源 | §§3.2、4.0 |
+| 独立测试单席风险 | 缺席时顺延/INCONCLUSIVE、不代签；24h 由运维记录、独立测试抽验终判 | §§4.0、9.3、10 |
+| 需求和完成门缺稳定追踪 ID/测试类别 | 新增 `REQ-P02-*`、`AC-1A-*`～`AC-1D-*` 与最低测试类别，要求机器核验用例映射 | §§1.2、4.2～4.5、9.1、8 `DW02-054` |
+
+### 11.6 执行版效力
 
 本执行版完成“任务可分派”的结构收口，但不代替 §10 的业主资源与权限确认，也不构成服务器、飞书正式应用、生产、cutover 或不可逆 migration 的授权。只有 `DW02-M0` 退出条件满足后，四个开发小组才进入实现。
