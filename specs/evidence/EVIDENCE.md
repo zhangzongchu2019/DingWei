@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-31T03:07:31Z
-分支头：`733a1dded6fe4746279f431f97381c28310dbfe3`
+生成时刻：2026-08-31T03:23:03Z
+分支头：`6afd7ce4a18a359df8828dd988c3e836090a05f8`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -11,9 +11,9 @@
 
 ```
 REVIEWED 8889a2e8fc73ffccee17555362a4e9be8da9f700c15273b4092c3a9c0b38baff  docs/dingwei-platform-specdoc.md
-REVIEWED f1617ff8e3813d8e148fe3444275d121c9557dd8d270d999e2ea24fd9b9c3b2c  docs/dingwei-platform-architecture.md
-REVIEWED 3a85ec687e1a01ad9e81b09210ecba3c10200b4a485e8d4211983fe543b9c6fb  docs/dingwei-prototype.html
-REVIEWED c3e870d60a62999d8fe19ccb7db686389fe742cb795ffeb92a407c451c8680af  docs/DELIVERY-STATUS.md
+REVIEWED aaab2767ae1e7c51d584604cd21e594463d6210331361805d8e142d5602519b8  docs/dingwei-platform-architecture.md
+REVIEWED 509511b1545b5e2fe5ee75dacabe03cf67a7d350e52c96b2465e88df5838ca81  docs/dingwei-prototype.html
+REVIEWED 05703b1f6a50ca981df156cd873dd672342ea0864c115e44a5009e3c6612cad1  docs/DELIVERY-STATUS.md
 REVIEWED 0d564164092ba326a02de944c3b903531e54763006033819d3b3f1553d7a3061  specs/evidence/collect.sh
 REVIEWED c5dcaaa2d86ed4247ff546cf7f5fd5f40298e33ec8527313cc486d945e3522c2  scripts/appendix-e-owner-gate.sh
 REVIEWED 1e082148049b505073f71888f837aff3d364d378f28d60ab13319abe0745baf3  scripts/arch-refcheck.sh
@@ -136,8 +136,8 @@ $ specs/tools/analyze.sh
     原型引用 122 个节号；悬空 0 ✓
   ④a 三件的【自述】版本是否与 DELIVERY-STATUS 一致
     SpecDoc: 件内 v3.77 · 状态文件 v3.77 ✓
-    架构设计: 件内 v1.6 · 状态文件 v1.6 ✓
-    原型: 件内 v1.50 · 状态文件 v1.50 ✓
+    架构设计: 件内 v1.7 · 状态文件 v1.7 ✓
+    原型: 件内 v1.51 · 状态文件 v1.51 ✓
   ④b 正文是否出现【他件】的旧版本号
     ✓ dingwei-platform-specdoc.md: 正文无他件旧版本号
     ✓ dingwei-platform-architecture.md: 正文无他件旧版本号

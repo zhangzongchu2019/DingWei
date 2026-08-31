@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DingWei 平台原型 v1.50 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
+<title>DingWei 平台原型 v1.51 · 依据 SpecDoc 见 DELIVERY-STATUS</title>
 <style>
 :root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--line:#2b3140;--tx:#dfe3ea;--dim:#8b93a5;
 --acc:#4c8dff;--ok:#3ecf8e;--warn:#ffb020;--bad:#ff5c5c;--imm:#c678dd;--s0:#ff5c5c;--s1:#ffb020;--s2:#3ecf8e}
@@ -135,8 +135,8 @@ body.uionly #uihint{display:block}
 </style></head><body>
 
 <div id="top">
-  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.50</span></h1>
-  <span class="anchor">原型 <b>v1.50</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
+  <h1>DingWei 平台原型 <span style="color:var(--dim);font-weight:400">v1.51</span></h1>
+  <span class="anchor">原型 <b>v1.51</b> · 基线 SpecDoc —— <b>跨件版本一律见 <code>docs/DELIVERY-STATUS.md</code></b><span class="mono" style="margin-left:8px" title="件内不写 commit 短码:本件与 SpecDoc 同 commit,写不进自己的哈希;锚以 README 与提交信息为准">锚见 README</span></span>
   <span class="sp"></span>
   <select id="persona" aria-label="操作者视角"><option value="owner">视角：业主 / 租户</option><option value="agent">视角：Agent（zzc-devo48-2642）</option><option value="platops">视角：平台级 ops</option><option value="tenops">视角：租户级 ops</option></select>
   <select id="proj" aria-label="项目筛选"><option value="all">项目：全部</option><option>dingwei 平台</option><option>图搜 3.0-poc</option><option>WSXC</option><option>openAPI4AI</option></select>
@@ -302,9 +302,10 @@ body.uionly #uihint{display:block}
   </tbody></table>
   <div class="note" data-edit>图例：<span class="cell-ok">✓ 已过</span> · <span class="cell-wait">进行/待</span> · <span class="cell-fail">FAIL</span> · <span class="na">N/A 本任务不需要此环节</span><br>
   T-1204 的门数由属性并集得出（安全面=是 ⇒ 架构评审 + 代码评审且门方须安全角色；跨服务 ⇒ 架构评审），<b>级别 L3 只是标签，不参与计算</b>。</div>
-  <div class="grid g2" style="margin-top:10px">
+  <div class="grid g3" style="margin-top:10px">
     <div class="card"><b class="cell-fail">starved · 无可派席位</b><div class="mono">所需角色：安全评审；当前合格执行席均占满</div></div>
     <div class="card"><b class="cell-wait">无人愿接</b><div class="mono">已广播 3 席，0 接受；转待决队列由调度者扩席或降级排期</div></div>
+    <div class="card"><b class="cell-wait">gate pending</b><div class="mono">门尚未结束；显示门方、待补证据与当前等待时长</div></div>
   </div>
 </div>
 
@@ -625,6 +626,7 @@ body.uionly #uihint{display:block}
 <section class="scr" id="s7">
 <h2 data-edit>帖子流</h2>
 <div class="sub" data-edit>解「作业无痕」；帖子数是分歧探测器，不是话痨指标。§18</div>
+<div class="note warn" data-edit><b>digest pending</b>：帖子已落账但封存摘要尚未生成；界面显示待生成的 seq 范围与摘要 Agent，未完成前禁止把该节点标为已封存。</div>
 
 
 <div class="panel">

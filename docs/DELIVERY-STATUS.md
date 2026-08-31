@@ -1,6 +1,6 @@
 # DingWei 交付状态（机器生成，勿手改）
 
-生成自 commit `2711e77a8aff0925555409730e4277c24aa2a7bb` · 分支 `design/prototype-v1.49-review-fix`
+生成自 commit `6afd7ce4a18a359df8828dd988c3e836090a05f8` · 分支 `design/prototype-v1.49-review-fix`
 
 ⚠️ 本文件在 **pre-commit 时刻**生成，此刻本次提交尚未存在 ——
 故「生成自 commit」指的是**上一个**提交；标了「本次提交中」的件，其新锚即紧随其后的那个提交。
@@ -21,18 +21,18 @@
 | 件 | 版本 | 末次改动锚 | 行 / 字节 | sha256 |
 |---|---|---|---|---|
 | `dingwei-platform-specdoc.md` | **v3.77** | `5344cecc0d7c0ce7e197d4506175a54bcd252c8f` | 5244 / 372834 | `8889a2e8fc73ffccee17555362a4e9be8da9f700c15273b4092c3a9c0b38baff` |
-| `dingwei-prototype.html` | **v1.50** | `2711e77a8aff0925555409730e4277c24aa2a7bb<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2924 / 262822 | `3a85ec687e1a01ad9e81b09210ecba3c10200b4a485e8d4211983fe543b9c6fb` |
-| `dingwei-platform-architecture.md` | **v1.6** | `2711e77a8aff0925555409730e4277c24aa2a7bb<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 1174 / 65443 | `f1617ff8e3813d8e148fe3444275d121c9557dd8d270d999e2ea24fd9b9c3b2c` |
+| `dingwei-prototype.html` | **v1.51** | `733a1dded6fe4746279f431f97381c28310dbfe3<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 2926 / 263188 | `509511b1545b5e2fe5ee75dacabe03cf67a7d350e52c96b2465e88df5838ca81` |
+| `dingwei-platform-architecture.md` | **v1.7** | `733a1dded6fe4746279f431f97381c28310dbfe3<br>⚠️ **本次提交中**（新锚见本文件顶部「生成自 commit」的下一个提交）` | 1174 / 65443 | `aaab2767ae1e7c51d584604cd21e594463d6210331361805d8e142d5602519b8` |
 
 ## 末次改动锚之后的提交（若为空，说明该件即为仓库最新）
 
 ```
+6afd7ce test(prototype): bind architecture states to screens
+733a1dd design(prototype): close round-one review gaps
 2711e77 design(prototype): close v1.48 review findings
 34a1c30 design(sp3): integrate reviewed package onto v0.2
 a145bae docs: close SP5 SP6 SP7 design package status
 deb20af merge: integrate reviewed SP6 and SP7 design packages
 a75be74 test: close round-three structural gate gaps
 267d5ed test: close round-two acceptance and review policy gaps
-66c388e test: close SP6 SP7 round-one checker gaps
-d451407 design: draft SP6 and SP7 v0.2 domain packages
 ```
