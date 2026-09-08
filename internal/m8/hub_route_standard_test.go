@@ -51,8 +51,8 @@ func TestHubStandardFiveRouteReverseMatrix(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if handled || result.Matched {
-			t.Fatalf("unbound Feishu sender reached owner route: handled=%v result=%+v", handled, result)
+		if !handled || !result.Matched || result.Reply == "" {
+			t.Fatalf("unbound Feishu sender did not receive a fail-closed routing error: handled=%v result=%+v", handled, result)
 		}
 	})
 

@@ -90,6 +90,8 @@ type Hub struct {
 	viewV2Mu         sync.Mutex
 	viewV2Nonces     map[string]time.Time
 	viewV2Requests   map[string]viewV2RequestResult
+	deliveryNotices  map[string]time.Time
+	amr              *amrProcessor
 }
 
 type L2Config struct {
@@ -117,6 +119,8 @@ type sessionClient struct {
 	targetBot      string
 	webTerminal    bool
 	osName         string
+	tool           string
+	version        string
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
@@ -205,7 +209,7 @@ var (
 )
 
 func New(repo store.Repository) *Hub {
-	return &Hub{
+	h := &Hub{
 		Repo:             repo,
 		serviceClients:   map[string]*client{},
 		sessionClients:   map[string]map[string]*sessionClient{},
@@ -226,6 +230,7 @@ func New(repo store.Repository) *Hub {
 		onboardContexts:  map[string]onboardContext{},
 		viewV2Nonces:     map[string]time.Time{},
 		viewV2Requests:   map[string]viewV2RequestResult{},
+		deliveryNotices:  map[string]time.Time{},
 		onlineDebounce:   2500 * time.Millisecond,
 		onboardInterval:  envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
 		newSessionNotice: true,
@@ -237,6 +242,8 @@ func New(repo store.Repository) *Hub {
 			ConfidenceThreshold: 0.60,
 		},
 	}
+	h.amr = newAMRProcessor(h)
+	return h
 }
 
 func (h *Hub) StartL2Workers(ctx context.Context) {
@@ -849,7 +856,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	markTiming("conn_seq")
-	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, deviceID: deviceID, deviceIDV1: deviceIDV1}
+	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	go h.watchSessionKeepalive(idleWatchdogCtx, c)
@@ -1010,7 +1017,11 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		if h.handleTerminalOutputEnvelope(c, env) {
 			continue
 		}
-		if h.handleSessionEventEnvelope(c, env) {
+		if h.handleSessionEventEnvelopeContext(r.Context(), c, env) {
+			continue
+		}
+		if h.amr != nil && h.amr.shouldDropLegacyAgentRoute(c.keyID, c.sessionName, env) {
+			log.Printf("amr decision=legacy_route_dropped session=%s", c.sessionName)
 			continue
 		}
 		if h.routeSessionSelectorEnvelope(r.Context(), c, env) {
@@ -1023,7 +1034,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if err := h.RouteEnvelope(r.Context(), env); err != nil {
-			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "投递失败："+err.Error()))
+			h.writeDeliveryFailure(r.Context(), c, env, env.To, err)
 		}
 	}
 }
@@ -2575,16 +2586,11 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 		if resolved.status == ownerSessionAmbiguous {
 			return ambiguousSessionError(to.SessionName, resolved.candidates)
 		}
-		k, sessionName, ok := resolved.keyID, resolved.sessionName, resolved.status == ownerSessionUniqueHit
-		if !ok {
-			k, ok = h.resolveOwnerSessionKey(ctx, senderOwner, to.SessionName, to.KeyID)
-			sessionName = to.SessionName
-		}
-		if !ok {
+		if resolved.status != ownerSessionUniqueHit {
 			return errors.New("目标会话不在你的账号下或不在线：" + to.SessionName)
 		}
-		env.To = sessionAddress(sessionName, k)
-		return h.routeToSession(ctx, k, sessionName, env, from.Kind == addressFeishu)
+		env.To = sessionAddress(resolved.sessionName, resolved.keyID)
+		return h.routeToSession(ctx, resolved.keyID, resolved.sessionName, env, from.Kind == addressFeishu)
 	case addressFeishu:
 		if to.KeyID != from.KeyID {
 			return errors.New("to/from key_id mismatch")
@@ -2839,9 +2845,73 @@ func renderAgentNetworkSkillWithContext(sessionName, localName, keyID string, in
 }
 
 func (h *Hub) routeSessionSelectorEnvelope(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	handled, err := h.routeSessionSelector(ctx, c.keyID, c.sessionName, env)
+	if err != nil {
+		h.writeDeliveryFailure(ctx, c, env, env.To, err)
+	}
+	return handled
+}
+
+func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, original model.Envelope, target string, routeErr error) {
+	if c == nil || routeErr == nil || metaString(original.Meta, "type") == "delivery_failure" {
+		log.Printf("delivery failure notification=suppressed reason=recursive_or_missing")
+		return
+	}
+	now := time.Now().UTC()
+	dedupKey := c.keyID + "\x00" + c.sessionName + "\x00" + target + "\x00" + routeErr.Error()
+	h.mu.Lock()
+	for key, at := range h.deliveryNotices {
+		if now.Sub(at) > time.Minute {
+			delete(h.deliveryNotices, key)
+		}
+	}
+	if at, ok := h.deliveryNotices[dedupKey]; ok && now.Sub(at) <= time.Minute {
+		h.mu.Unlock()
+		log.Printf("delivery failure notification=suppressed reason=deduplicated session=%s", c.sessionName)
+		return
+	}
+	h.deliveryNotices[dedupKey] = now
+	h.mu.Unlock()
+	env := deliveryFailureEnvelope(c, original.ID, target, routeErr.Error(), now)
+	if err := c.write(ctx, env); err != nil {
+		log.Printf("delivery failure notification=failed session=%s err=%v", c.sessionName, err)
+	}
+}
+
+func deliveryFailureEnvelope(c *sessionClient, sourceID, target, reason string, now time.Time) model.Envelope {
+	body := fmt.Sprintf("【投递失败】%s → %s；原因：%s", sourceID, target, reason)
+	env := model.Envelope{
+		ID:   "delivery-failure-" + randomHex(16),
+		To:   sessionAddress(c.sessionName, c.keyID),
+		From: sessionAddress("workpulse", c.keyID),
+		Body: body,
+		TS:   now.Unix(),
+		Meta: map[string]any{"type": "delivery_failure", "source_id": sourceID},
+	}
+	if amrSupportsStructuredFailure(c.version) {
+		env.Meta["presentation"] = "structured"
+	}
+	return env
+}
+
+// routeSessionSelector resolves and routes a selector emitted by an authenticated
+// session. It deliberately has no websocket dependency so background consumers
+// (notably completed-turn AMR) do not write errors to a stale source connection.
+func (h *Hub) routeSessionSelector(ctx context.Context, sourceKeyID, sourceSession string, env model.Envelope) (bool, error) {
+	handled, prepared, err := h.prepareSessionSelector(ctx, sourceKeyID, sourceSession, env)
+	if err != nil || !handled {
+		return handled, err
+	}
+	return true, h.RouteEnvelope(ctx, prepared)
+}
+
+// prepareSessionSelector performs authoritative owner/session resolution without
+// sending. Observation-mode AMR uses it to distinguish a valid candidate from
+// one that Hub policy would reject.
+func (h *Hub) prepareSessionSelector(ctx context.Context, sourceKeyID, sourceSession string, env model.Envelope) (bool, model.Envelope, error) {
 	text := strings.TrimSpace(env.To)
 	if text == "" || (!strings.HasPrefix(text, "#") && !strings.HasPrefix(text, "@")) {
-		return false
+		return false, env, nil
 	}
 	if body := strings.TrimSpace(env.Body); body != "" {
 		text += " " + body
@@ -2849,46 +2919,37 @@ func (h *Hub) routeSessionSelectorEnvelope(ctx context.Context, c *sessionClient
 	if strings.HasPrefix(text, "#") {
 		sessionName, body, ok := parseSelector(text)
 		if !ok {
-			return false
+			return false, env, nil
 		}
-		resolved := h.resolveOwnerSessionByShort(ctx, h.ownerKeyForKey(ctx, c.keyID), sessionName, "")
+		resolved := h.resolveOwnerSessionByShort(ctx, h.ownerKeyForKey(ctx, sourceKeyID), sessionName, "")
 		if resolved.status == ownerSessionAmbiguous {
-			_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+ambiguousSessionError(sessionName, resolved.candidates).Error()))
-			return true
+			return true, env, ambiguousSessionError(sessionName, resolved.candidates)
 		}
-		keyID, resolvedSession := c.keyID, sessionName
-		if resolved.status == ownerSessionUniqueHit {
-			keyID, resolvedSession = resolved.keyID, resolved.sessionName
+		if resolved.status != ownerSessionUniqueHit {
+			return true, env, errors.New("目标会话无法补全为在线 canonical 地址：" + sessionName)
 		}
-		env.To = sessionAddress(resolvedSession, keyID)
-		env.From = sessionAddress(c.sessionName, c.keyID)
+		env.To = sessionAddress(resolved.sessionName, resolved.keyID)
+		env.From = sessionAddress(sourceSession, sourceKeyID)
 		env.Body = body
-		if err := h.RouteEnvelope(ctx, env); err != nil {
-			_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+err.Error()))
-		}
-		return true
+		return true, env, nil
 	}
 	memberName, sessionName, body, ok := parseMemberMention(text)
 	if !ok {
-		return false
+		return false, env, nil
 	}
 	target, err := h.resolveMemberByName(ctx, memberName)
 	if err != nil {
-		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+err.Error()))
-		return true
+		return true, env, err
 	}
 	if target.DMOptOut {
-		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败：该成员未开放会话接入："+memberLabel(target)))
-		return true
+		return true, env, errors.New("该成员未开放会话接入：" + memberLabel(target))
 	}
 	keyID, resolvedSession, noDirectory, err := h.resolveMemberSession(ctx, target, sessionName)
 	if err != nil {
-		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+err.Error()))
-		return true
+		return true, env, err
 	}
 	if noDirectory {
-		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败：该会话为专职隔离会话不接受任务派发"))
-		return true
+		return true, env, errors.New("该会话为专职隔离会话不接受任务派发")
 	}
 	if env.Meta == nil {
 		env.Meta = map[string]any{}
@@ -2896,16 +2957,13 @@ func (h *Hub) routeSessionSelectorEnvelope(ctx context.Context, c *sessionClient
 	env.Meta["cross_member"] = target.OwnerKey
 	env.Meta["cross_member_name"] = memberLabel(target)
 	env.Meta["cross_session_name"] = resolvedSession
-	env.Meta["source_session_name"] = c.sessionName
-	env.Meta["source_key_id"] = c.keyID
+	env.Meta["source_session_name"] = sourceSession
+	env.Meta["source_key_id"] = sourceKeyID
 	env.Meta["reply_prefix"] = fmt.Sprintf("【%s·%s】", memberLabel(target), resolvedSession)
 	env.To = sessionAddress(resolvedSession, keyID)
-	env.From = sessionAddress(c.sessionName, keyID)
+	env.From = sessionAddress(sourceSession, keyID)
 	env.Body = body
-	if err := h.RouteEnvelope(ctx, env); err != nil {
-		_ = c.write(ctx, errorEnvelope(c.keyID, c.sessionName, env.ID, "投递失败："+err.Error()))
-	}
-	return true
+	return true, env, nil
 }
 
 func isCollectEnvelope(env model.Envelope) bool {
@@ -2991,7 +3049,7 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 			return model.PrefixDispatchResult{Matched: true, Reply: ambiguousSessionError(sessionName, resolved.candidates).Error()}, true, nil
 		}
 		if resolved.status != ownerSessionUniqueHit {
-			return model.PrefixDispatchResult{}, false, nil
+			return model.PrefixDispatchResult{Matched: true, Reply: "目标会话无法补全为在线 canonical 地址：" + sessionName}, true, nil
 		}
 		keyID, sessionName, found = resolved.keyID, resolved.sessionName, true
 	}

@@ -401,6 +401,10 @@ func (h *Hub) handleTerminalOutputEnvelope(c *sessionClient, env model.Envelope)
 // 存入 eventRing(供晚订阅的 View Service 回放),并扇出给内网订阅者。
 // 刻意【不进 buffer、不碰老 xterm viewers】—— 新页走这条,老页照旧走 terminal_output。
 func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) bool {
+	return h.handleSessionEventEnvelopeContext(context.Background(), c, env)
+}
+
+func (h *Hub) handleSessionEventEnvelopeContext(_ context.Context, c *sessionClient, env model.Envelope) bool {
 	if metaString(env.Meta, "type") != terminalSessionEventType {
 		return false
 	}
@@ -411,6 +415,9 @@ func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) b
 		log.Printf("provenance claim dropped ingress=agent_session session=%s", c.sessionName)
 	}
 	h.publishSessionEvent(c.keyID, c.sessionName, sanitized)
+	if h.amr != nil {
+		h.amr.ingest(c.keyID, c.sessionName, sanitized)
+	}
 	return true
 }
 
