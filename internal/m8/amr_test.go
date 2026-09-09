@@ -131,12 +131,12 @@ func TestAMRTerminalSuccessIsFailClosed(t *testing.T) {
 		data map[string]any
 		want bool
 	}{
-		{name: "missing outcome", data: map[string]any{}},
+		{name: "missing outcome", data: map[string]any{}, want: false},
 		{name: "claude success", data: map[string]any{"subtype": "success"}, want: true},
 		{name: "completed", data: map[string]any{"status": "completed"}, want: true},
-		{name: "claude interrupted subtype", data: map[string]any{"subtype": "error_during_execution"}},
-		{name: "explicit error", data: map[string]any{"is_error": true}},
-		{name: "unknown status", data: map[string]any{"status": "future_state"}},
+		{name: "claude interrupted subtype", data: map[string]any{"subtype": "error_during_execution"}, want: false},
+		{name: "explicit error", data: map[string]any{"is_error": true}, want: false},
+		{name: "unknown status", data: map[string]any{"status": "future_state"}, want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -316,17 +316,62 @@ func TestAMRStateConservationAfterPositiveCandidate(t *testing.T) {
 
 func TestParseAMRCandidatesUsesWholeTurnAndRejectsInvalidTokens(t *testing.T) {
 	got := parseAMRCandidates("@alpha @beta! do the work", "source", 20)
-	if len(got) != 2 || got[0].selector != "#alpha" || got[1].selector != "#beta" || got[1].replyPolicy != "expect_reply" || got[0].body != "do the work" {
+	if len(got) != 2 || got[0].selector != "#alpha" || got[1].selector != "#beta" || got[1].replyPolicy != "expect_reply" || got[0].body != "@alpha @beta! do the work" {
 		t.Fatalf("candidates=%+v", got)
 	}
-	if got := parseAMRCandidates("prefix @alpha body", "source", 20); len(got) != 0 {
-		t.Fatalf("mid-body mention routed: %+v", got)
+	if got := parseAMRCandidates("prefix @alpha body", "source", 20); len(got) != 1 || got[0].selector != "#alpha" || got[0].body != "prefix @alpha body" {
+		t.Fatalf("mid-body mention not routed with whole turn: %+v", got)
 	}
 	if got := parseAMRCandidates("@na$me body", "source", 20); len(got) != 0 {
 		t.Fatalf("invalid token partially consumed: %+v", got)
 	}
 	if got := parseAMRCandidates("@source body", "source", 20); len(got) != 0 {
 		t.Fatalf("self mention routed: %+v", got)
+	}
+}
+
+func TestParseAMRMentionGuardsAndCounters(t *testing.T) {
+	tests := []struct {
+		name     string
+		text     string
+		want     int
+		found    int
+		leading  int
+		embedded int
+		inCode   int
+		escaped  int
+	}{
+		{name: "email address", text: "zzc@zhangzongchu.com 出现在正文", want: 0},
+		{name: "css unresolved candidate", text: "CSS @media screen", want: 1, found: 1, embedded: 1},
+		{name: "python decorator candidate", text: "Python @property", want: 1, found: 1, embedded: 1},
+		{name: "inline code", text: "引用 `@name` 不投递", want: 0, inCode: 1},
+		{name: "fenced code", text: "```\n@name body\n```", want: 0, inCode: 1},
+		{name: "escaped", text: "@@opus50ts 字面量", want: 0, escaped: 1},
+		{name: "leading", text: "@alpha body", want: 1, found: 1, leading: 1},
+		{name: "embedded", text: "请处理 @alpha body", want: 1, found: 1, embedded: 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, scan := parseAMRCandidatesDetailed(tt.text, "source", 20)
+			if len(got) != tt.want || scan.found != tt.found || scan.leading != tt.leading || scan.embedded != tt.embedded || scan.inCode != tt.inCode || scan.escaped != tt.escaped {
+				t.Fatalf("candidates=%+v scan=%+v", got, scan)
+			}
+		})
+	}
+}
+
+func TestAMRUnresolvedMentionIsCountedAndNotDispatched(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	p := testAMRProcessor()
+	p.hub = hub
+	for i, body := range []string{"CSS @media screen", "Python @property"} {
+		p.stats.opened++
+		p.stats.queued++
+		p.process(amrRouteJob{key: amrTurnKey{KeyID: "key", Session: "source", DeliveryID: fmt.Sprintf("d%d", i), TurnID: "t"}, body: body})
+	}
+	stats, _ := p.snapshotStats()
+	if stats.mentionUnresolved != 2 || stats.mentionEmbedded != 2 || stats.closedCandidateRejected != 2 || stats.targetsDispatched != 0 {
+		t.Fatalf("unresolved mention stats=%+v", stats)
 	}
 }
 

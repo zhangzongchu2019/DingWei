@@ -101,6 +101,12 @@ type amrStats struct {
 	queueUnderflow          uint64
 	notificationsSent       uint64
 	notificationsSuppressed uint64
+	mentionFound            uint64
+	mentionLeading          uint64
+	mentionEmbedded         uint64
+	mentionUnresolved       uint64
+	mentionInCode           uint64
+	mentionEscaped          uint64
 	terminalUnknown         map[string]uint64
 	workerHeartbeat         time.Time
 }
@@ -537,12 +543,14 @@ func (p *amrProcessor) logStatsLocked() {
 	active := uint64(len(p.turns))
 	topOK := p.stats.opened == active+p.stats.queued+p.stats.closed+p.stats.incomplete+p.stats.failed
 	closedOK := p.stats.closed == p.stats.closedNonCandidate+p.stats.closedCandidateRejected+p.stats.closedCandidateReady+p.stats.closedDispatched
-	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d top_invariant=%t closed_invariant=%t",
+	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d mention_found=%d mention_leading=%d mention_embedded=%d mention_unresolved=%d mention_in_code=%d mention_escaped=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d top_invariant=%t closed_invariant=%t",
 		p.stats.eventsObserved, p.stats.opened, active, p.stats.queued, p.stats.closed, p.stats.incomplete, p.stats.failed,
 		p.stats.closedNonCandidate, p.stats.closedCandidateRejected, p.stats.closedCandidateReady, p.stats.closedDispatched,
 		p.stats.fragmentAppend, p.stats.fragmentSnapshot, p.stats.fragmentDuplicate, p.stats.lateAfterTerminal, p.stats.legacyRouteDropped,
 		p.stats.targetsAttempted, p.stats.targetsDispatched, p.stats.targetsFailed, p.stats.queueUnderflow,
-		p.stats.notificationsSent, p.stats.notificationsSuppressed, p.stats.terminalUnknown, amrStructuredFailureMinVersion(), p.stats.eventsRejected,
+		p.stats.notificationsSent, p.stats.notificationsSuppressed,
+		p.stats.mentionFound, p.stats.mentionLeading, p.stats.mentionEmbedded, p.stats.mentionUnresolved, p.stats.mentionInCode, p.stats.mentionEscaped,
+		p.stats.terminalUnknown, amrStructuredFailureMinVersion(), p.stats.eventsRejected,
 		topOK, closedOK)
 }
 
@@ -556,9 +564,16 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	p.stats.workerHeartbeat = time.Now().UTC()
 	p.mu.Unlock()
 
-	candidates, lookedLikeCandidate := parseAMRCandidatesDetailed(job.body, job.key.Session, p.maxTargets)
+	candidates, scan := parseAMRCandidatesDetailed(job.body, job.key.Session, p.maxTargets)
+	p.mu.Lock()
+	p.stats.mentionFound += uint64(scan.found)
+	p.stats.mentionLeading += uint64(scan.leading)
+	p.stats.mentionEmbedded += uint64(scan.embedded)
+	p.stats.mentionInCode += uint64(scan.inCode)
+	p.stats.mentionEscaped += uint64(scan.escaped)
+	p.mu.Unlock()
 	if len(candidates) == 0 {
-		if lookedLikeCandidate {
+		if scan.lookedLikeCandidate {
 			p.closeJob("candidate_rejected")
 			if p.modeFor(job.key.KeyID, job.key.Session) == amrRoute {
 				p.notifySource(job.key, "candidate", "@ 目标无法解析或不符合路由规则", true)
@@ -588,6 +603,9 @@ func (p *amrProcessor) process(job amrRouteJob) {
 		}
 		handled, resolved, err := p.hub.prepareSessionSelector(ctx, job.key.KeyID, job.key.Session, env)
 		if err != nil || !handled {
+			p.mu.Lock()
+			p.stats.mentionUnresolved++
+			p.mu.Unlock()
 			log.Printf("amr decision=candidate_rejected handled=%t err=%v", handled, err)
 			results = append(results, amrTargetResult{selector: candidate.selector, err: errors.New(firstNonEmpty(errorString(err), "目标无法解析"))})
 			continue
@@ -763,6 +781,15 @@ type amrCandidate struct {
 	replyPolicy string
 }
 
+type amrMentionScan struct {
+	lookedLikeCandidate bool
+	found               int
+	leading             int
+	embedded            int
+	inCode              int
+	escaped             int
+}
+
 var (
 	amrTokenName = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 	amrLongName  = regexp.MustCompile(`^([a-z0-9]+)-([a-z0-9]+)-[0-9a-f]{4}$`)
@@ -773,42 +800,100 @@ func parseAMRCandidates(text, sourceSession string, maxTargets int) []amrCandida
 	return candidates
 }
 
-func parseAMRCandidatesDetailed(text, sourceSession string, maxTargets int) ([]amrCandidate, bool) {
+func parseAMRCandidatesDetailed(text, sourceSession string, maxTargets int) ([]amrCandidate, amrMentionScan) {
 	text = strings.TrimSpace(text)
-	if text == "" || maxTargets <= 0 {
-		return nil, false
+	scan := amrMentionScan{}
+	if text == "" || maxTargets <= 0 || len(text) > amrRouteBodyMax {
+		return nil, scan
 	}
 	if strings.HasPrefix(text, "#") {
 		name, body, ok := parseSelector(text)
-		if !ok || name == sourceSession || body == "" || len(body) > amrRouteBodyMax {
-			return nil, true
+		if !ok || name == sourceSession || body == "" {
+			scan.lookedLikeCandidate = true
+			return nil, scan
 		}
-		return []amrCandidate{{selector: "#" + name, body: body, replyPolicy: "no_reply"}}, true
+		return []amrCandidate{{selector: "#" + name, body: body, replyPolicy: "no_reply"}}, scan
 	}
-	if !strings.HasPrefix(text, "@") {
-		return nil, false
-	}
-	if owner, session, body, ok := parseMemberMention(text); ok && session != "" && body != "" && len(body) <= amrRouteBodyMax {
-		return []amrCandidate{{selector: "@" + owner + "#" + session, body: body, replyPolicy: "no_reply"}}, true
-	}
-
-	remaining := text
 	tokens := make([]string, 0, maxTargets)
-	for strings.HasPrefix(remaining, "@") {
-		i := strings.IndexAny(remaining, " \t\r\n")
-		if i <= 1 {
-			return nil, true
+	inFence, inInline := false, false
+	// Mentions in ordinary prose are intentional routes, including quoted text.
+	// Agents must wrap examples such as `@name` in inline/fenced code; otherwise
+	// repeating somebody else's mention can dispatch the complete turn.
+	for i := 0; i < len(text); {
+		if strings.HasPrefix(text[i:], "```") {
+			inFence = !inFence
+			i += 3
+			continue
 		}
-		tokens = append(tokens, remaining[1:i])
-		remaining = strings.TrimLeft(remaining[i:], " \t\r\n")
+		if text[i] == '`' && !inFence {
+			inInline = !inInline
+			i++
+			continue
+		}
+		if text[i] != '@' {
+			i++
+			continue
+		}
+		anchored := i == 0 || text[i-1] == ' ' || text[i-1] == '\t' || text[i-1] == '\r' || text[i-1] == '\n'
+		if !anchored && !inFence && !inInline {
+			i++
+			continue
+		}
+		if i+1 < len(text) && text[i+1] == '@' {
+			scan.escaped++
+			i += 2
+			continue
+		}
+		end := i + 1
+		for end < len(text) && (text[end] >= 'A' && text[end] <= 'Z' || text[end] >= 'a' && text[end] <= 'z' || text[end] >= '0' && text[end] <= '9' || strings.ContainsRune("_.-", rune(text[end]))) {
+			end++
+		}
+		if end == i+1 {
+			i++
+			continue
+		}
+		if inFence || inInline {
+			scan.inCode++
+			i = end
+			continue
+		}
+		if end < len(text) && text[end] == '$' {
+			scan.lookedLikeCandidate = true
+			i = end + 1
+			continue
+		}
+		token := text[i+1 : end]
+		if end < len(text) && text[end] == '#' {
+			sessionEnd := end + 1
+			for sessionEnd < len(text) && (text[sessionEnd] >= 'A' && text[sessionEnd] <= 'Z' || text[sessionEnd] >= 'a' && text[sessionEnd] <= 'z' || text[sessionEnd] >= '0' && text[sessionEnd] <= '9' || strings.ContainsRune("_.-", rune(text[sessionEnd]))) {
+				sessionEnd++
+			}
+			if sessionEnd > end+1 {
+				token += text[end:sessionEnd]
+				end = sessionEnd
+			}
+		}
+		if end < len(text) && text[end] == '!' {
+			token += "!"
+			end++
+		}
+		tokens = append(tokens, token)
+		scan.lookedLikeCandidate = true
+		scan.found++
+		if i == 0 {
+			scan.leading++
+		} else {
+			scan.embedded++
+		}
 		if len(tokens) > maxTargets {
-			return nil, true
+			return nil, scan
 		}
+		i = end
 	}
-	body := strings.TrimSpace(remaining)
-	if body == "" || len(body) > 100_000 {
-		return nil, true
+	if len(tokens) == 0 {
+		return nil, scan
 	}
+	body := text
 	seen := map[string]bool{}
 	out := make([]amrCandidate, 0, len(tokens))
 	for _, token := range tokens {
@@ -818,7 +903,20 @@ func parseAMRCandidatesDetailed(text, sourceSession string, maxTargets int) ([]a
 			token = strings.TrimSuffix(token, "!")
 		}
 		if !amrTokenName.MatchString(token) {
-			return nil, true
+			parts := strings.Split(token, "#")
+			if len(parts) != 2 || !amrTokenName.MatchString(parts[0]) || !amrTokenName.MatchString(parts[1]) {
+				return nil, scan
+			}
+			if parts[1] == sourceSession {
+				continue
+			}
+			selector := "@" + parts[0] + "#" + parts[1]
+			if seen[selector] {
+				continue
+			}
+			seen[selector] = true
+			out = append(out, amrCandidate{selector: selector, body: body, replyPolicy: replyPolicy})
+			continue
 		}
 		if token == "all" || token == sourceSession || seen[token] {
 			continue
@@ -833,7 +931,7 @@ func parseAMRCandidatesDetailed(text, sourceSession string, maxTargets int) ([]a
 		}
 		out = append(out, amrCandidate{selector: selector, body: body, replyPolicy: replyPolicy})
 	}
-	return out, true
+	return out, scan
 }
 
 func amrDerivedEnvelopeID(key amrTurnKey, index int, selector string) string {
