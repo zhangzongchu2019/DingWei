@@ -1828,6 +1828,17 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(env["meta"]["role"], "alert")
         self.assertEqual(env["meta"]["no_mirror"], True)
 
+    def test_session_capabilities_envelope_applies_to_producer(self):
+        helper = SessionHelper(load_config(dict(
+            BASE_ENV, SH_PRODUCER="1", SH_TARGET_GROUP="oc_group", SH_MODE="driver"
+        )))
+        env = helper.session_capabilities_envelope()
+        self.assertEqual(env["to"], "workpulse#FB-2642")
+        self.assertEqual(env["from"], "home#FB-2642")
+        self.assertEqual(env["meta"]["type"], "session_capabilities")
+        self.assertEqual(env["meta"]["delivery_ack_v1"], True)
+        self.assertEqual(env["meta"]["unified_queue_v1"], True)
+
     def test_producer_requires_target_group(self):
         helper = SessionHelper(load_config(dict(BASE_ENV, SH_PRODUCER="1")))
         with self.assertRaises(RuntimeError):
