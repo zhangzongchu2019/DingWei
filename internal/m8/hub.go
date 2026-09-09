@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/coder/websocket"
 
@@ -1904,7 +1905,8 @@ func (h *Hub) resolveOwnerSessionByShort(ctx context.Context, ownerKey, requeste
 		}
 		return online[i].sessionName < online[j].sessionName
 	})
-	var shortMatches []candidate
+	var exactMatches []candidate
+	var fuzzyMatches []candidate
 	for _, item := range online {
 		if h.ownerKeyForKey(ctx, item.keyID) != ownerKey {
 			continue
@@ -1912,24 +1914,38 @@ func (h *Hub) resolveOwnerSessionByShort(ctx context.Context, ownerKey, requeste
 		if hintKey != "" && item.keyID == hintKey && (item.sessionName == requested || ownerSessionAliasMatch(ownerKey, item.sessionName, requested)) {
 			return ownerSessionResolveResult{keyID: item.keyID, sessionName: item.sessionName, status: ownerSessionUniqueHit}
 		}
-		if item.sessionName == requested {
-			return ownerSessionResolveResult{keyID: item.keyID, sessionName: item.sessionName, status: ownerSessionUniqueHit}
+		if item.sessionName == requested || ownerSessionAliasMatch(ownerKey, item.sessionName, requested) {
+			exactMatches = append(exactMatches, item)
+			continue
 		}
-		if ownerSessionAliasMatch(ownerKey, item.sessionName, requested) {
-			shortMatches = append(shortMatches, item)
+		if ownerSessionFuzzyMatch(item.sessionName, requested) {
+			fuzzyMatches = append(fuzzyMatches, item)
 		}
 	}
-	if len(shortMatches) == 0 {
+	matches := exactMatches
+	if len(matches) == 0 {
+		matches = fuzzyMatches
+	}
+	if len(matches) == 0 {
 		return ownerSessionResolveResult{status: ownerSessionNoMatch}
 	}
-	if len(shortMatches) == 1 {
-		return ownerSessionResolveResult{keyID: shortMatches[0].keyID, sessionName: shortMatches[0].sessionName, status: ownerSessionUniqueHit}
+	if len(matches) == 1 {
+		return ownerSessionResolveResult{keyID: matches[0].keyID, sessionName: matches[0].sessionName, status: ownerSessionUniqueHit}
 	}
-	names := make([]string, 0, len(shortMatches))
-	for _, item := range shortMatches {
+	names := make([]string, 0, len(matches))
+	for _, item := range matches {
 		names = append(names, item.sessionName)
 	}
 	return ownerSessionResolveResult{status: ownerSessionAmbiguous, candidates: names}
+}
+
+func ownerSessionFuzzyMatch(sessionName, requested string) bool {
+	requested = strings.TrimSpace(requested)
+	if utf8.RuneCountInString(requested) < 3 {
+		return false
+	}
+	short := shortSessionName(sessionName)
+	return short != "" && strings.Contains(short, requested)
 }
 
 func ownerSessionAliasMatch(ownerKey, sessionName, requested string) bool {

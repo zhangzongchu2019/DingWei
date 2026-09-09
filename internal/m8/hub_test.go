@@ -2140,6 +2140,89 @@ func TestShortSessionSelectorRejectsAmbiguousOwnerMatch(t *testing.T) {
 	assertNoEnvelope(t, ctx, secondDev, 120*time.Millisecond)
 }
 
+func TestResolveOwnerSessionFuzzyMatchKeepsExactPriorityAndOwnerBoundary(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-fuzzy", Name: "svc-fuzzy", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, owner := range []string{"u1", "u2"} {
+		if err := db.UpsertMember(ctx, model.Member{OwnerKey: owner, DisplayName: owner, Active: true}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	newKey := func(owner, label string) model.ServiceAPIKey {
+		t.Helper()
+		_, key, err := hub.IssueAPIKey(ctx, "svc-fuzzy", label)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := hub.BindAccount(ctx, key.ID, owner); err != nil {
+			t.Fatal(err)
+		}
+		return key
+	}
+	prodKey := newKey("u1", "prod")
+	ts3Key := newKey("u1", "ts3")
+	opsKey := newKey("u1", "exact")
+	otherKey := newKey("u2", "other")
+	prodName := "u1-prodops-" + keyTail(prodKey.ID)
+	ts3Name := "u1-ts3pocops-" + keyTail(ts3Key.ID)
+	opsName := "u1-ops-" + keyTail(opsKey.ID)
+	otherName := "u2-prodops-" + keyTail(otherKey.ID)
+	hub.mu.Lock()
+	hub.sessionClients[prodKey.ID] = map[string]*sessionClient{prodName: {keyID: prodKey.ID, sessionName: prodName}}
+	hub.sessionClients[otherKey.ID] = map[string]*sessionClient{otherName: {keyID: otherKey.ID, sessionName: otherName}}
+	hub.mu.Unlock()
+
+	for _, requested := range []string{"prodops", "ops"} {
+		got := hub.resolveOwnerSessionByShort(ctx, "u1", requested, "")
+		if got.status != ownerSessionUniqueHit || got.sessionName != prodName {
+			t.Fatalf("requested=%q result=%+v", requested, got)
+		}
+	}
+	if got := hub.resolveOwnerSessionByShort(ctx, "u1", "de", ""); got.status != ownerSessionNoMatch {
+		t.Fatalf("two-rune fuzzy request matched: %+v", got)
+	}
+	if got := hub.resolveOwnerSessionByShort(ctx, "u1", "prodops", otherKey.ID); got.sessionName != prodName {
+		t.Fatalf("cross-owner hint escaped owner boundary: %+v", got)
+	}
+
+	hub.mu.Lock()
+	hub.sessionClients[ts3Key.ID] = map[string]*sessionClient{ts3Name: {keyID: ts3Key.ID, sessionName: ts3Name}}
+	hub.mu.Unlock()
+	got := hub.resolveOwnerSessionByShort(ctx, "u1", "ops", "")
+	if got.status != ownerSessionAmbiguous || !slices.Contains(got.candidates, prodName) || !slices.Contains(got.candidates, ts3Name) {
+		t.Fatalf("fuzzy ambiguity result=%+v", got)
+	}
+	if hinted := hub.resolveOwnerSessionByShort(ctx, "u1", "ops", prodKey.ID); hinted.status != ownerSessionAmbiguous {
+		t.Fatalf("hint key bypassed fuzzy ambiguity: %+v", hinted)
+	}
+	err := ambiguousSessionError("ops", got.candidates)
+	if !strings.Contains(err.Error(), prodName) || !strings.Contains(err.Error(), ts3Name) {
+		t.Fatalf("ambiguity error=%q", err)
+	}
+
+	hub.mu.Lock()
+	hub.sessionClients[opsKey.ID] = map[string]*sessionClient{opsName: {keyID: opsKey.ID, sessionName: opsName}}
+	hub.mu.Unlock()
+	got = hub.resolveOwnerSessionByShort(ctx, "u1", "ops", "")
+	if got.status != ownerSessionUniqueHit || got.sessionName != opsName {
+		t.Fatalf("exact match did not beat fuzzy matches: %+v", got)
+	}
+}
+
+func TestOwnerSessionFuzzyMatchUsesOnlyShortNameAndThreeRunes(t *testing.T) {
+	if ownerSessionFuzzyMatch("u1-prodops-2642", "de") {
+		t.Fatal("two-rune request participated in fuzzy matching")
+	}
+	if !ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "zzc") {
+		t.Fatal("documented short-name substring did not match")
+	}
+	if ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "264") {
+		t.Fatal("fuzzy matching inspected the full canonical session name")
+	}
+}
+
 func TestCrossMemberMentionRejectsNoDirectorySession(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
