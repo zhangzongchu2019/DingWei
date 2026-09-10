@@ -438,3 +438,51 @@ func TestAMRRoutedEnvelopeIsReliable(t *testing.T) {
 		t.Fatalf("AMR 路由信封被判为不可靠 —— 将退回直写无痕、离线即丢")
 	}
 }
+
+// G2-1 阳性对照(T-019):生产上 fragment_snapshot 若为 0,必须先证明该分支**能**计数,
+// 否则分不清「累计式不存在」与「累计式发生了但没被识别」—— 后者会让 AMR 的聚合逻辑
+// 建立在一个未经验证的假设上(P3:claudeDriver 跨帧文本是互斥还是累计)。
+//
+// 三分支同时断言,不只测 snapshot:只测一格无法证明分类器**分得开**,
+// 而"分得开"才是这批计数可用作占比结论的前提。
+func TestAMRFragmentBranchesAreDistinguishable(t *testing.T) {
+	p := testAMRProcessor()
+	frag := func() (a, s, d uint64) {
+		st, _ := p.snapshotStats()
+		return st.fragmentAppend, st.fragmentSnapshot, st.fragmentDuplicate
+	}
+	send := func(text string) {
+		p.ingest("key", "source", amrEventJSON(t, amrSessionEvent{
+			Kind: "assistant_text", Text: text, DeliveryID: "d-frag", TurnID: "t-frag"}))
+	}
+
+	send("abc") // 首帧:走 append
+	a1, s1, d1 := frag()
+	if a1 != 1 || s1 != 0 || d1 != 0 {
+		t.Fatalf("首帧应记 append: append=%d snapshot=%d dup=%d", a1, s1, d1)
+	}
+
+	send("abc") // 与已存全文相同:dup
+	a2, s2, d2 := frag()
+	if d2 != d1+1 || a2 != a1 || s2 != s1 {
+		t.Fatalf("重复帧应只增 dup: append=%d snapshot=%d dup=%d", a2, s2, d2)
+	}
+
+	send("abcdef") // 以已存全文为前缀且更长:snapshot(累计式)
+	a3, s3, d3 := frag()
+	if s3 != s2+1 || a3 != a2 || d3 != d2 {
+		t.Fatalf("前缀扩展帧应只增 snapshot: append=%d snapshot=%d dup=%d", a3, s3, d3)
+	}
+
+	send("xyz") // 既不相同也非前缀:append(互斥式)
+	a4, s4, d4 := frag()
+	if a4 != a3+1 || s4 != s3 || d4 != d3 {
+		t.Fatalf("互斥帧应只增 append: append=%d snapshot=%d dup=%d", a4, s4, d4)
+	}
+
+	// 结论性断言:三格各自都被触发过,分类器确实分得开。
+	// 生产上任一格为 0,即可解读为「该形态在真实流量中未发生」,而非「未被识别」。
+	if a4 == 0 || s4 == 0 || d4 == 0 {
+		t.Fatalf("三分支须各自至少触发一次才构成阳性对照: append=%d snapshot=%d dup=%d", a4, s4, d4)
+	}
+}
