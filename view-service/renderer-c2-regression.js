@@ -10,7 +10,13 @@ const RENDERER_FILE = process.env.RENDERER_FILE || 'renderer-c2.html';
 const HUB_V2_GOLDEN_FILE = process.env.HUB_V2_GOLDEN_FILE || 'hub-delivery-v2-golden.json';
 const SESSION = 'c2-test-2642';
 
-async function bootContext(browser, rendererBody, { interruptRouteHits, initScript, controlRouteHits, controlReply, servePath = '/renderer', apiRequestUrls } = {}) {
+// T-036 裁定(组长 2026-09-10):控制面契约**按鉴权模式分叉**,这是设计意图不是缺陷 ——
+// VS 与 renderer 两侧都有互斥模式门(V2 下 legacy 分支不可达)。
+// 夹具此前把 auth_mode 写死 view_page_v2,却让 C2.1d/C2.2a 断言 legacy 契约,
+// 于是这两格恒红,而**legacy 模式从未被任何一格覆盖**。
+// 后者才是真问题:renderer 与 VS 模式不一致时,本套件结构上看不见 —— 业主点中断得到的
+// HTTP 400 正是这个盲区漏出去的。故把模式提成参数,两个模式各自逐字断言(不是删断言)。
+async function bootContext(browser, rendererBody, { interruptRouteHits, initScript, controlRouteHits, controlReply, servePath = '/renderer', apiRequestUrls, authMode = 'view_page_v2' } = {}) {
   const context = await browser.newContext();
   if (initScript) await context.addInitScript(initScript);
   await context.route('http://renderer.test/**', async route => {
@@ -19,7 +25,7 @@ async function bootContext(browser, rendererBody, { interruptRouteHits, initScri
     if (path === servePath) return route.fulfill({ contentType: 'text/html', body: rendererBody });
     if (path === '/status' || path.endsWith('/status')) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({
-        session: SESSION, auth_mode: 'view_page_v2', readonly: false, state: 'idle',
+        session: SESSION, auth_mode: authMode, readonly: false, state: 'idle',
       }) });
     }
     if (path === '/events' || path.endsWith('/events')) return route.abort();
@@ -47,7 +53,14 @@ async function bootContext(browser, rendererBody, { interruptRouteHits, initScri
   });
   const page = await context.newPage();
   await page.goto('http://renderer.test' + servePath, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => pageIdentity?.page_id, null, { timeout: 8000 });
+  // 就绪判据必须随模式走:pageIdentity 只在 V2 下建立(ensurePageIdentity 由 authMode 门控),
+  // 在 legacy 下等它=必然超时。首次改造这里就踩了,报出来的是「legacy 也坏了」的假象 ——
+  // 自己的夹具没适配,不能算被验对象的缺陷。
+  // legacy 就绪判据取 stats.sessionName:它由 applyStatusData 从 /status 写入,
+  // 有值即证明 /status 已取回并应用(默认为空,不是恒真断言)。
+  await page.waitForFunction(
+    mode => (mode === 'view_page_v2' ? !!pageIdentity?.page_id : !!stats.sessionName),
+    authMode, { timeout: 8000 });
   return { context, page };
 }
 
@@ -124,9 +137,9 @@ async function main() {
     await context.close();
   });
 
-  await T('C2.1d 真接线(非 stub):默认 transport 真打 VS /control、字段逐字 {kind,message_id,delivery_id}→"取消已请求"', async () => {
+  await T('C2.1d[legacy] 真接线:默认 transport 真打 VS /control、字段逐字 {kind,message_id,delivery_id}→"取消已请求"', async () => {
     const hits = [];
-    const { context, page } = await bootContext(browser, rendererBody, { controlRouteHits: hits, controlReply: { ok: true } });
+    const { context, page } = await bootContext(browser, rendererBody, { controlRouteHits: hits, controlReply: { ok: true }, authMode: 'hub_viewer_v1' });
     await emit(page, inputPosted('m1', '要删的那条'));
     await page.locator('.waiting-cancel-btn').click();
     await waitNote(page, '取消已请求');
@@ -137,6 +150,25 @@ async function main() {
     assert.strictEqual(hits[0].message_id, 'm1', '字段 message_id 逐字(G-ADDR)');
     assert.strictEqual(hits[0].delivery_id, 'dlv-m1', '字段 delivery_id 逐字(G-ADDR)');
     assert.deepStrictEqual(Object.keys(hits[0]).sort(), ['delivery_id', 'kind', 'message_id'], '只带三字段、无多余');
+    await context.close();
+  });
+
+  // V2 对照:同一动作在 V2 模式下必须**恰好**多出三个凭证字段。
+  // 两格合起来才构成契约:legacy 恰好 3、V2 恰好 5。只测一边等于没测分叉。
+  await T('C2.1d-v2[V2] 同一动作在 V2 下字段逐字 {kind,message_id,delivery_id,page_id,page_token,request_id}', async () => {
+    const hits = [];
+    const { context, page } = await bootContext(browser, rendererBody, { controlRouteHits: hits, controlReply: { ok: true }, authMode: 'view_page_v2' });
+    await emit(page, inputPosted('m1', '要删的那条'));
+    await page.locator('.waiting-cancel-btn').click();
+    await waitNote(page, '取消已请求');
+    assert.strictEqual(hits.length, 1, 'V2 下同样真发了 1 次 POST /control');
+    assert.strictEqual(hits[0].kind, 'cancel');
+    assert.strictEqual(hits[0].message_id, 'm1');
+    assert.strictEqual(hits[0].delivery_id, 'dlv-m1');
+    assert.deepStrictEqual(Object.keys(hits[0]).sort(),
+      ['delivery_id', 'kind', 'message_id', 'page_id', 'page_token', 'request_id'],
+      'V2 恰好六字段:三寻址 + 三凭证,不多不少');
+    assert.ok(hits[0].page_id && hits[0].page_token, 'V2 凭证不得为空(空串=VS 400,应本地拦)');
     await context.close();
   });
 
@@ -317,9 +349,9 @@ async function main() {
   });
 
 
-  await T('C2.2a 点中断→立即"已请求中断";无 transport 时回退 legacy /interrupt(POST 200≠已发出)', async () => {
+  await T('C2.2a[legacy] 点中断→立即"已请求中断";无 transport 时回退 legacy /interrupt(POST 200≠已发出)', async () => {
     const hits = [];
-    const { context, page } = await bootContext(browser, rendererBody, { interruptRouteHits: hits });
+    const { context, page } = await bootContext(browser, rendererBody, { interruptRouteHits: hits, authMode: 'hub_viewer_v1' });
     await page.locator('#interruptBtn').click();
     await page.waitForSelector('.event-card:has-text("已请求中断")', { timeout: 5000 });
     const st = await page.evaluate(() => window.__c2.state.interrupt && window.__c2.state.interrupt.state);
