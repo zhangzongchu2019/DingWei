@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const assert = require('assert');
 
 const RENDERER_PATH = 'renderer-canary-sse.html';
-const EXPECTED_RENDERER_SHA256 = '1133b3d095ac2a8bc36f32a91c4f89945eaab83667ca3553618967d4116521a8';
+const EXPECTED_RENDERER_SHA256 = '7ac1c2cd400ad74d8c8b8a8610928a8cdfe24c3c062c8b4b098be49779c9a3b9';
 
 (async () => {
   const renderer = fs.readFileSync(RENDERER_PATH);
@@ -111,11 +111,15 @@ const EXPECTED_RENDERER_SHA256 = '1133b3d095ac2a8bc36f32a91c4f89945eaab83667ca35
     console.log(`G2 focus PASS: sha256=${EXPECTED_RENDERER_SHA256} statusRefreshes=${statusRequests} identityRefreshes=${resumeRequests} lockedResponses=${lockedResumeResponses} exactChars=${expected.length}`);
 
     await page.locator('#sendBtn').click();
-    await page.locator('.error').filter({ hasText: 'POST /input failed: HTTP 403' }).waitFor();
+    await page.locator('#toastRegion .toast').filter({ hasText: 'POST /input failed: HTTP 403' }).waitFor();
+    assert.strictEqual(await page.locator('#activityList > .activity-card.error').count(), 1,
+      'rejected input error was not retained in activity history');
+    assert.strictEqual(await page.locator('#workspaceDockBody').evaluate(node => node.hidden), true,
+      'error toast automatically expanded the activity dock');
     assert.strictEqual(inputRequests, 1, 'UI submission did not issue exactly one rejected input request');
     assert.strictEqual(await page.locator('#humanInput').inputValue(), expected,
       'rejected input was cleared instead of remaining available to the user');
-    console.log(`G2 UI 403 PASS: inputRequests=${inputRequests} visibleError=POST /input failed: HTTP 403`);
+    console.log(`G2 UI 403 PASS: inputRequests=${inputRequests} toastError=POST /input failed: HTTP 403 history=retained dock=collapsed`);
 
     await page.evaluate(() => applyStatusData({ auth_mode: 'view_page_v2', session_state: 'running' }));
     assert.strictEqual(await page.locator('#taskProgress').isVisible(), true,
