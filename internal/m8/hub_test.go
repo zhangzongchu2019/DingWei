@@ -2001,6 +2001,16 @@ func TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope(t *testing.T) {
 	if strings.Contains(skill.Body, "legacy 示例") {
 		t.Fatalf("上线指南仍把 legacy 写法当正例推荐,而它在 driver 模式下不可达:%s", skill.Body)
 	}
+	// T-050 第二轮:组长第一版把业主需求原文里的「中文至少 2 个汉字」直接抄进了指南,
+	// 而 amrTokenName = ^[A-Za-z0-9_.-]+$ 根本不认中文 —— 含中文的 @ 目标连候选都不产生,
+	// 是指南自己想劝阻的那种「静默无事发生」。由 prodops 按新席视角通读时查出。
+	// 本断言守住:指南必须**明说**中文暂不支持,不得再出现「中文至少」这类暗示可用的措辞。
+	if strings.Contains(skill.Body, "中文至少") {
+		t.Fatalf("上线指南又在暗示中文短名可用,而 amrTokenName 不认中文:%s", skill.Body)
+	}
+	if !strings.Contains(skill.Body, "中文短名暂不支持") {
+		t.Fatalf("上线指南须明说中文短名暂不支持,否则新席会照着走一条静默失败的路:%s", skill.Body)
+	}
 	if err := writeEnvelope(ctx, home, model.Envelope{
 		ID:   "skill-ack",
 		To:   "workpulse#" + key.ID,
