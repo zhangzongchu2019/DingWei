@@ -22,6 +22,7 @@ from sessionhelper.app import (
     contains_comm_skill_ack,
     is_broadcast_envelope,
     is_no_mirror_envelope,
+    is_client_onboarding_text,
     is_online_directory_text,
 )
 from sessionhelper.cli import (
@@ -2112,3 +2113,53 @@ class AMRRouteDeliveryTest(unittest.TestCase):
     def test_plain_message_delivered(self):
         self.assertFalse(is_no_mirror_envelope({"meta": {}}))
         self.assertFalse(is_no_mirror_envelope({}))
+
+
+class PortedDeployedFeaturesTest(unittest.TestCase):
+    """T-048 移植回归：这三处功能原本只存在于部署机器上、不在仓里，
+    正因为**没有任何测试守着**，它们才可能被一次覆盖悄悄抹掉。
+    补测试才是这类问题的真解 —— 移植只解决这一次。
+    """
+
+    def test_onboarding_text_recognized(self):
+        guide = ("DingWei 客户端上线指南\n生成时间（UTC）：2026-09-10T03:06:06Z\n"
+                 "……需要时你自己去读这个文件（sessionHelper 每分钟刷新，不会主动推给你）")
+        self.assertTrue(is_client_onboarding_text(guide))
+
+    def test_onboarding_predicate_does_not_overmatch(self):
+        # 反向对照：只测"认得出"不够，还要保证它不会把普通消息误判成指南而吞掉。
+        for text in ["", "请看 sessionHelper 每分钟刷新一次的那个清单",
+                     "DingWei 客户端上线指南这几个字出现在正文里但没有另一半特征"]:
+            with self.subTest(text=text[:20]):
+                self.assertFalse(is_client_onboarding_text(text))
+
+    def test_durable_path_skips_system_messages_without_cli_injection(self):
+        """离线补发路径必须跳过三类系统消息并回 processed ACK，不得入 inbox 注入 CLI。
+
+        这是 T-048 三处里最危险的一处：某席离线一段时间后上线，
+        补发会把在线清单/上线指南/skill 推送当正常内容灌进对话。
+        """
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        roster = "\n**********\n【DingWei在线清单】同账号在线AI会话\n1. #home\n**********\n"
+        guide = "DingWei 客户端上线指南\nsessionHelper 每分钟刷新"
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, body in (("roster", roster), ("onboarding", guide)):
+                with self.subTest(kind=name):
+                    helper = SessionHelper(load_config(dict(
+                        BASE_ENV, SH_MODE="cli", SH_INBOX_DB=str(Path(tmp) / f"{name}.db"))))
+                    ws = FakeWS()
+                    env = {"body": body, "meta": {"type": "delivery", "ack_required": True,
+                                                  "delivery_id": f"dlv_{name}"}}
+                    asyncio.run(helper.accept_delivery(ws, env))
+                    self.assertEqual(len(ws.sent), 1, "须回且仅回一条 ACK")
+                    self.assertEqual(ws.sent[0]["meta"]["state"], "processed",
+                                     "跳过的系统消息须回 processed，否则 Hub 会当失败重投")
+                    # 关键：没有进 inbox = 不会被 worker 注入 CLI
+                    self.assertEqual(helper.delivery_inbox.claim_next(), None,
+                                     f"{name} 不得进入 inbox（会被注入 CLI 对话）")

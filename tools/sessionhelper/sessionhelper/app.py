@@ -103,6 +103,17 @@ def is_online_directory_text(text: str) -> bool:
     return ("【DingWei在线清单】" in text or "【DingWei 在线清单】" in text) and "**********" in text
 
 
+def is_client_onboarding_text(text: str) -> bool:
+    """上线指南文本识别。移植自部署版(T-048)。
+
+    Hub 会在重连后重推《DingWei 客户端上线指南》。若不识别,它会作为普通正文
+    被注入 CLI 对话 —— 每次重连刷一遍。部署版有此函数、仓内版没有,
+    是 2026-09-10 T-048 逐行 diff 查出的三处「部署版独有、覆盖即丢」之一。
+    """
+    text = str(text or "")
+    return "DingWei 客户端上线指南" in text and "sessionHelper 每分钟刷新" in text
+
+
 def normalized_text(text: str) -> str:
     return " ".join(str(text or "").split())
 
@@ -410,8 +421,18 @@ class SessionHelper:
             if self.is_delivery_cancel(env):
                 await self.handle_delivery_cancel(ws, env)
                 continue
+            body = str(env.get("body") or "")
+            if is_online_directory_text(body):
+                self.write_online_list(body)
+                continue
+            if is_client_onboarding_text(body):
+                print("[onboarding] skipped cli injection for repeated client guide", flush=True)
+                continue
             from_addr = str(env.get("from") or "")
-            print(f"[recv] from={from_addr} to={env.get('to')} body={env.get('body')!r}", flush=True)
+            # 🔴 只记长度与来源,不记正文(组长 2026-09-10 在移植时收紧,超出部署版的 body[:500]):
+            # 消息正文可能含凭据,日志不是它该去的地方。部署版截断到 500 字已比仓内版的全文好,
+            # 但截断只缩小泄露量、不消除泄露面。排查所需的是「到没到、谁发的」,不是正文本身。
+            print(f"[recv] from={from_addr} to={env.get('to')} body_len={len(body)}", flush=True)
             if self.is_agent_network_skill(env):
                 if self.comm_skill_installed:
                     await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
@@ -578,6 +599,27 @@ class SessionHelper:
     async def accept_delivery(self, ws, env: dict) -> None:
         delivery_id = str((env.get("meta") or {}).get("delivery_id") or "").strip()
         if not delivery_id:
+            return
+        # 🔴 移植自部署版(T-048,三处「覆盖即丢」中最危险的一处):
+        # 离线补发路径此前没有这层跳过,某席离线一段时间后上线,补发会把
+        # 在线清单/上线指南/skill 推送当作正常内容**注入 CLI 对话**。
+        # recv_loop(实时路径)本来就有类似跳过,durable(补发路径)没有 —— 两条路径各走各的,
+        # 只在其中一条加保护是不够的。
+        body = str(env.get("body") or "")
+        if is_online_directory_text(body):
+            await asyncio.to_thread(self.write_online_list, body)
+            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
+            print(f"[roster] delivery list written; skipped cli injection delivery_id={delivery_id}", flush=True)
+            return
+        if is_client_onboarding_text(body):
+            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
+            print(f"[onboarding] skipped delivery cli injection delivery_id={delivery_id}", flush=True)
+            return
+        if self.is_agent_network_skill(env):
+            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed"), ensure_ascii=False))
+            if self.comm_skill_installed:
+                await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
+            print(f"[agent_skill] skipped delivery cli injection delivery_id={delivery_id}", flush=True)
             return
         try:
             retry_failed = False
