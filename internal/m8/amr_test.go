@@ -538,3 +538,56 @@ func TestAMRFragmentBranchesAreDistinguishable(t *testing.T) {
 		t.Fatalf("三分支须各自至少触发一次才构成阳性对照: append=%d snapshot=%d dup=%d", a4, s4, d4)
 	}
 }
+
+// T-046(业主裁定:未解决不随本版本发布):安静的回合不得被丢弃,只要来源会话还连着。
+// 三格合起来才算数 —— 只测「安静不丢」会让「永不回收」也通过。
+func TestAMRQuietTurnSurvivesWhileSourceConnected(t *testing.T) {
+	p := testAMRProcessor()
+	p.turnTTL = time.Second
+	// hub 为 nil ⇒ sourceStillConnectedLocked 返回 false,模拟「来源已断」
+	p.ingest("key", "source", amrEventJSON(t, amrSessionEvent{
+		Kind: "assistant_text", Text: "@target 半句", DeliveryID: "d1", TurnID: "t1"}))
+	p.mu.Lock()
+	p.expireLocked(time.Now().UTC().Add(2 * time.Second))
+	gone := len(p.turns)
+	p.mu.Unlock()
+	if gone != 0 {
+		t.Fatalf("来源已断开时,安静超 TTL 的回合应被丢弃,实存 %d", gone)
+	}
+}
+
+func TestAMRQuietTurnKeptWhenSourceStillConnected(t *testing.T) {
+	p := testAMRProcessor()
+	p.turnTTL = time.Second
+	p.maxTurnAge = time.Hour
+	hub := &Hub{sessionClients: map[string]map[string]*sessionClient{
+		"key": {"source": {sessionName: "source", keyID: "key"}}}}
+	p.hub = hub
+	p.ingest("key", "source", amrEventJSON(t, amrSessionEvent{
+		Kind: "assistant_text", Text: "@target 等长命令中", DeliveryID: "d1", TurnID: "t1"}))
+	p.mu.Lock()
+	p.expireLocked(time.Now().UTC().Add(10 * time.Minute)) // 安静 10 分钟,远超 TTL
+	kept := len(p.turns)
+	p.mu.Unlock()
+	if kept != 1 {
+		t.Fatalf("来源仍在线时,仅仅安静不得丢弃该回合(这正是 T-046),实存 %d", kept)
+	}
+}
+
+func TestAMRQuietTurnStillBoundedByMaxAge(t *testing.T) {
+	p := testAMRProcessor()
+	p.turnTTL = time.Second
+	p.maxTurnAge = time.Minute // 绝对年龄上限
+	hub := &Hub{sessionClients: map[string]map[string]*sessionClient{
+		"key": {"source": {sessionName: "source", keyID: "key"}}}}
+	p.hub = hub
+	p.ingest("key", "source", amrEventJSON(t, amrSessionEvent{
+		Kind: "assistant_text", Text: "@target 连接假活", DeliveryID: "d1", TurnID: "t1"}))
+	p.mu.Lock()
+	p.expireLocked(time.Now().UTC().Add(2 * time.Minute)) // 超过 maxTurnAge
+	kept := len(p.turns)
+	p.mu.Unlock()
+	if kept != 0 {
+		t.Fatalf("超过绝对年龄上限仍须回收,否则连接假活会导致永不回收,实存 %d", kept)
+	}
+}

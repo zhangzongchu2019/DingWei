@@ -47,6 +47,7 @@ type amrTurnKey struct {
 type amrTurn struct {
 	text      string
 	updated   time.Time
+	started   time.Time
 	ttl       time.Duration
 	observed  int
 	truncated bool
@@ -116,6 +117,7 @@ type amrProcessor struct {
 	modes         map[string]amrMode
 	stats         amrStats
 	maxTurns      int
+	maxTurnAge    time.Duration
 	maxBytes      int
 	routeBodyMax  int
 	maxCompleted  int
@@ -135,6 +137,7 @@ func newAMRProcessor(h *Hub) *amrProcessor {
 		notices:      map[string]time.Time{},
 		modes:        parseAMRSessionModes(os.Getenv("WP_AMR_OBSERVE_SESSIONS"), os.Getenv("WP_AMR_ROUTE_SESSIONS")),
 		maxTurns:     envInt("WP_AMR_MAX_TURNS_PER_SESSION", 16),
+		maxTurnAge:   envDuration("WP_AMR_MAX_TURN_AGE", 6*time.Hour),
 		maxBytes:     envInt("WP_AMR_MAX_TURN_BYTES", 256<<10),
 		routeBodyMax: amrRouteBodyMax,
 		maxCompleted: envInt("WP_AMR_MAX_COMPLETED_PER_SESSION", 64),
@@ -246,7 +249,7 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 			log.Printf("amr decision=failed reason=turn_capacity")
 			return
 		}
-		t = &amrTurn{updated: now, ttl: p.turnTTLFor(keyID, sessionName)}
+		t = &amrTurn{updated: now, started: now, ttl: p.turnTTLFor(keyID, sessionName)}
 		p.turns[key] = t
 		p.stats.opened++
 	}
@@ -461,9 +464,37 @@ func (p *amrProcessor) turnTTLFor(keyID, session string) time.Duration {
 	return p.turnTTL
 }
 
+// sourceStillConnectedLocked 报告该回合的来源会话此刻是否仍连着 Hub。
+// 调用方持 p.mu;此处再取 p.hub.mu —— 与 turnTTLFor 同一顺序(p.mu -> hub.mu),不引入新的加锁次序。
+func (p *amrProcessor) sourceStillConnectedLocked(key amrTurnKey) bool {
+	if p.hub == nil {
+		return false
+	}
+	p.hub.mu.Lock()
+	defer p.hub.mu.Unlock()
+	sessions := p.hub.sessionClients[key.KeyID]
+	return sessions != nil && sessions[key.Session] != nil
+}
+
 func (p *amrProcessor) expireLocked(now time.Time) {
 	for key, turn := range p.turns {
 		if now.Sub(turn.updated) > turn.ttl {
+			// 🔴 T-046(业主 2026-09-10:未解决就不随本版本发布):
+			// 原实现只看「安静了多久」。而 turn.updated 每收事件刷新,
+			// 一个正在等长命令/等外部响应/等人的回合天然会安静数分钟到数小时 ——
+			// 那是 CLI Agent 的常态,不是异常。按安静时长丢弃,等于把常态判成死亡:
+			// 该回合里的 @ 提及**永不派送**,发送方只在 TTL 后收到一条失败通知。
+			// prodops 实测当日出现 6 次;我们三席都是这种形态。
+			//
+			// TTL 原本的用途是防止死回合占内存。但内存已由另外两道独立机制兜住:
+			// 每会话 maxTurns(默认 16,含 evictOldestForSessionLocked)与每回合 maxBytes(默认 256KiB)。
+			// ⇒ 安静本身不再构成丢弃理由。只有两种情况才丢:
+			//   ① 来源会话已经断开 —— 该回合确实不会再有终态了
+			//   ② 超过绝对年龄上限 maxTurnAge(默认 6h)—— 兜底,防止连接假活导致永不回收
+			// 这样既保住了「长时间安静的回合仍能派送」,又没有把内存边界交给运气。
+			if p.sourceStillConnectedLocked(key) && now.Sub(turn.started) < p.maxTurnAge {
+				continue
+			}
 			delete(p.turns, key)
 			p.completed[key] = now
 			p.stats.incomplete++
