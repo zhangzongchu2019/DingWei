@@ -349,6 +349,29 @@ async function driveLongReply(page, chunks, chunkText) {
     }
     ok(`T6b (E⑤/D) c1InputCards/c1PendingUpdates${t6b.hasDlvIndex ? '/c1DeliveryCards' : '(本锚无 c1DeliveryCards,该子断言跳过)'} 随逐出收敛到 ${CAP}`);
 
+    // T6c:逐出路径清干净了,不代表重置路径也清干净 —— 两条路径各清各的索引,必须各测一次。
+    // 本格由 T-043 误报的诊断过程顺带带出:当时为查别的问题读 resetConversation,
+    // 发现它清了 c1InputCards/c1PendingUpdates 却漏了反向索引 c1DeliveryCards(实测残留 5 条)。
+    const t6c = await page.evaluate(() => {
+      resetConversation();
+      for (let i = 0; i < 5; i += 1) {
+        handleIncomingEvent({ kind: 'input_posted', text: `t${i}`, message_id: `rm-${i}`,
+          delivery_id: `rid-${i}`, stage: 'cli_injected', cursor: `${i}` });
+      }
+      const hasDlvIndex = typeof c1DeliveryCards !== 'undefined';
+      const before = { cards: c1InputCards.size, dlv: hasDlvIndex ? c1DeliveryCards.size : null };
+      resetConversation();
+      return { hasDlvIndex, before,
+        after: { cards: c1InputCards.size, dlv: hasDlvIndex ? c1DeliveryCards.size : null } };
+    });
+    assert.strictEqual(t6c.before.cards, 5, '前置:这 5 张必须真的建了卡,否则本格测的是空集');
+    assert.strictEqual(t6c.after.cards, 0, 'D: resetConversation 后 c1InputCards 应清空');
+    if (t6c.hasDlvIndex) {
+      assert.strictEqual(t6c.before.dlv, 5, '前置:反向索引必须真的建了 5 条');
+      assert.strictEqual(t6c.after.dlv, 0, 'D: resetConversation 后 c1DeliveryCards 不得留下悬挂键');
+    }
+    ok(`T6c (D) resetConversation 同样清空输入卡与反向索引${t6c.hasDlvIndex ? '' : '(本锚无反向索引)'}`);
+
     // ── T8 (E′) 流式 delta 必须全量拼接;重连不得重复 ──────────
     // 🔴 2026-08-29 P0:我原先按 cursor 去重,而 Codex 的流式 delta **整个 item 共用一个 cursor**
     //(375 片全是 turn:<id>:item:0003),于是首片之后的 374 片被当成重放丢弃 ——

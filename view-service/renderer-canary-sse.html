@@ -1448,6 +1448,10 @@
       cancelRenderFlush();
       c1InputCards.clear();
       c1PendingUpdates.clear();
+      // T-041 的第二处同类漏点(诊断 T-043 时顺带发现):c1DeliveryCards 是 deliveryId -> messageKey
+      // 的反向索引,键不是 messageId,上面两句清不到它 => 重置后仍留着指向已清空卡片的悬挂键。
+      // 实测重置前 dlv=5/cards=5,重置后 dlv=5/cards=0。与 releaseTimelineNode 处同源,一并清。
+      c1DeliveryCards.clear();
       stats.turns = 0;
       stats.cost = 0;
       stats.turnCost = 0;
