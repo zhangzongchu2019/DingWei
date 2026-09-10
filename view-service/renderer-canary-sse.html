@@ -1148,7 +1148,21 @@
       c2SendControl({ kind: 'interrupt' }).then(r => {
         if (!r.sent && c2State.interrupt === req && req.state === 'requested') {
           // 无传输:回退 legacy /interrupt 路由(基线路径),但确认语义不变——POST 200≠已发出,升级仍只认流上事件
-          interruptTurn().catch(err => handleIncomingEvent({ kind: 'error', text: err.message, data: { code: 'interrupt_failed' } }));
+          interruptTurn().catch(err => {
+            handleIncomingEvent({ kind: 'error', text: err.message, data: { code: 'interrupt_failed' } });
+            // 🔴 本地拦下、根本没发出去时,必须撤掉 pending —— 否则:
+            // ① C2_ACK_TIMEOUT_MS 后定时器会再打一张「中断未确认(无回执)」。
+            //    「未确认」的语义是"发出去了、没等到回执";而这里压根没发。
+            //    对同一次点击先说"没发出",再说"没收到回执",后半句是假话,
+            //    直接违反本套件一直守的 G-HONEST(永不谎报已发出)。
+            // ② 1138 行的防重复守卫会因 state 仍为 requested 而把接下来的点击**静默吞掉**,
+            //    用户以为按钮坏了。业主 2026-09-10 那次点击正是这两条同时发生:
+            //    先「中断未发出:无运行中 turn」(对),随后又来一张「中断未确认(无回执)」(错)。
+            if (c2State.interrupt === req) {
+              clearTimeout(req.timer);
+              c2State.interrupt = null;
+            }
+          });
         }
       });
     }

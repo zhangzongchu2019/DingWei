@@ -366,6 +366,33 @@ async function main() {
     await context.close();
   });
 
+  // 业主 2026-09-10 实测暴露:V2 下无运行中 turn 时,interruptTurn() 本地抛错、根本没发出,
+  // 但 pending 未撤 => 超时后又打一张「中断未确认(无回执)」。对同一次点击先说"没发出"再说"没收到回执",
+  // 后半句是假话,违反 G-HONEST;且防重复守卫会把随后的点击静默吞掉。
+  await T('C2.2f[V2] 本地拦下(无运行中 turn)→只报未发出,不得再报"未确认",且不锁死后续点击', async () => {
+    // ACK 超时窗必须用 initScript 在**加载前**注入:该常量在脚本加载时求值,加载后再设 window 无效。
+    const { context, page } = await bootContext(browser, rendererBody, {
+      authMode: 'view_page_v2', initScript: () => { window.C2_ACK_TIMEOUT_MS = 300; },
+    });
+    await page.locator('#interruptBtn').click();
+    // 注:kind=error 在含 dock 的锚上渲成 #activityList 的 .activity-card(不是时间线 .event-card),
+    // 且另出一条 toast。故在**卡片容器集合**内按文本找,不绑定单一容器 —— 容器归属是迭代2 的事,
+    // 本格测的是文案诚实性。
+    // ⚠️ 不可用 document.body.textContent:renderer 是单文件 HTML,内联 <script> 在 body 内,
+    //    其源码含「中断未确认(无回执)」字面量,会让断言恒真。首版正是这样误判的。
+    const cardText = () => page.evaluate(() =>
+      [...document.querySelectorAll('.event-card,.activity-card,.toast')].map(n => n.textContent).join('\n'));
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('.event-card,.activity-card,.toast')]
+        .some(n => n.textContent.includes('中断未发出')), null, { timeout: 5000 });
+    await page.waitForTimeout(700);  // 超过 ACK 超时窗
+    assert.ok(!(await cardText()).includes('中断未确认'),
+      '本地拦下从未发出,不得再报「中断未确认(无回执)」(G-HONEST)');
+    assert.strictEqual(await page.evaluate(() => window.__c2.state.interrupt), null,
+      'pending 必须已撤,否则防重复守卫会吞掉后续点击');
+    await context.close();
+  });
+
   await T('C2.2b 流上 control 事件→升级"中断已发出"+pending 清空', async () => {
     const { context, page } = await bootContext(browser, rendererBody);
     await page.locator('#interruptBtn').click();
@@ -377,8 +404,12 @@ async function main() {
     await context.close();
   });
 
-  await T('C2.2c 超时无回执→"中断未确认(无回执)"(永不谎报已发出)', async () => {
+  // 改到 legacy(T-045 同批):本格自称测「发出去了但没等到回执」。而在 V2 夹具下没有运行中 turn,
+  // interruptTurn() 会本地抛错、**根本没发出**,此前它却仍打出「未确认」—— 本格是靠那个缺陷才通过的。
+  // legacy 下 interruptTurn 无 body 直发、fixture 回 200,pending 留存到超时,才是它真正要测的路径。
+  await T('C2.2c[legacy] 超时无回执→"中断未确认(无回执)"(永不谎报已发出)', async () => {
     const { context, page } = await bootContext(browser, rendererBody, {
+      authMode: 'hub_viewer_v1', interruptRouteHits: [],
       initScript: () => { window.C2_ACK_TIMEOUT_MS = 300; },
     });
     await page.locator('#interruptBtn').click();
