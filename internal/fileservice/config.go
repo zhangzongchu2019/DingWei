@@ -11,8 +11,14 @@ import (
 )
 
 const (
-	defaultMaxFileBytes = 16 << 20
-	defaultQuotaBytes   = int64(500) << 30
+	KiB = int64(1 << 10)
+	MiB = int64(1 << 20)
+	GiB = int64(1 << 30)
+
+	LongTextThreshold   = 4 * KiB
+	LongTextMaxBytes    = 8 * MiB
+	defaultMaxFileBytes = 16 * MiB
+	defaultQuotaBytes   = 500 * GiB
 )
 
 type Config struct {
