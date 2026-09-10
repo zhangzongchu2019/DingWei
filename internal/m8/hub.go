@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/coder/websocket"
 
@@ -124,6 +125,7 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
+	helperReady    bool
 	deviceID       string
 	deviceIDV1     bool
 }
@@ -781,6 +783,10 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	nameWarn := sessionNameRequestWarning(requestedSessionName, keyID, ownerKey)
+	if agentHandshakeEnforced() && nameWarn != "" {
+		http.Error(w, nameWarn, http.StatusBadRequest)
+		return
+	}
 	switch sessionNameEnforceMode() {
 	case "enforce":
 		if nameWarn != "" {
@@ -1002,6 +1008,14 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		}
 		if env.Meta == nil {
 			env.Meta = map[string]any{}
+		}
+		if agentHandshakeEnforced() && sessionEnvelopeRequiresHelperReady(env) && !sessionHelperReady(c) {
+			// M2 is a protocol admission hurdle, not trusted identity. A client
+			// holding the shared API secret can imitate session_capabilities.
+			// Strong helper identity requires a separately provisioned device key.
+			log.Printf("session content rejected reason=helper_capabilities_required key_id=%s session=%s conn_seq=%d", c.keyID, c.sessionName, c.connSeq)
+			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "当前连接尚未完成 sessionHelper capabilities 握手"))
+			continue
 		}
 		// Reserved attestation fields are never accepted from a session. The
 		// authenticated WS admission below derives the canonical agent channel.
@@ -1904,7 +1918,8 @@ func (h *Hub) resolveOwnerSessionByShort(ctx context.Context, ownerKey, requeste
 		}
 		return online[i].sessionName < online[j].sessionName
 	})
-	var shortMatches []candidate
+	var exactMatches []candidate
+	var fuzzyMatches []candidate
 	for _, item := range online {
 		if h.ownerKeyForKey(ctx, item.keyID) != ownerKey {
 			continue
@@ -1912,24 +1927,38 @@ func (h *Hub) resolveOwnerSessionByShort(ctx context.Context, ownerKey, requeste
 		if hintKey != "" && item.keyID == hintKey && (item.sessionName == requested || ownerSessionAliasMatch(ownerKey, item.sessionName, requested)) {
 			return ownerSessionResolveResult{keyID: item.keyID, sessionName: item.sessionName, status: ownerSessionUniqueHit}
 		}
-		if item.sessionName == requested {
-			return ownerSessionResolveResult{keyID: item.keyID, sessionName: item.sessionName, status: ownerSessionUniqueHit}
+		if item.sessionName == requested || ownerSessionAliasMatch(ownerKey, item.sessionName, requested) {
+			exactMatches = append(exactMatches, item)
+			continue
 		}
-		if ownerSessionAliasMatch(ownerKey, item.sessionName, requested) {
-			shortMatches = append(shortMatches, item)
+		if ownerSessionFuzzyMatch(item.sessionName, requested) {
+			fuzzyMatches = append(fuzzyMatches, item)
 		}
 	}
-	if len(shortMatches) == 0 {
+	matches := exactMatches
+	if len(matches) == 0 {
+		matches = fuzzyMatches
+	}
+	if len(matches) == 0 {
 		return ownerSessionResolveResult{status: ownerSessionNoMatch}
 	}
-	if len(shortMatches) == 1 {
-		return ownerSessionResolveResult{keyID: shortMatches[0].keyID, sessionName: shortMatches[0].sessionName, status: ownerSessionUniqueHit}
+	if len(matches) == 1 {
+		return ownerSessionResolveResult{keyID: matches[0].keyID, sessionName: matches[0].sessionName, status: ownerSessionUniqueHit}
 	}
-	names := make([]string, 0, len(shortMatches))
-	for _, item := range shortMatches {
+	names := make([]string, 0, len(matches))
+	for _, item := range matches {
 		names = append(names, item.sessionName)
 	}
 	return ownerSessionResolveResult{status: ownerSessionAmbiguous, candidates: names}
+}
+
+func ownerSessionFuzzyMatch(sessionName, requested string) bool {
+	requested = strings.TrimSpace(requested)
+	if utf8.RuneCountInString(requested) < 3 {
+		return false
+	}
+	short := shortSessionName(sessionName)
+	return short != "" && strings.Contains(short, requested)
 }
 
 func ownerSessionAliasMatch(ownerKey, sessionName, requested string) bool {
@@ -3282,6 +3311,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	}
 	c.stateMu.Lock()
 	wasDeliveryACKV1 := c.deliveryACKV1
+	c.helperReady = true
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
 	c.stateMu.Unlock()
 	if h.Repo != nil {
@@ -3297,6 +3327,29 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 		go h.drainSessionDeliveries(context.Background(), c)
 	}
 	return true
+}
+
+func sessionHelperReady(c *sessionClient) bool {
+	if c == nil {
+		return false
+	}
+	c.stateMu.Lock()
+	defer c.stateMu.Unlock()
+	return c.helperReady
+}
+
+func sessionEnvelopeRequiresHelperReady(env model.Envelope) bool {
+	typeName := strings.ToLower(strings.TrimSpace(metaString(env.Meta, "type")))
+	return typeName == "" || typeName == "content" || typeName == "agent_route"
+}
+
+func agentHandshakeEnforced() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("WP_AGENT_HANDSHAKE_ENFORCE"))) {
+	case "1", "true", "yes", "on", "enforce":
+		return true
+	default:
+		return false
+	}
 }
 
 func (h *Hub) releaseSessionDeliveryLeases(c *sessionClient, reason string) {

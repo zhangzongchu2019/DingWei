@@ -380,7 +380,7 @@
       .waiting-item::before { animation: none; }
       .task-progress::before { animation-duration: 2.2s; }
     }
-    .event-card {
+    .message-card, .activity-card {
       flex: 0 0 auto;      /* 关键:不被 flex 压缩,事件保持原高 → 溢出由 timeline 滚动,而不是压扁内容 */
       display: block;
       width: 100%;
@@ -391,6 +391,68 @@
       border-radius: 8px;
       box-shadow: var(--shadow);
       overflow: visible;
+    }
+    .workspace-dock {
+      flex: 0 0 auto;
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .workspace-dock-toggle, .dock-section-title {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 750;
+      text-align: left;
+    }
+    .workspace-dock-toggle::before { content: '▸'; transition: transform .15s ease; }
+    .workspace-dock-toggle[aria-expanded="true"]::before { transform: rotate(90deg); }
+    .workspace-dock-label { flex: 1; }
+    .dock-unread {
+      min-width: 20px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      text-align: center;
+    }
+    .dock-unread[hidden] { display: none; }
+    .workspace-dock-body { max-height: min(32vh, 260px); overflow-y: auto; border-top: 1px solid var(--line); }
+    .workspace-dock-body[hidden] { display: none; }
+    .dock-section + .dock-section { border-top: 1px solid var(--line); }
+    .dock-section-title { cursor: default; color: var(--muted); font-size: 12px; }
+    .dock-section-list { display: grid; gap: 8px; padding: 0 10px 10px; }
+    .activity-card { box-shadow: none; background: var(--panel-2); }
+    .toast-region {
+      position: fixed;
+      z-index: 100;
+      top: 14px;
+      right: 14px;
+      display: grid;
+      gap: 8px;
+      width: min(420px, calc(100vw - 28px));
+      pointer-events: none;
+    }
+    .toast {
+      padding: 10px 12px;
+      border: 1px solid color-mix(in srgb, var(--danger) 55%, var(--line));
+      border-radius: 8px;
+      background: var(--danger-bg);
+      color: var(--danger);
+      box-shadow: var(--shadow);
+      overflow-wrap: anywhere;
     }
     .turn-group {
       flex: 0 0 auto;
@@ -607,9 +669,9 @@
     .turn-msg { font-size: 15px; min-width: 0; max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
     .turn-tool { min-width: 0; max-width: 100%; }
     /* 你的输入回显:与 AI 输出区分(accent 边+底色) */
-    .event-card.user { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 8%, var(--panel)); }
-    .event-card.user .event-body { font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .event-card.user .event-meta { color: var(--accent); }
+    .message-card.user { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 8%, var(--panel)); }
+    .message-card.user .event-body { font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .message-card.user .event-meta { color: var(--accent); }
     .composer {
       position: sticky;
       bottom: 0;
@@ -816,7 +878,7 @@
 
     @media (max-width: 860px) {
       .main { padding: 10px; }
-      .event-card { display: block; }
+      .message-card, .activity-card { display: block; }
       .topbar { align-items: flex-start; flex-direction: column; }
       .lock-panel { justify-content: flex-start; }
       .lock-help { white-space: normal; }
@@ -845,7 +907,19 @@
       <section class="waiting-area" id="waitingArea" aria-label="等待接纳的消息" aria-live="polite" hidden>
         <div id="waitingList"></div>
       </section>
+      <section class="workspace-dock" id="workspaceDock" aria-label="辅助面板">
+        <button class="workspace-dock-toggle" id="workspaceDockToggle" type="button" aria-expanded="false" aria-controls="workspaceDockBody">
+          <span class="workspace-dock-label">辅助面板</span><span class="dock-unread" id="workspaceDockUnread" hidden>0</span>
+        </button>
+        <div class="workspace-dock-body" id="workspaceDockBody" hidden>
+          <section class="dock-section" data-dock-section="activity" aria-labelledby="activitySectionTitle">
+            <div class="dock-section-title" id="activitySectionTitle"><span>运行动态</span></div>
+            <div class="dock-section-list" id="activityList" role="log" aria-live="polite"></div>
+          </section>
+        </div>
+      </section>
     </main>
+    <div class="toast-region" id="toastRegion" aria-live="assertive" aria-atomic="true"></div>
 
     <footer class="composer">
       <div class="statusbar" aria-label="Session status">
@@ -882,6 +956,10 @@
     const timeline = document.getElementById('timeline');
     const waitingArea = document.getElementById('waitingArea');
     const waitingList = document.getElementById('waitingList');
+    const workspaceDockToggle = document.getElementById('workspaceDockToggle');
+    const workspaceDockBody = document.getElementById('workspaceDockBody');
+    const workspaceDockUnread = document.getElementById('workspaceDockUnread');
+    const toastRegion = document.getElementById('toastRegion');
     const themeBtn = document.getElementById('themeBtn');
     const reconnectBtn = document.getElementById('reconnectBtn');
     const streamAlert = document.getElementById('streamAlert');
@@ -1377,6 +1455,11 @@
       timeline.textContent = '';
       waitingList.textContent = '';
       waitingArea.hidden = true;
+      for (const section of dockSections.values()) section.list.textContent = '';
+      toastRegion.textContent = '';
+      dockUnreadCount = 0;
+      updateDockUnread();
+      setDockExpanded(false);
       beginTimelineReplay();
       scrollTimelineToBottom();
       updateMetrics();
@@ -2099,9 +2182,63 @@
       ].filter(Boolean);
     }
 
-    function baseCard(ev, cls = '') {
+    // Generic dock shell: future sections (for example files) register one
+    // list and reuse the same collapse/unread mechanics.
+    const dockSections = new Map();
+    let dockUnreadCount = 0;
+
+    function registerDockSection(id) {
+      const root = document.querySelector(`[data-dock-section="${id}"]`);
+      const list = root?.querySelector('.dock-section-list');
+      if (!root || !list) throw new Error(`missing dock section: ${id}`);
+      dockSections.set(id, { root, list });
+    }
+
+    function updateDockUnread() {
+      workspaceDockUnread.textContent = String(dockUnreadCount);
+      workspaceDockUnread.hidden = dockUnreadCount === 0;
+    }
+
+    function setDockExpanded(expanded) {
+      workspaceDockToggle.setAttribute('aria-expanded', String(expanded));
+      workspaceDockBody.hidden = !expanded;
+      if (expanded) {
+        dockUnreadCount = 0;
+        updateDockUnread();
+      }
+    }
+
+    workspaceDockToggle.addEventListener('click', () => {
+      setDockExpanded(workspaceDockToggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    function appendDockCard(sectionID, card) {
+      const section = dockSections.get(sectionID);
+      if (!section) throw new Error(`unregistered dock section: ${sectionID}`);
+      section.list.appendChild(card);
+      while (section.list.children.length > 500) section.list.removeChild(section.list.firstChild);
+      if (workspaceDockBody.hidden && !replayInProgress) {
+        dockUnreadCount++;
+        updateDockUnread();
+      }
+    }
+
+    function showErrorToast(text) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.setAttribute('role', 'alert');
+      toast.textContent = text || 'Unknown error';
+      toastRegion.appendChild(toast);
+      while (toastRegion.children.length > 3) toastRegion.removeChild(toastRegion.firstChild);
+      setTimeout(() => toast.remove(), 6000);
+    }
+
+    registerDockSection('activity');
+    setDockExpanded(false);
+
+    function baseCard(ev, cls = '', cardClass = 'message-card') {
       const card = document.createElement('article');
-      card.className = `event-card ${cls}`.trim();
+      card.className = `${cardClass} ${cls}`.trim();
       const body = document.createElement('div');
       body.className = 'event-body';
       const meta = document.createElement('span');
@@ -2122,7 +2259,8 @@
 
     // 业主08-05定:tool_call/state_change 独立事件卡不上时间线(与会话卡重复,状态已有待提交区/状态栏)。
     // 只挡"独立卡"出口:turn-group 数据入组、完成判定、状态栏/成本副作用均不受影响;
-    // state_change 本就不产卡(renderState 仅副作用),入集合为对齐口径。error/input_posted 卡保留。
+    // state_change 本就不产卡(renderState 仅副作用),入集合为对齐口径。input_posted 留在正文;
+    // 无 turn 的 error/control/unknown 进入正文外的辅助面板。
     const HIDDEN_TIMELINE_CARD_KINDS = new Set(['tool_call', 'state_change']);
 
     function renderEvent(ev) {
@@ -2389,7 +2527,7 @@
 
     // control 消息按系统事件渲染:v0.6 只表达「已发起/已发出」,绝不假称「已终止/真停」(真停挂 v0.7#20)
     function renderControlNote(ev) {
-      const { card, content } = baseCard(ev, 'system');
+      const { card, content } = baseCard(ev, 'system', 'activity-card');
       const kind = String(ev.control?.kind || ev.control_kind || '').toLowerCase();
       const text = {
         cancel: '已请求终止',
@@ -2397,7 +2535,7 @@
       }[kind] || '控制消息已下发';
       const detail = ev.text || ev._norm?.text || '';
       content.textContent = detail ? `${text}:${detail}` : text;
-      timeline.appendChild(card);
+      appendDockCard('activity', card);
     }
 
     function renderUser(ev) {
@@ -2590,16 +2728,18 @@
     }
 
     function renderError(ev) {
-      const { card, content } = baseCard(ev, 'error');
-      content.innerHTML = `${escapeHtml(ev.text || 'Unknown error')}<div class="subtitle">${escapeHtml(ev.data?.code || '')}</div>`;
-      timeline.appendChild(card);
+      const text = ev.text || 'Unknown error';
+      const { card, content } = baseCard(ev, 'error', 'activity-card');
+      content.innerHTML = `${escapeHtml(text)}<div class="subtitle">${escapeHtml(ev.data?.code || '')}</div>`;
+      appendDockCard('activity', card);
+      if (!replayInProgress) showErrorToast(text);
     }
 
     function renderUnknown(ev) {
-      const { card, content } = baseCard(ev);
+      const { card, content } = baseCard(ev, 'system', 'activity-card');
       content.appendChild(document.createTextNode(JSON.stringify(ev, null, 2)));
       mergeMetaIntoFirstBlock(content, content.firstChild);
-      timeline.appendChild(card);
+      appendDockCard('activity', card);
     }
 
     function renderMarkdown(src) {

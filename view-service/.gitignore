@@ -2,3 +2,6 @@ view-state.json
 .view-state-*
 __pycache__/
 *.pyc
+node_modules/
+package.json
+package-lock.json

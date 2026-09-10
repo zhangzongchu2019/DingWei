@@ -66,7 +66,10 @@ const controlEv = (ctlKind, text, extra = {}) => ({
 
 const waitingItems = page => page.locator('.waiting-item');
 const notes = (page, text) => page.locator(`.c2-note:has-text("${text}")`);
-const controlNotes = (page, text) => page.locator(`.event-card:has-text("${text}")`);
+const controlNotes = (page, text) => page.locator(`#activityList > .activity-card:has-text("${text}")`);
+const waitActivity = (page, text) => page.waitForFunction(
+  t => [...document.querySelectorAll('#activityList > .activity-card')].some(card => card.textContent.includes(t)),
+  text, { timeout: 5000 });
 // 等最终 note(跳过中间态"取消请求中…")
 const waitNote = (page, text) => page.waitForFunction(
   t => [...document.querySelectorAll('.c2-note')].some(n => n.textContent.includes(t)), text, { timeout: 8000 });
@@ -212,7 +215,7 @@ async function main() {
     await emit(page, goldenEvent('copy_agent'));
     await page.waitForTimeout(400);
     assert.strictEqual(await waitingItems(page).count(), 0, 'route_observation copy 绝不进 waiting');
-    const card = page.locator('.event-card[data-message-id="m-copy"]');
+    const card = page.locator('.message-card[data-message-id="m-copy"]');
     assert.strictEqual(await card.count(), 1, 'copy 显示为卡');
     const cardText = await card.textContent();
     assert.ok(cardText.includes('Agent·source'), '徽标显示');
@@ -226,7 +229,7 @@ async function main() {
     await page.waitForSelector('.waiting-item', { timeout: 5000 });
     await emit(page, goldenEvent('cli_injected'));
     await page.waitForFunction(() => document.querySelectorAll('.waiting-item').length === 0, null, { timeout: 5000 });
-    assert.strictEqual(await page.locator('.event-card[data-message-id="m-primary"]').count(), 1, '注入后建时间线卡');
+    assert.strictEqual(await page.locator('.message-card[data-message-id="m-primary"]').count(), 1, '注入后建时间线卡');
     await context.close();
   });
 
@@ -261,7 +264,7 @@ async function main() {
     delete bad.message_id;
     await emit(page, bad);
     await page.waitForTimeout(300);
-    const cards = await page.locator('.event-card').allTextContents();
+    const cards = await page.locator('.activity-card').allTextContents();
     assert.ok(cards.some(t => t.includes('消息格式异常') && t.includes('v2_missing_message_id')),
       'v2 U5 fail-closed 可观测');
     assert.strictEqual(await page.locator('.source-badge--trusted').count(), 0, 'conflict 徽标关');
@@ -274,7 +277,7 @@ async function main() {
     delete legacy.schema_version;
     await emit(page, legacy);
     await page.waitForTimeout(300);
-    const cards = await page.locator('.event-card').allTextContents();
+    const cards = await page.locator('.activity-card').allTextContents();
     assert.ok(!cards.some(t => t.includes('v2_missing_message_id')), '无版本不触发 v2 专属 conflict');
     await context.close();
   });
@@ -321,22 +324,22 @@ async function main() {
     const hits = [];
     const { context, page } = await bootContext(browser, rendererBody, { interruptRouteHits: hits });
     await page.locator('#interruptBtn').click();
-    await page.waitForSelector('.event-card:has-text("已请求中断")', { timeout: 5000 });
+    await waitActivity(page, '已请求中断');
     const st = await page.evaluate(() => window.__c2.state.interrupt && window.__c2.state.interrupt.state);
     assert.strictEqual(st, 'requested', 'pending 状态=requested');
     await page.waitForFunction(() => true, null, { timeout: 200 }); // 让回退 fetch 发出
     await page.waitForTimeout(300);
     assert.ok(hits.length >= 1, '无 transport 回退 legacy POST /interrupt');
-    assert.strictEqual(await page.locator('.event-card:has-text("中断已发出")').count(), 0, 'POST 200 不升级已发出(G-HONEST)');
+    assert.strictEqual(await page.locator('.activity-card:has-text("中断已发出")').count(), 0, 'POST 200 不升级已发出(G-HONEST)');
     await context.close();
   });
 
   await T('C2.2b 流上 control 事件→升级"中断已发出"+pending 清空', async () => {
     const { context, page } = await bootContext(browser, rendererBody);
     await page.locator('#interruptBtn').click();
-    await page.waitForSelector('.event-card:has-text("已请求中断")', { timeout: 5000 });
+    await waitActivity(page, '已请求中断');
     await emit(page, controlEv('interrupt'));
-    await page.waitForSelector('.event-card:has-text("中断已发出")', { timeout: 5000 });
+    await waitActivity(page, '中断已发出');
     const st = await page.evaluate(() => window.__c2.state.interrupt);
     assert.strictEqual(st, null, 'pending 已清空(回执到达)');
     await context.close();
@@ -347,8 +350,8 @@ async function main() {
       initScript: () => { window.C2_ACK_TIMEOUT_MS = 300; },
     });
     await page.locator('#interruptBtn').click();
-    await page.waitForSelector('.event-card:has-text("中断未确认(无回执)")', { timeout: 5000 });
-    assert.strictEqual(await page.locator('.event-card:has-text("中断已发出")').count(), 0, '无回执绝不显示已发出');
+    await waitActivity(page, '中断未确认(无回执)');
+    assert.strictEqual(await page.locator('.activity-card:has-text("中断已发出")').count(), 0, '无回执绝不显示已发出');
     await context.close();
   });
 
@@ -358,7 +361,7 @@ async function main() {
     await page.locator('#interruptBtn').click();
     await page.locator('#interruptBtn').click();
     await page.waitForTimeout(300);
-    assert.strictEqual(await page.locator('.event-card:has-text("已请求中断")').count(), 1, '只有一条已请求');
+    assert.strictEqual(await page.locator('.activity-card:has-text("已请求中断")').count(), 1, '只有一条已请求');
     const n = await page.evaluate(() => window.__c2Sent.length);
     assert.strictEqual(n, 1, 'transport 只发 1 条 interrupt');
     await context.close();

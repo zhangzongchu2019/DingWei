@@ -2088,6 +2088,97 @@ func TestFeishuShortSessionSelectorResolvesRegisteredNameByOwner(t *testing.T) {
 	assertNoEnvelope(t, ctx, u2Dev, 120*time.Millisecond)
 }
 
+func TestM2HelperHandshakeGateRejectsOneShotContentAndAllowsCapableConnection(t *testing.T) {
+	t.Setenv("WP_AGENT_HANDSHAKE_ENFORCE", "true")
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-m2", Name: "svc-m2", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "owner", DisplayName: "Owner", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-m2", "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "owner"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	source := dialSession(t, ctx, srv.URL, "source", key.ID, secret)
+	defer source.Close(websocket.StatusNormalClosure, "done")
+	target := dialSession(t, ctx, srv.URL, "target", key.ID, secret)
+	defer target.Close(websocket.StatusNormalClosure, "done")
+
+	if err := writeEnvelope(ctx, source, model.Envelope{ID: "blocked", To: "#target", Body: "must not route"}); err != nil {
+		t.Fatal(err)
+	}
+	for {
+		got := readEnvelope(t, ctx, source)
+		if metaBool(got.Meta, "error") {
+			if got.ID != "blocked" || !strings.Contains(got.Body, "capabilities") {
+				t.Fatalf("gate error=%+v", got)
+			}
+			break
+		}
+	}
+	if err := writeEnvelope(ctx, source, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, source, model.Envelope{ID: "allowed", To: "#target", Body: "route after capabilities"}); err != nil {
+		t.Fatal(err)
+	}
+	for {
+		got := readEnvelope(t, ctx, target)
+		if got.ID == "blocked" {
+			t.Fatalf("pre-capabilities content reached target: %+v", got)
+		}
+		if got.ID == "allowed" {
+			if got.Body != "route after capabilities" {
+				t.Fatalf("routed envelope=%+v", got)
+			}
+			break
+		}
+	}
+
+	body := dialSessionErrorBody(t, ctx, srv.URL, "bad_name", key.ID, secret)
+	if !strings.Contains(body, "会话名不合规") {
+		t.Fatalf("invalid session name was not rejected: %q", body)
+	}
+}
+
+func TestM2HelperHandshakeGateScopeIsOnlyContentAndAgentRoute(t *testing.T) {
+	for _, tc := range []struct {
+		typeName string
+		want     bool
+	}{
+		{typeName: "", want: true},
+		{typeName: "content", want: true},
+		{typeName: "agent_route", want: true},
+		{typeName: "session_capabilities", want: false},
+		{typeName: "delivery_ack", want: false},
+		{typeName: "session_event", want: false},
+		{typeName: "terminal_output", want: false},
+	} {
+		env := model.Envelope{Meta: map[string]any{"type": tc.typeName}}
+		if got := sessionEnvelopeRequiresHelperReady(env); got != tc.want {
+			t.Fatalf("type=%q got=%t want=%t", tc.typeName, got, tc.want)
+		}
+	}
+	c := &sessionClient{}
+	if sessionHelperReady(c) {
+		t.Fatal("new connection unexpectedly helper-ready")
+	}
+	(&Hub{}).handleSessionCapability(c, model.Envelope{Meta: map[string]any{"type": "session_capabilities"}})
+	if !sessionHelperReady(c) {
+		t.Fatal("capabilities did not mark current connection helper-ready")
+	}
+}
+
 func TestShortSessionSelectorRejectsAmbiguousOwnerMatch(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
@@ -2138,6 +2229,89 @@ func TestShortSessionSelectorRejectsAmbiguousOwnerMatch(t *testing.T) {
 	}
 	assertNoEnvelope(t, ctx, firstDev, 120*time.Millisecond)
 	assertNoEnvelope(t, ctx, secondDev, 120*time.Millisecond)
+}
+
+func TestResolveOwnerSessionFuzzyMatchKeepsExactPriorityAndOwnerBoundary(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-fuzzy", Name: "svc-fuzzy", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, owner := range []string{"u1", "u2"} {
+		if err := db.UpsertMember(ctx, model.Member{OwnerKey: owner, DisplayName: owner, Active: true}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	newKey := func(owner, label string) model.ServiceAPIKey {
+		t.Helper()
+		_, key, err := hub.IssueAPIKey(ctx, "svc-fuzzy", label)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := hub.BindAccount(ctx, key.ID, owner); err != nil {
+			t.Fatal(err)
+		}
+		return key
+	}
+	prodKey := newKey("u1", "prod")
+	ts3Key := newKey("u1", "ts3")
+	opsKey := newKey("u1", "exact")
+	otherKey := newKey("u2", "other")
+	prodName := "u1-prodops-" + keyTail(prodKey.ID)
+	ts3Name := "u1-ts3pocops-" + keyTail(ts3Key.ID)
+	opsName := "u1-ops-" + keyTail(opsKey.ID)
+	otherName := "u2-prodops-" + keyTail(otherKey.ID)
+	hub.mu.Lock()
+	hub.sessionClients[prodKey.ID] = map[string]*sessionClient{prodName: {keyID: prodKey.ID, sessionName: prodName}}
+	hub.sessionClients[otherKey.ID] = map[string]*sessionClient{otherName: {keyID: otherKey.ID, sessionName: otherName}}
+	hub.mu.Unlock()
+
+	for _, requested := range []string{"prodops", "ops"} {
+		got := hub.resolveOwnerSessionByShort(ctx, "u1", requested, "")
+		if got.status != ownerSessionUniqueHit || got.sessionName != prodName {
+			t.Fatalf("requested=%q result=%+v", requested, got)
+		}
+	}
+	if got := hub.resolveOwnerSessionByShort(ctx, "u1", "de", ""); got.status != ownerSessionNoMatch {
+		t.Fatalf("two-rune fuzzy request matched: %+v", got)
+	}
+	if got := hub.resolveOwnerSessionByShort(ctx, "u1", "prodops", otherKey.ID); got.sessionName != prodName {
+		t.Fatalf("cross-owner hint escaped owner boundary: %+v", got)
+	}
+
+	hub.mu.Lock()
+	hub.sessionClients[ts3Key.ID] = map[string]*sessionClient{ts3Name: {keyID: ts3Key.ID, sessionName: ts3Name}}
+	hub.mu.Unlock()
+	got := hub.resolveOwnerSessionByShort(ctx, "u1", "ops", "")
+	if got.status != ownerSessionAmbiguous || !slices.Contains(got.candidates, prodName) || !slices.Contains(got.candidates, ts3Name) {
+		t.Fatalf("fuzzy ambiguity result=%+v", got)
+	}
+	if hinted := hub.resolveOwnerSessionByShort(ctx, "u1", "ops", prodKey.ID); hinted.status != ownerSessionAmbiguous {
+		t.Fatalf("hint key bypassed fuzzy ambiguity: %+v", hinted)
+	}
+	err := ambiguousSessionError("ops", got.candidates)
+	if !strings.Contains(err.Error(), prodName) || !strings.Contains(err.Error(), ts3Name) {
+		t.Fatalf("ambiguity error=%q", err)
+	}
+
+	hub.mu.Lock()
+	hub.sessionClients[opsKey.ID] = map[string]*sessionClient{opsName: {keyID: opsKey.ID, sessionName: opsName}}
+	hub.mu.Unlock()
+	got = hub.resolveOwnerSessionByShort(ctx, "u1", "ops", "")
+	if got.status != ownerSessionUniqueHit || got.sessionName != opsName {
+		t.Fatalf("exact match did not beat fuzzy matches: %+v", got)
+	}
+}
+
+func TestOwnerSessionFuzzyMatchUsesOnlyShortNameAndThreeRunes(t *testing.T) {
+	if ownerSessionFuzzyMatch("u1-prodops-2642", "de") {
+		t.Fatal("two-rune request participated in fuzzy matching")
+	}
+	if !ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "zzc") {
+		t.Fatal("documented short-name substring did not match")
+	}
+	if ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "264") {
+		t.Fatal("fuzzy matching inspected the full canonical session name")
+	}
 }
 
 func TestCrossMemberMentionRejectsNoDirectorySession(t *testing.T) {

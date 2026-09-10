@@ -39,6 +39,27 @@ class RendererIter2ContractTest(unittest.TestCase):
                 self.assertIn("document.activeElement === humanInput", text)
                 self.assertIn("copyUnlockBtn.textContent !== '复制解锁指令'", text)
 
+    def test_activity_uses_extensible_dock_outside_conversation_timeline(self):
+        text = (ROOT / "renderer-canary-sse.html").read_text()
+        self.assertIn('class="workspace-dock"', text)
+        self.assertIn('data-dock-section="activity"', text)
+        self.assertIn("function registerDockSection(id)", text)
+        self.assertIn("function appendDockCard(sectionID, card)", text)
+        self.assertIn("registerDockSection('activity')", text)
+        self.assertIn("appendDockCard('activity', card)", text)
+        self.assertNotIn('className = `event-card ${cls}`', text)
+
+    def test_error_toast_does_not_expand_dock_and_history_is_retained(self):
+        text = (ROOT / "renderer-canary-sse.html").read_text()
+        self.assertIn("function showErrorToast(text)", text)
+        self.assertIn("appendDockCard('activity', card);\n      if (!replayInProgress) showErrorToast(text);", text)
+        self.assertIn("setDockExpanded(false);", text)
+
+    def test_view_only_change_keeps_event_transport_out_of_scope(self):
+        text = (ROOT / "renderer-canary-sse.html").read_text()
+        self.assertIn("function handleIncomingEvent(ev)", text)
+        self.assertIn("function renderTurnEvent(turnKey, ev)", text)
+
 
 if __name__ == "__main__":
     unittest.main()

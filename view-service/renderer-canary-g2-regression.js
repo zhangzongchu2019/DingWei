@@ -115,11 +115,15 @@ const PIN_RENDERER_SHA256 = process.env.EXPECTED_RENDERER_SHA256 || '';
     console.log(`G2 focus PASS: sha256=${rendererSha} statusRefreshes=${statusRequests} identityRefreshes=${resumeRequests} lockedResponses=${lockedResumeResponses} exactChars=${expected.length}`);
 
     await page.locator('#sendBtn').click();
-    await page.locator('.error').filter({ hasText: 'POST /input failed: HTTP 403' }).waitFor();
+    await page.locator('#toastRegion .toast').filter({ hasText: 'POST /input failed: HTTP 403' }).waitFor();
+    assert.strictEqual(await page.locator('#activityList > .activity-card.error').count(), 1,
+      'rejected input error was not retained in activity history');
+    assert.strictEqual(await page.locator('#workspaceDockBody').evaluate(node => node.hidden), true,
+      'error toast automatically expanded the activity dock');
     assert.strictEqual(inputRequests, 1, 'UI submission did not issue exactly one rejected input request');
     assert.strictEqual(await page.locator('#humanInput').inputValue(), expected,
       'rejected input was cleared instead of remaining available to the user');
-    console.log(`G2 UI 403 PASS: inputRequests=${inputRequests} visibleError=POST /input failed: HTTP 403`);
+    console.log(`G2 UI 403 PASS: inputRequests=${inputRequests} toastError=POST /input failed: HTTP 403 history=retained dock=collapsed`);
 
     await page.evaluate(() => applyStatusData({ auth_mode: 'view_page_v2', session_state: 'running' }));
     assert.strictEqual(await page.locator('#taskProgress').isVisible(), true,

@@ -117,7 +117,7 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-can
         ].forEach(handleIncomingEvent);
       });
       assert.strictEqual(await page.locator('#timeline > .turn-group').count(), 1);
-      assert.strictEqual(await page.locator('#timeline > .event-card').count(), 0);
+      assert.strictEqual(await page.locator('#timeline > .activity-card').count(), 0);
       const group = page.locator('#timeline > .turn-group');
       const tools = group.locator('.turn-tools');
       assert.strictEqual(await tools.getAttribute('open'), null);
@@ -151,6 +151,18 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-can
         'event-body turn-section turn-assistant',
         'turn-completed',
       ]);
+      await page.evaluate(() => {
+        finishTimelineReplay(false);
+        handleIncomingEvent({ kind: 'error', text: '独立错误进入运行动态', data: { code: 'iter2_probe' }, cursor: '51' });
+      });
+      assert.strictEqual(await page.locator('#timeline > .activity-card').count(), 0, '正文区不得出现运行动态卡');
+      assert.strictEqual(await page.locator('#activityList > .activity-card').count(), 1, '错误留在运行动态历史');
+      assert.strictEqual(await page.locator('#workspaceDockBody').evaluate(node => node.hidden), true, '错误不自动展开面板');
+      assert.strictEqual(await page.locator('#workspaceDockUnread').innerText(), '1', '折叠时累积未读');
+      assert.strictEqual(await page.locator('#toastRegion .toast:has-text("独立错误进入运行动态")').count(), 1, '错误只作独立 toast 提醒');
+      await page.locator('#workspaceDockToggle').click();
+      assert.strictEqual(await page.locator('#workspaceDockBody').evaluate(node => node.hidden), false, '用户可主动展开面板');
+      assert.strictEqual(await page.locator('#workspaceDockUnread').evaluate(node => node.hidden), true, '展开后清除未读');
       await page.evaluate(() => {
         resetConversation();
         for (let i = 0; i < 30; i += 1) {

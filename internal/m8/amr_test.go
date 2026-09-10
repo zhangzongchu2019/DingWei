@@ -131,12 +131,12 @@ func TestAMRTerminalSuccessIsFailClosed(t *testing.T) {
 		data map[string]any
 		want bool
 	}{
-		{name: "missing outcome", data: map[string]any{}},
+		{name: "missing outcome", data: map[string]any{}, want: false},
 		{name: "claude success", data: map[string]any{"subtype": "success"}, want: true},
 		{name: "completed", data: map[string]any{"status": "completed"}, want: true},
-		{name: "claude interrupted subtype", data: map[string]any{"subtype": "error_during_execution"}},
-		{name: "explicit error", data: map[string]any{"is_error": true}},
-		{name: "unknown status", data: map[string]any{"status": "future_state"}},
+		{name: "claude interrupted subtype", data: map[string]any{"subtype": "error_during_execution"}, want: false},
+		{name: "explicit error", data: map[string]any{"is_error": true}, want: false},
+		{name: "unknown status", data: map[string]any{"status": "future_state"}, want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
