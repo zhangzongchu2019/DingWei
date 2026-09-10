@@ -427,6 +427,16 @@
     .turn-tool-item { min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow: hidden; }
     .turn-tool-head { display: flex; align-items: baseline; gap: 12px; padding: 9px 11px; min-width: 0; }
     .turn-tool-item pre { margin: 0; border-radius: 0; }
+    /* G:超长正文折叠条 */
+    .longtext-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px;
+      padding: 8px 10px; border: 1px dashed var(--line); border-radius: 8px; background: var(--panel-2); }
+    .longtext-note { color: var(--muted); font-size: 12px; flex: 1 1 auto; min-width: 180px; }
+    .longtext-bar button { font: inherit; font-size: 12px; padding: 3px 10px; cursor: pointer;
+      border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: inherit; }
+    .longtext-bar button:hover { background: var(--panel-2); }
+    .longtext-fade { position: relative; }
+    .longtext-fade::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 40px;
+      pointer-events: none; background: linear-gradient(to bottom, transparent, var(--panel)); }
     .turn-completed { padding: 6px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; text-align: right; }
     .turn-error { color: var(--danger); background: var(--danger-bg); font-weight: 600; }
     .event-meta {
@@ -919,6 +929,28 @@
     const messageBuffers = new Map();
     const messageNodes = new Map();
     const turnGroups = new Map();
+    // ── View 长文本卡死 hotfix(A 节流 / B·C 上限 / D 缓存回收)──
+    // 症状:7964 字契约文本使页面假死。根因=每个 SSE chunk 都触发一次全量 rebuildTurn +
+    // renderMarkdown(整段历史文本),单回合 N 个 chunk ⇒ 近平方级重建。
+    // B/C:时间线承载的「完整消息卡/回合卡」上限(不是 SSE chunk 数)。
+    // 200 是**业主硬约束**(「始终最新 200 条」),不是性能取舍项。
+    // 我曾据"200 与 500 只差 +486ms"把它改成 500,那是把硬约束当成了可优化的建议 —— 已按令改回。
+    // 性能上 200/500 都不是闸门(真闸门是 H 的渲染死循环与 A 的每 chunk 全量重渲),
+    // 故这里取 200 不带来任何性能代价;要改必须先改约束,不能由执笔按"技术最优"自决。
+    const TIMELINE_MAX_CARDS = 200;
+    // ── G:超长正文文件化 ───────────────────────────────────────
+    // 业主定的方向:长文本本该落文件、直接读文件,不该在 View 页内联全量展示。
+    // 超过阈值的回合正文**不再整段进 markdown**,只内联渲染开头一段摘要,
+    // 其余通过[打开全文](Blob 新标签页)/[下载 .md]/[复制全文]取用 —— 正文一个字不丢。
+    // 关键不变量:**内联渲染看到的字符数上界 = 摘要长度,与正文总长无关** ⇒ 渲染成本与长度解耦。
+    // 这是治本的一层:A(节流)压的是频次、E(去重)断的是增长源、G 断的是"长度→成本"这条因果。
+    const LONGTEXT_THRESHOLD = (typeof window !== 'undefined' && window.DW_LONGTEXT_THRESHOLD) || 4000;
+    const LONGTEXT_EXCERPT = (typeof window !== 'undefined' && window.DW_LONGTEXT_EXCERPT) || 1200;
+    const RENDER_THROTTLE_MS = 80;       // A:重渲合并窗口(要求区间 50~100ms)
+    const assistantEntries = new Map();  // messageKey -> 渲染记录(非 turn 分组的流式助手卡)
+    const pendingRenders = new Set();    // 待重渲的 turn group / assistant 记录
+    let renderFlushTimer = null;
+    let renderFlushFrame = null;
     const waitingDeliveries = new Map();
     // ── C2 control 地基(待提交区删除 + 中断确认)──
     // 传输层:默认真接 VS POST /control(仅 kind=cancel;VS 恒 200 {"ok":bool},ok=false=未受理/已注入/终态);
@@ -1072,6 +1104,15 @@
       }
     }
     setInterval(c2MarkStaleWaiting, 30000);
+    // 渲染节流的测试/排障钩子:flush() 把待渲队列同步排空,供回归断言取确定态。
+    window.__dwRender = {
+      flush: () => flushPendingRenders(),
+      pending: () => pendingRenders.size,
+      throttleMs: () => RENDER_THROTTLE_MS,
+      maxCards: () => TIMELINE_MAX_CARDS,
+      longtextThreshold: () => LONGTEXT_THRESHOLD,
+      longtextExcerpt: () => LONGTEXT_EXCERPT,
+    };
     window.__c2 = {
       setTransport(t) { window.C2_CONTROL_TRANSPORT = t; },
       requestCancel: c2RequestCancel,
@@ -1257,6 +1298,11 @@
     }
     function finishTimelineReplay(forceBottom = true) {
       if (!replayInProgress) return;
+      // A:历史重放按 turn 合并后,收尾统一终渲一次。
+      // 必须排在 replayInProgress=false 之前 —— 终渲会让回合卡增高,
+      // ResizeObserver 的补滚判据是 (replayInProgress || timelineAtBottom),
+      // 先清标志会让这批增高落在判据之外,回放收尾停在半空。
+      flushPendingRenders();
       replayInProgress = false;
       clearTimeout(replayQuietTimer);
       clearTimeout(replayHardTimer);
@@ -1318,6 +1364,12 @@
       messageNodes.clear();
       turnGroups.clear();
       waitingDeliveries.clear();
+      // D:重置会话时一并清渲染队列与输入卡索引,否则这些 Map 指向已被 textContent='' 摘掉的游离节点
+      assistantEntries.clear();
+      pendingRenders.clear();
+      cancelRenderFlush();
+      c1InputCards.clear();
+      c1PendingUpdates.clear();
       stats.turns = 0;
       stats.cost = 0;
       stats.turnCost = 0;
@@ -1781,7 +1833,59 @@
       }
     }
 
+    // ── B/C/D:时间线承载上限 ────────────────────────────────────
+    // B 旧实现只在 handleIncomingEvent 的**最后一个**分支裁剪,delivery_update / 待提交区转入 /
+    //   echo 归并等分支全部提前 return,绕过上限;这里改为在唯一入口的出口处统一裁剪,任何分支都绕不过。
+    //   初始回放、实时新消息、重连补放同样只经此一个入口(SSE onmessage),故一处即全覆盖。
+    // C 计数对象=timeline 的直接子元素,即一张完整消息卡或一个回合卡;长回复不论多少 chunk 都只占 1。
+    // D 逐出节点时同步清掉指向它的全部索引缓存(旧实现只清 turnGroups,其余 Map 只增不减)。
+    function releaseTimelineNode(node) {
+      const ds = (node && node.dataset) || {};
+      if (ds.turnKey) {
+        const group = turnGroups.get(ds.turnKey);
+        if (group) { group.detached = true; pendingRenders.delete(group); }
+        turnGroups.delete(ds.turnKey);
+      }
+      if (ds.messageKey) {
+        const entry = assistantEntries.get(ds.messageKey);
+        if (entry) { entry.detached = true; pendingRenders.delete(entry); }
+        assistantEntries.delete(ds.messageKey);
+        messageNodes.delete(ds.messageKey);
+        messageBuffers.delete(ds.messageKey);
+      }
+      if (ds.messageId) {
+        c1InputCards.delete(ds.messageId);
+        c1PendingUpdates.delete(ds.messageId);
+        // 三方合并暴露(T-041):c1DeliveryCards 是 deliveryId -> messageKey 的**反向**索引,
+        // 键不是 messageId,故上面两句删不到它 —— 只增不减,与 D 条(逐出即清空全部指向该节点的索引)相悖。
+        // ⚠️ 合并前此处原注称「主线有那段回收循环,随 forward-port 补回」;实测四份副本无一存在该循环,
+        //    该说法不成立。不要据注释断言另一版本的内容(与今日部署制品三来源拼装同类)。
+        // 按值回收:表已收敛到 CAP 量级,每次逐出一次线性扫描的代价可忽略;
+        // 不给它单设上限——那正是产生本 bug 的结构(索引自成一套生命周期),复制它只会再漏一次。
+        for (const [dlvId, mappedKey] of c1DeliveryCards) {
+          if (mappedKey === ds.messageId) c1DeliveryCards.delete(dlvId);
+        }
+      }
+    }
+
+    function enforceTimelineCap() {
+      while (timeline.children.length > TIMELINE_MAX_CARDS) {
+        const oldest = timeline.firstElementChild;
+        if (!oldest) break;
+        releaseTimelineNode(oldest);
+        timeline.removeChild(oldest);
+      }
+    }
+
     function handleIncomingEvent(ev) {
+      try {
+        return dispatchIncomingEvent(ev);
+      } finally {
+        enforceTimelineCap();
+      }
+    }
+
+    function dispatchIncomingEvent(ev) {
       ev = normalizeEvent(ev);
       c2TrackTurn(ev);  // 中断目标:运行中 turn 跟踪(turn_completed 清除)
       if (ev._norm.conflict) {
@@ -1864,12 +1968,6 @@
       admitWaitingDelivery(ev);
       renderEvent(ev);
       rendered += 1;
-      // 事件窗口最多承载 500 个回合组/兼容卡片,超出丢弃最旧的。
-      while (timeline.children.length > 500) {
-        const oldest = timeline.firstChild;
-        if (oldest?.dataset?.turnKey) turnGroups.delete(oldest.dataset.turnKey);
-        timeline.removeChild(oldest);
-      }
       updateMetrics();
       if (shouldFollow) scheduleTimelineToBottom();
     }
@@ -2061,6 +2159,26 @@
       return `<span class="event-meta">${provenanceIconHtml(ev._norm || {})}${tl ? `<span class="event-type">${escapeHtml(tl)}</span>` : ''}${sl ? `<span class="event-sent">${escapeHtml(sl)}</span>` : ''}${eventTimeHtml(ev)}${diag.length ? `<details class="event-diag"><summary title="诊断" aria-label="诊断"><span class="diag-icon" aria-hidden="true">i</span></summary><span class="event-diag-list">${diag.map(([k, v]) => `<code>${escapeHtml(k)} ${escapeHtml(v)}</code>`).join('')}</span></details>` : ''}</span>`;
     }
 
+    // ── E(已按 P0 令重做):重放幂等**不再靠 cursor 去重** ────────
+    // 🔴 2026-08-29 P0:我原先假设 cursor 是"每事件唯一",据此对 assistant_text 做 seen 去重。
+    // 该假设是错的 —— Codex 的流式 delta **整个 item 共用同一个 cursor**
+    // (如 375 片全是 `turn:<turnId>:item:0003`,只有 data.params.delta 不同),
+    // 于是第一片进 seen 之后其余 374 片被当成重放丢弃,页面只剩首片 + 一个假的「✓ 回合完成」。
+    // 这正是我给自己定过的红线的反面:**去重的代价只能是"多渲一次",绝不能是"少一段内容"**,
+    // 而我把它踩了 —— 因为我只验证了"重复事件不再累加",没有验证"不同内容会不会被误判成重复"。
+    //
+    // 新口径(业主令):**在服务端给出 per-delta 唯一序号(event_seq / SSE id)之前,
+    // 任何按 cursor 的去重都不得作用于流式内容。** 这里索性把 cursor 去重整体拆掉,
+    // 只保留一种幂等机制(见 markStreamReconnect):重连时先清空再由 ring 重放重建。
+    // 一种机制比两种更难出错,且它的失败模式是"重建一次"而不是"丢正文"。
+    // 现网每次 SSE 重连(网络抖动 / VS 重启 / 休眠唤醒 / 后台标签页被断流)之后,
+    // hub 都会重放 ring 里的同一批事件;而追加路径此前**没有任何去重**——
+    // 同一回合的正文每重放一次就再追加一遍(实测 60→120→180→240 字线性增长),
+    // group.events 同步无界增长,使每次 rebuildTurn 的 filter/map/join 与 markdown 都越来越贵,
+    // 最终表现为「同一个答案吐出两份 → 页面越来越卡 → 卡死」,极端情况下正文长度会撞上
+    // V8 的字符串上限抛 RangeError(Invalid string length),此后该回合再也渲染不出来。
+    // 节流只降渲染**频次**,治不了内容**无界增长**,故必须在追加入口做幂等。
+    //
     function renderTurnEvent(turnKey, ev) {
       let group = turnGroups.get(turnKey);
       if (!group) {
@@ -2069,15 +2187,105 @@
         node.dataset.turnKey = turnKey;
         node.setAttribute('aria-label', `Turn ${turnKey}`);
         timeline.appendChild(node);
-        group = { node, events: [] };
+        group = { node, events: [], kind: 'turn', dirty: false, sorted: true, lastRender: 0, detached: false };
         turnGroups.set(turnKey, group);
       }
-      group.events.push(ev);
-      group.events.sort(compareCursor);
-      rebuildTurn(group);
+      group.events.push(ev);   // 不做 cursor 去重:同一 item 的多片 delta 共用 cursor,去重会吞正文
+      group.sorted = false;
+      // turn_completed 强制终渲:终态文案与 renderState 的状态栏/成本副作用不可被节流推迟
+      const completed = ev.kind === 'state_change' && ev.data && ev.data.change === 'turn_completed';
+      scheduleRender(group, completed);
+    }
+
+    // ── A:渲染节流 ─────────────────────────────────────────────
+    // 同一 turn / 同一助手消息的重渲合并进 RENDER_THROTTLE_MS 窗口。
+    // 前沿即时渲染:窗口空闲时第一条事件同步出画,保住「消息一到就看得见」的手感,
+    //   也让「一条事件 → 立刻可断言 DOM」的既有同步语义对孤立事件保持不变。
+    // 窗口内后续 chunk 只置脏,由尾帧一次性重渲;turn_completed 与回放收尾强制终渲。
+    function cancelRenderFlush() {
+      if (renderFlushTimer !== null) { clearTimeout(renderFlushTimer); renderFlushTimer = null; }
+      if (renderFlushFrame !== null) { cancelAnimationFrame(renderFlushFrame); renderFlushFrame = null; }
+    }
+
+    function renderPendingEntry(entry) {
+      entry.dirty = false;
+      entry.lastRender = Date.now();
+      if (entry.kind === 'assistant') renderAssistantBody(entry);
+      else rebuildTurn(entry);
+    }
+
+    function flushPendingRenders() {
+      cancelRenderFlush();
+      if (!pendingRenders.size) return;
+      // 跟随态必须在本次批量重渲**之前**取样:重渲会让回合卡增高,
+      // 浏览器的滚动锚定(overflow-anchor)随即挪动 scrollTop 并派发一次 scroll 事件,
+      // 而既有 scroll 处理器把「不在底部的 scroll」判为用户上翻 → 永久交还跟随权,页面停在半空。
+      // 取样后在同一批里补到底,scroll 事件落地时已在底部,判据自然不成立(不改既有启发式)。
+      const wasFollowing = replayInProgress || timelineAtBottom;
+      const due = Array.from(pendingRenders);
+      pendingRenders.clear();
+      for (const entry of due) {
+        if (entry.detached) continue;   // 已被上限逐出:不重渲,也不让它复活
+        // F:单个条目渲染抛错不得连累同批其余条目 —— 它们已被移出 pendingRenders,
+        // 一旦异常冒泡就再也没有人来渲染它们,表现为「页面从此不再更新 / 刷新也刷不出来」。
+        // 这里逐条兜住并把错误显式记到控制台(fail-loud,不静默),其余条目照常渲染。
+        try {
+          renderPendingEntry(entry);
+        } catch (err) {
+          console.error('[render] 条目重渲失败,已跳过该条,不影响同批其余条目:', err);
+        }
+      }
+      if (wasFollowing) scrollTimelineToBottom();
+    }
+
+    function scheduleRenderFlush() {
+      if (renderFlushTimer !== null || renderFlushFrame !== null) return;
+      renderFlushTimer = setTimeout(() => {
+        renderFlushTimer = null;
+        // 再对齐一次 rAF,避免与浏览器排版抢帧;定时器已先兜住节流窗口,
+        // 故页面不可见(rAF 不触发)时也不会把内容永久压在队列里 —— 下次可见的首帧或强制终渲会补上。
+        if (typeof requestAnimationFrame !== 'function') return flushPendingRenders();
+        renderFlushFrame = requestAnimationFrame(() => { renderFlushFrame = null; flushPendingRenders(); });
+      }, RENDER_THROTTLE_MS);
+    }
+
+    function scheduleRender(entry, force = false) {
+      if (entry.detached) { pendingRenders.delete(entry); return; }
+      entry.dirty = true;
+      if (force || (Date.now() - (entry.lastRender || 0)) >= RENDER_THROTTLE_MS) {
+        pendingRenders.delete(entry);
+        renderPendingEntry(entry);
+        return;
+      }
+      pendingRenders.add(entry);
+      scheduleRenderFlush();
+    }
+
+    // 只数长度,不拼串(整段 join 会在每次重渲时分配一份完整正文,长文本下这本身就是开销)
+    function eventsTextLength(evs) {
+      let n = 0;
+      for (const ev of evs) n += (ev.text || '').length;
+      return n;
+    }
+    // 取前 max 字的摘要;在行边界截断,避免把一行 markdown 从中间劈开
+    function eventsTextPrefix(evs, max) {
+      let out = '';
+      for (const ev of evs) {
+        out += ev.text || '';
+        if (out.length >= max) break;
+      }
+      if (out.length <= max) return out;
+      const cut = out.slice(0, max);
+      const nl = cut.lastIndexOf('\n');
+      return nl > max * 0.5 ? cut.slice(0, nl) : cut;
+    }
+    function eventsTextFull(evs) {
+      return evs.map(ev => ev.text || '').join('');
     }
 
     function rebuildTurn(group) {
+      // 排序也从「每 chunk 一次」挪到重渲时一次:旧实现 O(N) 次 sort ⇒ O(N² log N)
+      if (!group.sorted) { group.events.sort(compareCursor); group.sorted = true; }
       const users = group.events.filter(ev => ev.kind === 'user_input');
       const tools = group.events.filter(ev => ev.kind === 'tool_call');
       const assistants = group.events.filter(ev => ev.kind === 'assistant_text');
@@ -2096,8 +2304,25 @@
         html += `<details class="turn-tools"><summary><span>🔧 ${tools.length} 次工具调用</span></summary><div class="turn-tools-list">${tools.map(renderTurnTool).join('')}</div></details>`;
       }
       if (assistants.length) {
-        const text = assistants.map(ev => ev.text || '').join('');
-        html += `<section class="event-body turn-section turn-assistant">${eventMetaHtml(assistants[0])}<span class="event-content">${renderMarkdown(text)}</span></section>`;
+        const total = eventsTextLength(assistants);
+        if (total > LONGTEXT_THRESHOLD) {
+          // G:超长 ⇒ 只渲染摘要 + 文件化入口。内联 markdown 的输入被摘要长度封顶。
+          const excerpt = eventsTextPrefix(assistants, LONGTEXT_EXCERPT);
+          const note = completed
+            ? `全文 ${total.toLocaleString()} 字,已折叠(仅显示开头 ${excerpt.length.toLocaleString()} 字)`
+            : `接收中…已收 ${total.toLocaleString()} 字,已折叠(仅显示开头 ${excerpt.length.toLocaleString()} 字)`;
+          html += `<section class="event-body turn-section turn-assistant longtext">${eventMetaHtml(assistants[0])}` +
+            `<span class="event-content longtext-fade">${renderMarkdown(excerpt)}</span>` +
+            `<div class="longtext-bar" role="group" aria-label="长正文操作">` +
+            `<span class="longtext-note">📄 ${escapeHtml(note)}</span>` +
+            `<button type="button" data-longtext="open">打开全文</button>` +
+            `<button type="button" data-longtext="download">下载 .md</button>` +
+            `<button type="button" data-longtext="copy">复制全文</button>` +
+            `</div></section>`;
+        } else {
+          const text = eventsTextFull(assistants);
+          html += `<section class="event-body turn-section turn-assistant">${eventMetaHtml(assistants[0])}<span class="event-content">${renderMarkdown(text)}</span></section>`;
+        }
       }
       for (const ev of errors) {
         html += `<section class="event-body turn-section turn-error">${eventMetaHtml(ev)}<span class="event-content">${escapeHtml(ev.text || 'Unknown error')}</span></section>`;
@@ -2114,7 +2339,45 @@
         wireCopyButtons(content);
       });
       group.node.querySelectorAll('.turn-tool-item').forEach(wireCopyButtons);
+      wireLongtextBar(group);
       if (completed) renderState(completed);
+    }
+
+    // G:入口条接线。全文在点击那一刻才从 group.events 现拼 —— 既保证拿到的是最新内容,
+    // 也保证流式期间完全不为"可能没人点"的全文付出任何成本。
+    function wireLongtextBar(group) {
+      const bar = group.node.querySelector('.longtext-bar');
+      if (!bar) return;
+      const fullText = () => eventsTextFull(group.events.filter(ev => ev.kind === 'assistant_text'));
+      const fileName = `dingwei-${String(group.node.dataset.turnKey || 'turn').replace(/[^\w.-]/g, '_')}.md`;
+      const withBlobUrl = (fn) => {
+        const url = URL.createObjectURL(new Blob([fullText()], { type: 'text/markdown;charset=utf-8' }));
+        try { fn(url); } finally { setTimeout(() => URL.revokeObjectURL(url), 60000); }
+      };
+      bar.querySelectorAll('button[data-longtext]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const kind = btn.dataset.longtext;
+          const label = btn.textContent;
+          const flash = (t) => { btn.textContent = t; setTimeout(() => { btn.textContent = label; }, 1200); };
+          if (kind === 'copy') {
+            try { await navigator.clipboard.writeText(fullText()); flash('已复制'); }
+            catch { flash('复制失败'); }   // 诚实回显失败,不假称成功
+            return;
+          }
+          if (kind === 'download') {
+            withBlobUrl(url => {
+              const a = document.createElement('a');
+              a.href = url; a.download = fileName;
+              document.body.appendChild(a); a.click(); a.remove();
+            });
+            return;
+          }
+          withBlobUrl(url => {
+            // 新标签页打开;被拦截时不静默,退回下载
+            if (!window.open(url, '_blank', 'noopener')) flash('被拦截');
+          });
+        });
+      });
     }
 
     function renderTurnTool(ev) {
@@ -2189,13 +2452,25 @@
       let body = messageNodes.get(k);
       if (!body) {
         const { card, content } = baseCard(ev, `assistant ${ev.delivery_id?.startsWith('ext-') ? 'external' : ''}`);
+        card.dataset.messageKey = k;   // D:逐出时按此反查,清 messageNodes/messageBuffers/assistantEntries
         timeline.appendChild(card);
         body = content;
         messageNodes.set(k, body);
         messageBuffers.set(k, '');
       }
-      messageBuffers.set(k, (messageBuffers.get(k) || '') + (ev.text || ''));
-      body.innerHTML = renderMarkdown(messageBuffers.get(k));
+      let entry = assistantEntries.get(k);
+      if (!entry) {
+        entry = { kind: 'assistant', key: k, dirty: false, lastRender: 0, detached: false };
+        assistantEntries.set(k, entry);
+      }
+      messageBuffers.set(k, (messageBuffers.get(k) || '') + (ev.text || ''));   // 同上:不去重,不吞正文
+      scheduleRender(entry);   // A:同一条助手消息的多个 chunk 合并为一次 markdown 重渲
+    }
+
+    function renderAssistantBody(entry) {
+      const body = messageNodes.get(entry.key);
+      if (!body) return;
+      body.innerHTML = renderMarkdown(messageBuffers.get(entry.key) || '');
       mergeMetaIntoMarkdown(body);
       wireCopyButtons(body);
     }
@@ -2410,10 +2685,21 @@
           html += renderList(list, ordered);
           continue;
         }
+        const paraStart = i;
         const para = [];
         while (i < lines.length && lines[i].trim() && !isTableStart(lines, i) && !/^(\s*)([-*+]|\d+\.)\s+/.test(lines[i]) && !/^(#{1,3})\s+/.test(lines[i]) && !/^>\s?/.test(lines[i]) && !/^---+$/.test(lines[i].trim())) {
           para.push(lines[i++]);
         }
+        // 🔴 无进展保护 —— 长文本「卡死」的直接原因就在这里。
+        // 本函数的外层 `for (let i = 0; i < lines.length;)` 没有自增,完全依赖各分支推进 i。
+        // 「### 」这种**只有标记、没有标题**的行会两头落空:标题分支的 /^(#{1,3})\s+(.+)$/
+        // 要求标题非空所以不匹配;段落分支的守卫里又有 !/^(#{1,3})\s+/ 把它挡在外面 ——
+        // 于是一行都不吃、i 原地不动,外层 for 无限循环,html 每轮追加一个空 <p></p>,
+        // 约 7600 万轮后撑爆 V8 字符串上限抛 RangeError,页面表现为「卡住几分钟后再也渲染不出来」。
+        // 流式下只要某个 chunk 边界正好落在「### 」之后就会踩到(实测 7964 字契约文本的
+        // 3680 字前缀恰好如此);非流式下,正文里任何一个空标题行同样会踩到。
+        // 兜底:若这一轮没有任何前进,就把该行按普通段落吃掉,保证外层循环必定推进、且不丢内容。
+        if (i === paraStart) para.push(lines[i++]);
         html += `<p>${renderInline(para.join('\n'))}</p>`;
       }
       return html;
@@ -2541,6 +2827,15 @@
       if (eventSource) eventSource.close();
       eventSource = null;
     }
+    // 重连幂等:EventSource 断线后会自动重连,hub 随后重放 ring 里的同一批事件。
+    // 没有 per-event 唯一序号,客户端无法逐条判重(见上方 P0 说明),
+    // 因此改用"清空 + 由重放重建"这一种机制 —— 与刷新页面等价、天然幂等,
+    // 且失败模式是"重建一次(短暂重排)",不会丢正文。
+    function markStreamReconnect() {
+      resetConversation();
+      beginTimelineReplay();
+    }
+
     function connectEventStream() {
       closeEventStream();
       const generation = eventSourceGeneration;
@@ -2549,8 +2844,12 @@
       beginTimelineReplay();
       setStatus('idle');
       eventSource = new EventSource(apiEp('events'));
+      let everOpened = false;
       eventSource.onopen = () => {
         if (generation !== eventSourceGeneration) return;
+        // 第二次及以后的 open = 断线重连:hub 会重放 ring,先清空避免与已有内容叠加
+        if (everOpened) markStreamReconnect();
+        everOpened = true;
         opened = true;
         clearStreamConnectTimer();
         hideStreamAlert();

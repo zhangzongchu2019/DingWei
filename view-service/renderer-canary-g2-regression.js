@@ -4,14 +4,18 @@ const crypto = require('crypto');
 const assert = require('assert');
 
 const RENDERER_PATH = 'renderer-canary-sse.html';
-const EXPECTED_RENDERER_SHA256 = '1133b3d095ac2a8bc36f32a91c4f89945eaab83667ca3553618967d4116521a8';
+// F7(组长 2026-09-09 定):原为硬编码常量 —— renderer 每次正常演进都让本套件在断言前崩溃,
+// 且基线上该常量早已失配, 套件长期不产生任何结论。改为运行时计算并打印作为证据;
+// 「测的确实是被测文件」这个不变量改由调用方的 服务端sha256==磁盘sha256 阳性对照保证。
+// CI 需钉版时设 EXPECTED_RENDERER_SHA256 环境变量, 存在才额外断言。
+const PIN_RENDERER_SHA256 = process.env.EXPECTED_RENDERER_SHA256 || '';
 
 (async () => {
   const renderer = fs.readFileSync(RENDERER_PATH);
-  assert.strictEqual(
-    crypto.createHash('sha256').update(renderer).digest('hex'),
-    EXPECTED_RENDERER_SHA256,
-    'test must run against the exact deployed renderer source artifact',
+  const rendererSha = crypto.createHash('sha256').update(renderer).digest('hex');
+  if (PIN_RENDERER_SHA256) assert.strictEqual(
+    rendererSha, PIN_RENDERER_SHA256,
+    'test must run against the pinned renderer source artifact',
   );
 
   const browser = await chromium.launch({ headless: true });
@@ -108,7 +112,7 @@ const EXPECTED_RENDERER_SHA256 = '1133b3d095ac2a8bc36f32a91c4f89945eaab83667ca35
     assert.strictEqual(focus.focusLosses, 0, 'input blurred during status refresh');
     assert.deepStrictEqual(focus.disabledTransitions.filter(item => item.disabled), [],
       'input became disabled during continuous typing');
-    console.log(`G2 focus PASS: sha256=${EXPECTED_RENDERER_SHA256} statusRefreshes=${statusRequests} identityRefreshes=${resumeRequests} lockedResponses=${lockedResumeResponses} exactChars=${expected.length}`);
+    console.log(`G2 focus PASS: sha256=${rendererSha} statusRefreshes=${statusRequests} identityRefreshes=${resumeRequests} lockedResponses=${lockedResumeResponses} exactChars=${expected.length}`);
 
     await page.locator('#sendBtn').click();
     await page.locator('.error').filter({ hasText: 'POST /input failed: HTTP 403' }).waitFor();
