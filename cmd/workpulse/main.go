@@ -138,9 +138,26 @@ func run(logger *slog.Logger) error {
 	var feishuGateway feishu.Gateway
 	var feishuReceiver feishu.Receiver
 	if rpcURL := strings.TrimSpace(os.Getenv("FCS_RPC_URL")); rpcURL != "" {
-		hubID, _ := os.Hostname()
-		if strings.TrimSpace(hubID) == "" {
-			hubID = "hub-local"
+		// 🔴 hubID 必须**显式配置且全局唯一**,不再从主机名探测。
+		//
+		// 原实现:hubID, _ := os.Hostname(); 取不到则回退字面量 "hub-local"。
+		// 而 fcs.Subscribe 是 s.sinks[hubID] = ... —— **赋值,不是追加**。
+		// ⇒ 两个 Hub 实例若主机名相同(或都取不到而同时回退 "hub-local"),
+		//   后订阅的会**静默顶掉**前一个,s.sinks 任何时刻只剩最后连上的那个。
+		//
+		// 外部症状是「飞书消息随机投到两边之一」,实际是「只有一个在位,
+		// 而谁在位取决于谁最后连上」—— 广播逻辑(fanout)本身是对的,坏的是订阅表的 key。
+		// 业主原始设计意图是「每条入站复制广播给多个 Hub」,该缺陷把它退化成了单播。
+		//
+		// 故:不设默认值、不回退主机名。**回退正是本缺陷的来源** ——
+		// 一个"总能拿到某个值"的探测,会把配置错误变成运行期的静默单播,
+		// 而不是启动期的明确失败。
+		hubID := strings.TrimSpace(os.Getenv("WP_HUB_ID"))
+		if hubID == "" {
+			return fmt.Errorf("FCS_RPC_URL 已配置但 WP_HUB_ID 为空:" +
+				"每个 Hub 实例必须有显式且全局唯一的 hub id。" +
+				"若多实例共用同一 id,飞书入站订阅会互相顶替,表现为消息随机丢失。" +
+				"请为本实例设置 WP_HUB_ID(例如 hub-dw2-a),不要依赖主机名")
 		}
 		logger.Info("fcs mode: remote rpc", "url", rpcURL, "hub_id", hubID)
 		service := fcs.NewRPCClient(rpcURL, nil)

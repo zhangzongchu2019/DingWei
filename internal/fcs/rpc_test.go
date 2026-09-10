@@ -221,3 +221,85 @@ func waitSinks(t *testing.T, svc *service, n int) {
 	}
 	t.Fatalf("fcs did not register %d fanout sink(s) in time", n)
 }
+
+
+// 🔴 飞书入站广播的核心不变量(业主原始设计意图):
+// 每条入站消息应**复制广播给所有已订阅 Hub**,而不是任选一个。
+// 该意图曾被 hubID 冲突悄悄退化成单播 —— 两个 Hub 共用一个 id 时后者顶掉前者,
+// 外部表现为「消息随机投到两边之一」(2026-09-10 由 prodops 定位、组长复核)。
+//
+// 三格互为护栏:只测「两个不同 id 都收到」是不够的 ——
+// 一个把消息发给所有 sink、连退订都不处理的实现同样能过。
+func TestFanoutBroadcastsToAllDistinctHubs(t *testing.T) {
+	svc := NewService(&stubGateway{}, &stubReceiver{inbound: make(chan model.Message, 1)})
+	var a, b, c int
+	stopA, err := svc.Subscribe("hub-a", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
+		a++
+		return FanoutReceipt{}, nil
+	}))
+	if err != nil {
+		t.Fatalf("subscribe hub-a: %v", err)
+	}
+	stopB, err := svc.Subscribe("hub-b", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
+		b++
+		return FanoutReceipt{}, nil
+	}))
+	if err != nil {
+		t.Fatalf("subscribe hub-b: %v", err)
+	}
+
+	// ① 不同 id ⇒ 两边都收到。这才是「广播」,退化为单播即本缺陷。
+	if err := svc.fanout(context.Background(), InboundEnvelope{}); err != nil {
+		t.Fatalf("fanout: %v", err)
+	}
+	if a != 1 || b != 1 {
+		t.Fatalf("广播应送达全部不同 hub:a=%d b=%d", a, b)
+	}
+
+	// ② 同 id 重复订阅仍顶替。本次不改该语义(只加告警与订阅数日志),
+	//    此格把「顶替」钉成**已知且被测到**的行为,而不是靠外部现象倒推。
+	if _, err := svc.Subscribe("hub-a", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
+		c++
+		return FanoutReceipt{}, nil
+	})); err != nil {
+		t.Fatalf("subscribe duplicate hub-a: %v", err)
+	}
+	if err := svc.fanout(context.Background(), InboundEnvelope{}); err != nil {
+		t.Fatalf("fanout: %v", err)
+	}
+	if a != 1 {
+		t.Fatalf("同 id 重复订阅后旧 sink 不应再收到:a=%d", a)
+	}
+	if c != 1 || b != 2 {
+		t.Fatalf("新 sink 与另一 hub 都应收到:c=%d b=%d", c, b)
+	}
+
+	// ③ 被顶替者的 stop() 必须是**空操作** —— 不得连带删掉顶替它的那个订阅。
+	//    这条是读码时没想到、由本用例跑出来的:Subscribe 返回的 stop 闭包里有
+	//    `if current.id == subscriptionID` 守卫,故旧订阅的 stop 不会误删新订阅。
+	//    组长最初把本格写成「stopA 后 c 不应再收到」,结果 c=2 —— **是断言错了,不是代码错了**。
+	//    该守卫是正确且必要的设计,此处把它钉住。
+	stopA()
+	if err := svc.fanout(context.Background(), InboundEnvelope{}); err != nil {
+		t.Fatalf("fanout: %v", err)
+	}
+	if c != 2 {
+		t.Fatalf("被顶替者的 stop 必须是空操作,新订阅应继续收到:c=%d", c)
+	}
+	if b != 3 {
+		t.Fatalf("未退订的 hub 应继续收到:b=%d", b)
+	}
+
+	// ④ 反向对照:**当前在位**订阅退订后,必须真的不再收到 ——
+	//    防「发给所有人、退订也不管」式的假修复。
+	stopB()
+	if err := svc.fanout(context.Background(), InboundEnvelope{}); err != nil {
+		t.Fatalf("fanout: %v", err)
+	}
+	if b != 3 {
+		t.Fatalf("在位订阅退订后不得再收到:b=%d", b)
+	}
+	if c != 3 {
+		t.Fatalf("未退订的 hub-a 新订阅应继续收到:c=%d", c)
+	}
+}

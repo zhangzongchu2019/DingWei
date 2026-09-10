@@ -16,6 +16,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
@@ -78,8 +79,22 @@ func (s *service) Subscribe(authenticatedHubID string, sink InboundSink) (func()
 	s.mu.Lock()
 	s.nextSubscription++
 	subscriptionID := s.nextSubscription
+	// 🔴 同一 hubID 重复订阅会**顶掉**前一个(map 赋值语义),而广播只发给在位的那些。
+	// 这是「飞书消息随机丢一半」的直接成因:两个 Hub 共用一个 id 时,
+	// 订阅表里永远只有最后连上的那个,而外部看起来像随机派送。
+	// 顶替发生在启动瞬间,事后只能靠现象倒推 —— 故此处显式告警,把它变成可查的事实。
+	if previous, exists := s.sinks[authenticatedHubID]; exists {
+		log.Printf("fcs subscribe warning=duplicate_hub_id hub_id=%q previous_subscription=%d new_subscription=%d "+
+			"effect=previous_subscription_replaced hint=每个 Hub 实例需配置全局唯一的 WP_HUB_ID",
+			authenticatedHubID, previous.id, subscriptionID)
+	}
 	s.sinks[authenticatedHubID] = sinkSubscription{id: subscriptionID, sink: sink}
+	total := len(s.sinks)
 	s.mu.Unlock()
+	// 广播面大小是「配置对不对」的直接可观测量:预期几个 Hub 就该是几。
+	// 只打 duplicate 告警不够 —— 那要有人恰好在看日志;
+	// 把订阅数在每次订阅时报出来,任何一次巡检都能发现「怎么只有 1 个」。
+	log.Printf("fcs subscribe hub_id=%q subscription=%d active_sinks=%d", authenticatedHubID, subscriptionID, total)
 	return func() {
 		s.mu.Lock()
 		if current, ok := s.sinks[authenticatedHubID]; ok && current.id == subscriptionID {
