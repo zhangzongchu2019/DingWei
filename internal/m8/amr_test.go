@@ -1,10 +1,12 @@
 package m8
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 	"time"
@@ -205,6 +207,56 @@ func TestAMRLateAfterTerminalIsCounted(t *testing.T) {
 	stats, _ := p.snapshotStats()
 	if stats.lateAfterTerminal != 1 {
 		t.Fatalf("lateAfterTerminal=%d", stats.lateAfterTerminal)
+	}
+}
+
+// F8/T-040 阳性对照:光有 late_after_terminal 计数不够 —— G2-2 要的是「哪几条」。
+// 本例故意让同一个已完成回合再收两条事件:一条计数(assistant_text 非空),一条不计数(state_change),
+// 断言两条日志的 counted_late 取值**相反**。只断言"日志里有 counted_late"是空断言:
+// 恒真的字段名证明不了它区分得开,必须让两个分支同时在场并给出不同值。
+func TestAMRLateAfterTerminalLogCarriesAttribution(t *testing.T) {
+	var buf bytes.Buffer
+	prev := log.Writer()
+	log.SetOutput(&buf)
+	defer log.SetOutput(prev)
+
+	const secret = "此正文不得出现在日志里"
+	p := testAMRProcessor()
+	p.ingest("key", "source", amrEventJSON(t, amrSessionEvent{Kind: "state_change", Data: map[string]any{"change": "turn_completed", "status": "completed"}, DeliveryID: "d1", TurnID: "t1"}))
+	p.ingest("key", "source", amrEventJSON(t, amrSessionEvent{Kind: "assistant_text", Text: secret, DeliveryID: "d1", TurnID: "t1"}))
+	p.ingest("key", "source", amrEventJSON(t, amrSessionEvent{Kind: "state_change", Data: map[string]any{"change": "tool_use"}, DeliveryID: "d1", TurnID: "t1"}))
+
+	var counted, uncounted []string
+	for _, line := range strings.Split(buf.String(), "\n") {
+		if !strings.Contains(line, "reason=completed_turn") {
+			continue
+		}
+		switch {
+		case strings.Contains(line, "counted_late=true"):
+			counted = append(counted, line)
+		case strings.Contains(line, "counted_late=false"):
+			uncounted = append(uncounted, line)
+		default:
+			t.Fatalf("ignored 日志缺 counted_late 判别位: %q", line)
+		}
+	}
+	if len(counted) != 1 || len(uncounted) != 1 {
+		t.Fatalf("两分支须各出现一次才算区分得开: counted=%d uncounted=%d 全文=%q", len(counted), len(uncounted), buf.String())
+	}
+	stats, _ := p.snapshotStats()
+	if stats.lateAfterTerminal != uint64(len(counted)) {
+		t.Fatalf("日志与计数对不上: late_after_terminal=%d counted_late=true 行数=%d", stats.lateAfterTerminal, len(counted))
+	}
+	for _, field := range []string{"session=source", "delivery_id=d1", "turn_id=t1", "kind=assistant_text"} {
+		if !strings.Contains(counted[0], field) {
+			t.Fatalf("计数行缺归因字段 %s: %q", field, counted[0])
+		}
+	}
+	if strings.Contains(buf.String(), secret) {
+		t.Fatalf("正文泄漏进日志: %q", buf.String())
+	}
+	if !strings.Contains(counted[0], fmt.Sprintf("text_len=%d", len(secret))) {
+		t.Fatalf("计数行应只记 text_len 不记正文: %q", counted[0])
 	}
 }
 
