@@ -1,0 +1,18 @@
+package fileservice
+
+import "testing"
+
+func TestConfigRequiresMinIOAndKeepsCapacityConfigurable(t *testing.T) {
+	t.Setenv("FS_MINIO_ENDPOINT", "minio:9000")
+	t.Setenv("FS_MINIO_ACCESS_KEY", "access")
+	t.Setenv("FS_MINIO_SECRET_KEY", "secret")
+	t.Setenv("FS_TOTAL_QUOTA_BYTES", "12345")
+	t.Setenv("FS_RETENTION", "48h")
+	c, err := ConfigFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.QuotaBytes != 12345 || c.Retention.Hours() != 48 {
+		t.Fatalf("config=%+v", c)
+	}
+}

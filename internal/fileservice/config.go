@@ -1,0 +1,109 @@
+// Package fileservice implements the iteration-3 file data plane. It owns
+// metadata and policy; object bytes remain behind the ObjectStore interface.
+package fileservice
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+)
+
+const (
+	defaultMaxFileBytes = 16 << 20
+	defaultQuotaBytes   = int64(500) << 30
+)
+
+type Config struct {
+	Addr             string
+	DatabasePath     string
+	PublicBaseURL    string
+	MaxFileBytes     int64
+	QuotaBytes       int64
+	Retention        time.Duration
+	SweepInterval    time.Duration
+	CapabilityMaxAge time.Duration
+	MinIOEndpoint    string
+	MinIOAccessKey   string
+	MinIOSecretKey   string
+	MinIOBucket      string
+	MinIOUseTLS      bool
+}
+
+func ConfigFromEnv() (Config, error) {
+	c := Config{
+		Addr:             env("FS_ADDR", "127.0.0.1:8793"),
+		DatabasePath:     env("FS_DATABASE_PATH", "./data/file-service.db"),
+		PublicBaseURL:    strings.TrimRight(os.Getenv("FS_PUBLIC_BASE_URL"), "/"),
+		MaxFileBytes:     defaultMaxFileBytes,
+		QuotaBytes:       defaultQuotaBytes,
+		Retention:        60 * 24 * time.Hour,
+		SweepInterval:    time.Minute,
+		CapabilityMaxAge: 2 * time.Minute,
+		MinIOEndpoint:    os.Getenv("FS_MINIO_ENDPOINT"),
+		MinIOAccessKey:   os.Getenv("FS_MINIO_ACCESS_KEY"),
+		MinIOSecretKey:   os.Getenv("FS_MINIO_SECRET_KEY"),
+		MinIOBucket:      env("FS_MINIO_BUCKET", "dingwei-files"),
+	}
+	var err error
+	if c.MaxFileBytes, err = envInt64("FS_MAX_FILE_BYTES", c.MaxFileBytes); err != nil {
+		return Config{}, err
+	}
+	if c.QuotaBytes, err = envInt64("FS_TOTAL_QUOTA_BYTES", c.QuotaBytes); err != nil {
+		return Config{}, err
+	}
+	if c.Retention, err = envDuration("FS_RETENTION", c.Retention); err != nil {
+		return Config{}, err
+	}
+	if c.SweepInterval, err = envDuration("FS_SWEEP_INTERVAL", c.SweepInterval); err != nil {
+		return Config{}, err
+	}
+	if c.CapabilityMaxAge, err = envDuration("FS_CAPABILITY_MAX_AGE", c.CapabilityMaxAge); err != nil {
+		return Config{}, err
+	}
+	c.MinIOUseTLS = envBool("FS_MINIO_USE_TLS")
+	if c.MaxFileBytes <= 0 || c.QuotaBytes <= 0 || c.Retention <= 0 || c.CapabilityMaxAge <= 0 {
+		return Config{}, fmt.Errorf("file-service limits must be positive")
+	}
+	if c.MinIOEndpoint == "" || c.MinIOAccessKey == "" || c.MinIOSecretKey == "" {
+		return Config{}, fmt.Errorf("FS_MINIO_ENDPOINT/access key/secret key are required")
+	}
+	return c, nil
+}
+
+func env(key, fallback string) string {
+	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+		return v
+	}
+	return fallback
+}
+func envInt64(key string, fallback int64) (int64, error) {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return fallback, nil
+	}
+	n, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", key, err)
+	}
+	return n, nil
+}
+func envDuration(key string, fallback time.Duration) (time.Duration, error) {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return fallback, nil
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", key, err)
+	}
+	return d, nil
+}
+func envBool(key string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(key))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
+}
