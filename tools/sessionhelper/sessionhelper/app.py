@@ -390,6 +390,14 @@ class SessionHelper:
                             await ipc_task
                         except asyncio.CancelledError:
                             pass
+                    # 移植自部署版(T-048 第四处,prodops 的 10 处清单未含,组长逐 + 行复查时发现):
+                    # hb.cancel() 之后必须 await 它,否则任务被取消但从未被回收,
+                    # Python 会打 "Task was destroyed but it is pending!",且清理逻辑不保证执行。
+                    # 与上面 ipc_task 的处理对称 —— 一个 await 了、一个没有,本身就是个不对称的味道。
+                    try:
+                        await hb
+                    except asyncio.CancelledError:
+                        pass
 
     async def recv_loop(self, ws) -> None:
         async for raw in ws:
