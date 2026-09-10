@@ -73,22 +73,23 @@ func (c *rpcClient) resolve(ctx context.Context, req wireResolveReq) (string, er
 // resulting receipt back (best-effort). The returned cancel closes the stream and
 // stops the pump. It blocks until the stream is established (or errors) so callers
 // (receiverClient.Start) know the subscription is live before returning.
-func (c *rpcClient) Subscribe(authenticatedHubID string, sink InboundSink) (func(), error) {
+func (c *rpcClient) Subscribe(authenticatedHubID, hubVersion string, sink InboundSink) (func(), error) {
 	if authenticatedHubID == "" || sink == nil {
 		return nil, fmt.Errorf("fcs rpc: subscribe requires non-empty hub id and sink")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	body, err := c.openInbound(ctx, authenticatedHubID)
+	body, err := c.openInbound(ctx, authenticatedHubID, hubVersion)
 	if err != nil {
 		cancel()
 		return nil, err
 	}
-	go c.maintainInbound(ctx, body, authenticatedHubID, sink)
+	go c.maintainInbound(ctx, body, authenticatedHubID, hubVersion, sink)
 	return cancel, nil
 }
 
-func (c *rpcClient) openInbound(ctx context.Context, authenticatedHubID string) (io.ReadCloser, error) {
-	u := c.base + RPCPathInbound + "?hub=" + url.QueryEscape(authenticatedHubID)
+func (c *rpcClient) openInbound(ctx context.Context, authenticatedHubID, hubVersion string) (io.ReadCloser, error) {
+	u := c.base + RPCPathInbound + "?hub=" + url.QueryEscape(authenticatedHubID) +
+		"&version=" + url.QueryEscape(hubVersion)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
@@ -108,7 +109,7 @@ func (c *rpcClient) openInbound(ctx context.Context, authenticatedHubID string) 
 // maintainInbound restores the subscription after a clean EOF or transport
 // failure. Events during the gap remain at-most-once until the durable ledger
 // lands, but a transient disconnect must not permanently blind the hub.
-func (c *rpcClient) maintainInbound(ctx context.Context, body io.ReadCloser, hubID string, sink InboundSink) {
+func (c *rpcClient) maintainInbound(ctx context.Context, body io.ReadCloser, hubID, hubVersion string, sink InboundSink) {
 	backoff := 250 * time.Millisecond
 	for {
 		c.pumpInbound(ctx, body, hubID, sink)
@@ -123,7 +124,7 @@ func (c *rpcClient) maintainInbound(ctx context.Context, body io.ReadCloser, hub
 		case <-timer.C:
 		}
 		var err error
-		body, err = c.openInbound(ctx, hubID)
+		body, err = c.openInbound(ctx, hubID, hubVersion)
 		if err != nil {
 			if backoff < 5*time.Second {
 				backoff *= 2

@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
@@ -35,8 +36,9 @@ type service struct {
 }
 
 type sinkSubscription struct {
-	id   uint64
-	sink InboundSink
+	id      uint64
+	sink    InboundSink
+	version string // 注册时登记的 Hub 版本,用于出站落款(灰度分辨)
 }
 
 // NewService builds the FCS server side over an existing feishu Gateway+Receiver.
@@ -47,13 +49,37 @@ func NewService(gw feishu.Gateway, rx feishu.Receiver) *service {
 }
 
 // Send is the single outbound exit (converges runOutboundLoop + worker.sendReply).
+// hubStamp 返回该 Hub 的出站落款,形如 " [hub-dw2-a v0.1.2.9]"。
+// 版本取自**注册时**登记的值,不取调用方本条消息自报的值。
+func (s *service) hubStamp(hubID string) string {
+	hubID = strings.TrimSpace(hubID)
+	if hubID == "" {
+		return "" // 不知来源就不盖章;宁可没有落款,也不盖一个可能是错的
+	}
+	s.mu.RLock()
+	sub, ok := s.sinks[hubID]
+	s.mu.RUnlock()
+	if ok && sub.version != "" {
+		return fmt.Sprintf(" [%s %s]", hubID, sub.version)
+	}
+	return fmt.Sprintf(" [%s]", hubID) // 已注册但没报版本:仍标出实例,便于灰度分辨
+}
+
 func (s *service) Send(ctx context.Context, req OutboundRequest) (OutboundResult, error) {
+	// 业主 2026-09-10:HUB→飞书机器人→飞书账号方向,正文末尾附 [hub-id version]。
+	// 用途是灰度期间肉眼分辨「这条是哪个 Hub 回的」——多 Hub 同时在线时,
+	// 每个 Hub 各自独立回复是**预期行为**(那正是灰度要比较的东西),
+	// 前提是每条回复都能被认出来自谁。
+	text := req.Text
+	if stamp := s.hubStamp(req.HubID); stamp != "" && !strings.HasSuffix(strings.TrimRight(text, " \t\r\n"), stamp) {
+		text = strings.TrimRight(text, " \t\r\n") + stamp
+	}
 	msgID, err := s.gw.Send(ctx, feishu.OutMessage{
 		BotChannelID: req.BotChannelID,
 		ToID:         req.ToID,
 		ToName:       req.ToName,
 		ToType:       req.ToType,
-		Text:         req.Text,
+		Text:         text,
 	})
 	if err != nil {
 		return OutboundResult{}, err
@@ -72,7 +98,7 @@ func (s *service) ResolveNameToID(ctx context.Context, botChannelID, name, chatT
 }
 
 // Subscribe registers a hub as a fanout target (design §3.1/§6).
-func (s *service) Subscribe(authenticatedHubID string, sink InboundSink) (func(), error) {
+func (s *service) Subscribe(authenticatedHubID, hubVersion string, sink InboundSink) (func(), error) {
 	if authenticatedHubID == "" || sink == nil {
 		return nil, fmt.Errorf("fcs: subscribe requires non-empty hub id and sink")
 	}
@@ -88,13 +114,13 @@ func (s *service) Subscribe(authenticatedHubID string, sink InboundSink) (func()
 			"effect=previous_subscription_replaced hint=每个 Hub 实例需配置全局唯一的 WP_HUB_ID",
 			authenticatedHubID, previous.id, subscriptionID)
 	}
-	s.sinks[authenticatedHubID] = sinkSubscription{id: subscriptionID, sink: sink}
+	s.sinks[authenticatedHubID] = sinkSubscription{id: subscriptionID, sink: sink, version: strings.TrimSpace(hubVersion)}
 	total := len(s.sinks)
 	s.mu.Unlock()
 	// 广播面大小是「配置对不对」的直接可观测量:预期几个 Hub 就该是几。
 	// 只打 duplicate 告警不够 —— 那要有人恰好在看日志;
 	// 把订阅数在每次订阅时报出来,任何一次巡检都能发现「怎么只有 1 个」。
-	log.Printf("fcs subscribe hub_id=%q subscription=%d active_sinks=%d", authenticatedHubID, subscriptionID, total)
+	log.Printf("fcs subscribe hub_id=%q hub_version=%q subscription=%d active_sinks=%d", authenticatedHubID, hubVersion, subscriptionID, total)
 	return func() {
 		s.mu.Lock()
 		if current, ok := s.sinks[authenticatedHubID]; ok && current.id == subscriptionID {

@@ -111,7 +111,8 @@ func (s *rpcServer) handleInbound(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 
-	cancel, err := s.svc.Subscribe(hub, sink)
+	// 版本随注册一并带上(?version=),桥接据此为该 Hub 的出站盖章。
+	cancel, err := s.svc.Subscribe(hub, r.URL.Query().Get("version"), sink)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

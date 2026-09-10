@@ -27,6 +27,9 @@ import "context"
 
 // OutboundRequest is one hub→FCS send. Converges runOutboundLoop + worker.sendReply.
 type OutboundRequest struct {
+	// HubID 标识发起这条出站的 Hub。桥接据此查注册时登记的版本并在正文末尾盖章。
+	// 由调用方填写「我是谁」,版本仍取自注册表 —— 调用方无法自报一个假版本。
+	HubID        string `json:"hub_id,omitempty"`
 	BotChannelID string // which Feishu bot channel
 	ToID         string // chat_id / open_id (与 ToName 二选一)
 	ToName       string // 群名 / 姓名 (全局唯一可免 type)
@@ -171,7 +174,11 @@ type Service interface {
 
 	// Subscribe registers a hub as a fanout target. FCS then pushes inbound
 	// envelopes to sink.DeliverInbound and records per-hub receipts in its ledger.
-	Subscribe(authenticatedHubID string, sink InboundSink) (cancel func(), err error)
+	// Subscribe 注册一个 Hub 作为入站广播的接收方。
+	// hubVersion 在**注册时**给出而非每条消息带:桥接据此为该 Hub 的出站消息盖章,
+	// Hub 自身无法遗漏也无法伪造 —— 与「【源→目的】头由 Hub 加而非 Agent 自填」同一原则:
+	// 盖章应由**唯一知道真相的那一方**来盖。
+	Subscribe(authenticatedHubID, hubVersion string, sink InboundSink) (cancel func(), err error)
 }
 
 // IngressDedup assigns a persistent RANDOM request_id for a native Feishu event id

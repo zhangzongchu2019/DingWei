@@ -33,7 +33,7 @@ func (errGateway) Send(context.Context, feishu.OutMessage) (string, error) {
 
 type subscribeErrService struct{ Service }
 
-func (subscribeErrService) Subscribe(string, InboundSink) (func(), error) {
+func (subscribeErrService) Subscribe(string, string, InboundSink) (func(), error) {
 	return nil, errors.New("subscription rejected")
 }
 
@@ -90,7 +90,7 @@ func TestRPCResolveRoundtrip(t *testing.T) {
 func TestRPCSubscribeReportsServerRejectionBeforeStreamEstablished(t *testing.T) {
 	base := NewService(&stubGateway{}, &stubReceiver{})
 	client := newRPCPair(t, subscribeErrService{Service: base})
-	_, err := client.Subscribe("hub-rejected", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
+	_, err := client.Subscribe("hub-rejected", "vtest", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
 		return FanoutReceipt{}, nil
 	}))
 	if err == nil || !strings.Contains(err.Error(), "subscription rejected") {
@@ -121,7 +121,7 @@ func TestRPCInboundReconnectsAfterStreamEOF(t *testing.T) {
 
 	got := make(chan InboundEnvelope, 1)
 	client := NewRPCClient(srv.URL, srv.Client())
-	cancel, err := client.Subscribe("hub-reconnect", sinkFunc(func(_ context.Context, env InboundEnvelope) (FanoutReceipt, error) {
+	cancel, err := client.Subscribe("hub-reconnect", "vtest", sinkFunc(func(_ context.Context, env InboundEnvelope) (FanoutReceipt, error) {
 		got <- env
 		return FanoutReceipt{RequestID: env.RequestID, AuthenticatedHubID: "hub-reconnect", Effect: EffectDelivered}, nil
 	}))
@@ -154,7 +154,7 @@ func TestRPCInboundFanoutThroughHubAdapters(t *testing.T) {
 
 	var mu sync.Mutex
 	var got []model.Message
-	receiver := NewHubReceiver(client, "hub-A")
+	receiver := NewHubReceiver(client, "hub-A", "vtest")
 	go func() {
 		_ = receiver.Start(ctx, func(_ context.Context, m model.Message) error {
 			mu.Lock()
@@ -222,7 +222,6 @@ func waitSinks(t *testing.T, svc *service, n int) {
 	t.Fatalf("fcs did not register %d fanout sink(s) in time", n)
 }
 
-
 // 🔴 飞书入站广播的核心不变量(业主原始设计意图):
 // 每条入站消息应**复制广播给所有已订阅 Hub**,而不是任选一个。
 // 该意图曾被 hubID 冲突悄悄退化成单播 —— 两个 Hub 共用一个 id 时后者顶掉前者,
@@ -233,14 +232,14 @@ func waitSinks(t *testing.T, svc *service, n int) {
 func TestFanoutBroadcastsToAllDistinctHubs(t *testing.T) {
 	svc := NewService(&stubGateway{}, &stubReceiver{inbound: make(chan model.Message, 1)})
 	var a, b, c int
-	stopA, err := svc.Subscribe("hub-a", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
+	stopA, err := svc.Subscribe("hub-a", "vtest", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
 		a++
 		return FanoutReceipt{}, nil
 	}))
 	if err != nil {
 		t.Fatalf("subscribe hub-a: %v", err)
 	}
-	stopB, err := svc.Subscribe("hub-b", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
+	stopB, err := svc.Subscribe("hub-b", "vtest", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
 		b++
 		return FanoutReceipt{}, nil
 	}))
@@ -258,7 +257,7 @@ func TestFanoutBroadcastsToAllDistinctHubs(t *testing.T) {
 
 	// ② 同 id 重复订阅仍顶替。本次不改该语义(只加告警与订阅数日志),
 	//    此格把「顶替」钉成**已知且被测到**的行为,而不是靠外部现象倒推。
-	if _, err := svc.Subscribe("hub-a", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
+	if _, err := svc.Subscribe("hub-a", "vtest", sinkFunc(func(context.Context, InboundEnvelope) (FanoutReceipt, error) {
 		c++
 		return FanoutReceipt{}, nil
 	})); err != nil {
@@ -301,5 +300,52 @@ func TestFanoutBroadcastsToAllDistinctHubs(t *testing.T) {
 	}
 	if c != 3 {
 		t.Fatalf("未退订的 hub-a 新订阅应继续收到:c=%d", c)
+	}
+}
+
+// 🔴 出站落款(业主 2026-09-10 定):HUB→飞书方向,正文末尾附 [hub-id version]。
+// 灰度期间多个 Hub 各自独立回复是**预期行为**(那正是要比较的东西),
+// 前提是每条回复都能被认出来自谁。
+//
+// 四格互为护栏:只测「有落款」不够 —— 一个把任意字符串都拼上去的实现也能过。
+func TestOutboundStampsHubAndVersion(t *testing.T) {
+	gw := &stubGateway{}
+	svc := NewService(gw, &stubReceiver{inbound: make(chan model.Message, 1)})
+	if _, err := svc.Subscribe("hub-dw2-a", "0.1.2.9", sinkFunc(
+		func(context.Context, InboundEnvelope) (FanoutReceipt, error) { return FanoutReceipt{}, nil })); err != nil {
+		t.Fatalf("subscribe: %v", err)
+	}
+
+	// ① 已注册且报了版本 ⇒ 落款含实例与版本
+	if _, err := svc.Send(context.Background(), OutboundRequest{HubID: "hub-dw2-a", Text: "回复正文"}); err != nil {
+		t.Fatalf("send: %v", err)
+	}
+	if got := gw.sent[len(gw.sent)-1].Text; got != "回复正文 [hub-dw2-a 0.1.2.9]" {
+		t.Fatalf("落款不对:%q", got)
+	}
+
+	// ② 版本取**注册时**登记的值,调用方自报的假版本不得生效
+	//    (本条把「盖章由唯一知道真相的一方来盖」钉住)
+	if _, err := svc.Send(context.Background(), OutboundRequest{HubID: "hub-dw2-a", Text: "x"}); err != nil {
+		t.Fatalf("send: %v", err)
+	}
+	if got := gw.sent[len(gw.sent)-1].Text; got != "x [hub-dw2-a 0.1.2.9]" {
+		t.Fatalf("版本应取注册值:%q", got)
+	}
+
+	// ③ 幂等:已带同一落款的正文不得再盖一次(过渡期/重发会遇到)
+	if _, err := svc.Send(context.Background(), OutboundRequest{HubID: "hub-dw2-a", Text: "y [hub-dw2-a 0.1.2.9]"}); err != nil {
+		t.Fatalf("send: %v", err)
+	}
+	if got := gw.sent[len(gw.sent)-1].Text; got != "y [hub-dw2-a 0.1.2.9]" {
+		t.Fatalf("重复盖章:%q", got)
+	}
+
+	// ④ 反向对照:未知来源不得盖章 —— 宁可没有落款,也不盖一个可能是错的
+	if _, err := svc.Send(context.Background(), OutboundRequest{Text: "z"}); err != nil {
+		t.Fatalf("send: %v", err)
+	}
+	if got := gw.sent[len(gw.sent)-1].Text; got != "z" {
+		t.Fatalf("未知来源不应盖章:%q", got)
 	}
 }

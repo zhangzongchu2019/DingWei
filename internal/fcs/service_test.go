@@ -99,10 +99,10 @@ func TestInboundFanoutToAllHubs(t *testing.T) {
 
 	hubA := &recordingSink{}
 	hubB := &recordingSink{fail: true} // hub B fails; must NOT suppress hub A
-	if _, err := svc.Subscribe("hub-A", hubA); err != nil {
+	if _, err := svc.Subscribe("hub-A", "vtest", hubA); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.Subscribe("hub-B", hubB); err != nil {
+	if _, err := svc.Subscribe("hub-B", "vtest", hubB); err != nil {
 		t.Fatal(err)
 	}
 
@@ -152,7 +152,7 @@ func TestIngressDedupDropsDuplicate(t *testing.T) {
 	rx := &stubReceiver{inbound: make(chan model.Message, 2)}
 	svc := NewService(&stubGateway{}, rx)
 	hub := &recordingSink{}
-	if _, err := svc.Subscribe("hub-A", hub); err != nil {
+	if _, err := svc.Subscribe("hub-A", "vtest", hub); err != nil {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -177,11 +177,11 @@ func TestSubscribeStaleCancelDoesNotDeleteReplacement(t *testing.T) {
 	svc := NewService(&stubGateway{}, &stubReceiver{})
 	oldSink := &recordingSink{}
 	newSink := &recordingSink{}
-	cancelOld, err := svc.Subscribe("hub-A", oldSink)
+	cancelOld, err := svc.Subscribe("hub-A", "vtest", oldSink)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cancelNew, err := svc.Subscribe("hub-A", newSink)
+	cancelNew, err := svc.Subscribe("hub-A", "vtest", newSink)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -23,17 +23,22 @@ import (
 )
 
 // NewHubGateway returns a feishu.Gateway backed by the FCS Service (outbound + resolve).
-func NewHubGateway(svc Service) feishu.Gateway { return gatewayClient{svc: svc} }
+func NewHubGateway(svc Service, hubID string) feishu.Gateway {
+	return gatewayClient{svc: svc, hubID: hubID}
+}
 
 // NewHubReceiver returns a feishu.Receiver backed by the FCS Service fanout
 // (inbound). authenticatedHubID identifies this hub in the FCS fanout ledger.
-func NewHubReceiver(svc Service, authenticatedHubID string) feishu.Receiver {
-	return receiverClient{svc: svc, hubID: authenticatedHubID}
+func NewHubReceiver(svc Service, authenticatedHubID, hubVersion string) feishu.Receiver {
+	return receiverClient{svc: svc, hubID: authenticatedHubID, hubVersion: hubVersion}
 }
 
 // ── Gateway (hub → FCS, outbound single exit + resolve) ──────────────────────
 
-type gatewayClient struct{ svc Service }
+type gatewayClient struct {
+	svc   Service
+	hubID string
+}
 
 func (g gatewayClient) Send(ctx context.Context, out feishu.OutMessage) (string, error) {
 	res, err := g.svc.Send(ctx, OutboundRequest{
@@ -42,6 +47,7 @@ func (g gatewayClient) Send(ctx context.Context, out feishu.OutMessage) (string,
 		ToName:       out.ToName,
 		ToType:       out.ToType,
 		Text:         out.Text,
+		HubID:        g.hubID,
 		// A0 IDs (MessageID/RequestID/DeliveryID) are plumbed by the hub's outbound
 		// builder (B1 owns delivery_id) — TODO once the outbound Envelope carries them.
 	})
@@ -61,8 +67,9 @@ func (g gatewayClient) ResolveNameToID(ctx context.Context, botChannelID, name, 
 // ── Receiver (FCS fanout → hub inbound) ──────────────────────────────────────
 
 type receiverClient struct {
-	svc   Service
-	hubID string
+	svc        Service
+	hubID      string
+	hubVersion string
 }
 
 // Start subscribes this hub to the FCS fanout and blocks until ctx is cancelled
@@ -83,7 +90,7 @@ func (r receiverClient) Start(ctx context.Context, onInbound func(ctx context.Co
 			Attempt:            1,
 		}, err
 	})
-	cancel, err := r.svc.Subscribe(r.hubID, sink)
+	cancel, err := r.svc.Subscribe(r.hubID, r.hubVersion, sink)
 	if err != nil {
 		return err
 	}

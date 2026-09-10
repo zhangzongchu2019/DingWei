@@ -45,6 +45,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/scheduler"
 	"github.com/zhangzongchu2019/dingwei/internal/secretbox"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/version"
 	"github.com/zhangzongchu2019/dingwei/internal/worker"
 )
 
@@ -161,8 +162,10 @@ func run(logger *slog.Logger) error {
 		}
 		logger.Info("fcs mode: remote rpc", "url", rpcURL, "hub_id", hubID)
 		service := fcs.NewRPCClient(rpcURL, nil)
-		feishuGateway = fcs.NewHubGateway(service)
-		feishuReceiver = fcs.NewHubReceiver(service, hubID)
+		// 版本取编译期常量(业主 2026-09-10 定):它回答「跑的是哪个构建」,
+		// 与 WP_HUB_ID 回答的「是哪个实例」互补。灰度时两个都要知道。
+		feishuGateway = fcs.NewHubGateway(service, hubID)
+		feishuReceiver = fcs.NewHubReceiver(service, hubID, version.Version)
 	} else {
 		feishuGateway, feishuReceiver, err = buildFeishuGateway(ctx, logger, st, bs)
 		if err != nil {
