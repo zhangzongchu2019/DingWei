@@ -53,3 +53,4 @@ dingwei-onboard/
 # 215d066 误提交过一次，且它会随源码修复而失效——见该次提交说明。
 /handle-escape
 /pending-debt
+view-service/node_modules/

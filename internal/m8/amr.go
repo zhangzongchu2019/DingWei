@@ -600,7 +600,7 @@ func (p *amrProcessor) process(job amrRouteJob) {
 		if lookedLikeCandidate {
 			p.closeJob("candidate_rejected")
 			if p.modeFor(job.key.KeyID, job.key.Session) == amrRoute {
-				p.notifySource(job.key, "candidate", "@ 目标无法解析或不符合路由规则", true)
+				p.notifySource(job.key, amrOffendingToken(job.body), "@ 目标无法解析或不符合路由规则", true)
 			}
 		} else {
 			p.closeJob("non_candidate")
@@ -812,12 +812,54 @@ func parseAMRCandidates(text, sourceSession string, maxTargets int) []amrCandida
 	return candidates
 }
 
+// isMarkdownHeadingPrefix 判断以 `#` 开头的文本是 Markdown 标题而非 legacy 选择器。
+// 选择器形如 `#会话名 正文`,`#` 后必须紧跟合法会话名首字符;
+// 标题形如 `# 标题` / `## 标题`,`#` 后是空白或又一个 `#`。
+func isMarkdownHeadingPrefix(text string) bool {
+	rest := strings.TrimPrefix(text, "#")
+	if rest == "" {
+		return true // 光一个 `#`,不可能是选择器
+	}
+	if rest[0] == '#' {
+		return true // ## / ### / ####
+	}
+	switch rest[0] {
+	case ' ', '\t', '\r', '\n':
+		return true
+	}
+	return false
+}
+
+// amrOffendingToken 从解析失败的正文里摘出「看起来像 @/# 目标」的那一段,
+// 供失败通知回显。T-060:此处原先硬编码字面量 "candidate",
+// 通知读起来像「有个叫 candidate 的会话」,把人引向不存在的东西。
+// 只回显首个 token,截断到 64 字节,避免正文泄漏进通知。
+func amrOffendingToken(body string) string {
+	t := strings.TrimSpace(body)
+	if t == "" {
+		return "(空)"
+	}
+	if i := strings.IndexAny(t, " \t\r\n"); i > 0 {
+		t = t[:i]
+	}
+	if len(t) > 64 {
+		t = t[:64] + "…"
+	}
+	return t
+}
+
 func parseAMRCandidatesDetailed(text, sourceSession string, maxTargets int) ([]amrCandidate, bool) {
 	text = strings.TrimSpace(text)
 	if text == "" || maxTargets <= 0 {
 		return nil, false
 	}
 	if strings.HasPrefix(text, "#") {
+		// T-055: Markdown 标题(`# `、`## `、`#\t`)不是 legacy 选择器。
+		// 判别在第二个字符上完成:`#` 后紧跟空白或另一个 `#` ⇒ 标题,直接判非候选,
+		// 不置 lookedLikeCandidate —— 否则仍会回一条假的投递失败通知。
+		if isMarkdownHeadingPrefix(text) {
+			return nil, false
+		}
 		name, body, ok := parseSelector(text)
 		if !ok || name == sourceSession || body == "" || len(body) > amrRouteBodyMax {
 			return nil, true
