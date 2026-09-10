@@ -222,11 +222,19 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 
 	p.mu.Lock()
 	if _, done := p.completed[key]; done {
-		if ev.Kind == "assistant_text" && ev.Text != "" {
+		// F8/T-040:该分支对**所有**落在已完成回合上的事件都打同一行日志,但只有
+		// assistant_text 且正文非空的那部分才计入 late_after_terminal。原日志不带任何归因字段,
+		// 于是心跳里的 late_after_terminal=3 与日志里的 9 条 ignored 无法对上 ——
+		// G2-2 因此长期 NOT_COVERED:不是没数,是数与证据挂不上钩,而拼凑猜测不算验证。
+		// counted_late 就是那个判别位;delivery/turn/kind 用于定位到具体回合。
+		// 只记 text_len 不记正文:正文可能含凭据/隐私,日志不是它该去的地方。
+		late := ev.Kind == "assistant_text" && ev.Text != ""
+		if late {
 			p.stats.lateAfterTerminal++
 		}
 		p.mu.Unlock()
-		log.Printf("amr decision=ignored reason=completed_turn")
+		log.Printf("amr decision=ignored reason=completed_turn counted_late=%t session=%s delivery_id=%s turn_id=%s kind=%s text_len=%d",
+			late, sessionName, ev.DeliveryID, ev.TurnID, ev.Kind, len(ev.Text))
 		return
 	}
 	t := p.turns[key]
