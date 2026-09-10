@@ -267,6 +267,16 @@ class SessionHelper:
 
         return _vsapi
 
+    def session_capabilities_envelope(self) -> dict:
+        return envelope(
+            session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
+            {"type": "session_capabilities", "delivery_ack_v1": True,
+             "persistent_inbox_v1": True, "agent_route_v2": True,
+             "unified_queue_v1": self.cfg.mode == "driver",
+             "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
+             "processed_semantics": "accepted_to_cli", "helper_version": __version__},
+        )
+
     async def _run_once(self) -> None:
         import websockets, time
 
@@ -302,6 +312,10 @@ class SessionHelper:
                 print(f"[sessionHelper][debug] WS 握手成功,耗时 {time.monotonic()-_t0:.2f}s", flush=True)
             print(f"[sessionHelper] connected self={self.book.self_addr} version={__version__}", flush=True)
             self.provisioner.confirm_update_connected()
+            # M2 protocol admission. This raises the bar above one-shot clients
+            # such as send.py, but is not cryptographic helper identity: a
+            # holder of the shared API secret can imitate this JSON message.
+            await ws.send(json.dumps(self.session_capabilities_envelope(), ensure_ascii=False))
             if self.cfg.producer:
                 recv_task = asyncio.create_task(self.recv_control_loop(ws))
                 try:
@@ -314,14 +328,6 @@ class SessionHelper:
                     except asyncio.CancelledError:
                         pass
             else:
-                await ws.send(json.dumps(envelope(
-                    session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
-                    {"type": "session_capabilities", "delivery_ack_v1": True,
-                     "persistent_inbox_v1": True, "agent_route_v2": True,
-                     "unified_queue_v1": self.cfg.mode == "driver",
-                     "device_id_v1": self.cfg.device_id_v1 and bool(self.cfg.device_id),
-                     "processed_semantics": "accepted_to_cli", "helper_version": __version__},
-                ), ensure_ascii=False))
                 hb = asyncio.create_task(self.online_list_heartbeat_loop())
 
                 # B3: MCP IPC listener — receives send requests from the

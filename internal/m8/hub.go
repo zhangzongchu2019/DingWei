@@ -125,6 +125,7 @@ type sessionClient struct {
 	skillInstalled bool
 	skillCancel    context.CancelFunc
 	deliveryACKV1  bool
+	helperReady    bool
 	deviceID       string
 	deviceIDV1     bool
 }
@@ -782,6 +783,10 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	nameWarn := sessionNameRequestWarning(requestedSessionName, keyID, ownerKey)
+	if agentHandshakeEnforced() && nameWarn != "" {
+		http.Error(w, nameWarn, http.StatusBadRequest)
+		return
+	}
 	switch sessionNameEnforceMode() {
 	case "enforce":
 		if nameWarn != "" {
@@ -1003,6 +1008,14 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		}
 		if env.Meta == nil {
 			env.Meta = map[string]any{}
+		}
+		if agentHandshakeEnforced() && sessionEnvelopeRequiresHelperReady(env) && !sessionHelperReady(c) {
+			// M2 is a protocol admission hurdle, not trusted identity. A client
+			// holding the shared API secret can imitate session_capabilities.
+			// Strong helper identity requires a separately provisioned device key.
+			log.Printf("session content rejected reason=helper_capabilities_required key_id=%s session=%s conn_seq=%d", c.keyID, c.sessionName, c.connSeq)
+			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "当前连接尚未完成 sessionHelper capabilities 握手"))
+			continue
 		}
 		// Reserved attestation fields are never accepted from a session. The
 		// authenticated WS admission below derives the canonical agent channel.
@@ -3298,6 +3311,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	}
 	c.stateMu.Lock()
 	wasDeliveryACKV1 := c.deliveryACKV1
+	c.helperReady = true
 	c.deliveryACKV1 = metaBool(env.Meta, "delivery_ack_v1")
 	c.stateMu.Unlock()
 	if h.Repo != nil {
@@ -3313,6 +3327,29 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 		go h.drainSessionDeliveries(context.Background(), c)
 	}
 	return true
+}
+
+func sessionHelperReady(c *sessionClient) bool {
+	if c == nil {
+		return false
+	}
+	c.stateMu.Lock()
+	defer c.stateMu.Unlock()
+	return c.helperReady
+}
+
+func sessionEnvelopeRequiresHelperReady(env model.Envelope) bool {
+	typeName := strings.ToLower(strings.TrimSpace(metaString(env.Meta, "type")))
+	return typeName == "" || typeName == "content" || typeName == "agent_route"
+}
+
+func agentHandshakeEnforced() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("WP_AGENT_HANDSHAKE_ENFORCE"))) {
+	case "1", "true", "yes", "on", "enforce":
+		return true
+	default:
+		return false
+	}
 }
 
 func (h *Hub) releaseSessionDeliveryLeases(c *sessionClient, reason string) {

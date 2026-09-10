@@ -2088,6 +2088,97 @@ func TestFeishuShortSessionSelectorResolvesRegisteredNameByOwner(t *testing.T) {
 	assertNoEnvelope(t, ctx, u2Dev, 120*time.Millisecond)
 }
 
+func TestM2HelperHandshakeGateRejectsOneShotContentAndAllowsCapableConnection(t *testing.T) {
+	t.Setenv("WP_AGENT_HANDSHAKE_ENFORCE", "true")
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-m2", Name: "svc-m2", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "owner", DisplayName: "Owner", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-m2", "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "owner"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	source := dialSession(t, ctx, srv.URL, "source", key.ID, secret)
+	defer source.Close(websocket.StatusNormalClosure, "done")
+	target := dialSession(t, ctx, srv.URL, "target", key.ID, secret)
+	defer target.Close(websocket.StatusNormalClosure, "done")
+
+	if err := writeEnvelope(ctx, source, model.Envelope{ID: "blocked", To: "#target", Body: "must not route"}); err != nil {
+		t.Fatal(err)
+	}
+	for {
+		got := readEnvelope(t, ctx, source)
+		if metaBool(got.Meta, "error") {
+			if got.ID != "blocked" || !strings.Contains(got.Body, "capabilities") {
+				t.Fatalf("gate error=%+v", got)
+			}
+			break
+		}
+	}
+	if err := writeEnvelope(ctx, source, model.Envelope{ID: "caps", To: "workpulse#" + key.ID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeEnvelope(ctx, source, model.Envelope{ID: "allowed", To: "#target", Body: "route after capabilities"}); err != nil {
+		t.Fatal(err)
+	}
+	for {
+		got := readEnvelope(t, ctx, target)
+		if got.ID == "blocked" {
+			t.Fatalf("pre-capabilities content reached target: %+v", got)
+		}
+		if got.ID == "allowed" {
+			if got.Body != "route after capabilities" {
+				t.Fatalf("routed envelope=%+v", got)
+			}
+			break
+		}
+	}
+
+	body := dialSessionErrorBody(t, ctx, srv.URL, "bad_name", key.ID, secret)
+	if !strings.Contains(body, "会话名不合规") {
+		t.Fatalf("invalid session name was not rejected: %q", body)
+	}
+}
+
+func TestM2HelperHandshakeGateScopeIsOnlyContentAndAgentRoute(t *testing.T) {
+	for _, tc := range []struct {
+		typeName string
+		want     bool
+	}{
+		{typeName: "", want: true},
+		{typeName: "content", want: true},
+		{typeName: "agent_route", want: true},
+		{typeName: "session_capabilities", want: false},
+		{typeName: "delivery_ack", want: false},
+		{typeName: "session_event", want: false},
+		{typeName: "terminal_output", want: false},
+	} {
+		env := model.Envelope{Meta: map[string]any{"type": tc.typeName}}
+		if got := sessionEnvelopeRequiresHelperReady(env); got != tc.want {
+			t.Fatalf("type=%q got=%t want=%t", tc.typeName, got, tc.want)
+		}
+	}
+	c := &sessionClient{}
+	if sessionHelperReady(c) {
+		t.Fatal("new connection unexpectedly helper-ready")
+	}
+	(&Hub{}).handleSessionCapability(c, model.Envelope{Meta: map[string]any{"type": "session_capabilities"}})
+	if !sessionHelperReady(c) {
+		t.Fatal("capabilities did not mark current connection helper-ready")
+	}
+}
+
 func TestShortSessionSelectorRejectsAmbiguousOwnerMatch(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
