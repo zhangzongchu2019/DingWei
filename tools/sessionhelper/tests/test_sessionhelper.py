@@ -876,7 +876,9 @@ class SessionHelperTest(unittest.TestCase):
 
         body = "\n**********\n【DingWei在线清单】同账号在线AI会话\n1. #home\n**********\n"
         self.assertTrue(is_online_directory_text(body))
-        env = {"from": "workpulse#FB-2642", "to": "home#FB-2642", "body": body, "meta": {"type": "online_directory", "no_mirror": True}}
+        # 夹具订正(T-045):Hub 侧 online_directory 实际带 system=true(hub.go:4007),
+        # 原夹具只写 no_mirror,与真实信封不符 —— 而正是这个不符让"按 no_mirror 丢弃"看起来合理。
+        env = {"from": "workpulse#FB-2642", "to": "home#FB-2642", "body": body, "meta": {"type": "online_directory", "system": True, "no_mirror": True}}
         self.assertTrue(is_no_mirror_envelope(env))
         helper = SessionHelper(load_config(BASE_ENV))
         fake = FakeAdapter()
@@ -2076,3 +2078,37 @@ class SessionHelperTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AMRRouteDeliveryTest(unittest.TestCase):
+    """T-045:AMR 路由的 @ 提及必须能进入会话,不得被控制面过滤器吞掉。
+
+    这一格是端到端缺陷的最小复现:帧到达客户端却不入库,Hub 却记为 dispatched。
+    只断言"AMR 信封不被丢"是不够的 —— 必须同时断言控制面信封仍然被丢,
+    否则修复可能是把过滤器整个拆了(那会把 terminal_resize 之类灌进对话)。
+    """
+
+    def test_amr_route_envelope_is_delivered(self):
+        # 与 amr.go:583 逐字同形
+        env = {"id": "amr-abc", "to": "b#k", "from": "a#k", "body": "@b 请看",
+               "meta": {"type": "agent_route", "no_mirror": True, "reply_policy": "no_reply",
+                        "source_delivery_id": "d1", "source_turn_id": "t1"}}
+        self.assertFalse(is_no_mirror_envelope(env),
+                         "AMR 路由信封被当控制面丢弃 —— 这正是 T-045")
+
+    def test_control_plane_still_dropped(self):
+        # 反向对照:带 system 的控制面信封仍须被丢,否则修复就是拆了过滤器
+        for meta in [
+            {"type": "terminal_resize", "system": True, "no_mirror": True},
+            {"type": "delivery_cancel", "system": True, "no_mirror": True},
+            {"type": "provision", "system": True, "no_mirror": True},
+            {"type": "mirror_control", "system": True, "no_mirror": True},
+            {"error": True, "system": True, "no_mirror": True},
+        ]:
+            with self.subTest(meta=meta):
+                self.assertTrue(is_no_mirror_envelope({"meta": meta}),
+                                f"控制面信封未被丢弃:{meta}")
+
+    def test_plain_message_delivered(self):
+        self.assertFalse(is_no_mirror_envelope({"meta": {}}))
+        self.assertFalse(is_no_mirror_envelope({}))

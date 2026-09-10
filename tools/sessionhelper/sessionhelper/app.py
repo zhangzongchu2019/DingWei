@@ -75,8 +75,27 @@ def is_broadcast_envelope(env: dict) -> bool:
 
 
 def is_no_mirror_envelope(env: dict) -> bool:
+    """是否为不应进入会话的控制面信封。
+
+    🔴 T-045:本函数此前把 no_mirror 也当作丢弃理由,导致 AMR 路由的 @ 提及被静默丢弃 ——
+    帧到达了连接(coder 在 runtime.log 的 [recv] 里找到了原文、from 为发件方本体),
+    但因这道判定在 delivery_inbox.accept 之前执行,它既不入库也不留痕,
+    而 Hub 侧 RouteEnvelope 成功、计为 targets_dispatched。计数说成功、收件库是空的。
+
+    no_mirror 的字面含义就是「不要镜像」,Hub 侧也只由 shouldSkipMirror 消费
+    (决定要不要镜像到飞书等外部面),与「要不要投递给本会话」无关。
+    把它读成「不要投递」是语义越界。
+
+    改为只按 system 判定,安全性已逐个核对:Hub 侧每一个 no_mirror=true 的信封
+    **都同时带 system=true** —— terminal_interrupt/resize/refresh、delivery_cancel、
+    provision、mirror_control、agent_network_skill_push、online_directory、
+    delivery_status、errorEnvelope,无一例外。
+    唯二例外是 amr.go:583 的路由信封与本文件 agent_route_envelope 自己产的信封,
+    而这两者**正是应当被投递的**。
+    另:在线清单在本函数之前已由 is_online_directory_text 分支单独处理,不受影响。
+    """
     meta = env.get("meta") or {}
-    return truthy_meta(meta.get("no_mirror")) or truthy_meta(meta.get("system"))
+    return truthy_meta(meta.get("system"))
 
 
 def is_online_directory_text(text: str) -> bool:
