@@ -3271,11 +3271,28 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 	return nil
 }
 
+// reliablePrimaryEnvelope 判断信封是否走可靠投递(持久队列 + ACK + 离线补投 + 留日志)。
+//
+// 🔴 业主 2026-09-10 裁定:@ 提及要「尽可能可靠投递,只要客户端 inbox 收到就是送达」。
+// 原实现把 no_mirror 也当作不可靠的理由,而 no_mirror 的语义只是「不要镜像到外部面」
+// (本文件 shouldSkipMirror 是它唯一的消费者),与「要不要可靠送达」无关。
+// 这个耦合的后果:AMR 的 @ 提及既不进持久队列、也不要求 ACK、直写成功还完全不打日志,
+// 对方离线就无痕丢弃,而 Hub 仍把它计入 targets_dispatched —— 全链路查无可查(T-045/T-044)。
+//
+// 故解耦:不镜像 ≠ 不可靠。只有 system(控制面)才排除在可靠投递之外。
+// 同时把 agent_route 纳入可靠类型 —— 它承载 Agent 间协作指令,与人发的消息同级。
+// 注:走可靠路径后 Hub 会把 Meta["type"] 覆写为 "delivery" 并补 delivery_id/ack_required,
+// 即 @ 提及在收件侧与普通消息完全同形;no_mirror 仍保留在 Meta 里,
+// shouldSkipMirror 照旧生效,**不会**因此被镜像到飞书。
 func reliablePrimaryEnvelope(env model.Envelope) bool {
-	if env.ID == "" || metaBool(env.Meta, "system") || metaBool(env.Meta, "no_mirror") {
+	if env.ID == "" || metaBool(env.Meta, "system") {
 		return false
 	}
-	return metaString(env.Meta, "type") == ""
+	switch metaString(env.Meta, "type") {
+	case "", "agent_route":
+		return true
+	}
+	return false
 }
 
 func deliverySourceType(env model.Envelope) string {

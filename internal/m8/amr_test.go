@@ -392,3 +392,49 @@ func BenchmarkAMRIngestCompletedCardinality(b *testing.B) {
 		})
 	}
 }
+
+// 业主 2026-09-10 裁定:@ 提及要「尽可能可靠投递,只要客户端 inbox 收到就是送达」。
+// 本组用例把该裁定钉在 reliablePrimaryEnvelope 上,并守住三条边界:
+//   ① agent_route 必须可靠 —— 否则又回到"直写成功无痕、离线即丢"
+//   ② no_mirror 不再影响可靠性 —— 它只管镜不镜像
+//   ③ system 仍必须不可靠 —— 控制面信封不该进持久队列要 ACK
+// 只断言 ① 是不够的:把整个判定改成恒真也能让 ① 过,②③ 才是防止那种"修法"的护栏。
+func TestReliableEnvelopeDecouplesMirrorFromReliability(t *testing.T) {
+	cases := []struct {
+		name string
+		meta map[string]any
+		want bool
+	}{
+		{"AMR 路由信封(no_mirror 且 agent_route)", map[string]any{"type": "agent_route", "no_mirror": true}, true},
+		{"普通消息", map[string]any{}, true},
+		{"仅 no_mirror 的普通消息", map[string]any{"no_mirror": true}, true},
+		{"控制面 system", map[string]any{"type": "terminal_resize", "system": true, "no_mirror": true}, false},
+		{"仅 system", map[string]any{"system": true}, false},
+		{"其它已知类型不得被顺带放行", map[string]any{"type": "delivery_ack"}, false},
+	}
+	for _, tc := range cases {
+		env := model.Envelope{ID: "e1", Meta: tc.meta}
+		if got := reliablePrimaryEnvelope(env); got != tc.want {
+			t.Errorf("%s: reliablePrimaryEnvelope=%v want %v", tc.name, got, tc.want)
+		}
+	}
+	// 空 ID 仍不可靠(原有不变量,顺带守住)
+	if reliablePrimaryEnvelope(model.Envelope{Meta: map[string]any{}}) {
+		t.Errorf("空 ID 信封不得判为可靠")
+	}
+}
+
+// AMR 构造的信封必须真的能通过可靠判定 —— 上面那组测的是判定函数,
+// 这一格测的是**实际发出的那个信封形状**,两者对不上时前者会绿而线上仍坏。
+func TestAMRRoutedEnvelopeIsReliable(t *testing.T) {
+	env := model.Envelope{
+		ID: "amr-abc",
+		Meta: map[string]any{
+			"type": "agent_route", "no_mirror": true,
+			"reply_policy": "no_reply", "source_delivery_id": "d1", "source_turn_id": "t1",
+		},
+	}
+	if !reliablePrimaryEnvelope(env) {
+		t.Fatalf("AMR 路由信封被判为不可靠 —— 将退回直写无痕、离线即丢")
+	}
+}
