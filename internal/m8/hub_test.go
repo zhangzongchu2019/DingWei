@@ -1987,8 +1987,19 @@ func TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope(t *testing.T) {
 	homeName := "u1-home-" + keyTail(key.ID)
 	developerName := "u1-developer-" + keyTail(key.ID)
 	skill := readEnvelopeIncludingSystem(t, ctx, home)
-	if skill.Meta["type"] != agentNetworkSkillPushType || !strings.Contains(skill.Body, agentNetworkSkillAck) || !strings.Contains(skill.Body, "#developer 请核对X") {
+	// T-050:原断言检查指南里含 legacy 例子「#developer 请核对X」。
+	// 该写法在 driver 模式下是不可达代码,指南已改为明确劝阻使用它 —— 断言随之更新。
+	// 新断言改为检查指南**确实在教当前可用的那条路**(行首 @ 提及),
+	// 这比检查一个具体例句更贴近本用例的目的:指南推送内容是否有效。
+	// 顺带守住一条:指南不得再把 legacy 写法当正例推荐。
+	if skill.Meta["type"] != agentNetworkSkillPushType || !strings.Contains(skill.Body, agentNetworkSkillAck) {
 		t.Fatalf("agent skill push=%+v", skill)
+	}
+	if !strings.Contains(skill.Body, "行首") || !strings.Contains(skill.Body, "@提及") {
+		t.Fatalf("上线指南未教当前可用的投递方式(行首 @ 提及):%s", skill.Body)
+	}
+	if strings.Contains(skill.Body, "legacy 示例") {
+		t.Fatalf("上线指南仍把 legacy 写法当正例推荐,而它在 driver 模式下不可达:%s", skill.Body)
 	}
 	if err := writeEnvelope(ctx, home, model.Envelope{
 		ID:   "skill-ack",
