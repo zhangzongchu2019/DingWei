@@ -172,6 +172,10 @@ type ForwardResponse struct {
 }
 
 const (
+	// systemAddressName 是保留的系统地址名,用于 helper<->Hub 的控制面信封(T-044)。
+	// 它**不是会话名**:任何以它为目标的信封都终止于 Hub,绝不进入会话解析。
+	systemAddressName = "workpulse"
+
 	secOpsOwnerKey             = "systemtaskintl"
 	secOpsMemberName           = "SYSTEM-V-TASK-INTERNAL"
 	secOpsKeyword              = "#系统安全"
@@ -2598,6 +2602,23 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 	}
 	switch to.Kind {
 	case addressSession:
+		// 🔴 T-044:workpulse 是**保留的系统地址**,不是会话名。
+		// helper 会向 workpulse#<key> 发至少 9 类信封(session_capabilities / provision_ack /
+		// delivery_ack / delivery_cancel_ack / comm_skill_ack / terminal_interrupt_ack /
+		// terminal_output 等),Hub 按 meta.type 在会话路由**之前**拦截消费其中一部分。
+		// 凡类型不在拦截名单内的,此前会掉进下面的会话解析 —— 而 workpulse 从来不是注册会话,
+		// 于是报「目标会话不在你的账号下或不在线：workpulse」并**回一条投递失败通知**。
+		// 实测当日复现两次,且失败形态是「再生成一条通知」,有构成通知风暴的风险。
+		//
+		// 修法:保留地址一律终止于 Hub,绝不落到会话解析。
+		// 未被消费即属**本端程序问题**(helper 发了 Hub 不认的类型),不是发信方能处置的事,
+		// 故记服务端日志而不回投递失败 —— 回给 Agent 它也做不了什么,只会刷屏。
+		// 日志带 type/from,正是此前查不出"是哪一类漏出去"所缺的那条(helper 侧不记出站)。
+		if to.SessionName == systemAddressName {
+			log.Printf("session route decision=system_address_unconsumed target=%s type=%q from=%s env_id=%s",
+				systemAddressName, metaString(env.Meta, "type"), env.From, env.ID)
+			return nil
+		}
 		// 常规同 key 且在线 → 快路径直投
 		if to.KeyID == from.KeyID && h.sessionOnline(to.KeyID, to.SessionName) {
 			return h.routeToSession(ctx, to.KeyID, to.SessionName, env, from.Kind == addressFeishu)
