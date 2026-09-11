@@ -263,6 +263,29 @@ def _read_renderer() -> bytes:
         return fh.read()
 
 
+# display-provenance v1 灰度 flag。渲染器把来源头像(飞书/Agent/人工/系统 四个 SVG)
+# 整体挂在 window.PROVENANCE_ICONS_V1 之后;而在此之前 **VS 从未注入过该变量**
+# ⇒ provFlagOn() 恒假 ⇒ 四个来源图标在生产里是死代码,页面只剩按事件类型给的
+# 表情兜底(user_input→👤、assistant_text→🤖),于是「飞书头像不见了」、
+# 「Agent 投递的消息显示成 👤 而不是 Agent 头像」。
+# Hub 侧数据早已齐备(provenanceForEnvelope 盖 attested_by=hub + trust_decision=trusted,
+# 字段名与渲染器读取逐字一致),缺的只有这一行注入。
+# 仍留环境变量,便于无需改代码即可回退:VS_PROVENANCE_ICONS=0 关闭。
+_PROVENANCE_ICONS_ON = os.environ.get("VS_PROVENANCE_ICONS", "1").strip().lower() not in ("0", "false", "off", "no")
+_PROV_FLAG_SCRIPT = "<script>window.PROVENANCE_ICONS_V1=true;</script>"
+_PROV_FLAG_ANCHOR = "</head>"
+
+
+def _inject_provenance_flag(text: str) -> str:
+    """在 </head> 前注入灰度 flag。找不到锚点则原样返回(fail-open:宁可没图标,不可白页)。"""
+    if not _PROVENANCE_ICONS_ON or _PROV_FLAG_SCRIPT in text:
+        return text
+    idx = text.find(_PROV_FLAG_ANCHOR)
+    if idx < 0:
+        return text
+    return text[:idx] + _PROV_FLAG_SCRIPT + text[idx:]
+
+
 def _read_tasks_snapshot() -> dict:
     """GET /tasks 快照读取。fail-closed:无 VS_TASKS_FILE / 读失败 / 坏 JSON / 形状不符
     一律返 {"project":"","tasks":[]}(渲染器要 tasks 是 list),绝不抛——保证 handler 恒 200。"""
@@ -556,12 +579,15 @@ class _Handler(BaseHTTPRequestHandler):
         # The trusted router supplies the session. This process-level base is a deployment fact,
         # so the renderer has one path rewriter and request headers cannot choose its public prefix.
         hdr_sess = self.headers.get("X-DW-Session")
+        text = body.decode("utf-8", "replace")
         if hdr_sess:
             pre = PUBLIC_VIEW_BASE + "/" + hdr_sess.strip()
-            text = body.decode("utf-8", "replace")
             for ep in ("/events", "/input", "/interrupt", "/control", "/status", "/page"):
                 text = text.replace("'" + ep + "'", "'" + pre + ep + "'")
-            body = text.encode("utf-8")
+        # 🔴 注入**无条件**:来源头像与是否带 X-DW-Session 无关,
+        # 放进上面的 if 里会让直连 VS 的场景永远看不到图标。
+        text = _inject_provenance_flag(text)
+        body = text.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
