@@ -1933,7 +1933,19 @@
       //    两边键自然相同;而线上事件不带 message_id,永远走这条回退分支。
       //    ——**用例比现实宽松,于是测出了绿灯。**
       // ⇒ 回退分支必须归一(去前缀),与 c1DeliveryCards 的键口径一致。
-      norm.key = norm.messageId || deliveryMergeKey(norm.deliveryId);
+      // 🔴 T-074 真正的成因(2026-09-11 逐层查到源头):同一条输入由**两个进程**各发一个事件,
+      // 且**字段构成不对称**:
+      //     Hub(Go)   input_posted  internal/m8/terminal.go:496  **带 message_id**
+      //     helper(Py) user_input   unified_queue.py:167         **不带 message_id**
+      // ⇒ 前者键取 message_id,后者只能退回投递号 ⇒ **两个键永不相等** ⇒ 画两张卡。
+      // (投递号本身还有 `dlv_X` / `dw-dlv_X` 两种写法,那是**第二层**不一致。)
+      //
+      // ⇒ 键改为**先查投递号索引**:同一笔投递,谁先建卡谁定键,后到的一律沿用。
+      //   如此两种到达顺序都收敛到同一张卡,且不依赖任一方带 message_id。
+      // ⚠️ 组长此前三版修复都"用例通过、线上无效",根因同一个:
+      //   用例给两边都配了 message_id(或都不配),**比现实对称** —— 现实是一边有一边没有。
+      const dlvKey = deliveryMergeKey(norm.deliveryId);
+      norm.key = (dlvKey && c1DeliveryCards.get(dlvKey)) || norm.messageId || dlvKey;
       return { ...ev, _norm: norm };
     }
 

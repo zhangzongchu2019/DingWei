@@ -56,6 +56,23 @@ const base = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-canary
     const nk = await page.evaluate(() => document.querySelectorAll('#timeline > *').length);
     assert.strictEqual(nk, 1, `④ 无 message_id 时(线上形态)仍须只产一张卡,实为 ${nk} 张`);
 
+    // 🔴 ⑤ **线上真实形态**:Hub 的 input_posted **带** message_id,
+    //    helper 的 user_input **不带** —— 两边**不对称**。
+    //    前四格都让两边对称(都给或都不给),**比现实宽松**,组长据此三次误判「已修好」。
+    //    这一格才是业主实际看到的那个场景。
+    await page.evaluate(() => {
+      resetConversation(); finishTimelineReplay(false);
+      handleIncomingEvent({ kind:'input_posted', text:'真实形态', message_id:'msg-real',
+        delivery_id:'dlv_real', stage:'cli_injected', cursor:'20' });
+      handleIncomingEvent({ kind:'user_input', text:'真实形态',
+        delivery_id:'dw-dlv_real', data:{ lifecycle:'admitted' }, turn_id:'treal',
+        cursor:'queue:00000000000000000001:admitted' });
+    });
+    await page.waitForTimeout(220);
+    const real = await page.evaluate(() => document.querySelectorAll('#timeline > *').length);
+    assert.strictEqual(real, 1,
+      `⑤ 线上真实形态(一边带 message_id 一边不带)须只产一张卡,实为 ${real} 张`);
+
     console.log('T-074 delivery-id regression: ALL PASS');
   } finally { await browser.close(); }
 })();
