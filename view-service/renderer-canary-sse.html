@@ -392,7 +392,25 @@
       box-shadow: var(--shadow);
       overflow: visible;
     }
+    /* T-054:辅助面板收进右侧边条,只留错误。形态对齐既有 .taskboard-handle/.taskboard-panel。 */
+    .workspace-dock[hidden] { display: none; }
     .workspace-dock {
+      position: fixed; right: 0; top: 58%; z-index: 40;
+      display: flex; flex-direction: row-reverse; align-items: flex-start;
+    }
+    .workspace-dock-toggle {
+      writing-mode: vertical-rl; padding: 10px 6px;
+      border: 1px solid var(--danger, #d66); border-right: none;
+      border-radius: 8px 0 0 8px;
+      background: var(--bg-elev, #1e1e24); color: var(--danger, #d66);
+      cursor: pointer; font-size: 13px; white-space: nowrap;
+    }
+    .workspace-dock-body {
+      width: 320px; max-height: 60vh; overflow-y: auto;
+      background: var(--bg-elev, #1e1e24); border: 1px solid var(--danger, #d66);
+      border-radius: 8px 0 0 8px;
+    }
+    .workspace-dock-legacy {
       flex: 0 0 auto;
       margin-top: 10px;
       border: 1px solid var(--line);
@@ -907,18 +925,19 @@
       <section class="waiting-area" id="waitingArea" aria-label="等待接纳的消息" aria-live="polite" hidden>
         <div id="waitingList"></div>
       </section>
-      <section class="workspace-dock" id="workspaceDock" aria-label="辅助面板">
-        <button class="workspace-dock-toggle" id="workspaceDockToggle" type="button" aria-expanded="false" aria-controls="workspaceDockBody">
-          <span class="workspace-dock-label">辅助面板</span><span class="dock-unread" id="workspaceDockUnread" hidden>0</span>
-        </button>
-        <div class="workspace-dock-body" id="workspaceDockBody" hidden>
-          <section class="dock-section" data-dock-section="activity" aria-labelledby="activitySectionTitle">
-            <div class="dock-section-title" id="activitySectionTitle"><span>运行动态</span></div>
-            <div class="dock-section-list" id="activityList" role="log" aria-live="polite"></div>
-          </section>
-        </div>
-      </section>
     </main>
+    <!-- T-054:错误看板,右侧贴边;无错误时整体不显示 -->
+    <section class="workspace-dock" id="workspaceDock" aria-label="错误看板" hidden>
+      <button class="workspace-dock-toggle" id="workspaceDockToggle" type="button" aria-expanded="false" aria-controls="workspaceDockBody">
+        <span class="workspace-dock-label">错误看板</span><span class="dock-unread" id="workspaceDockUnread" hidden>0</span>
+      </button>
+      <div class="workspace-dock-body" id="workspaceDockBody" hidden>
+        <section class="dock-section" data-dock-section="activity" aria-labelledby="activitySectionTitle">
+          <div class="dock-section-title" id="activitySectionTitle"><span>错误</span></div>
+          <div class="dock-section-list" id="activityList" role="log" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
     <div class="toast-region" id="toastRegion" aria-live="assertive" aria-atomic="true"></div>
 
     <footer class="composer">
@@ -956,6 +975,7 @@
     const timeline = document.getElementById('timeline');
     const waitingArea = document.getElementById('waitingArea');
     const waitingList = document.getElementById('waitingList');
+    const workspaceDock = document.getElementById('workspaceDock');
     const workspaceDockToggle = document.getElementById('workspaceDockToggle');
     const workspaceDockBody = document.getElementById('workspaceDockBody');
     const workspaceDockUnread = document.getElementById('workspaceDockUnread');
@@ -1476,6 +1496,7 @@
       for (const section of dockSections.values()) section.list.textContent = '';
       toastRegion.textContent = '';
       dockUnreadCount = 0;
+      workspaceDock.hidden = true;  // T-054:清空后回到「无错误则不显示」
       updateDockUnread();
       setDockExpanded(false);
       beginTimelineReplay();
@@ -2235,6 +2256,7 @@
       if (!section) throw new Error(`unregistered dock section: ${sectionID}`);
       section.list.appendChild(card);
       while (section.list.children.length > 500) section.list.removeChild(section.list.firstChild);
+      workspaceDock.hidden = false;  // T-054:出现错误后入口才出现
       if (workspaceDockBody.hidden && !replayInProgress) {
         dockUnreadCount++;
         updateDockUnread();
@@ -2545,6 +2567,11 @@
 
     // control 消息按系统事件渲染:v0.6 只表达「已发起/已发出」,绝不假称「已终止/真停」(真停挂 v0.7#20)
     function renderControlNote(ev) {
+      // T-054(业主 2026-09-10):control 卡片与输入框上方的待提交区完全重复
+      // (待提交区已显示已入队→hub 已收→helper 已收→已注入→已写入终端,含失败原因),
+      // 故不再产生任何卡片 —— 正文区与边条都不产生。
+      return;
+      /* eslint-disable no-unreachable */
       const { card, content } = baseCard(ev, 'system', 'activity-card');
       const kind = String(ev.control?.kind || ev.control_kind || '').toLowerCase();
       const text = {
@@ -2554,6 +2581,7 @@
       const detail = ev.text || ev._norm?.text || '';
       content.textContent = detail ? `${text}:${detail}` : text;
       appendDockCard('activity', card);
+      /* eslint-enable no-unreachable */
     }
 
     function renderUser(ev) {
@@ -2754,10 +2782,14 @@
     }
 
     function renderUnknown(ev) {
+      // T-054:同上,unknown 事件不再产生卡片。
+      return;
+      /* eslint-disable no-unreachable */
       const { card, content } = baseCard(ev, 'system', 'activity-card');
       content.appendChild(document.createTextNode(JSON.stringify(ev, null, 2)));
       mergeMetaIntoFirstBlock(content, content.firstChild);
       appendDockCard('activity', card);
+      /* eslint-enable no-unreachable */
     }
 
     function renderMarkdown(src) {
