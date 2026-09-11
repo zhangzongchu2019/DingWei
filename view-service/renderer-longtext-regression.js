@@ -278,7 +278,10 @@ async function driveLongReply(page, chunks, chunkText) {
     assert.strictEqual(t5c.beforeDone.pending, 1, '前置:窗口内的后续 chunk 必须先被挂起(否则本格没测到节流)');
     assert.strictEqual(t5c.pendingAfter, 0, 'A: turn_completed 后待渲队列须已排空');
     assert.strictEqual(t5c.text, '尾段0尾段1尾段2尾段3尾段4', `A: turn_completed 须终渲全部尾段,实为「${t5c.text}」`);
-    assert.match(t5c.footer, /回合完成/, 'A: turn_completed 的终态文案须同步落 DOM');
+    // 🔴 2026-09-11 业主:「这里只要给个完成标志即可,不用单写一行文字」⇒ 文案去掉,只留 ✓。
+    // 本格的**测试意图不变**:终态必须同步落 DOM(证明终渲跑完了),只是可观测物从文案换成标志。
+    // 这不是为让测试通过而放宽 —— 若连标志也没有,本断言照样红。
+    assert.match(t5c.footer, /✓/, 'A: turn_completed 的终态标志须同步落 DOM');
     ok('T5c (A) turn_completed 强制终渲:尾段与终态文案同步落 DOM');
 
     // 长回复后页面仍可交互:真实控件可见可读

@@ -145,7 +145,11 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-can
         handleIncomingEvent({ kind: 'state_change', data: { change: 'turn_completed', turn_cost_usd: 0.1234 }, delivery_id: 'd-pw', turn_id: 't-pw', cursor: '50' });
       });
       assert.strictEqual(await group.locator('.turn-tools').count(), 0);
-      assert.match(await group.locator('.turn-completed').innerText(), /本回合 \$0\.1234/);
+      // 🔴 2026-09-11 业主:「这里只要给个完成标志即可,不用单写一行文字」。
+      // 原断言编码的是即将被去掉的行为,**不是为让测试通过而放宽判据**。
+      // 改为两条:①标志仍在(整行删掉会让「结束」与「在跑」无法区分);②费用文字不再出现。
+      assert.match(await group.locator('.turn-completed').innerText(), /✓/);
+      assert.doesNotMatch(await group.locator('.turn-completed').innerText(), /本回合|累计|\$/);
       assert.deepStrictEqual(await group.locator(':scope > *').evaluateAll(nodes => nodes.map(n => n.className)), [
         'event-body turn-section turn-user',
         'event-body turn-section turn-assistant',
