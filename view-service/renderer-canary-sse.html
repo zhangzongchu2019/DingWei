@@ -2667,17 +2667,6 @@
       /* eslint-enable no-unreachable */
     }
 
-    // 投递失败转入右侧错误看板 —— 不进正文区(业主 2026-09-11 定)。
-    function noteDeliveryFailureToBoard(ev, norm) {
-      const reason = stageFooterText(norm) || '失败:投递失败';
-      const text = String(ev.text || norm.text || '').slice(0, 200);
-      // fail-loud:即便不在正文区显示,也不让它彻底消失 —— 诊断时仍可从控制台/看板找回。
-      console.warn('[delivery-failed]', norm.deliveryId || '', reason, text.slice(0, 60));
-      const { card, content } = baseCard(ev, 'error', 'activity-card');
-      content.innerHTML = `${escapeHtml(reason)}<div class="subtitle">${escapeHtml(text)}</div>`;
-      appendDockCard('activity', card);
-    }
-
     function renderUser(ev) {
       const norm = ev._norm || { key: '', sourceTrusted: false, stageIdx: -1 };
       // control 消息(cancel/interrupt 等)不进输入卡/待提交区,按系统事件文案渲染
@@ -2685,18 +2674,27 @@
         c2MaybeConfirmInterrupt(ev);  // C2:流上 control 事件=中断回执,升级 pending 请求为已确认
         return renderControlNote(ev);
       }
-      // 🔴 业主 2026-09-11:『至少,我不希望看到一个 event 卡片。就算他是出错信息,
-      // 我也不希望看到。这个卡片中又解决不了什么问题,也不能帮助我解决问题。』
-      // ⇒ 失败态**不在正文区产卡**,改为收进右侧错误看板(业主早先定的形态:
-      //   无错误不显示 / 有错误才出现 / 需展开才看)。
-      // ⚠️ 仅拦**新建卡**这一步:已有卡的原位更新不受影响(下面 entry 分支),
-      //   否则会把一条**先成功后失败**的消息整张卡吞掉。
-      // ⚠️ 信息不凭空消失:仍写入错误看板,并 console.warn 留痕以便事后诊断。
-      const entry = norm.key ? c1CardFor(norm, true) : null;
-      if (!entry?.card && norm.stage === 'failed') {
-        noteDeliveryFailureToBoard(ev, norm);
+      // 🔴 业主 2026-09-11(两次):『不希望看到 event 卡片,就算是出错信息也不希望看到』
+      // 『这个卡片要显示的状态信息,在待提交信息区和对话轮次交互卡片中都可以展示,
+      //   无需多出一个 event 卡片』。
+      // ⇒ 失败**不另起任何卡**(正文区与右侧看板都不起),而是**更新已有的那张对话卡**。
+      // 成因见 T-074:失败事件与输入卡的 message_id 键对不上,`c1CardFor` 找不到 ⇒ 新建 ⇒ 多一张。
+      // ⇒ 按 message_id 找不到时,改用**投递号**(已归一)反查已有卡再更新。
+      const entry0 = norm.key ? c1CardFor(norm, true) : null;
+      if (!entry0?.card && norm.stage === 'failed') {
+        const viaDlv = norm.deliveryId ? c1InputCards.get(c1DeliveryCards.get(deliveryMergeKey(norm.deliveryId))) : null;
+        if (viaDlv?.footer) {
+          // fail-loud:不在界面另起卡,但仍留痕,便于事后诊断(业主不看,排查时要用)
+          console.warn('[delivery-failed]', norm.deliveryId || '', stageFooterText(norm));
+          const st = viaDlv.footer.querySelector('.stage-text');
+          if (st) st.textContent = stageFooterText(norm) || '失败:投递失败';
+          return;
+        }
+        // ⚠️ 连已有卡都找不到:仍不新建卡(业主明确不要),只留痕。
+        console.warn('[delivery-failed-orphan]', norm.deliveryId || '', stageFooterText(norm));
         return;
       }
+      const entry = entry0;
       if (entry && entry.card) {
         // 同 message_id 已有输入卡:原位更新,绝不产生第二张
         if (norm.text && !entry.content.textContent) entry.content.textContent = norm.text;
