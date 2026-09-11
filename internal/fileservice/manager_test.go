@@ -132,3 +132,39 @@ func TestConcurrentPutEvictsOldestAndKeepsTombstone(t *testing.T) {
 		t.Fatalf("oldest lacks tombstone: %+v", f)
 	}
 }
+
+func TestSweepRetriesDurableDeletingState(t *testing.T) {
+	m, c, objects := testManager(t, 100)
+	f, err := m.Put(context.Background(), Upload{OwnerKey: "o", SessionName: "s", OriginalName: "old", ContentLength: 4, Body: strings.NewReader("data")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Time = c.Time.Add(61 * 24 * time.Hour)
+	objects.failDelete = true
+	if err := m.Sweep(context.Background()); err == nil {
+		t.Fatal("injected object deletion failure was swallowed")
+	}
+	got, err := m.Repo.Get(context.Background(), f.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.State != StateDeleting || got.RemovalReason != "retention" || got.RemovedAt != nil {
+		t.Fatalf("deletion intent was not durable: %+v", got)
+	}
+	objects.failDelete = false
+	if err := m.Sweep(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	got, err = m.Repo.Get(context.Background(), f.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.State != StateExpired || got.RemovedAt == nil || got.RemovalReason != "retention" {
+		t.Fatalf("deletion retry did not close tombstone: %+v", got)
+	}
+	// MinIO lifecycle or a prior attempt may already have removed the object;
+	// another sweep remains a no-op.
+	if err := m.Sweep(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -132,6 +132,67 @@ func (r *Repository) RemovalCandidates(ctx context.Context, now time.Time, quota
 	}
 	return out, rows.Err()
 }
+
+func (r *Repository) ListDeleting(ctx context.Context) ([]File, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT id FROM files WHERE state='deleting' ORDER BY created_at,id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []File
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		f, err := r.Get(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
+}
+
+// MarkDeleting durably records intent before touching object storage. A crash
+// or metadata failure after Delete is therefore recoverable by the next sweep.
+func (r *Repository) MarkDeleting(ctx context.Context, id, reason string) error {
+	result, err := r.db.ExecContext(ctx, `UPDATE files SET state='deleting',removal_reason=? WHERE id=? AND state='ready'`, reason, id)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return fmt.Errorf("file is not ready for deletion")
+	}
+	return nil
+}
+
+func (r *Repository) FinishDeleting(ctx context.Context, id string, at time.Time) error {
+	var reason string
+	if err := r.db.QueryRowContext(ctx, `SELECT removal_reason FROM files WHERE id=? AND state='deleting'`, id).Scan(&reason); err != nil {
+		return err
+	}
+	state := StateEvicted
+	if reason == "retention" {
+		state = StateExpired
+	}
+	result, err := r.db.ExecContext(ctx, `UPDATE files SET state=?,removed_at=? WHERE id=? AND state='deleting'`, string(state), stamp(at), id)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return fmt.Errorf("deletion state changed")
+	}
+	return nil
+}
 func (r *Repository) Tombstone(ctx context.Context, id string, state State, at time.Time, reason string) error {
 	if state != StateEvicted && state != StateExpired {
 		return fmt.Errorf("invalid tombstone state")

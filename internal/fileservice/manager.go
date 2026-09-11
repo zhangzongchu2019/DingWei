@@ -126,21 +126,41 @@ func (m *Manager) Open(ctx context.Context, verifier CapabilityVerifier, raw, fi
 }
 
 func (m *Manager) enforceLocked(ctx context.Context) error {
+	deleting, err := m.Repo.ListDeleting(ctx)
+	if err != nil {
+		return err
+	}
+	for _, f := range deleting {
+		if err := m.finishRemoval(ctx, f); err != nil {
+			return err
+		}
+	}
 	candidates, err := m.Repo.RemovalCandidates(ctx, m.Clock.Now(), m.QuotaBytes)
 	if err != nil {
 		return err
 	}
 	for _, f := range candidates {
-		if err := m.Objects.Delete(ctx, f.ObjectKey); err != nil {
-			return fmt.Errorf("delete %s: %w", f.ID, err)
-		}
-		state, reason := StateEvicted, "quota_fifo"
+		reason := "quota_fifo"
 		if !f.ExpiresAt.After(m.Clock.Now()) {
-			state, reason = StateExpired, "retention"
+			reason = "retention"
 		}
-		if err := m.Repo.Tombstone(ctx, f.ID, state, m.Clock.Now(), reason); err != nil {
+		if err := m.Repo.MarkDeleting(ctx, f.ID, reason); err != nil {
 			return err
 		}
+		f.State, f.RemovalReason = StateDeleting, reason
+		if err := m.finishRemoval(ctx, f); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *Manager) finishRemoval(ctx context.Context, f File) error {
+	if err := m.Objects.Delete(ctx, f.ObjectKey); err != nil {
+		return fmt.Errorf("delete %s: %w", f.ID, err)
+	}
+	if err := m.Repo.FinishDeleting(ctx, f.ID, m.Clock.Now()); err != nil {
+		return fmt.Errorf("finish delete %s: %w", f.ID, err)
 	}
 	return nil
 }

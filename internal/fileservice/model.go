@@ -5,11 +5,12 @@ import "time"
 type State string
 
 const (
-	StatePending State = "pending"
-	StateReady   State = "ready"
-	StateEvicted State = "evicted"
-	StateExpired State = "expired"
-	StateFailed  State = "failed"
+	StatePending  State = "pending"
+	StateReady    State = "ready"
+	StateDeleting State = "deleting"
+	StateEvicted  State = "evicted"
+	StateExpired  State = "expired"
+	StateFailed   State = "failed"
 )
 
 type File struct {
