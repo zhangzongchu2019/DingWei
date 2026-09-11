@@ -54,6 +54,8 @@ var isBusinessErr = map[error]bool{
 	ErrPidReuse:      true,
 }
 
+var stopProcessTTL = 10 * time.Second
+
 // ── process identity (§1: pidfd + tuple, not bare pid) ─────────────────
 
 // ProcTuple is the immutable process identity tuple.
@@ -681,8 +683,7 @@ func (s *Supervisor) stopProcess(session string) error {
 	}
 
 	// Bounded wait (TTL 10s). N-5: compare tuple, not just /proc existence.
-	const stopTTL = 10 * time.Second
-	deadline := time.Now().Add(stopTTL)
+	deadline := time.Now().Add(stopProcessTTL)
 	for time.Now().Before(deadline) {
 		cur, err := readProcTuple(int(tuple.PID))
 		if err != nil {

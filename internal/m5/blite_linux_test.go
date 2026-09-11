@@ -3,6 +3,7 @@
 package m5
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -129,22 +130,52 @@ func TestB10_SigkillVerify(t *testing.T) {
 	if err := child.Start(); err != nil {
 		t.Fatal(err)
 	}
-	defer child.Process.Kill()
 
 	pid := child.Process.Pid
-	realTuple, err := readProcTuple(pid)
-	if err != nil {
-		t.Fatalf("read tuple: %v", err)
+	// bash legitimately execs sleep. Capture the stable target tuple so this
+	// test cannot mistake an exec transition for PID reuse.
+	var realTuple ProcTuple
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		var err error
+		realTuple, err = readProcTuple(pid)
+		if err == nil && strings.HasSuffix(realTuple.Exe, "/sleep") {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("child did not reach stable sleep executable: tuple=%+v err=%v", realTuple, err)
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 
-	// Open pidfd
+	// The supervisor owns and closes pidFd. Keep a separate observer fd so an
+	// EBADF on the managed fd cannot masquerade as ESRCH/process exit.
 	pidFd, err := unixPidfdOpen(pid)
 	if err != nil {
 		t.Fatalf("pidfd_open: %v", err)
 	}
-	defer unixClose(pidFd)
+	observerPidFd, err := unixPidfdOpen(pid)
+	if err != nil {
+		t.Fatalf("observer pidfd_open: %v", err)
+	}
+	defer unixClose(observerPidFd)
+	waitDone := make(chan struct{})
+	go func() {
+		_, _ = child.Process.Wait()
+		close(waitDone)
+	}()
+	defer func() {
+		_ = child.Process.Kill()
+		select {
+		case <-waitDone:
+		case <-time.After(2 * time.Second):
+		}
+	}()
 
 	s.RegisterProcess("test-session", realTuple, pidFd)
+	oldTTL := stopProcessTTL
+	stopProcessTTL = 100 * time.Millisecond
+	defer func() { stopProcessTTL = oldTTL }()
 
 	// Run stopProcess which will: SIGTERM (ignored) → wait 10s → SIGKILL → verify
 	err = s.stopProcess("test-session")
@@ -155,14 +186,69 @@ func TestB10_SigkillVerify(t *testing.T) {
 
 	// MC-2: Verify process is actually dead via pidfd_send_signal(0).
 	// If the process is still alive, this is a test FAILURE (not a log line).
-	time.Sleep(200 * time.Millisecond)
-	if err := unixPidfdSendSignal(pidFd, 0); err == nil {
+	select {
+	case <-waitDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("B10 FAIL: child was not reaped after SIGKILL")
+	}
+	observerErr := unixPidfdSendSignal(observerPidFd, 0)
+	if observerErr == nil {
 		// Process survived SIGKILL — this is a real defect
 		syscall.Kill(pid, syscall.SIGKILL) // cleanup
 		t.Fatal("B10 FAIL: process still alive after SIGKILL — stop sequence did not kill it")
 	}
 	// pidfd_send_signal(0) on a dead process returns ESRCH
-	t.Logf("B10 PASS: pidfd_send_signal(0) returned error (process dead): %v", err)
+	if !strings.Contains(observerErr.Error(), "no such process") {
+		t.Fatalf("B10 FAIL: observer did not prove ESRCH: %v", observerErr)
+	}
+	t.Logf("B10 PASS: observer pidfd returned ESRCH after reap: %v", observerErr)
+}
+
+func TestReadProcTupleRejectsZombie(t *testing.T) {
+	child := exec.Command("/bin/sh", "-c", "exit 0")
+	if err := child.Start(); err != nil {
+		t.Fatal(err)
+	}
+	pid := child.Process.Pid
+	defer child.Process.Wait()
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		data, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
+		if err != nil {
+			t.Fatalf("child disappeared before wait: %v", err)
+		}
+		closeParen := strings.LastIndex(string(data), ")")
+		fields := strings.Fields(string(data)[closeParen+2:])
+		if len(fields) > 0 && fields[0] == "Z" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("child did not become zombie")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if _, err := readProcTuple(pid); err == nil || !strings.Contains(err.Error(), "zombie") {
+		t.Fatalf("readProcTuple did not classify zombie as gone: %v", err)
+	}
+}
+
+func TestForkExecReapsExitedChild(t *testing.T) {
+	pid, pidFd, err := forkExec("/bin/sh", []string{"/bin/sh", "-c", "exit 0"}, os.Environ())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer unixClose(pidFd)
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		err = unixPidfdSendSignal(pidFd, 0)
+		if err != nil && strings.Contains(err.Error(), "no such process") {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("forkExec child %d was not reaped: %v", pid, err)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 }
 
 // ── B11: fsync anti-proof — MC-4(a): deterministic fsync-count assertion ─
@@ -206,6 +292,7 @@ func TestB11_FsyncCount(t *testing.T) {
 	}
 	t.Log("B11 PASS: nil FsyncCount (production path) works")
 }
+
 // ── B13: CLOEXEC — real fork/exec, verify fd invisible in child ──────
 
 func TestB13_CloexecInChild(t *testing.T) {

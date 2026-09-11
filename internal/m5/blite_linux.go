@@ -95,6 +95,9 @@ func readProcTuple(pid int) (ProcTuple, error) {
 	if len(fields) < 20 {
 		return ProcTuple{}, fmt.Errorf("stat too short: %d fields", len(fields))
 	}
+	if fields[0] == "Z" {
+		return ProcTuple{}, fmt.Errorf("process %d is a zombie", pid)
+	}
 	startTime, err := strconv.ParseUint(fields[19], 10, 64)
 	if err != nil {
 		return ProcTuple{}, fmt.Errorf("parse starttime: %w", err)
@@ -197,6 +200,10 @@ func forkExec(binary string, argv []string, envp []string) (int, int, error) {
 		proc.Wait()
 		return -1, -1, fmt.Errorf("forkExec: pidfd_open(%d) failed (MC-1 fail-closed): %w", proc.Pid, err)
 	}
+	// pidfd observes exit but does not reap children. Keep exactly one waiter
+	// for every successfully started child so SIGTERM/SIGKILL cannot leave a
+	// zombie that pidfd_send_signal(0) still reports as present.
+	go func() { _, _ = proc.Wait() }()
 	return proc.Pid, pidFd, nil
 }
 
