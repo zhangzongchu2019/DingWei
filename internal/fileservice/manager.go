@@ -16,6 +16,8 @@ import (
 var (
 	ErrInvalidUpload = errors.New("invalid upload")
 	ErrIntegrity     = errors.New("object integrity check failed")
+	ErrAccessDenied  = errors.New("file access denied")
+	ErrNotReady      = errors.New("file is not ready")
 )
 
 type Upload struct {
@@ -85,6 +87,42 @@ func (m *Manager) Sweep(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.enforceLocked(ctx)
+}
+
+// Describe authorizes before consulting metadata. This ordering is deliberate:
+// callers without a valid capability get the same answer for unknown, ready,
+// expired, and evicted IDs.
+func (m *Manager) Describe(ctx context.Context, verifier CapabilityVerifier, raw, method, fileID, byteRange string) (File, error) {
+	if m.Repo == nil || m.Clock == nil || verifier == nil {
+		return File{}, ErrAccessDenied
+	}
+	capability, err := verifier.Verify(raw, method, fileID, byteRange, m.Clock.Now())
+	if err != nil {
+		return File{}, ErrAccessDenied
+	}
+	f, err := m.Repo.Get(ctx, fileID)
+	if err != nil {
+		return File{}, ErrAccessDenied
+	}
+	if capability.Subject != f.OwnerKey+"/"+f.SessionName {
+		return File{}, ErrAccessDenied
+	}
+	if f.State != StateReady {
+		return f, ErrNotReady
+	}
+	return f, nil
+}
+
+func (m *Manager) Open(ctx context.Context, verifier CapabilityVerifier, raw, fileID, byteRange string, offset, length int64) (File, io.ReadCloser, error) {
+	f, err := m.Describe(ctx, verifier, raw, "GET", fileID, byteRange)
+	if err != nil {
+		return f, nil, err
+	}
+	r, err := m.Objects.Open(ctx, f.ObjectKey, offset, length)
+	if err != nil {
+		return File{}, nil, err
+	}
+	return f, r, nil
 }
 
 func (m *Manager) enforceLocked(ctx context.Context) error {
