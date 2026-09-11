@@ -93,6 +93,21 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-can
       await page.waitForTimeout(50);
       assert.strictEqual(await page.locator('#timeline').evaluate(node =>
         Math.abs(node.scrollHeight - node.clientHeight - node.scrollTop) <= 1), true);
+      // 🔴 2026-09-11:本格原以「代码直接设 scrollTop」模拟用户上翻。
+      // 旧实现分不清 scroll 来源,该代理才成立;修复后代码**按真实手势**判定用户接管
+      // (因为浏览器滚动锚定/上限淘汰也会派发 scroll,旧实现把它们误判成用户上翻,
+      //  正是刷新不滚底的根因)。故此处补一次**真实 wheel 手势**再设位置:
+      // 测试**意图不变**(用户上翻后新消息不得把他拽回底部),只是代理手段升级为真手势。
+      // ⚠️ 不能靠删掉这条断言来「修好」—— 那会把「尊重用户上翻」这条行为一起丢掉。
+      // ⚠️ 坐标必须落在**当前视口内**:本测试跑 1280 与 390 两档,写死 640 在窄档会落到屏幕外,
+      // wheel 根本不派发 —— 插桩实测第二档 sinceGesture 始终未触发。改为取元素中心。
+      const tlBox = await page.locator('#timeline').boundingBox();
+      await page.mouse.move(tlBox.x + tlBox.width / 2, tlBox.y + tlBox.height / 2);
+      await page.mouse.wheel(0, -400);
+      // ⚠️ Playwright 的 mouse.wheel **异步**:插桩实测手势事件比调用返回晚约 20ms 到达。
+      // 不等一下的话,紧随其后的 scrollTop 赋值所派发的 scroll 会**抢在手势之前**被处理,
+      // 于是被正确地判成「非用户滚动」—— 那是修复在起作用,不是修复有问题。
+      await page.waitForTimeout(60);
       const scrolledUp = await page.locator('#timeline').evaluate(node => {
         const previous = node.style.scrollBehavior;
         node.style.scrollBehavior = 'auto';

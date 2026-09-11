@@ -1449,10 +1449,37 @@
       replayQuietTimer = setTimeout(() => finishTimelineReplay(true), REPLAY_QUIET_MS);
     }
 
+    // ── 🔴 滚动根因修复(业主 2026-09-11 定「先修滚动根因」)───────────────────
+    // 旧实现把「不在底部的 scroll 事件」一律判为**用户上翻**并永久交还跟随权。
+    // 问题:scroll 事件不只由用户产生 —— 内容增高时浏览器的滚动锚定(overflow-anchor)
+    // 会挪动 scrollTop 并派发 scroll;上限淘汰使上方内容变矮时同样如此。
+    // 于是「内容一长高就被误判成用户上翻」,三层补拍(双 rAF/250ms/字体就绪)全部失效,
+    // 因为它们都挂在 timelineAtBottom 之后,而该标志已被提前清掉。
+    // ⇒ 症状:刷新后有时到底、有时停中间、有时差一屏(业主实测);
+    //    自动化侧表现为 renderer-regression 滚动断言约 25% 偶发失败(T-035,
+    //    此前被登记为「测试 flaky」,实为本缺陷的观测手段)。
+    //
+    // 修法:只有**紧随真实用户手势**的 scroll 才算用户接管。
+    // ⚠️ 非用户来源的 scroll 只允许把跟随标志**置真**(到底了),不允许置假 ——
+    //    否则浏览器挪一下就把跟随权拿走,正是旧实现的病根。
+    const USER_SCROLL_GESTURE_MS = 400;
+    const SCROLL_KEYS = new Set(['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', ' ', 'Spacebar']);
+    let lastUserScrollGestureAt = 0;
+    const markUserScrollGesture = () => { lastUserScrollGestureAt = Date.now(); };
+    // ⚠️ 监听挂在 document 上而非 timeline 上:滚动条拖拽、触控板惯性、指针落在子元素
+    // 或 timeline 外沿时,事件不一定经过 timeline。**宁可把手势判宽一点** ——
+    // 判宽的代价是「用户滚了但我们没跟随」(用户自己再滚回底即可);
+    // 判窄的代价是「浏览器滚了却被当成用户」,那正是本次要修的病根。
+    for (const type of ['wheel', 'touchstart', 'touchmove', 'mousedown', 'pointerdown']) {
+      document.addEventListener(type, markUserScrollGesture, { passive: true, capture: true });
+    }
+    document.addEventListener('keydown', (e) => { if (SCROLL_KEYS.has(e.key)) markUserScrollGesture(); }, { capture: true });
+
     timeline.addEventListener('scroll', () => {
       const nearBottom = isTimelineNearBottom();
-      if (replayInProgress && !nearBottom) {
-        // 用户在初始窗口内主动上翻时立即交还滚动控制权；后续 live 事件
+      const byUser = (Date.now() - lastUserScrollGestureAt) <= USER_SCROLL_GESTURE_MS;
+      if (replayInProgress && !nearBottom && byUser) {
+        // 用户在初始窗口内**主动**上翻时立即交还滚动控制权；后续 live 事件
         // 只能在用户仍贴底时跟随。
         finishTimelineReplay(false);
         if (followScrollFrame !== null) {
@@ -1460,7 +1487,7 @@
           followScrollFrame = null;
         }
       }
-      timelineAtBottom = nearBottom;
+      if (byUser || nearBottom) timelineAtBottom = nearBottom;
     }, { passive: true });
 
     const timelineResizeObserver = new ResizeObserver(() => {
