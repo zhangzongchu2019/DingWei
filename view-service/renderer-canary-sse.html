@@ -1047,7 +1047,7 @@
     const NARROW_VIEWPORT_PX = 768;   // 与既有回归用的两档视口(1280/390)对齐
     function timelineMaxCards() {
       const w = (typeof window !== 'undefined' && window.innerWidth) || 1280;
-      return 200;  // ⚠️ 手机档 20 仍未启用:滚动根因已修,但连续流式下淘汰过频仍拖垮贴底(见 T-076)
+      return w < NARROW_VIEWPORT_PX ? 20 : 200;   // 业主定:手机 10 轮次(20 卡)/ PC 100 轮次(200 卡)
     }
     // ── G:超长正文文件化 ───────────────────────────────────────
     // 业主定的方向:长文本本该落文件、直接读文件,不该在 View 页内联全量展示。
@@ -1464,6 +1464,7 @@
     // ⚠️ 非用户来源的 scroll 只允许把跟随标志**置真**(到底了),不允许置假 ——
     //    否则浏览器挪一下就把跟随权拿走,正是旧实现的病根。
     const USER_SCROLL_GESTURE_MS = 400;
+    const FOLLOW_RELEASE_GAP_PX = 160;   // 约两三行高:少于此距离的偏移不视为「用户要看历史」
     const SCROLL_KEYS = new Set(['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', ' ', 'Spacebar']);
     let lastUserScrollGestureAt = 0;
     const markUserScrollGesture = () => { lastUserScrollGestureAt = Date.now(); };
@@ -1488,7 +1489,15 @@
           followScrollFrame = null;
         }
       }
-      if (byUser || nearBottom) timelineAtBottom = nearBottom;
+      // 🔴 迟滞(T-076):贴底判据用于「要不要跟随」很合适,但用于「要不要**放弃**跟随」太敏感。
+      // 实测窄屏 20 卡:淘汰使位置被推离底部仅 **60px**,恰落在用户手势窗口内,
+      // 于是被判成「用户想看历史」而永久交还跟随权 —— 连续流式那格 5/5 失败。
+      // ⇒ 放弃跟随另立一条更宽的阈值:**离底不足 FOLLOW_RELEASE_GAP_PX 一律不放弃**。
+      // 判宽的代价是「用户只滚了一点点,仍会被带回底」(再滚多一点即可);
+      // 判窄的代价是「淘汰抖一下就永久失去跟随」,即本次要修的病。
+      const gap = timeline.scrollHeight - timeline.clientHeight - timeline.scrollTop;
+      if (nearBottom) timelineAtBottom = true;
+      else if (byUser && gap > FOLLOW_RELEASE_GAP_PX) timelineAtBottom = false;
     }, { passive: true });
 
     const timelineResizeObserver = new ResizeObserver(() => {
@@ -2050,6 +2059,10 @@
 
     function enforceTimelineCap() {
       const cap = timelineMaxCards();
+      // ⚠️ 此处**曾经**加过一段「淘汰后显式补滚」。负向对照显示去掉它测试照样全过
+      // (3/3),即它并未起作用 —— 真正治住窄屏小上限的是下方跟随判据里的**迟滞**。
+      // 已删除:基于错误假设加的补丁若留着,就成了又一层「谁也不敢动的时序补丁」,
+      // 而正是这类层层补丁让本缺陷长期找不到根因。**没有证据支持的代码不留。**
       while (timeline.children.length > cap) {
         const oldest = timeline.firstElementChild;
         if (!oldest) break;
