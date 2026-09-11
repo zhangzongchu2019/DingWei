@@ -1958,7 +1958,14 @@ func ownerSessionFuzzyMatch(sessionName, requested string) bool {
 		return false
 	}
 	short := shortSessionName(sessionName)
-	return short != "" && strings.Contains(short, requested)
+	// 🔴 T-071(2026-09-11 实测):此处原为 strings.Contains —— **任意位置的子串**都算命中。
+	// 后果:`@zzc`(业主 key 前缀)命中 `coder56sol**zzc**`,把发给业主的整段话
+	// 静默投给了 coder,而发信方收到的是「成功」。两侧都不会察觉。
+	// 改为**前缀**匹配:既保留 `opus`→`opus50ts`、`prod`→`prodops` 这类有用的简写,
+	// 又让「名字出现在别人短名中间」不再构成命中。
+	// ⚠️ 前缀仍是一种猜测,故必须与「投递结果回显实际去向」(见 amrTargetResult.resolved)
+	// 配套使用 —— 缩小猜错的面,同时让猜的结果可见。
+	return short != "" && strings.HasPrefix(short, requested)
 }
 
 func ownerSessionAliasMatch(ownerKey, sessionName, requested string) bool {

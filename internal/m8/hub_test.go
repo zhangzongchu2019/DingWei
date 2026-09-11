@@ -2278,7 +2278,9 @@ func TestResolveOwnerSessionFuzzyMatchKeepsExactPriorityAndOwnerBoundary(t *test
 	opsKey := newKey("u1", "exact")
 	otherKey := newKey("u2", "other")
 	prodName := "u1-prodops-" + keyTail(prodKey.ID)
-	ts3Name := "u1-ts3pocops-" + keyTail(ts3Key.ID)
+	// T-071:原为 "u1-ts3pocops-",靠与 prodops 共享**中间子串** ops 制造歧义。
+	// 前缀语义下改为共享**前缀** prod,测试意图(歧义须被检出)不变。
+	ts3Name := "u1-prodx-" + keyTail(ts3Key.ID)
 	opsName := "u1-ops-" + keyTail(opsKey.ID)
 	otherName := "u2-prodops-" + keyTail(otherKey.ID)
 	hub.mu.Lock()
@@ -2286,7 +2288,13 @@ func TestResolveOwnerSessionFuzzyMatchKeepsExactPriorityAndOwnerBoundary(t *test
 	hub.sessionClients[otherKey.ID] = map[string]*sessionClient{otherName: {keyID: otherKey.ID, sessionName: otherName}}
 	hub.mu.Unlock()
 
-	for _, requested := range []string{"prodops", "ops"} {
+	// 🔴 T-071(2026-09-11):`"ops"` 由此处移除。它是 prodops 的**中间/尾部子串**,
+	// 而模糊匹配已从「任意位置子串」收紧为「前缀」。
+	// 这**不是为了让测试通过而放宽判据**,恰恰相反 —— 原判据编码的是有缺陷的行为:
+	// 同一条规则让 `@zzc` 命中 `coder56sol**zzc**`,把发给业主的整段话静默投给了 coder,
+	// 而发信方收到的是「成功」。⇒ 收紧后 `prod`/`prodo`/`prodops` 仍可用,
+	// 代价是 `ops` 这类**后缀简写不再生效**(会得到干净的 no-match,而不是投错人)。
+	for _, requested := range []string{"prodops", "prod"} {
 		got := hub.resolveOwnerSessionByShort(ctx, "u1", requested, "")
 		if got.status != ownerSessionUniqueHit || got.sessionName != prodName {
 			t.Fatalf("requested=%q result=%+v", requested, got)
@@ -2302,14 +2310,14 @@ func TestResolveOwnerSessionFuzzyMatchKeepsExactPriorityAndOwnerBoundary(t *test
 	hub.mu.Lock()
 	hub.sessionClients[ts3Key.ID] = map[string]*sessionClient{ts3Name: {keyID: ts3Key.ID, sessionName: ts3Name}}
 	hub.mu.Unlock()
-	got := hub.resolveOwnerSessionByShort(ctx, "u1", "ops", "")
+	got := hub.resolveOwnerSessionByShort(ctx, "u1", "prod", "")
 	if got.status != ownerSessionAmbiguous || !slices.Contains(got.candidates, prodName) || !slices.Contains(got.candidates, ts3Name) {
 		t.Fatalf("fuzzy ambiguity result=%+v", got)
 	}
-	if hinted := hub.resolveOwnerSessionByShort(ctx, "u1", "ops", prodKey.ID); hinted.status != ownerSessionAmbiguous {
+	if hinted := hub.resolveOwnerSessionByShort(ctx, "u1", "prod", prodKey.ID); hinted.status != ownerSessionAmbiguous {
 		t.Fatalf("hint key bypassed fuzzy ambiguity: %+v", hinted)
 	}
-	err := ambiguousSessionError("ops", got.candidates)
+	err := ambiguousSessionError("prod", got.candidates)
 	if !strings.Contains(err.Error(), prodName) || !strings.Contains(err.Error(), ts3Name) {
 		t.Fatalf("ambiguity error=%q", err)
 	}
@@ -2327,8 +2335,17 @@ func TestOwnerSessionFuzzyMatchUsesOnlyShortNameAndThreeRunes(t *testing.T) {
 	if ownerSessionFuzzyMatch("u1-prodops-2642", "de") {
 		t.Fatal("two-rune request participated in fuzzy matching")
 	}
-	if !ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "zzc") {
-		t.Fatal("documented short-name substring did not match")
+	// 🔴 T-071:此处原断言 `zzc` **应当**命中 coder56solzzc —— 那正是缺陷本身,
+	// 被当成「documented」写进了测试。现反向断言:中间子串**不得**命中。
+	if ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "zzc") {
+		t.Fatal("T-071 回归:中间子串仍然命中,`@zzc` 会再次被静默投给 coder")
+	}
+	// 反向对照:前缀简写必须仍然有效,否则等于把功能关掉冒充修好。
+	if !ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "coder") {
+		t.Fatal("前缀简写失效 —— 修过头了")
+	}
+	if !ownerSessionFuzzyMatch("u1-prodops-2642", "prod") {
+		t.Fatal("前缀简写失效 —— 修过头了")
 	}
 	if ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "264") {
 		t.Fatal("fuzzy matching inspected the full canonical session name")
