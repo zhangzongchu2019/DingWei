@@ -392,7 +392,25 @@
       box-shadow: var(--shadow);
       overflow: visible;
     }
+    /* T-054:辅助面板收进右侧边条,只留错误。形态对齐既有 .taskboard-handle/.taskboard-panel。 */
+    .workspace-dock[hidden] { display: none; }
     .workspace-dock {
+      position: fixed; right: 0; top: 58%; z-index: 40;
+      display: flex; flex-direction: row-reverse; align-items: flex-start;
+    }
+    .workspace-dock-toggle {
+      writing-mode: vertical-rl; padding: 10px 6px;
+      border: 1px solid var(--danger, #d66); border-right: none;
+      border-radius: 8px 0 0 8px;
+      background: var(--bg-elev, #1e1e24); color: var(--danger, #d66);
+      cursor: pointer; font-size: 13px; white-space: nowrap;
+    }
+    .workspace-dock-body {
+      width: 320px; max-height: 60vh; overflow-y: auto;
+      background: var(--bg-elev, #1e1e24); border: 1px solid var(--danger, #d66);
+      border-radius: 8px 0 0 8px;
+    }
+    .workspace-dock-legacy {
       flex: 0 0 auto;
       margin-top: 10px;
       border: 1px solid var(--line);
@@ -907,18 +925,19 @@
       <section class="waiting-area" id="waitingArea" aria-label="等待接纳的消息" aria-live="polite" hidden>
         <div id="waitingList"></div>
       </section>
-      <section class="workspace-dock" id="workspaceDock" aria-label="辅助面板">
-        <button class="workspace-dock-toggle" id="workspaceDockToggle" type="button" aria-expanded="false" aria-controls="workspaceDockBody">
-          <span class="workspace-dock-label">辅助面板</span><span class="dock-unread" id="workspaceDockUnread" hidden>0</span>
-        </button>
-        <div class="workspace-dock-body" id="workspaceDockBody" hidden>
-          <section class="dock-section" data-dock-section="activity" aria-labelledby="activitySectionTitle">
-            <div class="dock-section-title" id="activitySectionTitle"><span>运行动态</span></div>
-            <div class="dock-section-list" id="activityList" role="log" aria-live="polite"></div>
-          </section>
-        </div>
-      </section>
     </main>
+    <!-- T-054:错误看板,右侧贴边;无错误时整体不显示 -->
+    <section class="workspace-dock" id="workspaceDock" aria-label="错误看板" hidden>
+      <button class="workspace-dock-toggle" id="workspaceDockToggle" type="button" aria-expanded="false" aria-controls="workspaceDockBody">
+        <span class="workspace-dock-label">错误看板</span><span class="dock-unread" id="workspaceDockUnread" hidden>0</span>
+      </button>
+      <div class="workspace-dock-body" id="workspaceDockBody" hidden>
+        <section class="dock-section" data-dock-section="activity" aria-labelledby="activitySectionTitle">
+          <div class="dock-section-title" id="activitySectionTitle"><span>错误</span></div>
+          <div class="dock-section-list" id="activityList" role="log" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
     <div class="toast-region" id="toastRegion" aria-live="assertive" aria-atomic="true"></div>
 
     <footer class="composer">
@@ -956,6 +975,7 @@
     const timeline = document.getElementById('timeline');
     const waitingArea = document.getElementById('waitingArea');
     const waitingList = document.getElementById('waitingList');
+    const workspaceDock = document.getElementById('workspaceDock');
     const workspaceDockToggle = document.getElementById('workspaceDockToggle');
     const workspaceDockBody = document.getElementById('workspaceDockBody');
     const workspaceDockUnread = document.getElementById('workspaceDockUnread');
@@ -1015,7 +1035,20 @@
     // 我曾据"200 与 500 只差 +486ms"把它改成 500,那是把硬约束当成了可优化的建议 —— 已按令改回。
     // 性能上 200/500 都不是闸门(真闸门是 H 的渲染死循环与 A 的每 chunk 全量重渲),
     // 故这里取 200 不带来任何性能代价;要改必须先改约束,不能由执笔按"技术最优"自决。
-    const TIMELINE_MAX_CARDS = 200;
+    // ── 2026-09-11 业主细化约束:按设备分档 ──
+    // 业主原话(单位已与业主对齐:一轮=2 卡,输入/输出各一张):
+    //     「PC:100 轮次 200 卡; 手机端:10 轮次 20 卡」
+    // 🔴 **PC 档维持 200 不变** —— 即业主原有硬约束「始终最新 200 条」原样保留,
+    //    本次只新增窄屏档。上一位执笔曾据性能把 200 改成 500 被退回并留言
+    //    「要改必须先改约束,不能由执笔按技术最优自决」;该约束本次**未被改动**。
+    // ⚠️ 计数单位是**时间线子节点数**。输入/输出各自成卡时 200 节点≈100 轮;
+    //    若某些消息走回合分组渲染(turn-group 一个节点=一整轮),同样 200 节点会装下
+    //    多达 200 轮 —— 即上限在分组模式下比预期**松**。本次不处理,记录在案。
+    const NARROW_VIEWPORT_PX = 768;   // 与既有回归用的两档视口(1280/390)对齐
+    function timelineMaxCards() {
+      const w = (typeof window !== 'undefined' && window.innerWidth) || 1280;
+      return w < NARROW_VIEWPORT_PX ? 20 : 200;   // 业主定:手机 10 轮次(20 卡)/ PC 100 轮次(200 卡)
+    }
     // ── G:超长正文文件化 ───────────────────────────────────────
     // 业主定的方向:长文本本该落文件、直接读文件,不该在 View 页内联全量展示。
     // 超过阈值的回合正文**不再整段进 markdown**,只内联渲染开头一段摘要,
@@ -1117,7 +1150,8 @@
       // →hub reserveViewV2Request 按 request_id+bodyHash 去重返 duplicate(不双撤);新 delivery 才新 id。
       // 注意:这是取消动作自己的 id,不是被撤 delivery 的 id(与 /input 的 request_id=env.ID 不同)。
       if (!entry.cancelRequestId) entry.cancelRequestId = newRequestId();
-      const r = await c2SendControl({ kind: 'cancel', message_id: norm.messageId || null, delivery_id: norm.deliveryId || waitKey, request_id: entry.cancelRequestId });
+      // ⚠️ 出站必须用 dw- 形式:helper 的队列以该形式为键,且其 fence 是**精确匹配**。
+      const r = await c2SendControl({ kind: 'cancel', message_id: norm.messageId || null, delivery_id: deliveryAddrId(norm.deliveryId || waitKey), request_id: entry.cancelRequestId });
       const cur = entry.node.querySelector('.c2-note');
       if (cur) cur.remove();
       if (!r.sent) {
@@ -1201,7 +1235,7 @@
       flush: () => flushPendingRenders(),
       pending: () => pendingRenders.size,
       throttleMs: () => RENDER_THROTTLE_MS,
-      maxCards: () => TIMELINE_MAX_CARDS,
+      maxCards: () => timelineMaxCards(),
       longtextThreshold: () => LONGTEXT_THRESHOLD,
       longtextExcerpt: () => LONGTEXT_EXCERPT,
     };
@@ -1416,10 +1450,38 @@
       replayQuietTimer = setTimeout(() => finishTimelineReplay(true), REPLAY_QUIET_MS);
     }
 
+    // ── 🔴 滚动根因修复(业主 2026-09-11 定「先修滚动根因」)───────────────────
+    // 旧实现把「不在底部的 scroll 事件」一律判为**用户上翻**并永久交还跟随权。
+    // 问题:scroll 事件不只由用户产生 —— 内容增高时浏览器的滚动锚定(overflow-anchor)
+    // 会挪动 scrollTop 并派发 scroll;上限淘汰使上方内容变矮时同样如此。
+    // 于是「内容一长高就被误判成用户上翻」,三层补拍(双 rAF/250ms/字体就绪)全部失效,
+    // 因为它们都挂在 timelineAtBottom 之后,而该标志已被提前清掉。
+    // ⇒ 症状:刷新后有时到底、有时停中间、有时差一屏(业主实测);
+    //    自动化侧表现为 renderer-regression 滚动断言约 25% 偶发失败(T-035,
+    //    此前被登记为「测试 flaky」,实为本缺陷的观测手段)。
+    //
+    // 修法:只有**紧随真实用户手势**的 scroll 才算用户接管。
+    // ⚠️ 非用户来源的 scroll 只允许把跟随标志**置真**(到底了),不允许置假 ——
+    //    否则浏览器挪一下就把跟随权拿走,正是旧实现的病根。
+    const USER_SCROLL_GESTURE_MS = 400;
+    const FOLLOW_RELEASE_GAP_PX = 160;   // 约两三行高:少于此距离的偏移不视为「用户要看历史」
+    const SCROLL_KEYS = new Set(['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', ' ', 'Spacebar']);
+    let lastUserScrollGestureAt = 0;
+    const markUserScrollGesture = () => { lastUserScrollGestureAt = Date.now(); };
+    // ⚠️ 监听挂在 document 上而非 timeline 上:滚动条拖拽、触控板惯性、指针落在子元素
+    // 或 timeline 外沿时,事件不一定经过 timeline。**宁可把手势判宽一点** ——
+    // 判宽的代价是「用户滚了但我们没跟随」(用户自己再滚回底即可);
+    // 判窄的代价是「浏览器滚了却被当成用户」,那正是本次要修的病根。
+    for (const type of ['wheel', 'touchstart', 'touchmove', 'mousedown', 'pointerdown']) {
+      document.addEventListener(type, markUserScrollGesture, { passive: true, capture: true });
+    }
+    document.addEventListener('keydown', (e) => { if (SCROLL_KEYS.has(e.key)) markUserScrollGesture(); }, { capture: true });
+
     timeline.addEventListener('scroll', () => {
       const nearBottom = isTimelineNearBottom();
-      if (replayInProgress && !nearBottom) {
-        // 用户在初始窗口内主动上翻时立即交还滚动控制权；后续 live 事件
+      const byUser = (Date.now() - lastUserScrollGestureAt) <= USER_SCROLL_GESTURE_MS;
+      if (replayInProgress && !nearBottom && byUser) {
+        // 用户在初始窗口内**主动**上翻时立即交还滚动控制权；后续 live 事件
         // 只能在用户仍贴底时跟随。
         finishTimelineReplay(false);
         if (followScrollFrame !== null) {
@@ -1427,7 +1489,15 @@
           followScrollFrame = null;
         }
       }
-      timelineAtBottom = nearBottom;
+      // 🔴 迟滞(T-076):贴底判据用于「要不要跟随」很合适,但用于「要不要**放弃**跟随」太敏感。
+      // 实测窄屏 20 卡:淘汰使位置被推离底部仅 **60px**,恰落在用户手势窗口内,
+      // 于是被判成「用户想看历史」而永久交还跟随权 —— 连续流式那格 5/5 失败。
+      // ⇒ 放弃跟随另立一条更宽的阈值:**离底不足 FOLLOW_RELEASE_GAP_PX 一律不放弃**。
+      // 判宽的代价是「用户只滚了一点点,仍会被带回底」(再滚多一点即可);
+      // 判窄的代价是「淘汰抖一下就永久失去跟随」,即本次要修的病。
+      const gap = timeline.scrollHeight - timeline.clientHeight - timeline.scrollTop;
+      if (nearBottom) timelineAtBottom = true;
+      else if (byUser && gap > FOLLOW_RELEASE_GAP_PX) timelineAtBottom = false;
     }, { passive: true });
 
     const timelineResizeObserver = new ResizeObserver(() => {
@@ -1476,6 +1546,7 @@
       for (const section of dockSections.values()) section.list.textContent = '';
       toastRegion.textContent = '';
       dockUnreadCount = 0;
+      workspaceDock.hidden = true;  // T-054:清空后回到「无错误则不显示」
       updateDockUnread();
       setDockExpanded(false);
       beginTimelineReplay();
@@ -1720,7 +1791,24 @@
     };
     const c1InputCards = new Map();      // messageIdKey -> { card, footer, stageIdx, footnotes:Set }
     const c1PendingUpdates = new Map();  // messageIdKey -> [norm 更新](卡片未建时缓冲)
-    const c1DeliveryCards = new Map();   // deliveryId -> messageIdKey(display v1 copy 归并寻址:observed_delivery_id→primary 卡)
+    // ── 🔴 T-074:同一笔投递有两个名字 ────────────────────────────────
+    // Hub 发 `dlv_X`(internal/m8/hub.go:3242);helper 收到后统一加前缀成 `dw-dlv_X`
+    // (tools/sessionhelper/sessionhelper/unified_queue.py:_delivery_id)。
+    // 渲染器此前对前缀零归一 ⇒ 合卡索引对不上 ⇒ **同一条输入渲染两遍**
+    // (业主 2026-09-10 截图:一张类型标 `event` 的卡 + 一张 👤 卡,正文相同)。
+    //
+    // ⚠️ **不能简单「统一去掉前缀」** —— helper 的队列正是以 **dw- 形式为键**
+    // (`self._by_delivery`),取消/中断必须用该形式寻址,去掉前缀会让寻址静默失效。
+    // ⇒ 两个用途各用各的形式,且**与 helper 同一套规则**:
+    //     合卡索引 → 去前缀(两种写法收敛到同一个键)
+    //     出站寻址 → 补前缀(缺则加,与 helper _delivery_id 的规则逐字一致)
+    const deliveryMergeKey = (id) => String(id || '').replace(/^dw-/, '');
+    const deliveryAddrId = (id) => {
+      const v = String(id || '').trim();
+      return (!v || v.startsWith('dw-')) ? v : 'dw-' + v;
+    };
+
+    const c1DeliveryCards = new Map();   // deliveryMergeKey -> messageIdKey(display v1 copy 归并寻址:observed_delivery_id→primary 卡)
     const c1MergeBuf = new Map();        // deliveryId -> [{ev,timer}](primary 卡未建时的归并缓冲,带 hold 窗回落)
     const C2_MERGE_HOLD_MS = (typeof window !== 'undefined' && window.C2_MERGE_HOLD_MS) || 3000;  // 归并等待窗(copy),测试可覆盖
     const C2_ECHO_HOLD_MS = (typeof window !== 'undefined' && window.C2_ECHO_HOLD_MS) || 800;     // 回显乱序短窗(user_input echo),测试可覆盖
@@ -1838,7 +1926,26 @@
         if (norm.cancellable === null) norm.cancellable = norm.stage === 'generated';
       }
       norm.stageIdx = C1_STAGE_ORDER.indexOf(norm.stage === 'turn_admitted' ? 'cli_injected' : norm.stage);
-      norm.key = norm.messageId || norm.deliveryId;
+      // 🔴 T-074 真正的成因在这一行(2026-09-11 实测):无 message_id 时键**退回投递号**,
+      // 而投递号正是那个有两种写法的字段(Hub 发 `dlv_X`,helper 加前缀成 `dw-dlv_X`)。
+      // ⇒ 同一条输入的两个事件拿到**两个不同的键** ⇒ 合卡索引永远对不上 ⇒ 画两张卡。
+      // ⚠️ 组长此前的修复之所以"测试通过、线上无效",是因为测试用例**给了 message_id**,
+      //    两边键自然相同;而线上事件不带 message_id,永远走这条回退分支。
+      //    ——**用例比现实宽松,于是测出了绿灯。**
+      // ⇒ 回退分支必须归一(去前缀),与 c1DeliveryCards 的键口径一致。
+      // 🔴 T-074 真正的成因(2026-09-11 逐层查到源头):同一条输入由**两个进程**各发一个事件,
+      // 且**字段构成不对称**:
+      //     Hub(Go)   input_posted  internal/m8/terminal.go:496  **带 message_id**
+      //     helper(Py) user_input   unified_queue.py:167         **不带 message_id**
+      // ⇒ 前者键取 message_id,后者只能退回投递号 ⇒ **两个键永不相等** ⇒ 画两张卡。
+      // (投递号本身还有 `dlv_X` / `dw-dlv_X` 两种写法,那是**第二层**不一致。)
+      //
+      // ⇒ 键改为**先查投递号索引**:同一笔投递,谁先建卡谁定键,后到的一律沿用。
+      //   如此两种到达顺序都收敛到同一张卡,且不依赖任一方带 message_id。
+      // ⚠️ 组长此前三版修复都"用例通过、线上无效",根因同一个:
+      //   用例给两边都配了 message_id(或都不配),**比现实对称** —— 现实是一边有一边没有。
+      const dlvKey = deliveryMergeKey(norm.deliveryId);
+      norm.key = (dlvKey && c1DeliveryCards.get(dlvKey)) || norm.messageId || dlvKey;
       return { ...ev, _norm: norm };
     }
 
@@ -1970,7 +2077,12 @@
     }
 
     function enforceTimelineCap() {
-      while (timeline.children.length > TIMELINE_MAX_CARDS) {
+      const cap = timelineMaxCards();
+      // ⚠️ 此处**曾经**加过一段「淘汰后显式补滚」。负向对照显示去掉它测试照样全过
+      // (3/3),即它并未起作用 —— 真正治住窄屏小上限的是下方跟随判据里的**迟滞**。
+      // 已删除:基于错误假设加的补丁若留着,就成了又一层「谁也不敢动的时序补丁」,
+      // 而正是这类层层补丁让本缺陷长期找不到根因。**没有证据支持的代码不留。**
+      while (timeline.children.length > cap) {
         const oldest = timeline.firstElementChild;
         if (!oldest) break;
         releaseTimelineNode(oldest);
@@ -2018,7 +2130,7 @@
         if (copyMergable) {
           // 归并去重(display v1):observed_delivery_id→primary 卡 footnote「已回显」;
           // 卡未建/在等待区→带 hold 窗缓冲(超时独立占位,错链不隐藏)
-          const pKey = norm.deliveryId ? c1DeliveryCards.get(norm.deliveryId) : null;
+          const pKey = norm.deliveryId ? c1DeliveryCards.get(deliveryMergeKey(norm.deliveryId)) : null;
           const pEntry = pKey ? c1InputCards.get(pKey) : null;
           if (pEntry && pEntry.footer) c1Footnote(pEntry, 'echo_merge', '已回显');
           else if (norm.deliveryId) bufferMergeCopy(norm.deliveryId, ev);
@@ -2052,7 +2164,7 @@
       if (provFlagOn() && ev.kind === 'user_input' && (ev._norm || {}).deliveryId) {
         const echoN = ev._norm;
         const echoKey = echoN.originDlv || echoN.deliveryId;  // 归并锚=origin_delivery_id(两签可信字段);回退=自身 id 精确命中;绝不 trim dw- 猜链
-        const pKey = c1DeliveryCards.get(echoKey);
+        const pKey = c1DeliveryCards.get(deliveryMergeKey(echoKey));
         const pEntry = pKey ? c1InputCards.get(pKey) : null;
         if (pEntry && pEntry.footer) {
           c1Footnote(pEntry, 'echo_merge', '已回显');
@@ -2235,6 +2347,7 @@
       if (!section) throw new Error(`unregistered dock section: ${sectionID}`);
       section.list.appendChild(card);
       while (section.list.children.length > 500) section.list.removeChild(section.list.firstChild);
+      workspaceDock.hidden = false;  // T-054:出现错误后入口才出现
       if (workspaceDockBody.hidden && !replayInProgress) {
         dockUnreadCount++;
         updateDockUnread();
@@ -2284,6 +2397,16 @@
     function renderEvent(ev) {
       if (ev.kind === 'state_change' && ev.data?.change === 'session_init') return renderState(ev);
       if (ev.kind === 'input_posted') return renderUser(ev);   // C1:canonical 输入事件,不经 turn 分组
+      // 🔴 T-074:legacy `user_input` 与 canonical `input_posted` 描述的是**同一条输入**,
+      // 却分别落到两条渲染路径(前者经 turn 分组、后者走独立输入卡),于是同一条输入画两次。
+      // ⇒ 若该笔投递**已经有卡**(合卡索引命中,前缀两种写法已归一),就让它就地更新,
+      //   不另起分组节点。
+      // ⚠️ **带守卫,不无条件抑制**:若 input_posted 未到(索引未命中),user_input 仍照常渲染 ——
+      //   否则在只有 legacy 事件的场景下,消息会整个消失。今晚已经因无守卫的抑制栽过一次。
+      if (ev.kind === 'user_input' && ev.delivery_id
+          && c1DeliveryCards.has(deliveryMergeKey(ev.delivery_id))) {
+        return renderUser(ev);
+      }
       const turnKey = turnKeyFor(ev);
       if (turnKey && ['user_input', 'assistant_text', 'tool_call', 'state_change', 'error'].includes(ev.kind)) {
         return renderTurnEvent(turnKey, ev);
@@ -2486,8 +2609,9 @@
       if (completed) {
         const cost = completed.data?.turn_cost_usd ?? completed.data?.cost_usd;
         const total = completed.data?.total_cost_usd ?? completed.data?.cost_total;
-        const costLabel = cost !== undefined ? `本回合 $${Number(cost).toFixed(4)}` : (total !== undefined ? `累计 $${Number(total).toFixed(4)}` : '');
-        html += `<footer class="turn-completed">✓ 回合完成${costLabel ? ` · ${escapeHtml(costLabel)}` : ''}</footer>`;
+        // 业主 2026-09-11:「这里只要给个完成标志即可,不用单写一行文字」。
+        // ⚠️ 标志本身保留:整行删掉会让「回合结束」与「还在跑」无法区分。
+        html += `<footer class="turn-completed" title="回合完成" aria-label="回合完成">✓</footer>`;
       }
       group.node.innerHTML = html;
       group.node.querySelectorAll('.turn-assistant .event-content').forEach(content => {
@@ -2545,6 +2669,11 @@
 
     // control 消息按系统事件渲染:v0.6 只表达「已发起/已发出」,绝不假称「已终止/真停」(真停挂 v0.7#20)
     function renderControlNote(ev) {
+      // T-054(业主 2026-09-10):control 卡片与输入框上方的待提交区完全重复
+      // (待提交区已显示已入队→hub 已收→helper 已收→已注入→已写入终端,含失败原因),
+      // 故不再产生任何卡片 —— 正文区与边条都不产生。
+      return;
+      /* eslint-disable no-unreachable */
       const { card, content } = baseCard(ev, 'system', 'activity-card');
       const kind = String(ev.control?.kind || ev.control_kind || '').toLowerCase();
       const text = {
@@ -2554,6 +2683,7 @@
       const detail = ev.text || ev._norm?.text || '';
       content.textContent = detail ? `${text}:${detail}` : text;
       appendDockCard('activity', card);
+      /* eslint-enable no-unreachable */
     }
 
     function renderUser(ev) {
@@ -2563,7 +2693,27 @@
         c2MaybeConfirmInterrupt(ev);  // C2:流上 control 事件=中断回执,升级 pending 请求为已确认
         return renderControlNote(ev);
       }
-      const entry = norm.key ? c1CardFor(norm, true) : null;
+      // 🔴 业主 2026-09-11(两次):『不希望看到 event 卡片,就算是出错信息也不希望看到』
+      // 『这个卡片要显示的状态信息,在待提交信息区和对话轮次交互卡片中都可以展示,
+      //   无需多出一个 event 卡片』。
+      // ⇒ 失败**不另起任何卡**(正文区与右侧看板都不起),而是**更新已有的那张对话卡**。
+      // 成因见 T-074:失败事件与输入卡的 message_id 键对不上,`c1CardFor` 找不到 ⇒ 新建 ⇒ 多一张。
+      // ⇒ 按 message_id 找不到时,改用**投递号**(已归一)反查已有卡再更新。
+      const entry0 = norm.key ? c1CardFor(norm, true) : null;
+      if (!entry0?.card && norm.stage === 'failed') {
+        const viaDlv = norm.deliveryId ? c1InputCards.get(c1DeliveryCards.get(deliveryMergeKey(norm.deliveryId))) : null;
+        if (viaDlv?.footer) {
+          // fail-loud:不在界面另起卡,但仍留痕,便于事后诊断(业主不看,排查时要用)
+          console.warn('[delivery-failed]', norm.deliveryId || '', stageFooterText(norm));
+          const st = viaDlv.footer.querySelector('.stage-text');
+          if (st) st.textContent = stageFooterText(norm) || '失败:投递失败';
+          return;
+        }
+        // ⚠️ 连已有卡都找不到:仍不新建卡(业主明确不要),只留痕。
+        console.warn('[delivery-failed-orphan]', norm.deliveryId || '', stageFooterText(norm));
+        return;
+      }
+      const entry = entry0;
       if (entry && entry.card) {
         // 同 message_id 已有输入卡:原位更新,绝不产生第二张
         if (norm.text && !entry.content.textContent) entry.content.textContent = norm.text;
@@ -2590,7 +2740,7 @@
         entry.stageEl = footer.querySelector('.stage-text');
         entry.sentEl = card.querySelector('.event-sent');
         entry.stageIdx = norm.stageIdx;
-        if (norm.deliveryId) c1DeliveryCards.set(norm.deliveryId, norm.key);
+        if (norm.deliveryId) c1DeliveryCards.set(deliveryMergeKey(norm.deliveryId), norm.key);
         // 应用建卡前缓冲的乱序更新
         const pending = c1PendingUpdates.get(norm.key) || [];
         c1PendingUpdates.delete(norm.key);
@@ -2754,10 +2904,14 @@
     }
 
     function renderUnknown(ev) {
+      // T-054:同上,unknown 事件不再产生卡片。
+      return;
+      /* eslint-disable no-unreachable */
       const { card, content } = baseCard(ev, 'system', 'activity-card');
       content.appendChild(document.createTextNode(JSON.stringify(ev, null, 2)));
       mergeMetaIntoFirstBlock(content, content.firstChild);
       appendDockCard('activity', card);
+      /* eslint-enable no-unreachable */
     }
 
     function renderMarkdown(src) {

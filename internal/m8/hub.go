@@ -3239,7 +3239,15 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		if env.Meta == nil {
 			env.Meta = map[string]any{}
 		}
-		deliveryID := "dlv_" + randomHex(16)
+		// 🔴 T-074 根因修复:投递号必须**一次生成、全链同形**。
+		// 此前 Hub 发 `dlv_X`,helper 的 unified_queue._delivery_id 收到后统一加前缀成
+		// `dw-dlv_X` 作内部队列键,于是渲染器同时见到两种写法 ⇒ 同一条输入画两张卡。
+		// helper 的加前缀是**幂等**的(`raw if raw.startswith("dw-") else "dw-"+raw`),
+		// ⇒ Hub 直接生成已带前缀的形式,helper 原样透传,两侧字符串逐字相同,helper 无需改动。
+		// ack 链不受影响:helper 回 ack 时用的是**从本信封 meta 原样取出**的 delivery_id
+		// (sessionhelper/app.py:532),Hub 侧 GetSessionDelivery 为精确匹配、全树不剥前缀。
+		// 存量行仍为 `dlv_` 开头,精确匹配照常命中,不需要迁移。
+		deliveryID := deliveryIDPrefix + randomHex(16)
 		env.Meta["type"] = "delivery"
 		env.Meta["delivery_id"] = deliveryID
 		env.Meta["delivery_version"] = 1
