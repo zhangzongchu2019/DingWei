@@ -67,6 +67,11 @@ type amrNoticeJob struct {
 
 type amrTargetResult struct {
 	selector string
+	// resolved 是**实际解析到的目标地址**,与 selector 可能不同。
+	// 🔴 T-071:此前通知只回显 selector,于是 `@zzc` 被模糊匹配到 coder 之后,
+	// 发信方看到的是「#zzc:成功」—— 投错了人,而两侧都无从察觉。
+	// 「系统替你做了选择」必须可见,哪怕那个选择是对的。
+	resolved string
 	ok       bool
 	err      error
 }
@@ -653,7 +658,7 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	}
 	for _, target := range prepared {
 		err := p.routeEnvelope(ctx, target.envelope)
-		result := amrTargetResult{selector: target.candidate.selector, ok: err == nil, err: err}
+		result := amrTargetResult{selector: target.candidate.selector, resolved: target.envelope.To, ok: err == nil, err: err}
 		results = append(results, result)
 	}
 	p.mu.Lock()
@@ -678,13 +683,30 @@ func errorString(err error) string {
 	return err.Error()
 }
 
+// amrResolvedShort 从完整地址里取出会话短名,供投递结果回显实际去向。
+func amrResolvedShort(addr string) string {
+	addr = strings.TrimSpace(addr)
+	if addr == "" {
+		return ""
+	}
+	if i := strings.Index(addr, "#"); i >= 0 {
+		addr = addr[:i]
+	}
+	return shortSessionName(addr)
+}
+
 func (p *amrProcessor) notifyRouteResults(key amrTurnKey, results []amrTargetResult) {
 	succeeded, failed := 0, 0
 	var details []string
 	for _, result := range results {
 		if result.ok {
 			succeeded++
-			details = append(details, result.selector+"：成功")
+			// 解析结果与写法不同时,把实际去向摊开 —— 相同则不啰嗦。
+			if to := amrResolvedShort(result.resolved); to != "" && to != strings.TrimPrefix(result.selector, "#") {
+				details = append(details, result.selector+" → "+to+"：成功")
+			} else {
+				details = append(details, result.selector+"：成功")
+			}
 		} else {
 			failed++
 			details = append(details, result.selector+"：失败（"+result.err.Error()+"）")
