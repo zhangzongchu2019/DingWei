@@ -54,3 +54,10 @@ dingwei-onboard/
 /handle-escape
 /pending-debt
 view-service/node_modules/
+
+# 构建产物(T-070:否则 build.sh 的判脏步骤会被自己的产物污染,第二次构建即被判 -dirty)
+/bin/
+/workpulse
+/fcs
+/dingwei-datad
+/mcsd
