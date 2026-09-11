@@ -250,6 +250,25 @@ func run(logger *slog.Logger) error {
 		// commit 随启动日志打出:运维无需 strings/反编译即可回答「线上是哪份源码」。
 		logger.Info("workpulse started", "addr", bs.Addr, "db", bs.DBPath,
 			"version", version.Version, "commit", version.Commit)
+		// T-066:让「取的是谁给的值」可见。**不改任何默认值** ——
+		// warn→enforce 这类渐进放量是正当做法,改默认值会破坏它;
+		// 四例(WP_HUB_ID/WP_DB_PATH/FCS_ADDR/WP_NAME_ENFORCE)的共同毛病不是选错了默认值,
+		// 而是默认值不出现在任何可见处 ⇒ 无人复核、无人知道现在处在哪一档。
+		effective := []config.Observed{
+			config.Observe("WP_DB_PATH", "/data/workpulse.db",
+				"同主机起第二个实例时会静默共用同一个库(T-065)"),
+			config.Observe("WP_ADDR", ":8080",
+				"绑全部网络接口;同主机多实例还会端口冲突"),
+			config.Observe("WP_NAME_ENFORCE", "warn",
+				"名字门只告警不拒绝 ⇒ 系统会接受一个它自己无法寻址的会话名(T-068)"),
+			config.ObserveRequired("WP_HUB_ID"),
+		}
+		// 全量快照:两台机器可直接 diff,用以发现「同一份配置在两处生效值不同」
+		logger.Info(config.Line(effective))
+		// 需要人看见的子集
+		for _, w := range config.Warnings(effective) {
+			logger.Warn("配置落在有风险的默认值上", "key", w.Key, "value", w.Value, "risk", w.Warn)
+		}
 		if err := srv.Serve(publicListener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("http server", "error", err)
 		}
