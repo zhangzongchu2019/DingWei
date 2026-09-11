@@ -308,6 +308,10 @@ func TestFanoutBroadcastsToAllDistinctHubs(t *testing.T) {
 // 前提是每条回复都能被认出来自谁。
 //
 // 四格互为护栏:只测「有落款」不够 —— 一个把任意字符串都拼上去的实现也能过。
+//
+// T-062:期望值由 `0.1.2.9` 改为 `v0.1.2.9`。**这不是为了让测试通过而放宽**——
+// 裸点分四段会被飞书识别成 IP 并转成 http://0.1.2.9/ 假链接(业主实测截图为证),
+// 加 v 前缀是修复本身,本测试原先的期望值编码的是有缺陷的旧行为。
 func TestOutboundStampsHubAndVersion(t *testing.T) {
 	gw := &stubGateway{}
 	svc := NewService(gw, &stubReceiver{inbound: make(chan model.Message, 1)})
@@ -320,7 +324,7 @@ func TestOutboundStampsHubAndVersion(t *testing.T) {
 	if _, err := svc.Send(context.Background(), OutboundRequest{HubID: "hub-dw2-a", Text: "回复正文"}); err != nil {
 		t.Fatalf("send: %v", err)
 	}
-	if got := gw.sent[len(gw.sent)-1].Text; got != "回复正文 [hub-dw2-a 0.1.2.9]" {
+	if got := gw.sent[len(gw.sent)-1].Text; got != "回复正文 [hub-dw2-a v0.1.2.9]" {
 		t.Fatalf("落款不对:%q", got)
 	}
 
@@ -329,15 +333,15 @@ func TestOutboundStampsHubAndVersion(t *testing.T) {
 	if _, err := svc.Send(context.Background(), OutboundRequest{HubID: "hub-dw2-a", Text: "x"}); err != nil {
 		t.Fatalf("send: %v", err)
 	}
-	if got := gw.sent[len(gw.sent)-1].Text; got != "x [hub-dw2-a 0.1.2.9]" {
+	if got := gw.sent[len(gw.sent)-1].Text; got != "x [hub-dw2-a v0.1.2.9]" {
 		t.Fatalf("版本应取注册值:%q", got)
 	}
 
 	// ③ 幂等:已带同一落款的正文不得再盖一次(过渡期/重发会遇到)
-	if _, err := svc.Send(context.Background(), OutboundRequest{HubID: "hub-dw2-a", Text: "y [hub-dw2-a 0.1.2.9]"}); err != nil {
+	if _, err := svc.Send(context.Background(), OutboundRequest{HubID: "hub-dw2-a", Text: "y [hub-dw2-a v0.1.2.9]"}); err != nil {
 		t.Fatalf("send: %v", err)
 	}
-	if got := gw.sent[len(gw.sent)-1].Text; got != "y [hub-dw2-a 0.1.2.9]" {
+	if got := gw.sent[len(gw.sent)-1].Text; got != "y [hub-dw2-a v0.1.2.9]" {
 		t.Fatalf("重复盖章:%q", got)
 	}
 

@@ -49,7 +49,20 @@ func NewService(gw feishu.Gateway, rx feishu.Receiver) *service {
 }
 
 // Send is the single outbound exit (converges runOutboundLoop + worker.sendReply).
-// hubStamp 返回该 Hub 的出站落款,形如 " [hub-dw2-a v0.1.2.9]"。
+// stampVersion 给版本号补 `v` 前缀后再入落款。
+// T-062:裸点分四段(如 0.1.2.9)会被飞书富文本识别成 IP 地址并自动转成
+// 可点链接 http://0.1.2.9/,落款渲染成 `[hub-dw2-a [0.1.2.9](http://0.1.2.9/)]` ——
+// 既难读,也给出一个指向别处的假链接。加 `v` 后不再被判定为 IP。
+// 只改渲染,不改 version.Version 本身(后者与仓内 VERSION 文件有一致性测试)。
+func stampVersion(v string) string {
+	v = strings.TrimSpace(v)
+	if v == "" || strings.HasPrefix(v, "v") {
+		return v
+	}
+	return "v" + v
+}
+
+// hubStamp 返回该 Hub 的出站落款,形如 " [hub-dw2-a v0.1.2.9]"(版本经 stampVersion 补 v)。
 // 版本取自**注册时**登记的值,不取调用方本条消息自报的值。
 func (s *service) hubStamp(hubID string) string {
 	hubID = strings.TrimSpace(hubID)
@@ -60,7 +73,7 @@ func (s *service) hubStamp(hubID string) string {
 	sub, ok := s.sinks[hubID]
 	s.mu.RUnlock()
 	if ok && sub.version != "" {
-		return fmt.Sprintf(" [%s %s]", hubID, sub.version)
+		return fmt.Sprintf(" [%s %s]", hubID, stampVersion(sub.version))
 	}
 	return fmt.Sprintf(" [%s]", hubID) // 已注册但没报版本:仍标出实例,便于灰度分辨
 }
