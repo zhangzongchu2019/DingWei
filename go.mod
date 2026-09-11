@@ -2,6 +2,10 @@ module github.com/zhangzongchu2019/dingwei
 
 go 1.22
 
+// 🔴 钉死工具链:此前 Dockerfile 用浮动 tag golang:1.22,
+// 导致同一份源码在不同时间/机器上编出不同产物(见 T-070 两机实证)。
+toolchain go1.22.2
+
 require (
 	github.com/coder/websocket v1.8.13
 	github.com/jackc/pgx/v5 v5.7.1
