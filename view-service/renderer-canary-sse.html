@@ -1926,7 +1926,14 @@
         if (norm.cancellable === null) norm.cancellable = norm.stage === 'generated';
       }
       norm.stageIdx = C1_STAGE_ORDER.indexOf(norm.stage === 'turn_admitted' ? 'cli_injected' : norm.stage);
-      norm.key = norm.messageId || norm.deliveryId;
+      // 🔴 T-074 真正的成因在这一行(2026-09-11 实测):无 message_id 时键**退回投递号**,
+      // 而投递号正是那个有两种写法的字段(Hub 发 `dlv_X`,helper 加前缀成 `dw-dlv_X`)。
+      // ⇒ 同一条输入的两个事件拿到**两个不同的键** ⇒ 合卡索引永远对不上 ⇒ 画两张卡。
+      // ⚠️ 组长此前的修复之所以"测试通过、线上无效",是因为测试用例**给了 message_id**,
+      //    两边键自然相同;而线上事件不带 message_id,永远走这条回退分支。
+      //    ——**用例比现实宽松,于是测出了绿灯。**
+      // ⇒ 回退分支必须归一(去前缀),与 c1DeliveryCards 的键口径一致。
+      norm.key = norm.messageId || deliveryMergeKey(norm.deliveryId);
       return { ...ev, _norm: norm };
     }
 

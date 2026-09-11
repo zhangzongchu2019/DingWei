@@ -41,6 +41,21 @@ const base = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-canary
     const n = await page.evaluate(() => document.querySelectorAll('#timeline > *').length);
     assert.strictEqual(n, 1, `③ 同一笔投递两个名字须只产生一张卡,实为 ${n} 张`);
 
+    // 🔴 ④ 线上真实形态:**不带 message_id** —— 此时键会退回投递号,
+    //    而投递号正是那个有两种写法的字段。前三格都给了 message_id,
+    //    两边键自然相同、合得上 —— **用例比现实宽松,曾据此误判「已修好」**。
+    //    这一格补的正是那个缺口:没有它,线上两张卡而测试全绿。
+    await page.evaluate(() => {
+      resetConversation(); finishTimelineReplay(false);
+      handleIncomingEvent({ kind:'input_posted', text:'无 message_id 的输入',
+        delivery_id:'dlv_nokey', stage:'cli_injected', cursor:'10' });
+      handleIncomingEvent({ kind:'user_input', text:'无 message_id 的输入',
+        delivery_id:'dw-dlv_nokey', data:{ lifecycle:'admitted' }, turn_id:'tnk', cursor:'11' });
+    });
+    await page.waitForTimeout(200);
+    const nk = await page.evaluate(() => document.querySelectorAll('#timeline > *').length);
+    assert.strictEqual(nk, 1, `④ 无 message_id 时(线上形态)仍须只产一张卡,实为 ${nk} 张`);
+
     console.log('T-074 delivery-id regression: ALL PASS');
   } finally { await browser.close(); }
 })();
