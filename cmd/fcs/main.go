@@ -13,6 +13,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/zhangzongchu2019/dingwei/internal/version"
 	"log/slog"
 	"net/http"
 	"os"
@@ -80,7 +81,8 @@ func run(logger *slog.Logger) error {
 	}
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
-		logger.Info("fcs started", "addr", addr, "db", bs.DBPath, "transport", bs.FeishuTransport)
+		logger.Info("fcs started", "addr", addr, "db", bs.DBPath, "transport", bs.FeishuTransport,
+			"version", version.Version, "commit", version.Commit)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fatalErr <- err
 		}

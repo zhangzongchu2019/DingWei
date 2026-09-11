@@ -247,7 +247,9 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /livez", livezHandler(prefixHub, st, publicAccept, internalAccept))
 
 	go func() {
-		logger.Info("workpulse started", "addr", bs.Addr, "db", bs.DBPath)
+		// commit 随启动日志打出:运维无需 strings/反编译即可回答「线上是哪份源码」。
+		logger.Info("workpulse started", "addr", bs.Addr, "db", bs.DBPath,
+			"version", version.Version, "commit", version.Commit)
 		if err := srv.Serve(publicListener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("http server", "error", err)
 		}
