@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -75,14 +74,20 @@ func run(logger *slog.Logger) error {
 		_, _ = w.Write([]byte("ok"))
 	})
 
-	addr := strings.TrimSpace(os.Getenv("FCS_ADDR"))
-	if addr == "" {
-		addr = ":8081"
-	}
+	// T-066:缺省 `:8081` 绑全部接口,曾致 8081 公网可达(T-064)。
+	// 此处**不改默认值**(改默认值会破坏既有部署),而是让「取的是谁给的值」进启动日志。
+	addrSetting := config.Observe("FCS_ADDR", ":8081", "绑全部网络接口,暴露面大于预期;生产应显式设为 127.0.0.1:8081")
+	addr := addrSetting.Value
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
 		logger.Info("fcs started", "addr", addr, "db", bs.DBPath, "transport", bs.FeishuTransport,
 			"version", version.Version, "commit", version.Commit)
+		// 全量快照:两台机器的启动日志可直接 diff,用以发现「同一份配置在两处生效值不同」
+		logger.Info(config.Line([]config.Observed{addrSetting}))
+		// 需要人看见的子集:落在有风险的默认值上
+		for _, w := range config.Warnings([]config.Observed{addrSetting}) {
+			logger.Warn("配置落在有风险的默认值上", "key", w.Key, "value", w.Value, "risk", w.Warn)
+		}
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fatalErr <- err
 		}
