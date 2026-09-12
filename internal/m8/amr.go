@@ -452,7 +452,7 @@ func (p *amrProcessor) evictOldestForSessionLocked(keyID, session string, now ti
 		p.capCompletedLocked()
 		p.stats.incomplete++
 		log.Printf("amr decision=incomplete reason=session_capacity_eviction")
-		p.queueNoticeLocked(amrNoticeJob{key: oldestKey, target: "capacity", reason: "本会话未完成轮次达到配额，最旧轮次已淘汰", failure: true})
+		p.queueNoticeLocked(amrNoticeJob{key: oldestKey, target: "", reason: "本会话未完成轮次达到配额，最旧轮次已淘汰", failure: true})
 	}
 }
 
@@ -505,7 +505,7 @@ func (p *amrProcessor) expireLocked(now time.Time) {
 			p.completed[key] = now
 			p.stats.incomplete++
 			log.Printf("amr decision=incomplete reason=turn_ttl")
-			p.queueNoticeLocked(amrNoticeJob{key: key, target: "ttl", reason: "本轮未收到可靠终态，已按 TTL 关闭且不会派送", failure: true})
+			p.queueNoticeLocked(amrNoticeJob{key: key, target: "", reason: "本轮未收到可靠终态，已按 TTL 关闭且不会派送", failure: true})
 		}
 	}
 	for key, at := range p.completed {

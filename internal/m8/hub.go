@@ -2944,7 +2944,14 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 }
 
 func deliveryFailureEnvelope(c *sessionClient, sourceID, target, reason string, now time.Time) model.Envelope {
+	// T-060：`→ %s` 槽位的语义是**投递目标（会话名）**。回合级失败（TTL 关闭、配额淘汰）
+	// 发生在目标解析**之前**，根本没有目标可填 —— 此前两处调用点往这里塞内部原因码
+	// （"ttl"、"capacity"），渲染出「投递失败 … → ttl」，读起来像投给了一个叫 ttl 的会话。
+	// 修法不是编一个目标，而是**没有目标时不出现那个箭头**。
 	body := fmt.Sprintf("【投递失败】%s → %s；原因：%s", sourceID, target, reason)
+	if target == "" {
+		body = fmt.Sprintf("【投递失败】%s；原因：%s", sourceID, reason)
+	}
 	env := model.Envelope{
 		ID:   "delivery-failure-" + randomHex(16),
 		To:   sessionAddress(c.sessionName, c.keyID),
