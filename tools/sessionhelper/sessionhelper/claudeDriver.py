@@ -56,7 +56,11 @@ DEFAULT_STORE = "/home/ai-dev/transport-v2/.claude-driver-delivery.sqlite3"
 EVENT_DRAIN_TIMEOUT = 5.0        # 协议 done 后等终结事件排空的上限（契约 v3）
 TURN_ACCEPT_TIMEOUT = 30.0       # 投递后等 isReplay ACK 的上限
 PREV_TURN_WAIT = 180.0           # 投下一条前，等上一个 turn 完成的上限（串行到 turn 边界）
-STALL_TIMEOUT = 120.0            # accepted/processing 后迟迟不 done ⇒ [delivery][STALLED]
+# T-083(业主 2026-09-12 定:至多 180 秒,超时仍判失败):
+# 原 120s 计的是**回合总时长**(submitted_at 不随活动刷新),干活重的 Agent 极易超。
+# 组长本机实测:STALLED 76 次,最长 elapsed=600s。180s 能减少误报但不能消除;
+# 若要根治需改为按**空闲时长**计时(有事件即刷新),该改法与「超时即失败」不冲突,待业主定。
+STALL_TIMEOUT = 180.0            # accepted/processing 后迟迟不 done ⇒ [delivery][STALLED]
 FANOUT_QUEUE_MAX = 2000
 
 

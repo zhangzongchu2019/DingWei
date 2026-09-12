@@ -39,7 +39,11 @@ _CODEX_BIN = os.environ.get("SH_CODEX_BIN") or shutil.which("codex") or "codex"
 DEFAULT_WORKDIR = os.path.expanduser("~")
 DEFAULT_STORE = os.path.join(os.path.expanduser("~"), ".codex-driver-delivery.sqlite3")
 JSONRPC_TIMEOUT = 30.0
-ACCEPTED_STALL_TIMEOUT = 120.0
+# T-083(业主 2026-09-12 定:至多 180 秒,超时仍判失败):
+# 原 120s 计的是**回合总时长**(submitted_at 不随活动刷新),干活重的 Agent 极易超。
+# 组长本机实测:STALLED 76 次,最长 elapsed=600s。180s 能减少误报但不能消除;
+# 若要根治需改为按**空闲时长**计时(有事件即刷新),该改法与「超时即失败」不冲突,待业主定。
+ACCEPTED_STALL_TIMEOUT = 180.0
 EVENT_DRAIN_TIMEOUT = 5.0
 FANOUT_QUEUE_MAX = 1000
 

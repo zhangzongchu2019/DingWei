@@ -62,7 +62,11 @@ SSE_RECONNECT_BASE = 0.5
 SSE_RECONNECT_MAX = 15.0
 # accepted → done 超时（秒），超时打 [delivery][STALLED] 告警
 # 协议回执只保证 prompt 被受理，不保证会被处理（如模型未配好）
-ACCEPTED_STALL_TIMEOUT = 120.0
+# T-083(业主 2026-09-12 定:至多 180 秒,超时仍判失败):
+# 原 120s 计的是**回合总时长**(submitted_at 不随活动刷新),干活重的 Agent 极易超。
+# 组长本机实测:STALLED 76 次,最长 elapsed=600s。180s 能减少误报但不能消除;
+# 若要根治需改为按**空闲时长**计时(有事件即刷新),该改法与「超时即失败」不冲突,待业主定。
+ACCEPTED_STALL_TIMEOUT = 180.0
 EVENT_DRAIN_TIMEOUT = 5.0     # poll_receipt done 后等事件排空的超时（实测差值 0.45s ×10）
 DEFAULT_STORE = os.path.join(os.path.expanduser("~"), ".opencode-driver-delivery.sqlite3")
 
