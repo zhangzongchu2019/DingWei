@@ -166,6 +166,22 @@ class T094IdleStallTest(unittest.TestCase):
         }})
         self.assertEqual(1, len(driver._delivery_pending_tools["env-x"]))
 
+    def test_codex_anonymous_completion_never_clears_named_tool(self):
+        driver = self._codex_driver()
+        driver._map_notification({"method": "item/started", "params": {
+            "threadId": "thread-x", "turnId": "turn-x",
+            "item": {"type": "commandExecution"},
+        }})
+        driver._map_notification({"method": "item/started", "params": {
+            "threadId": "thread-x", "turnId": "turn-x",
+            "item": {"id": "named-tool", "type": "commandExecution"},
+        }})
+        driver._map_notification({"method": "item/completed", "params": {
+            "threadId": "thread-x", "turnId": "turn-x",
+            "item": {"type": "commandExecution"},
+        }})
+        self.assertEqual({"named-tool"}, driver._delivery_pending_tools["env-x"])
+
     def _opencode_driver(self):
         driver = openCodeDriver.OpenCodeProtocolDriver(
             password="test", manage_server=False,
@@ -243,6 +259,25 @@ class T094IdleStallTest(unittest.TestCase):
             "data": {"assistantMessageID": "asst-o", "name": "same-name"},
         }), "")
         self.assertEqual(1, len(driver._delivery_pending_tools["env-o"]))
+
+    def test_opencode_anonymous_completion_never_clears_named_tool(self):
+        driver = self._opencode_driver()
+        driver._map_sse_event("", json.dumps({
+            "type": "session.step.started", "data": {"assistantMessageID": "asst-o"},
+        }), "")
+        driver._map_sse_event("", json.dumps({
+            "type": "session.tool.started",
+            "data": {"assistantMessageID": "asst-o", "name": "anonymous"},
+        }), "")
+        driver._map_sse_event("", json.dumps({
+            "type": "session.tool.started",
+            "data": {"assistantMessageID": "asst-o", "callID": "named-tool", "name": "named"},
+        }), "")
+        driver._map_sse_event("", json.dumps({
+            "type": "session.tool.ended",
+            "data": {"assistantMessageID": "asst-o", "name": "anonymous"},
+        }), "")
+        self.assertEqual({"named-tool"}, driver._delivery_pending_tools["env-o"])
 
 
 if __name__ == "__main__":
