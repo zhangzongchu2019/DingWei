@@ -862,7 +862,9 @@ func amrOffendingToken(body string) string {
 	if t == "" {
 		return "(空)"
 	}
-	if i := strings.IndexAny(t, " \t\r\n"); i > 0 {
+	// T-088:同上，按 Unicode 空白切分。此处尤其要紧 —— 这是**用户唯一能看到的线索**，
+	// 若按 ASCII 切不开，通知里会回显一整句话而非那个 token，反而更误导。
+	if i := strings.IndexFunc(t, unicode.IsSpace); i > 0 {
 		t = t[:i]
 	}
 	if len(t) > 64 {
@@ -934,12 +936,19 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 	remaining := text
 	tokens := make([]string, 0, maxTargets)
 	for strings.HasPrefix(remaining, "@") {
-		i := strings.IndexAny(remaining, " \t\r\n")
+		// 🔴 T-088:此处原为 IndexAny(remaining, " \t\r\n") —— **只认四个 ASCII 空白**。
+		// 中文输入法下「@某人　正文」用的是全角空格(U+3000)，切不开 ⇒ 整串被当作一个 token
+		// ⇒ amrTokenName 不匹配 ⇒ return nil,true ⇒ **整轮一个目标都不发**，且失败文案
+		// 不含任何指向「空格类型」的线索。**单目标同样中招**，不限多目标。
+		// 实测受影响:U+00A0 不换行空格 / U+2009 窄空格 / U+3000 全角空格。
+		// ⚠️ 与 T-082 是同一文件同类毛病 —— 当时为行首扫描用了 unicode.IsSpace，
+		//    却没查 token 切分仍在用 ASCII 四件套。修空白处理须全文搜一遍。
+		i := strings.IndexFunc(remaining, unicode.IsSpace)
 		if i <= 1 {
 			return nil, true
 		}
 		tokens = append(tokens, remaining[1:i])
-		remaining = strings.TrimLeft(remaining[i:], " \t\r\n")
+		remaining = strings.TrimLeftFunc(remaining[i:], unicode.IsSpace)
 		if len(tokens) > maxTargets {
 			return nil, true
 		}
