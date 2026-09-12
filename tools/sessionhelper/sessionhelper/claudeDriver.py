@@ -27,7 +27,7 @@ import subprocess
 import threading
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, Optional
 
@@ -148,6 +148,7 @@ class _TurnState:
     interrupted: bool = False
     submitted_at: float = 0.0
     last_event_at: float = 0.0
+    pending_tool_ids: set[str] = field(default_factory=set)
     stalled_logged: bool = False
 
 
@@ -349,7 +350,7 @@ class ClaudeProtocolDriver(Driver):
                 self._store.update_state(envelope_id, "failed", detail)
                 return DeliveryReceipt(id=envelope_id, state="failed", source="pipe",
                                        detail=f"[ABSOLUTE_TIMEOUT] total runtime {total_elapsed:.0f}s")
-            if idle_elapsed > self._stall_timeout:
+            if not active.pending_tool_ids and idle_elapsed > self._stall_timeout:
                 if not active.stalled_logged:
                     active.stalled_logged = True
                     log.warning("[delivery][STALLED] id=%s idle_elapsed=%.0fs no progress event; "
@@ -487,6 +488,18 @@ class ClaudeProtocolDriver(Driver):
                 active.accepted.set()
             return
 
+        if t == "user":
+            # Claude stream-json sends tool results back as non-replay user frames.
+            # A tool is in-flight from tool_use until its matching tool_result.
+            for c in d.get("message", {}).get("content", []):
+                if c.get("type") == "tool_result" and active is not None:
+                    tool_use_id = c.get("tool_use_id", "")
+                    if tool_use_id:
+                        active.pending_tool_ids.discard(tool_use_id)
+                    active.last_event_at = time.monotonic()
+                    active.stalled_logged = False
+            return
+
         if t == "assistant":
             for c in d.get("message", {}).get("content", []):
                 if c.get("type") == "text" and c.get("text", "").strip():
@@ -501,6 +514,9 @@ class ClaudeProtocolDriver(Driver):
                     if active is not None:
                         active.last_event_at = time.monotonic()
                         active.stalled_logged = False
+                        tool_use_id = c.get("id", "")
+                        if tool_use_id:
+                            active.pending_tool_ids.add(tool_use_id)
                     self._emit(SessionEvent(
                         kind="tool_call", text="", data={"name": c.get("name"), "input": c.get("input")},
                         session_id=self._session_id, delivery_id=delivery_id, turn_id=turn_id,
@@ -519,6 +535,7 @@ class ClaudeProtocolDriver(Driver):
                 session_id=self._session_id, delivery_id=delivery_id, turn_id=turn_id,
             ))
             if active is not None:
+                active.pending_tool_ids.clear()
                 if interrupted:
                     active.interrupted = True
                     active.state = "failed"

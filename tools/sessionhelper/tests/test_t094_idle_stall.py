@@ -35,6 +35,7 @@ class T094IdleStallTest(unittest.TestCase):
             driver._handle_frame({"type": "assistant", "message": {"content": [{"type": "text", "text": "progress"}]}})
         with mock.patch.object(claudeDriver.time, "monotonic", return_value=220):
             self.assertEqual("processing", driver.poll_receipt("env-c").state)
+        active.pending_tool_ids.add("still-running")
         with mock.patch.object(claudeDriver.time, "monotonic", return_value=911):
             receipt = driver.poll_receipt("env-c")
         self.assertEqual("failed", receipt.state)
@@ -54,6 +55,28 @@ class T094IdleStallTest(unittest.TestCase):
         self.assertEqual("failed", receipt.state)
         self.assertIn("STALLED", receipt.detail)
         self.assertNotIn("ABSOLUTE", receipt.detail)
+
+    def test_claude_inflight_tool_pauses_only_idle_gate(self):
+        driver = claudeDriver.ClaudeProtocolDriver(store_path=os.path.join(self.tmp.name, "claude-tool.sqlite"))
+        active = claudeDriver._TurnState(
+            envelope_id="env-c-tool", turn_id="turn-c-tool",
+            accepted=threading.Event(), terminal_seen=threading.Event(), submitted_at=10,
+        )
+        driver._active = active
+        driver._store.upsert("env-c-tool", "turn-c-tool", "hash", "accepted", "test")
+        with mock.patch.object(claudeDriver.time, "monotonic", return_value=20):
+            driver._handle_frame({"type": "assistant", "message": {"content": [
+                {"type": "tool_use", "id": "tool-c", "name": "slow"},
+            ]}})
+        with mock.patch.object(claudeDriver.time, "monotonic", return_value=200):
+            self.assertEqual("processing", driver.poll_receipt("env-c-tool").state)
+        self.assertEqual({"tool-c"}, active.pending_tool_ids)
+        with mock.patch.object(claudeDriver.time, "monotonic", return_value=201):
+            driver._handle_frame({"type": "user", "message": {"content": [
+                {"type": "tool_result", "tool_use_id": "tool-c", "content": "done"},
+            ]}})
+        with mock.patch.object(claudeDriver.time, "monotonic", return_value=292):
+            self.assertEqual("failed", driver.poll_receipt("env-c-tool").state)
 
     def _codex_driver(self):
         driver = codexDriver.CodexProtocolDriver(
@@ -84,10 +107,32 @@ class T094IdleStallTest(unittest.TestCase):
             idle_receipt = idle.poll_receipt("env-x")
         absolute = self._codex_driver()
         absolute._delivery_last_event_at["env-x"] = 905
+        absolute._delivery_pending_tools["env-x"] = {"still-running"}
         with mock.patch.object(codexDriver.time, "monotonic", return_value=911):
             absolute_receipt = absolute.poll_receipt("env-x")
         self.assertIn("idle stalled", idle_receipt.detail)
         self.assertIn("absolute turn timeout", absolute_receipt.detail)
+
+    def test_codex_inflight_tool_pauses_only_idle_gate(self):
+        driver = self._codex_driver()
+        driver._map_notification({
+            "method": "item/started",
+            "params": {"threadId": "thread-x", "turnId": "turn-x", "item": {
+                "id": "tool-x", "type": "commandExecution",
+            }},
+        })
+        with mock.patch.object(codexDriver.time, "monotonic", return_value=200):
+            self.assertEqual("accepted", driver.poll_receipt("env-x").state)
+        self.assertEqual({"tool-x"}, driver._delivery_pending_tools["env-x"])
+        with mock.patch.object(codexDriver.time, "monotonic", return_value=201):
+            driver._map_notification({
+                "method": "item/completed",
+                "params": {"threadId": "thread-x", "turnId": "turn-x", "item": {
+                    "id": "tool-x", "type": "commandExecution",
+                }},
+            })
+        with mock.patch.object(codexDriver.time, "monotonic", return_value=292):
+            self.assertEqual("failed", driver.poll_receipt("env-x").state)
 
     def _opencode_driver(self):
         driver = openCodeDriver.OpenCodeProtocolDriver(
@@ -123,10 +168,31 @@ class T094IdleStallTest(unittest.TestCase):
             idle_receipt = idle.poll_receipt("env-o")
         absolute = self._opencode_driver()
         absolute._delivery_last_event_at["env-o"] = 905
+        absolute._delivery_pending_tools["env-o"] = {"still-running"}
         with mock.patch.object(openCodeDriver.time, "monotonic", return_value=911):
             absolute_receipt = absolute.poll_receipt("env-o")
         self.assertIn("idle stalled", idle_receipt.detail)
         self.assertIn("absolute turn timeout", absolute_receipt.detail)
+
+    def test_opencode_inflight_tool_pauses_only_idle_gate(self):
+        driver = self._opencode_driver()
+        driver._map_sse_event("", json.dumps({
+            "type": "session.step.started", "data": {"assistantMessageID": "asst-o"},
+        }), "")
+        driver._map_sse_event("", json.dumps({
+            "type": "session.tool.started",
+            "data": {"assistantMessageID": "asst-o", "callID": "tool-o", "name": "slow"},
+        }), "")
+        with mock.patch.object(openCodeDriver.time, "monotonic", return_value=200):
+            self.assertEqual("accepted", driver.poll_receipt("env-o").state)
+        self.assertEqual({"tool-o"}, driver._delivery_pending_tools["env-o"])
+        with mock.patch.object(openCodeDriver.time, "monotonic", return_value=201):
+            driver._map_sse_event("", json.dumps({
+                "type": "session.tool.ended",
+                "data": {"assistantMessageID": "asst-o", "callID": "tool-o", "name": "slow"},
+            }), "")
+        with mock.patch.object(openCodeDriver.time, "monotonic", return_value=292):
+            self.assertEqual("failed", driver.poll_receipt("env-o").state)
 
 
 if __name__ == "__main__":

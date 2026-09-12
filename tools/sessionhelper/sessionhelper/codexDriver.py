@@ -491,6 +491,7 @@ class CodexProtocolDriver(Driver):
         self._turn_to_envelope: dict[str, str] = {}
         self._delivery_timestamps: dict[str, float] = {}
         self._delivery_last_event_at: dict[str, float] = {}
+        self._delivery_pending_tools: dict[str, set[str]] = {}
         self._done_seen_at: dict[str, float] = {}
         self._events_drained: set[str] = set()
         self._delivery_lock = threading.Lock()
@@ -704,7 +705,7 @@ class CodexProtocolDriver(Driver):
                 log.warning("[delivery][ABSOLUTE_TIMEOUT] envelope=%s %s", envelope_id, detail)
                 self._mark_delivery(envelope_id, "failed", detail)
                 return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
-            if idle_elapsed > self._stall_timeout:
+            if not self._delivery_pending_tools.get(envelope_id) and idle_elapsed > self._stall_timeout:
                 detail = f"idle stalled: no progress event for {idle_elapsed:.0f}s"
                 log.warning("[delivery][STALLED] envelope=%s %s", envelope_id, detail)
                 self._mark_delivery(envelope_id, "failed", detail)
@@ -931,6 +932,8 @@ class CodexProtocolDriver(Driver):
             cursor = self._turn_event_cursor(turn_id, "9999")
             status = turn.get("status", "")
             envelope_id = self._turn_to_envelope.get(turn_id)
+            if envelope_id:
+                self._delivery_pending_tools.pop(envelope_id, None)
             if turn_id == self._active_turn_id:
                 self._active_turn_id = ""
             self._interrupt_requested_turns.discard(turn_id)
@@ -965,6 +968,12 @@ class CodexProtocolDriver(Driver):
                 if envelope_id and turn_id:
                     self._remember_delivery(envelope_id, turn_id, "processing")
                     self._store.update_state(thread_id, envelope_id, "processing", f"user item admitted item={item.get('id')}")
+            elif item.get("type") in ("commandExecution", "fileChange", "dynamicToolCall"):
+                delivery_id = self._turn_to_envelope.get(turn_id, "")
+                if delivery_id:
+                    tool_id = item_id or item.get("type", "tool")
+                    self._delivery_pending_tools.setdefault(delivery_id, set()).add(tool_id)
+                    self._delivery_last_event_at[delivery_id] = time.monotonic()
             return None  # 纯生命周期通知，对用户无意义
 
         if method == "item/completed":
@@ -979,6 +988,12 @@ class CodexProtocolDriver(Driver):
                 return None
             if item_type in ("commandExecution", "fileChange", "dynamicToolCall"):
                 if delivery_id:
+                    tool_id = item_id or item_type
+                    pending = self._delivery_pending_tools.get(delivery_id)
+                    if pending is not None:
+                        pending.discard(tool_id)
+                        if not pending:
+                            self._delivery_pending_tools.pop(delivery_id, None)
                     self._delivery_last_event_at[delivery_id] = time.monotonic()
                 return SessionEvent(kind="tool_call", text=item.get("command", item_type), data=data, session_id=thread_id, cursor=cursor, delivery_id=delivery_id, turn_id=turn_id)
             # userMessage / reasoning / 其他未知 item 类型都不作为独立事件暴露

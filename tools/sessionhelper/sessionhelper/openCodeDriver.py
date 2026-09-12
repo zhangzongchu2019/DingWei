@@ -174,6 +174,7 @@ class OpenCodeProtocolDriver(Driver):
         self._msg_to_envelope: dict[str, str] = {}          # message_id → envelope_id（反向映射）
         self._delivery_timestamps: dict[str, float] = {}    # envelope_id → time of deliver()
         self._delivery_last_event_at: dict[str, float] = {} # envelope_id → last attributable progress
+        self._delivery_pending_tools: dict[str, set[str]] = {} # envelope_id → in-flight tool call ids
         self._delivery_terminal: set[str] = set()           # envelope_ids whose terminal event has fired
         self._delivery_drain_deadline: dict[str, float] = {}  # envelope_id → drain deadline
         self._asst_msg_to_envelope: dict[str, str] = {}      # assistant messageID → envelope_id
@@ -349,7 +350,7 @@ class OpenCodeProtocolDriver(Driver):
                 log.warning("[delivery][ABSOLUTE_TIMEOUT] envelope=%s %s", envelope_id, detail)
                 self._envelope_states[envelope_id] = "failed"
                 return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
-            if idle_elapsed > self._stall_timeout:
+            if not self._delivery_pending_tools.get(envelope_id) and idle_elapsed > self._stall_timeout:
                 log.warning(
                     "[delivery][STALLED] envelope=%s no progress event for %.0fs — "
                     "model may be misconfigured or session stalled. "
@@ -904,6 +905,7 @@ class OpenCodeProtocolDriver(Driver):
         # 追踪终结事件：step.ended / step.failed → 标记 delivery 事件已排空
         if delivery_id and (ev_type.endswith(".step.ended") or ev_type.endswith(".step.failed")):
             self._delivery_terminal.add(delivery_id)
+            self._delivery_pending_tools.pop(delivery_id, None)
 
         kind: EventKind
         text = ""
@@ -952,6 +954,20 @@ class OpenCodeProtocolDriver(Driver):
 
         if delivery_id and (kind == "tool_call" or (kind == "assistant_text" and text)):
             self._delivery_last_event_at[delivery_id] = time.monotonic()
+        if delivery_id and kind == "tool_call":
+            phase = ev_type.rsplit(".", 1)[-1].lower()
+            tool_id = str(
+                ev_data.get("callID") or ev_data.get("toolCallID")
+                or ev_data.get("id") or tool_name or "tool"
+            )
+            if phase in ("started", "start", "call", "pending", "running"):
+                self._delivery_pending_tools.setdefault(delivery_id, set()).add(tool_id)
+            elif phase in ("ended", "completed", "result", "failed", "error"):
+                pending = self._delivery_pending_tools.get(delivery_id)
+                if pending is not None:
+                    pending.discard(tool_id)
+                    if not pending:
+                        self._delivery_pending_tools.pop(delivery_id, None)
 
         return SessionEvent(
             kind=kind,
