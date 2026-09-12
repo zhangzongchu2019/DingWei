@@ -21,6 +21,36 @@ from .reply_origin import classify_reply_decision, reply_carryforward_meta
 from .provision import Provisioner, is_provision_envelope
 
 
+
+async def supervise_connection_loops(coros: "list") -> None:
+    """并发跑一组「绑定在同一条 WS 上」的循环,并保证**退出时它们全部被收掉**。
+
+    🔴 T-078 根因。此前这里是裸 `asyncio.gather(...)`:
+    某个循环抛异常时 gather 会把异常抛出去,但**其余任务不会被取消**,
+    它们继续以**已死的 ws** 运行。外层随即重连并再起一整套循环,
+    于是每断一次就多留一代孤儿 worker。
+
+    孤儿 `delivery_worker_loop` 仍会从**共享的 SQLite 收件库**里 claim 到投递,
+    注入 CLI 成功(适配器在本进程内,与 ws 无关),随后在死 ws 上发 ack 失败,
+    异常文本 `no close frame received or sent` 被原样写进收件库 error 字段
+    (`finish(delivery_id, str(exc))`)⇒ 消息**已进 CLI 但 Hub 永远等不到回执**。
+
+    这解释了 Hub 侧实测到的全部现象:连接健康、conn_seq 不变、
+    `client_present=true` 照常入队,却没有任何关闭事件 ——
+    因为出问题的根本不是 Hub 看到的那条连接,而是本进程里一条早该死掉的旧循环。
+
+    语义与原来的 gather 保持一致(第一个异常照样向外抛),只多了**必定清理**这一条。
+    """
+    tasks = [asyncio.ensure_future(c) for c in coros]
+    try:
+        await asyncio.gather(*tasks)
+    finally:
+        for t in tasks:
+            t.cancel()
+        # 必须 await 回收,否则只是标了取消、清理不保证执行(与 hb/ipc_task 同一道理)
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
 class Adapter(Protocol):
     name: str
 
@@ -373,7 +403,7 @@ class SessionHelper:
                                   allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock)))
 
                 try:
-                    await asyncio.gather(
+                    await supervise_connection_loops([
                         self.recv_loop(ws),
                         self.delivery_worker_loop(ws),
                         self.pending_drain_loop(ws),
@@ -381,7 +411,7 @@ class SessionHelper:
                         self.session_event_loop(ws),
                         self.outbox_loop(ws),
                         self.mirror_loop(ws),
-                    )
+                    ])
                 finally:
                     hb.cancel()
                     if ipc_task is not None:

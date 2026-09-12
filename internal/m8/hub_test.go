@@ -6775,3 +6775,32 @@ func TestSweepDisconnectedViewersRespectsGraceAndVirtual(t *testing.T) {
 		t.Fatal("View Service 虚拟 viewer 不该被断连 sweep 清")
 	}
 }
+
+// T-044:workpulse 是保留系统地址,不是会话名。
+// 三格合起来才算数:只断言「不再报错」会让「把所有未知目标都吞掉」也通过。
+func TestWorkpulseIsReservedSystemAddress(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+
+	// ① 目标是 workpulse 且类型未被消费 -> 终止于 Hub,不报错、不产生投递失败通知
+	err := h.RouteEnvelope(ctx, model.Envelope{
+		ID: "e1", From: sessionAddress("a", "k"), To: sessionAddress(systemAddressName, "k"),
+		Body: "x", Meta: map[string]any{"type": "some_unconsumed_type"},
+	})
+	if err != nil {
+		t.Fatalf("发往保留系统地址不应报错(报错会触发投递失败通知,今日已实测风暴风险):%v", err)
+	}
+
+	// ② 反向对照:普通不存在的会话名**仍须**报错,否则等于把所有错地址都吞掉
+	err = h.RouteEnvelope(ctx, model.Envelope{
+		ID: "e2", From: sessionAddress("a", "k"), To: sessionAddress("nosuchsession", "k"),
+		Body: "x", Meta: map[string]any{},
+	})
+	if err == nil {
+		t.Fatalf("普通不存在的会话名必须仍然报错 —— 否则本修复退化成吞掉一切错地址")
+	}
+
+	// ③ 保留名不得被当作可注册会话名占用(防止有人真去注册一个叫 workpulse 的会话)
+	if bareSessionNamePattern.MatchString(systemAddressName) != true {
+		t.Fatalf("前置:该保留名在字符集上本就形如合法短名,正因如此才必须显式保留")
+	}
+}
