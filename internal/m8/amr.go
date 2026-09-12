@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -871,6 +872,41 @@ func amrOffendingToken(body string) string {
 }
 
 func parseAMRCandidatesDetailed(text, sourceSession string, maxTargets int) ([]amrCandidate, bool) {
+	if maxTargets <= 0 {
+		return nil, false
+	}
+	text = strings.ReplaceAll(text, "\r\n", "\n")
+	lines := strings.Split(text, "\n")
+	lookedLikeCandidate := false
+	for i := range lines {
+		line := lines[i]
+		if i == 0 {
+			// T-082: retain the historical first-line whitespace allowance.
+			line = strings.TrimLeftFunc(line, unicode.IsSpace)
+		} else if first, _ := utf8.DecodeRuneInString(line); unicode.IsSpace(first) {
+			// Later lines are intentionally column-zero only. Indentation is the
+			// documented escape hatch for examples and pasted logs.
+			continue
+		}
+		if !strings.HasPrefix(line, "@") && !strings.HasPrefix(line, "#") {
+			continue
+		}
+		block := line
+		if i+1 < len(lines) {
+			block += "\n" + strings.Join(lines[i+1:], "\n")
+		}
+		candidates, looked := parseAMRCandidateBlock(block, sourceSession, maxTargets)
+		lookedLikeCandidate = lookedLikeCandidate || looked
+		if len(candidates) > 0 {
+			return candidates, true
+		}
+		// A Markdown heading is not a candidate, but it also must not stop the
+		// scan: a later column-zero route directive remains eligible.
+	}
+	return nil, lookedLikeCandidate
+}
+
+func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCandidate, bool) {
 	text = strings.TrimSpace(text)
 	if text == "" || maxTargets <= 0 {
 		return nil, false

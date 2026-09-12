@@ -382,6 +382,83 @@ func TestParseAMRCandidatesUsesWholeTurnAndRejectsInvalidTokens(t *testing.T) {
 	}
 }
 
+func TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas(t *testing.T) {
+	tests := []struct {
+		name             string
+		body             string
+		wantTargets      int
+		wantBody         string
+		wantNonCandidate bool
+	}{
+		{name: "first character regression", body: "@target direct", wantTargets: 1, wantBody: "direct"},
+		{name: "later column zero", body: "先说明再动手\n@target routed\ncontext", wantTargets: 1, wantBody: "routed\ncontext"},
+		{name: "space indentation escape", body: "说明\n @target example", wantNonCandidate: true},
+		{name: "tab indentation escape", body: "说明\n\t@target example", wantNonCandidate: true},
+		{name: "unicode indentation escape", body: "说明\n\u3000@target example", wantNonCandidate: true},
+		{name: "markdown heading continues", body: "## 标题\n@target after heading", wantTargets: 1, wantBody: "after heading"},
+		{name: "decorated markdown heading continues", body: "**## 标题**\n@target after decoration", wantTargets: 1, wantBody: "after decoration"},
+		{name: "quote does not route", body: "> @target quotation", wantNonCandidate: true},
+		{name: "only first directive routes", body: "@one first\n@two second", wantTargets: 1, wantBody: "first\n@two second"},
+		{name: "no line head mention", body: "plain @target reference\nmore text", wantNonCandidate: true},
+		{name: "first line keeps trim space", body: " \t@target trimmed", wantTargets: 1, wantBody: "trimmed"},
+		{name: "first line zero width is not trimmed", body: "\u200b@target hidden", wantNonCandidate: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			hub, db, ctx := newTestHub(t)
+			if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-t082", Name: "svc-t082", DeliveryType: "ws", Enabled: true}); err != nil {
+				t.Fatal(err)
+			}
+			_, key, err := hub.IssueAPIKey(ctx, "svc-t082", "owner")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_owner"); err != nil {
+				t.Fatal(err)
+			}
+			if err := db.UpsertMember(ctx, model.Member{OwnerKey: "owner", DisplayName: "Owner", FeishuOpenID: "ou_owner", Role: model.RoleMember, Active: true}); err != nil {
+				t.Fatal(err)
+			}
+			hub.mu.Lock()
+			hub.sessionClients[key.ID] = map[string]*sessionClient{
+				"target": {keyID: key.ID, sessionName: "target"},
+				"one":    {keyID: key.ID, sessionName: "one"},
+				"two":    {keyID: key.ID, sessionName: "two"},
+			}
+			hub.mu.Unlock()
+			p := testAMRProcessor()
+			p.hub = hub
+			p.modes = map[string]amrMode{"source": amrRoute}
+			var routed []model.Envelope
+			p.routeEnvelope = func(_ context.Context, env model.Envelope) error {
+				routed = append(routed, env)
+				return nil
+			}
+			p.mu.Lock()
+			p.stats.opened, p.stats.queued = 1, 1
+			p.mu.Unlock()
+			p.process(amrRouteJob{key: amrTurnKey{KeyID: key.ID, Session: "source", DeliveryID: "d", TurnID: "t"}, body: tc.body})
+			stats, _ := p.snapshotStats()
+			if len(routed) != tc.wantTargets || stats.targetsDispatched != uint64(tc.wantTargets) || stats.closedDispatched != boolUint64(tc.wantTargets > 0) {
+				t.Fatalf("heartbeat delta dispatched=%d targets_dispatched=%d routed=%d", stats.closedDispatched, stats.targetsDispatched, len(routed))
+			}
+			if tc.wantTargets > 0 && routed[0].Body != tc.wantBody {
+				t.Fatalf("body=%q want=%q", routed[0].Body, tc.wantBody)
+			}
+			if tc.wantNonCandidate && (stats.closedNonCandidate != 1 || stats.notificationsSent != 0 || stats.notificationsSuppressed != 0) {
+				t.Fatalf("non-candidate was not silent: %+v", stats)
+			}
+		})
+	}
+}
+
+func boolUint64(v bool) uint64 {
+	if v {
+		return 1
+	}
+	return 0
+}
+
 func TestLegacyAgentRouteDroppedOnlyForRouteEnabledSession(t *testing.T) {
 	p := testAMRProcessor()
 	p.modes = map[string]amrMode{"observe": amrObserve, "key/route": amrRoute}
