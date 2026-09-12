@@ -2948,6 +2948,14 @@ func deliveryFailureEnvelope(c *sessionClient, sourceID, target, reason string, 
 	// 发生在目标解析**之前**，根本没有目标可填 —— 此前两处调用点往这里塞内部原因码
 	// （"ttl"、"capacity"），渲染出「投递失败 … → ttl」，读起来像投给了一个叫 ttl 的会话。
 	// 修法不是编一个目标，而是**没有目标时不出现那个箭头**。
+	//
+	// 2026-09-12 补完：首轮只清了上述两处，**遗漏了 amr.go 的另外三处**
+	// （"terminal"、"empty"、"queue"，均经 notifySource 的 failure=true 分支进到这里）。
+	// 现已全部改为空目标。清点方法记在这里，免得下次再漏：
+	//   ① 直接调用 deliveryFailureEnvelope 的点
+	//   ② **经 notifySource(..., failure=true) 间接到达的点** —— 首轮漏的就是这一类
+	// 合法传值只有一种：真实会话名/写法（如 amrOffendingToken 给出的那个 @token）。
+	// 凡是内部状态码、原因码、阶段名，一律传 ""。
 	body := fmt.Sprintf("【投递失败】%s → %s；原因：%s", sourceID, target, reason)
 	if target == "" {
 		body = fmt.Sprintf("【投递失败】%s；原因：%s", sourceID, reason)

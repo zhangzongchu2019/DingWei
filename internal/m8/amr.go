@@ -299,14 +299,14 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 		p.stats.failed++
 		p.mu.Unlock()
 		log.Printf("amr decision=failed reason=terminal_failed")
-		p.notifySource(key, "terminal", "终态表示本轮未成功", true)
+		p.notifySource(key, "", "终态表示本轮未成功", true)
 		return
 	}
 	if body == "" {
 		p.stats.incomplete++
 		p.mu.Unlock()
 		log.Printf("amr decision=incomplete reason=empty")
-		p.notifySource(key, "empty", "本轮没有可路由的完整文本", true)
+		p.notifySource(key, "", "本轮没有可路由的完整文本", true)
 		return
 	}
 	if t.truncated {
@@ -320,7 +320,7 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 		p.stats.failed++
 		p.mu.Unlock()
 		log.Printf("amr decision=failed reason=queue_full")
-		p.notifySource(key, "queue", "Hub 路由队列已满", true)
+		p.notifySource(key, "", "Hub 路由队列已满", true)
 	}
 }
 
@@ -958,6 +958,7 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 		return nil, true
 	}
 	seen := map[string]bool{}
+	skipped := make([]string, 0, 2) // T-091:不合规 token,跳过但须可见
 	out := make([]amrCandidate, 0, len(tokens))
 	for _, token := range tokens {
 		replyPolicy := "no_reply"
@@ -966,7 +967,25 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 			token = strings.TrimSuffix(token, "!")
 		}
 		if !amrTokenName.MatchString(token) {
-			return nil, true
+			// 🔴 T-091(业主 2026-09-12 裁定:「@中文部分直接跳过,暂不支持就好了」):
+			// 此处原为 return nil,true —— **一个不合规 token 会让整轮全废**,
+			// 连同行的合法英文名一起投不出去(实测 `@opus50ts @张宗楚 hi` → 候选 0)。
+			// 改为跳过该 token、继续处理其余,并记入 skipped 供回执回显。
+			// ⚠️ 这**放宽了 fail-closed**:此前"有不认识的名字就整轮不发",现在会部分投递。
+			// 之所以可接受:①业主明确裁定 ②原行为的代价更大 —— 一个拼错/中文名
+			// 就让整轮通信失败,且文案不说明原因。
+			//
+			// 🔴 **已知缺口(不要照抄旧注释说"跳过会被回显")**:回显只在**全部**token
+			// 都被跳过时才有 —— 那时候候选为 0,worker 会走 notifySource(...,
+			// "@ 目标无法解析或不符合路由规则", failure=true)。
+			// **部分跳过时没有任何回显**:`@opus50ts @张宗楚 hi` 会投给 opus50ts,
+			// 而被跳过的 `张宗楚` 只落一条服务端日志,发信方看不到。
+			// 唯一的弱信号是投递回执的计数 ——「本轮 @1」与他写的两个名字对不上,
+			// 但要靠他自己察觉。**这是"部分成功报成功",与 T-071 同类。**
+			// 未补的原因:补回显要改 parseAMRCandidatesDetailed 签名(2 处生产 + 9 处测试),
+			// 且业主裁定是「直接跳过,后期再看做集中处理」⇒ 不在本单擅自扩围,另开卡。
+			skipped = append(skipped, token)
+			continue
 		}
 		if token == "all" || token == sourceSession || seen[token] {
 			continue
@@ -980,6 +999,12 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 			selector = "@" + parts[1] + "#" + parts[2]
 		}
 		out = append(out, amrCandidate{selector: selector, body: body, replyPolicy: replyPolicy})
+	}
+	if len(skipped) > 0 {
+		// T-091:跳过必须可见。函数签名只返回候选,没有回显通道,
+		// 故至少记服务端日志 —— **静默跳过就是把 T-071「误投且报成功」换了个方向重演**。
+		// 只记 token 本身(名字),不记正文。
+		log.Printf("amr decision=token_skipped reason=unsupported_name tokens=%v source=%s", skipped, sourceSession)
 	}
 	return out, true
 }
