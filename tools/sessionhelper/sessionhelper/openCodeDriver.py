@@ -955,6 +955,8 @@ class OpenCodeProtocolDriver(Driver):
         if delivery_id and (kind == "tool_call" or (kind == "assistant_text" and text)):
             self._delivery_last_event_at[delivery_id] = time.monotonic()
         if delivery_id and kind == "tool_call":
+            # 当前部署无 OpenCode 席可做行为核验；以下 phase/call id 映射按现有
+            # `.tool.*` SSE 命名推断。未来首次接入 OpenCode 时必须用真实事件回补验证。
             phase = ev_type.rsplit(".", 1)[-1].lower()
             tool_id = str(
                 ev_data.get("callID") or ev_data.get("toolCallID")
