@@ -316,4 +316,9 @@ fi
 log "starting sessionHelper session=$SH_SESSION_NAME key_id=$SH_KEY_ID cli=$SH_CLI ws=$SH_WS_BASE"
 log "secret loaded from local config; it will not be printed"
 trap cleanup_tmux EXIT
-"$VENV_DIR/bin/python" -m sessionhelper
+if [ "${SH_CLI_LAUNCH:-pty}" = "tmux" ]; then
+  # tmux 模式保留 bash 壳:trap cleanup_tmux EXIT 须在退出时执行(exec 会替换进程使 trap 失效)
+  "$VENV_DIR/bin/python" -m sessionhelper
+else
+  exec "$VENV_DIR/bin/python" -m sessionhelper
+fi
