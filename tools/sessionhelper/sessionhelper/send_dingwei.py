@@ -1,120 +1,83 @@
 #!/usr/bin/env python3
-"""DingWei 统一发信脚本：给指定会话发一条消息，即发即断。无第三方依赖（纯标准库）。
+"""DingWei 发信脚本（走 sessionHelper 本机 IPC）。用法与旧版完全一致。
 
-用法：
   send.py <收件会话名或完整地址> <正文...>
-  send.py <收件会话名或完整地址> --file <正文文件>       # 长正文用文件
+  send.py <收件会话名或完整地址> --file <正文文件>
 
-凭据从环境变量读（sessionHelper 已把它们注入到 CLI 运行环境）：
-  SH_KEY_ID / SH_SECRET / SH_WS_BASE / SH_SESSION_NAME
+与旧版的区别（T-092/T-085，业主 2026-09-12 定）：
+  · 不再自开 WebSocket、不再读 SH_SECRET —— 经 helper **已认证**的连接发出
+  · `from` 是**真实会话名**，不再是临时的 <短名>note
+  · 🔴 **读回执并反映到退出码** —— 旧版写完就无条件打印 "sent"，从不读应答，
+    这是 2026-09-12 组长误判「消息已送达」整整一轮的直接原因
+  · socket 不可用时**失败并明说，绝不回落旧 WS 路径**（回落等于绕过 M2、且留着凭据暴露）
 
-收件地址：只给会话名会自动补成 <会话名>#<SH_KEY_ID>；也可直接给完整 <会话名>#<key>。
-⚠️ 会话名必须用【在线清单文件】里的精确完整名。
+⚠️ 回执语义边界：`ok:true` 表示「已写入 helper 的已认证连接」，
+   **不代表 Hub 最终接受**。Hub 的裁决（如 invalid address / 目标不在线）
+   通过投递失败通知**异步**回来，不在本命令的返回值里。
 """
-import base64
 import json
 import os
-import re
 import socket
-import ssl
 import sys
-import time
-from urllib.parse import urlparse
+import uuid
+
+SOCK = os.environ.get("SH_MCP_IPC_SOCK", "/run/sessionhelper/dingwei-mcp.sock")
+TIMEOUT = 10.0
 
 
-NAME_PART_RE = re.compile(r"^[a-z0-9]+$")
-SESSION_NAME_RE = re.compile(r"^([a-z0-9]+)-([a-z0-9]+)-([0-9a-f]{4})$")
-DEFAULT_WS_BASE = "wss://dingwei.wegoab.com"
+def complete_addr(to: str) -> str:
+    """裸会话名补成 <名>#<key_id>。
 
-
-def temporary_session_name(env: dict[str, str] | None = None) -> str:
-    env = env or os.environ
-    configured_session = env.get("SH_SESSION_NAME", "").strip()
-
-    parsed = SESSION_NAME_RE.fullmatch(configured_session)
-    short = configured_session
-    if parsed:
-        short = parsed.group(2)
-    if not NAME_PART_RE.fullmatch(short):
-        short = "sender"
-    return f"{short}note"
-
-
-def send(recipient: str, body: str) -> None:
+    helper 侧本应补全，但 defb424f 误删了该逻辑（T-092，修复未部署）⇒ 此处自补，
+    使本脚本在修复上线前后都正确。SH_KEY_ID 是标识符不是密钥，读它不构成凭据暴露；
+    **SH_SECRET 全程不读**。
+    """
+    to = to.strip()
+    if "#" in to or not to:
+        return to
     key = os.environ.get("SH_KEY_ID", "").strip()
-    secret = os.environ.get("SH_SECRET", "").strip()
-    ws_base = os.environ.get("SH_WS_BASE", DEFAULT_WS_BASE).strip()
-    if not key or not secret:
-        sys.exit("缺少 SH_KEY_ID/SH_SECRET 环境变量（应由 sessionHelper 注入到 CLI 环境）")
-    to = recipient if "#" in recipient else f"{recipient}#{key}"
-    name = temporary_session_name()  # 临时发信会话名，不占用/顶掉真实会话
+    return f"{to}#{key}" if key else to
 
-    u = urlparse(ws_base)
-    host = u.hostname
-    port = u.port or (443 if u.scheme == "wss" else 80)
-    path = u.path.rstrip("/") + f"/ws/session/{name}?key_id={key}"
 
-    raw = socket.create_connection((host, port), timeout=15)
-    if u.scheme == "wss":
-        try:
-            ctx = ssl.create_default_context()
-            sock = ctx.wrap_socket(raw, server_hostname=host)
-        except ssl.SSLError:
-            ctx = ssl._create_unverified_context()
-            sock = ctx.wrap_socket(raw, server_hostname=host)
-    else:
-        sock = raw
-
-    handshake_key = base64.b64encode(os.urandom(16)).decode()
-    req = (
-        f"GET {path} HTTP/1.1\r\nHost: {host}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
-        f"Sec-WebSocket-Key: {handshake_key}\r\nSec-WebSocket-Version: 13\r\n"
-        f"Authorization: Bearer {secret}\r\n\r\n"
-    )
-    sock.sendall(req.encode())
-    resp = sock.recv(2048).decode(errors="replace")
-    first = resp.split("\r\n", 1)[0] if resp else ""
-    if " 101 " not in first:
-        sys.exit(f"WS 握手失败：{first or '无响应'}")
-
-    env = {
-        "id": os.urandom(8).hex(),
-        "to": to,
-        "from": f"{name}#{key}",
-        "body": body,
-        "ts": int(time.time()),
-        "meta": {},
-    }
-    payload = json.dumps(env, ensure_ascii=False).encode("utf-8")
-
-    frame = bytearray([0x81])  # FIN + text opcode
-    n = len(payload)
-    if n < 126:
-        frame.append(0x80 | n)
-    elif n < 65536:
-        frame.append(0x80 | 126)
-        frame += n.to_bytes(2, "big")
-    else:
-        frame.append(0x80 | 127)
-        frame += n.to_bytes(8, "big")
-    mask = os.urandom(4)
-    frame += mask
-    frame += bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
-    sock.sendall(frame)
-
-    time.sleep(1.0)  # linger，让 Hub 处理投递后再断
+def ipc_send(to: str, body: str) -> dict:
+    payload = {"type": "mcp_send", "to": to, "body": body,
+               "request_id": uuid.uuid4().hex[:12]}
+    raw = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(TIMEOUT)
     try:
-        sock.close()
-    except Exception:
-        pass
-    print(f"sent to={to} bytes={n}")
+        s.connect(SOCK)
+    except FileNotFoundError:
+        sys.exit(f"发送失败：找不到 IPC socket {SOCK}\n"
+                 f"  ⇒ sessionHelper 可能未运行。**不回落旧 WS 路径**（那会绕过 M2 并暴露凭据）。")
+    except (ConnectionRefusedError, PermissionError) as e:
+        sys.exit(f"发送失败：无法连接 {SOCK}（{type(e).__name__}）\n  ⇒ helper 在跑但未接受连接，检查 socket 权限。")
+    try:
+        s.sendall(raw)
+        buf = b""
+        while b"\n" not in buf:
+            ch = s.recv(4096)
+            if not ch:
+                break
+            buf += ch
+    except socket.timeout:
+        sys.exit(f"发送失败：等待 helper 回执超时（{TIMEOUT}s）⇒ helper 可能卡住。")
+    finally:
+        s.close()
+    txt = buf.decode("utf-8", "replace").strip()
+    if not txt:
+        sys.exit("发送失败：helper 未返回任何回执（连接被关闭）。")
+    try:
+        return json.loads(txt)
+    except json.JSONDecodeError:
+        sys.exit(f"发送失败：回执不是合法 JSON：{txt[:200]}")
 
 
 def main() -> None:
     args = sys.argv[1:]
     if len(args) < 2:
         sys.exit("用法: send.py <收件会话名或地址> <正文>   或   send.py <收件> --file <正文文件>")
-    recipient = args[0]
+    recipient = complete_addr(args[0])
     if args[1] == "--file":
         if len(args) < 3:
             sys.exit("--file 需要跟一个文件路径")
@@ -123,7 +86,15 @@ def main() -> None:
         body = " ".join(args[1:])
     if not body.strip():
         sys.exit("正文为空")
-    send(recipient, body)
+
+    resp = ipc_send(recipient, body)
+    # 🔴 回执必须被检查:ok:false ⇒ 非零退出。不得无条件打印成功。
+    if not resp.get("ok"):
+        print(f"发送失败：{resp.get('error') or resp}", file=sys.stderr)
+        sys.exit(1)
+    out = resp.get("outcome") or {}
+    print(f"sent to={out.get('to', recipient)} bytes={len(body.encode('utf-8'))} "
+          f"request_id={resp.get('request_id', '')}")
 
 
 if __name__ == "__main__":
