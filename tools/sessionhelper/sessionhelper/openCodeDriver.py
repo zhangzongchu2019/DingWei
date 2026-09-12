@@ -60,13 +60,9 @@ SSE_READ_TIMEOUT = 30.0  # 长超时——频繁重连可能丢事件，宁可�
 # 重连退避
 SSE_RECONNECT_BASE = 0.5
 SSE_RECONNECT_MAX = 15.0
-# accepted → done 超时（秒），超时打 [delivery][STALLED] 告警
-# 协议回执只保证 prompt 被受理，不保证会被处理（如模型未配好）
-# T-083(业主 2026-09-12 定:至多 180 秒,超时仍判失败):
-# 原 120s 计的是**回合总时长**(submitted_at 不随活动刷新),干活重的 Agent 极易超。
-# 组长本机实测:STALLED 76 次,最长 elapsed=600s。180s 能减少误报但不能消除;
-# 若要根治需改为按**空闲时长**计时(有事件即刷新),该改法与「超时即失败」不冲突,待业主定。
-ACCEPTED_STALL_TIMEOUT = 180.0
+# T-094: 一级按可归属增量事件后的空闲时长判卡死，二级限制回合总时长。
+ACCEPTED_STALL_TIMEOUT = 90.0
+ABSOLUTE_TURN_TIMEOUT = 900.0
 EVENT_DRAIN_TIMEOUT = 5.0     # poll_receipt done 后等事件排空的超时（实测差值 0.45s ×10）
 DEFAULT_STORE = os.path.join(os.path.expanduser("~"), ".opencode-driver-delivery.sqlite3")
 
@@ -165,6 +161,7 @@ class OpenCodeProtocolDriver(Driver):
         self._workdir = workdir
         self._manage_server = manage_server
         self._stall_timeout = stall_timeout
+        self._absolute_timeout = ABSOLUTE_TURN_TIMEOUT
         self._store = _DeliveryStore(store_path)
 
         self._base_url = f"http://{host}:{port}"
@@ -176,6 +173,7 @@ class OpenCodeProtocolDriver(Driver):
         self._envelope_to_msg: dict[str, str] = {}          # envelope_id → message_id (msg_*)
         self._msg_to_envelope: dict[str, str] = {}          # message_id → envelope_id（反向映射）
         self._delivery_timestamps: dict[str, float] = {}    # envelope_id → time of deliver()
+        self._delivery_last_event_at: dict[str, float] = {} # envelope_id → last attributable progress
         self._delivery_terminal: set[str] = set()           # envelope_ids whose terminal event has fired
         self._delivery_drain_deadline: dict[str, float] = {}  # envelope_id → drain deadline
         self._asst_msg_to_envelope: dict[str, str] = {}      # assistant messageID → envelope_id
@@ -336,22 +334,32 @@ class OpenCodeProtocolDriver(Driver):
                 detail="no session"
             )
 
-        # STALLED 检查：accepted 超时未 done → 协议回执只保证受理，不保证处理
+        # 两级闸门：空闲超时检出真卡死；绝对上限截断永不终结的活跃回合。
         current_state = self._envelope_states.get(envelope_id)
         delivered_at = self._delivery_timestamps.get(envelope_id)
         if current_state == "accepted" and delivered_at is not None:
-            elapsed = time.monotonic() - delivered_at
-            if elapsed > self._stall_timeout:
+            now = time.monotonic()
+            total_elapsed = now - delivered_at
+            idle_elapsed = now - self._delivery_last_event_at.get(envelope_id, delivered_at)
+            if total_elapsed > self._absolute_timeout:
+                detail = (
+                    f"absolute turn timeout: total runtime {total_elapsed:.0f}s "
+                    f"exceeded {self._absolute_timeout:.0f}s limit"
+                )
+                log.warning("[delivery][ABSOLUTE_TIMEOUT] envelope=%s %s", envelope_id, detail)
+                self._envelope_states[envelope_id] = "failed"
+                return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
+            if idle_elapsed > self._stall_timeout:
                 log.warning(
-                    "[delivery][STALLED] envelope=%s accepted but not done after %.0fs — "
+                    "[delivery][STALLED] envelope=%s no progress event for %.0fs — "
                     "model may be misconfigured or session stalled. "
                     "Protocol receipt guarantees admission, not processing.",
-                    envelope_id, elapsed,
+                    envelope_id, idle_elapsed,
                 )
                 self._envelope_states[envelope_id] = "failed"
                 return DeliveryReceipt(
                     id=envelope_id, state="failed", source="protocol",
-                    detail=f"stalled: accepted but no progress after {elapsed:.0f}s"
+                    detail=f"idle stalled: no progress event for {idle_elapsed:.0f}s"
                 )
 
         msg_id = self._envelope_to_msg.get(envelope_id, envelope_id)
@@ -941,6 +949,9 @@ class OpenCodeProtocolDriver(Driver):
         else:
             kind = "state_change"
             extra["change"] = ev_type
+
+        if delivery_id and (kind == "tool_call" or (kind == "assistant_text" and text)):
+            self._delivery_last_event_at[delivery_id] = time.monotonic()
 
         return SessionEvent(
             kind=kind,

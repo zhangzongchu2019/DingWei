@@ -1,0 +1,133 @@
+import json
+import os
+import sys
+import tempfile
+import threading
+import unittest
+from unittest import mock
+
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from sessionhelper import claudeDriver, codexDriver, openCodeDriver
+
+
+class T094IdleStallTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_claude_progress_refreshes_idle_but_absolute_limit_still_wins(self):
+        driver = claudeDriver.ClaudeProtocolDriver(store_path=os.path.join(self.tmp.name, "claude.sqlite"))
+        driver._stall_timeout = 90
+        driver._absolute_timeout = 900
+        active = claudeDriver._TurnState(
+            envelope_id="env-c", turn_id="turn-c",
+            accepted=threading.Event(), terminal_seen=threading.Event(), submitted_at=10,
+        )
+        active.accepted.set()
+        driver._active = active
+        driver._store.upsert("env-c", "turn-c", "hash", "accepted", "test")
+
+        with mock.patch.object(claudeDriver.time, "monotonic", return_value=210):
+            driver._handle_frame({"type": "assistant", "message": {"content": [{"type": "text", "text": "progress"}]}})
+        with mock.patch.object(claudeDriver.time, "monotonic", return_value=220):
+            self.assertEqual("processing", driver.poll_receipt("env-c").state)
+        with mock.patch.object(claudeDriver.time, "monotonic", return_value=911):
+            receipt = driver.poll_receipt("env-c")
+        self.assertEqual("failed", receipt.state)
+        self.assertIn("ABSOLUTE_TIMEOUT", receipt.detail)
+
+    def test_claude_idle_timeout_has_distinct_detail(self):
+        driver = claudeDriver.ClaudeProtocolDriver(store_path=os.path.join(self.tmp.name, "claude-idle.sqlite"))
+        driver._stall_timeout = 90
+        active = claudeDriver._TurnState(
+            envelope_id="env-c-idle", turn_id="turn-c-idle",
+            accepted=threading.Event(), terminal_seen=threading.Event(), submitted_at=10,
+        )
+        driver._active = active
+        driver._store.upsert("env-c-idle", "turn-c-idle", "hash", "accepted", "test")
+        with mock.patch.object(claudeDriver.time, "monotonic", return_value=101):
+            receipt = driver.poll_receipt("env-c-idle")
+        self.assertEqual("failed", receipt.state)
+        self.assertIn("STALLED", receipt.detail)
+        self.assertNotIn("ABSOLUTE", receipt.detail)
+
+    def _codex_driver(self):
+        driver = codexDriver.CodexProtocolDriver(
+            manage_daemon=False, store_path=os.path.join(self.tmp.name, "codex.sqlite"), stall_timeout=90,
+        )
+        driver._thread_id = "thread-x"
+        driver._session_id = "thread-x"
+        driver._envelope_states["env-x"] = "accepted"
+        driver._delivery_timestamps["env-x"] = 10
+        driver._absolute_timeout = 900
+        driver._turn_to_envelope["turn-x"] = "env-x"
+        return driver
+
+    def test_codex_attributable_delta_refreshes_idle(self):
+        driver = self._codex_driver()
+        with mock.patch.object(codexDriver.time, "monotonic", return_value=210):
+            event = driver._map_notification({
+                "method": "item/agentMessage/delta",
+                "params": {"threadId": "thread-x", "turnId": "turn-x", "itemId": "item-x", "delta": "progress"},
+            })
+        self.assertEqual("env-x", event.delivery_id)
+        with mock.patch.object(codexDriver.time, "monotonic", return_value=220):
+            self.assertEqual("accepted", driver.poll_receipt("env-x").state)
+
+    def test_codex_idle_and_absolute_details_differ(self):
+        idle = self._codex_driver()
+        with mock.patch.object(codexDriver.time, "monotonic", return_value=101):
+            idle_receipt = idle.poll_receipt("env-x")
+        absolute = self._codex_driver()
+        absolute._delivery_last_event_at["env-x"] = 905
+        with mock.patch.object(codexDriver.time, "monotonic", return_value=911):
+            absolute_receipt = absolute.poll_receipt("env-x")
+        self.assertIn("idle stalled", idle_receipt.detail)
+        self.assertIn("absolute turn timeout", absolute_receipt.detail)
+
+    def _opencode_driver(self):
+        driver = openCodeDriver.OpenCodeProtocolDriver(
+            password="test", manage_server=False,
+            store_path=os.path.join(self.tmp.name, "opencode.sqlite"), stall_timeout=90,
+        )
+        driver._session_id = "session-o"
+        driver._envelope_states["env-o"] = "accepted"
+        driver._delivery_timestamps["env-o"] = 10
+        driver._absolute_timeout = 900
+        driver._msg_to_envelope["msg-o"] = "env-o"
+        driver._current_delivery = "env-o"
+        driver._request = mock.Mock(return_value=(200, json.dumps({"data": []})))
+        return driver
+
+    def test_opencode_attributable_text_refreshes_idle(self):
+        driver = self._opencode_driver()
+        driver._map_sse_event("", json.dumps({
+            "type": "session.step.started", "data": {"assistantMessageID": "asst-o"},
+        }), "")
+        with mock.patch.object(openCodeDriver.time, "monotonic", return_value=210):
+            event = driver._map_sse_event("", json.dumps({
+                "type": "session.text.ended",
+                "data": {"assistantMessageID": "asst-o", "text": "progress"},
+            }), "")
+        self.assertEqual("env-o", event.delivery_id)
+        with mock.patch.object(openCodeDriver.time, "monotonic", return_value=220):
+            self.assertEqual("accepted", driver.poll_receipt("env-o").state)
+
+    def test_opencode_idle_and_absolute_details_differ(self):
+        idle = self._opencode_driver()
+        with mock.patch.object(openCodeDriver.time, "monotonic", return_value=101):
+            idle_receipt = idle.poll_receipt("env-o")
+        absolute = self._opencode_driver()
+        absolute._delivery_last_event_at["env-o"] = 905
+        with mock.patch.object(openCodeDriver.time, "monotonic", return_value=911):
+            absolute_receipt = absolute.poll_receipt("env-o")
+        self.assertIn("idle stalled", idle_receipt.detail)
+        self.assertIn("absolute turn timeout", absolute_receipt.detail)
+
+
+if __name__ == "__main__":
+    unittest.main()

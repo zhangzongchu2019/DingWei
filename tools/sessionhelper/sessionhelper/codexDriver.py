@@ -39,11 +39,9 @@ _CODEX_BIN = os.environ.get("SH_CODEX_BIN") or shutil.which("codex") or "codex"
 DEFAULT_WORKDIR = os.path.expanduser("~")
 DEFAULT_STORE = os.path.join(os.path.expanduser("~"), ".codex-driver-delivery.sqlite3")
 JSONRPC_TIMEOUT = 30.0
-# T-083(业主 2026-09-12 定:至多 180 秒,超时仍判失败):
-# 原 120s 计的是**回合总时长**(submitted_at 不随活动刷新),干活重的 Agent 极易超。
-# 组长本机实测:STALLED 76 次,最长 elapsed=600s。180s 能减少误报但不能消除;
-# 若要根治需改为按**空闲时长**计时(有事件即刷新),该改法与「超时即失败」不冲突,待业主定。
-ACCEPTED_STALL_TIMEOUT = 180.0
+# T-094: 一级按可归属增量事件后的空闲时长判卡死，二级限制回合总时长。
+ACCEPTED_STALL_TIMEOUT = 90.0
+ABSOLUTE_TURN_TIMEOUT = 900.0
 EVENT_DRAIN_TIMEOUT = 5.0
 FANOUT_QUEUE_MAX = 1000
 
@@ -480,6 +478,7 @@ class CodexProtocolDriver(Driver):
         self._approval_policy = approval_policy
         self._ephemeral = ephemeral
         self._stall_timeout = stall_timeout
+        self._absolute_timeout = ABSOLUTE_TURN_TIMEOUT
         self._store = _DeliveryStore(store_path)
 
         self._rpc: StdioJsonRpc | None = None
@@ -491,6 +490,7 @@ class CodexProtocolDriver(Driver):
         self._envelope_to_turn: dict[str, str] = {}
         self._turn_to_envelope: dict[str, str] = {}
         self._delivery_timestamps: dict[str, float] = {}
+        self._delivery_last_event_at: dict[str, float] = {}
         self._done_seen_at: dict[str, float] = {}
         self._events_drained: set[str] = set()
         self._delivery_lock = threading.Lock()
@@ -693,9 +693,19 @@ class CodexProtocolDriver(Driver):
 
         delivered_at = self._delivery_timestamps.get(envelope_id)
         if current_state in ("accepted", "queued", "processing") and delivered_at is not None:
-            elapsed = time.monotonic() - delivered_at
-            if elapsed > self._stall_timeout:
-                detail = f"stalled: accepted but no completion after {elapsed:.0f}s"
+            now = time.monotonic()
+            total_elapsed = now - delivered_at
+            idle_elapsed = now - self._delivery_last_event_at.get(envelope_id, delivered_at)
+            if total_elapsed > self._absolute_timeout:
+                detail = (
+                    f"absolute turn timeout: total runtime {total_elapsed:.0f}s "
+                    f"exceeded {self._absolute_timeout:.0f}s limit"
+                )
+                log.warning("[delivery][ABSOLUTE_TIMEOUT] envelope=%s %s", envelope_id, detail)
+                self._mark_delivery(envelope_id, "failed", detail)
+                return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
+            if idle_elapsed > self._stall_timeout:
+                detail = f"idle stalled: no progress event for {idle_elapsed:.0f}s"
                 log.warning("[delivery][STALLED] envelope=%s %s", envelope_id, detail)
                 self._mark_delivery(envelope_id, "failed", detail)
                 return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
@@ -968,6 +978,8 @@ class CodexProtocolDriver(Driver):
                 # 流式文本已由 item/agentMessage/delta 提供;completed 不再重发全文,否则 view 累加翻倍
                 return None
             if item_type in ("commandExecution", "fileChange", "dynamicToolCall"):
+                if delivery_id:
+                    self._delivery_last_event_at[delivery_id] = time.monotonic()
                 return SessionEvent(kind="tool_call", text=item.get("command", item_type), data=data, session_id=thread_id, cursor=cursor, delivery_id=delivery_id, turn_id=turn_id)
             # userMessage / reasoning / 其他未知 item 类型都不作为独立事件暴露
             return None
@@ -978,6 +990,8 @@ class CodexProtocolDriver(Driver):
             delivery_id = self._turn_to_envelope.get(turn_id, "")
             item_id = params.get("itemId", "")
             cursor = self._item_cursor_by_id.get(item_id, cursor)
+            if delivery_id and params.get("delta", ""):
+                self._delivery_last_event_at[delivery_id] = time.monotonic()
             return SessionEvent(kind="assistant_text", text=params.get("delta", ""), data=data, session_id=thread_id, cursor=cursor, delivery_id=delivery_id, turn_id=turn_id)
 
         # —— 错误 ——
