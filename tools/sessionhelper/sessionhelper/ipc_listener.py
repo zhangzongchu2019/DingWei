@@ -24,6 +24,7 @@ from typing import Any, Callable, Awaitable
 IPC_SEND = "mcp_send"           # request: {type, to, body? , file? , request_id,
                                 #           reply_to?, in_reply_to?, reply_policy?, kind?}
 IPC_VSAPI = "vsapi_v1"         # request: {type, method, path, body?, request_id}
+IPC_FILE = "file_access_v1"    # request: {type, file_ref, method=HEAD|GET, range?}
 
 # reply-origin 契约(shence 08-03 定):shim IPC payload 顶层四个 optional key,
 # 与 to/body 并列、无嵌套;存在才取,原样塞进出站 envelope.meta 同名 key。
@@ -69,6 +70,7 @@ async def _write_one(writer: asyncio.StreamWriter, payload: dict[str, Any]) -> N
 
 _SendHandler = Callable[[str, str, dict[str, Any]], Awaitable[dict[str, Any]]]
 _VsapiHandler = Callable[[str, str, dict[str, Any] | None], Awaitable[dict[str, Any]]]
+_FileHandler = Callable[[str, str, str], Awaitable[dict[str, Any]]]
 
 
 async def _handle_connection(
@@ -76,6 +78,7 @@ async def _handle_connection(
     writer: asyncio.StreamWriter,
     send_handler: _SendHandler,
     vsapi_handler: _VsapiHandler | None = None,
+    file_handler: _FileHandler | None = None,
     *,
     allowed_socket_dir: str | None = None,
 ) -> None:
@@ -90,6 +93,8 @@ async def _handle_connection(
 
     if msg_type == IPC_VSAPI:
         return await _handle_vsapi(writer, msg, vsapi_handler)
+    if msg_type == IPC_FILE:
+        return await _handle_file(writer, msg, file_handler)
     if msg_type != IPC_SEND:
         await _write_one(writer, {"ok": False, "error": f"unknown type {msg_type!r}"})
         return
@@ -158,10 +163,64 @@ async def _handle_vsapi(
     await _write_one(writer, {"ok": True, "result": result, "request_id": request_id})
 
 
+_FILE_RESULT_KEYS = {
+    "HEAD": {"file_ref", "size", "sha256", "media_type", "expires_at", "range"},
+    "GET": {"file_ref", "content_base64", "content_range", "sha256", "total_size"},
+}
+_FILE_RESULT_REQUIRED = {
+    "HEAD": {"file_ref", "size", "sha256"},
+    "GET": {"file_ref", "content_base64", "content_range", "sha256", "total_size"},
+}
+
+
+async def _handle_file(
+    writer: asyncio.StreamWriter,
+    msg: dict[str, Any],
+    file_handler: _FileHandler | None,
+) -> None:
+    """Run file access inside helper; raw bearer values never cross IPC."""
+    file_ref = str(msg.get("file_ref") or "").strip()
+    method = str(msg.get("method") or "").strip().upper()
+    byte_range = str(msg.get("range") or "").strip()
+    request_id = str(msg.get("request_id") or "")
+    if file_handler is None:
+        await _write_one(writer, {"ok": False, "error": "file access unavailable"})
+        return
+    if not file_ref.startswith("dwfile:") or len(file_ref) > 256 or method not in _FILE_RESULT_KEYS:
+        await _write_one(writer, {"ok": False, "error": "invalid file request"})
+        return
+    if (method == "HEAD" and byte_range) or (method == "GET" and not _single_range(byte_range)):
+        await _write_one(writer, {"ok": False, "error": "invalid file request"})
+        return
+    try:
+        result = await file_handler(file_ref, method, byte_range)
+    except Exception:
+        # Handler errors may contain Authorization headers or backend URLs.
+        await _write_one(writer, {"ok": False, "error": "file access failed"})
+        return
+    if (not isinstance(result, dict)
+            or not _FILE_RESULT_REQUIRED[method].issubset(result)
+            or not set(result).issubset(_FILE_RESULT_KEYS[method])
+            or result.get("file_ref") != file_ref):
+        await _write_one(writer, {"ok": False, "error": "unsafe file response"})
+        return
+    await _write_one(writer, {"ok": True, "result": result, "request_id": request_id})
+
+
+def _single_range(value: str) -> bool:
+    if not value.startswith("bytes=") or "," in value:
+        return False
+    bounds = value[6:].split("-")
+    if len(bounds) != 2 or not any(bounds):
+        return False
+    return all(not part or (part.isascii() and part.isdigit()) for part in bounds)
+
+
 async def serve_ipc(
     socket_path: str,
     send_handler: _SendHandler,
     vsapi_handler: _VsapiHandler | None = None,
+    file_handler: _FileHandler | None = None,
     *,
     allowed_socket_dir: str | None = None,
 ) -> None:
@@ -174,12 +233,14 @@ async def serve_ipc(
                        (reply_to / in_reply_to / reply_policy / kind).
     *vsapi_handler*  – async callable ``(method, path, body?) -> dict`` that
                        forwards a vsapi_v1 request to datad with auth token.
+    *file_handler*   – async callable that obtains and consumes the short-lived
+                       bearer inside helper, returning only bounded metadata/bytes.
     """
     if os.path.exists(socket_path):
         os.unlink(socket_path)
 
     server = await asyncio.start_unix_server(
-        lambda r, w: _handle_connection(r, w, send_handler, vsapi_handler,
+        lambda r, w: _handle_connection(r, w, send_handler, vsapi_handler, file_handler,
                                         allowed_socket_dir=allowed_socket_dir),
         path=socket_path,
     )
