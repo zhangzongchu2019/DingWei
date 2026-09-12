@@ -175,6 +175,8 @@ class OpenCodeProtocolDriver(Driver):
         self._delivery_timestamps: dict[str, float] = {}    # envelope_id → time of deliver()
         self._delivery_last_event_at: dict[str, float] = {} # envelope_id → last attributable progress
         self._delivery_pending_tools: dict[str, set[str]] = {} # envelope_id → in-flight tool call ids
+        self._delivery_anonymous_tools: dict[str, list[str]] = {} # missing-id starts, FIFO matched
+        self._anonymous_tool_seq: int = 0
         self._delivery_terminal: set[str] = set()           # envelope_ids whose terminal event has fired
         self._delivery_drain_deadline: dict[str, float] = {}  # envelope_id → drain deadline
         self._asst_msg_to_envelope: dict[str, str] = {}      # assistant messageID → envelope_id
@@ -906,6 +908,7 @@ class OpenCodeProtocolDriver(Driver):
         if delivery_id and (ev_type.endswith(".step.ended") or ev_type.endswith(".step.failed")):
             self._delivery_terminal.add(delivery_id)
             self._delivery_pending_tools.pop(delivery_id, None)
+            self._delivery_anonymous_tools.pop(delivery_id, None)
 
         kind: EventKind
         text = ""
@@ -958,16 +961,26 @@ class OpenCodeProtocolDriver(Driver):
             # 当前部署无 OpenCode 席可做行为核验；以下 phase/call id 映射按现有
             # `.tool.*` SSE 命名推断。未来首次接入 OpenCode 时必须用真实事件回补验证。
             phase = ev_type.rsplit(".", 1)[-1].lower()
-            tool_id = str(
-                ev_data.get("callID") or ev_data.get("toolCallID")
-                or ev_data.get("id") or tool_name or "tool"
-            )
+            stable_tool_id = ev_data.get("callID") or ev_data.get("toolCallID") or ev_data.get("id")
             if phase in ("started", "start", "call", "pending", "running"):
+                if stable_tool_id:
+                    tool_id = str(stable_tool_id)
+                else:
+                    self._anonymous_tool_seq += 1
+                    tool_id = f"anonymous-tool-{self._anonymous_tool_seq}"
+                    self._delivery_anonymous_tools.setdefault(delivery_id, []).append(tool_id)
                 self._delivery_pending_tools.setdefault(delivery_id, set()).add(tool_id)
             elif phase in ("ended", "completed", "result", "failed", "error"):
                 pending = self._delivery_pending_tools.get(delivery_id)
                 if pending is not None:
-                    pending.discard(tool_id)
+                    if stable_tool_id:
+                        pending.discard(str(stable_tool_id))
+                    else:
+                        anonymous = self._delivery_anonymous_tools.get(delivery_id)
+                        if anonymous:
+                            pending.discard(anonymous.pop(0))
+                            if not anonymous:
+                                self._delivery_anonymous_tools.pop(delivery_id, None)
                     if not pending:
                         self._delivery_pending_tools.pop(delivery_id, None)
 

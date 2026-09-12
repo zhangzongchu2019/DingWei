@@ -492,6 +492,8 @@ class CodexProtocolDriver(Driver):
         self._delivery_timestamps: dict[str, float] = {}
         self._delivery_last_event_at: dict[str, float] = {}
         self._delivery_pending_tools: dict[str, set[str]] = {}
+        self._delivery_anonymous_tools: dict[str, list[str]] = {}
+        self._anonymous_tool_seq = 0
         self._done_seen_at: dict[str, float] = {}
         self._events_drained: set[str] = set()
         self._delivery_lock = threading.Lock()
@@ -934,6 +936,7 @@ class CodexProtocolDriver(Driver):
             envelope_id = self._turn_to_envelope.get(turn_id)
             if envelope_id:
                 self._delivery_pending_tools.pop(envelope_id, None)
+                self._delivery_anonymous_tools.pop(envelope_id, None)
             if turn_id == self._active_turn_id:
                 self._active_turn_id = ""
             self._interrupt_requested_turns.discard(turn_id)
@@ -971,7 +974,11 @@ class CodexProtocolDriver(Driver):
             elif item.get("type") in ("commandExecution", "fileChange", "dynamicToolCall"):
                 delivery_id = self._turn_to_envelope.get(turn_id, "")
                 if delivery_id:
-                    tool_id = item_id or item.get("type", "tool")
+                    tool_id = item_id
+                    if not tool_id:
+                        self._anonymous_tool_seq += 1
+                        tool_id = f"anonymous-tool-{self._anonymous_tool_seq}"
+                        self._delivery_anonymous_tools.setdefault(delivery_id, []).append(tool_id)
                     self._delivery_pending_tools.setdefault(delivery_id, set()).add(tool_id)
                     self._delivery_last_event_at[delivery_id] = time.monotonic()
             return None  # 纯生命周期通知，对用户无意义
@@ -988,10 +995,16 @@ class CodexProtocolDriver(Driver):
                 return None
             if item_type in ("commandExecution", "fileChange", "dynamicToolCall"):
                 if delivery_id:
-                    tool_id = item_id or item_type
                     pending = self._delivery_pending_tools.get(delivery_id)
                     if pending is not None:
-                        pending.discard(tool_id)
+                        if item_id:
+                            pending.discard(item_id)
+                        else:
+                            anonymous = self._delivery_anonymous_tools.get(delivery_id)
+                            if anonymous:
+                                pending.discard(anonymous.pop(0))
+                                if not anonymous:
+                                    self._delivery_anonymous_tools.pop(delivery_id, None)
                         if not pending:
                             self._delivery_pending_tools.pop(delivery_id, None)
                     self._delivery_last_event_at[delivery_id] = time.monotonic()

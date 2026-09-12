@@ -78,6 +78,23 @@ class T094IdleStallTest(unittest.TestCase):
         with mock.patch.object(claudeDriver.time, "monotonic", return_value=292):
             self.assertEqual("failed", driver.poll_receipt("env-c-tool").state)
 
+    def test_claude_concurrent_tools_do_not_clear_each_other(self):
+        driver = claudeDriver.ClaudeProtocolDriver(store_path=os.path.join(self.tmp.name, "claude-concurrent.sqlite"))
+        active = claudeDriver._TurnState(
+            envelope_id="env-c-many", turn_id="turn-c-many",
+            accepted=threading.Event(), terminal_seen=threading.Event(), submitted_at=10,
+        )
+        driver._active = active
+        driver._store.upsert("env-c-many", "turn-c-many", "hash", "accepted", "test")
+        driver._handle_frame({"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "tool-one", "name": "slow"},
+            {"type": "tool_use", "id": "tool-two", "name": "slow"},
+        ]}})
+        driver._handle_frame({"type": "user", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "tool-one", "content": "done"},
+        ]}})
+        self.assertEqual({"tool-two"}, active.pending_tool_ids)
+
     def _codex_driver(self):
         driver = codexDriver.CodexProtocolDriver(
             manage_daemon=False, store_path=os.path.join(self.tmp.name, "codex.sqlite"), stall_timeout=90,
@@ -133,6 +150,21 @@ class T094IdleStallTest(unittest.TestCase):
             })
         with mock.patch.object(codexDriver.time, "monotonic", return_value=292):
             self.assertEqual("failed", driver.poll_receipt("env-x").state)
+
+    def test_codex_anonymous_concurrent_tools_are_counted_independently(self):
+        driver = self._codex_driver()
+        start = {"method": "item/started", "params": {
+            "threadId": "thread-x", "turnId": "turn-x",
+            "item": {"type": "commandExecution"},
+        }}
+        driver._map_notification(start)
+        driver._map_notification(start)
+        self.assertEqual(2, len(driver._delivery_pending_tools["env-x"]))
+        driver._map_notification({"method": "item/completed", "params": {
+            "threadId": "thread-x", "turnId": "turn-x",
+            "item": {"type": "commandExecution"},
+        }})
+        self.assertEqual(1, len(driver._delivery_pending_tools["env-x"]))
 
     def _opencode_driver(self):
         driver = openCodeDriver.OpenCodeProtocolDriver(
@@ -193,6 +225,24 @@ class T094IdleStallTest(unittest.TestCase):
             }), "")
         with mock.patch.object(openCodeDriver.time, "monotonic", return_value=292):
             self.assertEqual("failed", driver.poll_receipt("env-o").state)
+
+    def test_opencode_same_name_anonymous_tools_are_counted_independently(self):
+        driver = self._opencode_driver()
+        driver._map_sse_event("", json.dumps({
+            "type": "session.step.started", "data": {"assistantMessageID": "asst-o"},
+        }), "")
+        start = json.dumps({
+            "type": "session.tool.started",
+            "data": {"assistantMessageID": "asst-o", "name": "same-name"},
+        })
+        driver._map_sse_event("", start, "")
+        driver._map_sse_event("", start, "")
+        self.assertEqual(2, len(driver._delivery_pending_tools["env-o"]))
+        driver._map_sse_event("", json.dumps({
+            "type": "session.tool.ended",
+            "data": {"assistantMessageID": "asst-o", "name": "same-name"},
+        }), "")
+        self.assertEqual(1, len(driver._delivery_pending_tools["env-o"]))
 
 
 if __name__ == "__main__":
