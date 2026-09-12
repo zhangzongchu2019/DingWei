@@ -2838,6 +2838,20 @@ func TestSessionEndpointWarnModeAllowsMissingVersionAndMarksDirectory(t *testing
 	}
 }
 
+// versionRelativeToCurrent 按**当前 dwversion.Version** 造出各类测试版本号。
+// 起因:这两个用例原本写死 "0.2.0.0"(当 b 不匹配的样例)与 "0.1.9.9"(当 C/D 漂移的样例),
+// 前提是 Hub 版本恒为 0.1.x。2026-09-12 升到 0.2.0.0 时两条同时变红 ——
+// **"0.2.0.0 与本 Hub 不兼容"这个断言,在 Hub 自己就是 0.2.0.0 之后不再成立。**
+// 判据不该锚在会变的字面量上,故改为从当前版本推导,以后再升版不会再红。
+func versionRelativeToCurrent(t *testing.T, bumpA, bumpB, bumpC, bumpD int) string {
+	t.Helper()
+	cur, ok := parseWireVersion(dwversion.Version)
+	if !ok {
+		t.Fatalf("当前版本号无法解析:%q", dwversion.Version)
+	}
+	return fmt.Sprintf("%d.%d.%d.%d", cur[0]+bumpA, cur[1]+bumpB, cur[2]+bumpC, cur[3]+bumpD)
+}
+
 func TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
@@ -2846,8 +2860,8 @@ func TestSessionEndpointVersionEnforceRejectsMissingInvalidAndABMismatch(t *test
 	}{
 		{name: "missing", version: "", want: "当前版本=未上报"},
 		{name: "invalid", version: "0.1", want: "版本格式非法"},
-		{name: "a mismatch", version: "1.1.2.5", want: "版本不兼容"},
-		{name: "b mismatch", version: "0.2.0.0", want: "版本不兼容"},
+		{name: "a mismatch", version: versionRelativeToCurrent(t, 1, 0, 0, 0), want: "版本不兼容"},
+		{name: "b mismatch", version: versionRelativeToCurrent(t, 0, 1, 0, 0), want: "版本不兼容"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			useTestVersionEnforce(t, "enforce")
@@ -2891,13 +2905,15 @@ func TestSessionEndpointVersionEnforceAllowsCDDrift(t *testing.T) {
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "version=0.1.9.9")
+	// 同 A.B、仅 C/D 漂移 —— 版本门只比前两段,故应放行并原样入库。
+	drift := versionRelativeToCurrent(t, 0, 0, 7, 7)
+	conn := dialSessionWithQuery(t, ctx, srv.URL, "developer", key.ID, secret, "version="+drift)
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	endpoints, err := db.ListSessionEndpoints(ctx)
 	if err != nil || len(endpoints) != 1 {
 		t.Fatalf("endpoints=%+v err=%v", endpoints, err)
 	}
-	if endpoints[0].Version != "0.1.9.9" {
+	if endpoints[0].Version != drift {
 		t.Fatalf("compatible C/D drift should be stored: %+v", endpoints[0])
 	}
 }

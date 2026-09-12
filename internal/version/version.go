@@ -1,6 +1,6 @@
 package version
 
-const Version = "0.1.2.9"
+const Version = "0.2.0.0"
 
 // Commit 是构建时注入的源码提交号,用于回答「线上跑的这份是哪份源码编出来的」。
 //
