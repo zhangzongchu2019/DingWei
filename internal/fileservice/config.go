@@ -23,6 +23,7 @@ const (
 
 type Config struct {
 	Addr             string
+	InternalAddr     string
 	DatabasePath     string
 	PublicBaseURL    string
 	MaxFileBytes     int64
@@ -35,11 +36,14 @@ type Config struct {
 	MinIOSecretKey   string
 	MinIOBucket      string
 	MinIOUseTLS      bool
+	IssuerToken      string
+	AuditToken       string
 }
 
 func ConfigFromEnv() (Config, error) {
 	c := Config{
 		Addr:             env("FS_ADDR", "127.0.0.1:8793"),
+		InternalAddr:     env("FS_INTERNAL_ADDR", "127.0.0.1:8794"),
 		DatabasePath:     env("FS_DATABASE_PATH", "./data/file-service.db"),
 		PublicBaseURL:    strings.TrimRight(os.Getenv("FS_PUBLIC_BASE_URL"), "/"),
 		MaxFileBytes:     defaultMaxFileBytes,
@@ -51,6 +55,8 @@ func ConfigFromEnv() (Config, error) {
 		MinIOAccessKey:   os.Getenv("FS_MINIO_ACCESS_KEY"),
 		MinIOSecretKey:   os.Getenv("FS_MINIO_SECRET_KEY"),
 		MinIOBucket:      env("FS_MINIO_BUCKET", "dingwei-files"),
+		IssuerToken:      os.Getenv("FS_INTERNAL_ISSUER_TOKEN"),
+		AuditToken:       os.Getenv("FS_INTERNAL_AUDIT_TOKEN"),
 	}
 	var err error
 	if c.MaxFileBytes, err = envInt64("FS_MAX_FILE_BYTES", c.MaxFileBytes); err != nil {
@@ -74,6 +80,9 @@ func ConfigFromEnv() (Config, error) {
 	}
 	if c.MinIOEndpoint == "" || c.MinIOAccessKey == "" || c.MinIOSecretKey == "" {
 		return Config{}, fmt.Errorf("FS_MINIO_ENDPOINT/access key/secret key are required")
+	}
+	if c.IssuerToken == "" || c.AuditToken == "" {
+		return Config{}, fmt.Errorf("FS_INTERNAL_ISSUER_TOKEN/audit token are required")
 	}
 	return c, nil
 }

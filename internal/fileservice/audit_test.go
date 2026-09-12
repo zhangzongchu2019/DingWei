@@ -14,7 +14,7 @@ func TestAuditHandlerIsFailClosed(t *testing.T) {
 	}
 	defer repo.Close()
 	h := AuditHandler{Repo: repo, Token: "internal-secret"}
-	for _, token := range []string{"", "wrong"} {
+	for i, token := range []string{"", "wrong"} {
 		r := httptest.NewRequest(http.MethodGet, "/internal/files", nil)
 		if token != "" {
 			r.Header.Set("Authorization", "Bearer "+token)
@@ -22,7 +22,7 @@ func TestAuditHandlerIsFailClosed(t *testing.T) {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 		if w.Code != http.StatusNotFound {
-			t.Fatalf("token=%q status=%d", token, w.Code)
+			t.Fatalf("audit auth case=%d status=%d", i, w.Code)
 		}
 	}
 	r := httptest.NewRequest(http.MethodGet, "/internal/files?limit=10", nil)

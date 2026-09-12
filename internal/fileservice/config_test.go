@@ -6,6 +6,8 @@ func TestConfigRequiresMinIOAndKeepsCapacityConfigurable(t *testing.T) {
 	t.Setenv("FS_MINIO_ENDPOINT", "minio:9000")
 	t.Setenv("FS_MINIO_ACCESS_KEY", "access")
 	t.Setenv("FS_MINIO_SECRET_KEY", "secret")
+	t.Setenv("FS_INTERNAL_ISSUER_TOKEN", "issuer")
+	t.Setenv("FS_INTERNAL_AUDIT_TOKEN", "audit")
 	t.Setenv("FS_TOTAL_QUOTA_BYTES", "12345")
 	t.Setenv("FS_RETENTION", "48h")
 	c, err := ConfigFromEnv()

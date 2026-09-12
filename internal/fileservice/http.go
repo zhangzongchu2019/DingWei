@@ -16,6 +16,7 @@ type UploadGrant struct {
 	OwnerKey    string
 	SessionName string
 	MaxBytes    int64
+	ExpiresAt   time.Time
 }
 
 // UploadVerifier is intentionally separate from CapabilityVerifier. A View

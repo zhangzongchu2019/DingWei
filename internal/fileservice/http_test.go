@@ -16,6 +16,15 @@ import (
 
 type fixedUploadVerifier struct{ grant UploadGrant }
 
+type fixedCapabilityVerifier struct{ capability Capability }
+
+func (v fixedCapabilityVerifier) Verify(raw, method, fileID, byteRange string, _ time.Time) (Capability, error) {
+	if raw == "synthetic" && method == v.capability.Method && fileID == v.capability.FileID && byteRange == v.capability.Range {
+		return v.capability, nil
+	}
+	return Capability{}, ErrCapabilityDenied
+}
+
 func (v fixedUploadVerifier) VerifyUpload(raw, session string, n int64, _ time.Time) (UploadGrant, error) {
 	if raw != "upload-ticket" || session != v.grant.SessionName || n < 0 {
 		return UploadGrant{}, ErrAccessDenied
@@ -133,11 +142,18 @@ func TestHTTPRangeAndObjectFailureSemantics(t *testing.T) {
 	f := uploadRequest(t, h, "abcdef")
 	for _, raw := range []string{"bytes=8-9", "bytes=0-1,3-4"} {
 		token, _, _ := grants.Issue("owner/session", f.ID, http.MethodGet, raw, time.Minute)
+		capabilities := CapabilityVerifier(grants)
+		if token == "" {
+			token = "synthetic"
+			capabilities = fixedCapabilityVerifier{Capability{Subject: "owner/session", FileID: f.ID, Method: http.MethodGet, Range: raw}}
+		}
 		r := httptest.NewRequest(http.MethodGet, "/files/ref/"+f.ID, nil)
 		r.Header.Set("Authorization", "Bearer "+token)
 		r.Header.Set("Range", raw)
 		w := httptest.NewRecorder()
-		h.ServeHTTP(w, r)
+		testHandler := h
+		testHandler.Capabilities = capabilities
+		testHandler.ServeHTTP(w, r)
 		if w.Code != http.StatusRequestedRangeNotSatisfiable {
 			t.Fatalf("range=%s status=%d", raw, w.Code)
 		}
