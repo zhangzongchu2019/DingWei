@@ -761,6 +761,7 @@ func (p *amrProcessor) notifySource(key amrTurnKey, target, reason string, failu
 	}
 	if failure {
 		env = deliveryFailureEnvelope(c, key.DeliveryID, target, reason, now)
+		p.hub.annotateRestartWindow(&env, now, "amr_failure")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), p.routeTimeout)
 	defer cancel()
