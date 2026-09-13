@@ -93,6 +93,8 @@ type Hub struct {
 	viewV2Requests   map[string]viewV2RequestResult
 	deliveryNotices  map[string]time.Time
 	amr              *amrProcessor
+	startedAt        time.Time
+	restartWindow    time.Duration
 }
 
 type L2Config struct {
@@ -237,6 +239,8 @@ func New(repo store.Repository) *Hub {
 		viewV2Nonces:     map[string]time.Time{},
 		viewV2Requests:   map[string]viewV2RequestResult{},
 		deliveryNotices:  map[string]time.Time{},
+		startedAt:        time.Now().UTC(),
+		restartWindow:    envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
 		onlineDebounce:   2500 * time.Millisecond,
 		onboardInterval:  envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
 		newSessionNotice: true,
@@ -2944,9 +2948,29 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 	h.deliveryNotices[dedupKey] = now
 	h.mu.Unlock()
 	env := deliveryFailureEnvelope(c, original.ID, target, routeErr.Error(), now)
+	h.annotateRestartWindow(&env, now, "delivery_failure")
 	if err := c.write(ctx, env); err != nil {
 		log.Printf("delivery failure notification=failed session=%s err=%v", c.sessionName, err)
 	}
+}
+
+func (h *Hub) annotateRestartWindow(env *model.Envelope, now time.Time, event string) bool {
+	if h == nil || env == nil || h.startedAt.IsZero() || h.restartWindow <= 0 {
+		return false
+	}
+	age := now.Sub(h.startedAt)
+	if age < 0 || age >= h.restartWindow {
+		return false
+	}
+	if env.Meta == nil {
+		env.Meta = map[string]any{}
+	}
+	env.Meta["within_restart_window"] = true
+	env.Meta["hub_uptime_seconds"] = int64(age / time.Second)
+	env.Meta["restart_window_seconds"] = int64(h.restartWindow / time.Second)
+	log.Printf("restart window signal event=%s within_restart_window=true hub_uptime_seconds=%d restart_window_seconds=%d",
+		event, int64(age/time.Second), int64(h.restartWindow/time.Second))
+	return true
 }
 
 func deliveryFailureEnvelope(c *sessionClient, sourceID, target, reason string, now time.Time) model.Envelope {
