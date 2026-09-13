@@ -2109,6 +2109,85 @@ func TestFeishuShortSessionSelectorResolvesRegisteredNameByOwner(t *testing.T) {
 	assertNoEnvelope(t, ctx, u2Dev, 120*time.Millisecond)
 }
 
+func TestIPCSendBodyAMRRoutesTopLevelMentionsAndPreservesIndentEscape(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc1", "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_u1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", FeishuOpenID: "ou_u1", Role: model.RoleMember, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	source := dialSession(t, ctx, srv.URL, "source", key.ID, secret)
+	defer source.Close(websocket.StatusNormalClosure, "done")
+	primary := dialSession(t, ctx, srv.URL, "primary", key.ID, secret)
+	defer primary.Close(websocket.StatusNormalClosure, "done")
+	alpha := dialSession(t, ctx, srv.URL, "alpha", key.ID, secret)
+	defer alpha.Close(websocket.StatusNormalClosure, "done")
+	beta := dialSession(t, ctx, srv.URL, "beta", key.ID, secret)
+	defer beta.Close(websocket.StatusNormalClosure, "done")
+	tail := keyTail(key.ID)
+	sourceName := "u1-source-" + tail
+	primaryName := "u1-primary-" + tail
+
+	if err := writeEnvelope(ctx, source, model.Envelope{
+		ID: "ipc-amr-top", To: primaryName + "#" + key.ID, From: sourceName + "#" + key.ID,
+		Body: "说明\n@alpha @beta 给两席", Meta: map[string]any{ipcBodyAMRMetaKey: true},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got := readEnvelope(t, ctx, primary); got.ID != "ipc-amr-top" || got.Body != "说明\n@alpha @beta 给两席" {
+		t.Fatalf("primary envelope=%+v", got)
+	}
+	for name, conn := range map[string]*websocket.Conn{"alpha": alpha, "beta": beta} {
+		got := readEnvelope(t, ctx, conn)
+		if got.Body != "给两席" || metaString(got.Meta, "route_source") != "ipc_send_body_amr" {
+			t.Fatalf("%s derived envelope=%+v", name, got)
+		}
+	}
+
+	if err := writeEnvelope(ctx, source, model.Envelope{
+		ID: "ipc-amr-indented", To: primaryName + "#" + key.ID, From: sourceName + "#" + key.ID,
+		Body: "说明\n @alpha 仅展示", Meta: map[string]any{ipcBodyAMRMetaKey: true},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got := readEnvelope(t, ctx, primary); got.ID != "ipc-amr-indented" {
+		t.Fatalf("indented primary envelope=%+v", got)
+	}
+	readCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	if _, _, err := alpha.Read(readCtx); err == nil {
+		t.Fatal("indented mention unexpectedly routed to alpha")
+	}
+
+	if err := writeEnvelope(ctx, source, model.Envelope{
+		ID: "ipc-amr-dedup", To: "primary#" + key.ID, From: sourceName + "#" + key.ID,
+		Body: "@primary 不应重复", Meta: map[string]any{ipcBodyAMRMetaKey: true},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got := readEnvelope(t, ctx, primary); got.ID != "ipc-amr-dedup" {
+		t.Fatalf("dedup primary envelope=%+v", got)
+	}
+	readCtx, cancel = context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	if _, _, err := primary.Read(readCtx); err == nil {
+		t.Fatal("primary target received duplicate derived mention")
+	}
+}
+
 func TestM2HelperHandshakeGateRejectsOneShotContentAndAllowsCapableConnection(t *testing.T) {
 	t.Setenv("WP_AGENT_HANDSHAKE_ENFORCE", "true")
 	hub, db, ctx := newTestHub(t)

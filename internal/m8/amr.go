@@ -23,11 +23,63 @@ import (
 type amrMode string
 
 const (
-	amrOff          amrMode = "off"
-	amrObserve      amrMode = "observe"
-	amrRoute        amrMode = "route"
-	amrRouteBodyMax         = 100_000
+	ipcBodyAMRMetaKey         = "ipc_body_amr_v1"
+	amrOff            amrMode = "off"
+	amrObserve        amrMode = "observe"
+	amrRoute          amrMode = "route"
+	amrRouteBodyMax           = 100_000
 )
+
+func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, original model.Envelope) {
+	if h == nil || c == nil {
+		return
+	}
+	maxTargets := h.ipcBodyAMRMaxTargets()
+	candidates, _ := parseAMRCandidatesDetailed(original.Body, c.sessionName, maxTargets)
+	canonicalOriginalTo := original.To
+	if to, err := parseAddress(original.To); err == nil && to.Kind == addressSession {
+		probe := model.Envelope{To: "#" + to.SessionName, From: original.From}
+		if handled, prepared, err := h.prepareSessionSelector(ctx, c.keyID, c.sessionName, probe); err == nil && handled {
+			canonicalOriginalTo = prepared.To
+		}
+	}
+	seen := map[string]bool{canonicalOriginalTo: true}
+	for i, candidate := range candidates {
+		env := model.Envelope{
+			ID:   amrDerivedEnvelopeID(amrTurnKey{KeyID: c.keyID, Session: c.sessionName, DeliveryID: original.ID, TurnID: "ipc-send"}, i, candidate.selector),
+			To:   candidate.selector,
+			From: original.From,
+			Body: candidate.body,
+			TS:   time.Now().Unix(),
+			Meta: map[string]any{
+				"type":               "agent_route",
+				"no_mirror":          true,
+				"reply_policy":       candidate.replyPolicy,
+				"source_delivery_id": original.ID,
+				"route_source":       "ipc_send_body_amr",
+			},
+		}
+		handled, prepared, err := h.prepareSessionSelector(ctx, c.keyID, c.sessionName, env)
+		if err != nil || !handled {
+			h.writeDeliveryFailure(ctx, c, original, candidate.selector, errors.New(firstNonEmpty(errorString(err), "目标无法解析")))
+			continue
+		}
+		if seen[prepared.To] {
+			continue
+		}
+		seen[prepared.To] = true
+		if err := h.RouteEnvelope(ctx, prepared); err != nil {
+			h.writeDeliveryFailure(ctx, c, original, candidate.selector, err)
+		}
+	}
+}
+
+func (h *Hub) ipcBodyAMRMaxTargets() int {
+	if h != nil && h.amr != nil && h.amr.maxTargets > 0 {
+		return h.amr.maxTargets
+	}
+	return 20
+}
 
 type amrSessionEvent struct {
 	Kind       string         `json:"kind"`
