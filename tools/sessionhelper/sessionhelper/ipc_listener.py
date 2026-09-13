@@ -28,12 +28,13 @@ IPC_VSAPI = "vsapi_v1"         # request: {type, method, path, body?, request_id
 # reply-origin 契约(shence 08-03 定):shim IPC payload 顶层四个 optional key,
 # 与 to/body 并列、无嵌套;存在才取,原样塞进出站 envelope.meta 同名 key。
 REPLY_ORIGIN_KEYS = ("reply_to", "in_reply_to", "reply_policy", "kind")
+SEND_META_KEYS = REPLY_ORIGIN_KEYS + ("ipc_body_amr_v1",)
 
 
 def extract_reply_origin_meta(msg: dict[str, Any]) -> dict[str, Any]:
     """Pick the four optional top-level reply-origin keys out of an IPC
     request.  Present-and-non-null values only; nothing else is copied."""
-    return {k: msg[k] for k in REPLY_ORIGIN_KEYS if msg.get(k) is not None}
+    return {k: msg[k] for k in SEND_META_KEYS if msg.get(k) is not None}
 
 
 # ── helpers ───────────────────────────────────────────────────────────

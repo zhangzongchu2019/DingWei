@@ -41,7 +41,10 @@ def complete_addr(to: str) -> str:
 
 def ipc_send(to: str, body: str) -> dict:
     payload = {"type": "mcp_send", "to": to, "body": body,
-               "request_id": uuid.uuid4().hex[:12]}
+               "request_id": uuid.uuid4().hex[:12],
+               # T-089: only send.py opts into Hub-side body AMR parsing.
+               # MCP and other IPC callers keep their existing literal-body semantics.
+               "ipc_body_amr_v1": True}
     raw = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.settimeout(TIMEOUT)

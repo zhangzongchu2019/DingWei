@@ -1042,6 +1042,12 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			log.Printf("amr decision=legacy_route_dropped session=%s", c.sessionName)
 			continue
 		}
+		if metaBool(env.Meta, ipcBodyAMRMetaKey) {
+			// T-089: send.py opts in explicitly. Parse only this authenticated
+			// helper ingress, using the exact same Go AMR parser as turn output.
+			delete(env.Meta, ipcBodyAMRMetaKey)
+			h.routeIPCSendBodyAMR(r.Context(), c, env)
+		}
 		if h.routeSessionSelectorEnvelope(r.Context(), c, env) {
 			continue
 		}
