@@ -43,6 +43,18 @@ func TestIPCSendBodyAMRUsesSharedParserAndIndentEscape(t *testing.T) {
 	}
 }
 
+func TestIPCSendBodyAMRUsesConfiguredTargetLimit(t *testing.T) {
+	h := &Hub{amr: &amrProcessor{maxTargets: 1}}
+	limit := h.ipcBodyAMRMaxTargets()
+	if limit != 1 {
+		t.Fatalf("limit=%d want=1", limit)
+	}
+	candidates, looked := parseAMRCandidatesDetailed("@alpha @beta 正文", "source", limit)
+	if !looked || len(candidates) != 0 {
+		t.Fatalf("configured limit not enforced candidates=%+v looked=%t", candidates, looked)
+	}
+}
+
 func amrEventJSON(t testing.TB, event amrSessionEvent) string {
 	t.Helper()
 	b, err := json.Marshal(event)

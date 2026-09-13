@@ -34,10 +34,7 @@ func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, origina
 	if h == nil || c == nil {
 		return
 	}
-	maxTargets := 20
-	if h.amr != nil && h.amr.maxTargets > 0 {
-		maxTargets = h.amr.maxTargets
-	}
+	maxTargets := h.ipcBodyAMRMaxTargets()
 	candidates, _ := parseAMRCandidatesDetailed(original.Body, c.sessionName, maxTargets)
 	canonicalOriginalTo := original.To
 	if to, err := parseAddress(original.To); err == nil && to.Kind == addressSession {
@@ -75,6 +72,13 @@ func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, origina
 			h.writeDeliveryFailure(ctx, c, original, candidate.selector, err)
 		}
 	}
+}
+
+func (h *Hub) ipcBodyAMRMaxTargets() int {
+	if h != nil && h.amr != nil && h.amr.maxTargets > 0 {
+		return h.amr.maxTargets
+	}
+	return 20
 }
 
 type amrSessionEvent struct {
