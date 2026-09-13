@@ -292,10 +292,16 @@ class SessionHelper:
         shim IPC payload into the outbound envelope.meta verbatim."""
 
         async def _send(to: str, body: str, meta: dict | None = None) -> dict:
-            env = envelope(to, body, self.book.self_addr, meta or None)
+            # 🔴 T-092:地址补全在 defb424f 被误删(与同 hunk 的 datad 改动混在一起),
+            # 导致裸会话名直接进信封 ⇒ Hub 判 `invalid address` ⇒ **整条 IPC 发信路径不可用**
+            # (mcp_shim 走同一 handler,故 MCP 侧同样受影响)。此处恢复。
+            # ⚠️ 返回值里的 sent 只表示"已写入已认证连接",**不代表 Hub 接受** ——
+            # 调用方不得据此判断送达。Hub 的裁决走投递失败通知,异步回来。
+            dest = to if "#" in to else session_addr(to, self.book.key_id)
+            env = envelope(dest, body, self.book.self_addr, meta or None)
             await ws.send(json.dumps(env, ensure_ascii=False))
-            print(f"[ipc_send] to={to} bytes={len(body)}", flush=True)
-            return {"sent": True, "to": to}
+            print(f"[ipc_send] to={dest} bytes={len(body)}", flush=True)
+            return {"sent": True, "to": dest}
 
         return _send
 

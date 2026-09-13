@@ -39,7 +39,9 @@ _CODEX_BIN = os.environ.get("SH_CODEX_BIN") or shutil.which("codex") or "codex"
 DEFAULT_WORKDIR = os.path.expanduser("~")
 DEFAULT_STORE = os.path.join(os.path.expanduser("~"), ".codex-driver-delivery.sqlite3")
 JSONRPC_TIMEOUT = 30.0
-ACCEPTED_STALL_TIMEOUT = 120.0
+# T-094: 一级按可归属增量事件后的空闲时长判卡死，二级限制回合总时长。
+ACCEPTED_STALL_TIMEOUT = 90.0
+ABSOLUTE_TURN_TIMEOUT = 900.0
 EVENT_DRAIN_TIMEOUT = 5.0
 FANOUT_QUEUE_MAX = 1000
 
@@ -476,6 +478,7 @@ class CodexProtocolDriver(Driver):
         self._approval_policy = approval_policy
         self._ephemeral = ephemeral
         self._stall_timeout = stall_timeout
+        self._absolute_timeout = ABSOLUTE_TURN_TIMEOUT
         self._store = _DeliveryStore(store_path)
 
         self._rpc: StdioJsonRpc | None = None
@@ -487,6 +490,10 @@ class CodexProtocolDriver(Driver):
         self._envelope_to_turn: dict[str, str] = {}
         self._turn_to_envelope: dict[str, str] = {}
         self._delivery_timestamps: dict[str, float] = {}
+        self._delivery_last_event_at: dict[str, float] = {}
+        self._delivery_pending_tools: dict[str, set[str]] = {}
+        self._delivery_anonymous_tools: dict[str, list[str]] = {}
+        self._anonymous_tool_seq = 0
         self._done_seen_at: dict[str, float] = {}
         self._events_drained: set[str] = set()
         self._delivery_lock = threading.Lock()
@@ -689,9 +696,19 @@ class CodexProtocolDriver(Driver):
 
         delivered_at = self._delivery_timestamps.get(envelope_id)
         if current_state in ("accepted", "queued", "processing") and delivered_at is not None:
-            elapsed = time.monotonic() - delivered_at
-            if elapsed > self._stall_timeout:
-                detail = f"stalled: accepted but no completion after {elapsed:.0f}s"
+            now = time.monotonic()
+            total_elapsed = now - delivered_at
+            idle_elapsed = now - self._delivery_last_event_at.get(envelope_id, delivered_at)
+            if total_elapsed > self._absolute_timeout:
+                detail = (
+                    f"absolute turn timeout: total runtime {total_elapsed:.0f}s "
+                    f"exceeded {self._absolute_timeout:.0f}s limit"
+                )
+                log.warning("[delivery][ABSOLUTE_TIMEOUT] envelope=%s %s", envelope_id, detail)
+                self._mark_delivery(envelope_id, "failed", detail)
+                return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
+            if not self._delivery_pending_tools.get(envelope_id) and idle_elapsed > self._stall_timeout:
+                detail = f"idle stalled: no progress event for {idle_elapsed:.0f}s"
                 log.warning("[delivery][STALLED] envelope=%s %s", envelope_id, detail)
                 self._mark_delivery(envelope_id, "failed", detail)
                 return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
@@ -917,6 +934,9 @@ class CodexProtocolDriver(Driver):
             cursor = self._turn_event_cursor(turn_id, "9999")
             status = turn.get("status", "")
             envelope_id = self._turn_to_envelope.get(turn_id)
+            if envelope_id:
+                self._delivery_pending_tools.pop(envelope_id, None)
+                self._delivery_anonymous_tools.pop(envelope_id, None)
             if turn_id == self._active_turn_id:
                 self._active_turn_id = ""
             self._interrupt_requested_turns.discard(turn_id)
@@ -951,6 +971,16 @@ class CodexProtocolDriver(Driver):
                 if envelope_id and turn_id:
                     self._remember_delivery(envelope_id, turn_id, "processing")
                     self._store.update_state(thread_id, envelope_id, "processing", f"user item admitted item={item.get('id')}")
+            elif item.get("type") in ("commandExecution", "fileChange", "dynamicToolCall"):
+                delivery_id = self._turn_to_envelope.get(turn_id, "")
+                if delivery_id:
+                    tool_id = item_id
+                    if not tool_id:
+                        self._anonymous_tool_seq += 1
+                        tool_id = f"anonymous-tool-{self._anonymous_tool_seq}"
+                        self._delivery_anonymous_tools.setdefault(delivery_id, []).append(tool_id)
+                    self._delivery_pending_tools.setdefault(delivery_id, set()).add(tool_id)
+                    self._delivery_last_event_at[delivery_id] = time.monotonic()
             return None  # 纯生命周期通知，对用户无意义
 
         if method == "item/completed":
@@ -964,6 +994,20 @@ class CodexProtocolDriver(Driver):
                 # 流式文本已由 item/agentMessage/delta 提供;completed 不再重发全文,否则 view 累加翻倍
                 return None
             if item_type in ("commandExecution", "fileChange", "dynamicToolCall"):
+                if delivery_id:
+                    pending = self._delivery_pending_tools.get(delivery_id)
+                    if pending is not None:
+                        if item_id:
+                            pending.discard(item_id)
+                        else:
+                            anonymous = self._delivery_anonymous_tools.get(delivery_id)
+                            if anonymous:
+                                pending.discard(anonymous.pop(0))
+                                if not anonymous:
+                                    self._delivery_anonymous_tools.pop(delivery_id, None)
+                        if not pending:
+                            self._delivery_pending_tools.pop(delivery_id, None)
+                    self._delivery_last_event_at[delivery_id] = time.monotonic()
                 return SessionEvent(kind="tool_call", text=item.get("command", item_type), data=data, session_id=thread_id, cursor=cursor, delivery_id=delivery_id, turn_id=turn_id)
             # userMessage / reasoning / 其他未知 item 类型都不作为独立事件暴露
             return None
@@ -974,6 +1018,8 @@ class CodexProtocolDriver(Driver):
             delivery_id = self._turn_to_envelope.get(turn_id, "")
             item_id = params.get("itemId", "")
             cursor = self._item_cursor_by_id.get(item_id, cursor)
+            if delivery_id and params.get("delta", ""):
+                self._delivery_last_event_at[delivery_id] = time.monotonic()
             return SessionEvent(kind="assistant_text", text=params.get("delta", ""), data=data, session_id=thread_id, cursor=cursor, delivery_id=delivery_id, turn_id=turn_id)
 
         # —— 错误 ——

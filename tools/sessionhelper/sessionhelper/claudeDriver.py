@@ -27,7 +27,7 @@ import subprocess
 import threading
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, Optional
 
@@ -56,7 +56,9 @@ DEFAULT_STORE = "/home/ai-dev/transport-v2/.claude-driver-delivery.sqlite3"
 EVENT_DRAIN_TIMEOUT = 5.0        # 协议 done 后等终结事件排空的上限（契约 v3）
 TURN_ACCEPT_TIMEOUT = 30.0       # 投递后等 isReplay ACK 的上限
 PREV_TURN_WAIT = 180.0           # 投下一条前，等上一个 turn 完成的上限（串行到 turn 边界）
-STALL_TIMEOUT = 120.0            # accepted/processing 后迟迟不 done ⇒ [delivery][STALLED]
+# T-094: 一级按可归属增量事件后的空闲时长判卡死，二级限制回合总时长。
+STALL_TIMEOUT = 90.0             # 最后一次可归属增量事件后迟迟不 done ⇒ [delivery][STALLED]
+ABSOLUTE_TURN_TIMEOUT = 900.0    # 即使持续产出，单回合也不得无限运行
 FANOUT_QUEUE_MAX = 2000
 
 
@@ -145,6 +147,8 @@ class _TurnState:
     detail: str = ""
     interrupted: bool = False
     submitted_at: float = 0.0
+    last_event_at: float = 0.0
+    pending_tool_ids: set[str] = field(default_factory=set)
     stalled_logged: bool = False
 
 
@@ -164,6 +168,7 @@ class ClaudeProtocolDriver(Driver):
         self._env = env
         self._store = _DeliveryStore(store_path)
         self._stall_timeout = STALL_TIMEOUT   # 实例属性，conformance 可设短以验 STALLED 路径
+        self._absolute_timeout = ABSOLUTE_TURN_TIMEOUT
 
         self._proc: Optional[subprocess.Popen] = None
         self._session_id = ""
@@ -333,16 +338,26 @@ class ClaudeProtocolDriver(Driver):
             if active.terminal_seen.is_set():
                 self._store.update_state(envelope_id, "done", "result frame drained")
                 return DeliveryReceipt(id=envelope_id, state="done", source="pipe", detail="result drained")
-            # 停滞不静默：accepted/processing 后迟迟不 done ⇒ [delivery][STALLED] + failed
-            elapsed = time.monotonic() - (active.submitted_at or time.monotonic())
-            if elapsed > self._stall_timeout:
+            # 两级闸门：增量事件刷新空闲计时；总时长另受绝对上限约束。
+            now = time.monotonic()
+            total_elapsed = now - (active.submitted_at or now)
+            idle_elapsed = now - (active.last_event_at or active.submitted_at or now)
+            if total_elapsed > self._absolute_timeout:
+                active.stalled_logged = True
+                detail = f"absolute turn timeout after {total_elapsed:.0f}s (limit {self._absolute_timeout:.0f}s)"
+                log.warning("[delivery][ABSOLUTE_TIMEOUT] id=%s total_elapsed=%.0fs; turn exceeded hard limit",
+                            envelope_id, total_elapsed)
+                self._store.update_state(envelope_id, "failed", detail)
+                return DeliveryReceipt(id=envelope_id, state="failed", source="pipe",
+                                       detail=f"[ABSOLUTE_TIMEOUT] total runtime {total_elapsed:.0f}s")
+            if not active.pending_tool_ids and idle_elapsed > self._stall_timeout:
                 if not active.stalled_logged:
                     active.stalled_logged = True
-                    log.warning("[delivery][STALLED] id=%s elapsed=%.0fs no terminal event; "
-                                "turn appears hung", envelope_id, elapsed)
-                self._store.update_state(envelope_id, "failed", f"stalled after {elapsed:.0f}s")
+                    log.warning("[delivery][STALLED] id=%s idle_elapsed=%.0fs no progress event; "
+                                "turn appears hung", envelope_id, idle_elapsed)
+                self._store.update_state(envelope_id, "failed", f"idle stalled after {idle_elapsed:.0f}s")
                 return DeliveryReceipt(id=envelope_id, state="failed", source="pipe",
-                                       detail=f"[STALLED] no terminal after {elapsed:.0f}s")
+                                       detail=f"[STALLED] no progress event for {idle_elapsed:.0f}s")
             if active.accepted.is_set():
                 return DeliveryReceipt(id=envelope_id, state="processing", source="pipe",
                                        detail="accepted, draining events")
@@ -473,14 +488,35 @@ class ClaudeProtocolDriver(Driver):
                 active.accepted.set()
             return
 
+        if t == "user":
+            # Claude stream-json sends tool results back as non-replay user frames.
+            # A tool is in-flight from tool_use until its matching tool_result.
+            for c in d.get("message", {}).get("content", []):
+                if c.get("type") == "tool_result" and active is not None:
+                    tool_use_id = c.get("tool_use_id", "")
+                    if tool_use_id:
+                        active.pending_tool_ids.discard(tool_use_id)
+                    active.last_event_at = time.monotonic()
+                    active.stalled_logged = False
+            return
+
         if t == "assistant":
             for c in d.get("message", {}).get("content", []):
                 if c.get("type") == "text" and c.get("text", "").strip():
+                    if active is not None:
+                        active.last_event_at = time.monotonic()
+                        active.stalled_logged = False
                     self._emit(SessionEvent(
                         kind="assistant_text", text=c["text"], data={},
                         session_id=self._session_id, delivery_id=delivery_id, turn_id=turn_id,
                     ))
                 elif c.get("type") == "tool_use":
+                    if active is not None:
+                        active.last_event_at = time.monotonic()
+                        active.stalled_logged = False
+                        tool_use_id = c.get("id", "")
+                        if tool_use_id:
+                            active.pending_tool_ids.add(tool_use_id)
                     self._emit(SessionEvent(
                         kind="tool_call", text="", data={"name": c.get("name"), "input": c.get("input")},
                         session_id=self._session_id, delivery_id=delivery_id, turn_id=turn_id,
@@ -499,6 +535,7 @@ class ClaudeProtocolDriver(Driver):
                 session_id=self._session_id, delivery_id=delivery_id, turn_id=turn_id,
             ))
             if active is not None:
+                active.pending_tool_ids.clear()
                 if interrupted:
                     active.interrupted = True
                     active.state = "failed"
