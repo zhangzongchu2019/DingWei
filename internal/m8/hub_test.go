@@ -4823,6 +4823,13 @@ func TestInputObservationEventCarriesSingleAndMultiTargets(t *testing.T) {
 	if _, exists := delivery["targets"]; exists {
 		t.Fatalf("primary delivery unexpectedly contains targets: %#v", delivery["targets"])
 	}
+	primaryWithRouteTargets := inputObservationEvent(model.Envelope{To: "one#key", Meta: map[string]any{
+		"route_targets": []string{"a#k", "b#k"},
+	}}, "d4", "hub_received", "primary", false, "agent", "source", time.Now())
+	delivery, _ = primaryWithRouteTargets["delivery"].(map[string]any)
+	if _, exists := delivery["targets"]; exists {
+		t.Fatalf("primary delivery with route_targets unexpectedly contains targets: %#v", delivery["targets"])
+	}
 }
 
 func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
