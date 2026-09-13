@@ -34,7 +34,11 @@ func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, origina
 	if h == nil || c == nil {
 		return
 	}
-	candidates, _ := parseAMRCandidatesDetailed(original.Body, c.sessionName, 20)
+	maxTargets := 20
+	if h.amr != nil && h.amr.maxTargets > 0 {
+		maxTargets = h.amr.maxTargets
+	}
+	candidates, _ := parseAMRCandidatesDetailed(original.Body, c.sessionName, maxTargets)
 	canonicalOriginalTo := original.To
 	if to, err := parseAddress(original.To); err == nil && to.Kind == addressSession {
 		probe := model.Envelope{To: "#" + to.SessionName, From: original.From}
