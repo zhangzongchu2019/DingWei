@@ -4898,6 +4898,28 @@ func TestRouteToSessionAcksDeliveredInboundMessage(t *testing.T) {
 	}
 }
 
+func TestInputObservationEventCarriesSingleAndMultiTargets(t *testing.T) {
+	single := inputObservationEvent(model.Envelope{To: "one#key"}, "d1", "hub_received", "copy", false, "agent", "source", time.Now())
+	delivery, _ := single["delivery"].(map[string]any)
+	targets, _ := delivery["targets"].([]string)
+	if len(targets) != 1 || targets[0] != "one#key" {
+		t.Fatalf("single targets=%#v", delivery["targets"])
+	}
+	multi := inputObservationEvent(model.Envelope{To: "one#key", Meta: map[string]any{
+		"route_targets": []string{"one#key", "two#key"},
+	}}, "d2", "hub_received", "copy", false, "agent", "source", time.Now())
+	delivery, _ = multi["delivery"].(map[string]any)
+	targets, _ = delivery["targets"].([]string)
+	if len(targets) != 2 || targets[0] != "one#key" || targets[1] != "two#key" {
+		t.Fatalf("multi targets=%#v", delivery["targets"])
+	}
+	primary := inputObservationEvent(model.Envelope{To: "one#key"}, "d3", "hub_received", "primary", false, "agent", "source", time.Now())
+	delivery, _ = primary["delivery"].(map[string]any)
+	if _, exists := delivery["targets"]; exists {
+		t.Fatalf("primary delivery unexpectedly contains targets: %#v", delivery["targets"])
+	}
+}
+
 func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {

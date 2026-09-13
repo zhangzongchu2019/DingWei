@@ -278,6 +278,24 @@ async function main() {
     await context.close();
   });
 
+  await T('T-087 出站 copy 显示全部目标，入站 primary 保持简洁', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    const outbound = v2posted('t087-out', v2src('agent', 'source'), 'copy', 'cli_injected');
+    outbound.delivery.targets = ['zzc-alpha-2642#key', 'zzc-beta-2642#key'];
+    await emit(page, outbound);
+    const outCard = page.locator('.message-card[data-message-id="t087-out"]');
+    await outCard.waitFor({ timeout: 5000 });
+    const outText = await outCard.textContent();
+    assert.ok(outText.includes('→ zzc-alpha-2642、zzc-beta-2642'), `出站目标=${outText}`);
+
+    const inbound = v2posted('t087-in', v2src('agent', 'peer'), 'primary', 'cli_injected');
+    inbound.delivery.targets = ['current-session#key'];
+    await emit(page, inbound);
+    const inText = await page.locator('.message-card[data-message-id="t087-in"]').textContent();
+    assert.ok(!inText.includes('→ current-session'), `入站不应显示本窗口目标=${inText}`);
+    await context.close();
+  });
+
   await T('C2.4e helper_received 无 status→只推进不摘', async () => {
     const { context, page } = await bootContext(browser, rendererBody);
     await emit(page, goldenEvent('primary_feishu'));

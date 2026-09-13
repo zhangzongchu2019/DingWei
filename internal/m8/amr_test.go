@@ -332,8 +332,10 @@ func TestAMRRouteAttemptsEveryTargetAndCountsPartialSuccess(t *testing.T) {
 	p.hub = hub
 	p.modes = map[string]amrMode{"source": amrRoute}
 	attempted := 0
+	var routed []model.Envelope
 	p.routeEnvelope = func(_ context.Context, env model.Envelope) error {
 		attempted++
+		routed = append(routed, env)
 		if strings.HasPrefix(env.To, "two#") {
 			return errors.New("offline")
 		}
@@ -346,6 +348,12 @@ func TestAMRRouteAttemptsEveryTargetAndCountsPartialSuccess(t *testing.T) {
 	stats, active := p.snapshotStats()
 	if attempted != 3 || stats.targetsAttempted != 3 || stats.targetsDispatched != 2 || stats.targetsFailed != 1 || stats.closedDispatched != 1 {
 		t.Fatalf("attempted=%d stats=%+v", attempted, stats)
+	}
+	for _, env := range routed {
+		targets, ok := env.Meta["route_targets"].([]string)
+		if !ok || len(targets) != 3 || targets[0] != "one#"+key.ID || targets[1] != "two#"+key.ID || targets[2] != "three#"+key.ID {
+			t.Fatalf("route_targets=%#v", env.Meta["route_targets"])
+		}
 	}
 	if stats.opened != uint64(active)+stats.queued+stats.closed+stats.incomplete+stats.failed {
 		t.Fatalf("top-level conservation failed: stats=%+v active=%d", stats, active)
