@@ -491,6 +491,10 @@ func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envel
 }
 
 func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, cancellable bool, sourceKind, displayName string, now time.Time) map[string]any {
+	delivery := map[string]any{"role": role}
+	if targets := inputObservationTargets(env); role == "copy" && len(targets) > 0 {
+		delivery["targets"] = targets
+	}
 	event := map[string]any{
 		"schema_version": "delivery.v2",
 		"kind":           "input_posted",
@@ -501,7 +505,7 @@ func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, c
 		"source": map[string]any{
 			"kind": sourceKind, "display_name": displayName, "trust_decision": "trusted",
 		},
-		"delivery": map[string]any{"role": role, "targets": inputObservationTargets(env)},
+		"delivery": delivery,
 		"copy_kind": func() string {
 			if role == "copy" {
 				return "route_observation"
