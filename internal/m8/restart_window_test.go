@@ -56,3 +56,33 @@ func TestSessionDeliverySucceedsOutsideRestartWindow(t *testing.T) {
 		t.Fatalf("outside-window delivery=%+v", got)
 	}
 }
+
+func TestAMRFailureNotificationCarriesRestartWindowSignal(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	hub.startedAt = time.Now().Add(-5 * time.Second)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-amr", Name: "svc-amr", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-amr", "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	source := dialSession(t, ctx, srv.URL, "source", key.ID, secret)
+	defer source.Close(websocket.StatusNormalClosure, "done")
+
+	p := testAMRProcessor()
+	p.hub = hub
+	p.modes = map[string]amrMode{"source": amrRoute}
+	p.notifySource(amrTurnKey{KeyID: key.ID, Session: "source", DeliveryID: "d", TurnID: "t"}, "#missing", "target offline", true)
+	got := readEnvelope(t, ctx, source)
+	if metaString(got.Meta, "type") != "delivery_failure" || !metaBool(got.Meta, "within_restart_window") {
+		t.Fatalf("AMR failure notification=%+v", got)
+	}
+	if got.Meta["hub_uptime_seconds"] == nil || got.Meta["restart_window_seconds"] != float64(60) && got.Meta["restart_window_seconds"] != int64(60) {
+		t.Fatalf("AMR restart metadata=%+v", got.Meta)
+	}
+}
