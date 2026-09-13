@@ -657,6 +657,16 @@ func (p *amrProcessor) process(job amrRouteJob) {
 		p.notifyRouteResults(job.key, results)
 		return
 	}
+	routeTargets := make([]string, 0, len(prepared))
+	for _, target := range prepared {
+		routeTargets = append(routeTargets, target.envelope.To)
+	}
+	for i := range prepared {
+		if prepared[i].envelope.Meta == nil {
+			prepared[i].envelope.Meta = map[string]any{}
+		}
+		prepared[i].envelope.Meta["route_targets"] = routeTargets
+	}
 	for _, target := range prepared {
 		err := p.routeEnvelope(ctx, target.envelope)
 		result := amrTargetResult{selector: target.candidate.selector, resolved: target.envelope.To, ok: err == nil, err: err}

@@ -501,7 +501,7 @@ func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, c
 		"source": map[string]any{
 			"kind": sourceKind, "display_name": displayName, "trust_decision": "trusted",
 		},
-		"delivery": map[string]any{"role": role},
+		"delivery": map[string]any{"role": role, "targets": inputObservationTargets(env)},
 		"copy_kind": func() string {
 			if role == "copy" {
 				return "route_observation"
@@ -515,6 +515,16 @@ func inputObservationEvent(env model.Envelope, deliveryID, stage, role string, c
 		event["provenance"] = provenance
 	}
 	return event
+}
+
+func inputObservationTargets(env model.Envelope) []string {
+	if raw, ok := env.Meta["route_targets"].([]string); ok && len(raw) > 0 {
+		return append([]string(nil), raw...)
+	}
+	if env.To == "" {
+		return nil
+	}
+	return []string{env.To}
 }
 
 func provenanceForEnvelope(env model.Envelope) (displayProvenance, bool) {

@@ -1854,7 +1854,7 @@
         originDlv: ev.origin_delivery_id || data.origin_delivery_id || '',  // 归并锚(dev55 两签:helper 可信保留 hub meta.delivery_id 原样;仅相关性非鉴权)
         sourceKind: '', sourceLabel: '', sourceTrusted: false,
         stage: '', reason: '', copyKind: '', deliveryMode: '', cancellable: null,
-        text: '', stageIdx: -1, conflict: '',
+        targets: [], text: '', stageIdx: -1, conflict: '',
       };
       // canonical 受保护字段
       norm.sourceKind = src.kind || '';
@@ -1865,6 +1865,7 @@
       const delivery = (ev.delivery && typeof ev.delivery === 'object') ? ev.delivery : {};
       // V2 终裁:canonical=delivery.role{primary,copy,control};delivery_mode 已废、无 legacy 兼容(read-only role)
       norm.deliveryMode = delivery.role || '';
+      norm.targets = Array.isArray(delivery.targets) ? delivery.targets.filter(Boolean).map(String) : [];
       norm.copyKind = ev.copy_kind || delivery.copy_kind || '';
       const cb = ev.cancellable ?? ev.cancelable;  // 拼写容错(hub 双l/单l 并存,契约 hygiene;行为仍只认 input_posted 原值)
       norm.cancellable = (cb === undefined) ? null : Boolean(cb);
@@ -1994,6 +1995,12 @@
       // 投递语义措辞(张宗楚#3):「已注入执行」→「已送达」——投递状态只表「送进 CLI 没有」,
       // 不暗示 CLI 在执行/在等结果(执行与回复=单独输出消息那路信号);flag 关=原措辞
       return provFlagOn() ? t.replace('已注入执行', '已送达').replace('注入未确认', '送达未确认') : t;
+    }
+
+    function outboundTargetsHtml(norm) {
+      if (norm.deliveryMode !== 'copy' || !norm.targets.length) return '';
+      const labels = [...new Set(norm.targets.map(addr => String(addr).split('#')[0]).filter(Boolean))];
+      return labels.length ? `<span class="outbound-targets">→ ${escapeHtml(labels.join('、'))}</span>` : '';
     }
 
     function c1CardFor(norm, create) {
@@ -2730,7 +2737,7 @@
       const provIc = provenanceIconHtml(norm);  // display v1:provenance 图标在场时压 legacy 文字徽标(不双标)
       const badge = provIc ? '' : sourceBadgeHtml(norm);
       const footText = isCopy ? '已同步/镜像(不追 ACK)' : stageFooterText(norm);
-      footer.innerHTML = `${badge}<span class="stage-text">${escapeHtml(footText)}</span>`;
+      footer.innerHTML = `${badge}${outboundTargetsHtml(norm)}<span class="stage-text">${escapeHtml(footText)}</span>`;
       card.appendChild(footer);
       timeline.appendChild(card);
       if (entry) {

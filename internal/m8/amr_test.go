@@ -309,8 +309,10 @@ func TestAMRRouteAttemptsEveryTargetAndCountsPartialSuccess(t *testing.T) {
 	p.hub = hub
 	p.modes = map[string]amrMode{"source": amrRoute}
 	attempted := 0
+	var routed []model.Envelope
 	p.routeEnvelope = func(_ context.Context, env model.Envelope) error {
 		attempted++
+		routed = append(routed, env)
 		if strings.HasPrefix(env.To, "two#") {
 			return errors.New("offline")
 		}
@@ -323,6 +325,12 @@ func TestAMRRouteAttemptsEveryTargetAndCountsPartialSuccess(t *testing.T) {
 	stats, active := p.snapshotStats()
 	if attempted != 3 || stats.targetsAttempted != 3 || stats.targetsDispatched != 2 || stats.targetsFailed != 1 || stats.closedDispatched != 1 {
 		t.Fatalf("attempted=%d stats=%+v", attempted, stats)
+	}
+	for _, env := range routed {
+		targets, ok := env.Meta["route_targets"].([]string)
+		if !ok || len(targets) != 3 || targets[0] != "one#"+key.ID || targets[1] != "two#"+key.ID || targets[2] != "three#"+key.ID {
+			t.Fatalf("route_targets=%#v", env.Meta["route_targets"])
+		}
 	}
 	if stats.opened != uint64(active)+stats.queued+stats.closed+stats.incomplete+stats.failed {
 		t.Fatalf("top-level conservation failed: stats=%+v active=%d", stats, active)
@@ -524,9 +532,11 @@ func BenchmarkAMRIngestCompletedCardinality(b *testing.B) {
 
 // 业主 2026-09-10 裁定:@ 提及要「尽可能可靠投递,只要客户端 inbox 收到就是送达」。
 // 本组用例把该裁定钉在 reliablePrimaryEnvelope 上,并守住三条边界:
-//   ① agent_route 必须可靠 —— 否则又回到"直写成功无痕、离线即丢"
-//   ② no_mirror 不再影响可靠性 —— 它只管镜不镜像
-//   ③ system 仍必须不可靠 —— 控制面信封不该进持久队列要 ACK
+//
+//	① agent_route 必须可靠 —— 否则又回到"直写成功无痕、离线即丢"
+//	② no_mirror 不再影响可靠性 —— 它只管镜不镜像
+//	③ system 仍必须不可靠 —— 控制面信封不该进持久队列要 ACK
+//
 // 只断言 ① 是不够的:把整个判定改成恒真也能让 ① 过,②③ 才是防止那种"修法"的护栏。
 func TestReliableEnvelopeDecouplesMirrorFromReliability(t *testing.T) {
 	cases := []struct {
