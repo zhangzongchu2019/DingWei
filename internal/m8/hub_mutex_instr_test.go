@@ -34,7 +34,7 @@ func TestInstrMutexMeasuresHoldTimeNotWaitTime(t *testing.T) {
 }
 
 func TestDebugLockStatsEndpointInInstrBuild(t *testing.T) {
-	hub := New(nil)
+	hub := New(nil, false)
 	hub.mu.Lock()
 	hub.mu.Unlock()
 	rec := httptest.NewRecorder()

@@ -19,7 +19,7 @@ func (f fakeLivezDB) Ping(context.Context) error { return f.err }
 
 func TestLivezChecksLockDBAndAcceptHeartbeats(t *testing.T) {
 	t.Setenv("WP_HUB_LIVEZ_LOCK_TIMEOUT", "20ms")
-	hub := m8.New(nil)
+	hub := m8.New(nil, false)
 	publicHB, internalHB := &acceptHeartbeat{}, &acceptHeartbeat{}
 	publicHB.mark()
 	internalHB.mark()

@@ -57,7 +57,7 @@ type Server struct {
 }
 
 func New(repo store.Repository) *Server {
-	return &Server{Repo: repo, Prefix: m8.New(repo), sessions: map[string]string{}}
+	return &Server{Repo: repo, Prefix: m8.New(repo, false), sessions: map[string]string{}}
 }
 
 // Mount 注册路由到 mux。

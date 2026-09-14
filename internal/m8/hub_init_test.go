@@ -8,7 +8,7 @@ import (
 // Any map added to Hub must be initialized by New. A nil map can survive
 // reads and then panic on the first production write while h.mu is held.
 func TestNewInitializesEveryHubMap(t *testing.T) {
-	hub := New(nil)
+	hub := New(nil, false)
 	v := reflect.ValueOf(hub).Elem()
 	typ := v.Type()
 	for i := 0; i < v.NumField(); i++ {

@@ -43,8 +43,6 @@ func ParseConsoleAuthEnabled(raw string) (bool, error) {
 	}
 }
 
-func (h *Hub) SetConsoleAuthEnabled(enabled bool) { h.consoleAuthEnabled = enabled }
-
 func randomConsoleToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
