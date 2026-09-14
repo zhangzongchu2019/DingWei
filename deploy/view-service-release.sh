@@ -120,6 +120,23 @@ identify_online() {
 container_hash() { docker exec "$1" sha256sum "/app/vs/$2" | awk '{print $1}'; }
 container_meta() { docker exec "$1" stat -c '%u:%g:%a' "/app/vs/$2"; }
 
+wait_viewservice() {
+  local container="$1" attempts="${VSR_HEALTH_ATTEMPTS:-30}" interval="${VSR_HEALTH_INTERVAL:-1}"
+  local i started now status
+  [[ "$attempts" =~ ^[1-9][0-9]*$ ]] || die "VSR_HEALTH_ATTEMPTS must be a positive integer"
+  [[ "$interval" =~ ^[0-9]+$ ]] || die "VSR_HEALTH_INTERVAL must be a non-negative integer"
+  started="$(date +%s)"
+  for ((i=1; i<=attempts; i++)); do
+    status="$(docker exec "$container" supervisorctl status viewservice 2>&1 || true)"
+    if grep -q RUNNING <<<"$status" && docker exec "$container" curl -sf http://127.0.0.1:8791/healthz >/dev/null 2>&1; then
+      now="$(date +%s)"; echo "HEALTHY attempts=$i waited_seconds=$((now - started))"; return 0
+    fi
+    [ "$i" -eq "$attempts" ] || sleep "$interval"
+  done
+  now="$(date +%s)"; echo "HEALTH_TIMEOUT attempts=$attempts waited_seconds=$((now - started)) last_status=$status" >&2
+  return 1
+}
+
 check_container_layout() {
   local container="$1" entries entry pyc_count
   entries="$(docker exec "$container" find /app/vs -mindepth 1 -maxdepth 2 -printf '%P\n' | sort)"
@@ -150,8 +167,7 @@ restore_container() {
   [ ! -d "$backup/pre/__pycache__" ] || docker cp "$backup/pre/__pycache__" "$container:/app/vs/"
   if [ "$restart" -ne 0 ]; then
     docker exec "$container" supervisorctl restart viewservice
-    docker exec "$container" supervisorctl status viewservice | grep -q RUNNING
-    docker exec "$container" curl -sf http://127.0.0.1:8791/healthz >/dev/null
+    wait_viewservice "$container"
   fi
   for name in "${FLAT_FILES[@]}"; do
     want="$(sha_file "$backup/pre/$name")"; got="$(container_hash "$container" "$name")"
@@ -185,7 +201,7 @@ install_container() {
   done
   if [ "$go" -eq 0 ]; then echo "PRECHECK_ONLY writes=0"; return 0; fi
 
-  stamp="$(date -u +%Y%m%dT%H%M%SZ)"; backup="$backup_root/view-service-$expected-$stamp"
+  stamp="$(date -u +%Y%m%dT%H%M%S.%NZ)"; backup="$backup_root/view-service-$expected-$stamp"
   mkdir -p "$backup/pre" "$backup/forward" "$backup/meta"
   cp "$package/MANIFEST.sha256" "$package/PROVENANCE.json" "$backup/forward/"
   for n in "${!FLAT_FILES[@]}"; do
@@ -194,7 +210,12 @@ install_container() {
     cp "$package/${REPO_FILES[$n]}" "$backup/forward/$name"
     container_meta "$container" "$name" >"$backup/meta/$name"
   done
-  docker cp "$container:/app/vs/__pycache__" "$backup/pre/"
+  if docker exec "$container" test -d /app/vs/__pycache__; then
+    docker cp "$container:/app/vs/__pycache__" "$backup/pre/"
+    echo "CACHE_BACKUP state=present"
+  else
+    echo "CACHE_BACKUP state=absent"
+  fi
 
   if ! {
     copy_ok=1
@@ -206,9 +227,7 @@ install_container() {
       docker exec "$container" chmod "$mode" "/app/vs/$name" || { copy_ok=0; break; }
     done
     [ "$copy_ok" -eq 1 ] && { [ "$py_changed" -eq 0 ] || docker exec "$container" rm -rf /app/vs/__pycache__; } &&
-    { [ "$py_changed" -eq 0 ] || { docker exec "$container" supervisorctl restart viewservice &&
-      docker exec "$container" supervisorctl status viewservice | grep -q RUNNING &&
-      docker exec "$container" curl -sf http://127.0.0.1:8791/healthz >/dev/null; }; } &&
+    { [ "$py_changed" -eq 0 ] || { docker exec "$container" supervisorctl restart viewservice && wait_viewservice "$container"; }; } &&
     for n in "${!FLAT_FILES[@]}"; do
       name="${FLAT_FILES[$n]}"
       [ "$(container_hash "$container" "$name")" = "$(sha_file "$package/${REPO_FILES[$n]}")" ] || false

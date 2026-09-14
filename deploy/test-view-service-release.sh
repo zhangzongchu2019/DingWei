@@ -72,8 +72,11 @@ if [ "$op" = exec ]; then
     chmod) chmod "$1" "$(path "$2")" ;;
     rm) rm -rf "$(path "${@: -1}")" ;;
     mv) mv "$(path "$1")" "$(path "$2")" ;;
+    test) test "$1" "$(path "$2")" ;;
     supervisorctl)
       if [ "$1" = restart ]; then echo restart >>"$root/restarts"; mkdir -p "$root/app/vs/__pycache__"; printf pyc >"$root/app/vs/__pycache__/view_page_store.cpython-311.pyc"
+      elif [ -s "$root/health-delay" ]; then
+        n="$(cat "$root/health-delay")"; if [ "$n" -gt 0 ]; then echo $((n - 1)) >"$root/health-delay"; echo 'viewservice STARTING'; else echo 'viewservice RUNNING pid 123, uptime 0:00:01'; fi
       else echo 'viewservice RUNNING pid 123, uptime 0:00:01'; fi ;;
     curl) : ;;
     *) exit 2 ;;
@@ -85,12 +88,15 @@ elif [ "$op" = cp ]; then
 else exit 2; fi
 EOF
 chmod +x "$T/bin/docker"
-export FAKE_CONTAINER_ROOT="$T/container" PATH="$T/bin:$PATH"
+export FAKE_CONTAINER_ROOT="$T/container" PATH="$T/bin:$PATH" VSR_HEALTH_INTERVAL=0
 BEFORE="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
 (cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups") | grep -q 'PRECHECK_ONLY writes=0'
 AFTER="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
 [ "$BEFORE" = "$AFTER" ]
-(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups" --go) | grep -q '^INSTALLED '
+echo 2 >"$T/container/health-delay"
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups" --go)"
+grep -q '^HEALTHY attempts=3 ' <<<"$OUT"
+grep -q '^INSTALLED ' <<<"$OUT"
 [ -e "$T/container/app/vs/__pycache__/view_page_store.cpython-311.pyc" ]
 [ -s "$T/container/restarts" ]
 BACKUP="$(find "$T/backups" -mindepth 1 -maxdepth 1 -type d)"
@@ -117,5 +123,7 @@ AFTER="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256
 
 # Cache absence is a valid state created between removal and regeneration.
 rm -rf "$T/container/app/vs/__pycache__"
-(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups") | grep -q 'PRECHECK_ONLY writes=0'
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go)"
+grep -q '^CACHE_BACKUP state=absent$' <<<"$OUT"
+grep -q 'restart=0' <<<"$OUT"
 echo "PASS view-service release core"
