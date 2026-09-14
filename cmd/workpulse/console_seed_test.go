@@ -70,3 +70,32 @@ func TestConsoleSeedFailsClosedWithoutGrant(t *testing.T) {
 		t.Fatal("agent without explicit grant accepted")
 	}
 }
+
+func TestTwoOwnerIdentitiesEachSeeTheCompleteGrantSet(t *testing.T) {
+	ctx := context.Background()
+	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "seed.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err = db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "seed.json")
+	raw := `{"principals":[{"id":"owner-1","provider":"feishu","provider_issuer":"active-app","provider_subject":"subject-1","active":true},{"id":"owner-2","provider":"feishu","provider_issuer":"active-app","provider_subject":"subject-2","active":true},{"id":"outsider","provider":"feishu","provider_issuer":"active-app","provider_subject":"subject-3","active":true}],"agents":[{"id":"a1","key_id":"shared","session_name":"s1","owner_principal":"owner-1","active":true,"grants":[{"principal_id":"owner-1","permission":"interact"},{"principal_id":"owner-2","permission":"interact"}]},{"id":"a2","key_id":"shared","session_name":"s2","owner_principal":"owner-1","active":true,"grants":[{"principal_id":"owner-1","permission":"interact"},{"principal_id":"owner-2","permission":"interact"}]}]}`
+	if err = os.WriteFile(path, []byte(raw), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err = seedConsoleACL(ctx, db, path); err != nil {
+		t.Fatal(err)
+	}
+	for _, principal := range []string{"owner-1", "owner-2"} {
+		agents, err := db.ListConsoleAgents(ctx, principal)
+		if err != nil || len(agents) != 2 {
+			t.Fatalf("principal=%s agents=%+v err=%v", principal, agents, err)
+		}
+	}
+	if agents, err := db.ListConsoleAgents(ctx, "outsider"); err != nil || len(agents) != 0 {
+		t.Fatalf("outsider agents=%+v err=%v", agents, err)
+	}
+}
