@@ -4,6 +4,7 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
@@ -52,6 +53,58 @@ func TestConsoleACLSeparatesPrincipalsDespiteSharedKey(t *testing.T) {
 	}
 	if len(agents) != 1 || agents[0].ID != "agent-a" {
 		t.Fatalf("agents=%+v", agents)
+	}
+}
+
+func TestConsoleCapabilityRotationAndFourGates(t *testing.T) {
+	ctx := context.Background()
+	db, err := OpenSQLite(filepath.Join(t.TempDir(), "console.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err = db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 9, 14, 8, 0, 0, 0, time.UTC)
+	p := model.ConsolePrincipal{ID: "p", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "u", Active: true}
+	if err = db.UpsertConsolePrincipal(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	a := model.ConsoleAgent{ID: "a", KeyID: "shared", SessionName: "s", OwnerPrincipal: "p", Active: true}
+	if err = db.UpsertConsoleAgent(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.UpsertConsoleAgentGrant(ctx, model.ConsoleAgentGrant{PrincipalID: "p", AgentID: "a", Permission: "interact", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.CreateConsoleSession(ctx, model.ConsoleSession{ID: "login", PrincipalID: "p", TokenHash: "login-hash", ExpiresAt: now.Add(time.Hour)}, now); err != nil {
+		t.Fatal(err)
+	}
+	first := model.ConsolePageCapability{ID: "c1", SessionID: "login", PrincipalID: "p", AgentID: "a", PageID: "page", TokenHash: "token-1", ExpiresAt: now.Add(time.Minute)}
+	if err = db.RotateConsolePageCapability(ctx, first, "shared", "s", now); err != nil {
+		t.Fatal(err)
+	}
+	second := first
+	second.ID = "c2"
+	second.TokenHash = "token-2"
+	if err = db.RotateConsolePageCapability(ctx, second, "shared", "s", now.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := db.ResolveConsolePageCapability(ctx, "token-1", "a", "page", now.Add(2*time.Second)); err != nil || got != nil {
+		t.Fatalf("old token survived rotation got=%+v err=%v", got, err)
+	}
+	if got, err := db.ResolveConsolePageCapability(ctx, "token-2", "a", "page", now.Add(2*time.Second)); err != nil || got == nil || got.Generation != 2 {
+		t.Fatalf("new token got=%+v err=%v", got, err)
+	}
+	if err = db.UpsertConsoleAgentGrant(ctx, model.ConsoleAgentGrant{PrincipalID: "p", AgentID: "a", Permission: "interact", Active: false}); err != nil {
+		t.Fatal(err)
+	}
+	third := first
+	third.ID = "c3"
+	third.TokenHash = "token-3"
+	if err = db.RotateConsolePageCapability(ctx, third, "shared", "s", now.Add(3*time.Second)); err == nil {
+		t.Fatal("renewed after grant revocation")
 	}
 }
 

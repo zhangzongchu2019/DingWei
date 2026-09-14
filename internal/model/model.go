@@ -315,6 +315,26 @@ type ConsoleAgentGrant struct {
 	Active      bool
 }
 
+type ConsoleSession struct {
+	ID          string
+	PrincipalID string
+	TokenHash   string
+	ExpiresAt   time.Time
+	RevokedAt   time.Time
+}
+
+type ConsolePageCapability struct {
+	ID          string
+	SessionID   string
+	PrincipalID string
+	AgentID     string
+	PageID      string
+	TokenHash   string
+	Generation  int
+	ExpiresAt   time.Time
+	RevokedAt   time.Time
+}
+
 // SeenPerson 是 M9 成员候选池中已采集到的飞书用户。
 type SeenPerson struct {
 	OpenID       string
