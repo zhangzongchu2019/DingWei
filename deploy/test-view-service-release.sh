@@ -39,6 +39,8 @@ git -C "$T/repo" update-ref refs/heads/parallel "$PARALLEL"
 if (cd "$T/repo" && "$TOOL" identify-online "$T/old" parallel) >"$T/wrong-ref"; then exit 1; fi
 grep -q '^NOT_IN_REPO ' "$T/wrong-ref"
 (cd "$T/repo" && "$TOOL" identify-online "$T/old") | grep -q '^IDENTIFIED '
+if (cd "$T/repo" && "$TOOL" identify-online "$T/old") | grep -q '^SCAN_REF '; then exit 1; fi
+(cd "$T/repo" && "$TOOL" identify-online "$T/old" --verbose) | grep -q '^SCAN_REF '
 
 # Flat runtime layout uses an explicit repository-path to online-path mapping.
 mkdir "$T/flat"

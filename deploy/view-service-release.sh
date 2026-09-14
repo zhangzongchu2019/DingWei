@@ -64,12 +64,12 @@ verify_package() {
 }
 
 identify_online() {
-  local root flat=0 commits refs scanned=0 hit=0 c f online_path ok online candidate n matches
+  local root flat=0 verbose=0 commits refs scanned=0 hit=0 c f online_path ok online candidate n matches
   local -a scan_refs=() online_files=()
   root="${1:-}"; shift || true
-  [ -n "$root" ] || die "usage: identify-online <online-root> [--flat] [--all|ref ...]"
+  [ -n "$root" ] || die "usage: identify-online <online-root> [--flat] [--verbose] [--all|ref ...]"
   while [ $# -gt 0 ]; do
-    case "$1" in --flat) flat=1 ;; --all) scan_refs=(--all) ;; *) scan_refs+=("$1") ;; esac; shift
+    case "$1" in --flat) flat=1 ;; --verbose) verbose=1 ;; --all) scan_refs=(--all) ;; *) scan_refs+=("$1") ;; esac; shift
   done
   [ "${#scan_refs[@]}" -gt 0 ] || scan_refs=(--all)
   if [ "$flat" -eq 1 ]; then online_files=("${FLAT_FILES[@]}"); else online_files=("${REPO_FILES[@]}"); fi
@@ -83,7 +83,9 @@ identify_online() {
   fi
   [ -n "$commits" ] || die "empty scan range"
   echo "SCAN scope=${scan_refs[*]} refs=$(printf '%s\n' "$refs" | wc -l) commits=$(printf '%s\n' "$commits" | wc -l) flat=$flat"
-  while read -r f; do [ -n "$f" ] && echo "SCAN_REF $f"; done <<<"$refs"
+  if [ "$verbose" -eq 1 ]; then
+    while read -r f; do [ -n "$f" ] && echo "SCAN_REF $f"; done <<<"$refs"
+  fi
   while read -r c; do
     [ -n "$c" ] || continue; scanned=$((scanned + 1)); ok=1
     for n in "${!REPO_FILES[@]}"; do
@@ -106,7 +108,7 @@ identify_online() {
           [ "$candidate" = "$online" ] && matches+=("$c")
         done <<<"$commits"
         if [ "${#matches[@]}" -eq 0 ]; then echo "FILE_NOT_IN_REPO path=$f"; else
-          echo "FILE_MATCH path=$f commits=${#matches[@]} first=${matches[0]}"
+          echo "FILE_MATCH path=$f equivalent_commits=${#matches[@]} newest_equivalent=${matches[0]} attribution=AMBIGUOUS"
         fi
       done
       return 1 ;;
