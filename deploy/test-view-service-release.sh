@@ -126,4 +126,18 @@ rm -rf "$T/container/app/vs/__pycache__"
 OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go)"
 grep -q '^CACHE_BACKUP state=absent$' <<<"$OUT"
 grep -q 'restart=0' <<<"$OUT"
+
+# A service that remains unhealthy must not hide successful file restoration.
+BEFORE="$(cd "$T/container/app/vs" && sha256sum renderer-canary-sse.html view_service.py view_page_store.py | sha256sum)"
+printf 'python-v5\n' >"$T/repo/view-service/view_service.py"
+git -C "$T/repo" commit -qam python-v5; C5="$(git -C "$T/repo" rev-parse HEAD)"
+(cd "$T/repo" && "$TOOL" package "$C5" "$T/unhealthy-pkg")
+echo 999 >"$T/container/health-delay"
+if OUT="$(cd "$T/repo" && VSR_HEALTH_ATTEMPTS=2 "$TOOL" install "$T/unhealthy-pkg" --expected-commit "$C5" --container fixture --backup-root "$T/backups" --go 2>&1)"; then exit 1; fi
+grep -q '^RESTORED_DIGESTS ok files=3$' <<<"$OUT"
+grep -q '^HEALTH_TIMEOUT ' <<<"$OUT"
+if grep -q '^ROLLED_BACK$' <<<"$OUT"; then exit 1; fi
+grep -q '^ROLLBACK_INCOMPLETE restore=0 digests=0 health=1$' <<<"$OUT"
+AFTER="$(cd "$T/container/app/vs" && sha256sum renderer-canary-sse.html view_service.py view_page_store.py | sha256sum)"
+[ "$BEFORE" = "$AFTER" ]
 echo "PASS view-service release core"

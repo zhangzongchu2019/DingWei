@@ -155,25 +155,35 @@ check_container_layout() {
 
 restore_container() {
   local container="$1" backup="$2" restart="$3" n name meta uid gid mode want got
+  local restore_rc=0 digest_rc=0 health_rc=0
   echo "ROLLBACK backup=$backup"
   for n in "${!FLAT_FILES[@]}"; do
     name="${FLAT_FILES[$n]}"; meta="$(cat "$backup/meta/$name")"
     IFS=: read -r uid gid mode <<<"$meta"
-    docker cp "$backup/pre/$name" "$container:/app/vs/$name"
-    docker exec "$container" chown "$uid:$gid" "/app/vs/$name"
-    docker exec "$container" chmod "$mode" "/app/vs/$name"
+    docker cp "$backup/pre/$name" "$container:/app/vs/$name" || { echo "ROLLBACK_STEP_FAIL copy=$name" >&2; restore_rc=1; }
+    docker exec "$container" chown "$uid:$gid" "/app/vs/$name" || { echo "ROLLBACK_STEP_FAIL chown=$name" >&2; restore_rc=1; }
+    docker exec "$container" chmod "$mode" "/app/vs/$name" || { echo "ROLLBACK_STEP_FAIL chmod=$name" >&2; restore_rc=1; }
   done
-  docker exec "$container" rm -rf /app/vs/__pycache__
-  [ ! -d "$backup/pre/__pycache__" ] || docker cp "$backup/pre/__pycache__" "$container:/app/vs/"
-  if [ "$restart" -ne 0 ]; then
-    docker exec "$container" supervisorctl restart viewservice
-    wait_viewservice "$container"
+  docker exec "$container" rm -rf /app/vs/__pycache__ || { echo "ROLLBACK_STEP_FAIL cache_remove" >&2; restore_rc=1; }
+  if [ -d "$backup/pre/__pycache__" ]; then
+    docker cp "$backup/pre/__pycache__" "$container:/app/vs/" || { echo "ROLLBACK_STEP_FAIL cache_restore" >&2; restore_rc=1; }
   fi
   for name in "${FLAT_FILES[@]}"; do
-    want="$(sha_file "$backup/pre/$name")"; got="$(container_hash "$container" "$name")"
-    [ "$want" = "$got" ] || { echo "ROLLBACK_FAIL digest=$name expected=$want actual=$got" >&2; return 1; }
+    want="$(sha_file "$backup/pre/$name")"
+    if got="$(container_hash "$container" "$name" 2>/dev/null)" && [ "$want" = "$got" ]; then :; else
+      echo "ROLLBACK_FAIL digest=$name expected=$want actual=${got:-UNREADABLE}" >&2; digest_rc=1
+    fi
   done
-  echo "ROLLED_BACK"
+  [ "$digest_rc" -ne 0 ] || echo "RESTORED_DIGESTS ok files=${#FLAT_FILES[@]}"
+  if [ "$restart" -ne 0 ]; then
+    docker exec "$container" supervisorctl restart viewservice || health_rc=1
+    [ "$health_rc" -ne 0 ] || wait_viewservice "$container" || health_rc=1
+  fi
+  if [ "$restore_rc" -eq 0 ] && [ "$digest_rc" -eq 0 ] && [ "$health_rc" -eq 0 ]; then
+    echo "ROLLED_BACK"; return 0
+  fi
+  echo "ROLLBACK_INCOMPLETE restore=$restore_rc digests=$digest_rc health=$health_rc" >&2
+  return 1
 }
 
 install_container() {
@@ -201,7 +211,7 @@ install_container() {
   done
   if [ "$go" -eq 0 ]; then echo "PRECHECK_ONLY writes=0"; return 0; fi
 
-  stamp="$(date -u +%Y%m%dT%H%M%S.%NZ)"; backup="$backup_root/view-service-$expected-$stamp"
+  stamp="$(date -u +%Y%m%dT%H%M%SZ)-$(printf '%04x' "$RANDOM")"; backup="$backup_root/view-service-$expected-$stamp"
   mkdir -p "$backup/pre" "$backup/forward" "$backup/meta"
   cp "$package/MANIFEST.sha256" "$package/PROVENANCE.json" "$backup/forward/"
   for n in "${!FLAT_FILES[@]}"; do
