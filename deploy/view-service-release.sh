@@ -192,6 +192,7 @@ restore_container() {
 install_container() {
   local package="${1:-}"; shift || true
   local expected="" container="" backup_root="" go=0 n name current target py_changed=0 backup stamp meta uid gid mode copy_ok identity container_id container_image extra
+  local -a current_hashes=() target_hashes=()
   while [ $# -gt 0 ]; do
     case "$1" in
       --expected-commit) expected="${2:-}"; shift ;;
@@ -212,6 +213,7 @@ install_container() {
   echo "PREFLIGHT container=$container expected_commit=$expected files=${#FLAT_FILES[@]}"
   for n in "${!FLAT_FILES[@]}"; do
     name="${FLAT_FILES[$n]}"; current="$(container_hash "$container" "$name")"; target="$(sha_file "$package/${REPO_FILES[$n]}")"
+    current_hashes[$n]="$current"; target_hashes[$n]="$target"
     meta="$(container_meta "$container" "$name")"
     echo "FILE name=$name current=$current target=$target metadata=$meta"
     if [[ "$name" == *.py ]] && [ "$current" != "$target" ]; then py_changed=1; fi
@@ -237,7 +239,12 @@ install_container() {
   if ! {
     copy_ok=1
     for n in "${!FLAT_FILES[@]}"; do
-      name="${FLAT_FILES[$n]}"; IFS=: read -r uid gid mode <"$backup/meta/$name"
+      name="${FLAT_FILES[$n]}"
+      if [ "${current_hashes[$n]}" = "${target_hashes[$n]}" ]; then
+        echo "SKIP name=$name reason=identical"
+        continue
+      fi
+      IFS=: read -r uid gid mode <"$backup/meta/$name"
       docker cp "$package/${REPO_FILES[$n]}" "$container:/tmp/t109-$expected-$name" &&
       docker exec "$container" mv "/tmp/t109-$expected-$name" "/app/vs/$name" &&
       docker exec "$container" chown "$uid:$gid" "/app/vs/$name" &&

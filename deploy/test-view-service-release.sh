@@ -106,6 +106,9 @@ echo 2 >"$T/container/health-delay"
 OUT="$(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups" --go)"
 grep -q '^HEALTHY attempts=3 ' <<<"$OUT"
 grep -q '^INSTALLED ' <<<"$OUT"
+[ "$(grep -c '^SKIP ' <<<"$OUT")" -eq 2 ]
+grep -q '^SKIP name=renderer-canary-sse.html reason=identical$' <<<"$OUT"
+grep -q '^SKIP name=view_page_store.py reason=identical$' <<<"$OUT"
 [ -e "$T/container/app/vs/__pycache__/view_page_store.cpython-311.pyc" ]
 [ -s "$T/container/restarts" ]
 BACKUP="$(find "$T/backups" -mindepth 1 -maxdepth 1 -type d)"
@@ -114,19 +117,42 @@ BACKUP="$(find "$T/backups" -mindepth 1 -maxdepth 1 -type d)"
 
 # Renderer-only changes are hot-updated without restarting viewservice.
 RESTARTS="$(wc -l <"$T/container/restarts")"
+touch -d '2020-01-01 00:00:00 UTC' "$T/container/app/vs/view_service.py" "$T/container/app/vs/view_page_store.py"
+PY_MTIME_BEFORE="$(stat -c '%y' "$T/container/app/vs/view_service.py")|$(stat -c '%y' "$T/container/app/vs/view_page_store.py")"
 printf 'renderer-v3\n' >"$T/repo/view-service/renderer-canary-sse.html"
 git -C "$T/repo" commit -qam renderer-v3; C3="$(git -C "$T/repo" rev-parse HEAD)"
 (cd "$T/repo" && "$TOOL" package "$C3" "$T/static-pkg")
-(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go) | grep -q 'restart=0'
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go)"
+grep -q 'restart=0' <<<"$OUT"
+[ "$(grep -c '^SKIP ' <<<"$OUT")" -eq 2 ]
+grep -q '^SKIP name=view_service.py reason=identical$' <<<"$OUT"
+grep -q '^SKIP name=view_page_store.py reason=identical$' <<<"$OUT"
+[ "$PY_MTIME_BEFORE" = "$(stat -c '%y' "$T/container/app/vs/view_service.py")|$(stat -c '%y' "$T/container/app/vs/view_page_store.py")" ]
 [ "$(wc -l <"$T/container/restarts")" -eq "$RESTARTS" ]
+
+# All three different means no skip and three real staging writes. Restore C3 afterwards.
+for f in renderer-canary-sse.html view_service.py view_page_store.py; do printf 'all-new-%s\n' "$f" >"$T/repo/view-service/$f"; done
+git -C "$T/repo" commit -qam all-new; CALL="$(git -C "$T/repo" rev-parse HEAD)"
+(cd "$T/repo" && "$TOOL" package "$CALL" "$T/all-pkg")
+: >"$T/container/docker.log"
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/all-pkg" --expected-commit "$CALL" --container fixture --backup-root "$T/backups" --go)"
+if grep -q '^SKIP ' <<<"$OUT"; then exit 1; fi
+[ "$(grep -c '^cp .*:/tmp/t109-' "$T/container/docker.log")" -eq 3 ]
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go)"
+if grep -q '^SKIP ' <<<"$OUT"; then exit 1; fi
 
 # A mid-copy failure restores all three pre-images and their cache snapshot.
 BEFORE="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
+# Build a two-file delta: renderer is skipped, view_service then fails, while
+# view_page_store is also different. Rollback must still restore the complete pre-image.
+git -C "$T/repo" cat-file blob "$C3:view-service/renderer-canary-sse.html" >"$T/repo/view-service/renderer-canary-sse.html"
+printf 'page-fail-v4\n' >"$T/repo/view-service/view_page_store.py"
 printf 'python-v4\n' >"$T/repo/view-service/view_service.py"
 git -C "$T/repo" commit -qam python-v4; C4="$(git -C "$T/repo" rev-parse HEAD)"
 (cd "$T/repo" && "$TOOL" package "$C4" "$T/fail-pkg")
 touch "$T/container/fail-once"
-if (cd "$T/repo" && "$TOOL" install "$T/fail-pkg" --expected-commit "$C4" --container fixture --backup-root "$T/backups" --go) >/dev/null; then exit 1; fi
+if OUT="$(cd "$T/repo" && "$TOOL" install "$T/fail-pkg" --expected-commit "$C4" --container fixture --backup-root "$T/backups" --go)"; then exit 1; fi
+grep -q '^SKIP name=renderer-canary-sse.html reason=identical$' <<<"$OUT"
 AFTER="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
 [ "$BEFORE" = "$AFTER" ]
 
