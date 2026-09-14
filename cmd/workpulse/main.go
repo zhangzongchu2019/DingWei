@@ -218,6 +218,8 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewWS))
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewPage))
 	mux.HandleFunc("GET /console", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsolePage))
+	mux.HandleFunc("GET /console/login", prefixHub.HandleConsoleLoginPage)
+	mux.HandleFunc("GET /console/login/status", prefixHub.HandleConsoleLoginStatus)
 	mux.HandleFunc("GET /api/console/agents", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgents))
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleCapability))
 	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleTerminalViewCookie))

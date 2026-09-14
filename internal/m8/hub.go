@@ -1316,6 +1316,9 @@ func (h *Hub) dispatchL1Direct(ctx context.Context, msg model.Message, text stri
 }
 
 func (h *Hub) dispatchL1(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, string, string, error) {
+	if result, handled, err := h.dispatchConsoleLogin(ctx, msg, text); handled || err != nil {
+		return result, "command.console_login", "", err
+	}
 	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
 		return result, "command.security", "", err
 	}
@@ -1389,6 +1392,9 @@ func (h *Hub) executeL1Rule(ctx context.Context, rule model.L1DecisionRule, msg 
 }
 
 func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, string, bool, error) {
+	if result, handled, err := h.dispatchConsoleLogin(ctx, msg, text); handled || err != nil {
+		return result, "", handled, err
+	}
 	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
 		return result, "", handled, err
 	}

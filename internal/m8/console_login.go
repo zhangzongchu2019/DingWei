@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"html"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -208,4 +210,37 @@ func (h *Hub) consoleLogins() *consoleLoginStore {
 		}
 	})
 	return h.consoleLoginStore
+}
+
+// HandleConsoleLoginPage is intentionally public: it creates a short-lived
+// login challenge but grants no access. Identity proof happens only through
+// the authenticated Feishu ingress handled by dispatchConsoleLogin.
+func (h *Hub) HandleConsoleLoginPage(w http.ResponseWriter, r *http.Request) {
+	code, err := h.consoleLogins().issue(time.Now())
+	if err != nil {
+		http.Error(w, "console login unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	_, _ = fmt.Fprintf(w, `<!doctype html><meta charset=utf-8><title>DingWei Console Login</title><main><h1>登录 Agent Console</h1><p>请在飞书发送：</p><code>#console %s</code><p id=s>等待飞书确认…</p></main><script>const c=%q;const poll=async()=>{const r=await fetch('/console/login/status?code='+encodeURIComponent(c),{cache:'no-store'});if(r.status===200){location.replace('/console');return}if(r.status===202){setTimeout(poll,1000);return}document.querySelector('#s').textContent='登录码已过期，请刷新页面重试。'};poll()</script>`, html.EscapeString(code), code)
+}
+
+func (h *Hub) HandleConsoleLoginStatus(w http.ResponseWriter, r *http.Request) {
+	code, ok := parseConsoleLoginCommand("#console " + strings.TrimSpace(r.URL.Query().Get("code")))
+	if !ok {
+		http.Error(w, "invalid login code", http.StatusBadRequest)
+		return
+	}
+	_, token, claimed := h.consoleLogins().claim(time.Now(), code)
+	w.Header().Set("Cache-Control", "no-store")
+	if !claimed {
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = w.Write([]byte(`{"confirmed":false}`))
+		return
+	}
+	http.SetCookie(w, &http.Cookie{Name: consoleSessionCookie, Value: token, Path: "/", MaxAge: int(consoleSessionTTL.Seconds()), HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode})
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(`{"confirmed":true}`))
 }

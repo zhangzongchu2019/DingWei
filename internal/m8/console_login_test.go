@@ -2,6 +2,9 @@ package m8
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -158,5 +161,55 @@ func TestParseConsoleLoginCommand(t *testing.T) {
 func TestViewerStyleCodeIsNotAConsoleLoginCode(t *testing.T) {
 	if _, ok := parseConsoleLoginCommand("#console zzc-opus50ts-2642-Ab3dEf90"); ok {
 		t.Fatal("🔴 viewer 形态的 code 被当成了 console 登录码")
+	}
+}
+
+func TestConsoleLoginHTTPPageToCookie(t *testing.T) {
+	h, _ := newLoginHub(&model.ConsolePrincipal{ID: "owner-a", Active: true})
+	pageReq := httptest.NewRequest(http.MethodGet, "/console/login", nil)
+	pageRes := httptest.NewRecorder()
+	h.HandleConsoleLoginPage(pageRes, pageReq)
+	if pageRes.Code != 200 {
+		t.Fatalf("page code=%d", pageRes.Code)
+	}
+	match := regexp.MustCompile(`#console (c[0-9a-f]{8})`).FindStringSubmatch(pageRes.Body.String())
+	if len(match) != 2 {
+		t.Fatalf("login code absent: %s", pageRes.Body.String())
+	}
+	code := match[1]
+	pending := httptest.NewRecorder()
+	h.HandleConsoleLoginStatus(pending, httptest.NewRequest(http.MethodGet, "/console/login/status?code="+code, nil))
+	if pending.Code != http.StatusAccepted {
+		t.Fatalf("pending=%d", pending.Code)
+	}
+	if _, _, err := h.dispatchConsoleLogin(context.Background(), msgFrom("ou_owner", "app"), "#console "+code); err != nil {
+		t.Fatal(err)
+	}
+	confirmed := httptest.NewRecorder()
+	h.HandleConsoleLoginStatus(confirmed, httptest.NewRequest(http.MethodGet, "/console/login/status?code="+code, nil))
+	if confirmed.Code != 200 {
+		t.Fatalf("confirmed=%d", confirmed.Code)
+	}
+	cookies := confirmed.Result().Cookies()
+	if len(cookies) != 1 {
+		t.Fatalf("cookies=%v", cookies)
+	}
+	c := cookies[0]
+	if c.Name != consoleSessionCookie || c.Value == "" || !c.HttpOnly || !c.Secure || c.SameSite != http.SameSiteLaxMode || c.Path != "/" {
+		t.Fatalf("unsafe cookie=%+v", c)
+	}
+	replay := httptest.NewRecorder()
+	h.HandleConsoleLoginStatus(replay, httptest.NewRequest(http.MethodGet, "/console/login/status?code="+code, nil))
+	if replay.Code != http.StatusAccepted || len(replay.Result().Cookies()) != 0 {
+		t.Fatalf("replay code=%d cookies=%v", replay.Code, replay.Result().Cookies())
+	}
+}
+
+func TestConsoleLoginIsWiredIntoRealL1Dispatch(t *testing.T) {
+	h, repo := newLoginHub(&model.ConsolePrincipal{ID: "owner-a", Active: true})
+	code, _ := h.consoleLogins().issue(time.Now())
+	res, intent, _, err := h.dispatchL1(context.Background(), msgFrom("ou_owner", "app"), "#console "+code)
+	if err != nil || intent != "command.console_login" || !res.Matched || len(repo.created) != 1 {
+		t.Fatalf("intent=%q res=%+v created=%d err=%v", intent, res, len(repo.created), err)
 	}
 }
