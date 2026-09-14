@@ -175,3 +175,33 @@ func (s *SQLite) ListConsoleAgents(ctx context.Context, principalID string) ([]m
 	}
 	return out, rows.Err()
 }
+
+func (s *SQLite) ResolveGrantedConsoleAgent(ctx context.Context, principalID, sessionName, permission string) (*model.ConsoleAgent, error) {
+	if permission != "view" && permission != "interact" {
+		return nil, errors.New("invalid console permission")
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT a.id,a.key_id,a.session_name,a.owner_principal,a.active FROM console_agent a
+		JOIN console_agent_grant g ON g.agent_id=a.id JOIN console_principal p ON p.id=g.principal_id
+		WHERE p.id=? AND p.active=1 AND a.session_name=? AND a.active=1 AND g.active=1 AND (g.permission=? OR g.permission='interact')`, principalID, sessionName, permission)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.ConsoleAgent
+	for rows.Next() {
+		var a model.ConsoleAgent
+		var active int
+		if err := rows.Scan(&a.ID, &a.KeyID, &a.SessionName, &a.OwnerPrincipal, &active); err != nil {
+			return nil, err
+		}
+		a.Active = active != 0
+		out = append(out, a)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(out) != 1 {
+		return nil, nil
+	}
+	return &out[0], nil
+}
