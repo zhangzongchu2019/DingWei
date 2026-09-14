@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -44,10 +43,7 @@ func ParseConsoleAuthEnabled(raw string) (bool, error) {
 	}
 }
 
-func consoleAuthEnabled() bool {
-	enabled, _ := ParseConsoleAuthEnabled(os.Getenv("WP_CONSOLE_AUTH_ENABLED"))
-	return enabled
-}
+func (h *Hub) SetConsoleAuthEnabled(enabled bool) { h.consoleAuthEnabled = enabled }
 
 func randomConsoleToken() (string, error) {
 	b := make([]byte, 32)
@@ -82,7 +78,7 @@ func (h *Hub) authenticateConsole(w http.ResponseWriter, r *http.Request) (conso
 
 func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !consoleAuthEnabled() {
+		if !h.consoleAuthEnabled {
 			next(w, r)
 			return
 		}
@@ -101,7 +97,7 @@ func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 // key_id and session_name are returned after authorization as runtime targets.
 func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !consoleAuthEnabled() {
+		if !h.consoleAuthEnabled {
 			next(w, r)
 			return
 		}

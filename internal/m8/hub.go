@@ -58,12 +58,13 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
-	Repo             store.Repository
-	Outbound         MessageQueue
-	System           SystemHandler
-	L2               llm.Provider
-	L2Config         L2Config
-	ViewPageUnlocker ViewPageUnlocker
+	Repo               store.Repository
+	Outbound           MessageQueue
+	System             SystemHandler
+	L2                 llm.Provider
+	L2Config           L2Config
+	ViewPageUnlocker   ViewPageUnlocker
+	consoleAuthEnabled bool
 
 	mu               hubMutex
 	serviceClients   map[string]*client

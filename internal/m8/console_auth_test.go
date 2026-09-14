@@ -11,7 +11,7 @@ import (
 
 func TestUnifiedConsoleAuthCoversEveryViewRouteAndSeparatesSharedKey(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
-	t.Setenv("WP_CONSOLE_AUTH_ENABLED", "true")
+	hub.SetConsoleAuthEnabled(true)
 	now := time.Now()
 	for _, p := range []model.ConsolePrincipal{{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", Active: true}, {ID: "b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ub", Active: true}} {
 		if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
@@ -57,7 +57,7 @@ func TestUnifiedConsoleAuthCoversEveryViewRouteAndSeparatesSharedKey(t *testing.
 
 func TestUnifiedConsoleAuthRejectsMissingAndExpiredSession(t *testing.T) {
 	hub, _, _ := newTestHub(t)
-	t.Setenv("WP_CONSOLE_AUTH_ENABLED", "true")
+	hub.SetConsoleAuthEnabled(true)
 	next := hub.RequireConsoleAgent("view", func(w http.ResponseWriter, r *http.Request) { t.Fatal("reached protected handler") })
 	for _, cookie := range []string{"", "unknown"} {
 		req := httptest.NewRequest("GET", "/view/a", nil)

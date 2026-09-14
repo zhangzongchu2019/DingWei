@@ -102,6 +102,7 @@ func run(logger *slog.Logger) error {
 	inbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionIn, writeQueueConfig)
 	outbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionOut, writeQueueConfig)
 	prefixHub := m8.New(st)
+	prefixHub.SetConsoleAuthEnabled(consoleAuthEnabled)
 	prefixHub.Outbound = outbound
 	if bs.L2DeepSeekAPIKey != "" {
 		prefixHub.L2 = llm.NewDeepSeek(bs.L2DeepSeekAPIKey, bs.L2DeepSeekBaseURL, bs.L2DeepSeekModel)
