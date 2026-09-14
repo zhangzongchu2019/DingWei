@@ -96,19 +96,19 @@ EOF
 chmod +x "$T/bin/docker"
 export FAKE_CONTAINER_ROOT="$T/container" PATH="$T/bin:$PATH" VSR_HEALTH_INTERVAL=0
 BEFORE="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
-if (cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container wrong --backup-root "$T/backups") >/dev/null 2>&1; then exit 1; fi
-OUT="$(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups")"
+if (cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container wrong --backup-root "$T/backups" --write-only view_service.py) >/dev/null 2>&1; then exit 1; fi
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups" --write-only view_service.py)"
 grep -q '^CONTAINER name=fixture id=sha256:fixture-id image=example/view-service:test$' <<<"$OUT"
 grep -q 'PRECHECK_ONLY writes=0' <<<"$OUT"
 AFTER="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
 [ "$BEFORE" = "$AFTER" ]
 echo 2 >"$T/container/health-delay"
-OUT="$(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups" --go)"
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups" --write-only view_service.py --go)"
 grep -q '^HEALTHY attempts=3 ' <<<"$OUT"
 grep -q '^INSTALLED ' <<<"$OUT"
 [ "$(grep -c '^SKIP ' <<<"$OUT")" -eq 2 ]
-grep -q '^SKIP name=renderer-canary-sse.html reason=identical$' <<<"$OUT"
-grep -q '^SKIP name=view_page_store.py reason=identical$' <<<"$OUT"
+grep -q '^SKIP name=renderer-canary-sse.html reason=not-authorized-identical$' <<<"$OUT"
+grep -q '^SKIP name=view_page_store.py reason=not-authorized-identical$' <<<"$OUT"
 [ -e "$T/container/app/vs/__pycache__/view_page_store.cpython-311.pyc" ]
 [ -s "$T/container/restarts" ]
 BACKUP="$(find "$T/backups" -mindepth 1 -maxdepth 1 -type d)"
@@ -122,23 +122,46 @@ PY_MTIME_BEFORE="$(stat -c '%y' "$T/container/app/vs/view_service.py")|$(stat -c
 printf 'renderer-v3\n' >"$T/repo/view-service/renderer-canary-sse.html"
 git -C "$T/repo" commit -qam renderer-v3; C3="$(git -C "$T/repo" rev-parse HEAD)"
 (cd "$T/repo" && "$TOOL" package "$C3" "$T/static-pkg")
-OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go)"
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --go)"
 grep -q 'restart=0' <<<"$OUT"
 [ "$(grep -c '^SKIP ' <<<"$OUT")" -eq 2 ]
-grep -q '^SKIP name=view_service.py reason=identical$' <<<"$OUT"
-grep -q '^SKIP name=view_page_store.py reason=identical$' <<<"$OUT"
+grep -q '^SKIP name=view_service.py reason=not-authorized-identical$' <<<"$OUT"
+grep -q '^SKIP name=view_page_store.py reason=not-authorized-identical$' <<<"$OUT"
 [ "$PY_MTIME_BEFORE" = "$(stat -c '%y' "$T/container/app/vs/view_service.py")|$(stat -c '%y' "$T/container/app/vs/view_page_store.py")" ]
 [ "$(wc -l <"$T/container/restarts")" -eq "$RESTARTS" ]
+
+# Empty authorization is rejected before any write.
+: >"$T/container/docker.log"; BACKUPS_BEFORE="$(find "$T/backups" -mindepth 1 -maxdepth 1 -type d | wc -l)"
+if (cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go) >/dev/null 2>&1; then exit 1; fi
+[ ! -s "$T/container/docker.log" ]
+[ "$BACKUPS_BEFORE" -eq "$(find "$T/backups" -mindepth 1 -maxdepth 1 -type d | wc -l)" ]
+
+# Drift outside the order's write set aborts before backup or any container write.
+printf 'unauthorized-drift\n' >"$T/container/app/vs/view_service.py"; : >"$T/container/docker.log"
+if OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --go 2>&1)"; then exit 1; fi
+grep -q 'UNAUTHORIZED_DRIFT name=view_service.py .* writes=0' <<<"$OUT"
+if grep -Eq '^(cp |exec (mv|chown|chmod|rm) )' "$T/container/docker.log"; then exit 1; fi
+[ "$BACKUPS_BEFORE" -eq "$(find "$T/backups" -mindepth 1 -maxdepth 1 -type d | wc -l)" ]
+cp "$T/static-pkg/view-service/view_service.py" "$T/container/app/vs/view_service.py"
+
+# A two-file order writes exactly those two; the identical third file is untouched.
+printf 'two-renderer\n' >"$T/repo/view-service/renderer-canary-sse.html"; printf 'two-python\n' >"$T/repo/view-service/view_service.py"
+git -C "$T/repo" commit -qam two-files; C2W="$(git -C "$T/repo" rev-parse HEAD)"; (cd "$T/repo" && "$TOOL" package "$C2W" "$T/two-pkg")
+: >"$T/container/docker.log"
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/two-pkg" --expected-commit "$C2W" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --write-only view_service.py --go)"
+grep -q '^SKIP name=view_page_store.py reason=not-authorized-identical$' <<<"$OUT"
+[ "$(grep -c '^cp .*:/tmp/t109-' "$T/container/docker.log")" -eq 2 ]
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --write-only view_service.py --go)"
 
 # All three different means no skip and three real staging writes. Restore C3 afterwards.
 for f in renderer-canary-sse.html view_service.py view_page_store.py; do printf 'all-new-%s\n' "$f" >"$T/repo/view-service/$f"; done
 git -C "$T/repo" commit -qam all-new; CALL="$(git -C "$T/repo" rev-parse HEAD)"
 (cd "$T/repo" && "$TOOL" package "$CALL" "$T/all-pkg")
 : >"$T/container/docker.log"
-OUT="$(cd "$T/repo" && "$TOOL" install "$T/all-pkg" --expected-commit "$CALL" --container fixture --backup-root "$T/backups" --go)"
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/all-pkg" --expected-commit "$CALL" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --write-only view_service.py --write-only view_page_store.py --go)"
 if grep -q '^SKIP ' <<<"$OUT"; then exit 1; fi
 [ "$(grep -c '^cp .*:/tmp/t109-' "$T/container/docker.log")" -eq 3 ]
-OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go)"
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --write-only view_service.py --write-only view_page_store.py --go)"
 if grep -q '^SKIP ' <<<"$OUT"; then exit 1; fi
 
 # A mid-copy failure restores all three pre-images and their cache snapshot.
@@ -151,14 +174,14 @@ printf 'python-v4\n' >"$T/repo/view-service/view_service.py"
 git -C "$T/repo" commit -qam python-v4; C4="$(git -C "$T/repo" rev-parse HEAD)"
 (cd "$T/repo" && "$TOOL" package "$C4" "$T/fail-pkg")
 touch "$T/container/fail-once"
-if OUT="$(cd "$T/repo" && "$TOOL" install "$T/fail-pkg" --expected-commit "$C4" --container fixture --backup-root "$T/backups" --go)"; then exit 1; fi
-grep -q '^SKIP name=renderer-canary-sse.html reason=identical$' <<<"$OUT"
+if OUT="$(cd "$T/repo" && "$TOOL" install "$T/fail-pkg" --expected-commit "$C4" --container fixture --backup-root "$T/backups" --write-only view_service.py --write-only view_page_store.py --go)"; then exit 1; fi
+grep -q '^SKIP name=renderer-canary-sse.html reason=not-authorized-identical$' <<<"$OUT"
 AFTER="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
 [ "$BEFORE" = "$AFTER" ]
 
 # Cache absence is a valid state created between removal and regeneration.
 rm -rf "$T/container/app/vs/__pycache__"
-OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go)"
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --go)"
 grep -q '^CACHE_BACKUP state=absent$' <<<"$OUT"
 grep -q 'restart=0' <<<"$OUT"
 
@@ -168,7 +191,7 @@ printf 'python-v5\n' >"$T/repo/view-service/view_service.py"
 git -C "$T/repo" commit -qam python-v5; C5="$(git -C "$T/repo" rev-parse HEAD)"
 (cd "$T/repo" && "$TOOL" package "$C5" "$T/unhealthy-pkg")
 echo 999 >"$T/container/health-delay"
-if OUT="$(cd "$T/repo" && VSR_HEALTH_ATTEMPTS=2 "$TOOL" install "$T/unhealthy-pkg" --expected-commit "$C5" --container fixture --backup-root "$T/backups" --go 2>&1)"; then exit 1; fi
+if OUT="$(cd "$T/repo" && VSR_HEALTH_ATTEMPTS=2 "$TOOL" install "$T/unhealthy-pkg" --expected-commit "$C5" --container fixture --backup-root "$T/backups" --write-only view_service.py --write-only view_page_store.py --go 2>&1)"; then exit 1; fi
 grep -q '^RESTORED_DIGESTS ok files=3$' <<<"$OUT"
 grep -q '^HEALTH_TIMEOUT ' <<<"$OUT"
 if grep -q '^ROLLED_BACK$' <<<"$OUT"; then exit 1; fi

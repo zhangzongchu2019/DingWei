@@ -193,17 +193,23 @@ install_container() {
   local package="${1:-}"; shift || true
   local expected="" container="" backup_root="" go=0 n name current target py_changed=0 backup stamp meta uid gid mode copy_ok identity container_id container_image extra
   local -a current_hashes=() target_hashes=()
+  local -A write_only=()
   while [ $# -gt 0 ]; do
     case "$1" in
       --expected-commit) expected="${2:-}"; shift ;;
       --container) container="${2:-}"; shift ;;
       --backup-root) backup_root="${2:-}"; shift ;;
+      --write-only)
+        [ -n "${2:-}" ] || die "--write-only value required"
+        case "$2" in renderer-canary-sse.html|view_service.py|view_page_store.py) write_only["$2"]=1 ;; *) die "invalid --write-only file: $2" ;; esac
+        shift ;;
       --go) go=1 ;;
       *) die "unknown install option: $1" ;;
     esac; shift
   done
   [ -n "$package" ] && [ -n "$expected" ] && [ -n "$container" ] && [ -n "$backup_root" ] ||
-    die "usage: install <package> --expected-commit <sha> --container <name> --backup-root <dir> [--go]"
+    die "usage: install <package> --expected-commit <sha> --container <name> --backup-root <dir> --write-only <runtime-file> [--write-only <runtime-file> ...] [--go]"
+  [ "${#write_only[@]}" -gt 0 ] || die "at least one --write-only is required"
   verify_package "$package" "$expected"
   identity="$(docker inspect --format '{{.Id}} {{.Config.Image}}' "$container")" || die "container inspect failed: $container"
   read -r container_id container_image extra <<<"$identity"
@@ -216,6 +222,9 @@ install_container() {
     current_hashes[$n]="$current"; target_hashes[$n]="$target"
     meta="$(container_meta "$container" "$name")"
     echo "FILE name=$name current=$current target=$target metadata=$meta"
+    if [ -z "${write_only[$name]:-}" ] && [ "$current" != "$target" ]; then
+      die "UNAUTHORIZED_DRIFT name=$name current=$current target=$target writes=0"
+    fi
     if [[ "$name" == *.py ]] && [ "$current" != "$target" ]; then py_changed=1; fi
   done
   if [ "$go" -eq 0 ]; then echo "PRECHECK_ONLY writes=0"; return 0; fi
@@ -240,6 +249,10 @@ install_container() {
     copy_ok=1
     for n in "${!FLAT_FILES[@]}"; do
       name="${FLAT_FILES[$n]}"
+      if [ -z "${write_only[$name]:-}" ]; then
+        echo "SKIP name=$name reason=not-authorized-identical"
+        continue
+      fi
       if [ "${current_hashes[$n]}" = "${target_hashes[$n]}" ]; then
         echo "SKIP name=$name reason=identical"
         continue
