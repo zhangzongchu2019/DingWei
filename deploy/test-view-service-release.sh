@@ -25,6 +25,23 @@ grep -q '^NOT_IN_REPO ' "$T/not-in-repo"
 
 (cd "$T/repo" && "$TOOL" package "$C1" "$T/old")
 if (cd "$T/repo" && "$TOOL" verify-package "$T/old" "$C2") >/dev/null; then exit 1; fi
+cp -R "$T/old" "$T/forged"
+sed -i "s/$C1/$C2/" "$T/forged/PROVENANCE.json"
+if (cd "$T/repo" && "$TOOL" verify-package "$T/forged" "$C2") >/dev/null; then exit 1; fi
 printf 'x' >>"$T/old/MANIFEST.sha256"
 if (cd "$T/repo" && "$TOOL" verify-package "$T/old") >/dev/null; then exit 1; fi
+
+# A caller-selected parallel ref must not be mistaken for a repository-wide
+# negative. The default --all scan still finds the package's source commit.
+EMPTY_TREE="$(git -C "$T/repo" mktree </dev/null)"
+PARALLEL="$(printf 'parallel\n' | git -C "$T/repo" commit-tree "$EMPTY_TREE")"
+git -C "$T/repo" update-ref refs/heads/parallel "$PARALLEL"
+if (cd "$T/repo" && "$TOOL" identify-online "$T/old" parallel) >"$T/wrong-ref"; then exit 1; fi
+grep -q '^NOT_IN_REPO ' "$T/wrong-ref"
+(cd "$T/repo" && "$TOOL" identify-online "$T/old") | grep -q '^IDENTIFIED '
+
+# Flat runtime layout uses an explicit repository-path to online-path mapping.
+mkdir "$T/flat"
+cp "$T/old/view-service/"* "$T/flat/"
+(cd "$T/repo" && "$TOOL" identify-online "$T/flat" --flat) | grep -q '^IDENTIFIED '
 echo "PASS view-service release core"

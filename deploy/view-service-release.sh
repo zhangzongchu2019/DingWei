@@ -2,11 +2,12 @@
 # T-109: reproducible view-service package and online provenance verification.
 set -euo pipefail
 
-FILES=(
+REPO_FILES=(
   view-service/renderer-canary-sse.html
   view-service/view_service.py
   view-service/view_page_store.py
 )
+FLAT_FILES=(renderer-canary-sse.html view_service.py view_page_store.py)
 
 die() { echo "ERROR: $*" >&2; exit 2; }
 sha_file() { sha256sum "$1" | awk '{print $1}'; }
@@ -24,15 +25,15 @@ package_release() {
   mkdir -p "$out/view-service"
   manifest="$out/MANIFEST.sha256"
   : >"$manifest"
-  for f in "${FILES[@]}"; do
+  for f in "${REPO_FILES[@]}"; do
     git cat-file -e "$commit:$f" 2>/dev/null || die "missing path at commit: $f"
-    dst="$out/$f"; git show "$commit:$f" >"$dst"
+    dst="$out/$f"; git cat-file blob "$commit:$f" >"$dst"
     printf '%s  %s\n' "$(sha_file "$dst")" "$f" >>"$manifest"
   done
   cat >"$out/PROVENANCE.json" <<EOF
 {"commit":"$commit","tree":"$(git rev-parse "$commit^{tree}")","manifest_sha256":"$(sha_file "$manifest")"}
 EOF
-  echo "PACKAGED commit=$commit files=${#FILES[@]} output=$out"
+  echo "PACKAGED commit=$commit files=${#REPO_FILES[@]} output=$out"
 }
 
 verify_package() {
@@ -45,38 +46,70 @@ verify_package() {
   [ "$provenance_manifest" = "$actual_manifest" ] || { echo "FAIL manifest_digest"; return 1; }
   while read -r hash path; do
     [ -n "$hash" ] || continue; count=$((count + 1))
-    [ "$count" -le "${#FILES[@]}" ] && [ "$path" = "${FILES[$((count - 1))]}" ] || { echo "FAIL unexpected_path=$path"; return 1; }
+    [ "$count" -le "${#REPO_FILES[@]}" ] && [ "$path" = "${REPO_FILES[$((count - 1))]}" ] || { echo "FAIL unexpected_path=$path"; return 1; }
     [ -f "$root/$path" ] || { echo "FAIL missing=$path"; return 1; }
     [ "$(sha_file "$root/$path")" = "$hash" ] || { echo "FAIL digest=$path"; return 1; }
   done <"$root/MANIFEST.sha256"
-  [ "$count" -eq "${#FILES[@]}" ] || { echo "FAIL file_count=$count"; return 1; }
+  [ "$count" -eq "${#REPO_FILES[@]}" ] || { echo "FAIL file_count=$count"; return 1; }
   if [ -n "$expected" ]; then
     full_commit "$expected" >/dev/null
-    grep -Fq '"commit":"'"$expected"'"' "$root/PROVENANCE.json" || { echo "FAIL expected_commit=$expected"; return 1; }
+    for path in "${REPO_FILES[@]}"; do
+      git cat-file -e "$expected:$path" 2>/dev/null || { echo "FAIL expected_path=$path"; return 1; }
+      [ "$(sha_file "$root/$path")" = "$(git cat-file blob "$expected:$path" | sha256sum | awk '{print $1}')" ] || {
+        echo "FAIL expected_content=$path commit=$expected"; return 1;
+      }
+    done
   fi
   echo "VERIFIED files=$count${expected:+ expected_commit=$expected}"
 }
 
 identify_online() {
-  local root ref commits scanned=0 hit=0 c f ok online candidate
-  root="${1:-}"; ref="${2:-}"
-  [ -n "$root" ] && [ -n "$ref" ] || die "usage: identify-online <online-root> <scan-ref>"
-  git rev-parse --verify "$ref^{commit}" >/dev/null 2>&1 || die "scan ref is not available: $ref"
-  for f in "${FILES[@]}"; do [ -f "$root/$f" ] || die "online path missing: $f"; done
-  commits="$(git rev-list "$ref")"; [ -n "$commits" ] || die "empty scan range"
-  echo "SCAN ref=$ref tip=$(git rev-parse "$ref^{commit}") commits=$(printf '%s\n' "$commits" | wc -l)"
+  local root flat=0 commits refs scanned=0 hit=0 c f online_path ok online candidate n matches
+  local -a scan_refs=() online_files=()
+  root="${1:-}"; shift || true
+  [ -n "$root" ] || die "usage: identify-online <online-root> [--flat] [--all|ref ...]"
+  while [ $# -gt 0 ]; do
+    case "$1" in --flat) flat=1 ;; --all) scan_refs=(--all) ;; *) scan_refs+=("$1") ;; esac; shift
+  done
+  [ "${#scan_refs[@]}" -gt 0 ] || scan_refs=(--all)
+  if [ "$flat" -eq 1 ]; then online_files=("${FLAT_FILES[@]}"); else online_files=("${REPO_FILES[@]}"); fi
+  for online_path in "${online_files[@]}"; do [ -f "$root/$online_path" ] || die "online path missing: $online_path"; done
+  if [ "${scan_refs[0]}" = --all ]; then
+    refs="$(git for-each-ref --format='%(refname)' refs/heads refs/remotes)"
+    commits="$(git rev-list --all)"
+  else
+    for f in "${scan_refs[@]}"; do git rev-parse --verify "$f^{commit}" >/dev/null 2>&1 || die "scan ref is not available: $f"; done
+    refs="$(printf '%s\n' "${scan_refs[@]}")"; commits="$(git rev-list "${scan_refs[@]}" | sort -u)"
+  fi
+  [ -n "$commits" ] || die "empty scan range"
+  echo "SCAN scope=${scan_refs[*]} refs=$(printf '%s\n' "$refs" | wc -l) commits=$(printf '%s\n' "$commits" | wc -l) flat=$flat"
+  while read -r f; do [ -n "$f" ] && echo "SCAN_REF $f"; done <<<"$refs"
   while read -r c; do
     [ -n "$c" ] || continue; scanned=$((scanned + 1)); ok=1
-    for f in "${FILES[@]}"; do
+    for n in "${!REPO_FILES[@]}"; do
+      f="${REPO_FILES[$n]}"; online_path="${online_files[$n]}"
       git cat-file -e "$c:$f" 2>/dev/null || { ok=0; break; }
-      online="$(sha_file "$root/$f")"
-      candidate="$(git show "$c:$f" | sha256sum | awk '{print $1}')"
+      online="$(sha_file "$root/$online_path")"
+      candidate="$(git cat-file blob "$c:$f" | sha256sum | awk '{print $1}')"
       [ "$online" = "$candidate" ] || { ok=0; break; }
     done
     if [ "$ok" -eq 1 ]; then echo "MATCH commit=$c"; hit=$((hit + 1)); fi
   done <<<"$commits"
   case "$hit" in
-    0) echo "NOT_IN_REPO scanned=$scanned matches=0"; return 1 ;;
+    0)
+      echo "NOT_IN_REPO scanned=$scanned matches=0"
+      for n in "${!REPO_FILES[@]}"; do
+        f="${REPO_FILES[$n]}"; online_path="${online_files[$n]}"; online="$(sha_file "$root/$online_path")"; matches=()
+        while read -r c; do
+          git cat-file -e "$c:$f" 2>/dev/null || continue
+          candidate="$(git cat-file blob "$c:$f" | sha256sum | awk '{print $1}')"
+          [ "$candidate" = "$online" ] && matches+=("$c")
+        done <<<"$commits"
+        if [ "${#matches[@]}" -eq 0 ]; then echo "FILE_NOT_IN_REPO path=$f"; else
+          echo "FILE_MATCH path=$f commits=${#matches[@]} first=${matches[0]}"
+        fi
+      done
+      return 1 ;;
     1) echo "IDENTIFIED scanned=$scanned matches=1" ;;
     *) echo "AMBIGUOUS scanned=$scanned matches=$hit"; return 1 ;;
   esac
