@@ -11,7 +11,8 @@ printf 'v2\n' >"$T/repo/view-service/view_service.py"; git -C "$T/repo" commit -
 
 (cd "$T/repo" && "$TOOL" package "$C2" "$T/pkg" && "$TOOL" verify-package "$T/pkg" "$C2")
 rm "$T/pkg/PROVENANCE.json"
-(cd "$T/repo" && "$TOOL" identify-online "$T/pkg" "$C2") | grep -q '^IDENTIFIED '
+OUT="$(cd "$T/repo" && "$TOOL" identify-online "$T/pkg" "$C2")"
+grep -q '^IDENTIFIED ' <<<"$OUT"
 
 # An unrelated commit leaves the deployable tuple unchanged: report every
 # matching commit and refuse to guess which one was deployed.
@@ -38,12 +39,15 @@ PARALLEL="$(printf 'parallel\n' | git -C "$T/repo" commit-tree "$EMPTY_TREE")"
 git -C "$T/repo" update-ref refs/heads/parallel "$PARALLEL"
 if (cd "$T/repo" && "$TOOL" identify-online "$T/old" parallel) >"$T/wrong-ref"; then exit 1; fi
 grep -q '^NOT_IN_REPO ' "$T/wrong-ref"
-(cd "$T/repo" && "$TOOL" identify-online "$T/old") | grep -q '^IDENTIFIED '
-if (cd "$T/repo" && "$TOOL" identify-online "$T/old") | grep -q '^SCAN_REF '; then exit 1; fi
-(cd "$T/repo" && "$TOOL" identify-online "$T/old" --verbose) | grep -q '^SCAN_REF '
+OUT="$(cd "$T/repo" && "$TOOL" identify-online "$T/old")"
+grep -q '^IDENTIFIED ' <<<"$OUT"
+if grep -q '^SCAN_REF ' <<<"$OUT"; then exit 1; fi
+OUT="$(cd "$T/repo" && "$TOOL" identify-online "$T/old" --verbose)"
+grep -q '^SCAN_REF ' <<<"$OUT"
 
 # Flat runtime layout uses an explicit repository-path to online-path mapping.
 mkdir "$T/flat"
 cp "$T/old/view-service/"* "$T/flat/"
-(cd "$T/repo" && "$TOOL" identify-online "$T/flat" --flat) | grep -q '^IDENTIFIED '
+OUT="$(cd "$T/repo" && "$TOOL" identify-online "$T/flat" --flat)"
+grep -q '^IDENTIFIED ' <<<"$OUT"
 echo "PASS view-service release core"
