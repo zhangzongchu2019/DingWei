@@ -1,0 +1,62 @@
+[program:socat-vs-proxy]
+autorestart=true
+autostart=true
+command=socat TCP-LISTEN:19324,bind=127.0.0.1,fork,reuseaddr TCP:127.0.0.1:19325
+priority=50
+startsecs=1
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stopsignal=TERM
+stopwaitsecs=5
+; t112-environment key_count=0 keys_sorted_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+environment=%(ENVIRONMENT_SOCAT_VS_PROXY)s
+
+[program:workpulse]
+autorestart=true
+autostart=true
+command=/app/bin/workpulse
+directory=/app
+priority=100
+startsecs=3
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stopsignal=TERM
+stopwaitsecs=30
+; t112-environment key_count=5 keys_sorted_sha256=6877b649575054ab4d574e1efecdc2c3b9a41c343e9a24b83eae2c0feb8545a2
+environment=%(ENVIRONMENT_WORKPULSE)s
+
+[program:viewservice]
+autorestart=true
+autostart=true
+command=python3 /app/vs/view_service.py
+directory=/app/vs
+priority=200
+startsecs=2
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stopsignal=TERM
+stopwaitsecs=10
+; t112-environment key_count=0 keys_sorted_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+environment=%(ENVIRONMENT_VIEWSERVICE)s
+
+[program:fcs]
+autorestart=true
+autostart=true
+command=/app/bin/fcs
+directory=/app
+priority=90
+startsecs=3
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stopsignal=TERM
+stopwaitsecs=10
+; t112-environment key_count=8 keys_sorted_sha256=06ea767c0fb69caae1eb4ff7c3ce59d2e2fb6fed08d29aa4d690b79bbd997b1f
+environment=%(ENVIRONMENT_FCS)s
