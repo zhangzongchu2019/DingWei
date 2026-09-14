@@ -65,6 +65,9 @@ type Hub struct {
 	L2Config           L2Config
 	ViewPageUnlocker   ViewPageUnlocker
 	consoleAuthEnabled bool
+	// 统一登录的一次性登录票据(T-113)。仅内存、短 TTL、与页面写锁 code 池分开。
+	consoleLoginStore *consoleLoginStore
+	consoleLoginOnce  sync.Once
 
 	mu               hubMutex
 	serviceClients   map[string]*client
