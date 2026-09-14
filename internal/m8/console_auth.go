@@ -33,6 +33,22 @@ func hashConsoleToken(token string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+func ParseConsoleAuthEnabled(raw string) (bool, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "1", "true", "yes", "y", "on":
+		return true, nil
+	case "", "0", "false", "no", "n", "off":
+		return false, nil
+	default:
+		return false, fmt.Errorf("invalid WP_CONSOLE_AUTH_ENABLED value %q", raw)
+	}
+}
+
+func consoleAuthEnabled() bool {
+	enabled, _ := ParseConsoleAuthEnabled(os.Getenv("WP_CONSOLE_AUTH_ENABLED"))
+	return enabled
+}
+
 func randomConsoleToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -66,7 +82,7 @@ func (h *Hub) authenticateConsole(w http.ResponseWriter, r *http.Request) (conso
 
 func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !strings.EqualFold(strings.TrimSpace(os.Getenv("WP_CONSOLE_AUTH_ENABLED")), "true") {
+		if !consoleAuthEnabled() {
 			next(w, r)
 			return
 		}
@@ -85,7 +101,7 @@ func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 // key_id and session_name are returned after authorization as runtime targets.
 func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !strings.EqualFold(strings.TrimSpace(os.Getenv("WP_CONSOLE_AUTH_ENABLED")), "true") {
+		if !consoleAuthEnabled() {
 			next(w, r)
 			return
 		}

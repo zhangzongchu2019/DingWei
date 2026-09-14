@@ -1,0 +1,24 @@
+{
+  "principals": [
+    {
+      "id": "principal-owner",
+      "provider": "feishu",
+      "provider_issuer": "REPLACE_WITH_CONFIRMED_APP_ISSUER",
+      "provider_subject": "REPLACE_WITH_CONFIRMED_SUBJECT",
+      "display_name": "Owner",
+      "active": true
+    }
+  ],
+  "agents": [
+    {
+      "id": "agent-console",
+      "key_id": "REPLACE_WITH_KEY_ID",
+      "session_name": "REPLACE_WITH_FULL_SESSION_NAME",
+      "owner_principal": "principal-owner",
+      "active": true,
+      "grants": [
+        {"principal_id": "principal-owner", "permission": "interact"}
+      ]
+    }
+  ]
+}

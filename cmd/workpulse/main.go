@@ -76,7 +76,12 @@ func run(logger *slog.Logger) error {
 	if err := st.Migrate(ctx); err != nil {
 		return err
 	}
-	if strings.EqualFold(strings.TrimSpace(os.Getenv("WP_CONSOLE_AUTH_ENABLED")), "true") {
+	consoleAuthEnabled, err := m8.ParseConsoleAuthEnabled(os.Getenv("WP_CONSOLE_AUTH_ENABLED"))
+	if err != nil {
+		return err
+	}
+	logger.Info("unified console authentication", "enabled", consoleAuthEnabled)
+	if consoleAuthEnabled {
 		if err := seedConsoleACL(ctx, st, os.Getenv("WP_CONSOLE_SEED_FILE")); err != nil {
 			return err
 		}

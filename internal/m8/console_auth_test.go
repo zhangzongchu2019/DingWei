@@ -72,3 +72,21 @@ func TestUnifiedConsoleAuthRejectsMissingAndExpiredSession(t *testing.T) {
 		}
 	}
 }
+
+func TestParseConsoleAuthEnabled(t *testing.T) {
+	for _, value := range []string{"1", "true", "YES", "y", "on"} {
+		enabled, err := ParseConsoleAuthEnabled(value)
+		if err != nil || !enabled {
+			t.Fatalf("value=%q enabled=%v err=%v", value, enabled, err)
+		}
+	}
+	for _, value := range []string{"", "0", "false", "NO", "n", "off"} {
+		enabled, err := ParseConsoleAuthEnabled(value)
+		if err != nil || enabled {
+			t.Fatalf("value=%q enabled=%v err=%v", value, enabled, err)
+		}
+	}
+	if _, err := ParseConsoleAuthEnabled("tru"); err == nil {
+		t.Fatal("unknown non-empty flag accepted")
+	}
+}

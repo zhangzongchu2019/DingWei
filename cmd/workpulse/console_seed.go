@@ -18,10 +18,21 @@ type consoleSeedStore interface {
 }
 
 type consoleSeed struct {
-	Principals []model.ConsolePrincipal `json:"principals"`
-	Agents     []struct {
-		model.ConsoleAgent
-		Grants []struct {
+	Principals []struct {
+		ID              string `json:"id"`
+		Provider        string `json:"provider"`
+		ProviderIssuer  string `json:"provider_issuer"`
+		ProviderSubject string `json:"provider_subject"`
+		DisplayName     string `json:"display_name"`
+		Active          *bool  `json:"active"`
+	} `json:"principals"`
+	Agents []struct {
+		ID             string `json:"id"`
+		KeyID          string `json:"key_id"`
+		SessionName    string `json:"session_name"`
+		OwnerPrincipal string `json:"owner_principal"`
+		Active         *bool  `json:"active"`
+		Grants         []struct {
 			PrincipalID string `json:"principal_id"`
 			Permission  string `json:"permission"`
 		} `json:"grants"`
@@ -50,15 +61,23 @@ func seedConsoleACL(ctx context.Context, st consoleSeedStore, path string) error
 		return errors.New("console seed requires principals and agents")
 	}
 	for _, p := range seed.Principals {
-		if err := st.UpsertConsolePrincipal(ctx, p); err != nil {
+		if p.Active == nil {
+			return fmt.Errorf("principal %s: active is required", p.ID)
+		}
+		value := model.ConsolePrincipal{ID: p.ID, Provider: p.Provider, ProviderIssuer: p.ProviderIssuer, ProviderSubject: p.ProviderSubject, DisplayName: p.DisplayName, Active: *p.Active}
+		if err := st.UpsertConsolePrincipal(ctx, value); err != nil {
 			return fmt.Errorf("seed principal %s: %w", p.ID, err)
 		}
 	}
 	for _, entry := range seed.Agents {
+		if entry.Active == nil {
+			return fmt.Errorf("agent %s: active is required", entry.ID)
+		}
 		if len(entry.Grants) == 0 {
 			return fmt.Errorf("agent %s has no explicit grants", entry.ID)
 		}
-		if err := st.UpsertConsoleAgent(ctx, entry.ConsoleAgent); err != nil {
+		value := model.ConsoleAgent{ID: entry.ID, KeyID: entry.KeyID, SessionName: entry.SessionName, OwnerPrincipal: entry.OwnerPrincipal, Active: *entry.Active}
+		if err := st.UpsertConsoleAgent(ctx, value); err != nil {
 			return fmt.Errorf("seed agent %s: %w", entry.ID, err)
 		}
 		for _, grant := range entry.Grants {
