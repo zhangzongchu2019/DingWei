@@ -215,7 +215,7 @@ var (
 	deviceIDPattern        = regexp.MustCompile(`^[0-9a-f]{16}$`)
 )
 
-func New(repo store.Repository, consoleAuthEnabled bool) *Hub {
+func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 	h := &Hub{
 		Repo:               repo,
 		serviceClients:     map[string]*client{},
@@ -241,7 +241,7 @@ func New(repo store.Repository, consoleAuthEnabled bool) *Hub {
 		onlineDebounce:     2500 * time.Millisecond,
 		onboardInterval:    envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
 		newSessionNotice:   true,
-		consoleAuthEnabled: consoleAuthEnabled,
+		consoleAuthEnabled: consoleAuthMode.Enabled(),
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,

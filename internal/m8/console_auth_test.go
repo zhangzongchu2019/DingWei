@@ -75,15 +75,15 @@ func TestUnifiedConsoleAuthRejectsMissingAndExpiredSession(t *testing.T) {
 
 func TestParseConsoleAuthEnabled(t *testing.T) {
 	for _, value := range []string{"1", "true", "YES", "y", "on"} {
-		enabled, err := ParseConsoleAuthEnabled(value)
-		if err != nil || !enabled {
-			t.Fatalf("value=%q enabled=%v err=%v", value, enabled, err)
+		mode, err := ParseConsoleAuthEnabled(value)
+		if err != nil || !mode.Enabled() {
+			t.Fatalf("value=%q enabled=%v err=%v", value, mode.Enabled(), err)
 		}
 	}
 	for _, value := range []string{"", "0", "false", "NO", "n", "off"} {
-		enabled, err := ParseConsoleAuthEnabled(value)
-		if err != nil || enabled {
-			t.Fatalf("value=%q enabled=%v err=%v", value, enabled, err)
+		mode, err := ParseConsoleAuthEnabled(value)
+		if err != nil || mode.Enabled() {
+			t.Fatalf("value=%q enabled=%v err=%v", value, mode.Enabled(), err)
 		}
 	}
 	if _, err := ParseConsoleAuthEnabled("tru"); err == nil {

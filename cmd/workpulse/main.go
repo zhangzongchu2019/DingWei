@@ -76,12 +76,12 @@ func run(logger *slog.Logger) error {
 	if err := st.Migrate(ctx); err != nil {
 		return err
 	}
-	consoleAuthEnabled, err := m8.ParseConsoleAuthEnabled(os.Getenv("WP_CONSOLE_AUTH_ENABLED"))
+	consoleAuthMode, err := m8.ParseConsoleAuthEnabled(os.Getenv("WP_CONSOLE_AUTH_ENABLED"))
 	if err != nil {
 		return err
 	}
-	logger.Info("unified console authentication", "enabled", consoleAuthEnabled)
-	if consoleAuthEnabled {
+	logger.Info("unified console authentication", "enabled", consoleAuthMode.Enabled())
+	if consoleAuthMode.Enabled() {
 		if err := seedConsoleACL(ctx, st, os.Getenv("WP_CONSOLE_SEED_FILE")); err != nil {
 			return err
 		}
@@ -101,7 +101,7 @@ func run(logger *slog.Logger) error {
 	writeQueueConfig := bus.AsyncDBQueueConfigFromEnv(logger)
 	inbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionIn, writeQueueConfig)
 	outbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionOut, writeQueueConfig)
-	prefixHub := m8.New(st, consoleAuthEnabled)
+	prefixHub := m8.New(st, consoleAuthMode)
 	prefixHub.Outbound = outbound
 	if bs.L2DeepSeekAPIKey != "" {
 		prefixHub.L2 = llm.NewDeepSeek(bs.L2DeepSeekAPIKey, bs.L2DeepSeekBaseURL, bs.L2DeepSeekModel)

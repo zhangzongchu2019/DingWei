@@ -32,14 +32,19 @@ func hashConsoleToken(token string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func ParseConsoleAuthEnabled(raw string) (bool, error) {
+type ConsoleAuthMode struct{ enabled bool }
+
+func (m ConsoleAuthMode) Enabled() bool    { return m.enabled }
+func ConsoleAuthDisabled() ConsoleAuthMode { return ConsoleAuthMode{} }
+
+func ParseConsoleAuthEnabled(raw string) (ConsoleAuthMode, error) {
 	switch strings.ToLower(strings.TrimSpace(raw)) {
 	case "1", "true", "yes", "y", "on":
-		return true, nil
+		return ConsoleAuthMode{enabled: true}, nil
 	case "", "0", "false", "no", "n", "off":
-		return false, nil
+		return ConsoleAuthMode{}, nil
 	default:
-		return false, fmt.Errorf("invalid WP_CONSOLE_AUTH_ENABLED value %q", raw)
+		return ConsoleAuthMode{}, fmt.Errorf("invalid WP_CONSOLE_AUTH_ENABLED value %q", raw)
 	}
 }
 
