@@ -212,4 +212,7 @@ func TestConsoleLoginIsWiredIntoRealL1Dispatch(t *testing.T) {
 	if err != nil || intent != "command.console_login" || !res.Matched || len(repo.created) != 1 {
 		t.Fatalf("intent=%q res=%+v created=%d err=%v", intent, res, len(repo.created), err)
 	}
+	if _, _, ok := h.consoleLogins().claim(time.Now(), code); !ok {
+		t.Fatal("真实派发路径未确认票据")
+	}
 }
