@@ -287,6 +287,34 @@ type Member struct {
 	Active         bool
 }
 
+// ConsolePrincipal is an authenticated human identity. ProviderSubject is
+// meaningful only inside ProviderIssuer; neither owner_key nor API key scopes
+// are identity boundaries for the unified console.
+type ConsolePrincipal struct {
+	ID              string
+	Provider        string
+	ProviderIssuer  string
+	ProviderSubject string
+	DisplayName     string
+	Active          bool
+}
+
+// ConsoleAgent is the authorization target independently of shared key_id.
+type ConsoleAgent struct {
+	ID             string
+	KeyID          string
+	SessionName    string
+	OwnerPrincipal string
+	Active         bool
+}
+
+type ConsoleAgentGrant struct {
+	PrincipalID string
+	AgentID     string
+	Permission  string // view | interact
+	Active      bool
+}
+
 // SeenPerson 是 M9 成员候选池中已采集到的飞书用户。
 type SeenPerson struct {
 	OpenID       string
