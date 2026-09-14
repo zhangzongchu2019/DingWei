@@ -117,10 +117,104 @@ identify_online() {
   esac
 }
 
+container_hash() { docker exec "$1" sha256sum "/app/vs/$2" | awk '{print $1}'; }
+container_meta() { docker exec "$1" stat -c '%u:%g:%a' "/app/vs/$2"; }
+
+check_container_layout() {
+  local container="$1" entries
+  entries="$(docker exec "$container" find /app/vs -mindepth 1 -maxdepth 2 -printf '%P\n' | sort)"
+  while read -r entry; do
+    case "$entry" in
+      renderer-canary-sse.html|view_service.py|view_page_store.py|__pycache__|__pycache__/view_page_store.cpython-*.pyc) ;;
+      *) die "unexpected online path: $entry" ;;
+    esac
+  done <<<"$entries"
+  for entry in "${FLAT_FILES[@]}" __pycache__; do
+    grep -Fxq "$entry" <<<"$entries" || die "required online path missing: $entry"
+  done
+  [ "$(grep -c '^__pycache__/view_page_store\.cpython-.*\.pyc$' <<<"$entries")" -eq 1 ] || die "expected exactly one view_page_store pyc"
+  [ "$(printf '%s\n' "$entries" | wc -l)" -eq 5 ] || die "online allowlist must contain exactly five entries"
+}
+
+restore_container() {
+  local container="$1" backup="$2" restart="$3" n name meta uid gid mode
+  echo "ROLLBACK backup=$backup"
+  for n in "${!FLAT_FILES[@]}"; do
+    name="${FLAT_FILES[$n]}"; meta="$(cat "$backup/meta/$name")"
+    IFS=: read -r uid gid mode <<<"$meta"
+    docker cp "$backup/pre/$name" "$container:/app/vs/$name"
+    docker exec "$container" chown "$uid:$gid" "/app/vs/$name"
+    docker exec "$container" chmod "$mode" "/app/vs/$name"
+  done
+  docker exec "$container" rm -rf /app/vs/__pycache__
+  [ ! -d "$backup/pre/__pycache__" ] || docker cp "$backup/pre/__pycache__" "$container:/app/vs/"
+  [ "$restart" -eq 0 ] || docker exec "$container" supervisorctl restart viewservice
+  echo "ROLLED_BACK"
+}
+
+install_container() {
+  local package="${1:-}"; shift || true
+  local expected="" container="" backup_root="" go=0 n name current target py_changed=0 backup stamp meta uid gid mode copy_ok
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --expected-commit) expected="${2:-}"; shift ;;
+      --container) container="${2:-}"; shift ;;
+      --backup-root) backup_root="${2:-}"; shift ;;
+      --go) go=1 ;;
+      *) die "unknown install option: $1" ;;
+    esac; shift
+  done
+  [ -n "$package" ] && [ -n "$expected" ] && [ -n "$container" ] && [ -n "$backup_root" ] ||
+    die "usage: install <package> --expected-commit <sha> --container <name> --backup-root <dir> [--go]"
+  verify_package "$package" "$expected"
+  check_container_layout "$container"
+  echo "PREFLIGHT container=$container expected_commit=$expected files=${#FLAT_FILES[@]}"
+  for n in "${!FLAT_FILES[@]}"; do
+    name="${FLAT_FILES[$n]}"; current="$(container_hash "$container" "$name")"; target="$(sha_file "$package/${REPO_FILES[$n]}")"
+    meta="$(container_meta "$container" "$name")"
+    echo "FILE name=$name current=$current target=$target metadata=$meta"
+    if [ "$n" -gt 0 ] && [ "$current" != "$target" ]; then py_changed=1; fi
+  done
+  if [ "$go" -eq 0 ]; then echo "PRECHECK_ONLY writes=0"; return 0; fi
+
+  stamp="$(date -u +%Y%m%dT%H%M%SZ)"; backup="$backup_root/view-service-$expected-$stamp"
+  mkdir -p "$backup/pre" "$backup/forward" "$backup/meta"
+  cp "$package/MANIFEST.sha256" "$package/PROVENANCE.json" "$backup/forward/"
+  for n in "${!FLAT_FILES[@]}"; do
+    name="${FLAT_FILES[$n]}"
+    docker cp "$container:/app/vs/$name" "$backup/pre/$name"
+    cp "$package/${REPO_FILES[$n]}" "$backup/forward/$name"
+    container_meta "$container" "$name" >"$backup/meta/$name"
+  done
+  docker cp "$container:/app/vs/__pycache__" "$backup/pre/"
+
+  if ! {
+    copy_ok=1
+    for n in "${!FLAT_FILES[@]}"; do
+      name="${FLAT_FILES[$n]}"; IFS=: read -r uid gid mode <"$backup/meta/$name"
+      docker cp "$package/${REPO_FILES[$n]}" "$container:/app/vs/.t109-$name" &&
+      docker exec "$container" mv "/app/vs/.t109-$name" "/app/vs/$name" &&
+      docker exec "$container" chown "$uid:$gid" "/app/vs/$name" &&
+      docker exec "$container" chmod "$mode" "/app/vs/$name" || { copy_ok=0; break; }
+    done
+    [ "$copy_ok" -eq 1 ] && { [ "$py_changed" -eq 0 ] || docker exec "$container" rm -rf /app/vs/__pycache__; } &&
+    { [ "$py_changed" -eq 0 ] || docker exec "$container" supervisorctl restart viewservice; } &&
+    for n in "${!FLAT_FILES[@]}"; do
+      name="${FLAT_FILES[$n]}"
+      [ "$(container_hash "$container" "$name")" = "$(sha_file "$package/${REPO_FILES[$n]}")" ] || false
+    done
+  }; then
+    restore_container "$container" "$backup" "$py_changed"
+    return 1
+  fi
+  echo "INSTALLED commit=$expected backup=$backup restart=$py_changed files=${#FLAT_FILES[@]}"
+}
+
 cmd="${1:-}"; shift || true
 case "$cmd" in
   package) package_release "$@" ;;
   verify-package) verify_package "${1:-}" "${2:-}" ;;
   identify-online) identify_online "$@" ;;
-  *) die "commands: package | verify-package | identify-online" ;;
+  install) install_container "$@" ;;
+  *) die "commands: package | verify-package | identify-online | install" ;;
 esac

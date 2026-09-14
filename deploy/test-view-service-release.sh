@@ -50,4 +50,65 @@ mkdir "$T/flat"
 cp "$T/old/view-service/"* "$T/flat/"
 OUT="$(cd "$T/repo" && "$TOOL" identify-online "$T/flat" --flat)"
 grep -q '^IDENTIFIED ' <<<"$OUT"
+
+# Container adapter fixture: exact five-entry topology, precheck with zero
+# writes, then a three-file deployment with forward/pre-image backups.
+(cd "$T/repo" && "$TOOL" package "$C2" "$T/install-pkg")
+mkdir -p "$T/bin" "$T/container/app/vs/__pycache__" "$T/backups"
+cp "$T/old/view-service/"* "$T/container/app/vs/"
+printf pyc >"$T/container/app/vs/__pycache__/view_page_store.cpython-311.pyc"
+cat >"$T/bin/docker" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+root="$FAKE_CONTAINER_ROOT"; log="$root/docker.log"; op="$1"; shift
+path() { printf '%s%s' "$root" "$1"; }
+if [ "$op" = exec ]; then
+  container="$1"; shift; cmd="$1"; shift; echo "exec $cmd $*" >>"$log"
+  case "$cmd" in
+    find) find "$(path /app/vs)" -mindepth 1 -maxdepth 2 -printf '%P\n' ;;
+    sha256sum) sha256sum "$(path "$1")" ;;
+    stat) shift 2; stat -c '%u:%g:%a' "$(path "$1")" ;;
+    chown) : ;;
+    chmod) chmod "$1" "$(path "$2")" ;;
+    rm) rm -rf "$(path "${@: -1}")" ;;
+    mv) mv "$(path "$1")" "$(path "$2")" ;;
+    supervisorctl) echo restart >>"$root/restarts"; mkdir -p "$root/app/vs/__pycache__"; printf pyc >"$root/app/vs/__pycache__/view_page_store.cpython-311.pyc" ;;
+    *) exit 2 ;;
+  esac
+elif [ "$op" = cp ]; then
+  src="$1"; dst="$2"; echo "cp $src $dst" >>"$log"
+  if [ -e "$root/fail-once" ] && [[ "$dst" == *:/app/vs/.t109-view_service.py ]]; then rm "$root/fail-once"; exit 9; fi
+  if [[ "$src" == *:* ]]; then cp -R "$(path "${src#*:}")" "$dst"; else cp -R "$src" "$(path "${dst#*:}")"; fi
+else exit 2; fi
+EOF
+chmod +x "$T/bin/docker"
+export FAKE_CONTAINER_ROOT="$T/container" PATH="$T/bin:$PATH"
+BEFORE="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
+(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups") | grep -q 'PRECHECK_ONLY writes=0'
+AFTER="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
+[ "$BEFORE" = "$AFTER" ]
+(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups" --go) | grep -q '^INSTALLED '
+[ -e "$T/container/app/vs/__pycache__/view_page_store.cpython-311.pyc" ]
+[ -s "$T/container/restarts" ]
+BACKUP="$(find "$T/backups" -mindepth 1 -maxdepth 1 -type d)"
+[ "$(find "$BACKUP/pre" -type f | wc -l)" -eq 4 ]
+[ "$(find "$BACKUP/forward" -type f | wc -l)" -eq 5 ]
+
+# Renderer-only changes are hot-updated without restarting viewservice.
+RESTARTS="$(wc -l <"$T/container/restarts")"
+printf 'renderer-v3\n' >"$T/repo/view-service/renderer-canary-sse.html"
+git -C "$T/repo" commit -qam renderer-v3; C3="$(git -C "$T/repo" rev-parse HEAD)"
+(cd "$T/repo" && "$TOOL" package "$C3" "$T/static-pkg")
+(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --go) | grep -q 'restart=0'
+[ "$(wc -l <"$T/container/restarts")" -eq "$RESTARTS" ]
+
+# A mid-copy failure restores all three pre-images and their cache snapshot.
+BEFORE="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
+printf 'python-v4\n' >"$T/repo/view-service/view_service.py"
+git -C "$T/repo" commit -qam python-v4; C4="$(git -C "$T/repo" rev-parse HEAD)"
+(cd "$T/repo" && "$TOOL" package "$C4" "$T/fail-pkg")
+touch "$T/container/fail-once"
+if (cd "$T/repo" && "$TOOL" install "$T/fail-pkg" --expected-commit "$C4" --container fixture --backup-root "$T/backups" --go) >/dev/null; then exit 1; fi
+AFTER="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
+[ "$BEFORE" = "$AFTER" ]
 echo "PASS view-service release core"
