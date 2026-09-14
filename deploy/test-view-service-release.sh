@@ -37,6 +37,8 @@ if (cd "$T/repo" && "$TOOL" verify-package "$T/old") >/dev/null; then exit 1; fi
 EMPTY_TREE="$(git -C "$T/repo" mktree </dev/null)"
 PARALLEL="$(printf 'parallel\n' | git -C "$T/repo" commit-tree "$EMPTY_TREE")"
 git -C "$T/repo" update-ref refs/heads/parallel "$PARALLEL"
+TAG_ONLY="$(printf 'tag-only\n' | git -C "$T/repo" commit-tree "$EMPTY_TREE")"
+git -C "$T/repo" tag tag-only "$TAG_ONLY"
 if (cd "$T/repo" && "$TOOL" identify-online "$T/old" parallel) >"$T/wrong-ref"; then exit 1; fi
 grep -q '^NOT_IN_REPO ' "$T/wrong-ref"
 OUT="$(cd "$T/repo" && "$TOOL" identify-online "$T/old")"
@@ -44,6 +46,7 @@ grep -q '^IDENTIFIED ' <<<"$OUT"
 if grep -q '^SCAN_REF ' <<<"$OUT"; then exit 1; fi
 OUT="$(cd "$T/repo" && "$TOOL" identify-online "$T/old" --verbose)"
 grep -q '^SCAN_REF ' <<<"$OUT"
+grep -q '^SCAN_REF refs/tags/tag-only$' <<<"$OUT"
 
 # Flat runtime layout uses an explicit repository-path to online-path mapping.
 mkdir "$T/flat"
@@ -62,7 +65,10 @@ cat >"$T/bin/docker" <<'EOF'
 set -euo pipefail
 root="$FAKE_CONTAINER_ROOT"; log="$root/docker.log"; op="$1"; shift
 path() { printf '%s%s' "$root" "$1"; }
-if [ "$op" = exec ]; then
+if [ "$op" = inspect ]; then
+  shift 2; [ "$1" = fixture ] || exit 1
+  echo 'sha256:fixture-id example/view-service:test'
+elif [ "$op" = exec ]; then
   container="$1"; shift; cmd="$1"; shift; echo "exec $cmd $*" >>"$log"
   case "$cmd" in
     find) find "$(path /app/vs)" -mindepth 1 -maxdepth 2 -printf '%P\n' ;;
@@ -90,7 +96,10 @@ EOF
 chmod +x "$T/bin/docker"
 export FAKE_CONTAINER_ROOT="$T/container" PATH="$T/bin:$PATH" VSR_HEALTH_INTERVAL=0
 BEFORE="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
-(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups") | grep -q 'PRECHECK_ONLY writes=0'
+if (cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container wrong --backup-root "$T/backups") >/dev/null 2>&1; then exit 1; fi
+OUT="$(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups")"
+grep -q '^CONTAINER name=fixture id=sha256:fixture-id image=example/view-service:test$' <<<"$OUT"
+grep -q 'PRECHECK_ONLY writes=0' <<<"$OUT"
 AFTER="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
 [ "$BEFORE" = "$AFTER" ]
 echo 2 >"$T/container/health-delay"

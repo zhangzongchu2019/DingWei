@@ -75,12 +75,15 @@ identify_online() {
   if [ "$flat" -eq 1 ]; then online_files=("${FLAT_FILES[@]}"); else online_files=("${REPO_FILES[@]}"); fi
   for online_path in "${online_files[@]}"; do [ -f "$root/$online_path" ] || die "online path missing: $online_path"; done
   if [ "${scan_refs[0]}" = --all ]; then
-    refs="$(git for-each-ref --format='%(refname)' refs/heads refs/remotes)"
-    commits="$(git rev-list --all)"
+    refs="$(git for-each-ref --format='%(refname)')"
   else
     for f in "${scan_refs[@]}"; do git rev-parse --verify "$f^{commit}" >/dev/null 2>&1 || die "scan ref is not available: $f"; done
-    refs="$(printf '%s\n' "${scan_refs[@]}")"; commits="$(git rev-list "${scan_refs[@]}" | sort -u)"
+    refs="$(printf '%s\n' "${scan_refs[@]}")"
   fi
+  # The commit range is derived from the exact ref list reported below. This
+  # structurally prevents tags (or any future ref namespace) from being scanned
+  # without also being counted in the evidence line.
+  commits="$(git rev-list --stdin <<<"$refs")"
   [ -n "$commits" ] || die "empty scan range"
   echo "SCAN scope=${scan_refs[*]} refs=$(printf '%s\n' "$refs" | wc -l) commits=$(printf '%s\n' "$commits" | wc -l) flat=$flat"
   if [ "$verbose" -eq 1 ]; then
@@ -188,7 +191,7 @@ restore_container() {
 
 install_container() {
   local package="${1:-}"; shift || true
-  local expected="" container="" backup_root="" go=0 n name current target py_changed=0 backup stamp meta uid gid mode copy_ok
+  local expected="" container="" backup_root="" go=0 n name current target py_changed=0 backup stamp meta uid gid mode copy_ok identity container_id container_image extra
   while [ $# -gt 0 ]; do
     case "$1" in
       --expected-commit) expected="${2:-}"; shift ;;
@@ -201,6 +204,10 @@ install_container() {
   [ -n "$package" ] && [ -n "$expected" ] && [ -n "$container" ] && [ -n "$backup_root" ] ||
     die "usage: install <package> --expected-commit <sha> --container <name> --backup-root <dir> [--go]"
   verify_package "$package" "$expected"
+  identity="$(docker inspect --format '{{.Id}} {{.Config.Image}}' "$container")" || die "container inspect failed: $container"
+  read -r container_id container_image extra <<<"$identity"
+  [ -n "$container_id" ] && [ -n "$container_image" ] && [ -z "${extra:-}" ] || die "invalid container identity: $identity"
+  echo "CONTAINER name=$container id=$container_id image=$container_image"
   check_container_layout "$container"
   echo "PREFLIGHT container=$container expected_commit=$expected files=${#FLAT_FILES[@]}"
   for n in "${!FLAT_FILES[@]}"; do
