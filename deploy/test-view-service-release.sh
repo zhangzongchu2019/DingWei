@@ -54,7 +54,7 @@ grep -q '^IDENTIFIED ' <<<"$OUT"
 # Container adapter fixture: exact five-entry topology, precheck with zero
 # writes, then a three-file deployment with forward/pre-image backups.
 (cd "$T/repo" && "$TOOL" package "$C2" "$T/install-pkg")
-mkdir -p "$T/bin" "$T/container/app/vs/__pycache__" "$T/backups"
+mkdir -p "$T/bin" "$T/container/app/vs/__pycache__" "$T/container/tmp" "$T/backups"
 cp "$T/old/view-service/"* "$T/container/app/vs/"
 printf pyc >"$T/container/app/vs/__pycache__/view_page_store.cpython-311.pyc"
 cat >"$T/bin/docker" <<'EOF'
@@ -72,12 +72,15 @@ if [ "$op" = exec ]; then
     chmod) chmod "$1" "$(path "$2")" ;;
     rm) rm -rf "$(path "${@: -1}")" ;;
     mv) mv "$(path "$1")" "$(path "$2")" ;;
-    supervisorctl) echo restart >>"$root/restarts"; mkdir -p "$root/app/vs/__pycache__"; printf pyc >"$root/app/vs/__pycache__/view_page_store.cpython-311.pyc" ;;
+    supervisorctl)
+      if [ "$1" = restart ]; then echo restart >>"$root/restarts"; mkdir -p "$root/app/vs/__pycache__"; printf pyc >"$root/app/vs/__pycache__/view_page_store.cpython-311.pyc"
+      else echo 'viewservice RUNNING pid 123, uptime 0:00:01'; fi ;;
+    curl) : ;;
     *) exit 2 ;;
   esac
 elif [ "$op" = cp ]; then
   src="$1"; dst="$2"; echo "cp $src $dst" >>"$log"
-  if [ -e "$root/fail-once" ] && [[ "$dst" == *:/app/vs/.t109-view_service.py ]]; then rm "$root/fail-once"; exit 9; fi
+  if [ -e "$root/fail-once" ] && [[ "$dst" == *:/tmp/t109-*-view_service.py ]]; then rm "$root/fail-once"; exit 9; fi
   if [[ "$src" == *:* ]]; then cp -R "$(path "${src#*:}")" "$dst"; else cp -R "$src" "$(path "${dst#*:}")"; fi
 else exit 2; fi
 EOF
@@ -111,4 +114,8 @@ touch "$T/container/fail-once"
 if (cd "$T/repo" && "$TOOL" install "$T/fail-pkg" --expected-commit "$C4" --container fixture --backup-root "$T/backups" --go) >/dev/null; then exit 1; fi
 AFTER="$(find "$T/container/app/vs" -type f -exec sha256sum {} + | sort | sha256sum)"
 [ "$BEFORE" = "$AFTER" ]
+
+# Cache absence is a valid state created between removal and regeneration.
+rm -rf "$T/container/app/vs/__pycache__"
+(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups") | grep -q 'PRECHECK_ONLY writes=0'
 echo "PASS view-service release core"

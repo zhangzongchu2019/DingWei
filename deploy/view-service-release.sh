@@ -121,7 +121,7 @@ container_hash() { docker exec "$1" sha256sum "/app/vs/$2" | awk '{print $1}'; }
 container_meta() { docker exec "$1" stat -c '%u:%g:%a' "/app/vs/$2"; }
 
 check_container_layout() {
-  local container="$1" entries
+  local container="$1" entries entry pyc_count
   entries="$(docker exec "$container" find /app/vs -mindepth 1 -maxdepth 2 -printf '%P\n' | sort)"
   while read -r entry; do
     case "$entry" in
@@ -129,15 +129,15 @@ check_container_layout() {
       *) die "unexpected online path: $entry" ;;
     esac
   done <<<"$entries"
-  for entry in "${FLAT_FILES[@]}" __pycache__; do
+  for entry in "${FLAT_FILES[@]}"; do
     grep -Fxq "$entry" <<<"$entries" || die "required online path missing: $entry"
   done
-  [ "$(grep -c '^__pycache__/view_page_store\.cpython-.*\.pyc$' <<<"$entries")" -eq 1 ] || die "expected exactly one view_page_store pyc"
-  [ "$(printf '%s\n' "$entries" | wc -l)" -eq 5 ] || die "online allowlist must contain exactly five entries"
+  pyc_count="$(grep -c '^__pycache__/view_page_store\.cpython-.*\.pyc$' <<<"$entries" || true)"
+  [ "$pyc_count" -le 1 ] || die "expected at most one view_page_store pyc"
 }
 
 restore_container() {
-  local container="$1" backup="$2" restart="$3" n name meta uid gid mode
+  local container="$1" backup="$2" restart="$3" n name meta uid gid mode want got
   echo "ROLLBACK backup=$backup"
   for n in "${!FLAT_FILES[@]}"; do
     name="${FLAT_FILES[$n]}"; meta="$(cat "$backup/meta/$name")"
@@ -148,7 +148,15 @@ restore_container() {
   done
   docker exec "$container" rm -rf /app/vs/__pycache__
   [ ! -d "$backup/pre/__pycache__" ] || docker cp "$backup/pre/__pycache__" "$container:/app/vs/"
-  [ "$restart" -eq 0 ] || docker exec "$container" supervisorctl restart viewservice
+  if [ "$restart" -ne 0 ]; then
+    docker exec "$container" supervisorctl restart viewservice
+    docker exec "$container" supervisorctl status viewservice | grep -q RUNNING
+    docker exec "$container" curl -sf http://127.0.0.1:8791/healthz >/dev/null
+  fi
+  for name in "${FLAT_FILES[@]}"; do
+    want="$(sha_file "$backup/pre/$name")"; got="$(container_hash "$container" "$name")"
+    [ "$want" = "$got" ] || { echo "ROLLBACK_FAIL digest=$name expected=$want actual=$got" >&2; return 1; }
+  done
   echo "ROLLED_BACK"
 }
 
@@ -173,7 +181,7 @@ install_container() {
     name="${FLAT_FILES[$n]}"; current="$(container_hash "$container" "$name")"; target="$(sha_file "$package/${REPO_FILES[$n]}")"
     meta="$(container_meta "$container" "$name")"
     echo "FILE name=$name current=$current target=$target metadata=$meta"
-    if [ "$n" -gt 0 ] && [ "$current" != "$target" ]; then py_changed=1; fi
+    if [[ "$name" == *.py ]] && [ "$current" != "$target" ]; then py_changed=1; fi
   done
   if [ "$go" -eq 0 ]; then echo "PRECHECK_ONLY writes=0"; return 0; fi
 
@@ -192,13 +200,15 @@ install_container() {
     copy_ok=1
     for n in "${!FLAT_FILES[@]}"; do
       name="${FLAT_FILES[$n]}"; IFS=: read -r uid gid mode <"$backup/meta/$name"
-      docker cp "$package/${REPO_FILES[$n]}" "$container:/app/vs/.t109-$name" &&
-      docker exec "$container" mv "/app/vs/.t109-$name" "/app/vs/$name" &&
+      docker cp "$package/${REPO_FILES[$n]}" "$container:/tmp/t109-$expected-$name" &&
+      docker exec "$container" mv "/tmp/t109-$expected-$name" "/app/vs/$name" &&
       docker exec "$container" chown "$uid:$gid" "/app/vs/$name" &&
       docker exec "$container" chmod "$mode" "/app/vs/$name" || { copy_ok=0; break; }
     done
     [ "$copy_ok" -eq 1 ] && { [ "$py_changed" -eq 0 ] || docker exec "$container" rm -rf /app/vs/__pycache__; } &&
-    { [ "$py_changed" -eq 0 ] || docker exec "$container" supervisorctl restart viewservice; } &&
+    { [ "$py_changed" -eq 0 ] || { docker exec "$container" supervisorctl restart viewservice &&
+      docker exec "$container" supervisorctl status viewservice | grep -q RUNNING &&
+      docker exec "$container" curl -sf http://127.0.0.1:8791/healthz >/dev/null; }; } &&
     for n in "${!FLAT_FILES[@]}"; do
       name="${FLAT_FILES[$n]}"
       [ "$(container_hash "$container" "$name")" = "$(sha_file "$package/${REPO_FILES[$n]}")" ] || false
