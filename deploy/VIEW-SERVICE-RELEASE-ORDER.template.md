@@ -28,8 +28,10 @@ Required execution checks:
 1. Run `install` without `--go`; it must end with `PRECHECK_ONLY writes=0`.
 2. Confirm all three runtime files are compared. Sampling is forbidden.
 3. Execute only after the authorization fields above are complete.
-4. Run `identify-online /app/vs --flat` without deployment records. Record
-   `IDENTIFIED`, `AMBIGUOUS`, or `NOT_IN_REPO` without weakening the result.
+4. Copy the three runtime files read-only from the container into a fresh
+   temporary flat directory, then run `identify-online <snapshot> --flat`
+   without deployment records. Record `IDENTIFIED`, `AMBIGUOUS`, or
+   `NOT_IN_REPO` without weakening the result. `/app/vs` is not a host path.
 5. For Python changes, confirm `__pycache__` was removed before restart and
    perform a behavior-level health check. Renderer-only changes are hot
    updates and do not restart viewservice.
