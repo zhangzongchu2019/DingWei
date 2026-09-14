@@ -9,13 +9,16 @@ field below is completed and the real-container precheck passes.
 - Target: production container `dingwei-gray`, runtime root `/app/vs`.
 - Artifact source commit: `d6a4d07a3083b43e0b2e122f7652b11727dc96ab`.
 - Artifact reachable ref: `fe/view-merge-20260913`.
-- Deployment tool commit: `e737bca272b9c208e94d8bc32b99fd26eda278b6`.
+- Deployment tool commit: `94ff2ed979e61c073ebaff23cddef427b0a34cb7`.
 - Deployment tool ref: `fix/t109-view-service-deploy-coder56solzzc-20260914`.
 - Locally rebuilt package `MANIFEST.sha256` digest:
   `3bce0c539480e8f9dc22823256997a58dd1ac3675b1e858a219f9fe9bd61750d`.
 - Coordinator application coordinate: **[TO BE FILLED BY RELEASE OWNER]**.
 - Owner item-specific authorization coordinate: **[TO BE FILLED BY RELEASE OWNER]**.
 - Executor assigned by coordinator: **[TO BE FILLED BY RELEASE OWNER]**.
+- Durable artifact tag to create before issue:
+  `release/t087-renderer-d6a4d07a` -> `d6a4d07a3083b43e0b2e122f7652b11727dc96ab`.
+- Remote tag reachability check: **[REQUIRED BEFORE ISSUE; tag creation is not authorized by this draft]**.
 
 ## Complete three-file delta
 
@@ -37,17 +40,20 @@ the artifact commit. The package location is execution-local and must be
 recorded by the executor.
 
 ```sh
+PRECHECK_BACKUP_ROOT="$(mktemp -d)"
 ./deploy/view-service-release.sh package \
   d6a4d07a3083b43e0b2e122f7652b11727dc96ab "$PACKAGE"
 sha256sum "$PACKAGE/MANIFEST.sha256"
 ./deploy/view-service-release.sh install "$PACKAGE" \
   --expected-commit d6a4d07a3083b43e0b2e122f7652b11727dc96ab \
-  --container dingwei-gray --backup-root /data/backups
+  --container dingwei-gray --backup-root "$PRECHECK_BACKUP_ROOT"
 ```
 
 Required result: package digest equals the value above; all three `FILE` rows
 are printed; only renderer differs; final line is `PRECHECK_ONLY writes=0`.
-Any mismatch stops this order. Do not add `--go` during precheck.
+Any mismatch stops this order. Do not add `--go` or `--flat` during precheck:
+`install` does not accept `--flat`. `mktemp` creates only the named host-side
+scratch directory; the precheck performs zero container/target writes.
 
 - Real-container precheck evidence/result: **[REQUIRED BEFORE ISSUE]**.
 
@@ -56,11 +62,11 @@ Any mismatch stops this order. Do not add `--go` during precheck.
 Capture the same three observations immediately before and after application,
 using container UTC timestamps and the same query commands on both sides:
 
-| Observation | Before | After |
-|---|---|---|
-| Feishu WebSocket lifecycle sequence | **[REQUIRED]** | **[REQUIRED]** |
-| ingress `event_received` / `normalized` / `message_enqueued` counts | **[REQUIRED]** | **[REQUIRED]** |
-| application/container UTC time | **[REQUIRED]** | **[REQUIRED]** |
+| Observation | Exact collection command (run unchanged both times) | Before | After |
+|---|---|---|---|
+| Feishu WebSocket lifecycle sequence | `docker logs --timestamps --since 24h dingwei-gray 2>&1 \| grep -F 'feishu ws lifecycle'` | **[REQUIRED]** | **[REQUIRED]** |
+| ingress `event_received` / `normalized` / `message_enqueued` counters | `for s in event_received normalized message_enqueued; do docker logs --timestamps --since 24h dingwei-gray 2>&1 \| grep -F "feishu ingress $s" \| tail -1; done` | **[REQUIRED]** | **[REQUIRED]** |
+| application/container UTC time | `docker exec dingwei-gray date -u +%Y-%m-%dT%H:%M:%S.%NZ` | **[REQUIRED]** | **[REQUIRED]** |
 
 These observations distinguish whether an event reached the application. They
 do not by themselves exclude a silent half-open connection or a Feishu-side
@@ -103,14 +109,14 @@ MATCH commit=5b86e429fe7f90cc2dbea64eefc76feddb4d39fa
 AMBIGUOUS matches=2
 ```
 
-The three runtime files are byte-identical at these two adjacent commits, so
-content-only inspection cannot distinguish them. `PROVENANCE.json` must not be
-used to manufacture uniqueness. `NOT_IN_REPO` always fails. This release order
-remains a draft until the reviewer explicitly decides whether the exact
-two-commit content-equivalence class is an acceptable result for this
-renderer-only release; otherwise T-109's current exact-commit identification
-gate is unsatisfiable for this artifact. In either case, require all three
-forward SHA-256 values from the table, not a renderer-only sample.
+The expected result is exactly this two-member content-equivalence class. Both
+members must be printed and retained in the evidence; neither may be presented
+as the unique source. The reviewer accepts this result because the ambiguity is
+semantic while the deployed bytes are identical. `PROVENANCE.json` must not be
+used to manufacture uniqueness, and `NOT_IN_REPO` always fails. Package
+verification still proves that the package input is `d6a4d07a`; that evidence
+strength must not be transferred to content-only online identification. Require
+all three forward SHA-256 values from the table, not a renderer-only sample.
 
 Rollback uses the generated pre-image backup and must restore all three files
 with their recorded uid/gid/mode. Required evidence is
