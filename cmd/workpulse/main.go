@@ -76,6 +76,11 @@ func run(logger *slog.Logger) error {
 	if err := st.Migrate(ctx); err != nil {
 		return err
 	}
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("WP_CONSOLE_AUTH_ENABLED")), "true") {
+		if err := seedConsoleACL(ctx, st, os.Getenv("WP_CONSOLE_SEED_FILE")); err != nil {
+			return err
+		}
+	}
 	if n, err := st.RecoverProcessing(ctx); err != nil {
 		return err
 	} else if n > 0 {
