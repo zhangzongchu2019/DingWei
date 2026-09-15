@@ -731,10 +731,11 @@ class _Handler(BaseHTTPRequestHandler):
                 page_token = str(incoming.get("page_token", ""))
                 request_id = str(incoming.get("request_id", ""))
                 store = _get_page_store()
-                if page_id and page_token and request_id and store.authorize_page(page_id, page_token, session):
+                console_verified = self.headers.get("X-DW-Console-Capability-Verified") == "1"
+                if page_id and page_token and request_id and (console_verified or store.authorize_page(page_id, page_token, session)):
                     code, _ = _hub_v2_input(session, page_id, request_id, text)
                     ok = code == 200
-                    if ok:
+                    if ok and not console_verified:
                         store.record_successful_write(page_id, page_token)
             else:
                 st = _ensure_ready(session)

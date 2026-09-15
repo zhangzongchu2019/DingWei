@@ -21,6 +21,7 @@ type consoleAuthRepository interface {
 	ResolveGrantedConsoleAgent(context.Context, string, string, string) (*model.ConsoleAgent, error)
 	ListConsoleAgents(context.Context, string) ([]model.ConsoleAgent, error)
 	RotateConsolePageCapability(context.Context, model.ConsolePageCapability, string, string, time.Time) error
+	ResolveConsolePageCapability(context.Context, string, string, string, time.Time) (*model.ConsolePageCapability, error)
 }
 
 type consolePrincipalContextKey struct{}
@@ -180,15 +181,17 @@ func (h *Hub) HandleConsoleAgents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
-	repo := h.Repo.(consoleAuthRepository)
-	// 🔴 深度防御，同 HandleConsoleAgents。
-	// ⚠️ 本 handler 挂在 RequireConsoleAgent 下，而该守卫在开关关闭时**仍然放行**
-	//    （因为它同时包着 /view/* 这条回滚路径，不能改成拒绝）
-	//    ⇒ 本 handler 在开关关闭时**确实会被无凭据请求打到**，这两行不是多余的。
-	session, okS := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession)
-	agent, okA := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
-	if !okS || !okA {
-		http.Error(w, "capability unavailable", 500)
+	// 🔴 本 handler 挂在 RequireConsoleAgent 下，而该守卫在开关关闭时**仍然放行**
+	//    （它同时包着 /view/* 这条回滚路径，**不能**改成拒绝）
+	//    ⇒ 本 handler 在开关关闭时**确实会被无凭据请求打到**，下面这几行不是多余的。
+	// 🔵 合并取 coder56solzzc 版（0f4f8e04）：它比组长版**多检一项 repoOK**
+	//    （组长版 `h.Repo.(consoleAuthRepository)` 是**无检查断言**，类型不对会 panic），
+	//    且加了「开关关闭 ⇒ 404」，与 RequireConsolePrincipal 的改动一致。
+	repo, repoOK := h.Repo.(consoleAuthRepository)
+	session, sessionOK := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession)
+	agent, agentOK := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
+	if !h.consoleAuthEnabled || !repoOK || !sessionOK || !agentOK {
+		http.NotFound(w, r)
 		return
 	}
 	var req struct {
@@ -221,10 +224,46 @@ func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
 
 func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// This is an internal trust marker. Strip it before every branch,
+		// including the compatibility path where unified auth is disabled.
+		r.Header.Del("X-DW-Console-Capability-Verified")
 		permission := "view"
 		if r.Method != http.MethodGet {
 			permission = "interact"
 		}
-		h.RequireConsoleAgent(permission, next)(w, r)
+		h.RequireConsoleAgent(permission, func(w http.ResponseWriter, r *http.Request) {
+			if !h.consoleAuthEnabled || r.Method == http.MethodGet || !consoleCapabilityRequired(r.PathValue("rest")) {
+				next(w, r)
+				return
+			}
+			repo, repoOK := h.Repo.(consoleAuthRepository)
+			agent, agentOK := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
+			pageID := strings.TrimSpace(r.Header.Get("X-DW-Console-Page"))
+			raw := strings.TrimSpace(r.Header.Get("X-DW-Console-Capability"))
+			if !repoOK || !agentOK || pageID == "" || raw == "" {
+				http.Error(w, "console capability required", http.StatusForbidden)
+				return
+			}
+			capability, err := repo.ResolveConsolePageCapability(r.Context(), hashConsoleToken(raw), agent.ID, pageID, time.Now())
+			if err != nil {
+				http.Error(w, "console auth unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			if capability == nil {
+				http.Error(w, "forbidden", http.StatusForbidden)
+				return
+			}
+			r.Header.Set("X-DW-Console-Capability-Verified", "1")
+			next(w, r)
+		})(w, r)
+	}
+}
+
+func consoleCapabilityRequired(rest string) bool {
+	switch strings.Trim(strings.TrimSpace(rest), "/") {
+	case "input", "control", "interrupt":
+		return true
+	default:
+		return false
 	}
 }
