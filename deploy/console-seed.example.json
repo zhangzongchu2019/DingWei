@@ -1,0 +1,33 @@
+{
+  "principals": [
+    {
+      "id": "principal-owner-primary",
+      "provider": "feishu",
+      "provider_issuer": "REPLACE_WITH_CONFIRMED_APP_ISSUER",
+      "provider_subject": "REPLACE_WITH_CONFIRMED_SUBJECT",
+      "display_name": "Owner",
+      "active": true
+    },
+    {
+      "id": "principal-owner-secondary",
+      "provider": "feishu",
+      "provider_issuer": "REPLACE_WITH_CONFIRMED_APP_ISSUER",
+      "provider_subject": "REPLACE_WITH_SECOND_CONFIRMED_SUBJECT",
+      "display_name": "Owner (secondary identity)",
+      "active": true
+    }
+  ],
+  "agents": [
+    {
+      "id": "agent-console",
+      "key_id": "REPLACE_WITH_KEY_ID",
+      "session_name": "REPLACE_WITH_FULL_SESSION_NAME",
+      "owner_principal": "principal-owner-primary",
+      "active": true,
+      "grants": [
+        {"principal_id": "principal-owner-primary", "permission": "interact"},
+        {"principal_id": "principal-owner-secondary", "permission": "interact"}
+      ]
+    }
+  ]
+}

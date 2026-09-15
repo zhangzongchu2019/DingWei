@@ -58,12 +58,16 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
-	Repo             store.Repository
-	Outbound         MessageQueue
-	System           SystemHandler
-	L2               llm.Provider
-	L2Config         L2Config
-	ViewPageUnlocker ViewPageUnlocker
+	Repo               store.Repository
+	Outbound           MessageQueue
+	System             SystemHandler
+	L2                 llm.Provider
+	L2Config           L2Config
+	ViewPageUnlocker   ViewPageUnlocker
+	consoleAuthEnabled bool
+	// 统一登录的一次性登录票据(T-113)。仅内存、短 TTL、与页面写锁 code 池分开。
+	consoleLoginStore *consoleLoginStore
+	consoleLoginOnce  sync.Once
 
 	mu               hubMutex
 	serviceClients   map[string]*client
@@ -216,34 +220,35 @@ var (
 	deviceIDPattern        = regexp.MustCompile(`^[0-9a-f]{16}$`)
 )
 
-func New(repo store.Repository) *Hub {
+func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 	h := &Hub{
-		Repo:             repo,
-		serviceClients:   map[string]*client{},
-		sessionClients:   map[string]map[string]*sessionClient{},
-		keyAccounts:      map[string]map[string]bool{},
-		botChannels:      map[string]string{},
-		botNames:         map[string]string{},
-		envelopeIDs:      map[string]string{},
-		replyDedup:       newReplyDedup(envDuration("REPLY_ORIGIN_DEDUP_TTL", 10*time.Minute)),
-		onlineTimers:     map[string]*time.Timer{},
-		seenSessions:     map[string]bool{},
-		terminals:        map[string]*terminalState{},
-		terminalLastSize: map[string][2]int{},
-		syncTargets:      map[string]map[string]feishuSyncTarget{},
-		recentTerminal:   map[string][]terminalSyncItem{},
-		syncBuffers:      map[string]*feishuSyncBuffer{},
-		linkTokens:       map[string]ownerLinkToken{},
-		onboardPushed:    map[string]time.Time{},
-		onboardContexts:  map[string]onboardContext{},
-		viewV2Nonces:     map[string]time.Time{},
-		viewV2Requests:   map[string]viewV2RequestResult{},
-		deliveryNotices:  map[string]time.Time{},
-		startedAt:        time.Now().UTC(),
-		restartWindow:    envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
-		onlineDebounce:   2500 * time.Millisecond,
-		onboardInterval:  envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
-		newSessionNotice: true,
+		Repo:               repo,
+		serviceClients:     map[string]*client{},
+		sessionClients:     map[string]map[string]*sessionClient{},
+		keyAccounts:        map[string]map[string]bool{},
+		botChannels:        map[string]string{},
+		botNames:           map[string]string{},
+		envelopeIDs:        map[string]string{},
+		replyDedup:         newReplyDedup(envDuration("REPLY_ORIGIN_DEDUP_TTL", 10*time.Minute)),
+		onlineTimers:       map[string]*time.Timer{},
+		seenSessions:       map[string]bool{},
+		terminals:          map[string]*terminalState{},
+		terminalLastSize:   map[string][2]int{},
+		syncTargets:        map[string]map[string]feishuSyncTarget{},
+		recentTerminal:     map[string][]terminalSyncItem{},
+		syncBuffers:        map[string]*feishuSyncBuffer{},
+		linkTokens:         map[string]ownerLinkToken{},
+		onboardPushed:      map[string]time.Time{},
+		onboardContexts:    map[string]onboardContext{},
+		viewV2Nonces:       map[string]time.Time{},
+		viewV2Requests:     map[string]viewV2RequestResult{},
+		deliveryNotices:    map[string]time.Time{},
+		startedAt:          time.Now().UTC(),
+		restartWindow:      envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
+		onlineDebounce:     2500 * time.Millisecond,
+		onboardInterval:    envDuration("WP_ONBOARD_PUSH_INTERVAL", time.Hour),
+		newSessionNotice:   true,
+		consoleAuthEnabled: consoleAuthMode.Enabled(),
 		L2Config: L2Config{
 			Workers:             4,
 			PollInterval:        200 * time.Millisecond,
@@ -1324,6 +1329,9 @@ func (h *Hub) dispatchL1(ctx context.Context, msg model.Message, text string) (m
 	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
 		return result, "command.security", "", err
 	}
+	if result, handled, err := h.dispatchConsoleLogin(ctx, msg, text); handled || err != nil {
+		return result, "command.console_login", "", err
+	}
 	if result, handled, err := h.dispatchFeishuSyncCommand(ctx, msg, text); handled || err != nil {
 		return result, "command.sync", "", err
 	}
@@ -1395,6 +1403,9 @@ func (h *Hub) executeL1Rule(ctx context.Context, rule model.L1DecisionRule, msg 
 
 func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, string, bool, error) {
 	if result, handled, err := h.dispatchSecurityOps(ctx, msg, text); handled || err != nil {
+		return result, "", handled, err
+	}
+	if result, handled, err := h.dispatchConsoleLogin(ctx, msg, text); handled || err != nil {
 		return result, "", handled, err
 	}
 	if result, handled, err := h.dispatchFeishuSyncCommand(ctx, msg, text); handled || err != nil {

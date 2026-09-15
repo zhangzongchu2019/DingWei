@@ -11,7 +11,7 @@ import (
 )
 
 func TestHubLockReleasedAfterHandlerPanic(t *testing.T) {
-	hub := New(nil)
+	hub := New(nil, ConsoleAuthDisabled())
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /panic-under-lock", func(http.ResponseWriter, *http.Request) {
 		hub.withHubLock(func() {
@@ -50,7 +50,7 @@ func TestHubLockReleasedAfterHandlerPanic(t *testing.T) {
 }
 
 func TestProbeLock(t *testing.T) {
-	hub := New(nil)
+	hub := New(nil, ConsoleAuthDisabled())
 	if !hub.ProbeLock(context.Background(), 20*time.Millisecond, time.Millisecond) {
 		t.Fatal("uncontended mutex should be healthy")
 	}
@@ -77,7 +77,7 @@ func TestProbeLock(t *testing.T) {
 }
 
 func TestHandleDebugHoldLock(t *testing.T) {
-	hub := New(nil)
+	hub := New(nil, ConsoleAuthDisabled())
 	req := httptest.NewRequest(http.MethodPost, "/debug/hold-lock?seconds=1", nil)
 	rec := httptest.NewRecorder()
 	hub.HandleDebugHoldLock(rec, req)
@@ -97,7 +97,7 @@ func TestHandleDebugHoldLock(t *testing.T) {
 }
 
 func TestHandleDebugHoldLockRejectsInvalidDuration(t *testing.T) {
-	hub := New(nil)
+	hub := New(nil, ConsoleAuthDisabled())
 	for _, target := range []string{
 		"/debug/hold-lock?seconds=0",
 		"/debug/hold-lock?seconds=invalid",

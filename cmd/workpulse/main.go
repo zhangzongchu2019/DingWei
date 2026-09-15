@@ -76,6 +76,16 @@ func run(logger *slog.Logger) error {
 	if err := st.Migrate(ctx); err != nil {
 		return err
 	}
+	consoleAuthMode, err := m8.ParseConsoleAuthEnabled(os.Getenv("WP_CONSOLE_AUTH_ENABLED"))
+	if err != nil {
+		return err
+	}
+	logger.Info("unified console authentication", "enabled", consoleAuthMode.Enabled())
+	if consoleAuthMode.Enabled() {
+		if err := seedConsoleACL(ctx, st, os.Getenv("WP_CONSOLE_SEED_FILE")); err != nil {
+			return err
+		}
+	}
 	if n, err := st.RecoverProcessing(ctx); err != nil {
 		return err
 	} else if n > 0 {
@@ -91,7 +101,7 @@ func run(logger *slog.Logger) error {
 	writeQueueConfig := bus.AsyncDBQueueConfigFromEnv(logger)
 	inbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionIn, writeQueueConfig)
 	outbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionOut, writeQueueConfig)
-	prefixHub := m8.New(st)
+	prefixHub := m8.New(st, consoleAuthMode)
 	prefixHub.Outbound = outbound
 	if bs.L2DeepSeekAPIKey != "" {
 		prefixHub.L2 = llm.NewDeepSeek(bs.L2DeepSeekAPIKey, bs.L2DeepSeekBaseURL, bs.L2DeepSeekModel)
@@ -205,10 +215,15 @@ func run(logger *slog.Logger) error {
 	})
 	mux.HandleFunc("GET /ws/service/{serviceID}", prefixHub.HandleWS)
 	mux.HandleFunc("GET /ws/session/{sessionName}", prefixHub.HandleSessionWS)
-	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.HandleTerminalViewWS)
-	mux.HandleFunc("GET /view/{sessionName}", prefixHub.HandleTerminalViewPage)
-	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.HandleTerminalViewCookie)
-	mux.HandleFunc("/view/{sessionName}/{rest...}", prefixHub.HandleViewSubPath) // 新 view 子路径(events/input/status)→ 反代 View 服务
+	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewWS))
+	mux.HandleFunc("GET /view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewPage))
+	mux.HandleFunc("GET /console", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsolePage))
+	mux.HandleFunc("GET /console/login", prefixHub.HandleConsoleLoginPage)
+	mux.HandleFunc("GET /console/login/status", prefixHub.HandleConsoleLoginStatus)
+	mux.HandleFunc("GET /api/console/agents", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgents))
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleCapability))
+	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleTerminalViewCookie))
+	mux.HandleFunc("/view/{sessionName}/{rest...}", prefixHub.RequireConsoleViewSubPath(prefixHub.HandleViewSubPath)) // 新 view 子路径(events/input/status)→ 反代 View 服务
 	mux.HandleFunc("GET /links/{ownerKey}", prefixHub.HandleOwnerLinksPage)
 	mux.HandleFunc("GET /dl/{file}", provisionDownload)
 
