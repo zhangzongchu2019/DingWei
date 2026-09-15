@@ -110,6 +110,26 @@ func TestConsoleCapabilityIsConsumedForExactSessionBeforeInput(t *testing.T) {
 	}
 }
 
+func TestDisabledConsoleAuthStripsCallerSuppliedCapabilityMarker(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	hub.consoleAuthEnabled = false
+	next := hub.RequireConsoleViewSubPath(func(w http.ResponseWriter, r *http.Request) {
+		if marker := r.Header.Get("X-DW-Console-Capability-Verified"); marker != "" {
+			t.Fatalf("caller-supplied trust marker reached view service: %q", marker)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+	req := httptest.NewRequest("POST", "/view/session-a/input", nil)
+	req.SetPathValue("sessionName", "session-a")
+	req.SetPathValue("rest", "input")
+	req.Header.Set("X-DW-Console-Capability-Verified", "1")
+	rr := httptest.NewRecorder()
+	next(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("compatibility path code=%d", rr.Code)
+	}
+}
+
 func TestUnifiedConsoleAuthRejectsMissingAndExpiredSession(t *testing.T) {
 	hub, _, _ := newTestHub(t)
 	hub.consoleAuthEnabled = true
