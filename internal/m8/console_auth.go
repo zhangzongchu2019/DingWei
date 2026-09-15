@@ -81,8 +81,26 @@ func (h *Hub) authenticateConsole(w http.ResponseWriter, r *http.Request) (conso
 
 func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// 🔴 2026-09-15 修：开关关闭时【拒绝】，不再放行。
+		//
+		// 原来是 next(w, r) 直接放行，且**不设 principal 的 context 值** ——
+		// 实测后果（本地试跑，非推理）：
+		//   WP_CONSOLE_AUTH_ENABLED=false 时
+		//     GET /console            ⇒ HTTP 200，**未登录即可拿到页面**
+		//     GET /api/console/agents ⇒ **panic**（interface conversion: nil, not string），连接被关
+		//     连打 5 次 ⇒ 累计 6 次 panic（服务不整体崩，但任何人无需凭据即可触发）
+		//
+		// ⚠️ 而「开关关闭」是【部署代码后、打开开关前】的必经状态，
+		//    也是启用单写明的【回滚状态】 ⇒ 这个洞正好落在最该安全的那一格上。
+		//
+		// 为什么是拒绝而不是修 handler 了事：**控制台端点在开关关闭时没有任何合法用途**，
+		// 放行既不服务任何人、又制造暴露面。404 而非 401：不泄露「这里有个控制台」。
+		//
+		// 🔴 本守卫**只**用于 /console 与 /api/console/agents（已逐条核过路由表）；
+		//    **RequireConsoleAgent 不做同样改动** —— 它还包着 /view/{s} 与 /ws/view/{s}，
+		//    而那条路径正是关掉开关后要回落的**旧飞书解锁通路**，改成拒绝会打断回滚。
 		if !h.consoleAuthEnabled {
-			next(w, r)
+			http.NotFound(w, r)
 			return
 		}
 		_, session, ok := h.authenticateConsole(w, r)
@@ -133,7 +151,14 @@ func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 
 func (h *Hub) HandleConsoleAgents(w http.ResponseWriter, r *http.Request) {
 	repo := h.Repo.(consoleAuthRepository)
-	principal := r.Context().Value(consolePrincipalContextKey{}).(string)
+	// 🔴 深度防御：即使守卫被改动或被绕过，handler 也不得 panic。
+	// 「任何 handler 都不该因为缺一个 context 值而 panic」——
+	// 上面那道闸去掉暴露面，这一行保证即便闸失效也只是 500，不是 panic。
+	principal, ok := r.Context().Value(consolePrincipalContextKey{}).(string)
+	if !ok || principal == "" {
+		http.Error(w, "console unavailable", 500)
+		return
+	}
 	agents, err := repo.ListConsoleAgents(r.Context(), principal)
 	if err != nil {
 		http.Error(w, "console unavailable", 503)
@@ -156,8 +181,16 @@ func (h *Hub) HandleConsoleAgents(w http.ResponseWriter, r *http.Request) {
 
 func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
 	repo := h.Repo.(consoleAuthRepository)
-	session := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession)
-	agent := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
+	// 🔴 深度防御，同 HandleConsoleAgents。
+	// ⚠️ 本 handler 挂在 RequireConsoleAgent 下，而该守卫在开关关闭时**仍然放行**
+	//    （因为它同时包着 /view/* 这条回滚路径，不能改成拒绝）
+	//    ⇒ 本 handler 在开关关闭时**确实会被无凭据请求打到**，这两行不是多余的。
+	session, okS := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession)
+	agent, okA := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
+	if !okS || !okA {
+		http.Error(w, "capability unavailable", 500)
+		return
+	}
 	var req struct {
 		PageID string `json:"page_id"`
 	}
