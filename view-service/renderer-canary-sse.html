@@ -1284,6 +1284,7 @@
     let pageIdentityUnique = false;
     let pageIdentityUniqueTimer = null;
     let pageIdentityEnsurePromise = null;
+    let consoleCapability = null;
     const pageInstanceNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
       value => value.toString(16).padStart(2, '0')).join('');
 
@@ -3224,6 +3225,29 @@
       stats.access = stats.readonly ? '只读' : '可写';
       updateMetrics();
     }
+    async function acquireConsoleCapability() {
+      if (!pageIdentity?.page_id || !stats.sessionName) return false;
+      const res = await fetch(`/api/console/agents/${encodeURIComponent(stats.sessionName)}/capability`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page_id: pageIdentity.page_id }),
+      });
+      if (res.status === 404) return false;
+      if (!res.ok) throw new Error(`console capability failed: HTTP ${res.status}`);
+      const issued = await res.json();
+      if (!issued.capability || issued.page_id !== pageIdentity.page_id) throw new Error('invalid console capability');
+      consoleCapability = issued.capability;
+      stats.readonly = false;
+      stats.access = '可写';
+      updateMetrics();
+      return true;
+    }
+    function consoleWriteHeaders() {
+      if (!consoleCapability) return {};
+      return {
+        'X-DW-Console-Page': pageIdentity.page_id,
+        'X-DW-Console-Capability': consoleCapability,
+      };
+    }
     async function createPageIdentity() {
       const res = await fetch(apiEp('page'), { method: 'POST' });
       if (!res.ok) throw new Error(`POST /page failed: HTTP ${res.status}`);
@@ -3247,6 +3271,7 @@
       pageIdentityEnsurePromise = pending;
       try {
         await pending;
+        await acquireConsoleCapability();
       } finally {
         if (pageIdentityEnsurePromise === pending) pageIdentityEnsurePromise = null;
       }
@@ -3339,7 +3364,7 @@
       }
       const res = await fetch(apiEp('input'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...consoleWriteHeaders() },
         body: JSON.stringify(stats.authMode === 'view_page_v2' ? {
           text, page_id: pageIdentity?.page_id, page_token: pageIdentity?.page_token,
           request_id: newRequestId(),

@@ -21,6 +21,7 @@ type consoleAuthRepository interface {
 	ResolveGrantedConsoleAgent(context.Context, string, string, string) (*model.ConsoleAgent, error)
 	ListConsoleAgents(context.Context, string) ([]model.ConsoleAgent, error)
 	RotateConsolePageCapability(context.Context, model.ConsolePageCapability, string, string, time.Time) error
+	ResolveConsolePageCapability(context.Context, string, string, string, time.Time) (*model.ConsolePageCapability, error)
 }
 
 type consolePrincipalContextKey struct{}
@@ -155,9 +156,13 @@ func (h *Hub) HandleConsoleAgents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
-	repo := h.Repo.(consoleAuthRepository)
-	session := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession)
-	agent := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
+	repo, repoOK := h.Repo.(consoleAuthRepository)
+	session, sessionOK := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession)
+	agent, agentOK := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
+	if !h.consoleAuthEnabled || !repoOK || !sessionOK || !agentOK {
+		http.NotFound(w, r)
+		return
+	}
 	var req struct {
 		PageID string `json:"page_id"`
 	}
@@ -188,10 +193,46 @@ func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
 
 func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// This is an internal trust marker. Strip it before every branch,
+		// including the compatibility path where unified auth is disabled.
+		r.Header.Del("X-DW-Console-Capability-Verified")
 		permission := "view"
 		if r.Method != http.MethodGet {
 			permission = "interact"
 		}
-		h.RequireConsoleAgent(permission, next)(w, r)
+		h.RequireConsoleAgent(permission, func(w http.ResponseWriter, r *http.Request) {
+			if !h.consoleAuthEnabled || r.Method == http.MethodGet || !consoleCapabilityRequired(r.PathValue("rest")) {
+				next(w, r)
+				return
+			}
+			repo, repoOK := h.Repo.(consoleAuthRepository)
+			agent, agentOK := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
+			pageID := strings.TrimSpace(r.Header.Get("X-DW-Console-Page"))
+			raw := strings.TrimSpace(r.Header.Get("X-DW-Console-Capability"))
+			if !repoOK || !agentOK || pageID == "" || raw == "" {
+				http.Error(w, "console capability required", http.StatusForbidden)
+				return
+			}
+			capability, err := repo.ResolveConsolePageCapability(r.Context(), hashConsoleToken(raw), agent.ID, pageID, time.Now())
+			if err != nil {
+				http.Error(w, "console auth unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			if capability == nil {
+				http.Error(w, "forbidden", http.StatusForbidden)
+				return
+			}
+			r.Header.Set("X-DW-Console-Capability-Verified", "1")
+			next(w, r)
+		})(w, r)
+	}
+}
+
+func consoleCapabilityRequired(rest string) bool {
+	switch strings.Trim(strings.TrimSpace(rest), "/") {
+	case "input", "control", "interrupt":
+		return true
+	default:
+		return false
 	}
 }

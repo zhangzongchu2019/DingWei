@@ -296,6 +296,44 @@ class ControlHMACTest(unittest.TestCase):
             request.headers["X-dw-nonce"], request.data)
         self.assertNotEqual(signature, forward)
 
+    def test_console_verified_input_can_write_locked_page(self):
+        page = self.store.create_page("alice-dev55-2642")
+        self.assertEqual(self.store.page(page["page_id"])["state"], "locked")
+        server = vs.ThreadingHTTPServer(("127.0.0.1", 0), vs._Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        old_store = vs._page_store
+        vs._page_store = self.store
+
+        def post(verified):
+            body = json.dumps({"text": "hello", "page_id": page["page_id"],
+                               "page_token": page["page_token"], "request_id": "req-console"}).encode()
+            headers = {"Content-Type": "application/json", "X-DW-Session": "alice-dev55-2642"}
+            if verified:
+                headers["X-DW-Console-Capability-Verified"] = "1"
+            req = urllib.request.Request(f"http://127.0.0.1:{server.server_port}/input", body, headers,
+                                         method="POST")
+            try:
+                with urllib.request.urlopen(req, timeout=2) as response:
+                    return response.status
+            except urllib.error.HTTPError as exc:
+                return exc.code
+
+        try:
+            with mock.patch.multiple(vs, VIEW_UNLOCK_V2=True), \
+                    mock.patch.object(vs, "_hub_v2_input", return_value=(200, {"ok": True})) as forwarded:
+                self.assertEqual(post(False), 403)
+                forwarded.assert_not_called()
+                self.assertEqual(post(True), 200)
+                forwarded.assert_called_once_with("alice-dev55-2642", page["page_id"], "req-console", "hello")
+                # Console authorization must not mutate the legacy page grant.
+                self.assertEqual(self.store.page(page["page_id"])["state"], "locked")
+        finally:
+            vs._page_store = old_store
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
 
 if __name__ == "__main__":
     unittest.main()
