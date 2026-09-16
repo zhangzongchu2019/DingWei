@@ -80,7 +80,10 @@ func ConfigFromEnv() (Config, error) {
 		return Config{}, err
 	}
 	c.MinIOUseTLS = envBool("FS_MINIO_USE_TLS")
-	if c.MaxFileBytes <= 0 || c.QuotaBytes <= 0 || c.Retention <= 0 || c.TombstoneRetention <= 0 || c.CapabilityMaxAge <= 0 {
+	// Every numeric/duration limit in Config has the same fail-closed zero
+	// semantics. In particular, a non-positive SweepInterval must not reach
+	// RunSweeper, where it would otherwise silently disable retention.
+	if c.MaxFileBytes <= 0 || c.QuotaBytes <= 0 || c.Retention <= 0 || c.TombstoneRetention <= 0 || c.SweepInterval <= 0 || c.CapabilityMaxAge <= 0 {
 		return Config{}, fmt.Errorf("file-service limits must be positive")
 	}
 	if c.MinIOEndpoint == "" || c.MinIOAccessKey == "" || c.MinIOSecretKey == "" {
