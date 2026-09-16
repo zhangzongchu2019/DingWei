@@ -72,3 +72,32 @@ func TestConsolePageMultiTab(t *testing.T) {
 		}
 	}
 }
+
+func TestConsolePageRefreshesOnlyAgentList(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	rr := httptest.NewRecorder()
+	hub.HandleConsolePage(rr, httptest.NewRequest(http.MethodGet, "/console", nil))
+	body := rr.Body.String()
+	for _, w := range []struct{ frag, why string }{
+		{"setInterval(refreshAgents,15000)", "Agent 列表须每 15 秒刷新"},
+		{"nav.replaceChildren()", "刷新只重建左栏"},
+		{"applyAgentSnapshot(agents)", "刷新须同步既有 tab 的在线状态"},
+		{"e.pane.style.pointerEvents=online?'':'none'", "离线 tab 保留但不可交互"},
+	} {
+		if !strings.Contains(body, w.frag) {
+			t.Errorf("控制台页缺少 %q —— %s", w.frag, w.why)
+		}
+	}
+	// 列表刷新函数不得拥有右栏生命周期；右栏只由 openTab/closeTab 创建或销毁。
+	start := strings.Index(body, "function renderAgentList")
+	end := strings.Index(body, "async function refreshAgents")
+	if start < 0 || end <= start {
+		t.Fatal("无法定位左栏刷新函数")
+	}
+	segment := body[start:end]
+	for _, forbidden := range []string{"getElementById('tabs')", "getElementById('panes')", ".src=", ".remove()"} {
+		if strings.Contains(segment, forbidden) {
+			t.Errorf("左栏刷新函数含右栏破坏动作 %q", forbidden)
+		}
+	}
+}

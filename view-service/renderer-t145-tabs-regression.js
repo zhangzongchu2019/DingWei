@@ -34,8 +34,9 @@ function makeEnv() {
 }
 
 function load(env) {
+  const logic = block.replace(/refreshAgents\(\);\s*setInterval\(refreshAgents,15000\);?/, '');
   const fn = new Function('document', 'alert', 'encodeURIComponent', 'fetch', `
-    ${block.replace(/fetch\([\s\S]*$/, '')}   // 掐掉末尾的 fetch 调用,只留纯逻辑
+    ${logic}   // 只移除启动调用;函数体仍逐字来自真实源码
     return { openTab, closeTab, activate, tabs, dwShortName, MAX_TABS };
   `);
   return fn(env.document, env.alert, env.encodeURIComponent, () => { throw new Error('不该调 fetch'); });
