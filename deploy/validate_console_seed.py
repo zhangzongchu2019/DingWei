@@ -38,11 +38,12 @@ def fail(msg: str) -> None:
 # 🔴 必须与 cmd/workpulse/console_seed.go 的 consoleSeed 结构体保持一致。
 #    生产解析器带 dec.DisallowUnknownFields() ⇒ **任何未知字段都会让 workpulse 启动失败**。
 #    防漂移由 test_unknown_field_set_matches_production 钉住。
-ALLOWED_TOP = {"principals", "agents"}
+ALLOWED_TOP = {"principals", "roles", "agents"}
 ALLOWED_PRINCIPAL = {"id", "provider", "provider_issuer", "provider_subject",
                      "display_name", "active"}
 ALLOWED_AGENT = {"id", "key_id", "session_name", "owner_principal", "active", "grants"}
 ALLOWED_GRANT = {"principal_id", "permission"}
+ALLOWED_ROLE = {"principal_id", "role", "owner_key", "active"}
 
 
 def check_unknown_fields(seed) -> None:
@@ -71,6 +72,10 @@ def check_unknown_fields(seed) -> None:
         u = sorted(set(pr) - ALLOWED_PRINCIPAL)
         if u:
             fail("principals[%d] 存在未知字段 %s ⇒ workpulse 会启动失败" % (i, u))
+    for i, role in enumerate(seed.get("roles") or []):
+        u = sorted(set(role) - ALLOWED_ROLE)
+        if u:
+            fail("roles[%d] 存在未知字段 %s ⇒ workpulse 会启动失败" % (i, u))
     for i, ag in enumerate(seed.get("agents") or []):
         u = sorted(set(ag) - ALLOWED_AGENT)
         if u:
@@ -99,6 +104,7 @@ def main() -> None:
         fail(f"无法解析 {args.seed}: {exc}")
 
     principals = seed.get("principals") or []
+    roles = seed.get("roles") or []
     agents = seed.get("agents") or []
     if not principals or not agents:
         fail("principals 与 agents 都不得为空")
@@ -106,6 +112,14 @@ def main() -> None:
     pids = [p.get("id") for p in principals]
     if len(set(pids)) != len(pids):
         fail(f"principal id 重复: {pids}")
+
+    for role in roles:
+        if role.get("principal_id") not in pids:
+            fail(f"role 指向未声明的 principal: {role.get('principal_id')!r}")
+        if role.get("role") != "owner" or not role.get("owner_key"):
+            fail("principal role 必须为 owner 且显式给 owner_key 数据域")
+        if "active" not in role or not isinstance(role["active"], bool):
+            fail("principal role 必须显式给布尔 active")
 
     # ① 占位符必须已被替换 —— 样例文件原样导入是最容易发生的一种错
     blob = json.dumps(seed, ensure_ascii=False)
@@ -161,6 +175,10 @@ def main() -> None:
         if owner not in granted:
             fail(f"业主 principal {owner!r} 没有任何 grant —— "
                  f"他从这条身份登录时左栏会是空的,而他不会知道少了什么")
+        owner_roles = [r for r in roles if r.get("principal_id") == owner
+                       and r.get("role") == "owner" and r.get("active") is True]
+        if not owner_roles:
+            fail(f"业主 principal {owner!r} 没有 active owner 角色与 owner_key 数据域")
 
     print(f"SEED_OK principals={len(principals)} agents={len(agents)} "
           f"owner_principals={len(args.owner_principal)}")

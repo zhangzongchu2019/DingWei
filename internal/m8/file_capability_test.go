@@ -18,6 +18,17 @@ type recordingFileIssuer struct {
 	err   error
 }
 
+type recordingArchiveClient struct {
+	req   FileArchiveRequest
+	calls int
+	err   error
+}
+
+func (c *recordingArchiveClient) SetFileArchived(_ context.Context, req FileArchiveRequest) error {
+	c.req, c.calls = req, c.calls+1
+	return c.err
+}
+
 func (f *recordingFileIssuer) IssueFileTicket(_ context.Context, req FileTicketRequest) (FileTicket, error) {
 	f.req, f.calls = req, f.calls+1
 	return FileTicket{Token: "opaque-ticket", ExpiresAt: time.Now().Add(time.Minute), PublicBaseURL: "https://files.example"}, f.err
@@ -117,5 +128,37 @@ func TestConsoleUploadTicketRejectsOfflineAgentBeforeIssuer(t *testing.T) {
 	h.HandleConsoleFileUploadTicket(w, req)
 	if w.Code != http.StatusConflict || issuer.calls != 0 {
 		t.Fatalf("code=%d calls=%d", w.Code, issuer.calls)
+	}
+}
+
+func TestConsoleArchiveRequiresExplicitOwnerRoleAndPassesAuditFields(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	h.consoleAuthEnabled = true
+	client := &recordingArchiveClient{}
+	h.fileArchive = client
+	p := model.ConsolePrincipal{ID: "owner-p", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner-open-id", Active: true}
+	if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	session := model.ConsoleSession{ID: "login", PrincipalID: p.ID, ExpiresAt: time.Now().Add(time.Hour)}
+	request := func() *httptest.ResponseRecorder {
+		r := httptest.NewRequest(http.MethodPost, "/api/console/files/0123456789abcdef0123456789abcdef/archive", bytes.NewBufferString(`{"archived":true,"reason":"owner retention"}`))
+		r.SetPathValue("fileID", "0123456789abcdef0123456789abcdef")
+		r = r.WithContext(context.WithValue(r.Context(), consoleSessionContextKey{}, session))
+		w := httptest.NewRecorder()
+		h.HandleConsoleFileArchive(w, r)
+		return w
+	}
+	if w := request(); w.Code != http.StatusForbidden || client.calls != 0 {
+		t.Fatalf("roleless code=%d calls=%d", w.Code, client.calls)
+	}
+	if err := db.UpsertConsolePrincipalRole(ctx, model.ConsolePrincipalRole{PrincipalID: p.ID, Role: "owner", OwnerKey: "tenant-a", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if w := request(); w.Code != http.StatusNoContent || client.calls != 1 {
+		t.Fatalf("owner code=%d calls=%d body=%q", w.Code, client.calls, w.Body.String())
+	}
+	if client.req.ActorPrincipal != p.ID || client.req.OwnerKey != "tenant-a" || client.req.Reason != "owner retention" || !client.req.Archived {
+		t.Fatalf("request=%+v", client.req)
 	}
 }

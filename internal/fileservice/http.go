@@ -204,6 +204,7 @@ func setDownloadHeaders(w http.ResponseWriter, f File) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", "attachment; filename*=UTF-8''"+url.PathEscape(safeName(f.OriginalName)))
 	w.Header().Set("X-Content-SHA256", f.SHA256)
+	w.Header().Set("X-DingWei-Media-Type", f.MediaType)
 }
 func bearer(r *http.Request) string {
 	v := r.Header.Get("Authorization")

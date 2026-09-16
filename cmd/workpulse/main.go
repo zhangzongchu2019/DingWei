@@ -112,6 +112,7 @@ func run(logger *slog.Logger) error {
 			return err
 		}
 		prefixHub.SetFileTicketIssuer(issuer)
+		prefixHub.SetFileArchiveClient(issuer)
 		logger.Info("file capability issuer configured", "internal_url", fileIssuerURL, "public_url", filePublicURL)
 	}
 	if bs.L2DeepSeekAPIKey != "" {
@@ -234,6 +235,7 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /api/console/agents", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgents))
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleCapability))
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleFileUploadTicket))
+	mux.HandleFunc("POST /api/console/files/{fileID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleFileArchive))
 	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleTerminalViewCookie))
 	mux.HandleFunc("/view/{sessionName}/{rest...}", prefixHub.RequireConsoleViewSubPath(prefixHub.HandleViewSubPath)) // 新 view 子路径(events/input/status)→ 反代 View 服务
 	mux.HandleFunc("GET /links/{ownerKey}", prefixHub.HandleOwnerLinksPage)

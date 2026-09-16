@@ -15,6 +15,7 @@ type consoleSeedStore interface {
 	UpsertConsolePrincipal(context.Context, model.ConsolePrincipal) error
 	UpsertConsoleAgent(context.Context, model.ConsoleAgent) error
 	UpsertConsoleAgentGrant(context.Context, model.ConsoleAgentGrant) error
+	UpsertConsolePrincipalRole(context.Context, model.ConsolePrincipalRole) error
 }
 
 type consoleSeed struct {
@@ -26,6 +27,12 @@ type consoleSeed struct {
 		DisplayName     string `json:"display_name"`
 		Active          *bool  `json:"active"`
 	} `json:"principals"`
+	Roles []struct {
+		PrincipalID string `json:"principal_id"`
+		Role        string `json:"role"`
+		OwnerKey    string `json:"owner_key"`
+		Active      *bool  `json:"active"`
+	} `json:"roles"`
 	Agents []struct {
 		ID             string `json:"id"`
 		KeyID          string `json:"key_id"`
@@ -67,6 +74,15 @@ func seedConsoleACL(ctx context.Context, st consoleSeedStore, path string) error
 		value := model.ConsolePrincipal{ID: p.ID, Provider: p.Provider, ProviderIssuer: p.ProviderIssuer, ProviderSubject: p.ProviderSubject, DisplayName: p.DisplayName, Active: *p.Active}
 		if err := st.UpsertConsolePrincipal(ctx, value); err != nil {
 			return fmt.Errorf("seed principal %s: %w", p.ID, err)
+		}
+	}
+	for _, entry := range seed.Roles {
+		if entry.Active == nil {
+			return fmt.Errorf("principal role %s/%s: active is required", entry.PrincipalID, entry.Role)
+		}
+		value := model.ConsolePrincipalRole{PrincipalID: entry.PrincipalID, Role: entry.Role, OwnerKey: entry.OwnerKey, Active: *entry.Active}
+		if err := st.UpsertConsolePrincipalRole(ctx, value); err != nil {
+			return fmt.Errorf("seed principal role %s/%s: %w", entry.PrincipalID, entry.Role, err)
 		}
 	}
 	for _, entry := range seed.Agents {

@@ -144,6 +144,44 @@ func (s *SQLite) UpsertConsoleAgentGrant(ctx context.Context, g model.ConsoleAge
 	return err
 }
 
+func (s *SQLite) UpsertConsolePrincipalRole(ctx context.Context, role model.ConsolePrincipalRole) error {
+	if strings.TrimSpace(role.PrincipalID) == "" || role.Role != "owner" || strings.TrimSpace(role.OwnerKey) == "" {
+		return errors.New("invalid console principal role")
+	}
+	_, err := s.db.ExecContext(ctx, `INSERT INTO console_principal_role(principal_id,role,owner_key,active) VALUES(?,?,?,?)
+		ON CONFLICT(principal_id,role,owner_key) DO UPDATE SET active=excluded.active`,
+		role.PrincipalID, role.Role, role.OwnerKey, boolInt(role.Active))
+	return err
+}
+
+// ResolveConsoleOwnerScope returns one unambiguous owner data scope. Multiple
+// active scopes fail closed: callers must select a scope explicitly before the
+// model can support that shape.
+func (s *SQLite) ResolveConsoleOwnerScope(ctx context.Context, principalID string) (string, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT r.owner_key FROM console_principal_role r
+		JOIN console_principal p ON p.id=r.principal_id
+		WHERE r.principal_id=? AND r.role='owner' AND r.active=1 AND p.active=1 ORDER BY r.owner_key`, principalID)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+	var scopes []string
+	for rows.Next() {
+		var ownerKey string
+		if err := rows.Scan(&ownerKey); err != nil {
+			return "", err
+		}
+		scopes = append(scopes, ownerKey)
+	}
+	if err := rows.Err(); err != nil {
+		return "", err
+	}
+	if len(scopes) != 1 {
+		return "", nil
+	}
+	return scopes[0], nil
+}
+
 func (s *SQLite) ConsoleAgentAllowed(ctx context.Context, principalID, keyID, sessionName, permission string) (bool, error) {
 	if permission != "view" && permission != "interact" {
 		return false, errors.New("invalid console permission")

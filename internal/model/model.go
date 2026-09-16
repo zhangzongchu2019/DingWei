@@ -315,6 +315,16 @@ type ConsoleAgentGrant struct {
 	Active      bool
 }
 
+// ConsolePrincipalRole grants a human principal a role inside one explicit
+// data-owner scope. It is seeded policy, never inferred from a shared key or
+// display name.
+type ConsolePrincipalRole struct {
+	PrincipalID string
+	Role        string // currently: owner
+	OwnerKey    string
+	Active      bool
+}
+
 type ConsoleSession struct {
 	ID          string
 	PrincipalID string

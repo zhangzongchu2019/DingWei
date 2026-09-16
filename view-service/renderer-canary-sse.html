@@ -3494,12 +3494,13 @@
       humanInput.setRangeText('\n', start, end, 'end');
       humanInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    function appendInputReference(fileRef) {
+    function appendInputReference(fileRef, name, size) {
       const start = humanInput.selectionStart;
       const end = humanInput.selectionEnd;
       const prefix = start > 0 && !/\s$/u.test(humanInput.value.slice(0, start)) ? ' ' : '';
       const suffix = end < humanInput.value.length && !/^\s/u.test(humanInput.value.slice(end)) ? ' ' : '';
-      humanInput.setRangeText(prefix + fileRef + suffix, start, end, 'end');
+      const detail = ` (${String(name || 'file')}, ${Number(size)} bytes)`;
+      humanInput.setRangeText(prefix + fileRef + detail + suffix, start, end, 'end');
       humanInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
     async function uploadPastedImage(file) {
@@ -3525,7 +3526,8 @@
       if (!uploadRes.ok) throw new Error(`图片上传失败: HTTP ${uploadRes.status}`);
       const uploaded = await uploadRes.json();
       if (!/^dwfile:[0-9a-f]{32}$/u.test(String(uploaded.file_ref || ''))) throw new Error('上传响应缺少有效文件引用');
-      appendInputReference(uploaded.file_ref);
+      if (!Number.isSafeInteger(uploaded.size) || uploaded.size < 0) throw new Error('上传响应缺少有效文件大小');
+      appendInputReference(uploaded.file_ref, uploaded.name, uploaded.size);
     }
     humanInput.addEventListener('input', resizeHumanInput);
     humanInput.addEventListener('paste', (event) => {

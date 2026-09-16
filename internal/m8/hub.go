@@ -100,6 +100,7 @@ type Hub struct {
 	startedAt        time.Time
 	restartWindow    time.Duration
 	fileIssuer       FileTicketIssuer
+	fileArchive      FileArchiveClient
 }
 
 type L2Config struct {

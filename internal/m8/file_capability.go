@@ -46,6 +46,15 @@ type FileTicketIssuer interface {
 	IssueFileTicket(context.Context, FileTicketRequest) (FileTicket, error)
 }
 
+type FileArchiveRequest struct {
+	FileID, ActorPrincipal, OwnerKey, Reason string
+	Archived                                 bool
+}
+
+type FileArchiveClient interface {
+	SetFileArchived(context.Context, FileArchiveRequest) error
+}
+
 type HTTPFileTicketIssuer struct {
 	InternalBaseURL string
 	PublicBaseURL   string
@@ -120,7 +129,72 @@ func (i *HTTPFileTicketIssuer) IssueFileTicket(ctx context.Context, req FileTick
 	return FileTicket{Token: decoded.Token, ExpiresAt: decoded.ExpiresAt, PublicBaseURL: i.PublicBaseURL}, nil
 }
 
-func (h *Hub) SetFileTicketIssuer(issuer FileTicketIssuer) { h.fileIssuer = issuer }
+func (i *HTTPFileTicketIssuer) SetFileArchived(ctx context.Context, req FileArchiveRequest) error {
+	if i == nil || i.Client == nil || !fileIDPattern.MatchString(req.FileID) || strings.TrimSpace(req.ActorPrincipal) == "" || strings.TrimSpace(req.OwnerKey) == "" || strings.TrimSpace(req.Reason) == "" {
+		return errors.New("invalid file archive request")
+	}
+	payload, err := json.Marshal(map[string]any{"file_id": req.FileID, "actor_principal": req.ActorPrincipal, "owner_key": req.OwnerKey, "reason": req.Reason, "archived": req.Archived})
+	if err != nil {
+		return err
+	}
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, i.InternalBaseURL+"/internal/files/archive", bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+i.Credential)
+	httpReq.Header.Set("Content-Type", "application/json")
+	resp, err := i.Client.Do(httpReq)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+		return fmt.Errorf("file archive status %d", resp.StatusCode)
+	}
+	return nil
+}
+
+func (h *Hub) SetFileTicketIssuer(issuer FileTicketIssuer)   { h.fileIssuer = issuer }
+func (h *Hub) SetFileArchiveClient(client FileArchiveClient) { h.fileArchive = client }
+
+type consoleOwnerScopeRepository interface {
+	ResolveConsoleOwnerScope(context.Context, string) (string, error)
+}
+
+func (h *Hub) HandleConsoleFileArchive(w http.ResponseWriter, r *http.Request) {
+	session, sessionOK := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession)
+	repo, repoOK := h.Repo.(consoleOwnerScopeRepository)
+	fileID := strings.TrimSpace(r.PathValue("fileID"))
+	if !h.consoleAuthEnabled || !sessionOK || !repoOK || h.fileArchive == nil || !fileIDPattern.MatchString(fileID) {
+		http.NotFound(w, r)
+		return
+	}
+	var input struct {
+		Archived *bool  `json:"archived"`
+		Reason   string `json:"reason"`
+	}
+	dec := json.NewDecoder(io.LimitReader(r.Body, 16<<10))
+	dec.DisallowUnknownFields()
+	if dec.Decode(&input) != nil || input.Archived == nil || strings.TrimSpace(input.Reason) == "" || len(input.Reason) > 500 {
+		http.Error(w, "invalid archive request", http.StatusBadRequest)
+		return
+	}
+	ownerKey, err := repo.ResolveConsoleOwnerScope(r.Context(), session.PrincipalID)
+	if err != nil {
+		http.Error(w, "archive unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if ownerKey == "" {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	if err := h.fileArchive.SetFileArchived(r.Context(), FileArchiveRequest{FileID: fileID, ActorPrincipal: session.PrincipalID, OwnerKey: ownerKey, Reason: strings.TrimSpace(input.Reason), Archived: *input.Archived}); err != nil {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
 
 func (h *Hub) HandleConsoleFileUploadTicket(w http.ResponseWriter, r *http.Request) {
 	agent, ok := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)

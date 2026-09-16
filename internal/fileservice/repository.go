@@ -34,6 +34,13 @@ CREATE INDEX IF NOT EXISTS files_ready_fifo ON files(state,created_at,id);`); er
 		db.Close()
 		return nil, err
 	}
+	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS file_archive_audit (
+id INTEGER PRIMARY KEY AUTOINCREMENT, file_id TEXT NOT NULL, actor_principal TEXT NOT NULL,
+owner_key TEXT NOT NULL, archived INTEGER NOT NULL CHECK(archived IN (0,1)),
+reason TEXT NOT NULL, created_at TEXT NOT NULL);`); err != nil {
+		db.Close()
+		return nil, err
+	}
 	for _, column := range []struct{ name, ddl string }{
 		{"archived", `ALTER TABLE files ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`},
 		{"archived_at", `ALTER TABLE files ADD COLUMN archived_at TEXT`},
@@ -260,6 +267,40 @@ func (r *Repository) SetArchived(ctx context.Context, id string, archived bool, 
 		return fmt.Errorf("file is not ready for archive change")
 	}
 	return nil
+}
+
+// SetArchivedByOwner atomically enforces data ownership and records who made
+// the retention exception, when, and why. Role authorization is performed by
+// Hub before this internal call; this repository independently enforces scope.
+func (r *Repository) SetArchivedByOwner(ctx context.Context, id string, archived bool, actorPrincipal, ownerKey, reason string, at time.Time) error {
+	if actorPrincipal == "" || ownerKey == "" || reason == "" {
+		return fmt.Errorf("archive actor, owner scope, and reason are required")
+	}
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var actualOwner, state string
+	if err := tx.QueryRowContext(ctx, `SELECT owner_key,state FROM files WHERE id=?`, id).Scan(&actualOwner, &state); err != nil {
+		return err
+	}
+	if actualOwner != ownerKey || state != string(StateReady) {
+		return ErrAccessDenied
+	}
+	value := 0
+	var archivedAt any
+	if archived {
+		value, archivedAt = 1, stamp(at)
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE files SET archived=?,archived_at=? WHERE id=? AND owner_key=? AND state='ready'`, value, archivedAt, id, ownerKey); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO file_archive_audit(file_id,actor_principal,owner_key,archived,reason,created_at) VALUES(?,?,?,?,?,?)`,
+		id, actorPrincipal, ownerKey, value, reason, stamp(at)); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (r *Repository) PurgeTombstones(ctx context.Context, before time.Time) (int64, error) {

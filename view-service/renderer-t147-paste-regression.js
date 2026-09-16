@@ -36,10 +36,10 @@ async function t(name, fn) {
     const fetch = async (url, init) => {
       calls.push({url, init});
       if (calls.length === 1) return response(true, {upload_url:'https://files/upload',ticket:'ticket',session:'agent-a'});
-      return response(true, {file_ref:'dwfile:0123456789abcdef0123456789abcdef'});
+      return response(true, {file_ref:'dwfile:0123456789abcdef0123456789abcdef',name:'p.png',size:4});
     };
     await load(box, fetch).uploadPastedImage({type:'image/png',size:4,name:'p.png'});
-    assert.strictEqual(box.value, '已有文字 dwfile:0123456789abcdef0123456789abcdef');
+    assert.strictEqual(box.value, '已有文字 dwfile:0123456789abcdef0123456789abcdef (p.png, 4 bytes)');
     assert.strictEqual(calls.length, 2);
     assert.strictEqual(calls[1].init.headers.Authorization, 'Bearer ticket');
   });
