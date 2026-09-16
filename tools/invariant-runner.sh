@@ -11,7 +11,11 @@ CHECK="${DW_CHECK:-/opt/dingwei/tools/invariant-check.py}"
 CONF="${DW_CONF:-/opt/dingwei/deploy/invariants-dingwei-gray.json}"
 STATE="${DW_STATE:-/var/lib/dingwei/invariant-state.json}"
 LOG="${DW_LOG:-/var/log/dingwei/invariant.log}"
-SEND="${DW_SEND:-}"                 # 为空则只写日志,不发消息
+SEND="${DW_SEND:-}"                 # 旧路:外部 send.py(需凭据) —— 容器内不可用
+# 🔴 新路:hub 的告警出口是 **Unix socket**,不是 TCP 端口。
+#    首版曾走 http://127.0.0.1:8792/internal/notify,而该端口实测**宿主可达** ⇒ 已改。
+NOTIFY_SOCK="${DW_NOTIFY_SOCKET:-/run/dingwei/notify.sock}"
+USE_NOTIFY="${DW_USE_NOTIFY:-1}"    # 1=走 socket(默认);0=退回 send.py
 TO="${DW_NOTIFY_TO:-zzc-opus50ts-2642}"
 MAXAGE="${DW_MAX_AGE:-5400}"        # 心跳超过 90 分钟未成功即告警
 INTERVAL="${DW_INTERVAL:-1800}"     # 30 分钟一轮
@@ -26,7 +30,23 @@ run_once() {
   # 🔴 无论成败都写日志:日志是"它还活着"的证据,不只是"出事了"的证据。
   printf '%s rc=%s\n%s\n' "$ts" "$rc" "$out" >> "$LOG"
   if [ "$rc" -ne 0 ]; then
-    if [ -n "$SEND" ] && [ -x "$SEND" ] 2>/dev/null || [ -n "$SEND" ]; then
+    if [ "$USE_NOTIFY" = "1" ]; then
+      # 走 hub 的 Unix socket 告警出口:不新增凭据面,也不依赖网络拓扑。
+      local body code
+      body="$( { echo "🔴 巡检发现 $( [ "$rc" = 3 ] && echo '【巡检器本身不可判定】' || echo '断言不成立' )（$ts, rc=$rc）"
+                 echo; echo "$out"
+                 echo; echo "判读:rc=2 有断言不成立或心跳过期;rc=3 巡检器自身不可判定。rc=3 不是没问题,是查不了。"
+               } | python3 -c 'import json,sys;print(json.dumps({"text":sys.stdin.read()}))' )"
+      code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
+              --unix-socket "$NOTIFY_SOCK" \
+              -H 'Content-Type: application/json' -d "$body" \
+              'http://localhost/internal/notify' 2>>"$LOG")"
+      if [ "$code" != "202" ]; then
+        # 🔴 告警没送出去,必须显眼留痕 —— 否则这就是「失败没有声音」本身
+        printf '%s 🔴🔴 ALERT_DELIVERY_FAILED http=%s sock=%s —— 上面那条结论无人知晓\n' \
+               "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$code" "$NOTIFY_SOCK" >> "$LOG"
+      fi
+    elif [ -n "$SEND" ]; then
       local body; body="$(mktemp)"
       { echo "🔴 巡检发现 $( [ "$rc" = 3 ] && echo '【巡检器本身不可判定】' || echo '断言不成立' )（$ts, rc=$rc）"
         echo

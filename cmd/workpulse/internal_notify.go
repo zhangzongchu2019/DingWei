@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -25,7 +26,13 @@ import (
 //     (与 T-113 登录设计同一条原则:**能不新增就不新增**)。
 //
 // 🔴 三条硬线:
-//  1. **只挂内网 mux**(默认 127.0.0.1:8792)⇒ **不新增对外暴露面**。
+//  1. **只挂 Unix domain socket**,不挂任何 TCP 端口。
+//     ⚠️ **首版挂在内网 TCP mux(127.0.0.1:8792)上,理由是「内网口不可达」—— 那是错的。**
+//     prodops 实测:**从宿主 POST 该端口得到 HTTP 400,即端口宿主可达**(容器共享网络栈)。
+//     🔴 更值得记的是:**本仓所有既有内网端点都不依赖「端口不可达」,它们全都验 HMAC 签名**
+//     (见 view_input_v2.go 的 X-DW-Signature)⇒ **代码库早已假定内网口可能可达,
+//     而只有我那个端点靠网络拓扑当安全边界。** 我没看既有做法就自己发明了一个假设。
+//     改用 Unix socket:**文件权限兜底,不依赖任何网络拓扑假设,也不新增凭据。**
 //  2. **未配置目标 ⇒ 404「notify disabled」,绝不静默无操作** ——
 //     静默成功是本项目当日最贵的那一族错误(失败没有声音)。
 //  3. **正文长度设上限**,且用 DisallowUnknownFields —— 不接受未知字段。
@@ -81,4 +88,33 @@ func makeInternalNotifyHandler(outbound bus.Queue, logger *slog.Logger) http.Han
 		w.WriteHeader(http.StatusAccepted)
 		_, _ = w.Write([]byte(`{"queued":true}`))
 	}
+}
+
+// serveNotifySocket 在 Unix domain socket 上提供告警出口。
+//
+// 🔴 为什么是 socket 而不是 TCP:见 makeInternalNotifyHandler 顶部注释 ——
+// 「内网 TCP 端口不可达」在本部署形态下**被实测证伪**,
+// 而**文件权限是不依赖网络拓扑的边界**。
+func serveNotifySocket(path string, handler http.Handler, logger *slog.Logger) (func(), error) {
+	// 陈旧 socket 文件会让 Listen 失败;先清掉(它不含任何状态)。
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+	ln, err := net.Listen("unix", path)
+	if err != nil {
+		return nil, err
+	}
+	// 🔴 0600:只有服务运行身份可用。**这是本出口唯一的边界,不可放宽。**
+	if err := os.Chmod(path, 0o600); err != nil {
+		_ = ln.Close()
+		return nil, err
+	}
+	srv := &http.Server{Handler: handler, ReadHeaderTimeout: 5 * time.Second}
+	go func() {
+		if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+			logger.Warn("notify socket serve stopped", "error", err)
+		}
+	}()
+	logger.Info("notify socket listening", "path", path)
+	return func() { _ = srv.Close(); _ = os.Remove(path) }, nil
 }

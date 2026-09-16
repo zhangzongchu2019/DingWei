@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -113,4 +115,49 @@ func TestInternalNotify(t *testing.T) {
 			}
 		}
 	})
+}
+
+// TestNotifySocketOnly 锁死 2026-09-16 那次真实错误:
+// 首版把告警出口挂在内网 TCP 口并声称「宿主不可达」,prodops 实测从宿主得到 400 ⇒ 假设被证伪。
+// 🔴 本用例断言的是**结构**:源码里不得再把 /internal/notify 挂到 TCP mux 上。
+func TestNotifyMustNotBeOnTCPMux(t *testing.T) {
+	src, err := os.ReadFile("main.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(src)
+	if strings.Contains(text, `internalMux.HandleFunc("POST /internal/notify"`) {
+		t.Fatal("告警出口不得挂在内网 TCP mux 上 —— 该端口实测宿主可达;请只挂 Unix socket")
+	}
+	if !strings.Contains(text, "WP_NOTIFY_SOCKET") {
+		t.Fatal("告警出口必须由 WP_NOTIFY_SOCKET 控制;未配置即不存在该出口")
+	}
+}
+
+// TestNotifySocketPermissions 验证 socket 的权限边界 —— 它是本出口**唯一**的边界。
+func TestNotifySocketPermissions(t *testing.T) {
+	dir := t.TempDir()
+	sock := filepath.Join(dir, "notify.sock")
+	stop, err := serveNotifySocket(sock, http.NotFoundHandler(), nilLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	fi, err := os.Stat(sock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mode := fi.Mode().Perm(); mode != 0o600 {
+		t.Fatalf("socket 权限必须 0600（这是唯一边界）,实得 %o", mode)
+	}
+	// 🔴 陈旧 socket 文件不得导致启动失败 —— 否则一次崩溃就再也起不来
+	stop()
+	if _, err := os.Create(sock); err != nil {
+		t.Fatal(err)
+	}
+	stop2, err := serveNotifySocket(sock, http.NotFoundHandler(), nilLogger())
+	if err != nil {
+		t.Fatalf("陈旧 socket 应被清理后重建,实得错误: %v", err)
+	}
+	stop2()
 }

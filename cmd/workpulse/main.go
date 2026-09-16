@@ -231,9 +231,6 @@ func run(logger *slog.Logger) error {
 	// C2 事件订阅 / C3 鉴权 / C3 输入回投。View Service 作为内部消费者调用。
 	internalMux := http.NewServeMux()
 	internalMux.HandleFunc("GET /internal/view/{session}/events", prefixHub.HandleInternalViewEvents)
-	// 🔴 D(0.2.0.5)的告警出口:只挂内网 mux(默认 127.0.0.1:8792),不新增对外暴露面;
-	//    未配置目标即 404「notify disabled」,不静默无操作。
-	internalMux.HandleFunc("POST /internal/notify", makeInternalNotifyHandler(outbound, logger))
 	internalMux.HandleFunc("POST /internal/view/authorize", prefixHub.HandleInternalViewAuthorize)
 	internalMux.HandleFunc("POST /internal/view/{session}/input", prefixHub.HandleInternalViewInput)
 	internalMux.HandleFunc("POST /internal/view/{session}/interrupt", prefixHub.HandleInternalViewInterrupt)
@@ -250,6 +247,20 @@ func run(logger *slog.Logger) error {
 		internalAddr = "127.0.0.1:8792"
 	}
 	internalSrv := &http.Server{Addr: internalAddr, Handler: internalMux, ReadHeaderTimeout: 5 * time.Second}
+
+	// 🔴 D(0.2.0.4)告警出口:**只挂 Unix socket,不挂 TCP**。
+	//    首版挂 127.0.0.1:8792 并声称「宿主不可达」—— prodops 实测从宿主得到 400,该假设被证伪。
+	//    本仓既有内网端点均验 HMAC 签名、不依赖端口不可达;改用 socket 后
+	//    **既不依赖网络拓扑,也不新增凭据**。未配置 WP_NOTIFY_SOCKET ⇒ 整个出口不存在。
+	if sock := strings.TrimSpace(os.Getenv("WP_NOTIFY_SOCKET")); sock != "" {
+		notifyMux := http.NewServeMux()
+		notifyMux.HandleFunc("POST /internal/notify", makeInternalNotifyHandler(outbound, logger))
+		if stopNotify, err := serveNotifySocket(sock, notifyMux, logger); err != nil {
+			return fmt.Errorf("notify socket %s: %w", sock, err)
+		} else {
+			defer stopNotify()
+		}
+	}
 
 	srv := &http.Server{Addr: bs.Addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	publicListener, publicAccept, err := listenWithHeartbeat(bs.Addr)
