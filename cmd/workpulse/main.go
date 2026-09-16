@@ -231,6 +231,9 @@ func run(logger *slog.Logger) error {
 	// C2 事件订阅 / C3 鉴权 / C3 输入回投。View Service 作为内部消费者调用。
 	internalMux := http.NewServeMux()
 	internalMux.HandleFunc("GET /internal/view/{session}/events", prefixHub.HandleInternalViewEvents)
+	// 🔴 D(0.2.0.5)的告警出口:只挂内网 mux(默认 127.0.0.1:8792),不新增对外暴露面;
+	//    未配置目标即 404「notify disabled」,不静默无操作。
+	internalMux.HandleFunc("POST /internal/notify", makeInternalNotifyHandler(outbound, logger))
 	internalMux.HandleFunc("POST /internal/view/authorize", prefixHub.HandleInternalViewAuthorize)
 	internalMux.HandleFunc("POST /internal/view/{session}/input", prefixHub.HandleInternalViewInput)
 	internalMux.HandleFunc("POST /internal/view/{session}/interrupt", prefixHub.HandleInternalViewInterrupt)
