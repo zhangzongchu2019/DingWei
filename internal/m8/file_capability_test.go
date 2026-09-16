@@ -1,7 +1,11 @@
 package m8
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -65,5 +69,36 @@ func TestFileCapabilityUploadIsBoundToAuthenticatedSession(t *testing.T) {
 	got := h.fileCapabilityResponse(context.Background(), &sessionClient{keyID: "k", ownerKey: "owner", sessionName: "agent"}, model.Envelope{From: "agent#k", Meta: meta})
 	if !metaBool(got.Meta, "ok") || issuer.req.Operation != "upload" || issuer.req.OwnerKey != "owner" || issuer.req.SessionName != "agent" || issuer.req.MaxBytes != 1024 {
 		t.Fatalf("request=%+v response=%+v", issuer.req, got)
+	}
+}
+
+func TestConsoleUploadTicketUsesGrantedOnlineAgentIdentity(t *testing.T) {
+	issuer := &recordingFileIssuer{}
+	h := &Hub{fileIssuer: issuer, sessionClients: map[string]map[string]*sessionClient{
+		"shared": {"agent-a": {keyID: "shared", ownerKey: "owner-a", sessionName: "agent-a"}},
+	}}
+	body := bytes.NewBufferString(`{"max_bytes":1234}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/console/agents/agent-a/file-upload-ticket", body)
+	req = req.WithContext(context.WithValue(req.Context(), consoleAgentContextKey{}, model.ConsoleAgent{KeyID: "shared", SessionName: "agent-a"}))
+	w := httptest.NewRecorder()
+	h.HandleConsoleFileUploadTicket(w, req)
+	if w.Code != http.StatusOK || issuer.calls != 1 || issuer.req.OwnerKey != "owner-a" || issuer.req.SessionName != "agent-a" || issuer.req.MaxBytes != 1234 {
+		t.Fatalf("code=%d request=%+v body=%q", w.Code, issuer.req, w.Body.String())
+	}
+	var response map[string]any
+	if json.Unmarshal(w.Body.Bytes(), &response) != nil || response["ticket"] != "opaque-ticket" || response["session"] != "agent-a" {
+		t.Fatalf("response=%q", w.Body.String())
+	}
+}
+
+func TestConsoleUploadTicketRejectsOfflineAgentBeforeIssuer(t *testing.T) {
+	issuer := &recordingFileIssuer{}
+	h := &Hub{fileIssuer: issuer, sessionClients: map[string]map[string]*sessionClient{}}
+	req := httptest.NewRequest(http.MethodPost, "/api/console/agents/agent-a/file-upload-ticket", bytes.NewBufferString(`{"max_bytes":1}`))
+	req = req.WithContext(context.WithValue(req.Context(), consoleAgentContextKey{}, model.ConsoleAgent{KeyID: "shared", SessionName: "agent-a"}))
+	w := httptest.NewRecorder()
+	h.HandleConsoleFileUploadTicket(w, req)
+	if w.Code != http.StatusConflict || issuer.calls != 0 {
+		t.Fatalf("code=%d calls=%d", w.Code, issuer.calls)
 	}
 }

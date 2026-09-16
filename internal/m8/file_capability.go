@@ -122,6 +122,48 @@ func (i *HTTPFileTicketIssuer) IssueFileTicket(ctx context.Context, req FileTick
 
 func (h *Hub) SetFileTicketIssuer(issuer FileTicketIssuer) { h.fileIssuer = issuer }
 
+func (h *Hub) HandleConsoleFileUploadTicket(w http.ResponseWriter, r *http.Request) {
+	agent, ok := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
+	if !ok || h.fileIssuer == nil {
+		http.Error(w, "file upload unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	var input struct {
+		MaxBytes int64 `json:"max_bytes"`
+	}
+	decoder := json.NewDecoder(io.LimitReader(r.Body, 16<<10))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(&input) != nil || input.MaxBytes <= 0 || input.MaxBytes > maxFileUploadBytes {
+		http.Error(w, "invalid upload request", http.StatusBadRequest)
+		return
+	}
+	h.mu.Lock()
+	c := h.sessionClients[agent.KeyID][agent.SessionName]
+	ownerKey := ""
+	if c != nil {
+		ownerKey = c.ownerKey
+	}
+	h.mu.Unlock()
+	if ownerKey == "" {
+		http.Error(w, "agent offline", http.StatusConflict)
+		return
+	}
+	ticket, err := h.fileIssuer.IssueFileTicket(r.Context(), FileTicketRequest{
+		Operation: "upload", OwnerKey: ownerKey, SessionName: agent.SessionName,
+		MaxBytes: input.MaxBytes, TTL: time.Minute,
+	})
+	if err != nil {
+		http.Error(w, "file upload unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"upload_url": ticket.PublicBaseURL + "/files/upload", "ticket": ticket.Token,
+		"expires_at": ticket.ExpiresAt.UTC().Format(time.RFC3339Nano), "session": agent.SessionName,
+	})
+}
+
 func (h *Hub) handleFileCapabilityRequest(ctx context.Context, c *sessionClient, env model.Envelope) bool {
 	if metaString(env.Meta, "type") != fileCapabilityRequestType {
 		return false

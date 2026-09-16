@@ -3494,7 +3494,51 @@
       humanInput.setRangeText('\n', start, end, 'end');
       humanInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    function appendInputReference(fileRef) {
+      const start = humanInput.selectionStart;
+      const end = humanInput.selectionEnd;
+      const prefix = start > 0 && !/\s$/u.test(humanInput.value.slice(0, start)) ? ' ' : '';
+      const suffix = end < humanInput.value.length && !/^\s/u.test(humanInput.value.slice(end)) ? ' ' : '';
+      humanInput.setRangeText(prefix + fileRef + suffix, start, end, 'end');
+      humanInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    async function uploadPastedImage(file) {
+      if (!file || !String(file.type || '').startsWith('image/')) throw new Error('只处理图片粘贴');
+      if (file.size <= 0 || file.size > 16 * 1024 * 1024) throw new Error('图片须大于 0 且不超过 16 MiB');
+      const ticketRes = await fetch(`/api/console/agents/${encodeURIComponent(stats.sessionName)}/file-upload-ticket`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ max_bytes: file.size }),
+      });
+      if (!ticketRes.ok) throw new Error(`申请上传票据失败: HTTP ${ticketRes.status}`);
+      const ticket = await ticketRes.json();
+      if (!ticket.upload_url || !ticket.ticket || ticket.session !== stats.sessionName) throw new Error('上传票据响应无效');
+      const uploadRes = await fetch(ticket.upload_url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${ticket.ticket}`,
+          'X-DingWei-Session': stats.sessionName,
+          'X-File-Name': file.name || 'pasted-image',
+          'Content-Type': file.type,
+        },
+        body: file,
+      });
+      if (!uploadRes.ok) throw new Error(`图片上传失败: HTTP ${uploadRes.status}`);
+      const uploaded = await uploadRes.json();
+      if (!/^dwfile:[0-9a-f]{32}$/u.test(String(uploaded.file_ref || ''))) throw new Error('上传响应缺少有效文件引用');
+      appendInputReference(uploaded.file_ref);
+    }
     humanInput.addEventListener('input', resizeHumanInput);
+    humanInput.addEventListener('paste', (event) => {
+      const items = Array.from(event.clipboardData?.items || []);
+      const imageItem = items.find((item) => item.kind === 'file' && String(item.type || '').startsWith('image/'));
+      if (!imageItem) return; // 非图片粘贴保持浏览器原行为
+      event.preventDefault();
+      const file = imageItem.getAsFile();
+      uploadPastedImage(file).catch((err) => {
+        // 上传成功前从不修改输入框；失败时用户已经输入的文字自然原样保留。
+        handleIncomingEvent({ kind: 'error', text: err.message, data: { code: 'image_upload_failed' } });
+      });
+    });
     // Enter 发送；Ctrl/Cmd/Shift+Enter 在光标或选区处插入换行。
     // isComposing 守卫：中文输入法选字回车只确认候选，不误发送。
     humanInput.addEventListener('keydown', (e) => {
