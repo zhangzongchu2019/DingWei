@@ -10,11 +10,12 @@ func TestConfigRequiresMinIOAndKeepsCapacityConfigurable(t *testing.T) {
 	t.Setenv("FS_INTERNAL_AUDIT_TOKEN", "audit")
 	t.Setenv("FS_TOTAL_QUOTA_BYTES", "12345")
 	t.Setenv("FS_RETENTION", "48h")
+	t.Setenv("FS_TOMBSTONE_RETENTION", "72h")
 	c, err := ConfigFromEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.QuotaBytes != 12345 || c.Retention.Hours() != 48 {
+	if c.QuotaBytes != 12345 || c.Retention.Hours() != 48 || c.TombstoneRetention.Hours() != 72 {
 		t.Fatalf("config=%+v", c)
 	}
 }

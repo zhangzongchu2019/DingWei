@@ -3,6 +3,7 @@ package fileservice
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"io"
 	"path/filepath"
@@ -68,7 +69,7 @@ func testManager(t *testing.T, quota int64) (*Manager, *FixedClock, *memoryObjec
 	t.Cleanup(func() { r.Close() })
 	c := &FixedClock{Time: time.Date(2026, 9, 10, 0, 0, 0, 0, time.UTC)}
 	o := &memoryObjects{data: map[string][]byte{}}
-	return &Manager{Repo: r, Objects: o, Clock: c, MaxFileBytes: 32, QuotaBytes: quota, Retention: 60 * 24 * time.Hour}, c, o
+	return &Manager{Repo: r, Objects: o, Clock: c, MaxFileBytes: 32, QuotaBytes: quota, Retention: 60 * 24 * time.Hour, TombstoneRetention: 90 * 24 * time.Hour}, c, o
 }
 
 func TestPutIntegrityFailuresNeverBecomeReady(t *testing.T) {
@@ -166,5 +167,54 @@ func TestSweepRetriesDurableDeletingState(t *testing.T) {
 	// another sweep remains a no-op.
 	if err := m.Sweep(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestArchivedFileSurvivesWhileDefaultExpiresAndTombstonePurgesLater(t *testing.T) {
+	m, clock, objects := testManager(t, 100)
+	archived, err := m.Put(context.Background(), Upload{OwnerKey: "o", SessionName: "s", OriginalName: "keep", ContentLength: 4, Body: strings.NewReader("keep")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ordinary, err := m.Put(context.Background(), Upload{OwnerKey: "o", SessionName: "s", OriginalName: "drop", ContentLength: 4, Body: strings.NewReader("drop")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.Repo.SetArchived(context.Background(), archived.ID, true, clock.Now()); err != nil {
+		t.Fatal(err)
+	}
+	clock.Time = clock.Time.Add(60*24*time.Hour + time.Second)
+	if err := m.Sweep(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	kept, err := m.Repo.Get(context.Background(), archived.ID)
+	if err != nil || !kept.Archived || kept.State != StateReady {
+		t.Fatalf("archived file=%+v err=%v", kept, err)
+	}
+	deleted, err := m.Repo.Get(context.Background(), ordinary.ID)
+	if err != nil || deleted.State != StateExpired || deleted.RemovedAt == nil {
+		t.Fatalf("ordinary file=%+v err=%v", deleted, err)
+	}
+	objects.mu.Lock()
+	_, archivedBytesExist := objects.data[archived.ObjectKey]
+	_, ordinaryBytesExist := objects.data[ordinary.ObjectKey]
+	objects.mu.Unlock()
+	if !archivedBytesExist || ordinaryBytesExist {
+		t.Fatalf("object bytes archived=%t ordinary=%t", archivedBytesExist, ordinaryBytesExist)
+	}
+
+	clock.Time = clock.Time.Add(89 * 24 * time.Hour)
+	if err := m.Sweep(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Repo.Get(context.Background(), ordinary.ID); err != nil {
+		t.Fatalf("tombstone purged before 90d: %v", err)
+	}
+	clock.Time = clock.Time.Add(24*time.Hour + time.Second)
+	if err := m.Sweep(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Repo.Get(context.Background(), ordinary.ID); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("tombstone remains after 90d: %v", err)
 	}
 }

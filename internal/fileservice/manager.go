@@ -32,6 +32,7 @@ type Manager struct {
 	Clock                    Clock
 	MaxFileBytes, QuotaBytes int64
 	Retention                time.Duration
+	TombstoneRetention       time.Duration
 	mu                       sync.Mutex
 }
 
@@ -149,6 +150,11 @@ func (m *Manager) enforceLocked(ctx context.Context) error {
 		}
 		f.State, f.RemovalReason = StateDeleting, reason
 		if err := m.finishRemoval(ctx, f); err != nil {
+			return err
+		}
+	}
+	if m.TombstoneRetention > 0 {
+		if _, err := m.Repo.PurgeTombstones(ctx, m.Clock.Now().Add(-m.TombstoneRetention)); err != nil {
 			return err
 		}
 	}

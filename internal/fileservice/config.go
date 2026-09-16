@@ -22,41 +22,43 @@ const (
 )
 
 type Config struct {
-	Addr             string
-	InternalAddr     string
-	DatabasePath     string
-	PublicBaseURL    string
-	MaxFileBytes     int64
-	QuotaBytes       int64
-	Retention        time.Duration
-	SweepInterval    time.Duration
-	CapabilityMaxAge time.Duration
-	MinIOEndpoint    string
-	MinIOAccessKey   string
-	MinIOSecretKey   string
-	MinIOBucket      string
-	MinIOUseTLS      bool
-	IssuerToken      string
-	AuditToken       string
+	Addr               string
+	InternalAddr       string
+	DatabasePath       string
+	PublicBaseURL      string
+	MaxFileBytes       int64
+	QuotaBytes         int64
+	Retention          time.Duration
+	TombstoneRetention time.Duration
+	SweepInterval      time.Duration
+	CapabilityMaxAge   time.Duration
+	MinIOEndpoint      string
+	MinIOAccessKey     string
+	MinIOSecretKey     string
+	MinIOBucket        string
+	MinIOUseTLS        bool
+	IssuerToken        string
+	AuditToken         string
 }
 
 func ConfigFromEnv() (Config, error) {
 	c := Config{
-		Addr:             env("FS_ADDR", "127.0.0.1:8793"),
-		InternalAddr:     env("FS_INTERNAL_ADDR", "127.0.0.1:8794"),
-		DatabasePath:     env("FS_DATABASE_PATH", "./data/file-service.db"),
-		PublicBaseURL:    strings.TrimRight(os.Getenv("FS_PUBLIC_BASE_URL"), "/"),
-		MaxFileBytes:     defaultMaxFileBytes,
-		QuotaBytes:       defaultQuotaBytes,
-		Retention:        60 * 24 * time.Hour,
-		SweepInterval:    time.Minute,
-		CapabilityMaxAge: 2 * time.Minute,
-		MinIOEndpoint:    os.Getenv("FS_MINIO_ENDPOINT"),
-		MinIOAccessKey:   os.Getenv("FS_MINIO_ACCESS_KEY"),
-		MinIOSecretKey:   os.Getenv("FS_MINIO_SECRET_KEY"),
-		MinIOBucket:      env("FS_MINIO_BUCKET", "dingwei-files"),
-		IssuerToken:      os.Getenv("FS_INTERNAL_ISSUER_TOKEN"),
-		AuditToken:       os.Getenv("FS_INTERNAL_AUDIT_TOKEN"),
+		Addr:               env("FS_ADDR", "127.0.0.1:8793"),
+		InternalAddr:       env("FS_INTERNAL_ADDR", "127.0.0.1:8794"),
+		DatabasePath:       env("FS_DATABASE_PATH", "./data/file-service.db"),
+		PublicBaseURL:      strings.TrimRight(os.Getenv("FS_PUBLIC_BASE_URL"), "/"),
+		MaxFileBytes:       defaultMaxFileBytes,
+		QuotaBytes:         defaultQuotaBytes,
+		Retention:          60 * 24 * time.Hour,
+		TombstoneRetention: 90 * 24 * time.Hour,
+		SweepInterval:      time.Minute,
+		CapabilityMaxAge:   2 * time.Minute,
+		MinIOEndpoint:      os.Getenv("FS_MINIO_ENDPOINT"),
+		MinIOAccessKey:     os.Getenv("FS_MINIO_ACCESS_KEY"),
+		MinIOSecretKey:     os.Getenv("FS_MINIO_SECRET_KEY"),
+		MinIOBucket:        env("FS_MINIO_BUCKET", "dingwei-files"),
+		IssuerToken:        os.Getenv("FS_INTERNAL_ISSUER_TOKEN"),
+		AuditToken:         os.Getenv("FS_INTERNAL_AUDIT_TOKEN"),
 	}
 	var err error
 	if c.MaxFileBytes, err = envInt64("FS_MAX_FILE_BYTES", c.MaxFileBytes); err != nil {
@@ -68,6 +70,9 @@ func ConfigFromEnv() (Config, error) {
 	if c.Retention, err = envDuration("FS_RETENTION", c.Retention); err != nil {
 		return Config{}, err
 	}
+	if c.TombstoneRetention, err = envDuration("FS_TOMBSTONE_RETENTION", c.TombstoneRetention); err != nil {
+		return Config{}, err
+	}
 	if c.SweepInterval, err = envDuration("FS_SWEEP_INTERVAL", c.SweepInterval); err != nil {
 		return Config{}, err
 	}
@@ -75,7 +80,7 @@ func ConfigFromEnv() (Config, error) {
 		return Config{}, err
 	}
 	c.MinIOUseTLS = envBool("FS_MINIO_USE_TLS")
-	if c.MaxFileBytes <= 0 || c.QuotaBytes <= 0 || c.Retention <= 0 || c.CapabilityMaxAge <= 0 {
+	if c.MaxFileBytes <= 0 || c.QuotaBytes <= 0 || c.Retention <= 0 || c.TombstoneRetention <= 0 || c.CapabilityMaxAge <= 0 {
 		return Config{}, fmt.Errorf("file-service limits must be positive")
 	}
 	if c.MinIOEndpoint == "" || c.MinIOAccessKey == "" || c.MinIOSecretKey == "" {

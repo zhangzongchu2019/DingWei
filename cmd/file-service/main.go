@@ -40,7 +40,7 @@ func run(logger *slog.Logger) error {
 	service := &fileservice.Service{
 		Manager: &fileservice.Manager{
 			Repo: repo, Objects: objects, Clock: clock, MaxFileBytes: cfg.MaxFileBytes,
-			QuotaBytes: cfg.QuotaBytes, Retention: cfg.Retention,
+			QuotaBytes: cfg.QuotaBytes, Retention: cfg.Retention, TombstoneRetention: cfg.TombstoneRetention,
 		},
 		Capabilities:  fileservice.NewGrantStore(clock, cfg.CapabilityMaxAge),
 		UploadTickets: fileservice.NewUploadTicketStore(clock, cfg.CapabilityMaxAge),

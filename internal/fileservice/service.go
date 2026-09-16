@@ -24,7 +24,12 @@ func (s *Service) InternalHandler() http.Handler {
 	if s.Manager != nil {
 		repo = s.Manager.Repo
 	}
-	mux.Handle("/internal/files/issue/", IssuerHandler{Capabilities: s.Capabilities, Uploads: s.UploadTickets, Token: s.IssuerToken})
+	issuer := IssuerHandler{Capabilities: s.Capabilities, Uploads: s.UploadTickets, Repo: repo, Token: s.IssuerToken}
+	if s.Manager != nil {
+		issuer.Clock = s.Manager.Clock
+	}
+	mux.Handle("/internal/files/issue/", issuer)
+	mux.Handle("/internal/files/archive", issuer)
 	mux.Handle("/internal/files/audit", AuditHandler{Repo: repo, Token: s.AuditToken})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {

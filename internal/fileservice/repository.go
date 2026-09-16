@@ -28,12 +28,50 @@ func OpenRepository(path string) (*Repository, error) {
 id TEXT PRIMARY KEY, object_key TEXT NOT NULL UNIQUE, owner_key TEXT NOT NULL,
 session_name TEXT NOT NULL, original_name TEXT NOT NULL, media_type TEXT NOT NULL,
 size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, state TEXT NOT NULL,
-created_at TEXT NOT NULL, expires_at TEXT NOT NULL, removed_at TEXT, removal_reason TEXT NOT NULL DEFAULT '');
+	created_at TEXT NOT NULL, expires_at TEXT NOT NULL, archived INTEGER NOT NULL DEFAULT 0,
+	archived_at TEXT, removed_at TEXT, removal_reason TEXT NOT NULL DEFAULT '');
 CREATE INDEX IF NOT EXISTS files_ready_fifo ON files(state,created_at,id);`); err != nil {
 		db.Close()
 		return nil, err
 	}
+	for _, column := range []struct{ name, ddl string }{
+		{"archived", `ALTER TABLE files ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`},
+		{"archived_at", `ALTER TABLE files ADD COLUMN archived_at TEXT`},
+	} {
+		present, checkErr := sqliteColumnExists(db, "files", column.name)
+		if checkErr != nil {
+			db.Close()
+			return nil, checkErr
+		}
+		if !present {
+			if _, err = db.Exec(column.ddl); err != nil {
+				db.Close()
+				return nil, err
+			}
+		}
+	}
 	return r, nil
+}
+
+func sqliteColumnExists(db *sql.DB, table, column string) (bool, error) {
+	rows, err := db.Query(`PRAGMA table_info(` + table + `)`)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, typ string
+		var notNull, pk int
+		var defaultValue any
+		if err := rows.Scan(&cid, &name, &typ, &notNull, &defaultValue, &pk); err != nil {
+			return false, err
+		}
+		if name == column {
+			return true, nil
+		}
+	}
+	return false, rows.Err()
 }
 
 func (r *Repository) Close() error { return r.db.Close() }
@@ -51,8 +89,10 @@ func (r *Repository) Get(ctx context.Context, id string) (File, error) {
 	var f File
 	var created, expires string
 	var removed sql.NullString
-	err := r.db.QueryRowContext(ctx, `SELECT id,object_key,owner_key,session_name,original_name,media_type,size_bytes,sha256,state,created_at,expires_at,removed_at,removal_reason FROM files WHERE id=?`, id).Scan(
-		&f.ID, &f.ObjectKey, &f.OwnerKey, &f.SessionName, &f.OriginalName, &f.MediaType, &f.SizeBytes, &f.SHA256, &f.State, &created, &expires, &removed, &f.RemovalReason)
+	var archived int
+	var archivedAt sql.NullString
+	err := r.db.QueryRowContext(ctx, `SELECT id,object_key,owner_key,session_name,original_name,media_type,size_bytes,sha256,state,created_at,expires_at,archived,archived_at,removed_at,removal_reason FROM files WHERE id=?`, id).Scan(
+		&f.ID, &f.ObjectKey, &f.OwnerKey, &f.SessionName, &f.OriginalName, &f.MediaType, &f.SizeBytes, &f.SHA256, &f.State, &created, &expires, &archived, &archivedAt, &removed, &f.RemovalReason)
 	if err != nil {
 		return File{}, err
 	}
@@ -63,6 +103,14 @@ func (r *Repository) Get(ctx context.Context, id string) (File, error) {
 	f.ExpiresAt, err = time.Parse(time.RFC3339Nano, expires)
 	if err != nil {
 		return File{}, err
+	}
+	f.Archived = archived != 0
+	if archivedAt.Valid {
+		t, e := time.Parse(time.RFC3339Nano, archivedAt.String)
+		if e != nil {
+			return File{}, e
+		}
+		f.ArchivedAt = &t
 	}
 	if removed.Valid {
 		t, e := time.Parse(time.RFC3339Nano, removed.String)
@@ -106,7 +154,7 @@ func (r *Repository) ListStable(ctx context.Context, state State, limit int) ([]
 	return out, rows.Err()
 }
 func (r *Repository) RemovalCandidates(ctx context.Context, now time.Time, quota int64) ([]File, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id FROM files WHERE state='ready' ORDER BY CASE WHEN expires_at<=? THEN 0 ELSE 1 END,created_at,id`, stamp(now))
+	rows, err := r.db.QueryContext(ctx, `SELECT id FROM files WHERE state='ready' AND archived=0 ORDER BY CASE WHEN expires_at<=? THEN 0 ELSE 1 END,created_at,id`, stamp(now))
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +240,34 @@ func (r *Repository) FinishDeleting(ctx context.Context, id string, at time.Time
 		return fmt.Errorf("deletion state changed")
 	}
 	return nil
+}
+
+func (r *Repository) SetArchived(ctx context.Context, id string, archived bool, at time.Time) error {
+	value := 0
+	var archivedAt any
+	if archived {
+		value, archivedAt = 1, stamp(at)
+	}
+	result, err := r.db.ExecContext(ctx, `UPDATE files SET archived=?,archived_at=? WHERE id=? AND state='ready'`, value, archivedAt, id)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return fmt.Errorf("file is not ready for archive change")
+	}
+	return nil
+}
+
+func (r *Repository) PurgeTombstones(ctx context.Context, before time.Time) (int64, error) {
+	result, err := r.db.ExecContext(ctx, `DELETE FROM files WHERE state IN ('expired','evicted') AND removed_at IS NOT NULL AND removed_at<?`, stamp(before))
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 func (r *Repository) Tombstone(ctx context.Context, id string, state State, at time.Time, reason string) error {
 	if state != StateEvicted && state != StateExpired {

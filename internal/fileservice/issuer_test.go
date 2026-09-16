@@ -2,12 +2,40 @@ package fileservice
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 	"time"
 )
+
+func TestIssuerArchivesReadyFileWithExplicitBoolean(t *testing.T) {
+	clock := &FixedClock{Time: time.Date(2026, 9, 17, 0, 0, 0, 0, time.UTC)}
+	repo, err := OpenRepository(filepath.Join(t.TempDir(), "files.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer repo.Close()
+	f := File{ID: "f1", ObjectKey: "objects/f1", OwnerKey: "o", SessionName: "s", OriginalName: "x", SizeBytes: 1, SHA256: "a", State: StateReady, CreatedAt: clock.Now(), ExpiresAt: clock.Now().Add(time.Hour)}
+	if err := repo.InsertReady(context.Background(), f); err != nil {
+		t.Fatal(err)
+	}
+	h := IssuerHandler{Repo: repo, Clock: clock, Token: "internal-only"}
+	body := bytes.NewBufferString(`{"file_id":"f1","archived":true}`)
+	r := httptest.NewRequest(http.MethodPost, "/internal/files/archive", body)
+	r.Header.Set("Authorization", "Bearer internal-only")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("archive status=%d body=%q", w.Code, w.Body.String())
+	}
+	got, err := repo.Get(context.Background(), "f1")
+	if err != nil || !got.Archived || got.ArchivedAt == nil {
+		t.Fatalf("archived file=%+v err=%v", got, err)
+	}
+}
 
 func TestIssuerKeepsUploadAndRetrievalAudiencesSeparate(t *testing.T) {
 	clock := &FixedClock{Time: time.Date(2026, 9, 12, 2, 0, 0, 0, time.UTC)}

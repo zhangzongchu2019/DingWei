@@ -17,7 +17,9 @@ type File struct {
 	ID, ObjectKey, OwnerKey, SessionName, OriginalName, MediaType, SHA256 string
 	SizeBytes                                                             int64
 	State                                                                 State
+	Archived                                                              bool
 	CreatedAt, ExpiresAt                                                  time.Time
+	ArchivedAt                                                            *time.Time
 	RemovedAt                                                             *time.Time
 	RemovalReason                                                         string
 }
