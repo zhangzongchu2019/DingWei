@@ -11,8 +11,6 @@ import (
 type IssuerHandler struct {
 	Capabilities *GrantStore
 	Uploads      *UploadTicketStore
-	Repo         *Repository
-	Clock        Clock
 	Token        string
 }
 
@@ -25,7 +23,6 @@ type issueRequest struct {
 	Range       string `json:"range"`
 	TTLSeconds  int64  `json:"ttl_seconds"`
 	MaxBytes    int64  `json:"max_bytes"`
-	Archived    *bool  `json:"archived"`
 }
 
 func (h IssuerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -45,20 +42,6 @@ func (h IssuerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ttl := time.Duration(req.TTLSeconds) * time.Second
-	if r.URL.Path == "/internal/files/archive" {
-		if h.Repo == nil || h.Clock == nil || req.FileID == "" || req.Archived == nil {
-			hide(w)
-			return
-		}
-		if err := h.Repo.SetArchived(r.Context(), req.FileID, *req.Archived, h.Clock.Now()); err != nil {
-			hide(w)
-			return
-		}
-		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"file_id": req.FileID, "archived": *req.Archived})
-		return
-	}
 	var raw string
 	var expiresAt time.Time
 	var err error

@@ -62,6 +62,23 @@ func TestFileCapabilityRejectsInvalidRequestBeforeIssuer(t *testing.T) {
 	}
 }
 
+func TestFileTicketIssuerRejectsURLCredentialsQueryAndFragment(t *testing.T) {
+	for _, raw := range []string{
+		"https://user:pw@files.example",
+		"https://files.example?token=must-not-be-in-url",
+		"https://files.example#credential-fragment",
+	} {
+		t.Run(raw, func(t *testing.T) {
+			if _, err := NewHTTPFileTicketIssuer(raw, "https://public.example", "issuer-credential"); err == nil {
+				t.Fatalf("unsafe internal URL accepted: %s", raw)
+			}
+			if _, err := NewHTTPFileTicketIssuer("https://internal.example", raw, "issuer-credential"); err == nil {
+				t.Fatalf("unsafe public URL accepted: %s", raw)
+			}
+		})
+	}
+}
+
 func TestFileCapabilityUploadIsBoundToAuthenticatedSession(t *testing.T) {
 	issuer := &recordingFileIssuer{}
 	h := &Hub{fileIssuer: issuer}
