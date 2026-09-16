@@ -174,6 +174,26 @@ class FileHandlerBridgeTest(unittest.TestCase):
 
         asyncio.run(run())
 
+    def test_binary_non_text_stays_on_demand_and_keeps_reference(self):
+        async def run():
+            helper = self.helper()
+
+            async def handler(file_ref, method, _byte_range):
+                if method == "HEAD":
+                    return {"file_ref": file_ref, "size": 3, "sha256": SHA256,
+                            "media_type": "image/png", "expires_at": "", "range": True}
+                return {"file_ref": file_ref, "content_base64": "////",
+                        "content_range": "bytes 0-2/3", "sha256": SHA256, "total_size": 3}
+
+            helper._make_file_handler = lambda _ws: handler
+            body = "inspect dwfile:" + FILE_ID
+            got = await helper._enrich_small_text_files(object(), {"body": body})
+            self.assertEqual(got["body"], body)
+            self.assertIn("dwfile:" + FILE_ID, got["body"])
+            self.assertNotIn("USER UPLOAD BEGIN", got["body"])
+
+        asyncio.run(run())
+
     def test_executable_media_type_is_read_as_untrusted_text_never_executed_or_written(self):
         async def run():
             helper = self.helper()
