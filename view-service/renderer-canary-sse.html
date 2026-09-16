@@ -3163,8 +3163,37 @@
     // 没有 per-event 唯一序号,客户端无法逐条判重(见上方 P0 说明),
     // 因此改用"清空 + 由重放重建"这一种机制 —— 与刷新页面等价、天然幂等,
     // 且失败模式是"重建一次(短暂重排)",不会丢正文。
+    // T-086 止血(业主 2026-09-16 定):**把清空推迟到第一条重放事件真正到达时**。
+    //
+    // 为什么:`eventRing` 纯内存 ⇒ **Hub 一重启就归零**;而此处原先在 onopen **立刻**清空,
+    // 于是「清空了、却没东西可重放」⇒ **整页空白**。业主当日被擦四五次,成因是组长的连续发版。
+    // 🔴 本改**不修根因**(ring 仍无持久化,重启前的历史确实没了),
+    //    只让「屏幕上还看得见的旧内容」不被白白擦掉 —— **旧内容远好过白页**。
+    //
+    // 🔴 为什么要窗口:若只写「第一条事件到达时才清」,ring 空时**后来的第一条【活事件】
+    //    也会触发清空** —— 那只是把白页**推迟**,不是消除。故只在重放突发期内接受清空,
+    //    超时即取消(常量复用现成的 REPLAY_HARD_LIMIT_MS)。
+    let pendingReconnectClear = false;
+    let pendingClearTimer = null;
+    function cancelPendingReconnectClear() {
+      pendingReconnectClear = false;
+      clearTimeout(pendingClearTimer);
+      pendingClearTimer = null;
+    }
+    // 返回 true 表示「本条事件到达时应当先清空」——供 handleIncomingEvent 之前调用。
+    function consumeReconnectClear() {
+      if (!pendingReconnectClear) return false;
+      cancelPendingReconnectClear();
+      return true;
+    }
     function markStreamReconnect() {
-      resetConversation();
+      // 不再立刻 resetConversation();挂起,等第一条重放事件。
+      pendingReconnectClear = true;
+      clearTimeout(pendingClearTimer);
+      pendingClearTimer = setTimeout(function () {
+        // 窗口内一条都没来 ⇒ ring 是空的(多半 Hub 刚重启)⇒ **取消清空,保住现有内容**
+        cancelPendingReconnectClear();
+      }, REPLAY_HARD_LIMIT_MS);
       beginTimelineReplay();
     }
 
@@ -3192,6 +3221,8 @@
         receivedFirstEvent = true;
         clearStreamConnectTimer();
         hideStreamAlert();
+        // T-086:重放的第一条到达了 ⇒ 此刻才清空(与旧行为等价);ring 空则永远走不到这里。
+        if (consumeReconnectClear()) resetConversation();
         try {
           handleIncomingEvent(JSON.parse(msg.data));
         } catch (err) {

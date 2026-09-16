@@ -147,25 +147,94 @@ func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http
 func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	fmt.Fprint(w, `<!doctype html><meta charset=utf-8><title>DingWei Agent Console</title><style>body{margin:0;display:grid;grid-template-columns:280px 1fr;height:100vh;font:14px sans-serif}nav{overflow:auto;border-right:1px solid #ddd;padding:12px}button{display:block;width:100%;margin:4px 0;text-align:left}iframe{width:100%;height:100%;border:0}</style><nav><h2>Agents</h2><div id=a></div></nav><iframe id=v title="Agent view"></iframe><script>
-// T-138(业主 2026-09-15 目标②③):左栏只显短名;在线优先,离线折叠。
-// 短名 = 三段式 <owner>-<name>-<suffix> 的中间段;取不到就原样显示。
-// 🔴 不做"重名回退全名"的兜底 —— 业主裁定:命名归他,短名唯一性由命名策略保证,
-//    渲染层兜底会把真正的命名冲突静默吸收掉,让他看不见本该看见的问题。
+	fmt.Fprint(w, consolePageHTML)
+}
+
+// consolePageHTML 业主 2026-09-16 定:右侧改为**多 tab**,每点一个 Agent 增加一个属性页。
+//
+// 🔴 关键设计:切换 tab 用**显示/隐藏**,**不换 iframe 的 src**。
+//    换 src 会把上一个 Agent 的页面整个销毁 —— 那正是业主此前每次切 Agent 都要重新加载的原因。
+//
+// 🔴 上限 8(业主定)。为什么必须有上限:每个 view 页是一条 **SSE 长连接**,
+//    而浏览器对同一源的 **HTTP/1.1 并发连接上限是 6**(HTTP/2 多路复用后才不适用)。
+//    ⇒ **无上限时,第 7 个 tab 会直接卡住,且表现为「页面一直转圈」而非报错** —— 又一种没有声音的失败。
+const consolePageHTML = `<!doctype html><meta charset=utf-8><title>DingWei Agent Console</title>
+<style>
+body{margin:0;display:grid;grid-template-columns:240px 1fr;height:100vh;font:14px sans-serif}
+nav{overflow:auto;border-right:1px solid #ddd;padding:10px}
+nav button{display:block;width:100%;margin:3px 0;text-align:left;padding:4px 6px}
+main{display:flex;flex-direction:column;min-width:0}
+#tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #ddd;padding:6px;min-height:28px}
+#tabs .tab{display:inline-flex;align-items:center;gap:6px;border:1px solid #ccc;border-radius:4px;
+  padding:3px 8px;cursor:pointer;background:#f7f7f7;max-width:200px}
+#tabs .tab.on{background:#fff;border-color:#4a90d9;font-weight:600}
+#tabs .tab .x{color:#999;font-weight:400}
+#tabs .tab .x:hover{color:#c00}
+#panes{flex:1;position:relative;min-height:0}
+#panes iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#hint{padding:10px;color:#888}
+</style>
+<nav><h3 style="margin:4px 0 8px">Agents</h3><div id=a></div></nav>
+<main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
+<script>
+const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
+// 短名 = 三段式 <owner>-<name>-<suffix> 的中间段;取不到就原样显示(T-138,业主裁定命名归他)
 function dwShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s}
-fetch('/api/console/agents').then(r=>r.json()).then(function(x){
-  var nav=document.querySelector('#a');
-  function mk(a){var b=document.createElement('button');b.textContent=dwShortName(a.session);
-    b.title=a.session;b.disabled=!a.online;
-    b.onclick=function(){v.src='/view/'+encodeURIComponent(a.session)};return b}
+const tabs = new Map();   // session -> {tab, pane}
+function activate(session){
+  tabs.forEach(function(v,k){
+    v.tab.classList.toggle('on', k===session);
+    v.pane.style.display = (k===session) ? 'block' : 'none';
+  });
+  var h=document.getElementById('hint'); if(h) h.style.display='none';
+}
+function closeTab(session){
+  var e=tabs.get(session); if(!e) return;
+  e.tab.remove(); e.pane.remove(); tabs.delete(session);   // 🔴 关闭才真正断开那条 SSE
+  var last=Array.from(tabs.keys()).pop();
+  if(last) activate(last);
+  else { var h=document.getElementById('hint'); if(h) h.style.display='block'; }
+}
+function openTab(session){
+  if(tabs.has(session)){ activate(session); return; }      // 已开过 ⇒ 切过去,不重建
+  if(tabs.size >= MAX_TABS){
+    alert('最多同时打开 ' + MAX_TABS + ' 个 Agent。\n' +
+          '每个页面占一条长连接,超过浏览器上限后新页会一直转圈而不报错。\n' +
+          '请先关掉一个再打开。');
+    return;
+  }
+  var tab=document.createElement('span'); tab.className='tab'; tab.title=session;
+  var label=document.createElement('span'); label.textContent=dwShortName(session);
+  var x=document.createElement('span'); x.className='x'; x.textContent='×'; x.title='关闭';
+  tab.append(label,x);
+  tab.onclick=function(ev){ if(ev.target===x){ ev.stopPropagation(); closeTab(session); } else activate(session); };
+  var pane=document.createElement('iframe');
+  pane.title='Agent view: '+session;
+  pane.src='/view/'+encodeURIComponent(session);
+  pane.style.display='none';
+  document.getElementById('tabs').append(tab);
+  document.getElementById('panes').append(pane);
+  tabs.set(session,{tab:tab,pane:pane});
+  activate(session);
+}
+fetch('/api/console/agents').then(function(r){return r.json()}).then(function(x){
+  var nav=document.getElementById('a');
+  function mk(a){
+    var b=document.createElement('button');
+    b.textContent=dwShortName(a.session); b.title=a.session; b.disabled=!a.online;
+    b.onclick=function(){ openTab(a.session) };
+    return b;
+  }
   var on=x.agents.filter(function(a){return a.online});
   var off=x.agents.filter(function(a){return !a.online});
   on.forEach(function(a){nav.append(mk(a))});
-  if(off.length){var d=document.createElement('details');
-    var sm=document.createElement('summary');sm.textContent='离线 ('+off.length+')';
-    d.append(sm);off.forEach(function(a){d.append(mk(a))});nav.append(d)}
-})</script>`)
-}
+  if(off.length){
+    var d=document.createElement('details');
+    var sm=document.createElement('summary'); sm.textContent='离线 ('+off.length+')';
+    d.append(sm); off.forEach(function(a){d.append(mk(a))}); nav.append(d);
+  }
+})
+</script>`
 
 func (h *Hub) HandleConsoleAgents(w http.ResponseWriter, r *http.Request) {
 	repo := h.Repo.(consoleAuthRepository)

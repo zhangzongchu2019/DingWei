@@ -35,3 +35,40 @@ func TestConsolePageShortNameAndOfflineGrouping(t *testing.T) {
 		t.Error("旧的全名平铺写法仍在页面里:新旧并存 ⇒ 断言不排他")
 	}
 }
+
+// TestConsolePageMultiTab 业主 2026-09-16 定:右侧多 tab,每点一个 Agent 增加一个属性页。
+// 🔴 本测试是【结构级】的,它只证明这些行为的实现仍在页面里;
+// 真行为由 view-service/renderer-t145-tabs-regression.js(抽真源码求值)与业主目视共同保证。
+func TestConsolePageMultiTab(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	rr := httptest.NewRecorder()
+	hub.HandleConsolePage(rr, httptest.NewRequest(http.MethodGet, "/console", nil))
+	body := rr.Body.String()
+	for _, w := range []struct{ frag, why string }{
+		{"MAX_TABS = 8", "上限必须存在且为业主定的 8"},
+		{"tabs.has(session)", "已开过的 Agent 必须切过去,不得重建(重建=丢掉那一页的内容)"},
+		{"v.pane.style.display", "🔴 切换必须用显示/隐藏"},
+		{"closeTab", "必须能关闭,否则点多了收不回来"},
+		{"tabs.delete(session)", "关闭必须真正移除,才会断开那条长连接"},
+	} {
+		if !strings.Contains(body, w.frag) {
+			t.Errorf("控制台页缺少 %q —— %s", w.frag, w.why)
+		}
+	}
+	// 🔴 阴性对照:旧的单 iframe 写法必须已消失。
+	//    否则「多 tab 存在」与「旧写法也还在」可能同时为真,断言就不排他。
+	if strings.Contains(body, "v.src='/view/'") || strings.Contains(body, "<iframe id=v") {
+		t.Error("旧的单 iframe 替换写法仍在:新旧并存 ⇒ 断言不排他")
+	}
+	// 🔴 切换绝不能改 src —— 改 src 等于销毁并重建那一页,正是本次要消灭的行为
+	if strings.Contains(body, "function activate") {
+		i := strings.Index(body, "function activate")
+		seg := body[i:]
+		if j := strings.Index(seg, "}"); j > 0 {
+			seg = seg[:j]
+		}
+		if strings.Contains(seg, ".src") {
+			t.Error("activate() 里不得出现 .src —— 切换必须用显示/隐藏,不得重载")
+		}
+	}
+}
