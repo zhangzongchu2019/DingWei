@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import os
 import re
@@ -208,6 +209,9 @@ class SessionHelper:
         )
         self.busy_acked_from: set[str] = set()
         self.delivery_busy_acked: set[str] = set()
+        # File capability responses are control-plane messages. They must be
+        # consumed here and never reach the inbox, CLI, LLM, or logs.
+        self.file_ticket_waiters: dict[str, asyncio.Future] = {}
         # One adapter owns one CLI/driver stream. Admission, roster, and buffered
         # drains may arrive on different tasks, but inject+reply collection must
         # remain a single transaction or one message can consume another's reply.
@@ -333,6 +337,82 @@ class SessionHelper:
 
         return _vsapi
 
+    def _make_file_handler(self, ws):
+        """Fetch bounded file data while keeping the bearer inside helper."""
+        import urllib.request
+
+        async def _file(file_ref: str, method: str, byte_range: str) -> dict:
+            request_id = os.urandom(12).hex()
+            loop = asyncio.get_running_loop()
+            waiter = loop.create_future()
+            self.file_ticket_waiters[request_id] = waiter
+            request = envelope(
+                session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
+                {"type": "file_capability_request", "request_id": request_id,
+                 "operation": method.lower(), "file_ref": file_ref, "range": byte_range,
+                 "no_mirror": True},
+            )
+            try:
+                await ws.send(json.dumps(request, ensure_ascii=False))
+                ticket = await asyncio.wait_for(waiter, timeout=10)
+            finally:
+                self.file_ticket_waiters.pop(request_id, None)
+            if not ticket.get("ok"):
+                raise RuntimeError("file capability unavailable")
+            token = str(ticket.get("token") or "")
+            base_url = str(ticket.get("public_base_url") or "").rstrip("/")
+            file_id = file_ref.removeprefix("dwfile:")
+            if not token or not base_url or not re.fullmatch(r"[0-9a-f]{32}", file_id):
+                raise RuntimeError("file capability unavailable")
+            def fetch() -> dict:
+                headers = {"Authorization": f"Bearer {token}"}
+                if byte_range:
+                    headers["Range"] = byte_range
+                request = urllib.request.Request(
+                    f"{base_url}/files/ref/{file_id}", method=method, headers=headers)
+                try:
+                    with urllib.request.urlopen(request, timeout=15) as resp:  # noqa: S310 - URL is Hub-issued and validated server-side.
+                        if resp.status not in (200, 206):
+                            raise RuntimeError("file access failed")
+                        sha256 = str(resp.headers.get("X-Content-SHA256") or "")
+                        if method == "HEAD":
+                            size = int(resp.headers.get("Content-Length") or "-1")
+                            if size < 0 or not re.fullmatch(r"[0-9a-f]{64}", sha256):
+                                raise RuntimeError("file access failed")
+                            return {"file_ref": file_ref, "size": size, "sha256": sha256,
+                                    "media_type": str(resp.headers.get("Content-Type") or ""),
+                                    "expires_at": "", "range": resp.headers.get("Accept-Ranges") == "bytes"}
+                        data = resp.read(8 * 1024 * 1024 + 1)
+                        if len(data) > 8 * 1024 * 1024:
+                            raise RuntimeError("file range exceeds 8 MiB")
+                        content_range = str(resp.headers.get("Content-Range") or "")
+                        match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", content_range)
+                        if not match or not re.fullmatch(r"[0-9a-f]{64}", sha256):
+                            raise RuntimeError("file access failed")
+                        return {"file_ref": file_ref,
+                                "content_base64": base64.b64encode(data).decode("ascii"),
+                                "content_range": content_range, "sha256": sha256,
+                                "total_size": int(match.group(3))}
+                except Exception as exc:
+                    raise RuntimeError("file access failed") from exc
+
+            return await asyncio.to_thread(fetch)
+
+        return _file
+
+    def is_file_capability_response(self, env: dict) -> bool:
+        return (env.get("meta") or {}).get("type") == "file_capability_response"
+
+    def handle_file_capability_response(self, env: dict) -> None:
+        meta = env.get("meta") or {}
+        request_id = str(meta.get("request_id") or "")
+        waiter = self.file_ticket_waiters.get(request_id)
+        if waiter is not None and not waiter.done():
+            # Copy only the fixed response contract. Unknown fields cannot leak
+            # through this control-plane channel into callers.
+            waiter.set_result({key: meta.get(key) for key in
+                               ("ok", "token", "expires_at", "public_base_url", "error")})
+
     def session_capabilities_envelope(self) -> dict:
         return envelope(
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
@@ -406,6 +486,7 @@ class SessionHelper:
                     ipc_task = asyncio.create_task(
                         serve_ipc(self.cfg.mcp_ipc_sock, self._make_send_handler(ws),
                                   vsapi_handler=vsapi_handler,
+                                  file_handler=self._make_file_handler(ws),
                                   allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock)))
 
                 try:
@@ -440,6 +521,9 @@ class SessionHelper:
             try:
                 env = json.loads(raw)
             except Exception:
+                continue
+            if self.is_file_capability_response(env):
+                self.handle_file_capability_response(env)
                 continue
             if self.is_terminal_interrupt(env):
                 await self.handle_terminal_interrupt(ws, env)

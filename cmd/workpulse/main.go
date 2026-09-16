@@ -103,6 +103,17 @@ func run(logger *slog.Logger) error {
 	outbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionOut, writeQueueConfig)
 	prefixHub := m8.New(st, consoleAuthMode)
 	prefixHub.Outbound = outbound
+	fileIssuerURL := strings.TrimSpace(os.Getenv("WP_FILE_ISSUER_URL"))
+	filePublicURL := strings.TrimSpace(os.Getenv("WP_FILE_PUBLIC_URL"))
+	fileIssuerCredential := strings.TrimSpace(os.Getenv("WP_FILE_ISSUER_TOKEN"))
+	if fileIssuerURL != "" || filePublicURL != "" || fileIssuerCredential != "" {
+		issuer, err := m8.NewHTTPFileTicketIssuer(fileIssuerURL, filePublicURL, fileIssuerCredential)
+		if err != nil {
+			return err
+		}
+		prefixHub.SetFileTicketIssuer(issuer)
+		logger.Info("file capability issuer configured", "internal_url", fileIssuerURL, "public_url", filePublicURL)
+	}
 	if bs.L2DeepSeekAPIKey != "" {
 		prefixHub.L2 = llm.NewDeepSeek(bs.L2DeepSeekAPIKey, bs.L2DeepSeekBaseURL, bs.L2DeepSeekModel)
 		if n, err := strconv.Atoi(bs.L2Workers); err == nil && n > 0 {

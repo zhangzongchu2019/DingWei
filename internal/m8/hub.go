@@ -99,6 +99,7 @@ type Hub struct {
 	amr              *amrProcessor
 	startedAt        time.Time
 	restartWindow    time.Duration
+	fileIssuer       FileTicketIssuer
 }
 
 type L2Config struct {
@@ -119,6 +120,7 @@ type sessionClient struct {
 	mu             sync.Mutex
 	stateMu        sync.Mutex
 	keyID          string
+	ownerKey       string
 	sessionName    string
 	localName      string // 客户端握手上报的原始名；sessionHelper 用它命名本机在线清单文件
 	connSeq        int
@@ -875,7 +877,7 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	markTiming("conn_seq")
-	c = &sessionClient{conn: conn, keyID: keyID, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
+	c = &sessionClient{conn: conn, keyID: keyID, ownerKey: ownerKey, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	go h.watchSessionKeepalive(idleWatchdogCtx, c)
@@ -1007,6 +1009,9 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 		if c.targetBot != "" {
 			if env.Meta == nil {
 				env.Meta = map[string]any{}
+			}
+			if h.handleFileCapabilityRequest(r.Context(), c, env) {
+				continue
 			}
 			if isProducerEnvelope(env) && metaString(env.Meta, "target_bot") == "" {
 				env.Meta["target_bot"] = c.targetBot
