@@ -7,10 +7,13 @@ StartLimitBurst=5
 
 [Service]
 Type=simple
-User={{USER}}
-WorkingDirectory={{WORKDIR}}
-EnvironmentFile={{WORKDIR}}/.file-service.env
-ExecStart={{WORKDIR}}/bin/file-service
+User=dingwei-file
+Group=dingwei-file
+WorkingDirectory=/opt/dingwei/file-service
+# The concrete credential-bearing env-file path is supplied only in the
+# authorized deployment package; it is intentionally not stored in Git.
+EnvironmentFile={{FILE_SERVICE_ENV_FILE}}
+ExecStart=/opt/dingwei/file-service/bin/file-service
 Restart=always
 RestartSec=3s
 KillSignal=SIGTERM
@@ -19,7 +22,7 @@ TimeoutStopSec=30s
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths={{FILE_DATA_DIR}}
+ReadWritePaths=/var/lib/dingwei-file-service
 
 [Install]
 WantedBy=multi-user.target

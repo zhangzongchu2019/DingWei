@@ -53,10 +53,24 @@ var unsignedWebhookWarned sync.Map
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	if err := run(logger); err != nil {
+	if err := execute(os.Args, os.Stdout, logger, run); err != nil {
 		logger.Error("workpulse exited", "error", err)
 		os.Exit(1)
 	}
+}
+
+func execute(args []string, out io.Writer, logger *slog.Logger, runServer func(*slog.Logger) error) error {
+	if len(args) > 1 {
+		if args[1] != "validate-console-seed" || len(args) != 3 {
+			return errors.New("usage: workpulse validate-console-seed <seed.json>")
+		}
+		if err := validateConsoleSeedFile(args[2]); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintln(out, "CONSOLE_SEED_VALID")
+		return err
+	}
+	return runServer(logger)
 }
 
 func run(logger *slog.Logger) error {

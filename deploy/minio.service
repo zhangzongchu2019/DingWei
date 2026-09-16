@@ -1,0 +1,29 @@
+[Unit]
+Description=DingWei dedicated MinIO object store
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=dingwei-minio
+Group=dingwei-minio
+WorkingDirectory=/var/lib/dingwei-minio
+# The credential-bearing env-file path is injected by the authorized
+# executor. No credential value or credential path is stored in Git.
+EnvironmentFile={{MINIO_ENV_FILE}}
+ExecStart=/opt/dingwei/minio/bin/minio server --address 127.0.0.1:9000 --console-address 127.0.0.1:9001 /var/lib/dingwei-minio
+Restart=always
+RestartSec=3s
+KillSignal=SIGTERM
+TimeoutStopSec=60s
+LimitNOFILE=65536
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/dingwei-minio
+
+[Install]
+WantedBy=multi-user.target

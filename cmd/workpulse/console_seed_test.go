@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +12,41 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
+
+func TestValidateConsoleSeedCommandNeverStartsServer(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "seed.json")
+	raw := `{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua","active":true}],"roles":[{"principal_id":"a","role":"owner","owner_key":"owner","active":true}],"agents":[{"id":"aa","key_id":"k","session_name":"owner-agent-2642","owner_principal":"a","active":true,"grants":[{"principal_id":"a","permission":"interact"}]}]}`
+	if err := os.WriteFile(path, []byte(raw), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	called := false
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	err := execute([]string{"workpulse", "validate-console-seed", path}, &out, logger, func(*slog.Logger) error {
+		called = true
+		return nil
+	})
+	if err != nil || called || out.String() != "CONSOLE_SEED_VALID\n" {
+		t.Fatalf("err=%v server_called=%t out=%q", err, called, out.String())
+	}
+}
+
+func TestValidateConsoleSeedCommandRejectsProductionTypeErrorWithoutStartingServer(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "seed.json")
+	raw := `{"principals":[{"id":"a","provider":1,"provider_issuer":"app","provider_subject":"ua","active":true}],"agents":[{"id":"aa","key_id":"k","session_name":"owner-agent-2642","owner_principal":"a","active":true,"grants":[{"principal_id":"a","permission":"interact"}]}]}`
+	if err := os.WriteFile(path, []byte(raw), 0600); err != nil {
+		t.Fatal(err)
+	}
+	called := false
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	err := execute([]string{"workpulse", "validate-console-seed", path}, io.Discard, logger, func(*slog.Logger) error {
+		called = true
+		return nil
+	})
+	if err == nil || called || !strings.Contains(err.Error(), "cannot unmarshal number") {
+		t.Fatalf("err=%v server_called=%t", err, called)
+	}
+}
 
 func TestConsoleSeedIsExplicitAndSeparatesSharedKey(t *testing.T) {
 	ctx := context.Background()
