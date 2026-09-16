@@ -32,13 +32,12 @@ function makeEnv() {
   return { document, byId, made, alert() {}, encodeURIComponent };
 }
 
-function load(env) {
+function load(env, fetchImpl = () => { throw new Error('本测试不应发真实请求'); }) {
   const fn = new Function('document', 'alert', 'encodeURIComponent', 'fetch', 'setInterval', `
     ${block}
-    return {openTab, tabs, renderAgentList, applyAgentSnapshot};
+    return {openTab, tabs, renderAgentList, applyAgentSnapshot, refreshAgents};
   `);
-  return fn(env.document, env.alert, env.encodeURIComponent,
-    () => { throw new Error('本测试不应发真实请求'); },
+  return fn(env.document, env.alert, env.encodeURIComponent, fetchImpl,
     () => { throw new Error('本测试不应注册真实定时器'); });
 }
 
@@ -94,5 +93,26 @@ t('③ 列表增删只改变左栏数量,不改变已开右栏数量', () => {
   assert.deepStrictEqual(env.byId.panes.children.map(p => p.src), srcs, '所有 iframe src 均不得改变');
 });
 
-console.log(`\n通过 ${pass} / 失败 ${fail}`);
-process.exit(fail ? 1 : 0);
+(async () => {
+  try {
+    const env = makeEnv();
+    const M = load(env, () => Promise.reject(new Error('temporary network failure')));
+    M.renderAgentList([online('a-x-1'), offline('a-y-1')]);
+    M.applyAgentSnapshot([online('a-x-1'), offline('a-y-1')]);
+    M.openTab('a-x-1');
+    const left = [...env.byId.a.children];
+    const entry = M.tabs.get('a-x-1'), pane = entry.pane, src = pane.src;
+    await M.refreshAgents();
+    assert.strictEqual(env.byId.a.children.length, left.length, '请求失败不得清空或累加左栏');
+    assert.deepStrictEqual(env.byId.a.children, left, '请求失败须保留上一次左栏快照对象');
+    assert.strictEqual(M.tabs.size, 1, '请求失败不得删除已开 tab');
+    assert.strictEqual(M.tabs.get('a-x-1'), entry, '请求失败不得重建 tab');
+    assert.strictEqual(entry.pane, pane, '请求失败不得重建 pane');
+    assert.strictEqual(entry.pane.src, src, '请求失败不得重载 iframe');
+    console.log('  ✅ ④ fetch 失败保留左栏快照与已开 tab/pane/src'); pass++;
+  } catch (e) {
+    console.log('  🔴 ④ fetch 失败保留左栏快照与已开 tab/pane/src ->', e.message); fail++;
+  }
+  console.log(`\n通过 ${pass} / 失败 ${fail}`);
+  process.exit(fail ? 1 : 0);
+})();
