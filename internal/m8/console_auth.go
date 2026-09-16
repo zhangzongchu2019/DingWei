@@ -147,7 +147,24 @@ func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http
 func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	fmt.Fprint(w, `<!doctype html><meta charset=utf-8><title>DingWei Agent Console</title><style>body{margin:0;display:grid;grid-template-columns:280px 1fr;height:100vh;font:14px sans-serif}nav{overflow:auto;border-right:1px solid #ddd;padding:12px}button{display:block;width:100%;margin:4px 0;text-align:left}iframe{width:100%;height:100%;border:0}</style><nav><h2>Agents</h2><div id=a></div></nav><iframe id=v title="Agent view"></iframe><script>fetch('/api/console/agents').then(r=>r.json()).then(x=>x.agents.forEach(a=>{let b=document.createElement('button');b.textContent=a.session+(a.online?'':' (offline)');b.disabled=!a.online;b.onclick=()=>v.src='/view/'+encodeURIComponent(a.session);document.querySelector('#a').append(b)}))</script>`)
+	fmt.Fprint(w, `<!doctype html><meta charset=utf-8><title>DingWei Agent Console</title><style>body{margin:0;display:grid;grid-template-columns:280px 1fr;height:100vh;font:14px sans-serif}nav{overflow:auto;border-right:1px solid #ddd;padding:12px}button{display:block;width:100%;margin:4px 0;text-align:left}iframe{width:100%;height:100%;border:0}</style><nav><h2>Agents</h2><div id=a></div></nav><iframe id=v title="Agent view"></iframe><script>
+// T-138(业主 2026-09-15 目标②③):左栏只显短名;在线优先,离线折叠。
+// 短名 = 三段式 <owner>-<name>-<suffix> 的中间段;取不到就原样显示。
+// 🔴 不做"重名回退全名"的兜底 —— 业主裁定:命名归他,短名唯一性由命名策略保证,
+//    渲染层兜底会把真正的命名冲突静默吸收掉,让他看不见本该看见的问题。
+function dwShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s}
+fetch('/api/console/agents').then(r=>r.json()).then(function(x){
+  var nav=document.querySelector('#a');
+  function mk(a){var b=document.createElement('button');b.textContent=dwShortName(a.session);
+    b.title=a.session;b.disabled=!a.online;
+    b.onclick=function(){v.src='/view/'+encodeURIComponent(a.session)};return b}
+  var on=x.agents.filter(function(a){return a.online});
+  var off=x.agents.filter(function(a){return !a.online});
+  on.forEach(function(a){nav.append(mk(a))});
+  if(off.length){var d=document.createElement('details');
+    var sm=document.createElement('summary');sm.textContent='离线 ('+off.length+')';
+    d.append(sm);off.forEach(function(a){d.append(mk(a))});nav.append(d)}
+})</script>`)
 }
 
 func (h *Hub) HandleConsoleAgents(w http.ResponseWriter, r *http.Request) {
