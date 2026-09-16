@@ -1285,6 +1285,18 @@
     let pageIdentityUniqueTimer = null;
     let pageIdentityEnsurePromise = null;
     let consoleCapability = null;
+    // T-141(2026-09-16):记住票的归属页与到期时刻。
+    // 此前每次状态轮询(5s)都重铸一张,而票 TTL 是 300s ——
+    // 白扔 60 次,且 RotateConsolePageCapability 会【作废上一张】,
+    // 于是界面在 只读/可输入 之间抖动,并留下每 5 秒一个真实空窗(偶发 403)。
+    let consoleCapabilityPageId = null;
+    let consoleCapabilityExpiresAt = 0;
+    const CONSOLE_CAPABILITY_RENEW_MS = 60000;   // 距到期不足 1 分钟才续铸
+    function consoleCapabilityUsable() {
+      return !!consoleCapability
+        && consoleCapabilityPageId === pageIdentity?.page_id
+        && Date.now() < consoleCapabilityExpiresAt;
+    }
     const pageInstanceNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
       value => value.toString(16).padStart(2, '0')).join('');
 
@@ -3221,12 +3233,19 @@
       pageIdentity = identity;
       sessionStorage.setItem(pageStorageKey(), JSON.stringify(identity));
       stats.unlockCode = identity.code;
-      stats.readonly = !identity.can_write;
+      // T-141:控制台能力票与页面锁是【两套授权】;持票时不得被页面锁覆盖。
+      stats.readonly = consoleCapabilityUsable() ? false : !identity.can_write;
       stats.access = stats.readonly ? '只读' : '可写';
       updateMetrics();
     }
     async function acquireConsoleCapability() {
       if (!pageIdentity?.page_id || !stats.sessionName) return false;
+      // T-141:仍有余额则直接复用,不重铸 —— 重铸会作废手上这张。
+      if (consoleCapabilityUsable()
+          && Date.now() < consoleCapabilityExpiresAt - CONSOLE_CAPABILITY_RENEW_MS) {
+        if (stats.readonly) { stats.readonly = false; stats.access = '可写'; updateMetrics(); }
+        return true;
+      }
       const res = await fetch(`/api/console/agents/${encodeURIComponent(stats.sessionName)}/capability`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page_id: pageIdentity.page_id }),
@@ -3236,6 +3255,9 @@
       const issued = await res.json();
       if (!issued.capability || issued.page_id !== pageIdentity.page_id) throw new Error('invalid console capability');
       consoleCapability = issued.capability;
+      consoleCapabilityPageId = issued.page_id;
+      // 后端回 expires_in(秒);缺省按 300s,并留 5s 余量抵消网络往返。
+      consoleCapabilityExpiresAt = Date.now() + ((Number(issued.expires_in) || 300) - 5) * 1000;
       stats.readonly = false;
       stats.access = '可写';
       updateMetrics();
@@ -3255,6 +3277,11 @@
       savePageIdentity({ page_id: created.page_id, page_token: created.page_token,
         code: created.code, state: created.state, can_write: created.state === 'unlocked' });
       announcePageIdentity();
+    }
+    function resetConsoleCapability() {
+      consoleCapability = null;
+      consoleCapabilityPageId = null;
+      consoleCapabilityExpiresAt = 0;
     }
     function resetPageIdentityChannel() {
       clearTimeout(pageIdentityUniqueTimer);
