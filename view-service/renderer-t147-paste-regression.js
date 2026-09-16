@@ -59,6 +59,16 @@ async function t(name, fn) {
     await assert.rejects(load(box, async () => { calls++; }).uploadPastedImage({type:'text/plain',size:4,name:'x.txt'}));
     assert.strictEqual(calls, 0); assert.strictEqual(box.value, '普通粘贴');
   });
+  await t('⑤ 上传票据的 session 不属于当前 Agent 时拒绝且不改文字', async () => {
+    const box = input('不可串席'); let calls = 0;
+    const fetch = async () => {
+      calls++;
+      return response(true, {upload_url:'https://files/upload',ticket:'ticket',session:'other-agent'});
+    };
+    await assert.rejects(load(box, fetch).uploadPastedImage({type:'image/png',size:4,name:'p.png'}));
+    assert.strictEqual(calls, 1, '错 session 票据不得继续上传');
+    assert.strictEqual(box.value, '不可串席');
+  });
   console.log(`\n通过 ${pass} / 失败 ${fail}`);
   process.exit(fail ? 1 : 0);
 })();
