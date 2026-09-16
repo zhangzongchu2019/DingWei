@@ -1,0 +1,25 @@
+[Unit]
+Description=DingWei file service
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User={{USER}}
+WorkingDirectory={{WORKDIR}}
+EnvironmentFile={{WORKDIR}}/.file-service.env
+ExecStart={{WORKDIR}}/bin/file-service
+Restart=always
+RestartSec=3s
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths={{FILE_DATA_DIR}}
+
+[Install]
+WantedBy=multi-user.target

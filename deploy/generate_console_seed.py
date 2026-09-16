@@ -89,8 +89,15 @@ def main():
                           for p in principals]}          # 🔴 每个 agent 对【每条】身份各一条
               for n in names]
 
+    # Archival authority is an explicit owner role scoped to the same
+    # owner_key as the generated Agent inventory. It is not inferred from a
+    # shared key_id, session-name prefix, or a particular principal ID.
+    roles = [{"principal_id": p["id"], "role": "owner",
+              "owner_key": a.owner_key, "active": True}
+             for p in principals]
+
     with open(a.out, "w", encoding="utf-8") as fh:
-        json.dump({"principals": principals, "agents": agents}, fh,
+        json.dump({"principals": principals, "roles": roles, "agents": agents}, fh,
                   ensure_ascii=False, indent=2)
         fh.write("\n")
     os.chmod(a.out, 0o600)
@@ -101,6 +108,7 @@ def main():
           ", ".join("%s=%s" % (p["id"], digest(p["provider_subject"])) for p in principals)))
     print("  agents     : %d" % len(agents))
     print("  grants     : %d  (= %d × %d)" % (len(agents) * len(principals), len(agents), len(principals)))
+    print("  owner roles: %d" % len(roles))
     print("  🔴 下一步用这个数:  --expect-agents %d   /   --expect-total %d"
           % (len(agents), len(agents)))
     print("  ⚠️ 产出含身份字面值,已置 0600;**不得入仓**。")

@@ -1,0 +1,14 @@
+[Unit]
+Description=DingWei file-service readiness check
+After={{SERVICE_NAME}}.service
+
+[Service]
+Type=oneshot
+Environment=FS_LIVEZ_SERVICE_NAME={{SERVICE_NAME}}.service
+ExecStart={{WORKDIR}}/deploy/file-service-livez-check.sh
+
+User=root
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/run

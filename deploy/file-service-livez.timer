@@ -1,0 +1,11 @@
+[Unit]
+Description=Check DingWei file-service readiness every 10 seconds
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=10s
+AccuracySec=1s
+Unit={{SERVICE_NAME}}-livez.service
+
+[Install]
+WantedBy=timers.target

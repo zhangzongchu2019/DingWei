@@ -67,18 +67,34 @@ class T(unittest.TestCase):
         for a in d["agents"]:
             self.assertEqual(sorted(g["principal_id"] for g in a["grants"]),
                              ["owner-entry-a", "owner-entry-b"])
+        self.assertEqual(d["roles"], [
+            {"principal_id": "owner-entry-a", "role": "owner", "owner_key": OWNER_KEY, "active": True},
+            {"principal_id": "owner-entry-b", "role": "owner", "owner_key": OWNER_KEY, "active": True},
+        ])
 
     def test_2_schema_matches_go_struct(self):
         """🔴 生产解析器带 DisallowUnknownFields():多一个键就起不来。"""
         self.assertEqual(self.run_tool(expect=3)[0], 0)
         d = json.load(open(self.out))
-        self.assertEqual(set(d.keys()), {"principals", "agents"})
+        self.assertEqual(set(d.keys()), {"principals", "roles", "agents"})
         for p in d["principals"]:
             self.assertEqual(set(p), {"id","provider","provider_issuer","provider_subject","display_name","active"})
         for a in d["agents"]:
             self.assertEqual(set(a), {"id","key_id","session_name","owner_principal","active","grants"})
             for g in a["grants"]:
                 self.assertEqual(set(g), {"principal_id","permission"})
+        for role in d["roles"]:
+            self.assertEqual(set(role), {"principal_id", "role", "owner_key", "active"})
+
+    def test_10_every_owner_identity_gets_explicit_scoped_role(self):
+        self.assertEqual(self.run_tool(expect=3)[0], 0)
+        d = json.load(open(self.out))
+        self.assertEqual(
+            sorted((r["principal_id"], r["role"], r["owner_key"], r["active"])
+                   for r in d["roles"]),
+            [("owner-entry-a", "owner", OWNER_KEY, True),
+             ("owner-entry-b", "owner", OWNER_KEY, True)],
+        )
 
     def test_3_file_is_0600(self):
         self.assertEqual(self.run_tool(expect=3)[0], 0)
