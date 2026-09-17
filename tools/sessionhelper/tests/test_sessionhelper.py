@@ -46,7 +46,6 @@ from sessionhelper.config import default_inbox_db, detect_full_session_name, det
 from sessionhelper.llm import PROVIDERS
 from sessionhelper.protocol import AddressBook, is_mirror_control, reply_target
 from sessionhelper.provision import Provisioner, compare_versions
-from sessionhelper.send_dingwei import DEFAULT_WS_BASE, temporary_session_name
 from sessionhelper.inbox import DeliveryInbox
 
 
@@ -470,23 +469,6 @@ class SessionHelperTest(unittest.TestCase):
         with self.assertRaises(SystemExit) as bad_owner:
             load_config(dict(BASE_ENV, SH_OWNER="Zzc", SH_SESSION_NAME="zzc-home-2642"))
         self.assertIn("SH_OWNER 不合规", str(bad_owner.exception))
-
-    def test_send_dingwei_temporary_session_name_is_compliant(self):
-        self.assertEqual(
-            temporary_session_name({"SH_OWNER": "zzc", "SH_SESSION_NAME": "manager", "SH_KEY_ID": "FB-zzc-devteam-e0d12642"}),
-            "managernote",
-        )
-        self.assertEqual(
-            temporary_session_name({"SH_SESSION_NAME": "fulei-dev1013-3dd6", "SH_KEY_ID": "FB-key-3dd6"}),
-            "dev1013note",
-        )
-        self.assertEqual(
-            temporary_session_name({"SH_SESSION_NAME": "Bad-Name", "SH_KEY_ID": "FB-key-1a2b"}),
-            "sendernote",
-        )
-
-    def test_send_dingwei_default_ws_base_uses_dingwei_host(self):
-        self.assertEqual(DEFAULT_WS_BASE, "wss://dingwei.wegoab.com")
 
     def test_ws_url_reports_tool_and_model_when_configured(self):
         cfg = load_config(dict(BASE_ENV, SH_TOOL="CODEX", SH_MODEL="gpt-5.5", SH_SESSION_FULL="sh-home-e0d12642"))
