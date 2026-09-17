@@ -249,30 +249,11 @@ func (r *Repository) FinishDeleting(ctx context.Context, id string, at time.Time
 	return nil
 }
 
-func (r *Repository) SetArchived(ctx context.Context, id string, archived bool, at time.Time) error {
-	value := 0
-	var archivedAt any
-	if archived {
-		value, archivedAt = 1, stamp(at)
-	}
-	result, err := r.db.ExecContext(ctx, `UPDATE files SET archived=?,archived_at=? WHERE id=? AND state='ready'`, value, archivedAt, id)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n != 1 {
-		return fmt.Errorf("file is not ready for archive change")
-	}
-	return nil
-}
-
-// SetArchivedByOwner atomically enforces data ownership and records who made
-// the retention exception, when, and why. Role authorization is performed by
-// Hub before this internal call; this repository independently enforces scope.
-func (r *Repository) SetArchivedByOwner(ctx context.Context, id string, archived bool, actorPrincipal, ownerKey, reason string, at time.Time) error {
+// SetArchivedLocationByOwner changes retention metadata and, when non-empty,
+// the object key in the same transaction as the audit record. Role
+// authorization is performed by Hub; this transaction independently enforces
+// owner scope and ready state.
+func (r *Repository) SetArchivedLocationByOwner(ctx context.Context, id, objectKey string, archived bool, actorPrincipal, ownerKey, reason string, at time.Time) error {
 	if actorPrincipal == "" || ownerKey == "" || reason == "" {
 		return fmt.Errorf("archive actor, owner scope, and reason are required")
 	}
@@ -293,8 +274,18 @@ func (r *Repository) SetArchivedByOwner(ctx context.Context, id string, archived
 	if archived {
 		value, archivedAt = 1, stamp(at)
 	}
-	if _, err := tx.ExecContext(ctx, `UPDATE files SET archived=?,archived_at=? WHERE id=? AND owner_key=? AND state='ready'`, value, archivedAt, id, ownerKey); err != nil {
+	query := `UPDATE files SET archived=?,archived_at=? WHERE id=? AND owner_key=? AND state='ready'`
+	args := []any{value, archivedAt, id, ownerKey}
+	if objectKey != "" {
+		query = `UPDATE files SET archived=?,archived_at=?,object_key=? WHERE id=? AND owner_key=? AND state='ready'`
+		args = []any{value, archivedAt, objectKey, id, ownerKey}
+	}
+	result, err := tx.ExecContext(ctx, query, args...)
+	if err != nil {
 		return err
+	}
+	if n, err := result.RowsAffected(); err != nil || n != 1 {
+		return ErrAccessDenied
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO file_archive_audit(file_id,actor_principal,owner_key,archived,reason,created_at) VALUES(?,?,?,?,?,?)`,
 		id, actorPrincipal, ownerKey, value, reason, stamp(at)); err != nil {

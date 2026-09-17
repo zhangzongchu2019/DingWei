@@ -32,7 +32,7 @@ func run(logger *slog.Logger) error {
 		return fmt.Errorf("open metadata repository: %w", err)
 	}
 	defer repo.Close()
-	objects, err := fileservice.NewMinIOObjectStore(cfg.MinIOEndpoint, cfg.MinIOAccessKey, cfg.MinIOSecretKey, cfg.MinIOBucket, cfg.MinIOUseTLS)
+	objects, err := fileservice.NewLocalObjectStore(cfg.DataRoot)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func run(logger *slog.Logger) error {
 	service := &fileservice.Service{
 		Manager: &fileservice.Manager{
 			Repo: repo, Objects: objects, Clock: clock, MaxFileBytes: cfg.MaxFileBytes,
-			QuotaBytes: cfg.QuotaBytes, Retention: cfg.Retention, TombstoneRetention: cfg.TombstoneRetention,
+			QuotaBytes: cfg.QuotaBytes, Retention: cfg.Retention, TombstoneRetention: cfg.TombstoneRetention, ObjectPrefix: cfg.ObjectPrefix,
 		},
 		Capabilities:  fileservice.NewGrantStore(clock, cfg.CapabilityMaxAge),
 		UploadTickets: fileservice.NewUploadTicketStore(clock, cfg.CapabilityMaxAge),

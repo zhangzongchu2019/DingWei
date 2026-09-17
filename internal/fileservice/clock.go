@@ -3,7 +3,7 @@ package fileservice
 import "time"
 
 // Clock is mandatory service input so expiry and sweeps remain testable without
-// changing the host clock (which would also distort MinIO lifecycle behavior).
+// changing the host clock (which would also distort retention behavior).
 type Clock interface{ Now() time.Time }
 
 type RealClock struct{}

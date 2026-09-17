@@ -11,13 +11,13 @@ import (
 // already checked the owner role, while Repository independently checks that
 // the file belongs to the declared owner scope.
 type ArchiveHandler struct {
-	Repo  *Repository
-	Token string
-	Clock Clock
+	Manager *Manager
+	Token   string
+	Clock   Clock
 }
 
 func (h ArchiveHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost || h.Repo == nil || h.Clock == nil || h.Token == "" || !sameSecret(bearer(r), h.Token) {
+	if r.Method != http.MethodPost || h.Manager == nil || h.Clock == nil || h.Token == "" || !sameSecret(bearer(r), h.Token) {
 		hide(w)
 		return
 	}
@@ -38,7 +38,7 @@ func (h ArchiveHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		hide(w)
 		return
 	}
-	if err := h.Repo.SetArchivedByOwner(r.Context(), input.FileID, *input.Archived, input.ActorPrincipal, input.OwnerKey, input.Reason, h.Clock.Now()); err != nil {
+	if err := h.Manager.SetArchivedByOwner(r.Context(), input.FileID, *input.Archived, input.ActorPrincipal, input.OwnerKey, input.Reason); err != nil {
 		hide(w)
 		return
 	}

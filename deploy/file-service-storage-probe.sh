@@ -10,7 +10,7 @@ session=${FS_PROBE_SESSION:-deployment-probe}
 
 tmp=$(mktemp -d)
 trap 'rm -rf -- "$tmp"' EXIT
-body="dingwei-file-service-minio-probe-$(date -u +%s)-$$"
+body="dingwei-file-service-local-probe-$(date -u +%s)-$$"
 printf '%s' "$body" >"$tmp/body"
 size=$(wc -c <"$tmp/body" | tr -d ' ')
 sum=$(sha256sum "$tmp/body" | cut -d' ' -f1)
@@ -48,4 +48,4 @@ curl --fail --silent --show-error \
   -H "Authorization: Bearer ${get_token}" -H "Range: ${range}" \
   "$public_base/files/ref/$file_id" >"$tmp/got"
 cmp "$tmp/body" "$tmp/got"
-printf 'FILE_SERVICE_MINIO_OK file_id=%s bytes=%s sha256=%s\n' "$file_id" "$size" "$sum"
+printf 'FILE_SERVICE_STORAGE_OK file_id=%s bytes=%s sha256=%s\n' "$file_id" "$size" "$sum"

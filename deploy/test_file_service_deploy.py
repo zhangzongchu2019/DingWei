@@ -33,36 +33,33 @@ class FileServiceDeploymentTest(unittest.TestCase):
         self.assertNotIn("proxy_pass http://127.0.0.1:8794", text)
         self.assertNotIn("location /internal/", text)
 
-    def test_minio_is_pinned_private_and_least_privilege(self):
-        unit = (DEPLOY / "minio.service").read_text()
-        policy = (DEPLOY / "minio-file-service-policy.json").read_text()
+    def test_local_storage_replaces_minio_and_is_non_executable(self):
+        unit = (DEPLOY / "file-service.service").read_text()
         contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
-        self.assertIn("127.0.0.1:9000", unit)
-        self.assertIn("127.0.0.1:9001", unit)
-        self.assertIn("/var/lib/dingwei-minio", unit)
-        self.assertIn("RELEASE.2025-09-07T16-13-09Z.hotfix.28f01c988", contract)
-        self.assertIn("86e8afc8409b7b803ce91ea91f7d3551aff93ea63d8d242e64a317e95d4cd9d5", contract)
-        for action in ("s3:PutObject", "s3:GetObject", "s3:DeleteObject"):
-            self.assertIn(action, policy)
-        for forbidden in ("s3:*", "admin:", "s3:CreateBucket", "s3:PutBucketPolicy"):
-            self.assertNotIn(forbidden, policy)
+        self.assertIn("UMask=0077", unit)
+        self.assertIn("NoExecPaths=/var/lib/dingwei-file-service/objects", unit)
+        self.assertIn("FS_DATA_ROOT=/var/lib/dingwei-file-service/objects", contract)
+        self.assertNotIn("FS_MINIO_", contract)
+        self.assertFalse((DEPLOY / "minio.service").exists())
+        self.assertFalse((DEPLOY / "minio-file-service-policy.json").exists())
 
-    def test_real_minio_probe_is_not_readyz_only(self):
-        probe = (DEPLOY / "file-service-minio-probe.sh").read_text()
+    def test_real_storage_probe_is_not_readyz_only(self):
+        probe = (DEPLOY / "file-service-storage-probe.sh").read_text()
         self.assertIn("/internal/files/issue/upload", probe)
         self.assertIn("/files/upload", probe)
         self.assertIn("/internal/files/issue/retrieval", probe)
         self.assertIn("/files/ref/", probe)
         self.assertIn("cmp ", probe)
-        self.assertIn("FILE_SERVICE_MINIO_OK", probe)
+        self.assertIn("FILE_SERVICE_STORAGE_OK", probe)
         self.assertNotIn("/readyz", probe)
 
     def test_expiry_methods_distinguish_disposable_from_production_mutation(self):
         contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
-        self.assertIn("isolated short-retention instance", contract)
-        self.assertIn("does not modify production metadata", contract)
-        self.assertIn("Production-row time travel", contract)
-        self.assertIn("direct production database mutation", contract)
+        self.assertIn("repository integration test against a real temporary", contract)
+        self.assertIn("changes no production metadata or clock", contract)
+        self.assertIn("Disposable isolated-instance time travel", contract)
+        self.assertIn("time-travel one production row", contract)
+        self.assertIn("60 to 61", contract)
         self.assertIn("Quota eviction is not an acceptable substitute", contract)
 
 

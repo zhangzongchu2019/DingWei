@@ -59,6 +59,20 @@ func (s *memoryObjects) Delete(_ context.Context, k string) error {
 	delete(s.data, k)
 	return nil
 }
+func (s *memoryObjects) Move(_ context.Context, from, to string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	b, ok := s.data[from]
+	if !ok {
+		return errors.New("missing")
+	}
+	if _, exists := s.data[to]; exists {
+		return errors.New("target exists")
+	}
+	s.data[to] = b
+	delete(s.data, from)
+	return nil
+}
 
 func testManager(t *testing.T, quota int64) (*Manager, *FixedClock, *memoryObjects) {
 	t.Helper()
@@ -163,7 +177,7 @@ func TestSweepRetriesDurableDeletingState(t *testing.T) {
 	if got.State != StateExpired || got.RemovedAt == nil || got.RemovalReason != "retention" {
 		t.Fatalf("deletion retry did not close tombstone: %+v", got)
 	}
-	// MinIO lifecycle or a prior attempt may already have removed the object;
+	// A prior attempt may already have removed the object;
 	// another sweep remains a no-op.
 	if err := m.Sweep(context.Background()); err != nil {
 		t.Fatal(err)
@@ -180,10 +194,10 @@ func TestArchivedFileSurvivesWhileDefaultExpiresAndTombstonePurgesLater(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Repo.SetArchived(context.Background(), archived.ID, true, clock.Now()); err != nil {
+	if err := m.SetArchivedByOwner(context.Background(), archived.ID, true, "owner-principal", "o", "keep"); err != nil {
 		t.Fatal(err)
 	}
-	clock.Time = clock.Time.Add(60*24*time.Hour + time.Second)
+	clock.Time = ordinary.ExpiresAt.Add(time.Second)
 	if err := m.Sweep(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +210,7 @@ func TestArchivedFileSurvivesWhileDefaultExpiresAndTombstonePurgesLater(t *testi
 		t.Fatalf("ordinary file=%+v err=%v", deleted, err)
 	}
 	objects.mu.Lock()
-	_, archivedBytesExist := objects.data[archived.ObjectKey]
+	_, archivedBytesExist := objects.data[kept.ObjectKey]
 	_, ordinaryBytesExist := objects.data[ordinary.ObjectKey]
 	objects.mu.Unlock()
 	if !archivedBytesExist || ordinaryBytesExist {

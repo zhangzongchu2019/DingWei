@@ -9,14 +9,12 @@ import (
 
 func setRequiredConfigEnv(t *testing.T) {
 	t.Helper()
-	t.Setenv("FS_MINIO_ENDPOINT", "minio:9000")
-	t.Setenv("FS_MINIO_ACCESS_KEY", "access")
-	t.Setenv("FS_MINIO_SECRET_KEY", "secret")
+	t.Setenv("FS_DATA_ROOT", t.TempDir())
 	t.Setenv("FS_INTERNAL_ISSUER_TOKEN", "issuer")
 	t.Setenv("FS_INTERNAL_AUDIT_TOKEN", "audit")
 }
 
-func TestConfigRequiresMinIOAndKeepsCapacityConfigurable(t *testing.T) {
+func TestConfigRequiresLocalRootAndKeepsCapacityConfigurable(t *testing.T) {
 	setRequiredConfigEnv(t)
 	t.Setenv("FS_TOTAL_QUOTA_BYTES", "12345")
 	t.Setenv("FS_RETENTION", "48h")
@@ -65,7 +63,7 @@ func TestValidRetentionConfigActuallyDeletesExpiredObject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	clock.Time = clock.Time.Add(time.Hour + time.Second)
+	clock.Time = f.ExpiresAt.Add(time.Second)
 	if err := m.Sweep(context.Background()); err != nil {
 		t.Fatal(err)
 	}

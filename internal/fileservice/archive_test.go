@@ -15,7 +15,7 @@ func TestArchiveRequiresMatchingOwnerScopeAndWritesAudit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := ArchiveHandler{Repo: m.Repo, Token: "issuer", Clock: m.Clock}
+	h := ArchiveHandler{Manager: m, Token: "issuer", Clock: m.Clock}
 	call := func(owner string) int {
 		body := bytes.NewBufferString(`{"file_id":"` + f.ID + `","actor_principal":"owner-principal","owner_key":"` + owner + `","reason":"keep for case","archived":true}`)
 		r := httptest.NewRequest(http.MethodPost, "/internal/files/archive", body)
@@ -33,6 +33,9 @@ func TestArchiveRequiresMatchingOwnerScopeAndWritesAudit(t *testing.T) {
 	got, err := m.Repo.Get(context.Background(), f.ID)
 	if err != nil || !got.Archived || got.ArchivedAt == nil {
 		t.Fatalf("file=%+v err=%v", got, err)
+	}
+	if !strings.Contains(got.ObjectKey, "/pinned/") {
+		t.Fatalf("archived object was not moved out of dated directory: %s", got.ObjectKey)
 	}
 	var actor, owner, reason string
 	var archived int
