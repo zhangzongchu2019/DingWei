@@ -203,6 +203,21 @@ func TestLocalArchiveMovesOutAndDaySweepCannotDeletePinned(t *testing.T) {
 	}
 }
 
+func TestDeleteDayDirectlyRejectsPinnedKey(t *testing.T) {
+	s := newLocalStore(t)
+	key := "files/pinned/id-20260918T120000Z"
+	if err := s.Put(context.Background(), key, strings.NewReader("keep"), 4, "application/octet-stream"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteDay(context.Background(), key); err == nil {
+		t.Fatal("DeleteDay accepted a pinned key")
+	}
+	b, err := os.ReadFile(mustPath(t, s, key))
+	if err != nil || string(b) != "keep" {
+		t.Fatalf("pinned bytes changed: bytes=%q err=%v", b, err)
+	}
+}
+
 func TestDatedObjectRetentionIsBetweenSixtyAndSixtyOneDays(t *testing.T) {
 	s := newLocalStore(t)
 	r, err := OpenRepository(filepath.Join(t.TempDir(), "meta.db"))
