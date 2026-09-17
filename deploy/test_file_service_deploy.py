@@ -55,8 +55,10 @@ class FileServiceDeploymentTest(unittest.TestCase):
 
     def test_expiry_methods_distinguish_disposable_from_production_mutation(self):
         contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
-        self.assertIn("repository integration test against a real temporary", contract)
-        self.assertIn("changes no production metadata or clock", contract)
+        self.assertIn("candidate-binary isolated verification", contract)
+        self.assertIn("verify-retention --work-dir", contract)
+        self.assertIn("RETENTION_DIRECTORY_OK", contract)
+        self.assertIn("production metadata, data root or host clock", contract)
         self.assertIn("Disposable isolated-instance time travel", contract)
         self.assertIn("time-travel one production row", contract)
         self.assertIn("60 to 61", contract)

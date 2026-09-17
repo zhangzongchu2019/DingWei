@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,10 +17,24 @@ import (
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	if err := run(logger); err != nil {
+	if err := execute(os.Args, os.Stdout, logger, run); err != nil {
 		logger.Error("file-service exited", "error", err)
 		os.Exit(1)
 	}
+}
+
+func execute(args []string, out io.Writer, logger *slog.Logger, runServer func(*slog.Logger) error) error {
+	if len(args) > 1 {
+		if len(args) != 4 || args[1] != "verify-retention" || args[2] != "--work-dir" {
+			return errors.New("usage: file-service verify-retention --work-dir <temporary-directory>")
+		}
+		if err := verifyRetention(args[3]); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintln(out, "RETENTION_DIRECTORY_OK")
+		return err
+	}
+	return runServer(logger)
 }
 
 func run(logger *slog.Logger) error {

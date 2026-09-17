@@ -94,11 +94,17 @@ disable flag is part of this safety boundary.
 Two valid methods exist; both are write actions and must be listed explicitly
 in the authorization.
 
-1. **Recommended: repository integration test against a real temporary
-   filesystem.** The test uploads two disposable objects into one dated
-   directory, advances the injected clock past that directory's expiry, runs
-   the real sweeper, and proves the whole date directory is absent while a
-   pinned object remains. This changes no production metadata or clock.
+1. **Recommended: candidate-binary isolated verification.** Run
+   `<verified-candidate-file-service> verify-retention --work-dir <empty-temp-parent>`.
+   The command creates and later removes its own child directory. It uses the
+   production Repository, LocalObjectStore and Manager methods to upload two
+   ordinary objects and one pinned object, advances only its process-local
+   FixedClock, and invokes the production sweeper. Success is the single line
+   `RETENTION_DIRECTORY_OK`; it means the whole dated directory disappeared,
+   both ordinary rows became expired, and pinned metadata and bytes remained.
+   This command is dispatched before ConfigFromEnv and run(), so it opens no
+   listener and reads no production service configuration. It changes no
+   production metadata, data root or host clock.
 2. **Disposable isolated-instance time travel.** Start a temporary instance
    with a dedicated metadata DB and data root, upload only acceptance objects,
    stop it, move their dated directory and update all corresponding object keys
