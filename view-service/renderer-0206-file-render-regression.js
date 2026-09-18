@@ -8,6 +8,7 @@
 // 依赖：Playwright chromium；契约测试替身 renderer-0206-contract-mock.py（HTTPS）。
 // 环境变量：MOCK_BASE=https://127.0.0.1:19443  FIXTURES=<样本目录>  SHOTS=<截图目录>
 const fs = require('fs');
+const crypto = require('crypto');
 const path = require('path');
 const assert = require('assert');
 const { chromium } = require('playwright');
@@ -41,6 +42,33 @@ function ensureGeneratedFixtures() {
     console.log(`  · 生成 ${over}（${fs.statSync(over).size} 字节）`);
   }
 }
+// 🔴 开跑前先对账：**被服务的 renderer 必须就是仓内这一份**。
+//
+// 为什么要有这一道：2026-09-18 评审方在锚上跑得
+// `ReferenceError: FILE_EXT_NEVER_INLINE is not defined`，而同一锚在我这边 PASS。
+// 实测复现出的根因是 —— **测试脚本来自新提交，被服务的 renderer 停在旧提交**。
+// 那时的失败信息指向「测试里那个标识符不存在」，**看起来像测试写错了**，
+// 而真正的事实是「你跑的不是这一版产品」。一次误诊耗掉了双方各一轮。
+//
+// 有了这道对账，同样的错配会直接说出它自己是什么。
+async function assertServedRendererMatchesRepo(page) {
+  const served = await page.content();
+  const repo = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
+  const norm = (t) => crypto.createHash('sha256').update(t.replace(/\s+$/u, '')).digest('hex');
+  // page.content() 会返回序列化后的 DOM，与源文件不逐字节相同，
+  // 故用一个只可能出现在本版产品里的标记做对账，而不是比整份哈希。
+  const markers = ['FILE_EXT_NEVER_INLINE', 'FILE_EXT_KIND', 'data-dispatch', 'fileAttachmentsHost'];
+  const missing = markers.filter((m) => repo.includes(m) && !served.includes(m));
+  if (missing.length) {
+    throw new Error(
+      `\n🔴 被服务的 renderer 与仓内这一份不是同一版 —— 先修这个，别查测试。\n`
+      + `   仓内文件  ${path.join(__dirname, 'renderer-canary-sse.html')}  sha256=${norm(repo).slice(0, 16)}…\n`
+      + `   服务地址  ${BASE}/renderer-canary-sse.html\n`
+      + `   服务端缺少本版标记: ${missing.join(', ')}\n`
+      + `   常见成因：mock 从另一个目录/另一次检出启动，或 renderer 未随测试脚本一起更新。`);
+  }
+}
+
 let pass = 0, fail = 0;
 async function t(name, fn) {
   try { await fn(); console.log('  ✅', name); pass++; }
@@ -66,6 +94,7 @@ async function t(name, fn) {
   await page.route('**/taskboard**', (route) => route.fulfill({ status: 404, body: '' }));
 
   await page.goto(`${BASE}/renderer-canary-sse.html`, { waitUntil: 'domcontentloaded' });
+  await assertServedRendererMatchesRepo(page);
   // stats 是脚本作用域的 const，不挂在 window 上
   await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
 

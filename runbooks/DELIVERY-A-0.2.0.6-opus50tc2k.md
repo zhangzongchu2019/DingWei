@@ -255,6 +255,47 @@ A 线评审（`openapi4aiterrazzc`，其锚 `a3a9de11`）在 `8fe12ae4` 上实�
 而不是某一个字面量**。组长说那一层他和另一位都没想到 ——
 **而我把它用在别人的守卫上，没用在自己的。**
 
+## 4.9 ④h `ReferenceError` 的根因：**我实测复现出来了**（2026-09-18T13:11Z）
+
+组长给了静态线索（非 iframe、两个 `const` 相邻、13 条通过说明脚本执行了、报的是无绑定而非 TDZ），
+并建议先插只读探针做阳性对照。**我按此做了，并进一步把它复现了。**
+
+### 一、探针（在我这边，正常 mock）
+
+    [probe] {"url":"…/renderer-canary-sse.html","kind":"object","never":"object","stats":"object","ready":"complete"}
+
+3/3 均如此 ⇒ **不是 reload 竞态，也不是上下文落空**。
+
+### 二、🔴 复现：**测试脚本是新的，被服务的 renderer 是旧的**
+
+用 `0c05effc` 的 renderer（其中**没有** `FILE_EXT_NEVER_INLINE`）配 `8fe12ae4` 的测试脚本：
+
+    [probe] {"kind":"object","never":"undefined","ready":"complete"}    ← 相邻那张表读得到，这一张读不到
+    🔴 ④h  ReferenceError: FILE_EXT_NEVER_INLINE is not defined
+    其余 15 条全绿
+
+**与评审方所报逐条吻合**（他那边 ⑦⑧ 另因样本缺失而红）。
+⇒ **根因是产品文件与测试脚本不同源**，不是页面作用域、不是加载时序、不是我的断言写法。
+
+📌 组长第 ④ 条线索恰好指向这里：`is not defined`（**无绑定**）而非 TDZ ——
+**无绑定意味着那段代码根本不在被执行的那份文件里。**
+
+### 三、已加一道对账，让同样的错配自己说出它是什么
+
+测试开跑前先核：**被服务的 renderer 必须含有本版产品的标记**，否则直接抛：
+
+    🔴 被服务的 renderer 与仓内这一份不是同一版 —— 先修这个，别查测试。
+       仓内文件 …/renderer-canary-sse.html  sha256=…
+       服务地址 https://…/renderer-canary-sse.html
+       服务端缺少本版标记: FILE_EXT_NEVER_INLINE
+       常见成因：mock 从另一个目录/另一次检出启动，或 renderer 未随测试脚本一起更新。
+
+**双向实测**：正常 mock → 16/0；旧 renderer 的 mock → 立即抛上述错误，**不再报成 `ReferenceError`**。
+
+🔴 **这才是这件事的真正代价**：原来的失败信息指向「测试里那个标识符不存在」，
+**看起来像我的测试写错了**；而事实是「你跑的不是这一版产品」。
+**一次误诊，双方各耗一轮。** 与今天其它几处同族 —— **失败信息指向的地方，和真正要改的地方，不是同一处。**
+
 ## 5. 未闭合 / 属于别的线（我停在这里，没动）
 
 1. **上传依赖 B 线返回 `url`**。基线 `internal/fileservice/http.go:70-75` 现返回
