@@ -16,8 +16,97 @@ import (
 
 const consoleSessionCookie = "dw_console_session"
 
+const (
+	// D1-b(组长 2026-09-18 裁,已报业主):滑动续期必须有绝对上限。
+	// 『一直打开就不用重登』**不等于**『永远不用重登』——
+	// 没有上限意味着一个被窃的 cookie 永久有效。
+	consoleSessionAbsoluteTTL = 30 * 24 * time.Hour
+	// 剩余不足一半才续:每会话最多每 consoleSessionTTL/2 写一次库,与开了几个标签页无关。
+	consoleSessionRenewBelow = consoleSessionTTL / 2
+	// 再加一道进程内节流,防同一瞬间多个标签页同时触发。
+	consoleSessionTouchMin = time.Minute
+)
+
+// newConsoleSessionCookie 是【唯一】构造 console 会话 cookie 的地方。
+//
+// 🔴 登录与续期必须共用它。组长把这一条定为硬闸,理由照抄:
+// 只延后 DB 里的 expires_at 是不够的 —— cookie 的 MaxAge 在登录那一刻写死,
+// 到点浏览器自己就把它删了,服务端再宽松也收不到凭据。
+// 而属性只要有一处不同就是一次**静默降级**:漏一个 Secure 不会让任何测试变红,
+// 只会让 cookie 允许明文发送。共用一个构造器 ⇒ 属性不一致在结构上不可能发生。
+func newConsoleSessionCookie(token string) *http.Cookie {
+	return &http.Cookie{
+		Name:     consoleSessionCookie,
+		Value:    token,
+		Path:     "/",
+		MaxAge:   int(consoleSessionTTL.Seconds()),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+}
+
+func (h *Hub) now() time.Time {
+	if h.NowFunc != nil {
+		return h.NowFunc()
+	}
+	return time.Now()
+}
+
+// consoleTouchAllowed 是写放大闸:同一会话 consoleSessionTouchMin 内只放行一次落库。
+func (h *Hub) consoleTouchAllowed(sessionID string, now time.Time) bool {
+	h.consoleTouchMu.Lock()
+	defer h.consoleTouchMu.Unlock()
+	if last, ok := h.consoleTouched[sessionID]; ok && now.Sub(last) < consoleSessionTouchMin {
+		return false
+	}
+	if h.consoleTouched == nil {
+		// New() 里已初始化;这里只兜零值 Hub(测试直接构造)的情况。
+		h.consoleTouched = make(map[string]time.Time)
+	}
+	h.consoleTouched[sessionID] = now
+	return true
+}
+
+// renewConsoleSession 实现业主第 7 条:页面一直开着就不必到期重走飞书登录。
+//
+// 之所以不需要前端配合:console 页每 15s 打一次 /api/console/agents、
+// 每个 view 页每 5s 打一次 /view/{s}/status,两者都经 authenticateConsole。
+// 页面开着 ⇒ 服务端每几秒就见它一次 ⇒ 在这里续,就等于「开着即续」。
+//
+// D1-c(组长裁):**不要求「真人活动」**,页面在轮询即可 —— 业主原话就是『只要一直打开』。
+func (h *Hub) renewConsoleSession(r *http.Request, w http.ResponseWriter, repo consoleAuthRepository, session *model.ConsoleSession, rawToken string, now time.Time) {
+	if session.CreatedAt.IsZero() {
+		// 算不出绝对上限就不续(fail-closed):宁可让用户重登,
+		// 也不能让一个上限未知的会话被无限延长。
+		return
+	}
+	if session.ExpiresAt.Sub(now) >= consoleSessionRenewBelow {
+		return
+	}
+	newExpiry := now.Add(consoleSessionTTL)
+	if cap := session.CreatedAt.Add(consoleSessionAbsoluteTTL); newExpiry.After(cap) {
+		newExpiry = cap
+	}
+	if !newExpiry.After(session.ExpiresAt) {
+		// 已经贴到 30 天绝对上限:不再延长,到点按原样过期。
+		return
+	}
+	if !h.consoleTouchAllowed(session.ID, now) {
+		return
+	}
+	if err := repo.TouchConsoleSession(r.Context(), session.ID, newExpiry, now); err != nil {
+		// 续期失败不影响本次请求:凭据此刻仍然有效,下一次轮询还会再试。
+		return
+	}
+	session.ExpiresAt = newExpiry
+	// 🔴 DB 与 cookie 必须一起延 —— 只延一边就会「服务端明明是对的」却仍在第 12 小时失败。
+	http.SetCookie(w, newConsoleSessionCookie(rawToken))
+}
+
 type consoleAuthRepository interface {
 	ResolveConsoleSession(context.Context, string, time.Time) (*model.ConsoleSession, error)
+	TouchConsoleSession(context.Context, string, time.Time, time.Time) error
 	ResolveGrantedConsoleAgent(context.Context, string, string, string) (*model.ConsoleAgent, error)
 	ListConsoleAgents(context.Context, string) ([]model.ConsoleAgent, error)
 	RotateConsolePageCapability(context.Context, model.ConsolePageCapability, string, string, time.Time) error
@@ -68,7 +157,8 @@ func (h *Hub) authenticateConsole(w http.ResponseWriter, r *http.Request) (conso
 		http.Error(w, "authentication required", http.StatusUnauthorized)
 		return nil, nil, false
 	}
-	session, err := repo.ResolveConsoleSession(r.Context(), hashConsoleToken(cookie.Value), time.Now())
+	now := h.now()
+	session, err := repo.ResolveConsoleSession(r.Context(), hashConsoleToken(cookie.Value), now)
 	if err != nil {
 		http.Error(w, "console auth unavailable", http.StatusServiceUnavailable)
 		return nil, nil, false
@@ -77,6 +167,7 @@ func (h *Hub) authenticateConsole(w http.ResponseWriter, r *http.Request) (conso
 		http.Error(w, "authentication required", http.StatusUnauthorized)
 		return nil, nil, false
 	}
+	h.renewConsoleSession(r, w, repo, session, cookie.Value, now)
 	return repo, session, true
 }
 

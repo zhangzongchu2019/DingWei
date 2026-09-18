@@ -331,6 +331,9 @@ type ConsoleSession struct {
 	TokenHash   string
 	ExpiresAt   time.Time
 	RevokedAt   time.Time
+	// CreatedAt 是滑动续期的**绝对上限**起算点(D1-b:无论多活跃,30 天后必须重登)。
+	// 没有它就只能纯滑动 ⇒ 一个被窃的 cookie 永久有效。
+	CreatedAt time.Time
 }
 
 type ConsolePageCapability struct {
