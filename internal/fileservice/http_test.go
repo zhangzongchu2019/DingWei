@@ -72,7 +72,7 @@ func TestHTTPUploadHeadAndSingleRanges(t *testing.T) {
 	if hw.Code != http.StatusOK || hw.Header().Get("Content-Length") != "6" || hw.Header().Get("Content-Disposition") == "" {
 		t.Fatalf("HEAD status=%d headers=%v", hw.Code, hw.Header())
 	}
-	if hw.Header().Get("Content-Type") != "application/octet-stream" || hw.Header().Get("X-Content-Type-Options") != "nosniff" || strings.ContainsAny(hw.Header().Get("Content-Disposition"), "\r\n") {
+	if hw.Header().Get("Content-Type") != "application/octet-stream" || hw.Header().Get("X-Content-Type-Options") != "nosniff" || hw.Header().Get("Referrer-Policy") != "no-referrer" || strings.ContainsAny(hw.Header().Get("Content-Disposition"), "\r\n") {
 		t.Fatalf("unsafe download headers: %v", hw.Header())
 	}
 
@@ -153,6 +153,32 @@ func TestHTTPUploadErrorsAreJSONWhileRetrievalStaysHidden(t *testing.T) {
 	h.ServeHTTP(gw, get)
 	if gw.Code != http.StatusNotFound || gw.Body.String() != "not found\n" {
 		t.Fatalf("retrieval status=%d body=%q", gw.Code, gw.Body.String())
+	}
+}
+
+func TestDownloadHeadersInlineOnlySafeMediaTypes(t *testing.T) {
+	for _, tc := range []struct {
+		mediaType, wantType string
+		attachment          bool
+	}{
+		{"image/jpeg", "image/jpeg", false},
+		{"video/mp4; codecs=avc1", "video/mp4", false},
+		{"application/pdf", "application/pdf", false},
+		{"text/plain; charset=utf-8", "text/plain", false},
+		{"text/html", "application/octet-stream", true},
+		{"image/svg+xml", "application/octet-stream", true},
+		{"application/zip", "application/octet-stream", true},
+	} {
+		t.Run(tc.mediaType, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			setDownloadHeaders(w, File{OriginalName: "unsafe.html", MediaType: tc.mediaType})
+			if got := w.Header().Get("Content-Type"); got != tc.wantType {
+				t.Fatalf("content-type=%q want=%q", got, tc.wantType)
+			}
+			if got := w.Header().Get("Content-Disposition"); (got != "") != tc.attachment {
+				t.Fatalf("content-disposition=%q attachment=%t", got, tc.attachment)
+			}
+		})
 	}
 }
 
