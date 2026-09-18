@@ -28,6 +28,16 @@ func normalizedMedia(mediaType string) (string, string) {
 	if base == "image/svg+xml" {
 		return "application/octet-stream", "bin"
 	}
+	downloadExts := map[string]string{
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document":   "docx",
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         "xlsx",
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+		"application/msword": "doc", "application/vnd.ms-excel": "xls", "application/vnd.ms-powerpoint": "ppt",
+		"application/zip": "zip", "application/x-zip-compressed": "zip",
+	}
+	if ext, ok := downloadExts[base]; ok {
+		return "application/octet-stream", ext
+	}
 	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || base == "application/pdf" || base == "text/plain"
 	if !inlineCandidate {
 		return "application/octet-stream", "bin"

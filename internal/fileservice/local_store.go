@@ -23,7 +23,7 @@ type LocalObjectStore struct {
 
 var (
 	legacyObjectKey = regexp.MustCompile(`^files/[0-9]{2}/[0-9]{4}/[0-9a-f]{32}-[0-9]{8}T[0-9]{6}\.[0-9]{9}Z$`)
-	directObjectKey = regexp.MustCompile(`^[a-z0-9_-]{1,64}/[a-z0-9_-]{1,64}/[0-9]{2}/[0-9]{4}/[0-9a-f]{32}\.(?:jpg|png|gif|webp|avif|heic|bmp|tiff|mp4|webm|ogv|mov|mkv|pdf|txt|bin)$`)
+	directObjectKey = regexp.MustCompile(`^[a-z0-9_-]{1,64}/[a-z0-9_-]{1,64}/[0-9]{2}/[0-9]{4}/[0-9a-f]{32}\.(?:jpg|png|gif|webp|avif|heic|bmp|tiff|mp4|webm|ogv|mov|mkv|pdf|txt|docx|xlsx|pptx|doc|xls|ppt|zip|bin)$`)
 )
 
 func validDeletableObjectKey(key string) bool {

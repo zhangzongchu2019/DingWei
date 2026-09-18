@@ -18,6 +18,10 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 	tests := []struct{ fixture, media, wantMedia, wantExt string }{
 		{"sample-quicktime.mov", "video/quicktime", "video/quicktime", "mov"},
 		{"sample-active.svg", "image/svg+xml", "application/octet-stream", "bin"},
+		{"sample-office.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/octet-stream", "docx"},
+		{"sample-office.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/octet-stream", "xlsx"},
+		{"sample-office.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/octet-stream", "pptx"},
+		{"sample-archive.zip", "application/zip", "application/octet-stream", "zip"},
 		{"sample-unknown.dat", "application/x-dingwei-unknown", "application/octet-stream", "bin"},
 	}
 	for _, tt := range tests {
