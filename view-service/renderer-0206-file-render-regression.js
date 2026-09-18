@@ -78,7 +78,10 @@ async function t(name, fn) {
 (async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
   ensureGeneratedFixtures();
-  const browser = await chromium.launch({ headless: true });
+  // 🔵 PW_CHANNEL=chrome ⇒ 用系统真 Chrome（含 H.264/AAC 与 PDFium）；留空则仍用 playwright 自带 chromium
+  const launchOpts = { headless: true };
+  if (process.env.PW_CHANNEL) launchOpts.channel = process.env.PW_CHANNEL;
+  const browser = await chromium.launch(launchOpts);
   const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   const uploadCalls = [];
@@ -340,7 +343,7 @@ async function t(name, fn) {
   });
 
   // ── ④b mp4：本浏览器解不了该编码时也要有出路，绝不留裸 URL ─────
-  await t('④b mp4（本 chromium 无 h264 解码器）降级为下载链接，不报错、不留裸 URL', async () => {
+  await t('④b mp4：能解码则必须内联 <video>，不能解码则降级为下载链接（两种都不得留裸 URL）', async () => {
     const before = await page.locator('.attachment').count();
     await page.evaluate(() => { document.getElementById('humanInput').value = ''; });
     await page.setInputFiles('#filePicker', [fx('sample.mp4')]);
@@ -351,8 +354,19 @@ async function t(name, fn) {
     const last = page.locator('.attachment').last();
     const hasVideo = await last.locator('video').count();
     const hasLink = await last.locator('a.attachment-dl').count();
-    assert.ok(hasVideo + hasLink >= 1, 'mp4 必须要么内联要么给下载链接');
-    assert.ok(hasLink >= 1, '解不了码时必须有下载链接兜底');
+    // 🔴 先问浏览器【这一台】能不能解 H.264，再据此断言 —— 否则这条测试断言的是
+    //    「环境缺陷」而不是「产品行为」：内联时同样会附下载链接，`hasLink>=1` 两种情况都成立，
+    //    于是它从来没有真正验过「mp4 能显示」。
+    const canPlayH264 = await page.evaluate(() =>
+      document.createElement('video').canPlayType('video/mp4; codecs="avc1.42E01E"'));
+    assert.ok(hasLink >= 1, 'mp4 无论能否内联，都必须另给下载链接');
+    if (canPlayH264 === 'probably' || canPlayH264 === 'maybe') {
+      assert.ok(hasVideo >= 1,
+        `本浏览器可解 H.264（canPlayType=${canPlayH264}），mp4 必须内联 <video>，实测 video 元素数=${hasVideo}`);
+    } else {
+      assert.strictEqual(hasVideo, 0,
+        '本浏览器不可解 H.264，不得放出一个放不了的 <video>（应只给下载链接）');
+    }
   });
 
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
