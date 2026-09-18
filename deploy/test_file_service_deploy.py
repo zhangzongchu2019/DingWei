@@ -33,6 +33,19 @@ class FileServiceDeploymentTest(unittest.TestCase):
         self.assertNotIn("proxy_pass http://127.0.0.1:8794", text)
         self.assertNotIn("location /internal/", text)
 
+    def test_direct_links_inline_only_whitelisted_extensions(self):
+        text = (DEPLOY / "nginx-dingwei.conf").read_text()
+        self.assertIn("location ~ ^/f/", text)
+        self.assertIn("jpg|png|gif|webp|avif|mp4|webm|ogv|pdf|txt", text)
+        self.assertIn("default_type application/octet-stream", text)
+        self.assertIn("add_header Content-Disposition attachment always", text)
+        self.assertEqual(text.count("add_header X-Content-Type-Options nosniff always"), 2)
+        self.assertEqual(text.count("add_header Referrer-Policy no-referrer always"), 2)
+        inline = text.split("location ~ ^/f/", 1)[1].split("location ~ ^/f/", 1)[0]
+        self.assertNotIn("Content-Disposition", inline)
+        self.assertIn("location /f/", text)
+        self.assertIn("return 404", text)
+
     def test_local_storage_replaces_minio_and_is_non_executable(self):
         unit = (DEPLOY / "file-service.service").read_text()
         contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
