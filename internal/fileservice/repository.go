@@ -146,10 +146,16 @@ func (r *Repository) ReadyBytes(ctx context.Context) (int64, error) {
 // ListStable backs the authenticated internal audit endpoint. Its ordering is
 // part of the acceptance contract, not an implementation detail.
 func (r *Repository) ListStable(ctx context.Context, state State, limit int) ([]File, error) {
+	return r.ListStablePage(ctx, state, limit, 0)
+}
+func (r *Repository) ListStablePage(ctx context.Context, state State, limit, offset int) ([]File, error) {
 	if limit <= 0 || limit > 1000 {
 		return nil, fmt.Errorf("limit must be between 1 and 1000")
 	}
-	rows, err := r.db.QueryContext(ctx, `SELECT id FROM files WHERE (?='' OR state=?) ORDER BY created_at,id LIMIT ?`, string(state), string(state), limit)
+	if offset < 0 {
+		return nil, fmt.Errorf("offset must be non-negative")
+	}
+	rows, err := r.db.QueryContext(ctx, `SELECT id FROM files WHERE (?='' OR state=?) ORDER BY created_at,id LIMIT ? OFFSET ?`, string(state), string(state), limit, offset)
 	if err != nil {
 		return nil, err
 	}
