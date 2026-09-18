@@ -313,6 +313,39 @@
       text-align: center; font-size: 13px; color: var(--muted);
     }
     .composer.dragging .composer-inner { border-color: var(--accent); }
+
+    /* ── 上传进度（业主验收第 1 条）────────────────────────────── */
+    .upload-queue { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .upload-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center;
+      border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; background: var(--panel);
+      font-size: 12px;
+    }
+    .upload-row .u-name { color: var(--text); font-weight: 600; word-break: break-all; }
+    .upload-row .u-meta { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .upload-row .u-bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+    .upload-row .u-fill { height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+    /* 未知进度（申请票据/等响应）时用一条来回走的条，表示「在动」而不是「卡住」 */
+    .upload-row.indeterminate .u-fill { width: 35%; animation: u-slide 1.1s ease-in-out infinite; }
+    @keyframes u-slide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
+    .upload-row.failed { border-color: #c0392b; }
+    .upload-row.failed .u-meta { color: #c0392b; }
+    .upload-row.done .u-fill { background: #2e9e5b; }
+
+    /* ── 草稿附件缩略图（业主验收第 2 条）───────────────────────── */
+    .draft-attachments { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .draft-chip {
+      display: flex; align-items: center; gap: 8px; max-width: 260px;
+      border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px 6px 6px; background: var(--panel);
+    }
+    .draft-chip img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; display: block; flex: 0 0 auto; }
+    .draft-chip .d-icon {
+      width: 40px; height: 40px; border-radius: 4px; flex: 0 0 auto; display: flex;
+      align-items: center; justify-content: center; font-size: 18px; background: var(--bg); border: 1px solid var(--line);
+    }
+    .draft-chip .d-text { min-width: 0; }
+    .draft-chip .d-name { font-size: 12px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .draft-chip .d-size { font-size: 11px; color: var(--muted); }
     .main {
       min-height: 0;
       min-width: 0;
@@ -993,6 +1026,13 @@
         <span class="status-item sb-res">会话 <strong id="sessionName">--</strong></span>
         <button class="text-btn sb-res" id="reconnectBtn" type="button" title="重连事件流">重连</button>
       </div>
+      <!-- 业主 2026-09-18 验收第 1 条：「选择文件上传时，没有任何提示，这个很容易认为是出问题了」
+           ⇒ 上传全程必须可见：每个文件一行，文件名 + 已传/总 + 进度条 + 状态。 -->
+      <div class="upload-queue" id="uploadQueue" hidden></div>
+      <!-- 业主第 2 条：「输入框中的链接（文件名，字节数），不知道怎么来的。如果能显示为缩略图就更好了」
+           ⇒ 草稿里的每条 /f/ 直链在这里显示成带缩略图的附件块。
+           🔴 正文仍是那条 https 直链，接收侧靠扫 /f/ 分派；这里只是**附加的视觉层**，不替代正文。 -->
+      <div class="draft-attachments" id="draftAttachments" hidden></div>
       <div class="composer-inner" id="composerInner">
         <textarea id="humanInput" rows="1" placeholder="输入消息；Enter 发送，Ctrl/Cmd/Shift+Enter 换行；可粘贴/拖放任意文件"></textarea>
         <!-- 0.2.0.6 A 线：上传入口三种都要在（业主第 1 条）。界面上看不见按钮 = 功能不存在，
@@ -1029,6 +1069,8 @@
     const composerInner = document.getElementById('composerInner');
     const filePicker = document.getElementById('filePicker');
     const dropHint = document.getElementById('dropHint');
+    const uploadQueue = document.getElementById('uploadQueue');
+    const draftAttachments = document.getElementById('draftAttachments');
     const sessionDot = document.getElementById('sessionDot');
     const sessionState = document.getElementById('sessionState');
     const taskProgress = document.getElementById('taskProgress');
@@ -2474,9 +2516,13 @@
       const task = fetch(url, { method: 'HEAD' })
         .then((res) => {
           if (res.ok) {
+            const rawDisposition = String(res.headers.get('Content-Disposition') || '');
             return {
               mediaType: String(res.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase(),
-              disposition: String(res.headers.get('Content-Disposition') || '').toLowerCase(),
+              disposition: rawDisposition.toLowerCase(),
+              // R4：接收侧的原名只能从这里来。服务端暂不带 filename（B 线 B5 在补），
+              // 解不出即 '' —— **不编名字**，由调用方回退到浏览器默认行为。
+              fileName: parseDispositionFilename(rawDisposition),
               size: Number(res.headers.get('Content-Length')) || 0,
             };
           }
@@ -2536,18 +2582,38 @@
       return FILE_EXT_KIND[ext] || 'download';
     }
 
+    // 从 Content-Disposition 取原始文件名：支持 RFC 5987 的 filename*（可带 UTF-8 百分号编码）
+    // 与普通 filename="…"。🔴 取不到就返回 ''，**绝不猜、绝不用 URL 末段冒充原名**。
+    function parseDispositionFilename(raw) {
+      if (!raw) return '';
+      const ext = /filename\*\s*=\s*([^;]+)/i.exec(raw);
+      if (ext) {
+        const v = ext[1].trim().replace(/^UTF-8''/i, '');
+        try { return decodeURIComponent(v); } catch { return v; }
+      }
+      const plain = /filename\s*=\s*("([^"]*)"|[^;]+)/i.exec(raw);
+      if (plain) return (plain[2] !== undefined ? plain[2] : plain[1]).trim();
+      return '';
+    }
+
     function fileNameFromUrl(url) {
       try { return decodeURIComponent(new URL(url, location.href).pathname.split('/').pop() || '') || '文件'; }
       catch { return '文件'; }
     }
 
-    function fileDownloadLink(url, label) {
+    function fileDownloadLink(url, label, fileName) {
       const a = document.createElement('a');
       a.className = 'attachment-dl';
       a.href = url;
       a.rel = 'noopener noreferrer';
       a.target = '_blank';
-      a.setAttribute('download', '');
+      // R4（业主 2026-09-18：下载下来是 f5790871….bin，Word 打不开）：
+      // 🔴 `download=""` 让浏览器回退用 URL 末段命名 —— 而同一张卡片上明明显示着正确的原名。
+      //    **显示对了、存下来错了**：两边取的不是同一个值。
+      // ⇒ 有已知原名就填；取不到留空回退现行为，不自己编。
+      const name = String(fileName || '').trim();
+      // 只挡目录分隔符：空格与括号是合法文件名字符（业主那个就是 `… v2 (1).docx`）。
+      a.setAttribute('download', name && !/[\\/]/.test(name) ? name : '');
       a.textContent = `⬇ ${label || '下载'}`;
       return a;
     }
@@ -2569,7 +2635,7 @@
       return box;
     }
 
-    async function fillTextAttachment(box, url, meta) {
+    async function fillTextAttachment(box, url, meta, knownName) {
       const pre = document.createElement('pre');
       box.appendChild(pre);
       try {
@@ -2589,14 +2655,14 @@
           const note = document.createElement('div');
           note.className = 'attachment-note';
           note.textContent = `已截断：只内联前 ${FILE_TEXT_INLINE_MAX} 字节${total ? `，全文 ${formatFileBytes(total)}` : ''}`;
-          box.append(note, fileDownloadLink(url, '下载完整文件'));
+          box.append(note, fileDownloadLink(url, '下载完整文件', knownName));
         }
       } catch (err) {
         pre.remove();
         const note = document.createElement('div');
         note.className = 'attachment-note';
         note.textContent = `文本取回失败（${err.message}）⇒ 改给下载链接`;
-        box.append(note, fileDownloadLink(url, '下载'));
+        box.append(note, fileDownloadLink(url, '下载', knownName));
       }
     }
 
@@ -2629,13 +2695,16 @@
           source = 'ext';
         }
       }
+      // R4：本页上传用 uploadedFileHints 的 name；接收侧用 HEAD 解出的 Content-Disposition filename。
+      //     两者都没有 ⇒ '' ⇒ fileDownloadLink 回退浏览器默认命名，不编。
+      const knownName = String(hint?.name || meta?.fileName || '').trim();
       const box = fileAttachmentShell(url, meta, hint);
       box.dataset.dispatch = source;   // 供验收断言「这一张是靠哪一级定的类型」
       if (source === 'gone') {
         const note = document.createElement('div');
         note.className = 'attachment-note';
         note.textContent = '文件已不可取（服务端 404）——可能已过 7 天保留期被清理';
-        box.append(note, fileDownloadLink(url, '仍要试着打开'));
+        box.append(note, fileDownloadLink(url, '仍要试着打开', knownName));
         return box;
       }
       if (source === 'ext') {
@@ -2651,7 +2720,7 @@
           img.loading = 'lazy';
           img.alt = hint?.name || fileNameFromUrl(url);
           // 图片本身加载不出来时也不留空白：退到下载链接。
-          img.addEventListener('error', () => { img.replaceWith(fileDownloadLink(url, '下载图片')); }, { once: true });
+          img.addEventListener('error', () => { img.replaceWith(fileDownloadLink(url, '下载图片', knownName)); }, { once: true });
           box.appendChild(img);
           break;
         }
@@ -2660,9 +2729,9 @@
           video.src = url;
           video.controls = true;
           video.preload = 'metadata';
-          video.addEventListener('error', () => { video.replaceWith(fileDownloadLink(url, '下载视频')); }, { once: true });
+          video.addEventListener('error', () => { video.replaceWith(fileDownloadLink(url, '下载视频', knownName)); }, { once: true });
           box.appendChild(video);
-          box.appendChild(fileDownloadLink(url, '下载视频'));   // 浏览器解不了该编码时仍有出路
+          box.appendChild(fileDownloadLink(url, '下载视频', knownName));   // 浏览器解不了该编码时仍有出路
           break;
         }
         case 'pdf': {
@@ -2670,15 +2739,15 @@
           frame.src = url;
           frame.title = hint?.name || fileNameFromUrl(url);
           box.appendChild(frame);
-          box.appendChild(fileDownloadLink(url, '下载 PDF'));   // 浏览器无内置 PDF 阅读器时仍有出路
+          box.appendChild(fileDownloadLink(url, '下载 PDF', knownName));   // 浏览器无内置 PDF 阅读器时仍有出路
           break;
         }
         case 'text':
-          await fillTextAttachment(box, url, meta);
+          await fillTextAttachment(box, url, meta, knownName);
           break;
         default:
           // 🔴 兜底分支：其它一切 ⇒ 下载链接。业主逐字：「不能显示的，直接给出下载链接」。
-          box.appendChild(fileDownloadLink(url, hint?.name || fileNameFromUrl(url)));
+          box.appendChild(fileDownloadLink(url, hint?.name || fileNameFromUrl(url), knownName));
       }
       return box;
     }
@@ -2711,7 +2780,7 @@
           .then((box) => slot.replaceWith(box))
           .catch(() => {
             const fallback = fileAttachmentShell(url, null, uploadedFileHints.get(url));
-            fallback.appendChild(fileDownloadLink(url, '下载'));
+            fallback.appendChild(fileDownloadLink(url, '下载', uploadedFileHints.get(url)?.name || ''));
             slot.replaceWith(fallback);
           });
       }
@@ -3816,6 +3885,7 @@
         await submitInput(text);
         humanInput.value = '';
         resizeHumanInput();
+        renderDraftAttachments();   // 发出去之后草稿条随正文一起清空
       } catch (err) {
         handleIncomingEvent({ kind: 'error', text: err.message, data: { code: 'input_failed' } });
       }
@@ -3846,7 +3916,84 @@
     // 0.2.0.5 的教训：这里原本**只有 paste 一个入口且只收 image/**，界面上没有任何
     // 可见按钮，于是「界面上根本没有上传入口」是业主自己用的时候发现的。
     // ⇒ 三个入口（粘贴 / 选择 / 拖放）必须同时在，且都不限类型。
-    async function uploadOneFile(file) {
+    // ── 上传进度行（业主 2026-09-18 验收第 1 条）────────────────────────
+    // 🔴 判据是业主那句话的反面：任一时刻用户都能分辨「在传」与「卡住了」。
+    //    所以每一行在任何时刻都必须处于三种可读状态之一：
+    //    ① 有百分比与已传/总字节（在传，且能看出数在涨）
+    //    ② 不定进度条来回走（在等票据或等响应——没有字节可报，但看得出没死）
+    //    ③ 终态：已附加 / 失败＋原因
+    function newUploadRow(file) {
+      const row = document.createElement('div');
+      row.className = 'upload-row indeterminate';
+      const name = document.createElement('span');
+      name.className = 'u-name';
+      name.textContent = file.name || '未命名文件';
+      const meta = document.createElement('span');
+      meta.className = 'u-meta';
+      meta.textContent = '申请上传凭证…';
+      const bar = document.createElement('div');
+      bar.className = 'u-bar';
+      const fill = document.createElement('div');
+      fill.className = 'u-fill';
+      bar.appendChild(fill);
+      row.append(name, meta, bar);
+      uploadQueue.appendChild(row);
+      uploadQueue.hidden = false;
+      return {
+        // 有字节可报时：给百分比与 已传/总，并停掉不定动画
+        progress(loaded, total) {
+          row.classList.remove('indeterminate');
+          const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0;
+          fill.style.width = `${pct}%`;
+          meta.textContent = `${pct}% · ${formatFileBytes(loaded)} / ${formatFileBytes(total)}`;
+        },
+        // 没有字节可报的阶段（等票据、等服务端响应）：明说在等什么，并保持条在动
+        waiting(text) {
+          row.classList.add('indeterminate');
+          fill.style.width = '';
+          meta.textContent = text;
+        },
+        done(sizeBytes) {
+          row.classList.remove('indeterminate');
+          row.classList.add('done');
+          fill.style.width = '100%';
+          meta.textContent = `已附加 · ${formatFileBytes(sizeBytes)}`;
+          setTimeout(() => { row.remove(); if (!uploadQueue.children.length) uploadQueue.hidden = true; }, 2500);
+        },
+        failed(reason) {
+          row.classList.remove('indeterminate');
+          row.classList.add('failed');
+          fill.style.width = '100%';
+          meta.textContent = `失败 · ${reason}`;
+          // 失败行不自动消失：业主要能看到为什么失败。
+        },
+      };
+    }
+
+    // 🔴 用 XHR 而不是 fetch：**fetch 不上报上传进度**（没有 upload.onprogress），
+    //    而业主第 1 条要的正是「已传/总字节」。这是为满足该条必须做的技术选择，
+    //    不是偏好；其余语义（票据、请求头、失败取 {"error"}）与原 fetch 版逐条一致。
+    function uploadWithProgress(url, ticket, file, row) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${ticket}`);
+        xhr.setRequestHeader('X-DingWei-Session', stats.sessionName);
+        xhr.setRequestHeader('X-File-Name', file.name || 'upload.bin');
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) row.progress(e.loaded, e.total);
+        });
+        // 字节发完但服务端还没回：此时既不该停在 100% 不动，也没有新字节可报。
+        xhr.upload.addEventListener('load', () => row.waiting('已发完，等服务端确认…'));
+        xhr.addEventListener('load', () => resolve({ status: xhr.status, body: xhr.responseText }));
+        xhr.addEventListener('error', () => reject(new Error('网络中断')));
+        xhr.addEventListener('abort', () => reject(new Error('已取消')));
+        xhr.send(file);
+      });
+    }
+
+    async function uploadOneFile(file, row) {
       if (!file) throw new Error('没有可上传的文件');
       const label = file.name || '未命名文件';
       // A4：上限一律 50 MiB = 50<<20 = 52428800 字节（不是 50×1000²）。
@@ -3854,6 +4001,7 @@
       if (file.size > FILE_MAX_UPLOAD_BYTES) {
         throw new Error(`${label}：${formatFileBytes(file.size)} 超过上限 50 MiB（${FILE_MAX_UPLOAD_BYTES} 字节）`);
       }
+      row?.waiting('申请上传凭证…');
       const ticketRes = await fetch(`/api/console/agents/${encodeURIComponent(stats.sessionName)}/file-upload-ticket`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ max_bytes: file.size }),
@@ -3861,27 +4009,24 @@
       if (!ticketRes.ok) throw new Error(`${label}：申请上传票据失败 HTTP ${ticketRes.status}`);
       const ticket = await ticketRes.json();
       if (!ticket.upload_url || !ticket.ticket || ticket.session !== stats.sessionName) throw new Error(`${label}：上传票据响应无效`);
-      const uploadRes = await fetch(ticket.upload_url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${ticket.ticket}`,
-          'X-DingWei-Session': stats.sessionName,
-          'X-File-Name': file.name || 'upload.bin',
-          // 不限类型：浏览器给不出类型时按二进制传，由服务端定夺，A 侧不猜。
-          'Content-Type': file.type || 'application/octet-stream',
-        },
-        body: file,
-      });
-      if (!uploadRes.ok) {
+      // 不限类型：浏览器给不出类型时按二进制传，由服务端定夺，A 侧不猜（见 uploadWithProgress）。
+      row?.progress(0, file.size);
+      const uploadRes = await uploadWithProgress(ticket.upload_url, ticket.ticket, file, row || { progress() {}, waiting() {} });
+      if (uploadRes.status < 200 || uploadRes.status >= 300) {
         // §2：失败返回非 2xx ＋ {"error": "<可读原因>"}。取不到可读原因就如实给状态码，不编。
         let reason = `HTTP ${uploadRes.status}`;
         try {
-          const failed = await uploadRes.json();
+          const failed = JSON.parse(uploadRes.body);
           if (failed && failed.error) reason = String(failed.error);
         } catch { /* 非 JSON 失败体：保留状态码 */ }
         throw new Error(`${label}：上传失败 ${reason}`);
       }
-      const uploaded = await uploadRes.json();
+      let uploaded;
+      try {
+        uploaded = JSON.parse(uploadRes.body);
+      } catch {
+        throw new Error(`${label}：上传响应不是合法 JSON`);
+      }
       // §2：A 只依赖 url / name / size / media_type 四个字段。
       const url = String(uploaded.url || '');
       if (!/^https:\/\//u.test(url)) throw new Error(`${label}：上传响应缺少契约 §2 要求的绝对 https url`);
@@ -3893,6 +4038,8 @@
         mediaType: String(uploaded.media_type || '').split(';')[0].trim().toLowerCase(),
       });
       appendInputReference(url, uploaded.name || file.name, uploaded.size);
+      row?.done(uploaded.size);
+      renderDraftAttachments();   // 业主第 2 条：回填后立刻把缩略图摆出来
       return url;
     }
 
@@ -3906,16 +4053,92 @@
       // 顺序上传：票据一次一张、且按 max_bytes 绑定本次大小，并发会互相挤掉。
       // 单个失败不打断其余文件 —— 拖进来 5 个坏了 1 个，另外 4 个仍应传上去。
       for (const file of list) {
+        // 🔴 每个文件一行,不是只显示一个总数(组长 R1 明示:多文件时逐个可见)。
+        const row = newUploadRow(file);
         try {
-          await uploadOneFile(file);
+          await uploadOneFile(file, row);
         } catch (err) {
-          // 上传成功前从不修改输入框；失败时用户已经输入的文字自然原样保留。
+          row.failed(err.message);
+          // 🔴 R3：上传成功前从不修改输入框 —— 失败时用户已经输入的文字原样保留。
+          //    注意这条约束只管「不动输入框」，**不含「不给反馈」**；
+          //    反馈现在走上面这一行 ＋ 下面的错误事件。两件事此前被绑在一起，是业主第 1 条的成因。
           handleIncomingEvent({ kind: 'error', text: err.message, data: { code: 'file_upload_failed' } });
         }
       }
     }
 
+    // ── 草稿附件缩略图（业主 2026-09-18 验收第 2 条）────────────────────
+    // 业主原话：「输入框中的链接（文件名，字节数），不知道怎么来的。如果能显示为缩略图就更好了」
+    //
+    // 🔴 正文仍然是那条 https 直链，**一个字都不动**：
+    //    接收侧（附录 B2）靠扫正文里的 /f/ 直链分派渲染 ——
+    //    为了好看把链接从正文里拿掉，会让接收方什么都渲染不出来。
+    //    ⇒ 这里是**附加的视觉层**：从输入框现有文本里扫出直链，在它下方摆缩略图。
+    //    用户删掉那段文字，这里也随之消失；两者永远一致，因为它只是正文的投影。
+    function draftIconFor(mediaType) {
+      if (!mediaType) return '📄';
+      if (mediaType.startsWith('video/')) return '🎬';
+      if (mediaType === 'application/pdf') return '📕';
+      if (mediaType.startsWith('text/')) return '📝';
+      if (mediaType.startsWith('audio/')) return '🎵';
+      return '📦';
+    }
+
+    // 🔴 约束:任何改动 humanInput.value 的代码,必须派发 input 事件或直接调用本函数。
+    //    实测(2026-09-18):直接赋值而不派事件 ⇒ 附件块留在上一份草稿上,
+    //    于是「视觉层」与「正文」不再一致 —— 而正文才是发出去的东西。
+    //    浏览器用例⑩里有一条不变式断言盯着这件事:附件块数 == 正文里的 /f/ 直链数。
+    function renderDraftAttachments() {
+      const urls = [...new Set((humanInput.value.match(FILE_URL_RE) || []).map(trimUrlTail))].filter(isOwnFileUrl);
+      draftAttachments.textContent = '';
+      if (!urls.length) {
+        draftAttachments.hidden = true;
+        return;
+      }
+      draftAttachments.hidden = false;
+      for (const url of urls) {
+        // 本页刚传的文件，四个字段就在 uploadedFileHints 里，**不必再发 HEAD**（组长明示）。
+        const hint = uploadedFileHints.get(url) || {};
+        const chip = document.createElement('div');
+        chip.className = 'draft-chip';
+        chip.dataset.fileUrl = url;
+        const mediaType = hint.mediaType || '';
+        if (mediaType.startsWith('image/') && mediaType !== 'image/svg+xml') {
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = hint.name || fileNameFromUrl(url);
+          img.loading = 'lazy';
+          // 缩略图取不到就退回图标，不留一个破图。
+          img.addEventListener('error', () => {
+            const fallback = document.createElement('span');
+            fallback.className = 'd-icon';
+            fallback.textContent = '🖼';
+            img.replaceWith(fallback);
+          }, { once: true });
+          chip.appendChild(img);
+        } else {
+          const icon = document.createElement('span');
+          icon.className = 'd-icon';
+          icon.textContent = draftIconFor(mediaType);
+          chip.appendChild(icon);
+        }
+        const text = document.createElement('div');
+        text.className = 'd-text';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'd-name';
+        nameEl.textContent = hint.name || fileNameFromUrl(url);
+        nameEl.title = url;
+        const sizeEl = document.createElement('div');
+        sizeEl.className = 'd-size';
+        sizeEl.textContent = [mediaType || '类型未知', hint.size ? formatFileBytes(hint.size) : ''].filter(Boolean).join(' · ');
+        text.append(nameEl, sizeEl);
+        chip.appendChild(text);
+        draftAttachments.appendChild(chip);
+      }
+    }
+
     humanInput.addEventListener('input', resizeHumanInput);
+    humanInput.addEventListener('input', renderDraftAttachments);
     // 入口①：粘贴 —— 🔴 由「只接 image/*」扩到任意类型，且一次粘多个也收。
     humanInput.addEventListener('paste', (event) => {
       const files = Array.from(event.clipboardData?.items || [])
