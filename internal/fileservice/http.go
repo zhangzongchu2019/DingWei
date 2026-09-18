@@ -33,7 +33,6 @@ type HTTPHandler struct {
 
 func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Referrer-Policy", "no-referrer")
 	switch {
 	case r.URL.Path == "/files/upload" && r.Method == http.MethodPost:
 		h.upload(w, r)
@@ -218,25 +217,10 @@ func parseSingleRange(raw string, size int64) (int64, int64, error) {
 
 func setDownloadHeaders(w http.ResponseWriter, f File) {
 	w.Header().Set("Accept-Ranges", "bytes")
-	mediaType := strings.ToLower(strings.TrimSpace(strings.SplitN(f.MediaType, ";", 2)[0]))
-	if inlineMediaType(mediaType) {
-		w.Header().Set("Content-Type", mediaType)
-	} else {
-		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Header().Set("Content-Disposition", "attachment; filename*=UTF-8''"+url.PathEscape(safeName(f.OriginalName)))
-	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", "attachment; filename*=UTF-8''"+url.PathEscape(safeName(f.OriginalName)))
 	w.Header().Set("X-Content-SHA256", f.SHA256)
 	w.Header().Set("X-DingWei-Media-Type", f.MediaType)
-}
-
-func inlineMediaType(mediaType string) bool {
-	switch mediaType {
-	case "image/jpeg", "image/png", "image/gif", "image/webp", "image/avif",
-		"video/mp4", "video/webm", "video/ogg", "application/pdf", "text/plain":
-		return true
-	default:
-		return false
-	}
 }
 func bearer(r *http.Request) string {
 	v := r.Header.Get("Authorization")
