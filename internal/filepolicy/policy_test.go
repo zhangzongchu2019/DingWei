@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -30,9 +31,14 @@ func TestDirectLinkExtensionAllowListsExcludeActiveContent(t *testing.T) {
 	nginx := mustRead(t, "../../deploy/nginx-dingwei.conf")
 	store := mustRead(t, "../fileservice/local_store.go")
 	managerPath := "../fileservice/manager.go"
-	assertForbiddenExtensionsAbsent(t, "nginx file_ext", captureExtensions(t, nginx, `\(\?<file_ext>([^)]+)\)`))
-	assertForbiddenExtensionsAbsent(t, "directObjectKey", captureExtensions(t, store, `directObjectKey\s*=.*?\\\.\(\?:([^)]*)\)`))
-	assertForbiddenExtensionsAbsent(t, "manager media maps", managerMapExtensions(t, managerPath, "exts", "downloadExts"))
+	nginxExtensions := captureAllExtensions(t, nginx, `\(\?<file_ext>([^)]+)\)`)
+	storeExtensions := captureExtensions(t, store, `directObjectKey\s*=.*?\\\.\(\?:([^)]*)\)`)
+	managerExtensions := append(managerMapExtensions(t, managerPath, "exts", "downloadExts"), "bin")
+	assertForbiddenExtensionsAbsent(t, "nginx file_ext", nginxExtensions)
+	assertForbiddenExtensionsAbsent(t, "directObjectKey", storeExtensions)
+	assertForbiddenExtensionsAbsent(t, "manager media maps", managerExtensions)
+	assertExtensionSetsEqual(t, "manager", managerExtensions, "nginx", nginxExtensions)
+	assertExtensionSetsEqual(t, "manager", managerExtensions, "directObjectKey", storeExtensions)
 }
 
 func managerMapExtensions(t *testing.T, path string, names ...string) []string {
@@ -99,6 +105,42 @@ func captureExtensions(t *testing.T, raw, pattern string) []string {
 		t.Fatalf("extension allowlist not found with %q", pattern)
 	}
 	return strings.Split(match[1], "|")
+}
+
+func captureAllExtensions(t *testing.T, raw, pattern string) []string {
+	t.Helper()
+	matches := regexp.MustCompile(pattern).FindAllStringSubmatch(raw, -1)
+	if len(matches) == 0 {
+		t.Fatalf("extension allowlists not found with %q", pattern)
+	}
+	var extensions []string
+	for _, match := range matches {
+		if len(match) != 2 {
+			t.Fatalf("invalid extension allowlist match for %q", pattern)
+		}
+		extensions = append(extensions, strings.Split(match[1], "|")...)
+	}
+	return extensions
+}
+
+func assertExtensionSetsEqual(t *testing.T, leftName string, left []string, rightName string, right []string) {
+	t.Helper()
+	normalize := func(values []string) []string {
+		set := make(map[string]bool, len(values))
+		for _, value := range values {
+			set[value] = true
+		}
+		result := make([]string, 0, len(set))
+		for value := range set {
+			result = append(result, value)
+		}
+		sort.Strings(result)
+		return result
+	}
+	want, got := normalize(left), normalize(right)
+	if strings.Join(want, "|") != strings.Join(got, "|") {
+		t.Fatalf("extension sets differ: %s=%v %s=%v", leftName, want, rightName, got)
+	}
 }
 
 func assertForbiddenExtensionsAbsent(t *testing.T, source string, extensions []string) {
