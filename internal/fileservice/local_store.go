@@ -36,8 +36,11 @@ func NewLocalObjectStore(root string) (*LocalObjectStore, error) {
 	if root == "" || !filepath.IsAbs(root) {
 		return nil, fmt.Errorf("FS_DATA_ROOT must be an absolute path")
 	}
-	if err := os.MkdirAll(root, 0o750); err != nil {
+	if err := os.MkdirAll(root, os.ModeSetgid|0o750); err != nil {
 		return nil, fmt.Errorf("create object root: %w", err)
+	}
+	if err := os.Chmod(root, os.ModeSetgid|0o750); err != nil {
+		return nil, fmt.Errorf("set object root mode: %w", err)
 	}
 	resolved, err := filepath.EvalSymlinks(root)
 	if err != nil {
@@ -77,12 +80,15 @@ func (s *LocalObjectStore) ensureDir(dir string) error {
 			continue
 		}
 		current = filepath.Join(current, part)
-		if err := os.Mkdir(current, 0o750); err != nil && !errors.Is(err, os.ErrExist) {
+		if err := os.Mkdir(current, os.ModeSetgid|0o750); err != nil && !errors.Is(err, os.ErrExist) {
 			return err
 		}
 		info, err := os.Lstat(current)
 		if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 			return fmt.Errorf("object path component is not a real directory: %s", current)
+		}
+		if err := os.Chmod(current, os.ModeSetgid|0o750); err != nil {
+			return fmt.Errorf("set object directory mode: %w", err)
 		}
 	}
 	return nil
@@ -103,7 +109,7 @@ func (s *LocalObjectStore) Put(ctx context.Context, key string, body io.Reader, 
 		return fmt.Errorf("object target already exists")
 	}
 	tmp := filepath.Join(filepath.Dir(path), ".tmp-"+filepath.Base(path))
-	fd, err := unix.Open(tmp, unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL|unix.O_NOFOLLOW, 0o600)
+	fd, err := unix.Open(tmp, unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL|unix.O_NOFOLLOW, 0o640)
 	if err != nil {
 		return fmt.Errorf("create temporary object: %w", err)
 	}
@@ -115,6 +121,9 @@ func (s *LocalObjectStore) Put(ctx context.Context, key string, body io.Reader, 
 			_ = os.Remove(tmp)
 		}
 	}()
+	if err := unix.Fchmod(fd, 0o640); err != nil {
+		return fmt.Errorf("set object mode: %w", err)
+	}
 	n, err := io.Copy(f, io.LimitReader(body, size+1))
 	if err != nil || n != size {
 		return fmt.Errorf("write complete object: wrote=%d want=%d: %w", n, size, err)

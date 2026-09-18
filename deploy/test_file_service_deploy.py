@@ -20,6 +20,17 @@ class FileServiceDeploymentTest(unittest.TestCase):
         self.assertIn("Restart=always", text)
         self.assertIn("StartLimitBurst=5", text)
         self.assertIn("ReadWritePaths=/var/lib/dingwei-file-service", text)
+        self.assertIn("User=dingwei-file", text)
+        self.assertIn("Group=dingwei-file", text)
+        self.assertIn("UMask=0077", text)
+
+    def test_nginx_uses_only_the_dedicated_object_read_group(self):
+        contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
+        self.assertIn("www-data", contract)
+        self.assertIn("dingwei-file-read", contract)
+        for mode in ("`0710`", "`2750`", "`0640`", "`0600`"):
+            self.assertIn(mode, contract)
+        self.assertIn("must never belong to\n  `dingwei-file-read`", contract)
 
     def test_probe_is_continuous_and_targets_only_private_readyz(self):
         unit = (DEPLOY / "file-service-livez.service").read_text()
