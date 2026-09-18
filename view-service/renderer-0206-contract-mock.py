@@ -18,6 +18,7 @@ import json
 import os
 import re
 import secrets
+import urllib.parse
 import ssl
 import sys
 import threading
@@ -70,7 +71,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length") or 0)
             data = self.rfile.read(length)
             media_type = (self.headers.get("Content-Type") or "application/octet-stream").split(";")[0].strip().lower()
-            name = self.headers.get("X-File-Name") or "upload.bin"
+            # 🔴 P0 协议（组长 2026-09-18 定死）：X-File-Name 为 `UTF-8''<percent-encoded>`，
+            #    无该前缀则按裸值（旧客户端，向后兼容）。
+            #    替身必须实现契约的这一半，否则 A 侧会对着编码后的名字写断言。
+            #    ⚠️ 本替身只做解码；真正的 safeName 归 B 线，且必须**先解码再 safeName**。
+            raw_name = self.headers.get("X-File-Name") or "upload.bin"
+            if raw_name.startswith("UTF-8''"):
+                name = urllib.parse.unquote(raw_name[len("UTF-8''"):], encoding="utf-8", errors="replace")
+            else:
+                name = raw_name
             # A4：50 MiB = 52428800
             if len(data) > 52428800:
                 return self._send(413, json.dumps({"error": "超过 50 MiB 上限"}).encode(),

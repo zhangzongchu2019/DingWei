@@ -3990,7 +3990,13 @@
         xhr.open('POST', url, true);
         xhr.setRequestHeader('Authorization', `Bearer ${ticket}`);
         xhr.setRequestHeader('X-DingWei-Session', stats.sessionName);
-        xhr.setRequestHeader('X-File-Name', file.name || 'upload.bin');
+        // 🔴 P0（业主 2026-09-18 撞上）：HTTP header 值受限于 ISO-8859-1(latin-1)。
+        //    中文/emoji 超出该范围 ⇒ **浏览器在 setRequestHeader 阶段直接抛异常**，
+        //    上传请求根本发不出去。fetch 与 XHR 都有这个限制，换 XHR 没有改变它。
+        // ⇒ 按组长定死的协议编码：UTF-8''<percent-encoded>，与服务端 setDownloadHeaders
+        //    已在用的 `filename*=UTF-8''…` 同一套，不另发明。
+        //    encodeURIComponent 的输出必然全是 ASCII ⇒ 永不再触发该异常。
+        xhr.setRequestHeader('X-File-Name', `UTF-8''${encodeURIComponent(file.name || 'upload.bin')}`);
         xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
         xhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable) row.progress(e.loaded, e.total);

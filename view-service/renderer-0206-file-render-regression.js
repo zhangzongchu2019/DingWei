@@ -641,6 +641,41 @@ async function t(name, fn) {
     }
   });
 
+  // ── ⑭ P0 A-E1:中文 / emoji / 空格括号 文件名必须【能传上去】────────────
+  //     业主 2026-09-18 撞上:中文名 PDF 直接报 ISO-8859-1 异常,**请求根本没发出去**。
+  //     🔴 此前 21/21 全绿却漏了,因为夹具名全是 ASCII ——
+  //        用 ASCII 名测文件名编码,测多少遍都测不出来。
+  await t('⑭ P0:中文/emoji/空格括号/含%% 的文件名都能成功上传,且草稿块显示原名', async () => {
+    const names = ['季度报告（终版）.pdf', '📎emoji名.png', 'marketing v2 (1).docx', '50%off.pdf'];
+    const made = [];
+    try {
+      for (const n of names) {
+        const t2 = path.join(FIXTURES, n);
+        fs.copyFileSync(fx('sample.pdf'), t2);
+        made.push(t2);
+      }
+      await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+      const errs = [];
+      page.on('pageerror', (e) => errs.push(String(e)));
+      await page.setInputFiles('#filePicker', made);
+      // 🔴 关键:四个都要真的上传成功。编码没做时,setRequestHeader 抛异常 ⇒ 这里永远等不到。
+      await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 4,
+        null, { timeout: 60000 });
+      const draft = await page.inputValue('#humanInput');
+      for (const n of names) {
+        assert.ok(draft.includes(n), `输入框应回填原名 ${JSON.stringify(n)}，实测 ${JSON.stringify(draft.slice(0, 300))}`);
+      }
+      // 草稿块也必须显示原名(不是 %E5%AD%A3… 那种编码串)
+      const chipNames = await page.locator('#draftAttachments .draft-chip .d-name').allTextContents();
+      for (const n of names) {
+        assert.ok(chipNames.some((c) => c === n), `草稿块应显示原名 ${JSON.stringify(n)}，实测 ${JSON.stringify(chipNames)}`);
+      }
+      assert.deepStrictEqual(errs, [], `上传过程中不得有未捕获异常: ${JSON.stringify(errs)}`);
+    } finally {
+      for (const f2 of made) fs.rmSync(f2, { force: true });
+    }
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;

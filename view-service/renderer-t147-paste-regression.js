@@ -129,6 +129,43 @@ const ticketFetch = (override) => async () => response(true, { ...ticket, ...(ov
     }
   });
 
+  // 🔴 P0 A-E2：头值必须全 ASCII —— 这条断言直接盯根因。
+  //    HTTP header 受 ISO-8859-1 限制，中文/emoji 会让浏览器在 setRequestHeader 阶段抛异常，
+  //    上传请求**根本发不出去**（业主 2026-09-18 撞上）。
+  //    🔴 为什么此前 21/21 全绿还漏了：夹具文件名全是 ASCII ——
+  //       **用 ASCII 名测文件名编码，测多少遍都测不出来。**
+  await t('⑨ P0：中文/emoji/空格括号文件名 ⇒ X-File-Name 必须是 UTF-8\'\' 编码且全 ASCII', async () => {
+    const names = ['季度报告（终版）.pdf', '📎 emoji 名.png', 'marketing v2 (1).docx', '50%off.pdf'];
+    for (const name of names) {
+      const box = input('');
+      let seen = null;
+      const api = load(box, ticketFetch(), {
+        onUpload: (req) => { seen = req; return { status: 201, body: { url: 'https://h/f/o/s/26/0918/x.bin', name, size: 4 } }; },
+      });
+      await api.uploadOneFile(file({ name, size: 4 }));
+      const hv = seen.headers['X-File-Name'];
+      // A-E2：全 ASCII 可打印，否则浏览器会抛 ByteString 异常
+      assert.ok(/^[\x20-\x7e]*$/.test(hv), `头值必须全 ASCII，实测 ${JSON.stringify(hv)}（名: ${name}）`);
+      // 协议：UTF-8'' 前缀 ＋ percent-encoded，且能还原回原名
+      assert.ok(hv.startsWith("UTF-8''"), `缺协议前缀: ${JSON.stringify(hv)}`);
+      assert.strictEqual(decodeURIComponent(hv.slice(7)), name, `解码后应还原原名: ${JSON.stringify(hv)}`);
+    }
+  });
+
+  // B 侧要按 `%` 区分「编码过」与「本来就含 %」—— A 侧的职责是**总是编码**，
+  // 这样 50%off.pdf 会被编成 50%25off.pdf，B 侧解码后仍是 50%off.pdf。
+  await t('⑩ P0：名字里本来就含 % 的文件，编码后解码必须还原（不得变成乱码）', async () => {
+    const box = input('');
+    let seen = null;
+    const api = load(box, ticketFetch(), {
+      onUpload: (req) => { seen = req; return { status: 201, body: { url: 'https://h/f/o/s/26/0918/x.bin', name: '50%off.pdf', size: 4 } }; },
+    });
+    await api.uploadOneFile(file({ name: '50%off.pdf', size: 4 }));
+    const hv = seen.headers['X-File-Name'];
+    assert.ok(hv.includes('50%25off'), `% 必须被转义成 %25，实测 ${JSON.stringify(hv)}`);
+    assert.strictEqual(decodeURIComponent(hv.slice(7)), '50%off.pdf');
+  });
+
   await t(`② 上限取自源码常量 ${LIMIT}（= 50 MiB），超限在发请求前拒绝且不改文字`, async () => {
     assert.strictEqual(LIMIT, 52428800, '附录 A4：50 MiB = 50<<20，不是 50×1000²');
     const box = input('保留');

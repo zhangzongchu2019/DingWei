@@ -13,7 +13,7 @@
     {
       "id": "renderer-matches-anchor",
       "desc": "🔴 renderer 哈希必须 == 发版锚内同名文件(当日最贵的那条断言)",
-      "cmd": "want=f6d03a8f026f533bd3b176ccd81f47d66f608e68a00fc5f15829ca637079854a; got=$(sha256sum /app/vs/renderer-canary-sse.html 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希(记为不成立)'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
+      "cmd": "want=8c1991a74d66fc23d74def35aab22791f2f83f6d3e8e3cb8aa52001dff2fd2a8; got=$(sha256sum /app/vs/renderer-canary-sse.html 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希(记为不成立)'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
     },
     {
       "id": "view-service-matches-anchor",

@@ -192,3 +192,70 @@ R1 要的是「每个文件都被看见过」，那本来就是时间上的性�
     产品文件本节未改动（⑬/⑬b 只加测试）⇒ 巡检期望值无需回写
 
     e98666890787d237b178bc4d67502f5270e65911c36d6c9c70b681381c4417d0  view-service/renderer-0206-file-render-regression.js
+
+
+---
+
+## 10. 🔴 P0：中文文件名根本传不上去（A 侧，2026-09-18T23:55Z）
+
+### 10.1 改了什么
+
+    - xhr.setRequestHeader('X-File-Name', file.name || 'upload.bin');
+    + xhr.setRequestHeader('X-File-Name', `UTF-8''${encodeURIComponent(file.name || 'upload.bin')}`);
+
+按组长定死的协议，与服务端 `setDownloadHeaders` 已在用的 `filename*=UTF-8''…` **同一套**，不另发明。
+`encodeURIComponent` 的输出必然全 ASCII ⇒ 永不再触发 ISO-8859-1(ByteString) 异常。
+
+**契约替身也跟着实现了协议的 B 侧那一半**（`UTF-8''` 前缀则 percent-decode，无前缀按裸值）——
+否则我会对着**编码后**的名字写断言，测出来的是替身的行为不是契约的行为。
+
+### 10.2 三条判据
+
+| 判据 | 结果 |
+|---|---|
+| **A-E1** 中文 / emoji / 空格括号 / 含 `%` 四种名都能成功上传 | ✅ 浏览器 ⑭：四个真文件全部上传成功，输入框回填**原名**，草稿块显示**原名**（不是 `%E5%AD%A3…`），且全程无未捕获异常 |
+| **A-E2** 头值全 ASCII | ✅ 单元 ⑨：`/^[\x20-\x7e]*$/` 逐个断言，并断言 `UTF-8''` 前缀与解码可还原 |
+| **A-E3** 去掉 `encodeURIComponent` ⇒ 中文用例必须转红 | ✅ 见下 |
+
+**变异 P1b（去掉 `encodeURIComponent`）**：
+
+    浏览器 23/1  →  ⑭ `page.waitForFunction: Timeout 60000ms exceeded`
+                    （**上传根本没发生** —— 与业主撞上的症状同形）
+    单元   8/2   →  ⑨「头值必须全 ASCII，实测 "季度报告（终版）.pdf"」
+                    ⑩「% 必须被转义成 %25，实测 "50%off.pdf"」
+
+📌 **浏览器侧的红是"超时"而不是"断言失败"，这恰好就是这个缺陷的真实形态**：
+异常发生在 `setRequestHeader`，请求从未离开浏览器，所以服务端什么也看不到、
+日志里什么也没有 —— 业主看到的就是「点了没反应」。
+
+### 10.3 🔴 为什么 21/21 全绿还漏了它 —— 第五次同型
+
+**夹具文件名全是 ASCII**（`sample.mp4` `sample.png` `sample-office.docx`…）。
+**用 ASCII 名测文件名编码，测多少遍都测不出来。**
+
+与今天前四次同型：用白名单内的样本测白名单（mp4/webm 都在旧表里 ⇒ iPhone 整类失效没测出）、
+用假字节测 ⑬b（失败路径与正确行为结果相同）、`want` 与 `got` 同源、粗变异。
+📌 **共同点都是：素材落在被测维度的同一侧。** 测编码要用非 ASCII，
+测白名单要用白名单外，测「A 等于 B」要让 A、B 来源不同 —— **素材必须跨过那条线，否则断言无从分辨。**
+
+⇒ 我在 ⑭ 里把四种名字**写死成用例**（中文 / emoji / 空格括号 / 含 `%`），
+它们此后会一直跨在那条线上。
+
+### 10.4 本轮证据
+
+    浏览器 24/24 · 单元 10/10 · 变异 P1b 浏览器与单元同时转红且各中要害
+    全仓 go test ./... 分开 2 次：rc=0 / rc=0
+    巡检期望值同次回写
+
+    8c1991a74d66fc23d74def35aab22791f2f83f6d3e8e3cb8aa52001dff2fd2a8  view-service/renderer-canary-sse.html
+    b585dbada87ffd1cb5dc7c2e203871454c7290907c4610a099aa63265928a9f7  view-service/renderer-0206-file-render-regression.js
+    b9fc29bd483b44c328707b0b47a323690c3bab0e87eecebb2c48f770a1ce4b9e  view-service/renderer-t147-paste-regression.js
+    1aea368919df82428feda7a6f0b270027708569233cc6645cb324f7e827db26c  view-service/renderer-0206-contract-mock.py
+
+### 10.5 我这侧**证明不了**的
+
+1. **B 侧解码与 `safeName` 顺序**：组长定「先解码再 safeName」，
+   并要求 `%2e%2e%2f` / `%0d%0a` / `%00` 三个编码形态被挡住。
+   **那是 B 线的判据**，我的替身只做解码、不做 `safeName` ——
+   ⇒ **我的 24/24 不构成对 B 侧安全性的任何证据**，别把它读成端到端已通。
+2. 未在真浏览器 + 真后端上传过中文名文件（我用的是契约替身）。
