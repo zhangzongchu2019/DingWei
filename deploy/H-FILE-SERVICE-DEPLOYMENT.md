@@ -24,8 +24,10 @@ mount property.
 - Install the verified artifact at
   `/opt/dingwei/file-service/bin/file-service`, `root:root`, mode `0755`.
 - Run `deploy/file-service.service` as `dingwei-file`.
-- Create the dedicated read-only group `dingwei-file-read` and add nginx user
-  `www-data` to it; do not add nginx to the `dingwei-file` primary group.
+- Create the dedicated read-only group `dingwei-file-read` and add both the
+  file-service user `dingwei-file` and nginx user `www-data` to it. Membership
+  of `dingwei-file` is required so its chmod preserves setgid on descendants.
+  Do not add nginx to the `dingwei-file` primary group.
 - Persistent directory: `/var/lib/dingwei-file-service`, owner
   `dingwei-file:dingwei-file-read`, mode `0710` (traversable but not listable).
 - Object root and every object subdirectory: group `dingwei-file-read`, mode
