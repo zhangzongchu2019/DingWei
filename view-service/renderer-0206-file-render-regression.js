@@ -157,7 +157,7 @@ async function t(name, fn) {
     assert.strictEqual(await page.locator('.attachment[data-dispatch="ext"] iframe').count(), 1, '降级后 .pdf 仍应内联');
     assert.ok(await page.locator('.attachment[data-dispatch="ext"] a.attachment-dl[href$=".bin"]').count() >= 2, '降级后 .bin 仍走下载链接');
     const note = await page.locator('.attachment[data-dispatch="ext"] .attachment-note').first().textContent();
-    assert.ok(note.includes('降级'), '降级必须在界面上说明，不许静默');
+    assert.ok(note.includes('已降级'), 'A-R04 要求界面上明写「已降级」，不许静默');
     await page.screenshot({ path: path.join(SHOTS, '02c-degraded-by-extension.png'), fullPage: true });
   });
   await page.unroute('**/f/**');   // 🔴 无论 ④c 过没过都要摘掉，否则后面每一条都被它污染
@@ -208,6 +208,26 @@ async function t(name, fn) {
   });
   await page.unroute(carriedUrls.match(/https:\/\/[^\s(]+\.bin/u)?.[0] || '**/never**').catch(() => {});
   await page.unroute(carriedUrls.match(/https:\/\/[^\s(]+\.png/u)?.[0] || '**/never**').catch(() => {});
+
+  // ── ④f text/* 与 text/html：按服务端声明内联，且必须是【源码文本】不是被执行的 HTML ──
+  await t('④f 服务端声明 text/* 即内联；text/html 以源码文本显示，不得被当 HTML 执行', async () => {
+    const urls = (carriedUrls.match(/https:\/\/[^\s(]+/gu) || []);
+    const target = urls.find((u) => u.endsWith('.bin'));
+    assert.ok(target, '需要一个真实直链');
+    const payload = '# 标题\n<script>window.__pwned = 1;</script>\n正文';
+    await page.route(target, (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 200, headers: { 'Content-Type': 'text/html', 'Content-Length': String(Buffer.byteLength(payload)) } })
+      : route.fulfill({ status: 200, contentType: 'text/html', body: payload })));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), target);
+    await page.waitForSelector('.attachment[data-dispatch="head"] pre', { timeout: 20000 });
+    const shown = await page.locator('.attachment pre').first().textContent();
+    assert.ok(shown.includes('<script>'), 'text/html 必须以源码文本显示，不能被解析成节点');
+    assert.strictEqual(await page.evaluate(() => window.__pwned), undefined, '正文里的脚本绝不能被执行');
+    assert.strictEqual(await page.locator('.attachment iframe').count(), 0, 'text/* 不得走 iframe');
+    await page.unroute(target);
+  });
 
   // ── ④b mp4：本浏览器解不了该编码时也要有出路，绝不留裸 URL ─────
   await t('④b mp4（本 chromium 无 h264 解码器）降级为下载链接，不报错、不留裸 URL', async () => {

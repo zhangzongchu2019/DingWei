@@ -2514,8 +2514,11 @@
       if (mt.startsWith('image/')) return 'image';
       if (mt.startsWith('video/')) return 'video';
       if (mt === 'application/pdf') return 'pdf';
-      // A5 白名单内的文本只有 text/plain；其余 text/* 在服务端已落成 .bin ＋ attachment。
-      if (mt === 'text/plain') return 'text';
+      // §3.2 的表写的是 text/*，附录 A5 的服务端白名单只放 text/plain。
+      // 服务端真声明了 text/* 就按 text/* 内联 —— 附录 B2 定的权威值是响应头。
+      // 🔴 内联一律走 <pre> 的 textContent（见 fillTextAttachment），
+      //    所以 text/html 显示的是**源码文本**、不会被当 HTML 执行；比 iframe 安全。
+      if (mt.startsWith('text/')) return 'text';
       return 'download';
     }
     function kindFromExt(url) { return FILE_EXT_KIND[fileExtOf(url)] || 'download'; }
@@ -2625,7 +2628,7 @@
       if (source === 'ext') {
         const note = document.createElement('div');
         note.className = 'attachment-note';
-        note.textContent = 'HEAD 不可用，已按 URL 扩展名降级分派';
+        note.textContent = '已降级：HEAD 不可用，改按 URL 扩展名分派';
         box.appendChild(note);
       }
       switch (kind) {
