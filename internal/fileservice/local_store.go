@@ -220,21 +220,3 @@ func (s *LocalObjectStore) Move(_ context.Context, from, to string) error {
 	}
 	return nil
 }
-
-// DeleteDay removes the date directory containing key. Pinned objects are
-// structurally excluded and can never be removed by this operation.
-func (s *LocalObjectStore) DeleteDay(_ context.Context, key string) error {
-	if strings.Contains(filepath.ToSlash(key), "/pinned/") {
-		return fmt.Errorf("refuse to sweep pinned object")
-	}
-	path, err := s.path(key)
-	if err != nil {
-		return err
-	}
-	day := filepath.Dir(path)
-	rel, err := filepath.Rel(s.Root, day)
-	if err != nil || len(strings.Split(filepath.ToSlash(rel), "/")) != 3 {
-		return fmt.Errorf("invalid day directory")
-	}
-	return os.RemoveAll(day)
-}
