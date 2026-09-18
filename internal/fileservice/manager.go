@@ -44,7 +44,10 @@ func (m *Manager) SetArchivedByOwner(ctx context.Context, id string, archived bo
 	if err != nil || f.OwnerKey != ownerKey || f.State != StateReady {
 		return ErrAccessDenied
 	}
-	return m.Repo.SetArchivedLocationByOwner(ctx, id, "", archived, actorPrincipal, ownerKey, reason, m.Clock.Now())
+	if m.Retention <= 0 {
+		return ErrInvalidUpload
+	}
+	return m.Repo.SetArchivedLocationByOwner(ctx, id, "", archived, actorPrincipal, ownerKey, reason, m.Clock.Now(), m.Retention)
 }
 
 func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {

@@ -13,8 +13,9 @@ import (
 )
 
 type fakeFileBrowser struct {
-	openErr error
-	opens   int
+	openErr   error
+	opens     int
+	mediaType string
 }
 
 func TestHTTPFileBrowserPreviewRequiresIssuedTickets(t *testing.T) {
@@ -69,7 +70,11 @@ func (f *fakeFileBrowser) Open(context.Context, string) (FileContent, error) {
 	if f.openErr != nil {
 		return FileContent{}, f.openErr
 	}
-	return FileContent{Body: io.NopCloser(strings.NewReader("data")), Size: 4, MediaType: "image/png"}, nil
+	mediaType := f.mediaType
+	if mediaType == "" {
+		mediaType = "image/png"
+	}
+	return FileContent{Body: io.NopCloser(strings.NewReader("data")), Size: 4, MediaType: mediaType}, nil
 }
 
 func TestAdminFilesRequireAuthAndUseBrowserCapability(t *testing.T) {
@@ -95,7 +100,31 @@ func TestAdminFilesRequireAuthAndUseBrowserCapability(t *testing.T) {
 	}
 }
 
-func TestAdminFilePreviewFailsClosedWhenTicketPathFails(t *testing.T) {
+func TestAdminFilePreviewAppliesInlineWhitelist(t *testing.T) {
+	tests := []struct {
+		media, wantType, wantDisposition string
+	}{
+		{"image/png", "image/png", ""},
+		{"video/mp4; codecs=avc1", "video/mp4", ""},
+		{"application/pdf", "application/pdf", ""},
+		{"text/plain; charset=utf-8", "text/plain", ""},
+		{"text/html", "application/octet-stream", "attachment"},
+		{"image/svg+xml", "application/octet-stream", "attachment"},
+		{"broken media type", "application/octet-stream", "attachment"},
+	}
+	for _, tt := range tests {
+		srv, _, mux, _ := newAdminTestServer(t)
+		fb := &fakeFileBrowser{mediaType: tt.media}
+		srv.Files = fb
+		srv.sessions["tok"] = "admin"
+		w := getAuth(t, mux, "/admin/files/0123456789abcdef0123456789abcdef/content")
+		if w.Code != http.StatusOK || w.Header().Get("Content-Type") != tt.wantType || w.Header().Get("Content-Disposition") != tt.wantDisposition {
+			t.Fatalf("media=%q status=%d type=%q disposition=%q", tt.media, w.Code, w.Header().Get("Content-Type"), w.Header().Get("Content-Disposition"))
+		}
+	}
+}
+
+func TestAdminFileHandlerFailsClosedWhenBrowserOpenFails(t *testing.T) {
 	srv, _, mux, _ := newAdminTestServer(t)
 	fb := &fakeFileBrowser{openErr: errors.New("ticket issuance disabled")}
 	srv.Files = fb

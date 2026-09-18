@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -83,10 +84,28 @@ func (s *Server) fileContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer c.Body.Close()
-	w.Header().Set("Content-Type", c.MediaType)
+	mediaType, inline := adminPreviewMediaType(c.MediaType)
+	w.Header().Set("Content-Type", mediaType)
+	if !inline {
+		w.Header().Set("Content-Disposition", "attachment")
+	}
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Length", strconv.FormatInt(c.Size, 10))
 	_, _ = io.Copy(w, c.Body)
+}
+
+func adminPreviewMediaType(raw string) (string, bool) {
+	mediaType, _, err := mime.ParseMediaType(raw)
+	if err != nil {
+		return "application/octet-stream", false
+	}
+	mediaType = strings.ToLower(mediaType)
+	inline := (strings.HasPrefix(mediaType, "image/") && mediaType != "image/svg+xml") ||
+		strings.HasPrefix(mediaType, "video/") || mediaType == "application/pdf" || mediaType == "text/plain"
+	if !inline {
+		return "application/octet-stream", false
+	}
+	return mediaType, true
 }
 
 type HTTPFileBrowser struct {

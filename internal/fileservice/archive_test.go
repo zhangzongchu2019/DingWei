@@ -39,6 +39,9 @@ func TestArchiveRequiresMatchingOwnerScopeAndWritesAudit(t *testing.T) {
 	if got.ObjectKey != f.ObjectKey {
 		t.Fatalf("archive changed stable object key: before=%s after=%s", f.ObjectKey, got.ObjectKey)
 	}
+	if !got.ExpiresAt.Equal(f.ExpiresAt) {
+		t.Fatalf("archive changed expires_at: before=%s after=%s", f.ExpiresAt, got.ExpiresAt)
+	}
 	var actor, owner, reason string
 	var archived int
 	if err := m.Repo.db.QueryRow(`SELECT actor_principal,owner_key,archived,reason FROM file_archive_audit WHERE file_id=?`, f.ID).Scan(&actor, &owner, &archived, &reason); err != nil {
@@ -52,7 +55,8 @@ func TestArchiveRequiresMatchingOwnerScopeAndWritesAudit(t *testing.T) {
 		t.Fatalf("unarchive code=%d", code)
 	}
 	unarchived, err := m.Repo.Get(context.Background(), f.ID)
-	if err != nil || unarchived.Archived || unarchived.UnarchivedAt == nil || !unarchived.ExpiresAt.After(clock.Time.Add(7*24*time.Hour)) || unarchived.ObjectKey != f.ObjectKey {
+	wantExpires := time.Date(clock.Time.UTC().Year(), clock.Time.UTC().Month(), clock.Time.UTC().Day()+1, 0, 0, 0, 0, time.UTC).Add(m.Retention)
+	if err != nil || unarchived.Archived || unarchived.UnarchivedAt == nil || !unarchived.ExpiresAt.Equal(wantExpires) || unarchived.ObjectKey != f.ObjectKey {
 		t.Fatalf("unarchived=%+v err=%v", unarchived, err)
 	}
 }
