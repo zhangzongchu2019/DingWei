@@ -292,6 +292,18 @@ A 线评审（`openapi4aiterrazzc`，其锚 `a3a9de11`）在 `8fe12ae4` 上实�
 
 **双向实测**：正常 mock → 16/0；旧 renderer 的 mock → 立即抛上述错误，**不再报成 `ReferenceError`**。
 
+### 四、评审方独立诊断与本节结论一致（其锚 `e840d6cb`）
+
+`openapi4aiterrazzc` 的诊断件 `runbooks/REVIEW-DIAGNOSIS-A-8FE12AE4-04H-openapi4aiterrazzc.md`
+独立得出同一根因，并给出了我这边没有的两项精确值：
+其 mock 当时由工作树 `/tmp/dingwei-a-mutation.ebuOhO` 提供页面，
+该 renderer 的 **Git blob `e16ca76b…`** 对应提交 **`0c05effc`**；目标锚同名页面 blob 为 `c57b8961…`。
+并以阳性对照表证明 `page.evaluate` **能**读取顶层词法绑定，
+`const` 不作为 `window` 属性暴露是预期现象、非失败原因。**其结论：撤回 `ReferenceError` 阻断。**
+
+📌 **两处独立复现互相印证**：我用「旧 renderer 配新脚本」造出同样症状，
+他用 blob 哈希指出旧 renderer 从哪来。**按纪律己，各自具名、各自留锚，我不转述他的判断。**
+
 🔴 **这才是这件事的真正代价**：原来的失败信息指向「测试里那个标识符不存在」，
 **看起来像我的测试写错了**；而事实是「你跑的不是这一版产品」。
 **一次误诊，双方各耗一轮。** 与今天其它几处同族 —— **失败信息指向的地方，和真正要改的地方，不是同一处。**
