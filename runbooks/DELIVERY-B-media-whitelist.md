@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-18T23:08:29Z`
+更新时间（UTC）：`2026-09-18T23:33:02Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`68e84d6d1bebe872f0e17e05753692454160d941`
+- 实现锚：`a9a08e4032e62b92765420a03561afced6eab292`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -36,3 +36,13 @@ V1 必须在部署后上传真实 quicktime 对象并通过生产 nginx 执行 `
 - 删除 Office 映射后执行 `go test -v ./... -count=1`：978 条中唯一转红 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks`；还原后全仓 rc=0。
 
 V4′ 仍须部署后上传真实 docx，经生产 nginx `curl -I` 验证 octet-stream、attachment 且 URL 末段为 `.docx`；仓内不宣称该项已通过。
+
+## B6：安全文本子集与 UTF-8 声明
+
+- 新增 `text/markdown→md`、`text/csv→csv`；与 txt 一起由 nginx 固定声明为 `text/plain`，不使用浏览器行为不确定的 markdown/csv 类型。
+- nginx 内联 location 增加 `charset utf-8` 与 `charset_types text/plain`；文件字节不做转码。
+- `text/html`、`text/xml`、`application/xhtml+xml`、`application/xml`、`image/svg+xml` 在媒体规范化入口显式降为 octet-stream/.bin；直链和删除键正则均不接受这些危险扩展名。
+- 新增中文 Markdown 与危险 HTML 夹具；同组测试同时证明 md 内联候选和 HTML/SVG/XML 系列拒绝。
+- 将危险类型拒绝条件外科式短路为 false 后，`go test -v ./... -count=1` 执行 978 条，唯一转红 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks`；还原后全仓 rc=0。
+
+V7–V10 仍须部署后通过生产 nginx 做 md/html/svg 阳性与阴性对照，并比较中文 md 取回字节；仓内不宣称生产响应头或浏览器显示已通过。
