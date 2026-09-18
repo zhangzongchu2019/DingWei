@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -250,6 +251,7 @@ func randomID() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 func safeName(s string) string {
+	s = path.Base(strings.ReplaceAll(s, `\`, "/"))
 	s = strings.Map(func(r rune) rune {
 		if r < ' ' || r == 0x7f {
 			return -1

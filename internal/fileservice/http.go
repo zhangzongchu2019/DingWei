@@ -66,7 +66,7 @@ func (h HTTPHandler) upload(w http.ResponseWriter, r *http.Request) {
 	}
 	f, err := h.Manager.Put(r.Context(), Upload{
 		OwnerKey: grant.OwnerKey, SessionName: grant.SessionName,
-		OriginalName: r.Header.Get("X-File-Name"), MediaType: r.Header.Get("Content-Type"),
+		OriginalName: decodedUploadFileName(r.Header.Get("X-File-Name")), MediaType: r.Header.Get("Content-Type"),
 		ExpectedSHA256: r.Header.Get("X-Content-SHA256"), ContentLength: r.ContentLength, Body: r.Body,
 	})
 	if err != nil {
@@ -85,6 +85,18 @@ func (h HTTPHandler) upload(w http.ResponseWriter, r *http.Request) {
 		"url": strings.TrimRight(h.PublicBaseURL, "/") + "/f/" + f.ObjectKey, "name": f.OriginalName, "size": f.SizeBytes,
 		"sha256": f.SHA256, "media_type": f.MediaType, "expires_at": f.ExpiresAt, "range": true,
 	})
+}
+
+func decodedUploadFileName(raw string) string {
+	const prefix = "UTF-8''"
+	if strings.HasPrefix(raw, prefix) {
+		decoded, err := url.PathUnescape(strings.TrimPrefix(raw, prefix))
+		if err != nil {
+			return "download"
+		}
+		raw = decoded
+	}
+	return safeName(raw)
 }
 
 func uploadError(w http.ResponseWriter, status int, message string) {
