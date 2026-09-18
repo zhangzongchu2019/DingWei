@@ -41,7 +41,7 @@ func normalizedMedia(mediaType string) (string, string) {
 	if ext, ok := downloadExts[base]; ok {
 		return "application/octet-stream", ext
 	}
-	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || strings.HasPrefix(base, "text/") || base == "application/pdf" || base == "application/xhtml+xml" || base == "application/xml"
+	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || strings.HasPrefix(base, "text/") || base == "application/pdf" || base == "application/json" || base == "application/xhtml+xml" || base == "application/xml"
 	if !inlineCandidate {
 		return "application/octet-stream", "bin"
 	}
@@ -49,11 +49,17 @@ func normalizedMedia(mediaType string) (string, string) {
 		"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif",
 		"image/heic": "heic", "image/bmp": "bmp", "image/tiff": "tiff", "image/svg+xml": "svg",
 		"video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "video/quicktime": "mov", "video/x-matroska": "mkv",
-		"application/pdf": "pdf", "text/plain": "txt", "text/markdown": "md", "text/csv": "csv",
+		"application/pdf": "pdf", "application/json": "json",
+		"text/plain": "txt", "text/markdown": "md", "text/csv": "csv", "text/x-python": "py", "text/javascript": "js",
+		"text/x-go": "go", "text/x-java-source": "java", "text/yaml": "yaml", "text/x-yaml": "yml", "text/x-toml": "toml",
+		"text/x-ini": "ini", "text/x-log": "log", "text/x-sql": "sql", "text/x-shellscript": "sh",
 		"text/html": "html", "text/xml": "xml", "application/xhtml+xml": "xhtml", "application/xml": "xml",
 	}
 	if ext, ok := exts[base]; ok {
 		return base, ext
+	}
+	if strings.HasPrefix(base, "text/") {
+		return base, "txt"
 	}
 	return "application/octet-stream", "bin"
 }
