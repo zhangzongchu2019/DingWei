@@ -174,6 +174,41 @@ async function t(name, fn) {
     assert.strictEqual(await page.locator('.attachment[data-dispatch="gone"] img').count(), 0, '不得为已清理的文件画 <img>');
   });
 
+  // ── ④e 🔴 权威头优先：扩展名与 Content-Type 【故意不一致】────────────
+  //     这是唯一能分辨 (b) 与 (b′) 的用例：(b) 看 URL 扩展名，(b′) 看服务端声明的头。
+  //     契约裁的是 (b′) ⇒ 头赢，扩展名输。
+  await t('④e 扩展名与 Content-Type 不一致时，以服务端声明的头为准（分辨 (b)/(b′)）', async () => {
+    const urls = (carriedUrls.match(/https:\/\/[^\s(]+/gu) || []);
+    const binUrl = urls.find((u) => u.endsWith('.bin'));
+    const pngUrl = urls.find((u) => u.endsWith('.png'));
+    assert.ok(binUrl && pngUrl, '需要一个 .bin 与一个 .png 的真实直链');
+    // .bin 谎报成 image/png（且不带 attachment）；.png 谎报成 application/octet-stream
+    // HEAD 与 GET 都按「服务端声明 image/png」来演，只有 URL 扩展名是 .bin ——
+    // 只改 HEAD 会让 <img> 真去取到二进制而加载失败，那测的就不是分派依据了。
+    const pngBytes = fs.readFileSync(fx('sample.png'));
+    await page.route(binUrl, (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 200, headers: { 'Content-Type': 'image/png', 'Content-Length': String(pngBytes.length) } })
+      : route.fulfill({ status: 200, contentType: 'image/png', body: pngBytes })));
+    await page.route(pngUrl, (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 200, headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': '2687' } })
+      : route.continue()));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    await page.evaluate((body) => handleIncomingEvent({ kind: 'user_input', text: body, ts: Date.now() }), `${binUrl}\n${pngUrl}`);
+    await page.waitForFunction(() => document.querySelectorAll('.attachment[data-dispatch="head"]').length >= 2, null, { timeout: 30000 });
+    const binBox = page.locator(`.attachment[data-file-url="${binUrl}"]`);
+    const pngBox = page.locator(`.attachment[data-file-url="${pngUrl}"]`);
+    // 扩展名 .bin，但头说 image/png ⇒ 必须内联成 <img>（若按扩展名走，这里会是下载链接）
+    assert.strictEqual(await binBox.locator('img').count(), 1, '.bin + image/png 头 ⇒ 应按头内联 <img>');
+    assert.strictEqual(await binBox.locator('a.attachment-dl').count(), 0, '.bin 不应因扩展名被判成下载');
+    // 扩展名 .png，但头说 octet-stream ⇒ 必须走下载链接（若按扩展名走，这里会画 <img>）
+    assert.strictEqual(await pngBox.locator('img').count(), 0, '.png + octet-stream 头 ⇒ 不得内联');
+    assert.strictEqual(await pngBox.locator('a.attachment-dl').count(), 1, '.png + octet-stream 头 ⇒ 应给下载链接');
+    await page.screenshot({ path: path.join(SHOTS, '02d-header-beats-extension.png'), fullPage: true });
+  });
+  await page.unroute(carriedUrls.match(/https:\/\/[^\s(]+\.bin/u)?.[0] || '**/never**').catch(() => {});
+  await page.unroute(carriedUrls.match(/https:\/\/[^\s(]+\.png/u)?.[0] || '**/never**').catch(() => {});
+
   // ── ④b mp4：本浏览器解不了该编码时也要有出路，绝不留裸 URL ─────
   await t('④b mp4（本 chromium 无 h264 解码器）降级为下载链接，不报错、不留裸 URL', async () => {
     const before = await page.locator('.attachment').count();

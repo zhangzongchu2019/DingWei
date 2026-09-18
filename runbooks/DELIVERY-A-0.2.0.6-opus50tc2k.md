@@ -1,7 +1,8 @@
 # A 线交付件 · 0.2.0.6 view 文件上传与按类型显示 · `opus50tc2k`
 
 - **基线**：`27abfcf032db271a414eeea9ed08685c81b16a12`（附录 B1 = H 发版锚 = 现网跑的那一版）
-- **契约读到**：`094dfce98b3d38934694aace1de8fd2845f705c0`（附录 A 六项 · **附录 B2 改裁为 (b′)** · 附录 C · 硬规丙）
+- **契约读到**：`3a453e4f867d5d2f37416613e622c4fde867846f`（附录 D 为 B 线归档/清理裁定，对 A 线无影响）
+- 上一版读到：`094dfce98b3d38934694aace1de8fd2845f705c0`（附录 A 六项 · **附录 B2 改裁为 (b′)** · 附录 C · 硬规丙）
 - **交付分支**：`opus50tc2k/a-0.2.0.6-file-render`
 - 🔴 **未合并、未推 `tasks/v0.1-B` 的产品代码** —— `stagegate 0.2.0.6` 仍红。
 - 本件为第二版：第一版按原裁定 (b) 的扩展名分派实现；组行改裁 (b′) 后已按 (b′) 重写，并保留降级分支。
@@ -51,11 +52,11 @@
 ### 3.1 交付物哈希
 
     d4fd2abc69ee214b0dfb82c0b852cdf8482c093272c4e3f4441d4cd86251711c  view-service/renderer-canary-sse.html
-    1941a597be83d5143e87349c56d7bebc8386f2bbd6483978e858bfb919f6a023  view-service/renderer-0206-file-render-regression.js
+    54deca9839f99e1ec9585c6c2a0e7eff904e96848ede541fad96ba3f51d3db5c  view-service/renderer-0206-file-render-regression.js
     2f4757ce8568c7b4745cbffc58f78dee4339861856addeac33d252841237fe15  view-service/renderer-0206-contract-mock.py
     07d5515ba72605e237d1a745f34dc28cc8d5b8dc17ebe0c4db38087156347032  view-service/renderer-t147-paste-regression.js
 
-### 3.2 功能级验收：真浏览器、真文件、真上传（12/12）
+### 3.2 功能级验收：真浏览器、真文件、真上传（13/13）
 
     ①  上传入口在界面上可见（文件选择按钮），不是只有隐藏的 paste 监听器
     ②  文件选择一次传 6 个不同类型（图片/视频/pdf/文本/office/未知二进制）
@@ -64,6 +65,7 @@
     ④a 接收方只拿到 URL（刷新后 hints 清空）⇒ 靠 HEAD 读服务端声明分派      ← (b′) 的接收方那一半
     ④c HEAD 被拒（405）时按 URL 扩展名降级分派，且标出「已降级」            ← 降级分支
     ④d 文件已被清理（HEAD 404）时给出「已不可取」，不是坏掉的 <img> 也不是裸 URL ← 过期链接
+    ④e 扩展名与 Content-Type 【故意不一致】时以服务端声明的头为准          ← 唯一能分辨 (b)/(b′) 的用例
     ④b mp4（本 chromium 无 h264 解码器）降级为下载链接，不报错、不留裸 URL
     ⑤  拖放一次拖入 2 个文件，两个都上传
     ⑥  粘贴一个 pdf（非图片）也上传 —— 原实现只接 image/*
@@ -82,6 +84,7 @@
     c418fd41f2f0249d05e955a83869907297b771a58061bbbd5a0bd1deca4ca840  02a-inline-pdf.png
     b866200c0f26d5effa2dfaefb88daa03253e6fb8526de0a3ef3cc830d14ee654  02b-receiver-side-by-head.png
     368237b96b8143cfc65ed997cf8719dbe6008b277e846e1eb474877d10c00bba  02c-degraded-by-extension.png
+    6c963e079a6e6d65c6c0503940d2166310fdaf95d9908bb4d03a6f334aad9b48  02d-header-beats-extension.png
     5565785e15d713ac6ba240381f2420bc1fdb4341888020d30d44107eb4532853  03-large-text-truncated.png
 
 ### 3.3 回归对照（改后 vs 未改的基线 `27abfcf0`，同环境同命令）
@@ -112,14 +115,17 @@
    B 的增量实质只是 `file_ref` → `url`。B 未上线前 A 侧上传按 S4 报错（有意不回落）。
 2. **附录 C 已裁的上传端 `{"error"}`**：A 侧已写成「能读到 `{"error"}` 就用它，读不到就如实给状态码」，
    不编原因。B 线落地后无需 A 侧再改。
-3. **`HEAD` 是否真被 nginx 放行 —— 本件证明不了**。我用的是自写替身，它放行 HEAD；
-   生产是否放行由 `prodops` 实测。**实测若不过，④c 那条降级分支就是兜底，已测到。**
+3. **`HEAD` 是否真被 nginx 放行 —— 本件仍证明不了**（我用的是自写替身）。
+   🔵 组长 2026-09-18 给出一条生产侧观测：不带票据的 `HEAD` 返 **404（应用层 `hide()`）**，
+   而 nginx 拒绝方法会返 **403** ⇒ **请求到达了应用 ⇒ HEAD 被放行**。
+   该观测出自组长，不是我跑的，正式实测仍挂在 `prodops`。**即便实测不过，④c 的降级分支已测到。**
 4. **A-T08（直链无鉴权可达 + `nosniff` + `no-referrer`）本件证明不了**：替身按 A5 出头，
    只证明页面能正确消费这些头，**不证明生产 nginx 会这么出**。须评审在真环境验。
 5. **评审方案 `runbooks/REVIEW-PLAN-A-openapi4aiterrazzc.md` 锚在 `d26bfd70`，早于附录 B/C**。
    其「分派断言只读取响应的 `media_type`」「专造扩展名与 media_type 不一致的夹具」两条，
-   与现行 (b′) 口径已不一致（现在权威值是**响应头**，夹具应改为**头与扩展名不一致**）。
-   请组长决定是否让评审按 `094dfce9` 重取，**我不直接联系评审方**。
+   组长已定稿新版（含 `A-T08` 与接收侧 `A-R01/02/03`），其中「**权威头优先：扩展名与 `Content-Type` 不一致**」
+   是唯一能分辨 (b)/(b′) 的用例 —— **本件 ④e 就是我这侧对该场景的自测**（`.bin` 声明成 `image/png` ⇒ 内联；
+   `.png` 声明成 `octet-stream` ⇒ 下载链接）。评审仍会独立重跑，我不直接联系评审方。
 6. **本机 chromium 是开源构建，无 h264 解码器**：`video/mp4` 只验到「降级为下载链接」，
    `video/webm`（VP9/Opus）验到真播放（时长 3s、画面 320×240）。**headless 也无内置 PDF 阅读器**，
    `<iframe>` 内为空白，但下载链接始终在。真环境用 Chrome/Edge 可验 mp4 与 PDF 内联。
