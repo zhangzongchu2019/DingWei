@@ -246,6 +246,28 @@ async function t(name, fn) {
     await page.unroute(target);
   });
 
+  // ── ④h 降级路径上的 svg/html：不能靠「没写进表里」来安全 ─────────────
+  //     ④g 验的是 HEAD 路径（服务端声明 image/svg+xml）。降级路径读的是 URL 扩展名，
+  //     走的是另一张表 —— 那条路径此前没有任何断言盯着。
+  await t('④h 降级路径:.svg 仍走下载链接,且 FILE_EXT_KIND 里不得出现永不内联的扩展名', async () => {
+    // (a) 配置形状本身:表里不得混入 svg/html 之类(防「将来有人补全白名单」)
+    const leaked = await page.evaluate(() =>
+      [...FILE_EXT_NEVER_INLINE].filter((e) => Object.prototype.hasOwnProperty.call(FILE_EXT_KIND, e)));
+    assert.deepStrictEqual(leaked, [], `FILE_EXT_KIND 混入了永不内联的扩展名: ${leaked}`);
+    // (b) 行为:HEAD 不可用(降级)时,.svg 链接必须仍是下载链接
+    const svgUrl = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/aaaabbbbccccddddeeeeffff00001111.svg`;
+    await page.route('**/f/**', (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 405, body: '' })
+      : route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg"/>' })));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), svgUrl);
+    await page.waitForSelector('.attachment[data-dispatch="ext"]', { timeout: 20000 });
+    assert.strictEqual(await page.locator('.attachment img').count(), 0, '降级路径下 .svg 不得进 <img>');
+    assert.strictEqual(await page.locator('.attachment a.attachment-dl').count(), 1, '降级路径下 .svg 应给下载链接');
+    await page.unroute('**/f/**');
+  });
+
   // ── ④b mp4：本浏览器解不了该编码时也要有出路，绝不留裸 URL ─────
   await t('④b mp4（本 chromium 无 h264 解码器）降级为下载链接，不报错、不留裸 URL', async () => {
     const before = await page.locator('.attachment').count();

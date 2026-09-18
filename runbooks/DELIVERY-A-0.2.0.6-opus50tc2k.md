@@ -52,12 +52,12 @@
 
 ### 3.1 交付物哈希
 
-    bcf277bad7440ede6181cd1178bf83338bdbe78fb516c4c4659677c244a0e2ac  view-service/renderer-canary-sse.html
-    64819627f0949641e277320234910a80f9be0f6fdaf1af51d2a34fc3f19f928e  view-service/renderer-0206-file-render-regression.js
+    ed71963c652ef2e6744977be9292de72f1ede6fa6abccf5fbee921d151d20c35  view-service/renderer-canary-sse.html
+    7ce6cf1cb31b0ebafa7832d3f19894033d959564f664d27b1f0f06ef1d834707  view-service/renderer-0206-file-render-regression.js
     2f4757ce8568c7b4745cbffc58f78dee4339861856addeac33d252841237fe15  view-service/renderer-0206-contract-mock.py
     07d5515ba72605e237d1a745f34dc28cc8d5b8dc17ebe0c4db38087156347032  view-service/renderer-t147-paste-regression.js
 
-### 3.2 功能级验收：真浏览器、真文件、真上传（15/15）
+### 3.2 功能级验收：真浏览器、真文件、真上传（16/16）
 
     ①  上传入口在界面上可见（文件选择按钮），不是只有隐藏的 paste 监听器
     ②  文件选择一次传 6 个不同类型（图片/视频/pdf/文本/office/未知二进制）
@@ -68,7 +68,8 @@
     ④d 文件已被清理（HEAD 404）时给出「已不可取」，不是坏掉的 <img> 也不是裸 URL ← 过期链接
     ④e 扩展名与 Content-Type 【故意不一致】时以服务端声明的头为准          ← 唯一能分辨 (b)/(b′) 的用例
     ④f 服务端声明 text/* 即内联；text/html 以【源码文本】显示，脚本不被执行      ← 附录 E
-    ④g image/svg+xml 不内联，走下载链接（SVG 可内嵌脚本）                       ← 附录 E
+    ④g image/svg+xml 不内联，走下载链接（SVG 可内嵌脚本）                       ← 附录 E（HEAD 路径）
+    ④h 降级路径 .svg 仍走下载链接，且 FILE_EXT_KIND 不得混入永不内联的扩展名    ← 附录 E（降级路径）
     ④b mp4（本 chromium 无 h264 解码器）降级为下载链接，不报错、不留裸 URL
     ⑤  拖放一次拖入 2 个文件，两个都上传
     ⑥  粘贴一个 pdf（非图片）也上传 —— 原实现只接 image/*
@@ -118,7 +119,7 @@
 **期望值的更新归属于使它失效的那次改动，不归属于发版。** 据此回写：
 
     want  cb3c4ac8a847cd981bcc8d8003fa0f3839b75457a1be4d7095821e615730340a   ← 基线 27abfcf0 的 renderer
-      →   bcf277bad7440ede6181cd1178bf83338bdbe78fb516c4c4659677c244a0e2ac   ← 本分支的 renderer（已核，逐字相等）
+      →   ed71963c652ef2e6744977be9292de72f1ede6fa6abccf5fbee921d151d20c35   ← 本分支当前 renderer（已核，逐字相等）
 
 另核过：同文件另两条钉仓内文件的断言（`view_service.py` / `view_page_store.py`）
 **本分支均未改动**，不需回写；`workpulse-binary-matches-expected` 的期望值来自部署期环境变量
@@ -140,6 +141,31 @@
 **它替代不了发版当天的 ⑬ 闸**（那条在真实产物上重算），只是把**仓内**这一半提前到改动发生的那一刻。
 📌 做这一步的理由就写在那条被修过一次的提交标题里：「我写下规矩的下一版就自己忘了」——
 **一条只靠记性维持的耦合，迟早会以「部署出错」的面目复发一次。**
+
+## 4.6 补一处「守卫只在一条路径上有效」（2026-09-18T12:16Z，自查所得）
+
+组长在 ⑭ 闸上遇到「守卫加完就假定它会一直有效」，我据此回查自己的线，查到一处同形：
+
+**④g 验的是 HEAD 路径**（服务端声明 `image/svg+xml` ⇒ 下载链接）。
+但**降级路径**（HEAD 不可用时按 URL 扩展名分派）读的是另一张表 `FILE_EXT_KIND` ——
+`svg`/`html` 今天不在那张表里，**所以降级路径的安全是靠「没写」得来的，不是靠守卫**。
+将来有人「补全白名单」把它们加进去，降级路径就会内联，而那条路径当时没有任何断言盯着。
+
+**已补**：独立一层 `FILE_EXT_NEVER_INLINE`（`svg`/`svgz`/`html`/`htm`/`xhtml`/`xml`），
+`kindFromExt` 先查它、**不看 `FILE_EXT_KIND` 是否列了它们**；
+新增 ④h，两条断言各守一半 —— (a) 配置形状：表里不得混入永不内联的扩展名；(b) 行为：降级路径 `.svg` 必须是下载链接。
+
+**变异（整包跑，各只红它针对的那条）**：
+
+    M11 表里加 svg、拒绝表保留      → 红 (a) 配置形状断言   （行为仍正确 ⇒ 只有 (a) 能发现）
+    M12 表里加 svg、并去掉拒绝表    → 红 (b) 行为断言
+
+📌 这两发合起来才说明白：**(a) 守的是「有人改了配置」，(b) 守的是「有人拆了守卫」。**
+只有 (b) 时，M11 全绿；只有 (a) 时，M12 里被拆掉的守卫无人过问。
+
+🔵 顺带：本次改 renderer 后，**我自己上一节加的那条巡检测试立刻把我拦下了** ——
+它打印「仓内实际 = ed71963c… / 巡检 want = bcf277ba…」。已回写。
+**一条当天就抓到作者本人的闸，比一条只在文档里被引用的规矩可信。**
 
 ## 5. 未闭合 / 属于别的线（我停在这里，没动）
 

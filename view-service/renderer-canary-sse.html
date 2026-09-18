@@ -2525,7 +2525,16 @@
       if (mt.startsWith('text/')) return 'text';
       return 'download';
     }
-    function kindFromExt(url) { return FILE_EXT_KIND[fileExtOf(url)] || 'download'; }
+    // 🔴 附录 E：这几个扩展名**永不内联**，且**不看 FILE_EXT_KIND 是否列了它们**。
+    //    为什么要独立一层：今天 svg/html 不在表里，安全是靠「没写」得来的；
+    //    将来有人「补全白名单」把它们加进去，降级路径就会内联 —— 而那条路径当时没有任何断言盯着。
+    //    （同一形状：守卫加完就假定它会一直有效。组长 2026-09-18 在 ⑭ 闸上遇到的也是这个。）
+    const FILE_EXT_NEVER_INLINE = new Set(['svg', 'svgz', 'html', 'htm', 'xhtml', 'xml']);
+    function kindFromExt(url) {
+      const ext = fileExtOf(url);
+      if (FILE_EXT_NEVER_INLINE.has(ext)) return 'download';
+      return FILE_EXT_KIND[ext] || 'download';
+    }
 
     function fileNameFromUrl(url) {
       try { return decodeURIComponent(new URL(url, location.href).pathname.split('/').pop() || '') || '文件'; }
