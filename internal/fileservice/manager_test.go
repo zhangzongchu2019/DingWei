@@ -271,3 +271,21 @@ func TestFinishRemovalRechecksArchivedFailClosed(t *testing.T) {
 		t.Fatal("archived bytes deleted")
 	}
 }
+
+func TestFinishRemovalRequiresDurableDeletingIntent(t *testing.T) {
+	m, _, objects := testManager(t, 100)
+	f, err := m.Put(context.Background(), Upload{OwnerKey: "o", SessionName: "s", ContentLength: 4, Body: strings.NewReader("keep")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.RemovalReason = "retention"
+	if err := m.finishRemoval(context.Background(), f); err == nil {
+		t.Fatal("ready row deleted without durable intent")
+	}
+	objects.mu.Lock()
+	_, ok := objects.data[f.ObjectKey]
+	objects.mu.Unlock()
+	if !ok {
+		t.Fatal("bytes deleted before intent")
+	}
+}
