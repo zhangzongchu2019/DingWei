@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-18T23:36:25Z`
+更新时间（UTC）：`2026-09-18T23:39:54Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`d958337c433fb9f5c6adb9bd9d9644b9b9123287`
+- 实现锚：`0611fefcdad9bf60ac2b0631e73522e0e93c84e9`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -48,3 +48,10 @@ V4′ 仍须部署后上传真实 docx，经生产 nginx `curl -I` 验证 octet-
 - 单独从黑名单删除 `text/html` 后，`go test -v ./... -count=1` 执行 978 条，唯一转红 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks`；还原后全仓 rc=0。
 
 V7′–V11′ 仍须部署后通过生产 nginx 做 md/py/json 与 html/xml/svg 阳性、阴性对照，验证未知 text 子类型 `.txt` 回退，并比较中文 md 取回字节；仓内不宣称生产响应头或浏览器显示已通过。
+
+## P0：UTF-8 上传文件名协议
+
+- `X-File-Name` 以 `UTF-8''` 开头时先用 `url.PathUnescape` 解码 UTF-8，再执行 `safeName`；无前缀时保持旧客户端裸值语义。
+- `safeName` 统一剥离 `/` 与 `\\` 路径前缀并删除 CR/LF、NUL 等控制字符；解码失败降为 `download`。
+- 覆盖中文、emoji、空格括号、旧 ASCII、原名含 `%` 的新旧路径，以及 `%2e%2e%2f`、`%0d%0a`、`%00` 与对应裸攻击值。
+- 将实现变异为“先 safeName、后解码且不再清洗”后，`go test -v ./... -count=1` 执行 980 条，唯一转红 `TestDecodedUploadFileNameSupportsUTF8LegacyAndSanitizesAfterDecode`；还原后全仓 rc=0。
