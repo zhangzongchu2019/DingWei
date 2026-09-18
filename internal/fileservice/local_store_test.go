@@ -48,7 +48,7 @@ func TestLocalPutIsAtomicAndNonExecutable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm() != 0o600 || info.Mode().Perm()&0o111 != 0 {
+	if info.Mode().Perm() != 0o640 || info.Mode().Perm()&0o111 != 0 {
 		t.Fatalf("unsafe object mode=%#o", info.Mode().Perm())
 	}
 	if matches, _ := filepath.Glob(filepath.Join(filepath.Dir(path), ".tmp-*")); len(matches) != 0 {
@@ -165,6 +165,37 @@ func TestLocalDeleteRejectsInvalidObjectKeyShape(t *testing.T) {
 	}
 	if b, err := os.ReadFile(mustPath(t, s, key)); err != nil || string(b) != "keep" {
 		t.Fatalf("invalid-key object changed: bytes=%q err=%v", b, err)
+	}
+}
+
+func TestLocalPutForcesNginxReadableModesUnderProductionUmask(t *testing.T) {
+	previous := syscall.Umask(0o077)
+	t.Cleanup(func() { syscall.Umask(previous) })
+
+	s := newLocalStore(t)
+	key := "owner/session/26/0918/0123456789abcdef0123456789abcdef.jpg"
+	if err := s.Put(context.Background(), key, strings.NewReader("data"), 4, "image/jpeg"); err != nil {
+		t.Fatal(err)
+	}
+	path := mustPath(t, s, key)
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0o640 {
+		t.Fatalf("object mode=%#o want=0640", got)
+	}
+	for dir := filepath.Dir(path); ; dir = filepath.Dir(dir) {
+		info, err := os.Stat(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := info.Mode().Perm(); got != 0o750 || info.Mode()&os.ModeSetgid == 0 {
+			t.Fatalf("directory %s mode=%s want=2750", dir, info.Mode())
+		}
+		if dir == s.Root {
+			break
+		}
 	}
 }
 

@@ -20,6 +20,17 @@ class FileServiceDeploymentTest(unittest.TestCase):
         self.assertIn("Restart=always", text)
         self.assertIn("StartLimitBurst=5", text)
         self.assertIn("ReadWritePaths=/var/lib/dingwei-file-service", text)
+        self.assertIn("User=dingwei-file", text)
+        self.assertIn("Group=dingwei-file", text)
+        self.assertIn("UMask=0077", text)
+
+    def test_nginx_uses_only_the_dedicated_object_read_group(self):
+        contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
+        self.assertIn("www-data", contract)
+        self.assertIn("dingwei-file-read", contract)
+        for mode in ("`0710`", "`2750`", "`0640`", "`0600`"):
+            self.assertIn(mode, contract)
+        self.assertIn("must never belong to\n  `dingwei-file-read`", contract)
 
     def test_probe_is_continuous_and_targets_only_private_readyz(self):
         unit = (DEPLOY / "file-service-livez.service").read_text()
@@ -40,13 +51,13 @@ class FileServiceDeploymentTest(unittest.TestCase):
 
     def test_direct_links_inline_only_whitelisted_extensions(self):
         text = (DEPLOY / "nginx-dingwei.conf").read_text()
-        self.assertIn("location ~ ^/f/", text)
+        self.assertIn('location ~ "^/f/', text)
         self.assertIn("jpg|png|gif|webp|avif|mp4|webm|ogv|pdf|txt", text)
         self.assertIn("default_type application/octet-stream", text)
         self.assertIn("add_header Content-Disposition attachment always", text)
         self.assertEqual(text.count("add_header X-Content-Type-Options nosniff always"), 2)
         self.assertEqual(text.count("add_header Referrer-Policy no-referrer always"), 2)
-        inline = text.split("location ~ ^/f/", 1)[1].split("location ~ ^/f/", 1)[0]
+        inline = text.split('location ~ "^/f/', 1)[1].split('location ~ "^/f/', 1)[0]
         self.assertNotIn("Content-Disposition", inline)
         self.assertIn("location /f/", text)
         self.assertIn("return 404", text)

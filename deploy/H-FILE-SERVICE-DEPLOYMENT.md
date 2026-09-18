@@ -10,8 +10,9 @@ Object bytes are owned directly by file-service under
 `/var/lib/dingwei-file-service/objects`; MinIO is not deployed. Paths have the
 form `files/YY/MMDD/<id>-<timestamp>` or `files/pinned/<id>-<timestamp>`.
 Original names remain metadata only and never participate in a disk path.
-Files are atomically committed with mode `0600`; the service unit also fixes
-`UMask=0077`. The data root must be on a filesystem mounted `noexec` by the
+Files are atomically committed with explicit mode `0640`; the service unit
+fixes `UMask=0077`, so file-service uses `fchmod` after creation. The data root
+must be on a filesystem mounted `noexec` by the
 authorized executor; the application-level mode is not a substitute for that
 mount property.
 
@@ -23,9 +24,17 @@ mount property.
 - Install the verified artifact at
   `/opt/dingwei/file-service/bin/file-service`, `root:root`, mode `0755`.
 - Run `deploy/file-service.service` as `dingwei-file`.
+- Create the dedicated read-only group `dingwei-file-read` and add nginx user
+  `www-data` to it; do not add nginx to the `dingwei-file` primary group.
 - Persistent directory: `/var/lib/dingwei-file-service`, owner
-  `dingwei-file:dingwei-file`, mode `0750`.
-- Metadata database: `/var/lib/dingwei-file-service/file-service.db`.
+  `dingwei-file:dingwei-file-read`, mode `0710` (traversable but not listable).
+- Object root and every object subdirectory: group `dingwei-file-read`, mode
+  `2750`; setgid makes new descendants inherit only this dedicated group.
+- Object files: group `dingwei-file-read`, mode `0640` after an explicit
+  `fchmod`, so systemd `UMask=0077` cannot remove group-read access.
+- Metadata database: `/var/lib/dingwei-file-service/file-service.db`, owner
+  `dingwei-file:dingwei-file`, mode `0600`; it must never belong to
+  `dingwei-file-read` and must not be readable by that group.
 - Public listener: `127.0.0.1:8793`; internal issuer/audit listener:
   `127.0.0.1:8794`. Only the two public `/files/` routes in
   `deploy/nginx-dingwei.conf` may be exposed.
