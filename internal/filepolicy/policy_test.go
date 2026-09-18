@@ -1,8 +1,12 @@
 package filepolicy
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -25,8 +29,58 @@ func TestUploadLimitMatchesNginx(t *testing.T) {
 func TestDirectLinkExtensionAllowListsExcludeActiveContent(t *testing.T) {
 	nginx := mustRead(t, "../../deploy/nginx-dingwei.conf")
 	store := mustRead(t, "../fileservice/local_store.go")
+	managerPath := "../fileservice/manager.go"
 	assertForbiddenExtensionsAbsent(t, "nginx file_ext", captureExtensions(t, nginx, `\(\?<file_ext>([^)]+)\)`))
 	assertForbiddenExtensionsAbsent(t, "directObjectKey", captureExtensions(t, store, `directObjectKey\s*=.*?\\\.\(\?:([^)]*)\)`))
+	assertForbiddenExtensionsAbsent(t, "manager media maps", managerMapExtensions(t, managerPath, "exts", "downloadExts"))
+}
+
+func managerMapExtensions(t *testing.T, path string, names ...string) []string {
+	t.Helper()
+	file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wanted := make(map[string]bool, len(names))
+	for _, name := range names {
+		wanted[name] = true
+	}
+	found := make(map[string]bool, len(names))
+	var extensions []string
+	ast.Inspect(file, func(node ast.Node) bool {
+		assignment, ok := node.(*ast.AssignStmt)
+		if !ok || len(assignment.Lhs) != 1 || len(assignment.Rhs) != 1 {
+			return true
+		}
+		name, ok := assignment.Lhs[0].(*ast.Ident)
+		literal, literalOK := assignment.Rhs[0].(*ast.CompositeLit)
+		if !ok || !literalOK || !wanted[name.Name] {
+			return true
+		}
+		found[name.Name] = true
+		for _, element := range literal.Elts {
+			pair, ok := element.(*ast.KeyValueExpr)
+			if !ok {
+				continue
+			}
+			value, valueOK := pair.Value.(*ast.BasicLit)
+			if !valueOK || value.Kind != token.STRING {
+				continue
+			}
+			decoded, decodeErr := strconv.Unquote(value.Value)
+			if decodeErr != nil {
+				t.Fatal(decodeErr)
+			}
+			extensions = append(extensions, decoded)
+		}
+		return true
+	})
+	for _, name := range names {
+		if !found[name] {
+			t.Fatalf("manager media map %q not found", name)
+		}
+	}
+	return extensions
 }
 
 func mustRead(t *testing.T, path string) string {
