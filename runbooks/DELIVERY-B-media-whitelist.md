@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-18T22:59:50Z`
+更新时间（UTC）：`2026-09-18T23:08:29Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`0e09c4b885654ba9df50395285b28ffcb143aa87`
+- 实现锚：`68e84d6d1bebe872f0e17e05753692454160d941`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -26,3 +26,13 @@
 ## 生产验收边界
 
 V1 必须在部署后上传真实 quicktime 对象并通过生产 nginx 执行 `curl -I`，要求 `Content-Type: video/quicktime` 且无 attachment。仓内配置与替身不能冒充该证据，本交付不宣称 V1 已通过。
+
+## B5：已知附件类型保留可用后缀
+
+- 受控 media type 映射新增 docx/xlsx/pptx/doc/xls/ppt/zip；扩展名不读取 `OriginalName`，未知类型仍 `.bin`。
+- 上述文件仍统一存储 `application/octet-stream`，由 nginx 原 attachment location 强制下载；该 location 扩为一个 `bin|docx|xlsx|pptx|doc|xls|ppt|zip` 正则块，旧 `.bin` 保持兼容。
+- `directObjectKey` 同步扩展，避免新增附件对象无法被 sweeper 删除。
+- docx、xlsx、pptx、zip 四份夹具与既有未知类型夹具均通过真实 `Manager.Put` 验证后缀和 octet-stream。
+- 删除 Office 映射后执行 `go test -v ./... -count=1`：978 条中唯一转红 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks`；还原后全仓 rc=0。
+
+V4′ 仍须部署后上传真实 docx，经生产 nginx `curl -I` 验证 octet-stream、attachment 且 URL 末段为 `.docx`；仓内不宣称该项已通过。
