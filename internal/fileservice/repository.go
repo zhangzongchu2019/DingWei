@@ -44,6 +44,7 @@ reason TEXT NOT NULL, created_at TEXT NOT NULL);`); err != nil {
 	for _, column := range []struct{ name, ddl string }{
 		{"archived", `ALTER TABLE files ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`},
 		{"archived_at", `ALTER TABLE files ADD COLUMN archived_at TEXT`},
+		{"unarchived_at", `ALTER TABLE files ADD COLUMN unarchived_at TEXT`},
 	} {
 		present, checkErr := sqliteColumnExists(db, "files", column.name)
 		if checkErr != nil {
@@ -97,9 +98,9 @@ func (r *Repository) Get(ctx context.Context, id string) (File, error) {
 	var created, expires string
 	var removed sql.NullString
 	var archived int
-	var archivedAt sql.NullString
-	err := r.db.QueryRowContext(ctx, `SELECT id,object_key,owner_key,session_name,original_name,media_type,size_bytes,sha256,state,created_at,expires_at,archived,archived_at,removed_at,removal_reason FROM files WHERE id=?`, id).Scan(
-		&f.ID, &f.ObjectKey, &f.OwnerKey, &f.SessionName, &f.OriginalName, &f.MediaType, &f.SizeBytes, &f.SHA256, &f.State, &created, &expires, &archived, &archivedAt, &removed, &f.RemovalReason)
+	var archivedAt, unarchivedAt sql.NullString
+	err := r.db.QueryRowContext(ctx, `SELECT id,object_key,owner_key,session_name,original_name,media_type,size_bytes,sha256,state,created_at,expires_at,archived,archived_at,unarchived_at,removed_at,removal_reason FROM files WHERE id=?`, id).Scan(
+		&f.ID, &f.ObjectKey, &f.OwnerKey, &f.SessionName, &f.OriginalName, &f.MediaType, &f.SizeBytes, &f.SHA256, &f.State, &created, &expires, &archived, &archivedAt, &unarchivedAt, &removed, &f.RemovalReason)
 	if err != nil {
 		return File{}, err
 	}
@@ -118,6 +119,13 @@ func (r *Repository) Get(ctx context.Context, id string) (File, error) {
 			return File{}, e
 		}
 		f.ArchivedAt = &t
+	}
+	if unarchivedAt.Valid {
+		t, e := time.Parse(time.RFC3339Nano, unarchivedAt.String)
+		if e != nil {
+			return File{}, e
+		}
+		f.UnarchivedAt = &t
 	}
 	if removed.Valid {
 		t, e := time.Parse(time.RFC3339Nano, removed.String)
@@ -212,7 +220,7 @@ func (r *Repository) ListDeleting(ctx context.Context) ([]File, error) {
 // MarkDeleting durably records intent before touching object storage. A crash
 // or metadata failure after Delete is therefore recoverable by the next sweep.
 func (r *Repository) MarkDeleting(ctx context.Context, id, reason string) error {
-	result, err := r.db.ExecContext(ctx, `UPDATE files SET state='deleting',removal_reason=? WHERE id=? AND state='ready'`, reason, id)
+	result, err := r.db.ExecContext(ctx, `UPDATE files SET state='deleting',removal_reason=? WHERE id=? AND state='ready' AND archived=0`, reason, id)
 	if err != nil {
 		return err
 	}
@@ -270,15 +278,18 @@ func (r *Repository) SetArchivedLocationByOwner(ctx context.Context, id, objectK
 		return ErrAccessDenied
 	}
 	value := 0
-	var archivedAt any
+	var archivedAt, unarchivedAt any
 	if archived {
 		value, archivedAt = 1, stamp(at)
+	} else {
+		unarchivedAt = stamp(at)
 	}
-	query := `UPDATE files SET archived=?,archived_at=? WHERE id=? AND owner_key=? AND state='ready'`
-	args := []any{value, archivedAt, id, ownerKey}
+	expires := time.Date(at.UTC().Year(), at.UTC().Month(), at.UTC().Day()+1, 0, 0, 0, 0, time.UTC).Add(7 * 24 * time.Hour)
+	query := `UPDATE files SET archived=?,archived_at=?,unarchived_at=?,expires_at=? WHERE id=? AND owner_key=? AND state='ready'`
+	args := []any{value, archivedAt, unarchivedAt, stamp(expires), id, ownerKey}
 	if objectKey != "" {
-		query = `UPDATE files SET archived=?,archived_at=?,object_key=? WHERE id=? AND owner_key=? AND state='ready'`
-		args = []any{value, archivedAt, objectKey, id, ownerKey}
+		query = `UPDATE files SET archived=?,archived_at=?,unarchived_at=?,expires_at=?,object_key=? WHERE id=? AND owner_key=? AND state='ready'`
+		args = []any{value, archivedAt, unarchivedAt, stamp(expires), objectKey, id, ownerKey}
 	}
 	result, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {

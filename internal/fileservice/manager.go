@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -38,13 +37,6 @@ type Manager struct {
 	mu                       sync.Mutex
 }
 
-type objectMover interface {
-	Move(context.Context, string, string) error
-}
-type dayDirectoryDeleter interface {
-	DeleteDay(context.Context, string) error
-}
-
 func (m *Manager) SetArchivedByOwner(ctx context.Context, id string, archived bool, actorPrincipal, ownerKey, reason string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -52,31 +44,7 @@ func (m *Manager) SetArchivedByOwner(ctx context.Context, id string, archived bo
 	if err != nil || f.OwnerKey != ownerKey || f.State != StateReady {
 		return ErrAccessDenied
 	}
-	mover, ok := m.Objects.(objectMover)
-	if !ok {
-		return fmt.Errorf("object store does not support archive relocation")
-	}
-	prefix := m.ObjectPrefix
-	if prefix == "" {
-		prefix = "files"
-	}
-	base := filepath.Base(f.ObjectKey)
-	target := fmt.Sprintf("%s/pinned/%s", prefix, base)
-	if !archived {
-		created := f.CreatedAt.UTC()
-		target = fmt.Sprintf("%s/%02d/%02d%02d/%s", prefix, created.Year()%100, int(created.Month()), created.Day(), base)
-	}
-	if target == f.ObjectKey {
-		return m.Repo.SetArchivedLocationByOwner(ctx, id, "", archived, actorPrincipal, ownerKey, reason, m.Clock.Now())
-	}
-	if err := mover.Move(ctx, f.ObjectKey, target); err != nil {
-		return fmt.Errorf("move archived object: %w", err)
-	}
-	if err := m.Repo.SetArchivedLocationByOwner(ctx, id, target, archived, actorPrincipal, ownerKey, reason, m.Clock.Now()); err != nil {
-		_ = mover.Move(context.Background(), target, f.ObjectKey)
-		return err
-	}
-	return nil
+	return m.Repo.SetArchivedLocationByOwner(ctx, id, "", archived, actorPrincipal, ownerKey, reason, m.Clock.Now())
 }
 
 func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
@@ -181,15 +149,7 @@ func (m *Manager) enforceLocked(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := m.finishRetentionDirectories(ctx, deleting); err != nil {
-		return err
-	}
 	for _, f := range deleting {
-		if f.RemovalReason == "retention" {
-			if _, ok := m.Objects.(dayDirectoryDeleter); ok {
-				continue
-			}
-		}
 		if err := m.finishRemoval(ctx, f); err != nil {
 			return err
 		}
@@ -207,17 +167,9 @@ func (m *Manager) enforceLocked(ctx context.Context) error {
 			return err
 		}
 		f.State, f.RemovalReason = StateDeleting, reason
-		if reason == "retention" {
-			if _, ok := m.Objects.(dayDirectoryDeleter); ok {
-				continue
-			}
-		}
 		if err := m.finishRemoval(ctx, f); err != nil {
 			return err
 		}
-	}
-	if err := m.finishRetentionDirectories(ctx, candidates); err != nil {
-		return err
 	}
 	if m.TombstoneRetention > 0 {
 		if _, err := m.Repo.PurgeTombstones(ctx, m.Clock.Now().Add(-m.TombstoneRetention)); err != nil {
@@ -227,45 +179,25 @@ func (m *Manager) enforceLocked(ctx context.Context) error {
 	return nil
 }
 
-func (m *Manager) finishRetentionDirectories(ctx context.Context, files []File) error {
-	deleter, ok := m.Objects.(dayDirectoryDeleter)
-	if !ok {
-		return nil
-	}
-	groups := map[string][]File{}
-	for _, f := range files {
-		if f.RemovalReason != "retention" && f.State == StateDeleting {
-			continue
-		}
-		if f.State != StateDeleting && f.ExpiresAt.After(m.Clock.Now()) {
-			continue
-		}
-		groups[filepath.Dir(f.ObjectKey)] = append(groups[filepath.Dir(f.ObjectKey)], f)
-	}
-	for _, group := range groups {
-		if len(group) == 0 {
-			continue
-		}
-		if err := deleter.DeleteDay(ctx, group[0].ObjectKey); err != nil {
-			return fmt.Errorf("delete retention directory: %w", err)
-		}
-		for _, f := range group {
-			if err := m.Repo.FinishDeleting(ctx, f.ID, m.Clock.Now()); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 func (m *Manager) finishRemoval(ctx context.Context, f File) error {
-	if err := m.Objects.Delete(ctx, f.ObjectKey); err != nil {
+	current, err := m.Repo.Get(ctx, f.ID)
+	if err != nil || current.State != StateDeleting || current.Archived || (current.RemovalReason != "retention" && current.RemovalReason != "quota_fifo") {
+		return fmt.Errorf("refuse unsafe delete: %w", firstError(err, ErrAccessDenied))
+	}
+	if err := m.Objects.Delete(ctx, current.ObjectKey); err != nil {
 		return fmt.Errorf("delete %s: %w", f.ID, err)
 	}
 	if err := m.Repo.FinishDeleting(ctx, f.ID, m.Clock.Now()); err != nil {
 		return fmt.Errorf("finish delete %s: %w", f.ID, err)
 	}
 	return nil
+}
+
+func firstError(err, fallback error) error {
+	if err != nil {
+		return err
+	}
+	return fallback
 }
 
 func randomID() (string, error) {

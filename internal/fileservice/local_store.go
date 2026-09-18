@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"golang.org/x/sys/unix"
@@ -18,6 +19,16 @@ type LocalObjectStore struct {
 	Root string
 	// Test-only fault hook. Production constructors never set it.
 	afterWrite func(string) error
+}
+
+var (
+	legacyObjectKey = regexp.MustCompile(`^files/[0-9]{2}/[0-9]{4}/[0-9a-f]{32}-[0-9]{8}T[0-9]{6}\.[0-9]{9}Z$`)
+	directObjectKey = regexp.MustCompile(`^[a-z0-9_-]{1,64}/[a-z0-9_-]{1,64}/[0-9]{2}/[0-9]{4}/[0-9a-f]{32}\.(?:jpg|png|gif|webp|avif|mp4|webm|ogv|pdf|txt|bin)$`)
+)
+
+func validDeletableObjectKey(key string) bool {
+	return key == filepath.ToSlash(filepath.Clean(filepath.FromSlash(key))) &&
+		(legacyObjectKey.MatchString(key) || directObjectKey.MatchString(key))
 }
 
 func NewLocalObjectStore(root string) (*LocalObjectStore, error) {
@@ -172,9 +183,19 @@ func (s *LocalObjectStore) Open(_ context.Context, key string, offset, length in
 }
 
 func (s *LocalObjectStore) Delete(_ context.Context, key string) error {
+	if !validDeletableObjectKey(key) {
+		return fmt.Errorf("refuse unsafe object delete")
+	}
 	path, err := s.path(key)
 	if err != nil {
 		return err
+	}
+	if info, statErr := os.Lstat(path); statErr == nil {
+		if !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("refuse non-regular object delete")
+		}
+	} else if !errors.Is(statErr, os.ErrNotExist) {
+		return statErr
 	}
 	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err

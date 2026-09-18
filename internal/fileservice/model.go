@@ -19,7 +19,7 @@ type File struct {
 	State                                                                 State
 	Archived                                                              bool
 	CreatedAt, ExpiresAt                                                  time.Time
-	ArchivedAt                                                            *time.Time
+	ArchivedAt, UnarchivedAt                                              *time.Time
 	RemovedAt                                                             *time.Time
 	RemovalReason                                                         string
 }

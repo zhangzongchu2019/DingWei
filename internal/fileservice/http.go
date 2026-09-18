@@ -44,14 +44,22 @@ func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h HTTPHandler) upload(w http.ResponseWriter, r *http.Request) {
-	if h.Manager == nil || h.Manager.Clock == nil || h.Uploads == nil || r.ContentLength < 0 {
-		hide(w)
+	if h.Manager == nil || h.Manager.Clock == nil || h.Uploads == nil {
+		uploadError(w, http.StatusServiceUnavailable, "upload service unavailable")
+		return
+	}
+	if r.ContentLength < 0 {
+		uploadError(w, http.StatusBadRequest, "content length is required")
+		return
+	}
+	if r.ContentLength > h.Manager.MaxFileBytes {
+		uploadError(w, http.StatusRequestEntityTooLarge, "file exceeds upload limit")
 		return
 	}
 	session := r.Header.Get("X-DingWei-Session")
 	grant, err := h.Uploads.VerifyUpload(bearer(r), session, r.ContentLength, h.Manager.Clock.Now())
 	if err != nil || grant.OwnerKey == "" || grant.SessionName != session || (grant.MaxBytes > 0 && r.ContentLength > grant.MaxBytes) {
-		hide(w)
+		uploadError(w, http.StatusUnauthorized, "upload ticket is invalid or expired")
 		return
 	}
 	f, err := h.Manager.Put(r.Context(), Upload{
@@ -60,10 +68,12 @@ func (h HTTPHandler) upload(w http.ResponseWriter, r *http.Request) {
 		ExpectedSHA256: r.Header.Get("X-Content-SHA256"), ContentLength: r.ContentLength, Body: r.Body,
 	})
 	if err != nil {
-		if errors.Is(err, ErrInvalidUpload) || errors.Is(err, ErrIntegrity) {
-			hide(w)
+		if errors.Is(err, ErrIntegrity) {
+			uploadError(w, http.StatusUnprocessableEntity, "uploaded bytes failed integrity validation")
+		} else if errors.Is(err, ErrInvalidUpload) {
+			uploadError(w, http.StatusBadRequest, "invalid upload")
 		} else {
-			http.Error(w, "upload failed", http.StatusServiceUnavailable)
+			uploadError(w, http.StatusServiceUnavailable, "upload storage unavailable")
 		}
 		return
 	}
@@ -73,6 +83,12 @@ func (h HTTPHandler) upload(w http.ResponseWriter, r *http.Request) {
 		"file_ref": "dwfile:" + f.ID, "name": f.OriginalName, "size": f.SizeBytes,
 		"sha256": f.SHA256, "media_type": f.MediaType, "expires_at": f.ExpiresAt, "range": true,
 	})
+}
+
+func uploadError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
 }
 
 func (h HTTPHandler) retrieve(w http.ResponseWriter, r *http.Request) {

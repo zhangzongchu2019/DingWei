@@ -154,7 +154,7 @@ func TestLocalPutRefusesSymlinkDirectoryComponent(t *testing.T) {
 	}
 }
 
-func TestLocalArchiveMovesOutAndDaySweepCannotDeletePinned(t *testing.T) {
+func TestPerFileSweepKeepsArchivedObjectAtStablePath(t *testing.T) {
 	s := newLocalStore(t)
 	r, err := OpenRepository(filepath.Join(t.TempDir(), "meta.db"))
 	if err != nil {
@@ -179,8 +179,8 @@ func TestLocalArchiveMovesOutAndDaySweepCannotDeletePinned(t *testing.T) {
 		t.Fatal(err)
 	}
 	kept, _ := r.Get(context.Background(), keep.ID)
-	if !strings.Contains(kept.ObjectKey, "/pinned/") {
-		t.Fatalf("key=%s", kept.ObjectKey)
+	if kept.ObjectKey != keep.ObjectKey {
+		t.Fatalf("archive changed key before=%s after=%s", keep.ObjectKey, kept.ObjectKey)
 	}
 	if strings.Contains(kept.ObjectKey, "run-me") || strings.HasSuffix(kept.ObjectKey, ".sh") {
 		t.Fatalf("user filename entered object path: %s", kept.ObjectKey)
@@ -190,7 +190,7 @@ func TestLocalArchiveMovesOutAndDaySweepCannotDeletePinned(t *testing.T) {
 		t.Fatal(err)
 	}
 	if b, err := os.ReadFile(mustPath(t, s, kept.ObjectKey)); err != nil || !bytes.Equal(b, []byte("keep")) {
-		t.Fatalf("pinned bytes=%q err=%v", b, err)
+		t.Fatalf("archived bytes=%q err=%v", b, err)
 	}
 	if _, err := os.Stat(mustPath(t, s, drop.ObjectKey)); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("dated object remains err=%v", err)
@@ -198,8 +198,8 @@ func TestLocalArchiveMovesOutAndDaySweepCannotDeletePinned(t *testing.T) {
 	if _, err := os.Stat(mustPath(t, s, drop2.ObjectKey)); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("second dated object remains err=%v", err)
 	}
-	if _, err := os.Stat(filepath.Dir(mustPath(t, s, drop.ObjectKey))); !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("dated directory remains err=%v", err)
+	if _, err := os.Stat(filepath.Dir(mustPath(t, s, drop.ObjectKey))); err != nil {
+		t.Fatalf("shared dated directory was removed err=%v", err)
 	}
 }
 

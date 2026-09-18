@@ -135,6 +135,27 @@ func TestHTTPRetrievalDenialsDoNotRevealExistence(t *testing.T) {
 	}
 }
 
+func TestHTTPUploadErrorsAreJSONWhileRetrievalStaysHidden(t *testing.T) {
+	m, _, _ := testManager(t, 4)
+	m.MaxFileBytes = 4
+	h := HTTPHandler{Manager: m, Uploads: fixedUploadVerifier{UploadGrant{OwnerKey: "owner", SessionName: "session", MaxBytes: 4}}}
+	r := httptest.NewRequest(http.MethodPost, "/files/upload", strings.NewReader("abcde"))
+	r.Header.Set("Authorization", "Bearer upload-ticket")
+	r.Header.Set("X-DingWei-Session", "session")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusRequestEntityTooLarge || w.Header().Get("Content-Type") != "application/json" || !strings.Contains(w.Body.String(), `"error"`) {
+		t.Fatalf("upload status=%d headers=%v body=%q", w.Code, w.Header(), w.Body.String())
+	}
+
+	get := httptest.NewRequest(http.MethodHead, "/files/ref/unknown", nil)
+	gw := httptest.NewRecorder()
+	h.ServeHTTP(gw, get)
+	if gw.Code != http.StatusNotFound || gw.Body.String() != "not found\n" {
+		t.Fatalf("retrieval status=%d body=%q", gw.Code, gw.Body.String())
+	}
+}
+
 func TestHTTPRangeAndObjectFailureSemantics(t *testing.T) {
 	m, _, objects := testManager(t, 100)
 	grants := NewGrantStore(m.Clock, 2*time.Minute)
