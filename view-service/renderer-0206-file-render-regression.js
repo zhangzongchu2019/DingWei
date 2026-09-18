@@ -275,10 +275,27 @@ async function t(name, fn) {
   //     ④g 验的是 HEAD 路径（服务端声明 image/svg+xml）。降级路径读的是 URL 扩展名，
   //     走的是另一张表 —— 那条路径此前没有任何断言盯着。
   await t('④h 降级路径:.svg 仍走下载链接,且 FILE_EXT_KIND 里不得出现永不内联的扩展名', async () => {
-    // (a) 配置形状本身:表里不得混入 svg/html 之类(防「将来有人补全白名单」)
-    const leaked = await page.evaluate(() =>
-      [...FILE_EXT_NEVER_INLINE].filter((e) => Object.prototype.hasOwnProperty.call(FILE_EXT_KIND, e)));
+    // (a) 配置形状本身:表里不得混入 svg/html 之类(防「将来有人补全白名单」)。
+    // 🔴 改为**现读产品源码**，不再经 page.evaluate 取页面作用域里的 const：
+    //    页面作用域能否被 evaluate 读到，取决于脚本怎么加载、页面处于什么状态 ——
+    //    那是断言之外的变量。评审方在同一锚上得到 ReferenceError 而我这边 PASS，
+    //    差别就出在这个变量上。现读源码则与浏览器状态无关，且与本仓已有的
+    //    TestUploadLimitMatchesNginx / TestDirectLinkExtensionAllowListsExcludeActiveContent 同手法。
+    const rendererSrc = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
+    const neverInline = (/const FILE_EXT_NEVER_INLINE = new Set\(\[([^\]]*)\]\)/.exec(rendererSrc) || [])[1];
+    const extKind = (/const FILE_EXT_KIND = \{([\s\S]*?)\};/.exec(rendererSrc) || [])[1];
+    assert.ok(neverInline && extKind, '源码里取不到 FILE_EXT_NEVER_INLINE / FILE_EXT_KIND —— 名称被改过?');
+    const forbidden = [...neverInline.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    const listed = [...extKind.matchAll(/([a-z0-9]+)\s*:/g)].map((m) => m[1]);
+    const leaked = forbidden.filter((e) => listed.includes(e));
     assert.deepStrictEqual(leaked, [], `FILE_EXT_KIND 混入了永不内联的扩展名: ${leaked}`);
+    // 🔴 只断言「两集合不相交」还不够 —— 从禁止集合里删掉一个 token(如 'html'),
+    //    因为它本来也不在 FILE_EXT_KIND 里，不相交仍然成立，**零转红**（实测 M13）。
+    //    ⇒ 必须对禁止集合本身下**绝对断言**：逐个 token 必须在。
+    //    这正是我在 C 线 R2b 第三发里用过的那一层：换一个 token 才证得出守卫查的是整个集合。
+    for (const must of ['svg', 'svgz', 'html', 'htm', 'xhtml', 'xml']) {
+      assert.ok(forbidden.includes(must), `禁止集合缺少 ${must}（附录 E 要求 html/svg 永不内联）`);
+    }
     // (b) 行为:HEAD 不可用(降级)时,.svg 链接必须仍是下载链接
     const svgUrl = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/aaaabbbbccccddddeeeeffff00001111.svg`;
     await page.route('**/f/**', (route) => (route.request().method() === 'HEAD'
