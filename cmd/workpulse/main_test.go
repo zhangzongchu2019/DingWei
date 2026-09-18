@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io"
 	"log/slog"
 	"net/http"
@@ -22,6 +25,35 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/secretbox"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
+
+func TestRunWiresAdminFileBrowserConfiguration(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "main.go", nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	foundRun, foundCall := false, false
+	for _, declaration := range file.Decls {
+		function, ok := declaration.(*ast.FuncDecl)
+		if !ok || function.Name.Name != "run" {
+			continue
+		}
+		foundRun = true
+		ast.Inspect(function.Body, func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok {
+				return true
+			}
+			identifier, ok := call.Fun.(*ast.Ident)
+			if ok && identifier.Name == "configureAdminFileBrowser" {
+				foundCall = true
+			}
+			return true
+		})
+	}
+	if !foundRun || !foundCall {
+		t.Fatalf("run wiring missing: found_run=%t configureAdminFileBrowser_call=%t", foundRun, foundCall)
+	}
+}
 
 func TestConfigureAdminFileBrowserWarnsForEachMissingSetting(t *testing.T) {
 	names := []string{"WP_FILE_ISSUER_URL", "WP_FILE_PUBLIC_URL", "WP_FILE_ISSUER_TOKEN", "WP_FILE_AUDIT_TOKEN"}
