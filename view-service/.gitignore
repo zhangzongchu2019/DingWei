@@ -5,3 +5,8 @@ __pycache__/
 node_modules/
 package.json
 package-lock.json
+
+# 0206 回归样本：两个大件（sample-large.txt / oversize-52428801.bin）由
+# renderer-0206-file-render-regression.js 用时现生成，不入仓。
+# 🔴 规则本体在 fixtures-0206/.gitignore（与被忽略的文件同处，删目录即连规则一起删）。
+#    此处只留指路：查忽略规则的人通常先看这一份，找不到会以为规则不存在。
