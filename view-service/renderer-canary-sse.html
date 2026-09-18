@@ -2729,9 +2729,12 @@
           video.src = url;
           video.controls = true;
           video.preload = 'metadata';
-          video.addEventListener('error', () => { video.replaceWith(fileDownloadLink(url, '下载视频', knownName)); }, { once: true });
+          // 🔴 下面那条下载链接是**无条件**附的（能播时也该能下载）。
+          //    所以 error 分支只需把放不了的 <video> **移除**，不能再 replaceWith 出第二条 ——
+          //    否则解不了码时会并排出现两个「⬇ 下载视频」（组长 2026-09-18 从我的证据截图里看出来的）。
+          video.addEventListener('error', () => { video.remove(); }, { once: true });
           box.appendChild(video);
-          box.appendChild(fileDownloadLink(url, '下载视频', knownName));   // 浏览器解不了该编码时仍有出路
+          box.appendChild(fileDownloadLink(url, '下载视频', knownName));   // 恒附一条：能播时可下载，解不了码时它就是唯一出路
           break;
         }
         case 'pdf': {
@@ -3953,12 +3956,20 @@
           fill.style.width = '';
           meta.textContent = text;
         },
-        done(sizeBytes) {
+        // 组长 2026-09-18 裁定：完成态的行在**对应草稿块出现后即移除**。
+        // 理由：草稿块（缩略图＋原名＋大小）已完整表达「已附加」，两处冗余；
+        // 而 R1 要解决的是「进行中不知道在不在动」，完成之后再占屏幕会把草稿区挤走，
+        // 草稿区才是业主第 2 条要的东西。传 20 个文件就会堆 20 行 —— 这条是本次新引入的，必须清。
+        // 🔴 失败行不走这里（见 failed），人必须看得见哪个失败了。
+        done(sizeBytes, url) {
           row.classList.remove('indeterminate');
           row.classList.add('done');
           fill.style.width = '100%';
           meta.textContent = `已附加 · ${formatFileBytes(sizeBytes)}`;
-          setTimeout(() => { row.remove(); if (!uploadQueue.children.length) uploadQueue.hidden = true; }, 2500);
+          const chipShown = url && draftAttachments.querySelector(`[data-file-url="${CSS.escape(url)}"]`);
+          const drop = () => { row.remove(); if (!uploadQueue.children.length) uploadQueue.hidden = true; };
+          // 草稿块已在 ⇒ 立即移除；万一没在（理论上不该发生）⇒ 留一个短兜底，不把行永久挂住。
+          if (chipShown) drop(); else setTimeout(drop, 2500);
         },
         failed(reason) {
           row.classList.remove('indeterminate');
@@ -4038,8 +4049,9 @@
         mediaType: String(uploaded.media_type || '').split(';')[0].trim().toLowerCase(),
       });
       appendInputReference(url, uploaded.name || file.name, uploaded.size);
-      row?.done(uploaded.size);
       renderDraftAttachments();   // 业主第 2 条：回填后立刻把缩略图摆出来
+      // 🔴 顺序要紧：先渲染草稿块，done() 才看得到它、才能立即清掉完成行。
+      row?.done(uploaded.size, url);
       return url;
     }
 

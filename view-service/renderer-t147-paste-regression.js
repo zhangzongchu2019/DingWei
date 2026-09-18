@@ -60,6 +60,8 @@ function fakeDom() {
     className: '', style: {}, textContent: '', children: [], hidden: true,
     dataset: {}, title: '', src: '', alt: '', loading: '',
     addEventListener() {}, replaceWith() {},
+    // 产品的 done() 现在会查草稿块是否已出现（完成行随之立即移除），替身要能被查
+    querySelector() { return null; },
     classList: { add() {}, remove() {}, toggle() {} },
     append(...xs) { this.children.push(...xs); },
     appendChild(x) { this.children.push(x); return x; },
@@ -78,6 +80,8 @@ function load(humanInput, fetch, opts = {}) {
     // 抽取范围里现在也含 renderDraftAttachments(业主验收第 2 条),它引用这几个符号 ——
     // 一并注入,让被测的仍是**产品那一份实现**,而不是替换成空函数糊过去。
     'FILE_URL_RE', 'trimUrlTail', 'isOwnFileUrl', 'draftAttachments', 'fileNameFromUrl', 'draftIconFor',
+    // CSS.escape 只在浏览器里有；产品用它拼选择器查草稿块
+    'CSS',
     `${block}; return {uploadOneFile, uploadFiles};`,
   );
   const api = fn(
@@ -91,6 +95,7 @@ function load(humanInput, fetch, opts = {}) {
     dom.queue,
     (u) => String(u).split('/').pop(),
     () => '📄',
+    { escape: (v) => String(v) },
   );
   return { ...api, errors };
 }

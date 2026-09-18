@@ -380,7 +380,11 @@ async function t(name, fn) {
       await last.locator('video').first().waitFor({ state: 'detached', timeout: 5000 });
       assert.strictEqual(await last.locator('video').count(), 0,
         `本浏览器不可解 H.264（canPlayType=${JSON.stringify(canPlayH264)}），回退后不得残留放不了的 <video>`);
-      assert.ok(await last.locator('a.attachment-dl').count() >= 1, '回退后必须留下下载链接');
+      // 🔴 恰好一条：error 分支只移除 <video>，不再 replaceWith 出第二条。
+      //    组长从我的证据截图里看出并排两个「⬇ 下载视频」——
+      //    业主那台真浏览器上，凡解不了码的视频都会撞上（他那个 HEVC 的 .mov 正是）。
+      assert.strictEqual(await last.locator('a.attachment-dl').count(), 1,
+        `解不了码时应恰好一条下载链接，实测 ${await last.locator('a.attachment-dl').count()} 条`);
     }
   });
 
@@ -400,7 +404,16 @@ async function t(name, fn) {
     const picking = page.setInputFiles('#filePicker', [fx('sample.webm'), fx('sample.pdf')]);
     // 进行中:队列必须可见,且每个文件各一行
     await page.waitForSelector('#uploadQueue .upload-row', { timeout: 20000 });
-    await page.waitForFunction(() => document.querySelectorAll('#uploadQueue .upload-row').length >= 2, null, { timeout: 20000 });
+    // 🔴 不能断言「两行同时在」：上传是**顺序**的，且完成行在草稿块出现后即移除（组长裁定）
+    //    ⇒ 任一瞬间通常只有一行。R1 要的是「每个文件都有过自己的一行」，那是**时间上的**性质。
+    //    所以这里改为全程采集行名，最后断言两个文件名都出现过。
+    await page.evaluate(() => {
+      window.__nameSeen = new Set();
+      const grab = () => document.querySelectorAll('#uploadQueue .upload-row .u-name')
+        .forEach((e) => window.__nameSeen.add(e.textContent || ''));
+      grab();
+      window.__nameTimer = setInterval(grab, 30);
+    });
     // 🔴 从此刻起把每一行 meta 的**全部取值**记下来。
     //    只看某一瞬间是不够的:去掉字节进度后,行会一直停在「等…」的不定态,
     //    那正是业主抱怨的形态 ——「条在动,但看不出有没有进展」。
@@ -416,16 +429,21 @@ async function t(name, fn) {
       meta: e.querySelector('.u-meta')?.textContent || '',
       indeterminate: e.classList.contains('indeterminate'),
     })));
-    assert.strictEqual(rows.length, 2, `多文件必须逐个一行,实测 ${rows.length}`);
-    assert.ok(rows.some((r) => r.name.includes('sample.webm')), `行里要有文件名: ${JSON.stringify(rows)}`);
+    assert.ok(rows.length >= 1, '进行中必须至少有一行可见');
     for (const r of rows) {
       assert.ok(r.meta.length > 0, `行状态不可读: ${JSON.stringify(r)}`);
+      assert.ok(r.name.length > 0, `行必须带文件名: ${JSON.stringify(r)}`);
     }
     await page.screenshot({ path: path.join(SHOTS, '04-upload-in-progress.png') });
     release();
     await picking;
     await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 2, null, { timeout: 60000 });
     const metaSeen = await page.evaluate(() => { clearInterval(window.__metaTimer); return [...window.__metaSeen]; });
+    const nameSeen = await page.evaluate(() => { clearInterval(window.__nameTimer); return [...window.__nameSeen]; });
+    // 每个文件都必须有过自己的一行 —— 不是只显示一个总数（组长 R1 明示）
+    for (const want of ['sample.webm', 'sample.pdf']) {
+      assert.ok(nameSeen.some((n) => n.includes(want)), `${want} 没有过自己的进度行: ${JSON.stringify(nameSeen)}`);
+    }
     // 🔴 整个上传过程中,必须至少出现过一次**带字节数的进度**(形如「37% · 1.2 MiB / 3.4 MiB」)。
     //    只有不定态文案不算:那与业主原话「没有任何提示,很容易认为是出问题了」是同一种体验。
     // 🔴 这里只验「可见性」,不验「字节在涨」—— 边界写明白:
@@ -435,7 +453,14 @@ async function t(name, fn) {
     //      变异「去掉 progress 监听」在那一层红。**两级分工,各自写明覆盖的是哪一半。**
     assert.ok(metaSeen.some((m) => /\/\s.+(B|KiB|MiB)/.test(m)),
       `未出现带「已传/总」字节的状态,见到: ${JSON.stringify(metaSeen)}`);
-    assert.ok(metaSeen.some((m) => /已附加/.test(m)), `完成态未出现: ${JSON.stringify(metaSeen)}`);
+    // 组长裁定：完成态的行在草稿块出现后即移除 ⇒ 这里断言「都传完后队列清空」，
+    // 而不是断言「看得见已附加」——后者会把「完成行留在屏幕上」也算通过，正是要清掉的行为。
+    await page.waitForFunction(() => document.querySelectorAll('#uploadQueue .upload-row').length === 0,
+      null, { timeout: 15000 });
+    assert.strictEqual(await page.locator('#uploadQueue .upload-row').count(), 0, '完成后不得残留进度行');
+    // 而「已附加」这件事必须由草稿块表达（两处冗余是被裁掉的那一处）
+    assert.ok(await page.locator('#draftAttachments .draft-chip').count() >= 2,
+      '完成行清掉之后，草稿块必须接住「已附加」这件事');
     } finally {
       release();
       if (routed) await page.unroute('**/files/upload').catch(() => {});
@@ -541,6 +566,10 @@ async function t(name, fn) {
       assert.ok(/存储暂时不可用/.test(meta), `失败行要带服务端可读原因: ${JSON.stringify(meta)}`);
       // 🔴 R3：失败不得清掉用户已输入的文字
       assert.strictEqual(await page.inputValue('#humanInput'), '用户写到一半的话', '上传失败不得动用户已输入的文字');
+      // 🔴 完成态的行会被清掉，**失败的行必须留着** —— 人要看得见哪个失败了（组长裁定）。
+      await page.waitForTimeout(3000);
+      assert.ok(await page.locator('#uploadQueue .upload-row.failed').count() >= 1,
+        '失败行不得被自动清掉：完成态清、失败态留，这是两条不同的规则');
     } finally {
       await page.unroute('**/files/upload').catch(() => {});
       await page.evaluate(() => {
