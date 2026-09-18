@@ -28,8 +28,8 @@ class FileServiceDeploymentTest(unittest.TestCase):
     def test_nginx_exposes_only_public_file_routes(self):
         text = (DEPLOY / "nginx-dingwei.conf").read_text()
         self.assertIn("location = /files/upload", text)
-        self.assertIn("location ^~ /files/ref/", text)
-        self.assertEqual(text.count("proxy_pass http://127.0.0.1:8793"), 2)
+        self.assertNotIn("location ^~ /files/ref/", text)
+        self.assertEqual(text.count("proxy_pass http://127.0.0.1:8793"), 1)
         self.assertNotIn("proxy_pass http://127.0.0.1:8794", text)
         self.assertNotIn("location /internal/", text)
 
@@ -60,8 +60,8 @@ class FileServiceDeploymentTest(unittest.TestCase):
         probe = (DEPLOY / "file-service-storage-probe.sh").read_text()
         self.assertIn("/internal/files/issue/upload", probe)
         self.assertIn("/files/upload", probe)
-        self.assertIn("/internal/files/issue/retrieval", probe)
-        self.assertIn("/files/ref/", probe)
+        self.assertIn('["url"]', probe)
+        self.assertIn('curl --fail --silent --show-error "$file_url"', probe)
         self.assertIn("cmp ", probe)
         self.assertIn("FILE_SERVICE_STORAGE_OK", probe)
         self.assertNotIn("/readyz", probe)
@@ -74,7 +74,7 @@ class FileServiceDeploymentTest(unittest.TestCase):
         self.assertIn("production metadata, data root or host clock", contract)
         self.assertIn("Disposable isolated-instance time travel", contract)
         self.assertIn("time-travel one production row", contract)
-        self.assertIn("60 to 61", contract)
+        self.assertIn("exactly 7 days", contract)
         self.assertIn("Quota eviction is not an acceptable substitute", contract)
 
 

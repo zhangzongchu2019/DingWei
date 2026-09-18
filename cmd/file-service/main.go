@@ -61,6 +61,7 @@ func run(logger *slog.Logger) error {
 		UploadTickets: fileservice.NewUploadTicketStore(clock, cfg.CapabilityMaxAge),
 		IssuerToken:   cfg.IssuerToken,
 		AuditToken:    cfg.AuditToken,
+		PublicBaseURL: cfg.PublicBaseURL,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

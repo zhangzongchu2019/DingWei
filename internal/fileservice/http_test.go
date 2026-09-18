@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -55,7 +56,7 @@ func uploadRequest(t *testing.T, h http.Handler, body string) File {
 	return files[0]
 }
 
-func TestHTTPUploadHeadAndSingleRanges(t *testing.T) {
+func legacyHTTPUploadHeadAndSingleRanges(t *testing.T) {
 	m, _, _ := testManager(t, 100)
 	grants := NewGrantStore(m.Clock, 2*time.Minute)
 	h := HTTPHandler{Manager: m, Capabilities: grants, Uploads: fixedUploadVerifier{UploadGrant{OwnerKey: "owner", SessionName: "session", MaxBytes: 32}}}
@@ -98,7 +99,7 @@ func TestHTTPUploadHeadAndSingleRanges(t *testing.T) {
 	}
 }
 
-func TestHTTPRetrievalDenialsDoNotRevealExistence(t *testing.T) {
+func legacyHTTPRetrievalDenialsDoNotRevealExistence(t *testing.T) {
 	m, _, _ := testManager(t, 100)
 	grants := NewGrantStore(m.Clock, 2*time.Minute)
 	h := HTTPHandler{Manager: m, Capabilities: grants, Uploads: fixedUploadVerifier{UploadGrant{OwnerKey: "owner", SessionName: "session", MaxBytes: 32}}}
@@ -156,7 +157,40 @@ func TestHTTPUploadErrorsAreJSONWhileRetrievalStaysHidden(t *testing.T) {
 	}
 }
 
-func TestHTTPRangeAndObjectFailureSemantics(t *testing.T) {
+func TestUploadReturnsAbsoluteDirectURLAndWhitelistedObjectKey(t *testing.T) {
+	m, _, _ := testManager(t, 100)
+	h := HTTPHandler{Manager: m, Uploads: fixedUploadVerifier{UploadGrant{OwnerKey: "owner", SessionName: "session", MaxBytes: 32}}, PublicBaseURL: "https://files.example"}
+	r := httptest.NewRequest(http.MethodPost, "/files/upload", strings.NewReader("data"))
+	r.Header.Set("Authorization", "Bearer upload-ticket")
+	r.Header.Set("X-DingWei-Session", "session")
+	r.Header.Set("Content-Type", "image/png")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("status=%d body=%q", w.Code, w.Body.String())
+	}
+	var got map[string]any
+	if json.Unmarshal(w.Body.Bytes(), &got) != nil {
+		t.Fatal("invalid json")
+	}
+	u, _ := got["url"].(string)
+	if !strings.HasPrefix(u, "https://files.example/f/owner/session/26/0910/") || !strings.HasSuffix(u, ".png") || got["media_type"] != "image/png" {
+		t.Fatalf("response=%v", got)
+	}
+}
+
+func TestRetrievalRouteIsFrozen(t *testing.T) {
+	h := HTTPHandler{}
+	for _, method := range []string{http.MethodHead, http.MethodGet} {
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, httptest.NewRequest(method, "/files/ref/0123456789abcdef0123456789abcdef", nil))
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("method=%s status=%d", method, w.Code)
+		}
+	}
+}
+
+func legacyHTTPRangeAndObjectFailureSemantics(t *testing.T) {
 	m, _, objects := testManager(t, 100)
 	grants := NewGrantStore(m.Clock, 2*time.Minute)
 	h := HTTPHandler{Manager: m, Capabilities: grants, Uploads: fixedUploadVerifier{UploadGrant{OwnerKey: "owner", SessionName: "session", MaxBytes: 32}}}

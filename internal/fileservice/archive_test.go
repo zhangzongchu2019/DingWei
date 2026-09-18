@@ -52,7 +52,7 @@ func TestArchiveRequiresMatchingOwnerScopeAndWritesAudit(t *testing.T) {
 		t.Fatalf("unarchive code=%d", code)
 	}
 	unarchived, err := m.Repo.Get(context.Background(), f.ID)
-	if err != nil || unarchived.Archived || unarchived.UnarchivedAt == nil || !unarchived.ExpiresAt.After(clock.Time.Add(7*24*time.Hour)) || unarchived.ObjectKey != f.ObjectKey {
+	if err != nil || unarchived.Archived || unarchived.UnarchivedAt == nil || !unarchived.ExpiresAt.Equal(clock.Time.Add(7*24*time.Hour)) || unarchived.ObjectKey != f.ObjectKey {
 		t.Fatalf("unarchived=%+v err=%v", unarchived, err)
 	}
 }

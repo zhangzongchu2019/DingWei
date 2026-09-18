@@ -218,6 +218,20 @@ func TestDeleteDayDirectlyRejectsPinnedKey(t *testing.T) {
 	}
 }
 
+func TestLocalDeleteRejectsInvalidObjectKeyShape(t *testing.T) {
+	s := newLocalStore(t)
+	key := "owner/agent/26/0918/0123456789abcdef0123456789abcdef.exe"
+	if err := s.Put(context.Background(), key, strings.NewReader("keep"), 4, "application/octet-stream"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Delete(context.Background(), key); err == nil {
+		t.Fatal("unsafe key was deleted")
+	}
+	if b, err := os.ReadFile(mustPath(t, s, key)); err != nil || string(b) != "keep" {
+		t.Fatalf("bytes=%q err=%v", b, err)
+	}
+}
+
 func TestDatedObjectRetentionIsBetweenSixtyAndSixtyOneDays(t *testing.T) {
 	s := newLocalStore(t)
 	r, err := OpenRepository(filepath.Join(t.TempDir(), "meta.db"))

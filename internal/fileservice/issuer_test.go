@@ -5,11 +5,24 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
 
-func TestIssuerKeepsUploadAndRetrievalAudiencesSeparate(t *testing.T) {
+func TestRetrievalIssuerIsFrozen(t *testing.T) {
+	clock := &FixedClock{Time: time.Now()}
+	h := IssuerHandler{Capabilities: NewGrantStore(clock, time.Minute), Token: "secret"}
+	r := httptest.NewRequest(http.MethodPost, "/internal/files/issue/retrieval", strings.NewReader(`{"subject":"o/s","file_id":"id","method":"HEAD","ttl_seconds":60}`))
+	r.Header.Set("Authorization", "Bearer secret")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("status=%d", w.Code)
+	}
+}
+
+func legacyIssuerKeepsUploadAndRetrievalAudiencesSeparate(t *testing.T) {
 	clock := &FixedClock{Time: time.Date(2026, 9, 12, 2, 0, 0, 0, time.UTC)}
 	capabilities := NewGrantStore(clock, 2*time.Minute)
 	uploads := NewUploadTicketStore(clock, 2*time.Minute)

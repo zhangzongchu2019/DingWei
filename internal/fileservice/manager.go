@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +20,17 @@ var (
 	ErrAccessDenied  = errors.New("file access denied")
 	ErrNotReady      = errors.New("file is not ready")
 )
+
+var identitySegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
+
+func normalizedMedia(mediaType string) (string, string) {
+	base := strings.ToLower(strings.TrimSpace(strings.SplitN(mediaType, ";", 2)[0]))
+	exts := map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif", "video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "application/pdf": "pdf", "text/plain": "txt"}
+	if ext, ok := exts[base]; ok {
+		return base, ext
+	}
+	return "application/octet-stream", "bin"
+}
 
 type Upload struct {
 	OwnerKey, SessionName, OriginalName, MediaType, ExpectedSHA256 string
@@ -48,7 +60,7 @@ func (m *Manager) SetArchivedByOwner(ctx context.Context, id string, archived bo
 }
 
 func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
-	if m.Repo == nil || m.Objects == nil || m.Clock == nil || in.Body == nil || in.ContentLength < 0 || in.ContentLength > m.MaxFileBytes || in.OwnerKey == "" || in.SessionName == "" {
+	if m.Repo == nil || m.Objects == nil || m.Clock == nil || in.Body == nil || in.ContentLength < 0 || in.ContentLength > m.MaxFileBytes || !identitySegment.MatchString(in.OwnerKey) || !identitySegment.MatchString(in.SessionName) {
 		return File{}, ErrInvalidUpload
 	}
 	m.mu.Lock()
@@ -58,15 +70,12 @@ func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
 		return File{}, err
 	}
 	now := m.Clock.Now().UTC()
-	prefix := m.ObjectPrefix
-	if prefix == "" {
-		prefix = "files"
-	}
-	key := fmt.Sprintf("%s/%02d/%02d%02d/%s-%s", prefix, now.Year()%100, int(now.Month()), now.Day(), id, now.Format("20060102T150405.000000000Z"))
+	mediaType, ext := normalizedMedia(in.MediaType)
+	key := fmt.Sprintf("%s/%s/%02d/%02d%02d/%s.%s", in.OwnerKey, in.SessionName, now.Year()%100, int(now.Month()), now.Day(), id, ext)
 	h := sha256.New()
 	limited := &io.LimitedReader{R: in.Body, N: m.MaxFileBytes + 1}
 	reader := io.TeeReader(limited, h)
-	if err := m.Objects.Put(ctx, key, reader, in.ContentLength, in.MediaType); err != nil {
+	if err := m.Objects.Put(ctx, key, reader, in.ContentLength, mediaType); err != nil {
 		return File{}, err
 	}
 	cleanup := func() { _ = m.Objects.Delete(context.Background(), key) }
@@ -88,10 +97,8 @@ func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
 		cleanup()
 		return File{}, ErrInvalidUpload
 	}
-	// Directory retention is day-granular: a file expires at the start of the
-	// next UTC day plus Retention, yielding an actual 60..61 day window.
-	expires := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, time.UTC).Add(m.Retention)
-	f := File{ID: id, ObjectKey: key, OwnerKey: in.OwnerKey, SessionName: in.SessionName, OriginalName: safeName(in.OriginalName), MediaType: in.MediaType, SizeBytes: info.Size, SHA256: digest, State: StateReady, CreatedAt: now, ExpiresAt: expires}
+	expires := now.Add(m.Retention)
+	f := File{ID: id, ObjectKey: key, OwnerKey: in.OwnerKey, SessionName: in.SessionName, OriginalName: safeName(in.OriginalName), MediaType: mediaType, SizeBytes: info.Size, SHA256: digest, State: StateReady, CreatedAt: now, ExpiresAt: expires}
 	if err := m.Repo.InsertReady(ctx, f); err != nil {
 		cleanup()
 		return File{}, err

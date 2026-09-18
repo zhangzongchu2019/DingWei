@@ -38,9 +38,9 @@ FS_INTERNAL_ADDR=127.0.0.1:8794
 FS_DATABASE_PATH=/var/lib/dingwei-file-service/file-service.db
 FS_DATA_ROOT=/var/lib/dingwei-file-service/objects
 FS_OBJECT_PREFIX=files
-FS_MAX_FILE_BYTES=16777216
+FS_MAX_FILE_BYTES=52428800
 FS_TOTAL_QUOTA_BYTES=536870912000
-FS_RETENTION=1440h
+FS_RETENTION=168h
 FS_TOMBSTONE_RETENTION=2160h
 FS_SWEEP_INTERVAL=1m
 FS_CAPABILITY_MAX_AGE=2m
@@ -113,9 +113,8 @@ in the authorization.
    time-travel one production row: directory deletion would correctly remove
    its whole day while leaving sibling metadata inconsistent.
 
-Default retention is deliberately day-granular: files remain for 60 to 61
-days, then the sweeper removes the entire UTC date directory. It is not an
-exact 60-day per-object promise.
+Default retention is exactly 7 days from each upload timestamp. The sweeper
+deletes eligible objects one by one and always skips archived objects.
 
 Quota eviction is not an acceptable substitute: it proves the quota path, not
 the 60-day retention path.

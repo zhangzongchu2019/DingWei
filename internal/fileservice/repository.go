@@ -284,7 +284,7 @@ func (r *Repository) SetArchivedLocationByOwner(ctx context.Context, id, objectK
 	} else {
 		unarchivedAt = stamp(at)
 	}
-	expires := time.Date(at.UTC().Year(), at.UTC().Month(), at.UTC().Day()+1, 0, 0, 0, 0, time.UTC).Add(7 * 24 * time.Hour)
+	expires := at.UTC().Add(7 * 24 * time.Hour)
 	query := `UPDATE files SET archived=?,archived_at=?,unarchived_at=?,expires_at=? WHERE id=? AND owner_key=? AND state='ready'`
 	args := []any{value, archivedAt, unarchivedAt, stamp(expires), id, ownerKey}
 	if objectKey != "" {

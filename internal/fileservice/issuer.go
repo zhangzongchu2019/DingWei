@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -47,13 +46,10 @@ func (h IssuerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
 	switch r.URL.Path {
 	case "/internal/files/issue/retrieval":
-		if h.Capabilities == nil || req.Subject == "" || req.FileID == "" || (strings.ToUpper(req.Method) != http.MethodHead && strings.ToUpper(req.Method) != http.MethodGet) {
-			hide(w)
-			return
-		}
-		var capability Capability
-		raw, capability, err = h.Capabilities.Issue(req.Subject, req.FileID, req.Method, req.Range, ttl)
-		expiresAt = capability.ExpiresAt
+		// Frozen by owner decision 2026-09-18. Restore only with Hub head/get,
+		// GrantStore, public /files/ref/ and nginx proxy as one reviewed change.
+		hide(w)
+		return
 	case "/internal/files/issue/upload":
 		if h.Uploads == nil || req.OwnerKey == "" || req.SessionName == "" || req.MaxBytes <= 0 {
 			hide(w)
