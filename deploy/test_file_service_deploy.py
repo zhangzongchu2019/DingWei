@@ -28,6 +28,9 @@ class FileServiceDeploymentTest(unittest.TestCase):
         contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
         self.assertIn("www-data", contract)
         self.assertIn("dingwei-file-read", contract)
+        self.assertIn("file-service user `dingwei-file` and nginx user `www-data`", contract)
+        self.assertIn("Membership\n  of `dingwei-file` is required", contract)
+        self.assertIn("Do not add nginx to the `dingwei-file` primary group", contract)
         for mode in ("`0710`", "`2750`", "`0640`", "`0600`"):
             self.assertIn(mode, contract)
         self.assertIn("must never belong to\n  `dingwei-file-read`", contract)
