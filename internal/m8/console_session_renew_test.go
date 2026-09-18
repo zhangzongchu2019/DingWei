@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -72,7 +73,32 @@ func TestConsoleSessionSlidesWhenPageKeepsPolling(t *testing.T) {
 	}
 }
 
-// 🔴 组长定的硬闸:续期的 Set-Cookie 必须与登录时【逐属性】一致。
+// realLoginCookie 走一次**真实登录流程**,取登录侧实际发出的那个 Set-Cookie。
+//
+// 🔴 不能用 newConsoleSessionCookie() 造 want:那样 want 与 got 同源(都出自生产构造器),
+//    断言就退化成「续期 == 构造器」,而不是「续期 == 登录」——
+//    **登录侧被改成不走构造器时它不会红**,而那恰恰是保留这条断言唯一要防的情形。
+//    (组长 2026-09-18 复核发现;假绿的又一种:want 与 got 同源。)
+func realLoginCookie(t *testing.T) *http.Cookie {
+	t.Helper()
+	h, _ := newLoginHub(&model.ConsolePrincipal{ID: "owner-a", Active: true})
+	code, err := h.consoleLogins().issue(time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := h.dispatchConsoleLogin(context.Background(), msgFrom("ou_owner", "app"), "#console "+code); err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	h.HandleConsoleLoginStatus(rr, httptest.NewRequest(http.MethodGet, "/console/login/status?code="+code, nil))
+	cookies := rr.Result().Cookies()
+	if len(cookies) != 1 {
+		t.Fatalf("登录未发出唯一 cookie: %v", cookies)
+	}
+	return cookies[0]
+}
+
+// 🔴 组长定的硬闸:续期的 Set-Cookie 必须与**登录实际发出的那个**逐属性一致。
 // 漏一个 Secure 不会让任何断言变红,只会让 cookie 允许明文发送 ⇒ 这里逐项比。
 func TestRenewedCookieMatchesLoginCookieAttributeByAttribute(t *testing.T) {
 	now := time.Date(2026, 9, 18, 12, 0, 0, 0, time.UTC)
@@ -82,11 +108,16 @@ func TestRenewedCookieMatchesLoginCookieAttributeByAttribute(t *testing.T) {
 	if got == nil {
 		t.Fatal("未重发 cookie")
 	}
-	want := newConsoleSessionCookie("raw-a")
-	if got.Name != want.Name || got.Value != want.Value || got.Path != want.Path ||
+	want := realLoginCookie(t)
+	if got.Name != want.Name || got.Path != want.Path ||
 		got.MaxAge != want.MaxAge || got.HttpOnly != want.HttpOnly ||
 		got.Secure != want.Secure || got.SameSite != want.SameSite {
-		t.Fatalf("续期 cookie 与登录 cookie 不一致\n续期 %+v\n登录 %+v", got, want)
+		t.Fatalf("续期 cookie 与【登录实发】cookie 不一致\n续期 %+v\n登录 %+v", got, want)
+	}
+	// Value 不参与上面的比较:登录发的是它新签的 token,续期发的必须是**手上这张**。
+	// 续期若换了 token,等于把同一会话的凭据在无声中轮换掉。
+	if got.Value != "raw-a" {
+		t.Fatalf("续期必须重发原 token,实际 %q", got.Value)
 	}
 }
 

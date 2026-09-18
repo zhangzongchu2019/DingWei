@@ -46,6 +46,12 @@
 断言仍然逐项写死（`TestRenewedCookieMatchesLoginCookieAttributeByAttribute`），
 因为「共用构造器」这件事**本身也可能将来被人拆开**。
 
+🔴 **该断言首版是空的**（组长 2026-09-18 复核打变异发现）：`want` 用 `newConsoleSessionCookie()` 造，
+与 `got` **同源** ⇒ 测的是「续期 == 构造器」而非「续期 == 登录」，登录侧怎么改它都不红。
+已改为 `want` 取自**一次真实登录流程的 `Set-Cookie`**；`Value` 另立一条断言
+（续期必须重发手上那张 token，不得无声轮换）。两发变异（登录侧降级 / 续期侧降级）现各自变红，
+见 `runbooks/EVIDENCE-D1-mutation-20260918.md` §2.1。
+
 ## 4. 证据（值，不给结论）
 
 ### 4.1 单测
@@ -90,7 +96,7 @@
     2fc0be99900f6a6a35919ee80422cc363dc0bdf4ffb7318ba6d29ed6442ac3d6  internal/m8/hub.go
     509e276367fb0c3bf34b3f56726ccf4d312b4ba543c174affbad5129bdafc2db  internal/store/console_auth.go
     68d5cbd5b96043f64cde825a7aab9db02f60f2f7f65109601276ec0740a3dda1  internal/model/model.go
-    63b8215e58065a50680fca527033b4d5e3215b7727523efb66011641af932ff5  internal/m8/console_session_renew_test.go
+    efecc2141a3677344d844aee3b0e021369539a504c61259dc85decdff672eeb6  internal/m8/console_session_renew_test.go
     18a3956f01abf584d9975d6452632bc544f2a6f8dc4b05738d5c48cc03f3add1  internal/store/console_auth_touch_test.go
 
 ### 4.4 顺带被既有不变量抓了一次

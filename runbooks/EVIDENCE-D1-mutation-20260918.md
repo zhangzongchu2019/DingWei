@@ -31,6 +31,32 @@
 
 （M5~M7b 的 FAIL 计数为 2 是因为父用例 `TestTouchConsoleSessionGuards` 与其子用例各计一行。）
 
+### 2.1 🔴 组长复核补打的两发（2026-09-18T13:10Z，锚 `82b27dd0`）
+
+组长按纪律丁在**我自己点名的那个风险场景**上打了一发，打出了一条**空断言**：
+
+| 变异 | 执行 | PASS/FAIL | 结果 |
+|---|---|---|---|
+| **M8** 登录侧（`console_login.go:244`）拆出构造器 ＋ `Secure: true→false` | 376 | 374/2 | `TestConsoleLoginHTTPPageToCookie`（既有）<br>`TestRenewedCookieMatchesLoginCookieAttributeByAttribute`（**修复后才红**） |
+| **M9** 对称：**续期侧**拆出构造器 ＋ `Secure: true→false` | 376 | 375/1 | `TestRenewedCookieMatchesLoginCookieAttributeByAttribute` |
+
+**修复前 M8 下我那条断言是绿的**，因为：
+
+    want := newConsoleSessionCookie("raw-a")   // ← want 与 got 同源，都出自生产构造器
+
+⇒ 它断言的是「续期 == 构造器」，**不是**「续期 == 登录」。
+而我保留这条断言的**唯一理由**就是「共用构造器将来可能被拆开」——
+**那正是它兜不住的那一种**。名字叫 `MatchesLoginCookie`，测的却不是登录。
+
+**已改**：`want` 改为走一次**真实登录流程**（`consoleLogins().issue` → `dispatchConsoleLogin`
+→ `HandleConsoleLoginStatus`）后取其实际 `Set-Cookie`，再逐属性比对。
+`Value` 不参与属性比对（登录发新签的 token，续期必须发**手上这张**），
+另立一条断言 `got.Value == "raw-a"` —— **续期若换 token，等于把凭据在无声中轮换掉**。
+
+📌 **假绿的又一种：`want` 与 `got` 同源。**
+它比「断言恒真」更难看出来，因为断言里有真实的比较、有真实的两个对象，
+只是**两个对象来自同一个源头**。一个测试名字里写着 A 对 B，实际测的是 B 对 B。
+
 🔴 **M6 / M7 的第一版是粗变异**（把 SQL 条件改成 `?=?`），它连正例一起打红 ——
 **那只能证明「动了会红」，不能证明「这道守卫被那条阴性对照盯着」**。
 M6b / M7b 是删掉整个条件并同步去掉参数的**外科式变异**，各自只打中对应的那一条阴性对照。
@@ -66,5 +92,5 @@ M6b / M7b 是删掉整个条件并同步去掉参数的**外科式变异**，各
 
 ## 5. 结论边界
 
-本件只证明：**上述七道守卫各自被至少一条用例盯着，且那些用例在整包跑里确实被执行。**
+本件只证明：**上述九个变异各自被至少一条用例盯着，且那些用例在整包跑里确实被执行。**
 不证明：守卫本身在生产语义下正确（那要真环境），也不证明没有第八道该有而未写的守卫。
