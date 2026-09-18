@@ -151,3 +151,44 @@ R1 要的是「每个文件都被看见过」，那本来就是时间上的性�
     f6d03a8f026f533bd3b176ccd81f47d66f608e68a00fc5f15829ca637079854a  view-service/renderer-canary-sse.html
     4fdca73de5ac63bf345b77da8580781f18029231b7ba35a4fa1f1d329f9d87d0  view-service/renderer-0206-file-render-regression.js
     52c885c09e405e8f4feb87bcc0c5fe793a003fc46e41b9ea5b5b0ce3311a4076  view-service/renderer-t147-paste-regression.js
+
+
+## 9. 契约 `cb8ac605` 第④条：我实测了，不是接受它（2026-09-18T23:50Z）
+
+组长判「A 线反向映射表**不必**为外-A 新增条目，查不到即落 `download` 兜底，行为已正确」。
+这条关系到业主那个 docx，我实跑而不是照收 —— **两条路径 × 七种扩展名**：
+
+    HEAD 可用（Content-Type: octet-stream ＋ attachment）
+      docx xlsx pptx doc xls ppt zip  →  dispatch=head  inline=0  links=1   ✅
+    HEAD 不可用（降级按扩展名）
+      docx xlsx pptx doc xls ppt zip  →  dispatch=ext   inline=0  links=1   ✅
+
+⇒ **组长判断成立**，表不必动。新增用例 ⑬ 固化这 14 格。
+**变异 X1**（往降级表里误加 `docx: 'text'`）⇒ 红 ⑬：`ext/docx 不得内联，实测 inline=1`。
+
+### 9.1 🔴 打 ⑬ 的变异时，发现 attachment 头那道守卫**从未被用到**
+
+**变异 X2**（把 `disposition.includes('attachment')` 整段去掉）⇒ ⑬ **仍全绿**。
+原因：外-A 的 `Content-Type` 本就是 `octet-stream`，
+`kindFromMediaType` 自己就返回 `download` ⇒ **⑬ 走的根本不是那道守卫**。
+能分辨它的只有「**可内联的类型 ＋ attachment**」这一格 —— 而此前无人测。
+
+**已补 ⑬b**：服务端声明 `image/png` 但带 `Content-Disposition: attachment` ⇒ 必须下载。
+
+### 9.2 🔴 ⑬b 第一版**也是空的**，我自己又踩了一次
+
+⑬b 首版的 GET 正文是假字节 `'x'`。结果：没有守卫时 `<img>` 因加载失败**自行降级**成下载链接
+⇒ 断言在「守卫在」和「守卫没了」两种情况下**都绿**（实测 X2 零转红）。
+**换成真 PNG 字节后**，X2c ⇒ 红 ⑬b：`{"d":"head","img":1,"links":0}`。
+
+📌 记法：**当被测行为的失败路径与正确行为的结果相同，PoC 的素材必须让两者分开。**
+假素材会让「产品做对了」和「产品做错但恰好也降级了」看起来一样 ——
+这和「粗变异」「want/got 同源」是同一族：**证据看起来有，分辨力是零。**
+
+### 9.3 本节证据
+
+    浏览器 23/23（新增 ⑬ ⑬b） · 单元 8/8
+    X1 ⇒ 红 ⑬ · X2c ⇒ 红 ⑬b，各只红它针对的那一条
+    产品文件本节未改动（⑬/⑬b 只加测试）⇒ 巡检期望值无需回写
+
+    e98666890787d237b178bc4d67502f5270e65911c36d6c9c70b681381c4417d0  view-service/renderer-0206-file-render-regression.js

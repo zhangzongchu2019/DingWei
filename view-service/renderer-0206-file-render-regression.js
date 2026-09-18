@@ -579,6 +579,68 @@ async function t(name, fn) {
     }
   });
 
+  // ── ⑬ 契约 cb8ac605 第④条:外-A 七种扩展名在**两条路径**上都必须落下载兜底 ────
+  //     组长判断「反向映射表不必新增条目,查不到即落 download」——
+  //     这条判断关系到业主的 docx,我实测一次而不是接受它。
+  await t('⑬ 外-A(docx/xlsx/pptx/doc/xls/ppt/zip)在 HEAD 与降级两条路径上都只给下载链接', async () => {
+    for (const mode of ['head', 'ext']) {
+      for (const ext of ['docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt', 'zip']) {
+        const url = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/0123456789abcdef0123456789abc${ext.length}f0.${ext}`;
+        await page.route(url, (route) => {
+          if (route.request().method() === 'HEAD') {
+            return mode === 'head'
+              ? route.fulfill({ status: 200, headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': 'attachment', 'Content-Length': '64' } })
+              : route.fulfill({ status: 405, body: '' });
+          }
+          return route.fulfill({ status: 200, contentType: 'application/octet-stream', body: 'x' });
+        });
+        try {
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+          await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), url);
+          await page.waitForSelector('.attachments .attachment', { timeout: 15000 });
+          const got = await page.evaluate(() => {
+            const a = document.querySelector('.attachments .attachment');
+            return { d: a.dataset.dispatch, inline: a.querySelectorAll('img,video,iframe,pre').length, links: a.querySelectorAll('a.attachment-dl').length };
+          });
+          assert.strictEqual(got.inline, 0, `${mode}/${ext} 不得内联，实测 ${JSON.stringify(got)}`);
+          assert.ok(got.links >= 1, `${mode}/${ext} 必须给下载链接，实测 ${JSON.stringify(got)}`);
+        } finally {
+          await page.unroute(url).catch(() => {});
+        }
+      }
+    }
+  });
+
+  // ── ⑬b attachment 头本身的守卫:可内联的类型 ＋ attachment ⇒ 仍须下载 ──────
+  //     🔴 这条是打 ⑬ 的变异时发现的缺口:外-A 的 Content-Type 本就是 octet-stream,
+  //     所以 ⑬ 走的是 kindFromMediaType 那一支,**disposition 那道守卫从未被用到**
+  //     (实测:把它整段去掉,⑬ 仍全绿)。能分辨它的只有「可内联类型 ＋ attachment」这一格。
+  await t('⑬b 服务端说 image/png 但带 Content-Disposition: attachment ⇒ 必须下载,不内联', async () => {
+    const url = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/0123456789abcdef0123456789abcdef.png`;
+    await page.route(url, (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 200, headers: { 'Content-Type': 'image/png', 'Content-Disposition': 'attachment', 'Content-Length': '64' } })
+      // 🔴 正文必须是**真 PNG**：用假字节的话，没有守卫时 <img> 也会因加载失败而自行降级，
+      //    于是这条断言在「守卫在」和「守卫没了」两种情况下都绿 —— 变异被自己的 PoC 掩盖。
+      //    （实测过：假字节时 X2 变异零转红。）
+      : route.fulfill({ status: 200, contentType: 'image/png', body: fs.readFileSync(fx('sample.png')) })));
+    try {
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+      await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), url);
+      await page.waitForSelector('.attachments .attachment', { timeout: 15000 });
+      const got = await page.evaluate(() => {
+        const a = document.querySelector('.attachments .attachment');
+        return { d: a.dataset.dispatch, img: a.querySelectorAll('img').length, links: a.querySelectorAll('a.attachment-dl').length };
+      });
+      assert.strictEqual(got.d, 'head', `应走 HEAD 支: ${JSON.stringify(got)}`);
+      assert.strictEqual(got.img, 0, `服务端说要当附件下,就不得内联: ${JSON.stringify(got)}`);
+      assert.ok(got.links >= 1, `必须给下载链接: ${JSON.stringify(got)}`);
+    } finally {
+      await page.unroute(url).catch(() => {});
+    }
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;
