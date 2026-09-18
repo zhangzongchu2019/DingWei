@@ -229,6 +229,23 @@ async function t(name, fn) {
     await page.unroute(target);
   });
 
+  // ── ④g 附录 E：image/svg+xml 不内联 —— SVG 能内嵌脚本 ─────────────
+  await t('④g 服务端声明 image/svg+xml 时不内联，走下载链接（附录 E）', async () => {
+    const target = (carriedUrls.match(/https:\/\/[^\s(]+\.bin/u) || [])[0];
+    assert.ok(target, '需要一个真实直链');
+    await page.route(target, (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 200, headers: { 'Content-Type': 'image/svg+xml', 'Content-Length': '64' } })
+      : route.continue()));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), target);
+    await page.waitForSelector('.attachment[data-dispatch="head"]', { timeout: 20000 });
+    assert.strictEqual(await page.locator('.attachment img').count(), 0, 'svg 不得进 <img>');
+    assert.strictEqual(await page.locator('.attachment iframe').count(), 0, 'svg 不得进 <iframe>');
+    assert.strictEqual(await page.locator('.attachment a.attachment-dl').count(), 1, 'svg 应给下载链接');
+    await page.unroute(target);
+  });
+
   // ── ④b mp4：本浏览器解不了该编码时也要有出路，绝不留裸 URL ─────
   await t('④b mp4（本 chromium 无 h264 解码器）降级为下载链接，不报错、不留裸 URL', async () => {
     const before = await page.locator('.attachment').count();

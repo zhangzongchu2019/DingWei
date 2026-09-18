@@ -2511,6 +2511,10 @@
 
     function kindFromMediaType(mt) {
       if (!mt) return '';
+      // 🔴 附录 E：SVG 可内嵌脚本 ⇒ 不内联，走下载链接。
+      //    经 <img> 加载的 SVG 浏览器本就禁脚本，B 线也已把它排除在白名单外 ——
+      //    但那是【别人线上的两个前提】，任一被改动这里就破了，所以本侧自己也挡一道。
+      if (mt === 'image/svg+xml') return 'download';
       if (mt.startsWith('image/')) return 'image';
       if (mt.startsWith('video/')) return 'video';
       if (mt === 'application/pdf') return 'pdf';

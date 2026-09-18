@@ -46,18 +46,18 @@
 | S7 | 内联失败（图片加载错 / 视频解不了码 / 无 PDF 阅读器）一律降级为下载链接 | 业主「不能显示的，直接给出下载链接」 | 无 |
 | S8 | HEAD 非 404 的失败（405/403/网络错）一律走扩展名降级；**只有 404 判为「已清理」** | 404 是「确实没有」，其余是「问不到」，两者表现不该相同 | 若 nginx 对缺件返 403，会被当成降级而非过期 |
 | S9 | 同一 URL 全页只发一次 HEAD（Promise 级缓存） | 流式重渲每 chunk 都会重扫正文 | 无 |
-| S10 | 服务端声明 `text/*`（不只 `text/plain`）一律内联，且**只走 `<pre>` 的 `textContent`** | §3.2 的表写的是 `text/*`，A5 白名单只放 `text/plain`；权威值是响应头（B2）。走 textContent ⇒ `text/html` 显示源码、不被执行，比 iframe 安全 | 若业主要求 html 渲染成页面，需另裁（我不会自行开这个口子） |
+| S10（已由附录 E 裁定采纳） | 服务端声明 `text/*`（不只 `text/plain`）一律内联，且**只走 `<pre>` 的 `textContent`** | §3.2 的表写的是 `text/*`，A5 白名单只放 `text/plain`；权威值是响应头（B2）。走 textContent ⇒ `text/html` 显示源码、不被执行，比 iframe 安全 | 若业主要求 html 渲染成页面，需另裁（我不会自行开这个口子） |
 
 ## 3. 证据（值，不给结论）
 
 ### 3.1 交付物哈希
 
-    52d77cbc50f0ac690a887e03486ddbd7017e603db0fb20ea68ff00caad83d526  view-service/renderer-canary-sse.html
-    fd5c4b4bc3d29134911d336febeb0f5fee29291195d5d88eb470e5f144e38281  view-service/renderer-0206-file-render-regression.js
+    bcf277bad7440ede6181cd1178bf83338bdbe78fb516c4c4659677c244a0e2ac  view-service/renderer-canary-sse.html
+    64819627f0949641e277320234910a80f9be0f6fdaf1af51d2a34fc3f19f928e  view-service/renderer-0206-file-render-regression.js
     2f4757ce8568c7b4745cbffc58f78dee4339861856addeac33d252841237fe15  view-service/renderer-0206-contract-mock.py
     07d5515ba72605e237d1a745f34dc28cc8d5b8dc17ebe0c4db38087156347032  view-service/renderer-t147-paste-regression.js
 
-### 3.2 功能级验收：真浏览器、真文件、真上传（14/14）
+### 3.2 功能级验收：真浏览器、真文件、真上传（15/15）
 
     ①  上传入口在界面上可见（文件选择按钮），不是只有隐藏的 paste 监听器
     ②  文件选择一次传 6 个不同类型（图片/视频/pdf/文本/office/未知二进制）
@@ -67,7 +67,8 @@
     ④c HEAD 被拒（405）时按 URL 扩展名降级分派，且标出「已降级」            ← 降级分支
     ④d 文件已被清理（HEAD 404）时给出「已不可取」，不是坏掉的 <img> 也不是裸 URL ← 过期链接
     ④e 扩展名与 Content-Type 【故意不一致】时以服务端声明的头为准          ← 唯一能分辨 (b)/(b′) 的用例
-    ④f 服务端声明 text/* 即内联；text/html 以【源码文本】显示，脚本不被执行
+    ④f 服务端声明 text/* 即内联；text/html 以【源码文本】显示，脚本不被执行      ← 附录 E
+    ④g image/svg+xml 不内联，走下载链接（SVG 可内嵌脚本）                       ← 附录 E
     ④b mp4（本 chromium 无 h264 解码器）降级为下载链接，不报错、不留裸 URL
     ⑤  拖放一次拖入 2 个文件，两个都上传
     ⑥  粘贴一个 pdf（非图片）也上传 —— 原实现只接 image/*
