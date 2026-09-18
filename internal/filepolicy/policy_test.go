@@ -62,3 +62,15 @@ func TestDefaultRetentionMatchesContract(t *testing.T) {
 		t.Fatalf("DefaultRetention=%s", DefaultRetention)
 	}
 }
+
+func TestDeploymentContractMatchesFilePolicy(t *testing.T) {
+	contract := mustRead(t, "../../deploy/H-FILE-SERVICE-DEPLOYMENT.md")
+	for _, setting := range []string{
+		"FS_RETENTION=168h",
+		"FS_MAX_FILE_BYTES=52428800",
+	} {
+		if count := strings.Count(contract, setting); count != 1 {
+			t.Fatalf("deployment setting %q count=%d", setting, count)
+		}
+	}
+}

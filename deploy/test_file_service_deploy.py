@@ -8,6 +8,11 @@ DEPLOY = ROOT / "deploy"
 
 
 class FileServiceDeploymentTest(unittest.TestCase):
+    def test_owner_selected_limits_are_pinned_in_deployment_contract(self):
+        contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
+        self.assertEqual(contract.count("FS_RETENTION=168h"), 1)
+        self.assertEqual(contract.count("FS_MAX_FILE_BYTES=52428800"), 1)
+
     def test_service_is_supervised_and_write_scope_is_explicit(self):
         text = (DEPLOY / "file-service.service").read_text()
         self.assertIn("ExecStart=/opt/dingwei/file-service/bin/file-service", text)
