@@ -111,6 +111,36 @@
 **当时自动化断言是绿的**（只断言了「大文本要有截断说明」），**是看截图发现的**。
 已改为按 `Content-Range` 的 `end+1 < total` 判定，并补了「小文本不得出现截断说明」的反向断言。
 
+## 4.5 巡检期望值回写（组长 2026-09-18T12:04Z 扩范围后追加）
+
+改 `renderer-canary-sse.html` 会打破 `deploy/invariants-dingwei-gray.json` 的
+`renderer-matches-anchor`（它把该文件的 sha256 钉死）。组长立的通则：
+**期望值的更新归属于使它失效的那次改动，不归属于发版。** 据此回写：
+
+    want  cb3c4ac8a847cd981bcc8d8003fa0f3839b75457a1be4d7095821e615730340a   ← 基线 27abfcf0 的 renderer
+      →   bcf277bad7440ede6181cd1178bf83338bdbe78fb516c4c4659677c244a0e2ac   ← 本分支的 renderer（已核，逐字相等）
+
+另核过：同文件另两条钉仓内文件的断言（`view_service.py` / `view_page_store.py`）
+**本分支均未改动**，不需回写；`workpulse-binary-matches-expected` 的期望值来自部署期环境变量
+`DW_EXPECT_WORKPULSE_SHA`，不在仓内，**D1 改动 workpulse 二进制也不需要在仓内回写**。
+
+### 🔴 我多做了一步：让这件事不再依赖记性
+
+新增 `deploy/test_invariants_expected_hashes.py`（**我自选，可删**）：
+把巡检里「钉仓内文件哈希」的期望值与真实文件焊在一起。
+
+    test_every_pinned_expectation_matches_the_repo_file   改了被钉住的文件却没回写 ⇒ 红
+    test_registry_covers_every_repo_file_pin              新增一条钉文件的巡检项却没登记 ⇒ 红
+
+变异验证（两发都只红它针对的那一条）：
+
+    I1 把 want 改回旧值（模拟忘了回写）        → 红 test_every_pinned_...，并打印实际/期望两个值
+    I2 新增一条钉文件的巡检项但不登记 PINNED   → 红 test_registry_covers_...
+
+**它替代不了发版当天的 ⑬ 闸**（那条在真实产物上重算），只是把**仓内**这一半提前到改动发生的那一刻。
+📌 做这一步的理由就写在那条被修过一次的提交标题里：「我写下规矩的下一版就自己忘了」——
+**一条只靠记性维持的耦合，迟早会以「部署出错」的面目复发一次。**
+
 ## 5. 未闭合 / 属于别的线（我停在这里，没动）
 
 1. **上传依赖 B 线返回 `url`**。基线 `internal/fileservice/http.go:70-75` 现返回
