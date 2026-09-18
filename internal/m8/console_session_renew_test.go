@@ -119,6 +119,14 @@ func TestRenewedCookieMatchesLoginCookieAttributeByAttribute(t *testing.T) {
 	if got.Value != "raw-a" {
 		t.Fatalf("续期必须重发原 token,实际 %q", got.Value)
 	}
+	// 🔴 上面比的是「续期 == 登录」,那是**一致性**,不是**正确性**:
+	//    两侧【一致地】变差(共用构造器本身被降级)时,一致性断言全绿。
+	//    实证:把 newConsoleSessionCookie 的 Secure 改成 false,本条曾仍 PASS,
+	//    只有既有的 TestConsoleLoginHTTPPageToCookie 变红 —— 保障落在别人的测试上。
+	//    ⇒ 这里再钉一遍绝对属性,不依赖另一条测试继续存在。
+	if !got.Secure || !got.HttpOnly || got.SameSite != http.SameSiteLaxMode || got.Path != "/" {
+		t.Fatalf("续期 cookie 的绝对属性不合格: %+v", got)
+	}
 }
 
 func TestConsoleSessionNotRenewedWhileMoreThanHalfRemains(t *testing.T) {
