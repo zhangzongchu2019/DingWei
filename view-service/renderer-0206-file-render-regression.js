@@ -29,6 +29,7 @@ async function t(name, fn) {
   const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   const uploadCalls = [];
+  let carriedUrls = '';   // ② 里传上去的 6 个 URL；刷新后输入框会清空，靠它跨用例传递
   page.on('request', (req) => { if (req.url().endsWith('/files/upload')) uploadCalls.push(req.url()); });
   page.on('console', (m) => { if (m.type() === 'error') console.log('    [console.error]', m.text()); });
 
@@ -113,10 +114,11 @@ async function t(name, fn) {
   });
 
   // ── ④a 🔴 接收方路径：只有 URL、没有上传响应（附录 B2 真正要解决的那一半）──
-  //     刷新页面 ⇒ uploadedFileHints 清空 ⇒ 只能靠 URL 扩展名分派。
+  //     刷新页面 ⇒ uploadedFileHints 清空 ⇒ 只能靠 HEAD 读服务端声明的 Content-Type。
   //     这一条覆盖「不同 Agent 之间互传」：接收方从来没见过那个上传响应。
-  await t('④a 接收方只拿到 URL（页面刷新后 hints 清空）仍按扩展名正确分派', async () => {
-    const carried = await page.inputValue('#humanInput');
+  await t('④a 接收方只拿到 URL（页面刷新后 hints 清空）⇒ 靠 HEAD 读服务端声明分派', async () => {
+    carriedUrls = await page.inputValue('#humanInput');
+    const carried = carriedUrls;
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
     const hints = await page.evaluate(() => uploadedFileHints.size);
@@ -130,7 +132,46 @@ async function t(name, fn) {
     const binLinks = await page.locator('.attachment a.attachment-dl[href$=".bin"]').count();
     assert.ok(binLinks >= 2, `.bin 必须走下载链接，实际 ${binLinks}`);
     assert.strictEqual(await page.locator('.attachments .attachment-note').count(), 0, '小文本不该报截断');
-    await page.screenshot({ path: path.join(SHOTS, '02b-receiver-side-by-extension.png'), fullPage: true });
+    // 附录 B2 (b′)：接收方一侧的类型必须来自**服务端声明的头**，不是 URL 扩展名的再解释。
+    const heads = await page.locator('.attachment[data-dispatch="head"]').count();
+    assert.ok(heads >= 6, `接收方的 6 张都应由 HEAD 定类型，实际 ${heads}`);
+    await page.screenshot({ path: path.join(SHOTS, '02b-receiver-side-by-head.png'), fullPage: true });
+  });
+
+  // ── ④c 🔴 降级分支：nginx 若不放行 HEAD，必须退回扩展名分派而不是整个瞎掉 ──
+  //     组长明示：`limit_except GET` 放行 HEAD 只从文档知道、未实测（prodops 在 H 收尾验）。
+  //     实测通过前这条分支必须存在且被测到。
+  await t('④c HEAD 被拒（405）时按 URL 扩展名降级分派，且标出「已降级」', async () => {
+    const carried = carriedUrls;
+    await page.route('**/f/**', (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 405, body: '' })
+      : route.continue()));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    await page.evaluate((body) => handleIncomingEvent({ kind: 'user_input', text: body, ts: Date.now() }), carried);
+    await page.waitForFunction(() => document.querySelectorAll('.attachment[data-dispatch="ext"]').length >= 6, null, { timeout: 30000 });
+    assert.strictEqual(await page.locator('.attachment[data-dispatch="head"]').count(), 0, 'HEAD 已被拒，不该还有 head 级分派');
+    // 降级之后类型仍要对：.png→img、.webm→video、.pdf→iframe、.txt→pre、.bin→下载链接
+    assert.strictEqual(await page.locator('.attachment[data-dispatch="ext"] img').count(), 1, '降级后 .png 仍应内联');
+    assert.strictEqual(await page.locator('.attachment[data-dispatch="ext"] video').count(), 1, '降级后 .webm 仍应内联');
+    assert.strictEqual(await page.locator('.attachment[data-dispatch="ext"] iframe').count(), 1, '降级后 .pdf 仍应内联');
+    assert.ok(await page.locator('.attachment[data-dispatch="ext"] a.attachment-dl[href$=".bin"]').count() >= 2, '降级后 .bin 仍走下载链接');
+    const note = await page.locator('.attachment[data-dispatch="ext"] .attachment-note').first().textContent();
+    assert.ok(note.includes('降级'), '降级必须在界面上说明，不许静默');
+    await page.screenshot({ path: path.join(SHOTS, '02c-degraded-by-extension.png'), fullPage: true });
+  });
+  await page.unroute('**/f/**');   // 🔴 无论 ④c 过没过都要摘掉，否则后面每一条都被它污染
+
+  // ── ④d 过期链接：7 天保留期到了，HEAD 自然 404 ⇒ 如实说，不画坏图 ──────
+  await t('④d 文件已被清理（HEAD 404）时给出「已不可取」，不是坏掉的 <img> 也不是裸 URL', async () => {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    const gone = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/deadbeefdeadbeefdeadbeefdeadbeef.png`;
+    await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: `过期件：${u}`, ts: Date.now() }), gone);
+    await page.waitForSelector('.attachment[data-dispatch="gone"]', { timeout: 20000 });
+    const note = await page.locator('.attachment[data-dispatch="gone"] .attachment-note').textContent();
+    assert.ok(note.includes('不可取'), `应如实说明已不可取，实际「${note}」`);
+    assert.strictEqual(await page.locator('.attachment[data-dispatch="gone"] img').count(), 0, '不得为已清理的文件画 <img>');
   });
 
   // ── ④b mp4：本浏览器解不了该编码时也要有出路，绝不留裸 URL ─────

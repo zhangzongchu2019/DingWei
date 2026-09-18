@@ -2428,11 +2428,15 @@
 
     // ══ 0.2.0.6 A 线：正文区按类型自动渲染（业主第 2 条）══════════════════
     // 契约 §3.2 · 附录 A5 · 🔴 附录 B2（组长 2026-09-18 裁定，取 (b)）。口径三条：
-    //   1. **本页本次上传**（手上有上传响应）⇒ 用响应里的 media_type，最准；
-    //      **收到的消息**（只有一个 URL）⇒ 用 URL 里的扩展名。
-    //      🔴 这不是「靠扩展名猜」：原规则针对的是**上传者自带的文件名扩展名**（可控 ⇒ 不可信），
-    //      而 URL 里这个扩展名是**服务端按 A5 白名单从 media_type 生成**的忠实投影 ⇒ 可信。
-    //      取 (b) 而不是「只渲本页本次上传」，是因为业主要的是 **Agent 之间互传** ——
+    //   1. 分派依据三级，按权威性排序（附录 B2 改裁为 (b′)）：
+    //      ① **本页本次上传** ⇒ 用上传响应里的 media_type（§2 的四字段之一，最准）
+    //      ② **收到的消息** ⇒ 发 HEAD 读**服务端声明的 Content-Type**。
+    //         那是权威值；URL 扩展名只是对权威值的再解释。A5 保证这个头是对的。
+    //         HEAD 返回 404 ⇒ 文件已过 7 天保留期被清掉，如实说「已不可取」，不画一个坏掉的 <img>。
+    //      ③ 🔴 **降级**：HEAD 不被放行 / 网络出错 ⇒ 退回 URL 扩展名分派。
+    //         组长明示 nginx `limit_except GET` 放行 HEAD **只从文档知道、未实测**
+    //         （已派 prodops 在 H 收尾实测），实测通过前这条降级分支必须在。
+    //      取 (b′) 而不是「只渲本页本次上传」，是因为业主要的是 **Agent 之间互传** ——
     //      接收方根本没见过那个上传响应。
     //   2. 🔴 渲染不了的一律给下载链接。不是报错，不是留一串裸 URL 文本。
     //   3. 只认本站 /f/ 直链（附录 A1 的 URL 前缀），不对任意外站 URL 做任何请求。
@@ -2462,7 +2466,28 @@
       return String(raw).replace(/[.,;:!?，。；：！？、)\]}」』>]+$/u, '');
     }
 
-    // 附录 A5 那张白名单的**反向映射**。B 线落地时按同一张表写死；
+    const fileMetaCache = new Map();   // url -> Promise<meta|'gone'|null>；同一 URL 全页只探一次
+
+    // HEAD 探测：ok ⇒ 服务端声明；404 ⇒ 文件已被清理；其余(405/403/网络错) ⇒ null ⇒ 走扩展名降级。
+    function probeFileMeta(url) {
+      if (fileMetaCache.has(url)) return fileMetaCache.get(url);
+      const task = fetch(url, { method: 'HEAD' })
+        .then((res) => {
+          if (res.ok) {
+            return {
+              mediaType: String(res.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase(),
+              disposition: String(res.headers.get('Content-Disposition') || '').toLowerCase(),
+              size: Number(res.headers.get('Content-Length')) || 0,
+            };
+          }
+          return res.status === 404 ? 'gone' : null;
+        })
+        .catch(() => null);
+      fileMetaCache.set(url, task);
+      return task;
+    }
+
+    // 附录 A5 那张白名单的**反向映射**，只在 HEAD 不可用时作降级依据。
     // 🔴 表外的扩展名（含 .bin）一律下载链接，不尝试内联。
     const FILE_EXT_KIND = {
       png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image',
@@ -2484,19 +2509,16 @@
       } catch { return ''; }
     }
 
-    // 分派依据：本页本次上传优先用响应的 media_type（附录 B2 上半行），
-    // 否则用 URL 扩展名（附录 B2 下半行）。两条都命不中 ⇒ 下载链接。
-    function fileKindOf(url, hint) {
-      const mt = hint?.mediaType || '';
-      if (mt) {
-        if (mt.startsWith('image/')) return 'image';
-        if (mt.startsWith('video/')) return 'video';
-        if (mt === 'application/pdf') return 'pdf';
-        if (mt === 'text/plain') return 'text';
-        return 'download';
-      }
-      return FILE_EXT_KIND[fileExtOf(url)] || 'download';
+    function kindFromMediaType(mt) {
+      if (!mt) return '';
+      if (mt.startsWith('image/')) return 'image';
+      if (mt.startsWith('video/')) return 'video';
+      if (mt === 'application/pdf') return 'pdf';
+      // A5 白名单内的文本只有 text/plain；其余 text/* 在服务端已落成 .bin ＋ attachment。
+      if (mt === 'text/plain') return 'text';
+      return 'download';
     }
+    function kindFromExt(url) { return FILE_EXT_KIND[fileExtOf(url)] || 'download'; }
 
     function fileNameFromUrl(url) {
       try { return decodeURIComponent(new URL(url, location.href).pathname.split('/').pop() || '') || '文件'; }
@@ -2565,12 +2587,48 @@
     async function buildFileAttachment(url) {
       const hint = uploadedFileHints.get(url) || null;
       const ext = fileExtOf(url);
-      const meta = {
-        mediaType: hint?.mediaType || FILE_EXT_LABEL[ext] || (ext ? `.${ext}` : ''),
-        size: hint?.size || 0,
-      };
+      let kind = '';
+      let meta = { mediaType: '', size: 0 };
+      let source = '';
+      if (hint?.mediaType) {
+        // ① 本页本次上传：手上就有 §2 的 media_type，不必再问服务端。
+        meta = { mediaType: hint.mediaType, size: hint.size };
+        kind = kindFromMediaType(hint.mediaType);
+        source = 'upload';
+      } else {
+        const probed = await probeFileMeta(url);
+        if (probed === 'gone') {
+          // ② HEAD 404：7 天保留期到了、文件已被清掉。如实说，不画坏图也不假装能下。
+          source = 'gone';
+        } else if (probed) {
+          meta = { mediaType: probed.mediaType, size: probed.size };
+          // 服务端明说要当附件下（A5：白名单外 ⇒ octet-stream ＋ attachment），照办。
+          kind = probed.disposition.includes('attachment') ? 'download' : kindFromMediaType(probed.mediaType);
+          source = 'head';
+        } else {
+          // ③ 降级：HEAD 不被放行或网络出错 ⇒ 退回扩展名。
+          //    nginx 放行 HEAD 尚未实测（prodops 在 H 收尾验），这条分支在实测通过前必须在。
+          meta = { mediaType: FILE_EXT_LABEL[ext] || (ext ? `.${ext}` : ''), size: 0 };
+          kind = kindFromExt(url);
+          source = 'ext';
+        }
+      }
       const box = fileAttachmentShell(url, meta, hint);
-      switch (fileKindOf(url, hint)) {
+      box.dataset.dispatch = source;   // 供验收断言「这一张是靠哪一级定的类型」
+      if (source === 'gone') {
+        const note = document.createElement('div');
+        note.className = 'attachment-note';
+        note.textContent = '文件已不可取（服务端 404）——可能已过 7 天保留期被清理';
+        box.append(note, fileDownloadLink(url, '仍要试着打开'));
+        return box;
+      }
+      if (source === 'ext') {
+        const note = document.createElement('div');
+        note.className = 'attachment-note';
+        note.textContent = 'HEAD 不可用，已按 URL 扩展名降级分派';
+        box.appendChild(note);
+      }
+      switch (kind) {
         case 'image': {
           const img = document.createElement('img');
           img.src = url;
