@@ -154,6 +154,20 @@ func TestLocalPutRefusesSymlinkDirectoryComponent(t *testing.T) {
 	}
 }
 
+func TestLocalDeleteRejectsInvalidObjectKeyShape(t *testing.T) {
+	s := newLocalStore(t)
+	key := "files/26/0918/not-a-valid-object-key"
+	if err := s.Put(context.Background(), key, strings.NewReader("keep"), 4, "application/octet-stream"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Delete(context.Background(), key); err == nil {
+		t.Fatal("Delete accepted an invalid object-key shape")
+	}
+	if b, err := os.ReadFile(mustPath(t, s, key)); err != nil || string(b) != "keep" {
+		t.Fatalf("invalid-key object changed: bytes=%q err=%v", b, err)
+	}
+}
+
 func TestPerFileSweepKeepsArchivedObjectAtStablePath(t *testing.T) {
 	s := newLocalStore(t)
 	r, err := OpenRepository(filepath.Join(t.TempDir(), "meta.db"))
@@ -203,7 +217,7 @@ func TestPerFileSweepKeepsArchivedObjectAtStablePath(t *testing.T) {
 	}
 }
 
-func TestLocalDeleteRejectsInvalidObjectKeyShape(t *testing.T) {
+func TestLocalDeleteRejectsDisallowedExtension(t *testing.T) {
 	s := newLocalStore(t)
 	key := "owner/agent/26/0918/0123456789abcdef0123456789abcdef.exe"
 	if err := s.Put(context.Background(), key, strings.NewReader("keep"), 4, "application/octet-stream"); err != nil {
