@@ -232,6 +232,28 @@ func TestLocalDeleteRejectsInvalidObjectKeyShape(t *testing.T) {
 	}
 }
 
+func TestLocalDeleteRejectsSymlinkTarget(t *testing.T) {
+	s := newLocalStore(t)
+	key := "owner/agent/26/0918/0123456789abcdef0123456789abcdef.bin"
+	path, _ := s.path(key)
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "outside")
+	if err := os.WriteFile(outside, []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, path); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Delete(context.Background(), key); err == nil {
+		t.Fatal("symlink target accepted")
+	}
+	if b, _ := os.ReadFile(outside); string(b) != "keep" {
+		t.Fatalf("outside=%q", b)
+	}
+}
+
 func TestDatedObjectRetentionIsBetweenSixtyAndSixtyOneDays(t *testing.T) {
 	s := newLocalStore(t)
 	r, err := OpenRepository(filepath.Join(t.TempDir(), "meta.db"))
