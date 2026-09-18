@@ -24,6 +24,7 @@ import (
 )
 
 func TestConfigureAdminFileBrowserWarnsForEachMissingSetting(t *testing.T) {
+	names := []string{"WP_FILE_ISSUER_URL", "WP_FILE_PUBLIC_URL", "WP_FILE_ISSUER_TOKEN", "WP_FILE_AUDIT_TOKEN"}
 	values := []struct {
 		name                               string
 		issuerURL, publicURL, token, audit string
@@ -39,8 +40,14 @@ func TestConfigureAdminFileBrowserWarnsForEachMissingSetting(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(&logs, nil))
 			srv := &admin.Server{}
 			configureAdminFileBrowser(srv, logger, tt.issuerURL, tt.publicURL, tt.token, tt.audit)
-			if srv.Files != nil || !strings.Contains(logs.String(), tt.name) {
+			logText := logs.String()
+			if srv.Files != nil || !strings.Contains(logText, tt.name) {
 				t.Fatalf("files=%v logs=%q", srv.Files, logs.String())
+			}
+			for _, other := range names {
+				if other != tt.name && strings.Contains(logText, other) {
+					t.Fatalf("missing=%s falsely reported=%s logs=%q", tt.name, other, logText)
+				}
 			}
 		})
 	}
