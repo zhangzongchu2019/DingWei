@@ -34,7 +34,7 @@ func (f *recordingFileIssuer) IssueFileTicket(_ context.Context, req FileTicketR
 	return FileTicket{Token: "opaque-ticket", ExpiresAt: time.Now().Add(time.Minute), PublicBaseURL: "https://files.example"}, f.err
 }
 
-func TestFileCapabilityUsesAuthenticatedSessionIdentity(t *testing.T) {
+func TestFileRetrievalCapabilityIsFrozen(t *testing.T) {
 	issuer := &recordingFileIssuer{}
 	h := &Hub{fileIssuer: issuer}
 	c := &sessionClient{keyID: "key-a", ownerKey: "owner-a", sessionName: "session-a"}
@@ -44,10 +44,10 @@ func TestFileCapabilityUsesAuthenticatedSessionIdentity(t *testing.T) {
 		"owner_key": "attacker", "session_name": "other",
 	}}
 	got := h.fileCapabilityResponse(context.Background(), c, env)
-	if issuer.calls != 1 || issuer.req.OwnerKey != "owner-a" || issuer.req.SessionName != "session-a" || issuer.req.Subject != "owner-a/session-a" {
+	if issuer.calls != 0 {
 		t.Fatalf("issuer calls=%d request=%+v", issuer.calls, issuer.req)
 	}
-	if !metaBool(got.Meta, "ok") || metaString(got.Meta, "token") != "opaque-ticket" || got.Body != "" {
+	if metaBool(got.Meta, "ok") || metaString(got.Meta, "token") != "" || metaString(got.Meta, "error") == "" || got.Body != "" {
 		t.Fatalf("response=%+v", got)
 	}
 	if got.Meta["owner_key"] != nil || got.Meta["session_name"] != nil {

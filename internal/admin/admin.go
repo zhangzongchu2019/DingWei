@@ -52,6 +52,7 @@ type Server struct {
 	Collector SeenPersonCollector
 	Scheduler *scheduler.Service
 	SecretKey string
+	Files     FileBrowser
 	mu        sync.Mutex
 	sessions  map[string]string // token -> username
 }
@@ -68,6 +69,8 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/login", s.loginForm)
 	mux.HandleFunc("POST /admin/login", s.loginSubmit)
 	mux.HandleFunc("GET /admin", s.requireAuth(s.status))
+	mux.HandleFunc("GET /admin/files", s.requireAuth(s.filesPage))
+	mux.HandleFunc("GET /admin/files/{id}/content", s.requireAuth(s.fileContent))
 	mux.HandleFunc("GET /admin/datad/tasks", s.requireAuth(s.datadTasksProxy))
 	mux.HandleFunc("GET /admin/datad/sessions", s.requireAuth(s.datadSessionsProxy))
 	mux.HandleFunc("GET /admin/control-plane", s.requireAuth(s.controlPlaneDashboard))
@@ -166,6 +169,7 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 <li><a href="/admin/sessions">会话端点 / 通配 / 镜像</a></li>
 <li><a href="/admin/provision">Provision 下发</a></li>
 <li><a href="/admin/control-plane">总控指标看板</a></li>
+<li><a href="/admin/files">文件对象浏览</a></li>
 <li><a href="/admin/config">运行配置</a></li>
 </ul>`, stats.Total, stats.Queued, stats.Processing, stats.Done, stats.Dead,
 		controlStats.Depth, controlStats.Total, controlStats.Status["queued"], controlStats.Status["llm_pending"], controlStats.Status["done"], controlStats.Status["failed"], controlStats.Status["expired"], controlStats.FailedRate*100, controlStats.ExpiredRate*100,

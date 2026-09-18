@@ -232,3 +232,62 @@ func TestArchivedFileSurvivesWhileDefaultExpiresAndTombstonePurgesLater(t *testi
 		t.Fatalf("tombstone remains after 90d: %v", err)
 	}
 }
+
+func TestMarkDeletingRejectsArchivedRow(t *testing.T) {
+	m, _, _ := testManager(t, 100)
+	f, err := m.Put(context.Background(), Upload{OwnerKey: "o", SessionName: "s", ContentLength: 4, Body: strings.NewReader("keep")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.SetArchivedByOwner(context.Background(), f.ID, true, "p", "o", "keep"); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.Repo.MarkDeleting(context.Background(), f.ID, "retention"); err == nil {
+		t.Fatal("archived row entered deleting")
+	}
+	got, _ := m.Repo.Get(context.Background(), f.ID)
+	if got.State != StateReady || !got.Archived {
+		t.Fatalf("file=%+v", got)
+	}
+}
+
+func TestFinishRemovalRechecksArchivedFailClosed(t *testing.T) {
+	m, _, objects := testManager(t, 100)
+	f, err := m.Put(context.Background(), Upload{OwnerKey: "o", SessionName: "s", ContentLength: 4, Body: strings.NewReader("keep")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = m.Repo.db.Exec(`UPDATE files SET state='deleting',archived=1,removal_reason='retention' WHERE id=?`, f.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.finishRemoval(context.Background(), f); err == nil {
+		t.Fatal("archived deleting row was removed")
+	}
+	objects.mu.Lock()
+	_, ok := objects.data[f.ObjectKey]
+	objects.mu.Unlock()
+	if !ok {
+		t.Fatal("archived bytes deleted")
+	}
+}
+
+func TestFinishRemovalRequiresDurableDeletingIntent(t *testing.T) {
+	m, _, objects := testManager(t, 100)
+	f, err := m.Put(context.Background(), Upload{OwnerKey: "o", SessionName: "s", ContentLength: 4, Body: strings.NewReader("keep")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Repo.db.Exec(`UPDATE files SET removal_reason='retention' WHERE id=?`, f.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.finishRemoval(context.Background(), f); err == nil {
+		t.Fatal("ready row deleted without durable intent")
+	}
+	objects.mu.Lock()
+	_, ok := objects.data[f.ObjectKey]
+	objects.mu.Unlock()
+	if !ok {
+		t.Fatal("bytes deleted before intent")
+	}
+}

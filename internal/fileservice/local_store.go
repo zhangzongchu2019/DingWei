@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"golang.org/x/sys/unix"
@@ -20,13 +21,26 @@ type LocalObjectStore struct {
 	afterWrite func(string) error
 }
 
+var (
+	legacyObjectKey = regexp.MustCompile(`^files/[0-9]{2}/[0-9]{4}/[0-9a-f]{32}-[0-9]{8}T[0-9]{6}\.[0-9]{9}Z$`)
+	directObjectKey = regexp.MustCompile(`^[a-z0-9_-]{1,64}/[a-z0-9_-]{1,64}/[0-9]{2}/[0-9]{4}/[0-9a-f]{32}\.(?:jpg|png|gif|webp|avif|mp4|webm|ogv|pdf|txt|bin)$`)
+)
+
+func validDeletableObjectKey(key string) bool {
+	return key == filepath.ToSlash(filepath.Clean(filepath.FromSlash(key))) &&
+		(legacyObjectKey.MatchString(key) || directObjectKey.MatchString(key))
+}
+
 func NewLocalObjectStore(root string) (*LocalObjectStore, error) {
 	root = strings.TrimSpace(root)
 	if root == "" || !filepath.IsAbs(root) {
 		return nil, fmt.Errorf("FS_DATA_ROOT must be an absolute path")
 	}
-	if err := os.MkdirAll(root, 0o750); err != nil {
+	if err := os.MkdirAll(root, os.ModeSetgid|0o750); err != nil {
 		return nil, fmt.Errorf("create object root: %w", err)
+	}
+	if err := os.Chmod(root, os.ModeSetgid|0o750); err != nil {
+		return nil, fmt.Errorf("set object root mode: %w", err)
 	}
 	resolved, err := filepath.EvalSymlinks(root)
 	if err != nil {
@@ -66,12 +80,15 @@ func (s *LocalObjectStore) ensureDir(dir string) error {
 			continue
 		}
 		current = filepath.Join(current, part)
-		if err := os.Mkdir(current, 0o750); err != nil && !errors.Is(err, os.ErrExist) {
+		if err := os.Mkdir(current, os.ModeSetgid|0o750); err != nil && !errors.Is(err, os.ErrExist) {
 			return err
 		}
 		info, err := os.Lstat(current)
 		if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 			return fmt.Errorf("object path component is not a real directory: %s", current)
+		}
+		if err := os.Chmod(current, os.ModeSetgid|0o750); err != nil {
+			return fmt.Errorf("set object directory mode: %w", err)
 		}
 	}
 	return nil
@@ -92,7 +109,7 @@ func (s *LocalObjectStore) Put(ctx context.Context, key string, body io.Reader, 
 		return fmt.Errorf("object target already exists")
 	}
 	tmp := filepath.Join(filepath.Dir(path), ".tmp-"+filepath.Base(path))
-	fd, err := unix.Open(tmp, unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL|unix.O_NOFOLLOW, 0o600)
+	fd, err := unix.Open(tmp, unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL|unix.O_NOFOLLOW, 0o640)
 	if err != nil {
 		return fmt.Errorf("create temporary object: %w", err)
 	}
@@ -104,6 +121,9 @@ func (s *LocalObjectStore) Put(ctx context.Context, key string, body io.Reader, 
 			_ = os.Remove(tmp)
 		}
 	}()
+	if err := unix.Fchmod(fd, 0o640); err != nil {
+		return fmt.Errorf("set object mode: %w", err)
+	}
 	n, err := io.Copy(f, io.LimitReader(body, size+1))
 	if err != nil || n != size {
 		return fmt.Errorf("write complete object: wrote=%d want=%d: %w", n, size, err)
@@ -172,9 +192,19 @@ func (s *LocalObjectStore) Open(_ context.Context, key string, offset, length in
 }
 
 func (s *LocalObjectStore) Delete(_ context.Context, key string) error {
+	if !validDeletableObjectKey(key) {
+		return fmt.Errorf("refuse unsafe object delete")
+	}
 	path, err := s.path(key)
 	if err != nil {
 		return err
+	}
+	if info, statErr := os.Lstat(path); statErr == nil {
+		if !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("refuse non-regular object delete")
+		}
+	} else if !errors.Is(statErr, os.ErrNotExist) {
+		return statErr
 	}
 	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
@@ -198,22 +228,4 @@ func (s *LocalObjectStore) Move(_ context.Context, from, to string) error {
 		return err
 	}
 	return nil
-}
-
-// DeleteDay removes the date directory containing key. Pinned objects are
-// structurally excluded and can never be removed by this operation.
-func (s *LocalObjectStore) DeleteDay(_ context.Context, key string) error {
-	if strings.Contains(filepath.ToSlash(key), "/pinned/") {
-		return fmt.Errorf("refuse to sweep pinned object")
-	}
-	path, err := s.path(key)
-	if err != nil {
-		return err
-	}
-	day := filepath.Dir(path)
-	rel, err := filepath.Rel(s.Root, day)
-	if err != nil || len(strings.Split(filepath.ToSlash(rel), "/")) != 3 {
-		return fmt.Errorf("invalid day directory")
-	}
-	return os.RemoveAll(day)
 }

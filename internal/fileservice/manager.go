@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +20,17 @@ var (
 	ErrAccessDenied  = errors.New("file access denied")
 	ErrNotReady      = errors.New("file is not ready")
 )
+
+var identitySegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
+
+func normalizedMedia(mediaType string) (string, string) {
+	base := strings.ToLower(strings.TrimSpace(strings.SplitN(mediaType, ";", 2)[0]))
+	exts := map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif", "video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "application/pdf": "pdf", "text/plain": "txt"}
+	if ext, ok := exts[base]; ok {
+		return base, ext
+	}
+	return "application/octet-stream", "bin"
+}
 
 type Upload struct {
 	OwnerKey, SessionName, OriginalName, MediaType, ExpectedSHA256 string
@@ -38,13 +49,6 @@ type Manager struct {
 	mu                       sync.Mutex
 }
 
-type objectMover interface {
-	Move(context.Context, string, string) error
-}
-type dayDirectoryDeleter interface {
-	DeleteDay(context.Context, string) error
-}
-
 func (m *Manager) SetArchivedByOwner(ctx context.Context, id string, archived bool, actorPrincipal, ownerKey, reason string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -52,35 +56,14 @@ func (m *Manager) SetArchivedByOwner(ctx context.Context, id string, archived bo
 	if err != nil || f.OwnerKey != ownerKey || f.State != StateReady {
 		return ErrAccessDenied
 	}
-	mover, ok := m.Objects.(objectMover)
-	if !ok {
-		return fmt.Errorf("object store does not support archive relocation")
+	if m.Retention <= 0 {
+		return ErrInvalidUpload
 	}
-	prefix := m.ObjectPrefix
-	if prefix == "" {
-		prefix = "files"
-	}
-	base := filepath.Base(f.ObjectKey)
-	target := fmt.Sprintf("%s/pinned/%s", prefix, base)
-	if !archived {
-		created := f.CreatedAt.UTC()
-		target = fmt.Sprintf("%s/%02d/%02d%02d/%s", prefix, created.Year()%100, int(created.Month()), created.Day(), base)
-	}
-	if target == f.ObjectKey {
-		return m.Repo.SetArchivedLocationByOwner(ctx, id, "", archived, actorPrincipal, ownerKey, reason, m.Clock.Now())
-	}
-	if err := mover.Move(ctx, f.ObjectKey, target); err != nil {
-		return fmt.Errorf("move archived object: %w", err)
-	}
-	if err := m.Repo.SetArchivedLocationByOwner(ctx, id, target, archived, actorPrincipal, ownerKey, reason, m.Clock.Now()); err != nil {
-		_ = mover.Move(context.Background(), target, f.ObjectKey)
-		return err
-	}
-	return nil
+	return m.Repo.SetArchivedLocationByOwner(ctx, id, "", archived, actorPrincipal, ownerKey, reason, m.Clock.Now(), m.Retention)
 }
 
 func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
-	if m.Repo == nil || m.Objects == nil || m.Clock == nil || in.Body == nil || in.ContentLength < 0 || in.ContentLength > m.MaxFileBytes || in.OwnerKey == "" || in.SessionName == "" {
+	if m.Repo == nil || m.Objects == nil || m.Clock == nil || in.Body == nil || in.ContentLength < 0 || in.ContentLength > m.MaxFileBytes || !identitySegment.MatchString(in.OwnerKey) || !identitySegment.MatchString(in.SessionName) {
 		return File{}, ErrInvalidUpload
 	}
 	m.mu.Lock()
@@ -90,15 +73,12 @@ func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
 		return File{}, err
 	}
 	now := m.Clock.Now().UTC()
-	prefix := m.ObjectPrefix
-	if prefix == "" {
-		prefix = "files"
-	}
-	key := fmt.Sprintf("%s/%02d/%02d%02d/%s-%s", prefix, now.Year()%100, int(now.Month()), now.Day(), id, now.Format("20060102T150405.000000000Z"))
+	mediaType, ext := normalizedMedia(in.MediaType)
+	key := fmt.Sprintf("%s/%s/%02d/%02d%02d/%s.%s", in.OwnerKey, in.SessionName, now.Year()%100, int(now.Month()), now.Day(), id, ext)
 	h := sha256.New()
 	limited := &io.LimitedReader{R: in.Body, N: m.MaxFileBytes + 1}
 	reader := io.TeeReader(limited, h)
-	if err := m.Objects.Put(ctx, key, reader, in.ContentLength, in.MediaType); err != nil {
+	if err := m.Objects.Put(ctx, key, reader, in.ContentLength, mediaType); err != nil {
 		return File{}, err
 	}
 	cleanup := func() { _ = m.Objects.Delete(context.Background(), key) }
@@ -120,10 +100,8 @@ func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
 		cleanup()
 		return File{}, ErrInvalidUpload
 	}
-	// Directory retention is day-granular: a file expires at the start of the
-	// next UTC day plus Retention, yielding an actual 60..61 day window.
-	expires := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, time.UTC).Add(m.Retention)
-	f := File{ID: id, ObjectKey: key, OwnerKey: in.OwnerKey, SessionName: in.SessionName, OriginalName: safeName(in.OriginalName), MediaType: in.MediaType, SizeBytes: info.Size, SHA256: digest, State: StateReady, CreatedAt: now, ExpiresAt: expires}
+	expires := now.Add(m.Retention)
+	f := File{ID: id, ObjectKey: key, OwnerKey: in.OwnerKey, SessionName: in.SessionName, OriginalName: safeName(in.OriginalName), MediaType: mediaType, SizeBytes: info.Size, SHA256: digest, State: StateReady, CreatedAt: now, ExpiresAt: expires}
 	if err := m.Repo.InsertReady(ctx, f); err != nil {
 		cleanup()
 		return File{}, err
@@ -181,15 +159,7 @@ func (m *Manager) enforceLocked(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := m.finishRetentionDirectories(ctx, deleting); err != nil {
-		return err
-	}
 	for _, f := range deleting {
-		if f.RemovalReason == "retention" {
-			if _, ok := m.Objects.(dayDirectoryDeleter); ok {
-				continue
-			}
-		}
 		if err := m.finishRemoval(ctx, f); err != nil {
 			return err
 		}
@@ -207,17 +177,9 @@ func (m *Manager) enforceLocked(ctx context.Context) error {
 			return err
 		}
 		f.State, f.RemovalReason = StateDeleting, reason
-		if reason == "retention" {
-			if _, ok := m.Objects.(dayDirectoryDeleter); ok {
-				continue
-			}
-		}
 		if err := m.finishRemoval(ctx, f); err != nil {
 			return err
 		}
-	}
-	if err := m.finishRetentionDirectories(ctx, candidates); err != nil {
-		return err
 	}
 	if m.TombstoneRetention > 0 {
 		if _, err := m.Repo.PurgeTombstones(ctx, m.Clock.Now().Add(-m.TombstoneRetention)); err != nil {
@@ -227,45 +189,25 @@ func (m *Manager) enforceLocked(ctx context.Context) error {
 	return nil
 }
 
-func (m *Manager) finishRetentionDirectories(ctx context.Context, files []File) error {
-	deleter, ok := m.Objects.(dayDirectoryDeleter)
-	if !ok {
-		return nil
-	}
-	groups := map[string][]File{}
-	for _, f := range files {
-		if f.RemovalReason != "retention" && f.State == StateDeleting {
-			continue
-		}
-		if f.State != StateDeleting && f.ExpiresAt.After(m.Clock.Now()) {
-			continue
-		}
-		groups[filepath.Dir(f.ObjectKey)] = append(groups[filepath.Dir(f.ObjectKey)], f)
-	}
-	for _, group := range groups {
-		if len(group) == 0 {
-			continue
-		}
-		if err := deleter.DeleteDay(ctx, group[0].ObjectKey); err != nil {
-			return fmt.Errorf("delete retention directory: %w", err)
-		}
-		for _, f := range group {
-			if err := m.Repo.FinishDeleting(ctx, f.ID, m.Clock.Now()); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 func (m *Manager) finishRemoval(ctx context.Context, f File) error {
-	if err := m.Objects.Delete(ctx, f.ObjectKey); err != nil {
+	current, err := m.Repo.Get(ctx, f.ID)
+	if err != nil || current.State != StateDeleting || current.Archived || (current.RemovalReason != "retention" && current.RemovalReason != "quota_fifo") {
+		return fmt.Errorf("refuse unsafe delete: %w", firstError(err, ErrAccessDenied))
+	}
+	if err := m.Objects.Delete(ctx, current.ObjectKey); err != nil {
 		return fmt.Errorf("delete %s: %w", f.ID, err)
 	}
 	if err := m.Repo.FinishDeleting(ctx, f.ID, m.Clock.Now()); err != nil {
 		return fmt.Errorf("finish delete %s: %w", f.ID, err)
 	}
 	return nil
+}
+
+func firstError(err, fallback error) error {
+	if err != nil {
+		return err
+	}
+	return fallback
 }
 
 func randomID() (string, error) {

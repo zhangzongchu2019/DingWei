@@ -141,6 +141,12 @@ func run(logger *slog.Logger) error {
 	adm.Outbound = outbound
 	adm.Prefix = prefixHub
 	adm.SecretKey = bs.SecretKey
+	if fileIssuerURL != "" && filePublicURL != "" && fileIssuerCredential != "" {
+		if auditToken := strings.TrimSpace(os.Getenv("WP_FILE_AUDIT_TOKEN")); auditToken != "" {
+			adm.Files = admin.NewHTTPFileBrowser(fileIssuerURL, filePublicURL, fileIssuerCredential, auditToken)
+			logger.Info("admin file browser configured")
+		}
+	}
 	if datadURL := strings.TrimSpace(os.Getenv("DATAD_URL")); datadURL != "" {
 		datadToken := strings.TrimSpace(os.Getenv("DATAD_TOKEN"))
 		if datadToken == "" {

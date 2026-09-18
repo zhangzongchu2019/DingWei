@@ -69,6 +69,14 @@ type Hub struct {
 	consoleLoginStore *consoleLoginStore
 	consoleLoginOnce  sync.Once
 
+	// NowFunc 只为测试注入时钟。D1 的滑动续期要验「跨过 12 小时」,
+	// 真等 12 小时不是验收,是浪费;而只看代码里有 UPDATE 又证明不了行为。
+	NowFunc func() time.Time
+
+	// D1 滑动续期的写放大闸:同一会话在 consoleSessionTouchMin 内只写一次库。
+	consoleTouchMu sync.Mutex
+	consoleTouched map[string]time.Time
+
 	mu               hubMutex
 	serviceClients   map[string]*client
 	sessionClients   map[string]map[string]*sessionClient
@@ -242,6 +250,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		syncBuffers:        map[string]*feishuSyncBuffer{},
 		linkTokens:         map[string]ownerLinkToken{},
 		onboardPushed:      map[string]time.Time{},
+		consoleTouched:     map[string]time.Time{},
 		onboardContexts:    map[string]onboardContext{},
 		viewV2Nonces:       map[string]time.Time{},
 		viewV2Requests:     map[string]viewV2RequestResult{},

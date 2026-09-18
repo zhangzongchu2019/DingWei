@@ -13,13 +13,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/filepolicy"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
 const (
 	fileCapabilityRequestType  = "file_capability_request"
 	fileCapabilityResponseType = "file_capability_response"
-	maxFileUploadBytes         = int64(16 << 20)
+	maxFileUploadBytes         = filepolicy.MaxUploadBytes
 )
 
 var fileIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
@@ -273,14 +274,11 @@ func (h *Hub) fileCapabilityResponse(ctx context.Context, c *sessionClient, env 
 			return response
 		}
 	case "head", "get":
-		ref := strings.TrimSpace(metaString(env.Meta, "file_ref"))
-		req.FileID = strings.TrimPrefix(ref, "dwfile:")
-		req.Method = strings.ToUpper(operation)
-		req.ByteRange = strings.TrimSpace(metaString(env.Meta, "range"))
-		if !strings.HasPrefix(ref, "dwfile:") || !fileIDPattern.MatchString(req.FileID) || (operation == "head" && req.ByteRange != "") || (operation == "get" && !validFileByteRange(req.ByteRange)) {
-			meta["error"] = "invalid file capability request"
-			return response
-		}
+		// Frozen by owner decision 2026-09-18. Restore only together with the
+		// file-service retrieval issuer, GrantStore verification, /files/ref/
+		// HTTP route and nginx proxy.
+		meta["error"] = "file retrieval capability frozen"
+		return response
 	default:
 		meta["error"] = "invalid file capability request"
 		return response

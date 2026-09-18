@@ -70,6 +70,29 @@ func TestRemovalCandidatesExpireFirstThenFIFOQuota(t *testing.T) {
 	}
 }
 
+func TestRemovalCandidatesExcludeArchived(t *testing.T) {
+	r, err := OpenRepository(filepath.Join(t.TempDir(), "f.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	now := time.Now().UTC()
+	f := File{ID: "archived", ObjectKey: "owner/agent/26/0918/0123456789abcdef0123456789abcdef.bin", OwnerKey: "owner", SessionName: "agent", OriginalName: "x", MediaType: "application/octet-stream", SizeBytes: 1, SHA256: "a", State: StateReady, CreatedAt: now.Add(-8 * 24 * time.Hour), ExpiresAt: now.Add(-time.Hour)}
+	if err := r.InsertReady(context.Background(), f); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.db.Exec(`UPDATE files SET archived=1 WHERE id=?`, f.ID); err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.RemovalCandidates(context.Background(), now, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("candidates=%v", got)
+	}
+}
+
 func TestInjectedClockCrossesRetentionBoundary(t *testing.T) {
 	boundary := time.Date(2026, 11, 8, 0, 0, 0, 0, time.UTC)
 	clock := &FixedClock{Time: boundary.Add(-time.Nanosecond)}
