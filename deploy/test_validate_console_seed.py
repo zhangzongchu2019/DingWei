@@ -24,6 +24,10 @@ GOOD = {
         {"id": "owner-b", "provider": "feishu", "provider_issuer": "app1",
          "provider_subject": "ou_bbb", "display_name": "Owner(2nd)", "active": True},
     ],
+    "roles": [
+        {"principal_id": "owner-a", "role": "owner", "owner_key": "tenant-owner", "active": True},
+        {"principal_id": "owner-b", "role": "owner", "owner_key": "tenant-owner", "active": True},
+    ],
     "agents": [
         {"id": "ag-1", "key_id": "K", "session_name": "zzc-one-2642", "owner_principal": "owner-a",
          "active": True, "grants": [{"principal_id": "owner-a", "permission": "interact"},
@@ -80,6 +84,7 @@ class SeedValidatorTest(unittest.TestCase):
         """🔴 业主第二条身份漏写 ⇒ 他从那条登录时左栏是空的,而他不会知道。"""
         def drop_second(s):
             s["principals"] = [p for p in s["principals"] if p["id"] != "owner-b"]
+            s["roles"] = [r for r in s["roles"] if r["principal_id"] != "owner-b"]
             for a in s["agents"]:
                 a["grants"] = [g for g in a["grants"] if g["principal_id"] != "owner-b"]
         self._mutate(drop_second, "业主有几条身份就必须声明几条")
@@ -106,6 +111,9 @@ class SeedValidatorTest(unittest.TestCase):
 
     def test_8_duplicate_session(self):
         self._mutate(lambda s: s["agents"][1].update(session_name="zzc-one-2642"), "重复")
+
+    def test_10_owner_role_must_be_explicit(self):
+        self._mutate(lambda s: s["roles"].pop(), "没有 active owner 角色")
 
 
 if __name__ == "__main__":

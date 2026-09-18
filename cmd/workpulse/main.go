@@ -53,10 +53,24 @@ var unsignedWebhookWarned sync.Map
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	if err := run(logger); err != nil {
+	if err := execute(os.Args, os.Stdout, logger, run); err != nil {
 		logger.Error("workpulse exited", "error", err)
 		os.Exit(1)
 	}
+}
+
+func execute(args []string, out io.Writer, logger *slog.Logger, runServer func(*slog.Logger) error) error {
+	if len(args) > 1 {
+		if args[1] != "validate-console-seed" || len(args) != 3 {
+			return errors.New("usage: workpulse validate-console-seed <seed.json>")
+		}
+		if err := validateConsoleSeedFile(args[2]); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintln(out, "CONSOLE_SEED_VALID")
+		return err
+	}
+	return runServer(logger)
 }
 
 func run(logger *slog.Logger) error {
@@ -103,6 +117,18 @@ func run(logger *slog.Logger) error {
 	outbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionOut, writeQueueConfig)
 	prefixHub := m8.New(st, consoleAuthMode)
 	prefixHub.Outbound = outbound
+	fileIssuerURL := strings.TrimSpace(os.Getenv("WP_FILE_ISSUER_URL"))
+	filePublicURL := strings.TrimSpace(os.Getenv("WP_FILE_PUBLIC_URL"))
+	fileIssuerCredential := strings.TrimSpace(os.Getenv("WP_FILE_ISSUER_TOKEN"))
+	if fileIssuerURL != "" || filePublicURL != "" || fileIssuerCredential != "" {
+		issuer, err := m8.NewHTTPFileTicketIssuer(fileIssuerURL, filePublicURL, fileIssuerCredential)
+		if err != nil {
+			return err
+		}
+		prefixHub.SetFileTicketIssuer(issuer)
+		prefixHub.SetFileArchiveClient(issuer)
+		logger.Info("file capability issuer configured", "internal_url", fileIssuerURL, "public_url", filePublicURL)
+	}
 	if bs.L2DeepSeekAPIKey != "" {
 		prefixHub.L2 = llm.NewDeepSeek(bs.L2DeepSeekAPIKey, bs.L2DeepSeekBaseURL, bs.L2DeepSeekModel)
 		if n, err := strconv.Atoi(bs.L2Workers); err == nil && n > 0 {
@@ -222,6 +248,8 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /console/login/status", prefixHub.HandleConsoleLoginStatus)
 	mux.HandleFunc("GET /api/console/agents", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgents))
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleCapability))
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleFileUploadTicket))
+	mux.HandleFunc("POST /api/console/files/{fileID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleFileArchive))
 	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleTerminalViewCookie))
 	mux.HandleFunc("/view/{sessionName}/{rest...}", prefixHub.RequireConsoleViewSubPath(prefixHub.HandleViewSubPath)) // 新 view 子路径(events/input/status)→ 反代 View 服务
 	mux.HandleFunc("GET /links/{ownerKey}", prefixHub.HandleOwnerLinksPage)

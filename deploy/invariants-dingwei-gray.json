@@ -2,8 +2,8 @@
   "_why": "2026-09-16 立。断言取自当日手工做过的对照;把一次性动作变成每半小时一遍。",
   "_where": "🔴 本断言集【在容器 dingwei-gray 内部】执行 —— 不用 docker exec、不用 sudo。首版误按宿主视角写,被 prodops 拦下。",
   "_scope": "🔴 只放【运行时能持续问】的断言。需要仓库的(commit 在仓内 / preprod 含现网)属【发版纪律】,由 release-gate 的 preflight/postflight 管,不在此处。 🔴 且断言【不得有副作用】:只读不执行 —— 首版用 --commit 实际启动了服务,是反例。",
-  "_expect_note": "🔴 expected_* 是【发版时必须更新】的显式常量。忘了更新 ⇒ 本巡检立刻响 —— 这正是要的:把静默漂移变成响亮失败。 🔴 2026-09-16 实证:本组长【写下这条规矩之后的下一版就自己忘了】——renderer 改了而期望值没回写,同一个锚内自相矛盾,被 prodops 拦下。⇒ 已立 release-gate 第⑬闸机械检查,不再依赖记得。",
-  "_expected_anchor": "13e72586cc76251ecc33cb8d66f497598e9c83d4",
+  "_expect_note": "🔴 expected_* 是【发版时必须更新】的显式常量。忘了更新 ⇒ 本巡检立刻响 —— 这正是要的:把静默漂移变成响亮失败。",
+  "_expected_anchor": "5378fe2383b5482ff4300a065adebed878721355",
   "assertions": [
     {
       "id": "sentinel-must-fail",
@@ -13,7 +13,7 @@
     {
       "id": "renderer-matches-anchor",
       "desc": "🔴 renderer 哈希必须 == 发版锚内同名文件(当日最贵的那条断言)",
-      "cmd": "want=37477eae0c030f594ec0d5b40d0f81aa20586300ae59ae1871d16dfceec4397f; got=$(sha256sum /app/vs/renderer-canary-sse.html 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希(记为不成立)'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
+      "cmd": "want=cb3c4ac8a847cd981bcc8d8003fa0f3839b75457a1be4d7095821e615730340a; got=$(sha256sum /app/vs/renderer-canary-sse.html 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希(记为不成立)'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
     },
     {
       "id": "view-service-matches-anchor",

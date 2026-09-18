@@ -125,3 +125,38 @@ func TestConsolePrincipalIssuerIsPartOfIdentity(t *testing.T) {
 		t.Fatalf("cross issuer got=%+v err=%v", got, err)
 	}
 }
+
+func TestConsoleOwnerRoleIsExplicitAndScopeIsUnambiguous(t *testing.T) {
+	ctx := context.Background()
+	db, err := OpenSQLite(filepath.Join(t.TempDir(), "console-role.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []model.ConsolePrincipal{
+		{ID: "owner-a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "oa", Active: true},
+		{ID: "member-b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ob", Active: true},
+	} {
+		if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got, err := db.ResolveConsoleOwnerScope(ctx, "member-b"); err != nil || got != "" {
+		t.Fatalf("principal without role scope=%q err=%v", got, err)
+	}
+	if err := db.UpsertConsolePrincipalRole(ctx, model.ConsolePrincipalRole{PrincipalID: "owner-a", Role: "owner", OwnerKey: "tenant-a", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := db.ResolveConsoleOwnerScope(ctx, "owner-a"); err != nil || got != "tenant-a" {
+		t.Fatalf("owner scope=%q err=%v", got, err)
+	}
+	if err := db.UpsertConsolePrincipalRole(ctx, model.ConsolePrincipalRole{PrincipalID: "owner-a", Role: "owner", OwnerKey: "tenant-b", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := db.ResolveConsoleOwnerScope(ctx, "owner-a"); err != nil || got != "" {
+		t.Fatalf("ambiguous scope must fail closed scope=%q err=%v", got, err)
+	}
+}

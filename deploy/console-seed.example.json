@@ -17,6 +17,20 @@
       "active": true
     }
   ],
+  "roles": [
+    {
+      "principal_id": "principal-owner-primary",
+      "role": "owner",
+      "owner_key": "REPLACE_WITH_OWNER_DATA_SCOPE",
+      "active": true
+    },
+    {
+      "principal_id": "principal-owner-secondary",
+      "role": "owner",
+      "owner_key": "REPLACE_WITH_OWNER_DATA_SCOPE",
+      "active": true
+    }
+  ],
   "agents": [
     {
       "id": "agent-console",

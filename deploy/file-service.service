@@ -1,0 +1,30 @@
+[Unit]
+Description=DingWei file service
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=dingwei-file
+Group=dingwei-file
+WorkingDirectory=/opt/dingwei/file-service
+# The concrete credential-bearing env-file path is supplied only in the
+# authorized deployment package; it is intentionally not stored in Git.
+EnvironmentFile={{FILE_SERVICE_ENV_FILE}}
+ExecStart=/opt/dingwei/file-service/bin/file-service
+Restart=always
+RestartSec=3s
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/dingwei-file-service
+UMask=0077
+NoExecPaths=/var/lib/dingwei-file-service/objects
+
+[Install]
+WantedBy=multi-user.target

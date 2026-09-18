@@ -168,6 +168,7 @@ main{display:flex;flex-direction:column;min-width:0}
 #tabs .tab{display:inline-flex;align-items:center;gap:6px;border:1px solid #ccc;border-radius:4px;
   padding:3px 8px;cursor:pointer;background:#f7f7f7;max-width:200px}
 #tabs .tab.on{background:#fff;border-color:#4a90d9;font-weight:600}
+#tabs .tab.offline{opacity:.5}
 #tabs .tab .x{color:#999;font-weight:400}
 #tabs .tab .x:hover{color:#c00}
 #panes{flex:1;position:relative;min-height:0}
@@ -181,6 +182,7 @@ const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6
 // 短名 = 三段式 <owner>-<name>-<suffix> 的中间段;取不到就原样显示(T-138,业主裁定命名归他)
 function dwShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s}
 const tabs = new Map();   // session -> {tab, pane}
+let agentSnapshot = new Map(); // session -> online;只描述左栏最新快照,不拥有 tab/pane
 function activate(session){
   tabs.forEach(function(v,k){
     v.tab.classList.toggle('on', k===session);
@@ -217,23 +219,46 @@ function openTab(session){
   tabs.set(session,{tab:tab,pane:pane});
   activate(session);
 }
-fetch('/api/console/agents').then(function(r){return r.json()}).then(function(x){
+function applyAgentSnapshot(agents){
+  agentSnapshot = new Map(agents.map(function(a){return [a.session, !!a.online]}));
+  // 🔴 只更新既有 tab 的可用状态。tab/pane 对象与 iframe src 均不得在列表刷新时改变。
+  tabs.forEach(function(e,session){
+    var online=agentSnapshot.get(session)===true;
+    e.tab.classList.toggle('offline', !online);
+    e.tab.setAttribute('aria-disabled', online?'false':'true');
+    e.pane.style.pointerEvents=online?'':'none';
+  });
+}
+function renderAgentList(agents){
   var nav=document.getElementById('a');
+  nav.replaceChildren(); // 只重建左栏;右侧 tabs/panes 不在本函数所有权内
   function mk(a){
     var b=document.createElement('button');
     b.textContent=dwShortName(a.session); b.title=a.session; b.disabled=!a.online;
     b.onclick=function(){ openTab(a.session) };
     return b;
   }
-  var on=x.agents.filter(function(a){return a.online});
-  var off=x.agents.filter(function(a){return !a.online});
+  var on=agents.filter(function(a){return a.online});
+  var off=agents.filter(function(a){return !a.online});
   on.forEach(function(a){nav.append(mk(a))});
   if(off.length){
     var d=document.createElement('details');
     var sm=document.createElement('summary'); sm.textContent='离线 ('+off.length+')';
     d.append(sm); off.forEach(function(a){d.append(mk(a))}); nav.append(d);
   }
-})
+}
+async function refreshAgents(){
+  try{
+    var r=await fetch('/api/console/agents',{cache:'no-store'});
+    if(!r.ok) return;
+    var x=await r.json();
+    var agents=Array.isArray(x.agents)?x.agents:[];
+    renderAgentList(agents);
+    applyAgentSnapshot(agents);
+  }catch(_){ /* 保留上一份可见快照;短暂请求失败不得把左栏清空 */ }
+}
+refreshAgents();
+setInterval(refreshAgents,15000);
 </script>`
 
 func (h *Hub) HandleConsoleAgents(w http.ResponseWriter, r *http.Request) {

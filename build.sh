@@ -30,7 +30,7 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 OUT="${1:-./bin}"
 mkdir -p "$OUT"
-for c in workpulse fcs; do
+for c in workpulse fcs file-service; do
   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
   go build -trimpath -buildvcs=false \
     -ldflags "-s -w -X github.com/zhangzongchu2019/dingwei/internal/version.Commit=${COMMIT}" \
@@ -38,4 +38,4 @@ for c in workpulse fcs; do
 done
 echo "commit=${COMMIT}"
 go version
-sha256sum "$OUT/workpulse" "$OUT/fcs"
+sha256sum "$OUT/workpulse" "$OUT/fcs" "$OUT/file-service"
