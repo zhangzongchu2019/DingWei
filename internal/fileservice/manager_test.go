@@ -17,6 +17,8 @@ import (
 func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 	tests := []struct{ fixture, media, wantMedia, wantExt string }{
 		{"sample-quicktime.mov", "video/quicktime", "video/quicktime", "mov"},
+		{"sample-markdown.md", "text/markdown", "text/markdown", "md"},
+		{"sample-dangerous.html", "text/html", "application/octet-stream", "bin"},
 		{"sample-active.svg", "image/svg+xml", "application/octet-stream", "bin"},
 		{"sample-office.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/octet-stream", "docx"},
 		{"sample-office.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/octet-stream", "xlsx"},
@@ -44,6 +46,15 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 		if gotMedia != media || gotExt != ext {
 			t.Fatalf("media=%q got=(%q,%q)", media, gotMedia, gotExt)
 		}
+	}
+	for _, media := range []string{"text/xml", "application/xhtml+xml", "application/xml"} {
+		gotMedia, gotExt := normalizedMedia(media)
+		if gotMedia != "application/octet-stream" || gotExt != "bin" {
+			t.Fatalf("dangerous media=%q got=(%q,%q)", media, gotMedia, gotExt)
+		}
+	}
+	if gotMedia, gotExt := normalizedMedia("text/csv"); gotMedia != "text/csv" || gotExt != "csv" {
+		t.Fatalf("csv got=(%q,%q)", gotMedia, gotExt)
 	}
 }
 

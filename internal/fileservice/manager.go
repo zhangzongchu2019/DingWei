@@ -25,7 +25,10 @@ var identitySegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 
 func normalizedMedia(mediaType string) (string, string) {
 	base := strings.ToLower(strings.TrimSpace(strings.SplitN(mediaType, ";", 2)[0]))
-	if base == "image/svg+xml" {
+	dangerousInlineTypes := map[string]bool{
+		"text/html": true, "text/xml": true, "application/xhtml+xml": true, "application/xml": true, "image/svg+xml": true,
+	}
+	if dangerousInlineTypes[base] {
 		return "application/octet-stream", "bin"
 	}
 	downloadExts := map[string]string{
@@ -38,7 +41,7 @@ func normalizedMedia(mediaType string) (string, string) {
 	if ext, ok := downloadExts[base]; ok {
 		return "application/octet-stream", ext
 	}
-	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || base == "application/pdf" || base == "text/plain"
+	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || strings.HasPrefix(base, "text/") || base == "application/pdf" || base == "application/xhtml+xml" || base == "application/xml"
 	if !inlineCandidate {
 		return "application/octet-stream", "bin"
 	}
@@ -46,7 +49,8 @@ func normalizedMedia(mediaType string) (string, string) {
 		"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif",
 		"image/heic": "heic", "image/bmp": "bmp", "image/tiff": "tiff", "image/svg+xml": "svg",
 		"video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "video/quicktime": "mov", "video/x-matroska": "mkv",
-		"application/pdf": "pdf", "text/plain": "txt",
+		"application/pdf": "pdf", "text/plain": "txt", "text/markdown": "md", "text/csv": "csv",
+		"text/html": "html", "text/xml": "xml", "application/xhtml+xml": "xhtml", "application/xml": "xml",
 	}
 	if ext, ok := exts[base]; ok {
 		return base, ext
