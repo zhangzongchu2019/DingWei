@@ -6,12 +6,42 @@ import (
 	"database/sql"
 	"errors"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 )
+
+func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
+	tests := []struct{ fixture, media, wantMedia, wantExt string }{
+		{"sample-quicktime.mov", "video/quicktime", "video/quicktime", "mov"},
+		{"sample-active.svg", "image/svg+xml", "application/octet-stream", "bin"},
+		{"sample-unknown.dat", "application/x-dingwei-unknown", "application/octet-stream", "bin"},
+	}
+	for _, tt := range tests {
+		body, err := os.ReadFile(filepath.Join("../../view-service/fixtures-0206", tt.fixture))
+		if err != nil {
+			t.Fatal(err)
+		}
+		m, _, _ := testManager(t, 1<<20)
+		m.MaxFileBytes = 1 << 20
+		f, err := m.Put(context.Background(), Upload{OwnerKey: "owner", SessionName: "session", MediaType: tt.media, ContentLength: int64(len(body)), Body: bytes.NewReader(body)})
+		if err != nil {
+			t.Fatalf("fixture=%s: %v", tt.fixture, err)
+		}
+		if f.MediaType != tt.wantMedia || !strings.HasSuffix(f.ObjectKey, "."+tt.wantExt) {
+			t.Fatalf("fixture=%s media=%q key=%q", tt.fixture, f.MediaType, f.ObjectKey)
+		}
+	}
+	for media, ext := range map[string]string{"video/x-matroska": "mkv", "image/heic": "heic", "image/bmp": "bmp", "image/tiff": "tiff"} {
+		gotMedia, gotExt := normalizedMedia(media)
+		if gotMedia != media || gotExt != ext {
+			t.Fatalf("media=%q got=(%q,%q)", media, gotMedia, gotExt)
+		}
+	}
+}
 
 type memoryObjects struct {
 	mu         sync.Mutex

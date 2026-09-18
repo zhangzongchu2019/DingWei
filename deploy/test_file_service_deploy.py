@@ -55,7 +55,8 @@ class FileServiceDeploymentTest(unittest.TestCase):
     def test_direct_links_inline_only_whitelisted_extensions(self):
         text = (DEPLOY / "nginx-dingwei.conf").read_text()
         self.assertIn("location ~ ^/f/", text)
-        self.assertIn("jpg|png|gif|webp|avif|mp4|webm|ogv|pdf|txt", text)
+        self.assertIn("jpg|png|gif|webp|avif|heic|bmp|tiff|mp4|webm|ogv|mov|mkv|pdf|txt", text)
+        self.assertIn("video/quicktime mov", text)
         self.assertIn("default_type application/octet-stream", text)
         self.assertIn("add_header Content-Disposition attachment always", text)
         self.assertEqual(text.count("add_header X-Content-Type-Options nosniff always"), 2)

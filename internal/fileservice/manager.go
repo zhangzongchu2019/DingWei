@@ -25,7 +25,19 @@ var identitySegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 
 func normalizedMedia(mediaType string) (string, string) {
 	base := strings.ToLower(strings.TrimSpace(strings.SplitN(mediaType, ";", 2)[0]))
-	exts := map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif", "video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "application/pdf": "pdf", "text/plain": "txt"}
+	if base == "image/svg+xml" {
+		return "application/octet-stream", "bin"
+	}
+	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || base == "application/pdf" || base == "text/plain"
+	if !inlineCandidate {
+		return "application/octet-stream", "bin"
+	}
+	exts := map[string]string{
+		"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif",
+		"image/heic": "heic", "image/bmp": "bmp", "image/tiff": "tiff", "image/svg+xml": "svg",
+		"video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "video/quicktime": "mov", "video/x-matroska": "mkv",
+		"application/pdf": "pdf", "text/plain": "txt",
+	}
 	if ext, ok := exts[base]; ok {
 		return base, ext
 	}
