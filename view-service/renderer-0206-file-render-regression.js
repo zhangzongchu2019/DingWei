@@ -360,12 +360,27 @@ async function t(name, fn) {
     const canPlayH264 = await page.evaluate(() =>
       document.createElement('video').canPlayType('video/mp4; codecs="avc1.42E01E"'));
     assert.ok(hasLink >= 1, 'mp4 无论能否内联，都必须另给下载链接');
+    // 🔴 两支都必须【等】：产品无法在插入 <video> 之前知道这台浏览器能不能解码，
+    //    只能先插进去、由 media error 事件触发回退。同步断言测的是「谁跑得快」，不是产品行为。
+    //    实测（不可解码机）：t≈0ms video=1 readyState=0 → t≈200ms video=0 links=2，此后稳定。
     if (canPlayH264 === 'probably' || canPlayH264 === 'maybe') {
-      assert.ok(hasVideo >= 1,
-        `本浏览器可解 H.264（canPlayType=${canPlayH264}），mp4 必须内联 <video>，实测 video 元素数=${hasVideo}`);
+      // 能解码：等到真的拿到元数据，才算「内联成功」；只看元素在不算。
+      await last.locator('video').first().waitFor({ state: 'attached', timeout: 5000 });
+      const ok = await last.locator('video').first().evaluate((v) => new Promise((resolve) => {
+        if (v.readyState >= 1) return resolve({ readyState: v.readyState, w: v.videoWidth, h: v.videoHeight });
+        v.addEventListener('loadedmetadata', () => resolve({ readyState: v.readyState, w: v.videoWidth, h: v.videoHeight }), { once: true });
+        v.addEventListener('error', () => resolve({ readyState: v.readyState, err: v.error && v.error.code }), { once: true });
+        setTimeout(() => resolve({ readyState: v.readyState, timeout: true }), 5000);
+      }));
+      assert.ok(ok.readyState >= 1 && ok.w > 0,
+        `本浏览器可解 H.264（canPlayType=${canPlayH264}），mp4 必须真的内联，实测 ${JSON.stringify(ok)}`);
     } else {
-      assert.strictEqual(hasVideo, 0,
-        '本浏览器不可解 H.264，不得放出一个放不了的 <video>（应只给下载链接）');
+      // 不可解码：等回退完成再断言 —— 断言的是「最终不留一个放不了的 <video>」，
+      // 不是「一插进来就没有」（后者产品做不到，见上）。
+      await last.locator('video').first().waitFor({ state: 'detached', timeout: 5000 });
+      assert.strictEqual(await last.locator('video').count(), 0,
+        `本浏览器不可解 H.264（canPlayType=${JSON.stringify(canPlayH264)}），回退后不得残留放不了的 <video>`);
+      assert.ok(await last.locator('a.attachment-dl').count() >= 1, '回退后必须留下下载链接');
     }
   });
 
