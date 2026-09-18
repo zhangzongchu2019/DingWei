@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/admin"
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/config"
@@ -21,6 +22,29 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/secretbox"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
+
+func TestConfigureAdminFileBrowserWarnsForEachMissingSetting(t *testing.T) {
+	values := []struct {
+		name                               string
+		issuerURL, publicURL, token, audit string
+	}{
+		{"WP_FILE_ISSUER_URL", "", "https://public", "issuer", "audit"},
+		{"WP_FILE_PUBLIC_URL", "https://internal", "", "issuer", "audit"},
+		{"WP_FILE_ISSUER_TOKEN", "https://internal", "https://public", "", "audit"},
+		{"WP_FILE_AUDIT_TOKEN", "https://internal", "https://public", "issuer", ""},
+	}
+	for _, tt := range values {
+		t.Run(tt.name, func(t *testing.T) {
+			var logs bytes.Buffer
+			logger := slog.New(slog.NewTextHandler(&logs, nil))
+			srv := &admin.Server{}
+			configureAdminFileBrowser(srv, logger, tt.issuerURL, tt.publicURL, tt.token, tt.audit)
+			if srv.Files != nil || !strings.Contains(logs.String(), tt.name) {
+				t.Fatalf("files=%v logs=%q", srv.Files, logs.String())
+			}
+		})
+	}
+}
 
 func TestHandleFeishuWebhookURLVerification(t *testing.T) {
 	db, err := store.OpenSQLite(t.TempDir() + "/webhook.db")

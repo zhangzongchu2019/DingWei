@@ -73,6 +73,27 @@ func execute(args []string, out io.Writer, logger *slog.Logger, runServer func(*
 	return runServer(logger)
 }
 
+func configureAdminFileBrowser(adm *admin.Server, logger *slog.Logger, issuerURL, publicURL, issuerToken, auditToken string) {
+	values := []struct{ name, value string }{
+		{"WP_FILE_ISSUER_URL", issuerURL},
+		{"WP_FILE_PUBLIC_URL", publicURL},
+		{"WP_FILE_ISSUER_TOKEN", issuerToken},
+		{"WP_FILE_AUDIT_TOKEN", auditToken},
+	}
+	missing := make([]string, 0, len(values))
+	for _, value := range values {
+		if strings.TrimSpace(value.value) == "" {
+			missing = append(missing, value.name)
+		}
+	}
+	if len(missing) != 0 {
+		logger.Warn("admin file browser disabled: missing configuration", "missing_env", strings.Join(missing, ","))
+		return
+	}
+	adm.Files = admin.NewHTTPFileBrowser(issuerURL, publicURL, issuerToken, auditToken)
+	logger.Info("admin file browser configured")
+}
+
 func run(logger *slog.Logger) error {
 	bs := config.LoadBootstrap()
 	if err := os.MkdirAll(bs.DataDir, 0o750); err != nil {
@@ -141,12 +162,7 @@ func run(logger *slog.Logger) error {
 	adm.Outbound = outbound
 	adm.Prefix = prefixHub
 	adm.SecretKey = bs.SecretKey
-	if fileIssuerURL != "" && filePublicURL != "" && fileIssuerCredential != "" {
-		if auditToken := strings.TrimSpace(os.Getenv("WP_FILE_AUDIT_TOKEN")); auditToken != "" {
-			adm.Files = admin.NewHTTPFileBrowser(fileIssuerURL, filePublicURL, fileIssuerCredential, auditToken)
-			logger.Info("admin file browser configured")
-		}
-	}
+	configureAdminFileBrowser(adm, logger, fileIssuerURL, filePublicURL, fileIssuerCredential, strings.TrimSpace(os.Getenv("WP_FILE_AUDIT_TOKEN")))
 	if datadURL := strings.TrimSpace(os.Getenv("DATAD_URL")); datadURL != "" {
 		datadToken := strings.TrimSpace(os.Getenv("DATAD_TOKEN"))
 		if datadToken == "" {

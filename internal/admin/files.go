@@ -46,7 +46,7 @@ type FileBrowser interface {
 
 func (s *Server) filesPage(w http.ResponseWriter, r *http.Request) {
 	if s.Files == nil {
-		http.Error(w, "file browser unavailable", http.StatusServiceUnavailable)
+		http.Error(w, "file browser disabled: startup configuration was not injected", http.StatusServiceUnavailable)
 		return
 	}
 	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
@@ -55,7 +55,7 @@ func (s *Server) filesPage(w http.ResponseWriter, r *http.Request) {
 	}
 	page, err := s.Files.List(r.Context(), offset, 50)
 	if err != nil {
-		http.Error(w, "file browser unavailable", 503)
+		http.Error(w, "file browser audit request failed: "+err.Error(), http.StatusServiceUnavailable)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
