@@ -261,8 +261,8 @@ func (r *Repository) FinishDeleting(ctx context.Context, id string, at time.Time
 // the object key in the same transaction as the audit record. Role
 // authorization is performed by Hub; this transaction independently enforces
 // owner scope and ready state.
-func (r *Repository) SetArchivedLocationByOwner(ctx context.Context, id, objectKey string, archived bool, actorPrincipal, ownerKey, reason string, at time.Time) error {
-	if actorPrincipal == "" || ownerKey == "" || reason == "" {
+func (r *Repository) SetArchivedLocationByOwner(ctx context.Context, id, objectKey string, archived bool, actorPrincipal, ownerKey, reason string, at time.Time, retention time.Duration) error {
+	if actorPrincipal == "" || ownerKey == "" || reason == "" || retention <= 0 {
 		return fmt.Errorf("archive actor, owner scope, and reason are required")
 	}
 	tx, err := r.db.BeginTx(ctx, nil)
@@ -284,12 +284,12 @@ func (r *Repository) SetArchivedLocationByOwner(ctx context.Context, id, objectK
 	} else {
 		unarchivedAt = stamp(at)
 	}
-	expires := at.UTC().Add(7 * 24 * time.Hour)
-	query := `UPDATE files SET archived=?,archived_at=?,unarchived_at=?,expires_at=? WHERE id=? AND owner_key=? AND state='ready'`
-	args := []any{value, archivedAt, unarchivedAt, stamp(expires), id, ownerKey}
+	expires := at.UTC().Add(retention)
+	query := `UPDATE files SET archived=?,archived_at=?,unarchived_at=?,expires_at=CASE WHEN ?=0 THEN ? ELSE expires_at END WHERE id=? AND owner_key=? AND state='ready'`
+	args := []any{value, archivedAt, unarchivedAt, value, stamp(expires), id, ownerKey}
 	if objectKey != "" {
-		query = `UPDATE files SET archived=?,archived_at=?,unarchived_at=?,expires_at=?,object_key=? WHERE id=? AND owner_key=? AND state='ready'`
-		args = []any{value, archivedAt, unarchivedAt, stamp(expires), objectKey, id, ownerKey}
+		query = `UPDATE files SET archived=?,archived_at=?,unarchived_at=?,expires_at=CASE WHEN ?=0 THEN ? ELSE expires_at END,object_key=? WHERE id=? AND owner_key=? AND state='ready'`
+		args = []any{value, archivedAt, unarchivedAt, value, stamp(expires), objectKey, id, ownerKey}
 	}
 	result, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {

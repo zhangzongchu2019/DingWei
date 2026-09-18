@@ -13,13 +13,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/filepolicy"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
 const (
 	fileCapabilityRequestType  = "file_capability_request"
 	fileCapabilityResponseType = "file_capability_response"
-	maxFileUploadBytes         = int64(50 << 20)
+	maxFileUploadBytes         = filepolicy.MaxUploadBytes
 )
 
 var fileIDPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)

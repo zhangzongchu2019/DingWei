@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/filepolicy"
 )
 
 const (
@@ -19,7 +21,7 @@ const (
 
 	LongTextThreshold   = 4 * KiB
 	LongTextMaxBytes    = 8 * MiB
-	defaultMaxFileBytes = 50 * MiB
+	defaultMaxFileBytes = filepolicy.MaxUploadBytes
 	defaultQuotaBytes   = 500 * GiB
 )
 
@@ -50,7 +52,7 @@ func ConfigFromEnv() (Config, error) {
 		PublicBaseURL:      strings.TrimRight(os.Getenv("FS_PUBLIC_BASE_URL"), "/"),
 		MaxFileBytes:       defaultMaxFileBytes,
 		QuotaBytes:         defaultQuotaBytes,
-		Retention:          7 * 24 * time.Hour,
+		Retention:          filepolicy.DefaultRetention,
 		TombstoneRetention: 90 * 24 * time.Hour,
 		SweepInterval:      time.Minute,
 		CapabilityMaxAge:   2 * time.Minute,
