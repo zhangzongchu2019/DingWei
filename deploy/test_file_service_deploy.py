@@ -8,6 +8,11 @@ DEPLOY = ROOT / "deploy"
 
 
 class FileServiceDeploymentTest(unittest.TestCase):
+    def test_owner_selected_limits_are_pinned_in_deployment_contract(self):
+        contract = (DEPLOY / "H-FILE-SERVICE-DEPLOYMENT.md").read_text()
+        self.assertEqual(contract.count("FS_RETENTION=168h"), 1)
+        self.assertEqual(contract.count("FS_MAX_FILE_BYTES=52428800"), 1)
+
     def test_service_is_supervised_and_write_scope_is_explicit(self):
         text = (DEPLOY / "file-service.service").read_text()
         self.assertIn("ExecStart=/opt/dingwei/file-service/bin/file-service", text)
@@ -28,10 +33,23 @@ class FileServiceDeploymentTest(unittest.TestCase):
     def test_nginx_exposes_only_public_file_routes(self):
         text = (DEPLOY / "nginx-dingwei.conf").read_text()
         self.assertIn("location = /files/upload", text)
-        self.assertIn("location ^~ /files/ref/", text)
-        self.assertEqual(text.count("proxy_pass http://127.0.0.1:8793"), 2)
+        self.assertNotIn("location ^~ /files/ref/", text)
+        self.assertEqual(text.count("proxy_pass http://127.0.0.1:8793"), 1)
         self.assertNotIn("proxy_pass http://127.0.0.1:8794", text)
         self.assertNotIn("location /internal/", text)
+
+    def test_direct_links_inline_only_whitelisted_extensions(self):
+        text = (DEPLOY / "nginx-dingwei.conf").read_text()
+        self.assertIn("location ~ ^/f/", text)
+        self.assertIn("jpg|png|gif|webp|avif|mp4|webm|ogv|pdf|txt", text)
+        self.assertIn("default_type application/octet-stream", text)
+        self.assertIn("add_header Content-Disposition attachment always", text)
+        self.assertEqual(text.count("add_header X-Content-Type-Options nosniff always"), 2)
+        self.assertEqual(text.count("add_header Referrer-Policy no-referrer always"), 2)
+        inline = text.split("location ~ ^/f/", 1)[1].split("location ~ ^/f/", 1)[0]
+        self.assertNotIn("Content-Disposition", inline)
+        self.assertIn("location /f/", text)
+        self.assertIn("return 404", text)
 
     def test_local_storage_replaces_minio_and_is_non_executable(self):
         unit = (DEPLOY / "file-service.service").read_text()
@@ -47,8 +65,8 @@ class FileServiceDeploymentTest(unittest.TestCase):
         probe = (DEPLOY / "file-service-storage-probe.sh").read_text()
         self.assertIn("/internal/files/issue/upload", probe)
         self.assertIn("/files/upload", probe)
-        self.assertIn("/internal/files/issue/retrieval", probe)
-        self.assertIn("/files/ref/", probe)
+        self.assertIn('["url"]', probe)
+        self.assertIn('curl --fail --silent --show-error "$file_url"', probe)
         self.assertIn("cmp ", probe)
         self.assertIn("FILE_SERVICE_STORAGE_OK", probe)
         self.assertNotIn("/readyz", probe)
@@ -61,7 +79,7 @@ class FileServiceDeploymentTest(unittest.TestCase):
         self.assertIn("production metadata, data root or host clock", contract)
         self.assertIn("Disposable isolated-instance time travel", contract)
         self.assertIn("time-travel one production row", contract)
-        self.assertIn("60 to 61", contract)
+        self.assertIn("exactly 7 days", contract)
         self.assertIn("Quota eviction is not an acceptable substitute", contract)
 
 

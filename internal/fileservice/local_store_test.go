@@ -154,7 +154,7 @@ func TestLocalPutRefusesSymlinkDirectoryComponent(t *testing.T) {
 	}
 }
 
-func TestLocalArchiveMovesOutAndDaySweepCannotDeletePinned(t *testing.T) {
+func TestPerFileSweepKeepsArchivedObjectAtStablePath(t *testing.T) {
 	s := newLocalStore(t)
 	r, err := OpenRepository(filepath.Join(t.TempDir(), "meta.db"))
 	if err != nil {
@@ -179,8 +179,8 @@ func TestLocalArchiveMovesOutAndDaySweepCannotDeletePinned(t *testing.T) {
 		t.Fatal(err)
 	}
 	kept, _ := r.Get(context.Background(), keep.ID)
-	if !strings.Contains(kept.ObjectKey, "/pinned/") {
-		t.Fatalf("key=%s", kept.ObjectKey)
+	if kept.ObjectKey != keep.ObjectKey {
+		t.Fatalf("archive changed key before=%s after=%s", keep.ObjectKey, kept.ObjectKey)
 	}
 	if strings.Contains(kept.ObjectKey, "run-me") || strings.HasSuffix(kept.ObjectKey, ".sh") {
 		t.Fatalf("user filename entered object path: %s", kept.ObjectKey)
@@ -190,7 +190,7 @@ func TestLocalArchiveMovesOutAndDaySweepCannotDeletePinned(t *testing.T) {
 		t.Fatal(err)
 	}
 	if b, err := os.ReadFile(mustPath(t, s, kept.ObjectKey)); err != nil || !bytes.Equal(b, []byte("keep")) {
-		t.Fatalf("pinned bytes=%q err=%v", b, err)
+		t.Fatalf("archived bytes=%q err=%v", b, err)
 	}
 	if _, err := os.Stat(mustPath(t, s, drop.ObjectKey)); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("dated object remains err=%v", err)
@@ -198,23 +198,44 @@ func TestLocalArchiveMovesOutAndDaySweepCannotDeletePinned(t *testing.T) {
 	if _, err := os.Stat(mustPath(t, s, drop2.ObjectKey)); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("second dated object remains err=%v", err)
 	}
-	if _, err := os.Stat(filepath.Dir(mustPath(t, s, drop.ObjectKey))); !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("dated directory remains err=%v", err)
+	if _, err := os.Stat(filepath.Dir(mustPath(t, s, drop.ObjectKey))); err != nil {
+		t.Fatalf("shared dated directory was removed err=%v", err)
 	}
 }
 
-func TestDeleteDayDirectlyRejectsPinnedKey(t *testing.T) {
+func TestLocalDeleteRejectsInvalidObjectKeyShape(t *testing.T) {
 	s := newLocalStore(t)
-	key := "files/pinned/id-20260918T120000Z"
+	key := "owner/agent/26/0918/0123456789abcdef0123456789abcdef.exe"
 	if err := s.Put(context.Background(), key, strings.NewReader("keep"), 4, "application/octet-stream"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.DeleteDay(context.Background(), key); err == nil {
-		t.Fatal("DeleteDay accepted a pinned key")
+	if err := s.Delete(context.Background(), key); err == nil {
+		t.Fatal("unsafe key was deleted")
 	}
-	b, err := os.ReadFile(mustPath(t, s, key))
-	if err != nil || string(b) != "keep" {
-		t.Fatalf("pinned bytes changed: bytes=%q err=%v", b, err)
+	if b, err := os.ReadFile(mustPath(t, s, key)); err != nil || string(b) != "keep" {
+		t.Fatalf("bytes=%q err=%v", b, err)
+	}
+}
+
+func TestLocalDeleteRejectsSymlinkTarget(t *testing.T) {
+	s := newLocalStore(t)
+	key := "owner/agent/26/0918/0123456789abcdef0123456789abcdef.bin"
+	path, _ := s.path(key)
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "outside")
+	if err := os.WriteFile(outside, []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, path); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Delete(context.Background(), key); err == nil {
+		t.Fatal("symlink target accepted")
+	}
+	if b, _ := os.ReadFile(outside); string(b) != "keep" {
+		t.Fatalf("outside=%q", b)
 	}
 }
 

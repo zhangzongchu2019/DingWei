@@ -31,21 +31,8 @@ curl --fail --silent --show-error \
   -H "X-DingWei-Session: ${session}" -H 'X-File-Name: deployment-probe.txt' \
   -H 'Content-Type: text/plain' -H "X-Content-SHA256: ${sum}" \
   --data-binary @"$tmp/body" "$public_base/files/upload" >"$tmp/upload.json"
-file_id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["file_ref"].removeprefix("dwfile:"))' "$tmp/upload.json")
-range="bytes=0-$((size - 1))"
-
-python3 - "$owner" "$session" "$file_id" "$range" >"$tmp/issue-get.json" <<'PY'
-import json, sys
-print(json.dumps({"subject": sys.argv[1] + "/" + sys.argv[2], "file_id": sys.argv[3],
-                  "method": "GET", "range": sys.argv[4], "ttl_seconds": 60}))
-PY
-curl --fail --silent --show-error \
-  -H "Authorization: Bearer ${FS_INTERNAL_ISSUER_TOKEN}" \
-  -H 'Content-Type: application/json' --data-binary @"$tmp/issue-get.json" \
-  "$internal_base/internal/files/issue/retrieval" >"$tmp/get-ticket.json"
-get_token=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["token"])' "$tmp/get-ticket.json")
-curl --fail --silent --show-error \
-  -H "Authorization: Bearer ${get_token}" -H "Range: ${range}" \
-  "$public_base/files/ref/$file_id" >"$tmp/got"
+file_url=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["url"])' "$tmp/upload.json")
+file_id=$(basename "$file_url" | cut -d. -f1)
+curl --fail --silent --show-error "$file_url" >"$tmp/got"
 cmp "$tmp/body" "$tmp/got"
 printf 'FILE_SERVICE_STORAGE_OK file_id=%s bytes=%s sha256=%s\n' "$file_id" "$size" "$sum"

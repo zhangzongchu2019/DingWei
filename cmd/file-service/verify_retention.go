@@ -37,7 +37,7 @@ func verifyRetention(workDir string) error {
 		Repo: repo, Objects: objects, Clock: clock,
 		MaxFileBytes: 1024, QuotaBytes: 1024 * 1024,
 		Retention: 60 * 24 * time.Hour, TombstoneRetention: 90 * 24 * time.Hour,
-		ObjectPrefix: "verify",
+		ObjectPrefix: "files",
 	}
 	put := func(body string) (fileservice.File, error) {
 		return manager.Put(context.Background(), fileservice.Upload{
@@ -77,8 +77,8 @@ func verifyRetention(workDir string) error {
 	if err := manager.Sweep(context.Background()); err != nil {
 		return fmt.Errorf("sweep date directory: %w", err)
 	}
-	if _, err := os.Stat(dateDir); !errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("date directory remains after sweep: %v", err)
+	if info, err := os.Stat(dateDir); err != nil || !info.IsDir() {
+		return fmt.Errorf("shared date directory removed despite archived object: %v", err)
 	}
 	for _, f := range []fileservice.File{first, second} {
 		got, err := repo.Get(context.Background(), f.ID)
