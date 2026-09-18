@@ -21,10 +21,10 @@ func (s *SQLite) CreateConsoleSession(ctx context.Context, session model.Console
 
 func (s *SQLite) ResolveConsoleSession(ctx context.Context, tokenHash string, now time.Time) (*model.ConsoleSession, error) {
 	var session model.ConsoleSession
-	var expires string
-	err := s.db.QueryRowContext(ctx, `SELECT s.id,s.principal_id,s.token_hash,s.expires_at FROM console_session s
+	var expires, created string
+	err := s.db.QueryRowContext(ctx, `SELECT s.id,s.principal_id,s.token_hash,s.expires_at,s.created_at FROM console_session s
 		JOIN console_principal p ON p.id=s.principal_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND p.active=1 AND s.expires_at>?`,
-		tokenHash, now.UTC().Format(time.RFC3339Nano)).Scan(&session.ID, &session.PrincipalID, &session.TokenHash, &expires)
+		tokenHash, now.UTC().Format(time.RFC3339Nano)).Scan(&session.ID, &session.PrincipalID, &session.TokenHash, &expires, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -35,7 +35,30 @@ func (s *SQLite) ResolveConsoleSession(ctx context.Context, tokenHash string, no
 	if err != nil {
 		return nil, err
 	}
+	// created_at 供滑动续期算绝对上限;老行若格式异常不让整次鉴权失败 —— 上限退化为「不可续」,
+	// 那是 fail-closed 的方向(宁可让用户重登,不可让一个算不出上限的会话无限续)。
+	session.CreatedAt, err = time.Parse(time.RFC3339Nano, created)
+	if err != nil {
+		session.CreatedAt = time.Time{}
+	}
 	return &session, nil
+}
+
+// TouchConsoleSession 把会话的过期时刻**只向后**推。D1(业主第 7 条:页面一直开着就不必重登)。
+//
+// 🔴 三道守卫，缺一不可：
+//   - `revoked_at IS NULL`  —— 已吊销的不得被续活
+//   - `expires_at>?`(now)   —— **已经过期的不得被续活**(否则「过期」形同虚设)
+//   - `expires_at<?`(新值)  —— 只延长不缩短(并发多标签下，晚到的旧值不得把已续的窗口拉回来)
+func (s *SQLite) TouchConsoleSession(ctx context.Context, sessionID string, newExpiry, now time.Time) error {
+	if sessionID == "" || !newExpiry.After(now) {
+		return errors.New("invalid console session touch")
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE console_session SET expires_at=?
+		WHERE id=? AND revoked_at IS NULL AND expires_at>? AND expires_at<?`,
+		newExpiry.UTC().Format(time.RFC3339Nano), sessionID,
+		now.UTC().Format(time.RFC3339Nano), newExpiry.UTC().Format(time.RFC3339Nano))
+	return err
 }
 
 func (s *SQLite) RevokeConsoleSession(ctx context.Context, sessionID string, now time.Time) error {
