@@ -278,7 +278,9 @@ func TestFinishRemovalRequiresDurableDeletingIntent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.RemovalReason = "retention"
+	if _, err := m.Repo.db.Exec(`UPDATE files SET removal_reason='retention' WHERE id=?`, f.ID); err != nil {
+		t.Fatal(err)
+	}
 	if err := m.finishRemoval(context.Background(), f); err == nil {
 		t.Fatal("ready row deleted without durable intent")
 	}
