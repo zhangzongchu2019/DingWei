@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-18T23:49:02Z`
+更新时间（UTC）：`2026-09-18T23:54:37Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`e78000a508d40208d3e758a43fcb05ffb591936f`
+- 实现锚：`65ab85323a34b8131eafbd40bb5ef32134e26211`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -50,6 +50,8 @@ V4′ 仍须部署后上传真实 docx，经生产 nginx `curl -I` 验证 octet-
 V7′–V11′ 仍须部署后通过生产 nginx 做 md/py/json 与 html/xml/svg 阳性、阴性对照，验证未知 text 子类型 `.txt` 回退，并比较中文 md 取回字节；仓内不宣称生产响应头或浏览器显示已通过。
 
 评审返工：已删除 `exts` 中 SVG/HTML/XML/XHTML 的危险死映射，并从 `inlineCandidate` 删除 XML/XHTML 分支。`TestDirectLinkExtensionAllowListsExcludeActiveContent` 现通过 Go AST 同时读取 `manager.go` 的 `exts` 与 `downloadExts`、nginx `file_ext`、`directObjectKey` 四个来源。向 `exts` 重新插入 `text/html→html` 后，全仓 980 条仅该配置形状测试转红；还原后 rc=0。当前实现同时保留未知 `text/*→.txt`，覆盖 Python/YAML 等未枚举文本。
+
+判据升级：同一测试现要求 manager 两张映射表（加通用 `.bin` 回退）、nginx 两个 `file_ext` 正则并集、`directObjectKey` 三处扩展名集合严格相等，并继续拒绝主动内容扩展名。MB-1 仅在 manager 加 `flv`、MB-2 仅在 nginx 加 `flv`、MB-3 仅在 `directObjectKey` 加 `flv`，三发均执行全仓 980 条，且都仅该测试转红；全部还原后全仓 rc=0。
 
 ## P0：UTF-8 上传文件名协议
 
