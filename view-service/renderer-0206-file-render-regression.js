@@ -13,10 +13,34 @@ const assert = require('assert');
 const { chromium } = require('playwright');
 
 const BASE = process.env.MOCK_BASE || 'https://127.0.0.1:19443';
-const FIXTURES = process.env.FIXTURES || '/data/ai-dev-data/work/fixtures';
+// 🔴 默认指向【仓内】样本目录，不要指向任何人的本机暂存目录。
+//    此前默认是 /data/ai-dev-data/work/fixtures —— 那是我本机的路径，
+//    在别人机器上必然 ENOENT，而失败信息是「缺样本」，看起来像环境问题、不像交付缺陷。
+const FIXTURES = process.env.FIXTURES || path.join(__dirname, 'fixtures-0206');
 const SHOTS = process.env.SHOTS || '/tmp/renderer-0206-shots';
 
 const fx = (n) => path.join(FIXTURES, n);
+
+// 两个大件不入仓（820 KB / 50 MiB），改为**用时现生成**，不依赖任何人的本地残留。
+// 内容是确定性的：同一段代码在任何机器上生成同一份字节。
+function ensureGeneratedFixtures() {
+  const large = fx('sample-large.txt');
+  if (!fs.existsSync(large)) {
+    let text = '';
+    for (let i = 0; i < 20000; i += 1) text += `${String(i).padStart(8, '0')} DingWei truncation fixture line\n`;
+    fs.writeFileSync(large, text);
+    console.log(`  · 生成 ${large}（${fs.statSync(large).size} 字节）`);
+  }
+  const over = fx('oversize-52428801.bin');
+  if (!fs.existsSync(over)) {
+    const fd = fs.openSync(over, 'w');
+    const block = Buffer.alloc(1024 * 1024);
+    for (let i = 0; i < 50; i += 1) fs.writeSync(fd, block);
+    fs.writeSync(fd, Buffer.from('x'));   // 50 MiB + 1 字节：验的是「上限恰好被拒」
+    fs.closeSync(fd);
+    console.log(`  · 生成 ${over}（${fs.statSync(over).size} 字节）`);
+  }
+}
 let pass = 0, fail = 0;
 async function t(name, fn) {
   try { await fn(); console.log('  ✅', name); pass++; }
@@ -25,6 +49,7 @@ async function t(name, fn) {
 
 (async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
+  ensureGeneratedFixtures();
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
