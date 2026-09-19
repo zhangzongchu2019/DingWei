@@ -650,6 +650,14 @@ async function t(name, fn) {
   //        用 ASCII 名测文件名编码,测多少遍都测不出来。
   await t('⑭ P0:中文/emoji/空格括号/含%% 的文件名都能成功上传,且草稿块显示原名', async () => {
     const names = ['季度报告（终版）.pdf', '📎emoji名.png', 'marketing v2 (1).docx', '50%off.pdf'];
+    // 🔴 先验夹具本身:「中文名」必须真的含 >0x7f 的码点。
+    //    用 ASCII 名(或被环境转义过的名)测文件名编码,测多少遍都测不出来 ——
+    //    那就是「素材落在被测维度的同一侧」。这里把它焊成断言,不靠肉眼看着像中文。
+    const nonAscii = names.filter((n) => [...n].some((c) => c.codePointAt(0) > 0x7f));
+    assert.ok(nonAscii.includes('季度报告（终版）.pdf'), '夹具「中文名」必须含 >0x7f 码点');
+    assert.ok(nonAscii.includes('📎emoji名.png'), '夹具「emoji 名」必须含 >0x7f 码点');
+    assert.strictEqual(nonAscii.length, 2,
+      `另外两个夹具是**按设计**的纯 ASCII(一个测空格与括号、一个测 %),不得也变成非 ASCII —— 否则「ASCII 路径没坏」这一半就没人测了,实测 ${JSON.stringify(nonAscii)}`);
     const made = [];
     try {
       for (const n of names) {
@@ -729,6 +737,163 @@ async function t(name, fn) {
     assert.strictEqual(got.totalInDom, 4, `🔴 隐藏必须是视觉隐藏：DOM 中 /f/ 直链总数应仍为 4，实测 ${got.totalInDom}`);
     assert.ok(got.goneVisible, 'R5-V4：HEAD 404 的过期链接必须在正文中保持可见（否则用户连复制都做不到）');
     await page.screenshot({ path: path.join(SHOTS, '06-r5-alternating.png'), fullPage: true });
+  });
+
+  // ── ⑯ R6:批次级状态(业主 09-18 一次传 6 张图:「多文件传输时,没有提示,不知道是不是结束了」)──
+  //
+  // 🔴 这条盯的是**批次层**,不是单文件层。单文件层由 ⑨ 盯着,两条断言互不覆盖:
+  //    ⑨ 说「每个文件都有过自己的一行、完成后不残留」,⑯ 说「整批还剩多少、结束了没有」。
+  //    正因为是两层,产品里批次行用的是独立类名 .batch-row 而不是 .upload-row ——
+  //    若复用同一个类,⑨ 那句「完成后不得残留进度行」会被批次行连带打红/连带满足,
+  //    两层就再也分不开了。
+  await t('⑯ R6-V1/V2/V3/V4:批次行计数递增、全成功后消失、有失败时留住并说清数目、单文件不出批次行', async () => {
+    const six = ['sample.pdf', 'sample.png', 'sample-small.txt', 'sample.docx', 'sample.mp4', 'sample.webm'].map(fx);
+    // 🔴 淡出时长取自**产品源码里的常量**,不在测试里另写一个数字 ——
+    //    两处各写一个,产品改了测试不会红,这条判据就变成摆设。
+    const src = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
+    const lingerMs = Number((src.match(/BATCH_DONE_LINGER_MS\s*=\s*(\d+)/) || [])[1]);
+    assert.ok(Number.isFinite(lingerMs) && lingerMs > 0, '产品里必须有 BATCH_DONE_LINGER_MS 常量,本条判据靠它取时长');
+
+    const reset = () => page.evaluate(() => {
+      document.querySelectorAll('#uploadQueue .upload-row, #uploadQueue .batch-row').forEach((e) => e.remove());
+      const el = document.getElementById('humanInput');
+      el.value = '';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    // 🔴 全程采集批次行文案,用 MutationObserver 抓**每一次**取值,而不是定时采样。
+    //    理由(实测过才这么写):settle(第 6 个) 与 finish() 在同一个同步块里连着改文案,
+    //    任何间隔采样都可能整段错过 6/6 —— 而那恰好是 V1 要的终点值。
+    //    childList 记录里的 removedNodes 带着被顶掉的旧文本节点,6/6 就在里面。
+    const installProbe = () => page.evaluate(() => {
+      window.__batchSeen = [];
+      window.__batchEver = false;
+      const push = (v) => {
+        const t2 = (v || '').trim();
+        if (t2 && window.__batchSeen[window.__batchSeen.length - 1] !== t2) window.__batchSeen.push(t2);
+      };
+      const scan = () => {
+        if (document.querySelector('#uploadQueue .batch-row')) window.__batchEver = true;
+        const cur = document.querySelector('#uploadQueue .batch-row .b-meta');
+        if (cur) push(cur.textContent);
+      };
+      window.__batchObs = new MutationObserver((records) => {
+        for (const r of records) {
+          const tgt = r.target;
+          if (tgt && tgt.classList && tgt.classList.contains('b-meta')) {
+            for (const n of r.removedNodes) if (n.nodeType === 3) push(n.data);
+          }
+        }
+        scan();
+      });
+      window.__batchObs.observe(document.getElementById('uploadQueue'),
+        { childList: true, subtree: true, characterData: true });
+      scan();
+    });
+    const readProbe = () => page.evaluate(() => {
+      if (window.__batchObs) window.__batchObs.disconnect();
+      return { seen: window.__batchSeen || [], ever: !!window.__batchEver };
+    });
+
+    let routed = false;
+    try {
+      // ── R6-V1 / R6-V2：6 个文件全部成功 ────────────────────────────
+      await reset();
+      await installProbe();
+      await page.setInputFiles('#filePicker', six);
+      await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 6,
+        null, { timeout: 90000 });
+      await page.screenshot({ path: path.join(SHOTS, '07-r6-batch-done.png') });
+      const okRun = await readProbe();
+      assert.ok(okRun.ever, 'R6-V1：多文件上传必须出现过批次行');
+      // 🔴 沿时间断言,不断言某一瞬间:1/6 … 6/6 每一格都必须**出现过**。
+      //    (这正是上一轮自己更正过的那个维度问题:需求是「整批进度看得见」,是时间性质。)
+      for (let k = 1; k <= 6; k += 1) {
+        assert.ok(okRun.seen.some((m) => m.startsWith(`${k}/6 `)),
+          `R6-V1：批次计数 ${k}/6 没有出现过,实测采集到 ${JSON.stringify(okRun.seen)}`);
+      }
+      // 批次行必须同时给字节量,否则 36 MB 那一批仍然只能看个数字
+      assert.ok(okRun.seen.some((m) => /\/\s*\d/.test(m) && /(B|KiB|MiB)/.test(m)),
+        `R6-V1：批次行必须带「已传 / 总」字节,实测 ${JSON.stringify(okRun.seen)}`);
+      // R6-V2 上半：完成态出现过
+      assert.ok(okRun.seen.some((m) => /6 个文件已全部附加/.test(m)),
+        `R6-V2：全部成功后必须出现明确的完成态文案,实测 ${JSON.stringify(okRun.seen)}`);
+      // R6-V2 下半：之后必须消失(常驻就又回到裁定②要清的堆积)
+      // 🔴 等不到就直接超时的话,报告里只有「Timeout 16000ms」——看不出等的是什么、实测是什么。
+      //    自己接住,把当时的批次行状态原样打出来。
+      try {
+        await page.waitForFunction(() => document.querySelectorAll('#uploadQueue .batch-row').length === 0,
+          null, { timeout: lingerMs + 12000 });
+      } catch (e) {
+        const cur = await page.evaluate(() => {
+          const r = document.querySelector('#uploadQueue .batch-row');
+          return r ? { state: r.dataset.batchState, meta: r.querySelector('.b-meta')?.textContent } : null;
+        });
+        throw new Error(`R6-V2：全部成功的批次完成态必须淡出,等 ${lingerMs + 12000} ms 后仍在,实测 ${JSON.stringify(cur)}`);
+      }
+      assert.strictEqual(await page.locator('#uploadQueue .batch-row').count(), 0,
+        'R6-V2：全部成功的批次完成态必须淡出,不得常驻');
+
+      // ── R6-V4：单文件不出批次行 ───────────────────────────────────
+      await reset();
+      await installProbe();
+      await page.setInputFiles('#filePicker', [fx('sample.pdf')]);
+      await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 1,
+        null, { timeout: 60000 });
+      await page.waitForTimeout(400);
+      const oneRun = await readProbe();
+      assert.strictEqual(oneRun.ever, false,
+        `R6-V4：单文件上传不得出现批次行(1/1 是噪音),实测采集到 ${JSON.stringify(oneRun.seen)}`);
+
+      // ── R6-V3：6 个里第 4 个失败 ──────────────────────────────────
+      await reset();
+      await installProbe();
+      let nth = 0;
+      await page.route('**/files/upload', async (route) => {
+        nth += 1;
+        if (nth === 4) {
+          await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: '存储暂时不可用' }) });
+        } else {
+          await route.continue();
+        }
+      });
+      routed = true;
+      await page.setInputFiles('#filePicker', six);
+      await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 5,
+        null, { timeout: 90000 });
+      // 等批次结算完(finish 在整批走完之后)
+      try {
+        await page.waitForFunction(() => {
+          const r = document.querySelector('#uploadQueue .batch-row');
+          return !!r && r.dataset.batchState === 'has-failure';
+        }, null, { timeout: 30000 });
+      } catch (e) {
+        // 🔴 把实测终态打出来:失败被记成成功时,这里会是 all-ok 与「6 个文件已全部附加」,
+        //    一眼看得出是计数错了,而不是「等超时了」。
+        const cur = await page.evaluate(() => {
+          const r = document.querySelector('#uploadQueue .batch-row');
+          return r ? { state: r.dataset.batchState, meta: r.querySelector('.b-meta')?.textContent }
+                   : { state: '(批次行已不在)', meta: null };
+        });
+        throw new Error(`R6-V3：等不到「有失败」的批次终态,实测 ${JSON.stringify(cur)}`);
+      }
+      const badRun = await readProbe();
+      assert.ok(badRun.seen.some((m) => /5 个已附加/.test(m) && /1 个失败/.test(m)),
+        `R6-V3：有失败时完成态必须说清数目,实测 ${JSON.stringify(badRun.seen)}`);
+      // 🔴 R6-V3 的牙在这里:等**超过**淡出时长之后,批次行必须还在。
+      await page.waitForTimeout(lingerMs + 2500);
+      assert.strictEqual(await page.locator('#uploadQueue .batch-row').count(), 1,
+        `R6-V3：有失败的批次完成态不得淡出,必须留到用户自己清掉(已等 ${lingerMs + 2500} ms)`);
+      const badMeta = await page.locator('#uploadQueue .batch-row .b-meta').textContent();
+      assert.ok(/1 个失败/.test(badMeta), `R6-V3：留在屏幕上的那一行必须写着失败数,实测 ${JSON.stringify(badMeta)}`);
+      // 裁定②里已定、本次不变:失败的**单文件行**同样保留
+      assert.ok(await page.locator('#uploadQueue .upload-row.failed').count() >= 1,
+        'R6-V3：失败的单文件行必须保留(裁定②:完成态清、失败态留)');
+      await page.screenshot({ path: path.join(SHOTS, '08-r6-batch-failure.png') });
+    } finally {
+      if (routed) await page.unroute('**/files/upload').catch(() => {});
+      await reset().catch(() => {});
+    }
   });
 
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────

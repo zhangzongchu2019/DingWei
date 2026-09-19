@@ -337,6 +337,23 @@
     .upload-row.failed .u-meta { color: #c0392b; }
     .upload-row.done .u-fill { background: #2e9e5b; }
 
+    /* ── 批次级状态（R6，组长 2026-09-18 裁定）──────────────────────
+       🔴 批次行与单文件行是**两层**，故用独立类名、独立 DOM，不复用 .upload-row：
+          复用会让盯单文件行的断言被批次行连带满足（⑨ 的「完成后不得残留进度行」
+          正是这种形状），于是批次行一出现，⑨ 就再也分辨不出单文件行有没有清干净。*/
+    .batch-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center;
+      border: 1px solid var(--accent); border-radius: 6px; padding: 6px 10px; background: var(--panel);
+      font-size: 12px;
+    }
+    .batch-row .b-name { color: var(--text); font-weight: 600; }
+    .batch-row .b-meta { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .batch-row .b-bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+    .batch-row .b-fill { height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+    .batch-row[data-batch-state="all-ok"] .b-fill { background: #2e9e5b; }
+    .batch-row[data-batch-state="has-failure"] { border-color: #c0392b; }
+    .batch-row[data-batch-state="has-failure"] .b-meta { color: #c0392b; }
+
     /* ── 草稿附件缩略图（业主验收第 2 条）───────────────────────── */
     .draft-attachments { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
     .draft-chip {
@@ -4041,6 +4058,78 @@
       };
     }
 
+    // ── 批次级状态（R6，组长 2026-09-18 裁定）──────────────────────────
+    // 业主原话：「多文件传输时,没有提示,不知道是不是结束了」（一次 6 张图，约 36 MB）。
+    //
+    // 🔴 为什么单文件行不够：裁定②让完成行随草稿块出现即移除（防堆积，该目的仍然有效），
+    //    但 6 个文件依次出现、依次消失之后，进度区变成**空白** ——
+    //    于是「还没开始」与「全部结束」在屏幕上长得一模一样，用户只能去数草稿块。
+    // ⇒ 本行只回答一个问题：整批还剩多少、结束了没有。它与单文件行**并存**，不互相替代。
+    //    单文件行回答「这个在不在动」，批次行回答「整批还剩多少」。
+    const BATCH_DONE_LINGER_MS = 4000;
+    function newBatchRow(files) {
+      const total = files.length;
+      const totalBytes = files.reduce((sum, f) => sum + (f.size || 0), 0);
+      const row = document.createElement('div');
+      row.className = 'batch-row';
+      row.dataset.batchState = 'running';
+      const name = document.createElement('span');
+      name.className = 'b-name';
+      name.textContent = '本批文件';
+      const meta = document.createElement('span');
+      meta.className = 'b-meta';
+      const bar = document.createElement('div');
+      bar.className = 'b-bar';
+      const fill = document.createElement('div');
+      fill.className = 'b-fill';
+      bar.appendChild(fill);
+      row.append(name, meta, bar);
+      // 🔴 插在队列最前：单文件行会一个个消失，批次行不能跟着它们上下跳。
+      uploadQueue.prepend(row);
+      uploadQueue.hidden = false;
+      let settled = 0, okCount = 0, failCount = 0, settledBytes = 0, liveBytes = 0;
+      const paint = () => {
+        const sent = Math.min(totalBytes, settledBytes + liveBytes);
+        const pct = totalBytes > 0 ? Math.min(100, Math.round((sent / totalBytes) * 100)) : 0;
+        fill.style.width = `${pct}%`;
+        meta.textContent = `${settled}/${total} 个文件 · ${formatFileBytes(sent)} / ${formatFileBytes(totalBytes)}`;
+      };
+      const drop = () => { row.remove(); if (!uploadQueue.children.length) uploadQueue.hidden = true; };
+      paint();
+      return {
+        // 把单文件那个 row 包一层：字节进度既喂它自己那一行，也累进批次行。
+        track(fileRow) {
+          return {
+            progress(loaded, totalOfFile) { liveBytes = loaded; paint(); fileRow.progress(loaded, totalOfFile); },
+            waiting(text) { fileRow.waiting(text); },
+            done(sizeBytes, url) { fileRow.done(sizeBytes, url); },
+          };
+        },
+        // 成败都要结算：失败的文件也不再「在传」，它的字节不能永远挂在 liveBytes 上。
+        settle(file, ok) {
+          settled += 1;
+          if (ok) okCount += 1; else failCount += 1;
+          settledBytes += file.size || 0;
+          liveBytes = 0;
+          paint();
+        },
+        finish() {
+          fill.style.width = '100%';
+          if (failCount === 0) {
+            row.dataset.batchState = 'all-ok';
+            meta.textContent = `${okCount} 个文件已全部附加`;
+            // R6-2：完成态停留数秒后淡出 —— 常驻就又回到裁定②要清的那种堆积。
+            setTimeout(drop, BATCH_DONE_LINGER_MS);
+          } else {
+            // 🔴 R6-3：有失败时**不淡出**。失败必须留在屏幕上，直到用户自己清掉。
+            //    这里的 if 分支本身就是该条判据的落点：去掉它 ⇒ 失败批次也会自己消失。
+            row.dataset.batchState = 'has-failure';
+            meta.textContent = `${okCount} 个已附加 · ${failCount} 个失败`;
+          }
+        },
+      };
+    }
+
     // 🔴 用 XHR 而不是 fetch：**fetch 不上报上传进度**（没有 upload.onprogress），
     //    而业主第 1 条要的正是「已传/总字节」。这是为满足该条必须做的技术选择，
     //    不是偏好；其余语义（票据、请求头、失败取 {"error"}）与原 fetch 版逐条一致。
@@ -4130,19 +4219,25 @@
       }
       // 顺序上传：票据一次一张、且按 max_bytes 绑定本次大小，并发会互相挤掉。
       // 单个失败不打断其余文件 —— 拖进来 5 个坏了 1 个，另外 4 个仍应传上去。
+      // 🔴 R6-4：单文件不开批次行 ——「1/1 个文件」是噪音，它回答不了任何问题。
+      const batch = list.length > 1 ? newBatchRow(list) : null;
       for (const file of list) {
         // 🔴 每个文件一行,不是只显示一个总数(组长 R1 明示:多文件时逐个可见)。
         const row = newUploadRow(file);
         try {
-          await uploadOneFile(file, row);
+          await uploadOneFile(file, batch ? batch.track(row) : row);
+          batch?.settle(file, true);
         } catch (err) {
           row.failed(err.message);
+          batch?.settle(file, false);
           // 🔴 R3：上传成功前从不修改输入框 —— 失败时用户已经输入的文字原样保留。
           //    注意这条约束只管「不动输入框」，**不含「不给反馈」**；
           //    反馈现在走上面这一行 ＋ 下面的错误事件。两件事此前被绑在一起，是业主第 1 条的成因。
           handleIncomingEvent({ kind: 'error', text: err.message, data: { code: 'file_upload_failed' } });
         }
       }
+      // 🔴 R6-2/R6-3：整批走完才结算批次行 —— 业主问的「是不是结束了」就答在这一句。
+      batch?.finish();
     }
 
     // ── 草稿附件缩略图（业主 2026-09-18 验收第 2 条）────────────────────
