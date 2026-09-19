@@ -40,6 +40,51 @@ func TestDirectLinkExtensionAllowListsExcludeActiveContent(t *testing.T) {
 	assertExtensionSetsEqual(t, "manager", managerExtensions, "nginx", nginxExtensions)
 	assertExtensionSetsEqual(t, "manager", managerExtensions, "directObjectKey", storeExtensions)
 	assertNginxServesTextExtensionsAsPlain(t, nginx, managerMapExtensions(t, managerPath, "filenameTextExts"))
+	assertNginxInlineTypesRejectExecutableMedia(t, nginx)
+}
+
+var executableInlineTypeCorpus = []string{
+	"text/html", "application/xhtml+xml", "text/xml", "application/xml", "image/svg+xml",
+	"text/javascript", "application/javascript", "application/x-javascript", "text/ecmascript", "application/ecmascript",
+}
+
+var forbiddenNginxInlineTypes = map[string]bool{
+	"text/html": true, "application/xhtml+xml": true, "text/xml": true, "application/xml": true, "image/svg+xml": true,
+	"text/javascript": true, "application/javascript": true, "application/x-javascript": true, "text/ecmascript": true, "application/ecmascript": true,
+}
+
+func assertNginxInlineTypesRejectExecutableMedia(t *testing.T, nginx string) {
+	t.Helper()
+	if forbidden, ok := firstForbiddenNginxInlineType(nginx); ok {
+		t.Fatalf("nginx inline types contains forbidden media type %q", forbidden)
+	}
+	const safeDirective = "video/mp4 mp4;"
+	if !strings.Contains(nginx, safeDirective) {
+		t.Fatalf("mutation anchor %q missing", safeDirective)
+	}
+	for _, forbidden := range executableInlineTypeCorpus {
+		mutated := strings.Replace(nginx, safeDirective, forbidden+" mp4;", 1)
+		if got, rejected := firstForbiddenNginxInlineType(mutated); !rejected || got != forbidden {
+			t.Fatalf("forbidden inline type mutation accepted: want=%q got=%q rejected=%t", forbidden, got, rejected)
+		}
+	}
+}
+
+func firstForbiddenNginxInlineType(nginx string) (string, bool) {
+	locations := strings.Split(nginx, "location ~ ^/f/")
+	if len(locations) < 2 {
+		return "", false
+	}
+	types := regexp.MustCompile(`(?s)types\s*\{(.*?)\}`).FindStringSubmatch(locations[1])
+	if len(types) != 2 {
+		return "", false
+	}
+	for _, directive := range regexp.MustCompile(`(?m)^\s*([^\s;]+)\s+`).FindAllStringSubmatch(types[1], -1) {
+		if forbiddenNginxInlineTypes[directive[1]] {
+			return directive[1], true
+		}
+	}
+	return "", false
 }
 
 func assertNginxServesTextExtensionsAsPlain(t *testing.T, nginx string, textExtensions []string) {
