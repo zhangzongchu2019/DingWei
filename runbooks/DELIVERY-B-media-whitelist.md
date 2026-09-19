@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-19T00:02:10Z`
+更新时间（UTC）：`2026-09-19T00:06:58Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`fe56e783b1981fa21bdf4aab57c5dc7f558b5959`
+- 实现锚：`53af5642b7051748a70376ed873eae43a9ccbcc5`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -59,6 +59,15 @@ V7′–V11′ 仍须部署后通过生产 nginx 做 md/py/json 与 html/xml/svg
 - 其余对象先按 MIME 走既有内联/附件映射；无法识别时，仅允许文件名后缀命中受控文本表，命中后存 `text/plain` 与真扩展名，表外或无扩展名仍 `.bin`。
 - 使用系统实测 MIME 的 yml/yaml (`application/yaml`)、toml (`application/toml`)、sql (`application/sql`)、sh (`application/x-shellscript`) 夹具，并覆盖空 MIME、evil.php 与伪造为 text/plain 的 html/xml/svg。
 - 删除文件名兜底行为后，全仓 980 条仅 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks` 转红；向受控表加入 html 后，全仓 980 条仅配置形状闸转红。全部还原后 rc=0。
+
+## B8：音频内联候选机制
+
+- `audio/*` 加入 image/video 同级的内联候选机制；实验尚未确认的 mp3/m4a/flac/aac MIME 映射未提前加入。
+- 按已裁定规范加入 `audio/ogg→oga`；WAV 别名 `audio/wav`、`audio/x-wav`、`audio/vnd.wave` 均映射 `.wav`，nginx 统一声明 `audio/wav`。
+- nginx 内联正则、types、`directObjectKey` 与 manager 映射同步加入 oga/wav，严格集合相等闸保持全绿；测试明确断言 video/ogg→ogv 与 audio/ogg→oga 不相等。
+- 删除 `audio/*` 候选条件后，全仓 980 条仅 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks` 转红；还原后 rc=0。
+
+V16 的 mp3 与其余实验待定类型不在本锚验收声明内；待 Playwright 真值返回后只补集中映射表并同步四处集合。
 
 ## P0：UTF-8 上传文件名协议
 
