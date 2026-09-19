@@ -295,7 +295,12 @@
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       font-size: 12px; color: var(--muted); margin-bottom: 6px;
     }
-    .attachment-name { color: var(--text); font-weight: 600; word-break: break-all; }
+    .attachment-name { color: var(--text); font-weight: 600; word-break: break-all; text-decoration: none; }
+    .attachment-name:hover { text-decoration: underline; }
+    /* R5-2：正文里那条已经被渲染成附件块的 URL ⇒ 视觉隐藏。
+       🔴 只隐藏，不从 DOM 删除 —— 接收侧靠扫正文里的 /f/ 直链分派（附录 B2），
+          删掉会让那条机制失效，也会让「附件块数 == 正文直链数」这条不变式失去锚。 */
+    .dw-link-rendered { display: none; }
     .attachment img, .attachment video { max-width: 100%; max-height: 420px; border-radius: 6px; display: block; }
     .attachment iframe { width: 100%; height: 480px; border: 0; border-radius: 6px; background: #fff; }
     .attachment pre {
@@ -2624,8 +2629,12 @@
       box.dataset.fileUrl = url;
       const head = document.createElement('div');
       head.className = 'attachment-head';
-      const name = document.createElement('span');
+      // R5-1（业主 09-18：「一个文件链接下一个文件展示」）：文件名本身就是那条链接。
+      const name = document.createElement('a');
       name.className = 'attachment-name';
+      name.href = url;
+      name.rel = 'noopener noreferrer';
+      name.target = '_blank';
       name.textContent = hint?.name || fileNameFromUrl(url);
       const facts = document.createElement('span');
       const size = hint?.size || meta?.size || 0;
@@ -2768,6 +2777,50 @@
       return host;
     }
 
+    // R5-2/R5-3：把正文里「已经成功渲染成附件块」的那条 URL 文本视觉隐藏。
+    //
+    // 🔴 三条约束，缺一不可：
+    //   ① **只隐藏，不删除** —— 接收侧靠扫正文里的 /f/ 直链分派（附录 B2）；
+    //      删掉等于把那条机制拆了，也会让不变式失去锚。
+    //   ② **只隐藏成功渲染的** —— 过期（HEAD 404）、渲染失败的，正文原样留着，
+    //      否则用户连那条 URL 都看不到、连复制都做不到。
+    //   ③ 每次重渲后都要重新施加：assistant 的正文每个流式 chunk 都会重写 innerHTML，
+    //      上一次包的 <span> 会被整段冲掉。
+    function hideRenderedLinks(cardEl) {
+      if (!cardEl || !cardEl._fileHost) return;
+      const okUrls = [...cardEl._fileHost.querySelectorAll('.attachment[data-rendered="ok"]')]
+        .map((b) => b.dataset.fileUrl).filter(Boolean);
+      if (!okUrls.length) return;
+      for (const body of cardEl.querySelectorAll('.event-content')) {
+        // 🔴 跳过已经被包过的:本函数在每个附件就绪时都会重跑一遍,
+        //    不跳过就会把同一条 URL 反复嵌套包裹(实测:三条链接被包成 9 层)。
+        const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+          acceptNode: (n) => (n.parentElement && n.parentElement.closest('.dw-link-rendered')
+            ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+        });
+        const hits = [];
+        let node = walker.nextNode();
+        while (node) {
+          if (okUrls.some((u) => node.nodeValue.includes(u))) hits.push(node);
+          node = walker.nextNode();
+        }
+        for (const textNode of hits) {
+          let rest = textNode;
+          for (const u of okUrls) {
+            const idx = rest.nodeValue.indexOf(u);
+            if (idx < 0) continue;
+            const mid = rest.splitText(idx);
+            rest = mid.splitText(u.length);
+            const span = document.createElement('span');
+            span.className = 'dw-link-rendered';
+            span.dataset.fileUrl = u;
+            span.textContent = u;
+            mid.replaceWith(span);
+          }
+        }
+      }
+    }
+
     function attachFileRenders(cardEl, rawText) {
       if (!cardEl || !rawText) return;
       const urls = [...new Set((String(rawText).match(FILE_URL_RE) || []).map(trimUrlTail))].filter(isOwnFileUrl);
@@ -2780,8 +2833,15 @@
         const slot = document.createElement('div');   // 占位：保证多个附件的先后次序与正文一致
         host.appendChild(slot);
         buildFileAttachment(url)
-          .then((box) => slot.replaceWith(box))
+          .then((box) => {
+            // R5-3：只有**成功渲染**的才算数。gone（HEAD 404 已过期）不算 ——
+            //      它在正文里那条 URL 必须留着可见，否则用户连复制都做不到。
+            if (box.dataset.dispatch && box.dataset.dispatch !== 'gone') box.dataset.rendered = 'ok';
+            slot.replaceWith(box);
+            hideRenderedLinks(cardEl);
+          })
           .catch(() => {
+            // 渲染失败 ⇒ 不打 rendered 标记 ⇒ 正文那条 URL 保持可见（R5-3）
             const fallback = fileAttachmentShell(url, null, uploadedFileHints.get(url));
             fallback.appendChild(fileDownloadLink(url, '下载', uploadedFileHints.get(url)?.name || ''));
             slot.replaceWith(fallback);

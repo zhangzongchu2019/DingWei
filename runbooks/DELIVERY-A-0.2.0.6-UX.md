@@ -259,3 +259,61 @@ R1 要的是「每个文件都被看见过」，那本来就是时间上的性�
    **那是 B 线的判据**，我的替身只做解码、不做 `safeName` ——
    ⇒ **我的 24/24 不构成对 B 侧安全性的任何证据**，别把它读成端到端已通。
 2. 未在真浏览器 + 真后端上传过中文名文件（我用的是契约替身）。
+
+
+---
+
+## 11. R5：链接—内容交替排列（2026-09-19T00:12Z）
+
+业主原话：「多个文件上传，文件名在上方，文件内容展示在下面，最好是一个文件链接下一个文件展示」。
+
+### 11.1 改了什么
+
+| 裁定 | 实现 |
+|---|---|
+| R5-1 文件名改为链接 | `fileAttachmentShell` 的 `attachment-name` 由 `<span>` 改为 `<a href=<直链> rel=noopener target=_blank>` |
+| R5-2 正文中已渲染的 URL 视觉隐藏 | `hideRenderedLinks(cardEl)`：走 `.event-content` 的文本节点，把命中 URL 包进 `<span class="dw-link-rendered">`（CSS `display:none`） |
+| R5-3 只隐藏**成功渲染**的 | 附件块就绪时打 `data-rendered="ok"`（`dispatch !== 'gone'` 才打；`catch` 分支不打）⇒ 过期/失败的正文原样可见 |
+| R5-4 附件块仍在卡片上 | 未动 —— 正文每个流式 chunk 重写 `innerHTML`，搬进去会让播放中的 `<video>` 反复重建 |
+
+**交替排列本身不需要新代码**：每个 `.attachment` 内部本就是 head(名) → 内容，
+`.attachments` 是 `flex-direction: column` ⇒ 名1→内容1→名2→内容2… 已经成立。
+**真正分离的是正文里那几条裸 URL**，R5-2 解决的正是它。
+
+### 11.2 两个实现细节，都是实测逼出来的
+
+1. 🔴 **重复包裹**：`hideRenderedLinks` 在每个附件就绪时都会重跑，首版把同一条 URL
+   **反复嵌套包了 9 层**（三条链接 × 多次调用）。已在 TreeWalker 上加祖先判断
+   （`closest('.dw-link-rendered')` 即 `FILTER_REJECT`）。
+2. 🔴 **只隐藏不删除**：`span.textContent` 必须仍是那条 URL。
+   删掉会让「接收侧扫正文 `/f/` 分派」失效（附录 B2），也会让不变式失去锚。
+   变异「隐藏时清空文本」⇒ 红：`DOM 中 /f/ 直链总数应仍为 4，实测 1`。
+
+### 11.3 判据与变异
+
+    ⑮ 一条用例覆盖 R5-V1/V2/V3/V4：
+       名在上内容在下 ✅ · 名是 <a> 且 href == 该块直链 ✅
+       恰好隐藏 3 条（== 成功渲染块数）✅ · DOM 中直链总数仍为 4 ✅
+       🔴 HEAD 404 的过期链接在正文中**保持可见** ✅（R5-V4 的阳性对照）
+
+| 变异 | 转红 |
+|---|---|
+| **R5-V5** 把「只隐藏成功渲染的」改成「全隐藏」 | ⑮：`应恰好隐藏 3 条，实测 4` |
+| 名不是链接（`<a>` → `<span>`） | ⑮：`文件名必须是 <a> 且 href == 该块直链: [false,false,false,false]` |
+| 隐藏时清空文本（等价于从 DOM 抹掉） | ⑮：`DOM 中 /f/ 直链总数应仍为 4，实测 1` |
+
+### 11.4 🔴 一处我差点写错的断言（套件与探针给出不同结果）
+
+⑮ 首版用 `document.querySelector('.message-card')` 取卡 —— **探针里通过，套件里失败（隐藏数 1 ≠ 3）**。
+因为探针只有一张卡，而套件里前面的用例留下了若干张，`querySelector` 取到的是**最早那张**。
+已改为 `[...document.querySelectorAll('.message-card')].pop()`。
+📌 **单独跑通过、进套件失败，往往不是 flaky，而是选择器在单卡环境下不具区分力** ——
+与今天「素材落在被测维度同一侧」是同一族。
+
+### 11.5 本轮证据
+
+    浏览器 25/25 · 单元 10/10 · 三发变异各只红 ⑮ 且理由各不相同
+    全仓 go test ./... 分开 2 次：rc=0 / rc=0 · 巡检期望值同次回写
+
+    0f9a15c8c74b961f4ae5fd38b56d4fcbe3d915e06a13a5ee2e35fad1f97a937e  view-service/renderer-canary-sse.html
+    abb43f1a2a8a7c6505a10658861c0e19bb0b20d41376bc5aeb7bb5f101d6f3ba  view-service/renderer-0206-file-render-regression.js

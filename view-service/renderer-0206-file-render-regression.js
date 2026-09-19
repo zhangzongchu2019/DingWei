@@ -502,8 +502,11 @@ async function t(name, fn) {
         .map((u) => u.replace(/[.,;:!?，。；：！？、)\]}」』>]+$/u, ''))
         .filter((u) => { try { const x = new URL(u, location.href); return x.origin === location.origin && x.pathname.startsWith('/f/'); } catch { return false; } })).size,
     }));
+    // 🔴 R5-2 之后口径要跟着改:正文里会有**被隐藏**的链接。
+    //    这里数的是**输入框(textarea)**里的链接 —— textarea 的值不受 R5 隐藏影响,
+    //    隐藏只发生在**已发出消息的正文区**。两者是不同的地方,断言仍然成立且含义不变。
     assert.strictEqual(consistency.chips, consistency.links,
-      `附件块与正文直链数不一致: ${JSON.stringify(consistency)} —— 视觉层与将要发出的正文脱节`);
+      `草稿附件块与输入框里的直链数不一致: ${JSON.stringify(consistency)} —— 视觉层与将要发出的正文脱节`);
     await page.screenshot({ path: path.join(SHOTS, '05-draft-thumbnail.png') });
     // 用户删掉文字 ⇒ 附件块随之消失(它只是正文的投影,不是独立状态)
     await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
@@ -674,6 +677,58 @@ async function t(name, fn) {
     } finally {
       for (const f2 of made) fs.rmSync(f2, { force: true });
     }
+  });
+
+  // ── ⑮ R5:链接—内容交替排列(业主 09-18:「一个文件链接下一个文件展示」)──────
+  await t('⑮ R5-V1/V2/V3/V4:名(链接)→内容 交替;正文中已渲染的 URL 隐藏但仍在 DOM;过期链接保持可见', async () => {
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.setInputFiles('#filePicker', [fx('sample.png'), fx('sample.pdf'), fx('sample.webm')]);
+    await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 3, null, { timeout: 60000 });
+    const text = await page.inputValue('#humanInput');
+    // R5-V4 的阳性对照:一条 HEAD 404 的过期链接,必须**不被隐藏**
+    const gone = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/deadbeefdeadbeefdeadbeefdeadbeef.png`;
+    await page.evaluate((body) => handleIncomingEvent({ kind: 'user_input', text: body, ts: Date.now() }), `${text} ${gone}`);
+    await page.waitForFunction(() => {
+      const card = [...document.querySelectorAll('.message-card')].pop();
+      return card && card.querySelectorAll('.attachments .attachment').length >= 4;
+    }, null, { timeout: 30000 });
+    await page.waitForFunction(() => {
+      const card = [...document.querySelectorAll('.message-card')].pop();
+      return card && card.querySelectorAll('.dw-link-rendered').length >= 3;
+    }, null, { timeout: 20000 });
+    const got = await page.evaluate(() => {
+      // 🔴 取**最后一张**卡:套件里前面的用例留下了若干张卡,
+      //    querySelector 取到的是最早那张 —— 探针里只有一张卡时看不出这个差别。
+      const card = [...document.querySelectorAll('.message-card')].pop();
+      const boxes = [...card.querySelectorAll('.attachments .attachment')];
+      return {
+        // R5-V1：每块内部都是 名 → 内容（head 在前，内容在后）；块与块顺序即交替顺序
+        alternating: boxes.map((a) => {
+          const head = a.firstElementChild;
+          const hasName = !!head?.querySelector('.attachment-name');
+          const after = [...a.children].slice(1).length;
+          return hasName && after > 0;
+        }),
+        // R5-V2：名是 <a> 且 href 等于该块的直链
+        links: boxes.map((a) => {
+          const el = a.querySelector('a.attachment-name');
+          return el ? el.getAttribute('href') === a.dataset.fileUrl : false;
+        }),
+        hidden: card.querySelectorAll('.dw-link-rendered').length,
+        // R5-V3：DOM 里 /f/ 直链总数仍是 4（3 条被隐藏 + 1 条过期可见）
+        totalInDom: (card.querySelector('.event-content').textContent.match(/\/f\//g) || []).length,
+        // R5-V4：过期那条在**可见文本**里仍看得到
+        goneVisible: card.querySelector('.event-content').innerText.includes('deadbeef'),
+        renderedOk: boxes.filter((a) => a.dataset.rendered === 'ok').length,
+      };
+    });
+    assert.ok(got.alternating.every(Boolean), `每块必须是「名在上、内容在下」: ${JSON.stringify(got.alternating)}`);
+    assert.ok(got.links.every(Boolean), `R5-V2：文件名必须是 <a> 且 href == 该块直链: ${JSON.stringify(got.links)}`);
+    assert.strictEqual(got.hidden, 3, `R5-V3：应恰好隐藏 3 条已渲染链接，实测 ${got.hidden}`);
+    assert.strictEqual(got.hidden, got.renderedOk, '被隐藏的条数必须等于成功渲染的块数');
+    assert.strictEqual(got.totalInDom, 4, `🔴 隐藏必须是视觉隐藏：DOM 中 /f/ 直链总数应仍为 4，实测 ${got.totalInDom}`);
+    assert.ok(got.goneVisible, 'R5-V4：HEAD 404 的过期链接必须在正文中保持可见（否则用户连复制都做不到）');
+    await page.screenshot({ path: path.join(SHOTS, '06-r5-alternating.png'), fullPage: true });
   });
 
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
