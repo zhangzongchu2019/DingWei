@@ -654,6 +654,17 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	p.mu.Unlock()
 
 	candidates, lookedLikeCandidate := parseAMRCandidatesDetailed(job.body, job.key.Session, p.maxTargets)
+	// 🔴 G2-b:渠道候选走渠道投递,不进 Agent 寻址(prepareSessionSelector 解不了它们)。
+	// 分流放在这里而不是更下面:下面每一步都假设 selector 是会话选择器。
+	if channels := filterChannelCandidates(candidates); len(channels) > 0 {
+		for _, candidate := range channels {
+			if err := p.deliverChannelCandidate(job, candidate); err != nil {
+				log.Printf("[channel] decision=failed session=%s channel=%s err=%v", job.key.Session, candidate.channel, err)
+			}
+		}
+		p.closeJob("dispatched")
+		return
+	}
 	if len(candidates) == 0 {
 		if lookedLikeCandidate {
 			p.closeJob("candidate_rejected")
@@ -883,6 +894,9 @@ func (p *amrProcessor) snapshotStats() (amrStats, int) {
 }
 
 type amrCandidate struct {
+	// channel/channelAddr 非空 = 这是一条【渠道投递】候选,不走 Agent 寻址(G2-a)。
+	channel     string
+	channelAddr string
 	selector    string
 	body        string
 	replyPolicy string
@@ -992,6 +1006,12 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 	if !strings.HasPrefix(text, "@") {
 		return nil, false
 	}
+	// 🔴 G2-a:渠道提及必须在这里就与 Agent 寻址分道。
+	// 放到后面去判会有两个后果:① 恰好存在同名成员时被静默投给 Agent;
+	// ② `@飞书`(无 #)会走下面的多目标 token 分支,被 amrTokenName 判为不合规而**整个跳过**。
+	if channel, addr, body, ok := parseChannelMention(text); ok && body != "" && len(body) <= amrRouteBodyMax {
+		return []amrCandidate{{channel: channel, channelAddr: addr, body: body, replyPolicy: "no_reply"}}, true
+	}
 	if owner, session, body, ok := parseMemberMention(text); ok && session != "" && body != "" && len(body) <= amrRouteBodyMax {
 		return []amrCandidate{{selector: "@" + owner + "#" + session, body: body, replyPolicy: "no_reply"}}, true
 	}
@@ -1075,4 +1095,15 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 func amrDerivedEnvelopeID(key amrTurnKey, index int, selector string) string {
 	sum := sha256.Sum256([]byte(key.KeyID + "\x00" + key.Session + "\x00" + key.DeliveryID + "\x00" + key.TurnID + "\x00" + strconv.Itoa(index) + "\x00" + selector))
 	return "amr-" + hex.EncodeToString(sum[:16])
+}
+
+// filterChannelCandidates 挑出渠道候选(channel 非空)。
+func filterChannelCandidates(candidates []amrCandidate) []amrCandidate {
+	out := make([]amrCandidate, 0, len(candidates))
+	for _, candidate := range candidates {
+		if candidate.channel != "" {
+			out = append(out, candidate)
+		}
+	}
+	return out
 }
