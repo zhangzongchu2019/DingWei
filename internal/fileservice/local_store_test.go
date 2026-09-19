@@ -213,7 +213,7 @@ func TestPerFileSweepKeepsArchivedObjectAtStablePath(t *testing.T) {
 	if kept.ObjectKey != keep.ObjectKey {
 		t.Fatalf("archive changed key before=%s after=%s", keep.ObjectKey, kept.ObjectKey)
 	}
-	if strings.Contains(kept.ObjectKey, "run-me") || strings.HasSuffix(kept.ObjectKey, ".sh") {
+	if strings.Contains(kept.ObjectKey, "run-me") {
 		t.Fatalf("user filename entered object path: %s", kept.ObjectKey)
 	}
 	clock.Time = drop.ExpiresAt.Add(time.Second)

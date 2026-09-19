@@ -24,8 +24,13 @@ var (
 
 var identitySegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 
-func normalizedMedia(mediaType string) (string, string) {
+func normalizedMedia(mediaType, originalName string) (string, string) {
 	base := strings.ToLower(strings.TrimSpace(strings.SplitN(mediaType, ";", 2)[0]))
+	nameExt := strings.TrimPrefix(strings.ToLower(path.Ext(safeName(originalName))), ".")
+	dangerousNameExts := map[string]bool{"php": true, "html": true, "htm": true, "xhtml": true, "xml": true, "svg": true, "svgz": true}
+	if dangerousNameExts[nameExt] {
+		return "application/octet-stream", "bin"
+	}
 	dangerousInlineTypes := map[string]bool{
 		"text/html": true, "text/xml": true, "application/xhtml+xml": true, "application/xml": true, "image/svg+xml": true,
 	}
@@ -43,9 +48,6 @@ func normalizedMedia(mediaType string) (string, string) {
 		return "application/octet-stream", ext
 	}
 	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || strings.HasPrefix(base, "text/") || base == "application/pdf" || base == "application/json"
-	if !inlineCandidate {
-		return "application/octet-stream", "bin"
-	}
 	exts := map[string]string{
 		"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif",
 		"image/heic": "heic", "image/bmp": "bmp", "image/tiff": "tiff",
@@ -55,11 +57,20 @@ func normalizedMedia(mediaType string) (string, string) {
 		"text/x-go": "go", "text/x-java-source": "java", "text/yaml": "yaml", "text/x-yaml": "yml", "text/x-toml": "toml",
 		"text/x-ini": "ini", "text/x-log": "log", "text/x-sql": "sql", "text/x-shellscript": "sh",
 	}
-	if ext, ok := exts[base]; ok {
-		return base, ext
+	if inlineCandidate {
+		if ext, ok := exts[base]; ok {
+			return base, ext
+		}
+		if strings.HasPrefix(base, "text/") {
+			return base, "txt"
+		}
 	}
-	if strings.HasPrefix(base, "text/") {
-		return base, "txt"
+	filenameTextExts := map[string]string{
+		"txt": "txt", "md": "md", "csv": "csv", "json": "json", "log": "log", "py": "py", "js": "js", "go": "go",
+		"java": "java", "yaml": "yaml", "yml": "yml", "toml": "toml", "ini": "ini", "sh": "sh", "sql": "sql",
+	}
+	if ext, ok := filenameTextExts[nameExt]; ok {
+		return "text/plain", ext
 	}
 	return "application/octet-stream", "bin"
 }
@@ -105,7 +116,7 @@ func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
 		return File{}, err
 	}
 	now := m.Clock.Now().UTC()
-	mediaType, ext := normalizedMedia(in.MediaType)
+	mediaType, ext := normalizedMedia(in.MediaType, in.OriginalName)
 	key := fmt.Sprintf("%s/%s/%02d/%02d%02d/%s.%s", in.OwnerKey, in.SessionName, now.Year()%100, int(now.Month()), now.Day(), id, ext)
 	h := sha256.New()
 	limited := &io.LimitedReader{R: in.Body, N: m.MaxFileBytes + 1}

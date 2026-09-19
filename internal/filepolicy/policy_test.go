@@ -33,7 +33,7 @@ func TestDirectLinkExtensionAllowListsExcludeActiveContent(t *testing.T) {
 	managerPath := "../fileservice/manager.go"
 	nginxExtensions := captureAllExtensions(t, nginx, `\(\?<file_ext>([^)]+)\)`)
 	storeExtensions := captureExtensions(t, store, `directObjectKey\s*=.*?\\\.\(\?:([^)]*)\)`)
-	managerExtensions := append(managerMapExtensions(t, managerPath, "exts", "downloadExts"), "bin")
+	managerExtensions := append(managerMapExtensions(t, managerPath, "exts", "downloadExts", "filenameTextExts"), "bin")
 	assertForbiddenExtensionsAbsent(t, "nginx file_ext", nginxExtensions)
 	assertForbiddenExtensionsAbsent(t, "directObjectKey", storeExtensions)
 	assertForbiddenExtensionsAbsent(t, "manager media maps", managerExtensions)

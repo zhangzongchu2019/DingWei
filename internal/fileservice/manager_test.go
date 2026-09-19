@@ -21,6 +21,13 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 		{"sample-python.py", "text/x-python", "text/x-python", "py"},
 		{"sample-json.json", "application/json", "application/json", "json"},
 		{"sample-unknown-text.foo", "text/x-unmapped", "text/x-unmapped", "txt"},
+		{"sample-config.yml", "application/yaml", "text/plain", "yml"},
+		{"sample-config.yaml", "application/yaml", "text/plain", "yaml"},
+		{"sample-config.toml", "application/toml", "text/plain", "toml"},
+		{"sample-query.sql", "application/sql", "text/plain", "sql"},
+		{"sample-script.sh", "application/x-shellscript", "text/plain", "sh"},
+		{"sample-empty-mime.ini", "", "text/plain", "ini"},
+		{"evil.php", "text/plain", "application/octet-stream", "bin"},
 		{"sample-dangerous.html", "text/html", "application/octet-stream", "bin"},
 		{"sample-dangerous.xml", "text/xml", "application/octet-stream", "bin"},
 		{"sample-active.svg", "image/svg+xml", "application/octet-stream", "bin"},
@@ -37,7 +44,7 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 		}
 		m, _, _ := testManager(t, 1<<20)
 		m.MaxFileBytes = 1 << 20
-		f, err := m.Put(context.Background(), Upload{OwnerKey: "owner", SessionName: "session", MediaType: tt.media, ContentLength: int64(len(body)), Body: bytes.NewReader(body)})
+		f, err := m.Put(context.Background(), Upload{OwnerKey: "owner", SessionName: "session", OriginalName: tt.fixture, MediaType: tt.media, ContentLength: int64(len(body)), Body: bytes.NewReader(body)})
 		if err != nil {
 			t.Fatalf("fixture=%s: %v", tt.fixture, err)
 		}
@@ -46,19 +53,25 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 		}
 	}
 	for media, ext := range map[string]string{"video/x-matroska": "mkv", "image/heic": "heic", "image/bmp": "bmp", "image/tiff": "tiff"} {
-		gotMedia, gotExt := normalizedMedia(media)
+		gotMedia, gotExt := normalizedMedia(media, "sample")
 		if gotMedia != media || gotExt != ext {
 			t.Fatalf("media=%q got=(%q,%q)", media, gotMedia, gotExt)
 		}
 	}
 	for _, media := range []string{"text/xml", "application/xhtml+xml", "application/xml"} {
-		gotMedia, gotExt := normalizedMedia(media)
+		gotMedia, gotExt := normalizedMedia(media, "sample")
 		if gotMedia != "application/octet-stream" || gotExt != "bin" {
 			t.Fatalf("dangerous media=%q got=(%q,%q)", media, gotMedia, gotExt)
 		}
 	}
-	if gotMedia, gotExt := normalizedMedia("text/csv"); gotMedia != "text/csv" || gotExt != "csv" {
+	if gotMedia, gotExt := normalizedMedia("text/csv", "sample.csv"); gotMedia != "text/csv" || gotExt != "csv" {
 		t.Fatalf("csv got=(%q,%q)", gotMedia, gotExt)
+	}
+	for _, name := range []string{"evil.html", "evil.xml", "evil.svg"} {
+		gotMedia, gotExt := normalizedMedia("text/plain", name)
+		if gotMedia != "application/octet-stream" || gotExt != "bin" {
+			t.Fatalf("dangerous name=%q got=(%q,%q)", name, gotMedia, gotExt)
+		}
 	}
 }
 
