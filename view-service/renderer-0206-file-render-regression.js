@@ -1298,6 +1298,53 @@ async function t(name, fn) {
     assert.strictEqual(await page.evaluate(() => document.getElementById('shotOverlay').hidden), true, '取消后遮罩必须关掉');
   });
 
+  await t('㉖ 🔴 未调用测试缝时,走的必须是【真的 getDisplayMedia】(组长 ts-No.6 第①条)', async () => {
+    // 🔴 组长的顾虑:测试缝哪天悄悄变成默认路径 ⇒ 「截屏」静默变成「传一张假图」。
+    //    本条就是钉这个:**另起一个浏览器、不设任何缝**,走完整条真路径。
+    //
+    // 🔵 组长建议的开关方向对,但**他给的组合不对**,实测(见交付件):
+    //    --auto-select-desktop-capture-source=…   ⇒ NotReadableError: Could not start video source
+    //    --use-fake-ui-for-media-stream 单用       ⇒ 同样 NotReadableError
+    //    🔴 真正成的是 **--use-fake-ui-for-media-stream ＋ --use-fake-device-for-media-stream**
+    //       ⇒ 拿到真轨 video:screen:-3:0,1280x900,**不弹框**。
+    //
+    // 🔵 为什么 ㉕ 仍然保留测试缝:开关给的是**合成画面,内容不可控** ——
+    //    裁剪对不对(裁右半必须得到右半)只有可控画面才验得了。
+    //    ⇒ 两条分工:㉕ 验**裁得对不对**(缝,画面可控);㉖ 验**真路径通不通**(开关,不用缝)。
+    const flagged = await chromium.launch({
+      headless: true,
+      args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+    });
+    try {
+      const fctx = await flagged.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
+      const fpage = await fctx.newPage();
+      await fpage.route('**/status', (route) => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
+      }));
+      await fpage.route('**/events', (route) => route.fulfill({ status: 200, contentType: 'text/event-stream', body: '' }));
+      await fpage.route('**/taskboard**', (route) => route.fulfill({ status: 404, body: '' }));
+      await fpage.goto(`${BASE}/renderer-canary-sse.html`, { waitUntil: 'domcontentloaded' });
+      await fpage.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+
+      // 🔴 关键:**一行缝都不设**。这一页上 screenshotFrameSource 必须仍是 null。
+      assert.strictEqual(await fpage.evaluate(() => typeof window.__dwSetScreenshotFrameSource), 'function',
+        '测试缝的设置函数应存在(但本条不调用它)');
+      await fpage.click('#shotBtn');
+      await fpage.waitForSelector('#shotOverlay:not([hidden])', { timeout: 20000 });
+      const got = await fpage.evaluate(() => ({
+        w: document.getElementById('shotCanvas').width,
+        h: document.getElementById('shotCanvas').height,
+      }));
+      assert.ok(got.w > 0 && got.h > 0, `真 getDisplayMedia 必须抓到一帧,实测 ${JSON.stringify(got)}`);
+      // 🔴 排他:㉕ 的替身帧是 200x100。这里若也拿到 200x100,说明缝变成了默认路径。
+      assert.ok(!(got.w === 200 && got.h === 100),
+        `🔴 抓到的帧尺寸与测试替身相同(200x100)⇒ 走的是缝而不是真 getDisplayMedia,实测 ${JSON.stringify(got)}`);
+    } finally {
+      await flagged.close();
+    }
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;

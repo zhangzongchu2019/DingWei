@@ -4481,6 +4481,15 @@
     //    getDisplayMedia 需要真实用户手势 ＋ 浏览器选源框,headless 给不了。
     //    没有这个缝,框选/裁剪/上传这三步在自动化里**一格都测不到** ——
     //    而那三步才是本功能里我们自己写的部分。选源那一步只能人工,用例里写明了。
+    // 🔴 这是**测试缝**,组长 2026-09-19 ts-No.6 批准保留,附两条要求:
+    //    ① 谁在用:view-service/renderer-0206-file-render-regression.js 的用例㉕ ——
+    //       它替换的**只有抓帧一步**,其后框选/裁剪/生成 File/走 uploadFiles 全是产品代码。
+    //    ② 去掉它会失去什么:失去「按选区裁得对不对」这一格。
+    //       浏览器开关(--use-fake-ui-for-media-stream ＋ --use-fake-device-for-media-stream)
+    //       能让真 getDisplayMedia 自动选源不弹框(用例㉖ 就这么跑),
+    //       但它给的是**合成画面、内容不可控** ⇒ 验不了裁剪正确性。
+    //    🔴 用例㉖ 专门钉住「不设缝时走的是真 getDisplayMedia」——
+    //       防这条缝哪天悄悄变成默认路径,那会让"截屏"静默变成"传一张假图"。
     let screenshotFrameSource = null;
     window.__dwSetScreenshotFrameSource = (fn) => { screenshotFrameSource = fn; };
 
