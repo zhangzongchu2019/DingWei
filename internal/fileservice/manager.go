@@ -73,6 +73,16 @@ func normalizedMedia(mediaType, originalName string) (string, string) {
 			return base, "txt"
 		}
 	}
+	filenameAudioExts := map[string]string{
+		"mp3": "mp3", "m4a": "m4a", "flac": "flac", "aac": "aac", "opus": "opus", "ogg": "oga", "wav": "wav",
+	}
+	filenameAudioTypes := map[string]string{
+		"mp3": "audio/mpeg", "m4a": "audio/mp4", "flac": "audio/flac", "aac": "audio/aac", "opus": "audio/opus",
+		"ogg": "audio/ogg", "wav": "audio/wav",
+	}
+	if objectExt, ok := filenameAudioExts[nameExt]; ok {
+		return filenameAudioTypes[nameExt], objectExt
+	}
 	return "application/octet-stream", "bin"
 }
 
