@@ -19,9 +19,9 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 		{"sample-quicktime.mov", "video/quicktime", "video/quicktime", "mov"},
 		{"sample-audio.oga", "audio/ogg", "audio/ogg", "oga"},
 		{"sample-audio.wav", "audio/vnd.wave", "audio/vnd.wave", "wav"},
-		{"sample-markdown.md", "text/markdown", "text/markdown", "md"},
-		{"sample-python.py", "text/x-python", "text/x-python", "py"},
-		{"sample-json.json", "application/json", "application/json", "json"},
+		{"sample-markdown.md", "text/markdown", "text/plain", "md"},
+		{"sample-python.py", "text/x-python", "text/plain", "py"},
+		{"sample-json.json", "application/json", "text/plain", "json"},
 		{"sample-unknown-text.foo", "text/x-unmapped", "text/x-unmapped", "txt"},
 		{"sample-config.yml", "application/yaml", "text/plain", "yml"},
 		{"sample-config.yaml", "application/yaml", "text/plain", "yaml"},
@@ -66,7 +66,7 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 			t.Fatalf("dangerous media=%q got=(%q,%q)", media, gotMedia, gotExt)
 		}
 	}
-	if gotMedia, gotExt := normalizedMedia("text/csv", "sample.csv"); gotMedia != "text/csv" || gotExt != "csv" {
+	if gotMedia, gotExt := normalizedMedia("text/csv", "sample.csv"); gotMedia != "text/plain" || gotExt != "csv" {
 		t.Fatalf("csv got=(%q,%q)", gotMedia, gotExt)
 	}
 	for _, media := range []string{"audio/wav", "audio/x-wav", "audio/vnd.wave"} {

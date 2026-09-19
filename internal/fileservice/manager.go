@@ -27,14 +27,14 @@ var identitySegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 func normalizedMedia(mediaType, originalName string) (string, string) {
 	base := strings.ToLower(strings.TrimSpace(strings.SplitN(mediaType, ";", 2)[0]))
 	nameExt := strings.TrimPrefix(strings.ToLower(path.Ext(safeName(originalName))), ".")
-	dangerousNameExts := map[string]bool{"php": true, "html": true, "htm": true, "xhtml": true, "xml": true, "svg": true, "svgz": true}
-	if dangerousNameExts[nameExt] {
-		return "application/octet-stream", "bin"
-	}
 	dangerousInlineTypes := map[string]bool{
 		"text/html": true, "text/xml": true, "application/xhtml+xml": true, "application/xml": true, "image/svg+xml": true,
 	}
 	if dangerousInlineTypes[base] {
+		return "application/octet-stream", "bin"
+	}
+	dangerousNameExts := map[string]bool{"php": true, "html": true, "htm": true, "xhtml": true, "xml": true, "svg": true, "svgz": true}
+	if dangerousNameExts[nameExt] {
 		return "application/octet-stream", "bin"
 	}
 	downloadExts := map[string]string{
@@ -46,6 +46,13 @@ func normalizedMedia(mediaType, originalName string) (string, string) {
 	}
 	if ext, ok := downloadExts[base]; ok {
 		return "application/octet-stream", ext
+	}
+	filenameTextExts := map[string]string{
+		"txt": "txt", "md": "md", "csv": "csv", "json": "json", "log": "log", "py": "py", "js": "js", "go": "go",
+		"java": "java", "yaml": "yaml", "yml": "yml", "toml": "toml", "ini": "ini", "sh": "sh", "sql": "sql",
+	}
+	if ext, ok := filenameTextExts[nameExt]; ok {
+		return "text/plain", ext
 	}
 	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || strings.HasPrefix(base, "audio/") || strings.HasPrefix(base, "text/") || base == "application/pdf" || base == "application/json"
 	exts := map[string]string{
@@ -65,13 +72,6 @@ func normalizedMedia(mediaType, originalName string) (string, string) {
 		if strings.HasPrefix(base, "text/") {
 			return base, "txt"
 		}
-	}
-	filenameTextExts := map[string]string{
-		"txt": "txt", "md": "md", "csv": "csv", "json": "json", "log": "log", "py": "py", "js": "js", "go": "go",
-		"java": "java", "yaml": "yaml", "yml": "yml", "toml": "toml", "ini": "ini", "sh": "sh", "sql": "sql",
-	}
-	if ext, ok := filenameTextExts[nameExt]; ok {
-		return "text/plain", ext
 	}
 	return "application/octet-stream", "bin"
 }

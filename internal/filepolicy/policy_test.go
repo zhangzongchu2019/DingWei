@@ -39,6 +39,30 @@ func TestDirectLinkExtensionAllowListsExcludeActiveContent(t *testing.T) {
 	assertForbiddenExtensionsAbsent(t, "manager media maps", managerExtensions)
 	assertExtensionSetsEqual(t, "manager", managerExtensions, "nginx", nginxExtensions)
 	assertExtensionSetsEqual(t, "manager", managerExtensions, "directObjectKey", storeExtensions)
+	assertNginxServesTextExtensionsAsPlain(t, nginx, managerMapExtensions(t, managerPath, "filenameTextExts"))
+}
+
+func assertNginxServesTextExtensionsAsPlain(t *testing.T, nginx string, textExtensions []string) {
+	t.Helper()
+	locations := strings.Split(nginx, "location ~ ^/f/")
+	if len(locations) < 2 {
+		t.Fatal("nginx inline /f/ location not found")
+	}
+	types := regexp.MustCompile(`(?s)types\s*\{(.*?)\}`).FindStringSubmatch(locations[1])
+	if len(types) != 2 {
+		t.Fatal("nginx inline types block not found")
+	}
+	extensionType := map[string]string{}
+	for _, match := range regexp.MustCompile(`(?m)^\s*([^\s;]+)\s+([^;]+);`).FindAllStringSubmatch(types[1], -1) {
+		for _, extension := range strings.Fields(match[2]) {
+			extensionType[extension] = match[1]
+		}
+	}
+	for _, extension := range textExtensions {
+		if got := extensionType[extension]; got != "text/plain" {
+			t.Fatalf("nginx text extension %q has type %q, want text/plain", extension, got)
+		}
+	}
 }
 
 func managerMapExtensions(t *testing.T, path string, names ...string) []string {
