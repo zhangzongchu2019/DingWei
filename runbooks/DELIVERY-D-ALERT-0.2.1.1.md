@@ -125,6 +125,17 @@
 - 结果：`rc=1`，唯一转红 `test_runtime_guard_covers_all_keys_and_unix_socket_without_values`，原因逐字为 `missing or duplicate alert-route-stays-wired`；
 - 还原后同命令 `rc=0`；最终提交不含变异。
 
+现网禁用态阳性对照（2026-09-19，prodops 只读执行；未安装新巡检集、未改配置、未重启）：
+
+```text
+configured=0/4 socket_unix=false
+rc=1
+```
+
+这证明的不只是“配置形状测试会检查断言存在”，还证明该断言面对四项全 unset、socket 不存在的真实状态确实会转红，不是恒真断言。该状态在接线后消失，因此本证据须与上线后同一断言的 `configured=4/4 socket_unix=true`、`rc=0` 配对判读。
+
+🔴 此时不得把新 JSON 单独部署到生产巡检集：在母本与接线尚未完成时，它会成为永久红项并掩盖其它新故障。断言与接线必须同批上线，验收看同一断言由上述红态翻转为绿态。
+
 ## 失败与回退
 
 以下任一发生即停在原地报告，不改告警内容、不换收件人碰运气：
