@@ -47,11 +47,12 @@ func normalizedMedia(mediaType, originalName string) (string, string) {
 	if ext, ok := downloadExts[base]; ok {
 		return "application/octet-stream", ext
 	}
-	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || strings.HasPrefix(base, "text/") || base == "application/pdf" || base == "application/json"
+	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || strings.HasPrefix(base, "audio/") || strings.HasPrefix(base, "text/") || base == "application/pdf" || base == "application/json"
 	exts := map[string]string{
 		"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif",
 		"image/heic": "heic", "image/bmp": "bmp", "image/tiff": "tiff",
 		"video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "video/quicktime": "mov", "video/x-matroska": "mkv",
+		"audio/ogg": "oga", "audio/wav": "wav", "audio/x-wav": "wav", "audio/vnd.wave": "wav",
 		"application/pdf": "pdf", "application/json": "json",
 		"text/plain": "txt", "text/markdown": "md", "text/csv": "csv", "text/x-python": "py", "text/javascript": "js",
 		"text/x-go": "go", "text/x-java-source": "java", "text/yaml": "yaml", "text/x-yaml": "yml", "text/x-toml": "toml",

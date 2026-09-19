@@ -55,8 +55,10 @@ class FileServiceDeploymentTest(unittest.TestCase):
     def test_direct_links_inline_only_whitelisted_extensions(self):
         text = (DEPLOY / "nginx-dingwei.conf").read_text()
         self.assertIn("location ~ ^/f/", text)
-        self.assertIn("jpg|png|gif|webp|avif|heic|bmp|tiff|mp4|webm|ogv|mov|mkv|pdf|txt|md|csv|json|log|py|js|go|java|yaml|yml|toml|ini|sh|sql", text)
+        self.assertIn("jpg|png|gif|webp|avif|heic|bmp|tiff|mp4|webm|ogv|mov|mkv|oga|wav|pdf|txt|md|csv|json|log|py|js|go|java|yaml|yml|toml|ini|sh|sql", text)
         self.assertIn("video/quicktime mov", text)
+        self.assertIn("audio/ogg oga", text)
+        self.assertIn("audio/wav wav", text)
         self.assertIn("(?<file_ext>bin|docx|xlsx|pptx|doc|xls|ppt|zip)", text)
         self.assertIn("objects/$file_rel.$file_ext", text)
         self.assertIn("text/plain txt md csv json log py js go java yaml yml toml ini sh sql", text)

@@ -17,6 +17,8 @@ import (
 func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 	tests := []struct{ fixture, media, wantMedia, wantExt string }{
 		{"sample-quicktime.mov", "video/quicktime", "video/quicktime", "mov"},
+		{"sample-audio.oga", "audio/ogg", "audio/ogg", "oga"},
+		{"sample-audio.wav", "audio/vnd.wave", "audio/vnd.wave", "wav"},
 		{"sample-markdown.md", "text/markdown", "text/markdown", "md"},
 		{"sample-python.py", "text/x-python", "text/x-python", "py"},
 		{"sample-json.json", "application/json", "application/json", "json"},
@@ -66,6 +68,17 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 	}
 	if gotMedia, gotExt := normalizedMedia("text/csv", "sample.csv"); gotMedia != "text/csv" || gotExt != "csv" {
 		t.Fatalf("csv got=(%q,%q)", gotMedia, gotExt)
+	}
+	for _, media := range []string{"audio/wav", "audio/x-wav", "audio/vnd.wave"} {
+		gotMedia, gotExt := normalizedMedia(media, "sample.wav")
+		if gotMedia != media || gotExt != "wav" {
+			t.Fatalf("wav alias=%q got=(%q,%q)", media, gotMedia, gotExt)
+		}
+	}
+	_, videoOGG := normalizedMedia("video/ogg", "sample.ogg")
+	_, audioOGG := normalizedMedia("audio/ogg", "sample.ogg")
+	if videoOGG != "ogv" || audioOGG != "oga" || videoOGG == audioOGG {
+		t.Fatalf("ogg mapping video=%q audio=%q", videoOGG, audioOGG)
 	}
 	for _, name := range []string{"evil.html", "evil.xml", "evil.svg"} {
 		gotMedia, gotExt := normalizedMedia("text/plain", name)
