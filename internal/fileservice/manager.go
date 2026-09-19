@@ -62,13 +62,13 @@ func normalizedMedia(mediaType, originalName string) (string, string) {
 		"audio/ogg": "oga", "audio/wav": "wav", "audio/x-wav": "wav", "audio/vnd.wave": "wav",
 		"application/pdf": "pdf", "application/json": "json",
 		"text/plain": "txt", "text/markdown": "md", "text/csv": "csv", "text/x-python": "py", "text/javascript": "js",
-		"text/x-go": "go", "text/x-java-source": "java", "text/yaml": "yaml", "text/x-yaml": "yml", "text/x-toml": "toml",
-		"text/x-ini": "ini", "text/x-log": "log", "text/x-sql": "sql", "text/x-shellscript": "sh",
+		"text/x-go": "go", "text/x-java-source": "java", "application/yaml": "yaml", "application/toml": "toml",
+		"text/x-ini": "ini", "text/x-log": "log", "application/sql": "sql", "application/x-shellscript": "sh",
+	}
+	if ext, ok := exts[base]; ok {
+		return base, ext
 	}
 	if inlineCandidate {
-		if ext, ok := exts[base]; ok {
-			return base, ext
-		}
 		if strings.HasPrefix(base, "text/") {
 			return base, "txt"
 		}

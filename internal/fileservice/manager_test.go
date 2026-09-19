@@ -74,6 +74,12 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 	if gotMedia, gotExt := normalizedMedia("text/csv", "sample.csv"); gotMedia != "text/plain" || gotExt != "csv" {
 		t.Fatalf("csv got=(%q,%q)", gotMedia, gotExt)
 	}
+	for media, ext := range map[string]string{"application/yaml": "yaml", "application/toml": "toml", "application/sql": "sql", "application/x-shellscript": "sh"} {
+		gotMedia, gotExt := normalizedMedia(media, "no-extension")
+		if gotMedia != media || gotExt != ext {
+			t.Fatalf("browser MIME fallback=%q got=(%q,%q)", media, gotMedia, gotExt)
+		}
+	}
 	for _, media := range []string{"audio/wav", "audio/x-wav", "audio/vnd.wave"} {
 		gotMedia, gotExt := normalizedMedia(media, "sample.wav")
 		if gotMedia != media || gotExt != "wav" {
