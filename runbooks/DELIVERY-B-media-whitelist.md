@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-18T23:54:37Z`
+更新时间（UTC）：`2026-09-19T00:02:10Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`65ab85323a34b8131eafbd40bb5ef32134e26211`
+- 实现锚：`fe56e783b1981fa21bdf4aab57c5dc7f558b5959`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -52,6 +52,13 @@ V7′–V11′ 仍须部署后通过生产 nginx 做 md/py/json 与 html/xml/svg
 评审返工：已删除 `exts` 中 SVG/HTML/XML/XHTML 的危险死映射，并从 `inlineCandidate` 删除 XML/XHTML 分支。`TestDirectLinkExtensionAllowListsExcludeActiveContent` 现通过 Go AST 同时读取 `manager.go` 的 `exts` 与 `downloadExts`、nginx `file_ext`、`directObjectKey` 四个来源。向 `exts` 重新插入 `text/html→html` 后，全仓 980 条仅该配置形状测试转红；还原后 rc=0。当前实现同时保留未知 `text/*→.txt`，覆盖 Python/YAML 等未枚举文本。
 
 判据升级：同一测试现要求 manager 两张映射表（加通用 `.bin` 回退）、nginx 两个 `file_ext` 正则并集、`directObjectKey` 三处扩展名集合严格相等，并继续拒绝主动内容扩展名。MB-1 仅在 manager 加 `flv`、MB-2 仅在 nginx 加 `flv`、MB-3 仅在 `directObjectKey` 加 `flv`，三发均执行全仓 980 条，且都仅该测试转红；全部还原后全仓 rc=0。
+
+## B7：MIME 优先、受控文件名后缀兜底
+
+- 文件名后缀先经过危险表：php/html/htm/xhtml/xml/svg/svgz 无论声称何种 MIME 都强制 octet-stream/.bin。
+- 其余对象先按 MIME 走既有内联/附件映射；无法识别时，仅允许文件名后缀命中受控文本表，命中后存 `text/plain` 与真扩展名，表外或无扩展名仍 `.bin`。
+- 使用系统实测 MIME 的 yml/yaml (`application/yaml`)、toml (`application/toml`)、sql (`application/sql`)、sh (`application/x-shellscript`) 夹具，并覆盖空 MIME、evil.php 与伪造为 text/plain 的 html/xml/svg。
+- 删除文件名兜底行为后，全仓 980 条仅 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks` 转红；向受控表加入 html 后，全仓 980 条仅配置形状闸转红。全部还原后 rc=0。
 
 ## P0：UTF-8 上传文件名协议
 
