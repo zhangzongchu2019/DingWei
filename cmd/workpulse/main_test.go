@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io"
 	"log/slog"
 	"net/http"
@@ -12,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/admin"
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/config"
@@ -21,6 +25,65 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/secretbox"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
+
+func TestRunWiresAdminFileBrowserConfiguration(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "main.go", nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	foundRun, foundCall := false, false
+	for _, declaration := range file.Decls {
+		function, ok := declaration.(*ast.FuncDecl)
+		if !ok || function.Name.Name != "run" {
+			continue
+		}
+		foundRun = true
+		ast.Inspect(function.Body, func(node ast.Node) bool {
+			call, ok := node.(*ast.CallExpr)
+			if !ok {
+				return true
+			}
+			identifier, ok := call.Fun.(*ast.Ident)
+			if ok && identifier.Name == "configureAdminFileBrowser" {
+				foundCall = true
+			}
+			return true
+		})
+	}
+	if !foundRun || !foundCall {
+		t.Fatalf("run wiring missing: found_run=%t configureAdminFileBrowser_call=%t", foundRun, foundCall)
+	}
+}
+
+func TestConfigureAdminFileBrowserWarnsForEachMissingSetting(t *testing.T) {
+	names := []string{"WP_FILE_ISSUER_URL", "WP_FILE_PUBLIC_URL", "WP_FILE_ISSUER_TOKEN", "WP_FILE_AUDIT_TOKEN"}
+	values := []struct {
+		name                               string
+		issuerURL, publicURL, token, audit string
+	}{
+		{"WP_FILE_ISSUER_URL", "", "https://public", "issuer", "audit"},
+		{"WP_FILE_PUBLIC_URL", "https://internal", "", "issuer", "audit"},
+		{"WP_FILE_ISSUER_TOKEN", "https://internal", "https://public", "", "audit"},
+		{"WP_FILE_AUDIT_TOKEN", "https://internal", "https://public", "issuer", ""},
+	}
+	for _, tt := range values {
+		t.Run(tt.name, func(t *testing.T) {
+			var logs bytes.Buffer
+			logger := slog.New(slog.NewTextHandler(&logs, nil))
+			srv := &admin.Server{}
+			configureAdminFileBrowser(srv, logger, tt.issuerURL, tt.publicURL, tt.token, tt.audit)
+			logText := logs.String()
+			if srv.Files != nil || !strings.Contains(logText, tt.name) {
+				t.Fatalf("files=%v logs=%q", srv.Files, logs.String())
+			}
+			for _, other := range names {
+				if other != tt.name && strings.Contains(logText, other) {
+					t.Fatalf("missing=%s falsely reported=%s logs=%q", tt.name, other, logText)
+				}
+			}
+		})
+	}
+}
 
 func TestHandleFeishuWebhookURLVerification(t *testing.T) {
 	db, err := store.OpenSQLite(t.TempDir() + "/webhook.db")

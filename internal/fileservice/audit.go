@@ -31,13 +31,35 @@ func (h AuditHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	state := State(r.URL.Query().Get("state"))
-	items, err := h.Repo.ListStable(r.Context(), state, limit)
+	offset := 0
+	if raw := r.URL.Query().Get("offset"); raw != "" {
+		offset, _ = strconv.Atoi(raw)
+		if offset < 0 {
+			http.Error(w, "invalid offset", 400)
+			return
+		}
+	}
+	var items []File
+	var err error
+	if id := strings.TrimSpace(r.URL.Query().Get("file_id")); id != "" {
+		var f File
+		f, err = h.Repo.Get(r.Context(), id)
+		if err == nil {
+			items = []File{f}
+		}
+	} else {
+		items, err = h.Repo.ListStablePage(r.Context(), state, limit, offset)
+	}
 	if err != nil {
 		http.Error(w, "query failed", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"files": items})
+	next := 0
+	if len(items) == limit {
+		next = offset + len(items)
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"files": items, "next_offset": next})
 }
 
 func sameSecret(a, b string) bool {
