@@ -4348,7 +4348,21 @@
     humanInput.addEventListener('input', resizeHumanInput);
     humanInput.addEventListener('input', renderDraftAttachments);
     // 入口①：粘贴 —— 🔴 由「只接 image/*」扩到任意类型，且一次粘多个也收。
-    humanInput.addEventListener('paste', (event) => {
+    // 🔴 P0(2026-09-19 现网回归:业主粘贴图片「完全没反应、输入框是空的」)。
+    //    监听器原先绑在 humanInput 这个**叶子节点**上。paste 事件从 document.activeElement
+    //    往上冒泡 —— **焦点不在输入框时,冒泡路径根本不经过它 ⇒ 监听器不触发**,
+    //    于是既没有上传请求、也没有任何控制台报错(因为压根没执行)。
+    //
+    //    为什么 0.2.0.6 没人撞上、0.2.0.7 才坏:
+    //    0.2.0.6 正文里的直链是**裸文本,点不了** ⇒ 焦点一直留在输入框;
+    //    0.2.0.7 把文件名做成 <a>(R4/R5)、又加了下载链接 ⇒ 实测正文附件区有三个可聚焦的 <a>
+    //    (#draftAttachments 与 #uploadQueue 里**没有**)⇒ 用户点过任一个,焦点就离开了输入框。
+    //    ⇒ **不是某一行写错了,是新增的可点元素把一个既有限制从罕见变成了常态。**
+    //
+    //    改挂 document:焦点在哪都能粘。只挂 composer 不行 —— 正文在 composer 之外,等于没修。
+    //    🔴 代价:作用域变成全页 ⇒ 「剪贴板里没有文件就 return、不干预浏览器原行为」这条更要紧。
+    //       用例⑳ 在页面三处(输入框/body/正文链接)粘纯文本把它钉住了,不靠这段注释保证。
+    document.addEventListener('paste', (event) => {
       const files = Array.from(event.clipboardData?.items || [])
         .filter((item) => item.kind === 'file')
         .map((item) => item.getAsFile())

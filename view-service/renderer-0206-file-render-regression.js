@@ -1011,6 +1011,132 @@ async function t(name, fn) {
     await page.unroute('**/f/**');
   });
 
+  // ── ⑱⑲⑳㉑ 三个入口 ＋ 焦点维度(P0 2026-09-19 现网回归)───────────────
+  //
+  // 🔴 本批的成因不是某个函数写错,是**三个入口(粘贴/选择文件/拖放)共用下游,而只测了一个**。
+  //    已有的 ⑥ 把 paste 事件**直接 dispatch 到 humanInput** —— 不管真实焦点在哪都一定触发,
+  //    于是它测不出「焦点不在输入框时监听器根本不被调用」这一整类。
+  //    ⇒ 下面的粘贴一律派发到 **document.activeElement**,与真实粘贴同形。
+  const pasteAtFocus = (spec) => page.evaluate(({ name, type, b64, text }) => {
+    const dt = new DataTransfer();
+    if (b64) {
+      const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      dt.items.add(new File([bin], name, { type }));
+    } else {
+      dt.setData('text/plain', text || '');
+    }
+    const target = document.activeElement || document.body;
+    const notCancelled = target.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    return { tag: target.tagName, cls: String(target.className || '').slice(0, 40), prevented: !notCancelled };
+  }, spec);
+  const pngSpec = () => ({ name: 'pasted-at-focus.png', type: 'image/png', b64: fs.readFileSync(fx('sample.png')).toString('base64') });
+
+  await t('⑱ 三个入口(粘贴/选择文件/拖放)各一条,走同一下游 —— 本次回归的根因是只测了一个', async () => {
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    // 入口①粘贴:焦点在输入框,事件派发到 activeElement
+    await page.evaluate(() => document.getElementById('humanInput').focus());
+    let before = uploadCalls.length;
+    const pasted = await pasteAtFocus(pngSpec());
+    assert.strictEqual(pasted.prevented, true, `粘贴入口:处理器必须接管(preventDefault),实测 ${JSON.stringify(pasted)}`);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '粘贴入口必须发出一次上传');
+
+    // 入口②选择文件
+    before = uploadCalls.length;
+    await page.setInputFiles('#filePicker', [fx('sample.pdf')]);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 2, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '选择文件入口必须发出一次上传');
+
+    // 入口③拖放
+    before = uploadCalls.length;
+    const dropB64 = fs.readFileSync(fx('sample-small.txt')).toString('base64');
+    await page.evaluate((b64) => {
+      const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const dt = new DataTransfer();
+      dt.items.add(new File([bin], 'dropped.txt', { type: 'text/plain' }));
+      dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }));
+      dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }));
+    }, dropB64);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 3, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '拖放入口必须发出一次上传');
+  });
+
+  await t('⑲ 🔴 P0 根因:焦点在正文附件链接上时,粘贴必须仍然生效(修复前必红)', async () => {
+    // 先让正文渲染出附件块 —— 业主页面上必然有:传完是要发出去的
+    const text = await page.inputValue('#humanInput');
+    assert.ok(/\/f\//.test(text), '本条依赖前一条留下的直链');
+    await page.evaluate((body) => handleIncomingEvent({ kind: 'user_input', text: body, ts: Date.now() }), text);
+    await page.waitForSelector('.attachments a', { timeout: 20000 });
+
+    // 🔴 0.2.0.7 新增的可聚焦元素只在**正文附件区**:实测 #draftAttachments / #uploadQueue 里没有。
+    const focusables = await page.evaluate(() => [...document.querySelectorAll('.attachments a[href]')]
+      .map((e) => e.className || e.tagName));
+    assert.ok(focusables.length > 0, `正文附件区必须有可聚焦链接(本条的前提),实测 ${JSON.stringify(focusables)}`);
+
+    const before = uploadCalls.length;
+    await page.locator('.attachments a[href]').first().focus();
+    const info = await pasteAtFocus(pngSpec());
+    assert.notStrictEqual(info.tag, 'TEXTAREA', `前提:焦点必须真的离开了输入框,实测 ${JSON.stringify(info)}`);
+    assert.strictEqual(info.prevented, true,
+      `🔴 焦点在 ${info.tag}.${info.cls} 上时粘贴必须仍被接管 —— 监听器绑在 humanInput 叶子上时,事件冒泡不经过它,现象就是「完全没反应、控制台也没报错」`);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n,
+      before ? 4 : 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '🔴 焦点在正文链接上时,粘贴必须真的发出上传');
+  });
+
+  await t('⑳ 扩大作用域的代价必须钉住:全页各处粘贴【纯文本】都不得被接管', async () => {
+    // 🔴 组长加的守卫:挂 document 之后全页粘贴都过这个处理器。
+    //    「没文件就 return」是一句承诺,这里把它变成判据 —— 否则谁动了那行,全页文本粘贴一起坏,且无人转红。
+    const spots = [
+      { label: '输入框', focus: () => page.evaluate(() => document.getElementById('humanInput').focus()) },
+      { label: 'body', focus: () => page.evaluate(() => { document.activeElement && document.activeElement.blur(); document.body.focus(); }) },
+      { label: '正文附件链接', focus: () => page.locator('.attachments a[href]').first().focus() },
+    ];
+    for (const spot of spots) {
+      await spot.focus();
+      const valueBefore = await page.inputValue('#humanInput');
+      const before = uploadCalls.length;
+      const info = await pasteAtFocus({ text: '这是一段纯文本,不是文件' });
+      await page.waitForTimeout(400);
+      assert.strictEqual(info.prevented, false,
+        `${spot.label}:纯文本粘贴不得被接管(必须保持浏览器原行为),实测 ${JSON.stringify(info)}`);
+      assert.strictEqual(uploadCalls.length, before, `${spot.label}:纯文本粘贴不得触发上传`);
+      assert.strictEqual(await page.inputValue('#humanInput'), valueBefore, `${spot.label}:纯文本粘贴不得由我们改动输入框`);
+    }
+  });
+
+  await t('㉑ 只读会话粘贴文件:必须给出可读提示,不得静默', async () => {
+    await page.route('**/status', (route) => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: true, owner: 'fixture', model: 'fixture-model' }),
+    }));
+    try {
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === true, null, { timeout: 15000 });
+      const before = uploadCalls.length;
+      await page.evaluate(() => document.getElementById('humanInput').focus());
+      // 🔴 这里我第一版断言「只读下仍应接管」,跑出来是红的 —— **断言写错了,不是产品错了**:
+      //    只读时产品会 humanInput.disabled = true(renderer 1503 行),
+      //    而 **disabled 的元素无法获得焦点** ⇒ activeElement 落回 body。
+      //    ⇒ 只读下该钉的不是「接不接管」这个实现细节,而是业主看得见的两件事:
+      //      ① 不得发出上传请求  ② 必须有可读提示,不得静默。
+      const info = await pasteAtFocus(pngSpec());
+      assert.ok(info.tag === 'BODY' || info.tag === 'TEXTAREA', `前提:只读下焦点落在 ${info.tag}`);
+      await page.waitForTimeout(800);
+      assert.strictEqual(uploadCalls.length, before, '只读会话不得发出上传请求');
+      const shown = await page.evaluate(() => document.body.innerText);
+      assert.ok(shown.includes('只读模式'),
+        '🔴 只读下必须有可读提示(「只读模式:先解锁再上传文件」),不得静默 —— 静默就是又一条「发了没反应」');
+    } finally {
+      await page.route('**/status', (route) => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
+      }));
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    }
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;
