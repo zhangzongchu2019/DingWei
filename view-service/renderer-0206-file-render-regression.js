@@ -342,6 +342,47 @@ async function t(name, fn) {
     await page.unroute('**/f/**');
   });
 
+  // ── ④i 判据 9 的自用：**只测第二道闸** ────────────────────────────
+  //
+  // 🔴 起因是我自己量出来的：删掉 kindFromExt 里那句 FILE_EXT_NEVER_INLINE 判断，
+  //    整套 26 条**零转红**（实测 N2）。原因是两道机制互为冗余：
+  //      第一道 kindFromMediaType('image/svg+xml') → 'download'
+  //      第二道 kindFromExt 的 FILE_EXT_NEVER_INLINE
+  //      而即使两道都删，`FILE_EXT_KIND['svg']` 本来就 undefined ⇒ 默认仍落 'download'
+  //    ⇒ **默认兜底把第二道闸盖住了，它看起来可以删** —— 这正是判据 9 说的形状。
+  //
+  // 本条的做法：把兜底**挪开**，让第二道闸成为唯一决定者 ——
+  // 运行时给 FILE_EXT_KIND 注入 svg:'image'，此时若无 deny-set，.svg 就会进 <img>。
+  // 🔴 注入的是**测试自己制造的、产品里被 ④h(a) 明令禁止的配置**：
+  //    ④h(a) 保证产品里不会出现它，本条保证**万一出现时第二道闸仍然拦得住**。
+  //    两条合起来才是完整的：一条防配置漂移，一条防守卫被删。
+  await t('④i 判据 9:只测第二道闸——FILE_EXT_KIND 里混入 svg 时,deny-set 必须仍拦住', async () => {
+    const svgUrl = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/99998888777766665555444433332222.svg`;
+    await page.route('**/f/**', (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 405, body: '' })
+      : route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg"/>' })));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    try {
+      // 注入前先自证：注入真的生效了，否则本条会变成一条永远绿的空用例。
+      const injected = await page.evaluate(() => {
+        FILE_EXT_KIND.svg = 'image';
+        return FILE_EXT_KIND.svg;
+      });
+      assert.strictEqual(injected, 'image',
+        '注入失败 ⇒ 本条测不到第二道闸（页面作用域取不到 FILE_EXT_KIND 时会静默变成空用例）');
+      await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), svgUrl);
+      await page.waitForSelector('.attachment[data-dispatch="ext"]', { timeout: 20000 });
+      assert.strictEqual(await page.locator('.attachment img').count(), 0,
+        '🔴 FILE_EXT_KIND 混入 svg 后仍不得进 <img> —— 这一格只有 deny-set 拦得住');
+      assert.strictEqual(await page.locator('.attachment a.attachment-dl').count(), 1,
+        '仍应给下载链接');
+    } finally {
+      await page.evaluate(() => { delete FILE_EXT_KIND.svg; }).catch(() => {});
+      await page.unroute('**/f/**');
+    }
+  });
+
   // ── ④b mp4：本浏览器解不了该编码时也要有出路，绝不留裸 URL ─────
   await t('④b mp4：能解码则必须内联 <video>，不能解码则降级为下载链接（两种都不得留裸 URL）', async () => {
     const before = await page.locator('.attachment').count();
