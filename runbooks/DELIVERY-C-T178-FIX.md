@@ -1,6 +1,6 @@
 # C 线 T-178：503 可诊断性修复
 
-更新时间（UTC）：`2026-09-18T23:42:50Z`
+更新时间（UTC）：`2026-09-19T00:07:53Z`
 
 ## 实施状态
 
@@ -23,3 +23,7 @@
 - C2 外科变异：把 audit 失败文案改回未注入文案，执行同一全仓命令共 981 条，唯一转红 `TestAdminFilesPageDistinguishesMissingInjectionFromAuditFailure`。
 - C3 外科变异：只删除 `run()` 中的注入调用，执行 `go test -v ./... -count=1` 共 982 条，唯一转红 `TestRunWiresAdminFileBrowserConfiguration`。
 - 所有变异均已还原，最终提交不含变异。
+
+## C3 已知局限
+
+本断言为静态结构断言：只验证 `run()` 体内存在该调用，不验证它在控制流上真的会被执行。把调用挪入 `if false` 或挪到早退 `return` 之后，本断言不会转红。覆盖该场景需按评审意见①把装配段抽成可测单元，列为后续。
