@@ -802,6 +802,13 @@ func (s *Server) upsertMember(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "owner_key required", http.StatusBadRequest)
 		return
 	}
+	// RED G/0.2.1.0:渠道保留字不得用作业主名/成员显示名(业主 2026-09-19 裁定,与 Agent 短名并列)。
+	// 必须在 allocateUniqueOwnerKey **之前** 拦:那个函数会给冲突名加后缀,
+	// 「飞书」变成「飞书-2」就绕过去了,而歧义并没有消失。
+	if err := s.rejectReservedMemberName(r.Context(), m); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	m.OwnerKey = s.allocateUniqueOwnerKey(r.Context(), m.OwnerKey, m.FeishuOpenID)
 	if err := s.Repo.UpsertMember(r.Context(), m); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -2982,4 +2989,57 @@ func SeedAdmin(ctx context.Context, repo store.Repository, username, initPass st
 		CreatedAt:    time.Now().UTC(),
 	}
 	return true, repo.CreateAdmin(ctx, a)
+}
+
+// rejectReservedMemberName 拦「新增 / 改名」时使用渠道保留字的成员名。
+//
+// 组长 2026-09-19 限定范围(产品决定):
+//
+//	接:新增成员 / 改名 时拒绝
+//	不动:存量同名成员 —— 不做数据迁移、不做批量改名、不做启动期校验
+//
+// 🔴 因此判据不是「名字是不是保留字」,而是「**这次是不是把它改成/新建成保留字**」:
+// 一个已经叫「飞书」的存量成员,更新它的其它字段时不得被拒 ——
+// 否则等于对存量做了一次隐式迁移,而那是被明确排除的。
+func (s *Server) rejectReservedMemberName(ctx context.Context, m model.Member) error {
+	var existing *model.Member
+	if m.OwnerKey != "" {
+		existing, _ = s.Repo.GetMemberByOwnerKey(ctx, m.OwnerKey)
+	}
+	unchanged := func(was string, now string) bool {
+		return existing != nil && strings.EqualFold(strings.TrimSpace(was), strings.TrimSpace(now))
+	}
+	fields := []struct {
+		label string
+		value string
+		was   string
+	}{
+		{"owner_key", m.OwnerKey, ownerKeyOf(existing)},
+		{"display_name", m.DisplayName, displayNameOf(existing)},
+	}
+	for _, field := range fields {
+		if field.value == "" || !m8.IsReservedChannelName(field.value) {
+			continue
+		}
+		if unchanged(field.was, field.value) {
+			// 存量同名:不是本次引入的。按裁定不动它,另开卡处理。
+			continue
+		}
+		return fmt.Errorf("%s 不得使用渠道保留字：%s（渠道名与成员名同处一个取值空间，@%s#xxx 会产生两种合法解读）", field.label, field.value, field.value)
+	}
+	return nil
+}
+
+func ownerKeyOf(m *model.Member) string {
+	if m == nil {
+		return ""
+	}
+	return m.OwnerKey
+}
+
+func displayNameOf(m *model.Member) string {
+	if m == nil {
+		return ""
+	}
+	return m.DisplayName
 }

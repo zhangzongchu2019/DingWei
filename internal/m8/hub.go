@@ -1137,6 +1137,11 @@ func sessionMirrorToFromRequest(r *http.Request) string {
 
 func (h *Hub) registerSessionEndpoint(ctx context.Context, ep model.SessionEndpoint) (string, error) {
 	requested := ep.SessionName
+	// 🔴 业主定的第三条:保留字不能用于 Agent 短名。必须在**写入口**拦 ——
+	// 只在解析期拦的话,名字照样落库,歧义从解析期搬进数据里,那时再修要动存量。
+	if isReservedForNaming(requested) {
+		return "", fmt.Errorf("会话短名不得使用渠道保留字：%s", requested)
+	}
 	if ep.OwnerKey == "" {
 		return requested, h.Repo.UpsertSessionEndpoint(ctx, ep)
 	}
@@ -3273,6 +3278,11 @@ func (h *Hub) dispatchDefaultPersonalSession(ctx context.Context, msg model.Mess
 }
 
 func (h *Hub) dispatchMemberMention(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
+	// 🔴 G2-a:渠道名不是成员名。不拦的话,`@飞书#x` 会走 resolveMemberByName,
+	// 而它匹配 OwnerKey 或 DisplayName —— 一旦有人叫「飞书」,渠道语法就被吃掉且无错可看。
+	if _, _, _, isChannel := parseChannelMention(h.stripLeadingBotMentions(msg.BotChannelID, text)); isChannel {
+		return model.PrefixDispatchResult{}, false, nil
+	}
 	targetName, sessionName, body, ok := h.parseMemberMention(msg.BotChannelID, text)
 	if !ok {
 		return model.PrefixDispatchResult{}, false, nil
