@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-19T00:36:37Z`
+更新时间（UTC）：`2026-09-19T00:39:55Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`6a4ad018d0d2b527e3ae5e500434ecf4fe982793`
+- 实现锚：`b44bca0852be616a22e9cfa5e483476756d9aa71`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -65,6 +65,8 @@ V7′–V11′ 仍须部署后通过生产 nginx 做 md/py/json 与 html/xml/svg
 Playwright 实测后的 MIME 后备键已校正为 `application/yaml→yaml`、`application/toml→toml`、`application/sql→sql`、`application/x-shellscript→sh`；保留实测正确的 text/x-python、text/x-go、text/x-log、text/javascript、text/markdown、text/csv。文件名表优先，因此 `.yml` 与 `.yaml` 仍分别保真；无文件名扩展名时后备 MIME 映射有独立断言。最终全仓 rc=0。
 
 第五道 nginx types 闸解析内联 location 的 `types` 块，逐项要求受控文本表所有扩展名映射为 `text/plain`。单独把 js 改挂 `application/javascript`、把 md 改挂 `text/markdown`，两发各执行全仓 980 条，复跑后的精确转红集合均仅配置形状闸；全部还原后 rc=0。
+
+第五道闸再升级为黑白双闸：除逐项要求受控文本扩展名为 `text/plain` 外，现读整个 nginx 内联 `types` 块，禁止 text/html、application/xhtml+xml、text/xml、application/xml、image/svg+xml、text/javascript、application/javascript、application/x-javascript、text/ecmascript、application/ecmascript。测试为每个禁止 MIME 合成配置变异；从 deny-set 单独删除 `text/javascript` 后，全仓 980 条仅配置形状闸转红。产品媒体 deny-set 未加入 JavaScript，`.js` 仍以 `text/plain` 安全内联；还原后全仓 rc=0。
 
 ## B8：音频内联候选机制
 
