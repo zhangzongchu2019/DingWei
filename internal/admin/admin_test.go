@@ -59,6 +59,26 @@ func TestAdminRequiresLogin(t *testing.T) {
 	}
 }
 
+func TestAdminAgentGroupingMinimalEntryConfiguresCodeAndLeader(t *testing.T) {
+	srv, db, mux, ctx := newAdminTestServer(t)
+	srv.sessions["tok"] = "admin"
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "key-a", SessionName: "owner-agent-a", OwnerKey: "owner", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	code := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	rec := postFormRaw(mux, "/admin/agent-groups", url.Values{
+		"action": {"upsert_group"}, "code": {code}, "leader_key_id": {"key-a"},
+		"leader_session_name": {"owner-agent-a"}, "leader_owner_key": {"owner"},
+	})
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/admin/agent-groups" {
+		t.Fatalf("POST status=%d location=%q body=%s", rec.Code, rec.Header().Get("Location"), rec.Body.String())
+	}
+	page := getAuth(t, mux, "/admin/agent-groups")
+	if !strings.Contains(page.Body.String(), code) || !strings.Contains(page.Body.String(), "owner/owner-agent-a#key-a") {
+		t.Fatalf("group page missing configured group: %s", page.Body.String())
+	}
+}
+
 func TestAdminAggregateManualEndpoints(t *testing.T) {
 	srv, db, mux, _ := newAdminTestServer(t)
 	svc := scheduler.New(scheduler.Config{}, nil, nil, srv.Outbound)
@@ -994,7 +1014,7 @@ func TestWriteDatadTaskBoardLayout(t *testing.T) {
 	var tasks []datad.Task
 	tasks = append(tasks, mk("TODO-1", "in_progress", 1), mk("TODO-2", "proposed", 2))
 	tasks = append(tasks, mk("ARCH-1", "archived", 1)) // 软删不展示
-	for i := 0; i < 14; i++ {                            // 14 件 done,超 cap 10
+	for i := 0; i < 14; i++ {                          // 14 件 done,超 cap 10
 		tasks = append(tasks, mk(fmt.Sprintf("DONE-%02d", i), "done", i)) // i 小=新
 	}
 	var buf strings.Builder

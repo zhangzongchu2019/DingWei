@@ -280,9 +280,10 @@ class ControlHMACTest(unittest.TestCase):
         ), mock.patch.object(vs.urllib.request, "urlopen", side_effect=fake_urlopen), \
                 mock.patch.object(vs.secrets, "token_hex", return_value="1234567890abcdef1234567890abcdef"), \
                 mock.patch.object(vs.time, "time", return_value=self.clock.value):
-            status, _ = vs._hub_v2_input("alice-dev55-2642", "page-1", "req-1", "a\nb")
+            status, _ = vs._hub_v2_input("alice-dev55-2642", "page-1", "req-1", "a\nb", "principal-owner")
         self.assertEqual(status, 200)
         request = captured["request"]
+        self.assertEqual(json.loads(request.data)["principal_id"], "principal-owner")
         self.assertEqual(request.full_url, "http://hub.internal/internal/view-v2/alice-dev55-2642/input")
         signature = request.headers["X-dw-signature"]
         reverse = vs._control_signature(
@@ -311,6 +312,7 @@ class ControlHMACTest(unittest.TestCase):
             headers = {"Content-Type": "application/json", "X-DW-Session": "alice-dev55-2642"}
             if verified:
                 headers["X-DW-Console-Capability-Verified"] = "1"
+                headers["X-DW-Console-Principal"] = "principal-owner"
             req = urllib.request.Request(f"http://127.0.0.1:{server.server_port}/input", body, headers,
                                          method="POST")
             try:
@@ -325,7 +327,8 @@ class ControlHMACTest(unittest.TestCase):
                 self.assertEqual(post(False), 403)
                 forwarded.assert_not_called()
                 self.assertEqual(post(True), 200)
-                forwarded.assert_called_once_with("alice-dev55-2642", page["page_id"], "req-console", "hello")
+                forwarded.assert_called_once_with("alice-dev55-2642", page["page_id"], "req-console", "hello",
+                                                  "principal-owner")
                 # Console authorization must not mutate the legacy page grant.
                 self.assertEqual(self.store.page(page["page_id"])["state"], "locked")
         finally:

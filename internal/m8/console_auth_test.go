@@ -86,6 +86,9 @@ func TestConsoleCapabilityIsConsumedForExactSessionBeforeInput(t *testing.T) {
 		if r.Header.Get("X-DW-Console-Capability-Verified") != "1" {
 			t.Fatal("trusted marker missing")
 		}
+		if r.Header.Get("X-DW-Console-Principal") != "a" {
+			t.Fatalf("attested principal missing: %q", r.Header.Get("X-DW-Console-Principal"))
+		}
 		w.WriteHeader(http.StatusNoContent)
 	})
 	request := func(session string) *httptest.ResponseRecorder {
@@ -96,6 +99,7 @@ func TestConsoleCapabilityIsConsumedForExactSessionBeforeInput(t *testing.T) {
 		req.Header.Set("X-DW-Console-Page", "page-a")
 		req.Header.Set("X-DW-Console-Capability", "secret-a")
 		req.Header.Set("X-DW-Console-Capability-Verified", "1")
+		req.Header.Set("X-DW-Console-Principal", "forged")
 		rr := httptest.NewRecorder()
 		next(rr, req)
 		return rr
