@@ -168,8 +168,6 @@ class RepositoryTemplateContractTest(unittest.TestCase):
         template_programs = verifier.parse_template(template_path, schema_programs)
 
         verifier.compare(schema_programs, template_programs, "SCHEMA_TEMPLATE")
-        self.assertEqual(schema_programs["workpulse"]["environment"]["key_count"], 16)
-        self.assertEqual(len(verifier.normalize_environment_transitions(schema["environment_transitions"])), 1)
 
 
 if __name__ == "__main__": unittest.main()

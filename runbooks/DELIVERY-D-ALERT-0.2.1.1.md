@@ -43,7 +43,9 @@
 4. `alert-route-stays-wired` 与接线同批上线，不得提前部署到禁用态制造永久红噪声；
 5. 整容器其它可重建性风险转入 `0.2.1.35`，不冒充本版已解决，也不再阻塞本版。
 
-prodops 按 T-112 原机械算法完成了只读摘要：当前 workpulse 环境为 `12` 个键；加入本版四项后的目标为 `key_count=16`、`keys_sorted_sha256=acc4bf12c0c7fa0aaf5c006cb7b907f412203b7a2529b256d764c9fc29f52ad8`。取证未回传键名集合或任何值，未修改现网。
+prodops 按 T-112 原机械算法完成的 `current=12`、`current+4=16` 摘要是**现网实然证据，只供交叉核对**，不得写成模板期望。模板应然值必须从原应有 5 键加本版四项得到，即目标 `key_count=9`；目标 digest 仍待从原应有键集计算。若原 5 键集合不可恢复，须明确记“查不出”，不得从现网 12 键反推。
+
+当前实然 12 与模板原应然 5 已不相同；本版加键后的实然 16 也必然不同于应然 9。这是 T-112 首次实际抓到的环境键集合漂移。必须逐键归因后再渲染，不能把现状回填为期望使闸恒绿。
 
 ### 🔴 模板输入来源仍待裁定
 
@@ -118,9 +120,9 @@ prodops 按 T-112 原机械算法完成了只读摘要：当前 workpulse 环境
 - 结果：`rc=1`，唯一转红 `test_runtime_guard_covers_all_keys_and_unix_socket_without_values`，原因逐字为 `missing or duplicate alert-route-stays-wired`；
 - 还原后同命令 `rc=0`；最终提交不含变异。
 
-模板摘要变异实证（2026-09-19）：
+模板摘要变异实证（2026-09-19；该发只证明模板注释受 schema 约束，不为后来撤回的 16 键目标背书）：
 
-- 靶点：只把 workpulse 模板注释的 `key_count=16` 改成 `15`，`git diff --numstat` 为该模板 `1 1`；
+- 靶点：只改 workpulse 模板注释的 `key_count`，`git diff --numstat` 为该模板 `1 1`；
 - 命令：`python3 -m unittest -v deploy.image.supervisord.test_verify_supervisor_template.RepositoryTemplateContractTest`；
 - 结果：`rc=1`，目标测试转红，失败类为 `ENV_DIGEST_MISMATCH_SCHEMA_TEMPLATE`、`program=workpulse`；
 - 还原后整组模板/巡检测试全绿，最终提交不含变异。
