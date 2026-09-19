@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-19T00:21:45Z`
+更新时间（UTC）：`2026-09-19T00:34:34Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`93f0e46fd3a362ac2670f99f4dc50f388347ea07`
+- 实现锚：`444c013080cdddec88eff325c558dbe7e2872363`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -71,7 +71,9 @@ V7′–V11′ 仍须部署后通过生产 nginx 做 md/py/json 与 html/xml/svg
 - nginx 内联正则、types、`directObjectKey` 与 manager 映射同步加入 oga/wav，严格集合相等闸保持全绿；测试明确断言 video/ogg→ogv 与 audio/ogg→oga 不相等。
 - 删除 `audio/*` 候选条件后，全仓 980 条仅 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks` 转红；还原后 rc=0。
 
-V16 的 mp3 与其余实验待定类型不在本锚验收声明内；待 Playwright 真值返回后只补集中映射表并同步四处集合。
+最终音频文件名受控表为 mp3/m4a/flac/aac/opus/ogg/wav：前五类分别返回 audio/mpeg、audio/mp4、audio/flac、audio/aac、audio/opus 与同名扩展名；ogg 返回 audio/ogg 但落 `.oga`，wav 返回 audio/wav。已识别 MIME 优先于文件名音频兜底，因此 video/ogg→ogv 与 audio/ogg→oga 保持单值且不冲突。
+
+nginx types、内联正则、`directObjectKey` 与 manager 映射同步完成，严格集合闸保持通过。删除 `filenameAudioExts` 的返回行为后，全仓 980 条仅 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks` 转红；危险 php/html/svg 同轮夹具仍强制 `.bin`。还原后全仓 rc=0。V21–V24 的生产响应头与播放行为仍须部署后实测，本件不宣称已在现网生效。
 
 ## P0：UTF-8 上传文件名协议
 
