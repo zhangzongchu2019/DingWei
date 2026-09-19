@@ -144,7 +144,8 @@ def _verify_control_request(headers, method: str, path: str, body: bytes,
     return True, 200
 
 
-def _hub_v2_input(session: str, page_id: str, request_id: str, text: str) -> tuple[int, dict]:
+def _hub_v2_input(session: str, page_id: str, request_id: str, text: str,
+                  principal_id: str = "") -> tuple[int, dict]:
     if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
         return 0, {"error": "v2 input auth unavailable"}
     try:
@@ -155,7 +156,8 @@ def _hub_v2_input(session: str, page_id: str, request_id: str, text: str) -> tup
     if len(secret) < 32:
         return 0, {"error": "v2 input secret too short"}
     path = f"/internal/view-v2/{session}/input"
-    body = json.dumps({"session": session, "page_id": page_id, "request_id": request_id, "text": text},
+    body = json.dumps({"session": session, "page_id": page_id, "request_id": request_id, "text": text,
+                       "principal_id": principal_id},
                       ensure_ascii=False, separators=(",", ":")).encode()
     timestamp = str(int(time.time()))
     nonce = secrets.token_hex(16)
@@ -733,7 +735,8 @@ class _Handler(BaseHTTPRequestHandler):
                 store = _get_page_store()
                 console_verified = self.headers.get("X-DW-Console-Capability-Verified") == "1"
                 if page_id and page_token and request_id and (console_verified or store.authorize_page(page_id, page_token, session)):
-                    code, _ = _hub_v2_input(session, page_id, request_id, text)
+                    principal_id = self.headers.get("X-DW-Console-Principal", "") if console_verified else ""
+                    code, _ = _hub_v2_input(session, page_id, request_id, text, principal_id)
                     ok = code == 200
                     if ok and not console_verified:
                         store.record_successful_write(page_id, page_token)

@@ -101,6 +101,8 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("POST /admin/routes", s.requireAuth(s.addRoute))
 	mux.HandleFunc("GET /admin/sessions", s.requireAuth(s.sessionsPage))
 	mux.HandleFunc("POST /admin/sessions", s.requireAuth(s.manageSession))
+	mux.HandleFunc("GET /admin/agent-groups", s.requireAuth(s.agentGroupsPage))
+	mux.HandleFunc("POST /admin/agent-groups", s.requireAuth(s.manageAgentGroups))
 	mux.HandleFunc("GET /admin/provision", s.requireAuth(s.provisionPage))
 	mux.HandleFunc("POST /admin/provision", s.requireAuth(s.manageProvision))
 	mux.HandleFunc("GET /admin/config", s.requireAuth(s.configs))
@@ -167,6 +169,7 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 <li><a href="/admin/projects">项目组 / 排期文档</a></li>
 <li><a href="/admin/services">租户 / 成员空间</a></li><li><a href="/admin/api-keys">凭证 API key</a></li>
 <li><a href="/admin/sessions">会话端点 / 通配 / 镜像</a></li>
+<li><a href="/admin/agent-groups">Agent 编组（最简入口）</a></li>
 <li><a href="/admin/provision">Provision 下发</a></li>
 <li><a href="/admin/control-plane">总控指标看板</a></li>
 <li><a href="/admin/files">文件对象浏览</a></li>
@@ -174,6 +177,76 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 </ul>`, stats.Total, stats.Queued, stats.Processing, stats.Done, stats.Dead,
 		controlStats.Depth, controlStats.Total, controlStats.Status["queued"], controlStats.Status["llm_pending"], controlStats.Status["done"], controlStats.Status["failed"], controlStats.Status["expired"], controlStats.FailedRate*100, controlStats.ExpiredRate*100,
 		controlStats.L2InFlight, controlStats.L2P50MS, controlStats.L2P95MS, controlStats.L2FailureRate*100)
+}
+
+func (s *Server) agentGroupsPage(w http.ResponseWriter, r *http.Request) {
+	groups, err := s.Repo.ListAgentGroups(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	endpoints, err := s.Repo.ListSessionEndpoints(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeHTMLHeader(w, "Agent 编组")
+	_, _ = w.Write([]byte(`<h3>Agent 编组（最简入口）</h3>
+<p>组别编码必须是 32 个 base64 字符。未显式编组的 Agent 属于本 owner 的默认组；一旦加入任一显式组，默认组即被替换。</p>
+<h4>创建组 / 更换组长</h4><form method=post action=/admin/agent-groups>
+<input type=hidden name=action value=upsert_group>组别编码 <input name=code size=36 required>
+组长 key_id <input name=leader_key_id required> 会话 <input name=leader_session_name required>
+owner <input name=leader_owner_key required><button>保存组与组长</button></form>
+<h4>加入 / 移出 Agent</h4><form method=post action=/admin/agent-groups>
+操作 <select name=action><option value=assign>加入</option><option value=unassign>移出</option></select>
+组别编码 <input name=code size=36 required> key_id <input name=key_id required>
+会话 <input name=session_name required> owner <input name=owner_key><button>执行</button></form>
+<h4>当前组</h4><table border=1 cellpadding=4><tr><th>编码</th><th>组长</th><th>成员</th></tr>`))
+	for _, group := range groups {
+		members, memberErr := s.Repo.ListAgentGroupMembers(r.Context(), group.Code)
+		if memberErr != nil {
+			http.Error(w, memberErr.Error(), http.StatusInternalServerError)
+			return
+		}
+		labels := make([]string, 0, len(members))
+		for _, member := range members {
+			labels = append(labels, member.OwnerKey+"/"+member.SessionName+"#"+member.KeyID)
+		}
+		_, _ = fmt.Fprintf(w, `<tr><td><code>%s</code></td><td>%s/%s#%s</td><td>%s</td></tr>`,
+			esc(group.Code), esc(group.LeaderOwnerKey), esc(group.LeaderSessionName), esc(group.LeaderKeyID), esc(strings.Join(labels, "、")))
+	}
+	_, _ = w.Write([]byte(`</table><h4>可用会话端点</h4><ul>`))
+	for _, endpoint := range endpoints {
+		_, _ = fmt.Fprintf(w, `<li>%s / %s#%s</li>`, esc(endpoint.OwnerKey), esc(endpoint.SessionName), esc(endpoint.KeyID))
+	}
+	_, _ = w.Write([]byte(`</ul><p><a href=/admin>返回</a></p>`))
+}
+
+func (s *Server) manageAgentGroups(w http.ResponseWriter, r *http.Request) {
+	action := strings.TrimSpace(r.FormValue("action"))
+	code := strings.TrimSpace(r.FormValue("code"))
+	var err error
+	switch action {
+	case "upsert_group":
+		err = s.Repo.UpsertAgentGroup(r.Context(), model.AgentGroup{
+			Code: code, LeaderKeyID: strings.TrimSpace(r.FormValue("leader_key_id")),
+			LeaderSessionName: strings.TrimSpace(r.FormValue("leader_session_name")), LeaderOwnerKey: strings.TrimSpace(r.FormValue("leader_owner_key")),
+		})
+	case "assign":
+		err = s.Repo.AssignAgentGroup(r.Context(), model.AgentGroupMember{Code: code, KeyID: strings.TrimSpace(r.FormValue("key_id")),
+			SessionName: strings.TrimSpace(r.FormValue("session_name")), OwnerKey: strings.TrimSpace(r.FormValue("owner_key"))})
+	case "unassign":
+		err = s.Repo.UnassignAgentGroup(r.Context(), code, strings.TrimSpace(r.FormValue("key_id")), strings.TrimSpace(r.FormValue("session_name")))
+	default:
+		http.Error(w, "invalid group action", http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_ = s.Repo.WriteAudit(r.Context(), adminUser(r), "admin_agent_group_"+action, code)
+	http.Redirect(w, r, "/admin/agent-groups", http.StatusSeeOther)
 }
 
 func (s *Server) controlPlaneDashboard(w http.ResponseWriter, r *http.Request) {

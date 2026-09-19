@@ -268,6 +268,27 @@ type SessionEndpoint struct {
 	DeliveryACKV1    bool
 }
 
+// AgentGroup is one project grouping capability. Code is the 32-character
+// base64 capability shared by owners; every group has exactly one leader.
+type AgentGroup struct {
+	Code              string
+	LeaderKeyID       string
+	LeaderSessionName string
+	LeaderOwnerKey    string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+// AgentGroupMember links one Agent endpoint to one or more explicit groups.
+// No rows means the Agent belongs to its owner's synthetic default group.
+type AgentGroupMember struct {
+	Code        string
+	KeyID       string
+	SessionName string
+	OwnerKey    string
+	CreatedAt   time.Time
+}
+
 // CleanupResult 是数据清理 dry-run/confirm 的统计。
 type CleanupResult struct {
 	Messages        int

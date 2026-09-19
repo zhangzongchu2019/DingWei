@@ -70,8 +70,38 @@ func assertNginxInlineTypesRejectExecutableMedia(t *testing.T, nginx string) {
 	}
 }
 
+// 🔴 /f/ location 的正则【必须带引号】(否则 nginx 把 {1,64} 当块起始,pcre2 报
+// "missing closing parenthesis" —— 0.2.0.6 v2 曾因此回滚,修复见 dcfa01ee)。
+// 这里按【内容】切分而不写死引号形式:带不带引号都能定位,
+// 免得下次有人调整书写方式时,是这道闸先红而不是 nginx 先红。
+var inlineFLocationSplit = regexp.MustCompile(`location ~ "?\^/f/`)
+
+// 🔴 只测一件事:含 {} 量词的 /f/ location 正则【必须被引号包住】。
+// 不带引号时 nginx 会把 {1,64} 的 { 当作块起始,pcre2 报
+//
+//	missing closing parenthesis in "^/f/(?<file_rel>[a-z0-9_-]"
+//
+// 0.2.0.6 v2 因此回滚过一次(RELEASE-0.2.0.6-v2-NGINX-SYNTAX-ROLLBACK-20260918),
+// 修复见 dcfa01ee —— 而该修复只在发布线上,从未回流工作分支,
+// 于是 0.2.0.7 的发版锚又带着坏形态出来,被 prodops 在部署第 2 步拦下。
+//
+// 🔴 本用例【不能】与按内容定位的那几道合并:
+// 那几道为了兼容书写形式而对引号不敏感,去掉引号它们仍全绿。
+// 引号这件事必须有一条只盯它的用例,否则坏形态只会在部署当天被 nginx 拒绝。
+func TestInlineFLocationRegexesAreQuoted(t *testing.T) {
+	nginx := mustRead(t, "../../deploy/nginx-dingwei.conf")
+	unquoted := regexp.MustCompile(`(?m)^location ~ \^/f/`).FindAllString(nginx, -1)
+	if len(unquoted) != 0 {
+		t.Fatalf("发现 %d 条未加引号的 /f/ location 正则;含 {} 量词时 nginx 会解析失败(见 dcfa01ee)", len(unquoted))
+	}
+	quoted := regexp.MustCompile(`(?m)^location ~ "\^/f/[^"]*\{[0-9]`).FindAllString(nginx, -1)
+	if len(quoted) < 2 {
+		t.Fatalf("带引号且含 {} 量词的 /f/ location 应至少 2 条,实得 %d —— 是不是正则形态被改了?", len(quoted))
+	}
+}
+
 func firstForbiddenNginxInlineType(nginx string) (string, bool) {
-	locations := strings.Split(nginx, "location ~ ^/f/")
+	locations := inlineFLocationSplit.Split(nginx, -1)
 	if len(locations) < 2 {
 		return "", false
 	}
@@ -89,7 +119,7 @@ func firstForbiddenNginxInlineType(nginx string) (string, bool) {
 
 func assertNginxServesTextExtensionsAsPlain(t *testing.T, nginx string, textExtensions []string) {
 	t.Helper()
-	locations := strings.Split(nginx, "location ~ ^/f/")
+	locations := inlineFLocationSplit.Split(nginx, -1)
 	if len(locations) < 2 {
 		t.Fatal("nginx inline /f/ location not found")
 	}

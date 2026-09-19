@@ -153,11 +153,13 @@ func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 // consolePageHTML 业主 2026-09-16 定:右侧改为**多 tab**,每点一个 Agent 增加一个属性页。
 //
 // 🔴 关键设计:切换 tab 用**显示/隐藏**,**不换 iframe 的 src**。
-//    换 src 会把上一个 Agent 的页面整个销毁 —— 那正是业主此前每次切 Agent 都要重新加载的原因。
+//
+//	换 src 会把上一个 Agent 的页面整个销毁 —— 那正是业主此前每次切 Agent 都要重新加载的原因。
 //
 // 🔴 上限 8(业主定)。为什么必须有上限:每个 view 页是一条 **SSE 长连接**,
-//    而浏览器对同一源的 **HTTP/1.1 并发连接上限是 6**(HTTP/2 多路复用后才不适用)。
-//    ⇒ **无上限时,第 7 个 tab 会直接卡住,且表现为「页面一直转圈」而非报错** —— 又一种没有声音的失败。
+//
+//	而浏览器对同一源的 **HTTP/1.1 并发连接上限是 6**(HTTP/2 多路复用后才不适用)。
+//	⇒ **无上限时,第 7 个 tab 会直接卡住,且表现为「页面一直转圈」而非报错** —— 又一种没有声音的失败。
 const consolePageHTML = `<!doctype html><meta charset=utf-8><title>DingWei Agent Console</title>
 <style>
 body{margin:0;display:grid;grid-template-columns:240px 1fr;height:100vh;font:14px sans-serif}
@@ -338,6 +340,7 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 		// This is an internal trust marker. Strip it before every branch,
 		// including the compatibility path where unified auth is disabled.
 		r.Header.Del("X-DW-Console-Capability-Verified")
+		r.Header.Del("X-DW-Console-Principal")
 		permission := "view"
 		if r.Method != http.MethodGet {
 			permission = "interact"
@@ -365,6 +368,9 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 				return
 			}
 			r.Header.Set("X-DW-Console-Capability-Verified", "1")
+			if session, ok := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession); ok {
+				r.Header.Set("X-DW-Console-Principal", session.PrincipalID)
+			}
 			next(w, r)
 		})(w, r)
 	}
