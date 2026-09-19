@@ -1137,6 +1137,144 @@ async function t(name, fn) {
     }
   });
 
+  // ── ㉒㉓㉔㉕ 0.2.1.2 UI 批 ────────────────────────────────────────
+
+  await t('㉒ 🔴 阴格(业主确认):窄窗口 <880px 下 📎/📷 仍然可见', async () => {
+    // 🔴 这条是业主确认过的阴格,不是我加的边角:
+    //    现 CSS 里 .sb-res 在 <880px 整排 display:none。📎 直搬进状态栏就会在窄窗口消失,
+    //    退回 0.2.0.5「界面上看不见按钮 = 功能不存在」那个坑。
+    const sizes = [{ w: 1280, h: 900, label: '宽' }, { w: 820, h: 900, label: '窄<880' }, { w: 480, h: 900, label: '很窄' }];
+    try {
+      for (const size of sizes) {
+        await page.setViewportSize({ width: size.w, height: size.h });
+        await page.waitForTimeout(150);
+        const vis = await page.evaluate(() => {
+          const seen = (sel) => {
+            const el = document.querySelector(sel);
+            if (!el) return 'missing';
+            const r = el.getBoundingClientRect();
+            return (getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0) ? 'visible' : 'hidden';
+          };
+          return { attach: seen('#fileLabel'), shot: seen('#shotBtn'), picker: !!document.querySelector('#filePicker') };
+        });
+        assert.strictEqual(vis.attach, 'visible', `${size.label}(${size.w}px):📎 必须可见,实测 ${JSON.stringify(vis)}`);
+        assert.strictEqual(vis.shot, 'visible', `${size.label}(${size.w}px):📷 必须可见,实测 ${JSON.stringify(vis)}`);
+        assert.ok(vis.picker, `${size.label}:file input 必须仍在 DOM 里(三入口之一)`);
+      }
+      // 阳性对照:同一轮里,**该被隐藏的**在窄窗口下确实隐藏了 ——
+      // 🔴 只验"📎 可见"是半条:一个"把整条响应式规则删掉"的实现也能让它全过。
+      await page.setViewportSize({ width: 820, height: 900 });
+      await page.waitForTimeout(150);
+      const resHidden = await page.evaluate(() => {
+        // 🔴 必须挑【没有豁免】的那一个:📎/📷 同时挂着 .sb-res 与 .sb-always,
+        //    拿它们做对照会把"豁免生效"误判成"响应式规则没了"。
+        const el = document.querySelector('.statusbar .sb-res:not(.sb-always)');
+        return el ? getComputedStyle(el).display === 'none' : 'missing';
+      });
+      assert.strictEqual(resHidden, true, `阳性对照:窄窗口下 .sb-res 应仍被隐藏(否则是整条响应式规则被删了),实测 ${resHidden}`);
+    } finally {
+      await page.setViewportSize({ width: 1280, height: 900 });
+    }
+  });
+
+  await t('㉓ 🔴 断线必须看得见:🕐 那一栏进入断线态、显示第 N 次、点击可立即重试', async () => {
+    // 🔴 自动重连 ＋ 无指示 ⇒ 死掉的页面与正常页面**看起来完全一样**,业主会对着断线页面等消息。
+    //    本条盯的就是「断线这件事在屏幕上存在」。
+    const before = await page.evaluate(() => ({
+      offline: document.getElementById('clockStatus')?.classList.contains('offline'),
+      text: document.getElementById('localTime')?.textContent,
+    }));
+    // 直接触发事件流错误:mock 的 /events 已是空流,这里显式踢一次 onerror
+    await page.evaluate(() => { if (typeof eventSource !== 'undefined' && eventSource) eventSource.dispatchEvent(new Event('error')); });
+    await page.waitForFunction(() => document.getElementById('clockStatus')?.classList.contains('offline'), null, { timeout: 15000 });
+    const during = await page.evaluate(() => ({
+      offline: document.getElementById('clockStatus')?.classList.contains('offline'),
+      text: document.getElementById('localTime')?.textContent,
+      clickable: document.getElementById('clockStatus')?.tagName,
+    }));
+    assert.strictEqual(during.offline, true, `断线时 🕐 必须进入可见的断线态,实测 ${JSON.stringify({ before, during })}`);
+    assert.ok(/断线重连中/.test(during.text || ''), `断线态文案必须说明正在重连,实测 ${JSON.stringify(during.text)}`);
+    assert.ok(/第 \d+ 次/.test(during.text || ''), `🔴 必须给出第几次 —— 只说"断线"看不出它在不在动,实测 ${JSON.stringify(during.text)}`);
+    assert.strictEqual(during.clickable, 'BUTTON',
+      '🔴 手动退路不能随「重连」按钮一起消失:这一栏必须是可点的 button');
+    // 退避节奏取自源码常量,不在用例里另写一份数字
+    const src = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
+    const backoff = (/const RECONNECT_BACKOFF_MS = \[([^\]]*)\]/.exec(src) || [])[1];
+    assert.ok(backoff, '产品里必须有 RECONNECT_BACKOFF_MS 常量');
+    assert.deepStrictEqual(backoff.split(',').map((x) => Number(x.trim())), [1000, 2000, 5000, 10000, 30000],
+      `退避必须是 1s→2s→5s→10s→30s 封顶(业主定 30s,组长收口先快后慢),实测 ${backoff}`);
+  });
+
+  await t('㉔ 状态栏精简:业主点名移除的不得再出现,保留的必须在;「归属 归属」不再重复', async () => {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    const bar = await page.evaluate(() => {
+      const el = document.querySelector('.statusbar');
+      return { html: el ? el.innerHTML : '', text: el ? el.innerText : '' };
+    });
+    for (const gone of ['lockHelp', 'headerOwner', 'sessionDot', 'sessionState', 'loadStat', 'modelStat', 'reconnectBtn']) {
+      assert.ok(!bar.html.includes(`id="${gone}"`), `状态栏不得再有 ${gone}(业主点名移除)`);
+    }
+    for (const kept of ['themeBtn', 'localTime', 'fileLabel', 'shotBtn', 'memStat', 'diskStat', 'turnCost', 'totalCost']) {
+      assert.ok(bar.html.includes(`id="${kept}"`), `状态栏必须保留 ${kept}(业主保留清单)`);
+    }
+    // 🔴 「归属 归属」是缺陷不是设计:HTML 一次、JS 再拼一次。移除后不得再出现任何一处。
+    assert.ok(!/归属/.test(bar.text), `「归属」已按业主要求移除,实测状态栏文本 ${JSON.stringify(bar.text.slice(0, 120))}`);
+    const src = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
+    assert.ok(!/headerOwner\.textContent\s*=/.test(src), 'JS 里也不得再拼「归属」(原缺陷:标签与值各拼一次)');
+    // 内存 ≥4 位数进位;磁盘去百分比
+    const fmt = await page.evaluate(() => ({
+      mem4: formatMem({ used_mb: 1687, total_mb: 15485, pct: 11 }),
+      mem3: formatMem({ used_mb: 120, total_mb: 900, pct: 13 }),
+      disk: formatDisk({ used_gb: 44.2, total_gb: 232.4, pct: 19 }),
+    }));
+    assert.ok(/GB/.test(fmt.mem4) && !/MB/.test(fmt.mem4), `内存 ≥4 位数必须进位到 GB,实测 ${fmt.mem4}`);
+    assert.ok(/MB/.test(fmt.mem3), `内存 3 位数时不进位,实测 ${fmt.mem3}`);
+    assert.ok(!/%/.test(fmt.mem4) && !/%/.test(fmt.disk), `内存/磁盘都不再带百分比,实测 ${fmt.mem4} | ${fmt.disk}`);
+    assert.strictEqual(fmt.disk, '44.2 / 232.4 GB', `磁盘格式按业主给的样子,实测 ${fmt.disk}`);
+  });
+
+  await t('㉕ 页内截屏:抓帧→框选→裁剪→**走既有上传管道**(选源那一步只能人工,见注释)', async () => {
+    // 🔴 自动化覆盖到哪一步、哪一步只能人工 —— 写在这里,不留给读的人猜:
+    //   能自动:抓到帧之后的**全部** —— 框选(经 __dwSetShotRect)、按选区裁剪、
+    //           生成 image/png 的 File、走 uploadFiles 上传、直链回填输入框。
+    //   只能人工:`getDisplayMedia` 弹出的**「选择共享内容」框** —— 它要求真实用户手势,
+    //           headless 给不了。产品里为此留了显式测试缝 __dwSetScreenshotFrameSource,
+    //           用例替换的**只有抓帧这一步**,其后每一步都是产品自己的代码。
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    const before = uploadCalls.length;
+    // 替身帧:200x100 的画布,左半红右半蓝 —— 裁右半应得纯蓝,以此验"真的按选区裁了"
+    await page.evaluate(() => {
+      window.__dwSetScreenshotFrameSource(() => {
+        const c = document.createElement('canvas');
+        c.width = 200; c.height = 100;
+        const g = c.getContext('2d');
+        g.fillStyle = '#ff0000'; g.fillRect(0, 0, 100, 100);
+        g.fillStyle = '#0000ff'; g.fillRect(100, 0, 100, 100);
+        return Promise.resolve(c);
+      });
+    });
+    await page.click('#shotBtn');
+    await page.waitForSelector('#shotOverlay:not([hidden])', { timeout: 15000 });
+    assert.strictEqual(await page.evaluate(() => document.getElementById('shotCanvas').width), 200, '抓到的帧应进画布');
+    // 框选右半
+    await page.evaluate(() => window.__dwSetShotRect({ x: 100, y: 0, w: 100, h: 100 }));
+    await page.click('#shotConfirm');
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '🔴 截屏必须走【既有】上传管道,发出一次上传');
+    const draft = await page.inputValue('#humanInput');
+    assert.ok(/screenshot-.*\.png/.test(draft), `输入框应回填截屏文件名,实测 ${JSON.stringify(draft.slice(0, 160))}`);
+    assert.strictEqual(await page.evaluate(() => document.getElementById('shotOverlay').hidden), true, '上传后遮罩必须关掉');
+    // 取消路径:不得上传
+    const before2 = uploadCalls.length;
+    await page.click('#shotBtn');
+    await page.waitForSelector('#shotOverlay:not([hidden])', { timeout: 15000 });
+    await page.click('#shotCancel');
+    await page.waitForTimeout(500);
+    assert.strictEqual(uploadCalls.length, before2, '点取消不得上传 —— 只验"能传"是半条');
+    assert.strictEqual(await page.evaluate(() => document.getElementById('shotOverlay').hidden), true, '取消后遮罩必须关掉');
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;
