@@ -3,7 +3,7 @@
 - 分支：`coder56solzzc/g-grouping-backend-0210`
 - 产品锚：`91e24a926f3e7ebf9f4e179b75f7fc52b1d512ae`
 - 基线：`gfup/release/0.2.0.7` 的 `7f02e92d58e67ebf0fee6bfd2f1f3740d6cdffb6`
-- 更新时间：2026-09-19T09:22:41Z
+- 更新时间：2026-09-19T09:32:37Z
 - 状态事实：实现与仓内证据已推；未合并、未部署、未宣称生产验收通过。
 
 ## 实现事实
@@ -47,6 +47,15 @@
 - `go test ./... -count=1`：rc=0；其中 `internal/m8` 42.023s。
 - `cd view-service && python3 -m unittest test_view_page_store.py`：12/12，rc=0。
 - `go test ./internal/store ./internal/admin ./internal/m8 -count=1`：三包均 rc=0。
+
+### 独立复跑暴露的测试时序竞态及修复
+
+组长整包复跑曾在 `TestAgentGroupingSupportsMultipleGroupsAndOneLeader` 得到 `session ... offline`，而定向复跑连续通过。根因属于测试前提而非产品掉线：`HandleSessionWS` 有意先写 onboarding 帧，再把 client 发布进 `sessionClients`；测试辅助函数 `dialSession` 读到 onboarding 即返回，因此它不是“已上线”屏障。低负载时后续 SQLite 配置操作恰好掩盖窗口，整包负载下最后建立的 multi 会话暴露。
+
+夹具现对四个端点逐一调用仓内既有 `waitSessionOnline`，按真实条件轮询，不增加固定 sleep。修复后：
+
+- `go test ./internal/m8 -run '^TestAgentGroupingSupportsMultipleGroupsAndOneLeader$' -count=50`：rc=0；
+- `go test ./internal/m8 -count=1`：rc=0（40.861s）。
 
 ## 明确没有跑 / 没有证明
 

@@ -77,6 +77,13 @@ func newGroupingFixture(t *testing.T) groupingFixture {
 		return model.SessionEndpoint{}
 	}
 	sourceEP, sameEP, outsideEP, multiEP := find(sourceKey.ID), find(sameKey.ID), find(outsideKey.ID), find(multiKey.ID)
+	// dialSession returns after reading the onboarding frame, but HandleSessionWS
+	// deliberately sends onboarding before publishing the client in
+	// sessionClients. Make that registration precondition explicit; a fixed
+	// sleep would merely move the same race under a different machine load.
+	for _, ep := range []model.SessionEndpoint{sourceEP, sameEP, outsideEP, multiEP} {
+		waitSessionOnline(t, hub, ep.KeyID, ep.SessionName)
+	}
 	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: sourceEP.KeyID, LeaderSessionName: sourceEP.SessionName, LeaderOwnerKey: sourceEP.OwnerKey}); err != nil {
 		t.Fatal(err)
 	}
