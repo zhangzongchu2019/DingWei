@@ -1011,6 +1011,340 @@ async function t(name, fn) {
     await page.unroute('**/f/**');
   });
 
+  // ── ⑱⑲⑳㉑ 三个入口 ＋ 焦点维度(P0 2026-09-19 现网回归)───────────────
+  //
+  // 🔴 本批的成因不是某个函数写错,是**三个入口(粘贴/选择文件/拖放)共用下游,而只测了一个**。
+  //    已有的 ⑥ 把 paste 事件**直接 dispatch 到 humanInput** —— 不管真实焦点在哪都一定触发,
+  //    于是它测不出「焦点不在输入框时监听器根本不被调用」这一整类。
+  //    ⇒ 下面的粘贴一律派发到 **document.activeElement**,与真实粘贴同形。
+  const pasteAtFocus = (spec) => page.evaluate(({ name, type, b64, text }) => {
+    const dt = new DataTransfer();
+    if (b64) {
+      const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      dt.items.add(new File([bin], name, { type }));
+    } else {
+      dt.setData('text/plain', text || '');
+    }
+    const target = document.activeElement || document.body;
+    const notCancelled = target.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    return { tag: target.tagName, cls: String(target.className || '').slice(0, 40), prevented: !notCancelled };
+  }, spec);
+  const pngSpec = () => ({ name: 'pasted-at-focus.png', type: 'image/png', b64: fs.readFileSync(fx('sample.png')).toString('base64') });
+
+  await t('⑱ 三个入口(粘贴/选择文件/拖放)各一条,走同一下游 —— 本次回归的根因是只测了一个', async () => {
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    // 入口①粘贴:焦点在输入框,事件派发到 activeElement
+    await page.evaluate(() => document.getElementById('humanInput').focus());
+    let before = uploadCalls.length;
+    const pasted = await pasteAtFocus(pngSpec());
+    assert.strictEqual(pasted.prevented, true, `粘贴入口:处理器必须接管(preventDefault),实测 ${JSON.stringify(pasted)}`);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '粘贴入口必须发出一次上传');
+
+    // 入口②选择文件
+    before = uploadCalls.length;
+    await page.setInputFiles('#filePicker', [fx('sample.pdf')]);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 2, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '选择文件入口必须发出一次上传');
+
+    // 入口③拖放
+    before = uploadCalls.length;
+    const dropB64 = fs.readFileSync(fx('sample-small.txt')).toString('base64');
+    await page.evaluate((b64) => {
+      const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const dt = new DataTransfer();
+      dt.items.add(new File([bin], 'dropped.txt', { type: 'text/plain' }));
+      dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }));
+      dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }));
+    }, dropB64);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 3, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '拖放入口必须发出一次上传');
+  });
+
+  await t('⑲ 🔴 P0 根因:焦点在正文附件链接上时,粘贴必须仍然生效(修复前必红)', async () => {
+    // 先让正文渲染出附件块 —— 业主页面上必然有:传完是要发出去的
+    const text = await page.inputValue('#humanInput');
+    assert.ok(/\/f\//.test(text), '本条依赖前一条留下的直链');
+    await page.evaluate((body) => handleIncomingEvent({ kind: 'user_input', text: body, ts: Date.now() }), text);
+    await page.waitForSelector('.attachments a', { timeout: 20000 });
+
+    // 🔴 0.2.0.7 新增的可聚焦元素只在**正文附件区**:实测 #draftAttachments / #uploadQueue 里没有。
+    const focusables = await page.evaluate(() => [...document.querySelectorAll('.attachments a[href]')]
+      .map((e) => e.className || e.tagName));
+    assert.ok(focusables.length > 0, `正文附件区必须有可聚焦链接(本条的前提),实测 ${JSON.stringify(focusables)}`);
+
+    const before = uploadCalls.length;
+    await page.locator('.attachments a[href]').first().focus();
+    const info = await pasteAtFocus(pngSpec());
+    assert.notStrictEqual(info.tag, 'TEXTAREA', `前提:焦点必须真的离开了输入框,实测 ${JSON.stringify(info)}`);
+    assert.strictEqual(info.prevented, true,
+      `🔴 焦点在 ${info.tag}.${info.cls} 上时粘贴必须仍被接管 —— 监听器绑在 humanInput 叶子上时,事件冒泡不经过它,现象就是「完全没反应、控制台也没报错」`);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n,
+      before ? 4 : 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '🔴 焦点在正文链接上时,粘贴必须真的发出上传');
+  });
+
+  await t('⑳ 扩大作用域的代价必须钉住:全页各处粘贴【纯文本】都不得被接管', async () => {
+    // 🔴 组长加的守卫:挂 document 之后全页粘贴都过这个处理器。
+    //    「没文件就 return」是一句承诺,这里把它变成判据 —— 否则谁动了那行,全页文本粘贴一起坏,且无人转红。
+    const spots = [
+      { label: '输入框', focus: () => page.evaluate(() => document.getElementById('humanInput').focus()) },
+      { label: 'body', focus: () => page.evaluate(() => { document.activeElement && document.activeElement.blur(); document.body.focus(); }) },
+      { label: '正文附件链接', focus: () => page.locator('.attachments a[href]').first().focus() },
+    ];
+    for (const spot of spots) {
+      await spot.focus();
+      const valueBefore = await page.inputValue('#humanInput');
+      const before = uploadCalls.length;
+      const info = await pasteAtFocus({ text: '这是一段纯文本,不是文件' });
+      await page.waitForTimeout(400);
+      assert.strictEqual(info.prevented, false,
+        `${spot.label}:纯文本粘贴不得被接管(必须保持浏览器原行为),实测 ${JSON.stringify(info)}`);
+      assert.strictEqual(uploadCalls.length, before, `${spot.label}:纯文本粘贴不得触发上传`);
+      assert.strictEqual(await page.inputValue('#humanInput'), valueBefore, `${spot.label}:纯文本粘贴不得由我们改动输入框`);
+    }
+  });
+
+  await t('㉑ 只读会话粘贴文件:必须给出可读提示,不得静默', async () => {
+    await page.route('**/status', (route) => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: true, owner: 'fixture', model: 'fixture-model' }),
+    }));
+    try {
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === true, null, { timeout: 15000 });
+      const before = uploadCalls.length;
+      await page.evaluate(() => document.getElementById('humanInput').focus());
+      // 🔴 这里我第一版断言「只读下仍应接管」,跑出来是红的 —— **断言写错了,不是产品错了**:
+      //    只读时产品会 humanInput.disabled = true(renderer 1503 行),
+      //    而 **disabled 的元素无法获得焦点** ⇒ activeElement 落回 body。
+      //    ⇒ 只读下该钉的不是「接不接管」这个实现细节,而是业主看得见的两件事:
+      //      ① 不得发出上传请求  ② 必须有可读提示,不得静默。
+      const info = await pasteAtFocus(pngSpec());
+      assert.ok(info.tag === 'BODY' || info.tag === 'TEXTAREA', `前提:只读下焦点落在 ${info.tag}`);
+      await page.waitForTimeout(800);
+      assert.strictEqual(uploadCalls.length, before, '只读会话不得发出上传请求');
+      const shown = await page.evaluate(() => document.body.innerText);
+      assert.ok(shown.includes('只读模式'),
+        '🔴 只读下必须有可读提示(「只读模式:先解锁再上传文件」),不得静默 —— 静默就是又一条「发了没反应」');
+    } finally {
+      await page.route('**/status', (route) => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
+      }));
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    }
+  });
+
+  // ── ㉒㉓㉔㉕ 0.2.1.2 UI 批 ────────────────────────────────────────
+
+  await t('㉒ 🔴 阴格(业主确认):窄窗口 <880px 下 📎/📷 仍然可见', async () => {
+    // 🔴 这条是业主确认过的阴格,不是我加的边角:
+    //    现 CSS 里 .sb-res 在 <880px 整排 display:none。📎 直搬进状态栏就会在窄窗口消失,
+    //    退回 0.2.0.5「界面上看不见按钮 = 功能不存在」那个坑。
+    const sizes = [{ w: 1280, h: 900, label: '宽' }, { w: 820, h: 900, label: '窄<880' }, { w: 480, h: 900, label: '很窄' }];
+    try {
+      for (const size of sizes) {
+        await page.setViewportSize({ width: size.w, height: size.h });
+        await page.waitForTimeout(150);
+        const vis = await page.evaluate(() => {
+          const seen = (sel) => {
+            const el = document.querySelector(sel);
+            if (!el) return 'missing';
+            const r = el.getBoundingClientRect();
+            return (getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0) ? 'visible' : 'hidden';
+          };
+          return { attach: seen('#fileLabel'), shot: seen('#shotBtn'), picker: !!document.querySelector('#filePicker') };
+        });
+        assert.strictEqual(vis.attach, 'visible', `${size.label}(${size.w}px):📎 必须可见,实测 ${JSON.stringify(vis)}`);
+        assert.strictEqual(vis.shot, 'visible', `${size.label}(${size.w}px):📷 必须可见,实测 ${JSON.stringify(vis)}`);
+        assert.ok(vis.picker, `${size.label}:file input 必须仍在 DOM 里(三入口之一)`);
+      }
+      // 阳性对照:同一轮里,**该被隐藏的**在窄窗口下确实隐藏了 ——
+      // 🔴 只验"📎 可见"是半条:一个"把整条响应式规则删掉"的实现也能让它全过。
+      await page.setViewportSize({ width: 820, height: 900 });
+      await page.waitForTimeout(150);
+      const resHidden = await page.evaluate(() => {
+        // 🔴 必须挑【没有豁免】的那一个:📎/📷 同时挂着 .sb-res 与 .sb-always,
+        //    拿它们做对照会把"豁免生效"误判成"响应式规则没了"。
+        const el = document.querySelector('.statusbar .sb-res:not(.sb-always)');
+        return el ? getComputedStyle(el).display === 'none' : 'missing';
+      });
+      assert.strictEqual(resHidden, true, `阳性对照:窄窗口下 .sb-res 应仍被隐藏(否则是整条响应式规则被删了),实测 ${resHidden}`);
+    } finally {
+      await page.setViewportSize({ width: 1280, height: 900 });
+    }
+  });
+
+  await t('㉓ 🔴 断线必须看得见:🕐 那一栏进入断线态、显示第 N 次、点击可立即重试', async () => {
+    // 🔴 自动重连 ＋ 无指示 ⇒ 死掉的页面与正常页面**看起来完全一样**,业主会对着断线页面等消息。
+    //    本条盯的就是「断线这件事在屏幕上存在」。
+    const before = await page.evaluate(() => ({
+      offline: document.getElementById('clockStatus')?.classList.contains('offline'),
+      text: document.getElementById('localTime')?.textContent,
+    }));
+    // 直接触发事件流错误:mock 的 /events 已是空流,这里显式踢一次 onerror
+    await page.evaluate(() => { if (typeof eventSource !== 'undefined' && eventSource) eventSource.dispatchEvent(new Event('error')); });
+    await page.waitForFunction(() => document.getElementById('clockStatus')?.classList.contains('offline'), null, { timeout: 15000 });
+    const during = await page.evaluate(() => ({
+      offline: document.getElementById('clockStatus')?.classList.contains('offline'),
+      text: document.getElementById('localTime')?.textContent,
+      clickable: document.getElementById('clockStatus')?.tagName,
+    }));
+    assert.strictEqual(during.offline, true, `断线时 🕐 必须进入可见的断线态,实测 ${JSON.stringify({ before, during })}`);
+    assert.ok(/断线重连中/.test(during.text || ''), `断线态文案必须说明正在重连,实测 ${JSON.stringify(during.text)}`);
+    assert.ok(/第 \d+ 次/.test(during.text || ''), `🔴 必须给出第几次 —— 只说"断线"看不出它在不在动,实测 ${JSON.stringify(during.text)}`);
+    assert.strictEqual(during.clickable, 'BUTTON',
+      '🔴 手动退路不能随「重连」按钮一起消失:这一栏必须是可点的 button');
+    // 退避节奏取自源码常量,不在用例里另写一份数字
+    const src = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
+    const backoff = (/const RECONNECT_BACKOFF_MS = \[([^\]]*)\]/.exec(src) || [])[1];
+    assert.ok(backoff, '产品里必须有 RECONNECT_BACKOFF_MS 常量');
+    assert.deepStrictEqual(backoff.split(',').map((x) => Number(x.trim())), [1000, 2000, 5000, 10000, 30000],
+      `退避必须是 1s→2s→5s→10s→30s 封顶(业主定 30s,组长收口先快后慢),实测 ${backoff}`);
+  });
+
+  await t('㉔ 状态栏精简:移除项不再出现、保留项仍在、无未捕获异常;「归属 归属」不再重复', async () => {
+    // 🔴 组长点名要钉的那一条:被移除的元素**都有 id,而有 id 的东西通常有 JS 在引用**。
+    //    删 DOM 不删引用 ⇒ getElementById 返回 null ⇒ 后续 `.textContent=` 抛错
+    //    ⇒ **整段脚本静默停摆,后面的监听器一个都不绑** —— 正是粘贴那次的形状。
+    //    所以这里从 reload 开始就收未捕获异常,并在收完之后再动一次三个入口。
+    const pageErrors = [];
+    const onPageError = (e) => pageErrors.push(String((e && e.stack) || e));
+    page.on('pageerror', onPageError);
+    try {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    const bar = await page.evaluate(() => {
+      const el = document.querySelector('.statusbar');
+      return { html: el ? el.innerHTML : '', text: el ? el.innerText : '' };
+    });
+    for (const gone of ['lockHelp', 'headerOwner', 'sessionDot', 'sessionState', 'loadStat', 'modelStat', 'reconnectBtn']) {
+      assert.ok(!bar.html.includes(`id="${gone}"`), `状态栏不得再有 ${gone}(业主点名移除)`);
+    }
+    for (const kept of ['themeBtn', 'localTime', 'fileLabel', 'shotBtn', 'memStat', 'diskStat', 'turnCost', 'totalCost']) {
+      assert.ok(bar.html.includes(`id="${kept}"`), `状态栏必须保留 ${kept}(业主保留清单)`);
+    }
+    // 🔴 「归属 归属」是缺陷不是设计:HTML 一次、JS 再拼一次。移除后不得再出现任何一处。
+    assert.ok(!/归属/.test(bar.text), `「归属」已按业主要求移除,实测状态栏文本 ${JSON.stringify(bar.text.slice(0, 120))}`);
+    const src = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
+    assert.ok(!/headerOwner\.textContent\s*=/.test(src), 'JS 里也不得再拼「归属」(原缺陷:标签与值各拼一次)');
+    // 内存 ≥4 位数进位;磁盘去百分比
+    const fmt = await page.evaluate(() => ({
+      mem4: formatMem({ used_mb: 1687, total_mb: 15485, pct: 11 }),
+      mem3: formatMem({ used_mb: 120, total_mb: 900, pct: 13 }),
+      disk: formatDisk({ used_gb: 44.2, total_gb: 232.4, pct: 19 }),
+    }));
+    assert.ok(/GB/.test(fmt.mem4) && !/MB/.test(fmt.mem4), `内存 ≥4 位数必须进位到 GB,实测 ${fmt.mem4}`);
+    assert.ok(/MB/.test(fmt.mem3), `内存 3 位数时不进位,实测 ${fmt.mem3}`);
+    assert.ok(!/%/.test(fmt.mem4) && !/%/.test(fmt.disk), `内存/磁盘都不再带百分比,实测 ${fmt.mem4} | ${fmt.disk}`);
+    assert.strictEqual(fmt.disk, '44.2 / 232.4 GB', `磁盘格式按业主给的样子,实测 ${fmt.disk}`);
+
+    // 再动一次三个入口:若脚本已停摆,监听器根本没绑,这里会露出来
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); el.focus(); });
+    const before = uploadCalls.length;
+    await pasteAtFocus({ name: 'after-trim.png', type: 'image/png', b64: fs.readFileSync(fx('sample.png')).toString('base64') });
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '精简之后粘贴入口必须仍然工作(脚本没停摆)');
+    await page.setInputFiles('#filePicker', [fx('sample.pdf')]);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 2, { timeout: 30000 });
+
+    assert.deepStrictEqual(pageErrors, [],
+      `🔴 移除那七项之后页面不得有任何未捕获异常 —— 有异常 = 整段脚本可能已停摆,实测 ${JSON.stringify(pageErrors.slice(0, 3))}`);
+    } finally {
+      page.off('pageerror', onPageError);
+    }
+  });
+
+  await t('㉕ 页内截屏:抓帧→框选→裁剪→**走既有上传管道**(选源那一步只能人工,见注释)', async () => {
+    // 🔴 自动化覆盖到哪一步、哪一步只能人工 —— 写在这里,不留给读的人猜:
+    //   能自动:抓到帧之后的**全部** —— 框选(经 __dwSetShotRect)、按选区裁剪、
+    //           生成 image/png 的 File、走 uploadFiles 上传、直链回填输入框。
+    //   只能人工:`getDisplayMedia` 弹出的**「选择共享内容」框** —— 它要求真实用户手势,
+    //           headless 给不了。产品里为此留了显式测试缝 __dwSetScreenshotFrameSource,
+    //           用例替换的**只有抓帧这一步**,其后每一步都是产品自己的代码。
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    const before = uploadCalls.length;
+    // 替身帧:200x100 的画布,左半红右半蓝 —— 裁右半应得纯蓝,以此验"真的按选区裁了"
+    await page.evaluate(() => {
+      window.__dwSetScreenshotFrameSource(() => {
+        const c = document.createElement('canvas');
+        c.width = 200; c.height = 100;
+        const g = c.getContext('2d');
+        g.fillStyle = '#ff0000'; g.fillRect(0, 0, 100, 100);
+        g.fillStyle = '#0000ff'; g.fillRect(100, 0, 100, 100);
+        return Promise.resolve(c);
+      });
+    });
+    await page.click('#shotBtn');
+    await page.waitForSelector('#shotOverlay:not([hidden])', { timeout: 15000 });
+    assert.strictEqual(await page.evaluate(() => document.getElementById('shotCanvas').width), 200, '抓到的帧应进画布');
+    // 框选右半
+    await page.evaluate(() => window.__dwSetShotRect({ x: 100, y: 0, w: 100, h: 100 }));
+    await page.click('#shotConfirm');
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '🔴 截屏必须走【既有】上传管道,发出一次上传');
+    const draft = await page.inputValue('#humanInput');
+    assert.ok(/screenshot-.*\.png/.test(draft), `输入框应回填截屏文件名,实测 ${JSON.stringify(draft.slice(0, 160))}`);
+    assert.strictEqual(await page.evaluate(() => document.getElementById('shotOverlay').hidden), true, '上传后遮罩必须关掉');
+    // 取消路径:不得上传
+    const before2 = uploadCalls.length;
+    await page.click('#shotBtn');
+    await page.waitForSelector('#shotOverlay:not([hidden])', { timeout: 15000 });
+    await page.click('#shotCancel');
+    await page.waitForTimeout(500);
+    assert.strictEqual(uploadCalls.length, before2, '点取消不得上传 —— 只验"能传"是半条');
+    assert.strictEqual(await page.evaluate(() => document.getElementById('shotOverlay').hidden), true, '取消后遮罩必须关掉');
+  });
+
+  await t('㉖ 🔴 未调用测试缝时,走的必须是【真的 getDisplayMedia】(组长 ts-No.6 第①条)', async () => {
+    // 🔴 组长的顾虑:测试缝哪天悄悄变成默认路径 ⇒ 「截屏」静默变成「传一张假图」。
+    //    本条就是钉这个:**另起一个浏览器、不设任何缝**,走完整条真路径。
+    //
+    // 🔵 组长建议的开关方向对,但**他给的组合不对**,实测(见交付件):
+    //    --auto-select-desktop-capture-source=…   ⇒ NotReadableError: Could not start video source
+    //    --use-fake-ui-for-media-stream 单用       ⇒ 同样 NotReadableError
+    //    🔴 真正成的是 **--use-fake-ui-for-media-stream ＋ --use-fake-device-for-media-stream**
+    //       ⇒ 拿到真轨 video:screen:-3:0,1280x900,**不弹框**。
+    //
+    // 🔵 为什么 ㉕ 仍然保留测试缝:开关给的是**合成画面,内容不可控** ——
+    //    裁剪对不对(裁右半必须得到右半)只有可控画面才验得了。
+    //    ⇒ 两条分工:㉕ 验**裁得对不对**(缝,画面可控);㉖ 验**真路径通不通**(开关,不用缝)。
+    const flagged = await chromium.launch({
+      headless: true,
+      args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+    });
+    try {
+      const fctx = await flagged.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
+      const fpage = await fctx.newPage();
+      await fpage.route('**/status', (route) => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
+      }));
+      await fpage.route('**/events', (route) => route.fulfill({ status: 200, contentType: 'text/event-stream', body: '' }));
+      await fpage.route('**/taskboard**', (route) => route.fulfill({ status: 404, body: '' }));
+      await fpage.goto(`${BASE}/renderer-canary-sse.html`, { waitUntil: 'domcontentloaded' });
+      await fpage.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+
+      // 🔴 关键:**一行缝都不设**。这一页上 screenshotFrameSource 必须仍是 null。
+      assert.strictEqual(await fpage.evaluate(() => typeof window.__dwSetScreenshotFrameSource), 'function',
+        '测试缝的设置函数应存在(但本条不调用它)');
+      await fpage.click('#shotBtn');
+      await fpage.waitForSelector('#shotOverlay:not([hidden])', { timeout: 20000 });
+      const got = await fpage.evaluate(() => ({
+        w: document.getElementById('shotCanvas').width,
+        h: document.getElementById('shotCanvas').height,
+      }));
+      assert.ok(got.w > 0 && got.h > 0, `真 getDisplayMedia 必须抓到一帧,实测 ${JSON.stringify(got)}`);
+      // 🔴 排他:㉕ 的替身帧是 200x100。这里若也拿到 200x100,说明缝变成了默认路径。
+      assert.ok(!(got.w === 200 && got.h === 100),
+        `🔴 抓到的帧尺寸与测试替身相同(200x100)⇒ 走的是缝而不是真 getDisplayMedia,实测 ${JSON.stringify(got)}`);
+    } finally {
+      await flagged.close();
+    }
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;

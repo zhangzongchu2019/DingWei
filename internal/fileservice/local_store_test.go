@@ -154,6 +154,29 @@ func TestLocalPutRefusesSymlinkDirectoryComponent(t *testing.T) {
 	}
 }
 
+// 🔴 回流合并(2026-09-19):此处的冲突不是「删了一个函数」,是**同名不同料**。
+//
+//	preprod 与锚都有 TestLocalDeleteRejectsInvalidObjectKeyShape,但**夹具不同**:
+//	  preprod  key = "files/26/0918/not-a-valid-object-key"        ← legacy 形状
+//	  锚       key = "owner/agent/26/0918/<32hex>.exe"             ← direct-object 形状但扩展名不在白名单
+//	锚那一份在本文件**后面**(合并后仍在,未动)。若只保锚的,**preprod 这一格覆盖会静默消失**;
+//	若两份同名都保,go 会 redeclared 编译失败。
+//	⇒ 保留两格,把 preprod 这一份改名点出它测的是哪一类 key。
+//	⚠️ 改名是合并里唯一的"动了字"的地方,已向组长单列报备,由他裁定是否保留。
+func TestLocalDeleteRejectsLegacyShapeObjectKey(t *testing.T) {
+	s := newLocalStore(t)
+	key := "files/26/0918/not-a-valid-object-key"
+	if err := s.Put(context.Background(), key, strings.NewReader("keep"), 4, "application/octet-stream"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Delete(context.Background(), key); err == nil {
+		t.Fatal("Delete accepted an invalid object-key shape")
+	}
+	if b, err := os.ReadFile(mustPath(t, s, key)); err != nil || string(b) != "keep" {
+		t.Fatalf("invalid-key object changed: bytes=%q err=%v", b, err)
+	}
+}
+
 func TestLocalPutForcesNginxReadableModesUnderProductionUmask(t *testing.T) {
 	previous := syscall.Umask(0o077)
 	t.Cleanup(func() { syscall.Umask(previous) })
@@ -234,7 +257,7 @@ func TestPerFileSweepKeepsArchivedObjectAtStablePath(t *testing.T) {
 	}
 }
 
-func TestLocalDeleteRejectsInvalidObjectKeyShape(t *testing.T) {
+func TestLocalDeleteRejectsDisallowedExtension(t *testing.T) {
 	s := newLocalStore(t)
 	key := "owner/agent/26/0918/0123456789abcdef0123456789abcdef.exe"
 	if err := s.Put(context.Background(), key, strings.NewReader("keep"), 4, "application/octet-stream"); err != nil {

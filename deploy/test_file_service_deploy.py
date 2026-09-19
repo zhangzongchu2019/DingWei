@@ -54,7 +54,14 @@ class FileServiceDeploymentTest(unittest.TestCase):
 
     def test_direct_links_inline_only_whitelisted_extensions(self):
         text = (DEPLOY / "nginx-dingwei.conf").read_text()
-        self.assertRegex(text, r'location ~ "?\^/f/')  # 带不带引号都接受;引号是 nginx 语法必需(见 dcfa01ee)
+        # 🔴 回流合并(2026-09-19)逐块取舍,理由记在这里:
+        #   · 引号断言取 **preprod 那条严格的**(必须带引号),不取锚那条 assertRegex ——
+        #     锚那条写的是「带不带引号都接受」,而 `0.2.0.6 v2` 正是**不带引号被整批回滚**的:
+        #     nginx 会把 `{1,64}` 的 `{` 当块起始 ⇒ pcre2_compile() failed。
+        #     严格那条**蕴含**宽松那条,保留宽松的反而会让后来人以为不带引号也行。
+        #   · 扩展名串取 **锚** 的新全集:preprod 那串(…avif|mp4…)在新 conf 里**已不再连续出现**
+        #     (avif 之后插了 heic),保留它会红在一个已经被取代的旧事实上。
+        self.assertIn('location ~ "^/f/', text)
         self.assertIn("jpg|png|gif|webp|avif|heic|bmp|tiff|mp4|webm|ogv|mov|mkv|oga|wav|mp3|m4a|flac|aac|opus|pdf|txt|md|csv|json|log|py|js|go|java|yaml|yml|toml|ini|sh|sql", text)
         self.assertIn("video/quicktime mov", text)
         self.assertIn("audio/ogg oga", text)
@@ -73,6 +80,8 @@ class FileServiceDeploymentTest(unittest.TestCase):
         self.assertIn("add_header Content-Disposition attachment always", text)
         self.assertEqual(text.count("add_header X-Content-Type-Options nosniff always"), 2)
         self.assertEqual(text.count("add_header Referrer-Policy no-referrer always"), 2)
+        # 两侧写法等价(都取两个 /f/ location 之间那一段);取锚方的切法,
+        # 它对引号不敏感 —— 而「必须带引号」已由上面那条严格断言单独钉住,不靠这里。
         import re as _re
         _parts = _re.split(r'location ~ "?\^/f/', text)
         inline = _parts[1]

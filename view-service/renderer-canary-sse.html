@@ -816,6 +816,31 @@
     .sb-cost, .sb-res { display: none; }
     @media (min-width: 560px) { .sb-cost { display: inline-flex; } }
     @media (min-width: 880px) { .sb-res  { display: inline-flex; } }
+    /* RED 0.2.1.2:📎/📷 移进状态栏后**必须单独豁免**上面那条响应式隐藏。
+       直接沿用 .sb-res 会让它们在 <880px 时整排 display:none ⇒ 窄窗口下按钮消失,
+       那就是 0.2.0.5 的坑「界面上看不见按钮 = 功能不存在」(业主 0.2.0.6 第 1 条验收意见的成因)。
+       ⇒ .sb-always 不参与任何 media query,任何宽度都显示。业主确认的阴格盯的就是这一条。 */
+    /* 🔴 这两个元素**同时**挂 .sb-res 与 .sb-always:
+       挂 .sb-res 是因为它们确实属于"状态栏追加区"(将来有人整理这一区时会连它们一起动);
+       .sb-always 才是把它们从隐藏里救回来的那一道。
+       🔴 第一版我只挂 .sb-always 不挂 .sb-res —— 变异"删掉 .sb-always"**零转红**:
+       元素本来就不在隐藏规则的作用域里,豁免规则是**空的**,而阴格照样全绿。
+       (自己写的「东西在那儿但不起作用」,靠组长要求的那发变异才照出来。) */
+    .statusbar .sb-always { display: inline-flex !important; }
+    /* RED 时钟兼任连接状态:断线时变色 ＋ 换文案 ＋ 可点立即重试。
+       不额外占状态栏空间 —— 状态栏正是本批要精简的东西,加一格等于一边减一边加。 */
+    .statusbar .status-clock {
+      background: none; border: 0; padding: 0 4px; height: 24px; color: inherit;
+      font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .statusbar .status-clock.offline { color: #c0392b; font-weight: 700; }
+    /* 页内框选裁剪(0.2.1.2 ③)。浏览器只能整屏/整窗抓,**框选必须自实现** —— 不裁只能传整屏,基本无用。 */
+    .shot-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.55); display: flex; flex-direction: column; }
+    .shot-overlay[hidden] { display: none; }
+    .shot-bar { padding: 8px 12px; color: #fff; font-size: 13px; display: flex; gap: 12px; align-items: center; }
+    .shot-canvas-wrap { position: relative; flex: 1; overflow: auto; display: flex; align-items: flex-start; justify-content: center; }
+    .shot-canvas-wrap canvas { max-width: 100%; cursor: crosshair; background: #fff; }
+    .shot-sel { position: absolute; border: 2px dashed #2e9e5b; background: rgba(46,158,91,.15); pointer-events: none; }
     .sb-res.status-sep, .sb-cost.status-sep { display: none; }
     @media (min-width: 560px) { .status-sep.sb-cost { display: block; } }
     @media (min-width: 880px) { .status-sep.sb-res  { display: block; } }
@@ -1028,26 +1053,30 @@
 
     <footer class="composer">
       <div class="statusbar" aria-label="Session status">
-        <!-- 优先级1(始终显示):主题切换 · 主机时间 · 锁状态 · 解锁按钮 -->
+        <!-- 0.2.1.2 状态栏精简:保留清单由业主 2026-09-19 逐条给定。
+             移除的:🔓可输入 · 已解锁8h自动回收 · 归属 · 空闲 · 负载 · 模型 · 会话 · 重连
+             🔴 「归属 归属」是**缺陷不是设计**:HTML 写了标签「归属」,JS 又拼了一次
+             给 headerOwner 赋值时又把「归属」两个字拼了一遍 ⇒ 页面上重复显示。
+             本批随移除一并消失;将来若要恢复归属显示,**只在一处拼**。 -->
         <button class="icon-btn" id="themeBtn" type="button" title="切换黑夜/白天">◐</button>
-        <span class="status-item">🕐 <strong id="localTime">--:--:--</strong></span>
+        <!-- 🔴 🕐 兼任连接状态(见 CSS 注释):断线时变红并显示「断线重连中 · 第 N 次」,
+             点击 = 立即重试。移除「重连」按钮后,手动退路不能跟着一起消失。 -->
+        <button class="status-item status-clock" id="clockStatus" type="button" title="点击立即重连事件流">🕐 <strong id="localTime">--:--:--</strong></button>
         <span class="lock-badge readonly" id="lockBadge">🔒 只读</span>
         <button class="unlock-btn" id="copyUnlockBtn" type="button">复制解锁指令</button>
-        <!-- 优先级2(够宽追加):成本 -->
+        <!-- 🔴 两个上传入口移进状态栏,并**单独豁免响应式隐藏**(.sb-always)。 -->
+        <label class="file-label sb-res sb-always" id="fileLabel" title="选择文件上传（可多选，单个 ≤ 50 MiB）">📎 文件
+          <input type="file" id="filePicker" multiple>
+        </label>
+        <button class="text-btn sb-res sb-always" id="shotBtn" type="button" title="截屏 → 框选 → 上传">📷 截屏</button>
+        <!-- 够宽追加:成本 -->
         <span class="status-sep sb-cost"></span>
         <span class="status-item sb-cost">本次 <strong id="turnCost">$0.0000</strong></span>
         <span class="status-item sb-cost">累计 <strong id="totalCost">$0.0000</strong></span>
-        <!-- 优先级3(更宽追加):头部身份 + 详情 + 服务资源 -->
+        <!-- 更宽追加:服务资源(内存/磁盘,去掉百分比) -->
         <span class="status-sep sb-res"></span>
-        <span class="status-item sb-res" id="lockHelp">🔒 只读模式 · 输入被锁</span>
-        <span class="status-item sb-res">归属 <strong id="headerOwner">--</strong></span>
-        <span class="status-item sb-res"><span class="status-dot idle" id="sessionDot"></span><strong id="sessionState">空闲</strong></span>
         <span class="status-item sb-res">内存 <strong id="memStat">--</strong></span>
         <span class="status-item sb-res">磁盘 <strong id="diskStat">--</strong></span>
-        <span class="status-item sb-res">负载 <strong id="loadStat">--</strong></span>
-        <span class="status-item sb-res">模型 <strong id="modelStat">--</strong></span>
-        <span class="status-item sb-res">会话 <strong id="sessionName">--</strong></span>
-        <button class="text-btn sb-res" id="reconnectBtn" type="button" title="重连事件流">重连</button>
       </div>
       <!-- 业主 2026-09-18 验收第 1 条：「选择文件上传时，没有任何提示，这个很容易认为是出问题了」
            ⇒ 上传全程必须可见：每个文件一行，文件名 + 已传/总 + 进度条 + 状态。 -->
@@ -1058,15 +1087,23 @@
       <div class="draft-attachments" id="draftAttachments" hidden></div>
       <div class="composer-inner" id="composerInner">
         <textarea id="humanInput" rows="1" placeholder="输入消息；Enter 发送，Ctrl/Cmd/Shift+Enter 换行；可粘贴/拖放任意文件"></textarea>
-        <!-- 0.2.0.6 A 线：上传入口三种都要在（业主第 1 条）。界面上看不见按钮 = 功能不存在，
-             0.2.0.5 就是这么栗的：只有 paste 监听器，没有任何可见入口。 -->
-        <label class="file-label" id="fileLabel" title="选择文件上传（可多选，单个 ≤ 50 MiB）">📎 文件
-          <input type="file" id="filePicker" multiple>
-        </label>
+        <!-- 0.2.1.2:📎 已移入状态栏(业主 2026-09-19)。三个入口仍然都在:
+             状态栏 📎 选择文件 · 粘贴 · 拖放 —— **粘贴路径照旧保留,截屏是新增入口不是替代品**。 -->
         <button class="icon-btn interrupt" id="interruptBtn" type="button" title="Interrupt current turn">■</button>
         <button class="text-btn send" id="sendBtn" type="button">发送</button>
       </div>
       <div class="drop-hint" id="dropHint" hidden>松手即上传（可一次多个，单个 ≤ 50 MiB）</div>
+      <div class="shot-overlay" id="shotOverlay" hidden>
+        <div class="shot-bar">
+          <span id="shotHint">在图上拖动框选要发送的区域；不框选＝整张</span>
+          <button class="text-btn" id="shotConfirm" type="button">上传选区</button>
+          <button class="text-btn" id="shotCancel" type="button">取消</button>
+        </div>
+        <div class="shot-canvas-wrap" id="shotWrap">
+          <canvas id="shotCanvas"></canvas>
+          <div class="shot-sel" id="shotSel" hidden></div>
+        </div>
+      </div>
     </footer>
   </div>
 
@@ -1080,29 +1117,29 @@
     const workspaceDockUnread = document.getElementById('workspaceDockUnread');
     const toastRegion = document.getElementById('toastRegion');
     const themeBtn = document.getElementById('themeBtn');
-    const reconnectBtn = document.getElementById('reconnectBtn');
+    const clockStatus = document.getElementById('clockStatus');
+    const shotBtn = document.getElementById('shotBtn');
+    const shotOverlay = document.getElementById('shotOverlay');
+    const shotCanvas = document.getElementById('shotCanvas');
+    const shotSel = document.getElementById('shotSel');
+    const shotWrap = document.getElementById('shotWrap');
+    const shotConfirm = document.getElementById('shotConfirm');
+    const shotCancel = document.getElementById('shotCancel');
     const streamAlert = document.getElementById('streamAlert');
     const streamRetryBtn = document.getElementById('streamRetryBtn');
     const humanInput = document.getElementById('humanInput');
     const headerSessionName = document.getElementById('headerSessionName');
-    const headerOwner = document.getElementById('headerOwner');
     const lockBadge = document.getElementById('lockBadge');
-    const lockHelp = document.getElementById('lockHelp');
     const copyUnlockBtn = document.getElementById('copyUnlockBtn');
     const composerInner = document.getElementById('composerInner');
     const filePicker = document.getElementById('filePicker');
     const dropHint = document.getElementById('dropHint');
     const uploadQueue = document.getElementById('uploadQueue');
     const draftAttachments = document.getElementById('draftAttachments');
-    const sessionDot = document.getElementById('sessionDot');
-    const sessionState = document.getElementById('sessionState');
     const taskProgress = document.getElementById('taskProgress');
     const memStat = document.getElementById('memStat');
     const diskStat = document.getElementById('diskStat');
-    const loadStat = document.getElementById('loadStat');
     const localTime = document.getElementById('localTime');
-    const modelStat = document.getElementById('modelStat');
-    const sessionName = document.getElementById('sessionName');
     const turnCost = document.getElementById('turnCost');
     const totalCost = document.getElementById('totalCost');
 
@@ -1126,6 +1163,13 @@
     let eventSourceGeneration = 0;
     let streamConnectTimer = null;
     const STREAM_CONNECT_GRACE_MS = 7500;
+    // RED 0.2.1.2:移除「重连」按钮**必须同时加自动重连** —— 移除前它是 SSE 断开后
+    //    **唯一**的恢复入口,先拿掉再说等于"断线只能刷页面"。
+    //    业主定「网络确实不好时 30 秒一次」;组长收口为**先快后慢**:
+    //    瞬断不让业主等 30 秒,持续坏时落在业主说的 30 秒。
+    const RECONNECT_BACKOFF_MS = [1000, 2000, 5000, 10000, 30000];
+    let reconnectAttempt = 0;      // 第几次重连(0 = 当前是连着的)
+    let reconnectTimer = null;
     let statusTimer = null;
     let rendered = 0;
     const messageBuffers = new Map();
@@ -1432,20 +1476,20 @@
       }[value] || value;
     }
     function updateMetrics() {
+      // 0.2.1.2:空闲/负载/模型/会话 四格已按业主清单移除 ⇒ 这里不再写它们。
+      // stats.sessionState 仍在用(下面这行 ＋ 事件流状态),只是不再有一格显示它。
       taskProgress.hidden = stats.sessionState !== 'running';
-      const stateClass = stats.readonly ? 'readonly' : (['running', 'idle', 'disconnected'].includes(stats.sessionState) ? stats.sessionState : 'idle');
-      sessionDot.className = `status-dot ${stateClass}`;
-      sessionState.textContent = stats.readonly ? '只读' : labelForSessionState(stats.sessionState);
       memStat.textContent = formatMem(stats.mem);
       diskStat.textContent = formatDisk(stats.disk);
-      loadStat.textContent = String(stats.load);
-      modelStat.textContent = stats.model;
-      sessionName.textContent = stats.sessionName;
       turnCost.textContent = `$${stats.turnCost.toFixed(4)}`;
       totalCost.textContent = `$${stats.cost.toFixed(4)}`;
       updateHeaderLock();
     }
     function updateLocalTime() {
+      // RED 断线态下这一栏显示的是「断线重连中 · 第 N 次」——
+      //    时钟每秒刷新一次,不挡住的话会把断线提示**一秒内覆盖掉**,
+      //    于是"断线可见"这件事在页面上只存在一瞬 —— 那等于不可见。
+      if (reconnectAttempt > 0) return;
       if (stats.statusDatetimeText && !stats.statusDatetimeMs) {
         localTime.textContent = stats.statusDatetimeText;
         return;
@@ -1459,25 +1503,33 @@
     }
     function formatMem(mem) {
       if (mem.used_mb !== undefined && mem.total_mb !== undefined) {
-        const pct = mem.pct !== undefined ? ` · ${mem.pct}%` : '';
-        return `${mem.used_mb} / ${mem.total_mb} MB${pct}`;
+        // 业主 2026-09-19:简化为 `1687 / 15485 MB`,并且 RED **≥4 位数时进位**(15485MB → 15GB)。
+        // 进位判据落在**两个数里较大的那个**上:只看 used 的话,15485MB 总量会在 used 变小时
+        // 忽然从 GB 跳回 MB —— 同一台机器的同一格,单位不该随用量抖。
+        const bigger = Math.max(Number(mem.used_mb) || 0, Number(mem.total_mb) || 0);
+        if (bigger >= 1000) {
+          const gb = (v) => (Number(v) / 1024).toFixed(1).replace(/\.0$/, '');
+          return `${gb(mem.used_mb)} / ${gb(mem.total_mb)} GB`;
+        }
+        return `${mem.used_mb} / ${mem.total_mb} MB`;
       }
       return `${mem.used} / ${mem.total} ${mem.unit}`;
     }
     function formatDisk(disk) {
       if (disk.used_gb !== undefined && disk.total_gb !== undefined) {
-        const pct = disk.pct !== undefined ? ` · ${disk.pct}%` : '';
-        return `${disk.used_gb} / ${disk.total_gb} GB${pct}`;
+        // 业主 2026-09-19:简化为 `44.2 / 232.4 GB` —— **去掉百分比**。
+        return `${disk.used_gb} / ${disk.total_gb} GB`;
       }
       return `${disk.used} / ${disk.total} ${disk.unit}`;
     }
     function updateHeaderLock() {
       headerSessionName.textContent = stats.sessionName;
-      headerOwner.textContent = `归属 ${stats.owner}`;
+      // 0.2.1.2:「归属」一格已移除。RED 它原来是个缺陷:HTML 里写了标签「归属」,
+      // 这里又拼了一次 `归属 ${stats.owner}` ⇒ 页面显示「归属 归属 xxx」。
+      // 将来若要恢复归属显示,**标签与值只在一处拼**。
       if (stats.readonly) {
         if (lockBadge.className !== 'lock-badge readonly') lockBadge.className = 'lock-badge readonly';
         if (lockBadge.textContent !== '🔒 只读') lockBadge.textContent = '🔒 只读';
-        if (lockHelp.textContent !== '🔒 只读模式 · 输入被锁') lockHelp.textContent = '🔒 只读模式 · 输入被锁';
         if (copyUnlockBtn.hidden) copyUnlockBtn.hidden = false;
         if (copyUnlockBtn.textContent !== '复制解锁指令') copyUnlockBtn.textContent = '复制解锁指令';
         setHumanInputDisabled(true);
@@ -1486,7 +1538,6 @@
       } else {
         if (lockBadge.className !== 'lock-badge writable') lockBadge.className = 'lock-badge writable';
         if (lockBadge.textContent !== '🔓 可输入') lockBadge.textContent = '🔓 可输入';
-        if (lockHelp.textContent !== '已解锁，8h 无操作自动回收') lockHelp.textContent = '已解锁，8h 无操作自动回收';
         if (!copyUnlockBtn.hidden) copyUnlockBtn.hidden = true;
         setHumanInputDisabled(false);
         const placeholder = '输入消息；Enter 发送，Ctrl/Cmd/Shift+Enter 换行';
@@ -3674,6 +3725,38 @@
     function showStreamAlert() {
       if (!document.hidden) streamAlert.hidden = false;
     }
+    // RED 断线必须**看得见**,否则就是「东西在那儿但不起作用」:
+    //    自动重连 ＋ 无指示 ⇒ 死掉的页面和正常页面长得一模一样,业主会对着断线页面等消息。
+    //    做法(不额外占状态栏空间):让保留下来的 🕐 那一栏兼任连接状态。
+    function renderConnectionState() {
+      if (!clockStatus) return;
+      if (reconnectAttempt > 0) {
+        clockStatus.classList.add('offline');
+        clockStatus.title = '事件流已断开,正在自动重连。点击立即重试';
+        localTime.textContent = `断线重连中 · 第 ${reconnectAttempt} 次`;
+      } else {
+        clockStatus.classList.remove('offline');
+        clockStatus.title = '点击立即重连事件流';
+        updateLocalTime();
+      }
+    }
+    function clearReconnectTimer() {
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    }
+    // 连上了 ⇒ 归零并恢复时钟显示。
+    function markStreamConnected() {
+      clearReconnectTimer();
+      reconnectAttempt = 0;
+      renderConnectionState();
+    }
+    // 断了 ⇒ 计次、显示、并按 1s→2s→5s→10s→30s 封顶排下一次。
+    function scheduleReconnect() {
+      clearReconnectTimer();
+      const delay = RECONNECT_BACKOFF_MS[Math.min(reconnectAttempt, RECONNECT_BACKOFF_MS.length - 1)];
+      reconnectAttempt += 1;
+      renderConnectionState();
+      reconnectTimer = setTimeout(() => { reconnectTimer = null; connectEventStream(); }, delay);
+    }
     function closeEventStream() {
       eventSourceGeneration += 1;
       clearStreamConnectTimer();
@@ -3735,6 +3818,7 @@
         opened = true;
         clearStreamConnectTimer();
         hideStreamAlert();
+        markStreamConnected();
         if (!stats.readonly) setStatus('idle');
       };
       eventSource.onmessage = (msg) => {
@@ -3754,6 +3838,17 @@
         if (generation !== eventSourceGeneration) return;
         opened = false;
         setStatus('disconnected');
+        // RED 不依赖 EventSource 自带的重连:它不给次数、不给节奏,也**不给任何可见状态**。
+        //    这里自己排队重连,并把次数显示到 🕐 那一栏上。
+        // 🔴 断线时必须**结束重放窗口**,否则我这次加的自动重连会造一个回归:
+        //    connectEventStream() 每次都调 beginTimelineReplay(),在**连不上的流**上
+        //    每 1s/2s/5s… 重开一次窗口 ⇒ replayInProgress 长期为 true
+        //    ⇒ renderError 里那句 `if (!replayInProgress) showErrorToast(text)` 永远不执行
+        //    ⇒ **本地错误(只读上传、票据失败…)在断线期间一条 toast 都不弹、错误看板计数也不涨。**
+        //    实测对照(基线 vs 未修前的本批):基线「错误看板1 / toasts 2」,本批「错误看板0 / toasts 1」。
+        //    重放窗口的用途是"连上后抑制 ring 重放的噪声";**连不上时本就不该处于该状态**。
+        finishTimelineReplay(true);
+        scheduleReconnect();
         // EventSource 自带重连；仅在宽限期后仍未重新 open/收到事件时提示。
         clearStreamConnectTimer();
         streamConnectTimer = setTimeout(() => {
@@ -3980,7 +4075,9 @@
       const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
       document.body.dataset.theme = next;
     });
-    reconnectBtn.addEventListener('click', () => {
+    // 0.2.1.2:「重连」按钮已移除 ⇒ 手动退路挪到 🕐 那一栏上,**不随按钮一起消失**。
+    clockStatus?.addEventListener('click', () => {
+      clearReconnectTimer();
       connectEventStream();
       refreshStatus();
     });
@@ -4348,7 +4445,21 @@
     humanInput.addEventListener('input', resizeHumanInput);
     humanInput.addEventListener('input', renderDraftAttachments);
     // 入口①：粘贴 —— 🔴 由「只接 image/*」扩到任意类型，且一次粘多个也收。
-    humanInput.addEventListener('paste', (event) => {
+    // 🔴 P0(2026-09-19 现网回归:业主粘贴图片「完全没反应、输入框是空的」)。
+    //    监听器原先绑在 humanInput 这个**叶子节点**上。paste 事件从 document.activeElement
+    //    往上冒泡 —— **焦点不在输入框时,冒泡路径根本不经过它 ⇒ 监听器不触发**,
+    //    于是既没有上传请求、也没有任何控制台报错(因为压根没执行)。
+    //
+    //    为什么 0.2.0.6 没人撞上、0.2.0.7 才坏:
+    //    0.2.0.6 正文里的直链是**裸文本,点不了** ⇒ 焦点一直留在输入框;
+    //    0.2.0.7 把文件名做成 <a>(R4/R5)、又加了下载链接 ⇒ 实测正文附件区有三个可聚焦的 <a>
+    //    (#draftAttachments 与 #uploadQueue 里**没有**)⇒ 用户点过任一个,焦点就离开了输入框。
+    //    ⇒ **不是某一行写错了,是新增的可点元素把一个既有限制从罕见变成了常态。**
+    //
+    //    改挂 document:焦点在哪都能粘。只挂 composer 不行 —— 正文在 composer 之外,等于没修。
+    //    🔴 代价:作用域变成全页 ⇒ 「剪贴板里没有文件就 return、不干预浏览器原行为」这条更要紧。
+    //       用例⑳ 在页面三处(输入框/body/正文链接)粘纯文本把它钉住了,不靠这段注释保证。
+    document.addEventListener('paste', (event) => {
       const files = Array.from(event.clipboardData?.items || [])
         .filter((item) => item.kind === 'file')
         .map((item) => item.getAsFile())
@@ -4357,6 +4468,152 @@
       event.preventDefault();
       uploadFiles(files);
     });
+    // ── 入口④:页内截屏(0.2.1.2 ③,业主 2026-09-19)────────────────────
+    // 点 📷 → getDisplayMedia 选源 → 抓一帧 → **页内框选裁剪** → 走既有上传管道。
+    //
+    // 🔴 三条硬限制(已向业主讲明,不是实现偷懒):
+    //   · 浏览器**强制**弹「选择共享内容」框,绕不过;
+    //   · 浏览器只能整屏/整窗抓,**框选必须自实现** —— 不裁剪则只能传整屏,基本无用;
+    //   · 以 Chrome 系为准。
+    // 🔵 粘贴路径**照旧保留,不替换** —— 截屏是新增入口,不是替代品。
+    //
+    // 🔴 抓帧这一步留了一个**显式的测试缝** `screenshotFrameSource`:
+    //    getDisplayMedia 需要真实用户手势 ＋ 浏览器选源框,headless 给不了。
+    //    没有这个缝,框选/裁剪/上传这三步在自动化里**一格都测不到** ——
+    //    而那三步才是本功能里我们自己写的部分。选源那一步只能人工,用例里写明了。
+    // 🔴 这是**测试缝**,组长 2026-09-19 ts-No.6 批准保留,附两条要求:
+    //    ① 谁在用:view-service/renderer-0206-file-render-regression.js 的用例㉕ ——
+    //       它替换的**只有抓帧一步**,其后框选/裁剪/生成 File/走 uploadFiles 全是产品代码。
+    //    ② 去掉它会失去什么:失去「按选区裁得对不对」这一格。
+    //       浏览器开关(--use-fake-ui-for-media-stream ＋ --use-fake-device-for-media-stream)
+    //       能让真 getDisplayMedia 自动选源不弹框(用例㉖ 就这么跑),
+    //       但它给的是**合成画面、内容不可控** ⇒ 验不了裁剪正确性。
+    //    🔴 用例㉖ 专门钉住「不设缝时走的是真 getDisplayMedia」——
+    //       防这条缝哪天悄悄变成默认路径,那会让"截屏"静默变成"传一张假图"。
+    let screenshotFrameSource = null;
+    window.__dwSetScreenshotFrameSource = (fn) => { screenshotFrameSource = fn; };
+
+    async function captureScreenFrame() {
+      if (screenshotFrameSource) return screenshotFrameSource();
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        throw new Error('本浏览器不支持页内截屏(需要 getDisplayMedia,以 Chrome 系为准)');
+      }
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      try {
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.muted = true;
+        await video.play();
+        // 等一帧真正可用:metadata 到了不代表已经有画面。
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        return canvas;
+      } finally {
+        stream.getTracks().forEach((t) => t.stop());   // 不停轨 ⇒ 浏览器会一直显示"正在共享"
+      }
+    }
+
+    let shotSourceCanvas = null;
+    let shotRect = null;   // {x,y,w,h} 源图坐标系
+
+    function closeShotOverlay() {
+      shotOverlay.hidden = true;
+      shotSel.hidden = true;
+      shotSourceCanvas = null;
+      shotRect = null;
+    }
+
+    async function startScreenshot() {
+      if (stats.readonly) {
+        handleIncomingEvent({ kind: 'error', text: '只读模式：先解锁再上传文件', data: { code: 'file_upload_readonly' } });
+        return;
+      }
+      try {
+        shotSourceCanvas = await captureScreenFrame();
+      } catch (err) {
+        // 🔴 抓不到必须可见:用户点了按钮,什么都不发生是最难报告的一种失败。
+        //    (用户自己在选源框点「取消」也走这里,文案要能区分得开。)
+        handleIncomingEvent({ kind: 'error', text: `截屏未完成：${err.message}`, data: { code: 'screenshot_failed' } });
+        return;
+      }
+      shotCanvas.width = shotSourceCanvas.width;
+      shotCanvas.height = shotSourceCanvas.height;
+      shotCanvas.getContext('2d').drawImage(shotSourceCanvas, 0, 0);
+      shotRect = null;
+      shotSel.hidden = true;
+      shotOverlay.hidden = false;
+    }
+
+    // 框选:鼠标坐标 → 源图坐标(canvas 会被 max-width 缩放,必须按缩放比换算)
+    (() => {
+      let dragging = false;
+      let startX = 0;
+      let startY = 0;
+      const toSource = (ev) => {
+        const r = shotCanvas.getBoundingClientRect();
+        const sx = shotCanvas.width / r.width;
+        const sy = shotCanvas.height / r.height;
+        return { x: (ev.clientX - r.left) * sx, y: (ev.clientY - r.top) * sy, r };
+      };
+      shotCanvas?.addEventListener('pointerdown', (ev) => {
+        dragging = true;
+        const p = toSource(ev);
+        startX = p.x; startY = p.y;
+        shotRect = null;
+        shotSel.hidden = true;
+        shotCanvas.setPointerCapture?.(ev.pointerId);
+      });
+      shotCanvas?.addEventListener('pointermove', (ev) => {
+        if (!dragging) return;
+        const p = toSource(ev);
+        const x = Math.min(startX, p.x);
+        const y = Math.min(startY, p.y);
+        const w = Math.abs(p.x - startX);
+        const h = Math.abs(p.y - startY);
+        shotRect = { x, y, w, h };
+        const wrap = shotWrap.getBoundingClientRect();
+        shotSel.hidden = false;
+        shotSel.style.left = `${(x / shotCanvas.width) * p.r.width + (p.r.left - wrap.left)}px`;
+        shotSel.style.top = `${(y / shotCanvas.height) * p.r.height + (p.r.top - wrap.top)}px`;
+        shotSel.style.width = `${(w / shotCanvas.width) * p.r.width}px`;
+        shotSel.style.height = `${(h / shotCanvas.height) * p.r.height}px`;
+      });
+      shotCanvas?.addEventListener('pointerup', () => { dragging = false; });
+    })();
+
+    // 供用例直接设选区(框选是鼠标行为,坐标换算另有其测法;这里让"裁剪+上传"能被单独验)
+    window.__dwSetShotRect = (rect) => { shotRect = rect; };
+
+    async function confirmScreenshot() {
+      if (!shotSourceCanvas) return;
+      const full = { x: 0, y: 0, w: shotSourceCanvas.width, h: shotSourceCanvas.height };
+      // 不框选 = 整张(业主可能就是要整屏);框太小(<4px)按误触处理,也当整张。
+      const r = (shotRect && shotRect.w >= 4 && shotRect.h >= 4) ? shotRect : full;
+      const out = document.createElement('canvas');
+      out.width = Math.round(r.w);
+      out.height = Math.round(r.h);
+      out.getContext('2d').drawImage(shotSourceCanvas,
+        Math.round(r.x), Math.round(r.y), Math.round(r.w), Math.round(r.h),
+        0, 0, out.width, out.height);
+      const blob = await new Promise((res) => out.toBlob(res, 'image/png'));
+      closeShotOverlay();
+      if (!blob) {
+        handleIncomingEvent({ kind: 'error', text: '截屏裁剪失败：拿不到图片数据', data: { code: 'screenshot_failed' } });
+        return;
+      }
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      // 🔴 走**既有**上传管道,不另写一条:上传的进度行/草稿块/直链回填/P0 文件名编码
+      //    全部沿用,不给自己留第二条需要单独维护的路。
+      await uploadFiles([new File([blob], `screenshot-${stamp}.png`, { type: 'image/png' })]);
+    }
+
+    shotBtn?.addEventListener('click', startScreenshot);
+    shotConfirm?.addEventListener('click', confirmScreenshot);
+    shotCancel?.addEventListener('click', closeShotOverlay);
+
     // 入口②：文件选择（可多选）。这是 0.2.0.5 缺的那个「看得见的入口」。
     filePicker?.addEventListener('change', () => {
       const picked = Array.from(filePicker.files || []);

@@ -240,7 +240,8 @@ func (h *Hub) HandleConsoleLoginStatus(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"confirmed":false}`))
 		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: consoleSessionCookie, Value: token, Path: "/", MaxAge: int(consoleSessionTTL.Seconds()), HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode})
+	// 与续期共用同一个构造器:属性不一致在结构上不可能发生(见 newConsoleSessionCookie)。
+	http.SetCookie(w, newConsoleSessionCookie(token))
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write([]byte(`{"confirmed":true}`))
 }
