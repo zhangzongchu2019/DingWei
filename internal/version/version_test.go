@@ -3,6 +3,7 @@ package version
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -53,4 +54,23 @@ func parseQuad(t *testing.T, v string) [4]int {
 		q[i] = n
 	}
 	return q
+}
+
+// 🔴 三处版本号必须一致。既有的 TestVersionMatchesRepositoryVersionFile 只焊了
+// VERSION 与 Go 常量【两处】;helper 的 __version__ 是第三处,不在任何仓内闸里 ——
+// 2026-09-19 装配 0.2.1.0 时组长抬了前两处、漏了第三处,
+// 由出单时的 preflight 第⑭闸拦下(T-162 记着那道闸当初也是被执行方拦出来的)。
+// ⇒ 把它焊进仓内:出单前就能红,而不是等到出单那一刻。
+func TestHelperVersionMatchesGoVersion(t *testing.T) {
+	raw, err := os.ReadFile("../../tools/sessionhelper/sessionhelper/__init__.py")
+	if err != nil {
+		t.Fatalf("读不到 helper 版本文件:%v —— 查不了不等于通过", err)
+	}
+	m := regexp.MustCompile(`__version__\s*=\s*"([0-9.]+)"`).FindSubmatch(raw)
+	if m == nil {
+		t.Fatal("helper __init__.py 里找不到 __version__")
+	}
+	if got := string(m[1]); got != Version {
+		t.Fatalf("helper __version__=%q 与 Go const Version=%q 不一致 —— 装上去会自报错误版本", got, Version)
+	}
 }
