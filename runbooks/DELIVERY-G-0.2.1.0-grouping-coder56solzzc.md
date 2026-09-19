@@ -44,7 +44,7 @@
 
 ## 最终回归
 
-- `go test ./... -count=1`：rc=0；其中 `internal/m8` 42.023s。
+- 修复测试竞态后 `go test ./... -count=1`：rc=0；其中 `internal/m8` 44.578s。
 - `cd view-service && python3 -m unittest test_view_page_store.py`：12/12，rc=0。
 - `go test ./internal/store ./internal/admin ./internal/m8 -count=1`：三包均 rc=0。
 
@@ -66,3 +66,4 @@
 - G2 证明的是响应字节相等；没有做统计学时延侧信道测试，不宣称两条路径在微秒级不可区分。
 - 没有做多进程/高并发更新同一组长的压力测试；SQLite 单写者与主键/单行组模型保证仓内结构约束。
 - 没有修改版本号；最终装配时由组长统一把发版锚抬到 `0.2.1.0`。
+- 本轮只修复测试夹具的上线前提，未修改任何产品行为。
