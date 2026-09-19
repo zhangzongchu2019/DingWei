@@ -17,7 +17,7 @@
 
 代码侧仍是**配置接线**，不是重写出口。不得借本版修改 `cmd/workpulse/internal_notify.go` 或扩充巡检内容。
 
-### 🔴 第二轮只读核查发现的部署阻断
+### 第二轮只读核查与母本落点更正
 
 现网 `workpulse` 配置位于容器内 `/etc/supervisor/conf.d/dingwei.conf`。执行方确认：
 
@@ -27,42 +27,29 @@
 - invariant-runner 配置同样是容器可写层新增文件，且未显式设置 `DW_NOTIFY_SOCKET`；
 - 当前只读信息无法定位一份会在容器重建时恢复这些配置的持久母本。
 
-因此，**直接修改当前容器可以当场接通，却不能作为本版交付**：容器一旦重建，四项配置会无声消失，告警重新失效。下面执行顺序的前置条件“找到并修改持久母本”当前不成立。
+这证明只改当前容器可写层不能作为交付。不过后续仓内核查找到了持久母本：
 
-本件停在这里等待组长裁定持久落点。可选方向至少涉及镜像/编排/受控启动配置，已超出“只接现有三个变量”的原始范围；作者不自行选择或实施。
+- `deploy/image/supervisord/dingwei.conf.template` 是 supervisor 配置模板；
+- `[program:workpulse]` 的 `environment=%(ENVIRONMENT_WORKPULSE)s` 是环境配置注入点；
+- `supervisor-structure.schema.json` 与模板上的 `t112-environment` 注释共同约束键数和排序键名摘要，不记录键名或值。
 
-## 母本核查后的两条执行路线
+组长在 ts-No.31 裁定：`0.2.1.3` 的整容器可重建性降级为登记项，不再阻塞计划内的 `0.2.1.1`。本版改走仓内模板母本，**不得**直接编辑容器可写层作为持久化手段。
 
-两条路线互斥。prodops 完成只读核查、组长明确选择之前，生产执行侧保持暂停。
+`0.2.1.1` 现在的执行边界为：
 
-### 路线甲：找到编排母本
+1. 四项配置由 prodops 写入 `ENVIRONMENT_WORKPULSE` 的受控来源，再由仓内模板渲染；值不进仓、不回传；
+2. 模板注释与 schema 同步更新为目标键集合的 `key_count` 和 `keys_sorted_sha256`；
+3. 模板、schema、旧现网证据之间只允许一条**精确声明的迁移**，不能把任意漂移放行；生产生成新去值证据后必须删除迁移声明；
+4. `alert-route-stays-wired` 与接线同批上线，不得提前部署到禁用态制造永久红噪声；
+5. 整容器其它可重建性风险转入 `0.2.1.35`，不冒充本版已解决，也不再阻塞本版。
 
-适用条件：能够给出一份容器重建时实际消费的编排/配置母本，并能证明现网已有 supervisor 与 runner 配置由它恢复，而不是只在当前容器可写层存活。
+prodops 按 T-112 原机械算法完成了只读摘要：当前 workpulse 环境为 `12` 个键；加入本版四项后的目标为 `key_count=16`、`keys_sorted_sha256=acc4bf12c0c7fa0aaf5c006cb7b907f412203b7a2529b256d764c9fc29f52ad8`。取证未回传键名集合或任何值，未修改现网。
 
-处置：
+### 🔴 模板输入来源仍待裁定
 
-1. 四项配置写入该母本，值仍只由 prodops 在生产侧持有；
-2. 按下文“接通 → 北极星 → 404 阴格 → 恢复启用 → 守住”执行；
-3. 做一次不泄露值的重建形状核验：重建后四项仍为 set/nonempty、socket 仍为 Unix socket、巡检断言仍绿；
-4. 本版仍属纯接线，范围不扩大。
+全仓检索只找到模板里的 `environment=%(ENVIRONMENT_WORKPULSE)s` 占位符，没有找到仓内渲染器、持久输入清单或 `ENVIRONMENT_WORKPULSE` 的来源定义。模板与摘要闸能持久保存“应当有哪一组键”的单向承诺，**不能凭空恢复四项值**。
 
-### 路线乙：找不到编排母本
-
-适用条件：只能修改当前容器可写层，不能指出重建时恢复配置的来源。
-
-处置：
-
-1. **本版不接线，不在当前容器写四项，不以“暂时能发”为交付；**
-2. 单独立“`dingwei-gray` 现网可重建性”问题，范围至少覆盖 supervisor、runner 及其它仅存在于容器可写层的配置；
-3. 先建立并验证母本，再回到本件走路线甲。顺序不得反过来。
-
-理由：在没有母本的容器上接线，接完那一刻起，它距离无声失效只差一次容器重建；重建后配置来源不可追、消失时刻不可知、告警本身又无法通知任何人。这会原样复刻本版要修的故障形状，而不是修复它。
-
-🔴 2026-09-19 组长依据 prodops 的只读证据正式裁定走路线乙。更强的事实是：`invariant-runner.conf` 在 `docker diff` 中为 `A`，镜像基线里没有它；容器重建时不只是四项接线消失，承载 `alert-route-stays-wired` 的 runner 也一并消失。守卫与被守对象同处容器可写层，不能用“守卫会报警”论证可写层接线可接受。
-
-因此 `0.2.1.1` 当前状态为：**暂停在路线乙入口；不接线，不部署新巡检 JSON，不触发演练告警。** 后续前置是 `0.2.1.3` 建立并以平行容器验证现网可重建母本，之后才可回到路线甲。
-
-`alert-route-stays-wired` 在两条路线下都保留为交付要求：路线甲用它持续守住已接通的配置；路线乙中代码与测试保留，但**不单独提前部署到当前禁用现网形成永久红噪声**，待母本建立并完成接线时与配置同批启用。没有母本时这道闸尤其重要，因为它会在未来任何一次接线或 socket 丢失时立即暴露问题。
+因此本件当前可以交付模板目标和判据，但生产执行单还必须指出 `ENVIRONMENT_WORKPULSE` 的持久来源。若执行时仍从当前容器现场拼出该字符串，重建后四项值仍会消失，等于原样复刻本版根因。在组长裁定该来源前，不得把“模板已更新”写成“接线已可持久恢复”。
 
 ## 凭据与目标值边界
 
@@ -70,19 +57,19 @@
 - `WP_ALERT_BOT_CHANNEL` 必须取自现网已知成功的同一飞书机器人通道；不能凭名字猜。
 - `WP_ALERT_CHAT_ENTITY` 必须取自该通道下、经业主本人入站消息核实的个人实体；不得使用 Agent session name。
 - `WP_ALERT_CHAT_TYPE=personal`；`WP_NOTIFY_SOCKET` 必须与 runner 实际请求路径一致。
-- 配置必须写入现网的持久母本，不能只注入当前进程或当前容器。当前只读核查已确认该母本不可见；组长裁定新的持久落点前不得执行后续步骤，值始终不得回传。
+- 配置必须通过仓内 `dingwei.conf.template` 的 `ENVIRONMENT_WORKPULSE` 来源生成，不能只注入当前进程或当前容器。值始终不得回传。
 
 ## 执行顺序（由组长出单、prodops 执行）
 
 ### 1. 基线与回退点
 
 1. 记录当前 workpulse `version/commit`、四项配置的 set/unset 状态、runner 状态；不输出值。
-2. 备份实际 supervisor 配置母本，记录备份路径与文件摘要；备份内容不得进仓或消息。
-3. 确认回退动作是恢复母本并重启 workpulse，且不会替换二进制。
+2. 记录仓内模板锚、渲染输入来源与当前实际 supervisor 配置摘要；备份内容不得进仓或消息。
+3. 确认回退动作是恢复上一版模板渲染结果并重启 workpulse，且不会替换二进制。
 
 ### 2. 接通
 
-1. 在持久母本写入四项配置，其中 socket 路径须与 runner 一致。
+1. 由仓内模板渲染 supervisor 配置；四项从 `ENVIRONMENT_WORKPULSE` 的受控来源注入，其中 socket 路径须与 runner 一致。
 2. 只重启 workpulse；不改二进制，不重启其它服务。
 3. 只读确认：workpulse 仍自报原 `version/commit`；socket 存在且为 Unix socket、权限 `0600`；四项均 `set/nonempty`（不输出值）。
 
@@ -122,12 +109,21 @@
 
 部署时须先完成接线，再更新巡检集；否则新断言会正确地立即转红。删除该断言的外科变异必须只打红 `TestAlertRouteInvariantTest.test_runtime_guard_covers_all_keys_and_unix_socket_without_values`（实际 unittest 名以 `-v` 输出为准），还原后全绿，最终提交不得含变异。
 
+同批还必须守住模板环境摘要：修改 `ENVIRONMENT_WORKPULSE` 的键集合而不同步 `t112-environment` 注释或 schema，模板校验测试必须转红。旧现网证据与目标模板之间的差异只能命中本次 workpulse 环境迁移；修改其它 program、字段或摘要仍须失败。
+
 仓内变异实证（2026-09-19）：
 
 - 靶点：只删除 JSON 中 `alert-route-stays-wired` 整项；变异前 `git diff --numstat` 显示巡检 JSON 仅为本次新增；
 - 命令：`python3 -m unittest -v deploy.test_invariants_alert_route`；
 - 结果：`rc=1`，唯一转红 `test_runtime_guard_covers_all_keys_and_unix_socket_without_values`，原因逐字为 `missing or duplicate alert-route-stays-wired`；
 - 还原后同命令 `rc=0`；最终提交不含变异。
+
+模板摘要变异实证（2026-09-19）：
+
+- 靶点：只把 workpulse 模板注释的 `key_count=16` 改成 `15`，`git diff --numstat` 为该模板 `1 1`；
+- 命令：`python3 -m unittest -v deploy.image.supervisord.test_verify_supervisor_template.RepositoryTemplateContractTest`；
+- 结果：`rc=1`，目标测试转红，失败类为 `ENV_DIGEST_MISMATCH_SCHEMA_TEMPLATE`、`program=workpulse`；
+- 还原后整组模板/巡检测试全绿，最终提交不含变异。
 
 现网禁用态阳性对照（2026-09-19，prodops 只读执行；未安装新巡检集、未改配置、未重启）：
 
@@ -148,15 +144,16 @@ rc=1
 - workpulse 自报版本/提交变化；
 - runner 得不到预期 `202`，或阴格不是 `404`；
 - 系统显示已发送但业主未确认收到；
-- 配置只能落当前容器，找不到可持久恢复的母本。
+- 配置没有经过仓内模板生成，而是只落当前容器。
 
-回退只恢复执行前 supervisor 配置母本并重启 workpulse；回退后复核四项状态与基线一致、socket 状态与基线一致、runner 仍运行。
+回退只恢复上一版模板渲染结果并重启 workpulse；回退后复核四项状态与基线一致、socket 状态与基线一致、runner 仍运行。
 
 ## 可证伪判据
 
 - 删除/清空任一目标配置后，启用态探针必须不再得到 `202`。
 - 把 disabled 分支改成静默成功，阴格必须从预期 `404` 变红。
 - 从巡检 JSON 删除 `alert-route-stays-wired`，配置形状测试必须唯一转红；否则“守住”本身没有守卫。
+- 只改模板的 workpulse `key_count` 或 `keys_sorted_sha256` 而不改 schema，模板校验必须转红；只改旧证据到目标之间迁移声明以外的任一维，三方校验也必须转红。
 - 绕过 runner 直接 POST 不能满足北极星，因为它没有证明真实失败能触发整条链路。
 - 没有业主本人“收到”的回复时，本件不得宣称发布验收通过。
 
@@ -165,4 +162,4 @@ rc=1
 - 本件不证明所有未来告警内容都正确，只证明既有巡检失败能到达业主。
 - 本件不证明飞书长期可用，也不建立第二通知渠道。
 - 本件不改二进制、不改版本号；版本与装配由组长统一处理。
-- 本件尚未执行生产变更；生产动作等待组长出单与业主当次授权。
+- 本件尚未执行生产变更；代码在仓里不等于现网生效。生产动作等待组长出单与业主当次授权。

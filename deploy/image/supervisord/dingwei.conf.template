@@ -26,7 +26,7 @@ stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0
 stopsignal=TERM
 stopwaitsecs=30
-; t112-environment key_count=5 keys_sorted_sha256=6877b649575054ab4d574e1efecdc2c3b9a41c343e9a24b83eae2c0feb8545a2
+; t112-environment key_count=16 keys_sorted_sha256=acc4bf12c0c7fa0aaf5c006cb7b907f412203b7a2529b256d764c9fc29f52ad8
 environment=%(ENVIRONMENT_WORKPULSE)s
 
 [program:viewservice]

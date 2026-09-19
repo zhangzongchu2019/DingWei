@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from deploy.image.supervisord import verify_supervisor_template as verifier
+
 HERE = Path(__file__).resolve().parent
 VERIFY = HERE / "verify_supervisor_template.py"
 EMPTY = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -106,6 +108,68 @@ class ThreeWayGateTest(unittest.TestCase):
     def test_template_env_digest_drift(self):
         self.template.write_text(self.template.read_text().replace(ONE, EMPTY))
         self.assert_failure("ENV_DIGEST_MISMATCH_SCHEMA_TEMPLATE")
+
+    def test_declared_environment_transition_is_exact(self):
+        value = json.loads(self.schema.read_text())
+        value["programs"]["fcs"]["environment"] = {
+            "key_count": 2,
+            "keys_sorted_sha256": EMPTY,
+        }
+        value["environment_transitions"] = {
+            "fcs": {
+                "from": {"key_count": 1, "keys_sorted_sha256": ONE},
+                "to": {"key_count": 2, "keys_sorted_sha256": EMPTY},
+            }
+        }
+        self.schema.write_text(json.dumps(value))
+        self.template.write_text(
+            self.template.read_text().replace(
+                f"key_count=1 keys_sorted_sha256={ONE}",
+                f"key_count=2 keys_sorted_sha256={EMPTY}",
+            )
+        )
+        result = self.run_gate()
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("environment_transitions=1", result.stdout)
+
+    def test_environment_transition_does_not_cover_other_drift(self):
+        value = json.loads(self.schema.read_text())
+        value["programs"]["fcs"]["environment"] = {
+            "key_count": 2,
+            "keys_sorted_sha256": EMPTY,
+        }
+        value["environment_transitions"] = {
+            "fcs": {
+                "from": {"key_count": 1, "keys_sorted_sha256": ONE},
+                "to": {"key_count": 3, "keys_sorted_sha256": EMPTY},
+            }
+        }
+        self.schema.write_text(json.dumps(value))
+        self.assert_failure("ENV_DIGEST_MISMATCH_EVIDENCE_SCHEMA")
+
+    def test_environment_transition_must_be_removed_after_evidence_catches_up(self):
+        value = json.loads(self.schema.read_text())
+        value["environment_transitions"] = {
+            "fcs": {
+                "from": {"key_count": 1, "keys_sorted_sha256": ONE},
+                "to": {"key_count": 2, "keys_sorted_sha256": EMPTY},
+            }
+        }
+        self.schema.write_text(json.dumps(value))
+        self.assert_failure("ENV_TRANSITION_STALE")
+
+
+class RepositoryTemplateContractTest(unittest.TestCase):
+    def test_workpulse_template_comment_matches_target_schema(self):
+        schema_path = HERE / "supervisor-structure.schema.json"
+        template_path = HERE / "dingwei.conf.template"
+        schema = json.loads(schema_path.read_text())
+        schema_programs = verifier.normalize_programs(schema["programs"], "schema")
+        template_programs = verifier.parse_template(template_path, schema_programs)
+
+        verifier.compare(schema_programs, template_programs, "SCHEMA_TEMPLATE")
+        self.assertEqual(schema_programs["workpulse"]["environment"]["key_count"], 16)
+        self.assertEqual(len(verifier.normalize_environment_transitions(schema["environment_transitions"])), 1)
 
 
 if __name__ == "__main__": unittest.main()

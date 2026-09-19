@@ -5,6 +5,12 @@
     "ref": "refs/heads/feat/t112-image-provenance-opus50ts-20260914",
     "sha256": "11e857d652a726f599d705c84e8446e2d89532f74d754280e870490bf4cc2d5f"
   },
+  "environment_transitions": {
+    "workpulse": {
+      "from": {"key_count": 5, "keys_sorted_sha256": "6877b649575054ab4d574e1efecdc2c3b9a41c343e9a24b83eae2c0feb8545a2"},
+      "to": {"key_count": 16, "keys_sorted_sha256": "acc4bf12c0c7fa0aaf5c006cb7b907f412203b7a2529b256d764c9fc29f52ad8"}
+    }
+  },
   "programs": {
     "fcs": {
       "environment": {"key_count": 8, "keys_sorted_sha256": "06ea767c0fb69caae1eb4ff7c3ce59d2e2fb6fed08d29aa4d690b79bbd997b1f"},
@@ -19,7 +25,7 @@
       "fields": {"autorestart": "true", "autostart": "true", "command": "python3 /app/vs/view_service.py", "directory": "/app/vs", "priority": "200", "startsecs": "2", "stderr_logfile": "/dev/stderr", "stderr_logfile_maxbytes": "0", "stdout_logfile": "/dev/stdout", "stdout_logfile_maxbytes": "0", "stopsignal": "TERM", "stopwaitsecs": "10"}
     },
     "workpulse": {
-      "environment": {"key_count": 5, "keys_sorted_sha256": "6877b649575054ab4d574e1efecdc2c3b9a41c343e9a24b83eae2c0feb8545a2"},
+      "environment": {"key_count": 16, "keys_sorted_sha256": "acc4bf12c0c7fa0aaf5c006cb7b907f412203b7a2529b256d764c9fc29f52ad8"},
       "fields": {"autorestart": "true", "autostart": "true", "command": "/app/bin/workpulse", "directory": "/app", "priority": "100", "startsecs": "3", "stderr_logfile": "/dev/stderr", "stderr_logfile_maxbytes": "0", "stdout_logfile": "/dev/stdout", "stdout_logfile_maxbytes": "0", "stopsignal": "TERM", "stopwaitsecs": "30"}
     }
   }

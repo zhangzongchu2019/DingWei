@@ -136,10 +136,42 @@ def parse_template(path: Path, schema_programs: dict[str, dict]) -> dict[str, di
     return normalize_programs(out, "template")
 
 
-def compare(left: dict[str, dict], right: dict[str, dict], label: str) -> None:
+def normalize_environment_transitions(raw: object) -> dict[str, dict]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        fail("ENV_TRANSITIONS_INVALID", "environment_transitions must be an object")
+    out: dict[str, dict] = {}
+    for program, transition in raw.items():
+        if not isinstance(program, str) or not isinstance(transition, dict) or set(transition) != {"from", "to"}:
+            fail("ENV_TRANSITIONS_INVALID", str(program))
+        normalized = normalize_programs(
+            {program: {"fields": {}, "environment": transition["from"]}},
+            "environment_transitions.from",
+        )[program]["environment"]
+        target = normalize_programs(
+            {program: {"fields": {}, "environment": transition["to"]}},
+            "environment_transitions.to",
+        )[program]["environment"]
+        if normalized == target:
+            fail("ENV_TRANSITIONS_INVALID", f"program={program} transition is a no-op")
+        out[program] = {"from": normalized, "to": target}
+    return dict(sorted(out.items()))
+
+
+def compare(
+    left: dict[str, dict],
+    right: dict[str, dict],
+    label: str,
+    environment_transitions: dict[str, dict] | None = None,
+) -> set[str]:
     left_names, right_names = set(left), set(right)
     if left_names != right_names:
         fail(f"PROGRAM_SET_MISMATCH_{label}", f"left_only={sorted(left_names-right_names)} right_only={sorted(right_names-left_names)}")
+    used_transitions: set[str] = set()
+    transitions = environment_transitions or {}
+    if set(transitions) - left_names:
+        fail("ENV_TRANSITIONS_INVALID", f"unknown_programs={sorted(set(transitions)-left_names)}")
     for name in sorted(left):
         lf, rf = left[name]["fields"], right[name]["fields"]
         if lf != rf:
@@ -147,7 +179,14 @@ def compare(left: dict[str, dict], right: dict[str, dict], label: str) -> None:
             differences = [key for key in keys if lf.get(key) != rf.get(key)]
             fail(f"FIELD_MISMATCH_{label}", f"program={name} fields={differences}")
         if left[name]["environment"] != right[name]["environment"]:
-            fail(f"ENV_DIGEST_MISMATCH_{label}", f"program={name}")
+            transition = transitions.get(name)
+            if transition != {"from": left[name]["environment"], "to": right[name]["environment"]}:
+                fail(f"ENV_DIGEST_MISMATCH_{label}", f"program={name}")
+            used_transitions.add(name)
+    stale = set(transitions) - used_transitions
+    if stale:
+        fail("ENV_TRANSITION_STALE", f"programs={sorted(stale)}")
+    return used_transitions
 
 
 def main() -> None:
@@ -177,10 +216,19 @@ def main() -> None:
     git("merge-base", "--is-ancestor", source["commit"], resolve_ref(source["ref"]))
     evidence_programs = parse_evidence(blob.decode())
     schema_programs = normalize_programs(schema.get("programs"), "schema")
-    compare(evidence_programs, schema_programs, "EVIDENCE_SCHEMA")
+    environment_transitions = normalize_environment_transitions(schema.get("environment_transitions"))
+    used_transitions = compare(
+        evidence_programs,
+        schema_programs,
+        "EVIDENCE_SCHEMA",
+        environment_transitions,
+    )
     template_programs = parse_template(args.template, schema_programs)
     compare(schema_programs, template_programs, "SCHEMA_TEMPLATE")
-    print(f"PASS programs={len(schema_programs)} evidence_sha256={digest}")
+    print(
+        f"PASS programs={len(schema_programs)} "
+        f"environment_transitions={len(used_transitions)} evidence_sha256={digest}"
+    )
 
 
 if __name__ == "__main__":
