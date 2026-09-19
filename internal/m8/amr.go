@@ -165,8 +165,8 @@ type amrStats struct {
 	replyOriginRouted      uint64
 	replyOriginSkipped     uint64
 	replyOriginUnavailable uint64
-	terminalUnknown         map[string]uint64
-	workerHeartbeat         time.Time
+	terminalUnknown        map[string]uint64
+	workerHeartbeat        time.Time
 }
 
 type amrProcessor struct {

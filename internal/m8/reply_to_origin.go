@@ -146,5 +146,9 @@ func (p *amrProcessor) bumpReplyOrigin(counter *uint64) {
 func (p *amrProcessor) replyToOriginUnavailable(job amrRouteJob, reason string) {
 	log.Printf("[reply-origin] R1 回程未发生 session=%s delivery_id=%s reason=%s", job.key.Session, job.key.DeliveryID, reason)
 	p.bumpReplyOrigin(&p.stats.replyOriginUnavailable)
-	p.notifySource(job.key, replyToOriginRouteSource, reason, true)
+	// 🔴 target 传空串,不传 replyToOriginRouteSource:
+	//    deliveryFailureEnvelope 的 `→ %s` 槽位语义是**投递目标(会话名)**,
+	//    hub.go:3005 写死了「凡是内部状态码、原因码、阶段名,一律传 ""」——
+	//    传 "reply_to_origin" 会渲染成「投递失败 … → reply_to_origin」,读起来像投给了一个叫它的会话。
+	p.notifySource(job.key, "", reason, true)
 }

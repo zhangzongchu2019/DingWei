@@ -13,9 +13,13 @@ package m8
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
@@ -86,7 +90,8 @@ func TestReplyToOriginR1RoutesTurnOutputBackToSender(t *testing.T) {
 
 // R-2:A 收到该回复之后的输出【不再】自动回 B —— 结构性,不靠兜底。
 // 🔴 同一条用例里配阳性对照:换成一条【显式】入站,回程必须仍然发生。
-//    只验「不回」是半条 —— 一个「干脆永不回程」的实现也能让它通过。
+//
+//	只验「不回」是半条 —— 一个「干脆永不回程」的实现也能让它通过。
 func TestReplyToOriginR2StopsOnReplyInboundButExplicitStillFlows(t *testing.T) {
 	h, _, ctx := newTestHub(t)
 	p, routed := replyOriginProcessor(h)
@@ -156,15 +161,71 @@ func TestReplyToOriginR4CarriesStableDedupKey(t *testing.T) {
 	}
 }
 
-// C1:来源记录查不到时,必须有【可见表现】,不得静默丢弃。
-func TestReplyToOriginMissingDeliveryIsVisibleNotSilent(t *testing.T) {
-	h, _, _ := newTestHub(t)
-	p, routed := replyOriginProcessor(h)
+// C1 / G-R-01:来源记录查不到时,失败通知必须【真的到达】在线的 B —— 不是只有计数。
+//
+// 🔴 本条是被打回后重写的。第一版的问题(验收人 G-R-01,组长立为判据 10):
+//
+//	用例名承诺「Visible / 不静默」,断言却只证明「计数 +1」;
+//	夹具里根本没有在线的 B ⇒ notifySource 实际写失败(日志 source_offline),用例照样 PASS。
+//	**用例名承诺的范围大于断言实际覆盖的范围** —— 而名字不会被变异检查,它永远是绿的。
+//	自检方法:把用例名逐词念出来问「这个词我断言了吗」。
+//
+// 现在:接一条真 websocket,断言失败正文确实抵达。删掉 p.notifySource(...) 本条必须转红。
+func TestReplyToOriginMissingDeliveryNotifiesOnlineSession(t *testing.T) {
+	h, _, ctx := newTestHub(t)
 
+	accepted := make(chan *websocket.Conn, 1)
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		accepted <- conn
+		<-release
+	}))
+	defer server.Close()
+	defer close(release)
+	clientConn, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(server.URL, "http"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer clientConn.CloseNow()
+	serverConn := <-accepted
+	defer serverConn.CloseNow()
+
+	h.mu.Lock()
+	h.sessionClients["k1"] = map[string]*sessionClient{"bee": {conn: serverConn, keyID: "k1", sessionName: "bee"}}
+	h.mu.Unlock()
+
+	p, routed := replyOriginProcessor(h)
 	p.replyToOrigin(amrRouteJob{key: amrTurnKey{KeyID: "k1", Session: "bee", DeliveryID: "dw-dlv_missing", TurnID: "t1"}, body: "输出"})
 
 	if len(*routed) != 0 {
 		t.Fatalf("查不到来源时不得凭空投递,实测 %d 条", len(*routed))
+	}
+
+	readCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	_, data, err := clientConn.Read(readCtx)
+	if err != nil {
+		t.Fatalf("G-R-01:失败通知必须真的抵达在线会话 —— 删掉 p.notifySource(...) 时本条应在这里转红。err=%v", err)
+	}
+	var got model.Envelope
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatalf("抵达的不是可解析的信封:%v raw=%q", err, string(data))
+	}
+	if got.To != sessionAddress("bee", "k1") {
+		t.Fatalf("通知必须发给产生输出的那个会话,to=%q", got.To)
+	}
+	if !strings.Contains(got.Body, "未自动回程") {
+		t.Fatalf("通知正文必须说明「没有自动回程」这件事,实测 %q", got.Body)
+	}
+	if !strings.Contains(got.Body, "dw-dlv_missing") {
+		t.Fatalf("通知正文必须带上是哪一次投递,便于定位,实测 %q", got.Body)
+	}
+	if strings.Contains(got.Body, replyToOriginRouteSource) {
+		t.Fatalf("通知正文不得把内部来路名渲染成投递目标,实测 %q", got.Body)
 	}
 	if p.stats.replyOriginUnavailable != 1 {
 		t.Fatalf("C1:查不到必须留下可见计数(心跳日志里看得到),实测 %d", p.stats.replyOriginUnavailable)
