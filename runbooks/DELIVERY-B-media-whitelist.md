@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-19T00:06:58Z`
+更新时间（UTC）：`2026-09-19T00:21:45Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`53af5642b7051748a70376ed873eae43a9ccbcc5`
+- 实现锚：`93f0e46fd3a362ac2670f99f4dc50f388347ea07`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -53,12 +53,16 @@ V7′–V11′ 仍须部署后通过生产 nginx 做 md/py/json 与 html/xml/svg
 
 判据升级：同一测试现要求 manager 两张映射表（加通用 `.bin` 回退）、nginx 两个 `file_ext` 正则并集、`directObjectKey` 三处扩展名集合严格相等，并继续拒绝主动内容扩展名。MB-1 仅在 manager 加 `flv`、MB-2 仅在 nginx 加 `flv`、MB-3 仅在 `directObjectKey` 加 `flv`，三发均执行全仓 980 条，且都仅该测试转红；全部还原后全仓 rc=0。
 
-## B7：MIME 优先、受控文件名后缀兜底
+## B7：危险项优先、受控文件名后缀保真、MIME 兜底
 
 - 文件名后缀先经过危险表：php/html/htm/xhtml/xml/svg/svgz 无论声称何种 MIME 都强制 octet-stream/.bin。
 - 其余对象先按 MIME 走既有内联/附件映射；无法识别时，仅允许文件名后缀命中受控文本表，命中后存 `text/plain` 与真扩展名，表外或无扩展名仍 `.bin`。
 - 使用系统实测 MIME 的 yml/yaml (`application/yaml`)、toml (`application/toml`)、sql (`application/sql`)、sh (`application/x-shellscript`) 夹具，并覆盖空 MIME、evil.php 与伪造为 text/plain 的 html/xml/svg。
 - 删除文件名兜底行为后，全仓 980 条仅 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks` 转红；向受控表加入 html 后，全仓 980 条仅配置形状闸转红。全部还原后 rc=0。
+
+实验二改裁后，最终顺序为：危险 MIME/危险后缀 → Office/ZIP 附件 MIME → 受控文本文件名后缀 → 内联 MIME → `.bin`。因此 yml/yaml 保留各自原扩展名，ini 可在空 MIME 下恢复，而无扩展名仍 `.bin`。受控表固定为 txt/md/csv/json/log/py/js/go/java/yaml/yml/toml/ini/sql/sh；html/htm/xhtml/xml/svg/svgz/php 不在表内。删除文件名优先分支后，全仓 980 条仅媒体夹具测试转红。
+
+第五道 nginx types 闸解析内联 location 的 `types` 块，逐项要求受控文本表所有扩展名映射为 `text/plain`。单独把 js 改挂 `application/javascript`、把 md 改挂 `text/markdown`，两发各执行全仓 980 条，复跑后的精确转红集合均仅配置形状闸；全部还原后 rc=0。
 
 ## B8：音频内联候选机制
 
