@@ -85,3 +85,11 @@ nginx types、内联正则、`directObjectKey` 与 manager 映射同步完成，
 - `safeName` 统一剥离 `/` 与 `\\` 路径前缀并删除 CR/LF、NUL 等控制字符；解码失败降为 `download`。
 - 覆盖中文、emoji、空格括号、旧 ASCII、原名含 `%` 的新旧路径，以及 `%2e%2e%2f`、`%0d%0a`、`%00` 与对应裸攻击值。
 - 将实现变异为“先 safeName、后解码且不再清洗”后，`go test -v ./... -count=1` 执行 980 条，唯一转红 `TestDecodedUploadFileNameSupportsUTF8LegacyAndSanitizesAfterDecode`；还原后全仓 rc=0。
+
+## B-9：空名与纯路径名回退
+
+- 更新时间：2026-09-19T00:57:02Z。
+- 产品锚：`508f92d51293e9e6c650e920a5ca855dec85e061`。
+- `safeName` 在 `TrimSpace` 后显式拒绝 `""`、`"."`、`".."`、`"/"`，统一回退为 `download`，恢复缺失 `X-File-Name` 时的既有展示名。
+- `TestSafeNameRejectsEmptyAndPathOnlyNames` 直接覆盖这一层。端到端上传还会在 `Manager.Put` 再调用一次 `safeName`，后一道防御会掩盖前一道退化，因此不能替代该单层用例。
+- 外科变异删除新增判定、恢复为仅判断 `s == ""` 后，精确测试执行 1 条并转红；四个输入分别报告 `"."`、`"."`、`".."`、`"/"`，四格全部咬住。变异已还原，`go test ./internal/fileservice -count=1` 通过。
