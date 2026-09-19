@@ -33,6 +33,12 @@
       "cmd": "want=\"${DW_EXPECT_WORKPULSE_SHA:?需在部署时写入期望哈希}\"; got=$(sha256sum /app/bin/workpulse 2>/dev/null | cut -d\" \" -f1); [ -n \"$got\" ] || { echo \"取不到哈希(记为不成立)\"; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
     },
     {
+      "id": "alert-route-stays-wired",
+      "desc": "🔴 告警接线四项须保持非空,且 workpulse 实际监听的路径须为 Unix socket;只报形状,不输出值",
+      "_why": "0.2.0.4 以禁用态交付后静默掉队四个版本。北极星只能证明今天通;本断言保证以后接线或 socket 丢失会被发现。读取的是 workpulse 进程实际环境,不是某份可能未生效的配置文件。",
+      "cmd": "pid=$(supervisorctl pid workpulse 2>/dev/null); case \"$pid\" in ''|0|*[!0-9]*) echo '取不到 workpulse pid'; exit 1;; esac; python3 -c 'import os,stat,sys; p=sys.argv[1]; raw=open(\"/proc/\"+p+\"/environ\",\"rb\").read().split(b\"\\0\"); env=dict(x.split(b\"=\",1) for x in raw if b\"=\" in x); keys=(b\"WP_NOTIFY_SOCKET\",b\"WP_ALERT_CHAT_ENTITY\",b\"WP_ALERT_BOT_CHANNEL\",b\"WP_ALERT_CHAT_TYPE\"); missing=[k for k in keys if not env.get(k,b\"\").strip()]; sock=env.get(b\"WP_NOTIFY_SOCKET\",b\"\").decode(\"utf-8\",\"surrogateescape\"); is_sock=False\ntry: is_sock=bool(sock) and stat.S_ISSOCK(os.stat(sock).st_mode)\nexcept OSError: pass\nprint(\"configured=%d/4 socket_unix=%s\" % (4-len(missing), str(is_sock).lower())); raise SystemExit(0 if not missing and is_sock else 1)' \"$pid\""
+    },
+    {
       "id": "switches-in-config-not-only-runtime",
       "desc": "🔴 关键开关须落在配置文件里(只存在于容器创建参数 ⇒ 容器一重建即无声关闭)",
       "cmd": "miss=0; for k in VS_VIEW_UNLOCK_V2 VS_TARGET_NAME; do grep -rqs \"$k\" /etc/supervisor /etc/supervisord.conf 2>/dev/null || { echo \"$k 不在 supervisor 配置里(仅存在于容器创建参数)\"; miss=1; }; done; exit $miss",

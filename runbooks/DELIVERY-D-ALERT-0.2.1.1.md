@@ -55,10 +55,12 @@
 
 ### 3. 北极星：真实失败
 
-1. 用临时断言配置制造一条**真实、可控、可恢复**的巡检失败，并以 `invariant-runner.sh once` 走生产同一条 runner → Unix socket → outbound → 飞书链路。不得用直接 POST 冒充真实失败。
-2. 临时配置与临时状态文件不得覆盖生产断言集或生产心跳；执行后删除临时件。
-3. HTTP `202`、队列 `done`、发送日志只用于排障，**均不判通过**。
-4. 只有业主以 `source_kind=user` 明确回复“收到”，本格才通过。若业主回复“没收到”，原样记失败；若未回复，记“待判”，不得写成成功或失败。
+1. **执行前先通知组长，由组长提前告知业主下一条是演练；未得到组长确认不得触发。**
+2. 用临时断言配置制造一条**真实、可控、可恢复**的巡检失败，并以 `invariant-runner.sh once` 走生产同一条 runner → Unix socket → outbound → 飞书链路。不得用直接 POST 冒充真实失败。
+3. 临时断言的 ID、描述以及最终告警正文必须带明确标识 `DRILL-0.2.1.1-告警通路验证`，使手机通知与历史记录都能一眼识别为演练；这只改变失败素材，不缩短链路。
+4. 临时配置与临时状态文件不得覆盖生产断言集或生产心跳；执行后删除临时件。
+5. HTTP `202`、队列 `done`、发送日志只用于排障，**均不判通过**。
+6. 只有业主以 `source_kind=user` 明确回复“收到”，本格才通过。若业主回复“没收到”，原样记失败；若未回复，记“待判”，不得写成成功或失败。
 
 若使用日志/数据库判断某一环“没有发生”，须先用一条已知成功投递证明同一查法能命中；阳性对照也查不到时，该探针无分辨力，停止下结论。
 
@@ -76,6 +78,24 @@
 2. 确认 socket 重新为 `0600`、四项配置均为 `set/nonempty`、runner 仍为 RUNNING。
 3. 不再制造第三条告警；以配置形状和 socket 状态确认最终启用，避免给业主重复发验收消息。
 
+### 6. 守住：接线丢失必须自动转红
+
+巡检集新增 `alert-route-stays-wired`：
+
+- 从 supervisor 取得 workpulse PID，读取**运行中进程**的实际环境，而不是读取一份可能未生效的配置；
+- 断言 `WP_NOTIFY_SOCKET`、`WP_ALERT_CHAT_ENTITY`、`WP_ALERT_BOT_CHANNEL`、`WP_ALERT_CHAT_TYPE` 四项均 set/nonempty；
+- 用进程环境中的 socket 路径做 `stat`，断言该路径当前确为 Unix socket；
+- 输出只含 `configured=N/4 socket_unix=true/false`，不输出任何值或路径。
+
+部署时须先完成接线，再更新巡检集；否则新断言会正确地立即转红。删除该断言的外科变异必须只打红 `TestAlertRouteInvariantTest.test_runtime_guard_covers_all_keys_and_unix_socket_without_values`（实际 unittest 名以 `-v` 输出为准），还原后全绿，最终提交不得含变异。
+
+仓内变异实证（2026-09-19）：
+
+- 靶点：只删除 JSON 中 `alert-route-stays-wired` 整项；变异前 `git diff --numstat` 显示巡检 JSON 仅为本次新增；
+- 命令：`python3 -m unittest -v deploy.test_invariants_alert_route`；
+- 结果：`rc=1`，唯一转红 `test_runtime_guard_covers_all_keys_and_unix_socket_without_values`，原因逐字为 `missing or duplicate alert-route-stays-wired`；
+- 还原后同命令 `rc=0`；最终提交不含变异。
+
 ## 失败与回退
 
 以下任一发生即停在原地报告，不改告警内容、不换收件人碰运气：
@@ -92,6 +112,7 @@
 
 - 删除/清空任一目标配置后，启用态探针必须不再得到 `202`。
 - 把 disabled 分支改成静默成功，阴格必须从预期 `404` 变红。
+- 从巡检 JSON 删除 `alert-route-stays-wired`，配置形状测试必须唯一转红；否则“守住”本身没有守卫。
 - 绕过 runner 直接 POST 不能满足北极星，因为它没有证明真实失败能触发整条链路。
 - 没有业主本人“收到”的回复时，本件不得宣称发布验收通过。
 
