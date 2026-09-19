@@ -12,6 +12,7 @@ func setRequiredConfigEnv(t *testing.T) {
 	t.Setenv("FS_DATA_ROOT", t.TempDir())
 	t.Setenv("FS_INTERNAL_ISSUER_TOKEN", "issuer")
 	t.Setenv("FS_INTERNAL_AUDIT_TOKEN", "audit")
+	t.Setenv("FS_PUBLIC_BASE_URL", "https://files.example")
 }
 
 func TestConfigRequiresLocalRootAndKeepsCapacityConfigurable(t *testing.T) {
@@ -25,6 +26,17 @@ func TestConfigRequiresLocalRootAndKeepsCapacityConfigurable(t *testing.T) {
 	}
 	if c.QuotaBytes != 12345 || c.Retention.Hours() != 48 || c.TombstoneRetention.Hours() != 72 {
 		t.Fatalf("config=%+v", c)
+	}
+}
+
+func TestDefaultUploadLimitAndRetentionMatchDirectLinkContract(t *testing.T) {
+	setRequiredConfigEnv(t)
+	c, err := ConfigFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.MaxFileBytes != 50<<20 || c.Retention != 7*24*time.Hour {
+		t.Fatalf("max=%d retention=%s", c.MaxFileBytes, c.Retention)
 	}
 }
 

@@ -4,11 +4,14 @@ package fileservice
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/filepolicy"
 )
 
 const (
@@ -18,7 +21,7 @@ const (
 
 	LongTextThreshold   = 4 * KiB
 	LongTextMaxBytes    = 8 * MiB
-	defaultMaxFileBytes = 16 * MiB
+	defaultMaxFileBytes = filepolicy.MaxUploadBytes
 	defaultQuotaBytes   = 500 * GiB
 )
 
@@ -49,7 +52,7 @@ func ConfigFromEnv() (Config, error) {
 		PublicBaseURL:      strings.TrimRight(os.Getenv("FS_PUBLIC_BASE_URL"), "/"),
 		MaxFileBytes:       defaultMaxFileBytes,
 		QuotaBytes:         defaultQuotaBytes,
-		Retention:          60 * 24 * time.Hour,
+		Retention:          filepolicy.DefaultRetention,
 		TombstoneRetention: 90 * 24 * time.Hour,
 		SweepInterval:      time.Minute,
 		CapabilityMaxAge:   2 * time.Minute,
@@ -86,6 +89,10 @@ func ConfigFromEnv() (Config, error) {
 	}
 	if c.IssuerToken == "" || c.AuditToken == "" {
 		return Config{}, fmt.Errorf("FS_INTERNAL_ISSUER_TOKEN/audit token are required")
+	}
+	u, parseErr := url.Parse(c.PublicBaseURL)
+	if parseErr != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return Config{}, fmt.Errorf("FS_PUBLIC_BASE_URL must be an absolute https origin")
 	}
 	return c, nil
 }

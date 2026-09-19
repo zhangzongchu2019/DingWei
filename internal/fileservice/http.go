@@ -26,9 +26,10 @@ type UploadVerifier interface {
 }
 
 type HTTPHandler struct {
-	Manager      *Manager
-	Capabilities CapabilityVerifier
-	Uploads      UploadVerifier
+	Manager       *Manager
+	Capabilities  CapabilityVerifier
+	Uploads       UploadVerifier
+	PublicBaseURL string
 }
 
 func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -36,43 +37,72 @@ func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.URL.Path == "/files/upload" && r.Method == http.MethodPost:
 		h.upload(w, r)
-	case strings.HasPrefix(r.URL.Path, "/files/ref/") && (r.Method == http.MethodHead || r.Method == http.MethodGet):
-		h.retrieve(w, r)
+	// Retrieval route frozen by owner decision 2026-09-18: downloads use nginx
+	// /f/. Restore only together with Hub head/get issuance, IssuerHandler's
+	// retrieval branch, GrantStore wiring, nginx /files/ref/, and their tests.
 	default:
 		hide(w)
 	}
 }
 
 func (h HTTPHandler) upload(w http.ResponseWriter, r *http.Request) {
-	if h.Manager == nil || h.Manager.Clock == nil || h.Uploads == nil || r.ContentLength < 0 {
-		hide(w)
+	if h.Manager == nil || h.Manager.Clock == nil || h.Uploads == nil {
+		uploadError(w, http.StatusServiceUnavailable, "upload service unavailable")
+		return
+	}
+	if r.ContentLength < 0 {
+		uploadError(w, http.StatusBadRequest, "content length is required")
+		return
+	}
+	if r.ContentLength > h.Manager.MaxFileBytes {
+		uploadError(w, http.StatusRequestEntityTooLarge, "file exceeds upload limit")
 		return
 	}
 	session := r.Header.Get("X-DingWei-Session")
 	grant, err := h.Uploads.VerifyUpload(bearer(r), session, r.ContentLength, h.Manager.Clock.Now())
 	if err != nil || grant.OwnerKey == "" || grant.SessionName != session || (grant.MaxBytes > 0 && r.ContentLength > grant.MaxBytes) {
-		hide(w)
+		uploadError(w, http.StatusUnauthorized, "upload ticket is invalid or expired")
 		return
 	}
 	f, err := h.Manager.Put(r.Context(), Upload{
 		OwnerKey: grant.OwnerKey, SessionName: grant.SessionName,
-		OriginalName: r.Header.Get("X-File-Name"), MediaType: r.Header.Get("Content-Type"),
+		OriginalName: decodedUploadFileName(r.Header.Get("X-File-Name")), MediaType: r.Header.Get("Content-Type"),
 		ExpectedSHA256: r.Header.Get("X-Content-SHA256"), ContentLength: r.ContentLength, Body: r.Body,
 	})
 	if err != nil {
-		if errors.Is(err, ErrInvalidUpload) || errors.Is(err, ErrIntegrity) {
-			hide(w)
+		if errors.Is(err, ErrIntegrity) {
+			uploadError(w, http.StatusUnprocessableEntity, "uploaded bytes failed integrity validation")
+		} else if errors.Is(err, ErrInvalidUpload) {
+			uploadError(w, http.StatusBadRequest, "invalid upload")
 		} else {
-			http.Error(w, "upload failed", http.StatusServiceUnavailable)
+			uploadError(w, http.StatusServiceUnavailable, "upload storage unavailable")
 		}
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"file_ref": "dwfile:" + f.ID, "name": f.OriginalName, "size": f.SizeBytes,
+		"url": strings.TrimRight(h.PublicBaseURL, "/") + "/f/" + f.ObjectKey, "name": f.OriginalName, "size": f.SizeBytes,
 		"sha256": f.SHA256, "media_type": f.MediaType, "expires_at": f.ExpiresAt, "range": true,
 	})
+}
+
+func decodedUploadFileName(raw string) string {
+	const prefix = "UTF-8''"
+	if strings.HasPrefix(raw, prefix) {
+		decoded, err := url.PathUnescape(strings.TrimPrefix(raw, prefix))
+		if err != nil {
+			return "download"
+		}
+		raw = decoded
+	}
+	return safeName(raw)
+}
+
+func uploadError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
 }
 
 func (h HTTPHandler) retrieve(w http.ResponseWriter, r *http.Request) {

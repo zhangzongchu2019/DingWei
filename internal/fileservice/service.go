@@ -12,10 +12,11 @@ type Service struct {
 	UploadTickets *UploadTicketStore
 	IssuerToken   string
 	AuditToken    string
+	PublicBaseURL string
 }
 
 func (s *Service) PublicHandler() http.Handler {
-	return HTTPHandler{Manager: s.Manager, Capabilities: s.Capabilities, Uploads: s.UploadTickets}
+	return HTTPHandler{Manager: s.Manager, Capabilities: s.Capabilities, Uploads: s.UploadTickets, PublicBaseURL: s.PublicBaseURL}
 }
 
 func (s *Service) InternalHandler() http.Handler {

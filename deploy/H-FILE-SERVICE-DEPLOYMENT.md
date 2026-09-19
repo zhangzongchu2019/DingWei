@@ -10,8 +10,9 @@ Object bytes are owned directly by file-service under
 `/var/lib/dingwei-file-service/objects`; MinIO is not deployed. Paths have the
 form `files/YY/MMDD/<id>-<timestamp>` or `files/pinned/<id>-<timestamp>`.
 Original names remain metadata only and never participate in a disk path.
-Files are atomically committed with mode `0600`; the service unit also fixes
-`UMask=0077`. The data root must be on a filesystem mounted `noexec` by the
+Files are atomically committed with explicit mode `0640`; the service unit
+fixes `UMask=0077`, so file-service uses `fchmod` after creation. The data root
+must be on a filesystem mounted `noexec` by the
 authorized executor; the application-level mode is not a substitute for that
 mount property.
 
@@ -23,9 +24,19 @@ mount property.
 - Install the verified artifact at
   `/opt/dingwei/file-service/bin/file-service`, `root:root`, mode `0755`.
 - Run `deploy/file-service.service` as `dingwei-file`.
+- Create the dedicated read-only group `dingwei-file-read` and add both the
+  file-service user `dingwei-file` and nginx user `www-data` to it. Membership
+  of `dingwei-file` is required so its chmod preserves setgid on descendants.
+  Do not add nginx to the `dingwei-file` primary group.
 - Persistent directory: `/var/lib/dingwei-file-service`, owner
-  `dingwei-file:dingwei-file`, mode `0750`.
-- Metadata database: `/var/lib/dingwei-file-service/file-service.db`.
+  `dingwei-file:dingwei-file-read`, mode `0710` (traversable but not listable).
+- Object root and every object subdirectory: group `dingwei-file-read`, mode
+  `2750`; setgid makes new descendants inherit only this dedicated group.
+- Object files: group `dingwei-file-read`, mode `0640` after an explicit
+  `fchmod`, so systemd `UMask=0077` cannot remove group-read access.
+- Metadata database: `/var/lib/dingwei-file-service/file-service.db`, owner
+  `dingwei-file:dingwei-file`, mode `0600`; it must never belong to
+  `dingwei-file-read` and must not be readable by that group.
 - Public listener: `127.0.0.1:8793`; internal issuer/audit listener:
   `127.0.0.1:8794`. Only the two public `/files/` routes in
   `deploy/nginx-dingwei.conf` may be exposed.
@@ -38,9 +49,9 @@ FS_INTERNAL_ADDR=127.0.0.1:8794
 FS_DATABASE_PATH=/var/lib/dingwei-file-service/file-service.db
 FS_DATA_ROOT=/var/lib/dingwei-file-service/objects
 FS_OBJECT_PREFIX=files
-FS_MAX_FILE_BYTES=16777216
+FS_MAX_FILE_BYTES=52428800
 FS_TOTAL_QUOTA_BYTES=536870912000
-FS_RETENTION=1440h
+FS_RETENTION=168h
 FS_TOMBSTONE_RETENTION=2160h
 FS_SWEEP_INTERVAL=1m
 FS_CAPABILITY_MAX_AGE=2m
@@ -113,9 +124,8 @@ in the authorization.
    time-travel one production row: directory deletion would correctly remove
    its whole day while leaving sibling metadata inconsistent.
 
-Default retention is deliberately day-granular: files remain for 60 to 61
-days, then the sweeper removes the entire UTC date directory. It is not an
-exact 60-day per-object promise.
+Default retention is exactly 7 days from each upload timestamp. The sweeper
+deletes eligible objects one by one and always skips archived objects.
 
 Quota eviction is not an acceptable substitute: it proves the quota path, not
 the 60-day retention path.
