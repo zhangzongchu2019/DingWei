@@ -937,6 +937,80 @@ async function t(name, fn) {
     }
   });
 
+  // ── ⑰ B-11：音频在 A 侧接得上；文本的两条路径必须一致 ────────────────
+  //
+  // 🔴 起因（我在 B 线增量评审里打出、组长 2026-09-19 授权本批修）：
+  //    B 侧本批把音频能力做全了（落盘 .mp3 ＋ 真实 audio MIME ＋ nginx 七行），
+  //    而 A 侧 kindFromMediaType 没有 audio 分支、FILE_EXT_KIND 没有音频扩展名
+  //    ⇒ 端到端仍渲成下载链接，「否则不播」那个目的没达成。
+  //
+  // 🔴 断言落在 data-kind 上，不落在 <audio> 在不在上：
+  //    夹具是假字节、且本机 chromium 未必有对应解码器 ⇒ <audio> 必然自我移除。
+  //    「判成 audio 但播不了」与「根本没判成 audio」在 DOM 上长得一样 ——
+  //    这正是 ④b 当初吃过的亏。data-kind 把**分派**与**解码能力**分开。
+  await t('⑰ B-11:音频两条路径都判成 audio 且必有下载出路;文本降级路径与 HEAD 路径一致;html/svg 仍 download', async () => {
+    const mk = (id, ext) => `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/${id}.${ext}`;
+    const kindOf = (u) => page.evaluate((url) => {
+      const box = [...document.querySelectorAll('.attachment')].find((e) => e.dataset.fileUrl === url);
+      return box ? { kind: box.dataset.kind, dl: box.querySelectorAll('a.attachment-dl').length } : null;
+    }, u);
+
+    // ── (a) HEAD 路径：服务端声明 audio/mpeg ⇒ 必须判成 audio
+    const headAudio = mk('aaaa1111bbbb2222cccc3333dddd4444', 'mp3');
+    await page.route('**/f/**', (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 200, headers: { 'Content-Type': 'audio/mpeg' }, body: '' })
+      : route.fulfill({ status: 200, contentType: 'audio/mpeg', body: 'ID3fake' })));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), headAudio);
+    await page.waitForSelector('.attachment[data-dispatch="head"]', { timeout: 20000 });
+    const a1 = await kindOf(headAudio);
+    assert.ok(a1, 'HEAD 路径下应有该 URL 的附件块');
+    assert.strictEqual(a1.kind, 'audio', `🔴 HEAD 声明 audio/mpeg 必须判成 audio，实测 ${JSON.stringify(a1)}`);
+    // 能播时也该能存一份；解不了码时它是唯一出路 —— 两种情况都必须恰好一条，不能并排两条。
+    assert.strictEqual(a1.dl, 1, `音频块必须恰好一条下载链接，实测 ${a1.dl} 条`);
+    await page.unroute('**/f/**');
+
+    // ── (b) 降级路径：HEAD 不可用，按 URL 扩展名 ⇒ 七种音频扩展名逐个判成 audio
+    await page.route('**/f/**', (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 405, body: '' })
+      : route.fulfill({ status: 200, contentType: 'application/octet-stream', body: 'fake' })));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    const audioExts = ['mp3', 'm4a', 'flac', 'aac', 'opus', 'oga', 'wav'];
+    // 文本：与 B 侧 internal/fileservice/manager.go 的 filenameTextExts 对齐的那 15 个
+    const textExts = ['txt', 'md', 'csv', 'json', 'log', 'py', 'js', 'go', 'java', 'yaml', 'yml', 'toml', 'ini', 'sh', 'sql'];
+    // 🔴 阳性对照与音频/文本**同一轮**：若守卫被削弱，这两个会跟着一起变 —— 那时才分辨得出。
+    const neverInline = ['html', 'svg'];
+    const all = [...audioExts, ...textExts, ...neverInline];
+    for (let i = 0; i < all.length; i += 1) {
+      const id = String(i).padStart(2, '0').repeat(16).slice(0, 32);
+      await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), mk(id, all[i]));
+    }
+    await page.waitForFunction((n) => document.querySelectorAll('.attachment[data-dispatch="ext"]').length >= n,
+      all.length, { timeout: 60000 });
+    const got = {};
+    for (let i = 0; i < all.length; i += 1) {
+      const id = String(i).padStart(2, '0').repeat(16).slice(0, 32);
+      got[all[i]] = await kindOf(mk(id, all[i]));
+    }
+    for (const ext of audioExts) {
+      assert.strictEqual(got[ext]?.kind, 'audio',
+        `🔴 降级路径 .${ext} 必须判成 audio，实测 ${JSON.stringify(got[ext])}`);
+      assert.strictEqual(got[ext]?.dl, 1, `.${ext} 必须恰好一条下载链接，实测 ${JSON.stringify(got[ext])}`);
+    }
+    for (const ext of textExts) {
+      assert.strictEqual(got[ext]?.kind, 'text',
+        `🔴 降级路径 .${ext} 必须判成 text（与 HEAD 路径一致；B 侧 filenameTextExts 统一出 text/plain），实测 ${JSON.stringify(got[ext])}`);
+    }
+    for (const ext of neverInline) {
+      assert.strictEqual(got[ext]?.kind, 'download',
+        `阳性对照：.${ext} 永不内联，必须仍是 download，实测 ${JSON.stringify(got[ext])}`);
+    }
+    await page.screenshot({ path: path.join(SHOTS, '09-b11-audio-and-text.png'), fullPage: true });
+    await page.unroute('**/f/**');
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;

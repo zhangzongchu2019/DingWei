@@ -303,6 +303,7 @@
     .dw-link-rendered { display: none; }
     .attachment img, .attachment video { max-width: 100%; max-height: 420px; border-radius: 6px; display: block; }
     .attachment iframe { width: 100%; height: 480px; border: 0; border-radius: 6px; background: #fff; }
+    .attachment audio { width: 100%; display: block; }
     .attachment pre {
       margin: 0; max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-word;
       font-size: 12px; line-height: 1.5;
@@ -2557,11 +2558,22 @@
 
     // 附录 A5 那张白名单的**反向映射**，只在 HEAD 不可用时作降级依据。
     // 🔴 表外的扩展名（含 .bin）一律下载链接，不尝试内联。
+    // 🔴 本表只在【降级路径】上用（HEAD 拿不到 Content-Type 时按 URL 扩展名分派）。
+    //    B-11（组长 2026-09-19 授权）补两类，成因都是「B 侧本批加宽了能力，本表没跟上」：
+    //    ① 音频：B 侧本批新增 audio 落盘与真实 audio MIME（mp3/m4a/flac/aac/opus/oga/wav），
+    //       本表若不补，降级路径上音频一律落 download ——「否则不播」那个目的就没达成。
+    //    ② 文本：B 侧 filenameTextExts 有 15 个扩展名统一出 text/plain，
+    //       而本表此前只有 txt ⇒ md/csv/py/yml/json 在 HEAD 路径内联、在降级路径落 download，
+    //       **同一个文件两条路径两种结果**。这里与 B 侧那张表对齐。
+    //    🔴 对齐对象写死在这里，便于下次核：internal/fileservice/manager.go 的 filenameTextExts。
+    //    ⚠️ 补进本表的扩展名必须与 FILE_EXT_NEVER_INLINE 不相交（④h(a) 盯着这条）。
     const FILE_EXT_KIND = {
       png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image',
       mp4: 'video', webm: 'video',
+      mp3: 'audio', m4a: 'audio', flac: 'audio', aac: 'audio', opus: 'audio', oga: 'audio', wav: 'audio',
       pdf: 'pdf',
-      txt: 'text',
+      txt: 'text', md: 'text', csv: 'text', json: 'text', log: 'text', py: 'text', js: 'text',
+      go: 'text', java: 'text', yaml: 'text', yml: 'text', toml: 'text', ini: 'text', sh: 'text', sql: 'text',
     };
     // 展示用的类型文案：扩展名分派下没有响应头可读，不编造 media_type。
     const FILE_EXT_LABEL = {
@@ -2585,6 +2597,10 @@
       if (mt === 'image/svg+xml') return 'download';
       if (mt.startsWith('image/')) return 'image';
       if (mt.startsWith('video/')) return 'video';
+      // B-11：音频与视频同一条路 —— 能播就播，播不了由 error 分支降级到下载链接。
+      // 🔴 音频是被动数据（不像 svg 能带脚本），所以这里按服务端声明的真实 audio MIME 内联，
+      //    而不是像文本那样统一压成一种类型；压成 text/plain 会让它根本不播。
+      if (mt.startsWith('audio/')) return 'audio';
       if (mt === 'application/pdf') return 'pdf';
       // §3.2 的表写的是 text/*，附录 A5 的服务端白名单只放 text/plain。
       // 服务端真声明了 text/* 就按 text/* 内联 —— 附录 B2 定的权威值是响应头。
@@ -2726,6 +2742,13 @@
       const knownName = String(hint?.name || meta?.fileName || '').trim();
       const box = fileAttachmentShell(url, meta, hint);
       box.dataset.dispatch = source;   // 供验收断言「这一张是靠哪一级定的类型」
+      // 🔴 B-11 新增：把**判成了哪一类**也记下来。
+      //    起因是 ④b 那条已经吃过一次亏：本机解不了 H.264 时 <video> 会自我移除，
+      //    于是「判成 video 但播不了」与「根本没判成 video」在 DOM 上长得一样，
+      //    用例只好写成「两种都算过」。音频同理（替身里的样本是假字节，必然解码失败）。
+      //    ⇒ 把分派结果显式记成 data-kind，判定与解码能力就分开了：
+      //      data-kind 验的是**分派对不对**，元素在不在验的是**这台机器能不能播**。
+      box.dataset.kind = kind;
       if (source === 'gone') {
         const note = document.createElement('div');
         note.className = 'attachment-note';
@@ -2761,6 +2784,18 @@
           video.addEventListener('error', () => { video.remove(); }, { once: true });
           box.appendChild(video);
           box.appendChild(fileDownloadLink(url, '下载视频', knownName));   // 恒附一条：能播时可下载，解不了码时它就是唯一出路
+          break;
+        }
+        case 'audio': {
+          const audio = document.createElement('audio');
+          audio.src = url;
+          audio.controls = true;
+          audio.preload = 'metadata';
+          // 与 video 同一形态（见上）：下载链接**无条件**附一条 ——
+          // 能播时也该能存一份；解不了码时 error 分支只移除播放器，不再补第二条链接。
+          audio.addEventListener('error', () => { audio.remove(); }, { once: true });
+          box.appendChild(audio);
+          box.appendChild(fileDownloadLink(url, '下载音频', knownName));
           break;
         }
         case 'pdf': {

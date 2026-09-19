@@ -33,6 +33,12 @@ OWNER = "fixtureowner"
 EXT_WHITELIST = {
     "image/png": ".png", "image/jpeg": ".jpg", "image/gif": ".gif", "image/webp": ".webp",
     "video/mp4": ".mp4", "video/webm": ".webm",
+    # B-11：音频。B 侧本批已落地（internal/fileservice/manager.go 的 filenameAudioTypes
+    # ＋ nginx inline 块七行），替身不同步就会出现「测的是替身、不是契约」——
+    # 那正是评审里立过的那条：素材/环境落在被测维度的同一侧，断言就无从分辨。
+    "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/flac": ".flac", "audio/aac": ".aac",
+    "audio/opus": ".opus", "audio/ogg": ".oga",
+    "audio/wav": ".wav", "audio/x-wav": ".wav", "audio/vnd.wave": ".wav",
     "application/pdf": ".pdf",
     "text/plain": ".txt",
 }
