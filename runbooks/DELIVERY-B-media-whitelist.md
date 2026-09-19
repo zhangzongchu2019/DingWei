@@ -1,12 +1,12 @@
 # B 线：媒体白名单通配语义修复
 
-更新时间（UTC）：`2026-09-19T00:34:34Z`
+更新时间（UTC）：`2026-09-19T00:36:37Z`
 
 ## 实施状态
 
 - 分支：`coder56solzzc/b-media-whitelist-wildcard`
 - 基线：`c1db31cb8c59c652c9956172e8af28944fb7e27c`
-- 实现锚：`444c013080cdddec88eff325c558dbe7e2872363`
+- 实现锚：`6a4ad018d0d2b527e3ae5e500434ecf4fe982793`
 - 状态：代码与仓内证据已交付，未合并、未部署。
 
 ## 改动事实
@@ -61,6 +61,8 @@ V7′–V11′ 仍须部署后通过生产 nginx 做 md/py/json 与 html/xml/svg
 - 删除文件名兜底行为后，全仓 980 条仅 `TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks` 转红；向受控表加入 html 后，全仓 980 条仅配置形状闸转红。全部还原后 rc=0。
 
 实验二改裁后，最终顺序为：危险 MIME/危险后缀 → Office/ZIP 附件 MIME → 受控文本文件名后缀 → 内联 MIME → `.bin`。因此 yml/yaml 保留各自原扩展名，ini 可在空 MIME 下恢复，而无扩展名仍 `.bin`。受控表固定为 txt/md/csv/json/log/py/js/go/java/yaml/yml/toml/ini/sql/sh；html/htm/xhtml/xml/svg/svgz/php 不在表内。删除文件名优先分支后，全仓 980 条仅媒体夹具测试转红。
+
+Playwright 实测后的 MIME 后备键已校正为 `application/yaml→yaml`、`application/toml→toml`、`application/sql→sql`、`application/x-shellscript→sh`；保留实测正确的 text/x-python、text/x-go、text/x-log、text/javascript、text/markdown、text/csv。文件名表优先，因此 `.yml` 与 `.yaml` 仍分别保真；无文件名扩展名时后备 MIME 映射有独立断言。最终全仓 rc=0。
 
 第五道 nginx types 闸解析内联 location 的 `types` 块，逐项要求受控文本表所有扩展名映射为 `text/plain`。单独把 js 改挂 `application/javascript`、把 md 改挂 `text/markdown`，两发各执行全仓 980 条，复跑后的精确转红集合均仅配置形状闸；全部还原后 rc=0。
 
