@@ -54,7 +54,7 @@ class FileServiceDeploymentTest(unittest.TestCase):
 
     def test_direct_links_inline_only_whitelisted_extensions(self):
         text = (DEPLOY / "nginx-dingwei.conf").read_text()
-        self.assertIn("location ~ ^/f/", text)
+        self.assertRegex(text, r'location ~ "?\^/f/')  # 带不带引号都接受;引号是 nginx 语法必需(见 dcfa01ee)
         self.assertIn("jpg|png|gif|webp|avif|heic|bmp|tiff|mp4|webm|ogv|mov|mkv|oga|wav|mp3|m4a|flac|aac|opus|pdf|txt|md|csv|json|log|py|js|go|java|yaml|yml|toml|ini|sh|sql", text)
         self.assertIn("video/quicktime mov", text)
         self.assertIn("audio/ogg oga", text)
@@ -73,7 +73,9 @@ class FileServiceDeploymentTest(unittest.TestCase):
         self.assertIn("add_header Content-Disposition attachment always", text)
         self.assertEqual(text.count("add_header X-Content-Type-Options nosniff always"), 2)
         self.assertEqual(text.count("add_header Referrer-Policy no-referrer always"), 2)
-        inline = text.split("location ~ ^/f/", 1)[1].split("location ~ ^/f/", 1)[0]
+        import re as _re
+        _parts = _re.split(r'location ~ "?\^/f/', text)
+        inline = _parts[1]
         self.assertNotIn("Content-Disposition", inline)
         self.assertIn("location /f/", text)
         self.assertIn("return 404", text)
