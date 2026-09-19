@@ -78,6 +78,17 @@ func TestDecodedUploadFileNameSupportsUTF8LegacyAndSanitizesAfterDecode(t *testi
 	}
 }
 
+func TestSafeNameRejectsEmptyAndPathOnlyNames(t *testing.T) {
+	// This directly covers the shared safeName layer. An end-to-end upload also
+	// calls safeName again in Manager.Put, so it cannot prove this invocation is
+	// correct: the later defense would mask a regression here.
+	for _, raw := range []string{"", ".", "..", "/"} {
+		if got := safeName(raw); got != "download" {
+			t.Errorf("safeName(%q)=%q want download", raw, got)
+		}
+	}
+}
+
 func TestUploadRestoresEncodedUTF8OriginalName(t *testing.T) {
 	m, _, _ := testManager(t, 100)
 	h := HTTPHandler{Manager: m, Uploads: fixedUploadVerifier{UploadGrant{OwnerKey: "owner", SessionName: "session", MaxBytes: 32}}, PublicBaseURL: "https://files.example"}

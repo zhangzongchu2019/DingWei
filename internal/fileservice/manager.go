@@ -280,7 +280,7 @@ func safeName(s string) string {
 		return r
 	}, s)
 	s = strings.TrimSpace(s)
-	if s == "" {
+	if s == "" || s == "." || s == ".." || s == "/" {
 		return "download"
 	}
 	return s
