@@ -160,6 +160,11 @@ type amrStats struct {
 	queueUnderflow          uint64
 	notificationsSent       uint64
 	notificationsSuppressed uint64
+	// 回程段 2(reply_to_origin.go)的三个计数,进心跳日志 ——
+	// 🔴 组长 C1:「回不去」必须有可见表现。日志是一次性的,计数是可被持续观察的。
+	replyOriginRouted      uint64
+	replyOriginSkipped     uint64
+	replyOriginUnavailable uint64
 	terminalUnknown         map[string]uint64
 	workerHeartbeat         time.Time
 }
@@ -634,12 +639,14 @@ func (p *amrProcessor) logStatsLocked() {
 	active := uint64(len(p.turns))
 	topOK := p.stats.opened == active+p.stats.queued+p.stats.closed+p.stats.incomplete+p.stats.failed
 	closedOK := p.stats.closed == p.stats.closedNonCandidate+p.stats.closedCandidateRejected+p.stats.closedCandidateReady+p.stats.closedDispatched
-	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d top_invariant=%t closed_invariant=%t",
+	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d reply_origin_routed=%d reply_origin_skipped=%d reply_origin_unavailable=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d top_invariant=%t closed_invariant=%t",
 		p.stats.eventsObserved, p.stats.opened, active, p.stats.queued, p.stats.closed, p.stats.incomplete, p.stats.failed,
 		p.stats.closedNonCandidate, p.stats.closedCandidateRejected, p.stats.closedCandidateReady, p.stats.closedDispatched,
 		p.stats.fragmentAppend, p.stats.fragmentSnapshot, p.stats.fragmentDuplicate, p.stats.lateAfterTerminal, p.stats.legacyRouteDropped,
 		p.stats.targetsAttempted, p.stats.targetsDispatched, p.stats.targetsFailed, p.stats.queueUnderflow,
-		p.stats.notificationsSent, p.stats.notificationsSuppressed, p.stats.terminalUnknown, amrStructuredFailureMinVersion(), p.stats.eventsRejected,
+		p.stats.notificationsSent, p.stats.notificationsSuppressed,
+		p.stats.replyOriginRouted, p.stats.replyOriginSkipped, p.stats.replyOriginUnavailable,
+		p.stats.terminalUnknown, amrStructuredFailureMinVersion(), p.stats.eventsRejected,
 		topOK, closedOK)
 }
 
@@ -662,6 +669,9 @@ func (p *amrProcessor) process(job amrRouteJob) {
 			}
 		} else {
 			p.closeJob("non_candidate")
+			// 🔴 回程段 2:本轮有输出、但正文里没有任何 @提及目标 ——
+			//    业主要的「其内容本身应该回给 A」正是这一支。实现见 reply_to_origin.go。
+			p.replyToOrigin(job)
 		}
 		return
 	}
