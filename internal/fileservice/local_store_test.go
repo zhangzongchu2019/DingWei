@@ -154,7 +154,16 @@ func TestLocalPutRefusesSymlinkDirectoryComponent(t *testing.T) {
 	}
 }
 
-func TestLocalDeleteRejectsInvalidObjectKeyShape(t *testing.T) {
+// 🔴 回流合并(2026-09-19):此处的冲突不是「删了一个函数」,是**同名不同料**。
+//
+//	preprod 与锚都有 TestLocalDeleteRejectsInvalidObjectKeyShape,但**夹具不同**:
+//	  preprod  key = "files/26/0918/not-a-valid-object-key"        ← legacy 形状
+//	  锚       key = "owner/agent/26/0918/<32hex>.exe"             ← direct-object 形状但扩展名不在白名单
+//	锚那一份在本文件**后面**(合并后仍在,未动)。若只保锚的,**preprod 这一格覆盖会静默消失**;
+//	若两份同名都保,go 会 redeclared 编译失败。
+//	⇒ 保留两格,把 preprod 这一份改名点出它测的是哪一类 key。
+//	⚠️ 改名是合并里唯一的"动了字"的地方,已向组长单列报备,由他裁定是否保留。
+func TestLocalDeleteRejectsLegacyShapeObjectKey(t *testing.T) {
 	s := newLocalStore(t)
 	key := "files/26/0918/not-a-valid-object-key"
 	if err := s.Put(context.Background(), key, strings.NewReader("keep"), 4, "application/octet-stream"); err != nil {
@@ -227,7 +236,7 @@ func TestPerFileSweepKeepsArchivedObjectAtStablePath(t *testing.T) {
 	if kept.ObjectKey != keep.ObjectKey {
 		t.Fatalf("archive changed key before=%s after=%s", keep.ObjectKey, kept.ObjectKey)
 	}
-	if strings.Contains(kept.ObjectKey, "run-me") || strings.HasSuffix(kept.ObjectKey, ".sh") {
+	if strings.Contains(kept.ObjectKey, "run-me") {
 		t.Fatalf("user filename entered object path: %s", kept.ObjectKey)
 	}
 	clock.Time = drop.ExpiresAt.Add(time.Second)

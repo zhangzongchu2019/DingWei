@@ -160,8 +160,13 @@ type amrStats struct {
 	queueUnderflow          uint64
 	notificationsSent       uint64
 	notificationsSuppressed uint64
-	terminalUnknown         map[string]uint64
-	workerHeartbeat         time.Time
+	// 回程段 2(reply_to_origin.go)的三个计数,进心跳日志 ——
+	// 🔴 组长 C1:「回不去」必须有可见表现。日志是一次性的,计数是可被持续观察的。
+	replyOriginRouted      uint64
+	replyOriginSkipped     uint64
+	replyOriginUnavailable uint64
+	terminalUnknown        map[string]uint64
+	workerHeartbeat        time.Time
 }
 
 type amrProcessor struct {
@@ -634,12 +639,14 @@ func (p *amrProcessor) logStatsLocked() {
 	active := uint64(len(p.turns))
 	topOK := p.stats.opened == active+p.stats.queued+p.stats.closed+p.stats.incomplete+p.stats.failed
 	closedOK := p.stats.closed == p.stats.closedNonCandidate+p.stats.closedCandidateRejected+p.stats.closedCandidateReady+p.stats.closedDispatched
-	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d top_invariant=%t closed_invariant=%t",
+	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d reply_origin_routed=%d reply_origin_skipped=%d reply_origin_unavailable=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d top_invariant=%t closed_invariant=%t",
 		p.stats.eventsObserved, p.stats.opened, active, p.stats.queued, p.stats.closed, p.stats.incomplete, p.stats.failed,
 		p.stats.closedNonCandidate, p.stats.closedCandidateRejected, p.stats.closedCandidateReady, p.stats.closedDispatched,
 		p.stats.fragmentAppend, p.stats.fragmentSnapshot, p.stats.fragmentDuplicate, p.stats.lateAfterTerminal, p.stats.legacyRouteDropped,
 		p.stats.targetsAttempted, p.stats.targetsDispatched, p.stats.targetsFailed, p.stats.queueUnderflow,
-		p.stats.notificationsSent, p.stats.notificationsSuppressed, p.stats.terminalUnknown, amrStructuredFailureMinVersion(), p.stats.eventsRejected,
+		p.stats.notificationsSent, p.stats.notificationsSuppressed,
+		p.stats.replyOriginRouted, p.stats.replyOriginSkipped, p.stats.replyOriginUnavailable,
+		p.stats.terminalUnknown, amrStructuredFailureMinVersion(), p.stats.eventsRejected,
 		topOK, closedOK)
 }
 
@@ -654,6 +661,17 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	p.mu.Unlock()
 
 	candidates, lookedLikeCandidate := parseAMRCandidatesDetailed(job.body, job.key.Session, p.maxTargets)
+	// 🔴 G2-b:渠道候选走渠道投递,不进 Agent 寻址(prepareSessionSelector 解不了它们)。
+	// 分流放在这里而不是更下面:下面每一步都假设 selector 是会话选择器。
+	if channels := filterChannelCandidates(candidates); len(channels) > 0 {
+		for _, candidate := range channels {
+			if err := p.deliverChannelCandidate(job, candidate); err != nil {
+				log.Printf("[channel] decision=failed session=%s channel=%s err=%v", job.key.Session, candidate.channel, err)
+			}
+		}
+		p.closeJob("dispatched")
+		return
+	}
 	if len(candidates) == 0 {
 		if lookedLikeCandidate {
 			p.closeJob("candidate_rejected")
@@ -662,6 +680,9 @@ func (p *amrProcessor) process(job amrRouteJob) {
 			}
 		} else {
 			p.closeJob("non_candidate")
+			// 🔴 回程段 2:本轮有输出、但正文里没有任何 @提及目标 ——
+			//    业主要的「其内容本身应该回给 A」正是这一支。实现见 reply_to_origin.go。
+			p.replyToOrigin(job)
 		}
 		return
 	}
@@ -883,6 +904,9 @@ func (p *amrProcessor) snapshotStats() (amrStats, int) {
 }
 
 type amrCandidate struct {
+	// channel/channelAddr 非空 = 这是一条【渠道投递】候选,不走 Agent 寻址(G2-a)。
+	channel     string
+	channelAddr string
 	selector    string
 	body        string
 	replyPolicy string
@@ -992,6 +1016,12 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 	if !strings.HasPrefix(text, "@") {
 		return nil, false
 	}
+	// 🔴 G2-a:渠道提及必须在这里就与 Agent 寻址分道。
+	// 放到后面去判会有两个后果:① 恰好存在同名成员时被静默投给 Agent;
+	// ② `@飞书`(无 #)会走下面的多目标 token 分支,被 amrTokenName 判为不合规而**整个跳过**。
+	if channel, addr, body, ok := parseChannelMention(text); ok && body != "" && len(body) <= amrRouteBodyMax {
+		return []amrCandidate{{channel: channel, channelAddr: addr, body: body, replyPolicy: "no_reply"}}, true
+	}
 	if owner, session, body, ok := parseMemberMention(text); ok && session != "" && body != "" && len(body) <= amrRouteBodyMax {
 		return []amrCandidate{{selector: "@" + owner + "#" + session, body: body, replyPolicy: "no_reply"}}, true
 	}
@@ -1075,4 +1105,15 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 func amrDerivedEnvelopeID(key amrTurnKey, index int, selector string) string {
 	sum := sha256.Sum256([]byte(key.KeyID + "\x00" + key.Session + "\x00" + key.DeliveryID + "\x00" + key.TurnID + "\x00" + strconv.Itoa(index) + "\x00" + selector))
 	return "amr-" + hex.EncodeToString(sum[:16])
+}
+
+// filterChannelCandidates 挑出渠道候选(channel 非空)。
+func filterChannelCandidates(candidates []amrCandidate) []amrCandidate {
+	out := make([]amrCandidate, 0, len(candidates))
+	for _, candidate := range candidates {
+		if candidate.channel != "" {
+			out = append(out, candidate)
+		}
+	}
+	return out
 }

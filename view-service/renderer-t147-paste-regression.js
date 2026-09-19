@@ -3,7 +3,20 @@
 // 0.2.0.6 把「只接 image/*、16 MiB、回填 dwfile: 引用」改成
 // 「任意类型、50 MiB、回填契约 §2 的绝对 https url」，本件随之改写。
 // 契约：tasks/v0.1-B 锚 d26bfd7002f70b7a9c9b5dcec6a1682ccbef974f §2 · §3.1 · 附录 A4
-const fs = require('fs'), assert = require('assert');
+const fs = require('fs'), rawAssert = require('assert');
+// 🔴 断言计数器 —— 用来分辨「跑过」与「验过」。
+//    起因(2026-09-19):⑥ 因替身缺 prepend 在**进入断言之前**就抛错,
+//    那条用例于是「存在、看起来在跑、实际什么都没验」。这与判据 9 同族:用例在但不起作用。
+//    ⇒ 一条用例跑完却一次断言都没执行 ⇒ 判红,而不是判绿。
+let assertCount = 0;
+const assert = new Proxy(rawAssert, {
+  apply(target, thisArg, args) { assertCount += 1; return Reflect.apply(target, thisArg, args); },
+  get(target, prop, recv) {
+    const v = Reflect.get(target, prop, recv);
+    if (typeof v === 'function') return (...args) => { assertCount += 1; return v.apply(target, args); };
+    return v;
+  },
+});
 const src = fs.readFileSync('renderer-canary-sse.html', 'utf8');
 const start = src.indexOf('    function appendInputReference');
 const end = src.indexOf("    humanInput.addEventListener('input'", start);
@@ -26,16 +39,79 @@ function input(value = '已有文字') {
     dispatchEvent() {},
   };
 }
+// 产品把上传 POST 从 fetch 换成了 XMLHttpRequest —— 因为 fetch 不上报上传进度，
+// 而业主 2026-09-18 验收第 1 条要的正是「已传/总字节」。
+// ⇒ 替身也必须跟上：fetch 只服务票据请求，上传走 fakeXHR。
+// 🔴 替身不跟着产品走，测的就是上一版产品（与今天 ④h 那场误诊同源）。
+function fakeXHRFactory(onSend) {
+  return class FakeXHR {
+    constructor() {
+      this.upload = { _h: {}, addEventListener(t, f) { this._h[t] = f; } };
+      this._h = {};
+      this.headers = {};
+    }
+    open(method, url) { this.method = method; this.url = url; }
+    setRequestHeader(k, v) { this.headers[k] = v; }
+    addEventListener(t, f) { this._h[t] = f; }
+    send(body) {
+      const res = onSend({ url: this.url, headers: this.headers, body });
+      if (res.networkError) { setTimeout(() => this._h.error && this._h.error(), 0); return; }
+      if (this.upload._h.progress) {
+        this.upload._h.progress({ lengthComputable: true, loaded: body.size || 0, total: body.size || 0 });
+      }
+      if (this.upload._h.load) this.upload._h.load();
+      this.status = res.status;
+      this.responseText = typeof res.body === 'string' ? res.body : JSON.stringify(res.body);
+      setTimeout(() => this._h.load && this._h.load(), 0);
+    }
+  };
+}
+
+// document / uploadQueue 的最小替身：只为 newUploadRow 能跑起来。
+function fakeDom() {
+  const make = () => ({
+    className: '', style: {}, textContent: '', children: [], hidden: true,
+    dataset: {}, title: '', src: '', alt: '', loading: '',
+    addEventListener() {}, replaceWith() {},
+    // 产品的 done() 现在会查草稿块是否已出现（完成行随之立即移除），替身要能被查
+    querySelector() { return null; },
+    classList: { add() {}, remove() {}, toggle() {} },
+    append(...xs) { this.children.push(...xs); },
+    // R6 的批次行插在队列最前(单文件行会一个个消失,批次行不能跟着跳位置)。
+    // 🔴 这个方法 2026-09-19 缺过一次:产品用了 prepend,替身没跟上 ⇒ ⑥ 在进断言前就挂。
+    prepend(...xs) { this.children.unshift(...xs); },
+    appendChild(x) { this.children.push(x); return x; },
+    remove() {},
+  });
+  return { createElement: make, queue: make() };
+}
+
 function load(humanInput, fetch, opts = {}) {
   const errors = [];
+  const dom = fakeDom();
   const fn = new Function(
     'humanInput', 'fetch', 'stats', 'Event', 'FILE_MAX_UPLOAD_BYTES',
     'formatFileBytes', 'uploadedFileHints', 'handleIncomingEvent',
+    'XMLHttpRequest', 'document', 'uploadQueue', 'setTimeout',
+    // 抽取范围里现在也含 renderDraftAttachments(业主验收第 2 条),它引用这几个符号 ——
+    // 一并注入,让被测的仍是**产品那一份实现**,而不是替换成空函数糊过去。
+    'FILE_URL_RE', 'trimUrlTail', 'isOwnFileUrl', 'draftAttachments', 'fileNameFromUrl', 'draftIconFor',
+    // CSS.escape 只在浏览器里有；产品用它拼选择器查草稿块
+    'CSS',
     `${block}; return {uploadOneFile, uploadFiles};`,
   );
   const api = fn(
     humanInput, fetch, { sessionName: 'agent-a', readonly: Boolean(opts.readonly) }, class Event {},
     LIMIT, (n) => `${n} B`, new Map(), (ev) => errors.push(ev),
+    fakeXHRFactory(opts.onUpload || (() => ({ status: 503, body: {} }))),
+    dom, dom.queue, setTimeout,
+    /https?:\/\/[^\s<>"'`）】]+/gu,
+    (raw) => String(raw).replace(/[.,;:!?，。；：！？、)\]}」』>]+$/u, ''),
+    (raw) => /^https:\/\/[^/]+\/f\//u.test(String(raw)),
+    dom.queue,
+    (u) => String(u).split('/').pop(),
+    () => '📄',
+    { escape: (v) => String(v) },
   );
   return { ...api, errors };
 }
@@ -45,76 +121,132 @@ const file = (over = {}) => ({ type: 'application/pdf', size: 601, name: 'a.pdf'
 
 let pass = 0, fail = 0;
 async function t(name, fn) {
-  try { await fn(); console.log('  ✅', name); pass++; }
-  catch (e) { console.log('  🔴', name, '->', e.message); fail++; }
+  const before = assertCount;
+  try {
+    await fn();
+    if (assertCount === before) {
+      console.log('  🔴', name, '-> 该用例跑完但**一次断言都没执行**（跑过 ≠ 验过）');
+      fail++;
+      return;
+    }
+    console.log('  ✅', name, `(${assertCount - before} 条断言)`);
+    pass++;
+  } catch (e) { console.log('  🔴', name, '->', e.message); fail++; }
 }
+
+// 票据端点统一替身：只回票据，不再承载上传响应（上传走 onUpload）。
+const ticketFetch = (override) => async () => response(true, { ...ticket, ...(override || {}) });
 
 (async () => {
   await t('① 🔴 任意类型都可上传（原实现只接 image/*），回填 §2 的 url 而不是 dwfile 引用', async () => {
     for (const f of [file(), file({ type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', name: 'a.docx' }),
                      file({ type: '', name: 'a.unknown' }), file({ type: 'video/mp4', name: 'a.mp4' })]) {
       const box = input('原文');
-      const calls = [];
-      const fetch = async (url, init) => {
-        calls.push({ url, init });
-        return calls.length === 1 ? response(true, ticket)
-          : response(true, { url: 'https://dw2.cmjrt.com:56443/f/o/s/26/0918/abc.pdf', name: f.name, size: f.size, media_type: f.type }, 201);
-      };
-      await load(box, fetch).uploadOneFile(f);
+      let seen = null;
+      const api = load(box, ticketFetch(), {
+        onUpload: (req) => { seen = req; return { status: 201, body: { url: 'https://dw2.cmjrt.com:56443/f/o/s/26/0918/abc.pdf', name: f.name, size: f.size, media_type: f.type } }; },
+      });
+      await api.uploadOneFile(f);
       assert.strictEqual(box.value, `原文 https://dw2.cmjrt.com:56443/f/o/s/26/0918/abc.pdf (${f.name}, ${f.size} bytes)`);
       // 浏览器给不出类型时按二进制传，不猜、也不拒
-      assert.strictEqual(calls[1].init.headers['Content-Type'], f.type || 'application/octet-stream');
+      assert.strictEqual(seen.headers['Content-Type'], f.type || 'application/octet-stream');
+      assert.strictEqual(seen.headers['X-DingWei-Session'], 'agent-a');
     }
+  });
+
+  // 🔴 P0 A-E2：头值必须全 ASCII —— 这条断言直接盯根因。
+  //    HTTP header 受 ISO-8859-1 限制，中文/emoji 会让浏览器在 setRequestHeader 阶段抛异常，
+  //    上传请求**根本发不出去**（业主 2026-09-18 撞上）。
+  //    🔴 为什么此前 21/21 全绿还漏了：夹具文件名全是 ASCII ——
+  //       **用 ASCII 名测文件名编码，测多少遍都测不出来。**
+  await t('⑨ P0：中文/emoji/空格括号文件名 ⇒ X-File-Name 必须是 UTF-8\'\' 编码且全 ASCII', async () => {
+    const names = ['季度报告（终版）.pdf', '📎 emoji 名.png', 'marketing v2 (1).docx', '50%off.pdf'];
+    for (const name of names) {
+      const box = input('');
+      let seen = null;
+      const api = load(box, ticketFetch(), {
+        onUpload: (req) => { seen = req; return { status: 201, body: { url: 'https://h/f/o/s/26/0918/x.bin', name, size: 4 } }; },
+      });
+      await api.uploadOneFile(file({ name, size: 4 }));
+      const hv = seen.headers['X-File-Name'];
+      // A-E2：全 ASCII 可打印，否则浏览器会抛 ByteString 异常
+      assert.ok(/^[\x20-\x7e]*$/.test(hv), `头值必须全 ASCII，实测 ${JSON.stringify(hv)}（名: ${name}）`);
+      // 协议：UTF-8'' 前缀 ＋ percent-encoded，且能还原回原名
+      assert.ok(hv.startsWith("UTF-8''"), `缺协议前缀: ${JSON.stringify(hv)}`);
+      assert.strictEqual(decodeURIComponent(hv.slice(7)), name, `解码后应还原原名: ${JSON.stringify(hv)}`);
+    }
+  });
+
+  // B 侧要按 `%` 区分「编码过」与「本来就含 %」—— A 侧的职责是**总是编码**，
+  // 这样 50%off.pdf 会被编成 50%25off.pdf，B 侧解码后仍是 50%off.pdf。
+  await t('⑩ P0：名字里本来就含 % 的文件，编码后解码必须还原（不得变成乱码）', async () => {
+    const box = input('');
+    let seen = null;
+    const api = load(box, ticketFetch(), {
+      onUpload: (req) => { seen = req; return { status: 201, body: { url: 'https://h/f/o/s/26/0918/x.bin', name: '50%off.pdf', size: 4 } }; },
+    });
+    await api.uploadOneFile(file({ name: '50%off.pdf', size: 4 }));
+    const hv = seen.headers['X-File-Name'];
+    assert.ok(hv.includes('50%25off'), `% 必须被转义成 %25，实测 ${JSON.stringify(hv)}`);
+    assert.strictEqual(decodeURIComponent(hv.slice(7)), '50%off.pdf');
   });
 
   await t(`② 上限取自源码常量 ${LIMIT}（= 50 MiB），超限在发请求前拒绝且不改文字`, async () => {
     assert.strictEqual(LIMIT, 52428800, '附录 A4：50 MiB = 50<<20，不是 50×1000²');
-    const box = input('保留'); let calls = 0;
+    const box = input('保留');
+    let calls = 0;
     await assert.rejects(load(box, async () => { calls++; }).uploadOneFile(file({ size: LIMIT + 1 })));
     assert.strictEqual(calls, 0, '超限不得发起任何请求');
     assert.strictEqual(box.value, '保留');
     // 边界另一侧：正好等于上限必须放行
     const ok = input('');
-    let n = 0;
-    const fetch = async () => { n++; return n === 1 ? response(true, ticket) : response(true, { url: 'https://h/f/x.bin', name: 'x', size: LIMIT }, 201); };
-    await load(ok, fetch).uploadOneFile(file({ size: LIMIT }));
-    assert.strictEqual(n, 2, '正好 50 MiB 必须允许');
+    let uploads = 0;
+    await load(ok, ticketFetch(), {
+      onUpload: () => { uploads++; return { status: 201, body: { url: 'https://h/f/x.bin', name: 'x', size: LIMIT } }; },
+    }).uploadOneFile(file({ size: LIMIT }));
+    assert.strictEqual(uploads, 1, '正好 50 MiB 必须允许');
   });
 
   await t('③ 上传失败不改输入框，且把服务端 {"error"} 的可读原因带出来', async () => {
     const box = input('不可丢');
-    const fetch = async (url) => (String(url).includes('ticket') ? response(true, ticket) : response(false, { error: '票据无效' }, 401));
-    await assert.rejects(load(box, fetch).uploadOneFile(file()), /票据无效/);
+    const api = load(box, ticketFetch(), { onUpload: () => ({ status: 401, body: { error: '票据无效' } }) });
+    await assert.rejects(api.uploadOneFile(file()), /票据无效/);
     assert.strictEqual(box.value, '不可丢');
   });
 
   await t('④ 响应只给旧的 file_ref、没有 §2 要求的 url ⇒ 拒绝（不得回落旧字段）', async () => {
     const box = input('原文');
-    const fetch = async (url) => (String(url).includes('ticket') ? response(true, ticket)
-      : response(true, { file_ref: 'dwfile:0123456789abcdef0123456789abcdef', name: 'a.pdf', size: 601 }, 201));
-    await assert.rejects(load(box, fetch).uploadOneFile(file()), /url/);
+    const api = load(box, ticketFetch(), {
+      onUpload: () => ({ status: 201, body: { file_ref: 'dwfile:0123456789abcdef0123456789abcdef', name: 'a.pdf', size: 601 } }),
+    });
+    await assert.rejects(api.uploadOneFile(file()), /url/);
     assert.strictEqual(box.value, '原文');
   });
 
   await t('⑤ 上传票据的 session 不属于当前 Agent 时拒绝且不改文字', async () => {
-    const box = input('不可串席'); let calls = 0;
-    const fetch = async () => { calls++; return response(true, { ...ticket, session: 'other-agent' }); };
-    await assert.rejects(load(box, fetch).uploadOneFile(file()));
-    assert.strictEqual(calls, 1, '错 session 票据不得继续上传');
+    const box = input('不可串席');
+    let uploads = 0;
+    const api = load(box, ticketFetch({ session: 'other-agent' }), { onUpload: () => { uploads++; return { status: 201, body: {} }; } });
+    await assert.rejects(api.uploadOneFile(file()));
+    assert.strictEqual(uploads, 0, '错 session 票据不得继续上传');
     assert.strictEqual(box.value, '不可串席');
   });
 
   await t('⑥ 多文件：中间一个失败，其余仍要传完（不因一个坏文件整批中断）', async () => {
     const box = input('');
     let seq = 0;
-    const fetch = async (url) => {
-      if (String(url).includes('ticket')) return response(true, ticket);
-      seq += 1;
-      if (seq === 2) return response(false, { error: '第二个坏了' }, 503);
-      return response(true, { url: `https://h/f/o/s/26/0918/n${seq}.pdf`, name: `n${seq}.pdf`, size: 10 }, 201);
-    };
-    const api = load(box, fetch);
+    const api = load(box, ticketFetch(), {
+      onUpload: () => {
+        seq += 1;
+        if (seq === 2) return { status: 503, body: { error: '第二个坏了' } };
+        return { status: 201, body: { url: `https://h/f/o/s/26/0918/n${seq}.pdf`, name: `n${seq}.pdf`, size: 10 } };
+      },
+    });
     await api.uploadFiles([file({ name: 'n1.pdf' }), file({ name: 'n2.pdf' }), file({ name: 'n3.pdf' })]);
+    // 🔴 正向证据:三个文件都真的被尝试过。
+    //    没有这一行时,「替身在更早的地方挂掉」与「行为正确」在报告里不一定分得开 ——
+    //    2026-09-19 就是这么挂的(替身缺 prepend,本用例在进入下面三条断言之前抛错)。
+    assert.strictEqual(seq, 3, `三个文件都必须被尝试上传,实测只尝试了 ${seq} 个`);
     assert.strictEqual((box.value.match(/https:\/\/h\/f\//g) || []).length, 2, '成功的两个都要回填');
     assert.strictEqual(api.errors.length, 1, '失败的那个要报一次错');
     assert.ok(api.errors[0].text.includes('第二个坏了'), '错误文案要带服务端可读原因');
@@ -129,6 +261,31 @@ async function t(name, fn) {
     let calls = 0;
     await assert.rejects(load(input(), async () => { calls++; }).uploadOneFile(file({ size: 0 })));
     assert.strictEqual(calls, 0);
+  });
+
+  // 🔴 业主 2026-09-18 验收第 1 条的单元级守卫：上传各阶段必须把状态报出去。
+  await t('⑧ 上传全程必须有进度回调：票据等待 → 字节进度 → 完成', async () => {
+    const box = input('');
+    const seenStates = [];
+    const row = {
+      waiting: (t2) => seenStates.push(`waiting:${t2}`),
+      progress: (l, t2) => seenStates.push(`progress:${l}/${t2}`),
+      done: (sz) => seenStates.push(`done:${sz}`),
+      failed: (r) => seenStates.push(`failed:${r}`),
+    };
+    const api = load(box, ticketFetch(), {
+      onUpload: () => ({ status: 201, body: { url: 'https://h/f/o/s/26/0918/p.pdf', name: 'p.pdf', size: 601 } }),
+    });
+    await api.uploadOneFile(file(), row);
+    assert.ok(seenStates.some((x) => x.startsWith('waiting:')), `缺票据阶段反馈: ${seenStates}`);
+    // 🔴 产品在开跑前会先写一次 progress(0, size) 作为初始值 —— 那一条**不算**字节进度。
+    //    必须出现 loaded>0 的那一次,它只可能来自 xhr.upload 的 progress 监听器。
+    //    去掉那个监听器 ⇒ 本断言红(浏览器级验不到:同机 mock 一个 chunk 就发完)。
+    assert.ok(seenStates.some((x) => /^progress:([1-9]\d*)\//.test(x)),
+      `缺真实字节进度(只有初始 0 不算): ${seenStates}`);
+    assert.ok(seenStates.some((x) => x.startsWith('done:')), `缺完成反馈: ${seenStates}`);
+    assert.ok(seenStates.indexOf('done:601') > seenStates.findIndex((x) => x.startsWith('progress:')),
+      `顺序不对（完成应在进度之后）: ${seenStates}`);
   });
 
   console.log(`\n通过 ${pass} / 失败 ${fail}`);

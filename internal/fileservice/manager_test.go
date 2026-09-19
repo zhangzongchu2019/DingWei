@@ -6,12 +6,98 @@ import (
 	"database/sql"
 	"errors"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 )
+
+func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
+	tests := []struct{ fixture, media, wantMedia, wantExt string }{
+		{"sample-quicktime.mov", "video/quicktime", "video/quicktime", "mov"},
+		{"sample-audio.oga", "audio/ogg", "audio/ogg", "oga"},
+		{"sample-audio.wav", "audio/vnd.wave", "audio/vnd.wave", "wav"},
+		{"sample-audio.mp3", "audio/mpeg", "audio/mpeg", "mp3"},
+		{"sample-audio.m4a", "audio/mp4", "audio/mp4", "m4a"},
+		{"sample-audio.flac", "audio/flac", "audio/flac", "flac"},
+		{"sample-audio.aac", "audio/aac", "audio/aac", "aac"},
+		{"sample-audio.opus", "audio/opus", "audio/opus", "opus"},
+		{"sample-markdown.md", "text/markdown", "text/plain", "md"},
+		{"sample-python.py", "text/x-python", "text/plain", "py"},
+		{"sample-json.json", "application/json", "text/plain", "json"},
+		{"sample-unknown-text.foo", "text/x-unmapped", "text/x-unmapped", "txt"},
+		{"sample-config.yml", "application/yaml", "text/plain", "yml"},
+		{"sample-config.yaml", "application/yaml", "text/plain", "yaml"},
+		{"sample-config.toml", "application/toml", "text/plain", "toml"},
+		{"sample-query.sql", "application/sql", "text/plain", "sql"},
+		{"sample-script.sh", "application/x-shellscript", "text/plain", "sh"},
+		{"sample-empty-mime.ini", "", "text/plain", "ini"},
+		{"evil.php", "text/plain", "application/octet-stream", "bin"},
+		{"sample-dangerous.html", "text/html", "application/octet-stream", "bin"},
+		{"sample-dangerous.xml", "text/xml", "application/octet-stream", "bin"},
+		{"sample-active.svg", "image/svg+xml", "application/octet-stream", "bin"},
+		{"sample-office.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/octet-stream", "docx"},
+		{"sample-office.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/octet-stream", "xlsx"},
+		{"sample-office.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/octet-stream", "pptx"},
+		{"sample-archive.zip", "application/zip", "application/octet-stream", "zip"},
+		{"sample-unknown.dat", "application/x-dingwei-unknown", "application/octet-stream", "bin"},
+	}
+	for _, tt := range tests {
+		body, err := os.ReadFile(filepath.Join("../../view-service/fixtures-0206", tt.fixture))
+		if err != nil {
+			t.Fatal(err)
+		}
+		m, _, _ := testManager(t, 1<<20)
+		m.MaxFileBytes = 1 << 20
+		f, err := m.Put(context.Background(), Upload{OwnerKey: "owner", SessionName: "session", OriginalName: tt.fixture, MediaType: tt.media, ContentLength: int64(len(body)), Body: bytes.NewReader(body)})
+		if err != nil {
+			t.Fatalf("fixture=%s: %v", tt.fixture, err)
+		}
+		if f.MediaType != tt.wantMedia || !strings.HasSuffix(f.ObjectKey, "."+tt.wantExt) {
+			t.Fatalf("fixture=%s media=%q key=%q", tt.fixture, f.MediaType, f.ObjectKey)
+		}
+	}
+	for media, ext := range map[string]string{"video/x-matroska": "mkv", "image/heic": "heic", "image/bmp": "bmp", "image/tiff": "tiff"} {
+		gotMedia, gotExt := normalizedMedia(media, "sample")
+		if gotMedia != media || gotExt != ext {
+			t.Fatalf("media=%q got=(%q,%q)", media, gotMedia, gotExt)
+		}
+	}
+	for _, media := range []string{"text/xml", "application/xhtml+xml", "application/xml"} {
+		gotMedia, gotExt := normalizedMedia(media, "sample")
+		if gotMedia != "application/octet-stream" || gotExt != "bin" {
+			t.Fatalf("dangerous media=%q got=(%q,%q)", media, gotMedia, gotExt)
+		}
+	}
+	if gotMedia, gotExt := normalizedMedia("text/csv", "sample.csv"); gotMedia != "text/plain" || gotExt != "csv" {
+		t.Fatalf("csv got=(%q,%q)", gotMedia, gotExt)
+	}
+	for media, ext := range map[string]string{"application/yaml": "yaml", "application/toml": "toml", "application/sql": "sql", "application/x-shellscript": "sh"} {
+		gotMedia, gotExt := normalizedMedia(media, "no-extension")
+		if gotMedia != media || gotExt != ext {
+			t.Fatalf("browser MIME fallback=%q got=(%q,%q)", media, gotMedia, gotExt)
+		}
+	}
+	for _, media := range []string{"audio/wav", "audio/x-wav", "audio/vnd.wave"} {
+		gotMedia, gotExt := normalizedMedia(media, "sample.wav")
+		if gotMedia != media || gotExt != "wav" {
+			t.Fatalf("wav alias=%q got=(%q,%q)", media, gotMedia, gotExt)
+		}
+	}
+	_, videoOGG := normalizedMedia("video/ogg", "sample.ogg")
+	_, audioOGG := normalizedMedia("audio/ogg", "sample.ogg")
+	if videoOGG != "ogv" || audioOGG != "oga" || videoOGG == audioOGG {
+		t.Fatalf("ogg mapping video=%q audio=%q", videoOGG, audioOGG)
+	}
+	for _, name := range []string{"evil.html", "evil.xml", "evil.svg"} {
+		gotMedia, gotExt := normalizedMedia("text/plain", name)
+		if gotMedia != "application/octet-stream" || gotExt != "bin" {
+			t.Fatalf("dangerous name=%q got=(%q,%q)", name, gotMedia, gotExt)
+		}
+	}
+}
 
 type memoryObjects struct {
 	mu         sync.Mutex

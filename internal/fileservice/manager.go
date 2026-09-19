@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -23,11 +24,64 @@ var (
 
 var identitySegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 
-func normalizedMedia(mediaType string) (string, string) {
+func normalizedMedia(mediaType, originalName string) (string, string) {
 	base := strings.ToLower(strings.TrimSpace(strings.SplitN(mediaType, ";", 2)[0]))
-	exts := map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif", "video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "application/pdf": "pdf", "text/plain": "txt"}
+	nameExt := strings.TrimPrefix(strings.ToLower(path.Ext(safeName(originalName))), ".")
+	dangerousInlineTypes := map[string]bool{
+		"text/html": true, "text/xml": true, "application/xhtml+xml": true, "application/xml": true, "image/svg+xml": true,
+	}
+	if dangerousInlineTypes[base] {
+		return "application/octet-stream", "bin"
+	}
+	dangerousNameExts := map[string]bool{"php": true, "html": true, "htm": true, "xhtml": true, "xml": true, "svg": true, "svgz": true}
+	if dangerousNameExts[nameExt] {
+		return "application/octet-stream", "bin"
+	}
+	downloadExts := map[string]string{
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document":   "docx",
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         "xlsx",
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+		"application/msword": "doc", "application/vnd.ms-excel": "xls", "application/vnd.ms-powerpoint": "ppt",
+		"application/zip": "zip", "application/x-zip-compressed": "zip",
+	}
+	if ext, ok := downloadExts[base]; ok {
+		return "application/octet-stream", ext
+	}
+	filenameTextExts := map[string]string{
+		"txt": "txt", "md": "md", "csv": "csv", "json": "json", "log": "log", "py": "py", "js": "js", "go": "go",
+		"java": "java", "yaml": "yaml", "yml": "yml", "toml": "toml", "ini": "ini", "sh": "sh", "sql": "sql",
+	}
+	if ext, ok := filenameTextExts[nameExt]; ok {
+		return "text/plain", ext
+	}
+	inlineCandidate := strings.HasPrefix(base, "image/") || strings.HasPrefix(base, "video/") || strings.HasPrefix(base, "audio/") || strings.HasPrefix(base, "text/") || base == "application/pdf" || base == "application/json"
+	exts := map[string]string{
+		"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif",
+		"image/heic": "heic", "image/bmp": "bmp", "image/tiff": "tiff",
+		"video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "video/quicktime": "mov", "video/x-matroska": "mkv",
+		"audio/ogg": "oga", "audio/wav": "wav", "audio/x-wav": "wav", "audio/vnd.wave": "wav",
+		"application/pdf": "pdf", "application/json": "json",
+		"text/plain": "txt", "text/markdown": "md", "text/csv": "csv", "text/x-python": "py", "text/javascript": "js",
+		"text/x-go": "go", "text/x-java-source": "java", "application/yaml": "yaml", "application/toml": "toml",
+		"text/x-ini": "ini", "text/x-log": "log", "application/sql": "sql", "application/x-shellscript": "sh",
+	}
 	if ext, ok := exts[base]; ok {
 		return base, ext
+	}
+	if inlineCandidate {
+		if strings.HasPrefix(base, "text/") {
+			return base, "txt"
+		}
+	}
+	filenameAudioExts := map[string]string{
+		"mp3": "mp3", "m4a": "m4a", "flac": "flac", "aac": "aac", "opus": "opus", "ogg": "oga", "wav": "wav",
+	}
+	filenameAudioTypes := map[string]string{
+		"mp3": "audio/mpeg", "m4a": "audio/mp4", "flac": "audio/flac", "aac": "audio/aac", "opus": "audio/opus",
+		"ogg": "audio/ogg", "wav": "audio/wav",
+	}
+	if objectExt, ok := filenameAudioExts[nameExt]; ok {
+		return filenameAudioTypes[nameExt], objectExt
 	}
 	return "application/octet-stream", "bin"
 }
@@ -73,7 +127,7 @@ func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
 		return File{}, err
 	}
 	now := m.Clock.Now().UTC()
-	mediaType, ext := normalizedMedia(in.MediaType)
+	mediaType, ext := normalizedMedia(in.MediaType, in.OriginalName)
 	key := fmt.Sprintf("%s/%s/%02d/%02d%02d/%s.%s", in.OwnerKey, in.SessionName, now.Year()%100, int(now.Month()), now.Day(), id, ext)
 	h := sha256.New()
 	limited := &io.LimitedReader{R: in.Body, N: m.MaxFileBytes + 1}
@@ -218,6 +272,7 @@ func randomID() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 func safeName(s string) string {
+	s = path.Base(strings.ReplaceAll(s, `\`, "/"))
 	s = strings.Map(func(r rune) rune {
 		if r < ' ' || r == 0x7f {
 			return -1
@@ -225,7 +280,7 @@ func safeName(s string) string {
 		return r
 	}, s)
 	s = strings.TrimSpace(s)
-	if s == "" {
+	if s == "" || s == "." || s == ".." || s == "/" {
 		return "download"
 	}
 	return s

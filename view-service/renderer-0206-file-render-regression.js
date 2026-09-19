@@ -78,7 +78,10 @@ async function t(name, fn) {
 (async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
   ensureGeneratedFixtures();
-  const browser = await chromium.launch({ headless: true });
+  // 🔵 PW_CHANNEL=chrome ⇒ 用系统真 Chrome（含 H.264/AAC 与 PDFium）；留空则仍用 playwright 自带 chromium
+  const launchOpts = { headless: true };
+  if (process.env.PW_CHANNEL) launchOpts.channel = process.env.PW_CHANNEL;
+  const browser = await chromium.launch(launchOpts);
   const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   const uploadCalls = [];
@@ -339,8 +342,49 @@ async function t(name, fn) {
     await page.unroute('**/f/**');
   });
 
+  // ── ④i 判据 9 的自用：**只测第二道闸** ────────────────────────────
+  //
+  // 🔴 起因是我自己量出来的：删掉 kindFromExt 里那句 FILE_EXT_NEVER_INLINE 判断，
+  //    整套 26 条**零转红**（实测 N2）。原因是两道机制互为冗余：
+  //      第一道 kindFromMediaType('image/svg+xml') → 'download'
+  //      第二道 kindFromExt 的 FILE_EXT_NEVER_INLINE
+  //      而即使两道都删，`FILE_EXT_KIND['svg']` 本来就 undefined ⇒ 默认仍落 'download'
+  //    ⇒ **默认兜底把第二道闸盖住了，它看起来可以删** —— 这正是判据 9 说的形状。
+  //
+  // 本条的做法：把兜底**挪开**，让第二道闸成为唯一决定者 ——
+  // 运行时给 FILE_EXT_KIND 注入 svg:'image'，此时若无 deny-set，.svg 就会进 <img>。
+  // 🔴 注入的是**测试自己制造的、产品里被 ④h(a) 明令禁止的配置**：
+  //    ④h(a) 保证产品里不会出现它，本条保证**万一出现时第二道闸仍然拦得住**。
+  //    两条合起来才是完整的：一条防配置漂移，一条防守卫被删。
+  await t('④i 判据 9:只测第二道闸——FILE_EXT_KIND 里混入 svg 时,deny-set 必须仍拦住', async () => {
+    const svgUrl = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/99998888777766665555444433332222.svg`;
+    await page.route('**/f/**', (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 405, body: '' })
+      : route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg"/>' })));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    try {
+      // 注入前先自证：注入真的生效了，否则本条会变成一条永远绿的空用例。
+      const injected = await page.evaluate(() => {
+        FILE_EXT_KIND.svg = 'image';
+        return FILE_EXT_KIND.svg;
+      });
+      assert.strictEqual(injected, 'image',
+        '注入失败 ⇒ 本条测不到第二道闸（页面作用域取不到 FILE_EXT_KIND 时会静默变成空用例）');
+      await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), svgUrl);
+      await page.waitForSelector('.attachment[data-dispatch="ext"]', { timeout: 20000 });
+      assert.strictEqual(await page.locator('.attachment img').count(), 0,
+        '🔴 FILE_EXT_KIND 混入 svg 后仍不得进 <img> —— 这一格只有 deny-set 拦得住');
+      assert.strictEqual(await page.locator('.attachment a.attachment-dl').count(), 1,
+        '仍应给下载链接');
+    } finally {
+      await page.evaluate(() => { delete FILE_EXT_KIND.svg; }).catch(() => {});
+      await page.unroute('**/f/**');
+    }
+  });
+
   // ── ④b mp4：本浏览器解不了该编码时也要有出路，绝不留裸 URL ─────
-  await t('④b mp4（本 chromium 无 h264 解码器）降级为下载链接，不报错、不留裸 URL', async () => {
+  await t('④b mp4：能解码则必须内联 <video>，不能解码则降级为下载链接（两种都不得留裸 URL）', async () => {
     const before = await page.locator('.attachment').count();
     await page.evaluate(() => { document.getElementById('humanInput').value = ''; });
     await page.setInputFiles('#filePicker', [fx('sample.mp4')]);
@@ -351,8 +395,746 @@ async function t(name, fn) {
     const last = page.locator('.attachment').last();
     const hasVideo = await last.locator('video').count();
     const hasLink = await last.locator('a.attachment-dl').count();
-    assert.ok(hasVideo + hasLink >= 1, 'mp4 必须要么内联要么给下载链接');
-    assert.ok(hasLink >= 1, '解不了码时必须有下载链接兜底');
+    // 🔴 先问浏览器【这一台】能不能解 H.264，再据此断言 —— 否则这条测试断言的是
+    //    「环境缺陷」而不是「产品行为」：内联时同样会附下载链接，`hasLink>=1` 两种情况都成立，
+    //    于是它从来没有真正验过「mp4 能显示」。
+    const canPlayH264 = await page.evaluate(() =>
+      document.createElement('video').canPlayType('video/mp4; codecs="avc1.42E01E"'));
+    assert.ok(hasLink >= 1, 'mp4 无论能否内联，都必须另给下载链接');
+    // 🔴 两支都必须【等】：产品无法在插入 <video> 之前知道这台浏览器能不能解码，
+    //    只能先插进去、由 media error 事件触发回退。同步断言测的是「谁跑得快」，不是产品行为。
+    //    实测（不可解码机）：t≈0ms video=1 readyState=0 → t≈200ms video=0 links=2，此后稳定。
+    if (canPlayH264 === 'probably' || canPlayH264 === 'maybe') {
+      // 能解码：等到真的拿到元数据，才算「内联成功」；只看元素在不算。
+      await last.locator('video').first().waitFor({ state: 'attached', timeout: 5000 });
+      const ok = await last.locator('video').first().evaluate((v) => new Promise((resolve) => {
+        if (v.readyState >= 1) return resolve({ readyState: v.readyState, w: v.videoWidth, h: v.videoHeight });
+        v.addEventListener('loadedmetadata', () => resolve({ readyState: v.readyState, w: v.videoWidth, h: v.videoHeight }), { once: true });
+        v.addEventListener('error', () => resolve({ readyState: v.readyState, err: v.error && v.error.code }), { once: true });
+        setTimeout(() => resolve({ readyState: v.readyState, timeout: true }), 5000);
+      }));
+      assert.ok(ok.readyState >= 1 && ok.w > 0,
+        `本浏览器可解 H.264（canPlayType=${canPlayH264}），mp4 必须真的内联，实测 ${JSON.stringify(ok)}`);
+    } else {
+      // 不可解码：等回退完成再断言 —— 断言的是「最终不留一个放不了的 <video>」，
+      // 不是「一插进来就没有」（后者产品做不到，见上）。
+      await last.locator('video').first().waitFor({ state: 'detached', timeout: 5000 });
+      assert.strictEqual(await last.locator('video').count(), 0,
+        `本浏览器不可解 H.264（canPlayType=${JSON.stringify(canPlayH264)}），回退后不得残留放不了的 <video>`);
+      // 🔴 恰好一条：error 分支只移除 <video>，不再 replaceWith 出第二条。
+      //    组长从我的证据截图里看出并排两个「⬇ 下载视频」——
+      //    业主那台真浏览器上，凡解不了码的视频都会撞上（他那个 HEVC 的 .mov 正是）。
+      assert.strictEqual(await last.locator('a.attachment-dl').count(), 1,
+        `解不了码时应恰好一条下载链接，实测 ${await last.locator('a.attachment-dl').count()} 条`);
+    }
+  });
+
+  // ── ⑨ 业主验收第 1 条:上传全程可见(不是静默 30 秒)────────────────
+  await t('⑨ 上传进行中界面可见:文件名 + 已传/总字节 + 进度在动,多文件逐个一行', async () => {
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    // 用 route 把上传卡住,才能观察「进行中」那一刻;不卡住就只能看到终态。
+    // 🔴 挂起必须放在 try/finally 里:若本用例中途断言失败,release 不执行 ⇒
+    //    后面每一个用到上传的用例都会被这把锁拖死(实测变异 V2 时 1 条真红 + 5 条级联)。
+    //    「一个用例的失败污染后续用例」会让变异结果读不出来 —— 红得太多和没红一样该查。
+    let release = () => {};
+    let routed = false;
+    try {
+    const held = new Promise((r) => { release = r; });
+    await page.route('**/files/upload', async (route) => { await held; await route.continue(); });
+    routed = true;
+    const picking = page.setInputFiles('#filePicker', [fx('sample.webm'), fx('sample.pdf')]);
+    // 进行中:队列必须可见,且每个文件各一行
+    await page.waitForSelector('#uploadQueue .upload-row', { timeout: 20000 });
+    // 🔴 不能断言「两行同时在」：上传是**顺序**的，且完成行在草稿块出现后即移除（组长裁定）
+    //    ⇒ 任一瞬间通常只有一行。R1 要的是「每个文件都有过自己的一行」，那是**时间上的**性质。
+    //    所以这里改为全程采集行名，最后断言两个文件名都出现过。
+    await page.evaluate(() => {
+      window.__nameSeen = new Set();
+      const grab = () => document.querySelectorAll('#uploadQueue .upload-row .u-name')
+        .forEach((e) => window.__nameSeen.add(e.textContent || ''));
+      grab();
+      window.__nameTimer = setInterval(grab, 30);
+    });
+    // 🔴 从此刻起把每一行 meta 的**全部取值**记下来。
+    //    只看某一瞬间是不够的:去掉字节进度后,行会一直停在「等…」的不定态,
+    //    那正是业主抱怨的形态 ——「条在动,但看不出有没有进展」。
+    await page.evaluate(() => {
+      window.__metaSeen = new Set();
+      const grab = () => document.querySelectorAll('#uploadQueue .upload-row .u-meta')
+        .forEach((e) => window.__metaSeen.add(e.textContent || ''));
+      grab();
+      window.__metaTimer = setInterval(grab, 30);
+    });
+    const rows = await page.locator('#uploadQueue .upload-row').evaluateAll((els) => els.map((e) => ({
+      name: e.querySelector('.u-name')?.textContent || '',
+      meta: e.querySelector('.u-meta')?.textContent || '',
+      indeterminate: e.classList.contains('indeterminate'),
+    })));
+    assert.ok(rows.length >= 1, '进行中必须至少有一行可见');
+    for (const r of rows) {
+      assert.ok(r.meta.length > 0, `行状态不可读: ${JSON.stringify(r)}`);
+      assert.ok(r.name.length > 0, `行必须带文件名: ${JSON.stringify(r)}`);
+    }
+    await page.screenshot({ path: path.join(SHOTS, '04-upload-in-progress.png') });
+    release();
+    await picking;
+    await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 2, null, { timeout: 60000 });
+    const metaSeen = await page.evaluate(() => { clearInterval(window.__metaTimer); return [...window.__metaSeen]; });
+    const nameSeen = await page.evaluate(() => { clearInterval(window.__nameTimer); return [...window.__nameSeen]; });
+    // 每个文件都必须有过自己的一行 —— 不是只显示一个总数（组长 R1 明示）
+    for (const want of ['sample.webm', 'sample.pdf']) {
+      assert.ok(nameSeen.some((n) => n.includes(want)), `${want} 没有过自己的进度行: ${JSON.stringify(nameSeen)}`);
+    }
+    // 🔴 整个上传过程中,必须至少出现过一次**带字节数的进度**(形如「37% · 1.2 MiB / 3.4 MiB」)。
+    //    只有不定态文案不算:那与业主原话「没有任何提示,很容易认为是出问题了」是同一种体验。
+    // 🔴 这里只验「可见性」,不验「字节在涨」—— 边界写明白:
+    //    本机上传走的是同机 mock,54~62 KiB 一个 chunk 就发完,
+    //    xhr.upload 的 progress 实际观测不到中间值(实测 metaSeen 只有初始值与终态)。
+    //    ⇒ 「progress 回调是否真的接上」由**单元级** renderer-t147 的 ⑧ 盯着(fakeXHR 可控地发进度);
+    //      变异「去掉 progress 监听」在那一层红。**两级分工,各自写明覆盖的是哪一半。**
+    assert.ok(metaSeen.some((m) => /\/\s.+(B|KiB|MiB)/.test(m)),
+      `未出现带「已传/总」字节的状态,见到: ${JSON.stringify(metaSeen)}`);
+    // 组长裁定：完成态的行在草稿块出现后即移除 ⇒ 这里断言「都传完后队列清空」，
+    // 而不是断言「看得见已附加」——后者会把「完成行留在屏幕上」也算通过，正是要清掉的行为。
+    await page.waitForFunction(() => document.querySelectorAll('#uploadQueue .upload-row').length === 0,
+      null, { timeout: 15000 });
+    assert.strictEqual(await page.locator('#uploadQueue .upload-row').count(), 0, '完成后不得残留进度行');
+    // 而「已附加」这件事必须由草稿块表达（两处冗余是被裁掉的那一处）
+    assert.ok(await page.locator('#draftAttachments .draft-chip').count() >= 2,
+      '完成行清掉之后，草稿块必须接住「已附加」这件事');
+    } finally {
+      release();
+      if (routed) await page.unroute('**/files/upload').catch(() => {});
+    }
+  });
+
+  // ── ⑩ 业主验收第 2 条:草稿里的链接要有缩略图,且正文仍是直链 ────────
+  await t('⑩ 草稿附件块:图片出缩略图、非图片出图标;🔴 正文仍保留原样直链', async () => {
+    // 🔴 自备输入,不吃上一条用例留下的草稿 —— 否则针对 ⑨ 的变异会连带把本条打红,
+    //    而本条与进度行无关。用例间的状态耦合会让变异的爆炸半径读不出来。
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.setInputFiles('#filePicker', [fx('sample.png'), fx('sample.pdf')]);
+    await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 2, null, { timeout: 60000 });
+    const text = await page.inputValue('#humanInput');
+    await page.waitForSelector('#draftAttachments .draft-chip', { timeout: 20000 });
+    const chips = await page.locator('#draftAttachments .draft-chip').count();
+    assert.ok(chips >= 2, `每条直链一个附件块,实测 ${chips}`);
+    // 图片那条必须是真 <img> 且真的加载出来(有自然宽高),不是占位图标
+    await page.evaluate(() => { document.getElementById('humanInput').value = ''; document.getElementById('humanInput').dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.setInputFiles('#filePicker', [fx('sample.png')]);
+    await page.waitForFunction(() => /\/f\//.test(document.getElementById('humanInput').value), null, { timeout: 60000 });
+    await page.waitForSelector('#draftAttachments .draft-chip img', { timeout: 20000 });
+    const shot = await page.locator('#draftAttachments .draft-chip img').first().evaluate((im) => new Promise((resolve) => {
+      if (im.complete && im.naturalWidth) return resolve({ w: im.naturalWidth, h: im.naturalHeight });
+      im.addEventListener('load', () => resolve({ w: im.naturalWidth, h: im.naturalHeight }), { once: true });
+      im.addEventListener('error', () => resolve({ err: true }), { once: true });
+      setTimeout(() => resolve({ timeout: true }), 5000);
+    }));
+    assert.ok(shot.w > 0, `缩略图必须真的加载出来,实测 ${JSON.stringify(shot)}`);
+    // 🔴 正文仍必须是那条 https 直链 —— 接收侧靠扫 /f/ 分派,拿掉链接接收方就什么都渲染不出来
+    const draft = await page.inputValue('#humanInput');
+    assert.ok(/https:\/\/[^\s]+\/f\//.test(draft), `正文必须保留直链,实测 ${JSON.stringify(draft)}`);
+    // 🔴 不变式:附件块数 == 正文里的 /f/ 直链数。
+    //    附件块只是正文的投影;两者一旦不等,用户看到的就不是他将要发出去的东西。
+    //    实测过失同步的途径:有代码直接赋值 humanInput.value 而不派 input 事件。
+    const consistency = await page.evaluate(() => ({
+      chips: document.querySelectorAll('#draftAttachments .draft-chip').length,
+      links: new Set((document.getElementById('humanInput').value.match(/https?:\/\/[^\s<>"'`）】]+/gu) || [])
+        .map((u) => u.replace(/[.,;:!?，。；：！？、)\]}」』>]+$/u, ''))
+        .filter((u) => { try { const x = new URL(u, location.href); return x.origin === location.origin && x.pathname.startsWith('/f/'); } catch { return false; } })).size,
+    }));
+    // 🔴 R5-2 之后口径要跟着改:正文里会有**被隐藏**的链接。
+    //    这里数的是**输入框(textarea)**里的链接 —— textarea 的值不受 R5 隐藏影响,
+    //    隐藏只发生在**已发出消息的正文区**。两者是不同的地方,断言仍然成立且含义不变。
+    assert.strictEqual(consistency.chips, consistency.links,
+      `草稿附件块与输入框里的直链数不一致: ${JSON.stringify(consistency)} —— 视觉层与将要发出的正文脱节`);
+    await page.screenshot({ path: path.join(SHOTS, '05-draft-thumbnail.png') });
+    // 用户删掉文字 ⇒ 附件块随之消失(它只是正文的投影,不是独立状态)
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.waitForFunction(() => document.querySelectorAll('#draftAttachments .draft-chip').length === 0, null, { timeout: 10000 });
+  });
+
+  // ── ⑪ R4：下载存盘名必须是原名,不是 32 位 .bin(业主 2026-09-18 验收)────
+  await t('⑪ R4-V1/V2:本页上传的 docx,下载属性带原名(含空格与括号);V3:服务端不带 filename 时回退不编名', async () => {
+    // 自备输入:清空草稿,只上传本用例这一个文件,免得 .last() 取到别人留下的附件
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    // 业主那个文件名的形状:带空格、带括号
+    const trickyName = 'marketing-price-center-v2 (1).docx';
+    const src = fx('sample.docx');
+    const tmp = path.join(FIXTURES, trickyName);
+    fs.copyFileSync(src, tmp);
+    try {
+      await page.setInputFiles('#filePicker', [tmp]);
+      await page.waitForFunction(() => /\/f\//.test(document.getElementById('humanInput').value), null, { timeout: 60000 });
+      const draft = await page.inputValue('#humanInput');
+      await page.evaluate((body) => handleIncomingEvent({ kind: 'user_input', text: body, ts: Date.now() }), draft);
+      await page.waitForSelector('.attachments .attachment a.attachment-dl', { timeout: 20000 });
+      const dl = await page.locator('.attachments .attachment a.attachment-dl').last().evaluate((a) => ({
+        download: a.getAttribute('download'), href: a.getAttribute('href'),
+      }));
+      // 🔴 V1/V2:存盘名必须是原名,且空格与括号原样保留
+      assert.strictEqual(dl.download, trickyName,
+        `下载存盘名必须是原名,实测 download=${JSON.stringify(dl.download)} href=${dl.href}`);
+      assert.ok(/\.bin$/.test(dl.href), '本例服务端落盘应为 .bin —— 正是「显示对、存下来错」的那一格');
+    } finally {
+      fs.rmSync(tmp, { force: true });
+    }
+  });
+
+  await t('⑪b R4-V3:接收侧服务端不带 Content-Disposition filename ⇒ 不报错、不编名(回退空 download)', async () => {
+    // 刷新清掉本页上传记录,使其只能走 HEAD —— 即接收方的处境
+    const carried = carriedUrls;
+    const binUrl = (carried.match(/https:\/\/[^\s(]+\.bin/u) || [])[0];
+    assert.ok(binUrl, '需要一个 .bin 直链');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    await page.evaluate(() => uploadedFileHints.clear());
+    await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), binUrl);
+    await page.waitForSelector('.attachments .attachment a.attachment-dl', { timeout: 20000 });
+    const dl = await page.locator('.attachments .attachment a.attachment-dl').last().getAttribute('download');
+    assert.strictEqual(dl, '', `服务端不带 filename 时必须回退空 download(不编名),实测 ${JSON.stringify(dl)}`);
+  });
+
+  // ── ⑫ R1 的另一半:失败也必须看得见,且带可读原因 ─────────────────
+  //     业主原话是「没有任何提示,很容易认为是出问题了」—— 真出问题时更不能没提示。
+  await t('⑫ 上传失败:该行标为失败并带服务端可读原因,且不清掉用户已输入的文字(R3)', async () => {
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = '用户写到一半的话'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.route('**/files/upload', (route) => route.fulfill({
+      status: 503, contentType: 'application/json', body: JSON.stringify({ error: '存储暂时不可用' }),
+    }));
+    try {
+      await page.setInputFiles('#filePicker', [fx('sample.pdf')]);
+      await page.waitForSelector('#uploadQueue .upload-row.failed', { timeout: 30000 });
+      const meta = await page.locator('#uploadQueue .upload-row.failed .u-meta').last().textContent();
+      assert.ok(/失败/.test(meta), `失败行要标明失败: ${JSON.stringify(meta)}`);
+      assert.ok(/存储暂时不可用/.test(meta), `失败行要带服务端可读原因: ${JSON.stringify(meta)}`);
+      // 🔴 R3：失败不得清掉用户已输入的文字
+      assert.strictEqual(await page.inputValue('#humanInput'), '用户写到一半的话', '上传失败不得动用户已输入的文字');
+      // 🔴 完成态的行会被清掉，**失败的行必须留着** —— 人要看得见哪个失败了（组长裁定）。
+      await page.waitForTimeout(3000);
+      assert.ok(await page.locator('#uploadQueue .upload-row.failed').count() >= 1,
+        '失败行不得被自动清掉：完成态清、失败态留，这是两条不同的规则');
+    } finally {
+      await page.unroute('**/files/upload').catch(() => {});
+      await page.evaluate(() => {
+        document.querySelectorAll('#uploadQueue .upload-row').forEach((e) => e.remove());
+        const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    }
+  });
+
+  // ── ⑬ 契约 cb8ac605 第④条:外-A 七种扩展名在**两条路径**上都必须落下载兜底 ────
+  //     组长判断「反向映射表不必新增条目,查不到即落 download」——
+  //     这条判断关系到业主的 docx,我实测一次而不是接受它。
+  await t('⑬ 外-A(docx/xlsx/pptx/doc/xls/ppt/zip)在 HEAD 与降级两条路径上都只给下载链接', async () => {
+    for (const mode of ['head', 'ext']) {
+      for (const ext of ['docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt', 'zip']) {
+        const url = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/0123456789abcdef0123456789abc${ext.length}f0.${ext}`;
+        await page.route(url, (route) => {
+          if (route.request().method() === 'HEAD') {
+            return mode === 'head'
+              ? route.fulfill({ status: 200, headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': 'attachment', 'Content-Length': '64' } })
+              : route.fulfill({ status: 405, body: '' });
+          }
+          return route.fulfill({ status: 200, contentType: 'application/octet-stream', body: 'x' });
+        });
+        try {
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+          await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), url);
+          await page.waitForSelector('.attachments .attachment', { timeout: 15000 });
+          const got = await page.evaluate(() => {
+            const a = document.querySelector('.attachments .attachment');
+            return { d: a.dataset.dispatch, inline: a.querySelectorAll('img,video,iframe,pre').length, links: a.querySelectorAll('a.attachment-dl').length };
+          });
+          assert.strictEqual(got.inline, 0, `${mode}/${ext} 不得内联，实测 ${JSON.stringify(got)}`);
+          assert.ok(got.links >= 1, `${mode}/${ext} 必须给下载链接，实测 ${JSON.stringify(got)}`);
+        } finally {
+          await page.unroute(url).catch(() => {});
+        }
+      }
+    }
+  });
+
+  // ── ⑬b attachment 头本身的守卫:可内联的类型 ＋ attachment ⇒ 仍须下载 ──────
+  //     🔴 这条是打 ⑬ 的变异时发现的缺口:外-A 的 Content-Type 本就是 octet-stream,
+  //     所以 ⑬ 走的是 kindFromMediaType 那一支,**disposition 那道守卫从未被用到**
+  //     (实测:把它整段去掉,⑬ 仍全绿)。能分辨它的只有「可内联类型 ＋ attachment」这一格。
+  await t('⑬b 服务端说 image/png 但带 Content-Disposition: attachment ⇒ 必须下载,不内联', async () => {
+    const url = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/0123456789abcdef0123456789abcdef.png`;
+    await page.route(url, (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 200, headers: { 'Content-Type': 'image/png', 'Content-Disposition': 'attachment', 'Content-Length': '64' } })
+      // 🔴 正文必须是**真 PNG**：用假字节的话，没有守卫时 <img> 也会因加载失败而自行降级，
+      //    于是这条断言在「守卫在」和「守卫没了」两种情况下都绿 —— 变异被自己的 PoC 掩盖。
+      //    （实测过：假字节时 X2 变异零转红。）
+      : route.fulfill({ status: 200, contentType: 'image/png', body: fs.readFileSync(fx('sample.png')) })));
+    try {
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+      await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), url);
+      await page.waitForSelector('.attachments .attachment', { timeout: 15000 });
+      const got = await page.evaluate(() => {
+        const a = document.querySelector('.attachments .attachment');
+        return { d: a.dataset.dispatch, img: a.querySelectorAll('img').length, links: a.querySelectorAll('a.attachment-dl').length };
+      });
+      assert.strictEqual(got.d, 'head', `应走 HEAD 支: ${JSON.stringify(got)}`);
+      assert.strictEqual(got.img, 0, `服务端说要当附件下,就不得内联: ${JSON.stringify(got)}`);
+      assert.ok(got.links >= 1, `必须给下载链接: ${JSON.stringify(got)}`);
+    } finally {
+      await page.unroute(url).catch(() => {});
+    }
+  });
+
+  // ── ⑭ P0 A-E1:中文 / emoji / 空格括号 文件名必须【能传上去】────────────
+  //     业主 2026-09-18 撞上:中文名 PDF 直接报 ISO-8859-1 异常,**请求根本没发出去**。
+  //     🔴 此前 21/21 全绿却漏了,因为夹具名全是 ASCII ——
+  //        用 ASCII 名测文件名编码,测多少遍都测不出来。
+  await t('⑭ P0:中文/emoji/空格括号/含%% 的文件名都能成功上传,且草稿块显示原名', async () => {
+    const names = ['季度报告（终版）.pdf', '📎emoji名.png', 'marketing v2 (1).docx', '50%off.pdf'];
+    // 🔴 先验夹具本身:「中文名」必须真的含 >0x7f 的码点。
+    //    用 ASCII 名(或被环境转义过的名)测文件名编码,测多少遍都测不出来 ——
+    //    那就是「素材落在被测维度的同一侧」。这里把它焊成断言,不靠肉眼看着像中文。
+    const nonAscii = names.filter((n) => [...n].some((c) => c.codePointAt(0) > 0x7f));
+    assert.ok(nonAscii.includes('季度报告（终版）.pdf'), '夹具「中文名」必须含 >0x7f 码点');
+    assert.ok(nonAscii.includes('📎emoji名.png'), '夹具「emoji 名」必须含 >0x7f 码点');
+    assert.strictEqual(nonAscii.length, 2,
+      `另外两个夹具是**按设计**的纯 ASCII(一个测空格与括号、一个测 %),不得也变成非 ASCII —— 否则「ASCII 路径没坏」这一半就没人测了,实测 ${JSON.stringify(nonAscii)}`);
+    const made = [];
+    try {
+      for (const n of names) {
+        const t2 = path.join(FIXTURES, n);
+        fs.copyFileSync(fx('sample.pdf'), t2);
+        made.push(t2);
+      }
+      await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+      const errs = [];
+      page.on('pageerror', (e) => errs.push(String(e)));
+      await page.setInputFiles('#filePicker', made);
+      // 🔴 关键:四个都要真的上传成功。编码没做时,setRequestHeader 抛异常 ⇒ 这里永远等不到。
+      await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 4,
+        null, { timeout: 60000 });
+      const draft = await page.inputValue('#humanInput');
+      for (const n of names) {
+        assert.ok(draft.includes(n), `输入框应回填原名 ${JSON.stringify(n)}，实测 ${JSON.stringify(draft.slice(0, 300))}`);
+      }
+      // 草稿块也必须显示原名(不是 %E5%AD%A3… 那种编码串)
+      const chipNames = await page.locator('#draftAttachments .draft-chip .d-name').allTextContents();
+      for (const n of names) {
+        assert.ok(chipNames.some((c) => c === n), `草稿块应显示原名 ${JSON.stringify(n)}，实测 ${JSON.stringify(chipNames)}`);
+      }
+      assert.deepStrictEqual(errs, [], `上传过程中不得有未捕获异常: ${JSON.stringify(errs)}`);
+    } finally {
+      for (const f2 of made) fs.rmSync(f2, { force: true });
+    }
+  });
+
+  // ── ⑮ R5:链接—内容交替排列(业主 09-18:「一个文件链接下一个文件展示」)──────
+  await t('⑮ R5-V1/V2/V3/V4:名(链接)→内容 交替;正文中已渲染的 URL 隐藏但仍在 DOM;过期链接保持可见', async () => {
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.setInputFiles('#filePicker', [fx('sample.png'), fx('sample.pdf'), fx('sample.webm')]);
+    await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 3, null, { timeout: 60000 });
+    const text = await page.inputValue('#humanInput');
+    // R5-V4 的阳性对照:一条 HEAD 404 的过期链接,必须**不被隐藏**
+    const gone = `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/deadbeefdeadbeefdeadbeefdeadbeef.png`;
+    await page.evaluate((body) => handleIncomingEvent({ kind: 'user_input', text: body, ts: Date.now() }), `${text} ${gone}`);
+    await page.waitForFunction(() => {
+      const card = [...document.querySelectorAll('.message-card')].pop();
+      return card && card.querySelectorAll('.attachments .attachment').length >= 4;
+    }, null, { timeout: 30000 });
+    await page.waitForFunction(() => {
+      const card = [...document.querySelectorAll('.message-card')].pop();
+      return card && card.querySelectorAll('.dw-link-rendered').length >= 3;
+    }, null, { timeout: 20000 });
+    const got = await page.evaluate(() => {
+      // 🔴 取**最后一张**卡:套件里前面的用例留下了若干张卡,
+      //    querySelector 取到的是最早那张 —— 探针里只有一张卡时看不出这个差别。
+      const card = [...document.querySelectorAll('.message-card')].pop();
+      const boxes = [...card.querySelectorAll('.attachments .attachment')];
+      return {
+        // R5-V1：每块内部都是 名 → 内容（head 在前，内容在后）；块与块顺序即交替顺序
+        alternating: boxes.map((a) => {
+          const head = a.firstElementChild;
+          const hasName = !!head?.querySelector('.attachment-name');
+          const after = [...a.children].slice(1).length;
+          return hasName && after > 0;
+        }),
+        // R5-V2：名是 <a> 且 href 等于该块的直链
+        links: boxes.map((a) => {
+          const el = a.querySelector('a.attachment-name');
+          return el ? el.getAttribute('href') === a.dataset.fileUrl : false;
+        }),
+        hidden: card.querySelectorAll('.dw-link-rendered').length,
+        // R5-V3：DOM 里 /f/ 直链总数仍是 4（3 条被隐藏 + 1 条过期可见）
+        totalInDom: (card.querySelector('.event-content').textContent.match(/\/f\//g) || []).length,
+        // R5-V4：过期那条在**可见文本**里仍看得到
+        goneVisible: card.querySelector('.event-content').innerText.includes('deadbeef'),
+        renderedOk: boxes.filter((a) => a.dataset.rendered === 'ok').length,
+      };
+    });
+    assert.ok(got.alternating.every(Boolean), `每块必须是「名在上、内容在下」: ${JSON.stringify(got.alternating)}`);
+    assert.ok(got.links.every(Boolean), `R5-V2：文件名必须是 <a> 且 href == 该块直链: ${JSON.stringify(got.links)}`);
+    assert.strictEqual(got.hidden, 3, `R5-V3：应恰好隐藏 3 条已渲染链接，实测 ${got.hidden}`);
+    assert.strictEqual(got.hidden, got.renderedOk, '被隐藏的条数必须等于成功渲染的块数');
+    assert.strictEqual(got.totalInDom, 4, `🔴 隐藏必须是视觉隐藏：DOM 中 /f/ 直链总数应仍为 4，实测 ${got.totalInDom}`);
+    assert.ok(got.goneVisible, 'R5-V4：HEAD 404 的过期链接必须在正文中保持可见（否则用户连复制都做不到）');
+    await page.screenshot({ path: path.join(SHOTS, '06-r5-alternating.png'), fullPage: true });
+  });
+
+  // ── ⑯ R6:批次级状态(业主 09-18 一次传 6 张图:「多文件传输时,没有提示,不知道是不是结束了」)──
+  //
+  // 🔴 这条盯的是**批次层**,不是单文件层。单文件层由 ⑨ 盯着,两条断言互不覆盖:
+  //    ⑨ 说「每个文件都有过自己的一行、完成后不残留」,⑯ 说「整批还剩多少、结束了没有」。
+  //    正因为是两层,产品里批次行用的是独立类名 .batch-row 而不是 .upload-row ——
+  //    若复用同一个类,⑨ 那句「完成后不得残留进度行」会被批次行连带打红/连带满足,
+  //    两层就再也分不开了。
+  await t('⑯ R6-V1/V2/V3/V4:批次行计数递增、全成功后消失、有失败时留住并说清数目、单文件不出批次行', async () => {
+    const six = ['sample.pdf', 'sample.png', 'sample-small.txt', 'sample.docx', 'sample.mp4', 'sample.webm'].map(fx);
+    // 🔴 淡出时长取自**产品源码里的常量**,不在测试里另写一个数字 ——
+    //    两处各写一个,产品改了测试不会红,这条判据就变成摆设。
+    const src = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
+    const lingerMs = Number((src.match(/BATCH_DONE_LINGER_MS\s*=\s*(\d+)/) || [])[1]);
+    assert.ok(Number.isFinite(lingerMs) && lingerMs > 0, '产品里必须有 BATCH_DONE_LINGER_MS 常量,本条判据靠它取时长');
+
+    const reset = () => page.evaluate(() => {
+      document.querySelectorAll('#uploadQueue .upload-row, #uploadQueue .batch-row').forEach((e) => e.remove());
+      const el = document.getElementById('humanInput');
+      el.value = '';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    // 🔴 全程采集批次行文案,用 MutationObserver 抓**每一次**取值,而不是定时采样。
+    //    理由(实测过才这么写):settle(第 6 个) 与 finish() 在同一个同步块里连着改文案,
+    //    任何间隔采样都可能整段错过 6/6 —— 而那恰好是 V1 要的终点值。
+    //    childList 记录里的 removedNodes 带着被顶掉的旧文本节点,6/6 就在里面。
+    const installProbe = () => page.evaluate(() => {
+      window.__batchSeen = [];
+      window.__batchEver = false;
+      const push = (v) => {
+        const t2 = (v || '').trim();
+        if (t2 && window.__batchSeen[window.__batchSeen.length - 1] !== t2) window.__batchSeen.push(t2);
+      };
+      const scan = () => {
+        if (document.querySelector('#uploadQueue .batch-row')) window.__batchEver = true;
+        const cur = document.querySelector('#uploadQueue .batch-row .b-meta');
+        if (cur) push(cur.textContent);
+      };
+      window.__batchObs = new MutationObserver((records) => {
+        for (const r of records) {
+          const tgt = r.target;
+          if (tgt && tgt.classList && tgt.classList.contains('b-meta')) {
+            for (const n of r.removedNodes) if (n.nodeType === 3) push(n.data);
+          }
+        }
+        scan();
+      });
+      window.__batchObs.observe(document.getElementById('uploadQueue'),
+        { childList: true, subtree: true, characterData: true });
+      scan();
+    });
+    const readProbe = () => page.evaluate(() => {
+      if (window.__batchObs) window.__batchObs.disconnect();
+      return { seen: window.__batchSeen || [], ever: !!window.__batchEver };
+    });
+
+    let routed = false;
+    try {
+      // ── R6-V1 / R6-V2：6 个文件全部成功 ────────────────────────────
+      await reset();
+      await installProbe();
+      await page.setInputFiles('#filePicker', six);
+      await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 6,
+        null, { timeout: 90000 });
+      await page.screenshot({ path: path.join(SHOTS, '07-r6-batch-done.png') });
+      const okRun = await readProbe();
+      assert.ok(okRun.ever, 'R6-V1：多文件上传必须出现过批次行');
+      // 🔴 沿时间断言,不断言某一瞬间:1/6 … 6/6 每一格都必须**出现过**。
+      //    (这正是上一轮自己更正过的那个维度问题:需求是「整批进度看得见」,是时间性质。)
+      for (let k = 1; k <= 6; k += 1) {
+        assert.ok(okRun.seen.some((m) => m.startsWith(`${k}/6 `)),
+          `R6-V1：批次计数 ${k}/6 没有出现过,实测采集到 ${JSON.stringify(okRun.seen)}`);
+      }
+      // 批次行必须同时给字节量,否则 36 MB 那一批仍然只能看个数字
+      assert.ok(okRun.seen.some((m) => /\/\s*\d/.test(m) && /(B|KiB|MiB)/.test(m)),
+        `R6-V1：批次行必须带「已传 / 总」字节,实测 ${JSON.stringify(okRun.seen)}`);
+      // R6-V2 上半：完成态出现过
+      assert.ok(okRun.seen.some((m) => /6 个文件已全部附加/.test(m)),
+        `R6-V2：全部成功后必须出现明确的完成态文案,实测 ${JSON.stringify(okRun.seen)}`);
+      // R6-V2 下半：之后必须消失(常驻就又回到裁定②要清的堆积)
+      // 🔴 等不到就直接超时的话,报告里只有「Timeout 16000ms」——看不出等的是什么、实测是什么。
+      //    自己接住,把当时的批次行状态原样打出来。
+      try {
+        await page.waitForFunction(() => document.querySelectorAll('#uploadQueue .batch-row').length === 0,
+          null, { timeout: lingerMs + 12000 });
+      } catch (e) {
+        const cur = await page.evaluate(() => {
+          const r = document.querySelector('#uploadQueue .batch-row');
+          return r ? { state: r.dataset.batchState, meta: r.querySelector('.b-meta')?.textContent } : null;
+        });
+        throw new Error(`R6-V2：全部成功的批次完成态必须淡出,等 ${lingerMs + 12000} ms 后仍在,实测 ${JSON.stringify(cur)}`);
+      }
+      assert.strictEqual(await page.locator('#uploadQueue .batch-row').count(), 0,
+        'R6-V2：全部成功的批次完成态必须淡出,不得常驻');
+
+      // ── R6-V4：单文件不出批次行 ───────────────────────────────────
+      await reset();
+      await installProbe();
+      await page.setInputFiles('#filePicker', [fx('sample.pdf')]);
+      await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 1,
+        null, { timeout: 60000 });
+      await page.waitForTimeout(400);
+      const oneRun = await readProbe();
+      assert.strictEqual(oneRun.ever, false,
+        `R6-V4：单文件上传不得出现批次行(1/1 是噪音),实测采集到 ${JSON.stringify(oneRun.seen)}`);
+
+      // ── R6-V3：6 个里第 4 个失败 ──────────────────────────────────
+      await reset();
+      await installProbe();
+      let nth = 0;
+      await page.route('**/files/upload', async (route) => {
+        nth += 1;
+        if (nth === 4) {
+          await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: '存储暂时不可用' }) });
+        } else {
+          await route.continue();
+        }
+      });
+      routed = true;
+      await page.setInputFiles('#filePicker', six);
+      await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 5,
+        null, { timeout: 90000 });
+      // 等批次结算完(finish 在整批走完之后)
+      try {
+        await page.waitForFunction(() => {
+          const r = document.querySelector('#uploadQueue .batch-row');
+          return !!r && r.dataset.batchState === 'has-failure';
+        }, null, { timeout: 30000 });
+      } catch (e) {
+        // 🔴 把实测终态打出来:失败被记成成功时,这里会是 all-ok 与「6 个文件已全部附加」,
+        //    一眼看得出是计数错了,而不是「等超时了」。
+        const cur = await page.evaluate(() => {
+          const r = document.querySelector('#uploadQueue .batch-row');
+          return r ? { state: r.dataset.batchState, meta: r.querySelector('.b-meta')?.textContent }
+                   : { state: '(批次行已不在)', meta: null };
+        });
+        throw new Error(`R6-V3：等不到「有失败」的批次终态,实测 ${JSON.stringify(cur)}`);
+      }
+      const badRun = await readProbe();
+      assert.ok(badRun.seen.some((m) => /5 个已附加/.test(m) && /1 个失败/.test(m)),
+        `R6-V3：有失败时完成态必须说清数目,实测 ${JSON.stringify(badRun.seen)}`);
+      // 🔴 R6-V3 的牙在这里:等**超过**淡出时长之后,批次行必须还在。
+      await page.waitForTimeout(lingerMs + 2500);
+      assert.strictEqual(await page.locator('#uploadQueue .batch-row').count(), 1,
+        `R6-V3：有失败的批次完成态不得淡出,必须留到用户自己清掉(已等 ${lingerMs + 2500} ms)`);
+      const badMeta = await page.locator('#uploadQueue .batch-row .b-meta').textContent();
+      assert.ok(/1 个失败/.test(badMeta), `R6-V3：留在屏幕上的那一行必须写着失败数,实测 ${JSON.stringify(badMeta)}`);
+      // 裁定②里已定、本次不变:失败的**单文件行**同样保留
+      assert.ok(await page.locator('#uploadQueue .upload-row.failed').count() >= 1,
+        'R6-V3：失败的单文件行必须保留(裁定②:完成态清、失败态留)');
+      await page.screenshot({ path: path.join(SHOTS, '08-r6-batch-failure.png') });
+    } finally {
+      if (routed) await page.unroute('**/files/upload').catch(() => {});
+      await reset().catch(() => {});
+    }
+  });
+
+  // ── ⑰ B-11：音频在 A 侧接得上；文本的两条路径必须一致 ────────────────
+  //
+  // 🔴 起因（我在 B 线增量评审里打出、组长 2026-09-19 授权本批修）：
+  //    B 侧本批把音频能力做全了（落盘 .mp3 ＋ 真实 audio MIME ＋ nginx 七行），
+  //    而 A 侧 kindFromMediaType 没有 audio 分支、FILE_EXT_KIND 没有音频扩展名
+  //    ⇒ 端到端仍渲成下载链接，「否则不播」那个目的没达成。
+  //
+  // 🔴 断言落在 data-kind 上，不落在 <audio> 在不在上：
+  //    夹具是假字节、且本机 chromium 未必有对应解码器 ⇒ <audio> 必然自我移除。
+  //    「判成 audio 但播不了」与「根本没判成 audio」在 DOM 上长得一样 ——
+  //    这正是 ④b 当初吃过的亏。data-kind 把**分派**与**解码能力**分开。
+  await t('⑰ B-11:音频两条路径都判成 audio 且必有下载出路;文本降级路径与 HEAD 路径一致;html/svg 仍 download', async () => {
+    const mk = (id, ext) => `${BASE}/f/fixtureowner/fixture-a-2642/26/0918/${id}.${ext}`;
+    const kindOf = (u) => page.evaluate((url) => {
+      const box = [...document.querySelectorAll('.attachment')].find((e) => e.dataset.fileUrl === url);
+      return box ? { kind: box.dataset.kind, dl: box.querySelectorAll('a.attachment-dl').length } : null;
+    }, u);
+
+    // ── (a) HEAD 路径：服务端声明 audio/mpeg ⇒ 必须判成 audio
+    const headAudio = mk('aaaa1111bbbb2222cccc3333dddd4444', 'mp3');
+    await page.route('**/f/**', (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 200, headers: { 'Content-Type': 'audio/mpeg' }, body: '' })
+      : route.fulfill({ status: 200, contentType: 'audio/mpeg', body: 'ID3fake' })));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), headAudio);
+    await page.waitForSelector('.attachment[data-dispatch="head"]', { timeout: 20000 });
+    const a1 = await kindOf(headAudio);
+    assert.ok(a1, 'HEAD 路径下应有该 URL 的附件块');
+    assert.strictEqual(a1.kind, 'audio', `🔴 HEAD 声明 audio/mpeg 必须判成 audio，实测 ${JSON.stringify(a1)}`);
+    // 能播时也该能存一份；解不了码时它是唯一出路 —— 两种情况都必须恰好一条，不能并排两条。
+    assert.strictEqual(a1.dl, 1, `音频块必须恰好一条下载链接，实测 ${a1.dl} 条`);
+    await page.unroute('**/f/**');
+
+    // ── (b) 降级路径：HEAD 不可用，按 URL 扩展名 ⇒ 七种音频扩展名逐个判成 audio
+    await page.route('**/f/**', (route) => (route.request().method() === 'HEAD'
+      ? route.fulfill({ status: 405, body: '' })
+      : route.fulfill({ status: 200, contentType: 'application/octet-stream', body: 'fake' })));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    const audioExts = ['mp3', 'm4a', 'flac', 'aac', 'opus', 'oga', 'wav'];
+    // 文本：与 B 侧 internal/fileservice/manager.go 的 filenameTextExts 对齐的那 15 个
+    const textExts = ['txt', 'md', 'csv', 'json', 'log', 'py', 'js', 'go', 'java', 'yaml', 'yml', 'toml', 'ini', 'sh', 'sql'];
+    // 🔴 阳性对照与音频/文本**同一轮**：若守卫被削弱，这两个会跟着一起变 —— 那时才分辨得出。
+    const neverInline = ['html', 'svg'];
+    const all = [...audioExts, ...textExts, ...neverInline];
+    for (let i = 0; i < all.length; i += 1) {
+      const id = String(i).padStart(2, '0').repeat(16).slice(0, 32);
+      await page.evaluate((u) => handleIncomingEvent({ kind: 'user_input', text: u, ts: Date.now() }), mk(id, all[i]));
+    }
+    await page.waitForFunction((n) => document.querySelectorAll('.attachment[data-dispatch="ext"]').length >= n,
+      all.length, { timeout: 60000 });
+    const got = {};
+    for (let i = 0; i < all.length; i += 1) {
+      const id = String(i).padStart(2, '0').repeat(16).slice(0, 32);
+      got[all[i]] = await kindOf(mk(id, all[i]));
+    }
+    for (const ext of audioExts) {
+      assert.strictEqual(got[ext]?.kind, 'audio',
+        `🔴 降级路径 .${ext} 必须判成 audio，实测 ${JSON.stringify(got[ext])}`);
+      assert.strictEqual(got[ext]?.dl, 1, `.${ext} 必须恰好一条下载链接，实测 ${JSON.stringify(got[ext])}`);
+    }
+    for (const ext of textExts) {
+      assert.strictEqual(got[ext]?.kind, 'text',
+        `🔴 降级路径 .${ext} 必须判成 text（与 HEAD 路径一致；B 侧 filenameTextExts 统一出 text/plain），实测 ${JSON.stringify(got[ext])}`);
+    }
+    for (const ext of neverInline) {
+      assert.strictEqual(got[ext]?.kind, 'download',
+        `阳性对照：.${ext} 永不内联，必须仍是 download，实测 ${JSON.stringify(got[ext])}`);
+    }
+    await page.screenshot({ path: path.join(SHOTS, '09-b11-audio-and-text.png'), fullPage: true });
+    await page.unroute('**/f/**');
+  });
+
+  // ── ⑱⑲⑳㉑ 三个入口 ＋ 焦点维度(P0 2026-09-19 现网回归)───────────────
+  //
+  // 🔴 本批的成因不是某个函数写错,是**三个入口(粘贴/选择文件/拖放)共用下游,而只测了一个**。
+  //    已有的 ⑥ 把 paste 事件**直接 dispatch 到 humanInput** —— 不管真实焦点在哪都一定触发,
+  //    于是它测不出「焦点不在输入框时监听器根本不被调用」这一整类。
+  //    ⇒ 下面的粘贴一律派发到 **document.activeElement**,与真实粘贴同形。
+  const pasteAtFocus = (spec) => page.evaluate(({ name, type, b64, text }) => {
+    const dt = new DataTransfer();
+    if (b64) {
+      const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      dt.items.add(new File([bin], name, { type }));
+    } else {
+      dt.setData('text/plain', text || '');
+    }
+    const target = document.activeElement || document.body;
+    const notCancelled = target.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    return { tag: target.tagName, cls: String(target.className || '').slice(0, 40), prevented: !notCancelled };
+  }, spec);
+  const pngSpec = () => ({ name: 'pasted-at-focus.png', type: 'image/png', b64: fs.readFileSync(fx('sample.png')).toString('base64') });
+
+  await t('⑱ 三个入口(粘贴/选择文件/拖放)各一条,走同一下游 —— 本次回归的根因是只测了一个', async () => {
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); });
+    // 入口①粘贴:焦点在输入框,事件派发到 activeElement
+    await page.evaluate(() => document.getElementById('humanInput').focus());
+    let before = uploadCalls.length;
+    const pasted = await pasteAtFocus(pngSpec());
+    assert.strictEqual(pasted.prevented, true, `粘贴入口:处理器必须接管(preventDefault),实测 ${JSON.stringify(pasted)}`);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '粘贴入口必须发出一次上传');
+
+    // 入口②选择文件
+    before = uploadCalls.length;
+    await page.setInputFiles('#filePicker', [fx('sample.pdf')]);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 2, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '选择文件入口必须发出一次上传');
+
+    // 入口③拖放
+    before = uploadCalls.length;
+    const dropB64 = fs.readFileSync(fx('sample-small.txt')).toString('base64');
+    await page.evaluate((b64) => {
+      const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const dt = new DataTransfer();
+      dt.items.add(new File([bin], 'dropped.txt', { type: 'text/plain' }));
+      dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }));
+      dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }));
+    }, dropB64);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 3, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '拖放入口必须发出一次上传');
+  });
+
+  await t('⑲ 🔴 P0 根因:焦点在正文附件链接上时,粘贴必须仍然生效(修复前必红)', async () => {
+    // 先让正文渲染出附件块 —— 业主页面上必然有:传完是要发出去的
+    const text = await page.inputValue('#humanInput');
+    assert.ok(/\/f\//.test(text), '本条依赖前一条留下的直链');
+    await page.evaluate((body) => handleIncomingEvent({ kind: 'user_input', text: body, ts: Date.now() }), text);
+    await page.waitForSelector('.attachments a', { timeout: 20000 });
+
+    // 🔴 0.2.0.7 新增的可聚焦元素只在**正文附件区**:实测 #draftAttachments / #uploadQueue 里没有。
+    const focusables = await page.evaluate(() => [...document.querySelectorAll('.attachments a[href]')]
+      .map((e) => e.className || e.tagName));
+    assert.ok(focusables.length > 0, `正文附件区必须有可聚焦链接(本条的前提),实测 ${JSON.stringify(focusables)}`);
+
+    const before = uploadCalls.length;
+    await page.locator('.attachments a[href]').first().focus();
+    const info = await pasteAtFocus(pngSpec());
+    assert.notStrictEqual(info.tag, 'TEXTAREA', `前提:焦点必须真的离开了输入框,实测 ${JSON.stringify(info)}`);
+    assert.strictEqual(info.prevented, true,
+      `🔴 焦点在 ${info.tag}.${info.cls} 上时粘贴必须仍被接管 —— 监听器绑在 humanInput 叶子上时,事件冒泡不经过它,现象就是「完全没反应、控制台也没报错」`);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n,
+      before ? 4 : 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '🔴 焦点在正文链接上时,粘贴必须真的发出上传');
+  });
+
+  await t('⑳ 扩大作用域的代价必须钉住:全页各处粘贴【纯文本】都不得被接管', async () => {
+    // 🔴 组长加的守卫:挂 document 之后全页粘贴都过这个处理器。
+    //    「没文件就 return」是一句承诺,这里把它变成判据 —— 否则谁动了那行,全页文本粘贴一起坏,且无人转红。
+    const spots = [
+      { label: '输入框', focus: () => page.evaluate(() => document.getElementById('humanInput').focus()) },
+      { label: 'body', focus: () => page.evaluate(() => { document.activeElement && document.activeElement.blur(); document.body.focus(); }) },
+      { label: '正文附件链接', focus: () => page.locator('.attachments a[href]').first().focus() },
+    ];
+    for (const spot of spots) {
+      await spot.focus();
+      const valueBefore = await page.inputValue('#humanInput');
+      const before = uploadCalls.length;
+      const info = await pasteAtFocus({ text: '这是一段纯文本,不是文件' });
+      await page.waitForTimeout(400);
+      assert.strictEqual(info.prevented, false,
+        `${spot.label}:纯文本粘贴不得被接管(必须保持浏览器原行为),实测 ${JSON.stringify(info)}`);
+      assert.strictEqual(uploadCalls.length, before, `${spot.label}:纯文本粘贴不得触发上传`);
+      assert.strictEqual(await page.inputValue('#humanInput'), valueBefore, `${spot.label}:纯文本粘贴不得由我们改动输入框`);
+    }
+  });
+
+  await t('㉑ 只读会话粘贴文件:必须给出可读提示,不得静默', async () => {
+    await page.route('**/status', (route) => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: true, owner: 'fixture', model: 'fixture-model' }),
+    }));
+    try {
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === true, null, { timeout: 15000 });
+      const before = uploadCalls.length;
+      await page.evaluate(() => document.getElementById('humanInput').focus());
+      // 🔴 这里我第一版断言「只读下仍应接管」,跑出来是红的 —— **断言写错了,不是产品错了**:
+      //    只读时产品会 humanInput.disabled = true(renderer 1503 行),
+      //    而 **disabled 的元素无法获得焦点** ⇒ activeElement 落回 body。
+      //    ⇒ 只读下该钉的不是「接不接管」这个实现细节,而是业主看得见的两件事:
+      //      ① 不得发出上传请求  ② 必须有可读提示,不得静默。
+      const info = await pasteAtFocus(pngSpec());
+      assert.ok(info.tag === 'BODY' || info.tag === 'TEXTAREA', `前提:只读下焦点落在 ${info.tag}`);
+      await page.waitForTimeout(800);
+      assert.strictEqual(uploadCalls.length, before, '只读会话不得发出上传请求');
+      const shown = await page.evaluate(() => document.body.innerText);
+      assert.ok(shown.includes('只读模式'),
+        '🔴 只读下必须有可读提示(「只读模式:先解锁再上传文件」),不得静默 —— 静默就是又一条「发了没反应」');
+    } finally {
+      await page.route('**/status', (route) => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
+      }));
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+    }
   });
 
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
@@ -406,7 +1188,10 @@ async function t(name, fn) {
     assert.ok(note.includes('已截断'), `应给出截断说明，实际「${note}」`);
     const pre = await page.locator('.attachments pre').last().textContent();
     assert.ok(pre.length <= 262144, `内联文本不得超过上限，实际 ${pre.length}`);
-    assert.ok(await page.locator('.attachments .attachment-dl').count() >= 3, '截断后必须另给下载链接');
+    // 🔴 只数**这一张卡自己**的下载链接：原来数的是全页累计(>=3)，
+    //    那个数会随前面新增用例而漂 —— 断言依赖无关用例的副作用，就不再是这条用例的断言。
+    const truncated = page.locator('.turn-group .attachments .attachment').last();
+    assert.ok(await truncated.locator('a.attachment-dl').count() >= 1, '截断后这张卡必须另给下载链接');
     await page.screenshot({ path: path.join(SHOTS, '03-large-text-truncated.png'), fullPage: true });
   });
 

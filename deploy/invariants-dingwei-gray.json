@@ -13,12 +13,12 @@
     {
       "id": "renderer-matches-anchor",
       "desc": "🔴 renderer 哈希必须 == 发版锚内同名文件(当日最贵的那条断言)",
-      "cmd": "want=ed71963c652ef2e6744977be9292de72f1ede6fa6abccf5fbee921d151d20c35; got=$(sha256sum /app/vs/renderer-canary-sse.html 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希(记为不成立)'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
+      "cmd": "want=8d18e894c30b6a5886f49f99c9e8810c2ffdb65b636f8d58ee5576b72419d1de; got=$(sha256sum /app/vs/renderer-canary-sse.html 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希(记为不成立)'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
     },
     {
       "id": "view-service-matches-anchor",
       "desc": "🔴 view_service.py 哈希必须 == 发版锚(当日它是旧版,害我找了一下午)",
-      "cmd": "want=690c08438ef59518bc2e3f798a798884e26d1928bf9b4959046edaa278d29a95; got=$(sha256sum /app/vs/view_service.py 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
+      "cmd": "want=a9f41746ad71371542754518335ac886acdfb5507ca246af30ca4d067a6f129c; got=$(sha256sum /app/vs/view_service.py 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
     },
     {
       "id": "page-store-matches-anchor",

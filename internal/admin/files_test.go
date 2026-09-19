@@ -14,6 +14,7 @@ import (
 
 type fakeFileBrowser struct {
 	openErr   error
+	listErr   error
 	opens     int
 	mediaType string
 }
@@ -63,6 +64,9 @@ func TestHTTPFileBrowserPreviewRequiresIssuedTickets(t *testing.T) {
 }
 
 func (f *fakeFileBrowser) List(context.Context, int, int) (FilePage, error) {
+	if f.listErr != nil {
+		return FilePage{}, f.listErr
+	}
 	return FilePage{Files: []AdminFile{{ID: "0123456789abcdef0123456789abcdef", OriginalName: "a.png", SizeBytes: 4, SHA256: "abcd", OwnerKey: "owner", SessionName: "agent", CreatedAt: time.Date(2026, 9, 18, 0, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2026, 9, 26, 0, 0, 0, 0, time.UTC)}}}, nil
 }
 func (f *fakeFileBrowser) Open(context.Context, string) (FileContent, error) {
@@ -135,5 +139,29 @@ func TestAdminFileHandlerFailsClosedWhenBrowserOpenFails(t *testing.T) {
 	mux.ServeHTTP(w, req)
 	if w.Code != http.StatusNotFound || w.Body.String() == "data" || fb.opens != 1 {
 		t.Fatalf("status=%d body=%q opens=%d", w.Code, w.Body.String(), fb.opens)
+	}
+}
+
+func TestAdminFilesPageDistinguishesMissingInjectionFromAuditFailure(t *testing.T) {
+	srv, _, mux, _ := newAdminTestServer(t)
+	srv.sessions["tok"] = "admin"
+	request := func() *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/admin/files", nil)
+		req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec
+	}
+	missing := request()
+	if missing.Code != http.StatusServiceUnavailable || !strings.Contains(missing.Body.String(), "startup configuration was not injected") {
+		t.Fatalf("missing status=%d body=%q", missing.Code, missing.Body.String())
+	}
+	srv.Files = &fakeFileBrowser{listErr: errors.New("audit status 401")}
+	failed := request()
+	if failed.Code != http.StatusServiceUnavailable || !strings.Contains(failed.Body.String(), "audit request failed: audit status 401") {
+		t.Fatalf("failed status=%d body=%q", failed.Code, failed.Body.String())
+	}
+	if missing.Body.String() == failed.Body.String() {
+		t.Fatalf("503 diagnostics are identical: %q", missing.Body.String())
 	}
 }

@@ -2,7 +2,11 @@ package m8
 
 // reply-origin / loop-termination 契约的纯逻辑原语(冻结锚 5db177e，含 b6d3182 澄清)。
 // 本文件只提供无副作用的字段访问 / 分类 / 终止判据 + 一个带 TTL 的去重表；
-// 不接入 live 路由(段2 才把它们挂到 RouteEnvelope / helper)。这样段1可独立编译+单测。
+// 🔴 2026-09-19 更正这行注释(它此前说「不接入 live 路由」,而代码早已接上,骗过一次派工):
+//    **段 2 已接入**:applyReplyOriginTermination 就是 RouteEnvelope 的第一行(hub.go:2612),
+//    replyDedup 在 hub.go:235 初始化 ⇒ R4 hop 兜底 / R5 dedup / origin 捕获 三项都在执行路径上。
+//    仍**不在本文件**的是 reply 生成侧(R1/R2/R3)—— 它在 reply_to_origin.go,
+//    接在 amr worker 的 non_candidate 分支上。
 //
 // 设计对应:
 //   §1 envelope 新字段 = 走 Meta 加性可选(向后兼容,旧端遇未知字段 ignore)。

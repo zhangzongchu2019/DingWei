@@ -56,6 +56,54 @@ func uploadRequest(t *testing.T, h http.Handler, body string) File {
 	return files[0]
 }
 
+func TestDecodedUploadFileNameSupportsUTF8LegacyAndSanitizesAfterDecode(t *testing.T) {
+	tests := []struct{ raw, want string }{
+		{"UTF-8''%E4%B8%AD%E6%96%87%E6%96%87%E4%BB%B6.pdf", "中文文件.pdf"},
+		{"UTF-8''emoji-%F0%9F%93%84.pdf", "emoji-📄.pdf"},
+		{"UTF-8''marketing-price-center-v2%20%281%29.docx", "marketing-price-center-v2 (1).docx"},
+		{"legacy-name.pdf", "legacy-name.pdf"},
+		{"50%off.pdf", "50%off.pdf"},
+		{"UTF-8''50%25off.pdf", "50%off.pdf"},
+		{"UTF-8''%2e%2e%2fetc%2fpasswd", "passwd"},
+		{"../etc/passwd", "passwd"},
+		{"UTF-8''bad%0d%0aname.txt", "badname.txt"},
+		{"bad\r\nname.txt", "badname.txt"},
+		{"UTF-8''bad%00name.txt", "badname.txt"},
+		{"bad\x00name.txt", "badname.txt"},
+	}
+	for _, tt := range tests {
+		if got := decodedUploadFileName(tt.raw); got != tt.want {
+			t.Fatalf("raw=%q got=%q want=%q", tt.raw, got, tt.want)
+		}
+	}
+}
+
+func TestSafeNameRejectsEmptyAndPathOnlyNames(t *testing.T) {
+	// This directly covers the shared safeName layer. An end-to-end upload also
+	// calls safeName again in Manager.Put, so it cannot prove this invocation is
+	// correct: the later defense would mask a regression here.
+	for _, raw := range []string{"", ".", "..", "/"} {
+		if got := safeName(raw); got != "download" {
+			t.Errorf("safeName(%q)=%q want download", raw, got)
+		}
+	}
+}
+
+func TestUploadRestoresEncodedUTF8OriginalName(t *testing.T) {
+	m, _, _ := testManager(t, 100)
+	h := HTTPHandler{Manager: m, Uploads: fixedUploadVerifier{UploadGrant{OwnerKey: "owner", SessionName: "session", MaxBytes: 32}}, PublicBaseURL: "https://files.example"}
+	r := httptest.NewRequest(http.MethodPost, "/files/upload", strings.NewReader("data"))
+	r.Header.Set("Authorization", "Bearer upload-ticket")
+	r.Header.Set("X-DingWei-Session", "session")
+	r.Header.Set("X-File-Name", "UTF-8''%E4%B8%AD%E6%96%87%20%F0%9F%93%84.pdf")
+	r.Header.Set("Content-Type", "application/pdf")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusCreated || !strings.Contains(w.Body.String(), "中文 📄.pdf") {
+		t.Fatalf("status=%d body=%q", w.Code, w.Body.String())
+	}
+}
+
 func legacyHTTPUploadHeadAndSingleRanges(t *testing.T) {
 	m, _, _ := testManager(t, 100)
 	grants := NewGrantStore(m.Clock, 2*time.Minute)

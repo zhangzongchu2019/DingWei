@@ -3197,6 +3197,132 @@ func (s *SQLite) SessionEndpointDeliveryACK(ctx context.Context, keyID, sessionN
 	return enabled == 1, true, nil
 }
 
+var agentGroupCodePattern = regexp.MustCompile(`^[A-Za-z0-9+/]{32}$`)
+
+func validateAgentGroupCode(code string) error {
+	if !agentGroupCodePattern.MatchString(code) {
+		return errors.New("group code must be exactly 32 base64 characters")
+	}
+	return nil
+}
+
+func (s *SQLite) UpsertAgentGroup(ctx context.Context, group model.AgentGroup) error {
+	if err := validateAgentGroupCode(group.Code); err != nil {
+		return err
+	}
+	if group.LeaderKeyID == "" || group.LeaderSessionName == "" || group.LeaderOwnerKey == "" {
+		return errors.New("group leader endpoint and owner are required")
+	}
+	now := s.now().UTC().Format(time.RFC3339Nano)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `INSERT INTO agent_group(code,leader_key_id,leader_session_name,leader_owner_key,created_at,updated_at)
+		VALUES(?,?,?,?,?,?) ON CONFLICT(code) DO UPDATE SET leader_key_id=excluded.leader_key_id,
+		leader_session_name=excluded.leader_session_name,leader_owner_key=excluded.leader_owner_key,updated_at=excluded.updated_at`,
+		group.Code, group.LeaderKeyID, group.LeaderSessionName, group.LeaderOwnerKey, now, now); err != nil {
+		return err
+	}
+	// A leader is mechanically a member of the group; this also makes the
+	// one-leader invariant useful immediately after first creation.
+	if _, err := tx.ExecContext(ctx, `INSERT INTO agent_group_member(code,key_id,session_name,owner_key,created_at)
+		VALUES(?,?,?,?,?) ON CONFLICT(code,key_id,session_name) DO UPDATE SET owner_key=excluded.owner_key`,
+		group.Code, group.LeaderKeyID, group.LeaderSessionName, group.LeaderOwnerKey, now); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *SQLite) AssignAgentGroup(ctx context.Context, member model.AgentGroupMember) error {
+	if err := validateAgentGroupCode(member.Code); err != nil {
+		return err
+	}
+	if member.KeyID == "" || member.SessionName == "" || member.OwnerKey == "" {
+		return errors.New("group member endpoint and owner are required")
+	}
+	_, err := s.db.ExecContext(ctx, `INSERT INTO agent_group_member(code,key_id,session_name,owner_key,created_at)
+		VALUES(?,?,?,?,?) ON CONFLICT(code,key_id,session_name) DO UPDATE SET owner_key=excluded.owner_key`,
+		member.Code, member.KeyID, member.SessionName, member.OwnerKey, s.now().UTC().Format(time.RFC3339Nano))
+	return err
+}
+
+func (s *SQLite) UnassignAgentGroup(ctx context.Context, code, keyID, sessionName string) error {
+	if err := validateAgentGroupCode(code); err != nil {
+		return err
+	}
+	var leaderKeyID, leaderSessionName string
+	if err := s.db.QueryRowContext(ctx, `SELECT leader_key_id,leader_session_name FROM agent_group WHERE code=?`, code).Scan(&leaderKeyID, &leaderSessionName); err != nil {
+		return err
+	}
+	if leaderKeyID == keyID && leaderSessionName == sessionName {
+		return errors.New("group leader cannot be removed; appoint another leader first")
+	}
+	_, err := s.db.ExecContext(ctx, `DELETE FROM agent_group_member WHERE code=? AND key_id=? AND session_name=?`, code, keyID, sessionName)
+	return err
+}
+
+func (s *SQLite) ListAgentGroups(ctx context.Context) ([]model.AgentGroup, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT code,leader_key_id,leader_session_name,leader_owner_key,created_at,updated_at FROM agent_group ORDER BY code`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.AgentGroup
+	for rows.Next() {
+		var g model.AgentGroup
+		var createdAt, updatedAt string
+		if err := rows.Scan(&g.Code, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &createdAt, &updatedAt); err != nil {
+			return nil, err
+		}
+		g.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+		g.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+		out = append(out, g)
+	}
+	return out, rows.Err()
+}
+
+func (s *SQLite) ListAgentGroupMembers(ctx context.Context, code string) ([]model.AgentGroupMember, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT code,key_id,session_name,owner_key,created_at FROM agent_group_member WHERE code=? ORDER BY owner_key,session_name,key_id`, code)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.AgentGroupMember
+	for rows.Next() {
+		var m model.AgentGroupMember
+		var createdAt string
+		if err := rows.Scan(&m.Code, &m.KeyID, &m.SessionName, &m.OwnerKey, &createdAt); err != nil {
+			return nil, err
+		}
+		m.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+func (s *SQLite) ListAgentGroupsForEndpoint(ctx context.Context, keyID, sessionName string) ([]model.AgentGroup, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT g.code,g.leader_key_id,g.leader_session_name,g.leader_owner_key,g.created_at,g.updated_at
+		FROM agent_group g JOIN agent_group_member m ON m.code=g.code WHERE m.key_id=? AND m.session_name=? ORDER BY g.code`, keyID, sessionName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.AgentGroup
+	for rows.Next() {
+		var g model.AgentGroup
+		var createdAt, updatedAt string
+		if err := rows.Scan(&g.Code, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &createdAt, &updatedAt); err != nil {
+			return nil, err
+		}
+		g.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+		g.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+		out = append(out, g)
+	}
+	return out, rows.Err()
+}
+
 func (s *SQLite) SetSessionMirror(ctx context.Context, keyID, sessionName string, enabled bool, mirrorTo string) error {
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO session_endpoint(key_id, session_name, full_session_name, owner_key, last_seen_at, active, mirror_enabled, mirror_to, client_ip, tool, model, producer, target_group, no_directory, no_directory_admin, no_directory_reported)

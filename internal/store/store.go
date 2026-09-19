@@ -137,6 +137,12 @@ type Repository interface {
 	SessionEndpointDeliveryACK(ctx context.Context, keyID, sessionName string) (bool, bool, error)
 	SetSessionMirror(ctx context.Context, keyID, sessionName string, enabled bool, mirrorTo string) error
 	SetSessionNoDirectory(ctx context.Context, keyID, sessionName string, enabled bool) error
+	UpsertAgentGroup(ctx context.Context, group model.AgentGroup) error
+	AssignAgentGroup(ctx context.Context, member model.AgentGroupMember) error
+	UnassignAgentGroup(ctx context.Context, code, keyID, sessionName string) error
+	ListAgentGroups(ctx context.Context) ([]model.AgentGroup, error)
+	ListAgentGroupMembers(ctx context.Context, code string) ([]model.AgentGroupMember, error)
+	ListAgentGroupsForEndpoint(ctx context.Context, keyID, sessionName string) ([]model.AgentGroup, error)
 
 	// 通知幂等（M7）
 	RecordNotification(ctx context.Context, kind, ownerKey, targetKey, remindDate string) (bool, error)

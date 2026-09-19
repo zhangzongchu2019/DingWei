@@ -18,6 +18,7 @@ import json
 import os
 import re
 import secrets
+import urllib.parse
 import ssl
 import sys
 import threading
@@ -32,6 +33,12 @@ OWNER = "fixtureowner"
 EXT_WHITELIST = {
     "image/png": ".png", "image/jpeg": ".jpg", "image/gif": ".gif", "image/webp": ".webp",
     "video/mp4": ".mp4", "video/webm": ".webm",
+    # B-11：音频。B 侧本批已落地（internal/fileservice/manager.go 的 filenameAudioTypes
+    # ＋ nginx inline 块七行），替身不同步就会出现「测的是替身、不是契约」——
+    # 那正是评审里立过的那条：素材/环境落在被测维度的同一侧，断言就无从分辨。
+    "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/flac": ".flac", "audio/aac": ".aac",
+    "audio/opus": ".opus", "audio/ogg": ".oga",
+    "audio/wav": ".wav", "audio/x-wav": ".wav", "audio/vnd.wave": ".wav",
     "application/pdf": ".pdf",
     "text/plain": ".txt",
 }
@@ -70,7 +77,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length") or 0)
             data = self.rfile.read(length)
             media_type = (self.headers.get("Content-Type") or "application/octet-stream").split(";")[0].strip().lower()
-            name = self.headers.get("X-File-Name") or "upload.bin"
+            # 🔴 P0 协议（组长 2026-09-18 定死）：X-File-Name 为 `UTF-8''<percent-encoded>`，
+            #    无该前缀则按裸值（旧客户端，向后兼容）。
+            #    替身必须实现契约的这一半，否则 A 侧会对着编码后的名字写断言。
+            #    ⚠️ 本替身只做解码；真正的 safeName 归 B 线，且必须**先解码再 safeName**。
+            raw_name = self.headers.get("X-File-Name") or "upload.bin"
+            if raw_name.startswith("UTF-8''"):
+                name = urllib.parse.unquote(raw_name[len("UTF-8''"):], encoding="utf-8", errors="replace")
+            else:
+                name = raw_name
             # A4：50 MiB = 52428800
             if len(data) > 52428800:
                 return self._send(413, json.dumps({"error": "超过 50 MiB 上限"}).encode(),

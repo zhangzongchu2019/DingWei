@@ -1146,6 +1146,11 @@ func sessionMirrorToFromRequest(r *http.Request) string {
 
 func (h *Hub) registerSessionEndpoint(ctx context.Context, ep model.SessionEndpoint) (string, error) {
 	requested := ep.SessionName
+	// 🔴 业主定的第三条:保留字不能用于 Agent 短名。必须在**写入口**拦 ——
+	// 只在解析期拦的话,名字照样落库,歧义从解析期搬进数据里,那时再修要动存量。
+	if isReservedForNaming(requested) {
+		return "", fmt.Errorf("会话短名不得使用渠道保留字：%s", requested)
+	}
 	if ep.OwnerKey == "" {
 		return requested, h.Repo.UpsertSessionEndpoint(ctx, ep)
 	}
@@ -2657,6 +2662,9 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 		}
 		// 常规同 key 且在线 → 快路径直投
 		if to.KeyID == from.KeyID && h.sessionOnline(to.KeyID, to.SessionName) {
+			if err := h.enforceAgentGrouping(ctx, from, env, to.KeyID, to.SessionName); err != nil {
+				return err
+			}
 			return h.routeToSession(ctx, to.KeyID, to.SessionName, env, from.Kind == addressFeishu)
 		}
 		// 可靠 helper 的能力已经由 Hub 在在线握手时坐实并持久化。连接瞬断时，
@@ -2666,6 +2674,9 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 			if deliveryACK, found, lookupErr := h.Repo.SessionEndpointDeliveryACK(ctx, to.KeyID, to.SessionName); lookupErr != nil {
 				return lookupErr
 			} else if found && deliveryACK {
+				if err := h.enforceAgentGrouping(ctx, from, env, to.KeyID, to.SessionName); err != nil {
+					return err
+				}
 				return h.routeToSession(ctx, to.KeyID, to.SessionName, env, from.Kind == addressFeishu)
 			}
 		}
@@ -2680,7 +2691,28 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 			return ambiguousSessionError(to.SessionName, resolved.candidates)
 		}
 		if resolved.status != ownerSessionUniqueHit {
+			// Cross-owner addressing is deliberately exact-only: the sender must
+			// use the persisted FullSessionName, never a short/global fuzzy name.
+			full, found, lookupErr := h.resolveSessionByFullName(ctx, to.SessionName)
+			if lookupErr != nil {
+				return lookupErr
+			}
+			if found {
+				if err := h.enforceAgentGrouping(ctx, from, env, full.KeyID, full.SessionName); err != nil {
+					return err
+				}
+				env.To = sessionAddress(full.SessionName, full.KeyID)
+				return h.routeToSession(ctx, full.KeyID, full.SessionName, env, from.Kind == addressFeishu)
+			}
+			if _, isAgent, identityErr := h.sourceAgentIdentity(ctx, from, env); identityErr != nil {
+				return identityErr
+			} else if isAgent {
+				return errGroupAgentNotFound
+			}
 			return errors.New("目标会话不在你的账号下或不在线：" + to.SessionName)
+		}
+		if err := h.enforceAgentGrouping(ctx, from, env, resolved.keyID, resolved.sessionName); err != nil {
+			return err
 		}
 		env.To = sessionAddress(resolved.sessionName, resolved.keyID)
 		return h.routeToSession(ctx, resolved.keyID, resolved.sessionName, env, from.Kind == addressFeishu)
@@ -2974,6 +3006,9 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 	h.deliveryNotices[dedupKey] = now
 	h.mu.Unlock()
 	env := deliveryFailureEnvelope(c, original.ID, target, routeErr.Error(), now)
+	if errors.Is(routeErr, errGroupAgentNotFound) {
+		env.Body = groupAgentNotFoundText
+	}
 	h.annotateRestartWindow(&env, now, "delivery_failure")
 	if err := c.write(ctx, env); err != nil {
 		log.Printf("delivery failure notification=failed session=%s err=%v", c.sessionName, err)
@@ -3207,6 +3242,9 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 		env.Meta["sender_open_id"] = msg.SenderOpenID
 	}
 	if err := h.RouteEnvelope(ctx, env); err != nil {
+		if errors.Is(err, errGroupAgentNotFound) {
+			return model.PrefixDispatchResult{Matched: true, Reply: groupAgentNotFoundText}, true, nil
+		}
 		return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, true, nil
 	}
 	return model.PrefixDispatchResult{Matched: true}, true, nil
@@ -3249,6 +3287,11 @@ func (h *Hub) dispatchDefaultPersonalSession(ctx context.Context, msg model.Mess
 }
 
 func (h *Hub) dispatchMemberMention(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
+	// 🔴 G2-a:渠道名不是成员名。不拦的话,`@飞书#x` 会走 resolveMemberByName,
+	// 而它匹配 OwnerKey 或 DisplayName —— 一旦有人叫「飞书」,渠道语法就被吃掉且无错可看。
+	if _, _, _, isChannel := parseChannelMention(h.stripLeadingBotMentions(msg.BotChannelID, text)); isChannel {
+		return model.PrefixDispatchResult{}, false, nil
+	}
 	targetName, sessionName, body, ok := h.parseMemberMention(msg.BotChannelID, text)
 	if !ok {
 		return model.PrefixDispatchResult{}, false, nil
@@ -3292,6 +3335,9 @@ func (h *Hub) dispatchMemberMention(ctx context.Context, msg model.Message, text
 		env.Meta["sender_open_id"] = msg.SenderOpenID
 	}
 	if err := h.RouteEnvelope(ctx, env); err != nil {
+		if errors.Is(err, errGroupAgentNotFound) {
+			return model.PrefixDispatchResult{Matched: true, Reply: groupAgentNotFoundText}, true, nil
+		}
 		return model.PrefixDispatchResult{Matched: true, Reply: "该成员会话投递失败：" + err.Error()}, true, nil
 	}
 	return model.PrefixDispatchResult{Matched: true}, true, nil

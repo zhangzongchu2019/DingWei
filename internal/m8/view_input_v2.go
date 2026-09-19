@@ -29,10 +29,11 @@ var viewV2NoncePattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
 var viewV2RequestIDPattern = regexp.MustCompile(`^(?:[0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$`)
 
 type viewV2InputRequest struct {
-	Session   string `json:"session"`
-	PageID    string `json:"page_id"`
-	RequestID string `json:"request_id"`
-	Text      string `json:"text"`
+	Session     string `json:"session"`
+	PageID      string `json:"page_id"`
+	RequestID   string `json:"request_id"`
+	Text        string `json:"text"`
+	PrincipalID string `json:"principal_id,omitempty"`
 }
 
 type viewV2RequestResult struct {
@@ -96,7 +97,7 @@ func (h *Hub) HandleInternalViewV2Input(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	status := http.StatusOK
-	if err := h.routeViewServiceInput(r.Context(), session, req.PageID, req.RequestID, req.Text); err != nil {
+	if err := h.routeViewServiceInput(r.Context(), session, req.PageID, req.RequestID, req.Text, req.PrincipalID); err != nil {
 		status = http.StatusNotFound
 	}
 	h.completeViewV2Request(targetName, req.RequestID, bodyHash, status, now)
@@ -108,7 +109,7 @@ func (h *Hub) HandleInternalViewV2Input(w http.ResponseWriter, r *http.Request) 
 	_, _ = w.Write([]byte(`{"ok":true}`))
 }
 
-func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, requestID, text string) error {
+func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, requestID, text, principalID string) error {
 	h.mu.Lock()
 	st, found := h.terminalBySessionNameLocked(session)
 	var keyID string
@@ -141,7 +142,7 @@ func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, reques
 		Body: terminalSubmission(text), TS: time.Now().Unix(),
 		Meta: map[string]any{"source_kind": "user", "source_display_name": "View",
 			"auth_mode": "view_page_v2", "page_id": pageID, "request_id": requestID,
-			hubIngressMetaKey: hubIngressViewV2},
+			"console_principal_id": strings.TrimSpace(principalID), hubIngressMetaKey: hubIngressViewV2},
 	}
 	return h.routeToSession(ctx, keyID, session, env, false)
 }
