@@ -3,7 +3,20 @@
 // 0.2.0.6 把「只接 image/*、16 MiB、回填 dwfile: 引用」改成
 // 「任意类型、50 MiB、回填契约 §2 的绝对 https url」，本件随之改写。
 // 契约：tasks/v0.1-B 锚 d26bfd7002f70b7a9c9b5dcec6a1682ccbef974f §2 · §3.1 · 附录 A4
-const fs = require('fs'), assert = require('assert');
+const fs = require('fs'), rawAssert = require('assert');
+// 🔴 断言计数器 —— 用来分辨「跑过」与「验过」。
+//    起因(2026-09-19):⑥ 因替身缺 prepend 在**进入断言之前**就抛错,
+//    那条用例于是「存在、看起来在跑、实际什么都没验」。这与判据 9 同族:用例在但不起作用。
+//    ⇒ 一条用例跑完却一次断言都没执行 ⇒ 判红,而不是判绿。
+let assertCount = 0;
+const assert = new Proxy(rawAssert, {
+  apply(target, thisArg, args) { assertCount += 1; return Reflect.apply(target, thisArg, args); },
+  get(target, prop, recv) {
+    const v = Reflect.get(target, prop, recv);
+    if (typeof v === 'function') return (...args) => { assertCount += 1; return v.apply(target, args); };
+    return v;
+  },
+});
 const src = fs.readFileSync('renderer-canary-sse.html', 'utf8');
 const start = src.indexOf('    function appendInputReference');
 const end = src.indexOf("    humanInput.addEventListener('input'", start);
@@ -64,6 +77,9 @@ function fakeDom() {
     querySelector() { return null; },
     classList: { add() {}, remove() {}, toggle() {} },
     append(...xs) { this.children.push(...xs); },
+    // R6 的批次行插在队列最前(单文件行会一个个消失,批次行不能跟着跳位置)。
+    // 🔴 这个方法 2026-09-19 缺过一次:产品用了 prepend,替身没跟上 ⇒ ⑥ 在进断言前就挂。
+    prepend(...xs) { this.children.unshift(...xs); },
     appendChild(x) { this.children.push(x); return x; },
     remove() {},
   });
@@ -105,8 +121,17 @@ const file = (over = {}) => ({ type: 'application/pdf', size: 601, name: 'a.pdf'
 
 let pass = 0, fail = 0;
 async function t(name, fn) {
-  try { await fn(); console.log('  ✅', name); pass++; }
-  catch (e) { console.log('  🔴', name, '->', e.message); fail++; }
+  const before = assertCount;
+  try {
+    await fn();
+    if (assertCount === before) {
+      console.log('  🔴', name, '-> 该用例跑完但**一次断言都没执行**（跑过 ≠ 验过）');
+      fail++;
+      return;
+    }
+    console.log('  ✅', name, `(${assertCount - before} 条断言)`);
+    pass++;
+  } catch (e) { console.log('  🔴', name, '->', e.message); fail++; }
 }
 
 // 票据端点统一替身：只回票据，不再承载上传响应（上传走 onUpload）。
@@ -218,6 +243,10 @@ const ticketFetch = (override) => async () => response(true, { ...ticket, ...(ov
       },
     });
     await api.uploadFiles([file({ name: 'n1.pdf' }), file({ name: 'n2.pdf' }), file({ name: 'n3.pdf' })]);
+    // 🔴 正向证据:三个文件都真的被尝试过。
+    //    没有这一行时,「替身在更早的地方挂掉」与「行为正确」在报告里不一定分得开 ——
+    //    2026-09-19 就是这么挂的(替身缺 prepend,本用例在进入下面三条断言之前抛错)。
+    assert.strictEqual(seq, 3, `三个文件都必须被尝试上传,实测只尝试了 ${seq} 个`);
     assert.strictEqual((box.value.match(/https:\/\/h\/f\//g) || []).length, 2, '成功的两个都要回填');
     assert.strictEqual(api.errors.length, 1, '失败的那个要报一次错');
     assert.ok(api.errors[0].text.includes('第二个坏了'), '错误文案要带服务端可读原因');
