@@ -1205,7 +1205,15 @@ async function t(name, fn) {
       `退避必须是 1s→2s→5s→10s→30s 封顶(业主定 30s,组长收口先快后慢),实测 ${backoff}`);
   });
 
-  await t('㉔ 状态栏精简:业主点名移除的不得再出现,保留的必须在;「归属 归属」不再重复', async () => {
+  await t('㉔ 状态栏精简:移除项不再出现、保留项仍在、无未捕获异常;「归属 归属」不再重复', async () => {
+    // 🔴 组长点名要钉的那一条:被移除的元素**都有 id,而有 id 的东西通常有 JS 在引用**。
+    //    删 DOM 不删引用 ⇒ getElementById 返回 null ⇒ 后续 `.textContent=` 抛错
+    //    ⇒ **整段脚本静默停摆,后面的监听器一个都不绑** —— 正是粘贴那次的形状。
+    //    所以这里从 reload 开始就收未捕获异常,并在收完之后再动一次三个入口。
+    const pageErrors = [];
+    const onPageError = (e) => pageErrors.push(String((e && e.stack) || e));
+    page.on('pageerror', onPageError);
+    try {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
     const bar = await page.evaluate(() => {
@@ -1232,6 +1240,21 @@ async function t(name, fn) {
     assert.ok(/MB/.test(fmt.mem3), `内存 3 位数时不进位,实测 ${fmt.mem3}`);
     assert.ok(!/%/.test(fmt.mem4) && !/%/.test(fmt.disk), `内存/磁盘都不再带百分比,实测 ${fmt.mem4} | ${fmt.disk}`);
     assert.strictEqual(fmt.disk, '44.2 / 232.4 GB', `磁盘格式按业主给的样子,实测 ${fmt.disk}`);
+
+    // 再动一次三个入口:若脚本已停摆,监听器根本没绑,这里会露出来
+    await page.evaluate(() => { const el = document.getElementById('humanInput'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); el.focus(); });
+    const before = uploadCalls.length;
+    await pasteAtFocus({ name: 'after-trim.png', type: 'image/png', b64: fs.readFileSync(fx('sample.png')).toString('base64') });
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 1, { timeout: 30000 });
+    assert.strictEqual(uploadCalls.length, before + 1, '精简之后粘贴入口必须仍然工作(脚本没停摆)');
+    await page.setInputFiles('#filePicker', [fx('sample.pdf')]);
+    await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n, 2, { timeout: 30000 });
+
+    assert.deepStrictEqual(pageErrors, [],
+      `🔴 移除那七项之后页面不得有任何未捕获异常 —— 有异常 = 整段脚本可能已停摆,实测 ${JSON.stringify(pageErrors.slice(0, 3))}`);
+    } finally {
+      page.off('pageerror', onPageError);
+    }
   });
 
   await t('㉕ 页内截屏:抓帧→框选→裁剪→**走既有上传管道**(选源那一步只能人工,见注释)', async () => {
