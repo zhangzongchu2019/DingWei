@@ -15,7 +15,21 @@
 - `/run/dingwei/notify.sock` 不存在；
 - invariant-runner 正常运行，默认请求 `/run/dingwei/notify.sock`，最近一轮 9 条断言成立。
 
-因此本版是**配置接线**，不是重写出口。不得借本版修改 `cmd/workpulse/internal_notify.go` 或扩充巡检内容。
+代码侧仍是**配置接线**，不是重写出口。不得借本版修改 `cmd/workpulse/internal_notify.go` 或扩充巡检内容。
+
+### 🔴 第二轮只读核查发现的部署阻断
+
+现网 `workpulse` 配置位于容器内 `/etc/supervisor/conf.d/dingwei.conf`。执行方确认：
+
+- 该文件不在宿主 bind mount 中；
+- `docker diff` 将它标为容器可写层修改；
+- 可见挂载只有两份 secret 与 `/data`，均不是该配置；
+- invariant-runner 配置同样是容器可写层新增文件，且未显式设置 `DW_NOTIFY_SOCKET`；
+- 当前只读信息无法定位一份会在容器重建时恢复这些配置的持久母本。
+
+因此，**直接修改当前容器可以当场接通，却不能作为本版交付**：容器一旦重建，四项配置会无声消失，告警重新失效。下面执行顺序的前置条件“找到并修改持久母本”当前不成立。
+
+本件停在这里等待组长裁定持久落点。可选方向至少涉及镜像/编排/受控启动配置，已超出“只接现有三个变量”的原始范围；作者不自行选择或实施。
 
 ## 凭据与目标值边界
 
@@ -23,7 +37,7 @@
 - `WP_ALERT_BOT_CHANNEL` 必须取自现网已知成功的同一飞书机器人通道；不能凭名字猜。
 - `WP_ALERT_CHAT_ENTITY` 必须取自该通道下、经业主本人入站消息核实的个人实体；不得使用 Agent session name。
 - `WP_ALERT_CHAT_TYPE=personal`；`WP_NOTIFY_SOCKET` 必须与 runner 实际请求路径一致。
-- 配置必须写入现网的持久母本，不能只注入当前进程或当前容器。母本位置由 prodops 只读核实后填入执行记录，值仍不回传。
+- 配置必须写入现网的持久母本，不能只注入当前进程或当前容器。当前只读核查已确认该母本不可见；组长裁定新的持久落点前不得执行后续步骤，值始终不得回传。
 
 ## 执行顺序（由组长出单、prodops 执行）
 
