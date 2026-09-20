@@ -80,6 +80,8 @@ NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome node view-service/console-
 
 装配闸：`TestConsolePlatformRoutesAreAssembledWithServerGuards` 用 Go AST 读取 `cmd/workpulse/main.go`，要求六条平台路由同时存在目标 handler、console principal 守卫与平台角色守卫。它验证的是路由装配，不拿“handler 函数存在”冒充“功能已接上”。
 
+装配变异：只删除 approve 路由，`git diff --numstat` 为 `0 1 cmd/workpulse/main.go`；定向测试 `rc=1`，唯一失败为 `console platform route not assembled: POST /api/console/platform/items/{itemID}/approve`。已还原。
+
 全量回归（2026-09-20）：
 
 ```text
