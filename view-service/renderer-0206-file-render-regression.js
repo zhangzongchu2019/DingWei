@@ -1613,6 +1613,151 @@ async function t(name, fn) {
       `🔴 截屏遮罩没有铺满视口(共 ${violations.length} 项):\n       - ${violations.join('\n       - ')}`);
   });
 
+  // ── ㉙ 选区 <4px 必须回退整张(两侧都要有素材)──────────────────
+  await t('㉙ 🔴 选区 <4px 必须回退整张(不是碎片);刚过阈值必须真按选区裁 —— 两条腿都要有', async () => {
+    // 为什么单开一格(组长 ts-No.2 裁定②):
+    //   renderer:4594  const r = (shotRect && shotRect.w >= 4 && shotRect.h >= 4) ? shotRect : full;
+    //   U7 变异把【整条三元式】换成 full ⇒ 那个 `>= 4` 兜底被一起吞掉,
+    //   所以它此前**自己零判别力**:把阈值删掉(碎片照裁)也没有任何用例红。
+    //
+    // 🔴 只验"小选区回退整张"是**半条** —— "一律传整张"(U7)也能让它全过。
+    //    所以本条**两侧都要有素材**(本仓判据 6):
+    //      L1 不拖          ⇒ 整张    (shotRect === null 这条触发路径)
+    //      L2 拖 ~2 CSS px  ⇒ 整张    (w<4 兜底这条触发路径)
+    //      L3 拖到源 10x10  ⇒ 10x10   (🔴 阳性对照:刚过阈值就必须真裁,不许也回退整张)
+    //    每条腿都有**前置守卫**:先读产品自己的 shotRect,确认这条腿真的走在它声称的分支上 ——
+    //    否则拖大了/拖没了都不会有人发现,那一腿就是空断言。
+    const SRC_W = 2400, SRC_H = 1200;
+    const bodies = [];
+    const onReq = (req) => { if (req.url().endsWith('/files/upload')) bodies.push(req.postDataBuffer()); };
+    page.on('request', onReq);
+
+    // 四象限异色帧:整张与碎片可以用**颜色**分辨,不只靠尺寸
+    await page.evaluate(([W, H]) => {
+      window.__dwSetScreenshotFrameSource(() => {
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const g = c.getContext('2d');
+        g.fillStyle = '#ff0000'; g.fillRect(0, 0, W / 2, H / 2);          // 左上 红
+        g.fillStyle = '#00ff00'; g.fillRect(W / 2, 0, W / 2, H / 2);       // 右上 绿
+        g.fillStyle = '#0000ff'; g.fillRect(0, H / 2, W / 2, H / 2);       // 左下 蓝
+        g.fillStyle = '#ffff00'; g.fillRect(W / 2, H / 2, W / 2, H / 2);   // 右下 黄
+        return Promise.resolve(c);
+      });
+    }, [SRC_W, SRC_H]);
+
+    // 上传字节的 IHDR:逐字节解析,不经图像库(与 ㉗ 同一手法)
+    const ihdr = (buf, label) => {
+      const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      assert.ok(buf && buf.length > 24,
+        `${label}:未取到上传请求体(postDataBuffer 为空)⇒ 取证手段失效,不是产品失败,先修取证`);
+      assert.ok(buf.subarray(0, 8).equals(PNG_SIG), `${label}:上传字节不是 PNG(签名不符)`);
+      assert.strictEqual(buf.subarray(12, 16).toString('latin1'), 'IHDR', `${label}:第一个 chunk 不是 IHDR`);
+      return [buf.readUInt32BE(16), buf.readUInt32BE(20)];
+    };
+    // 解码上传字节本身,按给定坐标采样(验"是整张/是哪一块",不只验尺寸)
+    const sample = (buf, pts) => page.evaluate(async ([b64, keys]) => {
+      const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const bmp = await createImageBitmap(new Blob([bin], { type: 'image/png' }));
+      const c = document.createElement('canvas');
+      c.width = bmp.width; c.height = bmp.height;
+      const g = c.getContext('2d');
+      g.drawImage(bmp, 0, 0);
+      const out = { w: bmp.width, h: bmp.height, pts: {} };
+      for (const [name, xy] of Object.entries(keys)) {
+        const d = g.getImageData(xy[0], xy[1], 1, 1).data;
+        out.pts[name] = [d[0], d[1], d[2]];
+      }
+      return out;
+    }, [buf.toString('base64'), pts]);
+
+    let refs = (await page.inputValue('#humanInput')).split('/f/').length - 1;
+
+    // 一条腿:开遮罩 →(可选)真 pointer 拖 → 读产品自己的 shotRect → 上传 → 取字节
+    const shoot = async (label, dragCss) => {
+      bodies.length = 0;
+      await page.click('#shotBtn');
+      await page.waitForSelector('#shotOverlay:not([hidden])', { timeout: 15000 });
+      const geo = await page.evaluate(() => {
+        const box = (id) => {
+          const r = document.getElementById(id).getBoundingClientRect();
+          return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+        };
+        return { canvas: box('shotCanvas'), wrap: box('shotWrap'), cw: document.getElementById('shotCanvas').width };
+      });
+      assert.strictEqual(geo.cw, SRC_W, `${label}:画布宽应为帧源宽 ${SRC_W},实测 ${geo.cw}`);
+      let rect = null;
+      if (dragCss) {
+        // 拖拽必须落在用户真能看见的区域内(与 ㉗ 同一约束)
+        const vis = {
+          left: Math.max(geo.canvas.left, geo.wrap.left), top: Math.max(geo.canvas.top, geo.wrap.top),
+          right: Math.min(geo.canvas.right, geo.wrap.right), bottom: Math.min(geo.canvas.bottom, geo.wrap.bottom),
+        };
+        const x0 = geo.canvas.left + geo.canvas.width * 0.75;   // 源 x=1800,稳落在右上绿象限内
+        const y0 = geo.canvas.top + Math.min(60, geo.canvas.height / 2);
+        for (const [name, p] of [['起点', { x: x0, y: y0 }], ['终点', { x: x0 + dragCss, y: y0 + dragCss }]]) {
+          assert.ok(p.x > vis.left + 3 && p.x < vis.right - 3 && p.y > vis.top + 3 && p.y < vis.bottom - 3,
+            `${label}:拖选${name} (${p.x.toFixed(1)},${p.y.toFixed(1)}) 不在可见区 ⇒ 布局变了,请重挑坐标`);
+        }
+        await page.mouse.move(x0, y0);
+        await page.mouse.down();
+        await page.mouse.move(x0 + dragCss, y0 + dragCss, { steps: 3 });
+        await page.mouse.up();
+      }
+      rect = await page.evaluate(() => (typeof shotRect !== 'undefined' && shotRect
+        ? { x: shotRect.x, y: shotRect.y, w: shotRect.w, h: shotRect.h } : null));
+      refs += 1;
+      await page.click('#shotConfirm');
+      await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n,
+        refs, { timeout: 30000 });
+      assert.strictEqual(bodies.length, 1, `${label}:应恰好捕获 1 次上传请求体,实测 ${bodies.length}`);
+      return { rect, buf: bodies[0], geo };
+    };
+
+    try {
+      // ── L1 不拖:shotRect 必须仍是 null,上传必须是整张 ────────────────
+      const l1 = await shoot('L1 不拖', null);
+      assert.strictEqual(l1.rect, null,
+        `L1 前置守卫:没拖就不该有选区,实测 ${JSON.stringify(l1.rect)} ⇒ 这一腿没走在"未框选"分支上`);
+      assert.deepStrictEqual(ihdr(l1.buf, 'L1 不拖'), [SRC_W, SRC_H],
+        'L1:未框选必须传整张 —— 业主"就想传整屏"这条路不许被堵死(板件已裁定不置灰)');
+      const s1 = await sample(l1.buf, { tl: [10, 10], tr: [SRC_W - 11, 10], bl: [10, SRC_H - 11], br: [SRC_W - 11, SRC_H - 11] });
+      assert.deepStrictEqual([s1.pts.tl, s1.pts.tr, s1.pts.bl, s1.pts.br],
+        [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0]],
+        `L1:整张的四象限颜色应各就各位(证明真是整张,不是碰巧同尺寸),实测 ${JSON.stringify(s1.pts)}`);
+
+      // ── L2 拖 ~2 CSS px:必须【回退整张】,不是裁出碎片 ────────────────
+      const l2 = await shoot('L2 微拖', 2);      // 2 CSS px × 缩放比 1.875 ≈ 3.75 源 px < 4
+      assert.ok(l2.rect, 'L2 前置守卫:拖了就该有选区,实测 null ⇒ 这一腿没走在"<4px 兜底"分支上');
+      assert.ok(l2.rect.w > 0 && l2.rect.w < 4 && l2.rect.h > 0 && l2.rect.h < 4,
+        `L2 前置守卫:选区必须【非空且 <4px】才算在测兜底,实测 ${JSON.stringify(l2.rect)}`);
+      assert.deepStrictEqual(ihdr(l2.buf, 'L2 微拖'), [SRC_W, SRC_H],
+        `🔴 L2:选区 ${l2.rect.w.toFixed(2)}x${l2.rect.h.toFixed(2)}(<4px,按误触处理)必须回退整张,不许裁出碎片`);
+      const s2 = await sample(l2.buf, { tl: [10, 10], br: [SRC_W - 11, SRC_H - 11] });
+      assert.deepStrictEqual([s2.pts.tl, s2.pts.br], [[255, 0, 0], [255, 255, 0]],
+        `L2:回退的必须是【整张】(左上红/右下黄都在),实测 ${JSON.stringify(s2.pts)}`);
+
+      // ── L3 阳性对照:刚过阈值(源 10x10)必须真按选区裁 ─────────────────
+      //    🔴 没有这一腿,"一律传整张"也能让 L1/L2 全过 ⇒ 本条又成了半条。
+      const WANT = 10;                                        // 源 px,明确 >= 4
+      const dragCss3 = WANT * (l2.geo.canvas.width / SRC_W);   // 源 10px 对应的 CSS 位移
+      const l3 = await shoot('L3 刚过阈值', dragCss3);
+      assert.ok(l3.rect && l3.rect.w >= 4 && l3.rect.h >= 4,
+        `L3 前置守卫:选区必须 >=4px 才算过了阈值,实测 ${JSON.stringify(l3.rect)}`);
+      const got3 = ihdr(l3.buf, 'L3 刚过阈值');
+      assert.ok(!(got3[0] === SRC_W && got3[1] === SRC_H),
+        `🔴 L3 阳性对照:选区已过阈值(${l3.rect.w.toFixed(2)}px)却传了整张 ⇒ "一律传整张"也能过 L1/L2,本条就是半条`);
+      assert.deepStrictEqual(got3, [Math.round(l3.rect.w), Math.round(l3.rect.h)],
+        `L3:IHDR 应 == 选区宽高 ${Math.round(l3.rect.w)}x${Math.round(l3.rect.h)},实测 ${got3[0]}x${got3[1]}`);
+      const s3 = await sample(l3.buf, { mid: [got3[0] >> 1, got3[1] >> 1] });
+      assert.deepStrictEqual(s3.pts.mid, [0, 255, 0],
+        `L3:裁出来的应是右上绿象限那一块,中心实测 [${s3.pts.mid}] ⇒ 尺寸对但位置错`);
+    } finally {
+      page.off('request', onReq);
+      await page.evaluate(() => window.__dwSetScreenshotFrameSource(null)).catch(() => {});
+    }
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;
