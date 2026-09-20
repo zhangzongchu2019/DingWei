@@ -1,10 +1,78 @@
-const { chromium } = require('playwright');
+// 🔴 2026-09-20(㉒ 同格,组长 ts-No.22「顺手把端口这条治本」):本件原先**硬编码依赖 :19312 的外部静态服务**
+//    (`RENDERER_URL` 的缺省值就指它)。两个后果,今晚都实测踩过:
+//      · 服务不在 ⇒ `page.goto` 抛 `ERR_CONNECTION_REFUSED`、**未捕获异常 rc=1** ⇒
+//        从 rc 上看不出是"环境缺失"还是"断言失败"(正是 ⑭ 要治的形状);
+//      · :19312 是**共享端口** ⇒ 谁先起谁绊倒后面的人(`EADDRINUSE`),而"记得先起服务"正是本组在治的病。
+//    ⇒ 改成**自启自收、自挑空闲端口**(形状照 `coder56solzzc` 那四件与 `renderer-sse-reconnect.js` 的 `startFixture`)。
+//    🔵 rc 同时对齐发布约定:**0 全过 / 2 断言失败 / 3 环境不可用**(原先无论什么原因一律 1)。
+//    🔵 env 面:只读**已登记**的 `PW_CHANNEL`;**不再读 `RENDERER_URL`**(未登记面,跑者的机械扫描会拒)。
+//    🔵 合并注记:`coder56solzzc/browser-selfhost-02135` 上有共享件 `renderer-regression-selfhost.js`
+//       (`startRendererServer` / `launchChromium` / `regressionCollector` / `finishRegression`)。
+//       🔴 **它不在本件的基线上** ⇒ 直接 require 会 MODULE_NOT_FOUND(= rc=3),所以这里内联等价的一小段。
+//       两条线合并后**应换成那个 helper**,别再实现第三次。
+const fs = require('fs');
+const http = require('http');
+const path = require('path');
 const assert = require('assert');
-const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-canary-sse.html';
+
+const SHOTS = '/tmp/renderer-pw';
+
+class EnvironmentUnavailable extends Error {}
+
+function chromiumForRegression() {
+  try { return require('playwright').chromium; }
+  catch (err) { throw new EnvironmentUnavailable(`Playwright 不可用: ${err.message}`); }
+}
+
+async function launchChromium() {
+  const chromium = chromiumForRegression();
+  try {
+    const options = { headless: true };
+    if (process.env.PW_CHANNEL) options.channel = process.env.PW_CHANNEL;   // 已登记的 env 面
+    return await chromium.launch(options);
+  } catch (err) {
+    if (/executable doesn't exist|browser.*not found|failed to launch/i.test(err.message || '')) {
+      throw new EnvironmentUnavailable(`Chromium 不可用: ${err.message}`);
+    }
+    throw err;
+  }
+}
+
+// 自起一个**只**服务仓内那一份 renderer 的 HTTP 服务:端口 0(自挑空闲)、cwd 无关、退出必收。
+// 🔵 不用 `python3 -m http.server`:那会把整个目录暴露出去,而且多一个进程要收。
+async function startRendererServer() {
+  const rendererPath = path.join(__dirname, 'renderer-canary-sse.html');
+  let renderer;
+  try { renderer = fs.readFileSync(rendererPath); }
+  catch (err) { throw new EnvironmentUnavailable(`renderer 件读不到(${rendererPath}): ${err.message}`); }
+  const server = http.createServer((req, res) => {
+    const pathname = new URL(req.url, 'http://renderer.test').pathname;
+    if (pathname !== '/renderer-canary-sse.html') {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('not found');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(renderer);
+  });
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  }).catch((err) => { throw new EnvironmentUnavailable(`静态服务起不来: ${err.message}`); });
+  const port = server.address().port;
+  const crypto = require('crypto');
+  console.log(`  · 自起静态服务 http://127.0.0.1:${port}/renderer-canary-sse.html(自挑端口 · 退出必收 · 不再依赖 :19312)`);
+  console.log(`    renderer sha256=${crypto.createHash('sha256').update(renderer).digest('hex').slice(0, 16)}…`);
+  return { url: `http://127.0.0.1:${port}/renderer-canary-sse.html`, close: () => new Promise((resolve) => server.close(resolve)) };
+}
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  const fixture = await startRendererServer();
+  const baseUrl = fixture.url;
+  fs.mkdirSync(SHOTS, { recursive: true });
+  let browser;
   try {
+    browser = await launchChromium();
     for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
       const page = await browser.newPage({ viewport });
       await page.route('**/status', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
@@ -65,7 +133,7 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-can
       assert.ok(bottomCluster.timelineBottom <= bottomCluster.waitingBottom);
       assert.ok(bottomCluster.waitingBottom <= bottomCluster.composerTop);
       assert.ok(Math.abs(bottomCluster.composerBottom - bottomCluster.viewportHeight) <= 1);
-      await page.screenshot({ path: `/tmp/renderer-pw/waiting-bottom-${viewport.width}.png`, fullPage: true });
+      await page.screenshot({ path: path.join(SHOTS, `waiting-bottom-${viewport.width}.png`), fullPage: true });
       await page.evaluate(() => {
         handleIncomingEvent({ kind: 'user_input', text: '排队中的外部任务\n第二行\n第三行', data: { lifecycle: 'admitted' }, delivery_id: 'd-wait', turn_id: 't-wait', cursor: '2' });
       });
@@ -214,29 +282,66 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-can
       await page.waitForTimeout(100);
       assert.strictEqual(await page.locator('#timeline').evaluate(node =>
         Math.abs(node.scrollHeight - node.clientHeight - node.scrollTop) <= 1), true);
+      // 🔴 2026-09-20(㉒):本格的**代理过期了**,与上面那格 2026-09-11 修掉的那个同源,只是这一格漏了。
+      //    产品自 09-11 起只认「**紧随真实手势** 400ms 内、且离底 >160px」的 scroll 为"用户接管"
+      //    (`renderer-canary-sse.html:1658` / `:1659` / `:1691`,锚 `260ad413`);
+      //    而这里只设 `scrollTop` + 派发**合成** scroll,**没有任何真手势** ⇒ 产品按设计不交还跟随权
+      //    ⇒ 连续流把人带回底部 ⇒ 本格长期红(实测 `3164 !== 0`,rc=1)。
+      //    🔵 定界七格实测(探针未入仓):真 wheel 上翻后连续流 2.1s,scrollTop **纹丝不动**(1234 → 1234,
+      //       `timelineAtBottom` 第 1 个采样就交还并全程保持);同一条腿**去掉手势**必被拽到底(0 → 2503)。
+      //       ⇒ 🔴 红的是代理,不是产品。
+      //    ⇒ 修法与上面那格一致:**补一次真 wheel 手势**,断言原样保留
+      //       (那格的注释也写着"⚠️ 不能靠删掉这条断言来「修好」")。
+      //    ⚠️ 坐标必须落在**当前视口内**(本件跑 1280 与 390 两档)⇒ 取元素中心,不写死。
+      //    ⚠️ Playwright 的 `mouse.wheel` **异步**(实测比调用返回晚约 20ms)⇒ 等一下再置位,
+      //       否则置位派发的 scroll 会抢在手势之前被处理,被正确地判成"非用户滚动"。
+      const continuousBox = await page.locator('#timeline').boundingBox();
+      await page.mouse.move(continuousBox.x + continuousBox.width / 2, continuousBox.y + continuousBox.height / 2);
+      await page.mouse.wheel(0, -400);
+      await page.waitForTimeout(60);
       const continuousScrollTop = await page.locator('#timeline').evaluate(node => {
+        const previous = node.style.scrollBehavior;
         node.style.scrollBehavior = 'auto';
         node.scrollTop = 0;
-        node.dispatchEvent(new Event('scroll'));
+        node.style.scrollBehavior = previous;
         return node.scrollTop;
       });
       await page.waitForTimeout(2100);
       assert.strictEqual(await page.evaluate(() => replayInProgress), false);
-      assert.strictEqual(await page.locator('#timeline').evaluate(node => node.scrollTop), continuousScrollTop);
+      // 🔴 断言比原来**多一条**:位置没被拽走之外,跟随权也不得被悄悄夺回
+      //    (`scrollTimelineToBottom()` 结尾会把 `timelineAtBottom` 置真 ⇒ 位置这一帧没动,
+      //     下一条内容照样会把人带到底)。这正是 D1 的形状,不能只量位置。
+      const continuousEnd = await page.locator('#timeline').evaluate(node => ({
+        st: node.scrollTop,
+        gap: node.scrollHeight - node.clientHeight - node.scrollTop,
+        atBottom: timelineAtBottom,
+      }));
+      assert.strictEqual(continuousEnd.st, continuousScrollTop,
+        `用户上翻后被拽回底部:scrollTop ${continuousScrollTop} → ${continuousEnd.st}`
+        + `(离底 ${continuousEnd.gap}px · timelineAtBottom=${continuousEnd.atBottom})⇒ 连续流期间产品夺回了滚动控制权`);
+      assert.strictEqual(continuousEnd.atBottom, false,
+        `跟随权被重新夺回(timelineAtBottom=true,离底 ${continuousEnd.gap}px)`
+        + ` ⇒ 即使这一帧位置没动,后续内容仍会把用户带到底`);
       await page.evaluate(() => clearInterval(window.__continuousTimer));
       const layout = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,
         clientWidth: document.documentElement.clientWidth,
       }));
       assert.strictEqual(layout.scrollWidth, layout.clientWidth);
-      await page.screenshot({ path: `/tmp/renderer-pw/turn-group-${viewport.width}.png`, fullPage: true });
+      await page.screenshot({ path: path.join(SHOTS, `turn-group-${viewport.width}.png`), fullPage: true });
       await page.close();
     }
     console.log('renderer regression PASS: waiting admission + continuous SSE scroll ownership + async reflow (1280x900, 390x844)');
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
+    await fixture.close();
   }
 })().catch(err => {
-  console.error(err);
-  process.exit(1);
+  // rc 约定:0 全过 / 2 断言失败 / 3 环境不可用(原先一律 1 ⇒ 从 rc 上分不清是哪种)
+  if (err instanceof EnvironmentUnavailable) {
+    console.error(`ENVIRONMENT_UNAVAILABLE: ${err.message}`);
+    process.exit(3);
+  }
+  console.error(err && (err.stack || err.message) || err);
+  process.exit(2);
 });
