@@ -256,6 +256,9 @@ const consolePageHTML = `<!doctype html><meta charset=utf-8><title>DingWei Agent
 body{margin:0;display:grid;grid-template-columns:240px 1fr;height:100vh;font:14px sans-serif}
 nav{overflow:auto;border-right:1px solid #ddd;padding:10px}
 nav button{display:block;width:100%;margin:3px 0;text-align:left;padding:4px 6px}
+#platform-items a{display:block;padding:4px 6px;margin:3px 0;border:1px solid #ddd;border-radius:4px;color:#174f8a;text-decoration:none}
+#platform-actions{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 12px}
+#platform-actions button{width:auto;margin:0;font-size:12px}
 main{display:flex;flex-direction:column;min-width:0}
 #tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #ddd;padding:6px;min-height:28px}
 #tabs .tab{display:inline-flex;align-items:center;gap:6px;border:1px solid #ccc;border-radius:4px;
@@ -268,7 +271,7 @@ main{display:flex;flex-direction:column;min-width:0}
 #panes iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 #hint{padding:10px;color:#888}
 </style>
-<nav><h3 style="margin:4px 0 8px">Agents</h3><div id=a></div></nav>
+<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-items></div><div id=platform-actions></div></section><h3 id=agents style="margin:4px 0 8px">Agents</h3><div id=a></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <script>
 const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
@@ -276,6 +279,25 @@ const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6
 function dwShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s}
 const tabs = new Map();   // session -> {tab, pane}
 let agentSnapshot = new Map(); // session -> online;只描述左栏最新快照,不拥有 tab/pane
+function renderPlatform(platform){
+  var items=document.getElementById('platform-items'); items.replaceChildren();
+  (Array.isArray(platform.items)?platform.items:[]).forEach(function(item){
+    var a=document.createElement('a'); a.textContent=item.title; a.href=item.href; a.dataset.itemId=item.id;
+    if(item.status==='pending') a.dataset.status='pending';
+    items.append(a);
+  });
+  var actions=document.getElementById('platform-actions'); actions.replaceChildren();
+  (Array.isArray(platform.actions)?platform.actions:[]).filter(function(action){return action!=='read'}).forEach(function(action){
+    var b=document.createElement('button'); b.type='button'; b.dataset.action=action; b.textContent=action; actions.append(b);
+  });
+  document.documentElement.dataset.platformRole=platform.role||'';
+}
+async function refreshPlatform(){
+  try{
+    var r=await fetch('/api/console/platform',{cache:'no-store'}); if(!r.ok) return;
+    renderPlatform(await r.json());
+  }catch(_){ /* 平台入口失败不得清空已打开的 Agent tab */ }
+}
 function activate(session){
   tabs.forEach(function(v,k){
     v.tab.classList.toggle('on', k===session);
@@ -350,6 +372,7 @@ async function refreshAgents(){
     applyAgentSnapshot(agents);
   }catch(_){ /* 保留上一份可见快照;短暂请求失败不得把左栏清空 */ }
 }
+refreshPlatform();
 refreshAgents();
 setInterval(refreshAgents,15000);
 </script>`

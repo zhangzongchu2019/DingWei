@@ -71,12 +71,16 @@ class T(unittest.TestCase):
             {"principal_id": "owner-entry-a", "role": "owner", "owner_key": OWNER_KEY, "active": True},
             {"principal_id": "owner-entry-b", "role": "owner", "owner_key": OWNER_KEY, "active": True},
         ])
+        self.assertEqual(d["platform_roles"], [
+            {"principal_id": "owner-entry-a", "role": "owner", "active": True},
+            {"principal_id": "owner-entry-b", "role": "owner", "active": True},
+        ])
 
     def test_2_schema_matches_go_struct(self):
         """🔴 生产解析器带 DisallowUnknownFields():多一个键就起不来。"""
         self.assertEqual(self.run_tool(expect=3)[0], 0)
         d = json.load(open(self.out))
-        self.assertEqual(set(d.keys()), {"principals", "roles", "agents"})
+        self.assertEqual(set(d.keys()), {"principals", "roles", "platform_roles", "agents"})
         for p in d["principals"]:
             self.assertEqual(set(p), {"id","provider","provider_issuer","provider_subject","display_name","active"})
         for a in d["agents"]:
@@ -85,6 +89,17 @@ class T(unittest.TestCase):
                 self.assertEqual(set(g), {"principal_id","permission"})
         for role in d["roles"]:
             self.assertEqual(set(role), {"principal_id", "role", "owner_key", "active"})
+        for role in d["platform_roles"]:
+            self.assertEqual(set(role), {"principal_id", "role", "active"})
+
+    def test_11_management_role_is_explicit_not_inferred(self):
+        rc, out = self.run_tool("--management-principal", "owner-entry-b", expect=3)
+        self.assertEqual(rc, 0, out)
+        d = json.load(open(self.out))
+        self.assertEqual(d["platform_roles"], [
+            {"principal_id": "owner-entry-a", "role": "owner", "active": True},
+            {"principal_id": "owner-entry-b", "role": "management", "active": True},
+        ])
 
     def test_10_every_owner_identity_gets_explicit_scoped_role(self):
         self.assertEqual(self.run_tool(expect=3)[0], 0)
@@ -141,6 +156,11 @@ class T(unittest.TestCase):
         rc, out = self.run_tool()
         self.assertEqual(rc, 3)
         self.assertIn("无法判别", out)
+
+    def test_12_unknown_management_principal_blocks(self):
+        rc, out = self.run_tool("--management-principal", "ghost", expect=3)
+        self.assertEqual(rc, 2)
+        self.assertIn("management principal 不在本次生成集合", out)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

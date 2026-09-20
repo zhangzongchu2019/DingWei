@@ -50,6 +50,8 @@ def main():
     ap.add_argument("--principal-digest", action="append", required=True,
                     metavar="SHA256_16", help="业主身份的 sha256 前16位,可重复")
     ap.add_argument("--permission", default="interact")
+    ap.add_argument("--management-principal", action="append", default=[],
+                    help="生成结果中要显式授予 management 的 principal id;其余为 owner")
     ap.add_argument("--out", required=True)
     ap.add_argument("--expect-agents", type=int, default=None,
                     help="外部预期条数;给了就必须相等,否则退 2(不迁就现状)")
@@ -96,8 +98,19 @@ def main():
               "owner_key": a.owner_key, "active": True}
              for p in principals]
 
+    principal_ids = {p["id"] for p in principals}
+    unknown_management = sorted(set(a.management_principal) - principal_ids)
+    if unknown_management:
+        die("management principal 不在本次生成集合: %s" % unknown_management, 2)
+    management = set(a.management_principal)
+    platform_roles = [{"principal_id": p["id"],
+                       "role": "management" if p["id"] in management else "owner",
+                       "active": True}
+                      for p in principals]
+
     with open(a.out, "w", encoding="utf-8") as fh:
-        json.dump({"principals": principals, "roles": roles, "agents": agents}, fh,
+        json.dump({"principals": principals, "roles": roles,
+                   "platform_roles": platform_roles, "agents": agents}, fh,
                   ensure_ascii=False, indent=2)
         fh.write("\n")
     os.chmod(a.out, 0o600)
@@ -109,6 +122,7 @@ def main():
     print("  agents     : %d" % len(agents))
     print("  grants     : %d  (= %d × %d)" % (len(agents) * len(principals), len(agents), len(principals)))
     print("  owner roles: %d" % len(roles))
+    print("  platform roles: %d (management=%d)" % (len(platform_roles), len(management)))
     print("  🔴 下一步用这个数:  --expect-agents %d   /   --expect-total %d"
           % (len(agents), len(agents)))
     print("  ⚠️ 产出含身份字面值,已置 0600;**不得入仓**。")

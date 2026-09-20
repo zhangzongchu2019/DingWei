@@ -31,6 +31,18 @@
       "active": true
     }
   ],
+  "platform_roles": [
+    {
+      "principal_id": "principal-owner-primary",
+      "role": "management",
+      "active": true
+    },
+    {
+      "principal_id": "principal-owner-secondary",
+      "role": "owner",
+      "active": true
+    }
+  ],
   "agents": [
     {
       "id": "agent-console",

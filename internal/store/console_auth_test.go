@@ -56,6 +56,48 @@ func TestConsoleACLSeparatesPrincipalsDespiteSharedKey(t *testing.T) {
 	}
 }
 
+func TestConsolePlatformItemLifecycleAndPendingVisibility(t *testing.T) {
+	ctx := context.Background()
+	db, err := OpenSQLite(filepath.Join(t.TempDir(), "console-platform-items.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	item := model.ConsolePlatformItem{ID: "specs", Kind: "spec", Title: "Specs", Href: "/console/specs",
+		Status: "pending", SubmittedBy: "owner", Active: true}
+	if err := db.CreateConsolePlatformItem(ctx, item, now); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := db.ListConsolePlatformItems(ctx, false); err != nil || len(got) != 0 {
+		t.Fatalf("owner-visible pending=%+v err=%v", got, err)
+	}
+	if got, err := db.ListConsolePlatformItems(ctx, true); err != nil || len(got) != 1 || got[0].Status != "pending" {
+		t.Fatalf("management pending=%+v err=%v", got, err)
+	}
+	if ok, err := db.ApproveConsolePlatformItem(ctx, "specs", now.Add(time.Minute)); err != nil || !ok {
+		t.Fatalf("approve ok=%v err=%v", ok, err)
+	}
+	if ok, err := db.UpdateConsolePlatformItem(ctx, "specs", "SpecKit", "/console/spec-kit", now.Add(2*time.Minute)); err != nil || !ok {
+		t.Fatalf("edit ok=%v err=%v", ok, err)
+	}
+	if got, err := db.ListConsolePlatformItems(ctx, false); err != nil || len(got) != 1 || got[0].Title != "SpecKit" {
+		t.Fatalf("approved list=%+v err=%v", got, err)
+	}
+	if ok, err := db.DeleteConsolePlatformItem(ctx, "specs", now.Add(3*time.Minute)); err != nil || !ok {
+		t.Fatalf("delete ok=%v err=%v", ok, err)
+	}
+	if got, err := db.ListConsolePlatformItems(ctx, true); err != nil || len(got) != 0 {
+		t.Fatalf("deleted list=%+v err=%v", got, err)
+	}
+}
+
 func TestConsoleCapabilityRotationAndFourGates(t *testing.T) {
 	ctx := context.Background()
 	db, err := OpenSQLite(filepath.Join(t.TempDir(), "console.db"))

@@ -355,6 +355,18 @@ type ConsolePlatformRole struct {
 	Active      bool
 }
 
+type ConsolePlatformItem struct {
+	ID          string    `json:"id"`
+	Kind        string    `json:"kind"`
+	Title       string    `json:"title"`
+	Href        string    `json:"href"`
+	Status      string    `json:"status"` // pending | approved
+	SubmittedBy string    `json:"submitted_by,omitempty"`
+	Active      bool      `json:"active"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
+	UpdatedAt   time.Time `json:"updated_at,omitempty"`
+}
+
 type ConsoleSession struct {
 	ID          string
 	PrincipalID string

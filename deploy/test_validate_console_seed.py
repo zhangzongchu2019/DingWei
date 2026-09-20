@@ -28,6 +28,10 @@ GOOD = {
         {"principal_id": "owner-a", "role": "owner", "owner_key": "tenant-owner", "active": True},
         {"principal_id": "owner-b", "role": "owner", "owner_key": "tenant-owner", "active": True},
     ],
+    "platform_roles": [
+        {"principal_id": "owner-a", "role": "management", "active": True},
+        {"principal_id": "owner-b", "role": "owner", "active": True},
+    ],
     "agents": [
         {"id": "ag-1", "key_id": "K", "session_name": "zzc-one-2642", "owner_principal": "owner-a",
          "active": True, "grants": [{"principal_id": "owner-a", "permission": "interact"},
@@ -85,6 +89,7 @@ class SeedValidatorTest(unittest.TestCase):
         def drop_second(s):
             s["principals"] = [p for p in s["principals"] if p["id"] != "owner-b"]
             s["roles"] = [r for r in s["roles"] if r["principal_id"] != "owner-b"]
+            s["platform_roles"] = [r for r in s["platform_roles"] if r["principal_id"] != "owner-b"]
             for a in s["agents"]:
                 a["grants"] = [g for g in a["grants"] if g["principal_id"] != "owner-b"]
         self._mutate(drop_second, "业主有几条身份就必须声明几条")

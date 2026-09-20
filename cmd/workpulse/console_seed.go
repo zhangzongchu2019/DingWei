@@ -17,6 +17,7 @@ type consoleSeedStore interface {
 	UpsertConsoleAgent(context.Context, model.ConsoleAgent) error
 	UpsertConsoleAgentGrant(context.Context, model.ConsoleAgentGrant) error
 	UpsertConsolePrincipalRole(context.Context, model.ConsolePrincipalRole) error
+	UpsertConsolePlatformRole(context.Context, model.ConsolePlatformRole) error
 }
 
 type consoleSeed struct {
@@ -34,6 +35,11 @@ type consoleSeed struct {
 		OwnerKey    string `json:"owner_key"`
 		Active      *bool  `json:"active"`
 	} `json:"roles"`
+	PlatformRoles []struct {
+		PrincipalID string `json:"principal_id"`
+		Role        string `json:"role"`
+		Active      *bool  `json:"active"`
+	} `json:"platform_roles"`
 	Agents []struct {
 		ID             string `json:"id"`
 		KeyID          string `json:"key_id"`
@@ -68,6 +74,12 @@ func seedConsoleACL(ctx context.Context, st consoleSeedStore, path string) error
 		value := model.ConsolePrincipalRole{PrincipalID: entry.PrincipalID, Role: entry.Role, OwnerKey: entry.OwnerKey, Active: *entry.Active}
 		if err := st.UpsertConsolePrincipalRole(ctx, value); err != nil {
 			return fmt.Errorf("seed principal role %s/%s: %w", entry.PrincipalID, entry.Role, err)
+		}
+	}
+	for _, entry := range seed.PlatformRoles {
+		value := model.ConsolePlatformRole{PrincipalID: entry.PrincipalID, Role: entry.Role, Active: *entry.Active}
+		if err := st.UpsertConsolePlatformRole(ctx, value); err != nil {
+			return fmt.Errorf("seed platform role %s/%s: %w", entry.PrincipalID, entry.Role, err)
 		}
 	}
 	for _, entry := range seed.Agents {
@@ -136,6 +148,14 @@ func validateConsoleSeed(seed consoleSeed) error {
 		}
 		if !principals[entry.PrincipalID] || entry.Role != "owner" || strings.TrimSpace(entry.OwnerKey) == "" {
 			return fmt.Errorf("principal role %s/%s: invalid role or owner scope", entry.PrincipalID, entry.Role)
+		}
+	}
+	for _, entry := range seed.PlatformRoles {
+		if entry.Active == nil {
+			return fmt.Errorf("platform role %s/%s: active is required", entry.PrincipalID, entry.Role)
+		}
+		if !principals[entry.PrincipalID] || (entry.Role != "management" && entry.Role != "owner") {
+			return fmt.Errorf("platform role %s/%s: invalid role", entry.PrincipalID, entry.Role)
 		}
 	}
 	agents := make(map[string]bool, len(seed.Agents))

@@ -1,7 +1,9 @@
 package m8
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -81,5 +83,65 @@ func TestConsolePlatformUnknownPrincipalIsForbidden(t *testing.T) {
 	handler(rr, req)
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("code=%d body=%q", rr.Code, rr.Body.String())
+	}
+}
+
+func callConsolePlatform(t *testing.T, hub *Hub, principalID, action, method, path string, body []byte, handler http.HandlerFunc) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(method, path, bytes.NewReader(body))
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, principalID))
+	rr := httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(action, handler)(rr, req)
+	return rr
+}
+
+func TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow(t *testing.T) {
+	hub := newConsolePlatformTestHub(t)
+
+	// Existing Agent workspace is a real mounted item, not an empty extension point.
+	rr := callConsolePlatform(t, hub, "owner", consolePlatformActionRead, http.MethodGet,
+		"/api/console/platform", nil, hub.HandleConsolePlatform)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("owner list code=%d body=%q", rr.Code, rr.Body.String())
+	}
+	var listed struct {
+		Role    string                      `json:"role"`
+		Actions []string                    `json:"actions"`
+		Items   []model.ConsolePlatformItem `json:"items"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &listed); err != nil {
+		t.Fatal(err)
+	}
+	if listed.Role != "owner" || len(listed.Items) != 1 || listed.Items[0].ID != "agents" || listed.Items[0].Href != "#agents" {
+		t.Fatalf("owner platform=%+v", listed)
+	}
+
+	payload := []byte(`{"id":"specs","kind":"spec","title":"Specs","href":"/console/specs"}`)
+	// A normal owner can submit for review...
+	rr = callConsolePlatform(t, hub, "owner", consolePlatformActionSubmit, http.MethodPost,
+		"/api/console/platform/submissions", payload, hub.HandleConsolePlatformSubmit)
+	if rr.Code != http.StatusCreated || !bytes.Contains(rr.Body.Bytes(), []byte(`"status":"pending"`)) {
+		t.Fatalf("owner submit code=%d body=%q", rr.Code, rr.Body.String())
+	}
+	// ...but the same identity, through the same HTTP channel, cannot add directly.
+	rr = callConsolePlatform(t, hub, "owner", consolePlatformActionAdd, http.MethodPost,
+		"/api/console/platform/items", []byte(`{"id":"direct","kind":"spec","title":"Direct","href":"/console/direct"}`), hub.HandleConsolePlatformAdd)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("owner direct management action code=%d body=%q", rr.Code, rr.Body.String())
+	}
+
+	approveReq := httptest.NewRequest(http.MethodPost, "/api/console/platform/items/specs/approve", nil)
+	approveReq.SetPathValue("itemID", "specs")
+	approveReq = approveReq.WithContext(context.WithValue(approveReq.Context(), consolePrincipalContextKey{}, "manager"))
+	approveRR := httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionApprove, hub.HandleConsolePlatformApprove)(approveRR, approveReq)
+	if approveRR.Code != http.StatusNoContent {
+		t.Fatalf("manager approve code=%d body=%q", approveRR.Code, approveRR.Body.String())
+	}
+
+	rr = callConsolePlatform(t, hub, "owner", consolePlatformActionRead, http.MethodGet,
+		"/api/console/platform", nil, hub.HandleConsolePlatform)
+	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"id":"specs"`)) {
+		t.Fatalf("owner approved list code=%d body=%q", rr.Code, rr.Body.String())
 	}
 }

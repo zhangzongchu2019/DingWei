@@ -44,6 +44,14 @@ async function main() {
       res.end(JSON.stringify({ agents }));
       return;
     }
+    if (req.url === '/api/console/platform') {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({
+        role: 'owner', actions: ['read', 'submit'],
+        items: [{ id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' }],
+      }));
+      return;
+    }
     if (req.url && req.url.startsWith('/view/')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end('<!doctype html><title>fixture agent view</title>');
@@ -87,6 +95,15 @@ async function main() {
       await offline.waitFor({ state: 'attached' });
       assert.strictEqual(await online.isEnabled(), true);
       assert.strictEqual(await offline.isDisabled(), true);
+    });
+
+    await test('mounts a real platform item and role-scoped actions', async () => {
+      const agentsItem = page.locator('#platform-items a[data-item-id="agents"]');
+      await agentsItem.waitFor({ state: 'visible' });
+      assert.strictEqual(await agentsItem.getAttribute('href'), '#agents');
+      assert.strictEqual(await page.locator('#platform-actions button[data-action="submit"]').isVisible(), true);
+      assert.strictEqual(await page.locator('#platform-actions button[data-action="approve"]').count(), 0);
+      assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'owner');
     });
 
     await test('opens a real console tab and agent iframe', async () => {

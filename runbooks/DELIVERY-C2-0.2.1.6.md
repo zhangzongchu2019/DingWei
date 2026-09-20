@@ -26,13 +26,7 @@ NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome node view-service/console-
 
 **先红后绿：**首轮把第一条用例指向不存在的 `#console-harness-probe-that-does-not-exist`：`rc=1`，只有 `loads the real console document` 转红，另外两条通过。改为真实 `nav #a` 后：`passed=3 failed=0`、`rc=0`。
 
-**空白页变异：**只把装置的 `/console` 响应从真实 `consolePageHTML` 改为空白 HTML；`git diff --numstat` 为 `1 1 view-service/console-browser-regression.js`。结果 `rc=1`、`passed=0 failed=3`，三条分别红在标题身份、Agent 按钮渲染、tab/iframe 交互；已还原。
-
-## 明确没有证明
-
-- 本格只证明 console 浏览器装置有分辨力，尚未实现或验证 C2 的角色权限模型、Agent 列表拓展、功能项挂载框架。
-- 本格没有启动真实 workpulse、没有登录真实 console、没有触碰生产。
-- 本格使用 mock API 数据，只证明浏览器层消费真实页面代码；服务端角色权限须由后续独立的服务端阴格验证。
+**空白页变异：**只把装置的 `/console` 响应从真实 `consolePageHTML` 改为空白 HTML；`git diff --numstat` 为 `1 1 view-service/console-browser-regression.js`。首格时结果为 `rc=1`、`passed=0 failed=3`；平台壳接入后同一变异还须覆盖新增的平台项用例。变异已还原。
 
 ### ① 角色权限模型
 
@@ -55,3 +49,36 @@ go test ./internal/store ./internal/m8 -run TestConsolePlatform -count=1
 结果：两包 `rc=0`。测试明确不创建任何 Agent grant，仍能解析平台角色，证明两套语义没有混表。
 
 变异：只把 owner 分支短路为允许全部动作，`git diff --numstat` 为 `1 1 internal/m8/console_platform.go`。定向命令执行 12 个子用例，只有 owner/add、edit、delete、approve 四个阴格转红；manager 六项与 owner/read、submit 仍通过。`rc=1`，还原后定向回归重新 `rc=0`。
+
+### ② Agent 列表页拓展 ＋ ③ 功能项挂载框架
+
+console 左栏新增 Work platform 区域，仍保留既有 Agent 列表与多 tab 行为。`GET /api/console/platform` 返回服务端已解析的角色、允许动作与挂载项；前端只据此渲染，不承担授权。
+
+第一项真实挂载为既有 Agent workspace：API 返回 `id=agents`、`href=#agents`，浏览器用例验证该入口真实出现在 console DOM。它不是空扩展点。
+
+后续 I/K/L 可复用的服务端框架已经落地：
+
+- 普通业主 `POST /api/console/platform/submissions`：只生成 pending；
+- 管理团队可 add / edit / delete / approve；
+- 普通业主列表不显示 pending，管理团队可见并审批；
+- 所有管理端路由均同时经过 console 登录与平台角色守卫；同一 HTTP 通道不会产生豁免。
+
+角色可由 console seed 的 `platform_roles` 显式声明；生成器支持 `--management-principal`，其余 principal 显式落为 owner。未知 management principal fail-closed，种子与校验器的字段集合已有双向测试。
+
+当前定向证据：
+
+```text
+python3 -m unittest -v deploy.test_generate_console_seed deploy.test_validate_console_seed
+# 23 tests, rc=0
+go test ./internal/store ./internal/m8 ./cmd/workpulse -run 'TestConsolePlatform|TestConsoleSeed|TestValidateConsoleSeed' -count=1
+# 三包 rc=0
+NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome node view-service/console-browser-regression.js
+# passed=4 failed=0
+```
+
+## 明确没有证明
+
+- 尚未用真实浏览器登录生产 console；Playwright 使用真实页面源码，但 API 数据是本地 fixture。
+- 尚未部署或触碰生产，未生成含真实身份值的 seed。
+- 尚未把 I/K/L 的业务页面接入；本版只提供壳、角色与通用挂载/审批生命周期，真实挂载项是 Agents。
+- 版本号暂未从 `0.2.1.4` 抬升：并行的 `0.2.1.5` 尚未合入，本分支不抢先修改其版本文件；装配时须先合 `0.2.1.5` 再统一抬至 `0.2.1.6`。

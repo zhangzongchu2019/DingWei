@@ -38,12 +38,13 @@ def fail(msg: str) -> None:
 # 🔴 必须与 cmd/workpulse/console_seed.go 的 consoleSeed 结构体保持一致。
 #    生产解析器带 dec.DisallowUnknownFields() ⇒ **任何未知字段都会让 workpulse 启动失败**。
 #    防漂移由 test_unknown_field_set_matches_production 钉住。
-ALLOWED_TOP = {"principals", "roles", "agents"}
+ALLOWED_TOP = {"principals", "roles", "platform_roles", "agents"}
 ALLOWED_PRINCIPAL = {"id", "provider", "provider_issuer", "provider_subject",
                      "display_name", "active"}
 ALLOWED_AGENT = {"id", "key_id", "session_name", "owner_principal", "active", "grants"}
 ALLOWED_GRANT = {"principal_id", "permission"}
 ALLOWED_ROLE = {"principal_id", "role", "owner_key", "active"}
+ALLOWED_PLATFORM_ROLE = {"principal_id", "role", "active"}
 
 
 def check_unknown_fields(seed) -> None:
@@ -76,6 +77,10 @@ def check_unknown_fields(seed) -> None:
         u = sorted(set(role) - ALLOWED_ROLE)
         if u:
             fail("roles[%d] 存在未知字段 %s ⇒ workpulse 会启动失败" % (i, u))
+    for i, role in enumerate(seed.get("platform_roles") or []):
+        u = sorted(set(role) - ALLOWED_PLATFORM_ROLE)
+        if u:
+            fail("platform_roles[%d] 存在未知字段 %s ⇒ workpulse 会启动失败" % (i, u))
     for i, ag in enumerate(seed.get("agents") or []):
         u = sorted(set(ag) - ALLOWED_AGENT)
         if u:
@@ -105,6 +110,7 @@ def main() -> None:
 
     principals = seed.get("principals") or []
     roles = seed.get("roles") or []
+    platform_roles = seed.get("platform_roles") or []
     agents = seed.get("agents") or []
     if not principals or not agents:
         fail("principals 与 agents 都不得为空")
@@ -120,6 +126,14 @@ def main() -> None:
             fail("principal role 必须为 owner 且显式给 owner_key 数据域")
         if "active" not in role or not isinstance(role["active"], bool):
             fail("principal role 必须显式给布尔 active")
+
+    for role in platform_roles:
+        if role.get("principal_id") not in pids:
+            fail(f"platform role 指向未声明的 principal: {role.get('principal_id')!r}")
+        if role.get("role") not in {"management", "owner"}:
+            fail("platform role 必须为 management 或 owner")
+        if "active" not in role or not isinstance(role["active"], bool):
+            fail("platform role 必须显式给布尔 active")
 
     # ① 占位符必须已被替换 —— 样例文件原样导入是最容易发生的一种错
     blob = json.dumps(seed, ensure_ascii=False)
