@@ -19,6 +19,12 @@ TEXT = os.environ.get('TEXT_FILE') and open(os.environ['TEXT_FILE'], encoding='u
     or ('契约正文压测段落,含表格与列表。\n\n| 列A | 列B |\n|---|---|\n| 1 | 值 |\n\n- 要点一\n- 要点二\n\n' * 120)
 CHUNK = int(os.environ.get('CHUNK', '160'))     # 段落级 chunk,贴近 sample-events
 DELAY = float(os.environ.get('DELAY', '0.04'))  # 每 chunk 间隔秒
+# 🔴 FIRST_DELAY 与 DELAY 是两件事,别混:DELAY 只 sleep 在 **chunk 之间**,
+#    而"清空窗口"(REPLAY_HARD_LIMIT_MS=1000)是从 onopen 起算、由**第一条**到达的事件消费的
+#    ⇒ 想验"首条重放慢"必须让**第一条之前**就静默,DELAY 再大也推不动它。
+# FIRST_DELAY 模拟的是真链路里那段:view_service 先把 200 头发给浏览器(onopen 触发、窗口开始计时),
+#    之后才去连 hub、等 h.mu、拷 ring(上限 1000 条)、再逐行透传。
+FIRST_DELAY = float(os.environ.get('FIRST_DELAY', '0'))  # 首条事件之前的静默秒数(0=关)
 TOOLS = int(os.environ.get('TOOLS', '0'))       # 回合内穿插的 tool_call 数
 REPEAT = int(os.environ.get('REPEAT', '1'))     # 文本重复倍数(放大正文)
 RING_TURNS = int(os.environ.get('RING_TURNS', '0'))  # 连接时先补放的历史回合数(模拟 hub ring 重放)
@@ -52,6 +58,9 @@ class H(BaseHTTPRequestHandler):
             self.send_header('Cache-Control','no-cache')
             self.send_header('Connection','keep-alive')
             self.end_headers()
+            self.wfile.flush()   # 🔴 必须先把头冲出去:浏览器此刻 onopen、窗口开始计时
+            if FIRST_DELAY > 0:
+                time.sleep(FIRST_DELAY)
             cur = 0
             def emit(ev):
                 nonlocal cur
@@ -115,5 +124,6 @@ class H(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     port=int(sys.argv[1]) if len(sys.argv)>1 else 19400
-    print('chunks:', len(chunks(TEXT, CHUNK)), 'chunk size', CHUNK, 'delay', DELAY, flush=True)
+    print('chunks:', len(chunks(TEXT, CHUNK)), 'chunk size', CHUNK, 'delay', DELAY,
+          'first_delay', FIRST_DELAY, flush=True)
     ThreadingHTTPServer(('127.0.0.1',port), H).serve_forever()
