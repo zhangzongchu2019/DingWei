@@ -30,7 +30,7 @@
 | 🔴 **真断外网**(不是改 host、不是拦域名白名单 —— 要能证明"任何外部域都出不去) | 死端口代理 `--proxy-server=http://127.0.0.1:9`:**任何**非 loopback 请求都被送进一个必然 connect 失败的本地套接字(不是域名表)。S0 每跑先自证 3 个外部域全 BLOCKED,自证不过 **rc=3 中止全跑** | 🔴 **浏览器层**,**不是 OS 层**(§二 有实测证据) |
 | 载入 ＋ 编辑 ＋ 保存 全程:**外部请求数 = 0** | S2:外部 **0**(CDP 面 0 · Playwright 面 0),本地 4 条;正文从键盘进去、从"保存"按钮出来**一字不差**(61 字) | 实测 |
 | 🔴 阴格 **必须先证探针有牙**:默认拼写检查(会去 jsdelivr)**必须被探针抓到** | S1:CDP 抓到 **3 条**、PW 抓到 **6 条记录**(= 3 个请求 × `request`+`requestfailed` 各一条),去重后 **3 个 URL**(词典 `.aff`/`.dic` + Font Awesome) | 实测 |
-| 抓不到 ⇒ 先修探针再报结论 | S1 红 ⇒ 后续 S2/S3 的 "0" 一个都不产出的结构(`assert` 在 S1 内,S1 红则该格计入 fail、rc=2) | 装置 |
+| 抓不到 ⇒ 先修探针再报结论 | S1 的 `assert` 在**它自己那格**内:红 ⇒ 该格计入 fail、**整跑 `rc=2`**(不合格)。🔴 **但 S2/S3 仍会继续执行并打印它们的数字** —— **只有 S0(隔离自证)红才硬中止 `rc=3`**。⇒ 读这份日志**必须看 rc,不能只翻到 S2/S3 那两行看"0"**(见 §八末那条自审) | 装置 |
 | 另验 `cache.enable` 类"悄悄写 localStorage":**EasyMDE 也要查有没有同类默认** | S6(存储阴格:开 `autosave` **必须**看到写盘)+ S7(不开 ⇒ **四类存储全空**) | 实测 |
 | 🔴 仍是**只验不引入** | 仓内 `package.json` **0**;装置与被测字节只在 `/tmp`;`release/*` 未碰;产品件未动 | 实测 |
 
@@ -116,6 +116,7 @@ S0 是**独立一格**:同一个隔离浏览器里,先 `fetch` 本地 `/ping`(**
     easymde-run2.log(产出 S0–S7 的那次实跑)   mtime 2026-09-20T14:21:25
     fa-probe.js   mtime 2026-09-20T14:37:02   sha256 f78a3462aa96d65c…   12448 B
     fa-page.html  mtime 2026-09-20T14:32:53   sha256 04ec679b1e12f235…    2834 B
+    cp-probe.js   (§七 码位表的一次性小探针;在主判据那 8 格跑完之后才写,不影响 S0–S7)
     fa-probe2.log(产出 F1–F3 的那次实跑)      mtime 2026-09-20T14:37:14
 
 ⇒ 两个装置的 mtime 都**早于**各自日志的完成时间 ⇒ 本件引用的数字与内联源码**是同一份字节**。
@@ -188,7 +189,7 @@ S0 是**独立一格**:同一个隔离浏览器里,先 `fetch` 本地 `/ping`(**
 | 腿 | `document.fonts` 枚举 | `button.bold > i` 实测 | 工具栏截图墨迹 | 外部请求 |
 |---|---|---|---|---|
 | **F1** 不自托管 | `faces=[]` | `class="fa fa-bold"` · computed `font-family: Arial`(回退) · `::before content = none` · **rect 0×0** | 1264×52,**非背景 1446 px**,不同颜色 **18**(PNG 只有 **557 B**) | **0** |
-| **F2** 本地自托管 | `faces=["FontAwesome/loaded"]` | computed `font-family: FontAwesome` · `::before content = "\uf032"` · **rect 10×13** | 1264×49,**非背景 3012 px**,不同颜色 **534**(PNG **3799 B**) | **0**(CDP 与 PW 两面) |
+| **F2** 本地自托管 | `faces=["FontAwesome/loaded"]` | computed `font-family: FontAwesome` · `::before content` = **PUA 字符,实测码位 `U+F032`** · **rect 10×13** | 1264×49,**非背景 3012 px**,不同颜色 **534**(PNG **3799 B**) | **0**(CDP 与 PW 两面) |
 | **F3** A/B 分辨力 | — | 两腿工具栏**钮数相同**(守卫) | **27.8 → 61.5 每行墨迹 = 2.2×**(🔵 两腿高度不同 ⇒ 按高度归一化后再比,不拿裸像素数糊弄) | — |
 
 **结论(实测)**:
@@ -213,6 +214,24 @@ S0 是**独立一格**:同一个隔离浏览器里,先 `fetch` 本地 `/ping`(**
 
 **实跑汇总**:`通过 3 / 失败 0`,`rc=0`(`/tmp/fa-probe2.log`)。
 
+### 🔵 交叉核对:10 颗工具栏钮的**码位逐个实测**(独立小探针 `cp-probe.js`,§11.5)
+
+F2 那条 `::before content` 在日志里显示成一个**不可见的 PUA 字符**,肉眼读不出码位。
+交付件初稿里我**按 `fa-bold` 的码位推断**写成 `\uf032` —— 🔴 **那是推断,不能当实测报**,所以我把它量了出来:
+
+| 钮 | `class` | `::before` 码位(🔬 实测) | `::before` font-family | 图标几何 |
+|---|---|---|---|---|
+| bold | `fa fa-bold` | **`U+F032`** | FontAwesome | 10×13 |
+| italic | `fa fa-italic` | `U+F033` | FontAwesome | 8×13 |
+| heading | `fa fa-header fa-heading` | `U+F1DC` | FontAwesome | 13×13 |
+| quote | `fa fa-quote-left` | `U+F10D` | FontAwesome | 12×13 |
+| preview | `fa fa-eye` | `U+F06E` | FontAwesome | 13×13 |
+| side-by-side | `fa fa-columns` | `U+F0DB` | FontAwesome | 12×13 |
+| fullscreen | `fa fa-arrows-alt` | `U+F0B2` | FontAwesome | 11×13 |
+
+(同一次实跑里 `unordered-list`/`link`/`image` 三颗一并量了,均 `FontAwesome` + 非零几何;外部请求 **0**。)
+🔵 **推断值与实测值一致 —— 但一致不等于当初那样写是对的**:一致的推断仍然是推断,标注方式错了。
+
 ---
 
 ## 八 三次"探针第一次红" —— **全是我的件,没有一条是产品缺陷**
@@ -226,6 +245,19 @@ S0 是**独立一格**:同一个隔离浏览器里,先 `fetch` 本地 `/ping`(**
 🔵 三例同一形状:**探针第一次红,先怀疑探针。**
 其中第 2 例值得单独记:它属于「**假故障长得和真故障一模一样**」的**反面** ——
 **假绿也会长得和真绿一模一样**(若我当时只信"0 条外部请求",就会把"guide 按钮不出网"当成结论写进交付件)。
+
+### 🔴 复核时我自己抓到的一处**装置结构表述过头**(已更正,记在这里免得下一个人重信)
+
+交付件初稿 §一 写过:「S1 红 ⇒ 后续 S2/S3 的 "0" **一个都不产出**」。
+🔴 **代码不是这么写的**:`t()` 会 catch 每格的异常、计入 fail 后**继续跑下一格**;
+**只有 S0(隔离自证)** 后面有 `if (fail) { … process.exit(3) }` 那道硬中止。
+
+    真实结构   S0 红 ⇒ **rc=3 硬中止**,一条 "外部请求 0" 都不产出
+              S1 红 ⇒ 该格计入 fail、**整跑 rc=2**(不合格),但 **S2–S7 仍会执行并打印各自的数字**
+
+⇒ **读这份日志必须先看 rc,不能翻到 S2/S3 那两行看见 "0" 就当结论。**
+🔵 这也是我把 `rc=0/2/3` 写进通过文本、并要求外层 shell 把 rc 记进日志的原因:**数字在正文里,判定在 rc 里。**
+🔵 引入后若把这几格改造成回归闸,建议**把 S1 也做成与 S0 同形的硬中止** —— 阴格不过时,后面的绿一条都不该产出。
 
 ---
 
@@ -274,8 +306,11 @@ S0 是**独立一格**:同一个隔离浏览器里,先 `fetch` 本地 `/ping`(**
 
     mkdir -p /tmp/md-easymde-offline/vendor/fonts && cd /tmp/md-easymde-offline
     # 把下面四个文件按名写回;被测字节取 npm easymde@2.21.0 的 dist/ 两份(哈希见 §三)
-    NODE_PATH=/home/is3/pwrun/node_modules node run.js        # S0–S7,rc 0/2/3
-    NODE_PATH=/home/is3/pwrun/node_modules node fa-probe.js   # F1–F3,rc 0/2/3
+    NODE_PATH=/home/is3/pwrun/node_modules node run.js        # S0–S7 主判据,rc 0/2/3
+    NODE_PATH=/home/is3/pwrun/node_modules node fa-probe.js   # F1–F3 附带 A/B,rc 0/2/3
+    NODE_PATH=/home/is3/pwrun/node_modules node cp-probe.js   # §七 那张码位表(一次性小探针,打印 JSON,不判 rc)
+
+🔴 **读日志的顺序**:先看最后一行 `rc=` —— **S1(阴格)红不会中止 S2–S7**,它们仍会打印各自的 "0"(§八末那条自审)。
 
 **rc 约定**:`0` 全过 · `2` 有格红 · `3` 环境/隔离自证不过(**中止,不产出任何"0 外部请求"的结论**)。
 
@@ -904,6 +939,59 @@ const classify = (url, port) => {
 </script>
 ````
 
+### 11.5 `cp-probe.js`(一次性小探针:量 `::before` 的**码位** —— §七 那张表的来源)
+
+````javascript
+// 🔵 一次性小探针:把 F2 里那个 ::before content 的**码位**量出来
+//    (交付件原先写 "\uf032" 是我按 fa-bold 推断的 —— 推断不能当实测报)
+'use strict';
+const http = require('http'), fs = require('fs'), path = require('path');
+const { chromium } = require('playwright');
+const HERE = '/tmp/md-easymde-offline';
+const PROXY = 'http://127.0.0.1:9';
+const server = http.createServer((req, res) => {
+  const u = req.url.split('?')[0];
+  if (u === '/' || u === '/fa') { res.writeHead(200, {'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}); return res.end(fs.readFileSync(path.join(HERE,'fa-page.html'))); }
+  if (u.startsWith('/vendor/')) {
+    const f = path.join(HERE,'vendor',u.slice(8));
+    if (!f.startsWith(path.join(HERE,'vendor')) || !fs.existsSync(f)) { res.writeHead(404); return res.end('nf'); }
+    const ct = f.endsWith('.css')?'text/css':f.endsWith('.js')?'text/javascript':f.endsWith('.woff2')?'font/woff2':'application/octet-stream';
+    res.writeHead(200,{'Content-Type':ct,'Cache-Control':'no-store'}); return res.end(fs.readFileSync(f));
+  }
+  res.writeHead(404); res.end('nf');
+});
+server.listen(0,'127.0.0.1', async () => {
+  const port = server.address().port;
+  const browser = await chromium.launch({headless:true,args:['--no-sandbox',`--proxy-server=${PROXY}`]});
+  const ctx = await browser.newContext({viewport:{width:1280,height:900},serviceWorkers:'block'});
+  const page = await ctx.newPage();
+  const ext = [];
+  ctx.on('request', r => { if (!r.url().startsWith(`http://127.0.0.1:${port}`)) ext.push(r.url()); });
+  await page.goto(`http://127.0.0.1:${port}/fa?cfg=localfa`, {waitUntil:'load',timeout:20000});
+  await page.waitForFunction('window.__dwReady === true', null, {timeout:20000});
+  await page.evaluate('document.fonts.ready');
+  await page.waitForTimeout(1500);
+  const out = await page.evaluate(`(function(){
+    var names = ['bold','italic','heading','quote','unordered-list','link','image','preview','side-by-side','fullscreen'];
+    var res = [];
+    names.forEach(function(n){
+      var b = document.querySelector('.editor-toolbar button.' + n);
+      if (!b) { res.push({btn:n, found:false}); return; }
+      var i = b.querySelector('i') || b;
+      var c = getComputedStyle(i,'::before').content;
+      var codes = [];
+      if (c && c !== 'none') { var s = c.replace(/^"|"$/g,''); for (var k=0;k<s.length;k++) codes.push('U+'+s.charCodeAt(k).toString(16).toUpperCase().padStart(4,'0')); }
+      var r = i.getBoundingClientRect();
+      res.push({btn:n, cls:i.className, content:c==='none'?'none':codes.join(' '), family:getComputedStyle(i,'::before').fontFamily, w:Math.round(r.width), h:Math.round(r.height)});
+    });
+    return res;
+  })()`);
+  console.log(JSON.stringify(out, null, 1));
+  console.log('external requests =', ext.length, JSON.stringify(ext));
+  await browser.close(); await new Promise(r=>server.close(r));
+});
+````
+
 ---
 
 ## 十二 板件待贴片段(逐字;按既有裁定 **由组长自己贴,我不动板件**)
@@ -947,6 +1035,13 @@ const classify = (url, port) => {
     localStorage/sessionStorage/IndexedDB/serviceWorker **四类全空**(S7);开了立刻写 `smde_<uniqueId>`(S6 阴格先证探针有牙)
     ⇒ **没有 Vditor `cache.enable=true` 那种默认写草稿的坑**;🔴 但一旦有人打开 `autosave`,浏览器里就有**第二份 spec 正文**
     ⇒ 引入时须**显式禁止**(与 I 项「正文唯一源」相撞)。
+
+🔵 **一处自审(装置结构,已更正)**:初稿写过「S1 红 ⇒ 后续 0 一个都不产出」—— **代码不是这么写的**:
+    只有 **S0(隔离自证)** 有硬中止 `rc=3`;S1 红是「该格 fail + 整跑 **rc=2**」,而 **S2–S7 仍会跑并打印各自的数字**
+    ⇒ **读日志必须先看 rc,不能翻到 S2/S3 看见 "0" 就当结论**。引入后若改造成回归闸,建议把 S1 也做成与 S0 同形的硬中止。
+🔵 **交叉核对**:F2 那个 `::before` 是不可见 PUA 字符,初稿我**按 fa-bold 推断**写 `U+F032` ⇒ 已用独立小探针**逐个量出**
+    (bold `U+F032` · italic `U+F033` · heading `U+F1DC` · quote `U+F10D` · preview `U+F06E` · side-by-side `U+F0DB` · fullscreen `U+F0B2`,均 `FontAwesome` + 非零几何,外部 0)
+    ⇒ **推断值与实测值一致,但一致不等于当初那样写是对的**。
 
 🔵 **不隔离对照(S5)**:同样两个开关不关,**4 条外部请求真的成功**(词典 ×2 + FA css + FA woff2)
     ⇒ S2/S3 的 0 是「隔离 + 配置」共同作用的结果,**不是探针瞎**。
