@@ -1470,7 +1470,7 @@ func TestSessionAddressingFourFlows(t *testing.T) {
 	if msg == nil || msg.ChatEntityID != "dev:group:oc_group" || msg.BotChannelID != "dev" || msg.ChatType != model.ChatGroup {
 		t.Fatalf("group outbound message = %+v", msg)
 	}
-	if text := messageText(t, msg); text != `<at user_id="ou_alice"></at> 群回复` {
+	if text := messageText(t, msg); !strings.HasPrefix(text, `<at user_id="ou_alice"></at> `) || !strings.Contains(text, "群回复") {
 		t.Fatalf("group outbound text = %q msg=%+v", text, msg)
 	}
 }
@@ -1622,7 +1622,7 @@ func TestSessionReplyUsesSourceBotChannelContext(t *testing.T) {
 	if msg == nil || msg.BotChannelID != "is3-Connector" || msg.ChatEntityID != "is3-Connector:group:oc_team" || msg.ChatType != model.ChatGroup {
 		t.Fatalf("group reply outbound=%+v", msg)
 	}
-	if text := messageText(t, msg); text != `<at user_id="ou_sender"></at> 群回复` {
+	if text := messageText(t, msg); !strings.HasPrefix(text, `<at user_id="ou_sender"></at> `) || !strings.Contains(text, "群回复") {
 		t.Fatalf("group reply text=%q msg=%+v", text, msg)
 	}
 
@@ -6191,15 +6191,19 @@ func applyIDFromReply(t *testing.T, reply string) string {
 }
 
 func hasUTCPrefix(text string) bool {
-	if len(text) < len("[2006-01-02 15:04:05 UTC]") {
-		return false
+	for _, line := range strings.Split(text, "\n") {
+		if len(line) < len("[2006-01-02 15:04:05 UTC]") {
+			continue
+		}
+		prefix := line[:len("[2006-01-02 15:04:05 UTC]")]
+		if !strings.HasPrefix(prefix, "[") || !strings.HasSuffix(prefix, " UTC]") {
+			continue
+		}
+		if _, err := time.Parse("2006-01-02 15:04:05 MST", strings.TrimSuffix(strings.TrimPrefix(prefix, "["), "]")); err == nil {
+			return true
+		}
 	}
-	prefix := text[:len("[2006-01-02 15:04:05 UTC]")]
-	if !strings.HasPrefix(prefix, "[") || !strings.HasSuffix(prefix, " UTC]") {
-		return false
-	}
-	_, err := time.Parse("2006-01-02 15:04:05 MST", strings.TrimSuffix(strings.TrimPrefix(prefix, "["), "]"))
-	return err == nil
+	return false
 }
 
 func waitOutbound(t *testing.T, ctx context.Context, q *bus.DBQueue) *model.Message {

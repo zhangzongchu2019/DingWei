@@ -3726,7 +3726,9 @@ func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope)
 	if err != nil {
 		return err
 	}
-	content, _ := json.Marshal(map[string]string{"text": renderFeishuText(env, chatType)})
+	rendered := env
+	rendered.Body = h.renderAgentFeishuBody(ctx, env)
+	content, _ := json.Marshal(map[string]string{"text": renderFeishuText(rendered, chatType)})
 	err = h.Outbound.Enqueue(ctx, model.Message{
 		ID:           env.ID,
 		ChatEntityID: botChannelID + ":" + entityKind + ":" + to.OpenID,

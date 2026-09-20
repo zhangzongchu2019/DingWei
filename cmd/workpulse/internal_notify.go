@@ -64,7 +64,7 @@ func makeInternalNotifyHandler(outbound bus.Queue, logger *slog.Logger) http.Han
 			http.Error(w, "notify unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		content, err := json.Marshal(map[string]any{"text": req.Text})
+		content, err := json.Marshal(map[string]any{"text": formatInternalAlertText(req.Text)})
 		if err != nil {
 			http.Error(w, "notify unavailable", http.StatusServiceUnavailable)
 			return
@@ -88,6 +88,17 @@ func makeInternalNotifyHandler(outbound bus.Queue, logger *slog.Logger) http.Han
 		w.WriteHeader(http.StatusAccepted)
 		_, _ = w.Write([]byte(`{"queued":true}`))
 	}
+}
+
+func formatInternalAlertText(text string) string {
+	lines := strings.Split(strings.TrimSpace(text), "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "@") || strings.HasPrefix(line, "#") {
+			lines[i] = " " + line
+		}
+	}
+	return "【DingWei 巡检告警】\n" + strings.Join(lines, "\n") +
+		"\n\n回复说明：此消息为系统单向告警，不可直接回复。"
 }
 
 // serveNotifySocket 在 Unix domain socket 上提供告警出口。
