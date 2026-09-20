@@ -28,9 +28,12 @@ FIRST_DELAY = float(os.environ.get('FIRST_DELAY', '0'))  # 首条事件之前的
 TOOLS = int(os.environ.get('TOOLS', '0'))       # 回合内穿插的 tool_call 数
 REPEAT = int(os.environ.get('REPEAT', '1'))     # 文本重复倍数(放大正文)
 RING_TURNS = int(os.environ.get('RING_TURNS', '0'))  # 连接时先补放的历史回合数(模拟 hub ring 重放)
+EMPTY_RING_RECONNECT = os.environ.get('EMPTY_RING_RECONNECT') == '1'
 # SHARED_CURSOR=1:同一 item 的全部 delta 共用一个 cursor —— Codex 流式的真实形态。
 # 2026-08-29 P0 就出在这里:按 cursor 去重会把首片之后的全部 delta 当成重放丢掉。
 SHARED_CURSOR = os.environ.get('SHARED_CURSOR') == '1'
+EVENT_CONNECTIONS = 0
+EVENT_CONNECTIONS_LOCK = threading.Lock()
 
 def chunks(t, n):
     return [t[i:i+n] for i in range(0, len(t), n)]
@@ -43,6 +46,7 @@ class H(BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(body))); self.end_headers()
         self.wfile.write(body)
     def do_GET(self):
+        global EVENT_CONNECTIONS
         p = self.path.split('?')[0]
         if p in ('/', '/renderer'):
             return self._send(200, 'text/html; charset=utf-8', open(RENDERER,'rb').read())
@@ -52,13 +56,28 @@ class H(BaseHTTPRequestHandler):
                 'auth_mode':'legacy','owner':'zzc','model':'m','cost_total':0,'cost_last':0,'turns':1}).encode())
         if p.endswith('/tasks'):
             return self._send(200, 'application/json', b'{}')
+        if p.endswith('/probe'):
+            with EVENT_CONNECTIONS_LOCK:
+                count = EVENT_CONNECTIONS
+            return self._send(200, 'application/json', json.dumps({
+                'event_connections': count,
+                'empty_ring_reconnect': EMPTY_RING_RECONNECT,
+            }).encode())
         if p.endswith('/events'):
+            with EVENT_CONNECTIONS_LOCK:
+                EVENT_CONNECTIONS += 1
+                connection_number = EVENT_CONNECTIONS
             self.send_response(200)
             self.send_header('Content-Type','text/event-stream')
             self.send_header('Cache-Control','no-cache')
             self.send_header('Connection','keep-alive')
             self.end_headers()
             self.wfile.flush()   # 🔴 必须先把头冲出去:浏览器此刻 onopen、窗口开始计时
+            # EMPTY_RING_RECONNECT=1 的首连会建立页面内容并断开;后续连接只返回 SSE 头,
+            # 等价于 hub 重启后 ring 为空。默认关闭,不改变既有任何用例的行为。
+            if EMPTY_RING_RECONNECT and connection_number > 1:
+                time.sleep(30)
+                return
             if FIRST_DELAY > 0:
                 time.sleep(FIRST_DELAY)
             cur = 0
@@ -101,7 +120,7 @@ class H(BaseHTTPRequestHandler):
                 # RECONNECT=1:发完即断开,模拟现网断线重连后 hub 重放 ring 里的同一批事件。
                 # 必须显式关掉底层连接并置 close_connection —— 光 return 在 HTTP/1.1 keep-alive 下
                 # 浏览器可能不认为连接已断,EventSource 就不会重连,该用例会静默空转。
-                if os.environ.get('RECONNECT') == '1':
+                if os.environ.get('RECONNECT') == '1' or EMPTY_RING_RECONNECT:
                     self.close_connection = True
                     try:
                         self.wfile.flush()
