@@ -1093,18 +1093,31 @@
         <button class="text-btn send" id="sendBtn" type="button">发送</button>
       </div>
       <div class="drop-hint" id="dropHint" hidden>松手即上传（可一次多个，单个 ≤ 50 MiB）</div>
-      <div class="shot-overlay" id="shotOverlay" hidden>
-        <div class="shot-bar">
-          <span id="shotHint">在图上拖动框选要发送的区域；不框选＝整张</span>
-          <button class="text-btn" id="shotConfirm" type="button">上传选区</button>
-          <button class="text-btn" id="shotCancel" type="button">取消</button>
-        </div>
-        <div class="shot-canvas-wrap" id="shotWrap">
-          <canvas id="shotCanvas"></canvas>
-          <div class="shot-sel" id="shotSel" hidden></div>
-        </div>
-      </div>
     </footer>
+  </div>
+
+  <!-- 🔴 截屏遮罩必须是 <body> 直属,**不能**留在 <footer class="composer"> 里(0.2.1.7 修)。
+       成因:.composer 带 backdrop-filter: blur(10px),按 CSS 规范 backdrop-filter ≠ none 的元素
+       **成为 fixed 后代的包含块** ⇒ .shot-overlay{position:fixed;inset:0} 的 inset 只对
+       【页脚那个盒子】解析,不是视口。实测(1280x900):遮罩 rect == footer rect == [0,740,1280,160],
+       画布只有 110px 可见带、必须滚动才能框选,视口中心命中的是 timeline 而不是遮罩。
+       另一层:.composer 是 position:sticky + z-index:6 的层叠上下文 ⇒ 遮罩的 z-index:9999
+       被关在里面,全局只相当于 6;而 .toast-region 是 100、.workspace-dock/.taskboard-handle 是 40
+       ⇒ 框选时 toast 与侧栏浮在遮罩之上。移出 footer 后这两件事一起解决。
+       🔴 不要改回 footer 内 + 去掉 backdrop-filter:那会改动业主看惯的观感(组长 ts-No.2 裁定);
+          也不要为一个元素引入 portal 机制。
+       闸:view-service/renderer-0206-file-render-regression.js 用例 ㉘(两档视口高度各验一次,
+          修复前必红 —— 它是真 test-first,阳性对照天然存在)。 -->
+  <div class="shot-overlay" id="shotOverlay" hidden>
+    <div class="shot-bar">
+      <span id="shotHint">在图上拖动框选要发送的区域；不框选＝整张</span>
+      <button class="text-btn" id="shotConfirm" type="button">上传选区</button>
+      <button class="text-btn" id="shotCancel" type="button">取消</button>
+    </div>
+    <div class="shot-canvas-wrap" id="shotWrap">
+      <canvas id="shotCanvas"></canvas>
+      <div class="shot-sel" id="shotSel" hidden></div>
+    </div>
   </div>
 
   <script>

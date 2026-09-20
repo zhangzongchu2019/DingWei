@@ -1537,6 +1537,82 @@ async function t(name, fn) {
     }
   });
 
+  // ── ㉘ 截屏遮罩必须铺满【视口】(0.2.1.7 截屏项 · 先闸后修)──────────
+  await t('㉘ 🔴 截屏遮罩必须铺满【视口】而不是页脚 —— 两个视口高度各验一次(修复前必红)', async () => {
+    // 缺陷成因(实测,非推断):<footer class="composer"> 带 backdrop-filter: blur(10px)
+    // (renderer-canary-sse.html:789),按 CSS 规范 backdrop-filter ≠ none 的元素
+    // **成为 fixed 后代的包含块** ⇒ .shot-overlay{position:fixed;inset:0}(:838)
+    // 只对【页脚那个盒子】解析,不是视口。实测遮罩只有 160px 高,画布只有 110px 可见带。
+    //
+    // 🔴 本条是**真 test-first**:缺陷是活的,阳性对照天然存在 —— 修复之前它必须是红的。
+    //    组长 ts-No.2 的硬性顺序:先写闸、跑到红,再动手修。
+    // 🔵 三个维度合起来才是业主那句"不是我希望的方式":遮罩铺满 · 整帧看得见(不必滚动) ·
+    //    屏幕中央真的被盖住(命中测试)。只验第一个维度会漏掉"铺满了但仍裁切画布"。
+    const SRC_W = 800, SRC_H = 600;   // 小帧:修好后应完整可见,不需要滚动
+    await page.evaluate(([W, H]) => {
+      window.__dwSetScreenshotFrameSource(() => {
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const g = c.getContext('2d');
+        g.fillStyle = '#3366cc'; g.fillRect(0, 0, W, H);
+        return Promise.resolve(c);
+      });
+    }, [SRC_W, SRC_H]);
+
+    const violations = [];
+    const seen = [];
+    try {
+      for (const vh of [900, 1600]) {
+        await page.setViewportSize({ width: 1280, height: vh });
+        await page.waitForTimeout(150);
+        await page.click('#shotBtn');
+        await page.waitForSelector('#shotOverlay:not([hidden])', { timeout: 15000 });
+        const m = await page.evaluate(() => {
+          const box = (el) => {
+            const r = el.getBoundingClientRect();
+            return { left: +r.left.toFixed(2), top: +r.top.toFixed(2), right: +r.right.toFixed(2),
+                     bottom: +r.bottom.toFixed(2), width: +r.width.toFixed(2), height: +r.height.toFixed(2) };
+          };
+          const ov = document.getElementById('shotOverlay');
+          const hit = document.elementsFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+          return {
+            inner: [window.innerWidth, window.innerHeight],
+            overlay: box(ov),
+            canvas: box(document.getElementById('shotCanvas')),
+            hitInOverlay: hit.some((el) => el === ov || ov.contains(el)),
+            hitTop: hit.length ? (hit[0].id || String(hit[0].className) || hit[0].tagName) : 'none',
+          };
+        });
+        seen.push({ vp: `1280x${vh}`, ovTop: m.overlay.top, ovH: m.overlay.height,
+                    cvBottom: m.canvas.bottom, hit: m.hitInOverlay, hitTop: m.hitTop });
+
+        // 亚像素容差 1px:只吸收取整,吸收不了"只盖页脚"这种量级(top=740 / h=160)
+        const T = 1;
+        if (!(Math.abs(m.overlay.left) <= T && Math.abs(m.overlay.top) <= T
+              && Math.abs(m.overlay.width - m.inner[0]) <= T && Math.abs(m.overlay.height - m.inner[1]) <= T)) {
+          violations.push(`1280x${vh}: 遮罩 rect=${JSON.stringify(m.overlay)} ≠ 视口 ${m.inner[0]}x${m.inner[1]}(应铺满)`);
+        }
+        if (!(m.canvas.top >= m.overlay.top - T && m.canvas.bottom <= m.overlay.bottom + T
+              && m.canvas.left >= m.overlay.left - T && m.canvas.right <= m.overlay.right + T)) {
+          violations.push(`1280x${vh}: 画布 ${JSON.stringify(m.canvas)} 未被遮罩完整包住 ⇒ 用户必须滚动才能框选`);
+        }
+        if (!m.hitInOverlay) {
+          violations.push(`1280x${vh}: 视口中心命中的是 ${JSON.stringify(m.hitTop)} 而不是遮罩 ⇒ 屏幕中央没变暗、也点不到`);
+        }
+
+        await page.click('#shotCancel');
+        await page.waitForFunction(() => document.getElementById('shotOverlay').hidden, null, { timeout: 5000 });
+      }
+    } finally {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.evaluate(() => window.__dwSetScreenshotFrameSource(null)).catch(() => {});
+    }
+    // 🔵 实测值一律打出来:红的时候要看得到"红在哪",绿的时候也不采信自报值
+    console.log('    · ㉘ 实测:', JSON.stringify(seen));
+    assert.deepStrictEqual(violations, [],
+      `🔴 截屏遮罩没有铺满视口(共 ${violations.length} 项):\n       - ${violations.join('\n       - ')}`);
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;
