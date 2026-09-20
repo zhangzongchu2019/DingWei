@@ -1345,6 +1345,198 @@ async function t(name, fn) {
     }
   });
 
+  // ── ㉗ U7 固化：框选裁剪必须【真的按选区裁】──────────────────────
+  await t('㉗ 🔴 U7:真实 pointer 拖选后,上传字节的 PNG IHDR 宽高必须 == 选区宽高(传整张即红)', async () => {
+    // 本条钉的是 U7 变异(忽略选区、一律传整张)。此前 ㉕ 只断言"上传发生了 1 次 ＋ 文件名 ＋ 遮罩关闭",
+    // 对 U7 **零判别力**(变异后 37 条全绿)—— 业主框选了却收到整屏,用例本来就查不出来。
+    //
+    // 三条判据 → 各自的断言(判据落在 assert 上,不落在注释上):
+    //   ① 上传字节的 IHDR 宽高 == 选区宽高       → A0/A1/A2/A3
+    //   ② 真实 pointer 拖选,不用 __dwSetShotRect  → B1/B2 ＋ 守卫 C ＋ 落点对账
+    //   ③ U7 ⇒ 必须转红                          → A0(排他句:整张尺寸即红)
+    //   附带 D:尺寸对 ≠ 裁对了地方(解码上传字节本身,采样必须是选区那一象限的纯色)
+    //
+    // 🔴 本条【不设】__dwSetShotRect —— 设了,canvas 被 max-width 缩放后的坐标换算段
+    //    (renderer:4556 toSource)就永远不会被执行,守卫 C 也就无从谈起。
+    // 🔵 帧源仍用 __dwSetScreenshotFrameSource,沿用 ㉕/㉖ 既定分工:
+    //    缝 = 画面可控(验裁得对不对),浏览器开关(㉖) = 验真路径通不通。
+    const SRC_W = 2400, SRC_H = 1200;                 // 帧源宽 > wrap 宽 ⇒ 必被 max-width 缩小
+    const SEL = { x: 1500, y: 20, w: 600, h: 160 };   // 源坐标选区,整块落在【右上绿】象限内
+    const bodies = [];
+    const onReq = (req) => {
+      if (!req.url().endsWith('/files/upload')) return;
+      bodies.push(req.postDataBuffer());
+    };
+    page.on('request', onReq);
+    try {
+      const refsBefore = (await page.inputValue('#humanInput')).split('/f/').length - 1;
+      // 帧源四象限异色:纯色帧验不出"尺寸对但偏移错",四色才验得出
+      await page.evaluate(([W, H]) => {
+        window.__dwSetScreenshotFrameSource(() => {
+          const c = document.createElement('canvas');
+          c.width = W; c.height = H;
+          const g = c.getContext('2d');
+          g.fillStyle = '#ff0000'; g.fillRect(0, 0, W / 2, H / 2);          // 左上 红
+          g.fillStyle = '#00ff00'; g.fillRect(W / 2, 0, W / 2, H / 2);       // 右上 绿
+          g.fillStyle = '#0000ff'; g.fillRect(0, H / 2, W / 2, H / 2);       // 左下 蓝
+          g.fillStyle = '#ffff00'; g.fillRect(W / 2, H / 2, W / 2, H / 2);   // 右下 黄
+          return Promise.resolve(c);
+        });
+      }, [SRC_W, SRC_H]);
+
+      await page.click('#shotBtn');
+      await page.waitForSelector('#shotOverlay:not([hidden])', { timeout: 15000 });
+      const geo = await page.evaluate(() => {
+        const box = (id) => {
+          const r = document.getElementById(id).getBoundingClientRect();
+          return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+        };
+        return {
+          canvas: box('shotCanvas'), wrap: box('shotWrap'),
+          cw: document.getElementById('shotCanvas').width,
+          ch: document.getElementById('shotCanvas').height,
+          selHidden: document.getElementById('shotSel').hidden,
+        };
+      });
+      // 帧源对账:必须是我这一帧,不是 ㉕ 留在页面上的 200x100(那条用例不清缝)
+      assert.strictEqual(geo.cw, SRC_W, `画布宽应为帧源宽 ${SRC_W}(若为 200 ⇒ 沿用了 ㉕ 的替身帧),实测 ${geo.cw}`);
+      assert.strictEqual(geo.ch, SRC_H, `画布高应为帧源高 ${SRC_H},实测 ${geo.ch}`);
+
+      // 守卫 C:canvas 必须真被缩小过。缩放比=1 时坐标换算段等于没跑,
+      //        本条对"换算写错"零判别力 ⇒ 那种情况下本条必须自己失败,不能假装验过。
+      assert.ok(geo.canvas.width > 0 && geo.canvas.height > 0, `canvas 显示尺寸无效: ${JSON.stringify(geo.canvas)}`);
+      assert.ok(Math.abs(geo.canvas.width - SRC_W) > 1,
+        `🔴 守卫 C:显示宽 ${geo.canvas.width} ≈ 源宽 ${SRC_W} ⇒ 缩放比=1,坐标换算段未被执行,本条无判别力`);
+      const scale = SRC_W / geo.canvas.width;
+
+      // 拖拽端点:由 aspect 映射从源坐标反算,并且必须落在【用户真能看见】的区域内。
+      // (canvas 会被 .shot-canvas-wrap 裁剪;拖到看不见的地方不算真实拖选)
+      const vis = {
+        left: Math.max(geo.canvas.left, geo.wrap.left),
+        top: Math.max(geo.canvas.top, geo.wrap.top),
+        right: Math.min(geo.canvas.right, geo.wrap.right),
+        bottom: Math.min(geo.canvas.bottom, geo.wrap.bottom),
+      };
+      const css = (sx, sy) => ({
+        x: geo.canvas.left + (sx / SRC_W) * geo.canvas.width,
+        y: geo.canvas.top + (sy / SRC_H) * geo.canvas.height,
+      });
+      const p0 = css(SEL.x, SEL.y);
+      const p1 = css(SEL.x + SEL.w, SEL.y + SEL.h);
+      for (const [label, p] of [['起点', p0], ['终点', p1]]) {
+        assert.ok(p.x > vis.left + 3 && p.x < vis.right - 3 && p.y > vis.top + 3 && p.y < vis.bottom - 3,
+          `🔴 拖选${label} (${p.x.toFixed(1)},${p.y.toFixed(1)}) 不在可见区 `
+          + `(${vis.left.toFixed(1)},${vis.top.toFixed(1)})-(${vis.right.toFixed(1)},${vis.bottom.toFixed(1)}) 内 `
+          + '⇒ 布局变了,请重挑选区;别把拖选放到用户看不见的地方');
+      }
+
+      // 断言 B1:拖之前选框必须隐藏 —— 产品里只有 pointermove 会把它显示出来,
+      //          这是"下面的选区确由 pointer 事件产生"的前半段证据。
+      assert.strictEqual(geo.selHidden, true, '拖选前 #shotSel 应隐藏,否则 B2 那条证据不成立');
+
+      // 记录浏览器【实际投递】的坐标:期望值从实收坐标算,不假设 Chrome 保留小数
+      await page.evaluate(() => {
+        window.__u7probe = [];
+        const c = document.getElementById('shotCanvas');
+        const rec = (k) => (e) => window.__u7probe.push([k, e.clientX, e.clientY]);
+        c.addEventListener('pointerdown', rec('down'), true);
+        c.addEventListener('pointermove', rec('move'), true);
+      });
+      await page.mouse.move(p0.x, p0.y);
+      await page.mouse.down();
+      await page.mouse.move(p1.x, p1.y, { steps: 12 });
+      await page.mouse.up();
+      // 断言 B2:选框出现了 ⇒ 产品的 pointerdown/pointermove 处理器真的执行过
+      await page.waitForSelector('#shotSel:not([hidden])', { timeout: 5000 });
+
+      const drag = await page.evaluate(() => {
+        const rows = window.__u7probe || [];
+        const moves = rows.filter((r) => r[0] === 'move');
+        return {
+          n: rows.length,
+          down: rows.find((r) => r[0] === 'down') || null,
+          last: moves.length ? moves[moves.length - 1] : null,
+          shotRect: typeof shotRect !== 'undefined' ? shotRect : null,
+        };
+      });
+      assert.ok(drag.down && drag.last, `未收到真实 pointer 事件(down=${!!drag.down}, 共 ${drag.n} 条)`);
+      // 期望选区 = 实收坐标经 aspect 映射回源坐标。这就是缩放映射的定义式:
+      // 本条验的是"实现有没有按这个定义做",不是"定义对不对"。
+      const toSrc = (clientX, clientY) => ({
+        x: (clientX - geo.canvas.left) * (SRC_W / geo.canvas.width),
+        y: (clientY - geo.canvas.top) * (SRC_H / geo.canvas.height),
+      });
+      const s0 = toSrc(drag.down[1], drag.down[2]);
+      const s1 = toSrc(drag.last[1], drag.last[2]);
+      const expW = Math.round(Math.abs(s1.x - s0.x));
+      const expH = Math.round(Math.abs(s1.y - s0.y));
+      // 落点对账:拖到的必须是我指定的那块,否则下面的期望值无从谈起
+      assert.ok(Math.abs(expW - SEL.w) <= 2 && Math.abs(expH - SEL.h) <= 2,
+        `拖选落点偏离指定选区:指定 ${SEL.w}x${SEL.h},由实收坐标算出 ${expW}x${expH}`);
+
+      await page.click('#shotConfirm');
+      await page.waitForFunction((n) => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= n,
+        refsBefore + 1, { timeout: 30000 });
+
+      assert.strictEqual(bodies.length, 1, `应恰好捕获 1 次上传请求体,实测 ${bodies.length}`);
+      const buf = bodies[0];
+      assert.ok(buf && buf.length > 24,
+        '未取到上传请求体(postDataBuffer 为空)⇒ 无法验 IHDR。这不是产品失败,是取证手段失效,先修取证再判产品');
+
+      // 断言 A:逐字节解析上传体的 PNG IHDR —— 不经任何图像库,读的就是线上那份字节
+      const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      assert.ok(buf.subarray(0, 8).equals(PNG_SIG), `上传字节不是 PNG:前 8 字节 ${buf.subarray(0, 8).toString('hex')}`);
+      assert.strictEqual(buf.subarray(12, 16).toString('latin1'), 'IHDR',
+        `第一个 chunk 不是 IHDR,实测 ${JSON.stringify(buf.subarray(12, 16).toString('latin1'))}`);
+      const ihdrW = buf.readUInt32BE(16);
+      const ihdrH = buf.readUInt32BE(20);
+
+      // 断言 A0(U7 的指纹 · 排他句):整张 = 2400x1200。忽略选区一律传整张 ⇒ 必须在这里红。
+      assert.ok(!(ihdrW === SRC_W && ihdrH === SRC_H),
+        `🔴 U7:上传的是整张 ${SRC_W}x${SRC_H} ⇒ 选区被忽略了(业主"框选了却收到整屏"就是这个形状)`);
+      // 断言 A1/A2:IHDR 宽高 == 选区宽高(判据①;不接受"上传发生了一次")
+      assert.strictEqual(ihdrW, expW,
+        `IHDR 宽应 == 选区宽 ${expW}(源 ${SRC_W} → 显示 ${geo.canvas.width},缩放比 ${scale.toFixed(4)}),实测 ${ihdrW}`);
+      assert.strictEqual(ihdrH, expH, `IHDR 高应 == 选区高 ${expH},实测 ${ihdrH}`);
+      // 断言 A3:与产品自己记下的选区对账(判据①的字面形式:上传字节 == 选区)
+      assert.ok(drag.shotRect, '读不到产品的 shotRect(点上传前它应仍在)⇒ 无法做"选区 ↔ 上传字节"对账');
+      assert.strictEqual(ihdrW, Math.round(drag.shotRect.w),
+        `IHDR 宽 ${ihdrW} ≠ 产品选区宽 ${Math.round(drag.shotRect.w)}`);
+      assert.strictEqual(ihdrH, Math.round(drag.shotRect.h),
+        `IHDR 高 ${ihdrH} ≠ 产品选区高 ${Math.round(drag.shotRect.h)}`);
+
+      // 断言 D:尺寸对 ≠ 裁对了地方。解码【上传字节本身】,四角+中心必须全是右上象限的纯绿
+      const px = await page.evaluate(async (b64) => {
+        const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        const bmp = await createImageBitmap(new Blob([bin], { type: 'image/png' }));
+        const c = document.createElement('canvas');
+        c.width = bmp.width; c.height = bmp.height;
+        const g = c.getContext('2d');
+        g.drawImage(bmp, 0, 0);
+        const at = (x, y) => Array.from(g.getImageData(x, y, 1, 1).data.slice(0, 3));
+        const w = bmp.width;
+        const h = bmp.height;
+        return {
+          w, h,
+          pts: { tl: at(3, 3), tr: at(w - 4, 3), bl: at(3, h - 4), br: at(w - 4, h - 4), mid: at(w >> 1, h >> 1) },
+        };
+      }, buf.toString('base64'));
+      assert.strictEqual(px.w, ihdrW, `解码宽 ${px.w} 与 IHDR 宽 ${ihdrW} 不一致 ⇒ 读的不是同一份字节`);
+      assert.strictEqual(px.h, ihdrH, `解码高 ${px.h} 与 IHDR 高 ${ihdrH} 不一致`);
+      for (const [name, rgb] of Object.entries(px.pts)) {
+        assert.deepStrictEqual(rgb, [0, 255, 0],
+          `采样点 ${name} 应为纯绿 [0,255,0](选区整块在右上绿象限内),实测 [${rgb.join(',')}] ⇒ 尺寸对但裁错了地方`);
+      }
+    } finally {
+      page.off('request', onReq);
+      // 收尾:帧源清回 null、探针清掉。后续用例都不截屏,留在页面上只是隐患。
+      await page.evaluate(() => {
+        window.__dwSetScreenshotFrameSource(null);
+        window.__u7probe = null;
+      }).catch(() => {});
+    }
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;
