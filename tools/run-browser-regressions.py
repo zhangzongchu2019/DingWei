@@ -26,6 +26,7 @@ SUITES = (
     ("renderer_0206_file_render", ROOT / "view-service/renderer-0206-file-render-regression.js"),
     ("console_browser", ROOT / "view-service/console-browser-regression.js"),
     ("renderer_in_console_iframe", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
+    ("renderer_sse_reconnect", ROOT / "view-service/renderer-sse-reconnect.js"),
 )
 
 # Only names are recorded; values may contain local paths or credentials. These
