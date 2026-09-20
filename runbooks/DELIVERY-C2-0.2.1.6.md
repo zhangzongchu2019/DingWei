@@ -106,6 +106,7 @@ console-browser-regression.js           # passed=5 failed=0
 ## `0.2.1.5` 合入后的最终装配
 
 - 已合入发件人标识锚 `f6590f21bc1d6f0c172a90367871707e8016bcc8`；`git merge-base --is-ancestor` rc=0。
+- 本次合并没有冲突；C2 未修改 `internal/m8/hub.go`，该文件与 `0.2.1.5` 锚逐字相同。此前“`hub.go` 两侧代码均保留”的说法不准确，现更正为“该文件从未发生两侧合并”。
 - 三处版本号已由 `0.2.1.5` 统一抬至 `0.2.1.6`。
 - 相对该发件人标识锚的文件差异只含 C2 平台壳文件与三处版本号，没有夹带其它功能。
 - 合并后基线：`go build ./...` rc=0；`go vet ./...` rc=0；`go test ./... -count=1` rc=0；console 浏览器 `5/5`；console seed Python 测试 `23/23`。
