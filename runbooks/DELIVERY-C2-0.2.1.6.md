@@ -80,6 +80,8 @@ NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome node view-service/console-
 
 权限阴格同时查响应与状态：普通业主直接调用 add 后既须得到 403，也须查询 `console_platform_item` 确认 `direct` 行不存在。只看其中一侧不算通过。
 
+M-perm-x 单侧变异：拒绝分支先用丢弃响应的 recorder 真执行 handler，再对外原样返回 403。`git diff --numstat` 为 `3 0 internal/m8/console_platform.go`；因此响应断言保持通过，但数据库出现 approved 的 `direct` 行，`TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow` 以 `owner received 403 but management side effect still happened` 精确转红，`rc=1`。已还原。
+
 装配闸：`TestConsolePlatformRoutesAreAssembledWithServerGuards` 用 Go AST 读取 `cmd/workpulse/main.go`，要求六条平台路由同时存在目标 handler、console principal 守卫与平台角色守卫。它验证的是路由装配，不拿“handler 函数存在”冒充“功能已接上”。
 
 装配变异：只删除 approve 路由，`git diff --numstat` 为 `0 1 cmd/workpulse/main.go`；定向测试 `rc=1`，唯一失败为 `console platform route not assembled: POST /api/console/platform/items/{itemID}/approve`。已还原。
