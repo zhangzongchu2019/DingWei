@@ -1762,6 +1762,112 @@ async function t(name, fn) {
     }
   });
 
+  // ── ㉚ 截屏选源：必须显式声明「本 tab 可以被截」───────────────────────
+  await t("㉚ 🔴 截屏必须传 selfBrowserSurface:'include' —— 否则【当前这个 tab】被浏览器故意排除(业主实操撞到的)", async () => {
+    // 背景 —— 业主原话:「不能截屏本 tab 窗口页」。
+    //   产品此前传的是 getDisplayMedia({ video:true, audio:false }) —— **零约束**。
+    //   🔴 Chrome 侧 `selfBrowserSurface` 的默认值是 `'exclude'`（读规范得出，出处见交付件），
+    //      含义是"把发起调用的这个标签页从选源列表里排除掉"，目的是防**实时预览**自我嵌套。
+    //      我们根本不预览（抓一帧就停轨），那个默认值对我们只有害处：
+    //      **业主想截的正是他眼前这一页，而浏览器把它藏起来了。**
+    //
+    // 🔵 本条【能】验什么、【不能】验什么 —— 写死在这里，不留给读的人猜：
+    //   能：产品**实际传给** getDisplayMedia 的约束对象里有没有 selfBrowserSurface:'include'
+    //       （做法：在页面里包住真 API 只做记录，随后**委托真实现**，整条截屏路径照常走完）
+    //   能：本浏览器**认识**这个成员（守卫，见下）—— 否则"我们传了"是句空话
+    //   能：加了它之后真路径没被弄坏（遮罩照常出现、抓到的是真帧不是替身）
+    //   🔴 不能：真实「选择共享内容」框里到底列出哪些来源 —— headless 到不了那个框
+    //       （㉕ 的注释里已写明这一点）。⇒ 那一半只能【人工验 ＋ 业主确认】，
+    //       协议见交付件。**不在这里冒充。**
+    const flagged = await chromium.launch({
+      headless: true,
+      args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+    });
+    try {
+      const fctx = await flagged.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
+      const fpage = await fctx.newPage();
+      await fpage.route('**/status', (route) => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
+      }));
+      await fpage.route('**/events', (route) => route.fulfill({ status: 200, contentType: 'text/event-stream', body: '' }));
+      await fpage.route('**/taskboard**', (route) => route.fulfill({ status: 404, body: '' }));
+      await fpage.goto(`${BASE}/renderer-canary-sse.html`, { waitUntil: 'domcontentloaded' });
+      await fpage.waitForFunction(() => typeof stats !== 'undefined' && stats.readonly === false, null, { timeout: 15000 });
+
+      // 记录器：只**观察**产品传出的约束，随后委托真实现。
+      //   🔴 存 JSON 深拷贝而不是活对象 —— 否则事后被谁改动，这条断言就悄悄失去判别力。
+      await fpage.evaluate(() => {
+        window.__gdmCalls = [];
+        const real = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+        navigator.mediaDevices.getDisplayMedia = (opts) => {
+          window.__gdmCalls.push(opts === undefined ? 'undefined' : JSON.parse(JSON.stringify(opts)));
+          return real(opts);
+        };
+      });
+
+      await fpage.click('#shotBtn');   // 🔴 真手势（Playwright 的 trusted click），不是直接调产品函数
+      await fpage.waitForSelector('#shotOverlay:not([hidden])', { timeout: 20000 });
+      const calls = await fpage.evaluate(() => window.__gdmCalls);
+      const frame = await fpage.evaluate(() => ({
+        w: document.getElementById('shotCanvas').width,
+        h: document.getElementById('shotCanvas').height,
+      }));
+
+      // 断言 0：记录器确实被走到 —— 否则下面每条都是"没记录到"式的假绿
+      assert.strictEqual(calls.length, 1,
+        `产品应恰好调用一次 getDisplayMedia，实测 ${calls.length} 次：${JSON.stringify(calls)}`);
+      const opts = calls[0];
+      assert.ok(opts && typeof opts === 'object', `约束应是一个对象，实测 ${JSON.stringify(opts)}`);
+
+      // 断言 1（核心）：本 tab 不被排除
+      assert.strictEqual(opts.selfBrowserSurface, 'include',
+        `🔴 缺 selfBrowserSurface:'include' ⇒ Chrome 按默认 'exclude' 把【当前 tab】排除在选源列表外，`
+        + `业主就截不到他眼前这一页。实测产品传出的约束 = ${JSON.stringify(opts)}`);
+
+      // 断言 2（机制钉）：不许改用 preferCurrentTab 把选源窄化成"只有本 tab"
+      //   那样也能满足业主这句话，但代价是**截别的窗口/整屏的能力一起没了**，
+      //   而 0.2.1.2 那个 📷 的原意是通用截屏。
+      //   🔵 这条钉的是**当前修法**，不是永恒不变量：若哪天产品决定"📷 就是只截本页"，
+      //      它应当随之改写 —— 届时请连本注释一起改，别只删断言。
+      assert.strictEqual(opts.preferCurrentTab, undefined,
+        `preferCurrentTab 会把选源框窄化成【只有当前 tab】，截别的窗口/整屏就做不到了。实测 = ${JSON.stringify(opts)}`);
+
+      // 断言 3：加了约束之后真路径没被弄坏（遮罩已出现；再验抓到的是真帧，不是 ㉕ 的 200x100 替身）
+      assert.ok(frame.w > 0 && frame.h > 0, `真 getDisplayMedia 必须抓到一帧，实测 ${JSON.stringify(frame)}`);
+      assert.ok(!(frame.w === 200 && frame.h === 100),
+        `抓到的帧尺寸与 ㉕ 的测试替身相同(200x100) ⇒ 走的是缝而不是真路径，实测 ${JSON.stringify(frame)}`);
+
+      // 守卫：证明本浏览器**认识** selfBrowserSurface 这个成员。
+      //   🔴 为什么非要有这一条：未知字典成员会被 WebIDL **静默忽略**（下面第②半就是对照实测）。
+      //      若哪天名字写错、或换到一个不认它的浏览器，断言 1 会**照样绿** ——
+      //      而业主那边一点没变。那就是"看起来验过了"的形状。
+      //   判据（两半，缺一不可）：
+      //     ① 传**非法枚举值** ⇒ 必须 TypeError（枚举转换失败，发生在任何采集逻辑之前）
+      //     ② 传**编造的成员名** ⇒ 必须【不】是 TypeError（未知成员被忽略）
+      //   只有两半同时成立，那个 TypeError 才是"认识这个成员"的证据，而不是环境噪声。
+      const guard = await fpage.evaluate(async () => {
+        const one = async (o) => {
+          try {
+            const s = await navigator.mediaDevices.getDisplayMedia(o);
+            s.getTracks().forEach((t) => t.stop());
+            return 'ok';
+          } catch (e) { return String(e && e.name); }
+        };
+        return {
+          bogusEnumValue: await one({ video: true, selfBrowserSurface: '__dw_no_such_value__' }),
+          bogusMemberName: await one({ video: true, __dwBogusMember: 'x' }),
+        };
+      });
+      assert.strictEqual(guard.bogusEnumValue, 'TypeError',
+        `守卫①失效：非法枚举值应抛 TypeError（证明 IDL 认识 selfBrowserSurface），实测 ${JSON.stringify(guard)}`);
+      assert.notStrictEqual(guard.bogusMemberName, 'TypeError',
+        `守卫②失效：编造的成员名不该抛 TypeError（否则 TypeError 证明不了"认识"），实测 ${JSON.stringify(guard)}`);
+    } finally {
+      await flagged.close();
+    }
+  });
+
   // ── ⑤ 拖放：一次拖入多个 ────────────────────────────────────────
   await t('⑤ 拖放一次拖入 2 个文件，两个都上传', async () => {
     const before = uploadCalls.length;
