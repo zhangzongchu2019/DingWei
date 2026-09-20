@@ -1174,6 +1174,16 @@
     };
     let eventSource = null;
     let eventSourceGeneration = 0;
+    // 🔴 0.2.1.35-⑬:这个标志**必须是模块级的**。它原先是 connectEventStream() 的闭包局部,
+    //    而 0.2.1.2 的自建重连每次都**新建** EventSource(scheduleReconnect → connectEventStream),
+    //    于是它每次重连都归零 ⇒ 下面那句 `if (streamEverOpened) markStreamReconnect()`
+    //    在**已发的自动重连路径上从不执行** ⇒ T-086 的延迟清空永不 arm ⇒ resetConversation 永不运行
+    //    ⇒ 每次重连把整份 ring 又追加一遍(实测 26s / 18 次重连:正文 15360 → 136320 字,
+    //      markStreamReconnect 调用数 = 0)。
+    //    🔵 EventSource **原生**重连是"同一对象二次 open",所以这个 bug 在 0.2.1.2 之前不成立
+    //      (对照实测:摘掉自建重连、以及真 pre-0.2.1.2 的件,正文全程纹丝不动)。
+    //    判据是"**这个页面**曾经连上过",不是"**这个对象**open 过第二次"。
+    let streamEverOpened = false;
     let streamConnectTimer = null;
     const STREAM_CONNECT_GRACE_MS = 7500;
     // RED 0.2.1.2:移除「重连」按钮**必须同时加自动重连** —— 移除前它是 SSE 断开后
@@ -3822,12 +3832,14 @@
       beginTimelineReplay();
       setStatus('idle');
       eventSource = new EventSource(apiEp('events'));
-      let everOpened = false;
       eventSource.onopen = () => {
         if (generation !== eventSourceGeneration) return;
-        // 第二次及以后的 open = 断线重连:hub 会重放 ring,先清空避免与已有内容叠加
-        if (everOpened) markStreamReconnect();
-        everOpened = true;
+        // 第二次及以后的 open = 断线重连:hub 会重放 ring,先 arm 延迟清空避免与已有内容叠加。
+        // 🔴 arm 的时机必须在 **open**,不能提前到 scheduleReconnect:延迟清空窗口
+        //    (REPLAY_HARD_LIMIT_MS)是从 arm 那一刻起算的,而 backoff 最长 30s ⇒
+        //    提前 arm 会让窗口在重放到达之前就过期,等于没修。
+        if (streamEverOpened) markStreamReconnect();
+        streamEverOpened = true;
         opened = true;
         clearStreamConnectTimer();
         hideStreamAlert();
