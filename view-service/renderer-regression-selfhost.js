@@ -4,6 +4,24 @@ const path = require('path');
 
 class EnvironmentUnavailable extends Error {}
 
+function regressionCollector() {
+  const failures = [];
+  return {
+    async check(name, fn) {
+      try {
+        await fn();
+        console.log(`  PASS ${name}`);
+      } catch (err) {
+        failures.push(`${name}: ${err.message}`);
+        console.log(`  FAIL ${name}: ${err.message}`);
+      }
+    },
+    finish() {
+      if (failures.length) throw new Error(`${failures.length} regression check(s) failed\n${failures.join('\n')}`);
+    },
+  };
+}
+
 function chromiumForRegression() {
   try {
     return require('playwright').chromium;
@@ -65,4 +83,4 @@ function finishRegression(err) {
   process.exitCode = 2;
 }
 
-module.exports = { finishRegression, launchChromium, startRendererServer };
+module.exports = { finishRegression, launchChromium, regressionCollector, startRendererServer };

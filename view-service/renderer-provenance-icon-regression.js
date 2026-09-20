@@ -11,7 +11,7 @@
 // 因此本测试**必须显式关掉 flag 跑一遍**(⑤⑥ 两格),否则「开着 flag 图标出现」
 // 这件事无法区分是本次修好的、还是本来就好的 —— 那就成了不可能失败的检查。
 const assert = require('assert');
-const { finishRegression, launchChromium, startRendererServer } = require('./renderer-regression-selfhost');
+const { finishRegression, launchChromium, regressionCollector, startRendererServer } = require('./renderer-regression-selfhost');
 
 const provEvent = (kind, displayName, id) => ({
   schema_version: 'delivery.v2', kind: 'input_posted',
@@ -40,6 +40,7 @@ async function boot(browser, baseUrl, flagOn) {
   const baseUrl = fixture.url;
   let browser;
   try {
+    const checks = regressionCollector();
     // 服务出的内容 == 磁盘上的文件(这条自检写进过部署单,一晚栽过两次陈旧静态服务)
     const disk = require('crypto').createHash('sha256')
       .update(require('fs').readFileSync(__dirname + '/renderer-canary-sse.html')).digest('hex');
@@ -54,16 +55,24 @@ async function boot(browser, baseUrl, flagOn) {
     await on.evaluate(ev => handleIncomingEvent(ev), provEvent('agent', 'zzc-prodops-2642', 'ag1'));
 
     // ① 甲:飞书来源必须有来源图标
-    assert.strictEqual(await on.locator('.prov-ic[aria-label*="飞书"]').count(), 1,
-      '① 飞书来源必须渲染飞书头像(业主:「飞书不见了」)');
+    await checks.check('① 飞书来源渲染飞书头像', async () => {
+      assert.strictEqual(await on.locator('.prov-ic[aria-label*="飞书"]').count(), 1,
+        '① 飞书来源必须渲染飞书头像(业主:「飞书不见了」)');
+    });
     // ② 乙:Agent 投递必须是 Agent 头像,不是 👤
-    assert.strictEqual(await on.locator('.prov-ic[aria-label*="Agent"], .prov-ic[title*="zzc-prodops-2642"]').count(), 1,
-      '② Agent 投递必须渲染 Agent 头像(业主:「并没有显示为 Agent 头像」)');
+    await checks.check('② Agent 投递渲染 Agent 头像', async () => {
+      assert.strictEqual(await on.locator('.prov-ic[aria-label*="Agent"], .prov-ic[title*="zzc-prodops-2642"]').count(), 1,
+        '② Agent 投递必须渲染 Agent 头像(业主:「并没有显示为 Agent 头像」)');
+    });
     // ③ 两张卡各自只有一个来源图标,不得叠加表情
-    assert.strictEqual(await on.locator('.prov-ic').count(), 2, '③ 两条来源各出且仅出一个来源图标');
+    await checks.check('③ 每条来源仅一个图标', async () => {
+      assert.strictEqual(await on.locator('.prov-ic').count(), 2, '③ 两条来源各出且仅出一个来源图标');
+    });
     // ④ flag 开时 input 卡不得再挂 👤 类型标(否则「人/👤 双标」回归)
-    assert.strictEqual(await on.locator('.event-type').filter({ hasText: '👤' }).count(), 0,
-      '④ flag 开时输入卡不得再出 👤 类型标');
+    await checks.check('④ flag 开时不叠加人物类型标', async () => {
+      assert.strictEqual(await on.locator('.event-type').filter({ hasText: '👤' }).count(), 0,
+        '④ flag 开时输入卡不得再出 👤 类型标');
+    });
     await on.close();
 
     // ── flag 关:阳性对照,证明上面四格确实是 flag 带来的 ───────────────
@@ -71,10 +80,13 @@ async function boot(browser, baseUrl, flagOn) {
     await off.evaluate(ev => handleIncomingEvent(ev), provEvent('feishu', '飞书', 'fs2'));
     await off.evaluate(ev => handleIncomingEvent(ev), provEvent('agent', 'zzc-prodops-2642', 'ag2'));
     // ⑤ flag 关必须一个来源图标都没有 —— 这正是业主看到的线上状态
-    assert.strictEqual(await off.locator('.prov-ic').count(), 0,
-      '⑤ 阳性对照失效:flag 关时竟仍有来源图标,说明①②不是 flag 起的作用');
+    await checks.check('⑤ flag 关时来源图标消失', async () => {
+      assert.strictEqual(await off.locator('.prov-ic').count(), 0,
+        '⑤ 阳性对照失效:flag 关时竟仍有来源图标,说明①②不是 flag 起的作用');
+    });
     await off.close();
 
+    checks.finish();
     console.log('renderer-provenance-icon-regression: 5/5 通过(含 flag 关的阳性对照)');
   } finally {
     if (browser) await browser.close();

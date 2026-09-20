@@ -2,7 +2,7 @@
 // 而出站寻址必须仍用 helper 认的 dw- 形式。
 // 🔴 两格缺一不可:只验「合成一张卡」会让「把前缀一刀切掉」通过,而那会让取消静默失效。
 const assert = require('assert');
-const { finishRegression, launchChromium, startRendererServer } = require('./renderer-regression-selfhost');
+const { finishRegression, launchChromium, regressionCollector, startRendererServer } = require('./renderer-regression-selfhost');
 
 (async () => {
   const fixture = await startRendererServer();
@@ -11,6 +11,7 @@ const { finishRegression, launchChromium, startRendererServer } = require('./ren
   try {
     browser = await launchChromium();
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    const checks = regressionCollector();
     await page.route('**/status', r => r.fulfill({ status:200, contentType:'application/json', body: JSON.stringify({
       session:'fixture', state:'idle', readonly:true, can_write:false, owner:'f', model:'m', cost_total:0, cost_last:0, turns:0 })}));
     await page.route('**/events', r => r.fulfill({ status:200, contentType:'text/event-stream', body:'' }));
@@ -23,14 +24,17 @@ const { finishRegression, launchChromium, startRendererServer } = require('./ren
       addrFromBare: deliveryAddrId('dlv_abc'), addrFromPref: deliveryAddrId('dw-dlv_abc'),
       addrEmpty: deliveryAddrId(''),
     }));
-    assert.strictEqual(keys.bare, keys.pref, '① 两种写法必须收敛到同一个合卡键');
+    await checks.check('① 两种写法收敛同一合卡键', async () => {
+      assert.strictEqual(keys.bare, keys.pref, '① 两种写法必须收敛到同一个合卡键');
+    });
     // ② 出站寻址必须是 helper 认的 dw- 形式(与 helper _delivery_id 规则一致)
-    assert.strictEqual(keys.addrFromBare, 'dw-dlv_abc', '② 裸号出站须补 dw- 前缀');
-    assert.strictEqual(keys.addrFromPref, 'dw-dlv_abc', '② 已带前缀不得重复加');
-    assert.strictEqual(keys.addrEmpty, '', '② 空值不得编造出 "dw-"');
-
-    // 🔴 阳性对照:两个函数必须真的不同 —— 若有人把它们写成同一个,上面两格会同时"通过"
-    assert.notStrictEqual(keys.bare, keys.addrFromBare, '🔴 合卡键与出站寻址不得是同一个值,否则判据是空的');
+    await checks.check('② 出站寻址使用 dw- 形式且与合卡键不同', async () => {
+      assert.strictEqual(keys.addrFromBare, 'dw-dlv_abc', '② 裸号出站须补 dw- 前缀');
+      assert.strictEqual(keys.addrFromPref, 'dw-dlv_abc', '② 已带前缀不得重复加');
+      assert.strictEqual(keys.addrEmpty, '', '② 空值不得编造出 "dw-"');
+      // 🔴 阳性对照:两个函数必须真的不同 —— 若有人把它们写成同一个,上面两格会同时"通过"
+      assert.notStrictEqual(keys.bare, keys.addrFromBare, '🔴 合卡键与出站寻址不得是同一个值,否则判据是空的');
+    });
 
     // ③ 端到端:同一笔投递的两个名字只产生一张卡
     await page.evaluate(() => {
@@ -41,7 +45,9 @@ const { finishRegression, launchChromium, startRendererServer } = require('./ren
     });
     await page.waitForTimeout(200);
     const n = await page.evaluate(() => document.querySelectorAll('#timeline > *').length);
-    assert.strictEqual(n, 1, `③ 同一笔投递两个名字须只产生一张卡,实为 ${n} 张`);
+    await checks.check('③ 对称 message_id 只产一张卡', async () => {
+      assert.strictEqual(n, 1, `③ 同一笔投递两个名字须只产生一张卡,实为 ${n} 张`);
+    });
 
     // 🔴 ④ 线上真实形态:**不带 message_id** —— 此时键会退回投递号,
     //    而投递号正是那个有两种写法的字段。前三格都给了 message_id,
@@ -56,7 +62,9 @@ const { finishRegression, launchChromium, startRendererServer } = require('./ren
     });
     await page.waitForTimeout(200);
     const nk = await page.evaluate(() => document.querySelectorAll('#timeline > *').length);
-    assert.strictEqual(nk, 1, `④ 无 message_id 时(线上形态)仍须只产一张卡,实为 ${nk} 张`);
+    await checks.check('④ 两边均无 message_id 只产一张卡', async () => {
+      assert.strictEqual(nk, 1, `④ 无 message_id 时(线上形态)仍须只产一张卡,实为 ${nk} 张`);
+    });
 
     // 🔴 ⑤ **线上真实形态**:Hub 的 input_posted **带** message_id,
     //    helper 的 user_input **不带** —— 两边**不对称**。
@@ -72,9 +80,12 @@ const { finishRegression, launchChromium, startRendererServer } = require('./ren
     });
     await page.waitForTimeout(220);
     const real = await page.evaluate(() => document.querySelectorAll('#timeline > *').length);
-    assert.strictEqual(real, 1,
-      `⑤ 线上真实形态(一边带 message_id 一边不带)须只产一张卡,实为 ${real} 张`);
+    await checks.check('⑤ 非对称 message_id 线上形态只产一张卡', async () => {
+      assert.strictEqual(real, 1,
+        `⑤ 线上真实形态(一边带 message_id 一边不带)须只产一张卡,实为 ${real} 张`);
+    });
 
+    checks.finish();
     console.log('T-074 delivery-id regression: ALL PASS');
   } finally { if (browser) await browser.close(); await fixture.close(); }
 })().catch(finishRegression);
