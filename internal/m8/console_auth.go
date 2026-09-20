@@ -387,6 +387,7 @@ function renderPlatform(platform){
   var items=document.getElementById('platform-items'); items.replaceChildren();
   (Array.isArray(platform.items)?platform.items:[]).forEach(function(item){
     var a=document.createElement('a'); a.textContent=item.title; a.href=item.href; a.dataset.itemId=item.id;
+    if(item.target) a.target=item.target;   // 逐项:独立文档入口开新页,页内锚(#agents)不动
     if(item.status==='pending') a.dataset.status='pending';
     items.append(a);
   });

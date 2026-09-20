@@ -75,6 +75,10 @@ func (h *Hub) RequireConsolePlatformAction(action string, next http.HandlerFunc)
 
 var consolePlatformItemID = regexp.MustCompile(`^[a-z][a-z0-9-]{1,63}$`)
 
+// builtin 入口占用的 id。放行同 id 提交会让页面出现两个 data-item-id 相同的项,
+// 闸与 UI 都无法唯一寻址(与既有 "agents" 保留同一理由)。
+var consolePlatformReservedItemIDs = map[string]bool{"agents": true, "agent-groups": true}
+
 type consolePlatformItemRequest struct {
 	ID    string `json:"id"`
 	Kind  string `json:"kind"`
@@ -87,7 +91,7 @@ func validConsolePlatformItemRequest(req consolePlatformItemRequest) bool {
 	req.Kind = strings.TrimSpace(req.Kind)
 	req.Title = strings.TrimSpace(req.Title)
 	req.Href = strings.TrimSpace(req.Href)
-	if !consolePlatformItemID.MatchString(req.ID) || req.ID == "agents" || req.Kind == "" || req.Title == "" || len(req.Title) > 120 {
+	if !consolePlatformItemID.MatchString(req.ID) || consolePlatformReservedItemIDs[req.ID] || req.Kind == "" || req.Title == "" || len(req.Title) > 120 {
 		return false
 	}
 	return (strings.HasPrefix(req.Href, "/") && !strings.HasPrefix(req.Href, "//")) || strings.HasPrefix(req.Href, "#")
@@ -122,7 +126,21 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	// The existing Agent workspace is the first real mounted feature. Future
 	// I/K/L items use the same response shape and persistence API.
 	builtin := model.ConsolePlatformItem{ID: "agents", Kind: "agents", Title: "Agents", Href: "#agents", Status: "approved", Active: true}
-	items = append([]model.ConsolePlatformItem{builtin}, items...)
+	builtins := []model.ConsolePlatformItem{builtin}
+	// Agent 编组入口(0.2.1.7):它是**独立文档**,所以必须 target="_blank"。
+	// 🔴 顶层导航过去会把 console 右栏那一堆活 iframe(每个一条 SSE)连同已打开的 Agent 页
+	//    一起带走,而且后退回不来 —— 实测 pane 2→0、两条 SSE 全断、顶层 URL 变成 /admin/agent-groups。
+	// 🔴 target 是**逐项**的,不能一律加:builtin "Agents" 的 href 是 `#agents` 页内锚,
+	//    给它 _blank 只会开一个空标签页。
+	// 角色口径与 platformActions 同一个(只对 management 发)。UI 可见性不是授权判据:
+	// /admin/* 自己还有 wp_admin 那道**独立**鉴权,两者是两个域。
+	if role == consolePlatformRoleManagement {
+		builtins = append(builtins, model.ConsolePlatformItem{
+			ID: "agent-groups", Kind: "agent-groups", Title: "Agent 编组",
+			Href: "/admin/agent-groups", Target: "_blank", Status: "approved", Active: true,
+		})
+	}
+	items = append(builtins, items...)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	_ = json.NewEncoder(w).Encode(map[string]any{"role": role, "actions": platformActions(role), "items": items})
