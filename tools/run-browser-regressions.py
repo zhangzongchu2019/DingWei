@@ -27,6 +27,12 @@ SUITES = (
     ("renderer_in_console_iframe", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
 )
 
+# Only names are recorded; values may contain local paths or credentials. These
+# are the caller-controlled inputs that can replace the repository artifact or
+# its fixtures/mock contract. Runner-generated MOCK_BASE/CERT/KEY values are not
+# overrides, but a caller-supplied value is still reported rather than hidden.
+OVERRIDE_ENV_NAMES = ("FIXTURES", "MOCK_BASE", "MOCK_CERT", "MOCK_KEY", "MOCK_SESSION", "RENDERER_OVERRIDE")
+
 
 class EnvironmentUnavailable(RuntimeError):
     pass
@@ -131,11 +137,12 @@ def commit_sha() -> str:
     return result.stdout.strip()
 
 
-def receipt(timestamp: str, sha: str, results: dict[str, int], aggregate: int) -> str:
+def receipt(timestamp: str, sha: str, overrides: tuple[str, ...], results: dict[str, int], aggregate: int) -> str:
     lines = [
         "DW_BROWSER_RECEIPT_V1_BEGIN",
         f"generated_at_utc={timestamp}",
         f"commit_sha={sha}",
+        "overrides=" + (",".join(overrides) if overrides else "none"),
     ]
     lines.extend(f"suite.{name}.rc={results.get(name, 3)}" for name, _ in SUITES)
     lines.extend((f"aggregate_rc={aggregate}", "DW_BROWSER_RECEIPT_V1_END"))
@@ -148,6 +155,7 @@ def main() -> int:
     args = parser.parse_args()
 
     env = os.environ.copy()
+    overrides = tuple(name for name in OVERRIDE_ENV_NAMES if env.get(name))
     results: dict[str, int] = {}
     aggregate = 3
     mock: subprocess.Popen[str] | None = None
@@ -193,7 +201,7 @@ def main() -> int:
                 mock.wait()
 
     try:
-        rendered = receipt(utc_now(), commit_sha(), results, aggregate)
+        rendered = receipt(utc_now(), commit_sha(), overrides, results, aggregate)
     except EnvironmentUnavailable as error:
         print(f"ENVIRONMENT_UNAVAILABLE: {error}", file=sys.stderr)
         return 3
