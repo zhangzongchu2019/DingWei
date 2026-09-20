@@ -5,6 +5,23 @@
 **边界(照裁定执行)** 🔴 **只调研**:未引入任何依赖、未装任何包、未改产品、未碰发布线。
 仓内 `package.json` 数量**仍为 0**(实测),所有下载物只在 `/tmp/md-research/`,**不在仓内**。
 
+> ## 🔴 更正(2026-09-21 · ts-No.77 断网实跑之后回填)
+>
+> 本件原有的一条结论**被实测推翻**。原文在各处划掉保留,以免下一个人重新信它:
+>
+> - ~~EasyMDE「关掉拼写检查后**无其它外网依赖**」~~ ⇒ 🔴 **错**。实测默认配置下有**三个**外网面:
+>   ① `spellChecker` 词典 `cdn.jsdelivr.net/codemirror.spell-checker/latest/en_US.aff|.dic`
+>   ② `autoDownloadFontAwesome`(**默认开**)注入 `maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css`
+>   ③ 默认工具栏 `guide` 按钮 = `window.open("https://www.markdownguide.org/basic-syntax/")`(**点了才出网**)
+>   ⇒ 要真离线需 **3 处**配置,不是 1 处。
+> - **错因**:ts-No.75 的 CDN 串正则只找 `unpkg|jsdelivr|cdnjs` 一族,**`maxcdn` 不在里面**;
+>   而 `guide` 那颗按钮的 URL 在 bundle 里是**普通字符串常量、不含 `cdn` 字样** ⇒ 两个都从指缝里漏了。
+>   🔵 教训与"包级证据 ≠ 运行时证据"同源:**grep 用的关键字,决定了你能看见什么。**
+> - 证据:交付件 `runbooks/DELIVERY-EASYMDE-OFFLINE-0.2.1.50-qwen38maxkhovvob4.md`(S0–S7 断网实跑,**8/0 rc=0**)。
+> - 🔴 受影响位置已就地更正并标「🔴 ts-No.77 更正」:§〇 排序表 · §一 证据分类 · §三 对照表 EasyMDE 行 ·
+>   §四-1 · §六 E 行 · §八-1 · §八-8 · §九 板件片段。
+> - 🔵 **Vditor / Cherry 未做同类更正** —— 它们**仍是包级证据**,同类漏报风险原样存在。
+
 ---
 
 ## 〇 一句话
@@ -12,11 +29,11 @@
 **三个候选都能用,但没有一个"拿来就行"** —— 每一个都至少撞上本仓一道硬约束(见 §二),
 且 🔴 **三者都过不了同一条**:**图片直链只活 7 天**(§二-6),那是**产品/基建决定,不是选型决定**。
 
-**供裁的排序(🔴 不是结论,且未经任何浏览器实跑)**:
+**供裁的排序(🔴 不是结论)**:🟢 ts-No.77 后补 —— EasyMDE **已有断网实跑**(离线可用性),**Vditor/Cherry 仍无任何浏览器实跑**;排序未因此变动。
 
 | 名次 | 候选 | 为什么它排这里 | 它的硬伤 |
 |---|---|---|---|
-| 1 | **EasyMDE 2.21.0**(MIT) | 约束最少:**104KB gz** · UMD 直用 · 上传是**纯客户端回调**(服务端 0 改动) | 无所见即所得 · 默认会打外网取拼写词典 · 无自带暗色 · 附件只支持图片 |
+| 1 | **EasyMDE 2.21.0**(MIT) | 约束最少:**104KB gz** · UMD 直用 · 上传是**纯客户端回调**(服务端 0 改动)· 🧪 **已断网实跑证明可离线**(ts-No.77) | 无所见即所得 · 🔴 **默认会打外网 3 处**(拼写词典 + Font Awesome + 工具栏 `guide` 按钮 ⇒ **3 处配置都要改**,ts-No.77 更正)· 无自带暗色 · 附件只支持图片 |
 | 2 | **Vditor 4.0.0**(MIT) | 功能最全(WYSIWYG/IR/分屏 + 数学图表 + `setTheme` 暗色 API) | 真实离线载荷 **≈656KB gz 起**(编辑器 69KB + lute 引擎 578KB),全功能 **21.9MB**;默认 `cdn` 指向 **unpkg**;默认往 **localStorage 写草稿**(与"正文唯一源"冲突);上传响应体要适配 |
 | 3 | **Cherry Markdown 0.11.10**(Apache-2.0) | **上传/附件口径最贴合我们**(`fileUpload(file,cb)` + `urlProcessor` + 多类型附件表) | 🔴 **npm 包不发 `.min.js`**:core 2.26MB/591KB gz、full 12.7MB/2.3MB gz(**未压缩**);体积最大 |
 
@@ -29,8 +46,10 @@
 | 🔬 **实测(包级)** | 今天(2026-09-21)从 `registry.npmjs.org` 取元数据 + 下载 tarball 到 `/tmp/md-research/tb/`,量 `gzip -9` 字节数、`grep` 包内字符串 | 体积 · 发布日 · 许可证字段 · 反引号数 · UMD 与否 · CDN 串 · 默认值 · 依赖数 · 包内文件清单 |
 | 📖 **读码(本仓)** | 只读本仓源码得出的结论,**没有运行时验证** | §二 六道约束 · §六 "要改几处" 清单 |
 | 🌐 **网络检索** | 搜索引擎/上游页面,**未逐个复核** | 仅用于**佐证**淘汰(tui.editor 自述 No Longer Maintained、cherry 是腾讯开源);**不作为任何一格的唯一依据** |
+| 🧪 **断网实跑**(ts-No.77 后补) | 真浏览器 + 浏览器层隔离(死端口代理)+ CDP / Playwright **两个独立观测面**计数外部请求 | **仅 EasyMDE 2.21.0 一家**:载入 / 编辑 / 保存 / 工具栏全点 / guide / 存储副作用。交付件 `DELIVERY-EASYMDE-OFFLINE-0.2.1.50-qwen38maxkhovvob4.md` |
 
-🔴 **本件里没有任何一条"浏览器实跑"证据。** 见 §八-1。
+🔴 **原文:本件里没有任何一条"浏览器实跑"证据。** 见 §八-1。
+🟢 **ts-No.77 更正**:上表第四类(🧪 断网实跑)已补,**但只覆盖 EasyMDE**;Vditor / Cherry 仍无运行时证据。
 
 ---
 
@@ -100,7 +119,7 @@
 
 | 候选(版本) | 许可证<br>🔬 registry 字段 | 🔬 最近发布 | 🔬 体积(gz) | 需改构建链? | 🔴 能否**完全自托管离线** | 导入文件 / 图片预览 | 与本仓耦合面 |
 |---|---|---|---|---|---|---|---|
-| **EasyMDE** 2.21.0 | MIT | **2026-05-03** | js **104KB** + css 3KB<br>(`dist/easymde.min.js` 320KB raw;dist 仅 0.3MB/2 文件) | **否**(UMD,`<script>` 直用;deps 5 已打包) | ⚠️ **默认不离线**:拼写检查开启时运行时 XHR `cdn.jsdelivr.net/…/en_US.aff\|.dic` 🔬(bundle 内实测)⇒ **必须 `spellChecker:false`** 或自托管词典;关掉后**无其它外网依赖** | 图片:✅ 拖拽/粘贴/文件选择器**全走 `imageUploadFunction(file,onSuccess,onError)`** 🔬(`src/js/easymde.js:1957/2007/2431`)—— **纯客户端回调,服务端 0 改动**,正好接我们的 `/files/upload`<br>🔴 非图片附件:**无** | **最小**:1 个 `<script>`+1 个 `<link>`(需 2️⃣ 新增静态路由)· 上传 0 处服务端改动 · 暗色需**自写 CSS**(见 §四) |
+| **EasyMDE** 2.21.0 | MIT | **2026-05-03** | js **104KB** + css 3KB<br>(`dist/easymde.min.js` 320KB raw;dist 仅 0.3MB/2 文件) | **否**(UMD,`<script>` 直用;deps 5 已打包) | 🔴 **默认不离线 —— 3 处(ts-No.77 更正,原写 1 处)**:① 拼写检查运行时 XHR `cdn.jsdelivr.net/…/en_US.aff\|.dic` 🔬 ⇒ **必须 `spellChecker:false`** 或自托管词典;② `autoDownloadFontAwesome` **默认开** 🧪 ⇒ **载入即**注入 `maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css`,必须显式给 `false`;③ 默认工具栏 `guide` 按钮 = `markdownguide.org` 🧪,**点了才出网** ⇒ 从 `toolbar` 去掉或改指内网文档。<br>🧪 **三处都处理后:载入+编辑+保存+工具栏全点 ⇒ 外部请求实测 0**(CDP 与 Playwright 两个观测面一致)<br>~~关掉拼写检查后**无其它外网依赖**~~ ← 🔴 **本句已被 ts-No.77 断网实跑推翻** | 图片:✅ 拖拽/粘贴/文件选择器**全走 `imageUploadFunction(file,onSuccess,onError)`** 🔬(`src/js/easymde.js:1957/2007/2431`)—— **纯客户端回调,服务端 0 改动**,正好接我们的 `/files/upload`<br>🔴 非图片附件:**无** | **最小**:1 个 `<script>`+1 个 `<link>`(需 2️⃣ 新增静态路由)· 上传 0 处服务端改动 · 暗色需**自写 CSS**(见 §四) |
 | **Vditor** 4.0.0 | MIT | **2026-08-30** | js **69KB**(`dist/index.min.js` 290KB raw)+ css 9KB<br>🔴 **但引擎另算**:`dist/js/lute/lute.min.js` **578KB gz**(3.6MB raw)<br>⇒ 最小可用 **≈656KB gz**;全功能 dist **21.9MB/530 文件** 🔬 | **否**(UMD;deps 1) | ⚠️ **默认不离线**:bundle 内实测 `CDN="https://unpkg.com/vditor@4.0.0"`,README:220 亦写明默认值 ⇒ **必须设 `options.cdn` 指向自托管路径**;🔵 好消息:**所有资产包内自带**(mathjax 6.5M · lute 3.6M · mermaid 3.5M · highlight.js 2.1M · graphviz 2.0M · katex 1.5M · echarts 1.0M · markmap 840K 🔬)⇒ 自托管**做得到**,代价是体积 | 图片:✅ `upload{url,max,linkToImgUrl,token,headers,fieldName,multiple,accept,…}` 🔬(`dist/types/index.d.ts:386-425`)<br>🔴 **但它期望自己的响应体 `msg.data.succMap`** 🔬(bundle 实测),而我们返回 `{url,name,size,sha256,…}` ⇒ **要一层适配**(服务端 shim 或客户端拦截)<br>附件:✅ `accept` 可配 | **中**:静态路由(2️⃣)· **上传适配 1 处** · 暗色 ✅ 有 `setTheme("dark"\|"classic")` 🔬(`dist/index.d.ts`)· 🔴 **默认 `cache.enable=true`**(types 注释"默认值: true" + bundle `cache:{enable:!0` 🔬)⇒ **默认往 localStorage 写草稿,必须显式关**(见 §四) |
 | **Cherry Markdown** 0.11.10 | **Apache-2.0** | **2026-08-24** | 🔴 **包内无 `.min.js`**:`core.js` 2.26MB raw/**591KB gz**;`cherry-markdown.js` 12.7MB raw/**2.3MB gz** 🔬;css(min)40KB gz<br>dist 合计 **47.9MB/241 文件** | **否**(UMD 实测:`core.js` 头部 `define.amd … globalThis.Cherry`)<br>🔴 但**要自己压缩**才能上生产 ⇒ 那**就是**一步构建 | ✅ **包内零 CDN 引用** 🔬(`cdnrefs=0`) | 🔵 **口径最贴合**:`fileUpload: CherryFileUploadHandler` = `(file, callback) => …`**纯客户端回调** 🔬(`types/cherry.d.ts:81/135/890`)+ `fileUploadMulti` + `urlProcessor(url, srcType)` + `fileTypeLimitMap{video,audio,image,word,pdf,file}` 🔬 ⇒ **图片与非图片附件都有原生位**,且**不需要新造上传** | **中偏大**:静态路由(2️⃣)· 上传 0 处服务端改动 ✅ · 🔴 **反引号 1780** ⇒ console 内联不可行(3️⃣)· 暗色能力**未验**(§八-3) |
 | **Editor.js** 2.31.7 | Apache-2.0 | **2026-09-17** | js **65KB**(`dist/editorjs.umd.js` 239KB raw) | 否(UMD;deps 3) | ✅ `cdnrefs=0` 🔬 | 🔴 **模型不对**:输出是 **block JSON,不是 markdown**;要 markdown 得自己写序列化器 ⇒ **等于自研**,违背"不自研" | 不适用(见 §四) |
@@ -119,9 +138,28 @@
 > 组长判据:「**只有优点的候选说明你没查够**」。以下每条都带证据出处。
 
 ### EasyMDE 2.21.0
-1. 🔴 **默认配置会打外网**:`spellChecker !== false` 即启用 🔬(`src/js/easymde.js:2153/2164`),启用后运行时
-   `XMLHttpRequest → https://cdn.jsdelivr.net/codemirror.spell-checker/latest/en_US.aff|.dic` 🔬(bundle 内实测两处)。
-   ⇒ 内网侧**必须显式 `spellChecker:false`**(或自托管词典)。**忘记关 = 每次编辑都发一个失败的外网请求。**
+1. 🔴 **默认配置会打外网 —— 而且是 3 处,不是 1 处**
+   (🔴 **ts-No.77 更正**:本节原先只写了 ①,并断言"关掉后无其它外网依赖";**该断言已被断网实跑推翻**)
+   - **① 拼写词典**:`spellChecker !== false` 即启用 🔬(`src/js/easymde.js:2153/2164`),启用后运行时
+     `XMLHttpRequest → https://cdn.jsdelivr.net/codemirror.spell-checker/latest/en_US.aff|.dic` 🔬(bundle 内实测两处)。
+     ⇒ 内网侧**必须显式 `spellChecker:false`**(或自托管词典)。**忘记关 = 每次编辑都发一个失败的外网请求。**
+   - **② Font Awesome(ts-No.75 漏报)**:`autoDownloadFontAwesome` **默认开** —— 🧪 bundle 原文
+     `var t=!0; … if(!1===e.autoDownloadFontAwesome&&(t=!1))`,即**只有显式给 `false` 才不下载**;
+     随后 `createElement("link") → https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css`。
+     🔵 它先扫 `document.styleSheets` 里有没有 `//maxcdn.bootstrapcdn.com/font-awesome/`,有才跳过
+     ⇒ **自托管 Font Awesome 也必须用这个域,否则照样出网**。
+     ⇒ **载入即出网**,与用户是否编辑无关。🔴 **漏报原因**:ts-No.75 的 CDN 正则里没有 `maxcdn`。
+   - **③ 工具栏 `guide` 按钮(ts-No.75 漏报)**:默认工具栏含
+     `guide:{action:"https://www.markdownguide.org/basic-syntax/",title:"Markdown Guide",default:!0}` 🧪(bundle 实测)。
+     ⇒ **点击才出网**(载入/编辑/保存全程不碰它 ⇒ 不影响 ① ②);但内网侧点它 = **打不开一个外网站点**
+     ⇒ 必须从 `toolbar` 数组里去掉,或改指内网文档。🔴 **漏报原因**:该 URL 是普通字符串常量,**不含 `cdn` 字样**。
+   - 🧪 **断网实测**:①②都关 + 不点③ ⇒ **外部请求 0**(两面一致);①②不关 ⇒ 观测到 3 条外部 URL
+     (`font-awesome.min.css` + `en_US.aff` + `en_US.dic`),而**不隔离对照**下这 3 条真的能出去(还多一条 `.woff2`)。
+     证据:`runbooks/DELIVERY-EASYMDE-OFFLINE-0.2.1.50-qwen38maxkhovvob4.md` S0/S1/S2/S3/S5。
+   - 🔵 **`localStorage` 副作用(与 Vditor 对照)**:EasyMDE 的 `autosave` 是 **opt-in** —— 🧪 不开时
+     `localStorage`/`sessionStorage`/IndexedDB/serviceWorker **全空**;开了立刻写 `smde_<uniqueId>`
+     ⇒ **没有 Vditor `cache.enable=true` 那种"默认就写草稿"的坑**;但一旦有人打开 `autosave`,
+     浏览器里就会存**第二份 spec 正文**,与 I 项「正文唯一源」相撞 ⇒ 引入时须**显式禁止**。
 2. 🔴 **没有所见即所得**:只有"编辑 + 分屏预览"。业主若要 Word 式体验,它给不了。
 3. 🔴 **没有自带暗色**:`dist` 只有 `easymde.min.css`(3KB gz)一份浅色样式 ⇒ **暗色要我们自己写 CSS**,
    而本仓刚做完主题全局化(`data-dw-theme`),**这块 CSS 得跟着主题走**(§八-3:**未验**)。
@@ -204,7 +242,7 @@
 | B | `view_service.py` 新增静态路由 + 白名单 | `view_service.py:556-566` | 1 处 | 1 处 | 1 处 |
 | C | nginx 路由(**生产侧,prodops 出单**) | `deploy/nginx-dingwei.conf` | 1 处 | 1 处 | 1 处 |
 | D | **上传适配** | `fileservice/http.go:82-88` | **0 处**(客户端回调) | 🔴 **1 处**(响应体 `succMap` 适配) | **0 处**(客户端回调) |
-| E | **关掉默认的外网/本地副作用** | §四 | `spellChecker:false` 1 处 | `cdn` + `cache.enable:false` **2 处** | 0 处(零 CDN) |
+| E | **关掉默认的外网/本地副作用** | §四 | 🔴 **3 处**(ts-No.77 更正,原写 1 处):`spellChecker:false` + `autoDownloadFontAwesome:false` + `toolbar` 去掉 `guide` | `cdn` + `cache.enable:false` **2 处**(🔵 **仍是 bundle/读码证据,未断网实跑**) | 0 处(零 CDN;🔵 **同左,未实跑**) |
 | F | **暗色对齐** `data-dw-theme` | 主题全局化那格 | 🔴 **自写 CSS**(无自带暗色) | ✅ `setTheme('dark')`(读 d.ts,**未实跑**) | 🔴 **未验** |
 | G | **自研 markdown 的去留**(防第二事实源) | `renderer-canary-sse.html:3533-3731` | 编辑侧不影响展示 ⇒ **可不动** | 同 | 同 |
 | H | invariants 新增资产 pin(🔵 建议) | `invariants-dingwei-gray.json:16` 同族 | 1 条 | 1 条 | 1 条 |
@@ -238,8 +276,13 @@ spec 是长期文档 ⇒ **正文里嵌的图 7 天后全变死链**。可选:
 
 ## 八 🔴 没验到什么
 
-1. 🔴 **一个候选都没在浏览器里跑过。** 所有数字是**包级**实测(registry 元数据 + tarball 内文件 `gzip -9` + `grep`)。
-   **渲染保真度、编辑手感、性能、与现有 CSS 的冲突、初始化是否报错 —— 一律未验。**
+1. 🔴 ~~**一个候选都没在浏览器里跑过。**~~(🟢 **ts-No.77 更正:EasyMDE 已跑过** —— 见下)
+   其余仍是**包级**实测(registry 元数据 + tarball 内文件 `gzip -9` + `grep`)。
+   🔵 **EasyMDE 现在有什么**:🧪 断网实跑证明了「离线可用性 + 无存储副作用」
+   (`DELIVERY-EASYMDE-OFFLINE-0.2.1.50-qwen38maxkhovvob4.md`,S0–S7,**8/0 rc=0**)。
+   🔴 **EasyMDE 仍然没有什么**:**渲染保真度、编辑手感、大文档性能、与本仓 CSS/主题的冲突、暗色**
+   —— 一律**未验**(那一跑只量"出不出网 / 落不落盘",没量"渲得对不对、好不好用")。
+   🔴 **Vditor / Cherry:一律未验,连离线都没实跑过。**
 2. 🔴 **没验候选的 markdown 解析与自研 `renderMarkdown` 是否一致。** 产品里还有
    `mergeMetaIntoMarkdown`(`renderer-canary-sse.html:3400`)与超长摘要路径(`:3158`/`:3197`),
    换渲染器可能让这些**行为漂移**。⇒ 真要选,**下一步应该是一格"同一份 spec 正文,三种渲染器逐字比对"的实验**。
@@ -255,6 +298,10 @@ spec 是长期文档 ⇒ **正文里嵌的图 7 天后全变死链**。可选:
 8. 🔴 **"完全自托管离线"我验的是"包内自带资产 + 包内无 CDN 串"**,
    **没有断网实跑**证明它运行时不去外网取别的东西(字体、图标 sprite、语言包、Web Worker)。
    ⇒ **Vditor/Cherry 的"✅/⚠️"是包级证据,不是运行时证据。**
+   🟢 **ts-No.77 更正 + 自证**:EasyMDE **已补断网实跑**,而这一跑**恰好推翻了本件的包级结论**
+   —— 包级 grep 漏掉了 `maxcdn`(字体)与 `guide`(外链按钮)两处。
+   🔴 **这就是"包级证据不是运行时证据"的活样本**:Vditor / Cherry 那两格**同类漏报的风险原样存在**,
+   它们表里的 ✅/⚠️ **不可当作已验**。
 9. 🔵 **没做任何 PoC 集成**(组长明令不引入、不装依赖)⇒ §六"要改几处"是**读码清单**,不是改过一遍数出来的。
 10. 🔵 **7 天保留期那条我只读了默认值与契约测试**,没有实测"7 天后 `/f/` 真的 404"
     (生产侧行为,**我不碰生产**)。
@@ -299,8 +346,15 @@ hypermd/stackedit-js 2018 · tui-editor 2019 · editormd(npm 404);
 🔴 **待裁三问(选型救不了)**:① 图片 7 天死链怎么办(长保留/随版本入库/本期不做内嵌)
 ② 要不要让组件接管"展示"(退役自研渲染 = 业主看得见的观感变化)③ 编辑器挂 console 侧还是独立页
 
-🔴 **本件没有任何浏览器实跑证据**(全部是包级实测 + 读码);"完全自托管离线"验的是
-**包内自带资产 + 包内无 CDN 串**,**没有断网实跑** ⇒ 详见调研件 §八 十二条"没验到什么"。
+🔴 ~~**本件没有任何浏览器实跑证据**~~ → 🟢 **ts-No.77 更正:EasyMDE 已有断网实跑**
+(`DELIVERY-EASYMDE-OFFLINE-0.2.1.50-qwen38maxkhovvob4.md`,S0–S7,**8/0 rc=0**;Vditor/Cherry 仍无)。
+🔴 **该实跑推翻了本件一条包级结论**:EasyMDE 默认外网面是 **3 处**不是 1 处
+(拼写词典 `jsdelivr` + **Font Awesome `maxcdn`,默认开、载入即出网** + **工具栏 `guide` 按钮 → `markdownguide.org`**);
+漏报原因:CDN 正则里没有 `maxcdn`,而 guide 的 URL 是不含 `cdn` 字样的字符串常量。
+⇒ **要真离线:3 处配置都要改**(§六 E 行已更正为 3 处)。
+🔵 附带实测:EasyMDE `autosave` 是 **opt-in**(不开 ⇒ localStorage/sessionStorage/IndexedDB/SW 全空)
+⇒ **没有 Vditor `cache.enable=true` 那种默认写草稿的坑**;但一旦打开就会在浏览器里存第二份正文 ⇒ 引入时须显式禁止。
+🔴 **仍没验到**:渲染保真度、编辑手感、大文档性能、与本仓 CSS/主题(暗色)的冲突、图片上传路径、Vditor/Cherry 全部。
 🔵 **附带一条(比选型更要紧,同批查出)**:现有自研渲染是「**先转义再 markdown**」——
   `renderInline:3678` 首句 `escapeHtml(src)` · `highlightCode:3701` 先转义 · 表格/列表单元格一律经 `renderInline`
   ⇒ 📖 **读码结论:不是裸 innerHTML**。而 **marked 自己 README:55 明说不消毒**,
