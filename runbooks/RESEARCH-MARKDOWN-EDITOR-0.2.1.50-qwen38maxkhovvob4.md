@@ -37,6 +37,11 @@
 | 2 | **Vditor 4.0.0**(MIT) | 功能最全(WYSIWYG/IR/分屏 + 数学图表 + `setTheme` 暗色 API) | 真实离线载荷 **≈656KB gz 起**(编辑器 69KB + lute 引擎 578KB),全功能 **21.9MB**;默认 `cdn` 指向 **unpkg**;默认往 **localStorage 写草稿**(与"正文唯一源"冲突);上传响应体要适配 |
 | 3 | **Cherry Markdown 0.11.10**(Apache-2.0) | **上传/附件口径最贴合我们**(`fileUpload(file,cb)` + `urlProcessor` + 多类型附件表) | 🔴 **npm 包不发 `.min.js`**:core 2.26MB/591KB gz、full 12.7MB/2.3MB gz(**未压缩**);体积最大 |
 
+🔴🔴 **第 2、3 名那两行的"硬伤"列一律是包级证据 ⇒ 现在不可信**(ts-No.77 裁定就地标注):
+同类的漏报**已在第 1 名身上实证发生过**(EasyMDE 的 `maxcdn` 字体与 `guide` 按钮两处外联,包级 grep 都没抓到)
+⇒ **它们的外网面数字不得作为选型依据**。第 1 名 EasyMDE 已由 🧪 断网实跑取代包级证据(交付件 `DELIVERY-EASYMDE-OFFLINE-…`)。
+🔵 选型已**定案 EasyMDE**(板件 `dc624ea0`),这两行**不补做**实跑 —— 但它们**留在表里就必须自带这条边界**。
+
 ---
 
 ## 一 取数方法(三类证据**分开标**)
@@ -120,8 +125,8 @@
 | 候选(版本) | 许可证<br>🔬 registry 字段 | 🔬 最近发布 | 🔬 体积(gz) | 需改构建链? | 🔴 能否**完全自托管离线** | 导入文件 / 图片预览 | 与本仓耦合面 |
 |---|---|---|---|---|---|---|---|
 | **EasyMDE** 2.21.0 | MIT | **2026-05-03** | js **104KB** + css 3KB<br>(`dist/easymde.min.js` 320KB raw;dist 仅 0.3MB/2 文件) | **否**(UMD,`<script>` 直用;deps 5 已打包) | 🔴 **默认不离线 —— 3 处(ts-No.77 更正,原写 1 处)**:① 拼写检查运行时 XHR `cdn.jsdelivr.net/…/en_US.aff\|.dic` 🔬 ⇒ **必须 `spellChecker:false`** 或自托管词典;② `autoDownloadFontAwesome` **默认开** 🧪 ⇒ **载入即**注入 `maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css`,必须显式给 `false`;③ 默认工具栏 `guide` 按钮 = `markdownguide.org` 🧪,**点了才出网** ⇒ 从 `toolbar` 去掉或改指内网文档。<br>🧪 **三处都处理后:载入+编辑+保存+工具栏全点 ⇒ 外部请求实测 0**(CDP 与 Playwright 两个观测面一致)<br>~~关掉拼写检查后**无其它外网依赖**~~ ← 🔴 **本句已被 ts-No.77 断网实跑推翻** | 图片:✅ 拖拽/粘贴/文件选择器**全走 `imageUploadFunction(file,onSuccess,onError)`** 🔬(`src/js/easymde.js:1957/2007/2431`)—— **纯客户端回调,服务端 0 改动**,正好接我们的 `/files/upload`<br>🔴 非图片附件:**无** | **最小**:1 个 `<script>`+1 个 `<link>`(需 2️⃣ 新增静态路由)· 上传 0 处服务端改动 · 暗色需**自写 CSS**(见 §四) |
-| **Vditor** 4.0.0 | MIT | **2026-08-30** | js **69KB**(`dist/index.min.js` 290KB raw)+ css 9KB<br>🔴 **但引擎另算**:`dist/js/lute/lute.min.js` **578KB gz**(3.6MB raw)<br>⇒ 最小可用 **≈656KB gz**;全功能 dist **21.9MB/530 文件** 🔬 | **否**(UMD;deps 1) | ⚠️ **默认不离线**:bundle 内实测 `CDN="https://unpkg.com/vditor@4.0.0"`,README:220 亦写明默认值 ⇒ **必须设 `options.cdn` 指向自托管路径**;🔵 好消息:**所有资产包内自带**(mathjax 6.5M · lute 3.6M · mermaid 3.5M · highlight.js 2.1M · graphviz 2.0M · katex 1.5M · echarts 1.0M · markmap 840K 🔬)⇒ 自托管**做得到**,代价是体积 | 图片:✅ `upload{url,max,linkToImgUrl,token,headers,fieldName,multiple,accept,…}` 🔬(`dist/types/index.d.ts:386-425`)<br>🔴 **但它期望自己的响应体 `msg.data.succMap`** 🔬(bundle 实测),而我们返回 `{url,name,size,sha256,…}` ⇒ **要一层适配**(服务端 shim 或客户端拦截)<br>附件:✅ `accept` 可配 | **中**:静态路由(2️⃣)· **上传适配 1 处** · 暗色 ✅ 有 `setTheme("dark"\|"classic")` 🔬(`dist/index.d.ts`)· 🔴 **默认 `cache.enable=true`**(types 注释"默认值: true" + bundle `cache:{enable:!0` 🔬)⇒ **默认往 localStorage 写草稿,必须显式关**(见 §四) |
-| **Cherry Markdown** 0.11.10 | **Apache-2.0** | **2026-08-24** | 🔴 **包内无 `.min.js`**:`core.js` 2.26MB raw/**591KB gz**;`cherry-markdown.js` 12.7MB raw/**2.3MB gz** 🔬;css(min)40KB gz<br>dist 合计 **47.9MB/241 文件** | **否**(UMD 实测:`core.js` 头部 `define.amd … globalThis.Cherry`)<br>🔴 但**要自己压缩**才能上生产 ⇒ 那**就是**一步构建 | ✅ **包内零 CDN 引用** 🔬(`cdnrefs=0`) | 🔵 **口径最贴合**:`fileUpload: CherryFileUploadHandler` = `(file, callback) => …`**纯客户端回调** 🔬(`types/cherry.d.ts:81/135/890`)+ `fileUploadMulti` + `urlProcessor(url, srcType)` + `fileTypeLimitMap{video,audio,image,word,pdf,file}` 🔬 ⇒ **图片与非图片附件都有原生位**,且**不需要新造上传** | **中偏大**:静态路由(2️⃣)· 上传 0 处服务端改动 ✅ · 🔴 **反引号 1780** ⇒ console 内联不可行(3️⃣)· 暗色能力**未验**(§八-3) |
+| **Vditor** 4.0.0 | MIT | **2026-08-30** | js **69KB**(`dist/index.min.js` 290KB raw)+ css 9KB<br>🔴 **但引擎另算**:`dist/js/lute/lute.min.js` **578KB gz**(3.6MB raw)<br>⇒ 最小可用 **≈656KB gz**;全功能 dist **21.9MB/530 文件** 🔬 | **否**(UMD;deps 1) | 🔴🔴 **本格数字不可信(包级证据;同类漏报已在 EasyMDE 上实证发生过 ⇒ 不得作为选型依据)** —— ts-No.77 裁定就地标注<br>⚠️ **默认不离线**:bundle 内实测 `CDN="https://unpkg.com/vditor@4.0.0"`,README:220 亦写明默认值 ⇒ **必须设 `options.cdn` 指向自托管路径**;🔵 好消息:**所有资产包内自带**(mathjax 6.5M · lute 3.6M · mermaid 3.5M · highlight.js 2.1M · graphviz 2.0M · katex 1.5M · echarts 1.0M · markmap 840K 🔬)⇒ 自托管**做得到**,代价是体积 | 图片:✅ `upload{url,max,linkToImgUrl,token,headers,fieldName,multiple,accept,…}` 🔬(`dist/types/index.d.ts:386-425`)<br>🔴 **但它期望自己的响应体 `msg.data.succMap`** 🔬(bundle 实测),而我们返回 `{url,name,size,sha256,…}` ⇒ **要一层适配**(服务端 shim 或客户端拦截)<br>附件:✅ `accept` 可配 | **中**:静态路由(2️⃣)· **上传适配 1 处** · 暗色 ✅ 有 `setTheme("dark"\|"classic")` 🔬(`dist/index.d.ts`)· 🔴 **默认 `cache.enable=true`**(types 注释"默认值: true" + bundle `cache:{enable:!0` 🔬)⇒ **默认往 localStorage 写草稿,必须显式关**(见 §四) |
+| **Cherry Markdown** 0.11.10 | **Apache-2.0** | **2026-08-24** | 🔴 **包内无 `.min.js`**:`core.js` 2.26MB raw/**591KB gz**;`cherry-markdown.js` 12.7MB raw/**2.3MB gz** 🔬;css(min)40KB gz<br>dist 合计 **47.9MB/241 文件** | **否**(UMD 实测:`core.js` 头部 `define.amd … globalThis.Cherry`)<br>🔴 但**要自己压缩**才能上生产 ⇒ 那**就是**一步构建 | 🔴🔴 **本格数字不可信(包级证据;同类漏报已在 EasyMDE 上实证发生过 ⇒ 不得作为选型依据)** —— ts-No.77 裁定就地标注<br>✅ **包内零 CDN 引用** 🔬(`cdnrefs=0`)<br>🔴 而 EasyMDE 当初也是"包内 grep 没找到" ⇒ 这条 ✅ **恰恰是被实证推翻过的那种形状**(漏的是 `maxcdn` 与 `window.open` 目标) | 🔵 **口径最贴合**:`fileUpload: CherryFileUploadHandler` = `(file, callback) => …`**纯客户端回调** 🔬(`types/cherry.d.ts:81/135/890`)+ `fileUploadMulti` + `urlProcessor(url, srcType)` + `fileTypeLimitMap{video,audio,image,word,pdf,file}` 🔬 ⇒ **图片与非图片附件都有原生位**,且**不需要新造上传** | **中偏大**:静态路由(2️⃣)· 上传 0 处服务端改动 ✅ · 🔴 **反引号 1780** ⇒ console 内联不可行(3️⃣)· 暗色能力**未验**(§八-3) |
 | **Editor.js** 2.31.7 | Apache-2.0 | **2026-09-17** | js **65KB**(`dist/editorjs.umd.js` 239KB raw) | 否(UMD;deps 3) | ✅ `cdnrefs=0` 🔬 | 🔴 **模型不对**:输出是 **block JSON,不是 markdown**;要 markdown 得自己写序列化器 ⇒ **等于自研**,违背"不自研" | 不适用(见 §四) |
 | **展示侧组合**:marked 18.0.13 / markdown-it 15.0.2 / DOMPurify 3.4.15 | MIT / MIT / **(MPL-2.0 OR Apache-2.0)** | 2026-09-12 / 09-11 / 09-06 | marked **14KB** gz · markdown-it **47KB** gz · DOMPurify **11KB** gz 🔬 | 否(三者均 UMD) | ✅ 三者 `cdnrefs=0` 🔬 | 🔴 **只展示,不含编辑**(没有编辑 UI、没有导入、没有图片上传位) | 若只替掉自研渲染(5️⃣),这是**最轻**的一条;但**它不满足业主"编辑"那半** |
 | `md-editor-v3` 7.0.0 | MIT | 2026-09-16 | 🔬 **无浏览器 bundle**(仅 `lib/es`、`lib/cjs`) | 🔴 **是**:`peerDependencies: vue` + deps 22 | — | — | **淘汰**(1️⃣:仓内无 Vue、无构建链) |
@@ -162,7 +167,10 @@
      浏览器里就会存**第二份 spec 正文**,与 I 项「正文唯一源」相撞 ⇒ 引入时须**显式禁止**。
 2. 🔴 **没有所见即所得**:只有"编辑 + 分屏预览"。业主若要 Word 式体验,它给不了。
 3. 🔴 **没有自带暗色**:`dist` 只有 `easymde.min.css`(3KB gz)一份浅色样式 ⇒ **暗色要我们自己写 CSS**,
-   而本仓刚做完主题全局化(`data-dw-theme`),**这块 CSS 得跟着主题走**(§八-3:**未验**)。
+   而本仓刚做完主题全局化(🔴 **属性名是 `data-theme`,本件原先写成 `data-dw-theme` —— 坐标错,已更正**:
+   renderer 侧变量集 `renderer-canary-sse.html:26` 的 `[data-theme="dark"]`、挂在 `<body>` 上见 `:1021`;
+   console 侧挂在 `html` 上见 `internal/m8/console_auth.go:277` 的 `html[data-theme="dark"]`),
+   **这块 CSS 得跟着主题走**(§八-3:**未验**;🟢 ts-No.78 已派,量暗色对比度)。
 4. 🔴 **附件只支持图片**:上传位只接图片(拖拽/粘贴/选择器三条路都只走 `imageUploadFunction`)⇒
    spec 里若要挂 `.md`/`.pdf` 附件,**没有原生位**。
 5. 🔵 **基于 CodeMirror 5**(打包在内),不是 CM6 ⇒ 大文档性能与可扩展性弱于 CM6 系;
@@ -243,7 +251,8 @@
 | C | nginx 路由(**生产侧,prodops 出单**) | `deploy/nginx-dingwei.conf` | 1 处 | 1 处 | 1 处 |
 | D | **上传适配** | `fileservice/http.go:82-88` | **0 处**(客户端回调) | 🔴 **1 处**(响应体 `succMap` 适配) | **0 处**(客户端回调) |
 | E | **关掉默认的外网/本地副作用** | §四 | 🔴 **3 处**(ts-No.77 更正,原写 1 处):`spellChecker:false` + `autoDownloadFontAwesome:false` + `toolbar` 去掉 `guide` | `cdn` + `cache.enable:false` **2 处**(🔵 **仍是 bundle/读码证据,未断网实跑**) | 0 处(零 CDN;🔵 **同左,未实跑**) |
-| F | **暗色对齐** `data-dw-theme` | 主题全局化那格 | 🔴 **自写 CSS**(无自带暗色) | ✅ `setTheme('dark')`(读 d.ts,**未实跑**) | 🔴 **未验** |
+| **E2** | 🔴 **图标字体资产**(ts-No.77 新增;理由:E 行只数"配置处数",**会把修法② 记成 1 处配置** ⇒ 那张表在误导人) | 交付件 §七(断网 A/B 实测) | 🔴 **必须自托管 FA 或改写图标 CSS 用本仓图标**:实测关掉 `autoDownloadFontAwesome` 而不补 ⇒ 图标 `::before content=none`、**rect 0×0**、工具栏墨迹 27.8/行;**本地自托管 ⇒ 61.5/行(2.2×)且断网下外部仍 0** ⇒ 自托管可行。另需 **1 条哈希 pin**;FA 许可证 registry 字段 `(OFL-1.1 AND MIT)`(字体走 OFL,🔵 **法务口径我不替他们下结论**) | 🔴 **未验**(不采纳,不做) | 🔴 **未验**(不采纳,不做) |
+| F | **暗色对齐** `data-theme`(🔴 原写 `data-dw-theme`,**坐标错已更正**) | `renderer-canary-sse.html:26` / `:1021`;console 侧 `console_auth.go:277` | 🔴 **自写 CSS**(无自带暗色) | ✅ `setTheme('dark')`(读 d.ts,**未实跑**) | 🔴 **未验** |
 | G | **自研 markdown 的去留**(防第二事实源) | `renderer-canary-sse.html:3533-3731` | 编辑侧不影响展示 ⇒ **可不动** | 同 | 同 |
 | H | invariants 新增资产 pin(🔵 建议) | `invariants-dingwei-gray.json:16` 同族 | 1 条 | 1 条 | 1 条 |
 | I | console 侧挂载(I 项挂 `renderPlatform`) | 板件 2044 段 | 视 A 而定 | 视 A 而定 | 视 A 而定 |
