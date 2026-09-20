@@ -445,6 +445,68 @@ async function t(name, fn) {
         assert.deepStrictEqual(violations, [], `storage 退路不成立(共 ${violations.length} 项):\n       - ${violations.join('\n       - ')}`);
       } finally { await context.close(); }
     });
+    // ── T9 两个 tab **同时开着**:A 点 ◐ ⇒ B 必须【实时】跟随(不是等 B 重载读档) ──────
+    // 🔵 这条补的是一个我自己列出来的缺口:T4 的"新开 tab 仍暗"验的是**加载时读档**,
+    //    而"两个 tab 都开着、一边点另一边立刻跟"走的是**跨文档广播**,是另一条腿,不能互相代替。
+    //    🔴 不重载 B —— 一重载就退化成 T4 那条腿了。
+    await t('T9 🔴 两个 tab 同时开着,在 A 点 ◐ ⇒ B 必须实时跟随(不重载 B)', async () => {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+      try {
+        const pageA = await context.newPage();
+        await pageA.goto(`${base}/console`, { waitUntil: 'domcontentloaded' });
+        const pageB = await context.newPage();
+        await pageB.goto(`${base}/console`, { waitUntil: 'domcontentloaded' });
+        const a0 = await shellOf(pageA);
+        const b0 = await shellOf(pageB);
+        assert.ok(luminance(a0.pageBg) > 0.5 && luminance(b0.pageBg) > 0.5,
+          `守卫:两个 tab 点前都应是浅色,实测 ${a0.pageBg} / ${b0.pageBg} ⇒ 否则"跟随"无从证明`);
+        const shared = await pageB.evaluate((k) => { try { localStorage.setItem(k, 'probe'); const v = localStorage.getItem(k); localStorage.removeItem(k); return v === 'probe'; } catch (e) { return false; } }, KEY);
+        assert.strictEqual(shared, true, '守卫:同 context 的两个 page 应共享同一份 localStorage,否则本条测不到跨 tab');
+        await pageA.click('#themeBtn');
+        await pageB.waitForTimeout(600);
+        const a1 = await shellOf(pageA);
+        const b1 = await shellOf(pageB);
+        console.log('    · T9 实测:', JSON.stringify({ tabA: a1, tabB: b1 }));
+        const violations = [];
+        if (!(luminance(a1.pageBg) < 0.5)) violations.push(`点的那个 tab 自己没变暗:${JSON.stringify(a1)}`);
+        if (!(luminance(b1.pageBg) < 0.5)) violations.push(`🔴 另一个 tab 没有实时跟随(它全程没被重载):${JSON.stringify(b1)} ⇒ 跨 tab 那条路是断的`);
+        assert.deepStrictEqual(violations, [], `跨 tab 实时同步不成立(共 ${violations.length} 项):\n       - ${violations.join('\n       - ')}`);
+        await pageB.close();
+        await pageA.close();
+      } finally { await context.close(); }
+    });
+    // ── T10 两个 tab + **没有 BroadcastChannel** ⇒ console 侧的 storage 退路必须顶上 ──────
+    // 🔵 为什么要有这一条:变异 MT8(把 console 的 storage 监听去掉)在 T1~T9 下【零转红】——
+    //    跨 tab 那条腿被频道掩盖了。T9 是"**有**频道"的跨 tab,T10 是"**没有**频道"的跨 tab,
+    //    两条腿各钉一条路 ⇒ 删掉任何一条都会有人发现。
+    // 🔴 这与 T7/T8 是同一个纪律:冗余是故意的,但**冗余必须各自被钉住**。
+    await t('T10 🔴 没有 BroadcastChannel 时,两个 tab 之间仍必须实时同步(钉住 console 侧的 storage 退路)', async () => {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+      await context.addInitScript(() => { delete window.BroadcastChannel; });
+      try {
+        const pageA = await context.newPage();
+        await pageA.goto(`${base}/console`, { waitUntil: 'domcontentloaded' });
+        const pageB = await context.newPage();
+        await pageB.goto(`${base}/console`, { waitUntil: 'domcontentloaded' });
+        assert.strictEqual(await pageA.evaluate(() => ('BroadcastChannel' in window)), false, '守卫:tab A 应已没有 BroadcastChannel');
+        assert.strictEqual(await pageB.evaluate(() => ('BroadcastChannel' in window)), false, '守卫:tab B 应已没有 BroadcastChannel,否则本条只是在重跑 T9');
+        const a0 = await shellOf(pageA);
+        const b0 = await shellOf(pageB);
+        assert.ok(luminance(a0.pageBg) > 0.5 && luminance(b0.pageBg) > 0.5,
+          `守卫:两个 tab 点前都应是浅色,实测 ${a0.pageBg} / ${b0.pageBg}`);
+        await pageA.click('#themeBtn');
+        await pageB.waitForTimeout(700);   // 🔴 全程不重载 B
+        const a1 = await shellOf(pageA);
+        const b1 = await shellOf(pageB);
+        console.log('    · T10 实测(无频道):', JSON.stringify({ tabA: a1, tabB: b1 }));
+        const violations = [];
+        if (!(luminance(a1.pageBg) < 0.5)) violations.push(`点的那个 tab 自己没变暗:${JSON.stringify(a1)}`);
+        if (!(luminance(b1.pageBg) < 0.5)) violations.push(`🔴 没有频道时,另一个 tab 没有实时跟随(全程未重载):${JSON.stringify(b1)} ⇒ console 侧的 storage 退路是断的(平时被频道掩盖着)`);
+        assert.deepStrictEqual(violations, [], `无频道时的跨 tab 同步不成立(共 ${violations.length} 项):\n       - ${violations.join('\n       - ')}`);
+        await pageB.close();
+        await pageA.close();
+      } finally { await context.close(); }
+    });
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));
