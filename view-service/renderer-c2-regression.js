@@ -1,13 +1,14 @@
 // C2 · 待提交区删除 + 中断确认 回归(renderer-c2-regression.js)
 // 配对 C2 契约现状 v0.1 红绿门 sketch:G-HONEST(诚实呈现)/G-ADDR(寻址字段随请求带出)。
 // 全部断言=呈现语义(契约无关):transport 经 window.__c2.setTransport 注入 mock。
-// 用法: RENDERER_FILE=<path> node renderer-c2-regression.js
+// 用法: node renderer-c2-regression.js（可用 RENDERER_FILE/HUB_V2_GOLDEN_FILE 覆盖本仓默认件）
 const { chromium } = require('playwright');
 const fs = require('fs');
 const assert = require('assert');
+const path = require('path');
 
-const RENDERER_FILE = process.env.RENDERER_FILE || 'renderer-c2.html';
-const HUB_V2_GOLDEN_FILE = process.env.HUB_V2_GOLDEN_FILE || 'hub-delivery-v2-golden.json';
+const RENDERER_FILE = process.env.RENDERER_FILE || path.join(__dirname, 'renderer-canary-sse.html');
+const HUB_V2_GOLDEN_FILE = process.env.HUB_V2_GOLDEN_FILE || path.join(__dirname, 'hub-delivery-v2-golden.json');
 const SESSION = 'c2-test-2642';
 
 // T-036 裁定(组长 2026-09-10):控制面契约**按鉴权模式分叉**,这是设计意图不是缺陷 ——
@@ -128,6 +129,17 @@ async function main() {
     await context.close();
   });
 
+  await T('C2.G-ADDR canonical 原样出站;存量 bare 单独归一为 canonical', async () => {
+    const { context, page } = await bootContext(browser, rendererBody);
+    const ids = await page.evaluate(() => ({
+      canonical: deliveryAddrId('dw-dlv-m1'),
+      bare: deliveryAddrId('dlv-m1'),
+    }));
+    assert.strictEqual(ids.canonical, 'dw-dlv-m1', 'canonical delivery_id 不得被重复加前缀或缩略');
+    assert.strictEqual(ids.bare, 'dw-dlv-m1', '存量 bare delivery_id 必须补成完整 canonical 地址');
+    await context.close();
+  });
+
   await T('C2.1b /control 不可达(404)→明说"取消未发出"+按钮恢复+条目不消失(不本地静默删)', async () => {
     const { context, page } = await bootContext(browser, rendererBody);  // 无 /control 路由 → 兜底 404
     await emit(page, inputPosted('m1', '要删的那条'));
@@ -151,7 +163,7 @@ async function main() {
     assert.strictEqual(hits.length, 1, '默认 transport 真发了 1 次 POST /control(非 no_transport 空转)');
     assert.strictEqual(hits[0].kind, 'cancel', '字段 kind=cancel 逐字');
     assert.strictEqual(hits[0].message_id, 'm1', '字段 message_id 逐字(G-ADDR)');
-    assert.strictEqual(hits[0].delivery_id, 'dlv-m1', '字段 delivery_id 逐字(G-ADDR)');
+    assert.strictEqual(hits[0].delivery_id, 'dw-dlv-m1', '字段 delivery_id 须为完整 canonical G-ADDR');
     assert.deepStrictEqual(Object.keys(hits[0]).sort(), ['delivery_id', 'kind', 'message_id'], '只带三字段、无多余');
     await context.close();
   });
@@ -167,7 +179,7 @@ async function main() {
     assert.strictEqual(hits.length, 1, 'V2 下同样真发了 1 次 POST /control');
     assert.strictEqual(hits[0].kind, 'cancel');
     assert.strictEqual(hits[0].message_id, 'm1');
-    assert.strictEqual(hits[0].delivery_id, 'dlv-m1');
+    assert.strictEqual(hits[0].delivery_id, 'dw-dlv-m1');
     assert.deepStrictEqual(Object.keys(hits[0]).sort(),
       ['delivery_id', 'kind', 'message_id', 'page_id', 'page_token', 'request_id'],
       'V2 恰好六字段:三寻址 + 三凭证,不多不少');
@@ -199,7 +211,7 @@ async function main() {
     const msgs = await page.evaluate(() => window.__c2Sent);
     assert.strictEqual(msgs.length, 1, 'transport 收到 1 条');
     assert.strictEqual(msgs[0].kind, 'cancel', 'kind=cancel');
-    assert.strictEqual(msgs[0].delivery_id, 'dlv-m1', 'G-ADDR:寻址带 delivery_id');
+    assert.strictEqual(msgs[0].delivery_id, 'dw-dlv-m1', 'G-ADDR:寻址带完整 canonical delivery_id');
     assert.strictEqual(msgs[0].message_id, 'm1', 'G-ADDR:寻址带 message_id');
     assert.strictEqual(await waitingItems(page).count(), 1, '条目仍在等事件流确认');
     // dev55 实证 hub 真 cancel SSE 线格式:{observed_delivery_id, delivery_stage, delivery_status:cancelled}
@@ -370,6 +382,8 @@ async function main() {
   });
 
 
+  // T-166 已把下列四格钉为真实产品缺口并 blocked-on-owner:内部 state/transport 仍工作,
+  // 但 T-054 吞掉通用 control 卡后,interrupt 没有替代可见出口。不得改成只验内部 state 来伪造绿。
   await T('C2.2a[legacy] 点中断→立即"已请求中断";无 transport 时回退 legacy /interrupt(POST 200≠已发出)', async () => {
     const hits = [];
     const { context, page } = await bootContext(browser, rendererBody, { interruptRouteHits: hits, authMode: 'hub_viewer_v1' });
