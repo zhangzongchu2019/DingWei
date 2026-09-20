@@ -1,13 +1,15 @@
 // T-074:同一笔投递的两个名字(dlv_X / dw-dlv_X)必须收敛到同一张卡;
 // 而出站寻址必须仍用 helper 认的 dw- 形式。
 // 🔴 两格缺一不可:只验「合成一张卡」会让「把前缀一刀切掉」通过,而那会让取消静默失效。
-const { chromium } = require('playwright');
 const assert = require('assert');
-const base = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-canary-sse.html';
+const { finishRegression, launchChromium, startRendererServer } = require('./renderer-regression-selfhost');
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  const fixture = await startRendererServer();
+  const base = fixture.url;
+  let browser;
   try {
+    browser = await launchChromium();
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     await page.route('**/status', r => r.fulfill({ status:200, contentType:'application/json', body: JSON.stringify({
       session:'fixture', state:'idle', readonly:true, can_write:false, owner:'f', model:'m', cost_total:0, cost_last:0, turns:0 })}));
@@ -74,5 +76,5 @@ const base = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-canary
       `⑤ 线上真实形态(一边带 message_id 一边不带)须只产一张卡,实为 ${real} 张`);
 
     console.log('T-074 delivery-id regression: ALL PASS');
-  } finally { await browser.close(); }
-})();
+  } finally { if (browser) await browser.close(); await fixture.close(); }
+})().catch(finishRegression);

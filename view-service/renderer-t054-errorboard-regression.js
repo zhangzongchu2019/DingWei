@@ -1,13 +1,15 @@
 // T-054 验收:辅助面板收进右侧边条,只留错误,无错误则不显示。
 // 四格判据取自任务板 T-054 verify_level,②③ 必须同时断言 ——
 // 只测③会让「把错误也一起去掉」平凡通过。
-const { chromium } = require('playwright');
 const assert = require('assert');
-const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-canary-sse.html';
+const { finishRegression, launchChromium, startRendererServer } = require('./renderer-regression-selfhost');
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  const fixture = await startRendererServer();
+  const baseUrl = fixture.url;
+  let browser;
   try {
+    browser = await launchChromium();
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     await page.route('**/status', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
       session: 'fixture-dev55-2642', state: 'idle', readonly: true, can_write: false,
@@ -64,6 +66,7 @@ const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-can
 
     console.log('T-054 errorboard regression: ALL PASS (6/6)');
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
+    await fixture.close();
   }
-})();
+})().catch(finishRegression);

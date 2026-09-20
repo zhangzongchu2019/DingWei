@@ -10,9 +10,8 @@
 //
 // 因此本测试**必须显式关掉 flag 跑一遍**(⑤⑥ 两格),否则「开着 flag 图标出现」
 // 这件事无法区分是本次修好的、还是本来就好的 —— 那就成了不可能失败的检查。
-const { chromium } = require('playwright');
 const assert = require('assert');
-const baseUrl = process.env.RENDERER_URL || 'http://127.0.0.1:19399/renderer-canary-sse.html';
+const { finishRegression, launchChromium, startRendererServer } = require('./renderer-regression-selfhost');
 
 const provEvent = (kind, displayName, id) => ({
   schema_version: 'delivery.v2', kind: 'input_posted',
@@ -24,7 +23,7 @@ const provEvent = (kind, displayName, id) => ({
   cancellable: false, updated_at: new Date(0).toISOString(),
 });
 
-async function boot(browser, flagOn) {
+async function boot(browser, baseUrl, flagOn) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   await page.route('**/status', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
     session: 'fixture-dev55-2642', state: 'idle', readonly: true, can_write: false,
@@ -37,17 +36,20 @@ async function boot(browser, flagOn) {
 }
 
 (async () => {
-  // 服务出的内容 == 磁盘上的文件(这条自检写进过部署单,一晚栽过两次陈旧静态服务)
-  const disk = require('crypto').createHash('sha256')
-    .update(require('fs').readFileSync(__dirname + '/renderer-canary-sse.html')).digest('hex');
-  const served = require('crypto').createHash('sha256')
-    .update(Buffer.from(await (await fetch(baseUrl)).arrayBuffer())).digest('hex');
-  assert.strictEqual(served, disk, `served != disk —— 测的不是本目录的文件\n  served=${served}\n  disk  =${disk}`);
-
-  const browser = await chromium.launch({ headless: true });
+  const fixture = await startRendererServer();
+  const baseUrl = fixture.url;
+  let browser;
   try {
+    // 服务出的内容 == 磁盘上的文件(这条自检写进过部署单,一晚栽过两次陈旧静态服务)
+    const disk = require('crypto').createHash('sha256')
+      .update(require('fs').readFileSync(__dirname + '/renderer-canary-sse.html')).digest('hex');
+    const served = require('crypto').createHash('sha256')
+      .update(Buffer.from(await (await fetch(baseUrl)).arrayBuffer())).digest('hex');
+    assert.strictEqual(served, disk, `served != disk —— 测的不是本目录的文件\n  served=${served}\n  disk  =${disk}`);
+
+    browser = await launchChromium();
     // ── flag 开:业主要的两个图标都必须出现 ───────────────────────────
-    const on = await boot(browser, true);
+    const on = await boot(browser, baseUrl, true);
     await on.evaluate(ev => handleIncomingEvent(ev), provEvent('feishu', '飞书', 'fs1'));
     await on.evaluate(ev => handleIncomingEvent(ev), provEvent('agent', 'zzc-prodops-2642', 'ag1'));
 
@@ -65,7 +67,7 @@ async function boot(browser, flagOn) {
     await on.close();
 
     // ── flag 关:阳性对照,证明上面四格确实是 flag 带来的 ───────────────
-    const off = await boot(browser, false);
+    const off = await boot(browser, baseUrl, false);
     await off.evaluate(ev => handleIncomingEvent(ev), provEvent('feishu', '飞书', 'fs2'));
     await off.evaluate(ev => handleIncomingEvent(ev), provEvent('agent', 'zzc-prodops-2642', 'ag2'));
     // ⑤ flag 关必须一个来源图标都没有 —— 这正是业主看到的线上状态
@@ -75,6 +77,7 @@ async function boot(browser, flagOn) {
 
     console.log('renderer-provenance-icon-regression: 5/5 通过(含 flag 关的阳性对照)');
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
+    await fixture.close();
   }
-})().catch(e => { console.error(e.message || e); process.exit(1); });
+})().catch(finishRegression);

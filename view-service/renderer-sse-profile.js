@@ -1,3 +1,5 @@
+// 🔵 诊断件,不是闸:只报告耗时,没有产品确认的性能预算与硬断言。
+// 不得把本文件计入发布覆盖;预算须由业主确认后才能升格为闸。
 // renderer 回放路径耗时归因:把「刷新后多久才出内容」分摊到
 // rebuildTurn / renderMarkdown / scrollTimelineToBottom(强制同步重排) / enforceTimelineCap。
 // 配套 renderer-sse-fixture.py 的 RING_TURNS 使用(模拟刷新时 hub 重放 ring):

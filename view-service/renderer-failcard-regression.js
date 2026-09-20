@@ -1,12 +1,14 @@
 // 业主 2026-09-11:「就算他是出错信息,我也不希望看到」
 // ⇒ 投递失败不进正文区,改收右侧错误看板。
 // 🔴 三格互为护栏:只测「正文没有」会让「把失败整个丢掉」平凡通过。
-const { chromium } = require('playwright');
 const assert = require('assert');
-const base = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-canary-sse.html';
+const { finishRegression, launchChromium, startRendererServer } = require('./renderer-regression-selfhost');
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  const fixture = await startRendererServer();
+  const base = fixture.url;
+  let browser;
   try {
+    browser = await launchChromium();
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     await page.route('**/status', r => r.fulfill({ status:200, contentType:'application/json', body: JSON.stringify({
       session:'f', state:'idle', readonly:true, can_write:false, owner:'f', model:'m', cost_total:0, cost_last:0, turns:0 })}));
@@ -69,5 +71,5 @@ const base = process.env.RENDERER_URL || 'http://127.0.0.1:19312/renderer-canary
       `④ 失败状态必须体现在已有卡的脚注上,实为 ${JSON.stringify(after.stages)}`);
 
     console.log('failure-card regression: ALL PASS');
-  } finally { await browser.close(); }
-})();
+  } finally { if (browser) await browser.close(); await fixture.close(); }
+})().catch(finishRegression);
