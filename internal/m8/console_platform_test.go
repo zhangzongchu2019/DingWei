@@ -129,6 +129,13 @@ func TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow(t *testing.T) {
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("owner direct management action code=%d body=%q", rr.Code, rr.Body.String())
 	}
+	direct, err := hub.Repo.(*store.SQLite).ConsolePlatformItem(context.Background(), "direct")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if direct != nil {
+		t.Fatalf("owner received 403 but management side effect still happened: %+v", direct)
+	}
 
 	approveReq := httptest.NewRequest(http.MethodPost, "/api/console/platform/items/specs/approve", nil)
 	approveReq.SetPathValue("itemID", "specs")

@@ -78,6 +78,8 @@ NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome node view-service/console-
 
 挂载变异：只删除服务端把内建 `agents` 项加入响应的那一行，`git diff --numstat` 为 `1 1 internal/m8/console_platform.go`。定向用例唯一转红为 `TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow`，失败内容 `Items:[]`；`rc=1`。这证明“至少真挂一项”不是只由浏览器 fixture 自证。已还原。
 
+权限阴格同时查响应与状态：普通业主直接调用 add 后既须得到 403，也须查询 `console_platform_item` 确认 `direct` 行不存在。只看其中一侧不算通过。
+
 装配闸：`TestConsolePlatformRoutesAreAssembledWithServerGuards` 用 Go AST 读取 `cmd/workpulse/main.go`，要求六条平台路由同时存在目标 handler、console principal 守卫与平台角色守卫。它验证的是路由装配，不拿“handler 函数存在”冒充“功能已接上”。
 
 装配变异：只删除 approve 路由，`git diff --numstat` 为 `0 1 cmd/workpulse/main.go`；定向测试 `rc=1`，唯一失败为 `console platform route not assembled: POST /api/console/platform/items/{itemID}/approve`。已还原。
