@@ -33,6 +33,7 @@ SUITES = (
     ("renderer_provenance_icon", ROOT / "view-service/renderer-provenance-icon-regression.js"),
     ("renderer_storage_denied", ROOT / "view-service/renderer-storage-denied-regression.js"),
     ("terminal_storage_denied", ROOT / "view-service/terminal-storage-denied-regression.js"),
+    ("renderer_t086_empty_ring_e2e", ROOT / "view-service/renderer-t086-empty-ring-e2e-regression.js"),
 )
 
 # Only names are recorded; values may contain local paths or credentials. These
