@@ -216,6 +216,19 @@ async function measureLeg(browser, leg) {
     await page.addInitScript(INIT);
     await page.goto(`${fx.base}/renderer`, { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => {
+      // 🔴 变体基线(判"弹的是哪一件事",**不判措辞**):此刻页面脚本已跑完、任何告警都还没出现,
+      //    标记里那份"连接不上"的文案与按钮标签就是 conn 变体的基线。后面的判据是
+      //    "出窗时显示的**不是**这份基线" ⇒ 业主改措辞不会让闸红,而"弹错变体 / 弹空壳"一定会红。
+      //    🔵 这一层是 M-C3 逼出来的:把 replay 文案改成空串后,产品里的 `|| conn` 兜底会把它
+      //       悄悄换成"连接不上"那条,而整块 textContent 仍有 55 字(含按钮标签)⇒ 端到端 26/0 全绿,
+      //       业主看到的却是**指错方向**的告警 —— 比没有告警更坏。
+      const bt = document.getElementById('streamAlertText');
+      const bb = document.getElementById('streamRetryBtn');
+      window.__c.connBaseline = {
+        msgPresent: !!bt,
+        msg: bt ? bt.textContent.trim() : null,
+        btn: bb ? bb.textContent.trim() : null,
+      };
       const om = window.markStreamReconnect, or = window.resetConversation, oc = window.consumeReconnectClear;
       const oa = window.showStreamAlert;
       if (typeof om === 'function') window.markStreamReconnect = function () {
@@ -265,9 +278,23 @@ async function measureLeg(browser, leg) {
           const el = document.getElementById('streamAlert');
           if (!el) return { present: false };
           const r = el.getBoundingClientRect();
+          // 🔴 整块 textLen **不足以**判"告警正文有没有":它把按钮标签也算进去。
+          //    故分别量消息节点与按钮,并且只回**长度与布尔**,不把措辞带出页面
+          //    (措辞是产品可见项,闸不钉它;带进日志只会诱使下一个人拿它当断言)。
+          const base = window.__c.connBaseline || {};
+          const msg = document.getElementById('streamAlertText');
+          const btn = document.getElementById('streamRetryBtn');
+          const msgText = msg ? msg.textContent.trim() : null;
+          const btnText = btn ? btn.textContent.trim() : null;
           return { present: true, hidden: el.hidden, textLen: (el.textContent || '').replace(/\s+/g, ' ').trim().length,
-                   w: +r.width.toFixed(1), h: +r.height.toFixed(1) };
+                   w: +r.width.toFixed(1), h: +r.height.toFixed(1),
+                   msgPresent: !!msg, msgLen: msgText === null ? null : msgText.length,
+                   msgIsConn: msgText !== null && typeof base.msg === 'string' && msgText === base.msg,
+                   btnIsConn: btnText !== null && typeof base.btn === 'string' && btnText === base.btn };
         })(),
+        // 守卫:基线没取到 ⇒ 变体判据是空的,必须让腿自己红,不能假装验过
+        baseOk: !!(window.__c.connBaseline && window.__c.connBaseline.msgPresent
+          && window.__c.connBaseline.msg && window.__c.connBaseline.btn),
         // 页面内的窗口常量真值(读不到就 null,守卫会因此判"腿失去意义"而不是假装量过)
         limit: (function () { try { return REPLAY_HARD_LIMIT_MS; } catch (e) { return null; } })(),
         es: { ...window.__es },
@@ -360,17 +387,30 @@ async function measureLeg(browser, leg) {
           assert.ok(hits.length >= 1,
             `窗口过期了 ${(last.arms || []).length} 次,却没有一次在 arm 后 [${WINDOW_MS_ASSUMED - ALERT_EARLY_MS}, ${WINDOW_MS_ASSUMED + ALERT_LATE_MS}]ms 内触发告警`
             + ` ⇒ 缺陷仍然是**静默**的,(c) 没落地。实测告警调用=${JSON.stringify(last.alerts)} · arms=${JSON.stringify(last.arms)}。${scene}`);
-          // 🔴 告警必须**看得见**,不是"调用发生过":hidden=false · 文本非空 · 盒子非零。
+          assert.strictEqual(last.baseOk, true,
+            `conn 变体基线没取到(#streamAlertText / #streamRetryBtn 在页面脚本跑完后读不到)`
+            + ` ⇒ "弹的是哪一件事"这条判据是空的,本腿不成立(不是"通过")。${scene}`);
+          // 🔴 告警必须**看得见、而且说的就是这件事**,不是"调用发生过":
+          //    hidden=false · 盒子非零 · 消息节点存在 · 消息非空 · 消息≠conn 基线 · 按钮≠conn 基线。
+          //    🔵 为什么不能只用整块 textContent 非空:那块里**含按钮标签**。实测 M-C3
+          //       (replay 文案改成空串)整块仍有 55 字 ⇒ 旧写法 26/0 全绿,而业主看到的是
+          //       "连接不上…点【重试】" ⇒ **指错方向**,比没有告警更坏。
+          //    🔵 判据全是长度与布尔,**不含任何一句措辞** ⇒ 业主改文案不会让本条红。
           //    用"任一次采样满足"而不是"末次采样满足" —— 告警会在下一次 onopen 被 hideStreamAlert()
           //    藏掉,只看末次会随采样相位忽红忽绿(那是 flaky,不是判据)。
           const shown = valid.filter((s) => s.alertBox && s.alertBox.present && s.alertBox.hidden === false
-            && s.alertBox.textLen > 0 && s.alertBox.w > 0 && s.alertBox.h > 0);
+            && s.alertBox.w > 0 && s.alertBox.h > 0
+            && s.alertBox.msgPresent === true && s.alertBox.msgLen > 0
+            && s.alertBox.msgIsConn === false && s.alertBox.btnIsConn === false);
           assert.ok(shown.length >= 1,
-            `告警函数被调过 ${hits.length} 次,但 ${valid.length} 次采样里**没有一次**看见它真的显示出来`
-            + `(要求 hidden=false · 文本非空 · 盒子非零)⇒ 那就是"看起来告警了、业主什么也看不见"。${scene}`);
+            `告警函数被调过 ${hits.length} 次,但 ${valid.length} 次采样里**没有一次**同时满足`
+            + `「hidden=false · 盒子非零 · 消息节点存在 · 消息非空 · 消息≠conn 基线 · 按钮≠conn 基线」`
+            + ` ⇒ 要么业主什么也看不见,要么看见的是**另一件事**的告警。`
+            + `末次采样 alertBox=${JSON.stringify((valid[valid.length - 1] || {}).alertBox)}。${scene}`);
           const ab = shown[shown.length - 1].alertBox;
           console.log(`      ↳ 告警命中 ${hits.length} 次;首次 arm→告警 delta=${hits[0].delta}ms(判据区间 ${WINDOW_MS_ASSUMED - ALERT_EARLY_MS}~${WINDOW_MS_ASSUMED + ALERT_LATE_MS}ms)`
-            + ` · 实参=${JSON.stringify(hits[0].arg)} · 盒子 ${ab.w}x${ab.h} · 文本 ${ab.textLen} 字 · 可见采样 ${shown.length}/${valid.length}`);
+            + ` · 实参=${JSON.stringify(hits[0].arg)} · 盒子 ${ab.w}x${ab.h} · 消息 ${ab.msgLen} 字(≠conn 基线)`
+            + ` · 按钮变体已换=${!ab.btnIsConn} · 整块 textLen ${ab.textLen} · 可见采样 ${shown.length}/${valid.length}`);
           console.log('      ↳ 🔵 断线告警(7500ms 宽限期)落不进这个区间 ⇒ 它冒充不了本条;区间是算出来的,不是拍的。');
         });
 
