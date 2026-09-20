@@ -26,7 +26,7 @@ NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome node view-service/console-
 
 **先红后绿：**首轮把第一条用例指向不存在的 `#console-harness-probe-that-does-not-exist`：`rc=1`，只有 `loads the real console document` 转红，另外两条通过。改为真实 `nav #a` 后：`passed=3 failed=0`、`rc=0`。
 
-**空白页变异：**只把装置的 `/console` 响应从真实 `consolePageHTML` 改为空白 HTML；`git diff --numstat` 为 `1 1 view-service/console-browser-regression.js`。首格时结果为 `rc=1`、`passed=0 failed=3`；平台壳接入后同一变异还须覆盖新增的平台项用例。变异已还原。
+**空白页变异：**只把装置的 `/console` 响应从真实 `consolePageHTML` 改为空白 HTML；`git diff --numstat` 为 `1 1 view-service/console-browser-regression.js`。首格时结果为 `rc=1`、`passed=0 failed=3`；平台壳接入后复跑为 `rc=1`、`passed=0 failed=4`，新增的平台项用例也精确转红。变异已还原。
 
 ### ① 角色权限模型
 
@@ -74,6 +74,21 @@ go test ./internal/store ./internal/m8 ./cmd/workpulse -run 'TestConsolePlatform
 # 三包 rc=0
 NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome node view-service/console-browser-regression.js
 # passed=4 failed=0
+```
+
+挂载变异：只删除服务端把内建 `agents` 项加入响应的那一行，`git diff --numstat` 为 `1 1 internal/m8/console_platform.go`。定向用例唯一转红为 `TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow`，失败内容 `Items:[]`；`rc=1`。这证明“至少真挂一项”不是只由浏览器 fixture 自证。已还原。
+
+装配闸：`TestConsolePlatformRoutesAreAssembledWithServerGuards` 用 Go AST 读取 `cmd/workpulse/main.go`，要求六条平台路由同时存在目标 handler、console principal 守卫与平台角色守卫。它验证的是路由装配，不拿“handler 函数存在”冒充“功能已接上”。
+
+全量回归（2026-09-20）：
+
+```text
+go build ./...                         # rc=0
+go vet ./...                           # rc=0
+go test ./... -count=1                 # rc=0
+python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed
+# 23 tests, rc=0
+console-browser-regression.js           # passed=4 failed=0
 ```
 
 ## 明确没有证明
