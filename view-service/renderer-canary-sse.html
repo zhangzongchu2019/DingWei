@@ -4084,9 +4084,83 @@
       if (!body.ok) throw new Error('interrupt returned ok=false');
     }
 
+    // ── 日夜主题:全局化 ＋ 持久化(0.2.1.7)────────────────────────────────────────
+    // 业主原话:「◐ 应该要**提出来,放在整个 Agent 列表**,而不是某一个 tab」
+    // ⇒ 开关的**归属**移到了 console 页(internal/m8/console_auth.go 的 nav #themeBtn);
+    //   renderer 侧只负责三件事:①加载时读回偏好 ②把自己这个 ◐ 的改动**提升为全局**
+    //   ③接收 console / 其他 tab 的广播并应用。
+    // 🔴 本页那个 ◐ **保留**(不删业主看惯的控件),但它不再是"只管这一个 tab"。
+    //
+    // 传输用 BroadcastChannel —— 与本文件既有的 page-identity 同一手法(见 setupPageIdentityChannel,
+    // 那里也是先 `'BroadcastChannel' in window` 再建)。选它而不是遍历 iframe 的 postMessage,
+    // 因为它一次覆盖两类"看不见就漏掉"的对象:**display:none 的隐藏 pane**(切 tab 不重载)与**其他 tab**。
+    // 🔴 持久化用 localStorage,**不用 sessionStorage**:后者不跨 tab ⇒ 不满足"含持久化"。
+    //   (本文件既有两处 sessionStorage 用途 —— 任务板折叠 :1742 与页面身份 :3894 —— 都是**故意**按 tab 隔离的,
+    //    主题不是;别把它们当先例照抄。)
+    // 🔴 写入方必须**自己立刻 apply**:BroadcastChannel 与 storage 事件都**不会**在写入方自己那份文档上触发。
+    const THEME_KEY = 'dw-theme';
+    let themeChannel = null;
+
+    function themeStore() {
+      try { return window.localStorage; } catch { return null; }   // 隐私模式下取用即抛
+    }
+    function readStoredTheme() {
+      const store = themeStore();
+      if (!store) return null;
+      try {
+        const value = store.getItem(THEME_KEY);
+        return (value === 'dark' || value === 'light') ? value : null;
+      } catch { return null; }
+    }
+    function writeStoredTheme(theme) {
+      const store = themeStore();
+      if (!store) return;
+      try { if (store.getItem(THEME_KEY) !== theme) store.setItem(THEME_KEY, theme); } catch { /* 存不下不影响本次会话 */ }
+    }
+    function applyTheme(theme) {
+      if (theme !== 'dark' && theme !== 'light') return;
+      if (document.body.dataset.theme === theme) return;   // 幂等:挡住来回广播
+      document.body.dataset.theme = theme;
+    }
+    // spread=false 用于"收到广播"那条路:只应用,不再广播、不成回环
+    function setTheme(theme, { spread = true } = {}) {
+      applyTheme(theme);                 // 🔴 自己先变
+      writeStoredTheme(theme);
+      if (spread) { try { themeChannel?.postMessage({ type: 'theme', theme }); } catch { /* 通道没了也不影响本地 */ } }
+    }
+    function setupThemeSync() {
+      // 🔴 三段**各自** try/catch,不共用一个:频道建不起来(老浏览器/被策略禁掉)
+      //    **不得连带**丢掉 storage 退路 ⇒ 否则"一条路坏了 ⇒ 两条路都没了",
+      //    而报错只会指向先坏的那条。两条路互为冗余是**故意的**(隐私模式下 localStorage
+      //    取用即抛,那时只有频道能用;反之老浏览器没频道,那时只有 storage 事件能用),
+      //    而冗余必须**各自被钉住** —— 见闸的 T7 / T8。
+      try {
+        const stored = readStoredTheme();
+        if (stored) applyTheme(stored);    // 🔴 加载时读:新开的 pane 要跟得上既有偏好
+      } catch { /* 读不到就保持 markup 里的 data-theme="light" */ }
+      try {
+        if ('BroadcastChannel' in window && !themeChannel) {
+          themeChannel = new BroadcastChannel(THEME_KEY);
+          themeChannel.onmessage = (event) => {
+            const theme = event?.data?.theme;
+            if (theme !== 'dark' && theme !== 'light') return;
+            setTheme(theme, { spread: false });
+          };
+        }
+      } catch { themeChannel = null; }
+      try {
+        // 别的文档绕过频道直接改了存储也要跟随
+        window.addEventListener('storage', (event) => {
+          if (event.key !== THEME_KEY) return;
+          if (event.newValue === 'dark' || event.newValue === 'light') setTheme(event.newValue, { spread: false });
+        });
+      } catch { /* 挂不上事件时,本页那个 ◐ 仍然可用 */ }
+    }
+    setupThemeSync();
+
     themeBtn.addEventListener('click', () => {
       const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.body.dataset.theme = next;
+      setTheme(next);
     });
     // 0.2.1.2:「重连」按钮已移除 ⇒ 手动退路挪到 🕐 那一栏上,**不随按钮一起消失**。
     clockStatus?.addEventListener('click', () => {

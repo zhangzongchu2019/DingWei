@@ -270,8 +270,28 @@ main{display:flex;flex-direction:column;min-width:0}
 #panes{flex:1;position:relative;min-height:0}
 #panes iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 #hint{padding:10px;color:#888}
+/* 🔴 日夜主题(0.2.1.7):暗色**只在** [data-theme=dark] 下覆盖,浅色声明一条没改
+      ⇒ 业主看惯的浅色观感零变化(git diff 可自证:上面那些规则原样未动)。
+      🔵 外壳必须跟着暗:否则"面板是夜里、左栏和 tab 条是白天"的花脸,正是本版要消灭的。
+      色值取自 renderer 的 [data-theme=dark] 变量集(renderer-canary-sse.html:26-42),两处观感一致。 */
+html[data-theme="dark"]{color-scheme:dark}
+html[data-theme="dark"] body{background:#111316;color:#eef2f6}
+html[data-theme="dark"] nav{border-right-color:#38414c}
+html[data-theme="dark"] nav button{background:#1b1f24;color:#eef2f6;border:1px solid #38414c}
+html[data-theme="dark"] nav button:disabled{color:#a8b0bb}
+html[data-theme="dark"] #platform-items a{background:#1b1f24;border-color:#38414c;color:#6cb6ff}
+html[data-theme="dark"] #platform-actions button{background:#1b1f24;color:#eef2f6;border:1px solid #38414c}
+html[data-theme="dark"] #tabs{border-bottom-color:#38414c}
+html[data-theme="dark"] #tabs .tab{background:#1b1f24;border-color:#38414c;color:#eef2f6}
+html[data-theme="dark"] #tabs .tab.on{background:#242a31;border-color:#6cb6ff}
+html[data-theme="dark"] #tabs .tab .x{color:#a8b0bb}
+html[data-theme="dark"] #tabs .tab .x:hover{color:#ffb4a9}
+html[data-theme="dark"] #hint{color:#a8b0bb}
+html[data-theme="dark"] details,html[data-theme="dark"] summary{color:#a8b0bb}
+/* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
+#themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-items></div><div id=platform-actions></div></section><h3 id=agents style="margin:4px 0 8px">Agents</h3><div id=a></div></nav>
+<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></div><div id=a></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <script>
 const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
@@ -279,6 +299,90 @@ const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6
 function dwShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s}
 const tabs = new Map();   // session -> {tab, pane}
 let agentSnapshot = new Map(); // session -> online;只描述左栏最新快照,不拥有 tab/pane
+// ── 🔴 日夜主题:全局(整个控制台 ＋ 所有已开 pane)＋ 持久化(跨 tab、跨重启)── 0.2.1.7 ──
+// 业主原话:「◐ 应该要**提出来,放在整个 Agent 列表**,而不是某一个 tab」
+// ⇒ 开关的**归属**在 console(见上面 nav 里的 #themeBtn),renderer 侧只负责**接收并应用**。
+//
+// 传输用 BroadcastChannel(与 renderer 的 page-identity 同一手法,见其 setupPageIdentityChannel):
+//   它一次覆盖两类"看不见就漏掉"的对象 ——
+//   ① **隐藏的 pane**:切 tab 是 display:none,iframe **不重载**(实测:里面打的标记切完仍在)
+//      ⇒ 靠"显示时刷新"永远救不到它,必须主动送过去;
+//   ② **其他浏览器 tab**:同源即同频道。
+// 🔴 写入方必须【自己立刻 apply】:BroadcastChannel 与 storage 事件都**不会**在写入方自己那份文档上触发
+//   (已由 view-service/console-theme-global-regression.js 的 T3 用"同一个任务内就变暗"钉住)。
+// 🔴 持久化用 localStorage,**不用 sessionStorage**:后者不跨 tab ⇒ 不满足业主"含持久化"
+//   (闸 T4 专门有一条"新开一个 tab 必须仍是暗"的判别腿)。
+// 🔵 本段全部特性探测 ＋ try/catch,不是防御性堆砌,有两个真实理由:
+//   · 同一份源码会被 view-service/renderer-t145-tabs-regression.js 抽出去,放进**极简 DOM 替身**
+//     (只有 createElement/getElementById;**没有** window、localStorage、documentElement、
+//      querySelectorAll、addEventListener)求值 ⇒ 裸写这些名字会让那件八条**全红**,
+//      而报错看起来像"tab 逻辑坏了"(错误消息指错方向)。
+//   · 隐私模式下取用 localStorage **即抛**;那不该让控制台白屏。
+var DW_THEME_KEY='dw-theme';
+var dwThemeChannel=null;
+function dwThemeStore(){
+  try{ return (typeof window!=='undefined'&&window.localStorage)?window.localStorage:null; }catch(_){ return null }
+}
+function dwThemeRead(){
+  var s=dwThemeStore(); if(!s) return null;
+  try{ var v=s.getItem(DW_THEME_KEY); return (v==='dark'||v==='light')?v:null; }catch(_){ return null }
+}
+function dwThemeWrite(v){
+  var s=dwThemeStore(); if(!s) return;
+  try{ if(s.getItem(DW_THEME_KEY)!==v) s.setItem(DW_THEME_KEY,v); }catch(_){ /* 存不下不影响本次会话 */ }
+}
+function dwThemeShell(v){
+  try{
+    if(typeof document==='undefined') return;
+    if(document.documentElement) document.documentElement.dataset.theme=v;   // CSS 走 html[data-theme=dark]
+    if(document.body) document.body.dataset.theme=v;                          // 兜底:选择器改了也还有线索
+  }catch(_){}
+}
+function dwThemePublish(v){
+  try{ if(dwThemeChannel) dwThemeChannel.postMessage({type:'theme',theme:v}); }catch(_){}
+}
+function dwThemeApply(v,spread){
+  if(v!=='dark'&&v!=='light') return;
+  dwThemeShell(v);                                  // 🔴 自己先变:等不到自己的事件
+  dwThemeWrite(v);
+  if(spread!==false) dwThemePublish(v);             // 收到广播时传 false ⇒ 不成回环
+}
+function dwThemeToggle(){
+  var cur='light';
+  try{ if(document.documentElement&&document.documentElement.dataset.theme==='dark') cur='dark'; }catch(_){}
+  dwThemeApply(cur==='dark'?'light':'dark');
+}
+function dwThemeInit(){
+  // 🔴 四段**各自** try/catch,不共用一个。理由不是风格:共用一个的话,
+  //    频道建不起来(老浏览器 / 被策略禁掉)会**连带跳过**后面的 storage 退路
+  //    ⇒ "一条路坏了 ⇒ 两条路都没了",而报错只会指向先坏的那条(错误消息指错方向)。
+  try{ dwThemeShell(dwThemeRead()==='dark'?'dark':'light'); }catch(_){}   // 加载时读:重载/新开 tab 都得跟得上
+  try{
+    if(typeof document!=='undefined'&&document.getElementById){
+      var btn=document.getElementById('themeBtn');
+      if(btn&&btn.addEventListener) btn.addEventListener('click',dwThemeToggle);
+    }
+  }catch(_){}
+  try{
+    if(typeof window!=='undefined'&&('BroadcastChannel' in window)&&!dwThemeChannel){
+      dwThemeChannel=new BroadcastChannel(DW_THEME_KEY);
+      dwThemeChannel.onmessage=function(e){
+        var v=e&&e.data&&e.data.theme;
+        if(v!=='dark'&&v!=='light') return;
+        dwThemeApply(v,false);   // 收到广播只应用,不再广播 ⇒ 不成回环
+      };
+    }
+  }catch(_){ dwThemeChannel=null; }
+  try{
+    if(typeof window!=='undefined'&&window.addEventListener){
+      // 别的文档绕过频道直接写了存储(例如 renderer 侧先落盘)也要跟随
+      window.addEventListener('storage',function(e){
+        if(!e||e.key!==DW_THEME_KEY) return;
+        if(e.newValue==='dark'||e.newValue==='light') dwThemeApply(e.newValue,false);
+      });
+    }
+  }catch(_){}
+}
 function renderPlatform(platform){
   var items=document.getElementById('platform-items'); items.replaceChildren();
   (Array.isArray(platform.items)?platform.items:[]).forEach(function(item){
@@ -372,6 +476,7 @@ async function refreshAgents(){
     applyAgentSnapshot(agents);
   }catch(_){ /* 保留上一份可见快照;短暂请求失败不得把左栏清空 */ }
 }
+dwThemeInit();   // 🔴 主题先行:先把已存偏好应用到外壳,再渲染列表(否则先白一下再变暗)
 refreshPlatform();
 refreshAgents();
 setInterval(refreshAgents,15000);
