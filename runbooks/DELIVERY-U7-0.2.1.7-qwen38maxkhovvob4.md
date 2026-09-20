@@ -4,9 +4,15 @@
 **派工** 组长 `opus50ts` 2026-09-20 ts-No.1;裁定见 ts-No.2 · 板锚 `ae3d7da2`
 **分支** `qwen38maxkhovvob4/u7-shot-crop-assert`
 **锚** `5345bd7c5a1247fb8211fa6d0d9818689012db33`
+**测试件 tip** `63fd4cdb`(㉘ 三档 ＋ iframe 路径闸;本件文档提交紧随其后)
 **基线** `84eb1f10`(`preprod` == `release/0.2.1.6`,两者同锚)
-**改动范围** 🔴 **只碰一个文件**:`view-service/renderer-0206-file-render-regression.js`(+192 行,新增用例 ㉗)。
-**产品实现零改动。**
+**改动范围(ts-No.1 那一格)** 🔴 **只碰一个文件**:`view-service/renderer-0206-file-render-regression.js`(+192 行,新增用例 ㉗)。
+**该格产品实现零改动。**
+**后续范围(ts-No.2 / ts-No.4 裁定后追加,详见第六节)**
+
+    产品件  view-service/renderer-canary-sse.html   仅 #shotOverlay 的 DOM 位置 ＋ 注释(ts-No.2 授权并指定修法)
+    测试件  renderer-0206-file-render-regression.js ㉘(三档视口)· ㉙(<4px 回退整张)
+    新件    renderer-in-console-iframe-regression.js 真 console iframe 路径的遮罩闸(ts-No.4 ③,组长判为阻断项)
 
     sha256  测试件    453f3f5149250334140cb98475cb6183ff6d83d3c34efcf0b0c59d450e86e821
             renderer  76c56d954db51039c2f63352136f8981e8f3edb992067a445cbe2bedd072930c
@@ -36,9 +42,22 @@ MOCK_CERT=<cert.pem> MOCK_KEY=<key.pem> python3 view-service/renderer-0206-contr
 NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome \
 MOCK_BASE=https://127.0.0.1:19443 SHOTS=/tmp/xxx \
   node view-service/renderer-0206-file-render-regression.js
+
+# 3) 真 console iframe 路径(ts-No.4 ③ 追加;自带 HTTP 装置,【不需要】上面那个契约替身)
+NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome \
+  node view-service/renderer-in-console-iframe-regression.js
+
+# 3b) 它的【阳性对照】:喂生产钉住的那份 renderer 字节,必须红
+RENDERER_OVERRIDE=<旧 renderer.html,sha256=76c56d954db51039…> \
+NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome \
+  node view-service/renderer-in-console-iframe-regression.js
 ```
 
-**结果**:`通过 38 / 失败 0`(基线 37 条 ＋ 新增 ㉗)。
+**结果**:
+
+    2)  通过 40 / 失败 0    rc=0   (基线 37 ＋ ㉗ ㉘ ㉙)
+    3)  通过 2  / 失败 0    rc=0
+    3b) 通过 1  / 失败 1    rc=1   唯一红的是 iframe-②,共 11 项违规(原文见第六节)
 
 🔵 **环境前置(踩过的,写下来省别人半天)**:
 
@@ -140,8 +159,31 @@ PNG 签名 8 字节 → 首 chunk 类型必须是 `IHDR` → `buf.readUInt32BE(1
 4. **未验真实选源框、真实屏幕内容下的裁剪** —— 选源那一步需要真实用户手势,headless 给不了
    (㉕ 的注释里也写明了这条边界)。
 5. **只跑了这一个套件。** `console-browser-regression.js` 等其余浏览器套件、Go 侧测试**一个都没跑**。
+   🔵 **更新(ts-No.4 之后,原文不删)**:现在**多跑了一个**自立的
+   `renderer-in-console-iframe-regression.js`(真 console iframe 路径,见第六节)。
+   但 `console-browser-regression.js`(C2)等**其余既有**浏览器套件、Go 侧测试
+   **仍然一个都没跑** —— 这一条的实质(合入前没跑全仓回归)**没有变**。
 6. 🔵 **环境事实**:㉖ 需要 Playwright 自带 chromium(见第一节前置 1)。
    **别人机器上可能仍红,那不是产品问题。**
+7. 🔴 **iframe 那件是【替身支撑】的,不是真后端。** console 页 HTML **确实取自生产源码**
+   (`console_auth.go` 的 `consolePageHTML`,5994 字节),`/view/*` 返回的也**确实是仓内
+   真实的 renderer 字节**;但 `/api/console/agents`、`/api/console/platform`、
+   `status`、`events` 四个依赖是本件自带的 HTTP 替身
+   ⇒ **真 console ＋ 真后端(真 SSE 流、真上传、真鉴权跳转)下的遮罩几何未验。**
+   替身与真件在"几何"这一层是否等价,**我推论等价,没有实测。**
+8. 🔴 **iframe 路径下,遮罩盖不到 console 自己的 nav / tabs。** 实测:遮罩开着时,
+   console 顶层 nav 位置的最上层命中元素仍是 `platform`(不是遮罩)。
+   iframe 画不到自己外面,这是**架构固有边界**,不是本次修复能解决的。
+   本件**只打印、不断言**它(断言等于把缺陷钉成契约)。
+   ⇒ **本件不背书"框选时整个浏览器窗口都变暗"这个观感。**
+9. 🔵 **窗口 420 宽时,业主能框选的面积只有 180px 宽。** 实测 iframe 视口 `180x859`
+   —— console 的 nav 是**固定 240px 列、没有响应式规则**,窄窗口下面板被挤到 180px。
+   **这是 console 侧的问题,不是 renderer 侧的,本格没改它、也没替它找补。**
+   遮罩在 180px 里仍然铺满(`ovTop=0 / ovH=859 / chain=body`),所以**修法不需要重议**;
+   但"窄窗口下截屏基本不可用"这件事**本身可能需要另开一格**,已报组长。
+10. 🔴 **iframe 路径下没验真实 `getDisplayMedia`。** 帧源仍走测试缝
+   `__dwSetScreenshotFrameSource`(与第 1 条同源:真路径的画面不可控)。
+   ⇒ iframe 路径上验的是**遮罩几何**,不是**真截屏内容**。
 
 ---
 
@@ -305,6 +347,97 @@ rc=1   通过 39 / 失败 1        ← 唯一红的就是 ㉙
 🔵 **留给组长裁定的一个取舍**:若希望 ㉙ **只**管阈值(红条归属更干净),
 可以把 L3 的内容采样去掉、只留尺寸;代价是 M3 那类"裁错位置"就只剩 ㉗ 一格覆盖。
 **我的建议是保留**(牙更多),红条归属用上面这张表说清即可。
+
+🟢 **已裁定(ts-No.4 ①)**:**保留** L3 的内容采样。判据③ 由组长**重述**为
+"变异后转红的**每一条都必须能解释为什么它该红**;解释不了的红条 = 真问题",
+🔴 **这是判据被反例修正,不是判据向本件让步** —— 归属就用上面那张表说清。
+
+### 🔵 ts-No.4 ③④ 追加:在【业主真走的那条路】上补验 ＋ 窄窗口档
+
+**③ 组长判为阻断项的理由(我原先把它当备查,判错了)**:
+`position:fixed` 在 iframe 内相对的是 **iframe 自己的视口**,不是浏览器窗口
+⇒ "遮罩铺满视口"在**独立 renderer 页**与**console iframe** 两条路上根本不是同一件事。
+🔴 而业主实际走的就是 console 那条(`internal/m8/console_auth.go:306` 建 iframe,
+`src='/view/'+session`),**独立页他从不走** ⇒ 只在独立页上验收 =
+**在用户不走的那条路上验收**。推论等价 ≠ 实测等价,这一格就是把那条推论换成实测。
+
+**新件** `view-service/renderer-in-console-iframe-regression.js`(装置 ＋ 两条用例)。
+装置沿用 C2 的手法,但有两处关键区别:
+
+    · console 页【从生产源码里取】(console_auth.go 的 consolePageHTML,5994 字节),不复制一份
+    · /view/* 返回【仓内真实的 renderer-canary-sse.html】,不是占位页 —— 否则验的不是业主那份
+
+🔵 **踩坑写进文件头注释了**:iframe 内 renderer 的 `status` / `events` 是**相对路径**,
+会被解析成 `/view/<session>/status`;只挂 `/status` 会 404 ⇒ `stats.readonly` 恒为 true
+⇒ 📷 点不动,而失败信息看起来像"页面没加载好"(**又一例"错误消息指错方向"**)。
+
+**两条用例**:
+
+    iframe-① 对账   被服务的 renderer 字节 == 仓内那一份 · iframe 铺满 #panes ·
+                    stats.readonly === false · sessionName 对 · 有 📷 入口
+    iframe-② 闸     判据与 ㉘ 同形,但【参照物换成 iframe 视口】,三档窗口 × 四维度:
+                      A 遮罩 rect == iframe 视口 rect(容差 1px)
+                      B 遮罩父链 == body(包含块没被谁改回去)
+                      C 画布被遮罩完整包住
+                      D iframe 视口中心 elementsFromPoint 命中遮罩
+
+**实测(修复后的树)** `通过 2 / 失败 0`,`rc=0`。三档窗口量到的 iframe 视口与遮罩:
+
+| 浏览器窗口 | iframe 视口 | 遮罩 ovTop / ovH | 父链 | 中心命中 |
+|---|---|---|---|---|
+| 1280x900 | **1040x859** | 0 / 859 | body | ✅ 遮罩内 |
+| 1280x1600 | **1040x1559** | 0 / 1559 | body | ✅ 遮罩内 |
+| 420x900 | **180x859** | 0 / 859 | body | ✅ 遮罩内 |
+
+🔵 **第二列正是③ 要证的那件事**:窗口 1280 宽,面板只有 1040 宽 ⇒
+"铺满视口"在这条路上**必须**以 iframe 视口为参照物,拿浏览器窗口当参照物会误判。
+
+**🔴 阳性对照:喂的不是变异,是【生产钉住的那份字节】**
+
+    RENDERER_OVERRIDE=<renderer-prefix.html>
+    sha256=76c56d954db51039…  ==  deploy/invariants-dingwei-gray.json:16 的 want=
+    ⇒ 通过 1 / 失败 1,rc=1,唯一红的是 iframe-②,共 11 项违规(420 档少一项"画布越界")
+
+```text
+🔴 iframe-② … -> 🔴 真 console 的 iframe 内,遮罩没有铺满 iframe 视口(共 11 项):
+   - 1280x900(iframe 视口 1040x859): 遮罩 rect={"left":0,"top":699,…,"height":160} ≠ iframe 视口 1040x859
+   - 1280x900(iframe 视口 1040x859): 遮罩父链是 footer<div<body 而不是 body ⇒ 包含块又被谁改了
+   - 1280x900(iframe 视口 1040x859): 画布 {…,"top":749,…,"bottom":1349,…} 未被遮罩完整包住 ⇒ 面板内仍需滚动才能框选
+   - 1280x900(iframe 视口 1040x859): iframe 视口中心命中的是 "timeline" 而不是遮罩
+   - 1280x1600(iframe 视口 1040x1559): 遮罩 rect={"left":0,"top":1399,…,"height":160} ≠ iframe 视口 1040x1559
+   - 1280x1600(iframe 视口 1040x1559): 遮罩父链是 footer<div<body 而不是 body ⇒ 包含块又被谁改了
+   - 1280x1600(iframe 视口 1040x1559): 画布 {…,"top":1449,…,"bottom":2049,…} 未被遮罩完整包住 ⇒ 面板内仍需滚动才能框选
+   - 1280x1600(iframe 视口 1040x1559): iframe 视口中心命中的是 "timeline" 而不是遮罩
+   - 420x900(iframe 视口 180x859): 遮罩 rect={"left":0,"top":611,"right":220.11,…,"width":220.11,"height":248} ≠ iframe 视口 180x859
+   - 420x900(iframe 视口 180x859): 遮罩父链是 footer<div<body 而不是 body ⇒ 包含块又被谁改了
+   - 420x900(iframe 视口 180x859): iframe 视口中心命中的是 "timeline" 而不是遮罩
+```
+
+🔵 **420 那一档多出来的信息(修复前)**:遮罩 `width=220.11` 而 iframe 视口只有 `180` 宽
+⇒ **窄窗口下遮罩还横向溢出面板**。这条只在窄档看得见,④ 补这一档是对的。
+
+**④ 独立页那一侧同步补窄窗口档** —— ㉘ 由两档扩为三档(新增 `420x900`),判据三维度不变。
+实测 `通过 40 / 失败 0`,`rc=0`:
+
+```text
+· ㉘ 实测: [{"vp":"1280x900","ovTop":0,"ovH":900,"cvBottom":650,"hit":true,"hitTop":"shotCanvas"},
+            {"vp":"1280x1600","ovTop":0,"ovH":1600,"cvBottom":650,"hit":true,"hitTop":"shotWrap"},
+            {"vp":"420x900","ovTop":0,"ovH":900,"cvBottom":371.28,"hit":true,"hitTop":"shotWrap"}]
+```
+
+**🔴 两件如实报、且【故意不断言】的(详见第四节 8 / 9 条)**
+
+1. **遮罩开着时,console 自己的 nav / tabs 仍是最上层命中元素**(实测 `platform`)。
+   iframe 盖不到自己外面 —— 架构固有边界。**只打印不断言**:断言等于把缺陷钉成契约,
+   将来真要修就会红。⇒ 本件**不背书**"框选时整个浏览器窗口都变暗"这个观感。
+2. **窗口 420 宽时面板只有 180px**(console nav 固定 240px 列、无响应式规则)。
+   **这是 console 侧的问题,不在本格范围,我没改它、也不替它找补。**
+   🔵 但它对业主是真场景 ⇒ "窄窗口下截屏基本不可用"**本身可能需另开一格**,已报组长。
+
+🟢 **对组长那句"若 iframe 视口本身就很小,修法可能要再议"的回答**:**修法不需要重议。**
+判据是"遮罩铺满它拿到的那个视口",三档(859 / 1559 / 180x859)实测**都铺满且父链都是 body**
+⇒ 缺陷与修法都在 renderer 侧、且已被这两件钉住;180px 那件事的成因在 **console 的栅格**,
+**换一个修法也不会让它变宽。**
 
 ---
 
