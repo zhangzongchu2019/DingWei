@@ -73,7 +73,7 @@ python3 -m unittest -v deploy.test_generate_console_seed deploy.test_validate_co
 go test ./internal/store ./internal/m8 ./cmd/workpulse -run 'TestConsolePlatform|TestConsoleSeed|TestValidateConsoleSeed' -count=1
 # 三包 rc=0
 NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome node view-service/console-browser-regression.js
-# passed=4 failed=0
+# passed=5 failed=0（普通业主与管理团队两侧均覆盖）
 ```
 
 挂载变异：只删除服务端把内建 `agents` 项加入响应的那一行，`git diff --numstat` 为 `1 1 internal/m8/console_platform.go`。定向用例唯一转红为 `TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow`，失败内容 `Items:[]`；`rc=1`。这证明“至少真挂一项”不是只由浏览器 fixture 自证。已还原。

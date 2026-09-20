@@ -45,9 +45,11 @@ async function main() {
       return;
     }
     if (req.url === '/api/console/platform') {
+      const management = String(req.headers.cookie || '').includes('fixture-role=management');
       res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify({
-        role: 'owner', actions: ['read', 'submit'],
+        role: management ? 'management' : 'owner',
+        actions: management ? ['read', 'submit', 'add', 'edit', 'delete', 'approve'] : ['read', 'submit'],
         items: [{ id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' }],
       }));
       return;
@@ -104,6 +106,14 @@ async function main() {
       assert.strictEqual(await page.locator('#platform-actions button[data-action="submit"]').isVisible(), true);
       assert.strictEqual(await page.locator('#platform-actions button[data-action="approve"]').count(), 0);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'owner');
+    });
+
+    await test('shows management actions only after the server role changes', async () => {
+      await page.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      await page.evaluate(() => refreshPlatform());
+      await page.locator('#platform-actions button[data-action="approve"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#platform-actions button[data-action="add"]').isVisible(), true);
+      assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'management');
     });
 
     await test('opens a real console tab and agent iframe', async () => {
