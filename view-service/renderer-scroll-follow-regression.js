@@ -55,6 +55,11 @@
 //        🔴 这与组长 ts-No.24 ④「M-D2 必须红」的判据冲突 ⇒ 已请裁,见交付件。
 //   M-D3 施加 v2(合取真修:`:1745` 守卫 ＋ 四点铺开)⇒ 🔴 A3 显影腿必须红(形态变了),
 //        而 A1/A2 仍绿 ⇒ 证明显影腿看得见东西、且不是"任何改动都红"。
+//   🔵 **L9「(i) 空操作对照」**(组长裁定:撤销「M-D2 必须红」,但**采纳**这条对照腿)——
+//        M-D2 全绿只是"没观测到差别",🔴 而"没观测到差别 ⇒ 空操作"是**把结论当判据用**。
+//        L9 把这句话变成一条**会自己报警的断言**:同进程内跑基线字节与 (i) 字节,
+//        **逐项比对已登记观测量**;全同 ⇒ "(i) 是空操作"成立;
+//        🔴 任一项不同 ⇒ (i) **非**空操作 ⇒ 「M-D2 必须红」**自动恢复生效**(阴格)。
 const assert = require('assert');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -110,7 +115,8 @@ async function startServer(opt) {
   const server = http.createServer((req, res) => {
     const u = req.url.split('?')[0];
     const json = (o) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(o)); };
-    const html = () => { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(RENDERER_BYTES); };
+    // 🔵 L9 用 opt.bytes 换一份字节来跑(基线 vs (i));其余各腿一律用仓内那份
+    const html = () => { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(opt.bytes || RENDERER_BYTES); };
     if (u === '/__hangup') {
       // 🔴 真断链:把所有还开着的 SSE 连接 shutdown+close(不是发个事件假装断)
       const snap = st.evConns.filter((c) => !c.res.writableEnded);
@@ -391,8 +397,82 @@ function evidence(o) {
   ].filter(Boolean);
 }
 
+// ── (i) 变体:在本进程内**合成**,不依赖任何人的 /tmp ─────────────────────────────
+// (i) = 组长 ts-No.21 ① 裁的那个修法:引入 `userTookOverScroll` ＋ **只**在 `:2309 shouldFollow` 加守卫。
+// 🔴 三处锚点都必须**恰好命中一次**才写盘;命中数不对就报错,**不静默跳过** ——
+//    跳过就等于把"(i) 是空操作"退回成一句没人验的论断,那正是 L9 要治的东西。
+const VARIANT_I_STEPS = [
+  ["    let timelineAtBottom = true;\n",
+   "    let timelineAtBottom = true;\n    let userTookOverScroll = false;\n"],
+  ["else if (byUser && gap > FOLLOW_RELEASE_GAP_PX) timelineAtBottom = false;",
+   "else if (byUser && gap > FOLLOW_RELEASE_GAP_PX) { timelineAtBottom = false; if (streamEverOpened) userTookOverScroll = true; }"],
+  ["      const shouldFollow = replayInProgress || timelineAtBottom;",
+   "      const shouldFollow = (replayInProgress && !userTookOverScroll) || timelineAtBottom;"],
+];
+function buildVariantI() {
+  let s = RENDERER_BYTES.toString('utf8');
+  VARIANT_I_STEPS.forEach(([oldStr, newStr], i) => {
+    const n = s.split(oldStr).length - 1;
+    assert.strictEqual(n, 1,
+      `🔴 (i) 对照腿的锚点过期:第 ${i + 1} 处命中 ${n} 次(应恰好 1 次)。`
+      + `产品件动过了 ⇒ 请先更新 VARIANT_I_STEPS 的锚点,别把这条腿静默跳过。锚点前 60 字:${JSON.stringify(oldStr.slice(0, 60))}`);
+    s = s.replace(oldStr, newStr);
+  });
+  const bytes = Buffer.from(s, 'utf8');
+  return { bytes, sha256: crypto.createHash('sha256').update(bytes).digest('hex') };
+}
+
+// ── 已登记观测量(L9 逐项比对的就是这张表)────────────────────────────────────────
+// 🔴 哪些量**能**逐项比、哪些**不能**,不是我拍的:是**三次基线实跑对账**量出来的
+//    (同一份字节 `9b5656f4…` 连跑三轮,逐字段比):
+//   ✅ 三轮逐字相同 ⇒ 进对照集:
+//      位移 px(A1 0/0/0 · A2 5905/5905/5905 · A3 3284×3 · C2 185×3 · C3 188×3)
+//      reset **次数** · 结束 atBottom 标志 · gap<=1 · 拽底"有没有"(零/非零)·
+//      **首个拽底调用栈的函数名链** · atBottom 采样类(0/部分/全部)· 告警 arg 序列 ·
+//      conn#2 有没有发事件 · 时间旋钮是否被尊重 · 刺激是否增长 · pageerror 数
+//   🔴 实测有抖动 ⇒ **不进**对照集(否则对照腿会变成"狼来了"):
+//      拽底**次数**(127/123/128、132/139/137,±7)· rendered(±2)· conn2 emitted(±1)·
+//      firstAt(1302/1301、1/0)· 全部时间戳 · 窗内 st 极值(6994/6971)· 采样**分母**(78/79)·
+//      🔴 **参照点/终点的绝对 st 与 gap**:C1 三轮实测 **117 / 117 / 1610**(差 1493px!)——
+//         因为 C1 的手势施加在**重放进行中**,落点取决于那一刻已到多少内容 ⇒ 结构性抖动。
+//         🔵 但 C1 的**位移**三轮都是 0 ⇒ 位移是"两端一起动"的量,比绝对位置稳。
+//   🔴 **调用栈里的行号不是观测量,是源码坐标**:(i) 在 `:1429` 插入一行声明 ⇒ 其后所有行号 +1。
+//      实测机械核对:基线 `:1605` ≡ (i) `:1606`、基线 `:1745` ≡ (i) `:1746`、基线 `:3892` ≡ (i) `:3893`,
+//      **三处逐字相同**(列号也未变)⇒ 行号差是**位移假象**,不是行为差。
+//      ⇒ 登记的是**函数名链**(与组长那条纪律同源:行号随树变,跨席给行号必须同时给锚点)。
+//   🔵 L9 另有一道**运行时抖动对照**:同进程内把基线字节再跑一遍(**A1/A2/C1** 三腿 ——
+//      C1 是实测抖过的那条,所以它在守卫里),若它与自己都不同 ⇒ 先报这个,**不许读 (i) 的结论**。
+//      🔴 已知限制:这道守卫只覆盖 3 腿,不是 8 腿 ⇒ 它挡不住"只在其它五腿上抖"的量;
+//         那五条靠上面那张**三轮对账表**兜底,不是靠运行时守卫。
+// 🔴 只取**函数名链**,把 `:行:列` 全部丢掉 —— 行号是源码坐标,插一行就整体位移(见上)
+const normStack = (st) => (st || '').split('<-').map((f) => {
+  const m = f.trim().match(/^at\s+([^\s(]+)\s*\(/);
+  return m ? m[1] : f.trim().replace(/:\d+:\d+/g, '').replace(/\s+/g, ' ');
+}).join(' <- ').slice(0, 160);
+function observables(o) {
+  const cls = (n, total) => (n === 0 ? 'none' : (total && n === total ? 'all' : 'some'));
+  return {
+    dragPx: o.drag,
+    endAtBottomFlag: o.end.atBottom,
+    endAtBottomGap: o.end.gap <= 1,
+    resetsCount: o.resets.length,
+    snapsClass: o.snapsAfter.length === 0 ? 'zero' : 'some',
+    firstSnapStack: o.snapsAfter.length ? normStack(o.snapsAfter[0].stack) : null,
+    atBottomSamplesClass: cls(o.window.atBottomTrueSamples, o.window.n),
+    alertArgs: (o.alerts || []).map((a) => a.arg),
+    conn2HasEvents: o.conns[1] ? o.conns[1].emitted > 0 : null,
+    firstDelayRespected: o.conns[1] && o.opt.firstReplayDelayMs ? o.conns[1].firstAt >= o.opt.firstReplayDelayMs - 200 : null,
+    stimulusGrew: o.window.renderedEnd > o.window.renderedStart,
+    pageErrorsCount: (o.pageErrors || []).length,
+  };
+}
+const diffObservables = (a, b) => Object.keys(a)
+  .filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]))
+  .map((k) => `${k}: 基线=${JSON.stringify(a[k])} ↔ 对照=${JSON.stringify(b[k])}`);
+
 let pass = 0;
 let fail = 0;
+const VECTORS = {};   // L1-L8 的基线观测量,供 L9 逐项比对
 let envMissing = 0;
 const failures = [];
 async function t(name, fn) {
@@ -442,6 +522,7 @@ const LEGS = [
         const o = await runLeg(browser, leg);
         if (o.error) throw Object.assign(new Error(o.error), { env: o.env });
         evidence(o).forEach((l) => console.log(l));
+        VECTORS[leg.name] = observables(o);
         // ── 共用守卫(每条腿都要):装置自证,不然是"我跑了"不是"我验了" ──
         assert.ok(o.conns.length >= 1, '守卫:夹具一条 SSE 连接都没收到 ⇒ 这一腿根本没跑起来');
         assert.ok(!o.pageErrors || o.pageErrors.length === 0,
@@ -506,6 +587,52 @@ const LEGS = [
         }
       });
     }
+
+    // ── L9「(i) 空操作对照」──────────────────────────────────────────────────
+    // 组长裁定(撤销「M-D2 必须红」那封):M-D2 全绿**只是"没观测到差别"**,
+    // 🔴 而"没观测到差别 ⇒ 空操作"是**把结论当判据用**(`:1745` 绕过 `:2309` 那套是读码论证)。
+    // ⇒ 这条腿把那句话变成**会自己报警的断言**:同进程内跑基线字节与 (i) 字节,逐项比对已登记观测量。
+    //    全同 ⇒ "(i) 是空操作"成立(**已裁定的非缺口**);任一不同 ⇒ 🔴 阴格命中 ⇒ 「M-D2 必须红」自动恢复生效。
+    await t('L9 🔴 (i) 空操作对照:基线 vs 施加 (i) 的字节,【已登记观测量逐项相同】(任一不同 ⇒ (i) 非空操作 ⇒ 「M-D2 必须红」自动恢复生效)', async () => {
+      const v = buildVariantI();
+      console.log(`   (i) 副本 sha256=${v.sha256.slice(0, 16)}… 由基线 ${RENDERER_SHA.slice(0, 16)}… 在本进程内合成(3 处锚点各命中 1 次)`);
+      const missing = LEGS.map(([, lg]) => lg.name).filter((n) => !VECTORS[n]);
+      assert.deepStrictEqual(missing, [], `基线那一轮缺腿,无从比对:${missing.join(', ')}`);
+
+      // ① 抖动对照:同一份【基线字节】再跑两腿。它若与自己都不同 ⇒ 登记集不稳 ⇒ 不许读 (i) 的结论
+      // 🔴 覆盖 A1/A2/**C1**:C1 是三次基线对账里**实测抖过**的那条(绝对位置 117/117/1610),
+      //    把它放进运行时守卫,正是为了下次它再抖时**先报警、而不是把抖动算到 (i) 头上**。
+      for (const [, lg] of LEGS.filter(([, x]) => ['A1', 'A2', 'C1'].includes(x.name))) {
+        const o = await runLeg(browser, lg);
+        if (o.error) throw Object.assign(new Error(`抖动对照腿(${lg.name})异常: ${o.error}`), { env: o.env });
+        const d = diffObservables(VECTORS[lg.name], observables(o));
+        assert.deepStrictEqual(d, [],
+          `🔴 抖动对照失败:【同一份基线字节】两轮量出来的登记观测量不同(${lg.name})⇒ 登记集本身不稳,`
+          + `先把抖的那个量降级成类别或移出登记集,**不许读 (i) 的结论**。差异:${d.join(' | ')}`);
+      }
+      console.log('   ✅ 抖动对照:基线 vs 基线(A1/A2/C1 三腿)逐项相同 ⇒ 这两轮登记集没抖');
+
+      // ② 正式对照:八条腿全部用 (i) 字节重跑,逐腿逐项比对
+      const allDiffs = [];
+      let fields = 0;
+      for (const [, lg] of LEGS) {
+        const o = await runLeg(browser, Object.assign({}, lg, { bytes: v.bytes }));
+        if (o.error) throw Object.assign(new Error(`(i) 对照腿(${lg.name})异常: ${o.error}`), { env: o.env });
+        const obs = observables(o);
+        fields = Object.keys(obs).length;
+        const d = diffObservables(VECTORS[lg.name], obs);
+        console.log(`   · ${lg.name}: ${d.length ? '🔴 有差异 ⇒ ' + d.join(' | ') : `逐项相同(${fields} 项)`}`);
+        d.forEach((x) => allDiffs.push(`${lg.name} ${x}`));
+      }
+
+      // 🔴 阴格:任一观测量不同 ⇒ (i) 不是空操作
+      assert.deepStrictEqual(allDiffs, [],
+        `🔴 阴格命中:(i) **不是**空操作 —— ${allDiffs.length} 项观测量与基线不同:${allDiffs.join(' | ')}`
+        + ` ⇒ 按组长裁定,ts-No.24 ④「M-D2 必须红」**自动恢复生效**:请给 (i) 补一条真闸(钉住它带来的那个行为差别),`
+        + `并把这份差异逐项贴给组长。🔵 在那之前,别再引用"(i) 是空操作"这句话。`);
+      console.log(`   🔵 结论:八腿 × ${fields} 项登记观测量逐项相同 ⇒ 「(i) 是空操作」**成立**`
+        + '(已裁定的非缺口:撤销依据与作废条件见交付件第四节)');
+    });
   } finally {
     await browser.close();
   }
