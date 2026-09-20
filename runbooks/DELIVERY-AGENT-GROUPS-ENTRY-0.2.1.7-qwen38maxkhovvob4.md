@@ -188,7 +188,8 @@ M5 == "不发这一项"的改前状态我另有两跑(正常 + 阳性对照),不
       与 console principal 的角色**互不相干**。
 
 ⇒ 两道门:①要有 `console_platform_role.role='management'` 才**看得见**入口;
-        ②还要有 `wp_admin` 会话才**打得开** `/admin/agent-groups`。
+        ②还要有 `wp_admin` 会话才**打得开** `/admin/agent-groups`
+          (两者同源 —— 见第十节第 2 条的读码收窄 ⇒ 缺 cookie 时是跳登录页,不是 404)。
    若业主的 console 身份是默认 `owner`,他**看不见**这个入口(而 admin 后台他可能一直进得去)。
 
 我按你的裁定原样实现了(只对 management 发 + owner 看不到的断言),**没有**擅自放宽。
@@ -205,10 +206,14 @@ M5 == "不发这一项"的改前状态我另有两跑(正常 + 阳性对照),不
    本件只验"新标签页里打开了那个文档、console 顶层没被带走",
    **完全没验 admin 侧鉴权**(`wp_admin` 缺失时 303→/admin/login 那条真路径),也没验 admin 页内容。
 2. 🔴 **没在真 hub + 真 view_service 上跑**(与上一格同一边界)。console 页是从生产源码实时抠的、
-   载荷是真 handler 现产的,但**HTTP 服务是夹具**;真部署下的反代/同源/cookie 作用域**未验**。
-   特别是:真环境里 console 与 `/admin/*` 是否**同一个 origin** 我**没验** ——
-   若不是,`href="/admin/agent-groups"` 会打到 console 那个 host 上去(**这会让入口 404**)。
-   ⇒ 🔴 **这是本交付里最该被复核的一条。**
+   载荷是真 handler 现产的,但**HTTP 服务是夹具**;真部署下的反代与 cookie 作用域**未验**。
+   🔵 交件后我把其中"同源"这一问用**读码**收窄了(原先标为"最该被复核的一条"):
+       `cmd/workpulse/main.go:175` `adm.Mount(mux)`(注释即 `/healthz /readyz /admin*`)
+       与 `:268` `mux.HandleFunc("GET /console", …)` **挂在同一个 mux 上**
+       ⇒ console 与 `/admin/*` **同源同监听**,`href="/admin/agent-groups"` 不会打到别的 host,
+         没有 404 风险;`wp_admin` 缺失时是 **303 → /admin/login**(同源,能正常跳)。
+   🔴 仍**未验**的残留:前置反代是否只放行部分路径(仓内看不出来)、以及跨端口部署的现场形态。
+      **这是读码结论,不是实测。**
 3. **没验中键/Ctrl+点击、键盘 Enter 打开**这些等价入口(只验了左键 click)。
 4. **没验窄窗口**(上一格 420x900 那档):`#platform-items` 在窄面板下的排布与可点性**未测**。
 5. 🔴 **M5 在浏览器腿零判别力**(4/0 全绿),那条判据只有 Go 腿在守。已在表里标明,不藏在"5 个变异全红"这种说法里。
