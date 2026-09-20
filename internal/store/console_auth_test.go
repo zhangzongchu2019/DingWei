@@ -160,3 +160,38 @@ func TestConsoleOwnerRoleIsExplicitAndScopeIsUnambiguous(t *testing.T) {
 		t.Fatalf("ambiguous scope must fail closed scope=%q err=%v", got, err)
 	}
 }
+
+func TestConsolePlatformRoleIsIndependentFromAgentGrants(t *testing.T) {
+	ctx := context.Background()
+	db, err := OpenSQLite(filepath.Join(t.TempDir(), "console-platform-role.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []model.ConsolePrincipal{
+		{ID: "manager", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "manager-openid", Active: true},
+		{ID: "owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner-openid", Active: true},
+		{ID: "inactive", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "inactive-openid", Active: false},
+	} {
+		if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// No Agent grant is created for either principal. Platform role resolution
+	// must not depend on console_agent_grant.
+	if got, err := db.ResolveConsolePlatformRole(ctx, "owner"); err != nil || got != "owner" {
+		t.Fatalf("ordinary owner role=%q err=%v", got, err)
+	}
+	if err := db.UpsertConsolePlatformRole(ctx, model.ConsolePlatformRole{PrincipalID: "manager", Role: "management", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := db.ResolveConsolePlatformRole(ctx, "manager"); err != nil || got != "management" {
+		t.Fatalf("management role=%q err=%v", got, err)
+	}
+	if got, err := db.ResolveConsolePlatformRole(ctx, "inactive"); err != nil || got != "" {
+		t.Fatalf("inactive principal role=%q err=%v", got, err)
+	}
+}

@@ -33,3 +33,23 @@ NODE_PATH=<playwright-node_modules> PW_CHANNEL=chrome node view-service/console-
 - 本格只证明 console 浏览器装置有分辨力，尚未实现或验证 C2 的角色权限模型、Agent 列表拓展、功能项挂载框架。
 - 本格没有启动真实 workpulse、没有登录真实 console、没有触碰生产。
 - 本格使用 mock API 数据，只证明浏览器层消费真实页面代码；服务端角色权限须由后续独立的服务端阴格验证。
+
+### ① 角色权限模型
+
+新增独立的 `console_platform_role`，角色为 `management` / `owner`。它不读取、复用或写入 `console_agent_grant`；后者仍只表达 principal × Agent 的 view/interact 权限。
+
+服务端动作矩阵：
+
+- 管理团队：read / submit / add / edit / delete / approve；
+- 普通业主：read / submit；
+- 未知或非活跃 principal：全部拒绝。
+
+现有 active console principal 默认是普通业主；只有显式 active 的 management 记录才能取得管理权限。权限判定由 `RequireConsolePlatformAction` 在服务端执行，前端按钮可见性不参与授权。
+
+定向回归：
+
+```text
+go test ./internal/store ./internal/m8 -run TestConsolePlatform -count=1
+```
+
+结果：两包 `rc=0`。测试明确不创建任何 Agent grant，仍能解析平台角色，证明两套语义没有混表。

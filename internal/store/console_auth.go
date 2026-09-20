@@ -205,6 +205,33 @@ func (s *SQLite) ResolveConsoleOwnerScope(ctx context.Context, principalID strin
 	return scopes[0], nil
 }
 
+func (s *SQLite) UpsertConsolePlatformRole(ctx context.Context, role model.ConsolePlatformRole) error {
+	if strings.TrimSpace(role.PrincipalID) == "" || (role.Role != "management" && role.Role != "owner") {
+		return errors.New("invalid console platform role")
+	}
+	_, err := s.db.ExecContext(ctx, `INSERT INTO console_platform_role(principal_id,role,active) VALUES(?,?,?)
+		ON CONFLICT(principal_id,role) DO UPDATE SET active=excluded.active`,
+		role.PrincipalID, role.Role, boolInt(role.Active))
+	return err
+}
+
+// ResolveConsolePlatformRole returns the strongest active platform role.
+// Every active console principal is an ordinary owner unless explicitly
+// promoted to the management team. This default keeps existing owners able to
+// read and submit while all management mutations remain opt-in.
+func (s *SQLite) ResolveConsolePlatformRole(ctx context.Context, principalID string) (string, error) {
+	var role string
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE((
+		SELECT r.role FROM console_platform_role r
+		WHERE r.principal_id=p.id AND r.active=1
+		ORDER BY CASE r.role WHEN 'management' THEN 0 ELSE 1 END LIMIT 1
+	), 'owner') FROM console_principal p WHERE p.id=? AND p.active=1`, principalID).Scan(&role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return role, err
+}
+
 func (s *SQLite) ConsoleAgentAllowed(ctx context.Context, principalID, keyID, sessionName, permission string) (bool, error) {
 	if permission != "view" && permission != "interact" {
 		return false, errors.New("invalid console permission")

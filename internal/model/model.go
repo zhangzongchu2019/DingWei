@@ -346,6 +346,15 @@ type ConsolePrincipalRole struct {
 	Active      bool
 }
 
+// ConsolePlatformRole controls platform-wide work management. It is separate
+// from ConsoleAgentGrant: one governs management actions, the other governs a
+// principal's access to one specific Agent.
+type ConsolePlatformRole struct {
+	PrincipalID string
+	Role        string // management | owner
+	Active      bool
+}
+
 type ConsoleSession struct {
 	ID          string
 	PrincipalID string
