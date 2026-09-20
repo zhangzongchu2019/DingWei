@@ -20,6 +20,16 @@ func TestConsolePlatformRoutesAreAssembledWithServerGuards(t *testing.T) {
 		"PATCH /api/console/platform/items/{itemID}":        "HandleConsolePlatformEdit",
 		"DELETE /api/console/platform/items/{itemID}":       "HandleConsolePlatformDelete",
 		"POST /api/console/platform/items/{itemID}/approve": "HandleConsolePlatformApprove",
+		"GET /console/specs":                                "HandleConsoleSpecsPage",
+		"GET /api/console/specs":                            "HandleConsoleSpecs",
+		"POST /api/console/specs":                           "HandleConsoleSpecs",
+		"GET /api/console/specs/{specID}":                   "HandleConsoleSpec",
+		"PATCH /api/console/specs/{specID}":                 "HandleConsoleSpec",
+		"POST /api/console/specs/{specID}/submit":           "HandleConsoleSpecSubmit",
+		"POST /api/console/specs/{specID}/reviews":          "HandleConsoleSpecReview",
+		"POST /api/console/specs/{specID}/claim":            "HandleConsoleSpecClaim",
+		"POST /api/console/specs/{specID}/archive":          "HandleConsoleSpecArchive",
+		"GET /api/console/task-proposals/ready":             "HandleConsoleTaskProposalsReady",
 	}
 	seen := map[string]bool{}
 	ast.Inspect(file, func(node ast.Node) bool {

@@ -368,6 +368,66 @@ type ConsolePlatformItem struct {
 	UpdatedAt   time.Time `json:"updated_at,omitempty"`
 }
 
+type ConsoleSpec struct {
+	ID              string    `json:"id"`
+	PrincipalID     string    `json:"principal_id,omitempty"`
+	Title           string    `json:"title"`
+	State           string    `json:"state"`
+	CurrentRevision int       `json:"current_revision"`
+	ClaimedBy       string    `json:"claimed_by,omitempty"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type ConsoleSpecRevision struct {
+	SpecID           string    `json:"spec_id"`
+	Revision         int       `json:"revision"`
+	ContentMarkdown  string    `json:"content_markdown"`
+	AcceptanceJSON   string    `json:"acceptance_json"`
+	InputAnchorsJSON string    `json:"input_anchors_json"`
+	ContentSHA256    string    `json:"content_sha256"`
+	CreatedBy        string    `json:"created_by"`
+	Supersedes       int       `json:"supersedes_revision,omitempty"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
+type ConsoleSpecReview struct {
+	ID          string    `json:"review_id"`
+	SpecID      string    `json:"spec_id"`
+	Revision    int       `json:"revision"`
+	Stage       string    `json:"stage"`
+	Verdict     string    `json:"verdict"`
+	ReasonCodes string    `json:"reason_codes_json,omitempty"`
+	Detail      string    `json:"detail,omitempty"`
+	ReviewedBy  string    `json:"reviewed_by"`
+	ReviewedAt  time.Time `json:"reviewed_at"`
+}
+
+type ConsoleSpecEvent struct {
+	ID       string    `json:"id"`
+	SpecID   string    `json:"spec_id"`
+	Revision int       `json:"revision"`
+	Actor    string    `json:"actor"`
+	Action   string    `json:"action"`
+	Detail   string    `json:"detail,omitempty"`
+	At       time.Time `json:"at"`
+}
+
+type ConsoleTaskProposal struct {
+	ID               string    `json:"proposal_id"`
+	SchemaVersion    int       `json:"schema_version"`
+	SpecID           string    `json:"spec_id"`
+	Revision         int       `json:"revision"`
+	ContentSHA256    string    `json:"content_sha256"`
+	Title            string    `json:"title"`
+	AcceptanceJSON   string    `json:"acceptance_json"`
+	InputAnchorsJSON string    `json:"input_anchors_json"`
+	ReviewID         string    `json:"review_id"`
+	ReviewedBy       string    `json:"reviewed_by"`
+	ReviewedAt       time.Time `json:"reviewed_at"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
 type ConsoleSession struct {
 	ID          string
 	PrincipalID string

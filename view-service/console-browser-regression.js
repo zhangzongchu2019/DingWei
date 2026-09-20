@@ -50,7 +50,10 @@ async function main() {
       res.end(JSON.stringify({
         role: management ? 'management' : 'owner',
         actions: management ? ['read', 'submit', 'add', 'edit', 'delete', 'approve'] : ['read', 'submit'],
-        items: [{ id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' }],
+        items: [
+          { id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' },
+          { id: 'specs', kind: 'spec', title: 'Specs', href: '/console/specs', target: '_blank', status: 'approved' },
+        ],
       }));
       return;
     }
@@ -123,6 +126,18 @@ async function main() {
       await tab.waitFor({ state: 'visible' });
       assert.strictEqual(await tab.evaluate((node) => node.classList.contains('on')), true);
       assert.strictEqual(new URL(await pane.getAttribute('src'), page.url()).pathname, '/view/owner-alpha-2642');
+    });
+
+    await test('opens Specs separately without destroying live Agent panes', async () => {
+      const paneCount = await page.locator('#panes iframe').count();
+      const paneSrc = await page.locator('#panes iframe').first().getAttribute('src');
+      const popupPromise = page.waitForEvent('popup');
+      await page.locator('#platform-items a[data-item-id="specs"]').click();
+      const popup = await popupPromise;
+      assert.strictEqual(new URL(popup.url()).pathname, '/console/specs');
+      assert.strictEqual(await page.locator('#panes iframe').count(), paneCount);
+      assert.strictEqual(await page.locator('#panes iframe').first().getAttribute('src'), paneSrc);
+      await popup.close();
     });
   } finally {
     await browser.close();

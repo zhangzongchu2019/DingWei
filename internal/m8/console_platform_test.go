@@ -112,11 +112,11 @@ func TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &listed); err != nil {
 		t.Fatal(err)
 	}
-	if listed.Role != "owner" || len(listed.Items) != 1 || listed.Items[0].ID != "agents" || listed.Items[0].Href != "#agents" {
+	if listed.Role != "owner" || len(listed.Items) != 2 || listed.Items[0].ID != "agents" || listed.Items[0].Href != "#agents" || listed.Items[1].ID != "specs" {
 		t.Fatalf("owner platform=%+v", listed)
 	}
 
-	payload := []byte(`{"id":"specs","kind":"spec","title":"Specs","href":"/console/specs"}`)
+	payload := []byte(`{"id":"custom-specs","kind":"spec","title":"Custom Specs","href":"/console/custom-specs"}`)
 	// A normal owner can submit for review...
 	rr = callConsolePlatform(t, hub, "owner", consolePlatformActionSubmit, http.MethodPost,
 		"/api/console/platform/submissions", payload, hub.HandleConsolePlatformSubmit)
@@ -137,8 +137,8 @@ func TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow(t *testing.T) {
 		t.Fatalf("owner received 403 but management side effect still happened: %+v", direct)
 	}
 
-	approveReq := httptest.NewRequest(http.MethodPost, "/api/console/platform/items/specs/approve", nil)
-	approveReq.SetPathValue("itemID", "specs")
+	approveReq := httptest.NewRequest(http.MethodPost, "/api/console/platform/items/custom-specs/approve", nil)
+	approveReq.SetPathValue("itemID", "custom-specs")
 	approveReq = approveReq.WithContext(context.WithValue(approveReq.Context(), consolePrincipalContextKey{}, "manager"))
 	approveRR := httptest.NewRecorder()
 	hub.RequireConsolePlatformAction(consolePlatformActionApprove, hub.HandleConsolePlatformApprove)(approveRR, approveReq)
@@ -148,7 +148,7 @@ func TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow(t *testing.T) {
 
 	rr = callConsolePlatform(t, hub, "owner", consolePlatformActionRead, http.MethodGet,
 		"/api/console/platform", nil, hub.HandleConsolePlatform)
-	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"id":"specs"`)) {
+	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"id":"custom-specs"`)) {
 		t.Fatalf("owner approved list code=%d body=%q", rr.Code, rr.Body.String())
 	}
 }

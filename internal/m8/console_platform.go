@@ -77,7 +77,7 @@ var consolePlatformItemID = regexp.MustCompile(`^[a-z][a-z0-9-]{1,63}$`)
 
 // builtin 入口占用的 id。放行同 id 提交会让页面出现两个 data-item-id 相同的项,
 // 闸与 UI 都无法唯一寻址(与既有 "agents" 保留同一理由)。
-var consolePlatformReservedItemIDs = map[string]bool{"agents": true, "agent-groups": true}
+var consolePlatformReservedItemIDs = map[string]bool{"agents": true, "agent-groups": true, "specs": true}
 
 type consolePlatformItemRequest struct {
 	ID    string `json:"id"`
@@ -126,7 +126,10 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	// The existing Agent workspace is the first real mounted feature. Future
 	// I/K/L items use the same response shape and persistence API.
 	builtin := model.ConsolePlatformItem{ID: "agents", Kind: "agents", Title: "Agents", Href: "#agents", Status: "approved", Active: true}
-	builtins := []model.ConsolePlatformItem{builtin}
+	builtins := []model.ConsolePlatformItem{builtin, {
+		ID: "specs", Kind: "spec", Title: "Specs",
+		Href: "/console/specs", Target: "_blank", Status: "approved", Active: true,
+	}}
 	// Agent 编组入口(0.2.1.7):它是**独立文档**,所以必须 target="_blank"。
 	// 🔴 顶层导航过去会把 console 右栏那一堆活 iframe(每个一条 SSE)连同已打开的 Agent 页
 	//    一起带走,而且后退回不来 —— 实测 pane 2→0、两条 SSE 全断、顶层 URL 变成 /admin/agent-groups。
