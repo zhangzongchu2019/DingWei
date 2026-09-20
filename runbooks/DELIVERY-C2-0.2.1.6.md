@@ -53,3 +53,5 @@ go test ./internal/store ./internal/m8 -run TestConsolePlatform -count=1
 ```
 
 结果：两包 `rc=0`。测试明确不创建任何 Agent grant，仍能解析平台角色，证明两套语义没有混表。
+
+变异：只把 owner 分支短路为允许全部动作，`git diff --numstat` 为 `1 1 internal/m8/console_platform.go`。定向命令执行 12 个子用例，只有 owner/add、edit、delete、approve 四个阴格转红；manager 六项与 owner/read、submit 仍通过。`rc=1`，还原后定向回归重新 `rc=0`。
