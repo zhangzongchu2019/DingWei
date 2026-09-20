@@ -94,7 +94,7 @@ go vet ./...                           # rc=0
 go test ./... -count=1                 # rc=0
 python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed
 # 23 tests, rc=0
-console-browser-regression.js           # passed=4 failed=0
+console-browser-regression.js           # passed=5 failed=0
 ```
 
 ## 明确没有证明
@@ -102,4 +102,12 @@ console-browser-regression.js           # passed=4 failed=0
 - 尚未用真实浏览器登录生产 console；Playwright 使用真实页面源码，但 API 数据是本地 fixture。
 - 尚未部署或触碰生产，未生成含真实身份值的 seed。
 - 尚未把 I/K/L 的业务页面接入；本版只提供壳、角色与通用挂载/审批生命周期，真实挂载项是 Agents。
-- 版本号暂未从 `0.2.1.4` 抬升：并行的 `0.2.1.5` 尚未合入，本分支不抢先修改其版本文件；装配时须先合 `0.2.1.5` 再统一抬至 `0.2.1.6`。
+
+## `0.2.1.5` 合入后的最终装配
+
+- 已合入发件人标识锚 `f6590f21bc1d6f0c172a90367871707e8016bcc8`；`git merge-base --is-ancestor` rc=0。
+- 三处版本号已由 `0.2.1.5` 统一抬至 `0.2.1.6`。
+- 相对该发件人标识锚的文件差异只含 C2 平台壳文件与三处版本号，没有夹带其它功能。
+- 合并后基线：`go build ./...` rc=0；`go vet ./...` rc=0；`go test ./... -count=1` rc=0；console 浏览器 `5/5`；console seed Python 测试 `23/23`。
+- 合并后 M-label：删 Agent 落款，全仓唯一红 `TestAgentFeishuOutboundBodyIdentifiesAuthenticatedSenderOnce`。
+- 合并后 C2 变异均已复跑：owner 全放行会红四个角色矩阵阴格及状态型 handler 阴格；删 Agents 挂载只红 handler；删 approve 路由只红 AST 装配闸；保持 403 但执行副作用只红状态断言。所有变异均已还原。
