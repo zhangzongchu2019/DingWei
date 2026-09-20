@@ -22,7 +22,6 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
-const { execFileSync } = require('child_process');
 const { chromium } = require('playwright');
 const { requireVendor, PINS_MAIN, PINS_FA, sha256 } = require('./vendor-pins');
 
@@ -32,37 +31,12 @@ const PROXY = 'http://127.0.0.1:9';
 const PRODUCT = path.resolve(HERE, '../../../view-service/renderer-canary-sse.html');
 const WAIT = 20000;
 
-// 🔴 门槛 = WCAG 2.1 AA(正文 4.5:1;非文本/UI 组件 3.0:1)。
-//    🔵 **这个门槛是我选的**,组长/业主可以改;**报数与判定分开写**,判定不掩盖数字。
-const TH_TEXT = 4.5, TH_UI = 3.0;
-
-const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
-const lum = (a) => 0.2126 * lin(a[0]) + 0.7152 * lin(a[1]) + 0.0722 * lin(a[2]);
-const ratio = (a, b) => { const la = lum(a), lb = lum(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); };
-const R = (x) => Math.round(x * 1000) / 1000;
-// 🔵 两种写法都要认:`getComputedStyle().backgroundColor` 回 `rgb(...)/rgba(...)`,
-//    而 **CSS 变量的原始值**回 `#rrggbb`(第一跑我只认 rgb() ⇒ D1/D2 全红在守卫上,红的是我的解析器)。
-const rgb = (s) => {
-  if (!s) return null;
-  const t = String(s).trim();
-  const m = /rgba?\(([^)]+)\)/.exec(t);
-  if (m) {
-    const p = m[1].split(',').map((x) => parseFloat(x));
-    if (p.slice(0, 3).some((x) => Number.isNaN(x))) return null;
-    return { v: [p[0], p[1], p[2]], a: p.length > 3 ? p[3] : 1, raw: t };
-  }
-  const h = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(t);
-  if (h) {
-    let x = h[1];
-    if (x.length === 3) x = x.split('').map((c) => c + c).join('');
-    return { v: [0, 2, 4].map((i) => parseInt(x.slice(i, i + 2), 16)), a: 1, raw: t };
-  }
-  return null;
-};
-
-function px(png) {
-  return JSON.parse(execFileSync('python3', [path.join(HERE, 'px.py'), png], { encoding: 'utf8' }).trim().split('\n').pop());
-}
+// 🔴 量测核(尺子 / 门槛 / 维度 / 样本 / 页内量测函数 / 像素尺)**共用一个模块**:
+//    `measure-core.js`(裁定 (1) 的"适用对象"限定写在它头部,并且**写进了 judge()**,不靠读日志的人记得)。
+const {
+  TH_TEXT, TH_UI, DIM_INFO, DIM_DECO, ratio, R, rgb, px, judge, reportOnly, repoRef,
+  MD_SAMPLE, TOOLBAR, MEASURE_LINES, MUT_DARK110, buildRows
+} = require('./measure-core');
 
 // ── 产品 CSS:运行时抽取 + 形状守卫 ───────────────────────────────────────────
 function productCSS() {
@@ -122,27 +96,14 @@ function startServer(prod) {
   return new Promise((r) => server.listen(0, '127.0.0.1', () => r({ server, port: server.address().port })));
 }
 
-const MD_SAMPLE = [
-  '# 标题一',
-  '',
-  '正文一段:**粗体** 与 *斜体* 与 `行内代码` 与 [链接文字](https://intranet.example/a)。',
-  '',
-  '> 引用一段',
-  '',
-  '- 列表项一',
-  '- 列表项二',
-  '',
-  '```js',
-  'const x = 1; // 注释',
-  '```',
-  ''
-].join('\n');
+// MD_SAMPLE / TOOLBAR / MEASURE_LINES 都来自 measure-core.js —— 🔴 **两个探针共用同一份样本与同一把尺子**,
+// 否则 token 层的数字(例如 D8 那个 18/26)在两条路径上**不可比**。
 
 // 变异体(每一个都写明**它要回答什么问题**)
 const MUTS = {
   // 阴格 B(真靶):把编辑器正文压到 ~1.10 —— 明知不合格,探针必须报出来
-  dark110: '.EasyMDEContainer .CodeMirror{background:#111316 !important;color:#1a1d21 !important}'
-    + '.EasyMDEContainer .CodeMirror .cm-s-easymde span,.CodeMirror-line{color:#1a1d21 !important}',
+  // 阴格 B(真靶):**与 console-iframe 那条腿共用同一条配方**(measure-core.MUT_DARK110)
+  dark110: MUT_DARK110,
   // 定因:暗色下图标色实测是 rgb(255,255,255),而 --text 是 #eef2f6 ⇒ 不像来自 --text。
   //       若把 color-scheme 强制改回 light,图标**应当**翻成黑 ⇒ 证明它来自 UA 的 canvastext(随 color-scheme 走)
   schemelight: ':root{color-scheme:light !important}[data-theme="dark"]{color-scheme:light !important}',
@@ -179,66 +140,12 @@ function pageHTML(prod, theme, pcssMode, mut) {
     '    element: document.getElementById("md"),',
     '    spellChecker: false,                 // 引入硬条件①',
     '    autoDownloadFontAwesome: false,      // 引入硬条件①(FA 已本地自托管 = 硬条件②)',
-    '    toolbar: ["bold","italic","heading","|","quote","unordered-list","ordered-list","|","link","image","|","preview","side-by-side","fullscreen"],',
+    '    toolbar: ' + TOOLBAR + ',   //  🔴 去掉了默认的 "guide"(它是外网站点,ts-No.77 实测)',
     '    //  🔴 去掉了默认的 "guide"(它是外网站点,ts-No.77 实测)',
     '    initialValue: ' + JSON.stringify(MD_SAMPLE) + ',',
     '    minHeight: "200px"',
     '  });',
-    '  window.__dwMeasure = function(){',
-    '    function cs(el,p){ return getComputedStyle(el)[p]; }',
-    '    function effBg(el){ var n=el; while(n && n.nodeType===1){ var c=getComputedStyle(n).backgroundColor;',
-    '      var m=/rgba?\\(([^)]+)\\)/.exec(c); if(m){ var p=m[1].split(",").map(parseFloat); if(p.length<4||p[3]>0)',
-    '        return {from:n.tagName+(n.className?"."+String(n.className).trim().split(/\\s+/)[0]:""), value:c}; } n=n.parentElement; }',
-    '      return {from:"(none)", value:"rgba(0, 0, 0, 0)"}; }',
-    '    var out = { theme: window.__dwTheme, pcss: window.__dwPcss, mut: window.__dwMut, vars:{}, els:{}, tokens:{}, line:{} };',
-    '    ["--bg","--text","--muted","--line","--panel","--panel-2","--accent","--accent-2","--code-bg","--code-text"].forEach(function(k){',
-    '      out.vars[k] = getComputedStyle(document.body).getPropertyValue(k).trim(); });',
-    '    var b = document.body;',
-    '    out.els.body = { bg: cs(b,"backgroundColor"), color: cs(b,"color"), fontFamily: cs(b,"fontFamily"),',
-    '      fontSize: cs(b,"fontSize"), colorScheme: cs(b,"colorScheme"), htmlColorScheme: cs(document.documentElement,"colorScheme") };',
-    '    var cm = document.querySelector(".EasyMDEContainer .CodeMirror");',
-    '    if (cm) { var e = effBg(cm); out.els.codeMirror = { bg: e.value, bgFrom: e.from, color: cs(cm,"color"),',
-    '      borderColor: cs(cm,"borderTopColor"), borderWidth: cs(cm,"borderTopWidth"), fontSize: cs(cm,"fontSize"),',
-    '      fontFamily: cs(cm,"fontFamily"), rect: (function(r){return {w:Math.round(r.width),h:Math.round(r.height)};})(cm.getBoundingClientRect()) }; }',
-    '    var line = document.querySelector(".CodeMirror-line");',
-    '    if (line) { out.line = { tag: line.tagName, fontSize: cs(line,"fontSize"), lineHeight: cs(line,"lineHeight"),',
-    '      maxHeight: cs(line,"maxHeight"), maxWidth: cs(line,"maxWidth"), tabSize: cs(line,"tabSize"),',
-    '      overflow: cs(line,"overflow"), overflowX: cs(line,"overflowX"), whiteSpace: cs(line,"whiteSpace"),',
-    '      wordBreak: cs(line,"wordBreak"), fontFamily: cs(line,"fontFamily"), color: cs(line,"color"),',
-    '      margin: cs(line,"margin"), padding: cs(line,"padding") }; }',
-    '    var tb = document.querySelector(".editor-toolbar");',
-    '    if (tb) { var tbBg = effBg(tb); out.els.toolbar = { bg: tbBg.value, bgFrom: tbBg.from, color: cs(tb,"color"),',
-    '      borderTopColor: cs(tb,"borderTopColor"), borderLeftColor: cs(tb,"borderLeftColor") }; }',
-    '    var icon = document.querySelector(".editor-toolbar button.bold i") || document.querySelector(".editor-toolbar button.bold");',
-    '    if (icon) { var btn = icon.closest("button"); var ib = effBg(btn);',
-    '      out.els.toolbarIcon = { color: cs(icon,"color"), buttonColor: cs(btn,"color"), colorScheme: cs(btn,"colorScheme"),',
-    '      fontFamily: cs(icon,"fontFamily"), bg: ib.value, bgFrom: ib.from, btnBorder: cs(btn,"borderTopColor") }; }',
-    '    var sep = document.querySelector(".editor-toolbar i.separator");',
-    '    if (sep) { out.els.separator = { borderLeftColor: cs(sep,"borderLeftColor"), borderRightColor: cs(sep,"borderRightColor") }; }',
-    '    var sb = document.querySelector(".editor-statusbar");',
-    '    if (sb) { var sbb = effBg(sb); out.els.statusbar = { color: cs(sb,"color"), bg: sbb.value, bgFrom: sbb.from, fontSize: cs(sb,"fontSize") }; }',
-    '    var spans = document.querySelectorAll(".CodeMirror span[class*=cm-]");',
-    '    for (var i=0;i<spans.length;i++){ var s=spans[i]; var c=cs(s,"color"); var cls=s.className;',
-    '      if(!out.tokens[c]) out.tokens[c]={classes:{},n:0}; out.tokens[c].classes[cls]=(out.tokens[c].classes[cls]||0)+1; out.tokens[c].n++; }',
-    '    out.tokenCount = spans.length;',
-    // 🔴 D8 要用的量:编辑区里**继承** pre 颜色的 span 有多少(= 变异真正打得着的正文),
-    //    以及**自带颜色声明**的 span 有多少(= 被 CodeMirror 主题色 shield 住的部分)。
-    //    🔵 为什么不能只看像素层 contrast_max:它取的是整块的最暗/最亮对,**部分**文字变不可见它一动不动
-    //       ⇒ 它证不了"正文没事"。所以这一维必须在解析层按 span 数。
-    '    var lines = document.querySelectorAll(".CodeMirror-line");',
-    '    out.inherit = { lines: lines.length, spans: 0, inheriting: 0, preColor: null, sampleInherit: [], sampleOwn: [] };',
-    '    if (lines.length) {',
-    '      out.inherit.preColor = cs(lines[0], "color");',
-    '      for (var k = 0; k < spans.length; k++) {',
-    '        var sp = spans[k]; out.inherit.spans++;',
-    '        if (cs(sp, "color") === out.inherit.preColor) {',
-    '          out.inherit.inheriting++;',
-    '          if (out.inherit.sampleInherit.length < 3) out.inherit.sampleInherit.push(sp.className);',
-    '        } else if (out.inherit.sampleOwn.length < 3) out.inherit.sampleOwn.push(sp.className + "=" + cs(sp, "color"));',
-    '      }',
-    '    }',
-    '    return out;',
-    '  };',
+    ...MEASURE_LINES,
     '  window.__dwSetHoverTarget = function(sel){ var el=document.querySelector(sel); if(el) el.setAttribute("data-dw-probe", sel); };',
     '  window.__dwReady = true;',
     '})();',
@@ -278,10 +185,9 @@ async function open(browser, port, qs) {
   return { ctx, page, rec };
 }
 
-function judge(label, value, th, kind) {
-  const ok = value >= th;
-  return { label, value: R(value), th, kind, ok, text: `${label} = ${R(value)} : 1  门槛 ${th}(${kind})⇒ ${ok ? '✅ 合格' : '🔴 低于门槛'}` };
-}
+// 🔴 `judge()` 来自 measure-core.js —— 它按裁定 (1) 的**维度**决定判不判:
+//    信息维(正文/图标/状态色/可点控件的可辨识特征)⇒ 判定;装饰维(边框/分隔线)⇒ **只报数,不判缺陷**。
+//    🔵 缺维会**抛错**(装置问题),不会"默认判缺陷" —— 免得有人加一行观测时把裁定绕过去。
 
 (async () => {
   requireVendor(Object.assign({}, PINS_MAIN, PINS_FA), 'ts-No.78 暗色对比度');
@@ -315,25 +221,9 @@ function judge(label, value, th, kind) {
       assert.deepStrictEqual(rec.cdpExt, [], `🔴 断网下仍有外部请求(CDP):${JSON.stringify(rec.cdpExt)}`);
       assert.deepStrictEqual(rec.pageErrors, [], `页面报错:${JSON.stringify(rec.pageErrors)}`);
 
-      // 🔴 守卫:主题**真的生效了**吗 —— body 背景必须等于该主题的 --bg
-      const varBg = rgb(m.vars['--bg']), bodyBg = rgb(m.els.body.bg);
-      assert.ok(varBg && bodyBg, `守卫:颜色解析不了(body=${m.els.body.bg} --bg=${m.vars['--bg']})⇒ 解析器不认这个写法,先修探针`);
-      assert.deepStrictEqual(bodyBg.v, varBg.v,
-        `🔴 主题没生效:body 背景 ${m.els.body.bg} ≠ --bg ${m.vars['--bg']} ⇒ 这一格量的是**另一个**配色,数字不可用`);
-
-      const cmBg = rgb(m.els.codeMirror.bg);
-      const rows = [];
-      // ① 正文:编辑器自己的背景 vs 每一个 token 颜色(取最坏)
-      const tokenRows = Object.keys(m.els.codeMirror ? m.tokens : {}).map((c) => {
-        const t2 = rgb(c); const v = ratio(t2.v, cmBg.v);
-        return { color: c, ratio: v, n: m.tokens[c].n, classes: Object.keys(m.tokens[c].classes).slice(0, 3).join(' ') };
-      }).sort((a, b) => a.ratio - b.ratio);
-      assert.ok(tokenRows.length > 0,
-        `守卫:一个 token 色都没量到(tokenCount=${m.tokenCount})⇒ CodeMirror 没渲染出带 class 的 span,这一格是空的`);
-      rows.push(judge(`正文最坏 token(${tokenRows[0].classes || tokenRows[0].color})`, tokenRows[0].ratio, TH_TEXT, '正文'));
-      rows.push(judge('正文基础色(.CodeMirror color vs bg)', ratio(rgb(m.els.codeMirror.color).v, cmBg.v), TH_TEXT, '正文'));
-      // ② 工具栏常态:图标色 vs 其有效背景
-      rows.push(judge('工具栏图标(常态)', ratio(rgb(m.els.toolbarIcon.color).v, rgb(m.els.toolbarIcon.bg).v), TH_UI, 'UI 图标'));
+      // 🔴 主题是否真生效、token 是否真量到、**行集合与维度归属** —— 全在 `measure-core.buildRows` 里
+      //    (两个探针共用同一份判据 ⇒ "console 那条路"与"独立页那条路"量的是**同一件事**)
+      //    🔵 守卫放在真事件之后才跑,顺序不影响结论:事件取的是 hov/actReal,守卫查的是 m
       // ③ 工具栏 hover / 激活态 —— 🔴 **用真事件**,不用 classList.add 那种测试缝
       //    (缝能验的只是"我加的类会触发那条 CSS",验不到"产品自己会不会把类加上/鼠标移上去会不会变")
       const readBtn = (sel) => page.evaluate(`(function(){
@@ -355,8 +245,7 @@ function judge(label, value, th, kind) {
       const pxBtn = px(pngAct);
       assert.ok(actReal && /active/.test(actReal.cls),
         `守卫:真点击之后产品**没有**给按钮加 .active(实测 class="${actReal && actReal.cls}")⇒ 这一格量不到激活态,别拿合成态充数`);
-      rows.push(judge('工具栏图标(**真 hover** 态)', ratio(rgb(hov.icon).v, rgb(hov.bg).v), TH_UI, 'UI 图标'));
-      rows.push(judge('工具栏图标(**真点击 .active** 态)', ratio(rgb(actReal.icon).v, rgb(actReal.bg).v), TH_UI, 'UI 图标'));
+      const { rows, tokenRows, ref, bodyBg, cmBg } = buildRows(m, hov, actReal);
       // 交叉核对:合成 .active(测试缝)与真事件应当给出**同一个**数;不一致就报,不取其一
       const actSyn = await page.evaluate(`(function(){
         var b=document.querySelector('.editor-toolbar button.quote'); b.classList.add('active');
@@ -367,18 +256,6 @@ function judge(label, value, th, kind) {
       assert.ok(Math.abs(synRatio - realRatio) < 0.01,
         `🔴 合成态与真事件不一致(合成 ${R(synRatio)} vs 真点击 ${R(realRatio)})⇒ 有一边量的不是同一个东西,先查装置`);
       const act = actReal;
-      // ④ 边框:编辑器边框 vs 页面背景(非文本对比)
-      rows.push(judge('编辑器边框 vs 页面背景', ratio(rgb(m.els.codeMirror.borderColor).v, bodyBg.v), TH_UI, '边框'));
-      rows.push(judge('工具栏边框 vs 页面背景', ratio(rgb(m.els.toolbar.borderTopColor).v, bodyBg.v), TH_UI, '边框'));
-      // ⑤ 状态栏
-      if (m.els.statusbar) rows.push(judge('状态栏文字', ratio(rgb(m.els.statusbar.color).v, rgb(m.els.statusbar.bg).v), TH_TEXT, '正文'));
-      // ⑥ 分隔线(暗色下 border-right:#fff 会变白发丝线 —— 只报数)
-      if (m.els.separator) {
-        rows.push(judge('工具栏分隔线 left vs 页面背景', ratio(rgb(m.els.separator.borderLeftColor).v, bodyBg.v), TH_UI, '边框'));
-        rows.push(judge('工具栏分隔线 right vs 页面背景', ratio(rgb(m.els.separator.borderRightColor).v, bodyBg.v), TH_UI, '边框'));
-      }
-      // ⑦ 观感边界差(**不是**可读性):编辑器块 vs 页面背景
-      rows.push({ label: '编辑器块 vs 页面背景(🔵 观感边界差,**不是**可读性判据)', value: R(ratio(cmBg.v, bodyBg.v)), th: null, kind: '观感', ok: null, text: '' });
 
       // 像素层交叉核对:编辑区 + 工具栏 + 激活态那颗钮
       const pngCM = path.join(OUT, `${tag}-codemirror.png`);
@@ -398,8 +275,11 @@ function judge(label, value, th, kind) {
       console.log(`     像素层 真 hover 钮:bg ${JSON.stringify(pxHov.bg)} 最暗 ${JSON.stringify(pxHov.darkest)} 最亮 ${JSON.stringify(pxHov.lightest)} ⇒ contrast_max ${pxHov.contrast_max}`);
       console.log(`     像素层 真点击 .active 钮:bg ${JSON.stringify(pxBtn.bg)} 最暗 ${JSON.stringify(pxBtn.darkest)} 最亮 ${JSON.stringify(pxBtn.lightest)} ⇒ contrast_max ${pxBtn.contrast_max}`);
       console.log(`     🔵 交叉核对:合成 .active(测试缝)= ${R(synRatio)} vs 真点击 = ${R(realRatio)} ⇒ **一致**(否则上面那条断言会红)`);
-      const below = rows.filter((r) => r.ok === false);
-      console.log(`     🔴 低于门槛 ${below.length} 项:${below.map((r) => `${r.label} ${r.value}`).join(' · ') || '(无)'}`);
+      // 🔴 裁定 (1):**信息维**低于门槛才是缺陷;**装饰维**只报数(否则本仓自己的 --line vs --bg = 1.261/1.798 当场变两个缺陷)
+      const belowInfo = rows.filter((r) => r.ok === false);
+      const belowDeco = rows.filter((r) => r.dim === DIM_DECO && r.value < r.th);
+      console.log(`     🔴 **信息维**低于门槛 ${belowInfo.length} 项(判缺陷):${belowInfo.map((r) => `${r.label} ${r.value}`).join(' · ') || '(无)'}`);
+      console.log(`     🔵 **装饰维**低于门槛 ${belowDeco.length} 项(按裁定 (1) **不判缺陷**,只报数):${belowDeco.map((r) => `${r.label} ${r.value}`).join(' · ') || '(无)'} · 本仓同尺参照 ${ref}`);
       console.log(`     🔵 最坏的 5 个 token 色:${out.tokenRows.slice(0, 5).map((x) => `${x.color}→${R(x.ratio)}(${x.classes})`).join(' · ')}`);
       return out;
     } finally { await ctx.close().catch(() => {}); }

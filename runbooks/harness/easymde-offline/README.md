@@ -19,7 +19,8 @@
     NODE_PATH=/home/is3/pwrun/node_modules node run.js       # S0–S7  主判据      rc 0/2/3
     NODE_PATH=/home/is3/pwrun/node_modules node fa-probe.js  # F1–F3  Font Awesome A/B(修法②的代价)
     NODE_PATH=/home/is3/pwrun/node_modules node cp-probe.js  # 工具栏图标 ::before 码位(打印 JSON)
-    NODE_PATH=/home/is3/pwrun/node_modules node dark-contrast-probe.js   # ts-No.78 暗色对比度
+    NODE_PATH=/home/is3/pwrun/node_modules node dark-contrast-probe.js   # ts-No.78 暗色对比度(独立页形状)
+    NODE_PATH=/home/is3/pwrun/node_modules node console-iframe-dark-probe.js  # ts-No.78 追加腿:真 console 的 iframe 内
 
 内网/离线镜像:`DW_NPM_MIRROR=https://你的镜像/ node prepare-vendor.js`。
 
@@ -58,10 +59,12 @@
 |---|---|
 | `prepare-vendor.js` | 从 npm/内网镜像取 `easymde@2.21.0` 与 `font-awesome@4.7.0`,**逐字校验 pin** 后落到 `vendor/`;FA css 是**派生件**(改写 6 处 `../fonts/` → `/vendor/fonts/`,改写前先断言"上游哈希命中"与"恰好 6 处") |
 | `vendor-pins.js` | 🔴 **pin 的唯一源**(三个探针共用,防第二事实源) |
+| `measure-core.js` | 🔴 **量测核的唯一源**:门槛与**维度归属**(裁定 (1))、`buildRows`(行集合)、`MUT_DARK110`(阴格配方)、页内量测函数、像素尺调用 —— 两个对比度探针共用,免得两条路径量成两件事 |
 | `run.js` + `page.html` | S0–S7 主判据 |
 | `fa-probe.js` + `fa-page.html` | F1–F3:关掉 Font Awesome 自动下载的**代价**(图标会不会消失),以及本地自托管在断网下成不成 |
 | `cp-probe.js` | 工具栏图标 `::before` 的**码位**逐个实测(把"推断"换成"实测"用的那把尺) |
-| `dark-contrast-probe.js` | ts-No.78:`data-theme` 两种取值下 正文/工具栏/边框 的**对比度实测** |
+| `dark-contrast-probe.js` | ts-No.78:`data-theme` 两种取值下 正文/工具栏/边框 的**对比度实测**(独立页 + `data-theme` 挂 `<body>` 的形状) |
+| `console-iframe-dark-probe.js` | ts-No.78 **追加腿**(裁定 (3)):同一把尺子搬进**真 console 的 iframe**(`console_auth.go` 的 `consolePageHTML` + 仓内真 renderer 字节),主题走**业主真实路径**(真点击顶层 ◐) |
 | `px.py` | 像素尺:读 PNG,回 `{bg, darkest, lightest, contrast_max}`(半透明/合成之后**真渲染出来**的颜色) |
 
 ## `dark-contrast-probe.js`(ts-No.78)的 rc 与九条腿
@@ -79,6 +82,22 @@
    ⇒ 注入为空,量的是**未变异**的页面;而它那道"提特异性之后仍合格就是反常"的守卫**把它抓住了**(红在守卫上)。
    第二版另加一条**归因守卫**:变异必须真的把 `pre.CodeMirror-line` 的颜色变成 `--code-text`,否则一律判**装置问题**
    —— 🔵 本组规矩:**"没变"既不许被读成"没风险",也不许被读成"有牙"**。
+
+## `console-iframe-dark-probe.js`(ts-No.78 追加腿 · 裁定 (3))的 rc 与六条腿
+
+    0 全过 · 2 有格红 · 3 装置自证不过(C0)⇒ 中止,不产出任何对比度结论
+
+    C0 装置自证(console 页从 `console_auth.go` 抽 + renderer sha 对账 + 编辑器真在 iframe 内 + 隔离成立)
+    C1 主题走**业主真实路径**:真点击 console 顶层 ◐ ⇒ 外层 `html[data-theme=dark]` 且 iframe 内 `body` 跟着暗
+    C2 iframe 内(暗色)实测 · C3 独立页(暗色)实测 · C4 🔴 两条路径**逐项对照** · C5 阴格(iframe 形状下尺子有没有牙)
+
+🔴 **两件"不许"已经写成断言,不靠人记得**:
+   · **不许手设 `data-theme`** —— C1 会 grep 本文件,一旦发现对 `data-theme` 的**写**就判红(装置自证);
+     主题落地只认产品自己写的 `localStorage["dw-theme"]`(renderer `THEME_KEY`)。
+   · **不许把 C0 自证故意发的那几条外部请求算到被测件头上** —— 划账时**打印条数**,不静默清。
+🔵 **两处装置自审(第一跑红,红的是我的件)**:① C2/C5 复用同一文档 ⇒ bold 已是 `.active`,再点一次是**取消**
+   ⇒ 量不到激活态(守卫抓住了);现已先复位再量。② 上一腿真点击后鼠标还停在 bold 上 ⇒ "常态图标"读到的是 **hover 态**
+   (C5 常态 1.026 vs C2/C3 的 18.608);现已在取样前把鼠标移到中性位置。
 
 ## 🔴 pin 与来源(逐字)
 

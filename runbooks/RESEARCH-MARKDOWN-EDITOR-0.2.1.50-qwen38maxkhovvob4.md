@@ -252,7 +252,7 @@
 | D | **上传适配** | `fileservice/http.go:82-88` | **0 处**(客户端回调) | 🔴 **1 处**(响应体 `succMap` 适配) | **0 处**(客户端回调) |
 | E | **关掉默认的外网/本地副作用** | §四 | 🔴 **3 处**(ts-No.77 更正,原写 1 处):`spellChecker:false` + `autoDownloadFontAwesome:false` + `toolbar` 去掉 `guide` | `cdn` + `cache.enable:false` **2 处**(🔵 **仍是 bundle/读码证据,未断网实跑**) | 0 处(零 CDN;🔵 **同左,未实跑**) |
 | **E2** | 🔴 **图标字体资产**(ts-No.77 新增;理由:E 行只数"配置处数",**会把修法② 记成 1 处配置** ⇒ 那张表在误导人) | 交付件 §七(断网 A/B 实测) | 🔴 **必须自托管 FA 或改写图标 CSS 用本仓图标**:实测关掉 `autoDownloadFontAwesome` 而不补 ⇒ 图标 `::before content=none`、**rect 0×0**、工具栏墨迹 27.8/行;**本地自托管 ⇒ 61.5/行(2.2×)且断网下外部仍 0** ⇒ 自托管可行。另需 **1 条哈希 pin**;FA 许可证 registry 字段 `(OFL-1.1 AND MIT)`(字体走 OFL,🔵 **法务口径我不替他们下结论**) | 🔴 **未验**(不采纳,不做) | 🔴 **未验**(不采纳,不做) |
-| F | **暗色对齐** `data-theme`(🔴 原写 `data-dw-theme`,**坐标错已更正**) | `renderer-canary-sse.html:26` / `:1021`;console 侧 `console_auth.go:277` | 🔴 **自写 CSS**(无自带暗色) | ✅ `setTheme('dark')`(读 d.ts,**未实跑**) | 🔴 **未验** |
+| F | **暗色对齐** `data-theme`(🔴 原写 `data-dw-theme`,**坐标错已更正**) | `renderer-canary-sse.html:26` / `:1021`;console 侧 `console_auth.go:277` | 🔴 **自写 CSS**(无自带暗色)—— 🧪 **ts-No.78 已实测"原样撞车"的代价**:暗色下工具栏 **真 hover / 真点击 `.active` = 1.026**(浅色同处 20.469);定因实测:图标色随 `color-scheme` 走,而 EasyMDE 给这两态**写死** `background:#fcfcfc`;一条候选规则(`background:var(--panel-2);border-color:var(--line)`)实测抬到 **14.477**,**未落产品**。🟢 **已在真 console 的 iframe 内重验**(裁定 (3)):11 项观测量与独立页**逐项相同(差 0)** | ✅ `setTheme('dark')`(读 d.ts,**未实跑**) | 🔴 **未验** |
 | G | **自研 markdown 的去留**(防第二事实源) | `renderer-canary-sse.html:3533-3731` | 编辑侧不影响展示 ⇒ **可不动** | 同 | 同 |
 | H | invariants 新增资产 pin(🔵 建议) | `invariants-dingwei-gray.json:16` 同族 | 1 条 | 1 条 | 1 条 |
 | I | console 侧挂载(I 项挂 `renderPlatform`) | 板件 2044 段 | 视 A 而定 | 视 A 而定 | 视 A 而定 |
@@ -260,6 +260,28 @@
 🔵 **读法**:**A/B/C 三家一样**(都要新增静态路由 —— 因为本仓根本没有静态资产位),
 **真正的差别只在 D/E/F 三行**:Cherry 与 EasyMDE 在"上传"上零服务端改动,
 Vditor 多一处适配、且多两处"必须关掉的默认行为"。
+
+### 🔴 引入硬条件⑦(组合闸)的**落法** —— 裁定 (2) 升格,**本期只写不实现**
+
+> 条目:**引入 EasyMDE 时,必须有一条闸钉住「本仓 `pre` × 编辑器行元素」这个组合。**
+> 理由(交付方原话,组长采纳):它是**唯一一处"引入后别人一改就静默坏、且零转红"**的组合;
+> 🔴 现在挡住它的是 **CodeMirror 自己的特异性**(`.CodeMirror pre.CodeMirror-line`,0,2,1 > bare `pre` 的 0,0,1),
+> **不是任何一方有意设计** ⇒ **碰巧存在的防线,等于没有防线**(`!important` 直接越过特异性)。
+
+| 项 | 落法 |
+|---|---|
+| 位置 | 引入那件渲染闸里(与硬条件④ 的资产 pin 同批),或单立 `view-service/easymde-pre-cascade-regression.js` |
+| 被钉的组合 | 本仓 bare `pre`(`renderer-canary-sse.html:990`,坐标锚 `8bfa7197`)× `.CodeMirror-line`(它**就是** `<pre>`) |
+| 观测量(🔴 三层,缺一不可) | ① `pre` 层:`getComputedStyle('.CodeMirror-line').color` 对**编辑区有效背景**的对比度<br>② token 层:编辑区内「计算色 == 其所在 `pre` 计算色」的 `cm-*` span **计数**<br>③ 🔴 **不许只用**像素层 `contrast_max` —— 实测它对"部分文字变不可见"**无分辨力**(`21 → 21`) |
+| 阳性对照 | 注入 `pre{color:var(--code-text) !important}` ⇒ ①② **必须**动(实测 ① `21 → 1.182`;② `18/26` 个 span 变 `#e6edf3`,最坏 token `2.159 → 1.182`);🔴 **不动 ⇒ 判装置问题**,不许读成"没风险";另加**归因守卫**:`pre` 色必须真等于 `--code-text` |
+| 判据 | ① ≥ 门槛(**信息维**,裁定 (1))**且** ② 的继承 span 数 == **0** |
+| 两条修法(**都还没裁**) | (i) 给编辑区显式写 `color` ⇒ ② 是主判据;(ii) 把本仓 `pre` 收窄成 `:not(.CodeMirror-line)` ⇒ ① 是主判据 |
+| 🔴 有效期 | 钉的是**当前这个组合**,不是永恒不变量:产品 CSS 不再有 bare `pre`,或编辑器换成非 CodeMirror 系(行元素不再是 `<pre>`)⇒ **随之改写或拔掉**,且拔掉时要留一句为什么 |
+| 🔴 为什么现在不实现 | 组长明令本期只写落法;**产品里现在没有编辑器** ⇒ 现在实现等于钉住一个**不存在**的组合 |
+
+🔵 门槛口径已按裁定 (1) 写进装置(`measure-core.js` 的 `judge()`):**信息维判定、装饰维只报数**、
+判定行**同时打印本仓同尺参照值**(`--line vs --bg = 1.261 / 1.798`);**缺维直接抛错**(不默认判缺陷、也不默认放过)。
+🔴 证据与逐格数字见 `runbooks/DELIVERY-EASYMDE-DARK-CONTRAST-0.2.1.50-qwen38maxkhovvob4.md` §十 / §十五 / §16.2。
 
 ---
 
