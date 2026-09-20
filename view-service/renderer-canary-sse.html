@@ -4638,7 +4638,10 @@
       if (!navigator.mediaDevices?.getDisplayMedia) {
         throw new Error('本浏览器不支持页内截屏(需要 getDisplayMedia,以 Chrome 系为准)');
       }
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      // 🔴 selfBrowserSurface:'include' —— Chrome 默认 'exclude',即把【当前这个 tab】排除在选源列表外
+      //    (那默认是为"实时预览会自我嵌套"设的;我们抓一帧就停轨,没有预览,只剩"业主截不到眼前这页")。
+      //    不认这个成员的浏览器会按 WebIDL 把它当未知成员忽略 ⇒ 无副作用(忽略机制已实测,见用例 ㉚ 守卫②)。
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false, selfBrowserSurface: 'include' });
       try {
         const video = document.createElement('video');
         video.srcObject = stream;
