@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
+import re
 import shutil
 import socket
 import subprocess
@@ -31,7 +32,16 @@ SUITES = (
 # are the caller-controlled inputs that can replace the repository artifact or
 # its fixtures/mock contract. Runner-generated MOCK_BASE/CERT/KEY values are not
 # overrides, but a caller-supplied value is still reported rather than hidden.
-OVERRIDE_ENV_NAMES = ("FIXTURES", "MOCK_BASE", "MOCK_CERT", "MOCK_KEY", "MOCK_SESSION", "RENDERER_OVERRIDE")
+OVERRIDE_ENV_NAMES = (
+    "FIXTURES", "MOCK_BASE", "MOCK_CERT", "MOCK_KEY", "MOCK_SESSION",
+    "NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH", "PW_CHANNEL", "RENDERER_OVERRIDE",
+)
+# These are overwritten by the runner before the consumer sees them. They are
+# excluded from the coverage requirement, although caller-supplied values are
+# still conservatively disclosed in the receipt.
+RUNNER_CONTROLLED_ENV_NAMES = {"MOCK_BASE", "MOCK_CERT", "MOCK_KEY", "SHOTS"}
+# Node and Playwright consume these without a process.env read in suite source.
+IMPLICIT_ENV_NAMES = {"NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH"}
 
 
 class EnvironmentUnavailable(RuntimeError):
@@ -55,7 +65,57 @@ def require_command(name: str) -> None:
         raise EnvironmentUnavailable(f"missing command: {name}")
 
 
+def unregistered_environment_inputs(extra_source: str = "") -> set[str]:
+    """Mechanically find suite environment inputs missing from the receipt registry."""
+    source_paths = [path for _, path in SUITES] + [
+        ROOT / "view-service/renderer-0206-contract-mock.py",
+        Path(__file__).resolve(),
+    ]
+    chunks = []
+    for path in source_paths:
+        try:
+            chunks.append(path.read_text(encoding="utf-8"))
+        except OSError as error:
+            raise EnvironmentUnavailable(f"cannot inspect environment reads in {path}: {error}") from error
+    chunks.append(extra_source)
+    discovered = set(IMPLICIT_ENV_NAMES)
+    patterns = (
+        r"process\.env\.([A-Z][A-Z0-9_]*)",
+        r"env\.get\([\"']([A-Z][A-Z0-9_]*)[\"']\)",
+        r"os\.environ(?:\.get)?\([\"']([A-Z][A-Z0-9_]*)[\"']",
+        r"os\.environ\[[\"']([A-Z][A-Z0-9_]*)[\"']\]",
+    )
+    for source in chunks:
+        for pattern in patterns:
+            discovered.update(re.findall(pattern, source))
+    return discovered - RUNNER_CONTROLLED_ENV_NAMES - set(OVERRIDE_ENV_NAMES)
+
+
+def check_environment_input_registry() -> None:
+    missing = unregistered_environment_inputs()
+    if missing:
+        raise EnvironmentUnavailable(
+            "environment inputs missing from OVERRIDE_ENV_NAMES: " + ", ".join(sorted(missing))
+        )
+
+
+def selftest_environment_input_registry() -> int:
+    missing = unregistered_environment_inputs()
+    synthetic = "DW_UNREGISTERED_BROWSER_INPUT"
+    caught = unregistered_environment_inputs(f"process.env.{synthetic}\n")
+    if missing or caught != {synthetic}:
+        print(
+            "environment registry selftest failed: baseline=%s synthetic=%s"
+            % (sorted(missing), sorted(caught)),
+            file=sys.stderr,
+        )
+        return 2
+    print("environment registry selftest passed: an unregistered process.env input is rejected")
+    return 0
+
+
 def probe_environment(env: dict[str, str]) -> None:
+    check_environment_input_registry()
     for command in ("node", "python3", "openssl", "git", "date"):
         require_command(command)
     missing = [str(path.relative_to(ROOT)) for _, path in SUITES if not path.is_file()]
@@ -152,7 +212,11 @@ def receipt(timestamp: str, sha: str, overrides: tuple[str, ...], results: dict[
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--receipt", type=Path, help="also write the complete machine receipt to this file")
+    parser.add_argument("--selftest-env-coverage", action="store_true")
     args = parser.parse_args()
+
+    if args.selftest_env_coverage:
+        return selftest_environment_input_registry()
 
     env = os.environ.copy()
     overrides = tuple(name for name in OVERRIDE_ENV_NAMES if env.get(name))
