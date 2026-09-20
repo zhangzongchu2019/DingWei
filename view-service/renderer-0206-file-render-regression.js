@@ -1538,7 +1538,7 @@ async function t(name, fn) {
   });
 
   // ── ㉘ 截屏遮罩必须铺满【视口】(0.2.1.7 截屏项 · 先闸后修)──────────
-  await t('㉘ 🔴 截屏遮罩必须铺满【视口】而不是页脚 —— 两个视口高度各验一次(修复前必红)', async () => {
+  await t('㉘ 🔴 截屏遮罩必须铺满【视口】而不是页脚 —— 三档视口各验一次(修复前必红)', async () => {
     // 缺陷成因(实测,非推断):<footer class="composer"> 带 backdrop-filter: blur(10px)
     // (renderer-canary-sse.html:789),按 CSS 规范 backdrop-filter ≠ none 的元素
     // **成为 fixed 后代的包含块** ⇒ .shot-overlay{position:fixed;inset:0}(:838)
@@ -1562,8 +1562,12 @@ async function t(name, fn) {
     const violations = [];
     const seen = [];
     try {
-      for (const vh of [900, 1600]) {
-        await page.setViewportSize({ width: 1280, height: vh });
+      // 🔵 三档:两档高度(证明与视口高度无关)＋ 一档窄窗口。
+      //    窄窗口不是"可选加档":㉒ 的存在说明 <880px 对业主是真场景,
+      //    而 <560px 时 .composer{padding:10px}(renderer:1015)会介入 ⇒ 页脚几何变了,
+      //    修复前遮罩正是"贴着页脚盒子"的,所以这一档必须单独验。
+      for (const vp of [{ width: 1280, height: 900 }, { width: 1280, height: 1600 }, { width: 420, height: 900 }]) {
+        await page.setViewportSize(vp);
         await page.waitForTimeout(150);
         await page.click('#shotBtn');
         await page.waitForSelector('#shotOverlay:not([hidden])', { timeout: 15000 });
@@ -1583,21 +1587,21 @@ async function t(name, fn) {
             hitTop: hit.length ? (hit[0].id || String(hit[0].className) || hit[0].tagName) : 'none',
           };
         });
-        seen.push({ vp: `1280x${vh}`, ovTop: m.overlay.top, ovH: m.overlay.height,
+        seen.push({ vp: `${vp.width}x${vp.height}`, ovTop: m.overlay.top, ovH: m.overlay.height,
                     cvBottom: m.canvas.bottom, hit: m.hitInOverlay, hitTop: m.hitTop });
 
         // 亚像素容差 1px:只吸收取整,吸收不了"只盖页脚"这种量级(top=740 / h=160)
         const T = 1;
         if (!(Math.abs(m.overlay.left) <= T && Math.abs(m.overlay.top) <= T
               && Math.abs(m.overlay.width - m.inner[0]) <= T && Math.abs(m.overlay.height - m.inner[1]) <= T)) {
-          violations.push(`1280x${vh}: 遮罩 rect=${JSON.stringify(m.overlay)} ≠ 视口 ${m.inner[0]}x${m.inner[1]}(应铺满)`);
+          violations.push(`${vp.width}x${vp.height}: 遮罩 rect=${JSON.stringify(m.overlay)} ≠ 视口 ${m.inner[0]}x${m.inner[1]}(应铺满)`);
         }
         if (!(m.canvas.top >= m.overlay.top - T && m.canvas.bottom <= m.overlay.bottom + T
               && m.canvas.left >= m.overlay.left - T && m.canvas.right <= m.overlay.right + T)) {
-          violations.push(`1280x${vh}: 画布 ${JSON.stringify(m.canvas)} 未被遮罩完整包住 ⇒ 用户必须滚动才能框选`);
+          violations.push(`${vp.width}x${vp.height}: 画布 ${JSON.stringify(m.canvas)} 未被遮罩完整包住 ⇒ 用户必须滚动才能框选`);
         }
         if (!m.hitInOverlay) {
-          violations.push(`1280x${vh}: 视口中心命中的是 ${JSON.stringify(m.hitTop)} 而不是遮罩 ⇒ 屏幕中央没变暗、也点不到`);
+          violations.push(`${vp.width}x${vp.height}: 视口中心命中的是 ${JSON.stringify(m.hitTop)} 而不是遮罩 ⇒ 屏幕中央没变暗、也点不到`);
         }
 
         await page.click('#shotCancel');
