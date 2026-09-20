@@ -1746,10 +1746,18 @@
     }
 
     // ── C3 责任方任务看板(右侧折叠浮窗,只读)──
+    function taskBoardInitialCollapsed() {
+      try { return sessionStorage.getItem('dw-taskboard-collapsed') !== '0'; }
+      catch (_) { return true; }
+    }
+    function persistTaskBoardCollapsed(collapsed) {
+      try { sessionStorage.setItem('dw-taskboard-collapsed', collapsed ? '1' : '0'); }
+      catch (_) { /* Storage may be denied by browser policy; in-memory state still works. */ }
+    }
     const taskBoard = {
       handle: null, panel: null, listEl: null, headEl: null,
       data: null, lastGood: null, lastGoodAt: 0,
-      collapsed: sessionStorage.getItem('dw-taskboard-collapsed') !== '0',
+      collapsed: taskBoardInitialCollapsed(),
       STALE_MS: 600000,
     };
 
@@ -1783,7 +1791,7 @@
 
     function taskBoardSetCollapsed(collapsed) {
       taskBoard.collapsed = collapsed;
-      sessionStorage.setItem('dw-taskboard-collapsed', collapsed ? '1' : '0');
+      persistTaskBoardCollapsed(collapsed);
       taskBoard.panel.hidden = collapsed;
       taskBoardRenderHandle();
     }

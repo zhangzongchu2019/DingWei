@@ -31,6 +31,7 @@ SUITES = (
     ("renderer_t054_errorboard", ROOT / "view-service/renderer-t054-errorboard-regression.js"),
     ("renderer_t074_delivery_id", ROOT / "view-service/renderer-t074-delivery-id-regression.js"),
     ("renderer_provenance_icon", ROOT / "view-service/renderer-provenance-icon-regression.js"),
+    ("renderer_storage_denied", ROOT / "view-service/renderer-storage-denied-regression.js"),
 )
 
 # Only names are recorded; values may contain local paths or credentials. These
