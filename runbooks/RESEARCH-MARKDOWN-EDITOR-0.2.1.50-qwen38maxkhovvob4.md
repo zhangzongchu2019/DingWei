@@ -164,8 +164,17 @@
    否则就是**第二事实源**,正是 I 项纪律要防的东西。
 3. 🔴 **DOMPurify 的许可证是 `(MPL-2.0 OR Apache-2.0)`** —— 双许可,选 Apache-2.0 侧可商用;
    🔵 但**这是读 registry 字段,不是法务结论**(§八-4/5)。
-4. 🔴 **marked/markdown-it 都不做消毒**:引入它们**必须同时引入 DOMPurify**,否则是 XSS 面扩大
-   (现有自研渲染是否消毒,**我这次没查** —— 见 §八-11)。
+4. 🔴 **marked 自己不消毒 —— 这是它自己 README 里的原话**(🔬 实测包内 `README.md:55`:
+   「🚨 Marked does not sanitize the output HTML. Please use a sanitize library, like DOMPurify」),
+   且渲染路径确实原样放行:🔬 `case"html":{t+=this.renderer.html(r)`。
+   ⇒ **引入 marked 必须同时引入 DOMPurify**,否则是把现有的一道保护**拆掉**(见第 6 条)。
+5. 🔴 **markdown-it 的 `html` 默认值随 preset 变**:包内实测三处 `html:` —— **两处 `false`、一处 `true`**
+   ⇒ **不能假设它默认安全**,必须显式确认所用 preset 并显式设 `html:false`。
+6. 🔵 **对照:现有自研渲染是"先转义再 markdown"**(📖 读码):`renderInline` **第一句就是 `escapeHtml(src)`**
+   (`view-service/renderer-canary-sse.html:3678`,文件 sha256 `9b5656f4505c16bd…`),链接正则只放行 `https?://`;
+   `highlightCode` 亦先 `escapeHtml(code)`(`:3701`);表格/列表单元格一律经 `renderInline`(`:3658`/`:3668`/`:3670`)。
+   ⇒ 这条自研路径**不是裸 innerHTML**。
+   🔴 **所以"换成成熟组件"在消毒这一维上是【降级风险】,不是升级** —— 这一点必须进选型裁量。
 
 ---
 
@@ -249,9 +258,12 @@ spec 是长期文档 ⇒ **正文里嵌的图 7 天后全变死链**。可选:
 9. 🔵 **没做任何 PoC 集成**(组长明令不引入、不装依赖)⇒ §六"要改几处"是**读码清单**,不是改过一遍数出来的。
 10. 🔵 **7 天保留期那条我只读了默认值与契约测试**,没有实测"7 天后 `/f/` 真的 404"
     (生产侧行为,**我不碰生产**)。
-11. 🔴 **我没查现有自研 `renderMarkdown` 是否做 HTML 消毒** —— 那是"引入 marked/markdown-it 必须同时引入 DOMPurify"
-    这句的**前提缺口**:如果自研那套本来就没消毒,那问题比选型大,而且**与本次调研无关但更该报**。
-    ⇒ 🔵 **建议单开一格只读诊断**(不占本件)。
+11. 🔵 **自研渲染的消毒:已查,但只到"入口级读码"**(原为"没查",本轮补上 —— 见 §四-6):
+    `renderInline`/`highlightCode` 都**先 `escapeHtml`**,表格与列表单元格一律经 `renderInline`。
+    🔴 **边界**:我**没做穷尽审计**(`mergeMetaIntoMarkdown:3400`、超长摘要路径 `:3158`/`:3197`、
+    `data-code` 属性回填等未逐条走),**也没有实测注入**(没真跑一条含 `<img onerror=…>` 的正文)。
+    ⇒ 结论只能到「**没发现裸 innerHTML 入口**」,**不能**到「无 XSS」。
+    🔵 若要把它变成结论,应单开一格:**真灌一条含 `<img src=x onerror=…>` 与 `[x](javascript:…)` 的正文,断言不执行**(不占本件)。
 12. 🔵 **业主的验收口径我没拿到原文**:我只看到组长转述的「最好使用一套成熟的markdown编辑展示组件或开源成品处理」。
     "最好"是**倾向**还是**硬要求**、"编辑展示"是**一个组件管两头**还是**可以两个组件分管**,
     ⇒ **这两点会直接改变排序**(尤其影响 §七-②)。
@@ -263,7 +275,9 @@ spec 是长期文档 ⇒ **正文里嵌的图 7 天后全变死链**。可选:
 ```text
 ## ✅ ts-No.75 markdown 编辑组件选型调研 —— 交付(qwen38maxkhovvob4,只调研未引入)
 
-调研件 `runbooks/RESEARCH-MARKDOWN-EDITOR-0.2.1.50-qwen38maxkhovvob4.md`(锚 <本次提交>)。
+调研件 `runbooks/RESEARCH-MARKDOWN-EDITOR-0.2.1.50-qwen38maxkhovvob4.md`。
+(🔵 **锚不给自引**:本件无法引用「自己所在的那个提交」—— 一改就变。同批锚 = L9 补丁 `99fedced`;
+ 调研件与它同批推送 ⇒ **远端 tip 即本件所在提交**。行号一律随树变,请以 tip 为准。)
 🔴 **仓内 package.json 仍为 0 个**,未引入/未装/未改产品/未碰发布线。
 
 三家可用(体积一律 gzip -9 实测):EasyMDE 2.21.0(MIT,104KB)· Vditor 4.0.0(MIT,69KB+引擎 578KB)·
@@ -287,8 +301,13 @@ hypermd/stackedit-js 2018 · tui-editor 2019 · editormd(npm 404);
 
 🔴 **本件没有任何浏览器实跑证据**(全部是包级实测 + 读码);"完全自托管离线"验的是
 **包内自带资产 + 包内无 CDN 串**,**没有断网实跑** ⇒ 详见调研件 §八 十二条"没验到什么"。
-🔵 附带报一条**与本件无关但更该报**的:我**没查**现有自研 renderMarkdown 是否做 HTML 消毒
-  ⇒ 建议单开一格只读诊断。
+🔵 **附带一条(比选型更要紧,同批查出)**:现有自研渲染是「**先转义再 markdown**」——
+  `renderInline:3678` 首句 `escapeHtml(src)` · `highlightCode:3701` 先转义 · 表格/列表单元格一律经 `renderInline`
+  ⇒ 📖 **读码结论:不是裸 innerHTML**。而 **marked 自己 README:55 明说不消毒**,
+  markdown-it 的 `html` 默认值**随 preset 变**(包内实测 2 处 false / 1 处 true)
+  ⇒ 🔴 **「换成熟组件」在消毒这一维上是【降级风险】**;若裁为"接管展示",
+     DOMPurify(11KB gz · **反引号 0** · 三者中唯一可直接内联进 Go raw string)应**同批引入**。
+  🔵 边界:只做了**入口级读码**,**没有实测注入** ⇒ 结论止于「没发现裸 innerHTML 入口」,**不是**「无 XSS」。
 ```
 
 ---
