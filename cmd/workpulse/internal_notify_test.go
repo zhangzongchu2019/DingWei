@@ -43,7 +43,7 @@ func TestInternalNotify(t *testing.T) {
 		q := &fakeQueue{}
 		h := makeInternalNotifyHandler(q, nilLogger())
 		rr := httptest.NewRecorder()
-		h(rr, notifyReq(`{"text":"巡检失败:3 条断言不成立"}`))
+		h(rr, notifyReq(`{"text":"巡检失败:3 条断言不成立\n#T-188\n@owner"}`))
 		if rr.Code != http.StatusAccepted {
 			t.Fatalf("code=%d body=%s", rr.Code, rr.Body.String())
 		}
@@ -57,6 +57,19 @@ func TestInternalNotify(t *testing.T) {
 		var c map[string]any
 		if err := json.Unmarshal([]byte(m.Content), &c); err != nil || c["text"] == "" {
 			t.Fatalf("正文未正确编码: %s", m.Content)
+		}
+		text, _ := c["text"].(string)
+		if !strings.Contains(text, "【DingWei 巡检告警】") ||
+			!strings.Contains(text, "回复说明：此消息为系统单向告警，不可直接回复。") {
+			t.Fatalf("业主实际收到的告警正文缺少可辨来源/回复能力: %q", text)
+		}
+		for _, line := range strings.Split(text, "\n") {
+			if strings.HasPrefix(line, "@") || strings.HasPrefix(line, "#") {
+				t.Fatalf("告警正文含可触发路由的行首: %q", line)
+			}
+		}
+		if !strings.Contains(text, "\n #T-188\n @owner") {
+			t.Fatalf("告警正文未把潜在寻址行缩进: %q", text)
 		}
 		if !strings.HasPrefix(m.ID, "alert-") {
 			t.Fatalf("ID 应可一眼辨识来源: %s", m.ID)
