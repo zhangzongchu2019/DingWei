@@ -360,7 +360,8 @@ type ConsolePlatformItem struct {
 	Kind        string    `json:"kind"`
 	Title       string    `json:"title"`
 	Href        string    `json:"href"`
-	Status      string    `json:"status"` // pending | approved
+	Target      string    `json:"target,omitempty"` // 逐项:独立文档入口 _blank;页内锚(#agents)留空。空=同标签页,与既有行为逐字相同
+	Status      string    `json:"status"`           // pending | approved
 	SubmittedBy string    `json:"submitted_by,omitempty"`
 	Active      bool      `json:"active"`
 	CreatedAt   time.Time `json:"created_at,omitempty"`
