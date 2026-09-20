@@ -1028,7 +1028,7 @@
 
     <main class="main">
       <section class="stream-alert" id="streamAlert" role="alert" hidden>
-        <span>⚠️ 事件流连接不上——可能打开了太多 web-view 页窗口（Chrome 每个域名最多 6 个连接），请关闭多余窗口后点【重试】</span>
+        <span id="streamAlertText">⚠️ 事件流连接不上——可能打开了太多 web-view 页窗口（Chrome 每个域名最多 6 个连接），请关闭多余窗口后点【重试】</span>
         <button class="text-btn" id="streamRetryBtn" type="button">重试</button>
       </section>
       <div class="task-progress" id="taskProgress" hidden aria-hidden="true"></div>
@@ -1139,6 +1139,7 @@
     const shotConfirm = document.getElementById('shotConfirm');
     const shotCancel = document.getElementById('shotCancel');
     const streamAlert = document.getElementById('streamAlert');
+    const streamAlertText = document.getElementById('streamAlertText');
     const streamRetryBtn = document.getElementById('streamRetryBtn');
     const humanInput = document.getElementById('humanInput');
     const headerSessionName = document.getElementById('headerSessionName');
@@ -3750,11 +3751,40 @@
       clearTimeout(streamConnectTimer);
       streamConnectTimer = null;
     }
+    // 🔴 (c) `0.2.1.35`-⑲:重放窗口过期不得**静默**。同一个告警元素现在承载两种含义 ——
+    //    "连接不上"(恢复动作 = 重试)与 "重放超时"(恢复动作 = 刷新)⇒ 按变体分别给文案与按钮标签。
+    //    🔵 conn 的措辞**从标记里读**,不在这里复制第二份:两份字串迟早会漂,而漂了没人会发现。
+    //    🔵 措辞与外观属**产品可见**项(业主可能改)⇒ 闸只钉"出窗时有可见告警"与"变体是 replay",不钉文案。
+    const STREAM_ALERT_TEXT = {
+      conn: streamAlertText.textContent.trim(),
+      replay: '⚠️ 重连后 1 秒内没等到历史重放:屏幕上的正文可能已过期,或与随后到达的重放重复。点【刷新】可恢复。',
+    };
+    const STREAM_ALERT_ACTION = { conn: '重试', replay: '刷新' };
+    let streamAlertMode = 'conn';
     function hideStreamAlert() {
+      // 🔴 重放超时告警**不许**被 onopen / onmessage 的常规 hide 抹掉:它出现的那一刻(arm+1s)
+      //    之后约 300ms 就会来一条迟到的重放事件 ⇒ 没有这一句,告警只显示 300ms,业主根本看不见,
+      //    (c) 等于没做。端到端闸那条"可见性"断言(要求某次采样里 hidden=false · 文本非空 · 盒子非零)
+      //    钉的就是这件事。清它只有一条正路:clearReplayTimeoutAlert()。
+      if (streamAlertMode === 'replay' && !streamAlert.hidden) return;
       streamAlert.hidden = true;
     }
-    function showStreamAlert() {
-      if (!document.hidden) streamAlert.hidden = false;
+    function showStreamAlert(mode) {
+      if (document.hidden) return;
+      streamAlertMode = mode || 'conn';
+      // 🔴 不留 `|| conn` 兜底:那会把"变体缺失 / 文案为空"**静默降级成另一件事的告警**。
+      //    实测(变异 M-C3:把 replay 文案改成空串)有兜底时页面弹的是"连接不上…点【重试】",
+      //    端到端闸当时 26/0 全绿 ⇒ 业主被指向一个错误的恢复动作。**指错方向比不指更坏。**
+      //    两张表对 conn / replay 都是全覆盖的,不需要兜底;缺一项就该在页面上看得出来。
+      streamAlertText.textContent = STREAM_ALERT_TEXT[streamAlertMode];
+      streamRetryBtn.textContent = STREAM_ALERT_ACTION[streamAlertMode];
+      streamAlert.hidden = false;
+    }
+    // 撤销重放超时告警的唯一入口:内容已由 ring 重建 ⇒ "可能与重放重复"的风险过去了。
+    function clearReplayTimeoutAlert() {
+      if (streamAlertMode !== 'replay') return;
+      streamAlertMode = 'conn';
+      streamAlert.hidden = true;
     }
     // RED 断线必须**看得见**,否则就是「东西在那儿但不起作用」:
     //    自动重连 ＋ 无指示 ⇒ 死掉的页面和正常页面长得一模一样,业主会对着断线页面等消息。
@@ -3828,6 +3858,12 @@
       pendingClearTimer = setTimeout(function () {
         // 窗口内一条都没来 ⇒ ring 是空的(多半 Hub 刚重启)⇒ **取消清空,保住现有内容**
         cancelPendingReconnectClear();
+        // 🔴 (c) `0.2.1.35`-⑲:取消清空只做到"不弄坏内容",它同时意味着**这一轮重放没接上** ——
+        //    屏幕上的正文可能已过期,也可能与随后迟到几百毫秒的重放叠成两份。
+        //    改之前这里一个字都不说 ⇒ 一个**频率未知的静默失败**(组长 ts-No.12 ③ 判它本版必做)。
+        //    🔵 变体 'replay' 与 'conn' 共用同一个元素,靠这个实参区分;单元闸 ⑦ 钉的就是它,
+        //       免得"弹了一条【连接不上】"也算过 —— 那是错误消息指错方向。
+        showStreamAlert('replay');
       }, REPLAY_HARD_LIMIT_MS);
       beginTimelineReplay();
     }
@@ -3860,7 +3896,8 @@
         clearStreamConnectTimer();
         hideStreamAlert();
         // T-086:重放的第一条到达了 ⇒ 此刻才清空(与旧行为等价);ring 空则永远走不到这里。
-        if (consumeReconnectClear()) resetConversation();
+        // 🔴 (c):清空 = 内容马上由 ring 重建 ⇒ "可能与重放重复"的风险过去了,重放超时告警可以撤。
+        if (consumeReconnectClear()) { resetConversation(); clearReplayTimeoutAlert(); }
         try {
           handleIncomingEvent(JSON.parse(msg.data));
         } catch (err) {
@@ -4189,7 +4226,11 @@
       refreshStatus();
     });
     streamRetryBtn.addEventListener('click', () => {
+      const mode = streamAlertMode;
       hideStreamAlert();
+      // 🔴 (c):重放超时那条的恢复动作是**刷新**,不是重连 —— 重连只会再 arm 一次窗口,
+      //    治不了屏幕上已经叠起来的内容;刷新让整页从 hub 重新取一份完整状态。
+      if (mode === 'replay') { window.location.reload(); return; }
       connectEventStream();
     });
     async function doSend() {
