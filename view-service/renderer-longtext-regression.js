@@ -386,14 +386,28 @@ async function driveLongReply(page, chunks, chunkText) {
       const deltas = [];
       for (let i = 0; i < N; i += 1) deltas.push(`第${String(i).padStart(3, '0')}片`);
       const expected = deltas.join('');
-      const feed = () => {
-        handleIncomingEvent({ kind: 'user_input', text: '请输出全文', delivery_id: 'd-delta',
+      // 🔴 throughHook:逐字走一遍产品真实的消费点。
+      //   T-086(13e72586)把"清空"从 onopen 挪进了 eventSource.onmessage,
+      //   `consumeReconnectClear()` 全仓**唯一调用点**就在那儿;而本用例是直接调
+      //   handleIncomingEvent 的合成重放 —— 不经那个钩子,清空就永远不会被消费。
+      //   本格原先就栽在这里:它 red 了半个月(最后改动 711d90ed 早于 T-086),
+      //   而且因为是硬 assert,**把后面的 T9/T10/T11/T12/T13 一起遮住了没跑**。
+      //   🔵 那次 FAIL 是【用例驱动过期】,不是产品缺陷;真缺陷(自建重连从不 arm
+      //      markStreamReconnect ⇒ 正文无界增长)由 renderer-sse-reconnect.js 端到端守。
+      const feed = (throughHook) => {
+        let first = true;
+        const deliver = (ev) => {
+          if (throughHook && first) { if (consumeReconnectClear()) resetConversation(); }
+          first = false;
+          handleIncomingEvent(ev);
+        };
+        deliver({ kind: 'user_input', text: '请输出全文', delivery_id: 'd-delta',
           turn_id: 't-delta', stage: 'cli_injected', cursor: 'turn:t-delta:item:0001' });
         for (const d of deltas) {
-          handleIncomingEvent({ kind: 'assistant_text', text: d, delivery_id: 'd-delta',
+          deliver({ kind: 'assistant_text', text: d, delivery_id: 'd-delta',
             turn_id: 't-delta', cursor: SHARED });
         }
-        handleIncomingEvent({ kind: 'state_change', data: { change: 'turn_completed' },
+        deliver({ kind: 'state_change', data: { change: 'turn_completed' },
           delivery_id: 'd-delta', turn_id: 't-delta', cursor: 'turn:t-delta:item:0004' });
       };
       const readFull = () => {
@@ -408,13 +422,14 @@ async function driveLongReply(page, chunks, chunkText) {
         return c.innerText.replace(/\s+/g, '');
       };
       resetConversation();
-      feed();
+      feed(false);
       window.__dwRender.flush();
       const first = { full: readFull(), dom: readDom(),
         completed: !!document.querySelector('#timeline > [data-turn-key="t-delta"] .turn-completed') };
-      // 重连:hub 重放同一批 —— 走 markStreamReconnect(清空后由重放重建),不得叠加
+      // 重连:hub 重放同一批 —— 走 markStreamReconnect(清空后由重放重建),不得叠加。
+      // 🔴 重放这一遍必须**经产品的消费点**(throughHook=true),否则测的是"没人会走的那条路"。
       markStreamReconnect();
-      feed();
+      feed(true);
       finishTimelineReplay(false);
       window.__dwRender.flush();
       const afterReconnect = { full: readFull(), dom: readDom() };
