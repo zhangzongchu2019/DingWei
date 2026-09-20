@@ -175,6 +175,10 @@ def main() -> int:
                 print(f"\n=== browser suite: {name} ===", flush=True)
                 completed = run(["node", str(path)], env=suite_env)
                 results[name] = completed.returncode
+            if len(results) != len(SUITES):
+                raise EnvironmentUnavailable(
+                    f"only ran {len(results)}/{len(SUITES)} browser suites; an incomplete run cannot pass"
+                )
             aggregate = 0 if all(code == 0 for code in results.values()) else 2
     except EnvironmentUnavailable as error:
         print(f"ENVIRONMENT_UNAVAILABLE: {error}", file=sys.stderr)
