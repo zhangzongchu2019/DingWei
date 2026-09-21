@@ -369,14 +369,16 @@ type ConsolePlatformItem struct {
 }
 
 type ConsoleSpec struct {
-	ID              string    `json:"id"`
-	PrincipalID     string    `json:"principal_id,omitempty"`
-	Title           string    `json:"title"`
-	State           string    `json:"state"`
-	CurrentRevision int       `json:"current_revision"`
-	ClaimedBy       string    `json:"claimed_by,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID                 string    `json:"id"`
+	PrincipalID        string    `json:"principal_id,omitempty"`
+	Title              string    `json:"title"`
+	State              string    `json:"state"`
+	CurrentRevision    int       `json:"current_revision"`
+	ClaimedBy          string    `json:"claimed_by,omitempty"`
+	EditCapabilityHash string    `json:"-"`
+	EditingClosed      bool      `json:"editing_closed"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
 }
 
 type ConsoleSpecRevision struct {
@@ -387,6 +389,7 @@ type ConsoleSpecRevision struct {
 	InputAnchorsJSON string    `json:"input_anchors_json"`
 	ContentSHA256    string    `json:"content_sha256"`
 	CreatedBy        string    `json:"created_by"`
+	CreatedVia       string    `json:"created_via"`
 	Supersedes       int       `json:"supersedes_revision,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
 }

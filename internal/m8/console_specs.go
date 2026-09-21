@@ -20,11 +20,18 @@ type consoleSpecRepository interface {
 	ConsoleSpec(context.Context, string, string, bool) (*model.ConsoleSpec, error)
 	ConsoleSpecRevision(context.Context, string, string, int, bool) (*model.ConsoleSpecRevision, error)
 	AppendConsoleSpecRevision(context.Context, string, string, int, model.ConsoleSpecRevision, time.Time) (int, error)
+	AppendConsoleSpecRevisionWithCapability(context.Context, string, int, string, model.ConsoleSpecRevision, time.Time) (int, error)
+	CloseConsoleSpecEditing(context.Context, string, string, time.Time) error
 	SubmitConsoleSpec(context.Context, string, string, time.Time) error
 	ReviewConsoleSpec(context.Context, model.ConsoleSpecReview, time.Time) error
 	ClaimConsoleSpec(context.Context, string, string, time.Time) error
 	ArchiveConsoleSpec(context.Context, string, string, time.Time) error
 	ListReadyConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
+}
+
+func specCapabilityHash(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
 }
 
 type specAcceptance struct {
@@ -132,12 +139,13 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := "spec-" + randomHex(12)
+	editToken := randomHex(32)
 	rev, err := revisionFromRequest(id, principal, 1, req)
 	if err != nil {
 		http.Error(w, "invalid spec", http.StatusBadRequest)
 		return
 	}
-	spec := model.ConsoleSpec{ID: id, PrincipalID: principal, Title: strings.TrimSpace(req.Title)}
+	spec := model.ConsoleSpec{ID: id, PrincipalID: principal, Title: strings.TrimSpace(req.Title), EditCapabilityHash: specCapabilityHash(editToken)}
 	if err = repo.CreateConsoleSpec(r.Context(), spec, rev, h.now()); err != nil {
 		http.Error(w, "console spec unavailable", http.StatusConflict)
 		return
@@ -145,7 +153,10 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 	created, _ := repo.ConsoleSpec(r.Context(), principal, id, management)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(created)
+	_ = json.NewEncoder(w).Encode(struct {
+		*model.ConsoleSpec
+		EditURL string `json:"edit_url"`
+	}{created, "/console/specs/" + id + "#edit=" + editToken})
 }
 
 func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
@@ -194,7 +205,15 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid spec", http.StatusBadRequest)
 		return
 	}
-	next, err := repo.AppendConsoleSpecRevision(r.Context(), principal, id, req.ExpectedRevision, rev, h.now())
+	capability := strings.TrimSpace(r.Header.Get("X-DW-Spec-Edit-Capability"))
+	var next int
+	if capability != "" {
+		next, err = repo.AppendConsoleSpecRevisionWithCapability(r.Context(), id, req.ExpectedRevision, specCapabilityHash(capability), rev, h.now())
+	} else if principal != "" {
+		next, err = repo.AppendConsoleSpecRevision(r.Context(), principal, id, req.ExpectedRevision, rev, h.now())
+	} else {
+		err = store.ErrConsoleSpecEditDenied
+	}
 	if errors.Is(err, store.ErrConsoleSpecNotFound) {
 		http.NotFound(w, r)
 		return
@@ -203,12 +222,32 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "revision conflict", http.StatusConflict)
 		return
 	}
+	if errors.Is(err, store.ErrConsoleSpecEditDenied) {
+		http.Error(w, "editing closed or invalid capability", http.StatusForbidden)
+		return
+	}
 	if err != nil {
 		http.Error(w, "console spec unavailable", http.StatusServiceUnavailable)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]int{"revision": next})
+}
+
+func (h *Hub) HandleConsoleSpecCloseEditing(w http.ResponseWriter, r *http.Request) {
+	repo, ok := h.consoleSpecs()
+	if !ok {
+		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if err := repo.CloseConsoleSpecEditing(r.Context(), platformPrincipal(r), r.PathValue("specID"), h.now()); errors.Is(err, store.ErrConsoleSpecNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Hub) HandleConsoleSpecSubmit(w http.ResponseWriter, r *http.Request) {

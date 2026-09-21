@@ -45,7 +45,8 @@ func specRevision(specID string, revision int, content string) model.ConsoleSpec
 
 func createSpec(t *testing.T, db *SQLite, id, title string, now time.Time) {
 	t.Helper()
-	spec := model.ConsoleSpec{ID: id, PrincipalID: "owner-a", Title: title}
+	capability := sha256.Sum256([]byte("edit:" + id))
+	spec := model.ConsoleSpec{ID: id, PrincipalID: "owner-a", Title: title, EditCapabilityHash: hex.EncodeToString(capability[:])}
 	if err := db.CreateConsoleSpec(context.Background(), spec, specRevision(id, 1, "# "+title), now); err != nil {
 		t.Fatal(err)
 	}

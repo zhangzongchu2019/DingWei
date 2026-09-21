@@ -276,10 +276,16 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("DELETE /api/console/platform/items/{itemID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("delete", prefixHub.HandleConsolePlatformDelete)))
 	mux.HandleFunc("POST /api/console/platform/items/{itemID}/approve", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("approve", prefixHub.HandleConsolePlatformApprove)))
 	mux.HandleFunc("GET /console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpecsPage)))
+	mux.HandleFunc("GET /console/specs/{specID}", prefixHub.HandleSharedConsoleSpecPage)
 	mux.HandleFunc("GET /api/console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpecs)))
 	mux.HandleFunc("POST /api/console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecs)))
 	mux.HandleFunc("GET /api/console/specs/{specID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpec)))
 	mux.HandleFunc("PATCH /api/console/specs/{specID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpec)))
+	// Shared spec links are capability-authorized, not identity-authorized. GET is public;
+	// PATCH requires the opaque edit capability inside HandleConsoleSpec.
+	mux.HandleFunc("GET /api/specs/shared/{specID}", prefixHub.HandleConsoleSpec)
+	mux.HandleFunc("PATCH /api/specs/shared/{specID}", prefixHub.HandleConsoleSpec)
+	mux.HandleFunc("POST /api/console/specs/{specID}/close-editing", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecCloseEditing)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/submit", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecSubmit)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/reviews", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("approve", prefixHub.HandleConsoleSpecReview)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/claim", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("approve", prefixHub.HandleConsoleSpecClaim)))

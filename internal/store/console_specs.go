@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	ErrConsoleSpecNotFound  = errors.New("console spec not found")
-	ErrConsoleSpecConflict  = errors.New("console spec revision conflict")
-	ErrConsoleSpecGateOrder = errors.New("console spec gate order invalid")
+	ErrConsoleSpecNotFound   = errors.New("console spec not found")
+	ErrConsoleSpecConflict   = errors.New("console spec revision conflict")
+	ErrConsoleSpecGateOrder  = errors.New("console spec gate order invalid")
+	ErrConsoleSpecEditDenied = errors.New("console spec editing denied")
 )
 
 func specTime(v string) (time.Time, error) { return time.Parse(time.RFC3339Nano, v) }
@@ -27,9 +28,13 @@ func appendConsoleSpecEvent(ctx context.Context, tx *sql.Tx, specID string, revi
 }
 
 func insertConsoleSpecRevision(ctx context.Context, tx *sql.Tx, revision model.ConsoleSpecRevision, at time.Time) error {
-	_, err := tx.ExecContext(ctx, `INSERT INTO console_spec_revision(spec_id,revision,content_markdown,acceptance_json,input_anchors_json,content_sha256,created_by,supersedes_revision,created_at)
-		VALUES(?,?,?,?,?,?,?,?,?)`, revision.SpecID, revision.Revision, revision.ContentMarkdown, revision.AcceptanceJSON,
-		revision.InputAnchorsJSON, revision.ContentSHA256, revision.CreatedBy, nullInt(revision.Supersedes), at.UTC().Format(time.RFC3339Nano))
+	via := revision.CreatedVia
+	if via == "" {
+		via = "principal"
+	}
+	_, err := tx.ExecContext(ctx, `INSERT INTO console_spec_revision(spec_id,revision,content_markdown,acceptance_json,input_anchors_json,content_sha256,created_by,created_via,supersedes_revision,created_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?)`, revision.SpecID, revision.Revision, revision.ContentMarkdown, revision.AcceptanceJSON,
+		revision.InputAnchorsJSON, revision.ContentSHA256, revision.CreatedBy, via, nullInt(revision.Supersedes), at.UTC().Format(time.RFC3339Nano))
 	return err
 }
 
@@ -42,7 +47,7 @@ func nullInt(v int) any {
 
 func (s *SQLite) CreateConsoleSpec(ctx context.Context, spec model.ConsoleSpec, revision model.ConsoleSpecRevision, now time.Time) error {
 	if strings.TrimSpace(spec.ID) == "" || strings.TrimSpace(spec.PrincipalID) == "" || strings.TrimSpace(spec.Title) == "" ||
-		revision.SpecID != spec.ID || revision.Revision != 1 || revision.CreatedBy != spec.PrincipalID {
+		strings.TrimSpace(spec.EditCapabilityHash) == "" || revision.SpecID != spec.ID || revision.Revision != 1 || revision.CreatedBy != spec.PrincipalID {
 		return errors.New("invalid console spec")
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -51,8 +56,8 @@ func (s *SQLite) CreateConsoleSpec(ctx context.Context, spec model.ConsoleSpec, 
 	}
 	defer tx.Rollback()
 	stamp := now.UTC().Format(time.RFC3339Nano)
-	if _, err = tx.ExecContext(ctx, `INSERT INTO console_spec(id,principal_id,title,state,current_revision,created_at,updated_at) VALUES(?,?,?,'draft',1,?,?)`,
-		spec.ID, spec.PrincipalID, spec.Title, stamp, stamp); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO console_spec(id,principal_id,title,state,current_revision,edit_capability_hash,editing_closed,created_at,updated_at) VALUES(?,?,?,'draft',1,?,0,?,?)`,
+		spec.ID, spec.PrincipalID, spec.Title, spec.EditCapabilityHash, stamp, stamp); err != nil {
 		return err
 	}
 	if err = insertConsoleSpecRevision(ctx, tx, revision, now); err != nil {
@@ -67,8 +72,9 @@ func (s *SQLite) CreateConsoleSpec(ctx context.Context, spec model.ConsoleSpec, 
 func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 	var spec model.ConsoleSpec
 	var claimed sql.NullString
+	var editingClosed int
 	var created, updated string
-	err := row.Scan(&spec.ID, &spec.PrincipalID, &spec.Title, &spec.State, &spec.CurrentRevision, &claimed, &created, &updated)
+	err := row.Scan(&spec.ID, &spec.PrincipalID, &spec.Title, &spec.State, &spec.CurrentRevision, &claimed, &spec.EditCapabilityHash, &editingClosed, &created, &updated)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -76,6 +82,7 @@ func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 		return nil, err
 	}
 	spec.ClaimedBy = nullableString(claimed)
+	spec.EditingClosed = editingClosed != 0
 	spec.CreatedAt, err = specTime(created)
 	if err != nil {
 		return nil, err
@@ -88,14 +95,14 @@ func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 }
 
 func (s *SQLite) ConsoleSpec(ctx context.Context, principalID, specID string, management bool) (*model.ConsoleSpec, error) {
-	query := `SELECT id,principal_id,title,state,current_revision,claimed_by,created_at,updated_at FROM console_spec WHERE id=?`
+	query := `SELECT id,principal_id,title,state,current_revision,claimed_by,edit_capability_hash,editing_closed,created_at,updated_at FROM console_spec WHERE id=?`
 	// Spec 内容按业主裁定“控写、不控读”。保留 principal/management 参数以兼容
 	// 既有 repo 接口，但直接链接读取不再以身份过滤；写路径仍单独按 owner/capability 判。
 	return scanConsoleSpec(s.db.QueryRowContext(ctx, query, specID))
 }
 
 func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, management bool) ([]model.ConsoleSpec, error) {
-	query := `SELECT id,principal_id,title,state,current_revision,claimed_by,created_at,updated_at FROM console_spec`
+	query := `SELECT id,principal_id,title,state,current_revision,claimed_by,edit_capability_hash,editing_closed,created_at,updated_at FROM console_spec`
 	var args []any
 	if !management {
 		query += ` WHERE principal_id=?`
@@ -119,11 +126,11 @@ func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, manag
 }
 
 func (s *SQLite) ConsoleSpecRevision(ctx context.Context, principalID, specID string, revision int, management bool) (*model.ConsoleSpecRevision, error) {
-	query := `SELECT r.spec_id,r.revision,r.content_markdown,r.acceptance_json,r.input_anchors_json,r.content_sha256,r.created_by,COALESCE(r.supersedes_revision,0),r.created_at
+	query := `SELECT r.spec_id,r.revision,r.content_markdown,r.acceptance_json,r.input_anchors_json,r.content_sha256,r.created_by,r.created_via,COALESCE(r.supersedes_revision,0),r.created_at
 		FROM console_spec_revision r JOIN console_spec s ON s.id=r.spec_id WHERE r.spec_id=? AND r.revision=?`
 	var r model.ConsoleSpecRevision
 	var created string
-	err := s.db.QueryRowContext(ctx, query, specID, revision).Scan(&r.SpecID, &r.Revision, &r.ContentMarkdown, &r.AcceptanceJSON, &r.InputAnchorsJSON, &r.ContentSHA256, &r.CreatedBy, &r.Supersedes, &created)
+	err := s.db.QueryRowContext(ctx, query, specID, revision).Scan(&r.SpecID, &r.Revision, &r.ContentMarkdown, &r.AcceptanceJSON, &r.InputAnchorsJSON, &r.ContentSHA256, &r.CreatedBy, &r.CreatedVia, &r.Supersedes, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -175,6 +182,67 @@ func (s *SQLite) AppendConsoleSpecRevision(ctx context.Context, principalID, spe
 		return 0, err
 	}
 	return next, nil
+}
+
+// AppendConsoleSpecRevisionWithCapability writes through a shared edit link.
+// Authorization, closed-state check and revision CAS happen in one transaction.
+func (s *SQLite) AppendConsoleSpecRevisionWithCapability(ctx context.Context, specID string, expected int, capabilityHash string, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	var current, closed int
+	var owner string
+	err = tx.QueryRowContext(ctx, `SELECT current_revision,principal_id,editing_closed FROM console_spec WHERE id=? AND edit_capability_hash=?`, specID, capabilityHash).Scan(&current, &owner, &closed)
+	if errors.Is(err, sql.ErrNoRows) || closed != 0 {
+		return 0, ErrConsoleSpecEditDenied
+	}
+	if err != nil {
+		return 0, err
+	}
+	if current != expected {
+		return 0, ErrConsoleSpecConflict
+	}
+	next := current + 1
+	if revision.SpecID != specID || revision.Revision != next {
+		return 0, errors.New("invalid console spec revision")
+	}
+	revision.CreatedBy = owner // FK anchor; CreatedVia records that no human identity was asserted.
+	revision.CreatedVia = "shared_link"
+	revision.Supersedes = current
+	if err = insertConsoleSpecRevision(ctx, tx, revision, now); err != nil {
+		return 0, err
+	}
+	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET current_revision=?,state='needs_improvement',claimed_by=NULL,updated_at=? WHERE id=? AND edit_capability_hash=? AND editing_closed=0 AND current_revision=?`,
+		next, now.UTC().Format(time.RFC3339Nano), specID, capabilityHash, expected)
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return 0, ErrConsoleSpecEditDenied
+	}
+	if err = appendConsoleSpecEvent(ctx, tx, specID, next, "shared-link", "revise.shared", fmt.Sprintf("supersedes=%d", current), now); err != nil {
+		return 0, err
+	}
+	if err = tx.Commit(); err != nil {
+		return 0, err
+	}
+	return next, nil
+}
+
+func (s *SQLite) CloseConsoleSpecEditing(ctx context.Context, principalID, specID string, now time.Time) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET editing_closed=1,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=0`,
+		now.UTC().Format(time.RFC3339Nano), specID, principalID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return ErrConsoleSpecNotFound
+	}
+	return nil
 }
 
 func (s *SQLite) SubmitConsoleSpec(ctx context.Context, principalID, specID string, now time.Time) error {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -134,6 +135,58 @@ func TestConsoleSpecInputAnchorsAndManagementSideEffectsAreServerEnforced(t *tes
 	stored, err := hub.Repo.(*store.SQLite).ConsoleSpec(context.Background(), "owner-a", spec.ID, false)
 	if err != nil || stored == nil || stored.State != "draft" {
 		t.Fatalf("403 performed side effect spec=%+v err=%v", stored, err)
+	}
+}
+
+func TestConsoleSpecSharedCapabilityWritesUntilOwnerClosesEditing(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", validSpecBody, hub.HandleConsoleSpecs)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	var created struct {
+		ID      string `json:"id"`
+		EditURL string `json:"edit_url"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	token := strings.TrimPrefix(strings.SplitN(created.EditURL, "#edit=", 2)[1], " ")
+	patchBody := `{"title":"Spec A","content_markdown":"# shared","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}],"expected_revision":1}`
+	req := httptest.NewRequest(http.MethodPatch, "/api/specs/shared/"+created.ID, bytes.NewBufferString(patchBody))
+	req.SetPathValue("specID", created.ID)
+	req.Header.Set("X-DW-Spec-Edit-Capability", token)
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleSpec(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("shared PATCH code=%d body=%s", rr.Code, rr.Body.String())
+	}
+
+	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/close-editing", nil)
+	req.SetPathValue("specID", created.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpecCloseEditing)(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("close editing code=%d body=%s", rr.Code, rr.Body.String())
+	}
+
+	patchBody = strings.Replace(patchBody, `"expected_revision":1`, `"expected_revision":2`, 1)
+	req = httptest.NewRequest(http.MethodPatch, "/api/specs/shared/"+created.ID, bytes.NewBufferString(patchBody))
+	req.SetPathValue("specID", created.ID)
+	req.Header.Set("X-DW-Spec-Edit-Capability", token)
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleSpec(rr, req)
+	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "editing closed") {
+		t.Fatalf("closed shared PATCH code=%d body=%s", rr.Code, rr.Body.String())
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/api/specs/shared/"+created.ID, nil)
+	req.SetPathValue("specID", created.ID)
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleSpec(rr, req)
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"current_revision":2`) {
+		t.Fatalf("closing writes must not close public read code=%d body=%s", rr.Code, rr.Body.String())
 	}
 }
 

@@ -32,10 +32,13 @@ textarea{min-height:110px}button{margin:8px 6px 0 0;padding:6px 10px}.spec-row{b
 </section>
 <script>
 var currentSpec=null,platformRole='';
+var sharedMatch=location.pathname.match(/^\/console\/specs\/([^/]+)$/);
+var sharedSpecID=sharedMatch?decodeURIComponent(sharedMatch[1]):'';
+var sharedEditToken=new URLSearchParams(location.hash.slice(1)).get('edit')||'';
 function payload(prefix){return {title:document.getElementById(prefix+'-title').value,content_markdown:document.getElementById(prefix+'-content').value,
  acceptance:[{id:'A1',text:document.getElementById(prefix+'-acceptance').value}],input_anchors:[{kind:'owner_message',ref:document.getElementById(prefix+'-anchor').value}]};}
 async function specAction(id,path,body){var opts={method:'POST'};if(body){opts.headers={'Content-Type':'application/json'};opts.body=JSON.stringify(body);}var r=await fetch('/api/console/specs/'+encodeURIComponent(id)+'/'+path,opts);if(!r.ok)throw new Error(path+' failed');await refreshSpecs();}
-async function refreshSpecs(){var r=await fetch('/api/console/specs',{cache:'no-store'});if(!r.ok)throw new Error('list failed');var data=await r.json();platformRole=data.role||'';var list=document.getElementById('spec-list');list.replaceChildren();
+async function refreshSpecs(){var r=await fetch(sharedSpecID?'/api/specs/shared/'+encodeURIComponent(sharedSpecID):'/api/console/specs',{cache:'no-store'});if(!r.ok)throw new Error('list failed');var raw=await r.json();var data=sharedSpecID?{role:'shared',specs:[raw.spec]}:raw;platformRole=data.role||'';var list=document.getElementById('spec-list');list.replaceChildren();
  (Array.isArray(data.specs)?data.specs:[]).forEach(function(spec){var row=document.createElement('div');row.className='spec-row';row.dataset.specId=spec.id;row.dataset.title=spec.title;
   var title=document.createElement('strong');title.textContent=spec.title;var meta=document.createElement('div');meta.className='meta';meta.textContent=spec.state+' · revision '+spec.current_revision;
   row.append(title,meta);if(platformRole!=='management'){var edit=document.createElement('button');edit.type='button';edit.className='edit-spec';edit.textContent='Edit';edit.onclick=function(){openSpec(spec.id)};row.append(edit);
@@ -44,19 +47,25 @@ async function refreshSpecs(){var r=await fetch('/api/console/specs',{cache:'no-
    var fail=document.createElement('button');fail.textContent='Needs improvement';fail.onclick=function(){var reason=window.prompt('Reason code');if(!reason||!reason.trim())return;specAction(spec.id,'reviews',{revision:spec.current_revision,stage:stage,verdict:'fail',reason_codes:[reason.trim()]})};row.append(fail);}
    if(spec.state==='claimable'){var claim=document.createElement('button');claim.textContent='Claim';claim.onclick=function(){specAction(spec.id,'claim')};row.append(claim);}var archive=document.createElement('button');archive.textContent='Archive';archive.onclick=function(){specAction(spec.id,'archive')};row.append(archive);}
   list.append(row);});}
-async function openSpec(id){var r=await fetch('/api/console/specs/'+encodeURIComponent(id),{cache:'no-store'});if(!r.ok)throw new Error('open failed');var data=await r.json();currentSpec=data.spec;
+async function openSpec(id){var endpoint=sharedSpecID?'/api/specs/shared/':'/api/console/specs/';var r=await fetch(endpoint+encodeURIComponent(id),{cache:'no-store'});if(!r.ok)throw new Error('open failed');var data=await r.json();currentSpec=data.spec;
  document.getElementById('edit-title').value=data.spec.title;document.getElementById('edit-content').value=data.revision.content_markdown;
  var acceptance=JSON.parse(data.revision.acceptance_json);var anchors=JSON.parse(data.revision.input_anchors_json);
  document.getElementById('edit-acceptance').value=acceptance[0].text;document.getElementById('edit-anchor').value=anchors[0].ref;document.getElementById('editor').hidden=false;document.getElementById('edit-status').textContent='';}
 document.getElementById('create-spec').onclick=async function(){var status=document.getElementById('create-status');status.textContent='';var r=await fetch('/api/console/specs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload('new'))});
  if(!r.ok){status.className='error';status.textContent='create failed';return;}status.className='ok';status.textContent='created';await refreshSpecs();};
-document.getElementById('save-spec').onclick=async function(){var status=document.getElementById('edit-status');var body=payload('edit');body.expected_revision=currentSpec.current_revision;
- var r=await fetch('/api/console/specs/'+encodeURIComponent(currentSpec.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){status.className='error';status.textContent='save failed';return;}
+document.getElementById('save-spec').onclick=async function(){var status=document.getElementById('edit-status');var body=payload('edit');body.expected_revision=currentSpec.current_revision;var endpoint=sharedSpecID?'/api/specs/shared/':'/api/console/specs/';var headers={'Content-Type':'application/json'};if(sharedSpecID)headers['X-DW-Spec-Edit-Capability']=sharedEditToken;
+ var r=await fetch(endpoint+encodeURIComponent(currentSpec.id),{method:'PATCH',headers:headers,body:JSON.stringify(body)});if(!r.ok){status.className='error';status.textContent=r.status===403?'editing closed or invalid link':'save failed';return;}
  var data=await r.json();status.className='ok';status.textContent='saved revision '+data.revision;await refreshSpecs();};
-refreshSpecs().catch(function(){document.getElementById('spec-list').textContent='Unable to load specs';});
+refreshSpecs().then(function(){if(sharedSpecID)return openSpec(sharedSpecID)}).catch(function(){document.getElementById('spec-list').textContent='Unable to load specs';});
 </script>`
 
 func (h *Hub) HandleConsoleSpecsPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	fmt.Fprint(w, consoleSpecsPageHTML)
+}
+
+func (h *Hub) HandleSharedConsoleSpecPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	fmt.Fprint(w, consoleSpecsPageHTML)
