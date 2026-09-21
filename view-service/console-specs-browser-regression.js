@@ -105,10 +105,15 @@ async function main() {
         acceptance_json: JSON.stringify(body.acceptance), input_anchors_json: JSON.stringify(body.input_anchors) });
       res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ revision: item.current_revision })); return;
     }
-    const action = String(req.url || '').match(/^\/api\/console\/specs\/([^/]+)\/(submit|archive|claim|reviews)$/);
+    const action = String(req.url || '').match(/^\/api\/console\/specs\/([^/]+)\/(submit|archive|claim|reviews|reopen-editing)$/);
     if (action && req.method === 'POST') {
       if (action[2] === 'archive') {
         res.writeHead(409, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('already archived'); return;
+      }
+      if (action[2] === 'reopen-editing') {
+        const item = specs.find((candidate) => candidate.id === action[1]);
+        if (!item || item.principal_id !== 'owner-a') { res.writeHead(404); res.end('not found'); return; }
+        item.editing_closed = false;
       }
       res.writeHead(204); res.end(); return;
     }
@@ -205,6 +210,7 @@ async function main() {
     const foreign = page.locator('#spec-list [data-title="Foreign"]');
     assert.strictEqual(await foreign.locator('.edit-spec').count(), 0, 'management role must not grant Edit on another owner spec');
     assert.strictEqual(await foreign.getByRole('button', { name: 'Submit', exact: true }).count(), 0, 'management role must not grant Submit on another owner spec');
+    assert.strictEqual(await foreign.locator('.reopen-spec').count(), 0, 'another owner must not receive Reopen editing');
     await foreign.locator('.view-spec').click();
     await page.waitForFunction(() => document.getElementById('edit-title').value === 'Foreign');
     assert.strictEqual(await page.locator('#save-spec').isHidden(), true, 'foreign spec View must not expose Save');
@@ -215,6 +221,9 @@ async function main() {
     await closed.locator('.view-spec').click();
     await page.waitForFunction(() => document.getElementById('edit-title').value === 'Closed');
     assert.strictEqual(await page.locator('#save-spec').isHidden(), true, 'editing-closed own spec must remain readable without Save');
+    await closed.locator('.reopen-spec').click();
+    await page.locator('#spec-list [data-title="Closed"] .edit-spec').waitFor({ state: 'visible' });
+    assert.strictEqual(specs.find((item) => item.id === 'spec-closed').editing_closed, false, 'owner Reopen editing must change the server-side state');
     const own = page.locator('#spec-list [data-title="Spec A"]');
     await own.getByRole('button', { name: 'Archive', exact: true }).click();
     await own.locator('.spec-action-status').filter({ hasText: '操作失败 409:already archived' }).waitFor({ state: 'visible' });
@@ -250,7 +259,7 @@ async function main() {
     assert.strictEqual(wrapMetrics.lineOverhang, 0, `editor line overhung viewport: ${JSON.stringify(wrapMetrics)}`);
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);
-    console.log('console specs browser: passed=23 failed=0');
+    console.log('console specs browser: passed=27 failed=0');
   } finally {
     await browser.close(); await new Promise((resolve) => server.close(resolve));
   }

@@ -184,14 +184,14 @@ func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, spe
 	if err = insertConsoleSpecRevision(ctx, tx, revision, now); err != nil {
 		return 0, err
 	}
-	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET current_revision=?,state='needs_improvement',claimed_by=NULL,updated_at=? WHERE id=? AND principal_id=? AND current_revision=?`,
+	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET current_revision=?,state='needs_improvement',claimed_by=NULL,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=0 AND current_revision=?`,
 		next, now.UTC().Format(time.RFC3339Nano), specID, principalID, expected)
 	if err != nil {
 		return 0, err
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
-		return 0, ErrConsoleSpecConflict
+		return 0, ErrConsoleSpecEditDenied
 	}
 	if err = appendConsoleSpecEvent(ctx, tx, specID, next, principalID, "revise", fmt.Sprintf("supersedes=%d", current), now); err != nil {
 		return 0, err
@@ -218,10 +218,10 @@ func (s *SQLite) appendConsoleSpecRevisionWithCapability(ctx context.Context, sp
 		return 0, err
 	}
 	defer tx.Rollback()
-	var current, closed int
+	var current int
 	var owner string
-	err = tx.QueryRowContext(ctx, `SELECT current_revision,principal_id,editing_closed FROM console_spec WHERE id=? AND edit_capability_hash=?`, specID, capabilityHash).Scan(&current, &owner, &closed)
-	if errors.Is(err, sql.ErrNoRows) || closed != 0 {
+	err = tx.QueryRowContext(ctx, `SELECT current_revision,principal_id FROM console_spec WHERE id=? AND edit_capability_hash=?`, specID, capabilityHash).Scan(&current, &owner)
+	if errors.Is(err, sql.ErrNoRows) {
 		return 0, ErrConsoleSpecEditDenied
 	}
 	if err != nil {
@@ -269,6 +269,19 @@ func (s *SQLite) appendConsoleSpecRevisionWithCapability(ctx context.Context, sp
 
 func (s *SQLite) CloseConsoleSpecEditing(ctx context.Context, principalID, specID string, now time.Time) error {
 	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET editing_closed=1,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=0`,
+		now.UTC().Format(time.RFC3339Nano), specID, principalID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return ErrConsoleSpecNotFound
+	}
+	return nil
+}
+
+func (s *SQLite) ReopenConsoleSpecEditing(ctx context.Context, principalID, specID string, now time.Time) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET editing_closed=0,updated_at=? WHERE id=? AND principal_id=? AND editing_closed=1`,
 		now.UTC().Format(time.RFC3339Nano), specID, principalID)
 	if err != nil {
 		return err

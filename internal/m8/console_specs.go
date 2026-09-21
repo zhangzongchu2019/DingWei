@@ -26,6 +26,7 @@ type consoleSpecRepository interface {
 	OpenConsoleSpecRevision(context.Context, string, string, int, model.ConsoleSpecRevision, time.Time) (int, error)
 	OpenConsoleSpecRevisionWithCapability(context.Context, string, int, string, model.ConsoleSpecRevision, time.Time) (int, error)
 	CloseConsoleSpecEditing(context.Context, string, string, time.Time) error
+	ReopenConsoleSpecEditing(context.Context, string, string, time.Time) error
 	SubmitConsoleSpec(context.Context, string, string, time.Time) error
 	ReviewConsoleSpec(context.Context, model.ConsoleSpecReview, time.Time) error
 	ClaimConsoleSpec(context.Context, string, string, time.Time) error
@@ -319,6 +320,22 @@ func (h *Hub) HandleConsoleSpecCloseEditing(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if err := repo.CloseConsoleSpecEditing(r.Context(), platformPrincipal(r), r.PathValue("specID"), h.now()); errors.Is(err, store.ErrConsoleSpecNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Hub) HandleConsoleSpecReopenEditing(w http.ResponseWriter, r *http.Request) {
+	repo, ok := h.consoleSpecs()
+	if !ok {
+		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if err := repo.ReopenConsoleSpecEditing(r.Context(), platformPrincipal(r), r.PathValue("specID"), h.now()); errors.Is(err, store.ErrConsoleSpecNotFound) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {

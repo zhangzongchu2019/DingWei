@@ -238,11 +238,53 @@ func TestConsoleSpecSharedCapabilityWritesUntilOwnerClosesEditing(t *testing.T) 
 		t.Fatalf("closed shared PATCH code=%d body=%s", rr.Code, rr.Body.String())
 	}
 
+	// Closing is one reversible owner-controlled brake. It must stop the owner
+	// write path too; otherwise UI and storage disagree about the same state.
+	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+created.ID, bytes.NewBufferString(patchBody))
+	req.SetPathValue("specID", created.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
+	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "editing closed") {
+		t.Fatalf("closed owner PATCH code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	closed, err := hub.Repo.(*store.SQLite).ConsoleSpec(context.Background(), "owner-a", created.ID, false)
+	if err != nil || closed == nil || closed.CurrentRevision != 2 || closed.State != "needs_improvement" {
+		t.Fatalf("closed rejected write changed state spec=%+v err=%v", closed, err)
+	}
+
+	for _, principal := range []string{"owner-b", ""} {
+		req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/reopen-editing", nil)
+		req.SetPathValue("specID", created.ID)
+		req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, principal))
+		rr = httptest.NewRecorder()
+		hub.HandleConsoleSpecReopenEditing(rr, req)
+		if rr.Code != http.StatusNotFound {
+			t.Fatalf("non-owner %q reopened editing code=%d body=%s", principal, rr.Code, rr.Body.String())
+		}
+	}
+	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/reopen-editing", nil)
+	req.SetPathValue("specID", created.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpecReopenEditing)(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("owner reopen code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+created.ID, bytes.NewBufferString(patchBody))
+	req.SetPathValue("specID", created.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"revision":3`) {
+		t.Fatalf("reopened owner PATCH code=%d body=%s", rr.Code, rr.Body.String())
+	}
+
 	req = httptest.NewRequest(http.MethodGet, "/api/specs/shared/"+created.ID, nil)
 	req.SetPathValue("specID", created.ID)
 	rr = httptest.NewRecorder()
 	hub.HandleConsoleSpec(rr, req)
-	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"current_revision":2`) {
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"current_revision":3`) {
 		t.Fatalf("closing writes must not close public read code=%d body=%s", rr.Code, rr.Body.String())
 	}
 }
@@ -332,6 +374,32 @@ func TestConsoleSpecHTTPReviewProducesVersionedTaskProposalWithoutKFields(t *tes
 	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
 	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "revision locked") {
 		t.Fatalf("locked revision PATCH must be observably rejected code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	// Reopening editing is not a task/proposal unlock. The same locked revision
+	// remains immutable; only the explicit new-version path below may advance it.
+	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/close-editing", nil)
+	req.SetPathValue("specID", spec.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleSpecCloseEditing(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("close locked spec code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/reopen-editing", nil)
+	req.SetPathValue("specID", spec.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleSpecReopenEditing(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("reopen locked spec code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+spec.ID, bytes.NewBufferString(newBody))
+	req.SetPathValue("specID", spec.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
+	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "revision locked") {
+		t.Fatalf("reopen must not unlock proposed revision code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/versions", bytes.NewBufferString(newBody))
 	req.SetPathValue("specID", spec.ID)
