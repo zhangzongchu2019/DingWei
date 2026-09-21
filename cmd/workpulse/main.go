@@ -179,6 +179,10 @@ func run(logger *slog.Logger) error {
 	}
 	adm.Mount(mux)                          // /healthz /readyz /admin*
 	portal.NewScheduleServer(st).Mount(mux) // /schedule/
+	// Nova-260921-A(B1-b):admin 能力的 console 门(/console/admin/*),由 console 角色授权。
+	// 🔴 必须在 adm.Prefix = prefixHub 之后 —— 门 B 的鉴权走的是那个 hub;
+	//    s.Prefix 为 nil 时 MountConsole 注册的路由会**关死**(503),不是放行。
+	adm.MountConsole(mux)
 	coord := coordination.New(st, outbound, clock.Real{}, bs.GlobalSchedulePath)
 	schedulerSvc := scheduler.New(scheduler.Config{
 		TeamFile:       bs.ScheduleTeamFile,

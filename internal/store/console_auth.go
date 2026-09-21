@@ -334,3 +334,62 @@ func (s *SQLite) ResolveGrantedConsoleAgent(ctx context.Context, principalID, se
 	}
 	return &out[0], nil
 }
+
+// ListConsolePrincipals 列出全部 console principal(**含 active=0**),按 id 升序。
+//
+// Nova-260921-A(B1-b)「增删管理者」需要它:在此之前全仓**没有任何**列举 principal 的方法
+// (只有 Upsert 与按 provider/issuer/subject 的 Resolve),`console_platform_role` 的唯一写入点
+// 是 seed(cmd/workpulse/console_seed.go:81)⇒ 改管理者名单只能改配置文件再重启。
+//
+// 🔴 **含停用行是刻意的**:管理者名册页必须能看见"这个 principal 已停用"。
+// 否则一个停用 principal 上挂着的 management 行会成为**看不见的悬空授权** ——
+// 而 ResolveConsolePlatformRole 对停用 principal 返回 "",两边说法不一致却没人能看见。
+func (s *SQLite) ListConsolePrincipals(ctx context.Context) ([]model.ConsolePrincipal, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT id,provider,provider_issuer,provider_subject,display_name,active
+		FROM console_principal ORDER BY id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []model.ConsolePrincipal{}
+	for rows.Next() {
+		var p model.ConsolePrincipal
+		var active int
+		if err := rows.Scan(&p.ID, &p.Provider, &p.ProviderIssuer, &p.ProviderSubject, &p.DisplayName, &active); err != nil {
+			return nil, err
+		}
+		p.Active = active != 0
+		out = append(out, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ListActiveConsoleManagement 返回当前 active 的 management principal id(升序)。
+//
+// 🔴 「剩最后一个不能删」这条守卫(板件 REQUIREMENT-REGISTRY-20260921.md:42)要靠它计数。
+// 用**列举**而不是 COUNT(*):调用方需要知道"最后一个是谁",才能在名册页上
+// 就地把那个按钮禁用并写明原因(判据写在它生效的地方),而不是让人点了才被拒。
+// 🔴 查询出错时调用方必须**拒**,不得当成"0 个"或"很多个"继续(fail-closed)。
+func (s *SQLite) ListActiveConsoleManagement(ctx context.Context) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT principal_id FROM console_platform_role
+		WHERE role='management' AND active=1 ORDER BY principal_id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
+}

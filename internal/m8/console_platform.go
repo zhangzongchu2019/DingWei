@@ -82,6 +82,7 @@ var consolePlatformReservedItemIDs = map[string]bool{
 	"agent-groups": true,
 	"specs":        true,
 	"task-board":   true,
+	"admin":        true,
 }
 
 type consolePlatformItemRequest struct {
@@ -145,6 +146,22 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 		builtins = append(builtins, model.ConsolePlatformItem{
 			ID: "agent-groups", Kind: "agent-groups", Title: "Agent 编组",
 			Href: "#agent-groups", Status: "approved", Active: true,
+		})
+		// 平台管理入口(Nova-260921-A / B1-b):admin 能力搬进 console。
+		//
+		// 🔴 与上面那条编组入口的**关键区别是方向**,不是形态:
+		//    编组入口指向 `/admin/agent-groups` —— 那是**旧 admin 后台**,走 wp_admin 那道
+		//    独立鉴权,业主点进去是 303 → /admin/login(板件 SPEC-OWNER-TAB-ADMIN-20260920.md §二
+		//    判定为「形态对上了,**方向相反**」)。
+		//    本项指向 `/console/admin` —— 由**console 角色**授权的新门(internal/admin/console_door.go),
+		//    业主不需要在 console 里再登一次(业主原话「admin 接纳 console 的鉴权方式」)。
+		// 🔴 形态仍是 `_blank`(独立文档):顶层导航会带走右栏那一堆活 iframe 与它们的 SSE,
+		//    与上面编组入口同一条实测理由。
+		// 🔵 UI 可见性不是授权判据:`/console/admin/*` 自己还有 RequireConsoleManagement 那道门,
+		//    "只对 management 发这一项"只是为了不让普通业主看到一个点了就 403 的入口。
+		builtins = append(builtins, model.ConsolePlatformItem{
+			ID: "admin", Kind: "admin", Title: "平台管理",
+			Href: "/console/admin", Target: "_blank", Status: "approved", Active: true,
 		})
 	}
 	items = append(builtins, items...)
