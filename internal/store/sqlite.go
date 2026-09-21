@@ -3287,7 +3287,8 @@ func (s *SQLite) ClaimLegacyConsoleAgentGroupAsManagement(ctx context.Context, c
 	if strings.TrimSpace(principalID) == "" {
 		return sql.ErrNoRows
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE agent_group SET creator_principal=?,updated_at=? WHERE code=? AND creator_principal IS NULL`,
+	_, err := s.db.ExecContext(ctx, `UPDATE agent_group SET creator_principal=?,updated_at=? WHERE code=? AND creator_principal IS NULL AND NOT EXISTS(
+		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.active=1)`,
 		principalID, s.now().UTC().Format(time.RFC3339Nano), code)
 	return err
 }
@@ -3374,7 +3375,8 @@ func (s *SQLite) UnassignAgentGroup(ctx context.Context, code, keyID, sessionNam
 }
 
 func (s *SQLite) ListAgentGroups(ctx context.Context) ([]model.AgentGroup, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT code,COALESCE(short_name,''),COALESCE(creator_principal,''),additions_closed,leader_key_id,leader_session_name,leader_owner_key,created_at,updated_at FROM agent_group ORDER BY code`)
+	rows, err := s.db.QueryContext(ctx, `SELECT g.code,COALESCE(g.short_name,''),COALESCE(g.creator_principal,''),g.additions_closed,g.leader_key_id,g.leader_session_name,g.leader_owner_key,
+		EXISTS(SELECT 1 FROM console_agent a WHERE a.key_id=g.leader_key_id AND a.session_name=g.leader_session_name AND a.active=1),g.created_at,g.updated_at FROM agent_group g ORDER BY g.code`)
 	if err != nil {
 		return nil, err
 	}
@@ -3383,11 +3385,12 @@ func (s *SQLite) ListAgentGroups(ctx context.Context) ([]model.AgentGroup, error
 	for rows.Next() {
 		var g model.AgentGroup
 		var createdAt, updatedAt string
-		var closed int
-		if err := rows.Scan(&g.Code, &g.ShortName, &g.CreatorPrincipal, &closed, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &createdAt, &updatedAt); err != nil {
+		var closed, mapped int
+		if err := rows.Scan(&g.Code, &g.ShortName, &g.CreatorPrincipal, &closed, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &mapped, &createdAt, &updatedAt); err != nil {
 			return nil, err
 		}
 		g.AdditionsClosed = closed != 0
+		g.LeaderConsoleMapped = mapped != 0
 		g.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		g.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
 		out = append(out, g)
@@ -3415,7 +3418,8 @@ func (s *SQLite) ListAgentGroupMembers(ctx context.Context, code string) ([]mode
 }
 
 func (s *SQLite) ListAgentGroupsForEndpoint(ctx context.Context, keyID, sessionName string) ([]model.AgentGroup, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT g.code,COALESCE(g.short_name,''),COALESCE(g.creator_principal,''),g.additions_closed,g.leader_key_id,g.leader_session_name,g.leader_owner_key,g.created_at,g.updated_at
+	rows, err := s.db.QueryContext(ctx, `SELECT g.code,COALESCE(g.short_name,''),COALESCE(g.creator_principal,''),g.additions_closed,g.leader_key_id,g.leader_session_name,g.leader_owner_key,
+		EXISTS(SELECT 1 FROM console_agent a WHERE a.key_id=g.leader_key_id AND a.session_name=g.leader_session_name AND a.active=1),g.created_at,g.updated_at
 		FROM agent_group g JOIN agent_group_member m ON m.code=g.code WHERE m.key_id=? AND m.session_name=? ORDER BY g.code`, keyID, sessionName)
 	if err != nil {
 		return nil, err
@@ -3425,11 +3429,12 @@ func (s *SQLite) ListAgentGroupsForEndpoint(ctx context.Context, keyID, sessionN
 	for rows.Next() {
 		var g model.AgentGroup
 		var createdAt, updatedAt string
-		var closed int
-		if err := rows.Scan(&g.Code, &g.ShortName, &g.CreatorPrincipal, &closed, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &createdAt, &updatedAt); err != nil {
+		var closed, mapped int
+		if err := rows.Scan(&g.Code, &g.ShortName, &g.CreatorPrincipal, &closed, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &mapped, &createdAt, &updatedAt); err != nil {
 			return nil, err
 		}
 		g.AdditionsClosed = closed != 0
+		g.LeaderConsoleMapped = mapped != 0
 		g.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		g.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
 		out = append(out, g)

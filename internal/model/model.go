@@ -271,15 +271,16 @@ type SessionEndpoint struct {
 // AgentGroup is one project grouping capability. Code is the 32-character
 // base64 capability shared by owners; every group has exactly one leader.
 type AgentGroup struct {
-	Code              string    `json:"code"`
-	ShortName         string    `json:"short_name"`
-	CreatorPrincipal  string    `json:"creator_principal"`
-	AdditionsClosed   bool      `json:"additions_closed"`
-	LeaderKeyID       string    `json:"leader_key_id"`
-	LeaderSessionName string    `json:"leader_session_name"`
-	LeaderOwnerKey    string    `json:"leader_owner_key"`
-	CreatedAt         time.Time `json:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at"`
+	Code                string    `json:"code"`
+	ShortName           string    `json:"short_name"`
+	CreatorPrincipal    string    `json:"creator_principal"`
+	AdditionsClosed     bool      `json:"additions_closed"`
+	LeaderKeyID         string    `json:"leader_key_id"`
+	LeaderSessionName   string    `json:"leader_session_name"`
+	LeaderOwnerKey      string    `json:"leader_owner_key"`
+	LeaderConsoleMapped bool      `json:"leader_console_mapped"`
+	CreatedAt           time.Time `json:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at"`
 }
 
 // AgentGroupMember links one Agent endpoint to one or more explicit groups.

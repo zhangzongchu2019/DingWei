@@ -73,7 +73,7 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
 				return
 			}
-			canManage := group.CreatorPrincipal == principal || (platformRole(r) == consolePlatformRoleManagement && group.CreatorPrincipal == "")
+			canManage := group.CreatorPrincipal == principal || (platformRole(r) == consolePlatformRoleManagement && group.CreatorPrincipal == "" && !group.LeaderConsoleMapped)
 			visible := canManage
 			for _, member := range members {
 				visible = visible || ownedEndpoint[member.KeyID+"\x00"+member.SessionName]

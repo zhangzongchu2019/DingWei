@@ -150,10 +150,31 @@ func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 	if err := db.AssignAgentGroup(ctx, model.AgentGroupMember{Code: groupCodeA, KeyID: member.KeyID, SessionName: member.SessionName, OwnerKey: "ob"}); err != nil {
 		t.Fatal(err)
 	}
+	// Positive control first: the leader endpoint really resolves to an active
+	// console Agent. Management must therefore not treat this group as orphaned.
+	groups, err := db.ListAgentGroups(ctx)
+	if err != nil || len(groups) != 1 || !groups[0].LeaderConsoleMapped {
+		t.Fatalf("mapped leader precondition missing groups=%+v err=%v", groups, err)
+	}
+	if err := db.ClaimLegacyConsoleAgentGroupAsManagement(ctx, groupCodeA, "manager"); err != nil {
+		t.Fatal(err)
+	}
+	groups, err = db.ListAgentGroups(ctx)
+	if err != nil || len(groups) != 1 || groups[0].CreatorPrincipal != "" {
+		t.Fatalf("management stole mapped legacy group groups=%+v err=%v", groups, err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/console/agent-groups", nil)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
+	req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
+	rr := httptest.NewRecorder()
+	hub.HandleConsoleAgentGroups(rr, req)
+	if rr.Code != http.StatusOK || bytes.Contains(rr.Body.Bytes(), []byte(groupCodeA)) {
+		t.Fatalf("management UI exposed mapped legacy group as manageable code=%d body=%s", rr.Code, rr.Body.String())
+	}
 	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeA, "owner-a", true); err != nil {
 		t.Fatalf("legacy leader close additions: %v", err)
 	}
-	groups, err := db.ListAgentGroups(ctx)
+	groups, err = db.ListAgentGroups(ctx)
 	if err != nil || len(groups) != 1 || groups[0].CreatorPrincipal != "owner-a" || !groups[0].AdditionsClosed {
 		t.Fatalf("legacy claim was not persisted groups=%+v err=%v", groups, err)
 	}
