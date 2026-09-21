@@ -26,7 +26,9 @@ function productionHTML() {
   if (MUTATION === 'no-wire') html = html.replace('wireSpecRender(root);', '');
   if (MUTATION === 'no-copy') html = html.replace("root.querySelectorAll('.copy-code')", "root.querySelectorAll('.copy-code-disabled')");
   if (MUTATION === 'no-server-error') html = html.replace("return prefix+' '+r.status+(detail?':'+detail:'');", "return prefix;");
-  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'role-split') html = html.replace("var canEdit=(isOwner||!!(sharedSpecID&&sharedEditToken))&&!spec.editing_closed;", "var canEdit=platformRole!=='management';");
+  if (MUTATION === 'no-action-error') html = html.replace("status.textContent=await responseFailure('操作失败',r);", "status.textContent='';");
+  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -72,14 +74,14 @@ async function main() {
       res.writeHead(200, { 'Content-Type': 'text/css' }); res.end(fs.readFileSync(path.join(ASSET_DIR, 'easymde.min.css'))); return;
     }
     if (req.url === '/api/console/specs' && req.method === 'GET') {
-      res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ specs })); return;
+      res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ role: 'management', principal: 'owner-a', specs })); return;
     }
     if (req.url === '/api/console/specs' && req.method === 'POST') {
       const body = await requestBody(req);
       if (body.title === 'server-reject') {
         res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('server create detail'); return;
       }
-      const item = { id: `spec-${specs.length + 1}`, title: body.title, state: 'draft', current_revision: 1 };
+      const item = { id: `spec-${specs.length + 1}`, principal_id: 'owner-a', title: body.title, state: 'draft', current_revision: 1 };
       specs.push(item); revisions.set(item.id, { ...body, spec_id: item.id, revision: 1,
         acceptance_json: JSON.stringify(body.acceptance), input_anchors_json: JSON.stringify(body.input_anchors) });
       res.writeHead(201, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(item)); return;
@@ -100,6 +102,13 @@ async function main() {
       revisions.set(item.id, { ...body, spec_id: item.id, revision: item.current_revision,
         acceptance_json: JSON.stringify(body.acceptance), input_anchors_json: JSON.stringify(body.input_anchors) });
       res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ revision: item.current_revision })); return;
+    }
+    const action = String(req.url || '').match(/^\/api\/console\/specs\/([^/]+)\/(submit|archive|claim|reviews)$/);
+    if (action && req.method === 'POST') {
+      if (action[2] === 'archive') {
+        res.writeHead(409, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('already archived'); return;
+      }
+      res.writeHead(204); res.end(); return;
     }
     res.writeHead(404); res.end('not found');
   });
@@ -146,6 +155,11 @@ async function main() {
     }
     assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 2, 'true page must show both specs at once');
     for (const title of ['Spec A', 'Spec B']) {
+      const row = page.locator(`#spec-list [data-title="${title}"]`);
+      assert.strictEqual(await row.locator('.edit-spec').count(), 1, 'management owner must see Edit for own spec');
+      assert.strictEqual(await row.getByRole('button', { name: 'Submit', exact: true }).count(), 1, 'management owner must see Submit for own draft spec');
+    }
+    for (const title of ['Spec A', 'Spec B']) {
       await page.locator(`#spec-list [data-title="${title}"] .edit-spec`).click();
       await page.waitForFunction((want) => document.getElementById('edit-title').value === want, title);
       assert.strictEqual(await page.inputValue('#edit-title'), title, `edit form must open ${title}`);
@@ -181,8 +195,18 @@ async function main() {
     await page.waitForTimeout(100);
     assert.strictEqual(await page.locator('#edit-status').textContent(), '保存失败 409:server save detail', 'save must expose status and server response body');
     assert.strictEqual(specs.find((item) => item.title === 'Spec B').current_revision, 2, 'server-rejected save must not create a revision');
+    specs.push({ id: 'spec-foreign', principal_id: 'owner-b', title: 'Foreign', state: 'draft', current_revision: 1 });
+    revisions.set('spec-foreign', { spec_id: 'spec-foreign', revision: 1, content_markdown: '# Foreign', acceptance_json: '[]', input_anchors_json: '[]' });
+    await page.evaluate(() => refreshSpecs());
+    const foreign = page.locator('#spec-list [data-title="Foreign"]');
+    assert.strictEqual(await foreign.locator('.edit-spec').count(), 0, 'management role must not grant Edit on another owner spec');
+    assert.strictEqual(await foreign.getByRole('button', { name: 'Submit', exact: true }).count(), 0, 'management role must not grant Submit on another owner spec');
+    const own = page.locator('#spec-list [data-title="Spec A"]');
+    await own.getByRole('button', { name: 'Archive', exact: true }).click();
+    await own.locator('.spec-action-status').filter({ hasText: '操作失败 409:already archived' }).waitFor({ state: 'visible' });
+    assert.deepStrictEqual(pageErrors, [], `failed specAction must be handled on-page: ${JSON.stringify(pageErrors)}`);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 2, 'reload must retain both specs');
+    assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 3, 'reload must retain all specs');
     const editorContract = await page.evaluate(() => ({
       spell: window.specEditors.new.options.spellChecker,
       fa: window.specEditors.new.options.autoDownloadFontAwesome,
@@ -212,7 +236,7 @@ async function main() {
     assert.strictEqual(wrapMetrics.lineOverhang, 0, `editor line overhung viewport: ${JSON.stringify(wrapMetrics)}`);
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);
-    console.log('console specs browser: passed=14 failed=0');
+    console.log('console specs browser: passed=18 failed=0');
   } finally {
     await browser.close(); await new Promise((resolve) => server.close(resolve));
   }

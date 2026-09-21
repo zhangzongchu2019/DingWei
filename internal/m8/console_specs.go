@@ -171,7 +171,7 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
-		_ = json.NewEncoder(w).Encode(map[string]any{"role": platformRole(r), "specs": items})
+		_ = json.NewEncoder(w).Encode(map[string]any{"principal": principal, "role": platformRole(r), "specs": items})
 		return
 	}
 	if r.Method != http.MethodPost {
@@ -238,7 +238,7 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"spec": spec, "revision": rev})
 		return
 	}
-	if r.Method != http.MethodPatch || management {
+	if r.Method != http.MethodPatch {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}

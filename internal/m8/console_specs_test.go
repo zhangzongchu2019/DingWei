@@ -125,6 +125,48 @@ func TestConsoleSpecHTTPMultipleSpecsAreVisiblePubliclyButWritesRemainControlled
 	}
 }
 
+func TestConsoleSpecManagementOwnerCanEditOwnSpecButNotAnotherOwners(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	createdBy := func(principal string) model.ConsoleSpec {
+		rr := callConsoleSpec(t, hub, principal, consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", validSpecBody, hub.HandleConsoleSpecs)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("create principal=%s code=%d body=%s", principal, rr.Code, rr.Body.String())
+		}
+		var spec model.ConsoleSpec
+		if err := json.Unmarshal(rr.Body.Bytes(), &spec); err != nil {
+			t.Fatal(err)
+		}
+		return spec
+	}
+	owned := createdBy("manager")
+	foreign := createdBy("owner-a")
+	patch := `{"title":"Spec A","content_markdown":"# edited","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}],"expected_revision":1}`
+
+	for _, tc := range []struct {
+		name string
+		id   string
+		want int
+	}{
+		{name: "management owner may edit", id: owned.ID, want: http.StatusOK},
+		{name: "management role does not grant another owners write", id: foreign.ID, want: http.StatusNotFound},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+tc.id, bytes.NewBufferString(patch))
+			req.SetPathValue("specID", tc.id)
+			req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
+			rr := httptest.NewRecorder()
+			hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
+			if rr.Code != tc.want {
+				t.Fatalf("PATCH code=%d want=%d body=%s", rr.Code, tc.want, rr.Body.String())
+			}
+		})
+	}
+	stored, err := hub.Repo.(*store.SQLite).ConsoleSpecRevision(context.Background(), "owner-a", foreign.ID, 1, false)
+	if err != nil || stored == nil || stored.ContentMarkdown != "# A" {
+		t.Fatalf("rejected management cross-owner PATCH changed state revision=%+v err=%v", stored, err)
+	}
+}
+
 func TestConsoleSpecInputAnchorsAndManagementSideEffectsAreServerEnforced(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
 	bad := `{"title":"Bad","content_markdown":"x","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"upstream_spec","ref":"spec:x"}]}`
