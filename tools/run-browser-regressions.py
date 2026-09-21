@@ -23,19 +23,23 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = (
-    ("renderer_0206_file_render", ROOT / "view-service/renderer-0206-file-render-regression.js"),
-    ("console_browser", ROOT / "view-service/console-browser-regression.js"),
-    ("renderer_in_console_iframe", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
-    ("renderer_sse_reconnect", ROOT / "view-service/renderer-sse-reconnect.js"),
-    ("renderer_failcard", ROOT / "view-service/renderer-failcard-regression.js"),
-    ("renderer_t054_errorboard", ROOT / "view-service/renderer-t054-errorboard-regression.js"),
-    ("renderer_t074_delivery_id", ROOT / "view-service/renderer-t074-delivery-id-regression.js"),
-    ("renderer_provenance_icon", ROOT / "view-service/renderer-provenance-icon-regression.js"),
-    ("renderer_storage_denied", ROOT / "view-service/renderer-storage-denied-regression.js"),
-    ("terminal_storage_denied", ROOT / "view-service/terminal-storage-denied-regression.js"),
-    ("renderer_t086_empty_ring_e2e", ROOT / "view-service/renderer-t086-empty-ring-e2e-regression.js"),
-    ("renderer_c2", ROOT / "view-service/renderer-c2-regression.js"),
-    ("console_specs_browser", ROOT / "view-service/console-specs-browser-regression.js"),
+    ("renderer_0206_file_render", "node", ROOT / "view-service/renderer-0206-file-render-regression.js"),
+    ("console_browser", "node", ROOT / "view-service/console-browser-regression.js"),
+    ("renderer_in_console_iframe", "node", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
+    ("renderer_sse_reconnect", "node", ROOT / "view-service/renderer-sse-reconnect.js"),
+    ("renderer_failcard", "node", ROOT / "view-service/renderer-failcard-regression.js"),
+    ("renderer_t054_errorboard", "node", ROOT / "view-service/renderer-t054-errorboard-regression.js"),
+    ("renderer_t074_delivery_id", "node", ROOT / "view-service/renderer-t074-delivery-id-regression.js"),
+    ("renderer_provenance_icon", "node", ROOT / "view-service/renderer-provenance-icon-regression.js"),
+    ("renderer_storage_denied", "node", ROOT / "view-service/renderer-storage-denied-regression.js"),
+    ("terminal_storage_denied", "node", ROOT / "view-service/terminal-storage-denied-regression.js"),
+    ("renderer_t086_empty_ring_e2e", "node", ROOT / "view-service/renderer-t086-empty-ring-e2e-regression.js"),
+    ("renderer_c2", "node", ROOT / "view-service/renderer-c2-regression.js"),
+    ("console_specs_browser", "node", ROOT / "view-service/console-specs-browser-regression.js"),
+    ("md_render_core_sync", "python3", ROOT / "view-service/test_md_render_core.py"),
+    ("md_render_core_parity", "node", ROOT / "view-service/md-render-core-parity.js"),
+    ("renderer_markdown_image", "node", ROOT / "view-service/renderer-markdown-image-regression.js"),
+    ("renderer_markdown_injection", "node", ROOT / "view-service/renderer-markdown-injection-regression.js"),
 )
 
 # Only names are recorded; values may contain local paths or credentials. These
@@ -78,7 +82,7 @@ def require_command(name: str) -> None:
 
 def unregistered_environment_inputs(extra_source: str = "") -> set[str]:
     """Mechanically find suite environment inputs missing from the receipt registry."""
-    source_paths = [path for _, path in SUITES] + [
+    source_paths = [path for _, _, path in SUITES] + [
         ROOT / "view-service/renderer-0206-contract-mock.py",
         Path(__file__).resolve(),
     ]
@@ -129,7 +133,7 @@ def probe_environment(env: dict[str, str]) -> None:
     check_environment_input_registry()
     for command in ("node", "python3", "openssl", "git", "date"):
         require_command(command)
-    missing = [str(path.relative_to(ROOT)) for _, path in SUITES if not path.is_file()]
+    missing = [str(path.relative_to(ROOT)) for _, _, path in SUITES if not path.is_file()]
     mock = ROOT / "view-service/renderer-0206-contract-mock.py"
     if not mock.is_file():
         missing.append(str(mock.relative_to(ROOT)))
@@ -215,7 +219,7 @@ def receipt(timestamp: str, sha: str, overrides: tuple[str, ...], results: dict[
         f"commit_sha={sha}",
         "overrides=" + (",".join(overrides) if overrides else "none"),
     ]
-    lines.extend(f"suite.{name}.rc={results.get(name, 3)}" for name, _ in SUITES)
+    lines.extend(f"suite.{name}.rc={results.get(name, 3)}" for name, _, _ in SUITES)
     lines.extend((f"aggregate_rc={aggregate}", "DW_BROWSER_RECEIPT_V1_END"))
     return "\n".join(lines) + "\n"
 
@@ -254,9 +258,9 @@ def main() -> int:
                 "MOCK_BASE": f"https://127.0.0.1:{port}",
                 "SHOTS": str(temporary_path / "shots"),
             }
-            for name, path in SUITES:
+            for name, interpreter, path in SUITES:
                 print(f"\n=== browser suite: {name} ===", flush=True)
-                completed = run(["node", str(path)], env=suite_env)
+                completed = run([interpreter, str(path)], env=suite_env)
                 results[name] = completed.returncode
             if len(results) != len(SUITES):
                 raise EnvironmentUnavailable(

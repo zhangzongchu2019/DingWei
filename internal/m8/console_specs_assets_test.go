@@ -5,7 +5,10 @@ import (
 	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+
+	viewservice "github.com/zhangzongchu2019/dingwei/view-service"
 )
 
 func TestConsoleSpecAssetsArePinnedAndRouteIsAllowlisted(t *testing.T) {
@@ -33,5 +36,16 @@ func TestConsoleSpecAssetsArePinnedAndRouteIsAllowlisted(t *testing.T) {
 	new(Hub).HandleConsoleSpecAsset(rr, req)
 	if rr.Code != http.StatusNotFound {
 		t.Fatalf("non-allowlisted asset code=%d want=404", rr.Code)
+	}
+}
+
+func TestConsoleSpecEmbeddedMarkdownCoreIsPinned(t *testing.T) {
+	sum := sha256.Sum256([]byte(viewservice.MarkdownRenderCore))
+	const want = "63c5e5159cc8f07613dcd08ec4e64e8e936675f1f2ac23ac652d80a52f8c2f98"
+	if got := hex.EncodeToString(sum[:]); got != want {
+		t.Fatalf("embedded md-render-core sha=%s want=%s", got, want)
+	}
+	if !strings.Contains(renderedConsoleSpecsPage(), "<script>"+viewservice.MarkdownRenderCore+"</script>") {
+		t.Fatal("served spec page does not contain the pinned shared renderer bytes")
 	}
 }

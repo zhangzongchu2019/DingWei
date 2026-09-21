@@ -7,8 +7,11 @@ const { chromium } = require('playwright');
 
 const GO_SOURCE = path.join(__dirname, '..', 'internal', 'm8', 'console_specs_page.go');
 const ASSET_DIR = path.join(__dirname, '..', 'internal', 'm8', 'static', 'easymde');
+const MD_CORE = path.join(__dirname, 'md-render-core.js');
+const RENDERER = path.join(__dirname, 'renderer-canary-sse.html');
 const START = 'const consoleSpecsPageHTML = `';
 const END = '`\n\nfunc (h *Hub) HandleConsoleSpecsPage';
+const MUTATION = process.argv.find((arg) => arg.startsWith('--mutate='))?.slice('--mutate='.length) || '';
 
 function productionHTML() {
   const source = fs.readFileSync(GO_SOURCE, 'utf8');
@@ -17,7 +20,13 @@ function productionHTML() {
   const contentStart = start + START.length;
   const end = source.indexOf(END, contentStart);
   assert.notStrictEqual(end, -1, 'consoleSpecsPageHTML end marker missing');
-  return source.slice(contentStart, end);
+  let html = source.slice(contentStart, end).replace(
+    '<script id=dw-md-core></script>', () => `<script>${fs.readFileSync(MD_CORE, 'utf8')}</script>`);
+  if (MUTATION === 'no-render') html = html.replace('renderSpec(data.revision.content_markdown);', '');
+  if (MUTATION === 'no-wire') html = html.replace('wireSpecRender(root);', '');
+  if (MUTATION === 'no-copy') html = html.replace("root.querySelectorAll('.copy-code')", "root.querySelectorAll('.copy-code-disabled')");
+  if (MUTATION && !['no-render', 'no-wire', 'no-copy'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  return html;
 }
 
 function listen(server) {
@@ -40,6 +49,20 @@ async function main() {
   const server = http.createServer(async (req, res) => {
     if (req.url === '/console/specs') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(html); return;
+    }
+    if (req.url === '/view/parity-session') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(fs.readFileSync(RENDERER)); return;
+    }
+    if (req.url === '/view/parity-session/status') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ session: 'parity-session', auth_mode: 'legacy', readonly: true, state: 'idle' })); return;
+    }
+    if (req.url === '/f/spec/good/26/0921/0123456789abcdef0123456789abcdef.png') {
+      res.writeHead(200, { 'Content-Type': 'image/png' });
+      res.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64')); return;
+    }
+    if (req.url === '/f/spec/missing/26/0921/ffffffffffffffffffffffffffffffff.png') {
+      res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('gone'); return;
     }
     if (req.url === '/console/spec-assets/easymde.min.js') {
       res.writeHead(200, { 'Content-Type': 'text/javascript' }); res.end(fs.readFileSync(path.join(ASSET_DIR, 'easymde.min.js'))); return;
@@ -79,7 +102,11 @@ async function main() {
   if (process.env.PW_CHANNEL) launchOptions.channel = process.env.PW_CHANNEL;
   const browser = await chromium.launch(launchOptions);
   try {
-    const page = await browser.newPage(); page.setDefaultTimeout(2500);
+    const context = await browser.newContext();
+    await context.addInitScript(() => { Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (text) => { globalThis.__copiedCode = text; } }, configurable: true }); });
+    const page = await context.newPage(); page.setDefaultTimeout(2500);
+    const pageErrors = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}/console/specs`, { waitUntil: 'domcontentloaded' });
     for (const title of ['Spec A', 'Spec B']) {
       await page.fill('#new-title', title);
@@ -94,9 +121,31 @@ async function main() {
       await page.locator(`#spec-list [data-title="${title}"] .edit-spec`).click();
       await page.waitForFunction((want) => document.getElementById('edit-title').value === want, title);
       assert.strictEqual(await page.inputValue('#edit-title'), title, `edit form must open ${title}`);
-      await page.evaluate((value) => window.specEditors.edit.value(value), `# ${title} changed`);
+      await page.locator('#spec-rendered h1').filter({ hasText: title }).waitFor({ state: 'visible' });
+      const changed = title === 'Spec A'
+        ? `# ${title} changed\n\n\`\`\`python\nprint("copy-me")\n\`\`\`\n\n![good](http://127.0.0.1:${port}/f/spec/good/26/0921/0123456789abcdef0123456789abcdef.png)\n\n![missing](http://127.0.0.1:${port}/f/spec/missing/26/0921/ffffffffffffffffffffffffffffffff.png)`
+        : `# ${title} changed`;
+      await page.evaluate((value) => window.specEditors.edit.value(value), changed);
       await page.click('#save-spec');
       await page.locator('#edit-status').filter({ hasText: 'saved revision 2' }).waitFor({ state: 'visible' });
+      if (title === 'Spec A') {
+        await page.locator('#spec-rendered h1').filter({ hasText: 'Spec A changed' }).waitFor({ state: 'visible' });
+        await page.locator('#spec-rendered img.md-img').waitFor({ state: 'visible' });
+        await page.locator('#spec-rendered .md-image-fallback').waitFor({ state: 'visible' });
+        assert.strictEqual(await page.locator('#spec-rendered img.md-img').count(), 1, 'working image must remain inline');
+        assert.strictEqual(await page.locator('#spec-rendered .md-image-fallback').getAttribute('href'), `http://127.0.0.1:${port}/f/spec/missing/26/0921/ffffffffffffffffffffffffffffffff.png`, 'failed image must retain a direct download exit');
+        assert.strictEqual(await page.locator('#spec-rendered img.md-img').evaluate((el) => getComputedStyle(el).maxHeight), '420px', 'shared renderer CSS contract must be present');
+        await page.locator('#spec-rendered .copy-code').click();
+        assert.strictEqual(await page.evaluate(() => globalThis.__copiedCode), 'print("copy-me")', 'Copy button must be wired to the rendered code');
+        const timeline = await context.newPage();
+        await timeline.goto(`http://127.0.0.1:${port}/view/parity-session`, { waitUntil: 'domcontentloaded' });
+        const timelineRendered = await timeline.evaluate((markdown) => renderMarkdown(markdown), changed);
+        const specCoreRendered = await page.evaluate((markdown) => DwMdCore.renderMarkdown(markdown), changed);
+        assert.strictEqual(specCoreRendered, timelineRendered, 'spec and timeline must render identical bytes at the real spec origin');
+        assert.strictEqual(await page.locator('#spec-rendered > .md').count(), 1, 'the spec page must mount the shared renderer output into its visible DOM');
+        assert.strictEqual(await page.evaluate((origin) => DwMdCore.isOwnFileUrl(origin + '/f/spec/good/26/0921/0123456789abcdef0123456789abcdef.png'), `http://127.0.0.1:${port}`), true, 'shared own-file boundary must use the real spec page origin');
+        await timeline.close();
+      }
     }
     await page.reload({ waitUntil: 'domcontentloaded' });
     assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 2, 'reload must retain both specs');
@@ -127,8 +176,9 @@ async function main() {
     });
     assert.strictEqual(wrapMetrics.overflow, 0, `editor line overflowed: ${JSON.stringify(wrapMetrics)}`);
     assert.strictEqual(wrapMetrics.lineOverhang, 0, `editor line overhung viewport: ${JSON.stringify(wrapMetrics)}`);
+    assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);
-    console.log('console specs browser: passed=2 failed=0');
+    console.log('console specs browser: passed=7 failed=0');
   } finally {
     await browser.close(); await new Promise((resolve) => server.close(resolve));
   }
