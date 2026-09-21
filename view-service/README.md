@@ -10,6 +10,27 @@ python3 -m unittest -v test_view_service.py
 python3 -m http.server 19312 --bind 127.0.0.1
 ```
 
+## markdown 渲染共享件（`md-render-core.js`）
+
+`view-service/md-render-core.js` 是 markdown 渲染的**单一事实源**；
+`renderer-canary-sse.html` 里带 `// DW-MD-CORE:<段名> BEGIN/END` 标记的 6 段是它的**生成副本**。
+
+```bash
+cd view-service
+python3 md-render-core-sync.py --check         # 只核：漂移即 rc=1，并指名是哪一段
+python3 md-render-core-sync.py                 # 刷副本（改完源必须跑，然后两份一起提交）
+python3 -m unittest -v test_md_render_core.py  # 漂移闸 12 格（含 5 条“闸有牙”腿）
+NODE_PATH=<playwright 所在> node md-render-core-parity.js   # 行为对账闸：共享件 vs 产品页，99 项输出逐字节相同（≈0.9s）
+```
+
+🔴 改法顺序不能反：**改 `md-render-core.js` → 跑 sync → 两份一起提交**。
+不要直接改 renderer 里那 6 段——它是生成物，下次同步会覆盖你的改动。
+
+🔴 这两条闸目前**都没有任何自动执行路径**（仓内无 CI；`build.sh` 只做 `go build` ＋ `go version`，
+不跑 python / node 测试）⇒ 改完共享件**必须手动跑两条**。
+漂移闸比的是**源字节**，对账闸比的是**行为输出**——🔵 源字节相同 ≠ 行为相同（遮蔽/重定义/依赖段外全局都能让两者分家），
+所以两条都要跑。接线归属待组长裁（见 `runbooks/DELIVERY-MD-RENDER-CORE-0.2.1.50-qwen38maxkhovvob4.md` §七）。
+
 浏览器回归使用 Playwright 1.45.3 Docker 镜像，覆盖桌面与移动视口、等候区接纳转移、回合分组、进行中工具折叠、完成后工具区移除和横向溢出：
 
 ```bash

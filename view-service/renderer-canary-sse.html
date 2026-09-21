@@ -1475,6 +1475,16 @@
     const pageInstanceNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
       value => value.toString(16).padStart(2, '0')).join('');
 
+    // ── 🔴 DW-MD-CORE:下面 6 段是 view-service/md-render-core.js 的【生成副本】────────────
+    //    (标记形如 DW-MD-CORE:段名 BEGIN/END;6 段 = escape · own-url · ext-kind · ext-of ·
+    //     never-inline · render。它们在本文件里**不连续**,因为抽取时**零移动**——
+    //     移动 const 会引入 TDZ 风险,而本格的硬条件是「抽件前后两件闸结论逐项相同」。)
+    //    🔴 不要直接改这 6 段:改共享件 → `python3 view-service/md-render-core-sync.py` → 两份一起提交。
+    //    漂移由 `view-service/test_md_render_core.py` 挡(它跑 --check,不同步即红)。
+    //    🔴 为什么两边各一份字节而不是新增一个静态资产路由:两页由不同服务出(renderer 走 view-service,
+    //     spec 页走 Go),共用一个 HTTP 资产要新增静态路由 ⇒ 牵 nginx 前缀改写、哈希 pin、
+    //     以及「非白名单路径仍 404」的阴格,代价远大于收益。详见共享件头部与交付件。
+    // 🔴 DW-MD-CORE:escape BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     function escapeHtml(value) {
       return String(value ?? '')
         .replaceAll('&', '&amp;')
@@ -1483,6 +1493,7 @@
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
     }
+    // DW-MD-CORE:escape END
     function newRequestId() {
       return Array.from(crypto.getRandomValues(new Uint8Array(16)),
         value => value.toString(16).padStart(2, '0')).join('');
@@ -2597,12 +2608,14 @@
       return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
     }
 
+    // 🔴 DW-MD-CORE:own-url BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     function isOwnFileUrl(raw) {
       try {
         const u = new URL(raw, location.href);
         return u.origin === location.origin && u.pathname.startsWith('/f/');
       } catch { return false; }
     }
+    // DW-MD-CORE:own-url END
 
     // 正文里的 URL 常带尾随标点（句号、右括号、中文标点），不剥掉会把它吃进路径。
     function trimUrlTail(raw) {
@@ -2634,6 +2647,7 @@
       return task;
     }
 
+    // 🔴 DW-MD-CORE:ext-kind BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     // 附录 A5 那张白名单的**反向映射**，只在 HEAD 不可用时作降级依据。
     // 🔴 表外的扩展名（含 .bin）一律下载链接，不尝试内联。
     // 🔴 本表只在【降级路径】上用（HEAD 拿不到 Content-Type 时按 URL 扩展名分派）。
@@ -2660,12 +2674,14 @@
       txt: 'text', md: 'text', csv: 'text', json: 'text', log: 'text', py: 'text', js: 'text',
       go: 'text', java: 'text', yaml: 'text', yml: 'text', toml: 'text', ini: 'text', sh: 'text', sql: 'text',
     };
+    // DW-MD-CORE:ext-kind END
     // 展示用的类型文案：扩展名分派下没有响应头可读，不编造 media_type。
     const FILE_EXT_LABEL = {
       png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp',
       mp4: 'video/mp4', webm: 'video/webm', pdf: 'application/pdf', txt: 'text/plain',
     };
 
+    // 🔴 DW-MD-CORE:ext-of BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     function fileExtOf(url) {
       try {
         const last = new URL(url, location.href).pathname.split('/').pop() || '';
@@ -2673,6 +2689,7 @@
         return dot > 0 ? last.slice(dot + 1).toLowerCase() : '';
       } catch { return ''; }
     }
+    // DW-MD-CORE:ext-of END
 
     function kindFromMediaType(mt) {
       if (!mt) return '';
@@ -2694,6 +2711,7 @@
       if (mt.startsWith('text/')) return 'text';
       return 'download';
     }
+    // 🔴 DW-MD-CORE:never-inline BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     // 🔴 附录 E：这几个扩展名**永不内联**，且**不看 FILE_EXT_KIND 是否列了它们**。
     //    为什么要独立一层：今天 svg/html 不在表里，安全是靠「没写」得来的；
     //    将来有人「补全白名单」把它们加进去，降级路径就会内联 —— 而那条路径当时没有任何断言盯着。
@@ -2704,6 +2722,7 @@
       if (FILE_EXT_NEVER_INLINE.has(ext)) return 'download';
       return FILE_EXT_KIND[ext] || 'download';
     }
+    // DW-MD-CORE:never-inline END
 
     // 从 Content-Disposition 取原始文件名：支持 RFC 5987 的 filename*（可带 UTF-8 百分号编码）
     // 与普通 filename="…"。🔴 取不到就返回 ''，**绝不猜、绝不用 URL 末段冒充原名**。
@@ -3601,6 +3620,7 @@
       /* eslint-enable no-unreachable */
     }
 
+    // 🔴 DW-MD-CORE:render BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     function renderMarkdown(src) {
       const blocks = splitFencedBlocks(src);
       let html = '';
@@ -3808,6 +3828,7 @@
       }
       return html;
     }
+    // DW-MD-CORE:render END
 
     function wireCopyButtons(root) {
       root.querySelectorAll('.copy-code').forEach(btn => {
