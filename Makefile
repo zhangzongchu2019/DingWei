@@ -4,6 +4,7 @@ build:
 run: build
 	./bin/workpulse
 test:
+	python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed
 	go test ./...
 tidy:
 	go mod tidy
