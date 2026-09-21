@@ -28,7 +28,9 @@ function productionHTML() {
   if (MUTATION === 'no-server-error') html = html.replace("return prefix+' '+r.status+(detail?':'+detail:'');", "return prefix;");
   if (MUTATION === 'role-split') html = html.replace("var canEdit=(isOwner||!!(sharedSpecID&&sharedEditToken))&&!spec.editing_closed;", "var canEdit=platformRole!=='management';");
   if (MUTATION === 'no-action-error') html = html.replace("status.textContent=await responseFailure('操作失败',r);", "status.textContent='';");
-  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'no-view') html = html.replace("view.className='view-spec';", "view.className='view-spec-disabled';");
+  if (MUTATION === 'readonly-can-write') html = html.replace("document.getElementById('save-spec').hidden=!!readOnly;", "document.getElementById('save-spec').hidden=false;");
+  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -196,17 +198,29 @@ async function main() {
     assert.strictEqual(await page.locator('#edit-status').textContent(), '保存失败 409:server save detail', 'save must expose status and server response body');
     assert.strictEqual(specs.find((item) => item.title === 'Spec B').current_revision, 2, 'server-rejected save must not create a revision');
     specs.push({ id: 'spec-foreign', principal_id: 'owner-b', title: 'Foreign', state: 'draft', current_revision: 1 });
-    revisions.set('spec-foreign', { spec_id: 'spec-foreign', revision: 1, content_markdown: '# Foreign', acceptance_json: '[]', input_anchors_json: '[]' });
+    revisions.set('spec-foreign', { spec_id: 'spec-foreign', revision: 1, content_markdown: '# Foreign', acceptance_json: '[{"id":"A1","text":"read"}]', input_anchors_json: '[{"kind":"owner_message","ref":"msg:foreign"}]' });
+    specs.push({ id: 'spec-closed', principal_id: 'owner-a', title: 'Closed', state: 'draft', current_revision: 1, editing_closed: true });
+    revisions.set('spec-closed', { spec_id: 'spec-closed', revision: 1, content_markdown: '# Closed', acceptance_json: '[{"id":"A1","text":"read"}]', input_anchors_json: '[{"kind":"owner_message","ref":"msg:closed"}]' });
     await page.evaluate(() => refreshSpecs());
     const foreign = page.locator('#spec-list [data-title="Foreign"]');
     assert.strictEqual(await foreign.locator('.edit-spec').count(), 0, 'management role must not grant Edit on another owner spec');
     assert.strictEqual(await foreign.getByRole('button', { name: 'Submit', exact: true }).count(), 0, 'management role must not grant Submit on another owner spec');
+    await foreign.locator('.view-spec').click();
+    await page.waitForFunction(() => document.getElementById('edit-title').value === 'Foreign');
+    assert.strictEqual(await page.locator('#save-spec').isHidden(), true, 'foreign spec View must not expose Save');
+    assert.strictEqual(await page.locator('#edit-status').textContent(), '只读', 'foreign spec View must say it is read-only');
+    assert.strictEqual(await page.locator('#edit-acceptance').isDisabled(), true, 'foreign spec View must disable write controls');
+    const closed = page.locator('#spec-list [data-title="Closed"]');
+    assert.strictEqual(await closed.locator('.edit-spec').count(), 0, 'editing-closed own spec must not expose Edit');
+    await closed.locator('.view-spec').click();
+    await page.waitForFunction(() => document.getElementById('edit-title').value === 'Closed');
+    assert.strictEqual(await page.locator('#save-spec').isHidden(), true, 'editing-closed own spec must remain readable without Save');
     const own = page.locator('#spec-list [data-title="Spec A"]');
     await own.getByRole('button', { name: 'Archive', exact: true }).click();
     await own.locator('.spec-action-status').filter({ hasText: '操作失败 409:already archived' }).waitFor({ state: 'visible' });
     assert.deepStrictEqual(pageErrors, [], `failed specAction must be handled on-page: ${JSON.stringify(pageErrors)}`);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 3, 'reload must retain all specs');
+    assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 4, 'reload must retain all specs');
     const editorContract = await page.evaluate(() => ({
       spell: window.specEditors.new.options.spellChecker,
       fa: window.specEditors.new.options.autoDownloadFontAwesome,
@@ -236,7 +250,7 @@ async function main() {
     assert.strictEqual(wrapMetrics.lineOverhang, 0, `editor line overhung viewport: ${JSON.stringify(wrapMetrics)}`);
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);
-    console.log('console specs browser: passed=18 failed=0');
+    console.log('console specs browser: passed=23 failed=0');
   } finally {
     await browser.close(); await new Promise((resolve) => server.close(resolve));
   }
