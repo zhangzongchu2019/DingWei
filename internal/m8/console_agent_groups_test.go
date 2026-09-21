@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -115,7 +116,7 @@ func TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership(t *testing.T) {
 	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-a", b2.ID); err == nil {
 		t.Fatal("principal added another owners Agent")
 	}
-	if err = db.SetConsoleAgentGroupAdditionsClosed(ctx, created.Code, "owner-a", true); err != nil {
+	if err = db.SetConsoleAgentGroupAdditionsClosed(ctx, created.Code, "owner-a", true, false); err != nil {
 		t.Fatal(err)
 	}
 	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-b", b2.ID); err == nil {
@@ -124,13 +125,13 @@ func TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership(t *testing.T) {
 	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-a", a1.ID); err != nil {
 		t.Fatalf("creator must still add own agent while closed: %v", err)
 	}
-	if err = db.UnassignConsoleAgentGroup(ctx, created.Code, "owner-a", b1.ID); err != nil {
+	if err = db.UnassignConsoleAgentGroup(ctx, created.Code, "owner-a", b1.ID, false); err != nil {
 		t.Fatalf("creator kick failed: %v", err)
 	}
-	if err = db.DeleteConsoleAgentGroup(ctx, created.Code, "owner-b"); err == nil {
+	if err = db.DeleteConsoleAgentGroup(ctx, created.Code, "owner-b", false); err == nil {
 		t.Fatal("non-creator deleted group")
 	}
-	if err = db.DeleteConsoleAgentGroup(ctx, created.Code, "owner-a"); err != nil {
+	if err = db.DeleteConsoleAgentGroup(ctx, created.Code, "owner-a", false); err != nil {
 		t.Fatal(err)
 	}
 	if members, err := db.ListAgentGroupMembers(ctx, created.Code); err != nil || len(members) != 0 {
@@ -156,32 +157,38 @@ func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 	if err != nil || len(groups) != 1 || !groups[0].LeaderConsoleMapped {
 		t.Fatalf("mapped leader precondition missing groups=%+v err=%v", groups, err)
 	}
-	if err := db.ClaimLegacyConsoleAgentGroupAsManagement(ctx, groupCodeA, "manager"); err != nil {
-		t.Fatal(err)
+	req := httptest.NewRequest(http.MethodPost, "/api/console/agent-groups/"+groupCodeA+"/additions", bytes.NewBufferString(`{"closed":true}`))
+	req.SetPathValue("code", groupCodeA)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
+	req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
+	rr := httptest.NewRecorder()
+	hub.HandleConsoleAgentGroup(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("management acted on mapped legacy group code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	groups, err = db.ListAgentGroups(ctx)
 	if err != nil || len(groups) != 1 || groups[0].CreatorPrincipal != "" {
 		t.Fatalf("management stole mapped legacy group groups=%+v err=%v", groups, err)
 	}
-	req := httptest.NewRequest(http.MethodGet, "/api/console/agent-groups", nil)
+	req = httptest.NewRequest(http.MethodGet, "/api/console/agent-groups", nil)
 	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
 	req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
-	rr := httptest.NewRecorder()
+	rr = httptest.NewRecorder()
 	hub.HandleConsoleAgentGroups(rr, req)
 	if rr.Code != http.StatusOK || bytes.Contains(rr.Body.Bytes(), []byte(groupCodeA)) {
 		t.Fatalf("management UI exposed mapped legacy group as manageable code=%d body=%s", rr.Code, rr.Body.String())
 	}
-	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeA, "owner-a", true); err != nil {
+	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeA, "owner-a", true, false); err != nil {
 		t.Fatalf("legacy leader close additions: %v", err)
 	}
 	groups, err = db.ListAgentGroups(ctx)
 	if err != nil || len(groups) != 1 || groups[0].CreatorPrincipal != "owner-a" || !groups[0].AdditionsClosed {
 		t.Fatalf("legacy claim was not persisted groups=%+v err=%v", groups, err)
 	}
-	if err := db.UnassignConsoleAgentGroup(ctx, groupCodeA, "owner-a", member.ID); err != nil {
+	if err := db.UnassignConsoleAgentGroup(ctx, groupCodeA, "owner-a", member.ID, false); err != nil {
 		t.Fatalf("legacy leader kick: %v", err)
 	}
-	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeA, "owner-a"); err != nil {
+	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeA, "owner-a", false); err != nil {
 		t.Fatalf("legacy leader delete: %v", err)
 	}
 
@@ -190,10 +197,10 @@ func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 	if err := db.CreateConsoleAgentGroup(ctx, newGroup); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeB, "owner-a", true); err != nil {
+	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeB, "owner-a", true, false); err != nil {
 		t.Fatalf("new group close additions: %v", err)
 	}
-	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeB, "owner-a"); err != nil {
+	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeB, "owner-a", false); err != nil {
 		t.Fatalf("new group delete: %v", err)
 	}
 }
@@ -209,7 +216,7 @@ func TestConsoleAgentGroupsLegacyWithoutConsoleAgentRequiresManagementClaim(t *t
 	if err := db.AssignAgentGroup(ctx, model.AgentGroupMember{Code: groupCodeA, KeyID: member.KeyID, SessionName: member.SessionName, OwnerKey: "ob"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeA, "owner-a", true); err == nil {
+	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeA, "owner-a", true, false); err == nil {
 		t.Fatal("ordinary owner claimed legacy group whose leader has no console_agent mapping")
 	}
 	req := httptest.NewRequest(http.MethodGet, "/api/console/agent-groups", nil)
@@ -229,11 +236,95 @@ func TestConsoleAgentGroupsLegacyWithoutConsoleAgentRequiresManagementClaim(t *t
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("management close legacy orphan group code=%d body=%s", rr.Code, rr.Body.String())
 	}
-	if err := db.UnassignConsoleAgentGroup(ctx, groupCodeA, "manager", member.ID); err != nil {
+	if err := db.UnassignConsoleAgentGroup(ctx, groupCodeA, "manager", member.ID, false); err != nil {
 		t.Fatalf("management kick legacy orphan member: %v", err)
 	}
-	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeA, "manager"); err != nil {
+	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeA, "manager", false); err != nil {
 		t.Fatalf("management delete legacy orphan group: %v", err)
+	}
+}
+
+func TestConsoleAgentGroupFailedRequestsDoNotClaimAndClosedRequiresPresence(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	ctx := context.Background()
+	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: "orphan-key", LeaderSessionName: "orphan-session", LeaderOwnerKey: "legacy"}); err != nil {
+		t.Fatal(err)
+	}
+	request := func(method, suffix, body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, "/api/console/agent-groups/"+groupCodeA+suffix, strings.NewReader(body))
+		req.SetPathValue("code", groupCodeA)
+		req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
+		req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
+		rr := httptest.NewRecorder()
+		hub.HandleConsoleAgentGroup(rr, req)
+		return rr
+	}
+	for _, tc := range []struct {
+		method, suffix, body string
+		want                 int
+	}{
+		{http.MethodPut, "", "", http.StatusMethodNotAllowed},
+		{http.MethodPost, "/additions", `{}`, http.StatusBadRequest},
+		{http.MethodPost, "/additions", `null`, http.StatusBadRequest},
+	} {
+		if rr := request(tc.method, tc.suffix, tc.body); rr.Code != tc.want {
+			t.Fatalf("failed request code=%d want=%d body=%s", rr.Code, tc.want, rr.Body.String())
+		}
+		groups, err := db.ListAgentGroups(ctx)
+		if err != nil || len(groups) != 1 || groups[0].CreatorPrincipal != "" {
+			t.Fatalf("failed request claimed orphan group groups=%+v err=%v", groups, err)
+		}
+	}
+	if rr := request(http.MethodPost, "/additions", `{"closed":true}`); rr.Code != http.StatusNoContent {
+		t.Fatalf("valid close code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	if rr := request(http.MethodPost, "/additions", `{}`); rr.Code != http.StatusBadRequest {
+		t.Fatalf("missing closed reopened group code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	groups, _ := db.ListAgentGroups(ctx)
+	if len(groups) != 1 || !groups[0].AdditionsClosed {
+		t.Fatalf("missing closed changed state groups=%+v", groups)
+	}
+	if rr := request(http.MethodPost, "/additions", `{"closed":false}`); rr.Code != http.StatusNoContent {
+		t.Fatalf("explicit false code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	groups, _ = db.ListAgentGroups(ctx)
+	if len(groups) != 1 || groups[0].AdditionsClosed {
+		t.Fatalf("explicit false did not reopen groups=%+v", groups)
+	}
+}
+
+func TestConsoleAgentGroupOrphanDecisionIsRecheckedAtActionTime(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	ctx := context.Background()
+	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: "late-key", LeaderSessionName: "late-session", LeaderOwnerKey: "ob"}); err != nil {
+		t.Fatal(err)
+	}
+	// T1: management observes a true orphan through the same list API used by UI.
+	req := httptest.NewRequest(http.MethodGet, "/api/console/agent-groups", nil)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
+	req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
+	rr := httptest.NewRecorder()
+	hub.HandleConsoleAgentGroups(rr, req)
+	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"can_manage":true`)) {
+		t.Fatalf("orphan precondition missing code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	// T2: before the action, the real owner mapping arrives.
+	addOwnedGroupAgent(t, db, "owner-b", "late-agent", "late-key", "late-session", "ob")
+	// T3: stale management intent must be rejected by the action SQL itself.
+	req = httptest.NewRequest(http.MethodPost, "/api/console/agent-groups/"+groupCodeA+"/additions", strings.NewReader(`{"closed":true}`))
+	req.SetPathValue("code", groupCodeA)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
+	req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleAgentGroup(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("stale management intent acted after owner appeared code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeA, "owner-b", true, false); err != nil {
+		t.Fatalf("real owner could not manage after rejected stale intent: %v", err)
 	}
 }
 
@@ -261,7 +352,7 @@ func TestGroupingEmptyTableDistinguishesNeverConfiguredFromDeletedAll(t *testing
 	if err := db.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "agent-a", KeyID: "ka", SessionName: "owner-a-agent-2642", OwnerPrincipal: "principal-a", Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeA, "principal-a"); err != nil {
+	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeA, "principal-a", false); err != nil {
 		t.Fatal(err)
 	}
 	if err := hub.enforceAgentGrouping(ctx, from, env, "kb", "owner-b-agent-2642"); !errors.Is(err, errGroupAgentNotFound) {

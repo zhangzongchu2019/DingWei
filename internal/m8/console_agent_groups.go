@@ -17,11 +17,10 @@ type consoleAgentGroupRepository interface {
 	ListAgentGroups(context.Context) ([]model.AgentGroup, error)
 	ListAgentGroupMembers(context.Context, string) ([]model.AgentGroupMember, error)
 	CreateConsoleAgentGroup(context.Context, model.AgentGroup) error
-	DeleteConsoleAgentGroup(context.Context, string, string) error
-	ClaimLegacyConsoleAgentGroupAsManagement(context.Context, string, string) error
-	SetConsoleAgentGroupAdditionsClosed(context.Context, string, string, bool) error
+	DeleteConsoleAgentGroup(context.Context, string, string, bool) error
+	SetConsoleAgentGroupAdditionsClosed(context.Context, string, string, bool, bool) error
 	AssignOwnedConsoleAgentGroup(context.Context, string, string, string) error
-	UnassignConsoleAgentGroup(context.Context, string, string, string) error
+	UnassignConsoleAgentGroup(context.Context, string, string, string, bool) error
 }
 
 type consoleAgentGroupView struct {
@@ -137,16 +136,11 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 	repo := h.Repo.(consoleAgentGroupRepository)
 	principal, code := platformPrincipal(r), r.PathValue("code")
-	if platformRole(r) == consolePlatformRoleManagement {
-		if err := repo.ClaimLegacyConsoleAgentGroupAsManagement(r.Context(), code, principal); err != nil {
-			http.Error(w, "agent group claim failed", http.StatusConflict)
-			return
-		}
-	}
+	management := platformRole(r) == consolePlatformRoleManagement
 	var err error
 	switch {
 	case r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/members/"):
-		err = repo.UnassignConsoleAgentGroup(r.Context(), code, principal, r.PathValue("agentID"))
+		err = repo.UnassignConsoleAgentGroup(r.Context(), code, principal, r.PathValue("agentID"), management)
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/members"):
 		var request struct {
 			AgentID string `json:"agent_id"`
@@ -158,15 +152,15 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		err = repo.AssignOwnedConsoleAgentGroup(r.Context(), code, principal, request.AgentID)
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/additions"):
 		var request struct {
-			Closed bool `json:"closed"`
+			Closed *bool `json:"closed"`
 		}
-		if json.NewDecoder(r.Body).Decode(&request) != nil {
+		if json.NewDecoder(r.Body).Decode(&request) != nil || request.Closed == nil {
 			http.Error(w, "closed required", http.StatusBadRequest)
 			return
 		}
-		err = repo.SetConsoleAgentGroupAdditionsClosed(r.Context(), code, principal, request.Closed)
+		err = repo.SetConsoleAgentGroupAdditionsClosed(r.Context(), code, principal, *request.Closed, management)
 	case r.Method == http.MethodDelete:
-		err = repo.DeleteConsoleAgentGroup(r.Context(), code, principal)
+		err = repo.DeleteConsoleAgentGroup(r.Context(), code, principal, management)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return

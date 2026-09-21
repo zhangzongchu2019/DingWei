@@ -3270,9 +3270,10 @@ func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentG
 	return tx.Commit()
 }
 
-func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID string) error {
+func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID string, management bool) error {
 	res, err := s.db.ExecContext(ctx, `DELETE FROM agent_group WHERE code=? AND (creator_principal=? OR (creator_principal IS NULL AND EXISTS(
-		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.owner_principal=? AND a.active=1)))`, code, principalID, principalID)
+		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.owner_principal=? AND a.active=1)) OR
+		(?=1 AND creator_principal IS NULL AND NOT EXISTS(SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.active=1)))`, code, principalID, principalID, boolInt(management))
 	if err != nil {
 		return err
 	}
@@ -3283,19 +3284,10 @@ func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID 
 	return nil
 }
 
-func (s *SQLite) ClaimLegacyConsoleAgentGroupAsManagement(ctx context.Context, code, principalID string) error {
-	if strings.TrimSpace(principalID) == "" {
-		return sql.ErrNoRows
-	}
-	_, err := s.db.ExecContext(ctx, `UPDATE agent_group SET creator_principal=?,updated_at=? WHERE code=? AND creator_principal IS NULL AND NOT EXISTS(
-		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.active=1)`,
-		principalID, s.now().UTC().Format(time.RFC3339Nano), code)
-	return err
-}
-
-func (s *SQLite) SetConsoleAgentGroupAdditionsClosed(ctx context.Context, code, principalID string, closed bool) error {
+func (s *SQLite) SetConsoleAgentGroupAdditionsClosed(ctx context.Context, code, principalID string, closed, management bool) error {
 	res, err := s.db.ExecContext(ctx, `UPDATE agent_group SET additions_closed=?,creator_principal=COALESCE(creator_principal,?),updated_at=? WHERE code=? AND (creator_principal=? OR (creator_principal IS NULL AND EXISTS(
-		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.owner_principal=? AND a.active=1)))`, boolInt(closed), principalID, s.now().UTC().Format(time.RFC3339Nano), code, principalID, principalID)
+		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.owner_principal=? AND a.active=1)) OR
+		(?=1 AND creator_principal IS NULL AND NOT EXISTS(SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.active=1)))`, boolInt(closed), principalID, s.now().UTC().Format(time.RFC3339Nano), code, principalID, principalID, boolInt(management))
 	if err != nil {
 		return err
 	}
@@ -3323,13 +3315,14 @@ func (s *SQLite) AssignOwnedConsoleAgentGroup(ctx context.Context, code, princip
 	return nil
 }
 
-func (s *SQLite) UnassignConsoleAgentGroup(ctx context.Context, code, principalID, agentID string) error {
+func (s *SQLite) UnassignConsoleAgentGroup(ctx context.Context, code, principalID, agentID string, management bool) error {
 	res, err := s.db.ExecContext(ctx, `DELETE FROM agent_group_member WHERE code=? AND (key_id,session_name) IN (
 		SELECT a.key_id,a.session_name FROM console_agent a JOIN agent_group g ON g.code=?
 		WHERE a.id=? AND (a.owner_principal=? OR g.creator_principal=? OR (g.creator_principal IS NULL AND EXISTS(
-			SELECT 1 FROM console_agent leader WHERE leader.key_id=g.leader_key_id AND leader.session_name=g.leader_session_name AND leader.owner_principal=? AND leader.active=1)))
+			SELECT 1 FROM console_agent leader WHERE leader.key_id=g.leader_key_id AND leader.session_name=g.leader_session_name AND leader.owner_principal=? AND leader.active=1)) OR
+			(?=1 AND g.creator_principal IS NULL AND NOT EXISTS(SELECT 1 FROM console_agent leader WHERE leader.key_id=g.leader_key_id AND leader.session_name=g.leader_session_name AND leader.active=1)))
 	) AND NOT (key_id=(SELECT leader_key_id FROM agent_group WHERE code=?) AND session_name=(SELECT leader_session_name FROM agent_group WHERE code=?))`,
-		code, code, agentID, principalID, principalID, principalID, code, code)
+		code, code, agentID, principalID, principalID, principalID, boolInt(management), code, code)
 	if err != nil {
 		return err
 	}

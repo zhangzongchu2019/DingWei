@@ -9,6 +9,7 @@ const { chromium } = require('playwright');
 const GO_SOURCE = path.join(__dirname, '..', 'internal', 'm8', 'console_auth.go');
 const START = 'const consolePageHTML = `';
 const END = '`\n\nfunc (h *Hub) HandleConsoleAgents';
+const MUTATION = process.argv.find((arg) => arg.startsWith('--mutate='))?.slice(9) || '';
 
 function consoleHTMLFromProductionSource() {
   const source = fs.readFileSync(GO_SOURCE, 'utf8');
@@ -17,7 +18,10 @@ function consoleHTMLFromProductionSource() {
   const contentStart = start + START.length;
   const end = source.indexOf(END, contentStart);
   assert.notStrictEqual(end, -1, 'consolePageHTML end marker missing');
-  return source.slice(contentStart, end);
+  let html = source.slice(contentStart, end);
+  if (MUTATION === 'stale-groups') html = html.replace('if(generation!==groupRequestGeneration)return null;', '');
+  if (MUTATION && MUTATION !== 'stale-groups') throw new Error(`unknown mutation: ${MUTATION}`);
+  return html;
 }
 
 function listen(server) {
@@ -33,6 +37,14 @@ async function main() {
     { session: 'owner-alpha-2642', online: true },
     { session: 'owner-offline-2642', online: false },
   ];
+  let raceGroupResponses = false;
+  let raceGroupRequest = 0;
+  function groupPayload(closed) {
+    return { principal: 'owner-a', owned_agents: [{ id: 'agent-a', session_name: 'owner-alpha-2642' }], groups: [{
+      code: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'abc123', creator_principal: 'owner-a', can_manage: true, additions_closed: closed,
+      members: [{ agent_id: 'agent-a', session_name: 'owner-alpha-2642' }, { agent_id: 'agent-b', session_name: 'other-full-agent-2642' }],
+    }] };
+  }
   const server = http.createServer((req, res) => {
     if (req.url === '/console') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -58,11 +70,13 @@ async function main() {
       return;
     }
     if (req.url === '/api/console/agent-groups') {
-      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-      res.end(JSON.stringify({ principal: 'owner-a', owned_agents: [{ id: 'agent-a', session_name: 'owner-alpha-2642' }], groups: [{
-        code: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'abc123', creator_principal: 'owner-a', can_manage: true, additions_closed: false,
-        members: [{ agent_id: 'agent-a', session_name: 'owner-alpha-2642' }, { agent_id: 'agent-b', session_name: 'other-full-agent-2642' }],
-      }] }));
+      const send = (closed) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(groupPayload(closed))); };
+      if (raceGroupResponses) {
+        raceGroupRequest += 1;
+        if (raceGroupRequest === 1) { setTimeout(() => send(false), 150); return; }
+        send(true); return;
+      }
+      send(false);
       return;
     }
     if (req.url && req.url.startsWith('/view/')) {
@@ -136,6 +150,18 @@ async function main() {
       await page.locator('#agentMode').click();
       assert.strictEqual(await page.locator('#a').isVisible(), true);
       assert.strictEqual(await page.locator('#g').isHidden(), true);
+    });
+
+    await test('ignores an older group snapshot that arrives after the latest response', async () => {
+      await page.locator('#agentMode').click();
+      raceGroupResponses = true; raceGroupRequest = 0;
+      await page.evaluate(() => Promise.all([refreshGroups(), refreshGroups()]));
+      const openCount = await page.locator('#g .agent-group').getByRole('button', { name: '开放添加' }).count();
+      const closeCount = await page.locator('#g .agent-group').getByRole('button', { name: '关闭添加' }).count();
+      raceGroupResponses = false;
+      await page.locator('#agentMode').click();
+      assert.strictEqual(openCount, 1);
+      assert.strictEqual(closeCount, 0);
     });
 
     await test('opens a real console tab and agent iframe', async () => {
