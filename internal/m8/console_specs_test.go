@@ -244,6 +244,23 @@ func TestConsoleSpecHTTPReviewProducesVersionedTaskProposalWithoutKFields(t *tes
 			t.Fatalf("I leaked K-owned field %s in %s", forbidden, text)
 		}
 	}
+	newBody := `{"title":"Spec A","content_markdown":"# version two","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}],"expected_revision":1}`
+	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+spec.ID, bytes.NewBufferString(newBody))
+	req.SetPathValue("specID", spec.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
+	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "revision locked") {
+		t.Fatalf("locked revision PATCH must be observably rejected code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/versions", bytes.NewBufferString(newBody))
+	req.SetPathValue("specID", spec.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpecNewVersion)(rr, req)
+	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"revision":2`) {
+		t.Fatalf("explicit new version code=%d body=%s", rr.Code, rr.Body.String())
+	}
 }
 
 func stringsReplace(value, old, new string) string {

@@ -93,8 +93,12 @@ func TestConsoleSpecRevisionCASAndClaimedRevisionReturnsToNeedsImprovement(t *te
 		t.Fatal(err)
 	}
 	if _, err := db.AppendConsoleSpecRevision(ctx, "owner-a", "spec-a", 1,
+		specRevision("spec-a", 2, "# changed"), now.Add(5*time.Second)); err != ErrConsoleSpecRevisionLocked {
+		t.Fatalf("locked revision edit err=%v want ErrConsoleSpecRevisionLocked", err)
+	}
+	if _, err := db.OpenConsoleSpecRevision(ctx, "owner-a", "spec-a", 1,
 		specRevision("spec-a", 2, "# changed"), now.Add(5*time.Second)); err != nil {
-		t.Fatal(err)
+		t.Fatalf("explicit new version must remain available: %v", err)
 	}
 	got, err := db.ConsoleSpec(ctx, "owner-a", "spec-a", false)
 	if err != nil || got == nil || got.State != "needs_improvement" || got.CurrentRevision != 2 || got.ClaimedBy != "" {
@@ -156,7 +160,7 @@ func TestConsoleSpecRequiresBothGatesOnTheSameRevisionAndReadyProposalTracksCurr
 	if err != nil || len(history) != 1 || history[0].ID != firstID {
 		t.Fatalf("proposal idempotency history=%+v err=%v", history, err)
 	}
-	if _, err := db.AppendConsoleSpecRevision(ctx, "owner-a", "spec-a", 1,
+	if _, err := db.OpenConsoleSpecRevision(ctx, "owner-a", "spec-a", 1,
 		specRevision("spec-a", 2, "# revision two"), now.Add(6*time.Second)); err != nil {
 		t.Fatal(err)
 	}

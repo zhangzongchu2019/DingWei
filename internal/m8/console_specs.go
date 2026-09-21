@@ -21,6 +21,8 @@ type consoleSpecRepository interface {
 	ConsoleSpecRevision(context.Context, string, string, int, bool) (*model.ConsoleSpecRevision, error)
 	AppendConsoleSpecRevision(context.Context, string, string, int, model.ConsoleSpecRevision, time.Time) (int, error)
 	AppendConsoleSpecRevisionWithCapability(context.Context, string, int, string, model.ConsoleSpecRevision, time.Time) (int, error)
+	OpenConsoleSpecRevision(context.Context, string, string, int, model.ConsoleSpecRevision, time.Time) (int, error)
+	OpenConsoleSpecRevisionWithCapability(context.Context, string, int, string, model.ConsoleSpecRevision, time.Time) (int, error)
 	CloseConsoleSpecEditing(context.Context, string, string, time.Time) error
 	SubmitConsoleSpec(context.Context, string, string, time.Time) error
 	ReviewConsoleSpec(context.Context, model.ConsoleSpecReview, time.Time) error
@@ -28,6 +30,8 @@ type consoleSpecRepository interface {
 	ArchiveConsoleSpec(context.Context, string, string, time.Time) error
 	ListReadyConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
 }
+
+type consoleSpecOpenNewContextKey struct{}
 
 func specCapabilityHash(token string) string {
 	sum := sha256.Sum256([]byte(token))
@@ -206,11 +210,20 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	capability := strings.TrimSpace(r.Header.Get("X-DW-Spec-Edit-Capability"))
+	openNew, _ := r.Context().Value(consoleSpecOpenNewContextKey{}).(bool)
 	var next int
 	if capability != "" {
-		next, err = repo.AppendConsoleSpecRevisionWithCapability(r.Context(), id, req.ExpectedRevision, specCapabilityHash(capability), rev, h.now())
+		if openNew {
+			next, err = repo.OpenConsoleSpecRevisionWithCapability(r.Context(), id, req.ExpectedRevision, specCapabilityHash(capability), rev, h.now())
+		} else {
+			next, err = repo.AppendConsoleSpecRevisionWithCapability(r.Context(), id, req.ExpectedRevision, specCapabilityHash(capability), rev, h.now())
+		}
 	} else if principal != "" {
-		next, err = repo.AppendConsoleSpecRevision(r.Context(), principal, id, req.ExpectedRevision, rev, h.now())
+		if openNew {
+			next, err = repo.OpenConsoleSpecRevision(r.Context(), principal, id, req.ExpectedRevision, rev, h.now())
+		} else {
+			next, err = repo.AppendConsoleSpecRevision(r.Context(), principal, id, req.ExpectedRevision, rev, h.now())
+		}
 	} else {
 		err = store.ErrConsoleSpecEditDenied
 	}
@@ -226,12 +239,22 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "editing closed or invalid capability", http.StatusForbidden)
 		return
 	}
+	if errors.Is(err, store.ErrConsoleSpecRevisionLocked) {
+		http.Error(w, "revision locked; open a new version", http.StatusConflict)
+		return
+	}
 	if err != nil {
 		http.Error(w, "console spec unavailable", http.StatusServiceUnavailable)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]int{"revision": next})
+}
+
+func (h *Hub) HandleConsoleSpecNewVersion(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(context.WithValue(r.Context(), consoleSpecOpenNewContextKey{}, true))
+	r.Method = http.MethodPatch
+	h.HandleConsoleSpec(w, r)
 }
 
 func (h *Hub) HandleConsoleSpecCloseEditing(w http.ResponseWriter, r *http.Request) {

@@ -285,7 +285,9 @@ func run(logger *slog.Logger) error {
 	// PATCH requires the opaque edit capability inside HandleConsoleSpec.
 	mux.HandleFunc("GET /api/specs/shared/{specID}", prefixHub.HandleConsoleSpec)
 	mux.HandleFunc("PATCH /api/specs/shared/{specID}", prefixHub.HandleConsoleSpec)
+	mux.HandleFunc("POST /api/specs/shared/{specID}/versions", prefixHub.HandleConsoleSpecNewVersion)
 	mux.HandleFunc("POST /api/console/specs/{specID}/close-editing", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecCloseEditing)))
+	mux.HandleFunc("POST /api/console/specs/{specID}/versions", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecNewVersion)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/submit", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecSubmit)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/reviews", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("approve", prefixHub.HandleConsoleSpecReview)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/claim", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("approve", prefixHub.HandleConsoleSpecClaim)))

@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	ErrConsoleSpecNotFound   = errors.New("console spec not found")
-	ErrConsoleSpecConflict   = errors.New("console spec revision conflict")
-	ErrConsoleSpecGateOrder  = errors.New("console spec gate order invalid")
-	ErrConsoleSpecEditDenied = errors.New("console spec editing denied")
+	ErrConsoleSpecNotFound       = errors.New("console spec not found")
+	ErrConsoleSpecConflict       = errors.New("console spec revision conflict")
+	ErrConsoleSpecGateOrder      = errors.New("console spec gate order invalid")
+	ErrConsoleSpecEditDenied     = errors.New("console spec editing denied")
+	ErrConsoleSpecRevisionLocked = errors.New("console spec revision locked by downstream reference")
 )
 
 func specTime(v string) (time.Time, error) { return time.Parse(time.RFC3339Nano, v) }
@@ -142,6 +143,14 @@ func (s *SQLite) ConsoleSpecRevision(ctx context.Context, principalID, specID st
 }
 
 func (s *SQLite) AppendConsoleSpecRevision(ctx context.Context, principalID, specID string, expected int, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
+	return s.appendConsoleSpecRevision(ctx, principalID, specID, expected, revision, now, false)
+}
+
+func (s *SQLite) OpenConsoleSpecRevision(ctx context.Context, principalID, specID string, expected int, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
+	return s.appendConsoleSpecRevision(ctx, principalID, specID, expected, revision, now, true)
+}
+
+func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, specID string, expected int, revision model.ConsoleSpecRevision, now time.Time, openNew bool) (int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -157,6 +166,15 @@ func (s *SQLite) AppendConsoleSpecRevision(ctx context.Context, principalID, spe
 	}
 	if current != expected {
 		return 0, ErrConsoleSpecConflict
+	}
+	if !openNew {
+		var locked int
+		if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM console_task_proposal WHERE spec_id=? AND revision=?`, specID, current).Scan(&locked); err != nil {
+			return 0, err
+		}
+		if locked != 0 {
+			return 0, ErrConsoleSpecRevisionLocked
+		}
 	}
 	next := current + 1
 	if revision.SpecID != specID || revision.Revision != next || revision.CreatedBy != principalID {
@@ -187,6 +205,14 @@ func (s *SQLite) AppendConsoleSpecRevision(ctx context.Context, principalID, spe
 // AppendConsoleSpecRevisionWithCapability writes through a shared edit link.
 // Authorization, closed-state check and revision CAS happen in one transaction.
 func (s *SQLite) AppendConsoleSpecRevisionWithCapability(ctx context.Context, specID string, expected int, capabilityHash string, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
+	return s.appendConsoleSpecRevisionWithCapability(ctx, specID, expected, capabilityHash, revision, now, false)
+}
+
+func (s *SQLite) OpenConsoleSpecRevisionWithCapability(ctx context.Context, specID string, expected int, capabilityHash string, revision model.ConsoleSpecRevision, now time.Time) (int, error) {
+	return s.appendConsoleSpecRevisionWithCapability(ctx, specID, expected, capabilityHash, revision, now, true)
+}
+
+func (s *SQLite) appendConsoleSpecRevisionWithCapability(ctx context.Context, specID string, expected int, capabilityHash string, revision model.ConsoleSpecRevision, now time.Time, openNew bool) (int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -203,6 +229,15 @@ func (s *SQLite) AppendConsoleSpecRevisionWithCapability(ctx context.Context, sp
 	}
 	if current != expected {
 		return 0, ErrConsoleSpecConflict
+	}
+	if !openNew {
+		var locked int
+		if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM console_task_proposal WHERE spec_id=? AND revision=?`, specID, current).Scan(&locked); err != nil {
+			return 0, err
+		}
+		if locked != 0 {
+			return 0, ErrConsoleSpecRevisionLocked
+		}
 	}
 	next := current + 1
 	if revision.SpecID != specID || revision.Revision != next {
