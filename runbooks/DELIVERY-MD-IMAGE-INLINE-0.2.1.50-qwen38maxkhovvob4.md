@@ -296,3 +296,34 @@ console iframe **3/0** · scroll-follow **9/0** · py **41 OK** · go filepolicy
 待裁 5 条(交付件 §九):外站图要不要预览 · 解不了的格式要不要剔出白名单 · 非图片目标的感叹号 ·
    G0(e) 严格度 · 两件是否接 SUITES(跑者归 coder56solzzc,我没动)。
 ```
+
+---
+
+## 十一 🔴 裁定 5 要的数:新闸实跑耗时(接 SUITES 的预算依据)
+
+【实测】同一台机、同一棵字节(`52ae3f57…`)、**无并发负载**下连跑三次(`/proc/loadavg` ≈ 2.1 / 96 核):
+
+    renderer-markdown-image-regression.js    43.6s · 43.5s · 43.5s   ⇒ **≈ 43.5s**(极差 0.1s)   三次都 15/0 rc=0
+    renderer-markdown-injection-regression.js 7.2s · 7.2s            ⇒ **≈ 7.2s**               两次都 11/0 rc=0
+
+复现:`cd view-service && NODE_PATH=<playwright node_modules> node renderer-markdown-image-regression.js`
+
+    🔵 预算口径:两件合计 **≈ 51s**;新件自带夹具(`listen(0)` 自挑端口 · 自启自收 · `__dirname`,cwd 无关),
+       **不需要外部服务、不需要 :19312/:19443、不需要证书** ⇒ 接线只是一行(参照既有 SUITES 条目形状)。
+    🔵 参照:组长提到 ts-No.77 那件约 200s ⇒ 本件 **43.5s** 明显更便宜。
+    🔴 耗时的结构成因【读码,未逐腿计时】:全件**只 launch 一次浏览器**,但每条腿各开自己的 context/page
+       并真灌 SSE(15 条腿 + 5 发阳性对照,每发都要重渲一遍)⇒ 时间几乎全在"真灌 + 等 settle",不在启动。
+       🔴 **我没有逐腿耗时表** —— 件里没打这个数。要的话我加(会改动件,需你点头)。
+    🔴 一处口径:上面是**本席 Linux + Playwright 自带 chromium** 的数;跑者若在别的机器/别的 channel
+       (`PW_CHANNEL=chrome`)上跑,耗时**会变**,那是环境差异不是产品差异。
+
+## 十二 🔴 更正 §七-3 那句"spec 展示面还不存在"
+
+§七-3 我写的是「Specs 独立页/未来的 spec 展示面(**还不存在**)」。**这句不准确,更正如下(原文不删,留痕)**:
+
+    准确的说法  它在**我这棵树 / 发布线 `f3c2af80` / 板件分支 `8869c808`** 上确实不存在(三个 `git ls-tree` 为证),
+               但在 **`coder56solzzc/spec-management-02110` @ `ea6cc30b`** 上**已经存在** —— 只是**零渲染**
+               (正文直接塞 `<textarea>`,全页 `<img>`=0、对 `/f/` 请求=0)。
+    🔴 差别要紧  "还不存在"读起来像"以后建的时候再说";"**已存在且零渲染**"意味着 `0.2.1.50`
+               **现在就缺一格活**,而缺的正是它的核心指标(spec 要显示图)。
+    定界件    `runbooks/BOUNDARY-SPEC-RENDER-PATH-0.2.1.50-qwen38maxkhovvob4.md`(十二节,含实测观测量表与探针全文)
