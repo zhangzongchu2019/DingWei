@@ -283,7 +283,7 @@ func (m *Manager) enforceLocked(ctx context.Context) error {
 
 func (m *Manager) finishRemoval(ctx context.Context, f File) error {
 	current, err := m.Repo.Get(ctx, f.ID)
-	if err != nil || current.State != StateDeleting || current.Archived || (current.RemovalReason != "retention" && current.RemovalReason != "quota_fifo") {
+	if err != nil || current.State != StateDeleting || current.Archived || current.RetentionClass == RetentionSpecPermanent || (current.RemovalReason != "retention" && current.RemovalReason != "quota_fifo") {
 		return fmt.Errorf("refuse unsafe delete: %w", firstError(err, ErrAccessDenied))
 	}
 	if err := m.Objects.Delete(ctx, current.ObjectKey); err != nil {

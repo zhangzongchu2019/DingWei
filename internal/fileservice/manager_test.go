@@ -128,6 +128,9 @@ func TestPersistForSpecCopiesBySHAAndSurvivesTemporaryDeletion(t *testing.T) {
 	if err := m.Sweep(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+	if expired, err := m.Repo.Get(context.Background(), first.ID); err != nil || expired.State != StateExpired {
+		t.Fatalf("temporary expiry path did not complete: state=%q err=%v", expired.State, err)
+	}
 	if got := string(objects.data[key]); got != "image-bytes" {
 		t.Fatalf("permanent bytes=%q after temporary retention sweep", got)
 	}
@@ -144,6 +147,51 @@ func TestPersistForSpecCopiesBySHAAndSurvivesTemporaryDeletion(t *testing.T) {
 	}
 	if permanent != 1 {
 		t.Fatalf("same sha created %d permanent objects", permanent)
+	}
+}
+
+func TestSpecPermanentSurvivesQuotaFIFOAndDeletionPhases(t *testing.T) {
+	m, clock, objects := testManager(t, 1<<20)
+	put := func(session, body string) File {
+		f, err := m.Put(context.Background(), Upload{OwnerKey: "owner", SessionName: session, OriginalName: "diagram.png", MediaType: "image/png", ContentLength: int64(len(body)), Body: strings.NewReader(body)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return f
+	}
+	source := put("agent-a", "image-bytes")
+	key, err := m.PersistForSpec(context.Background(), source.ID, "owner-principal", "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	permanentID := "spec-" + source.SHA256
+	if err := m.Repo.MarkDeleting(context.Background(), permanentID, "quota_fifo"); err == nil {
+		t.Fatal("permanent row entered deleting state")
+	}
+	if _, err := m.Repo.db.Exec(`UPDATE files SET state='deleting',removal_reason='quota_fifo' WHERE id=?`, permanentID); err != nil {
+		t.Fatal(err)
+	}
+	permanent, err := m.Repo.Get(context.Background(), permanentID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.finishRemoval(context.Background(), permanent); err == nil {
+		t.Fatal("finishRemoval accepted a permanent row")
+	}
+	if _, err := m.Repo.db.Exec(`UPDATE files SET state='ready',removal_reason='',created_at=? WHERE id=?`, stamp(clock.Now().Add(-time.Hour)), permanentID); err != nil {
+		t.Fatal(err)
+	}
+	clock.Time = clock.Time.Add(time.Second)
+	newer := put("agent-b", "newer-bytes")
+	m.QuotaBytes = 1
+	if err := m.Sweep(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if evicted, err := m.Repo.Get(context.Background(), newer.ID); err != nil || evicted.State != StateEvicted {
+		t.Fatalf("quota FIFO path did not complete: state=%q err=%v", evicted.State, err)
+	}
+	if got := string(objects.data[key]); got != "image-bytes" {
+		t.Fatalf("permanent bytes=%q after quota FIFO sweep", got)
 	}
 }
 

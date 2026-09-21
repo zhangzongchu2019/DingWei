@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -30,6 +31,7 @@ id TEXT PRIMARY KEY, object_key TEXT NOT NULL UNIQUE, owner_key TEXT NOT NULL,
 session_name TEXT NOT NULL, original_name TEXT NOT NULL, media_type TEXT NOT NULL,
 size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, state TEXT NOT NULL,
 	created_at TEXT NOT NULL, expires_at TEXT NOT NULL, archived INTEGER NOT NULL DEFAULT 0,
+	retention_class TEXT NOT NULL DEFAULT 'temporary',
 	archived_at TEXT, removed_at TEXT, removal_reason TEXT NOT NULL DEFAULT '');
 CREATE INDEX IF NOT EXISTS files_ready_fifo ON files(state,created_at,id);`); err != nil {
 		db.Close()
@@ -50,6 +52,7 @@ media_type TEXT NOT NULL, created_at TEXT NOT NULL);`); err != nil {
 	}
 	for _, column := range []struct{ name, ddl string }{
 		{"archived", `ALTER TABLE files ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`},
+		{"retention_class", `ALTER TABLE files ADD COLUMN retention_class TEXT NOT NULL DEFAULT 'temporary'`},
 		{"archived_at", `ALTER TABLE files ADD COLUMN archived_at TEXT`},
 		{"unarchived_at", `ALTER TABLE files ADD COLUMN unarchived_at TEXT`},
 	} {
@@ -70,7 +73,7 @@ media_type TEXT NOT NULL, created_at TEXT NOT NULL);`); err != nil {
 
 func (r *Repository) SpecPermanentObject(ctx context.Context, sha string) (string, bool, error) {
 	var key string
-	err := r.db.QueryRowContext(ctx, `SELECT object_key FROM spec_permanent_object WHERE sha256=?`, sha).Scan(&key)
+	err := r.db.QueryRowContext(ctx, `SELECT object_key FROM files WHERE sha256=? AND retention_class=? AND state='ready'`, sha, RetentionSpecPermanent).Scan(&key)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", false, nil
 	}
@@ -78,9 +81,20 @@ func (r *Repository) SpecPermanentObject(ctx context.Context, sha string) (strin
 }
 
 func (r *Repository) InsertSpecPermanentObject(ctx context.Context, sha, key string, size int64, mediaType string, at time.Time) error {
-	_, err := r.db.ExecContext(ctx, `INSERT OR IGNORE INTO spec_permanent_object(sha256,object_key,size_bytes,media_type,created_at) VALUES(?,?,?,?,?)`,
-		sha, key, size, mediaType, stamp(at))
-	return err
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO spec_permanent_object(sha256,object_key,size_bytes,media_type,created_at) VALUES(?,?,?,?,?)`, sha, key, size, mediaType, stamp(at)); err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO files(id,object_key,owner_key,session_name,original_name,media_type,size_bytes,sha256,state,created_at,expires_at,retention_class) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
+		"spec-"+sha, key, "spec-global", "permanent", path.Base(key), mediaType, size, sha, string(StateReady), stamp(at), stamp(at), RetentionSpecPermanent)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func sqliteColumnExists(db *sql.DB, table, column string) (bool, error) {
@@ -121,8 +135,8 @@ func (r *Repository) Get(ctx context.Context, id string) (File, error) {
 	var removed sql.NullString
 	var archived int
 	var archivedAt, unarchivedAt sql.NullString
-	err := r.db.QueryRowContext(ctx, `SELECT id,object_key,owner_key,session_name,original_name,media_type,size_bytes,sha256,state,created_at,expires_at,archived,archived_at,unarchived_at,removed_at,removal_reason FROM files WHERE id=?`, id).Scan(
-		&f.ID, &f.ObjectKey, &f.OwnerKey, &f.SessionName, &f.OriginalName, &f.MediaType, &f.SizeBytes, &f.SHA256, &f.State, &created, &expires, &archived, &archivedAt, &unarchivedAt, &removed, &f.RemovalReason)
+	err := r.db.QueryRowContext(ctx, `SELECT id,object_key,owner_key,session_name,original_name,media_type,size_bytes,sha256,state,created_at,expires_at,archived,retention_class,archived_at,unarchived_at,removed_at,removal_reason FROM files WHERE id=?`, id).Scan(
+		&f.ID, &f.ObjectKey, &f.OwnerKey, &f.SessionName, &f.OriginalName, &f.MediaType, &f.SizeBytes, &f.SHA256, &f.State, &created, &expires, &archived, &f.RetentionClass, &archivedAt, &unarchivedAt, &removed, &f.RemovalReason)
 	if err != nil {
 		return File{}, err
 	}
@@ -161,7 +175,7 @@ func (r *Repository) Get(ctx context.Context, id string) (File, error) {
 
 func (r *Repository) ReadyBytes(ctx context.Context) (int64, error) {
 	var n int64
-	err := r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(size_bytes),0) FROM files WHERE state='ready'`).Scan(&n)
+	err := r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(size_bytes),0) FROM files WHERE state='ready' AND retention_class<>?`, RetentionSpecPermanent).Scan(&n)
 	return n, err
 }
 
@@ -197,7 +211,7 @@ func (r *Repository) ListStablePage(ctx context.Context, state State, limit, off
 	return out, rows.Err()
 }
 func (r *Repository) RemovalCandidates(ctx context.Context, now time.Time, quota int64) ([]File, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id FROM files WHERE state='ready' AND archived=0 ORDER BY CASE WHEN expires_at<=? THEN 0 ELSE 1 END,created_at,id`, stamp(now))
+	rows, err := r.db.QueryContext(ctx, `SELECT id FROM files WHERE state='ready' AND archived=0 AND retention_class<>? ORDER BY CASE WHEN expires_at<=? THEN 0 ELSE 1 END,created_at,id`, RetentionSpecPermanent, stamp(now))
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +239,7 @@ func (r *Repository) RemovalCandidates(ctx context.Context, now time.Time, quota
 }
 
 func (r *Repository) ListDeleting(ctx context.Context) ([]File, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id FROM files WHERE state='deleting' ORDER BY created_at,id`)
+	rows, err := r.db.QueryContext(ctx, `SELECT id FROM files WHERE state='deleting' AND retention_class<>? ORDER BY created_at,id`, RetentionSpecPermanent)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +262,7 @@ func (r *Repository) ListDeleting(ctx context.Context) ([]File, error) {
 // MarkDeleting durably records intent before touching object storage. A crash
 // or metadata failure after Delete is therefore recoverable by the next sweep.
 func (r *Repository) MarkDeleting(ctx context.Context, id, reason string) error {
-	result, err := r.db.ExecContext(ctx, `UPDATE files SET state='deleting',removal_reason=? WHERE id=? AND state='ready' AND archived=0`, reason, id)
+	result, err := r.db.ExecContext(ctx, `UPDATE files SET state='deleting',removal_reason=? WHERE id=? AND state='ready' AND archived=0 AND retention_class<>?`, reason, id, RetentionSpecPermanent)
 	if err != nil {
 		return err
 	}
@@ -271,7 +285,7 @@ func (r *Repository) FinishDeleting(ctx context.Context, id string, at time.Time
 	if reason == "retention" {
 		state = StateExpired
 	}
-	result, err := r.db.ExecContext(ctx, `UPDATE files SET state=?,removed_at=? WHERE id=? AND state='deleting'`, string(state), stamp(at), id)
+	result, err := r.db.ExecContext(ctx, `UPDATE files SET state=?,removed_at=? WHERE id=? AND state='deleting' AND retention_class<>?`, string(state), stamp(at), id, RetentionSpecPermanent)
 	if err != nil {
 		return err
 	}
