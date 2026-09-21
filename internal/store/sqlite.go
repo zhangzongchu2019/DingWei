@@ -3239,6 +3239,7 @@ func (s *SQLite) UpsertAgentGroup(ctx context.Context, group model.AgentGroup) e
 }
 
 var ErrAgentGroupShortNameConflict = errors.New("agent group short name conflict")
+var ErrAgentGroupCodeConflict = errors.New("agent group code conflict")
 
 func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentGroup) error {
 	if err := validateAgentGroupCode(group.Code); err != nil {
@@ -3258,6 +3259,9 @@ func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentG
 	if err != nil {
 		if strings.Contains(err.Error(), "agent_group.short_name") {
 			return ErrAgentGroupShortNameConflict
+		}
+		if strings.Contains(err.Error(), "agent_group.code") {
+			return ErrAgentGroupCodeConflict
 		}
 		return err
 	}

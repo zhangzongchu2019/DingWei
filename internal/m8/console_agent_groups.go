@@ -35,7 +35,7 @@ func createConsoleAgentGroup(ctx context.Context, repo consoleAgentGroupReposito
 		group := model.AgentGroup{Code: code, ShortName: shortName, CreatorPrincipal: principal,
 			LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: ownerKey}
 		err := repo.CreateConsoleAgentGroup(ctx, group)
-		if errors.Is(err, store.ErrAgentGroupShortNameConflict) {
+		if errors.Is(err, store.ErrAgentGroupShortNameConflict) || errors.Is(err, store.ErrAgentGroupCodeConflict) {
 			continue
 		}
 		return group, err

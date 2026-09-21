@@ -3,11 +3,14 @@ package m8
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -25,6 +28,101 @@ func addOwnedGroupAgent(t *testing.T, db *store.SQLite, principal, id, key, sess
 		t.Fatal(err)
 	}
 	return agent
+}
+
+func TestConsoleAgentGroupConcurrentCodeCollisionRedrawsBothCandidates(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	ctx := context.Background()
+	a1 := addOwnedGroupAgent(t, db, "owner-a", "concurrent-a1", "concurrent-ka1", "owner-a-concurrent-one-2642", "oa")
+	a2 := addOwnedGroupAgent(t, db, "owner-a", "concurrent-a2", "concurrent-ka2", "owner-a-concurrent-two-2642", "oa")
+	for iteration := 0; iteration < 20; iteration++ {
+		collisionCode := fmt.Sprintf("%032d", 1000+iteration)
+		retryCodes := []string{fmt.Sprintf("A%031d", 2000+iteration), fmt.Sprintf("B%031d", 3000+iteration)}
+		firstShorts := []string{fmt.Sprintf("a%05x", iteration), fmt.Sprintf("b%05x", iteration)}
+		retryShorts := []string{fmt.Sprintf("c%05x", iteration), fmt.Sprintf("d%05x", iteration)}
+		ready := make(chan struct{}, 2)
+		start := make(chan struct{})
+		errs := make(chan error, 2)
+		var wg sync.WaitGroup
+		for worker, leader := range []model.ConsoleAgent{a1, a2} {
+			wg.Add(1)
+			go func(worker int, leader model.ConsoleAgent) {
+				defer wg.Done()
+				attempt := 0
+				_, err := createConsoleAgentGroup(ctx, db, "owner-a", leader, "oa", func() (string, string) {
+					attempt++
+					if attempt == 1 {
+						ready <- struct{}{}
+						<-start
+						return collisionCode, firstShorts[worker]
+					}
+					return retryCodes[worker], retryShorts[worker]
+				})
+				errs <- err
+			}(worker, leader)
+		}
+		<-ready
+		<-ready
+		close(start)
+		wg.Wait()
+		close(errs)
+		for err := range errs {
+			if err != nil {
+				t.Fatalf("iteration %d concurrent create did not retry code collision: %v", iteration, err)
+			}
+		}
+		groups, err := db.ListAgentGroups(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		seenCollision, seenRetry := 0, 0
+		for _, group := range groups {
+			if group.Code == collisionCode {
+				seenCollision++
+			}
+			if group.Code == retryCodes[0] || group.Code == retryCodes[1] {
+				seenRetry++
+				if group.ShortName != retryShorts[0] && group.ShortName != retryShorts[1] {
+					t.Fatalf("iteration %d retry did not redraw short name group=%+v", iteration, group)
+				}
+			}
+		}
+		if seenCollision != 1 || seenRetry != 1 {
+			t.Fatalf("iteration %d collision=%d retry=%d", iteration, seenCollision, seenRetry)
+		}
+	}
+}
+
+func TestConsoleAgentGroupConcurrentDeleteAndJoinLeavesNoMembers(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	ctx := context.Background()
+	leader := addOwnedGroupAgent(t, db, "owner-a", "race-leader", "race-leader-key", "owner-a-race-leader-2642", "oa")
+	joining := addOwnedGroupAgent(t, db, "owner-a", "race-joining", "race-joining-key", "owner-a-race-joining-2642", "oa")
+	for iteration := 0; iteration < 20; iteration++ {
+		code := fmt.Sprintf("R%031d", iteration)
+		group := model.AgentGroup{Code: code, ShortName: fmt.Sprintf("e%05x", iteration), CreatorPrincipal: "owner-a", LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: "oa"}
+		if err := db.CreateConsoleAgentGroup(ctx, group); err != nil {
+			t.Fatal(err)
+		}
+		start := make(chan struct{})
+		results := make(chan error, 2)
+		go func() { <-start; results <- db.DeleteConsoleAgentGroup(ctx, code, "owner-a", false) }()
+		go func() { <-start; results <- db.AssignOwnedConsoleAgentGroup(ctx, code, "owner-a", joining.ID) }()
+		close(start)
+		first, second := <-results, <-results
+		if first != nil && !errors.Is(first, sql.ErrNoRows) {
+			t.Fatalf("iteration %d unexpected race result: %v", iteration, first)
+		}
+		if second != nil && !errors.Is(second, sql.ErrNoRows) {
+			t.Fatalf("iteration %d unexpected race result: %v", iteration, second)
+		}
+		members, err := db.ListAgentGroupMembers(ctx, code)
+		if err != nil || len(members) != 0 {
+			t.Fatalf("iteration %d delete/join left members=%+v err=%v", iteration, members, err)
+		}
+	}
 }
 
 func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
