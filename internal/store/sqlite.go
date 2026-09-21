@@ -3232,6 +3232,9 @@ func (s *SQLite) UpsertAgentGroup(ctx context.Context, group model.AgentGroup) e
 		group.Code, group.LeaderKeyID, group.LeaderSessionName, group.LeaderOwnerKey, now); err != nil {
 		return err
 	}
+	if _, err := tx.ExecContext(ctx, `UPDATE agent_group_state SET ever_activated=1 WHERE singleton=1`); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -3261,11 +3264,15 @@ func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentG
 	if _, err = tx.ExecContext(ctx, `INSERT INTO agent_group_member(code,key_id,session_name,owner_key,created_at) VALUES(?,?,?,?,?)`, group.Code, group.LeaderKeyID, group.LeaderSessionName, group.LeaderOwnerKey, now); err != nil {
 		return err
 	}
+	if _, err = tx.ExecContext(ctx, `UPDATE agent_group_state SET ever_activated=1 WHERE singleton=1`); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
 func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID string) error {
-	res, err := s.db.ExecContext(ctx, `DELETE FROM agent_group WHERE code=? AND creator_principal=?`, code, principalID)
+	res, err := s.db.ExecContext(ctx, `DELETE FROM agent_group WHERE code=? AND (creator_principal=? OR (creator_principal IS NULL AND EXISTS(
+		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.owner_principal=? AND a.active=1)))`, code, principalID, principalID)
 	if err != nil {
 		return err
 	}
@@ -3277,7 +3284,8 @@ func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID 
 }
 
 func (s *SQLite) SetConsoleAgentGroupAdditionsClosed(ctx context.Context, code, principalID string, closed bool) error {
-	res, err := s.db.ExecContext(ctx, `UPDATE agent_group SET additions_closed=?,updated_at=? WHERE code=? AND creator_principal=?`, boolInt(closed), s.now().UTC().Format(time.RFC3339Nano), code, principalID)
+	res, err := s.db.ExecContext(ctx, `UPDATE agent_group SET additions_closed=?,creator_principal=COALESCE(creator_principal,?),updated_at=? WHERE code=? AND (creator_principal=? OR (creator_principal IS NULL AND EXISTS(
+		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.owner_principal=? AND a.active=1)))`, boolInt(closed), principalID, s.now().UTC().Format(time.RFC3339Nano), code, principalID, principalID)
 	if err != nil {
 		return err
 	}
@@ -3308,9 +3316,10 @@ func (s *SQLite) AssignOwnedConsoleAgentGroup(ctx context.Context, code, princip
 func (s *SQLite) UnassignConsoleAgentGroup(ctx context.Context, code, principalID, agentID string) error {
 	res, err := s.db.ExecContext(ctx, `DELETE FROM agent_group_member WHERE code=? AND (key_id,session_name) IN (
 		SELECT a.key_id,a.session_name FROM console_agent a JOIN agent_group g ON g.code=?
-		WHERE a.id=? AND (a.owner_principal=? OR g.creator_principal=?)
+		WHERE a.id=? AND (a.owner_principal=? OR g.creator_principal=? OR (g.creator_principal IS NULL AND EXISTS(
+			SELECT 1 FROM console_agent leader WHERE leader.key_id=g.leader_key_id AND leader.session_name=g.leader_session_name AND leader.owner_principal=? AND leader.active=1)))
 	) AND NOT (key_id=(SELECT leader_key_id FROM agent_group WHERE code=?) AND session_name=(SELECT leader_session_name FROM agent_group WHERE code=?))`,
-		code, code, agentID, principalID, principalID, code, code)
+		code, code, agentID, principalID, principalID, principalID, code, code)
 	if err != nil {
 		return err
 	}
@@ -3319,6 +3328,12 @@ func (s *SQLite) UnassignConsoleAgentGroup(ctx context.Context, code, principalI
 		return sql.ErrNoRows
 	}
 	return nil
+}
+
+func (s *SQLite) AgentGroupingActivated(ctx context.Context) (bool, error) {
+	var active int
+	err := s.db.QueryRowContext(ctx, `SELECT ever_activated FROM agent_group_state WHERE singleton=1`).Scan(&active)
+	return active != 0, err
 }
 
 func (s *SQLite) AssignAgentGroup(ctx context.Context, member model.AgentGroupMember) error {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -134,5 +135,76 @@ func TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership(t *testing.T) {
 	}
 	if members, err := db.ListAgentGroupMembers(ctx, created.Code); err != nil || len(members) != 0 {
 		t.Fatalf("delete must cascade all member relations members=%+v err=%v", members, err)
+	}
+}
+
+func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	ctx := context.Background()
+	leader := addOwnedGroupAgent(t, db, "owner-a", "legacy-leader", "legacy-key", "owner-a-legacy-2642", "oa")
+	member := addOwnedGroupAgent(t, db, "owner-b", "legacy-member", "legacy-member-key", "owner-b-member-2642", "ob")
+	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: "oa"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AssignAgentGroup(ctx, model.AgentGroupMember{Code: groupCodeA, KeyID: member.KeyID, SessionName: member.SessionName, OwnerKey: "ob"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeA, "owner-a", true); err != nil {
+		t.Fatalf("legacy leader close additions: %v", err)
+	}
+	groups, err := db.ListAgentGroups(ctx)
+	if err != nil || len(groups) != 1 || groups[0].CreatorPrincipal != "owner-a" || !groups[0].AdditionsClosed {
+		t.Fatalf("legacy claim was not persisted groups=%+v err=%v", groups, err)
+	}
+	if err := db.UnassignConsoleAgentGroup(ctx, groupCodeA, "owner-a", member.ID); err != nil {
+		t.Fatalf("legacy leader kick: %v", err)
+	}
+	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeA, "owner-a"); err != nil {
+		t.Fatalf("legacy leader delete: %v", err)
+	}
+
+	// Independent positive control: a newly-created group retains the same actions.
+	newGroup := model.AgentGroup{Code: groupCodeB, ShortName: "new123", CreatorPrincipal: "owner-a", LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: "oa"}
+	if err := db.CreateConsoleAgentGroup(ctx, newGroup); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeB, "owner-a", true); err != nil {
+		t.Fatalf("new group close additions: %v", err)
+	}
+	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeB, "owner-a"); err != nil {
+		t.Fatalf("new group delete: %v", err)
+	}
+}
+
+func TestGroupingEmptyTableDistinguishesNeverConfiguredFromDeletedAll(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	for _, ep := range []model.SessionEndpoint{
+		{KeyID: "ka", SessionName: "owner-a-agent-2642", OwnerKey: "owner-a", Active: true},
+		{KeyID: "kb", SessionName: "owner-b-agent-2642", OwnerKey: "owner-b", Active: true},
+	} {
+		if err := db.UpsertSessionEndpoint(ctx, ep); err != nil {
+			t.Fatal(err)
+		}
+	}
+	from := address{Kind: addressSession, KeyID: "ka", SessionName: "owner-a-agent-2642"}
+	env := model.Envelope{From: "owner-a-agent-2642#ka", To: "owner-b-agent-2642#kb"}
+	if err := hub.enforceAgentGrouping(ctx, from, env, "kb", "owner-b-agent-2642"); err != nil {
+		t.Fatalf("never-configured migration state must preserve pre-G behavior: %v", err)
+	}
+	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: "ka", LeaderSessionName: "owner-a-agent-2642", LeaderOwnerKey: "owner-a"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "principal-a", Provider: "fixture", ProviderIssuer: "fixture", ProviderSubject: "a", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "agent-a", KeyID: "ka", SessionName: "owner-a-agent-2642", OwnerPrincipal: "principal-a", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeA, "principal-a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.enforceAgentGrouping(ctx, from, env, "kb", "owner-b-agent-2642"); !errors.Is(err, errGroupAgentNotFound) {
+		t.Fatalf("delete-all must not silently restore global reachability err=%v", err)
 	}
 }

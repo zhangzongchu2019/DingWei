@@ -143,6 +143,7 @@ type Repository interface {
 	ListAgentGroups(ctx context.Context) ([]model.AgentGroup, error)
 	ListAgentGroupMembers(ctx context.Context, code string) ([]model.AgentGroupMember, error)
 	ListAgentGroupsForEndpoint(ctx context.Context, keyID, sessionName string) ([]model.AgentGroup, error)
+	AgentGroupingActivated(ctx context.Context) (bool, error)
 
 	// 通知幂等（M7）
 	RecordNotification(ctx context.Context, kind, ownerKey, targetKey, remindDate string) (bool, error)
