@@ -18,6 +18,7 @@ type consoleAgentGroupRepository interface {
 	ListAgentGroupMembers(context.Context, string) ([]model.AgentGroupMember, error)
 	CreateConsoleAgentGroup(context.Context, model.AgentGroup) error
 	DeleteConsoleAgentGroup(context.Context, string, string) error
+	ClaimLegacyConsoleAgentGroupAsManagement(context.Context, string, string) error
 	SetConsoleAgentGroupAdditionsClosed(context.Context, string, string, bool) error
 	AssignOwnedConsoleAgentGroup(context.Context, string, string, string) error
 	UnassignConsoleAgentGroup(context.Context, string, string, string) error
@@ -25,7 +26,8 @@ type consoleAgentGroupRepository interface {
 
 type consoleAgentGroupView struct {
 	model.AgentGroup
-	Members []model.AgentGroupMember `json:"members"`
+	Members   []model.AgentGroupMember `json:"members"`
+	CanManage bool                     `json:"can_manage"`
 }
 
 func createConsoleAgentGroup(ctx context.Context, repo consoleAgentGroupRepository, principal string, leader model.ConsoleAgent, ownerKey string, candidate func() (string, string)) (model.AgentGroup, error) {
@@ -71,12 +73,13 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
 				return
 			}
-			visible := group.CreatorPrincipal == principal
+			canManage := group.CreatorPrincipal == principal || (platformRole(r) == consolePlatformRoleManagement && group.CreatorPrincipal == "")
+			visible := canManage
 			for _, member := range members {
 				visible = visible || ownedEndpoint[member.KeyID+"\x00"+member.SessionName]
 			}
 			if visible {
-				views = append(views, consoleAgentGroupView{AgentGroup: group, Members: members})
+				views = append(views, consoleAgentGroupView{AgentGroup: group, Members: members, CanManage: canManage})
 			}
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -134,6 +137,12 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 	repo := h.Repo.(consoleAgentGroupRepository)
 	principal, code := platformPrincipal(r), r.PathValue("code")
+	if platformRole(r) == consolePlatformRoleManagement {
+		if err := repo.ClaimLegacyConsoleAgentGroupAsManagement(r.Context(), code, principal); err != nil {
+			http.Error(w, "agent group claim failed", http.StatusConflict)
+			return
+		}
+	}
 	var err error
 	switch {
 	case r.Method == http.MethodDelete && strings.Contains(r.URL.Path, "/members/"):

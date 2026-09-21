@@ -60,7 +60,7 @@ async function main() {
     if (req.url === '/api/console/agent-groups') {
       res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify({ principal: 'owner-a', owned_agents: [{ id: 'agent-a', session_name: 'owner-alpha-2642' }], groups: [{
-        code: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'abc123', creator_principal: 'owner-a', additions_closed: false,
+        code: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'abc123', creator_principal: 'owner-a', can_manage: true, additions_closed: false,
         members: [{ agent_id: 'agent-a', session_name: 'owner-alpha-2642' }, { agent_id: 'agent-b', session_name: 'other-full-agent-2642' }],
       }] }));
       return;

@@ -3283,6 +3283,15 @@ func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID 
 	return nil
 }
 
+func (s *SQLite) ClaimLegacyConsoleAgentGroupAsManagement(ctx context.Context, code, principalID string) error {
+	if strings.TrimSpace(principalID) == "" {
+		return sql.ErrNoRows
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE agent_group SET creator_principal=?,updated_at=? WHERE code=? AND creator_principal IS NULL`,
+		principalID, s.now().UTC().Format(time.RFC3339Nano), code)
+	return err
+}
+
 func (s *SQLite) SetConsoleAgentGroupAdditionsClosed(ctx context.Context, code, principalID string, closed bool) error {
 	res, err := s.db.ExecContext(ctx, `UPDATE agent_group SET additions_closed=?,creator_principal=COALESCE(creator_principal,?),updated_at=? WHERE code=? AND (creator_principal=? OR (creator_principal IS NULL AND EXISTS(
 		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.owner_principal=? AND a.active=1)))`, boolInt(closed), principalID, s.now().UTC().Format(time.RFC3339Nano), code, principalID, principalID)

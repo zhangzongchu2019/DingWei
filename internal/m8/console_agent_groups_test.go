@@ -177,6 +177,45 @@ func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 	}
 }
 
+func TestConsoleAgentGroupsLegacyWithoutConsoleAgentRequiresManagementClaim(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	ctx := context.Background()
+	member := addOwnedGroupAgent(t, db, "owner-b", "orphan-member", "orphan-member-key", "owner-b-orphan-member-2642", "ob")
+	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: "missing-leader-key", LeaderSessionName: "missing-leader-session", LeaderOwnerKey: "legacy-owner"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AssignAgentGroup(ctx, model.AgentGroupMember{Code: groupCodeA, KeyID: member.KeyID, SessionName: member.SessionName, OwnerKey: "ob"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetConsoleAgentGroupAdditionsClosed(ctx, groupCodeA, "owner-a", true); err == nil {
+		t.Fatal("ordinary owner claimed legacy group whose leader has no console_agent mapping")
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/console/agent-groups", nil)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
+	req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
+	rr := httptest.NewRecorder()
+	hub.HandleConsoleAgentGroups(rr, req)
+	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"can_manage":true`)) {
+		t.Fatalf("management cannot see manageable legacy orphan code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	req = httptest.NewRequest(http.MethodPost, "/api/console/agent-groups/"+groupCodeA+"/additions", bytes.NewBufferString(`{"closed":true}`))
+	req.SetPathValue("code", groupCodeA)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
+	req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleAgentGroup(rr, req)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("management close legacy orphan group code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	if err := db.UnassignConsoleAgentGroup(ctx, groupCodeA, "manager", member.ID); err != nil {
+		t.Fatalf("management kick legacy orphan member: %v", err)
+	}
+	if err := db.DeleteConsoleAgentGroup(ctx, groupCodeA, "manager"); err != nil {
+		t.Fatalf("management delete legacy orphan group: %v", err)
+	}
+}
+
 func TestGroupingEmptyTableDistinguishesNeverConfiguredFromDeletedAll(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	for _, ep := range []model.SessionEndpoint{
