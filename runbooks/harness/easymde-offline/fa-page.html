@@ -1,0 +1,64 @@
+<!doctype html><meta charset="utf-8"><title>DW · EasyMDE Font Awesome A/B 夹具(ts-No.77 附带实测)</title>
+<textarea id="md"></textarea>
+<script>
+// 🔵 两腿**唯一差别**:有没有从**本地**挂一份 Font Awesome。
+//    offline : autoDownloadFontAwesome:false,且**不**自托管 FA  ← 修法②的"裸"形态
+//    localfa : autoDownloadFontAwesome:false + 本地 /vendor/fa.min.css ← 修法②的完整形态
+(function () {
+  var cfg = new URLSearchParams(location.search).get('cfg') || 'offline';
+  window.__dwCfg = cfg;
+  window.__dwFaError = null;
+
+  function link(href, cb) {
+    var l = document.createElement('link');
+    l.rel = 'stylesheet'; l.href = href;
+    if (cb) { l.onload = function () { cb(null); }; l.onerror = function () { cb('link failed: ' + href); }; }
+    document.head.appendChild(l);
+    return l;
+  }
+
+  function boot() {
+    var s = document.createElement('script');
+    s.src = '/vendor/easymde.min.js';
+    s.onload = function () {
+      window.__dwEditor = new EasyMDE({
+        element: document.getElementById('md'),
+        spellChecker: false,                 // 外网面①
+        autoDownloadFontAwesome: false       // 外网面②
+      });
+      window.__dwReady = true;
+    };
+    s.onerror = function () { window.__dwFaError = 'easymde.min.js 载入失败'; };
+    document.head.appendChild(s);
+  }
+
+  link('/vendor/easymde.min.css');
+  if (cfg === 'localfa') link('/vendor/fa.min.css', function (err) { if (err) window.__dwFaError = err; boot(); });
+  else boot();
+
+  // 量:图标字体在不在 · 工具栏几颗钮 · bold 那颗的字形从哪来
+  window.__dwFa = function () {
+    var out = { cfg: window.__dwCfg, faError: window.__dwFaError, faCheck: null, faces: [], toolbarButtons: 0, boldIcon: null, sheets: [] };
+    try { out.faCheck = document.fonts.check('14px FontAwesome'); } catch (e) { out.faCheck = 'ERR ' + e.message; }
+    try { document.fonts.forEach(function (f) { out.faces.push(f.family + '/' + f.status); }); } catch (e2) {}
+    var btns = document.querySelectorAll('.editor-toolbar button');
+    out.toolbarButtons = btns.length;
+    var b = document.querySelector('.editor-toolbar button.bold');
+    if (b) {
+      var i = b.querySelector('i') || b;
+      var cs = getComputedStyle(i, '::before');
+      var r = i.getBoundingClientRect();
+      out.boldIcon = {
+        innerTag: i.tagName, innerClass: i.className,
+        fontFamily: getComputedStyle(i).fontFamily,
+        beforeContent: cs.content, beforeFontFamily: cs.fontFamily,
+        rectW: Math.round(r.width), rectH: Math.round(r.height)
+      };
+    }
+    for (var k = 0; k < document.styleSheets.length; k++) {
+      try { out.sheets.push(String(document.styleSheets[k].href)); } catch (e3) { out.sheets.push('(inaccessible)'); }
+    }
+    return out;
+  };
+})();
+</script>

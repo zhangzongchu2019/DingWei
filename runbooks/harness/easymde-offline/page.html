@@ -1,0 +1,50 @@
+<!doctype html><meta charset="utf-8"><title>DW · EasyMDE 断网实跑夹具</title>
+<link rel="stylesheet" href="/vendor/easymde.min.css">
+<textarea id="md"></textarea>
+<button id="dwSave" type="button">保存</button>
+<pre id="dwOut"></pre>
+<script src="/vendor/easymde.min.js"></script>
+<script>
+(function () {
+  var cfg = new URLSearchParams(location.search).get('cfg') || 'default';
+  var opts = { element: document.getElementById('md') };
+  // 🔴 "offline" 只动两个开关 —— 这就是 ts-No.75 里查到的两个默认外联点
+  if (cfg === 'offline' || cfg === 'autosave') { opts.spellChecker = false; opts.autoDownloadFontAwesome = false; }
+  if (cfg === 'autosave') { opts.autosave = { enabled: true, uniqueId: 'dw-offline-probe', delay: 100 }; }
+  window.__dwCfg = cfg;
+  window.__dwEditor = new EasyMDE(opts);
+  document.getElementById('dwSave').addEventListener('click', function () {
+    var v = window.__dwEditor.value();
+    fetch('/save', { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: v })
+      .then(function (r) { return r.text(); })
+      .then(function (t) { document.getElementById('dwOut').textContent = 'saved:' + t; });
+  });
+  // 隔离自证:本地必须通,外部必须不通(不通时把**错误名**带回来,好知道是哪一层拦的)
+  window.__dwProbe = async function () {
+    var out = {};
+    try { var r = await fetch('/ping'); out.local = 'OK ' + r.status; }
+    catch (e) { out.local = 'FAILED ' + e.name + ': ' + e.message; }
+    var ext = {
+      jsdelivr: 'https://cdn.jsdelivr.net/codemirror.spell-checker/latest/en_US.aff',
+      bootstrapcdn: 'https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css',
+      example: 'https://example.com/'
+    };
+    for (var k in ext) {
+      try { var rr = await fetch(ext[k], { mode: 'no-cors' }); out[k] = 'REACHED status=' + rr.status + ' type=' + rr.type; }
+      catch (e2) { out[k] = 'BLOCKED ' + e2.name + ': ' + e2.message; }
+    }
+    return out;
+  };
+  window.__dwStorage = async function () {
+    var ls = {}, ss = {}, i;
+    for (i = 0; i < localStorage.length; i++) { var a = localStorage.key(i); ls[a] = (localStorage.getItem(a) || '').length; }
+    for (i = 0; i < sessionStorage.length; i++) { var b = sessionStorage.key(i); ss[b] = (sessionStorage.getItem(b) || '').length; }
+    var idb = null;
+    try { idb = (await indexedDB.databases()).map(function (d) { return d.name; }); } catch (e3) { idb = 'ERR ' + e3.message; }
+    var sw = 0;
+    try { sw = (await navigator.serviceWorker.getRegistrations()).length; } catch (e4) { sw = 'ERR'; }
+    return { localStorage: ls, sessionStorage: ss, indexedDB: idb, serviceWorkerRegistrations: sw };
+  };
+  window.__dwReady = true;
+})();
+</script>

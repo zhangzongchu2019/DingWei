@@ -917,6 +917,9 @@
     .md h3 { font-size: 16px; }
     .md p { margin: 0 0 11px; }
     .md a { color: var(--accent); text-decoration-thickness: 1px; }
+    /* ts-No.79:markdown 里**就地**渲染的图(只可能是本站 /f/ 图片直链,见 isInlineImageUrl)。
+       尺寸上限与 .attachment img 同一口径 —— 同一张图走两条路时不该一大一小。 */
+    .md img.md-img { max-width: 100%; max-height: 420px; border-radius: 6px; display: block; margin: 6px 0; }
     .md blockquote {
       margin: 10px 0;
       padding: 8px 12px;
@@ -1472,6 +1475,16 @@
     const pageInstanceNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)),
       value => value.toString(16).padStart(2, '0')).join('');
 
+    // ── 🔴 DW-MD-CORE:下面 6 段是 view-service/md-render-core.js 的【生成副本】────────────
+    //    (标记形如 DW-MD-CORE:段名 BEGIN/END;6 段 = escape · own-url · ext-kind · ext-of ·
+    //     never-inline · render。它们在本文件里**不连续**,因为抽取时**零移动**——
+    //     移动 const 会引入 TDZ 风险,而本格的硬条件是「抽件前后两件闸结论逐项相同」。)
+    //    🔴 不要直接改这 6 段:改共享件 → `python3 view-service/md-render-core-sync.py` → 两份一起提交。
+    //    漂移由 `view-service/test_md_render_core.py` 挡(它跑 --check,不同步即红)。
+    //    🔴 为什么两边各一份字节而不是新增一个静态资产路由:两页由不同服务出(renderer 走 view-service,
+    //     spec 页走 Go),共用一个 HTTP 资产要新增静态路由 ⇒ 牵 nginx 前缀改写、哈希 pin、
+    //     以及「非白名单路径仍 404」的阴格,代价远大于收益。详见共享件头部与交付件。
+    // 🔴 DW-MD-CORE:escape BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     function escapeHtml(value) {
       return String(value ?? '')
         .replaceAll('&', '&amp;')
@@ -1480,6 +1493,7 @@
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
     }
+    // DW-MD-CORE:escape END
     function newRequestId() {
       return Array.from(crypto.getRandomValues(new Uint8Array(16)),
         value => value.toString(16).padStart(2, '0')).join('');
@@ -2602,12 +2616,14 @@
       return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
     }
 
+    // 🔴 DW-MD-CORE:own-url BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     function isOwnFileUrl(raw) {
       try {
         const u = new URL(raw, location.href);
         return u.origin === location.origin && u.pathname.startsWith('/f/');
       } catch { return false; }
     }
+    // DW-MD-CORE:own-url END
 
     // 正文里的 URL 常带尾随标点（句号、右括号、中文标点），不剥掉会把它吃进路径。
     function trimUrlTail(raw) {
@@ -2639,6 +2655,7 @@
       return task;
     }
 
+    // 🔴 DW-MD-CORE:ext-kind BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     // 附录 A5 那张白名单的**反向映射**，只在 HEAD 不可用时作降级依据。
     // 🔴 表外的扩展名（含 .bin）一律下载链接，不尝试内联。
     // 🔴 本表只在【降级路径】上用（HEAD 拿不到 Content-Type 时按 URL 扩展名分派）。
@@ -2651,19 +2668,28 @@
     //    🔴 对齐对象写死在这里，便于下次核：internal/fileservice/manager.go 的 filenameTextExts。
     //    ⚠️ 补进本表的扩展名必须与 FILE_EXT_NEVER_INLINE 不相交（④h(a) 盯着这条）。
     const FILE_EXT_KIND = {
+      // 🔴 图片行必须 == `deploy/nginx-dingwei.conf` 里 `types{image/*}` 那一组(**单一事实源在 nginx**),
+      //    另加一个已登记别名 `jpeg`(image/jpeg 的另一种写法;nginx 的 /f/ 只放行 jpg)。
+      //    🔴 **本仓只有这一份图片扩展名清单**:markdown 就地出图(ts-No.79)也走它(经 kindFromExt),
+      //    不许在别处再列一份 —— 漂移由 renderer-markdown-image-regression.js 的 G0 逐项对账
+      //    (少一个、多一个、连"独有 token 在源码里出现两次"都红)。
+      //    ⚠️ 补进本表的扩展名必须与 FILE_EXT_NEVER_INLINE 不相交(④h(a) 与 G0(c) 都盯着这条)。
       png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image',
+      avif: 'image', heic: 'image', bmp: 'image', tiff: 'image',
       mp4: 'video', webm: 'video',
       mp3: 'audio', m4a: 'audio', flac: 'audio', aac: 'audio', opus: 'audio', oga: 'audio', wav: 'audio',
       pdf: 'pdf',
       txt: 'text', md: 'text', csv: 'text', json: 'text', log: 'text', py: 'text', js: 'text',
       go: 'text', java: 'text', yaml: 'text', yml: 'text', toml: 'text', ini: 'text', sh: 'text', sql: 'text',
     };
+    // DW-MD-CORE:ext-kind END
     // 展示用的类型文案：扩展名分派下没有响应头可读，不编造 media_type。
     const FILE_EXT_LABEL = {
       png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp',
       mp4: 'video/mp4', webm: 'video/webm', pdf: 'application/pdf', txt: 'text/plain',
     };
 
+    // 🔴 DW-MD-CORE:ext-of BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     function fileExtOf(url) {
       try {
         const last = new URL(url, location.href).pathname.split('/').pop() || '';
@@ -2671,6 +2697,7 @@
         return dot > 0 ? last.slice(dot + 1).toLowerCase() : '';
       } catch { return ''; }
     }
+    // DW-MD-CORE:ext-of END
 
     function kindFromMediaType(mt) {
       if (!mt) return '';
@@ -2692,6 +2719,7 @@
       if (mt.startsWith('text/')) return 'text';
       return 'download';
     }
+    // 🔴 DW-MD-CORE:never-inline BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     // 🔴 附录 E：这几个扩展名**永不内联**，且**不看 FILE_EXT_KIND 是否列了它们**。
     //    为什么要独立一层：今天 svg/html 不在表里，安全是靠「没写」得来的；
     //    将来有人「补全白名单」把它们加进去，降级路径就会内联 —— 而那条路径当时没有任何断言盯着。
@@ -2702,6 +2730,7 @@
       if (FILE_EXT_NEVER_INLINE.has(ext)) return 'download';
       return FILE_EXT_KIND[ext] || 'download';
     }
+    // DW-MD-CORE:never-inline END
 
     // 从 Content-Disposition 取原始文件名：支持 RFC 5987 的 filename*（可带 UTF-8 百分号编码）
     // 与普通 filename="…"。🔴 取不到就返回 ''，**绝不猜、绝不用 URL 末段冒充原名**。
@@ -2961,14 +2990,22 @@
       const urls = [...new Set((String(rawText).match(FILE_URL_RE) || []).map(trimUrlTail))].filter(isOwnFileUrl);
       if (!urls.length) return;
       const seen = cardEl._fileSeen || (cardEl._fileSeen = new Set());
+      // 🔴 ts-No.79:同一张图不显示两处 —— 正文里已**就地出图**的直链不再建卡。
+      //    判据是"当前 DOM 里那张 <img> 的状态",不是"这条 URL 写在 markdown 语法里"(理由见 mdInlineImageUrls)。
+      const inlineShown = mdInlineImageUrls(cardEl);
+      // 🔴 ts-No.79:记住这张卡当前的正文 —— 就地那张**加载失败**时,wireMarkdownImages 要靠它把卡补回来。
+      cardEl._fileText = String(rawText);
       const host = fileAttachmentsHost(cardEl);
       for (const url of urls) {
-        if (seen.has(url)) continue;
+        if (seen.has(url) || inlineShown.has(url)) continue;
         seen.add(url);
         const slot = document.createElement('div');   // 占位：保证多个附件的先后次序与正文一致
+        slot.dataset.fileUrl = url;   // 🔴 ts-No.79:让"就地那张已加载"能撤掉**还在飞**的这张卡
         host.appendChild(slot);
         buildFileAttachment(url)
           .then((box) => {
+            // 🔴 ts-No.79:探测回来时正文里已经就地出图了 ⇒ 这张卡不要了(一图不两处)
+            if (mdInlineImageUrls(cardEl).has(url)) { slot.remove(); return; }
             // R5-3：只有**成功渲染**的才算数。gone（HEAD 404 已过期）不算 ——
             //      它在正文里那条 URL 必须留着可见，否则用户连复制都做不到。
             if (box.dataset.dispatch && box.dataset.dispatch !== 'gone') box.dataset.rendered = 'ok';
@@ -2981,6 +3018,56 @@
             fallback.appendChild(fileDownloadLink(url, '下载', uploadedFileHints.get(url)?.name || ''));
             slot.replaceWith(fallback);
           });
+      }
+    }
+
+    // 🔴 ts-No.79:markdown 就地出图 与 附件卡 之间的让位规则。
+    //
+    // 为什么判据是"**当前 DOM 里那张 <img> 的状态**",而不是"这条 URL 写在 markdown 语法里":
+    //   · 超长正文只渲染开头摘要(LONGTEXT_EXCERPT)⇒ 摘要外的图**不会**就地出现 ⇒ 卡必须照旧建,
+    //     否则那张图**直接没了**(比现状差)。
+    //   · 图取不到(7 天保留期到了 / 解不了码)⇒ 就地那张撤掉 ⇒ 卡照旧给
+    //     「文件已不可取(服务端 404)——可能已过 7 天保留期被清理」与「⬇ 下载图片」的出路 ⇒ 也不比现状差。
+    //   🔵 两条都不是推论:renderer-markdown-image-regression.js 的 G5/G6 各钉一条。
+    function mdInlineImageUrls(cardEl) {
+      const urls = new Set();
+      if (!cardEl || !cardEl.querySelectorAll) return urls;
+      for (const img of cardEl.querySelectorAll('.event-content img[data-md-img]')) {
+        const src = img.getAttribute('src');
+        if (!src) continue;
+        // 🔴 加载失败(complete 且 naturalWidth==0)⇒ **不算**已就地显示 ⇒ 附件卡接手
+        if (img.complete && img.naturalWidth === 0) continue;
+        urls.add(src);
+      }
+      return urls;
+    }
+
+    function dropRenderedFileCard(cardEl, url) {
+      if (!cardEl || !url || !cardEl._fileHost) return;
+      for (const el of [...cardEl._fileHost.children]) {
+        if (el.dataset && el.dataset.fileUrl === url) el.remove();
+      }
+    }
+
+    // 每次重渲后都要重新接线(innerHTML 会把上一次的处理连同元素一起冲掉)—— 与 hideRenderedLinks 同理。
+    function wireMarkdownImages(content, cardEl) {
+      if (!content || !cardEl) return;
+      for (const img of content.querySelectorAll('img[data-md-img]')) {
+        if (img.dataset.mdWired === '1') continue;
+        img.dataset.mdWired = '1';
+        const url = img.getAttribute('src') || '';
+        const failed = () => {
+          // 就地那张取不到 ⇒ 撤掉破图标,并让附件卡接手(它带"已过期/下载"的出路,不留空白)。
+          img.remove();
+          attachFileRenders(cardEl, cardEl._fileText || '');
+        };
+        if (img.complete) {
+          if (img.naturalWidth === 0) failed();
+          else dropRenderedFileCard(cardEl, url);
+          continue;
+        }
+        img.addEventListener('load', () => dropRenderedFileCard(cardEl, url), { once: true });
+        img.addEventListener('error', failed, { once: true });
       }
     }
 
@@ -3237,6 +3324,7 @@
       group.node.querySelectorAll('.turn-assistant .event-content').forEach(content => {
         mergeMetaIntoMarkdown(content);
         wireCopyButtons(content);
+        wireMarkdownImages(content, group.node);   // 🔴 ts-No.79:就地图片与附件卡的让位(回合重建路径)
       });
       group.node.querySelectorAll('.turn-tool-item').forEach(wireCopyButtons);
       wireLongtextBar(group);
@@ -3403,6 +3491,8 @@
       wireCopyButtons(body);
       // 0.2.0.6 A：挂在卡片上而不是正文里 —— 正文每个 chunk 都重写 innerHTML。
       attachFileRenders(body.closest('.message-card'), messageBuffers.get(entry.key) || '');
+      // 🔴 ts-No.79:流式路径也要接线,否则每个 chunk 重渲后"让位"就失效 ⇒ 一图两处。
+      wireMarkdownImages(body, body.closest('.message-card'));
     }
 
     function mergeMetaIntoMarkdown(content) {
@@ -3538,6 +3628,7 @@
       /* eslint-enable no-unreachable */
     }
 
+    // 🔴 DW-MD-CORE:render BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     function renderMarkdown(src) {
       const blocks = splitFencedBlocks(src);
       let html = '';
@@ -3682,6 +3773,25 @@
       return `<${tag}>${items}</${tag}>`;
     }
 
+    // 🔴 ts-No.79(业主:「只要是图片的就显示预览的图」「感叹号可以不用了」):
+    //    "这条 URL 该不该就地出图"的**唯一**判据。两个前提都复用**已有**的东西,不新造清单、不新造边界:
+    //      · isOwnFileUrl —— 附件那条路已在用的信任边界:只认本站 /f/ 直链,
+    //        🔴「不对任意外站 URL 做任何请求」(见 FILE_URL_RE 上面那段注释)⇒ 外站图片**仍是链接**。
+    //        🔵 这是一条产品可见的边界:要放开得由业主裁,不在本格顺手改(G4 把现状钉住了)。
+    //      · kindFromExt —— 先查 FILE_EXT_NEVER_INLINE(svg/svgz/html/htm/xhtml/xml **写死**永不内联;
+    //        派工单④:不靠"名单里没写"),再查 FILE_EXT_KIND(== nginx 的 types{image/*},G0 对账)。
+    function isInlineImageUrl(url) {
+      return isOwnFileUrl(url) && kindFromExt(url) === 'image';
+    }
+
+    // 🔴 派工单④:一律 <img>,**绝不内联 SVG 源码** —— 本函数只可能产出 <img>,
+    //    没有任何一条路会把文件字节读进来拼成元素(svg 更是上面那层写死的 deny-set 就挡住了)。
+    //    alt/src 用的都是 escapeHtml **之后**的串(引号已是 &quot;)⇒ 属性突破不成立;
+    //    那道承重墙由 ts-No.76 的 P12 与本件 G3/M-G3 一起钉着。
+    function mdImageHtml(alt, url) {
+      return `<img class="md-img" data-md-img src="${url}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer">`;
+    }
+
     function renderInline(src) {
       let out = escapeHtml(src);
       const codes = [];
@@ -3690,7 +3800,13 @@
         codes.push(`<code>${code}</code>`);
         return token;
       });
-      out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" rel="noreferrer" target="_blank">$1</a>');
+      // 🔴 ts-No.79:`!?` 把感叹号一起吃掉 ⇒「! ＋ 链接」那个怪形态消失(业主:感叹号可以不用了)。
+      //    指向图片的就**就地出图**,其余**仍是链接**(派工单③:非图片链接行为不变,只是少了那个 "!")。
+      //    🔵 用函数式替换而不是 '$1/$2' 串:捕获值里的 `$` 不再有机会被当替换模式解释。
+      out = out.replace(/(!?)\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, bang, text, url) => (
+        isInlineImageUrl(url)
+          ? mdImageHtml(text, url)
+          : `<a href="${url}" rel="noreferrer" target="_blank">${text}</a>`));
       out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       out = out.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
       out = out.replace(/\n/g, '<br>');
@@ -3720,6 +3836,7 @@
       }
       return html;
     }
+    // DW-MD-CORE:render END
 
     function wireCopyButtons(root) {
       root.querySelectorAll('.copy-code').forEach(btn => {
@@ -4646,7 +4763,10 @@
       if (!navigator.mediaDevices?.getDisplayMedia) {
         throw new Error('本浏览器不支持页内截屏(需要 getDisplayMedia,以 Chrome 系为准)');
       }
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      // 🔴 selfBrowserSurface:'include' —— Chrome 默认 'exclude',即把【当前这个 tab】排除在选源列表外
+      //    (那默认是为"实时预览会自我嵌套"设的;我们抓一帧就停轨,没有预览,只剩"业主截不到眼前这页")。
+      //    不认这个成员的浏览器会按 WebIDL 把它当未知成员忽略 ⇒ 无副作用(忽略机制已实测,见用例 ㉚ 守卫②)。
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false, selfBrowserSurface: 'include' });
       try {
         const video = document.createElement('video');
         video.srcObject = stream;
