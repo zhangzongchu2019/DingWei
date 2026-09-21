@@ -41,6 +41,25 @@ def resolve_principal(conn, want_digest, issuer):
         die("摘要 %s 命中 %d 条,无法判别。fail-closed。" % (want_digest, len(hits)))
     return hits[0][0]
 
+def resolve_principal_id(conn, subject, issuer):
+    """以库内既有身份配对为准取 id；不得用命令行位置重新给真人编号。"""
+    try:
+        rows = conn.execute(
+            "SELECT id FROM console_principal "
+            "WHERE provider='feishu' AND provider_issuer=? AND provider_subject=?",
+            (issuer, subject),
+        ).fetchall()
+    except sqlite3.Error as exc:
+        die("无法读取 console_principal 既有身份配对: %s" % exc)
+    if len(rows) == 0:
+        die("subject 摘要 %s 在 console_principal 中无既有 id。\n"
+            "   ⇒ 本工具不按参数位置发明 id;请先显式建立并审核 principal 身份配对。"
+            % digest(subject))
+    if len(rows) > 1:
+        die("subject 摘要 %s 在 console_principal 中命中 %d 个 id,无法判别。fail-closed。"
+            % (digest(subject), len(rows)))
+    return rows[0][0]
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", required=True, help="workpulse.db(只读打开)")
@@ -61,14 +80,14 @@ def main():
         die("数据库不存在: %s" % a.db)
     conn = sqlite3.connect("file:%s?mode=ro" % a.db, uri=True)
 
-    # ---- principals:摘要 -> 字面值,逐条要求活跃渠道下唯一命中 ----
-    principals, subj_by_id = [], {}
-    for i, d in enumerate(a.principal_digest):
-        pid = "owner-entry-%s" % chr(ord("a") + i)
+    # ---- principals:摘要 -> subject -> 库内既有 id，顺序不得改变身份配对 ----
+    principals = []
+    for d in a.principal_digest:
         subj = resolve_principal(conn, d, a.issuer)
-        subj_by_id[pid] = subj
+        pid = resolve_principal_id(conn, subj, a.issuer)
         principals.append({"id": pid, "provider": "feishu", "provider_issuer": a.issuer,
                            "provider_subject": subj, "display_name": "Owner", "active": True})
+    principals.sort(key=lambda p: p["id"])
 
     # ---- agents:按【列值】取,不按名字 ----
     rows = conn.execute(
