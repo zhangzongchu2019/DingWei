@@ -86,6 +86,44 @@ func normalizedMedia(mediaType, originalName string) (string, string) {
 	return "application/octet-stream", "bin"
 }
 
+// PersistForSpec copies a ready temporary object into the content-addressed,
+// sweeper-independent spec area. Repeated content reuses the same object key.
+func (m *Manager) PersistForSpec(ctx context.Context, id, actorPrincipal, ownerKey string) (string, error) {
+	if m == nil || m.Repo == nil || m.Objects == nil || m.Clock == nil || actorPrincipal == "" || ownerKey == "" {
+		return "", ErrAccessDenied
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	f, err := m.Repo.Get(ctx, id)
+	if err != nil || f.OwnerKey != ownerKey || f.State != StateReady {
+		return "", ErrAccessDenied
+	}
+	if key, ok, err := m.Repo.SpecPermanentObject(ctx, f.SHA256); err != nil {
+		return "", err
+	} else if ok {
+		return key, nil
+	}
+	ext := strings.TrimPrefix(path.Ext(f.ObjectKey), ".")
+	if ext == "" || len(f.SHA256) < 32 {
+		return "", ErrInvalidUpload
+	}
+	key := fmt.Sprintf("spec-assets/global/00/0000/%s.%s", f.SHA256[:32], ext)
+	if _, err = m.Objects.Stat(ctx, key); err != nil {
+		body, openErr := m.Objects.Open(ctx, f.ObjectKey, 0, f.SizeBytes)
+		if openErr != nil {
+			return "", openErr
+		}
+		defer body.Close()
+		if err = m.Objects.Put(ctx, key, body, f.SizeBytes, f.MediaType); err != nil {
+			return "", err
+		}
+	}
+	if err = m.Repo.InsertSpecPermanentObject(ctx, f.SHA256, key, f.SizeBytes, f.MediaType, m.Clock.Now()); err != nil {
+		return "", err
+	}
+	return key, nil
+}
+
 type Upload struct {
 	OwnerKey, SessionName, OriginalName, MediaType, ExpectedSHA256 string
 	ContentLength                                                  int64

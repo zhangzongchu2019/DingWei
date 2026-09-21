@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -36,6 +38,44 @@ type consoleSpecOpenNewContextKey struct{}
 func specCapabilityHash(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+
+var specMarkdownImage = regexp.MustCompile(`!\[[^\]]*\]\((https://[^)\s]+)\)`)
+
+func (h *Hub) persistSpecImages(ctx context.Context, markdown, actorPrincipal, ownerPrincipal string) (string, error) {
+	matches := specMarkdownImage.FindAllStringSubmatch(markdown, -1)
+	if len(matches) == 0 {
+		return markdown, nil
+	}
+	scopeRepo, ok := h.Repo.(consoleOwnerScopeRepository)
+	if !ok || h.filePermanent == nil {
+		return "", errors.New("spec permanent image service unavailable")
+	}
+	ownerKey, err := scopeRepo.ResolveConsoleOwnerScope(ctx, ownerPrincipal)
+	if err != nil || ownerKey == "" {
+		return "", errors.New("spec image owner scope unavailable")
+	}
+	rewritten := markdown
+	for _, match := range matches {
+		raw := match[1]
+		u, parseErr := url.Parse(raw)
+		base := ""
+		if parseErr == nil && strings.Contains(u.Path, "/f/") {
+			name := u.Path[strings.LastIndex(u.Path, "/")+1:]
+			if dot := strings.IndexByte(name, '.'); dot > 0 {
+				base = name[:dot]
+			}
+		}
+		if !fileIDPattern.MatchString(base) {
+			return "", errors.New("spec image must use an uploaded HTTPS /f/ URL")
+		}
+		stable, persistErr := h.filePermanent.PersistSpecFile(ctx, FilePermanentRequest{FileID: base, ActorPrincipal: actorPrincipal, OwnerKey: ownerKey})
+		if persistErr != nil || !strings.HasPrefix(stable, "https://") {
+			return "", errors.New("persist spec image")
+		}
+		rewritten = strings.ReplaceAll(rewritten, raw, stable)
+	}
+	return rewritten, nil
 }
 
 type specAcceptance struct {
@@ -144,6 +184,12 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 	}
 	id := "spec-" + randomHex(12)
 	editToken := randomHex(32)
+	persistedMarkdown, err := h.persistSpecImages(r.Context(), req.ContentMarkdown, principal, principal)
+	if err != nil {
+		http.Error(w, "spec image persistence failed", http.StatusServiceUnavailable)
+		return
+	}
+	req.ContentMarkdown = persistedMarkdown
 	rev, err := revisionFromRequest(id, principal, 1, req)
 	if err != nil {
 		http.Error(w, "invalid spec", http.StatusBadRequest)
@@ -202,6 +248,15 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.ExpectedRevision <= 0 {
 		http.Error(w, "expected_revision required", http.StatusBadRequest)
+		return
+	}
+	actor := principal
+	if actor == "" {
+		actor = "shared-link"
+	}
+	req.ContentMarkdown, err = h.persistSpecImages(r.Context(), req.ContentMarkdown, actor, spec.PrincipalID)
+	if err != nil {
+		http.Error(w, "spec image persistence failed", http.StatusServiceUnavailable)
 		return
 	}
 	rev, err := revisionFromRequest(id, principal, req.ExpectedRevision+1, req)

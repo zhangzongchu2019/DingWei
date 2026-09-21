@@ -33,10 +33,25 @@ func newConsoleSpecTestHub(t *testing.T) *Hub {
 			t.Fatal(err)
 		}
 	}
+	for _, principal := range []string{"owner-a", "owner-b"} {
+		if err := db.UpsertConsolePrincipalRole(context.Background(), model.ConsolePrincipalRole{PrincipalID: principal, Role: "owner", OwnerKey: "tenant-a", Active: true}); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if err := db.UpsertConsolePlatformRole(context.Background(), model.ConsolePlatformRole{PrincipalID: "manager", Role: "management", Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	return New(db, ConsoleAuthMode{enabled: true})
+}
+
+type recordingSpecPermanentClient struct {
+	requests []FilePermanentRequest
+	url      string
+}
+
+func (c *recordingSpecPermanentClient) PersistSpecFile(_ context.Context, req FilePermanentRequest) (string, error) {
+	c.requests = append(c.requests, req)
+	return c.url, nil
 }
 
 func callConsoleSpec(t *testing.T, hub *Hub, principal, action, method, path string, body string, handler http.HandlerFunc) *httptest.ResponseRecorder {
@@ -187,6 +202,29 @@ func TestConsoleSpecSharedCapabilityWritesUntilOwnerClosesEditing(t *testing.T) 
 	hub.HandleConsoleSpec(rr, req)
 	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"current_revision":2`) {
 		t.Fatalf("closing writes must not close public read code=%d body=%s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestConsoleSpecSavePersistsAndRewritesUploadedImageURL(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	client := &recordingSpecPermanentClient{url: "https://files.example/f/spec-assets/global/00/0000/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png"}
+	hub.SetFilePermanentClient(client)
+	temporary := "https://files.example/f/tenant/agent/26/0920/0123456789abcdef0123456789abcdef.png"
+	body := strings.Replace(validSpecBody, `# A`, `# A\n![diagram](`+temporary+`)`, 1)
+	rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", body, hub.HandleConsoleSpecs)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	var created model.ConsoleSpec
+	if err := json.Unmarshal(rr.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	revision, err := hub.Repo.(*store.SQLite).ConsoleSpecRevision(context.Background(), "owner-b", created.ID, 1, false)
+	if err != nil || revision == nil || strings.Contains(revision.ContentMarkdown, temporary) || !strings.Contains(revision.ContentMarkdown, client.url) {
+		t.Fatalf("stored markdown=%q err=%v", revision.ContentMarkdown, err)
+	}
+	if len(client.requests) != 1 || client.requests[0].FileID != "0123456789abcdef0123456789abcdef" || client.requests[0].OwnerKey != "tenant-a" {
+		t.Fatalf("permanent requests=%+v", client.requests)
 	}
 }
 

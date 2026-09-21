@@ -109,6 +109,7 @@ type Hub struct {
 	restartWindow    time.Duration
 	fileIssuer       FileTicketIssuer
 	fileArchive      FileArchiveClient
+	filePermanent    FilePermanentClient
 }
 
 type L2Config struct {

@@ -35,23 +35,25 @@ func (f *recordingFileIssuer) IssueFileTicket(_ context.Context, req FileTicketR
 }
 
 func TestFileRetrievalCapabilityIsFrozen(t *testing.T) {
-	issuer := &recordingFileIssuer{}
-	h := &Hub{fileIssuer: issuer}
-	c := &sessionClient{keyID: "key-a", ownerKey: "owner-a", sessionName: "session-a"}
-	env := model.Envelope{From: "session-a#key-a", Meta: map[string]any{
-		"type": fileCapabilityRequestType, "request_id": "request-1", "operation": "get",
-		"file_ref": "dwfile:0123456789abcdef0123456789abcdef", "range": "bytes=0-15",
-		"owner_key": "attacker", "session_name": "other",
-	}}
-	got := h.fileCapabilityResponse(context.Background(), c, env)
-	if issuer.calls != 0 {
-		t.Fatalf("issuer calls=%d request=%+v", issuer.calls, issuer.req)
-	}
-	if metaBool(got.Meta, "ok") || metaString(got.Meta, "token") != "" || metaString(got.Meta, "error") == "" || got.Body != "" {
-		t.Fatalf("response=%+v", got)
-	}
-	if got.Meta["owner_key"] != nil || got.Meta["session_name"] != nil {
-		t.Fatalf("response reflected identity claims: %+v", got.Meta)
+	for _, operation := range []string{"get", "head"} {
+		issuer := &recordingFileIssuer{}
+		h := &Hub{fileIssuer: issuer}
+		c := &sessionClient{keyID: "key-a", ownerKey: "owner-a", sessionName: "session-a"}
+		env := model.Envelope{From: "session-a#key-a", Meta: map[string]any{
+			"type": fileCapabilityRequestType, "request_id": "request-1", "operation": operation,
+			"file_ref": "dwfile:0123456789abcdef0123456789abcdef", "range": "bytes=0-15",
+			"owner_key": "attacker", "session_name": "other",
+		}}
+		got := h.fileCapabilityResponse(context.Background(), c, env)
+		if issuer.calls != 0 {
+			t.Fatalf("operation=%s issuer calls=%d request=%+v", operation, issuer.calls, issuer.req)
+		}
+		if metaBool(got.Meta, "ok") || metaString(got.Meta, "token") != "" || metaString(got.Meta, "error") != "file retrieval capability frozen" || got.Body != "" {
+			t.Fatalf("operation=%s response=%+v", operation, got)
+		}
+		if got.Meta["owner_key"] != nil || got.Meta["session_name"] != nil {
+			t.Fatalf("operation=%s response reflected identity claims: %+v", operation, got.Meta)
+		}
 	}
 }
 

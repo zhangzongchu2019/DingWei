@@ -56,6 +56,12 @@ type FileArchiveClient interface {
 	SetFileArchived(context.Context, FileArchiveRequest) error
 }
 
+type FilePermanentRequest struct{ FileID, ActorPrincipal, OwnerKey string }
+
+type FilePermanentClient interface {
+	PersistSpecFile(context.Context, FilePermanentRequest) (string, error)
+}
+
 type HTTPFileTicketIssuer struct {
 	InternalBaseURL string
 	PublicBaseURL   string
@@ -156,8 +162,37 @@ func (i *HTTPFileTicketIssuer) SetFileArchived(ctx context.Context, req FileArch
 	return nil
 }
 
-func (h *Hub) SetFileTicketIssuer(issuer FileTicketIssuer)   { h.fileIssuer = issuer }
-func (h *Hub) SetFileArchiveClient(client FileArchiveClient) { h.fileArchive = client }
+func (i *HTTPFileTicketIssuer) PersistSpecFile(ctx context.Context, req FilePermanentRequest) (string, error) {
+	if i == nil || i.Client == nil || !fileIDPattern.MatchString(req.FileID) || req.ActorPrincipal == "" || req.OwnerKey == "" {
+		return "", errors.New("invalid permanent file request")
+	}
+	payload, err := json.Marshal(map[string]string{"file_id": req.FileID, "actor_principal": req.ActorPrincipal, "owner_key": req.OwnerKey})
+	if err != nil {
+		return "", err
+	}
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, i.InternalBaseURL+"/internal/files/spec-permanent", bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+i.Credential)
+	httpReq.Header.Set("Content-Type", "application/json")
+	resp, err := i.Client.Do(httpReq)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	var decoded struct {
+		URL string `json:"url"`
+	}
+	if resp.StatusCode != http.StatusOK || json.NewDecoder(io.LimitReader(resp.Body, 16<<10)).Decode(&decoded) != nil || decoded.URL == "" {
+		return "", fmt.Errorf("file permanent status %d", resp.StatusCode)
+	}
+	return decoded.URL, nil
+}
+
+func (h *Hub) SetFileTicketIssuer(issuer FileTicketIssuer)       { h.fileIssuer = issuer }
+func (h *Hub) SetFileArchiveClient(client FileArchiveClient)     { h.fileArchive = client }
+func (h *Hub) SetFilePermanentClient(client FilePermanentClient) { h.filePermanent = client }
 
 type consoleOwnerScopeRepository interface {
 	ResolveConsoleOwnerScope(context.Context, string) (string, error)

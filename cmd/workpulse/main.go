@@ -148,6 +148,7 @@ func run(logger *slog.Logger) error {
 		}
 		prefixHub.SetFileTicketIssuer(issuer)
 		prefixHub.SetFileArchiveClient(issuer)
+		prefixHub.SetFilePermanentClient(issuer)
 		logger.Info("file capability issuer configured", "internal_url", fileIssuerURL, "public_url", filePublicURL)
 	}
 	if bs.L2DeepSeekAPIKey != "" {

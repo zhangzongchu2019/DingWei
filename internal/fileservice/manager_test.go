@@ -99,6 +99,43 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 	}
 }
 
+func TestPersistForSpecCopiesBySHAAndSurvivesTemporaryDeletion(t *testing.T) {
+	m, _, objects := testManager(t, 1<<20)
+	put := func(session string) File {
+		f, err := m.Put(context.Background(), Upload{OwnerKey: "owner", SessionName: session, OriginalName: "diagram.png", MediaType: "image/png", ContentLength: 11, Body: strings.NewReader("image-bytes")})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return f
+	}
+	first := put("agent-a")
+	key, err := m.PersistForSpec(context.Background(), first.ID, "owner-principal", "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(key, "spec-assets/global/00/0000/") {
+		t.Fatalf("permanent key=%q", key)
+	}
+	delete(objects.data, first.ObjectKey) // 验收阴格：临时原图立即删除，不等 7 天。
+	if got := string(objects.data[key]); got != "image-bytes" {
+		t.Fatalf("permanent bytes=%q after source deletion", got)
+	}
+	second := put("agent-b")
+	key2, err := m.PersistForSpec(context.Background(), second.ID, "owner-principal", "owner")
+	if err != nil || key2 != key {
+		t.Fatalf("dedupe key2=%q key=%q err=%v", key2, key, err)
+	}
+	permanent := 0
+	for objectKey := range objects.data {
+		if strings.HasPrefix(objectKey, "spec-assets/") {
+			permanent++
+		}
+	}
+	if permanent != 1 {
+		t.Fatalf("same sha created %d permanent objects", permanent)
+	}
+}
+
 type memoryObjects struct {
 	mu         sync.Mutex
 	data       map[string][]byte

@@ -3,6 +3,7 @@ package fileservice
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -41,6 +42,12 @@ reason TEXT NOT NULL, created_at TEXT NOT NULL);`); err != nil {
 		db.Close()
 		return nil, err
 	}
+	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS spec_permanent_object (
+sha256 TEXT PRIMARY KEY, object_key TEXT NOT NULL UNIQUE, size_bytes INTEGER NOT NULL,
+media_type TEXT NOT NULL, created_at TEXT NOT NULL);`); err != nil {
+		db.Close()
+		return nil, err
+	}
 	for _, column := range []struct{ name, ddl string }{
 		{"archived", `ALTER TABLE files ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`},
 		{"archived_at", `ALTER TABLE files ADD COLUMN archived_at TEXT`},
@@ -59,6 +66,21 @@ reason TEXT NOT NULL, created_at TEXT NOT NULL);`); err != nil {
 		}
 	}
 	return r, nil
+}
+
+func (r *Repository) SpecPermanentObject(ctx context.Context, sha string) (string, bool, error) {
+	var key string
+	err := r.db.QueryRowContext(ctx, `SELECT object_key FROM spec_permanent_object WHERE sha256=?`, sha).Scan(&key)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", false, nil
+	}
+	return key, err == nil, err
+}
+
+func (r *Repository) InsertSpecPermanentObject(ctx context.Context, sha, key string, size int64, mediaType string, at time.Time) error {
+	_, err := r.db.ExecContext(ctx, `INSERT OR IGNORE INTO spec_permanent_object(sha256,object_key,size_bytes,media_type,created_at) VALUES(?,?,?,?,?)`,
+		sha, key, size, mediaType, stamp(at))
+	return err
 }
 
 func sqliteColumnExists(db *sql.DB, table, column string) (bool, error) {
