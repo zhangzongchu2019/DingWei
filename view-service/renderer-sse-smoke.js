@@ -1,3 +1,5 @@
+// 🔵 诊断件,不是闸:未完成与页面异常目前只打印,不会令 rc 非零。
+// 不得把本文件计入发布覆盖;若要升格为闸,须先补硬断言与 rc 0/2/3 契约。
 // renderer 端到端冒烟:真 EventSource + 真节奏,盯异常 / 长任务 / 内容完整性 / 主线程可响应。
 // 配套 renderer-sse-fixture.py 使用:
 //   RENDERER=<件> python3 renderer-sse-fixture.py 19400 &

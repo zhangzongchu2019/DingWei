@@ -27,6 +27,14 @@ SUITES = (
     ("console_browser", ROOT / "view-service/console-browser-regression.js"),
     ("renderer_in_console_iframe", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
     ("renderer_sse_reconnect", ROOT / "view-service/renderer-sse-reconnect.js"),
+    ("renderer_failcard", ROOT / "view-service/renderer-failcard-regression.js"),
+    ("renderer_t054_errorboard", ROOT / "view-service/renderer-t054-errorboard-regression.js"),
+    ("renderer_t074_delivery_id", ROOT / "view-service/renderer-t074-delivery-id-regression.js"),
+    ("renderer_provenance_icon", ROOT / "view-service/renderer-provenance-icon-regression.js"),
+    ("renderer_storage_denied", ROOT / "view-service/renderer-storage-denied-regression.js"),
+    ("terminal_storage_denied", ROOT / "view-service/terminal-storage-denied-regression.js"),
+    ("renderer_t086_empty_ring_e2e", ROOT / "view-service/renderer-t086-empty-ring-e2e-regression.js"),
+    ("renderer_c2", ROOT / "view-service/renderer-c2-regression.js"),
     ("console_specs_browser", ROOT / "view-service/console-specs-browser-regression.js"),
 )
 
@@ -36,7 +44,8 @@ SUITES = (
 # overrides, but a caller-supplied value is still reported rather than hidden.
 OVERRIDE_ENV_NAMES = (
     "FIXTURES", "MOCK_BASE", "MOCK_CERT", "MOCK_KEY", "MOCK_SESSION",
-    "NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH", "PW_CHANNEL", "RENDERER_OVERRIDE",
+    "HUB_V2_GOLDEN_FILE", "NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH", "PW_CHANNEL",
+    "RENDERER_FILE", "RENDERER_OVERRIDE",
 )
 # These are overwritten by the runner before the consumer sees them. They are
 # excluded from the coverage requirement, although caller-supplied values are

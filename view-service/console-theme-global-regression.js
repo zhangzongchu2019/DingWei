@@ -62,7 +62,47 @@ async function t(name, fn) {
   try { await fn(); console.log('  ✅', name); pass += 1; } catch (e) { console.log('  🔴', name, '->', e && e.message); fail += 1; }
 }
 
+// An absent iframe is a retry condition, not permission to inherit
+// Playwright's 30s locator timeout on every attempt (the old 50 * 30s = 25 min).
+async function frameOf(page, session) {
+  const title = `Agent view: ${session}`;
+  for (let i = 0; i < 25; i += 1) {
+    const handle = await page.locator(`#panes iframe[title="${title}"]`).elementHandle({ timeout: 200 }).catch(() => null);
+    const frame = handle ? await handle.contentFrame().catch(() => null) : null;
+    if (frame) return frame;
+    await page.waitForTimeout(100);
+  }
+  const viaUrl = page.frames().find((frame) => frame.url().includes(`/view/${encodeURIComponent(session)}`));
+  if (viaUrl) return viaUrl;
+  throw new Error(`拿不到 ${session} 那个 iframe 的 frame 对象(elementHandle/contentFrame 与 url 两条路都失败)`);
+}
+
+async function selftestFrameOfTimeout() {
+  let calls = 0;
+  const optionsSeen = [];
+  const page = {
+    locator() {
+      return { elementHandle: async (options) => {
+        calls += 1;
+        optionsSeen.push(options);
+        return null;
+      } };
+    },
+    waitForTimeout: async () => {},
+    frames: () => [],
+  };
+  await assert.rejects(() => frameOf(page, 'missing-agent-2642'), /拿不到/);
+  assert.strictEqual(calls, 25, '重试数必须有界');
+  assert.strictEqual(optionsSeen.every(options => options && options.timeout === 200), true,
+    `每次 elementHandle 必须显式限时, 实测 ${JSON.stringify(optionsSeen)}`);
+  console.log('frameOf timeout selftest: PASS (25 attempts * explicit 200ms cap)');
+}
+
 (async () => {
+  if (process.argv.includes('--selftest-frame-timeout')) {
+    await selftestFrameOfTimeout();
+    return;
+  }
   const consoleHTML = consoleHTMLFromProductionSource();
   const rendererBytes = fs.readFileSync(RENDERER);
   console.log(`  · console 页取自生产源码 internal/m8/console_auth.go(${consoleHTML.length} 字节)`);
@@ -148,19 +188,6 @@ async function t(name, fn) {
   //    还没建好的窗口是存在的(实测抖动过一次:变异 MT1 那轮 T4 报"没找到 frame 对象",
   //    那**不是**主题信号,是装置抖动 ⇒ 按判据③,解释不了的红条就是真问题,所以必须修掉)。
   //    改用 elementHandle().contentFrame() + 轮询:拿到的一定是这个元素自己的 frame。
-  async function frameOf(page, session) {
-    const title = `Agent view: ${session}`;
-    for (let i = 0; i < 50; i += 1) {
-      const handle = await page.locator(`#panes iframe[title="${title}"]`).elementHandle().catch(() => null);
-      const f = handle ? await handle.contentFrame().catch(() => null) : null;
-      if (f) return f;
-      await page.waitForTimeout(100);
-    }
-    const viaUrl = page.frames().find((x) => x.url().includes(`/view/${encodeURIComponent(session)}`));
-    if (viaUrl) return viaUrl;
-    throw new Error(`拿不到 ${session} 那个 iframe 的 frame 对象(elementHandle/contentFrame 与 url 两条路都失败)`);
-  }
-
   const shellOf = (page) => page.evaluate(shellProbe);
   const paneOf = (f) => f.evaluate(paneProbe);
   const storeOf = (page) => page.evaluate(() => ({ local: { ...localStorage }, session: { ...sessionStorage } }));

@@ -316,10 +316,17 @@ class SessionHelper:
         """Return an async ``(method, path, body?) -> dict`` that forwards
         a vsapi_v1 request to datad with the session token appended.
         Helper = pure pipe, no RBAC, no path rewriting (design §7b)."""
-        import aiohttp
-
         token = self.cfg.datad_token  # per-session token (prodops 签发, DATAD_TOKEN)
         datad_url = self.cfg.datad_url.rstrip("/")
+
+        if not datad_url:
+            async def _unconfigured(_method: str, _path: str,
+                                    _body: dict | None = None) -> dict:
+                raise RuntimeError("vsapi 未配置:datad_url 未配置")
+
+            return _unconfigured
+
+        import aiohttp
 
         async def _vsapi(method: str, path: str, body: dict | None = None) -> dict:
             url = f"{datad_url}{path}"
@@ -531,7 +538,9 @@ class SessionHelper:
                 if self.cfg.mcp_ipc_sock:
                     from .ipc_listener import serve_ipc
 
-                    vsapi_handler = self._make_vsapi_handler() if self.cfg.datad_url else None
+                    # 即使 datad_url 未配也装入一个 fail-loud handler。传 None 会让
+                    # MCP 调用退化成 NoneType/Transport closed,把配置缺失伪装成连接故障。
+                    vsapi_handler = self._make_vsapi_handler()
                     ipc_task = asyncio.create_task(
                         serve_ipc(self.cfg.mcp_ipc_sock, self._make_send_handler(ws),
                                   vsapi_handler=vsapi_handler,

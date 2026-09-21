@@ -52,6 +52,16 @@ const SAMPLE_MS = 1000;
 //    多一整份,`consumeReconnectClear` 一次都没返回 true,且**页面上无任何告警**。
 // ⇒ 夹具加 `FIRST_DELAY`(首条事件之前的静默秒数;与 `DELAY` 是两件事,DELAY 只 sleep 在
 //    chunk 之间,推不动"首条"),窗内 0.6s 与出窗 1.3s 各钉一条。
+//
+// ── (c) 落地后 L4 的反转(组长 ts-No.17 裁定:`0.2.1.35`-⑲ 只做 (c) 告警,不放宽窗口)──
+//    产品侧:窗口过期 ⇒ 复用现成 stream alert 出一条**可见**告警,告诉业主怎么恢复(刷新)。
+//    闸侧:🔴 **L4 由"已知缺陷显影"反转成硬断言** —— 出窗 ⇒ 必须出现告警;`knownDefect` 标记已删。
+//    并且**窗内三条腿各加一条反向断言**:健康路径上不得出现这个告警 —— 否则误报会淹掉真告警,
+//    而且没有这条,(c) 可以写成"每次 arm 都告警"而 L4 照样绿 ⇒ 那又是半条闸。
+//    🔴 判别力来自**时间区间**而不是"告警出现过":`showStreamAlert` 还有一个**早就存在**的来源
+//       —— 断线宽限期 `STREAM_CONNECT_GRACE_MS = 7500ms`。只数次数会让它冒充重放超时告警。
+//    🔵 L4 **不再**断言"出窗不得增长":重复要等 ⑰(hub 侧 per-event 序号)才治得了,
+//       (c) 只把静默变成可见。增长数字仍然打印(测量,不是断言)。
 const LONG_UNIT = '契约正文压测段落';                 // 8 字
 const LONG_TEXT = LONG_UNIT.repeat(960);               // 7680 字 ⇒ 折叠
 const SHORT_TEXT = Array.from({ length: 50 }, (_, i) => `[${String(i).padStart(3, '0')}]契约正文压测`).join(''); // 550 字 ⇒ 不折叠
@@ -66,16 +76,39 @@ const LEGS = [
     expectChars: SHORT_TEXT.length, expectChunks: Math.ceil(SHORT_TEXT.length / CHUNK), folded: false },
   { name: 'L3 慢重放·窗内(首条 0.6s 后到)', text: SHORT_TEXT, ring: 2, secs: 14, firstDelay: 0.6,
     expectChars: SHORT_TEXT.length, expectChunks: Math.ceil(SHORT_TEXT.length / CHUNK), folded: false },
-  // 🔴 L4 是**已知缺陷显影**,不是闸:它不判"产品对不对",只把"窗口过期后缺陷原样回来"
-  //    这件事在每次跑时**打印出来**(计入 ⚠️,不影响 rc,不阻断发布)。
-  //    为什么不做成硬红:缺陷还活着、修法待裁(0.2.1.35-⑲),做成硬红会让发布闸长期红着,
-  //    而"长期红着的闸"正是本组今晚反复治的病(红久了就没人看)。
-  // 🔵 **有效期**:窗口修法落地后本条会报「形态变了」⇒ 那时把它**反转**成硬断言
-  //    "出窗也不得增长"并删掉 knownDefect 标记。它钉的是当前缺陷形态,不是契约。
+  // 🔵 L4 的身世(留着,因为它就是"钉要有有效期"的样例):
+  //    它**曾经**是"已知缺陷显影腿"(knownDefect,不计 rc),那时缺陷还活着、修法待裁,
+  //    做成硬红会让发布闸长期红着。文件里当时写明:**修法落地后本条要反转成硬断言**。
+  //    组长 ts-No.17 裁定 (c)(窗口过期 ⇒ 可见告警)本版做 ⇒ **有效期到了,现已反转**:
+  //    🔴 出窗 ⇒ **必须出现告警**,硬断言、计入 rc。knownDefect 标记已删。
+  //    🔵 注意它**不再**断言"出窗不得增长" —— 重复本身要等 ⑰(hub 侧 per-event 序号)才治得了,
+  //       (c) 只把静默变成可见。增长数字仍然**打印**出来(测量,不是断言)。
   { name: 'L4 慢重放·出窗(首条 1.3s 后到)', text: SHORT_TEXT, ring: 2, secs: 14, firstDelay: 1.3,
     expectChars: SHORT_TEXT.length, expectChunks: Math.ceil(SHORT_TEXT.length / CHUNK), folded: false,
-    knownDefect: true },
+    outOfWindow: true },
 ];
+
+// 🔴 告警的**时间判据**(这条是本腿有没有牙的关键):
+//    `showStreamAlert` 有两个来源 —— 重放窗口过期(本次要钉的),以及断线宽限期
+//    `STREAM_CONNECT_GRACE_MS = 7500ms`(**早就存在**的那条)。只断言"告警出现过"
+//    ⇒ 断线那条会**冒充**重放超时,本腿零判别力。
+//    故判据是:告警必须出现在**某次 arm 之后 [WINDOW-150, WINDOW+900]ms** 内。
+//    🔵 上界 900ms 远小于 7500ms ⇒ 断线告警落不进这个区间(它至少在 error 之后 7.5s,
+//       而 error 又发生在 arm 之后 ~1.3s)。**区间是算出来的,不是拍出来的。**
+const ALERT_EARLY_MS = 150;
+const ALERT_LATE_MS = 900;
+
+// 在 arms / alerts 两组时间戳里挑出"落在窗口过期那一刻附近"的告警
+function alertHitsNearExpiry(arms, alerts, limit) {
+  const hits = [];
+  for (const a of (alerts || [])) {
+    for (const t of (arms || [])) {
+      const d = a.t - t;
+      if (d >= limit - ALERT_EARLY_MS && d <= limit + ALERT_LATE_MS) hits.push({ arm: t, alert: a.t, delta: d, arg: a.arg });
+    }
+  }
+  return hits;
+}
 
 let pass = 0;
 let fail = 0;
@@ -83,13 +116,6 @@ const failures = [];
 async function t(name, fn) {
   try { await fn(); console.log('  ✅', name); pass += 1; }
   catch (e) { console.log('  🔴', name, '->', e && e.message); fail += 1; failures.push(name); }
-}
-// 已知缺陷腿:两种结果都不进 pass/fail —— "缺陷仍在"不是通过,"形态变了"也不是失败。
-let knownStill = 0;
-let knownChanged = 0;
-async function tKnown(name, fn) {
-  try { await fn(); console.log('  ⚠️  KNOWN-DEFECT 仍在(不计通过):', name); knownStill += 1; }
-  catch (e) { console.log('  🔵 KNOWN-DEFECT 形态变了 ⇒ 本条须反转/重写:', name, '->', e && e.message); knownChanged += 1; }
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -174,7 +200,9 @@ const INIT = () => {
   window.EventSource = Patched;
   // consume/consumeTrue:包住 consumeReconnectClear() —— 它是"延迟清空有没有真被消费"的
   // 唯一直接证据。mark/reset 只能说明"有调用",说明不了"窗口内还是窗口外"。
-  window.__c = { mark: 0, reset: 0, consume: 0, consumeTrue: 0 };
+  // arms / alerts:两组**时间戳**,用来判"告警是不是在窗口过期那一刻出现的"。
+  // 🔴 只数次数不够 —— 断线告警(7500ms 宽限期)也会出现,数次数会把两者混成一个。
+  window.__c = { mark: 0, reset: 0, consume: 0, consumeTrue: 0, arms: [], alerts: [] };
 };
 
 async function measureLeg(browser, leg) {
@@ -188,8 +216,26 @@ async function measureLeg(browser, leg) {
     await page.addInitScript(INIT);
     await page.goto(`${fx.base}/renderer`, { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => {
+      // 🔴 变体基线(判"弹的是哪一件事",**不判措辞**):此刻页面脚本已跑完、任何告警都还没出现,
+      //    标记里那份"连接不上"的文案与按钮标签就是 conn 变体的基线。后面的判据是
+      //    "出窗时显示的**不是**这份基线" ⇒ 业主改措辞不会让闸红,而"弹错变体 / 弹空壳"一定会红。
+      //    🔵 这一层是 M-C3 逼出来的:把 replay 文案改成空串后,产品里的 `|| conn` 兜底会把它
+      //       悄悄换成"连接不上"那条,而整块 textContent 仍有 55 字(含按钮标签)⇒ 端到端 26/0 全绿,
+      //       业主看到的却是**指错方向**的告警 —— 比没有告警更坏。
+      const bt = document.getElementById('streamAlertText');
+      const bb = document.getElementById('streamRetryBtn');
+      window.__c.connBaseline = {
+        msgPresent: !!bt,
+        msg: bt ? bt.textContent.trim() : null,
+        btn: bb ? bb.textContent.trim() : null,
+      };
       const om = window.markStreamReconnect, or = window.resetConversation, oc = window.consumeReconnectClear;
-      if (typeof om === 'function') window.markStreamReconnect = function () { window.__c.mark += 1; return om.apply(this, arguments); };
+      const oa = window.showStreamAlert;
+      if (typeof om === 'function') window.markStreamReconnect = function () {
+        window.__c.mark += 1;
+        window.__c.arms.push(Math.round(performance.now()));
+        return om.apply(this, arguments);
+      };
       if (typeof or === 'function') window.resetConversation = function () { window.__c.reset += 1; return or.apply(this, arguments); };
       // 🔴 必须**透传返回值**:调用点是 `if (consumeReconnectClear()) resetConversation();`,
       //    吞掉返回值就等于把清空调没了(那会造出一个假的"修复生效")。
@@ -198,6 +244,12 @@ async function measureLeg(browser, leg) {
         window.__c.consume += 1;
         if (r === true) window.__c.consumeTrue += 1;
         return r;
+      };
+      // 🔴 记**调用时刻**与实参,但**不断言实参内容**:告警文案与外观是产品可见的,
+      //    业主可能改(组长 ts-No.17 ②)⇒ 钉住措辞就是替产品立契约。
+      if (typeof oa === 'function') window.showStreamAlert = function () {
+        window.__c.alerts.push({ t: Math.round(performance.now()), arg: arguments.length ? String(arguments[0]) : null });
+        return oa.apply(this, arguments);
       };
     });
     const probe = () => page.evaluate(() => {
@@ -218,6 +270,31 @@ async function measureLeg(browser, leg) {
         cards: document.getElementById('timeline').children.length,
         mark: window.__c.mark, reset: window.__c.reset,
         consume: window.__c.consume, consumeTrue: window.__c.consumeTrue,
+        arms: window.__c.arms.slice(), alerts: window.__c.alerts.slice(),
+        // 告警的**可见性**用三件事一起判:hidden 标志 · 非空文本 · 非零盒子。
+        // 🔴 只看 hidden===false 不够:一个 display:none 或 0x0 的空壳也能让 hidden 为 false,
+        //    那就是"看起来告警了、业主什么也看不见" —— 与本组治的病同型。
+        alertBox: (function () {
+          const el = document.getElementById('streamAlert');
+          if (!el) return { present: false };
+          const r = el.getBoundingClientRect();
+          // 🔴 整块 textLen **不足以**判"告警正文有没有":它把按钮标签也算进去。
+          //    故分别量消息节点与按钮,并且只回**长度与布尔**,不把措辞带出页面
+          //    (措辞是产品可见项,闸不钉它;带进日志只会诱使下一个人拿它当断言)。
+          const base = window.__c.connBaseline || {};
+          const msg = document.getElementById('streamAlertText');
+          const btn = document.getElementById('streamRetryBtn');
+          const msgText = msg ? msg.textContent.trim() : null;
+          const btnText = btn ? btn.textContent.trim() : null;
+          return { present: true, hidden: el.hidden, textLen: (el.textContent || '').replace(/\s+/g, ' ').trim().length,
+                   w: +r.width.toFixed(1), h: +r.height.toFixed(1),
+                   msgPresent: !!msg, msgLen: msgText === null ? null : msgText.length,
+                   msgIsConn: msgText !== null && typeof base.msg === 'string' && msgText === base.msg,
+                   btnIsConn: btnText !== null && typeof base.btn === 'string' && btnText === base.btn };
+        })(),
+        // 守卫:基线没取到 ⇒ 变体判据是空的,必须让腿自己红,不能假装验过
+        baseOk: !!(window.__c.connBaseline && window.__c.connBaseline.msgPresent
+          && window.__c.connBaseline.msg && window.__c.connBaseline.btn),
         // 页面内的窗口常量真值(读不到就 null,守卫会因此判"腿失去意义"而不是假装量过)
         limit: (function () { try { return REPLAY_HARD_LIMIT_MS; } catch (e) { return null; } })(),
         es: { ...window.__es },
@@ -275,14 +352,14 @@ async function measureLeg(browser, leg) {
       // 🔴 慢重放腿的**自证守卫**:必须证明"首条重放确实落在窗内/出窗",否则
       //    FIRST_DELAY 没生效时这两条腿会退化成 L2 并**照样绿**(那是最坏的一种绿)。
       if (leg.firstDelay) {
-        await t(`${leg.name} · 守卫:首条重放距 open 的实测间隔确实${leg.knownDefect ? '越过了' : '落在'}窗口 ${WINDOW_MS_ASSUMED}ms ${leg.knownDefect ? '之外' : '之内'}`, async () => {
+        await t(`${leg.name} · 守卫:首条重放距 open 的实测间隔确实${leg.outOfWindow ? '越过了' : '落在'}窗口 ${WINDOW_MS_ASSUMED}ms ${leg.outOfWindow ? '之外' : '之内'}`, async () => {
           assert.strictEqual(last.limit, WINDOW_MS_ASSUMED,
             `页面内 REPLAY_HARD_LIMIT_MS 实测 ${last.limit},不是选这两条腿时假设的 ${WINDOW_MS_ASSUMED} ⇒ firstDelay 必须重算,本条已失去意义(不许静默沿用)。${scene}`);
           const gaps = (last.es && last.es.gaps) || [];
           assert.ok(gaps.length >= 2, `只量到 ${gaps.length} 条 open→首条 间隔,判不出与窗口的关系。${scene}`);
           const gMin = Math.min(...gaps);
           const gMax = Math.max(...gaps);
-          if (leg.knownDefect) {
+          if (leg.outOfWindow) {
             assert.ok(gMin > WINDOW_MS_ASSUMED,
               `最短间隔 ${gMin}ms 没越过窗口 ${WINDOW_MS_ASSUMED}ms ⇒ 本条根本没走到"窗口过期"那条路径,量的是别的东西。gaps=[${gaps.join(',')}]`);
           } else {
@@ -294,20 +371,53 @@ async function measureLeg(browser, leg) {
         });
       }
 
-      // ⚠️ 出窗腿到此为止:下面用 tKnown 把**当前缺陷形态**显影出来,然后跳过常规硬断言
-      //    (常规断言在这里必然红 —— 红的是产品,不是本件,而修法待裁 ⇒ 不阻断发布)。
-      if (leg.knownDefect) {
-        await tKnown(`${leg.name} · 窗口过期 ⇒ 延迟清空被取消 ⇒ 正文每次重连多一整份`, async () => {
+      // ── 出窗腿(L4):(c) 落地后**反转成硬闸** —— 出窗 ⇒ 必须出现可见告警 ─────────────
+      // 🔵 它**不断言**"出窗不得增长":重复本身要等 ⑰(hub 侧 per-event 序号)才治得了,
+      //    (c) 只把**静默**变成**可见**。增长数字仍然打印出来(测量,不是断言),
+      //    因为发布单需要它 —— 别让人把"告警出现了"读成"重复修好了"。
+      if (leg.outOfWindow) {
+        await t(`${leg.name} · 前置事实:出窗时延迟清空一次都没被消费(consumeTrue == 0)`, async () => {
           assert.strictEqual(last.consumeTrue, 0,
-            `consumeReconnectClear 居然返回过 ${last.consumeTrue} 次 true ⇒ 出窗时清空仍被消费了,缺陷形态已变(或被修了)`);
-          assert.ok(maxOf('full') > leg.expectChars,
-            `正文最大 ${maxOf('full')} 字,没超过单份 ${leg.expectChars} ⇒ 出窗时不再累加了,缺陷形态已变(或被修了)`);
-          console.log(`      ↳ 显影:单份 ${leg.expectChars} 字 → 实测最大 ${maxOf('full')} 字`
-            + `(≈${(maxOf('full') / leg.expectChars).toFixed(1)} 份)· consume 调用 ${last.consume} 次其中 true 0 次`
-            + ` · open→首条 gaps=[${((last.es && last.es.gaps) || []).join(',')}]ms · 页面窗口 ${last.limit}ms`);
-          console.log('      ↳ 🔴 这是**活缺陷**:窗口过期后清空被取消,缺陷原样回来且页面无任何告警(0.2.1.35-⑲)。');
-          console.log('      ↳ 🔵 修法落地后本条会打「形态变了」⇒ 届时反转成硬断言"出窗也不得增长"并删掉 knownDefect。');
+            `consumeReconnectClear 返回过 ${last.consumeTrue} 次 true ⇒ 清空在出窗时仍被消费了,本条量的不是"窗口过期"那条路。${scene}`);
+          assert.ok((last.arms || []).length >= 1, `一次 arm 都没记到 ⇒ 本条没有落点,判不了告警。${scene}`);
         });
+
+        await t(`${leg.name} · 🔴 窗口过期 ⇒ 必须出现**可见**告警(时间判据:arm 后 ${WINDOW_MS_ASSUMED - ALERT_EARLY_MS}~${WINDOW_MS_ASSUMED + ALERT_LATE_MS}ms 内)`, async () => {
+          const hits = alertHitsNearExpiry(last.arms, last.alerts, WINDOW_MS_ASSUMED);
+          assert.ok(hits.length >= 1,
+            `窗口过期了 ${(last.arms || []).length} 次,却没有一次在 arm 后 [${WINDOW_MS_ASSUMED - ALERT_EARLY_MS}, ${WINDOW_MS_ASSUMED + ALERT_LATE_MS}]ms 内触发告警`
+            + ` ⇒ 缺陷仍然是**静默**的,(c) 没落地。实测告警调用=${JSON.stringify(last.alerts)} · arms=${JSON.stringify(last.arms)}。${scene}`);
+          assert.strictEqual(last.baseOk, true,
+            `conn 变体基线没取到(#streamAlertText / #streamRetryBtn 在页面脚本跑完后读不到)`
+            + ` ⇒ "弹的是哪一件事"这条判据是空的,本腿不成立(不是"通过")。${scene}`);
+          // 🔴 告警必须**看得见、而且说的就是这件事**,不是"调用发生过":
+          //    hidden=false · 盒子非零 · 消息节点存在 · 消息非空 · 消息≠conn 基线 · 按钮≠conn 基线。
+          //    🔵 为什么不能只用整块 textContent 非空:那块里**含按钮标签**。实测 M-C3
+          //       (replay 文案改成空串)整块仍有 55 字 ⇒ 旧写法 26/0 全绿,而业主看到的是
+          //       "连接不上…点【重试】" ⇒ **指错方向**,比没有告警更坏。
+          //    🔵 判据全是长度与布尔,**不含任何一句措辞** ⇒ 业主改文案不会让本条红。
+          //    用"任一次采样满足"而不是"末次采样满足" —— 告警会在下一次 onopen 被 hideStreamAlert()
+          //    藏掉,只看末次会随采样相位忽红忽绿(那是 flaky,不是判据)。
+          const shown = valid.filter((s) => s.alertBox && s.alertBox.present && s.alertBox.hidden === false
+            && s.alertBox.w > 0 && s.alertBox.h > 0
+            && s.alertBox.msgPresent === true && s.alertBox.msgLen > 0
+            && s.alertBox.msgIsConn === false && s.alertBox.btnIsConn === false);
+          assert.ok(shown.length >= 1,
+            `告警函数被调过 ${hits.length} 次,但 ${valid.length} 次采样里**没有一次**同时满足`
+            + `「hidden=false · 盒子非零 · 消息节点存在 · 消息非空 · 消息≠conn 基线 · 按钮≠conn 基线」`
+            + ` ⇒ 要么业主什么也看不见,要么看见的是**另一件事**的告警。`
+            + `末次采样 alertBox=${JSON.stringify((valid[valid.length - 1] || {}).alertBox)}。${scene}`);
+          const ab = shown[shown.length - 1].alertBox;
+          console.log(`      ↳ 告警命中 ${hits.length} 次;首次 arm→告警 delta=${hits[0].delta}ms(判据区间 ${WINDOW_MS_ASSUMED - ALERT_EARLY_MS}~${WINDOW_MS_ASSUMED + ALERT_LATE_MS}ms)`
+            + ` · 实参=${JSON.stringify(hits[0].arg)} · 盒子 ${ab.w}x${ab.h} · 消息 ${ab.msgLen} 字(≠conn 基线)`
+            + ` · 按钮变体已换=${!ab.btnIsConn} · 整块 textLen ${ab.textLen} · 可见采样 ${shown.length}/${valid.length}`);
+          console.log('      ↳ 🔵 断线告警(7500ms 宽限期)落不进这个区间 ⇒ 它冒充不了本条;区间是算出来的,不是拍的。');
+        });
+
+        console.log(`      ↳ 测量(不断言):单份 ${leg.expectChars} 字 → 实测最大 ${maxOf('full')} 字`
+          + `(≈${(maxOf('full') / leg.expectChars).toFixed(1)} 份)· consume ${last.consume} 次其中 true ${last.consumeTrue} 次`
+          + ` · open→首条 gaps=[${((last.es && last.es.gaps) || []).join(',')}]ms · 页面窗口 ${last.limit}ms`);
+        console.log('      ↳ 🔴 重复**仍在**((c) 不治重复,只治静默);治重复要等 ⑰(hub 侧 per-event 序号)。');
         continue;
       }
 
@@ -363,21 +473,22 @@ async function measureLeg(browser, leg) {
         assert.ok(last.consumeTrue >= 1,
           `consumeReconnectClear 调用 ${last.consume} 次却没有一次返回 true ⇒ 清空不是从延迟窗口这条路走掉的。${scene}`);
       });
+
+      // 🔴 反向断言(健康路径不许被吵):窗内腿**不得**出现"窗口过期时刻的告警"。
+      //    没有这一条,(c) 可以写成"每次 arm 都告警"而 L4 照样绿 ⇒ 那又是半条闸。
+      await t(`${leg.name} · 🔴 窗内**不得**触发重放超时告警(误报会把真告警淹掉)`, async () => {
+        const hits = alertHitsNearExpiry(last.arms, last.alerts, WINDOW_MS_ASSUMED);
+        assert.strictEqual(hits.length, 0,
+          `窗内腿出现了 ${hits.length} 次"窗口过期时刻的告警" ⇒ 告警在健康路径上误报:${JSON.stringify(hits.slice(0, 3))}。${scene}`);
+      });
     }
   } finally {
     await browser.close();
   }
 
   console.log(`\n  合计 ${pass + fail} 条:✅ ${pass} · 🔴 ${fail}`);
-  if (knownStill + knownChanged > 0) {
-    console.log(`  另有 ⚠️ 已知缺陷显影 ${knownStill + knownChanged} 条(不计入 pass/fail、不影响 rc):`
-      + `仍在 ${knownStill} · 形态变了 ${knownChanged}`);
-    if (knownChanged > 0) {
-      console.log('  🔵 "形态变了"不是失败,但**必须有人去看**:要么是窗口修法落地了'
-        + '(⇒ 把那条反转成硬断言"出窗也不得增长"),要么是夹具/页面变了(⇒ 重新定边界)。');
-    }
-    if (knownStill > 0) console.log('  🔴 提醒:0.2.1.35-⑲ 那条活缺陷仍在(出窗即回归、无告警),别把本件的 rc=0 读成"慢重放没问题"。');
-  }
+  console.log('  🔵 读法提醒:L4 钉的是「出窗 ⇒ 必须出现可见告警」,**不是**「出窗不重复」。');
+  console.log('     重复本身仍在(见 L4 那两行测量输出),治它要 ⑰(hub 侧 per-event 序号)⇒ 别把 rc=0 读成"慢重放修好了"。');
   if (CONTROL && fail === 0) {
     console.log('  🔴 阳性对照跑居然全绿 ⇒ 本件**没有判别力**,不成立');
     process.exit(2);

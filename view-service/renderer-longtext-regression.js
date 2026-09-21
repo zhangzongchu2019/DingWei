@@ -9,7 +9,7 @@
 // 而不是"换了个负载碰巧变绿"。
 const { chromium } = require('playwright');
 const fs = require('fs');
-const assert = require('assert');
+const hardAssert = require('assert');
 
 const RENDERER_FILE = process.env.RENDERER_FILE || 'renderer-canary-sse.html';
 const BASELINE_FILE = process.env.BASELINE_FILE || '';
@@ -104,7 +104,24 @@ async function driveLongReply(page, chunks, chunkText) {
   const rendererBody = fs.readFileSync(RENDERER_FILE, 'utf-8');
   const browser = await chromium.launch({ headless: true });
   const fail = [];
-  const ok = (name) => console.log(`  PASS  ${name}`);
+  const assertionFailures = [];
+  let sectionStart = 0;
+  // Assertion failures are collected instead of thrown so one red check cannot
+  // suppress every later check in this long sequential fixture.
+  const assert = new Proxy({}, {
+    get(_target, method) {
+      return (...args) => {
+        try { return hardAssert[method](...args); }
+        catch (err) { assertionFailures.push(err); return undefined; }
+      };
+    },
+  });
+  const ok = (name) => {
+    const newFailures = assertionFailures.slice(sectionStart);
+    if (newFailures.length) console.log(`  FAIL  ${name} -> ${newFailures.map(e => e.message).join(' | ')}`);
+    else console.log(`  PASS  ${name}`);
+    sectionStart = assertionFailures.length;
+  };
   try {
     const { context, page } = await boot(browser, rendererBody);
 
@@ -645,6 +662,10 @@ async function driveLongReply(page, chunks, chunkText) {
   } finally {
     await browser.close();
   }
-  if (fail.length) { console.error('\nFAIL:', fail[0].message); process.exit(1); }
+  if (fail.length || assertionFailures.length) {
+    for (const err of fail) console.error('\nHARNESS FAIL:', err.message);
+    for (const err of assertionFailures) console.error('\nASSERT FAIL:', err.message);
+    process.exit(1);
+  }
   console.log('\nrenderer-longtext-regression: ALL PASS');
 })();

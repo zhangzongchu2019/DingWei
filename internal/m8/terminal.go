@@ -1770,7 +1770,8 @@ const terminalPageHTML = `<!doctype html>
     const sessionName = location.pathname.split('/').pop();
     const key = 'dingwei.terminal.scrollback.' + sessionName;
     const input = document.getElementById('scrollback');
-    input.value = localStorage.getItem(key) || '2000';
+    try { input.value = localStorage.getItem(key) || '2000'; }
+    catch (e) { input.value = '2000'; }
     let fit;
     function newTerm() {
       const t = new Terminal({ convertEol: false, cursorBlink: true, scrollback: parseInt(input.value, 10) || 2000, theme: { background: '#0b0f14' } });
@@ -1821,7 +1822,7 @@ const terminalPageHTML = `<!doctype html>
     new ResizeObserver(doFit).observe(document.getElementById('terminal'));
     window.addEventListener('resize', doFit);
     function recreate() {
-      localStorage.setItem(key, input.value);
+      try { localStorage.setItem(key, input.value); } catch (e) {}
       const old = term;
       document.getElementById('terminal').innerHTML = '';
       term = newTerm();

@@ -6,14 +6,25 @@
   2. _handle_connection → send_handler 透传 + envelope() 组包端到端
 """
 import asyncio
+import ast
+import inspect
 import json
+import os
+import socket
+import tempfile
+import textwrap
+import threading
+from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 from sessionhelper.ipc_listener import (
     REPLY_ORIGIN_KEYS,
     extract_reply_origin_meta,
     _handle_connection,
 )
+from sessionhelper import mcp_shim
+from sessionhelper.app import SessionHelper
 from sessionhelper.protocol import envelope
 
 
@@ -102,6 +113,61 @@ class HandleConnectionWiringTest(unittest.TestCase):
         self.assertEqual(env["meta"], meta)
         env2 = envelope("a#k", "hi", "b#k", {} or None)
         self.assertEqual(env2["meta"], {})
+
+    def test_vsapi_without_datad_is_explicitly_unconfigured(self):
+        helper = object.__new__(SessionHelper)
+        helper.cfg = SimpleNamespace(datad_url="", datad_token="")
+        handler = helper._make_vsapi_handler()
+        with self.assertRaisesRegex(RuntimeError, "未配置.*datad_url") as caught:
+            asyncio.run(handler("POST", "/v1/sessions/me/heartbeat", {"status": "active"}))
+        self.assertNotIn("Transport closed", str(caught.exception))
+        self.assertNotIn("NoneType", str(caught.exception))
+
+    def test_run_once_always_installs_vsapi_handler(self):
+        """装配闸:变异回 `... if datad_url else None` 必须红。"""
+        tree = ast.parse(textwrap.dedent(inspect.getsource(SessionHelper._run_once)))
+        assignments = [node for node in ast.walk(tree)
+                       if isinstance(node, ast.Assign)
+                       and any(isinstance(target, ast.Name) and target.id == "vsapi_handler"
+                               for target in node.targets)]
+        self.assertEqual(len(assignments), 1, "_run_once 应仅装配一次 vsapi_handler")
+        self.assertIsInstance(assignments[0].value, ast.Call,
+                              "vsapi_handler 必须始终由 factory 生成,不得未配置时退回 None")
+
+    def test_mcp_vsapi_receives_one_line_error_instead_of_transport_close(self):
+        """真 Unix socket 腿:两个 MCP 工具都须收到明确错误,不能被吞成断链。"""
+        cases = (
+            ("heartbeat_report", lambda: mcp_shim._heartbeat_report({"status": "active"})),
+            ("project_context", lambda: mcp_shim._project_context({"scope": "config"})),
+        )
+        for name, invoke in cases:
+            with self.subTest(tool=name), tempfile.TemporaryDirectory() as tmp:
+                socket_path = os.path.join(tmp, "mcp.sock")
+                ready = threading.Event()
+
+                def server():
+                    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
+                        listener.bind(socket_path)
+                        listener.listen(1)
+                        ready.set()
+                        conn, _ = listener.accept()
+                        with conn:
+                            conn.recv(4096)
+                            conn.sendall(json.dumps({
+                                "ok": False,
+                                "error": "vsapi 未配置:datad_url 未配置",
+                            }, ensure_ascii=False).encode("utf-8") + b"\n")
+
+                worker = threading.Thread(target=server, daemon=True)
+                worker.start()
+                self.assertTrue(ready.wait(2), "Unix socket fixture did not start")
+                with mock.patch.object(mcp_shim, "_IPC_SOCK", socket_path), \
+                     mock.patch.object(mcp_shim, "_IPC_TIMEOUT", 1.0):
+                    with self.assertRaisesRegex(RuntimeError, "未配置.*datad_url") as caught:
+                        invoke()
+                self.assertNotIn("Transport closed", str(caught.exception))
+                worker.join(timeout=2)
+                self.assertFalse(worker.is_alive(), "Unix socket fixture did not finish")
 
 
 if __name__ == "__main__":
