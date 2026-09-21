@@ -25,7 +25,8 @@ function productionHTML() {
   if (MUTATION === 'no-render') html = html.replace('renderSpec(data.revision.content_markdown);', '');
   if (MUTATION === 'no-wire') html = html.replace('wireSpecRender(root);', '');
   if (MUTATION === 'no-copy') html = html.replace("root.querySelectorAll('.copy-code')", "root.querySelectorAll('.copy-code-disabled')");
-  if (MUTATION && !['no-render', 'no-wire', 'no-copy'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'no-server-error') html = html.replace("return prefix+' '+r.status+(detail?':'+detail:'');", "return prefix;");
+  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -75,6 +76,9 @@ async function main() {
     }
     if (req.url === '/api/console/specs' && req.method === 'POST') {
       const body = await requestBody(req);
+      if (body.title === 'server-reject') {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('server create detail'); return;
+      }
       const item = { id: `spec-${specs.length + 1}`, title: body.title, state: 'draft', current_revision: 1 };
       specs.push(item); revisions.set(item.id, { ...body, spec_id: item.id, revision: 1,
         acceptance_json: JSON.stringify(body.acceptance), input_anchors_json: JSON.stringify(body.input_anchors) });
@@ -89,6 +93,9 @@ async function main() {
     }
     if (match && req.method === 'PATCH') {
       const body = await requestBody(req); const item = specs.find((candidate) => candidate.id === match[1]);
+      if (body.content_markdown === 'server-save-reject') {
+        res.writeHead(409, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('server save detail'); return;
+      }
       item.current_revision += 1; item.state = 'needs_improvement';
       revisions.set(item.id, { ...body, spec_id: item.id, revision: item.current_revision,
         acceptance_json: JSON.stringify(body.acceptance), input_anchors_json: JSON.stringify(body.input_anchors) });
@@ -108,6 +115,27 @@ async function main() {
     const pageErrors = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}/console/specs`, { waitUntil: 'domcontentloaded' });
+    const validNew = { title: 'Valid', markdown: '# Valid', acceptance: 'accepted', anchor: 'msg:valid' };
+    async function setNew(values) {
+      await page.fill('#new-title', values.title);
+      await page.evaluate((value) => window.specEditors.new.value(value), values.markdown);
+      await page.fill('#new-acceptance', values.acceptance);
+      await page.fill('#new-anchor', values.anchor);
+    }
+    for (const [field, selector, label] of [
+      ['title', '#new-title', 'Title'], ['markdown', '#new-content', 'Markdown'],
+      ['acceptance', '#new-acceptance', 'Acceptance'], ['anchor', '#new-anchor', 'Owner message anchor'],
+    ]) {
+      await setNew({ ...validNew, [field]: '' });
+      await page.click('#create-spec');
+      await page.locator('#create-status').filter({ hasText: label }).waitFor({ state: 'visible' });
+      assert.strictEqual(specs.length, 0, `missing ${field} must be blocked before POST`);
+    }
+    await setNew({ ...validNew, title: 'server-reject' });
+    await page.click('#create-spec');
+    await page.locator('#create-status').filter({ hasText: '创建失败 400:server create detail' }).waitFor({ state: 'visible' });
+    assert.strictEqual(specs.length, 0, 'server-rejected create must not create a spec');
+    assert.strictEqual(await page.locator('label .required').count(), 8, 'both create and edit forms must mark all four required fields');
     for (const title of ['Spec A', 'Spec B']) {
       await page.fill('#new-title', title);
       await page.evaluate((value) => window.specEditors.new.value(value), `# ${title}`);
@@ -147,6 +175,12 @@ async function main() {
         await timeline.close();
       }
     }
+    await page.evaluate(() => openSpec('spec-2'));
+    await page.evaluate(() => window.specEditors.edit.value('server-save-reject'));
+    await page.click('#save-spec');
+    await page.waitForTimeout(100);
+    assert.strictEqual(await page.locator('#edit-status').textContent(), '保存失败 409:server save detail', 'save must expose status and server response body');
+    assert.strictEqual(specs.find((item) => item.title === 'Spec B').current_revision, 2, 'server-rejected save must not create a revision');
     await page.reload({ waitUntil: 'domcontentloaded' });
     assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 2, 'reload must retain both specs');
     const editorContract = await page.evaluate(() => ({
@@ -178,7 +212,7 @@ async function main() {
     assert.strictEqual(wrapMetrics.lineOverhang, 0, `editor line overhung viewport: ${JSON.stringify(wrapMetrics)}`);
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);
-    console.log('console specs browser: passed=7 failed=0');
+    console.log('console specs browser: passed=14 failed=0');
   } finally {
     await browser.close(); await new Promise((resolve) => server.close(resolve));
   }
