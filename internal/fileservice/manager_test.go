@@ -100,7 +100,7 @@ func TestNormalizedMediaWildcardCandidatesAndFixtureFallbacks(t *testing.T) {
 }
 
 func TestPersistForSpecCopiesBySHAAndSurvivesTemporaryDeletion(t *testing.T) {
-	m, _, objects := testManager(t, 1<<20)
+	m, clock, objects := testManager(t, 1<<20)
 	put := func(session string) File {
 		f, err := m.Put(context.Background(), Upload{OwnerKey: "owner", SessionName: session, OriginalName: "diagram.png", MediaType: "image/png", ContentLength: 11, Body: strings.NewReader("image-bytes")})
 		if err != nil {
@@ -119,6 +119,17 @@ func TestPersistForSpecCopiesBySHAAndSurvivesTemporaryDeletion(t *testing.T) {
 	delete(objects.data, first.ObjectKey) // 验收阴格：临时原图立即删除，不等 7 天。
 	if got := string(objects.data[key]); got != "image-bytes" {
 		t.Fatalf("permanent bytes=%q after source deletion", got)
+	}
+	// The permanent tier is deliberately outside the temporary files table.
+	// Even after the source row expires and the sweeper completes all three
+	// removal phases (candidate, deleting intent, finish), it cannot select or
+	// remove the content-addressed copy.
+	clock.Time = clock.Time.Add(61 * 24 * time.Hour)
+	if err := m.Sweep(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := string(objects.data[key]); got != "image-bytes" {
+		t.Fatalf("permanent bytes=%q after temporary retention sweep", got)
 	}
 	second := put("agent-b")
 	key2, err := m.PersistForSpec(context.Background(), second.ID, "owner-principal", "owner")
