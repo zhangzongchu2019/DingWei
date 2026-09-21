@@ -77,7 +77,11 @@ var consolePlatformItemID = regexp.MustCompile(`^[a-z][a-z0-9-]{1,63}$`)
 
 // builtin 入口占用的 id。放行同 id 提交会让页面出现两个 data-item-id 相同的项,
 // 闸与 UI 都无法唯一寻址(与既有 "agents" 保留同一理由)。
-var consolePlatformReservedItemIDs = map[string]bool{"agents": true, "agent-groups": true, "specs": true}
+var consolePlatformReservedItemIDs = map[string]bool{
+	"agents":       true,
+	"agent-groups": true,
+	"specs":        true,
+}
 
 type consolePlatformItemRequest struct {
 	ID    string `json:"id"`
