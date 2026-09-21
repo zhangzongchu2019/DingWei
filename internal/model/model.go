@@ -271,22 +271,26 @@ type SessionEndpoint struct {
 // AgentGroup is one project grouping capability. Code is the 32-character
 // base64 capability shared by owners; every group has exactly one leader.
 type AgentGroup struct {
-	Code              string
-	LeaderKeyID       string
-	LeaderSessionName string
-	LeaderOwnerKey    string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	Code              string    `json:"code"`
+	ShortName         string    `json:"short_name"`
+	CreatorPrincipal  string    `json:"creator_principal"`
+	AdditionsClosed   bool      `json:"additions_closed"`
+	LeaderKeyID       string    `json:"leader_key_id"`
+	LeaderSessionName string    `json:"leader_session_name"`
+	LeaderOwnerKey    string    `json:"leader_owner_key"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
 // AgentGroupMember links one Agent endpoint to one or more explicit groups.
 // No rows means the Agent belongs to its owner's synthetic default group.
 type AgentGroupMember struct {
-	Code        string
-	KeyID       string
-	SessionName string
-	OwnerKey    string
-	CreatedAt   time.Time
+	AgentID     string    `json:"agent_id"`
+	Code        string    `json:"code"`
+	KeyID       string    `json:"key_id"`
+	SessionName string    `json:"session_name"`
+	OwnerKey    string    `json:"owner_key"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // CleanupResult 是数据清理 dry-run/confirm 的统计。
@@ -322,11 +326,11 @@ type ConsolePrincipal struct {
 
 // ConsoleAgent is the authorization target independently of shared key_id.
 type ConsoleAgent struct {
-	ID             string
-	KeyID          string
-	SessionName    string
-	OwnerPrincipal string
-	Active         bool
+	ID             string `json:"id"`
+	KeyID          string `json:"key_id"`
+	SessionName    string `json:"session_name"`
+	OwnerPrincipal string `json:"owner_principal"`
+	Active         bool   `json:"active"`
 }
 
 type ConsoleAgentGrant struct {

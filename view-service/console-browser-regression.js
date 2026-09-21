@@ -57,6 +57,14 @@ async function main() {
       }));
       return;
     }
+    if (req.url === '/api/console/agent-groups') {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({ principal: 'owner-a', owned_agents: [{ id: 'agent-a', session_name: 'owner-alpha-2642' }], groups: [{
+        code: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'abc123', creator_principal: 'owner-a', additions_closed: false,
+        members: [{ agent_id: 'agent-a', session_name: 'owner-alpha-2642' }, { agent_id: 'agent-b', session_name: 'other-full-agent-2642' }],
+      }] }));
+      return;
+    }
     if (req.url && req.url.startsWith('/view/')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end('<!doctype html><title>fixture agent view</title>');
@@ -94,33 +102,43 @@ async function main() {
     });
 
     await test('renders online and offline agents from the console API', async () => {
-      const online = page.locator('nav button[title="owner-alpha-2642"]');
-      const offline = page.locator('nav button[title="owner-offline-2642"]');
+      const online = page.locator('#a button[title="owner-alpha-2642"]');
+      const offline = page.locator('#a button[title="owner-offline-2642"]');
       await online.waitFor({ state: 'visible' });
       await offline.waitFor({ state: 'attached' });
       assert.strictEqual(await online.isEnabled(), true);
       assert.strictEqual(await offline.isDisabled(), true);
     });
 
-    await test('mounts a real platform item and role-scoped actions', async () => {
+    await test('mounts platform items while retiring all five dead action buttons', async () => {
       const agentsItem = page.locator('#platform-items a[data-item-id="agents"]');
       await agentsItem.waitFor({ state: 'visible' });
       assert.strictEqual(await agentsItem.getAttribute('href'), '#agents');
-      assert.strictEqual(await page.locator('#platform-actions button[data-action="submit"]').isVisible(), true);
-      assert.strictEqual(await page.locator('#platform-actions button[data-action="approve"]').count(), 0);
+      assert.strictEqual(await page.locator('#platform-actions button').count(), 0);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'owner');
     });
 
-    await test('shows management actions only after the server role changes', async () => {
+    await test('keeps dead action buttons absent after the server role changes', async () => {
       await page.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
       await page.evaluate(() => refreshPlatform());
-      await page.locator('#platform-actions button[data-action="approve"]').waitFor({ state: 'visible' });
-      assert.strictEqual(await page.locator('#platform-actions button[data-action="add"]').isVisible(), true);
+      assert.strictEqual(await page.locator('#platform-actions button').count(), 0);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'management');
     });
 
+    await test('switches between pure Agent list and group-Agent tree', async () => {
+      assert.strictEqual(await page.locator('#a').isVisible(), true);
+      assert.strictEqual(await page.locator('#g').isHidden(), true);
+      await page.locator('#agentMode').click();
+      await page.locator('#g .agent-group strong').filter({ hasText: 'abc123' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#g button[title="other-full-agent-2642"]').textContent(), 'other-full-agent-2642');
+      assert.strictEqual(await page.locator('#a').isHidden(), true);
+      await page.locator('#agentMode').click();
+      assert.strictEqual(await page.locator('#a').isVisible(), true);
+      assert.strictEqual(await page.locator('#g').isHidden(), true);
+    });
+
     await test('opens a real console tab and agent iframe', async () => {
-      await page.locator('nav button[title="owner-alpha-2642"]').click();
+      await page.locator('#a button[title="owner-alpha-2642"]').click();
       const tab = page.locator('#tabs .tab[title="owner-alpha-2642"]');
       const pane = page.locator('#panes iframe[title="Agent view: owner-alpha-2642"]');
       await tab.waitFor({ state: 'visible' });
