@@ -3232,7 +3232,115 @@ func (s *SQLite) UpsertAgentGroup(ctx context.Context, group model.AgentGroup) e
 		group.Code, group.LeaderKeyID, group.LeaderSessionName, group.LeaderOwnerKey, now); err != nil {
 		return err
 	}
+	if _, err := tx.ExecContext(ctx, `UPDATE agent_group_state SET ever_activated=1 WHERE singleton=1`); err != nil {
+		return err
+	}
 	return tx.Commit()
+}
+
+var ErrAgentGroupShortNameConflict = errors.New("agent group short name conflict")
+var ErrAgentGroupCodeConflict = errors.New("agent group code conflict")
+
+func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentGroup) error {
+	if err := validateAgentGroupCode(group.Code); err != nil {
+		return err
+	}
+	if !regexp.MustCompile(`^[a-z0-9]{6}$`).MatchString(group.ShortName) || group.CreatorPrincipal == "" || group.LeaderKeyID == "" || group.LeaderSessionName == "" || group.LeaderOwnerKey == "" {
+		return errors.New("complete console group identity required")
+	}
+	now := s.now().UTC().Format(time.RFC3339Nano)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.ExecContext(ctx, `INSERT INTO agent_group(code,short_name,creator_principal,additions_closed,leader_key_id,leader_session_name,leader_owner_key,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)`,
+		group.Code, group.ShortName, group.CreatorPrincipal, boolInt(group.AdditionsClosed), group.LeaderKeyID, group.LeaderSessionName, group.LeaderOwnerKey, now, now)
+	if err != nil {
+		if strings.Contains(err.Error(), "agent_group.short_name") {
+			return ErrAgentGroupShortNameConflict
+		}
+		if strings.Contains(err.Error(), "agent_group.code") {
+			return ErrAgentGroupCodeConflict
+		}
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO agent_group_member(code,key_id,session_name,owner_key,created_at) VALUES(?,?,?,?,?)`, group.Code, group.LeaderKeyID, group.LeaderSessionName, group.LeaderOwnerKey, now); err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE agent_group_state SET ever_activated=1 WHERE singleton=1`); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID string, management bool) error {
+	res, err := s.db.ExecContext(ctx, `DELETE FROM agent_group WHERE code=? AND (creator_principal=? OR (creator_principal IS NULL AND EXISTS(
+		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.owner_principal=? AND a.active=1)) OR
+		(?=1 AND creator_principal IS NULL AND NOT EXISTS(SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.active=1)))`, code, principalID, principalID, boolInt(management))
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (s *SQLite) SetConsoleAgentGroupAdditionsClosed(ctx context.Context, code, principalID string, closed, management bool) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE agent_group SET additions_closed=?,creator_principal=COALESCE(creator_principal,?),updated_at=? WHERE code=? AND (creator_principal=? OR (creator_principal IS NULL AND EXISTS(
+		SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.owner_principal=? AND a.active=1)) OR
+		(?=1 AND creator_principal IS NULL AND NOT EXISTS(SELECT 1 FROM console_agent a WHERE a.key_id=agent_group.leader_key_id AND a.session_name=agent_group.leader_session_name AND a.active=1)))`, boolInt(closed), principalID, s.now().UTC().Format(time.RFC3339Nano), code, principalID, principalID, boolInt(management))
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (s *SQLite) AssignOwnedConsoleAgentGroup(ctx context.Context, code, principalID, agentID string) error {
+	res, err := s.db.ExecContext(ctx, `INSERT INTO agent_group_member(code,key_id,session_name,owner_key,created_at)
+		SELECT g.code,a.key_id,a.session_name,e.owner_key,? FROM agent_group g JOIN console_agent a ON a.id=?
+		JOIN session_endpoint e ON e.key_id=a.key_id AND e.session_name=a.session_name
+		WHERE g.code=? AND a.owner_principal=? AND a.active=1 AND (g.additions_closed=0 OR g.creator_principal=?)
+		ON CONFLICT(code,key_id,session_name) DO UPDATE SET owner_key=excluded.owner_key`,
+		s.now().UTC().Format(time.RFC3339Nano), agentID, code, principalID, principalID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (s *SQLite) UnassignConsoleAgentGroup(ctx context.Context, code, principalID, agentID string, management bool) error {
+	res, err := s.db.ExecContext(ctx, `DELETE FROM agent_group_member WHERE code=? AND (key_id,session_name) IN (
+		SELECT a.key_id,a.session_name FROM console_agent a JOIN agent_group g ON g.code=?
+		WHERE a.id=? AND (a.owner_principal=? OR g.creator_principal=? OR (g.creator_principal IS NULL AND EXISTS(
+			SELECT 1 FROM console_agent leader WHERE leader.key_id=g.leader_key_id AND leader.session_name=g.leader_session_name AND leader.owner_principal=? AND leader.active=1)) OR
+			(?=1 AND g.creator_principal IS NULL AND NOT EXISTS(SELECT 1 FROM console_agent leader WHERE leader.key_id=g.leader_key_id AND leader.session_name=g.leader_session_name AND leader.active=1)))
+	) AND NOT (key_id=(SELECT leader_key_id FROM agent_group WHERE code=?) AND session_name=(SELECT leader_session_name FROM agent_group WHERE code=?))`,
+		code, code, agentID, principalID, principalID, principalID, boolInt(management), code, code)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (s *SQLite) AgentGroupingActivated(ctx context.Context) (bool, error) {
+	var active int
+	err := s.db.QueryRowContext(ctx, `SELECT ever_activated FROM agent_group_state WHERE singleton=1`).Scan(&active)
+	return active != 0, err
 }
 
 func (s *SQLite) AssignAgentGroup(ctx context.Context, member model.AgentGroupMember) error {
@@ -3264,7 +3372,8 @@ func (s *SQLite) UnassignAgentGroup(ctx context.Context, code, keyID, sessionNam
 }
 
 func (s *SQLite) ListAgentGroups(ctx context.Context) ([]model.AgentGroup, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT code,leader_key_id,leader_session_name,leader_owner_key,created_at,updated_at FROM agent_group ORDER BY code`)
+	rows, err := s.db.QueryContext(ctx, `SELECT g.code,COALESCE(g.short_name,''),COALESCE(g.creator_principal,''),g.additions_closed,g.leader_key_id,g.leader_session_name,g.leader_owner_key,
+		EXISTS(SELECT 1 FROM console_agent a WHERE a.key_id=g.leader_key_id AND a.session_name=g.leader_session_name AND a.active=1),g.created_at,g.updated_at FROM agent_group g ORDER BY g.code`)
 	if err != nil {
 		return nil, err
 	}
@@ -3273,9 +3382,12 @@ func (s *SQLite) ListAgentGroups(ctx context.Context) ([]model.AgentGroup, error
 	for rows.Next() {
 		var g model.AgentGroup
 		var createdAt, updatedAt string
-		if err := rows.Scan(&g.Code, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &createdAt, &updatedAt); err != nil {
+		var closed, mapped int
+		if err := rows.Scan(&g.Code, &g.ShortName, &g.CreatorPrincipal, &closed, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &mapped, &createdAt, &updatedAt); err != nil {
 			return nil, err
 		}
+		g.AdditionsClosed = closed != 0
+		g.LeaderConsoleMapped = mapped != 0
 		g.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		g.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
 		out = append(out, g)
@@ -3284,7 +3396,7 @@ func (s *SQLite) ListAgentGroups(ctx context.Context) ([]model.AgentGroup, error
 }
 
 func (s *SQLite) ListAgentGroupMembers(ctx context.Context, code string) ([]model.AgentGroupMember, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT code,key_id,session_name,owner_key,created_at FROM agent_group_member WHERE code=? ORDER BY owner_key,session_name,key_id`, code)
+	rows, err := s.db.QueryContext(ctx, `SELECT m.code,COALESCE(a.id,''),m.key_id,m.session_name,m.owner_key,m.created_at FROM agent_group_member m LEFT JOIN console_agent a ON a.key_id=m.key_id AND a.session_name=m.session_name WHERE m.code=? ORDER BY m.owner_key,m.session_name,m.key_id`, code)
 	if err != nil {
 		return nil, err
 	}
@@ -3293,7 +3405,7 @@ func (s *SQLite) ListAgentGroupMembers(ctx context.Context, code string) ([]mode
 	for rows.Next() {
 		var m model.AgentGroupMember
 		var createdAt string
-		if err := rows.Scan(&m.Code, &m.KeyID, &m.SessionName, &m.OwnerKey, &createdAt); err != nil {
+		if err := rows.Scan(&m.Code, &m.AgentID, &m.KeyID, &m.SessionName, &m.OwnerKey, &createdAt); err != nil {
 			return nil, err
 		}
 		m.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
@@ -3303,7 +3415,8 @@ func (s *SQLite) ListAgentGroupMembers(ctx context.Context, code string) ([]mode
 }
 
 func (s *SQLite) ListAgentGroupsForEndpoint(ctx context.Context, keyID, sessionName string) ([]model.AgentGroup, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT g.code,g.leader_key_id,g.leader_session_name,g.leader_owner_key,g.created_at,g.updated_at
+	rows, err := s.db.QueryContext(ctx, `SELECT g.code,COALESCE(g.short_name,''),COALESCE(g.creator_principal,''),g.additions_closed,g.leader_key_id,g.leader_session_name,g.leader_owner_key,
+		EXISTS(SELECT 1 FROM console_agent a WHERE a.key_id=g.leader_key_id AND a.session_name=g.leader_session_name AND a.active=1),g.created_at,g.updated_at
 		FROM agent_group g JOIN agent_group_member m ON m.code=g.code WHERE m.key_id=? AND m.session_name=? ORDER BY g.code`, keyID, sessionName)
 	if err != nil {
 		return nil, err
@@ -3313,9 +3426,12 @@ func (s *SQLite) ListAgentGroupsForEndpoint(ctx context.Context, keyID, sessionN
 	for rows.Next() {
 		var g model.AgentGroup
 		var createdAt, updatedAt string
-		if err := rows.Scan(&g.Code, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &createdAt, &updatedAt); err != nil {
+		var closed, mapped int
+		if err := rows.Scan(&g.Code, &g.ShortName, &g.CreatorPrincipal, &closed, &g.LeaderKeyID, &g.LeaderSessionName, &g.LeaderOwnerKey, &mapped, &createdAt, &updatedAt); err != nil {
 			return nil, err
 		}
+		g.AdditionsClosed = closed != 0
+		g.LeaderConsoleMapped = mapped != 0
 		g.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		g.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
 		out = append(out, g)

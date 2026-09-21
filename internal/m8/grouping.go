@@ -119,7 +119,13 @@ func (h *Hub) enforceAgentGrouping(ctx context.Context, from address, env model.
 	// An empty grouping table is the migration/rollback state. Preserve the
 	// pre-G routing behavior until an owner creates the first explicit group.
 	if len(groups) == 0 {
-		return nil
+		activated, stateErr := h.Repo.AgentGroupingActivated(ctx)
+		if stateErr != nil {
+			return stateErr
+		}
+		if !activated {
+			return nil
+		}
 	}
 	if exempt, err := h.ownerSenderExempt(ctx, from, env); err != nil || exempt {
 		return err

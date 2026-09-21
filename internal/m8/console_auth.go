@@ -291,7 +291,7 @@ html[data-theme="dark"] details,html[data-theme="dark"] summary{color:#a8b0bb}
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></div><div id=a></div></nav>
+<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></div><div style="display:flex;gap:4px;flex-wrap:wrap"><button id=agentMode type=button>编组树</button><button id=createGroup type=button>建组</button><button id=joinGroup type=button>用组码加入</button></div><div id=group-status></div><div id=g hidden></div><div id=a></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <script>
 const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
@@ -391,10 +391,7 @@ function renderPlatform(platform){
     if(item.status==='pending') a.dataset.status='pending';
     items.append(a);
   });
-  var actions=document.getElementById('platform-actions'); actions.replaceChildren();
-  (Array.isArray(platform.actions)?platform.actions:[]).filter(function(action){return action!=='read'}).forEach(function(action){
-    var b=document.createElement('button'); b.type='button'; b.dataset.action=action; b.textContent=action; actions.append(b);
-  });
+  var actions=document.getElementById('platform-actions'); actions.replaceChildren(); // B1:未接线五按钮退场;服务端权限动词不动
   document.documentElement.dataset.platformRole=platform.role||'';
 }
 async function refreshPlatform(){
@@ -477,9 +474,17 @@ async function refreshAgents(){
     applyAgentSnapshot(agents);
   }catch(_){ /* 保留上一份可见快照;短暂请求失败不得把左栏清空 */ }
 }
+var groupMode=false,groupRequestGeneration=0,groupSnapshot={groups:[],owned_agents:[]};
+async function groupAction(path,method,body){var r=await fetch(path,{method:method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});if(!r.ok){document.getElementById('group-status').textContent=(await r.text()).trim()||('HTTP '+r.status);return false;}document.getElementById('group-status').textContent='';await refreshGroups();return true;}
+function renderGroups(){var root=document.getElementById('g');root.replaceChildren();(groupSnapshot.groups||[]).forEach(function(group){var box=document.createElement('section');box.className='agent-group';var head=document.createElement('strong');head.textContent=group.short_name||'历史组';box.append(head);var code=document.createElement('code');code.className='group-code';code.textContent=group.code;code.title='加入必须使用完整 32 字符组码';box.append(code);if(group.can_manage){var close=document.createElement('button');close.textContent=group.additions_closed?'开放添加':'关闭添加';close.onclick=function(){groupAction('/api/console/agent-groups/'+encodeURIComponent(group.code)+'/additions','POST',{closed:!group.additions_closed})};box.append(close);var del=document.createElement('button');del.textContent='删组';del.onclick=function(){if(confirm('删除编组并解除全部 Agent 关系?'))groupAction('/api/console/agent-groups/'+encodeURIComponent(group.code),'DELETE')};box.append(del);}(group.members||[]).forEach(function(member){var row=document.createElement('div');var b=document.createElement('button');b.textContent=member.session_name;b.title=member.session_name;b.onclick=function(){openTab(member.session_name)};row.append(b);if(member.agent_id){var rm=document.createElement('button');rm.textContent='移出';rm.onclick=function(){if(confirm('从该编组移出 '+member.session_name+'?'))groupAction('/api/console/agent-groups/'+encodeURIComponent(group.code)+'/members/'+encodeURIComponent(member.agent_id),'DELETE')};row.append(rm);}box.append(row)});root.append(box)});}
+async function refreshGroups(){var generation=++groupRequestGeneration;try{var r=await fetch('/api/console/agent-groups',{cache:'no-store'});if(!r.ok)return null;var data=await r.json();if(generation!==groupRequestGeneration)return null;if(groupMode){groupSnapshot=data;renderGroups();}return data;}catch(_){return null;}}
+document.getElementById('agentMode').onclick=function(){groupMode=!groupMode;document.getElementById('g').hidden=!groupMode;document.getElementById('a').hidden=groupMode;this.textContent=groupMode?'纯 Agent 列表':'编组树';if(groupMode)refreshGroups();};
+document.getElementById('createGroup').onclick=function(){refreshGroups().then(function(data){var agents=(data&&data.owned_agents)||[];if(!agents.length){document.getElementById('group-status').textContent='没有自己的 Agent';return;}var id=prompt('输入作为组长的 Agent id',agents[0].id);if(id)groupAction('/api/console/agent-groups','POST',{agent_id:id});});};
+document.getElementById('joinGroup').onclick=function(){refreshGroups().then(function(data){var agents=(data&&data.owned_agents)||[];if(!agents.length){document.getElementById('group-status').textContent='没有自己的 Agent';return;}var code=prompt('输入完整 32 字符组码');if(!code)return;var id=prompt('输入自己的 Agent id',agents[0].id);if(id)groupAction('/api/console/agent-groups/'+encodeURIComponent(code)+'/members','POST',{agent_id:id});});};
 dwThemeInit();   // 🔴 主题先行:先把已存偏好应用到外壳,再渲染列表(否则先白一下再变暗)
 refreshPlatform();
 refreshAgents();
+refreshGroups();
 setInterval(refreshAgents,15000);
 </script>`
 

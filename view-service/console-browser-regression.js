@@ -9,6 +9,7 @@ const { chromium } = require('playwright');
 const GO_SOURCE = path.join(__dirname, '..', 'internal', 'm8', 'console_auth.go');
 const START = 'const consolePageHTML = `';
 const END = '`\n\nfunc (h *Hub) HandleConsoleAgents';
+const MUTATION = process.argv.find((arg) => arg.startsWith('--mutate='))?.slice(9) || '';
 
 function consoleHTMLFromProductionSource() {
   const source = fs.readFileSync(GO_SOURCE, 'utf8');
@@ -17,7 +18,10 @@ function consoleHTMLFromProductionSource() {
   const contentStart = start + START.length;
   const end = source.indexOf(END, contentStart);
   assert.notStrictEqual(end, -1, 'consolePageHTML end marker missing');
-  return source.slice(contentStart, end);
+  let html = source.slice(contentStart, end);
+  if (MUTATION === 'stale-groups') html = html.replace('if(generation!==groupRequestGeneration)return null;', '');
+  if (MUTATION && MUTATION !== 'stale-groups') throw new Error(`unknown mutation: ${MUTATION}`);
+  return html;
 }
 
 function listen(server) {
@@ -33,6 +37,14 @@ async function main() {
     { session: 'owner-alpha-2642', online: true },
     { session: 'owner-offline-2642', online: false },
   ];
+  let raceGroupResponses = false;
+  let raceGroupRequest = 0;
+  function groupPayload(closed) {
+    return { principal: 'owner-a', owned_agents: [{ id: 'agent-a', session_name: 'owner-alpha-2642' }], groups: [{
+      code: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'abc123', creator_principal: 'owner-a', can_manage: true, additions_closed: closed,
+      members: [{ agent_id: 'agent-a', session_name: 'owner-alpha-2642' }, { agent_id: 'agent-b', session_name: 'other-full-agent-2642' }],
+    }] };
+  }
   const server = http.createServer((req, res) => {
     if (req.url === '/console') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -55,6 +67,16 @@ async function main() {
           { id: 'specs', kind: 'spec', title: 'Specs', href: '/console/specs', target: '_blank', status: 'approved' },
         ],
       }));
+      return;
+    }
+    if (req.url === '/api/console/agent-groups') {
+      const send = (closed) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(groupPayload(closed))); };
+      if (raceGroupResponses) {
+        raceGroupRequest += 1;
+        if (raceGroupRequest === 1) { setTimeout(() => send(false), 150); return; }
+        send(true); return;
+      }
+      send(false);
       return;
     }
     if (req.url && req.url.startsWith('/view/')) {
@@ -94,33 +116,56 @@ async function main() {
     });
 
     await test('renders online and offline agents from the console API', async () => {
-      const online = page.locator('nav button[title="owner-alpha-2642"]');
-      const offline = page.locator('nav button[title="owner-offline-2642"]');
+      const online = page.locator('#a button[title="owner-alpha-2642"]');
+      const offline = page.locator('#a button[title="owner-offline-2642"]');
       await online.waitFor({ state: 'visible' });
       await offline.waitFor({ state: 'attached' });
       assert.strictEqual(await online.isEnabled(), true);
       assert.strictEqual(await offline.isDisabled(), true);
     });
 
-    await test('mounts a real platform item and role-scoped actions', async () => {
+    await test('mounts platform items while retiring all five dead action buttons', async () => {
       const agentsItem = page.locator('#platform-items a[data-item-id="agents"]');
       await agentsItem.waitFor({ state: 'visible' });
       assert.strictEqual(await agentsItem.getAttribute('href'), '#agents');
-      assert.strictEqual(await page.locator('#platform-actions button[data-action="submit"]').isVisible(), true);
-      assert.strictEqual(await page.locator('#platform-actions button[data-action="approve"]').count(), 0);
+      assert.strictEqual(await page.locator('#platform-actions button').count(), 0);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'owner');
     });
 
-    await test('shows management actions only after the server role changes', async () => {
+    await test('keeps dead action buttons absent after the server role changes', async () => {
       await page.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
       await page.evaluate(() => refreshPlatform());
-      await page.locator('#platform-actions button[data-action="approve"]').waitFor({ state: 'visible' });
-      assert.strictEqual(await page.locator('#platform-actions button[data-action="add"]').isVisible(), true);
+      assert.strictEqual(await page.locator('#platform-actions button').count(), 0);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'management');
     });
 
+    await test('switches between pure Agent list and group-Agent tree', async () => {
+      assert.strictEqual(await page.locator('#a').isVisible(), true);
+      assert.strictEqual(await page.locator('#g').isHidden(), true);
+      await page.locator('#agentMode').click();
+      await page.locator('#g .agent-group strong').filter({ hasText: 'abc123' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#g .group-code').textContent(), 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+      assert.strictEqual(await page.locator('#g button[title="other-full-agent-2642"]').textContent(), 'other-full-agent-2642');
+      assert.strictEqual(await page.locator('#a').isHidden(), true);
+      await page.locator('#agentMode').click();
+      assert.strictEqual(await page.locator('#a').isVisible(), true);
+      assert.strictEqual(await page.locator('#g').isHidden(), true);
+    });
+
+    await test('ignores an older group snapshot that arrives after the latest response', async () => {
+      await page.locator('#agentMode').click();
+      raceGroupResponses = true; raceGroupRequest = 0;
+      await page.evaluate(() => Promise.all([refreshGroups(), refreshGroups()]));
+      const openCount = await page.locator('#g .agent-group').getByRole('button', { name: '开放添加' }).count();
+      const closeCount = await page.locator('#g .agent-group').getByRole('button', { name: '关闭添加' }).count();
+      raceGroupResponses = false;
+      await page.locator('#agentMode').click();
+      assert.strictEqual(openCount, 1);
+      assert.strictEqual(closeCount, 0);
+    });
+
     await test('opens a real console tab and agent iframe', async () => {
-      await page.locator('nav button[title="owner-alpha-2642"]').click();
+      await page.locator('#a button[title="owner-alpha-2642"]').click();
       const tab = page.locator('#tabs .tab[title="owner-alpha-2642"]');
       const pane = page.locator('#panes iframe[title="Agent view: owner-alpha-2642"]');
       await tab.waitFor({ state: 'visible' });
