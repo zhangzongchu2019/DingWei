@@ -51,7 +51,7 @@ func createSpec(t *testing.T, db *SQLite, id, title string, now time.Time) {
 	}
 }
 
-func TestConsoleSpecsSupportMultipleIndependentSpecsAndOwnerIsolation(t *testing.T) {
+func TestConsoleSpecsSupportMultipleIndependentSpecsWithPublicReadAndControlledWrite(t *testing.T) {
 	db := newConsoleSpecStore(t)
 	now := time.Date(2026, 9, 20, 1, 0, 0, 0, time.UTC)
 	createSpec(t, db, "spec-a", "A", now)
@@ -61,8 +61,8 @@ func TestConsoleSpecsSupportMultipleIndependentSpecsAndOwnerIsolation(t *testing
 	if err != nil || len(items) != 2 {
 		t.Fatalf("owner-a specs=%+v err=%v", items, err)
 	}
-	if got, err := db.ConsoleSpec(context.Background(), "owner-b", "spec-a", false); err != nil || got != nil {
-		t.Fatalf("cross-owner read must be indistinguishable from missing got=%+v err=%v", got, err)
+	if got, err := db.ConsoleSpec(context.Background(), "owner-b", "spec-a", false); err != nil || got == nil || got.ID != "spec-a" {
+		t.Fatalf("控写不控读:cross-owner read got=%+v err=%v", got, err)
 	}
 	if _, err := db.AppendConsoleSpecRevision(context.Background(), "owner-b", "spec-a", 1,
 		specRevision("spec-a", 2, "stolen"), now.Add(2*time.Second)); err != ErrConsoleSpecNotFound {

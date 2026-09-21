@@ -89,12 +89,9 @@ func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 
 func (s *SQLite) ConsoleSpec(ctx context.Context, principalID, specID string, management bool) (*model.ConsoleSpec, error) {
 	query := `SELECT id,principal_id,title,state,current_revision,claimed_by,created_at,updated_at FROM console_spec WHERE id=?`
-	args := []any{specID}
-	if !management {
-		query += ` AND principal_id=?`
-		args = append(args, principalID)
-	}
-	return scanConsoleSpec(s.db.QueryRowContext(ctx, query, args...))
+	// Spec 内容按业主裁定“控写、不控读”。保留 principal/management 参数以兼容
+	// 既有 repo 接口，但直接链接读取不再以身份过滤；写路径仍单独按 owner/capability 判。
+	return scanConsoleSpec(s.db.QueryRowContext(ctx, query, specID))
 }
 
 func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, management bool) ([]model.ConsoleSpec, error) {
@@ -124,14 +121,9 @@ func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, manag
 func (s *SQLite) ConsoleSpecRevision(ctx context.Context, principalID, specID string, revision int, management bool) (*model.ConsoleSpecRevision, error) {
 	query := `SELECT r.spec_id,r.revision,r.content_markdown,r.acceptance_json,r.input_anchors_json,r.content_sha256,r.created_by,COALESCE(r.supersedes_revision,0),r.created_at
 		FROM console_spec_revision r JOIN console_spec s ON s.id=r.spec_id WHERE r.spec_id=? AND r.revision=?`
-	args := []any{specID, revision}
-	if !management {
-		query += ` AND s.principal_id=?`
-		args = append(args, principalID)
-	}
 	var r model.ConsoleSpecRevision
 	var created string
-	err := s.db.QueryRowContext(ctx, query, args...).Scan(&r.SpecID, &r.Revision, &r.ContentMarkdown, &r.AcceptanceJSON, &r.InputAnchorsJSON, &r.ContentSHA256, &r.CreatedBy, &r.Supersedes, &created)
+	err := s.db.QueryRowContext(ctx, query, specID, revision).Scan(&r.SpecID, &r.Revision, &r.ContentMarkdown, &r.AcceptanceJSON, &r.InputAnchorsJSON, &r.ContentSHA256, &r.CreatedBy, &r.Supersedes, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

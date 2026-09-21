@@ -49,7 +49,7 @@ func callConsoleSpec(t *testing.T, hub *Hub, principal, action, method, path str
 
 const validSpecBody = `{"title":"Spec A","content_markdown":"# A","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}]}`
 
-func TestConsoleSpecHTTPMultipleSpecsAreVisibleAndCrossOwnerIs404(t *testing.T) {
+func TestConsoleSpecHTTPMultipleSpecsAreVisiblePubliclyButWritesRemainControlled(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
 	ids := make([]string, 0, 2)
 	for _, body := range []string{validSpecBody, stringsReplace(validSpecBody, "Spec A", "Spec B")} {
@@ -82,8 +82,30 @@ func TestConsoleSpecHTTPMultipleSpecsAreVisibleAndCrossOwnerIs404(t *testing.T) 
 	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-b"))
 	rr = httptest.NewRecorder()
 	hub.RequireConsolePlatformAction(consolePlatformActionRead, hub.HandleConsoleSpec)(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("控写不控读:cross-owner GET code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	var public struct {
+		Spec     model.ConsoleSpec         `json:"spec"`
+		Revision model.ConsoleSpecRevision `json:"revision"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &public); err != nil || public.Spec.ID != ids[0] || public.Revision.ContentMarkdown != "# A" {
+		t.Fatalf("public GET payload=%s err=%v", rr.Body.String(), err)
+	}
+
+	// 阳性只证明公开读；写仍须由所有者或后续能力链接授权。不能把“读放开”误写成“全放开”。
+	patch := `{"title":"Spec A","content_markdown":"# stolen","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}],"expected_revision":1}`
+	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+ids[0], bytes.NewBufferString(patch))
+	req.SetPathValue("specID", ids[0])
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-b"))
+	rr = httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
 	if rr.Code != http.StatusNotFound {
-		t.Fatalf("cross-owner existence leaked code=%d body=%s", rr.Code, rr.Body.String())
+		t.Fatalf("cross-owner PATCH must remain controlled code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	stored, err := hub.Repo.(*store.SQLite).ConsoleSpecRevision(context.Background(), "owner-a", ids[0], 1, false)
+	if err != nil || stored == nil || stored.ContentMarkdown != "# A" {
+		t.Fatalf("rejected PATCH changed state revision=%+v err=%v", stored, err)
 	}
 }
 
