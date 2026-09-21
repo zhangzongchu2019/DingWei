@@ -20,6 +20,14 @@ def make_db(path, agents, persons):
     c.executemany("INSERT INTO session_endpoint VALUES(?,?,?,?)", agents)
     c.execute("CREATE TABLE seen_person(open_id TEXT, bot_channel_id TEXT)")
     c.executemany("INSERT INTO seen_person VALUES(?,?)", persons)
+    # 🔴 生成器必须维护库内既有的 id↔subject 配对；不能把参数位置当身份。
+    c.execute("CREATE TABLE console_principal(id TEXT PRIMARY KEY, provider TEXT, "
+              "provider_issuer TEXT, provider_subject TEXT, display_name TEXT, active INT, "
+              "UNIQUE(provider,provider_issuer,provider_subject))")
+    c.executemany("INSERT INTO console_principal VALUES(?,?,?,?,?,?)", [
+        ("owner-entry-a", "feishu", ISSUER, SUBJ_A, "Owner", 1),
+        ("owner-entry-b", "feishu", ISSUER, SUBJ_B, "Owner", 1),
+    ])
     c.commit(); c.close()
 
 class T(unittest.TestCase):
@@ -52,8 +60,13 @@ class T(unittest.TestCase):
         p = subprocess.run(cmd, capture_output=True, text=True)
         return p.returncode, p.stdout + p.stderr
 
+    def generated_principal_pairs(self):
+        data = json.load(open(self.out))
+        return {(p["id"], p["provider_subject"]) for p in data["principals"]}
+
     # ---------- 阳性对照 ----------
     def test_1_happy_path(self):
+        """阳格只证明正常顺序不被误报；它不能证明实现具有顺序无关性。"""
         rc, out = self.run_tool(expect=3)
         self.assertEqual(rc, 0, out)
         d = json.load(open(self.out))
@@ -63,6 +76,9 @@ class T(unittest.TestCase):
         self.assertNotIn("zzc-wrongowner-2642", names)            # 🔴 只有 owner_key 能排除它
         self.assertNotIn("zzc-inactive-2642", names)
         self.assertEqual(len(d["principals"]), 2)
+        self.assertEqual(self.generated_principal_pairs(), {
+            ("owner-entry-a", SUBJ_A), ("owner-entry-b", SUBJ_B),
+        })
         # 🔴 每个 agent 对【每条】身份各一条 —— 少一条则业主用另一身份登录时看不到它
         for a in d["agents"]:
             self.assertEqual(sorted(g["principal_id"] for g in a["grants"]),
@@ -161,6 +177,37 @@ class T(unittest.TestCase):
         rc, out = self.run_tool("--management-principal", "ghost", expect=3)
         self.assertEqual(rc, 2)
         self.assertIn("management principal 不在本次生成集合", out)
+
+    def test_13_existing_identity_pairing_is_order_independent(self):
+        """事故最小复现：交换 digest 顺序不得改变库内既有 id↔subject 配对。
+
+        合法结果有两种：自动纠正后 rc=0 且配对仍与库一致；或拒绝并且不留产物。
+        当前实现会 rc=0 且产出 a→B/b→A，因此本闸应先红。
+        """
+        expected = {("owner-entry-a", SUBJ_A), ("owner-entry-b", SUBJ_B)}
+        rc, out = self.run_tool(digests=(SUBJ_B, SUBJ_A), expect=3)
+        if rc == 0:
+            self.assertEqual(self.generated_principal_pairs(), expected, out)
+        else:
+            self.assertFalse(os.path.exists(self.out), out)
+
+    def test_14_new_identity_id_is_order_independent_or_both_rejected(self):
+        """全新 subject 可稳定派生 id，也可要求显式 id；不得由参数位置决定 id。"""
+        outcomes = []
+        for digests in ((SUBJ_OTHER, SUBJ_A), (SUBJ_A, SUBJ_OTHER)):
+            if os.path.exists(self.out):
+                os.unlink(self.out)
+            rc, out = self.run_tool(digests=digests, expect=3)
+            new_id = None
+            if rc == 0:
+                pairs = self.generated_principal_pairs()
+                new_id = next(pid for pid, subject in pairs if subject == SUBJ_OTHER)
+            else:
+                self.assertFalse(os.path.exists(self.out), out)
+            outcomes.append((rc, new_id))
+        both_rejected = outcomes[0][0] != 0 and outcomes[1][0] != 0
+        both_same_id = outcomes[0][0] == outcomes[1][0] == 0 and outcomes[0][1] == outcomes[1][1]
+        self.assertTrue(both_rejected or both_same_id, "全新身份结果依赖参数顺序: %r" % (outcomes,))
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
