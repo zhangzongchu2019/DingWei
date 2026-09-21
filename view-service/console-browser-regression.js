@@ -130,6 +130,7 @@ async function main() {
       assert.strictEqual(await page.locator('#g').isHidden(), true);
       await page.locator('#agentMode').click();
       await page.locator('#g .agent-group strong').filter({ hasText: 'abc123' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#g .group-code').textContent(), 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
       assert.strictEqual(await page.locator('#g button[title="other-full-agent-2642"]').textContent(), 'other-full-agent-2642');
       assert.strictEqual(await page.locator('#a').isHidden(), true);
       await page.locator('#agentMode').click();
