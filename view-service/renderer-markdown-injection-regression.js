@@ -35,11 +35,14 @@
 //   I6:正常 markdown(**粗体** / 链接 / `code` / 表格 / 任务列表 / 代码高亮)**必须仍渲染出来**。
 //   🔴 没有 I6,一个"把正文渲染成空字符串"的改动会让本件全绿 —— 那不是安全,那是瞎了。
 //
-// ── 显影腿 ───────────────────────────────────────────────────────────────────────
-//   I7:钉**现状形状** —— markdown 图片语法 `![alt](url)` 现在**不**被渲染成 `<img>`
-//   (自研 renderInline 只处理 `` ` ``、链接、粗体、斜体、换行;**没有图片分支**)。
-//   🔵 这一格不是"该不该",是"现在是什么":它变了(有人补了图片支持)⇒ 红 ⇒ 报组长,
-//      并按 ts-No.75 ① 的裁定口径重新对账(业主产品定义里逐字有「预览图片」)。
+// ── 形状腿 ───────────────────────────────────────────────────────────────────────
+//   I7:原先钉的是**现状形状**「`![alt](url)` 不被渲染成 `<img>`,而是留下一个孤零零的 "!"」。
+//   🔴 **ts-No.79 把它改写了** —— 它按自己的说明书红了(「有人补了图片支持 ⇒ 红 ⇒ 报组长」),
+//      而这次补图片支持正是业主裁定 ＋ 组长板件派工(锚 `96d82d6e`)要求的:
+//        业主逐字「只要是图片的就显示预览的图」「感叹号可以不用了」。
+//   ⇒ 现在它钉**新形状里属于本件职责的那一半**:外站图片 URL 仍是链接、感叹号消失、不就地出图。
+//   🔵 **本站 `/f/` 图片直链就地出图**那份契约不在这里,由 `renderer-markdown-image-regression.js`
+//      (G1/G5)独家钉 —— 两件**不要互相冒充**(本件的夹具根本不提供 `/f/` 路由)。
 //
 // 装置:本件**自带** HTTP+SSE 夹具(自启自收、自挑空闲端口 listen(0)、路径一律走 __dirname,cwd 无关)。
 //   事件语义按 `internal/m8/terminal.go` HandleInternalViewEvents「先回放 eventRing,再挂实时流」模拟。
@@ -77,47 +80,9 @@ const RENDERER_SHA = crypto.createHash('sha256').update(RENDERER_BYTES).digest('
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const now = () => Date.now();
 
-// ── payload 目录 ────────────────────────────────────────────────────────────────
-// 🔵 canary 一律写 `window.__dwPwned`:它被置上 = 有脚本真执行了(而不是"看起来没执行")。
-const CANARY = 'window.__dwPwned=1';
-const PAYLOADS = [
-  { id: 'P01', text: `<script>${CANARY}</script>`, why: '裸 script 标签' },
-  { id: 'P02', text: `<img src=x onerror="${CANARY}">`, why: 'img onerror(最经典:src 必然加载失败 ⇒ 必然触发)' },
-  { id: 'P03', text: `<iframe src="javascript:${CANARY}"></iframe>`, why: 'iframe + javascript: 协议' },
-  { id: 'P04', text: `<svg onload="${CANARY}"></svg>`, why: 'svg onload' },
-  { id: 'P05', text: `<details ontoggle="${CANARY}" open>x</details>`, why: 'ontoggle(open 属性 ⇒ 不需交互就触发)' },
-  { id: 'P06', text: `<a href="javascript:${CANARY}">点我</a>`, why: '裸 a + javascript:' },
-  { id: 'P07', text: `[x](javascript:${CANARY})`, why: 'markdown 链接塞 javascript: 协议' },
-  { id: 'P08', text: `[x](JaVaScRiPt:${CANARY})`, why: '协议名大小写绕过' },
-  { id: 'P09', text: '[x](  javascript:' + CANARY + ')', why: '协议前置空白绕过' },
-  { id: 'P10', text: `[x](&#106;avascript:${CANARY})`, why: 'HTML 实体绕过(href 里实体会被解码)' },
-  { id: 'P11', text: '[x](data:text/html;base64,PHNjcmlwdD53aW5kb3cuX19kd1B3bmVkPTE8L3NjcmlwdD4=)', why: 'data:text/html + base64' },
-  { id: 'P12', text: `[x](https://ok.example/"onmouseover="${CANARY})`, why: '🔴 链接 URL 里的**属性突破**(整段无空格无右括号 ⇒ 能穿过 [^)\\s]+ 的捕获)' },
-  { id: 'P13', text: `<div style="background:url(javascript:${CANARY})">x</div>`, why: 'style 属性里的 url()' },
-  // 🔵 P14 原先写成了 `<body onload="${CANARY}>`(引号没闭合)—— 那是**我写错了**,不是故意的形状;
-  //    已改回本意。"不闭合"这个形状由 P17 专门承担。
-  { id: 'P14', text: `<body onload="${CANARY}">`, why: 'body onload(整页级)' },
-  // 🔵 以下三种是第一跑绿之后**自己加的**:组长说「以及你认为该试的其它形状」。
-  { id: 'P15', text: '`<img src=x15 onerror="' + CANARY + '">`', why: '行内代码里的 payload:必须是 <code> 内的**死文本**(反引号提取发生在转义之后)' },
-  { id: 'P16', text: `&lt;img src=x16 onerror="${CANARY}"&gt;`, why: '🔴 **双重编码(mXSS)**:送进来时已是转义形态,渲染器若"帮忙解码一次"就会变活' },
-  { id: 'P17', text: `<img src=x17 onerror="${CANARY}"`, why: '**不闭合标签**(没有结尾 >):赌解析器宽容度' },
-];
-const ALL_TEXT = PAYLOADS.map((p) => p.text).join('\n\n');
-
-// ── 反证("被转义了"而不是"被悄悄丢掉了")的期望形式 ────────────────────────────────
-// 🔴 这里踩过一次坑,记下来:期望值不能拿 escapeHtml 的输出直接当。
-//    payload 被转义后是**文本节点**,浏览器序列化 innerHTML 时只转 `& < >`,**引号原样**;
-//    而落在**属性值**里的那部分(P12)才会序列化成 `&quot;`。两种形态不一样,得分开写。
-const escTextNode = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-PAYLOADS.forEach((p) => { p.expect = [escTextNode(p.text)]; });
-// P12 的 URL 以 https:// 开头 ⇒ 会被链接正则吃掉,`[x](` 前缀不会以文本出现;
-// 它真正要钉的是:**引号被转义了**(所以不可能突破出 href 属性变成 onmouseover 属性)。
-const P12 = PAYLOADS.find((p) => p.id === 'P12');
-P12.expect = ['&quot;onmouseover=&quot;'];
-// P15 的反引号会被行内代码规则消费掉 ⇒ 整条 payload 的转义形态不会原样出现,只断言 <code> 里那一段
-const P15 = PAYLOADS.find((p) => p.id === 'P15');
-P15.expect = [escTextNode('<img src=x15 onerror="' + CANARY + '">')];
-P15.inCode = 'src=x15';   // 额外断言:它必须落在 <code> 元素里,而不是散在正文中
+// 🔴 payload 清单已抽成 `md-injection-payloads.js`(ts-No.79 起与本仓另一件共用同一份清单)。
+//    为什么不留在这里:两件各存一份 ⇒ **两份必漂移**;抽出来后改形状只改一处,两件的断言同时跟着变。
+const { CANARY, PAYLOADS, ALL_TEXT, escTextNode } = require('./md-injection-payloads.js');
 
 // ── 自带夹具:一套路由,按 opt.events 灌真 SSE ─────────────────────────────────────
 async function startServer(opt) {
@@ -184,6 +149,21 @@ async function scan(page) {
       out.longtext = tl.querySelectorAll('.turn-assistant.longtext').length;
       out.userCard = tl.querySelectorAll('.turn-user').length;
       tl.querySelectorAll('script,iframe,object,embed,svg,img,link,meta').forEach((el) => {
+        // 🔴 ts-No.79 起,timeline 里出现 <img> **不再必然是注入**:产品自己会把本站 /f/ 的图片直链
+        //    就地渲染成 `<img class="md-img" data-md-img>`。若不收窄,将来任何一条带本站图片的正文
+        //    都会让本件报**假失败** —— 而假失败会吃掉同套件后面所有断言的执行(组长:「掩盖是双向的」)。
+        //    🔵 收窄得很紧,三条**同时**满足才算产品自产:有 data-md-img · 无任何 on* 属性 · src 是本站 /f/。
+        //    ⇒ P02 那种 `<img src=x onerror=…>` 照旧算活元素;escapeHtml 被掏空后攻击者自己写
+        //      data-md-img 的形状也照旧算(它必然带 on* 或 src 不是本站 /f/)。检测力没有削弱。
+        if (el.tagName === 'IMG' && el.hasAttribute('data-md-img')
+          && !Array.from(el.attributes || []).some((a) => /^on/i.test(a.name))) {
+          let own = false;
+          try {
+            const u = new URL(el.getAttribute('src') || '', location.href);
+            own = u.origin === location.origin && u.pathname.startsWith('/f/');
+          } catch { own = false; }
+          if (own) return;
+        }
         out.liveInTimeline.push(el.tagName.toLowerCase() + (el.getAttribute('src') ? `@src=${String(el.getAttribute('src')).slice(0, 40)}` : ''));
       });
       // 反证腿要看的"正常 markdown 是否仍渲染"
@@ -237,9 +217,11 @@ const MUTATIONS = {
   },
   'M-I2': {
     label: '链接正则放开协议(去掉 https?:// 限制)',
+    // 🔴 锚点随 ts-No.79 改过:链接那一行现在是函数式替换(图片分支与链接分支同一个正则)。
+    //    **意图不变**:只去掉 `https?://` 这个协议限制,别的都不动。
     steps: [[
-      `out = out.replace(/\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)/g, '<a href="$2" rel="noreferrer" target="_blank">$1</a>');`,
-      `out = out.replace(/\\[([^\\]]+)\\]\\(([^)\\s]+)\\)/g, '<a href="$2" rel="noreferrer" target="_blank">$1</a>');`,
+      `out = out.replace(/(!?)\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)/g, (_, bang, text, url) => (`,
+      `out = out.replace(/(!?)\\[([^\\]]+)\\]\\(([^)\\s]+)\\)/g, (_, bang, text, url) => (`,
     ]],
     breached: (s) => s.badScheme.length > 0,
     want: 'javascript:/data:text/html 协议的 href',
@@ -464,7 +446,7 @@ const CASES = [
   },
   {
     name: 'I7',
-    title: '🔵 显影腿:markdown 图片语法 ![alt](url) 现状【不】被渲染成 <img>(变了要报,不一定是缺陷)',
+    title: '🔵 形状腿(ts-No.79 后改写):外站图片语法 ⇒ 仍是链接、感叹号消失、不就地出图',
     events: eventsFor('![示意图](https://ok.example/a.png)\n\n正文里还有一条 [链接](https://ok.example/b)', 'd-i7'),
     probe: [async (page, out) => {
       await waitSel(page, '#timeline .turn-assistant .md', '正文');
@@ -547,24 +529,22 @@ const CASES = [
         } else if (c.kind === 'develop') {
           const s = r.scans[0].s;
           const b = breachOf(s);
-          assert.deepStrictEqual(b, [], `🔴 显影腿里出现了破坏:${b.join(' | ')}`);
+          assert.deepStrictEqual(b, [], `🔴 形状腿里出现了破坏:${b.join(' | ')}`);
+          // 🔴 ts-No.79 之后这一条的**含义变了**:不再是"产品没有图片支持",
+          //    而是"**外站**图片 URL 不得就地出图" —— 那是产品自己写的信任边界
+          //    (「只认本站 /f/ 直链,不对任意外站 URL 做任何请求」),由 image 件的 G4 用请求账目另钉一份。
           assert.strictEqual(s.imgInTimeline, 0,
-            `🔴 形状变了:消息容器里出现了 ${s.imgInTimeline} 个 <img> —— 说明**有人给自研渲染补了图片支持**。`
-            + '\n     🔵 这不一定是缺陷:按 ts-No.75 ① 的裁定口径,业主产品定义里逐字有「预览图片」,'
-            + '图片内嵌是**带号延后**项。⇒ 请报组长重新对账,别把这条红当成回归直接改回去。');
-          // 🔵 真实形状是**第一跑量出来的**,不是我推的:`![alt](url)` 里的 `[alt](url)` 被链接正则吃掉,
-          //    只剩一个孤零零的 "!" ⇒ 用户看到的是「!示意图」这样一个**带感叹号的链接**:
-          //    不是图片,也不是干净文本。我原先以为字面量 "![" 会整体留下 —— **错了,已按实测改。**
-          assert.ok(s.timelineText.includes('!示意图'),
-            `🔴 形状变了:正文不再是「!示意图」这个形状 ⇒ 自研渲染开始消费图片语法了。`
-            + `\n     实测正文片段:${JSON.stringify(s.timelineText.slice(0, 200))}`
-            + '\n     🔵 报组长重新对账(ts-No.75 ①:业主产品定义里逐字有「预览图片」,本期按裁定**带号延后**),'
-            + '**不要自行改回**。');
-          assert.ok(s.legit.a >= 1,
-            `守卫:alt 文本没有变成链接(a=${s.legit.a})⇒ 这一格验的不是"图片语法被当链接吃掉"那个形状`);
-          console.log('\n     🔵 现状(显影,不是"该不该"):![alt](url) **不生成 <img>**;'
-            + '而是被链接正则吃掉 `[alt](url)`,留下一个孤立的 "!" ⇒ 用户看到「!示意图」这样的带感叹号链接');
-          console.log('     🔵 与 ts-No.75 ① 同源:业主产品定义里有「预览图片」,而自研渲染**没有图片分支** ⇒ 本期按裁定带号延后');
+            `🔴 外站图片 URL 竟然就地出图了(${s.imgInTimeline} 个 <img>)⇒ 本站 /f/ 那条信任边界被放开了。`
+            + '\n     🔵 放开它是**产品可见决定,归业主**;若是无意放开,请查 isInlineImageUrl 里的 isOwnFileUrl。');
+          // 🔴 感叹号必须没了(业主逐字:「感叹号可以不用了」);alt 文本必须仍以链接形式可见
+          assert.ok(!s.timelineText.includes('!示意图'),
+            `🔴 「! ＋ 链接」那个怪形态还在(实测正文片段:${JSON.stringify(s.timelineText.slice(0, 160))})`);
+          assert.ok(s.timelineText.includes('示意图'),
+            `🔴 alt 文本不见了(不是"感叹号没了",是整条被吞了)⇒ 丢字不算修好,算失真`);
+          assert.ok(s.legit.a >= 2,
+            `守卫:两条链接没有都渲染出来(a=${s.legit.a},应 ≥2)⇒ 这一格验的不是"图片语法被当链接吃掉"那个形状`);
+          console.log('\n     🔵 新形状(ts-No.79 起):`![alt](外站 url)` ⇒ **没有感叹号的链接**,不出图;');
+          console.log('     🔵 本站 /f/ 图片直链**会**就地出图 —— 那份契约由 renderer-markdown-image-regression.js(G1/G5)独家钉,本件不重复。');
         }
       });
     }
@@ -614,6 +594,7 @@ const CASES = [
   console.log('        来源标签与 c2Note、事件类型/状态标签、diag 键值、草稿输入框与粘贴路径、console 外壳自身。');
   console.log('     ③ **穷尽审计没做**:我是从注入形状往里打,不是把每一处 innerHTML 往外数。');
   console.log('     ④ 单档 1280×900 · headless · 默认主题;**暗色与窄档未跑**(推论上与转义无因果,但那是推论)。');
-  console.log('     ⑤ I7 是**显影腿**:它钉的是"现在没有图片支持"这个形状,不是"不该有"。它红了要报,不要改回去。');
+  console.log('     ⑤ I7 已被 **ts-No.79 改写**:它原先钉"现在没有图片支持",现在钉"外站图片不就地出图 ＋ 感叹号消失"。');
+  console.log('        🔵 本站 /f/ 图片**就地出图**那份契约在 renderer-markdown-image-regression.js(G1/G5/G6),本件不重复钉。');
   process.exit(0);
 })().catch((e) => { console.error('harness error:', e); process.exit(2); });
