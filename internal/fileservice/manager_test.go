@@ -165,18 +165,30 @@ func TestSpecPermanentSurvivesQuotaFIFOAndDeletionPhases(t *testing.T) {
 		t.Fatal(err)
 	}
 	permanentID := "spec-" + source.SHA256
+	if used, err := m.Repo.ReadyBytes(context.Background()); err != nil || used != source.SizeBytes {
+		t.Fatalf("temporary quota bytes=%d want=%d err=%v; permanent copy must not consume temporary quota", used, source.SizeBytes, err)
+	}
 	if err := m.Repo.MarkDeleting(context.Background(), permanentID, "quota_fifo"); err == nil {
 		t.Fatal("permanent row entered deleting state")
 	}
 	if _, err := m.Repo.db.Exec(`UPDATE files SET state='deleting',removal_reason='quota_fifo' WHERE id=?`, permanentID); err != nil {
 		t.Fatal(err)
 	}
+	if deleting, err := m.Repo.ListDeleting(context.Background()); err != nil || len(deleting) != 0 {
+		t.Fatalf("deleting recovery enumerated permanent rows: count=%d err=%v", len(deleting), err)
+	}
 	permanent, err := m.Repo.Get(context.Background(), permanentID)
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := m.Repo.FinishDeleting(context.Background(), permanentID, clock.Now()); err == nil {
+		t.Fatal("repository completed deletion for a permanent row")
+	}
 	if err := m.finishRemoval(context.Background(), permanent); err == nil {
 		t.Fatal("finishRemoval accepted a permanent row")
+	}
+	if got := string(objects.data[key]); got != "image-bytes" {
+		t.Fatalf("finishRemoval touched permanent bytes=%q", got)
 	}
 	if _, err := m.Repo.db.Exec(`UPDATE files SET state='ready',removal_reason='',created_at=? WHERE id=?`, stamp(clock.Now().Add(-time.Hour)), permanentID); err != nil {
 		t.Fatal(err)
