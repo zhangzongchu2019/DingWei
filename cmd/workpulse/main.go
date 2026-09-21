@@ -61,8 +61,12 @@ func main() {
 
 func execute(args []string, out io.Writer, logger *slog.Logger, runServer func(*slog.Logger) error) error {
 	if len(args) > 1 {
+		if args[1] == "version" && len(args) == 2 {
+			_, err := fmt.Fprintln(out, version.Version, version.Commit)
+			return err
+		}
 		if args[1] != "validate-console-seed" || len(args) != 3 {
-			return errors.New("usage: workpulse validate-console-seed <seed.json>")
+			return errors.New("usage: workpulse version | workpulse validate-console-seed <seed.json>")
 		}
 		if err := validateConsoleSeedFile(args[2]); err != nil {
 			return err

@@ -69,6 +69,11 @@ prompt_value() {
 echo "== WorkPulse deploy =="
 echo "WORKDIR=$WORKDIR"
 
+if [ "${1:-}" != "" ] && [ "${1:-}" != "--build-only" ]; then
+  echo "usage: deploy/install.sh [--build-only]" >&2
+  exit 2
+fi
+
 if [ "$(uname -s)" != "Linux" ]; then
   echo "deploy/install.sh 仅支持 Linux systemd 裸机部署。" >&2
   exit 1
@@ -78,17 +83,23 @@ need_cmd openssl
 need_cmd curl
 need_cmd sqlite3
 need_cmd tmux
-if [ ! -x "$WORKDIR/bin/workpulse" ]; then
-  need_cmd go
-fi
+need_cmd go
+need_cmd git
+need_cmd python3
+need_cmd sha256sum
 
 mkdir -p "$WORKDIR/bin" "$WORKDIR/data"
 
-if [ ! -x "$WORKDIR/bin/workpulse" ]; then
-  echo "== build bin/workpulse =="
-  (cd "$WORKDIR" && go build -o bin/workpulse ./cmd/workpulse)
-else
-  echo "== reuse existing bin/workpulse =="
+echo "== gated build bin/workpulse =="
+source_commit=$(git -C "$WORKDIR" rev-parse HEAD)
+(cd "$WORKDIR" && SOURCE_COMMIT="$source_commit" ./build.sh "$WORKDIR/bin")
+actual_commit=$("$WORKDIR/bin/workpulse" version | awk '{print $NF}')
+if [ "$actual_commit" != "$source_commit" ]; then
+  echo "built workpulse commit mismatch: expected=$source_commit actual=$actual_commit" >&2
+  exit 2
+fi
+if [ "${1:-}" = "--build-only" ]; then
+  exit 0
 fi
 
 if [ ! -f "$ENV_FILE" ]; then

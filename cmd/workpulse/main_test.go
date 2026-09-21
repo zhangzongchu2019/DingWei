@@ -24,7 +24,20 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/scheduler"
 	"github.com/zhangzongchu2019/dingwei/internal/secretbox"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/version"
 )
+
+func TestVersionCommandReportsBuildProvenance(t *testing.T) {
+	var out bytes.Buffer
+	called := false
+	err := execute([]string{"workpulse", "version"}, &out, slog.Default(), func(*slog.Logger) error {
+		called = true
+		return nil
+	})
+	if err != nil || called || strings.TrimSpace(out.String()) != version.Version+" "+version.Commit {
+		t.Fatalf("out=%q called=%t err=%v", out.String(), called, err)
+	}
+}
 
 func TestRunWiresAdminFileBrowserConfiguration(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "main.go", nil, 0)

@@ -24,12 +24,33 @@
 set -eu
 # 🔴 发版构建先过 console seed 身份配对闸。生成器若会因参数顺序改写
 # principal id↔subject，产物就不应继续编译；本闸与 schema 校验必须同跑。
-python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed
-COMMIT="$(git rev-parse HEAD)"
-if [ -n "$(git status --porcelain)" ]; then
-  COMMIT="${COMMIT}-dirty"
-  echo "⚠️  工作树不干净,commit 标记为 ${COMMIT}" >&2
-  echo "    脏树产物**不得用于部署** —— 它无法被任何人重现。" >&2
+python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed deploy.test_build_entrypoints
+python3 -m unittest -q view-service/test_md_render_core.py
+HEAD_COMMIT="$(git rev-parse HEAD)"
+if [ -n "${SOURCE_COMMIT:-}" ]; then
+  case "$SOURCE_COMMIT" in
+    *[!0-9a-f]*|'') echo "SOURCE_COMMIT 必须是 40 位小写十六进制" >&2; exit 2 ;;
+  esac
+  if [ "${#SOURCE_COMMIT}" -ne 40 ]; then
+    echo "SOURCE_COMMIT 必须是 40 位小写十六进制" >&2
+    exit 2
+  fi
+  if [ "$SOURCE_COMMIT" != "$HEAD_COMMIT" ]; then
+    echo "SOURCE_COMMIT 与当前源码锚不一致: expected=$SOURCE_COMMIT actual=$HEAD_COMMIT" >&2
+    exit 2
+  fi
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "部署制品拒绝脏工作树" >&2
+    exit 2
+  fi
+  COMMIT="$SOURCE_COMMIT"
+else
+  COMMIT="$HEAD_COMMIT"
+  if [ -n "$(git status --porcelain)" ]; then
+    COMMIT="${COMMIT}-dirty"
+    echo "⚠️  工作树不干净,commit 标记为 ${COMMIT}" >&2
+    echo "    本地产物可用于调试,但不得用于部署。" >&2
+  fi
 fi
 OUT="${1:-./bin}"
 mkdir -p "$OUT"

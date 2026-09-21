@@ -1,15 +1,17 @@
 .PHONY: build run test tidy docker sessionhelper mcs-sim mcsd
 build:
-	CGO_ENABLED=0 go build -trimpath -o bin/workpulse ./cmd/workpulse
+	./build.sh ./bin
 run: build
 	./bin/workpulse
 test:
-	python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed
+	python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed deploy.test_build_entrypoints
+	python3 -m unittest -q view-service/test_md_render_core.py
 	go test ./...
 tidy:
 	go mod tidy
 docker:
-	docker build -t workpulse:latest .
+	@commit="$$(git rev-parse HEAD)"; \
+	docker build --build-arg SOURCE_COMMIT="$$commit" -t workpulse:latest .
 sessionhelper:
 	python3 -m venv tools/sessionhelper/.venv
 	tools/sessionhelper/.venv/bin/python -m pip install -r tools/sessionhelper/requirements.txt
