@@ -527,6 +527,9 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 		WHERE s.id=? AND (s.principal_id=? OR ?=1)`, proposal.SpecID, principalID, boolInt(management)).Scan(&title, &contentHash, &acceptance, &anchors); err != nil {
 		return err
 	}
+	if proposal.AcceptanceJSON != "" {
+		acceptance = proposal.AcceptanceJSON
+	}
 	seen := map[string]bool{}
 	for _, dep := range dependsOn {
 		if dep == "" || dep == proposal.ID || seen[dep] {
@@ -595,7 +598,7 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 	return tx.Commit()
 }
 
-func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string) error {
+func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string, acceptanceJSON string) error {
 	if proposalID == "" || hours < 0 {
 		return errors.New("invalid task plan")
 	}
@@ -671,13 +674,16 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 		}
 	}
 	raw, _ := json.Marshal(dependsOn)
-	res, err := tx.ExecContext(ctx, `UPDATE console_task_proposal SET task_content=?,status=?,estimated_hours=?,depends_on_json=? WHERE id=?`, content, status, hours, string(raw), proposalID)
+	if acceptanceJSON == "" {
+		acceptanceJSON = "[]"
+	}
+	res, err := tx.ExecContext(ctx, `UPDATE console_task_proposal SET task_content=?,status=?,estimated_hours=?,depends_on_json=?,acceptance_json=? WHERE id=?`, content, status, hours, string(raw), acceptanceJSON, proposalID)
 	if err != nil {
 		return err
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
-		res, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET task_content=?,status=?,estimated_hours=?,depends_on_json=? WHERE id=?`, content, status, hours, string(raw), proposalID)
+		res, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET task_content=?,status=?,estimated_hours=?,depends_on_json=?,acceptance_json=? WHERE id=?`, content, status, hours, string(raw), acceptanceJSON, proposalID)
 		if err != nil {
 			return err
 		}

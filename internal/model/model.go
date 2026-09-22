@@ -433,6 +433,8 @@ type ConsoleTaskProposal struct {
 	EstimatedHours   float64   `json:"estimated_hours"`
 	DependsOnJSON    string    `json:"depends_on_json"`
 	DependedBy       []string  `json:"depended_by,omitempty"`
+	DependencyLevel  int       `json:"dependency_level"`
+	Parallel         bool      `json:"parallel"`
 	AcceptanceJSON   string    `json:"acceptance_json"`
 	InputAnchorsJSON string    `json:"input_anchors_json"`
 	ReviewID         string    `json:"review_id"`

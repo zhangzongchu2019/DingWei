@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -36,10 +37,69 @@ type consoleSpecRepository interface {
 	ListConsoleTaskProposals(context.Context, string) ([]model.ConsoleTaskProposal, error)
 	ListAllConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
 	CreateConsoleTaskProposal(context.Context, model.ConsoleTaskProposal, string, bool) error
-	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string) error
+	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string, string) error
 }
 
 type consoleSpecOpenNewContextKey struct{}
+
+func orderConsoleTasks(tasks []model.ConsoleTaskProposal, all []model.ConsoleTaskProposal) []model.ConsoleTaskProposal {
+	byID := make(map[string]*model.ConsoleTaskProposal, len(tasks))
+	for i := range tasks {
+		byID[tasks[i].ID] = &tasks[i]
+	}
+	deps := make(map[string][]string, len(tasks))
+	for i := range tasks {
+		var taskDeps []string
+		_ = json.Unmarshal([]byte(tasks[i].DependsOnJSON), &taskDeps)
+		deps[tasks[i].ID] = taskDeps
+	}
+	for _, other := range all {
+		var otherDeps []string
+		_ = json.Unmarshal([]byte(other.DependsOnJSON), &otherDeps)
+		for _, dep := range otherDeps {
+			if task := byID[dep]; task != nil {
+				task.DependedBy = append(task.DependedBy, other.ID)
+			}
+		}
+	}
+	memo, visiting := map[string]int{}, map[string]bool{}
+	var level func(string) int
+	level = func(id string) int {
+		if n, ok := memo[id]; ok {
+			return n
+		}
+		if visiting[id] {
+			return 0
+		}
+		visiting[id] = true
+		n := 0
+		for _, dep := range deps[id] {
+			if byID[dep] != nil {
+				if candidate := level(dep) + 1; candidate > n {
+					n = candidate
+				}
+			}
+		}
+		visiting[id] = false
+		memo[id] = n
+		return n
+	}
+	counts := map[int]int{}
+	for i := range tasks {
+		tasks[i].DependencyLevel = level(tasks[i].ID)
+		counts[tasks[i].DependencyLevel]++
+	}
+	for i := range tasks {
+		tasks[i].Parallel = counts[tasks[i].DependencyLevel] > 1
+	}
+	sort.SliceStable(tasks, func(i, j int) bool {
+		if tasks[i].DependencyLevel != tasks[j].DependencyLevel {
+			return tasks[i].DependencyLevel < tasks[j].DependencyLevel
+		}
+		return tasks[i].ID < tasks[j].ID
+	})
+	return tasks
+}
 
 func specCapabilityHash(token string) string {
 	sum := sha256.Sum256([]byte(token))
@@ -272,17 +332,7 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "console tasks unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		for i := range tasks {
-			for _, other := range all {
-				var deps []string
-				_ = json.Unmarshal([]byte(other.DependsOnJSON), &deps)
-				for _, dep := range deps {
-					if dep == tasks[i].ID {
-						tasks[i].DependedBy = append(tasks[i].DependedBy, other.ID)
-					}
-				}
-			}
-		}
+		tasks = orderConsoleTasks(tasks, all)
 		_ = json.NewEncoder(w).Encode(map[string]any{"spec": spec, "revision": rev, "tasks": tasks, "dependency_candidates": all})
 		return
 	}
@@ -361,10 +411,11 @@ func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	var req struct {
-		Content        string   `json:"content"`
-		Status         string   `json:"status"`
-		EstimatedHours float64  `json:"estimated_hours"`
-		DependsOn      []string `json:"depends_on"`
+		Content          string   `json:"content"`
+		Status           string   `json:"status"`
+		EstimatedHours   float64  `json:"estimated_hours"`
+		DependsOn        []string `json:"depends_on"`
+		DefinitionOfDone string   `json:"definition_of_done"`
 	}
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10))
 	dec.DisallowUnknownFields()
@@ -372,7 +423,11 @@ func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "invalid task plan", 400)
 		return
 	}
-	if err := repo.UpdateConsoleTaskProposalPlan(r.Context(), r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn); err != nil {
+	dod, _ := json.Marshal([]specAcceptance{{ID: "DOD", Text: strings.TrimSpace(req.DefinitionOfDone)}})
+	if strings.TrimSpace(req.DefinitionOfDone) == "" {
+		dod = []byte("[]")
+	}
+	if err := repo.UpdateConsoleTaskProposalPlan(r.Context(), r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn, string(dod)); err != nil {
 		http.Error(w, err.Error(), http.StatusConflict)
 		return
 	}
@@ -386,10 +441,11 @@ func (h *Hub) HandleConsoleSpecTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Title          string   `json:"title"`
-		Content        string   `json:"content"`
-		EstimatedHours float64  `json:"estimated_hours"`
-		DependsOn      []string `json:"depends_on"`
+		Title            string   `json:"title"`
+		Content          string   `json:"content"`
+		EstimatedHours   float64  `json:"estimated_hours"`
+		DependsOn        []string `json:"depends_on"`
+		DefinitionOfDone string   `json:"definition_of_done"`
 	}
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10))
 	dec.DisallowUnknownFields()
@@ -398,10 +454,14 @@ func (h *Hub) HandleConsoleSpecTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	deps, _ := json.Marshal(req.DependsOn)
+	dod, _ := json.Marshal([]specAcceptance{{ID: "DOD", Text: strings.TrimSpace(req.DefinitionOfDone)}})
+	if strings.TrimSpace(req.DefinitionOfDone) == "" {
+		dod = []byte("[]")
+	}
 	now := h.now()
 	proposal := model.ConsoleTaskProposal{ID: "proposal:" + randomHex(16), SchemaVersion: 1, SpecID: r.PathValue("specID"),
 		Title: strings.TrimSpace(req.Title), TaskContent: strings.TrimSpace(req.Content), Status: "planned", EstimatedHours: req.EstimatedHours,
-		DependsOnJSON: string(deps), ReviewID: "manual", ReviewedBy: platformPrincipal(r), ReviewedAt: now, CreatedAt: now}
+		DependsOnJSON: string(deps), AcceptanceJSON: string(dod), ReviewID: "manual", ReviewedBy: platformPrincipal(r), ReviewedAt: now, CreatedAt: now}
 	if err := repo.CreateConsoleTaskProposal(r.Context(), proposal, platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement); err != nil {
 		http.Error(w, err.Error(), http.StatusConflict)
 		return

@@ -237,19 +237,19 @@ func TestConsoleTaskPlanningRejectsSelfMissingAndCycles(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-a", false, "content", "planned", 3, []string{"task-a"}); err == nil {
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-a", false, "content", "planned", 3, []string{"task-a"}, "[]"); err == nil {
 		t.Fatal("self dependency accepted")
 	}
-	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-a", false, "content", "planned", 3, []string{"not-frozen"}); err == nil {
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-a", false, "content", "planned", 3, []string{"not-frozen"}, "[]"); err == nil {
 		t.Fatal("missing/unfrozen cross-spec dependency accepted")
 	}
-	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-b", false, "content", "planned", 3, nil); err == nil {
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-b", false, "content", "planned", 3, nil, "[]"); err == nil {
 		t.Fatal("foreign owner updated task plan")
 	}
-	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-a", false, "content", "planned", 3, []string{"task-b"}); err != nil {
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-a", false, "content", "planned", 3, []string{"task-b"}, "[]"); err != nil {
 		t.Fatalf("frozen cross-spec dependency rejected: %v", err)
 	}
-	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-b", "owner-a", false, "content", "planned", 2, []string{"task-a"}); err == nil {
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-b", "owner-a", false, "content", "planned", 2, []string{"task-a"}, "[]"); err == nil {
 		t.Fatal("dependency cycle accepted")
 	}
 	tasks, err := db.ListConsoleTaskProposals(ctx, "spec-a")
