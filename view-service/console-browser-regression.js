@@ -205,6 +205,7 @@ async function main() {
       const popupPromise = page.waitForEvent('popup');
       await page.locator('#platform-items a[data-item-id="specs"]').click();
       const popup = await popupPromise;
+      await popup.waitForURL((url) => url.pathname === '/console/specs', { timeout: 5000 });
       assert.strictEqual(new URL(popup.url()).pathname, '/console/specs');
       assert.strictEqual(await page.locator('#panes iframe').count(), paneCount);
       assert.strictEqual(await page.locator('#panes iframe').first().getAttribute('src'), paneSrc);
