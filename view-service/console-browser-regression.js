@@ -22,7 +22,8 @@ function consoleHTMLFromProductionSource() {
   if (MUTATION === 'stale-groups') html = html.replace('if(generation!==groupRequestGeneration)return null;', '');
   if (MUTATION === 'expose-group-code') html = html.replace("box.append(copy);", "box.append(copy);var leaked=document.createElement('code');leaked.className='group-code';leaked.textContent=group.code;box.append(leaked);");
   if (MUTATION === 'manual-agent-fields') html = html.replace("option.textContent=agent.session_name;option.dataset.keyId=agent.key_id||'';select.append(option)", "option.textContent=agent.id;option.dataset.keyId=agent.key_id||'';select.append(option)");
-  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'legacy-specs-entry') html = html.replace("if(item.id==='specs') a.onclick=function(ev){ev.preventDefault();openSpecsWorkspace();};", "");
+  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -67,7 +68,7 @@ async function main() {
         actions: management ? ['read', 'submit', 'add', 'edit', 'delete', 'approve'] : ['read', 'submit'],
         items: [
           { id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' },
-          { id: 'specs', kind: 'spec', title: 'Specs', href: '/console/specs', target: '_blank', status: 'approved' },
+          { id: 'specs', kind: 'spec', title: 'Specs', href: MUTATION === 'legacy-specs-entry' ? '/console/specs' : '#specs', ...(MUTATION === 'legacy-specs-entry' ? {target:'_blank'} : {}), status: 'approved' },
           ...(management ? [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: MUTATION === 'legacy-group-entry' ? '/admin/agent-groups' : '#agent-groups', ...(MUTATION === 'legacy-group-entry' ? {target:'_blank'} : {}), status: 'approved' }] : []),
         ],
       }));
@@ -86,6 +87,7 @@ async function main() {
       send(false);
       return;
     }
+    if (req.url === '/console/specs?embedded=1') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><title>DingWei Specs</title><h1>我的 spec</h1>'); return; }
     if (req.url && req.url.startsWith('/view/')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end('<!doctype html><title>fixture agent view</title>');
@@ -199,17 +201,15 @@ async function main() {
       assert.strictEqual(new URL(await pane.getAttribute('src'), page.url()).pathname, '/view/owner-alpha-2642');
     });
 
-    await test('opens Specs separately without destroying live Agent panes', async () => {
+    await test('opens Specs inside console without destroying live Agent panes', async () => {
       const paneCount = await page.locator('#panes iframe').count();
       const paneSrc = await page.locator('#panes iframe').first().getAttribute('src');
-      const popupPromise = page.waitForEvent('popup');
       await page.locator('#platform-items a[data-item-id="specs"]').click();
-      const popup = await popupPromise;
-      await popup.waitForURL((url) => url.pathname === '/console/specs', { timeout: 5000 });
-      assert.strictEqual(new URL(popup.url()).pathname, '/console/specs');
-      assert.strictEqual(await page.locator('#panes iframe').count(), paneCount);
+      const specsPane = page.locator('#panes iframe[title="Specs workspace"]');
+      await specsPane.waitFor({state:'visible'});
+      assert.strictEqual(new URL(await specsPane.getAttribute('src'), page.url()).pathname, '/console/specs');
+      assert.strictEqual(await page.locator('#panes iframe').count(), paneCount+1);
       assert.strictEqual(await page.locator('#panes iframe').first().getAttribute('src'), paneSrc);
-      await popup.close();
     });
   } finally {
     await browser.close();

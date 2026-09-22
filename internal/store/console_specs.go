@@ -367,13 +367,13 @@ func (s *SQLite) ReviewConsoleSpec(ctx context.Context, review model.ConsoleSpec
 		return err
 	}
 	if review.Stage == "human_review" && review.Verdict == "pass" {
-		var contentHash, acceptance, anchors string
-		if err = tx.QueryRowContext(ctx, `SELECT content_sha256,acceptance_json,input_anchors_json FROM console_spec_revision WHERE spec_id=? AND revision=?`, review.SpecID, review.Revision).Scan(&contentHash, &acceptance, &anchors); err != nil {
+		var contentHash, contentMarkdown, acceptance, anchors string
+		if err = tx.QueryRowContext(ctx, `SELECT content_sha256,content_markdown,acceptance_json,input_anchors_json FROM console_spec_revision WHERE spec_id=? AND revision=?`, review.SpecID, review.Revision).Scan(&contentHash, &contentMarkdown, &acceptance, &anchors); err != nil {
 			return err
 		}
 		proposalID := fmt.Sprintf("proposal:%s:%d", review.SpecID, review.Revision)
-		_, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO console_task_proposal(id,schema_version,spec_id,revision,content_sha256,title,acceptance_json,input_anchors_json,review_id,reviewed_by,reviewed_at,created_at) VALUES(?,1,?,?,?,?,?,?,?,?,?,?)`,
-			proposalID, review.SpecID, review.Revision, contentHash, title, acceptance, anchors, review.ID, review.ReviewedBy, stamp, stamp)
+		_, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO console_task_proposal(id,schema_version,spec_id,revision,content_sha256,title,task_content,status,estimated_hours,depends_on_json,acceptance_json,input_anchors_json,review_id,reviewed_by,reviewed_at,created_at) VALUES(?,1,?,?,?,?,?,'proposed',0,'[]',?,?,?,?,?,?)`,
+			proposalID, review.SpecID, review.Revision, contentHash, title, contentMarkdown, acceptance, anchors, review.ID, review.ReviewedBy, stamp, stamp)
 		if err != nil {
 			return err
 		}
@@ -438,7 +438,7 @@ func (s *SQLite) ArchiveConsoleSpec(ctx context.Context, specID, actor string, n
 func scanProposal(row rowScanner) (*model.ConsoleTaskProposal, error) {
 	var p model.ConsoleTaskProposal
 	var reviewed, created string
-	err := row.Scan(&p.ID, &p.SchemaVersion, &p.SpecID, &p.Revision, &p.ContentSHA256, &p.Title, &p.AcceptanceJSON, &p.InputAnchorsJSON, &p.ReviewID, &p.ReviewedBy, &reviewed, &created)
+	err := row.Scan(&p.ID, &p.SchemaVersion, &p.SpecID, &p.Revision, &p.ContentSHA256, &p.Title, &p.TaskContent, &p.Status, &p.EstimatedHours, &p.DependsOnJSON, &p.AcceptanceJSON, &p.InputAnchorsJSON, &p.ReviewID, &p.ReviewedBy, &reviewed, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -453,7 +453,7 @@ func scanProposal(row rowScanner) (*model.ConsoleTaskProposal, error) {
 	return &p, err
 }
 
-const proposalColumns = `p.id,p.schema_version,p.spec_id,p.revision,p.content_sha256,p.title,p.acceptance_json,p.input_anchors_json,p.review_id,p.reviewed_by,p.reviewed_at,p.created_at`
+const proposalColumns = `p.id,p.schema_version,p.spec_id,p.revision,p.content_sha256,p.title,p.task_content,p.status,p.estimated_hours,p.depends_on_json,p.acceptance_json,p.input_anchors_json,p.review_id,p.reviewed_by,p.reviewed_at,p.created_at`
 
 func (s *SQLite) ListReadyConsoleTaskProposals(ctx context.Context) ([]model.ConsoleTaskProposal, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT `+proposalColumns+` FROM console_task_proposal p JOIN console_spec s ON s.id=p.spec_id AND s.current_revision=p.revision WHERE s.state IN ('claimable','in_progress') ORDER BY p.created_at,p.id`)
@@ -487,6 +487,110 @@ func (s *SQLite) ListConsoleTaskProposals(ctx context.Context, specID string) ([
 		out = append(out, *p)
 	}
 	return out, rows.Err()
+}
+
+func (s *SQLite) ListAllConsoleTaskProposals(ctx context.Context) ([]model.ConsoleTaskProposal, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT `+proposalColumns+` FROM console_task_proposal p ORDER BY p.created_at,p.id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.ConsoleTaskProposal
+	for rows.Next() {
+		p, scanErr := scanProposal(rows)
+		if scanErr != nil {
+			return nil, scanErr
+		}
+		out = append(out, *p)
+	}
+	return out, rows.Err()
+}
+
+func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string) error {
+	if proposalID == "" || hours < 0 {
+		return errors.New("invalid task plan")
+	}
+	allowed := map[string]bool{"proposed": true, "planned": true, "in_progress": true, "blocked": true, "done": true}
+	if !allowed[status] {
+		return errors.New("invalid task status")
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var specID string
+	if err = tx.QueryRowContext(ctx, `SELECT p.spec_id FROM console_task_proposal p JOIN console_spec s ON s.id=p.spec_id WHERE p.id=? AND (s.principal_id=? OR ?=1)`, proposalID, principalID, boolInt(management)).Scan(&specID); err != nil {
+		return err
+	}
+	seen := map[string]bool{}
+	for _, dep := range dependsOn {
+		if dep == proposalID {
+			return errors.New("task cannot depend on itself")
+		}
+		if dep == "" || seen[dep] {
+			return errors.New("invalid duplicate dependency")
+		}
+		seen[dep] = true
+		var depSpec string
+		if err = tx.QueryRowContext(ctx, `SELECT spec_id FROM console_task_proposal WHERE id=?`, dep).Scan(&depSpec); err != nil {
+			return errors.New("dependency task not found or not frozen")
+		}
+		// A cross-spec target is valid only because a proposal row is itself the
+		// immutable downstream reference that freezes that exact revision.
+		_ = depSpec
+	}
+	rows, err := tx.QueryContext(ctx, `SELECT id,depends_on_json FROM console_task_proposal`)
+	if err != nil {
+		return err
+	}
+	graph := map[string][]string{}
+	for rows.Next() {
+		var id, raw string
+		var deps []string
+		if err = rows.Scan(&id, &raw); err != nil {
+			rows.Close()
+			return err
+		}
+		_ = json.Unmarshal([]byte(raw), &deps)
+		graph[id] = deps
+	}
+	rows.Close()
+	graph[proposalID] = append([]string(nil), dependsOn...)
+	visiting, done := map[string]bool{}, map[string]bool{}
+	var visit func(string) bool
+	visit = func(id string) bool {
+		if visiting[id] {
+			return true
+		}
+		if done[id] {
+			return false
+		}
+		visiting[id] = true
+		for _, dep := range graph[id] {
+			if visit(dep) {
+				return true
+			}
+		}
+		visiting[id] = false
+		done[id] = true
+		return false
+	}
+	for id := range graph {
+		if visit(id) {
+			return errors.New("task dependency cycle")
+		}
+	}
+	raw, _ := json.Marshal(dependsOn)
+	res, err := tx.ExecContext(ctx, `UPDATE console_task_proposal SET task_content=?,status=?,estimated_hours=?,depends_on_json=? WHERE id=?`, content, status, hours, string(raw), proposalID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return sql.ErrNoRows
+	}
+	return tx.Commit()
 }
 
 func (s *SQLite) ListConsoleSpecEvents(ctx context.Context, specID string) ([]model.ConsoleSpecEvent, error) {

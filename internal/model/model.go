@@ -428,6 +428,11 @@ type ConsoleTaskProposal struct {
 	Revision         int       `json:"revision"`
 	ContentSHA256    string    `json:"content_sha256"`
 	Title            string    `json:"title"`
+	TaskContent      string    `json:"content"`
+	Status           string    `json:"status"`
+	EstimatedHours   float64   `json:"estimated_hours"`
+	DependsOnJSON    string    `json:"depends_on_json"`
+	DependedBy       []string  `json:"depended_by,omitempty"`
 	AcceptanceJSON   string    `json:"acceptance_json"`
 	InputAnchorsJSON string    `json:"input_anchors_json"`
 	ReviewID         string    `json:"review_id"`
