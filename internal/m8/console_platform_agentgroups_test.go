@@ -59,11 +59,11 @@ func TestConsolePlatformAgentGroupsEntryIsManagementOnly(t *testing.T) {
 	if !ok {
 		t.Fatalf("management 拿不到 Agent 编组入口,items=%+v", items)
 	}
-	if entry.Href != "/admin/agent-groups" {
-		t.Errorf("href=%q,应为 /admin/agent-groups", entry.Href)
+	if entry.Href != "#agent-groups" {
+		t.Errorf("href=%q,应为 console 内部 #agent-groups", entry.Href)
 	}
-	if entry.Target != "_blank" {
-		t.Errorf("target=%q,应为 _blank(否则点击会顶层导航,把已打开的 pane 与 SSE 全部带走)", entry.Target)
+	if entry.Target != "" {
+		t.Errorf("target=%q,内部 tab 不得弹新窗口", entry.Target)
 	}
 	if entry.Title == "" || entry.Status != "approved" || !entry.Active {
 		t.Errorf("入口必须是已批准的活平台项,实为 %+v", entry)

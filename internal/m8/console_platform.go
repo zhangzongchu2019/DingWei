@@ -134,17 +134,14 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 		ID: "specs", Kind: "spec", Title: "Specs",
 		Href: "/console/specs", Target: "_blank", Status: "approved", Active: true,
 	}}
-	// Agent 编组入口(0.2.1.7):它是**独立文档**,所以必须 target="_blank"。
-	// 🔴 顶层导航过去会把 console 右栏那一堆活 iframe(每个一条 SSE)连同已打开的 Agent 页
-	//    一起带走,而且后退回不来 —— 实测 pane 2→0、两条 SSE 全断、顶层 URL 变成 /admin/agent-groups。
-	// 🔴 target 是**逐项**的,不能一律加:builtin "Agents" 的 href 是 `#agents` 页内锚,
-	//    给它 _blank 只会开一个空标签页。
+	// Agent 编组入口(0.2.1.55)由 console 自己接成内部 tab;旧 admin 仍可直接访问,
+	// 但 console 不再向那个独立鉴权域跳转。
 	// 角色口径与 platformActions 同一个(只对 management 发)。UI 可见性不是授权判据:
 	// /admin/* 自己还有 wp_admin 那道**独立**鉴权,两者是两个域。
 	if role == consolePlatformRoleManagement {
 		builtins = append(builtins, model.ConsolePlatformItem{
 			ID: "agent-groups", Kind: "agent-groups", Title: "Agent 编组",
-			Href: "/admin/agent-groups", Target: "_blank", Status: "approved", Active: true,
+			Href: "#agent-groups", Status: "approved", Active: true,
 		})
 	}
 	items = append(builtins, items...)
