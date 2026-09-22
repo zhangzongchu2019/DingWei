@@ -23,7 +23,9 @@ function consoleHTMLFromProductionSource() {
   if (MUTATION === 'expose-group-code') html = html.replace("box.append(copy);", "box.append(copy);var leaked=document.createElement('code');leaked.className='group-code';leaked.textContent=group.code;box.append(leaked);");
   if (MUTATION === 'manual-agent-fields') html = html.replace("option.textContent=agent.session_name;option.dataset.keyId=agent.key_id||'';select.append(option)", "option.textContent=agent.id;option.dataset.keyId=agent.key_id||'';select.append(option)");
   if (MUTATION === 'legacy-specs-entry') html = html.replace("if(item.id==='specs') a.onclick=function(ev){ev.preventDefault();openSpecsWorkspace();};", "");
-  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'silent-group-load') html = html.replace("if(status)status.textContent='编组加载失败: '+String(err&&err.message||err);", "if(status)status.textContent='';");
+  if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
+  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','unhandled-group-action'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -42,6 +44,8 @@ async function main() {
   ];
   let raceGroupResponses = false;
   let raceGroupRequest = 0;
+  let failGroupLoad = false;
+  let failGroupAction = false;
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
@@ -77,8 +81,10 @@ async function main() {
     }
     if (req.url === '/api/console/agent-groups') {
       if (req.method === 'POST') {
+        if (failGroupAction) { req.socket.destroy(); return; }
         let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{groupWrites.push({url:req.url,body:JSON.parse(raw)});res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(groupPayload(false).groups[0]));}); return;
       }
+      if (failGroupLoad) { res.writeHead(503, {'Content-Type':'text/plain'}); res.end('fixture groups unavailable'); return; }
       const send = (closed) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(groupPayload(closed))); };
       if (raceGroupResponses) {
         raceGroupRequest += 1;
@@ -216,6 +222,17 @@ async function main() {
         body: { agent_id: 'agent-a' },
       }]);
       assert.deepStrictEqual(pageErrors, []);
+    });
+
+    await test('shows group load and network action failures on the page', async () => {
+      failGroupLoad = true;
+      await page.evaluate(() => refreshGroups());
+      assert.strictEqual(await page.locator('#group-status').textContent(), '编组加载失败: fixture groups unavailable');
+      failGroupLoad = false; failGroupAction = true;
+      await page.locator('#groupShortName').fill('team-003');
+      await page.locator('#createGroup').click();
+      await page.locator('#group-status').filter({hasText:'编组操作失败:'}).waitFor({state:'visible'});
+      failGroupAction = false;
     });
 
     await test('opens a real console tab and agent iframe', async () => {

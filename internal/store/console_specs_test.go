@@ -257,3 +257,24 @@ func TestConsoleTaskPlanningRejectsSelfMissingAndCycles(t *testing.T) {
 		t.Fatalf("plan not persisted tasks=%+v err=%v", tasks, err)
 	}
 }
+
+func TestConsoleTaskSplitCreatesAndLocksCurrentRevision(t *testing.T) {
+	db := newConsoleSpecStore(t)
+	ctx := context.Background()
+	now := time.Date(2026, 9, 22, 10, 0, 0, 0, time.UTC)
+	createSpec(t, db, "spec-split", "Split", now)
+	p := model.ConsoleTaskProposal{ID: "task-split", SpecID: "spec-split", Title: "Implement", TaskContent: "Do it", Status: "planned", EstimatedHours: 3, DependsOnJSON: "[]", ReviewID: "manual", ReviewedBy: "owner-a", ReviewedAt: now, CreatedAt: now}
+	if err := db.CreateConsoleTaskProposal(ctx, p, "owner-a", false); err != nil {
+		t.Fatal(err)
+	}
+	tasks, err := db.ListConsoleTaskProposals(ctx, "spec-split")
+	if err != nil || len(tasks) != 1 || tasks[0].Revision != 1 || tasks[0].EstimatedHours != 3 {
+		t.Fatalf("tasks=%+v err=%v", tasks, err)
+	}
+	if _, err := db.AppendConsoleSpecRevision(ctx, "owner-a", "spec-split", 1, specRevision("spec-split", 2, "changed"), now.Add(time.Second)); err != ErrConsoleSpecRevisionLocked {
+		t.Fatalf("split revision must be locked, err=%v", err)
+	}
+	if err := db.CreateConsoleTaskProposal(ctx, model.ConsoleTaskProposal{ID: "bad", SpecID: "spec-split", Title: "Bad", TaskContent: "Bad", Status: "planned", DependsOnJSON: `["missing"]`, ReviewedAt: now, CreatedAt: now}, "owner-a", false); err == nil {
+		t.Fatal("missing dependency must be rejected")
+	}
+}
