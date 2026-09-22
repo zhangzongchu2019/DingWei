@@ -46,6 +46,7 @@ async function main() {
   let raceGroupRequest = 0;
   let failGroupLoad = '';
   let failGroupAction = '';
+  let slowGroupLoad = false;
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
@@ -90,6 +91,7 @@ async function main() {
       if (failGroupLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify(groupPayload(false))); }, 200); return; }
       if (failGroupLoad === 'empty') { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:[],groups:[]})); return; }
       const send = (closed) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(groupPayload(closed))); };
+      if (slowGroupLoad) { slowGroupLoad=false; setTimeout(() => send(false), 120); return; }
       if (raceGroupResponses) {
         raceGroupRequest += 1;
         if (raceGroupRequest === 1) { setTimeout(() => send(false), 150); return; }
@@ -177,8 +179,13 @@ async function main() {
       await entry.waitFor({ state: 'visible' });
       assert.strictEqual(await entry.getAttribute('href'), '#agent-groups');
       assert.strictEqual(await entry.getAttribute('target'), null);
+      slowGroupLoad = true;
       await entry.click();
       await page.locator('#tabs .tab[title="Agent 编组"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#groupLeader').isDisabled(), true);
+      assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载中…');
+      assert.strictEqual(await page.locator('#group-status').textContent(), 'Agent 列表加载中…');
+      await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
       await page.locator('#g .agent-group strong').filter({ hasText: 'team-001' }).waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('#g .group-code').count(), 0);
       assert.strictEqual(await page.locator('#g .copy-group-code').count(), 1);
@@ -230,13 +237,14 @@ async function main() {
 
     await test('shows group load and network action failures on the page', async () => {
       failGroupLoad = '500';
-      await page.evaluate(() => refreshGroups());
+      await page.locator('#retryGroups').click();
+      await page.waitForFunction(() => document.getElementById('group-status').textContent.includes('HTTP 500'));
       assert.strictEqual(await page.locator('#group-status').textContent(), '编组加载失败: HTTP 500: fixture groups unavailable');
       assert.strictEqual(await page.locator('#groupLeader').isDisabled(), true);
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载失败');
-      failGroupLoad = 'shape'; await page.evaluate(() => refreshGroups());
+      failGroupLoad = 'shape'; await page.locator('#retryGroups').click(); await page.waitForFunction(() => document.getElementById('group-status').textContent.includes('响应格式无效'));
       assert.strictEqual(await page.locator('#group-status').textContent(), '编组加载失败: 响应格式无效');
-      failGroupLoad = 'timeout'; await page.evaluate(() => { groupFetchTimeoutMs=20; refreshGroups(); });
+      failGroupLoad = 'timeout'; await page.evaluate(() => { groupFetchTimeoutMs=20; }); await page.locator('#retryGroups').click();
       assert.strictEqual(await page.locator('#group-status').textContent(), 'Agent 列表加载中…');
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载中…');
       await page.waitForFunction(() => document.getElementById('group-status').textContent.includes('请求超时'));
