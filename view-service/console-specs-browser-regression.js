@@ -196,6 +196,8 @@ async function main() {
     assert.strictEqual(await page.locator('#list-screen').isVisible(), true, 'opening detail must keep the spec list visible above it');
     assert.strictEqual(await page.locator('#detail-screen').evaluate((node) => node.previousElementSibling && node.previousElementSibling.id), 'list-screen', 'detail must be the list following sibling');
     const task=page.locator('#task-list .task-row[data-task-id="task-a"]');await task.waitFor({state:'visible'});
+    assert.strictEqual(await task.getAttribute('id'),'task-row-task-a');
+    assert.strictEqual(await task.locator('.task-dod').getAttribute('id'),'task-row-task-a-dod');
     assert.deepStrictEqual(await page.locator('#task-list .task-row').evaluateAll((rows)=>rows.map((r)=>r.dataset.taskId)),['task-a','task-b']);
     assert.strictEqual(await page.locator('#task-list .task-row[data-task-id="task-a"] .meta').textContent().then((x)=>x.includes('可并行')),true);
     assert.strictEqual(await page.locator('#task-list .task-row[data-task-id="task-b"] .task-dod').inputValue(),'');
