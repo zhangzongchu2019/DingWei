@@ -20,7 +20,9 @@ function consoleHTMLFromProductionSource() {
   assert.notStrictEqual(end, -1, 'consolePageHTML end marker missing');
   let html = source.slice(contentStart, end);
   if (MUTATION === 'stale-groups') html = html.replace('if(generation!==groupRequestGeneration)return null;', '');
-  if (MUTATION && MUTATION !== 'stale-groups') throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'expose-group-code') html = html.replace("box.append(copy);", "box.append(copy);var leaked=document.createElement('code');leaked.className='group-code';leaked.textContent=group.code;box.append(leaked);");
+  if (MUTATION === 'manual-agent-fields') html = html.replace("option.textContent=agent.session_name;option.dataset.keyId=agent.key_id||'';select.append(option)", "option.textContent=agent.id;option.dataset.keyId=agent.key_id||'';select.append(option)");
+  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -66,7 +68,7 @@ async function main() {
         items: [
           { id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' },
           { id: 'specs', kind: 'spec', title: 'Specs', href: '/console/specs', target: '_blank', status: 'approved' },
-          ...(management ? [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'approved' }] : []),
+          ...(management ? [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: MUTATION === 'legacy-group-entry' ? '/admin/agent-groups' : '#agent-groups', ...(MUTATION === 'legacy-group-entry' ? {target:'_blank'} : {}), status: 'approved' }] : []),
         ],
       }));
       return;
@@ -113,6 +115,7 @@ async function main() {
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     page.setDefaultTimeout(1500);
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: `http://127.0.0.1:${port}` });
     await page.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
 
     await test('loads the real console document', async () => {
@@ -159,6 +162,9 @@ async function main() {
       assert.strictEqual(await page.locator('#groupLeader option').first().getAttribute('data-key-id'), 'fixture-key-a');
       assert.strictEqual(await page.locator('.group-workspace input').count(), 2);
       assert.strictEqual(await page.locator('.group-workspace input[name="key_id"]').count(), 0);
+      await page.locator('#g .copy-group-code').click();
+      assert.strictEqual(await page.evaluate(() => navigator.clipboard.readText()), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      assert.strictEqual(await page.locator('#group-status').textContent(), '组码已复制');
     });
 
     await test('ignores an older group snapshot that arrives after the latest response', async () => {

@@ -109,7 +109,8 @@ async function t(name, fn) {
 }
 
 (async () => {
-  const consoleHTML = consoleHTMLFromProductionSource();
+  let consoleHTML = consoleHTMLFromProductionSource();
+  if (CONTROL) consoleHTML = consoleHTML.replace("if(item.id==='agent-groups') a.onclick=function(ev){ev.preventDefault();openGroupWorkspace();};", "");
   const rendererBytes = fs.readFileSync(RENDERER);
   const payloads = dumpPayloadsFromGo();
   console.log(`  · console 页取自生产源码 internal/m8/console_auth.go(${consoleHTML.length} 字节)`);
@@ -118,7 +119,7 @@ async function t(name, fn) {
   console.log(`    owner.items  =${JSON.stringify((payloads.owner.items || []).map((x) => [x.id, x.target || '']))}`);
   console.log(`  · renderer  ${RENDERER}`);
   console.log(`    sha256=${sha256(rendererBytes).slice(0, 16)}… ${rendererBytes.length} 字节`);
-  if (CONTROL) console.log('  🔵 POSITIVE_CONTROL=1:这是【阳性对照】跑,期望**只红 G2**');
+  if (CONTROL) console.log('  🔵 POSITIVE_CONTROL=1:恢复旧 admin popup 入口,期望 G1/G2 红');
 
   // 当前该给哪个角色的载荷 —— 每个角色用**一个新页面**取,靠页面自己启动时那次 refreshPlatform()
   let currentPrincipal = 'manager';
@@ -314,8 +315,8 @@ async function t(name, fn) {
         assert.strictEqual(leaked, null, `🔴 owner 也看到了入口:${JSON.stringify(leaked)}(角色判定没了)`);
         const builtin = await platformEntry(page, 'agents');
         assert.ok(builtin, 'owner 连 builtin agents 都丢了 —— 排他腿不能顺手把该给的也砍掉');
-        const count = await page.evaluate(() => document.querySelectorAll('#platform-items a').length);
-        assert.strictEqual(count, 1, `owner 的平台项应只有 1 个,实为 ${count}`);
+        const ids = await page.evaluate(() => Array.from(document.querySelectorAll('#platform-items a')).map((a) => a.dataset.itemId).sort());
+        assert.deepStrictEqual(ids, ['agents','specs'], `owner 应保留 agents/specs 且只排除 agent-groups,实为 ${JSON.stringify(ids)}`);
       } finally { await context.close(); }
     });
   } finally {
