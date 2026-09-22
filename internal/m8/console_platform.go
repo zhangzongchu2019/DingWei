@@ -132,7 +132,7 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	builtin := model.ConsolePlatformItem{ID: "agents", Kind: "agents", Title: "Agents", Href: "#agents", Status: "approved", Active: true}
 	builtins := []model.ConsolePlatformItem{builtin, {
 		ID: "specs", Kind: "spec", Title: "Specs",
-		Href: "/console/specs", Target: "_blank", Status: "approved", Active: true,
+		Href: "#specs", Status: "approved", Active: true,
 	}}
 	// Agent 编组入口(0.2.1.55)由 console 自己接成内部 tab;旧 admin 仍可直接访问,
 	// 但 console 不再向那个独立鉴权域跳转。

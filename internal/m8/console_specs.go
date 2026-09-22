@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -32,6 +33,9 @@ type consoleSpecRepository interface {
 	ClaimConsoleSpec(context.Context, string, string, time.Time) error
 	ArchiveConsoleSpec(context.Context, string, string, time.Time) error
 	ListReadyConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
+	ListConsoleTaskProposals(context.Context, string) ([]model.ConsoleTaskProposal, error)
+	ListAllConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
+	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string) error
 }
 
 type consoleSpecOpenNewContextKey struct{}
@@ -165,14 +169,35 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 	principal := platformPrincipal(r)
 	management := platformRole(r) == consolePlatformRoleManagement
 	if r.Method == http.MethodGet {
-		items, err := repo.ListConsoleSpecs(r.Context(), principal, management)
+		items, err := repo.ListConsoleSpecs(r.Context(), principal, false) // “我的 spec”始终只列当前 principal
 		if err != nil {
 			http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
-		_ = json.NewEncoder(w).Encode(map[string]any{"principal": principal, "role": platformRole(r), "specs": items})
+		page := 1
+		if raw := r.URL.Query().Get("page"); raw != "" {
+			if _, scanErr := fmt.Sscanf(raw, "%d", &page); scanErr != nil || page < 1 {
+				http.Error(w, "invalid page", 400)
+				return
+			}
+		}
+		const pageSize = 20
+		total := len(items)
+		pages := (total + pageSize - 1) / pageSize
+		if pages == 0 {
+			pages = 1
+		}
+		start := (page - 1) * pageSize
+		if start > total {
+			start = total
+		}
+		end := start + pageSize
+		if end > total {
+			end = total
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"principal": principal, "role": platformRole(r), "specs": items[start:end], "page": page, "page_size": pageSize, "total": total, "total_pages": pages})
 		return
 	}
 	if r.Method != http.MethodPost {
@@ -236,7 +261,28 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
-		_ = json.NewEncoder(w).Encode(map[string]any{"spec": spec, "revision": rev})
+		tasks, err := repo.ListConsoleTaskProposals(r.Context(), id)
+		if err != nil {
+			http.Error(w, "console tasks unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		all, err := repo.ListAllConsoleTaskProposals(r.Context())
+		if err != nil {
+			http.Error(w, "console tasks unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		for i := range tasks {
+			for _, other := range all {
+				var deps []string
+				_ = json.Unmarshal([]byte(other.DependsOnJSON), &deps)
+				for _, dep := range deps {
+					if dep == tasks[i].ID {
+						tasks[i].DependedBy = append(tasks[i].DependedBy, other.ID)
+					}
+				}
+			}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"spec": spec, "revision": rev, "tasks": tasks, "dependency_candidates": all})
 		return
 	}
 	if r.Method != http.MethodPatch {
@@ -305,6 +351,31 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]int{"revision": next})
+}
+
+func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Request) {
+	repo, ok := h.consoleSpecs()
+	if !ok {
+		http.Error(w, "console specs unavailable", 503)
+		return
+	}
+	var req struct {
+		Content        string   `json:"content"`
+		Status         string   `json:"status"`
+		EstimatedHours float64  `json:"estimated_hours"`
+		DependsOn      []string `json:"depends_on"`
+	}
+	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10))
+	dec.DisallowUnknownFields()
+	if dec.Decode(&req) != nil {
+		http.Error(w, "invalid task plan", 400)
+		return
+	}
+	if err := repo.UpdateConsoleTaskProposalPlan(r.Context(), r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn); err != nil {
+		http.Error(w, err.Error(), http.StatusConflict)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Hub) HandleConsoleSpecNewVersion(w http.ResponseWriter, r *http.Request) {

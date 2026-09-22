@@ -22,8 +22,8 @@ textarea{min-height:110px}button{margin:8px 6px 0 0;padding:6px 10px}.spec-row{b
 .dw-icon:before{font:700 13px/1 sans-serif}.dw-bold:before{content:'B'}.dw-italic:before{content:'I';font-style:italic}.dw-heading:before{content:'H'}.dw-link:before{content:'↗'}.dw-image:before{content:'▧'}.dw-list:before{content:'•'}
 </style>
 <h1>Spec management</h1><p>一个账号可同时管理多份 spec。认领后的版本不可原地覆盖。</p>
-<div class=grid>
-<section><h2>New spec</h2>
+<nav><button id=show-spec-list type=button>我的 spec</button><button id=show-new-spec type=button>新建 spec</button></nav>
+<section id=new-screen hidden><h2>New spec</h2>
 <label>Title <span class=required>*</span></label><input id=new-title required>
 <label>Markdown <span class=required>*</span></label><textarea id=new-content required></textarea>
 <label>Import Markdown</label><input id=new-import type=file accept=".md,.markdown,text/markdown,text/plain">
@@ -31,10 +31,10 @@ textarea{min-height:110px}button{margin:8px 6px 0 0;padding:6px 10px}.spec-row{b
 <label>Owner message anchor <span class=required>*</span></label><input id=new-anchor required>
 <button id=create-spec type=button>Create</button><span id=create-status></span>
 </section>
-<section><h2>My specs</h2><div id=spec-list></div></section>
-</div>
-<section id=editor hidden><h2>Edit spec</h2>
-<h3>Rendered spec</h3><div id=spec-rendered class=spec-rendered></div>
+<section id=list-screen><h2>我的 spec</h2><div id=spec-list></div><button id=prev-page type=button>上一页</button><span id=page-status></span><button id=next-page type=button>下一页</button></section>
+<section id=detail-screen hidden><h2>Spec 详情</h2><div id=detail-meta class=meta></div><div id=spec-rendered class=spec-rendered></div><h3>任务列表</h3><div id=task-list></div></section>
+<section id=editor hidden><h2>修改 spec</h2>
+<h3>Rendered spec</h3><div id=edit-rendered class=spec-rendered></div>
 <label>Title <span class=required>*</span></label><input id=edit-title readonly required>
 <label>Markdown <span class=required>*</span></label><textarea id=edit-content required></textarea>
 <label>Import Markdown</label><input id=edit-import type=file accept=".md,.markdown,text/markdown,text/plain">
@@ -43,7 +43,7 @@ textarea{min-height:110px}button{margin:8px 6px 0 0;padding:6px 10px}.spec-row{b
 <button id=save-spec type=button>Save new revision</button><span id=edit-status></span>
 </section>
 <script src="/console/spec-assets/easymde.min.js"></script><script id=dw-md-core></script><script>
-var currentSpec=null,platformRole='',currentPrincipal='';
+var currentSpec=null,platformRole='',currentPrincipal='',currentPage=1,totalPages=1;
 var sharedMatch=location.pathname.match(/^\/console\/specs\/([^/]+)$/);
 var sharedSpecID=sharedMatch?decodeURIComponent(sharedMatch[1]):'';
 var sharedEditToken=new URLSearchParams(location.hash.slice(1)).get('edit')||'';
@@ -61,9 +61,10 @@ function payload(prefix){return {title:document.getElementById(prefix+'-title').
 function missingRequired(body){for(const item of [['Title',body.title],['Markdown',body.content_markdown],['Acceptance',body.acceptance[0].text],['Owner message anchor',body.input_anchors[0].ref]])if(!String(item[1]||'').trim())return item[0];return '';}
 async function responseFailure(prefix,r){var detail=(await r.text()).trim();return prefix+' '+r.status+(detail?':'+detail:'');}
 function wireSpecRender(root){root.querySelectorAll('.copy-code').forEach(function(btn){btn.onclick=async function(){try{await navigator.clipboard.writeText(decodeURIComponent(btn.dataset.code||''));btn.textContent='Copied';}catch(_){btn.textContent='Copy failed';}};});root.querySelectorAll('img[data-md-img]').forEach(function(img){img.onerror=function(){var link=document.createElement('a');link.className='md-image-fallback';link.href=img.currentSrc||img.src;link.target='_blank';link.rel='noreferrer';link.download='';link.textContent='⬇ 下载图片'+(img.alt?'：'+img.alt:'');img.replaceWith(link);};});}
-function renderSpec(markdown){var root=document.getElementById('spec-rendered');root.innerHTML=DwMdCore.renderMarkdown(markdown||'');wireSpecRender(root);}
+function renderSpec(markdown,rootID){var root=document.getElementById(rootID||'spec-rendered');root.innerHTML=DwMdCore.renderMarkdown(markdown||'');wireSpecRender(root);}
+function showScreen(id){['list-screen','new-screen','detail-screen','editor'].forEach(function(x){document.getElementById(x).hidden=x!==id;});}
 async function specAction(id,path,body,status){status.textContent='';var opts={method:'POST'};if(body){opts.headers={'Content-Type':'application/json'};opts.body=JSON.stringify(body);}var r=await fetch('/api/console/specs/'+encodeURIComponent(id)+'/'+path,opts);if(!r.ok){status.className='spec-action-status error';status.textContent=await responseFailure('操作失败',r);return false;}await refreshSpecs();return true;}
-async function refreshSpecs(){var r=await fetch(sharedSpecID?'/api/specs/shared/'+encodeURIComponent(sharedSpecID):'/api/console/specs',{cache:'no-store'});if(!r.ok)throw new Error('list failed');var raw=await r.json();var data=sharedSpecID?{role:'shared',principal:'',specs:[raw.spec]}:raw;platformRole=data.role||'';currentPrincipal=data.principal||'';var list=document.getElementById('spec-list');list.replaceChildren();
+async function refreshSpecs(){var endpoint=sharedSpecID?'/api/specs/shared/'+encodeURIComponent(sharedSpecID):'/api/console/specs?page='+currentPage;var r=await fetch(endpoint,{cache:'no-store'});if(!r.ok)throw new Error('list failed');var raw=await r.json();var data=sharedSpecID?{role:'shared',principal:'',specs:[raw.spec],page:1,total_pages:1}:raw;platformRole=data.role||'';currentPrincipal=data.principal||'';currentPage=data.page||1;totalPages=data.total_pages||1;document.getElementById('page-status').textContent=currentPage+' / '+totalPages;document.getElementById('prev-page').disabled=currentPage<=1;document.getElementById('next-page').disabled=currentPage>=totalPages;var list=document.getElementById('spec-list');list.replaceChildren();
  (Array.isArray(data.specs)?data.specs:[]).forEach(function(spec){var row=document.createElement('div');row.className='spec-row';row.dataset.specId=spec.id;row.dataset.title=spec.title;
   var title=document.createElement('strong');title.textContent=spec.title;var meta=document.createElement('div');meta.className='meta';meta.textContent=spec.state+' · revision '+spec.current_revision;
   var status=document.createElement('span');status.className='spec-action-status';var isOwner=!!currentPrincipal&&spec.principal_id===currentPrincipal;var canEdit=(isOwner||!!(sharedSpecID&&sharedEditToken))&&!spec.editing_closed;
@@ -75,15 +76,18 @@ async function refreshSpecs(){var r=await fetch(sharedSpecID?'/api/specs/shared/
    if(spec.state==='claimable'){var claim=document.createElement('button');claim.textContent='Claim';claim.onclick=function(){specAction(spec.id,'claim',null,status)};row.append(claim);}var archive=document.createElement('button');archive.textContent='Archive';archive.onclick=function(){specAction(spec.id,'archive',null,status)};row.append(archive);}
   row.append(status);
   list.append(row);});}
+function renderTasks(tasks,candidates){var root=document.getElementById('task-list');root.replaceChildren();(tasks||[]).forEach(function(task){var row=document.createElement('article');row.className='spec-row task-row';var deps=JSON.parse(task.depends_on_json||'[]');row.innerHTML='<strong></strong><div class=task-content></div><div class=meta></div><label>预期工时 <input class=task-hours type=number min=0 step=.5></label><label>依赖项 <select class=task-deps multiple></select></label><button class=save-task-plan type=button>保存拆解</button><span class=task-status></span>';row.querySelector('strong').textContent=task.title;row.querySelector('.task-content').textContent=task.content||'';row.querySelector('.meta').textContent='状态 '+task.status+' · 被依赖 '+((task.depended_by||[]).join(', ')||'无');row.querySelector('.task-hours').value=task.estimated_hours||0;var select=row.querySelector('.task-deps');(candidates||[]).forEach(function(c){var o=document.createElement('option');o.value=c.proposal_id;o.textContent=c.title+' ('+c.spec_id+' r'+c.revision+')';o.selected=deps.includes(c.proposal_id);select.append(o)});row.querySelector('.save-task-plan').onclick=async function(){var body={content:row.querySelector('.task-content').textContent,status:task.status||'proposed',estimated_hours:Number(row.querySelector('.task-hours').value),depends_on:Array.from(select.selectedOptions).map(function(o){return o.value})};var resp=await fetch('/api/console/task-proposals/'+encodeURIComponent(task.proposal_id)+'/plan',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});var status=row.querySelector('.task-status');status.textContent=resp.ok?'已保存':(await resp.text()).trim();if(resp.ok)openSpec(currentSpec.id,true);};root.append(row);});if(!(tasks||[]).length)root.textContent='尚未拆出任务';}
 async function openSpec(id,readOnly){var endpoint=sharedSpecID?'/api/specs/shared/':'/api/console/specs/';var r=await fetch(endpoint+encodeURIComponent(id),{cache:'no-store'});if(!r.ok)throw new Error('open failed');var data=await r.json();currentSpec=data.spec;
- document.getElementById('edit-title').value=data.spec.title;specEditors.edit.value(data.revision.content_markdown);renderSpec(data.revision.content_markdown);
+ if(readOnly){document.getElementById('detail-meta').textContent=data.spec.state+' · revision '+data.spec.current_revision;renderSpec(data.revision.content_markdown,'spec-rendered');renderTasks(data.tasks||[],data.dependency_candidates||[]);showScreen('detail-screen');return;}
+ document.getElementById('edit-title').value=data.spec.title;specEditors.edit.value(data.revision.content_markdown);renderSpec(data.revision.content_markdown,'edit-rendered');
  var acceptance=JSON.parse(data.revision.acceptance_json);var anchors=JSON.parse(data.revision.input_anchors_json);
- document.getElementById('edit-acceptance').value=acceptance[0].text;document.getElementById('edit-anchor').value=anchors[0].ref;specEditors.edit.codemirror.setOption('readOnly',!!readOnly);['edit-import','edit-acceptance','edit-anchor'].forEach(function(id){document.getElementById(id).disabled=!!readOnly;});document.getElementById('save-spec').hidden=!!readOnly;document.getElementById('editor').hidden=false;document.getElementById('edit-status').textContent=readOnly?'只读':'';}
+ document.getElementById('edit-acceptance').value=acceptance[0].text;document.getElementById('edit-anchor').value=anchors[0].ref;specEditors.edit.codemirror.setOption('readOnly',false);['edit-import','edit-acceptance','edit-anchor'].forEach(function(id){document.getElementById(id).disabled=false;});document.getElementById('save-spec').hidden=false;showScreen('editor');document.getElementById('edit-status').textContent='';}
 document.getElementById('create-spec').onclick=async function(){var status=document.getElementById('create-status');status.textContent='';var body=payload('new');var missing=missingRequired(body);if(missing){status.className='error';status.textContent='缺少必填项: '+missing;return;}var r=await fetch('/api/console/specs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
- if(!r.ok){status.className='error';status.textContent=await responseFailure('创建失败',r);return;}status.className='ok';status.textContent='created';await refreshSpecs();};
+ if(!r.ok){status.className='error';status.textContent=await responseFailure('创建失败',r);return;}status.className='ok';status.textContent='created';showScreen('list-screen');await refreshSpecs();};
 document.getElementById('save-spec').onclick=async function(){var status=document.getElementById('edit-status');var body=payload('edit');body.expected_revision=currentSpec.current_revision;var endpoint=sharedSpecID?'/api/specs/shared/':'/api/console/specs/';var headers={'Content-Type':'application/json'};if(sharedSpecID)headers['X-DW-Spec-Edit-Capability']=sharedEditToken;
  var missing=missingRequired(body);if(missing){status.className='error';status.textContent='缺少必填项: '+missing;return;}var r=await fetch(endpoint+encodeURIComponent(currentSpec.id),{method:'PATCH',headers:headers,body:JSON.stringify(body)});if(!r.ok){status.className='error';status.textContent=await responseFailure('保存失败',r);return;}
- var data=await r.json();status.className='ok';status.textContent='saved revision '+data.revision;renderSpec(body.content_markdown);await refreshSpecs();};
+ var data=await r.json();status.className='ok';status.textContent='saved revision '+data.revision;renderSpec(body.content_markdown,'edit-rendered');await refreshSpecs();};
+document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');refreshSpecs();};document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};document.getElementById('prev-page').onclick=function(){if(currentPage>1){currentPage--;refreshSpecs();}};document.getElementById('next-page').onclick=function(){if(currentPage<totalPages){currentPage++;refreshSpecs();}};
 refreshSpecs().then(function(){if(sharedSpecID)return openSpec(sharedSpecID,!sharedEditToken)}).catch(function(){document.getElementById('spec-list').textContent='Unable to load specs';});
 </script>`
 

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -216,5 +217,43 @@ func TestConsoleSpecFailedReviewRequiresStructuredReasonCode(t *testing.T) {
 	spec, err := db.ConsoleSpec(ctx, "owner-a", "spec-a", false)
 	if err != nil || spec == nil || spec.State != "needs_improvement" {
 		t.Fatalf("reasoned failure did not return spec to needs_improvement: spec=%+v err=%v", spec, err)
+	}
+}
+
+func TestConsoleTaskPlanningRejectsSelfMissingAndCycles(t *testing.T) {
+	db := newConsoleSpecStore(t)
+	ctx := context.Background()
+	now := time.Date(2026, 9, 22, 3, 0, 0, 0, time.UTC)
+	createSpec(t, db, "spec-a", "A", now)
+	createSpec(t, db, "spec-b", "B", now)
+	stamp := now.Format(time.RFC3339Nano)
+	for _, id := range []string{"a", "b"} {
+		specID := "spec-" + id
+		reviewID := "review-" + id
+		if _, err := db.db.ExecContext(ctx, `INSERT INTO console_spec_review(id,spec_id,revision,stage,verdict,reason_codes_json,detail,reviewed_by,reviewed_at) VALUES(?,?,1,'human_review','pass','[]','',?,?)`, reviewID, specID, "manager", stamp); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.db.ExecContext(ctx, `INSERT INTO console_task_proposal(id,schema_version,spec_id,revision,content_sha256,title,acceptance_json,input_anchors_json,review_id,reviewed_by,reviewed_at,created_at) VALUES(?,1,?,1,?,'task `+id+`','[]','[]',?,'manager',?,?)`, "task-"+id, specID, strings.Repeat(id, 64), reviewID, stamp, stamp); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-a", false, "content", "planned", 3, []string{"task-a"}); err == nil {
+		t.Fatal("self dependency accepted")
+	}
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-a", false, "content", "planned", 3, []string{"not-frozen"}); err == nil {
+		t.Fatal("missing/unfrozen cross-spec dependency accepted")
+	}
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-b", false, "content", "planned", 3, nil); err == nil {
+		t.Fatal("foreign owner updated task plan")
+	}
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-a", "owner-a", false, "content", "planned", 3, []string{"task-b"}); err != nil {
+		t.Fatalf("frozen cross-spec dependency rejected: %v", err)
+	}
+	if err := db.UpdateConsoleTaskProposalPlan(ctx, "task-b", "owner-a", false, "content", "planned", 2, []string{"task-a"}); err == nil {
+		t.Fatal("dependency cycle accepted")
+	}
+	tasks, err := db.ListConsoleTaskProposals(ctx, "spec-a")
+	if err != nil || len(tasks) != 1 || tasks[0].EstimatedHours != 3 || tasks[0].DependsOnJSON != `["task-b"]` {
+		t.Fatalf("plan not persisted tasks=%+v err=%v", tasks, err)
 	}
 }

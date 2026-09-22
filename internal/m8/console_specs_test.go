@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -408,6 +409,58 @@ func TestConsoleSpecHTTPReviewProducesVersionedTaskProposalWithoutKFields(t *tes
 	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpecNewVersion)(rr, req)
 	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"revision":2`) {
 		t.Fatalf("explicit new version code=%d body=%s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestConsoleSpecsListIsMineOnlyAndPaginatesTwenty(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	ctx := context.Background()
+	for i := 0; i < 21; i++ {
+		id := fmt.Sprintf("spec-mine-%02d", i)
+		rev, err := revisionFromRequest(id, "owner-a", 1, consoleSpecWriteRequest{Title: id, ContentMarkdown: "# " + id, Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := db.CreateConsoleSpec(ctx, model.ConsoleSpec{ID: id, PrincipalID: "owner-a", Title: id, EditCapabilityHash: fmt.Sprintf("%064x", i+1)}, rev, hub.now()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	foreignRev, _ := revisionFromRequest("spec-foreign", "owner-b", 1, consoleSpecWriteRequest{Title: "foreign", ContentMarkdown: "# foreign", Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}})
+	if err := db.CreateConsoleSpec(ctx, model.ConsoleSpec{ID: "spec-foreign", PrincipalID: "owner-b", Title: "foreign", EditCapabilityHash: strings.Repeat("b", 64)}, foreignRev, hub.now()); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/console/specs?page=1", nil)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
+	rr := httptest.NewRecorder()
+	hub.HandleConsoleSpecs(rr, req)
+	var payload struct {
+		Specs      []model.ConsoleSpec `json:"specs"`
+		Page       int                 `json:"page"`
+		PageSize   int                 `json:"page_size"`
+		Total      int                 `json:"total"`
+		TotalPages int                 `json:"total_pages"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if rr.Code != 200 || len(payload.Specs) != 20 || payload.PageSize != 20 || payload.Total != 21 || payload.TotalPages != 2 {
+		t.Fatalf("page1 code=%d payload=%+v", rr.Code, payload)
+	}
+	for _, spec := range payload.Specs {
+		if spec.PrincipalID != "owner-a" {
+			t.Fatalf("foreign spec leaked: %+v", spec)
+		}
+	}
+	req = httptest.NewRequest(http.MethodGet, "/api/console/specs?page=2", nil)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	req = req.WithContext(context.WithValue(req.Context(), consolePlatformRoleContextKey{}, consolePlatformRoleManagement))
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleSpecs(rr, req)
+	payload.Specs = nil
+	if err := json.Unmarshal(rr.Body.Bytes(), &payload); err != nil || len(payload.Specs) != 1 {
+		t.Fatalf("page2 payload=%+v err=%v", payload, err)
 	}
 }
 
