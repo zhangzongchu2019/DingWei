@@ -35,6 +35,7 @@ type consoleSpecRepository interface {
 	ListReadyConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
 	ListConsoleTaskProposals(context.Context, string) ([]model.ConsoleTaskProposal, error)
 	ListAllConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
+	CreateConsoleTaskProposal(context.Context, model.ConsoleTaskProposal, string, bool) error
 	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string) error
 }
 
@@ -376,6 +377,38 @@ func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Hub) HandleConsoleSpecTasks(w http.ResponseWriter, r *http.Request) {
+	repo, ok := h.consoleSpecs()
+	if !ok {
+		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	var req struct {
+		Title          string   `json:"title"`
+		Content        string   `json:"content"`
+		EstimatedHours float64  `json:"estimated_hours"`
+		DependsOn      []string `json:"depends_on"`
+	}
+	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10))
+	dec.DisallowUnknownFields()
+	if dec.Decode(&req) != nil || strings.TrimSpace(req.Title) == "" || strings.TrimSpace(req.Content) == "" || req.EstimatedHours < 0 {
+		http.Error(w, "task title, content and non-negative hours required", http.StatusBadRequest)
+		return
+	}
+	deps, _ := json.Marshal(req.DependsOn)
+	now := h.now()
+	proposal := model.ConsoleTaskProposal{ID: "proposal:" + randomHex(16), SchemaVersion: 1, SpecID: r.PathValue("specID"),
+		Title: strings.TrimSpace(req.Title), TaskContent: strings.TrimSpace(req.Content), Status: "planned", EstimatedHours: req.EstimatedHours,
+		DependsOnJSON: string(deps), ReviewID: "manual", ReviewedBy: platformPrincipal(r), ReviewedAt: now, CreatedAt: now}
+	if err := repo.CreateConsoleTaskProposal(r.Context(), proposal, platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement); err != nil {
+		http.Error(w, err.Error(), http.StatusConflict)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(proposal)
 }
 
 func (h *Hub) HandleConsoleSpecNewVersion(w http.ResponseWriter, r *http.Request) {

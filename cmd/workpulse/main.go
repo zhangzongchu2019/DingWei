@@ -307,6 +307,7 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("POST /api/console/specs/{specID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("delete", prefixHub.HandleConsoleSpecArchive)))
 	mux.HandleFunc("GET /api/console/task-proposals/ready", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("approve", prefixHub.HandleConsoleTaskProposalsReady)))
 	mux.HandleFunc("PATCH /api/console/task-proposals/{proposalID}/plan", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleTaskProposalPlan)))
+	mux.HandleFunc("POST /api/console/specs/{specID}/tasks", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecTasks)))
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleCapability))
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleFileUploadTicket))
 	mux.HandleFunc("POST /api/console/files/{fileID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleFileArchive))

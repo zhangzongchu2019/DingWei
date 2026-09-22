@@ -32,7 +32,9 @@ function productionHTML() {
   if (MUTATION === 'readonly-can-write') html = html.replace("document.getElementById('save-spec').hidden=!!readOnly;", "document.getElementById('save-spec').hidden=false;");
   if (MUTATION === 'same-screen-create') html = html.replace('<section id=new-screen hidden>', '<section id=new-screen>');
   if (MUTATION === 'hide-dependents') html = html.replace("+' · 被依赖 '+((task.depended_by||[]).join(', ')||'无')", "");
-  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'hide-list-on-detail') html = html.replace("showScreen('detail-screen');return;", "showScreen('detail-screen');document.getElementById('list-screen').hidden=true;return;");
+  if (MUTATION === 'hide-list-on-detail') assert.ok(html.includes("document.getElementById('list-screen').hidden=true"), 'hide-list mutation anchor missing');
+  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -54,6 +56,8 @@ async function main() {
   const specs = [];
   const revisions = new Map();
   const taskPlans = [];
+  const taskCreates = [];
+  const taskDeps = new Map([['task-a', []], ['task-b', []]]);
   const server = http.createServer(async (req, res) => {
     if (String(req.url).startsWith('/console/specs')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(html); return;
@@ -98,12 +102,14 @@ async function main() {
       const item = specs.find((candidate) => candidate.id === match[1]);
       if (!item) { res.writeHead(404); res.end(); return; }
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      const taskA={proposal_id:'task-a',spec_id:'spec-1',revision:2,title:'Implement A',content:'task content',status:'planned',estimated_hours:5,depends_on_json:'["task-b"]',depended_by:['task-c']};
-      const taskB={proposal_id:'task-b',spec_id:'spec-2',revision:2,title:'Frozen B',content:'dependency',status:'done',estimated_hours:2,depends_on_json:'[]'};
-      res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?[taskA]:[], dependency_candidates:[taskA,taskB] })); return;
+      const taskA={proposal_id:'task-a',spec_id:'spec-1',revision:2,title:'Implement A',content:'task content',status:'planned',estimated_hours:5,depends_on_json:JSON.stringify(taskDeps.get('task-a')),depended_by:['task-c'].concat(taskDeps.get('task-b').includes('task-a')?['task-b']:[])};
+      const taskB={proposal_id:'task-b',spec_id:'spec-1',revision:2,title:'Implement B',content:'dependency',status:'planned',estimated_hours:2,depends_on_json:JSON.stringify(taskDeps.get('task-b')),depended_by:taskDeps.get('task-a').includes('task-b')?['task-a']:[]};
+      res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?[taskA,taskB]:[], dependency_candidates:[taskA,taskB] })); return;
     }
     const planMatch=String(req.url||'').match(/^\/api\/console\/task-proposals\/([^/]+)\/plan$/);
-    if(planMatch&&req.method==='PATCH'){taskPlans.push({id:planMatch[1],body:await requestBody(req)});res.writeHead(204);res.end();return;}
+    if(planMatch&&req.method==='PATCH'){const body=await requestBody(req);const id=planMatch[1];taskPlans.push({id,body});if(body.depends_on.includes(id)){res.writeHead(409);res.end('task cannot depend on itself');return;}const next=new Map(taskDeps);next.set(id,body.depends_on);if((next.get('task-a')||[]).includes('task-b')&&(next.get('task-b')||[]).includes('task-a')){res.writeHead(409);res.end('task dependency cycle');return;}taskDeps.set(id,body.depends_on);res.writeHead(204);res.end();return;}
+    const splitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/tasks$/);
+    if(splitMatch&&req.method==='POST'){taskCreates.push({specID:splitMatch[1],body:await requestBody(req)});res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify({proposal_id:'task-new'}));return;}
     if (match && req.method === 'PATCH') {
       const body = await requestBody(req); const item = specs.find((candidate) => candidate.id === match[1]);
       if (body.content_markdown === 'server-save-reject') {
@@ -180,16 +186,29 @@ async function main() {
       assert.strictEqual(await row.getByRole('button', { name: 'Submit', exact: true }).count(), 1, 'management owner must see Submit for own draft spec');
     }
     await page.locator('#spec-list [data-title="Spec A"] .view-spec').click();
-    const task=page.locator('#task-list .task-row');await task.waitFor({state:'visible'});
+    await page.locator('#detail-screen').waitFor({state:'visible'});
+    assert.strictEqual(await page.locator('#list-screen').isVisible(), true, 'opening detail must keep the spec list visible above it');
+    assert.strictEqual(await page.locator('#detail-screen').evaluate((node) => node.previousElementSibling && node.previousElementSibling.id), 'list-screen', 'detail must be the list following sibling');
+    const task=page.locator('#task-list .task-row').nth(0);await task.waitFor({state:'visible'});
     assert.strictEqual(await task.locator('strong').textContent(),'Implement A');
     assert.strictEqual(await task.locator('.task-content').textContent(),'task content');
     assert.match(await task.locator('.meta').textContent(),/状态 planned/);
     assert.match(await task.locator('.meta').textContent(),/被依赖 task-c/);
     assert.strictEqual(await task.locator('.task-hours').inputValue(),'5');
-    assert.strictEqual(await task.locator('.task-deps option:checked').getAttribute('value'),'task-b');
-    await task.locator('.task-hours').fill('8');await task.locator('.save-task-plan').click();
+    assert.strictEqual(await task.locator('.task-deps option:checked').count(),0);
+    await task.locator('.task-hours').fill('8');await task.locator('.task-deps').selectOption(['task-a']);await task.locator('.save-task-plan').click();
+    await task.locator('.task-status').filter({hasText:'task cannot depend on itself'}).waitFor({state:'visible'});
+    await task.locator('.task-deps').selectOption(['task-b']);await task.locator('.save-task-plan').click();
     await page.waitForTimeout(100);
-    assert.deepStrictEqual(taskPlans[0],{id:'task-a',body:{content:'task content',status:'planned',estimated_hours:8,depends_on:['task-b']}});
+    assert.deepStrictEqual(taskPlans.slice(0,2),[
+      {id:'task-a',body:{content:'task content',status:'planned',estimated_hours:8,depends_on:['task-a']}},
+      {id:'task-a',body:{content:'task content',status:'planned',estimated_hours:8,depends_on:['task-b']}},
+    ]);
+    const taskB=page.locator('#task-list .task-row').nth(1);await taskB.locator('.task-deps').selectOption(['task-a']);await taskB.locator('.save-task-plan').click();
+    await taskB.locator('.task-status').filter({hasText:'task dependency cycle'}).waitFor({state:'visible'});
+    await page.fill('#task-title','Implement new');await page.fill('#task-content','new content');await page.fill('#task-hours','4');await page.selectOption('#task-deps',['task-b']);await page.click('#create-task');
+    await page.waitForFunction(() => document.getElementById('task-create-status').textContent === '已拆解');
+    assert.deepStrictEqual(taskCreates[0],{specID:'spec-1',body:{title:'Implement new',content:'new content',estimated_hours:4,depends_on:['task-b']}});
     for (const title of ['Spec A', 'Spec B']) {
       await page.click('#show-spec-list');
       await page.locator(`#spec-list [data-title="${title}"] .edit-spec`).click();

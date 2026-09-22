@@ -64,6 +64,30 @@ func callConsoleSpec(t *testing.T, hub *Hub, principal, action, method, path str
 	return rr
 }
 
+func TestConsoleSpecTaskSplitEndpointCreatesVisibleTaskAndLocksRevision(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", validSpecBody, hub.HandleConsoleSpecs)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	var created model.ConsoleSpec
+	if err := json.Unmarshal(rr.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/tasks", strings.NewReader(`{"title":"Implement","content":"Do it","estimated_hours":4,"depends_on":[]}`))
+	req.SetPathValue("specID", created.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpecTasks)(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("split code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	tasks, err := hub.Repo.(*store.SQLite).ListConsoleTaskProposals(context.Background(), created.ID)
+	if err != nil || len(tasks) != 1 || tasks[0].Title != "Implement" || tasks[0].EstimatedHours != 4 {
+		t.Fatalf("tasks=%+v err=%v", tasks, err)
+	}
+}
+
 const validSpecBody = `{"title":"Spec A","content_markdown":"# A","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}]}`
 
 func TestConsoleSpecHTTPMultipleSpecsAreVisiblePubliclyButWritesRemainControlled(t *testing.T) {
