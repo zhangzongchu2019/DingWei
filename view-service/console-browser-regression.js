@@ -43,6 +43,7 @@ async function main() {
   let raceGroupResponses = false;
   let raceGroupRequest = 0;
   const groupWrites = [];
+  const groupJoinWrites = [];
   function groupPayload(closed) {
     return { principal: 'owner-a', owned_agents: [{ id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642' }], groups: [{
       code: 'team-001AAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'team-001', creator_principal: 'owner-a', can_manage: true, additions_closed: closed,
@@ -87,6 +88,16 @@ async function main() {
       send(false);
       return;
     }
+    if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members' && req.method === 'POST') {
+      let raw = '';
+      req.on('data', (chunk) => { raw += chunk; });
+      req.on('end', () => {
+        groupJoinWrites.push({ url: req.url, body: JSON.parse(raw) });
+        res.writeHead(204);
+        res.end();
+      });
+      return;
+    }
     if (req.url === '/console/specs?embedded=1') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><title>DingWei Specs</title><h1>我的 spec</h1>'); return; }
     if (req.url && req.url.startsWith('/view/')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -103,6 +114,7 @@ async function main() {
   const browser = await chromium.launch(launchOptions);
   let passed = 0;
   const failures = [];
+  const pageErrors = [];
   async function test(name, fn) {
     try {
       await fn();
@@ -116,6 +128,7 @@ async function main() {
 
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    page.on('pageerror', (error) => pageErrors.push(error.message));
     page.setDefaultTimeout(1500);
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: `http://127.0.0.1:${port}` });
     await page.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
@@ -190,6 +203,19 @@ async function main() {
       assert.deepStrictEqual(groupWrites[0].body, { agent_id: 'agent-a', short_name: 'team-002' });
       assert.strictEqual('key_id' in groupWrites[0].body, false);
       assert.strictEqual('session_name' in groupWrites[0].body, false);
+    });
+
+    await test('joins through visible controls and leaves no uncaught page error', async () => {
+      await page.locator('#groupJoinCode').fill('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await page.locator('#groupJoinAgent').selectOption('agent-a');
+      const joined = page.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members') && response.status() === 204);
+      await page.locator('#joinGroup').click();
+      await joined;
+      assert.deepStrictEqual(groupJoinWrites, [{
+        url: '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members',
+        body: { agent_id: 'agent-a' },
+      }]);
+      assert.deepStrictEqual(pageErrors, []);
     });
 
     await test('opens a real console tab and agent iframe', async () => {
