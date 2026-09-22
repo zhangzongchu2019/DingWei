@@ -3197,7 +3197,7 @@ func (s *SQLite) SessionEndpointDeliveryACK(ctx context.Context, keyID, sessionN
 	return enabled == 1, true, nil
 }
 
-var agentGroupCodePattern = regexp.MustCompile(`^[A-Za-z0-9+/]{32}$`)
+var agentGroupCodePattern = regexp.MustCompile(`^(?:[A-Za-z0-9+/]{32}|[a-z0-9-]{8}[A-Za-z0-9_-]{24})$`)
 
 func validateAgentGroupCode(code string) error {
 	if !agentGroupCodePattern.MatchString(code) {
@@ -3245,7 +3245,7 @@ func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentG
 	if err := validateAgentGroupCode(group.Code); err != nil {
 		return err
 	}
-	if !regexp.MustCompile(`^[a-z0-9]{6}$`).MatchString(group.ShortName) || group.CreatorPrincipal == "" || group.LeaderKeyID == "" || group.LeaderSessionName == "" || group.LeaderOwnerKey == "" {
+	if !regexp.MustCompile(`^[a-z0-9-]{8}$`).MatchString(group.ShortName) || !strings.HasPrefix(group.Code, group.ShortName) || group.CreatorPrincipal == "" || group.LeaderKeyID == "" || group.LeaderSessionName == "" || group.LeaderOwnerKey == "" {
 		return errors.New("complete console group identity required")
 	}
 	now := s.now().UTC().Format(time.RFC3339Nano)

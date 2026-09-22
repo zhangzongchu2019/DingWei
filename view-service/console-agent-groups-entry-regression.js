@@ -37,7 +37,7 @@ const END = '`\n\nfunc (h *Hub) HandleConsoleAgents';
 const A = 'owner-alpha-2642';
 const B = 'owner-beta-2642';
 const ENTRY_ID = 'agent-groups';
-const ENTRY_HREF = '/admin/agent-groups';
+const ENTRY_HREF = '#agent-groups';
 const CONTROL = process.env.POSITIVE_CONTROL === '1';
 const GO_BIN = process.env.GO_BIN || 'go';
 // 阳性对照在产品尚未发出该项时,按组长裁定的形状合成一项(**没有** target)。
@@ -92,8 +92,9 @@ function makeControlPayload(payload, principal) {
   const items = Array.isArray(payload.items) ? payload.items.map((x) => ({ ...x })) : [];
   const i = items.findIndex((x) => x && x.id === ENTRY_ID);
   if (i >= 0) {
-    delete items[i].target;
-    return { ...payload, items, __control: 'stripped-target-from-product-item' };
+    items[i].href = '/admin/agent-groups';
+    items[i].target = '_blank';
+    return { ...payload, items, __control: 'restored-legacy-admin-popup' };
   }
   // 🔴 只给 management 那条腿合成:owner 腿(G4)必须保持"看不到",
   //    否则阳性对照跑会连 G4 一起红,而判据要求**只红 G2**(每条红都得能解释)。
@@ -130,12 +131,7 @@ async function t(name, fn) {
       const p = payloads[currentPrincipal] || { role: 'owner', actions: [], items: [] };
       return json(res, CONTROL ? makeControlPayload(p, currentPrincipal) : p);
     }
-    // 🔵 替身页:生产的 /admin/agent-groups 在**另一个鉴权域**(需 wp_admin cookie,否则 303→/admin/login)。
-    //    本件只验"新标签页里打开了那个文档、console 顶层没被带走",不验 admin 侧鉴权。
-    if (u === ENTRY_HREF) {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-      return res.end('<!doctype html><html><body><h1 id="stub">Agent 编组(夹具替身页)</h1></body></html>');
-    }
+    if (u === '/api/console/agent-groups') return json(res, { principal: 'manager', owned_agents: [{ id: 'a', key_id: 'ka', session_name: A }], groups: [] });
     if (u === `/view/${encodeURIComponent(A)}` || u === `/view/${encodeURIComponent(B)}`) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       return res.end(rendererBytes);
@@ -223,9 +219,9 @@ async function t(name, fn) {
   }, id);
 
   try {
-    // ── G1 入口存在、形状是平台项、target=_blank ────────────────────────────
+    // ── G1 入口存在、形状是 console 内部 tab ────────────────────────────────
     currentPrincipal = 'manager';
-    await t(`G1 🔴 management 必须拿到「${ENTRY_ID}」平台项,且 target=${CONTROL ? '(阳性对照:必须【没有】target)' : '_blank'}`, async () => {
+    await t(`G1 🔴 management 必须拿到「${ENTRY_ID}」内部 tab 平台项`, async () => {
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
       try {
         const { page } = await openTwoPanes(context);
@@ -233,15 +229,11 @@ async function t(name, fn) {
         assert.ok(e, `#platform-items 里没有 data-item-id="${ENTRY_ID}" 的项(它必须是**平台项形状**,不是往 nav 里硬塞 HTML)`);
         assert.strictEqual(e.count, 1, `入口必须唯一可寻址,实到 ${e.count} 个同 id 项`);
         assert.strictEqual(e.href, ENTRY_HREF, `href=${e.href},应为 ${ENTRY_HREF}`);
-        if (CONTROL) {
-          assert.ok(!e.target, `阳性对照前提坏了:这一项应当**没有** target,实为 ${e.target}`);
-        } else {
-          assert.strictEqual(e.target, '_blank', `target=${JSON.stringify(e.target)},应为 "_blank"(否则点击顶层导航,pane 与 SSE 全丢)`);
-        }
+        assert.ok(!e.target, `内部 tab 不得带 target,实为 ${e.target}`);
       } finally { await context.close(); }
     });
 
-    // ── G2 点击后:新页打开、console 顶层没被带走、pane 对象与 SSE 都还活着 ──
+    // ── G2 点击后:console 内 tab 打开、pane 对象与 SSE 都还活着 ─────────────
     currentPrincipal = 'manager';
     await t('G2 🔴 点击入口后 pane 数不变、iframe 对象不变、SSE 不断、console 页还在', async () => {
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -260,25 +252,21 @@ async function t(name, fn) {
         assert.ok(pre, `前置坏了:#platform-items 里没有 data-item-id="${ENTRY_ID}" 的项,本格无从点击`);
         // 🔴 waitForEvent 必须**立刻挂 catch**:浮动的 promise 在 click 还没返回时就超时的话,
         //    会变成 unhandled rejection 把整个进程带走(改前第一跑就崩在这里)。
-        const popupPromise = context.waitForEvent('page', { timeout: 8000 })
-          .then((p) => p).catch((e) => ({ __noPopup: String(e && e.message).slice(0, 60) }));
         await page.click(`#platform-items a[data-item-id="${ENTRY_ID}"]`, { timeout: 8000 });
-        const popup = await popupPromise;
-        if (popup && !popup.__noPopup) await popup.waitForLoadState('domcontentloaded').catch(() => {});
         await page.waitForTimeout(400);
         // 🔴 先把现场**全部**量完,再一次性断言:逐条 assert 会在第一条就抛出,
         //    红了只看得见"没开新页",看不见"pane 全丢、SSE 全断"——而那才是业主要赔的东西。
         const after = await snapshot(page);
         const markersAfter = await readMarkers(page);
-        const popupUrl = (popup && !popup.__noPopup) ? popup.url() : null;
-        const scene = `\n      点击前=${JSON.stringify(before)}\n      点击后=${JSON.stringify(after)}\n      标记/SSE=${JSON.stringify(markersAfter)}\n      新页=${popupUrl || (popup && popup.__noPopup)}`;
+        const groupTab = await page.locator('#tabs .tab[title="Agent 编组"]').count();
+        const workspace = await page.locator('#panes .group-workspace').count();
+        const scene = `\n      点击前=${JSON.stringify(before)}\n      点击后=${JSON.stringify(after)}\n      标记/SSE=${JSON.stringify(markersAfter)}\n      编组tab=${groupTab} workspace=${workspace}`;
         const v = [];
-        if (!popup || popup.__noPopup) v.push('点击后**没有新标签页打开** ⇒ target 没生效,顶层文档被导航走了');
-        else if (!popupUrl.includes(ENTRY_HREF)) v.push(`新页开的不是 ${ENTRY_HREF},实为 ${popupUrl}`);
+        if (groupTab !== 1 || workspace !== 1) v.push('点击后没有在 console 内打开唯一 Agent 编组 tab');
         if (!after.consoleStillThere) v.push('console 顶层文档已不是控制台(#platform-items 没了)⇒ 整页被导航走,后退回不来');
         if (!after.url.startsWith(`${base}/console`)) v.push(`console 顶层 URL 变了:${after.url}`);
         if (after.panes !== 2) v.push(`pane 数 2→${after.panes}(已打开的 Agent 页全丢)`);
-        if (after.tabs !== 2) v.push(`tab 数 2→${after.tabs}`);
+        if (after.tabs !== 3) v.push(`tab 数应 2→3,实为 ${after.tabs}`);
         if (JSON.stringify(after.paneTitles) !== JSON.stringify(before.paneTitles)) v.push(`pane 标题集变了:${JSON.stringify(after.paneTitles)}`);
         if (markersAfter[A] !== `${A}-alive`) v.push(`A pane 的 iframe 对象被重建/重载(标记=${markersAfter[A]})`);
         if (markersAfter[B] !== `${B}-alive`) v.push(`B(隐藏)pane 的对象没了(标记=${markersAfter[B]})`);
@@ -286,7 +274,6 @@ async function t(name, fn) {
         if (markersAfter[`${B}_sse`] !== 1) v.push(`B pane 的 SSE 断了(readyState=${markersAfter[`${B}_sse`]})`);
         assert.strictEqual(v.length, 0,
           `点击入口后现场被破坏(${v.length} 条):\n      - ${v.join('\n      - ')}${scene}`);
-        if (popup && !popup.__noPopup) await popup.close();
       } finally { await context.close(); }
     });
 

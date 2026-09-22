@@ -39,9 +39,10 @@ async function main() {
   ];
   let raceGroupResponses = false;
   let raceGroupRequest = 0;
+  const groupWrites = [];
   function groupPayload(closed) {
-    return { principal: 'owner-a', owned_agents: [{ id: 'agent-a', session_name: 'owner-alpha-2642' }], groups: [{
-      code: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'abc123', creator_principal: 'owner-a', can_manage: true, additions_closed: closed,
+    return { principal: 'owner-a', owned_agents: [{ id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642' }], groups: [{
+      code: 'team-001AAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'team-001', creator_principal: 'owner-a', can_manage: true, additions_closed: closed,
       members: [{ agent_id: 'agent-a', session_name: 'owner-alpha-2642' }, { agent_id: 'agent-b', session_name: 'other-full-agent-2642' }],
     }] };
   }
@@ -65,11 +66,15 @@ async function main() {
         items: [
           { id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' },
           { id: 'specs', kind: 'spec', title: 'Specs', href: '/console/specs', target: '_blank', status: 'approved' },
+          ...(management ? [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'approved' }] : []),
         ],
       }));
       return;
     }
     if (req.url === '/api/console/agent-groups') {
+      if (req.method === 'POST') {
+        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{groupWrites.push({url:req.url,body:JSON.parse(raw)});res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(groupPayload(false).groups[0]));}); return;
+      }
       const send = (closed) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(groupPayload(closed))); };
       if (raceGroupResponses) {
         raceGroupRequest += 1;
@@ -139,29 +144,44 @@ async function main() {
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'management');
     });
 
-    await test('switches between pure Agent list and group-Agent tree', async () => {
-      assert.strictEqual(await page.locator('#a').isVisible(), true);
-      assert.strictEqual(await page.locator('#g').isHidden(), true);
-      await page.locator('#agentMode').click();
-      await page.locator('#g .agent-group strong').filter({ hasText: 'abc123' }).waitFor({ state: 'visible' });
-      assert.strictEqual(await page.locator('#g .group-code').textContent(), 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+    await test('opens Agent groups inside console with full-name Agent selectors and hidden full code', async () => {
+      const entry = page.locator('#platform-items a[data-item-id="agent-groups"]');
+      await entry.waitFor({ state: 'visible' });
+      assert.strictEqual(await entry.getAttribute('href'), '#agent-groups');
+      assert.strictEqual(await entry.getAttribute('target'), null);
+      await entry.click();
+      await page.locator('#tabs .tab[title="Agent 编组"]').waitFor({ state: 'visible' });
+      await page.locator('#g .agent-group strong').filter({ hasText: 'team-001' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#g .group-code').count(), 0);
+      assert.strictEqual(await page.locator('#g .copy-group-code').count(), 1);
       assert.strictEqual(await page.locator('#g button[title="other-full-agent-2642"]').textContent(), 'other-full-agent-2642');
-      assert.strictEqual(await page.locator('#a').isHidden(), true);
-      await page.locator('#agentMode').click();
-      assert.strictEqual(await page.locator('#a').isVisible(), true);
-      assert.strictEqual(await page.locator('#g').isHidden(), true);
+      assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['owner-alpha-2642']);
+      assert.strictEqual(await page.locator('#groupLeader option').first().getAttribute('data-key-id'), 'fixture-key-a');
+      assert.strictEqual(await page.locator('.group-workspace input').count(), 2);
+      assert.strictEqual(await page.locator('.group-workspace input[name="key_id"]').count(), 0);
     });
 
     await test('ignores an older group snapshot that arrives after the latest response', async () => {
-      await page.locator('#agentMode').click();
       raceGroupResponses = true; raceGroupRequest = 0;
       await page.evaluate(() => Promise.all([refreshGroups(), refreshGroups()]));
       const openCount = await page.locator('#g .agent-group').getByRole('button', { name: '开放添加' }).count();
       const closeCount = await page.locator('#g .agent-group').getByRole('button', { name: '关闭添加' }).count();
       raceGroupResponses = false;
-      await page.locator('#agentMode').click();
       assert.strictEqual(openCount, 1);
       assert.strictEqual(closeCount, 0);
+    });
+
+    await test('requires the owners exact 8-character short name and sends selected Agent id only', async () => {
+      await page.locator('#groupShortName').fill('short');
+      await page.locator('#createGroup').click();
+      assert.strictEqual(await page.locator('#group-status').textContent(), '短名必须为 8 位 [a-z0-9-]');
+      assert.strictEqual(groupWrites.length, 0);
+      await page.locator('#groupShortName').fill('team-002');
+      await page.locator('#createGroup').click();
+      await page.waitForFunction(() => document.getElementById('group-status').textContent === '');
+      assert.deepStrictEqual(groupWrites[0].body, { agent_id: 'agent-a', short_name: 'team-002' });
+      assert.strictEqual('key_id' in groupWrites[0].body, false);
+      assert.strictEqual('session_name' in groupWrites[0].body, false);
     });
 
     await test('opens a real console tab and agent iframe', async () => {

@@ -2,10 +2,12 @@ package m8
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -29,18 +31,10 @@ type consoleAgentGroupView struct {
 	CanManage bool                     `json:"can_manage"`
 }
 
-func createConsoleAgentGroup(ctx context.Context, repo consoleAgentGroupRepository, principal string, leader model.ConsoleAgent, ownerKey string, candidate func() (string, string)) (model.AgentGroup, error) {
-	for attempt := 0; attempt < 32; attempt++ {
-		code, shortName := candidate()
-		group := model.AgentGroup{Code: code, ShortName: shortName, CreatorPrincipal: principal,
-			LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: ownerKey}
-		err := repo.CreateConsoleAgentGroup(ctx, group)
-		if errors.Is(err, store.ErrAgentGroupShortNameConflict) || errors.Is(err, store.ErrAgentGroupCodeConflict) {
-			continue
-		}
-		return group, err
-	}
-	return model.AgentGroup{}, store.ErrAgentGroupShortNameConflict
+func createConsoleAgentGroup(ctx context.Context, repo consoleAgentGroupRepository, principal string, leader model.ConsoleAgent, ownerKey, shortName string, codeCandidate func() string) (model.AgentGroup, error) {
+	group := model.AgentGroup{Code: shortName + codeCandidate(), ShortName: shortName, CreatorPrincipal: principal,
+		LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: ownerKey}
+	return group, repo.CreateConsoleAgentGroup(ctx, group)
 }
 
 func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
@@ -90,10 +84,17 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var request struct {
-		AgentID string `json:"agent_id"`
+		AgentID   string `json:"agent_id"`
+		ShortName string `json:"short_name"`
 	}
+	request.ShortName = strings.TrimSpace(request.ShortName)
 	if json.NewDecoder(r.Body).Decode(&request) != nil || strings.TrimSpace(request.AgentID) == "" {
-		http.Error(w, "agent_id required", http.StatusBadRequest)
+		http.Error(w, "agent_id and short_name required", http.StatusBadRequest)
+		return
+	}
+	request.ShortName = strings.TrimSpace(request.ShortName)
+	if !regexp.MustCompile(`^[a-z0-9-]{8}$`).MatchString(request.ShortName) {
+		http.Error(w, "short_name must be 8 characters [a-z0-9-]", http.StatusBadRequest)
 		return
 	}
 	var leader *model.ConsoleAgent
@@ -123,14 +124,37 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "owned agent endpoint not found", http.StatusConflict)
 		return
 	}
-	group, err := createConsoleAgentGroup(r.Context(), repo, principal, *leader, ownerKey, func() (string, string) { return randomHex(16), randomHex(3) })
+	suffix, err := randomGroupSuffix(24)
 	if err != nil {
-		http.Error(w, "agent group create failed", http.StatusConflict)
+		http.Error(w, "agent group entropy unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	group, err := createConsoleAgentGroup(r.Context(), repo, principal, *leader, ownerKey, request.ShortName, func() string { return suffix })
+	if err != nil {
+		if errors.Is(err, store.ErrAgentGroupShortNameConflict) {
+			http.Error(w, "short_name already exists", http.StatusConflict)
+		} else {
+			http.Error(w, "agent group create failed", http.StatusConflict)
+		}
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(group)
+}
+
+const groupSuffixAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+
+func randomGroupSuffix(n int) (string, error) {
+	raw := make([]byte, n)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
+	}
+	out := make([]byte, n)
+	for i := range out {
+		out[i] = groupSuffixAlphabet[int(raw[i]&63)]
+	}
+	return string(out), nil
 }
 
 func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
