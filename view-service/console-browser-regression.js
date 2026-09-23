@@ -94,7 +94,7 @@ async function main() {
       if (req.method === 'POST') {
         if (failGroupAction === 'network') { req.socket.destroy(); return; }
         if (failGroupAction === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture create denied'); return; }
-        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode&&auditGroup&&body.short_name===auditGroup.short_name){res.writeHead(409,{'Content-Type':'text/plain; charset=utf-8'});res.end(`${body.short_name} 不可用；建议名称 ${body.short_name}1、${body.short_name}2`);return;}if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
+        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode&&auditGroup&&body.short_name===auditGroup.short_name){res.writeHead(409,{'Content-Type':'text/plain; charset=utf-8'});res.end(`group name ${body.short_name} is unavailable; try ${body.short_name}1`);return;}if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
       }
       groupGETs += 1;
       if (failGroupLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture groups unavailable'); return; }
@@ -119,10 +119,10 @@ async function main() {
       req.on('end', () => {
         const body = JSON.parse(raw); groupJoinWrites.push({ url: req.url, body });
         if (auditGroupMode && auditGroup && auditGroup.members.some((member) => member.agent_id === body.agent_id)) {
-          res.writeHead(409, {'Content-Type':'text/plain; charset=utf-8'}); res.end('该 Agent 已在本组'); return;
+          res.writeHead(409, {'Content-Type':'text/plain; charset=utf-8'}); res.end('该 Agent 已在该编组中'); return;
         }
         if (auditGroupMode && auditGroup && auditGroup.additions_closed) {
-          res.writeHead(409, {'Content-Type':'text/plain; charset=utf-8'}); res.end('本组已关闭添加'); return;
+          res.writeHead(409, {'Content-Type':'text/plain; charset=utf-8'}); res.end('该编组已关闭添加'); return;
         }
         if (auditGroupMode && auditGroup && !auditGroup.members.some((member) => member.agent_id === body.agent_id)) {
           auditGroup.members.push({agent_id:'agent-b',key_id:'fixture-key-b',session_name:'owner-beta-2642'});
@@ -133,7 +133,7 @@ async function main() {
       return;
     }
     if (req.url === '/api/console/agent-groups/missing-1AAAAAAAAAAAAAAAAAAAAAAA/members' && req.method === 'POST' && auditGroupMode) {
-      res.writeHead(404, {'Content-Type':'text/plain; charset=utf-8'}); res.end('组码不存在'); return;
+      res.writeHead(404, {'Content-Type':'text/plain; charset=utf-8'}); res.end('404 page not found'); return;
     }
     if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members/agent-b' && req.method === 'DELETE' && auditGroupMode) {
       auditGroup.members = auditGroup.members.filter((member) => member.agent_id !== 'agent-b'); res.writeHead(204); res.end(); return;
@@ -301,16 +301,16 @@ async function main() {
       await auditPage.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
 
       await auditPage.locator('#groupShortName').click();
-      await auditPage.keyboard.type('audit-01');
+      await auditPage.keyboard.type('dingwei');
       await auditPage.locator('#groupLeader').selectOption('agent-a');
       assert.strictEqual(await humanHit('#createGroup'), true);
       await auditPage.locator('#createGroup').click();
-      await auditPage.locator('#groupListItems').getByText('audit-01').waitFor({ state: 'visible' });
+      await auditPage.locator('#groupListItems').getByText('dingwei').waitFor({ state: 'visible' });
 
       // Failure paths are product outcomes and must remain visible without JS errors.
       assert.strictEqual(await humanHit('#createGroup'), true);
       await auditPage.locator('#createGroup').click();
-      await auditPage.locator('#groupNameFeedback').filter({ hasText: 'audit-01 不可用；建议名称 audit-011、audit-012' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupNameFeedback').filter({ hasText: 'group name dingwei is unavailable; try dingwei1' }).waitFor({ state: 'visible' });
 
       await auditPage.locator('#groupJoinCode').click();
       await auditPage.keyboard.type('short');
@@ -327,19 +327,19 @@ async function main() {
       await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
       assert.strictEqual(await humanHit('#joinByCode'), true);
       await auditPage.locator('#joinByCode').click();
-      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '组码不存在' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '404 page not found' }).waitFor({ state: 'visible' });
 
       await keyboardReplace('#groupJoinCode', 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
       await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-a');
       await auditPage.locator('#joinByCode').click();
-      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '该 Agent 已在本组' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '该 Agent 已在该编组中' }).waitFor({ state: 'visible' });
 
       assert.strictEqual(await humanHit('#groupAdditionsToggle'), true);
       await auditPage.locator('#groupAdditionsToggle').click();
       await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '开放添加' }).waitFor({ state: 'visible' });
       await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
       await auditPage.locator('#joinByCode').click();
-      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '本组已关闭添加' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '该编组已关闭添加' }).waitFor({ state: 'visible' });
       await auditPage.locator('#groupAdditionsToggle').click();
       await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '关闭添加' }).waitFor({ state: 'visible' });
 
