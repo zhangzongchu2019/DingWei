@@ -158,7 +158,7 @@ async function main() {
     if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA' && req.method === 'DELETE' && auditGroupMode) {
       auditGroup = null; res.writeHead(204); res.end(); return;
     }
-    if (req.url === '/console/specs?embedded=1') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><title>DingWei Specs</title><h1>我的 spec</h1>'); return; }
+    if (req.url === '/console/specs?embedded=1') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><title>DingWei Specs</title><h1>我的 spec</h1><button id=specsProbe onclick="this.textContent=\'clicked\'">probe</button>'); return; }
     if (req.url && req.url.startsWith('/view/')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end('<!doctype html><title>fixture agent view</title>');
@@ -236,6 +236,10 @@ async function main() {
       await code.click();
       await timerPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
       assert.strictEqual(await code.inputValue(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await timerPage.locator('#tabs .tab[title="Specs"]').click();
+      const specsProbe = timerPage.frameLocator('iframe[title="Specs workspace"]').locator('#specsProbe');
+      await specsProbe.click();
+      assert.strictEqual(await specsProbe.textContent(), 'clicked');
       await timerPage.close();
     });
 
