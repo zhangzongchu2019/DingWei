@@ -174,7 +174,7 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	}
 	delete(hub.sessionClients[a2.KeyID], a2.SessionName)
 	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
-	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "agent is offline") {
+	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该 Agent 不可用（不存在、未激活或已下线）") {
 		t.Fatalf("offline Agent must be visibly rejected code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	hub.sessionClients[a2.KeyID] = map[string]*sessionClient{a2.SessionName: {keyID: a2.KeyID, sessionName: a2.SessionName}}
@@ -209,6 +209,10 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	rr = call("owner-a", http.MethodDelete, "/api/console/agent-groups/"+group.Code+"/members/"+b1.ID, group.Code, b1.ID, nil)
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("creator must remove the cross-owner member code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	rr = call("owner-a", http.MethodDelete, "/api/console/agent-groups/"+group.Code+"/members/"+b1.ID, group.Code, b1.ID, nil)
+	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该 Agent 不在本编组中，可能列表已过期，请刷新") {
+		t.Fatalf("stale non-member removal must be visibly rejected code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodGet, "/api/console/agent-groups", "", "", nil)
 	if rr.Code != http.StatusOK || bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-b-full-2642"`)) {
@@ -325,11 +329,33 @@ func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 	if err := db.AssignAgentGroup(ctx, model.AgentGroupMember{Code: groupCodeA, KeyID: member.KeyID, SessionName: member.SessionName, OwnerKey: "ob"}); err != nil {
 		t.Fatal(err)
 	}
+	hub.sessionClients[member.KeyID] = map[string]*sessionClient{member.SessionName: {keyID: member.KeyID, sessionName: member.SessionName}}
 	// Positive control first: the leader endpoint really resolves to an active
 	// console Agent. Management must therefore not treat this group as orphaned.
 	groups, err := db.ListAgentGroups(ctx)
 	if err != nil || len(groups) != 1 || !groups[0].LeaderConsoleMapped {
 		t.Fatalf("mapped leader precondition missing groups=%+v err=%v", groups, err)
+	}
+	ordinaryCall := func(method, path, agentID string, body []byte) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, path, bytes.NewReader(body))
+		req.SetPathValue("code", groupCodeA)
+		req.SetPathValue("agentID", agentID)
+		req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-c"))
+		rr := httptest.NewRecorder()
+		hub.HandleConsoleAgentGroup(rr, req)
+		return rr
+	}
+	for _, probe := range []struct {
+		method, path, agentID string
+		body                  []byte
+	}{
+		{http.MethodPost, "/api/console/agent-groups/" + groupCodeA + "/additions", "", []byte(`{"closed":true}`)},
+		{http.MethodDelete, "/api/console/agent-groups/" + groupCodeA, "", nil},
+		{http.MethodDelete, "/api/console/agent-groups/" + groupCodeA + "/members/" + leader.ID, leader.ID, nil},
+	} {
+		if rr := ordinaryCall(probe.method, probe.path, probe.agentID, probe.body); rr.Code != http.StatusNotFound {
+			t.Fatalf("ordinary caller must not disclose mapped legacy group method=%s path=%s code=%d body=%s", probe.method, probe.path, rr.Code, rr.Body.String())
+		}
 	}
 	req := httptest.NewRequest(http.MethodPost, "/api/console/agent-groups/"+groupCodeA+"/additions", bytes.NewBufferString(`{"closed":true}`))
 	req.SetPathValue("code", groupCodeA)

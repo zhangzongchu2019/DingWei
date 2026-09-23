@@ -3247,6 +3247,7 @@ var ErrAgentGroupAdditionsClosed = errors.New("agent group additions closed")
 var ErrAgentGroupAccessDenied = errors.New("agent group access denied")
 var ErrAgentGroupLeaderProtected = errors.New("agent group leader protected")
 var ErrAgentGroupAgentUnavailable = errors.New("agent group agent unavailable")
+var ErrAgentGroupMemberNotFound = errors.New("agent group member not found")
 
 func (s *SQLite) agentGroupExists(ctx context.Context, code string) (bool, error) {
 	var exists int
@@ -3373,12 +3374,16 @@ func (s *SQLite) AssignOwnedConsoleAgentGroup(ctx context.Context, code, princip
 	n, _ := res.RowsAffected()
 	if n != 1 {
 		var additionsClosed int
-		lookupErr := s.db.QueryRowContext(ctx, `SELECT additions_closed FROM agent_group WHERE code=?`, code).Scan(&additionsClosed)
+		var creator sql.NullString
+		lookupErr := s.db.QueryRowContext(ctx, `SELECT additions_closed,creator_principal FROM agent_group WHERE code=?`, code).Scan(&additionsClosed, &creator)
 		if errors.Is(lookupErr, sql.ErrNoRows) {
 			return sql.ErrNoRows
 		}
 		if lookupErr != nil {
 			return lookupErr
+		}
+		if !creator.Valid || creator.String == "" {
+			return sql.ErrNoRows
 		}
 		if additionsClosed != 0 {
 			return ErrAgentGroupAdditionsClosed
@@ -3398,6 +3403,10 @@ func (s *SQLite) AssignOwnedConsoleAgentGroup(ctx context.Context, code, princip
 		if exists == 0 {
 			return ErrAgentGroupAgentUnavailable
 		}
+		// The group and the caller-owned active Agent both existed, yet the
+		// INSERT selected no row. This covers internal referential drift such as
+		// a missing session_endpoint; it intentionally remains a non-disclosing
+		// 404 until a reproducible repair path is available.
 		return sql.ErrNoRows
 	}
 	return nil
@@ -3436,7 +3445,7 @@ func (s *SQLite) UnassignConsoleAgentGroup(ctx context.Context, code, principalI
 			return lookupErr
 		}
 		if member == 0 {
-			return sql.ErrNoRows
+			return ErrAgentGroupMemberNotFound
 		}
 		lookupErr = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM agent_group g JOIN console_agent a ON a.id=? WHERE g.code=? AND g.leader_key_id=a.key_id AND g.leader_session_name=a.session_name)`, agentID, code).Scan(&leader)
 		if lookupErr != nil {

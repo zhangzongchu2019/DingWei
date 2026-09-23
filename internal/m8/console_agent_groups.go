@@ -225,7 +225,7 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !h.consoleAgentOnline(r.Context(), request.AgentID, principal) {
-			http.Error(w, "agent is offline", http.StatusConflict)
+			http.Error(w, "该 Agent 不可用（不存在、未激活或已下线）", http.StatusConflict)
 			return
 		}
 		err = repo.AssignOwnedConsoleAgentGroup(r.Context(), code, principal, request.AgentID)
@@ -253,7 +253,11 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if errors.Is(err, store.ErrAgentGroupAgentUnavailable) {
-		http.Error(w, "该 Agent 已下线", http.StatusConflict)
+		http.Error(w, "该 Agent 不可用（不存在、未激活或已下线）", http.StatusConflict)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupMemberNotFound) {
+		http.Error(w, "该 Agent 不在本编组中，可能列表已过期，请刷新", http.StatusConflict)
 		return
 	}
 	if errors.Is(err, store.ErrAgentGroupLeaderProtected) {
