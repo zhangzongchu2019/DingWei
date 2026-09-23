@@ -62,6 +62,7 @@ async function main() {
   let groupGETs = 0;
   let failPlatformLoad = '';
   let failAgentsLoad = '';
+  let agentGETs = 0;
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
@@ -78,6 +79,7 @@ async function main() {
       return;
     }
     if (req.url === '/api/console/agents') {
+      agentGETs += 1;
       if (failAgentsLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture agents unavailable'); return; }
       if (failAgentsLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({ agents })); }, 200); return; }
       if (failAgentsLoad === 'empty') { res.writeHead(200, {'Content-Type':'application/json'}); res.end('{"agents":[]}'); return; }
@@ -186,6 +188,13 @@ async function main() {
     }
   }
 
+  // Console refreshes the Agent snapshot every 15 seconds. Interactive-flow
+  // checks must cross a real timer tick so platform tabs cannot accidentally
+  // inherit the offline-Agent pointer lock after a fast test has already ended.
+  async function waitPastAgentRefreshCycle(page) {
+    await page.waitForTimeout(16000);
+  }
+
 
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
@@ -198,6 +207,36 @@ async function main() {
     await test('loads the real console document', async () => {
       assert.strictEqual(await page.title(), 'DingWei Agent Console');
       await page.locator('nav #a').waitFor({ state: 'attached' });
+    });
+
+    await test('keeps platform workspaces interactive after a full Agent refresh interval', async () => {
+      const timerPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      timerPage.setDefaultTimeout(1500);
+      await timerPage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      await timerPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+      await timerPage.locator('#platform-items a[data-item-id="agent-groups"]').click();
+      await timerPage.locator('.group-workspace').waitFor({state:'visible'});
+      await timerPage.locator('#platform-items a[data-item-id="specs"]').click();
+      const specsPane = timerPage.locator('#panes iframe[title="Specs workspace"]');
+      await specsPane.waitFor({state:'visible'});
+      await timerPage.locator('#tabs .tab[title="Agent 编组"]').click();
+
+      const agentGETsBeforeTimer = agentGETs;
+      await waitPastAgentRefreshCycle(timerPage);
+      assert.ok(agentGETs > agentGETsBeforeTimer, 'the test must observe at least one real 15-second Agent refresh');
+
+      const groupPane = timerPage.locator('#panes .group-workspace');
+      assert.notStrictEqual(await groupPane.evaluate((node) => node.style.pointerEvents), 'none', 'Agent timer must not disable the group platform pane');
+      assert.notStrictEqual(await specsPane.evaluate((node) => node.style.pointerEvents), 'none', 'Agent timer must not disable the Specs platform pane');
+      const code = timerPage.locator('#groupJoinCode');
+      await code.scrollIntoViewIfNeeded();
+      const box = await code.boundingBox();
+      assert.ok(box, 'group code input must have a visible box after timer tick');
+      assert.strictEqual(await timerPage.evaluate(({x,y}) => document.elementFromPoint(x,y)?.id, {x:box.x+box.width/2,y:box.y+box.height/2}), 'groupJoinCode');
+      await code.click();
+      await timerPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      assert.strictEqual(await code.inputValue(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await timerPage.close();
     });
 
     await test('distinguishes platform and Agent load failures from true empty states', async () => {
