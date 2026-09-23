@@ -27,9 +27,9 @@ func newConsoleSpecTestHub(t *testing.T) *Hub {
 		t.Fatal(err)
 	}
 	for _, p := range []model.ConsolePrincipal{
-		{ID: "owner-a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "oa", Active: true},
-		{ID: "owner-b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ob", Active: true},
-		{ID: "manager", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "om", Active: true},
+		{ID: "owner-a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "oa", DisplayName: "甲", Active: true},
+		{ID: "owner-b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ob", DisplayName: "乙", Active: true},
+		{ID: "manager", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "om", DisplayName: "丙", Active: true},
 	} {
 		if err := db.UpsertConsolePrincipal(context.Background(), p); err != nil {
 			t.Fatal(err)
@@ -73,6 +73,13 @@ func TestConsoleSpecTaskSplitEndpointCreatesVisibleTaskAndLocksRevision(t *testi
 	}
 	var created model.ConsoleSpec
 	if err := json.Unmarshal(rr.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	db := hub.Repo.(*store.SQLite)
+	if err := db.TransferConsoleSpec(context.Background(), created.ID, "owner-a", "丙", "review", hub.now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); err != nil {
 		t.Fatal(err)
 	}
 	req := httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/tasks", strings.NewReader(`{"title":"Implement","content":"Do it","definition_of_done":"tests pass","estimated_hours":16,"depends_on":[]}`))
@@ -123,6 +130,12 @@ func TestConsoleSpecDetailReturnsTopologicalTasksDespiteReverseCreatedTimes(t *t
 		t.Fatal(err)
 	}
 	db := hub.Repo.(*store.SQLite)
+	if err := db.TransferConsoleSpec(context.Background(), created.ID, "owner-a", "丙", "review", hub.now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); err != nil {
+		t.Fatal(err)
+	}
 	base := time.Date(2026, 9, 22, 12, 0, 0, 0, time.UTC)
 	for _, p := range []model.ConsoleTaskProposal{
 		{ID: "a", SpecID: created.ID, Title: "A", TaskContent: "A", Status: "planned", DependsOnJSON: `[]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(3 * time.Second), ReviewedAt: base.Add(3 * time.Second)},
@@ -206,7 +219,7 @@ func TestConsoleSpecHTTPMultipleSpecsAreVisiblePubliclyButWritesRemainControlled
 	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-b"))
 	rr = httptest.NewRecorder()
 	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
-	if rr.Code != http.StatusNotFound {
+	if rr.Code != http.StatusForbidden {
 		t.Fatalf("cross-owner PATCH must remain controlled code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	stored, err := hub.Repo.(*store.SQLite).ConsoleSpecRevision(context.Background(), "owner-a", ids[0], 1, false)
@@ -238,7 +251,7 @@ func TestConsoleSpecManagementOwnerCanEditOwnSpecButNotAnotherOwners(t *testing.
 		want int
 	}{
 		{name: "management owner may edit", id: owned.ID, want: http.StatusOK},
-		{name: "management role does not grant another owners write", id: foreign.ID, want: http.StatusNotFound},
+		{name: "management role does not grant another owners write", id: foreign.ID, want: http.StatusForbidden},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+tc.id, bytes.NewBufferString(patch))
@@ -268,24 +281,23 @@ func TestConsoleSpecInputAnchorsAndManagementSideEffectsAreServerEnforced(t *tes
 	var spec model.ConsoleSpec
 	_ = json.Unmarshal(rr.Body.Bytes(), &spec)
 
-	// Keep the HTTP response forbidden while deliberately attempting the real
-	// management action: the permanent assertion below checks state, not prose.
-	reviewPath := "/api/console/specs/" + spec.ID + "/reviews"
-	req := httptest.NewRequest(http.MethodPost, reviewPath, bytes.NewBufferString(`{"stage":"hard_gate","verdict":"pass"}`))
+	// Approval permission remains distinct from write permission; a forbidden
+	// management action must not mutate the spec.
+	req := httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/archive", nil)
 	req.SetPathValue("specID", spec.ID)
 	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
 	rr = httptest.NewRecorder()
-	hub.RequireConsolePlatformAction(consolePlatformActionApprove, hub.HandleConsoleSpecReview)(rr, req)
+	hub.RequireConsolePlatformAction(consolePlatformActionApprove, hub.HandleConsoleSpecArchive)(rr, req)
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("owner review code=%d", rr.Code)
 	}
 	stored, err := hub.Repo.(*store.SQLite).ConsoleSpec(context.Background(), "owner-a", spec.ID, false)
-	if err != nil || stored == nil || stored.State != "draft" {
+	if err != nil || stored == nil || stored.State != "editing" {
 		t.Fatalf("403 performed side effect spec=%+v err=%v", stored, err)
 	}
 }
 
-func TestConsoleSpecSharedCapabilityWritesUntilOwnerClosesEditing(t *testing.T) {
+func TestConsoleSpecSharedCapabilityIsReadOnly(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
 	rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", validSpecBody, hub.HandleConsoleSpecs)
 	if rr.Code != http.StatusCreated {
@@ -298,84 +310,22 @@ func TestConsoleSpecSharedCapabilityWritesUntilOwnerClosesEditing(t *testing.T) 
 	if err := json.Unmarshal(rr.Body.Bytes(), &created); err != nil {
 		t.Fatal(err)
 	}
-	token := strings.TrimPrefix(strings.SplitN(created.EditURL, "#edit=", 2)[1], " ")
-	patchBody := `{"title":"Spec A","content_markdown":"# shared","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}],"expected_revision":1}`
-	req := httptest.NewRequest(http.MethodPatch, "/api/specs/shared/"+created.ID, bytes.NewBufferString(patchBody))
+	token := strings.SplitN(created.EditURL, "#edit=", 2)[1]
+	sharedPatch := strings.TrimSuffix(validSpecBody, "}") + `,"expected_revision":1}`
+	req := httptest.NewRequest(http.MethodPatch, "/api/specs/shared/"+created.ID, bytes.NewBufferString(sharedPatch))
 	req.SetPathValue("specID", created.ID)
 	req.Header.Set("X-DW-Spec-Edit-Capability", token)
 	rr = httptest.NewRecorder()
 	hub.HandleConsoleSpec(rr, req)
-	if rr.Code != http.StatusOK {
+	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "editing closed or invalid capability") {
 		t.Fatalf("shared PATCH code=%d body=%s", rr.Code, rr.Body.String())
 	}
-
-	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/close-editing", nil)
-	req.SetPathValue("specID", created.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpecCloseEditing)(rr, req)
-	if rr.Code != http.StatusNoContent {
-		t.Fatalf("close editing code=%d body=%s", rr.Code, rr.Body.String())
-	}
-
-	patchBody = strings.Replace(patchBody, `"expected_revision":1`, `"expected_revision":2`, 1)
-	req = httptest.NewRequest(http.MethodPatch, "/api/specs/shared/"+created.ID, bytes.NewBufferString(patchBody))
-	req.SetPathValue("specID", created.ID)
-	req.Header.Set("X-DW-Spec-Edit-Capability", token)
-	rr = httptest.NewRecorder()
-	hub.HandleConsoleSpec(rr, req)
-	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "editing closed") {
-		t.Fatalf("closed shared PATCH code=%d body=%s", rr.Code, rr.Body.String())
-	}
-
-	// Closing is one reversible owner-controlled brake. It must stop the owner
-	// write path too; otherwise UI and storage disagree about the same state.
-	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+created.ID, bytes.NewBufferString(patchBody))
-	req.SetPathValue("specID", created.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
-	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "editing closed") {
-		t.Fatalf("closed owner PATCH code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	closed, err := hub.Repo.(*store.SQLite).ConsoleSpec(context.Background(), "owner-a", created.ID, false)
-	if err != nil || closed == nil || closed.CurrentRevision != 2 || closed.State != "needs_improvement" {
-		t.Fatalf("closed rejected write changed state spec=%+v err=%v", closed, err)
-	}
-
-	for _, principal := range []string{"owner-b", ""} {
-		req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/reopen-editing", nil)
-		req.SetPathValue("specID", created.ID)
-		req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, principal))
-		rr = httptest.NewRecorder()
-		hub.HandleConsoleSpecReopenEditing(rr, req)
-		if rr.Code != http.StatusNotFound {
-			t.Fatalf("non-owner %q reopened editing code=%d body=%s", principal, rr.Code, rr.Body.String())
-		}
-	}
-	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/reopen-editing", nil)
-	req.SetPathValue("specID", created.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpecReopenEditing)(rr, req)
-	if rr.Code != http.StatusNoContent {
-		t.Fatalf("owner reopen code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+created.ID, bytes.NewBufferString(patchBody))
-	req.SetPathValue("specID", created.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
-	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"revision":3`) {
-		t.Fatalf("reopened owner PATCH code=%d body=%s", rr.Code, rr.Body.String())
-	}
-
 	req = httptest.NewRequest(http.MethodGet, "/api/specs/shared/"+created.ID, nil)
 	req.SetPathValue("specID", created.ID)
 	rr = httptest.NewRecorder()
 	hub.HandleConsoleSpec(rr, req)
-	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"current_revision":3`) {
-		t.Fatalf("closing writes must not close public read code=%d body=%s", rr.Code, rr.Body.String())
+	if rr.Code != http.StatusOK || strings.Contains(rr.Body.String(), "principal_id") {
+		t.Fatalf("shared GET code=%d body=%s", rr.Code, rr.Body.String())
 	}
 }
 
@@ -402,104 +352,7 @@ func TestConsoleSpecSavePersistsAndRewritesUploadedImageURL(t *testing.T) {
 	}
 }
 
-func TestConsoleSpecHTTPReviewProducesVersionedTaskProposalWithoutKFields(t *testing.T) {
-	hub := newConsoleSpecTestHub(t)
-	rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", validSpecBody, hub.HandleConsoleSpecs)
-	var spec model.ConsoleSpec
-	if err := json.Unmarshal(rr.Body.Bytes(), &spec); err != nil {
-		t.Fatal(err)
-	}
-	req := httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/submit", nil)
-	req.SetPathValue("specID", spec.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpecSubmit)(rr, req)
-	if rr.Code != http.StatusNoContent {
-		t.Fatalf("submit code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	for _, body := range []string{`{"revision":1,"stage":"hard_gate","verdict":"pass","reason_codes":[]}`, `{"revision":1,"stage":"human_review","verdict":"pass","reason_codes":[]}`} {
-		req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/reviews", bytes.NewBufferString(body))
-		req.SetPathValue("specID", spec.ID)
-		req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "manager"))
-		rr = httptest.NewRecorder()
-		hub.RequireConsolePlatformAction(consolePlatformActionApprove, hub.HandleConsoleSpecReview)(rr, req)
-		if rr.Code != http.StatusNoContent {
-			t.Fatalf("review code=%d body=%s", rr.Code, rr.Body.String())
-		}
-	}
-	rr = callConsoleSpec(t, hub, "manager", consolePlatformActionApprove, http.MethodGet, "/api/console/task-proposals/ready", "", hub.HandleConsoleTaskProposalsReady)
-	if rr.Code != http.StatusOK {
-		t.Fatalf("ready code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	var payload struct {
-		Proposals []struct {
-			SchemaVersion int    `json:"schema_version"`
-			ProposalID    string `json:"proposal_id"`
-			Source        struct {
-				SpecID        string `json:"spec_id"`
-				Revision      int    `json:"revision"`
-				ContentSHA256 string `json:"content_sha256"`
-			} `json:"source"`
-			Acceptance   []specAcceptance  `json:"acceptance"`
-			InputAnchors []specInputAnchor `json:"input_anchors"`
-		} `json:"proposals"`
-	}
-	if err := json.Unmarshal(rr.Body.Bytes(), &payload); err != nil {
-		t.Fatal(err)
-	}
-	if len(payload.Proposals) != 1 || payload.Proposals[0].SchemaVersion != 1 || payload.Proposals[0].Source.SpecID != spec.ID || payload.Proposals[0].Source.Revision != 1 || len(payload.Proposals[0].Acceptance) != 1 || len(payload.Proposals[0].InputAnchors) != 1 {
-		t.Fatalf("proposal contract=%s", rr.Body.String())
-	}
-	text := rr.Body.String()
-	for _, forbidden := range []string{`"assignee"`, `"reviewer"`, `"priority"`} {
-		if bytes.Contains([]byte(text), []byte(forbidden)) {
-			t.Fatalf("I leaked K-owned field %s in %s", forbidden, text)
-		}
-	}
-	newBody := `{"title":"Spec A","content_markdown":"# version two","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}],"expected_revision":1}`
-	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+spec.ID, bytes.NewBufferString(newBody))
-	req.SetPathValue("specID", spec.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
-	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "revision locked") {
-		t.Fatalf("locked revision PATCH must be observably rejected code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	// Reopening editing is not a task/proposal unlock. The same locked revision
-	// remains immutable; only the explicit new-version path below may advance it.
-	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/close-editing", nil)
-	req.SetPathValue("specID", spec.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.HandleConsoleSpecCloseEditing(rr, req)
-	if rr.Code != http.StatusNoContent {
-		t.Fatalf("close locked spec code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/reopen-editing", nil)
-	req.SetPathValue("specID", spec.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.HandleConsoleSpecReopenEditing(rr, req)
-	if rr.Code != http.StatusNoContent {
-		t.Fatalf("reopen locked spec code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+spec.ID, bytes.NewBufferString(newBody))
-	req.SetPathValue("specID", spec.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpec)(rr, req)
-	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "revision locked") {
-		t.Fatalf("reopen must not unlock proposed revision code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/versions", bytes.NewBufferString(newBody))
-	req.SetPathValue("specID", spec.ID)
-	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
-	rr = httptest.NewRecorder()
-	hub.RequireConsolePlatformAction(consolePlatformActionSubmit, hub.HandleConsoleSpecNewVersion)(rr, req)
-	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"revision":2`) {
-		t.Fatalf("explicit new version code=%d body=%s", rr.Code, rr.Body.String())
-	}
-}
+// Legacy dual-gate HTTP coverage was replaced by the three-state workflow tests.
 
 func TestConsoleSpecsListIsMineOnlyAndPaginatesTwenty(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
@@ -537,8 +390,11 @@ func TestConsoleSpecsListIsMineOnlyAndPaginatesTwenty(t *testing.T) {
 	if rr.Code != 200 || len(payload.Specs) != 20 || payload.PageSize != 20 || payload.Total != 21 || payload.TotalPages != 2 {
 		t.Fatalf("page1 code=%d payload=%+v", rr.Code, payload)
 	}
+	if strings.Contains(rr.Body.String(), "principal_id") {
+		t.Fatalf("read API leaked principal_id: %s", rr.Body.String())
+	}
 	for _, spec := range payload.Specs {
-		if spec.PrincipalID != "owner-a" {
+		if spec.OwnerShortName != "甲" || spec.Title == "foreign" {
 			t.Fatalf("foreign spec leaked: %+v", spec)
 		}
 	}

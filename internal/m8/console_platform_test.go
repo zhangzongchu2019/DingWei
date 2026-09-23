@@ -24,8 +24,8 @@ func newConsolePlatformTestHub(t *testing.T) *Hub {
 		t.Fatal(err)
 	}
 	for _, p := range []model.ConsolePrincipal{
-		{ID: "manager", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "manager-openid", Active: true},
-		{ID: "owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner-openid", Active: true},
+		{ID: "manager", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "manager-openid", DisplayName: "manager", Active: true},
+		{ID: "owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner-openid", DisplayName: "owner", Active: true},
 	} {
 		if err := db.UpsertConsolePrincipal(context.Background(), p); err != nil {
 			t.Fatal(err)

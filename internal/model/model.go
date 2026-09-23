@@ -375,11 +375,17 @@ type ConsolePlatformItem struct {
 
 type ConsoleSpec struct {
 	ID                 string    `json:"id"`
-	PrincipalID        string    `json:"principal_id,omitempty"`
+	PrincipalID        string    `json:"-"`
+	OwnerShortName     string    `json:"owner_short_name"`
 	Title              string    `json:"title"`
 	State              string    `json:"state"`
 	CurrentRevision    int       `json:"current_revision"`
-	ClaimedBy          string    `json:"claimed_by,omitempty"`
+	CurrentEditorID    string    `json:"-"`
+	CurrentEditorShort string    `json:"current_editor_short_name"`
+	Archived           bool      `json:"archived"`
+	TaskState          string    `json:"task_state"`
+	CanEdit            bool      `json:"can_edit"`
+	CanSplit           bool      `json:"can_split"`
 	EditCapabilityHash string    `json:"-"`
 	EditingClosed      bool      `json:"editing_closed"`
 	CreatedAt          time.Time `json:"created_at"`
@@ -393,7 +399,7 @@ type ConsoleSpecRevision struct {
 	AcceptanceJSON   string    `json:"acceptance_json"`
 	InputAnchorsJSON string    `json:"input_anchors_json"`
 	ContentSHA256    string    `json:"content_sha256"`
-	CreatedBy        string    `json:"created_by"`
+	CreatedBy        string    `json:"-"`
 	CreatedVia       string    `json:"created_via"`
 	Supersedes       int       `json:"supersedes_revision,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
@@ -438,7 +444,7 @@ type ConsoleTaskProposal struct {
 	AcceptanceJSON   string    `json:"acceptance_json"`
 	InputAnchorsJSON string    `json:"input_anchors_json"`
 	ReviewID         string    `json:"review_id"`
-	ReviewedBy       string    `json:"reviewed_by"`
+	ReviewedBy       string    `json:"-"`
 	ReviewedAt       time.Time `json:"reviewed_at"`
 	CreatedAt        time.Time `json:"created_at"`
 }

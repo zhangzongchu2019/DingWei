@@ -76,6 +76,8 @@ class T(unittest.TestCase):
         self.assertNotIn("zzc-wrongowner-2642", names)            # 🔴 只有 owner_key 能排除它
         self.assertNotIn("zzc-inactive-2642", names)
         self.assertEqual(len(d["principals"]), 2)
+        self.assertEqual([p["display_name"] for p in d["principals"]], [OWNER_KEY, OWNER_KEY + "-2"])
+        self.assertEqual(len({p["display_name"] for p in d["principals"]}), 2)
         self.assertEqual(self.generated_principal_pairs(), {
             ("owner-entry-a", SUBJ_A), ("owner-entry-b", SUBJ_B),
         })

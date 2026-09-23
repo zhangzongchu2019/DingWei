@@ -15,7 +15,7 @@ import (
 
 func TestValidateConsoleSeedCommandNeverStartsServer(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "seed.json")
-	raw := `{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua","active":true}],"roles":[{"principal_id":"a","role":"owner","owner_key":"owner","active":true}],"agents":[{"id":"aa","key_id":"k","session_name":"owner-agent-2642","owner_principal":"a","active":true,"grants":[{"principal_id":"a","permission":"interact"}]}]}`
+	raw := `{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua","display_name":"a","active":true}],"roles":[{"principal_id":"a","role":"owner","owner_key":"owner","active":true}],"agents":[{"id":"aa","key_id":"k","session_name":"owner-agent-2642","owner_principal":"a","active":true,"grants":[{"principal_id":"a","permission":"interact"}]}]}`
 	if err := os.WriteFile(path, []byte(raw), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestConsoleSeedIsExplicitAndSeparatesSharedKey(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "seed.json")
-	raw := `{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua","active":true},{"id":"b","provider":"feishu","provider_issuer":"app","provider_subject":"ub","active":true}],"agents":[{"id":"aa","key_id":"shared","session_name":"sa","owner_principal":"a","active":true,"grants":[{"principal_id":"a","permission":"interact"}]},{"id":"ab","key_id":"shared","session_name":"sb","owner_principal":"b","active":true,"grants":[{"principal_id":"b","permission":"interact"}]}]}`
+	raw := `{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua","display_name":"a","active":true},{"id":"b","provider":"feishu","provider_issuer":"app","provider_subject":"ub","display_name":"b","active":true}],"agents":[{"id":"aa","key_id":"shared","session_name":"sa","owner_principal":"a","active":true,"grants":[{"principal_id":"a","permission":"interact"}]},{"id":"ab","key_id":"shared","session_name":"sb","owner_principal":"b","active":true,"grants":[{"principal_id":"b","permission":"interact"}]}]}`
 	if err = os.WriteFile(path, []byte(raw), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -75,6 +75,22 @@ func TestConsoleSeedIsExplicitAndSeparatesSharedKey(t *testing.T) {
 	}
 }
 
+func TestConsoleSeedRejectsDuplicateShortNamesBeforeAnyWrite(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "seed.json")
+	raw := `{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua","display_name":"same","active":true},{"id":"b","provider":"feishu","provider_issuer":"app","provider_subject":"ub","display_name":"same","active":true}],"agents":[{"id":"aa","key_id":"k","session_name":"s","owner_principal":"a","active":true,"grants":[{"principal_id":"a","permission":"interact"}]}]}`
+	if err := os.WriteFile(path, []byte(raw), 0600); err != nil {
+		t.Fatal(err)
+	}
+	seed, err := parseConsoleSeed(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = validateConsoleSeed(seed)
+	if err == nil || !strings.Contains(err.Error(), `display_name "same" conflicts: a,b`) {
+		t.Fatalf("err=%v", err)
+	}
+}
+
 func TestConsoleSeedRequiresExplicitActive(t *testing.T) {
 	ctx := context.Background()
 	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "seed.db"))
@@ -86,7 +102,7 @@ func TestConsoleSeedRequiresExplicitActive(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "seed.json")
-	_ = os.WriteFile(path, []byte(`{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua"}],"agents":[{"id":"aa","key_id":"k","session_name":"s","owner_principal":"a","active":true,"grants":[{"principal_id":"a","permission":"view"}]}]}`), 0600)
+	_ = os.WriteFile(path, []byte(`{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua","display_name":"a"}],"agents":[{"id":"aa","key_id":"k","session_name":"s","owner_principal":"a","active":true,"grants":[{"principal_id":"a","permission":"view"}]}]}`), 0600)
 	if err = seedConsoleACL(ctx, db, path); err == nil || !strings.Contains(err.Error(), "active is required") {
 		t.Fatalf("err=%v", err)
 	}
@@ -103,7 +119,7 @@ func TestConsoleSeedFailsClosedWithoutGrant(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "seed.json")
-	_ = os.WriteFile(path, []byte(`{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua","active":true}],"agents":[{"id":"aa","key_id":"k","session_name":"s","owner_principal":"a","active":true,"grants":[]}]}`), 0600)
+	_ = os.WriteFile(path, []byte(`{"principals":[{"id":"a","provider":"feishu","provider_issuer":"app","provider_subject":"ua","display_name":"a","active":true}],"agents":[{"id":"aa","key_id":"k","session_name":"s","owner_principal":"a","active":true,"grants":[]}]}`), 0600)
 	if err = seedConsoleACL(ctx, db, path); err == nil {
 		t.Fatal("agent without explicit grant accepted")
 	}
@@ -120,7 +136,7 @@ func TestTwoOwnerIdentitiesEachSeeTheCompleteGrantSet(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "seed.json")
-	raw := `{"principals":[{"id":"owner-1","provider":"feishu","provider_issuer":"active-app","provider_subject":"subject-1","active":true},{"id":"owner-2","provider":"feishu","provider_issuer":"active-app","provider_subject":"subject-2","active":true},{"id":"outsider","provider":"feishu","provider_issuer":"active-app","provider_subject":"subject-3","active":true}],"agents":[{"id":"a1","key_id":"shared","session_name":"s1","owner_principal":"owner-1","active":true,"grants":[{"principal_id":"owner-1","permission":"interact"},{"principal_id":"owner-2","permission":"interact"}]},{"id":"a2","key_id":"shared","session_name":"s2","owner_principal":"owner-1","active":true,"grants":[{"principal_id":"owner-1","permission":"interact"},{"principal_id":"owner-2","permission":"interact"}]}]}`
+	raw := `{"principals":[{"id":"owner-1","provider":"feishu","provider_issuer":"active-app","provider_subject":"subject-1","display_name":"owner-1","active":true},{"id":"owner-2","provider":"feishu","provider_issuer":"active-app","provider_subject":"subject-2","display_name":"owner-2","active":true},{"id":"outsider","provider":"feishu","provider_issuer":"active-app","provider_subject":"subject-3","display_name":"outsider","active":true}],"agents":[{"id":"a1","key_id":"shared","session_name":"s1","owner_principal":"owner-1","active":true,"grants":[{"principal_id":"owner-1","permission":"interact"},{"principal_id":"owner-2","permission":"interact"}]},{"id":"a2","key_id":"shared","session_name":"s2","owner_principal":"owner-1","active":true,"grants":[{"principal_id":"owner-1","permission":"interact"},{"principal_id":"owner-2","permission":"interact"}]}]}`
 	if err = os.WriteFile(path, []byte(raw), 0600); err != nil {
 		t.Fatal(err)
 	}

@@ -130,13 +130,19 @@ func validateConsoleSeed(seed consoleSeed) error {
 		return errors.New("console seed requires principals and agents")
 	}
 	principals := make(map[string]bool, len(seed.Principals))
+	shortNames := make(map[string]string, len(seed.Principals))
 	for _, p := range seed.Principals {
 		if p.Active == nil {
 			return fmt.Errorf("principal %s: active is required", p.ID)
 		}
-		if strings.TrimSpace(p.ID) == "" || strings.TrimSpace(p.Provider) == "" || strings.TrimSpace(p.ProviderIssuer) == "" || strings.TrimSpace(p.ProviderSubject) == "" {
+		short := strings.TrimSpace(p.DisplayName)
+		if strings.TrimSpace(p.ID) == "" || strings.TrimSpace(p.Provider) == "" || strings.TrimSpace(p.ProviderIssuer) == "" || strings.TrimSpace(p.ProviderSubject) == "" || short == "" {
 			return fmt.Errorf("principal %s: identity fields are required", p.ID)
 		}
+		if prior, exists := shortNames[short]; exists {
+			return fmt.Errorf("principal display_name %q conflicts: %s,%s; owner must choose a unique name", short, prior, p.ID)
+		}
+		shortNames[short] = p.ID
 		if principals[p.ID] {
 			return fmt.Errorf("principal %s: duplicate id", p.ID)
 		}

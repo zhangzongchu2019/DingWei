@@ -552,7 +552,7 @@ func TestGroupingEmptyTableDistinguishesNeverConfiguredFromDeletedAll(t *testing
 	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: "ka", LeaderSessionName: "owner-a-agent-2642", LeaderOwnerKey: "owner-a"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "principal-a", Provider: "fixture", ProviderIssuer: "fixture", ProviderSubject: "a", Active: true}); err != nil {
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "principal-a", Provider: "fixture", ProviderIssuer: "fixture", ProviderSubject: "a", DisplayName: "principal-a", Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "agent-a", KeyID: "ka", SessionName: "owner-a-agent-2642", OwnerPrincipal: "principal-a", Active: true}); err != nil {

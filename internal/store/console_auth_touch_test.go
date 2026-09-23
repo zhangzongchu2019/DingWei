@@ -24,7 +24,7 @@ func TestTouchConsoleSessionGuards(t *testing.T) {
 		if err := db.Migrate(ctx); err != nil {
 			t.Fatal(err)
 		}
-		if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "p", Provider: "feishu", ProviderIssuer: "i", ProviderSubject: "s", Active: true}); err != nil {
+		if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "p", Provider: "feishu", ProviderIssuer: "i", ProviderSubject: "s", DisplayName: "p", Active: true}); err != nil {
 			t.Fatal(err)
 		}
 		return db

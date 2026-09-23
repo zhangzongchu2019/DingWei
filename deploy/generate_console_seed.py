@@ -86,8 +86,12 @@ def main():
         subj = resolve_principal(conn, d, a.issuer)
         pid = resolve_principal_id(conn, subj, a.issuer)
         principals.append({"id": pid, "provider": "feishu", "provider_issuer": a.issuer,
-                           "provider_subject": subj, "display_name": "Owner", "active": True})
+                           "provider_subject": subj, "active": True})
     principals.sort(key=lambda p: p["id"])
+    # A single owner can have multiple login identities. Give identities deterministic,
+    # distinguishable defaults while keeping owner_key as the human-editable base.
+    for i, principal in enumerate(principals):
+        principal["display_name"] = a.owner_key if i == 0 else "%s-%d" % (a.owner_key, i + 1)
 
     # ---- agents:按【列值】取,不按名字 ----
     rows = conn.execute(

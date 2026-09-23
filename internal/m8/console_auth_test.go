@@ -13,7 +13,7 @@ func TestUnifiedConsoleAuthCoversEveryViewRouteAndSeparatesSharedKey(t *testing.
 	hub, db, ctx := newTestHub(t)
 	hub.consoleAuthEnabled = true
 	now := time.Now()
-	for _, p := range []model.ConsolePrincipal{{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", Active: true}, {ID: "b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ub", Active: true}} {
+	for _, p := range []model.ConsolePrincipal{{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", DisplayName: "a", Active: true}, {ID: "b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ub", DisplayName: "b", Active: true}} {
 		if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
 			t.Fatal(err)
 		}
@@ -59,7 +59,7 @@ func TestConsoleCapabilityIsConsumedForExactSessionBeforeInput(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.consoleAuthEnabled = true
 	now := time.Now()
-	for _, p := range []model.ConsolePrincipal{{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", Active: true}, {ID: "b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ub", Active: true}} {
+	for _, p := range []model.ConsolePrincipal{{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", DisplayName: "a", Active: true}, {ID: "b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ub", DisplayName: "b", Active: true}} {
 		if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
 			t.Fatal(err)
 		}
