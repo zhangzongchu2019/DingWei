@@ -256,3 +256,33 @@ func TestConsoleSpecTwelveStepFlowSingleEditorFinalAndOwnerOnlyTasks(t *testing.
 		t.Fatal("closed split accepted")
 	}
 }
+
+func TestConsoleSpecEditorsAndTransfersRequireActiveOwnerRole(t *testing.T) {
+	db := newConsoleSpecStore(t)
+	ctx := context.Background()
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "nonowner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "no", DisplayName: "非业主", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "inactive-owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "io", DisplayName: "停用业主", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertConsolePrincipalRole(ctx, model.ConsolePrincipalRole{PrincipalID: "inactive-owner", Role: "owner", OwnerKey: "tenant-a", Active: false}); err != nil {
+		t.Fatal(err)
+	}
+	editors, err := db.ListActiveConsolePrincipals(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, editor := range editors {
+		if editor.ID == "nonowner" || editor.ID == "inactive-owner" {
+			t.Fatalf("non-owner leaked into editor candidates: %+v", editors)
+		}
+	}
+	createSpec(t, db, "owner-only-target", "owner-only-target", time.Now())
+	if err := db.TransferConsoleSpec(ctx, "owner-only-target", "owner-a", "非业主", "editing", time.Now()); !errors.Is(err, ErrConsoleSpecPermission) {
+		t.Fatalf("active non-owner became editor: %v", err)
+	}
+	if err := db.TransferConsoleSpec(ctx, "owner-only-target", "owner-a", "乙", "editing", time.Now()); err != nil {
+		t.Fatalf("active owner transfer failed: %v", err)
+	}
+}

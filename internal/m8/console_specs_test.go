@@ -35,7 +35,7 @@ func newConsoleSpecTestHub(t *testing.T) *Hub {
 			t.Fatal(err)
 		}
 	}
-	for _, principal := range []string{"owner-a", "owner-b"} {
+	for _, principal := range []string{"owner-a", "owner-b", "manager"} {
 		if err := db.UpsertConsolePrincipalRole(context.Background(), model.ConsolePrincipalRole{PrincipalID: principal, Role: "owner", OwnerKey: "tenant-a", Active: true}); err != nil {
 			t.Fatal(err)
 		}
@@ -294,6 +294,24 @@ func TestConsoleSpecInputAnchorsAndManagementSideEffectsAreServerEnforced(t *tes
 	stored, err := hub.Repo.(*store.SQLite).ConsoleSpec(context.Background(), "owner-a", spec.ID, false)
 	if err != nil || stored == nil || stored.State != "editing" {
 		t.Fatalf("403 performed side effect spec=%+v err=%v", stored, err)
+	}
+}
+
+func TestConsoleSpecEditorsHTTPExcludesActiveNonOwners(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	if err := db.UpsertConsolePrincipal(context.Background(), model.ConsolePrincipal{ID: "nonowner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "nonowner", DisplayName: "非业主", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/console/spec-editors", nil)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr := httptest.NewRecorder()
+	hub.HandleConsoleSpecEditors(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("editors code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	if strings.Contains(rr.Body.String(), "非业主") || !strings.Contains(rr.Body.String(), "甲") || !strings.Contains(rr.Body.String(), "乙") {
+		t.Fatalf("owner-only editor response=%s", rr.Body.String())
 	}
 }
 

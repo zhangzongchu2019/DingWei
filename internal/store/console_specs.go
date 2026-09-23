@@ -23,7 +23,9 @@ var (
 )
 
 func (s *SQLite) ListActiveConsolePrincipals(ctx context.Context) ([]model.ConsolePrincipal, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,provider,provider_issuer,provider_subject,display_name,active FROM console_principal WHERE active=1 ORDER BY display_name,id`)
+	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active
+		FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
+		WHERE p.active=1 ORDER BY p.display_name,p.id`)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +47,12 @@ func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetS
 	if nextState != "editing" && nextState != "review" {
 		return errors.New("invalid spec state")
 	}
-	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET state=?,current_editor_id=(SELECT id FROM console_principal WHERE display_name=? AND active=1),updated_at=? WHERE id=? AND current_editor_id=? AND state<>'final' AND archived=0 AND EXISTS(SELECT 1 FROM console_principal WHERE display_name=? AND active=1)`, nextState, targetShort, now.UTC().Format(time.RFC3339Nano), specID, actor, targetShort)
+	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET state=?,current_editor_id=(
+		SELECT p.id FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
+		WHERE p.display_name=? AND p.active=1),updated_at=?
+		WHERE id=? AND current_editor_id=? AND state<>'final' AND archived=0 AND EXISTS(
+		SELECT 1 FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
+		WHERE p.display_name=? AND p.active=1)`, nextState, targetShort, now.UTC().Format(time.RFC3339Nano), specID, actor, targetShort)
 	if err != nil {
 		return err
 	}

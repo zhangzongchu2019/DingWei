@@ -30,6 +30,9 @@ func newConsoleSpecStore(t *testing.T) *SQLite {
 		if err := db.UpsertConsolePrincipal(context.Background(), p); err != nil {
 			t.Fatal(err)
 		}
+		if err := db.UpsertConsolePrincipalRole(context.Background(), model.ConsolePrincipalRole{PrincipalID: p.ID, Role: "owner", OwnerKey: "tenant-a", Active: true}); err != nil {
+			t.Fatal(err)
+		}
 	}
 	return db
 }
