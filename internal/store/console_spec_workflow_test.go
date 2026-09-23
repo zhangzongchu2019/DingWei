@@ -271,12 +271,17 @@ func TestConsoleSpecEditorsAndTransfersRequireActiveOwnerRole(t *testing.T) {
 	}
 	editors, err := db.ListActiveConsolePrincipals(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("owner candidate list returned an error: %v", err)
 	}
+	got := make(map[string]bool, len(editors))
 	for _, editor := range editors {
+		got[editor.ID] = true
 		if editor.ID == "nonowner" || editor.ID == "inactive-owner" {
 			t.Fatalf("non-owner leaked into editor candidates: %+v", editors)
 		}
+	}
+	if len(editors) != 3 || !got["owner-a"] || !got["owner-b"] || !got["manager"] {
+		t.Fatalf("owner candidate ids=%v want exactly owner-a,owner-b,manager", got)
 	}
 	createSpec(t, db, "owner-only-target", "owner-only-target", time.Now())
 	if err := db.TransferConsoleSpec(ctx, "owner-only-target", "owner-a", "非业主", "editing", time.Now()); !errors.Is(err, ErrConsoleSpecPermission) {
