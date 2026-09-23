@@ -167,7 +167,7 @@ async function main() {
     assert.strictEqual(await page.locator('#new-screen').isHidden(), true, 'new form must not share the first screen');
     assert.strictEqual(await page.locator('#detail-screen').isHidden(), true, 'detail must be empty before a spec is selected');
     assert.strictEqual(await page.locator('#task-area').isHidden(), true, 'task area must be empty before a spec is selected');
-    await page.locator('#empty-create-spec').waitFor({state:'visible'});await page.click('#empty-create-spec');
+    await page.waitForFunction(()=>document.getElementById('page-status').textContent!=='');assert.strictEqual(await page.locator('#empty-create-spec').count(),1,'empty list must expose exactly one create-spec link');await page.click('#empty-create-spec');
     assert.strictEqual(await page.locator('#new-screen').isVisible(), true, 'empty list create link must open a separate create screen');
     const validNew = { title: 'Valid', markdown: '# Valid', acceptance: 'accepted', anchor: 'msg:valid' };
     async function setNew(values) {
