@@ -35,10 +35,18 @@ type consoleSpecRepository interface {
 	ListAllConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
 	CreateConsoleTaskProposal(context.Context, model.ConsoleTaskProposal, string, bool) error
 	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string, string) error
+	DeleteConsoleSpecTask(context.Context, string, string) error
 	ListActiveConsolePrincipals(context.Context) ([]model.ConsolePrincipal, error)
 	TransferConsoleSpec(context.Context, string, string, string, string, time.Time) error
 	FinalizeConsoleSpec(context.Context, string, string, time.Time) error
 	CloseConsoleSpecTaskSplit(context.Context, string, string, time.Time) error
+	ListOwnedConsoleAgents(context.Context, string) ([]model.ConsoleAgent, error)
+	ResolveConsoleAgentByEndpoint(context.Context, string, string) (*model.ConsoleAgent, error)
+	StartConsoleSpecPresplit(context.Context, model.ConsoleSpecPresplitRequest, string) (*model.ConsoleSpecRevision, *model.ConsoleAgent, error)
+	ConsoleSpecPresplit(context.Context, string, string, time.Time, time.Time) (*model.ConsoleSpecPresplitRequest, error)
+	FailConsoleSpecPresplitDispatch(context.Context, string, string, time.Time) error
+	RejectConsoleSpecPresplitResult(context.Context, string, model.ConsoleAgent, string, time.Time) error
+	CompleteConsoleSpecPresplit(context.Context, string, model.ConsoleAgent, []store.ConsoleSpecPresplitTask, time.Time) error
 }
 
 type consoleSpecOpenNewContextKey struct{}
@@ -435,6 +443,23 @@ func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Reque
 		dod = []byte("[]")
 	}
 	if err := repo.UpdateConsoleTaskProposalPlan(r.Context(), r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn, string(dod)); err != nil {
+		code := http.StatusConflict
+		if errors.Is(err, store.ErrConsoleSpecPermission) {
+			code = http.StatusForbidden
+		}
+		http.Error(w, err.Error(), code)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Hub) HandleConsoleSpecTaskDelete(w http.ResponseWriter, r *http.Request) {
+	repo, ok := h.consoleSpecs()
+	if !ok {
+		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if err := repo.DeleteConsoleSpecTask(r.Context(), r.PathValue("proposalID"), platformPrincipal(r)); err != nil {
 		code := http.StatusConflict
 		if errors.Is(err, store.ErrConsoleSpecPermission) {
 			code = http.StatusForbidden
