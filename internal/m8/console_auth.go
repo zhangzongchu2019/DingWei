@@ -270,6 +270,7 @@ main{display:flex;flex-direction:column;min-width:0}
 #tabs .tab .tab-state{color:#9d1b1b;font-size:11px;font-weight:400}
 #panes{flex:1;position:relative;min-height:0}
 #panes iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.agent-offline-reason{position:absolute;inset:0;z-index:2;align-items:center;justify-content:center;background:var(--bg);color:#9d1b1b;font-weight:600}
 .group-workspace{position:absolute;inset:0;overflow:auto;padding:16px;background:inherit}
 .group-workspace label{display:block;margin:8px 0}.group-workspace input,.group-workspace select{min-width:320px;padding:5px}
 .group-workspace button{margin:4px;padding:5px 9px}.agent-group{border:1px solid #ddd;border-radius:6px;padding:10px;margin:8px 0}
@@ -417,12 +418,13 @@ function activate(session){
   tabs.forEach(function(v,k){
     v.tab.classList.toggle('on', k===session);
     v.pane.style.display = (k===session) ? 'block' : 'none';
+    if(v.offlineReason)v.offlineReason.style.display=(k===session&&!v.offlineReason.hidden)?'flex':'none';
   });
   var h=document.getElementById('hint'); if(h) h.style.display='none';
 }
 function closeTab(session){
   var e=tabs.get(session); if(!e) return;
-  e.tab.remove(); e.pane.remove(); tabs.delete(session);   // 🔴 关闭才真正断开那条 SSE
+  e.tab.remove(); e.pane.remove(); if(e.offlineReason)e.offlineReason.remove(); tabs.delete(session);   // 🔴 关闭才真正断开那条 SSE
   var last=Array.from(tabs.keys()).pop();
   if(last) activate(last);
   else { var h=document.getElementById('hint'); if(h) h.style.display='block'; }
@@ -444,9 +446,10 @@ function openTab(session){
   pane.title='Agent view: '+session;
   pane.src='/view/'+encodeURIComponent(session);
   pane.style.display='none';
+  var offlineReason=document.createElement('div');offlineReason.className='agent-offline-reason';offlineReason.hidden=true;offlineReason.textContent='该 Agent 已离线，暂不可交互';
   document.getElementById('tabs').append(tab);
-  document.getElementById('panes').append(pane);
-  tabs.set(session,{tab:tab,pane:pane});
+  document.getElementById('panes').append(pane,offlineReason);
+  tabs.set(session,{tab:tab,pane:pane,offlineReason:offlineReason});
   activate(session);
 }
 function applyAgentSnapshot(agents){
@@ -460,6 +463,7 @@ function applyAgentSnapshot(agents){
     var state=e.tab.querySelector('.tab-state');if(!state){state=document.createElement('span');state.className='tab-state';e.tab.insertBefore(state,e.tab.querySelector('.x'));}
     state.textContent=online?'':'离线，暂不可交互';state.hidden=online;
     e.tab.title=online?session:(session+' · Agent 离线，暂不可交互');
+    e.offlineReason.hidden=online;e.offlineReason.style.display=online||!e.tab.classList.contains('on')?'none':'flex';
     e.pane.style.pointerEvents=online?'':'none';
   });
 }

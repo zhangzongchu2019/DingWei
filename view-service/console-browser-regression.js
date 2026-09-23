@@ -26,7 +26,7 @@ function consoleHTMLFromProductionSource() {
   if (MUTATION === 'silent-group-load') html = html.replace("groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);", "groupStatus('');if(source==='retry')groupFeedback('groupRetryFeedback','');");
   if (MUTATION === 'silent-platform-load') html = html.replace("status.textContent='工作台加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);", "status.textContent='';");
   if (MUTATION === 'silent-agent-load') html = html.replace("status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);", "status.textContent='';");
-  if (MUTATION === 'silent-offline-tab') html = html.replace("state.textContent=online?'':'离线，暂不可交互';", "state.textContent='';");
+  if (MUTATION === 'silent-offline-tab') html = html.replace("state.textContent=online?'':'离线，暂不可交互';", "state.textContent='';").replace("offlineReason.textContent='该 Agent 已离线，暂不可交互';", "offlineReason.textContent='';");
   if (MUTATION === 'disable-platform-tabs-on-agent-refresh') html = html.replace("if(String(session).startsWith('__')) return;", '');
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
   if (MUTATION === 'legacy-group-deadlock') {
@@ -607,10 +607,14 @@ async function main() {
       assert.strictEqual(await tab.getAttribute('aria-disabled'), 'true');
       assert.match(await tab.getAttribute('title'), /Agent 离线，暂不可交互/);
       assert.strictEqual(await page.locator('#panes iframe[title="Agent view: owner-alpha-2642"]').evaluate((node) => node.style.pointerEvents), 'none');
+      const reason = page.locator('#panes .agent-offline-reason');
+      assert.strictEqual(await reason.isVisible(), true);
+      assert.strictEqual(await reason.textContent(), '该 Agent 已离线，暂不可交互');
       assert.notStrictEqual(await page.locator('#panes .group-workspace').evaluate((node) => node.style.pointerEvents), 'none', 'Agent refresh must not disable the platform group workspace');
       agents[0].online = true;
       await page.evaluate(() => refreshAgents());
       assert.strictEqual(await page.locator('#tabs .tab[title="owner-alpha-2642"] .tab-state').isHidden(), true);
+      assert.strictEqual(await reason.isHidden(), true);
     });
 
     await test('opens Specs inside console without destroying live Agent panes', async () => {
