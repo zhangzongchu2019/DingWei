@@ -25,7 +25,12 @@ function consoleHTMLFromProductionSource() {
   if (MUTATION === 'legacy-specs-entry') html = html.replace("if(item.id==='specs') a.onclick=function(ev){ev.preventDefault();openSpecsWorkspace();};", "");
   if (MUTATION === 'silent-group-load') html = html.replace("groupStatus('编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err));", "groupStatus('');");
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
-  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','unhandled-group-action'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'legacy-group-deadlock') {
+    html = html.replace(/<section id=groupCodeJoin>.*?<\/section>/, '');
+    html = html.replace('<section id=groupDetail hidden>', '<section id=groupDetail hidden><label>完整 32 字符组码 <input id=groupJoinCode maxlength=32></label>');
+    html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
+  }
+  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -50,6 +55,7 @@ async function main() {
   let emptyGroupInventory = false;
   let auditGroupMode = false;
   let auditGroup = null;
+  let groupGETs = 0;
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
@@ -90,6 +96,7 @@ async function main() {
         if (failGroupAction === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture create denied'); return; }
         let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
       }
+      groupGETs += 1;
       if (failGroupLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture groups unavailable'); return; }
       if (failGroupLoad === 'shape') { res.writeHead(200, {'Content-Type':'application/json'}); res.end('{"owned_agents":"wrong","groups":[]}'); return; }
       if (failGroupLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify(groupPayload(false))); }, 200); return; }
@@ -199,6 +206,7 @@ async function main() {
     await test('lets a human start from zero groups without a hidden-control deadlock', async () => {
       emptyGroupInventory = true;
       const emptyPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      emptyPage.setDefaultTimeout(1500);
       const emptyErrors = [];
       emptyPage.on('pageerror', (error) => emptyErrors.push(error.message));
       emptyPage.on('console', (message) => { if (message.type() === 'error') emptyErrors.push(message.text()); });
@@ -213,6 +221,7 @@ async function main() {
       assert.strictEqual(await emptyPage.locator('#groupLeader').isDisabled(), true);
       assert.strictEqual(await emptyPage.locator('#groupJoinAgent').isDisabled(), true);
       assert.strictEqual(await emptyPage.locator('#groupCodeJoinAgent').isDisabled(), true);
+      assert.strictEqual(await emptyPage.locator('#groupJoinCode').isEnabled(), true);
       async function humanHit(selector) {
         const target = emptyPage.locator(selector);
         const box = await target.boundingBox();
@@ -228,14 +237,22 @@ async function main() {
       await emptyPage.locator('#groupJoinCode').click();
       await emptyPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
       assert.strictEqual(await emptyPage.locator('#groupJoinCode').inputValue(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      const getsBeforeRetry = groupGETs;
       const refreshed = emptyPage.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups') && response.status() === 200);
       await emptyPage.locator('#retryGroups').click();
       await refreshed;
+      assert.strictEqual(groupGETs, getsBeforeRetry + 1, 'visible retry must issue one groups GET');
       assert.strictEqual(await emptyPage.locator('#group-status').textContent(), '没有自己的 Agent，无法建组或加入');
       assert.deepStrictEqual(emptyErrors, []);
       await emptyPage.close();
       emptyGroupInventory = false;
     });
+    if (MUTATION === 'legacy-group-deadlock') {
+      console.log(`console browser harness: passed=${passed} failed=${failures.length}`);
+      if (failures.length) console.error(failures.join('\n'));
+      process.exitCode = failures.length ? 1 : 0;
+      return;
+    }
 
     await test('runs the zero-group human workflow without hidden actions or long tasks', async () => {
       auditGroupMode = true;
