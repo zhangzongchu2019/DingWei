@@ -257,7 +257,7 @@ async function main() {
       await page.locator('#edit-status').filter({ hasText: 'saved revision 2' }).waitFor({ state: 'visible' });
       if (title === 'Spec A') {
         await page.locator('#edit-rendered h1').filter({ hasText: 'Spec A changed' }).waitFor({ state: 'visible' });
-        await page.locator('#edit-rendered img.md-img').waitFor({ state: 'visible' });
+        await page.locator('#edit-rendered img.md-img[alt="good"]').waitFor({ state: 'visible' });
         await page.locator('#edit-rendered .md-image-fallback').waitFor({ state: 'visible' });
         assert.strictEqual(await page.locator('#edit-rendered img.md-img').count(), 1, 'working image must remain inline');
         assert.strictEqual(await page.locator('#edit-rendered .md-image-fallback').getAttribute('href'), `http://127.0.0.1:${port}/f/spec/missing/26/0921/ffffffffffffffffffffffffffffffff.png`, 'failed image must retain a direct download exit');
