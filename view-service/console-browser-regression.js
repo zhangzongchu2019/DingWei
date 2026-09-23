@@ -94,7 +94,7 @@ async function main() {
       if (req.method === 'POST') {
         if (failGroupAction === 'network') { req.socket.destroy(); return; }
         if (failGroupAction === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture create denied'); return; }
-        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
+        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode&&auditGroup&&body.short_name===auditGroup.short_name){res.writeHead(409,{'Content-Type':'text/plain; charset=utf-8'});res.end(`${body.short_name} 不可用；建议名称 ${body.short_name}1、${body.short_name}2`);return;}if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
       }
       groupGETs += 1;
       if (failGroupLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture groups unavailable'); return; }
@@ -118,6 +118,12 @@ async function main() {
       req.on('data', (chunk) => { raw += chunk; });
       req.on('end', () => {
         const body = JSON.parse(raw); groupJoinWrites.push({ url: req.url, body });
+        if (auditGroupMode && auditGroup && auditGroup.members.some((member) => member.agent_id === body.agent_id)) {
+          res.writeHead(409, {'Content-Type':'text/plain; charset=utf-8'}); res.end('该 Agent 已在本组'); return;
+        }
+        if (auditGroupMode && auditGroup && auditGroup.additions_closed) {
+          res.writeHead(409, {'Content-Type':'text/plain; charset=utf-8'}); res.end('本组已关闭添加'); return;
+        }
         if (auditGroupMode && auditGroup && !auditGroup.members.some((member) => member.agent_id === body.agent_id)) {
           auditGroup.members.push({agent_id:'agent-b',key_id:'fixture-key-b',session_name:'owner-beta-2642'});
         }
@@ -125,6 +131,9 @@ async function main() {
         res.end();
       });
       return;
+    }
+    if (req.url === '/api/console/agent-groups/missing-1AAAAAAAAAAAAAAAAAAAAAAA/members' && req.method === 'POST' && auditGroupMode) {
+      res.writeHead(404, {'Content-Type':'text/plain; charset=utf-8'}); res.end('组码不存在'); return;
     }
     if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members/agent-b' && req.method === 'DELETE' && auditGroupMode) {
       auditGroup.members = auditGroup.members.filter((member) => member.agent_id !== 'agent-b'); res.writeHead(204); res.end(); return;
@@ -266,9 +275,15 @@ async function main() {
       });
       await auditContext.addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
       const auditPage = await auditContext.newPage();
+      auditPage.setDefaultTimeout(1500);
       const auditErrors = [];
+      const auditExpectedHTTPDiagnostics = [];
       auditPage.on('pageerror', (error) => auditErrors.push(error.message));
-      auditPage.on('console', (message) => { if (message.type() === 'error') auditErrors.push(message.text()); });
+      auditPage.on('console', (message) => {
+        if (message.type() !== 'error') return;
+        if (message.text().startsWith('Failed to load resource: the server responded with a status of')) auditExpectedHTTPDiagnostics.push(message.text());
+        else auditErrors.push(message.text());
+      });
       await auditPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
       async function humanHit(selector) {
         const target = auditPage.locator(selector);
@@ -292,10 +307,43 @@ async function main() {
       await auditPage.locator('#createGroup').click();
       await auditPage.locator('#groupListItems').getByText('audit-01').waitFor({ state: 'visible' });
 
+      // Failure paths are product outcomes and must remain visible without JS errors.
+      assert.strictEqual(await humanHit('#createGroup'), true);
+      await auditPage.locator('#createGroup').click();
+      await auditPage.locator('#groupNameFeedback').filter({ hasText: 'audit-01 不可用；建议名称 audit-011、audit-012' }).waitFor({ state: 'visible' });
+
       await auditPage.locator('#groupJoinCode').click();
-      await auditPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await auditPage.keyboard.type('short');
+      assert.strictEqual(await humanHit('#joinByCode'), true);
+      await auditPage.locator('#joinByCode').click();
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '请输入完整 32 字符组码' }).waitFor({ state: 'visible' });
+
+      async function keyboardReplace(selector, value) {
+        await auditPage.locator(selector).click();
+        await auditPage.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+        await auditPage.keyboard.type(value);
+      }
+      await keyboardReplace('#groupJoinCode', 'missing-1AAAAAAAAAAAAAAAAAAAAAAA');
       await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
       assert.strictEqual(await humanHit('#joinByCode'), true);
+      await auditPage.locator('#joinByCode').click();
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '组码不存在' }).waitFor({ state: 'visible' });
+
+      await keyboardReplace('#groupJoinCode', 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-a');
+      await auditPage.locator('#joinByCode').click();
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '该 Agent 已在本组' }).waitFor({ state: 'visible' });
+
+      assert.strictEqual(await humanHit('#groupAdditionsToggle'), true);
+      await auditPage.locator('#groupAdditionsToggle').click();
+      await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '开放添加' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
+      await auditPage.locator('#joinByCode').click();
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '本组已关闭添加' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupAdditionsToggle').click();
+      await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '关闭添加' }).waitFor({ state: 'visible' });
+
+      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
       await auditPage.locator('#joinByCode').click();
       const member = auditPage.locator('#groupMembers button').filter({ hasText: 'beta' });
       await member.waitFor({ state: 'visible' });
@@ -320,6 +368,7 @@ async function main() {
       await auditPage.locator('#groupEmptyCreate').waitFor({ state: 'visible' });
       assert.strictEqual(await auditPage.locator('#groupCodeJoin').isVisible(), true);
       assert.deepStrictEqual(await auditPage.evaluate(() => globalThis.__dwLongTasks), []);
+      assert.strictEqual(auditExpectedHTTPDiagnostics.length, 4, 'four deliberate HTTP failures must stay narrowly classified');
       assert.deepStrictEqual(auditErrors, []);
       await auditContext.close();
       auditGroupMode = false;
