@@ -228,12 +228,12 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "agent is offline", http.StatusConflict)
 			return
 		}
-		closed, own, lookupErr := h.consoleGroupAdditionsClosed(r.Context(), code, principal)
+		closed, _, lookupErr := h.consoleGroupAdditionsClosed(r.Context(), code, principal)
 		if lookupErr != nil {
 			http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		if own && closed {
+		if closed {
 			http.Error(w, "该编组已关闭添加", http.StatusConflict)
 			return
 		}
@@ -251,6 +251,10 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		err = repo.DeleteConsoleAgentGroup(r.Context(), code, principal, management)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupMemberExists) {
+		http.Error(w, "该 Agent 已在该编组中", http.StatusConflict)
 		return
 	}
 	if errors.Is(err, sql.ErrNoRows) {

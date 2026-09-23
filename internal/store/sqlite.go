@@ -3242,6 +3242,7 @@ func (s *SQLite) UpsertAgentGroup(ctx context.Context, group model.AgentGroup) e
 
 var ErrAgentGroupShortNameConflict = errors.New("agent group short name conflict")
 var ErrAgentGroupCodeConflict = errors.New("agent group code conflict")
+var ErrAgentGroupMemberExists = errors.New("agent group member already exists")
 
 func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentGroup) error {
 	if err := validateAgentGroupCode(group.Code); err != nil {
@@ -3321,13 +3322,18 @@ func (s *SQLite) AssignOwnedConsoleAgentGroup(ctx context.Context, code, princip
 		SELECT g.code,a.key_id,a.session_name,e.owner_key,? FROM agent_group g JOIN console_agent a ON a.id=?
 		JOIN session_endpoint e ON e.key_id=a.key_id AND e.session_name=a.session_name
 		WHERE g.code=? AND a.owner_principal=? AND a.active=1 AND g.additions_closed=0
-		ON CONFLICT(code,key_id,session_name) DO UPDATE SET owner_key=excluded.owner_key`,
+		ON CONFLICT(code,key_id,session_name) DO NOTHING`,
 		s.now().UTC().Format(time.RFC3339Nano), agentID, code, principalID)
 	if err != nil {
 		return err
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
+		var exists int
+		err = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM agent_group_member m JOIN console_agent a ON a.key_id=m.key_id AND a.session_name=m.session_name WHERE m.code=? AND a.id=?)`, code, agentID).Scan(&exists)
+		if err == nil && exists != 0 {
+			return ErrAgentGroupMemberExists
+		}
 		return sql.ErrNoRows
 	}
 	return nil

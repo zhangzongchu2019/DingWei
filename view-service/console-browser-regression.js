@@ -194,8 +194,9 @@ async function main() {
       assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['alpha', 'beta']);
       assert.deepStrictEqual(await page.locator('#groupJoinAgent option').allTextContents(), ['beta']);
       assert.strictEqual(await page.locator('#groupJoinCode').count(), 1);
-      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
       assert.strictEqual(await page.locator('#groupCodeValue').textContent(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      assert.deepStrictEqual(await page.locator('#groupCodeJoinAgent option').allTextContents(), ['alpha', 'beta']);
       assert.strictEqual(await page.locator('#groupShortName').getAttribute('pattern'), null);
       assert.strictEqual(await page.locator('.group-workspace input[name="key_id"]').count(), 0);
       await page.locator('#copyGroupCode').click();
@@ -235,9 +236,10 @@ async function main() {
     });
 
     await test('joins through visible controls and leaves no uncaught page error', async () => {
-      await page.locator('#groupJoinAgent').selectOption('agent-b');
+      await page.locator('#groupJoinCode').pressSequentially('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await page.locator('#groupCodeJoinAgent').selectOption('agent-b');
       const joined = page.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members') && response.status() === 204);
-      await page.locator('#joinGroup').click();
+      await page.locator('#joinByCode').click();
       await joined;
       assert.deepStrictEqual(groupJoinWrites, [{
         url: '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members',

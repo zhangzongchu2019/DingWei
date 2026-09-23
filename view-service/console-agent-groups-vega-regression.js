@@ -13,7 +13,14 @@ assert(start >= 0 && end > start, 'cannot extract consolePageHTML from productio
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
 if (mutation === 'retry-feedback') html = html.replace("groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');", '');
-if (mutation === 'can-manage') html = html.replace('if(!leader&&selected.can_manage)', 'if(false)');
+if (mutation === 'can-manage') {
+  // The production page has an earlier compatibility definition and the final
+  // definition that is actually used. Mutate only the final guard.
+  const guard = 'if(!leader&&selected.can_manage)';
+  const at = html.lastIndexOf(guard);
+  assert(at >= 0, 'cannot find final can_manage guard');
+  html = html.slice(0, at) + 'if(false)' + html.slice(at + guard.length);
+}
 if (mutation && !['retry-feedback', 'can-manage'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 
 let groups = [];
@@ -84,7 +91,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#groupShortName').click(); await page.locator('#groupShortName').press('ControlOrMeta+A'); await page.locator('#groupShortName').press('Backspace'); await page.locator('#groupShortName').pressSequentially('团队1'); await page.locator('#createGroup').click();
       await page.locator('#groupNameFeedback').filter({ hasText: 'unavailable' }).waitFor({ state: 'visible' });
       assert.match(await page.locator('#groupNameFeedback').textContent(), /团队1 is unavailable; try 团队11/);
-      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), 'A'.repeat(32));
+      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
       assert.strictEqual(await page.locator('#groupCodeValue').textContent(), 'A'.repeat(32));
     });
     await test('retry success is visible', async () => {
@@ -93,11 +100,15 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
     await test('keeps the 32-character code credential visible and submits the code the operator enters', async () => {
       const code = 'B'.repeat(32);
-      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), 'A'.repeat(32));
+      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
       await page.locator('#groupJoinCode').click(); await page.locator('#groupJoinCode').press('ControlOrMeta+A'); await page.locator('#groupJoinCode').pressSequentially(code);
-      await page.locator('#groupJoinAgent').selectOption('member'); await page.locator('#joinGroup').click();
+      await page.locator('#groupCodeJoinAgent').selectOption('member'); await page.locator('#joinByCode').click();
       await page.waitForTimeout(20);
       assert.deepStrictEqual(membershipWrites.at(-1), { code, agent_id: 'member' });
+      nextJoinFailure = '该 Agent 已在该编组中';
+      await page.locator('#joinByCode').click();
+      await page.locator('#groupCodeJoinFeedback').getByText('该 Agent 已在该编组中').waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#groupCodeJoinFeedback').textContent(), '该 Agent 已在该编组中');
       groups[0].members = groups[0].members.filter((member) => member.agent_id !== 'member');
       await page.evaluate(() => refreshGroups('credential-reset'));
     });
@@ -118,13 +129,14 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.deepStrictEqual(consoleErrors.filter((text) => !text.includes('status of 409')), []);
     });
     await test('only own online short names are candidates', async () => {
+      // Keep this assertion independent of the removal-flow test: a mutation
+      // that correctly blocks removal must not make this later candidate check
+      // fail merely because its fixture cleanup did not run.
+      groups[0].members = groups[0].members.filter((member) => member.agent_id !== 'member');
+      await page.evaluate(() => refreshGroups('candidate-reset'));
       const names = await page.locator('#groupJoinAgent option').allTextContents();
-      if (mutation === 'can-manage') {
-        assert.deepStrictEqual(names, ['没有可加入的在线 Agent']);
-      } else {
-        assert.deepStrictEqual(names, ['member']);
-        assert.strictEqual(await page.locator('#groupJoinAgent option').first().getAttribute('value'), 'member');
-      }
+      assert.deepStrictEqual(names, ['member']);
+      assert.strictEqual(await page.locator('#groupJoinAgent option').first().getAttribute('value'), 'member');
     });
   } finally { await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`vega group browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);

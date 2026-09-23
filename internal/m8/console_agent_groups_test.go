@@ -49,7 +49,7 @@ func TestConsoleAgentGroupUserShortNameCollisionIsReportedNotRedrawn(t *testing.
 				_, err := createConsoleAgentGroup(ctx, db, "owner-a", leader, "oa", shortName, func() string {
 					ready <- struct{}{}
 					<-start
-					return fmt.Sprintf("%032d", 1000+iteration+worker)
+					return fmt.Sprintf("%032d", 1000+iteration*2+worker)
 				})
 				errs <- err
 			}(worker, leader)
@@ -178,9 +178,21 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("open group must accept an online Agent from another owner through the group-code credential, code=%d body=%s", rr.Code, rr.Body.String())
 	}
+	rr = call("owner-b", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+b1.ID+`"}`))
+	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该 Agent 已在该编组中") {
+		t.Fatalf("duplicate code join must be a visible, specific failure code=%d body=%s", rr.Code, rr.Body.String())
+	}
 	rr = call("owner-a", http.MethodGet, "/api/console/agent-groups", "", "", nil)
 	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-a-two-2642"`)) || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-b-full-2642"`)) {
 		t.Fatalf("creator list lacks the joined members code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	rr = call("owner-a", http.MethodDelete, "/api/console/agent-groups/"+group.Code+"/members/"+b1.ID, group.Code, b1.ID, nil)
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("creator must remove the cross-owner member code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	rr = call("owner-a", http.MethodGet, "/api/console/agent-groups", "", "", nil)
+	if rr.Code != http.StatusOK || bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-b-full-2642"`)) {
+		t.Fatalf("removed cross-owner member remains visible code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodDelete, "/api/console/agent-groups/"+group.Code, group.Code, "", nil)
 	if rr.Code != http.StatusNoContent {
