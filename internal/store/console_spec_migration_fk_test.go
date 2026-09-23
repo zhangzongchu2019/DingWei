@@ -132,4 +132,8 @@ VALUES('dangling','missing-spec',1,'owner-entry-a','probe','','2026-09-22T00:00:
 	if err = db.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pragma_table_info('console_spec') WHERE name='claimed_by'`).Scan(&claimedColumn); err != nil || claimedColumn != 1 {
 		t.Errorf("rollback legacy schema claimed_by columns=%d err=%v", claimedColumn, err)
 	}
+	var v2Tables int
+	if err = db.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='console_spec_v2'`).Scan(&v2Tables); err != nil || v2Tables != 0 {
+		t.Errorf("rollback console_spec_v2 tables=%d err=%v", v2Tables, err)
+	}
 }
