@@ -49,7 +49,7 @@ func TestConsoleAgentGroupUserShortNameCollisionIsReportedNotRedrawn(t *testing.
 				_, err := createConsoleAgentGroup(ctx, db, "owner-a", leader, "oa", shortName, func() string {
 					ready <- struct{}{}
 					<-start
-					return fmt.Sprintf("%024d", 1000+iteration+worker)
+					return fmt.Sprintf("%032d", 1000+iteration+worker)
 				})
 				errs <- err
 			}(worker, leader)
