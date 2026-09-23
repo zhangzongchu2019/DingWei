@@ -22,10 +22,23 @@ var (
 	ErrConsoleSpecFinal          = errors.New("console spec is finalized")
 )
 
-func (s *SQLite) ListActiveConsolePrincipals(ctx context.Context) ([]model.ConsolePrincipal, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active
+type consoleSpecOwnerQuerier interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+}
+
+// activeOwnerPrincipals is the single source of truth for every short-name
+// based spec assignee lookup: an active identity with an active owner role.
+func activeOwnerPrincipals(ctx context.Context, q consoleSpecOwnerQuerier, shortName string) ([]model.ConsolePrincipal, error) {
+	query := `SELECT DISTINCT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active
 		FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
-		WHERE p.active=1 ORDER BY p.display_name,p.id`)
+		WHERE p.active=1`
+	args := []any{}
+	if shortName != "" {
+		query += ` AND p.display_name=?`
+		args = append(args, shortName)
+	}
+	query += ` ORDER BY p.display_name,p.id`
+	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,16 +56,36 @@ func (s *SQLite) ListActiveConsolePrincipals(ctx context.Context) ([]model.Conso
 	return out, rows.Err()
 }
 
+func resolveOwnerPrincipalByShortName(ctx context.Context, q consoleSpecOwnerQuerier, shortName string) (*model.ConsolePrincipal, error) {
+	items, err := activeOwnerPrincipals(ctx, q, shortName)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) != 1 {
+		return nil, ErrConsoleSpecPermission
+	}
+	return &items[0], nil
+}
+
+func (s *SQLite) ListActiveConsolePrincipals(ctx context.Context) ([]model.ConsolePrincipal, error) {
+	return activeOwnerPrincipals(ctx, s.db, "")
+}
+
 func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetShort, nextState string, now time.Time) error {
 	if nextState != "editing" && nextState != "review" {
 		return errors.New("invalid spec state")
 	}
-	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET state=?,current_editor_id=(
-		SELECT p.id FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
-		WHERE p.display_name=? AND p.active=1),updated_at=?
-		WHERE id=? AND current_editor_id=? AND state<>'final' AND archived=0 AND EXISTS(
-		SELECT 1 FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
-		WHERE p.display_name=? AND p.active=1)`, nextState, targetShort, now.UTC().Format(time.RFC3339Nano), specID, actor, targetShort)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	target, err := resolveOwnerPrincipalByShortName(ctx, tx, targetShort)
+	if err != nil {
+		return err
+	}
+	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET state=?,current_editor_id=?,updated_at=?
+		WHERE id=? AND current_editor_id=? AND state<>'final' AND archived=0`, nextState, target.ID, now.UTC().Format(time.RFC3339Nano), specID, actor)
 	if err != nil {
 		return err
 	}
@@ -60,7 +93,7 @@ func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetS
 	if n != 1 {
 		return ErrConsoleSpecPermission
 	}
-	return nil
+	return tx.Commit()
 }
 
 func (s *SQLite) FinalizeConsoleSpec(ctx context.Context, specID, actor string, now time.Time) error {

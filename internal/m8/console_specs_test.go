@@ -313,6 +313,20 @@ func TestConsoleSpecEditorsHTTPExcludesActiveNonOwners(t *testing.T) {
 	if strings.Contains(rr.Body.String(), "非业主") || !strings.Contains(rr.Body.String(), "甲") || !strings.Contains(rr.Body.String(), "乙") {
 		t.Fatalf("owner-only editor response=%s", rr.Body.String())
 	}
+	created := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", validSpecBody, hub.HandleConsoleSpecs)
+	var spec model.ConsoleSpec
+	if err := json.Unmarshal(created.Body.Bytes(), &spec); err != nil {
+		t.Fatal(err)
+	}
+	req = httptest.NewRequest(http.MethodPost, "/api/console/specs/"+spec.ID+"/workflow/transfer", bytes.NewBufferString(`{"target_short_name":"非业主","state":"editing"}`))
+	req.SetPathValue("specID", spec.ID)
+	req.SetPathValue("action", "transfer")
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleSpecWorkflow(rr, req)
+	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "permission denied") {
+		t.Fatalf("non-owner transfer code=%d body=%s", rr.Code, rr.Body.String())
+	}
 }
 
 func TestConsoleSpecSharedCapabilityIsReadOnly(t *testing.T) {
