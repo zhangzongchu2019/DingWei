@@ -48,6 +48,8 @@ async function main() {
   let failGroupAction = '';
   let slowGroupLoad = false;
   let emptyGroupInventory = false;
+  let auditGroupMode = false;
+  let auditGroup = null;
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
@@ -86,12 +88,13 @@ async function main() {
       if (req.method === 'POST') {
         if (failGroupAction === 'network') { req.socket.destroy(); return; }
         if (failGroupAction === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture create denied'); return; }
-        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{groupWrites.push({url:req.url,body:JSON.parse(raw)});res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(groupPayload(false).groups[0]));}); return;
+        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
       }
       if (failGroupLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture groups unavailable'); return; }
       if (failGroupLoad === 'shape') { res.writeHead(200, {'Content-Type':'application/json'}); res.end('{"owned_agents":"wrong","groups":[]}'); return; }
       if (failGroupLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify(groupPayload(false))); }, 200); return; }
       if (failGroupLoad === 'empty') { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:[],groups:[]})); return; }
+      if (auditGroupMode) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:groupPayload(false).owned_agents,groups:auditGroup?[auditGroup]:[]})); return; }
       if (emptyGroupInventory) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:groupPayload(false).owned_agents,groups:[]})); return; }
       const send = (closed) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(groupPayload(closed))); };
       if (slowGroupLoad) { slowGroupLoad=false; setTimeout(() => send(false), 120); return; }
@@ -107,11 +110,23 @@ async function main() {
       let raw = '';
       req.on('data', (chunk) => { raw += chunk; });
       req.on('end', () => {
-        groupJoinWrites.push({ url: req.url, body: JSON.parse(raw) });
+        const body = JSON.parse(raw); groupJoinWrites.push({ url: req.url, body });
+        if (auditGroupMode && auditGroup && !auditGroup.members.some((member) => member.agent_id === body.agent_id)) {
+          auditGroup.members.push({agent_id:'agent-b',key_id:'fixture-key-b',session_name:'owner-beta-2642'});
+        }
         res.writeHead(204);
         res.end();
       });
       return;
+    }
+    if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members/agent-b' && req.method === 'DELETE' && auditGroupMode) {
+      auditGroup.members = auditGroup.members.filter((member) => member.agent_id !== 'agent-b'); res.writeHead(204); res.end(); return;
+    }
+    if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions' && req.method === 'POST' && auditGroupMode) {
+      let raw=''; req.on('data',(chunk)=>{raw+=chunk}); req.on('end',()=>{auditGroup.additions_closed=JSON.parse(raw).closed;res.writeHead(204);res.end();}); return;
+    }
+    if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA' && req.method === 'DELETE' && auditGroupMode) {
+      auditGroup = null; res.writeHead(204); res.end(); return;
     }
     if (req.url === '/console/specs?embedded=1') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><title>DingWei Specs</title><h1>我的 spec</h1>'); return; }
     if (req.url && req.url.startsWith('/view/')) {
@@ -142,6 +157,7 @@ async function main() {
       console.log(`  FAIL ${name}: ${error.message}`);
     }
   }
+
 
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
@@ -215,6 +231,80 @@ async function main() {
       assert.deepStrictEqual(emptyErrors, []);
       await emptyPage.close();
       emptyGroupInventory = false;
+    });
+
+    await test('runs the zero-group human workflow without hidden actions or long tasks', async () => {
+      auditGroupMode = true;
+      auditGroup = null;
+      const auditContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      await auditContext.addInitScript(() => {
+        globalThis.__dwLongTasks = [];
+        new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) if (entry.duration > 200) globalThis.__dwLongTasks.push(entry.duration);
+        }).observe({ type: 'longtask', buffered: true });
+      });
+      await auditContext.addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      const auditPage = await auditContext.newPage();
+      const auditErrors = [];
+      auditPage.on('pageerror', (error) => auditErrors.push(error.message));
+      auditPage.on('console', (message) => { if (message.type() === 'error') auditErrors.push(message.text()); });
+      await auditPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+      async function humanHit(selector) {
+        const target = auditPage.locator(selector);
+        await target.scrollIntoViewIfNeeded();
+        const box = await target.boundingBox();
+        assert.ok(box && box.width > 0 && box.height > 0, `${selector} has no visible hit box`);
+        return auditPage.evaluate(({ selector, x, y }) => {
+          const wanted = document.querySelector(selector), hit = document.elementFromPoint(x, y);
+          return Boolean(wanted && hit && (hit === wanted || wanted.contains(hit)));
+        }, { selector, x: box.x + box.width / 2, y: box.y + box.height / 2 });
+      }
+      const entry = auditPage.locator('#platform-items a[data-item-id="agent-groups"]');
+      await entry.waitFor({ state: 'visible' });
+      await entry.click();
+      await auditPage.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
+
+      await auditPage.locator('#groupShortName').click();
+      await auditPage.keyboard.type('audit-01');
+      await auditPage.locator('#groupLeader').selectOption('agent-a');
+      assert.strictEqual(await humanHit('#createGroup'), true);
+      await auditPage.locator('#createGroup').click();
+      await auditPage.locator('#groupListItems').getByText('audit-01').waitFor({ state: 'visible' });
+
+      await auditPage.locator('#groupJoinCode').click();
+      await auditPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
+      assert.strictEqual(await humanHit('#joinByCode'), true);
+      await auditPage.locator('#joinByCode').click();
+      const member = auditPage.locator('#groupMembers button').filter({ hasText: 'beta' });
+      await member.waitFor({ state: 'visible' });
+      assert.strictEqual(await humanHit('#groupMembers div:nth-child(2) button'), true);
+      await member.click();
+      await auditPage.locator('#groupRemoveAction button').waitFor({ state: 'visible' });
+      assert.strictEqual(await humanHit('#groupRemoveAction button'), true);
+      auditPage.once('dialog', (dialog) => dialog.accept());
+      await auditPage.locator('#groupRemoveAction button').click();
+      await member.waitFor({ state: 'detached' });
+
+      assert.strictEqual(await humanHit('#groupAdditionsToggle'), true);
+      await auditPage.locator('#groupAdditionsToggle').click();
+      await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '开放添加' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupAdditionsToggle').click();
+      await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '关闭添加' }).waitFor({ state: 'visible' });
+
+      const deleteGroup = auditPage.locator('#groupListItems button').filter({ hasText: '删组' });
+      assert.strictEqual(await deleteGroup.count(), 1);
+      auditPage.once('dialog', (dialog) => dialog.accept());
+      await deleteGroup.click();
+      await auditPage.locator('#groupEmptyCreate').waitFor({ state: 'visible' });
+      assert.strictEqual(await auditPage.locator('#groupCodeJoin').isVisible(), true);
+      assert.deepStrictEqual(await auditPage.evaluate(() => globalThis.__dwLongTasks), []);
+      assert.deepStrictEqual(auditErrors, []);
+      await auditContext.close();
+      auditGroupMode = false;
+      auditGroup = null;
+      groupWrites.length = 0;
+      groupJoinWrites.length = 0;
     });
 
     await test('opens Agent groups inside console with the owner-only online Agent selector', async () => {
