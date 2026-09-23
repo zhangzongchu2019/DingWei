@@ -47,6 +47,7 @@ async function main() {
   let failGroupLoad = '';
   let failGroupAction = '';
   let slowGroupLoad = false;
+  let emptyGroupInventory = false;
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
@@ -91,6 +92,7 @@ async function main() {
       if (failGroupLoad === 'shape') { res.writeHead(200, {'Content-Type':'application/json'}); res.end('{"owned_agents":"wrong","groups":[]}'); return; }
       if (failGroupLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify(groupPayload(false))); }, 200); return; }
       if (failGroupLoad === 'empty') { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:[],groups:[]})); return; }
+      if (emptyGroupInventory) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:groupPayload(false).owned_agents,groups:[]})); return; }
       const send = (closed) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(groupPayload(closed))); };
       if (slowGroupLoad) { slowGroupLoad=false; setTimeout(() => send(false), 120); return; }
       if (raceGroupResponses) {
@@ -176,6 +178,43 @@ async function main() {
       await page.evaluate(() => refreshPlatform());
       assert.strictEqual(await page.locator('#platform-actions button').count(), 0);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'management');
+    });
+
+    await test('lets a human start from zero groups without a hidden-control deadlock', async () => {
+      emptyGroupInventory = true;
+      const emptyPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      const emptyErrors = [];
+      emptyPage.on('pageerror', (error) => emptyErrors.push(error.message));
+      emptyPage.on('console', (message) => { if (message.type() === 'error') emptyErrors.push(message.text()); });
+      await emptyPage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      await emptyPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+      const entry = emptyPage.locator('#platform-items a[data-item-id="agent-groups"]');
+      await entry.waitFor({ state: 'visible' });
+      await entry.click();
+      await emptyPage.locator('#groupCodeJoin').waitFor({ state: 'visible' });
+      assert.strictEqual(await emptyPage.locator('#groupDetail').isHidden(), true);
+      async function humanHit(selector) {
+        const target = emptyPage.locator(selector);
+        const box = await target.boundingBox();
+        assert.ok(box && box.width > 0 && box.height > 0, `${selector} has no visible hit box`);
+        return emptyPage.evaluate(({ selector, x, y }) => {
+          const wanted = document.querySelector(selector);
+          const hit = document.elementFromPoint(x, y);
+          return Boolean(wanted && hit && (hit === wanted || wanted.contains(hit)));
+        }, { selector, x: box.x + box.width / 2, y: box.y + box.height / 2 });
+      }
+      assert.strictEqual(await humanHit('#groupJoinCode'), true);
+      assert.strictEqual(await humanHit('#retryGroups'), true);
+      await emptyPage.locator('#groupJoinCode').click();
+      await emptyPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      assert.strictEqual(await emptyPage.locator('#groupJoinCode').inputValue(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      const refreshed = emptyPage.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups') && response.status() === 200);
+      await emptyPage.locator('#retryGroups').click();
+      await refreshed;
+      assert.strictEqual(await emptyPage.locator('#groupRetryFeedback').textContent(), '已刷新 · 0 个编组');
+      assert.deepStrictEqual(emptyErrors, []);
+      await emptyPage.close();
+      emptyGroupInventory = false;
     });
 
     await test('opens Agent groups inside console with the owner-only online Agent selector', async () => {
