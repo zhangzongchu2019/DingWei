@@ -295,7 +295,7 @@ html[data-theme="dark"] details,html[data-theme="dark"] summary{color:#a8b0bb}
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></div><div id=a></div></nav>
+<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试加载工作台</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试加载 Agent</button><div id=a></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <script>
 const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
@@ -401,10 +401,16 @@ function renderPlatform(platform){
   document.documentElement.dataset.platformRole=platform.role||'';
 }
 async function refreshPlatform(){
+  var status=document.getElementById('platform-status'),retry=document.getElementById('retryPlatform');
+  status.textContent='工作台加载中…';retry.hidden=true;
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},consoleFetchTimeoutMs);
   try{
-    var r=await fetch('/api/console/platform',{cache:'no-store'}); if(!r.ok) return;
-    renderPlatform(await r.json());
-  }catch(_){ /* 平台入口失败不得清空已打开的 Agent tab */ }
+    var r=await fetch('/api/console/platform',{cache:'no-store',signal:controller.signal});
+    if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
+    var data=await r.json();if(!data||!Array.isArray(data.items))throw new Error('响应格式无效');
+    renderPlatform(data);status.textContent=data.items.length?'':'没有可用工作台入口';retry.hidden=data.items.length>0;
+  }catch(err){status.textContent='工作台加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
+  }finally{clearTimeout(timer);}
 }
 function activate(session){
   tabs.forEach(function(v,k){
@@ -471,16 +477,22 @@ function renderAgentList(agents){
   }
 }
 async function refreshAgents(){
+  var status=document.getElementById('agents-status'),retry=document.getElementById('retryAgents');
+  status.textContent='Agent 列表加载中…';retry.hidden=true;
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},consoleFetchTimeoutMs);
   try{
-    var r=await fetch('/api/console/agents',{cache:'no-store'});
-    if(!r.ok) return;
+    var r=await fetch('/api/console/agents',{cache:'no-store',signal:controller.signal});
+    if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
     var x=await r.json();
-    var agents=Array.isArray(x.agents)?x.agents:[];
+    if(!x||!Array.isArray(x.agents))throw new Error('响应格式无效');
+    var agents=x.agents;
     renderAgentList(agents);
     applyAgentSnapshot(agents);
-  }catch(_){ /* 保留上一份可见快照;短暂请求失败不得把左栏清空 */ }
+    status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=agents.length>0;
+  }catch(err){status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
+  }finally{clearTimeout(timer);}
 }
-var groupMode=false,groupRequestGeneration=0,groupFetchTimeoutMs=8000,groupSnapshot={groups:[],owned_agents:[]};
+var consoleFetchTimeoutMs=8000,groupMode=false,groupRequestGeneration=0,groupFetchTimeoutMs=8000,groupSnapshot={groups:[],owned_agents:[]};
 function groupStatus(text){var status=document.getElementById('group-status');if(status)status.textContent=text;}
 function setGroupSelectState(text,disabled){['groupLeader','groupJoinAgent','groupCodeJoinAgent'].forEach(function(id){var select=document.getElementById(id);if(!select)return;select.replaceChildren();var option=document.createElement('option');option.value='';option.textContent=text;select.append(option);select.disabled=disabled;});}
 function groupFeedback(id,text){var e=document.getElementById(id);if(e)e.textContent=text||'';}
@@ -489,6 +501,8 @@ function groupShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s
 async function refreshGroups(source){var generation=++groupRequestGeneration;if(groupMode){setGroupSelectState('加载中…',true);groupStatus('Agent 列表加载中…');}var controller=new AbortController();var timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);try{var r=await fetch('/api/console/agent-groups',{cache:'no-store',signal:controller.signal});if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}var data=await r.json();if(!data||!Array.isArray(data.owned_agents)||!Array.isArray(data.groups))throw new Error('响应格式无效');if(generation!==groupRequestGeneration)return null;if(groupMode){groupSnapshot=data;renderGroups();if(!data.owned_agents.length){setGroupSelectState('没有自己的 Agent',true);groupStatus('没有自己的 Agent，无法建组或加入');}else if(source==='retry'){groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');groupStatus('');}else groupStatus('');}return data;}catch(err){if(groupMode&&generation===groupRequestGeneration){setGroupSelectState('加载失败',true);var message='编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);}return null;}finally{clearTimeout(timer);}}
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}
 dwThemeInit();   // 🔴 主题先行:先把已存偏好应用到外壳,再渲染列表(否则先白一下再变暗)
+document.getElementById('retryPlatform').onclick=refreshPlatform;
+document.getElementById('retryAgents').onclick=refreshAgents;
 refreshPlatform();
 refreshAgents();
 refreshGroups();
