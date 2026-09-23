@@ -373,7 +373,7 @@ func rewriteLegacyOwnerDisplayNames(ctx context.Context, tx *sql.Tx) ([]consoleD
 	return rewrites, nil
 }
 
-func (s *SQLite) applyConsoleSpecWorkflowMigration(ctx context.Context, name, body, digest string) error {
+func (s *SQLite) applyConsoleSpecWorkflowMigration(ctx context.Context, name, body, digest string) (retErr error) {
 	conn, err := s.db.Conn(ctx)
 	if err != nil {
 		return fmt.Errorf("migrate %s: acquire dedicated connection: %w", name, err)
@@ -382,10 +382,9 @@ func (s *SQLite) applyConsoleSpecWorkflowMigration(ctx context.Context, name, bo
 	if _, err = conn.ExecContext(ctx, `PRAGMA foreign_keys=OFF`); err != nil {
 		return fmt.Errorf("migrate %s: disable foreign keys: %w", name, err)
 	}
-	restored := false
 	defer func() {
-		if !restored {
-			_, _ = conn.ExecContext(context.Background(), `PRAGMA foreign_keys=ON`)
+		if restoreErr := restoreConsoleForeignKeys(context.Background(), conn, name); restoreErr != nil {
+			retErr = errors.Join(retErr, restoreErr)
 		}
 	}()
 	var enabled int
@@ -423,15 +422,19 @@ func (s *SQLite) applyConsoleSpecWorkflowMigration(ctx context.Context, name, bo
 	} else if len(violations) != 0 {
 		return fmt.Errorf("migrate %s: post-commit foreign_key_check failed: %s", name, strings.Join(violations, "; "))
 	}
-	if _, err = conn.ExecContext(ctx, `PRAGMA foreign_keys=ON`); err != nil {
-		return fmt.Errorf("migrate %s: restore foreign keys: %w", name, err)
-	}
-	if err = conn.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&enabled); err != nil || enabled != 1 {
-		return fmt.Errorf("migrate %s: foreign_keys did not restore (value=%d err=%v)", name, enabled, err)
-	}
-	restored = true
 	for _, rewrite := range rewrites {
 		fmt.Fprintf(os.Stderr, "migrate 0044: principal display_name rewritten id=%s old=%q new=%q\n", rewrite.ID, rewrite.OldName, rewrite.NewName)
+	}
+	return nil
+}
+
+func restoreConsoleForeignKeys(ctx context.Context, conn *sql.Conn, name string) error {
+	if _, err := conn.ExecContext(ctx, `PRAGMA foreign_keys=ON`); err != nil {
+		return fmt.Errorf("migrate %s: restore foreign keys: %w", name, err)
+	}
+	var enabled int
+	if err := conn.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&enabled); err != nil || enabled != 1 {
+		return fmt.Errorf("migrate %s: foreign_keys did not restore (value=%d err=%v)", name, enabled, err)
 	}
 	return nil
 }

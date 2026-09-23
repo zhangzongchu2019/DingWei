@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -64,5 +65,49 @@ INSERT INTO console_spec_task VALUES('task-1','spec-e05',1,'owner-entry-a');`)
 	var enabled int
 	if err = db.db.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&enabled); err != nil || enabled != 1 {
 		t.Fatalf("foreign_keys=%d err=%v", enabled, err)
+	}
+}
+
+func TestMigration0044RejectsDanglingChildAndRestoresForeignKeys(t *testing.T) {
+	ctx := context.Background()
+	db, err := OpenSQLite(filepath.Join(t.TempDir(), "dangling.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	_, err = db.db.ExecContext(ctx, `
+CREATE TABLE console_principal(id TEXT PRIMARY KEY,provider TEXT,provider_issuer TEXT,provider_subject TEXT,display_name TEXT NOT NULL,active INTEGER);
+CREATE TABLE console_principal_role(principal_id TEXT,role TEXT,owner_key TEXT,active INTEGER);
+CREATE TABLE console_spec(id TEXT PRIMARY KEY,principal_id TEXT NOT NULL REFERENCES console_principal(id),title TEXT NOT NULL,state TEXT NOT NULL,current_revision INTEGER NOT NULL,claimed_by TEXT,edit_capability_hash TEXT NOT NULL DEFAULT '',editing_closed INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE console_spec_event(id TEXT PRIMARY KEY,spec_id TEXT NOT NULL REFERENCES console_spec(id),revision INTEGER NOT NULL,actor TEXT NOT NULL,action TEXT NOT NULL,detail TEXT NOT NULL DEFAULT '',at TEXT NOT NULL);
+INSERT INTO console_principal VALUES('owner-entry-a','feishu','app','oa','Owner',1);
+INSERT INTO console_principal_role VALUES('owner-entry-a','owner','zzc',1);
+INSERT INTO console_spec VALUES('spec-e05','owner-entry-a','prod','archived',1,NULL,'',0,'2026-09-22T00:00:00Z','2026-09-22T00:00:00Z');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.db.ExecContext(ctx, migrationLedgerDDL); err != nil {
+		t.Fatal(err)
+	}
+	body, err := migrationFS.ReadFile("migrations/0044_console_spec_workflow.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body = append(body, []byte(`
+INSERT INTO console_spec_event(id,spec_id,revision,actor,action,detail,at)
+VALUES('dangling','missing-spec',1,'owner-entry-a','probe','','2026-09-22T00:00:01Z');
+`)...)
+	sum := sha256.Sum256(body)
+	err = db.applyConsoleSpecWorkflowMigration(ctx, "0044_console_spec_workflow.sql", string(body), hex.EncodeToString(sum[:]))
+	if err == nil || !strings.Contains(err.Error(), "pre-commit foreign_key_check failed") {
+		t.Fatalf("dangling child migration err=%v", err)
+	}
+	var enabled int
+	if err = db.db.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&enabled); err != nil || enabled != 1 {
+		t.Fatalf("foreign_keys after rejected migration=%d err=%v", enabled, err)
+	}
+	var recorded int
+	if err = db.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations WHERE version='0044_console_spec_workflow.sql'`).Scan(&recorded); err != nil || recorded != 0 {
+		t.Fatalf("migration ledger rows=%d err=%v", recorded, err)
 	}
 }
