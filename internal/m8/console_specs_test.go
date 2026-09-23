@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
@@ -74,7 +75,7 @@ func TestConsoleSpecTaskSplitEndpointCreatesVisibleTaskAndLocksRevision(t *testi
 	if err := json.Unmarshal(rr.Body.Bytes(), &created); err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/tasks", strings.NewReader(`{"title":"Implement","content":"Do it","estimated_hours":4,"depends_on":[]}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/console/specs/"+created.ID+"/tasks", strings.NewReader(`{"title":"Implement","content":"Do it","definition_of_done":"tests pass","estimated_hours":16,"depends_on":[]}`))
 	req.SetPathValue("specID", created.ID)
 	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
 	rr = httptest.NewRecorder()
@@ -83,8 +84,72 @@ func TestConsoleSpecTaskSplitEndpointCreatesVisibleTaskAndLocksRevision(t *testi
 		t.Fatalf("split code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	tasks, err := hub.Repo.(*store.SQLite).ListConsoleTaskProposals(context.Background(), created.ID)
-	if err != nil || len(tasks) != 1 || tasks[0].Title != "Implement" || tasks[0].EstimatedHours != 4 {
+	if err != nil || len(tasks) != 1 || tasks[0].Title != "Implement" || tasks[0].EstimatedHours != 16 || !strings.Contains(tasks[0].AcceptanceJSON, "tests pass") {
 		t.Fatalf("tasks=%+v err=%v", tasks, err)
+	}
+}
+
+func TestConsoleTasksAreTopologicalAndParallelIsDerived(t *testing.T) {
+	chain := []model.ConsoleTaskProposal{
+		{ID: "c", DependsOnJSON: `["b"]`}, {ID: "b", DependsOnJSON: `["a"]`}, {ID: "a", DependsOnJSON: `[]`},
+	}
+	ordered := orderConsoleTasks(chain, chain)
+	if got := []string{ordered[0].ID, ordered[1].ID, ordered[2].ID}; fmt.Sprint(got) != "[a b c]" {
+		t.Fatalf("topological order=%v want [a b c]", got)
+	}
+	if ordered[0].DependencyLevel != 0 || ordered[1].DependencyLevel != 1 || ordered[2].DependencyLevel != 2 {
+		t.Fatalf("levels=%+v", ordered)
+	}
+	peers := []model.ConsoleTaskProposal{{ID: "a", DependsOnJSON: `[]`}, {ID: "d", DependsOnJSON: `[]`}}
+	peers = orderConsoleTasks(peers, peers)
+	if !peers[0].Parallel || !peers[1].Parallel {
+		t.Fatalf("same-level peers must be parallel: %+v", peers)
+	}
+	peers[1].DependsOnJSON = `["a"]`
+	peers = orderConsoleTasks(peers, peers)
+	if peers[0].Parallel || peers[1].Parallel {
+		t.Fatalf("dependency must remove parallel marker: %+v", peers)
+	}
+}
+
+func TestConsoleSpecDetailReturnsTopologicalTasksDespiteReverseCreatedTimes(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", validSpecBody, hub.HandleConsoleSpecs)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	var created model.ConsoleSpec
+	if err := json.Unmarshal(rr.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	db := hub.Repo.(*store.SQLite)
+	base := time.Date(2026, 9, 22, 12, 0, 0, 0, time.UTC)
+	for _, p := range []model.ConsoleTaskProposal{
+		{ID: "a", SpecID: created.ID, Title: "A", TaskContent: "A", Status: "planned", DependsOnJSON: `[]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(3 * time.Second), ReviewedAt: base.Add(3 * time.Second)},
+		{ID: "b", SpecID: created.ID, Title: "B", TaskContent: "B", Status: "planned", DependsOnJSON: `["a"]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(2 * time.Second), ReviewedAt: base.Add(2 * time.Second)},
+		{ID: "c", SpecID: created.ID, Title: "C", TaskContent: "C", Status: "planned", DependsOnJSON: `["b"]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(time.Second), ReviewedAt: base.Add(time.Second)},
+	} {
+		if err := db.CreateConsoleTaskProposal(context.Background(), p, "owner-a", false); err != nil {
+			t.Fatal(err)
+		}
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/console/specs/"+created.ID, nil)
+	req.SetPathValue("specID", created.ID)
+	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleSpec(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("detail code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	var out struct {
+		Tasks []model.ConsoleTaskProposal `json:"tasks"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	got := []string{out.Tasks[0].ID, out.Tasks[1].ID, out.Tasks[2].ID}
+	if fmt.Sprint(got) != "[a b c]" {
+		t.Fatalf("handler task order=%v want [a b c]", got)
 	}
 }
 
