@@ -38,8 +38,8 @@ function productionHTML() {
   if (MUTATION === 'no-parallel-marker') html = html.replace("(task.parallel?'可并行':'顺序执行')", "'顺序执行'");
   if (MUTATION === 'no-hours-hint') html = html.replace("node.textContent=Number(input.value)>8?'建议再拆':'';", "node.textContent='';");
   if (MUTATION === 'no-empty-create') html = html.replace("list.append(empty);", "");
-  if (MUTATION === 'show-detail-before-click') html = html.replace('<section id=detail-screen hidden>', '<section id=detail-screen>');
-  if (MUTATION === 'keep-detail-on-page') html = html.replaceAll('clearSpecSelection();currentPage', 'currentPage');
+  if (MUTATION === 'show-detail-before-click') html = html.replace("document.getElementById('detail-screen').hidden=true;", "document.getElementById('detail-screen').hidden=false;");
+  if (MUTATION === 'keep-detail-on-page') html = html.replace('async function refreshSpecs(){clearSpecSelection();', 'async function refreshSpecs(){');
   if (MUTATION === 'no-task-entry') html = html.replace("document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('show-task-split').hidden=true;");
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
@@ -204,6 +204,11 @@ async function main() {
       const row = page.locator(`#spec-list [data-title="${title}"]`);
       assert.strictEqual(await row.locator('.edit-spec').count(), 1, 'management owner must see Edit for own spec');
     }
+    await page.locator('#spec-list [data-title="Spec A"] .view-spec').click();await page.locator('#detail-screen').waitFor({state:'visible'});assert.notStrictEqual((await page.locator('#spec-rendered').textContent()).trim(),'');
+    await page.click('#show-new-spec');
+    async function keyboardReplace(selector,value){await page.locator(selector).click();await page.keyboard.press(process.platform==='darwin'?'Meta+A':'Control+A');await page.keyboard.type(value);}
+    await keyboardReplace('#new-title','Created after detail');await page.locator('#new-screen .CodeMirror').click();await page.keyboard.press(process.platform==='darwin'?'Meta+A':'Control+A');await page.keyboard.type('# Created after detail');await keyboardReplace('#new-acceptance','created accepted');await keyboardReplace('#new-anchor','msg:created');await page.click('#create-spec');
+    await page.locator('#spec-list [data-title="Created after detail"]').waitFor({state:'visible'});assert.strictEqual(await page.locator('#detail-screen').isHidden(),true,'creation list refresh must hide prior detail');assert.strictEqual((await page.locator('#spec-rendered').textContent()).trim(),'','creation list refresh must clear prior detail DOM');assert.strictEqual((await page.locator('#task-list').textContent()).trim(),'','creation list refresh must clear prior task DOM');
     await page.request.post(`http://127.0.0.1:${port}/fixture/populate-pages`);await page.click('#show-spec-list');await page.waitForFunction(()=>!document.getElementById('next-page').disabled);
     await page.locator('#spec-list [data-title="Spec A"] .view-spec').click();await page.locator('#detail-screen').waitFor({state:'visible'});await page.click('#next-page');
     assert.strictEqual(await page.locator('#detail-screen').isHidden(),true,'pagination must clear selected spec detail');assert.strictEqual(await page.locator('#task-area').isHidden(),true,'pagination must clear selected task area');assert.strictEqual(await page.locator('#task-list').textContent(),'','pagination must clear rendered tasks');
