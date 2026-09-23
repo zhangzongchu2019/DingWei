@@ -28,13 +28,16 @@ function consoleHTMLFromProductionSource() {
   if (MUTATION === 'silent-agent-load') html = html.replace("status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);", "status.textContent='';");
   if (MUTATION === 'silent-offline-tab') html = html.replace("state.textContent=online?'':'离线，暂不可交互';", "state.textContent='';").replace("offlineReason.textContent='该 Agent 已离线，暂不可交互';", "offlineReason.textContent='';");
   if (MUTATION === 'disable-platform-tabs-on-agent-refresh') html = html.replace("if(String(session).startsWith('__')) return;", '');
+  if (MUTATION === 'keep-created-group-name') html = html.replace(".then(function(ok){if(ok)input.value='';});", ';');
+  if (MUTATION === 'reset-group-leader-selection') html = html.replace("if(groupLeaderSelection&&Array.from(leaders.options).some(function(o){return o.value===groupLeaderSelection;}))leaders.value=groupLeaderSelection;", '');
+  if (MUTATION === 'full-code-join-agent-names') html = html.replace("o.textContent=groupShortName(agent.session_name);codeJoin.append(o);", "o.textContent=agent.session_name;codeJoin.append(o);");
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
   if (MUTATION === 'legacy-group-deadlock') {
     html = html.replace(/<section id=groupCodeJoin>.*?<\/section>/, '');
     html = html.replace('<section id=groupDetail hidden>', '<section id=groupDetail hidden><label>完整 32 字符组码 <input id=groupJoinCode maxlength=32></label>');
     html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
   }
-  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -243,6 +246,34 @@ async function main() {
       await timerPage.close();
     });
 
+    await test('resets the created name while preserving the selected short-name Agent', async () => {
+      const createPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      try {
+        createPage.setDefaultTimeout(1500);
+        await createPage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+        await createPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+        await createPage.locator('#platform-items a[data-item-id="agent-groups"]').click();
+        const leader = createPage.locator('#groupLeader');
+        await createPage.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
+        assert.deepStrictEqual(await leader.locator('option').allTextContents(), ['alpha', 'beta']);
+        assert.deepStrictEqual(await createPage.locator('#groupCodeJoinAgent option').allTextContents(), ['alpha', 'beta']);
+        await leader.selectOption('agent-b');
+        assert.strictEqual(await leader.inputValue(), 'agent-b');
+        const name = createPage.locator('#groupShortName');
+        await name.click();
+        await createPage.keyboard.type('myteam');
+        const created = createPage.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups') && response.request().method() === 'POST' && response.status() === 201);
+        await createPage.locator('#createGroup').click();
+        await created;
+        await createPage.locator('#groupNameFeedback').getByText('操作成功').waitFor({state:'visible'});
+        assert.strictEqual(await name.inputValue(), '', 'successful create must clear the submitted name');
+        assert.strictEqual(await leader.inputValue(), 'agent-b', 'refresh after create must preserve the selected Agent');
+      } finally {
+        await createPage.close();
+        groupWrites.length = 0;
+      }
+    });
+
     await test('distinguishes platform and Agent load failures from true empty states', async () => {
       failPlatformLoad = '500';
       failAgentsLoad = '500';
@@ -421,6 +452,9 @@ async function main() {
       await auditPage.locator('#groupListItems').getByText('dingwei').waitFor({ state: 'visible' });
 
       // Failure paths are product outcomes and must remain visible without JS errors.
+      await auditPage.locator('#groupShortName').click();
+      await auditPage.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+      await auditPage.keyboard.type('dingwei');
       assert.strictEqual(await humanHit('#createGroup'), true);
       await auditPage.locator('#createGroup').click();
       await auditPage.locator('#groupNameFeedback').filter({ hasText: '团队名称不可用；建议名称：dingwei1、dingwei2' }).waitFor({ state: 'visible' });
