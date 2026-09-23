@@ -95,7 +95,7 @@ async function main() {
       if (failGroupLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify(groupPayload(false))); }, 200); return; }
       if (failGroupLoad === 'empty') { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:[],groups:[]})); return; }
       if (auditGroupMode) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:groupPayload(false).owned_agents,groups:auditGroup?[auditGroup]:[]})); return; }
-      if (emptyGroupInventory) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:groupPayload(false).owned_agents,groups:[]})); return; }
+      if (emptyGroupInventory) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:[],groups:[]})); return; }
       const send = (closed) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(groupPayload(closed))); };
       if (slowGroupLoad) { slowGroupLoad=false; setTimeout(() => send(false), 120); return; }
       if (raceGroupResponses) {
@@ -208,7 +208,11 @@ async function main() {
       await entry.waitFor({ state: 'visible' });
       await entry.click();
       await emptyPage.locator('#groupCodeJoin').waitFor({ state: 'visible' });
+      await emptyPage.locator('#group-status').filter({ hasText: '没有自己的 Agent，无法建组或加入' }).waitFor({ state: 'visible' });
       assert.strictEqual(await emptyPage.locator('#groupDetail').isHidden(), true);
+      assert.strictEqual(await emptyPage.locator('#groupLeader').isDisabled(), true);
+      assert.strictEqual(await emptyPage.locator('#groupJoinAgent').isDisabled(), true);
+      assert.strictEqual(await emptyPage.locator('#groupCodeJoinAgent').isDisabled(), true);
       async function humanHit(selector) {
         const target = emptyPage.locator(selector);
         const box = await target.boundingBox();
@@ -227,7 +231,7 @@ async function main() {
       const refreshed = emptyPage.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups') && response.status() === 200);
       await emptyPage.locator('#retryGroups').click();
       await refreshed;
-      assert.strictEqual(await emptyPage.locator('#groupRetryFeedback').textContent(), '已刷新 · 0 个编组');
+      assert.strictEqual(await emptyPage.locator('#group-status').textContent(), '没有自己的 Agent，无法建组或加入');
       assert.deepStrictEqual(emptyErrors, []);
       await emptyPage.close();
       emptyGroupInventory = false;
