@@ -148,6 +148,12 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &group); err != nil || len(group.Code) != 32 || group.ShortName != "mygroup" || strings.HasPrefix(group.Code, "mygroup") {
 		t.Fatalf("created group=%+v err=%v", group, err)
 	}
+	unknownCode := strings.Repeat("z", 32)
+	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+unknownCode+"/members", unknownCode, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
+	if rr.Code != http.StatusNotFound || strings.TrimSpace(rr.Body.String()) != "404 page not found" {
+		t.Fatalf("unknown 32-character group code must be visibly distinct from short input validation code=%d body=%q", rr.Code, rr.Body.String())
+	}
+	t.Logf("unknown 32-character group code: status=%d body=%q", rr.Code, strings.TrimSpace(rr.Body.String()))
 	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/additions", group.Code, "", []byte(`{"closed":true}`))
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("close additions code=%d body=%s", rr.Code, rr.Body.String())
@@ -168,6 +174,7 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该编组已关闭添加") {
 		t.Fatalf("closed group must reject a second Agent code=%d body=%s", rr.Code, rr.Body.String())
 	}
+	t.Logf("closed additions: status=%d body=%q", rr.Code, strings.TrimSpace(rr.Body.String()))
 	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/additions", group.Code, "", []byte(`{"closed":false}`))
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("open additions code=%d body=%s", rr.Code, rr.Body.String())
@@ -190,6 +197,7 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该 Agent 已在该编组中") {
 		t.Fatalf("duplicate code join must be a visible, specific failure code=%d body=%s", rr.Code, rr.Body.String())
 	}
+	t.Logf("duplicate member: status=%d body=%q", rr.Code, strings.TrimSpace(rr.Body.String()))
 	rr = call("owner-b", http.MethodDelete, "/api/console/agent-groups/"+group.Code+"/members/"+a2.ID, group.Code, a2.ID, nil)
 	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "无权管理该编组") {
 		t.Fatalf("existing member removal authorization must be explicit code=%d body=%s", rr.Code, rr.Body.String())
@@ -250,6 +258,7 @@ func TestConsoleAgentGroupNameIsTrimmedExactAndSuggestsWithinEightRunes(t *testi
 	if duplicate.Code != http.StatusConflict || !strings.Contains(duplicate.Body.String(), "团队1 is unavailable; try 团队11") {
 		t.Fatalf("duplicate feedback code=%d body=%q", duplicate.Code, duplicate.Body.String())
 	}
+	t.Logf("duplicate group name: status=%d body=%q", duplicate.Code, strings.TrimSpace(duplicate.Body.String()))
 	eight := call(`{"agent_id":"` + leader.ID + `","short_name":"甲乙丙丁戊己庚辛"}`)
 	if eight.Code != http.StatusCreated {
 		t.Fatalf("eight-rune create code=%d body=%s", eight.Code, eight.Body.String())
