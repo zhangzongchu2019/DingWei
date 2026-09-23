@@ -186,6 +186,11 @@ async function main() {
       slowGroupLoad = true;
       await entry.click();
       await page.locator('#tabs .tab[title="Agent 编组"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('.group-workspace').count(), 1);
+      assert.strictEqual(await page.locator('.group-workspace:visible').count(), 1);
+      for (const id of ['groupLeader', 'groupJoinCode', 'groupCodeJoinAgent', 'joinByCode', 'groupListItems', 'groupDetail', 'retryGroups']) {
+        assert.strictEqual(await page.locator(`#${id}`).count(), 1, `${id} must have one live DOM node`);
+      }
       assert.strictEqual(await page.locator('#groupLeader').isDisabled(), true);
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载中…');
       assert.strictEqual(await page.locator('#group-status').textContent(), 'Agent 列表加载中…');
