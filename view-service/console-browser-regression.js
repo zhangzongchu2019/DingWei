@@ -108,7 +108,7 @@ async function main() {
       if (req.method === 'POST') {
         if (failGroupAction === 'network') { req.socket.destroy(); return; }
         if (failGroupAction === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture create denied'); return; }
-        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode&&auditGroup&&body.short_name===auditGroup.short_name){res.writeHead(409,{'Content-Type':'text/plain; charset=utf-8'});res.end(`group name ${body.short_name} is unavailable; try ${body.short_name}1`);return;}if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
+        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode&&auditGroup&&body.short_name===auditGroup.short_name){res.writeHead(409,{'Content-Type':'text/plain; charset=utf-8'});res.end(`团队名称不可用；建议名称：${body.short_name}1、${body.short_name}2`);return;}if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
       }
       groupGETs += 1;
       if (failGroupLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture groups unavailable'); return; }
@@ -147,7 +147,7 @@ async function main() {
       return;
     }
     if (req.url === '/api/console/agent-groups/missing-1AAAAAAAAAAAAAAAAAAAAAAA/members' && req.method === 'POST' && auditGroupMode) {
-      res.writeHead(404, {'Content-Type':'text/plain; charset=utf-8'}); res.end('404 page not found'); return;
+      res.writeHead(404, {'Content-Type':'text/plain; charset=utf-8'}); res.end('组码不存在'); return;
     }
     if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members/agent-b' && req.method === 'DELETE' && auditGroupMode) {
       auditGroup.members = auditGroup.members.filter((member) => member.agent_id !== 'agent-b'); res.writeHead(204); res.end(); return;
@@ -419,7 +419,7 @@ async function main() {
       // Failure paths are product outcomes and must remain visible without JS errors.
       assert.strictEqual(await humanHit('#createGroup'), true);
       await auditPage.locator('#createGroup').click();
-      await auditPage.locator('#groupNameFeedback').filter({ hasText: 'group name dingwei is unavailable; try dingwei1' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupNameFeedback').filter({ hasText: '团队名称不可用；建议名称：dingwei1、dingwei2' }).waitFor({ state: 'visible' });
 
       await auditPage.locator('#groupJoinCode').click();
       await auditPage.keyboard.type('short');
@@ -436,7 +436,7 @@ async function main() {
       await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
       assert.strictEqual(await humanHit('#joinByCode'), true);
       await auditPage.locator('#joinByCode').click();
-      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '404 page not found' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '组码不存在' }).waitFor({ state: 'visible' });
 
       await keyboardReplace('#groupJoinCode', 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
       await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-a');

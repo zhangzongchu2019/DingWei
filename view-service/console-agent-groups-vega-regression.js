@@ -56,7 +56,7 @@ const server = http.createServer(async (req, res) => {
   if (pathName === '/api/console/agent-groups' && req.method === 'POST') {
     const body = await read(req); const short = body.short_name;
     const collides = groups.find((g) => g.short_name === short);
-    if (collides) { res.writeHead(409, { 'content-type': 'text/plain' }); return res.end(`group name ${short} is unavailable; try ${short.slice(0, 7)}1`); }
+    if (collides) { res.writeHead(409, { 'content-type': 'text/plain' }); return res.end(`团队名称不可用；建议名称：${short.slice(0, 7)}1、${short.slice(0, 7)}2`); }
     groups.push({ code: 'A'.repeat(32), short_name: short, creator_principal: 'owner', can_manage: true, leader_key_id: 'key-leader', leader_session_name: 'owner-leader-2642', members: [{ agent_id: 'leader', key_id: 'key-leader', session_name: 'owner-leader-2642' }] });
     return json(res, 201, groups[0]);
   }
@@ -125,8 +125,8 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#groupListItems').getByText('团队1').waitFor({ state: 'visible' });
       assert.match(await page.locator('#groupMembers').textContent(), /^leader（组长）$/);
       await page.locator('#groupShortName').click(); await page.locator('#groupShortName').press('ControlOrMeta+A'); await page.locator('#groupShortName').press('Backspace'); await page.locator('#groupShortName').pressSequentially('团队1'); await page.locator('#createGroup').click();
-      await page.locator('#groupNameFeedback').filter({ hasText: 'unavailable' }).waitFor({ state: 'visible' });
-      assert.match(await page.locator('#groupNameFeedback').textContent(), /团队1 is unavailable; try 团队11/);
+      await page.locator('#groupNameFeedback').filter({ hasText: '团队名称不可用' }).waitFor({ state: 'visible' });
+      assert.match(await page.locator('#groupNameFeedback').textContent(), /团队名称不可用；建议名称：团队11、团队12/);
       assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
       assert.strictEqual(await page.locator('#groupCodeValue').textContent(), 'A'.repeat(32));
     });
