@@ -3365,7 +3365,7 @@ func (s *SQLite) AssignOwnedConsoleAgentGroup(ctx context.Context, code, princip
 	res, err := s.db.ExecContext(ctx, `INSERT INTO agent_group_member(code,key_id,session_name,owner_key,created_at)
 		SELECT g.code,a.key_id,a.session_name,e.owner_key,? FROM agent_group g JOIN console_agent a ON a.id=?
 		JOIN session_endpoint e ON e.key_id=a.key_id AND e.session_name=a.session_name
-		WHERE g.code=? AND a.owner_principal=? AND a.active=1 AND g.additions_closed=0
+		WHERE g.code=? AND g.creator_principal IS NOT NULL AND a.owner_principal=? AND a.active=1 AND g.additions_closed=0
 		ON CONFLICT(code,key_id,session_name) DO NOTHING`,
 		s.now().UTC().Format(time.RFC3339Nano), agentID, code, principalID)
 	if err != nil {

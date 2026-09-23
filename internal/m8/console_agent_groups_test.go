@@ -321,8 +321,12 @@ func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
 	db := hub.Repo.(*store.SQLite)
 	ctx := context.Background()
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "owner-c", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "oc", Active: true}); err != nil {
+		t.Fatal(err)
+	}
 	leader := addOwnedGroupAgent(t, db, "owner-a", "legacy-leader", "legacy-key", "owner-a-legacy-2642", "oa")
 	member := addOwnedGroupAgent(t, db, "owner-b", "legacy-member", "legacy-member-key", "owner-b-member-2642", "ob")
+	ordinaryAgent := addOwnedGroupAgent(t, db, "owner-c", "legacy-ordinary", "legacy-ordinary-key", "owner-c-ordinary-2642", "oc")
 	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: "oa"}); err != nil {
 		t.Fatal(err)
 	}
@@ -330,6 +334,7 @@ func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 	hub.sessionClients[member.KeyID] = map[string]*sessionClient{member.SessionName: {keyID: member.KeyID, sessionName: member.SessionName}}
+	hub.sessionClients[ordinaryAgent.KeyID] = map[string]*sessionClient{ordinaryAgent.SessionName: {keyID: ordinaryAgent.KeyID, sessionName: ordinaryAgent.SessionName}}
 	// Positive control first: the leader endpoint really resolves to an active
 	// console Agent. Management must therefore not treat this group as orphaned.
 	groups, err := db.ListAgentGroups(ctx)
@@ -352,6 +357,7 @@ func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 		{http.MethodPost, "/api/console/agent-groups/" + groupCodeA + "/additions", "", []byte(`{"closed":true}`)},
 		{http.MethodDelete, "/api/console/agent-groups/" + groupCodeA, "", nil},
 		{http.MethodDelete, "/api/console/agent-groups/" + groupCodeA + "/members/" + leader.ID, leader.ID, nil},
+		{http.MethodPost, "/api/console/agent-groups/" + groupCodeA + "/members", "", []byte(`{"agent_id":"` + ordinaryAgent.ID + `"}`)},
 	} {
 		if rr := ordinaryCall(probe.method, probe.path, probe.agentID, probe.body); rr.Code != http.StatusNotFound {
 			t.Fatalf("ordinary caller must not disclose mapped legacy group method=%s path=%s code=%d body=%s", probe.method, probe.path, rr.Code, rr.Body.String())
