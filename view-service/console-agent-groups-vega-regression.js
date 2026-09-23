@@ -13,6 +13,13 @@ assert(start >= 0 && end > start, 'cannot extract consolePageHTML from productio
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
 if (mutation === 'retry-feedback') html = html.replace("groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');", '');
+if (mutation === 'retry-reachability') html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
+if (mutation === 'name-feedback') {
+  const feedback = "groupFeedback('groupNameFeedback','团队名称不能超过 8 个字符')";
+  const at = html.lastIndexOf(feedback);
+  assert(at >= 0, 'cannot find final overlong-name feedback');
+  html = html.slice(0, at) + '' + html.slice(at + feedback.length);
+}
 if (mutation === 'can-manage') {
   // The production page has an earlier compatibility definition and the final
   // definition that is actually used. Mutate only the final guard.
@@ -21,10 +28,11 @@ if (mutation === 'can-manage') {
   assert(at >= 0, 'cannot find final can_manage guard');
   html = html.slice(0, at) + 'if(false)' + html.slice(at + guard.length);
 }
-if (mutation && !['retry-feedback', 'can-manage'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation && !['retry-feedback', 'retry-reachability', 'name-feedback', 'can-manage'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 
 let groups = [];
 let additionsClosed = false;
+let failInitialGroupsLoad = true;
 const agents = [
   { id: 'leader', key_id: 'key-leader', session_name: 'owner-leader-2642', online: true },
   { id: 'member', key_id: 'key-member', session_name: 'owner-member-2642', online: true },
@@ -41,7 +49,10 @@ const server = http.createServer(async (req, res) => {
   if (pathName === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   if (pathName === '/api/console/agents') return json(res, 200, { agents: [] });
   if (pathName === '/api/console/platform') return json(res, 200, { role: 'management', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'approved' }] });
-  if (pathName === '/api/console/agent-groups' && req.method === 'GET') return json(res, 200, payload());
+  if (pathName === '/api/console/agent-groups' && req.method === 'GET') {
+    if (failInitialGroupsLoad) { failInitialGroupsLoad = false; res.writeHead(503, { 'content-type': 'text/plain' }); return res.end('initial load failed'); }
+    return json(res, 200, payload());
+  }
   if (pathName === '/api/console/agent-groups' && req.method === 'POST') {
     const body = await read(req); const short = body.short_name;
     const collides = groups.find((g) => g.short_name === short);
@@ -69,22 +80,47 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
 (async () => {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch(process.env.PW_CHANNEL ? { headless: true, channel: process.env.PW_CHANNEL } : { headless: true });
-  const page = await browser.newPage(); page.setDefaultTimeout(1800);
+  const context = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
+  const page = await context.newPage(); page.setDefaultTimeout(1800);
   const pageErrors = []; const consoleErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/console`);
     await page.locator('#platform-items a[data-item-id="agent-groups"]').click();
+    await test('zero-group initial load failure has a reachable retry control', async () => {
+      await page.locator('#groupRetry').waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#groupDetail').isHidden(), true);
+      assert.strictEqual(await page.locator('#retryGroups').isVisible(), true);
+      assert.strictEqual(await page.locator('#retryGroups').evaluate((button) => button.closest('#groupRetry') !== null), true);
+      await page.locator('#retryGroups').click();
+    });
+    if (mutation === 'retry-reachability') {
+      // Continue the rest of the independent cases after recording the one
+      // intended failure; this bypass is test-fixture setup only.
+      await page.locator('#groupDetail').evaluate((detail) => { detail.hidden = false; });
+      await page.locator('#retryGroups').click();
+    }
     await page.locator('#groupLeader').waitFor({ state: 'visible' });
     await page.waitForFunction(() => !document.getElementById('groupLeader').disabled);
     await test('name feedback is near the name control and the obsolete pattern is absent', async () => {
       assert.strictEqual(await page.locator('#groupShortName').getAttribute('pattern'), null);
+      assert.strictEqual(await page.locator('#groupShortName').getAttribute('maxlength'), null);
       await page.locator('#createGroup').click();
       assert.strictEqual(await page.locator('#groupNameFeedback').textContent(), '请输入团队名称');
     });
+    await test('pasting more than eight characters remains visible and gets nearby feedback', async () => {
+      await page.locator('#groupShortName').click();
+      await page.locator('#groupShortName').press('ControlOrMeta+A');
+      await page.locator('#groupShortName').press('Backspace');
+      await page.evaluate(async () => navigator.clipboard.writeText('超过八个字符的团队名称'));
+      await page.locator('#groupShortName').press('ControlOrMeta+V');
+      assert.ok((await page.locator('#groupShortName').inputValue()).length > 8);
+      await page.locator('#createGroup').click();
+      await page.locator('#groupNameFeedback').getByText('团队名称不能超过 8 个字符').waitFor({ state: 'visible' });
+    });
     await test('create trims, lists leader first, and reports exact duplicate with suggestion', async () => {
-      await page.locator('#groupShortName').click(); await page.locator('#groupShortName').pressSequentially('  团队1  '); await page.locator('#createGroup').click();
+      await page.locator('#groupShortName').click(); await page.locator('#groupShortName').press('ControlOrMeta+A'); await page.locator('#groupShortName').press('Backspace'); await page.locator('#groupShortName').pressSequentially('  团队1  '); await page.locator('#createGroup').click();
       await page.locator('#groupNameFeedback').getByText('操作成功').waitFor({ state: 'visible' });
       await page.locator('#groupListItems').getByText('团队1').waitFor({ state: 'visible' });
       assert.match(await page.locator('#groupMembers').textContent(), /^leader（组长）$/);
@@ -126,7 +162,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#groupMembers').getByRole('button', { name: 'member' }).click(); await page.locator('#groupRemoveAction button').click();
       await page.waitForFunction(() => !document.getElementById('groupMembers').textContent.includes('member'));
       assert.deepStrictEqual(pageErrors, []);
-      assert.deepStrictEqual(consoleErrors.filter((text) => !text.includes('status of 409')), []);
+      assert.deepStrictEqual(consoleErrors.filter((text) => !text.includes('status of 409') && !text.includes('status of 503')), []);
     });
     await test('only own online short names are candidates', async () => {
       // Keep this assertion independent of the removal-flow test: a mutation
@@ -138,7 +174,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.deepStrictEqual(names, ['member']);
       assert.strictEqual(await page.locator('#groupJoinAgent option').first().getAttribute('value'), 'member');
     });
-  } finally { await browser.close(); await new Promise((resolve) => server.close(resolve)); }
+  } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`vega group browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);
   if (mutation) { if (fail !== 1) process.exit(1); } else if (fail) process.exit(1);
 })().catch((err) => { console.error(err); process.exit(2); });
