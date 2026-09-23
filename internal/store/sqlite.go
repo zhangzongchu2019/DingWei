@@ -374,7 +374,25 @@ func rewriteLegacyOwnerDisplayNames(ctx context.Context, tx *sql.Tx) ([]consoleD
 }
 
 func (s *SQLite) applyConsoleSpecWorkflowMigration(ctx context.Context, name, body, digest string) error {
-	tx, err := s.db.BeginTx(ctx, nil)
+	conn, err := s.db.Conn(ctx)
+	if err != nil {
+		return fmt.Errorf("migrate %s: acquire dedicated connection: %w", name, err)
+	}
+	defer conn.Close()
+	if _, err = conn.ExecContext(ctx, `PRAGMA foreign_keys=OFF`); err != nil {
+		return fmt.Errorf("migrate %s: disable foreign keys: %w", name, err)
+	}
+	restored := false
+	defer func() {
+		if !restored {
+			_, _ = conn.ExecContext(context.Background(), `PRAGMA foreign_keys=ON`)
+		}
+	}()
+	var enabled int
+	if err = conn.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&enabled); err != nil || enabled != 0 {
+		return fmt.Errorf("migrate %s: foreign_keys did not turn off (value=%d err=%v)", name, enabled, err)
+	}
+	tx, err := conn.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("migrate %s: open transaction: %w", name, err)
 	}
@@ -392,13 +410,49 @@ func (s *SQLite) applyConsoleSpecWorkflowMigration(ctx context.Context, name, bo
 	if _, err = tx.ExecContext(ctx, `INSERT INTO schema_migrations(version,digest,applied_at) VALUES(?,?,?)`, name, digest, s.now()); err != nil {
 		return fmt.Errorf("migrate %s: record ledger: %w", name, err)
 	}
+	if violations, checkErr := consoleForeignKeyViolations(ctx, tx); checkErr != nil {
+		return fmt.Errorf("migrate %s: pre-commit foreign_key_check: %w", name, checkErr)
+	} else if len(violations) != 0 {
+		return fmt.Errorf("migrate %s: pre-commit foreign_key_check failed: %s", name, strings.Join(violations, "; "))
+	}
 	if err = tx.Commit(); err != nil {
 		return err
 	}
+	if violations, checkErr := consoleForeignKeyViolations(ctx, conn); checkErr != nil {
+		return fmt.Errorf("migrate %s: post-commit foreign_key_check: %w", name, checkErr)
+	} else if len(violations) != 0 {
+		return fmt.Errorf("migrate %s: post-commit foreign_key_check failed: %s", name, strings.Join(violations, "; "))
+	}
+	if _, err = conn.ExecContext(ctx, `PRAGMA foreign_keys=ON`); err != nil {
+		return fmt.Errorf("migrate %s: restore foreign keys: %w", name, err)
+	}
+	if err = conn.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&enabled); err != nil || enabled != 1 {
+		return fmt.Errorf("migrate %s: foreign_keys did not restore (value=%d err=%v)", name, enabled, err)
+	}
+	restored = true
 	for _, rewrite := range rewrites {
 		fmt.Fprintf(os.Stderr, "migrate 0044: principal display_name rewritten id=%s old=%q new=%q\n", rewrite.ID, rewrite.OldName, rewrite.NewName)
 	}
 	return nil
+}
+
+func consoleForeignKeyViolations(ctx context.Context, q consoleDisplayNameQuerier) ([]string, error) {
+	rows, err := q.QueryContext(ctx, `PRAGMA foreign_key_check`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var violations []string
+	for rows.Next() {
+		var table, parent string
+		var rowID sql.NullInt64
+		var fkID int
+		if err := rows.Scan(&table, &rowID, &parent, &fkID); err != nil {
+			return nil, err
+		}
+		violations = append(violations, fmt.Sprintf("table=%s rowid=%v parent=%s fkid=%d", table, rowID, parent, fkID))
+	}
+	return violations, rows.Err()
 }
 
 func (s *SQLite) consoleSpecWorkflowSchema(ctx context.Context) (oldSchema, newSchema bool, err error) {
