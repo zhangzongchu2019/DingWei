@@ -37,7 +37,12 @@ function productionHTML() {
   if (MUTATION === 'no-task-dod') html = html.replace("row.querySelector('.task-dod').value=taskDoD(task);", "row.querySelector('.task-dod').value='';");
   if (MUTATION === 'no-parallel-marker') html = html.replace("(task.parallel?'可并行':'顺序执行')", "'顺序执行'");
   if (MUTATION === 'no-hours-hint') html = html.replace("node.textContent=Number(input.value)>8?'建议再拆':'';", "node.textContent='';");
-  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'no-empty-create') html = html.replace("list.append(empty);", "");
+  if (MUTATION === 'show-detail-before-click') html = html.replace('<section id=detail-screen hidden>', '<section id=detail-screen>');
+  if (MUTATION === 'keep-detail-on-page') html = html.replaceAll('clearSpecSelection();currentPage', 'currentPage');
+  if (MUTATION === 'no-task-entry') html = html.replace("document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('show-task-split').hidden=true;");
+  if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
+  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -63,6 +68,10 @@ async function main() {
   const taskDeps = new Map([['task-a', []], ['task-b', []]]);
   const taskDoDs = new Map([['task-a', 'A done'], ['task-b', '']]);
   const server = http.createServer(async (req, res) => {
+    if (req.url === '/fixture/populate-pages' && req.method === 'POST') {
+      for (let i = 0; i < 20; i++) { const item={id:`page-spec-${i}`,owner_short_name:'甲',current_editor_short_name:'甲',title:`Page ${i}`,state:'editing',task_state:'splitting',current_revision:1,can_edit:true,can_split:true}; specs.push(item); revisions.set(item.id,{spec_id:item.id,revision:1,content_markdown:'# page',acceptance_json:'[]',input_anchors_json:'[]'}); }
+      res.writeHead(204); res.end(); return;
+    }
     if (String(req.url).startsWith('/console/specs')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(html); return;
     }
@@ -150,12 +159,16 @@ async function main() {
     const context = await browser.newContext();
     await context.addInitScript(() => { Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (text) => { globalThis.__copiedCode = text; } }, configurable: true }); });
     const page = await context.newPage(); page.setDefaultTimeout(2500);
-    const pageErrors = [];
+    const pageErrors = [], consoleErrors = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
     await page.goto(`http://127.0.0.1:${port}/console/specs`, { waitUntil: 'domcontentloaded' });
     assert.strictEqual(await page.locator('#list-screen').isVisible(), true, 'entry must show my spec list first');
     assert.strictEqual(await page.locator('#new-screen').isHidden(), true, 'new form must not share the first screen');
-    await page.click('#show-new-spec');
+    assert.strictEqual(await page.locator('#detail-screen').isHidden(), true, 'detail must be empty before a spec is selected');
+    assert.strictEqual(await page.locator('#task-area').isHidden(), true, 'task area must be empty before a spec is selected');
+    await page.locator('#empty-create-spec').waitFor({state:'visible'});await page.click('#empty-create-spec');
+    assert.strictEqual(await page.locator('#new-screen').isVisible(), true, 'empty list create link must open a separate create screen');
     const validNew = { title: 'Valid', markdown: '# Valid', acceptance: 'accepted', anchor: 'msg:valid' };
     async function setNew(values) {
       await page.fill('#new-title', values.title);
@@ -191,7 +204,10 @@ async function main() {
       const row = page.locator(`#spec-list [data-title="${title}"]`);
       assert.strictEqual(await row.locator('.edit-spec').count(), 1, 'management owner must see Edit for own spec');
     }
-    await page.locator('#spec-list [data-title="Spec A"] .view-spec').click();
+    await page.request.post(`http://127.0.0.1:${port}/fixture/populate-pages`);await page.click('#show-spec-list');await page.waitForFunction(()=>!document.getElementById('next-page').disabled);
+    await page.locator('#spec-list [data-title="Spec A"] .view-spec').click();await page.locator('#detail-screen').waitFor({state:'visible'});await page.click('#next-page');
+    assert.strictEqual(await page.locator('#detail-screen').isHidden(),true,'pagination must clear selected spec detail');assert.strictEqual(await page.locator('#task-area').isHidden(),true,'pagination must clear selected task area');assert.strictEqual(await page.locator('#task-list').textContent(),'','pagination must clear rendered tasks');
+    await page.waitForFunction(()=>document.getElementById('page-status').textContent==='2 / 2');await page.click('#prev-page');await page.locator('#spec-list [data-title="Spec A"] .view-spec').waitFor({state:'visible'});await page.locator('#spec-list [data-title="Spec A"] .view-spec').click();
     await page.locator('#detail-screen').waitFor({state:'visible'});
     assert.strictEqual(await page.locator('#list-screen').isVisible(), true, 'opening detail must keep the spec list visible above it');
     assert.strictEqual(await page.locator('#detail-screen').evaluate((node) => node.previousElementSibling && node.previousElementSibling.id), 'list-screen', 'detail must be the list following sibling');
@@ -207,6 +223,7 @@ async function main() {
     assert.match(await task.locator('.meta').textContent(),/被依赖 task-c/);
     assert.strictEqual(await task.locator('.task-hours').inputValue(),'5');
     assert.strictEqual(await task.locator('.task-deps option:checked').count(),0);
+    assert.strictEqual(await page.locator('#show-task-split').isVisible(),true,'selected splittable spec must show a task split entry');assert.strictEqual(await page.locator('#task-split').isHidden(),true,'task split form must stay hidden before clicking entry');await page.click('#show-task-split');assert.strictEqual(await page.locator('#task-split').isVisible(),true,'clicking task split entry must reveal the form');
     await task.locator('.task-dod').fill('A complete');await task.locator('.task-hours').fill('16');
     assert.strictEqual(await task.locator('.task-hours-hint').textContent(),'建议再拆');
     await task.locator('.task-deps').selectOption(['task-a']);await task.locator('.save-task-plan').click();
@@ -222,7 +239,7 @@ async function main() {
     assert.strictEqual(await page.locator('#task-list .task-row[data-task-id="task-a"] .meta').textContent().then((x)=>x.includes('顺序执行')),true);
     const taskB=page.locator('#task-list .task-row[data-task-id="task-b"]');await taskB.locator('.task-deps').selectOption(['task-a']);await taskB.locator('.save-task-plan').click();
     await taskB.locator('.task-status').filter({hasText:'task dependency cycle'}).waitFor({state:'visible'});
-    await page.fill('#task-title','Implement new');await page.fill('#task-content','new content');await page.fill('#task-dod','New done');await page.fill('#task-hours','16');
+    await page.click('#show-task-split');await page.fill('#task-title','Implement new');await page.fill('#task-content','new content');await page.fill('#task-dod','New done');await page.fill('#task-hours','16');
     assert.strictEqual(await page.locator('#task-hours-hint').textContent(),'建议再拆');await page.selectOption('#task-deps',['task-b']);await page.click('#create-task');
     await page.waitForFunction(() => document.getElementById('task-create-status').textContent === '已拆解');
     assert.deepStrictEqual(taskCreates[0],{specID:'spec-1',body:{title:'Implement new',content:'new content',definition_of_done:'New done',estimated_hours:16,depends_on:['task-b']}});
@@ -265,7 +282,8 @@ async function main() {
     assert.strictEqual(specs.find((item) => item.title === 'Spec B').current_revision, 2, 'server-rejected save must not create a revision');
     assert.deepStrictEqual(pageErrors, [], `failed specAction must be handled on-page: ${JSON.stringify(pageErrors)}`);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 2, 'reload must retain owned specs');
+    assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 20, 'reload must retain the first owned-spec page');
+    assert.strictEqual(await page.locator('#spec-list [data-title="Spec A"]').count(),1);assert.strictEqual(await page.locator('#spec-list [data-title="Spec B"]').count(),1);
     await page.click('#show-new-spec');
     await page.evaluate(() => window.specEditors.new.value('editor contract'));
     await page.locator('.CodeMirror-line').first().waitFor({state:'attached'});
@@ -297,6 +315,7 @@ async function main() {
     assert.strictEqual(wrapMetrics.overflow, 0, `editor line overflowed: ${JSON.stringify(wrapMetrics)}`);
     assert.strictEqual(wrapMetrics.lineOverhang, 0, `editor line overhung viewport: ${JSON.stringify(wrapMetrics)}`);
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
+    assert.deepStrictEqual(consoleErrors.filter((message)=>!/^Failed to load resource: the server responded with a status of (400|404|409)/.test(message)), [], `spec page emitted unexpected console errors: ${JSON.stringify(consoleErrors)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);
     console.log('console specs browser: passed=27 failed=0');
   } finally {
