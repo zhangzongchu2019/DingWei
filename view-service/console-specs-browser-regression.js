@@ -42,8 +42,9 @@ function productionHTML() {
   if (MUTATION === 'keep-detail-on-page') html = html.replace('async function refreshSpecs(){clearSpecSelection();', 'async function refreshSpecs(){');
   if (MUTATION === 'no-task-entry') html = html.replace("document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('show-task-split').hidden=true;");
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
-  if (MUTATION === 'silent-presplit-failure') html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'silent-presplit-failure'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
+  if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
+  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -225,13 +226,15 @@ async function main() {
     await openPresplitMode('no-agents');
     assert.strictEqual(await page.locator('#presplit-status').textContent(),'没有自己的在线 Agent');
     assert.strictEqual(await page.locator('#start-presplit').isDisabled(),true);
-    for (const mode of ['no-reply','timeout','invalid','restart']) {
+    const targetSilentMode = MUTATION.startsWith('silent-presplit-') ? MUTATION.slice('silent-presplit-'.length) : '';
+    for (const mode of targetSilentMode ? [targetSilentMode] : ['no-reply','timeout','invalid','restart']) {
       await openPresplitMode(mode);
       assert.deepStrictEqual(await page.locator('#presplit-agent option').allTextContents(),['请选择 Agent','owner-agent-2642']);
       assert.strictEqual(await page.locator('#start-presplit').isDisabled(),true,'Agent must be explicitly selected');
       await page.selectOption('#presplit-agent','agent-a');
       await page.click('#start-presplit');
-      await page.locator('#presplit-status').filter({hasText:'预拆失败，可手工添加'}).waitFor({state:'visible'});
+      await page.waitForTimeout(100);
+      assert.strictEqual(await page.locator('#presplit-status').textContent(),'预拆失败，可手工添加',`${mode}: failure must be visible instead of leaving only an apparently successful empty task table`);
       assert.strictEqual((await page.locator('#task-list').textContent()).trim(),'尚未拆出任务',`${mode} must remain visibly failed instead of looking like a successful empty task table`);
     }
     await openPresplitMode('success');
