@@ -26,26 +26,19 @@ type consoleSpecOwnerQuerier interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 }
 
-// activeOwnerPrincipals is the single source of truth for every short-name
-// based spec assignee lookup: an active identity with an active owner role.
-func activeOwnerPrincipals(ctx context.Context, q consoleSpecOwnerQuerier, shortName string) ([]model.ConsolePrincipal, error) {
-	query := `SELECT DISTINCT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active
+// resolveOwnerPrincipalByShortName is the single source of truth for every
+// short-name based spec assignee lookup: an active identity with an active owner role.
+func resolveOwnerPrincipalByShortName(ctx context.Context, q consoleSpecOwnerQuerier, shortName string) (*model.ConsolePrincipal, error) {
+	rows, err := q.QueryContext(ctx, `SELECT DISTINCT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active
 		FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
-		WHERE p.active=1`
-	args := []any{}
-	if shortName != "" {
-		query += ` AND p.display_name=?`
-		args = append(args, shortName)
-	}
-	query += ` ORDER BY p.display_name,p.id`
-	rows, err := q.QueryContext(ctx, query, args...)
+		WHERE p.active=1 AND p.display_name=? ORDER BY p.id`, shortName)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []model.ConsolePrincipal
+	var out []*model.ConsolePrincipal
 	for rows.Next() {
-		var p model.ConsolePrincipal
+		p := new(model.ConsolePrincipal)
 		var active int
 		if err := rows.Scan(&p.ID, &p.Provider, &p.ProviderIssuer, &p.ProviderSubject, &p.DisplayName, &active); err != nil {
 			return nil, err
@@ -53,22 +46,44 @@ func activeOwnerPrincipals(ctx context.Context, q consoleSpecOwnerQuerier, short
 		p.Active = active != 0
 		out = append(out, p)
 	}
-	return out, rows.Err()
-}
-
-func resolveOwnerPrincipalByShortName(ctx context.Context, q consoleSpecOwnerQuerier, shortName string) (*model.ConsolePrincipal, error) {
-	items, err := activeOwnerPrincipals(ctx, q, shortName)
-	if err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	if len(items) != 1 {
+	if len(out) != 1 {
 		return nil, ErrConsoleSpecPermission
 	}
-	return &items[0], nil
+	return out[0], nil
 }
 
 func (s *SQLite) ListActiveConsolePrincipals(ctx context.Context) ([]model.ConsolePrincipal, error) {
-	return activeOwnerPrincipals(ctx, s.db, "")
+	rows, err := s.db.QueryContext(ctx, `SELECT display_name FROM console_principal WHERE active=1 ORDER BY display_name,id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	out := make([]model.ConsolePrincipal, 0, len(names))
+	for _, name := range names {
+		principal, err := resolveOwnerPrincipalByShortName(ctx, s.db, name)
+		if errors.Is(err, ErrConsoleSpecPermission) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *principal)
+	}
+	return out, nil
 }
 
 func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetShort, nextState string, now time.Time) error {
