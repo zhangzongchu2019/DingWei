@@ -175,12 +175,12 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 		t.Fatalf("open group must add own online Agent code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-b", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+b1.ID+`"}`))
-	if rr.Code != http.StatusNotFound {
-		t.Fatalf("opened group must still reject another owner's Agent, code=%d body=%s", rr.Code, rr.Body.String())
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("open group must accept an online Agent from another owner through the group-code credential, code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodGet, "/api/console/agent-groups", "", "", nil)
-	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-a-two-2642"`)) {
-		t.Fatalf("creator list lacks joined own Agent code=%d body=%s", rr.Code, rr.Body.String())
+	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-a-two-2642"`)) || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-b-full-2642"`)) {
+		t.Fatalf("creator list lacks the joined members code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodDelete, "/api/console/agent-groups/"+group.Code, group.Code, "", nil)
 	if rr.Code != http.StatusNoContent {
@@ -249,8 +249,8 @@ func TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-b", b1.ID); err == nil {
-		t.Fatal("a different owner must not add an Agent to this group")
+	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-b", b1.ID); err != nil {
+		t.Fatalf("the group-code credential must accept another owner's online Agent: %v", err)
 	}
 	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-a", b2.ID); err == nil {
 		t.Fatal("principal added another owners Agent")

@@ -12,7 +12,7 @@ const end = source.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents', start);
 assert(start >= 0 && end > start, 'cannot extract consolePageHTML from production source');
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
-if (mutation === 'retry-feedback') html = html.replace("if(source==='retry')vegaGroupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');", '');
+if (mutation === 'retry-feedback') html = html.replace("groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');", '');
 if (mutation === 'can-manage') html = html.replace('if(!leader&&selected.can_manage)', 'if(false)');
 if (mutation && !['retry-feedback', 'can-manage'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 
@@ -23,6 +23,7 @@ const agents = [
   { id: 'member', key_id: 'key-member', session_name: 'owner-member-2642', online: true },
 ];
 let nextJoinFailure = '';
+const membershipWrites = [];
 function payload() {
   return { principal: 'owner', owned_agents: agents, groups: groups.map((g) => ({ ...g, additions_closed: additionsClosed, members: g.members.map((m) => ({ ...m })) })) };
 }
@@ -45,13 +46,14 @@ const server = http.createServer(async (req, res) => {
   if (memberMatch && req.method === 'POST') {
     if (nextJoinFailure) { const text = nextJoinFailure; nextJoinFailure = ''; res.writeHead(409, { 'content-type': 'text/plain' }); return res.end(text); }
     if (additionsClosed) { res.writeHead(409, { 'content-type': 'text/plain' }); return res.end('该编组已关闭添加'); }
-    const body = await read(req); const a = agents.find((x) => x.id === body.agent_id);
+    const body = await read(req); membershipWrites.push({ code: decodeURIComponent(memberMatch[1]), agent_id: body.agent_id }); const a = agents.find((x) => x.id === body.agent_id);
     if (!a) { res.writeHead(404); return res.end(); }
     groups[0].members.push({ agent_id: a.id, key_id: a.key_id, session_name: a.session_name }); res.writeHead(204); return res.end();
   }
   if (memberMatch && req.method === 'DELETE') { groups[0].members = groups[0].members.filter((m) => m.agent_id !== decodeURIComponent(memberMatch[2])); res.writeHead(204); return res.end(); }
   if (pathName.endsWith('/additions') && req.method === 'POST') { additionsClosed = (await read(req)).closed; res.writeHead(204); return res.end(); }
   if (pathName.startsWith('/api/console/agent-groups/') && req.method === 'DELETE') { groups = []; res.writeHead(204); return res.end(); }
+  if (pathName === '/favicon.ico') { res.writeHead(204); return res.end(); }
   res.writeHead(404); res.end();
 });
 
@@ -61,6 +63,9 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch(process.env.PW_CHANNEL ? { headless: true, channel: process.env.PW_CHANNEL } : { headless: true });
   const page = await browser.newPage(); page.setDefaultTimeout(1800);
+  const pageErrors = []; const consoleErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/console`);
     await page.locator('#platform-items a[data-item-id="agent-groups"]').click();
@@ -72,21 +77,34 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await page.locator('#groupNameFeedback').textContent(), '请输入团队名称');
     });
     await test('create trims, lists leader first, and reports exact duplicate with suggestion', async () => {
-      await page.locator('#groupShortName').fill('  团队1  '); await page.locator('#createGroup').click();
+      await page.locator('#groupShortName').click(); await page.locator('#groupShortName').pressSequentially('  团队1  '); await page.locator('#createGroup').click();
       await page.locator('#groupNameFeedback').getByText('操作成功').waitFor({ state: 'visible' });
       await page.locator('#groupListItems').getByText('团队1').waitFor({ state: 'visible' });
       assert.match(await page.locator('#groupMembers').textContent(), /^leader（组长）$/);
-      await page.locator('#groupShortName').fill('团队1'); await page.locator('#createGroup').click();
+      await page.locator('#groupShortName').click(); await page.locator('#groupShortName').press('ControlOrMeta+A'); await page.locator('#groupShortName').press('Backspace'); await page.locator('#groupShortName').pressSequentially('团队1'); await page.locator('#createGroup').click();
       await page.locator('#groupNameFeedback').filter({ hasText: 'unavailable' }).waitFor({ state: 'visible' });
       assert.match(await page.locator('#groupNameFeedback').textContent(), /团队1 is unavailable; try 团队11/);
+      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), 'A'.repeat(32));
+      assert.strictEqual(await page.locator('#groupCodeValue').textContent(), 'A'.repeat(32));
     });
     await test('retry success is visible', async () => {
-      await page.locator('#retryGroups').click(); await page.locator('#groupRetryFeedback').getByText('已刷新 · 1 个编组').waitFor({ state: 'visible' });
+      await page.evaluate(() => refreshGroups('retry')); await page.locator('#groupRetryFeedback').getByText('已刷新 · 1 个编组').waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('#groupRetryFeedback').textContent(), '已刷新 · 1 个编组');
+    });
+    await test('keeps the 32-character code credential visible and submits the code the operator enters', async () => {
+      const code = 'B'.repeat(32);
+      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), 'A'.repeat(32));
+      await page.locator('#groupJoinCode').click(); await page.locator('#groupJoinCode').press('ControlOrMeta+A'); await page.locator('#groupJoinCode').pressSequentially(code);
+      await page.locator('#groupJoinAgent').selectOption('member'); await page.locator('#joinGroup').click();
+      await page.waitForTimeout(20);
+      assert.deepStrictEqual(membershipWrites.at(-1), { code, agent_id: 'member' });
+      groups[0].members = groups[0].members.filter((member) => member.agent_id !== 'member');
+      await page.evaluate(() => refreshGroups('credential-reset'));
     });
     await test('close rejects, open joins, offline error is visible, and removal confirms the real consequence', async () => {
       await page.locator('#groupAdditionsToggle').click(); await page.getByRole('button', { name: '开放添加' }).waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('#groupAdditionsToggle').textContent(), '开放添加');
+      await page.locator('#groupJoinCode').click(); await page.locator('#groupJoinCode').press('ControlOrMeta+A'); await page.locator('#groupJoinCode').pressSequentially('A'.repeat(32));
       await page.locator('#groupJoinAgent').selectOption('member'); await page.locator('#joinGroup').click(); await page.locator('#groupJoinFeedback').getByText('该编组已关闭添加').waitFor({ state: 'visible' });
       await page.locator('#groupAdditionsToggle').click(); await page.getByRole('button', { name: '关闭添加' }).waitFor({ state: 'visible' });
       await page.locator('#groupJoinAgent').selectOption('member');
@@ -96,6 +114,8 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       page.once('dialog', async (dialog) => { assert.match(dialog.message(), /消息可达性会变/); await dialog.accept(); });
       await page.locator('#groupMembers').getByRole('button', { name: 'member' }).click(); await page.locator('#groupRemoveAction button').click();
       await page.waitForFunction(() => !document.getElementById('groupMembers').textContent.includes('member'));
+      assert.deepStrictEqual(pageErrors, []);
+      assert.deepStrictEqual(consoleErrors.filter((text) => !text.includes('status of 409')), []);
     });
     await test('only own online short names are candidates', async () => {
       const names = await page.locator('#groupJoinAgent option').allTextContents();
