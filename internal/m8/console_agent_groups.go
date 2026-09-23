@@ -228,15 +228,6 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "agent is offline", http.StatusConflict)
 			return
 		}
-		closed, _, lookupErr := h.consoleGroupAdditionsClosed(r.Context(), code, principal)
-		if lookupErr != nil {
-			http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		if closed {
-			http.Error(w, "该编组已关闭添加", http.StatusConflict)
-			return
-		}
 		err = repo.AssignOwnedConsoleAgentGroup(r.Context(), code, principal, request.AgentID)
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/additions"):
 		var request struct {
@@ -253,8 +244,24 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if errors.Is(err, store.ErrAgentGroupAdditionsClosed) {
+		http.Error(w, "该编组已关闭添加", http.StatusConflict)
+		return
+	}
 	if errors.Is(err, store.ErrAgentGroupMemberExists) {
 		http.Error(w, "该 Agent 已在该编组中", http.StatusConflict)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupAgentUnavailable) {
+		http.Error(w, "该 Agent 已下线", http.StatusConflict)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupLeaderProtected) {
+		http.Error(w, "组长不可剔除", http.StatusConflict)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupAccessDenied) {
+		http.Error(w, "无权管理该编组", http.StatusForbidden)
 		return
 	}
 	if errors.Is(err, sql.ErrNoRows) {
@@ -266,23 +273,6 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Hub) consoleGroupAdditionsClosed(ctx context.Context, code, principal string) (closed, own bool, err error) {
-	repo, ok := h.Repo.(consoleAgentGroupRepository)
-	if !ok {
-		return false, false, errors.New("agent groups unavailable")
-	}
-	groups, err := repo.ListAgentGroups(ctx)
-	if err != nil {
-		return false, false, err
-	}
-	for _, group := range groups {
-		if group.Code == code && group.CreatorPrincipal == principal {
-			return group.AdditionsClosed, true, nil
-		}
-	}
-	return false, false, nil
 }
 
 func (h *Hub) consoleAgentOnline(ctx context.Context, agentID, principal string) bool {

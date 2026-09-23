@@ -3243,6 +3243,27 @@ func (s *SQLite) UpsertAgentGroup(ctx context.Context, group model.AgentGroup) e
 var ErrAgentGroupShortNameConflict = errors.New("agent group short name conflict")
 var ErrAgentGroupCodeConflict = errors.New("agent group code conflict")
 var ErrAgentGroupMemberExists = errors.New("agent group member already exists")
+var ErrAgentGroupAdditionsClosed = errors.New("agent group additions closed")
+var ErrAgentGroupAccessDenied = errors.New("agent group access denied")
+var ErrAgentGroupLeaderProtected = errors.New("agent group leader protected")
+var ErrAgentGroupAgentUnavailable = errors.New("agent group agent unavailable")
+
+func (s *SQLite) agentGroupExists(ctx context.Context, code string) (bool, error) {
+	var exists int
+	err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM agent_group WHERE code=?)`, code).Scan(&exists)
+	return exists != 0, err
+}
+
+// agentGroupHasCreator distinguishes user-created groups from legacy rows.
+// Legacy rows deliberately retain the established non-disclosure 404 contract.
+func (s *SQLite) agentGroupHasCreator(ctx context.Context, code string) (bool, error) {
+	var creator sql.NullString
+	err := s.db.QueryRowContext(ctx, `SELECT creator_principal FROM agent_group WHERE code=?`, code).Scan(&creator)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return creator.Valid && creator.String != "", err
+}
 
 func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentGroup) error {
 	if err := validateAgentGroupCode(group.Code); err != nil {
@@ -3298,6 +3319,17 @@ func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID 
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
+		exists, lookupErr := s.agentGroupExists(ctx, code)
+		if lookupErr != nil {
+			return lookupErr
+		}
+		hasCreator, creatorErr := s.agentGroupHasCreator(ctx, code)
+		if creatorErr != nil {
+			return creatorErr
+		}
+		if exists && hasCreator {
+			return ErrAgentGroupAccessDenied
+		}
 		return sql.ErrNoRows
 	}
 	return nil
@@ -3312,6 +3344,17 @@ func (s *SQLite) SetConsoleAgentGroupAdditionsClosed(ctx context.Context, code, 
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
+		exists, lookupErr := s.agentGroupExists(ctx, code)
+		if lookupErr != nil {
+			return lookupErr
+		}
+		hasCreator, creatorErr := s.agentGroupHasCreator(ctx, code)
+		if creatorErr != nil {
+			return creatorErr
+		}
+		if exists && hasCreator {
+			return ErrAgentGroupAccessDenied
+		}
 		return sql.ErrNoRows
 	}
 	return nil
@@ -3329,10 +3372,31 @@ func (s *SQLite) AssignOwnedConsoleAgentGroup(ctx context.Context, code, princip
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
+		var additionsClosed int
+		lookupErr := s.db.QueryRowContext(ctx, `SELECT additions_closed FROM agent_group WHERE code=?`, code).Scan(&additionsClosed)
+		if errors.Is(lookupErr, sql.ErrNoRows) {
+			return sql.ErrNoRows
+		}
+		if lookupErr != nil {
+			return lookupErr
+		}
+		if additionsClosed != 0 {
+			return ErrAgentGroupAdditionsClosed
+		}
 		var exists int
-		err = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM agent_group_member m JOIN console_agent a ON a.key_id=m.key_id AND a.session_name=m.session_name WHERE m.code=? AND a.id=?)`, code, agentID).Scan(&exists)
-		if err == nil && exists != 0 {
+		lookupErr = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM agent_group_member m JOIN console_agent a ON a.key_id=m.key_id AND a.session_name=m.session_name WHERE m.code=? AND a.id=?)`, code, agentID).Scan(&exists)
+		if lookupErr != nil {
+			return lookupErr
+		}
+		if exists != 0 {
 			return ErrAgentGroupMemberExists
+		}
+		lookupErr = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM console_agent WHERE id=? AND owner_principal=? AND active=1)`, agentID, principalID).Scan(&exists)
+		if lookupErr != nil {
+			return lookupErr
+		}
+		if exists == 0 {
+			return ErrAgentGroupAgentUnavailable
 		}
 		return sql.ErrNoRows
 	}
@@ -3352,7 +3416,36 @@ func (s *SQLite) UnassignConsoleAgentGroup(ctx context.Context, code, principalI
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
-		return sql.ErrNoRows
+		exists, lookupErr := s.agentGroupExists(ctx, code)
+		if lookupErr != nil {
+			return lookupErr
+		}
+		if !exists {
+			return sql.ErrNoRows
+		}
+		hasCreator, creatorErr := s.agentGroupHasCreator(ctx, code)
+		if creatorErr != nil {
+			return creatorErr
+		}
+		if !hasCreator {
+			return sql.ErrNoRows
+		}
+		var member, leader int
+		lookupErr = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM agent_group_member m JOIN console_agent a ON a.key_id=m.key_id AND a.session_name=m.session_name WHERE m.code=? AND a.id=?)`, code, agentID).Scan(&member)
+		if lookupErr != nil {
+			return lookupErr
+		}
+		if member == 0 {
+			return sql.ErrNoRows
+		}
+		lookupErr = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM agent_group g JOIN console_agent a ON a.id=? WHERE g.code=? AND g.leader_key_id=a.key_id AND g.leader_session_name=a.session_name)`, agentID, code).Scan(&leader)
+		if lookupErr != nil {
+			return lookupErr
+		}
+		if leader != 0 {
+			return ErrAgentGroupLeaderProtected
+		}
+		return ErrAgentGroupAccessDenied
 	}
 	return nil
 }

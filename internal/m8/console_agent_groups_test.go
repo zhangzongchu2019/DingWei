@@ -152,9 +152,17 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("close additions code=%d body=%s", rr.Code, rr.Body.String())
 	}
+	rr = call("owner-b", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/additions", group.Code, "", []byte(`{"closed":false}`))
+	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "无权管理该编组") {
+		t.Fatalf("existing group additions authorization must be explicit code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	rr = call("owner-b", http.MethodDelete, "/api/console/agent-groups/"+group.Code, group.Code, "", nil)
+	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "无权管理该编组") {
+		t.Fatalf("existing group delete authorization must be explicit code=%d body=%s", rr.Code, rr.Body.String())
+	}
 	rr = call("owner-b", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+b1.ID+`"}`))
-	if rr.Code != http.StatusNotFound {
-		t.Fatalf("closed non-creator join code=%d body=%s", rr.Code, rr.Body.String())
+	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该编组已关闭添加") {
+		t.Fatalf("closed non-creator join must be visibly rejected code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
 	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该编组已关闭添加") {
@@ -181,6 +189,18 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	rr = call("owner-b", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+b1.ID+`"}`))
 	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该 Agent 已在该编组中") {
 		t.Fatalf("duplicate code join must be a visible, specific failure code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	rr = call("owner-b", http.MethodDelete, "/api/console/agent-groups/"+group.Code+"/members/"+a2.ID, group.Code, a2.ID, nil)
+	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "无权管理该编组") {
+		t.Fatalf("existing member removal authorization must be explicit code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	rr = call("owner-a", http.MethodDelete, "/api/console/agent-groups/"+group.Code+"/members/"+a1.ID, group.Code, a1.ID, nil)
+	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "组长不可剔除") {
+		t.Fatalf("leader removal must be visibly rejected code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	rr = call("owner-a", http.MethodDelete, "/api/console/agent-groups/"+strings.Repeat("z", 32), strings.Repeat("z", 32), "", nil)
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("unknown group must remain not found code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodGet, "/api/console/agent-groups", "", "", nil)
 	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-a-two-2642"`)) || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-b-full-2642"`)) {
