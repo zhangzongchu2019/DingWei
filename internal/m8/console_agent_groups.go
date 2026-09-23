@@ -6,9 +6,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
@@ -31,10 +33,48 @@ type consoleAgentGroupView struct {
 	CanManage bool                     `json:"can_manage"`
 }
 
+type consoleOwnedAgentView struct {
+	ID          string `json:"id"`
+	SessionName string `json:"session_name"`
+	Online      bool   `json:"online"`
+}
+
 func createConsoleAgentGroup(ctx context.Context, repo consoleAgentGroupRepository, principal string, leader model.ConsoleAgent, ownerKey, shortName string, codeCandidate func() string) (model.AgentGroup, error) {
-	group := model.AgentGroup{Code: shortName + codeCandidate(), ShortName: shortName, CreatorPrincipal: principal,
+	group := model.AgentGroup{Code: codeCandidate(), ShortName: shortName, CreatorPrincipal: principal,
 		LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: ownerKey}
 	return group, repo.CreateConsoleAgentGroup(ctx, group)
+}
+
+func validConsoleGroupName(name string) bool {
+	if n := utf8.RuneCountInString(name); n < 1 || n > 8 {
+		return false
+	}
+	for _, r := range name {
+		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
+			return false
+		}
+	}
+	return true
+}
+
+func suggestedConsoleGroupName(name string, groups []model.AgentGroup) string {
+	used := make(map[string]bool, len(groups))
+	for _, group := range groups {
+		used[group.ShortName] = true
+	}
+	runes := []rune(name)
+	for suffix := 1; ; suffix++ {
+		digits := []rune(fmt.Sprintf("%d", suffix))
+		limit := 8 - len(digits)
+		base := runes
+		if len(base) > limit {
+			base = base[:limit]
+		}
+		candidate := string(base) + string(digits)
+		if !used[candidate] {
+			return candidate
+		}
+	}
 }
 
 func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
@@ -75,8 +115,15 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 				views = append(views, consoleAgentGroupView{AgentGroup: group, Members: members, CanManage: canManage})
 			}
 		}
+		ownedViews := make([]consoleOwnedAgentView, 0, len(owned))
+		for _, agent := range owned {
+			h.mu.Lock()
+			online := h.sessionClients[agent.KeyID] != nil && h.sessionClients[agent.KeyID][agent.SessionName] != nil
+			h.mu.Unlock()
+			ownedViews = append(ownedViews, consoleOwnedAgentView{ID: agent.ID, SessionName: agent.SessionName, Online: online})
+		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"principal": principal, "groups": views, "owned_agents": owned})
+		_ = json.NewEncoder(w).Encode(map[string]any{"principal": principal, "groups": views, "owned_agents": ownedViews})
 		return
 	}
 	if r.Method != http.MethodPost {
@@ -87,14 +134,13 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 		AgentID   string `json:"agent_id"`
 		ShortName string `json:"short_name"`
 	}
-	request.ShortName = strings.TrimSpace(request.ShortName)
 	if json.NewDecoder(r.Body).Decode(&request) != nil || strings.TrimSpace(request.AgentID) == "" {
 		http.Error(w, "agent_id and short_name required", http.StatusBadRequest)
 		return
 	}
 	request.ShortName = strings.TrimSpace(request.ShortName)
-	if !regexp.MustCompile(`^[a-z0-9-]{8}$`).MatchString(request.ShortName) {
-		http.Error(w, "short_name must be 8 characters [a-z0-9-]", http.StatusBadRequest)
+	if !validConsoleGroupName(request.ShortName) {
+		http.Error(w, "group name must be 1 to 8 letters or numbers", http.StatusBadRequest)
 		return
 	}
 	var leader *model.ConsoleAgent
@@ -124,7 +170,7 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "owned agent endpoint not found", http.StatusConflict)
 		return
 	}
-	suffix, err := randomGroupSuffix(24)
+	suffix, err := randomGroupSuffix(32)
 	if err != nil {
 		http.Error(w, "agent group entropy unavailable", http.StatusServiceUnavailable)
 		return
@@ -132,7 +178,12 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 	group, err := createConsoleAgentGroup(r.Context(), repo, principal, *leader, ownerKey, request.ShortName, func() string { return suffix })
 	if err != nil {
 		if errors.Is(err, store.ErrAgentGroupShortNameConflict) {
-			http.Error(w, "short_name already exists", http.StatusConflict)
+			groups, listErr := repo.ListAgentGroups(r.Context())
+			if listErr != nil {
+				http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			http.Error(w, "group name "+request.ShortName+" is unavailable; try "+suggestedConsoleGroupName(request.ShortName, groups), http.StatusConflict)
 		} else {
 			http.Error(w, "agent group create failed", http.StatusConflict)
 		}
@@ -173,6 +224,10 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "agent_id required", http.StatusBadRequest)
 			return
 		}
+		if !h.consoleAgentOnline(r.Context(), request.AgentID, principal) {
+			http.Error(w, "该 Agent 不可用（不存在、未激活或已下线）", http.StatusConflict)
+			return
+		}
 		err = repo.AssignOwnedConsoleAgentGroup(r.Context(), code, principal, request.AgentID)
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/additions"):
 		var request struct {
@@ -189,6 +244,30 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if errors.Is(err, store.ErrAgentGroupAdditionsClosed) {
+		http.Error(w, "该编组已关闭添加", http.StatusConflict)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupMemberExists) {
+		http.Error(w, "该 Agent 已在该编组中", http.StatusConflict)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupAgentUnavailable) {
+		http.Error(w, "该 Agent 不可用（不存在、未激活或已下线）", http.StatusConflict)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupMemberNotFound) {
+		http.Error(w, "该 Agent 不在本编组中，可能列表已过期，请刷新", http.StatusConflict)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupLeaderProtected) {
+		http.Error(w, "组长不可剔除", http.StatusConflict)
+		return
+	}
+	if errors.Is(err, store.ErrAgentGroupAccessDenied) {
+		http.Error(w, "无权管理该编组", http.StatusForbidden)
+		return
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		http.NotFound(w, r)
 		return
@@ -198,4 +277,25 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Hub) consoleAgentOnline(ctx context.Context, agentID, principal string) bool {
+	repo, ok := h.Repo.(consoleAgentGroupRepository)
+	if !ok {
+		return false
+	}
+	agents, err := repo.ListOwnedConsoleAgents(ctx, principal)
+	if err != nil {
+		return false
+	}
+	for _, agent := range agents {
+		if agent.ID != agentID {
+			continue
+		}
+		h.mu.Lock()
+		online := h.sessionClients[agent.KeyID] != nil && h.sessionClients[agent.KeyID][agent.SessionName] != nil
+		h.mu.Unlock()
+		return online
+	}
+	return false
 }
