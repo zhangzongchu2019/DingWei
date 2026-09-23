@@ -267,6 +267,7 @@ main{display:flex;flex-direction:column;min-width:0}
 #tabs .tab.offline{opacity:.5}
 #tabs .tab .x{color:#999;font-weight:400}
 #tabs .tab .x:hover{color:#c00}
+#tabs .tab .tab-state{color:#9d1b1b;font-size:11px;font-weight:400}
 #panes{flex:1;position:relative;min-height:0}
 #panes iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .group-workspace{position:absolute;inset:0;overflow:auto;padding:16px;background:inherit}
@@ -452,9 +453,13 @@ function applyAgentSnapshot(agents){
   agentSnapshot = new Map(agents.map(function(a){return [a.session, !!a.online]}));
   // 🔴 只更新既有 tab 的可用状态。tab/pane 对象与 iframe src 均不得在列表刷新时改变。
   tabs.forEach(function(e,session){
+    if(String(session).startsWith('__')) return; // Specs/编组是平台 tab,不是 Agent session
     var online=agentSnapshot.get(session)===true;
     e.tab.classList.toggle('offline', !online);
     e.tab.setAttribute('aria-disabled', online?'false':'true');
+    var state=e.tab.querySelector('.tab-state');if(!state){state=document.createElement('span');state.className='tab-state';e.tab.insertBefore(state,e.tab.querySelector('.x'));}
+    state.textContent=online?'':'离线，暂不可交互';state.hidden=online;
+    e.tab.title=online?session:(session+' · Agent 离线，暂不可交互');
     e.pane.style.pointerEvents=online?'':'none';
   });
 }
