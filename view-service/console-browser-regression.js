@@ -23,9 +23,21 @@ function consoleHTMLFromProductionSource() {
   if (MUTATION === 'expose-group-code') html = html.replace("box.append(copy);", "box.append(copy);var leaked=document.createElement('code');leaked.className='group-code';leaked.textContent=group.code;box.append(leaked);");
   if (MUTATION === 'manual-agent-fields') html = html.replace("option.textContent=agent.session_name;option.dataset.keyId=agent.key_id||'';select.append(option)", "option.textContent=agent.id;option.dataset.keyId=agent.key_id||'';select.append(option)");
   if (MUTATION === 'legacy-specs-entry') html = html.replace("if(item.id==='specs') a.onclick=function(ev){ev.preventDefault();openSpecsWorkspace();};", "");
-  if (MUTATION === 'silent-group-load') html = html.replace("groupStatus('编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err));", "groupStatus('');");
+  if (MUTATION === 'silent-group-load') html = html.replace("groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);", "groupStatus('');if(source==='retry')groupFeedback('groupRetryFeedback','');");
+  if (MUTATION === 'silent-platform-load') html = html.replace("status.textContent='工作台加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);", "status.textContent='';");
+  if (MUTATION === 'silent-agent-load') html = html.replace("status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);", "status.textContent='';");
+  if (MUTATION === 'silent-offline-tab') html = html.replace("state.textContent=online?'':'离线，暂不可交互';", "state.textContent='';").replace("offlineReason.textContent='该 Agent 已离线，暂不可交互';", "offlineReason.textContent='';");
+  if (MUTATION === 'disable-platform-tabs-on-agent-refresh') html = html.replace("if(String(session).startsWith('__')) return;", '');
+  if (MUTATION === 'keep-created-group-name') html = html.replace(".then(function(ok){if(ok)input.value='';});", ';');
+  if (MUTATION === 'reset-group-leader-selection') html = html.replace("if(groupLeaderSelection&&Array.from(leaders.options).some(function(o){return o.value===groupLeaderSelection;}))leaders.value=groupLeaderSelection;", '');
+  if (MUTATION === 'full-code-join-agent-names') html = html.replace("o.textContent=groupShortName(agent.session_name);codeJoin.append(o);", "o.textContent=agent.session_name;codeJoin.append(o);");
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
-  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','unhandled-group-action'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'legacy-group-deadlock') {
+    html = html.replace(/<section id=groupCodeJoin>.*?<\/section>/, '');
+    html = html.replace('<section id=groupDetail hidden>', '<section id=groupDetail hidden><label>完整 32 字符组码 <input id=groupJoinCode maxlength=32></label>');
+    html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
+  }
+  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -47,6 +59,13 @@ async function main() {
   let failGroupLoad = '';
   let failGroupAction = '';
   let slowGroupLoad = false;
+  let emptyGroupInventory = false;
+  let auditGroupMode = false;
+  let auditGroup = null;
+  let groupGETs = 0;
+  let failPlatformLoad = '';
+  let failAgentsLoad = '';
+  let agentGETs = 0;
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
@@ -63,11 +82,18 @@ async function main() {
       return;
     }
     if (req.url === '/api/console/agents') {
+      agentGETs += 1;
+      if (failAgentsLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture agents unavailable'); return; }
+      if (failAgentsLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({ agents })); }, 200); return; }
+      if (failAgentsLoad === 'empty') { res.writeHead(200, {'Content-Type':'application/json'}); res.end('{"agents":[]}'); return; }
       res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify({ agents }));
       return;
     }
     if (req.url === '/api/console/platform') {
+      if (failPlatformLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture platform unavailable'); return; }
+      if (failPlatformLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({role:'management',actions:[],items:[]})); }, 200); return; }
+      if (failPlatformLoad === 'empty') { res.writeHead(200, {'Content-Type':'application/json'}); res.end('{"role":"management","actions":[],"items":[]}'); return; }
       const management = String(req.headers.cookie || '').includes('fixture-role=management');
       res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       res.end(JSON.stringify({
@@ -85,12 +111,15 @@ async function main() {
       if (req.method === 'POST') {
         if (failGroupAction === 'network') { req.socket.destroy(); return; }
         if (failGroupAction === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture create denied'); return; }
-        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{groupWrites.push({url:req.url,body:JSON.parse(raw)});res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(groupPayload(false).groups[0]));}); return;
+        let raw=''; req.on('data',(c)=>{raw+=c}); req.on('end',()=>{const body=JSON.parse(raw);groupWrites.push({url:req.url,body});if(auditGroupMode&&auditGroup&&body.short_name===auditGroup.short_name){res.writeHead(409,{'Content-Type':'text/plain; charset=utf-8'});res.end(`团队名称不可用；建议名称：${body.short_name}1、${body.short_name}2`);return;}if(auditGroupMode){auditGroup={...groupPayload(false).groups[0],short_name:body.short_name,members:[groupPayload(false).groups[0].members[0]]};}res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify(auditGroupMode?auditGroup:groupPayload(false).groups[0]));}); return;
       }
+      groupGETs += 1;
       if (failGroupLoad === '500') { res.writeHead(500, {'Content-Type':'text/plain'}); res.end('fixture groups unavailable'); return; }
       if (failGroupLoad === 'shape') { res.writeHead(200, {'Content-Type':'application/json'}); res.end('{"owned_agents":"wrong","groups":[]}'); return; }
       if (failGroupLoad === 'timeout') { setTimeout(() => { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify(groupPayload(false))); }, 200); return; }
       if (failGroupLoad === 'empty') { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:[],groups:[]})); return; }
+      if (auditGroupMode) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:groupPayload(false).owned_agents,groups:auditGroup?[auditGroup]:[]})); return; }
+      if (emptyGroupInventory) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({principal:'owner-a',owned_agents:[],groups:[]})); return; }
       const send = (closed) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(groupPayload(closed))); };
       if (slowGroupLoad) { slowGroupLoad=false; setTimeout(() => send(false), 120); return; }
       if (raceGroupResponses) {
@@ -105,13 +134,34 @@ async function main() {
       let raw = '';
       req.on('data', (chunk) => { raw += chunk; });
       req.on('end', () => {
-        groupJoinWrites.push({ url: req.url, body: JSON.parse(raw) });
+        const body = JSON.parse(raw); groupJoinWrites.push({ url: req.url, body });
+        if (auditGroupMode && auditGroup && auditGroup.members.some((member) => member.agent_id === body.agent_id)) {
+          res.writeHead(409, {'Content-Type':'text/plain; charset=utf-8'}); res.end('该 Agent 已在该编组中'); return;
+        }
+        if (auditGroupMode && auditGroup && auditGroup.additions_closed) {
+          res.writeHead(409, {'Content-Type':'text/plain; charset=utf-8'}); res.end('该编组已关闭添加'); return;
+        }
+        if (auditGroupMode && auditGroup && !auditGroup.members.some((member) => member.agent_id === body.agent_id)) {
+          auditGroup.members.push({agent_id:'agent-b',key_id:'fixture-key-b',session_name:'owner-beta-2642'});
+        }
         res.writeHead(204);
         res.end();
       });
       return;
     }
-    if (req.url === '/console/specs?embedded=1') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><title>DingWei Specs</title><h1>我的 spec</h1>'); return; }
+    if (req.url === '/api/console/agent-groups/missing-1AAAAAAAAAAAAAAAAAAAAAAA/members' && req.method === 'POST' && auditGroupMode) {
+      res.writeHead(404, {'Content-Type':'text/plain; charset=utf-8'}); res.end('组码不存在'); return;
+    }
+    if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members/agent-b' && req.method === 'DELETE' && auditGroupMode) {
+      auditGroup.members = auditGroup.members.filter((member) => member.agent_id !== 'agent-b'); res.writeHead(204); res.end(); return;
+    }
+    if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions' && req.method === 'POST' && auditGroupMode) {
+      let raw=''; req.on('data',(chunk)=>{raw+=chunk}); req.on('end',()=>{auditGroup.additions_closed=JSON.parse(raw).closed;res.writeHead(204);res.end();}); return;
+    }
+    if (req.url === '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA' && req.method === 'DELETE' && auditGroupMode) {
+      auditGroup = null; res.writeHead(204); res.end(); return;
+    }
+    if (req.url === '/console/specs?embedded=1') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><title>DingWei Specs</title><h1>我的 spec</h1><button id=specsProbe onclick="this.textContent=\'clicked\'">probe</button>'); return; }
     if (req.url && req.url.startsWith('/view/')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end('<!doctype html><title>fixture agent view</title>');
@@ -141,6 +191,14 @@ async function main() {
     }
   }
 
+  // Console refreshes the Agent snapshot every 15 seconds. Interactive-flow
+  // checks must cross a real timer tick so platform tabs cannot accidentally
+  // inherit the offline-Agent pointer lock after a fast test has already ended.
+  async function waitPastAgentRefreshCycle(page) {
+    await page.waitForTimeout(16000);
+  }
+
+
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -153,6 +211,126 @@ async function main() {
       assert.strictEqual(await page.title(), 'DingWei Agent Console');
       await page.locator('nav #a').waitFor({ state: 'attached' });
     });
+
+    await test('keeps platform workspaces interactive after a full Agent refresh interval', async () => {
+      const timerPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      timerPage.setDefaultTimeout(1500);
+      await timerPage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      await timerPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+      await timerPage.locator('#platform-items a[data-item-id="agent-groups"]').click();
+      await timerPage.locator('.group-workspace').waitFor({state:'visible'});
+      await timerPage.locator('#platform-items a[data-item-id="specs"]').click();
+      const specsPane = timerPage.locator('#panes iframe[title="Specs workspace"]');
+      await specsPane.waitFor({state:'visible'});
+      await timerPage.locator('#tabs .tab[title="Agent 编组"]').click();
+
+      const agentGETsBeforeTimer = agentGETs;
+      await waitPastAgentRefreshCycle(timerPage);
+      assert.ok(agentGETs > agentGETsBeforeTimer, 'the test must observe at least one real 15-second Agent refresh');
+
+      const groupPane = timerPage.locator('#panes .group-workspace');
+      assert.notStrictEqual(await groupPane.evaluate((node) => node.style.pointerEvents), 'none', 'Agent timer must not disable the group platform pane');
+      assert.notStrictEqual(await specsPane.evaluate((node) => node.style.pointerEvents), 'none', 'Agent timer must not disable the Specs platform pane');
+      const code = timerPage.locator('#groupJoinCode');
+      await code.scrollIntoViewIfNeeded();
+      const box = await code.boundingBox();
+      assert.ok(box, 'group code input must have a visible box after timer tick');
+      assert.strictEqual(await timerPage.evaluate(({x,y}) => document.elementFromPoint(x,y)?.id, {x:box.x+box.width/2,y:box.y+box.height/2}), 'groupJoinCode');
+      await code.click();
+      await timerPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      assert.strictEqual(await code.inputValue(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await timerPage.locator('#tabs .tab[title="Specs"]').click();
+      const specsProbe = timerPage.frameLocator('iframe[title="Specs workspace"]').locator('#specsProbe');
+      await specsProbe.click();
+      assert.strictEqual(await specsProbe.textContent(), 'clicked');
+      await timerPage.close();
+    });
+
+    await test('resets the created name while preserving the selected short-name Agent', async () => {
+      const createPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      try {
+        createPage.setDefaultTimeout(1500);
+        await createPage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+        await createPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+        await createPage.locator('#platform-items a[data-item-id="agent-groups"]').click();
+        const leader = createPage.locator('#groupLeader');
+        await createPage.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
+        assert.deepStrictEqual(await leader.locator('option').allTextContents(), ['alpha', 'beta']);
+        assert.deepStrictEqual(await createPage.locator('#groupCodeJoinAgent option').allTextContents(), ['alpha', 'beta']);
+        await leader.selectOption('agent-b');
+        assert.strictEqual(await leader.inputValue(), 'agent-b');
+        const name = createPage.locator('#groupShortName');
+        await name.click();
+        await createPage.keyboard.type('myteam');
+        const created = createPage.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups') && response.request().method() === 'POST' && response.status() === 201);
+        await createPage.locator('#createGroup').click();
+        await created;
+        await createPage.locator('#groupNameFeedback').getByText('操作成功').waitFor({state:'visible'});
+        assert.strictEqual(await name.inputValue(), '', 'successful create must clear the submitted name');
+        assert.strictEqual(await leader.inputValue(), 'agent-b', 'refresh after create must preserve the selected Agent');
+      } finally {
+        await createPage.close();
+        groupWrites.length = 0;
+      }
+    });
+
+    await test('distinguishes platform and Agent load failures from true empty states', async () => {
+      failPlatformLoad = '500';
+      failAgentsLoad = '500';
+      const failedPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      failedPage.setDefaultTimeout(1500);
+      const failedPageErrors = [], failedConsoleErrors = [], expectedFailureDiagnostics = [];
+      failedPage.on('pageerror', (error) => failedPageErrors.push(error.message));
+      failedPage.on('console', (message) => {
+        if (message.type() !== 'error') return;
+        if (message.text().startsWith('Failed to load resource: the server responded with a status of')) expectedFailureDiagnostics.push(message.text());
+        else failedConsoleErrors.push(message.text());
+      });
+      await failedPage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      await failedPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+      await failedPage.locator('#platform-status').filter({ hasText: '工作台加载失败: HTTP 500: fixture platform unavailable' }).waitFor({ state: 'visible' });
+      await failedPage.locator('#agents-status').filter({ hasText: 'Agent 列表加载失败: HTTP 500: fixture agents unavailable' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await failedPage.locator('#retryPlatform').isVisible(), true);
+      assert.strictEqual(await failedPage.locator('#retryAgents').isVisible(), true);
+      assert.notStrictEqual(await failedPage.locator('#agents-status').textContent(), '没有自己的 Agent');
+
+      failPlatformLoad = 'timeout';
+      failAgentsLoad = 'timeout';
+      await failedPage.evaluate(() => { consoleFetchTimeoutMs = 100; });
+      await failedPage.locator('#retryPlatform').click();
+      await failedPage.locator('#retryAgents').click();
+      assert.strictEqual(await failedPage.locator('#platform-status').textContent(), '工作台加载中…');
+      assert.strictEqual(await failedPage.locator('#agents-status').textContent(), 'Agent 列表加载中…');
+      await failedPage.locator('#platform-status').filter({ hasText: '工作台加载失败: 请求超时' }).waitFor({ state: 'visible' });
+      await failedPage.locator('#agents-status').filter({ hasText: 'Agent 列表加载失败: 请求超时' }).waitFor({ state: 'visible' });
+
+      failPlatformLoad = 'empty';
+      failAgentsLoad = 'empty';
+      await failedPage.locator('#retryPlatform').click();
+      await failedPage.locator('#retryAgents').click();
+      await failedPage.locator('#platform-status').filter({ hasText: '没有可用工作台入口' }).waitFor({ state: 'visible' });
+      await failedPage.locator('#agents-status').filter({ hasText: '没有自己的 Agent' }).waitFor({ state: 'visible' });
+      assert.notStrictEqual(await failedPage.locator('#agents-status').textContent(), 'Agent 列表加载失败: 请求超时');
+
+      failPlatformLoad = '';
+      failAgentsLoad = '';
+      await failedPage.locator('#retryPlatform').click();
+      await failedPage.locator('#retryAgents').click();
+      await failedPage.locator('#platform-items a[data-item-id="agent-groups"]').waitFor({ state: 'visible' });
+      await failedPage.locator('#a button[title="owner-alpha-2642"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await failedPage.locator('#platform-status').textContent(), '');
+      assert.strictEqual(await failedPage.locator('#agents-status').textContent(), '');
+      assert.strictEqual(expectedFailureDiagnostics.length, 2);
+      assert.deepStrictEqual(failedPageErrors, []);
+      assert.deepStrictEqual(failedConsoleErrors, []);
+      await failedPage.close();
+    });
+    if (MUTATION === 'silent-platform-load' || MUTATION === 'silent-agent-load') {
+      console.log(`console browser harness: passed=${passed} failed=${failures.length}`);
+      if (failures.length) console.error(failures.join('\n'));
+      process.exitCode = failures.length ? 1 : 0;
+      return;
+    }
 
     await test('renders online and offline agents from the console API', async () => {
       const online = page.locator('#a button[title="owner-alpha-2642"]');
@@ -178,6 +356,174 @@ async function main() {
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'management');
     });
 
+    await test('lets a human start from zero groups without a hidden-control deadlock', async () => {
+      emptyGroupInventory = true;
+      const emptyPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      emptyPage.setDefaultTimeout(1500);
+      const emptyErrors = [];
+      emptyPage.on('pageerror', (error) => emptyErrors.push(error.message));
+      emptyPage.on('console', (message) => { if (message.type() === 'error') emptyErrors.push(message.text()); });
+      await emptyPage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      await emptyPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+      const entry = emptyPage.locator('#platform-items a[data-item-id="agent-groups"]');
+      await entry.waitFor({ state: 'visible' });
+      await entry.click();
+      await emptyPage.locator('#groupCodeJoin').waitFor({ state: 'visible' });
+      await emptyPage.locator('#group-status').filter({ hasText: '没有自己的 Agent，无法建组或加入' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await emptyPage.locator('#groupDetail').isHidden(), true);
+      assert.strictEqual(await emptyPage.locator('#groupLeader').isDisabled(), true);
+      assert.strictEqual(await emptyPage.locator('#groupJoinAgent').isDisabled(), true);
+      assert.strictEqual(await emptyPage.locator('#groupCodeJoinAgent').isDisabled(), true);
+      assert.strictEqual(await emptyPage.locator('#groupJoinCode').isEnabled(), true);
+      async function humanHit(selector) {
+        const target = emptyPage.locator(selector);
+        const box = await target.boundingBox();
+        assert.ok(box && box.width > 0 && box.height > 0, `${selector} has no visible hit box`);
+        return emptyPage.evaluate(({ selector, x, y }) => {
+          const wanted = document.querySelector(selector);
+          const hit = document.elementFromPoint(x, y);
+          return Boolean(wanted && hit && (hit === wanted || wanted.contains(hit)));
+        }, { selector, x: box.x + box.width / 2, y: box.y + box.height / 2 });
+      }
+      assert.strictEqual(await humanHit('#groupJoinCode'), true);
+      assert.strictEqual(await humanHit('#retryGroups'), true);
+      await emptyPage.locator('#groupJoinCode').click();
+      await emptyPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      assert.strictEqual(await emptyPage.locator('#groupJoinCode').inputValue(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      const getsBeforeRetry = groupGETs;
+      const refreshed = emptyPage.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups') && response.status() === 200);
+      await emptyPage.locator('#retryGroups').click();
+      await refreshed;
+      assert.strictEqual(groupGETs, getsBeforeRetry + 1, 'visible retry must issue one groups GET');
+      assert.strictEqual(await emptyPage.locator('#group-status').textContent(), '没有自己的 Agent，无法建组或加入');
+      assert.deepStrictEqual(emptyErrors, []);
+      await emptyPage.close();
+      emptyGroupInventory = false;
+    });
+    if (MUTATION === 'legacy-group-deadlock') {
+      console.log(`console browser harness: passed=${passed} failed=${failures.length}`);
+      if (failures.length) console.error(failures.join('\n'));
+      process.exitCode = failures.length ? 1 : 0;
+      return;
+    }
+
+    await test('runs the zero-group human workflow without hidden actions or long tasks', async () => {
+      auditGroupMode = true;
+      auditGroup = null;
+      const auditContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      await auditContext.addInitScript(() => {
+        globalThis.__dwLongTasks = [];
+        new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) if (entry.duration > 200) globalThis.__dwLongTasks.push(entry.duration);
+        }).observe({ type: 'longtask', buffered: true });
+      });
+      await auditContext.addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      const auditPage = await auditContext.newPage();
+      auditPage.setDefaultTimeout(1500);
+      const auditErrors = [];
+      const auditExpectedHTTPDiagnostics = [];
+      auditPage.on('pageerror', (error) => auditErrors.push(error.message));
+      auditPage.on('console', (message) => {
+        if (message.type() !== 'error') return;
+        if (message.text().startsWith('Failed to load resource: the server responded with a status of')) auditExpectedHTTPDiagnostics.push(message.text());
+        else auditErrors.push(message.text());
+      });
+      await auditPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+      async function humanHit(selector) {
+        const target = auditPage.locator(selector);
+        await target.scrollIntoViewIfNeeded();
+        const box = await target.boundingBox();
+        assert.ok(box && box.width > 0 && box.height > 0, `${selector} has no visible hit box`);
+        return auditPage.evaluate(({ selector, x, y }) => {
+          const wanted = document.querySelector(selector), hit = document.elementFromPoint(x, y);
+          return Boolean(wanted && hit && (hit === wanted || wanted.contains(hit)));
+        }, { selector, x: box.x + box.width / 2, y: box.y + box.height / 2 });
+      }
+      const entry = auditPage.locator('#platform-items a[data-item-id="agent-groups"]');
+      await entry.waitFor({ state: 'visible' });
+      await entry.click();
+      await auditPage.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
+
+      await auditPage.locator('#groupShortName').click();
+      await auditPage.keyboard.type('dingwei');
+      await auditPage.locator('#groupLeader').selectOption('agent-a');
+      assert.strictEqual(await humanHit('#createGroup'), true);
+      await auditPage.locator('#createGroup').click();
+      await auditPage.locator('#groupListItems').getByText('dingwei').waitFor({ state: 'visible' });
+
+      // Failure paths are product outcomes and must remain visible without JS errors.
+      await auditPage.locator('#groupShortName').click();
+      await auditPage.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+      await auditPage.keyboard.type('dingwei');
+      assert.strictEqual(await humanHit('#createGroup'), true);
+      await auditPage.locator('#createGroup').click();
+      await auditPage.locator('#groupNameFeedback').filter({ hasText: '团队名称不可用；建议名称：dingwei1、dingwei2' }).waitFor({ state: 'visible' });
+
+      await auditPage.locator('#groupJoinCode').click();
+      await auditPage.keyboard.type('short');
+      assert.strictEqual(await humanHit('#joinByCode'), true);
+      await auditPage.locator('#joinByCode').click();
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '请输入完整 32 字符组码' }).waitFor({ state: 'visible' });
+
+      async function keyboardReplace(selector, value) {
+        await auditPage.locator(selector).click();
+        await auditPage.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+        await auditPage.keyboard.type(value);
+      }
+      await keyboardReplace('#groupJoinCode', 'missing-1AAAAAAAAAAAAAAAAAAAAAAA');
+      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
+      assert.strictEqual(await humanHit('#joinByCode'), true);
+      await auditPage.locator('#joinByCode').click();
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '组码不存在' }).waitFor({ state: 'visible' });
+
+      await keyboardReplace('#groupJoinCode', 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-a');
+      await auditPage.locator('#joinByCode').click();
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '该 Agent 已在该编组中' }).waitFor({ state: 'visible' });
+
+      assert.strictEqual(await humanHit('#groupAdditionsToggle'), true);
+      await auditPage.locator('#groupAdditionsToggle').click();
+      await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '开放添加' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
+      await auditPage.locator('#joinByCode').click();
+      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '该编组已关闭添加' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupAdditionsToggle').click();
+      await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '关闭添加' }).waitFor({ state: 'visible' });
+
+      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
+      await auditPage.locator('#joinByCode').click();
+      const member = auditPage.locator('#groupMembers button').filter({ hasText: 'beta' });
+      await member.waitFor({ state: 'visible' });
+      assert.strictEqual(await humanHit('#groupMembers div:nth-child(2) button'), true);
+      await member.click();
+      await auditPage.locator('#groupRemoveAction button').waitFor({ state: 'visible' });
+      assert.strictEqual(await humanHit('#groupRemoveAction button'), true);
+      auditPage.once('dialog', (dialog) => dialog.accept());
+      await auditPage.locator('#groupRemoveAction button').click();
+      await member.waitFor({ state: 'detached' });
+
+      assert.strictEqual(await humanHit('#groupAdditionsToggle'), true);
+      await auditPage.locator('#groupAdditionsToggle').click();
+      await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '开放添加' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupAdditionsToggle').click();
+      await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '关闭添加' }).waitFor({ state: 'visible' });
+
+      const deleteGroup = auditPage.locator('#groupListItems button').filter({ hasText: '删组' });
+      assert.strictEqual(await deleteGroup.count(), 1);
+      auditPage.once('dialog', (dialog) => dialog.accept());
+      await deleteGroup.click();
+      await auditPage.locator('#groupEmptyCreate').waitFor({ state: 'visible' });
+      assert.strictEqual(await auditPage.locator('#groupCodeJoin').isVisible(), true);
+      assert.deepStrictEqual(await auditPage.evaluate(() => globalThis.__dwLongTasks), []);
+      assert.strictEqual(auditExpectedHTTPDiagnostics.length, 4, 'four deliberate HTTP failures must stay narrowly classified');
+      assert.deepStrictEqual(auditErrors, []);
+      await auditContext.close();
+      auditGroupMode = false;
+      auditGroup = null;
+      groupWrites.length = 0;
+      groupJoinWrites.length = 0;
+    });
+
     await test('opens Agent groups inside console with the owner-only online Agent selector', async () => {
       const entry = page.locator('#platform-items a[data-item-id="agent-groups"]');
       await entry.waitFor({ state: 'visible' });
@@ -186,6 +532,11 @@ async function main() {
       slowGroupLoad = true;
       await entry.click();
       await page.locator('#tabs .tab[title="Agent 编组"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('.group-workspace').count(), 1);
+      assert.strictEqual(await page.locator('.group-workspace:visible').count(), 1);
+      for (const id of ['groupLeader', 'groupJoinCode', 'groupCodeJoinAgent', 'joinByCode', 'groupListItems', 'groupDetail', 'retryGroups']) {
+        assert.strictEqual(await page.locator(`#${id}`).count(), 1, `${id} must have one live DOM node`);
+      }
       assert.strictEqual(await page.locator('#groupLeader').isDisabled(), true);
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载中…');
       assert.strictEqual(await page.locator('#group-status').textContent(), 'Agent 列表加载中…');
@@ -251,15 +602,15 @@ async function main() {
 
     await test('shows group load and network action failures beside their controls', async () => {
       failGroupLoad = '500';
-      await page.evaluate(() => refreshGroups('retry'));
+      await page.locator('#retryGroups').click();
       await page.locator('#groupRetryFeedback').getByText('编组加载失败: HTTP 500').waitFor({state:'visible'});
       assert.strictEqual(await page.locator('#groupLeader').isDisabled(), true);
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载失败');
-      failGroupLoad = 'shape'; await page.evaluate(() => refreshGroups('retry')); await page.locator('#groupRetryFeedback').getByText('响应格式无效').waitFor({state:'visible'});
-      failGroupLoad = 'timeout'; await page.evaluate(() => { groupFetchTimeoutMs=20; return refreshGroups('retry'); }); await page.locator('#groupRetryFeedback').getByText('请求超时').waitFor({state:'visible'});
-      failGroupLoad = 'empty'; await page.evaluate(() => refreshGroups('retry')); await page.locator('#group-status').getByText('没有自己的 Agent').waitFor({state:'visible'});
+      failGroupLoad = 'shape'; await page.locator('#retryGroups').click(); await page.locator('#groupRetryFeedback').getByText('响应格式无效').waitFor({state:'visible'});
+      failGroupLoad = 'timeout'; await page.evaluate(() => { groupFetchTimeoutMs=20; }); await page.locator('#retryGroups').click(); await page.locator('#groupRetryFeedback').getByText('请求超时').waitFor({state:'visible'});
+      failGroupLoad = 'empty'; await page.locator('#retryGroups').click(); await page.locator('#group-status').getByText('没有自己的 Agent').waitFor({state:'visible'});
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '没有自己的 Agent');
-      failGroupLoad = ''; await page.evaluate(() => refreshGroups('retry')); await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
+      failGroupLoad = ''; await page.locator('#retryGroups').click(); await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
       assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['alpha', 'beta']);
       failGroupLoad = '';
       failGroupAction = '500';
@@ -279,6 +630,25 @@ async function main() {
       await tab.waitFor({ state: 'visible' });
       assert.strictEqual(await tab.evaluate((node) => node.classList.contains('on')), true);
       assert.strictEqual(new URL(await pane.getAttribute('src'), page.url()).pathname, '/view/owner-alpha-2642');
+    });
+
+    await test('explains why an open Agent tab becomes non-interactive when offline', async () => {
+      agents[0].online = false;
+      await page.evaluate(() => refreshAgents());
+      const tab = page.locator('#tabs .tab[title^="owner-alpha-2642"]');
+      await tab.waitFor({ state: 'visible' });
+      assert.strictEqual(await tab.locator('.tab-state').textContent(), '离线，暂不可交互');
+      assert.strictEqual(await tab.getAttribute('aria-disabled'), 'true');
+      assert.match(await tab.getAttribute('title'), /Agent 离线，暂不可交互/);
+      assert.strictEqual(await page.locator('#panes iframe[title="Agent view: owner-alpha-2642"]').evaluate((node) => node.style.pointerEvents), 'none');
+      const reason = page.locator('#panes .agent-offline-reason');
+      assert.strictEqual(await reason.isVisible(), true);
+      assert.strictEqual(await reason.textContent(), '该 Agent 已离线，暂不可交互');
+      assert.notStrictEqual(await page.locator('#panes .group-workspace').evaluate((node) => node.style.pointerEvents), 'none', 'Agent refresh must not disable the platform group workspace');
+      agents[0].online = true;
+      await page.evaluate(() => refreshAgents());
+      assert.strictEqual(await page.locator('#tabs .tab[title="owner-alpha-2642"] .tab-state').isHidden(), true);
+      assert.strictEqual(await reason.isHidden(), true);
     });
 
     await test('opens Specs inside console without destroying live Agent panes', async () => {

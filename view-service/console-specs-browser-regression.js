@@ -22,6 +22,14 @@ function productionHTML() {
   assert.notStrictEqual(end, -1, 'consoleSpecsPageHTML end marker missing');
   let html = source.slice(contentStart, end).replace(
     '<script id=dw-md-core></script>', () => `<script>${fs.readFileSync(MD_CORE, 'utf8')}</script>`);
+  if (MUTATION === 'no-editor-focus') {
+    assert.ok(html.includes('specEditors.edit.codemirror.focus();'), 'no-editor-focus mutation anchor missing');
+    html = html.replace('specEditors.edit.codemirror.focus();', '');
+  }
+  if (MUTATION === 'no-editor-refresh') {
+    assert.ok(html.includes("if(id==='editor')specEditors.edit.codemirror.refresh();"), 'no-editor-refresh mutation anchor missing');
+    html = html.replace("if(id==='editor')specEditors.edit.codemirror.refresh();", '');
+  }
   if (MUTATION === 'no-render') html = html.replace('renderSpec(data.revision.content_markdown);', '');
   if (MUTATION === 'no-wire') html = html.replace('wireSpecRender(root);', '');
   if (MUTATION === 'no-copy') html = html.replace("root.querySelectorAll('.copy-code')", "root.querySelectorAll('.copy-code-disabled')");
@@ -44,7 +52,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -359,6 +367,88 @@ async function main() {
     });
     assert.strictEqual(wrapMetrics.overflow, 0, `editor line overflowed: ${JSON.stringify(wrapMetrics)}`);
     assert.strictEqual(wrapMetrics.lineOverhang, 0, `editor line overhung viewport: ${JSON.stringify(wrapMetrics)}`);
+    // ㉟ 打开【修改】后,人必须立刻能干活:焦点在编辑器里、编辑器在眼前、内容真的画出来了 ——————
+    // 🔴 业主症状「滚不动 / 按键无响应」的定性(件 SPECS-EDITOR-REPRO-20260923):
+    //    甲 焦点默认在 BODY ⇒ 不点就打字,键一个都不进编辑器 ——「不是响应慢,是根本没收到」
+    //    乙 渲染预览排在编辑器上方,长文时编辑器在第 20 屏开外 ⇒ 点完 Edit 第一屏看不见编辑框
+    //    丙 内容在 #editor 仍 hidden 时灌入、无人 refresh ⇒ CodeMirror 沿用上一份的尺寸、只补 1 行
+    //       🔴 丙最直指根因;三档都必须红,**1KB 也红** —— 尺寸是放大器,不是根因
+    // 🔴 必须走【新建 → openSpec(id,false)】这条真实路径:在 new 屏上直接 setValue 时编辑器是可见的,
+    //    丙 不会复现。本轮实测栽过一次:测试自己调了 refresh,把丙盖成假绿。
+    const ownerReal = fs.readFileSync(path.join(__dirname, 'fixtures-specs', 'owner-spec-20260923.txt'), 'utf8');
+    const ownerProfile = (() => {
+      const lines = ownerReal.split('\n');
+      const lens = lines.map((line) => line.length).sort((a, b) => a - b);
+      return { bytes: Buffer.byteLength(ownerReal), lines: lines.length,
+        blank: lines.filter((line) => !line.trim()).length,
+        median: lens[Math.floor(lens.length / 2)], max: lens[lens.length - 1],
+        cjk: (ownerReal.match(/[一-鿿]/g) || []).length,
+        markdown: (ownerReal.match(/^#|```|^\s*\|/gm) || []).length };
+    })();
+    assert.deepStrictEqual(ownerProfile, { bytes: 15423, lines: 199, blank: 63, median: 40, max: 466, cjk: 0, markdown: 0 },
+      `业主真实素材画像不符,素材可能被换过: ${JSON.stringify(ownerProfile)}`);
+    const filler = '## 小节\n\n正文,中英混排 mixed content for realism.\n\n- 要点一\n- 要点二\n\n';
+    const editorCases = [
+      { label: '1KB(阳性对照:也必须红)', markdown: filler.repeat(10) },
+      { label: '业主真实正文 15423B', markdown: ownerReal },
+      { label: '30KB', markdown: filler.repeat(420) },
+    ];
+    for (const editorCase of editorCases) {
+      let caseSpecID = '';
+      const grabCase = (resp) => {
+        if (resp.url().endsWith('/api/console/specs') && resp.request().method() === 'POST' && resp.status() === 201) {
+          resp.json().then((body) => { caseSpecID = body.id; }).catch(() => {});
+        }
+      };
+      page.on('response', grabCase);
+      await page.click('#show-new-spec');
+      await setNew({ title: `Editor-${editorCase.label}`, markdown: editorCase.markdown, acceptance: 'usable', anchor: 'msg:editor' });
+      await page.click('#create-spec');
+      await page.waitForSelector('#list-screen:not([hidden])');
+      for (let i = 0; i < 40 && !caseSpecID; i++) await page.waitForTimeout(100);
+      page.off('response', grabCase);
+      assert.ok(caseSpecID, `未能取到新建 spec 的 id(${editorCase.label})`);
+      await page.evaluate((id) => window.openSpec(id, false), caseSpecID);
+      await page.waitForSelector('#editor:not([hidden])');
+      await page.waitForFunction((n) => window.specEditors.edit.value().length >= n, editorCase.markdown.length);
+      await page.waitForTimeout(300);
+      const usable = await page.evaluate(() => {
+        const cm = window.specEditors.edit.codemirror;
+        const wrap = cm.getWrapperElement();
+        const rect = wrap.getBoundingClientRect();
+        const cx = Math.round(rect.left + rect.width / 2);
+        const cy = Math.round(rect.top + Math.min(rect.height, innerHeight) / 2);
+        const hit = document.elementFromPoint(cx, cy);
+        const active = document.activeElement;
+        return {
+          focusInEditor: !!(active && active.closest && active.closest('.CodeMirror')),
+          activeTag: active ? active.tagName + (active.id ? '#' + active.id : '') : null,
+          hitInEditor: !!(hit && hit.closest && hit.closest('.CodeMirror')),
+          hitTag: hit ? hit.tagName + (hit.id ? '#' + hit.id : '') : null,
+          centerY: cy, viewportH: innerHeight, wrapTop: Math.round(rect.top),
+          renderedLines: wrap.querySelectorAll('.CodeMirror-line').length, lineCount: cm.lineCount(),
+        };
+      });
+      assert.ok(usable.focusInEditor,
+        `${editorCase.label}:打开修改后焦点在 ${usable.activeTag},不在编辑器里 ⇒ 不点就打字,键一个都不进去`);
+      assert.ok(usable.hitInEditor,
+        `${editorCase.label}:编辑器中心点命中的是 ${usable.hitTag}(中心 y=${usable.centerY},视口高 ${usable.viewportH},编辑器顶 ${usable.wrapTop})⇒ 点完 Edit 第一屏看不见编辑框`);
+      assert.strictEqual(usable.renderedLines, usable.lineCount,
+        `${editorCase.label}:编辑器只渲染了 ${usable.renderedLines} 行,而这份 spec 有 ${usable.lineCount} 行 ⇒ 尺寸没重算(沿用了上一份)`);
+      // 丁 🔴 纪律十:「点得到」之外必须断言「点了/键了**有效果**」。
+      //    甲只证明 activeElement 在编辑器里,证不了键真的进得去 ——
+      //    本线今天栽过同型的一次:元素存在、可见、中心点命中自身,而 onclick 是 null(点得到、点了没用)。
+      //    ⇒ 这里**不做任何点击**,直接敲键:业主的真实动作就是"打开就打字"。
+      const beforeType = await page.evaluate(() => window.specEditors.edit.value().length);
+      await page.keyboard.type('ZZ');
+      await page.waitForTimeout(200);
+      const afterType = await page.evaluate(() => ({
+        len: window.specEditors.edit.value().length,
+        head: window.specEditors.edit.value().slice(0, 4) }));
+      assert.ok(afterType.len > beforeType,
+        `${editorCase.label}:打开修改后【不点击】直接键入,编辑器内容没有变化(${beforeType} → ${afterType.len}) ⇒ 键根本没进编辑器`);
+      console.log(`editor usable ${editorCase.label}: 焦点=${usable.activeTag} 命中=${usable.hitTag} 渲染行=${usable.renderedLines}/${usable.lineCount} 直接键入=${beforeType}→${afterType.len}`);
+    }
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
     assert.deepStrictEqual(consoleErrors.filter((message)=>!/^Failed to load resource: the server responded with a status of (400|404|409|502)/.test(message)), [], `spec page emitted unexpected console errors: ${JSON.stringify(consoleErrors)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);

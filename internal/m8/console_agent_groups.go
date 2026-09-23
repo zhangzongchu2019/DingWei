@@ -57,13 +57,14 @@ func validConsoleGroupName(name string) bool {
 	return true
 }
 
-func suggestedConsoleGroupName(name string, groups []model.AgentGroup) string {
+func suggestedConsoleGroupNames(name string, groups []model.AgentGroup, count int) []string {
 	used := make(map[string]bool, len(groups))
 	for _, group := range groups {
 		used[group.ShortName] = true
 	}
+	suggestions := make([]string, 0, count)
 	runes := []rune(name)
-	for suffix := 1; ; suffix++ {
+	for suffix := 1; len(suggestions) < count; suffix++ {
 		digits := []rune(fmt.Sprintf("%d", suffix))
 		limit := 8 - len(digits)
 		base := runes
@@ -72,9 +73,11 @@ func suggestedConsoleGroupName(name string, groups []model.AgentGroup) string {
 		}
 		candidate := string(base) + string(digits)
 		if !used[candidate] {
-			return candidate
+			suggestions = append(suggestions, candidate)
+			used[candidate] = true
 		}
 	}
+	return suggestions
 }
 
 func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
@@ -183,7 +186,8 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
 				return
 			}
-			http.Error(w, "group name "+request.ShortName+" is unavailable; try "+suggestedConsoleGroupName(request.ShortName, groups), http.StatusConflict)
+			suggestions := suggestedConsoleGroupNames(request.ShortName, groups, 2)
+			http.Error(w, "团队名称不可用；建议名称："+strings.Join(suggestions, "、"), http.StatusConflict)
 		} else {
 			http.Error(w, "agent group create failed", http.StatusConflict)
 		}
@@ -269,7 +273,7 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		http.Error(w, "组码不存在", http.StatusNotFound)
 		return
 	}
 	if err != nil {
