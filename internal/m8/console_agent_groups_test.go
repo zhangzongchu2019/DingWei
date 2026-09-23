@@ -124,6 +124,9 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	a1 := addOwnedGroupAgent(t, db, "owner-a", "a1", "ka1", "owner-a-one-2642", "oa")
 	a2 := addOwnedGroupAgent(t, db, "owner-a", "a2", "ka2", "owner-a-two-2642", "oa")
 	b1 := addOwnedGroupAgent(t, db, "owner-b", "b1", "kb1", "owner-b-full-2642", "ob")
+	hub.sessionClients[a1.KeyID] = map[string]*sessionClient{a1.SessionName: {keyID: a1.KeyID, sessionName: a1.SessionName}}
+	hub.sessionClients[a2.KeyID] = map[string]*sessionClient{a2.SessionName: {keyID: a2.KeyID, sessionName: a2.SessionName}}
+	hub.sessionClients[b1.KeyID] = map[string]*sessionClient{b1.SessionName: {keyID: b1.KeyID, sessionName: b1.SessionName}}
 	call := func(principal, method, path, code, agentID string, body []byte) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(method, path, bytes.NewReader(body))
 		req.SetPathValue("code", code)
@@ -137,12 +140,12 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 		}
 		return rr
 	}
-	rr := call("owner-a", http.MethodPost, "/api/console/agent-groups", "", "", []byte(`{"agent_id":"`+a1.ID+`","short_name":"my-group"}`))
+	rr := call("owner-a", http.MethodPost, "/api/console/agent-groups", "", "", []byte(`{"agent_id":"`+a1.ID+`","short_name":"mygroup"}`))
 	if rr.Code != http.StatusCreated {
 		t.Fatalf("create code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	var group model.AgentGroup
-	if err := json.Unmarshal(rr.Body.Bytes(), &group); err != nil || len(group.Code) != 32 || group.ShortName != "my-group" || !strings.HasPrefix(group.Code, "my-group") {
+	if err := json.Unmarshal(rr.Body.Bytes(), &group); err != nil || len(group.Code) != 32 || group.ShortName != "mygroup" || strings.HasPrefix(group.Code, "mygroup") {
 		t.Fatalf("created group=%+v err=%v", group, err)
 	}
 	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/additions", group.Code, "", []byte(`{"closed":true}`))
@@ -154,20 +157,30 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 		t.Fatalf("closed non-creator join code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
-	if rr.Code != http.StatusNoContent {
-		t.Fatalf("closed creator join code=%d body=%s", rr.Code, rr.Body.String())
+	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该编组已关闭添加") {
+		t.Fatalf("closed group must reject a second Agent code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/additions", group.Code, "", []byte(`{"closed":false}`))
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("open additions code=%d body=%s", rr.Code, rr.Body.String())
 	}
-	rr = call("owner-b", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+b1.ID+`"}`))
+	delete(hub.sessionClients[a2.KeyID], a2.SessionName)
+	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
+	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "agent is offline") {
+		t.Fatalf("offline Agent must be visibly rejected code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	hub.sessionClients[a2.KeyID] = map[string]*sessionClient{a2.SessionName: {keyID: a2.KeyID, sessionName: a2.SessionName}}
+	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
 	if rr.Code != http.StatusNoContent {
-		t.Fatalf("consented join code=%d body=%s", rr.Code, rr.Body.String())
+		t.Fatalf("open group must add own online Agent code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	rr = call("owner-b", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+b1.ID+`"}`))
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("opened group must still reject another owner's Agent, code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodGet, "/api/console/agent-groups", "", "", nil)
-	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-b-full-2642"`)) {
-		t.Fatalf("creator list lacks joined full name code=%d body=%s", rr.Code, rr.Body.String())
+	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-a-two-2642"`)) {
+		t.Fatalf("creator list lacks joined own Agent code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-a", http.MethodDelete, "/api/console/agent-groups/"+group.Code, group.Code, "", nil)
 	if rr.Code != http.StatusNoContent {
@@ -175,6 +188,43 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	}
 	if members, err := db.ListAgentGroupMembers(context.Background(), group.Code); err != nil || len(members) != 0 {
 		t.Fatalf("delete did not detach relations members=%+v err=%v", members, err)
+	}
+}
+
+func TestConsoleAgentGroupNameIsTrimmedExactAndSuggestsWithinEightRunes(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	leader := addOwnedGroupAgent(t, db, "owner-a", "name-leader", "name-key", "owner-a-name-2642", "oa")
+	call := func(body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/api/console/agent-groups", strings.NewReader(body))
+		req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+		rr := httptest.NewRecorder()
+		hub.HandleConsoleAgentGroups(rr, req)
+		return rr
+	}
+	first := call(`{"agent_id":"` + leader.ID + `","short_name":"  团队1  "}`)
+	if first.Code != http.StatusCreated {
+		t.Fatalf("trimmed create code=%d body=%s", first.Code, first.Body.String())
+	}
+	var group model.AgentGroup
+	if err := json.Unmarshal(first.Body.Bytes(), &group); err != nil || group.ShortName != "团队1" || len(group.Code) != 32 {
+		t.Fatalf("trimmed group=%+v err=%v", group, err)
+	}
+	duplicate := call(`{"agent_id":"` + leader.ID + `","short_name":"团队1"}`)
+	if duplicate.Code != http.StatusConflict || !strings.Contains(duplicate.Body.String(), "团队1 is unavailable; try 团队11") {
+		t.Fatalf("duplicate feedback code=%d body=%q", duplicate.Code, duplicate.Body.String())
+	}
+	eight := call(`{"agent_id":"` + leader.ID + `","short_name":"甲乙丙丁戊己庚辛"}`)
+	if eight.Code != http.StatusCreated {
+		t.Fatalf("eight-rune create code=%d body=%s", eight.Code, eight.Body.String())
+	}
+	eightDuplicate := call(`{"agent_id":"` + leader.ID + `","short_name":"甲乙丙丁戊己庚辛"}`)
+	if eightDuplicate.Code != http.StatusConflict || !strings.Contains(eightDuplicate.Body.String(), "try 甲乙丙丁戊己庚1") {
+		t.Fatalf("eight-rune suggestion code=%d body=%q", eightDuplicate.Code, eightDuplicate.Body.String())
+	}
+	invalid := call(`{"agent_id":"` + leader.ID + `","short_name":"team-01"}`)
+	if invalid.Code != http.StatusBadRequest || !strings.Contains(invalid.Body.String(), "1 to 8 letters or numbers") {
+		t.Fatalf("punctuation must be rejected code=%d body=%q", invalid.Code, invalid.Body.String())
 	}
 }
 
@@ -187,20 +237,20 @@ func TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership(t *testing.T) {
 	b1 := addOwnedGroupAgent(t, db, "owner-b", "b1", "kb1", "owner-b-one-2642", "ob")
 	b2 := addOwnedGroupAgent(t, db, "owner-b", "b2", "kb2", "owner-b-two-2642", "ob")
 
-	occupied := model.AgentGroup{Code: "abc-1234" + groupCodeA[8:], ShortName: "abc-1234", CreatorPrincipal: "owner-a", LeaderKeyID: a1.KeyID, LeaderSessionName: a1.SessionName, LeaderOwnerKey: "oa"}
+	occupied := model.AgentGroup{Code: "abc-1234" + groupCodeA[8:], ShortName: "abc1234", CreatorPrincipal: "owner-a", LeaderKeyID: a1.KeyID, LeaderSessionName: a1.SessionName, LeaderOwnerKey: "oa"}
 	if err := db.CreateConsoleAgentGroup(ctx, occupied); err != nil {
 		t.Fatal(err)
 	}
-	created, err := createConsoleAgentGroup(ctx, db, "owner-a", a2, "oa", "abc-1234", func() string { return groupCodeB[8:] })
+	created, err := createConsoleAgentGroup(ctx, db, "owner-a", a2, "oa", "abc1234", func() string { return groupCodeB })
 	if !errors.Is(err, store.ErrAgentGroupShortNameConflict) {
 		t.Fatalf("duplicate user short name must be reported without redraw group=%+v err=%v", created, err)
 	}
-	created, err = createConsoleAgentGroup(ctx, db, "owner-a", a2, "oa", "def-5678", func() string { return groupCodeB[8:] })
+	created, err = createConsoleAgentGroup(ctx, db, "owner-a", a2, "oa", "def5678", func() string { return groupCodeB })
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-b", b1.ID); err != nil {
-		t.Fatalf("other owner consented join failed: %v", err)
+	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-b", b1.ID); err == nil {
+		t.Fatal("a different owner must not add an Agent to this group")
 	}
 	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-a", b2.ID); err == nil {
 		t.Fatal("principal added another owners Agent")
@@ -211,11 +261,14 @@ func TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership(t *testing.T) {
 	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-b", b2.ID); err == nil {
 		t.Fatal("closed group accepted a non-creator agent")
 	}
-	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-a", a1.ID); err != nil {
-		t.Fatalf("creator must still add own agent while closed: %v", err)
+	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-a", a1.ID); err == nil {
+		t.Fatal("closed group accepted a second Agent")
 	}
-	if err = db.UnassignConsoleAgentGroup(ctx, created.Code, "owner-a", b1.ID, false); err != nil {
-		t.Fatalf("creator kick failed: %v", err)
+	if err = db.SetConsoleAgentGroupAdditionsClosed(ctx, created.Code, "owner-a", false, false); err != nil {
+		t.Fatalf("open additions: %v", err)
+	}
+	if err = db.AssignOwnedConsoleAgentGroup(ctx, created.Code, "owner-a", a1.ID); err != nil {
+		t.Fatalf("open group must add the owner's Agent: %v", err)
 	}
 	if err = db.DeleteConsoleAgentGroup(ctx, created.Code, "owner-b", false); err == nil {
 		t.Fatal("non-creator deleted group")
@@ -282,7 +335,7 @@ func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 	}
 
 	// Independent positive control: a newly-created group retains the same actions.
-	newGroup := model.AgentGroup{Code: "new-1234" + groupCodeB[8:], ShortName: "new-1234", CreatorPrincipal: "owner-a", LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: "oa"}
+	newGroup := model.AgentGroup{Code: "new-1234" + groupCodeB[8:], ShortName: "new1234", CreatorPrincipal: "owner-a", LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: "oa"}
 	if err := db.CreateConsoleAgentGroup(ctx, newGroup); err != nil {
 		t.Fatal(err)
 	}

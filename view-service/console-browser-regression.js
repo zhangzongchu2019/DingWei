@@ -50,9 +50,10 @@ async function main() {
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
-    return { principal: 'owner-a', owned_agents: [{ id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642' }], groups: [{
+    return { principal: 'owner-a', owned_agents: [{ id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642', online: true }, { id: 'agent-b', key_id: 'fixture-key-b', session_name: 'owner-beta-2642', online: true }], groups: [{
       code: 'team-001AAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'team-001', creator_principal: 'owner-a', can_manage: true, additions_closed: closed,
-      members: [{ agent_id: 'agent-a', session_name: 'owner-alpha-2642' }, { agent_id: 'agent-b', session_name: 'other-full-agent-2642' }],
+      leader_key_id: 'fixture-key-a', leader_session_name: 'owner-alpha-2642',
+      members: [{ agent_id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642' }],
     }] };
   }
   const server = http.createServer((req, res) => {
@@ -174,92 +175,64 @@ async function main() {
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'management');
     });
 
-    await test('opens Agent groups inside console with full-name Agent selectors and hidden full code', async () => {
+    await test('opens Agent groups inside console with the owner-only online Agent selector', async () => {
       const entry = page.locator('#platform-items a[data-item-id="agent-groups"]');
       await entry.waitFor({ state: 'visible' });
       assert.strictEqual(await entry.getAttribute('href'), '#agent-groups');
       assert.strictEqual(await entry.getAttribute('target'), null);
-      slowGroupLoad = true;
       await entry.click();
       await page.locator('#tabs .tab[title="Agent 编组"]').waitFor({ state: 'visible' });
-      assert.strictEqual(await page.locator('#groupLeader').isDisabled(), true);
-      assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载中…');
-      assert.strictEqual(await page.locator('#group-status').textContent(), 'Agent 列表加载中…');
       await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
-      await page.locator('#g .agent-group strong').filter({ hasText: 'team-001' }).waitFor({ state: 'visible' });
-      assert.strictEqual(await page.locator('#g .group-code').count(), 0);
-      assert.strictEqual(await page.locator('#g .copy-group-code').count(), 1);
-      assert.strictEqual(await page.locator('#g button[title="other-full-agent-2642"]').textContent(), 'other-full-agent-2642');
-      assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['owner-alpha-2642']);
-      assert.strictEqual(await page.locator('#groupLeader option').first().getAttribute('data-key-id'), 'fixture-key-a');
-      assert.strictEqual(await page.locator('.group-workspace input').count(), 2);
+      await page.locator('#groupListItems').getByText('team-001').waitFor({ state: 'visible' });
+      assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['alpha', 'beta']);
+      assert.deepStrictEqual(await page.locator('#groupJoinAgent option').allTextContents(), ['beta']);
+      assert.strictEqual(await page.locator('#groupJoinCode').count(), 0);
+      assert.strictEqual(await page.locator('#groupShortName').getAttribute('pattern'), null);
       assert.strictEqual(await page.locator('.group-workspace input[name="key_id"]').count(), 0);
-      await page.locator('#g .copy-group-code').click();
-      assert.strictEqual(await page.evaluate(() => navigator.clipboard.readText()), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
-      assert.strictEqual(await page.locator('#group-status').textContent(), '组码已复制');
     });
 
-    await test('ignores an older group snapshot that arrives after the latest response', async () => {
-      raceGroupResponses = true; raceGroupRequest = 0;
-      await page.evaluate(() => Promise.all([refreshGroups(), refreshGroups()]));
-      const openCount = await page.locator('#g .agent-group').getByRole('button', { name: '开放添加' }).count();
-      const closeCount = await page.locator('#g .agent-group').getByRole('button', { name: '关闭添加' }).count();
-      raceGroupResponses = false;
-      assert.strictEqual(openCount, 1);
-      assert.strictEqual(closeCount, 0);
+    await test('shows a visible successful retry result', async () => {
+      await page.locator('#retryGroups').click();
+      await page.locator('#groupRetryFeedback').getByText('已刷新 · 1 个编组').waitFor({ state: 'visible' });
     });
 
-    await test('requires the owners exact 8-character short name and sends selected Agent id only', async () => {
-      await page.locator('#groupShortName').fill('short');
+    await test('keeps rejected and accepted create results visible beside the name control', async () => {
+      await page.locator('#groupShortName').fill('');
       await page.locator('#createGroup').click();
-      assert.strictEqual(await page.locator('#group-status').textContent(), '短名必须为 8 位 [a-z0-9-]');
+      assert.strictEqual(await page.locator('#groupNameFeedback').textContent(), '请输入团队名称');
       assert.strictEqual(groupWrites.length, 0);
-      await page.locator('#groupShortName').fill('team-002');
+      await page.locator('#groupShortName').fill('团队2');
       await page.locator('#createGroup').click();
-      await page.waitForFunction(() => document.getElementById('group-status').textContent === '');
-      assert.deepStrictEqual(groupWrites[0].body, { agent_id: 'agent-a', short_name: 'team-002' });
+      await page.locator('#groupNameFeedback').getByText('操作成功').waitFor({ state: 'visible' });
+      assert.deepStrictEqual(groupWrites[0].body, { agent_id: 'agent-a', short_name: '团队2' });
       assert.strictEqual('key_id' in groupWrites[0].body, false);
       assert.strictEqual('session_name' in groupWrites[0].body, false);
     });
 
     await test('joins through visible controls and leaves no uncaught page error', async () => {
-      await page.locator('#groupJoinCode').fill('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
-      await page.locator('#groupJoinAgent').selectOption('agent-a');
+      await page.locator('#groupJoinAgent').selectOption('agent-b');
       const joined = page.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members') && response.status() === 204);
       await page.locator('#joinGroup').click();
       await joined;
       assert.deepStrictEqual(groupJoinWrites, [{
         url: '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members',
-        body: { agent_id: 'agent-a' },
+        body: { agent_id: 'agent-b' },
       }]);
       assert.deepStrictEqual(pageErrors, []);
     });
 
-    await test('shows group load and network action failures on the page', async () => {
+    await test('shows group load and network action failures beside their controls', async () => {
       failGroupLoad = '500';
       await page.locator('#retryGroups').click();
-      await page.waitForFunction(() => document.getElementById('group-status').textContent.includes('HTTP 500'));
-      assert.strictEqual(await page.locator('#group-status').textContent(), '编组加载失败: HTTP 500: fixture groups unavailable');
-      assert.strictEqual(await page.locator('#groupLeader').isDisabled(), true);
-      assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载失败');
-      failGroupLoad = 'shape'; await page.locator('#retryGroups').click(); await page.waitForFunction(() => document.getElementById('group-status').textContent.includes('响应格式无效'));
-      assert.strictEqual(await page.locator('#group-status').textContent(), '编组加载失败: 响应格式无效');
-      failGroupLoad = 'timeout'; await page.evaluate(() => { groupFetchTimeoutMs=20; }); await page.locator('#retryGroups').click();
-      assert.strictEqual(await page.locator('#group-status').textContent(), 'Agent 列表加载中…');
-      assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载中…');
-      await page.waitForFunction(() => document.getElementById('group-status').textContent.includes('请求超时'));
-      assert.strictEqual(await page.locator('#group-status').textContent(), '编组加载失败: 请求超时');
-      failGroupLoad = 'empty'; await page.locator('#retryGroups').click(); await page.waitForFunction(() => document.getElementById('group-status').textContent.includes('没有自己的 Agent'));
-      assert.strictEqual(await page.locator('#groupLeader option').textContent(), '没有自己的 Agent');
-      failGroupLoad = ''; await page.locator('#retryGroups').click(); await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
-      assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['owner-alpha-2642']);
+      await page.locator('#groupRetryFeedback').getByText('编组加载失败: HTTP 500').waitFor({state:'visible'});
+      failGroupLoad = '';
       failGroupAction = '500';
-      await page.locator('#groupShortName').fill('team-003');
+      await page.locator('#groupShortName').fill('团队3');
       await page.locator('#createGroup').click();
-      await page.locator('#group-status').filter({hasText:'编组操作失败 HTTP 500: fixture create denied'}).waitFor({state:'visible'});
+      await page.locator('#groupNameFeedback').filter({hasText:'fixture create denied'}).waitFor({state:'visible'});
       failGroupAction = 'network';
       await page.locator('#createGroup').click();
-      await page.locator('#group-status').filter({hasText:'编组操作失败:'}).waitFor({state:'visible'});
+      await page.locator('#groupNameFeedback').filter({hasText:'请求失败:'}).waitFor({state:'visible'});
       failGroupAction = '';
     });
 

@@ -14,6 +14,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -3197,7 +3199,7 @@ func (s *SQLite) SessionEndpointDeliveryACK(ctx context.Context, keyID, sessionN
 	return enabled == 1, true, nil
 }
 
-var agentGroupCodePattern = regexp.MustCompile(`^(?:[A-Za-z0-9+/]{32}|[a-z0-9-]{8}[A-Za-z0-9_-]{24})$`)
+var agentGroupCodePattern = regexp.MustCompile(`^(?:[A-Za-z0-9+/]{32}|[A-Za-z0-9_-]{32})$`)
 
 func validateAgentGroupCode(code string) error {
 	if !agentGroupCodePattern.MatchString(code) {
@@ -3245,7 +3247,7 @@ func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentG
 	if err := validateAgentGroupCode(group.Code); err != nil {
 		return err
 	}
-	if !regexp.MustCompile(`^[a-z0-9-]{8}$`).MatchString(group.ShortName) || !strings.HasPrefix(group.Code, group.ShortName) || group.CreatorPrincipal == "" || group.LeaderKeyID == "" || group.LeaderSessionName == "" || group.LeaderOwnerKey == "" {
+	if !validConsoleAgentGroupName(group.ShortName) || group.CreatorPrincipal == "" || group.LeaderKeyID == "" || group.LeaderSessionName == "" || group.LeaderOwnerKey == "" {
 		return errors.New("complete console group identity required")
 	}
 	now := s.now().UTC().Format(time.RFC3339Nano)
@@ -3272,6 +3274,18 @@ func (s *SQLite) CreateConsoleAgentGroup(ctx context.Context, group model.AgentG
 		return err
 	}
 	return tx.Commit()
+}
+
+func validConsoleAgentGroupName(name string) bool {
+	if strings.TrimSpace(name) != name || utf8.RuneCountInString(name) < 1 || utf8.RuneCountInString(name) > 8 {
+		return false
+	}
+	for _, r := range name {
+		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *SQLite) DeleteConsoleAgentGroup(ctx context.Context, code, principalID string, management bool) error {
@@ -3306,7 +3320,7 @@ func (s *SQLite) AssignOwnedConsoleAgentGroup(ctx context.Context, code, princip
 	res, err := s.db.ExecContext(ctx, `INSERT INTO agent_group_member(code,key_id,session_name,owner_key,created_at)
 		SELECT g.code,a.key_id,a.session_name,e.owner_key,? FROM agent_group g JOIN console_agent a ON a.id=?
 		JOIN session_endpoint e ON e.key_id=a.key_id AND e.session_name=a.session_name
-		WHERE g.code=? AND a.owner_principal=? AND a.active=1 AND (g.additions_closed=0 OR g.creator_principal=?)
+		WHERE g.code=? AND g.creator_principal=? AND a.owner_principal=? AND a.active=1 AND g.additions_closed=0
 		ON CONFLICT(code,key_id,session_name) DO UPDATE SET owner_key=excluded.owner_key`,
 		s.now().UTC().Format(time.RFC3339Nano), agentID, code, principalID, principalID)
 	if err != nil {
