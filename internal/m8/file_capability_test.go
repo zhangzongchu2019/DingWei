@@ -138,7 +138,7 @@ func TestConsoleArchiveRequiresExplicitOwnerRoleAndPassesAuditFields(t *testing.
 	h.consoleAuthEnabled = true
 	client := &recordingArchiveClient{}
 	h.fileArchive = client
-	p := model.ConsolePrincipal{ID: "owner-p", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner-open-id", Active: true}
+	p := model.ConsolePrincipal{ID: "owner-p", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner-open-id", DisplayName: "owner-p", Active: true}
 	if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
 		t.Fatal(err)
 	}

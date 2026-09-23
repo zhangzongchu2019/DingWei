@@ -19,7 +19,7 @@ func newRenewHub(t *testing.T, created, expires, now time.Time) (*Hub, func() *m
 	hub, db, ctx := newTestHub(t)
 	hub.consoleAuthEnabled = true
 	hub.NowFunc = func() time.Time { return now }
-	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", Active: true}); err != nil {
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", DisplayName: "a", Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.CreateConsoleSession(ctx, model.ConsoleSession{ID: "login-a", PrincipalID: "a", TokenHash: hashConsoleToken("raw-a"), ExpiresAt: expires}, created); err != nil {
@@ -76,9 +76,10 @@ func TestConsoleSessionSlidesWhenPageKeepsPolling(t *testing.T) {
 // realLoginCookie 走一次**真实登录流程**,取登录侧实际发出的那个 Set-Cookie。
 //
 // 🔴 不能用 newConsoleSessionCookie() 造 want:那样 want 与 got 同源(都出自生产构造器),
-//    断言就退化成「续期 == 构造器」,而不是「续期 == 登录」——
-//    **登录侧被改成不走构造器时它不会红**,而那恰恰是保留这条断言唯一要防的情形。
-//    (组长 2026-09-18 复核发现;假绿的又一种:want 与 got 同源。)
+//
+//	断言就退化成「续期 == 构造器」,而不是「续期 == 登录」——
+//	**登录侧被改成不走构造器时它不会红**,而那恰恰是保留这条断言唯一要防的情形。
+//	(组长 2026-09-18 复核发现;假绿的又一种:want 与 got 同源。)
 func realLoginCookie(t *testing.T) *http.Cookie {
 	t.Helper()
 	h, _ := newLoginHub(&model.ConsolePrincipal{ID: "owner-a", Active: true})
@@ -190,7 +191,7 @@ func TestRevokedConsoleSessionIsRejected(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.consoleAuthEnabled = true
 	hub.NowFunc = func() time.Time { return now }
-	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", Active: true}); err != nil {
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", DisplayName: "a", Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.CreateConsoleSession(ctx, model.ConsoleSession{ID: "login-a", PrincipalID: "a", TokenHash: hashConsoleToken("raw-a"), ExpiresAt: now.Add(time.Hour)}, now.Add(-11*time.Hour)); err != nil {

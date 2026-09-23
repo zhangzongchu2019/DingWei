@@ -3,11 +3,33 @@ package store
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
+
+func TestConsolePrincipalDisplayNameConflictIsExplicit(t *testing.T) {
+	ctx := context.Background()
+	db, err := OpenSQLite(filepath.Join(t.TempDir(), "display-name.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err = db.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	first := model.ConsolePrincipal{ID: "a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ua", DisplayName: "same-name", Active: true}
+	second := model.ConsolePrincipal{ID: "b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ub", DisplayName: "same-name", Active: false}
+	if err = db.UpsertConsolePrincipal(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	err = db.UpsertConsolePrincipal(ctx, second)
+	if err == nil || !strings.Contains(err.Error(), `display_name "same-name" already exists`) || strings.Contains(err.Error(), "UNIQUE constraint failed") {
+		t.Fatalf("conflict error=%v", err)
+	}
+}
 
 func TestConsoleACLSeparatesPrincipalsDespiteSharedKey(t *testing.T) {
 	ctx := context.Background()
@@ -20,8 +42,8 @@ func TestConsoleACLSeparatesPrincipalsDespiteSharedKey(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range []model.ConsolePrincipal{
-		{ID: "principal-a", Provider: "feishu", ProviderIssuer: "app-1", ProviderSubject: "user-a", Active: true},
-		{ID: "principal-b", Provider: "feishu", ProviderIssuer: "app-1", ProviderSubject: "user-b", Active: true},
+		{ID: "principal-a", Provider: "feishu", ProviderIssuer: "app-1", ProviderSubject: "user-a", DisplayName: "principal-a", Active: true},
+		{ID: "principal-b", Provider: "feishu", ProviderIssuer: "app-1", ProviderSubject: "user-b", DisplayName: "principal-b", Active: true},
 	} {
 		if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
 			t.Fatal(err)
@@ -66,7 +88,7 @@ func TestConsolePlatformItemLifecycleAndPendingVisibility(t *testing.T) {
 	if err := db.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner", Active: true}); err != nil {
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner", DisplayName: "owner", Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	now := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
@@ -109,7 +131,7 @@ func TestConsoleCapabilityRotationAndFourGates(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := time.Date(2026, 9, 14, 8, 0, 0, 0, time.UTC)
-	p := model.ConsolePrincipal{ID: "p", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "u", Active: true}
+	p := model.ConsolePrincipal{ID: "p", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "u", DisplayName: "p", Active: true}
 	if err = db.UpsertConsolePrincipal(ctx, p); err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +182,7 @@ func TestConsolePrincipalIssuerIsPartOfIdentity(t *testing.T) {
 	if err := db.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "p", Provider: "feishu", ProviderIssuer: "app-1", ProviderSubject: "same", Active: true}); err != nil {
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "p", Provider: "feishu", ProviderIssuer: "app-1", ProviderSubject: "same", DisplayName: "p", Active: true}); err != nil {
 		t.Fatal(err)
 	}
 	if got, err := db.ResolveConsolePrincipal(ctx, "feishu", "app-2", "same"); err != nil || got != nil {
@@ -179,8 +201,8 @@ func TestConsoleOwnerRoleIsExplicitAndScopeIsUnambiguous(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range []model.ConsolePrincipal{
-		{ID: "owner-a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "oa", Active: true},
-		{ID: "member-b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ob", Active: true},
+		{ID: "owner-a", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "oa", DisplayName: "owner-a", Active: true},
+		{ID: "member-b", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "ob", DisplayName: "member-b", Active: true},
 	} {
 		if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
 			t.Fatal(err)
@@ -214,9 +236,9 @@ func TestConsolePlatformRoleIsIndependentFromAgentGrants(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range []model.ConsolePrincipal{
-		{ID: "manager", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "manager-openid", Active: true},
-		{ID: "owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner-openid", Active: true},
-		{ID: "inactive", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "inactive-openid", Active: false},
+		{ID: "manager", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "manager-openid", DisplayName: "manager", Active: true},
+		{ID: "owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner-openid", DisplayName: "owner", Active: true},
+		{ID: "inactive", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "inactive-openid", DisplayName: "inactive", Active: false},
 	} {
 		if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
 			t.Fatal(err)

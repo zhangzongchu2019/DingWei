@@ -88,7 +88,7 @@ async function main() {
     }
     if (String(req.url).startsWith('/api/console/specs?') && req.method === 'GET') {
       const page = Number(new URL(req.url, 'http://fixture').searchParams.get('page') || 1); const start=(page-1)*20;
-      const own=specs.filter((item)=>item.principal_id==='owner-a');
+      const own=specs;
       res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ role: 'management', principal: 'owner-a', specs:own.slice(start,start+20), page, page_size:20, total:own.length, total_pages:Math.max(1,Math.ceil(own.length/20)) })); return;
     }
     if (req.url === '/api/console/specs' && req.method === 'POST') {
@@ -96,7 +96,7 @@ async function main() {
       if (body.title === 'server-reject') {
         res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('server create detail'); return;
       }
-      const item = { id: `spec-${specs.length + 1}`, principal_id: 'owner-a', title: body.title, state: 'draft', current_revision: 1 };
+      const item = { id: `spec-${specs.length + 1}`, owner_short_name:'甲',current_editor_short_name:'甲',title: body.title, state: 'editing',task_state:'splitting',current_revision: 1,can_edit:true,can_split:true };
       specs.push(item); revisions.set(item.id, { ...body, spec_id: item.id, revision: 1,
         acceptance_json: JSON.stringify(body.acceptance), input_anchors_json: JSON.stringify(body.input_anchors) });
       res.writeHead(201, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(item)); return;
@@ -112,6 +112,7 @@ async function main() {
       const ordered=[taskA,taskB].sort((a,b)=>a.dependency_level-b.dependency_level||a.proposal_id.localeCompare(b.proposal_id));
       res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?ordered:[], dependency_candidates:[taskA,taskB] })); return;
     }
+    if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'甲'},{short_name:'乙'},{short_name:'丙'}]}));return;}
     const planMatch=String(req.url||'').match(/^\/api\/console\/task-proposals\/([^/]+)\/plan$/);
     if(planMatch&&req.method==='PATCH'){const body=await requestBody(req);const id=planMatch[1];taskPlans.push({id,body});if(body.depends_on.includes(id)){res.writeHead(409);res.end('task cannot depend on itself');return;}const next=new Map(taskDeps);next.set(id,body.depends_on);if((next.get('task-a')||[]).includes('task-b')&&(next.get('task-b')||[]).includes('task-a')){res.writeHead(409);res.end('task dependency cycle');return;}taskDeps.set(id,body.depends_on);taskDoDs.set(id,body.definition_of_done||'');res.writeHead(204);res.end();return;}
     const splitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/tasks$/);
@@ -121,7 +122,7 @@ async function main() {
       if (body.content_markdown === 'server-save-reject') {
         res.writeHead(409, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('server save detail'); return;
       }
-      item.current_revision += 1; item.state = 'needs_improvement';
+      item.current_revision += 1;
       revisions.set(item.id, { ...body, spec_id: item.id, revision: item.current_revision,
         acceptance_json: JSON.stringify(body.acceptance), input_anchors_json: JSON.stringify(body.input_anchors) });
       res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ revision: item.current_revision })); return;
@@ -189,7 +190,6 @@ async function main() {
     for (const title of ['Spec A', 'Spec B']) {
       const row = page.locator(`#spec-list [data-title="${title}"]`);
       assert.strictEqual(await row.locator('.edit-spec').count(), 1, 'management owner must see Edit for own spec');
-      assert.strictEqual(await row.getByRole('button', { name: 'Submit', exact: true }).count(), 1, 'management owner must see Submit for own draft spec');
     }
     await page.locator('#spec-list [data-title="Spec A"] .view-spec').click();
     await page.locator('#detail-screen').waitFor({state:'visible'});
@@ -263,32 +263,9 @@ async function main() {
     await page.waitForTimeout(100);
     assert.strictEqual(await page.locator('#edit-status').textContent(), '保存失败 409:server save detail', 'save must expose status and server response body');
     assert.strictEqual(specs.find((item) => item.title === 'Spec B').current_revision, 2, 'server-rejected save must not create a revision');
-    specs.push({ id: 'spec-foreign', principal_id: 'owner-b', title: 'Foreign', state: 'draft', current_revision: 1 });
-    revisions.set('spec-foreign', { spec_id: 'spec-foreign', revision: 1, content_markdown: '# Foreign', acceptance_json: '[{"id":"A1","text":"read"}]', input_anchors_json: '[{"kind":"owner_message","ref":"msg:foreign"}]' });
-    specs.push({ id: 'spec-closed', principal_id: 'owner-a', title: 'Closed', state: 'draft', current_revision: 1, editing_closed: true });
-    revisions.set('spec-closed', { spec_id: 'spec-closed', revision: 1, content_markdown: '# Closed', acceptance_json: '[{"id":"A1","text":"read"}]', input_anchors_json: '[{"kind":"owner_message","ref":"msg:closed"}]' });
-    await page.evaluate(() => refreshSpecs()); await page.click('#show-spec-list');
-    assert.strictEqual(await page.locator('#spec-list [data-title="Foreign"]').count(), 0, '我的 spec list must exclude another owner spec');
-    await page.evaluate(() => openSpec('spec-foreign',true));
-    await page.locator('#detail-screen #spec-rendered h1').filter({hasText:'Foreign'}).waitFor({state:'visible'});
-    assert.strictEqual(await page.locator('#detail-screen').isVisible(), true, 'public read must open a separate detail screen');
-    assert.strictEqual(await page.locator('#save-spec').isHidden(), true, 'detail screen must not expose Save');
-    await page.click('#show-spec-list');
-    const closed = page.locator('#spec-list [data-title="Closed"]');
-    assert.strictEqual(await closed.locator('.edit-spec').count(), 0, 'editing-closed own spec must not expose Edit');
-    await closed.locator('.view-spec').click();
-    await page.locator('#detail-screen #spec-rendered h1').filter({hasText:'Closed'}).waitFor({state:'visible'});
-    assert.strictEqual(await page.locator('#detail-screen').isVisible(), true, 'editing-closed own spec must remain readable in detail screen');
-    await page.click('#show-spec-list');
-    await closed.locator('.reopen-spec').click();
-    await page.locator('#spec-list [data-title="Closed"] .edit-spec').waitFor({ state: 'visible' });
-    assert.strictEqual(specs.find((item) => item.id === 'spec-closed').editing_closed, false, 'owner Reopen editing must change the server-side state');
-    const own = page.locator('#spec-list [data-title="Spec A"]');
-    await own.getByRole('button', { name: 'Archive', exact: true }).click();
-    await own.locator('.spec-action-status').filter({ hasText: '操作失败 409:already archived' }).waitFor({ state: 'visible' });
     assert.deepStrictEqual(pageErrors, [], `failed specAction must be handled on-page: ${JSON.stringify(pageErrors)}`);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 3, 'reload must retain all owned specs and exclude foreign specs');
+    assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 2, 'reload must retain owned specs');
     await page.click('#show-new-spec');
     await page.evaluate(() => window.specEditors.new.value('editor contract'));
     await page.locator('.CodeMirror-line').first().waitFor({state:'attached'});

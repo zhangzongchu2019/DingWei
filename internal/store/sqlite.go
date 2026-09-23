@@ -192,6 +192,28 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 			}
 			continue
 		}
+		if name == "0044_console_spec_workflow.sql" {
+			oldSchema, newSchema, err := s.consoleSpecWorkflowSchema(ctx)
+			if err != nil {
+				return err
+			}
+			if newSchema {
+				if err := s.preflightConsolePrincipalDisplayNames(ctx); err != nil {
+					return err
+				}
+				if err := s.recordMigration(ctx, name, digest); err != nil {
+					return err
+				}
+				continue
+			}
+			if oldSchema {
+				if err := s.applyConsoleSpecWorkflowMigration(ctx, name, string(body), digest); err != nil {
+					return err
+				}
+				legacy = false
+				continue
+			}
+		}
 
 		if legacy {
 			state, err := s.migrationObjState(ctx, string(body))
@@ -253,6 +275,210 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 		fmt.Fprintf(os.Stderr, "store: legacy 迁移补账 %d 件（已核验对象存在，未重放语句）\n", backfilled)
 	}
 	return nil
+}
+
+func (s *SQLite) preflightConsolePrincipalDisplayNames(ctx context.Context) error {
+	return preflightConsolePrincipalDisplayNames(ctx, s.db)
+}
+
+type consoleDisplayNameQuerier interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+}
+
+func preflightConsolePrincipalDisplayNames(ctx context.Context, q consoleDisplayNameQuerier) error {
+	// Deliberately inspect every row, including inactive identities. SQLite trim()
+	// only strips ASCII space by default, so list Tab/LF/CR explicitly as well.
+	rows, err := q.QueryContext(ctx, `SELECT COALESCE(display_name,''),group_concat(id),COUNT(*) FROM console_principal GROUP BY display_name HAVING trim(COALESCE(display_name,''), char(32)||char(9)||char(10)||char(13))='' OR COUNT(*)>1 ORDER BY display_name`)
+	if err != nil {
+		return fmt.Errorf("migrate 0044: check principal short names: %w", err)
+	}
+	defer rows.Close()
+	var conflicts []string
+	for rows.Next() {
+		var name, ids string
+		var count int
+		if err := rows.Scan(&name, &ids, &count); err != nil {
+			return err
+		}
+		if name == "" {
+			name = "<empty>"
+		} else if strings.Trim(name, " \t\n\r") == "" {
+			name = "<blank-whitespace>"
+		}
+		conflicts = append(conflicts, fmt.Sprintf("%s(count=%d ids=%s)", name, count, ids))
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if len(conflicts) > 0 {
+		return fmt.Errorf("migrate 0044: console_principal display_name conflicts; owner cleanup required; no names changed: %s", strings.Join(conflicts, "; "))
+	}
+	return nil
+}
+
+type consoleDisplayNameRewrite struct {
+	ID, OldName, NewName string
+}
+
+func rewriteLegacyOwnerDisplayNames(ctx context.Context, tx *sql.Tx) ([]consoleDisplayNameRewrite, error) {
+	rows, err := tx.QueryContext(ctx, `SELECT p.id,r.owner_key FROM console_principal p
+		JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
+		WHERE p.display_name='Owner' ORDER BY r.owner_key,p.id`)
+	if err != nil {
+		return nil, fmt.Errorf("migrate 0044: resolve legacy Owner names: %w", err)
+	}
+	defer rows.Close()
+	owners := make(map[string]string)
+	var orderedIDs []string
+	for rows.Next() {
+		var id, ownerKey string
+		if err := rows.Scan(&id, &ownerKey); err != nil {
+			return nil, err
+		}
+		if strings.TrimSpace(ownerKey) == "" {
+			return nil, fmt.Errorf("migrate 0044: legacy display_name Owner principal %s has empty owner_key", id)
+		}
+		if prior, exists := owners[id]; exists && prior != ownerKey {
+			return nil, fmt.Errorf("migrate 0044: legacy display_name Owner principal %s has ambiguous owner_keys %q and %q", id, prior, ownerKey)
+		}
+		if _, exists := owners[id]; !exists {
+			orderedIDs = append(orderedIDs, id)
+		}
+		owners[id] = ownerKey
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	var total int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM console_principal WHERE display_name='Owner'`).Scan(&total); err != nil {
+		return nil, err
+	}
+	if total != len(orderedIDs) {
+		return nil, fmt.Errorf("migrate 0044: %d legacy display_name Owner rows but only %d have one active owner_key; refusing silent rename", total, len(orderedIDs))
+	}
+	counts := make(map[string]int)
+	rewrites := make([]consoleDisplayNameRewrite, 0, len(orderedIDs))
+	for _, id := range orderedIDs {
+		ownerKey := owners[id]
+		counts[ownerKey]++
+		newName := ownerKey
+		if counts[ownerKey] > 1 {
+			newName = fmt.Sprintf("%s-%d", ownerKey, counts[ownerKey])
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE console_principal SET display_name=? WHERE id=? AND display_name='Owner'`, newName, id); err != nil {
+			return nil, err
+		}
+		rewrites = append(rewrites, consoleDisplayNameRewrite{ID: id, OldName: "Owner", NewName: newName})
+	}
+	return rewrites, nil
+}
+
+func (s *SQLite) applyConsoleSpecWorkflowMigration(ctx context.Context, name, body, digest string) (retErr error) {
+	conn, err := s.db.Conn(ctx)
+	if err != nil {
+		return fmt.Errorf("migrate %s: acquire dedicated connection: %w", name, err)
+	}
+	defer conn.Close()
+	if _, err = conn.ExecContext(ctx, `PRAGMA foreign_keys=OFF`); err != nil {
+		return fmt.Errorf("migrate %s: disable foreign keys: %w", name, err)
+	}
+	defer func() {
+		if restoreErr := restoreConsoleForeignKeys(context.Background(), conn, name); restoreErr != nil {
+			retErr = errors.Join(retErr, restoreErr)
+		}
+	}()
+	var enabled int
+	if err = conn.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&enabled); err != nil || enabled != 0 {
+		return fmt.Errorf("migrate %s: foreign_keys did not turn off (value=%d err=%v)", name, enabled, err)
+	}
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("migrate %s: open transaction: %w", name, err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	rewrites, err := rewriteLegacyOwnerDisplayNames(ctx, tx)
+	if err != nil {
+		return err
+	}
+	if err = preflightConsolePrincipalDisplayNames(ctx, tx); err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, body); err != nil {
+		return fmt.Errorf("migrate %s: %w", name, err)
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO schema_migrations(version,digest,applied_at) VALUES(?,?,?)`, name, digest, s.now()); err != nil {
+		return fmt.Errorf("migrate %s: record ledger: %w", name, err)
+	}
+	if violations, checkErr := consoleForeignKeyViolations(ctx, tx); checkErr != nil {
+		return fmt.Errorf("migrate %s: pre-commit foreign_key_check: %w", name, checkErr)
+	} else if len(violations) != 0 {
+		return fmt.Errorf("migrate %s: pre-commit foreign_key_check failed: %s", name, strings.Join(violations, "; "))
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	if violations, checkErr := consoleForeignKeyViolations(ctx, conn); checkErr != nil {
+		return fmt.Errorf("migrate %s: post-commit foreign_key_check: %w", name, checkErr)
+	} else if len(violations) != 0 {
+		return fmt.Errorf("migrate %s: post-commit foreign_key_check failed: %s", name, strings.Join(violations, "; "))
+	}
+	for _, rewrite := range rewrites {
+		fmt.Fprintf(os.Stderr, "migrate 0044: principal display_name rewritten id=%s old=%q new=%q\n", rewrite.ID, rewrite.OldName, rewrite.NewName)
+	}
+	return nil
+}
+
+func restoreConsoleForeignKeys(ctx context.Context, conn *sql.Conn, name string) error {
+	if _, err := conn.ExecContext(ctx, `PRAGMA foreign_keys=ON`); err != nil {
+		return fmt.Errorf("migrate %s: restore foreign keys: %w", name, err)
+	}
+	var enabled int
+	if err := conn.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&enabled); err != nil || enabled != 1 {
+		return fmt.Errorf("migrate %s: foreign_keys did not restore (value=%d err=%v)", name, enabled, err)
+	}
+	return nil
+}
+
+func consoleForeignKeyViolations(ctx context.Context, q consoleDisplayNameQuerier) ([]string, error) {
+	rows, err := q.QueryContext(ctx, `PRAGMA foreign_key_check`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var violations []string
+	for rows.Next() {
+		var table, parent string
+		var rowID sql.NullInt64
+		var fkID int
+		if err := rows.Scan(&table, &rowID, &parent, &fkID); err != nil {
+			return nil, err
+		}
+		violations = append(violations, fmt.Sprintf("table=%s rowid=%v parent=%s fkid=%d", table, rowID, parent, fkID))
+	}
+	return violations, rows.Err()
+}
+
+func (s *SQLite) consoleSpecWorkflowSchema(ctx context.Context) (oldSchema, newSchema bool, err error) {
+	rows, err := s.db.QueryContext(ctx, `PRAGMA table_info(console_spec)`)
+	if err != nil {
+		return false, false, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, nn, pk int
+		var name, typ string
+		var def sql.NullString
+		if err = rows.Scan(&cid, &name, &typ, &nn, &def, &pk); err != nil {
+			return
+		}
+		if name == "claimed_by" {
+			oldSchema = true
+		}
+		if name == "current_editor_id" {
+			newSchema = true
+		}
+	}
+	return oldSchema, newSchema, rows.Err()
 }
 
 // applyMigration 在一个事务里执行迁移并记账：要么都成，要么都不成。

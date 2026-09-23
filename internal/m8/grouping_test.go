@@ -187,8 +187,8 @@ func TestGroupingOwnerExemptionUsesSenderIdentityNotChannel(t *testing.T) {
 	}
 
 	for _, principal := range []model.ConsolePrincipal{
-		{ID: "principal-owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner", Active: true},
-		{ID: "principal-viewer", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "viewer", Active: true},
+		{ID: "principal-owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner", DisplayName: "principal-owner", Active: true},
+		{ID: "principal-viewer", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "viewer", DisplayName: "principal-viewer", Active: true},
 	} {
 		if err := f.db.UpsertConsolePrincipal(f.ctx, principal); err != nil {
 			t.Fatal(err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -122,13 +123,20 @@ func (s *SQLite) ResolveConsolePageCapability(ctx context.Context, tokenHash, ag
 }
 
 func (s *SQLite) UpsertConsolePrincipal(ctx context.Context, p model.ConsolePrincipal) error {
-	if strings.TrimSpace(p.ID) == "" || strings.TrimSpace(p.Provider) == "" || strings.TrimSpace(p.ProviderIssuer) == "" || strings.TrimSpace(p.ProviderSubject) == "" {
+	if strings.TrimSpace(p.ID) == "" || strings.TrimSpace(p.Provider) == "" || strings.TrimSpace(p.ProviderIssuer) == "" || strings.TrimSpace(p.ProviderSubject) == "" || strings.TrimSpace(p.DisplayName) == "" {
 		return errors.New("console principal identity fields required")
 	}
 	_, err := s.db.ExecContext(ctx, `INSERT INTO console_principal(id,provider,provider_issuer,provider_subject,display_name,active)
 		VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET provider=excluded.provider,provider_issuer=excluded.provider_issuer,
 		provider_subject=excluded.provider_subject,display_name=excluded.display_name,active=excluded.active`,
 		p.ID, p.Provider, p.ProviderIssuer, p.ProviderSubject, p.DisplayName, boolInt(p.Active))
+	if err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed: console_principal.display_name") {
+		var existingID string
+		if lookupErr := s.db.QueryRowContext(ctx, `SELECT id FROM console_principal WHERE display_name=? ORDER BY id LIMIT 1`, p.DisplayName).Scan(&existingID); lookupErr == nil {
+			return fmt.Errorf("console principal display_name %q already exists (principal %s)", p.DisplayName, existingID)
+		}
+		return fmt.Errorf("console principal display_name %q already exists", p.DisplayName)
+	}
 	return err
 }
 

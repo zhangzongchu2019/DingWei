@@ -29,15 +29,16 @@ type consoleSpecRepository interface {
 	OpenConsoleSpecRevisionWithCapability(context.Context, string, int, string, model.ConsoleSpecRevision, time.Time) (int, error)
 	CloseConsoleSpecEditing(context.Context, string, string, time.Time) error
 	ReopenConsoleSpecEditing(context.Context, string, string, time.Time) error
-	SubmitConsoleSpec(context.Context, string, string, time.Time) error
-	ReviewConsoleSpec(context.Context, model.ConsoleSpecReview, time.Time) error
-	ClaimConsoleSpec(context.Context, string, string, time.Time) error
 	ArchiveConsoleSpec(context.Context, string, string, time.Time) error
 	ListReadyConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
 	ListConsoleTaskProposals(context.Context, string) ([]model.ConsoleTaskProposal, error)
 	ListAllConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
 	CreateConsoleTaskProposal(context.Context, model.ConsoleTaskProposal, string, bool) error
 	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string, string) error
+	ListActiveConsolePrincipals(context.Context) ([]model.ConsolePrincipal, error)
+	TransferConsoleSpec(context.Context, string, string, string, string, time.Time) error
+	FinalizeConsoleSpec(context.Context, string, string, time.Time) error
+	CloseConsoleSpecTaskSplit(context.Context, string, string, time.Time) error
 }
 
 type consoleSpecOpenNewContextKey struct{}
@@ -245,6 +246,10 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		const pageSize = 20
+		for i := range items {
+			items[i].CanEdit = items[i].CurrentEditorID == principal && items[i].State != "final" && !items[i].Archived
+			items[i].CanSplit = items[i].PrincipalID == principal && items[i].State == "final" && items[i].TaskState == "splitting"
+		}
 		total := len(items)
 		pages := (total + pageSize - 1) / pageSize
 		if pages == 0 {
@@ -258,7 +263,7 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 		if end > total {
 			end = total
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"principal": principal, "role": platformRole(r), "specs": items[start:end], "page": page, "page_size": pageSize, "total": total, "total_pages": pages})
+		_ = json.NewEncoder(w).Encode(map[string]any{"role": platformRole(r), "specs": items[start:end], "page": page, "page_size": pageSize, "total": total, "total_pages": pages})
 		return
 	}
 	if r.Method != http.MethodPost {
@@ -315,6 +320,8 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodGet {
+		spec.CanEdit = spec.CurrentEditorID == principal && spec.State != "final" && !spec.Archived
+		spec.CanSplit = spec.PrincipalID == principal && spec.State == "final" && spec.TaskState == "splitting"
 		rev, err := repo.ConsoleSpecRevision(r.Context(), principal, id, spec.CurrentRevision, management)
 		if err != nil {
 			http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
@@ -428,7 +435,11 @@ func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Reque
 		dod = []byte("[]")
 	}
 	if err := repo.UpdateConsoleTaskProposalPlan(r.Context(), r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn, string(dod)); err != nil {
-		http.Error(w, err.Error(), http.StatusConflict)
+		code := http.StatusConflict
+		if errors.Is(err, store.ErrConsoleSpecPermission) {
+			code = http.StatusForbidden
+		}
+		http.Error(w, err.Error(), code)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -463,12 +474,76 @@ func (h *Hub) HandleConsoleSpecTasks(w http.ResponseWriter, r *http.Request) {
 		Title: strings.TrimSpace(req.Title), TaskContent: strings.TrimSpace(req.Content), Status: "planned", EstimatedHours: req.EstimatedHours,
 		DependsOnJSON: string(deps), AcceptanceJSON: string(dod), ReviewID: "manual", ReviewedBy: platformPrincipal(r), ReviewedAt: now, CreatedAt: now}
 	if err := repo.CreateConsoleTaskProposal(r.Context(), proposal, platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement); err != nil {
-		http.Error(w, err.Error(), http.StatusConflict)
+		code := http.StatusConflict
+		if errors.Is(err, store.ErrConsoleSpecPermission) {
+			code = http.StatusForbidden
+		}
+		http.Error(w, err.Error(), code)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(proposal)
+}
+
+func (h *Hub) HandleConsoleSpecWorkflow(w http.ResponseWriter, r *http.Request) {
+	repo, ok := h.consoleSpecs()
+	if !ok {
+		http.Error(w, "console specs unavailable", 503)
+		return
+	}
+	principal := platformPrincipal(r)
+	action := r.PathValue("action")
+	var err error
+	switch action {
+	case "transfer":
+		var req struct {
+			TargetShortName string `json:"target_short_name"`
+			State           string `json:"state"`
+		}
+		dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10))
+		dec.DisallowUnknownFields()
+		if dec.Decode(&req) != nil || strings.TrimSpace(req.TargetShortName) == "" {
+			http.Error(w, "target_short_name required", 400)
+			return
+		}
+		err = repo.TransferConsoleSpec(r.Context(), r.PathValue("specID"), principal, strings.TrimSpace(req.TargetShortName), req.State, h.now())
+	case "finalize":
+		err = repo.FinalizeConsoleSpec(r.Context(), r.PathValue("specID"), principal, h.now())
+	case "close-tasks":
+		err = repo.CloseConsoleSpecTaskSplit(r.Context(), r.PathValue("specID"), principal, h.now())
+	default:
+		http.Error(w, "unknown workflow action", 404)
+		return
+	}
+	if err != nil {
+		if errors.Is(err, store.ErrConsoleSpecPermission) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		} else {
+			http.Error(w, err.Error(), http.StatusConflict)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Hub) HandleConsoleSpecEditors(w http.ResponseWriter, r *http.Request) {
+	repo, ok := h.consoleSpecs()
+	if !ok {
+		http.Error(w, "console specs unavailable", 503)
+		return
+	}
+	items, err := repo.ListActiveConsolePrincipals(r.Context())
+	if err != nil {
+		http.Error(w, "console principals unavailable", 503)
+		return
+	}
+	out := make([]map[string]string, 0, len(items))
+	for _, p := range items {
+		out = append(out, map[string]string{"short_name": p.DisplayName})
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"editors": out})
 }
 
 func (h *Hub) HandleConsoleSpecNewVersion(w http.ResponseWriter, r *http.Request) {
@@ -504,66 +579,6 @@ func (h *Hub) HandleConsoleSpecReopenEditing(w http.ResponseWriter, r *http.Requ
 		return
 	} else if err != nil {
 		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Hub) HandleConsoleSpecSubmit(w http.ResponseWriter, r *http.Request) {
-	repo, ok := h.consoleSpecs()
-	if !ok {
-		http.Error(w, "console specs unavailable", 503)
-		return
-	}
-	if err := repo.SubmitConsoleSpec(r.Context(), platformPrincipal(r), r.PathValue("specID"), h.now()); errors.Is(err, store.ErrConsoleSpecNotFound) {
-		http.NotFound(w, r)
-		return
-	} else if err != nil {
-		http.Error(w, "cannot submit spec", http.StatusConflict)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Hub) HandleConsoleSpecReview(w http.ResponseWriter, r *http.Request) {
-	repo, ok := h.consoleSpecs()
-	if !ok {
-		http.Error(w, "console specs unavailable", 503)
-		return
-	}
-	var req struct {
-		Revision    int      `json:"revision"`
-		Stage       string   `json:"stage"`
-		Verdict     string   `json:"verdict"`
-		ReasonCodes []string `json:"reason_codes"`
-		Detail      string   `json:"detail"`
-	}
-	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 32<<10))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&req) != nil {
-		http.Error(w, "invalid review", 400)
-		return
-	}
-	reasons, _ := json.Marshal(req.ReasonCodes)
-	review := model.ConsoleSpecReview{ID: "review-" + randomHex(12), SpecID: r.PathValue("specID"), Revision: req.Revision, Stage: req.Stage, Verdict: req.Verdict, ReasonCodes: string(reasons), Detail: req.Detail, ReviewedBy: platformPrincipal(r)}
-	if err := repo.ReviewConsoleSpec(r.Context(), review, h.now()); errors.Is(err, store.ErrConsoleSpecGateOrder) {
-		http.Error(w, "gate order invalid", http.StatusConflict)
-		return
-	} else if err != nil {
-		http.Error(w, "invalid review", http.StatusBadRequest)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *Hub) HandleConsoleSpecClaim(w http.ResponseWriter, r *http.Request) {
-	repo, ok := h.consoleSpecs()
-	if !ok {
-		http.Error(w, "console specs unavailable", 503)
-		return
-	}
-	if err := repo.ClaimConsoleSpec(r.Context(), r.PathValue("specID"), platformPrincipal(r), h.now()); err != nil {
-		http.Error(w, "spec not claimable", http.StatusConflict)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
