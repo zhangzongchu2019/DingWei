@@ -100,7 +100,7 @@ VALUES('dangling','missing-spec',1,'owner-entry-a','probe','','2026-09-22T00:00:
 	sum := sha256.Sum256(body)
 	err = db.applyConsoleSpecWorkflowMigration(ctx, "0044_console_spec_workflow.sql", string(body), hex.EncodeToString(sum[:]))
 	if err == nil || !strings.Contains(err.Error(), "pre-commit foreign_key_check failed") {
-		t.Fatalf("dangling child migration err=%v", err)
+		t.Errorf("dangling child migration err=%v", err)
 	}
 	var enabled int
 	if err = db.db.QueryRowContext(ctx, `PRAGMA foreign_keys`).Scan(&enabled); err != nil || enabled != 1 {
@@ -108,6 +108,28 @@ VALUES('dangling','missing-spec',1,'owner-entry-a','probe','','2026-09-22T00:00:
 	}
 	var recorded int
 	if err = db.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations WHERE version='0044_console_spec_workflow.sql'`).Scan(&recorded); err != nil || recorded != 0 {
-		t.Fatalf("migration ledger rows=%d err=%v", recorded, err)
+		t.Errorf("migration ledger rows=%d err=%v", recorded, err)
+	}
+	for table, want := range map[string]int{
+		"console_principal":      1,
+		"console_principal_role": 1,
+		"console_spec":           1,
+		"console_spec_event":     0,
+	} {
+		var got int
+		if err = db.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM `+table).Scan(&got); err != nil || got != want {
+			t.Errorf("rollback %s rows=%d want=%d err=%v", table, got, want, err)
+		}
+	}
+	var principalID, state string
+	var claimedBy *string
+	if err = db.db.QueryRowContext(ctx, `SELECT principal_id,state,claimed_by FROM console_spec WHERE id='spec-e05'`).Scan(&principalID, &state, &claimedBy); err != nil {
+		t.Errorf("rollback legacy spec row: %v", err)
+	} else if principalID != "owner-entry-a" || state != "archived" || claimedBy != nil {
+		t.Errorf("rollback legacy spec=(principal=%q state=%q claimed_by=%v)", principalID, state, claimedBy)
+	}
+	var claimedColumn int
+	if err = db.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pragma_table_info('console_spec') WHERE name='claimed_by'`).Scan(&claimedColumn); err != nil || claimedColumn != 1 {
+		t.Errorf("rollback legacy schema claimed_by columns=%d err=%v", claimedColumn, err)
 	}
 }
