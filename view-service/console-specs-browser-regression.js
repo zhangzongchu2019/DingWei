@@ -42,7 +42,8 @@ function productionHTML() {
   if (MUTATION === 'keep-detail-on-page') html = html.replace('async function refreshSpecs(){clearSpecSelection();', 'async function refreshSpecs(){');
   if (MUTATION === 'no-task-entry') html = html.replace("document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('show-task-split').hidden=true;");
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
-  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION === 'silent-presplit-failure') html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
+  if (MUTATION && !['no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'silent-presplit-failure'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -67,7 +68,12 @@ async function main() {
   const taskCreates = [];
   const taskDeps = new Map([['task-a', []], ['task-b', []]]);
   const taskDoDs = new Map([['task-a', 'A done'], ['task-b', '']]);
+  let presplitMode = 'success'; let presplitRequest = null; let presplitGenerated = false;
   const server = http.createServer(async (req, res) => {
+    if (String(req.url).startsWith('/fixture/presplit-mode') && req.method === 'POST') {
+      presplitMode = new URL(req.url, 'http://fixture').searchParams.get('mode') || 'success'; presplitRequest = null; presplitGenerated = false;
+      res.writeHead(204); res.end(); return;
+    }
     if (req.url === '/fixture/populate-pages' && req.method === 'POST') {
       for (let i = 0; i < 20; i++) { const item={id:`page-spec-${i}`,owner_short_name:'甲',current_editor_short_name:'甲',title:`Page ${i}`,state:'editing',task_state:'splitting',current_revision:1,can_edit:true,can_split:true}; specs.push(item); revisions.set(item.id,{spec_id:item.id,revision:1,content_markdown:'# page',acceptance_json:'[]',input_anchors_json:'[]'}); }
       res.writeHead(204); res.end(); return;
@@ -119,11 +125,17 @@ async function main() {
       const taskA={proposal_id:'task-a',spec_id:'spec-1',revision:2,title:'Implement A',content:'task content',status:'planned',estimated_hours:5,depends_on_json:JSON.stringify(taskDeps.get('task-a')),acceptance_json:taskDoDs.get('task-a')?JSON.stringify([{id:'DOD',text:taskDoDs.get('task-a')}]) : '[]',depended_by:['task-c'].concat(taskDeps.get('task-b').includes('task-a')?['task-b']:[]),dependency_level:aLevel,parallel};
       const taskB={proposal_id:'task-b',spec_id:'spec-1',revision:2,title:'Implement B',content:'dependency',status:'planned',estimated_hours:2,depends_on_json:JSON.stringify(taskDeps.get('task-b')),acceptance_json:taskDoDs.get('task-b')?JSON.stringify([{id:'DOD',text:taskDoDs.get('task-b')}]) : '',depended_by:taskDeps.get('task-a').includes('task-b')?['task-a']:[],dependency_level:bLevel,parallel};
       const ordered=[taskA,taskB].sort((a,b)=>a.dependency_level-b.dependency_level||a.proposal_id.localeCompare(b.proposal_id));
-      res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?ordered:[], dependency_candidates:[taskA,taskB] })); return;
+      const generated={proposal_id:'task-presplit',spec_id:item.id,revision:1,title:'Agent task',content:'generated',status:'planned',estimated_hours:2,depends_on_json:'[]',acceptance_json:'[]',depended_by:[],dependency_level:0,parallel:false};
+      res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?ordered:(presplitGenerated&&item.id==='spec-2'?[generated]:[]), dependency_candidates:[taskA,taskB] })); return;
     }
     if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'甲'},{short_name:'乙'},{short_name:'丙'}]}));return;}
+    const presplitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/presplit$/);
+    if(presplitMatch&&req.method==='GET'){const agents=presplitMode==='no-agents'?[]:[{id:'agent-a',session_name:'owner-agent-2642'}];res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({agents,request:presplitRequest}));return;}
+    if(presplitMatch&&req.method==='POST'){await requestBody(req);if(presplitMode==='no-reply'){presplitRequest={request_id:'r-no-reply',status:'failed',failure_reason:'no reply'};res.writeHead(502);res.end('预拆失败，可手工添加');return;}const failure={timeout:'timeout',invalid:'invalid task format',restart:'restart'}[presplitMode];presplitRequest={request_id:'r-'+presplitMode,status:failure?'failed':'completed',failure_reason:failure||''};if(!failure)presplitGenerated=true;res.writeHead(202,{'Content-Type':'application/json'});res.end(JSON.stringify({request_id:presplitRequest.request_id,status:'pending'}));return;}
     const planMatch=String(req.url||'').match(/^\/api\/console\/task-proposals\/([^/]+)\/plan$/);
     if(planMatch&&req.method==='PATCH'){const body=await requestBody(req);const id=planMatch[1];taskPlans.push({id,body});if(body.depends_on.includes(id)){res.writeHead(409);res.end('task cannot depend on itself');return;}const next=new Map(taskDeps);next.set(id,body.depends_on);if((next.get('task-a')||[]).includes('task-b')&&(next.get('task-b')||[]).includes('task-a')){res.writeHead(409);res.end('task dependency cycle');return;}taskDeps.set(id,body.depends_on);taskDoDs.set(id,body.definition_of_done||'');res.writeHead(204);res.end();return;}
+    const taskDeleteMatch=String(req.url||'').match(/^\/api\/console\/task-proposals\/([^/]+)$/);
+    if(taskDeleteMatch&&req.method==='DELETE'){if(taskDeleteMatch[1]==='task-presplit')presplitGenerated=false;res.writeHead(204);res.end();return;}
     const splitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/tasks$/);
     if(splitMatch&&req.method==='POST'){taskCreates.push({specID:splitMatch[1],body:await requestBody(req)});res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify({proposal_id:'task-new'}));return;}
     if (match && req.method === 'PATCH') {
@@ -204,6 +216,31 @@ async function main() {
       const row = page.locator(`#spec-list [data-title="${title}"]`);
       assert.strictEqual(await row.locator('.edit-spec').count(), 1, 'management owner must see Edit for own spec');
     }
+    async function openPresplitMode(mode) {
+      await page.request.post(`http://127.0.0.1:${port}/fixture/presplit-mode?mode=${mode}`);
+      await page.click('#show-spec-list');
+      await page.locator('#spec-list [data-title="Spec B"] .view-spec').click();
+      await page.locator('#agent-presplit').waitFor({state:'visible'});
+    }
+    await openPresplitMode('no-agents');
+    assert.strictEqual(await page.locator('#presplit-status').textContent(),'没有自己的在线 Agent');
+    assert.strictEqual(await page.locator('#start-presplit').isDisabled(),true);
+    for (const mode of ['no-reply','timeout','invalid','restart']) {
+      await openPresplitMode(mode);
+      assert.deepStrictEqual(await page.locator('#presplit-agent option').allTextContents(),['请选择 Agent','owner-agent-2642']);
+      assert.strictEqual(await page.locator('#start-presplit').isDisabled(),true,'Agent must be explicitly selected');
+      await page.selectOption('#presplit-agent','agent-a');
+      await page.click('#start-presplit');
+      await page.locator('#presplit-status').filter({hasText:'预拆失败，可手工添加'}).waitFor({state:'visible'});
+      assert.strictEqual((await page.locator('#task-list').textContent()).trim(),'尚未拆出任务',`${mode} must remain visibly failed instead of looking like a successful empty task table`);
+    }
+    await openPresplitMode('success');
+    await page.selectOption('#presplit-agent','agent-a');
+    await page.click('#start-presplit');
+    await page.locator('#presplit-status').filter({hasText:'预拆完成'}).waitFor({state:'visible'});
+    await page.locator('#task-list [data-task-id="task-presplit"]').waitFor({state:'visible'});
+    await page.locator('#task-list [data-task-id="task-presplit"] .delete-task').click();
+    await page.locator('#task-list [data-task-id="task-presplit"]').waitFor({state:'detached'});
     await page.locator('#spec-list [data-title="Spec A"] .view-spec').click();await page.locator('#detail-screen').waitFor({state:'visible'});assert.notStrictEqual((await page.locator('#spec-rendered').textContent()).trim(),'');
     await page.click('#show-new-spec');
     async function keyboardReplace(selector,value){await page.locator(selector).click();await page.keyboard.press(process.platform==='darwin'?'Meta+A':'Control+A');await page.keyboard.type(value);}
@@ -320,9 +357,9 @@ async function main() {
     assert.strictEqual(wrapMetrics.overflow, 0, `editor line overflowed: ${JSON.stringify(wrapMetrics)}`);
     assert.strictEqual(wrapMetrics.lineOverhang, 0, `editor line overhung viewport: ${JSON.stringify(wrapMetrics)}`);
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
-    assert.deepStrictEqual(consoleErrors.filter((message)=>!/^Failed to load resource: the server responded with a status of (400|404|409)/.test(message)), [], `spec page emitted unexpected console errors: ${JSON.stringify(consoleErrors)}`);
+    assert.deepStrictEqual(consoleErrors.filter((message)=>!/^Failed to load resource: the server responded with a status of (400|404|409|502)/.test(message)), [], `spec page emitted unexpected console errors: ${JSON.stringify(consoleErrors)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);
-    console.log('console specs browser: passed=27 failed=0');
+    console.log('console specs browser: passed=34 failed=0');
   } finally {
     await browser.close(); await new Promise((resolve) => server.close(resolve));
   }

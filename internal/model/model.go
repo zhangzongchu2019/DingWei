@@ -449,6 +449,22 @@ type ConsoleTaskProposal struct {
 	CreatedAt        time.Time `json:"created_at"`
 }
 
+// ConsoleSpecPresplitRequest persists the one-shot Agent pre-split lifecycle.
+// Agent identity is resolved from its authenticated session connection; these
+// fields are server-owned and never accepted from callback JSON.
+type ConsoleSpecPresplitRequest struct {
+	ID             string     `json:"request_id"`
+	SpecID         string     `json:"spec_id"`
+	Revision       int        `json:"revision"`
+	AgentID        string     `json:"agent_id"`
+	OwnerPrincipal string     `json:"-"`
+	Status         string     `json:"status"`
+	FailureReason  string     `json:"failure_reason,omitempty"`
+	DeadlineAt     time.Time  `json:"deadline_at"`
+	CreatedAt      time.Time  `json:"created_at"`
+	CompletedAt    *time.Time `json:"completed_at,omitempty"`
+}
+
 type ConsoleSession struct {
 	ID          string
 	PrincipalID string
