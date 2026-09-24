@@ -52,8 +52,9 @@ function productionHTML() {
   if (MUTATION === 'owner-transfer-leak') mutateHTML('if(canEdit){var transfer=', 'if(true){var transfer=');
   if (MUTATION === 'owner-hardcoded-names') mutateHTML("var data=await r.json();select.replaceChildren();", "var data=await r.json();data.editors=[{short_name:'lbl'},{short_name:'th'}];select.replaceChildren();");
   if (MUTATION === 'owner-copy-sticky') mutateHTML("statusEl._copyTimer=setTimeout(function(){statusEl.hidden=true;statusEl.textContent='';},5000);", 'statusEl._copyTimer=0;');
-  if (MUTATION === 'owner-transfer-disconnected') mutateHTML("specAction(spec.id,'workflow/transfer'", "specAction(spec.id,'workflow/not-transfer'");
+  if (MUTATION === 'owner-transfer-disconnected') mutateHTML("specAction(transferSpec.id,'workflow/transfer'", "specAction(transferSpec.id,'workflow/not-transfer'");
   if (MUTATION === 'owner-delete-action') mutateHTML("var copyLink=document.createElement('button');", "var forbidden=document.createElement('button');forbidden.className='delete-spec';forbidden.textContent='删除';action.append(forbidden);var copyLink=document.createElement('button');");
+  if (MUTATION === 'owner-expand-nonexclusive') mutateHTML("document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};", "document.getElementById('show-new-spec').onclick=function(){document.getElementById('new-screen').hidden=false;};");
   if (MUTATION === 'no-list-error-text') {
     mutateHTML('catch(err){specListFailure(err);}', 'catch(err){}');
   }
@@ -74,8 +75,7 @@ function productionHTML() {
   if (MUTATION === 'readonly-can-write') html = html.replace("document.getElementById('save-spec').hidden=!!readOnly;", "document.getElementById('save-spec').hidden=false;");
   if (MUTATION === 'same-screen-create') html = html.replace('<section id=new-screen hidden>', '<section id=new-screen>');
   if (MUTATION === 'hide-dependents') html = html.replace("+' · 被依赖 '+((task.depended_by||[]).join(', ')||'无')", "");
-  if (MUTATION === 'hide-list-on-detail') html = html.replace("showScreen('detail-screen');return;", "showScreen('detail-screen');document.getElementById('list-screen').hidden=true;return;");
-  if (MUTATION === 'hide-list-on-detail') assert.ok(html.includes("document.getElementById('list-screen').hidden=true"), 'hide-list mutation anchor missing');
+  if (MUTATION === 'hide-list-on-detail') mutateHTML("title.onclick=function(){openSpec(spec.id,true)};", "title.onclick=async function(){await openSpec(spec.id,true);document.getElementById('list-screen').hidden=true;};");
   if (MUTATION === 'no-task-dod') html = html.replace("row.querySelector('.task-dod').value=taskDoD(task);", "row.querySelector('.task-dod').value='';");
   if (MUTATION === 'no-parallel-marker') html = html.replace("(task.parallel?'可并行':'顺序执行')", "'顺序执行'");
   if (MUTATION === 'no-hours-hint') html = html.replace("node.textContent=Number(input.value)>8?'建议再拆':'';", "node.textContent='';");
@@ -86,7 +86,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -289,13 +289,25 @@ async function main() {
     assert.strictEqual((html.match(/['"](?:lbl|th)['"]/g)||[]).length,0,'前端不得硬编码业主 lbl/th');
     const firstAction=page.locator('#spec-list [data-title="Spec A"] .spec-action');
     await firstAction.locator('.transfer-spec').click();
-    await firstAction.locator('.spec-transfer-owner option').last().waitFor({state:'attached'});
-    assert.deepStrictEqual(await firstAction.locator('.spec-transfer-owner option').allTextContents(), ['甲','乙','丙'], '转给候选必须来自业主接口');
-    await firstAction.locator('.spec-transfer-owner').selectOption({label:'乙'});
-    await firstAction.locator('input[value="review"]').check();
-    await firstAction.locator('.confirm-transfer').click();
+    await page.locator('#list-transfer-owner option').last().waitFor({state:'attached'});
+    assert.deepStrictEqual(await page.locator('#list-transfer-owner option').allTextContents(), ['甲','乙','丙'], '转给候选必须来自业主接口');
+    await page.locator('#list-transfer-owner').selectOption({label:'乙'});
+    await page.locator('input[name="list-transfer-state"][value="review"]').check();
+    await page.locator('#confirm-list-transfer').click();
     await page.waitForTimeout(300);
     assert.deepStrictEqual(transferWrites, [{specID:'spec-1',body:{target_short_name:'乙',state:'review'}}], '转审核必须接到真实 workflow/transfer 请求');
+    const screenState=async()=>page.evaluate(()=>({list:!document.getElementById('list-screen').hidden,newSpec:!document.getElementById('new-screen').hidden,detail:!document.getElementById('detail-screen').hidden,transfer:!document.getElementById('transfer-screen').hidden}));
+    await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
+    await page.locator('#detail-screen').waitFor({state:'visible'});
+    assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:true,transfer:false},'点标题后列表常驻且只展开编辑屏');
+    await page.locator('#show-new-spec').click();
+    assert.deepStrictEqual(await screenState(),{list:true,newSpec:true,detail:false,transfer:false},'点添加后必须收起编辑屏且只展开新建');
+    await page.locator('#spec-list [data-title="Spec A"] .transfer-spec').click();
+    await page.locator('#transfer-screen').waitFor({state:'visible'});
+    assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:false,transfer:true},'点转后必须收起新建且只展开转给');
+    await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
+    await page.locator('#detail-screen').waitFor({state:'visible'});
+    assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:true,transfer:false},'从转给返回编辑时前一个展开项必须收起');
     for (const title of ['Spec A', 'Spec B']) {
       const row = page.locator(`#spec-list [data-title="${title}"]`);
       // S-6 改格留痕:原断言是「自己的 spec 必须看到 Edit 按钮」;业主裁定去掉列表行按钮、标题即入口,
@@ -375,7 +387,7 @@ async function main() {
     await page.waitForFunction(()=>document.getElementById('page-status').textContent==='2 / 2');await page.click('#prev-page');await page.locator('#spec-list [data-title="Spec A"] .spec-title').waitFor({state:'visible'});await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
     await page.locator('#detail-screen').waitFor({state:'visible'});
     assert.strictEqual(await page.locator('#list-screen').isVisible(), true, 'opening detail must keep the spec list visible above it');
-    assert.strictEqual(await page.locator('#detail-screen').evaluate((node) => node.previousElementSibling && node.previousElementSibling.id), 'list-screen', 'detail must be the list following sibling');
+    assert.strictEqual(await page.evaluate(() => Boolean(document.getElementById('list-screen').compareDocumentPosition(document.getElementById('detail-screen')) & Node.DOCUMENT_POSITION_FOLLOWING)), true, 'detail must render after the resident list');
     const task=page.locator('#task-list .task-row[data-task-id="task-a"]');await task.waitFor({state:'visible'});
     assert.strictEqual(await task.getAttribute('id'),'task-row-task-a');
     assert.strictEqual(await task.locator('.task-dod').getAttribute('id'),'task-row-task-a-dod');
