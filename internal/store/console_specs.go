@@ -56,32 +56,28 @@ func resolveOwnerPrincipalByShortName(ctx context.Context, q consoleSpecOwnerQue
 }
 
 func (s *SQLite) ListActiveConsolePrincipals(ctx context.Context) ([]model.ConsolePrincipal, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT display_name FROM console_principal WHERE active=1 ORDER BY display_name,id`)
+	// Production currently has one active owner_key per principal. If multiple
+	// scopes appear later, leave ShortName empty so the UI visibly degrades to the
+	// human name instead of silently presenting an arbitrary owner scope.
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active,CASE WHEN COUNT(DISTINCT r.owner_key)=1 THEN MIN(r.owner_key) ELSE '' END
+		FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
+		WHERE p.active=1 GROUP BY p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active ORDER BY p.display_name,p.id`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var names []string
+	var out []model.ConsolePrincipal
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+		var p model.ConsolePrincipal
+		var active int
+		if err := rows.Scan(&p.ID, &p.Provider, &p.ProviderIssuer, &p.ProviderSubject, &p.DisplayName, &active, &p.ShortName); err != nil {
 			return nil, err
 		}
-		names = append(names, name)
+		p.Active = active != 0
+		out = append(out, p)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
-	}
-	out := make([]model.ConsolePrincipal, 0, len(names))
-	for _, name := range names {
-		principal, err := resolveOwnerPrincipalByShortName(ctx, s.db, name)
-		if errors.Is(err, ErrConsoleSpecPermission) {
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, *principal)
 	}
 	return out, nil
 }
@@ -213,14 +209,20 @@ func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 }
 
 func (s *SQLite) ConsoleSpec(ctx context.Context, principalID, specID string, management bool) (*model.ConsoleSpec, error) {
-	query := `SELECT s.id,s.principal_id,o.display_name,s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(e.display_name,''),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id WHERE s.id=?`
+	// For the owner projection, the final "未知业主" fallback is unreachable under
+	// today's INNER JOIN plus principal foreign key. Keep it for a future schema
+	// that may use a nullable/LEFT owner relation; do not write a test for it now.
+	query := `SELECT s.id,s.principal_id,COALESCE(NULLIF(o.display_name,''),o.id,'未知业主'),s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(NULLIF(e.display_name,''),e.id,CASE WHEN s.state='final' THEN COALESCE(NULLIF(o.display_name,''),o.id,'未知业主') END,'未知业主'),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id WHERE s.id=?`
 	// Spec 内容按业主裁定“控写、不控读”。保留 principal/management 参数以兼容
 	// 既有 repo 接口，但直接链接读取不再以身份过滤；写路径仍单独按 owner/capability 判。
 	return scanConsoleSpec(s.db.QueryRowContext(ctx, query, specID))
 }
 
 func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, management bool) ([]model.ConsoleSpec, error) {
-	query := `SELECT s.id,s.principal_id,o.display_name,s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(e.display_name,''),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id`
+	// As in ConsoleSpec, the owner-side "未知业主" branch is unreachable while
+	// this remains an INNER JOIN protected by the principal foreign key. It is a
+	// deliberate future-schema fallback; the editor LEFT JOIN fallback is live.
+	query := `SELECT s.id,s.principal_id,COALESCE(NULLIF(o.display_name,''),o.id,'未知业主'),s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(NULLIF(e.display_name,''),e.id,CASE WHEN s.state='final' THEN COALESCE(NULLIF(o.display_name,''),o.id,'未知业主') END,'未知业主'),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id`
 	var args []any
 	if !management {
 		query += ` WHERE s.principal_id=? OR s.current_editor_id=?`
