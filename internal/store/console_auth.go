@@ -156,6 +156,20 @@ func (s *SQLite) ResolveConsolePrincipal(ctx context.Context, provider, issuer, 
 	return &p, nil
 }
 
+func (s *SQLite) GetConsolePrincipal(ctx context.Context, id string) (*model.ConsolePrincipal, error) {
+	var p model.ConsolePrincipal
+	var active int
+	err := s.db.QueryRowContext(ctx, `SELECT id,provider,provider_issuer,provider_subject,display_name,active FROM console_principal WHERE id=?`, id).Scan(&p.ID, &p.Provider, &p.ProviderIssuer, &p.ProviderSubject, &p.DisplayName, &active)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	p.Active = active != 0
+	return &p, nil
+}
+
 func (s *SQLite) UpsertConsoleAgent(ctx context.Context, a model.ConsoleAgent) error {
 	if a.ID == "" || a.KeyID == "" || a.SessionName == "" || a.OwnerPrincipal == "" {
 		return errors.New("console agent identity fields required")

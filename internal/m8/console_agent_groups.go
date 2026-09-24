@@ -18,6 +18,8 @@ import (
 
 type consoleAgentGroupRepository interface {
 	ListOwnedConsoleAgents(context.Context, string) ([]model.ConsoleAgent, error)
+	GetConsolePrincipal(context.Context, string) (*model.ConsolePrincipal, error)
+	ResolveConsoleAgentByEndpoint(context.Context, string, string) (*model.ConsoleAgent, error)
 	ListAgentGroups(context.Context) ([]model.AgentGroup, error)
 	ListAgentGroupMembers(context.Context, string) ([]model.AgentGroupMember, error)
 	CreateConsoleAgentGroup(context.Context, model.AgentGroup) error
@@ -29,8 +31,14 @@ type consoleAgentGroupRepository interface {
 
 type consoleAgentGroupView struct {
 	model.AgentGroup
-	Members   []model.AgentGroupMember `json:"members"`
-	CanManage bool                     `json:"can_manage"`
+	Members          []consoleAgentGroupMemberView `json:"members"`
+	CanManage        bool                          `json:"can_manage"`
+	OwnerDisplayName string                        `json:"owner_display_name"`
+}
+
+type consoleAgentGroupMemberView struct {
+	model.AgentGroupMember
+	Online bool `json:"online"`
 }
 
 type consoleOwnedAgentView struct {
@@ -122,7 +130,45 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 				visible = visible || ownedEndpoint[member.KeyID+"\x00"+member.SessionName]
 			}
 			if visible {
-				views = append(views, consoleAgentGroupView{AgentGroup: group, Members: members, CanManage: canManage})
+				ownerPrincipal := group.CreatorPrincipal
+				if ownerPrincipal == "" {
+					leader, resolveErr := repo.ResolveConsoleAgentByEndpoint(r.Context(), group.LeaderKeyID, group.LeaderSessionName)
+					if resolveErr != nil {
+						http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
+						return
+					}
+					if leader != nil && leader.Active {
+						ownerPrincipal = leader.OwnerPrincipal
+					}
+				}
+				ownerDisplayName := ""
+				if ownerPrincipal != "" {
+					owner, ownerErr := repo.GetConsolePrincipal(r.Context(), ownerPrincipal)
+					if ownerErr != nil {
+						http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
+						return
+					}
+					if owner != nil {
+						ownerDisplayName = strings.TrimSpace(owner.DisplayName)
+					}
+				}
+				if ownerDisplayName == "" {
+					ownerDisplayName = strings.TrimSpace(ownerPrincipal)
+				}
+				if ownerDisplayName == "" {
+					ownerDisplayName = strings.TrimSpace(group.LeaderOwnerKey)
+				}
+				if ownerDisplayName == "" {
+					ownerDisplayName = "未知业主"
+				}
+				memberViews := make([]consoleAgentGroupMemberView, 0, len(members))
+				for _, member := range members {
+					h.mu.Lock()
+					online := h.sessionClients[member.KeyID] != nil && h.sessionClients[member.KeyID][member.SessionName] != nil
+					h.mu.Unlock()
+					memberViews = append(memberViews, consoleAgentGroupMemberView{AgentGroupMember: member, Online: online})
+				}
+				views = append(views, consoleAgentGroupView{AgentGroup: group, Members: memberViews, CanManage: canManage, OwnerDisplayName: ownerDisplayName})
 			}
 		}
 		ownedViews := make([]consoleOwnedAgentView, 0, len(owned))

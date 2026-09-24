@@ -193,6 +193,10 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 		t.Fatalf("duplicate code join must be a visible, specific failure code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	t.Logf("duplicate member: status=%d body=%q", rr.Code, strings.TrimSpace(rr.Body.String()))
+	b2 := addOwnedGroupAgent(t, db, "owner-b", "b2-private", "kb2-private", "owner-b-private-2642", "ob")
+	if err := db.CreateConsoleAgentGroup(context.Background(), model.AgentGroup{Code: strings.Repeat("p", 32), ShortName: "private", CreatorPrincipal: "owner-b", LeaderKeyID: b2.KeyID, LeaderSessionName: b2.SessionName, LeaderOwnerKey: "ob"}); err != nil {
+		t.Fatal(err)
+	}
 	rr = call("owner-b", http.MethodDelete, "/api/console/agent-groups/"+group.Code+"/members/"+a2.ID, group.Code, a2.ID, nil)
 	if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "无权管理该编组") {
 		t.Fatalf("existing member removal authorization must be explicit code=%d body=%s", rr.Code, rr.Body.String())
@@ -208,6 +212,25 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	rr = call("owner-a", http.MethodGet, "/api/console/agent-groups", "", "", nil)
 	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-a-two-2642"`)) || !bytes.Contains(rr.Body.Bytes(), []byte(`"session_name":"owner-b-full-2642"`)) {
 		t.Fatalf("creator list lacks the joined members code=%d body=%s", rr.Code, rr.Body.String())
+	}
+	if bytes.Contains(rr.Body.Bytes(), []byte(`owner-b-private-2642`)) || bytes.Contains(rr.Body.Bytes(), []byte(`"short_name":"private"`)) {
+		t.Fatalf("an unrelated group, its owner metadata, and its members must not be disclosed: %s", rr.Body.String())
+	}
+	var groupList struct {
+		Groups []consoleAgentGroupView `json:"groups"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &groupList); err != nil || len(groupList.Groups) != 1 {
+		t.Fatalf("decode group list: groups=%+v err=%v", groupList.Groups, err)
+	}
+	if got := groupList.Groups[0].OwnerDisplayName; got != "甲" {
+		t.Fatalf("owner_display_name=%q want human-readable principal display name", got)
+	}
+	onlineByAgent := map[string]bool{}
+	for _, member := range groupList.Groups[0].Members {
+		onlineByAgent[member.AgentID] = member.Online
+	}
+	if onlineByAgent[a2.ID] || !onlineByAgent[b1.ID] {
+		t.Fatalf("member online flags=%v want offline owned member and online cross-owner member", onlineByAgent)
 	}
 	rr = call("owner-a", http.MethodDelete, "/api/console/agent-groups/"+group.Code+"/members/"+b1.ID, group.Code, b1.ID, nil)
 	if rr.Code != http.StatusNoContent {
