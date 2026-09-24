@@ -316,6 +316,25 @@ func TestConsoleSpecEditorsHTTPExcludesActiveNonOwners(t *testing.T) {
 	if !strings.Contains(rr.Body.String(), `"short_name":"tenant-a"`) || !strings.Contains(rr.Body.String(), `"display_name":"甲"`) || !strings.Contains(rr.Body.String(), `"value":"甲"`) {
 		t.Fatalf("editor response must expose short name, human name, and transfer value: %s", rr.Body.String())
 	}
+	if err := db.UpsertConsolePrincipalRole(context.Background(), model.ConsolePrincipalRole{PrincipalID: "owner-a", Role: "owner", OwnerKey: "tenant-b", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	rr = httptest.NewRecorder()
+	hub.HandleConsoleSpecEditors(rr, req)
+	var candidates struct {
+		Editors []struct {
+			ShortName   string `json:"short_name"`
+			DisplayName string `json:"display_name"`
+		} `json:"editors"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &candidates); err != nil {
+		t.Fatal(err)
+	}
+	for _, candidate := range candidates.Editors {
+		if candidate.DisplayName == "甲" && candidate.ShortName != "" {
+			t.Fatalf("multi-scope owner must omit the ambiguous short label: %+v", candidate)
+		}
+	}
 	created := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", validSpecBody, hub.HandleConsoleSpecs)
 	var spec model.ConsoleSpec
 	if err := json.Unmarshal(created.Body.Bytes(), &spec); err != nil {

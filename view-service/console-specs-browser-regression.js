@@ -190,7 +190,7 @@ async function main() {
       const generated={proposal_id:'task-presplit',spec_id:item.id,revision:1,title:'Agent task',content:'generated',status:'planned',estimated_hours:2,depends_on_json:'[]',acceptance_json:'[]',depended_by:[],dependency_level:0,parallel:false};
       res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?ordered:(presplitGenerated&&item.id==='spec-2'?[generated]:[]), dependency_candidates:[taskA,taskB] })); return;
     }
-    if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'zzc',display_name:'张宗楚',value:'张宗楚'},{short_name:'lbl',display_name:'李炳隆',value:'李炳隆'},{short_name:'th',display_name:'唐虹',value:'唐虹'}]}));return;}
+    if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'zzc',display_name:'张宗楚',value:'张宗楚'},{short_name:'lbl',display_name:'李炳隆',value:'李炳隆'},{short_name:'th',display_name:'唐虹',value:'唐虹'},{short_name:'',display_name:'多角色业主',value:'多角色业主'}]}));return;}
     const workflowTransfer=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/workflow\/transfer$/);
     if(workflowTransfer&&req.method==='POST'){transferWrites.push({specID:workflowTransfer[1],body:await requestBody(req)});res.writeHead(204);res.end();return;}
     const presplitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/presplit$/);
@@ -301,7 +301,7 @@ async function main() {
     const firstAction=page.locator('#spec-list [data-title="Spec A"] .spec-action');
     await firstAction.locator('.transfer-spec').click();
     await page.locator('#list-transfer-owner option').last().waitFor({state:'attached'});
-    assert.deepStrictEqual(await page.locator('#list-transfer-owner option').allTextContents(), ['zzc（张宗楚）','lbl（李炳隆）','th（唐虹）'], '转给候选必须显示接口给出的短名与真名');
+    assert.deepStrictEqual(await page.locator('#list-transfer-owner option').allTextContents(), ['zzc（张宗楚）','lbl（李炳隆）','th（唐虹）','多角色业主'], '转给候选必须显示短名与真名；多 scope 时只显示真名');
     await page.locator('#list-transfer-owner').selectOption({label:'lbl（李炳隆）'});
     await page.locator('input[name="list-transfer-state"][value="review"]').check();
     await page.locator('#confirm-list-transfer').click();

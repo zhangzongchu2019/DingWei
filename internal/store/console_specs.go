@@ -56,9 +56,10 @@ func resolveOwnerPrincipalByShortName(ctx context.Context, q consoleSpecOwnerQue
 }
 
 func (s *SQLite) ListActiveConsolePrincipals(ctx context.Context) ([]model.ConsolePrincipal, error) {
-	// A principal may own several scopes. Until the product defines a preferred
-	// scope, expose the lexically first owner_key as its deterministic short label.
-	rows, err := s.db.QueryContext(ctx, `SELECT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active,MIN(r.owner_key)
+	// Production currently has one active owner_key per principal. If multiple
+	// scopes appear later, leave ShortName empty so the UI visibly degrades to the
+	// human name instead of silently presenting an arbitrary owner scope.
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active,CASE WHEN COUNT(DISTINCT r.owner_key)=1 THEN MIN(r.owner_key) ELSE '' END
 		FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
 		WHERE p.active=1 GROUP BY p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active ORDER BY p.display_name,p.id`)
 	if err != nil {

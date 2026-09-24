@@ -306,6 +306,18 @@ func TestConsoleSpecEditorsAndTransfersRequireActiveOwnerRole(t *testing.T) {
 	if len(editors) != 3 || !got["owner-a"] || !got["owner-b"] || !got["manager"] {
 		t.Fatalf("owner candidate ids=%v want exactly owner-a,owner-b,manager", got)
 	}
+	if err := db.UpsertConsolePrincipalRole(ctx, model.ConsolePrincipalRole{PrincipalID: "owner-a", Role: "owner", OwnerKey: "tenant-b", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	editors, err = db.ListActiveConsolePrincipals(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, editor := range editors {
+		if editor.ID == "owner-a" && editor.ShortName != "" {
+			t.Fatalf("multi-scope owner must visibly fall back to its human name, not an arbitrary scope: %+v", editor)
+		}
+	}
 	createSpec(t, db, "owner-only-target", "owner-only-target", time.Now())
 	if err := db.TransferConsoleSpec(ctx, "owner-only-target", "owner-a", "非业主", "editing", time.Now()); !errors.Is(err, ErrConsoleSpecPermission) {
 		t.Fatalf("active non-owner became editor: %v", err)
