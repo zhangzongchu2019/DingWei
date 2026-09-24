@@ -181,13 +181,8 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	}
 	delete(hub.sessionClients[a2.KeyID], a2.SessionName)
 	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
-	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该 Agent 不可用（不存在、未激活或已下线）") {
-		t.Fatalf("offline Agent must be visibly rejected code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	hub.sessionClients[a2.KeyID] = map[string]*sessionClient{a2.SessionName: {keyID: a2.KeyID, sessionName: a2.SessionName}}
-	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
 	if rr.Code != http.StatusNoContent {
-		t.Fatalf("open group must add own online Agent code=%d body=%s", rr.Code, rr.Body.String())
+		t.Fatalf("group membership is configuration, so an owned active offline Agent must be addable code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-b", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+b1.ID+`"}`))
 	if rr.Code != http.StatusNoContent {
@@ -323,6 +318,31 @@ func TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership(t *testing.T) {
 	}
 	if members, err := db.ListAgentGroupMembers(ctx, created.Code); err != nil || len(members) != 0 {
 		t.Fatalf("delete must cascade all member relations members=%+v err=%v", members, err)
+	}
+}
+
+func TestConsoleAgentGroupsLegacyLeaderOwnerSeesTheDeleteActionTheHandlerAllows(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	ctx := context.Background()
+	leader := addOwnedGroupAgent(t, db, "owner-a", "legacy-ui-leader", "legacy-ui-key", "owner-a-legacy-ui-2642", "oa")
+	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: "oa"}); err != nil {
+		t.Fatal(err)
+	}
+	get := httptest.NewRequest(http.MethodGet, "/api/console/agent-groups", nil)
+	get = get.WithContext(context.WithValue(get.Context(), consolePrincipalContextKey{}, "owner-a"))
+	view := httptest.NewRecorder()
+	hub.HandleConsoleAgentGroups(view, get)
+	if view.Code != http.StatusOK || !bytes.Contains(view.Body.Bytes(), []byte(`"can_manage":true`)) {
+		t.Fatalf("legacy leader owner can delete through the handler but UI hides the action code=%d body=%s", view.Code, view.Body.String())
+	}
+	remove := httptest.NewRequest(http.MethodDelete, "/api/console/agent-groups/"+groupCodeA, nil)
+	remove.SetPathValue("code", groupCodeA)
+	remove = remove.WithContext(context.WithValue(remove.Context(), consolePrincipalContextKey{}, "owner-a"))
+	deleted := httptest.NewRecorder()
+	hub.HandleConsoleAgentGroup(deleted, remove)
+	if deleted.Code != http.StatusNoContent {
+		t.Fatalf("legacy leader owner delete handler disagrees with can_manage code=%d body=%s", deleted.Code, deleted.Body.String())
 	}
 }
 
