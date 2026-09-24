@@ -33,8 +33,13 @@ function productionHTML() {
     mutateHTML("title.onclick=function(){openSpec(spec.id,true)};",
       "title.onclick=function(){openSpec(spec.id,true)};var legacy=document.createElement('button');legacy.className='view-spec';legacy.textContent='View';legacy.onclick=function(){openSpec(spec.id,true)};row.append(legacy);");
   }
-  if (MUTATION === 'readonly-shows-edit') {
-    mutateHTML('if(editEntry)editEntry.hidden=!data.spec.can_edit;', 'if(editEntry)editEntry.hidden=false;');
+  if (MUTATION === 'readonly-hides-content') {
+    mutateHTML("specEditors.edit.codemirror.setOption('readOnly',!canEdit);",
+      "specEditors.edit.codemirror.setOption('readOnly',canEdit?false:'nocursor');if(!canEdit)specEditors.edit.value('');");
+  }
+  if (MUTATION === 'second-edit-entry-back') {
+    mutateHTML("showScreen('detail-screen');if(canEdit){",
+      "showScreen('detail-screen');if(canEdit){var back=document.createElement('button');back.id='edit-spec-entry';back.textContent='编辑';document.getElementById('detail-screen').append(back);");
   }
   if (MUTATION === 'task-area-outside-detail') {
     mutateHTML('<section id=task-area>', '<section id=task-area data-moved=1 hidden>');
@@ -74,7 +79,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'readonly-shows-edit', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -373,14 +378,14 @@ async function main() {
     assert.deepStrictEqual(taskCreates[0],{specID:'spec-1',body:{title:'Implement new',content:'new content',definition_of_done:'New done',estimated_hours:16,depends_on:['task-b']}});
     for (const title of ['Spec A', 'Spec B']) {
       await page.click('#show-spec-list');
-      // S-6 改格留痕:原来点 .edit-spec 直接进编辑屏;甲案改成【标题进详情屏 → 详情页点「编辑」】,
-      //   所以这里补一次点击。判据(能不能打开这份 spec 的编辑态)没变,只是路径按裁定改了。
+      // S-6 改格留痕(第二次):甲案是【标题→详情→点「编辑」】;乙案(业主改判)是**同一套界面**,
+      //   点标题即到文本框,**没有第二个入口**。判据(能不能打开这份 spec 的内容)没变,路径又少一步。
       await page.locator(`#spec-list [data-title="${title}"] .spec-title`).click();
       await page.waitForSelector('#detail-screen:not([hidden])');
-      await page.click('#edit-spec-entry');
       await page.waitForFunction((want) => document.getElementById('edit-title').value === want, title);
       assert.strictEqual(await page.inputValue('#edit-title'), title, `edit form must open ${title}`);
-      await page.locator('#edit-rendered h1').filter({ hasText: title }).waitFor({ state: 'visible' });
+      // 乙案:编辑屏与详情屏合并 ⇒ 原 #edit-rendered 这块重复的预览已删,判据落到文本框内容上
+      await page.waitForFunction((want) => window.specEditors.edit.value().includes(want), title);
       const changed = title === 'Spec A'
         ? `# ${title} changed\n\n\`\`\`python\nprint("copy-me")\n\`\`\`\n\n![good](http://127.0.0.1:${port}/f/spec/good/26/0921/0123456789abcdef0123456789abcdef.png)\n\n![missing](http://127.0.0.1:${port}/f/spec/missing/26/0921/ffffffffffffffffffffffffffffffff.png)`
         : `# ${title} changed`;
@@ -388,20 +393,20 @@ async function main() {
       await page.click('#save-spec');
       await page.locator('#edit-status').filter({ hasText: 'saved revision 2' }).waitFor({ state: 'visible' });
       if (title === 'Spec A') {
-        await page.locator('#edit-rendered h1').filter({ hasText: 'Spec A changed' }).waitFor({ state: 'visible' });
-        await page.locator('#edit-rendered img.md-img[alt="good"]').waitFor({ state: 'visible' });
-        await page.locator('#edit-rendered .md-image-fallback').waitFor({ state: 'visible' });
-        assert.strictEqual(await page.locator('#edit-rendered img.md-img').count(), 1, 'working image must remain inline');
-        assert.strictEqual(await page.locator('#edit-rendered .md-image-fallback').getAttribute('href'), `http://127.0.0.1:${port}/f/spec/missing/26/0921/ffffffffffffffffffffffffffffffff.png`, 'failed image must retain a direct download exit');
-        assert.strictEqual(await page.locator('#edit-rendered img.md-img').evaluate((el) => getComputedStyle(el).maxHeight), '420px', 'shared renderer CSS contract must be present');
-        await page.locator('#edit-rendered .copy-code').click();
+        await page.locator('#spec-rendered h1').filter({ hasText: 'Spec A changed' }).waitFor({ state: 'visible' });
+        await page.locator('#spec-rendered img.md-img[alt="good"]').waitFor({ state: 'visible' });
+        await page.locator('#spec-rendered .md-image-fallback').waitFor({ state: 'visible' });
+        assert.strictEqual(await page.locator('#spec-rendered img.md-img').count(), 1, 'working image must remain inline');
+        assert.strictEqual(await page.locator('#spec-rendered .md-image-fallback').getAttribute('href'), `http://127.0.0.1:${port}/f/spec/missing/26/0921/ffffffffffffffffffffffffffffffff.png`, 'failed image must retain a direct download exit');
+        assert.strictEqual(await page.locator('#spec-rendered img.md-img').evaluate((el) => getComputedStyle(el).maxHeight), '420px', 'shared renderer CSS contract must be present');
+        await page.locator('#spec-rendered .copy-code').click();
         assert.strictEqual(await page.evaluate(() => globalThis.__copiedCode), 'print("copy-me")', 'Copy button must be wired to the rendered code');
         const timeline = await context.newPage();
         await timeline.goto(`http://127.0.0.1:${port}/view/parity-session`, { waitUntil: 'domcontentloaded' });
         const timelineRendered = await timeline.evaluate((markdown) => renderMarkdown(markdown), changed);
         const specCoreRendered = await page.evaluate((markdown) => DwMdCore.renderMarkdown(markdown), changed);
         assert.strictEqual(specCoreRendered, timelineRendered, 'spec and timeline must render identical bytes at the real spec origin');
-        assert.strictEqual(await page.locator('#edit-rendered > .md').count(), 1, 'the spec page must mount the shared renderer output into its visible DOM');
+        assert.strictEqual(await page.locator('#spec-rendered > .md').count(), 1, 'the spec page must mount the shared renderer output into its visible DOM');
         assert.strictEqual(await page.evaluate((origin) => DwMdCore.isOwnFileUrl(origin + '/f/spec/good/26/0921/0123456789abcdef0123456789abcdef.png'), `http://127.0.0.1:${port}`), true, 'shared own-file boundary must use the real spec page origin');
         await timeline.close();
       }
@@ -488,7 +493,7 @@ async function main() {
       page.off('response', grabCase);
       assert.ok(caseSpecID, `未能取到新建 spec 的 id(${editorCase.label})`);
       await page.evaluate((id) => window.openSpec(id, false), caseSpecID);
-      await page.waitForSelector('#editor:not([hidden])');
+      await page.waitForSelector('#detail-screen:not([hidden])');   // 乙案:编辑屏已并入详情屏
       await page.waitForFunction((n) => window.specEditors.edit.value().length >= n, editorCase.markdown.length);
       await page.waitForTimeout(300);
       const usable = await page.evaluate(() => {
@@ -576,13 +581,14 @@ async function main() {
     assert.ok(listOkState.rows > 0, '重试成功后列表必须重新渲染出行');
     console.log(`S-5: 失败有文案=${listFailState.visibleError} 重试可见=${listFailState.retryVisible} 重试后错误行消失=${listOkState.errorGone} 分页状态=${JSON.stringify(listOkState.pageStatus)} 行数=${listOkState.rows}`);
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
-    // ㊳ S-6(甲案):列表行只留标题;详情页按 can_edit 给「编辑」;进来之后主链路必须够得着 ——
-    // 🔴 四条判据(组长 2026-09-24 裁定):
-    //   ① 列表行只有标题可点,不得再出现 View／Edit 并列
-    //   ② can_edit=true ⇒ 详情页出现「编辑」入口,点它进编辑态
-    //   ③ can_edit=false ⇒ 不得出现「编辑」入口,但内容必须可读(权限问题,比体验问题重)
-    //   ④ 🔴 从标题进入后,拆解/预拆/工作流必须可达 —— 这一条是本轮实测拦下来的:
-    //      它们只活在详情屏,若标题按 can_edit 直接进编辑态,可编辑的 spec 就再也够不到那条主链路。
+    // ㊳ S-6 乙案:查看与编辑**同一套界面** —————————————————————————————————
+    // 🔴 业主 2026-09-24:「查看和编辑应该是同一套界面……无论是编辑还是查看,都是文本框打开展示,
+    //    只是只读不让编辑而已」。⇒ 五条判据:
+    //    ① 打开任一 spec ⇒ **文本框直接展示内容**,不存在先看后编两步
+    //    ② 不可编辑 ⇒ 文本框只读,🔴 **但内容可见、可滚动、可选中复制**(只读 ≠ 不让看)
+    //    ③ 可编辑 ⇒ **同一个文本框**可改可存,且**不得出现第二个「编辑」入口**
+    //    ④ 拆解/预拆/工作流**同屏可达**(另有独立用例 ㊴ 专门盯,这里只做同屏断言)
+    //    ⑤ 列表行仍只有标题可点(S-6 甲已交付,乙案继承)
     await page.click('#show-spec-list');
     await page.waitForSelector('.spec-row .spec-title');
     const rowShape = await page.evaluate(() => ({
@@ -590,43 +596,60 @@ async function main() {
       legacyButtons: document.querySelectorAll('.spec-row .view-spec, .spec-row .edit-spec').length,
     }));
     assert.ok(rowShape.titles > 0, '列表行必须有可点标题');
-    assert.strictEqual(rowShape.legacyButtons, 0,
-      `列表行上不得再出现 View／Edit 并列,实测 ${rowShape.legacyButtons} 个 —— 业主反对的正是这个形状`);
-    // ② 可编辑:详情页出「编辑」,点进去是编辑态
+    assert.strictEqual(rowShape.legacyButtons, 0, `列表行上不得再出现 View／Edit 并列,实测 ${rowShape.legacyButtons} 个`);
+    // ①③ 可编辑:一次点击就到文本框,且没有第二个入口
     const editableID = await page.evaluate(() => (document.querySelector('.spec-row') || {}).dataset.specId);
     await page.locator('.spec-row .spec-title').first().click();
     await page.waitForSelector('#detail-screen:not([hidden])');
-    const detailShape = await page.evaluate(() => ({
-      editHidden: (document.getElementById('edit-spec-entry') || {}).hidden,
-      taskAreaVisible: !!(document.getElementById('task-area') && document.getElementById('task-area').offsetParent),
-      taskAreaInDetail: !!(document.getElementById('task-area') && document.getElementById('task-area').closest('#detail-screen')),
-      canEdit: window.currentSpec ? window.currentSpec.can_edit : null,
-      rendered: (document.getElementById('spec-rendered') || {}).childElementCount,
-    }));
-    assert.strictEqual(detailShape.canEdit, true, 'S-6 前置:第一行这份 spec 应当可编辑');
-    assert.strictEqual(detailShape.editHidden, false, 'can_edit 为真时详情页必须给出「编辑」入口');
-    // ④ 主链路必须够得着(这一条挡的是"把可编辑的 spec 直接甩进编辑屏"那种改法)
-    assert.ok(detailShape.taskAreaInDetail && detailShape.taskAreaVisible,
-      '从标题进来之后,任务拆解/预拆/工作流必须可达(它们在详情屏里)');
-    await page.click('#edit-spec-entry');
-    await page.waitForSelector('#editor:not([hidden])');
-    assert.strictEqual(await page.locator('#editor').isVisible(), true, '点「编辑」必须进编辑态');
-    // ③ 不可编辑:不得出现「编辑」,但内容要能读
+    const editableShape = await page.evaluate(() => {
+      const cm = window.specEditors.edit.codemirror;
+      const vis = (id) => { const el = document.getElementById(id); return !!(el && el.offsetParent); };
+      return {
+        canEdit: window.currentSpec ? window.currentSpec.can_edit : null,
+        editorVisible: !!cm.getWrapperElement().offsetParent,
+        valueLen: cm.getValue().length,
+        readOnly: !!cm.getOption('readOnly'),
+        saveHidden: (document.getElementById('save-spec') || {}).hidden,
+        secondEntry: document.querySelectorAll('#edit-spec-entry').length,
+        editorScreenGone: !document.getElementById('editor'),
+        taskArea: vis('task-area'), workflow: vis('spec-workflow'),
+      };
+    });
+    assert.strictEqual(editableShape.canEdit, true, 'S-6 前置:第一行这份 spec 应当可编辑');
+    assert.ok(editableShape.editorVisible && editableShape.valueLen > 0,
+      `一次点击之后文本框必须直接展示内容(可见=${editableShape.editorVisible} 长度=${editableShape.valueLen})`);
+    assert.strictEqual(editableShape.readOnly, false, '可编辑的 spec,文本框不得是只读');
+    assert.strictEqual(editableShape.saveHidden, false, '可编辑的 spec 必须能存');
+    assert.strictEqual(editableShape.secondEntry, 0, '不得出现第二个「编辑」入口 —— 查看与编辑是同一套界面');
+    assert.ok(editableShape.taskArea && editableShape.workflow, '拆解与工作流必须与文本框同屏可达');
+    // ② 不可编辑:只读,但内容必须看得见、滚得动、选得中
     await page.request.post(`http://127.0.0.1:${port}/fixture/add-readonly-spec`);
     await page.click('#show-spec-list');
     await page.waitForFunction(() => /ReadOnlySpec/.test(document.getElementById('spec-list').innerText), null, { timeout: 5000 });
     await page.locator('#spec-list [data-title="ReadOnlySpec"] .spec-title').click();
     await page.waitForSelector('#detail-screen:not([hidden])');
-    const readonlyShape = await page.evaluate(() => ({
-      editHidden: (document.getElementById('edit-spec-entry') || {}).hidden,
-      rendered: (document.getElementById('spec-rendered') || {}).childElementCount,
-      bodyText: (document.getElementById('spec-rendered') || {}).innerText || '',
-    }));
-    assert.strictEqual(readonlyShape.editHidden, true,
-      'can_edit 为假时详情页不得出现「编辑」入口 —— 这是权限,不是体验');
-    assert.ok(readonlyShape.rendered > 0 && readonlyShape.bodyText.length > 0,
-      `不可编辑不等于不让看:内容必须渲染出来,实测 ${JSON.stringify(readonlyShape.bodyText.slice(0, 60))}`);
-    console.log(`S-6: 标题=${rowShape.titles} 旧按钮=${rowShape.legacyButtons} 可编辑详情有编辑入口=${!detailShape.editHidden} 主链路可达=${detailShape.taskAreaInDetail} 只读无编辑入口=${readonlyShape.editHidden}`);
+    const readonlyShape = await page.evaluate(() => {
+      const cm = window.specEditors.edit.codemirror;
+      cm.setSelection({ line: 0, ch: 0 }, { line: 0, ch: 3 });
+      return {
+        readOnly: !!cm.getOption('readOnly'),
+        nocursor: cm.getOption('readOnly') === 'nocursor',
+        visible: !!cm.getWrapperElement().offsetParent,
+        valueLen: cm.getValue().length,
+        rendered: cm.getWrapperElement().querySelectorAll('.CodeMirror-line').length,
+        selected: cm.getSelection().length,
+        saveHidden: (document.getElementById('save-spec') || {}).hidden,
+        secondEntry: document.querySelectorAll('#edit-spec-entry').length,
+      };
+    });
+    assert.strictEqual(readonlyShape.readOnly, true, '不可编辑的 spec,文本框必须只读');
+    assert.strictEqual(readonlyShape.nocursor, false, "只读不得用 'nocursor' —— 那会连选中复制都做不了");
+    assert.ok(readonlyShape.visible && readonlyShape.valueLen > 0 && readonlyShape.rendered > 0,
+      `只读 ≠ 不让看:内容必须可见(可见=${readonlyShape.visible} 长度=${readonlyShape.valueLen} 渲染行=${readonlyShape.rendered})`);
+    assert.ok(readonlyShape.selected > 0, '只读态必须能选中复制');
+    assert.strictEqual(readonlyShape.saveHidden, true, '不可编辑时不得给出保存入口');
+    assert.strictEqual(readonlyShape.secondEntry, 0, '只读态同样不得出现「编辑」入口');
+    console.log(`S-6乙: 可编辑(只读=${editableShape.readOnly} 存=${!editableShape.saveHidden} 同屏=${editableShape.taskArea && editableShape.workflow}) 只读(只读=${readonlyShape.readOnly} 可见行=${readonlyShape.rendered} 选中=${readonlyShape.selected})`);
     // ㊲ S-7:「复制只读链接」—— 复制到的**文本内容**必须对,且成功必须有**可见反馈** ——————
     // 🔴 业主 2026-09-24 裁定「当前控写不控读」⇒ 给的是**只读**链接。
     //    它对【已存在】的 spec 同样有效(`GET /console/specs/{id}` 本就公开可读),
