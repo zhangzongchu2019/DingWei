@@ -22,7 +22,17 @@ if (mutation === 'leak-delete') mutate('if(g.can_manage){var del=', 'if(true){va
 if (mutation === 'leak-remove') mutate('if(selected.can_manage&&!leader){var rm=', 'if(!leader){var rm=');
 if (mutation === 'foreign-candidate') mutate("fill('groupJoinAgent',owned.filter(function(a){return !ids.has(a.id);}),", "fill('groupJoinAgent',owned.concat([{id:'foreign',session_name:'foreign-agent-2642',online:true}]).filter(function(a){return !ids.has(a.id);}),");
 if (mutation === 'detach-remove-row') mutate('row.append(rm);}members.append(row);', 'members.append(rm);}members.append(row);');
-if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'ux-table-align') mutate('.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}', '.group-table th{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-table td{padding:7px 7px 7px 31px;border-bottom:1px solid #ddd;text-align:left}');
+if (mutation === 'ux-member-gap') mutate('gap:18px;max-width:520px', 'justify-content:space-between;max-width:none');
+if (mutation === 'ux-placeholder') mutate('placeholder="请输入完整的 32 位编组码"', 'placeholder=""');
+if (mutation === 'ux-block-colors') {
+  mutate('.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}.group-block-join{background:#fff7eb}', '.group-block-list,.group-block-detail,.group-block-add{background:#f4f7fb}.group-block-join{background:#fff7eb}');
+  mutate('html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="dark"] .group-block-detail{background:#252033}html[data-theme="dark"] .group-block-add{background:#182a22}html[data-theme="dark"] .group-block-join{background:#30251a}', 'html[data-theme="dark"] .group-block-list,html[data-theme="dark"] .group-block-detail,html[data-theme="dark"] .group-block-add{background:#1b2530}html[data-theme="dark"] .group-block-join{background:#30251a}');
+}
+if (mutation === 'ux-add-focus') mutate("document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};", "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
+if (mutation === 'ux-detail-exclusive') mutate("row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();setGroupPanelMode('detail');}", "row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();if(globalThis.__testExclusive)document.getElementById('groupDetail').hidden=false;else setGroupPanelMode('detail');}");
+if (mutation === 'ux-join-exclusive') mutate("document.getElementById('groupCodeJoinOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='join'?'':'join');}", "document.getElementById('groupCodeJoinOpen').onclick=function(){if(globalThis.__testExclusive){document.getElementById('groupCodeJoin').hidden=false;document.getElementById('groupJoinCode').focus();}else setGroupPanelMode(groupPanelMode==='join'?'':'join');}");
+if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'ux-member-gap', 'ux-placeholder', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive', 'ux-join-exclusive'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 
 let groups = [];
 let additionsClosed = false;
@@ -95,6 +105,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#groupDetail').evaluate((detail) => { detail.hidden = false; });
       await page.locator('#retryGroups').click();
     }
+    await page.locator('#groupAddOpen').click();
     await page.locator('#groupLeader').waitFor({ state: 'visible' });
     await page.waitForFunction(() => !document.getElementById('groupLeader').disabled);
     await test('name feedback is near the name control and the obsolete pattern is absent', async () => {
@@ -113,13 +124,15 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
     await test('create trims, lists leader first, and reports exact duplicate with suggestion', async () => {
       await page.locator('#groupShortName').click(); await page.locator('#groupShortName').press('ControlOrMeta+A'); await page.locator('#groupShortName').press('Backspace'); await page.locator('#groupShortName').pressSequentially('  团队1  '); await page.locator('#createGroup').click();
-      await page.locator('#groupNameFeedback').getByText('操作成功').waitFor({ state: 'visible' });
+      await page.locator('#groupAddPanel').waitFor({ state: 'hidden' });
       await page.locator('#groupListItems').getByText('团队1').waitFor({ state: 'visible' });
       assert.match(await page.locator('#groupMembers').textContent(), /^leader（组长）$/);
+      await page.locator('#groupAddOpen').click();
       await page.locator('#groupShortName').click(); await page.locator('#groupShortName').press('ControlOrMeta+A'); await page.locator('#groupShortName').press('Backspace'); await page.locator('#groupShortName').pressSequentially('团队1'); await page.locator('#createGroup').click();
       await page.locator('#groupNameFeedback').filter({ hasText: '团队名称不可用' }).waitFor({ state: 'visible' });
       assert.match(await page.locator('#groupNameFeedback').textContent(), /团队名称不可用；建议名称：团队11、团队12/);
       assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
+      await page.locator('#groupAddOpen').click();
     });
     await test('retry success is visible', async () => {
       await page.evaluate(() => refreshGroups('retry')); await page.locator('#groupRetryFeedback').getByText('已刷新 · 1 个编组').waitFor({ state: 'visible' });
@@ -127,6 +140,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
     await test('keeps the 32-character code credential visible and submits the code the operator enters', async () => {
       const code = 'B'.repeat(32);
+      await page.locator('#groupCodeJoinOpen').click();
       assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
       await page.locator('#groupJoinCode').click(); await page.locator('#groupJoinCode').press('ControlOrMeta+A'); await page.locator('#groupJoinCode').pressSequentially(code);
       await page.locator('#groupCodeJoinAgent').selectOption('member'); await page.locator('#joinByCode').click();
@@ -157,10 +171,73 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.match(crossText, /^leader（组长）（offline）member$/);
       assert.strictEqual(crossAddHidden, true, 'cross-owner group must not expose member candidates');
     });
+    await test('aligns table headers with row cells at runtime', async () => {
+      await page.setViewportSize({ width: 1800, height: 900 });
+      const edges = await page.evaluate(() => {
+        const textLeft = (node) => { const range=document.createRange();range.selectNodeContents(node);return range.getBoundingClientRect().left; };
+        return { header:textLeft(document.querySelector('#groupListTable th')), cell:textLeft(document.querySelector('#groupListItems tr td')) };
+      });
+      assert.ok(Math.abs(edges.header - edges.cell) <= 0.5, `table header/cell left edges differ: ${JSON.stringify(edges)}`);
+    });
+    await test('keeps member action close to its Agent name on a wide screen', async () => {
+      groups[0].members.push({ agent_id: 'member', key_id: 'key-member', session_name: 'owner-member-2642', online: true });
+      try {
+        await page.evaluate(() => refreshGroups('ux-member-gap'));
+        const row = page.locator('#groupMembers .group-member-row').filter({ hasText: 'member' });
+        await row.hover();
+        const gap = await row.evaluate((node) => {
+          const name = node.querySelector('span').getBoundingClientRect(), remove = node.querySelector('.group-member-remove').getBoundingClientRect();
+          return remove.left - name.right;
+        });
+        assert.ok(gap <= 80, `wide-screen member/remove gap=${gap}px exceeds 80px`);
+      } finally {
+        groups[0].members = groups[0].members.filter((member) => member.agent_id !== 'member');
+        await page.evaluate(() => refreshGroups('ux-member-gap-reset'));
+      }
+    });
+    await test('labels the 32-character group code input with meaningful placeholder text', async () => {
+      const placeholder = await page.locator('#groupJoinCode').getAttribute('placeholder');
+      assert.ok(placeholder && placeholder.includes('32'), `group code placeholder=${JSON.stringify(placeholder)}`);
+    });
+    await test('distinguishes all four functional blocks in light and dark themes', async () => {
+      const selectors = ['.group-block-list', '.group-block-detail', '#groupMemberAdd', '.group-block-join'];
+      const colors = async () => page.evaluate((items) => items.map((selector) => getComputedStyle(document.querySelector(selector)).backgroundColor), selectors);
+      const light = await colors();
+      assert.strictEqual(new Set(light).size, 4, `all four light-theme functional blocks must have distinct colors: ${JSON.stringify(light)}`);
+      await page.locator('html').evaluate((html) => html.dataset.theme = 'dark');
+      try {
+        const dark = await colors();
+        assert.strictEqual(new Set(dark).size, 4, `all four dark-theme functional blocks must have distinct colors: ${JSON.stringify(dark)}`);
+        assert.notDeepStrictEqual(dark, light, 'dark theme must not reuse light block colors');
+      } finally {
+        await page.locator('html').evaluate((html) => html.dataset.theme = 'light');
+      }
+    });
+    await test('keeps the list resident and makes detail, add, and cross-owner join pairwise exclusive', async () => {
+      const visible = async () => page.evaluate(() => ({
+        list: !document.getElementById('groupListTable').closest('.group-block-list').hidden,
+        detail: !document.getElementById('groupDetail').hidden,
+        add: !document.getElementById('groupAddPanel').hidden,
+        join: !document.getElementById('groupCodeJoin').hidden,
+      }));
+      await page.evaluate(() => { globalThis.__testExclusive = true; });
+      try {
+        await page.locator('#groupListItems tr').first().click();
+        assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '点组名后只能展开组详情');
+        await page.locator('#groupAddOpen').click();
+        assert.deepStrictEqual(await visible(), { list: true, detail: false, add: true, join: false }, '点添加后必须收起详情且只展开添加编组');
+        await page.locator('#groupCodeJoinOpen').click();
+        assert.deepStrictEqual(await visible(), { list: true, detail: false, add: false, join: true }, '点加入入口后必须收起添加且只展开加入其他业主编组');
+        await page.locator('#groupListItems tr').first().click();
+        assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '从加入返回组详情时前一个展开项必须收起');
+      } finally {
+        await page.evaluate(() => { globalThis.__testExclusive = false; setGroupPanelMode('detail'); });
+      }
+    });
     await test('close rejects, open joins, offline error is visible, and removal confirms the real consequence', async () => {
+      await page.locator('#groupListItems tr').first().click();
       await page.locator('#groupAdditionsToggle').click(); await page.getByRole('button', { name: '开放添加' }).waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('#groupAdditionsToggle').textContent(), '开放添加');
-      await page.locator('#groupJoinCode').click(); await page.locator('#groupJoinCode').press('ControlOrMeta+A'); await page.locator('#groupJoinCode').pressSequentially('A'.repeat(32));
       await page.locator('#groupJoinAgent').selectOption('member'); await page.locator('#joinGroup').click(); await page.locator('#groupJoinFeedback').getByText('该编组已关闭添加').waitFor({ state: 'visible' });
       await page.locator('#groupAdditionsToggle').click(); await page.getByRole('button', { name: '关闭添加' }).waitFor({ state: 'visible' });
       await page.locator('#groupJoinAgent').selectOption('member');
