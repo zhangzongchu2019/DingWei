@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
 const consoleSessionCookie = "dw_console_session"
@@ -238,7 +239,43 @@ func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http
 func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	fmt.Fprint(w, consolePageHTML)
+	fmt.Fprint(w, renderConsolePage(dwversion.Version, dwversion.Commit))
+}
+
+// renderConsolePage 把版本号在【服务端】填进页面。
+//
+// 🔴 为什么必须服务端渲染、且模板里不许出现版本号字面量:
+//
+//	这一行的全部用处是回答业主那句「我屏幕上这份是哪一版」。若把版本号硬编码进前端字符串,
+//	那么"页面是旧的"时【版本号也是旧的】—— 它会跟着旧页面一起骗人,等于没做。
+//	守住这一点的是 TestConsolePageSourceCarriesNoVersionLiteral:模板里出现当前版本号即红。
+//
+// 🔴 为什么连 commit 一起显示(比业主原话多半步,理由在 internal/version/version.go 里已有实测):
+//
+//	0.2.0.7 发版锚 e741db4b 上线后,现网自报 version=0.2.0.5 commit=e741db4… ——
+//	**commit 是新的、version 是旧的**。同理,同一版本号可以部署两次(修缺陷不抬号),
+//	那时只看版本号【分辨不出新旧两份制品】,而这正是本次要消灭的那类来回。
+//	commit 未注入时按 version.go 的既有口径只显版本号:宁可不显示,也不显示一个可能是错的来源。
+func renderConsolePage(appVersion, commit string) string {
+	text := appVersion
+	if commit != "" && commit != "unknown" {
+		short := commit
+		if len(short) > 7 {
+			short = short[:7]
+		}
+		text = appVersion + " · " + short
+	}
+	return strings.NewReplacer(
+		"{{CONSOLE_VERSION_TEXT}}", htmlAttrEscape(text),
+		"{{CONSOLE_VERSION}}", htmlAttrEscape(appVersion),
+		"{{CONSOLE_COMMIT}}", htmlAttrEscape(commit),
+	).Replace(consolePageHTML)
+}
+
+// htmlAttrEscape:版本号与 commit 都来自构建期注入(-ldflags -X),不是用户输入,
+// 但注入值仍是【外部字符串】,原样拼进 HTML 属性属于无谓的口子,故统一转义。
+func htmlAttrEscape(v string) string {
+	return strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", `"`, "&quot;", "'", "&#39;").Replace(v)
 }
 
 // consolePageHTML 业主 2026-09-16 定:右侧改为**多 tab**,每点一个 Agent 增加一个属性页。
@@ -279,6 +316,14 @@ main{display:flex;flex-direction:column;min-width:0}
 .agent-tree-group{margin:5px 0}.agent-tree-group-label{display:block;font-weight:700;padding:4px 6px}.agent-tree-members{padding-left:10px}.agent-tree-agent{width:100%;text-align:left}
 .group-row{display:flex;align-items:center;margin:4px 0}.group-row .group-pick{margin-right:auto}.group-feedback{min-height:1.2em;color:#9d1b1b}
 #hint{padding:10px;color:#888}
+/* 🔴 版本角标(业主 2026-09-24 批「版本号显示 ---- 可以」)。
+   立项实证:业主连报五条「改动没生效」,全部源于【他那个页面是部署之前打开的】——
+   /console 虽是 no-store,但 no-store 只在【重新请求时】才起作用,旧标签页不会自己去问。
+   业主此前没有任何办法判断「我屏幕上这份是哪一版」,组长也只能对新旧制品跑 strings 对照。
+   🔴 pointer-events:none 是硬要求:角标永不吞点击 ⇒ 结构上不可能遮挡内容(不靠位置侥幸)。 */
+#app-version{position:fixed;right:6px;bottom:4px;z-index:5;pointer-events:none;
+  font-size:11px;line-height:1.4;color:#8a8a8a;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+html[data-theme="dark"] #app-version{color:#7c8896}
 /* 🔴 日夜主题(0.2.1.7):暗色**只在** [data-theme=dark] 下覆盖,浅色声明一条没改
       ⇒ 业主看惯的浅色观感零变化(git diff 可自证:上面那些规则原样未动)。
       🔵 外壳必须跟着暗:否则"面板是夜里、左栏和 tab 条是白天"的花脸,正是本版要消灭的。
@@ -302,6 +347,7 @@ html[data-theme="dark"] details,html[data-theme="dark"] summary{color:#a8b0bb}
 </style>
 <nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
+<div id=app-version data-version="{{CONSOLE_VERSION}}" data-commit="{{CONSOLE_COMMIT}}">{{CONSOLE_VERSION_TEXT}}</div>
 <script>
 const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
 // 短名 = 三段式 <owner>-<name>-<suffix> 的中间段;取不到就原样显示(T-138,业主裁定命名归他)

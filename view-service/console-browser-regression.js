@@ -7,6 +7,10 @@ const path = require('path');
 const { chromium } = require('playwright');
 
 const GO_SOURCE = path.join(__dirname, '..', 'internal', 'm8', 'console_auth.go');
+// 业主 2026-09-24 批的版本角标:值必须来自服务端。夹具喂一个明显不是真版本的号,
+// 这样「显示的是服务端喂的那一版」与「显示的是写死的字符串」两种情况【读数不同】。
+const HARNESS_VERSION = '7.7.7.7-harness';
+const HARNESS_COMMIT = 'c0ffee1234567890';
 const START = 'const consolePageHTML = `';
 const END = '`\n\nfunc (h *Hub) HandleConsoleAgents';
 const MUTATION = process.argv.find((arg) => arg.startsWith('--mutate='))?.slice(9) || '';
@@ -59,7 +63,15 @@ function consoleHTMLFromProductionSource() {
     html = html.replace('<section id=groupDetail hidden>', '<section id=groupDetail hidden><label>完整 32 字符组码 <input id=groupJoinCode maxlength=32></label>');
     html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
   }
-  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  // 🔴 阴性对照:把角标显示值写死。写死之后页面显示的就不再是服务端喂进来的那一版,
+  //    下面那条断言必须红 —— 否则这条判据等于没立。
+  if (MUTATION === 'hardcoded-version') mutate('>{{CONSOLE_VERSION_TEXT}}<', '>0.2.1.68<');
+  // 🔴 版本角标由服务端填值。夹具在这里【故意喂一个不可能是真版本的号】:
+  //    若哪天有人把版本号写死在模板里,页面显示的就不会是这个号 ⇒ 下面那条断言会红。
+  html = html.split('{{CONSOLE_VERSION_TEXT}}').join(HARNESS_VERSION + ' · ' + HARNESS_COMMIT.slice(0, 7))
+    .split('{{CONSOLE_VERSION}}').join(HARNESS_VERSION)
+    .split('{{CONSOLE_COMMIT}}').join(HARNESS_COMMIT);
+  if (MUTATION && !['hardcoded-version','stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -720,6 +732,28 @@ async function main() {
       assert.strictEqual(new URL(await specsPane.getAttribute('src'), page.url()).pathname, '/console/specs');
       assert.strictEqual(await page.locator('#panes iframe').count(), paneCount+1);
       assert.strictEqual(await page.locator('#panes iframe').first().getAttribute('src'), paneSrc);
+    });
+
+    // 业主 2026-09-24 批「版本号显示 ---- 可以」。
+    // 🔴 这条断的是【显示值等于服务端喂进来的那一版】,不是「页面上有版本号字样」——
+    //    后者在写死实现下照样绿(阴性对照:--mutate=hardcoded-version 必须红)。
+    await test('shows the server-rendered build version and never swallows a click', async () => {
+      const badge = page.locator('#app-version');
+      await badge.waitFor({ state: 'attached' });
+      assert.strictEqual(
+        (await badge.textContent()).trim(),
+        `${HARNESS_VERSION} · ${HARNESS_COMMIT.slice(0, 7)}`,
+        '角标显示的必须是服务端喂进来的那一版');
+      assert.strictEqual(await badge.getAttribute('data-version'), HARNESS_VERSION);
+      // 🔴 「不遮挡内容」不靠位置侥幸:角标正中那一点的命中元素必须【不是】角标本身。
+      const hitID = await page.evaluate(() => {
+        const el = document.getElementById('app-version');
+        const r = el.getBoundingClientRect();
+        const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return top ? top.id : null;
+      });
+      assert.notStrictEqual(hitID, 'app-version', '角标吞掉了它所在位置的点击 ⇒ 它在遮挡内容');
+      assert.strictEqual(await badge.isVisible(), true, '角标必须是业主看得见的');
     });
   } finally {
     await browser.close();
