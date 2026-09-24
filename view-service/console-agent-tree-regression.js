@@ -167,6 +167,22 @@ async function main() {
       `组节点必须按短名显示,实测 ${JSON.stringify(groupNodes.map((g) => g.label))}`);
     assert.strictEqual(await page.locator('#a [data-session="zzc-beta-2642"]').count(), 0,
       '业主已明确裁定:未分组 Agent 在树形态不显示,只能切到纯 Agent 列表查看');
+    // 🔴 上面那条钉的是【这个夹具里那一个】未分组 Agent(zzc-beta-2642)。
+    //    它今天够用,但判据与夹具内容绑死:夹具里将来多一个未分组 Agent,它就覆盖不到。
+    //    ⇒ 下面这条把规则本身写出来:**从载荷算出"未入任何显式组的自有 session"**,
+    //      逐个断言它们在树形态下不出现。夹具怎么长都跟得上。
+    const ungroupedSessions = await page.evaluate(() => {
+      const snap = window.groupSnapshot || {};
+      const grouped = new Set();
+      (snap.groups || []).forEach((g) => (g.members || []).forEach((m) => grouped.add(m.agent_id)));
+      return (snap.owned_agents || []).filter((a) => !grouped.has(a.id)).map((a) => a.session_name);
+    });
+    assert.ok(ungroupedSessions.length > 0,
+      '🔴 前置:夹具里必须真的有未分组 Agent,否则这条断言不论产品对错都会绿');
+    for (const session of ungroupedSessions) {
+      assert.strictEqual(await page.locator(`#a [data-session="${session}"]`).count(), 0,
+        `未入任何显式组的自有 Agent「${session}」不得出现在树形态(业主 2026-09-21 裁定)`);
+    }
     passed += 2;
 
     // ② 成员挂在组节点下;非自有成员显示全名,自有成员显示短名
