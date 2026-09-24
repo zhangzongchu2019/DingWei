@@ -326,6 +326,31 @@ func TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership(t *testing.T) {
 	}
 }
 
+func TestConsoleAgentGroupsLegacyLeaderOwnerSeesTheDeleteActionTheHandlerAllows(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	ctx := context.Background()
+	leader := addOwnedGroupAgent(t, db, "owner-a", "legacy-ui-leader", "legacy-ui-key", "owner-a-legacy-ui-2642", "oa")
+	if err := db.UpsertAgentGroup(ctx, model.AgentGroup{Code: groupCodeA, LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: "oa"}); err != nil {
+		t.Fatal(err)
+	}
+	get := httptest.NewRequest(http.MethodGet, "/api/console/agent-groups", nil)
+	get = get.WithContext(context.WithValue(get.Context(), consolePrincipalContextKey{}, "owner-a"))
+	view := httptest.NewRecorder()
+	hub.HandleConsoleAgentGroups(view, get)
+	if view.Code != http.StatusOK || !bytes.Contains(view.Body.Bytes(), []byte(`"can_manage":true`)) {
+		t.Fatalf("legacy leader owner can delete through the handler but UI hides the action code=%d body=%s", view.Code, view.Body.String())
+	}
+	remove := httptest.NewRequest(http.MethodDelete, "/api/console/agent-groups/"+groupCodeA, nil)
+	remove.SetPathValue("code", groupCodeA)
+	remove = remove.WithContext(context.WithValue(remove.Context(), consolePrincipalContextKey{}, "owner-a"))
+	deleted := httptest.NewRecorder()
+	hub.HandleConsoleAgentGroup(deleted, remove)
+	if deleted.Code != http.StatusNoContent {
+		t.Fatalf("legacy leader owner delete handler disagrees with can_manage code=%d body=%s", deleted.Code, deleted.Body.String())
+	}
+}
+
 func TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
 	db := hub.Repo.(*store.SQLite)
