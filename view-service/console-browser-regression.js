@@ -291,7 +291,7 @@ async function main() {
         const created = createPage.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups') && response.request().method() === 'POST' && response.status() === 201);
         await createPage.locator('#createGroup').click();
         await created;
-        await createPage.locator('#groupNameFeedback').getByText('操作成功').waitFor({state:'visible'});
+        await createPage.locator('#groupAddPanel').waitFor({state:'hidden'});
         assert.strictEqual(await name.inputValue(), '', 'successful create must clear the submitted name');
         assert.strictEqual(await leader.inputValue(), 'agent-b', 'refresh after create must preserve the selected Agent');
       } finally {
@@ -517,12 +517,14 @@ async function main() {
       await auditPage.locator('#groupListItems').getByText('dingwei').waitFor({ state: 'visible' });
 
       // Failure paths are product outcomes and must remain visible without JS errors.
+      await auditPage.locator('#groupAddOpen').click();
       await auditPage.locator('#groupShortName').click();
       await auditPage.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
       await auditPage.keyboard.type('dingwei');
       assert.strictEqual(await humanHit('#createGroup'), true);
       await auditPage.locator('#createGroup').click();
       await auditPage.locator('#groupNameFeedback').filter({ hasText: '团队名称不可用；建议名称：dingwei1、dingwei2' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupAddOpen').click();
 
       await auditPage.locator('#groupJoinCode').click();
       await auditPage.keyboard.type('short');
@@ -639,7 +641,7 @@ async function main() {
       await page.locator('#groupShortName').click();
       await page.locator('#groupShortName').pressSequentially('团队2');
       await page.locator('#createGroup').click();
-      await page.locator('#groupNameFeedback').getByText('操作成功').waitFor({ state: 'visible' });
+      await page.locator('#groupAddPanel').waitFor({ state: 'hidden' });
       assert.deepStrictEqual(groupWrites[0].body, { agent_id: 'agent-a', short_name: '团队2' });
       assert.strictEqual('key_id' in groupWrites[0].body, false);
       assert.strictEqual('session_name' in groupWrites[0].body, false);

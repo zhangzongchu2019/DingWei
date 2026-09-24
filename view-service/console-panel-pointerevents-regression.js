@@ -129,6 +129,7 @@ async function main() {
     await frame.locator('#stub').click({ timeout: 4000 });
     await page.locator('#tabs .tab').filter({ hasText: 'Agent 编组' }).click();
     await page.waitForTimeout(200);
+    await page.locator('#groupAddOpen').click({ timeout: 4000 });
     await page.locator('#groupShortName').click({ timeout: 4000 });
     await page.keyboard.type('abc');
     assert.strictEqual(await page.locator('#groupShortName').inputValue(), 'abc', '编组面板的团队名称框在一个 tick 之后必须仍能输入');
