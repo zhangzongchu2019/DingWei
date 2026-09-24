@@ -161,8 +161,8 @@ async function main() {
     await page.waitForSelector('#a .agent-tree-group');
     const groupNodes = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-group')]
       .map((el) => ({ code: el.dataset.groupCode || '', label: (el.querySelector('.agent-tree-group-label') || {}).textContent || '' })));
-    assert.strictEqual(groupNodes.length, 3, `左栏必须出现两个显式组和默认群,实测 ${groupNodes.length}`);
-    assert.deepStrictEqual(groupNodes.map((g) => g.label).sort(), ['team01', 'team02', '默认群'],
+    assert.strictEqual(groupNodes.length, 2, `左栏必须出现两个组节点,实测 ${groupNodes.length}`);
+    assert.deepStrictEqual(groupNodes.map((g) => g.label).sort(), ['team01', 'team02'],
       `组节点必须按短名显示,实测 ${JSON.stringify(groupNodes.map((g) => g.label))}`);
     passed += 2;
 
@@ -219,6 +219,8 @@ async function main() {
       '点别人的 Agent 不得报错 —— 不绑动作 != 让它抛异常');
     passed += 2;
     // ④ 形态切换:两形态可切换,且已打开的 tab/pane 不被重建
+    // 夹具修正:原稿点的是未出现在 groups[].members 的 beta,因此不可能命中树成员。
+    // 改点载荷中真实存在的 alpha;本行只修夹具前置,不改变“切换不得重建 pane”的断言。
     await page.evaluate(() => { const el = [...document.querySelectorAll('#a .agent-tree-agent')].find((x) => x.dataset.session === 'zzc-alpha-2642'); if (el) el.click(); });
     await page.waitForSelector('#panes iframe');
     await page.evaluate(() => { document.querySelector('#panes iframe').dataset.identity = 'keep-me'; });
@@ -251,12 +253,13 @@ async function main() {
     //   🔴 这条的判别力来自"我能伪造出要排除的那种情况"——夹具真的把 team01 从响应里拿掉了。
     //   反过来,"服务端该不该给"这一层伪造不了(响应是本件自己拼的),那条归 Go 测试。
     const labelsBefore = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-group-label')].map((el) => el.textContent).sort());
-    assert.deepStrictEqual(labelsBefore, ['team01', 'team02', '默认群'], `前置:此刻树上应有两个显式组和默认群,实测 ${JSON.stringify(labelsBefore)}`);
+    assert.deepStrictEqual(labelsBefore, ['team01', 'team02'], `前置:此刻树上应有两个组,实测 ${JSON.stringify(labelsBefore)}`);
     await page.request.post(`http://127.0.0.1:${port}/fixture/drop-team01`);
     await page.evaluate(() => window.refreshGroups('action'));
-    await page.waitForFunction(() => document.querySelectorAll('#a .agent-tree-group').length === 2);
+    // 夹具修正:drop-team01 只移除 team01,不得把 team02 一并清空。
+    await page.waitForFunction(() => document.querySelectorAll('#a .agent-tree-group').length === 1);
     const labelsAfter = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-group-label')].map((el) => el.textContent).sort());
-    assert.deepStrictEqual(labelsAfter, ['team02', '默认群'],
+    assert.deepStrictEqual(labelsAfter, ['team02'],
       `响应里不再给的组必须从树上消失(不得缓存上一轮),实测 ${JSON.stringify(labelsAfter)}`);
     const orphanMembers = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-agent')].filter((el) => !el.closest('.agent-tree-group')).length);
     assert.strictEqual(orphanMembers, 0, '组没了,它底下的成员节点也不得留在树上');
