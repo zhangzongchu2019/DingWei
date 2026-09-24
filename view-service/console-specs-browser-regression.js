@@ -55,6 +55,7 @@ function productionHTML() {
   if (MUTATION === 'owner-transfer-disconnected') mutateHTML("specAction(transferSpec.id,'workflow/transfer'", "specAction(transferSpec.id,'workflow/not-transfer'");
   if (MUTATION === 'owner-delete-action') mutateHTML("var copyLink=document.createElement('button');", "var forbidden=document.createElement('button');forbidden.className='delete-spec';forbidden.textContent='删除';action.append(forbidden);var copyLink=document.createElement('button');");
   if (MUTATION === 'owner-expand-nonexclusive') mutateHTML("document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};", "document.getElementById('show-new-spec').onclick=function(){document.getElementById('new-screen').hidden=false;};");
+  if (MUTATION === 'owner-empty-restore-all') mutateHTML("document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');refreshSpecs();};", "document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');document.getElementById('detail-screen').hidden=false;document.getElementById('transfer-screen').hidden=false;refreshSpecs();};");
   if (MUTATION === 'no-list-error-text') {
     mutateHTML('catch(err){specListFailure(err);}', 'catch(err){}');
   }
@@ -86,7 +87,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -245,8 +246,15 @@ async function main() {
     assert.strictEqual(await page.locator('#empty-create-spec').count(),1,'empty list must expose exactly one create-spec link');
     assert.deepStrictEqual(await page.evaluate(() => ({ rows:document.querySelectorAll('#spec-list>tr').length, cells:document.querySelectorAll('#empty-spec-row>td').length, buttons:document.querySelectorAll('#empty-spec-row button').length, text:document.getElementById('empty-spec-row').innerText.trim(), toolbarAddHidden:document.getElementById('show-new-spec').hidden, pagerHidden:document.getElementById('spec-pager').hidden })),
       {rows:1,cells:1,buttons:1,text:'⊕ 添加 spec',toolbarAddHidden:true,pagerHidden:true}, '空列表时 tbody 必须只有第一行 ⊕,不得叠加空态文案或常驻按钮');
+    const emptyScreenState=async()=>page.evaluate(()=>({list:!document.getElementById('list-screen').hidden,newSpec:!document.getElementById('new-screen').hidden,detail:!document.getElementById('detail-screen').hidden,transfer:!document.getElementById('transfer-screen').hidden}));
+    const emptyBefore=await emptyScreenState();
     await page.click('#empty-create-spec');
     assert.strictEqual(await page.locator('#new-screen').isVisible(), true, 'empty list create link must open a separate create screen');
+    assert.deepStrictEqual(await emptyScreenState(),{list:true,newSpec:true,detail:false,transfer:false},'空库打开新建时列表常驻且不可凭空显示详情/转给');
+    await page.click('#show-spec-list');
+    await page.waitForSelector('#empty-create-spec');
+    assert.deepStrictEqual(await emptyScreenState(),emptyBefore,'空库关闭新建后必须逐项恢复点开之前的不对称可见性');
+    await page.click('#empty-create-spec');
     const validNew = { title: 'Valid', markdown: '# Valid', acceptance: 'accepted', anchor: 'msg:valid' };
     async function setNew(values) {
       await page.fill('#new-title', values.title);
