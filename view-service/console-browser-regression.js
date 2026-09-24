@@ -19,6 +19,11 @@ function consoleHTMLFromProductionSource() {
   const end = source.indexOf(END, contentStart);
   assert.notStrictEqual(end, -1, 'consolePageHTML end marker missing');
   let html = source.slice(contentStart, end);
+  function mutate(from, to) {
+    const next = html.replace(from, to);
+    if (next === html) throw new Error(`mutation anchor missing: ${from}`);
+    html = next;
+  }
   if (MUTATION === 'stale-groups') html = html.replace('if(generation!==groupRequestGeneration)return null;', '');
   if (MUTATION === 'expose-group-code') html = html.replace("box.append(copy);", "box.append(copy);var leaked=document.createElement('code');leaked.className='group-code';leaked.textContent=group.code;box.append(leaked);");
   if (MUTATION === 'manual-agent-fields') html = html.replace("option.textContent=agent.session_name;option.dataset.keyId=agent.key_id||'';select.append(option)", "option.textContent=agent.id;option.dataset.keyId=agent.key_id||'';select.append(option)");
@@ -31,13 +36,30 @@ function consoleHTMLFromProductionSource() {
   if (MUTATION === 'keep-created-group-name') html = html.replace(".then(function(ok){if(ok)input.value='';});", ';');
   if (MUTATION === 'reset-group-leader-selection') html = html.replace("if(groupLeaderSelection&&Array.from(leaders.options).some(function(o){return o.value===groupLeaderSelection;}))leaders.value=groupLeaderSelection;", '');
   if (MUTATION === 'full-code-join-agent-names') html = html.replace("o.textContent=groupShortName(agent.session_name);codeJoin.append(o);", "o.textContent=agent.session_name;codeJoin.append(o);");
+  if (MUTATION === 'filter-offline-group-candidates') {
+    mutate("if(!owned.length){", "var online=owned.filter(function(a){return a.online;});if(!online.length){");
+    mutate("}else{owned.forEach(function(agent){var o=document.createElement('option');o.value=agent.id;o.textContent=groupShortName(agent.session_name)+(agent.online?'':'（离线）');codeJoin.append(o);", "}else{online.forEach(function(agent){var o=document.createElement('option');o.value=agent.id;o.textContent=groupShortName(agent.session_name);codeJoin.append(o);");
+    mutate("var candidates=owned.filter(function(a){return !memberIDs.has(a.id);});", "var candidates=owned.filter(function(a){return a.online&&!memberIDs.has(a.id);});");
+  }
+  if (MUTATION === 'preserve-stale-load-data') {
+    mutate("}catch(err){renderPlatform({items:[],role:document.documentElement.dataset.platformRole||''});status.textContent='工作台加载失败: '", "}catch(err){status.textContent='工作台加载失败: '");
+    mutate("}catch(err){renderAgentList([]);status.textContent='Agent 列表加载失败: '", "}catch(err){status.textContent='Agent 列表加载失败: '");
+  }
+  if (MUTATION === 'show-retry-after-success') {
+    mutate("status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;", "status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=false;");
+    mutate("status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=true;", "status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=false;");
+  }
+  if (MUTATION === 'show-retry-on-empty') {
+    mutate("status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;", "status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=document.getElementById('platform-items').childElementCount>0;");
+    mutate("status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=true;", "status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=agents.length>0;");
+  }
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
   if (MUTATION === 'legacy-group-deadlock') {
     html = html.replace(/<section id=groupCodeJoin>.*?<\/section>/, '');
     html = html.replace('<section id=groupDetail hidden>', '<section id=groupDetail hidden><label>完整 32 字符组码 <input id=groupJoinCode maxlength=32></label>');
     html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
   }
-  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -66,10 +88,13 @@ async function main() {
   let failPlatformLoad = '';
   let failAgentsLoad = '';
   let agentGETs = 0;
+  let includeOfflineOwned = false;
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
-    return { principal: 'owner-a', owned_agents: [{ id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642', online: true }, { id: 'agent-b', key_id: 'fixture-key-b', session_name: 'owner-beta-2642', online: true }], groups: [{
+    const ownedAgents = [{ id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642', online: true }, { id: 'agent-b', key_id: 'fixture-key-b', session_name: 'owner-beta-2642', online: true }];
+    if (includeOfflineOwned) ownedAgents.push({ id: 'agent-c', key_id: 'fixture-key-c', session_name: 'owner-gamma-2642', online: false });
+    return { principal: 'owner-a', owned_agents: ownedAgents, groups: [{
       code: 'team-001AAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'team-001', creator_principal: 'owner-a', can_manage: true, additions_closed: closed,
       leader_key_id: 'fixture-key-a', leader_session_name: 'owner-alpha-2642',
       members: [{ agent_id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642' }],
@@ -100,7 +125,7 @@ async function main() {
         role: management ? 'management' : 'owner',
         actions: management ? ['read', 'submit', 'add', 'edit', 'delete', 'approve'] : ['read', 'submit'],
         items: [
-          { id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' },
+          ...(MUTATION === 'restore-inert-agents-entry' ? [{ id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' }] : []),
           { id: 'specs', kind: 'spec', title: 'Specs', href: MUTATION === 'legacy-specs-entry' ? '/console/specs' : '#specs', ...(MUTATION === 'legacy-specs-entry' ? {target:'_blank'} : {}), status: 'approved' },
           ...(management ? [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: MUTATION === 'legacy-group-entry' ? '/admin/agent-groups' : '#agent-groups', ...(MUTATION === 'legacy-group-entry' ? {target:'_blank'} : {}), status: 'approved' }] : []),
         ],
@@ -274,9 +299,39 @@ async function main() {
       }
     });
 
+    await test('offers owned active offline Agents as group membership candidates', async () => {
+      includeOfflineOwned = true;
+      const offlinePage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      try {
+        offlinePage.setDefaultTimeout(1500);
+        await offlinePage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+        await offlinePage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+        await offlinePage.locator('#platform-items a[data-item-id="agent-groups"]').click();
+        await offlinePage.waitForFunction(() => document.getElementById('groupCodeJoinAgent').disabled === false);
+        assert.deepStrictEqual(await offlinePage.locator('#groupCodeJoinAgent option').allTextContents(), ['alpha', 'beta', 'gamma（离线）']);
+        assert.deepStrictEqual(await offlinePage.locator('#groupJoinAgent option').allTextContents(), ['beta', 'gamma（离线）']);
+      } finally {
+        await offlinePage.close();
+        includeOfflineOwned = false;
+        groupJoinWrites.length = 0;
+      }
+    });
+
     await test('distinguishes platform and Agent load failures from true empty states', async () => {
+      const stalePage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      stalePage.setDefaultTimeout(1500);
+      await stalePage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      await stalePage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+      await stalePage.locator('#platform-items a[data-item-id="agent-groups"]').waitFor({ state: 'visible' });
+      await stalePage.locator('#a button[title="owner-alpha-2642"]').waitFor({ state: 'visible' });
       failPlatformLoad = '500';
       failAgentsLoad = '500';
+      await stalePage.evaluate(() => Promise.all([refreshPlatform(), refreshAgents()]));
+      assert.strictEqual(await stalePage.locator('#platform-items a').count(), 0, 'failed refresh must clear stale platform entries');
+      assert.strictEqual(await stalePage.locator('#a button').count(), 0, 'failed refresh must clear stale Agent entries');
+      assert.strictEqual(await stalePage.locator('#retryPlatform').isVisible(), true);
+      assert.strictEqual(await stalePage.locator('#retryAgents').isVisible(), true);
+      await stalePage.close();
       const failedPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
       failedPage.setDefaultTimeout(1500);
       const failedPageErrors = [], failedConsoleErrors = [], expectedFailureDiagnostics = [];
@@ -311,21 +366,24 @@ async function main() {
       await failedPage.locator('#platform-status').filter({ hasText: '没有可用工作台入口' }).waitFor({ state: 'visible' });
       await failedPage.locator('#agents-status').filter({ hasText: '没有自己的 Agent' }).waitFor({ state: 'visible' });
       assert.notStrictEqual(await failedPage.locator('#agents-status').textContent(), 'Agent 列表加载失败: 请求超时');
+      assert.strictEqual(await failedPage.locator('#retryPlatform').isHidden(), true);
+      assert.strictEqual(await failedPage.locator('#retryAgents').isHidden(), true);
 
       failPlatformLoad = '';
       failAgentsLoad = '';
-      await failedPage.locator('#retryPlatform').click();
-      await failedPage.locator('#retryAgents').click();
+      await failedPage.evaluate(() => Promise.all([refreshPlatform(), refreshAgents()]));
       await failedPage.locator('#platform-items a[data-item-id="agent-groups"]').waitFor({ state: 'visible' });
       await failedPage.locator('#a button[title="owner-alpha-2642"]').waitFor({ state: 'visible' });
       assert.strictEqual(await failedPage.locator('#platform-status').textContent(), '');
       assert.strictEqual(await failedPage.locator('#agents-status').textContent(), '');
+      assert.strictEqual(await failedPage.locator('#retryPlatform').isHidden(), true);
+      assert.strictEqual(await failedPage.locator('#retryAgents').isHidden(), true);
       assert.strictEqual(expectedFailureDiagnostics.length, 2);
       assert.deepStrictEqual(failedPageErrors, []);
       assert.deepStrictEqual(failedConsoleErrors, []);
       await failedPage.close();
     });
-    if (MUTATION === 'silent-platform-load' || MUTATION === 'silent-agent-load') {
+    if (['silent-platform-load','silent-agent-load','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty'].includes(MUTATION)) {
       console.log(`console browser harness: passed=${passed} failed=${failures.length}`);
       if (failures.length) console.error(failures.join('\n'));
       process.exitCode = failures.length ? 1 : 0;
@@ -339,13 +397,15 @@ async function main() {
       await offline.waitFor({ state: 'attached' });
       assert.strictEqual(await online.isEnabled(), true);
       assert.strictEqual(await offline.isDisabled(), true);
+      assert.strictEqual(await page.locator('#retryAgents').isHidden(), true);
     });
 
-    await test('mounts platform items while retiring all five dead action buttons', async () => {
+    await test('renders no platform entry without an observable action', async () => {
       const agentsItem = page.locator('#platform-items a[data-item-id="agents"]');
-      await agentsItem.waitFor({ state: 'visible' });
-      assert.strictEqual(await agentsItem.getAttribute('href'), '#agents');
+      assert.strictEqual(await agentsItem.count(), 0, 'the inert Agents platform entry must not be rendered');
+      assert.strictEqual(await page.locator('#platform-items a:not([data-item-id="specs"]):not([data-item-id="agent-groups"])').count(), 0);
       assert.strictEqual(await page.locator('#platform-actions button').count(), 0);
+      assert.strictEqual(await page.locator('#retryPlatform').isHidden(), true);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'owner');
     });
 

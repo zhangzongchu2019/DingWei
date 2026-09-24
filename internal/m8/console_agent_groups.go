@@ -39,6 +39,12 @@ type consoleOwnedAgentView struct {
 	Online      bool   `json:"online"`
 }
 
+func canManageConsoleAgentGroup(group model.AgentGroup, principal string, management, leaderOwned bool) bool {
+	return group.CreatorPrincipal == principal ||
+		(group.CreatorPrincipal == "" && leaderOwned) ||
+		(management && group.CreatorPrincipal == "" && !group.LeaderConsoleMapped)
+}
+
 func createConsoleAgentGroup(ctx context.Context, repo consoleAgentGroupRepository, principal string, leader model.ConsoleAgent, ownerKey, shortName string, codeCandidate func() string) (model.AgentGroup, error) {
 	group := model.AgentGroup{Code: codeCandidate(), ShortName: shortName, CreatorPrincipal: principal,
 		LeaderKeyID: leader.KeyID, LeaderSessionName: leader.SessionName, LeaderOwnerKey: ownerKey}
@@ -109,7 +115,8 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
 				return
 			}
-			canManage := group.CreatorPrincipal == principal || (platformRole(r) == consolePlatformRoleManagement && group.CreatorPrincipal == "" && !group.LeaderConsoleMapped)
+			leaderOwned := ownedEndpoint[group.LeaderKeyID+"\x00"+group.LeaderSessionName]
+			canManage := canManageConsoleAgentGroup(group, principal, platformRole(r) == consolePlatformRoleManagement, leaderOwned)
 			visible := canManage
 			for _, member := range members {
 				visible = visible || ownedEndpoint[member.KeyID+"\x00"+member.SessionName]
@@ -228,10 +235,6 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "agent_id required", http.StatusBadRequest)
 			return
 		}
-		if !h.consoleAgentOnline(r.Context(), request.AgentID, principal) {
-			http.Error(w, "该 Agent 不可用（不存在、未激活或已下线）", http.StatusConflict)
-			return
-		}
 		err = repo.AssignOwnedConsoleAgentGroup(r.Context(), code, principal, request.AgentID)
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/additions"):
 		var request struct {
@@ -257,7 +260,7 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if errors.Is(err, store.ErrAgentGroupAgentUnavailable) {
-		http.Error(w, "该 Agent 不可用（不存在、未激活或已下线）", http.StatusConflict)
+		http.Error(w, "该 Agent 不可用（不存在、未激活或不属于当前业主）", http.StatusConflict)
 		return
 	}
 	if errors.Is(err, store.ErrAgentGroupMemberNotFound) {

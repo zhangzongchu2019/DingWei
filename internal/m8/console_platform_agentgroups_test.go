@@ -20,9 +20,6 @@ import (
 // 为什么必须 target="_blank":/admin/agent-groups 是**独立文档**,而 console 页的右栏
 // 是一堆活着的 iframe(每个一条 SSE)。顶层导航过去 ⇒ 全部 pane 与长连接一起没了,
 // 且后退回不来(实测:pane 数 2→0、SSE 全断)。
-// 🔴 但**不能给所有平台项一律加 _blank**:既有 builtin "Agents" 的 href 是 `#agents` 页内锚,
-//
-//	给它加 _blank 会开一个空标签页 ⇒ 逐项决定(下面两条腿各钉一边)。
 func consolePlatformItemsFor(t *testing.T, principalID string) (string, []model.ConsolePlatformItem) {
 	t.Helper()
 	hub := newConsolePlatformTestHub(t)
@@ -78,25 +75,20 @@ func TestConsolePlatformAgentGroupsEntryIsManagementOnly(t *testing.T) {
 	if _, leaked := findPlatformItem(ownerItems, "agent-groups"); leaked {
 		t.Errorf("非 management 也拿到了 Agent 编组入口,items=%+v", ownerItems)
 	}
-	if len(ownerItems) != 2 || ownerItems[0].ID != "agents" || ownerItems[1].ID != "specs" {
-		t.Errorf("owner 的平台项应只有公共 builtin agents/specs,实为 %+v", ownerItems)
+	if len(ownerItems) != 1 || ownerItems[0].ID != "specs" {
+		t.Errorf("owner 的平台项应只有可操作的 builtin specs,实为 %+v", ownerItems)
 	}
 }
 
-func TestConsolePlatformBuiltinAgentsKeepsInPageAnchor(t *testing.T) {
+func TestConsolePlatformBuiltinAgentsIsReservedButNotEmitted(t *testing.T) {
 	for _, principalID := range []string{"manager", "owner"} {
 		_, items := consolePlatformItemsFor(t, principalID)
-		builtin, ok := findPlatformItem(items, "agents")
-		if !ok {
-			t.Fatalf("%s 丢了 builtin agents 项:%+v", principalID, items)
+		if _, emitted := findPlatformItem(items, "agents"); emitted {
+			t.Fatalf("%s 收到无动作的 builtin agents 项:%+v", principalID, items)
 		}
-		if builtin.Href != "#agents" {
-			t.Errorf("%s builtin href=%q,应为页内锚 #agents", principalID, builtin.Href)
-		}
-		// 🔴 逐项、不是一律:页内锚**不得**带 target,否则点开一个空标签页。
-		if builtin.Target != "" {
-			t.Errorf("%s builtin agents 被加了 target=%q —— 页内锚开了新标签页(空页)", principalID, builtin.Target)
-		}
+	}
+	if !consolePlatformReservedItemIDs["agents"] {
+		t.Fatal("agents id 必须继续保留,防止用户自建同 id 假入口")
 	}
 }
 

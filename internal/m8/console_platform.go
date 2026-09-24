@@ -127,10 +127,9 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "console platform unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	// The existing Agent workspace is the first real mounted feature. Future
-	// I/K/L items use the same response shape and persistence API.
-	builtin := model.ConsolePlatformItem{ID: "agents", Kind: "agents", Title: "Agents", Href: "#agents", Status: "approved", Active: true}
-	builtins := []model.ConsolePlatformItem{builtin, {
+	// Agent 列表是 console 外壳本身,不是可点击的平台入口。保留 id=agents
+	// 的占用规则,但不把一个没有动作的假入口下发给客户端。
+	builtins := []model.ConsolePlatformItem{{
 		ID: "specs", Kind: "spec", Title: "Specs",
 		Href: "#specs", Status: "approved", Active: true,
 	}}

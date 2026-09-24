@@ -95,10 +95,9 @@ func callConsolePlatform(t *testing.T, hub *Hub, principalID, action, method, pa
 	return rr
 }
 
-func TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow(t *testing.T) {
+func TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow(t *testing.T) {
 	hub := newConsolePlatformTestHub(t)
 
-	// Existing Agent workspace is a real mounted item, not an empty extension point.
 	rr := callConsolePlatform(t, hub, "owner", consolePlatformActionRead, http.MethodGet,
 		"/api/console/platform", nil, hub.HandleConsolePlatform)
 	if rr.Code != http.StatusOK {
@@ -112,7 +111,7 @@ func TestConsolePlatformHandlersMountAgentsAndEnforceWorkflow(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &listed); err != nil {
 		t.Fatal(err)
 	}
-	if listed.Role != "owner" || len(listed.Items) != 2 || listed.Items[0].ID != "agents" || listed.Items[0].Href != "#agents" || listed.Items[1].ID != "specs" {
+	if listed.Role != "owner" || len(listed.Items) != 1 || listed.Items[0].ID != "specs" {
 		t.Fatalf("owner platform=%+v", listed)
 	}
 
