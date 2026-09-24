@@ -32,6 +32,13 @@
 //        这是权限问题,不是体验问题,组长已交业主裁定。
 //      · 🔴 在业主答复前:节点**照常渲染**(六条②要求它出现),但**不绑打开动作**。
 //      · 🔴 业主口径到位后,本条**按业主说法重写或删除**,不得拿本条去反驳业主。
+//   ⑧ 【回归守卫 · 客户端侧】树**只渲染响应里给了的组** —— 不自己拼、不猜、**不缓存上一次**
+//      变异 tree-keeps-stale-groups
+//      · 🔴 它**不是** visibility 的格。visibility 管"服务端给不给",归 Go 测试(coder56solzzc);
+//        本条管"客户端会不会自己多画一个"。两件事,两条都要。
+//      · 🔴 为什么不能在这一层测 visibility:这一层的响应**是本件自己拼的** ——
+//        我不喂那个组、再断言它没出现,**不论服务端对不对都会绿**(组长 2026-09-24 纪律十五)。
+//        **能伪造出我要排除的那种情况**,这一层才有判别力;伪造不了,格就得往下落一层。
 const assert = require('assert');
 const fs = require('fs');
 const http = require('http');
@@ -72,9 +79,16 @@ function productionHTML() {
   // ⑦ 占位守卫:锚点绑在 agentTreeCanOpen( 上 —— 这个名字只有本次实现落地后才存在,落地前必然
   //    报「锚点未命中」。合同名在此钉死:实现方请用 agentTreeCanOpen(node) 决定要不要绑点击。
   if (MUTATION === 'foreign-agent-can-open') mutateHTML('agentTreeCanOpen(', 'true||agentTreeCanOpen(');
+  // ⑧ 客户端不得自己留着上一轮的组。变异把 renderAgentNav 包一层,让它把历次见过的组累积起来 ——
+  //    这正是"缓存上一次"最常见的写法。锚点 'function renderAgentNav(' 只有实现落地后才存在。
+  if (MUTATION === 'tree-keeps-stale-groups') mutateHTML('function renderAgentNav(',
+    'var __staleGroups=[];function renderAgentNav(){var __g=(groupSnapshot&&groupSnapshot.groups)||[];'
+    + '__g.forEach(function(x){if(!__staleGroups.some(function(y){return y.code===x.code;}))__staleGroups.push(x);});'
+    + 'if(groupSnapshot)groupSnapshot.groups=__staleGroups;'
+    + 'return __realRenderAgentNav.apply(null,arguments);}function __realRenderAgentNav(');
   if (MUTATION && !['tree-back-to-flat', 'member-short-name', 'stale-tree-after-remove',
     'mode-switch-rebuilds-panes', 'tree-dedupes-agent', 'tree-ignores-member-online',
-    'foreign-agent-can-open'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+    'foreign-agent-can-open', 'tree-keeps-stale-groups'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -93,6 +107,7 @@ async function main() {
   // 字段名以 2026-09-24 冻结稿为准:groups[].owner_display_name(永不为空)、members[].online(所有成员都带)
   const foreign = { agent_id: 'agent-x', key_id: 'k-x', session_name: 'other-gamma-2642', owner_key: 'other-owner', online: false };
   let removed = false;
+  let droppedTeam01 = false;   // ⑧ 用:让响应里不再给 team01
   const groupsPayload = () => {
     const teamMembers = [
       { agent_id: 'agent-a', key_id: 'k-a', session_name: 'zzc-alpha-2642', owner_key: 'zzc', online: true },
@@ -101,20 +116,21 @@ async function main() {
     return {
       principal: 'owner-a',
       owned_agents: mine,
-      groups: [
+      groups: (droppedTeam01 ? [] : [
         { code: 'g'.repeat(32), short_name: 'team01', owner_display_name: '业主甲', can_manage: true, additions_closed: false,
           leader_key_id: 'k-a', leader_session_name: 'zzc-alpha-2642', members: teamMembers },
         // ⑤ 同一 Agent(agent-a)同时属于第二个组 ⇒ 树中应当出现两次
         { code: 'h'.repeat(32), short_name: 'team02', owner_display_name: '未知业主', can_manage: true, additions_closed: false,
           leader_key_id: 'k-a', leader_session_name: 'zzc-alpha-2642',
           members: [{ agent_id: 'agent-a', key_id: 'k-a', session_name: 'zzc-alpha-2642', owner_key: 'zzc', online: true }] },
-      ],
+      ]),
     };
   };
   const server = http.createServer((req, res) => {
     const json = (body) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); };
     if (req.url === '/console') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(html); return; }
     if (req.url === '/fixture/remove-foreign' && req.method === 'POST') { removed = true; res.writeHead(204); res.end(); return; }
+    if (req.url === '/fixture/drop-team01' && req.method === 'POST') { droppedTeam01 = true; res.writeHead(204); res.end(); return; }
     if (req.url === '/api/console/agents') return json({ agents: [...mine.map((a) => ({ session: a.session_name, online: a.online })), { session: foreign.session_name, online: true }] });
     if (req.url === '/api/console/platform') return json({ role: 'management', actions: ['read', 'submit'], items: [] });
     if (String(req.url).startsWith('/api/console/agent-groups')) return json(groupsPayload());
@@ -222,6 +238,21 @@ async function main() {
     await page.evaluate(() => window.refreshGroups('action'));
     await page.waitForFunction(() => document.querySelectorAll('#a .agent-tree-agent[data-session="other-gamma-2642"]').length === 0);
     passed += 1;
+
+    // ⑧ 【回归守卫 · 客户端侧】树只渲染响应里给了的组:响应里不再给 team01 ⇒ 树上必须立刻没有它。
+    //   🔴 这条的判别力来自"我能伪造出要排除的那种情况"——夹具真的把 team01 从响应里拿掉了。
+    //   反过来,"服务端该不该给"这一层伪造不了(响应是本件自己拼的),那条归 Go 测试。
+    const labelsBefore = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-group-label')].map((el) => el.textContent).sort());
+    assert.deepStrictEqual(labelsBefore, ['team01', 'team02'], `前置:此刻树上应有两个组,实测 ${JSON.stringify(labelsBefore)}`);
+    await page.request.post(`http://127.0.0.1:${port}/fixture/drop-team01`);
+    await page.evaluate(() => window.refreshGroups('action'));
+    await page.waitForFunction(() => document.querySelectorAll('#a .agent-tree-group').length === 1);
+    const labelsAfter = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-group-label')].map((el) => el.textContent).sort());
+    assert.deepStrictEqual(labelsAfter, ['team02'],
+      `响应里不再给的组必须从树上消失(不得缓存上一轮),实测 ${JSON.stringify(labelsAfter)}`);
+    const orphanMembers = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-agent')].filter((el) => !el.closest('.agent-tree-group')).length);
+    assert.strictEqual(orphanMembers, 0, '组没了,它底下的成员节点也不得留在树上');
+    passed += 3;
 
     assert.deepStrictEqual(pageErrors, [], `console 外壳报了顶层错误: ${JSON.stringify(pageErrors)}`);
     passed += 1;
