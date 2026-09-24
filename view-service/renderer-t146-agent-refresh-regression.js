@@ -6,7 +6,16 @@ assert.ok(i > 0 && j > i, '抽取失败:未找到页面脚本段');
 let block = src.slice(i + '<script>'.length, j);
 assert.ok(block.includes('refreshAgents') && block.includes('applyAgentSnapshot'), '抽取越界或不是 T-146 页面');
 // 不执行真实网络与定时器，只求值真实函数；所有行为仍来自 Go 源码，不复制实现。
-block = block.replace(/refreshAgents\(\);\s*setInterval\(refreshAgents,15000\);?/, '');
+// 桩:剥掉页面自举段(console_auth.go:513-519)。现在自举是
+//   refreshPlatform(); refreshAgents(); refreshGroups(); setInterval(refreshAgents,15000);
+// 逐条剥,剥不掉就报错 —— 不允许静默跳过(剥不掉 = 下面的定时器守卫会替它报)。
+const BOOTSTRAP = [/^\s*refreshPlatform\(\);\s*$/m, /^\s*refreshAgents\(\);\s*$/m,
+                   /^\s*refreshGroups\(\);\s*$/m, /^\s*setInterval\(refreshAgents,15000\);\s*$/m];
+for (const re of BOOTSTRAP) {
+  const before = block;
+  block = block.replace(re, '\n');
+  assert.notStrictEqual(block, before, `桩失效:自举段未命中 ${re} —— 页面自举改了形状,先修桩`);
+}
 
 function makeEnv() {
   const made = [];
@@ -19,6 +28,21 @@ function makeEnv() {
         contains(c) { return this._s.has(c); },
       },
       append(...xs) { this.children.push(...xs); },
+      // 桩:applyAgentSnapshot 现在会在 tab 里插一个 .tab-state(console_auth.go:464)。
+      querySelector(sel) {
+        const cls = sel.replace(/^\./, '');
+        for (const c of this.children) {
+          if (c.className === cls || (c.classList && c.classList.contains(cls))) return c;
+          const deep = c.querySelector && c.querySelector(sel);
+          if (deep) return deep;
+        }
+        return null;
+      },
+      insertBefore(node, ref) {
+        const at = ref ? this.children.indexOf(ref) : -1;
+        if (at < 0) this.children.push(node); else this.children.splice(at, 0, node);
+        return node;
+      },
       replaceChildren(...xs) { this.children = [...xs]; },
       setAttribute(k, v) { this.attrs[k] = String(v); },
       remove() { n.removed = true; },
@@ -27,7 +51,10 @@ function makeEnv() {
     made.push(n);
     return n;
   }
-  const byId = { tabs: el('div'), panes: el('div'), hint: el('div'), a: el('nav') };
+  // 桩:页面脚本顶层会给这两个按钮接线(console_auth.go:514-515),缺了就 null.onclick。
+  const byId = { tabs: el('div'), panes: el('div'), hint: el('div'), a: el('nav'),
+    retryPlatform: el('button'), retryAgents: el('button'),
+    'agents-status': el('div'), 'platform-items': el('div'), 'platform-status': el('div') };
   const document = { createElement: el, getElementById: id => byId[id] || null };
   return { document, byId, made, alert() {}, encodeURIComponent };
 }

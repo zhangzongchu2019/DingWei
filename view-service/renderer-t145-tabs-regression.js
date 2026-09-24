@@ -21,20 +21,47 @@ function makeEnv() {
         contains(c) { return this._s.has(c); },
       },
       append(...xs) { this.children.push(...xs); },
+      replaceChildren(...xs) { this.children = [...xs]; },
+      setAttribute(k, v) { (this.attrs || (this.attrs = {}))[k] = String(v); },
+      // 桩:applyAgentSnapshot 会往 tab 里插 .tab-state(console_auth.go:464)
+      querySelector(sel) {
+        const cls = sel.replace(/^\./, '');
+        for (const c of this.children) {
+          if (c.className === cls || (c.classList && c.classList.contains(cls))) return c;
+          const deep = c.querySelector && c.querySelector(sel);
+          if (deep) return deep;
+        }
+        return null;
+      },
+      insertBefore(node, ref) {
+        const at = ref ? this.children.indexOf(ref) : -1;
+        if (at < 0) this.children.push(node); else this.children.splice(at, 0, node);
+        return node;
+      },
       remove() { n.removed = true; },
       removed: false,
     };
     made.push(n);
     return n;
   }
-  const byId = { tabs: el('div'), panes: el('div'), hint: el('div'), a: el('nav') };
+  // 桩:页面脚本顶层给这两个按钮接线(console_auth.go:514-515),缺了就 null.onclick。
+  const byId = { tabs: el('div'), panes: el('div'), hint: el('div'), a: el('nav'),
+    retryPlatform: el('button'), retryAgents: el('button'),
+    'agents-status': el('div'), 'platform-items': el('div'), 'platform-status': el('div') };
   const document = { createElement: el, getElementById: (id) => byId[id] || null };
   const alerts = [];
   return { document, alert: (m) => alerts.push(m), alerts, byId, made, encodeURIComponent };
 }
 
 function load(env) {
-  const logic = block.replace(/refreshAgents\(\);\s*setInterval\(refreshAgents,15000\);?/, '');
+  // 桩:剥掉页面自举段(console_auth.go:516-519)。逐条剥,剥不掉就报错 —— 不允许静默跳过。
+  let logic = block;
+  for (const re of [/^\s*refreshPlatform\(\);\s*$/m, /^\s*refreshAgents\(\);\s*$/m,
+                    /^\s*refreshGroups\(\);\s*$/m, /^\s*setInterval\(refreshAgents,15000\);\s*$/m]) {
+    const before = logic;
+    logic = logic.replace(re, '\n');
+    assert.notStrictEqual(logic, before, `桩失效:自举段未命中 ${re} —— 页面自举改了形状,先修桩`);
+  }
   const fn = new Function('document', 'alert', 'encodeURIComponent', 'fetch', `
     ${logic}   // 只移除启动调用;函数体仍逐字来自真实源码
     return { openTab, closeTab, activate, tabs, dwShortName, MAX_TABS };
