@@ -234,6 +234,26 @@ func TestConsoleSpecTwelveStepFlowSingleEditorFinalAndOwnerOnlyTasks(t *testing.
 	if err := db.FinalizeConsoleSpec(ctx, "flow", "manager", now); err != nil {
 		t.Fatal(err)
 	}
+	finalized, err := db.ConsoleSpec(ctx, "owner-a", "flow", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if finalized == nil || finalized.State != "final" || finalized.CurrentEditorID != "" || finalized.CurrentEditorShort != "甲" {
+		t.Fatalf("finalized spec must automatically return to its creator for task splitting: %+v", finalized)
+	}
+	if _, err := db.db.ExecContext(ctx, `UPDATE console_principal SET display_name='' WHERE id='owner-a'`); err != nil {
+		t.Fatal(err)
+	}
+	fallback, err := db.ConsoleSpec(ctx, "owner-a", "flow", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fallback == nil || fallback.OwnerShortName != "owner-a" || fallback.CurrentEditorShort != "owner-a" {
+		t.Fatalf("empty human name must fall back to the non-empty principal short identifier: %+v", fallback)
+	}
+	if _, err := db.db.ExecContext(ctx, `UPDATE console_principal SET display_name='甲' WHERE id='owner-a'`); err != nil {
+		t.Fatal(err)
+	}
 	for _, actor := range []string{"owner-a", "owner-b", "manager"} {
 		r := specRevision("flow", 7, "final-change")
 		r.CreatedBy = actor
@@ -276,12 +296,27 @@ func TestConsoleSpecEditorsAndTransfersRequireActiveOwnerRole(t *testing.T) {
 	got := make(map[string]bool, len(editors))
 	for _, editor := range editors {
 		got[editor.ID] = true
+		if editor.ShortName == "" || editor.DisplayName == "" {
+			t.Fatalf("owner candidate must carry both short and human-readable names: %+v", editor)
+		}
 		if editor.ID == "nonowner" || editor.ID == "inactive-owner" {
 			t.Fatalf("non-owner leaked into editor candidates: %+v", editors)
 		}
 	}
 	if len(editors) != 3 || !got["owner-a"] || !got["owner-b"] || !got["manager"] {
 		t.Fatalf("owner candidate ids=%v want exactly owner-a,owner-b,manager", got)
+	}
+	if err := db.UpsertConsolePrincipalRole(ctx, model.ConsolePrincipalRole{PrincipalID: "owner-a", Role: "owner", OwnerKey: "tenant-b", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	editors, err = db.ListActiveConsolePrincipals(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, editor := range editors {
+		if editor.ID == "owner-a" && editor.ShortName != "" {
+			t.Fatalf("multi-scope owner must visibly fall back to its human name, not an arbitrary scope: %+v", editor)
+		}
 	}
 	createSpec(t, db, "owner-only-target", "owner-only-target", time.Now())
 	if err := db.TransferConsoleSpec(ctx, "owner-only-target", "owner-a", "非业主", "editing", time.Now()); !errors.Is(err, ErrConsoleSpecPermission) {

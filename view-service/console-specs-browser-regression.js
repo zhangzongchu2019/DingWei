@@ -45,8 +45,20 @@ function productionHTML() {
     mutateHTML('<section id=task-area>', '<section id=task-area data-moved=1 hidden>');
   }
   if (MUTATION === 'no-copy-link-feedback') {
-    mutateHTML("statusEl.textContent=ok?('只读链接已复制: '+text):'复制失败,请手动复制: '+text;", '');
+    mutateHTML("statusEl.textContent=ok?'link address copied':'copy failed';", 'statusEl.textContent="";');
   }
+  if (MUTATION === 'owner-table-misaligned') mutateHTML('.spec-table th,.spec-table td{padding:8px;', '.spec-table th{padding:8px;}.spec-table td{padding:8px 8px 8px 32px;');
+  if (MUTATION === 'owner-empty-extra') mutateHTML('emptyCell.append(empty);', "emptyCell.append(empty,document.createTextNode('暂无 spec'));" );
+  if (MUTATION === 'owner-transfer-leak') mutateHTML('if(canEdit){var transfer=', 'if(true){var transfer=');
+  if (MUTATION === 'owner-hardcoded-names') mutateHTML("var data=await r.json();select.replaceChildren();", "var data=await r.json();data.editors=[{short_name:'lbl'},{short_name:'th'}];select.replaceChildren();");
+  if (MUTATION === 'owner-copy-sticky') mutateHTML("statusEl._copyTimer=setTimeout(function(){statusEl.hidden=true;statusEl.textContent='';},5000);", 'statusEl._copyTimer=0;');
+  if (MUTATION === 'owner-transfer-disconnected') mutateHTML("specAction(transferSpec.id,'workflow/transfer'", "specAction(transferSpec.id,'workflow/not-transfer'");
+  if (MUTATION === 'owner-delete-action') mutateHTML("var copyLink=document.createElement('button');", "var forbidden=document.createElement('button');forbidden.className='delete-spec';forbidden.textContent='删除';action.append(forbidden);var copyLink=document.createElement('button');");
+  if (MUTATION === 'owner-expand-nonexclusive') mutateHTML("document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};", "document.getElementById('show-new-spec').onclick=function(){document.getElementById('new-screen').hidden=false;};");
+  if (MUTATION === 'owner-empty-restore-all') mutateHTML("document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');refreshSpecs();};", "document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');document.getElementById('detail-screen').hidden=false;document.getElementById('transfer-screen').hidden=false;refreshSpecs();};");
+  if (MUTATION === 'owner-editor-short-only') mutateHTML("o.textContent=shortName&&shortName!==displayName?shortName+'（'+displayName+'）':displayName;", 'o.textContent=shortName;');
+  if (MUTATION === 'owner-title-nonexclusive') mutateHTML("title.onclick=function(){openSpec(spec.id,true)};", "title.onclick=function(){var opened=openSpec(spec.id,true);if(globalThis.__testSpecExclusive)opened.then(function(){document.getElementById('transfer-screen').hidden=false;});};");
+  if (MUTATION === 'owner-transfer-nonexclusive') mutateHTML("showScreen('transfer-screen');};action.append(transfer);", "showScreen('transfer-screen');if(globalThis.__testSpecExclusive)document.getElementById('new-screen').hidden=false;};action.append(transfer);");
   if (MUTATION === 'no-list-error-text') {
     mutateHTML('catch(err){specListFailure(err);}', 'catch(err){}');
   }
@@ -67,8 +79,7 @@ function productionHTML() {
   if (MUTATION === 'readonly-can-write') html = html.replace("document.getElementById('save-spec').hidden=!!readOnly;", "document.getElementById('save-spec').hidden=false;");
   if (MUTATION === 'same-screen-create') html = html.replace('<section id=new-screen hidden>', '<section id=new-screen>');
   if (MUTATION === 'hide-dependents') html = html.replace("+' · 被依赖 '+((task.depended_by||[]).join(', ')||'无')", "");
-  if (MUTATION === 'hide-list-on-detail') html = html.replace("showScreen('detail-screen');return;", "showScreen('detail-screen');document.getElementById('list-screen').hidden=true;return;");
-  if (MUTATION === 'hide-list-on-detail') assert.ok(html.includes("document.getElementById('list-screen').hidden=true"), 'hide-list mutation anchor missing');
+  if (MUTATION === 'hide-list-on-detail') mutateHTML("title.onclick=function(){openSpec(spec.id,true)};", "title.onclick=async function(){await openSpec(spec.id,true);document.getElementById('list-screen').hidden=true;};");
   if (MUTATION === 'no-task-dod') html = html.replace("row.querySelector('.task-dod').value=taskDoD(task);", "row.querySelector('.task-dod').value='';");
   if (MUTATION === 'no-parallel-marker') html = html.replace("(task.parallel?'可并行':'顺序执行')", "'顺序执行'");
   if (MUTATION === 'no-hours-hint') html = html.replace("node.textContent=Number(input.value)>8?'建议再拆':'';", "node.textContent='';");
@@ -79,7 +90,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -102,6 +113,7 @@ async function main() {
   const revisions = new Map();
   const taskPlans = [];
   const taskCreates = [];
+  const transferWrites = [];
   const taskDeps = new Map([['task-a', []], ['task-b', []]]);
   const taskDoDs = new Map([['task-a', 'A done'], ['task-b', '']]);
   let failListMode = '';
@@ -178,7 +190,9 @@ async function main() {
       const generated={proposal_id:'task-presplit',spec_id:item.id,revision:1,title:'Agent task',content:'generated',status:'planned',estimated_hours:2,depends_on_json:'[]',acceptance_json:'[]',depended_by:[],dependency_level:0,parallel:false};
       res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?ordered:(presplitGenerated&&item.id==='spec-2'?[generated]:[]), dependency_candidates:[taskA,taskB] })); return;
     }
-    if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'甲'},{short_name:'乙'},{short_name:'丙'}]}));return;}
+    if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'zzc',display_name:'张宗楚',value:'张宗楚'},{short_name:'lbl',display_name:'李炳隆',value:'李炳隆'},{short_name:'th',display_name:'唐虹',value:'唐虹'},{short_name:'',display_name:'多角色业主',value:'多角色业主'}]}));return;}
+    const workflowTransfer=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/workflow\/transfer$/);
+    if(workflowTransfer&&req.method==='POST'){transferWrites.push({specID:workflowTransfer[1],body:await requestBody(req)});res.writeHead(204);res.end();return;}
     const presplitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/presplit$/);
     if(presplitMatch&&req.method==='GET'){const agents=presplitMode==='no-agents'?[]:[{id:'agent-a',session_name:'owner-agent-2642'}];res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({agents,request:presplitRequest}));return;}
     if(presplitMatch&&req.method==='POST'){await requestBody(req);if(presplitMode==='no-reply'){presplitRequest={request_id:'r-no-reply',status:'failed',failure_reason:'no reply'};res.writeHead(502);res.end('预拆失败，可手工添加');return;}const failure={timeout:'timeout',invalid:'invalid task format',restart:'restart'}[presplitMode];presplitRequest={request_id:'r-'+presplitMode,status:failure?'failed':'completed',failure_reason:failure||''};if(!failure)presplitGenerated=true;res.writeHead(202,{'Content-Type':'application/json'});res.end(JSON.stringify({request_id:presplitRequest.request_id,status:'pending'}));return;}
@@ -231,8 +245,19 @@ async function main() {
     assert.strictEqual(await page.locator('#new-screen').isHidden(), true, 'new form must not share the first screen');
     assert.strictEqual(await page.locator('#detail-screen').isHidden(), true, 'detail must be empty before a spec is selected');
     assert.strictEqual(await page.locator('#task-area').isHidden(), true, 'task area must be empty before a spec is selected');
-    await page.waitForFunction(()=>document.getElementById('page-status').textContent!=='');assert.strictEqual(await page.locator('#empty-create-spec').count(),1,'empty list must expose exactly one create-spec link');await page.click('#empty-create-spec');
+    await page.waitForFunction(()=>document.getElementById('page-status').textContent!=='');
+    assert.strictEqual(await page.locator('#empty-create-spec').count(),1,'empty list must expose exactly one create-spec link');
+    assert.deepStrictEqual(await page.evaluate(() => ({ rows:document.querySelectorAll('#spec-list>tr').length, cells:document.querySelectorAll('#empty-spec-row>td').length, buttons:document.querySelectorAll('#empty-spec-row button').length, text:document.getElementById('empty-spec-row').innerText.trim(), toolbarAddHidden:document.getElementById('show-new-spec').hidden, pagerHidden:document.getElementById('spec-pager').hidden })),
+      {rows:1,cells:1,buttons:1,text:'⊕ 添加 spec',toolbarAddHidden:true,pagerHidden:true}, '空列表时 tbody 必须只有第一行 ⊕,不得叠加空态文案或常驻按钮');
+    const emptyScreenState=async()=>page.evaluate(()=>({list:!document.getElementById('list-screen').hidden,newSpec:!document.getElementById('new-screen').hidden,detail:!document.getElementById('detail-screen').hidden,transfer:!document.getElementById('transfer-screen').hidden}));
+    const emptyBefore=await emptyScreenState();
+    await page.click('#empty-create-spec');
     assert.strictEqual(await page.locator('#new-screen').isVisible(), true, 'empty list create link must open a separate create screen');
+    assert.deepStrictEqual(await emptyScreenState(),{list:true,newSpec:true,detail:false,transfer:false},'空库打开新建时列表常驻且不可凭空显示详情/转给');
+    await page.click('#show-spec-list');
+    await page.waitForSelector('#empty-create-spec');
+    assert.deepStrictEqual(await emptyScreenState(),emptyBefore,'空库关闭新建后必须逐项恢复点开之前的不对称可见性');
+    await page.click('#empty-create-spec');
     const validNew = { title: 'Valid', markdown: '# Valid', acceptance: 'accepted', anchor: 'msg:valid' };
     async function setNew(values) {
       await page.fill('#new-title', values.title);
@@ -255,7 +280,10 @@ async function main() {
     assert.strictEqual(specs.length, 0, 'server-rejected create must not create a spec');
     assert.strictEqual(await page.locator('label .required').count(), 8, 'both create and edit forms must mark all four required fields');
     for (const title of ['Spec A', 'Spec B']) {
-      await page.click('#show-new-spec');
+      await page.click('#show-spec-list');
+      await page.waitForSelector('#show-new-spec:visible, #empty-create-spec:visible');
+      const addEntry = page.locator('#show-new-spec:visible, #empty-create-spec:visible');
+      await addEntry.click();
       await page.fill('#new-title', title);
       await page.evaluate((value) => window.specEditors.new.value(value), `# ${title}`);
       await page.fill('#new-acceptance', `${title} accepted`);
@@ -264,6 +292,38 @@ async function main() {
       await page.locator(`#spec-list [data-title="${title}"]`).waitFor({ state: 'visible' });
     }
     assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 2, 'true page must show both specs at once');
+    const columnEdges = await page.evaluate(() => { const textLeft=(node)=>{const range=document.createRange();range.selectNodeContents(node);return range.getBoundingClientRect().left;};return Array.from(document.querySelectorAll('#spec-table th')).map((th, i) => ({ h:textLeft(th), d:textLeft(document.querySelector(`#spec-list tr td:nth-child(${i+1})`)) })); });
+    assert.ok(columnEdges.every((edge) => Math.abs(edge.h-edge.d) <= 0.5), `四列表头与内容未对齐: ${JSON.stringify(columnEdges)}`);
+    assert.deepStrictEqual(await page.locator('#spec-table thead th').allTextContents(), ['标题','状态','当前','操作']);
+    assert.deepStrictEqual(await page.locator('#spec-list tr td:nth-child(2)').allTextContents(), ['修改','修改'], '状态列必须用业主图里的中文状态');
+    assert.strictEqual(await page.locator('.delete-spec,.archive-spec').count(),0,'业主已裁定不提供删除或归档入口');
+    assert.strictEqual((html.match(/['"](?:lbl|th)['"]/g)||[]).length,0,'前端不得硬编码业主 lbl/th');
+    const firstAction=page.locator('#spec-list [data-title="Spec A"] .spec-action');
+    await firstAction.locator('.transfer-spec').click();
+    await page.locator('#list-transfer-owner option').last().waitFor({state:'attached'});
+    assert.deepStrictEqual(await page.locator('#list-transfer-owner option').allTextContents(), ['zzc（张宗楚）','lbl（李炳隆）','th（唐虹）','多角色业主'], '转给候选必须显示短名与真名；多 scope 时只显示真名');
+    await page.locator('#list-transfer-owner').selectOption({label:'lbl（李炳隆）'});
+    await page.locator('input[name="list-transfer-state"][value="review"]').check();
+    await page.locator('#confirm-list-transfer').click();
+    await page.waitForTimeout(300);
+    assert.deepStrictEqual(transferWrites, [{specID:'spec-1',body:{target_short_name:'李炳隆',state:'review'}}], '转审核必须接到真实 workflow/transfer 请求');
+    const screenState=async()=>page.evaluate(()=>({list:!document.getElementById('list-screen').hidden,newSpec:!document.getElementById('new-screen').hidden,detail:!document.getElementById('detail-screen').hidden,transfer:!document.getElementById('transfer-screen').hidden}));
+    await page.evaluate(()=>{globalThis.__testSpecExclusive=true;});
+    try {
+      await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
+      await page.locator('#detail-screen').waitFor({state:'visible'});
+      assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:true,transfer:false},'点标题后列表常驻且只展开编辑屏');
+      await page.locator('#show-new-spec').click();
+      assert.deepStrictEqual(await screenState(),{list:true,newSpec:true,detail:false,transfer:false},'点添加后必须收起编辑屏且只展开新建');
+      await page.locator('#spec-list [data-title="Spec A"] .transfer-spec').click();
+      await page.locator('#transfer-screen').waitFor({state:'visible'});
+      assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:false,transfer:true},'点转后必须收起新建且只展开转给');
+      await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
+      await page.locator('#detail-screen').waitFor({state:'visible'});
+      assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:true,transfer:false},'从转给返回编辑时前一个展开项必须收起');
+    } finally {
+      await page.evaluate(()=>{globalThis.__testSpecExclusive=false;showScreen('list-screen');});
+    }
     for (const title of ['Spec A', 'Spec B']) {
       const row = page.locator(`#spec-list [data-title="${title}"]`);
       // S-6 改格留痕:原断言是「自己的 spec 必须看到 Edit 按钮」;业主裁定去掉列表行按钮、标题即入口,
@@ -343,7 +403,7 @@ async function main() {
     await page.waitForFunction(()=>document.getElementById('page-status').textContent==='2 / 2');await page.click('#prev-page');await page.locator('#spec-list [data-title="Spec A"] .spec-title').waitFor({state:'visible'});await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
     await page.locator('#detail-screen').waitFor({state:'visible'});
     assert.strictEqual(await page.locator('#list-screen').isVisible(), true, 'opening detail must keep the spec list visible above it');
-    assert.strictEqual(await page.locator('#detail-screen').evaluate((node) => node.previousElementSibling && node.previousElementSibling.id), 'list-screen', 'detail must be the list following sibling');
+    assert.strictEqual(await page.evaluate(() => Boolean(document.getElementById('list-screen').compareDocumentPosition(document.getElementById('detail-screen')) & Node.DOCUMENT_POSITION_FOLLOWING)), true, 'detail must render after the resident list');
     const task=page.locator('#task-list .task-row[data-task-id="task-a"]');await task.waitFor({state:'visible'});
     assert.strictEqual(await task.getAttribute('id'),'task-row-task-a');
     assert.strictEqual(await task.locator('.task-dod').getAttribute('id'),'task-row-task-a-dod');
@@ -485,6 +545,7 @@ async function main() {
         }
       };
       page.on('response', grabCase);
+      await page.click('#show-spec-list');
       await page.click('#show-new-spec');
       await setNew({ title: `Editor-${editorCase.label}`, markdown: editorCase.markdown, acceptance: 'usable', anchor: 'msg:editor' });
       await page.click('#create-spec');
@@ -626,6 +687,8 @@ async function main() {
     await page.request.post(`http://127.0.0.1:${port}/fixture/add-readonly-spec`);
     await page.click('#show-spec-list');
     await page.waitForFunction(() => /ReadOnlySpec/.test(document.getElementById('spec-list').innerText), null, { timeout: 5000 });
+    assert.strictEqual(await page.locator('#spec-list [data-title="ReadOnlySpec"] .transfer-spec').count(),0,'「转」不得出现在当前不是我的行');
+    assert.strictEqual(await page.locator('#spec-list [data-title="Spec A"] .transfer-spec').count(),1,'「转」必须保留在当前是我的行');
     await page.locator('#spec-list [data-title="ReadOnlySpec"] .spec-title').click();
     await page.waitForSelector('#detail-screen:not([hidden])');
     const readonlyShape = await page.evaluate(() => {
@@ -669,8 +732,11 @@ async function main() {
     }));
     assert.strictEqual(copyState.copied, `${copyState.origin}/console/specs/${firstRowSpecID}`,
       `复制到剪贴板的文本不是该 spec 的只读链接,实测 ${JSON.stringify(copyState.copied)}`);
-    assert.ok(/已复制/.test(copyState.rowStatus),
+    assert.strictEqual(copyState.rowStatus, 'link address copied',
       `复制之后列表行没有可见反馈(实测 ${JSON.stringify(copyState.rowStatus)}) ⇒ 业主又是"点了没反应"`);
+    await page.waitForTimeout(5200);
+    assert.strictEqual(await page.locator('.spec-row .spec-action-status').first().isHidden(), true,
+      '列表行复制冒泡必须在 5 秒后消失');
     // 详情页同样要有一个,且复制的是当前这份 spec
     await page.evaluate(() => { globalThis.__copiedCode = ''; });
     await page.evaluate((id) => window.openSpec(id, true), firstRowSpecID);
@@ -683,8 +749,10 @@ async function main() {
     }));
     assert.strictEqual(detailCopy.copied, `${copyState.origin}/console/specs/${firstRowSpecID}`,
       `详情页复制到的不是当前 spec 的只读链接,实测 ${JSON.stringify(detailCopy.copied)}`);
-    assert.ok(/已复制/.test(detailCopy.status),
+    assert.strictEqual(detailCopy.status, 'link address copied',
       `详情页复制之后没有可见反馈(实测 ${JSON.stringify(detailCopy.status)})`);
+    await page.waitForTimeout(5200);
+    assert.strictEqual(await page.locator('#copy-link-status').isHidden(), true, '详情复制冒泡必须在 5 秒后消失');
     console.log(`S-7: 列表复制=${copyState.copied} 反馈=${JSON.stringify(copyState.rowStatus)} 详情反馈=${JSON.stringify(detailCopy.status)}`);
     const unexpectedConsole = consoleErrors.filter((entry) => {
       if (/^Failed to load resource: the server responded with a status of (400|404|409|502)/.test(entry.text)) return false;
