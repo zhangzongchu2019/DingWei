@@ -276,6 +276,7 @@ main{display:flex;flex-direction:column;min-width:0}
 .group-workspace label{display:block;margin:8px 0}.group-workspace input,.group-workspace select{min-width:320px;padding:5px}
 .group-workspace button{margin:4px;padding:5px 9px}.agent-group{border:1px solid #ddd;border-radius:6px;padding:10px;margin:8px 0}
 .group-toolbar{display:flex;align-items:center;justify-content:space-between}.group-table{width:100%;border-collapse:collapse}.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-row{cursor:pointer}.group-member-row{display:flex;align-items:center;justify-content:space-between;min-height:34px}.group-member-remove{visibility:hidden}.group-member-row:hover .group-member-remove,.group-member-row:focus-within .group-member-remove{visibility:visible}
+.agent-tree-group{margin:5px 0}.agent-tree-group-label{display:block;font-weight:700;padding:4px 6px}.agent-tree-members{padding-left:10px}.agent-tree-agent{width:100%;text-align:left}
 .group-row{display:flex;align-items:center;margin:4px 0}.group-row .group-pick{margin-right:auto}.group-feedback{min-height:1.2em;color:#9d1b1b}
 #hint{padding:10px;color:#888}
 /* 🔴 日夜主题(0.2.1.7):暗色**只在** [data-theme=dark] 下覆盖,浅色声明一条没改
@@ -299,7 +300,7 @@ html[data-theme="dark"] details,html[data-theme="dark"] summary{color:#a8b0bb}
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div></nav>
+<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <script>
 const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
@@ -469,6 +470,7 @@ function applyAgentSnapshot(agents){
     e.pane.style.pointerEvents=online?'':'none';
   });
 }
+var agentListSnapshot=[],agentNavMode='tree',agentTreeAllowDuplicates=true;
 function renderAgentList(agents){
   var nav=document.getElementById('a');
   nav.replaceChildren(); // 只重建左栏;右侧 tabs/panes 不在本函数所有权内
@@ -487,6 +489,16 @@ function renderAgentList(agents){
     d.append(sm); off.forEach(function(a){d.append(mk(a))}); nav.append(d);
   }
 }
+function agentTreeMemberLabel(member,ownedIDs){return ownedIDs.has(member.agent_id)?dwShortName(member.session_name):member.session_name;}
+function agentTreeMemberDisabled(member){return member.online!==true;}
+function agentTreeCanOpen(member,ownedIDs){return ownedIDs.has(member.agent_id)&&member.online===true;}
+function renderAgentNav(){
+  if(agentNavMode==='flat'||!groupSnapshot.groups.length){renderAgentList(agentListSnapshot);return;}
+  var nav=document.getElementById('a'),ownedIDs=new Set((groupSnapshot.owned_agents||[]).map(function(a){return a.id;})),seen=new Set();nav.replaceChildren();
+  (groupSnapshot.groups||[]).forEach(function(group){var section=document.createElement('section');section.className='agent-tree-group';section.dataset.groupCode=group.code;var title=document.createElement('span');title.className='agent-tree-group-label';title.textContent=group.short_name||'历史组';var members=document.createElement('div');members.className='agent-tree-members';(group.members||[]).forEach(function(member){if(!agentTreeAllowDuplicates&&seen.has(member.agent_id))return;seen.add(member.agent_id);var b=document.createElement('button');b.type='button';b.className='agent-tree-agent';b.dataset.session=member.session_name;b.title=member.session_name;b.textContent=agentTreeMemberLabel(member,ownedIDs);b.disabled=agentTreeMemberDisabled(member);b.setAttribute('aria-disabled',b.disabled?'true':'false');if(agentTreeCanOpen(member,ownedIDs))b.onclick=function(){openTab(member.session_name);};members.append(b);});section.append(title,members);nav.append(section);});
+  var grouped=new Set();(groupSnapshot.groups||[]).forEach(function(group){(group.members||[]).forEach(function(member){grouped.add(member.agent_id);});});var ungrouped=(groupSnapshot.owned_agents||[]).filter(function(agent){return !grouped.has(agent.id);});if(ungrouped.length){var section=document.createElement('section');section.className='agent-tree-group';section.dataset.groupCode='default';var title=document.createElement('span');title.className='agent-tree-group-label';title.textContent='默认群';var members=document.createElement('div');members.className='agent-tree-members';ungrouped.forEach(function(agent){var b=document.createElement('button');b.type='button';b.className='agent-tree-agent';b.dataset.session=agent.session_name;b.title=agent.session_name;b.textContent=dwShortName(agent.session_name);b.disabled=!agent.online;b.setAttribute('aria-disabled',b.disabled?'true':'false');if(agent.online)b.onclick=function(){openTab(agent.session_name);};members.append(b);});section.append(title,members);nav.append(section);}
+}
+function agentNavSetMode(mode){agentNavMode=mode;document.getElementById('agentNavMode').textContent=mode==='tree'?'列表':'编组';renderAgentNav();}
 async function refreshAgents(){
   var status=document.getElementById('agents-status'),retry=document.getElementById('retryAgents');
   status.textContent='Agent 列表加载中…';retry.hidden=true;
@@ -497,10 +509,10 @@ async function refreshAgents(){
     var x=await r.json();
     if(!x||!Array.isArray(x.agents))throw new Error('响应格式无效');
     var agents=x.agents;
-    renderAgentList(agents);
+    agentListSnapshot=agents;renderAgentNav();
     applyAgentSnapshot(agents);
     status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=true;
-  }catch(err){renderAgentList([]);status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
+  }catch(err){agentListSnapshot=[];renderAgentList([]);status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
   }finally{clearTimeout(timer);}
 }
 var consoleFetchTimeoutMs=8000,groupMode=false,groupRequestGeneration=0,groupFetchTimeoutMs=8000,groupLeaderSelection='',groupSnapshot={groups:[],owned_agents:[]};
@@ -509,11 +521,12 @@ function setGroupSelectState(text,disabled){['groupLeader','groupJoinAgent','gro
 function groupFeedback(id,text){var e=document.getElementById(id);if(e)e.textContent=text||'';}
 function groupAction(path,method,body,feedback){return fetch(path,{method:method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined}).then(async function(r){if(!r.ok){groupFeedback(feedback||'group-status',(await r.text()).trim()||('HTTP '+r.status));return false;}await refreshGroups('action');groupFeedback(feedback||'group-status','操作成功');return true;}).catch(function(e){groupFeedback(feedback||'group-status','请求失败: '+String(e&&e.message||e));return false;});}
 function groupShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s;}
-async function refreshGroups(source){var generation=++groupRequestGeneration;if(groupMode){var leader=document.getElementById('groupLeader');if(leader&&leader.value)groupLeaderSelection=leader.value;setGroupSelectState('加载中…',true);groupStatus('Agent 列表加载中…');}var controller=new AbortController();var timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);try{var r=await fetch('/api/console/agent-groups',{cache:'no-store',signal:controller.signal});if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}var data=await r.json();if(!data||!Array.isArray(data.owned_agents)||!Array.isArray(data.groups))throw new Error('响应格式无效');if(generation!==groupRequestGeneration)return null;groupSnapshot=data;if(groupMode){renderGroups();if(!data.owned_agents.length){setGroupSelectState('没有自己的 Agent',true);groupStatus('没有自己的 Agent，无法建组或加入');}else if(source==='retry'){groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');groupStatus('');}else groupStatus('');}return data;}catch(err){if(groupMode&&generation===groupRequestGeneration){setGroupSelectState('加载失败',true);var message='编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);}return null;}finally{clearTimeout(timer);}}
+async function refreshGroups(source){var generation=++groupRequestGeneration;if(groupMode){var leader=document.getElementById('groupLeader');if(leader&&leader.value)groupLeaderSelection=leader.value;setGroupSelectState('加载中…',true);groupStatus('Agent 列表加载中…');}var controller=new AbortController();var timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);try{var r=await fetch('/api/console/agent-groups',{cache:'no-store',signal:controller.signal});if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}var data=await r.json();if(!data||!Array.isArray(data.owned_agents)||!Array.isArray(data.groups))throw new Error('响应格式无效');if(generation!==groupRequestGeneration)return null;groupSnapshot=data;renderAgentNav();if(groupMode){renderGroups();if(!data.owned_agents.length){setGroupSelectState('没有自己的 Agent',true);groupStatus('没有自己的 Agent，无法建组或加入');}else if(source==='retry'){groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');groupStatus('');}else groupStatus('');}return data;}catch(err){if(groupMode&&generation===groupRequestGeneration){setGroupSelectState('加载失败',true);var message='编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);}return null;}finally{clearTimeout(timer);}}
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}
 dwThemeInit();   // 🔴 主题先行:先把已存偏好应用到外壳,再渲染列表(否则先白一下再变暗)
 document.getElementById('retryPlatform').onclick=refreshPlatform;
 document.getElementById('retryAgents').onclick=refreshAgents;
+var agentNavModeButton=document.getElementById('agentNavMode');if(agentNavModeButton)agentNavModeButton.onclick=function(){agentNavSetMode(agentNavMode==='tree'?'flat':'tree');};
 refreshPlatform();
 refreshAgents();
 refreshGroups();
