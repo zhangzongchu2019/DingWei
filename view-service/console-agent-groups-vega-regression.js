@@ -26,8 +26,8 @@ if (mutation === 'ux-table-align') mutate('.group-table th,.group-table td{paddi
 if (mutation === 'ux-member-gap') mutate('gap:18px;max-width:520px', 'justify-content:space-between;max-width:none');
 if (mutation === 'ux-placeholder') mutate('placeholder="请输入完整的 32 位编组码"', 'placeholder=""');
 if (mutation === 'ux-block-colors') {
-  mutate('.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}.group-block-join{background:#fff7eb}', '.group-block-list,.group-block-detail,.group-block-add,.group-block-join{background:#fff}');
-  mutate('html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="dark"] .group-block-detail{background:#252033}html[data-theme="dark"] .group-block-add{background:#182a22}html[data-theme="dark"] .group-block-join{background:#30251a}', 'html[data-theme="dark"] .group-block-list,html[data-theme="dark"] .group-block-detail,html[data-theme="dark"] .group-block-add,html[data-theme="dark"] .group-block-join{background:#111316}');
+  mutate('.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}.group-block-join{background:#fff7eb}', '.group-block-list,.group-block-detail,.group-block-add{background:#f4f7fb}.group-block-join{background:#fff7eb}');
+  mutate('html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="dark"] .group-block-detail{background:#252033}html[data-theme="dark"] .group-block-add{background:#182a22}html[data-theme="dark"] .group-block-join{background:#30251a}', 'html[data-theme="dark"] .group-block-list,html[data-theme="dark"] .group-block-detail,html[data-theme="dark"] .group-block-add{background:#1b2530}html[data-theme="dark"] .group-block-join{background:#30251a}');
 }
 if (mutation === 'ux-add-focus') mutate("document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};", "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
 if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'ux-member-gap', 'ux-placeholder', 'ux-block-colors', 'ux-add-focus'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
@@ -201,11 +201,11 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       const selectors = ['.group-block-list', '.group-block-detail', '#groupMemberAdd', '.group-block-join'];
       const colors = async () => page.evaluate((items) => items.map((selector) => getComputedStyle(document.querySelector(selector)).backgroundColor), selectors);
       const light = await colors();
-      assert.ok(new Set(light).size > 1, `light block colors must differ: ${JSON.stringify(light)}`);
+      assert.strictEqual(new Set(light).size, 4, `all four light-theme functional blocks must have distinct colors: ${JSON.stringify(light)}`);
       await page.locator('html').evaluate((html) => html.dataset.theme = 'dark');
       try {
         const dark = await colors();
-        assert.ok(new Set(dark).size > 1, `dark block colors must differ: ${JSON.stringify(dark)}`);
+        assert.strictEqual(new Set(dark).size, 4, `all four dark-theme functional blocks must have distinct colors: ${JSON.stringify(dark)}`);
         assert.notDeepStrictEqual(dark, light, 'dark theme must not reuse light block colors');
       } finally {
         await page.locator('html').evaluate((html) => html.dataset.theme = 'light');
