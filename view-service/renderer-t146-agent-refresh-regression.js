@@ -68,6 +68,14 @@ function load(env, fetchImpl = () => { throw new Error('本测试不应发真实
     () => { throw new Error('本测试不应注册真实定时器'); });
 }
 
+// 🔴 量法说明(组长 2026-09-24 裁定,纪律十七同族:换量法不换意图):
+//   原断言拿「#panes 的子节点数」当「pane 数」。openTab 现在往 #panes 里塞两个节点
+//   (pane ＋ offlineReason,console_auth.go:451)⇒ 子节点数不再等于 pane 数。
+//   🔴 数 iframe 不是通用的 pane 判据:平台 pane 不都是 iframe ——
+//      编组那个是 createElement('section'),Specs 才是 iframe。
+//      **本套件只开 Agent tab,故 iframe 数 ＝ pane 数**;别照抄到有平台 tab 的场景。
+const ifr = (env) => env.byId.panes.children.filter((c) => c.tag === 'iframe').length;
+
 let pass = 0, fail = 0;
 const t = (name, f) => { try { f(); console.log('  ✅', name); pass++; } catch (e) { console.log('  🔴', name, '->', e.message); fail++; } };
 const online = session => ({session, online: true});
@@ -112,10 +120,12 @@ t('③ 列表增删只改变左栏数量,不改变已开右栏数量', () => {
   const env = makeEnv(), M = load(env);
   M.openTab('a-x-1'); M.openTab('a-y-1');
   const panes = [...env.byId.panes.children], srcs = panes.map(p => p.src);
+  const iframesBefore = ifr(env);
   M.renderAgentList([online('a-z-1')]); M.applyAgentSnapshot([online('a-z-1')]);
   assert.strictEqual(env.byId.a.children.length, 1, '左栏应替换为最新快照');
   assert.strictEqual(M.tabs.size, 2, '历史 tab 数不得随左栏快照改变');
-  assert.strictEqual(env.byId.panes.children.length, 2, 'pane 数不得随左栏快照改变');
+  assert.strictEqual(ifr(env), iframesBefore, 'pane 数不得随左栏快照改变');
+  assert.strictEqual(iframesBefore, 2, '前置:开了两个 Agent tab,就该有两个 iframe');
   assert.deepStrictEqual(env.byId.panes.children, panes, 'pane 对象与顺序均不得改变');
   assert.deepStrictEqual(env.byId.panes.children.map(p => p.src), srcs, '所有 iframe src 均不得改变');
 });
@@ -127,18 +137,31 @@ t('③ 列表增删只改变左栏数量,不改变已开右栏数量', () => {
     M.renderAgentList([online('a-x-1'), offline('a-y-1')]);
     M.applyAgentSnapshot([online('a-x-1'), offline('a-y-1')]);
     M.openTab('a-x-1');
-    const left = [...env.byId.a.children];
     const entry = M.tabs.get('a-x-1'), pane = entry.pane, src = pane.src;
     await M.refreshAgents();
-    assert.strictEqual(env.byId.a.children.length, left.length, '请求失败不得清空或累加左栏');
-    assert.deepStrictEqual(env.byId.a.children, left, '请求失败须保留上一次左栏快照对象');
+    // 🔴 这一条【原本】断言「请求失败不得清空左栏」。组长 2026-09-24 裁定改断言(纪律十六:
+    //    业主已确认判据优先),被下面两条取代 —— 本条成文在业主这两条【之前】:
+    //      业主 0.2.1.66 指标⑤:不得出现「列表有内容却同时挂着重试按钮」这种自相矛盾的界面
+    //      业主 0.2.1.66 指标④:任何加载失败都有可见文案,不得静默、不得只留一张旧表
+    //    ⇒ 「保留旧列表 ＋ 出重试」正是业主要禁的形状,所以现在断言的是【清空 ＋ 说清楚】。
+    //    🔵 留在后面的真实残留已登记为 G-B'(失败文案须渲染在列表区域内,归 coder56solzzc):
+    //       清空满足⑤,但文案在上方状态条、列表区空着 —— 窄屏上人先看到的仍是一张空表。
+    assert.strictEqual(env.byId.a.children.length, 0,
+      '请求失败必须清空左栏(业主指标⑤:不得留一张旧表还挂着重试)');
+    const status = env.byId['agents-status'].textContent || '';
+    assert.ok(status.includes('Agent 列表加载失败'),
+      `请求失败必须有可见文案(业主指标④),实测 ${JSON.stringify(status)}`);
+    assert.ok(status.includes('temporary network failure'),
+      '失败文案必须带上真实原因,不能只说"失败了"');
+    assert.strictEqual(env.byId.retryAgents.hidden, false, '请求失败必须把重试按钮露出来');
+    // 以下三条不受业主那两条影响,原意保留:左栏失败不得波及右侧已开的会话
     assert.strictEqual(M.tabs.size, 1, '请求失败不得删除已开 tab');
     assert.strictEqual(M.tabs.get('a-x-1'), entry, '请求失败不得重建 tab');
     assert.strictEqual(entry.pane, pane, '请求失败不得重建 pane');
     assert.strictEqual(entry.pane.src, src, '请求失败不得重载 iframe');
-    console.log('  ✅ ④ fetch 失败保留左栏快照与已开 tab/pane/src'); pass++;
+    console.log('  ✅ ④ fetch 失败:左栏清空 ＋ 可见文案 ＋ 重试,且不动已开 tab/pane/src'); pass++;
   } catch (e) {
-    console.log('  🔴 ④ fetch 失败保留左栏快照与已开 tab/pane/src ->', e.message); fail++;
+    console.log('  🔴 ④ fetch 失败:左栏清空 ＋ 可见文案 ＋ 重试,且不动已开 tab/pane/src ->', e.message); fail++;
   }
   console.log(`\n通过 ${pass} / 失败 ${fail}`);
   process.exit(fail ? 1 : 0);

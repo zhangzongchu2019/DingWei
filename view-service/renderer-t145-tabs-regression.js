@@ -69,6 +69,15 @@ function load(env) {
   return fn(env.document, env.alert, env.encodeURIComponent, () => { throw new Error('不该调 fetch'); });
 }
 
+// 🔴 量法说明(组长 2026-09-24 裁定,纪律十七同族:换量法不换意图):
+//   原断言拿「#panes 的子节点数」当「pane 数」。openTab 现在往 #panes 里塞两个节点
+//   (pane ＋ offlineReason,console_auth.go:451)⇒ 子节点数不再等于 pane 数。
+//   优先改用产品自己的登记表 tabs;tabs 够不着的那一条(重建检测)退回数 iframe。
+//   🔴 数 iframe 不是通用的 pane 判据:平台 pane 不都是 iframe ——
+//      编组那个是 createElement('section'),Specs 才是 iframe。
+//      **本套件只开 Agent tab,故 iframe 数 ＝ pane 数**;别照抄到有平台 tab 的场景。
+const ifr = (env) => env.byId.panes.children.filter((c) => c.tag === 'iframe').length;
+
 let pass = 0, fail = 0;
 const t = (n, f) => { try { f(); console.log('  ✅', n); pass++; } catch (e) { console.log('  🔴', n, '->', e.message.split('\n')[0]); fail++; } };
 
@@ -79,7 +88,10 @@ t('① 点一个 Agent ⇒ 增加一个 tab 与一个 pane', () => {
   M.openTab('zzc-opus50ts-2642');
   assert.strictEqual(M.tabs.size, 1);
   assert.strictEqual(env.byId.tabs.children.length, 1);
-  assert.strictEqual(env.byId.panes.children.length, 1);
+  // 量法:问产品自己的登记表,再确认那个 pane 真的挂进了 #panes(挂没挂进去比数几个更贴意图)
+  assert.ok(env.byId.panes.children.includes(M.tabs.get('zzc-opus50ts-2642').pane),
+    'pane 必须真的挂进 #panes,不能只登记在 tabs 里');
+  assert.strictEqual(ifr(env), 1, '只开了一个 Agent tab,#panes 里就只该有一个 iframe');
 });
 
 t('② 🔴 再点【同一个】⇒ 不得重建(重建即丢失那一页内容)', () => {
@@ -90,7 +102,9 @@ t('② 🔴 再点【同一个】⇒ 不得重建(重建即丢失那一页内容
   // 🔴 排他:首版只断言 tabs.size 与 children[0] —— 变异实测【没抓到】。
   //    因为重建时 map 被覆盖(size 仍 1),而新 pane 追加在 children[1],children[0] 仍是原件。
   //    ⇒ 我查的是「第一个还在不在」,不是「有没有多出来一个」。必须查【数量】。
-  assert.strictEqual(env.byId.panes.children.length, 1, '🔴 不得新建第二个 pane(新建=那一页被重载)');
+  // 🔴 这一条 tabs.size 够不着:重建时 map 被覆盖,size 仍是 1 —— 正是上面那段注释说的漏洞。
+  //    所以只能数 iframe(本套件只开 Agent tab,iframe 数 ＝ pane 数)。
+  assert.strictEqual(ifr(env), 1, '🔴 不得新建第二个 pane(新建=那一页被重载)');
   assert.strictEqual(env.byId.tabs.children.length, 1, '不得新建第二个 tab');
   assert.strictEqual(M.tabs.size, 1, '同一 Agent 不得产生第二个 tab');
   assert.strictEqual(env.byId.panes.children[0], pane, 'pane 必须仍是同一个对象');
