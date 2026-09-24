@@ -51,8 +51,10 @@ function productionHTML() {
   //    改绑到切换形态的函数名上:它只会随本次实现出现。
   if (MUTATION === 'mode-switch-rebuilds-panes') mutateHTML('agentNavSetMode(', 'tabs.clear()||agentNavSetMode(');
   if (MUTATION === 'tree-dedupes-agent') mutateHTML('agentTreeAllowDuplicates', 'false&&agentTreeAllowDuplicates');
+  // 不倒退:扁平列表今天就按 online 置灰(b.disabled=!a.online);树里若忽略 members[].online 即为倒退
+  if (MUTATION === 'tree-ignores-member-online') mutateHTML('agentTreeMemberDisabled', 'false&&agentTreeMemberDisabled');
   if (MUTATION && !['tree-back-to-flat', 'member-short-name', 'stale-tree-after-remove',
-    'mode-switch-rebuilds-panes', 'tree-dedupes-agent'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+    'mode-switch-rebuilds-panes', 'tree-dedupes-agent', 'tree-ignores-member-online'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -68,23 +70,24 @@ async function main() {
     { id: 'agent-a', session_name: 'zzc-alpha-2642', online: true },
     { id: 'agent-b', session_name: 'zzc-beta-2642', online: true },
   ];
-  const foreign = { agent_id: 'agent-x', key_id: 'k-x', session_name: 'other-gamma-2642', owner_key: 'other-owner' };
+  // 字段名以 2026-09-24 冻结稿为准:groups[].owner_display_name(永不为空)、members[].online(所有成员都带)
+  const foreign = { agent_id: 'agent-x', key_id: 'k-x', session_name: 'other-gamma-2642', owner_key: 'other-owner', online: false };
   let removed = false;
   const groupsPayload = () => {
     const teamMembers = [
-      { agent_id: 'agent-a', key_id: 'k-a', session_name: 'zzc-alpha-2642', owner_key: 'zzc' },
+      { agent_id: 'agent-a', key_id: 'k-a', session_name: 'zzc-alpha-2642', owner_key: 'zzc', online: true },
       ...(removed ? [] : [foreign]),
     ];
     return {
       principal: 'owner-a',
       owned_agents: mine,
       groups: [
-        { code: 'g'.repeat(32), short_name: 'team01', can_manage: true, additions_closed: false,
+        { code: 'g'.repeat(32), short_name: 'team01', owner_display_name: '业主甲', can_manage: true, additions_closed: false,
           leader_key_id: 'k-a', leader_session_name: 'zzc-alpha-2642', members: teamMembers },
         // ⑤ 同一 Agent(agent-a)同时属于第二个组 ⇒ 树中应当出现两次
-        { code: 'h'.repeat(32), short_name: 'team02', can_manage: true, additions_closed: false,
+        { code: 'h'.repeat(32), short_name: 'team02', owner_display_name: '未知业主', can_manage: true, additions_closed: false,
           leader_key_id: 'k-a', leader_session_name: 'zzc-alpha-2642',
-          members: [{ agent_id: 'agent-a', key_id: 'k-a', session_name: 'zzc-alpha-2642', owner_key: 'zzc' }] },
+          members: [{ agent_id: 'agent-a', key_id: 'k-a', session_name: 'zzc-alpha-2642', owner_key: 'zzc', online: true }] },
       ],
     };
   };
@@ -140,6 +143,18 @@ async function main() {
     assert.strictEqual(dupCount, 2, `同一 Agent 属两个组时必须在树中出现两次,实测 ${dupCount}`);
     passed += 1;
 
+    // ⑥ 不倒退(parity,非业主六条之一 —— 🟡 组长若认为越界可删):
+    //   扁平列表今天就按 online 置灰(renderAgentList 里 b.disabled=!a.online)。
+    //   树形态若忽略 members[].online,等于比现有形态倒退一档 —— 故在此钉一条。
+    //   字段名以 2026-09-24 冻结稿为准:members[].online,所有成员都带,包括跨业主成员。
+    const onlineShape = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-agent')]
+      .map((el) => ({ session: el.dataset.session || '', disabled: el.disabled === true || el.getAttribute('aria-disabled') === 'true' })));
+    const foreignOnline = onlineShape.find((m) => m.session === 'other-gamma-2642');
+    const ownOnline = onlineShape.find((m) => m.session === 'zzc-alpha-2642');
+    assert.strictEqual(foreignOnline.disabled, true,
+      'members[].online 为 false 的成员必须在树里表现为不可用(扁平列表今天就是这么做的,树不得倒退)');
+    assert.strictEqual(ownOnline.disabled, false, 'online 为 true 的成员不得被置灰');
+    passed += 2;
     // ④ 形态切换:两形态可切换,且已打开的 tab/pane 不被重建
     await page.evaluate(() => { const el = [...document.querySelectorAll('#a .agent-tree-agent')].find((x) => x.dataset.session === 'zzc-beta-2642'); if (el) el.click(); });
     await page.waitForSelector('#panes iframe');
