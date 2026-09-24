@@ -94,9 +94,11 @@ function productionHTML() {
     + '__g.forEach(function(x){if(!__staleGroups.some(function(y){return y.code===x.code;}))__staleGroups.push(x);});'
     + 'if(groupSnapshot)groupSnapshot.groups=__staleGroups;'
     + 'return __realRenderAgentNav.apply(null,arguments);}function __realRenderAgentNav(');
+  if (MUTATION === 'tree-shows-ungrouped') mutateHTML('section.append(title,members);nav.append(section);});\n}',
+    "section.append(title,members);nav.append(section);});var b=document.createElement('button');b.dataset.session='zzc-beta-2642';nav.append(b);\n}");
   if (MUTATION && !['tree-back-to-flat', 'member-short-name', 'stale-tree-after-remove',
     'mode-switch-rebuilds-panes', 'tree-dedupes-agent', 'tree-ignores-member-online',
-    'foreign-agent-can-open', 'tree-keeps-stale-groups'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+    'foreign-agent-can-open', 'tree-keeps-stale-groups', 'tree-shows-ungrouped'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -164,6 +166,8 @@ async function main() {
     assert.strictEqual(groupNodes.length, 2, `左栏必须出现两个组节点,实测 ${groupNodes.length}`);
     assert.deepStrictEqual(groupNodes.map((g) => g.label).sort(), ['team01', 'team02'],
       `组节点必须按短名显示,实测 ${JSON.stringify(groupNodes.map((g) => g.label))}`);
+    assert.strictEqual(await page.locator('#a [data-session="zzc-beta-2642"]').count(), 0,
+      '业主已明确裁定:未分组 Agent 在树形态不显示,只能切到纯 Agent 列表查看');
     passed += 2;
 
     // ② 成员挂在组节点下;非自有成员显示全名,自有成员显示短名

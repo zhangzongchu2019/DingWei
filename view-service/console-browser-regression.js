@@ -392,17 +392,15 @@ async function main() {
     }
 
     await test('renders online and offline agents from the console API', async () => {
-      includeOfflineOwned = true;
-      await page.evaluate(() => refreshGroups('offline-owned'));
+      await page.locator('#agentNavMode').click();
       const online = page.locator('#a button[title="owner-alpha-2642"]');
-      const offline = page.locator('#a button[title="owner-gamma-2642"]');
+      const offline = page.locator('#a button[title="owner-offline-2642"]');
       await online.waitFor({ state: 'visible' });
       await offline.waitFor({ state: 'attached' });
       assert.strictEqual(await online.isEnabled(), true);
       assert.strictEqual(await offline.isDisabled(), true);
       assert.strictEqual(await page.locator('#retryAgents').isHidden(), true);
-      includeOfflineOwned = false;
-      await page.evaluate(() => refreshGroups('offline-owned-reset'));
+      await page.locator('#agentNavMode').click();
     });
 
     await test('renders no platform entry without an observable action', async () => {
