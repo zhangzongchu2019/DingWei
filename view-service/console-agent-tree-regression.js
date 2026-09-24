@@ -16,6 +16,22 @@
 //   ④ 两形态可切换,且**切换后已打开的 tab/pane 不被重建** 变异 mode-switch-rebuilds-panes
 //      🔴 这条是 0.2.1.64 那条 P0 的教训:左栏**不拥有** tabs/panes。
 //   ⑤ 同一 Agent 属多组 ⇒ 树中**重复出现**(业主已定)   变异 tree-dedupes-agent
+//
+// 🔴 以下两条【出身不同】,读格的人必须能一眼分清哪条是业主定的、哪条是我们自己加的:
+//   ⑥ 【回归守卫 · 非业主验收判据】offline 成员在树里须表现为不可用
+//      变异 tree-ignores-member-online
+//      · 它挡的是**本次改动可能引入的倒退**:扁平列表**今天**就有 b.disabled=!a.online,
+//        树若忽略 online,就是我们自己把现有形态降了一档。
+//      · 🔴 它**不是**业主提出的要求 —— 业主六条里没有这一条。
+//      · 🔴 **若业主对树里 offline 另有说法,本条让位**,直接删;
+//        **不得拿本条去反驳业主**。
+//   ⑦ 【占位守卫 · 待业主裁定】别人的 Agent 出现在我的左栏时,**点它不得打开会话**
+//      变异 foreign-agent-can-open
+//      · 由来:业主六条②要求"别人用组码加入 ⇒ 我的左栏出现那个 Agent",
+//        而左栏既有语义是"点一下就打开它的会话"。**点别人的 Agent 会发生什么,六条里没写。**
+//        这是权限问题,不是体验问题,组长已交业主裁定。
+//      · 🔴 在业主答复前:节点**照常渲染**(六条②要求它出现),但**不绑打开动作**。
+//      · 🔴 业主口径到位后,本条**按业主说法重写或删除**,不得拿本条去反驳业主。
 const assert = require('assert');
 const fs = require('fs');
 const http = require('http');
@@ -53,8 +69,12 @@ function productionHTML() {
   if (MUTATION === 'tree-dedupes-agent') mutateHTML('agentTreeAllowDuplicates', 'false&&agentTreeAllowDuplicates');
   // 不倒退:扁平列表今天就按 online 置灰(b.disabled=!a.online);树里若忽略 members[].online 即为倒退
   if (MUTATION === 'tree-ignores-member-online') mutateHTML('agentTreeMemberDisabled', 'false&&agentTreeMemberDisabled');
+  // ⑦ 占位守卫:锚点绑在 agentTreeCanOpen( 上 —— 这个名字只有本次实现落地后才存在,落地前必然
+  //    报「锚点未命中」。合同名在此钉死:实现方请用 agentTreeCanOpen(node) 决定要不要绑点击。
+  if (MUTATION === 'foreign-agent-can-open') mutateHTML('agentTreeCanOpen(', 'true||agentTreeCanOpen(');
   if (MUTATION && !['tree-back-to-flat', 'member-short-name', 'stale-tree-after-remove',
-    'mode-switch-rebuilds-panes', 'tree-dedupes-agent', 'tree-ignores-member-online'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+    'mode-switch-rebuilds-panes', 'tree-dedupes-agent', 'tree-ignores-member-online',
+    'foreign-agent-can-open'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -143,9 +163,10 @@ async function main() {
     assert.strictEqual(dupCount, 2, `同一 Agent 属两个组时必须在树中出现两次,实测 ${dupCount}`);
     passed += 1;
 
-    // ⑥ 不倒退(parity,非业主六条之一 —— 🟡 组长若认为越界可删):
-    //   扁平列表今天就按 online 置灰(renderAgentList 里 b.disabled=!a.online)。
-    //   树形态若忽略 members[].online,等于比现有形态倒退一档 —— 故在此钉一条。
+    // ⑥ 【回归守卫 · 非业主验收判据】(组长 2026-09-24 裁定:保留,但标签必须写清出身)
+    //   挡的是:扁平列表今天就按 online 置灰(renderAgentList 里 b.disabled=!a.online),
+    //   树形态若忽略 members[].online,就是**本次改动造成的倒退**。防自己造成的倒退属本任务范围。
+    //   🔴 它不是业主六条之一。**若业主对树里 offline 另有说法,本条让位**,不得拿它反驳业主。
     //   字段名以 2026-09-24 冻结稿为准:members[].online,所有成员都带,包括跨业主成员。
     const onlineShape = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-agent')]
       .map((el) => ({ session: el.dataset.session || '', disabled: el.disabled === true || el.getAttribute('aria-disabled') === 'true' })));
@@ -154,6 +175,24 @@ async function main() {
     assert.strictEqual(foreignOnline.disabled, true,
       'members[].online 为 false 的成员必须在树里表现为不可用(扁平列表今天就是这么做的,树不得倒退)');
     assert.strictEqual(ownOnline.disabled, false, 'online 为 true 的成员不得被置灰');
+    passed += 2;
+
+    // ⑦ 【占位守卫 · 待业主裁定】别人的 Agent 点了不得打开会话。
+    //   🔴 这条**不是**在规定业主该怎么裁,而是在业主裁定前**把门关上**:
+    //   六条②只说"它要出现在我的左栏",没说"点它能进去"。在没答案之前默认**不给动作**,
+    //   因为这是权限,开错了是单向的(会话一旦打开,内容已经看过了)。
+    const panesBefore = await page.evaluate(() => document.getElementById('panes').children.length);
+    const errorsBefore = pageErrors.length;
+    await page.evaluate(() => {
+      const el = [...document.querySelectorAll('#a .agent-tree-agent')].find((x) => x.dataset.session === 'other-gamma-2642');
+      if (el) el.click();
+    });
+    await page.waitForTimeout(200);
+    const panesAfter = await page.evaluate(() => document.getElementById('panes').children.length);
+    assert.strictEqual(panesAfter, panesBefore,
+      `点别人的 Agent 不得打开会话(业主未裁定前一律不开),实测 panes ${panesBefore} -> ${panesAfter}`);
+    assert.strictEqual(pageErrors.length, errorsBefore,
+      '点别人的 Agent 不得报错 —— 不绑动作 != 让它抛异常');
     passed += 2;
     // ④ 形态切换:两形态可切换,且已打开的 tab/pane 不被重建
     await page.evaluate(() => { const el = [...document.querySelectorAll('#a .agent-tree-agent')].find((x) => x.dataset.session === 'zzc-beta-2642'); if (el) el.click(); });
