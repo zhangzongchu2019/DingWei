@@ -318,6 +318,7 @@ type Member struct {
 // are identity boundaries for the unified console.
 type ConsolePrincipal struct {
 	ID              string
+	ShortName       string
 	Provider        string
 	ProviderIssuer  string
 	ProviderSubject string

@@ -56,6 +56,7 @@ function productionHTML() {
   if (MUTATION === 'owner-delete-action') mutateHTML("var copyLink=document.createElement('button');", "var forbidden=document.createElement('button');forbidden.className='delete-spec';forbidden.textContent='删除';action.append(forbidden);var copyLink=document.createElement('button');");
   if (MUTATION === 'owner-expand-nonexclusive') mutateHTML("document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};", "document.getElementById('show-new-spec').onclick=function(){document.getElementById('new-screen').hidden=false;};");
   if (MUTATION === 'owner-empty-restore-all') mutateHTML("document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');refreshSpecs();};", "document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');document.getElementById('detail-screen').hidden=false;document.getElementById('transfer-screen').hidden=false;refreshSpecs();};");
+  if (MUTATION === 'owner-editor-short-only') mutateHTML("o.textContent=shortName&&shortName!==displayName?shortName+'（'+displayName+'）':displayName;", 'o.textContent=shortName;');
   if (MUTATION === 'no-list-error-text') {
     mutateHTML('catch(err){specListFailure(err);}', 'catch(err){}');
   }
@@ -87,7 +88,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -187,7 +188,7 @@ async function main() {
       const generated={proposal_id:'task-presplit',spec_id:item.id,revision:1,title:'Agent task',content:'generated',status:'planned',estimated_hours:2,depends_on_json:'[]',acceptance_json:'[]',depended_by:[],dependency_level:0,parallel:false};
       res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?ordered:(presplitGenerated&&item.id==='spec-2'?[generated]:[]), dependency_candidates:[taskA,taskB] })); return;
     }
-    if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'甲'},{short_name:'乙'},{short_name:'丙'}]}));return;}
+    if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'zzc',display_name:'张宗楚',value:'张宗楚'},{short_name:'lbl',display_name:'李炳隆',value:'李炳隆'},{short_name:'th',display_name:'唐虹',value:'唐虹'}]}));return;}
     const workflowTransfer=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/workflow\/transfer$/);
     if(workflowTransfer&&req.method==='POST'){transferWrites.push({specID:workflowTransfer[1],body:await requestBody(req)});res.writeHead(204);res.end();return;}
     const presplitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/presplit$/);
@@ -298,12 +299,12 @@ async function main() {
     const firstAction=page.locator('#spec-list [data-title="Spec A"] .spec-action');
     await firstAction.locator('.transfer-spec').click();
     await page.locator('#list-transfer-owner option').last().waitFor({state:'attached'});
-    assert.deepStrictEqual(await page.locator('#list-transfer-owner option').allTextContents(), ['甲','乙','丙'], '转给候选必须来自业主接口');
-    await page.locator('#list-transfer-owner').selectOption({label:'乙'});
+    assert.deepStrictEqual(await page.locator('#list-transfer-owner option').allTextContents(), ['zzc（张宗楚）','lbl（李炳隆）','th（唐虹）'], '转给候选必须显示接口给出的短名与真名');
+    await page.locator('#list-transfer-owner').selectOption({label:'lbl（李炳隆）'});
     await page.locator('input[name="list-transfer-state"][value="review"]').check();
     await page.locator('#confirm-list-transfer').click();
     await page.waitForTimeout(300);
-    assert.deepStrictEqual(transferWrites, [{specID:'spec-1',body:{target_short_name:'乙',state:'review'}}], '转审核必须接到真实 workflow/transfer 请求');
+    assert.deepStrictEqual(transferWrites, [{specID:'spec-1',body:{target_short_name:'李炳隆',state:'review'}}], '转审核必须接到真实 workflow/transfer 请求');
     const screenState=async()=>page.evaluate(()=>({list:!document.getElementById('list-screen').hidden,newSpec:!document.getElementById('new-screen').hidden,detail:!document.getElementById('detail-screen').hidden,transfer:!document.getElementById('transfer-screen').hidden}));
     await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
     await page.locator('#detail-screen').waitFor({state:'visible'});

@@ -565,7 +565,9 @@ func (h *Hub) HandleConsoleSpecEditors(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]map[string]string, 0, len(items))
 	for _, p := range items {
-		out = append(out, map[string]string{"short_name": p.DisplayName})
+		display := firstNonEmpty(strings.TrimSpace(p.DisplayName), strings.TrimSpace(p.ShortName), strings.TrimSpace(p.ID), "未知业主")
+		short := firstNonEmpty(strings.TrimSpace(p.ShortName), strings.TrimSpace(p.ID), display)
+		out = append(out, map[string]string{"short_name": short, "display_name": display, "value": display})
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"editors": out})

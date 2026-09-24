@@ -296,6 +296,9 @@ func TestConsoleSpecEditorsAndTransfersRequireActiveOwnerRole(t *testing.T) {
 	got := make(map[string]bool, len(editors))
 	for _, editor := range editors {
 		got[editor.ID] = true
+		if editor.ShortName == "" || editor.DisplayName == "" {
+			t.Fatalf("owner candidate must carry both short and human-readable names: %+v", editor)
+		}
 		if editor.ID == "nonowner" || editor.ID == "inactive-owner" {
 			t.Fatalf("non-owner leaked into editor candidates: %+v", editors)
 		}

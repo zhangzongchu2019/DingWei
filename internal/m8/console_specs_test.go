@@ -313,6 +313,9 @@ func TestConsoleSpecEditorsHTTPExcludesActiveNonOwners(t *testing.T) {
 	if strings.Contains(rr.Body.String(), "非业主") || !strings.Contains(rr.Body.String(), "甲") || !strings.Contains(rr.Body.String(), "乙") {
 		t.Fatalf("owner-only editor response=%s", rr.Body.String())
 	}
+	if !strings.Contains(rr.Body.String(), `"short_name":"tenant-a"`) || !strings.Contains(rr.Body.String(), `"display_name":"甲"`) || !strings.Contains(rr.Body.String(), `"value":"甲"`) {
+		t.Fatalf("editor response must expose short name, human name, and transfer value: %s", rr.Body.String())
+	}
 	created := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", validSpecBody, hub.HandleConsoleSpecs)
 	var spec model.ConsoleSpec
 	if err := json.Unmarshal(created.Body.Bytes(), &spec); err != nil {

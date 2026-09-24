@@ -56,32 +56,25 @@ func resolveOwnerPrincipalByShortName(ctx context.Context, q consoleSpecOwnerQue
 }
 
 func (s *SQLite) ListActiveConsolePrincipals(ctx context.Context) ([]model.ConsolePrincipal, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT display_name FROM console_principal WHERE active=1 ORDER BY display_name,id`)
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active,MIN(r.owner_key)
+		FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
+		WHERE p.active=1 GROUP BY p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active ORDER BY p.display_name,p.id`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var names []string
+	var out []model.ConsolePrincipal
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+		var p model.ConsolePrincipal
+		var active int
+		if err := rows.Scan(&p.ID, &p.Provider, &p.ProviderIssuer, &p.ProviderSubject, &p.DisplayName, &active, &p.ShortName); err != nil {
 			return nil, err
 		}
-		names = append(names, name)
+		p.Active = active != 0
+		out = append(out, p)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
-	}
-	out := make([]model.ConsolePrincipal, 0, len(names))
-	for _, name := range names {
-		principal, err := resolveOwnerPrincipalByShortName(ctx, s.db, name)
-		if errors.Is(err, ErrConsoleSpecPermission) {
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, *principal)
 	}
 	return out, nil
 }
