@@ -254,6 +254,7 @@ func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 const consolePageHTML = `<!doctype html><meta charset=utf-8><title>DingWei Agent Console</title>
 <style>
 body{margin:0;display:grid;grid-template-columns:240px 1fr;height:100vh;font:14px sans-serif}
+[hidden]{display:none!important}
 nav{overflow:auto;border-right:1px solid #ddd;padding:10px}
 nav button{display:block;width:100%;margin:3px 0;text-align:left;padding:4px 6px}
 #platform-items a{display:block;padding:4px 6px;margin:3px 0;border:1px solid #ddd;border-radius:4px;color:#174f8a;text-decoration:none}
@@ -297,7 +298,7 @@ html[data-theme="dark"] details,html[data-theme="dark"] summary{color:#a8b0bb}
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试加载工作台</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试加载 Agent</button><div id=a></div></nav>
+<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <script>
 const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
@@ -392,6 +393,7 @@ function dwThemeInit(){
 function renderPlatform(platform){
   var items=document.getElementById('platform-items'); items.replaceChildren();
   (Array.isArray(platform.items)?platform.items:[]).forEach(function(item){
+    if(item.id==='agents')return;
     var a=document.createElement('a'); a.textContent=item.title; a.href=item.href; a.dataset.itemId=item.id;
     if(item.target) a.target=item.target;
     if(item.id==='agent-groups') a.onclick=function(ev){ev.preventDefault();openGroupWorkspace();};
@@ -410,8 +412,8 @@ async function refreshPlatform(){
     var r=await fetch('/api/console/platform',{cache:'no-store',signal:controller.signal});
     if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
     var data=await r.json();if(!data||!Array.isArray(data.items))throw new Error('响应格式无效');
-    renderPlatform(data);status.textContent=data.items.length?'':'没有可用工作台入口';retry.hidden=data.items.length>0;
-  }catch(err){status.textContent='工作台加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
+    renderPlatform(data);status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;
+  }catch(err){renderPlatform({items:[],role:document.documentElement.dataset.platformRole||''});status.textContent='工作台加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
   }finally{clearTimeout(timer);}
 }
 function activate(session){
@@ -497,8 +499,8 @@ async function refreshAgents(){
     var agents=x.agents;
     renderAgentList(agents);
     applyAgentSnapshot(agents);
-    status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=agents.length>0;
-  }catch(err){status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
+    status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=true;
+  }catch(err){renderAgentList([]);status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
   }finally{clearTimeout(timer);}
 }
 var consoleFetchTimeoutMs=8000,groupMode=false,groupRequestGeneration=0,groupFetchTimeoutMs=8000,groupLeaderSelection='',groupSnapshot={groups:[],owned_agents:[]};
