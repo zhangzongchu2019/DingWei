@@ -266,6 +266,40 @@ async function main() {
       assert.strictEqual(await row.locator('.spec-title').count(), 1, 'management owner must see a clickable title for own spec');
       assert.strictEqual(await row.locator('.spec-title').getAttribute('title'), '点击打开(可编辑)', '可编辑的 spec,标题提示必须表明可编辑');
     }
+    // ㊴ S-6 ④ 的【独立用例】:从标题进入后,拆解/预拆/工作流必须可达 ——————————————
+    // 🔴 为什么单独开一条:上一段里这条判据虽然写了,但变异 task-area-outside-detail
+    //    先被更早的 openPresplitMode 接住 ⇒ 「红了」证明不了「被这条判据红的」。
+    //    本条**自带干净页面**、只依赖已建好的 Spec A、且**排在 presplit 之前**,
+    //    因此该变异会直接红在这里,这条判据才算有自己的阳性对照。
+    // 🔵 用新页面而不是改执行顺序:不动其它用例的前置状态(组长裁定)。
+    {
+      const reachPage = await context.newPage();
+      reachPage.setDefaultTimeout(2500);
+      await reachPage.goto(`http://127.0.0.1:${port}/console/specs`, { waitUntil: 'domcontentloaded' });
+      await reachPage.waitForSelector('#spec-list [data-title="Spec A"] .spec-title');
+      await reachPage.locator('#spec-list [data-title="Spec A"] .spec-title').click();
+      await reachPage.waitForSelector('#detail-screen:not([hidden])');
+      const reach = await reachPage.evaluate(() => {
+        const vis = (id) => { const el = document.getElementById(id); return !!(el && el.offsetParent); };
+        const inDetail = (id) => { const el = document.getElementById(id); return !!(el && el.closest('#detail-screen')); };
+        return {
+          taskArea: vis('task-area'), taskAreaInDetail: inDetail('task-area'),
+          workflow: vis('spec-workflow'), workflowInDetail: inDetail('spec-workflow'),
+          presplitExists: !!document.getElementById('agent-presplit'),
+          presplitInDetail: inDetail('agent-presplit'),
+          rendered: (document.getElementById('spec-rendered') || {}).childElementCount,
+        };
+      });
+      assert.ok(reach.taskArea && reach.taskAreaInDetail,
+        `从标题进来之后「任务拆解」不可达(可见=${reach.taskArea} 在详情屏内=${reach.taskAreaInDetail}) ⇒ 主链路从入口上就断了`);
+      assert.ok(reach.workflow && reach.workflowInDetail,
+        `从标题进来之后「转修改/转审核/审结」不可达(可见=${reach.workflow} 在详情屏内=${reach.workflowInDetail})`);
+      assert.ok(reach.presplitExists && reach.presplitInDetail,
+        'Agent 预拆区必须在详情屏内(它是否可用另说,但必须够得着)');
+      assert.ok(reach.rendered > 0, '详情屏必须把 spec 内容渲染出来');
+      console.log(`S-6④ 独立用例: 拆解=${reach.taskArea} 工作流=${reach.workflow} 预拆在详情内=${reach.presplitInDetail}`);
+      await reachPage.close();
+    }
     async function openPresplitMode(mode) {
       await page.request.post(`http://127.0.0.1:${port}/fixture/presplit-mode?mode=${mode}`);
       await page.click('#show-spec-list');
