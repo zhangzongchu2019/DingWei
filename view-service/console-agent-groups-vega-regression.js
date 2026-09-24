@@ -30,7 +30,9 @@ if (mutation === 'ux-block-colors') {
   mutate('html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="dark"] .group-block-detail{background:#252033}html[data-theme="dark"] .group-block-add{background:#182a22}html[data-theme="dark"] .group-block-join{background:#30251a}', 'html[data-theme="dark"] .group-block-list,html[data-theme="dark"] .group-block-detail,html[data-theme="dark"] .group-block-add{background:#1b2530}html[data-theme="dark"] .group-block-join{background:#30251a}');
 }
 if (mutation === 'ux-add-focus') mutate("document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};", "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
-if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'ux-member-gap', 'ux-placeholder', 'ux-block-colors', 'ux-add-focus'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'ux-detail-exclusive') mutate("row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();setGroupPanelMode('detail');}", "row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();if(globalThis.__testExclusive)document.getElementById('groupDetail').hidden=false;else setGroupPanelMode('detail');}");
+if (mutation === 'ux-join-exclusive') mutate("document.getElementById('groupCodeJoinOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='join'?'':'join');}", "document.getElementById('groupCodeJoinOpen').onclick=function(){if(globalThis.__testExclusive){document.getElementById('groupCodeJoin').hidden=false;document.getElementById('groupJoinCode').focus();}else setGroupPanelMode(groupPanelMode==='join'?'':'join');}");
+if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'ux-member-gap', 'ux-placeholder', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive', 'ux-join-exclusive'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 
 let groups = [];
 let additionsClosed = false;
@@ -218,14 +220,19 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
         add: !document.getElementById('groupAddPanel').hidden,
         join: !document.getElementById('groupCodeJoin').hidden,
       }));
-      await page.locator('#groupListItems tr').first().click();
-      assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '点组名后只能展开组详情');
-      await page.locator('#groupAddOpen').click();
-      assert.deepStrictEqual(await visible(), { list: true, detail: false, add: true, join: false }, '点添加后必须收起详情且只展开添加编组');
-      await page.locator('#groupCodeJoinOpen').click();
-      assert.deepStrictEqual(await visible(), { list: true, detail: false, add: false, join: true }, '点加入入口后必须收起添加且只展开加入其他业主编组');
-      await page.locator('#groupListItems tr').first().click();
-      assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '从加入返回组详情时前一个展开项必须收起');
+      await page.evaluate(() => { globalThis.__testExclusive = true; });
+      try {
+        await page.locator('#groupListItems tr').first().click();
+        assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '点组名后只能展开组详情');
+        await page.locator('#groupAddOpen').click();
+        assert.deepStrictEqual(await visible(), { list: true, detail: false, add: true, join: false }, '点添加后必须收起详情且只展开添加编组');
+        await page.locator('#groupCodeJoinOpen').click();
+        assert.deepStrictEqual(await visible(), { list: true, detail: false, add: false, join: true }, '点加入入口后必须收起添加且只展开加入其他业主编组');
+        await page.locator('#groupListItems tr').first().click();
+        assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '从加入返回组详情时前一个展开项必须收起');
+      } finally {
+        await page.evaluate(() => { globalThis.__testExclusive = false; setGroupPanelMode('detail'); });
+      }
     });
     await test('close rejects, open joins, offline error is visible, and removal confirms the real consequence', async () => {
       await page.locator('#groupListItems tr').first().click();
