@@ -213,14 +213,14 @@ func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 }
 
 func (s *SQLite) ConsoleSpec(ctx context.Context, principalID, specID string, management bool) (*model.ConsoleSpec, error) {
-	query := `SELECT s.id,s.principal_id,o.display_name,s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(e.display_name,''),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id WHERE s.id=?`
+	query := `SELECT s.id,s.principal_id,o.display_name,s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(e.display_name,CASE WHEN s.state='final' THEN o.display_name ELSE '' END),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id WHERE s.id=?`
 	// Spec 内容按业主裁定“控写、不控读”。保留 principal/management 参数以兼容
 	// 既有 repo 接口，但直接链接读取不再以身份过滤；写路径仍单独按 owner/capability 判。
 	return scanConsoleSpec(s.db.QueryRowContext(ctx, query, specID))
 }
 
 func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, management bool) ([]model.ConsoleSpec, error) {
-	query := `SELECT s.id,s.principal_id,o.display_name,s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(e.display_name,''),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id`
+	query := `SELECT s.id,s.principal_id,o.display_name,s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(e.display_name,CASE WHEN s.state='final' THEN o.display_name ELSE '' END),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id`
 	var args []any
 	if !management {
 		query += ` WHERE s.principal_id=? OR s.current_editor_id=?`

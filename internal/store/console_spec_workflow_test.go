@@ -234,6 +234,13 @@ func TestConsoleSpecTwelveStepFlowSingleEditorFinalAndOwnerOnlyTasks(t *testing.
 	if err := db.FinalizeConsoleSpec(ctx, "flow", "manager", now); err != nil {
 		t.Fatal(err)
 	}
+	finalized, err := db.ConsoleSpec(ctx, "owner-a", "flow", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if finalized == nil || finalized.State != "final" || finalized.CurrentEditorID != "" || finalized.CurrentEditorShort != "甲" {
+		t.Fatalf("finalized spec must automatically return to its creator for task splitting: %+v", finalized)
+	}
 	for _, actor := range []string{"owner-a", "owner-b", "manager"} {
 		r := specRevision("flow", 7, "final-change")
 		r.CreatedBy = actor
