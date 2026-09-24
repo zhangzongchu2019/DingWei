@@ -76,7 +76,7 @@ function productionHTML() {
   };
   if (MUTATION === 'tree-back-to-flat') mutateHTML("agentNavMode='tree'", "agentNavMode='flat'");
   if (MUTATION === 'member-short-name') mutateHTML('b.textContent=agentTreeMemberLabel(member,ownedIDs);', 'b.textContent=dwShortName(member.session_name);');
-  if (MUTATION === 'stale-tree-after-remove') mutateHTML('groupSnapshot=data;renderAgentNav();if(groupMode)', 'groupSnapshot=data;if(groupMode)');
+  if (MUTATION === 'stale-tree-after-remove') mutateHTML('groupSnapshot=data;renderAgentNav();if(groupMode)', "groupSnapshot=data;if(source!=='action')renderAgentNav();if(groupMode)");
   // 🔴 锚点必须绑在【本次要实现的东西】上。第一版我用了 document.getElementById('a') ——
   //    那是页面里早就有的字符串,产品还没落地它就能命中,这个变异因此"看起来有效"。
   //    改绑到切换形态的函数名上:它只会随本次实现出现。
@@ -89,11 +89,10 @@ function productionHTML() {
   if (MUTATION === 'foreign-agent-can-open') mutateHTML('if(agentTreeCanOpen(member,ownedIDs))', 'if(true)');
   // ⑧ 客户端不得自己留着上一轮的组。变异把 renderAgentNav 包一层,让它把历次见过的组累积起来 ——
   //    这正是"缓存上一次"最常见的写法。锚点 'function renderAgentNav(' 只有实现落地后才存在。
-  if (MUTATION === 'tree-keeps-stale-groups') mutateHTML('function renderAgentNav(',
-    'var __staleGroups=[];function renderAgentNav(){var __g=(groupSnapshot&&groupSnapshot.groups)||[];'
-    + '__g.forEach(function(x){if(!__staleGroups.some(function(y){return y.code===x.code;}))__staleGroups.push(x);});'
-    + 'if(groupSnapshot)groupSnapshot.groups=__staleGroups;'
-    + 'return __realRenderAgentNav.apply(null,arguments);}function __realRenderAgentNav(');
+  if (MUTATION === 'tree-keeps-stale-groups') mutateHTML('groupSnapshot=data;renderAgentNav();if(groupMode)',
+    'var __previousGroups=groupSnapshot.groups||[];groupSnapshot=data;'
+    + '__previousGroups.forEach(function(old){if(!groupSnapshot.groups.some(function(now){return now.code===old.code;}))'
+    + 'groupSnapshot.groups.push(Object.assign({},old,{members:[]}));});renderAgentNav();if(groupMode)');
   if (MUTATION === 'tree-shows-ungrouped') mutateHTML('section.append(title,members);nav.append(section);});\n}',
     "section.append(title,members);nav.append(section);});var b=document.createElement('button');b.dataset.session='zzc-beta-2642';nav.append(b);\n}");
   if (MUTATION && !['tree-back-to-flat', 'member-short-name', 'stale-tree-after-remove',
