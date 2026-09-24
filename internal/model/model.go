@@ -318,7 +318,7 @@ type Member struct {
 // are identity boundaries for the unified console.
 type ConsolePrincipal struct {
 	ID              string
-	ShortName       string
+	ShortName       string // Owner-scope label; populated only by ListActiveConsolePrincipals.
 	Provider        string
 	ProviderIssuer  string
 	ProviderSubject string

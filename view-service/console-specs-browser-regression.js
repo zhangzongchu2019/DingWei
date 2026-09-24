@@ -57,6 +57,8 @@ function productionHTML() {
   if (MUTATION === 'owner-expand-nonexclusive') mutateHTML("document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};", "document.getElementById('show-new-spec').onclick=function(){document.getElementById('new-screen').hidden=false;};");
   if (MUTATION === 'owner-empty-restore-all') mutateHTML("document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');refreshSpecs();};", "document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');document.getElementById('detail-screen').hidden=false;document.getElementById('transfer-screen').hidden=false;refreshSpecs();};");
   if (MUTATION === 'owner-editor-short-only') mutateHTML("o.textContent=shortName&&shortName!==displayName?shortName+'（'+displayName+'）':displayName;", 'o.textContent=shortName;');
+  if (MUTATION === 'owner-title-nonexclusive') mutateHTML("title.onclick=function(){openSpec(spec.id,true)};", "title.onclick=function(){var opened=openSpec(spec.id,true);if(globalThis.__testSpecExclusive)opened.then(function(){document.getElementById('transfer-screen').hidden=false;});};");
+  if (MUTATION === 'owner-transfer-nonexclusive') mutateHTML("showScreen('transfer-screen');};action.append(transfer);", "showScreen('transfer-screen');if(globalThis.__testSpecExclusive)document.getElementById('new-screen').hidden=false;};action.append(transfer);");
   if (MUTATION === 'no-list-error-text') {
     mutateHTML('catch(err){specListFailure(err);}', 'catch(err){}');
   }
@@ -88,7 +90,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -306,17 +308,22 @@ async function main() {
     await page.waitForTimeout(300);
     assert.deepStrictEqual(transferWrites, [{specID:'spec-1',body:{target_short_name:'李炳隆',state:'review'}}], '转审核必须接到真实 workflow/transfer 请求');
     const screenState=async()=>page.evaluate(()=>({list:!document.getElementById('list-screen').hidden,newSpec:!document.getElementById('new-screen').hidden,detail:!document.getElementById('detail-screen').hidden,transfer:!document.getElementById('transfer-screen').hidden}));
-    await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
-    await page.locator('#detail-screen').waitFor({state:'visible'});
-    assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:true,transfer:false},'点标题后列表常驻且只展开编辑屏');
-    await page.locator('#show-new-spec').click();
-    assert.deepStrictEqual(await screenState(),{list:true,newSpec:true,detail:false,transfer:false},'点添加后必须收起编辑屏且只展开新建');
-    await page.locator('#spec-list [data-title="Spec A"] .transfer-spec').click();
-    await page.locator('#transfer-screen').waitFor({state:'visible'});
-    assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:false,transfer:true},'点转后必须收起新建且只展开转给');
-    await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
-    await page.locator('#detail-screen').waitFor({state:'visible'});
-    assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:true,transfer:false},'从转给返回编辑时前一个展开项必须收起');
+    await page.evaluate(()=>{globalThis.__testSpecExclusive=true;});
+    try {
+      await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
+      await page.locator('#detail-screen').waitFor({state:'visible'});
+      assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:true,transfer:false},'点标题后列表常驻且只展开编辑屏');
+      await page.locator('#show-new-spec').click();
+      assert.deepStrictEqual(await screenState(),{list:true,newSpec:true,detail:false,transfer:false},'点添加后必须收起编辑屏且只展开新建');
+      await page.locator('#spec-list [data-title="Spec A"] .transfer-spec').click();
+      await page.locator('#transfer-screen').waitFor({state:'visible'});
+      assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:false,transfer:true},'点转后必须收起新建且只展开转给');
+      await page.locator('#spec-list [data-title="Spec A"] .spec-title').click();
+      await page.locator('#detail-screen').waitFor({state:'visible'});
+      assert.deepStrictEqual(await screenState(),{list:true,newSpec:false,detail:true,transfer:false},'从转给返回编辑时前一个展开项必须收起');
+    } finally {
+      await page.evaluate(()=>{globalThis.__testSpecExclusive=false;showScreen('list-screen');});
+    }
     for (const title of ['Spec A', 'Spec B']) {
       const row = page.locator(`#spec-list [data-title="${title}"]`);
       // S-6 改格留痕:原断言是「自己的 spec 必须看到 Edit 按钮」;业主裁定去掉列表行按钮、标题即入口,

@@ -56,6 +56,8 @@ func resolveOwnerPrincipalByShortName(ctx context.Context, q consoleSpecOwnerQue
 }
 
 func (s *SQLite) ListActiveConsolePrincipals(ctx context.Context) ([]model.ConsolePrincipal, error) {
+	// A principal may own several scopes. Until the product defines a preferred
+	// scope, expose the lexically first owner_key as its deterministic short label.
 	rows, err := s.db.QueryContext(ctx, `SELECT p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active,MIN(r.owner_key)
 		FROM console_principal p JOIN console_principal_role r ON r.principal_id=p.id AND r.role='owner' AND r.active=1
 		WHERE p.active=1 GROUP BY p.id,p.provider,p.provider_issuer,p.provider_subject,p.display_name,p.active ORDER BY p.display_name,p.id`)
@@ -206,6 +208,9 @@ func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 }
 
 func (s *SQLite) ConsoleSpec(ctx context.Context, principalID, specID string, management bool) (*model.ConsoleSpec, error) {
+	// For the owner projection, the final "未知业主" fallback is unreachable under
+	// today's INNER JOIN plus principal foreign key. Keep it for a future schema
+	// that may use a nullable/LEFT owner relation; do not write a test for it now.
 	query := `SELECT s.id,s.principal_id,COALESCE(NULLIF(o.display_name,''),o.id,'未知业主'),s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(NULLIF(e.display_name,''),e.id,CASE WHEN s.state='final' THEN COALESCE(NULLIF(o.display_name,''),o.id,'未知业主') END,'未知业主'),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id WHERE s.id=?`
 	// Spec 内容按业主裁定“控写、不控读”。保留 principal/management 参数以兼容
 	// 既有 repo 接口，但直接链接读取不再以身份过滤；写路径仍单独按 owner/capability 判。
@@ -213,6 +218,9 @@ func (s *SQLite) ConsoleSpec(ctx context.Context, principalID, specID string, ma
 }
 
 func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, management bool) ([]model.ConsoleSpec, error) {
+	// As in ConsoleSpec, the owner-side "未知业主" branch is unreachable while
+	// this remains an INNER JOIN protected by the principal foreign key. It is a
+	// deliberate future-schema fallback; the editor LEFT JOIN fallback is live.
 	query := `SELECT s.id,s.principal_id,COALESCE(NULLIF(o.display_name,''),o.id,'未知业主'),s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(NULLIF(e.display_name,''),e.id,CASE WHEN s.state='final' THEN COALESCE(NULLIF(o.display_name,''),o.id,'未知业主') END,'未知业主'),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id`
 	var args []any
 	if !management {
