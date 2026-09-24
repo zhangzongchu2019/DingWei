@@ -53,7 +53,6 @@ function consoleHTMLFromProductionSource() {
     mutate("status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;", "status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=document.getElementById('platform-items').childElementCount>0;");
     mutate("status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=true;", "status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=agents.length>0;");
   }
-  if (MUTATION === 'restore-inert-agents-entry') mutate("if(item.id==='agents')return;", '');
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
   if (MUTATION === 'legacy-group-deadlock') {
     html = html.replace(/<section id=groupCodeJoin>.*?<\/section>/, '');
@@ -126,7 +125,7 @@ async function main() {
         role: management ? 'management' : 'owner',
         actions: management ? ['read', 'submit', 'add', 'edit', 'delete', 'approve'] : ['read', 'submit'],
         items: [
-          { id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' },
+          ...(MUTATION === 'restore-inert-agents-entry' ? [{ id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' }] : []),
           { id: 'specs', kind: 'spec', title: 'Specs', href: MUTATION === 'legacy-specs-entry' ? '/console/specs' : '#specs', ...(MUTATION === 'legacy-specs-entry' ? {target:'_blank'} : {}), status: 'approved' },
           ...(management ? [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: MUTATION === 'legacy-group-entry' ? '/admin/agent-groups' : '#agent-groups', ...(MUTATION === 'legacy-group-entry' ? {target:'_blank'} : {}), status: 'approved' }] : []),
         ],

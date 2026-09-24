@@ -393,7 +393,6 @@ function dwThemeInit(){
 function renderPlatform(platform){
   var items=document.getElementById('platform-items'); items.replaceChildren();
   (Array.isArray(platform.items)?platform.items:[]).forEach(function(item){
-    if(item.id==='agents')return;
     var a=document.createElement('a'); a.textContent=item.title; a.href=item.href; a.dataset.itemId=item.id;
     if(item.target) a.target=item.target;
     if(item.id==='agent-groups') a.onclick=function(ev){ev.preventDefault();openGroupWorkspace();};
