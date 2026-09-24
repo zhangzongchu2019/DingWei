@@ -29,7 +29,7 @@ if (mutation === 'ux-block-colors') {
   mutate('.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}.group-block-join{background:#fff7eb}', '.group-block-list,.group-block-detail,.group-block-add,.group-block-join{background:#fff}');
   mutate('html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="dark"] .group-block-detail{background:#252033}html[data-theme="dark"] .group-block-add{background:#182a22}html[data-theme="dark"] .group-block-join{background:#30251a}', 'html[data-theme="dark"] .group-block-list,html[data-theme="dark"] .group-block-detail,html[data-theme="dark"] .group-block-add,html[data-theme="dark"] .group-block-join{background:#111316}');
 }
-if (mutation === 'ux-add-focus') mutate('document.getElementById(\'groupAddOpen\').onclick=function(){setGroupAddMode(!groupAddMode);};', "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
+if (mutation === 'ux-add-focus') mutate("document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};", "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
 if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'ux-member-gap', 'ux-placeholder', 'ux-block-colors', 'ux-add-focus'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 
 let groups = [];
@@ -138,6 +138,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
     await test('keeps the 32-character code credential visible and submits the code the operator enters', async () => {
       const code = 'B'.repeat(32);
+      await page.locator('#groupCodeJoinOpen').click();
       assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
       await page.locator('#groupJoinCode').click(); await page.locator('#groupJoinCode').press('ControlOrMeta+A'); await page.locator('#groupJoinCode').pressSequentially(code);
       await page.locator('#groupCodeJoinAgent').selectOption('member'); await page.locator('#joinByCode').click();
@@ -210,24 +211,26 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
         await page.locator('html').evaluate((html) => html.dataset.theme = 'light');
       }
     });
-    await test('shows only list and add blocks while adding, then restores prior visibility', async () => {
-      const ids = ['groupDetail', 'groupCodeJoin', 'groupRetry'];
-      const visible = async () => page.evaluate((names) => Object.fromEntries(names.map((id) => [id, !document.getElementById(id).hidden])), ids);
-      if (await page.locator('#groupAddPanel').isVisible()) await page.locator('#groupAddOpen').click();
-      const before = await visible();
+    await test('keeps the list resident and makes detail, add, and cross-owner join pairwise exclusive', async () => {
+      const visible = async () => page.evaluate(() => ({
+        list: !document.getElementById('groupListTable').closest('.group-block-list').hidden,
+        detail: !document.getElementById('groupDetail').hidden,
+        add: !document.getElementById('groupAddPanel').hidden,
+        join: !document.getElementById('groupCodeJoin').hidden,
+      }));
+      await page.locator('#groupListItems tr').first().click();
+      assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '点组名后只能展开组详情');
       await page.locator('#groupAddOpen').click();
-      try {
-        assert.deepStrictEqual(await visible(), { groupDetail: false, groupCodeJoin: false, groupRetry: false });
-        assert.strictEqual(await page.locator('#groupAddPanel').isVisible(), true);
-      } finally {
-        await page.locator('#groupAddOpen').click();
-      }
-      assert.deepStrictEqual(await visible(), before, 'closing add mode must restore each block to its prior visibility');
+      assert.deepStrictEqual(await visible(), { list: true, detail: false, add: true, join: false }, '点添加后必须收起详情且只展开添加编组');
+      await page.locator('#groupCodeJoinOpen').click();
+      assert.deepStrictEqual(await visible(), { list: true, detail: false, add: false, join: true }, '点加入入口后必须收起添加且只展开加入其他业主编组');
+      await page.locator('#groupListItems tr').first().click();
+      assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '从加入返回组详情时前一个展开项必须收起');
     });
     await test('close rejects, open joins, offline error is visible, and removal confirms the real consequence', async () => {
+      await page.locator('#groupListItems tr').first().click();
       await page.locator('#groupAdditionsToggle').click(); await page.getByRole('button', { name: '开放添加' }).waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('#groupAdditionsToggle').textContent(), '开放添加');
-      await page.locator('#groupJoinCode').click(); await page.locator('#groupJoinCode').press('ControlOrMeta+A'); await page.locator('#groupJoinCode').pressSequentially('A'.repeat(32));
       await page.locator('#groupJoinAgent').selectOption('member'); await page.locator('#joinGroup').click(); await page.locator('#groupJoinFeedback').getByText('该编组已关闭添加').waitFor({ state: 'visible' });
       await page.locator('#groupAdditionsToggle').click(); await page.getByRole('button', { name: '关闭添加' }).waitFor({ state: 'visible' });
       await page.locator('#groupJoinAgent').selectOption('member');
