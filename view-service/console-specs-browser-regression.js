@@ -29,6 +29,9 @@ function productionHTML() {
     html = html.split(needle).join(replacement);
     assert.notStrictEqual(html, before, `变异 ${MUTATION} 未改动任何字节 —— 锚点已失配,这条证明不存在`);
   };
+  if (MUTATION === 'no-copy-link-feedback') {
+    mutateHTML("statusEl.textContent=ok?('只读链接已复制: '+text):'复制失败,请手动复制: '+text;", '');
+  }
   if (MUTATION === 'no-list-error-text') {
     mutateHTML('catch(err){specListFailure(err);}', 'catch(err){}');
   }
@@ -62,7 +65,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -516,6 +519,42 @@ async function main() {
     assert.ok(listOkState.rows > 0, '重试成功后列表必须重新渲染出行');
     console.log(`S-5: 失败有文案=${listFailState.visibleError} 重试可见=${listFailState.retryVisible} 重试后错误行消失=${listOkState.errorGone} 分页状态=${JSON.stringify(listOkState.pageStatus)} 行数=${listOkState.rows}`);
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
+    // ㊲ S-7:「复制只读链接」—— 复制到的**文本内容**必须对,且成功必须有**可见反馈** ——————
+    // 🔴 业主 2026-09-24 裁定「当前控写不控读」⇒ 给的是**只读**链接。
+    //    它对【已存在】的 spec 同样有效(`GET /console/specs/{id}` 本就公开可读),
+    //    不依赖创建时那枚只出现一次的 edit 令牌。
+    // 🔴 判据落在**被写入的文本**上,不落在 clipboard 权限上 —— 无头环境里权限判据容易假绿。
+    await page.click('#show-spec-list');
+    await page.waitForSelector('.spec-row .copy-spec-link');
+    await page.evaluate(() => { globalThis.__copiedCode = ''; });
+    const firstRowSpecID = await page.evaluate(() => (document.querySelector('.spec-row') || {}).dataset.specId);
+    assert.ok(firstRowSpecID, 'S-7 前置:列表行必须带 data-spec-id');
+    await page.locator('.spec-row .copy-spec-link').first().click();
+    await page.waitForTimeout(400);
+    const copyState = await page.evaluate(() => ({
+      copied: globalThis.__copiedCode || '',
+      rowStatus: (document.querySelector('.spec-row .spec-action-status') || {}).textContent || '',
+      origin: location.origin,
+    }));
+    assert.strictEqual(copyState.copied, `${copyState.origin}/console/specs/${firstRowSpecID}`,
+      `复制到剪贴板的文本不是该 spec 的只读链接,实测 ${JSON.stringify(copyState.copied)}`);
+    assert.ok(/已复制/.test(copyState.rowStatus),
+      `复制之后列表行没有可见反馈(实测 ${JSON.stringify(copyState.rowStatus)}) ⇒ 业主又是"点了没反应"`);
+    // 详情页同样要有一个,且复制的是当前这份 spec
+    await page.evaluate(() => { globalThis.__copiedCode = ''; });
+    await page.evaluate((id) => window.openSpec(id, true), firstRowSpecID);
+    await page.waitForSelector('#copy-spec-link');
+    await page.click('#copy-spec-link');
+    await page.waitForTimeout(400);
+    const detailCopy = await page.evaluate(() => ({
+      copied: globalThis.__copiedCode || '',
+      status: (document.getElementById('copy-link-status') || {}).textContent || '',
+    }));
+    assert.strictEqual(detailCopy.copied, `${copyState.origin}/console/specs/${firstRowSpecID}`,
+      `详情页复制到的不是当前 spec 的只读链接,实测 ${JSON.stringify(detailCopy.copied)}`);
+    assert.ok(/已复制/.test(detailCopy.status),
+      `详情页复制之后没有可见反馈(实测 ${JSON.stringify(detailCopy.status)})`);
+    console.log(`S-7: 列表复制=${copyState.copied} 反馈=${JSON.stringify(copyState.rowStatus)} 详情反馈=${JSON.stringify(detailCopy.status)}`);
     const unexpectedConsole = consoleErrors.filter((entry) => {
       if (/^Failed to load resource: the server responded with a status of (400|404|409|502)/.test(entry.text)) return false;
       // S-5 故意把列表端点打成 500;只在该端点上放行,别处的 500 仍然算缺陷
