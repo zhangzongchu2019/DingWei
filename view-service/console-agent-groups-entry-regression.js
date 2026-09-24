@@ -9,8 +9,7 @@
 // 为什么入口必须 target="_blank"(实测到的活缺陷):
 //    /admin/agent-groups 是**独立文档**;console 右栏是一堆活着的 iframe,每个一条 SSE。
 //    顶层导航过去 ⇒ pane 全丢、SSE 全断、后退回不来(实测 pane 数 2→0)。
-// 🔴 但**不能一律加 _blank**:builtin "Agents" 的 href 是 `#agents` 页内锚,
-//    给它加 _blank 会开一个空标签页 ⇒ 逐项决定(G3 钉这一边)。
+// builtin "Agents" 已按业主裁定从服务端移除。G3/G4 现在守它不得重新长回。
 //
 // 装置与 console-theme-global-regression.js 同源同手法:
 //    console 页**从生产源码实时抠**(consolePageHTML),/view/* 返回仓内真实 renderer 字节。
@@ -278,33 +277,19 @@ async function t(name, fn) {
       } finally { await context.close(); }
     });
 
-    // ── G3 builtin "Agents" 是页内锚:不得带 target、不得开新页 ──────────────
+    // ── G3 builtin "Agents" 已删除:服务端不得再下发 ───────────────────────
     currentPrincipal = 'manager';
-    await t('G3 🔴 builtin「Agents」仍须页内锚(#agents、无 target、点击不开新页)', async () => {
+    await t('G3 🔴 builtin「Agents」入口必须不存在', async () => {
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
       try {
         const { page } = await openTwoPanes(context);
         const e = await platformEntry(page, 'agents');
-        assert.ok(e, 'builtin agents 项不见了');
-        assert.strictEqual(e.href, '#agents', `builtin href=${e.href},应为页内锚 #agents`);
-        assert.ok(!e.target, `🔴 页内锚被加了 target=${JSON.stringify(e.target)} —— 那会开一个**空标签页**(target 必须逐项,不能一律)`);
-        const before = await snapshot(page);
-        let popup = null;
-        const popupPromise = context.waitForEvent('page', { timeout: 2000 }).then((p) => { popup = p; return p; }).catch(() => null);
-        await page.click('#platform-items a[data-item-id="agents"]');
-        await popupPromise;
-        assert.strictEqual(popup, null, '页内锚点开了一個新标签页 —— target 被一律加了');
-        await page.waitForTimeout(300);
-        const after = await snapshot(page);
-        const markers = await readMarkers(page);
-        const evidence = `点击前=${JSON.stringify(before)} 点击后=${JSON.stringify(after)} 标记=${JSON.stringify(markers)}`;
-        assert.ok(after.consoleStillThere && after.panes === 2 && after.tabs === 2, `页内锚点击破坏了右栏 —— ${evidence}`);
-        assert.strictEqual(markers[A], `${A}-alive`, `页内锚点击后 A pane 对象没了 —— ${evidence}`);
+        assert.strictEqual(e, null, `builtin Agents 不得重新下发:${JSON.stringify(e)}`);
       } finally { await context.close(); }
     });
 
-    // ── G4 排他腿:owner 看不到它(两腿都在,断言才排他)────────────────────
-    await t('G4 🔴 非 management(owner)必须看不到入口,而 builtin agents 仍在', async () => {
+    // ── G4 owner 侧同样不得重新出现已删除入口 ──────────────────────────
+    await t('G4 🔴 owner 左栏也不得出现已删除的 builtin Agents', async () => {
       currentPrincipal = 'owner';
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
       try {
@@ -314,9 +299,9 @@ async function t(name, fn) {
         const leaked = await platformEntry(page, ENTRY_ID);
         assert.strictEqual(leaked, null, `🔴 owner 也看到了入口:${JSON.stringify(leaked)}(角色判定没了)`);
         const builtin = await platformEntry(page, 'agents');
-        assert.ok(builtin, 'owner 连 builtin agents 都丢了 —— 排他腿不能顺手把该给的也砍掉');
+        assert.strictEqual(builtin, null, `owner 侧 builtin Agents 不得重新出现:${JSON.stringify(builtin)}`);
         const ids = await page.evaluate(() => Array.from(document.querySelectorAll('#platform-items a')).map((a) => a.dataset.itemId).sort());
-        assert.deepStrictEqual(ids, ['agents','specs'], `owner 应保留 agents/specs 且只排除 agent-groups,实为 ${JSON.stringify(ids)}`);
+        assert.deepStrictEqual(ids, ['specs'], `owner 只应保留可操作的 specs,实为 ${JSON.stringify(ids)}`);
       } finally { await context.close(); }
     });
   } finally {

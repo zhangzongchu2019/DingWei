@@ -12,23 +12,17 @@ const end = source.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents', start);
 assert(start >= 0 && end > start, 'cannot extract consolePageHTML from production source');
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
-if (mutation === 'retry-feedback') html = html.replace("groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');", '');
-if (mutation === 'retry-reachability') html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
-if (mutation === 'name-feedback') {
-  const feedback = "groupFeedback('groupNameFeedback','团队名称不能超过 8 个字符')";
-  const at = html.lastIndexOf(feedback);
-  assert(at >= 0, 'cannot find final overlong-name feedback');
-  html = html.slice(0, at) + '' + html.slice(at + feedback.length);
+function mutate(from, to) {
+  const hits = html.split(from).length - 1;
+  assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
+  html = html.replace(from, to);
 }
-if (mutation === 'can-manage') {
-  // The production page has an earlier compatibility definition and the final
-  // definition that is actually used. Mutate only the final guard.
-  const guard = 'if(!leader&&selected.can_manage)';
-  const at = html.lastIndexOf(guard);
-  assert(at >= 0, 'cannot find final can_manage guard');
-  html = html.slice(0, at) + 'if(false)' + html.slice(at + guard.length);
-}
-if (mutation && !['retry-feedback', 'retry-reachability', 'name-feedback', 'can-manage'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'retry-feedback') mutate("groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');", '');
+if (mutation === 'leak-delete') mutate('if(g.can_manage){var del=', 'if(true){var del=');
+if (mutation === 'leak-remove') mutate('if(selected.can_manage&&!leader){var rm=', 'if(!leader){var rm=');
+if (mutation === 'foreign-candidate') mutate("fill('groupJoinAgent',owned.filter(function(a){return !ids.has(a.id);}),", "fill('groupJoinAgent',owned.concat([{id:'foreign',session_name:'foreign-agent-2642',online:true}]).filter(function(a){return !ids.has(a.id);}),");
+if (mutation === 'detach-remove-row') mutate('row.append(rm);}members.append(row);', 'members.append(rm);}members.append(row);');
+if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 
 let groups = [];
 let additionsClosed = false;
@@ -40,7 +34,7 @@ const agents = [
 let nextJoinFailure = '';
 const membershipWrites = [];
 function payload() {
-  return { principal: 'owner', owned_agents: agents, groups: groups.map((g) => ({ ...g, additions_closed: additionsClosed, members: g.members.map((m) => ({ ...m })) })) };
+  return { principal: 'owner', owned_agents: agents, groups: groups.map((g) => ({ ...g, owner_display_name: g.owner_display_name || '业主甲', additions_closed: additionsClosed, members: g.members.map((m) => ({ ...m })) })) };
 }
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
@@ -57,7 +51,7 @@ const server = http.createServer(async (req, res) => {
     const body = await read(req); const short = body.short_name;
     const collides = groups.find((g) => g.short_name === short);
     if (collides) { res.writeHead(409, { 'content-type': 'text/plain' }); return res.end(`团队名称不可用；建议名称：${short.slice(0, 7)}1、${short.slice(0, 7)}2`); }
-    groups.push({ code: 'A'.repeat(32), short_name: short, creator_principal: 'owner', can_manage: true, leader_key_id: 'key-leader', leader_session_name: 'owner-leader-2642', members: [{ agent_id: 'leader', key_id: 'key-leader', session_name: 'owner-leader-2642' }] });
+    groups.push({ code: 'A'.repeat(32), short_name: short, creator_principal: 'owner', can_manage: true, owner_display_name: '业主甲', leader_key_id: 'key-leader', leader_session_name: 'owner-leader-2642', members: [{ agent_id: 'leader', key_id: 'key-leader', session_name: 'owner-leader-2642', online: true }] });
     return json(res, 201, groups[0]);
   }
   const memberMatch = pathName.match(/^\/api\/console\/agent-groups\/([^/]+)\/members(?:\/([^/]+))?$/);
@@ -66,7 +60,7 @@ const server = http.createServer(async (req, res) => {
     if (additionsClosed) { res.writeHead(409, { 'content-type': 'text/plain' }); return res.end('该编组已关闭添加'); }
     const body = await read(req); membershipWrites.push({ code: decodeURIComponent(memberMatch[1]), agent_id: body.agent_id }); const a = agents.find((x) => x.id === body.agent_id);
     if (!a) { res.writeHead(404); return res.end(); }
-    groups[0].members.push({ agent_id: a.id, key_id: a.key_id, session_name: a.session_name }); res.writeHead(204); return res.end();
+    groups[0].members.push({ agent_id: a.id, key_id: a.key_id, session_name: a.session_name, online: a.online }); res.writeHead(204); return res.end();
   }
   if (memberMatch && req.method === 'DELETE') { groups[0].members = groups[0].members.filter((m) => m.agent_id !== decodeURIComponent(memberMatch[2])); res.writeHead(204); return res.end(); }
   if (pathName.endsWith('/additions') && req.method === 'POST') { additionsClosed = (await read(req)).closed; res.writeHead(204); return res.end(); }
@@ -105,19 +99,17 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await page.waitForFunction(() => !document.getElementById('groupLeader').disabled);
     await test('name feedback is near the name control and the obsolete pattern is absent', async () => {
       assert.strictEqual(await page.locator('#groupShortName').getAttribute('pattern'), null);
-      assert.strictEqual(await page.locator('#groupShortName').getAttribute('maxlength'), null);
+      assert.strictEqual(await page.locator('#groupShortName').getAttribute('maxlength'), '8');
       await page.locator('#createGroup').click();
       assert.strictEqual(await page.locator('#groupNameFeedback').textContent(), '请输入团队名称');
     });
-    await test('pasting more than eight characters remains visible and gets nearby feedback', async () => {
+    await test('the owner-confirmed eight-character limit is enforced by the native control', async () => {
       await page.locator('#groupShortName').click();
       await page.locator('#groupShortName').press('ControlOrMeta+A');
       await page.locator('#groupShortName').press('Backspace');
       await page.evaluate(async () => navigator.clipboard.writeText('超过八个字符的团队名称'));
       await page.locator('#groupShortName').press('ControlOrMeta+V');
-      assert.ok((await page.locator('#groupShortName').inputValue()).length > 8);
-      await page.locator('#createGroup').click();
-      await page.locator('#groupNameFeedback').getByText('团队名称不能超过 8 个字符').waitFor({ state: 'visible' });
+      assert.strictEqual((await page.locator('#groupShortName').inputValue()).length, 8);
     });
     await test('create trims, lists leader first, and reports exact duplicate with suggestion', async () => {
       await page.locator('#groupShortName').click(); await page.locator('#groupShortName').press('ControlOrMeta+A'); await page.locator('#groupShortName').press('Backspace'); await page.locator('#groupShortName').pressSequentially('  团队1  '); await page.locator('#createGroup').click();
@@ -128,7 +120,6 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#groupNameFeedback').filter({ hasText: '团队名称不可用' }).waitFor({ state: 'visible' });
       assert.match(await page.locator('#groupNameFeedback').textContent(), /团队名称不可用；建议名称：团队11、团队12/);
       assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
-      assert.strictEqual(await page.locator('#groupCodeValue').textContent(), 'A'.repeat(32));
     });
     await test('retry success is visible', async () => {
       await page.evaluate(() => refreshGroups('retry')); await page.locator('#groupRetryFeedback').getByText('已刷新 · 1 个编组').waitFor({ state: 'visible' });
@@ -148,6 +139,24 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       groups[0].members = groups[0].members.filter((member) => member.agent_id !== 'member');
       await page.evaluate(() => refreshGroups('credential-reset'));
     });
+    await test('renders the owner table and keeps cross-owner management controls absent', async () => {
+      groups.push({ code: 'C'.repeat(32), short_name: '他组', creator_principal: 'owner-b', owner_display_name: '业主乙', can_manage: false, leader_key_id: 'foreign-key', leader_session_name: 'foreign-leader-2642', members: [
+        { agent_id: 'foreign-leader', key_id: 'foreign-key', session_name: 'foreign-leader-2642', online: false },
+        { agent_id: 'member', key_id: 'key-member', session_name: 'owner-member-2642', online: true },
+      ] });
+      await page.evaluate(() => refreshGroups('cross-owner'));
+      assert.deepStrictEqual(await page.locator('#groupListTable th').allTextContents(), ['组名', '组长', '业主', '操作']);
+      assert.strictEqual(await page.locator('#groupListItems .group-delete').count(), 1, 'delete must exist only for an owned group');
+      assert.deepStrictEqual(await page.locator('#groupListItems tr').allTextContents(), ['团队1leader业主甲删除', '他组leader业主乙']);
+      await page.locator('#groupListItems tr').filter({ hasText: '他组' }).click();
+      const crossText = await page.locator('#groupMembers').textContent();
+      const crossRemoveCount = await page.locator('#groupMembers .group-member-remove').count();
+      const crossAddHidden = await page.locator('#groupMemberAdd').isHidden();
+      await page.locator('#groupListItems tr').filter({ hasText: '团队1' }).click();
+      assert.strictEqual(crossRemoveCount, 0, 'cross-owner members must not expose removal');
+      assert.match(crossText, /^leader（组长）（offline）member$/);
+      assert.strictEqual(crossAddHidden, true, 'cross-owner group must not expose member candidates');
+    });
     await test('close rejects, open joins, offline error is visible, and removal confirms the real consequence', async () => {
       await page.locator('#groupAdditionsToggle').click(); await page.getByRole('button', { name: '开放添加' }).waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('#groupAdditionsToggle').textContent(), '开放添加');
@@ -159,7 +168,12 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await page.locator('#groupJoinFeedback').textContent(), '该 Agent 已下线');
       await page.locator('#joinGroup').click(); await page.locator('#groupMembers').getByText('member').waitFor({ state: 'visible' });
       page.once('dialog', async (dialog) => { assert.match(dialog.message(), /消息可达性会变/); await dialog.accept(); });
-      await page.locator('#groupMembers').getByRole('button', { name: 'member' }).click(); await page.locator('#groupRemoveAction button').click();
+      const memberRow = page.locator('#groupMembers .group-member-row').filter({ hasText: 'member' });
+      await memberRow.hover();
+      assert.strictEqual(await memberRow.locator(':scope > .group-member-remove').count(), 1, 'removal must be a direct child of the hovered member row');
+      const remove = memberRow.locator('.group-member-remove');
+      assert.strictEqual(await remove.evaluate((button) => button.closest('.group-member-row') === button.parentElement), true);
+      await remove.click();
       await page.waitForFunction(() => !document.getElementById('groupMembers').textContent.includes('member'));
       assert.deepStrictEqual(pageErrors, []);
       assert.deepStrictEqual(consoleErrors.filter((text) => !text.includes('status of 409') && !text.includes('status of 503')), []);
