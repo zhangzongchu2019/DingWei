@@ -181,13 +181,8 @@ func TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete(t *testing.T) {
 	}
 	delete(hub.sessionClients[a2.KeyID], a2.SessionName)
 	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
-	if rr.Code != http.StatusConflict || !strings.Contains(rr.Body.String(), "该 Agent 不可用（不存在、未激活或已下线）") {
-		t.Fatalf("offline Agent must be visibly rejected code=%d body=%s", rr.Code, rr.Body.String())
-	}
-	hub.sessionClients[a2.KeyID] = map[string]*sessionClient{a2.SessionName: {keyID: a2.KeyID, sessionName: a2.SessionName}}
-	rr = call("owner-a", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+a2.ID+`"}`))
 	if rr.Code != http.StatusNoContent {
-		t.Fatalf("open group must add own online Agent code=%d body=%s", rr.Code, rr.Body.String())
+		t.Fatalf("group membership is configuration, so an owned active offline Agent must be addable code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	rr = call("owner-b", http.MethodPost, "/api/console/agent-groups/"+group.Code+"/members", group.Code, "", []byte(`{"agent_id":"`+b1.ID+`"}`))
 	if rr.Code != http.StatusNoContent {

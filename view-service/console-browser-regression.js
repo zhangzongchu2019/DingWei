@@ -19,6 +19,11 @@ function consoleHTMLFromProductionSource() {
   const end = source.indexOf(END, contentStart);
   assert.notStrictEqual(end, -1, 'consolePageHTML end marker missing');
   let html = source.slice(contentStart, end);
+  function mutate(from, to) {
+    const next = html.replace(from, to);
+    if (next === html) throw new Error(`mutation anchor missing: ${from}`);
+    html = next;
+  }
   if (MUTATION === 'stale-groups') html = html.replace('if(generation!==groupRequestGeneration)return null;', '');
   if (MUTATION === 'expose-group-code') html = html.replace("box.append(copy);", "box.append(copy);var leaked=document.createElement('code');leaked.className='group-code';leaked.textContent=group.code;box.append(leaked);");
   if (MUTATION === 'manual-agent-fields') html = html.replace("option.textContent=agent.session_name;option.dataset.keyId=agent.key_id||'';select.append(option)", "option.textContent=agent.id;option.dataset.keyId=agent.key_id||'';select.append(option)");
@@ -31,13 +36,18 @@ function consoleHTMLFromProductionSource() {
   if (MUTATION === 'keep-created-group-name') html = html.replace(".then(function(ok){if(ok)input.value='';});", ';');
   if (MUTATION === 'reset-group-leader-selection') html = html.replace("if(groupLeaderSelection&&Array.from(leaders.options).some(function(o){return o.value===groupLeaderSelection;}))leaders.value=groupLeaderSelection;", '');
   if (MUTATION === 'full-code-join-agent-names') html = html.replace("o.textContent=groupShortName(agent.session_name);codeJoin.append(o);", "o.textContent=agent.session_name;codeJoin.append(o);");
+  if (MUTATION === 'filter-offline-group-candidates') {
+    mutate("if(!owned.length){", "var online=owned.filter(function(a){return a.online;});if(!online.length){");
+    mutate("}else{owned.forEach(function(agent){var o=document.createElement('option');o.value=agent.id;o.textContent=groupShortName(agent.session_name)+(agent.online?'':'（离线）');codeJoin.append(o);", "}else{online.forEach(function(agent){var o=document.createElement('option');o.value=agent.id;o.textContent=groupShortName(agent.session_name);codeJoin.append(o);");
+    mutate("var candidates=owned.filter(function(a){return !memberIDs.has(a.id);});", "var candidates=owned.filter(function(a){return a.online&&!memberIDs.has(a.id);});");
+  }
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
   if (MUTATION === 'legacy-group-deadlock') {
     html = html.replace(/<section id=groupCodeJoin>.*?<\/section>/, '');
     html = html.replace('<section id=groupDetail hidden>', '<section id=groupDetail hidden><label>完整 32 字符组码 <input id=groupJoinCode maxlength=32></label>');
     html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
   }
-  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','unhandled-group-action','legacy-group-deadlock'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -66,10 +76,13 @@ async function main() {
   let failPlatformLoad = '';
   let failAgentsLoad = '';
   let agentGETs = 0;
+  let includeOfflineOwned = false;
   const groupWrites = [];
   const groupJoinWrites = [];
   function groupPayload(closed) {
-    return { principal: 'owner-a', owned_agents: [{ id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642', online: true }, { id: 'agent-b', key_id: 'fixture-key-b', session_name: 'owner-beta-2642', online: true }], groups: [{
+    const ownedAgents = [{ id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642', online: true }, { id: 'agent-b', key_id: 'fixture-key-b', session_name: 'owner-beta-2642', online: true }];
+    if (includeOfflineOwned) ownedAgents.push({ id: 'agent-c', key_id: 'fixture-key-c', session_name: 'owner-gamma-2642', online: false });
+    return { principal: 'owner-a', owned_agents: ownedAgents, groups: [{
       code: 'team-001AAAAAAAAAAAAAAAAAAAAAAAA', short_name: 'team-001', creator_principal: 'owner-a', can_manage: true, additions_closed: closed,
       leader_key_id: 'fixture-key-a', leader_session_name: 'owner-alpha-2642',
       members: [{ agent_id: 'agent-a', key_id: 'fixture-key-a', session_name: 'owner-alpha-2642' }],
@@ -271,6 +284,24 @@ async function main() {
       } finally {
         await createPage.close();
         groupWrites.length = 0;
+      }
+    });
+
+    await test('offers owned active offline Agents as group membership candidates', async () => {
+      includeOfflineOwned = true;
+      const offlinePage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      try {
+        offlinePage.setDefaultTimeout(1500);
+        await offlinePage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+        await offlinePage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+        await offlinePage.locator('#platform-items a[data-item-id="agent-groups"]').click();
+        await offlinePage.waitForFunction(() => document.getElementById('groupCodeJoinAgent').disabled === false);
+        assert.deepStrictEqual(await offlinePage.locator('#groupCodeJoinAgent option').allTextContents(), ['alpha', 'beta', 'gamma（离线）']);
+        assert.deepStrictEqual(await offlinePage.locator('#groupJoinAgent option').allTextContents(), ['beta', 'gamma（离线）']);
+      } finally {
+        await offlinePage.close();
+        includeOfflineOwned = false;
+        groupJoinWrites.length = 0;
       }
     });
 

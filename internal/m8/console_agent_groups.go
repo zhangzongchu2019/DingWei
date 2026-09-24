@@ -235,10 +235,6 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "agent_id required", http.StatusBadRequest)
 			return
 		}
-		if !h.consoleAgentOnline(r.Context(), request.AgentID, principal) {
-			http.Error(w, "该 Agent 不可用（不存在、未激活或已下线）", http.StatusConflict)
-			return
-		}
 		err = repo.AssignOwnedConsoleAgentGroup(r.Context(), code, principal, request.AgentID)
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/additions"):
 		var request struct {
@@ -264,7 +260,7 @@ func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if errors.Is(err, store.ErrAgentGroupAgentUnavailable) {
-		http.Error(w, "该 Agent 不可用（不存在、未激活或已下线）", http.StatusConflict)
+		http.Error(w, "该 Agent 不可用（不存在、未激活或不属于当前业主）", http.StatusConflict)
 		return
 	}
 	if errors.Is(err, store.ErrAgentGroupMemberNotFound) {
