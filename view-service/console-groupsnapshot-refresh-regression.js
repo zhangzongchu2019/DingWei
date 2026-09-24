@@ -22,7 +22,9 @@ function extract(goSource) {
 
 function makeEnv() {
   function el(tag) {
-    const n = { tag, children: [], style: {}, attrs: {}, className: '', value: '', hidden: false,
+    // 🔴 dataset:renderAgentNav 会写 el.dataset.groupCode / .session。
+    //    假元素没有它时抛 "Cannot set properties of undefined",而异常被产品 catch 吞掉。
+    const n = { tag, children: [], style: {}, attrs: {}, className: '', value: '', hidden: false, dataset: {},
       classList: { _s: new Set(), toggle(c, on) { on ? this._s.add(c) : this._s.delete(c); },
                    contains(c) { return this._s.has(c); } },
       append(...xs) { this.children.push(...xs); },
@@ -34,8 +36,11 @@ function makeEnv() {
       remove() { n.removed = true; }, removed: false };
     return n;
   }
+  // 🔴 2026-09-24 补桩:refreshGroups 现在会调 renderAgentNav(),它要 #a 与 #agentNavMode。
+  //    缺了不会报错 —— 异常被产品自己的 catch 吞掉,refreshGroups 静默返回 null,
+  //    于是这条格红在"应把 data 返回出来"上,看起来像产品坏了。(纪律五十二)
   const byId = { tabs: el('div'), panes: el('div'), hint: el('div'), a: el('nav'),
-    retryPlatform: el('button'), retryAgents: el('button'),
+    retryPlatform: el('button'), retryAgents: el('button'), agentNavMode: el('button'),
     'agents-status': el('div'), 'platform-items': el('div'), 'platform-status': el('div') };
   return { document: { createElement: el, getElementById: id => byId[id] || null }, byId,
            alert() {}, encodeURIComponent };
@@ -63,10 +68,15 @@ const t = async (name, f) => {
 
 // 🔴 变异锚点绑在【只有本次改动落地后才存在】的字节上:
 //    "return null;groupSnapshot=data;if(groupMode){" —— 改动前这串不存在。
+// 🔴 2026-09-24 改锚:原锚是 'return null;groupSnapshot=data;if(groupMode){' ——
+//    它把【左右邻居】一起绑进了判据。产品后来在中间插了一句 renderAgentNav();,
+//    锚点当场失配,这条格连着两个交付锚都是红的(纪律五十二:桩跟着产品漂)。
+//    ⇒ 新锚只绑【赋值本身】这一小段,并用"把它包进 if(groupMode)"来复现那次回退。
+//      邻居再怎么加,这个锚都还在;而它改的正是本条要防的那件事:赋值被 groupMode 挡住。
 const MUTATION = {
   name: 'snapshot-back-inside-groupmode',
-  from: 'return null;groupSnapshot=data;if(groupMode){',
-  to:   'return null;if(groupMode){groupSnapshot=data;',
+  from: 'groupSnapshot=data;',
+  to:   'if(groupMode)groupSnapshot=data;',
 };
 
 (async () => {
