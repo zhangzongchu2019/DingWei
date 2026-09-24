@@ -16,7 +16,117 @@ import (
 const (
 	groupCodeA = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 	groupCodeB = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+	groupCodeC = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
 )
+
+type groupingPolicyFixture struct {
+	hub *Hub
+	db  *store.SQLite
+	ctx context.Context
+	ep  map[string]agentEndpointIdentity
+}
+
+func newGroupingPolicyFixture(t *testing.T) groupingPolicyFixture {
+	t.Helper()
+	hub, db, ctx := newTestHub(t)
+	endpoints := map[string]agentEndpointIdentity{
+		"a": {KeyID: "policy-ka", SessionName: "owner-a-policy-a", OwnerKey: "owner-a"},
+		"b": {KeyID: "policy-kb", SessionName: "owner-a-policy-b", OwnerKey: "owner-a"},
+		"c": {KeyID: "policy-kc", SessionName: "owner-c-policy-c", OwnerKey: "owner-c"},
+		"d": {KeyID: "policy-kd", SessionName: "owner-d-policy-d", OwnerKey: "owner-d"},
+	}
+	for _, ep := range endpoints {
+		if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: ep.KeyID, SessionName: ep.SessionName, OwnerKey: ep.OwnerKey, Active: true}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return groupingPolicyFixture{hub: hub, db: db, ctx: ctx, ep: endpoints}
+}
+
+func (f groupingPolicyFixture) enforce(from, to string) error {
+	source, target := f.ep[from], f.ep[to]
+	return f.hub.enforceAgentGrouping(f.ctx,
+		address{Kind: addressSession, KeyID: source.KeyID, SessionName: source.SessionName},
+		model.Envelope{From: source.SessionName + "#" + source.KeyID, To: target.SessionName + "#" + target.KeyID},
+		target.KeyID, target.SessionName)
+}
+
+func (f groupingPolicyFixture) createGroup(t *testing.T, code, leader string) {
+	t.Helper()
+	ep := f.ep[leader]
+	if err := f.db.UpsertAgentGroup(f.ctx, model.AgentGroup{Code: code, LeaderKeyID: ep.KeyID, LeaderSessionName: ep.SessionName, LeaderOwnerKey: ep.OwnerKey}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func (f groupingPolicyFixture) add(t *testing.T, code, endpoint string) {
+	t.Helper()
+	ep := f.ep[endpoint]
+	if err := f.db.AssignAgentGroup(f.ctx, model.AgentGroupMember{Code: code, KeyID: ep.KeyID, SessionName: ep.SessionName, OwnerKey: ep.OwnerKey}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestOwnerGroupingRule01SameExplicitGroupCommunicates(t *testing.T) {
+	f := newGroupingPolicyFixture(t)
+	f.createGroup(t, groupCodeA, "a")
+	f.add(t, groupCodeA, "c")
+	if err := f.enforce("a", "c"); err != nil {
+		t.Fatalf("same explicit group must communicate: %v", err)
+	}
+}
+
+func TestOwnerGroupingRule02UngroupedAgentsUseTheOwnerDefaultGroup(t *testing.T) {
+	f := newGroupingPolicyFixture(t)
+	f.createGroup(t, groupCodeC, "c") // activate grouping without grouping a/b
+	if err := f.enforce("a", "b"); err != nil {
+		t.Fatalf("ungrouped same-owner Agents must share the default group: %v", err)
+	}
+}
+
+func TestOwnerGroupingRule03ExplicitMembershipRemovesTheDefaultGroup(t *testing.T) {
+	f := newGroupingPolicyFixture(t)
+	f.createGroup(t, groupCodeA, "a")
+	if err := f.enforce("a", "b"); !errors.Is(err, errGroupAgentNotFound) {
+		t.Fatalf("explicitly grouped Agent must not retain the owner default group: %v", err)
+	}
+}
+
+func TestOwnerGroupingRule04DifferentGroupsAreIsolated(t *testing.T) {
+	f := newGroupingPolicyFixture(t)
+	f.createGroup(t, groupCodeA, "a")
+	f.createGroup(t, groupCodeB, "c")
+	if err := f.enforce("a", "c"); !errors.Is(err, errGroupAgentNotFound) {
+		t.Fatalf("different explicit groups must be isolated: %v", err)
+	}
+}
+
+func TestOwnerGroupingRule05MultipleGroupsProvideMultipleKeys(t *testing.T) {
+	f := newGroupingPolicyFixture(t)
+	f.createGroup(t, groupCodeA, "a")
+	f.createGroup(t, groupCodeB, "c")
+	f.add(t, groupCodeA, "d")
+	f.add(t, groupCodeB, "d")
+	if errA, errB := f.enforce("a", "d"), f.enforce("c", "d"); errA != nil || errB != nil {
+		t.Fatalf("multi-group Agent must communicate through every membership: groupA=%v groupB=%v", errA, errB)
+	}
+}
+
+func TestOwnerGroupingRule02ExitAllGroupsRestoresTheDefaultGroup(t *testing.T) {
+	f := newGroupingPolicyFixture(t)
+	f.createGroup(t, groupCodeA, "c")
+	f.add(t, groupCodeA, "a")
+	if err := f.enforce("a", "b"); !errors.Is(err, errGroupAgentNotFound) {
+		t.Fatalf("explicit membership precondition did not remove default group: %v", err)
+	}
+	a := f.ep["a"]
+	if err := f.db.UnassignAgentGroup(f.ctx, groupCodeA, a.KeyID, a.SessionName); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.enforce("a", "b"); err != nil {
+		t.Fatalf("leaving every explicit group must restore the owner default group: %v", err)
+	}
+}
 
 type groupingFixture struct {
 	hub                               *Hub
