@@ -22,6 +22,16 @@ function productionHTML() {
   assert.notStrictEqual(end, -1, 'consoleSpecsPageHTML end marker missing');
   let html = source.slice(contentStart, end).replace(
     '<script id=dw-md-core></script>', () => `<script>${fs.readFileSync(MD_CORE, 'utf8')}</script>`);
+  // 🔴 变异必须【真的改到字节】:本仓已查出三个既有变异因锚点失配成了空操作、变异下仍全绿。
+  //    统一走 mutateHTML():替换前后必须不同,否则当场报错。
+  const mutateHTML = (needle, replacement) => {
+    const before = html;
+    html = html.split(needle).join(replacement);
+    assert.notStrictEqual(html, before, `变异 ${MUTATION} 未改动任何字节 —— 锚点已失配,这条证明不存在`);
+  };
+  if (MUTATION === 'no-list-error-text') {
+    mutateHTML('catch(err){specListFailure(err);}', 'catch(err){}');
+  }
   if (MUTATION === 'no-editor-focus') {
     assert.ok(html.includes('specEditors.edit.codemirror.focus();'), 'no-editor-focus mutation anchor missing');
     html = html.replace('specEditors.edit.codemirror.focus();', '');
@@ -52,7 +62,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'no-view', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -77,6 +87,7 @@ async function main() {
   const taskCreates = [];
   const taskDeps = new Map([['task-a', []], ['task-b', []]]);
   const taskDoDs = new Map([['task-a', 'A done'], ['task-b', '']]);
+  let failListMode = '';
   let presplitMode = 'success'; let presplitRequest = null; let presplitGenerated = false;
   const server = http.createServer(async (req, res) => {
     if (String(req.url).startsWith('/fixture/presplit-mode') && req.method === 'POST') {
@@ -110,7 +121,13 @@ async function main() {
     if (req.url === '/console/spec-assets/easymde.min.css') {
       res.writeHead(200, { 'Content-Type': 'text/css' }); res.end(fs.readFileSync(path.join(ASSET_DIR, 'easymde.min.css'))); return;
     }
+    if (String(req.url).startsWith('/fixture/fail-list') && req.method === 'POST') {
+      failListMode = new URL(req.url, 'http://fixture').searchParams.get('mode') || '';
+      res.writeHead(204); res.end(); return;
+    }
     if (String(req.url).startsWith('/api/console/specs?') && req.method === 'GET') {
+      if (failListMode === '500') { res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('fixture list unavailable'); return; }
+      if (failListMode === 'network') { req.socket.destroy(); return; }
       const page = Number(new URL(req.url, 'http://fixture').searchParams.get('page') || 1); const start=(page-1)*20;
       const own=specs;
       res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ role: 'management', principal: 'owner-a', specs:own.slice(start,start+20), page, page_size:20, total:own.length, total_pages:Math.max(1,Math.ceil(own.length/20)) })); return;
@@ -182,7 +199,9 @@ async function main() {
     const page = await context.newPage(); page.setDefaultTimeout(2500);
     const pageErrors = [], consoleErrors = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
-    page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+    // 🔵 连 URL 一起记:否则放行某个状态码就只能在全站范围放行,
+    //    而本套件里 500 是 S-5 那一格【故意注入】的,只该在列表端点上被放行。
+    page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push({ text: message.text(), url: message.location().url || '' }); });
     await page.goto(`http://127.0.0.1:${port}/console/specs`, { waitUntil: 'domcontentloaded' });
     assert.strictEqual(await page.locator('#list-screen').isVisible(), true, 'entry must show my spec list first');
     assert.strictEqual(await page.locator('#new-screen').isHidden(), true, 'new form must not share the first screen');
@@ -449,8 +468,61 @@ async function main() {
         `${editorCase.label}:打开修改后【不点击】直接键入,编辑器内容没有变化(${beforeType} → ${afterType.len}) ⇒ 键根本没进编辑器`);
       console.log(`editor usable ${editorCase.label}: 焦点=${usable.activeTag} 命中=${usable.hitTag} 渲染行=${usable.renderedLines}/${usable.lineCount} 直接键入=${beforeType}→${afterType.len}`);
     }
+    // ㊱ S-5:「我的 spec」刷新失败**不得静默** ——————————————————————————————
+    // 🔴 业主实测:新建 spec 后回列表**没有变化**;关闭 tab 再打开(重新挂载走另一条路径)才出现。
+    //    产品侧成因(读码):`show-spec-list` 的 onclick 是
+    //      showScreen('list-screen');refreshSpecs();      ← 既没 await 也没 catch
+    //    而 refreshSpecs 内部 `if(!r.ok)throw new Error('list failed')`
+    //    ⇒ 请求一旦不 ok:**未捕获的 promise 异常**,列表保持旧内容,**一个字都不显示**。
+    // 🔴 本格按组长要求覆盖**两种**:① 失败必须有可见文案 ② 成功必须真的换了内容
+    //    (只验①会被"永远不刷新"骗过;只验②会被"失败时静默保留旧内容"骗过 —— 两条缺一不可。)
+    const listFail = async (mode) => {
+      const res = await page.request.post(`http://127.0.0.1:${port}/fixture/fail-list?mode=${mode}`);
+      assert.strictEqual(res.status(), 204, 'fixture 开关必须生效');
+    };
+    // ① 失败:必须出现可见文案,且不得抛未捕获异常
+    const errorsBefore = pageErrors.length;
+    await listFail('500');
+    await page.click('#show-spec-list');
+    await page.waitForTimeout(800);
+    const listFailState = await page.evaluate(() => {
+      const listText = (document.getElementById('spec-list') || {}).innerText || '';
+      const screenText = (document.getElementById('list-screen') || {}).innerText || '';
+      return { listText: listText.slice(0, 200), visibleError: /失败|错误|不可用|重试/.test(screenText),
+        retry: !!document.querySelector('#retry-specs'),
+        retryVisible: !!(document.querySelector('#retry-specs') && document.querySelector('#retry-specs').offsetParent) };
+    });
+    assert.ok(listFailState.visibleError,
+      `列表刷新失败时页面上没有任何可见文案(列表区文本: ${JSON.stringify(listFailState.listText)}) ⇒ 业主看到的就是"点了没反应"`);
+    assert.ok(listFailState.retryVisible,
+      '列表刷新失败时必须给一个可见的重试入口,否则业主只能关 tab 重开');
+    assert.deepStrictEqual(pageErrors.slice(errorsBefore), [],
+      `列表刷新失败时抛了未捕获异常: ${JSON.stringify(pageErrors.slice(errorsBefore))}`);
+    // ② 成功:必须真的换了内容(防"永远不刷新"也能过①)
+    // 🔵 判据取「失败态被真实替换掉」而不是「某个标题出现」——
+    //    列表是分页的(每页 20),前面的用例已灌进 20+ 条,新建的那份未必落在第一页;
+    //    用标题去断言会因为分页而假红,那是**装置的噪声**,不是产品行为。
+    await listFail('');
+    await page.click('#retry-specs');
+    await page.waitForFunction(() => !document.getElementById('spec-list-error'), null, { timeout: 5000 })
+      .catch(() => { throw new assert.AssertionError({ message: '点「重试」之后错误行仍在 ⇒ 重试入口没有真的重刷' }); });
+    const listOkState = await page.evaluate(() => ({
+      pageStatus: (document.getElementById('page-status') || {}).textContent || '',
+      rows: document.querySelectorAll('.spec-row:not(.task-row)').length,
+      errorGone: !document.getElementById('spec-list-error'),
+    }));
+    assert.ok(listOkState.errorGone, '重试成功后错误行必须消失');
+    assert.notStrictEqual(listOkState.pageStatus, '', '重试成功后分页状态必须被重新写上(证明真的取了新数据)');
+    assert.ok(listOkState.rows > 0, '重试成功后列表必须重新渲染出行');
+    console.log(`S-5: 失败有文案=${listFailState.visibleError} 重试可见=${listFailState.retryVisible} 重试后错误行消失=${listOkState.errorGone} 分页状态=${JSON.stringify(listOkState.pageStatus)} 行数=${listOkState.rows}`);
     assert.deepStrictEqual(pageErrors, [], `spec page emitted top-level errors: ${JSON.stringify(pageErrors)}`);
-    assert.deepStrictEqual(consoleErrors.filter((message)=>!/^Failed to load resource: the server responded with a status of (400|404|409|502)/.test(message)), [], `spec page emitted unexpected console errors: ${JSON.stringify(consoleErrors)}`);
+    const unexpectedConsole = consoleErrors.filter((entry) => {
+      if (/^Failed to load resource: the server responded with a status of (400|404|409|502)/.test(entry.text)) return false;
+      // S-5 故意把列表端点打成 500;只在该端点上放行,别处的 500 仍然算缺陷
+      if (/status of 500/.test(entry.text) && /\/api\/console\/specs\?/.test(entry.url)) return false;
+      return true;
+    });
+    assert.deepStrictEqual(unexpectedConsole, [], `spec page emitted unexpected console errors: ${JSON.stringify(unexpectedConsole)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);
     console.log('console specs browser: passed=34 failed=0');
   } finally {
