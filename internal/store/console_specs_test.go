@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -138,7 +139,7 @@ func TestConsoleTaskSplitCreatesAndLocksCurrentRevision(t *testing.T) {
 	if err != nil || len(tasks) != 1 || tasks[0].Revision != 1 || tasks[0].EstimatedHours != 3 {
 		t.Fatalf("tasks=%+v err=%v", tasks, err)
 	}
-	if _, err := db.AppendConsoleSpecRevision(ctx, "owner-a", "spec-split", 1, specRevision("spec-split", 2, "changed"), now.Add(time.Second)); err != ErrConsoleSpecFinal {
+	if _, err := db.AppendConsoleSpecRevision(ctx, "owner-a", "spec-split", 1, specRevision("spec-split", 2, "changed"), now.Add(time.Second)); !errors.Is(err, ErrConsoleSpecFinal) {
 		t.Fatalf("finalized spec must reject edits, err=%v", err)
 	}
 	if err := db.CreateConsoleTaskProposal(ctx, model.ConsoleTaskProposal{ID: "bad", SpecID: "spec-split", Title: "Bad", TaskContent: "Bad", Status: "planned", DependsOnJSON: `["missing"]`, ReviewedAt: now, CreatedAt: now}, "owner-a", false); err == nil {

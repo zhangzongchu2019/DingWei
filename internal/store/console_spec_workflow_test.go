@@ -257,7 +257,7 @@ func TestConsoleSpecTwelveStepFlowSingleEditorFinalAndOwnerOnlyTasks(t *testing.
 	for _, actor := range []string{"owner-a", "owner-b", "manager"} {
 		r := specRevision("flow", 7, "final-change")
 		r.CreatedBy = actor
-		if _, err := db.AppendConsoleSpecRevision(ctx, actor, "flow", 6, r, now); err != ErrConsoleSpecFinal {
+		if _, err := db.AppendConsoleSpecRevision(ctx, actor, "flow", 6, r, now); !errors.Is(err, ErrConsoleSpecFinal) {
 			t.Fatalf("final actor=%s err=%v", actor, err)
 		}
 	}
