@@ -64,7 +64,9 @@ const luminance = (rgb) => {
     const before = await frame.evaluate(() => ({ theme: document.documentElement.dataset.theme, body: getComputedStyle(document.body).backgroundColor, colors: ['list-screen', 'detail-screen', 'new-screen', 'transfer-screen'].map((id) => getComputedStyle(document.getElementById(id)).backgroundColor) }));
     const srcBefore = await iframe.getAttribute('src');
     await page.locator('#themeBtn').click();
-    await frame.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+    // 🔴 原先这里是默认 30s 超时,变异 no-theme-receiver 的红是一条 TimeoutError:
+    //    等 30 秒、而且报文说不出「哪条判据坏了」。改成短超时后落到下面那条显式断言上。
+    try { await frame.waitForFunction(() => document.documentElement.dataset.theme === 'dark', null, { timeout: 3000 }); } catch (_) { /* 让判定交给下面的断言 */ }
     const after = await frame.evaluate(() => ({ theme: document.documentElement.dataset.theme, body: getComputedStyle(document.body).backgroundColor, value: document.getElementById('new-title').value, colors: ['list-screen', 'detail-screen', 'new-screen', 'transfer-screen'].map((id) => getComputedStyle(document.getElementById(id)).backgroundColor) }));
     const srcAfter = await iframe.getAttribute('src');
     assert.strictEqual(after.theme, 'dark', 'iframe html data-theme must follow the shell');
@@ -72,6 +74,19 @@ const luminance = (rgb) => {
     assert.strictEqual(new Set(after.colors).size, 4, `dark block background distinct count must equal 4: ${after.colors}`);
     assert.strictEqual(srcAfter, srcBefore, `iframe src changed: ${srcBefore} -> ${srcAfter}`);
     assert.strictEqual(after.value, 'state-must-survive', 'existing iframe state was lost during theme switch');
-    console.log(`PASS spec theme: light=${colors.join('|')} dark=${after.colors.join('|')} src=${srcAfter} state=kept`);
+    // 🔵 业主的真实动线是【先切暗、再打开 Specs】,不是先开 Specs 再切主题。
+    //    这条动线此前没有格:产品是对的(初值走 localStorage),但没有任何东西钉住它。
+    const fresh = await browser.newPage();
+    await fresh.goto(`http://127.0.0.1:${server.address().port}/console`);
+    await fresh.locator('#themeBtn').click();
+    await fresh.locator('#platform-items a', { hasText: 'Specs' }).click();
+    await fresh.locator('iframe[title="Specs workspace"]').waitFor({ state: 'attached' });
+    const freshFrame = fresh.frames().find((f) => f.url().includes('/console/specs'));
+    await freshFrame.waitForSelector('#empty-create-spec');
+    const opened = await freshFrame.evaluate(() => ({ theme: document.documentElement.dataset.theme, body: getComputedStyle(document.body).backgroundColor }));
+    assert.strictEqual(opened.theme, 'dark', '先切暗再打开的 Specs 必须直接是当前主题,不能先白一下再变');
+    assert.ok(luminance(opened.body) < luminance(before.body) * .5, `新开的 Specs 必须直接是暗底: ${opened.body}`);
+    await fresh.close();
+    console.log(`PASS spec theme: light=${colors.join('|')} dark=${after.colors.join('|')} src=${srcAfter} state=kept fresh-open=${opened.theme}`);
   } finally { await browser.close(); server.close(); }
 })().catch((error) => { console.error(error); server.close(); process.exitCode = 1; });

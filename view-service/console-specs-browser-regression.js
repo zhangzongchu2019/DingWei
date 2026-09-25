@@ -1,5 +1,21 @@
 // Browser-level north-star gate for the real console specs management page.
-const assert = require('assert');
+// 🔴 第四层「消失的格」——组长 2026-09-24 裁定。
+//    前三层(从来没守 / 从来没跑 / 还没到分叉点)都假定【格还在】;
+//    81f3b702 是把功能连同守它的 7 条断言一起删掉,套件照样全绿。
+// 🔴 而且本套件原先那句 `passed=34 failed=0` 是【写死的字符串】,不是数出来的 ——
+//    删掉断言它也一样印 34。所以这里改成真数:每执行一次 assert.* 计一次,
+//    低于下限即红。功能可以下线,但必须【显式把下限调下去并写明缘由】,不能静默少掉。
+const assertModule = require('assert');
+let assertionCount = 0;
+const assert = new Proxy(assertModule, {
+  apply(target, thisArg, args) { assertionCount += 1; return Reflect.apply(target, thisArg, args); },
+  get(target, prop, receiver) {
+    const value = Reflect.get(target, prop, receiver);
+    return typeof value === 'function' ? (...args) => { assertionCount += 1; return value.apply(target, args); } : value;
+  },
+});
+// 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
+const MIN_ASSERTIONS = 165;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -33,9 +49,10 @@ function productionHTML() {
     mutateHTML("title.onclick=function(){openSpec(spec.id,true)};",
       "title.onclick=function(){openSpec(spec.id,true)};var legacy=document.createElement('button');legacy.className='view-spec';legacy.textContent='View';legacy.onclick=function(){openSpec(spec.id,true)};row.append(legacy);");
   }
+  // 🔴 靶子随实现移动了:无权限这一侧的内容现在来自 renderSpec,不再来自编辑器。
+  //    若仍变异编辑器那一行,这条变异会【静默变成恒绿】—— 那正是本轮判返工的同一种失效。
   if (MUTATION === 'readonly-hides-content') {
-    mutateHTML("specEditors.edit.codemirror.setOption('readOnly',!canEdit);",
-      "specEditors.edit.codemirror.setOption('readOnly',canEdit?false:'nocursor');if(!canEdit)specEditors.edit.value('');");
+    mutateHTML("renderSpec(data.revision.content_markdown,'spec-rendered');", "renderSpec('','spec-rendered');");
   }
   if (MUTATION === 'duplicate-body-preview') {
     mutateHTML("specEditors.edit.value(data.revision.content_markdown);", "specEditors.edit.value(data.revision.content_markdown);var duplicate=document.createElement('div');duplicate.id='duplicate-body-preview';duplicate.textContent=data.revision.content_markdown;document.getElementById('editor-block').prepend(duplicate);");
@@ -74,13 +91,21 @@ function productionHTML() {
     assert.ok(html.includes("if(id==='editor')specEditors.edit.codemirror.refresh();"), 'no-editor-refresh mutation anchor missing');
     html = html.replace("if(id==='editor')specEditors.edit.codemirror.refresh();", '');
   }
-  if (MUTATION === 'no-render') html = html.replace('renderSpec(data.revision.content_markdown);', '');
-  if (MUTATION === 'no-wire') html = html.replace('wireSpecRender(root);', '');
-  if (MUTATION === 'no-copy') html = html.replace("root.querySelectorAll('.copy-code')", "root.querySelectorAll('.copy-code-disabled')");
+  // 🔴 这三条原先用裸 html.replace,【没有锚点守卫】;其中 no-render 的锚点
+  //    'renderSpec(data.revision.content_markdown);' 在产品源码里【从来没有出现过】
+  //    (真实调用一直带第二个参数 ,'spec-rendered')⇒ 2026-09-24 实测:
+  //    `--mutate=no-render` 一字未改地跑完,assertions=165 全绿。
+  //    形式在、不起作用。改用 mutateHTML(改不到字节即红)并修正锚点。
+  if (MUTATION === 'no-render') mutateHTML("root.innerHTML=DwMdCore.renderMarkdown(markdown||'');", "root.textContent=markdown||'';");
+  if (MUTATION === 'no-wire') mutateHTML('wireSpecRender(root);', '');
+  if (MUTATION === 'no-copy') mutateHTML("root.querySelectorAll('.copy-code')", "root.querySelectorAll('.copy-code-disabled')");
   if (MUTATION === 'no-server-error') html = html.replace("return prefix+' '+r.status+(detail?':'+detail:'');", "return prefix;");
   if (MUTATION === 'role-split') html = html.replace("var canEdit=(isOwner||!!(sharedSpecID&&sharedEditToken))&&!spec.editing_closed;", "var canEdit=platformRole!=='management';");
   if (MUTATION === 'no-action-error') html = html.replace("status.textContent=await responseFailure('操作失败',r);", "status.textContent='';");
-  if (MUTATION === 'readonly-can-write') mutateHTML("specEditors.edit.codemirror.setOption('readOnly',!canEdit);", "specEditors.edit.codemirror.setOption('readOnly',false);");
+  // 同上:让无权限者重新拿到一个能写的正文控件(把编辑器放出来并解除只读)。
+  if (MUTATION === 'readonly-can-write') { mutateHTML("bodyField.hidden=!canEdit;", "bodyField.hidden=false;"); mutateHTML("specEditors.edit.codemirror.setOption('readOnly',!canEdit);", "specEditors.edit.codemirror.setOption('readOnly',false);"); }
+  // 🔴 本次返工的直接阴性对照:退回 81f3b702 的做法(永远显示编辑器、从不显示渲染详情)⇒ 必须红。
+  if (MUTATION === 'readonly-shows-source') mutateHTML("bodyField.hidden=!canEdit;renderedBody.hidden=canEdit;", "bodyField.hidden=false;renderedBody.hidden=true;");
   if (MUTATION === 'same-screen-create') html = html.replace('<section id=new-screen hidden>', '<section id=new-screen>');
   if (MUTATION === 'hide-dependents') html = html.replace("+' · 被依赖 '+((task.depended_by||[]).join(', ')||'无')", "");
   if (MUTATION === 'hide-list-on-detail') mutateHTML("title.onclick=function(){openSpec(spec.id,true)};", "title.onclick=async function(){await openSpec(spec.id,true);document.getElementById('list-screen').hidden=true;};");
@@ -94,7 +119,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -158,7 +183,8 @@ async function main() {
       const item={id:'spec-readonly',owner_short_name:'乙',current_editor_short_name:'乙',title:'ReadOnlySpec',
         state:'final',task_state:'closed',current_revision:1,can_edit:false,can_split:false};
       if (!specs.find((x) => x.id === item.id)) { specs.unshift(item);
-        revisions.set(item.id,{spec_id:item.id,revision:1,content_markdown:'# 只读内容\n\nSPEC_BODY_OCCURRENCE_SENTINEL',acceptance_json:'[]',input_anchors_json:'[]'}); }
+        const origin=`http://${req.headers.host}`;
+        revisions.set(item.id,{spec_id:item.id,revision:1,content_markdown:'# 只读内容\n\nSPEC_BODY_OCCURRENCE_SENTINEL\n\n```python\nprint("copy-me")\n```\n\n![good]('+origin+'/f/spec/good/26/0921/0123456789abcdef0123456789abcdef.png)\n\n![missing]('+origin+'/f/spec/missing/26/0921/ffffffffffffffffffffffffffffffff.png)',acceptance_json:'[]',input_anchors_json:'[]'}); }
       res.writeHead(204); res.end(); return;
     }
     if (String(req.url).startsWith('/fixture/fail-list') && req.method === 'POST') {
@@ -704,34 +730,56 @@ async function main() {
     assert.strictEqual(await page.locator('#spec-list [data-title="Spec A"] .transfer-spec').count(),1,'「转」必须保留在当前是我的行');
     await page.locator('#spec-list [data-title="ReadOnlySpec"] .spec-title').click();
     await page.waitForSelector('#detail-screen:not([hidden])');
+    // 🔴 返工后无权限这一侧量的是【渲染视图】,不是隐藏的编辑器。
+    //    旧探针量 CodeMirror 的可见性/可选中性 —— 那些判据没有被删,是被【搬到渲染视图上】了:
+    //    「只读 ≠ 不让看」「只读态必须能选中复制」两条的业主意图不变,承载它的元素换了。
     const readonlyShape = await page.evaluate(() => {
       const cm = window.specEditors.edit.codemirror;
-      cm.setSelection({ line: 0, ch: 0 }, { line: 0, ch: 3 });
+      const rendered = document.getElementById('spec-rendered');
+      const range = document.createRange(); range.selectNodeContents(rendered);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
       return {
-        readOnly: !!cm.getOption('readOnly'),
-        nocursor: cm.getOption('readOnly') === 'nocursor',
-        visible: !!cm.getWrapperElement().offsetParent,
-        valueLen: cm.getValue().length,
-        rendered: cm.getWrapperElement().querySelectorAll('.CodeMirror-line').length,
-        selected: cm.getSelection().length,
+        bodyFieldHidden: !!document.getElementById('edit-body-field').hidden,
+        bodyEditorVisible: !!cm.getWrapperElement().offsetParent,
+        renderedVisible: !!rendered.offsetParent,
+        renderedTextLen: rendered.innerText.trim().length,
+        renderedMountCount: rendered.querySelectorAll(':scope > .md').length,
+        rawMarkdownLeak: /(^|\n)#\s/.test(rendered.innerText),
+        writableBodyControls: Array.from(document.querySelectorAll('#detail-screen textarea, #detail-screen [contenteditable="true"]'))
+          .filter((el) => el.offsetParent && !el.readOnly && !el.disabled).length,
+        selected: String(sel).length,
         saveHidden: (document.getElementById('save-spec') || {}).hidden,
         secondEntry: document.querySelectorAll('#edit-spec-entry').length,
       };
     });
-    assert.strictEqual(readonlyShape.readOnly, true, '不可编辑的 spec,文本框必须只读');
-    assert.strictEqual(readonlyShape.nocursor, false, "只读不得用 'nocursor' —— 那会连选中复制都做不了");
-    assert.ok(readonlyShape.visible && readonlyShape.valueLen > 0 && readonlyShape.rendered > 0,
-      `只读 ≠ 不让看:内容必须可见(可见=${readonlyShape.visible} 长度=${readonlyShape.valueLen} 渲染行=${readonlyShape.rendered})`);
+    assert.strictEqual(readonlyShape.bodyFieldHidden, true, '无权限时不得给出正文编辑器 —— 业主要的是「详情」,不是只读的编辑器');
+    assert.strictEqual(readonlyShape.bodyEditorVisible, false, '正文编辑器在无权限时必须整个不可见');
+    assert.strictEqual(readonlyShape.writableBodyControls, 0, '无权限时屏上不得存在任何可输入的正文控件');
+    assert.strictEqual(readonlyShape.renderedVisible, true, '无权限时必须显示渲染后的详情');
+    assert.ok(readonlyShape.renderedTextLen > 0, `只读 ≠ 不让看:详情内容必须可见(长度=${readonlyShape.renderedTextLen})`);
+    assert.strictEqual(readonlyShape.rawMarkdownLeak, false, '详情必须是渲染后的结果,不能是带井号的 Markdown 源码');
     assert.ok(readonlyShape.selected > 0, '只读态必须能选中复制');
     assert.strictEqual(readonlyShape.saveHidden, true, '不可编辑时不得给出保存入口');
     assert.strictEqual(readonlyShape.secondEntry, 0, '只读态同样不得出现「编辑」入口');
     const occurrenceCount = await page.evaluate(() => (document.getElementById('detail-screen').innerText.match(/SPEC_BODY_OCCURRENCE_SENTINEL/g) || []).length);
     assert.strictEqual(occurrenceCount, 1, `同一份正文在详情屏上必须只出现一次，实测 ${occurrenceCount}`);
-    const readonlyBefore = await page.evaluate(() => window.specEditors.edit.value());
-    await page.locator('#editor-block .CodeMirror').click();
+    const readonlyRenderedBefore = await page.locator('#spec-rendered').innerText();
+    await page.locator('#spec-rendered').click();
     await page.keyboard.type('FORBIDDEN_WRITE_SENTINEL');
-    assert.strictEqual(await page.evaluate(() => window.specEditors.edit.value()), readonlyBefore, '无权限时真实键盘输入不得改变正文');
-    console.log(`S-6乙: 可编辑(只读=${editableShape.readOnly} 存=${!editableShape.saveHidden} 同屏=${editableShape.taskArea && editableShape.workflow}) 只读(只读=${readonlyShape.readOnly} 可见行=${readonlyShape.rendered} 选中=${readonlyShape.selected})`);
+    assert.strictEqual(await page.locator('#spec-rendered').innerText(), readonlyRenderedBefore, '无权限时真实键盘输入不得改变详情正文');
+    // 🔴 以下 7 条是 81f3b702 连同渲染视图一起删掉的,按组长裁定【恢复到 !canEdit 分支下】。
+    //    它们守的是业主可见的能力:图片内联 / 失败图仍留下载出口 / 渲染 CSS 契约 / 代码块可复制 / 渲染器真的挂进了 DOM。
+    await page.locator('#spec-rendered h1').filter({ hasText: '只读内容' }).waitFor({ state: 'visible' });
+    await page.locator('#spec-rendered img.md-img[alt="good"]').scrollIntoViewIfNeeded();
+    await page.locator('#spec-rendered img.md-img[alt="good"]').waitFor({ state: 'visible' });
+    await page.locator('#spec-rendered .md-image-fallback').waitFor({ state: 'visible' });
+    assert.strictEqual(await page.locator('#spec-rendered img.md-img').count(), 1, '能显示的图必须内联');
+    assert.strictEqual(await page.locator('#spec-rendered .md-image-fallback').getAttribute('href'), `http://127.0.0.1:${port}/f/spec/missing/26/0921/ffffffffffffffffffffffffffffffff.png`, '失败的图必须留一个直链下载出口');
+    assert.strictEqual(await page.locator('#spec-rendered img.md-img').evaluate((el) => getComputedStyle(el).maxHeight), '420px', '共享渲染器的 CSS 契约必须仍在');
+    await page.locator('#spec-rendered .copy-code').click();
+    assert.strictEqual(await page.evaluate(() => globalThis.__copiedCode), 'print("copy-me")', '代码块复制按钮必须接在渲染结果上');
+    assert.strictEqual(await page.locator('#spec-rendered > .md').count(), 1, '页面必须把共享渲染器的输出挂进可见 DOM');
+    console.log(`S-6乙: 可编辑(只读=${editableShape.readOnly} 存=${!editableShape.saveHidden} 同屏=${editableShape.taskArea && editableShape.workflow}) 只读(编辑器隐藏=${readonlyShape.bodyFieldHidden} 详情可见=${readonlyShape.renderedVisible} 源码泄漏=${readonlyShape.rawMarkdownLeak} 可输入正文控件=${readonlyShape.writableBodyControls} 选中=${readonlyShape.selected})`);
     // ㊲ S-7:「复制只读链接」—— 复制到的**文本内容**必须对,且成功必须有**可见反馈** ——————
     // 🔴 业主 2026-09-24 裁定「当前控写不控读」⇒ 给的是**只读**链接。
     //    它对【已存在】的 spec 同样有效(`GET /console/specs/{id}` 本就公开可读),
@@ -781,7 +829,11 @@ async function main() {
     });
     assert.deepStrictEqual(unexpectedConsole, [], `spec page emitted unexpected console errors: ${JSON.stringify(unexpectedConsole)}`);
     console.log(`editor wrap metrics overflow=${wrapMetrics.overflow} lineOverhang=${wrapMetrics.lineOverhang}`);
-    console.log('console specs browser: passed=34 failed=0');
+    const executedAssertions = assertionCount;
+    assert.ok(executedAssertions >= MIN_ASSERTIONS,
+      `断言数 ${executedAssertions} 低于下限 ${MIN_ASSERTIONS} —— 有格消失了。` +
+      '若是功能下线所致,请显式调低下限并写明缘由;不要让它静默少掉。');
+    console.log(`console specs browser: assertions=${executedAssertions} floor=${MIN_ASSERTIONS} failed=0`);
   } finally {
     await browser.close(); await new Promise((resolve) => server.close(resolve));
   }
