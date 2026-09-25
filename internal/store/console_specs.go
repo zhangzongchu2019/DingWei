@@ -13,13 +13,16 @@ import (
 )
 
 var (
-	ErrConsoleSpecNotFound       = errors.New("console spec not found")
-	ErrConsoleSpecConflict       = errors.New("console spec revision conflict")
-	ErrConsoleSpecGateOrder      = errors.New("console spec gate order invalid")
-	ErrConsoleSpecEditDenied     = errors.New("console spec editing denied")
-	ErrConsoleSpecRevisionLocked = errors.New("console spec revision locked by downstream reference")
-	ErrConsoleSpecPermission     = errors.New("console spec permission denied")
-	ErrConsoleSpecFinal          = errors.New("console spec is finalized")
+	ErrConsoleSpecNotFound        = errors.New("console spec not found")
+	ErrConsoleSpecConflict        = errors.New("console spec revision conflict")
+	ErrConsoleSpecGateOrder       = errors.New("console spec gate order invalid")
+	ErrConsoleSpecEditDenied      = errors.New("console spec editing denied")
+	ErrConsoleSpecRevisionLocked  = errors.New("console spec revision locked by downstream reference")
+	ErrConsoleSpecPermission      = errors.New("console spec permission denied")
+	ErrConsoleSpecFinal           = errors.New("console spec is finalized")
+	ErrConsoleSpecGate            = errors.New("console spec generation gate incomplete")
+	ErrConsoleSpecReviewerInvalid = errors.New("console spec review agent is missing, inactive or unknown")
+	ErrConsoleSpecReviewerLookup  = errors.New("console spec review agent lookup failed")
 )
 
 type consoleSpecOwnerQuerier interface {
@@ -107,8 +110,166 @@ func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetS
 	return tx.Commit()
 }
 
+type storedSpecCriterion struct {
+	OwnerRef  string   `json:"owner_ref"`
+	Source    string   `json:"source"`
+	CheckedBy string   `json:"checked_by"`
+	CheckedAt string   `json:"checked_at"`
+	Cases     []string `json:"cases"`
+}
+
+type storedSpecAcceptanceBundle struct {
+	Criteria []storedSpecCriterion `json:"criteria"`
+}
+
+type storedSpecGateIssue struct {
+	ID       string `json:"id"`
+	Text     string `json:"text"`
+	Response string `json:"response"`
+	Outcome  string `json:"outcome"`
+}
+
+func validSpecFinalAcceptance(raw string) bool {
+	var legacy []json.RawMessage
+	if json.Unmarshal([]byte(raw), &legacy) == nil {
+		// Pre-S-GEN revisions used a bare array and are explicitly out of backfill
+		// scope. New writes always persist the object bundle below.
+		return len(legacy) > 0
+	}
+	var bundle storedSpecAcceptanceBundle
+	if json.Unmarshal([]byte(raw), &bundle) != nil || len(bundle.Criteria) == 0 {
+		return false
+	}
+	for _, item := range bundle.Criteria {
+		if strings.TrimSpace(item.OwnerRef) == "" || (item.Source != "owner" && item.Source != "ai") || strings.TrimSpace(item.CheckedBy) == "" || strings.TrimSpace(item.CheckedAt) == "" || len(item.Cases) == 0 {
+			return false
+		}
+		if _, err := time.Parse(time.RFC3339, item.CheckedAt); err != nil {
+			return false
+		}
+		for _, testCase := range item.Cases {
+			if strings.TrimSpace(testCase) == "" {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func legacySpecAcceptance(raw string) bool {
+	var legacy []json.RawMessage
+	return json.Unmarshal([]byte(raw), &legacy) == nil
+}
+
+func validCompletedSpecGateReview(raw string) bool {
+	var issues []storedSpecGateIssue
+	if json.Unmarshal([]byte(raw), &issues) != nil || len(issues) == 0 {
+		return false
+	}
+	seen := map[string]bool{}
+	for _, issue := range issues {
+		if strings.TrimSpace(issue.ID) == "" || strings.TrimSpace(issue.Text) == "" || strings.TrimSpace(issue.Response) == "" || (issue.Outcome != "true_problem" && issue.Outcome != "false_positive") || seen[issue.ID] {
+			return false
+		}
+		seen[issue.ID] = true
+	}
+	return true
+}
+
+func (s *SQLite) SaveConsoleSpecGateReview(ctx context.Context, specID, actor string, review model.ConsoleSpecGateReview, now time.Time) error {
+	if strings.TrimSpace(review.ReviewAgentID) == "" {
+		return ErrConsoleSpecReviewerInvalid
+	}
+	if strings.TrimSpace(review.IssuesJSON) == "" {
+		return ErrConsoleSpecGate
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var revision int
+	if err = tx.QueryRowContext(ctx, `SELECT current_revision FROM console_spec WHERE id=? AND current_editor_id=? AND state='review' AND archived=0`, specID, actor).Scan(&revision); err != nil {
+		return ErrConsoleSpecPermission
+	}
+	var reviewerOwner string
+	if err = tx.QueryRowContext(ctx, `SELECT owner_principal FROM console_agent WHERE id=? AND active=1`, review.ReviewAgentID).Scan(&reviewerOwner); errors.Is(err, sql.ErrNoRows) {
+		return ErrConsoleSpecReviewerInvalid
+	} else if err != nil {
+		return fmt.Errorf("%w: %v", ErrConsoleSpecReviewerLookup, err)
+	}
+	if reviewerOwner == actor {
+		return ErrConsoleSpecGate
+	}
+	var issues []storedSpecGateIssue
+	if json.Unmarshal([]byte(review.IssuesJSON), &issues) != nil {
+		return ErrConsoleSpecGate
+	}
+	seen := map[string]bool{}
+	for _, issue := range issues {
+		if strings.TrimSpace(issue.ID) == "" || strings.TrimSpace(issue.Text) == "" || seen[issue.ID] || (issue.Outcome != "pending" && issue.Outcome != "true_problem" && issue.Outcome != "false_positive") {
+			return ErrConsoleSpecGate
+		}
+		seen[issue.ID] = true
+	}
+	stamp := now.UTC().Format(time.RFC3339Nano)
+	reviewID := review.ID
+	if reviewID == "" {
+		reviewID = newID()
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO console_spec_gate_review(id,spec_id,revision,review_agent_id,operator_principal,issues_json,created_at,updated_at)
+		VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(spec_id,revision) DO UPDATE SET review_agent_id=excluded.review_agent_id,operator_principal=excluded.operator_principal,issues_json=excluded.issues_json,updated_at=excluded.updated_at`,
+		reviewID, specID, revision, review.ReviewAgentID, actor, review.IssuesJSON, stamp, stamp)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *SQLite) ConsoleSpecGateReview(ctx context.Context, specID string, revision int) (*model.ConsoleSpecGateReview, error) {
+	var review model.ConsoleSpecGateReview
+	var created, updated string
+	err := s.db.QueryRowContext(ctx, `SELECT id,spec_id,revision,review_agent_id,operator_principal,issues_json,created_at,updated_at FROM console_spec_gate_review WHERE spec_id=? AND revision=?`, specID, revision).
+		Scan(&review.ID, &review.SpecID, &review.Revision, &review.ReviewAgentID, &review.OperatorPrincipal, &review.IssuesJSON, &created, &updated)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	review.CreatedAt, err = specTime(created)
+	if err != nil {
+		return nil, err
+	}
+	review.UpdatedAt, err = specTime(updated)
+	if err != nil {
+		return nil, err
+	}
+	return &review, nil
+}
+
 func (s *SQLite) FinalizeConsoleSpec(ctx context.Context, specID, actor string, now time.Time) error {
-	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET state='final',current_editor_id=NULL,updated_at=? WHERE id=? AND current_editor_id=? AND state='review' AND archived=0`, now.UTC().Format(time.RFC3339Nano), specID, actor)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var revision int
+	var acceptance string
+	if err = tx.QueryRowContext(ctx, `SELECT s.current_revision,r.acceptance_json FROM console_spec s JOIN console_spec_revision r ON r.spec_id=s.id AND r.revision=s.current_revision WHERE s.id=? AND s.current_editor_id=? AND s.state='review' AND s.archived=0`, specID, actor).Scan(&revision, &acceptance); err != nil {
+		return ErrConsoleSpecPermission
+	}
+	legacy := legacySpecAcceptance(acceptance)
+	if !validSpecFinalAcceptance(acceptance) {
+		return ErrConsoleSpecGate
+	}
+	if !legacy {
+		var issues string
+		if err = tx.QueryRowContext(ctx, `SELECT issues_json FROM console_spec_gate_review WHERE spec_id=? AND revision=? AND operator_principal=?`, specID, revision, actor).Scan(&issues); err != nil || !validCompletedSpecGateReview(issues) {
+			return ErrConsoleSpecGate
+		}
+	}
+	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET state='final',current_editor_id=NULL,updated_at=? WHERE id=? AND current_editor_id=? AND state='review' AND archived=0`, now.UTC().Format(time.RFC3339Nano), specID, actor)
 	if err != nil {
 		return err
 	}
@@ -116,7 +277,7 @@ func (s *SQLite) FinalizeConsoleSpec(ctx context.Context, specID, actor string, 
 	if n != 1 {
 		return ErrConsoleSpecPermission
 	}
-	return nil
+	return tx.Commit()
 }
 
 func (s *SQLite) CloseConsoleSpecTaskSplit(ctx context.Context, specID, actor string, now time.Time) error {
@@ -276,20 +437,24 @@ func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, spe
 		return 0, err
 	}
 	defer tx.Rollback()
-	var current int
-	err = tx.QueryRowContext(ctx, `SELECT current_revision FROM console_spec WHERE id=? AND current_editor_id=? AND state<>'final' AND archived=0`, specID, principalID).Scan(&current)
+	var current, archived, editingClosed int
+	var state string
+	var editor sql.NullString
+	err = tx.QueryRowContext(ctx, `SELECT current_revision,state,current_editor_id,archived,editing_closed FROM console_spec WHERE id=?`, specID).Scan(&current, &state, &editor, &archived, &editingClosed)
 	if errors.Is(err, sql.ErrNoRows) {
-		var exists int
-		if checkErr := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM console_spec WHERE id=?`, specID).Scan(&exists); checkErr != nil {
-			return 0, checkErr
-		}
-		if exists > 0 {
-			return 0, ErrConsoleSpecEditDenied
-		}
 		return 0, ErrConsoleSpecNotFound
 	}
 	if err != nil {
 		return 0, err
+	}
+	// Final is a distinct, auditable reason. Do not fold it into the compound
+	// editor/archived/closed predicate: final rows also have no current editor,
+	// which previously let removal of the final guard stay observationally green.
+	if state == "final" {
+		return 0, ErrConsoleSpecFinal
+	}
+	if !editor.Valid || editor.String != principalID || archived != 0 || editingClosed != 0 {
+		return 0, ErrConsoleSpecEditDenied
 	}
 	if current != expected {
 		return 0, ErrConsoleSpecConflict
@@ -311,7 +476,7 @@ func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, spe
 	if err = insertConsoleSpecRevision(ctx, tx, revision, now); err != nil {
 		return 0, err
 	}
-	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET current_revision=?,updated_at=? WHERE id=? AND current_editor_id=? AND state<>'final' AND archived=0 AND editing_closed=0 AND current_revision=?`,
+	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET current_revision=?,updated_at=? WHERE id=? AND current_editor_id=? AND archived=0 AND editing_closed=0 AND current_revision=?`,
 		next, now.UTC().Format(time.RFC3339Nano), specID, principalID, expected)
 	if err != nil {
 		return 0, err

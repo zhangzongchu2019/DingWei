@@ -39,6 +39,8 @@ type consoleSpecRepository interface {
 	ListActiveConsolePrincipals(context.Context) ([]model.ConsolePrincipal, error)
 	TransferConsoleSpec(context.Context, string, string, string, string, time.Time) error
 	FinalizeConsoleSpec(context.Context, string, string, time.Time) error
+	SaveConsoleSpecGateReview(context.Context, string, string, model.ConsoleSpecGateReview, time.Time) error
+	ConsoleSpecGateReview(context.Context, string, int) (*model.ConsoleSpecGateReview, error)
 	CloseConsoleSpecTaskSplit(context.Context, string, string, time.Time) error
 	ListOwnedConsoleAgents(context.Context, string) ([]model.ConsoleAgent, error)
 	ResolveConsoleAgentByEndpoint(context.Context, string, string) (*model.ConsoleAgent, error)
@@ -154,8 +156,38 @@ func (h *Hub) persistSpecImages(ctx context.Context, markdown, actorPrincipal, o
 }
 
 type specAcceptance struct {
-	ID   string `json:"id"`
-	Text string `json:"text"`
+	ID          string   `json:"id"`
+	Text        string   `json:"text"`
+	OwnerRef    string   `json:"owner_ref"`
+	Source      string   `json:"source"` // owner | ai
+	GeneratedBy string   `json:"generated_by,omitempty"`
+	CheckedBy   string   `json:"checked_by,omitempty"`
+	CheckedAt   string   `json:"checked_at,omitempty"`
+	Cases       []string `json:"cases,omitempty"`
+}
+
+type specInference struct {
+	ID          string `json:"id"`
+	Text        string `json:"text"`
+	GeneratedBy string `json:"generated_by"`
+	Status      string `json:"status"` // pending_owner_confirmation
+}
+
+type specAcceptanceBundle struct {
+	Criteria   []specAcceptance `json:"criteria"`
+	Inferences []specInference  `json:"inferences"`
+}
+
+type specGateIssue struct {
+	ID       string `json:"id"`
+	Text     string `json:"text"`
+	Response string `json:"response"`
+	Outcome  string `json:"outcome"` // true_problem | false_positive | pending
+}
+
+type specGateReviewRequest struct {
+	ReviewAgentID string          `json:"review_agent_id"`
+	Issues        []specGateIssue `json:"issues"`
 }
 
 type specInputAnchor struct {
@@ -168,6 +200,7 @@ type consoleSpecWriteRequest struct {
 	Title            string            `json:"title"`
 	ContentMarkdown  string            `json:"content_markdown"`
 	Acceptance       []specAcceptance  `json:"acceptance"`
+	Inferences       []specInference   `json:"inferences,omitempty"`
 	InputAnchors     []specInputAnchor `json:"input_anchors"`
 	ExpectedRevision int               `json:"expected_revision,omitempty"`
 }
@@ -178,8 +211,20 @@ func validateConsoleSpecWrite(req consoleSpecWriteRequest) error {
 	}
 	seen := map[string]bool{}
 	for _, item := range req.Acceptance {
-		if strings.TrimSpace(item.ID) == "" || strings.TrimSpace(item.Text) == "" || seen[item.ID] {
-			return errors.New("acceptance ids and text must be non-empty and unique")
+		if strings.TrimSpace(item.ID) == "" || strings.TrimSpace(item.Text) == "" || strings.TrimSpace(item.OwnerRef) == "" || seen[item.ID] {
+			return errors.New("acceptance ids, text and owner_ref must be non-empty and unique")
+		}
+		if item.Source != "owner" && item.Source != "ai" {
+			return errors.New("acceptance source must be owner or ai")
+		}
+		if (item.Source == "ai") != (strings.TrimSpace(item.GeneratedBy) != "") {
+			return errors.New("acceptance AI source and generated_by must agree")
+		}
+		seen[item.ID] = true
+	}
+	for _, item := range req.Inferences {
+		if strings.TrimSpace(item.ID) == "" || strings.TrimSpace(item.Text) == "" || strings.TrimSpace(item.GeneratedBy) == "" || item.Status != "pending_owner_confirmation" || seen[item.ID] {
+			return errors.New("invalid pending Agent inference")
 		}
 		seen[item.ID] = true
 	}
@@ -204,7 +249,11 @@ func decodeConsoleSpecWrite(w http.ResponseWriter, r *http.Request) (consoleSpec
 	var req consoleSpecWriteRequest
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 2<<20))
 	decoder.DisallowUnknownFields()
-	if decoder.Decode(&req) != nil || validateConsoleSpecWrite(req) != nil {
+	if decoder.Decode(&req) != nil {
+		http.Error(w, "invalid spec", http.StatusBadRequest)
+		return consoleSpecWriteRequest{}, false
+	}
+	if validateConsoleSpecWrite(req) != nil {
 		http.Error(w, "invalid spec", http.StatusBadRequest)
 		return consoleSpecWriteRequest{}, false
 	}
@@ -212,7 +261,7 @@ func decodeConsoleSpecWrite(w http.ResponseWriter, r *http.Request) (consoleSpec
 }
 
 func revisionFromRequest(specID, principal string, revision int, req consoleSpecWriteRequest) (model.ConsoleSpecRevision, error) {
-	acceptance, err := json.Marshal(req.Acceptance)
+	acceptance, err := json.Marshal(specAcceptanceBundle{Criteria: req.Acceptance, Inferences: req.Inferences})
 	if err != nil {
 		return model.ConsoleSpecRevision{}, err
 	}
@@ -348,7 +397,12 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		tasks = orderConsoleTasks(tasks, all)
-		_ = json.NewEncoder(w).Encode(map[string]any{"spec": spec, "revision": rev, "tasks": tasks, "dependency_candidates": all})
+		gateReview, err := repo.ConsoleSpecGateReview(r.Context(), id, spec.CurrentRevision)
+		if err != nil {
+			http.Error(w, "console spec review unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"spec": spec, "revision": rev, "gate_review": gateReview, "tasks": tasks, "dependency_candidates": all})
 		return
 	}
 	if r.Method != http.MethodPatch {
@@ -405,6 +459,10 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 	}
 	if errors.Is(err, store.ErrConsoleSpecEditDenied) {
 		http.Error(w, "editing closed or invalid capability", http.StatusForbidden)
+		return
+	}
+	if errors.Is(err, store.ErrConsoleSpecFinal) {
+		http.Error(w, "spec finalized; open a new version", http.StatusForbidden)
 		return
 	}
 	if errors.Is(err, store.ErrConsoleSpecRevisionLocked) {
@@ -533,6 +591,20 @@ func (h *Hub) HandleConsoleSpecWorkflow(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		err = repo.TransferConsoleSpec(r.Context(), r.PathValue("specID"), principal, strings.TrimSpace(req.TargetShortName), req.State, h.now())
+	case "review":
+		var req specGateReviewRequest
+		dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 128<<10))
+		dec.DisallowUnknownFields()
+		if dec.Decode(&req) != nil || strings.TrimSpace(req.ReviewAgentID) == "" {
+			http.Error(w, "structured review required", 400)
+			return
+		}
+		issues, marshalErr := json.Marshal(req.Issues)
+		if marshalErr != nil {
+			http.Error(w, "structured review required", 400)
+			return
+		}
+		err = repo.SaveConsoleSpecGateReview(r.Context(), r.PathValue("specID"), principal, model.ConsoleSpecGateReview{ReviewAgentID: strings.TrimSpace(req.ReviewAgentID), IssuesJSON: string(issues)}, h.now())
 	case "finalize":
 		err = repo.FinalizeConsoleSpec(r.Context(), r.PathValue("specID"), principal, h.now())
 	case "close-tasks":

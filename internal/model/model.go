@@ -418,6 +418,20 @@ type ConsoleSpecReview struct {
 	ReviewedAt  time.Time `json:"reviewed_at"`
 }
 
+// ConsoleSpecGateReview is the persisted pre-finalization AI review. Issues are
+// kept as structured JSON so the blocked text, final response and false-positive
+// outcome remain available for the three-version calibration requested by owner.
+type ConsoleSpecGateReview struct {
+	ID                string    `json:"review_id"`
+	SpecID            string    `json:"spec_id"`
+	Revision          int       `json:"revision"`
+	ReviewAgentID     string    `json:"review_agent_id"`
+	OperatorPrincipal string    `json:"operator_principal"`
+	IssuesJSON        string    `json:"issues_json"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
 type ConsoleSpecEvent struct {
 	ID       string    `json:"id"`
 	SpecID   string    `json:"spec_id"`

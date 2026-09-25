@@ -15,7 +15,7 @@ const assert = new Proxy(assertModule, {
   },
 });
 // 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
-const MIN_ASSERTIONS = 179;
+const MIN_ASSERTIONS = 188;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -82,6 +82,11 @@ function productionHTML() {
   if (MUTATION === 'owner-title-nonexclusive') mutateHTML("title.onclick=function(){openSpec(spec.id,true)};", "title.onclick=function(){var opened=openSpec(spec.id,true);if(globalThis.__testSpecExclusive)opened.then(function(){document.getElementById('transfer-screen').hidden=false;});};");
   if (MUTATION === 'owner-transfer-nonexclusive') mutateHTML("showScreen('transfer-screen');};action.append(transfer);", "showScreen('transfer-screen');if(globalThis.__testSpecExclusive)document.getElementById('new-screen').hidden=false;};action.append(transfer);");
   if (MUTATION === 'owner-transfer-radio-detached') mutateHTML('.spec-transfer-choice input[type=radio]{width:auto;margin:0}', '.spec-transfer-choice input[type=radio]{display:block;width:100%;margin:0 0 12px}.spec-transfer-choice{display:block;width:240px}');
+  if (MUTATION === 'sgen-single-acceptance') mutateHTML('function acceptanceItems(prefix){var fallback=', 'function acceptanceItems(prefix){document.querySelectorAll("#"+prefix+"-acceptance-list .acceptance-row:not(:first-child)").forEach(function(x){x.remove()});var fallback=');
+  if (MUTATION === 'sgen-drop-owner-ref') mutateHTML("owner_ref:row.querySelector('.acceptance-owner-ref').value||fallback", "owner_ref:''");
+  if (MUTATION === 'sgen-wrong-source-mark') mutateHTML("mark.textContent=ai?'AI 生成':'业主亲写'", "mark.textContent=ai?'业主亲写':'AI 生成'");
+  if (MUTATION === 'sgen-one-case-only') mutateHTML(".filter(Boolean)};});}", ".filter(Boolean).slice(0,1)};});}");
+  if (MUTATION === 'sgen-drop-checked-at') mutateHTML("checked_at:row.querySelector('.acceptance-checked-at').value", "checked_at:''");
   if (MUTATION === 'no-list-error-text') {
     mutateHTML('catch(err){specListFailure(err);}', 'catch(err){}');
   }
@@ -127,7 +132,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -741,6 +746,38 @@ async function main() {
     await page.keyboard.type('EDIT_BEHAVIOR_SENTINEL');
     assert.notStrictEqual(await page.evaluate(() => window.specEditors.edit.value()), editableBefore, '有权限时必须能通过真实键盘行为修改正文');
     await page.evaluate((value) => window.specEditors.edit.value(value), editableBefore);
+    // S-GEN ①②③⑥⑦：多条可逐条寻址；owner_ref/source 真值可见；核对三元组和一对多用例进入载荷。
+    await page.click('#edit-add-acceptance');
+    const secondCriterion = page.locator('#edit-acceptance-list .acceptance-row').nth(1);
+    await secondCriterion.locator('.acceptance-id').fill('A2');
+    await secondCriterion.locator('.acceptance-text').fill('second criterion');
+    await secondCriterion.locator('.acceptance-owner-ref').fill('owner:quote-2');
+    await secondCriterion.locator('.acceptance-source').selectOption('ai');
+    await secondCriterion.locator('.acceptance-generated-by').fill('agent-writer');
+    await secondCriterion.locator('.acceptance-checked-by').fill('checker');
+    await secondCriterion.locator('.acceptance-checked-at').fill('2026-09-25T01:02:03Z');
+    await secondCriterion.locator('.acceptance-cases').fill('case-one\ncase-two');
+    const sgenShape = await page.evaluate(() => ({
+      payload: payload('edit'),
+      marks: Array.from(document.querySelectorAll('#edit-acceptance-list .acceptance-source-mark')).map((x) => x.textContent.trim()),
+      rows: document.querySelectorAll('#edit-acceptance-list .acceptance-row').length,
+    }));
+    assert.strictEqual(sgenShape.rows, 2, 'S-GEN:验收标准必须能同时保存多条，而不是覆盖第一条');
+    assert.strictEqual(sgenShape.payload.acceptance.length, 2, 'S-GEN:提交载荷必须逐条保留两条标准');
+    assert.strictEqual(sgenShape.payload.acceptance[1].owner_ref, 'owner:quote-2', 'S-GEN:每条标准必须带自己的 owner_ref');
+    assert.deepStrictEqual(sgenShape.marks, ['业主亲写','AI 生成'], 'S-GEN:来源标记必须存在且与真实 source 一致');
+    assert.strictEqual(sgenShape.payload.acceptance[1].generated_by, 'agent-writer', 'S-GEN:AI 来源必须带生成 Agent');
+    assert.strictEqual(sgenShape.payload.acceptance[1].checked_by, 'checker', 'S-GEN:核对人必须进入该条标准');
+    assert.strictEqual(sgenShape.payload.acceptance[1].checked_at, '2026-09-25T01:02:03Z', 'S-GEN:核对时刻必须进入该条标准');
+    assert.deepStrictEqual(sgenShape.payload.acceptance[1].cases, ['case-one','case-two'], 'S-GEN:一条标准必须允许对应多条用例，不得截成恰好一条');
+    await secondCriterion.locator('.remove-acceptance').click();
+    await page.click('#edit-add-inference');
+    const inference = page.locator('#edit-inference-list .inference-row').first();
+    await inference.locator('.inference-text').fill('agent-only inference');
+    await inference.locator('.inference-generated-by').fill('agent-writer');
+    const inferencePayload = await page.evaluate(() => payload('edit').inferences);
+    assert.deepStrictEqual(inferencePayload.map((x) => [x.text,x.generated_by,x.status]), [['agent-only inference','agent-writer','pending_owner_confirmation']], 'S-GEN:指不出 owner_ref 的内容只能进入待业主确认推论区');
+    await inference.locator('.remove-inference').click();
     // ───── 一 业主逐字更正:保存按钮在「规范锚定」输入框右侧 ＋ 乙-1 中文文案 ─────
     // 🔴 这一处 2026-09-24 就做过(5af5c383),但那条线不是现网锚的祖先,【从未上线】。
     //    本轮在当前基线上重做,判据照用当初那两条 —— 两条一起断,少一条都能糊过去:
@@ -749,6 +786,8 @@ async function main() {
     const b1 = await page.evaluate(() => {
       const labelTextFor = (id) => {
         const el = document.getElementById(id);
+        const explicit = document.querySelector(`label[for="${id}"]`);
+        if (explicit) { const clone = explicit.cloneNode(true); clone.querySelectorAll('.required').forEach((n) => n.remove()); return clone.textContent.trim(); }
         let node = el.closest('.spec-anchor-row') || el;
         let label = node.previousElementSibling;
         while (label && label.tagName !== 'LABEL') label = label.previousElementSibling;

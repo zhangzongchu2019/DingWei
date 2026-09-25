@@ -43,6 +43,7 @@ func finalSpecForPresplit(t *testing.T, hub *Hub) model.ConsoleSpec {
 	if err := db.TransferConsoleSpec(context.Background(), spec.ID, "owner-a", "丙", "review", hub.now()); err != nil {
 		t.Fatal(err)
 	}
+	completeSpecGateForTest(t, db, spec.ID, "manager", hub.now())
 	if err := db.FinalizeConsoleSpec(context.Background(), spec.ID, "manager", hub.now()); err != nil {
 		t.Fatal(err)
 	}

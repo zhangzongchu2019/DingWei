@@ -79,6 +79,7 @@ func TestConsoleSpecTaskSplitEndpointCreatesVisibleTaskAndLocksRevision(t *testi
 	if err := db.TransferConsoleSpec(context.Background(), created.ID, "owner-a", "丙", "review", hub.now()); err != nil {
 		t.Fatal(err)
 	}
+	completeSpecGateForTest(t, db, created.ID, "manager", hub.now())
 	if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); err != nil {
 		t.Fatal(err)
 	}
@@ -133,6 +134,7 @@ func TestConsoleSpecDetailReturnsTopologicalTasksDespiteReverseCreatedTimes(t *t
 	if err := db.TransferConsoleSpec(context.Background(), created.ID, "owner-a", "丙", "review", hub.now()); err != nil {
 		t.Fatal(err)
 	}
+	completeSpecGateForTest(t, db, created.ID, "manager", hub.now())
 	if err := db.FinalizeConsoleSpec(context.Background(), created.ID, "manager", hub.now()); err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +168,22 @@ func TestConsoleSpecDetailReturnsTopologicalTasksDespiteReverseCreatedTimes(t *t
 	}
 }
 
-const validSpecBody = `{"title":"Spec A","content_markdown":"# A","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}]}`
+const validSpecBody = `{"title":"Spec A","content_markdown":"# A","acceptance":[{"id":"A1","text":"works","owner_ref":"msg:1","source":"owner","checked_by":"tester","checked_at":"2026-09-25T00:00:00Z","cases":["case-1"]}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}]}`
+
+func completeSpecGateForTest(t *testing.T, db *store.SQLite, specID, actor string, now time.Time) {
+	t.Helper()
+	agent := model.ConsoleAgent{ID: "review-agent-for-" + actor, KeyID: "review-key-" + actor, SessionName: "review-" + actor, OwnerPrincipal: "owner-a", Active: true}
+	if actor == "owner-a" {
+		agent.OwnerPrincipal = "owner-b"
+	}
+	if err := db.UpsertConsoleAgent(context.Background(), agent); err != nil {
+		t.Fatal(err)
+	}
+	issues := `[{"id":"fixture-q1","text":"fixture review","response":"checked","outcome":"false_positive"}]`
+	if err := db.SaveConsoleSpecGateReview(context.Background(), specID, actor, model.ConsoleSpecGateReview{ReviewAgentID: agent.ID, IssuesJSON: issues}, now); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func TestConsoleSpecHTTPMultipleSpecsAreVisiblePubliclyButWritesRemainControlled(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
@@ -213,7 +230,7 @@ func TestConsoleSpecHTTPMultipleSpecsAreVisiblePubliclyButWritesRemainControlled
 	}
 
 	// 阳性只证明公开读；写仍须由所有者或后续能力链接授权。不能把“读放开”误写成“全放开”。
-	patch := `{"title":"Spec A","content_markdown":"# stolen","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}],"expected_revision":1}`
+	patch := strings.TrimSuffix(strings.Replace(validSpecBody, "# A", "# stolen", 1), "}") + `,"expected_revision":1}`
 	req = httptest.NewRequest(http.MethodPatch, "/api/console/specs/"+ids[0], bytes.NewBufferString(patch))
 	req.SetPathValue("specID", ids[0])
 	req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-b"))
@@ -243,7 +260,7 @@ func TestConsoleSpecManagementOwnerCanEditOwnSpecButNotAnotherOwners(t *testing.
 	}
 	owned := createdBy("manager")
 	foreign := createdBy("owner-a")
-	patch := `{"title":"Spec A","content_markdown":"# edited","acceptance":[{"id":"A1","text":"works"}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}],"expected_revision":1}`
+	patch := strings.TrimSuffix(strings.Replace(validSpecBody, "# A", "# edited", 1), "}") + `,"expected_revision":1}`
 
 	for _, tc := range []struct {
 		name string

@@ -87,7 +87,7 @@ func TestMigration0044PreservesEveryLegacyStateAndDropsClaimedBy(t *testing.T) {
 		}
 		if legacy == "claimable" || legacy == "in_progress" || legacy == "archived" {
 			revision := model.ConsoleSpecRevision{SpecID: fmt.Sprintf("s%d", i), Revision: 2, CreatedBy: "owner"}
-			if _, writeErr := db.AppendConsoleSpecRevision(ctx, "owner", revision.SpecID, 1, revision, time.Now()); !errors.Is(writeErr, ErrConsoleSpecEditDenied) {
+			if _, writeErr := db.AppendConsoleSpecRevision(ctx, "owner", revision.SpecID, 1, revision, time.Now()); !errors.Is(writeErr, ErrConsoleSpecFinal) {
 				t.Fatalf("legacy final state %s remained writable: %v", legacy, writeErr)
 			}
 		}
@@ -257,7 +257,7 @@ func TestConsoleSpecTwelveStepFlowSingleEditorFinalAndOwnerOnlyTasks(t *testing.
 	for _, actor := range []string{"owner-a", "owner-b", "manager"} {
 		r := specRevision("flow", 7, "final-change")
 		r.CreatedBy = actor
-		if _, err := db.AppendConsoleSpecRevision(ctx, actor, "flow", 6, r, now); err != ErrConsoleSpecEditDenied {
+		if _, err := db.AppendConsoleSpecRevision(ctx, actor, "flow", 6, r, now); err != ErrConsoleSpecFinal {
 			t.Fatalf("final actor=%s err=%v", actor, err)
 		}
 	}
