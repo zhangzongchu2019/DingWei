@@ -88,7 +88,7 @@ func TestMigration0044PreservesEveryLegacyStateAndDropsClaimedBy(t *testing.T) {
 		if legacy == "claimable" || legacy == "in_progress" || legacy == "archived" {
 			revision := model.ConsoleSpecRevision{SpecID: fmt.Sprintf("s%d", i), Revision: 2, CreatedBy: "owner"}
 			if _, writeErr := db.AppendConsoleSpecRevision(ctx, "owner", revision.SpecID, 1, revision, time.Now()); !errors.Is(writeErr, ErrConsoleSpecFinal) {
-				t.Fatalf("legacy final state %s remained writable: %v", legacy, writeErr)
+				t.Fatalf("legacy final state %s rejection err=%v want ErrConsoleSpecFinal", legacy, writeErr)
 			}
 		}
 	}
