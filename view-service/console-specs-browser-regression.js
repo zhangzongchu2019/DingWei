@@ -15,7 +15,7 @@ const assert = new Proxy(assertModule, {
   },
 });
 // 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
-const MIN_ASSERTIONS = 165;
+const MIN_ASSERTIONS = 179;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -24,6 +24,8 @@ const { chromium } = require('playwright');
 const GO_SOURCE = path.join(__dirname, '..', 'internal', 'm8', 'console_specs_page.go');
 const ASSET_DIR = path.join(__dirname, '..', 'internal', 'm8', 'static', 'easymde');
 const MD_CORE = path.join(__dirname, 'md-render-core.js');
+// 业主原句,逐字。乙-1 的占位文案就是这一句,不得改写。
+const ANCHOR_PLACEHOLDER = '用固定的标记和规范，把 AI 的"自由创作"变成"按图施工"';
 const RENDERER = path.join(__dirname, 'renderer-canary-sse.html');
 const START = 'const consoleSpecsPageHTML = `';
 const END = '`\n\nfunc (h *Hub) HandleConsoleSpecsPage';
@@ -105,6 +107,12 @@ function productionHTML() {
   // 同上:让无权限者重新拿到一个能写的正文控件(把编辑器放出来并解除只读)。
   if (MUTATION === 'readonly-can-write') { mutateHTML("bodyField.hidden=!canEdit;", "bodyField.hidden=false;"); mutateHTML("specEditors.edit.codemirror.setOption('readOnly',!canEdit);", "specEditors.edit.codemirror.setOption('readOnly',false);"); }
   // 🔴 本次返工的直接阴性对照:退回 81f3b702 的做法(永远显示编辑器、从不显示渲染详情)⇒ 必须红。
+  // 一(业主逐字更正:保存按钮在「规范锚定」右侧)＋ 乙-1 中文文案的阴性对照
+  if (MUTATION === 'labels-back-to-english') mutateHTML('>验收标准 <', '>Acceptance <');
+  if (MUTATION === 'anchor-placeholder-gone') mutateHTML(" placeholder='" + ANCHOR_PLACEHOLDER + "'", '');
+  if (MUTATION === 'save-above-fields') mutateHTML('.spec-anchor-row{display:flex;align-items:center;gap:8px}', '.spec-anchor-row{display:block}');
+  // 二 的阴性对照:把高亮改回「后一条正则跑在已生成的 HTML 上」⇒ 属性名 class 会被再包一层
+  if (MUTATION === 'rehighlight-on-generated-html') mutateHTML('const wrap = (pattern, replacement) => { html = stash(html.replace(pattern, replacement)); };', 'const wrap = (pattern, replacement) => { html = html.replace(pattern, replacement); };');
   if (MUTATION === 'readonly-shows-source') mutateHTML("bodyField.hidden=!canEdit;renderedBody.hidden=canEdit;", "bodyField.hidden=false;renderedBody.hidden=true;");
   if (MUTATION === 'same-screen-create') html = html.replace('<section id=new-screen hidden>', '<section id=new-screen>');
   if (MUTATION === 'hide-dependents') html = html.replace("+' · 被依赖 '+((task.depended_by||[]).join(', ')||'无')", "");
@@ -119,7 +127,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -160,7 +168,16 @@ async function main() {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(html); return;
     }
     if (req.url === '/view/parity-session') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(fs.readFileSync(RENDERER)); return;
+      // 🔴 变异渲染核时,renderer 这份【生成副本】也要一起变 —— 否则先炸的是 parity 那条
+      //    (两份不一致),阴性对照就证不到「显示出来的代码坏了」那一层。
+      let rendererHTML = fs.readFileSync(RENDERER, 'utf8');
+      if (MUTATION === 'rehighlight-on-generated-html') {
+        const before = rendererHTML;
+        rendererHTML = rendererHTML.split('const wrap = (pattern, replacement) => { html = stash(html.replace(pattern, replacement)); };')
+          .join('const wrap = (pattern, replacement) => { html = html.replace(pattern, replacement); };');
+        assert.notStrictEqual(rendererHTML, before, 'renderer 副本里没有可变异的锚点 —— 同步漂了');
+      }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(rendererHTML); return;
     }
     if (req.url === '/view/parity-session/status') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -297,7 +314,9 @@ async function main() {
     }
     for (const [field, selector, label] of [
       ['title', '#new-title', 'Title'], ['markdown', '#new-content', 'Markdown'],
-      ['acceptance', '#new-acceptance', 'Acceptance'], ['anchor', '#new-anchor', 'Owner message anchor'],
+      // 🔴 乙-1 把这两个 label 译成中文后,必填项报错里的字段名也跟着中文 ——
+      //    否则业主看到的是中文 label、报错却说 Acceptance。Title/Markdown 的 label 仍是英文,故不动。
+      ['acceptance', '#new-acceptance', '验收标准'], ['anchor', '#new-anchor', '规范锚定'],
     ]) {
       await setNew({ ...validNew, [field]: '' });
       await page.click('#create-spec');
@@ -722,6 +741,46 @@ async function main() {
     await page.keyboard.type('EDIT_BEHAVIOR_SENTINEL');
     assert.notStrictEqual(await page.evaluate(() => window.specEditors.edit.value()), editableBefore, '有权限时必须能通过真实键盘行为修改正文');
     await page.evaluate((value) => window.specEditors.edit.value(value), editableBefore);
+    // ───── 一 业主逐字更正:保存按钮在「规范锚定」输入框右侧 ＋ 乙-1 中文文案 ─────
+    // 🔴 这一处 2026-09-24 就做过(5af5c383),但那条线不是现网锚的祖先,【从未上线】。
+    //    本轮在当前基线上重做,判据照用当初那两条 —— 两条一起断,少一条都能糊过去:
+    //      只断 left    ⇒ 按钮掉到下一行最右边也满足
+    //      只断同一行   ⇒ 按钮在输入框左边也满足
+    const b1 = await page.evaluate(() => {
+      const labelTextFor = (id) => {
+        const el = document.getElementById(id);
+        let node = el.closest('.spec-anchor-row') || el;
+        let label = node.previousElementSibling;
+        while (label && label.tagName !== 'LABEL') label = label.previousElementSibling;
+        const clone = label.cloneNode(true);
+        clone.querySelectorAll('.required').forEach((n) => n.remove());
+        return clone.textContent.trim();
+      };
+      const box = (id) => { const b = document.getElementById(id).getBoundingClientRect(); return { top: b.top, h: b.height, left: b.left, w: b.width }; };
+      return {
+        acceptanceLabel: labelTextFor('edit-acceptance'),
+        anchorLabel: labelTextFor('edit-anchor'),
+        newAcceptanceLabel: labelTextFor('new-acceptance'),
+        anchorPlaceholder: document.getElementById('edit-anchor').getAttribute('placeholder'),
+        newAnchorPlaceholder: document.getElementById('new-anchor').getAttribute('placeholder'),
+        acceptance: box('edit-acceptance'), anchor: box('edit-anchor'), save: box('save-spec'),
+      };
+    });
+    assert.strictEqual(b1.acceptanceLabel, '验收标准', `验收标准的 label 必须按业主图用中文,实测 ${JSON.stringify(b1.acceptanceLabel)}`);
+    assert.strictEqual(b1.anchorLabel, '规范锚定', `规范锚定的 label 必须用「规范锚定」,实测 ${JSON.stringify(b1.anchorLabel)}`);
+    assert.strictEqual(b1.newAcceptanceLabel, '验收标准', '新建屏的 label 必须与详情屏一致 —— 只改一屏等于没改');
+    assert.strictEqual(b1.anchorPlaceholder, ANCHOR_PLACEHOLDER, `规范锚定的占位必须逐字用业主原句,实测 ${JSON.stringify(b1.anchorPlaceholder)}`);
+    assert.strictEqual(b1.newAnchorPlaceholder, ANCHOR_PLACEHOLDER, '新建屏的占位同样必须是业主原句');
+    // 🔴 前置:三个矩形都要有真实高度,否则下面的比较在「全是 0」时会空洞通过
+    for (const [key, rect] of Object.entries({ acceptance: b1.acceptance, anchor: b1.anchor, save: b1.save })) {
+      assert.ok(rect.h > 0, `前置:${key} 必须真的可见(高度>0),实测 h=${rect.h} —— 否则版式判据是空洞的`);
+    }
+    assert.ok(b1.save.left >= b1.anchor.left + b1.anchor.w,
+      `保存按钮必须在「规范锚定」输入框右侧,实测 save.left=${b1.save.left} anchor.right=${b1.anchor.left + b1.anchor.w}`);
+    const anchorRowOverlap = Math.min(b1.save.top + b1.save.h, b1.anchor.top + b1.anchor.h) - Math.max(b1.save.top, b1.anchor.top);
+    assert.ok(anchorRowOverlap > 0, `保存按钮必须与「规范锚定」同一行(垂直投影有重叠),实测重叠=${anchorRowOverlap}px`);
+    assert.ok(b1.anchor.top >= b1.acceptance.top, '规范锚定在验收标准之下(按业主图顺序)');
+    console.log(`一 保存按钮: save.left=${Math.round(b1.save.left)} anchor.right=${Math.round(b1.anchor.left + b1.anchor.w)} 垂直重叠=${Math.round(anchorRowOverlap)}px 文案=${b1.acceptanceLabel}/${b1.anchorLabel}`);
     // ② 不可编辑:只读,但内容必须看得见、滚得动、选得中
     await page.request.post(`http://127.0.0.1:${port}/fixture/add-readonly-spec`);
     await page.click('#show-spec-list');
@@ -778,6 +837,15 @@ async function main() {
     assert.strictEqual(await page.locator('#spec-rendered img.md-img').evaluate((el) => getComputedStyle(el).maxHeight), '420px', '共享渲染器的 CSS 契约必须仍在');
     await page.locator('#spec-rendered .copy-code').click();
     assert.strictEqual(await page.evaluate(() => globalThis.__copiedCode), 'print("copy-me")', '代码块复制按钮必须接在渲染结果上');
+    // ───── 二 共享渲染器:断【显示出来的代码】,不是断复制按钮的值 ─────
+    // 🔴 上面那条只证明 data-code 里的原文没丢;2026-09-25 实测屏上显示的是
+    //    print(class="tok-str">"copy-me") —— 复制按钮那条【绿着】,业主看到的却是坏的。
+    //    这正是老断言漏掉的那一层:判据落在了「复制得到什么」,没落在「看到什么」。
+    const shownCode = (await page.locator('#spec-rendered pre code').innerText()).trim();
+    assert.strictEqual(shownCode, 'print("copy-me")', `代码块显示出来的文本必须与源码逐字相同,实测 ${JSON.stringify(shownCode)}`);
+    assert.ok(!/tok-[a-z]+"\s*>/.test(shownCode), `显示文本里漏出了标签属性,高亮又把自己的输出当源码包了一层:${JSON.stringify(shownCode)}`);
+    // 🔴 阳性对照:高亮本身必须还在 —— 否则「把高亮整个关掉」也能让上面两条绿。
+    assert.ok(await page.locator('#spec-rendered pre code .tok-str').count() >= 1, '字符串仍必须被高亮(否则等于把高亮关掉来糊过判据)');
     assert.strictEqual(await page.locator('#spec-rendered > .md').count(), 1, '页面必须把共享渲染器的输出挂进可见 DOM');
     console.log(`S-6乙: 可编辑(只读=${editableShape.readOnly} 存=${!editableShape.saveHidden} 同屏=${editableShape.taskArea && editableShape.workflow}) 只读(编辑器隐藏=${readonlyShape.bodyFieldHidden} 详情可见=${readonlyShape.renderedVisible} 源码泄漏=${readonlyShape.rawMarkdownLeak} 可输入正文控件=${readonlyShape.writableBodyControls} 选中=${readonlyShape.selected})`);
     // ㊲ S-7:「复制只读链接」—— 复制到的**文本内容**必须对,且成功必须有**可见反馈** ——————

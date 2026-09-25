@@ -11,7 +11,12 @@ import (
 const consoleSpecsPageHTML = `<!doctype html><meta charset=utf-8><title>DingWei Specs</title>
 <link rel=stylesheet href="/console/spec-assets/easymde.min.css">
 <style>
-body{font:14px sans-serif;margin:20px;max-width:1100px;background:#fff}h1,h2{margin:8px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+body{font:14px sans-serif;margin:20px;max-width:1100px;background:#fff}
+/* 🔴 业主 2026-09-25 逐字更正:「图右侧内容是因为占地不足导致的,准确表达应在右侧」
+   ⇒ 保存按钮与「规范锚定」输入框【同一行、按钮在右】。用 flex 而不是浮动/绝对定位:
+   输入框 flex:1 吃满剩余宽,按钮天然贴在它右侧,窄屏下也不会叠上去。
+   判据两条一起断(只断其一都能糊过去):save.left >= anchor.right ＋ 两者垂直投影有重叠。 */
+.spec-anchor-row{display:flex;align-items:center;gap:8px}.spec-anchor-row input{flex:1;min-width:0}h1,h2{margin:8px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 [hidden]{display:none!important}
 section{border:1px solid #ccd4df;border-radius:8px;padding:14px}label{display:block;margin:8px 0 3px}input,textarea{box-sizing:border-box;width:100%;padding:7px}
 textarea{min-height:110px}button{margin:8px 6px 0 0;padding:6px 10px}.spec-row{border:1px solid #dde3ea;border-radius:6px;padding:9px;margin:7px 0}
@@ -39,8 +44,8 @@ html[data-theme="dark"] .spec-block-list{background:#1b2530}html[data-theme="dar
 <label>Title <span class=required>*</span></label><input id=new-title required>
 <label>Markdown <span class=required>*</span></label><textarea id=new-content required></textarea>
 <label>Import Markdown</label><input id=new-import type=file accept=".md,.markdown,text/markdown,text/plain">
-<label>Acceptance <span class=required>*</span></label><input id=new-acceptance required>
-<label>Owner message anchor <span class=required>*</span></label><input id=new-anchor required>
+<label>验收标准 <span class=required>*</span></label><input id=new-acceptance required>
+<label>规范锚定 <span class=required>*</span></label><input id=new-anchor required placeholder='用固定的标记和规范，把 AI 的"自由创作"变成"按图施工"'>
 <button id=create-spec type=button>Create</button><span id=create-status></span>
 </section>
 <section id=list-screen class="spec-block spec-block-list"><div class=spec-list-toolbar><h2>我的 spec</h2><button id=show-new-spec type=button>⊕ 添加 spec</button></div><table id=spec-table class=spec-table><thead><tr><th>标题</th><th>状态</th><th>当前</th><th>操作</th></tr></thead><tbody id=spec-list></tbody></table><div id=spec-pager><button id=prev-page type=button>上一页</button><span id=page-status></span><button id=next-page type=button>下一页</button></div></section>
@@ -51,9 +56,9 @@ html[data-theme="dark"] .spec-block-list{background:#1b2530}html[data-theme="dar
 <div id=edit-body-field><label>Markdown <span class=required>*</span></label><textarea id=edit-content required></textarea></div>
 <div id=spec-rendered class=spec-rendered hidden></div>
 <label>Import Markdown</label><input id=edit-import type=file accept=".md,.markdown,text/markdown,text/plain">
-<label>Acceptance <span class=required>*</span></label><input id=edit-acceptance required>
-<label>Owner message anchor <span class=required>*</span></label><input id=edit-anchor required>
-<button id=save-spec type=button>Save new revision</button><span id=edit-status></span>
+<label>验收标准 <span class=required>*</span></label><input id=edit-acceptance required>
+<label>规范锚定 <span class=required>*</span></label>
+<div class=spec-anchor-row><input id=edit-anchor required placeholder='用固定的标记和规范，把 AI 的"自由创作"变成"按图施工"'><button id=save-spec type=button>Save new revision</button></div><span id=edit-status></span>
 </section>
 <div id=spec-workflow hidden><button id=finalize-spec type=button>审结</button><span id=workflow-status></span></div>
 <section id=task-area><h3>任务拆解</h3><div id=agent-presplit hidden><label>预拆 Agent <select id=presplit-agent></select></label><button id=start-presplit type=button>Agent 预拆</button><span id=presplit-status></span></div><button id=show-task-split type=button hidden>手工添加任务</button><button id=close-task-split type=button hidden>任务结案</button><div id=task-split hidden><label>任务名 <input id=task-title></label><label>内容 <textarea id=task-content></textarea></label><label>完成标准 (DoD) <textarea id=task-dod></textarea></label><label>预期工时 <input id=task-hours type=number min=0 step=.5 value=0></label><span id=task-hours-hint></span><label>依赖项 <select id=task-deps multiple></select></label><button id=create-task type=button>拆解任务</button><span id=task-create-status></span></div></section>
@@ -83,7 +88,7 @@ var specEditors={new:new EasyMDE(editorOptions(document.getElementById('new-cont
 function bindImport(prefix){document.getElementById(prefix+'-import').onchange=async function(){var f=this.files&&this.files[0];if(f)specEditors[prefix].value(await f.text());};}bindImport('new');bindImport('edit');
 function payload(prefix){return {title:document.getElementById(prefix+'-title').value,content_markdown:specEditors[prefix].value(),
  acceptance:[{id:'A1',text:document.getElementById(prefix+'-acceptance').value}],input_anchors:[{kind:'owner_message',ref:document.getElementById(prefix+'-anchor').value}]};}
-function missingRequired(body){for(const item of [['Title',body.title],['Markdown',body.content_markdown],['Acceptance',body.acceptance[0].text],['Owner message anchor',body.input_anchors[0].ref]])if(!String(item[1]||'').trim())return item[0];return '';}
+function missingRequired(body){for(const item of [['Title',body.title],['Markdown',body.content_markdown],['验收标准',body.acceptance[0].text],['规范锚定',body.input_anchors[0].ref]])if(!String(item[1]||'').trim())return item[0];return '';}
 async function responseFailure(prefix,r){var detail=(await r.text()).trim();return prefix+' '+r.status+(detail?':'+detail:'');}
 function wireSpecRender(root){root.querySelectorAll('.copy-code').forEach(function(btn){btn.onclick=async function(){try{await navigator.clipboard.writeText(decodeURIComponent(btn.dataset.code||''));btn.textContent='Copied';}catch(_){btn.textContent='Copy failed';}};});root.querySelectorAll('img[data-md-img]').forEach(function(img){img.onerror=function(){var link=document.createElement('a');link.className='md-image-fallback';link.href=img.currentSrc||img.src;link.target='_blank';link.rel='noreferrer';link.download='';link.textContent='⬇ 下载图片'+(img.alt?'：'+img.alt:'');img.replaceWith(link);};});}
 // S-7: 只读链接对外一直是公开可读的(main.go 注释逐字: Shared spec links are capability-authorized,
