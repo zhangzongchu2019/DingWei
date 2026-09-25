@@ -450,6 +450,7 @@ func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, spe
 	// Final is a distinct, auditable reason. Do not fold it into the compound
 	// editor/archived/closed predicate: final rows also have no current editor,
 	// which previously let removal of the final guard stay observationally green.
+	// The test bypasses the table CHECK only to isolate this decision; production still enforces final => current_editor_id IS NULL as a second guard.
 	if state == "final" {
 		return 0, ErrConsoleSpecFinal
 	}
