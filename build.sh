@@ -22,6 +22,8 @@
 #    (默认 OUT=./bin,在仓内)。已把常见产物加进 .gitignore;
 #    但若你把 OUT 指到仓内其它路径,仍会自伤 —— 建议 OUT 指向仓外。
 set -eu
+# 所有相对路径都以脚本所在的仓库根为准；调用者可以在任意 cwd 用绝对路径执行。
+cd "$(dirname "$0")"
 # 🔴 发版构建先过 console seed 身份配对闸。生成器若会因参数顺序改写
 # principal id↔subject，产物就不应继续编译；本闸与 schema 校验必须同跑。
 python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed deploy.test_build_entrypoints

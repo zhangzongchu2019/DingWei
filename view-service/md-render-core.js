@@ -333,20 +333,41 @@
       return `<div class="code-wrap"><div class="code-toolbar"><span>${safeLang}</span><button class="copy-code" type="button" data-code="${encoded}">Copy</button></div><pre><code>${highlighted}</code></pre></div>`;
     }
 
+    // 🔴 2026-09-25 修:每一条正则原先都作用在【上一条已经产出的 HTML】上,
+    //    于是后一条会把前一条生成的标签当成源码再包一层。实测触发点是关键字名单里的
+    //    `class` 命中了 `<span class="tok-str">` 的**属性名**:
+    //      print("copy-me")  ⇒  print(<span <span class="tok-kw">class</span>="tok-str">…</span>)
+    //      屏上显示成         print(class="tok-str">"copy-me")
+    //    ⇒ **凡含字符串字面量的 python 代码块都坏**,spec 页与 timeline 共用本核,两处都坏。
+    // 🔵 做法不是把 `class` 从名单里删掉(那只挡住今天这一个词,明天加 `for`/`type` 又会犯);
+    //    而是让后续规则【看不见已经包好的部分】:每包完一类就把生成的 span 收进保险箱,
+    //    原地留一个不可能被任何规则命中的占位,全部替换结束后再还原。
     function highlightCode(code, lang) {
-      let html = escapeHtml(code);
+      // 占位用的两个控制字符若真出现在源码里,先剔掉,免得还原阶段被伪造的占位污染。
+      let html = escapeHtml(code).replace(/[\u0001\u0002]/g, '');
+      const vault = [];
+      // 🔴 占位里【不能出现数字】:数字规则 \b(\d+)\b 会把占位的序号当成代码里的数字包起来,
+      //    stash 再把它收走 ⇒ 占位嵌套、还原失败,屏上直接漏出控制字符。(本次实测踩到过。)
+      //    故序号按 26 进制编成 A..P,所有规则(关键字/字面量全是小写)都命中不了它。
+      const encodeIndex = (n) => n.toString(26).replace(/[0-9a-p]/g, (ch) => String.fromCharCode(65 + parseInt(ch, 26)));
+      const decodeIndex = (s) => s.split('').reduce((acc, ch) => acc * 26 + (ch.charCodeAt(0) - 65), 0);
+      const stash = (value) => value.replace(/<span class="tok-[a-z]+">[\s\S]*?<\/span>/g, (hit) => {
+        vault.push(hit);
+        return '\u0001' + encodeIndex(vault.length - 1) + '\u0002';
+      });
+      const wrap = (pattern, replacement) => { html = stash(html.replace(pattern, replacement)); };
       if ((lang || '').toLowerCase() === 'python') {
-        html = html.replace(/(#.*)$/gm, '<span class="tok-com">$1</span>');
-        html = html.replace(/(&#39;[^&]*?&#39;|&quot;[^&]*?&quot;)/g, '<span class="tok-str">$1</span>');
-        html = html.replace(/\b(def|return|if|else|elif|for|in|and|or|not|class|import|from|while|try|except|with|as|lambda)\b/g, '<span class="tok-kw">$1</span>');
-        html = html.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="tok-num">$1</span>');
+        wrap(/(#.*)$/gm, '<span class="tok-com">$1</span>');
+        wrap(/(&#39;[^&]*?&#39;|&quot;[^&]*?&quot;)/g, '<span class="tok-str">$1</span>');
+        wrap(/\b(def|return|if|else|elif|for|in|and|or|not|class|import|from|while|try|except|with|as|lambda)\b/g, '<span class="tok-kw">$1</span>');
+        wrap(/\b(\d+(?:\.\d+)?)\b/g, '<span class="tok-num">$1</span>');
       } else if ((lang || '').toLowerCase() === 'json') {
-        html = html.replace(/(&quot;[^&]*?&quot;)(\s*:)/g, '<span class="tok-kw">$1</span>$2');
-        html = html.replace(/(:\s*)(&quot;[^&]*?&quot;)/g, '$1<span class="tok-str">$2</span>');
-        html = html.replace(/\b(true|false|null)\b/g, '<span class="tok-kw">$1</span>');
-        html = html.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="tok-num">$1</span>');
+        wrap(/(&quot;[^&]*?&quot;)(\s*:)/g, '<span class="tok-kw">$1</span>$2');
+        wrap(/(:\s*)(&quot;[^&]*?&quot;)/g, '$1<span class="tok-str">$2</span>');
+        wrap(/\b(true|false|null)\b/g, '<span class="tok-kw">$1</span>');
+        wrap(/\b(\d+(?:\.\d+)?)\b/g, '<span class="tok-num">$1</span>');
       }
-      return html;
+      return html.replace(/\u0001([A-P]+)\u0002/g, (_, index) => vault[decodeIndex(index)]);
     }
 // DW-MD-CORE:render END
 
