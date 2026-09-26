@@ -139,6 +139,7 @@ async function main() {
         items: [
           ...(MUTATION === 'restore-inert-agents-entry' ? [{ id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' }] : []),
           { id: 'specs', kind: 'spec', title: 'Specs', href: MUTATION === 'legacy-specs-entry' ? '/console/specs' : '#specs', ...(MUTATION === 'legacy-specs-entry' ? {target:'_blank'} : {}), status: 'approved' },
+          { id: 'task-board', kind: 'task-board', title: '任务管理', href: '#task-board', status: 'approved' },
           ...(management ? [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: MUTATION === 'legacy-group-entry' ? '/admin/agent-groups' : '#agent-groups', ...(MUTATION === 'legacy-group-entry' ? {target:'_blank'} : {}), status: 'approved' }] : []),
         ],
       }));
@@ -419,7 +420,7 @@ async function main() {
     await test('renders no platform entry without an observable action', async () => {
       const agentsItem = page.locator('#platform-items a[data-item-id="agents"]');
       assert.strictEqual(await agentsItem.count(), 0, 'the inert Agents platform entry must not be rendered');
-      assert.strictEqual(await page.locator('#platform-items a:not([data-item-id="specs"]):not([data-item-id="agent-groups"])').count(), 0);
+      assert.strictEqual(await page.locator('#platform-items a:not([data-item-id="specs"]):not([data-item-id="task-board"]):not([data-item-id="agent-groups"])').count(), 0);
       assert.strictEqual(await page.locator('#platform-actions button').count(), 0);
       assert.strictEqual(await page.locator('#retryPlatform').isHidden(), true);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'owner');
