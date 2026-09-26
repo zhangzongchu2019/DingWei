@@ -170,6 +170,50 @@ func TestConsoleSpecDetailReturnsTopologicalTasksDespiteReverseCreatedTimes(t *t
 
 const validSpecBody = `{"title":"Spec A","content_markdown":"# A\nmsg:1","acceptance":[{"id":"A1","text":"works","owner_ref":"msg:1","source":"owner","checked_by":"tester","checked_at":"2026-09-25T00:00:00Z","cases":["case-1"]}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}]}`
 
+func TestConsoleSpecWriteReportsEachValidationReason(t *testing.T) {
+	valid := func() consoleSpecWriteRequest {
+		return consoleSpecWriteRequest{
+			Title: "Spec A", ContentMarkdown: "# A\nmsg:1",
+			Acceptance:   []specAcceptance{{ID: "A1", Text: "works", OwnerRef: "msg:1"}},
+			InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "msg:1"}},
+		}
+	}
+	tests := []struct {
+		name string
+		edit func(*consoleSpecWriteRequest)
+		want string
+	}{
+		{"required top-level fields", func(r *consoleSpecWriteRequest) { r.Title = "" }, "title, content, acceptance and input anchors are required"},
+		{"acceptance fields unique", func(r *consoleSpecWriteRequest) { r.Acceptance[0].ID = "" }, "acceptance ids, text and owner_ref must be non-empty and unique"},
+		{"owner quote occurs in content", func(r *consoleSpecWriteRequest) { r.ContentMarkdown = `print("Hello, Python!")` }, "acceptance original quote must occur in current spec content: A1「msg:1」"},
+		{"pending inference shape", func(r *consoleSpecWriteRequest) { r.Inferences = []specInference{{ID: "I1", Text: "guess"}} }, "invalid pending Agent inference"},
+		{"input anchor ref", func(r *consoleSpecWriteRequest) { r.InputAnchors[0].Ref = "" }, "input anchor ref is required"},
+		{"upstream digest", func(r *consoleSpecWriteRequest) {
+			r.InputAnchors[0] = specInputAnchor{Kind: "upstream_spec", Ref: "spec-x"}
+		}, "upstream spec anchor requires digest"},
+		{"input anchor kind", func(r *consoleSpecWriteRequest) { r.InputAnchors[0].Kind = "invented" }, "invalid input anchor kind"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reqBody := valid()
+			tt.edit(&reqBody)
+			raw, err := json.Marshal(reqBody)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req := httptest.NewRequest(http.MethodPost, "/api/console/specs", bytes.NewReader(raw))
+			rr := httptest.NewRecorder()
+			if _, ok := decodeConsoleSpecWrite(rr, req); ok {
+				t.Fatalf("invalid request accepted: %s", tt.name)
+			}
+			if rr.Code != http.StatusBadRequest || strings.TrimSpace(rr.Body.String()) != tt.want {
+				t.Fatalf("code=%d reason=%q want 400 %q", rr.Code, strings.TrimSpace(rr.Body.String()), tt.want)
+			}
+			t.Logf("400 %s", tt.want)
+		})
+	}
+}
+
 func TestConsoleSpecFormServerOwnsNumberSourceAndCheckedTimeAndValidatesQuote(t *testing.T) {
 	now := time.Date(2026, 9, 26, 11, 0, 0, 0, time.UTC)
 	req := consoleSpecWriteRequest{Title: "Form", ContentMarkdown: "sealed text includes exact quote", Acceptance: []specAcceptance{{ID: "client-id", Text: "判据", OwnerRef: "exact quote", Source: "invalid", GeneratedBy: "writer", CheckedAt: "2099-01-01T00:00:00Z"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "msg"}}}

@@ -28,7 +28,7 @@ table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:8px;b
 <section id=spec-panel class=panel><h2>spec 列表</h2><table><thead><tr><th>spec</th><th>状态</th></tr></thead><tbody id=spec-list></tbody></table><div class=pager><button id=spec-prev type=button>上一页</button><span id=spec-page></span><button id=spec-next type=button>下一页</button></div></section>
 <section id=task-panel class=panel><div class=task-toolbar><h2>任务分解列表</h2><span><button id=edit-tasks type=button>编辑</button><button id=finish-tasks type=button hidden>编辑完成</button></span></div><div id=task-status role=status></div><table id=task-table><thead><tr><th>任务文本</th><th>研发</th><th>验收</th><th>状态</th><th>验收标准</th></tr></thead><tbody id=task-list></tbody></table><div class=pager><button id=task-prev type=button>上一页</button><span id=task-page></span><button id=task-next type=button>下一页</button></div></section>
 </div><script>
-let specPage=1,taskPage=1,selectedSpec='',editing=false,onlineAgents=[],currentTasks=[];
+let specPage=1,taskPage=1,selectedSpec=new URLSearchParams(location.search).get('spec_id')||'',editing=false,onlineAgents=[],currentTasks=[];
 function acceptanceDisplay(raw){try{const value=JSON.parse(raw||'[]'),list=Array.isArray(value)?value:(Array.isArray(value.criteria)?value.criteria:[]),ids=[],texts=[];list.forEach(function(v){const id=String(v.id||'').trim(),text=String(v.text||'').trim();if(id)ids.push(id);if(text)texts.push((id?id+' ':'')+text)});return {label:ids.join(', '),title:texts.join('\n')}}catch(_){return {label:'',title:''}}}
 function setPager(prefix,page,pages){document.getElementById(prefix+'-page').textContent=page+' / '+pages;document.getElementById(prefix+'-prev').disabled=page<=1;document.getElementById(prefix+'-next').disabled=page>=pages}
 function taskCell(value,title){const td=document.createElement('td');td.textContent=value||'';if(title)td.title=title;return td}
@@ -36,7 +36,7 @@ function assigneeCell(task,role){const td=document.createElement('td'),idKey=rol
 async function saveAssignment(task){const status=document.getElementById('task-status'),r=await fetch('/api/console/task-board/tasks/'+encodeURIComponent(task.proposal_id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({developer_agent_id:task.developer_agent_id||'',reviewer_agent_id:task.reviewer_agent_id||''})});status.textContent=r.ok?'已保存':(await r.text()).trim();if(r.ok)await loadBoard()}
 function renderTasks(tasks){currentTasks=tasks||[];const body=document.getElementById('task-list');body.replaceChildren();currentTasks.forEach(function(task){const tr=document.createElement('tr'),acceptance=acceptanceDisplay(task.acceptance_json);tr.dataset.taskId=task.proposal_id;tr.append(taskCell(task.content||task.title),assigneeCell(task,'developer'),assigneeCell(task,'reviewer'),taskCell(String(task.passed_cases||0)+'/'+String(task.total_cases||1)),taskCell(acceptance.label,acceptance.title));body.append(tr)})}
 function renderSpecs(specs){const body=document.getElementById('spec-list');body.replaceChildren();(specs||[]).forEach(function(spec){const tr=document.createElement('tr');tr.dataset.specId=spec.id;tr.classList.toggle('selected',spec.id===selectedSpec);tr.append(taskCell(spec.title),taskCell(spec.state));tr.onclick=function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1;loadBoard()};body.append(tr)})}
-async function loadBoard(){const q=new URLSearchParams({spec_page:String(specPage),task_page:String(taskPage)});if(selectedSpec)q.set('spec_id',selectedSpec);const r=await fetch('/api/console/task-board?'+q,{cache:'no-store'});if(!r.ok)throw new Error('task board unavailable');const data=await r.json();specPage=data.spec_page;taskPage=data.task_page;onlineAgents=data.agents||[];renderSpecs(data.specs);renderTasks(data.tasks);setPager('spec',data.spec_page,data.spec_total_pages);setPager('task',data.task_page,data.task_total_pages)}
+async function loadBoard(){const q=new URLSearchParams({spec_page:String(specPage),task_page:String(taskPage)});if(selectedSpec)q.set('spec_id',selectedSpec);const r=await fetch('/api/console/task-board?'+q,{cache:'no-store'});const status=document.getElementById('task-status');if(!r.ok){status.textContent=(await r.text()).trim()||'任务管理不可用';renderSpecs([]);renderTasks([]);return;}const data=await r.json();specPage=data.spec_page;taskPage=data.task_page;onlineAgents=data.agents||[];renderSpecs(data.specs);renderTasks(data.tasks);setPager('spec',data.spec_page,data.spec_total_pages);setPager('task',data.task_page,data.task_total_pages)}
 document.getElementById('edit-tasks').onclick=function(){editing=true;this.hidden=true;document.getElementById('finish-tasks').hidden=false;renderTasks(currentTasks)};document.getElementById('finish-tasks').onclick=function(){editing=false;this.hidden=true;document.getElementById('edit-tasks').hidden=false;renderTasks(currentTasks)};
 document.getElementById('spec-prev').onclick=function(){if(specPage>1){specPage--;loadBoard()}};document.getElementById('spec-next').onclick=function(){specPage++;loadBoard()};document.getElementById('task-prev').onclick=function(){if(taskPage>1){taskPage--;loadBoard()}};document.getElementById('task-next').onclick=function(){taskPage++;loadBoard()};
 loadBoard();
@@ -106,17 +106,25 @@ func (h *Hub) HandleConsoleTaskBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	principal := platformPrincipal(r)
-	specs, err := repo.ListConsoleSpecs(r.Context(), principal, false)
+	allSpecs, err := repo.ListConsoleSpecs(r.Context(), principal, false)
 	if err != nil {
 		http.Error(w, "console task board unavailable", http.StatusServiceUnavailable)
 		return
 	}
 	selectedID := strings.TrimSpace(r.URL.Query().Get("spec_id"))
+	specs := make([]model.ConsoleSpec, 0, len(allSpecs))
 	selected := false
-	for i := range specs {
-		if specs[i].ID == selectedID {
+	for i := range allSpecs {
+		if allSpecs[i].ID == selectedID && allSpecs[i].State != "final" {
+			http.Error(w, fmt.Sprintf("该 spec 尚未审结(当前状态:%s),审结后才能进入任务管理", allSpecs[i].State), http.StatusConflict)
+			return
+		}
+		if allSpecs[i].State != "final" {
+			continue
+		}
+		specs = append(specs, allSpecs[i])
+		if allSpecs[i].ID == selectedID {
 			selected = true
-			break
 		}
 	}
 	var tasks []model.ConsoleTaskProposal

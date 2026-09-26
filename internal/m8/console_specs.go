@@ -213,12 +213,20 @@ func validateConsoleSpecWrite(req consoleSpecWriteRequest) error {
 		return errors.New("title, content, acceptance and input anchors are required")
 	}
 	seen := map[string]bool{}
-	for _, item := range req.Acceptance {
+	for i, item := range req.Acceptance {
 		if strings.TrimSpace(item.ID) == "" || strings.TrimSpace(item.Text) == "" || strings.TrimSpace(item.OwnerRef) == "" || seen[item.ID] {
 			return errors.New("acceptance ids, text and owner_ref must be non-empty and unique")
 		}
 		if !strings.Contains(req.ContentMarkdown, item.OwnerRef) {
-			return errors.New("acceptance original quote must occur in current spec content")
+			id := strings.TrimSpace(item.ID)
+			if id == "" {
+				id = fmt.Sprintf("acceptance[%d]", i)
+			}
+			quote := []rune(strings.TrimSpace(item.OwnerRef))
+			if len(quote) > 30 {
+				quote = append(quote[:30], '…')
+			}
+			return fmt.Errorf("acceptance original quote must occur in current spec content: %s「%s」", id, string(quote))
 		}
 		seen[item.ID] = true
 	}
@@ -249,12 +257,12 @@ func decodeConsoleSpecWrite(w http.ResponseWriter, r *http.Request) (consoleSpec
 	var req consoleSpecWriteRequest
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 2<<20))
 	decoder.DisallowUnknownFields()
-	if decoder.Decode(&req) != nil {
-		http.Error(w, "invalid spec", http.StatusBadRequest)
+	if err := decoder.Decode(&req); err != nil {
+		http.Error(w, "invalid spec JSON: "+err.Error(), http.StatusBadRequest)
 		return consoleSpecWriteRequest{}, false
 	}
-	if validateConsoleSpecWrite(req) != nil {
-		http.Error(w, "invalid spec", http.StatusBadRequest)
+	if err := validateConsoleSpecWrite(req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return consoleSpecWriteRequest{}, false
 	}
 	return req, true
@@ -349,7 +357,7 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 	req.ContentMarkdown = persistedMarkdown
 	rev, err := revisionFromRequest(id, principal, 1, req, h.now())
 	if err != nil {
-		http.Error(w, "invalid spec", http.StatusBadRequest)
+		http.Error(w, "invalid spec encoding: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	spec := model.ConsoleSpec{ID: id, PrincipalID: principal, Title: strings.TrimSpace(req.Title), EditCapabilityHash: specCapabilityHash(editToken)}
@@ -436,7 +444,7 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 	}
 	rev, err := revisionFromRequest(id, principal, req.ExpectedRevision+1, req, h.now())
 	if err != nil {
-		http.Error(w, "invalid spec", http.StatusBadRequest)
+		http.Error(w, "invalid spec encoding: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	capability := strings.TrimSpace(r.Header.Get("X-DW-Spec-Edit-Capability"))

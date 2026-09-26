@@ -7,7 +7,7 @@ const assert = new Proxy(assertModule, {
     return typeof value === 'function' ? (...args) => { assertionCount += 1; return value.apply(target, args); } : value;
   },
 });
-const MIN_ASSERTIONS = 39;
+const MIN_ASSERTIONS = 40;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -119,6 +119,10 @@ const server = http.createServer(async (req, res) => {
     const specPage = Number(url.searchParams.get('spec_page') || 1);
     const taskPage = Number(url.searchParams.get('task_page') || 1);
     const selected = url.searchParams.get('spec_id') || '';
+    if (selected === 'spec-review') {
+      res.writeHead(409, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('该 spec 尚未审结(当前状态:review),审结后才能进入任务管理'); return;
+    }
     const onlineAgents = mutation === 'k10-drop-online-options' ? [] : agents.filter((agent) => agent.id !== 'agent-offline' && (agent.id !== 'agent-dev' || developerOnline));
     if (mutation === 'k10-include-offline') onlineAgents.push(agents[2]);
     const visibleTasks = selected ? tasks.slice((taskPage - 1) * 20, taskPage * 20).map((task) => {
@@ -189,6 +193,11 @@ async function main() {
   await page.waitForTimeout(100);
   assert.strictEqual(await frame.locator('#spec-page').textContent(), '2 / 2', 'K3 spec next advances to page two');
   assert.strictEqual(await frame.locator('#spec-list tr').count(), 1, 'K3 spec page two');
+  const blocked = await browser.newPage();
+  await blocked.goto(base + '/console/tasks?spec_id=spec-review', { waitUntil: 'domcontentloaded' });
+  await blocked.locator('#task-status').filter({ hasText: '该 spec 尚未审结(当前状态:review),审结后才能进入任务管理' }).waitFor();
+  assert.strictEqual(await blocked.locator('#task-list tr').count(), 0, 'unfinalized direct access must explain inapplicability, not render an empty task set as valid');
+  await blocked.close();
   await frame.locator('#spec-prev').click();
   await frame.locator('#task-list tr').first().waitFor();
   await frame.locator('#spec-list tr').first().click();

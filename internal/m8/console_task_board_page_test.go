@@ -1,10 +1,15 @@
 package m8
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
 func TestConsoleTaskBoardUsesIndependentEightAndTwentyItemPages(t *testing.T) {
@@ -49,6 +54,68 @@ func TestConsoleTaskBoardStatusNeverShowsZeroOverZero(t *testing.T) {
 	if !strings.Contains(consoleTaskBoardPageHTML, "String(task.passed_cases||0)+'/'+String(task.total_cases||1)") {
 		t.Fatal("K24 status must use the 0/1 fallback instead of rendering 0/0")
 	}
+}
+
+func TestConsoleTaskBoardListsAndOpensOnlyFinalSpecs(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	create := func(title string) model.ConsoleSpec {
+		var body map[string]any
+		if err := json.Unmarshal([]byte(validSpecBody), &body); err != nil {
+			t.Fatal(err)
+		}
+		body["title"] = title
+		raw, _ := json.Marshal(body)
+		rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", string(raw), hub.HandleConsoleSpecs)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("create %s code=%d body=%s", title, rr.Code, rr.Body.String())
+		}
+		var spec model.ConsoleSpec
+		if err := json.Unmarshal(rr.Body.Bytes(), &spec); err != nil {
+			t.Fatal(err)
+		}
+		return spec
+	}
+	draft := create("尚未审结")
+	final := create("已经审结")
+	db := hub.Repo.(*store.SQLite)
+	if err := db.TransferConsoleSpec(context.Background(), final.ID, "owner-a", "丙", "review", hub.now()); err != nil {
+		t.Fatal(err)
+	}
+	completeSpecGateForTest(t, db, final.ID, "manager", hub.now())
+	if err := db.FinalizeConsoleSpec(context.Background(), final.ID, "manager", hub.now()); err != nil {
+		t.Fatal(err)
+	}
+
+	request := func(rawQuery string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/api/console/task-board?"+rawQuery, nil)
+		req = req.WithContext(context.WithValue(req.Context(), consolePrincipalContextKey{}, "owner-a"))
+		rr := httptest.NewRecorder()
+		hub.HandleConsoleTaskBoard(rr, req)
+		return rr
+	}
+	listed := request("spec_page=1&task_page=1")
+	if listed.Code != http.StatusOK {
+		t.Fatalf("list code=%d body=%s", listed.Code, listed.Body.String())
+	}
+	var payload struct {
+		Specs []model.ConsoleSpec `json:"specs"`
+	}
+	if err := json.Unmarshal(listed.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if len(payload.Specs) != 1 || payload.Specs[0].ID != final.ID {
+		t.Fatalf("任务管理只应列已审结 spec: got=%+v draft=%s final=%s", payload.Specs, draft.ID, final.ID)
+	}
+	opened := request("spec_page=1&task_page=1&spec_id=" + final.ID)
+	if opened.Code != http.StatusOK {
+		t.Fatalf("final spec cannot enter task board: code=%d body=%s", opened.Code, opened.Body.String())
+	}
+	blocked := request("spec_page=1&task_page=1&spec_id=" + draft.ID)
+	want := "该 spec 尚未审结(当前状态:editing),审结后才能进入任务管理"
+	if blocked.Code != http.StatusConflict || strings.TrimSpace(blocked.Body.String()) != want {
+		t.Fatalf("unfinalized direct access code=%d body=%q want 409 %q", blocked.Code, strings.TrimSpace(blocked.Body.String()), want)
+	}
+	t.Logf("final listed/opened; draft hidden; direct draft: %d %s", blocked.Code, want)
 }
 
 func TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel(t *testing.T) {

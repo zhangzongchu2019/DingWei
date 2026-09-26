@@ -15,7 +15,7 @@ const assert = new Proxy(assertModule, {
   },
 });
 // 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
-const MIN_ASSERTIONS = 194;
+const MIN_ASSERTIONS = 195;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -262,6 +262,10 @@ async function main() {
     if(splitMatch&&req.method==='POST'){taskCreates.push({specID:splitMatch[1],body:await requestBody(req)});res.writeHead(201,{'Content-Type':'application/json'});res.end(JSON.stringify({proposal_id:'task-new'}));return;}
     if (match && req.method === 'PATCH') {
       const body = await requestBody(req); const item = specs.find((candidate) => candidate.id === match[1]);
+      if (body.content_markdown === 'print("Hello, Python!")') {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('acceptance original quote must occur in current spec content: A1「msg:B」'); return;
+      }
       if (body.content_markdown === 'server-save-reject') {
         res.writeHead(409, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('server save detail'); return;
       }
@@ -541,6 +545,10 @@ async function main() {
     await page.waitForTimeout(100);
     assert.strictEqual(await page.locator('#edit-status').textContent(), '保存失败 409:server save detail', 'save must expose status and server response body');
     assert.strictEqual(specs.find((item) => item.title === 'Spec B').current_revision, 2, 'server-rejected save must not create a revision');
+    await page.evaluate(() => window.specEditors.edit.value('print("Hello, Python!")'));
+    await page.click('#save-spec');
+    await page.locator('#edit-status').filter({ hasText: '保存失败 400:acceptance original quote must occur in current spec content: A1「msg:B」' }).waitFor({ state: 'visible' });
+    assert.strictEqual(await page.locator('#edit-status').textContent(), '保存失败 400:acceptance original quote must occur in current spec content: A1「msg:B」', 'owner content replacement must explain which original quote no longer occurs');
     assert.deepStrictEqual(pageErrors, [], `failed specAction must be handled on-page: ${JSON.stringify(pageErrors)}`);
     await page.reload({ waitUntil: 'domcontentloaded' });
     assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 20, 'reload must retain the first owned-spec page');
