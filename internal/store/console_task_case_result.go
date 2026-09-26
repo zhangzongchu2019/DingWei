@@ -14,7 +14,6 @@ const consoleTaskFallbackCase = "产出了没有"
 var (
 	allowAnyTaskCaseMarker      bool
 	allowAnyTaskCaseConfirmer   bool
-	countUnconfirmedTaskCases   bool
 	truncateTaskCaseDenominator bool
 	disableTaskFallbackCase     bool
 )
@@ -117,13 +116,17 @@ func (s *SQLite) ConfirmConsoleSpecTaskCase(ctx context.Context, taskID, accepta
 }
 
 func (s *SQLite) ConsoleSpecTaskCaseProgress(ctx context.Context, taskID string) (int, int, error) {
+	return s.consoleSpecTaskCaseProgress(ctx, taskID, false)
+}
+
+func (s *SQLite) consoleSpecTaskCaseProgress(ctx context.Context, taskID string, countUnconfirmed bool) (int, int, error) {
 	expected, err := s.consoleTaskExpectedCases(ctx, taskID)
 	if err != nil {
 		return 0, 0, err
 	}
 	passed := 0
 	query := `SELECT acceptance_id,case_name FROM console_spec_task_case_result WHERE task_id=? AND confirmed_by IS NOT NULL AND confirmed_at IS NOT NULL`
-	if countUnconfirmedTaskCases {
+	if countUnconfirmed {
 		query = `SELECT acceptance_id,case_name FROM console_spec_task_case_result WHERE task_id=?`
 	}
 	rows, err := s.db.QueryContext(ctx, query, taskID)

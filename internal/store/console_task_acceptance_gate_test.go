@@ -13,6 +13,7 @@ import (
 var taskAcceptanceMutation = flag.String("mutate", "", "task acceptance gate mutation")
 var taskAssignmentDisableForeignKeys bool
 var taskAcceptanceDisableCascade bool
+var taskCaseCountUnconfirmedMutation bool
 
 func TestMain(m *testing.M) {
 	flag.Parse()
@@ -51,7 +52,7 @@ func TestMain(m *testing.M) {
 	case "drop-k18-task-delete":
 		skipConsoleSpecTaskDelete = true
 	case "k20-count-marked", "drop-k20-confirmed-filter":
-		countUnconfirmedTaskCases = true
+		taskCaseCountUnconfirmedMutation = true
 	case "k21-allow-other-marker", "drop-k21-marker-role-check":
 		allowAnyTaskCaseMarker = true
 	case "k22-allow-developer-confirm", "drop-k22-confirmer-role-check":

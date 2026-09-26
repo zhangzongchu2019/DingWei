@@ -1,4 +1,13 @@
-const assert = require('assert');
+const assertModule = require('assert');
+let assertionCount = 0;
+const assert = new Proxy(assertModule, {
+  apply(target, thisArg, args) { assertionCount += 1; return Reflect.apply(target, thisArg, args); },
+  get(target, prop, receiver) {
+    const value = Reflect.get(target, prop, receiver);
+    return typeof value === 'function' ? (...args) => { assertionCount += 1; return value.apply(target, args); } : value;
+  },
+});
+const MIN_ASSERTIONS = 39;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -140,6 +149,7 @@ async function main() {
   const frame = page.frameLocator('iframe[title="任务管理"]');
   const reloadAndSelect = async () => { const boardFrame = page.frames().find((candidate) => candidate.url().includes('/console/tasks')); await boardFrame.goto(boardFrame.url()); await frame.locator('#spec-list tr').first().waitFor(); await frame.locator('#spec-list tr').first().click(); await frame.locator('#task-list tr').first().waitFor(); };
   await frame.locator('#spec-list tr').first().waitFor();
+  assert.strictEqual(await frame.locator('#spec-list tr').first().evaluate((row) => typeof row.onclick === 'function'), true, 'K6 spec row toggle handler installed');
   assert.strictEqual(await frame.locator('#spec-panel').isVisible(), true, 'K1 spec block visible');
   assert.strictEqual(await frame.locator('#task-panel').isVisible(), true, 'K1 task block visible');
   assert.deepStrictEqual(await frame.locator('#task-table th').allTextContents(), ['任务文本', '研发', '验收', '状态', '验收标准'], 'K2 five exact columns');
@@ -176,14 +186,16 @@ async function main() {
   await frame.locator('#task-page').filter({ hasText: '2 / 2' }).waitFor();
   assert.strictEqual(await frame.locator('#task-list tr').count(), 1, 'K3 task page two');
   await frame.locator('#spec-next').click();
-  await frame.locator('#spec-page').filter({ hasText: '2 / 2' }).waitFor();
+  await page.waitForTimeout(100);
+  assert.strictEqual(await frame.locator('#spec-page').textContent(), '2 / 2', 'K3 spec next advances to page two');
   assert.strictEqual(await frame.locator('#spec-list tr').count(), 1, 'K3 spec page two');
   await frame.locator('#spec-prev').click();
   await frame.locator('#task-list tr').first().waitFor();
   await frame.locator('#spec-list tr').first().click();
   await page.waitForTimeout(50);
   assert.strictEqual(await frame.locator('#task-list tr').count(), 0, 'K6 second click collapses task rows');
-  console.log('console task board: assertions=22 failed=0 (K13 deferred)');
+  assertModule.ok(assertionCount >= MIN_ASSERTIONS, `assertion floor ${MIN_ASSERTIONS} not met: ${assertionCount}`);
+  console.log(`console task board: assertions=${assertionCount} floor=${MIN_ASSERTIONS} failed=0 (K13 deferred)`);
   await browser.close();
   await new Promise((resolve) => server.close(resolve));
 }
