@@ -14,7 +14,7 @@ import (
 )
 
 func generationGateBody(criteria string) string {
-	return `{"title":"S-GEN","content_markdown":"# gate","acceptance":` + criteria + `,"inferences":[{"id":"I1","text":"可能需要提示","generated_by":"agent-writer","status":"pending_owner_confirmation"}],"input_anchors":[{"kind":"owner_message","ref":"owner:quote"}]}`
+	return `{"title":"S-GEN","content_markdown":"# gate owner:q1 owner:q2 owner:q owner:先挡住","acceptance":` + criteria + `,"inferences":[{"id":"I1","text":"可能需要提示","generated_by":"agent-writer","status":"pending_owner_confirmation"}],"input_anchors":[{"kind":"owner_message","ref":"owner:quote"}]}`
 }
 
 func TestConsoleSpecGenerationGatePersistsMultipleCriteriaAndCorrectSources(t *testing.T) {
@@ -41,18 +41,15 @@ func TestConsoleSpecGenerationGatePersistsMultipleCriteriaAndCorrectSources(t *t
 	}
 }
 
-func TestConsoleSpecGenerationGateRejectsUnanchoredOrFalseSource(t *testing.T) {
+func TestConsoleSpecGenerationGateRejectsMissingOriginalQuoteButIgnoresSource(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
-	cases := []string{
-		`[{"id":"A1","text":"no quote","source":"owner"}]`,
-		`[{"id":"A1","text":"false AI marker","owner_ref":"owner:q","source":"ai"}]`,
-		`[{"id":"A1","text":"false owner marker","owner_ref":"owner:q","source":"owner","generated_by":"agent-x"}]`,
+	rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", generationGateBody(`[{"id":"A1","text":"no quote","source":"invalid"}]`), hub.HandleConsoleSpecs)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("missing owner_ref code=%d body=%s", rr.Code, rr.Body.String())
 	}
-	for _, criteria := range cases {
-		rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", generationGateBody(criteria), hub.HandleConsoleSpecs)
-		if rr.Code != http.StatusBadRequest {
-			t.Fatalf("criteria=%s code=%d body=%s", criteria, rr.Code, rr.Body.String())
-		}
+	rr = callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", generationGateBody(`[{"id":"client-id","text":"source ignored","owner_ref":"owner:q","source":"invalid","generated_by":"person-or-agent"}]`), hub.HandleConsoleSpecs)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("removed source field still constrained code=%d body=%s", rr.Code, rr.Body.String())
 	}
 }
 

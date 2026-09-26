@@ -168,7 +168,31 @@ func TestConsoleSpecDetailReturnsTopologicalTasksDespiteReverseCreatedTimes(t *t
 	}
 }
 
-const validSpecBody = `{"title":"Spec A","content_markdown":"# A","acceptance":[{"id":"A1","text":"works","owner_ref":"msg:1","source":"owner","checked_by":"tester","checked_at":"2026-09-25T00:00:00Z","cases":["case-1"]}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}]}`
+const validSpecBody = `{"title":"Spec A","content_markdown":"# A\nmsg:1","acceptance":[{"id":"A1","text":"works","owner_ref":"msg:1","source":"owner","checked_by":"tester","checked_at":"2026-09-25T00:00:00Z","cases":["case-1"]}],"input_anchors":[{"kind":"owner_message","ref":"msg:1"}]}`
+
+func TestConsoleSpecFormServerOwnsNumberSourceAndCheckedTimeAndValidatesQuote(t *testing.T) {
+	now := time.Date(2026, 9, 26, 11, 0, 0, 0, time.UTC)
+	req := consoleSpecWriteRequest{Title: "Form", ContentMarkdown: "sealed text includes exact quote", Acceptance: []specAcceptance{{ID: "client-id", Text: "判据", OwnerRef: "exact quote", Source: "invalid", GeneratedBy: "writer", CheckedAt: "2099-01-01T00:00:00Z"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "msg"}}}
+	if err := validateConsoleSpecWrite(req); err != nil {
+		t.Fatalf("A1 removed source must not be validated: %v", err)
+	}
+	rev, err := revisionFromRequest("spec", "owner", 1, req, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var bundle specAcceptanceBundle
+	if err := json.Unmarshal([]byte(rev.AcceptanceJSON), &bundle); err != nil {
+		t.Fatal(err)
+	}
+	got := bundle.Criteria[0]
+	if got.ID != "A1" || got.CheckedAt != "2026-09-26T11:00:00Z" || got.Source != "ai" {
+		t.Fatalf("server-owned fields=%+v", got)
+	}
+	req.Acceptance[0].OwnerRef = "exact quotf"
+	if err := validateConsoleSpecWrite(req); err == nil {
+		t.Fatal("A5 one-character-changed original quote accepted")
+	}
+}
 
 func completeSpecGateForTest(t *testing.T, db *store.SQLite, specID, actor string, now time.Time) {
 	t.Helper()
@@ -225,7 +249,7 @@ func TestConsoleSpecHTTPMultipleSpecsAreVisiblePubliclyButWritesRemainControlled
 		Spec     model.ConsoleSpec         `json:"spec"`
 		Revision model.ConsoleSpecRevision `json:"revision"`
 	}
-	if err := json.Unmarshal(rr.Body.Bytes(), &public); err != nil || public.Spec.ID != ids[0] || public.Revision.ContentMarkdown != "# A" {
+	if err := json.Unmarshal(rr.Body.Bytes(), &public); err != nil || public.Spec.ID != ids[0] || public.Revision.ContentMarkdown != "# A\nmsg:1" {
 		t.Fatalf("public GET payload=%s err=%v", rr.Body.String(), err)
 	}
 
@@ -240,7 +264,7 @@ func TestConsoleSpecHTTPMultipleSpecsAreVisiblePubliclyButWritesRemainControlled
 		t.Fatalf("cross-owner PATCH must remain controlled code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	stored, err := hub.Repo.(*store.SQLite).ConsoleSpecRevision(context.Background(), "owner-a", ids[0], 1, false)
-	if err != nil || stored == nil || stored.ContentMarkdown != "# A" {
+	if err != nil || stored == nil || stored.ContentMarkdown != "# A\nmsg:1" {
 		t.Fatalf("rejected PATCH changed state revision=%+v err=%v", stored, err)
 	}
 }
@@ -282,7 +306,7 @@ func TestConsoleSpecManagementOwnerCanEditOwnSpecButNotAnotherOwners(t *testing.
 		})
 	}
 	stored, err := hub.Repo.(*store.SQLite).ConsoleSpecRevision(context.Background(), "owner-a", foreign.ID, 1, false)
-	if err != nil || stored == nil || stored.ContentMarkdown != "# A" {
+	if err != nil || stored == nil || stored.ContentMarkdown != "# A\nmsg:1" {
 		t.Fatalf("rejected management cross-owner PATCH changed state revision=%+v err=%v", stored, err)
 	}
 }
@@ -329,6 +353,9 @@ func TestConsoleSpecEditorsHTTPExcludesActiveNonOwners(t *testing.T) {
 	}
 	if strings.Contains(rr.Body.String(), "非业主") || !strings.Contains(rr.Body.String(), "甲") || !strings.Contains(rr.Body.String(), "乙") {
 		t.Fatalf("owner-only editor response=%s", rr.Body.String())
+	}
+	if item, ok := consoleSpecEditorItem(model.ConsolePrincipal{ID: "nameless-owner", DisplayName: ""}); ok || item != nil {
+		t.Fatalf("A11 nameless transfer candidate leaked: %+v", item)
 	}
 	if !strings.Contains(rr.Body.String(), `"short_name":"tenant-a"`) || !strings.Contains(rr.Body.String(), `"display_name":"甲"`) || !strings.Contains(rr.Body.String(), `"value":"甲"`) {
 		t.Fatalf("editor response must expose short name, human name, and transfer value: %s", rr.Body.String())
@@ -429,9 +456,10 @@ func TestConsoleSpecsListIsMineOnlyAndPaginatesTwenty(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
 	db := hub.Repo.(*store.SQLite)
 	ctx := context.Background()
+	now := hub.now()
 	for i := 0; i < 21; i++ {
 		id := fmt.Sprintf("spec-mine-%02d", i)
-		rev, err := revisionFromRequest(id, "owner-a", 1, consoleSpecWriteRequest{Title: id, ContentMarkdown: "# " + id, Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}})
+		rev, err := revisionFromRequest(id, "owner-a", 1, consoleSpecWriteRequest{Title: id, ContentMarkdown: "# " + id, Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}}, now)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -439,7 +467,7 @@ func TestConsoleSpecsListIsMineOnlyAndPaginatesTwenty(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	foreignRev, _ := revisionFromRequest("spec-foreign", "owner-b", 1, consoleSpecWriteRequest{Title: "foreign", ContentMarkdown: "# foreign", Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}})
+	foreignRev, _ := revisionFromRequest("spec-foreign", "owner-b", 1, consoleSpecWriteRequest{Title: "foreign", ContentMarkdown: "# foreign", Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}}, now)
 	if err := db.CreateConsoleSpec(ctx, model.ConsoleSpec{ID: "spec-foreign", PrincipalID: "owner-b", Title: "foreign", EditCapabilityHash: strings.Repeat("b", 64)}, foreignRev, hub.now()); err != nil {
 		t.Fatal(err)
 	}
