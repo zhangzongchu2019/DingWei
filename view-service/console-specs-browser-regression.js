@@ -15,7 +15,7 @@ const assert = new Proxy(assertModule, {
   },
 });
 // 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
-const MIN_ASSERTIONS = 188;
+const MIN_ASSERTIONS = 194;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -757,6 +757,7 @@ async function main() {
     const secondCriterion = page.locator('#edit-acceptance-list .acceptance-row').nth(1);
     await secondCriterion.locator('.acceptance-text').fill('second criterion');
     await secondCriterion.locator('.acceptance-owner-ref').fill('owner:quote-2');
+    assert.strictEqual(await secondCriterion.locator('.acceptance-generated-by').isEnabled(), true, 'S-FORM A4:生成者始终可填');
     await secondCriterion.locator('.acceptance-generated-by').fill('agent-writer');
     await secondCriterion.locator('.acceptance-checked-by').fill('checker');
     await secondCriterion.locator('.acceptance-cases').fill('case-one\ncase-two');
@@ -770,7 +771,6 @@ async function main() {
     assert.strictEqual(await secondCriterion.locator('.acceptance-id').getAttribute('readonly'), '', 'S-FORM A2:编号只读');
     assert.strictEqual(await secondCriterion.locator('.acceptance-id').inputValue(), 'A2', 'S-FORM A2:编号由系统续号');
     assert.strictEqual(await secondCriterion.locator('.acceptance-source').count(), 0, 'S-FORM A1:来源字段不存在');
-    assert.strictEqual(await secondCriterion.locator('.acceptance-generated-by').isEnabled(), true, 'S-FORM A4:生成者始终可填');
     assert.strictEqual(await secondCriterion.locator('.acceptance-checked-at').getAttribute('readonly'), '', 'S-FORM A3:核对时刻只读');
     assert.strictEqual(sgenShape.payload.acceptance[1].generated_by, 'agent-writer', 'S-FORM:生成者进入载荷');
     assert.strictEqual(sgenShape.payload.acceptance[1].checked_by, 'checker', 'S-GEN:核对人必须进入该条标准');
