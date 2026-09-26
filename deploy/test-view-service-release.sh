@@ -7,7 +7,7 @@ MUTATION=''
 case "${1:-}" in
   '') ;;
   --mutate=*) MUTATION="${1#--mutate=}" ;;
-  *) echo "usage: $0 [--mutate=identify-reject-member|--mutate=identify-accept-nonmember]" >&2; exit 2 ;;
+  *) echo "usage: $0 [--mutate=identify-reject-member|--mutate=identify-accept-nonmember|--mutate=drop-cwd-guard]" >&2; exit 2 ;;
 esac
 if [ -n "$MUTATION" ]; then
   cp "$TOOL" "$T/view-service-release.sh"; TOOL="$T/view-service-release.sh"
@@ -18,6 +18,9 @@ if [ -n "$MUTATION" ]; then
     identify-accept-nonmember)
       grep -A1 'EXPECTED_COMMIT_MISMATCH' "$TOOL" | grep -Fq 'return 1' || { echo 'stale mutation probe: identify-accept-nonmember' >&2; exit 2; }
       sed -i '/EXPECTED_COMMIT_MISMATCH/{n;s/return 1/return 0/;}' "$TOOL" ;;
+    drop-cwd-guard)
+      grep -Fq 'git rev-parse --is-inside-work-tree' "$TOOL" || { echo 'stale mutation probe: drop-cwd-guard' >&2; exit 2; }
+      sed -i '/^require_git_worktree() {$/,/^}$/c\require_git_worktree() { :; }' "$TOOL" ;;
     *) echo "unknown mutation: $MUTATION" >&2; exit 2 ;;
   esac
 fi
@@ -26,6 +29,26 @@ mkdir -p "$T/repo/view-service"
 for f in renderer-canary-sse.html view_service.py view_page_store.py; do printf 'v1-%s\n' "$f" >"$T/repo/view-service/$f"; done
 git -C "$T/repo" add .; git -C "$T/repo" commit -qm v1; C1="$(git -C "$T/repo" rev-parse HEAD)"
 printf 'v2\n' >"$T/repo/view-service/view_service.py"; git -C "$T/repo" commit -qam v2; C2="$(git -C "$T/repo" rev-parse HEAD)"
+
+# A wrong caller cwd is diagnosed before commit lookup can misdirect the
+# operator toward the anchor or fetch state.
+mkdir "$T/outside"
+if (cd "$T/outside" && "$TOOL" package "$C2" "$T/outside-package") >"$T/outside-cwd" 2>&1; then exit 1; fi
+grep -Fq '本脚本必须在仓内运行' "$T/outside-cwd" || {
+  echo "cwd guard diagnostic missing: $(<"$T/outside-cwd")" >&2; exit 1
+}
+grep -Fq "current cwd=$T/outside" "$T/outside-cwd" || { echo 'cwd guard omitted current cwd' >&2; exit 1; }
+grep -Fq '请先 cd 到该锚的 checkout' "$T/outside-cwd" || { echo 'cwd guard omitted checkout advice' >&2; exit 1; }
+if grep -Fq 'commit is not available' "$T/outside-cwd"; then
+  echo 'cwd guard fell through to misleading commit diagnostic' >&2; exit 1
+fi
+
+# Once cwd is valid, only a genuinely missing object gets the fetch advice.
+MISSING_COMMIT=0000000000000000000000000000000000000000
+if (cd "$T/repo" && "$TOOL" package "$MISSING_COMMIT" "$T/missing-package") >"$T/missing-commit" 2>&1; then exit 1; fi
+grep -Fq "commit is not available: $MISSING_COMMIT" "$T/missing-commit"
+grep -Fq 'git fetch <ref>' "$T/missing-commit"
+if grep -Fq '本脚本必须在仓内运行' "$T/missing-commit"; then exit 1; fi
 
 # Release orders cannot rely on the author remembering the view-service side.
 printf '%s\n' '# order' >"$T/order-missing"

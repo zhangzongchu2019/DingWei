@@ -10,10 +10,17 @@ REPO_FILES=(
 FLAT_FILES=(renderer-canary-sse.html view_service.py view_page_store.py)
 
 die() { echo "ERROR: $*" >&2; exit 2; }
+require_git_worktree() {
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 ||
+    die "本脚本必须在仓内运行; current cwd=$(pwd -P); 请先 cd 到该锚的 checkout"
+}
+require_git_worktree
 sha_file() { sha256sum "$1" | awk '{print $1}'; }
 full_commit() {
+  require_git_worktree
   [[ "$1" =~ ^[0-9a-f]{40}$ ]] || die "commit must be a full 40-character SHA"
-  git rev-parse --verify "$1^{commit}" 2>/dev/null || die "commit is not available: $1"
+  git rev-parse --verify "$1^{commit}" 2>/dev/null ||
+    die "commit is not available: $1; run git fetch <ref> and retry"
 }
 
 package_release() {
