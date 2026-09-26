@@ -128,6 +128,10 @@ func TestConsoleTaskLegacyDODMigrationPendingProductionCount(t *testing.T) {
 	t.Skip(`K17 covers new writes only; legacy acceptance_json rows containing "DOD" await the production count before any 0049 migration decision`)
 }
 
+func TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling(t *testing.T) {
+	t.Skip("future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed")
+}
+
 func TestConsoleTaskProposalRejectsDefinitionOfDoneWithoutPartialWrite(t *testing.T) {
 	ctx := context.Background()
 	db, now := lineageFixture(t, "proposal-dod")
