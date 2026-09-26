@@ -111,7 +111,7 @@ func TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow(t
 	if err := json.Unmarshal(rr.Body.Bytes(), &listed); err != nil {
 		t.Fatal(err)
 	}
-	if listed.Role != "owner" || len(listed.Items) != 1 || listed.Items[0].ID != "specs" {
+	if listed.Role != "owner" || len(listed.Items) != 2 || listed.Items[0].ID != "specs" || listed.Items[1].ID != "task-board" {
 		t.Fatalf("owner platform=%+v", listed)
 	}
 

@@ -301,7 +301,7 @@ async function t(name, fn) {
         const builtin = await platformEntry(page, 'agents');
         assert.strictEqual(builtin, null, `owner 侧 builtin Agents 不得重新出现:${JSON.stringify(builtin)}`);
         const ids = await page.evaluate(() => Array.from(document.querySelectorAll('#platform-items a')).map((a) => a.dataset.itemId).sort());
-        assert.deepStrictEqual(ids, ['specs'], `owner 只应保留可操作的 specs,实为 ${JSON.stringify(ids)}`);
+        assert.deepStrictEqual(ids, ['specs', 'task-board'], `owner 只应保留可操作的 specs/task-board,实为 ${JSON.stringify(ids)}`);
       } finally { await context.close(); }
     });
   } finally {

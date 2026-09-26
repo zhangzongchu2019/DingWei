@@ -75,8 +75,8 @@ func TestConsolePlatformAgentGroupsEntryIsManagementOnly(t *testing.T) {
 	if _, leaked := findPlatformItem(ownerItems, "agent-groups"); leaked {
 		t.Errorf("非 management 也拿到了 Agent 编组入口,items=%+v", ownerItems)
 	}
-	if len(ownerItems) != 1 || ownerItems[0].ID != "specs" {
-		t.Errorf("owner 的平台项应只有可操作的 builtin specs,实为 %+v", ownerItems)
+	if len(ownerItems) != 2 || ownerItems[0].ID != "specs" || ownerItems[1].ID != "task-board" {
+		t.Errorf("owner 的平台项应只有可操作的 builtin specs/task-board,实为 %+v", ownerItems)
 	}
 }
 

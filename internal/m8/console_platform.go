@@ -81,6 +81,7 @@ var consolePlatformReservedItemIDs = map[string]bool{
 	"agents":       true,
 	"agent-groups": true,
 	"specs":        true,
+	"task-board":   true,
 }
 
 type consolePlatformItemRequest struct {
@@ -132,6 +133,9 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	builtins := []model.ConsolePlatformItem{{
 		ID: "specs", Kind: "spec", Title: "Specs",
 		Href: "#specs", Status: "approved", Active: true,
+	}, {
+		ID: "task-board", Kind: "task-board", Title: "任务管理",
+		Href: "#task-board", Status: "approved", Active: true,
 	}}
 	// Agent 编组入口(0.2.1.55)由 console 自己接成内部 tab;旧 admin 仍可直接访问,
 	// 但 console 不再向那个独立鉴权域跳转。

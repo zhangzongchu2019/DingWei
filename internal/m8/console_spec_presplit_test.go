@@ -142,7 +142,7 @@ func TestConsoleSpecPresplitAgentIdentityTasksAndFirstResult(t *testing.T) {
 		}
 	}
 	db := hub.Repo.(*store.SQLite)
-	if err := db.UpdateConsoleTaskProposalPlan(context.Background(), remaining.ID, "owner-a", false, "edited", "planned", 4, nil, `[]`); err != nil {
+	if err := db.UpdateConsoleTaskProposalPlan(context.Background(), remaining.ID, "owner-a", false, "edited", "planned", 4, nil, ""); err != nil {
 		t.Fatalf("creator edits presplit task: %v", err)
 	}
 	updated, err := db.ListConsoleTaskProposals(context.Background(), spec.ID)

@@ -92,7 +92,7 @@ func TestConsoleSpecTaskSplitEndpointCreatesVisibleTaskAndLocksRevision(t *testi
 		t.Fatalf("split code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	tasks, err := hub.Repo.(*store.SQLite).ListConsoleTaskProposals(context.Background(), created.ID)
-	if err != nil || len(tasks) != 1 || tasks[0].Title != "Implement" || tasks[0].EstimatedHours != 16 || !strings.Contains(tasks[0].AcceptanceJSON, "tests pass") {
+	if err != nil || len(tasks) != 1 || tasks[0].Title != "Implement" || tasks[0].EstimatedHours != 16 || tasks[0].AcceptanceJSON != `[]` || tasks[0].DefinitionOfDone != "tests pass" {
 		t.Fatalf("tasks=%+v err=%v", tasks, err)
 	}
 }
@@ -140,9 +140,9 @@ func TestConsoleSpecDetailReturnsTopologicalTasksDespiteReverseCreatedTimes(t *t
 	}
 	base := time.Date(2026, 9, 22, 12, 0, 0, 0, time.UTC)
 	for _, p := range []model.ConsoleTaskProposal{
-		{ID: "a", SpecID: created.ID, Title: "A", TaskContent: "A", Status: "planned", DependsOnJSON: `[]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(3 * time.Second), ReviewedAt: base.Add(3 * time.Second)},
-		{ID: "b", SpecID: created.ID, Title: "B", TaskContent: "B", Status: "planned", DependsOnJSON: `["a"]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(2 * time.Second), ReviewedAt: base.Add(2 * time.Second)},
-		{ID: "c", SpecID: created.ID, Title: "C", TaskContent: "C", Status: "planned", DependsOnJSON: `["b"]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(time.Second), ReviewedAt: base.Add(time.Second)},
+		{ID: "a", SpecID: created.ID, Title: "A", TaskContent: "A", Status: "planned", DependsOnJSON: `[]`, AcceptanceJSON: `[{"id":"A1","text":"works"}]`, ReviewedBy: "owner-a", CreatedAt: base.Add(3 * time.Second), ReviewedAt: base.Add(3 * time.Second)},
+		{ID: "b", SpecID: created.ID, Title: "B", TaskContent: "B", Status: "planned", DependsOnJSON: `["a"]`, AcceptanceJSON: `[{"id":"A1","text":"works"}]`, ReviewedBy: "owner-a", CreatedAt: base.Add(2 * time.Second), ReviewedAt: base.Add(2 * time.Second)},
+		{ID: "c", SpecID: created.ID, Title: "C", TaskContent: "C", Status: "planned", DependsOnJSON: `["b"]`, AcceptanceJSON: `[{"id":"A1","text":"works"}]`, ReviewedBy: "owner-a", CreatedAt: base.Add(time.Second), ReviewedAt: base.Add(time.Second)},
 	} {
 		if err := db.CreateConsoleTaskProposal(context.Background(), p, "owner-a", false); err != nil {
 			t.Fatal(err)

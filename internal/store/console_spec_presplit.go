@@ -25,6 +25,8 @@ type ConsoleSpecPresplitTask struct {
 	DependsOn        []string
 }
 
+var presplitTaskDefinitionStorage = splitTaskDefinitionOfDone
+
 func (s *SQLite) ResolveConsoleAgentByEndpoint(ctx context.Context, keyID, sessionName string) (*model.ConsoleAgent, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT id,key_id,session_name,owner_principal,active FROM console_agent WHERE key_id=? AND session_name=?`, keyID, sessionName)
 	if err != nil {
@@ -191,13 +193,9 @@ func (s *SQLite) CompleteConsoleSpecPresplit(ctx context.Context, requestID stri
 	}
 	for _, task := range tasks {
 		deps, _ := json.Marshal(task.DependsOn)
-		dod := "[]"
-		if task.DefinitionOfDone != "" {
-			raw, _ := json.Marshal([]map[string]string{{"id": "DOD", "text": task.DefinitionOfDone}})
-			dod = string(raw)
-		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO console_spec_task(id,spec_id,revision,content_sha256,title,task_content,status,estimated_hours,depends_on_json,acceptance_json,input_anchors_json,created_by,created_at) VALUES(?,?,?,?,?,?,'planned',?,?,?,?,?,?)`,
-			task.ID, req.SpecID, req.Revision, hash, task.Title, task.Content, task.EstimatedHours, string(deps), dod, anchors, agent.OwnerPrincipal, now.UTC().Format(time.RFC3339Nano)); err != nil {
+		acceptanceJSON, definitionOfDone := presplitTaskDefinitionStorage(task.DefinitionOfDone)
+		if _, err = tx.ExecContext(ctx, `INSERT INTO console_spec_task(id,spec_id,revision,content_sha256,title,task_content,status,estimated_hours,depends_on_json,acceptance_json,input_anchors_json,definition_of_done,created_by,created_at) VALUES(?,?,?,?,?,?,'planned',?,?,?,?,?,?,?)`,
+			task.ID, req.SpecID, req.Revision, hash, task.Title, task.Content, task.EstimatedHours, string(deps), acceptanceJSON, anchors, definitionOfDone, agent.OwnerPrincipal, now.UTC().Format(time.RFC3339Nano)); err != nil {
 			return fmt.Errorf("persist presplit task: %w", err)
 		}
 	}

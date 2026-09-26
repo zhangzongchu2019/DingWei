@@ -23,7 +23,83 @@ var (
 	ErrConsoleSpecGate            = errors.New("console spec generation gate incomplete")
 	ErrConsoleSpecReviewerInvalid = errors.New("console spec review agent is missing, inactive or unknown")
 	ErrConsoleSpecReviewerLookup  = errors.New("console spec review agent lookup failed")
+	ErrConsoleTaskAcceptance      = errors.New("console task acceptance must reference this spec revision")
+	ErrConsoleTaskDefinition      = errors.New("task proposal cannot store a task definition of done")
+	ErrConsoleTaskCasePermission  = errors.New("console task case actor is not assigned to this task")
+	ErrConsoleTaskCaseUnknown     = errors.New("console task case is not linked to this task")
 )
+
+type storedTaskAcceptance struct {
+	ID string `json:"id"`
+}
+
+func splitTaskDefinitionOfDone(definition string) (string, string) {
+	return `[]`, strings.TrimSpace(definition)
+}
+
+func legacyTaskDefinitionInAcceptance(definition string) (string, string) {
+	raw, _ := json.Marshal([]map[string]string{{"id": "DOD", "text": strings.TrimSpace(definition)}})
+	return string(raw), ""
+}
+
+var (
+	createTaskDefinitionStorage  = splitTaskDefinitionOfDone
+	updateTaskDefinitionStorage  = splitTaskDefinitionOfDone
+	skipTaskAcceptanceMembership bool
+	skipTaskAcceptanceValidation bool
+	skipTaskAcceptanceWrite      bool
+	hideTaskAcceptanceRead       bool
+	treatEveryAcceptanceAsLinked bool
+	skipLinkedAcceptanceLookup   bool
+	allowProposalTaskDefinition  bool
+	skipProposalDefinitionCheck  bool
+	skipConsoleSpecTaskDelete    bool
+)
+
+func dropTaskDefinitionStorage(string) (string, string) { return `[]`, "" }
+
+func taskAcceptanceIDs(raw string) ([]string, error) {
+	var entries []storedTaskAcceptance
+	trimmed := strings.TrimSpace(raw)
+	if strings.HasPrefix(trimmed, "[") {
+		if json.Unmarshal([]byte(trimmed), &entries) != nil {
+			return nil, ErrConsoleTaskAcceptance
+		}
+	} else {
+		var bundle struct {
+			Criteria []storedTaskAcceptance `json:"criteria"`
+		}
+		if json.Unmarshal([]byte(trimmed), &bundle) != nil {
+			return nil, ErrConsoleTaskAcceptance
+		}
+		entries = bundle.Criteria
+	}
+	if len(entries) == 0 {
+		return nil, ErrConsoleTaskAcceptance
+	}
+	ids := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		id := strings.TrimSpace(entry.ID)
+		if id == "" {
+			return nil, ErrConsoleTaskAcceptance
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func taskAcceptanceMembership(taskIDs, specIDs []string) error {
+	allowed := make(map[string]bool, len(specIDs))
+	for _, id := range specIDs {
+		allowed[id] = true
+	}
+	for _, id := range taskIDs {
+		if !allowed[id] {
+			return ErrConsoleTaskAcceptance
+		}
+	}
+	return nil
+}
 
 type consoleSpecOwnerQuerier interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
@@ -554,14 +630,19 @@ func (s *SQLite) ArchiveConsoleSpec(ctx context.Context, specID, actor string, n
 
 func scanProposal(row rowScanner) (*model.ConsoleTaskProposal, error) {
 	var p model.ConsoleTaskProposal
+	var developerID, developerName, reviewerID, reviewerName, definitionOfDone sql.NullString
 	var reviewed, created string
-	err := row.Scan(&p.ID, &p.SchemaVersion, &p.SpecID, &p.Revision, &p.ContentSHA256, &p.Title, &p.TaskContent, &p.Status, &p.EstimatedHours, &p.DependsOnJSON, &p.AcceptanceJSON, &p.InputAnchorsJSON, &p.ReviewID, &p.ReviewedBy, &reviewed, &created)
+	err := row.Scan(&p.ID, &p.SchemaVersion, &p.SpecID, &p.Revision, &p.ContentSHA256, &p.Title, &p.TaskContent, &p.Status, &p.EstimatedHours, &p.DependsOnJSON, &p.AcceptanceJSON, &p.InputAnchorsJSON,
+		&definitionOfDone, &developerID, &developerName, &reviewerID, &reviewerName, &p.ReviewID, &p.ReviewedBy, &reviewed, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
+	p.DeveloperAgentID, p.DeveloperAgent = developerID.String, developerName.String
+	p.ReviewerAgentID, p.ReviewerAgent = reviewerID.String, reviewerName.String
+	p.DefinitionOfDone = definitionOfDone.String
 	p.ReviewedAt, err = specTime(reviewed)
 	if err != nil {
 		return nil, err
@@ -570,9 +651,13 @@ func scanProposal(row rowScanner) (*model.ConsoleTaskProposal, error) {
 	return &p, err
 }
 
-const proposalColumns = `p.id,p.schema_version,p.spec_id,p.revision,p.content_sha256,p.title,p.task_content,p.status,p.estimated_hours,p.depends_on_json,p.acceptance_json,p.input_anchors_json,p.review_id,p.reviewed_by,p.reviewed_at,p.created_at`
+const proposalColumns = `p.id,p.schema_version,p.spec_id,p.revision,p.content_sha256,p.title,p.task_content,p.status,p.estimated_hours,p.depends_on_json,'[]',p.input_anchors_json,'',NULL,NULL,NULL,NULL,p.review_id,p.reviewed_by,p.reviewed_at,p.created_at`
 const taskUnion = `SELECT ` + proposalColumns + ` FROM console_task_proposal p UNION ALL
-	SELECT t.id,1,t.spec_id,t.revision,t.content_sha256,t.title,t.task_content,t.status,t.estimated_hours,t.depends_on_json,t.acceptance_json,t.input_anchors_json,'manual:'||t.id,t.created_by,t.created_at,t.created_at FROM console_spec_task t`
+	SELECT t.id,1,t.spec_id,t.revision,t.content_sha256,t.title,t.task_content,t.status,t.estimated_hours,t.depends_on_json,
+		COALESCE((SELECT json_group_array(json_object('id',a.acceptance_id,'text',COALESCE(json_extract(j.value,'$.text'),''))) FROM console_spec_task_acceptance a JOIN console_spec_revision rr ON rr.spec_id=t.spec_id AND rr.revision=t.revision JOIN json_each(rr.acceptance_json) j ON json_extract(j.value,'$.id')=a.acceptance_id WHERE a.task_id=t.id),'[]'),
+		t.input_anchors_json,t.definition_of_done,
+		t.developer_agent_id,(SELECT session_name FROM console_agent WHERE id=t.developer_agent_id),t.reviewer_agent_id,(SELECT session_name FROM console_agent WHERE id=t.reviewer_agent_id),
+		'manual:'||t.id,t.created_by,t.created_at,t.created_at FROM console_spec_task t`
 
 func (s *SQLite) ListReadyConsoleTaskProposals(ctx context.Context) ([]model.ConsoleTaskProposal, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT `+proposalColumns+` FROM console_task_proposal p JOIN console_spec s ON s.id=p.spec_id AND s.current_revision=p.revision WHERE s.state='final' AND s.task_state='closed' ORDER BY p.created_at,p.id`)
@@ -638,17 +723,14 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 		return err
 	}
 	defer tx.Rollback()
-	var title, contentHash, acceptance, anchors string
-	if err = tx.QueryRowContext(ctx, `SELECT s.title,r.content_sha256,r.acceptance_json,r.input_anchors_json
+	var title, contentHash, anchors string
+	if err = tx.QueryRowContext(ctx, `SELECT s.title,r.content_sha256,r.input_anchors_json
 		FROM console_spec s JOIN console_spec_revision r ON r.spec_id=s.id AND r.revision=s.current_revision
-		WHERE s.id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting'`, proposal.SpecID, principalID).Scan(&title, &contentHash, &acceptance, &anchors); err != nil {
+		WHERE s.id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting'`, proposal.SpecID, principalID).Scan(&title, &contentHash, &anchors); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrConsoleSpecPermission
 		}
 		return err
-	}
-	if proposal.AcceptanceJSON != "" {
-		acceptance = proposal.AcceptanceJSON
 	}
 	seen := map[string]bool{}
 	for _, dep := range dependsOn {
@@ -707,9 +789,10 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 	if proposal.ReviewedAt.IsZero() {
 		proposal.ReviewedAt = proposal.CreatedAt
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO console_spec_task(id,spec_id,revision,content_sha256,title,task_content,status,estimated_hours,depends_on_json,acceptance_json,input_anchors_json,created_by,created_at)
-		SELECT ?,s.id,s.current_revision,?,?,?,?,?,?,?,?,?,? FROM console_spec s WHERE s.id=?`, proposal.ID, contentHash,
-		proposal.Title, proposal.TaskContent, proposal.Status, proposal.EstimatedHours, proposal.DependsOnJSON, acceptance, anchors,
+	acceptanceJSON, definitionOfDone := createTaskDefinitionStorage(proposal.DefinitionOfDone)
+	_, err = tx.ExecContext(ctx, `INSERT INTO console_spec_task(id,spec_id,revision,content_sha256,title,task_content,status,estimated_hours,depends_on_json,acceptance_json,input_anchors_json,definition_of_done,created_by,created_at)
+		SELECT ?,s.id,s.current_revision,?,?,?,?,?,?,?,?,?,?,? FROM console_spec s WHERE s.id=?`, proposal.ID, contentHash,
+		proposal.Title, proposal.TaskContent, proposal.Status, proposal.EstimatedHours, proposal.DependsOnJSON, acceptanceJSON, anchors, definitionOfDone,
 		proposal.ReviewedBy, stamp, proposal.SpecID)
 	if err != nil {
 		return err
@@ -718,7 +801,7 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 	return tx.Commit()
 }
 
-func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string, acceptanceJSON string) error {
+func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, principalID string, management bool, content, status string, hours float64, dependsOn []string, definitionOfDone string) error {
 	if proposalID == "" || hours < 0 {
 		return errors.New("invalid task plan")
 	}
@@ -732,11 +815,24 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 	}
 	defer tx.Rollback()
 	var specID string
-	if err = tx.QueryRowContext(ctx, `SELECT q.spec_id FROM (`+taskUnion+`) q JOIN console_spec s ON s.id=q.spec_id WHERE q.id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting'`, proposalID, principalID).Scan(&specID); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT q.spec_id FROM (`+taskUnion+`) q
+		JOIN console_spec s ON s.id=q.spec_id JOIN console_spec_revision r ON r.spec_id=q.spec_id AND r.revision=q.revision
+		WHERE q.id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting'`, proposalID, principalID).Scan(&specID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrConsoleSpecPermission
 		}
 		return err
+	}
+	// This legacy API updates either a per-spec-revision proposal row or a real
+	// task row. DoD is task-level data, so K17 covers only console_spec_task;
+	// accepting it on console_task_proposal would recreate the semantic mixing
+	// that put DoD in acceptance_json in the first place.
+	var proposalRow int
+	if err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM console_task_proposal WHERE id=?`, proposalID).Scan(&proposalRow); err != nil {
+		return err
+	}
+	if proposalRow != 0 && strings.TrimSpace(definitionOfDone) != "" && !allowProposalTaskDefinition && !skipProposalDefinitionCheck {
+		return ErrConsoleTaskDefinition
 	}
 	seen := map[string]bool{}
 	for _, dep := range dependsOn {
@@ -797,16 +893,18 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 		}
 	}
 	raw, _ := json.Marshal(dependsOn)
-	if acceptanceJSON == "" {
-		acceptanceJSON = "[]"
-	}
-	res, err := tx.ExecContext(ctx, `UPDATE console_task_proposal SET task_content=?,status=?,estimated_hours=?,depends_on_json=?,acceptance_json=? WHERE id=?`, content, status, hours, string(raw), acceptanceJSON, proposalID)
+	acceptanceJSON, storedDefinition := updateTaskDefinitionStorage(definitionOfDone)
+	query := `UPDATE console_task_proposal SET task_content=?,status=?,estimated_hours=?,depends_on_json=? WHERE id=?`
+	args := []any{content, status, hours, string(raw), proposalID}
+	res, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
-		res, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET task_content=?,status=?,estimated_hours=?,depends_on_json=?,acceptance_json=? WHERE id=?`, content, status, hours, string(raw), acceptanceJSON, proposalID)
+		query = `UPDATE console_spec_task SET task_content=?,status=?,estimated_hours=?,depends_on_json=?,acceptance_json=?,definition_of_done=? WHERE id=?`
+		args = []any{content, status, hours, string(raw), acceptanceJSON, storedDefinition, proposalID}
+		res, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
 			return err
 		}
@@ -818,7 +916,134 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 	return tx.Commit()
 }
 
+func (s *SQLite) UpdateConsoleSpecTaskAssignees(ctx context.Context, taskID, principalID, developerAgentID, reviewerAgentID string) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE console_spec_task
+		SET developer_agent_id=NULLIF(?,''),reviewer_agent_id=NULLIF(?,'')
+		WHERE id=? AND EXISTS(SELECT 1 FROM console_spec s WHERE s.id=console_spec_task.spec_id AND s.principal_id=? AND s.state='final' AND s.task_state='splitting')`,
+		strings.TrimSpace(developerAgentID), strings.TrimSpace(reviewerAgentID), taskID, principalID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return ErrConsoleSpecPermission
+	}
+	return nil
+}
+
+// acceptance_id cannot have a database foreign key because spec acceptance
+// criteria live inside console_spec_revision.acceptance_json. Validate every
+// association against the task's frozen spec revision before writing it.
+func (s *SQLite) SetConsoleSpecTaskAcceptances(ctx context.Context, taskID, principalID string, acceptanceIDs []string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var specRaw string
+	if err = tx.QueryRowContext(ctx, `SELECT r.acceptance_json FROM console_spec_task t
+		JOIN console_spec s ON s.id=t.spec_id JOIN console_spec_revision r ON r.spec_id=t.spec_id AND r.revision=t.revision
+		WHERE t.id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting'`, taskID, principalID).Scan(&specRaw); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrConsoleSpecPermission
+		}
+		return err
+	}
+	specIDs, err := taskAcceptanceIDs(specRaw)
+	if err != nil {
+		return err
+	}
+	allowed := make(map[string]bool, len(specIDs))
+	for _, id := range specIDs {
+		allowed[id] = true
+	}
+	seen := make(map[string]bool, len(acceptanceIDs))
+	for _, rawID := range acceptanceIDs {
+		id := strings.TrimSpace(rawID)
+		if id == "" || seen[id] || (!skipTaskAcceptanceValidation && !skipTaskAcceptanceMembership && !allowed[id]) {
+			return ErrConsoleTaskAcceptance
+		}
+		seen[id] = true
+	}
+	if skipTaskAcceptanceWrite {
+		return tx.Commit()
+	}
+	if _, err = tx.ExecContext(ctx, `DELETE FROM console_spec_task_acceptance WHERE task_id=?`, taskID); err != nil {
+		return err
+	}
+	for _, rawID := range acceptanceIDs {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO console_spec_task_acceptance(task_id,acceptance_id) VALUES(?,?)`, taskID, strings.TrimSpace(rawID)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *SQLite) ListConsoleSpecTaskAcceptanceIDs(ctx context.Context, taskID string) ([]string, error) {
+	if hideTaskAcceptanceRead {
+		return []string{}, nil
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT acceptance_id FROM console_spec_task_acceptance WHERE task_id=? ORDER BY acceptance_id`, taskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+func (s *SQLite) ListUnlinkedConsoleSpecAcceptanceIDs(ctx context.Context, specID string, revision int) ([]string, error) {
+	var raw string
+	if err := s.db.QueryRowContext(ctx, `SELECT acceptance_json FROM console_spec_revision WHERE spec_id=? AND revision=?`, specID, revision).Scan(&raw); err != nil {
+		return nil, err
+	}
+	ids, err := taskAcceptanceIDs(raw)
+	if err != nil {
+		return nil, err
+	}
+	if treatEveryAcceptanceAsLinked {
+		return []string{}, nil
+	}
+	if skipLinkedAcceptanceLookup {
+		return ids, nil
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT DISTINCT a.acceptance_id FROM console_spec_task_acceptance a
+		JOIN console_spec_task t ON t.id=a.task_id WHERE t.spec_id=? AND t.revision=?`, specID, revision)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	linked := map[string]bool{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		linked[id] = true
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	missing := make([]string, 0)
+	for _, id := range ids {
+		if !linked[id] {
+			missing = append(missing, id)
+		}
+	}
+	return missing, nil
+}
+
 func (s *SQLite) DeleteConsoleSpecTask(ctx context.Context, taskID, principalID string) error {
+	if skipConsoleSpecTaskDelete {
+		return nil
+	}
 	res, err := s.db.ExecContext(ctx, `DELETE FROM console_spec_task WHERE id=? AND EXISTS(SELECT 1 FROM console_spec s WHERE s.id=console_spec_task.spec_id AND s.principal_id=? AND s.state='final' AND s.task_state='splitting')`, taskID, principalID)
 	if err != nil {
 		return err
