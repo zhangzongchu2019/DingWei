@@ -50,6 +50,20 @@ func TestMain(m *testing.M) {
 		skipProposalDefinitionCheck = true
 	case "drop-k18-task-delete":
 		skipConsoleSpecTaskDelete = true
+	case "k20-count-marked", "drop-k20-confirmed-filter":
+		countUnconfirmedTaskCases = true
+	case "k21-allow-other-marker", "drop-k21-marker-role-check":
+		allowAnyTaskCaseMarker = true
+	case "k22-allow-developer-confirm", "drop-k22-confirmer-role-check":
+		allowAnyTaskCaseConfirmer = true
+	case "k23-fixed-denominator", "drop-k23-case-expansion":
+		truncateTaskCaseDenominator = true
+	case "k24-allow-zero-total", "drop-k24-fallback":
+		disableTaskFallbackCase = true
+	case "k25-disable-cascade":
+		taskAcceptanceDisableCascade = true
+	case "drop-k25-task-delete":
+		skipConsoleSpecTaskDelete = true
 	case "k12-disable-foreign-keys":
 		taskAssignmentDisableForeignKeys = true
 	default:

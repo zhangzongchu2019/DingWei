@@ -36,6 +36,7 @@ type consoleSpecRepository interface {
 	CreateConsoleTaskProposal(context.Context, model.ConsoleTaskProposal, string, bool) error
 	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string, string) error
 	UpdateConsoleSpecTaskAssignees(context.Context, string, string, string, string) error
+	ConsoleSpecTaskCaseProgress(context.Context, string) (int, int, error)
 	DeleteConsoleSpecTask(context.Context, string, string) error
 	ListActiveConsolePrincipals(context.Context) ([]model.ConsolePrincipal, error)
 	TransferConsoleSpec(context.Context, string, string, string, string, time.Time) error

@@ -49,8 +49,8 @@ const boardMutations = new Map([
   ['k6-break-toggle', ["selectedSpec=selectedSpec===spec.id?'':spec.id", 'selectedSpec=spec.id']],
   ['k6-drop-toggle-handler', ["tr.onclick=function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1;loadBoard()}", '']],
   ['k11-drop-offline-dot', ['td.append(dot)', '']],
-  ['k-status-invent-value', ["assigneeCell(task,'reviewer'),taskCell(''),taskCell(acceptance.label", "assigneeCell(task,'reviewer'),taskCell(task.status),taskCell(acceptance.label"]],
-  ['k-status-drop-empty-call', ["assigneeCell(task,'reviewer'),taskCell(''),taskCell(acceptance.label", "assigneeCell(task,'reviewer'),taskCell('planned'),taskCell(acceptance.label"]],
+  ['k-status-invent-value', ["taskCell(String(task.passed_cases||0)+'/'+String(task.total_cases||1))", "taskCell('0/0')"]],
+  ['k-status-drop-empty-call', ["taskCell(String(task.passed_cases||0)+'/'+String(task.total_cases||1))", "taskCell('')"]],
 ]);
 for (const [name, [needle]] of boardMutations) assert.ok(board.includes(needle), `stale mutation probe ${name}`);
 if (boardMutations.has(mutation)) {
@@ -153,7 +153,7 @@ async function main() {
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(2).textContent(), '', 'K5 missing reviewer empty');
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(4).textContent(), 'A1', 'K4 fifth column shows stable acceptance id');
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(4).getAttribute('title'), 'A1 Acceptance 1', 'K4 acceptance hover exposes full text');
-  assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(3).textContent(), '', 'status stays empty without task-case records');
+  assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(3).textContent(), '0/1', 'K24 status uses produced-or-not fallback and never 0/0');
   assert.strictEqual((await frame.locator('body').innerText()).includes('未知'), false, 'K5 no invented unknown placeholder');
   await frame.locator('#edit-tasks').click();
   const firstDeveloper = frame.locator('#task-list tr').first().locator('select.developer-agent');

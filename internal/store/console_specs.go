@@ -25,6 +25,8 @@ var (
 	ErrConsoleSpecReviewerLookup  = errors.New("console spec review agent lookup failed")
 	ErrConsoleTaskAcceptance      = errors.New("console task acceptance must reference this spec revision")
 	ErrConsoleTaskDefinition      = errors.New("task proposal cannot store a task definition of done")
+	ErrConsoleTaskCasePermission  = errors.New("console task case actor is not assigned to this task")
+	ErrConsoleTaskCaseUnknown     = errors.New("console task case is not linked to this task")
 )
 
 type storedTaskAcceptance struct {

@@ -465,6 +465,8 @@ type ConsoleTaskProposal struct {
 	ReviewerAgentID  string    `json:"reviewer_agent_id,omitempty"`
 	ReviewerAgent    string    `json:"reviewer_agent,omitempty"`
 	ReviewerOnline   bool      `json:"reviewer_online"`
+	PassedCases      int       `json:"passed_cases"`
+	TotalCases       int       `json:"total_cases"`
 	ReviewID         string    `json:"review_id"`
 	ReviewedBy       string    `json:"-"`
 	ReviewedAt       time.Time `json:"reviewed_at"`

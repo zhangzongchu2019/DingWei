@@ -45,9 +45,9 @@ func TestConsoleTaskBoardFiveColumnsAndNoInventedPrincipalPlaceholder(t *testing
 	}
 }
 
-func TestConsoleTaskBoardStatusStaysEmptyWithoutTaskCaseRecords(t *testing.T) {
-	if !strings.Contains(consoleTaskBoardPageHTML, "assigneeCell(task,'reviewer'),taskCell(''),taskCell(acceptance.label") {
-		t.Fatal("status column is no longer mechanically empty before task-case records exist")
+func TestConsoleTaskBoardStatusNeverShowsZeroOverZero(t *testing.T) {
+	if !strings.Contains(consoleTaskBoardPageHTML, "String(task.passed_cases||0)+'/'+String(task.total_cases||1)") {
+		t.Fatal("K24 status must use the 0/1 fallback instead of rendering 0/0")
 	}
 }
 
