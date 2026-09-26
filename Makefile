@@ -4,9 +4,8 @@ build:
 run: build
 	./bin/workpulse
 test:
-	python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed deploy.test_build_entrypoints
-	python3 -m unittest -q view-service/test_md_render_core.py
-	go test ./...
+	./build.sh --test-only
+	go test -count=1 ./...
 tidy:
 	go mod tidy
 docker:

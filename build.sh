@@ -24,10 +24,12 @@
 set -eu
 # 所有相对路径都以脚本所在的仓库根为准；调用者可以在任意 cwd 用绝对路径执行。
 cd "$(dirname "$0")"
-# 🔴 发版构建先过 console seed 身份配对闸。生成器若会因参数顺序改写
-# principal id↔subject，产物就不应继续编译；本闸与 schema 校验必须同跑。
-python3 -m unittest -q deploy.test_generate_console_seed deploy.test_validate_console_seed deploy.test_build_entrypoints
-python3 -m unittest -q view-service/test_md_render_core.py
+# 🔴 发版构建先过唯一的 Python/shell 测试清单。make test 与 CI 也调用
+# 同一入口，新增测试时不再维护互相漂移的多份名单。
+./scripts/run-build-tests.sh
+if [ "${1:-}" = "--test-only" ]; then
+  exit 0
+fi
 HEAD_COMMIT="$(git rev-parse HEAD)"
 if [ -n "${SOURCE_COMMIT:-}" ]; then
   case "$SOURCE_COMMIT" in

@@ -28,6 +28,10 @@ on:
       - 'specs/**'
       - 'go.mod'
       - 'go.sum'
+      - 'build.sh'
+      - 'Makefile'
+      - 'deploy/**'
+      - 'view-service/**'
       - '.github/**'
   pull_request:
     paths:
@@ -36,6 +40,10 @@ on:
       - 'specs/**'
       - 'go.mod'
       - 'go.sum'
+      - 'build.sh'
+      - 'Makefile'
+      - 'deploy/**'
+      - 'view-service/**'
       - '.github/**'
 
 jobs:
@@ -46,5 +54,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
       - name: 提交闸 ①–㉗
         run: scripts/speclint-gate.sh
+      - name: Python、shell 与 Go 测试
+        run: make test

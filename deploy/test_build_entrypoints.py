@@ -11,8 +11,7 @@ class BuildEntrypointContractTest(unittest.TestCase):
 
     def test_build_sh_owns_gate_flags_and_deploy_provenance(self):
         text = self.read("build.sh")
-        self.assertIn("deploy.test_generate_console_seed", text)
-        self.assertIn("view-service/test_md_render_core.py", text)
+        self.assertIn("./scripts/run-build-tests.sh", text)
         self.assertIn("-trimpath -buildvcs=false", text)
         self.assertIn("internal/version.Commit=${COMMIT}", text)
         self.assertIn('SOURCE_COMMIT', text)
@@ -40,6 +39,25 @@ class BuildEntrypointContractTest(unittest.TestCase):
         self.assertIn('"$WORKDIR/bin/workpulse" version', text)
         self.assertNotIn("reuse existing bin/workpulse", text)
         self.assertNotIn("go build -o bin/workpulse", text)
+
+    def test_every_deploy_and_view_service_test_is_wired_once(self):
+        runner = self.read("scripts/run-build-tests.sh")
+        discovered = set()
+        for directory in (ROOT / "deploy", ROOT / "view-service"):
+            for pattern in ("test*.py", "test*.sh"):
+                discovered.update(path.relative_to(ROOT).as_posix() for path in directory.rglob(pattern))
+        self.assertEqual(len(discovered), 16, f"测试文件集合变化，须同步审计清单: {sorted(discovered)}")
+        for test_file in sorted(discovered):
+            with self.subTest(test_file=test_file):
+                self.assertEqual(runner.count(test_file), 1, f"测试未接线或重复接线: {test_file}")
+
+    def test_build_make_and_ci_share_the_canonical_test_entrypoint(self):
+        self.assertIn("./scripts/run-build-tests.sh", self.read("build.sh"))
+        makefile = self.read("Makefile")
+        self.assertIn("./build.sh --test-only", makefile)
+        self.assertNotIn("python3 -m unittest", makefile)
+        workflow = self.read(".github/workflows/speclint.yml")
+        self.assertIn("run: make test", workflow)
 
 
 if __name__ == "__main__":
