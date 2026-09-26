@@ -12,6 +12,7 @@ import (
 )
 
 var taskAcceptanceMutation = flag.String("mutate", "", "task acceptance gate mutation")
+var taskAssignmentDisableForeignKeys bool
 
 func TestMain(m *testing.M) {
 	flag.Parse()
@@ -25,6 +26,8 @@ func TestMain(m *testing.M) {
 		validateTaskAcceptanceForInsert = func(string, string) error { return nil }
 	case "drop-update-acceptance-check":
 		validateTaskAcceptanceForUpdate = func(string, string) error { return nil }
+	case "k12-disable-foreign-keys":
+		taskAssignmentDisableForeignKeys = true
 	default:
 		panic("unknown --mutate=" + *taskAcceptanceMutation)
 	}

@@ -35,6 +35,7 @@ type consoleSpecRepository interface {
 	ListAllConsoleTaskProposals(context.Context) ([]model.ConsoleTaskProposal, error)
 	CreateConsoleTaskProposal(context.Context, model.ConsoleTaskProposal, string, bool) error
 	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string, string) error
+	UpdateConsoleSpecTaskAssignees(context.Context, string, string, string, string) error
 	DeleteConsoleSpecTask(context.Context, string, string) error
 	ListActiveConsolePrincipals(context.Context) ([]model.ConsolePrincipal, error)
 	TransferConsoleSpec(context.Context, string, string, string, string, time.Time) error
@@ -43,6 +44,7 @@ type consoleSpecRepository interface {
 	ConsoleSpecGateReview(context.Context, string, int) (*model.ConsoleSpecGateReview, error)
 	CloseConsoleSpecTaskSplit(context.Context, string, string, time.Time) error
 	ListOwnedConsoleAgents(context.Context, string) ([]model.ConsoleAgent, error)
+	ListConsoleAgents(context.Context, string) ([]model.ConsoleAgent, error)
 	ResolveConsoleAgentByEndpoint(context.Context, string, string) (*model.ConsoleAgent, error)
 	StartConsoleSpecPresplit(context.Context, model.ConsoleSpecPresplitRequest, string) (*model.ConsoleSpecRevision, *model.ConsoleAgent, error)
 	ConsoleSpecPresplit(context.Context, string, string, time.Time, time.Time) (*model.ConsoleSpecPresplitRequest, error)

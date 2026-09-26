@@ -637,14 +637,18 @@ func (s *SQLite) ArchiveConsoleSpec(ctx context.Context, specID, actor string, n
 
 func scanProposal(row rowScanner) (*model.ConsoleTaskProposal, error) {
 	var p model.ConsoleTaskProposal
+	var developerID, developerName, reviewerID, reviewerName sql.NullString
 	var reviewed, created string
-	err := row.Scan(&p.ID, &p.SchemaVersion, &p.SpecID, &p.Revision, &p.ContentSHA256, &p.Title, &p.TaskContent, &p.Status, &p.EstimatedHours, &p.DependsOnJSON, &p.AcceptanceJSON, &p.InputAnchorsJSON, &p.ReviewID, &p.ReviewedBy, &reviewed, &created)
+	err := row.Scan(&p.ID, &p.SchemaVersion, &p.SpecID, &p.Revision, &p.ContentSHA256, &p.Title, &p.TaskContent, &p.Status, &p.EstimatedHours, &p.DependsOnJSON, &p.AcceptanceJSON, &p.InputAnchorsJSON,
+		&developerID, &developerName, &reviewerID, &reviewerName, &p.ReviewID, &p.ReviewedBy, &reviewed, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
+	p.DeveloperAgentID, p.DeveloperAgent = developerID.String, developerName.String
+	p.ReviewerAgentID, p.ReviewerAgent = reviewerID.String, reviewerName.String
 	p.ReviewedAt, err = specTime(reviewed)
 	if err != nil {
 		return nil, err
@@ -653,9 +657,11 @@ func scanProposal(row rowScanner) (*model.ConsoleTaskProposal, error) {
 	return &p, err
 }
 
-const proposalColumns = `p.id,p.schema_version,p.spec_id,p.revision,p.content_sha256,p.title,p.task_content,p.status,p.estimated_hours,p.depends_on_json,p.acceptance_json,p.input_anchors_json,p.review_id,p.reviewed_by,p.reviewed_at,p.created_at`
+const proposalColumns = `p.id,p.schema_version,p.spec_id,p.revision,p.content_sha256,p.title,p.task_content,p.status,p.estimated_hours,p.depends_on_json,p.acceptance_json,p.input_anchors_json,NULL,NULL,NULL,NULL,p.review_id,p.reviewed_by,p.reviewed_at,p.created_at`
 const taskUnion = `SELECT ` + proposalColumns + ` FROM console_task_proposal p UNION ALL
-	SELECT t.id,1,t.spec_id,t.revision,t.content_sha256,t.title,t.task_content,t.status,t.estimated_hours,t.depends_on_json,t.acceptance_json,t.input_anchors_json,'manual:'||t.id,t.created_by,t.created_at,t.created_at FROM console_spec_task t`
+	SELECT t.id,1,t.spec_id,t.revision,t.content_sha256,t.title,t.task_content,t.status,t.estimated_hours,t.depends_on_json,t.acceptance_json,t.input_anchors_json,
+		t.developer_agent_id,(SELECT session_name FROM console_agent WHERE id=t.developer_agent_id),t.reviewer_agent_id,(SELECT session_name FROM console_agent WHERE id=t.reviewer_agent_id),
+		'manual:'||t.id,t.created_by,t.created_at,t.created_at FROM console_spec_task t`
 
 func (s *SQLite) ListReadyConsoleTaskProposals(ctx context.Context) ([]model.ConsoleTaskProposal, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT `+proposalColumns+` FROM console_task_proposal p JOIN console_spec s ON s.id=p.spec_id AND s.current_revision=p.revision WHERE s.state='final' AND s.task_state='closed' ORDER BY p.created_at,p.id`)
@@ -919,6 +925,21 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 		}
 	}
 	return tx.Commit()
+}
+
+func (s *SQLite) UpdateConsoleSpecTaskAssignees(ctx context.Context, taskID, principalID, developerAgentID, reviewerAgentID string) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE console_spec_task
+		SET developer_agent_id=NULLIF(?,''),reviewer_agent_id=NULLIF(?,'')
+		WHERE id=? AND EXISTS(SELECT 1 FROM console_spec s WHERE s.id=console_spec_task.spec_id AND s.principal_id=? AND s.state='final' AND s.task_state='splitting')`,
+		strings.TrimSpace(developerAgentID), strings.TrimSpace(reviewerAgentID), taskID, principalID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return ErrConsoleSpecPermission
+	}
+	return nil
 }
 
 func (s *SQLite) DeleteConsoleSpecTask(ctx context.Context, taskID, principalID string) error {

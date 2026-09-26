@@ -44,3 +44,13 @@ func TestConsoleTaskBoardFiveColumnsAndNoInventedPrincipalPlaceholder(t *testing
 		t.Fatal("task board must leave unavailable values empty")
 	}
 }
+
+func TestConsoleTaskBoardStatusStaysEmptyWithoutTaskCaseRecords(t *testing.T) {
+	if !strings.Contains(consoleTaskBoardPageHTML, "assigneeCell(task,'reviewer'),taskCell(''),taskCell(acceptance.label") {
+		t.Fatal("status column is no longer mechanically empty before task-case records exist")
+	}
+}
+
+func TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel(t *testing.T) {
+	t.Skip("K13 deferred: task case record model does not exist, so started state cannot be derived mechanically")
+}
