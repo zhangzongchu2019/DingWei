@@ -45,6 +45,12 @@ def reject_retired(checks):
         raise AssertionError(f"硬编码断言被加回: {restored}")
 
 
+def require_runtime_manifest_self_check(checks):
+    if "view-service-files-match-manifest" not in checks:
+        raise AssertionError("容器侧 MANIFEST 逐文件自校被摘掉")
+    return checks["view-service-files-match-manifest"]
+
+
 class ExpectedHashesTest(unittest.TestCase):
     def setUp(self):
         self.checks = {c["id"]: c for c in iter_checks(json.loads(INVARIANTS.read_text()))}
@@ -78,6 +84,65 @@ class ExpectedHashesTest(unittest.TestCase):
             missing = subprocess.run(["bash", "-c", probe], env=env, capture_output=True, text=True)
             self.assertNotEqual(missing.returncode, 0)
             self.assertIn("取不到", missing.stdout)
+
+    def test_runtime_files_are_checked_against_container_manifest(self):
+        check = require_runtime_manifest_self_check(self.checks)
+        self.assertNotIn("DW_EXPECT", check["cmd"])
+        self.assertIn('sed "s#  view-service/#  #"', check["cmd"])
+        self.assertIn("sha256sum -c --quiet -", check["cmd"])
+
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            files = ("renderer-canary-sse.html", "view_service.py", "view_page_store.py")
+            for name in files:
+                (root / name).write_text(f"fixture-{name}\n")
+
+            def write_manifest():
+                lines = []
+                for name in files:
+                    digest = __import__("hashlib").sha256((root / name).read_bytes()).hexdigest()
+                    lines.append(f"{digest}  view-service/{name}\n")
+                (root / "MANIFEST.sha256").write_text("".join(lines))
+
+            def run():
+                probe = check["cmd"].replace("/app/vs", str(root))
+                return subprocess.run(["bash", "-c", probe], capture_output=True, text=True)
+
+            write_manifest()
+            matching = run()
+            self.assertEqual(matching.returncode, 0)
+            self.assertEqual(matching.stdout + matching.stderr, "")
+
+            (root / files[0]).write_text("changed-by-one-byte-ish\n")
+            changed = run()
+            self.assertNotEqual(changed.returncode, 0)
+            self.assertIn(f"{files[0]}: FAILED", changed.stdout + changed.stderr)
+
+            write_manifest()
+            (root / files[1]).unlink()
+            missing = run()
+            self.assertNotEqual(missing.returncode, 0)
+            self.assertIn(f"{files[1]}: FAILED", missing.stdout + missing.stderr)
+
+            for name in files:
+                if not (root / name).exists():
+                    (root / name).write_text(f"fixture-{name}\n")
+            (root / "MANIFEST.sha256").write_text("")
+            empty = run()
+            self.assertNotEqual(empty.returncode, 0)
+            self.assertIn("no properly formatted checksum lines found", empty.stdout + empty.stderr)
+
+            write_manifest()
+            (root / "extra-not-in-manifest").write_text("allowed by this layer\n")
+            extra = run()
+            self.assertEqual(extra.returncode, 0)
+            self.assertEqual(extra.stdout + extra.stderr, "")
+
+    def test_reverse_mutation_dropping_runtime_manifest_self_check_is_rejected(self):
+        mutated = dict(self.checks)
+        mutated.pop("view-service-files-match-manifest")
+        with self.assertRaisesRegex(AssertionError, "容器侧 MANIFEST 逐文件自校被摘掉"):
+            require_runtime_manifest_self_check(mutated)
 
 
 if __name__ == "__main__":

@@ -16,6 +16,11 @@
       "cmd": "want=\"${DW_EXPECT_VS_MANIFEST_SHA:?需在部署时写入期望的 view-service manifest 摘要}\"; got=$(sha256sum /app/vs/MANIFEST.sha256 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到 /app/vs/MANIFEST.sha256(记为不成立)'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
     },
     {
+      "id": "view-service-files-match-manifest",
+      "desc": "🔴 /app/vs 三个运行时文件必须逐一符合容器内 MANIFEST；本条自校且不依赖注入期望值",
+      "cmd": "sed \"s#  view-service/#  #\" /app/vs/MANIFEST.sha256 | (cd /app/vs && sha256sum -c --quiet -)"
+    },
+    {
       "id": "workpulse-binary-matches-expected",
       "desc": "🔴 workpulse 二进制哈希必须 == 部署时记录值(取代原 --commit 断言)",
       "_why": "首版写 `/app/bin/workpulse --commit`,而 main.go 不解析任何命令行参数 ⇒ 该调用【不是取值,是把服务启动了一遍】。一个每 30 分钟拉起一次进程的巡检器,是我埋的雷 —— prodops 首跑即撞到。改为只读哈希,零副作用。",
