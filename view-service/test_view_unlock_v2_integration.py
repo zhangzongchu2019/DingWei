@@ -14,6 +14,9 @@ import view_service as vs
 from view_page_store import ViewPageStore
 
 
+TEST_TIMEOUT = float(os.environ.get("VS_TEST_TIMEOUT", "2"))
+
+
 class _FakeHubHandler(BaseHTTPRequestHandler):
     secret = b""
     received = []
@@ -71,8 +74,8 @@ class ViewUnlockV2IntegrationTest(unittest.TestCase):
         self.view.server_close()
         self.hub.shutdown()
         self.hub.server_close()
-        self.view_thread.join(timeout=2)
-        self.hub_thread.join(timeout=2)
+        self.view_thread.join(timeout=TEST_TIMEOUT)
+        self.hub_thread.join(timeout=TEST_TIMEOUT)
         self.patches.stop()
         vs._page_store = self.old_store
         self.store.close()
@@ -84,7 +87,7 @@ class ViewUnlockV2IntegrationTest(unittest.TestCase):
             f"http://127.0.0.1:{self.view.server_port}{path}", raw,
             {"Content-Type": "application/json", **(headers or {})}, method="POST")
         try:
-            with urllib.request.urlopen(request, timeout=2) as response:
+            with urllib.request.urlopen(request, timeout=TEST_TIMEOUT) as response:
                 return response.status, json.loads(response.read() or b"{}")
         except urllib.error.HTTPError as error:
             return error.code, json.loads(error.read() or b"{}")

@@ -59,6 +59,12 @@ class BuildEntrypointContractTest(unittest.TestCase):
         workflow = self.read(".github/workflows/speclint.yml")
         self.assertIn("run: make test", workflow)
 
+    def test_view_unlock_integration_has_one_configurable_timeout(self):
+        text = self.read("view-service/test_view_unlock_v2_integration.py")
+        self.assertIn('TEST_TIMEOUT = float(os.environ.get("VS_TEST_TIMEOUT", "2"))', text)
+        self.assertEqual(text.count("timeout=TEST_TIMEOUT"), 3)
+        self.assertNotIn("timeout=2", text)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
