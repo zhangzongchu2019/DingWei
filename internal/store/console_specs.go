@@ -192,14 +192,16 @@ func (s *SQLite) SaveConsoleSpecGateReview(ctx context.Context, specID, actor st
 	if err = tx.QueryRowContext(ctx, `SELECT current_revision FROM console_spec WHERE id=? AND current_editor_id=? AND state='review' AND archived=0`, specID, actor).Scan(&revision); err != nil {
 		return ErrConsoleSpecPermission
 	}
-	var reviewerOwner string
-	if err = tx.QueryRowContext(ctx, `SELECT owner_principal FROM console_agent WHERE id=? AND active=1`, review.ReviewAgentID).Scan(&reviewerOwner); errors.Is(err, sql.ErrNoRows) {
+	// 🔴 业主 2026-09-25 裁定「删」：原先此处比 `owner_principal == actor`（即"复核 Agent 归谁"），
+	// 而 Q7 要挡的是"复核者是不是操作者本人" —— 后者所需的事实在 spec 路由上并未被记下来
+	// （该路由挂 RequireConsolePrincipal，context 只有 principal＋session，ConsoleSession 无 Agent 字段）。
+	// ⇒ 本批降为【记录 ＋ 不卡死】：**不再按归属人拒绝**；仅校验复核 Agent 存在且启用。
+	//    Q7 真语义与「操作者 Agent 身份落库」另开一项（动登录通路会移动基线，不在本批）。
+	var reviewerExists int
+	if err = tx.QueryRowContext(ctx, `SELECT 1 FROM console_agent WHERE id=? AND active=1`, review.ReviewAgentID).Scan(&reviewerExists); errors.Is(err, sql.ErrNoRows) {
 		return ErrConsoleSpecReviewerInvalid
 	} else if err != nil {
 		return fmt.Errorf("%w: %v", ErrConsoleSpecReviewerLookup, err)
-	}
-	if reviewerOwner == actor {
-		return ErrConsoleSpecGate
 	}
 	var issues []storedSpecGateIssue
 	if json.Unmarshal([]byte(review.IssuesJSON), &issues) != nil {

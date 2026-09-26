@@ -89,8 +89,10 @@ func TestConsoleSpecFinalizeRequiresVerificationIndependentReviewerAndCompleteIs
 	pending := `[{
 		"id":"Q1","text":"owner_ref 是否逐条成立","response":"","outcome":"pending"
 	}]`
-	if err := db.SaveConsoleSpecGateReview(context.Background(), created.ID, "manager", model.ConsoleSpecGateReview{ReviewAgentID: "self-reviewer", IssuesJSON: pending}, hub.now()); err != store.ErrConsoleSpecGate {
-		t.Fatalf("self review err=%v", err)
+	// 🔴 业主 2026-09-25 裁定「删」：不再按 Agent 归属人拒绝 ⇒ 审结者名下的 Agent **现在应当放行**。
+	// 🔵 Q7 的真语义（复核者 ≠ 当前环节操作者）另开一项；本批只保证「记录 ＋ 不卡死」。
+	if err := db.SaveConsoleSpecGateReview(context.Background(), created.ID, "manager", model.ConsoleSpecGateReview{ReviewAgentID: "self-reviewer", IssuesJSON: pending}, hub.now()); err != nil {
+		t.Fatalf("self-owned reviewer must now be accepted (owner ruling 2026-09-25): err=%v", err)
 	}
 	if err := db.SaveConsoleSpecGateReview(context.Background(), created.ID, "manager", model.ConsoleSpecGateReview{ReviewAgentID: "independent-reviewer", IssuesJSON: pending}, hub.now()); err != nil {
 		t.Fatal(err)
