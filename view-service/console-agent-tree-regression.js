@@ -113,7 +113,7 @@ async function main() {
     { id: 'agent-a', session_name: 'zzc-alpha-2642', online: true },
     { id: 'agent-b', session_name: 'zzc-beta-2642', online: true },
   ];
-  // 字段名以 2026-09-24 冻结稿为准:groups[].owner_display_name(永不为空)、members[].online(所有成员都带)
+  // owner_display_name 无事实时为空；不得编造主体。members[].online 所有成员都带。
   const foreign = { agent_id: 'agent-x', key_id: 'k-x', session_name: 'other-gamma-2642', owner_key: 'other-owner', online: false };
   let removed = false;
   let droppedTeam01 = false;   // ⑧ 用:让响应里不再给 team01
@@ -129,7 +129,7 @@ async function main() {
         { code: 'g'.repeat(32), short_name: 'team01', owner_display_name: '业主甲', can_manage: true, additions_closed: false,
           leader_key_id: 'k-a', leader_session_name: 'zzc-alpha-2642', members: teamMembers },
         // ⑤ 同一 Agent(agent-a)同时属于第二个组 ⇒ 树中应当出现两次
-        { code: 'h'.repeat(32), short_name: 'team02', owner_display_name: '未知业主', can_manage: true, additions_closed: false,
+        { code: 'h'.repeat(32), short_name: 'team02', owner_display_name: '', can_manage: true, additions_closed: false,
           leader_key_id: 'k-a', leader_session_name: 'zzc-alpha-2642',
           members: [{ agent_id: 'agent-a', key_id: 'k-a', session_name: 'zzc-alpha-2642', owner_key: 'zzc', online: true }] },
       ].filter((group) => !droppedTeam01 || group.short_name !== 'team01'),

@@ -159,7 +159,7 @@ type specAcceptance struct {
 	ID          string   `json:"id"`
 	Text        string   `json:"text"`
 	OwnerRef    string   `json:"owner_ref"`
-	Source      string   `json:"source"` // owner | ai
+	Source      string   `json:"source,omitempty"`
 	GeneratedBy string   `json:"generated_by,omitempty"`
 	CheckedBy   string   `json:"checked_by,omitempty"`
 	CheckedAt   string   `json:"checked_at,omitempty"`
@@ -214,11 +214,8 @@ func validateConsoleSpecWrite(req consoleSpecWriteRequest) error {
 		if strings.TrimSpace(item.ID) == "" || strings.TrimSpace(item.Text) == "" || strings.TrimSpace(item.OwnerRef) == "" || seen[item.ID] {
 			return errors.New("acceptance ids, text and owner_ref must be non-empty and unique")
 		}
-		if item.Source != "owner" && item.Source != "ai" {
-			return errors.New("acceptance source must be owner or ai")
-		}
-		if (item.Source == "ai") != (strings.TrimSpace(item.GeneratedBy) != "") {
-			return errors.New("acceptance AI source and generated_by must agree")
+		if !strings.Contains(req.ContentMarkdown, item.OwnerRef) {
+			return errors.New("acceptance original quote must occur in current spec content")
 		}
 		seen[item.ID] = true
 	}
@@ -260,7 +257,15 @@ func decodeConsoleSpecWrite(w http.ResponseWriter, r *http.Request) (consoleSpec
 	return req, true
 }
 
-func revisionFromRequest(specID, principal string, revision int, req consoleSpecWriteRequest) (model.ConsoleSpecRevision, error) {
+func revisionFromRequest(specID, principal string, revision int, req consoleSpecWriteRequest, now time.Time) (model.ConsoleSpecRevision, error) {
+	for i := range req.Acceptance {
+		req.Acceptance[i].ID = fmt.Sprintf("A%d", i+1)
+		req.Acceptance[i].Source = "owner"
+		if strings.TrimSpace(req.Acceptance[i].GeneratedBy) != "" {
+			req.Acceptance[i].Source = "ai"
+		}
+		req.Acceptance[i].CheckedAt = now.UTC().Format(time.RFC3339)
+	}
 	acceptance, err := json.Marshal(specAcceptanceBundle{Criteria: req.Acceptance, Inferences: req.Inferences})
 	if err != nil {
 		return model.ConsoleSpecRevision{}, err
@@ -339,7 +344,7 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.ContentMarkdown = persistedMarkdown
-	rev, err := revisionFromRequest(id, principal, 1, req)
+	rev, err := revisionFromRequest(id, principal, 1, req, h.now())
 	if err != nil {
 		http.Error(w, "invalid spec", http.StatusBadRequest)
 		return
@@ -426,7 +431,7 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "spec image persistence failed", http.StatusServiceUnavailable)
 		return
 	}
-	rev, err := revisionFromRequest(id, principal, req.ExpectedRevision+1, req)
+	rev, err := revisionFromRequest(id, principal, req.ExpectedRevision+1, req, h.now())
 	if err != nil {
 		http.Error(w, "invalid spec", http.StatusBadRequest)
 		return
@@ -637,12 +642,20 @@ func (h *Hub) HandleConsoleSpecEditors(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]map[string]string, 0, len(items))
 	for _, p := range items {
-		display := firstNonEmpty(strings.TrimSpace(p.DisplayName), strings.TrimSpace(p.ShortName), strings.TrimSpace(p.ID), "未知业主")
-		short := strings.TrimSpace(p.ShortName)
-		out = append(out, map[string]string{"short_name": short, "display_name": display, "value": display})
+		if item, ok := consoleSpecEditorItem(p); ok {
+			out = append(out, item)
+		}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"editors": out})
+}
+
+func consoleSpecEditorItem(p model.ConsolePrincipal) (map[string]string, bool) {
+	display := strings.TrimSpace(p.DisplayName)
+	if display == "" {
+		return nil, false
+	}
+	return map[string]string{"short_name": strings.TrimSpace(p.ShortName), "display_name": display, "value": display}, true
 }
 
 func (h *Hub) HandleConsoleSpecNewVersion(w http.ResponseWriter, r *http.Request) {

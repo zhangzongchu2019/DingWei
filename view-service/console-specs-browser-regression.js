@@ -82,9 +82,15 @@ function productionHTML() {
   if (MUTATION === 'owner-title-nonexclusive') mutateHTML("title.onclick=function(){openSpec(spec.id,true)};", "title.onclick=function(){var opened=openSpec(spec.id,true);if(globalThis.__testSpecExclusive)opened.then(function(){document.getElementById('transfer-screen').hidden=false;});};");
   if (MUTATION === 'owner-transfer-nonexclusive') mutateHTML("showScreen('transfer-screen');};action.append(transfer);", "showScreen('transfer-screen');if(globalThis.__testSpecExclusive)document.getElementById('new-screen').hidden=false;};action.append(transfer);");
   if (MUTATION === 'owner-transfer-radio-detached') mutateHTML('.spec-transfer-choice input[type=radio]{width:auto;margin:0}', '.spec-transfer-choice input[type=radio]{display:block;width:100%;margin:0 0 12px}.spec-transfer-choice{display:block;width:240px}');
-  if (MUTATION === 'sgen-single-acceptance') mutateHTML('function acceptanceItems(prefix){var fallback=', 'function acceptanceItems(prefix){document.querySelectorAll("#"+prefix+"-acceptance-list .acceptance-row:not(:first-child)").forEach(function(x){x.remove()});var fallback=');
-  if (MUTATION === 'sgen-drop-owner-ref') mutateHTML("owner_ref:row.querySelector('.acceptance-owner-ref').value||fallback", "owner_ref:''");
-  if (MUTATION === 'sgen-wrong-source-mark') mutateHTML("mark.textContent=ai?'AI 生成':'业主亲写'", "mark.textContent=ai?'业主亲写':'AI 生成'");
+  if (MUTATION === 'sform-source-back') mutateHTML("<label>编号 <input class=acceptance-id readonly></label>", "<label>编号 <input class=acceptance-id readonly></label><label>来源 <select class=acceptance-source></select></label>");
+  if (MUTATION === 'sform-id-editable') mutateHTML('class=acceptance-id readonly', 'class=acceptance-id');
+  if (MUTATION === 'sform-checked-at-editable') mutateHTML('class=acceptance-checked-at readonly', 'class=acceptance-checked-at');
+  if (MUTATION === 'sform-generator-disabled') mutateHTML("generated.value=item.generated_by||'';", "generated.value=item.generated_by||'';generated.disabled=true;");
+  if (MUTATION === 'sform-creator-back-to-owner') mutateHTML('· 创建者 <span id=spec-owner-short>', '· 业主：<span id=spec-owner-short>');
+  if (MUTATION === 'sform-protected-words-renamed') mutateHTML('Agent 推论，待业主确认', 'Agent 推论，待创建者确认');
+  if (MUTATION === 'sgen-single-acceptance') mutateHTML('function acceptanceItems(prefix){return Array', 'function acceptanceItems(prefix){document.querySelectorAll("#"+prefix+"-acceptance-list .acceptance-row:not(:first-child)").forEach(function(x){x.remove()});return Array');
+  if (MUTATION === 'sgen-drop-owner-ref') mutateHTML("owner_ref:row.querySelector('.acceptance-owner-ref').value", "owner_ref:''");
+  if (MUTATION === 'sgen-wrong-source-mark') mutateHTML("<label>编号 <input class=acceptance-id readonly></label>", "<label>编号 <input class=acceptance-id readonly></label><label>来源 <select class=acceptance-source></select></label>");
   if (MUTATION === 'sgen-one-case-only') mutateHTML(".filter(Boolean)};});}", ".filter(Boolean).slice(0,1)};});}");
   if (MUTATION === 'sgen-drop-checked-at') mutateHTML("checked_at:row.querySelector('.acceptance-checked-at').value", "checked_at:''");
   if (MUTATION === 'no-list-error-text') {
@@ -132,7 +138,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', 'sform-source-back', 'sform-id-editable', 'sform-checked-at-editable', 'sform-generator-disabled', 'sform-creator-back-to-owner', 'sform-protected-words-renamed', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -746,30 +752,32 @@ async function main() {
     await page.keyboard.type('EDIT_BEHAVIOR_SENTINEL');
     assert.notStrictEqual(await page.evaluate(() => window.specEditors.edit.value()), editableBefore, '有权限时必须能通过真实键盘行为修改正文');
     await page.evaluate((value) => window.specEditors.edit.value(value), editableBefore);
-    // S-GEN ①②③⑥⑦：多条可逐条寻址；owner_ref/source 真值可见；核对三元组和一对多用例进入载荷。
+    // S-FORM A1-A5/A9/A10：浅表单形态与保留用词。
     await page.click('#edit-add-acceptance');
     const secondCriterion = page.locator('#edit-acceptance-list .acceptance-row').nth(1);
-    await secondCriterion.locator('.acceptance-id').fill('A2');
     await secondCriterion.locator('.acceptance-text').fill('second criterion');
     await secondCriterion.locator('.acceptance-owner-ref').fill('owner:quote-2');
-    await secondCriterion.locator('.acceptance-source').selectOption('ai');
     await secondCriterion.locator('.acceptance-generated-by').fill('agent-writer');
     await secondCriterion.locator('.acceptance-checked-by').fill('checker');
-    await secondCriterion.locator('.acceptance-checked-at').fill('2026-09-25T01:02:03Z');
     await secondCriterion.locator('.acceptance-cases').fill('case-one\ncase-two');
     const sgenShape = await page.evaluate(() => ({
       payload: payload('edit'),
-      marks: Array.from(document.querySelectorAll('#edit-acceptance-list .acceptance-source-mark')).map((x) => x.textContent.trim()),
       rows: document.querySelectorAll('#edit-acceptance-list .acceptance-row').length,
     }));
     assert.strictEqual(sgenShape.rows, 2, 'S-GEN:验收标准必须能同时保存多条，而不是覆盖第一条');
     assert.strictEqual(sgenShape.payload.acceptance.length, 2, 'S-GEN:提交载荷必须逐条保留两条标准');
     assert.strictEqual(sgenShape.payload.acceptance[1].owner_ref, 'owner:quote-2', 'S-GEN:每条标准必须带自己的 owner_ref');
-    assert.deepStrictEqual(sgenShape.marks, ['业主亲写','AI 生成'], 'S-GEN:来源标记必须存在且与真实 source 一致');
-    assert.strictEqual(sgenShape.payload.acceptance[1].generated_by, 'agent-writer', 'S-GEN:AI 来源必须带生成 Agent');
+    assert.strictEqual(await secondCriterion.locator('.acceptance-id').getAttribute('readonly'), '', 'S-FORM A2:编号只读');
+    assert.strictEqual(await secondCriterion.locator('.acceptance-id').inputValue(), 'A2', 'S-FORM A2:编号由系统续号');
+    assert.strictEqual(await secondCriterion.locator('.acceptance-source').count(), 0, 'S-FORM A1:来源字段不存在');
+    assert.strictEqual(await secondCriterion.locator('.acceptance-generated-by').isEnabled(), true, 'S-FORM A4:生成者始终可填');
+    assert.strictEqual(await secondCriterion.locator('.acceptance-checked-at').getAttribute('readonly'), '', 'S-FORM A3:核对时刻只读');
+    assert.strictEqual(sgenShape.payload.acceptance[1].generated_by, 'agent-writer', 'S-FORM:生成者进入载荷');
     assert.strictEqual(sgenShape.payload.acceptance[1].checked_by, 'checker', 'S-GEN:核对人必须进入该条标准');
-    assert.strictEqual(sgenShape.payload.acceptance[1].checked_at, '2026-09-25T01:02:03Z', 'S-GEN:核对时刻必须进入该条标准');
     assert.deepStrictEqual(sgenShape.payload.acceptance[1].cases, ['case-one','case-two'], 'S-GEN:一条标准必须允许对应多条用例，不得截成恰好一条');
+    assert.ok((await page.locator('#detail-screen').innerText()).includes('创建者'), 'S-FORM A10:详情显示创建者');
+    assert.ok((await page.locator('#detail-screen').innerText()).includes('Agent 推论，待业主确认'), 'S-FORM A9:推论用词保持');
+    assert.ok((await page.locator('#transfer-screen').innerText()).includes('业主'), 'S-FORM A9:转给业主用词保持');
     await secondCriterion.locator('.remove-acceptance').click();
     await page.click('#edit-add-inference');
     const inference = page.locator('#edit-inference-list .inference-row').first();
@@ -805,9 +813,9 @@ async function main() {
         acceptance: box('edit-acceptance'), anchor: box('edit-anchor'), save: box('save-spec'),
       };
     });
-    assert.strictEqual(b1.acceptanceLabel, '验收标准', `验收标准的 label 必须按业主图用中文,实测 ${JSON.stringify(b1.acceptanceLabel)}`);
+    assert.strictEqual(b1.acceptanceLabel, '验收判据', `S-FORM:label 必须为验收判据,实测 ${JSON.stringify(b1.acceptanceLabel)}`);
     assert.strictEqual(b1.anchorLabel, '规范锚定', `规范锚定的 label 必须用「规范锚定」,实测 ${JSON.stringify(b1.anchorLabel)}`);
-    assert.strictEqual(b1.newAcceptanceLabel, '验收标准', '新建屏的 label 必须与详情屏一致 —— 只改一屏等于没改');
+    assert.strictEqual(b1.newAcceptanceLabel, '验收判据', '新建屏的 label 必须与详情屏一致 —— 只改一屏等于没改');
     assert.strictEqual(b1.anchorPlaceholder, ANCHOR_PLACEHOLDER, `规范锚定的占位必须逐字用业主原句,实测 ${JSON.stringify(b1.anchorPlaceholder)}`);
     assert.strictEqual(b1.newAnchorPlaceholder, ANCHOR_PLACEHOLDER, '新建屏的占位同样必须是业主原句');
     // 🔴 前置:三个矩形都要有真实高度,否则下面的比较在「全是 0」时会空洞通过

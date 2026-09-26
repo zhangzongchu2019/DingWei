@@ -158,9 +158,6 @@ func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
 				if ownerDisplayName == "" {
 					ownerDisplayName = strings.TrimSpace(group.LeaderOwnerKey)
 				}
-				if ownerDisplayName == "" {
-					ownerDisplayName = "未知业主"
-				}
 				memberViews := make([]consoleAgentGroupMemberView, 0, len(members))
 				for _, member := range members {
 					h.mu.Lock()
