@@ -9,10 +9,11 @@
 ⇒ 本测试让这件事不再依赖记性：**改了被钉住的文件而没回写期望值，这里就红。**
 它替代不了发版当天的 ⑬ 闸（那条在真实产物上重算），它只是把**仓内**这一半提前到改动发生的那一刻。
 """
-import hashlib
 import json
+import os
 import pathlib
-import re
+import subprocess
+import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -20,10 +21,10 @@ INVARIANTS = ROOT / "deploy" / "invariants-dingwei-gray.json"
 
 # 巡检项 id -> 仓内对应文件。只登记「期望值就是仓内某个文件哈希」的那几条；
 # 期望值来自部署期环境变量的（如 workpulse 二进制）不在此列。
-PINNED = {
-    "renderer-matches-anchor": "view-service/renderer-canary-sse.html",
-    "view-service-matches-anchor": "view-service/view_service.py",
-    "page-store-matches-anchor": "view-service/view_page_store.py",
+RETIRED = {
+    "renderer-matches-anchor",
+    "view-service-matches-anchor",
+    "page-store-matches-anchor",
 }
 
 
@@ -38,37 +39,45 @@ def iter_checks(node):
             yield from iter_checks(value)
 
 
+def reject_retired(checks):
+    restored = RETIRED & checks.keys()
+    if restored:
+        raise AssertionError(f"硬编码断言被加回: {restored}")
+
+
 class ExpectedHashesTest(unittest.TestCase):
     def setUp(self):
         self.checks = {c["id"]: c for c in iter_checks(json.loads(INVARIANTS.read_text()))}
 
-    def test_every_pinned_expectation_matches_the_repo_file(self):
-        for check_id, rel in PINNED.items():
-            with self.subTest(check=check_id):
-                self.assertIn(check_id, self.checks, f"{check_id} 不在巡检清单里（被删了？）")
-                match = re.search(r"want=\"?([0-9a-f]{8,64})", self.checks[check_id]["cmd"])
-                self.assertIsNotNone(match, f"{check_id} 的 cmd 里取不到 want=")
-                want = match.group(1)
-                digest = hashlib.sha256((ROOT / rel).read_bytes()).hexdigest()
-                self.assertEqual(
-                    digest[: len(want)], want,
-                    f"\n🔴 {rel} 变了但 {check_id} 的期望值没回写。"
-                    f"\n   仓内实际 sha256 = {digest}"
-                    f"\n   巡检 want       = {want}"
-                    f"\n   改动者请在【同一次改动里】回写，不要留给发版当天。",
-                )
+    def test_hardcoded_repo_file_expectations_stay_retired(self):
+        reject_retired(self.checks)
 
-    def test_registry_covers_every_repo_file_pin(self):
-        """防止新增一条钉住仓内文件的巡检项、却忘了登记进 PINNED。"""
-        for check in self.checks.values():
-            cmd = check["cmd"]
-            if "sha256sum /app/" not in cmd or "want=\"${" in cmd:
-                continue
-            self.assertIn(
-                check["id"], PINNED,
-                f"\n🔴 巡检项 {check['id']} 钉的是文件哈希，但没登记到 PINNED ——"
-                f"\n   它将不被本测试保护，会退回『靠人记得回写』。",
-            )
+    def test_reverse_mutation_restoring_each_hardcoded_assertion_is_rejected(self):
+        for retired in RETIRED:
+            with self.subTest(retired=retired), self.assertRaisesRegex(AssertionError, "硬编码断言被加回"):
+                reject_retired({**self.checks, retired: {"id": retired, "cmd": "true"}})
+
+    def test_manifest_expectation_is_injected_and_fails_closed(self):
+        check = self.checks["view-service-manifest-matches-release"]
+        self.assertIn("${DW_EXPECT_VS_MANIFEST_SHA:?需在部署时写入期望的 view-service manifest 摘要}", check["cmd"])
+        self.assertIn("sha256sum /app/vs/MANIFEST.sha256", check["cmd"])
+        self.assertIn("取不到 /app/vs/MANIFEST.sha256(记为不成立)", check["cmd"])
+
+    def test_manifest_expectation_has_positive_wrong_and_missing_poles(self):
+        cmd = self.checks["view-service-manifest-matches-release"]["cmd"]
+        with tempfile.TemporaryDirectory() as raw:
+            manifest = pathlib.Path(raw) / "MANIFEST.sha256"
+            manifest.write_text("digest  view-service/file\n")
+            digest = __import__("hashlib").sha256(manifest.read_bytes()).hexdigest()
+            probe = cmd.replace("/app/vs/MANIFEST.sha256", str(manifest))
+            env = dict(os.environ, DW_EXPECT_VS_MANIFEST_SHA=digest)
+            self.assertEqual(subprocess.run(["bash", "-c", probe], env=env, capture_output=True).returncode, 0)
+            env["DW_EXPECT_VS_MANIFEST_SHA"] = "0" * 64
+            self.assertNotEqual(subprocess.run(["bash", "-c", probe], env=env, capture_output=True).returncode, 0)
+            manifest.unlink()
+            missing = subprocess.run(["bash", "-c", probe], env=env, capture_output=True, text=True)
+            self.assertNotEqual(missing.returncode, 0)
+            self.assertIn("取不到", missing.stdout)
 
 
 if __name__ == "__main__":

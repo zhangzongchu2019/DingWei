@@ -9,6 +9,15 @@ for f in renderer-canary-sse.html view_service.py view_page_store.py; do printf 
 git -C "$T/repo" add .; git -C "$T/repo" commit -qm v1; C1="$(git -C "$T/repo" rev-parse HEAD)"
 printf 'v2\n' >"$T/repo/view-service/view_service.py"; git -C "$T/repo" commit -qam v2; C2="$(git -C "$T/repo" rev-parse HEAD)"
 
+# Release orders cannot rely on the author remembering the view-service side.
+printf '%s\n' '# order' >"$T/order-missing"
+if (cd "$T/repo" && "$TOOL" check-order "$C1" "$C2" "$T/order-missing") >/dev/null 2>&1; then exit 1; fi
+printf '%s\n' '- 是否触及 view-service 侧运行时文件：否' >"$T/order-no"
+if (cd "$T/repo" && "$TOOL" check-order "$C1" "$C2" "$T/order-no") >/dev/null 2>&1; then exit 1; fi
+printf '%s\n' '- 是否触及 view-service 侧运行时文件：是' >"$T/order-yes"
+(cd "$T/repo" && "$TOOL" check-order "$C1" "$C2" "$T/order-yes") >/dev/null
+(cd "$T/repo" && "$TOOL" check-order "$C2" "$C2" "$T/order-no") >/dev/null
+
 (cd "$T/repo" && "$TOOL" package "$C2" "$T/pkg" && "$TOOL" verify-package "$T/pkg" "$C2")
 rm "$T/pkg/PROVENANCE.json"
 OUT="$(cd "$T/repo" && "$TOOL" identify-online "$T/pkg" "$C2")"
@@ -106,6 +115,8 @@ echo 2 >"$T/container/health-delay"
 OUT="$(cd "$T/repo" && "$TOOL" install "$T/install-pkg" --expected-commit "$C2" --container fixture --backup-root "$T/backups" --write-only view_service.py --go)"
 grep -q '^HEALTHY attempts=3 ' <<<"$OUT"
 grep -q '^INSTALLED ' <<<"$OUT"
+[ "$(sha256sum "$T/install-pkg/MANIFEST.sha256" | awk '{print $1}')" = "$(sha256sum "$T/container/app/vs/MANIFEST.sha256" | awk '{print $1}')" ]
+[ "$(sha256sum "$T/install-pkg/PROVENANCE.json" | awk '{print $1}')" = "$(sha256sum "$T/container/app/vs/PROVENANCE.json" | awk '{print $1}')" ]
 [ "$(grep -c '^SKIP ' <<<"$OUT")" -eq 2 ]
 grep -q '^SKIP name=renderer-canary-sse.html reason=not-authorized-identical$' <<<"$OUT"
 grep -q '^SKIP name=view_page_store.py reason=not-authorized-identical$' <<<"$OUT"
@@ -150,7 +161,7 @@ git -C "$T/repo" commit -qam two-files; C2W="$(git -C "$T/repo" rev-parse HEAD)"
 : >"$T/container/docker.log"
 OUT="$(cd "$T/repo" && "$TOOL" install "$T/two-pkg" --expected-commit "$C2W" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --write-only view_service.py --go)"
 grep -q '^SKIP name=view_page_store.py reason=not-authorized-identical$' <<<"$OUT"
-[ "$(grep -c '^cp .*:/tmp/t109-' "$T/container/docker.log")" -eq 2 ]
+[ "$(grep -c '^cp .*:/tmp/t109-' "$T/container/docker.log")" -eq 4 ]
 OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --write-only view_service.py --go)"
 
 # All three different means no skip and three real staging writes. Restore C3 afterwards.
@@ -160,7 +171,7 @@ git -C "$T/repo" commit -qam all-new; CALL="$(git -C "$T/repo" rev-parse HEAD)"
 : >"$T/container/docker.log"
 OUT="$(cd "$T/repo" && "$TOOL" install "$T/all-pkg" --expected-commit "$CALL" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --write-only view_service.py --write-only view_page_store.py --go)"
 if grep -q '^SKIP ' <<<"$OUT"; then exit 1; fi
-[ "$(grep -c '^cp .*:/tmp/t109-' "$T/container/docker.log")" -eq 3 ]
+[ "$(grep -c '^cp .*:/tmp/t109-' "$T/container/docker.log")" -eq 5 ]
 OUT="$(cd "$T/repo" && "$TOOL" install "$T/static-pkg" --expected-commit "$C3" --container fixture --backup-root "$T/backups" --write-only renderer-canary-sse.html --write-only view_service.py --write-only view_page_store.py --go)"
 if grep -q '^SKIP ' <<<"$OUT"; then exit 1; fi
 

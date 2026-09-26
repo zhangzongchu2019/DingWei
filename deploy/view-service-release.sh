@@ -145,7 +145,7 @@ check_container_layout() {
   entries="$(docker exec "$container" find /app/vs -mindepth 1 -maxdepth 2 -printf '%P\n' | sort)"
   while read -r entry; do
     case "$entry" in
-      renderer-canary-sse.html|view_service.py|view_page_store.py|__pycache__|__pycache__/view_page_store.cpython-*.pyc) ;;
+      renderer-canary-sse.html|view_service.py|view_page_store.py|MANIFEST.sha256|PROVENANCE.json|__pycache__|__pycache__/view_page_store.cpython-*.pyc) ;;
       *) die "unexpected online path: $entry" ;;
     esac
   done <<<"$entries"
@@ -268,12 +268,30 @@ install_container() {
     for n in "${!FLAT_FILES[@]}"; do
       name="${FLAT_FILES[$n]}"
       [ "$(container_hash "$container" "$name")" = "$(sha_file "$package/${REPO_FILES[$n]}")" ] || false
-    done
+    done &&
+    docker cp "$package/MANIFEST.sha256" "$container:/tmp/t109-$expected-MANIFEST.sha256" &&
+    docker exec "$container" mv "/tmp/t109-$expected-MANIFEST.sha256" "/app/vs/MANIFEST.sha256" &&
+    docker cp "$package/PROVENANCE.json" "$container:/tmp/t109-$expected-PROVENANCE.json" &&
+    docker exec "$container" mv "/tmp/t109-$expected-PROVENANCE.json" "/app/vs/PROVENANCE.json" &&
+    [ "$(container_hash "$container" MANIFEST.sha256)" = "$(sha_file "$package/MANIFEST.sha256")" ] &&
+    [ "$(container_hash "$container" PROVENANCE.json)" = "$(sha_file "$package/PROVENANCE.json")" ]
   }; then
     restore_container "$container" "$backup" "$py_changed"
     return 1
   fi
   echo "INSTALLED commit=$expected backup=$backup restart=$py_changed files=${#FLAT_FILES[@]}"
+}
+
+check_release_order() {
+  local base="${1:-}" head="${2:-}" order="${3:-}" touched=0 answer
+  [ -n "$base" ] && [ -n "$head" ] && [ -f "$order" ] || die "usage: check-order <base-commit> <head-commit> <release-order>"
+  full_commit "$base" >/dev/null; full_commit "$head" >/dev/null
+  git diff --quiet "$base" "$head" -- "${REPO_FILES[@]}" || touched=1
+  answer="$(sed -n 's/^- 是否触及 view-service 侧运行时文件：[[:space:]]*//p' "$order" | tail -1)"
+  [ "$answer" = 是 ] || [ "$answer" = 否 ] || die "release order missing view-service runtime field"
+  if [ "$touched" -eq 1 ] && [ "$answer" != 是 ]; then die "view-service runtime changed but release order does not schedule it"; fi
+  if [ "$touched" -eq 0 ] && [ "$answer" != 否 ]; then die "view-service runtime unchanged but release order says yes"; fi
+  echo "ORDER_OK view_service_runtime=$answer"
 }
 
 cmd="${1:-}"; shift || true
@@ -282,5 +300,6 @@ case "$cmd" in
   verify-package) verify_package "${1:-}" "${2:-}" ;;
   identify-online) identify_online "$@" ;;
   install) install_container "$@" ;;
-  *) die "commands: package | verify-package | identify-online | install" ;;
+  check-order) check_release_order "$@" ;;
+  *) die "commands: package | verify-package | identify-online | install | check-order" ;;
 esac
