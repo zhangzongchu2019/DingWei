@@ -23,6 +23,83 @@ var (
 	ErrConsoleSpecGate            = errors.New("console spec generation gate incomplete")
 	ErrConsoleSpecReviewerInvalid = errors.New("console spec review agent is missing, inactive or unknown")
 	ErrConsoleSpecReviewerLookup  = errors.New("console spec review agent lookup failed")
+	ErrConsoleTaskAcceptance      = errors.New("console task acceptance must reference this spec revision")
+)
+
+type storedTaskAcceptance struct {
+	ID string `json:"id"`
+}
+
+func taskAcceptanceIDs(raw string) ([]string, error) {
+	var entries []storedTaskAcceptance
+	trimmed := strings.TrimSpace(raw)
+	if strings.HasPrefix(trimmed, "[") {
+		if json.Unmarshal([]byte(trimmed), &entries) != nil {
+			return nil, ErrConsoleTaskAcceptance
+		}
+	} else {
+		var bundle struct {
+			Criteria []storedTaskAcceptance `json:"criteria"`
+		}
+		if json.Unmarshal([]byte(trimmed), &bundle) != nil {
+			return nil, ErrConsoleTaskAcceptance
+		}
+		entries = bundle.Criteria
+	}
+	if len(entries) == 0 {
+		return nil, ErrConsoleTaskAcceptance
+	}
+	ids := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		id := strings.TrimSpace(entry.ID)
+		if id == "" {
+			return nil, ErrConsoleTaskAcceptance
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func taskAcceptanceMembership(taskIDs, specIDs []string) error {
+	allowed := make(map[string]bool, len(specIDs))
+	for _, id := range specIDs {
+		allowed[id] = true
+	}
+	for _, id := range taskIDs {
+		if !allowed[id] {
+			return ErrConsoleTaskAcceptance
+		}
+	}
+	return nil
+}
+
+var (
+	parseTaskAcceptanceIDs    = taskAcceptanceIDs
+	checkTaskAcceptanceMember = taskAcceptanceMembership
+)
+
+func validateTaskAcceptanceAgainstSpec(taskRaw, specRaw string) error {
+	taskIDs, err := parseTaskAcceptanceIDs(taskRaw)
+	if err != nil {
+		return err
+	}
+	specIDs, err := parseTaskAcceptanceIDs(specRaw)
+	if err != nil {
+		return err
+	}
+	return checkTaskAcceptanceMember(taskIDs, specIDs)
+}
+
+func validateTaskAcceptanceNonEmpty(taskRaw, _ string) error {
+	_, err := parseTaskAcceptanceIDs(taskRaw)
+	return err
+}
+
+var (
+	// K8 membership code is intentionally retained but not connected: the
+	// existing acceptance_json stores task DoD, not a spec-criterion reference.
+	validateTaskAcceptanceForInsert = validateTaskAcceptanceNonEmpty
+	validateTaskAcceptanceForUpdate = validateTaskAcceptanceNonEmpty
 )
 
 type consoleSpecOwnerQuerier interface {
@@ -644,17 +721,21 @@ func (s *SQLite) CreateConsoleTaskProposal(ctx context.Context, proposal model.C
 		return err
 	}
 	defer tx.Rollback()
-	var title, contentHash, acceptance, anchors string
+	var title, contentHash, specAcceptance, anchors string
 	if err = tx.QueryRowContext(ctx, `SELECT s.title,r.content_sha256,r.acceptance_json,r.input_anchors_json
 		FROM console_spec s JOIN console_spec_revision r ON r.spec_id=s.id AND r.revision=s.current_revision
-		WHERE s.id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting'`, proposal.SpecID, principalID).Scan(&title, &contentHash, &acceptance, &anchors); err != nil {
+		WHERE s.id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting'`, proposal.SpecID, principalID).Scan(&title, &contentHash, &specAcceptance, &anchors); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrConsoleSpecPermission
 		}
 		return err
 	}
+	acceptance := specAcceptance
 	if proposal.AcceptanceJSON != "" {
 		acceptance = proposal.AcceptanceJSON
+	}
+	if err = validateTaskAcceptanceForInsert(acceptance, specAcceptance); err != nil {
+		return err
 	}
 	seen := map[string]bool{}
 	for _, dep := range dependsOn {
@@ -737,12 +818,19 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 		return err
 	}
 	defer tx.Rollback()
-	var specID string
-	if err = tx.QueryRowContext(ctx, `SELECT q.spec_id FROM (`+taskUnion+`) q JOIN console_spec s ON s.id=q.spec_id WHERE q.id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting'`, proposalID, principalID).Scan(&specID); err != nil {
+	var specID, specAcceptance string
+	if err = tx.QueryRowContext(ctx, `SELECT q.spec_id,r.acceptance_json FROM (`+taskUnion+`) q
+		JOIN console_spec s ON s.id=q.spec_id JOIN console_spec_revision r ON r.spec_id=q.spec_id AND r.revision=q.revision
+		WHERE q.id=? AND s.principal_id=? AND s.state='final' AND s.task_state='splitting'`, proposalID, principalID).Scan(&specID, &specAcceptance); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrConsoleSpecPermission
 		}
 		return err
+	}
+	if acceptanceJSON != "" {
+		if err = validateTaskAcceptanceForUpdate(acceptanceJSON, specAcceptance); err != nil {
+			return err
+		}
 	}
 	seen := map[string]bool{}
 	for _, dep := range dependsOn {
@@ -803,16 +891,25 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 		}
 	}
 	raw, _ := json.Marshal(dependsOn)
-	if acceptanceJSON == "" {
-		acceptanceJSON = "[]"
+	query := `UPDATE console_task_proposal SET task_content=?,status=?,estimated_hours=?,depends_on_json=? WHERE id=?`
+	args := []any{content, status, hours, string(raw), proposalID}
+	if acceptanceJSON != "" {
+		query = `UPDATE console_task_proposal SET task_content=?,status=?,estimated_hours=?,depends_on_json=?,acceptance_json=? WHERE id=?`
+		args = []any{content, status, hours, string(raw), acceptanceJSON, proposalID}
 	}
-	res, err := tx.ExecContext(ctx, `UPDATE console_task_proposal SET task_content=?,status=?,estimated_hours=?,depends_on_json=?,acceptance_json=? WHERE id=?`, content, status, hours, string(raw), acceptanceJSON, proposalID)
+	res, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}
 	n, _ := res.RowsAffected()
 	if n != 1 {
-		res, err = tx.ExecContext(ctx, `UPDATE console_spec_task SET task_content=?,status=?,estimated_hours=?,depends_on_json=?,acceptance_json=? WHERE id=?`, content, status, hours, string(raw), acceptanceJSON, proposalID)
+		query = `UPDATE console_spec_task SET task_content=?,status=?,estimated_hours=?,depends_on_json=? WHERE id=?`
+		args = []any{content, status, hours, string(raw), proposalID}
+		if acceptanceJSON != "" {
+			query = `UPDATE console_spec_task SET task_content=?,status=?,estimated_hours=?,depends_on_json=?,acceptance_json=? WHERE id=?`
+			args = []any{content, status, hours, string(raw), acceptanceJSON, proposalID}
+		}
+		res, err = tx.ExecContext(ctx, query, args...)
 		if err != nil {
 			return err
 		}

@@ -140,9 +140,9 @@ func TestConsoleSpecDetailReturnsTopologicalTasksDespiteReverseCreatedTimes(t *t
 	}
 	base := time.Date(2026, 9, 22, 12, 0, 0, 0, time.UTC)
 	for _, p := range []model.ConsoleTaskProposal{
-		{ID: "a", SpecID: created.ID, Title: "A", TaskContent: "A", Status: "planned", DependsOnJSON: `[]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(3 * time.Second), ReviewedAt: base.Add(3 * time.Second)},
-		{ID: "b", SpecID: created.ID, Title: "B", TaskContent: "B", Status: "planned", DependsOnJSON: `["a"]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(2 * time.Second), ReviewedAt: base.Add(2 * time.Second)},
-		{ID: "c", SpecID: created.ID, Title: "C", TaskContent: "C", Status: "planned", DependsOnJSON: `["b"]`, AcceptanceJSON: `[]`, ReviewedBy: "owner-a", CreatedAt: base.Add(time.Second), ReviewedAt: base.Add(time.Second)},
+		{ID: "a", SpecID: created.ID, Title: "A", TaskContent: "A", Status: "planned", DependsOnJSON: `[]`, AcceptanceJSON: `[{"id":"A1","text":"works"}]`, ReviewedBy: "owner-a", CreatedAt: base.Add(3 * time.Second), ReviewedAt: base.Add(3 * time.Second)},
+		{ID: "b", SpecID: created.ID, Title: "B", TaskContent: "B", Status: "planned", DependsOnJSON: `["a"]`, AcceptanceJSON: `[{"id":"A1","text":"works"}]`, ReviewedBy: "owner-a", CreatedAt: base.Add(2 * time.Second), ReviewedAt: base.Add(2 * time.Second)},
+		{ID: "c", SpecID: created.ID, Title: "C", TaskContent: "C", Status: "planned", DependsOnJSON: `["b"]`, AcceptanceJSON: `[{"id":"A1","text":"works"}]`, ReviewedBy: "owner-a", CreatedAt: base.Add(time.Second), ReviewedAt: base.Add(time.Second)},
 	} {
 		if err := db.CreateConsoleTaskProposal(context.Background(), p, "owner-a", false); err != nil {
 			t.Fatal(err)
