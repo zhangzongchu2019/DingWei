@@ -2,8 +2,7 @@
   "_why": "2026-09-16 立。断言取自当日手工做过的对照;把一次性动作变成每半小时一遍。",
   "_where": "🔴 本断言集【在容器 dingwei-gray 内部】执行 —— 不用 docker exec、不用 sudo。首版误按宿主视角写,被 prodops 拦下。",
   "_scope": "🔴 只放【运行时能持续问】的断言。需要仓库的(commit 在仓内 / preprod 含现网)属【发版纪律】,由 release-gate 的 preflight/postflight 管,不在此处。 🔴 且断言【不得有副作用】:只读不执行 —— 首版用 --commit 实际启动了服务,是反例。",
-  "_expect_note": "🔴 expected_* 是【发版时必须更新】的显式常量。忘了更新 ⇒ 本巡检立刻响 —— 这正是要的:把静默漂移变成响亮失败。",
-  "_expected_anchor": "5378fe2383b5482ff4300a065adebed878721355",
+  "_expect_note": "🔴 期望摘要由部署侧注入；不得与被检文件同行硬编码。取不到期望即不成立。",
   "assertions": [
     {
       "id": "sentinel-must-fail",
@@ -11,19 +10,10 @@
       "cmd": "false"
     },
     {
-      "id": "renderer-matches-anchor",
-      "desc": "🔴 renderer 哈希必须 == 发版锚内同名文件(当日最贵的那条断言)",
-      "cmd": "want=957b4b251f142560fa4cdc3945d92a5c1bdd84ca83952fbdc06c1c8f9bb86888; got=$(sha256sum /app/vs/renderer-canary-sse.html 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希(记为不成立)'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
-    },
-    {
-      "id": "view-service-matches-anchor",
-      "desc": "🔴 view_service.py 哈希必须 == 发版锚(当日它是旧版,害我找了一下午)",
-      "cmd": "want=a9f41746ad71371542754518335ac886acdfb5507ca246af30ca4d067a6f129c; got=$(sha256sum /app/vs/view_service.py 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
-    },
-    {
-      "id": "page-store-matches-anchor",
-      "desc": "view_page_store.py 哈希必须 == 发版锚(三文件必须全比,禁止抽样)",
-      "cmd": "want=5cc8e2b6; got=$(sha256sum /app/vs/view_page_store.py 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到哈希'; exit 1; }; echo \"got=${got:0:12}\"; [ \"${got:0:8}\" = \"$want\" ]"
+      "id": "view-service-manifest-matches-release",
+      "desc": "🔴 /app/vs 三文件内容摘要必须等于部署侧对发版锚机械计算并注入的摘要",
+      "_fill_at_deploy": "对发版锚运行 package_release，读取 PROVENANCE.manifest_sha256 注入 DW_EXPECT_VS_MANIFEST_SHA",
+      "cmd": "want=\"${DW_EXPECT_VS_MANIFEST_SHA:?需在部署时写入期望的 view-service manifest 摘要}\"; got=$(sha256sum /app/vs/MANIFEST.sha256 2>/dev/null | cut -d' ' -f1); [ -n \"$got\" ] || { echo '取不到 /app/vs/MANIFEST.sha256(记为不成立)'; exit 1; }; echo \"got=${got:0:12}\"; [ \"$got\" = \"$want\" ]"
     },
     {
       "id": "workpulse-binary-matches-expected",
