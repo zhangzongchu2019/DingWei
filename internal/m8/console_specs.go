@@ -498,11 +498,7 @@ func (h *Hub) HandleConsoleTaskProposalPlan(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "invalid task plan", 400)
 		return
 	}
-	dod, _ := json.Marshal([]specAcceptance{{ID: "DOD", Text: strings.TrimSpace(req.DefinitionOfDone)}})
-	if strings.TrimSpace(req.DefinitionOfDone) == "" {
-		dod = []byte("[]")
-	}
-	if err := repo.UpdateConsoleTaskProposalPlan(r.Context(), r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn, string(dod)); err != nil {
+	if err := repo.UpdateConsoleTaskProposalPlan(r.Context(), r.PathValue("proposalID"), platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement, req.Content, req.Status, req.EstimatedHours, req.DependsOn, strings.TrimSpace(req.DefinitionOfDone)); err != nil {
 		code := http.StatusConflict
 		if errors.Is(err, store.ErrConsoleSpecPermission) {
 			code = http.StatusForbidden
@@ -550,14 +546,10 @@ func (h *Hub) HandleConsoleSpecTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	deps, _ := json.Marshal(req.DependsOn)
-	dod, _ := json.Marshal([]specAcceptance{{ID: "DOD", Text: strings.TrimSpace(req.DefinitionOfDone)}})
-	if strings.TrimSpace(req.DefinitionOfDone) == "" {
-		dod = []byte("[]")
-	}
 	now := h.now()
 	proposal := model.ConsoleTaskProposal{ID: "proposal:" + randomHex(16), SchemaVersion: 1, SpecID: r.PathValue("specID"),
 		Title: strings.TrimSpace(req.Title), TaskContent: strings.TrimSpace(req.Content), Status: "planned", EstimatedHours: req.EstimatedHours,
-		DependsOnJSON: string(deps), AcceptanceJSON: string(dod), ReviewID: "manual", ReviewedBy: platformPrincipal(r), ReviewedAt: now, CreatedAt: now}
+		DependsOnJSON: string(deps), AcceptanceJSON: `[]`, DefinitionOfDone: strings.TrimSpace(req.DefinitionOfDone), ReviewID: "manual", ReviewedBy: platformPrincipal(r), ReviewedAt: now, CreatedAt: now}
 	if err := repo.CreateConsoleTaskProposal(r.Context(), proposal, platformPrincipal(r), platformRole(r) == consolePlatformRoleManagement); err != nil {
 		code := http.StatusConflict
 		if errors.Is(err, store.ErrConsoleSpecPermission) {

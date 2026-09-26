@@ -92,7 +92,7 @@ func TestConsoleSpecTaskSplitEndpointCreatesVisibleTaskAndLocksRevision(t *testi
 		t.Fatalf("split code=%d body=%s", rr.Code, rr.Body.String())
 	}
 	tasks, err := hub.Repo.(*store.SQLite).ListConsoleTaskProposals(context.Background(), created.ID)
-	if err != nil || len(tasks) != 1 || tasks[0].Title != "Implement" || tasks[0].EstimatedHours != 16 || !strings.Contains(tasks[0].AcceptanceJSON, "tests pass") {
+	if err != nil || len(tasks) != 1 || tasks[0].Title != "Implement" || tasks[0].EstimatedHours != 16 || tasks[0].AcceptanceJSON != `[]` || tasks[0].DefinitionOfDone != "tests pass" {
 		t.Fatalf("tasks=%+v err=%v", tasks, err)
 	}
 }

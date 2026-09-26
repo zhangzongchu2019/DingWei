@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"os"
 	"testing"
@@ -13,19 +12,44 @@ import (
 
 var taskAcceptanceMutation = flag.String("mutate", "", "task acceptance gate mutation")
 var taskAssignmentDisableForeignKeys bool
+var taskAcceptanceDisableCascade bool
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	switch *taskAcceptanceMutation {
 	case "":
-	case "k7-accept-empty":
-		parseTaskAcceptanceIDs = func(string) ([]string, error) { return nil, nil }
 	case "k8-accept-unknown":
-		checkTaskAcceptanceMember = func([]string, []string) error { return nil }
-	case "drop-insert-acceptance-check":
-		validateTaskAcceptanceForInsert = func(string, string) error { return nil }
-	case "drop-update-acceptance-check":
-		validateTaskAcceptanceForUpdate = func(string, string) error { return nil }
+		skipTaskAcceptanceMembership = true
+	case "drop-task-acceptance-validation":
+		skipTaskAcceptanceValidation = true
+	case "drop-task-acceptance-write":
+		skipTaskAcceptanceWrite = true
+	case "k14-hide-acceptance-read":
+		hideTaskAcceptanceRead = true
+	case "k15-hide-unlinked":
+		treatEveryAcceptanceAsLinked = true
+	case "drop-k15-linked-lookup":
+		skipLinkedAcceptanceLookup = true
+	case "k17-create-dod-in-acceptance":
+		createTaskDefinitionStorage = legacyTaskDefinitionInAcceptance
+	case "k17-update-dod-in-acceptance":
+		updateTaskDefinitionStorage = legacyTaskDefinitionInAcceptance
+	case "k17-presplit-dod-in-acceptance":
+		presplitTaskDefinitionStorage = legacyTaskDefinitionInAcceptance
+	case "drop-k17-create-dod-storage":
+		createTaskDefinitionStorage = dropTaskDefinitionStorage
+	case "drop-k17-update-dod-storage":
+		updateTaskDefinitionStorage = dropTaskDefinitionStorage
+	case "drop-k17-presplit-dod-storage":
+		presplitTaskDefinitionStorage = dropTaskDefinitionStorage
+	case "k18-disable-cascade":
+		taskAcceptanceDisableCascade = true
+	case "k19-accept-proposal-dod":
+		allowProposalTaskDefinition = true
+	case "drop-k19-proposal-check":
+		skipProposalDefinitionCheck = true
+	case "drop-k18-task-delete":
+		skipConsoleSpecTaskDelete = true
 	case "k12-disable-foreign-keys":
 		taskAssignmentDisableForeignKeys = true
 	default:
@@ -52,46 +76,15 @@ func taskAcceptanceProposal(id, specID, acceptance string, now time.Time) model.
 	}
 }
 
-func TestConsoleTaskAcceptanceGateInsert(t *testing.T) {
+func TestConsoleTaskMayStartWithNoAcceptanceLinks(t *testing.T) {
 	db, now := taskAcceptanceGateSpec(t, "acceptance-insert")
-	for i, raw := range []string{`[]`, `null`, `[{"id":"","text":"x"}]`} {
-		err := db.CreateConsoleTaskProposal(context.Background(), taskAcceptanceProposal("invalid-insert-"+string(rune('a'+i)), "acceptance-insert", raw, now), "owner-a", false)
-		if !errors.Is(err, ErrConsoleTaskAcceptance) {
-			t.Errorf("K7 INSERT acceptance=%s err=%v want ErrConsoleTaskAcceptance", raw, err)
-		}
+	proposal := taskAcceptanceProposal("zero-links", "acceptance-insert", `[]`, now)
+	proposal.DefinitionOfDone = "task definition"
+	if err := db.CreateConsoleTaskProposal(context.Background(), proposal, "owner-a", false); err != nil {
+		t.Fatalf("owner ruling permits a task with zero criterion links: %v", err)
 	}
-	for id, raw := range map[string]string{
-		"dod-insert":     `[{"id":"DOD","text":"task definition"}]`,
-		"unknown-insert": `[{"id":"A99","text":"not yet a checked lineage"}]`,
-	} {
-		if err := db.CreateConsoleTaskProposal(context.Background(), taskAcceptanceProposal(id, "acceptance-insert", raw, now), "owner-a", false); err != nil {
-			t.Fatalf("K7 non-empty boundary INSERT %s rejected: %v", id, err)
-		}
-	}
-}
-
-func TestConsoleTaskAcceptanceGateUpdate(t *testing.T) {
-	db, now := taskAcceptanceGateSpec(t, "acceptance-update")
-	valid := `[{"id":"A1","text":"two specs remain independently editable"}]`
-	if err := db.CreateConsoleTaskProposal(context.Background(), taskAcceptanceProposal("update-target", "acceptance-update", valid, now), "owner-a", false); err != nil {
-		t.Fatal(err)
-	}
-	for _, raw := range []string{`[]`, `null`, `[{"id":"","text":"x"}]`} {
-		err := db.UpdateConsoleTaskProposalPlan(context.Background(), "update-target", "owner-a", false, "content", "planned", 1, nil, raw)
-		if !errors.Is(err, ErrConsoleTaskAcceptance) {
-			t.Errorf("K7 UPDATE acceptance=%s err=%v want ErrConsoleTaskAcceptance", raw, err)
-		}
-	}
-	for _, raw := range []string{`[{"id":"DOD","text":"task definition"}]`, `[{"id":"A99","text":"not yet a checked lineage"}]`, valid} {
-		if err := db.UpdateConsoleTaskProposalPlan(context.Background(), "update-target", "owner-a", false, "content", "planned", 1, nil, raw); err != nil {
-			t.Fatalf("K7 non-empty boundary UPDATE %s rejected: %v", raw, err)
-		}
-	}
-}
-
-func TestConsoleTaskAcceptanceK8MembershipPendingOwnerRuling(t *testing.T) {
-	t.Skip("K8 is retained but deliberately not connected: acceptance_json currently stores task DoD")
-	if err := validateTaskAcceptanceAgainstSpec(`[{"id":"A99"}]`, `[{"id":"A1"}]`); !errors.Is(err, ErrConsoleTaskAcceptance) {
-		t.Fatalf("future K8 helper lost membership behavior: %v", err)
+	ids, err := db.ListConsoleSpecTaskAcceptanceIDs(context.Background(), proposal.ID)
+	if err != nil || len(ids) != 0 {
+		t.Fatalf("new task links=%v err=%v want empty", ids, err)
 	}
 }

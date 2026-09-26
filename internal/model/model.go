@@ -457,6 +457,7 @@ type ConsoleTaskProposal struct {
 	DependencyLevel  int       `json:"dependency_level"`
 	Parallel         bool      `json:"parallel"`
 	AcceptanceJSON   string    `json:"acceptance_json"`
+	DefinitionOfDone string    `json:"definition_of_done"`
 	InputAnchorsJSON string    `json:"input_anchors_json"`
 	DeveloperAgentID string    `json:"developer_agent_id,omitempty"`
 	DeveloperAgent   string    `json:"developer_agent,omitempty"`

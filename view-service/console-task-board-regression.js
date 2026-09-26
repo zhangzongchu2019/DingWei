@@ -35,21 +35,28 @@ let shell = rawGoString(path.join(root, 'internal/m8/console_auth.go'), 'console
   .replace('{{CONSOLE_VERSION}}', 'test').replace('{{CONSOLE_COMMIT}}', 'test').replace('{{CONSOLE_VERSION_TEXT}}', 'test');
 let board = rawGoString(path.join(root, 'internal/m8/console_task_board_page.go'), 'consoleTaskBoardPageHTML');
 
-if (mutation === 'k1-hide-task-panel') board = board.replace('<section id=task-panel class=panel>', '<section id=task-panel class=panel hidden>');
-if (mutation === 'k1-drop-initial-load') board = board.replace('\nloadBoard();\n</script>', '\n</script>');
-if (mutation === 'k2-drop-status-column') board = board.replace('<th>状态</th><th>验收标准</th>', '<th>验收标准</th>');
-if (mutation === 'k2-drop-task-table') board = board.replace('<table id=task-table>', '<div id=task-table>');
-if (mutation === 'k3-break-next-page') board = board.replace("specPage++;loadBoard()", "specPage+=0;loadBoard()");
-if (mutation === 'k3-drop-next-load') board = board.replace("specPage++;loadBoard()", "specPage++");
-if (mutation === 'k4-break-acceptance') board = board.replace("if(id)ids.push(id)", "if(false)ids.push(id)");
-if (mutation === 'k4-drop-acceptance-call') board = board.replace("acceptance=acceptanceDisplay(task.acceptance_json)", "acceptance={label:'',title:''}");
-if (mutation === 'k5-invent-placeholder') board = board.replace("td.textContent=task[nameKey]||''", "td.textContent=task[nameKey]||'未知人员'");
-if (mutation === 'k5-drop-empty-normalizer') board = board.replace("td.textContent=task[nameKey]||''", "td.textContent=task[nameKey]||'undefined'");
-if (mutation === 'k6-break-toggle') board = board.replace("selectedSpec=selectedSpec===spec.id?'':spec.id", "selectedSpec=spec.id");
-if (mutation === 'k6-drop-toggle-handler') board = board.replace("tr.onclick=function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1;loadBoard()}", '');
-if (mutation === 'k11-drop-offline-dot') board = board.replace("td.append(dot)", '');
-if (mutation === 'k-status-invent-value') board = board.replace("assigneeCell(task,'reviewer'),taskCell(''),taskCell(acceptance.label", "assigneeCell(task,'reviewer'),taskCell(task.status),taskCell(acceptance.label");
-if (mutation === 'k-status-drop-empty-call') board = board.replace("assigneeCell(task,'reviewer'),taskCell(''),taskCell(acceptance.label", "assigneeCell(task,'reviewer'),taskCell('planned'),taskCell(acceptance.label");
+const boardMutations = new Map([
+  ['k1-hide-task-panel', ['<section id=task-panel class=panel>', '<section id=task-panel class=panel hidden>']],
+  ['k1-drop-initial-load', ['\nloadBoard();\n</script>', '\n</script>']],
+  ['k2-drop-status-column', ['<th>状态</th><th>验收标准</th>', '<th>验收标准</th>']],
+  ['k2-drop-task-table', ['<table id=task-table>', '<div id=task-table>']],
+  ['k3-break-next-page', ['specPage++;loadBoard()', 'specPage+=0;loadBoard()']],
+  ['k3-drop-next-load', ['specPage++;loadBoard()', 'specPage++']],
+  ['k4-break-acceptance', ['if(id)ids.push(id)', 'if(false)ids.push(id)']],
+  ['k4-drop-acceptance-call', ['acceptance=acceptanceDisplay(task.acceptance_json)', "acceptance={label:'',title:''}"]],
+  ['k5-invent-placeholder', ["td.textContent=task[nameKey]||''", "td.textContent=task[nameKey]||'未知人员'"]],
+  ['k5-drop-empty-normalizer', ["td.textContent=task[nameKey]||''", "td.textContent=task[nameKey]||'undefined'"]],
+  ['k6-break-toggle', ["selectedSpec=selectedSpec===spec.id?'':spec.id", 'selectedSpec=spec.id']],
+  ['k6-drop-toggle-handler', ["tr.onclick=function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1;loadBoard()}", '']],
+  ['k11-drop-offline-dot', ['td.append(dot)', '']],
+  ['k-status-invent-value', ["assigneeCell(task,'reviewer'),taskCell(''),taskCell(acceptance.label", "assigneeCell(task,'reviewer'),taskCell(task.status),taskCell(acceptance.label"]],
+  ['k-status-drop-empty-call', ["assigneeCell(task,'reviewer'),taskCell(''),taskCell(acceptance.label", "assigneeCell(task,'reviewer'),taskCell('planned'),taskCell(acceptance.label"]],
+]);
+for (const [name, [needle]] of boardMutations) assert.ok(board.includes(needle), `stale mutation probe ${name}`);
+if (boardMutations.has(mutation)) {
+  const [needle, replacement] = boardMutations.get(mutation);
+  board = board.replace(needle, replacement);
+}
 
 const specs = Array.from({ length: 9 }, (_, i) => ({ id: `spec-${i + 1}`, title: `Spec ${i + 1}`, state: 'final' }));
 const tasks = Array.from({ length: 21 }, (_, i) => ({
