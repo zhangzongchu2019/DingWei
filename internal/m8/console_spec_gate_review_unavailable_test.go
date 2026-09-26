@@ -10,9 +10,7 @@ package m8
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -20,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
@@ -77,12 +76,16 @@ func TestConsoleSpecDetailFailsLoudlyWhenGateReviewTableIsMissing(t *testing.T) 
 	}
 
 	// 制造"迁移 0046 尚未生效"这一个事实,其余一切不动。
-	raw, err := sql.Open("sqlite", fmt.Sprintf("file:%s?_pragma=busy_timeout(5000)", path))
+	raw, err := repo.OpenSQLite(context.Background(), "file:"+filepath.ToSlash(path)+"?_pragma=busy_timeout(5000)")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer raw.Close()
-	if _, err := raw.ExecContext(context.Background(), `DROP TABLE console_spec_gate_review`); err != nil {
+	testAccess, err := repo.NewAccessCtx("test-org", "test-principal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := raw.Exec(context.Background(), testAccess, `DROP TABLE console_spec_gate_review`); err != nil {
 		t.Fatal(err)
 	}
 
@@ -95,4 +98,5 @@ func TestConsoleSpecDetailFailsLoudlyWhenGateReviewTableIsMissing(t *testing.T) 
 	if !strings.Contains(missing.Body.String(), "console spec review unavailable") {
 		t.Fatalf("503 了但不是 gate_review 这一条造成的:body=%s", missing.Body.String())
 	}
+	t.Logf("gate_review table present code=200; dropped code=%d body=%q", missing.Code, strings.TrimSpace(missing.Body.String()))
 }
