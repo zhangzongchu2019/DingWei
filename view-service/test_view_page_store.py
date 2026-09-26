@@ -12,6 +12,9 @@ import view_service as vs
 from view_page_store import ViewPageStore
 
 
+TEST_TIMEOUT = float(os.environ.get("VPS_TEST_TIMEOUT", "2"))
+
+
 class Clock:
     def __init__(self, value=1_800_000_000.0):
         self.value = value
@@ -86,7 +89,7 @@ class ViewPageStoreTest(unittest.TestCase):
         while time.monotonic() < deadline and self.store.page(page["page_id"])["state"] != "revoked":
             time.sleep(0.005)
         stop.set()
-        thread.join(timeout=1)
+        thread.join(timeout=TEST_TIMEOUT)
         self.assertEqual(self.store.page(page["page_id"])["state"], "revoked")
 
     def test_grant_and_locked_orphan_expiry_boundaries(self):
@@ -125,7 +128,7 @@ class ViewPageStoreTest(unittest.TestCase):
             thread.start()
         barrier.wait()
         for thread in threads:
-            thread.join(timeout=2)
+            thread.join(timeout=TEST_TIMEOUT)
         self.assertEqual(sorted(statuses), [200, 200])
         self.assertEqual(self.store.page(page["page_id"])["state"], "unlocked")
         commands, _ = self.store.replay_counts()
@@ -242,17 +245,17 @@ class ControlHMACTest(unittest.TestCase):
                      "X-DW-Request-ID": "msg-9", "X-DW-Signature": signature},
                     method="POST",
                 )
-                with urllib.request.urlopen(req, timeout=2) as response:
+                with urllib.request.urlopen(req, timeout=TEST_TIMEOUT) as response:
                     self.assertEqual(response.status, 200)
                 self.assertEqual(self.store.page(page["page_id"])["state"], "unlocked")
                 with self.assertRaises(urllib.error.HTTPError) as replay:
-                    urllib.request.urlopen(req, timeout=2)
+                    urllib.request.urlopen(req, timeout=TEST_TIMEOUT)
                 self.assertEqual(replay.exception.code, 409)
         finally:
             vs._page_store = old_store
             server.shutdown()
             server.server_close()
-            thread.join(timeout=2)
+            thread.join(timeout=TEST_TIMEOUT)
 
     def test_v2_input_uses_reverse_direction_signature(self):
         captured = {}
@@ -316,7 +319,7 @@ class ControlHMACTest(unittest.TestCase):
             req = urllib.request.Request(f"http://127.0.0.1:{server.server_port}/input", body, headers,
                                          method="POST")
             try:
-                with urllib.request.urlopen(req, timeout=2) as response:
+                with urllib.request.urlopen(req, timeout=TEST_TIMEOUT) as response:
                     return response.status
             except urllib.error.HTTPError as exc:
                 return exc.code
@@ -335,7 +338,7 @@ class ControlHMACTest(unittest.TestCase):
             vs._page_store = old_store
             server.shutdown()
             server.server_close()
-            thread.join(timeout=2)
+            thread.join(timeout=TEST_TIMEOUT)
 
 
 if __name__ == "__main__":

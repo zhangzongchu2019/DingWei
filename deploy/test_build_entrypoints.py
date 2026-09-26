@@ -65,6 +65,14 @@ class BuildEntrypointContractTest(unittest.TestCase):
         self.assertEqual(text.count("timeout=TEST_TIMEOUT"), 3)
         self.assertNotIn("timeout=2", text)
 
+    def test_view_page_store_has_one_configurable_timeout(self):
+        text = self.read("view-service/test_view_page_store.py")
+        self.assertIn('TEST_TIMEOUT = float(os.environ.get("VPS_TEST_TIMEOUT", "2"))', text)
+        self.assertEqual(text.count("timeout=TEST_TIMEOUT"), 7)
+        self.assertNotIn("timeout=1", text)
+        self.assertNotIn("timeout=2", text)
+        self.assertIn("time.sleep(0.005)", text)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
