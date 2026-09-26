@@ -238,8 +238,8 @@ func TestConsoleSpecTwelveStepFlowSingleEditorFinalAndOwnerOnlyTasks(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if finalized == nil || finalized.State != "final" || finalized.CurrentEditorID != "" || finalized.CurrentEditorShort != "甲" {
-		t.Fatalf("finalized spec must automatically return to its creator for task splitting: %+v", finalized)
+	if finalized == nil || finalized.State != "final" || finalized.CurrentEditorID != "" || finalized.CurrentEditorShort != "" {
+		t.Fatalf("finalized spec must have no current editor and must not substitute its creator: %+v", finalized)
 	}
 	if _, err := db.db.ExecContext(ctx, `UPDATE console_principal SET display_name='' WHERE id='owner-a'`); err != nil {
 		t.Fatal(err)
@@ -248,8 +248,8 @@ func TestConsoleSpecTwelveStepFlowSingleEditorFinalAndOwnerOnlyTasks(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fallback == nil || fallback.OwnerShortName != "owner-a" || fallback.CurrentEditorShort != "owner-a" {
-		t.Fatalf("empty human name must fall back to the non-empty principal short identifier: %+v", fallback)
+	if fallback == nil || fallback.OwnerShortName != "owner-a" || fallback.CurrentEditorShort != "" {
+		t.Fatalf("empty creator name may fall back to its id, but final current editor must stay empty: %+v", fallback)
 	}
 	if _, err := db.db.ExecContext(ctx, `UPDATE console_principal SET display_name='甲' WHERE id='owner-a'`); err != nil {
 		t.Fatal(err)
