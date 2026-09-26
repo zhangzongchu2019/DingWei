@@ -64,12 +64,21 @@ verify_package() {
 }
 
 identify_online() {
-  local root flat=0 verbose=0 commits refs scanned=0 hit=0 c f online_path ok online candidate n matches
-  local -a scan_refs=() online_files=()
+  local root flat=0 verbose=0 expect_commit='' commits refs scanned=0 hit=0 c f online_path ok online candidate n matches
+  local expected_match_found=0
+  local -a scan_refs=() online_files=() matching_commits=()
   root="${1:-}"; shift || true
-  [ -n "$root" ] || die "usage: identify-online <online-root> [--flat] [--verbose] [--all|ref ...]"
+  [ -n "$root" ] || die "usage: identify-online <online-root> [--flat] [--verbose] [--expect-commit <sha>] [--all|ref ...]"
   while [ $# -gt 0 ]; do
-    case "$1" in --flat) flat=1 ;; --verbose) verbose=1 ;; --all) scan_refs=(--all) ;; *) scan_refs+=("$1") ;; esac; shift
+    case "$1" in
+      --flat) flat=1; shift ;;
+      --verbose) verbose=1; shift ;;
+      --expect-commit)
+        [ $# -ge 2 ] || die "--expect-commit requires a full commit SHA"
+        expect_commit="$(full_commit "$2")"; shift 2 ;;
+      --all) scan_refs=(--all); shift ;;
+      *) scan_refs+=("$1"); shift ;;
+    esac
   done
   [ "${#scan_refs[@]}" -gt 0 ] || scan_refs=(--all)
   if [ "$flat" -eq 1 ]; then online_files=("${FLAT_FILES[@]}"); else online_files=("${REPO_FILES[@]}"); fi
@@ -98,7 +107,10 @@ identify_online() {
       candidate="$(git cat-file blob "$c:$f" | sha256sum | awk '{print $1}')"
       [ "$online" = "$candidate" ] || { ok=0; break; }
     done
-    if [ "$ok" -eq 1 ]; then echo "MATCH commit=$c"; hit=$((hit + 1)); fi
+    if [ "$ok" -eq 1 ]; then
+      echo "MATCH commit=$c"; matching_commits+=("$c"); hit=$((hit + 1))
+      [ -z "$expect_commit" ] || [ "$c" != "$expect_commit" ] || expected_match_found=1
+    fi
   done <<<"$commits"
   case "$hit" in
     0)
@@ -116,8 +128,17 @@ identify_online() {
       done
       return 1 ;;
     1) echo "IDENTIFIED scanned=$scanned matches=1" ;;
-    *) echo "AMBIGUOUS scanned=$scanned matches=$hit"; return 1 ;;
+    *) echo "AMBIGUOUS scanned=$scanned matches=$hit" ;;
   esac
+  if [ -n "$expect_commit" ]; then
+    if [ "$expected_match_found" -eq 1 ]; then
+      echo "EXPECTED_COMMIT_MATCH expected=$expect_commit matches=$hit"
+      return 0
+    fi
+    echo "EXPECTED_COMMIT_MISMATCH expected=$expect_commit actual_matches=${matching_commits[*]}" >&2
+    return 1
+  fi
+  [ "$hit" -eq 1 ] || return 1
 }
 
 container_hash() { docker exec "$1" sha256sum "/app/vs/$2" | awk '{print $1}'; }

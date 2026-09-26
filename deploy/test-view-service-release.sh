@@ -3,6 +3,24 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TOOL="$ROOT/deploy/view-service-release.sh"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+MUTATION=''
+case "${1:-}" in
+  '') ;;
+  --mutate=*) MUTATION="${1#--mutate=}" ;;
+  *) echo "usage: $0 [--mutate=identify-reject-member|--mutate=identify-accept-nonmember]" >&2; exit 2 ;;
+esac
+if [ -n "$MUTATION" ]; then
+  cp "$TOOL" "$T/view-service-release.sh"; TOOL="$T/view-service-release.sh"
+  case "$MUTATION" in
+    identify-reject-member)
+      grep -Fq '[ "$expected_match_found" -eq 1 ]' "$TOOL" || { echo 'stale mutation probe: identify-reject-member' >&2; exit 2; }
+      sed -i 's/\[ "$expected_match_found" -eq 1 \]/[ "$expected_match_found" -eq 0 ]/' "$TOOL" ;;
+    identify-accept-nonmember)
+      grep -A1 'EXPECTED_COMMIT_MISMATCH' "$TOOL" | grep -Fq 'return 1' || { echo 'stale mutation probe: identify-accept-nonmember' >&2; exit 2; }
+      sed -i '/EXPECTED_COMMIT_MISMATCH/{n;s/return 1/return 0/;}' "$TOOL" ;;
+    *) echo "unknown mutation: $MUTATION" >&2; exit 2 ;;
+  esac
+fi
 git init -q "$T/repo"; git -C "$T/repo" config user.email test@example.invalid; git -C "$T/repo" config user.name test
 mkdir -p "$T/repo/view-service"
 for f in renderer-canary-sse.html view_service.py view_page_store.py; do printf 'v1-%s\n' "$f" >"$T/repo/view-service/$f"; done
@@ -28,10 +46,23 @@ grep -q '^IDENTIFIED ' <<<"$OUT"
 printf 'unrelated\n' >"$T/repo/README"; git -C "$T/repo" add README; git -C "$T/repo" commit -qm unrelated
 if (cd "$T/repo" && "$TOOL" identify-online "$T/pkg" HEAD) >"$T/ambiguous"; then exit 1; fi
 grep -q '^AMBIGUOUS ' "$T/ambiguous"
+# With an explicit release anchor, ambiguity is informational: the audit passes
+# exactly when that anchor is one of the commits with matching runtime bytes.
+OUT="$(cd "$T/repo" && "$TOOL" identify-online "$T/pkg" --expect-commit "$C2" HEAD)"
+grep -q '^AMBIGUOUS ' <<<"$OUT"
+grep -q "^EXPECTED_COMMIT_MATCH expected=$C2 matches=2$" <<<"$OUT"
+if (cd "$T/repo" && "$TOOL" identify-online "$T/pkg" --expect-commit "$C1" HEAD) >"$T/expected-mismatch" 2>&1; then
+  echo "expected-commit negative unexpectedly passed: expected=$C1" >&2; exit 1
+fi
+grep -q "^EXPECTED_COMMIT_MISMATCH expected=$C1 actual_matches=.*$C2" "$T/expected-mismatch"
 
 printf 'manual bypass\n' >"$T/pkg/view-service/view_service.py"
 if (cd "$T/repo" && "$TOOL" identify-online "$T/pkg" HEAD) >"$T/not-in-repo"; then exit 1; fi
 grep -q '^NOT_IN_REPO ' "$T/not-in-repo"
+if (cd "$T/repo" && "$TOOL" identify-online "$T/pkg" --expect-commit "$C2" HEAD) >"$T/not-in-repo-expected"; then
+  echo 'NOT_IN_REPO unexpectedly passed with --expect-commit' >&2; exit 1
+fi
+grep -q '^NOT_IN_REPO ' "$T/not-in-repo-expected"
 
 (cd "$T/repo" && "$TOOL" package "$C1" "$T/old")
 if (cd "$T/repo" && "$TOOL" verify-package "$T/old" "$C2") >/dev/null; then exit 1; fi
