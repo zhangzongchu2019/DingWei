@@ -481,6 +481,31 @@ type ConsoleTaskProposal struct {
 	CreatedAt        time.Time `json:"created_at"`
 }
 
+// ConsoleTaskDriverStart is the durable seven-part project-start record. Token
+// values are deliberately absent; TokenInstructions describes how an Agent
+// obtains its own short-lived capability.
+type ConsoleTaskDriverStart struct {
+	SpecID                string     `json:"spec_id"`
+	Revision              int        `json:"revision"`
+	ContentSHA256         string     `json:"content_sha256"`
+	RepositoryName        string     `json:"repository_name"`
+	BranchName            string     `json:"branch_name"`
+	Schedule              string     `json:"schedule"`
+	TaskEndpoint          string     `json:"task_endpoint"`
+	TokenInstructions     string     `json:"token_instructions"`
+	AnnouncedBy           string     `json:"announced_by"`
+	AnnouncedAt           time.Time  `json:"announced_at"`
+	OwnerReviewedAt       *time.Time `json:"owner_reviewed_at,omitempty"`
+	DeploymentRequestedAt *time.Time `json:"deployment_requested_at,omitempty"`
+}
+
+type ConsoleTaskPauseReport struct {
+	SpecID     string    `json:"spec_id"`
+	Revision   int       `json:"revision"`
+	AgentID    string    `json:"agent_id"`
+	ReportedAt time.Time `json:"reported_at"`
+}
+
 // ConsoleSpecPresplitRequest persists the one-shot Agent pre-split lifecycle.
 // Agent identity is resolved from its authenticated session connection; these
 // fields are server-owned and never accepted from callback JSON.

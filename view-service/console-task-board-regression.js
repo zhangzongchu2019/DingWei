@@ -7,7 +7,7 @@ const assert = new Proxy(assertModule, {
     return typeof value === 'function' ? (...args) => { assertionCount += 1; return value.apply(target, args); } : value;
   },
 });
-const MIN_ASSERTIONS = 40;
+const MIN_ASSERTIONS = 44;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -25,6 +25,7 @@ const allowedMutations = new Set([
   'k10-include-offline', 'k10-drop-online-options',
   'k11-clear-offline', 'k11-drop-offline-dot',
   'k-status-invent-value', 'k-status-drop-empty-call',
+  'theme-drop-receiver',
 ]);
 if (!allowedMutations.has(mutation)) throw new Error(`unknown mutation: ${mutation}`);
 
@@ -58,8 +59,9 @@ const boardMutations = new Map([
   ['k6-break-toggle', ["selectedSpec=selectedSpec===spec.id?'':spec.id", 'selectedSpec=spec.id']],
   ['k6-drop-toggle-handler', ["tr.onclick=function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1;loadBoard()}", '']],
   ['k11-drop-offline-dot', ['td.append(dot)', '']],
-  ['k-status-invent-value', ["taskCell(String(task.passed_cases||0)+'/'+String(task.total_cases||1))", "taskCell('0/0')"]],
-  ['k-status-drop-empty-call', ["taskCell(String(task.passed_cases||0)+'/'+String(task.total_cases||1))", "taskCell('')"]],
+  ['k-status-invent-value', ["return {text:String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}", "return {text:'0/0',problem:false}"]],
+  ['k-status-drop-empty-call', ["return {text:String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}", "return {text:'',problem:false}"]],
+  ['theme-drop-receiver', ['dwTaskInitTheme();', '']],
 ]);
 for (const [name, [needle]] of boardMutations) assert.ok(board.includes(needle), `stale mutation probe ${name}`);
 if (boardMutations.has(mutation)) {
@@ -153,6 +155,14 @@ async function main() {
   const frame = page.frameLocator('iframe[title="任务管理"]');
   const reloadAndSelect = async () => { const boardFrame = page.frames().find((candidate) => candidate.url().includes('/console/tasks')); await boardFrame.goto(boardFrame.url()); await frame.locator('#spec-list tr').first().waitFor(); await frame.locator('#spec-list tr').first().click(); await frame.locator('#task-list tr').first().waitFor(); };
   await frame.locator('#spec-list tr').first().waitFor();
+  assert.strictEqual(await frame.locator('html').evaluate(()=>window.dwTaskThemeChannel!==null),true,'任务管理页公共主题接收器必须已连接');
+  await page.evaluate(()=>{const c=new BroadcastChannel('dw-theme');c.postMessage({type:'theme',theme:'light'});c.close();});
+  await frame.locator('html[data-theme="light"]').waitFor();
+  const lightBackground=await frame.locator('body').evaluate((body)=>getComputedStyle(body).backgroundColor);
+  await page.evaluate(()=>{const c=new BroadcastChannel('dw-theme');c.postMessage({type:'theme',theme:'dark'});c.close();});
+  await frame.locator('html[data-theme="dark"]').waitFor();
+  assert.strictEqual(await frame.locator('html').getAttribute('data-theme'),'dark','任务管理页必须接收公共暗色主题');
+  assert.notStrictEqual(await frame.locator('body').evaluate((body)=>getComputedStyle(body).backgroundColor),lightBackground,'任务管理页暗色 computed background 必须真实变化');
   assert.strictEqual(await frame.locator('#spec-list tr').first().evaluate((row) => typeof row.onclick === 'function'), true, 'K6 spec row toggle handler installed');
   assert.strictEqual(await frame.locator('#spec-panel').isVisible(), true, 'K1 spec block visible');
   assert.strictEqual(await frame.locator('#task-panel').isVisible(), true, 'K1 task block visible');
@@ -174,13 +184,11 @@ async function main() {
   assert.strictEqual(await firstDeveloper.locator('option[value="agent-dev"]').count(), 1, 'K10 online Agent appears in new assignment options');
   assert.strictEqual(await firstDeveloper.locator('option[value="agent-offline"]').count(), 0, 'K10 offline Agent absent from new assignment options');
   await firstDeveloper.selectOption('agent-dev');
+  await frame.locator('#task-list tr').first().locator('select.reviewer-agent').selectOption('agent-review');
+  await frame.locator('#finish-tasks').click();
   await frame.locator('#task-status').filter({ hasText: '已保存' }).waitFor();
   await reloadAndSelect();
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(1).textContent(), 'developer-session', 'K9 developer survives refresh');
-  await frame.locator('#edit-tasks').click();
-  await frame.locator('#task-list tr').first().locator('select.reviewer-agent').selectOption('agent-review');
-  await frame.locator('#task-status').filter({ hasText: '已保存' }).waitFor();
-  await reloadAndSelect();
   assert.strictEqual(await frame.locator('#task-list tr').first().locator('td').nth(2).textContent(), 'reviewer-session', 'K9 reviewer survives refresh');
   await page.request.post(base + '/fixture/developer-offline');
   await reloadAndSelect();

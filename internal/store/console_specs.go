@@ -19,6 +19,7 @@ var (
 	ErrConsoleSpecEditDenied      = errors.New("console spec editing denied")
 	ErrConsoleSpecRevisionLocked  = errors.New("console spec revision locked by downstream reference")
 	ErrConsoleSpecPermission      = errors.New("console spec permission denied")
+	ErrConsoleSpecSelfTransfer    = errors.New("无需转给自己；请直接提交复核")
 	ErrConsoleSpecFinal           = errors.New("console spec is finalized")
 	ErrConsoleSpecGate            = errors.New("console spec generation gate incomplete")
 	ErrConsoleSpecReviewerInvalid = errors.New("console spec review agent is missing, inactive or unknown")
@@ -27,6 +28,8 @@ var (
 	ErrConsoleTaskDefinition      = errors.New("task proposal cannot store a task definition of done")
 	ErrConsoleTaskCasePermission  = errors.New("console task case actor is not assigned to this task")
 	ErrConsoleTaskCaseUnknown     = errors.New("console task case is not linked to this task")
+	ErrConsoleTaskAssigneePair    = errors.New("研发与验收必须成对指定")
+	ErrConsoleTaskAssigneeSame    = errors.New("研发与验收必须由不同 Agent 承担")
 )
 
 const appendConsoleSpecRevisionUpdateSQL = `UPDATE console_spec SET current_revision=?,updated_at=? WHERE id=? AND current_editor_id=? AND archived=0 AND editing_closed=0 AND current_revision=?`
@@ -176,6 +179,9 @@ func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetS
 	if err != nil {
 		return err
 	}
+	if target.ID == actor {
+		return ErrConsoleSpecSelfTransfer
+	}
 	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET state=?,current_editor_id=?,updated_at=?
 		WHERE id=? AND current_editor_id=? AND state<>'final' AND archived=0`, nextState, target.ID, now.UTC().Format(time.RFC3339Nano), specID, actor)
 	if err != nil {
@@ -186,6 +192,21 @@ func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetS
 		return ErrConsoleSpecPermission
 	}
 	return tx.Commit()
+}
+
+// SubmitConsoleSpecReview enters review without inventing a transfer. The
+// current editor remains unchanged so a legitimate one-person project can run
+// Agent review and finalize under the existing gates.
+func (s *SQLite) SubmitConsoleSpecReview(ctx context.Context, specID, actor string, now time.Time) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET state='review',updated_at=? WHERE id=? AND current_editor_id=? AND state='editing' AND archived=0`, now.UTC().Format(time.RFC3339Nano), specID, actor)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return ErrConsoleSpecPermission
+	}
+	return nil
 }
 
 type storedSpecCriterion struct {
@@ -1031,10 +1052,18 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 }
 
 func (s *SQLite) UpdateConsoleSpecTaskAssignees(ctx context.Context, taskID, principalID, developerAgentID, reviewerAgentID string) error {
+	developerAgentID = strings.TrimSpace(developerAgentID)
+	reviewerAgentID = strings.TrimSpace(reviewerAgentID)
+	if (developerAgentID == "") != (reviewerAgentID == "") {
+		return ErrConsoleTaskAssigneePair
+	}
+	if developerAgentID != "" && developerAgentID == reviewerAgentID {
+		return ErrConsoleTaskAssigneeSame
+	}
 	res, err := s.db.ExecContext(ctx, `UPDATE console_spec_task
 		SET developer_agent_id=NULLIF(?,''),reviewer_agent_id=NULLIF(?,'')
 		WHERE id=? AND EXISTS(SELECT 1 FROM console_spec s WHERE s.id=console_spec_task.spec_id AND s.principal_id=? AND s.state='final' AND s.task_state='splitting')`,
-		strings.TrimSpace(developerAgentID), strings.TrimSpace(reviewerAgentID), taskID, principalID)
+		developerAgentID, reviewerAgentID, taskID, principalID)
 	if err != nil {
 		return err
 	}

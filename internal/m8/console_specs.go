@@ -36,10 +36,19 @@ type consoleSpecRepository interface {
 	CreateConsoleTaskProposal(context.Context, model.ConsoleTaskProposal, string, bool) error
 	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string, string) error
 	UpdateConsoleSpecTaskAssignees(context.Context, string, string, string, string) error
+	StartConsoleTaskDriver(context.Context, model.ConsoleTaskDriverStart) error
+	ListConsoleTasksForAgent(context.Context, string) ([]model.ConsoleTaskProposal, error)
+	RecordConsoleTaskPause(context.Context, string, int, string, time.Time) error
+	ConsoleTaskPauseReported(context.Context, string, int, string) (bool, error)
+	ListConsoleTaskPauseReports(context.Context, string, int) ([]model.ConsoleTaskPauseReport, error)
+	ReviewConsoleTaskDriver(context.Context, string, int, string, time.Time) error
+	RequestConsoleTaskDeployment(context.Context, string, int, string, time.Time) error
+	ConsoleTaskDriverStart(context.Context, string, int) (*model.ConsoleTaskDriverStart, error)
 	ConsoleSpecTaskCaseProgress(context.Context, string) (int, int, error)
 	DeleteConsoleSpecTask(context.Context, string, string) error
 	ListActiveConsolePrincipals(context.Context) ([]model.ConsolePrincipal, error)
 	TransferConsoleSpec(context.Context, string, string, string, string, time.Time) error
+	SubmitConsoleSpecReview(context.Context, string, string, time.Time) error
 	FinalizeConsoleSpec(context.Context, string, string, time.Time) error
 	SaveConsoleSpecGateReview(context.Context, string, string, model.ConsoleSpecGateReview, time.Time) error
 	ConsoleSpecGateReview(context.Context, string, int) (*model.ConsoleSpecGateReview, error)
@@ -646,6 +655,8 @@ func (h *Hub) HandleConsoleSpecWorkflow(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		err = repo.TransferConsoleSpec(r.Context(), r.PathValue("specID"), principal, strings.TrimSpace(req.TargetShortName), req.State, h.now())
+	case "submit-review":
+		err = repo.SubmitConsoleSpecReview(r.Context(), r.PathValue("specID"), principal, h.now())
 	case "review":
 		var req specGateReviewRequest
 		dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 128<<10))
