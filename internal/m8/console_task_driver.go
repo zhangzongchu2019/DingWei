@@ -114,7 +114,7 @@ func (h *Hub) HandleAgentConsoleTasks(w http.ResponseWriter, r *http.Request) {
 	}
 	sort.Slice(filtered, func(i, j int) bool { return filtered[i].ID < filtered[j].ID })
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"status": status, "message": message, "tasks": filtered})
+	_ = json.NewEncoder(w).Encode(map[string]any{"start": start, "status": status, "message": message, "tasks": filtered})
 }
 
 func (h *Hub) HandleConsoleTaskDriverReview(w http.ResponseWriter, r *http.Request) {

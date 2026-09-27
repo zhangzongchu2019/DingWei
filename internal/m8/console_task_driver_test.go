@@ -94,6 +94,23 @@ func taskIDsFromResponse(t *testing.T, rr *httptest.ResponseRecorder) []string {
 	return ids
 }
 
+func assertTaskStartDeliveredWithoutSecret(t *testing.T, rr *httptest.ResponseRecorder) {
+	t.Helper()
+	var body struct {
+		Start model.ConsoleTaskDriverStart `json:"start"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	v := body.Start
+	if v.SpecID == "" || v.Revision == 0 || v.ContentSHA256 == "" || v.RepositoryName == "" || v.BranchName == "" || v.Schedule == "" || v.TaskEndpoint == "" || v.TokenInstructions == "" {
+		t.Fatalf("C1 Agent did not receive all seven start parts: %+v", v)
+	}
+	if taskStartSecret.MatchString(rr.Body.String()) {
+		t.Fatalf("C2 Agent start response contains credential material: %s", rr.Body.String())
+	}
+}
+
 func TestAgentTaskDriverUsesTokenActorAndPersistsPauseReport(t *testing.T) {
 	hub, specID, agents := taskDriverHTTPFixture(t)
 	a := callAgentTasks(t, hub, specID, agents["a"], agents["b"])
@@ -103,6 +120,7 @@ func TestAgentTaskDriverUsesTokenActorAndPersistsPauseReport(t *testing.T) {
 		t.Fatalf("C3 task calls a=%d %s b=%d %s", a.Code, a.Body.String(), b.Code, b.Body.String())
 	}
 	aIDs, aUnclaimedIDs, bIDs := taskIDsFromResponse(t, a), taskIDsFromResponse(t, aWithoutClaim), taskIDsFromResponse(t, b)
+	assertTaskStartDeliveredWithoutSecret(t, a)
 	if len(aUnclaimedIDs) != 1 || len(bIDs) != 1 || aUnclaimedIDs[0] == bIDs[0] {
 		t.Fatalf("C3 token change did not change sets: a=%v b=%v", aUnclaimedIDs, bIDs)
 	}
