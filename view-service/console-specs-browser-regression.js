@@ -15,7 +15,7 @@ const assert = new Proxy(assertModule, {
   },
 });
 // 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
-const MIN_ASSERTIONS = 200;
+const MIN_ASSERTIONS = 203;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -75,6 +75,8 @@ function productionHTML() {
   if (MUTATION === 'owner-hardcoded-names') mutateHTML("var data=await r.json();select.replaceChildren();", "var data=await r.json();data.editors=[{short_name:'lbl'},{short_name:'th'}];select.replaceChildren();");
   if (MUTATION === 'owner-copy-sticky') mutateHTML("statusEl._copyTimer=setTimeout(function(){statusEl.hidden=true;statusEl.textContent='';},5000);", 'statusEl._copyTimer=0;');
   if (MUTATION === 'owner-transfer-disconnected') mutateHTML("specAction(transferSpec.id,'workflow/transfer'", "specAction(transferSpec.id,'workflow/not-transfer'");
+  if (MUTATION === 'owner-transfer-first-target') mutateHTML('transferSpec=spec;', 'transferSpec=specs[0];');
+  if (MUTATION === 'owner-transfer-no-success') mutateHTML("document.getElementById('list-transfer-notice').textContent='已把《'+selected.title+'》转为'+(state==='review'?'审核':'修改')+'，交给 '+targetShort;", "document.getElementById('list-transfer-notice').textContent='';");
   if (MUTATION === 'owner-delete-action') mutateHTML("var copyLink=document.createElement('button');", "var forbidden=document.createElement('button');forbidden.className='delete-spec';forbidden.textContent='删除';action.append(forbidden);var copyLink=document.createElement('button');");
   if (MUTATION === 'owner-expand-nonexclusive') mutateHTML("document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};", "document.getElementById('show-new-spec').onclick=function(){document.getElementById('new-screen').hidden=false;};");
   if (MUTATION === 'owner-empty-restore-all') mutateHTML("document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');refreshSpecs();};", "document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');document.getElementById('detail-screen').hidden=false;document.getElementById('transfer-screen').hidden=false;refreshSpecs();};");
@@ -138,7 +140,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', 'sform-source-back', 'sform-id-editable', 'sform-checked-at-editable', 'sform-generator-disabled', 'sform-creator-back-to-owner', 'sform-protected-words-renamed', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-transfer-first-target', 'owner-transfer-no-success', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', 'sform-source-back', 'sform-id-editable', 'sform-checked-at-editable', 'sform-generator-disabled', 'sform-creator-back-to-owner', 'sform-protected-words-renamed', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -250,7 +252,7 @@ async function main() {
     }
     if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'zzc',display_name:'张宗楚',value:'张宗楚'},{short_name:'lbl',display_name:'李炳隆',value:'李炳隆'},{short_name:'th',display_name:'唐虹',value:'唐虹'},{short_name:'',display_name:'多角色业主',value:'多角色业主'}]}));return;}
     const workflowTransfer=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/workflow\/transfer$/);
-    if(workflowTransfer&&req.method==='POST'){transferWrites.push({specID:workflowTransfer[1],body:await requestBody(req)});res.writeHead(204);res.end();return;}
+    if(workflowTransfer&&req.method==='POST'){const body=await requestBody(req),index=specs.findIndex((item)=>item.id===workflowTransfer[1]);transferWrites.push({specID:workflowTransfer[1],body});if(index>=0){const item=specs.splice(index,1)[0];item.state=body.state;item.current_editor_short_name=body.target_short_name;specs.unshift(item);}res.writeHead(204);res.end();return;}
     const presplitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/presplit$/);
     if(presplitMatch&&req.method==='GET'){const agents=presplitMode==='no-agents'?[]:[{id:'agent-a',session_name:'owner-agent-2642'}];res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({agents,request:presplitRequest}));return;}
     if(presplitMatch&&req.method==='POST'){await requestBody(req);if(presplitMode==='no-reply'){presplitRequest={request_id:'r-no-reply',status:'failed',failure_reason:'no reply'};res.writeHead(502);res.end('预拆失败，可手工添加');return;}const failure={timeout:'timeout',invalid:'invalid task format',restart:'restart'}[presplitMode];presplitRequest={request_id:'r-'+presplitMode,status:failure?'failed':'completed',failure_reason:failure||''};if(!failure)presplitGenerated=true;res.writeHead(202,{'Content-Type':'application/json'});res.end(JSON.stringify({request_id:presplitRequest.request_id,status:'pending'}));return;}
@@ -362,8 +364,8 @@ async function main() {
     assert.deepStrictEqual(await page.locator('#spec-list tr td:nth-child(2)').allTextContents(), ['修改','修改'], '状态列必须用业主图里的中文状态');
     assert.strictEqual(await page.locator('.delete-spec,.archive-spec').count(),0,'业主已裁定不提供删除或归档入口');
     assert.strictEqual((html.match(/['"](?:lbl|th)['"]/g)||[]).length,0,'前端不得硬编码业主 lbl/th');
-    const firstAction=page.locator('#spec-list [data-title="Spec A"] .spec-action');
-    await firstAction.locator('.transfer-spec').click();
+    const secondAction=page.locator('#spec-list [data-title="Spec B"] .spec-action');
+    await secondAction.locator('.transfer-spec').click();
     await page.locator('#list-transfer-owner option').last().waitFor({state:'attached'});
     const transferGeometry = await page.evaluate(() => Array.from(document.querySelectorAll('.spec-transfer-choice')).map((label) => {
       const radio = label.querySelector('input[type=radio]').getBoundingClientRect();
@@ -382,7 +384,10 @@ async function main() {
     await page.locator('input[name="list-transfer-state"][value="review"]').check();
     await page.locator('#confirm-list-transfer').click();
     await page.waitForTimeout(300);
-    assert.deepStrictEqual(transferWrites, [{specID:'spec-1',body:{target_short_name:'李炳隆',state:'review'}}], '转审核必须接到真实 workflow/transfer 请求');
+    assert.deepStrictEqual(transferWrites, [{specID:'spec-2',body:{target_short_name:'李炳隆',state:'review'}}], '点第二份的转审核必须携带第二份 spec id，不能永远取第一行');
+    assert.strictEqual(await page.locator('#list-transfer-notice').textContent(), '已把《Spec B》转为审核，交给 lbl', '转审核成功必须点名用户所选标题与接收短名');
+    assert.ok(!(await page.locator('#list-transfer-notice').textContent()).includes('Spec A'), '点第二份时成功文案不得出现第一份标题');
+    assert.strictEqual(await page.locator('#spec-list .spec-transfer-highlight').getAttribute('data-spec-id'), 'spec-2', '列表重排后必须高亮刚操作的 spec');
     const screenState=async()=>page.evaluate(()=>({list:!document.getElementById('list-screen').hidden,newSpec:!document.getElementById('new-screen').hidden,detail:!document.getElementById('detail-screen').hidden,transfer:!document.getElementById('transfer-screen').hidden}));
     await page.evaluate(()=>{globalThis.__testSpecExclusive=true;});
     try {
