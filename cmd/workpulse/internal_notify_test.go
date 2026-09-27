@@ -206,3 +206,26 @@ func TestNotifySocketStopCannotDeleteNewListenerAtSamePath(t *testing.T) {
 		t.Fatalf("old stop removed newer listener socket: %v", err)
 	}
 }
+
+func TestNotifySocketFirstStopPreservesNewListenerAtReboundPath(t *testing.T) {
+	sock := filepath.Join(t.TempDir(), "notify.sock")
+	oldStop, err := serveNotifySocket(sock, http.NotFoundHandler(), nilLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Keep the old listener open, but remove only its directory entry. A new
+	// process/listener can now bind the same pathname while oldStop has never
+	// run, so sync.Once cannot mask the SameFile ownership check.
+	if err := os.Remove(sock); err != nil {
+		t.Fatal(err)
+	}
+	newListener, err := net.Listen("unix", sock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer newListener.Close()
+	oldStop()
+	if _, err := os.Stat(sock); err != nil {
+		t.Fatalf("old listener first stop removed rebound socket owned by new listener: %v", err)
+	}
+}
