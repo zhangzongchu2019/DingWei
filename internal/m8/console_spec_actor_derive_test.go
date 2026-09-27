@@ -44,6 +44,9 @@ func TestConsoleSpecAgentCapabilityAttestsActorAndRejectsPublicIdentity(t *testi
 	if err := db.UpsertConsoleAgent(ctx, agent); err != nil {
 		t.Fatal(err)
 	}
+	if err := db.UpsertConsoleAgent(ctx, model.ConsoleAgent{ID: "agent-forged", KeyID: "public-other-key", SessionName: "agent-forged-2642", OwnerPrincipal: "owner-a", Active: true}); err != nil {
+		t.Fatal(err)
+	}
 	if err := db.UpsertConsoleAgentGrant(ctx, model.ConsoleAgentGrant{PrincipalID: "owner-a", AgentID: agent.ID, Permission: "interact", Active: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -66,6 +69,8 @@ func TestConsoleSpecAgentCapabilityAttestsActorAndRejectsPublicIdentity(t *testi
 		}
 		if includeHumanCapability {
 			req.Header.Set("X-DW-Console-Capability", capabilityRaw)
+		} else if includeServiceSecret {
+			req.Header.Set("X-DW-Console-Capability", "not-issued-by-human-session")
 		}
 		rr := httptest.NewRecorder()
 		handler(rr, req)
