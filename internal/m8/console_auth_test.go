@@ -1,13 +1,59 @@
 package m8
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
+
+func TestConsoleCapabilitySignerAllowsOnlyRegisteredAgentRoutePages(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.consoleAuthEnabled = true
+	now := time.Now()
+	principal := model.ConsolePrincipal{ID: "owner", Provider: "feishu", ProviderIssuer: "app", ProviderSubject: "owner", DisplayName: "owner", Active: true}
+	if err := db.UpsertConsolePrincipal(ctx, principal); err != nil {
+		t.Fatal(err)
+	}
+	session := model.ConsoleSession{ID: "login", PrincipalID: "owner", TokenHash: hashConsoleToken("login-token"), ExpiresAt: now.Add(time.Hour)}
+	if err := db.CreateConsoleSession(ctx, session, now); err != nil {
+		t.Fatal(err)
+	}
+	agent := model.ConsoleAgent{ID: "agent", KeyID: "key", SessionName: "session", OwnerPrincipal: "owner", Active: true}
+	if err := db.UpsertConsoleAgent(ctx, agent); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertConsoleAgentGrant(ctx, model.ConsoleAgentGrant{PrincipalID: "owner", AgentID: agent.ID, Permission: "interact", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	call := func(pageID string) *httptest.ResponseRecorder {
+		raw, _ := json.Marshal(map[string]string{"page_id": pageID})
+		req := httptest.NewRequest(http.MethodPost, "/api/console/agents/session/capability", bytes.NewReader(raw))
+		req = req.WithContext(context.WithValue(req.Context(), consoleSessionContextKey{}, session))
+		req = req.WithContext(context.WithValue(req.Context(), consoleAgentContextKey{}, agent))
+		rr := httptest.NewRecorder()
+		hub.HandleConsoleCapability(rr, req)
+		return rr
+	}
+	for _, pageID := range []string{ConsoleAgentCapabilitySpecsNew, ConsoleAgentSpecCapabilityPage("spec-1"), ConsoleAgentCapabilityTasks} {
+		rr := call(pageID)
+		if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"page_id":"`+pageID+`"`) {
+			t.Fatalf("registered page %q code=%d body=%s", pageID, rr.Code, rr.Body.String())
+		}
+	}
+	for _, pageID := range []string{"arbitrary-future-route", "console-spec:", "console-spec:spec/other"} {
+		rr := call(pageID)
+		if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "page_id is not an allowed Agent capability") {
+			t.Fatalf("unregistered page %q code=%d body=%s", pageID, rr.Code, rr.Body.String())
+		}
+	}
+}
 
 func TestUnifiedConsoleAuthCoversEveryViewRouteAndSeparatesSharedKey(t *testing.T) {
 	hub, db, ctx := newTestHub(t)

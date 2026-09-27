@@ -626,6 +626,31 @@ func (h *Hub) HandleConsoleAgents(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"agents": out})
 }
 
+const (
+	ConsoleAgentCapabilitySpecsNew = "console-specs:new"
+	ConsoleAgentCapabilityTasks    = "console-tasks"
+)
+
+func ConsoleAgentSpecCapabilityPage(specID string) string {
+	return "console-spec:" + strings.TrimSpace(specID)
+}
+
+// ConsoleAgentCapabilityPageAllowed is the single registry shared by the
+// signing endpoint and Agent route wiring. Adding an Agent route requires an
+// explicit capability namespace decision here; arbitrary caller-defined page
+// ids are never signed.
+func ConsoleAgentCapabilityPageAllowed(pageID string) bool {
+	pageID = strings.TrimSpace(pageID)
+	if pageID == ConsoleAgentCapabilitySpecsNew || pageID == ConsoleAgentCapabilityTasks {
+		return true
+	}
+	if !strings.HasPrefix(pageID, "console-spec:") {
+		return false
+	}
+	specID := strings.TrimPrefix(pageID, "console-spec:")
+	return specID != "" && !strings.ContainsAny(specID, "/?#")
+}
+
 func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
 	// 🔴 本 handler 挂在 RequireConsoleAgent 下，而该守卫在开关关闭时**仍然放行**
 	//    （它同时包着 /view/* 这条回滚路径，**不能**改成拒绝）
@@ -645,6 +670,11 @@ func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
 	}
 	if json.NewDecoder(r.Body).Decode(&req) != nil || strings.TrimSpace(req.PageID) == "" {
 		http.Error(w, "page_id required", 400)
+		return
+	}
+	req.PageID = strings.TrimSpace(req.PageID)
+	if !ConsoleAgentCapabilityPageAllowed(req.PageID) {
+		http.Error(w, "page_id is not an allowed Agent capability", http.StatusForbidden)
 		return
 	}
 	raw, err := randomConsoleToken()

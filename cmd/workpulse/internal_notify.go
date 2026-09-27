@@ -4,12 +4,15 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/bus"
@@ -107,16 +110,33 @@ func formatInternalAlertText(text string) string {
 // 「内网 TCP 端口不可达」在本部署形态下**被实测证伪**,
 // 而**文件权限是不依赖网络拓扑的边界**。
 func serveNotifySocket(path string, handler http.Handler, logger *slog.Logger) (func(), error) {
+	return serveNotifySocketWith(path, handler, logger, net.Listen, os.Chmod)
+}
+
+func serveNotifySocketWith(path string, handler http.Handler, logger *slog.Logger, listen func(string, string) (net.Listener, error), chmod func(string, os.FileMode) error) (func(), error) {
 	// 陈旧 socket 文件会让 Listen 失败;先清掉(它不含任何状态)。
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
-	ln, err := net.Listen("unix", path)
+	ln, err := listen("unix", path)
 	if err != nil {
 		return nil, err
 	}
+	// Own unlinking explicitly. net.UnixListener's default unlink-on-close can
+	// otherwise delete a newer listener that has already rebound this path.
+	if unix, ok := ln.(*net.UnixListener); ok {
+		unix.SetUnlinkOnClose(false)
+	}
 	// 🔴 0600:只有服务运行身份可用。**这是本出口唯一的边界,不可放宽。**
-	if err := os.Chmod(path, 0o600); err != nil {
+	if err := chmod(path, 0o600); err != nil {
+		_ = ln.Close()
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, fmt.Errorf("Listen 之后 socket 文件被删除（疑为上一个 listener 的 unlink 迟到）: %w", err)
+		}
+		return nil, err
+	}
+	owned, err := os.Stat(path)
+	if err != nil {
 		_ = ln.Close()
 		return nil, err
 	}
@@ -127,5 +147,14 @@ func serveNotifySocket(path string, handler http.Handler, logger *slog.Logger) (
 		}
 	}()
 	logger.Info("notify socket listening", "path", path)
-	return func() { _ = srv.Close(); _ = os.Remove(path) }, nil
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			_ = srv.Close()
+			current, err := os.Stat(path)
+			if err == nil && os.SameFile(owned, current) {
+				_ = os.Remove(path)
+			}
+		})
+	}, nil
 }

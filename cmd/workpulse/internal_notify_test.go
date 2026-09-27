@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -173,4 +174,35 @@ func TestNotifySocketPermissions(t *testing.T) {
 		t.Fatalf("陈旧 socket 应被清理后重建,实得错误: %v", err)
 	}
 	stop2()
+}
+
+func TestNotifySocketChmodENOENTExplainsLateUnlink(t *testing.T) {
+	sock := filepath.Join(t.TempDir(), "notify.sock")
+	_, err := serveNotifySocketWith(sock, http.NotFoundHandler(), nilLogger(), net.Listen, func(path string, mode os.FileMode) error {
+		if removeErr := os.Remove(path); removeErr != nil {
+			return removeErr
+		}
+		return os.Chmod(path, mode)
+	})
+	if err == nil || !strings.Contains(err.Error(), "Listen 之后 socket 文件被删除（疑为上一个 listener 的 unlink 迟到）") {
+		t.Fatalf("ENOENT diagnostic=%v", err)
+	}
+}
+
+func TestNotifySocketStopCannotDeleteNewListenerAtSamePath(t *testing.T) {
+	sock := filepath.Join(t.TempDir(), "notify.sock")
+	stop, err := serveNotifySocket(sock, http.NotFoundHandler(), nilLogger())
+	if err != nil {
+		t.Fatal(err)
+	}
+	stop()
+	newListener, err := net.Listen("unix", sock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer newListener.Close()
+	stop() // a late duplicate cleanup from the old server must be a no-op
+	if _, err := os.Stat(sock); err != nil {
+		t.Fatalf("old stop removed newer listener socket: %v", err)
+	}
 }

@@ -4,7 +4,9 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -86,6 +88,26 @@ func TestConsolePlatformRoutesAreAssembledWithServerGuards(t *testing.T) {
 		if !seen[pattern] {
 			t.Errorf("console platform route not assembled: %s", pattern)
 		}
+	}
+}
+
+func TestEveryAgentCapabilityRouteUsesTheSigningRegistry(t *testing.T) {
+	raw, err := os.ReadFile("main.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	count := 0
+	for number, line := range strings.Split(string(raw), "\n") {
+		if !strings.Contains(line, "RequireConsoleSpecAgentCapability") {
+			continue
+		}
+		count++
+		if !strings.Contains(line, "m8.ConsoleAgent") {
+			t.Errorf("Agent capability route line %d bypasses signing registry: %s", number+1, strings.TrimSpace(line))
+		}
+	}
+	if count < 4 {
+		t.Fatalf("Agent capability route scan matched %d, want current four routes", count)
 	}
 }
 

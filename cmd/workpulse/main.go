@@ -297,13 +297,13 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("POST /api/console/task-driver/specs/{specID}/{revision}/review", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleTaskDriverReview)))
 	mux.HandleFunc("POST /api/console/task-driver/specs/{specID}/{revision}/deploy", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleTaskDriverDeploy)))
 	mux.HandleFunc("GET /api/console/task-driver/specs/{specID}/{revision}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleTaskDriverStatus)))
-	mux.HandleFunc("GET /api/agent/console/task-driver/specs/{specID}/{revision}/tasks", prefixHub.RequireConsoleSpecAgentCapability(func(*http.Request) string { return "console-tasks" }, prefixHub.HandleAgentConsoleTasks))
+	mux.HandleFunc("GET /api/agent/console/task-driver/specs/{specID}/{revision}/tasks", prefixHub.RequireConsoleSpecAgentCapability(func(*http.Request) string { return m8.ConsoleAgentCapabilityTasks }, prefixHub.HandleAgentConsoleTasks))
 	mux.HandleFunc("POST /api/console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecs)))
-	mux.HandleFunc("POST /api/agent/console/specs", prefixHub.RequireConsoleSpecAgentCapability(func(*http.Request) string { return "console-specs:new" }, prefixHub.HandleConsoleSpecs))
+	mux.HandleFunc("POST /api/agent/console/specs", prefixHub.RequireConsoleSpecAgentCapability(func(*http.Request) string { return m8.ConsoleAgentCapabilitySpecsNew }, prefixHub.HandleConsoleSpecs))
 	mux.HandleFunc("GET /api/console/specs/{specID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpec)))
 	mux.HandleFunc("PATCH /api/console/specs/{specID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpec)))
-	mux.HandleFunc("PATCH /api/agent/console/specs/{specID}", prefixHub.RequireConsoleSpecAgentCapability(func(r *http.Request) string { return "console-spec:" + r.PathValue("specID") }, prefixHub.HandleConsoleSpec))
-	mux.HandleFunc("POST /api/agent/console/specs/{specID}/inferences", prefixHub.RequireConsoleSpecAgentCapability(func(r *http.Request) string { return "console-spec:" + r.PathValue("specID") }, prefixHub.HandleConsoleSpecAgentInference))
+	mux.HandleFunc("PATCH /api/agent/console/specs/{specID}", prefixHub.RequireConsoleSpecAgentCapability(func(r *http.Request) string { return m8.ConsoleAgentSpecCapabilityPage(r.PathValue("specID")) }, prefixHub.HandleConsoleSpec))
+	mux.HandleFunc("POST /api/agent/console/specs/{specID}/inferences", prefixHub.RequireConsoleSpecAgentCapability(func(r *http.Request) string { return m8.ConsoleAgentSpecCapabilityPage(r.PathValue("specID")) }, prefixHub.HandleConsoleSpecAgentInference))
 	// Shared spec links are capability-authorized, not identity-authorized. GET is public;
 	// PATCH requires the opaque edit capability inside HandleConsoleSpec.
 	mux.HandleFunc("GET /api/specs/shared/{specID}", prefixHub.HandleConsoleSpec)
