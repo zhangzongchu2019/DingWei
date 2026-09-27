@@ -30,6 +30,22 @@ import (
 
 const testSecOpsAdminOpenID = "ou_testadmin0000000000"
 
+const defaultEnvelopeReadTimeout = 2 * time.Second
+
+var envelopeReadTimeout = testDurationFromEnv("M8_ENVELOPE_TEST_TIMEOUT", defaultEnvelopeReadTimeout)
+
+func testDurationFromEnv(name string, fallback time.Duration) time.Duration {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return fallback
+	}
+	value, err := time.ParseDuration(raw)
+	if err != nil || value <= 0 {
+		panic(fmt.Sprintf("invalid %s=%q: want positive Go duration", name, raw))
+	}
+	return value
+}
+
 func newTestHub(t *testing.T) (*Hub, *store.SQLite, context.Context) {
 	t.Helper()
 	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "m8.db"))
@@ -2836,7 +2852,7 @@ func TestSessionEndpointTracksClientIPAndOffline(t *testing.T) {
 		t.Fatalf("endpoint after connect=%+v err=%v", endpoints, err)
 	}
 	_ = conn.Close(websocket.StatusNormalClosure, "done")
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(envelopeReadTimeout)
 	for {
 		endpoints, err = db.ListSessionEndpoints(ctx)
 		if err != nil {
@@ -3133,7 +3149,7 @@ func TestSessionEndpointConnSeqAndLastSeenOnReconnectAndMessage(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, 2*time.Second, func() bool {
+	waitFor(t, envelopeReadTimeout, func() bool {
 		endpoints, err := db.ListSessionEndpoints(ctx)
 		if err != nil || len(endpoints) != 1 {
 			return false
@@ -3301,7 +3317,7 @@ func TestSessionNameAutoSuffixWithinOwner(t *testing.T) {
 	if err := writeEnvelope(ctx, second, env); err != nil {
 		t.Fatal(err)
 	}
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(envelopeReadTimeout)
 	for {
 		endpoints, err = db.ListSessionEndpoints(ctx)
 		if err != nil {
@@ -4050,7 +4066,7 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	waitFor(t, 2*time.Second, func() bool {
+	waitFor(t, envelopeReadTimeout, func() bool {
 		hub.mu.Lock()
 		defer hub.mu.Unlock()
 		items := hub.recentTerminal[terminalKey(key.ID, homeName)]
@@ -4190,7 +4206,7 @@ func TestTerminalViewResizeForwardsToSessionAndCachesSize(t *testing.T) {
 	if metaInt(env.Meta, "cols") != 132 || metaInt(env.Meta, "rows") != 43 {
 		t.Fatalf("resize meta=%+v", env.Meta)
 	}
-	waitFor(t, 2*time.Second, func() bool {
+	waitFor(t, envelopeReadTimeout, func() bool {
 		hub.mu.Lock()
 		defer hub.mu.Unlock()
 		return hub.terminalLastSize[terminalKey(key.ID, "home")] == [2]int{132, 43}
@@ -4263,7 +4279,7 @@ func TestTerminalUnlockAllowsSameOwnerAccountWithoutExactKeyBinding(t *testing.T
 	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁输入") {
 		t.Fatalf("alice unlock result=%+v handled=%v err=%v", result, handled, err)
 	}
-	waitFor(t, 2*time.Second, func() bool {
+	waitFor(t, envelopeReadTimeout, func() bool {
 		hub.mu.Lock()
 		defer hub.mu.Unlock()
 		st := hub.terminals[terminalKey(key.ID, registeredName)]
@@ -4493,7 +4509,7 @@ func TestTerminalViewCookiePersistsAndRestoresUnlock(t *testing.T) {
 
 	// Drain the initial status message so the handler goroutine finishes
 	// accessing st.writerPage before the test modifies terminal state.
-	readCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	readCtx, cancel := context.WithTimeout(ctx, envelopeReadTimeout)
 	_ = readTerminalViewMessageType(t, readCtx, view)
 	cancel()
 
@@ -4546,7 +4562,7 @@ func TestTerminalViewCookiePersistsAndRestoresUnlock(t *testing.T) {
 	defer view2.Close(websocket.StatusNormalClosure, "done")
 
 	// Drain initial status from second viewer before modifying terminal state.
-	readCtx2, cancel2 := context.WithTimeout(ctx, 2*time.Second)
+	readCtx2, cancel2 := context.WithTimeout(ctx, envelopeReadTimeout)
 	_ = readTerminalViewMessageType(t, readCtx2, view2)
 	cancel2()
 
@@ -5148,7 +5164,7 @@ func TestDeliveredLeaseIsReleasedOnDisconnectAndFIFOResumesAfterReconnect(t *tes
 	if got := metaString(retried.Meta, "delivery_id"); got != firstID || retried.ID != "hol-first" {
 		t.Fatalf("retry must keep the exact id: got=%+v want_delivery_id=%s", retried, firstID)
 	}
-	if elapsed := time.Since(reconnectStart); elapsed >= 2*time.Second {
+	if elapsed := time.Since(reconnectStart); elapsed >= envelopeReadTimeout {
 		t.Fatalf("retry waited for stale two-minute lease: %s", elapsed)
 	}
 	if err := writeEnvelope(ctx, secondConn, model.Envelope{ID: "ack-first-processed", To: "workpulse#" + key.ID,
@@ -6045,7 +6061,7 @@ func dialTerminalViewWithCookie(t *testing.T, ctx context.Context, baseURL, sess
 
 func terminalViewerCode(t *testing.T, hub *Hub, keyID, sessionName string) string {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(envelopeReadTimeout)
 	for time.Now().Before(deadline) {
 		hub.mu.Lock()
 		st := hub.terminals[terminalKey(keyID, sessionName)]
@@ -6075,7 +6091,7 @@ func readEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn) model
 
 func readEnvelopeIncludingSystem(t *testing.T, ctx context.Context, conn *websocket.Conn) model.Envelope {
 	t.Helper()
-	readCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	readCtx, cancel := context.WithTimeout(ctx, envelopeReadTimeout)
 	defer cancel()
 	_, data, err := conn.Read(readCtx)
 	if err != nil {
@@ -6090,7 +6106,7 @@ func readEnvelopeIncludingSystem(t *testing.T, ctx context.Context, conn *websoc
 
 func readEnvelopeOfType(t *testing.T, ctx context.Context, conn *websocket.Conn, typ string) model.Envelope {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(envelopeReadTimeout)
 	for time.Now().Before(deadline) {
 		env := readEnvelopeIncludingSystem(t, ctx, conn)
 		if metaString(env.Meta, "type") == typ {
@@ -6117,7 +6133,7 @@ func assertNoEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn, w
 
 func waitEndpointInactive(t *testing.T, ctx context.Context, db *store.SQLite, keyID, sessionName string) {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(envelopeReadTimeout)
 	for {
 		endpoints, err := db.ListSessionEndpoints(ctx)
 		if err != nil {
@@ -6149,7 +6165,7 @@ func waitFor(t *testing.T, timeout time.Duration, ok func() bool) {
 
 func waitSessionOnline(t *testing.T, hub *Hub, keyID, sessionName string) {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(envelopeReadTimeout)
 	for {
 		if hub.sessionOnline(keyID, sessionName) {
 			return
@@ -6208,7 +6224,7 @@ func hasUTCPrefix(text string) bool {
 
 func waitOutbound(t *testing.T, ctx context.Context, q *bus.DBQueue) *model.Message {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(envelopeReadTimeout)
 	for time.Now().Before(deadline) {
 		msg, err := q.Dequeue(ctx)
 		if err != nil {
@@ -6397,7 +6413,7 @@ func TestInternalViewEventsReplaysOnSubscribe(t *testing.T) {
 	}
 	buf := make([]byte, 0, 512)
 	tmp := make([]byte, 256)
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(envelopeReadTimeout)
 	for time.Now().Before(deadline) {
 		n, rerr := resp.Body.Read(tmp)
 		buf = append(buf, tmp[:n]...)
@@ -6769,7 +6785,7 @@ func TestViewServiceFullChainIntegration(t *testing.T) {
 	defer resp.Body.Close()
 	buf := make([]byte, 0, 512)
 	tmp := make([]byte, 256)
-	for dl := time.Now().Add(2 * time.Second); time.Now().Before(dl); {
+	for dl := time.Now().Add(envelopeReadTimeout); time.Now().Before(dl); {
 		n, rerr := resp.Body.Read(tmp)
 		buf = append(buf, tmp[:n]...)
 		if strings.Contains(string(buf), eventJSON) {
