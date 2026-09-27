@@ -15,7 +15,7 @@ const assert = new Proxy(assertModule, {
   },
 });
 // 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
-const MIN_ASSERTIONS = 214;
+const MIN_ASSERTIONS = 220;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -80,6 +80,10 @@ function productionHTML() {
   if (MUTATION === 'sactor-drop-inference-empty') mutateHTML("empty.textContent='尚无 Agent 推论 —— 需要 Agent 生成';", "empty.textContent='';");
   if (MUTATION === 'drop-spec-row-stripe') mutateHTML('.spec-table tbody tr:nth-child(even){background:var(--row-alt)}', '');
   if (MUTATION === 'drop-task-row-stripe') mutateHTML('#task-list .task-row:nth-of-type(even){background:var(--row-alt)}', '');
+  if (MUTATION === 'assist-first-agent') mutateHTML("body:JSON.stringify({agent_id:agentID})", "body:JSON.stringify({agent_id:assistAgents[0].id})");
+  if (MUTATION === 'assist-drop-memory') mutateHTML("localStorage.setItem(SPEC_ASSIST_AGENT_KEY,value);", "localStorage.removeItem(SPEC_ASSIST_AGENT_KEY);");
+  if (MUTATION === 'assist-drop-offline-reason') mutateHTML("status.textContent='上次选择的 Agent 当前离线，不能发起动作'", "status.textContent=''");
+  if (MUTATION === 'assist-drop-empty-reason') mutateHTML("status.textContent='没有自己的在线 Agent'", "status.textContent=''");
   if (MUTATION === 'owner-delete-action') mutateHTML("var copyLink=document.createElement('button');", "var forbidden=document.createElement('button');forbidden.className='delete-spec';forbidden.textContent='删除';action.append(forbidden);var copyLink=document.createElement('button');");
   if (MUTATION === 'owner-expand-nonexclusive') mutateHTML("document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};", "document.getElementById('show-new-spec').onclick=function(){document.getElementById('new-screen').hidden=false;};");
   if (MUTATION === 'owner-empty-restore-all') mutateHTML("document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');refreshSpecs();};", "document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');document.getElementById('detail-screen').hidden=false;document.getElementById('transfer-screen').hidden=false;refreshSpecs();};");
@@ -143,7 +147,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-transfer-first-target', 'owner-transfer-no-success', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sactor-drop-inference-empty', 'drop-spec-row-stripe', 'drop-task-row-stripe', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', 'sform-source-back', 'sform-id-editable', 'sform-checked-at-editable', 'sform-generator-disabled', 'sform-creator-back-to-owner', 'sform-protected-words-renamed', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-transfer-first-target', 'owner-transfer-no-success', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sactor-drop-inference-empty', 'drop-spec-row-stripe', 'drop-task-row-stripe', 'assist-first-agent', 'assist-drop-memory', 'assist-drop-offline-reason', 'assist-drop-empty-reason', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', 'sform-source-back', 'sform-id-editable', 'sform-checked-at-editable', 'sform-generator-disabled', 'sform-creator-back-to-owner', 'sform-protected-words-renamed', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -167,6 +171,8 @@ async function main() {
   const taskPlans = [];
   const taskCreates = [];
   const transferWrites = [];
+  const assistWrites = [];
+  let assistAgents = [{id:'assist-a',session_name:'owner-assist-a-2642',online:true},{id:'assist-b',session_name:'owner-assist-b-2642',online:true}];
   const taskDeps = new Map([['task-a', []], ['task-b', []]]);
   const taskDoDs = new Map([['task-a', 'A done'], ['task-b', '']]);
   let failListMode = '';
@@ -175,6 +181,11 @@ async function main() {
     if (String(req.url).startsWith('/fixture/presplit-mode') && req.method === 'POST') {
       presplitMode = new URL(req.url, 'http://fixture').searchParams.get('mode') || 'success'; presplitRequest = null; presplitGenerated = false;
       res.writeHead(204); res.end(); return;
+    }
+    if (String(req.url).startsWith('/fixture/assist-mode') && req.method === 'POST') {
+      const mode=new URL(req.url,'http://fixture').searchParams.get('mode');
+      assistAgents=mode==='none'?[]:[{id:'assist-a',session_name:'owner-assist-a-2642',online:true},{id:'assist-b',session_name:'owner-assist-b-2642',online:mode!=='offline'}];
+      res.writeHead(204);res.end();return;
     }
     if (req.url === '/fixture/populate-pages' && req.method === 'POST') {
       for (let i = 0; i < 20; i++) { const item={id:`page-spec-${i}`,owner_short_name:'甲',current_editor_short_name:'甲',title:`Page ${i}`,state:'editing',task_state:'splitting',current_revision:1,can_edit:true,can_split:true}; specs.push(item); revisions.set(item.id,{spec_id:item.id,revision:1,content_markdown:'# page',acceptance_json:'[]',input_anchors_json:'[]'}); }
@@ -229,7 +240,7 @@ async function main() {
       if (failListMode === 'network') { req.socket.destroy(); return; }
       const page = Number(new URL(req.url, 'http://fixture').searchParams.get('page') || 1); const start=(page-1)*20;
       const own=specs;
-      res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ role: 'management', principal: 'owner-a', specs:own.slice(start,start+20), page, page_size:20, total:own.length, total_pages:Math.max(1,Math.ceil(own.length/20)) })); return;
+      res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ role: 'management', principal: 'owner-a', specs:own.slice(start,start+20), agents:assistAgents, page, page_size:20, total:own.length, total_pages:Math.max(1,Math.ceil(own.length/20)) })); return;
     }
     if (req.url === '/api/console/specs' && req.method === 'POST') {
       const body = await requestBody(req);
@@ -256,6 +267,8 @@ async function main() {
     if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'zzc',display_name:'张宗楚',value:'张宗楚'},{short_name:'lbl',display_name:'李炳隆',value:'李炳隆'},{short_name:'th',display_name:'唐虹',value:'唐虹'},{short_name:'',display_name:'多角色业主',value:'多角色业主'}]}));return;}
     const workflowTransfer=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/workflow\/transfer$/);
     if(workflowTransfer&&req.method==='POST'){const body=await requestBody(req),item=specs.find((candidate)=>candidate.id===workflowTransfer[1]);transferWrites.push({specID:workflowTransfer[1],body});if(item){item.state=body.state;item.current_editor_short_name=body.target_short_name;}res.writeHead(204);res.end();return;}
+    const assistMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/assist\/inference$/);
+    if(assistMatch&&req.method==='POST'){assistWrites.push({specID:assistMatch[1],body:await requestBody(req)});res.writeHead(202,{'Content-Type':'application/json'});res.end('{"status":"requested"}');return;}
     const presplitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/presplit$/);
     if(presplitMatch&&req.method==='GET'){const agents=presplitMode==='no-agents'?[]:[{id:'agent-a',session_name:'owner-agent-2642'}];res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({agents,request:presplitRequest}));return;}
     if(presplitMatch&&req.method==='POST'){await requestBody(req);if(presplitMode==='no-reply'){presplitRequest={request_id:'r-no-reply',status:'failed',failure_reason:'no reply'};res.writeHead(502);res.end('预拆失败，可手工添加');return;}const failure={timeout:'timeout',invalid:'invalid task format',restart:'restart'}[presplitMode];presplitRequest={request_id:'r-'+presplitMode,status:failure?'failed':'completed',failure_reason:failure||''};if(!failure)presplitGenerated=true;res.writeHead(202,{'Content-Type':'application/json'});res.end(JSON.stringify({request_id:presplitRequest.request_id,status:'pending'}));return;}
@@ -366,6 +379,25 @@ async function main() {
     const stripeColors=async(selector,theme)=>page.evaluate(({selector,theme})=>{document.documentElement.dataset.theme=theme;return Array.from(document.querySelectorAll(selector)).slice(0,2).map((row)=>getComputedStyle(row).backgroundColor);},{selector,theme});
     for(const theme of ['light','dark']){const colors=await stripeColors('#spec-list tr',theme);assert.strictEqual(colors.length,2,`spec 列表 ${theme} 必须有相邻两行`);assert.notStrictEqual(colors[0],colors[1],`spec 列表 ${theme} 相邻行必须有不同 computed background`);}
     await page.evaluate(()=>{document.documentElement.dataset.theme='light';});
+    await page.locator('#spec-list [data-title="Spec B"] .spec-title').click();
+    await page.locator('#spec-assist-agent').selectOption('assist-b');
+    await page.locator('#generate-inference').click();
+    assert.deepStrictEqual(assistWrites,[{specID:'spec-2',body:{agent_id:'assist-b'}}],'选择第二个协助 Agent 时请求必须携带第二个 id');
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('#spec-assist-agent option').last().waitFor({state:'attached'});
+    assert.strictEqual(await page.locator('#spec-assist-agent').inputValue(),'assist-b','刷新后必须恢复上次选择的协助 Agent');
+    await page.request.post(`http://127.0.0.1:${port}/fixture/assist-mode?mode=offline`);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('#spec-assist-agent option').last().waitFor({state:'attached'});
+    assert.strictEqual(await page.locator('#spec-assist-agent').inputValue(),'assist-b','记忆中的 Agent 离线后仍必须保持选中');
+    assert.match(await page.locator('#spec-assist-status').textContent(),/上次选择.*当前离线/,'离线记忆必须说明原因，不能静默换人或清空');
+    assert.strictEqual(await page.locator('#generate-inference').isDisabled(),true,'离线 Agent 不得发起生成推论');
+    await page.request.post(`http://127.0.0.1:${port}/fixture/assist-mode?mode=none`);
+    await page.reload({waitUntil:'domcontentloaded'});
+    assert.strictEqual(await page.locator('#spec-assist-status').textContent(),'没有自己的在线 Agent','没有自己的 Agent 时空态必须说话');
+    await page.request.post(`http://127.0.0.1:${port}/fixture/assist-mode?mode=online`);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('#spec-list [data-title="Spec B"]').waitFor({state:'visible'});
     const columnEdges = await page.evaluate(() => { const textLeft=(node)=>{const range=document.createRange();range.selectNodeContents(node);return range.getBoundingClientRect().left;};return Array.from(document.querySelectorAll('#spec-table th')).map((th, i) => ({ h:textLeft(th), d:textLeft(document.querySelector(`#spec-list tr td:nth-child(${i+1})`)) })); });
     assert.ok(columnEdges.every((edge) => Math.abs(edge.h-edge.d) <= 0.5), `四列表头与内容未对齐: ${JSON.stringify(columnEdges)}`);
     assert.deepStrictEqual(await page.locator('#spec-table thead th').allTextContents(), ['标题','状态','当前','操作']);
