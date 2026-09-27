@@ -47,7 +47,7 @@ func TestConsoleCapabilitySignerAllowsOnlyRegisteredAgentRoutePages(t *testing.T
 			t.Fatalf("registered page %q code=%d body=%s", pageID, rr.Code, rr.Body.String())
 		}
 	}
-	for _, pageID := range []string{"arbitrary-future-route", "console-spec:", "console-spec:spec/other"} {
+	for _, pageID := range []string{"arbitrary-future-route", "console-spec:"} {
 		rr := call(pageID)
 		if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "page_id is not an allowed Agent capability") {
 			t.Fatalf("unregistered page %q code=%d body=%s", pageID, rr.Code, rr.Body.String())

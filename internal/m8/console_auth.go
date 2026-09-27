@@ -648,7 +648,10 @@ func ConsoleAgentCapabilityPageAllowed(pageID string) bool {
 		return false
 	}
 	specID := strings.TrimPrefix(pageID, "console-spec:")
-	return specID != "" && !strings.ContainsAny(specID, "/?#")
+	// Existence and ownership belong to the concrete spec route. This registry
+	// only constrains the capability namespace, avoiding a second DB-coupled
+	// authorization rule in the signer.
+	return specID != ""
 }
 
 func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {

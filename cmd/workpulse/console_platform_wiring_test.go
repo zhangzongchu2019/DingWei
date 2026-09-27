@@ -4,10 +4,10 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"os"
 	"strconv"
-	"strings"
 	"testing"
+
+	"github.com/zhangzongchu2019/dingwei/internal/m8"
 )
 
 func TestConsolePlatformRoutesAreAssembledWithServerGuards(t *testing.T) {
@@ -91,23 +91,78 @@ func TestConsolePlatformRoutesAreAssembledWithServerGuards(t *testing.T) {
 	}
 }
 
-func TestEveryAgentCapabilityRouteUsesTheSigningRegistry(t *testing.T) {
-	raw, err := os.ReadFile("main.go")
+func agentCapabilityPageID(expr ast.Expr) (string, bool) {
+	switch value := expr.(type) {
+	case *ast.BasicLit:
+		if value.Kind != token.STRING {
+			return "", false
+		}
+		pageID, err := strconv.Unquote(value.Value)
+		return pageID, err == nil
+	case *ast.SelectorExpr:
+		switch value.Sel.Name {
+		case "ConsoleAgentCapabilitySpecsNew":
+			return m8.ConsoleAgentCapabilitySpecsNew, true
+		case "ConsoleAgentCapabilityTasks":
+			return m8.ConsoleAgentCapabilityTasks, true
+		}
+	case *ast.CallExpr:
+		if selector, ok := value.Fun.(*ast.SelectorExpr); ok && selector.Sel.Name == "ConsoleAgentSpecCapabilityPage" {
+			return m8.ConsoleAgentSpecCapabilityPage("contract-spec"), true
+		}
+	}
+	return "", false
+}
+
+func TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry(t *testing.T) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "main.go", nil, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	count := 0
-	for number, line := range strings.Split(string(raw), "\n") {
-		if !strings.Contains(line, "RequireConsoleSpecAgentCapability") {
-			continue
+	ast.Inspect(file, func(node ast.Node) bool {
+		call, ok := node.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		selector, ok := call.Fun.(*ast.SelectorExpr)
+		if !ok || selector.Sel.Name != "RequireConsoleSpecAgentCapability" || len(call.Args) < 1 {
+			return true
 		}
 		count++
-		if !strings.Contains(line, "m8.ConsoleAgent") {
-			t.Errorf("Agent capability route line %d bypasses signing registry: %s", number+1, strings.TrimSpace(line))
+		fn, ok := call.Args[0].(*ast.FuncLit)
+		if !ok {
+			t.Errorf("Agent capability route at %s has non-function page id", fset.Position(call.Pos()))
+			return true
 		}
-	}
+		var pageID string
+		var resolved bool
+		ast.Inspect(fn.Body, func(inner ast.Node) bool {
+			ret, ok := inner.(*ast.ReturnStmt)
+			if !ok || len(ret.Results) != 1 {
+				return true
+			}
+			pageID, resolved = agentCapabilityPageID(ret.Results[0])
+			return false
+		})
+		if !resolved {
+			t.Errorf("Agent capability route at %s uses an unregistered page-id expression", fset.Position(call.Pos()))
+			return true
+		}
+		if !m8.ConsoleAgentCapabilityPageAllowed(pageID) {
+			t.Errorf("Agent capability route at %s returns page_id=%q rejected by signing registry", fset.Position(call.Pos()), pageID)
+		}
+		return true
+	})
 	if count < 4 {
-		t.Fatalf("Agent capability route scan matched %d, want current four routes", count)
+		t.Fatalf("Agent capability route scan matched %d, want at least current four routes", count)
+	}
+	// Positive control: the evaluator must expose a newly added literal route
+	// as unregistered instead of treating an unreadable expression as success.
+	unknown, ok := agentCapabilityPageID(&ast.BasicLit{Kind: token.STRING, Value: `"future-unregistered-page"`})
+	if !ok || m8.ConsoleAgentCapabilityPageAllowed(unknown) {
+		t.Fatal("unregistered Agent route positive control escaped signing registry")
 	}
 }
 
