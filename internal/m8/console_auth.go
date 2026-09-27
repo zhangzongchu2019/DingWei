@@ -290,7 +290,7 @@ func htmlAttrEscape(v string) string {
 //	⇒ **无上限时,第 7 个 tab 会直接卡住,且表现为「页面一直转圈」而非报错** —— 又一种没有声音的失败。
 const consolePageHTML = `<!doctype html><meta charset=utf-8><title>DingWei Agent Console</title>
 <style>
-body{margin:0;display:grid;grid-template-columns:240px 1fr;height:100vh;font:14px sans-serif}
+:root{--row-alt:#e9eef5}body{margin:0;display:grid;grid-template-columns:240px 1fr;height:100vh;font:14px sans-serif}
 [hidden]{display:none!important}
 nav{overflow:auto;border-right:1px solid #ddd;padding:10px}
 nav button{display:block;width:100%;margin:3px 0;text-align:left;padding:4px 6px}
@@ -312,7 +312,7 @@ main{display:flex;flex-direction:column;min-width:0}
 .group-workspace{position:absolute;inset:0;overflow:auto;padding:16px;background:inherit}
 .group-workspace label{display:block;margin:8px 0}.group-workspace input,.group-workspace select{min-width:320px;padding:5px}
 .group-workspace button{margin:4px;padding:5px 9px}.agent-group{border:1px solid #ddd;border-radius:6px;padding:10px;margin:8px 0}
-.group-toolbar{display:flex;align-items:center;justify-content:space-between}.group-table{width:100%;table-layout:fixed;border-collapse:collapse}.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-table th:nth-child(1),.group-table td:nth-child(1){width:28%}.group-table th:nth-child(2),.group-table td:nth-child(2){width:28%}.group-table th:nth-child(3),.group-table td:nth-child(3){width:28%}.group-table th:nth-child(4),.group-table td:nth-child(4){width:16%}.group-row{cursor:pointer}.group-member-row{display:flex;align-items:center;gap:18px;max-width:520px;min-height:34px}.group-member-remove{visibility:hidden}.group-member-row:hover .group-member-remove,.group-member-row:focus-within .group-member-remove{visibility:visible}
+.group-toolbar{display:flex;align-items:center;justify-content:space-between}.group-table{width:100%;table-layout:fixed;border-collapse:collapse}.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-table tbody tr:nth-child(even){background:var(--row-alt)}.group-table th:nth-child(1),.group-table td:nth-child(1){width:28%}.group-table th:nth-child(2),.group-table td:nth-child(2){width:28%}.group-table th:nth-child(3),.group-table td:nth-child(3){width:28%}.group-table th:nth-child(4),.group-table td:nth-child(4){width:16%}.group-row{cursor:pointer}.group-member-row{display:flex;align-items:center;gap:18px;max-width:520px;min-height:34px}.group-member-remove{visibility:hidden}.group-member-row:hover .group-member-remove,.group-member-row:focus-within .group-member-remove{visibility:visible}
 .agent-tree-group{margin:5px 0}.agent-tree-group-label{display:block;font-weight:700;padding:4px 6px}.agent-tree-members{padding-left:10px}.agent-tree-agent{width:100%;text-align:left}
 .group-row .group-pick{margin-right:auto}.group-feedback{min-height:1.2em;color:#9d1b1b}.group-block{border-radius:7px;padding:12px;margin:10px 0}.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}.group-block-join{background:#fff7eb}
 #hint{padding:10px;color:#888}
@@ -328,7 +328,7 @@ html[data-theme="dark"] #app-version{color:#7c8896}
       ⇒ 业主看惯的浅色观感零变化(git diff 可自证:上面那些规则原样未动)。
       🔵 外壳必须跟着暗:否则"面板是夜里、左栏和 tab 条是白天"的花脸,正是本版要消灭的。
       色值取自 renderer 的 [data-theme=dark] 变量集(renderer-canary-sse.html:26-42),两处观感一致。 */
-html[data-theme="dark"]{color-scheme:dark}
+html[data-theme="dark"]{color-scheme:dark;--row-alt:#242a31}
 html[data-theme="dark"] body{background:#111316;color:#eef2f6}
 html[data-theme="dark"] nav{border-right-color:#38414c}
 html[data-theme="dark"] nav button{background:#1b1f24;color:#eef2f6;border:1px solid #38414c}
@@ -706,6 +706,36 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 			}
 			next(w, r)
 		})(w, r)
+	}
+}
+
+func (h *Hub) RequireConsoleSpecAgentCapability(pageID func(*http.Request) string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		repo, repoOK := h.Repo.(consoleAuthRepository)
+		specRepo, specOK := h.consoleSpecs()
+		keyID := strings.TrimSpace(r.Header.Get("X-DW-Agent-Key-ID"))
+		sessionName := strings.TrimSpace(r.Header.Get("X-DW-Agent-Session"))
+		secret := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		meta, authErr := h.Repo.ResolveServiceAPISecret(r.Context(), keyID, HashAPIKey(secret))
+		agent, agentErr := specRepo.ResolveConsoleAgentByEndpoint(r.Context(), keyID, sessionName)
+		raw := strings.TrimSpace(r.Header.Get("X-DW-Console-Capability"))
+		expectedPage := pageID(r)
+		if !h.consoleAuthEnabled || !repoOK || !specOK || keyID == "" || sessionName == "" || secret == "" || authErr != nil || meta == nil || agentErr != nil || agent == nil || !agent.Active || raw == "" || expectedPage == "" {
+			http.Error(w, "console capability required", http.StatusForbidden)
+			return
+		}
+		capability, err := repo.ResolveConsolePageCapability(r.Context(), hashConsoleToken(raw), agent.ID, expectedPage, time.Now())
+		if err != nil {
+			http.Error(w, "console auth unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if capability == nil {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		ctx := context.WithValue(r.Context(), consolePrincipalContextKey{}, capability.PrincipalID)
+		ctx = context.WithValue(ctx, consoleSpecActorContextKey{}, consoleSpecActor{ID: capability.AgentID, Kind: "agent"})
+		next(w, r.WithContext(ctx))
 	}
 }
 

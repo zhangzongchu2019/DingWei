@@ -15,7 +15,7 @@ const assert = new Proxy(assertModule, {
   },
 });
 // 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
-const MIN_ASSERTIONS = 195;
+const MIN_ASSERTIONS = 214;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -75,6 +75,11 @@ function productionHTML() {
   if (MUTATION === 'owner-hardcoded-names') mutateHTML("var data=await r.json();select.replaceChildren();", "var data=await r.json();data.editors=[{short_name:'lbl'},{short_name:'th'}];select.replaceChildren();");
   if (MUTATION === 'owner-copy-sticky') mutateHTML("statusEl._copyTimer=setTimeout(function(){statusEl.hidden=true;statusEl.textContent='';},5000);", 'statusEl._copyTimer=0;');
   if (MUTATION === 'owner-transfer-disconnected') mutateHTML("specAction(transferSpec.id,'workflow/transfer'", "specAction(transferSpec.id,'workflow/not-transfer'");
+  if (MUTATION === 'owner-transfer-first-target') mutateHTML('transferSpec=spec;', 'transferSpec=specs[0];');
+  if (MUTATION === 'owner-transfer-no-success') mutateHTML("document.getElementById('list-transfer-notice').textContent='已把《'+selected.title+'》转为'+(state==='review'?'审核':'修改')+'，交给 '+targetShort;", "document.getElementById('list-transfer-notice').textContent='';");
+  if (MUTATION === 'sactor-drop-inference-empty') mutateHTML("empty.textContent='尚无 Agent 推论 —— 需要 Agent 生成';", "empty.textContent='';");
+  if (MUTATION === 'drop-spec-row-stripe') mutateHTML('.spec-table tbody tr:nth-child(even){background:var(--row-alt)}', '');
+  if (MUTATION === 'drop-task-row-stripe') mutateHTML('#task-list .task-row:nth-of-type(even){background:var(--row-alt)}', '');
   if (MUTATION === 'owner-delete-action') mutateHTML("var copyLink=document.createElement('button');", "var forbidden=document.createElement('button');forbidden.className='delete-spec';forbidden.textContent='删除';action.append(forbidden);var copyLink=document.createElement('button');");
   if (MUTATION === 'owner-expand-nonexclusive') mutateHTML("document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};", "document.getElementById('show-new-spec').onclick=function(){document.getElementById('new-screen').hidden=false;};");
   if (MUTATION === 'owner-empty-restore-all') mutateHTML("document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');refreshSpecs();};", "document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');document.getElementById('detail-screen').hidden=false;document.getElementById('transfer-screen').hidden=false;refreshSpecs();};");
@@ -138,7 +143,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', 'sform-source-back', 'sform-id-editable', 'sform-checked-at-editable', 'sform-generator-disabled', 'sform-creator-back-to-owner', 'sform-protected-words-renamed', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-transfer-first-target', 'owner-transfer-no-success', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sactor-drop-inference-empty', 'drop-spec-row-stripe', 'drop-task-row-stripe', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', 'sform-source-back', 'sform-id-editable', 'sform-checked-at-editable', 'sform-generator-disabled', 'sform-creator-back-to-owner', 'sform-protected-words-renamed', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -208,7 +213,7 @@ async function main() {
       res.writeHead(200, { 'Content-Type': 'text/css' }); res.end(fs.readFileSync(path.join(ASSET_DIR, 'easymde.min.css'))); return;
     }
     if (req.url === '/fixture/add-readonly-spec' && req.method === 'POST') {
-      const item={id:'spec-readonly',owner_short_name:'乙',current_editor_short_name:'乙',title:'ReadOnlySpec',
+      const item={id:'spec-readonly',owner_short_name:'乙',current_editor_short_name:'乙',title:'ReadOnlySpec',derived_from:'spec-1',
         state:'final',task_state:'closed',current_revision:1,can_edit:false,can_split:false};
       if (!specs.find((x) => x.id === item.id)) { specs.unshift(item);
         const origin=`http://${req.headers.host}`;
@@ -246,11 +251,11 @@ async function main() {
       const taskB={proposal_id:'task-b',spec_id:'spec-1',revision:2,title:'Implement B',content:'dependency',status:'planned',estimated_hours:2,depends_on_json:JSON.stringify(taskDeps.get('task-b')),acceptance_json:taskDoDs.get('task-b')?JSON.stringify([{id:'DOD',text:taskDoDs.get('task-b')}]) : '',depended_by:taskDeps.get('task-a').includes('task-b')?['task-a']:[],dependency_level:bLevel,parallel};
       const ordered=[taskA,taskB].sort((a,b)=>a.dependency_level-b.dependency_level||a.proposal_id.localeCompare(b.proposal_id));
       const generated={proposal_id:'task-presplit',spec_id:item.id,revision:1,title:'Agent task',content:'generated',status:'planned',estimated_hours:2,depends_on_json:'[]',acceptance_json:'[]',depended_by:[],dependency_level:0,parallel:false};
-      res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?ordered:(presplitGenerated&&item.id==='spec-2'?[generated]:[]), dependency_candidates:[taskA,taskB] })); return;
+      res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), attribution:{creator:item.id==='spec-readonly'?'无法还原':'张宗楚',creator_kind:item.id==='spec-readonly'?'unknown':'principal',participants:item.id==='spec-readonly'?[]:['李炳隆']}, tasks:item.id==='spec-1'?ordered:(presplitGenerated&&item.id==='spec-2'?[generated]:[]), dependency_candidates:[taskA,taskB] })); return;
     }
     if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'zzc',display_name:'张宗楚',value:'张宗楚'},{short_name:'lbl',display_name:'李炳隆',value:'李炳隆'},{short_name:'th',display_name:'唐虹',value:'唐虹'},{short_name:'',display_name:'多角色业主',value:'多角色业主'}]}));return;}
     const workflowTransfer=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/workflow\/transfer$/);
-    if(workflowTransfer&&req.method==='POST'){transferWrites.push({specID:workflowTransfer[1],body:await requestBody(req)});res.writeHead(204);res.end();return;}
+    if(workflowTransfer&&req.method==='POST'){const body=await requestBody(req),item=specs.find((candidate)=>candidate.id===workflowTransfer[1]);transferWrites.push({specID:workflowTransfer[1],body});if(item){item.state=body.state;item.current_editor_short_name=body.target_short_name;}res.writeHead(204);res.end();return;}
     const presplitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/presplit$/);
     if(presplitMatch&&req.method==='GET'){const agents=presplitMode==='no-agents'?[]:[{id:'agent-a',session_name:'owner-agent-2642'}];res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({agents,request:presplitRequest}));return;}
     if(presplitMatch&&req.method==='POST'){await requestBody(req);if(presplitMode==='no-reply'){presplitRequest={request_id:'r-no-reply',status:'failed',failure_reason:'no reply'};res.writeHead(502);res.end('预拆失败，可手工添加');return;}const failure={timeout:'timeout',invalid:'invalid task format',restart:'restart'}[presplitMode];presplitRequest={request_id:'r-'+presplitMode,status:failure?'failed':'completed',failure_reason:failure||''};if(!failure)presplitGenerated=true;res.writeHead(202,{'Content-Type':'application/json'});res.end(JSON.stringify({request_id:presplitRequest.request_id,status:'pending'}));return;}
@@ -343,6 +348,8 @@ async function main() {
     await page.locator('#create-status').filter({ hasText: '创建失败 400:server create detail' }).waitFor({ state: 'visible' });
     assert.strictEqual(specs.length, 0, 'server-rejected create must not create a spec');
     assert.strictEqual(await page.locator('label .required').count(), 8, 'both create and edit forms must mark all four required fields');
+    assert.strictEqual(await page.locator('#new-inference-list .inference-empty').textContent(), '尚无 Agent 推论 —— 需要 Agent 生成', 'Agent 推论空集必须明确说明为何无内容');
+    assert.strictEqual(await page.locator('#new-inference-list .inference-row').count(), 0, 'Agent 推论空集不得伪造成供人填写的空行');
     for (const title of ['Spec A', 'Spec B']) {
       await page.click('#show-spec-list');
       await page.waitForSelector('#show-new-spec:visible, #empty-create-spec:visible');
@@ -356,14 +363,18 @@ async function main() {
       await page.locator(`#spec-list [data-title="${title}"]`).waitFor({ state: 'visible' });
     }
     assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 2, 'true page must show both specs at once');
+    const stripeColors=async(selector,theme)=>page.evaluate(({selector,theme})=>{document.documentElement.dataset.theme=theme;return Array.from(document.querySelectorAll(selector)).slice(0,2).map((row)=>getComputedStyle(row).backgroundColor);},{selector,theme});
+    for(const theme of ['light','dark']){const colors=await stripeColors('#spec-list tr',theme);assert.strictEqual(colors.length,2,`spec 列表 ${theme} 必须有相邻两行`);assert.notStrictEqual(colors[0],colors[1],`spec 列表 ${theme} 相邻行必须有不同 computed background`);}
+    await page.evaluate(()=>{document.documentElement.dataset.theme='light';});
     const columnEdges = await page.evaluate(() => { const textLeft=(node)=>{const range=document.createRange();range.selectNodeContents(node);return range.getBoundingClientRect().left;};return Array.from(document.querySelectorAll('#spec-table th')).map((th, i) => ({ h:textLeft(th), d:textLeft(document.querySelector(`#spec-list tr td:nth-child(${i+1})`)) })); });
     assert.ok(columnEdges.every((edge) => Math.abs(edge.h-edge.d) <= 0.5), `四列表头与内容未对齐: ${JSON.stringify(columnEdges)}`);
     assert.deepStrictEqual(await page.locator('#spec-table thead th').allTextContents(), ['标题','状态','当前','操作']);
     assert.deepStrictEqual(await page.locator('#spec-list tr td:nth-child(2)').allTextContents(), ['修改','修改'], '状态列必须用业主图里的中文状态');
     assert.strictEqual(await page.locator('.delete-spec,.archive-spec').count(),0,'业主已裁定不提供删除或归档入口');
     assert.strictEqual((html.match(/['"](?:lbl|th)['"]/g)||[]).length,0,'前端不得硬编码业主 lbl/th');
-    const firstAction=page.locator('#spec-list [data-title="Spec A"] .spec-action');
-    await firstAction.locator('.transfer-spec').click();
+    const secondAction=page.locator('#spec-list [data-title="Spec B"] .spec-action');
+    const selectedRowBefore=await page.locator('#spec-list tr').evaluateAll((rows)=>rows.findIndex((row)=>row.dataset.title==='Spec B'));
+    await secondAction.locator('.transfer-spec').click();
     await page.locator('#list-transfer-owner option').last().waitFor({state:'attached'});
     const transferGeometry = await page.evaluate(() => Array.from(document.querySelectorAll('.spec-transfer-choice')).map((label) => {
       const radio = label.querySelector('input[type=radio]').getBoundingClientRect();
@@ -382,7 +393,12 @@ async function main() {
     await page.locator('input[name="list-transfer-state"][value="review"]').check();
     await page.locator('#confirm-list-transfer').click();
     await page.waitForTimeout(300);
-    assert.deepStrictEqual(transferWrites, [{specID:'spec-1',body:{target_short_name:'李炳隆',state:'review'}}], '转审核必须接到真实 workflow/transfer 请求');
+    assert.deepStrictEqual(transferWrites, [{specID:'spec-2',body:{target_short_name:'李炳隆',state:'review'}}], '点第二份的转审核必须携带第二份 spec id，不能永远取第一行');
+    assert.strictEqual(await page.locator('#list-transfer-notice').textContent(), '已把《Spec B》转为审核，交给 lbl', '转审核成功必须点名用户所选标题与接收短名');
+    assert.ok(!(await page.locator('#list-transfer-notice').textContent()).includes('Spec A'), '点第二份时成功文案不得出现第一份标题');
+    assert.strictEqual(await page.locator('#spec-list .spec-transfer-highlight').getAttribute('data-spec-id'), 'spec-2', '列表刷新后必须高亮刚操作的 spec');
+    const selectedRowAfter=await page.locator('#spec-list tr').evaluateAll((rows)=>rows.findIndex((row)=>row.dataset.title==='Spec B'));
+    assert.strictEqual(selectedRowAfter,selectedRowBefore,'转审核后被操作的 spec 行号必须保持不变');
     const screenState=async()=>page.evaluate(()=>({list:!document.getElementById('list-screen').hidden,newSpec:!document.getElementById('new-screen').hidden,detail:!document.getElementById('detail-screen').hidden,transfer:!document.getElementById('transfer-screen').hidden}));
     await page.evaluate(()=>{globalThis.__testSpecExclusive=true;});
     try {
@@ -484,6 +500,8 @@ async function main() {
     assert.strictEqual(await task.getAttribute('id'),'task-row-task-a');
     assert.strictEqual(await task.locator('.task-dod').getAttribute('id'),'task-row-task-a-dod');
     assert.deepStrictEqual(await page.locator('#task-list .task-row').evaluateAll((rows)=>rows.map((r)=>r.dataset.taskId)),['task-a','task-b']);
+    for(const theme of ['light','dark']){const colors=await stripeColors('#task-list .task-row',theme);assert.strictEqual(colors.length,2,`任务列表 ${theme} 必须有相邻两行`);assert.notStrictEqual(colors[0],colors[1],`任务列表 ${theme} 相邻行必须有不同 computed background`);}
+    await page.evaluate(()=>{document.documentElement.dataset.theme='light';});
     assert.strictEqual(await page.locator('#task-list .task-row[data-task-id="task-a"] .meta').textContent().then((x)=>x.includes('可并行')),true);
     assert.strictEqual(await page.locator('#task-list .task-row[data-task-id="task-b"] .task-dod').inputValue(),'');
     assert.strictEqual(await task.locator('strong').textContent(),'Implement A');
@@ -765,8 +783,7 @@ async function main() {
     const secondCriterion = page.locator('#edit-acceptance-list .acceptance-row').nth(1);
     await secondCriterion.locator('.acceptance-text').fill('second criterion');
     await secondCriterion.locator('.acceptance-owner-ref').fill('owner:quote-2');
-    assert.strictEqual(await secondCriterion.locator('.acceptance-generated-by').isEnabled(), true, 'S-FORM A4:生成者始终可填');
-    await secondCriterion.locator('.acceptance-generated-by').fill('agent-writer');
+    assert.strictEqual(await secondCriterion.locator('.acceptance-generated-by').isEditable(), false, 'S-B:生成者由认证身份写入，不可手填');
     await secondCriterion.locator('.acceptance-checked-by').fill('checker');
     await secondCriterion.locator('.acceptance-cases').fill('case-one\ncase-two');
     const sgenShape = await page.evaluate(() => ({
@@ -780,10 +797,12 @@ async function main() {
     assert.strictEqual(await secondCriterion.locator('.acceptance-id').inputValue(), 'A2', 'S-FORM A2:编号由系统续号');
     assert.strictEqual(await secondCriterion.locator('.acceptance-source').count(), 0, 'S-FORM A1:来源字段不存在');
     assert.strictEqual(await secondCriterion.locator('.acceptance-checked-at').getAttribute('readonly'), '', 'S-FORM A3:核对时刻只读');
-    assert.strictEqual(sgenShape.payload.acceptance[1].generated_by, 'agent-writer', 'S-FORM:生成者进入载荷');
+    assert.strictEqual(sgenShape.payload.acceptance[1].generated_by, '', 'S-B:浏览器不得声称生成者');
     assert.strictEqual(sgenShape.payload.acceptance[1].checked_by, 'checker', 'S-GEN:核对人必须进入该条标准');
     assert.deepStrictEqual(sgenShape.payload.acceptance[1].cases, ['case-one','case-two'], 'S-GEN:一条标准必须允许对应多条用例，不得截成恰好一条');
     assert.ok((await page.locator('#detail-screen').innerText()).includes('创建者'), 'S-FORM A10:详情显示创建者');
+    assert.strictEqual(await page.locator('#spec-creator').textContent(), '张宗楚', 'S-B B1:创建者单独显示');
+    assert.strictEqual(await page.locator('#spec-participants').textContent(), '李炳隆', 'S-B B2:参与者与创建者分开显示');
     assert.ok((await page.locator('#detail-screen').innerText()).includes('Agent 推论，待业主确认'), 'S-FORM A9:推论用词保持');
     assert.ok((await page.locator('#transfer-screen').innerText()).includes('业主'), 'S-FORM A9:转给业主用词保持');
     await secondCriterion.locator('.remove-acceptance').click();
@@ -844,6 +863,9 @@ async function main() {
     assert.strictEqual(await page.locator('#spec-list [data-title="Spec A"] .transfer-spec').count(),1,'「转」必须保留在当前是我的行');
     await page.locator('#spec-list [data-title="ReadOnlySpec"] .spec-title').click();
     await page.waitForSelector('#detail-screen:not([hidden])');
+    assert.strictEqual(await page.locator('#spec-creator').textContent(), '无法还原', 'S-B legacy creator must not be invented');
+    assert.strictEqual(await page.locator('#spec-derived-from a').textContent(), 'spec-1', 'S-B B7:derived_from automatically renders a human link');
+    assert.match(await page.locator('#spec-derived-from a').getAttribute('href'), /\/console\/specs\/spec-1$/, 'S-B lineage link comes from authoritative field');
     // 🔴 返工后无权限这一侧量的是【渲染视图】,不是隐藏的编辑器。
     //    旧探针量 CodeMirror 的可见性/可选中性 —— 那些判据没有被删,是被【搬到渲染视图上】了:
     //    「只读 ≠ 不让看」「只读态必须能选中复制」两条的业主意图不变,承载它的元素换了。

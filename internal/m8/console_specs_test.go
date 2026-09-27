@@ -220,7 +220,8 @@ func TestConsoleSpecFormServerOwnsNumberSourceAndCheckedTimeAndValidatesQuote(t 
 	if err := validateConsoleSpecWrite(req); err != nil {
 		t.Fatalf("A1 removed source must not be validated: %v", err)
 	}
-	rev, err := revisionFromRequest("spec", "owner", 1, req, now)
+	normalizeConsoleSpecGeneratedBy(&req, consoleSpecActor{ID: "owner", Kind: "principal"})
+	rev, err := revisionFromRequest("spec", consoleSpecActor{ID: "owner", Kind: "principal"}, 1, req, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +230,7 @@ func TestConsoleSpecFormServerOwnsNumberSourceAndCheckedTimeAndValidatesQuote(t 
 		t.Fatal(err)
 	}
 	got := bundle.Criteria[0]
-	if got.ID != "A1" || got.CheckedAt != "2026-09-26T11:00:00Z" || got.Source != "ai" {
+	if got.ID != "A1" || got.CheckedAt != "2026-09-26T11:00:00Z" || got.Source != "owner" || got.GeneratedBy != "" {
 		t.Fatalf("server-owned fields=%+v", got)
 	}
 	req.Acceptance[0].OwnerRef = "exact quotf"
@@ -503,7 +504,7 @@ func TestConsoleSpecsListIsMineOnlyAndPaginatesTwenty(t *testing.T) {
 	now := hub.now()
 	for i := 0; i < 21; i++ {
 		id := fmt.Sprintf("spec-mine-%02d", i)
-		rev, err := revisionFromRequest(id, "owner-a", 1, consoleSpecWriteRequest{Title: id, ContentMarkdown: "# " + id, Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}}, now)
+		rev, err := revisionFromRequest(id, consoleSpecActor{ID: "owner-a", Kind: "principal"}, 1, consoleSpecWriteRequest{Title: id, ContentMarkdown: "# " + id, Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}}, now)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -511,7 +512,7 @@ func TestConsoleSpecsListIsMineOnlyAndPaginatesTwenty(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	foreignRev, _ := revisionFromRequest("spec-foreign", "owner-b", 1, consoleSpecWriteRequest{Title: "foreign", ContentMarkdown: "# foreign", Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}}, now)
+	foreignRev, _ := revisionFromRequest("spec-foreign", consoleSpecActor{ID: "owner-b", Kind: "principal"}, 1, consoleSpecWriteRequest{Title: "foreign", ContentMarkdown: "# foreign", Acceptance: []specAcceptance{{ID: "A1", Text: "ok"}}, InputAnchors: []specInputAnchor{{Kind: "owner_message", Ref: "m"}}}, now)
 	if err := db.CreateConsoleSpec(ctx, model.ConsoleSpec{ID: "spec-foreign", PrincipalID: "owner-b", Title: "foreign", EditCapabilityHash: strings.Repeat("b", 64)}, foreignRev, hub.now()); err != nil {
 		t.Fatal(err)
 	}

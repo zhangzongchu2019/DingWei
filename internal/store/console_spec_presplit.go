@@ -67,8 +67,8 @@ func (s *SQLite) StartConsoleSpecPresplit(ctx context.Context, req model.Console
 	}
 	var revision model.ConsoleSpecRevision
 	var revisionCreated string
-	if err = tx.QueryRowContext(ctx, `SELECT r.spec_id,r.revision,r.content_markdown,r.acceptance_json,r.input_anchors_json,r.content_sha256,r.created_by,r.created_via,COALESCE(r.supersedes_revision,0),r.created_at FROM console_spec_revision r JOIN console_spec s ON s.id=r.spec_id AND s.current_revision=r.revision WHERE s.id=?`, req.SpecID).
-		Scan(&revision.SpecID, &revision.Revision, &revision.ContentMarkdown, &revision.AcceptanceJSON, &revision.InputAnchorsJSON, &revision.ContentSHA256, &revision.CreatedBy, &revision.CreatedVia, &revision.Supersedes, &revisionCreated); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT r.spec_id,r.revision,r.content_markdown,r.acceptance_json,r.input_anchors_json,r.content_sha256,r.created_by,r.created_by_kind,r.created_via,COALESCE(r.supersedes_revision,0),r.created_at FROM console_spec_revision r JOIN console_spec s ON s.id=r.spec_id AND s.current_revision=r.revision WHERE s.id=?`, req.SpecID).
+		Scan(&revision.SpecID, &revision.Revision, &revision.ContentMarkdown, &revision.AcceptanceJSON, &revision.InputAnchorsJSON, &revision.ContentSHA256, &revision.CreatedBy, &revision.CreatedByKind, &revision.CreatedVia, &revision.Supersedes, &revisionCreated); err != nil {
 		return nil, nil, err
 	}
 	revision.CreatedAt, _ = time.Parse(time.RFC3339Nano, revisionCreated)

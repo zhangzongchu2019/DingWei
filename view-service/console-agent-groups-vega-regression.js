@@ -23,6 +23,7 @@ if (mutation === 'leak-remove') mutate('if(selected.can_manage&&!leader){var rm=
 if (mutation === 'foreign-candidate') mutate("fill('groupJoinAgent',owned.filter(function(a){return !ids.has(a.id);}),", "fill('groupJoinAgent',owned.concat([{id:'foreign',session_name:'foreign-agent-2642',online:true}]).filter(function(a){return !ids.has(a.id);}),");
 if (mutation === 'detach-remove-row') mutate('row.append(rm);}members.append(row);', 'members.append(rm);}members.append(row);');
 if (mutation === 'ux-table-align') mutate('.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}', '.group-table th{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-table td{padding:7px 7px 7px 31px;border-bottom:1px solid #ddd;text-align:left}');
+if (mutation === 'drop-group-row-stripe') mutate('.group-table tbody tr:nth-child(even){background:var(--row-alt)}', '');
 if (mutation === 'ux-member-gap') mutate('gap:18px;max-width:520px', 'justify-content:space-between;max-width:none');
 if (mutation === 'ux-placeholder') mutate('placeholder="请输入完整的 32 位编组码"', 'placeholder=""');
 if (mutation === 'ux-block-colors') {
@@ -32,7 +33,7 @@ if (mutation === 'ux-block-colors') {
 if (mutation === 'ux-add-focus') mutate("document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};", "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
 if (mutation === 'ux-detail-exclusive') mutate("row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();setGroupPanelMode('detail');}", "row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();if(globalThis.__testExclusive)document.getElementById('groupDetail').hidden=false;else setGroupPanelMode('detail');}");
 if (mutation === 'ux-join-exclusive') mutate("document.getElementById('groupCodeJoinOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='join'?'':'join');}", "document.getElementById('groupCodeJoinOpen').onclick=function(){if(globalThis.__testExclusive){document.getElementById('groupCodeJoin').hidden=false;document.getElementById('groupJoinCode').focus();}else setGroupPanelMode(groupPanelMode==='join'?'':'join');}");
-if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'ux-member-gap', 'ux-placeholder', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive', 'ux-join-exclusive'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'drop-group-row-stripe', 'ux-member-gap', 'ux-placeholder', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive', 'ux-join-exclusive'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 
 let groups = [];
 let additionsClosed = false;
@@ -162,6 +163,12 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.deepStrictEqual(await page.locator('#groupListTable th').allTextContents(), ['组名', '组长', '业主', '操作']);
       assert.strictEqual(await page.locator('#groupListItems .group-delete').count(), 1, 'delete must exist only for an owned group');
       assert.deepStrictEqual(await page.locator('#groupListItems tr').allTextContents(), ['团队1leader业主甲删除', '他组leader业主乙']);
+      for (const theme of ['light', 'dark']) {
+        const colors = await page.evaluate((value) => { document.documentElement.dataset.theme=value; return Array.from(document.querySelectorAll('#groupListItems tr')).slice(0,2).map((row)=>getComputedStyle(row).backgroundColor); }, theme);
+        assert.strictEqual(colors.length, 2, `Agent 编组 ${theme} 必须有相邻两行`);
+        assert.notStrictEqual(colors[0], colors[1], `Agent 编组 ${theme} 相邻行必须有不同 computed background`);
+      }
+      await page.evaluate(() => { document.documentElement.dataset.theme='light'; });
       await page.locator('#groupListItems tr').filter({ hasText: '他组' }).click();
       const crossText = await page.locator('#groupMembers').textContent();
       const crossRemoveCount = await page.locator('#groupMembers .group-member-remove').count();

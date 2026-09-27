@@ -214,6 +214,26 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 				continue
 			}
 		}
+		if name == "0050_console_spec_actor_and_derive.sql" {
+			state, err := s.consoleSpecActorSchema(ctx)
+			if err != nil {
+				return err
+			}
+			if state == objAllPresent {
+				if err := s.recordMigration(ctx, name, digest); err != nil {
+					return err
+				}
+				continue
+			}
+			if state == objPartial {
+				return fmt.Errorf("migrate %s: actor/derive schema is partially present", name)
+			}
+			if err := s.applyForeignKeyDisabledMigration(ctx, name, string(body), digest); err != nil {
+				return err
+			}
+			legacy = false
+			continue
+		}
 
 		if legacy {
 			state, err := s.migrationObjState(ctx, string(body))
@@ -273,6 +293,84 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 
 	if backfilled > 0 {
 		fmt.Fprintf(os.Stderr, "store: legacy 迁移补账 %d 件（已核验对象存在，未重放语句）\n", backfilled)
+	}
+	return nil
+}
+
+func (s *SQLite) consoleSpecActorSchema(ctx context.Context) (migrationObjState, error) {
+	hasColumn := func(table, want string) (bool, error) {
+		rows, err := s.db.QueryContext(ctx, `PRAGMA table_info(`+table+`)`)
+		if err != nil {
+			return false, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var cid, notNull, pk int
+			var name, typ string
+			var def sql.NullString
+			if err := rows.Scan(&cid, &name, &typ, &notNull, &def, &pk); err != nil {
+				return false, err
+			}
+			if name == want {
+				return true, nil
+			}
+		}
+		return false, rows.Err()
+	}
+	actor, err := hasColumn("console_spec_revision", "created_by_kind")
+	if err != nil {
+		return objUnverifiable, err
+	}
+	derived, err := hasColumn("console_spec", "derived_from")
+	if err != nil {
+		return objUnverifiable, err
+	}
+	if actor && derived {
+		return objAllPresent, nil
+	}
+	if actor || derived {
+		return objPartial, nil
+	}
+	return objAllMissing, nil
+}
+
+func (s *SQLite) applyForeignKeyDisabledMigration(ctx context.Context, name, body, digest string) (retErr error) {
+	conn, err := s.db.Conn(ctx)
+	if err != nil {
+		return fmt.Errorf("migrate %s: acquire dedicated connection: %w", name, err)
+	}
+	defer conn.Close()
+	if _, err = conn.ExecContext(ctx, `PRAGMA foreign_keys=OFF`); err != nil {
+		return fmt.Errorf("migrate %s: disable foreign keys: %w", name, err)
+	}
+	defer func() {
+		if restoreErr := restoreConsoleForeignKeys(context.Background(), conn, name); restoreErr != nil {
+			retErr = errors.Join(retErr, restoreErr)
+		}
+	}()
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("migrate %s: open transaction: %w", name, err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err = tx.ExecContext(ctx, body); err != nil {
+		return fmt.Errorf("migrate %s: %w", name, err)
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO schema_migrations(version,digest,applied_at) VALUES(?,?,?)`, name, digest, s.now()); err != nil {
+		return fmt.Errorf("migrate %s: record ledger: %w", name, err)
+	}
+	if violations, checkErr := consoleForeignKeyViolations(ctx, tx); checkErr != nil {
+		return fmt.Errorf("migrate %s: pre-commit foreign_key_check: %w", name, checkErr)
+	} else if len(violations) != 0 {
+		return fmt.Errorf("migrate %s: pre-commit foreign_key_check failed: %s", name, strings.Join(violations, "; "))
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	if violations, checkErr := consoleForeignKeyViolations(ctx, conn); checkErr != nil {
+		return fmt.Errorf("migrate %s: post-commit foreign_key_check: %w", name, checkErr)
+	} else if len(violations) != 0 {
+		return fmt.Errorf("migrate %s: post-commit foreign_key_check failed: %s", name, strings.Join(violations, "; "))
 	}
 	return nil
 }

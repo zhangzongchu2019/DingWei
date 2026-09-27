@@ -29,6 +29,8 @@ var (
 	ErrConsoleTaskCaseUnknown     = errors.New("console task case is not linked to this task")
 )
 
+const appendConsoleSpecRevisionUpdateSQL = `UPDATE console_spec SET current_revision=?,updated_at=? WHERE id=? AND current_editor_id=? AND archived=0 AND editing_closed=0 AND current_revision=?`
+
 type storedTaskAcceptance struct {
 	ID string `json:"id"`
 }
@@ -378,14 +380,39 @@ func appendConsoleSpecEvent(ctx context.Context, tx *sql.Tx, specID string, revi
 	return err
 }
 
+func normalizeConsoleSpecActor(revision *model.ConsoleSpecRevision) {
+	if revision.CreatedByKind == "" {
+		revision.CreatedByKind = "principal"
+	}
+}
+
+func validateConsoleSpecActor(ctx context.Context, tx *sql.Tx, revision model.ConsoleSpecRevision) error {
+	if strings.TrimSpace(revision.CreatedBy) == "" || (revision.CreatedByKind != "principal" && revision.CreatedByKind != "agent") {
+		return errors.New("invalid console spec actor")
+	}
+	query := `SELECT COUNT(*) FROM console_principal WHERE id=? AND active=1`
+	if revision.CreatedByKind == "agent" {
+		query = `SELECT COUNT(*) FROM console_agent WHERE id=? AND active=1`
+	}
+	var n int
+	if err := tx.QueryRowContext(ctx, query, revision.CreatedBy).Scan(&n); err != nil || n != 1 {
+		return errors.New("invalid console spec actor")
+	}
+	return nil
+}
+
 func insertConsoleSpecRevision(ctx context.Context, tx *sql.Tx, revision model.ConsoleSpecRevision, at time.Time) error {
+	normalizeConsoleSpecActor(&revision)
+	if err := validateConsoleSpecActor(ctx, tx, revision); err != nil {
+		return err
+	}
 	via := revision.CreatedVia
 	if via == "" {
 		via = "principal"
 	}
-	_, err := tx.ExecContext(ctx, `INSERT INTO console_spec_revision(spec_id,revision,content_markdown,acceptance_json,input_anchors_json,content_sha256,created_by,created_via,supersedes_revision,created_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?)`, revision.SpecID, revision.Revision, revision.ContentMarkdown, revision.AcceptanceJSON,
-		revision.InputAnchorsJSON, revision.ContentSHA256, revision.CreatedBy, via, nullInt(revision.Supersedes), at.UTC().Format(time.RFC3339Nano))
+	_, err := tx.ExecContext(ctx, `INSERT INTO console_spec_revision(spec_id,revision,content_markdown,acceptance_json,input_anchors_json,content_sha256,created_by,created_by_kind,created_via,supersedes_revision,created_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?)`, revision.SpecID, revision.Revision, revision.ContentMarkdown, revision.AcceptanceJSON,
+		revision.InputAnchorsJSON, revision.ContentSHA256, revision.CreatedBy, revision.CreatedByKind, via, nullInt(revision.Supersedes), at.UTC().Format(time.RFC3339Nano))
 	return err
 }
 
@@ -398,7 +425,7 @@ func nullInt(v int) any {
 
 func (s *SQLite) CreateConsoleSpec(ctx context.Context, spec model.ConsoleSpec, revision model.ConsoleSpecRevision, now time.Time) error {
 	if strings.TrimSpace(spec.ID) == "" || strings.TrimSpace(spec.PrincipalID) == "" || strings.TrimSpace(spec.Title) == "" ||
-		strings.TrimSpace(spec.EditCapabilityHash) == "" || revision.SpecID != spec.ID || revision.Revision != 1 || revision.CreatedBy != spec.PrincipalID {
+		strings.TrimSpace(spec.EditCapabilityHash) == "" || revision.SpecID != spec.ID || revision.Revision != 1 {
 		return errors.New("invalid console spec")
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -414,7 +441,7 @@ func (s *SQLite) CreateConsoleSpec(ctx context.Context, spec model.ConsoleSpec, 
 	if err = insertConsoleSpecRevision(ctx, tx, revision, now); err != nil {
 		return err
 	}
-	if err = appendConsoleSpecEvent(ctx, tx, spec.ID, 1, spec.PrincipalID, "create", "", now); err != nil {
+	if err = appendConsoleSpecEvent(ctx, tx, spec.ID, 1, revision.CreatedBy, "create", "", now); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -423,10 +450,11 @@ func (s *SQLite) CreateConsoleSpec(ctx context.Context, spec model.ConsoleSpec, 
 func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 	var spec model.ConsoleSpec
 	var editor sql.NullString
+	var derived sql.NullString
 	var archived int
 	var editingClosed int
 	var created, updated string
-	err := row.Scan(&spec.ID, &spec.PrincipalID, &spec.OwnerShortName, &spec.Title, &spec.State, &spec.CurrentRevision, &editor, &spec.CurrentEditorShort, &archived, &spec.TaskState, &spec.EditCapabilityHash, &editingClosed, &created, &updated)
+	err := row.Scan(&spec.ID, &spec.PrincipalID, &spec.OwnerShortName, &spec.Title, &spec.State, &spec.CurrentRevision, &editor, &spec.CurrentEditorShort, &archived, &spec.TaskState, &spec.EditCapabilityHash, &editingClosed, &derived, &created, &updated)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -436,6 +464,7 @@ func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 	spec.CurrentEditorID = nullableString(editor)
 	spec.Archived = archived != 0
 	spec.EditingClosed = editingClosed != 0
+	spec.DerivedFrom = nullableString(derived)
 	spec.CreatedAt, err = specTime(created)
 	if err != nil {
 		return nil, err
@@ -448,21 +477,21 @@ func scanConsoleSpec(row rowScanner) (*model.ConsoleSpec, error) {
 }
 
 func (s *SQLite) ConsoleSpec(ctx context.Context, principalID, specID string, management bool) (*model.ConsoleSpec, error) {
-	query := `SELECT s.id,s.principal_id,COALESCE(NULLIF(o.display_name,''),o.id),s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(NULLIF(e.display_name,''),e.id,''),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id WHERE s.id=?`
+	query := `SELECT s.id,s.principal_id,COALESCE(NULLIF(o.display_name,''),o.id),s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(NULLIF(e.display_name,''),e.id,''),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.derived_from,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id WHERE s.id=?`
 	// Spec 内容按业主裁定“控写、不控读”。保留 principal/management 参数以兼容
 	// 既有 repo 接口，但直接链接读取不再以身份过滤；写路径仍单独按 owner/capability 判。
 	return scanConsoleSpec(s.db.QueryRowContext(ctx, query, specID))
 }
 
 func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, management bool) ([]model.ConsoleSpec, error) {
-	query := `SELECT s.id,s.principal_id,COALESCE(NULLIF(o.display_name,''),o.id),s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(NULLIF(e.display_name,''),e.id,''),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id`
+	query := `SELECT s.id,s.principal_id,COALESCE(NULLIF(o.display_name,''),o.id),s.title,s.state,s.current_revision,s.current_editor_id,COALESCE(NULLIF(e.display_name,''),e.id,''),s.archived,s.task_state,s.edit_capability_hash,s.editing_closed,s.derived_from,s.created_at,s.updated_at FROM console_spec s JOIN console_principal o ON o.id=s.principal_id LEFT JOIN console_principal e ON e.id=s.current_editor_id`
 	var args []any
 	if !management {
 		query += ` WHERE s.principal_id=? OR s.current_editor_id=?`
 		args = append(args, principalID)
 		args = append(args, principalID)
 	}
-	query += ` ORDER BY s.updated_at DESC,s.id`
+	query += ` ORDER BY s.created_at DESC,s.id`
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -479,12 +508,97 @@ func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, manag
 	return out, rows.Err()
 }
 
+func (s *SQLite) ConsoleSpecAttribution(ctx context.Context, specID string) (model.ConsoleSpecAttribution, error) {
+	var out model.ConsoleSpecAttribution
+	var creatorID, creatorKind string
+	if err := s.db.QueryRowContext(ctx, `SELECT created_by,created_by_kind FROM console_spec_revision WHERE spec_id=? AND revision=1`, specID).Scan(&creatorID, &creatorKind); err != nil {
+		return out, err
+	}
+	actorLabel := func(kind, id string) string {
+		if kind == "unknown" {
+			return "无法还原"
+		}
+		var label string
+		if kind == "agent" {
+			_ = s.db.QueryRowContext(ctx, `SELECT session_name FROM console_agent WHERE id=?`, id).Scan(&label)
+		} else {
+			_ = s.db.QueryRowContext(ctx, `SELECT COALESCE(NULLIF(display_name,''),id) FROM console_principal WHERE id=?`, id).Scan(&label)
+		}
+		if label == "" {
+			return id
+		}
+		return label
+	}
+	out.CreatorKind = creatorKind
+	out.Creator = actorLabel(creatorKind, creatorID)
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT created_by_kind,created_by FROM console_spec_revision WHERE spec_id=? AND revision>1
+		UNION SELECT 'agent',review_agent_id FROM console_spec_gate_review WHERE spec_id=?
+		UNION SELECT 'principal',operator_principal FROM console_spec_gate_review WHERE spec_id=?
+		UNION SELECT 'principal',reviewed_by FROM console_spec_review WHERE spec_id=?`, specID, specID, specID, specID)
+	if err != nil {
+		return out, err
+	}
+	seen := map[string]bool{creatorKind + "\x00" + creatorID: true}
+	type actorRef struct{ kind, id string }
+	var participants []actorRef
+	for rows.Next() {
+		var kind, id string
+		if err := rows.Scan(&kind, &id); err != nil {
+			return out, err
+		}
+		key := kind + "\x00" + id
+		if seen[key] || kind == "unknown" || id == "" {
+			continue
+		}
+		seen[key] = true
+		participants = append(participants, actorRef{kind, id})
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return out, err
+	}
+	rows.Close()
+	for _, participant := range participants {
+		out.Participants = append(out.Participants, actorLabel(participant.kind, participant.id))
+	}
+	return out, nil
+}
+
+func (s *SQLite) DeriveConsoleSpec(ctx context.Context, principalID, sourceID string, spec model.ConsoleSpec, revision model.ConsoleSpecRevision, now time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var sourceRevision int
+	var sourceHash string
+	if err = tx.QueryRowContext(ctx, `SELECT s.current_revision,r.content_sha256 FROM console_spec s JOIN console_spec_revision r ON r.spec_id=s.id AND r.revision=s.current_revision WHERE s.id=? AND s.principal_id=? AND s.state='final' AND s.archived=0`, sourceID, principalID).Scan(&sourceRevision, &sourceHash); err != nil {
+		return ErrConsoleSpecPermission
+	}
+	if spec.ID == "" || spec.PrincipalID != principalID || spec.DerivedFrom != sourceID || revision.SpecID != spec.ID || revision.Revision != 1 || revision.ContentSHA256 != sourceHash {
+		return errors.New("invalid derived console spec")
+	}
+	stamp := now.UTC().Format(time.RFC3339Nano)
+	if _, err = tx.ExecContext(ctx, `INSERT INTO console_spec(id,principal_id,title,state,current_revision,current_editor_id,archived,task_state,edit_capability_hash,editing_closed,derived_from,created_at,updated_at) VALUES(?,?,?,'editing',1,?,0,'splitting',?,0,?,?,?)`,
+		spec.ID, principalID, spec.Title, principalID, spec.EditCapabilityHash, sourceID, stamp, stamp); err != nil {
+		return err
+	}
+	if err = insertConsoleSpecRevision(ctx, tx, revision, now); err != nil {
+		return err
+	}
+	if err = appendConsoleSpecEvent(ctx, tx, spec.ID, 1, revision.CreatedBy, "derive", fmt.Sprintf("source=%s revision=%d", sourceID, sourceRevision), now); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 func (s *SQLite) ConsoleSpecRevision(ctx context.Context, principalID, specID string, revision int, management bool) (*model.ConsoleSpecRevision, error) {
-	query := `SELECT r.spec_id,r.revision,r.content_markdown,r.acceptance_json,r.input_anchors_json,r.content_sha256,r.created_by,r.created_via,COALESCE(r.supersedes_revision,0),r.created_at
+	query := `SELECT r.spec_id,r.revision,r.content_markdown,r.acceptance_json,r.input_anchors_json,r.content_sha256,r.created_by,r.created_by_kind,r.created_via,COALESCE(r.supersedes_revision,0),r.created_at
 		FROM console_spec_revision r JOIN console_spec s ON s.id=r.spec_id WHERE r.spec_id=? AND r.revision=?`
 	var r model.ConsoleSpecRevision
 	var created string
-	err := s.db.QueryRowContext(ctx, query, specID, revision).Scan(&r.SpecID, &r.Revision, &r.ContentMarkdown, &r.AcceptanceJSON, &r.InputAnchorsJSON, &r.ContentSHA256, &r.CreatedBy, &r.CreatedVia, &r.Supersedes, &created)
+	err := s.db.QueryRowContext(ctx, query, specID, revision).Scan(&r.SpecID, &r.Revision, &r.ContentMarkdown, &r.AcceptanceJSON, &r.InputAnchorsJSON, &r.ContentSHA256, &r.CreatedBy, &r.CreatedByKind, &r.CreatedVia, &r.Supersedes, &created)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -542,14 +656,14 @@ func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, spe
 		}
 	}
 	next := current + 1
-	if revision.SpecID != specID || revision.Revision != next || revision.CreatedBy != principalID {
+	if revision.SpecID != specID || revision.Revision != next {
 		return 0, errors.New("invalid console spec revision")
 	}
 	revision.Supersedes = current
 	if err = insertConsoleSpecRevision(ctx, tx, revision, now); err != nil {
 		return 0, err
 	}
-	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET current_revision=?,updated_at=? WHERE id=? AND current_editor_id=? AND archived=0 AND editing_closed=0 AND current_revision=?`,
+	res, err := tx.ExecContext(ctx, appendConsoleSpecRevisionUpdateSQL,
 		next, now.UTC().Format(time.RFC3339Nano), specID, principalID, expected)
 	if err != nil {
 		return 0, err
@@ -558,7 +672,7 @@ func (s *SQLite) appendConsoleSpecRevision(ctx context.Context, principalID, spe
 	if n != 1 {
 		return 0, ErrConsoleSpecEditDenied
 	}
-	if err = appendConsoleSpecEvent(ctx, tx, specID, next, principalID, "revise", fmt.Sprintf("supersedes=%d", current), now); err != nil {
+	if err = appendConsoleSpecEvent(ctx, tx, specID, next, revision.CreatedBy, "revise", fmt.Sprintf("supersedes=%d", current), now); err != nil {
 		return 0, err
 	}
 	if err = tx.Commit(); err != nil {
