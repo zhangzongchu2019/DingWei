@@ -709,6 +709,36 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 	}
 }
 
+func (h *Hub) RequireConsoleSpecAgentCapability(pageID func(*http.Request) string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		repo, repoOK := h.Repo.(consoleAuthRepository)
+		specRepo, specOK := h.consoleSpecs()
+		keyID := strings.TrimSpace(r.Header.Get("X-DW-Agent-Key-ID"))
+		sessionName := strings.TrimSpace(r.Header.Get("X-DW-Agent-Session"))
+		secret := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		meta, authErr := h.Repo.ResolveServiceAPISecret(r.Context(), keyID, HashAPIKey(secret))
+		agent, agentErr := specRepo.ResolveConsoleAgentByEndpoint(r.Context(), keyID, sessionName)
+		raw := strings.TrimSpace(r.Header.Get("X-DW-Console-Capability"))
+		expectedPage := pageID(r)
+		if !h.consoleAuthEnabled || !repoOK || !specOK || keyID == "" || sessionName == "" || secret == "" || authErr != nil || meta == nil || agentErr != nil || agent == nil || !agent.Active || raw == "" || expectedPage == "" {
+			http.Error(w, "console capability required", http.StatusForbidden)
+			return
+		}
+		capability, err := repo.ResolveConsolePageCapability(r.Context(), hashConsoleToken(raw), agent.ID, expectedPage, time.Now())
+		if err != nil {
+			http.Error(w, "console auth unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if capability == nil {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		ctx := context.WithValue(r.Context(), consolePrincipalContextKey{}, capability.PrincipalID)
+		ctx = context.WithValue(ctx, consoleSpecActorContextKey{}, consoleSpecActor{ID: capability.AgentID, Kind: "agent"})
+		next(w, r.WithContext(ctx))
+	}
+}
+
 func consoleCapabilityRequired(rest string) bool {
 	switch strings.Trim(strings.TrimSpace(rest), "/") {
 	case "input", "control", "interrupt":

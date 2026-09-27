@@ -15,7 +15,7 @@ const assert = new Proxy(assertModule, {
   },
 });
 // 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
-const MIN_ASSERTIONS = 195;
+const MIN_ASSERTIONS = 200;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -208,7 +208,7 @@ async function main() {
       res.writeHead(200, { 'Content-Type': 'text/css' }); res.end(fs.readFileSync(path.join(ASSET_DIR, 'easymde.min.css'))); return;
     }
     if (req.url === '/fixture/add-readonly-spec' && req.method === 'POST') {
-      const item={id:'spec-readonly',owner_short_name:'乙',current_editor_short_name:'乙',title:'ReadOnlySpec',
+      const item={id:'spec-readonly',owner_short_name:'乙',current_editor_short_name:'乙',title:'ReadOnlySpec',derived_from:'spec-1',
         state:'final',task_state:'closed',current_revision:1,can_edit:false,can_split:false};
       if (!specs.find((x) => x.id === item.id)) { specs.unshift(item);
         const origin=`http://${req.headers.host}`;
@@ -246,7 +246,7 @@ async function main() {
       const taskB={proposal_id:'task-b',spec_id:'spec-1',revision:2,title:'Implement B',content:'dependency',status:'planned',estimated_hours:2,depends_on_json:JSON.stringify(taskDeps.get('task-b')),acceptance_json:taskDoDs.get('task-b')?JSON.stringify([{id:'DOD',text:taskDoDs.get('task-b')}]) : '',depended_by:taskDeps.get('task-a').includes('task-b')?['task-a']:[],dependency_level:bLevel,parallel};
       const ordered=[taskA,taskB].sort((a,b)=>a.dependency_level-b.dependency_level||a.proposal_id.localeCompare(b.proposal_id));
       const generated={proposal_id:'task-presplit',spec_id:item.id,revision:1,title:'Agent task',content:'generated',status:'planned',estimated_hours:2,depends_on_json:'[]',acceptance_json:'[]',depended_by:[],dependency_level:0,parallel:false};
-      res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), tasks:item.id==='spec-1'?ordered:(presplitGenerated&&item.id==='spec-2'?[generated]:[]), dependency_candidates:[taskA,taskB] })); return;
+      res.end(JSON.stringify({ spec: item, revision: revisions.get(item.id), attribution:{creator:item.id==='spec-readonly'?'无法还原':'张宗楚',creator_kind:item.id==='spec-readonly'?'unknown':'principal',participants:item.id==='spec-readonly'?[]:['李炳隆']}, tasks:item.id==='spec-1'?ordered:(presplitGenerated&&item.id==='spec-2'?[generated]:[]), dependency_candidates:[taskA,taskB] })); return;
     }
     if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'zzc',display_name:'张宗楚',value:'张宗楚'},{short_name:'lbl',display_name:'李炳隆',value:'李炳隆'},{short_name:'th',display_name:'唐虹',value:'唐虹'},{short_name:'',display_name:'多角色业主',value:'多角色业主'}]}));return;}
     const workflowTransfer=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/workflow\/transfer$/);
@@ -765,8 +765,7 @@ async function main() {
     const secondCriterion = page.locator('#edit-acceptance-list .acceptance-row').nth(1);
     await secondCriterion.locator('.acceptance-text').fill('second criterion');
     await secondCriterion.locator('.acceptance-owner-ref').fill('owner:quote-2');
-    assert.strictEqual(await secondCriterion.locator('.acceptance-generated-by').isEnabled(), true, 'S-FORM A4:生成者始终可填');
-    await secondCriterion.locator('.acceptance-generated-by').fill('agent-writer');
+    assert.strictEqual(await secondCriterion.locator('.acceptance-generated-by').isEditable(), false, 'S-B:生成者由认证身份写入，不可手填');
     await secondCriterion.locator('.acceptance-checked-by').fill('checker');
     await secondCriterion.locator('.acceptance-cases').fill('case-one\ncase-two');
     const sgenShape = await page.evaluate(() => ({
@@ -780,10 +779,12 @@ async function main() {
     assert.strictEqual(await secondCriterion.locator('.acceptance-id').inputValue(), 'A2', 'S-FORM A2:编号由系统续号');
     assert.strictEqual(await secondCriterion.locator('.acceptance-source').count(), 0, 'S-FORM A1:来源字段不存在');
     assert.strictEqual(await secondCriterion.locator('.acceptance-checked-at').getAttribute('readonly'), '', 'S-FORM A3:核对时刻只读');
-    assert.strictEqual(sgenShape.payload.acceptance[1].generated_by, 'agent-writer', 'S-FORM:生成者进入载荷');
+    assert.strictEqual(sgenShape.payload.acceptance[1].generated_by, '', 'S-B:浏览器不得声称生成者');
     assert.strictEqual(sgenShape.payload.acceptance[1].checked_by, 'checker', 'S-GEN:核对人必须进入该条标准');
     assert.deepStrictEqual(sgenShape.payload.acceptance[1].cases, ['case-one','case-two'], 'S-GEN:一条标准必须允许对应多条用例，不得截成恰好一条');
     assert.ok((await page.locator('#detail-screen').innerText()).includes('创建者'), 'S-FORM A10:详情显示创建者');
+    assert.strictEqual(await page.locator('#spec-creator').textContent(), '张宗楚', 'S-B B1:创建者单独显示');
+    assert.strictEqual(await page.locator('#spec-participants').textContent(), '李炳隆', 'S-B B2:参与者与创建者分开显示');
     assert.ok((await page.locator('#detail-screen').innerText()).includes('Agent 推论，待业主确认'), 'S-FORM A9:推论用词保持');
     assert.ok((await page.locator('#transfer-screen').innerText()).includes('业主'), 'S-FORM A9:转给业主用词保持');
     await secondCriterion.locator('.remove-acceptance').click();
@@ -844,6 +845,9 @@ async function main() {
     assert.strictEqual(await page.locator('#spec-list [data-title="Spec A"] .transfer-spec').count(),1,'「转」必须保留在当前是我的行');
     await page.locator('#spec-list [data-title="ReadOnlySpec"] .spec-title').click();
     await page.waitForSelector('#detail-screen:not([hidden])');
+    assert.strictEqual(await page.locator('#spec-creator').textContent(), '无法还原', 'S-B legacy creator must not be invented');
+    assert.strictEqual(await page.locator('#spec-derived-from a').textContent(), 'spec-1', 'S-B B7:derived_from automatically renders a human link');
+    assert.match(await page.locator('#spec-derived-from a').getAttribute('href'), /\/console\/specs\/spec-1$/, 'S-B lineage link comes from authoritative field');
     // 🔴 返工后无权限这一侧量的是【渲染视图】,不是隐藏的编辑器。
     //    旧探针量 CodeMirror 的可见性/可选中性 —— 那些判据没有被删,是被【搬到渲染视图上】了:
     //    「只读 ≠ 不让看」「只读态必须能选中复制」两条的业主意图不变,承载它的元素换了。

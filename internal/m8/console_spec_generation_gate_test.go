@@ -17,7 +17,7 @@ func generationGateBody(criteria string) string {
 	return `{"title":"S-GEN","content_markdown":"# gate owner:q1 owner:q2 owner:q owner:先挡住","acceptance":` + criteria + `,"inferences":[{"id":"I1","text":"可能需要提示","generated_by":"agent-writer","status":"pending_owner_confirmation"}],"input_anchors":[{"kind":"owner_message","ref":"owner:quote"}]}`
 }
 
-func TestConsoleSpecGenerationGatePersistsMultipleCriteriaAndCorrectSources(t *testing.T) {
+func TestConsoleSpecGenerationGatePersistsMultipleCriteriaAndUsesAuthenticatedSource(t *testing.T) {
 	hub := newConsoleSpecTestHub(t)
 	criteria := `[{"id":"A1","text":"owner criterion","owner_ref":"owner:q1","source":"owner","checked_by":"checker","checked_at":"2026-09-25T01:02:03Z","cases":["case-a","case-b"]},{"id":"A2","text":"AI criterion","owner_ref":"owner:q2","source":"ai","generated_by":"agent-writer","checked_by":"checker","checked_at":"2026-09-25T01:02:04Z","cases":["case-c"]}]`
 	rr := callConsoleSpec(t, hub, "owner-a", consolePlatformActionSubmit, http.MethodPost, "/api/console/specs", generationGateBody(criteria), hub.HandleConsoleSpecs)
@@ -36,7 +36,7 @@ func TestConsoleSpecGenerationGatePersistsMultipleCriteriaAndCorrectSources(t *t
 	if err := json.Unmarshal([]byte(rev.AcceptanceJSON), &bundle); err != nil {
 		t.Fatal(err)
 	}
-	if len(bundle.Criteria) != 2 || len(bundle.Inferences) != 1 || bundle.Criteria[0].Source != "owner" || bundle.Criteria[0].GeneratedBy != "" || bundle.Criteria[1].Source != "ai" || bundle.Criteria[1].GeneratedBy != "agent-writer" || len(bundle.Criteria[0].Cases) != 2 {
+	if len(bundle.Criteria) != 2 || len(bundle.Inferences) != 1 || bundle.Criteria[0].Source != "owner" || bundle.Criteria[0].GeneratedBy != "" || bundle.Criteria[1].Source != "owner" || bundle.Criteria[1].GeneratedBy != "" || len(bundle.Criteria[0].Cases) != 2 {
 		t.Fatalf("bundle=%+v", bundle)
 	}
 }

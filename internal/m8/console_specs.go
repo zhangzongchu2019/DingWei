@@ -52,9 +52,17 @@ type consoleSpecRepository interface {
 	FailConsoleSpecPresplitDispatch(context.Context, string, string, time.Time) error
 	RejectConsoleSpecPresplitResult(context.Context, string, model.ConsoleAgent, string, time.Time) error
 	CompleteConsoleSpecPresplit(context.Context, string, model.ConsoleAgent, []store.ConsoleSpecPresplitTask, time.Time) error
+	ConsoleSpecAttribution(context.Context, string) (model.ConsoleSpecAttribution, error)
+	DeriveConsoleSpec(context.Context, string, string, model.ConsoleSpec, model.ConsoleSpecRevision, time.Time) error
 }
 
 type consoleSpecOpenNewContextKey struct{}
+type consoleSpecActorContextKey struct{}
+
+type consoleSpecActor struct {
+	ID   string
+	Kind string
+}
 
 func orderConsoleTasks(tasks []model.ConsoleTaskProposal, all []model.ConsoleTaskProposal) []model.ConsoleTaskProposal {
 	byID := make(map[string]*model.ConsoleTaskProposal, len(tasks))
@@ -206,6 +214,23 @@ type consoleSpecWriteRequest struct {
 	Inferences       []specInference   `json:"inferences,omitempty"`
 	InputAnchors     []specInputAnchor `json:"input_anchors"`
 	ExpectedRevision int               `json:"expected_revision,omitempty"`
+	ClaimedCreatedBy string            `json:"created_by,omitempty"`
+}
+
+func authenticatedConsoleSpecActor(r *http.Request) consoleSpecActor {
+	if actor, ok := r.Context().Value(consoleSpecActorContextKey{}).(consoleSpecActor); ok && actor.ID != "" {
+		return actor
+	}
+	return consoleSpecActor{ID: platformPrincipal(r), Kind: "principal"}
+}
+
+func normalizeConsoleSpecGeneratedBy(req *consoleSpecWriteRequest, actor consoleSpecActor) {
+	for i := range req.Acceptance {
+		req.Acceptance[i].GeneratedBy = ""
+		if actor.Kind == "agent" {
+			req.Acceptance[i].GeneratedBy = actor.ID
+		}
+	}
 }
 
 func validateConsoleSpecWrite(req consoleSpecWriteRequest) error {
@@ -261,6 +286,7 @@ func decodeConsoleSpecWrite(w http.ResponseWriter, r *http.Request) (consoleSpec
 		http.Error(w, "invalid spec JSON: "+err.Error(), http.StatusBadRequest)
 		return consoleSpecWriteRequest{}, false
 	}
+	normalizeConsoleSpecGeneratedBy(&req, authenticatedConsoleSpecActor(r))
 	if err := validateConsoleSpecWrite(req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return consoleSpecWriteRequest{}, false
@@ -268,11 +294,11 @@ func decodeConsoleSpecWrite(w http.ResponseWriter, r *http.Request) (consoleSpec
 	return req, true
 }
 
-func revisionFromRequest(specID, principal string, revision int, req consoleSpecWriteRequest, now time.Time) (model.ConsoleSpecRevision, error) {
+func revisionFromRequest(specID string, actor consoleSpecActor, revision int, req consoleSpecWriteRequest, now time.Time) (model.ConsoleSpecRevision, error) {
 	for i := range req.Acceptance {
 		req.Acceptance[i].ID = fmt.Sprintf("A%d", i+1)
 		req.Acceptance[i].Source = "owner"
-		if strings.TrimSpace(req.Acceptance[i].GeneratedBy) != "" {
+		if actor.Kind == "agent" {
 			req.Acceptance[i].Source = "ai"
 		}
 		req.Acceptance[i].CheckedAt = now.UTC().Format(time.RFC3339)
@@ -287,7 +313,7 @@ func revisionFromRequest(specID, principal string, revision int, req consoleSpec
 	}
 	sum := sha256.Sum256([]byte(req.ContentMarkdown))
 	return model.ConsoleSpecRevision{SpecID: specID, Revision: revision, ContentMarkdown: req.ContentMarkdown,
-		AcceptanceJSON: string(acceptance), InputAnchorsJSON: string(anchors), ContentSHA256: hex.EncodeToString(sum[:]), CreatedBy: principal}, nil
+		AcceptanceJSON: string(acceptance), InputAnchorsJSON: string(anchors), ContentSHA256: hex.EncodeToString(sum[:]), CreatedBy: actor.ID, CreatedByKind: actor.Kind}, nil
 }
 
 func (h *Hub) consoleSpecs() (consoleSpecRepository, bool) {
@@ -302,6 +328,7 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	principal := platformPrincipal(r)
+	actor := authenticatedConsoleSpecActor(r)
 	management := platformRole(r) == consolePlatformRoleManagement
 	if r.Method == http.MethodGet {
 		items, err := repo.ListConsoleSpecs(r.Context(), principal, false) // “我的 spec”始终只列当前 principal
@@ -355,7 +382,7 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.ContentMarkdown = persistedMarkdown
-	rev, err := revisionFromRequest(id, principal, 1, req, h.now())
+	rev, err := revisionFromRequest(id, actor, 1, req, h.now())
 	if err != nil {
 		http.Error(w, "invalid spec encoding: "+err.Error(), http.StatusBadRequest)
 		return
@@ -381,6 +408,7 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	principal := platformPrincipal(r)
+	actor := authenticatedConsoleSpecActor(r)
 	management := platformRole(r) == consolePlatformRoleManagement
 	id := r.PathValue("specID")
 	spec, err := repo.ConsoleSpec(r.Context(), principal, id, management)
@@ -418,7 +446,12 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "console spec review unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"spec": spec, "revision": rev, "gate_review": gateReview, "tasks": tasks, "dependency_candidates": all})
+		attribution, err := repo.ConsoleSpecAttribution(r.Context(), id)
+		if err != nil {
+			http.Error(w, "console spec attribution unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"spec": spec, "revision": rev, "attribution": attribution, "gate_review": gateReview, "tasks": tasks, "dependency_candidates": all})
 		return
 	}
 	if r.Method != http.MethodPatch {
@@ -433,16 +466,16 @@ func (h *Hub) HandleConsoleSpec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "expected_revision required", http.StatusBadRequest)
 		return
 	}
-	actor := principal
-	if actor == "" {
-		actor = "shared-link"
+	imageActor := principal
+	if imageActor == "" {
+		imageActor = "shared-link"
 	}
-	req.ContentMarkdown, err = h.persistSpecImages(r.Context(), req.ContentMarkdown, actor, spec.PrincipalID)
+	req.ContentMarkdown, err = h.persistSpecImages(r.Context(), req.ContentMarkdown, imageActor, spec.PrincipalID)
 	if err != nil {
 		http.Error(w, "spec image persistence failed", http.StatusServiceUnavailable)
 		return
 	}
-	rev, err := revisionFromRequest(id, principal, req.ExpectedRevision+1, req, h.now())
+	rev, err := revisionFromRequest(id, actor, req.ExpectedRevision+1, req, h.now())
 	if err != nil {
 		http.Error(w, "invalid spec encoding: "+err.Error(), http.StatusBadRequest)
 		return
@@ -665,6 +698,48 @@ func (h *Hub) HandleConsoleSpecNewVersion(w http.ResponseWriter, r *http.Request
 	r = r.WithContext(context.WithValue(r.Context(), consoleSpecOpenNewContextKey{}, true))
 	r.Method = http.MethodPatch
 	h.HandleConsoleSpec(w, r)
+}
+
+func (h *Hub) HandleConsoleSpecDerive(w http.ResponseWriter, r *http.Request) {
+	repo, ok := h.consoleSpecs()
+	if !ok {
+		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	principal := platformPrincipal(r)
+	sourceID := r.PathValue("specID")
+	source, err := repo.ConsoleSpec(r.Context(), principal, sourceID, false)
+	if err != nil || source == nil {
+		http.NotFound(w, r)
+		return
+	}
+	if source.PrincipalID != principal || source.State != "final" {
+		http.Error(w, "only an owned finalized spec can be derived", http.StatusConflict)
+		return
+	}
+	sourceRevision, err := repo.ConsoleSpecRevision(r.Context(), principal, sourceID, source.CurrentRevision, false)
+	if err != nil || sourceRevision == nil {
+		http.Error(w, "console specs unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	id := "spec-" + randomHex(12)
+	editToken := randomHex(32)
+	actor := authenticatedConsoleSpecActor(r)
+	revision := *sourceRevision
+	revision.SpecID = id
+	revision.Revision = 1
+	revision.CreatedBy = actor.ID
+	revision.CreatedByKind = actor.Kind
+	revision.Supersedes = 0
+	spec := model.ConsoleSpec{ID: id, PrincipalID: principal, Title: source.Title + "（派生）", EditCapabilityHash: specCapabilityHash(editToken), DerivedFrom: sourceID}
+	if err := repo.DeriveConsoleSpec(r.Context(), principal, sourceID, spec, revision, h.now()); err != nil {
+		http.Error(w, err.Error(), http.StatusConflict)
+		return
+	}
+	created, _ := repo.ConsoleSpec(r.Context(), principal, id, false)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(map[string]any{"spec": created, "edit_url": "/console/specs/" + id + "#edit=" + editToken})
 }
 
 func (h *Hub) HandleConsoleSpecCloseEditing(w http.ResponseWriter, r *http.Request) {

@@ -389,6 +389,7 @@ type ConsoleSpec struct {
 	CanSplit           bool      `json:"can_split"`
 	EditCapabilityHash string    `json:"-"`
 	EditingClosed      bool      `json:"editing_closed"`
+	DerivedFrom        string    `json:"derived_from,omitempty"`
 	CreatedAt          time.Time `json:"created_at"`
 	UpdatedAt          time.Time `json:"updated_at"`
 }
@@ -401,9 +402,16 @@ type ConsoleSpecRevision struct {
 	InputAnchorsJSON string    `json:"input_anchors_json"`
 	ContentSHA256    string    `json:"content_sha256"`
 	CreatedBy        string    `json:"-"`
+	CreatedByKind    string    `json:"created_by_kind"`
 	CreatedVia       string    `json:"created_via"`
 	Supersedes       int       `json:"supersedes_revision,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
+}
+
+type ConsoleSpecAttribution struct {
+	Creator      string   `json:"creator"`
+	CreatorKind  string   `json:"creator_kind"`
+	Participants []string `json:"participants"`
 }
 
 type ConsoleSpecReview struct {
