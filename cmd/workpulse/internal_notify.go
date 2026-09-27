@@ -149,12 +149,14 @@ func serveNotifySocketWith(path string, handler http.Handler, logger *slog.Logge
 	logger.Info("notify socket listening", "path", path)
 	var once sync.Once
 	return func() {
-		once.Do(func() {
-			_ = srv.Close()
-			current, err := os.Stat(path)
-			if err == nil && os.SameFile(owned, current) {
-				_ = os.Remove(path)
-			}
+			once.Do(func() {
+				_ = srv.Close()
+				current, err := os.Stat(path)
+				// SameFile can misidentify an unlinked-and-recreated socket after inode reuse;
+				// this guard reduces, but does not eliminate, the risk of deleting a successor.
+				if err == nil && os.SameFile(owned, current) {
+					_ = os.Remove(path)
+				}
 		})
 	}, nil
 }
