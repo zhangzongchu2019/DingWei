@@ -15,7 +15,7 @@ const assert = new Proxy(assertModule, {
   },
 });
 // 下限 = 2026-09-24 返工后实测值。调低它必须在提交信息里写明哪条格因为哪个功能下线而删。
-const MIN_ASSERTIONS = 205;
+const MIN_ASSERTIONS = 214;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -78,6 +78,8 @@ function productionHTML() {
   if (MUTATION === 'owner-transfer-first-target') mutateHTML('transferSpec=spec;', 'transferSpec=specs[0];');
   if (MUTATION === 'owner-transfer-no-success') mutateHTML("document.getElementById('list-transfer-notice').textContent='已把《'+selected.title+'》转为'+(state==='review'?'审核':'修改')+'，交给 '+targetShort;", "document.getElementById('list-transfer-notice').textContent='';");
   if (MUTATION === 'sactor-drop-inference-empty') mutateHTML("empty.textContent='尚无 Agent 推论 —— 需要 Agent 生成';", "empty.textContent='';");
+  if (MUTATION === 'drop-spec-row-stripe') mutateHTML('.spec-table tbody tr:nth-child(even){background:var(--row-alt)}', '');
+  if (MUTATION === 'drop-task-row-stripe') mutateHTML('#task-list .task-row:nth-of-type(even){background:var(--row-alt)}', '');
   if (MUTATION === 'owner-delete-action') mutateHTML("var copyLink=document.createElement('button');", "var forbidden=document.createElement('button');forbidden.className='delete-spec';forbidden.textContent='删除';action.append(forbidden);var copyLink=document.createElement('button');");
   if (MUTATION === 'owner-expand-nonexclusive') mutateHTML("document.getElementById('show-new-spec').onclick=function(){showScreen('new-screen');};", "document.getElementById('show-new-spec').onclick=function(){document.getElementById('new-screen').hidden=false;};");
   if (MUTATION === 'owner-empty-restore-all') mutateHTML("document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');refreshSpecs();};", "document.getElementById('show-spec-list').onclick=function(){showScreen('list-screen');document.getElementById('detail-screen').hidden=false;document.getElementById('transfer-screen').hidden=false;refreshSpecs();};");
@@ -141,7 +143,7 @@ function productionHTML() {
   if (MUTATION === 'eager-task-form') html = html.replace("document.getElementById('task-split').hidden=true;document.getElementById('show-task-split').hidden=!data.spec.can_split;", "document.getElementById('task-split').hidden=false;document.getElementById('show-task-split').hidden=!data.spec.can_split;");
   const silentPresplit = ['silent-presplit-no-reply','silent-presplit-timeout','silent-presplit-invalid','silent-presplit-restart'];
   if (silentPresplit.includes(MUTATION)) html = html.replaceAll("status.textContent='预拆失败，可手工添加';", "status.textContent='';");
-  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-transfer-first-target', 'owner-transfer-no-success', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sactor-drop-inference-empty', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', 'sform-source-back', 'sform-id-editable', 'sform-checked-at-editable', 'sform-generator-disabled', 'sform-creator-back-to-owner', 'sform-protected-words-renamed', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['list-row-buttons-back', 'labels-back-to-english', 'anchor-placeholder-gone', 'save-above-fields', 'rehighlight-on-generated-html', 'readonly-hides-content', 'readonly-shows-source', 'duplicate-body-preview', 'second-edit-entry-back', 'task-area-outside-detail', 'no-copy-link-feedback', 'no-list-error-text', 'no-editor-focus', 'no-editor-refresh', 'no-render', 'no-wire', 'no-copy', 'no-server-error', 'role-split', 'no-action-error', 'readonly-can-write', 'same-screen-create', 'hide-dependents', 'hide-list-on-detail', 'no-task-dod', 'no-parallel-marker', 'no-hours-hint', 'no-empty-create', 'show-detail-before-click', 'keep-detail-on-page', 'no-task-entry', 'eager-task-form', 'owner-table-misaligned', 'owner-empty-extra', 'owner-transfer-leak', 'owner-hardcoded-names', 'owner-copy-sticky', 'owner-transfer-disconnected', 'owner-transfer-first-target', 'owner-transfer-no-success', 'owner-delete-action', 'owner-expand-nonexclusive', 'owner-empty-restore-all', 'owner-editor-short-only', 'owner-title-nonexclusive', 'owner-transfer-nonexclusive', 'owner-transfer-radio-detached', 'sactor-drop-inference-empty', 'drop-spec-row-stripe', 'drop-task-row-stripe', 'sgen-single-acceptance', 'sgen-drop-owner-ref', 'sgen-wrong-source-mark', 'sgen-one-case-only', 'sgen-drop-checked-at', 'sform-source-back', 'sform-id-editable', 'sform-checked-at-editable', 'sform-generator-disabled', 'sform-creator-back-to-owner', 'sform-protected-words-renamed', ...silentPresplit].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -253,7 +255,7 @@ async function main() {
     }
     if(req.url==='/api/console/spec-editors'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({editors:[{short_name:'zzc',display_name:'张宗楚',value:'张宗楚'},{short_name:'lbl',display_name:'李炳隆',value:'李炳隆'},{short_name:'th',display_name:'唐虹',value:'唐虹'},{short_name:'',display_name:'多角色业主',value:'多角色业主'}]}));return;}
     const workflowTransfer=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/workflow\/transfer$/);
-    if(workflowTransfer&&req.method==='POST'){const body=await requestBody(req),index=specs.findIndex((item)=>item.id===workflowTransfer[1]);transferWrites.push({specID:workflowTransfer[1],body});if(index>=0){const item=specs.splice(index,1)[0];item.state=body.state;item.current_editor_short_name=body.target_short_name;specs.unshift(item);}res.writeHead(204);res.end();return;}
+    if(workflowTransfer&&req.method==='POST'){const body=await requestBody(req),item=specs.find((candidate)=>candidate.id===workflowTransfer[1]);transferWrites.push({specID:workflowTransfer[1],body});if(item){item.state=body.state;item.current_editor_short_name=body.target_short_name;}res.writeHead(204);res.end();return;}
     const presplitMatch=String(req.url||'').match(/^\/api\/console\/specs\/([^/]+)\/presplit$/);
     if(presplitMatch&&req.method==='GET'){const agents=presplitMode==='no-agents'?[]:[{id:'agent-a',session_name:'owner-agent-2642'}];res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({agents,request:presplitRequest}));return;}
     if(presplitMatch&&req.method==='POST'){await requestBody(req);if(presplitMode==='no-reply'){presplitRequest={request_id:'r-no-reply',status:'failed',failure_reason:'no reply'};res.writeHead(502);res.end('预拆失败，可手工添加');return;}const failure={timeout:'timeout',invalid:'invalid task format',restart:'restart'}[presplitMode];presplitRequest={request_id:'r-'+presplitMode,status:failure?'failed':'completed',failure_reason:failure||''};if(!failure)presplitGenerated=true;res.writeHead(202,{'Content-Type':'application/json'});res.end(JSON.stringify({request_id:presplitRequest.request_id,status:'pending'}));return;}
@@ -361,6 +363,9 @@ async function main() {
       await page.locator(`#spec-list [data-title="${title}"]`).waitFor({ state: 'visible' });
     }
     assert.strictEqual(await page.locator('#spec-list [data-spec-id]').count(), 2, 'true page must show both specs at once');
+    const stripeColors=async(selector,theme)=>page.evaluate(({selector,theme})=>{document.documentElement.dataset.theme=theme;return Array.from(document.querySelectorAll(selector)).slice(0,2).map((row)=>getComputedStyle(row).backgroundColor);},{selector,theme});
+    for(const theme of ['light','dark']){const colors=await stripeColors('#spec-list tr',theme);assert.strictEqual(colors.length,2,`spec 列表 ${theme} 必须有相邻两行`);assert.notStrictEqual(colors[0],colors[1],`spec 列表 ${theme} 相邻行必须有不同 computed background`);}
+    await page.evaluate(()=>{document.documentElement.dataset.theme='light';});
     const columnEdges = await page.evaluate(() => { const textLeft=(node)=>{const range=document.createRange();range.selectNodeContents(node);return range.getBoundingClientRect().left;};return Array.from(document.querySelectorAll('#spec-table th')).map((th, i) => ({ h:textLeft(th), d:textLeft(document.querySelector(`#spec-list tr td:nth-child(${i+1})`)) })); });
     assert.ok(columnEdges.every((edge) => Math.abs(edge.h-edge.d) <= 0.5), `四列表头与内容未对齐: ${JSON.stringify(columnEdges)}`);
     assert.deepStrictEqual(await page.locator('#spec-table thead th').allTextContents(), ['标题','状态','当前','操作']);
@@ -368,6 +373,7 @@ async function main() {
     assert.strictEqual(await page.locator('.delete-spec,.archive-spec').count(),0,'业主已裁定不提供删除或归档入口');
     assert.strictEqual((html.match(/['"](?:lbl|th)['"]/g)||[]).length,0,'前端不得硬编码业主 lbl/th');
     const secondAction=page.locator('#spec-list [data-title="Spec B"] .spec-action');
+    const selectedRowBefore=await page.locator('#spec-list tr').evaluateAll((rows)=>rows.findIndex((row)=>row.dataset.title==='Spec B'));
     await secondAction.locator('.transfer-spec').click();
     await page.locator('#list-transfer-owner option').last().waitFor({state:'attached'});
     const transferGeometry = await page.evaluate(() => Array.from(document.querySelectorAll('.spec-transfer-choice')).map((label) => {
@@ -390,7 +396,9 @@ async function main() {
     assert.deepStrictEqual(transferWrites, [{specID:'spec-2',body:{target_short_name:'李炳隆',state:'review'}}], '点第二份的转审核必须携带第二份 spec id，不能永远取第一行');
     assert.strictEqual(await page.locator('#list-transfer-notice').textContent(), '已把《Spec B》转为审核，交给 lbl', '转审核成功必须点名用户所选标题与接收短名');
     assert.ok(!(await page.locator('#list-transfer-notice').textContent()).includes('Spec A'), '点第二份时成功文案不得出现第一份标题');
-    assert.strictEqual(await page.locator('#spec-list .spec-transfer-highlight').getAttribute('data-spec-id'), 'spec-2', '列表重排后必须高亮刚操作的 spec');
+    assert.strictEqual(await page.locator('#spec-list .spec-transfer-highlight').getAttribute('data-spec-id'), 'spec-2', '列表刷新后必须高亮刚操作的 spec');
+    const selectedRowAfter=await page.locator('#spec-list tr').evaluateAll((rows)=>rows.findIndex((row)=>row.dataset.title==='Spec B'));
+    assert.strictEqual(selectedRowAfter,selectedRowBefore,'转审核后被操作的 spec 行号必须保持不变');
     const screenState=async()=>page.evaluate(()=>({list:!document.getElementById('list-screen').hidden,newSpec:!document.getElementById('new-screen').hidden,detail:!document.getElementById('detail-screen').hidden,transfer:!document.getElementById('transfer-screen').hidden}));
     await page.evaluate(()=>{globalThis.__testSpecExclusive=true;});
     try {
@@ -492,6 +500,8 @@ async function main() {
     assert.strictEqual(await task.getAttribute('id'),'task-row-task-a');
     assert.strictEqual(await task.locator('.task-dod').getAttribute('id'),'task-row-task-a-dod');
     assert.deepStrictEqual(await page.locator('#task-list .task-row').evaluateAll((rows)=>rows.map((r)=>r.dataset.taskId)),['task-a','task-b']);
+    for(const theme of ['light','dark']){const colors=await stripeColors('#task-list .task-row',theme);assert.strictEqual(colors.length,2,`任务列表 ${theme} 必须有相邻两行`);assert.notStrictEqual(colors[0],colors[1],`任务列表 ${theme} 相邻行必须有不同 computed background`);}
+    await page.evaluate(()=>{document.documentElement.dataset.theme='light';});
     assert.strictEqual(await page.locator('#task-list .task-row[data-task-id="task-a"] .meta').textContent().then((x)=>x.includes('可并行')),true);
     assert.strictEqual(await page.locator('#task-list .task-row[data-task-id="task-b"] .task-dod').inputValue(),'');
     assert.strictEqual(await task.locator('strong').textContent(),'Implement A');

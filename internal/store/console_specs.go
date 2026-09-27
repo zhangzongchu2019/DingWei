@@ -491,7 +491,7 @@ func (s *SQLite) ListConsoleSpecs(ctx context.Context, principalID string, manag
 		args = append(args, principalID)
 		args = append(args, principalID)
 	}
-	query += ` ORDER BY s.updated_at DESC,s.id`
+	query += ` ORDER BY s.created_at DESC,s.id`
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

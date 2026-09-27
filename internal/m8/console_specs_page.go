@@ -38,6 +38,7 @@ html[data-theme="dark"] .spec-table th,html[data-theme="dark"] .spec-table td{bo
 html[data-theme="dark"] .spec-transfer-panel{background:#242a31}html[data-theme="dark"] .spec-rendered{--accent:#6cb6ff;--panel:#1b1f24;--panel-2:#242a31;--line:#53606f;--muted:#a8b0bb}
 html[data-theme="dark"] .editor-toolbar button.dw-icon{color:#eef2f6;background:#1b1f24}html[data-theme="dark"] .editor-toolbar button.dw-icon:hover,html[data-theme="dark"] .editor-toolbar button.dw-icon.active{color:#fff;background:#38414c}
 html[data-theme="dark"] .spec-block-list{background:#1b2530}html[data-theme="dark"] .spec-block-detail{background:#252033}html[data-theme="dark"] .spec-block-new{background:#182a22}html[data-theme="dark"] .spec-block-transfer{background:#30251a}.spec-transfer-highlight{outline:3px solid #2f80ed;outline-offset:-3px;background:#eaf3ff}html[data-theme="dark"] .spec-transfer-highlight{background:#17324d}
+:root{--row-alt:#e9eef5}html[data-theme="dark"]{--row-alt:#242a31}.spec-table tbody tr:nth-child(even){background:var(--row-alt)}#task-list .task-row:nth-of-type(even){background:var(--row-alt)}
 </style>
 <h1>Spec management</h1><p>一个账号可同时管理多份 spec。认领后的版本不可原地覆盖。</p>
 <nav><button id=show-spec-list type=button>我的 spec</button></nav>
