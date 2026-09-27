@@ -19,6 +19,7 @@ var (
 	ErrConsoleSpecEditDenied      = errors.New("console spec editing denied")
 	ErrConsoleSpecRevisionLocked  = errors.New("console spec revision locked by downstream reference")
 	ErrConsoleSpecPermission      = errors.New("console spec permission denied")
+	ErrConsoleSpecSelfTransfer    = errors.New("无需转给自己；请直接提交复核")
 	ErrConsoleSpecFinal           = errors.New("console spec is finalized")
 	ErrConsoleSpecGate            = errors.New("console spec generation gate incomplete")
 	ErrConsoleSpecReviewerInvalid = errors.New("console spec review agent is missing, inactive or unknown")
@@ -178,6 +179,9 @@ func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetS
 	if err != nil {
 		return err
 	}
+	if target.ID == actor {
+		return ErrConsoleSpecSelfTransfer
+	}
 	res, err := tx.ExecContext(ctx, `UPDATE console_spec SET state=?,current_editor_id=?,updated_at=?
 		WHERE id=? AND current_editor_id=? AND state<>'final' AND archived=0`, nextState, target.ID, now.UTC().Format(time.RFC3339Nano), specID, actor)
 	if err != nil {
@@ -188,6 +192,21 @@ func (s *SQLite) TransferConsoleSpec(ctx context.Context, specID, actor, targetS
 		return ErrConsoleSpecPermission
 	}
 	return tx.Commit()
+}
+
+// SubmitConsoleSpecReview enters review without inventing a transfer. The
+// current editor remains unchanged so a legitimate one-person project can run
+// Agent review and finalize under the existing gates.
+func (s *SQLite) SubmitConsoleSpecReview(ctx context.Context, specID, actor string, now time.Time) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE console_spec SET state='review',updated_at=? WHERE id=? AND current_editor_id=? AND state='editing' AND archived=0`, now.UTC().Format(time.RFC3339Nano), specID, actor)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n != 1 {
+		return ErrConsoleSpecPermission
+	}
+	return nil
 }
 
 type storedSpecCriterion struct {

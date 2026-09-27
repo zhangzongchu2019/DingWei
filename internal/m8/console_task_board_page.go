@@ -28,6 +28,12 @@ table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:8px;b
 <section id=spec-panel class=panel><h2>spec 列表</h2><table><thead><tr><th>spec</th><th>状态</th></tr></thead><tbody id=spec-list></tbody></table><div class=pager><button id=spec-prev type=button>上一页</button><span id=spec-page></span><button id=spec-next type=button>下一页</button></div></section>
 <section id=task-panel class=panel><div class=task-toolbar><h2>任务分解列表</h2><span><button id=edit-tasks type=button>编辑</button><button id=finish-tasks type=button hidden>编辑完成</button></span></div><div id=task-status role=status></div><table id=task-table><thead><tr><th>任务文本</th><th>研发</th><th>验收</th><th>状态</th><th>验收标准</th></tr></thead><tbody id=task-list></tbody></table><div class=pager><button id=task-prev type=button>上一页</button><span id=task-page></span><button id=task-next type=button>下一页</button></div></section>
 </div><script>
+var DW_THEME_KEY='dw-theme',dwTaskThemeChannel=null;
+function dwTaskApplyTheme(v){if(v!=='dark'&&v!=='light')return;document.documentElement.dataset.theme=v;if(document.body)document.body.dataset.theme=v;}
+function dwTaskInitTheme(){var initial='light';try{var stored=localStorage.getItem(DW_THEME_KEY);if(stored==='dark'||stored==='light')initial=stored;}catch(_){}dwTaskApplyTheme(initial);
+ try{if('BroadcastChannel' in window){dwTaskThemeChannel=new BroadcastChannel(DW_THEME_KEY);dwTaskThemeChannel.onmessage=function(e){dwTaskApplyTheme(e&&e.data&&e.data.theme);};}}catch(_){dwTaskThemeChannel=null;}
+ try{window.addEventListener('storage',function(e){if(e&&e.key===DW_THEME_KEY)dwTaskApplyTheme(e.newValue);});}catch(_){} }
+dwTaskInitTheme();
 let specPage=1,taskPage=1,selectedSpec=new URLSearchParams(location.search).get('spec_id')||'',editing=false,onlineAgents=[],currentTasks=[];
 function acceptanceDisplay(raw){try{const value=JSON.parse(raw||'[]'),list=Array.isArray(value)?value:(Array.isArray(value.criteria)?value.criteria:[]),ids=[],texts=[];list.forEach(function(v){const id=String(v.id||'').trim(),text=String(v.text||'').trim();if(id)ids.push(id);if(text)texts.push((id?id+' ':'')+text)});return {label:ids.join(', '),title:texts.join('\n')}}catch(_){return {label:'',title:''}}}
 function setPager(prefix,page,pages){document.getElementById(prefix+'-page').textContent=page+' / '+pages;document.getElementById(prefix+'-prev').disabled=page<=1;document.getElementById(prefix+'-next').disabled=page>=pages}
