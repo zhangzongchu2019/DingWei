@@ -954,8 +954,23 @@ func TestSecurityOpsRoutesToAllSystemSessions(t *testing.T) {
 	defer claude.Close(websocket.StatusNormalClosure, "done")
 	deepseek := dialSession(t, ctx, srv.URL, "secdeepseek", key.ID, secret)
 	defer deepseek.Close(websocket.StatusNormalClosure, "done")
-	waitSessionOnline(t, hub, key.ID, claudeName)
-	waitSessionOnline(t, hub, key.ID, deepseekName)
+	waitSessionsOnlineTogether(t, hub, key.ID, claudeName, deepseekName)
+	targets, err := hub.onlineSessionsForOwner(ctx, secOpsOwnerKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !sessionsOnlineTogether(hub, key.ID, claudeName, deepseekName) {
+		t.Fatal("sec-ops simultaneity was established but lost before the target snapshot")
+	}
+	targetSet := map[string]bool{}
+	for _, target := range targets {
+		targetSet[target.keyID+"\x00"+target.sessionName] = true
+	}
+	for _, sessionName := range []string{claudeName, deepseekName} {
+		if !targetSet[key.ID+"\x00"+sessionName] {
+			t.Fatalf("simultaneously online sec-ops session missing from targets: key=%s session=%s targets=%+v", key.ID, sessionName, targets)
+		}
+	}
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "secops1",
@@ -6172,6 +6187,32 @@ func waitSessionOnline(t *testing.T, hub *Hub, keyID, sessionName string) {
 		}
 		if time.Now().After(deadline) {
 			t.Fatalf("session did not become online key=%s session=%s", keyID, sessionName)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+func sessionsOnlineTogether(hub *Hub, keyID string, sessionNames ...string) bool {
+	hub.mu.Lock()
+	defer hub.mu.Unlock()
+	sessions := hub.sessionClients[keyID]
+	for _, sessionName := range sessionNames {
+		if sessions == nil || sessions[sessionName] == nil {
+			return false
+		}
+	}
+	return true
+}
+
+func waitSessionsOnlineTogether(t *testing.T, hub *Hub, keyID string, sessionNames ...string) {
+	t.Helper()
+	deadline := time.Now().Add(envelopeReadTimeout)
+	for {
+		if sessionsOnlineTogether(hub, keyID, sessionNames...) {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("sessions did not become simultaneously online key=%s sessions=%v", keyID, sessionNames)
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
