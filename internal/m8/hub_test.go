@@ -986,8 +986,8 @@ func TestSecurityOpsRoutesToAllSystemSessions(t *testing.T) {
 	if !result.Matched || !strings.Contains(result.Reply, "2个sec-ops会话") {
 		t.Fatalf("secops result=%+v", result)
 	}
-	gotClaude := readEnvelope(t, ctx, claude)
-	gotDeepseek := readEnvelope(t, ctx, deepseek)
+	gotClaude := readEnvelopeForSession(t, ctx, claude, claudeName)
+	gotDeepseek := readEnvelopeForSession(t, ctx, deepseek, deepseekName)
 	got := gotClaude.Body + "\n" + gotDeepseek.Body
 	if strings.Count(got, "加白名单 1.2.3.4") != 2 || strings.Contains(got, "#系统安全") || strings.Contains(got, "@SYSTEM-V-TASK-INTERNAL") {
 		t.Fatalf("secops bodies not stripped:\nclaude=%+v\ndeepseek=%+v", gotClaude, gotDeepseek)
@@ -1007,7 +1007,7 @@ func TestSecurityOpsRoutesToAllSystemSessions(t *testing.T) {
 	if err != nil || !result.Matched {
 		t.Fatalf("cc secops result=%+v err=%v", result, err)
 	}
-	if readEnvelope(t, ctx, claude).Body != "撤销封禁 2.2.2.2" || readEnvelope(t, ctx, deepseek).Body != "撤销封禁 2.2.2.2" {
+	if readEnvelopeForSession(t, ctx, claude, claudeName).Body != "撤销封禁 2.2.2.2" || readEnvelopeForSession(t, ctx, deepseek, deepseekName).Body != "撤销封禁 2.2.2.2" {
 		t.Fatal("cc connector secops did not fan out stripped command")
 	}
 }
@@ -6098,6 +6098,25 @@ func readEnvelope(t *testing.T, ctx context.Context, conn *websocket.Conn) model
 	t.Helper()
 	for {
 		env := readEnvelopeIncludingSystem(t, ctx, conn)
+		if env.Meta["type"] != agentNetworkSkillPushType {
+			return env
+		}
+	}
+}
+
+func readEnvelopeForSession(t *testing.T, ctx context.Context, conn *websocket.Conn, sessionName string) model.Envelope {
+	t.Helper()
+	for {
+		readCtx, cancel := context.WithTimeout(ctx, envelopeReadTimeout)
+		_, data, err := conn.Read(readCtx)
+		cancel()
+		if err != nil {
+			t.Fatalf("session=%s 未收到信封: %v", sessionName, err)
+		}
+		var env model.Envelope
+		if err := json.Unmarshal(data, &env); err != nil {
+			t.Fatalf("session=%s 信封解析失败: %v", sessionName, err)
+		}
 		if env.Meta["type"] != agentNetworkSkillPushType {
 			return env
 		}
