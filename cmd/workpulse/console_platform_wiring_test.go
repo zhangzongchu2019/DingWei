@@ -93,13 +93,11 @@ func TestConsolePlatformRoutesAreAssembledWithServerGuards(t *testing.T) {
 
 func agentCapabilityPageID(expr ast.Expr) (string, bool) {
 	switch value := expr.(type) {
-	case *ast.BasicLit:
-		if value.Kind != token.STRING {
+	case *ast.SelectorExpr:
+		pkg, ok := value.X.(*ast.Ident)
+		if !ok || pkg.Name != "m8" {
 			return "", false
 		}
-		pageID, err := strconv.Unquote(value.Value)
-		return pageID, err == nil
-	case *ast.SelectorExpr:
 		switch value.Sel.Name {
 		case "ConsoleAgentCapabilitySpecsNew":
 			return m8.ConsoleAgentCapabilitySpecsNew, true
@@ -107,9 +105,35 @@ func agentCapabilityPageID(expr ast.Expr) (string, bool) {
 			return m8.ConsoleAgentCapabilityTasks, true
 		}
 	case *ast.CallExpr:
-		if selector, ok := value.Fun.(*ast.SelectorExpr); ok && selector.Sel.Name == "ConsoleAgentSpecCapabilityPage" {
-			return m8.ConsoleAgentSpecCapabilityPage("contract-spec"), true
+		selector, ok := value.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return "", false
 		}
+		pkg, pkgOK := selector.X.(*ast.Ident)
+		if !pkgOK || pkg.Name != "m8" || selector.Sel.Name != "ConsoleAgentSpecCapabilityPage" || len(value.Args) != 1 {
+			return "", false
+		}
+		pathCall, ok := value.Args[0].(*ast.CallExpr)
+		if !ok || len(pathCall.Args) != 1 {
+			return "", false
+		}
+		pathSelector, ok := pathCall.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return "", false
+		}
+		receiver, receiverOK := pathSelector.X.(*ast.Ident)
+		if !receiverOK || receiver.Name != "r" || pathSelector.Sel.Name != "PathValue" {
+			return "", false
+		}
+		literal, ok := pathCall.Args[0].(*ast.BasicLit)
+		if !ok || literal.Kind != token.STRING {
+			return "", false
+		}
+		pathKey, err := strconv.Unquote(literal.Value)
+		if err != nil || pathKey == "" {
+			return "", false
+		}
+		return m8.ConsoleAgentSpecCapabilityPage("contract-" + pathKey), true
 	}
 	return "", false
 }
@@ -158,11 +182,16 @@ func TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry(t *testing.T) 
 	if count < 4 {
 		t.Fatalf("Agent capability route scan matched %d, want at least current four routes", count)
 	}
-	// Positive control: the evaluator must expose a newly added literal route
-	// as unregistered instead of treating an unreadable expression as success.
-	unknown, ok := agentCapabilityPageID(&ast.BasicLit{Kind: token.STRING, Value: `"future-unregistered-page"`})
-	if !ok || m8.ConsoleAgentCapabilityPageAllowed(unknown) {
-		t.Fatal("unregistered Agent route positive control escaped signing registry")
+	// This hand-built node is a positive control for the evaluator + production
+	// registry only. The count floor above independently guards the main.go scan.
+	known, ok := agentCapabilityPageID(&ast.SelectorExpr{X: ast.NewIdent("m8"), Sel: ast.NewIdent("ConsoleAgentCapabilityTasks")})
+	if !ok || !m8.ConsoleAgentCapabilityPageAllowed(known) {
+		t.Fatal("registered Agent page evaluator positive control failed")
+	}
+	// Literal/request-controlled expressions are not an accepted route shape,
+	// even if their runtime value could happen to match a registered namespace.
+	if _, ok := agentCapabilityPageID(&ast.BasicLit{Kind: token.STRING, Value: `"console-tasks"`}); ok {
+		t.Fatal("literal Agent page-id expression escaped route derivation contract")
 	}
 }
 

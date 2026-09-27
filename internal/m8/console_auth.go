@@ -648,9 +648,10 @@ func ConsoleAgentCapabilityPageAllowed(pageID string) bool {
 		return false
 	}
 	specID := strings.TrimPrefix(pageID, "console-spec:")
-	// Existence and ownership belong to the concrete spec route. This registry
-	// only constrains the capability namespace, avoiding a second DB-coupled
-	// authorization rule in the signer.
+	// This registry constrains the namespace only. The route derives the id from
+	// net/http PathValue (which cannot span '/'); the concrete spec handler owns
+	// existence and principal authorization. A stricter character preference
+	// here would not change which capability can actually be consumed.
 	return specID != ""
 }
 
