@@ -363,7 +363,21 @@ func (h *Hub) HandleConsoleSpecs(w http.ResponseWriter, r *http.Request) {
 		if end > total {
 			end = total
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"role": platformRole(r), "specs": items[start:end], "page": page, "page_size": pageSize, "total": total, "total_pages": pages})
+		agents, err := repo.ListOwnedConsoleAgents(r.Context(), principal)
+		if err != nil {
+			http.Error(w, "spec Agent list unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		type assistAgent struct {
+			ID          string `json:"id"`
+			SessionName string `json:"session_name"`
+			Online      bool   `json:"online"`
+		}
+		assistAgents := make([]assistAgent, 0, len(agents))
+		for _, agent := range agents {
+			assistAgents = append(assistAgents, assistAgent{ID: agent.ID, SessionName: agent.SessionName, Online: h.consoleAgentOnline(r.Context(), agent.ID, principal)})
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"role": platformRole(r), "specs": items[start:end], "agents": assistAgents, "page": page, "page_size": pageSize, "total": total, "total_pages": pages})
 		return
 	}
 	if r.Method != http.MethodPost {

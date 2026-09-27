@@ -298,6 +298,7 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /api/console/specs/{specID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpec)))
 	mux.HandleFunc("PATCH /api/console/specs/{specID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpec)))
 	mux.HandleFunc("PATCH /api/agent/console/specs/{specID}", prefixHub.RequireConsoleSpecAgentCapability(func(r *http.Request) string { return "console-spec:" + r.PathValue("specID") }, prefixHub.HandleConsoleSpec))
+	mux.HandleFunc("POST /api/agent/console/specs/{specID}/inferences", prefixHub.RequireConsoleSpecAgentCapability(func(r *http.Request) string { return "console-spec:" + r.PathValue("specID") }, prefixHub.HandleConsoleSpecAgentInference))
 	// Shared spec links are capability-authorized, not identity-authorized. GET is public;
 	// PATCH requires the opaque edit capability inside HandleConsoleSpec.
 	mux.HandleFunc("GET /api/specs/shared/{specID}", prefixHub.HandleConsoleSpec)
@@ -307,6 +308,7 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("POST /api/console/specs/{specID}/reopen-editing", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecReopenEditing)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/versions", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecNewVersion)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/derive", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecDerive)))
+	mux.HandleFunc("POST /api/console/specs/{specID}/assist/inference", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecInferenceAssist)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("delete", prefixHub.HandleConsoleSpecArchive)))
 	mux.HandleFunc("GET /api/console/task-proposals/ready", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("approve", prefixHub.HandleConsoleTaskProposalsReady)))
 	mux.HandleFunc("PATCH /api/console/task-proposals/{proposalID}/plan", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleTaskProposalPlan)))

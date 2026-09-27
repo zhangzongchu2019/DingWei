@@ -77,41 +77,42 @@ type Hub struct {
 	consoleTouchMu sync.Mutex
 	consoleTouched map[string]time.Time
 
-	mu                   hubMutex
-	serviceClients       map[string]*client
-	sessionClients       map[string]map[string]*sessionClient
-	keyAccounts          map[string]map[string]bool
-	botChannels          map[string]string
-	botNames             map[string]string
-	envelopeIDs          map[string]string
-	replyDedup           *replyDedup
-	onlineTimers         map[string]*time.Timer
-	seenSessions         map[string]bool
-	seenSessionsOnce     sync.Once
-	seenSessionsOK       bool
-	terminals            map[string]*terminalState
-	terminalLastSize     map[string][2]int
-	syncTargets          map[string]map[string]feishuSyncTarget
-	recentTerminal       map[string][]terminalSyncItem
-	syncBuffers          map[string]*feishuSyncBuffer
-	linkTokens           map[string]ownerLinkToken
-	onboardPushed        map[string]time.Time
-	onboardContexts      map[string]onboardContext
-	onlineDebounce       time.Duration
-	onboardInterval      time.Duration
-	newSessionNotice     bool
-	viewV2Mu             sync.Mutex
-	viewV2Nonces         map[string]time.Time
-	viewV2Requests       map[string]viewV2RequestResult
-	deliveryNotices      map[string]time.Time
-	amr                  *amrProcessor
-	startedAt            time.Time
-	restartWindow        time.Duration
-	fileIssuer           FileTicketIssuer
-	fileArchive          FileArchiveClient
-	filePermanent        FilePermanentClient
-	specPresplitDispatch func(context.Context, model.ConsoleAgent, model.Envelope) error
-	SpecPresplitTimeout  time.Duration
+	mu                    hubMutex
+	serviceClients        map[string]*client
+	sessionClients        map[string]map[string]*sessionClient
+	keyAccounts           map[string]map[string]bool
+	botChannels           map[string]string
+	botNames              map[string]string
+	envelopeIDs           map[string]string
+	replyDedup            *replyDedup
+	onlineTimers          map[string]*time.Timer
+	seenSessions          map[string]bool
+	seenSessionsOnce      sync.Once
+	seenSessionsOK        bool
+	terminals             map[string]*terminalState
+	terminalLastSize      map[string][2]int
+	syncTargets           map[string]map[string]feishuSyncTarget
+	recentTerminal        map[string][]terminalSyncItem
+	syncBuffers           map[string]*feishuSyncBuffer
+	linkTokens            map[string]ownerLinkToken
+	onboardPushed         map[string]time.Time
+	onboardContexts       map[string]onboardContext
+	onlineDebounce        time.Duration
+	onboardInterval       time.Duration
+	newSessionNotice      bool
+	viewV2Mu              sync.Mutex
+	viewV2Nonces          map[string]time.Time
+	viewV2Requests        map[string]viewV2RequestResult
+	deliveryNotices       map[string]time.Time
+	amr                   *amrProcessor
+	startedAt             time.Time
+	restartWindow         time.Duration
+	fileIssuer            FileTicketIssuer
+	fileArchive           FileArchiveClient
+	filePermanent         FilePermanentClient
+	specPresplitDispatch  func(context.Context, model.ConsoleAgent, model.Envelope) error
+	specInferenceDispatch func(context.Context, model.ConsoleAgent, model.Envelope) error
+	SpecPresplitTimeout   time.Duration
 }
 
 type L2Config struct {
