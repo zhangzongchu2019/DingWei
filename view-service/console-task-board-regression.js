@@ -7,7 +7,7 @@ const assert = new Proxy(assertModule, {
     return typeof value === 'function' ? (...args) => { assertionCount += 1; return value.apply(target, args); } : value;
   },
 });
-const MIN_ASSERTIONS = 42;
+const MIN_ASSERTIONS = 44;
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -59,8 +59,8 @@ const boardMutations = new Map([
   ['k6-break-toggle', ["selectedSpec=selectedSpec===spec.id?'':spec.id", 'selectedSpec=spec.id']],
   ['k6-drop-toggle-handler', ["tr.onclick=function(){selectedSpec=selectedSpec===spec.id?'':spec.id;taskPage=1;loadBoard()}", '']],
   ['k11-drop-offline-dot', ['td.append(dot)', '']],
-  ['k-status-invent-value', ["taskCell(String(task.passed_cases||0)+'/'+String(task.total_cases||1))", "taskCell('0/0')"]],
-  ['k-status-drop-empty-call', ["taskCell(String(task.passed_cases||0)+'/'+String(task.total_cases||1))", "taskCell('')"]],
+  ['k-status-invent-value', ["return {text:String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}", "return {text:'0/0',problem:false}"]],
+  ['k-status-drop-empty-call', ["return {text:String(task.passed_cases||0)+'/'+String(task.total_cases||1),problem:false}", "return {text:'',problem:false}"]],
   ['theme-drop-receiver', ['dwTaskInitTheme();', '']],
 ]);
 for (const [name, [needle]] of boardMutations) assert.ok(board.includes(needle), `stale mutation probe ${name}`);
@@ -155,6 +155,7 @@ async function main() {
   const frame = page.frameLocator('iframe[title="任务管理"]');
   const reloadAndSelect = async () => { const boardFrame = page.frames().find((candidate) => candidate.url().includes('/console/tasks')); await boardFrame.goto(boardFrame.url()); await frame.locator('#spec-list tr').first().waitFor(); await frame.locator('#spec-list tr').first().click(); await frame.locator('#task-list tr').first().waitFor(); };
   await frame.locator('#spec-list tr').first().waitFor();
+  assert.strictEqual(await frame.locator('html').evaluate(()=>window.dwTaskThemeChannel!==null),true,'任务管理页公共主题接收器必须已连接');
   await page.evaluate(()=>{const c=new BroadcastChannel('dw-theme');c.postMessage({type:'theme',theme:'light'});c.close();});
   await frame.locator('html[data-theme="light"]').waitFor();
   const lightBackground=await frame.locator('body').evaluate((body)=>getComputedStyle(body).backgroundColor);
