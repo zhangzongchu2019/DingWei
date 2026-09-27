@@ -36,6 +36,14 @@ type consoleSpecRepository interface {
 	CreateConsoleTaskProposal(context.Context, model.ConsoleTaskProposal, string, bool) error
 	UpdateConsoleTaskProposalPlan(context.Context, string, string, bool, string, string, float64, []string, string) error
 	UpdateConsoleSpecTaskAssignees(context.Context, string, string, string, string) error
+	StartConsoleTaskDriver(context.Context, model.ConsoleTaskDriverStart) error
+	ListConsoleTasksForAgent(context.Context, string) ([]model.ConsoleTaskProposal, error)
+	RecordConsoleTaskPause(context.Context, string, int, string, time.Time) error
+	ConsoleTaskPauseReported(context.Context, string, int, string) (bool, error)
+	ListConsoleTaskPauseReports(context.Context, string, int) ([]model.ConsoleTaskPauseReport, error)
+	ReviewConsoleTaskDriver(context.Context, string, int, string, time.Time) error
+	RequestConsoleTaskDeployment(context.Context, string, int, string, time.Time) error
+	ConsoleTaskDriverStart(context.Context, string, int) (*model.ConsoleTaskDriverStart, error)
 	ConsoleSpecTaskCaseProgress(context.Context, string) (int, int, error)
 	DeleteConsoleSpecTask(context.Context, string, string) error
 	ListActiveConsolePrincipals(context.Context) ([]model.ConsolePrincipal, error)

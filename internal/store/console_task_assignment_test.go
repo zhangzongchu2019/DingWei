@@ -48,7 +48,7 @@ func TestConsoleSpecTaskAssigneesPersistNullableAgentReferences(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	err = db.UpdateConsoleSpecTaskAssignees(ctx, proposal.ID, "owner-a", "agent-BOGUS", "")
+	err = db.UpdateConsoleSpecTaskAssignees(ctx, proposal.ID, "owner-a", "agent-BOGUS", "reviewer-agent")
 	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "foreign key") {
 		t.Fatalf("K12 nonexistent Agent assignment err=%v want foreign key rejection", err)
 	}

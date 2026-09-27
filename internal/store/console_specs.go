@@ -27,6 +27,8 @@ var (
 	ErrConsoleTaskDefinition      = errors.New("task proposal cannot store a task definition of done")
 	ErrConsoleTaskCasePermission  = errors.New("console task case actor is not assigned to this task")
 	ErrConsoleTaskCaseUnknown     = errors.New("console task case is not linked to this task")
+	ErrConsoleTaskAssigneePair    = errors.New("研发与验收必须成对指定")
+	ErrConsoleTaskAssigneeSame    = errors.New("研发与验收必须由不同 Agent 承担")
 )
 
 const appendConsoleSpecRevisionUpdateSQL = `UPDATE console_spec SET current_revision=?,updated_at=? WHERE id=? AND current_editor_id=? AND archived=0 AND editing_closed=0 AND current_revision=?`
@@ -1031,10 +1033,18 @@ func (s *SQLite) UpdateConsoleTaskProposalPlan(ctx context.Context, proposalID, 
 }
 
 func (s *SQLite) UpdateConsoleSpecTaskAssignees(ctx context.Context, taskID, principalID, developerAgentID, reviewerAgentID string) error {
+	developerAgentID = strings.TrimSpace(developerAgentID)
+	reviewerAgentID = strings.TrimSpace(reviewerAgentID)
+	if (developerAgentID == "") != (reviewerAgentID == "") {
+		return ErrConsoleTaskAssigneePair
+	}
+	if developerAgentID != "" && developerAgentID == reviewerAgentID {
+		return ErrConsoleTaskAssigneeSame
+	}
 	res, err := s.db.ExecContext(ctx, `UPDATE console_spec_task
 		SET developer_agent_id=NULLIF(?,''),reviewer_agent_id=NULLIF(?,'')
 		WHERE id=? AND EXISTS(SELECT 1 FROM console_spec s WHERE s.id=console_spec_task.spec_id AND s.principal_id=? AND s.state='final' AND s.task_state='splitting')`,
-		strings.TrimSpace(developerAgentID), strings.TrimSpace(reviewerAgentID), taskID, principalID)
+		developerAgentID, reviewerAgentID, taskID, principalID)
 	if err != nil {
 		return err
 	}
