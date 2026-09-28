@@ -40,6 +40,22 @@ func TestGateDumpDoorABaseline(t *testing.T) {
 	if out == "" {
 		t.Skip("设 DW_ADMIN_BASELINE_OUT 才跑(跨构建基线字节对照用)")
 	}
+	text := dumpDoorABaseline(t)
+	if err := os.WriteFile(out, []byte(text), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("wrote %s (%d bytes)", out, len(text))
+}
+
+// dumpDoorABaseline 是**取数装置**:门 A 的状态码／关键头／正文,顺序固定。
+//
+// 🔴 两个调用方,用途不同,但必须走**同一份**取数代码 —— 否则"字节全等"比的是两个装置:
+//   - TestGateDumpDoorABaseline:写文件,供跨树人工 diff(基线树 vs 本树)
+//   - TestGateDoorABytesMatchThePinnedBaseline(gate_baseline_pin_test.go):与 pin 住的哈希比,**自动红**
+//
+// 🔴 只用改动前就存在的 API ⇒ 本函数可原样拷进基线树跑(这正是它能当对照装置的前提)。
+func dumpDoorABaseline(t *testing.T) string {
+	t.Helper()
 	ctx := context.Background()
 	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "baseline.db"))
 	if err != nil {
@@ -112,8 +128,5 @@ func TestGateDumpDoorABaseline(t *testing.T) {
 	dump("ANON", http.MethodPost, "/admin/provision", nil, url.Values{}, true)
 	dump("ANON", http.MethodPost, "/admin/api-keys", nil, url.Values{}, true)
 
-	if err := os.WriteFile(out, []byte(buf.String()), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("wrote %s (%d bytes)", out, buf.Len())
+	return buf.String()
 }

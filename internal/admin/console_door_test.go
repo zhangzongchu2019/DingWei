@@ -843,3 +843,70 @@ func gateSubstituteWildcards(pattern string) string {
 		"{owner}", "gate", "{keyword}", "gate", "{name}", "gate", "{rest}", "gate",
 	).Replace(pattern)
 }
+
+// ── G4c 导航页不许有**第二份清单**,也不许有死链 ──────────────────────────────
+//
+// 🔴 本格是变异 M17 咬出来的缺口:往 consoleAdminIndex 的 HTML 里手写一条
+// `<a href="/console/admin/members">成员配置</a>` ⇒ 全仓 **rc=0、零转红**(实测),
+// 而那条链接**打不开**(门 B 没有 members 路由 ⇒ 404)。两个后果都是本组今日反复撞的形状:
+//
+//	① 死链:业主点一下 404,会当成故障反复点(板件 B1-a 今日已因「点了没反应」卡过一次)
+//	② 第二份清单:console_door.go 的头注**声称**「条目由路由表生成,不写第二份清单」,
+//	   而 M17 证明那句话当时**没有任何闸在守** ⇒ 描述与实现不符(本线今日同型第五次)
+//
+// 判据(期望值**独立**从路由表算,不从页面读 ⇒ 不是盲量):
+//
+//	① 页面上每一个 href 都必须是路由表里"该单列"的那条,**一条不多、一条不少、不重复**
+//	② 每一个 href 都**真打得开**(management 身份 GET ⇒ 200)
+//
+// 🔵 两腿各自被**单独**证明有牙(实测,不是推论):
+//
+//	M17(手写一条 /console/admin/members 链接)⇒ ①红:「不在路由表里」。
+//	   🔴 此时②**没跑到**(①用 t.Fatalf 先中止)⇒ 不能说"②也验过了"。
+//	M18(入口留在表里、但 MountConsole 不注册它的 GET)⇒ ②红:「死链,code=405」。
+//	   🔵 是 405 不是 404:该 pattern 的 POST 仍在 ⇒ Go 的 mux 回 405。
+//	   本格判据是"打不开"(≠200),405 与 404 同样算 —— 业主点下去都不是页面。
+var gateIndexHref = regexp.MustCompile(`href="([^"]+)"`)
+
+func TestGateConsoleAdminIndexHasNoSecondListAndNoDeadLink(t *testing.T) {
+	f := newTwoDoorFixture(t, true)
+	rec := f.do(t, http.MethodGet, consoleDoorPrefix, []*http.Cookie{f.consoleCookie("p-mgmt-1")}, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("装置坏:导航页 ⇒ code=%d(期望 200),本格结论不采信", rec.Code)
+	}
+	want := map[string]bool{}
+	for _, route := range f.srv.consoleDoorRoutes() {
+		if route.title == "" || route.get == nil {
+			continue // 与导航页同一条口径:不单列的不该有入口
+		}
+		want[route.pattern] = true
+	}
+	if len(want) != 5 {
+		t.Fatalf("前提坏了:路由表里该单列的应是 5 项(文件对象·Provision·凭证·机器人通道·管理者名单),实为 %d ⇒ 本格结论不采信", len(want))
+	}
+	seen := map[string]bool{}
+	for _, match := range gateIndexHref.FindAllStringSubmatch(rec.Body.String(), -1) {
+		href := match[1]
+		if seen[href] {
+			t.Fatalf("🔴 导航页里 %s 出现两次 ⇒ 同一能力两个入口,UI 与闸都无法唯一寻址", href)
+		}
+		seen[href] = true
+		if !want[href] {
+			t.Fatalf("🔴 导航页有一条**不在路由表里**的链接:%s。\n"+
+				"判据:条目由 consoleDoorRoutes() 生成,不许手写第二份清单(两份必漂移)。\n"+
+				"后果:这类链接通常指向门 B 没有的路由 ⇒ 业主点下去 404,会当成故障反复点。", href)
+		}
+	}
+	for href := range want {
+		if !seen[href] {
+			t.Fatalf("🔴 路由表里该单列的 %s 在导航页上**没有入口** ⇒ 能力在、业主看不见(等于没搬)", href)
+		}
+	}
+	for href := range seen {
+		probe := f.do(t, http.MethodGet, href, []*http.Cookie{f.consoleCookie("p-mgmt-1")}, nil)
+		if probe.Code != http.StatusOK {
+			t.Fatalf("🔴 导航页上的死链:%s ⇒ management 身份 GET code=%d(期望 200)。\n"+
+				"判据:导航页上每一条链接都必须真能打开 —— 点不动的入口等于没有入口。", href, probe.Code)
+		}
+	}
+}
