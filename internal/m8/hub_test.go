@@ -2140,7 +2140,7 @@ func TestFeishuShortSessionSelectorResolvesRegisteredNameByOwner(t *testing.T) {
 	assertNoEnvelope(t, ctx, u2Dev, 120*time.Millisecond)
 }
 
-func TestIPCSendBodyAMRRoutesTopLevelMentionsAndPreservesIndentEscape(t *testing.T) {
+func TestIPCSendBodyAMRRoutesMentionsAtAnyIndent(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
@@ -2197,10 +2197,8 @@ func TestIPCSendBodyAMRRoutesTopLevelMentionsAndPreservesIndentEscape(t *testing
 	if got := readEnvelope(t, ctx, primary); got.ID != "ipc-amr-indented" {
 		t.Fatalf("indented primary envelope=%+v", got)
 	}
-	readCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-	if _, _, err := alpha.Read(readCtx); err == nil {
-		t.Fatal("indented mention unexpectedly routed to alpha")
+	if got := readEnvelope(t, ctx, alpha); got.Body != "仅展示" || metaString(got.Meta, "route_source") != "ipc_send_body_amr" {
+		t.Fatalf("indented mention was not routed to alpha: %+v", got)
 	}
 
 	if err := writeEnvelope(ctx, source, model.Envelope{
@@ -2212,7 +2210,7 @@ func TestIPCSendBodyAMRRoutesTopLevelMentionsAndPreservesIndentEscape(t *testing
 	if got := readEnvelope(t, ctx, primary); got.ID != "ipc-amr-dedup" {
 		t.Fatalf("dedup primary envelope=%+v", got)
 	}
-	readCtx, cancel = context.WithTimeout(ctx, 100*time.Millisecond)
+	readCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	if _, _, err := primary.Read(readCtx); err == nil {
 		t.Fatal("primary target received duplicate derived mention")

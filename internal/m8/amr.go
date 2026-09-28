@@ -966,33 +966,90 @@ func parseAMRCandidatesDetailed(text, sourceSession string, maxTargets int) ([]a
 	}
 	text = strings.ReplaceAll(text, "\r\n", "\n")
 	lines := strings.Split(text, "\n")
+	fenced := pairedMarkdownFenceLines(lines)
 	lookedLikeCandidate := false
 	for i := range lines {
+		if fenced[i] {
+			continue
+		}
 		line := lines[i]
-		if i == 0 {
-			// T-082: retain the historical first-line whitespace allowance.
-			line = strings.TrimLeftFunc(line, unicode.IsSpace)
-		} else if first, _ := utf8.DecodeRuneInString(line); unicode.IsSpace(first) {
-			// Later lines are intentionally column-zero only. Indentation is the
-			// documented escape hatch for examples and pasted logs.
-			continue
+		for offset := 0; offset < len(line); {
+			rel := strings.IndexAny(line[offset:], "@#")
+			if rel < 0 {
+				break
+			}
+			start := offset + rel
+			block := line[start:]
+			if i+1 < len(lines) {
+				block += "\n" + strings.Join(lines[i+1:], "\n")
+			}
+			candidates, looked := parseAMRCandidateBlock(block, sourceSession, maxTargets)
+			lookedLikeCandidate = lookedLikeCandidate || looked
+			if len(candidates) > 0 {
+				return candidates, true
+			}
+			if looked {
+				// The first syntactically candidate-like block owns the routing
+				// decision. Continuing at a later token would let an over-limit or
+				// otherwise rejected block evade fail-closed validation.
+				return nil, true
+			}
+			_, size := utf8.DecodeRuneInString(line[start:])
+			offset = start + size
 		}
-		if !strings.HasPrefix(line, "@") && !strings.HasPrefix(line, "#") {
-			continue
-		}
-		block := line
-		if i+1 < len(lines) {
-			block += "\n" + strings.Join(lines[i+1:], "\n")
-		}
-		candidates, looked := parseAMRCandidateBlock(block, sourceSession, maxTargets)
-		lookedLikeCandidate = lookedLikeCandidate || looked
-		if len(candidates) > 0 {
-			return candidates, true
-		}
-		// A Markdown heading is not a candidate, but it also must not stop the
-		// scan: a later column-zero route directive remains eligible.
 	}
 	return nil, lookedLikeCandidate
+}
+
+// pairedMarkdownFenceLines marks only closed fenced blocks. A fence delimiter
+// is a line whose trimmed form starts with at least three backticks or tildes;
+// its closer uses the same character at least as many times and has only space
+// after it. An unmatched opener marks nothing, so malformed Markdown cannot
+// silently swallow every mention through the end of a turn.
+func pairedMarkdownFenceLines(lines []string) []bool {
+	masked := make([]bool, len(lines))
+	for i := 0; i < len(lines); i++ {
+		ch, width, ok := markdownFenceOpener(lines[i])
+		if !ok {
+			continue
+		}
+		closeAt := -1
+		for j := i + 1; j < len(lines); j++ {
+			if markdownFenceCloser(lines[j], ch, width) {
+				closeAt = j
+				break
+			}
+		}
+		if closeAt < 0 {
+			continue
+		}
+		for j := i; j <= closeAt; j++ {
+			masked[j] = true
+		}
+		i = closeAt
+	}
+	return masked
+}
+
+func markdownFenceOpener(line string) (byte, int, bool) {
+	trimmed := strings.TrimSpace(line)
+	if len(trimmed) < 3 || (trimmed[0] != '`' && trimmed[0] != '~') {
+		return 0, 0, false
+	}
+	width := 0
+	for width < len(trimmed) && trimmed[width] == trimmed[0] {
+		width++
+	}
+	return trimmed[0], width, width >= 3
+}
+
+func markdownFenceCloser(line string, ch byte, minWidth int) bool {
+	trimmed := strings.TrimSpace(line)
+	width := 0
+	for width < len(trimmed) && trimmed[width] == ch {
+		width++
+	}
+	return width >= minWidth && strings.TrimSpace(trimmed[width:]) == ""
 }
 
 func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCandidate, bool) {

@@ -7,10 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
@@ -32,14 +35,14 @@ func testAMRProcessor() *amrProcessor {
 	}
 }
 
-func TestIPCSendBodyAMRUsesSharedParserAndIndentEscape(t *testing.T) {
+func TestIPCSendBodyAMRUsesSharedParserAtAnyIndent(t *testing.T) {
 	top, looked := parseAMRCandidatesDetailed("发给主目标\n@alpha @beta 正文", "source", 20)
 	if !looked || len(top) != 2 || top[0].selector != "#alpha" || top[1].selector != "#beta" || top[0].body != "正文" {
 		t.Fatalf("top-level candidates=%+v looked=%t", top, looked)
 	}
 	indented, looked := parseAMRCandidatesDetailed("发给主目标\n @alpha @beta 正文", "source", 20)
-	if looked || len(indented) != 0 {
-		t.Fatalf("indented escape parsed candidates=%+v looked=%t", indented, looked)
+	if !looked || len(indented) != 2 || indented[0].selector != "#alpha" || indented[1].selector != "#beta" {
+		t.Fatalf("indented mention not parsed candidates=%+v looked=%t", indented, looked)
 	}
 }
 
@@ -402,14 +405,94 @@ func TestParseAMRCandidatesUsesWholeTurnAndRejectsInvalidTokens(t *testing.T) {
 	if len(got) != 2 || got[0].selector != "#alpha" || got[1].selector != "#beta" || got[1].replyPolicy != "expect_reply" || got[0].body != "do the work" {
 		t.Fatalf("candidates=%+v", got)
 	}
-	if got := parseAMRCandidates("prefix @alpha body", "source", 20); len(got) != 0 {
-		t.Fatalf("mid-body mention routed: %+v", got)
+	if got := parseAMRCandidates("prefix @alpha body", "source", 20); len(got) != 1 || got[0].selector != "#alpha" || got[0].body != "body" {
+		t.Fatalf("mid-body mention not routed: %+v", got)
 	}
 	if got := parseAMRCandidates("@na$me body", "source", 20); len(got) != 0 {
 		t.Fatalf("invalid token partially consumed: %+v", got)
 	}
 	if got := parseAMRCandidates("@source body", "source", 20); len(got) != 0 {
 		t.Fatalf("self mention routed: %+v", got)
+	}
+}
+
+func TestAMRRoutesMentionsAnywhereAndHonorsPairedFences(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{name: "mid sentence", body: "先写说明，再请 @target 核对这一项", wantBody: "核对这一项"},
+		{name: "paired fence", body: "引用日志：\n```text\n@target 围栏内不得投递\n```\n围栏外同一句仍请 @target 围栏外应投递", wantBody: "围栏外应投递"},
+		{name: "unmatched opener does not swallow", body: "```text\n@target 未闭合围栏仍应投递", wantBody: "未闭合围栏仍应投递"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			hub, db, ctx := newTestHub(t)
+			if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-at-open", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+				t.Fatal(err)
+			}
+			secret, key, err := hub.IssueAPIKey(ctx, "svc-at-open", "owner")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := db.UpsertMember(ctx, model.Member{OwnerKey: "owner", DisplayName: "Owner", FeishuOpenID: "ou_owner", Active: true}); err != nil {
+				t.Fatal(err)
+			}
+			if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_owner"); err != nil {
+				t.Fatal(err)
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+			srv := httptest.NewServer(mux)
+			defer srv.Close()
+			source := dialSession(t, ctx, srv.URL, "source", key.ID, secret)
+			defer source.Close(websocket.StatusNormalClosure, "done")
+			target := dialSession(t, ctx, srv.URL, "target", key.ID, secret)
+			defer target.Close(websocket.StatusNormalClosure, "done")
+
+			endpoints, err := db.ListSessionEndpoints(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			sourceName, targetName := "", ""
+			for _, ep := range endpoints {
+				if ep.KeyID == key.ID && shortSessionName(ep.SessionName) == "source" {
+					sourceName = ep.SessionName
+				}
+				if ep.KeyID == key.ID && shortSessionName(ep.SessionName) == "target" {
+					targetName = ep.SessionName
+				}
+			}
+			if sourceName == "" || targetName == "" {
+				t.Fatalf("route endpoints not registered: source=%q target=%q", sourceName, targetName)
+			}
+			waitSessionOnline(t, hub, key.ID, sourceName)
+			waitSessionOnline(t, hub, key.ID, targetName)
+			p := testAMRProcessor()
+			p.hub = hub
+			p.modes = map[string]amrMode{sourceName: amrRoute}
+			p.routeEnvelope = hub.RouteEnvelope
+			p.mu.Lock()
+			p.stats.opened, p.stats.queued = 1, 1
+			p.mu.Unlock()
+			p.process(amrRouteJob{key: amrTurnKey{KeyID: key.ID, Session: sourceName, DeliveryID: "d", TurnID: "t"}, body: tc.body})
+
+			got := readEnvelope(t, ctx, target)
+			if got.Body != tc.wantBody {
+				t.Fatalf("real AMR route body=%q want=%q", got.Body, tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestAMRMidBodyMarkdownHeadingIsNotCandidate(t *testing.T) {
+	got, looked := parseAMRCandidatesDetailed("说明文字中段 ## 标题\n只有普通正文", "source", 20)
+	if len(got) != 0 || looked {
+		t.Fatalf("mid-body Markdown heading became route candidate: got=%+v looked=%t", got, looked)
+	}
+	positive, looked := parseAMRCandidatesDetailed("说明文字中段 ## 标题\n标题后请 @target 核对", "source", 20)
+	if !looked || len(positive) != 1 || positive[0].selector != "#target" || positive[0].body != "核对" {
+		t.Fatalf("heading guard swallowed later real mention: got=%+v looked=%t", positive, looked)
 	}
 }
 
@@ -423,16 +506,16 @@ func TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas(t *testing.T) {
 	}{
 		{name: "first character regression", body: "@target direct", wantTargets: 1, wantBody: "direct"},
 		{name: "later column zero", body: "先说明再动手\n@target routed\ncontext", wantTargets: 1, wantBody: "routed\ncontext"},
-		{name: "space indentation escape", body: "说明\n @target example", wantNonCandidate: true},
-		{name: "tab indentation escape", body: "说明\n\t@target example", wantNonCandidate: true},
-		{name: "unicode indentation escape", body: "说明\n\u3000@target example", wantNonCandidate: true},
+		{name: "space indentation routes", body: "说明\n @target example", wantTargets: 1, wantBody: "example"},
+		{name: "tab indentation routes", body: "说明\n\t@target example", wantTargets: 1, wantBody: "example"},
+		{name: "unicode indentation routes", body: "说明\n\u3000@target example", wantTargets: 1, wantBody: "example"},
 		{name: "markdown heading continues", body: "## 标题\n@target after heading", wantTargets: 1, wantBody: "after heading"},
 		{name: "decorated markdown heading continues", body: "**## 标题**\n@target after decoration", wantTargets: 1, wantBody: "after decoration"},
-		{name: "quote does not route", body: "> @target quotation", wantNonCandidate: true},
+		{name: "quote routes when unfenced", body: "> @target quotation", wantTargets: 1, wantBody: "quotation"},
 		{name: "only first directive routes", body: "@one first\n@two second", wantTargets: 1, wantBody: "first\n@two second"},
-		{name: "no line head mention", body: "plain @target reference\nmore text", wantNonCandidate: true},
+		{name: "mid-line mention", body: "plain @target reference\nmore text", wantTargets: 1, wantBody: "reference\nmore text"},
 		{name: "first line keeps trim space", body: " \t@target trimmed", wantTargets: 1, wantBody: "trimmed"},
-		{name: "first line zero width is not trimmed", body: "\u200b@target hidden", wantNonCandidate: true},
+		{name: "zero width prefix still routes", body: "\u200b@target hidden", wantTargets: 1, wantBody: "hidden"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
