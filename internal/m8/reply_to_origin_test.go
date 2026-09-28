@@ -287,7 +287,7 @@ func TestAMRUnsupportedChineseNameReturnsWholeTurnThroughRealIngress(t *testing.
 	h, _, ctx := newTestHub(t)
 	key := replyOriginFixture(t, h, ctx, "dw-dlv_soft", "msg-soft", sessionAddress("ant", "k1"), nil)
 	p, routed := replyOriginProcessor(h)
-	body := "这段正文提到 @张宗楚，但名称不符合路由语法，所以正文必须完整回程"
+	body := "这段正文提到 @张宗楚 但名称不符合路由语法，所以正文必须完整回程"
 	p.ingest(key.KeyID, key.Session, amrEventJSON(t, amrSessionEvent{Kind: "assistant_text", Text: body, DeliveryID: key.DeliveryID, TurnID: key.TurnID}))
 	p.ingest(key.KeyID, key.Session, amrEventJSON(t, amrSessionEvent{Kind: "state_change", Data: map[string]any{"change": "turn_completed", "status": "completed"}, DeliveryID: key.DeliveryID, TurnID: key.TurnID}))
 	select {
