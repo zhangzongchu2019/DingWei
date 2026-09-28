@@ -12,6 +12,7 @@ package m8
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sort"
 	"strings"
@@ -82,13 +83,113 @@ func (h *Hub) ownerFeishuOpenID(ctx context.Context, keyID string) string {
 	return ""
 }
 
-// channelDeliveryTarget 解析出最终要投的飞书标识,并说明是不是走了兜底。
-func (h *Hub) channelDeliveryTarget(ctx context.Context, keyID, addr string) (openID string, fellBack bool) {
-	if isAddressableFeishuID(addr) {
-		return strings.TrimSpace(addr), false
+type feishuNameMatch struct {
+	feishuID string
+	owner    string
+}
+
+type channelDeliveryResolution struct {
+	openID   string
+	fellBack bool
+	note     string
+}
+
+func ownerFeishuOpenIDFromMembers(members []model.Member, ownerKey string) string {
+	for _, member := range members {
+		if member.Active && member.OwnerKey == ownerKey && member.FeishuOpenID != "" {
+			return member.FeishuOpenID
+		}
 	}
-	// addr 为空(只有 @飞书)或不可寻址(写错了/写成中文名)⇒ 一律发业主本人。
-	return h.ownerFeishuOpenID(ctx, keyID), true
+	return ""
+}
+
+// resolveFeishuName 在 active 成员和 active 群之间做同一轮精确名字匹配。
+// ID 形态在调用方先短路；成员表中“显示名就是 ID”的历史行也不得再次作为名字命中。
+func (h *Hub) resolveFeishuName(ctx context.Context, name string) ([]feishuNameMatch, []model.Member, error) {
+	members, err := h.Repo.ListMembers(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list members for feishu name: %w", err)
+	}
+	matches := make([]feishuNameMatch, 0, 2)
+	seenFeishuID := make(map[string]struct{})
+	addMatch := func(feishuID, owner string) {
+		feishuID = strings.TrimSpace(feishuID)
+		if feishuID == "" {
+			return
+		}
+		if _, exists := seenFeishuID[feishuID]; exists {
+			return
+		}
+		seenFeishuID[feishuID] = struct{}{}
+		matches = append(matches, feishuNameMatch{feishuID: feishuID, owner: strings.TrimSpace(owner)})
+	}
+	for _, member := range members {
+		displayName := strings.TrimSpace(member.DisplayName)
+		if !member.Active || displayName != name || isAddressableFeishuID(displayName) || strings.TrimSpace(member.FeishuOpenID) == "" {
+			continue
+		}
+		addMatch(member.FeishuOpenID, member.OwnerKey)
+	}
+	groups, err := h.Repo.ListChatEntities(ctx, model.ChatGroup)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list groups for feishu name: %w", err)
+	}
+	for _, group := range groups {
+		if !group.Active || strings.TrimSpace(group.DisplayName) != name || strings.TrimSpace(group.FeishuID) == "" {
+			continue
+		}
+		owner := strings.TrimSpace(group.BoundOwner)
+		if owner == "" {
+			owner = strings.TrimSpace(group.BotChannelID)
+		}
+		addMatch(group.FeishuID, owner)
+	}
+	sort.Slice(matches, func(i, j int) bool {
+		if matches[i].owner != matches[j].owner {
+			return matches[i].owner < matches[j].owner
+		}
+		return matches[i].feishuID < matches[j].feishuID
+	})
+	return matches, members, nil
+}
+
+// channelDeliveryTarget 解析出最终要投的飞书标识、是否兜底与正文末尾说明。
+func (h *Hub) channelDeliveryTarget(ctx context.Context, keyID, addr string) (channelDeliveryResolution, error) {
+	if isAddressableFeishuID(addr) {
+		return channelDeliveryResolution{openID: strings.TrimSpace(addr)}, nil
+	}
+	if strings.TrimSpace(addr) == "" {
+		return channelDeliveryResolution{openID: h.ownerFeishuOpenID(ctx, keyID), fellBack: true}, nil
+	}
+	if h.Repo == nil {
+		return channelDeliveryResolution{}, fmt.Errorf("resolve feishu name: repository unavailable")
+	}
+	name := strings.TrimSpace(addr)
+	matches, members, err := h.resolveFeishuName(ctx, name)
+	if err != nil {
+		return channelDeliveryResolution{}, err
+	}
+	if len(matches) == 1 {
+		return channelDeliveryResolution{openID: matches[0].feishuID}, nil
+	}
+	ownerKey := h.ownerKeyForKey(ctx, keyID)
+	resolution := channelDeliveryResolution{
+		openID:   ownerFeishuOpenIDFromMembers(members, ownerKey),
+		fellBack: true,
+	}
+	if len(matches) == 0 {
+		resolution.note = fmt.Sprintf("未找到名为「%s」的飞书账号或群，因此发给业主本人", name)
+		return resolution, nil
+	}
+	resolution.note = fmt.Sprintf("因为「%s」和「%s」同名，无法决定，因此发给业主本人", matches[0].owner, matches[1].owner)
+	return resolution, nil
+}
+
+func appendChannelDeliveryNote(body, note string) string {
+	if note == "" {
+		return body
+	}
+	return strings.TrimRight(body, " \t\r\n") + "\n" + note
 }
 
 // deliverChannelCandidate 把一条渠道候选投出去。
@@ -97,11 +198,15 @@ func (p *amrProcessor) deliverChannelCandidate(job amrRouteJob, candidate amrCan
 	ctx, cancel := context.WithTimeout(context.Background(), p.routeTimeout)
 	defer cancel()
 
-	openID, fellBack := h.channelDeliveryTarget(ctx, job.key.KeyID, candidate.channelAddr)
+	resolution, err := h.channelDeliveryTarget(ctx, job.key.KeyID, candidate.channelAddr)
+	if err != nil {
+		p.notifySource(job.key, "", "渠道投递失败：飞书名字寻址不可用，本条未发出", true)
+		return err
+	}
 	bot := h.defaultBotName()
 	log.Printf("[channel] deliver session=%s channel=%s addr=%q resolved=%q fell_back=%t bot=%q",
-		job.key.Session, candidate.channel, candidate.channelAddr, openID, fellBack, bot)
-	if openID == "" {
+		job.key.Session, candidate.channel, candidate.channelAddr, resolution.openID, resolution.fellBack, bot)
+	if resolution.openID == "" {
 		// 🔴 连业主本人都取不到 ⇒ 没有任何可投的目标。必须可见,不静默。
 		p.notifySource(job.key, "", "渠道投递失败：取不到业主本人的飞书标识，本条未发出", true)
 		return errChannelNoTarget
@@ -109,9 +214,9 @@ func (p *amrProcessor) deliverChannelCandidate(job amrRouteJob, candidate amrCan
 
 	env := model.Envelope{
 		ID:   "channel-" + randomHex(16),
-		To:   feishuAddress(openID, job.key.KeyID, bot),
+		To:   feishuAddress(resolution.openID, job.key.KeyID, bot),
 		From: sessionAddress(job.key.Session, job.key.KeyID),
-		Body: candidate.body,
+		Body: appendChannelDeliveryNote(candidate.body, resolution.note),
 		TS:   time.Now().Unix(),
 		Meta: map[string]any{
 			"type":               "agent_route",
@@ -120,7 +225,7 @@ func (p *amrProcessor) deliverChannelCandidate(job amrRouteJob, candidate amrCan
 			"route_source":       "channel_" + candidate.channel,
 			"channel":            candidate.channel,
 			"channel_addr":       candidate.channelAddr,
-			"channel_fell_back":  fellBack,
+			"channel_fell_back":  resolution.fellBack,
 			"source_delivery_id": job.key.DeliveryID,
 			"source_turn_id":     job.key.TurnID,
 		},

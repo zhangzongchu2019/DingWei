@@ -143,29 +143,101 @@ func TestChannelDeliveryNoAddressGoesToOwner(t *testing.T) {
 
 func TestChannelDeliveryAddressableIDIsNotFallenBack(t *testing.T) {
 	hub, keyID, _ := channelTestHub(t)
-	p, routed := channelProcessor(hub, keyID)
-
-	p.deliverChannelCandidate(amrRouteJob{key: channelJob(keyID), body: "发群"},
-		amrCandidate{channel: "feishu", channelAddr: "oc_realgroup", body: "发群", replyPolicy: "no_reply"})
-
-	if len(*routed) != 1 {
-		t.Fatalf("应投出一条,实测 %d", len(*routed))
-	}
-	got := (*routed)[0]
-	if !strings.HasPrefix(got.To, "oc_realgroup#") {
-		t.Fatalf("🔴 阳性对照:解析成功时必须发给该群,不得误兜底到业主。to=%q", got.To)
-	}
-	if metaBool(got.Meta, "channel_fell_back") != false {
-		t.Fatal("🔴 阳性对照:解析成功不得标记为兜底 ——「一律发业主」的实现会在这里露出来")
+	for _, address := range []string{"ou_realuser", "oc_realgroup"} {
+		t.Run(address[:2], func(t *testing.T) {
+			p, routed := channelProcessor(hub, keyID)
+			p.deliverChannelCandidate(amrRouteJob{key: channelJob(keyID), body: "按 ID 发"},
+				amrCandidate{channel: "feishu", channelAddr: address, body: "按 ID 发", replyPolicy: "no_reply"})
+			if len(*routed) != 1 {
+				t.Fatalf("应投出一条,实测 %d", len(*routed))
+			}
+			got := (*routed)[0]
+			if !strings.HasPrefix(got.To, address+"#") {
+				t.Fatalf("🔴 ID 解析成功时必须直投,不得误兜底到业主。to=%q", got.To)
+			}
+			if metaBool(got.Meta, "channel_fell_back") || got.Body != "按 ID 发" {
+				t.Fatalf("🔴 ID 寻址不得被名字兜底改写: meta=%v body=%q", got.Meta, got.Body)
+			}
+		})
 	}
 }
 
-func TestChannelDeliveryUnparsableAddressFallsBackToOwner(t *testing.T) {
+func TestChannelDeliveryUniqueNameSelectsNonFirstMember(t *testing.T) {
+	hub, keyID, ctx := channelTestHub(t)
+	for _, member := range []model.Member{
+		{OwnerKey: "a-owner", DisplayName: "甲目标", FeishuOpenID: "ou_first", Active: true},
+		{OwnerKey: "b-owner", DisplayName: "目标乙", FeishuOpenID: "ou_second", Active: true},
+		{OwnerKey: "c-owner", DisplayName: "终目标", FeishuOpenID: "ou_third", Active: true},
+		{OwnerKey: "inactive-owner", DisplayName: "目标乙", FeishuOpenID: "ou_inactive", Active: false},
+	} {
+		if err := hub.Repo.UpsertMember(ctx, member); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p, routed := channelProcessor(hub, keyID)
+	p.deliverChannelCandidate(amrRouteJob{key: channelJob(keyID), body: "唯一命中正文"},
+		amrCandidate{channel: "feishu", channelAddr: "目标乙", body: "唯一命中正文", replyPolicy: "no_reply"})
+	if len(*routed) != 1 {
+		t.Fatalf("唯一名字应投出一条,实测 %d", len(*routed))
+	}
+	got := (*routed)[0]
+	if !strings.HasPrefix(got.To, "ou_second#") {
+		t.Fatalf("必须投给三条成员中的第二条,不得固定取首项: to=%q", got.To)
+	}
+	if metaBool(got.Meta, "channel_fell_back") || got.Body != "唯一命中正文" {
+		t.Fatalf("唯一名字寻址不应伪装成兜底: meta=%v body=%q", got.Meta, got.Body)
+	}
+}
+
+func TestChannelDeliveryUniqueGroupNameRoutesToGroup(t *testing.T) {
+	hub, keyID, ctx := channelTestHub(t)
+	if err := hub.Repo.UpsertChatEntity(ctx, model.ChatEntity{ID: "bot:group:oc_named", BotChannelID: "bot", Type: model.ChatGroup, FeishuID: "oc_named", DisplayName: "发布群", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	p, routed := channelProcessor(hub, keyID)
+	p.deliverChannelCandidate(amrRouteJob{key: channelJob(keyID), body: "群正文"},
+		amrCandidate{channel: "feishu", channelAddr: "发布群", body: "群正文", replyPolicy: "no_reply"})
+	if len(*routed) != 1 || !strings.HasPrefix((*routed)[0].To, "oc_named#") {
+		t.Fatalf("唯一群名必须直投该群: routed=%+v", *routed)
+	}
+	if metaBool((*routed)[0].Meta, "channel_fell_back") || (*routed)[0].Body != "群正文" {
+		t.Fatalf("唯一群名不应带兜底痕迹: meta=%v body=%q", (*routed)[0].Meta, (*routed)[0].Body)
+	}
+}
+
+func TestChannelDeliveryDuplicateNameFallsBackWithOwnershipNote(t *testing.T) {
+	hub, keyID, ctx := channelTestHub(t)
+	if err := hub.Repo.UpsertMember(ctx, model.Member{OwnerKey: "person-owner", DisplayName: "同名目标", FeishuOpenID: "ou_duplicate", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.Repo.UpsertChatEntity(ctx, model.ChatEntity{ID: "bot:group:oc_duplicate", BotChannelID: "bot", Type: model.ChatGroup, FeishuID: "oc_duplicate", DisplayName: "同名目标", BoundOwner: "group-owner", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	p, routed := channelProcessor(hub, keyID)
+	p.deliverChannelCandidate(amrRouteJob{key: channelJob(keyID), body: "重名正文"},
+		amrCandidate{channel: "feishu", channelAddr: "同名目标", body: "重名正文", replyPolicy: "no_reply"})
+	if len(*routed) != 1 {
+		t.Fatalf("重名应兜底投出一条,实测 %d", len(*routed))
+	}
+	got := (*routed)[0]
+	wantNote := "因为「group-owner」和「person-owner」同名，无法决定，因此发给业主本人"
+	if !strings.HasPrefix(got.To, "ou_owner#") || !metaBool(got.Meta, "channel_fell_back") {
+		t.Fatalf("重名必须发给业主本人: to=%q meta=%v", got.To, got.Meta)
+	}
+	if !strings.HasSuffix(got.Body, wantNote) {
+		t.Fatalf("重名正文末尾未说明判定依据: body=%q want suffix=%q", got.Body, wantNote)
+	}
+	if got.Body == "重名正文" {
+		t.Fatal("重名兜底与寻址成功在正文上不可区分")
+	}
+}
+
+func TestChannelDeliveryMissingNameFallsBackWithNotFoundNote(t *testing.T) {
 	hub, keyID, _ := channelTestHub(t)
 	p, routed := channelProcessor(hub, keyID)
 
-	p.deliverChannelCandidate(amrRouteJob{key: channelJob(keyID), body: "写错了"},
-		amrCandidate{channel: "feishu", channelAddr: "张三的群", body: "写错了", replyPolicy: "no_reply"})
+	p.deliverChannelCandidate(amrRouteJob{key: channelJob(keyID), body: "零命中正文"},
+		amrCandidate{channel: "feishu", channelAddr: "不存在的名字", body: "零命中正文", replyPolicy: "no_reply"})
 
 	if len(*routed) != 1 {
 		t.Fatalf("应投出一条,实测 %d", len(*routed))
@@ -176,6 +248,27 @@ func TestChannelDeliveryUnparsableAddressFallsBackToOwner(t *testing.T) {
 	}
 	if metaBool(got.Meta, "channel_fell_back") != true {
 		t.Fatal("兜底必须被标记出来,否则事后分不清这条是发对了还是兜底的")
+	}
+	wantNote := "未找到名为「不存在的名字」的飞书账号或群，因此发给业主本人"
+	if !strings.HasSuffix(got.Body, wantNote) {
+		t.Fatalf("零命中正文末尾未说明判定依据: body=%q want suffix=%q", got.Body, wantNote)
+	}
+	if got.Body == "零命中正文" {
+		t.Fatal("零命中兜底与寻址成功在正文上不可区分")
+	}
+}
+
+func TestFeishuNameLookupSkipsMemberDisplayNameThatIsAddressableID(t *testing.T) {
+	hub, _, ctx := channelTestHub(t)
+	if err := hub.Repo.UpsertMember(ctx, model.Member{OwnerKey: "prefill-owner", DisplayName: "ou_prefilled", FeishuOpenID: "ou_prefilled", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	matches, _, err := hub.resolveFeishuName(ctx, "ou_prefilled")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 0 {
+		t.Fatalf("ID 形态的 display_name 不得再次进入名字匹配: %+v", matches)
 	}
 }
 
