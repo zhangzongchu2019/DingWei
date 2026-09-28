@@ -636,6 +636,16 @@ var dataMigrationVerifiers = map[string]dataMigrationVerifier{
 		}
 		return true, nil
 	},
+	// 0052 retires the exact historical display name. Its stable signature is
+	// the absence of that name; runtime compatibility is provided separately by
+	// Hub's read alias and does not require restoring it in bot_channel.
+	"0052_bot_channel_display_name.sql": func(ctx context.Context, db *sql.DB) (bool, error) {
+		var n int
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM bot_channel WHERE name='GreyTestRobot'`).Scan(&n); err != nil {
+			return false, err
+		}
+		return n == 0, nil
+	},
 
 	// 🔴 0025_owner_links_page.sql 【故意不登记】：它只是把 l1_command_roster 的 pattern
 	//    设成某个值，而那个字段管理员随时可改 —— 没有稳定效果签名。

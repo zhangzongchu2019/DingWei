@@ -650,6 +650,12 @@ func (h *Hub) RegisterBot(botChannelID, botName string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.botChannels[botName] = botChannelID
+	// Historical envelopes persist the old display name in their three-part
+	// Feishu address. Keep that name as a read alias while the channel's
+	// canonical display name and reverse mapping remain dingwei.
+	if botName == "dingwei" {
+		h.botChannels["GreyTestRobot"] = botChannelID
+	}
 	h.botNames[botChannelID] = botName
 }
 
@@ -2110,7 +2116,7 @@ func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, 
 		return model.PrefixDispatchResult{}, false, nil
 	}
 	if msg.ChatType != model.ChatPersonal {
-		return model.PrefixDispatchResult{Matched: true}, true, nil
+		return model.PrefixDispatchResult{Matched: true, Reply: "该指令仅支持与机器人的单聊"}, true, nil
 	}
 	openID := firstNonEmpty(msg.SenderOpenID, feishuOpenIDFromAccount(sourceAccount(msg)))
 	if openID == "" {

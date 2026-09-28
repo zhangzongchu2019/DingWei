@@ -4810,6 +4810,76 @@ func TestFeishuSyncRequiresExplicitKeyForOtherOwner(t *testing.T) {
 	}
 }
 
+func TestFeishuSyncGroupExplainsRestrictionAndPersonalStillWorks(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "dingwei")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "owner", DisplayName: "Owner", FeishuOpenID: "ou_owner", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-sync-chat-type", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := hub.IssueAPIKey(ctx, "svc-sync-chat-type", "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_owner"); err != nil {
+		t.Fatal(err)
+	}
+	const sessionName = "owner-home"
+	hub.mu.Lock()
+	hub.sessionClients[key.ID] = map[string]*sessionClient{sessionName: {keyID: key.ID, sessionName: sessionName}}
+	hub.mu.Unlock()
+
+	group, err := hub.Dispatch(ctx, model.Message{
+		ID: "sync-group", ChatEntityID: "dev:group:oc_team", SenderOpenID: "ou_owner", BotChannelID: "dev", ChatType: model.ChatGroup,
+	}, "#sync "+sessionName)
+	if err != nil || !group.Matched || group.Reply != "该指令仅支持与机器人的单聊" {
+		t.Fatalf("group sync must explain the restriction: result=%+v err=%v", group, err)
+	}
+	personal, err := hub.Dispatch(ctx, model.Message{
+		ID: "sync-personal", ChatEntityID: "dev:personal:ou_owner", SenderOpenID: "ou_owner", BotChannelID: "dev", ChatType: model.ChatPersonal,
+	}, "#sync "+sessionName)
+	if err != nil || !personal.Matched || personal.Reply != "已开启同步 "+sessionName {
+		t.Fatalf("personal sync behavior changed: result=%+v err=%v", personal, err)
+	}
+	hub.mu.Lock()
+	_, registered := hub.syncTargets[terminalKey(key.ID, sessionName)]["dev:ou_owner"]
+	hub.mu.Unlock()
+	if !registered {
+		t.Fatal("personal sync replied success without creating the target")
+	}
+}
+
+func TestRenamedBotRoutesNewAndHistoricalAddressesToSameChannel(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
+	hub.RegisterBot("grey-id", "dingwei")
+	hub.RegisterBot("unified-id", "UnifiedRobot")
+	if got := hub.defaultBotName(); got != "dingwei" {
+		t.Fatalf("case-insensitive default ordering changed: got=%q want dingwei", got)
+	}
+	if got := hub.botName("grey-id"); got != "dingwei" {
+		t.Fatalf("channel attribution retained old name: got=%q want dingwei", got)
+	}
+	for _, botName := range []string{"dingwei", "GreyTestRobot"} {
+		env := model.Envelope{
+			ID: "rename-" + botName, From: sessionAddress("owner-agent", "key"),
+			To: feishuAddress("ou_target", "key", botName), Body: "rename route " + botName,
+		}
+		if err := hub.RouteEnvelope(ctx, env); err != nil {
+			t.Fatalf("route bot=%s: %v", botName, err)
+		}
+		got, err := db.ClaimNextMessage(ctx, model.DirectionOut)
+		if err != nil || got == nil {
+			t.Fatalf("route bot=%s produced no outbound: msg=%+v err=%v", botName, got, err)
+		}
+		if got.BotChannelID != "grey-id" || got.ChatEntityID != "grey-id:personal:ou_target" {
+			t.Fatalf("bot=%s resolved to fake or different channel: %+v", botName, got)
+		}
+	}
+}
+
 func TestApplyKeyFlowCreatesPendingAndApprovesWithOneTimeSecretDM(t *testing.T) {
 	useTestApplyKeyApprover(t, "ou_approver")
 	hub, db, ctx := newTestHub(t)
