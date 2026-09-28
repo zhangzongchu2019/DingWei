@@ -278,7 +278,7 @@ func TestChannelDeliveryDuplicateNameFallsBackWithOwnershipNote(t *testing.T) {
 		t.Fatalf("重名应兜底投出一条,实测 %d", len(*routed))
 	}
 	got := (*routed)[0]
-	wantNote := "因为「群 group-owner（oc_duplicate）」和「成员 person-owner（ou_duplicate）」同名，无法决定，因此发给业主本人"
+	wantNote := "因为「群 oc_duplicate」和「成员 ou_duplicate」同名，无法决定，因此发给业主本人"
 	if !strings.HasPrefix(got.To, "ou_owner#") || !metaBool(got.Meta, "channel_fell_back") {
 		t.Fatalf("重名必须发给业主本人: to=%q meta=%v", got.To, got.Meta)
 	}
@@ -305,7 +305,7 @@ func TestChannelDeliveryDuplicateNameWithSameOwnerStillIdentifiesBothTargets(t *
 		t.Fatalf("同归属重名应兜底投出一条,实测 %d", len(*routed))
 	}
 	got := (*routed)[0]
-	wantNote := "因为「群 same-owner（oc_same_owner）」和「成员 same-owner（ou_same_owner）」同名，无法决定，因此发给业主本人"
+	wantNote := "因为「群 oc_same_owner」和「成员 ou_same_owner」同名，无法决定，因此发给业主本人"
 	if !strings.HasSuffix(got.Body, wantNote) {
 		t.Fatalf("同 owner 的两个目标仍须可区分: body=%q want suffix=%q", got.Body, wantNote)
 	}

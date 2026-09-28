@@ -5,10 +5,12 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/coder/websocket"
 
+	"github.com/zhangzongchu2019/dingwei/internal/bus"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
@@ -251,6 +253,45 @@ func TestAgentGroupingReachabilityAndIndistinguishableMiss(t *testing.T) {
 	missingReply := readEnvelope(t, f.ctx, f.source)
 	if outsideReply.Body != groupAgentNotFoundText || outsideReply.Body != missingReply.Body {
 		t.Fatalf("async outside=%q missing=%q", outsideReply.Body, missingReply.Body)
+	}
+}
+
+func TestAgentGroupingAllowsAgentToFeishuAddress(t *testing.T) {
+	f := newGroupingFixture(t)
+	f.hub.RegisterBot("grouping", "UnifiedRobot")
+	f.hub.Outbound = bus.NewDBQueue(f.db, model.DirectionOut)
+	env := model.Envelope{
+		ID:   "agent-to-feishu",
+		From: sessionAddress(f.sourceFull, f.sourceKey.ID),
+		// send.py supplies a two-part address; the ou_ prefix identifies the
+		// target as Feishu rather than an Agent session.
+		To:   sessionAddress("ou_owner", f.sourceKey.ID),
+		Body: "给业主",
+	}
+	if err := f.hub.RouteEnvelope(f.ctx, env); err != nil {
+		t.Fatalf("Agent 发飞书 openID 必须绕过 Agent 编组闸: %v", err)
+	}
+	got, err := f.db.ClaimNextMessage(f.ctx, model.DirectionOut)
+	if err != nil || got == nil {
+		t.Fatalf("飞书出站没有真正入队: msg=%+v err=%v", got, err)
+	}
+	if got.ChatEntityID != "grouping:personal:ou_owner" || !strings.Contains(got.Content, "给业主") {
+		t.Fatalf("飞书出站目标或正文错误: %+v", got)
+	}
+}
+
+func TestGroupingRejectionReasonsReflectRealCondition(t *testing.T) {
+	f := newGroupingPolicyFixture(t)
+	f.createGroup(t, groupCodeA, "a")
+	f.createGroup(t, groupCodeB, "c")
+	fromFeishu := address{Kind: addressFeishu, OpenID: "ou_stranger", KeyID: f.ep["a"].KeyID, BotName: "bot"}
+	err := f.hub.enforceAgentGrouping(f.ctx, fromFeishu, model.Envelope{}, f.ep["a"].KeyID, f.ep["a"].SessionName)
+	if !errors.Is(err, errGroupAgentNotFound) || groupingRejectionReason(err) != "sender_not_active_member" {
+		t.Fatalf("飞书非成员拒绝必须记录真实条件: err=%v reason=%s", err, groupingRejectionReason(err))
+	}
+	err = f.enforce("a", "c")
+	if !errors.Is(err, errGroupAgentNotFound) || groupingRejectionReason(err) != "cross_group_denied" {
+		t.Fatalf("跨组拒绝必须记录真实条件: err=%v reason=%s", err, groupingRejectionReason(err))
 	}
 }
 

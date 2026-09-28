@@ -155,11 +155,7 @@ func (h *Hub) resolveFeishuName(ctx context.Context, name string) ([]feishuNameM
 }
 
 func (match feishuNameMatch) attribution() string {
-	owner := match.owner
-	if owner == "" {
-		owner = "未标归属"
-	}
-	return fmt.Sprintf("%s %s（%s）", match.kind, owner, match.feishuID)
+	return match.kind + " " + match.feishuID
 }
 
 // channelDeliveryTarget 解析出最终要投的飞书标识、是否兜底与正文末尾说明。

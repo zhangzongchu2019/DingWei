@@ -12,6 +12,25 @@ const groupAgentNotFoundText = "组内找不到该Agent"
 
 var errGroupAgentNotFound = errors.New(groupAgentNotFoundText)
 
+type groupingRejection struct{ reason string }
+
+func (err groupingRejection) Error() string { return groupAgentNotFoundText }
+func (err groupingRejection) Is(target error) bool {
+	return target == errGroupAgentNotFound
+}
+
+func newGroupingRejection(reason string) error {
+	return groupingRejection{reason: reason}
+}
+
+func groupingRejectionReason(err error) string {
+	var rejection groupingRejection
+	if errors.As(err, &rejection) && rejection.reason != "" {
+		return rejection.reason
+	}
+	return "cross_group_denied"
+}
+
 type agentEndpointIdentity struct {
 	KeyID, SessionName, OwnerKey string
 }
@@ -134,10 +153,10 @@ func (h *Hub) enforceAgentGrouping(ctx context.Context, from address, env model.
 	// active registered owner gets no implicit group membership merely because
 	// the message arrived through the same bot/channel.
 	if from.Kind == addressFeishu {
-		return errGroupAgentNotFound
+		return newGroupingRejection("sender_not_active_member")
 	}
 	if metaString(env.Meta, hubIngressMetaKey) == hubIngressViewV2 {
-		return errGroupAgentNotFound
+		return newGroupingRejection("sender_not_active_member")
 	}
 	source, isAgent, err := h.sourceAgentIdentity(ctx, from, env)
 	if err != nil || !isAgent {
@@ -148,7 +167,7 @@ func (h *Hub) enforceAgentGrouping(ctx context.Context, from address, env model.
 		return err
 	}
 	if !found {
-		return errGroupAgentNotFound
+		return newGroupingRejection("cross_group_denied")
 	}
 	sourceGroups, err := h.groupingKeys(ctx, source)
 	if err != nil {
@@ -163,7 +182,7 @@ func (h *Hub) enforceAgentGrouping(ctx context.Context, from address, env model.
 			return nil
 		}
 	}
-	return errGroupAgentNotFound
+	return newGroupingRejection("cross_group_denied")
 }
 
 func (h *Hub) resolveSessionByFullName(ctx context.Context, fullName string) (model.SessionEndpoint, bool, error) {

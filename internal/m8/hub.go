@@ -1495,6 +1495,7 @@ func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, t
 				env.Meta["sender_open_id"] = msg.SenderOpenID
 			}
 			if err := h.RouteEnvelope(ctx, env); err != nil {
+				logFeishuDispatchRejected("route_error", feishuOpenIDFromAccount(sourceAccount(msg)), route.Service.ID, msg.BotChannelID)
 				return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, "", true, nil
 			}
 			return model.PrefixDispatchResult{Matched: true}, route.Service.ID, true, nil
@@ -1513,6 +1514,7 @@ func (h *Hub) dispatchL1LegacyFallback(ctx context.Context, msg model.Message, t
 			RawContent:   msg.Content,
 		}, route.Service.TimeoutMs)
 		if err != nil {
+			logFeishuDispatchRejected("route_error", feishuOpenIDFromAccount(sourceAccount(msg)), route.Service.ID, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, route.Service.ID, true, nil
 		}
 		return model.PrefixDispatchResult{Matched: true, Reply: reply}, route.Service.ID, true, nil
@@ -2627,6 +2629,17 @@ func (h *Hub) forward(ctx context.Context, serviceID string, req ForwardRequest,
 	return resp.Reply, nil
 }
 
+func logFeishuDispatchRejected(reason, openID, target, botChannel string) {
+	log.Printf("feishu dispatch rejected reason=%s open_id=%q target=%q bot_channel=%q", reason, openID, target, botChannel)
+}
+
+func feishuDispatchLogSource(addr address) (openID, botChannel string) {
+	if addr.Kind == addressFeishu {
+		return addr.OpenID, addr.BotName
+	}
+	return "", ""
+}
+
 func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 	// reply-origin / loop-termination:conversation 类消息先过 R4 hop / R5 dedup 兜底 + origin 捕获。
 	// control 类与无新字段的 legacy 消息透传不变(向后兼容)。drop=静默丢弃,不回错给发方。
@@ -2650,6 +2663,15 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 	}
 	switch to.Kind {
 	case addressSession:
+		// send.py addresses a Feishu account/group as <ou_/oc_/on_ id>#<key>.
+		// Recognize that shape before session/group resolution: a channel target is
+		// not an Agent endpoint and must never be rejected by the Agent grouping gate.
+		if isAddressableFeishuID(to.SessionName) {
+			if to.KeyID != from.KeyID {
+				return errors.New("to/from key_id mismatch")
+			}
+			return h.routeToFeishu(ctx, address{Kind: addressFeishu, OpenID: to.SessionName, KeyID: to.KeyID, BotName: h.defaultBotName()}, env)
+		}
 		// 🔴 T-044:workpulse 是**保留的系统地址**,不是会话名。
 		// helper 会向 workpulse#<key> 发至少 9 类信封(session_capabilities / provision_ack /
 		// delivery_ack / delivery_cancel_ack / comm_skill_ack / terminal_interrupt_ack /
@@ -2716,6 +2738,8 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 			} else if isAgent {
 				return errGroupAgentNotFound
 			}
+			openID, botChannel := feishuDispatchLogSource(from)
+			logFeishuDispatchRejected("target_not_owned_or_offline", openID, to.SessionName, botChannel)
 			return errors.New("目标会话不在你的账号下或不在线：" + to.SessionName)
 		}
 		if err := h.enforceAgentGrouping(ctx, from, env, resolved.keyID, resolved.sessionName); err != nil {
@@ -3014,6 +3038,7 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 	h.mu.Unlock()
 	env := deliveryFailureEnvelope(c, original.ID, target, routeErr.Error(), now)
 	if errors.Is(routeErr, errGroupAgentNotFound) {
+		logFeishuDispatchRejected(groupingRejectionReason(routeErr), "", target, "")
 		env.Body = groupAgentNotFoundText
 	}
 	h.annotateRestartWindow(&env, now, "delivery_failure")
@@ -3104,6 +3129,7 @@ func (h *Hub) prepareSessionSelector(ctx context.Context, sourceKeyID, sourceSes
 			return true, env, ambiguousSessionError(sessionName, resolved.candidates)
 		}
 		if resolved.status != ownerSessionUniqueHit {
+			logFeishuDispatchRejected("short_name_not_resolvable", "", sessionName, "")
 			return true, env, errors.New("目标会话无法补全为在线 canonical 地址：" + sessionName)
 		}
 		env.To = sessionAddress(resolved.sessionName, resolved.keyID)
@@ -3227,6 +3253,7 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 			return model.PrefixDispatchResult{Matched: true, Reply: ambiguousSessionError(sessionName, resolved.candidates).Error()}, true, nil
 		}
 		if resolved.status != ownerSessionUniqueHit {
+			logFeishuDispatchRejected("short_name_not_resolvable", feishuOpenIDFromAccount(source), sessionName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "目标会话无法补全为在线 canonical 地址：" + sessionName}, true, nil
 		}
 		keyID, sessionName, found = resolved.keyID, resolved.sessionName, true
@@ -3250,8 +3277,10 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 	}
 	if err := h.RouteEnvelope(ctx, env); err != nil {
 		if errors.Is(err, errGroupAgentNotFound) {
+			logFeishuDispatchRejected(groupingRejectionReason(err), feishuOpenIDFromAccount(source), sessionName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: groupAgentNotFoundText}, true, nil
 		}
+		logFeishuDispatchRejected("route_error", feishuOpenIDFromAccount(source), sessionName, msg.BotChannelID)
 		return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, true, nil
 	}
 	return model.PrefixDispatchResult{Matched: true}, true, nil
@@ -3285,6 +3314,7 @@ func (h *Hub) dispatchDefaultPersonalSession(ctx context.Context, msg model.Mess
 		}
 		h.annotateSourceContext(ctx, env.Meta, msg)
 		if err := h.RouteEnvelope(ctx, env); err != nil {
+			logFeishuDispatchRejected("route_error", feishuOpenIDFromAccount(source), sessions[0], msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, true, nil
 		}
 		return model.PrefixDispatchResult{Matched: true}, true, nil
@@ -3343,6 +3373,7 @@ func (h *Hub) dispatchMemberMention(ctx context.Context, msg model.Message, text
 	}
 	if err := h.RouteEnvelope(ctx, env); err != nil {
 		if errors.Is(err, errGroupAgentNotFound) {
+			logFeishuDispatchRejected(groupingRejectionReason(err), feishuOpenIDFromAccount(source), resolvedSession, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: groupAgentNotFoundText}, true, nil
 		}
 		return model.PrefixDispatchResult{Matched: true, Reply: "该成员会话投递失败：" + err.Error()}, true, nil
@@ -3377,6 +3408,10 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 	if c == nil && !(reliable && deliveryACK && endpointKnown && h.Repo != nil) {
 		log.Printf("session route decision=offline_rejected key_id=%s session=%s client_present=false reliable=%t endpoint_known=%t delivery_ack_v1=%t reason=session_offline",
 			keyID, sessionName, reliable, endpointKnown, deliveryACK)
+		if source, sourceErr := parseAddress(env.From); sourceErr == nil {
+			openID, botChannel := feishuDispatchLogSource(source)
+			logFeishuDispatchRejected("session_offline", openID, sessionName, botChannel)
+		}
 		h.unclaimEnvelope(env.ID, sig)
 		return fmt.Errorf("session %s offline", sessionName)
 	}
