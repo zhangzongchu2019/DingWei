@@ -175,21 +175,21 @@ func TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry(t *testing.T) 
 			return true
 		}
 		if !m8.ConsoleAgentCapabilityPageAllowed(pageID) {
-			t.Errorf("Agent capability route at %s returns page_id=%q rejected by signing registry", fset.Position(call.Pos()), pageID)
+			t.Errorf("Agent capability route at %s returns page_id=%q rejected by route registry", fset.Position(call.Pos()), pageID)
 		}
 		return true
 	})
 	if count < 4 {
 		t.Fatalf("Agent capability route scan matched %d, want at least current four routes", count)
 	}
-	// This hand-built node is a positive control for the evaluator + production
-	// registry only. The count floor above independently guards the main.go scan.
+	// This hand-built node controls the evaluator + route registry only. The
+	// count floor above independently guards the main.go scan.
 	known, ok := agentCapabilityPageID(&ast.SelectorExpr{X: ast.NewIdent("m8"), Sel: ast.NewIdent("ConsoleAgentCapabilityTasks")})
 	if !ok || !m8.ConsoleAgentCapabilityPageAllowed(known) {
 		t.Fatal("registered Agent page evaluator positive control failed")
 	}
-	// Literal/request-controlled expressions are not an accepted route shape,
-	// even if their runtime value could happen to match a registered namespace.
+	// Even a runtime-valid value is forbidden when the route shape itself is a
+	// literal: consumers must derive ids from their route, never caller input.
 	if _, ok := agentCapabilityPageID(&ast.BasicLit{Kind: token.STRING, Value: `"console-tasks"`}); ok {
 		t.Fatal("literal Agent page-id expression escaped route derivation contract")
 	}

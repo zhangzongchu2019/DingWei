@@ -3,6 +3,8 @@ package m8
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +15,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
-func TestConsoleCapabilitySignerAllowsOnlyRegisteredAgentRoutePages(t *testing.T) {
+func TestConsoleCapabilitySignerAcceptsOpaqueViewAndAgentPageIDs(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.consoleAuthEnabled = true
 	now := time.Now()
@@ -41,16 +43,18 @@ func TestConsoleCapabilitySignerAllowsOnlyRegisteredAgentRoutePages(t *testing.T
 		hub.HandleConsoleCapability(rr, req)
 		return rr
 	}
-	for _, pageID := range []string{ConsoleAgentCapabilitySpecsNew, ConsoleAgentSpecCapabilityPage("spec-1"), ConsoleAgentCapabilityTasks} {
+	viewBytes := make([]byte, 16)
+	if _, err := rand.Read(viewBytes); err != nil {
+		t.Fatal(err)
+	}
+	viewPageID := hex.EncodeToString(viewBytes)
+	if len(viewPageID) != 32 {
+		t.Fatalf("view fixture page_id length=%d want 32", len(viewPageID))
+	}
+	for _, pageID := range []string{viewPageID, ConsoleAgentSpecCapabilityPage("spec-1"), ConsoleAgentCapabilitySpecsNew, ConsoleAgentCapabilityTasks} {
 		rr := call(pageID)
 		if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"page_id":"`+pageID+`"`) {
-			t.Fatalf("registered page %q code=%d body=%s", pageID, rr.Code, rr.Body.String())
-		}
-	}
-	for _, pageID := range []string{"arbitrary-future-route", "console-spec:"} {
-		rr := call(pageID)
-		if rr.Code != http.StatusForbidden || !strings.Contains(rr.Body.String(), "page_id is not an allowed Agent capability") {
-			t.Fatalf("unregistered page %q code=%d body=%s", pageID, rr.Code, rr.Body.String())
+			t.Fatalf("page_id %q code=%d body=%s", pageID, rr.Code, rr.Body.String())
 		}
 	}
 }

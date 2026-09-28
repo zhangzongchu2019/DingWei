@@ -635,10 +635,10 @@ func ConsoleAgentSpecCapabilityPage(specID string) string {
 	return "console-spec:" + strings.TrimSpace(specID)
 }
 
-// ConsoleAgentCapabilityPageAllowed is the single registry shared by the
-// signing endpoint and Agent route wiring. Adding an Agent route requires an
-// explicit capability namespace decision here; arbitrary caller-defined page
-// ids are never signed.
+// ConsoleAgentCapabilityPageAllowed is the route-wiring registry. It prevents
+// Agent handlers from deriving their expected page id from caller-controlled
+// input. The signing endpoint deliberately accepts opaque view page ids: an
+// issued capability is usable only where a consumer derives that exact id.
 func ConsoleAgentCapabilityPageAllowed(pageID string) bool {
 	pageID = strings.TrimSpace(pageID)
 	if pageID == ConsoleAgentCapabilitySpecsNew || pageID == ConsoleAgentCapabilityTasks {
@@ -648,10 +648,9 @@ func ConsoleAgentCapabilityPageAllowed(pageID string) bool {
 		return false
 	}
 	specID := strings.TrimPrefix(pageID, "console-spec:")
-	// This registry constrains the namespace only. The route derives the id from
-	// net/http PathValue (which cannot span '/'); the concrete spec handler owns
-	// existence and principal authorization. A stricter character preference
-	// here would not change which capability can actually be consumed.
+	// The concrete route derives this id from net/http PathValue and owns the
+	// existence/principal checks. Character preferences here cannot expand what
+	// a capability consumer will accept.
 	return specID != ""
 }
 
@@ -677,10 +676,6 @@ func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.PageID = strings.TrimSpace(req.PageID)
-	if !ConsoleAgentCapabilityPageAllowed(req.PageID) {
-		http.Error(w, "page_id is not an allowed Agent capability", http.StatusForbidden)
-		return
-	}
 	raw, err := randomConsoleToken()
 	if err != nil {
 		http.Error(w, "capability unavailable", 503)
