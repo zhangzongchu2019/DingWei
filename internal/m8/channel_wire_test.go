@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/zhangzongchu2019/dingwei/internal/bus"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
@@ -437,6 +438,37 @@ func TestChannelDeliveryIsWiredIntoProcess(t *testing.T) {
 	}
 	if !strings.HasPrefix((*routed)[0].To, "oc_group#") {
 		t.Fatalf("装配:投递目标错 to=%q", (*routed)[0].To)
+	}
+}
+
+func TestChannelDeliveryFromRealProcessEntryReachesOutbound(t *testing.T) {
+	hub, keyID, ctx := channelTestHub(t)
+	const targetOpenID = "ou_channel_real_entry"
+	if err := hub.Repo.UpsertMember(ctx, model.Member{
+		OwnerKey: "channel-target-owner", DisplayName: "渠道真实目标", FeishuOpenID: targetOpenID, Active: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	hub.Outbound = bus.NewDBQueue(hub.Repo, model.DirectionOut)
+	p := testAMRProcessor()
+	p.hub = hub
+	p.modes = map[string]amrMode{"bee": amrRoute}
+	p.mu.Lock()
+	p.stats.opened, p.stats.queued = 1, 1
+	p.mu.Unlock()
+
+	// Production-shaped turn body through process -> deliverChannelCandidate ->
+	// Hub.RouteEnvelope. In particular, do not replace routeEnvelope with a test
+	// seam: doing so would bypass shouldSkipMirror, which is the regression here.
+	p.process(amrRouteJob{key: channelJob(keyID), body: "@飞书#渠道真实目标 真实入口正文"})
+
+	got, err := hub.Repo.ClaimNextMessage(ctx, model.DirectionOut)
+	if err != nil || got == nil {
+		t.Fatalf("渠道真实入口没有写入飞书出站队列: msg=%+v err=%v", got, err)
+	}
+	wantEntity := "ch-alpha:personal:" + targetOpenID
+	if got.ChatEntityID != wantEntity || !strings.Contains(got.Content, "真实入口正文") {
+		t.Fatalf("渠道真实入口投递错误: entity=%q want=%q content=%q", got.ChatEntityID, wantEntity, got.Content)
 	}
 }
 

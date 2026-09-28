@@ -209,6 +209,7 @@ func (p *amrProcessor) deliverChannelCandidate(job amrRouteJob, candidate amrCan
 		return err
 	}
 	bot := h.defaultBotName()
+	// This records routing intent before RouteEnvelope; it is not a delivery receipt.
 	log.Printf("[channel] deliver session=%s channel=%s addr=%q resolved=%q fell_back=%t bot=%q",
 		job.key.Session, candidate.channel, candidate.channelAddr, resolution.openID, resolution.fellBack, bot)
 	if resolution.openID == "" {

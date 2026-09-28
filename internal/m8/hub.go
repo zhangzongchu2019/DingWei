@@ -3759,6 +3759,7 @@ func (h *Hub) notifyDeliveryQueued(ctx context.Context, d model.SessionDelivery,
 
 func (h *Hub) routeToFeishu(ctx context.Context, to address, env model.Envelope) error {
 	if shouldSkipMirror(env) {
+		log.Printf("[feishu] skip_mirror env_id=%s to=%s type=%q", env.ID, env.To, metaString(env.Meta, "type"))
 		return nil
 	}
 	if h.Outbound == nil {
@@ -3868,6 +3869,13 @@ func shouldSkipMirror(env model.Envelope) bool {
 		return false
 	}
 	if isProducerEnvelope(env) {
+		return false
+	}
+	// A channel route is already an explicit Feishu delivery, not an incidental
+	// mirror. Keep no_mirror on the envelope for every other reuse of this
+	// metadata, but do not let it cancel the requested channel delivery itself.
+	channel := metaString(env.Meta, "channel")
+	if metaString(env.Meta, "type") == "agent_route" && channel != "" && metaString(env.Meta, "route_source") == "channel_"+channel {
 		return false
 	}
 	if v, ok := env.Meta["no_mirror"].(bool); ok && v {
