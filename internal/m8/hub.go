@@ -3159,10 +3159,10 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 	}
 	h.deliveryNotices[dedupKey] = now
 	h.mu.Unlock()
-	env := deliveryFailureEnvelope(c, original.ID, target, routeErr.Error(), now)
+	env := deliveryFailureEnvelopeWithOriginal(c, original.ID, target, routeErr.Error(), original.Body, now)
 	if errors.Is(routeErr, errGroupAgentNotFound) {
 		logFeishuDispatchRejected(groupingRejectionReason(routeErr), "", target, "")
-		env.Body = groupAgentNotFoundText
+		env.Body = strings.Replace(env.Body, routeErr.Error(), groupAgentNotFoundText+"（reason="+groupingRejectionReason(routeErr)+"）", 1)
 	}
 	h.annotateRestartWindow(&env, now, "delivery_failure")
 	if err := c.write(ctx, env); err != nil {
@@ -3190,6 +3190,10 @@ func (h *Hub) annotateRestartWindow(env *model.Envelope, now time.Time, event st
 }
 
 func deliveryFailureEnvelope(c *sessionClient, sourceID, target, reason string, now time.Time) model.Envelope {
+	return deliveryFailureEnvelopeWithOriginal(c, sourceID, target, reason, "", now)
+}
+
+func deliveryFailureEnvelopeWithOriginal(c *sessionClient, sourceID, target, reason, original string, now time.Time) model.Envelope {
 	// T-060：`→ %s` 槽位的语义是**投递目标（会话名）**。回合级失败（TTL 关闭、配额淘汰）
 	// 发生在目标解析**之前**，根本没有目标可填 —— 此前两处调用点往这里塞内部原因码
 	// （"ttl"、"capacity"），渲染出「投递失败 … → ttl」，读起来像投给了一个叫 ttl 的会话。
@@ -3206,6 +3210,20 @@ func deliveryFailureEnvelope(c *sessionClient, sourceID, target, reason string, 
 	if target == "" {
 		body = fmt.Sprintf("【投递失败】%s；原因：%s", sourceID, reason)
 	}
+	if original != "" {
+		head, truncated := original, false
+		if len([]rune(head)) > 80 {
+			head = string([]rune(head)[:80])
+			truncated = true
+		}
+		body += "；原文头部：" + head
+		if truncated {
+			body += "……（已截断，仅保留前80字）"
+		} else {
+			body += "（未截断）"
+		}
+	}
+	body += "\n本条为系统通知，不可回程，请勿将回复作为业务答复发送。"
 	env := model.Envelope{
 		ID:   "delivery-failure-" + randomHex(16),
 		To:   sessionAddress(c.sessionName, c.keyID),

@@ -226,7 +226,7 @@ func sessionTestServer(t *testing.T, hub *Hub) (*http.ServeMux, *httptest.Server
 	return mux, srv
 }
 
-func TestAgentGroupingReachabilityAndIndistinguishableMiss(t *testing.T) {
+func TestAgentGroupingReachabilityAndFailureCoordinates(t *testing.T) {
 	f := newGroupingFixture(t)
 	if err := f.hub.RouteEnvelope(f.ctx, model.Envelope{ID: "same-group", From: f.sourceFull + "#" + f.sourceKey.ID, To: f.sameFull + "#" + f.sourceKey.ID, Body: "ok"}); err != nil {
 		t.Fatal(err)
@@ -240,9 +240,9 @@ func TestAgentGroupingReachabilityAndIndistinguishableMiss(t *testing.T) {
 	if !errors.Is(outsideErr, errGroupAgentNotFound) || !errors.Is(missingErr, errGroupAgentNotFound) || outsideErr.Error() != missingErr.Error() || outsideErr.Error() != groupAgentNotFoundText {
 		t.Fatalf("outside=%q missing=%q", outsideErr, missingErr)
 	}
-	// send.py observes success before Hub's asynchronous routing decision. Both
-	// denials must come back later with byte-identical bodies, or the sender can
-	// enumerate globally existing Agents.
+	// send.py observes success before Hub's asynchronous routing decision. The
+	// later notice preserves the attempted target. Both addresses resolve far
+	// enough to hit the same cross-group policy path in this fixture.
 	if err := writeEnvelope(f.ctx, f.source, model.Envelope{ID: "outside-async", From: f.sourceFull + "#" + f.sourceKey.ID, To: f.outsideFull + "#" + f.sourceKey.ID, Body: "blocked"}); err != nil {
 		t.Fatal(err)
 	}
@@ -251,8 +251,10 @@ func TestAgentGroupingReachabilityAndIndistinguishableMiss(t *testing.T) {
 		t.Fatal(err)
 	}
 	missingReply := readEnvelope(t, f.ctx, f.source)
-	if outsideReply.Body != groupAgentNotFoundText || outsideReply.Body != missingReply.Body {
-		t.Fatalf("async outside=%q missing=%q", outsideReply.Body, missingReply.Body)
+	if !strings.Contains(outsideReply.Body, "reason=cross_group_denied") ||
+		!strings.Contains(missingReply.Body, "reason=cross_group_denied") ||
+		!strings.Contains(outsideReply.Body, f.outsideFull) || !strings.Contains(missingReply.Body, "owner-z-missing-deadbeef") {
+		t.Fatalf("异步拒绝必须保留真实 reason 与尝试目标: outside=%q missing=%q", outsideReply.Body, missingReply.Body)
 	}
 }
 
@@ -335,6 +337,14 @@ func TestGroupingRejectionReasonsReflectRealCondition(t *testing.T) {
 	err = f.enforce("a", "c")
 	if !errors.Is(err, errGroupAgentNotFound) || groupingRejectionReason(err) != "cross_group_denied" {
 		t.Fatalf("跨组拒绝必须记录真实条件: err=%v reason=%s", err, groupingRejectionReason(err))
+	}
+	source := f.ep["a"]
+	err = f.hub.enforceAgentGrouping(f.ctx,
+		address{Kind: addressSession, KeyID: source.KeyID, SessionName: source.SessionName},
+		model.Envelope{From: source.SessionName + "#" + source.KeyID, To: "missing#missing-key"},
+		"missing-key", "missing")
+	if !errors.Is(err, errGroupAgentNotFound) || groupingRejectionReason(err) != "target_endpoint_not_found" {
+		t.Fatalf("目标端点缺席必须与跨组拒绝使用不同 reason: err=%v reason=%s", err, groupingRejectionReason(err))
 	}
 }
 

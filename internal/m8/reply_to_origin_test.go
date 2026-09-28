@@ -282,3 +282,61 @@ func TestReplyToOriginIsWiredIntoProcessNonCandidateBranch(t *testing.T) {
 		t.Fatalf("装配:回程信封形态错 to=%q kind=%q", (*routed)[0].To, kindOf((*routed)[0]))
 	}
 }
+
+func TestAMRUnsupportedChineseNameReturnsWholeTurnThroughRealIngress(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	key := replyOriginFixture(t, h, ctx, "dw-dlv_soft", "msg-soft", sessionAddress("ant", "k1"), nil)
+	p, routed := replyOriginProcessor(h)
+	body := "这段正文提到 @张宗楚，但名称不符合路由语法，所以正文必须完整回程"
+	p.ingest(key.KeyID, key.Session, amrEventJSON(t, amrSessionEvent{Kind: "assistant_text", Text: body, DeliveryID: key.DeliveryID, TurnID: key.TurnID}))
+	p.ingest(key.KeyID, key.Session, amrEventJSON(t, amrSessionEvent{Kind: "state_change", Data: map[string]any{"change": "turn_completed", "status": "completed"}, DeliveryID: key.DeliveryID, TurnID: key.TurnID}))
+	select {
+	case job := <-p.queue:
+		p.process(job)
+	default:
+		t.Fatal("真实 ingest 入口没有形成回合任务")
+	}
+	if len(*routed) != 1 || (*routed)[0].Body != body || (*routed)[0].To != sessionAddress("ant", "k1") {
+		t.Fatalf("不支持的中文名不得吞掉正文: routed=%+v", *routed)
+	}
+}
+
+func TestAMROffRosterMentionGetsVisibleExplanation(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	accepted := make(chan *websocket.Conn, 1)
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		accepted <- conn
+		<-release
+	}))
+	defer server.Close()
+	defer close(release)
+	clientConn, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(server.URL, "http"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer clientConn.CloseNow()
+	serverConn := <-accepted
+	defer serverConn.CloseNow()
+	h.mu.Lock()
+	h.sessionClients["k-off"] = map[string]*sessionClient{"off-session": {conn: serverConn, keyID: "k-off", sessionName: "off-session"}}
+	h.mu.Unlock()
+	p := testAMRProcessor()
+	p.hub = h
+	p.modes = map[string]amrMode{}
+	p.ingest("k-off", "off-session", amrEventJSON(t, amrSessionEvent{Kind: "assistant_text", Text: "请 @target 处理", DeliveryID: "d-off", TurnID: "t-off"}))
+	readCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	_, data, err := clientConn.Read(readCtx)
+	if err != nil {
+		t.Fatalf("名单外正文提及必须立即给可见反馈: %v", err)
+	}
+	var got model.Envelope
+	if json.Unmarshal(data, &got) != nil || !strings.Contains(got.Body, "当前会话未启用正文提及投递") {
+		t.Fatalf("名单外反馈没有说清权限状态: raw=%q", string(data))
+	}
+}

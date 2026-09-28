@@ -167,7 +167,7 @@ func (h *Hub) enforceAgentGrouping(ctx context.Context, from address, env model.
 		return err
 	}
 	if !found {
-		return newGroupingRejection("cross_group_denied")
+		return newGroupingRejection("target_endpoint_not_found")
 	}
 	sourceGroups, err := h.groupingKeys(ctx, source)
 	if err != nil {

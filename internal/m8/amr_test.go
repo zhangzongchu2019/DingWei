@@ -496,6 +496,63 @@ func TestAMRMidBodyMarkdownHeadingIsNotCandidate(t *testing.T) {
 	}
 }
 
+func TestAMRSoftFailureClassificationKeepsSecurityBoundary(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		body       string
+		limit      int
+		wantLooked bool
+		wantReason string
+	}{
+		{name: "unsupported Chinese name is ordinary text", body: "答复里提到 @张宗楚 但不是可解析地址", limit: 20, wantLooked: false, wantReason: "提及写法未识别"},
+		{name: "URL is ordinary text", body: "仓库 git@example.invalid:path/repo.git", limit: 20, wantLooked: false, wantReason: "提及写法未识别"},
+		{name: "mention without body", body: "本轮请交给 @target", limit: 20, wantLooked: true, wantReason: "没有可发送的正文"},
+		{name: "address-like over limit remains fail closed", body: "@one @two 正文", limit: 1, wantLooked: true, wantReason: "超过数量限制"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, looked := parseAMRCandidatesDetailed(tc.body, "source", tc.limit)
+			if len(got) != 0 || looked != tc.wantLooked {
+				t.Fatalf("classification candidates=%+v looked=%t wantLooked=%t", got, looked, tc.wantLooked)
+			}
+			if reason := amrParseFeedback(tc.body, got, looked, tc.limit); !strings.Contains(reason, tc.wantReason) {
+				t.Fatalf("feedback=%q want fragment=%q", reason, tc.wantReason)
+			}
+		})
+	}
+}
+
+func TestAMRChannelFirstMakesLaterMentionVisible(t *testing.T) {
+	body := "@飞书#ou_owner 渠道正文，随后请 @reviewer 复核"
+	candidates, looked := parseAMRCandidatesDetailed(body, "source", 20)
+	if !looked || len(candidates) != 1 || candidates[0].channel == "" {
+		t.Fatalf("channel candidate=%+v looked=%t", candidates, looked)
+	}
+	if got := amrParseFeedback(body, candidates, looked, 20); !strings.Contains(got, "后续提及按普通正文处理") {
+		t.Fatalf("渠道优先导致的降级必须可见: %q", got)
+	}
+}
+
+func TestAMRNotificationExplainsItCannotBeRepliedTo(t *testing.T) {
+	now := time.Unix(123, 0)
+	env := deliveryFailureEnvelope(&sessionClient{keyID: "key", sessionName: "source"}, "dw-delivery-failure-1", "#target", "offline", now)
+	if !strings.Contains(env.Body, "本条为系统通知，不可回程") {
+		t.Fatalf("通知未标明不可回程，回复会形成失败通知闭环: %q", env.Body)
+	}
+}
+
+func TestDeliveryFailurePreservesCoordinatesAndTruncatedOriginalHead(t *testing.T) {
+	original := strings.Repeat("原", 90) + "尾部秘密"
+	env := deliveryFailureEnvelopeWithOriginal(&sessionClient{keyID: "key", sessionName: "source"}, "delivery-123", "#target", "拒绝", original, time.Unix(123, 0))
+	for _, required := range []string{"delivery-123", "#target", strings.Repeat("原", 80), "已截断，仅保留前80字"} {
+		if !strings.Contains(env.Body, required) {
+			t.Fatalf("退信缺少必需坐标/头部/截断标记 %q: %q", required, env.Body)
+		}
+	}
+	if strings.Contains(env.Body, "尾部秘密") || strings.Contains(env.Body, strings.Repeat("原", 81)) {
+		t.Fatalf("退信回灌超过80字的原文: %q", env.Body)
+	}
+}
+
 func TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas(t *testing.T) {
 	tests := []struct {
 		name             string

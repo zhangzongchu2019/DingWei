@@ -269,6 +269,13 @@ func (p *amrProcessor) shouldDropLegacyAgentRoute(keyID, session string, env mod
 func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 	mode := p.modeFor(keyID, sessionName)
 	if mode == amrOff {
+		// Sessions outside the rollout roster still need a visible explanation.
+		// They are not parsed or routed here: the notice only makes the disabled
+		// state observable instead of silently ignoring an apparent mention.
+		var ev amrSessionEvent
+		if json.Unmarshal([]byte(raw), &ev) == nil && ev.Kind == "assistant_text" && amrHasUnfencedTrigger(ev.Text) {
+			p.notifySourceVisible(amrTurnKey{KeyID: keyID, Session: sessionName, DeliveryID: ev.DeliveryID, TurnID: ev.TurnID}, "", "当前会话未启用正文提及投递；正文未解析，也未发给任何目标", false, "", true)
+		}
 		return
 	}
 	var ev amrSessionEvent
@@ -661,6 +668,7 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	p.mu.Unlock()
 
 	candidates, lookedLikeCandidate := parseAMRCandidatesDetailed(job.body, job.key.Session, p.maxTargets)
+	feedback := amrParseFeedback(job.body, candidates, lookedLikeCandidate, p.maxTargets)
 	// 🔴 G2-b:渠道候选走渠道投递,不进 Agent 寻址(prepareSessionSelector 解不了它们)。
 	// 分流放在这里而不是更下面:下面每一步都假设 selector 是会话选择器。
 	if channels := filterChannelCandidates(candidates); len(channels) > 0 {
@@ -669,6 +677,9 @@ func (p *amrProcessor) process(job amrRouteJob) {
 				log.Printf("[channel] decision=failed session=%s channel=%s err=%v", job.key.Session, candidate.channel, err)
 			}
 		}
+		if feedback != "" {
+			p.notifySourceVisible(job.key, "route_notice", feedback, false, job.body, false)
+		}
 		p.closeJob("dispatched")
 		return
 	}
@@ -676,10 +687,14 @@ func (p *amrProcessor) process(job amrRouteJob) {
 		if lookedLikeCandidate {
 			p.closeJob("candidate_rejected")
 			if p.modeFor(job.key.KeyID, job.key.Session) == amrRoute {
-				p.notifySource(job.key, amrOffendingToken(job.body), "@ 目标无法解析或不符合路由规则", true)
+				reason := firstNonEmpty(feedback, "提及格式正确但目标无权限、不可达或超过数量限制")
+				p.notifySourceVisible(job.key, amrOffendingToken(job.body), reason, true, job.body, false)
 			}
 		} else {
 			p.closeJob("non_candidate")
+			if feedback != "" {
+				p.notifySourceVisible(job.key, "syntax_notice", feedback, false, job.body, false)
+			}
 			// 🔴 回程段 2:本轮有输出、但正文里没有任何 @提及目标 ——
 			//    业主要的「其内容本身应该回给 A」正是这一支。实现见 reply_to_origin.go。
 			p.replyToOrigin(job)
@@ -804,7 +819,11 @@ func (p *amrProcessor) notifyRouteResults(key amrTurnKey, results []amrTargetRes
 }
 
 func (p *amrProcessor) notifySource(key amrTurnKey, target, reason string, failure bool) {
-	if p == nil || p.hub == nil || p.modeFor(key.KeyID, key.Session) != amrRoute {
+	p.notifySourceVisible(key, target, reason, failure, "", false)
+}
+
+func (p *amrProcessor) notifySourceVisible(key amrTurnKey, target, reason string, failure bool, originalBody string, allowOff bool) {
+	if p == nil || p.hub == nil || (!allowOff && p.modeFor(key.KeyID, key.Session) != amrRoute) {
 		return
 	}
 	now := time.Now().UTC()
@@ -834,6 +853,7 @@ func (p *amrProcessor) notifySource(key amrTurnKey, target, reason string, failu
 		return
 	}
 	body := reason
+	body += "\n本条为系统通知，不可回程，请勿将回复作为业务答复发送。"
 	env := model.Envelope{
 		ID:   "amr-notice-" + randomHex(16),
 		To:   sessionAddress(key.Session, key.KeyID),
@@ -843,7 +863,7 @@ func (p *amrProcessor) notifySource(key amrTurnKey, target, reason string, failu
 		Meta: map[string]any{"type": "delivery_result", "source_id": key.DeliveryID},
 	}
 	if failure {
-		env = deliveryFailureEnvelope(c, key.DeliveryID, target, reason, now)
+		env = deliveryFailureEnvelopeWithOriginal(c, key.DeliveryID, target, reason, originalBody, now)
 		p.hub.annotateRestartWindow(&env, now, "amr_failure")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), p.routeTimeout)
@@ -1001,6 +1021,42 @@ func parseAMRCandidatesDetailed(text, sourceSession string, maxTargets int) ([]a
 	return nil, lookedLikeCandidate
 }
 
+func amrHasUnfencedTrigger(text string) bool {
+	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
+	fenced := pairedMarkdownFenceLines(lines)
+	for i, line := range lines {
+		if !fenced[i] && strings.ContainsAny(line, "@#") {
+			return true
+		}
+	}
+	return false
+}
+
+// amrParseFeedback classifies user-actionable syntax failures independently
+// from authorization failures. The latter stay fail-closed; unsupported names
+// are ordinary text and return to the origin with this explanatory notice.
+func amrParseFeedback(text string, candidates []amrCandidate, looked bool, maxTargets int) string {
+	if len(candidates) > 0 {
+		for _, candidate := range candidates {
+			if candidate.channel != "" && amrHasUnfencedTrigger(candidate.body) {
+				return "渠道提及只消费第一个目标；正文中的后续提及按普通正文处理，未另行投递"
+			}
+		}
+		return ""
+	}
+	if !amrHasUnfencedTrigger(text) {
+		return ""
+	}
+	if !looked {
+		return "提及写法未识别（名称只支持 ASCII 字母、数字、下划线、点和横杠）；正文已按普通内容回程"
+	}
+	if strings.HasSuffix(strings.TrimSpace(text), "@") || strings.HasSuffix(strings.TrimSpace(text), "#") ||
+		regexp.MustCompile(`[@#][A-Za-z0-9_.-]+!?\s*$`).MatchString(strings.TrimSpace(text)) {
+		return "提及后没有可发送的正文，请补充正文"
+	}
+	return fmt.Sprintf("提及格式正确但目标无权限、不可达或超过数量限制（上限 %d）", maxTargets)
+}
+
 // pairedMarkdownFenceLines marks only closed fenced blocks. A fence delimiter
 // is a line whose trimmed form starts with at least three backticks or tildes;
 // its closer uses the same character at least as many times and has only space
@@ -1094,6 +1150,16 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 		// ⚠️ 与 T-082 是同一文件同类毛病 —— 当时为行首扫描用了 unicode.IsSpace，
 		//    却没查 token 切分仍在用 ASCII 四件套。修空白处理须全文搜一遍。
 		i := strings.IndexFunc(remaining, unicode.IsSpace)
+		if i < 0 {
+			token := strings.TrimPrefix(remaining, "@")
+			if strings.HasSuffix(token, "!") {
+				token = strings.TrimSuffix(token, "!")
+			}
+			// A valid-looking address without a body is a malformed command and
+			// remains fail-closed. Arbitrary prose/URLs after an at sign are not
+			// routing commands and must not suppress the whole turn.
+			return nil, amrTokenName.MatchString(token)
+		}
 		if i <= 1 {
 			return nil, true
 		}
@@ -1156,7 +1222,9 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 		// 只记 token 本身(名字),不记正文。
 		log.Printf("amr decision=token_skipped reason=unsupported_name tokens=%v source=%s", skipped, sourceSession)
 	}
-	return out, true
+	// When every token is unsupported this was never a valid routing command.
+	// Keep the body on the ordinary reply path; the worker emits a syntax notice.
+	return out, len(out) > 0
 }
 
 func amrDerivedEnvelopeID(key amrTurnKey, index int, selector string) string {

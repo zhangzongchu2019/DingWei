@@ -64,7 +64,7 @@ func TestEveryFeishuDispatchRejectionProductionPointIsLogged(t *testing.T) {
 		count        int
 	}
 	expectations := []expectation{
-		{"env.Body = groupAgentNotFoundText", "logFeishuDispatchRejected(groupingRejectionReason(routeErr)", 1},
+		{"env.Body = strings.Replace(env.Body", "logFeishuDispatchRejected(groupingRejectionReason(routeErr)", 1},
 		{"Reply: groupAgentNotFoundText", "logFeishuDispatchRejected(groupingRejectionReason(err)", 2},
 		{"Reply: \"该消息投递失败：\" + text", "logFeishuDispatchRejected(\"route_error\"", 4},
 		{"return errors.New(\"目标会话不在你的账号下或不在线：\"", "logFeishuDispatchRejected(\"target_not_owned_or_offline\"", 1},
