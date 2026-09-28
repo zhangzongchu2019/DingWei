@@ -94,6 +94,7 @@ type Hub struct {
 	syncTargets           map[string]map[string]feishuSyncTarget
 	recentTerminal        map[string][]terminalSyncItem
 	syncBuffers           map[string]*feishuSyncBuffer
+	syncToolSummaries     map[string]*terminalToolSummary
 	linkTokens            map[string]ownerLinkToken
 	onboardPushed         map[string]time.Time
 	onboardContexts       map[string]onboardContext
@@ -161,6 +162,11 @@ type feishuSyncTarget struct {
 type terminalSyncItem struct {
 	TS   time.Time
 	Text string
+}
+
+type terminalToolSummary struct {
+	total  int
+	byName map[string]int
 }
 
 type feishuSyncBuffer struct {
@@ -252,6 +258,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		syncTargets:        map[string]map[string]feishuSyncTarget{},
 		recentTerminal:     map[string][]terminalSyncItem{},
 		syncBuffers:        map[string]*feishuSyncBuffer{},
+		syncToolSummaries:  map[string]*terminalToolSummary{},
 		linkTokens:         map[string]ownerLinkToken{},
 		onboardPushed:      map[string]time.Time{},
 		consoleTouched:     map[string]time.Time{},
@@ -2109,6 +2116,35 @@ func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, 
 	if openID == "" {
 		return model.PrefixDispatchResult{Matched: true, Reply: "无法识别发起人 open_id"}, true, nil
 	}
+	target := feishuSyncTarget{
+		openID:       openID,
+		botName:      h.botName(msg.BotChannelID),
+		botChannelID: msg.BotChannelID,
+	}
+	if action == "unsync" {
+		ownerKey := h.controlOwnerKey(ctx, msg)
+		var candidateKeys []string
+		if explicitKey != "" {
+			targetOwner := h.ownerKeyForKey(ctx, explicitKey)
+			if ownerKey == "" || targetOwner == "" || ownerKey != targetOwner {
+				return model.PrefixDispatchResult{Matched: true, Reply: "无权同步他人会话"}, true, nil
+			}
+			candidateKeys = []string{explicitKey}
+		} else {
+			var err error
+			candidateKeys, err = h.registeredOwnerSessionKeys(ctx, ownerKey, sessionName)
+			if err != nil {
+				return model.PrefixDispatchResult{}, true, err
+			}
+		}
+		for _, keyID := range candidateKeys {
+			target.keyID = keyID
+			if h.removeFeishuSyncTarget(keyID, sessionName, target) {
+				return model.PrefixDispatchResult{Matched: true, Reply: "已停止同步 " + sessionName}, true, nil
+			}
+		}
+		return model.PrefixDispatchResult{Matched: true, Reply: "未找到该会话的同步登记（可能是从别的飞书会话开启的）"}, true, nil
+	}
 	targetKey, found := "", false
 	if explicitKey != "" {
 		sourceOwner := h.controlOwnerKey(ctx, msg)
@@ -2129,12 +2165,7 @@ func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, 
 		}
 		return model.PrefixDispatchResult{Matched: true, Reply: "未找到在线会话：" + sessionName + "#" + explicitKey}, true, nil
 	}
-	target := feishuSyncTarget{
-		openID:       openID,
-		keyID:        targetKey,
-		botName:      h.botName(msg.BotChannelID),
-		botChannelID: msg.BotChannelID,
-	}
+	target.keyID = targetKey
 	switch action {
 	case "sync":
 		for _, item := range h.addFeishuSyncTargetAndSnapshot(targetKey, sessionName, target) {
@@ -2143,12 +2174,33 @@ func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, 
 			}
 		}
 		return model.PrefixDispatchResult{Matched: true, Reply: "已开启同步 " + sessionName}, true, nil
-	case "unsync":
-		h.removeFeishuSyncTarget(targetKey, sessionName, target)
-		return model.PrefixDispatchResult{Matched: true, Reply: "已停止同步 " + sessionName}, true, nil
 	default:
 		return model.PrefixDispatchResult{}, false, nil
 	}
+}
+
+// registeredOwnerSessionKeys resolves persisted endpoints without requiring an
+// online websocket. It is intentionally used only for local #unsync cleanup;
+// enabling sync still requires a live session.
+func (h *Hub) registeredOwnerSessionKeys(ctx context.Context, ownerKey, sessionName string) ([]string, error) {
+	if h.Repo == nil || ownerKey == "" || sessionName == "" {
+		return nil, nil
+	}
+	endpoints, err := h.Repo.ListSessionEndpoints(ctx)
+	if err != nil {
+		return nil, err
+	}
+	seen := map[string]bool{}
+	var keys []string
+	for _, ep := range endpoints {
+		if ep.OwnerKey != ownerKey || (ep.SessionName != sessionName && ep.FullSessionName != sessionName) || seen[ep.KeyID] {
+			continue
+		}
+		seen[ep.KeyID] = true
+		keys = append(keys, ep.KeyID)
+	}
+	sort.Strings(keys)
+	return keys, nil
 }
 
 func (h *Hub) dispatchApplyKeyCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
@@ -2459,12 +2511,16 @@ func (h *Hub) addFeishuSyncTargetAndSnapshot(keyID, sessionName string, target f
 	return out
 }
 
-func (h *Hub) removeFeishuSyncTarget(keyID, sessionName string, target feishuSyncTarget) {
+func (h *Hub) removeFeishuSyncTarget(keyID, sessionName string, target feishuSyncTarget) bool {
 	k := terminalKey(keyID, sessionName)
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	removed := false
 	if targets := h.syncTargets[k]; targets != nil {
-		delete(targets, target.syncKey())
+		if _, ok := targets[target.syncKey()]; ok {
+			delete(targets, target.syncKey())
+			removed = true
+		}
 		if len(targets) == 0 {
 			delete(h.syncTargets, k)
 		}
@@ -2477,11 +2533,32 @@ func (h *Hub) removeFeishuSyncTarget(keyID, sessionName string, target feishuSyn
 			delete(h.syncBuffers, bufferKey)
 		}
 	}
+	return removed
 }
 
-func (h *Hub) appendTerminalSyncItemLocked(keyID, sessionName, text string, ts time.Time) []feishuSyncTarget {
+func (h *Hub) appendTerminalSyncItemLocked(keyID, sessionName, text string, ts time.Time) (terminalSyncItem, []feishuSyncTarget, bool) {
 	k := terminalKey(keyID, sessionName)
-	items := append(h.recentTerminal[k], terminalSyncItem{TS: ts.UTC(), Text: text})
+	kind, toolName := classifyTerminalSyncText(text)
+	if kind == terminalSyncTool {
+		summary := h.syncToolSummaries[k]
+		if summary == nil {
+			summary = &terminalToolSummary{byName: map[string]int{}}
+			h.syncToolSummaries[k] = summary
+		}
+		summary.total++
+		summary.byName[toolName]++
+		return terminalSyncItem{}, nil, false
+	}
+	if kind == terminalSyncTurnEnd {
+		summary := h.syncToolSummaries[k]
+		delete(h.syncToolSummaries, k)
+		if summary == nil || summary.total == 0 {
+			return terminalSyncItem{}, nil, false
+		}
+		text = formatTerminalToolSummary(*summary)
+	}
+	item := terminalSyncItem{TS: ts.UTC(), Text: text}
+	items := append(h.recentTerminal[k], item)
 	if len(items) > 10 {
 		items = items[len(items)-10:]
 	}
@@ -2490,13 +2567,14 @@ func (h *Hub) appendTerminalSyncItemLocked(keyID, sessionName, text string, ts t
 	for _, target := range h.syncTargets[k] {
 		targets = append(targets, target)
 	}
-	return targets
+	return item, targets, true
 }
 
 func (h *Hub) closeFeishuSyncLocked(keyID, sessionName string) {
 	k := terminalKey(keyID, sessionName)
 	delete(h.recentTerminal, k)
 	delete(h.syncTargets, k)
+	delete(h.syncToolSummaries, k)
 	for bufferKey, buffer := range h.syncBuffers {
 		if buffer.keyID == keyID && buffer.sessionName == sessionName {
 			if buffer.timer != nil {
@@ -2505,6 +2583,45 @@ func (h *Hub) closeFeishuSyncLocked(keyID, sessionName string) {
 			delete(h.syncBuffers, bufferKey)
 		}
 	}
+}
+
+type terminalSyncKind uint8
+
+const (
+	terminalSyncContent terminalSyncKind = iota
+	terminalSyncTool
+	terminalSyncTurnEnd
+)
+
+// classifyTerminalSyncText recognizes the stable textual protocol emitted by
+// sessionhelper.driver_adapter._format_event. Only a chunk whose trimmed text
+// begins with "[tool] <name>" is a tool operation. Embedded mentions such as
+// assistant prose containing "[tool]" and error/session lines remain content.
+func classifyTerminalSyncText(text string) (terminalSyncKind, string) {
+	trimmed := strings.TrimSpace(text)
+	if strings.HasPrefix(trimmed, "[tool] ") {
+		fields := strings.Fields(strings.TrimSpace(strings.TrimPrefix(trimmed, "[tool] ")))
+		if len(fields) > 0 {
+			return terminalSyncTool, fields[0]
+		}
+	}
+	if strings.HasPrefix(trimmed, "--- turn done (") && strings.HasSuffix(trimmed, "---") {
+		return terminalSyncTurnEnd, ""
+	}
+	return terminalSyncContent, ""
+}
+
+func formatTerminalToolSummary(summary terminalToolSummary) string {
+	names := make([]string, 0, len(summary.byName))
+	for name := range summary.byName {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	parts := make([]string, 0, len(names))
+	for _, name := range names {
+		parts = append(parts, fmt.Sprintf("%s×%d", name, summary.byName[name]))
+	}
+	return fmt.Sprintf("本回合发生工具操作 %d 次（%s）", summary.total, strings.Join(parts, "、"))
 }
 
 func (h *Hub) sendFeishuSyncItem(ctx context.Context, keyID, sessionName string, target feishuSyncTarget, item terminalSyncItem) error {

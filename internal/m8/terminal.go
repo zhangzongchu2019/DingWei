@@ -383,16 +383,19 @@ func (h *Hub) handleTerminalOutputEnvelope(c *sessionClient, env model.Envelope)
 		viewers = append(viewers, v)
 	}
 	var syncTargets []feishuSyncTarget
+	var syncItem terminalSyncItem
+	emitSyncItem := false
 	if clean != "" {
-		syncTargets = h.appendTerminalSyncItemLocked(c.keyID, c.sessionName, clean, ts)
+		syncItem, syncTargets, emitSyncItem = h.appendTerminalSyncItemLocked(c.keyID, c.sessionName, clean, ts)
 	}
 	h.mu.Unlock()
 	for _, v := range viewers {
 		_ = terminalWrite(context.Background(), v, map[string]any{"type": "output", "data": data})
 	}
-	item := terminalSyncItem{TS: ts, Text: clean}
-	for _, target := range syncTargets {
-		h.queueFeishuSyncItem(c.keyID, c.sessionName, target, item)
+	if emitSyncItem {
+		for _, target := range syncTargets {
+			h.queueFeishuSyncItem(c.keyID, c.sessionName, target, syncItem)
+		}
 	}
 	return true
 }

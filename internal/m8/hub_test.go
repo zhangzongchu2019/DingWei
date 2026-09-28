@@ -4163,6 +4163,39 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 		t.Fatalf("live chunks should be aggregated into one message msg=%+v err=%v", msg, err)
 	}
 
+	for i, body := range []string{
+		"\x1b[36m[tool] Bash\x1b[0m {\"command\":\"secret-detail\"}\r\n",
+		"\x1b[36m[tool] Bash\x1b[0m {\"command\":\"second-detail\"}\r\n",
+		"\x1b[36m[tool] Read\x1b[0m {\"path\":\"private-detail\"}\r\n",
+		"本回合正文",
+		"\x1b[90m--- turn done (1 turns) ---\x1b[0m\r\n",
+	} {
+		if err := writeEnvelope(ctx, home, model.Envelope{
+			ID: fmt.Sprintf("term-tool-%d", i), From: homeName + "#" + key.ID, To: "workpulse#" + key.ID,
+			Body: body, TS: time.Now().Unix(), Meta: map[string]any{"type": terminalOutputType},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	toolSummary := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	if toolSummary == nil {
+		t.Fatal("missing turn-level tool summary")
+	}
+	toolText := messageText(t, toolSummary)
+	for _, want := range []string{"本回合正文", "本回合发生工具操作 3 次", "Bash×2", "Read×1"} {
+		if !strings.Contains(toolText, want) {
+			t.Fatalf("tool summary missing %q: %q", want, toolText)
+		}
+	}
+	for _, forbidden := range []string{"[tool]", "secret-detail", "second-detail", "private-detail"} {
+		if strings.Contains(toolText, forbidden) {
+			t.Fatalf("tool detail leaked into Feishu sync: forbidden=%q text=%q", forbidden, toolText)
+		}
+	}
+	if msg, err := db.ClaimNextMessage(ctx, model.DirectionOut); err != nil || msg != nil {
+		t.Fatalf("tool operations must produce one turn-level notice, extra=%+v err=%v", msg, err)
+	}
+
 	result, err = hub.Dispatch(ctx, model.Message{ID: "sync-2", ChatEntityID: "dev:personal:ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal}, "#unsync "+homeName)
 	if err != nil {
 		t.Fatal(err)
@@ -4191,6 +4224,107 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 	hub.mu.Unlock()
 	if stillCached {
 		t.Fatal("terminal sync cache should be cleared after session offline")
+	}
+}
+
+func TestTerminalSyncToolClassificationUsesProtocolPrefix(t *testing.T) {
+	for _, tc := range []struct {
+		text     string
+		wantKind terminalSyncKind
+		wantName string
+	}{
+		{text: "[tool] Bash {\"command\":\"pwd\"}", wantKind: terminalSyncTool, wantName: "Bash"},
+		{text: "正文里提到 [tool] Bash，但不是协议行", wantKind: terminalSyncContent},
+		{text: "[error] tool failed", wantKind: terminalSyncContent},
+		{text: "[session abc · model]", wantKind: terminalSyncContent},
+		{text: "--- turn done (1 turns) ---", wantKind: terminalSyncTurnEnd},
+	} {
+		kind, name := classifyTerminalSyncText(tc.text)
+		if kind != tc.wantKind || name != tc.wantName {
+			t.Fatalf("classify %q = (%v,%q), want (%v,%q)", tc.text, kind, name, tc.wantKind, tc.wantName)
+		}
+	}
+}
+
+func offlineFeishuSyncFixture(t *testing.T) (*Hub, context.Context, model.ServiceAPIKey, string, feishuSyncTarget) {
+	t.Helper()
+	hub, db, ctx := newTestHub(t)
+	hub.RegisterBot("dev", "UnifiedRobot")
+	hub.RegisterBot("other", "OtherRobot")
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "aliceowner", DisplayName: "Alice", FeishuOpenID: "ou_alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-unsync-offline", Name: "svc", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	_, key, err := hub.IssueAPIKey(ctx, "svc-unsync-offline", "aliceowner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:ou_alice"); err != nil {
+		t.Fatal(err)
+	}
+	const sessionName = "aliceowner-offline-session"
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{
+		KeyID: key.ID, SessionName: sessionName, FullSessionName: sessionName, OwnerKey: "aliceowner", Active: false,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	wantTarget := feishuSyncTarget{openID: "ou_alice", keyID: key.ID, botName: "UnifiedRobot", botChannelID: "dev"}
+	hub.addFeishuSyncTargetAndSnapshot(key.ID, sessionName, wantTarget)
+	return hub, ctx, key, sessionName, wantTarget
+}
+
+func TestFeishuUnsyncReportsMismatchedFeishuTarget(t *testing.T) {
+	hub, ctx, key, sessionName, wantTarget := offlineFeishuSyncFixture(t)
+	wrong, err := hub.Dispatch(ctx, model.Message{
+		ID: "unsync-wrong-origin", ChatEntityID: "other:personal:ou_alice", SenderOpenID: "ou_alice", BotChannelID: "other", ChatType: model.ChatPersonal,
+	}, "#unsync "+sessionName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !wrong.Matched || wrong.Reply != "未找到该会话的同步登记（可能是从别的飞书会话开启的）" {
+		t.Fatalf("wrong-origin unsync must report no matching registration: %+v", wrong)
+	}
+	hub.mu.Lock()
+	_, stillRegistered := hub.syncTargets[terminalKey(key.ID, sessionName)][wantTarget.syncKey()]
+	hub.mu.Unlock()
+	if !stillRegistered {
+		t.Fatal("wrong-origin unsync removed another Feishu target")
+	}
+	// Positive side: the target created by this exact Feishu identity remains
+	// removable. This prevents a globally broken remover from satisfying only
+	// the mismatch assertion above.
+	correct, err := hub.Dispatch(ctx, model.Message{
+		ID: "unsync-correct-origin", ChatEntityID: "dev:personal:ou_alice", SenderOpenID: "ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal,
+	}, "#unsync "+sessionName)
+	if err != nil || !correct.Matched || correct.Reply != "已停止同步 "+sessionName {
+		t.Fatalf("matching Feishu target must still be removable: result=%+v err=%v", correct, err)
+	}
+	hub.mu.Lock()
+	_, remains := hub.syncTargets[terminalKey(key.ID, sessionName)]
+	hub.mu.Unlock()
+	if remains {
+		t.Fatal("matching unsync reported success but registration remains")
+	}
+}
+
+func TestFeishuUnsyncRemovesTargetWhileSessionOffline(t *testing.T) {
+	hub, ctx, key, sessionName, _ := offlineFeishuSyncFixture(t)
+	correct, err := hub.Dispatch(ctx, model.Message{
+		ID: "unsync-offline", ChatEntityID: "dev:personal:ou_alice", SenderOpenID: "ou_alice", BotChannelID: "dev", ChatType: model.ChatPersonal,
+	}, "#unsync "+sessionName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !correct.Matched || correct.Reply != "已停止同步 "+sessionName {
+		t.Fatalf("offline unsync must remove its registration: %+v", correct)
+	}
+	hub.mu.Lock()
+	_, remains := hub.syncTargets[terminalKey(key.ID, sessionName)]
+	hub.mu.Unlock()
+	if remains {
+		t.Fatal("offline unsync reported success but registration remains")
 	}
 }
 
