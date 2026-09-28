@@ -86,6 +86,7 @@ func (h *Hub) ownerFeishuOpenID(ctx context.Context, keyID string) string {
 type feishuNameMatch struct {
 	feishuID string
 	owner    string
+	kind     string
 }
 
 type channelDeliveryResolution struct {
@@ -112,7 +113,7 @@ func (h *Hub) resolveFeishuName(ctx context.Context, name string) ([]feishuNameM
 	}
 	matches := make([]feishuNameMatch, 0, 2)
 	seenFeishuID := make(map[string]struct{})
-	addMatch := func(feishuID, owner string) {
+	addMatch := func(feishuID, owner, kind string) {
 		feishuID = strings.TrimSpace(feishuID)
 		if feishuID == "" {
 			return
@@ -121,14 +122,14 @@ func (h *Hub) resolveFeishuName(ctx context.Context, name string) ([]feishuNameM
 			return
 		}
 		seenFeishuID[feishuID] = struct{}{}
-		matches = append(matches, feishuNameMatch{feishuID: feishuID, owner: strings.TrimSpace(owner)})
+		matches = append(matches, feishuNameMatch{feishuID: feishuID, owner: strings.TrimSpace(owner), kind: kind})
 	}
 	for _, member := range members {
 		displayName := strings.TrimSpace(member.DisplayName)
 		if !member.Active || displayName != name || isAddressableFeishuID(displayName) || strings.TrimSpace(member.FeishuOpenID) == "" {
 			continue
 		}
-		addMatch(member.FeishuOpenID, member.OwnerKey)
+		addMatch(member.FeishuOpenID, member.OwnerKey, "成员")
 	}
 	groups, err := h.Repo.ListChatEntities(ctx, model.ChatGroup)
 	if err != nil {
@@ -142,7 +143,7 @@ func (h *Hub) resolveFeishuName(ctx context.Context, name string) ([]feishuNameM
 		if owner == "" {
 			owner = strings.TrimSpace(group.BotChannelID)
 		}
-		addMatch(group.FeishuID, owner)
+		addMatch(group.FeishuID, owner, "群")
 	}
 	sort.Slice(matches, func(i, j int) bool {
 		if matches[i].owner != matches[j].owner {
@@ -151,6 +152,14 @@ func (h *Hub) resolveFeishuName(ctx context.Context, name string) ([]feishuNameM
 		return matches[i].feishuID < matches[j].feishuID
 	})
 	return matches, members, nil
+}
+
+func (match feishuNameMatch) attribution() string {
+	owner := match.owner
+	if owner == "" {
+		owner = "未标归属"
+	}
+	return fmt.Sprintf("%s %s（%s）", match.kind, owner, match.feishuID)
 }
 
 // channelDeliveryTarget 解析出最终要投的飞书标识、是否兜底与正文末尾说明。
@@ -181,7 +190,7 @@ func (h *Hub) channelDeliveryTarget(ctx context.Context, keyID, addr string) (ch
 		resolution.note = fmt.Sprintf("未找到名为「%s」的飞书账号或群，因此发给业主本人", name)
 		return resolution, nil
 	}
-	resolution.note = fmt.Sprintf("因为「%s」和「%s」同名，无法决定，因此发给业主本人", matches[0].owner, matches[1].owner)
+	resolution.note = fmt.Sprintf("因为「%s」和「%s」同名，无法决定，因此发给业主本人", matches[0].attribution(), matches[1].attribution())
 	return resolution, nil
 }
 

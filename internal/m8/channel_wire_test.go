@@ -9,10 +9,17 @@ package m8
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
 // ---- G2-a:解析层 ----
@@ -122,6 +129,57 @@ func channelJob(keyID string) amrTurnKey {
 	return amrTurnKey{KeyID: keyID, Session: "bee", DeliveryID: "dw-dlv_ch", TurnID: "t1"}
 }
 
+type feishuLookupFailureRepo struct {
+	store.Repository
+	membersErr error
+	groupsErr  error
+}
+
+func (repo *feishuLookupFailureRepo) ListMembers(ctx context.Context) ([]model.Member, error) {
+	if repo.membersErr != nil {
+		return nil, repo.membersErr
+	}
+	return repo.Repository.ListMembers(ctx)
+}
+
+func (repo *feishuLookupFailureRepo) ListChatEntities(ctx context.Context, typ model.ChatType) ([]model.ChatEntity, error) {
+	if repo.groupsErr != nil {
+		return nil, repo.groupsErr
+	}
+	return repo.Repository.ListChatEntities(ctx, typ)
+}
+
+func attachChannelNoticeClient(t *testing.T, hub *Hub, keyID string) *websocket.Conn {
+	t.Helper()
+	accepted := make(chan *websocket.Conn, 1)
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		accepted <- conn
+		<-release
+	}))
+	clientConn, _, err := websocket.Dial(context.Background(), "ws"+strings.TrimPrefix(server.URL, "http"), nil)
+	if err != nil {
+		server.Close()
+		close(release)
+		t.Fatal(err)
+	}
+	serverConn := <-accepted
+	hub.mu.Lock()
+	hub.sessionClients[keyID] = map[string]*sessionClient{"bee": {conn: serverConn, keyID: keyID, sessionName: "bee"}}
+	hub.mu.Unlock()
+	t.Cleanup(func() {
+		clientConn.CloseNow()
+		serverConn.CloseNow()
+		close(release)
+		server.Close()
+	})
+	return clientConn
+}
+
 func TestChannelDeliveryNoAddressGoesToOwner(t *testing.T) {
 	hub, keyID, _ := channelTestHub(t)
 	p, routed := channelProcessor(hub, keyID)
@@ -220,7 +278,7 @@ func TestChannelDeliveryDuplicateNameFallsBackWithOwnershipNote(t *testing.T) {
 		t.Fatalf("重名应兜底投出一条,实测 %d", len(*routed))
 	}
 	got := (*routed)[0]
-	wantNote := "因为「group-owner」和「person-owner」同名，无法决定，因此发给业主本人"
+	wantNote := "因为「群 group-owner（oc_duplicate）」和「成员 person-owner（ou_duplicate）」同名，无法决定，因此发给业主本人"
 	if !strings.HasPrefix(got.To, "ou_owner#") || !metaBool(got.Meta, "channel_fell_back") {
 		t.Fatalf("重名必须发给业主本人: to=%q meta=%v", got.To, got.Meta)
 	}
@@ -229,6 +287,69 @@ func TestChannelDeliveryDuplicateNameFallsBackWithOwnershipNote(t *testing.T) {
 	}
 	if got.Body == "重名正文" {
 		t.Fatal("重名兜底与寻址成功在正文上不可区分")
+	}
+}
+
+func TestChannelDeliveryDuplicateNameWithSameOwnerStillIdentifiesBothTargets(t *testing.T) {
+	hub, keyID, ctx := channelTestHub(t)
+	if err := hub.Repo.UpsertMember(ctx, model.Member{OwnerKey: "same-owner", DisplayName: "同归属重名", FeishuOpenID: "ou_same_owner", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.Repo.UpsertChatEntity(ctx, model.ChatEntity{ID: "bot:group:oc_same_owner", BotChannelID: "bot", Type: model.ChatGroup, FeishuID: "oc_same_owner", DisplayName: "同归属重名", BoundOwner: "same-owner", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	p, routed := channelProcessor(hub, keyID)
+	p.deliverChannelCandidate(amrRouteJob{key: channelJob(keyID), body: "同归属正文"},
+		amrCandidate{channel: "feishu", channelAddr: "同归属重名", body: "同归属正文", replyPolicy: "no_reply"})
+	if len(*routed) != 1 {
+		t.Fatalf("同归属重名应兜底投出一条,实测 %d", len(*routed))
+	}
+	got := (*routed)[0]
+	wantNote := "因为「群 same-owner（oc_same_owner）」和「成员 same-owner（ou_same_owner）」同名，无法决定，因此发给业主本人"
+	if !strings.HasSuffix(got.Body, wantNote) {
+		t.Fatalf("同 owner 的两个目标仍须可区分: body=%q want suffix=%q", got.Body, wantNote)
+	}
+}
+
+func TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		membersErr error
+		groupsErr  error
+	}{
+		{name: "members", membersErr: errors.New("members lookup failed")},
+		{name: "groups", groupsErr: errors.New("groups lookup failed")},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			hub, keyID, _ := channelTestHub(t)
+			hub.Repo = &feishuLookupFailureRepo{Repository: hub.Repo, membersErr: tc.membersErr, groupsErr: tc.groupsErr}
+			clientConn := attachChannelNoticeClient(t, hub, keyID)
+			p, routed := channelProcessor(hub, keyID)
+			err := p.deliverChannelCandidate(amrRouteJob{key: channelJob(keyID), body: "查找失败正文"},
+				amrCandidate{channel: "feishu", channelAddr: "张宗楚", body: "查找失败正文", replyPolicy: "no_reply"})
+			if err == nil {
+				t.Fatal("名字数据源查询失败不得伪装成零命中成功")
+			}
+			if len(*routed) != 0 {
+				t.Fatalf("名字查询失败不得路由业务正文: %+v", *routed)
+			}
+			readCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_, data, err := clientConn.Read(readCtx)
+			if err != nil {
+				t.Fatalf("名字查询失败必须抵达来源会话: %v", err)
+			}
+			var notice model.Envelope
+			if err := json.Unmarshal(data, &notice); err != nil {
+				t.Fatalf("失败通知不是信封: %v raw=%q", err, data)
+			}
+			if !strings.Contains(notice.Body, "飞书名字寻址不可用") {
+				t.Fatalf("查询失败没有可见分类: body=%q", notice.Body)
+			}
+			if strings.Contains(notice.Body, "未找到") {
+				t.Fatalf("查询失败被谎报成零命中: body=%q", notice.Body)
+			}
+		})
 	}
 }
 
