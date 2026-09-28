@@ -3124,6 +3124,16 @@ func (h *Hub) prepareSessionSelector(ctx context.Context, sourceKeyID, sourceSes
 		if !ok {
 			return false, env, nil
 		}
+		// A selector emitted by an authenticated Agent may name a Feishu ID
+		// directly. Canonicalize it here, before short-session resolution claims
+		// the envelope; RouteEnvelope remains the single place that enforces the
+		// to/from key match and performs Feishu delivery.
+		if isAddressableFeishuID(sessionName) {
+			env.To = feishuAddress(sessionName, sourceKeyID, h.defaultBotName())
+			env.From = sessionAddress(sourceSession, sourceKeyID)
+			env.Body = body
+			return true, env, nil
+		}
 		resolved := h.resolveOwnerSessionByShort(ctx, h.ownerKeyForKey(ctx, sourceKeyID), sessionName, "")
 		if resolved.status == ownerSessionAmbiguous {
 			return true, env, ambiguousSessionError(sessionName, resolved.candidates)

@@ -280,6 +280,49 @@ func TestAgentGroupingAllowsAgentToFeishuAddress(t *testing.T) {
 	}
 }
 
+func TestAgentGroupingAllowsSelectorEntryToFeishuAddress(t *testing.T) {
+	f := newGroupingFixture(t)
+	f.hub.RegisterBot("grouping", "UnifiedRobot")
+	f.hub.Outbound = bus.NewDBQueue(f.db, model.DirectionOut)
+
+	f.hub.mu.Lock()
+	sourceClient := f.hub.sessionClients[f.sourceKey.ID][f.sourceFull]
+	f.hub.mu.Unlock()
+	if sourceClient == nil {
+		t.Fatal("authenticated source session is not online")
+	}
+
+	// This is the production websocket entry: selector routing runs before the
+	// generic RouteEnvelope fallback. The direct RouteEnvelope test above is
+	// intentionally retained because the two entries guard different wiring.
+	env := model.Envelope{ID: "selector-agent-to-feishu", To: "#ou_owner", Body: "给业主"}
+	if handled := f.hub.routeSessionSelectorEnvelope(f.ctx, sourceClient, env); !handled {
+		t.Fatal("真实 selector 入口未认领飞书 ID")
+	}
+	got, err := f.db.ClaimNextMessage(f.ctx, model.DirectionOut)
+	if err != nil || got == nil {
+		t.Fatalf("真实 selector 入口未产生飞书出站消息: msg=%+v err=%v", got, err)
+	}
+	if got.ChatEntityID != "grouping:personal:ou_owner" || !strings.Contains(got.Content, "给业主") {
+		t.Fatalf("真实 selector 入口的飞书目标或正文错误: %+v", got)
+	}
+}
+
+func TestAgentGroupingFeishuAddressStillRejectsCrossKey(t *testing.T) {
+	f := newGroupingFixture(t)
+	f.hub.RegisterBot("grouping", "UnifiedRobot")
+	f.hub.Outbound = bus.NewDBQueue(f.db, model.DirectionOut)
+	err := f.hub.RouteEnvelope(f.ctx, model.Envelope{
+		ID:   "agent-to-feishu-cross-key",
+		From: sessionAddress(f.sourceFull, f.sourceKey.ID),
+		To:   feishuAddress("ou_owner", f.outsideKey.ID, "grouping"),
+		Body: "blocked",
+	})
+	if err == nil || !strings.Contains(err.Error(), "to/from key_id mismatch") {
+		t.Fatalf("飞书分流不得放宽跨 key 拒绝: err=%v", err)
+	}
+}
+
 func TestGroupingRejectionReasonsReflectRealCondition(t *testing.T) {
 	f := newGroupingPolicyFixture(t)
 	f.createGroup(t, groupCodeA, "a")
