@@ -14,6 +14,10 @@ import (
 //   ① 正侧:unsupported_name 这类真信号改后仍须【逐条】可检出 —— 对照素材是现网两条原文;
 //   ② 反侧:missing_identity_or_replay 不再逐条打,但【计数不能丢】,心跳里的值须与事件数对上。
 // 噪音量取现网实测窗口(95 分钟)的 16,724 条,让"万级噪音"在测试里真实出现,而不是用 3 条代表。
+//
+// 🔴 本件【不守】判定:「第一道门丢弃该事件」这条性质由 internal/m8/amr_test.go 的
+//    TestAMRFailClosedForReplayMissingIdentityAndNoTerminal 守,不在本件。
+//    改这一支的人只跑 -run TestAMRLogHygiene 会漏掉它 ⇒ 须同时跑整包。(复验 M11:删掉 return 时本件全绿。)
 
 const amrHygieneNoise = 16_724
 
@@ -132,8 +136,16 @@ func TestAMRLogHygieneMissingIdentityCountedNotLogged(t *testing.T) {
 
 	amrHygieneIngestNoise(t, p, amrHygieneNoise)
 
-	if lines := amrHygieneDecisionLines(buf); len(lines) != 0 {
-		t.Errorf("② 反侧:missing_identity_or_replay 仍在逐条打 amr decision=,实得 %d 行(want 0);首行=%q", len(lines), lines[0])
+	// 判的是「该支产生的日志行数」,与前缀无关:换个前缀照打 1.6 万行同样要红(复验 M12)。
+	// 这正是交付时否掉"换前缀"的理由 ——「只挪了位置,磁盘上照样 1.6 万行」—— 闸不能比这条理由更松。
+	var emitted []string
+	for _, line := range strings.Split(buf.String(), "\n") {
+		if strings.TrimSpace(line) != "" {
+			emitted = append(emitted, line)
+		}
+	}
+	if len(emitted) != 0 {
+		t.Errorf("② 反侧:missing_identity_or_replay 这一支仍在逐条落日志(任何前缀都算),实得 %d 行(want 0);首行=%q", len(emitted), emitted[0])
 	}
 	stats, _ := p.snapshotStats()
 	if stats.missingIdentityOrReplay != amrHygieneNoise {
@@ -170,5 +182,37 @@ func TestAMRLogHygieneInvalidJSONStillLogged(t *testing.T) {
 	stats, _ := p.snapshotStats()
 	if stats.eventsRejected != 1 || stats.missingIdentityOrReplay != 0 {
 		t.Errorf("边界:invalid_json 只应计入 eventsRejected;eventsRejected=%d missingIdentityOrReplay=%d", stats.eventsRejected, stats.missingIdentityOrReplay)
+	}
+}
+
+// ② 反侧补格:心跳「字段 ↔ 各自计数」的绑定。
+// 规格来自复验件 runbooks/REVIEW-S-AMR-LOG-HYGIENE-20260929-qwen38maxkhovvob4.md §九(复验方给规格,承办落实现)。
+// 上面那格里三个计数同为 16724,断言又是 Contains("字段=值") ⇒ 把字段接到别的变量上值照样对,闸不响
+// (复验 M5 互换 events/rejected_events、M6 用 eventsRejected 供 missing_identity_or_replay,均全绿)。
+// 让三个数各不相同即可钉住:噪音 100(obs/rej/mir 各 +100)+ 1 条 invalid_json(rej +1,不入 obs)
+// + 2 条无终态的合法片段(obs +2,不产 decision 行)⇒ obs=102 rej=101 mir=100。
+// 🔴 前提断言不许删:它保证夹具真是"三数各不相同",否则这一格会退化成上面那格的弱形。
+func TestAMRLogHygieneHeartbeatFieldsBoundToOwnCounters(t *testing.T) {
+	buf := amrHygieneCaptureLog(t)
+	p := testAMRProcessor()
+	amrHygieneIngestNoise(t, p, 100)
+	p.ingest("key", "zzc-opus50ts-2642", "{not json")
+	p.ingest("key", "zzc-opus50ts-2642", amrEventJSON(t, amrSessionEvent{Kind: "assistant_text", Text: "half", DeliveryID: "d9", TurnID: "t9"}))
+	p.ingest("key", "zzc-opus50ts-2642", amrEventJSON(t, amrSessionEvent{Kind: "assistant_text", Text: "half2", DeliveryID: "d10", TurnID: "t10"}))
+
+	stats, _ := p.snapshotStats()
+	if stats.eventsObserved != 102 || stats.eventsRejected != 101 || stats.missingIdentityOrReplay != 100 {
+		t.Fatalf("前提塌了:三个计数没有各就各位 obs=%d rej=%d mir=%d(want 102/101/100)",
+			stats.eventsObserved, stats.eventsRejected, stats.missingIdentityOrReplay)
+	}
+	buf.Reset()
+	p.mu.Lock()
+	p.logStatsLocked()
+	p.mu.Unlock()
+	hb := buf.String()
+	for _, f := range []string{" events=102 ", " rejected_events=101 ", " missing_identity_or_replay=100 "} {
+		if !strings.Contains(hb, f) {
+			t.Errorf("心跳字段接错变量:%q 不在心跳里;心跳=%q", strings.TrimSpace(f), strings.TrimSpace(hb))
+		}
 	}
 }
