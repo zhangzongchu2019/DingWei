@@ -60,6 +60,7 @@ func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, origina
 				"route_source":       "ipc_send_body_amr",
 			},
 		}
+		env.Meta[metaKeyMentionVerbatim] = true
 		handled, prepared, err := h.prepareSessionSelector(ctx, c.keyID, c.sessionName, env)
 		if err != nil || !handled {
 			h.writeDeliveryFailure(ctx, c, original, candidate.selector, errors.New(firstNonEmpty(errorString(err), "目标无法解析")))
@@ -663,8 +664,24 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	//      在解析层比不上,原先会投给自己;引用一次就分叉成"自己＋对方"两封。
 	//   ② 派生信封继承触发本轮那封入站的 hop_count / max_hops(照抄 reply_to_origin.go),
 	//      否则每跳从 0 起算,RouteEnvelope 里的 R4 兜底永远够不着。
+	//   ③ 一跳封顶(组长 2026-09-29 要求的第二条上限):触发本轮的入站若本身就是"原样送达"派生信封
+	//      (meta 带 mention_verbatim)⇒ 本轮不再按提及路由,只走普通回程。标记在 meta 不在正文,
+	//      所以不会被原样带进下一跳、也就不会被引用。它比 ② 的 R4(16 跳)紧,两者并存时链停在这一条上。
+	//   ②③ 共用同一次入站查询。该查询以"回合事件的 delivery_id == session_delivery 主键"为前提:
+	//      Hub 对 reliable 信封且对端自报 delivery_ack_v1 时成立(delivery_id.go 契约;判据见
+	//      TestAMRVerbatimTurnDeliveryIDMatchesSessionDelivery)。查不到时打一行可见日志,不再静默。
 	self := sessionAddress(job.key.Session, job.key.KeyID)
-	inboundHop, inboundMaxHops := p.inboundHopOf(ctx, job.key.DeliveryID)
+	inbound, inboundFound := p.inboundOf(ctx, job.key.DeliveryID)
+	if inboundFound && metaBool(inbound.Meta, metaKeyMentionVerbatim) {
+		log.Printf("amr decision=routing_suppressed reason=verbatim_inbound session=%s delivery_id=%s candidates=%d", job.key.Session, job.key.DeliveryID, len(candidates))
+		p.closeJob("non_candidate")
+		p.replyToOrigin(job)
+		return
+	}
+	if !inboundFound && job.key.DeliveryID != "" {
+		log.Printf("amr decision=inbound_unavailable session=%s delivery_id=%s candidates=%d hop_inherit=0", job.key.Session, job.key.DeliveryID, len(candidates))
+	}
+	inboundHop, inboundMaxHops := hopCountOf(inbound), metaInt(inbound.Meta, metaKeyMaxHops)
 	selfSkipped := 0
 	for i, candidate := range candidates {
 		// S-MENTION-BESTEFFORT ③:原样送达,理由同 routeIPCSendBodyAMR。
@@ -681,6 +698,7 @@ func (p *amrProcessor) process(job amrRouteJob) {
 				"source_turn_id":     job.key.TurnID,
 			},
 		}
+		env.Meta[metaKeyMentionVerbatim] = true
 		handled, resolved, err := p.hub.prepareSessionSelector(ctx, job.key.KeyID, job.key.Session, env)
 		if err != nil || !handled {
 			log.Printf("amr decision=candidate_rejected handled=%t err=%v", handled, err)
@@ -747,20 +765,23 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	p.notifyRouteResults(job.key, results)
 }
 
-// inboundHopOf 取触发本轮的那封入站的 hop_count / max_hops;取不到按 0 处理(与无新字段的 legacy 消息同待遇)。
-func (p *amrProcessor) inboundHopOf(ctx context.Context, deliveryID string) (int, int) {
+// metaKeyMentionVerbatim 标记"由提及原样送达产生的派生信封"(S-MENTION-BESTEFFORT ③ 的一跳封顶)。
+const metaKeyMentionVerbatim = "mention_verbatim"
+
+// inboundOf 取触发本轮的那封入站信封;取不到返回 false(调用方按无新字段的 legacy 消息处理)。
+func (p *amrProcessor) inboundOf(ctx context.Context, deliveryID string) (model.Envelope, bool) {
 	if p == nil || p.hub == nil || p.hub.Repo == nil || deliveryID == "" {
-		return 0, 0
+		return model.Envelope{}, false
 	}
 	delivery, err := p.hub.Repo.GetSessionDelivery(ctx, deliveryID)
 	if err != nil || delivery == nil {
-		return 0, 0
+		return model.Envelope{}, false
 	}
 	var inbound model.Envelope
 	if json.Unmarshal([]byte(delivery.Envelope), &inbound) != nil {
-		return 0, 0
+		return model.Envelope{}, false
 	}
-	return hopCountOf(inbound), metaInt(inbound.Meta, metaKeyMaxHops)
+	return inbound, true
 }
 
 func errorString(err error) string {

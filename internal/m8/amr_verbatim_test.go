@@ -39,6 +39,7 @@ type verbatimFixture struct {
 	hub     *Hub
 	keyID   string
 	names   map[string]string // 短名 → Hub 登记的规范会话名
+	conns   map[string]*websocket.Conn
 	p       *amrProcessor
 	routed  []verbatimRouted
 	dropped int
@@ -67,13 +68,15 @@ func newVerbatimFixture(t *testing.T) *verbatimFixture {
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
+	conns := map[string]*websocket.Conn{}
 	for _, short := range []string{"ant", "bee", "cat"} {
 		conn := dialSession(t, ctx, srv.URL, short, key.ID, secret)
 		t.Cleanup(func() { conn.Close(websocket.StatusNormalClosure, "done") })
+		conns[short] = conn
 	}
 	// 规范名从 session_endpoints 取、再逐席等上线 —— 照抄 TestAMRRoutesMentionsAnywhereAndHonorsPairedFences;
 	// 直接读 sessionClients 在全量并行跑时会撞上"已连上但尚未登记"的竞态(实测第三席偶发缺席)。
-	f := &verbatimFixture{hub: hub, keyID: key.ID, names: map[string]string{}}
+	f := &verbatimFixture{hub: hub, keyID: key.ID, names: map[string]string{}, conns: conns}
 	endpoints, err := db.ListSessionEndpoints(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -121,6 +124,24 @@ func (f *verbatimFixture) turn(short, deliveryID, body string) {
 	f.p.process(amrRouteJob{key: amrTurnKey{KeyID: f.keyID, Session: f.names[short], DeliveryID: deliveryID, TurnID: "t-" + deliveryID}, body: body})
 }
 
+// seed 直接落一条"投给 to 的入站"并返回它的 delivery_id —— 用来造【不带】原样送达标记的入站
+// (例如发送方显式 send.py 发来的信),以便在标记之外单独测自身跳过与跳数继承。
+func (f *verbatimFixture) seed(t *testing.T, to, from, body string, meta map[string]any) string {
+	t.Helper()
+	env := model.Envelope{ID: "seed-" + randomHex(8), To: sessionAddress(f.names[to], f.keyID), From: sessionAddress(f.names[from], f.keyID), Body: body, TS: time.Now().Unix(), Meta: meta}
+	payload, err := json.Marshal(env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dlv := deliveryIDPrefix + randomHex(16)
+	if err := f.hub.Repo.EnqueueSessionDelivery(context.Background(), model.SessionDelivery{
+		ID: dlv, KeyID: f.keyID, SessionName: f.names[to], Envelope: string(payload), SourceMessageID: env.ID, SourceType: "agent_route",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return dlv
+}
+
 func (f *verbatimFixture) to(name string) []verbatimRouted {
 	var out []verbatimRouted
 	for _, r := range f.routed {
@@ -162,71 +183,70 @@ func TestAMRVerbatimInboundAloneIsNotReparsed(t *testing.T) {
 	}
 }
 
-// C-3 连锁:收件方引用原文 ⇒ 第二跳确实会发生(这是实测结论,不是缺陷);
-// 但链必须被 R4 截住 —— 派生信封要继承入站的 hop_count,否则每跳从 0 起算、链无上限。
-func TestAMRVerbatimQuotedMentionChainIsBoundedByHopBackstop(t *testing.T) {
+// C-3 两条上限并存:原样送达的派生信封带 mention_verbatim 标记 ⇒ 收件方引用原文的那一轮不再路由、只回程。
+// 这是一跳封顶,比 R4(16 跳)紧;两条都在时,链恰好停在更紧的这一条上。
+func TestAMRVerbatimQuotedChainStopsAfterFirstHop(t *testing.T) {
 	f := newVerbatimFixture(t)
 	f.turn("ant", "dw-dlv_seed-c3", "@bee @cat 请处理")
-	if len(f.to("bee")) != 1 || len(f.to("cat")) != 1 {
-		t.Fatalf("前提:首跳应各投 1 封,bee=%d cat=%d", len(f.to("bee")), len(f.to("cat")))
+	bee, cat := f.to("bee"), f.to("cat")
+	if len(bee) != 1 || len(cat) != 1 {
+		t.Fatalf("前提:首跳应各投 1 封,bee=%d cat=%d", len(bee), len(cat))
 	}
-	// 最坏情形:bee、cat 每一轮都把收到的正文原样引用一遍 ⇒ 互相投递。
-	const guard = 3 * defaultMaxHops
-	last := map[string]verbatimRouted{"bee": f.to("bee")[0], "cat": f.to("cat")[0]}
-	speaker := "bee"
-	hops := 0
-	secondHopSeen := false
-	for hops < guard {
-		in := last[speaker]
-		n := len(f.routed)
-		f.turn(speaker, in.deliveryID, "收到,原文如下:"+in.env.Body)
-		if len(f.routed) == n {
-			break // 被兜底丢弃,或没有新投递
+	if !metaBool(bee[0].env.Meta, metaKeyMentionVerbatim) {
+		t.Fatalf("前提:原样送达的派生信封应带 %s 标记,meta=%v", metaKeyMentionVerbatim, bee[0].env.Meta)
+	}
+	if strings.Contains(bee[0].env.Body, metaKeyMentionVerbatim) {
+		t.Errorf("C-3:标记不得出现在正文里(否则它自己就成了可被引用的东西),正文=%q", bee[0].env.Body)
+	}
+	n := len(f.routed)
+	f.turn("bee", bee[0].deliveryID, "收到,原文如下:"+bee[0].env.Body)
+	var second, replies int
+	for _, r := range f.routed[n:] {
+		switch {
+		case kindOf(r.env) == kindReply && strings.HasPrefix(r.env.To, f.names["ant"]+"#"):
+			replies++
+		default:
+			second++
 		}
-		hops++
-		newest := f.routed[len(f.routed)-1]
-		other := "cat"
-		if speaker == "cat" {
-			other = "bee"
-		}
-		if !strings.HasPrefix(newest.env.To, f.names[other]+"#") {
-			// 引用里没有可解析的提及(例如收到的正文已被剥掉提及)⇒ 走回程,不是第二跳
-			break
-		}
-		if hops == 1 {
-			secondHopSeen = true
-			if got := hopCountOf(newest.env); got < 2 {
-				t.Errorf("C-3 继承:第二跳的 hop_count 应沿链累加(≥2),实得 %d —— 派生信封没有继承入站的 hop_count", got)
-			}
-		}
-		last[other] = newest
-		speaker = other
 	}
-	if !secondHopSeen {
-		t.Fatalf("前提:引用原文时应出现第二跳(本件的实测结论之一),实际没有;最后一封去向=%q 正文=%q",
-			f.routed[len(f.routed)-1].env.To, f.routed[len(f.routed)-1].env.Body)
+	if second != 0 {
+		t.Errorf("C-3 一跳封顶:带标记的入站触发的那一轮仍按提及路由了 %d 封(应为 0);全部=%+v", second, f.routed[n:])
 	}
-	if hops >= guard {
-		t.Errorf("C-3 连锁无上限:两席互相引用跑满 %d 跳仍未被 R4 兜底截住(dropped=%d)", guard, f.dropped)
-	}
-	if f.dropped != 1 {
-		t.Errorf("C-3:链应恰好被 R4 静默丢弃 1 次后停下,实得 dropped=%d hops=%d", f.dropped, hops)
-	}
-	// 首跳进 bee/cat 时 hop=1;此后每跳继承入站值,经 RouteEnvelope 再 +1:继承 1 投出 2 …… 继承 15 投出 16;
-	// 继承到 16 的那一封满足 hop_count>=max_hops(16)被丢 ⇒ 第二跳起共放行 15 跳。
-	if want := defaultMaxHops - 1; hops != want {
-		t.Errorf("C-3:互相引用应恰好放行 %d 跳后被截住,实得 %d 跳", want, hops)
+	if replies != 1 {
+		t.Errorf("C-3:该轮应回程给 ant 恰好 1 封,实得 %d", replies)
 	}
 }
 
-// C-4 连锁·分叉:收件方引用 "@bee @cat …" 时,原文里的短名 bee 就是它自己 ——
-// 解析后指向本席的目标必须跳过,否则引用一次就分叉成"自己＋对方"两封(实测:改前每跳 2 封、hop 恒为 1)。
+// C-3b 跳数继承(不经标记,单独钉):入站不带标记、hop_count=15 ⇒ 派生信封继承 15、经 R4 放行后为 16;
+// 入站 hop_count=16 ⇒ 派生信封继承 16 ⇒ R4 静默丢弃。即便标记失效,链也不会无上限。
+func TestAMRVerbatimDerivedEnvelopeInheritsInboundHop(t *testing.T) {
+	for _, tc := range []struct {
+		hop        int
+		wantRouted int
+		wantDrop   int
+	}{{hop: defaultMaxHops - 1, wantRouted: 1, wantDrop: 0}, {hop: defaultMaxHops, wantRouted: 0, wantDrop: 1}} {
+		f := newVerbatimFixture(t)
+		dlv := f.seed(t, "bee", "ant", "@bee @cat 请处理", map[string]any{"type": "agent_route", metaKeyHopCount: tc.hop})
+		f.turn("bee", dlv, "收到,原文如下:@bee @cat 请处理")
+		cat := f.to("cat")
+		if len(cat) != tc.wantRouted || f.dropped != tc.wantDrop {
+			t.Errorf("C-3b 入站 hop=%d:投给 cat %d 封、R4 丢弃 %d 次,应为 %d / %d —— 派生信封没有继承入站 hop_count",
+				tc.hop, len(cat), f.dropped, tc.wantRouted, tc.wantDrop)
+			continue
+		}
+		if tc.wantRouted == 1 && hopCountOf(cat[0].env) != tc.hop+1 {
+			t.Errorf("C-3b 入站 hop=%d:派生信封经 R4 后 hop 应为 %d,实得 %d", tc.hop, tc.hop+1, hopCountOf(cat[0].env))
+		}
+	}
+}
+
+// C-4 不投自己:入站不带标记(例如对方显式发来)而本席引用 "@bee @cat …" ⇒ 原文里的短名 bee 就是本席,
+// 解析后指向本席的目标必须跳过;否则引用一次就分叉成"自己＋对方"两封(实测:改前每跳 2 封、hop 恒为 1)。
 func TestAMRVerbatimQuotedSelfMentionIsNotRoutedToSelf(t *testing.T) {
 	f := newVerbatimFixture(t)
-	f.turn("ant", "dw-dlv_seed-c4", "@bee @cat 请处理")
-	in := f.to("bee")[0]
+	dlv := f.seed(t, "bee", "ant", "@bee @cat 请处理", map[string]any{"type": "agent_route"})
 	n := len(f.routed)
-	f.turn("bee", in.deliveryID, "收到,原文如下:"+in.env.Body)
+	f.turn("bee", dlv, "收到,原文如下:@bee @cat 请处理")
 	var toSelf, toCat int
 	for _, r := range f.routed[n:] {
 		switch {
@@ -244,16 +264,12 @@ func TestAMRVerbatimQuotedSelfMentionIsNotRoutedToSelf(t *testing.T) {
 	}
 }
 
-// C-5 连锁·不吞:引用里的提及只有本席自己 ⇒ 不是投递指令,这一轮的输出要按普通回程回给来源,不能被当"候选全拒"吞掉。
+// C-5 不吞:入站不带标记,引用里的提及只有本席自己 ⇒ 不是投递指令,按普通回程回给来源,不能被当"候选全拒"吞掉。
 func TestAMRVerbatimSelfOnlyQuoteStillReturnsToOrigin(t *testing.T) {
 	f := newVerbatimFixture(t)
-	f.turn("ant", "dw-dlv_seed-c5", "@bee 请处理")
-	in := f.to("bee")
-	if len(in) != 1 {
-		t.Fatalf("前提:bee 应收到 1 封,实得 %d", len(in))
-	}
+	dlv := f.seed(t, "bee", "ant", "@bee 请处理", map[string]any{"type": "agent_route"})
 	n := len(f.routed)
-	f.turn("bee", in[0].deliveryID, "收到,原文如下:"+in[0].env.Body+"\n已处理完毕。")
+	f.turn("bee", dlv, "收到,原文如下:@bee 请处理\n已处理完毕。")
 	var toSelf, toAnt int
 	for _, r := range f.routed[n:] {
 		switch {
@@ -268,5 +284,69 @@ func TestAMRVerbatimSelfOnlyQuoteStillReturnsToOrigin(t *testing.T) {
 	}
 	if toAnt != 1 {
 		t.Errorf("C-5 不吞:只提及自己的那一轮应回程给 ant 恰好 1 封,实得 %d —— 回复被吞了;本轮全部=%+v", toAnt, f.routed[n:])
+	}
+}
+
+// C-6 等价钉死(一跳封顶与跳数继承共同的前提):走真实 RouteEnvelope 与真实 websocket,
+// 收件方自报 delivery_ack_v1 ⇒ 投给它的那一帧 meta.delivery_id == session_delivery 主键,且已带 "dw-" 前缀
+// (helper 的 unified_queue._delivery_id 对已带前缀者原样透传,见 delivery_id.go 契约)⇒ 回合事件的 delivery_id
+// 能查回这封入站;再用它跑收件方引用原文的那一轮 ⇒ 标记在真实链路上生效(不产生派生投递)。
+func TestAMRVerbatimTurnDeliveryIDMatchesSessionDelivery(t *testing.T) {
+	f := newVerbatimFixture(t)
+	ctx := context.Background()
+	if err := writeEnvelope(ctx, f.conns["bee"], model.Envelope{ID: "caps-bee", To: "workpulse#" + f.keyID,
+		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(envelopeReadTimeout)
+	for {
+		f.hub.mu.Lock()
+		c := f.hub.sessionClients[f.keyID][f.names["bee"]]
+		f.hub.mu.Unlock()
+		if c != nil && f.hub.sessionSupportsDeliveryACK(c) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("前提:bee 的 delivery_ack_v1 未生效")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	real := testAMRProcessor()
+	real.hub = f.hub
+	real.routeTimeout = 5 * time.Second
+	real.routeEnvelope = f.hub.RouteEnvelope
+	real.process(amrRouteJob{key: amrTurnKey{KeyID: f.keyID, Session: f.names["ant"], DeliveryID: "dw-dlv_seed-c6", TurnID: "t-c6"}, body: "@bee @cat 请处理"})
+
+	var frame model.Envelope
+	for {
+		got := readEnvelope(t, ctx, f.conns["bee"])
+		if metaString(got.Meta, "type") == "delivery" {
+			frame = got
+			break
+		}
+	}
+	dlv := metaString(frame.Meta, "delivery_id")
+	if !strings.HasPrefix(dlv, "dw-") || metaInt(frame.Meta, "delivery_version") != 1 {
+		t.Fatalf("C-6:投给 bee 的帧应带已加 dw- 前缀的 delivery_id 且 delivery_version=1,meta=%v", frame.Meta)
+	}
+	row, err := f.hub.Repo.GetSessionDelivery(ctx, dlv)
+	if err != nil || row == nil {
+		t.Fatalf("C-6 等价:帧里的 delivery_id=%q 查不回 session_delivery(err=%v)—— 回合事件将查不到入站,继承与封顶都会静默失效", dlv, err)
+	}
+	var stored model.Envelope
+	if err := json.Unmarshal([]byte(row.Envelope), &stored); err != nil || !metaBool(stored.Meta, metaKeyMentionVerbatim) {
+		t.Fatalf("C-6:落库的入站应带 %s 标记,meta=%v err=%v", metaKeyMentionVerbatim, stored.Meta, err)
+	}
+	if stored.Body != "@bee @cat 请处理" {
+		t.Errorf("C-6:真实链路上投给 bee 的正文被改写了,实得=%q", stored.Body)
+	}
+
+	// 用 helper 会用的那个 delivery_id(即帧里原样的值)跑 bee 引用原文的一轮
+	n := len(f.routed)
+	f.turn("bee", dlv, "收到,原文如下:"+stored.Body)
+	for _, r := range f.routed[n:] {
+		if strings.HasPrefix(r.env.To, f.names["cat"]+"#") {
+			t.Errorf("C-6:经真实链路投来的带标记入站,bee 引用后仍给 cat 投了信 —— 一跳封顶在真实链路上没生效")
+		}
 	}
 }
