@@ -1991,10 +1991,10 @@ func (h *Hub) resolveOwnerSessionByShort(ctx context.Context, ownerKey, requeste
 		if h.ownerKeyForKey(ctx, item.keyID) != ownerKey {
 			continue
 		}
-		if hintKey != "" && item.keyID == hintKey && (item.sessionName == requested || ownerSessionAliasMatch(ownerKey, item.sessionName, requested)) {
+		if hintKey != "" && item.keyID == hintKey && ownerSessionExactMatch(ownerKey, item.sessionName, requested) {
 			return ownerSessionResolveResult{keyID: item.keyID, sessionName: item.sessionName, status: ownerSessionUniqueHit}
 		}
-		if item.sessionName == requested || ownerSessionAliasMatch(ownerKey, item.sessionName, requested) {
+		if ownerSessionExactMatch(ownerKey, item.sessionName, requested) {
 			exactMatches = append(exactMatches, item)
 			continue
 		}
@@ -2032,7 +2032,19 @@ func ownerSessionFuzzyMatch(sessionName, requested string) bool {
 	// 又让「名字出现在别人短名中间」不再构成命中。
 	// ⚠️ 前缀仍是一种猜测,故必须与「投递结果回显实际去向」(见 amrTargetResult.resolved)
 	// 配套使用 —— 缩小猜错的面,同时让猜的结果可见。
-	return short != "" && strings.HasPrefix(short, requested)
+	return short != "" && strings.HasPrefix(strings.ToLower(short), strings.ToLower(requested))
+}
+
+// ownerSessionExactMatch keeps exact matches ahead of fuzzy prefix matches, but
+// accepts case differences across the canonical name, short name, and
+// owner-short alias. Session names are ASCII by policy, so EqualFold gives a
+// deterministic widening without introducing locale-dependent guesses.
+func ownerSessionExactMatch(ownerKey, sessionName, requested string) bool {
+	requested = strings.TrimSpace(requested)
+	if strings.EqualFold(sessionName, requested) {
+		return true
+	}
+	return ownerSessionAliasMatch(ownerKey, sessionName, requested)
 }
 
 func ownerSessionAliasMatch(ownerKey, sessionName, requested string) bool {
@@ -2040,12 +2052,12 @@ func ownerSessionAliasMatch(ownerKey, sessionName, requested string) bool {
 	if short == "" {
 		return false
 	}
-	if requested == short {
+	if strings.EqualFold(requested, short) {
 		return true
 	}
 	parts := strings.Split(sessionName, "-")
 	if len(parts) == 3 && sessionNamePattern.MatchString(sessionName) && parts[0] == ownerKey {
-		return requested == parts[0]+"-"+parts[1]
+		return strings.EqualFold(requested, parts[0]+"-"+parts[1])
 	}
 	return false
 }

@@ -2439,6 +2439,55 @@ func TestResolveOwnerSessionFuzzyMatchKeepsExactPriorityAndOwnerBoundary(t *test
 	}
 }
 
+func TestPrepareSessionSelectorBestEffortCaseFoldedPrefixAndAmbiguity(t *testing.T) {
+	hub, db, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-best-effort", Name: "svc-best-effort", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertMember(ctx, model.Member{OwnerKey: "u1", DisplayName: "UserOne", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	newKey := func(label string) model.ServiceAPIKey {
+		t.Helper()
+		_, key, err := hub.IssueAPIKey(ctx, "svc-best-effort", label)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := hub.BindAccount(ctx, key.ID, "u1"); err != nil {
+			t.Fatal(err)
+		}
+		return key
+	}
+	sourceKey := newKey("source")
+	alphaKey := newKey("alpha")
+	coder56Key := newKey("coder56")
+	coder57Key := newKey("coder57")
+	alphaName := "u1-alpha-" + keyTail(alphaKey.ID)
+	coder56Name := "u1-coder56sol-" + keyTail(coder56Key.ID)
+	coder57Name := "u1-coder57sol-" + keyTail(coder57Key.ID)
+	hub.mu.Lock()
+	hub.sessionClients[alphaKey.ID] = map[string]*sessionClient{alphaName: {keyID: alphaKey.ID, sessionName: alphaName}}
+	hub.sessionClients[coder56Key.ID] = map[string]*sessionClient{coder56Name: {keyID: coder56Key.ID, sessionName: coder56Name}}
+	hub.sessionClients[coder57Key.ID] = map[string]*sessionClient{coder57Name: {keyID: coder57Key.ID, sessionName: coder57Name}}
+	hub.mu.Unlock()
+
+	// The selected target is deliberately not the first sorted candidate.
+	handled, prepared, err := hub.prepareSessionSelector(ctx, sourceKey.ID, "source", model.Envelope{To: "#CoDeR56S", Body: "正文"})
+	if err != nil || !handled {
+		t.Fatalf("case-folded unique prefix was not prepared: handled=%t err=%v", handled, err)
+	}
+	if want := sessionAddress(coder56Name, coder56Key.ID); prepared.To != want {
+		t.Fatalf("best-effort matching selected wrong session: got=%q want=%q", prepared.To, want)
+	}
+
+	// A broader prefix matches two concrete sessions. It must remain an error;
+	// choosing either one would turn best effort into silent misdelivery.
+	handled, _, err = hub.prepareSessionSelector(ctx, sourceKey.ID, "source", model.Envelope{To: "#CoDeR", Body: "正文"})
+	if !handled || err == nil || !strings.Contains(err.Error(), coder56Name) || !strings.Contains(err.Error(), coder57Name) {
+		t.Fatalf("ambiguous best-effort match was not rejected with both candidates: handled=%t err=%v", handled, err)
+	}
+}
+
 func TestOwnerSessionFuzzyMatchUsesOnlyShortNameAndThreeRunes(t *testing.T) {
 	if ownerSessionFuzzyMatch("u1-prodops-2642", "de") {
 		t.Fatal("two-rune request participated in fuzzy matching")
@@ -2451,6 +2500,9 @@ func TestOwnerSessionFuzzyMatchUsesOnlyShortNameAndThreeRunes(t *testing.T) {
 	// 反向对照:前缀简写必须仍然有效,否则等于把功能关掉冒充修好。
 	if !ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "coder") {
 		t.Fatal("前缀简写失效 —— 修过头了")
+	}
+	if !ownerSessionFuzzyMatch("u1-coder56solzzc-2642", "CoDeR") {
+		t.Fatal("case-folded prefix did not participate in best-effort matching")
 	}
 	if !ownerSessionFuzzyMatch("u1-prodops-2642", "prod") {
 		t.Fatal("前缀简写失效 —— 修过头了")
