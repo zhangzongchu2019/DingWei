@@ -465,6 +465,81 @@ func (h *Hub) publishDeliveryCancelled(keyID, sessionName, messageID, deliveryID
 	h.publishSessionEvent(keyID, sessionName, string(event))
 }
 
+// failureDockEventCode 是错误看板卡片 data.code 的取值。
+//
+// 🔴 刻意【不复用】另外两套同形词汇:Envelope.Meta["type"] 的 "delivery_failure"
+// (真源 internal/model/model.go 的 hub-meta-types 块)与 annotateRestartWindow 的 reason 标签。
+// 三者语义不同、消费方不同;复用会让"改一处以为改了三处"。
+const failureDockEventCode = "hub_failure_notice"
+
+// publishFailureDockEvent 把一次投递/路由失败送进 view 页的「错误看板」。
+//
+// 业主 2026-09-28 逐字:「这类消息可以发到错误消息栏」;2026-09-29 逐字:
+// 「a、当错误信息提示,传到 view 页错误提示区」。
+//
+// 🔴 这份事件【故意不带 turn_id、也不带 delivery_id】。渲染器的分流是:
+//
+//	view-service/renderer-canary-sse.html:2495  turnKeyFor(ev) = ev.turn_id || ev.delivery_id || ''
+//	view-service/renderer-canary-sse.html:3114  turnKey 非空 且 kind ∈ {…,'error'} ⇒ 早退进【回合正文】
+//	view-service/renderer-canary-sse.html:3121  没有 turnKey 才走到 renderError ⇒ 错误看板
+//
+// ⇒ 带上任一个键,这张卡就**永远进不了看板**,而是被画进正文区(业主 09-11 明确不想要的形状)。
+//
+// 🔵 **一处自我更正(实测推翻读码,原文照录)**:本函数第一版的注释写的是
+// 「也不带 message_id —— 它不参与分流,带了只会让下一个人以为它参与」。
+// **那半句是错的**,由 view-service/renderer-failure-dock-regression.js 腿二实测推翻:
+// ① `message_id` **确实不参与**分流(turnKeyFor 只看 turn_id/delivery_id)—— 带着它照样进看板;
+// ② 但声明了 `schema_version:"delivery.v2"` 就**必须**带它,否则 :2103 置
+//
+//	`conflict='v2_missing_message_id'`,:2328 会**另产一张**「消息格式异常…已按不可信处理」卡
+//	⇒ 业主看到一张真卡 ＋ 一张假卡(第一次实跑就是 1 份事件产出 2 张卡,当场露馅)。
+//
+// ⇒ 结论:**带 message_id,不带 turn_id / delivery_id**;关联坐标只能走 `data.source_id`。
+//
+// 🔵 与 renderer-failcard-regression.js ② 那条断言(「失败不得进错误看板」,业主 09-11
+// 「就算他是出错信息,我也不希望看到」)**不是同一个对象**,两条闸都必须绿:
+// 那条治的是 kind:'input_posted' + stage:'failed' —— **正文区已经有一张对话卡**的形状,
+// 要求状态写回原卡脚注(该文件 ④);本函数治的是**正文区本来没有卡**的失败通知。
+// 本函数**不碰** input_posted 那条路。
+// noticeID 用于 message_id(为空则本函数自铸一个);sourceID 是**关联坐标**(哪一轮),
+// 🔴 只放进 `data.source_id`,**绝不**放顶层 delivery_id / turn_id,也**绝不**放 data.delivery_id /
+// data.turn_id —— 渲染器 normalizeEvent 连 `data.delivery_id`、`data.turn_id` 一起读
+// (renderer-canary-sse.html:2065、:2067),放进去同样会被早退进回合正文。
+func (h *Hub) publishFailureDockEvent(keyID, sessionName, noticeID, sourceID, target, reason string, now time.Time) {
+	if h == nil || keyID == "" || sessionName == "" {
+		return
+	}
+	text := strings.TrimSpace(reason)
+	if text == "" {
+		text = "投递失败"
+	}
+	if t := strings.TrimSpace(target); t != "" {
+		text = "目标 " + t + "：" + text
+	}
+	if strings.TrimSpace(noticeID) == "" {
+		noticeID = "failure-dock-" + randomHex(8)
+	}
+	// 🔴 schema_version 声明 delivery.v2 就**必须**带 message_id:
+	// 渲染器 :2103 `if (isV2) { if (!norm.messageId) norm.conflict = 'v2_missing_message_id' }`
+	// ⇒ 缺了它会**另产一张**「消息格式异常(v2_missing_message_id),已按不可信处理」的卡(:2328),
+	// 业主看到的就是一张真卡 ＋ 一张假卡。这一条是**实测**逮到的,不是读码读出来的。
+	event := map[string]any{
+		"schema_version": "delivery.v2",
+		"kind":           "error",
+		"message_id":     noticeID,
+		"text":           text,
+		"data":           map[string]any{"code": failureDockEventCode, "source_id": sourceID},
+		"updated_at":     now.UTC().Format(time.RFC3339Nano),
+	}
+	raw, err := json.Marshal(event)
+	if err != nil {
+		// 不静默:看板少一张卡与人看不到通知是同一类损失。
+		log.Printf("failure dock event marshal=failed session=%s err=%v", sessionName, err)
+		return
+	}
+	h.publishSessionEvent(keyID, sessionName, string(raw))
+}
+
 func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envelope, deliveryID, stage, role string, cancellable bool) {
 	if keyID == "" || sessionName == "" || env.ID == "" || deliveryID == "" {
 		return

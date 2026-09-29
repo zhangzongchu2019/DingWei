@@ -3162,12 +3162,34 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 	env := deliveryFailureEnvelopeWithOriginal(c, original.ID, target, routeErr.Error(), original.Body, now)
 	if errors.Is(routeErr, errGroupAgentNotFound) {
 		logFeishuDispatchRejected(groupingRejectionReason(routeErr), "", target, "")
-		env.Body = strings.Replace(env.Body, routeErr.Error(), groupAgentNotFoundText+"（reason="+groupingRejectionReason(routeErr)+"）", 1)
+		env.Body = strings.Replace(env.Body, routeErr.Error(), deliveryFailureNoticeReason(routeErr), 1)
 	}
+	// ㈡ 错误看板(业主 09-28「这类消息可以发到错误消息栏」/ 09-29「传到 view 页错误提示区」)。
+	// 🔴 放在版本门**之前**:这一份是 Hub 自发的,不依赖对端 helper 版本 ⇒
+	//    即使下面那道门把回发送方的通知关掉,**人**在看板上仍然看得到。
+	//    少了这一步,"对旧客户端不发"就会把可见故障换成不可见故障。
+	h.publishFailureDockEvent(c.keyID, c.sessionName, env.ID, original.ID, target, deliveryFailureNoticeReason(routeErr), now)
 	h.annotateRestartWindow(&env, now, "delivery_failure")
+	// ㈢ 版本门(业主 09-29 逐字「这一点在客户端没有升级支持的情况下可以不发」)。
+	if amrClientTooOldForNoDisplayNotice(c.version) {
+		log.Printf("delivery failure notification=suppressed reason=client_without_no_display_support session=%s client_version=%q min=%s dock_event=published",
+			c.sessionName, c.version, amrNoDisplayNoticeMinVersion())
+		return
+	}
 	if err := c.write(ctx, env); err != nil {
 		log.Printf("delivery failure notification=failed session=%s err=%v", c.sessionName, err)
 	}
+}
+
+// deliveryFailureNoticeReason 把 errGroupAgentNotFound 这一类**内部错误**换成给人看的那句话。
+//
+// 🔵 抽出来是因为它现在有**两个**消费方(通知正文的 Replace 与错误看板那张卡)。
+// 两处各写一遍必然漂移 —— 本仓已在"两份清单各说各话"上吃过亏。
+func deliveryFailureNoticeReason(routeErr error) string {
+	if errors.Is(routeErr, errGroupAgentNotFound) {
+		return groupAgentNotFoundText + "（reason=" + groupingRejectionReason(routeErr) + "）"
+	}
+	return routeErr.Error()
 }
 
 func (h *Hub) annotateRestartWindow(env *model.Envelope, now time.Time, event string) bool {
@@ -3234,6 +3256,15 @@ func deliveryFailureEnvelopeWithOriginal(c *sessionClient, sourceID, target, rea
 	}
 	if amrSupportsStructuredFailure(c.version) {
 		env.Meta["presentation"] = "structured"
+	}
+	if amrSupportsNoDisplayNotice(c.version) {
+		// 「不展示」的表达(业主 09-29 b「此信息不用于展示」)。
+		// 🔴 **不覆盖** presentation="structured" —— 那是另一个语义(结构化失败),两键并存。
+		// 🔴 已知:今天**没有消费方读这个键**(helper 那半 S-HELPER-NOTICE-NO-INJECT 认的是
+		//    Meta["type"],见 internal/model/model.go 的 hub-meta-types 块)。加它的理由是
+		//    协议上得有这个表达(否则"不展示"只是某个客户端的实现巧合),并给下一个消费方一个契约。
+		//    它有自己的闸(键存在 ⇔ 版本支持),不是装饰 —— 见板件 §四 与 G3/G4。
+		env.Meta["display"] = "none"
 	}
 	return env
 }

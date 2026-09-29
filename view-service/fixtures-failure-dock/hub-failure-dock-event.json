@@ -1,0 +1,1 @@
+{"data":{"code":"hub_failure_notice","source_id":"dlv-golden"},"kind":"error","message_id":"failure-dock-golden","schema_version":"delivery.v2","text":"目标 #beta：失败（目标会话无法补全为在线 canonical 地址）","updated_at":"2026-09-29T15:04:05Z"}

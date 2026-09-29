@@ -18,6 +18,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
 const (
@@ -757,7 +758,23 @@ func (p *amrProcessor) notifyRouteResults(key amrTurnKey, results []amrTargetRes
 	if len(details) != 0 {
 		body += "\n" + strings.Join(details, "\n")
 	}
-	p.notifySource(key, "route_result", body, false)
+	// 🔴 这一路**就是业主实际撞到的那个形状**(「本轮 @1：成功 0，失败 1」),而它的信封是
+	//    delivery_result、failure=false ⇒ **不经** writeDeliveryFailure。
+	//    若不在此覆盖,㈡ 修的就不是业主看见的那一件事(闸会绿,问题还在)。
+	// ㈡ 每个失败目标一张卡(与 writeDeliveryFailure 那一路同形),放在通知之前:
+	//    看板是 Hub 侧的,即使下面那道版本门把通知关掉,人仍看得到。
+	if failed > 0 && p != nil && p.hub != nil {
+		now := time.Now().UTC()
+		for _, result := range results {
+			if result.ok {
+				continue
+			}
+			p.hub.publishFailureDockEvent(key.KeyID, key.Session, "", key.DeliveryID, result.selector, "失败（"+result.err.Error()+"）", now)
+		}
+	}
+	// ㈢ 有目标没投出去 ⇒ 这条【投递结果】就是业主说的「异常信息」⇒ 受版本门约束。
+	// 🔵 全成功时 gatedAnomaly=false,行为与今天逐字相同(不在业主这条的范围里,不顺手扩)。
+	p.notifySourceNotice(key, "route_result", body, false, "", failed > 0)
 }
 
 func (p *amrProcessor) notifySource(key amrTurnKey, target, reason string, failure bool) {
@@ -765,6 +782,26 @@ func (p *amrProcessor) notifySource(key amrTurnKey, target, reason string, failu
 }
 
 func (p *amrProcessor) notifySourceVisible(key amrTurnKey, target, reason string, failure bool, originalBody string) {
+	// 🔵 failure=true 的通知**本身**就是业主 09-29 b 说的「异常信号」⇒ 默认受版本门约束。
+	// 保持这个薄包装是为了**不动那 8 个上游调用点**的签名(与 A/C 两件同在 amr.go,少一处合并冲突面)。
+	p.notifySourceNotice(key, target, reason, failure, originalBody, failure)
+}
+
+// notifySourceNotice 是 amr 侧**回发送方通知的唯一咽喉**。
+//
+// gatedAnomaly 为真 ⇒ 这条通知属于业主 2026-09-29 逐字 b 所说的「异常信息」:
+//
+//	「当异常信息送达到 sessionHelper 发送方。**但此信息不用于展示**,仅告诉发送方有异常信息。
+//	  **这一点在客户端没有升级支持的情况下可以不发**。」
+//
+// ⇒ ① 同时送一份进 view 的「错误看板」(Hub 侧,不依赖对端版本);
+//
+//	② 对端支持时才发,且信封带 display=none;不支持则**不发**并留日志/计数(不静默)。
+//
+// 🔴 gatedAnomaly 与 failure **不是一回事**:notifyRouteResults 走的是 delivery_result 信封
+//
+//	(failure=false),但"本轮有目标没投出去"确实是异常 ⇒ 那一路 gatedAnomaly=true 而 failure=false。
+func (p *amrProcessor) notifySourceNotice(key amrTurnKey, target, reason string, failure bool, originalBody string, gatedAnomaly bool) {
 	if p == nil || p.hub == nil {
 		return
 	}
@@ -783,6 +820,15 @@ func (p *amrProcessor) notifySourceVisible(key amrTurnKey, target, reason string
 	}
 	p.notices[dedupKey] = now
 	p.mu.Unlock()
+
+	// ㈡ 错误看板。**放在取连接之前**:发送方离线时通知发不出去,但看板这张卡照样要留
+	//    (eventRing 会被晚订阅的 View 回放)—— 否则"离线"就等于"这件事没人知道"。
+	// 🔵 notifyRouteResults 那一路(failure=false)**不在这里发卡**,它按失败目标逐张发
+	//    (一张卡一个目标一个原因,比把整段【投递结果】塞进一张卡可读);
+	//    ⇒ 发卡点共**三处**,逐处变异必须每处单独红,见板件 G5。
+	if gatedAnomaly && failure {
+		p.hub.publishFailureDockEvent(key.KeyID, key.Session, "", key.DeliveryID, target, reason, now)
+	}
 
 	p.hub.mu.Lock()
 	var c *sessionClient
@@ -808,6 +854,26 @@ func (p *amrProcessor) notifySourceVisible(key amrTurnKey, target, reason string
 		env = deliveryFailureEnvelopeWithOriginal(c, key.DeliveryID, target, reason, originalBody, now)
 		p.hub.annotateRestartWindow(&env, now, "amr_failure")
 	}
+	if gatedAnomaly {
+		// ㈢ 版本门:对端 helper 不支持「送达但不展示」⇒ **不发**(业主:「可以不发」)。
+		// 🔴 不静默:留一行日志 ＋ 计一个数。静默跳过就是把 T-071 换个方向重演。
+		if amrClientTooOldForNoDisplayNotice(c.version) {
+			p.mu.Lock()
+			p.stats.notificationsSuppressed++
+			p.mu.Unlock()
+			log.Printf("amr notification=suppressed reason=client_without_no_display_support session=%s client_version=%q min=%s dock_event=%t",
+				key.Session, c.version, amrNoDisplayNoticeMinVersion(), failure)
+			return
+		}
+		if amrSupportsNoDisplayNotice(c.version) {
+			if env.Meta == nil {
+				env.Meta = map[string]any{}
+			}
+			// 「不展示」的表达。failure 那一路已由 deliveryFailureEnvelopeWithOriginal 打过,
+			// 这里幂等补上 delivery_result 那一路(notifyRouteResults)。
+			env.Meta["display"] = "none"
+		}
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), p.routeTimeout)
 	defer cancel()
 	if err := c.write(ctx, env); err != nil {
@@ -830,6 +896,69 @@ func amrSupportsStructuredFailure(version string) bool {
 
 func amrStructuredFailureMinVersion() string {
 	return firstNonEmpty(os.Getenv("WP_AMR_STRUCTURED_FAILURE_MIN_VERSION"), "0.1.3.0")
+}
+
+// amrSupportsNoDisplayNotice 报告对端 sessionHelper 是否支持「异常信号送达但**不展示**」。
+//
+// 业主 2026-09-29 逐字:「b、当异常信息送达到 sessionHelper 发送方。**但此信息不用于展示**,
+// 仅告诉发送方有异常信息。**这一点在客户端没有升级支持的情况下可以不发**。」
+//
+// 🔵 机制**照抄** amrSupportsStructuredFailure(同一套"按连接自报版本开能力"),不发明新机制。
+// 🔴 为什么用版本门而不是能力位:能力位那条路(deliveryACKV1,hub.go:3686 由消息 meta 上报并持久化)
+// 需要**客户端也上报**,而客户端那一半 S-HELPER-NOTICE-NO-INJECT 已闭合、认的是
+// Envelope.Meta["type"](真源 internal/model/model.go 的 hub-meta-types 块),没有上报能力位
+// ⇒ 要用能力位就得再改一次 helper,而 helper 批已定型。
+// 版本门是**三值**的,不是布尔。真值表(两个谓词互斥,未知时两者都 false):
+//
+//	自报版本 ≥ 门槛   amrSupportsNoDisplayNotice=true   ⇒ 发,且信封带 display=none
+//	自报版本 < 门槛   amrClientTooOldForNoDisplayNotice=true ⇒ **不发**(业主:「可以不发」)
+//	空 / 非法 / 门槛非法  两者都 false                    ⇒ 发,不打标记(= 与今天逐字相同)
+//
+// 🔴 第三行是**实测**逼出来的,不是我一开始就想清楚的:第一版把"未知"并进"不支持"(不发),
+// 结果一次整包跑打掉 **6 个既有闸**(TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing ·
+// TestAgentGroupingReachabilityAndFailureCoordinates · TestShortSessionSelectorRejectsAmbiguousOwnerMatch ·
+// TestSessionAddressingRejectsCrossKey · TestReplyToOriginMissingDeliveryNotifiesOnlineSession ·
+// TestAMRFailureNotificationCarriesRestartWindowSignal),整包耗时 53.7s→75.7s(它们全在等读超时)。
+// ⇒ 那 6 个闸断言的正是「失败必须显式通知发送方」。**我没有去改它们**(既有闸红不自己改回去),
+// 而是改了本件的方向:这是一个**减法**能力(少发一条通知),未知情形下应当**保留既有可见性**,
+// 不该替对端做决定。
+// 🔵 对照:amrSupportsStructuredFailure 是**加法**(多给一个 meta 键),未知 ⇒ 不加 —— 方向相反才对。
+func amrSupportsNoDisplayNotice(version string) bool {
+	current, ok := parseWireVersion(version)
+	if !ok {
+		return false
+	}
+	minimum, ok := parseWireVersion(amrNoDisplayNoticeMinVersion())
+	return ok && amrVersionAtLeast(current, minimum)
+}
+
+// amrClientTooOldForNoDisplayNotice 报告「我们**确切知道**对端太旧」。未知一律 false(照发)。
+func amrClientTooOldForNoDisplayNotice(version string) bool {
+	current, ok := parseWireVersion(version)
+	if !ok {
+		return false
+	}
+	minimum, ok := parseWireVersion(amrNoDisplayNoticeMinVersion())
+	if !ok {
+		return false
+	}
+	return !amrVersionAtLeast(current, minimum)
+}
+
+// amrNoDisplayNoticeMinVersion 默认取 **Hub 自己的构建版本**,可用 env 覆盖。
+//
+// 🔴 理由(不是随手挑的):本仓 Hub 与 sessionHelper **共用同一个 VERSION 文件**
+// ⇒ 「带 S-HELPER-NOTICE-NO-INJECT 的 helper」自报的版本**必然 ≥** 与它同批或更晚的 Hub 版本;
+// 而升级前在跑的 helper 自报的是旧版本(实测本机 0.2.0.5)⇒ 远低于门槛。
+// ⇒ 这个默认值**自动**实现了「Hub 批先上、helper 批后上」期间**不误开**:
+// Hub 批上线那一刻门槛就等于它自己的新版本,老 helper 一律不发(符合业主「可以不发」);
+// helper 批一上线自动打开,**不需要人去改配置**,也就不会因为忘了改而长期关着(靠记得 = 没有)。
+// 🔴 代价(已在板件 DESIGN-S-MENTION-ERRORDOCK-NODISPLAY §六-1 明说,待组长裁):
+// 那个窗口期内**发送方 Agent 收不到失败通知**;人仍能在错误看板看到
+// (publishFailureDockEvent 是 Hub 侧的,不依赖 helper 版本)。
+// 若要把门常开(行为与今天相同),部署时设 WP_AMR_NO_DISPLAY_NOTICE_MIN_VERSION=0.0.0.0 即可。
+func amrNoDisplayNoticeMinVersion() string {
+	return firstNonEmpty(os.Getenv("WP_AMR_NO_DISPLAY_NOTICE_MIN_VERSION"), dwversion.Version)
 }
 
 func amrVersionAtLeast(current, minimum [4]int) bool {
