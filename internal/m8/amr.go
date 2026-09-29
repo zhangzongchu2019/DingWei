@@ -150,6 +150,7 @@ type amrStats struct {
 	incomplete              uint64
 	failed                  uint64
 	eventsRejected          uint64
+	missingIdentityOrReplay uint64 // S-AMR-LOG-HYGIENE:见 ingest 第一道门
 	closedNonCandidate      uint64
 	closedCandidateRejected uint64
 	closedCandidateReady    uint64
@@ -246,7 +247,16 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 	p.stats.eventsObserved++
 	p.mu.Unlock()
 	if ev.DeliveryID == "" || ev.TurnID == "" || amrEventReplay(ev.Data) {
-		p.transitionFailed("missing_identity_or_replay")
+		// S-AMR-LOG-HYGIENE:这一支是预期内的常态(多数会话事件本就不带回合标识)。
+		// 原先经 transitionFailed 逐条打 `amr decision=failed`,现网 95 分钟 16,724 行、占 99.94%,
+		// 把真信号(unsupported_name 当窗只有 2 条)埋了约 8,000 倍。
+		// 现改为:与 transitionFailed 同样计入 eventsRejected,另记专用计数,**不逐条打日志**;
+		// 量由心跳里的 missing_identity_or_replay= 承载。判定(丢弃该事件)不变。
+		// 🔴 计数不能丢:它是这类事件唯一剩下的可见面 —— 把"看不见"换成"数不清"就白做了。
+		p.mu.Lock()
+		p.stats.eventsRejected++
+		p.stats.missingIdentityOrReplay++
+		p.mu.Unlock()
 		return
 	}
 	key := amrTurnKey{KeyID: keyID, Session: sessionName, DeliveryID: ev.DeliveryID, TurnID: ev.TurnID}
@@ -611,14 +621,14 @@ func (p *amrProcessor) logStatsLocked() {
 	active := uint64(len(p.turns))
 	topOK := p.stats.opened == active+p.stats.queued+p.stats.closed+p.stats.incomplete+p.stats.failed
 	closedOK := p.stats.closed == p.stats.closedNonCandidate+p.stats.closedCandidateRejected+p.stats.closedCandidateReady+p.stats.closedDispatched
-	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d reply_origin_routed=%d reply_origin_skipped=%d reply_origin_unavailable=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d top_invariant=%t closed_invariant=%t",
+	log.Printf("amr heartbeat events=%d opened=%d active=%d queued=%d closed=%d incomplete=%d failed=%d non_candidate=%d candidate_rejected=%d candidate_ready=%d dispatched=%d fragment_append=%d fragment_snapshot=%d fragment_dup=%d late_after_terminal=%d legacy_dropped=%d targets_attempted=%d targets_dispatched=%d targets_failed=%d queue_underflow=%d notifications_sent=%d notifications_suppressed=%d reply_origin_routed=%d reply_origin_skipped=%d reply_origin_unavailable=%d terminal_unknown=%v structured_failure_min_version=%s rejected_events=%d missing_identity_or_replay=%d top_invariant=%t closed_invariant=%t",
 		p.stats.eventsObserved, p.stats.opened, active, p.stats.queued, p.stats.closed, p.stats.incomplete, p.stats.failed,
 		p.stats.closedNonCandidate, p.stats.closedCandidateRejected, p.stats.closedCandidateReady, p.stats.closedDispatched,
 		p.stats.fragmentAppend, p.stats.fragmentSnapshot, p.stats.fragmentDuplicate, p.stats.lateAfterTerminal, p.stats.legacyRouteDropped,
 		p.stats.targetsAttempted, p.stats.targetsDispatched, p.stats.targetsFailed, p.stats.queueUnderflow,
 		p.stats.notificationsSent, p.stats.notificationsSuppressed,
 		p.stats.replyOriginRouted, p.stats.replyOriginSkipped, p.stats.replyOriginUnavailable,
-		p.stats.terminalUnknown, amrStructuredFailureMinVersion(), p.stats.eventsRejected,
+		p.stats.terminalUnknown, amrStructuredFailureMinVersion(), p.stats.eventsRejected, p.stats.missingIdentityOrReplay,
 		topOK, closedOK)
 }
 
