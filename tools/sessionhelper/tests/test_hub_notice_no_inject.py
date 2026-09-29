@@ -19,6 +19,7 @@
 """
 
 import asyncio
+import ast
 import io
 import json
 import sys
@@ -126,6 +127,37 @@ def injection_evidence(helper):
 
 
 NO_INJECTION = {"adapter_handled": 0, "pending_inbound": 0, "inbox_claimable": False}
+
+
+def spec_hiddenimports(spec_path: Path) -> list[str]:
+    """用 AST 从 sessionhelper.spec 里取出 hiddenimports 那张表(不用 grep)。
+
+    🔴 为什么用 AST 而不是 grep/子串断言 —— 两刀都实测过,结论要写准:
+       M7  只删列表项(spec 现有注释写的是 hub_meta.py,**不含**带点号的全串)
+           ⇒ 子串断言**也会红**(实测 grep -c 该全串 = 0)⇒ 🔴 这一刀**证不出**取法的必要。
+       M7b 删列表项,同时留一句含完整点号串的散文注释(现实里很容易出现,例如
+           "本表已登记 sessionhelper.hub_meta")⇒ 子串断言**绿着放过**(实测命中 1),本格红。
+       ⇒ 所以理由不是"grep 一定被骗",而是:**断言的真值必须只取决于那张表,
+          不取决于文件里写了什么散文。** AST 是结构性的,子串靠运气。
+       (与复验方证「生成器里没有 type 字面量」时用 AST 扫常量、而非 grep,是同一个道理。)
+    🔴 取不到那张表时**抛错**,不返回空表:形状变了属于「前提不成立」,
+       不能让它长得像「判据通过」。
+    """
+    tree = ast.parse(spec_path.read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if getattr(node.func, "id", None) != "Analysis":
+            continue
+        for kw in node.keywords:
+            if kw.arg != "hiddenimports" or not isinstance(kw.value, (ast.List, ast.Tuple)):
+                continue
+            return [e.value for e in kw.value.elts
+                    if isinstance(e, ast.Constant) and isinstance(e.value, str)]
+    raise AssertionError(
+        "sessionhelper.spec 里找不到 Analysis(hiddenimports=[...]) ⇒ 打包件形状变了。"
+        "这是【前提不成立】,不是判据通过:请更新本格的取法,🔴 不要放宽成 grep 子串断言。"
+    )
 
 
 def business_env(delivery_id="dlv_biz_1", body="请复核这一格"):
@@ -334,6 +366,31 @@ class HubMetaSameSourceTest(unittest.TestCase):
             self.assertNotIn(lit, src,
                              "判据:helper 侧不得另抄 type 字面量(两份必漂移);"
                              "请引用 sessionhelper/hub_meta.py 里的常量。命中:" + lit)
+
+    def test_08_packaging_contract_registers_hub_meta(self):
+        """判据(打包合同):sessionhelper.spec 的 hiddenimports 必须显式登记 hub_meta。
+
+        由来:组长裁定「现在就显式登记」+ 复验方要求「补这一行**及对应合同断言**」。
+        🔴 变异(每刀单独红、还原后 git diff 为空):
+           M7  只删列表项(注释留下)        ⇒ 本格红;🔵 但子串断言在这一刀下**也会红**,
+               所以 M7 只证明本格有牙,**不**证明"必须用 AST"。
+           M7b 删列表项 + 留一句含全串的散文 ⇒ 本格红,而**子串断言绿着放过**(实测)
+               ⇒ 这一刀才是用 AST 的理由,见 spec_hiddenimports 的头注。
+           M8  把 hiddenimports 关键字改名   ⇒ 本格红,且报的是【前提不成立】而不是判据不通过。
+           M9  打掉阳性对照(取法取不到 app)⇒ 本格红,并报"取法失效,下面那条断言不算数"。
+        """
+        spec = ROOT / "sessionhelper.spec"
+        self.assertTrue(spec.exists(), "前提不成立:找不到 " + str(spec))
+        names = spec_hiddenimports(spec)
+        self.assertIn("sessionhelper.app", names,
+                      "阳性对照:AST 连既有的 sessionhelper.app 都取不到 ⇒ 取法失效了,"
+                      "本格下面那条断言不算数(先修取法,不要读成通过)")
+        self.assertIn("sessionhelper.hub_meta", names,
+                      "判据(打包合同):hiddenimports 必须显式登记 sessionhelper.hub_meta。"
+                      "漏收的症状是**运行时** ModuleNotFoundError —— 发现成本远高于这一行。"
+                      "🔴 修法是在 Analysis(hiddenimports=[...]) 里加那一项,"
+                      "不是改本格断言;也不要顺手补 inbox/provision/reply_origin"
+                      "(那是另一件事,没量过就不动 —— 组长明令)。")
 
 
 if __name__ == "__main__":
