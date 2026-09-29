@@ -240,3 +240,148 @@ func TestSGroupEntryOwnerCannotManageForeignGroup(t *testing.T) {
 		t.Errorf("撤回自己的 Agent 后,该组对 owner-b 应不再可见,实为 %+v", still)
 	}
 }
+
+// 判据⑤⑥ —— 业主 2026-09-29 在确认 0.2.1.95 指标时**追加**的那条:
+//
+//	「另外:**非管理者也可以自建 Agent 编组**」
+//
+// 🔵 读码核实(组长先读、我复核同意):创建路径 internal/m8/console_agent_groups.go 的 POST 分支
+// 只要求「指定的组长是调用者**自己拥有**的 Agent」(在 ListOwnedConsoleAgents 里找得到)
+// ＋ 该 Agent 的 session endpoint 存在(用它取 ownerKey),**没有任何 management 判据**
+// ⇒ 代码本来就支持;此前唯一阻碍是**入口看不见**,而那正是判据① 修的东西。
+// 🔴 但「指标里写了、闸里没有」等于没有 ⇒ 本格补上**字面**观测量(真 handler + 真库,不打桩)。
+//
+// 🔴 判据⑥(**反向变异**)跑法 —— 必须显式断言红;超时红 / panic 红 / **编译红都不算**:
+// 在 internal/m8/console_agent_groups.go 的 POST 创建分支里
+// (`if r.Method != http.MethodPost { … }` 那段守卫**之后**、解码 body 之前;该守卫在本提交是 :182,
+// 🔵 行号随树变 —— 认形状不认行号:全文件只此一处 MethodPost 守卫)插入:
+//
+//	if platformRole(r) != consolePlatformRoleManagement {
+//	    http.Error(w, "无权创建编组", http.StatusForbidden)
+//	    return
+//	}
+//
+// 然后:go test ./internal/m8/ -run TestSGroupEntryOwnerCanCreateGroup -count=1 -v
+// 期望:本格红,且红文案**点名「非管理者不能建组」**。
+// 🔵 施加后若本格仍绿 ⇒ **先怀疑变异点打错了**(组长同日自己踩过两次:同文件里有相似形状,
+// 匹配到前一处就落进别的函数里;而且**编译红不算红**,重做到能跑才算),不要写成「对照没有牙」。
+// 跑完 `git checkout -- internal/m8/console_agent_groups.go` 还原,并核 `git diff --quiet` 逐字节相同。
+//
+// 🔵 本格已实跑过**三发**变异(2026-09-29,基线 e7aa57f5,产品件还原后 sha256 与变异前逐字节相同);
+// 三发都先过 `go build` ＋ `go vet`(编译红不算红),结果记在这里,免得下一个人重猜:
+// M1 创建路径加 management 判据(上面那段)⇒ 本格红,红文案点名「非管理者不能建组」;
+// ①② 与 management 格**仍绿**;判据④ 那格也红,但红在**装置步**(它那句 "creator 建组 code=403")、
+// 不点名真因 ⇒ 🔴 只有本格的红文案说的是对的缺陷。
+// M2 `canManage := canManageConsoleAgentGroup(…) && false`(列表视图 canManage 那一行,
+// console_agent_groups.go:127)⇒ 本格红在 **can_manage 那两条断言**(第一腿 owner-a、第二腿 owner-b),
+// **不是**红在列表长度 ⇒ 观测量确实会动、没断在盲量上;
+// 判据④ 那格靠它自带的阳性对照("阳性对照失效:creator 自己那一趟应 can_manage=true")红。
+// M3 创建路径只特批 owner-a(`if principal == "owner-b" { 403 }`)⇒ 本格红在**第二腿**
+// (owner-b 建组失败 code=403),而 ①② / management 格 / 🔴 **判据④ 全部绿**
+// ⇒ 本格第二腿是**别处没有的覆盖**:
+// "能自建"若不是对每个 owner 都成立(而是某人被特批),只有这一腿看得见。
+// ⇒ M1 红第一腿、M3 红第二腿 ⇒ 两条腿**各自单独能红**(逐处变异),不是一腿替两腿背书。
+func TestSGroupEntryOwnerCanCreateGroup(t *testing.T) {
+	hub := newConsoleSpecTestHub(t)
+	db := hub.Repo.(*store.SQLite)
+	a1 := addOwnedGroupAgent(t, db, "owner-a", "sge-c1", "sge-kc1", "owner-a-sge-create-2642", "oa")
+	b1 := addOwnedGroupAgent(t, db, "owner-b", "sge-c2", "sge-kc2", "owner-b-sge-create-2642", "ob")
+	hub.sessionClients[a1.KeyID] = map[string]*sessionClient{a1.SessionName: {keyID: a1.KeyID, sessionName: a1.SessionName}}
+	hub.sessionClients[b1.KeyID] = map[string]*sessionClient{b1.SessionName: {keyID: b1.KeyID, sessionName: b1.SessionName}}
+
+	// 🔵 装置自证(一):两位创建者在**真库**里解析出来的平台角色都必须**不是** management。
+	//   夹具只给 "manager" 写了 console_platform_role=management;owner-a / owner-b **没有角色行**
+	//   ⇒ ResolveConsolePlatformRole 走 COALESCE 默认 'owner'(与现网「第二位业主默认 owner」同形)。
+	//   🔴 这一步不是形式:若哪天夹具给他们补了 management 行,下面那趟就变成"管理者建组成功",
+	//      而判据⑥ 的变异**照样绿** ⇒ 观测量对变异不敏感,结论一律不采信。
+	for _, principal := range []string{"owner-a", "owner-b"} {
+		role, err := db.ResolveConsolePlatformRole(context.Background(), principal)
+		if err != nil {
+			t.Fatalf("夹具前提坏了:解析 %s 的平台角色失败 err=%v", principal, err)
+		}
+		if role != consolePlatformRoleOwner {
+			t.Fatalf("夹具前提坏了:%s 在真库里应解析为 %q,实为 %q ⇒ 本格判的是「非管理者能建组」,前提塌了结论不成立",
+				principal, consolePlatformRoleOwner, role)
+		}
+	}
+
+	// call 显式注入 **role=owner**(与判据④ 同一套做法):业主追加的那条逐字说的是"非管理者"。
+	call := func(principal, method, path, body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, path, bytes.NewReader([]byte(body)))
+		ctx := context.WithValue(req.Context(), consolePrincipalContextKey{}, principal)
+		ctx = context.WithValue(ctx, consolePlatformRoleContextKey{}, consolePlatformRoleOwner)
+		rr := httptest.NewRecorder()
+		hub.HandleConsoleAgentGroups(rr, req.WithContext(ctx))
+		return rr
+	}
+	listGroups := func(principal string) []consoleAgentGroupView {
+		rr := call(principal, http.MethodGet, "/api/console/agent-groups", "")
+		if rr.Code != http.StatusOK {
+			t.Fatalf("%s 列表 code=%d body=%s", principal, rr.Code, rr.Body.String())
+		}
+		var listed struct {
+			Groups []consoleAgentGroupView `json:"groups"`
+		}
+		if err := json.Unmarshal(rr.Body.Bytes(), &listed); err != nil {
+			t.Fatalf("%s 列表解码失败 err=%v body=%s", principal, err, rr.Body.String())
+		}
+		return listed.Groups
+	}
+	createGroup := func(principal, agentID, shortName string) model.AgentGroup {
+		rr := call(principal, http.MethodPost, "/api/console/agent-groups",
+			`{"agent_id":"`+agentID+`","short_name":"`+shortName+`"}`)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("🔴 判据⑤:%s(role=owner)**自建编组失败**,code=%d body=%s\n"+
+				"   若这一红的成因是创建路径被加上了 management 判据 ⇒ 那就是**「非管理者不能建组」**,\n"+
+				"   与业主 2026-09-29 逐字「非管理者也可以自建 Agent 编组」相悖(= 判据⑥ 的反向变异形状)。\n"+
+				"   创建路径本来只要求「组长是调用者自己拥有的 Agent」＋该 endpoint 存在,没有任何 management 判据;\n"+
+				"   查 internal/m8/console_agent_groups.go 的 POST 分支开头是不是多了 platformRole 判定。",
+				principal, rr.Code, rr.Body.String())
+		}
+		var group model.AgentGroup
+		if err := json.Unmarshal(rr.Body.Bytes(), &group); err != nil || len(group.Code) != 32 {
+			t.Fatalf("建组应答解码 err=%v group=%+v body=%s", err, group, rr.Body.String())
+		}
+		return group
+	}
+
+	// ⑤ 第一腿:role=owner 的 owner-a **真 handler + 真库**建组成功。
+	groupA := createGroup("owner-a", a1.ID, "sgeowna")
+	if groupA.CreatorPrincipal != "owner-a" {
+		t.Errorf("creator_principal=%q,应为 owner-a(他是创建者)—— can_manage 与删除权都挂在这个字段上", groupA.CreatorPrincipal)
+	}
+	if groupA.LeaderKeyID != a1.KeyID || groupA.LeaderSessionName != a1.SessionName {
+		t.Errorf("组长端点=%q/%q,应为他自己那个 Agent %q/%q", groupA.LeaderKeyID, groupA.LeaderSessionName, a1.KeyID, a1.SessionName)
+	}
+	// ⑤ 建完该组**对他可见**,且 can_manage=true(他是 creator)。
+	ownA := listGroups("owner-a")
+	if len(ownA) != 1 {
+		t.Fatalf("🔴 装置自证失败:owner-a 建完组后列表里应恰好 1 个,实为 %d 个:%+v\n"+
+			"   列表为空 ⇒ 下面 can_manage 那条断言证不了任何事(空集合不等于排他)", len(ownA), ownA)
+	}
+	if ownA[0].Code != groupA.Code {
+		t.Errorf("列表里的组 code=%q,与刚建出来的 %q 不是同一个", ownA[0].Code, groupA.Code)
+	}
+	if !ownA[0].CanManage {
+		t.Errorf("🔴 can_manage=false:他是 creator(canManageConsoleAgentGroup 认的第一种归属就是 creator)。\n" +
+			"   本格同时是判据④ 的**阳性对照** —— 那里断言 owner 对**别人的**组 can_manage=false;\n" +
+			"   若这里也是 false,那个 false 可能只是字段恒为 false(观测量对变异不敏感)⇒ 不采信。")
+	}
+
+	// ⑤ 第二腿:**另一位** role=owner(owner-b)同样能建 ⇒ 不是"某个 principal 被特批"。
+	groupB := createGroup("owner-b", b1.ID, "sgeownb")
+	if groupB.Code == groupA.Code {
+		t.Errorf("两位业主建出来的组 code 相同(%q)⇒ 组码不唯一,凭组码入组那条路会串", groupB.Code)
+	}
+	ownB := listGroups("owner-b")
+	if len(ownB) != 1 || ownB[0].Code != groupB.Code {
+		t.Fatalf("owner-b 应只看到**自己**建的那一个组,实为 %d 个:%+v", len(ownB), ownB)
+	}
+	if !ownB[0].CanManage {
+		t.Errorf("owner-b 对自己建的组 can_manage 应为 true,实为 %+v", ownB[0])
+	}
+	// 🔵 顺带钉住「能自建」**不等于**「互相看得见」:owner-b 建完之后,owner-a 那一趟仍只有他自己的组。
+	if again := listGroups("owner-a"); len(again) != 1 || again[0].Code != groupA.Code {
+		t.Errorf("owner-b 建组后,owner-a 的列表应仍只有他自己那一个,实为 %+v", again)
+	}
+}
