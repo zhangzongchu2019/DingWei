@@ -11,12 +11,23 @@
 //    顶层导航过去 ⇒ pane 全丢、SSE 全断、后退回不来(实测 pane 数 2→0)。
 // builtin "Agents" 已按业主裁定从服务端移除。G3/G4 现在守它不得重新长回。
 //
+// 🔴 口径变更(S-GROUP-ENTRY,2026-09-29):「Agent 编组」入口由"只对 management 下发"改为
+//    **对所有 principal 下发** ⇒ G4 从"owner 不得看到它"翻成"owner **必须**看到它"。
+//    由来:业主逐字「界面上没有 Agent 编组(只有 spec 和任务)」—— 而「加入到其他业主编组」
+//    那个面板只在这个入口**里面**(console_auth.go 的 openGroupWorkspace 仅一个调用点),
+//    它的目标用户恰恰是默认 role=owner 的另一位业主。
+//    派工 runbooks/DISPATCH-20260929-S-GROUP-ENTRY.md ·
+//    背景 runbooks/DEFECT-group-entry-is-management-only-20260929.md
+//    🔵 G4 仍守两件旧事:builtin Agents 不得长回;**admin(平台管理)不得下发给 owner**。
+//
 // 装置与 console-theme-global-regression.js 同源同手法:
 //    console 页**从生产源码实时抠**(consolePageHTML),/view/* 返回仓内真实 renderer 字节。
 //
 // 环境变量:
-//    POSITIVE_CONTROL=1  阳性对照跑:载荷里那一项**没有** target(产品已发该项则剥掉,未发则按裁定形状合成)
-//                        ⇒ 期望**只红 G2**(pane 断言),用它证明 G2 有牙。红别的 = 判据不成立。
+//    POSITIVE_CONTROL=1  阳性对照跑:把产品发出的那一项**改回旧 admin popup 形状**(带 target=_blank)
+//                        ⇒ 期望**红的正好是 G1/G2/G4**,G3 仍绿(它守 builtin Agents,与本变异无关)。
+//                        🔴 少红 = 那一条断言没有判别力(假绿);多红 = 装置异常或另有回归(假故障)。
+//                           两种都不算"对照成立" ⇒ 末尾**逐格核红格集合**,不是只看"有没有红"。
 //    PW_CHANNEL=chrome   用系统 Chrome
 //    GO_BIN=<path>       go 可执行文件(默认 PATH 里的 go)
 // 退出码:0 全过 · 1 断言失败 · 3 环境缺失(没有 go toolchain ⇒ 本件**不验**,不是产品坏了)
@@ -39,12 +50,12 @@ const ENTRY_ID = 'agent-groups';
 const ENTRY_HREF = '#agent-groups';
 const CONTROL = process.env.POSITIVE_CONTROL === '1';
 const GO_BIN = process.env.GO_BIN || 'go';
-// 阳性对照在产品尚未发出该项时,按组长裁定的形状合成一项(**没有** target)。
-// 🔵 它只用来证明 G2 的断言有牙,**不是**产品证据;产品级证据由变异 M1(真去掉 target)给。
-const SYNTHESIZED_ENTRY = {
-  id: ENTRY_ID, kind: ENTRY_ID, title: 'Agent 编组', href: ENTRY_HREF,
-  status: 'approved', active: true,
-};
+// 🔴 阳性对照的形状:把产品发出的那一项改回**旧 admin popup**(独立文档 + target=_blank)。
+// 🔵 它只用来证明 G1/G2/G4 的断言有牙,**不是**产品证据;产品级证据由变异 M1(真去掉 target)给。
+// 🔴 旧版这里还有一条"产品没发该项就**合成**一项"的退路(SYNTHESIZED_ENTRY),已删:
+//    合成出来的项形状是**对的** ⇒ 对照跑会在那条腿上绿,而那个绿会被读成"对照成立"(假绿)。
+//    现在改成:前提不满足就**硬中止**(见下面 CONTROL 前提自检),一条结论都不产。
+const CONTROL_HREF = '/admin/agent-groups';
 
 function consoleHTMLFromProductionSource() {
   const source = fs.readFileSync(GO_SOURCE, 'utf8');
@@ -86,25 +97,25 @@ function dumpPayloadsFromGo() {
   return byPrincipal;
 }
 
-// 阳性对照:把 target 摘掉(产品已发该项)或按裁定形状合成一项(产品还没发)
-function makeControlPayload(payload, principal) {
+// 阳性对照:把产品发出的那一项改回**旧 admin popup 形状**。
+// 🔴 前提(该项存在)已在启动时自检过并对**两个角色**一视同仁 ⇒ 这里不再需要"缺项就合成"的退路。
+//    旧版那条 `if (principal !== 'manager') return …owner-untouched` 一并删除:
+//    新口径下 G4 也断言 owner 那一项的形状,把 owner 腿排除在对照之外只会造出假绿或假故障。
+function makeControlPayload(payload) {
   const items = Array.isArray(payload.items) ? payload.items.map((x) => ({ ...x })) : [];
   const i = items.findIndex((x) => x && x.id === ENTRY_ID);
-  if (i >= 0) {
-    items[i].href = '/admin/agent-groups';
-    items[i].target = '_blank';
-    return { ...payload, items, __control: 'restored-legacy-admin-popup' };
-  }
-  // 🔴 只给 management 那条腿合成:owner 腿(G4)必须保持"看不到",
-  //    否则阳性对照跑会连 G4 一起红,而判据要求**只红 G2**(每条红都得能解释)。
-  if (principal !== 'manager') return { ...payload, items, __control: 'owner-untouched' };
-  return { ...payload, items: [...items, { ...SYNTHESIZED_ENTRY }], __control: 'synthesized-item-without-target' };
+  if (i < 0) throw new Error(`装置前提坏了:${payload.role} 的载荷里没有 ${ENTRY_ID},对照无从施加`);
+  items[i].href = CONTROL_HREF;
+  items[i].target = '_blank';
+  return { ...payload, items, __control: 'restored-legacy-admin-popup' };
 }
 
 let pass = 0;
 let fail = 0;
+// 🔴 记下**哪几格**红了,不只记条数:阳性对照的判据是"红的正好是该红的那几条"。
+const failedIDs = [];
 async function t(name, fn) {
-  try { await fn(); console.log('  ✅', name); pass += 1; } catch (e) { console.log('  🔴', name, '->', e && e.message); fail += 1; }
+  try { await fn(); console.log('  ✅', name); pass += 1; } catch (e) { console.log('  🔴', name, '->', e && e.message); fail += 1; failedIDs.push(name.slice(0, 2)); }
 }
 
 (async () => {
@@ -112,13 +123,26 @@ async function t(name, fn) {
   if (CONTROL) consoleHTML = consoleHTML.replace("if(item.id==='agent-groups') a.onclick=function(ev){ev.preventDefault();openGroupWorkspace();};", "");
   const rendererBytes = fs.readFileSync(RENDERER);
   const payloads = dumpPayloadsFromGo();
+  if (CONTROL) {
+    // 🔴 阳性对照的前提是"产品确实发出了该项",对照才有东西可改。
+    //    前提不满足时**硬中止、一条结论都不产** —— 与"阴格不过则后面的绿不算绿"同形:
+    //    否则缺项的那条腿会以"绿"收场,而那个绿会被读成"对照成立"。
+    for (const who of ['manager', 'owner']) {
+      const ids = (((payloads[who] || {}).items) || []).map((x) => (x && x.id));
+      if (!ids.includes(ENTRY_ID)) {
+        console.log(`  🔴 阳性对照前提塌了:${who} 的载荷里没有 ${ENTRY_ID},items=${JSON.stringify(ids)}`);
+        console.log('     对照要改的是**产品发出的那一项**;它不存在 ⇒ 本跑不产任何结论(不是产品坏了,是对照无从施加)');
+        process.exit(3);
+      }
+    }
+  }
   console.log(`  · console 页取自生产源码 internal/m8/console_auth.go(${consoleHTML.length} 字节)`);
   console.log(`  · 平台载荷取自真 Go handler(TestConsolePlatformPayloadDump):manager/owner 两份`);
   console.log(`    manager.items=${JSON.stringify((payloads.manager.items || []).map((x) => [x.id, x.target || '']))}`);
   console.log(`    owner.items  =${JSON.stringify((payloads.owner.items || []).map((x) => [x.id, x.target || '']))}`);
   console.log(`  · renderer  ${RENDERER}`);
   console.log(`    sha256=${sha256(rendererBytes).slice(0, 16)}… ${rendererBytes.length} 字节`);
-  if (CONTROL) console.log('  🔵 POSITIVE_CONTROL=1:恢复旧 admin popup 入口,期望 G1/G2 红');
+  if (CONTROL) console.log('  🔵 POSITIVE_CONTROL=1:把入口改回旧 admin popup,期望红的正好是 G1/G2/G4、G3 仍绿');
 
   // 当前该给哪个角色的载荷 —— 每个角色用**一个新页面**取,靠页面自己启动时那次 refreshPlatform()
   let currentPrincipal = 'manager';
@@ -129,7 +153,7 @@ async function t(name, fn) {
     if (u === '/api/console/agents') return json(res, { agents: [{ session: A, online: true }, { session: B, online: true }] });
     if (u === '/api/console/platform') {
       const p = payloads[currentPrincipal] || { role: 'owner', actions: [], items: [] };
-      return json(res, CONTROL ? makeControlPayload(p, currentPrincipal) : p);
+      return json(res, CONTROL ? makeControlPayload(p) : p);
     }
     if (u === '/api/console/agent-groups') return json(res, { principal: 'manager', owned_agents: [{ id: 'a', key_id: 'ka', session_name: A }], groups: [] });
     if (u === `/view/${encodeURIComponent(A)}` || u === `/view/${encodeURIComponent(B)}`) {
@@ -288,20 +312,30 @@ async function t(name, fn) {
       } finally { await context.close(); }
     });
 
-    // ── G4 owner 侧同样不得重新出现已删除入口 ──────────────────────────
-    await t('G4 🔴 owner 左栏也不得出现已删除的 builtin Agents', async () => {
+    // ── G4 owner 侧:🔴 S-GROUP-ENTRY(2026-09-29)口径已翻 ──────────────────
+    //    旧口径"owner 不得看到 agent-groups"(0.2.1.7 把它关在 management 里);
+    //    新口径"owner **必须**看到"——「加入到其他业主编组」只在这个入口里面,
+    //    而它的目标用户恰恰是默认 role=owner 的另一位业主。
+    //    🔵 本格仍守两件旧事:builtin Agents 不得长回;admin 不得下发给 owner
+    //       (ids 用 deepStrictEqual 钉**全集** ⇒ 多一项就红,这是派工判据② 的浏览器侧同形判据)。
+    await t('G4 🔴 owner 左栏必须有 agent-groups 内部 tab,且仍不得出现 builtin Agents / admin', async () => {
       currentPrincipal = 'owner';
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
       try {
         const { page } = await openTwoPanes(context);
         const role = await page.evaluate(() => document.documentElement.dataset.platformRole || '');
         assert.strictEqual(role, 'owner', `前置:这一腿必须以 owner 身份跑,实为 ${JSON.stringify(role)}`);
-        const leaked = await platformEntry(page, ENTRY_ID);
-        assert.strictEqual(leaked, null, `🔴 owner 也看到了入口:${JSON.stringify(leaked)}(角色判定没了)`);
+        const e = await platformEntry(page, ENTRY_ID);
+        assert.ok(e, `🔴 owner 的 #platform-items 里没有 data-item-id="${ENTRY_ID}" 的项 ⇒ 入口又只对 management 发了。` +
+          `「加入到其他业主编组」只能由这一项点击打开(openGroupWorkspace 仅一个调用点),而目标用户正是默认 role=owner 的另一位业主`);
+        assert.strictEqual(e.count, 1, `入口必须唯一可寻址,实到 ${e.count} 个同 id 项`);
+        assert.strictEqual(e.href, ENTRY_HREF, `href=${e.href},应为 ${ENTRY_HREF}(指向 /admin/agent-groups 是**方向相反**:旧 admin 独立鉴权域)`);
+        assert.ok(!e.target, `内部 tab 不得带 target,实为 ${e.target}`);
         const builtin = await platformEntry(page, 'agents');
         assert.strictEqual(builtin, null, `owner 侧 builtin Agents 不得重新出现:${JSON.stringify(builtin)}`);
         const ids = await page.evaluate(() => Array.from(document.querySelectorAll('#platform-items a')).map((a) => a.dataset.itemId).sort());
-        assert.deepStrictEqual(ids, ['specs', 'task-board'], `owner 只应保留可操作的 specs/task-board,实为 ${JSON.stringify(ids)}`);
+        assert.deepStrictEqual(ids, ['agent-groups', 'specs', 'task-board'],
+          `owner 的平台项**全集**应为 agent-groups/specs/task-board(🔴 多出 admin = 把管理面一刀切放出去了),实为 ${JSON.stringify(ids)}`);
       } finally { await context.close(); }
     });
   } finally {
@@ -310,9 +344,19 @@ async function t(name, fn) {
   }
 
   console.log(`\n  合计 ${pass + fail} 条:✅ ${pass} · 🔴 ${fail}`);
-  if (CONTROL && fail === 0) {
-    console.log('  🔴 阳性对照跑居然全绿 ⇒ G2 的断言**没有判别力**,本件不成立');
-    process.exit(1);
+  if (CONTROL) {
+    // 🔴 阳性对照的判据不是"有红",是"**红的正好是该红的那几条**":
+    //    少红 ⇒ 那一条断言对"恢复旧 admin popup"这个变异不敏感(假绿);
+    //    多红 ⇒ 装置异常或产品另有回归,而它会**混在**"对照成功"里被读过去(假故障)。
+    const want = ['G1', 'G2', 'G4'];
+    const got = failedIDs.slice().sort();
+    if (JSON.stringify(got) !== JSON.stringify(want)) {
+      console.log(`  🔴 阳性对照的红格集合不对:期望 ${JSON.stringify(want)},实到 ${JSON.stringify(got)}`);
+      console.log('     少红 = 缺的那条断言没有判别力;多红 = 先查装置/产品,不要读成"对照成立"');
+      process.exit(1);
+    }
+    console.log(`  🔵 阳性对照成立:恢复旧 admin popup 后红的正好是 ${JSON.stringify(want)},G3 仍绿`);
+    console.log('     (本跑按约定 rc=1 —— 对照跑本来就该红,判据是**红格集合**,不是 rc)');
   }
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.log('  🔴 装置异常:', e && e.stack ? e.stack.split('\n').slice(0, 4).join('\n') : e); process.exit(1); });
