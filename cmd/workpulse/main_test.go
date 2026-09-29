@@ -549,3 +549,137 @@ func findBotChannel(channels []model.BotChannel, id string) *model.BotChannel {
 	}
 	return nil
 }
+
+// Nova-260921-A(B1-b):**门 B(/console/admin/*)的装配闸**。
+//
+// 🔴 这一格是变异 M10 咬出来的缺口,不是设计时想到的:把 run() 里
+// `adm.MountConsole(mux)` 那一行注释掉 ⇒
+// `go test ./internal/admin/... ./internal/m8/... ./cmd/workpulse/...` **rc=0、零转红**(实测),
+// 而线上 `/console/admin/*` **全部 404** ⇒ 整格功能等于没接上,且没有任何告警。
+// 原因:运行时闸都在 admin/m8 包里,它们**自己**调 MountConsole 建夹具
+// ⇒ 它们能证明"门 B 挂了以后行为对",证明不了"主程序真的挂了"。
+//
+// 判据三条(形状照本文件既有的 TestRunWiresAdminFileBrowserConfiguration):
+//
+//	① run() 里必须有**恰好一处** MountConsole 调用 —— 🔴 注释掉不算(AST 里没有注释),
+//	   这正是 M10 能悄悄通过的原因,也是本闸必须走 AST 而不是 grep 的原因。
+//	② 它必须在 `<同一个接收者>.Prefix = …` 赋值**之后**:
+//	   反了 ⇒ s.Prefix == nil ⇒ 门 B 全 503(fail-closed,不漏权限,但功能等于没接上)。
+//	③ 它必须挂在**与 `<同一个接收者>.Mount(…)` 同一个 mux** 上:
+//	   挂到别的 mux ⇒ 路由注册在一个没人监听的表上,请求打不到。
+//
+// 🔵 接收者名不硬写(不假设它叫 adm):三条判据都以 MountConsole 那个接收者为锚,
+// 变量改名不影响本格。
+func TestRunWiresConsoleAdminDoor(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "main.go", nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var runBody *ast.BlockStmt
+	for _, declaration := range file.Decls {
+		function, ok := declaration.(*ast.FuncDecl)
+		if !ok || function.Name.Name != "run" {
+			continue
+		}
+		runBody = function.Body
+	}
+	if runBody == nil {
+		t.Fatal("main.go 里没有 run() ⇒ 本件的解析对象不存在,结论不采信")
+	}
+
+	type recvCall struct {
+		recv string
+		mux  string
+		at   token.Pos
+	}
+	type recvAssign struct {
+		recv string
+		at   token.Pos
+	}
+	var mountConsole, mount []recvCall
+	var prefixAssigns []recvAssign
+	identName := func(expr ast.Expr) string {
+		ident, ok := expr.(*ast.Ident)
+		if !ok {
+			return ""
+		}
+		return ident.Name
+	}
+	ast.Inspect(runBody, func(node ast.Node) bool {
+		switch statement := node.(type) {
+		case *ast.AssignStmt:
+			for _, lhs := range statement.Lhs {
+				selector, ok := lhs.(*ast.SelectorExpr)
+				if !ok || selector.Sel.Name != "Prefix" {
+					continue
+				}
+				if recv := identName(selector.X); recv != "" {
+					prefixAssigns = append(prefixAssigns, recvAssign{recv: recv, at: statement.Pos()})
+				}
+			}
+		case *ast.CallExpr:
+			selector, ok := statement.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			recv := identName(selector.X)
+			if recv == "" {
+				return true // portal.NewScheduleServer(st).Mount(mux) 一类:接收者不是标识符,与本格无关
+			}
+			mux := ""
+			if len(statement.Args) == 1 {
+				mux = identName(statement.Args[0])
+			}
+			switch selector.Sel.Name {
+			case "MountConsole":
+				mountConsole = append(mountConsole, recvCall{recv: recv, mux: mux, at: statement.Pos()})
+			case "Mount":
+				mount = append(mount, recvCall{recv: recv, mux: mux, at: statement.Pos()})
+			}
+		}
+		return true
+	})
+
+	if len(mountConsole) != 1 {
+		t.Fatalf("🔴 run() 里有 %d 处 MountConsole 调用,期望恰好 1 处。\n"+
+			"0 处 ⇒ /console/admin/* 全部 404:admin 能力搬进 console 这一格**等于没接上**,\n"+
+			"      而 admin/m8 两包的所有闸照样全绿(M10 实测 rc=0)—— 本格是唯一的闸。\n"+
+			">1 处 ⇒ 同一批路由注册两次,net/http 会 panic 或后注册的那份被忽略。\n"+
+			"判据:门 B 必须由 run() 装配一次,且注释掉不算(AST 里没有注释)。", len(mountConsole))
+	}
+	wired := mountConsole[0]
+
+	var prefixAt token.Pos
+	for _, assign := range prefixAssigns {
+		if assign.recv == wired.recv {
+			prefixAt = assign.at
+			break
+		}
+	}
+	if prefixAt == 0 {
+		t.Fatalf("run() 里找不到 %s.Prefix = … 的赋值 ⇒ 门 B 的鉴权 hub 没被装配,\n"+
+			"requireConsoleCap 会一律 503(关死整道门)。判据:MountConsole 依赖那个 Prefix。", wired.recv)
+	}
+	if wired.at < prefixAt {
+		t.Fatalf("🔴 %s.MountConsole(…) 出现在 %s.Prefix = … **之前**。\n"+
+			"后果:装配门 B 时 s.Prefix 还是 nil ⇒ requireConsoleCap 一律 503(fail-closed,不漏权限,\n"+
+			"但整道门打不开)。判据:先装配 console 鉴权 hub,再挂门 B。", wired.recv, wired.recv)
+	}
+
+	var mountMux string
+	for _, call := range mount {
+		if call.recv == wired.recv {
+			mountMux = call.mux
+			break
+		}
+	}
+	if mountMux == "" {
+		t.Fatalf("run() 里找不到 %s.Mount(<mux>) ⇒ 无法确定门 A 挂在哪个 mux 上,本格第③条判据无从核起。\n"+
+			"(不是「没问题」,是**量不到** ⇒ 结论不采信。)", wired.recv)
+	}
+	if wired.mux != mountMux {
+		t.Fatalf("🔴 门 B 挂在 mux %q 上,门 A 挂在 %q 上 ⇒ 两道门不在同一个路由表。\n"+
+			"后果:门 B 的路由注册在一个没人监听的表上,请求打不到(与「没接上」同型)。\n"+
+			"判据:MountConsole 必须与 Mount 用同一个 mux。", wired.mux, mountMux)
+	}
+}

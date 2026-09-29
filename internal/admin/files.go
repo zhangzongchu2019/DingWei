@@ -45,6 +45,7 @@ type FileBrowser interface {
 }
 
 func (s *Server) filesPage(w http.ResponseWriter, r *http.Request) {
+	base := adminBasePrefix(r) // 门 A=/admin,门 B=/console/admin(见 console_door.go)
 	if s.Files == nil {
 		http.Error(w, "file browser disabled: startup configuration was not injected", http.StatusServiceUnavailable)
 		return
@@ -59,17 +60,17 @@ func (s *Server) filesPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = io.WriteString(w, `<!doctype html><meta charset=utf-8><title>文件对象</title><h3>文件对象</h3><p><a href="/admin">返回</a></p><table><tr><th>fileid</th><th>原名</th><th>字节</th><th>sha256</th><th>上传时刻</th><th>来源</th><th>archived</th><th>预计清理</th><th>内容</th></tr>`)
+	_, _ = io.WriteString(w, `<!doctype html><meta charset=utf-8><title>文件对象</title><h3>文件对象</h3><p><a href="`+base+`">返回</a></p><table><tr><th>fileid</th><th>原名</th><th>字节</th><th>sha256</th><th>上传时刻</th><th>来源</th><th>archived</th><th>预计清理</th><th>内容</th></tr>`)
 	for _, f := range page.Files {
 		cleanup := f.ExpiresAt.UTC().Format(time.RFC3339)
 		if f.Archived {
 			cleanup = "无限豁免"
 		}
-		_, _ = fmt.Fprintf(w, `<tr><td><code>%s</code></td><td>%s</td><td>%d</td><td><code>%s</code></td><td>%s</td><td>%s/%s</td><td>%t</td><td>%s</td><td><a href="/admin/files/%s/content">预览/下载</a></td></tr>`, html.EscapeString(f.ID), html.EscapeString(f.OriginalName), f.SizeBytes, html.EscapeString(f.SHA256), f.CreatedAt.UTC().Format(time.RFC3339), html.EscapeString(f.OwnerKey), html.EscapeString(f.SessionName), f.Archived, cleanup, url.PathEscape(f.ID))
+		_, _ = fmt.Fprintf(w, `<tr><td><code>%s</code></td><td>%s</td><td>%d</td><td><code>%s</code></td><td>%s</td><td>%s/%s</td><td>%t</td><td>%s</td><td><a href="`+base+`/files/%s/content">预览/下载</a></td></tr>`, html.EscapeString(f.ID), html.EscapeString(f.OriginalName), f.SizeBytes, html.EscapeString(f.SHA256), f.CreatedAt.UTC().Format(time.RFC3339), html.EscapeString(f.OwnerKey), html.EscapeString(f.SessionName), f.Archived, cleanup, url.PathEscape(f.ID))
 	}
 	_, _ = io.WriteString(w, `</table>`)
 	if page.NextOffset > 0 {
-		_, _ = fmt.Fprintf(w, `<a href="/admin/files?offset=%d">下一页</a>`, page.NextOffset)
+		_, _ = fmt.Fprintf(w, `<a href="`+base+`/files?offset=%d">下一页</a>`, page.NextOffset)
 	}
 }
 

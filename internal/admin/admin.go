@@ -69,8 +69,8 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/login", s.loginForm)
 	mux.HandleFunc("POST /admin/login", s.loginSubmit)
 	mux.HandleFunc("GET /admin", s.requireAuth(s.status))
-	mux.HandleFunc("GET /admin/files", s.requireAuth(s.filesPage))
-	mux.HandleFunc("GET /admin/files/{id}/content", s.requireAuth(s.fileContent))
+	mux.HandleFunc("GET /admin/files", s.requireAuthCap(capFiles, s.filesPage))
+	mux.HandleFunc("GET /admin/files/{id}/content", s.requireAuthCap(capFileContent, s.fileContent))
 	mux.HandleFunc("GET /admin/datad/tasks", s.requireAuth(s.datadTasksProxy))
 	mux.HandleFunc("GET /admin/datad/sessions", s.requireAuth(s.datadSessionsProxy))
 	mux.HandleFunc("GET /admin/control-plane", s.requireAuth(s.controlPlaneDashboard))
@@ -91,20 +91,20 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("POST /admin/projects/{id}/members/{owner}/schedule", s.requireAuth(s.postPersonalSchedule))
 	mux.HandleFunc("GET /admin/projects/{id}/members/{owner}/schedule/history", s.requireAuth(s.personalScheduleHistory))
 	mux.HandleFunc("POST /admin/projects/{id}/members/{owner}/schedule/history", s.requireAuth(s.rollbackPersonalSchedule))
-	mux.HandleFunc("GET /admin/bot-channels", s.requireAuth(s.botChannels))
-	mux.HandleFunc("POST /admin/bot-channels", s.requireAuth(s.upsertBotChannel))
+	mux.HandleFunc("GET /admin/bot-channels", s.requireAuthCap(capBotChannels, s.botChannels))
+	mux.HandleFunc("POST /admin/bot-channels", s.requireAuthCap(capBotChannels, s.upsertBotChannel))
 	mux.HandleFunc("GET /admin/services", s.requireAuth(s.services))
 	mux.HandleFunc("POST /admin/services", s.requireAuth(s.upsertService))
-	mux.HandleFunc("GET /admin/api-keys", s.requireAuth(s.apiKeys))
-	mux.HandleFunc("POST /admin/api-keys", s.requireAuth(s.manageAPIKey))
+	mux.HandleFunc("GET /admin/api-keys", s.requireAuthCap(capAPIKeys, s.apiKeys))
+	mux.HandleFunc("POST /admin/api-keys", s.requireAuthCap(capAPIKeys, s.manageAPIKey))
 	mux.HandleFunc("GET /admin/routes", s.requireAuth(s.routes))
 	mux.HandleFunc("POST /admin/routes", s.requireAuth(s.addRoute))
 	mux.HandleFunc("GET /admin/sessions", s.requireAuth(s.sessionsPage))
 	mux.HandleFunc("POST /admin/sessions", s.requireAuth(s.manageSession))
 	mux.HandleFunc("GET /admin/agent-groups", s.requireAuth(s.agentGroupsPage))
 	mux.HandleFunc("POST /admin/agent-groups", s.requireAuth(s.manageAgentGroups))
-	mux.HandleFunc("GET /admin/provision", s.requireAuth(s.provisionPage))
-	mux.HandleFunc("POST /admin/provision", s.requireAuth(s.manageProvision))
+	mux.HandleFunc("GET /admin/provision", s.requireAuthCap(capProvision, s.provisionPage))
+	mux.HandleFunc("POST /admin/provision", s.requireAuthCap(capProvision, s.manageProvision))
 	mux.HandleFunc("GET /admin/config", s.requireAuth(s.configs))
 	mux.HandleFunc("POST /admin/config", s.requireAuth(s.upsertConfig))
 	mux.HandleFunc("POST /admin/delegate/schedule", s.requireAuth(s.delegateSchedule))
@@ -1278,6 +1278,7 @@ func (s *Server) rollbackScheduleDoc(w http.ResponseWriter, r *http.Request, pro
 }
 
 func (s *Server) botChannels(w http.ResponseWriter, r *http.Request) {
+	base := adminBasePrefix(r)
 	items, err := s.Repo.ListBotChannels(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1286,7 +1287,7 @@ func (s *Server) botChannels(w http.ResponseWriter, r *http.Request) {
 	writeHTMLHeader(w, "机器人管道")
 	_, _ = w.Write([]byte(`<h3>机器人管道</h3>
 <p>数据来源：后台录入的飞书自建应用。bot_name 就是寻址地址第三段，例如 <code>ou_xxx#key_id#UnifiedRobot</code> 会选择 UnifiedRobot 管道发送；接收由各自长连接或 webhook 完成。</p>
-<form method=post action=/admin/bot-channels>
+<form method=post action=` + base + `/bot-channels>
 <p>ID <input name=id> 名称 <input name=name> app_id <input name=app_id> app_secret <input name=app_secret type=password placeholder="留空不改"> 用途 <input name=purpose value=general>
 verification_token <input name=verification_token type=password placeholder="可选，留空不改"> encrypt_key <input name=encrypt_key type=password placeholder="可选，留空不改">
 <label><input type=checkbox name=cannot_send>禁发</label><label><input type=checkbox name=cannot_receive>禁收</label>
@@ -1310,7 +1311,7 @@ verification_token <input name=verification_token type=password placeholder="可
 			encryptStatus = "已设置"
 		}
 		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%t/%t</td><td>%t</td><td>%s</td><td>
-<form method=post action=/admin/bot-channels>
+<form method=post action=`+base+`/bot-channels>
 <input type=hidden name=id value="%s"> 名称 <input name=name value="%s"> app_id <input name=app_id value="%s">
 app_secret <input name=app_secret type=password placeholder="留空不改"> 用途 <input name=purpose value="%s">
 verification_token <input name=verification_token type=password placeholder="留空不改"> encrypt_key <input name=encrypt_key type=password placeholder="留空不改">
@@ -1430,6 +1431,7 @@ func (s *Server) upsertService(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) apiKeys(w http.ResponseWriter, r *http.Request) {
+	base := adminBasePrefix(r)
 	items, err := s.Repo.ListServiceAPIKeys(r.Context(), strings.TrimSpace(r.URL.Query().Get("service_id")))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1438,11 +1440,11 @@ func (s *Server) apiKeys(w http.ResponseWriter, r *http.Request) {
 	writeHTMLHeader(w, "凭证 API key")
 	_, _ = w.Write([]byte(`<h3>凭证 API key</h3>
 <p>概念：<b>key_id</b> 是公开地址标识，会出现在 <code>会话名#key_id</code>；<b>secret</b> 是私密连接密钥，只在签发时返回一次，库内只存 hash。</p>
-<form method=post action=/admin/api-keys>
+<form method=post action=` + base + `/api-keys>
 <input type=hidden name=action value=issue>
 <p>租户ID <input name=service_id> 标签 <input name=label> <button>签发 key（secret 只显示一次）</button></p>
 </form>
-<form method=post action=/admin/api-keys>
+<form method=post action=` + base + `/api-keys>
 <input type=hidden name=action value=bind>
 <p>key_id <input name=key_id> 绑定账号 <input name=chat_entity_id placeholder="dev:personal:ou_xxx"> <button>绑定账号</button></p>
 </form>
@@ -1451,7 +1453,7 @@ func (s *Server) apiKeys(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`<tr><td colspan=5>暂无凭证。签发后请立即保存返回的 secret；后台不会再次显示。</td></tr>`))
 	}
 	for _, key := range items {
-		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%t</td><td><form method=post action=/admin/api-keys><input type=hidden name=action value=revoke><input type=hidden name=key_id value="%s"><button>吊销</button></form></td></tr>`,
+		_, _ = fmt.Fprintf(w, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%t</td><td><form method=post action=`+base+`/api-keys><input type=hidden name=action value=revoke><input type=hidden name=key_id value="%s"><button>吊销</button></form></td></tr>`,
 			esc(key.ID), esc(key.ServiceID), esc(key.Label), key.Active, esc(key.ID))
 	}
 	_, _ = w.Write([]byte(`</table>`))
@@ -1787,14 +1789,15 @@ type provisionSendResult struct {
 }
 
 func (s *Server) provisionPage(w http.ResponseWriter, r *http.Request) {
+	base := adminBasePrefix(r)
 	items, err := s.Repo.ListSessionEndpoints(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	writeHTMLHeader(w, "Provision 下发")
-	_, _ = w.Write([]byte(`<h3>Provision 下发</h3><p><a href="/admin">返回后台首页</a></p>
-<form method=post action=/admin/provision enctype="multipart/form-data">
+	_, _ = w.Write([]byte(`<h3>Provision 下发</h3><p><a href="` + base + `">返回后台首页</a></p>
+<form method=post action=` + base + `/provision enctype="multipart/form-data">
 <p>目标类型 <select name=target_mode><option value=session>单会话</option><option value=owner>owner 全部在线会话</option><option value=key>key 全部在线会话</option></select>
  key_id <input name=key_id> session <input name=session_name> owner <input name=owner_key> 灰度台数 <input name=limit size=4 placeholder="1"></p>
 <p>action <select name=provision_action><option value=update_self>update_self</option><option value=install_skill>install_skill</option><option value=install_mcp>install_mcp</option></select>
@@ -2914,9 +2917,26 @@ func simpleDiff(prev, next string) string {
 	return b.String()
 }
 
+// adminUser 给出审计行里的 actor。
+//
+// 🔴 Nova-260921-A(B1-b)F3:并存期有**两道门**,凭据不同 ——
+//
+//	门 A(/admin/*)          wp_admin cookie      ⇒ "admin_session:<token 前 8 位>"(既有,未改)
+//	门 B(/console/admin/*)  console 会话 ＋ 角色 ⇒ "console_principal:<principal id>"
+//
+// 改之前门 B 会落到最后那个 `return "admin"`:
+// ⇒ **吊销 API key ／ 下发 provision ／ 增删管理者**在审计里全是无差别的 "admin",
+//
+//	查不到是谁干的。管理动作失去归属是治理缺陷,不是美观问题。
+//
+// 🔵 门 A 行为不变:它**必然**带 wp_admin cookie(否则 requireAuth 早已 303 到 /admin/login),
+// 所以第一个分支恒命中,新增的分支在门 A 上不可达(G6 用观测值钉住这句话,不靠推理)。
 func adminUser(r *http.Request) string {
 	if c, err := r.Cookie("wp_admin"); err == nil {
 		return "admin_session:" + c.Value[:min(len(c.Value), 8)]
+	}
+	if principal := consoleAdminActor(r); principal != "" {
+		return "console_principal:" + principal
 	}
 	return "admin"
 }
