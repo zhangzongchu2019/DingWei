@@ -64,8 +64,13 @@ func newManagementTestHub(t *testing.T) (*Hub, *store.SQLite) {
 		}{{"management", true}}},
 	}
 	for _, shape := range shapes {
+		// 🔴 DisplayName 自 0.2.1.89 起是【必填】:上游给 store.UpsertConsolePrincipal 的身份校验
+		// 加了一条 DisplayName 非空(internal/store/console_auth.go)。rebase 到 841d2837 后本夹具缺它
+		// ⇒ 三格(RoleMatrix / NotSubstitutableByActionVerb / FailsClosed 的开关关闭腿)全部
+		// 塌在**装置阶段**,报 "console principal identity fields required"。
+		// 🔵 补法与仓内既有夹具同口径(DisplayName = ID,见 console_auth_test.go / console_agent_groups_test.go)。
 		p := model.ConsolePrincipal{ID: shape.id, Provider: "feishu", ProviderIssuer: "app",
-			ProviderSubject: shape.id + "-openid", Active: shape.principal}
+			ProviderSubject: shape.id + "-openid", DisplayName: shape.id, Active: shape.principal}
 		if err := db.UpsertConsolePrincipal(ctx, p); err != nil {
 			t.Fatal(err)
 		}

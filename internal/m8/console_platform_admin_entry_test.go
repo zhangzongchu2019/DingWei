@@ -16,8 +16,15 @@ package m8
 //	      (板件 runbooks/SPEC-OWNER-TAB-ADMIN-20260920.md §二 的原话)。
 //	② owner 看不到 —— 否则普通业主看见一个点了就 403 的入口
 //	   (板件 B1-a 已因「界面显示可管理、点下去 404 ⇒ 业主当故障反复点」卡过一次)。
-//	   🔴 阳性对照:owner 那一趟必须**确实拿到了** agents/specs,
-//	      否则"没有 admin"可能只是整条请求失败 ⇒ 那是假绿。
+//	   🔴 阳性对照**不钉在"哪几个 builtin 项"上**(2026-09-29 改,组长裁定):
+//	      原先要求 owner 必须拿到 agents 与 specs,而上游把 owner 的 builtin 改成了
+//	      specs + task-board(agents 没了)⇒ **对照素材被产品的正当改动掏空**,本格恒红。
+//	      🔵 教训与组长那道出站闸同一天同一形状:阳性对照自己也得定期验。
+//	      现改为三条**与集合内容无关**的判据:
+//	        (a) 这趟请求 200 且响应可解析 —— consolePlatformItemsFor 内部已钉,走到这里即成立;
+//	        (b) owner 拿到的项**非空** —— 空集合证不了"漏与不漏",必须拒绝下结论;
+//	        (c) 同一条观测通道在 management 那腿**确实看得见 admin** ——
+//	            没有(c),"没发给 owner"与"通道根本观测不到 admin"分不开。
 //	③ id=admin 是保留字:提交同 id 的自定义项必须被拒。
 //
 // 🔵 UI 可见性**不是**授权判据:真正的门是 RequireConsoleManagement
@@ -34,6 +41,9 @@ func TestConsolePlatformAdminEntryIsManagementOnlyAndPointsAtTheConsoleDoor(t *t
 		t.Fatalf("夹具前提坏了:manager 应解析为 management,实为 %q ⇒ 下面两腿的结论都不采信", role)
 	}
 
+	// 🔵 (c) 的载体:①腿真的看见 admin 才置真。子格顺序执行,②腿读它当阳性对照。
+	mgmtSawAdmin := false
+
 	t.Run("management 必须看得到入口,且指向 console 那道门", func(t *testing.T) {
 		entry, ok := findPlatformItem(items, "admin")
 		if !ok {
@@ -41,6 +51,7 @@ func TestConsolePlatformAdminEntryIsManagementOnlyAndPointsAtTheConsoleDoor(t *t
 				"后果:/console/admin 仍然可用,但业主在 console 里**看不见它** ⇒ 等于没搬。\n"+
 				"判据:HandleConsolePlatform 的 builtin 里必须有 ID:\"admin\" 这一条(M11 实测:删掉它零转红)。", items)
 		}
+		mgmtSawAdmin = true
 		if entry.Href != "/console/admin" {
 			t.Fatalf("🔴 入口 href=%q,必须是 /console/admin。\n"+
 				"判据:指到 /admin(旧后台)⇒ 业主点进去 303 → /admin/login —— 形态对上了、方向相反\n"+
@@ -60,13 +71,17 @@ func TestConsolePlatformAdminEntryIsManagementOnlyAndPointsAtTheConsoleDoor(t *t
 		if ownerRole != consolePlatformRoleOwner {
 			t.Fatalf("夹具前提坏了:owner 应解析为 owner,实为 %q", ownerRole)
 		}
-		// 🔴 阳性对照:先证明这一趟**确实拿到了东西**,再断言"里面没有 admin"。
+		// 🔴 阳性对照(b):这一趟拿到了东西,才有资格断言"里面没有 admin"。
 		// 少了这一步,"没漏"与"整条请求失败"长得一模一样。
-		if _, ok := findPlatformItem(ownerItems, "agents"); !ok {
-			t.Fatalf("阳性对照失效:owner 连 builtin agents 都没拿到,items=%+v ⇒ 本腿的「没有 admin」不采信", ownerItems)
+		// 🔵 判据刻意**不指任何具体 builtin 项**:上游换掉 owner 的 builtin 集合时,本格不该红。
+		if len(ownerItems) == 0 {
+			t.Fatalf("阳性对照失效:owner 这一趟 200 且响应可解析,但**一项都没拿到** ⇒ " +
+				"空集合证不了「没有 admin」是漏还是本就什么都没有,本腿不采信")
 		}
-		if _, ok := findPlatformItem(ownerItems, "specs"); !ok {
-			t.Fatalf("阳性对照失效:owner 连 builtin specs 都没拿到,items=%+v ⇒ 本腿的「没有 admin」不采信", ownerItems)
+		// 🔴 阳性对照(c):同一条通道在 management 那腿看得见 admin ⇒ 观测量对 admin 敏感。
+		if !mgmtSawAdmin {
+			t.Fatalf("阳性对照失效:management 那腿没能证明这条通道**看得见** admin ⇒ " +
+				"本腿的「owner 没有 admin」不采信(分不清「没发给 owner」与「通道根本观测不到 admin」)")
 		}
 		if leaked, ok := findPlatformItem(ownerItems, "admin"); ok {
 			t.Fatalf("🔴 非 management 也拿到了「平台管理」入口:%+v。\n"+
