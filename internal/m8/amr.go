@@ -20,14 +20,9 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
-type amrMode string
-
 const (
-	ipcBodyAMRMetaKey         = "ipc_body_amr_v1"
-	amrOff            amrMode = "off"
-	amrObserve        amrMode = "observe"
-	amrRoute          amrMode = "route"
-	amrRouteBodyMax           = 100_000
+	ipcBodyAMRMetaKey = "ipc_body_amr_v1"
+	amrRouteBodyMax   = 100_000
 )
 
 func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, original model.Envelope) {
@@ -35,7 +30,11 @@ func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, origina
 		return
 	}
 	maxTargets := h.ipcBodyAMRMaxTargets()
-	candidates, _ := parseAMRCandidatesDetailed(original.Body, c.sessionName, maxTargets)
+	candidates, lookedLikeCandidate := parseAMRCandidatesDetailed(original.Body, c.sessionName, maxTargets)
+	feedback := amrParseFeedback(original.Body, candidates, lookedLikeCandidate, maxTargets)
+	if feedback != "" && h.amr != nil {
+		h.amr.notifySourceVisible(amrTurnKey{KeyID: c.keyID, Session: c.sessionName, DeliveryID: original.ID, TurnID: "ipc-send"}, "ipc_syntax_notice", feedback, lookedLikeCandidate, original.Body)
+	}
 	canonicalOriginalTo := original.To
 	if to, err := parseAddress(original.To); err == nil && to.Kind == addressSession {
 		probe := model.Envelope{To: "#" + to.SessionName, From: original.From}
@@ -177,7 +176,6 @@ type amrProcessor struct {
 	turns         map[amrTurnKey]*amrTurn
 	completed     map[amrTurnKey]time.Time
 	notices       map[string]time.Time
-	modes         map[string]amrMode
 	stats         amrStats
 	maxTurns      int
 	maxTurnAge    time.Duration
@@ -198,7 +196,6 @@ func newAMRProcessor(h *Hub) *amrProcessor {
 		turns:        map[amrTurnKey]*amrTurn{},
 		completed:    map[amrTurnKey]time.Time{},
 		notices:      map[string]time.Time{},
-		modes:        parseAMRSessionModes(os.Getenv("WP_AMR_OBSERVE_SESSIONS"), os.Getenv("WP_AMR_ROUTE_SESSIONS")),
 		maxTurns:     envInt("WP_AMR_MAX_TURNS_PER_SESSION", 16),
 		maxTurnAge:   envDuration("WP_AMR_MAX_TURN_AGE", 6*time.Hour),
 		maxBytes:     envInt("WP_AMR_MAX_TURN_BYTES", 256<<10),
@@ -210,10 +207,8 @@ func newAMRProcessor(h *Hub) *amrProcessor {
 	}
 	p.stats.terminalUnknown = map[string]uint64{}
 	p.routeEnvelope = h.RouteEnvelope
-	if len(p.modes) != 0 {
-		log.Printf("amr startup structured_failure_min_version=%s", amrStructuredFailureMinVersion())
-		go p.run()
-	}
+	log.Printf("amr startup mode=route_all structured_failure_min_version=%s", amrStructuredFailureMinVersion())
+	go p.run()
 	return p
 }
 
@@ -225,39 +220,8 @@ func envInt(name string, fallback int) int {
 	return v
 }
 
-// Session selectors are either an exact "keyID/session" or a session name.
-// Exact selectors win. A route entry overrides an observe entry.
-func parseAMRSessionModes(observe, route string) map[string]amrMode {
-	out := map[string]amrMode{}
-	for _, item := range strings.Split(observe, ",") {
-		if item = strings.TrimSpace(item); item != "" {
-			out[item] = amrObserve
-		}
-	}
-	for _, item := range strings.Split(route, ",") {
-		if item = strings.TrimSpace(item); item != "" {
-			out[item] = amrRoute
-		}
-	}
-	return out
-}
-
-func (p *amrProcessor) modeFor(keyID, session string) amrMode {
-	if p == nil {
-		return amrOff
-	}
-	if mode := p.modes[keyID+"/"+session]; mode != "" {
-		return mode
-	}
-	if mode := p.modes[session]; mode != "" {
-		return mode
-	}
-	return amrOff
-}
-
 func (p *amrProcessor) shouldDropLegacyAgentRoute(keyID, session string, env model.Envelope) bool {
-	drop := p != nil && p.modeFor(keyID, session) == amrRoute &&
-		metaString(env.Meta, "type") == "agent_route" && metaBool(env.Meta, "no_mirror")
+	drop := p != nil && metaString(env.Meta, "type") == "agent_route" && metaBool(env.Meta, "no_mirror")
 	if drop {
 		p.mu.Lock()
 		p.stats.legacyRouteDropped++
@@ -267,17 +231,6 @@ func (p *amrProcessor) shouldDropLegacyAgentRoute(keyID, session string, env mod
 }
 
 func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
-	mode := p.modeFor(keyID, sessionName)
-	if mode == amrOff {
-		// Sessions outside the rollout roster still need a visible explanation.
-		// They are not parsed or routed here: the notice only makes the disabled
-		// state observable instead of silently ignoring an apparent mention.
-		var ev amrSessionEvent
-		if json.Unmarshal([]byte(raw), &ev) == nil && ev.Kind == "assistant_text" && amrHasUnfencedTrigger(ev.Text) {
-			p.notifySourceVisible(amrTurnKey{KeyID: keyID, Session: sessionName, DeliveryID: ev.DeliveryID, TurnID: ev.TurnID}, "", "当前会话未启用正文提及投递；正文未解析，也未发给任何目标", false, "", true)
-		}
-		return
-	}
 	var ev amrSessionEvent
 	if err := json.Unmarshal([]byte(raw), &ev); err != nil {
 		p.transitionFailed("invalid_json")
@@ -678,7 +631,7 @@ func (p *amrProcessor) process(job amrRouteJob) {
 			}
 		}
 		if feedback != "" {
-			p.notifySourceVisible(job.key, "route_notice", feedback, false, job.body, false)
+			p.notifySourceVisible(job.key, "route_notice", feedback, false, job.body)
 		}
 		p.closeJob("dispatched")
 		return
@@ -686,14 +639,12 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	if len(candidates) == 0 {
 		if lookedLikeCandidate {
 			p.closeJob("candidate_rejected")
-			if p.modeFor(job.key.KeyID, job.key.Session) == amrRoute {
-				reason := firstNonEmpty(feedback, "提及格式正确但目标无权限、不可达或超过数量限制")
-				p.notifySourceVisible(job.key, amrOffendingToken(job.body), reason, true, job.body, false)
-			}
+			reason := firstNonEmpty(feedback, "提及格式正确但目标无权限、不可达或超过数量限制")
+			p.notifySourceVisible(job.key, amrOffendingToken(job.body), reason, true, job.body)
 		} else {
 			p.closeJob("non_candidate")
 			if feedback != "" {
-				p.notifySourceVisible(job.key, "syntax_notice", feedback, false, job.body, false)
+				p.notifySourceVisible(job.key, "syntax_notice", feedback, false, job.body)
 			}
 			// 🔴 回程段 2:本轮有输出、但正文里没有任何 @提及目标 ——
 			//    业主要的「其内容本身应该回给 A」正是这一支。实现见 reply_to_origin.go。
@@ -726,15 +677,6 @@ func (p *amrProcessor) process(job amrRouteJob) {
 			continue
 		}
 		prepared = append(prepared, amrPreparedTarget{candidate: candidate, envelope: resolved})
-	}
-	if p.modeFor(job.key.KeyID, job.key.Session) != amrRoute {
-		if len(prepared) == 0 {
-			p.closeJob("candidate_rejected")
-			return
-		}
-		log.Printf("amr decision=candidate_ready candidates=%d", len(prepared))
-		p.closeJob("candidate_ready")
-		return
 	}
 	if len(prepared) == 0 {
 		p.mu.Lock()
@@ -811,7 +753,7 @@ func (p *amrProcessor) notifyRouteResults(key amrTurnKey, results []amrTargetRes
 			details = append(details, result.selector+"：失败（"+result.err.Error()+"）")
 		}
 	}
-	body := fmt.Sprintf("【投递结果】本轮 @%d：成功 %d，失败 %d", len(results), succeeded, failed)
+	body := fmt.Sprintf("【投递结果】delivery_id=%s 本轮 @%d：成功 %d，失败 %d", key.DeliveryID, len(results), succeeded, failed)
 	if len(details) != 0 {
 		body += "\n" + strings.Join(details, "\n")
 	}
@@ -819,11 +761,11 @@ func (p *amrProcessor) notifyRouteResults(key amrTurnKey, results []amrTargetRes
 }
 
 func (p *amrProcessor) notifySource(key amrTurnKey, target, reason string, failure bool) {
-	p.notifySourceVisible(key, target, reason, failure, "", false)
+	p.notifySourceVisible(key, target, reason, failure, "")
 }
 
-func (p *amrProcessor) notifySourceVisible(key amrTurnKey, target, reason string, failure bool, originalBody string, allowOff bool) {
-	if p == nil || p.hub == nil || (!allowOff && p.modeFor(key.KeyID, key.Session) != amrRoute) {
+func (p *amrProcessor) notifySourceVisible(key amrTurnKey, target, reason string, failure bool, originalBody string) {
+	if p == nil || p.hub == nil {
 		return
 	}
 	now := time.Now().UTC()

@@ -117,7 +117,6 @@ func channelTestHub(t *testing.T) (*Hub, string, context.Context) {
 func channelProcessor(hub *Hub, keyID string) (*amrProcessor, *[]model.Envelope) {
 	p := testAMRProcessor()
 	p.hub = hub
-	p.modes = map[string]amrMode{"bee": amrRoute}
 	routed := &[]model.Envelope{}
 	p.routeEnvelope = func(_ context.Context, env model.Envelope) error {
 		*routed = append(*routed, env)
@@ -452,7 +451,6 @@ func TestChannelDeliveryFromRealProcessEntryReachesOutbound(t *testing.T) {
 	hub.Outbound = bus.NewDBQueue(hub.Repo, model.DirectionOut)
 	p := testAMRProcessor()
 	p.hub = hub
-	p.modes = map[string]amrMode{"bee": amrRoute}
 	p.mu.Lock()
 	p.stats.opened, p.stats.queued = 1, 1
 	p.mu.Unlock()

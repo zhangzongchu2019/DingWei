@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -24,7 +25,6 @@ func testAMRProcessor() *amrProcessor {
 		turns:        map[amrTurnKey]*amrTurn{},
 		completed:    map[amrTurnKey]time.Time{},
 		notices:      map[string]time.Time{},
-		modes:        map[string]amrMode{"source": amrObserve},
 		maxTurns:     8,
 		maxBytes:     1024,
 		routeBodyMax: 100_000,
@@ -33,6 +33,54 @@ func testAMRProcessor() *amrProcessor {
 		routeTimeout: time.Second,
 		maxTargets:   20,
 	}
+}
+
+func attachAMRNoticeClient(t *testing.T, h *Hub, ctx context.Context, keyID, session string) *websocket.Conn {
+	t.Helper()
+	accepted := make(chan *websocket.Conn, 1)
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		accepted <- conn
+		<-release
+	}))
+	clientConn, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(server.URL, "http"), nil)
+	if err != nil {
+		server.Close()
+		t.Fatal(err)
+	}
+	serverConn := <-accepted
+	h.mu.Lock()
+	if h.sessionClients[keyID] == nil {
+		h.sessionClients[keyID] = map[string]*sessionClient{}
+	}
+	h.sessionClients[keyID][session] = &sessionClient{conn: serverConn, keyID: keyID, sessionName: session}
+	h.mu.Unlock()
+	t.Cleanup(func() {
+		clientConn.CloseNow()
+		serverConn.CloseNow()
+		close(release)
+		server.Close()
+	})
+	return clientConn
+}
+
+func readAMRNotice(t *testing.T, ctx context.Context, conn *websocket.Conn) model.Envelope {
+	t.Helper()
+	readCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	_, data, err := conn.Read(readCtx)
+	if err != nil {
+		t.Fatalf("应立即收到显式通知，实际读取失败: %v", err)
+	}
+	var env model.Envelope
+	if err := json.Unmarshal(data, &env); err != nil {
+		t.Fatalf("通知不是合法信封: %v raw=%q", err, string(data))
+	}
+	return env
 }
 
 func TestIPCSendBodyAMRUsesSharedParserAtAnyIndent(t *testing.T) {
@@ -55,6 +103,40 @@ func TestIPCSendBodyAMRUsesConfiguredTargetLimit(t *testing.T) {
 	candidates, looked := parseAMRCandidatesDetailed("@alpha @beta 正文", "source", limit)
 	if !looked || len(candidates) != 0 {
 		t.Fatalf("configured limit not enforced candidates=%+v looked=%t", candidates, looked)
+	}
+}
+
+func TestIPCSendBodyAMRUsesSharedSyntaxFeedbackWithoutReplacingDirectPath(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	p := testAMRProcessor()
+	p.hub = h
+	h.amr = p
+	client := attachAMRNoticeClient(t, h, ctx, "ipc-key", "ipc-source")
+	c := h.sessionClients["ipc-key"]["ipc-source"]
+	original := model.Envelope{ID: "ipc-delivery-1", To: "primary#ipc-key", From: "ipc-source#ipc-key", Body: "正文提到 @张宗楚 但这不是合法地址"}
+	h.routeIPCSendBodyAMR(ctx, c, original)
+	if p.stats.notificationsSent != 1 {
+		t.Fatalf("直投入口写法反馈未发送: notifications_sent=%d want=1", p.stats.notificationsSent)
+	}
+	got := readAMRNotice(t, ctx, client)
+	if metaString(got.Meta, "source_id") != original.ID || !strings.Contains(got.Body, "提及写法未识别") {
+		t.Fatalf("直投入口没有复用共享写法反馈: %+v", got)
+	}
+	if original.To != "primary#ipc-key" || original.Body != "正文提到 @张宗楚 但这不是合法地址" {
+		t.Fatalf("直投提及扫描不得改写主投递信封: %+v", original)
+	}
+}
+
+func TestAMRRouteResultNoticeIncludesDeliveryID(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	p := testAMRProcessor()
+	p.hub = h
+	client := attachAMRNoticeClient(t, h, ctx, "result-key", "result-source")
+	key := amrTurnKey{KeyID: "result-key", Session: "result-source", DeliveryID: "delivery-coordinate-42", TurnID: "turn-1"}
+	p.notifyRouteResults(key, []amrTargetResult{{selector: "#target", resolved: "target#result-key", ok: true}})
+	got := readAMRNotice(t, ctx, client)
+	if !strings.Contains(got.Body, "delivery_id=delivery-coordinate-42") || metaString(got.Meta, "source_id") != key.DeliveryID {
+		t.Fatalf("提及结果通知缺少可对账 delivery_id: %+v", got)
 	}
 }
 
@@ -100,6 +182,22 @@ func TestAMRWaitsForExistingTurnCompletedAndAggregatesFragments(t *testing.T) {
 	case <-p.queue:
 		t.Fatal("duplicate terminal queued a second route")
 	default:
+	}
+}
+
+func TestAMRHasNoPerSessionRolloutDimension(t *testing.T) {
+	source, err := os.ReadFile("amr.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(source)
+	for _, forbidden := range []string{"WP_AMR_OBSERVE_SESSIONS", "WP_AMR_ROUTE_SESSIONS", "parseAMRSessionModes", "modeFor(", "modes map[string]"} {
+		if strings.Contains(text, forbidden) {
+			t.Fatalf("按会话灰度维度仍残留: %q", forbidden)
+		}
+	}
+	if !strings.Contains(text, "WP_AMR_QUEUE_CAP") {
+		t.Fatal("阳性对照失效:同法应能命中仍合法的全局 AMR 配置")
 	}
 }
 
@@ -333,7 +431,6 @@ func TestAMRRouteAttemptsEveryTargetAndCountsPartialSuccess(t *testing.T) {
 	hub.mu.Unlock()
 	p := testAMRProcessor()
 	p.hub = hub
-	p.modes = map[string]amrMode{"source": amrRoute}
 	attempted := 0
 	var routed []model.Envelope
 	p.routeEnvelope = func(_ context.Context, env model.Envelope) error {
@@ -383,14 +480,15 @@ func TestAMRStateConservationAfterPositiveCandidate(t *testing.T) {
 	hub.mu.Unlock()
 	p := testAMRProcessor()
 	p.hub = hub
+	p.routeEnvelope = func(context.Context, model.Envelope) error { return nil }
 	job := amrRouteJob{key: amrTurnKey{KeyID: key.ID, Session: "source", DeliveryID: "d", TurnID: "t"}, body: "@target positive control"}
 	p.mu.Lock()
 	p.stats.opened, p.stats.queued = 1, 1
 	p.mu.Unlock()
 	p.process(job)
 	stats, active := p.snapshotStats()
-	if stats.closedCandidateReady != 1 {
-		t.Fatalf("positive control did not reach candidate_ready: %+v", stats)
+	if stats.closedDispatched != 1 || stats.targetsDispatched != 1 {
+		t.Fatalf("全员默认路由没有真正投递候选: %+v", stats)
 	}
 	if stats.opened != uint64(active)+stats.queued+stats.closed+stats.incomplete+stats.failed {
 		t.Fatalf("top-level conservation failed: stats=%+v active=%d", stats, active)
@@ -470,7 +568,6 @@ func TestAMRRoutesMentionsAnywhereAndHonorsPairedFences(t *testing.T) {
 			waitSessionOnline(t, hub, key.ID, targetName)
 			p := testAMRProcessor()
 			p.hub = hub
-			p.modes = map[string]amrMode{sourceName: amrRoute}
 			p.routeEnvelope = hub.RouteEnvelope
 			p.mu.Lock()
 			p.stats.opened, p.stats.queued = 1, 1
@@ -599,7 +696,6 @@ func TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas(t *testing.T) {
 			hub.mu.Unlock()
 			p := testAMRProcessor()
 			p.hub = hub
-			p.modes = map[string]amrMode{"source": amrRoute}
 			var routed []model.Envelope
 			p.routeEnvelope = func(_ context.Context, env model.Envelope) error {
 				routed = append(routed, env)
@@ -630,15 +726,11 @@ func boolUint64(v bool) uint64 {
 	return 0
 }
 
-func TestLegacyAgentRouteDroppedOnlyForRouteEnabledSession(t *testing.T) {
+func TestLegacyAgentRouteDroppedForEverySession(t *testing.T) {
 	p := testAMRProcessor()
-	p.modes = map[string]amrMode{"observe": amrObserve, "key/route": amrRoute}
 	env := model.Envelope{Meta: map[string]any{"type": "agent_route", "no_mirror": true}}
-	if p.shouldDropLegacyAgentRoute("key", "observe", env) {
-		t.Fatal("observe mode dropped the legacy comparison path")
-	}
-	if !p.shouldDropLegacyAgentRoute("key", "route", env) {
-		t.Fatal("route mode did not suppress legacy double-send path")
+	if !p.shouldDropLegacyAgentRoute("key", "previously-unlisted", env) {
+		t.Fatal("全员路由模式没有抑制旧的重复投递路径")
 	}
 	if p.shouldDropLegacyAgentRoute("key", "route", model.Envelope{Meta: map[string]any{"type": "other"}}) {
 		t.Fatal("route mode dropped a non-agent-route envelope")

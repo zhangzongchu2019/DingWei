@@ -43,7 +43,6 @@ func replyOriginFixture(t *testing.T, h *Hub, ctx context.Context, deliveryID, s
 func replyOriginProcessor(h *Hub) (*amrProcessor, *[]model.Envelope) {
 	p := testAMRProcessor()
 	p.hub = h
-	p.modes = map[string]amrMode{"bee": amrRoute}
 	p.routeTimeout = 5 * time.Second
 	routed := &[]model.Envelope{}
 	p.routeEnvelope = func(_ context.Context, env model.Envelope) error {
@@ -199,7 +198,7 @@ func TestReplyToOriginMissingDeliveryNotifiesOnlineSession(t *testing.T) {
 	h.mu.Unlock()
 
 	p, routed := replyOriginProcessor(h)
-	p.replyToOrigin(amrRouteJob{key: amrTurnKey{KeyID: "k1", Session: "bee", DeliveryID: "dw-dlv_missing", TurnID: "t1"}, body: "输出"})
+	p.replyToOrigin(amrRouteJob{key: amrTurnKey{KeyID: "k1", Session: "bee", DeliveryID: "dw-dlv_missing", TurnID: "t1"}, body: "这是一轮无法回程但必须保留头部的输出"})
 
 	if len(*routed) != 0 {
 		t.Fatalf("查不到来源时不得凭空投递,实测 %d 条", len(*routed))
@@ -223,6 +222,9 @@ func TestReplyToOriginMissingDeliveryNotifiesOnlineSession(t *testing.T) {
 	}
 	if !strings.Contains(got.Body, "dw-dlv_missing") {
 		t.Fatalf("通知正文必须带上是哪一次投递,便于定位,实测 %q", got.Body)
+	}
+	if !strings.Contains(got.Body, "原文头部：这是一轮无法回程但必须保留头部的输出") {
+		t.Fatalf("默认回程失败通知必须带本轮原文头部,便于区分多条失败: %q", got.Body)
 	}
 	if strings.Contains(got.Body, replyToOriginRouteSource) {
 		t.Fatalf("通知正文不得把内部来路名渲染成投递目标,实测 %q", got.Body)
@@ -301,45 +303,18 @@ func TestAMRUnsupportedChineseNameReturnsWholeTurnThroughRealIngress(t *testing.
 	}
 }
 
-func TestAMROffRosterMentionGetsVisibleExplanation(t *testing.T) {
-	h, _, ctx := newTestHub(t)
-	accepted := make(chan *websocket.Conn, 1)
-	release := make(chan struct{})
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		conn, err := websocket.Accept(w, r, nil)
-		if err != nil {
-			return
-		}
-		accepted <- conn
-		<-release
-	}))
-	defer server.Close()
-	defer close(release)
-	clientConn, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(server.URL, "http"), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer clientConn.CloseNow()
-	serverConn := <-accepted
-	defer serverConn.CloseNow()
-	h.mu.Lock()
-	h.sessionClients["k-off"] = map[string]*sessionClient{"off-session": {conn: serverConn, keyID: "k-off", sessionName: "off-session"}}
-	h.mu.Unlock()
+func TestAMRPreviouslyUnlistedSessionUsesDefaultTurnPipeline(t *testing.T) {
 	p := testAMRProcessor()
-	p.hub = h
-	p.modes = map[string]amrMode{}
-	p.ingest("k-off", "off-session", amrEventJSON(t, amrSessionEvent{Kind: "assistant_text", Text: "请 @target 处理", DeliveryID: "d-off", TurnID: "t-off"}))
-	readCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-	_, data, err := clientConn.Read(readCtx)
-	if err != nil {
-		t.Fatalf("名单外正文提及必须立即给可见反馈: %v", err)
-	}
-	var got model.Envelope
-	if json.Unmarshal(data, &got) != nil || !strings.Contains(got.Body, "当前会话未启用正文提及投递") {
-		t.Fatalf("名单外反馈没有说清权限状态: raw=%q", string(data))
-	}
-	if !strings.Contains(got.Body, "本条为系统通知，不可回程") {
-		t.Fatalf("非失败通知未标明不可回程，回复会形成新的失败通知: body=%q", got.Body)
+	key := amrTurnKey{KeyID: "k-unlisted", Session: "previously-unlisted", DeliveryID: "d-unlisted", TurnID: "t-unlisted"}
+	body := "请 @target 处理"
+	p.ingest(key.KeyID, key.Session, amrEventJSON(t, amrSessionEvent{Kind: "assistant_text", Text: body, DeliveryID: key.DeliveryID, TurnID: key.TurnID}))
+	p.ingest(key.KeyID, key.Session, amrEventJSON(t, amrSessionEvent{Kind: "state_change", Data: map[string]any{"change": "turn_completed", "status": "completed"}, DeliveryID: key.DeliveryID, TurnID: key.TurnID}))
+	select {
+	case job := <-p.queue:
+		if job.key != key || job.body != body {
+			t.Fatalf("此前名单外席位没有进入同一条回合路由队列: job=%+v", job)
+		}
+	default:
+		t.Fatal("此前名单外席位的回合正文被静默跳过")
 	}
 }

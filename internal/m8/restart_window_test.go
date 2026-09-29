@@ -76,7 +76,6 @@ func TestAMRFailureNotificationCarriesRestartWindowSignal(t *testing.T) {
 
 	p := testAMRProcessor()
 	p.hub = hub
-	p.modes = map[string]amrMode{"source": amrRoute}
 	p.notifySource(amrTurnKey{KeyID: key.ID, Session: "source", DeliveryID: "d", TurnID: "t"}, "#missing", "target offline", true)
 	got := readEnvelope(t, ctx, source)
 	if metaString(got.Meta, "type") != "delivery_failure" || !metaBool(got.Meta, "within_restart_window") {

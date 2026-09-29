@@ -43,10 +43,6 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 	if p == nil || p.hub == nil || p.hub.Repo == nil {
 		return
 	}
-	// 与 @提及 路由同一道闸:observe 模式只观察不投递。
-	if p.modeFor(job.key.KeyID, job.key.Session) != amrRoute {
-		return
-	}
 	if job.key.DeliveryID == "" || job.body == "" {
 		return
 	}
@@ -150,5 +146,5 @@ func (p *amrProcessor) replyToOriginUnavailable(job amrRouteJob, reason string) 
 	//    deliveryFailureEnvelope 的 `→ %s` 槽位语义是**投递目标(会话名)**,
 	//    hub.go:3005 写死了「凡是内部状态码、原因码、阶段名,一律传 ""」——
 	//    传 "reply_to_origin" 会渲染成「投递失败 … → reply_to_origin」,读起来像投给了一个叫它的会话。
-	p.notifySource(job.key, "", reason, true)
+	p.notifySourceVisible(job.key, "", reason, true, job.body)
 }
