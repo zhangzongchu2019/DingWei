@@ -802,7 +802,7 @@ func (p *amrProcessor) notifySourceVisible(key amrTurnKey, target, reason string
 		From: sessionAddress("workpulse", key.KeyID),
 		Body: body,
 		TS:   now.Unix(),
-		Meta: map[string]any{"type": "delivery_result", "source_id": key.DeliveryID},
+		Meta: map[string]any{"type": model.MetaTypeDeliveryResult, "source_id": key.DeliveryID},
 	}
 	if failure {
 		env = deliveryFailureEnvelopeWithOriginal(c, key.DeliveryID, target, reason, originalBody, now)

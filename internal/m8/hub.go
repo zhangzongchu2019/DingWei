@@ -3140,7 +3140,7 @@ func (h *Hub) routeSessionSelectorEnvelope(ctx context.Context, c *sessionClient
 }
 
 func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, original model.Envelope, target string, routeErr error) {
-	if c == nil || routeErr == nil || metaString(original.Meta, "type") == "delivery_failure" {
+	if c == nil || routeErr == nil || metaString(original.Meta, "type") == model.MetaTypeDeliveryFailure {
 		log.Printf("delivery failure notification=suppressed reason=recursive_or_missing")
 		return
 	}
@@ -3230,7 +3230,7 @@ func deliveryFailureEnvelopeWithOriginal(c *sessionClient, sourceID, target, rea
 		From: sessionAddress("workpulse", c.keyID),
 		Body: body,
 		TS:   now.Unix(),
-		Meta: map[string]any{"type": "delivery_failure", "source_id": sourceID},
+		Meta: map[string]any{"type": model.MetaTypeDeliveryFailure, "source_id": sourceID},
 	}
 	if amrSupportsStructuredFailure(c.version) {
 		env.Meta["presentation"] = "structured"
