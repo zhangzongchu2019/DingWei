@@ -575,8 +575,13 @@ func TestAMRRoutesMentionsAnywhereAndHonorsPairedFences(t *testing.T) {
 			p.process(amrRouteJob{key: amrTurnKey{KeyID: key.ID, Session: sourceName, DeliveryID: "d", TurnID: "t"}, body: tc.body})
 
 			got := readEnvelope(t, ctx, target)
-			if got.Body != tc.wantBody {
-				t.Fatalf("real AMR route body=%q want=%q", got.Body, tc.wantBody)
+			// S-MENTION-BESTEFFORT ③:投出去的是发送方原文。原先这里断言剥掉提及后的一段(wantBody),
+			// 它同时承担"解析器选中了哪一个提及"的区分(如围栏内外)——该区分改在解析层断言,不丢。
+			if got.Body != tc.body {
+				t.Fatalf("real AMR route body=%q want original=%q", got.Body, tc.body)
+			}
+			if picked, _ := parseAMRCandidatesDetailed(tc.body, sourceName, 20); len(picked) == 0 || picked[0].body != tc.wantBody {
+				t.Fatalf("parser picked=%+v want candidate body=%q", picked, tc.wantBody)
 			}
 		})
 	}
@@ -709,8 +714,15 @@ func TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas(t *testing.T) {
 			if len(routed) != tc.wantTargets || stats.targetsDispatched != uint64(tc.wantTargets) || stats.closedDispatched != boolUint64(tc.wantTargets > 0) {
 				t.Fatalf("heartbeat delta dispatched=%d targets_dispatched=%d routed=%d", stats.closedDispatched, stats.targetsDispatched, len(routed))
 			}
-			if tc.wantTargets > 0 && routed[0].Body != tc.wantBody {
-				t.Fatalf("body=%q want=%q", routed[0].Body, tc.wantBody)
+			// S-MENTION-BESTEFFORT ③:投出的是原文;"选中了哪一行"的区分改在解析层断言(wantBody 仍是被选中那一段)。
+			// 原文只经 prepareSessionSelector 既有的整段首尾去空白(所有路由共用,不在本件改)。
+			if tc.wantTargets > 0 && routed[0].Body != strings.TrimSpace(tc.body) {
+				t.Fatalf("body=%q want original=%q", routed[0].Body, strings.TrimSpace(tc.body))
+			}
+			if tc.wantTargets > 0 {
+				if picked, _ := parseAMRCandidatesDetailed(tc.body, "source", p.maxTargets); len(picked) == 0 || picked[0].body != tc.wantBody {
+					t.Fatalf("parser picked=%+v want candidate body=%q", picked, tc.wantBody)
+				}
 			}
 			if tc.wantNonCandidate && (stats.closedNonCandidate != 1 || stats.notificationsSent != 0 || stats.notificationsSuppressed != 0) {
 				t.Fatalf("non-candidate was not silent: %+v", stats)

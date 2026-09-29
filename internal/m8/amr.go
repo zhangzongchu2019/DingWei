@@ -44,11 +44,13 @@ func (h *Hub) routeIPCSendBodyAMR(ctx context.Context, c *sessionClient, origina
 	}
 	seen := map[string]bool{canonicalOriginalTo: true}
 	for i, candidate := range candidates {
+		// S-MENTION-BESTEFFORT ③:投给对应方的正文保持发送方写下的原样(含提及字样与提及前的文字),
+		// 不再投 candidate.body(那是剥掉提及、且丢了前文的一段)。
 		env := model.Envelope{
 			ID:   amrDerivedEnvelopeID(amrTurnKey{KeyID: c.keyID, Session: c.sessionName, DeliveryID: original.ID, TurnID: "ipc-send"}, i, candidate.selector),
 			To:   candidate.selector,
 			From: original.From,
-			Body: candidate.body,
+			Body: original.Body,
 			TS:   time.Now().Unix(),
 			Meta: map[string]any{
 				"type":               "agent_route",
@@ -656,11 +658,20 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	defer cancel()
 	prepared := make([]amrPreparedTarget, 0, len(candidates))
 	results := make([]amrTargetResult, 0, len(candidates))
+	// S-MENTION-BESTEFFORT ③ 的连锁处置(原样送达后,收件方引用原文会让提及再被解析):
+	//   ① 解析后指向本席自己的目标一律跳过 —— 原文里的短名(如 bee)与本席规范名(owner-bee-xxxx)
+	//      在解析层比不上,原先会投给自己;引用一次就分叉成"自己＋对方"两封。
+	//   ② 派生信封继承触发本轮那封入站的 hop_count / max_hops(照抄 reply_to_origin.go),
+	//      否则每跳从 0 起算,RouteEnvelope 里的 R4 兜底永远够不着。
+	self := sessionAddress(job.key.Session, job.key.KeyID)
+	inboundHop, inboundMaxHops := p.inboundHopOf(ctx, job.key.DeliveryID)
+	selfSkipped := 0
 	for i, candidate := range candidates {
+		// S-MENTION-BESTEFFORT ③:原样送达,理由同 routeIPCSendBodyAMR。
 		env := model.Envelope{
 			ID:   amrDerivedEnvelopeID(job.key, i, candidate.selector),
 			To:   candidate.selector,
-			Body: candidate.body,
+			Body: job.body,
 			TS:   time.Now().Unix(),
 			Meta: map[string]any{
 				"type":               "agent_route",
@@ -676,7 +687,26 @@ func (p *amrProcessor) process(job amrRouteJob) {
 			results = append(results, amrTargetResult{selector: candidate.selector, err: errors.New(firstNonEmpty(errorString(err), "目标无法解析"))})
 			continue
 		}
+		if resolved.To == self {
+			selfSkipped++
+			log.Printf("amr decision=self_skipped session=%s selector=%s", job.key.Session, candidate.selector)
+			continue
+		}
+		if resolved.Meta == nil {
+			resolved.Meta = map[string]any{}
+		}
+		resolved.Meta[metaKeyHopCount] = inboundHop
+		if inboundMaxHops > 0 {
+			resolved.Meta[metaKeyMaxHops] = inboundMaxHops
+		}
 		prepared = append(prepared, amrPreparedTarget{candidate: candidate, envelope: resolved})
+	}
+	if len(prepared) == 0 && len(results) == 0 && selfSkipped > 0 {
+		// 提及全是本席自己(典型:引用了别人发给本席的原文)⇒ 不是投递指令,按普通输出回程,
+		// 否则这一轮的回复会被当成"候选全被拒"吞掉。
+		p.closeJob("non_candidate")
+		p.replyToOrigin(job)
+		return
 	}
 	if len(prepared) == 0 {
 		p.mu.Lock()
@@ -715,6 +745,22 @@ func (p *amrProcessor) process(job amrRouteJob) {
 	log.Printf("amr decision=dispatched candidates=%d", len(prepared))
 	p.closeJob("dispatched")
 	p.notifyRouteResults(job.key, results)
+}
+
+// inboundHopOf 取触发本轮的那封入站的 hop_count / max_hops;取不到按 0 处理(与无新字段的 legacy 消息同待遇)。
+func (p *amrProcessor) inboundHopOf(ctx context.Context, deliveryID string) (int, int) {
+	if p == nil || p.hub == nil || p.hub.Repo == nil || deliveryID == "" {
+		return 0, 0
+	}
+	delivery, err := p.hub.Repo.GetSessionDelivery(ctx, deliveryID)
+	if err != nil || delivery == nil {
+		return 0, 0
+	}
+	var inbound model.Envelope
+	if json.Unmarshal([]byte(delivery.Envelope), &inbound) != nil {
+		return 0, 0
+	}
+	return hopCountOf(inbound), metaInt(inbound.Meta, metaKeyMaxHops)
 }
 
 func errorString(err error) string {

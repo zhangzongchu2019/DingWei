@@ -2183,7 +2183,8 @@ func TestIPCSendBodyAMRRoutesMentionsAtAnyIndent(t *testing.T) {
 	}
 	for name, conn := range map[string]*websocket.Conn{"alpha": alpha, "beta": beta} {
 		got := readEnvelope(t, ctx, conn)
-		if got.Body != "给两席" || metaString(got.Meta, "route_source") != "ipc_send_body_amr" {
+		// S-MENTION-BESTEFFORT ③:派生信封投的是发送方原文(原先是剥掉提及后的 "给两席")。
+		if got.Body != "说明\n@alpha @beta 给两席" || metaString(got.Meta, "route_source") != "ipc_send_body_amr" {
 			t.Fatalf("%s derived envelope=%+v", name, got)
 		}
 	}
@@ -2197,7 +2198,7 @@ func TestIPCSendBodyAMRRoutesMentionsAtAnyIndent(t *testing.T) {
 	if got := readEnvelope(t, ctx, primary); got.ID != "ipc-amr-indented" {
 		t.Fatalf("indented primary envelope=%+v", got)
 	}
-	if got := readEnvelope(t, ctx, alpha); got.Body != "仅展示" || metaString(got.Meta, "route_source") != "ipc_send_body_amr" {
+	if got := readEnvelope(t, ctx, alpha); got.Body != "说明\n @alpha 仅展示" || metaString(got.Meta, "route_source") != "ipc_send_body_amr" {
 		t.Fatalf("indented mention was not routed to alpha: %+v", got)
 	}
 
