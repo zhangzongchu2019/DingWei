@@ -111,7 +111,14 @@ func TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow(t
 	if err := json.Unmarshal(rr.Body.Bytes(), &listed); err != nil {
 		t.Fatal(err)
 	}
-	if listed.Role != "owner" || len(listed.Items) != 2 || listed.Items[0].ID != "specs" || listed.Items[1].ID != "task-board" {
+	// 🔴 S-GROUP-ENTRY 改口径:owner 的平台项由 2 项变 **3** 项 ——
+	//   agent-groups 已移出 `if role == consolePlatformRoleManagement` 块
+	//   (派工 runbooks/DISPATCH-20260929-S-GROUP-ENTRY.md;
+	//    背景 runbooks/DEFECT-group-entry-is-management-only-20260929.md)。
+	//   🔵 **admin 仍不得下发给 owner**,那条判据由
+	//   console_platform_group_entry_owner_test.go 的子格 ② 专守,本处不重复钉。
+	if listed.Role != "owner" || len(listed.Items) != 3 || listed.Items[0].ID != "specs" ||
+		listed.Items[1].ID != "task-board" || listed.Items[2].ID != "agent-groups" {
 		t.Fatalf("owner platform=%+v", listed)
 	}
 

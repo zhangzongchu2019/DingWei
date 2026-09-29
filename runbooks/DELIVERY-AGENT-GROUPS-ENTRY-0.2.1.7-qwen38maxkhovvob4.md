@@ -229,3 +229,51 @@ M5 == "不发这一项"的改前状态我另有两跑(正常 + 阳性对照),不
 10. **`TestConsolePlatformPayloadDump` 是个装置而不是断言**:它跳过时(未设 env)不提供任何保证;
     它写出的是"当时的载荷",若 handler 与 dump 之间出现分叉(例如有人只改 dump),**没有机制会发现** ——
     这一层我**没有**再加对账(要加就是"用闸验闸",无穷退后)。
+
+---
+
+## 追记 · 2026-09-29 · S-GROUP-ENTRY:本件判据③ 的**口径已被翻转**,两处测试名已变
+
+🔴 **原文一律不删**(留痕),本节只说明"现在读到上面那些句子时该怎么理解"。
+
+### 一 口径翻转(这一条最要紧,因为它会让上面的判据③ 变成**错的**)
+
+上面判据③ 写的是「非 management(owner)**看不到**它」。
+**该口径已于 2026-09-29 由组长派工 S-GROUP-ENTRY 翻转成「owner **必须**看到」。**
+
+翻转理由(不是策略放宽,是修缺陷):「加入到其他业主编组」那个面板**只在这个入口里面**
+(`internal/m8/console_auth.go` 的 `openGroupWorkspace` 全文件仅一个调用点),
+而该功能的目标用户恰恰是**另一位业主**,其默认角色是 `owner`
+(`ResolveConsolePlatformRole` 对每个 active principal `COALESCE(…, 'owner')`)
+⇒ 入口只发 management = **功能对它的目标用户不存在**。
+
+    取证  runbooks/DEFECT-group-entry-is-management-only-20260929.md(板 tasks/v0.1-B)
+    派工  runbooks/DISPATCH-20260929-S-GROUP-ENTRY.md(板 tasks/v0.1-B)
+    来源  业主 2026-09-29 逐字「界面上没有 Agent 编组(只有 spec 和任务)」
+
+🔵 **`admin`(平台管理)那一项没有跟着翻** —— 它仍只对 management 下发,
+因为 `role==management` 同时是 `RequireConsoleManagement` 的判据,而 `/console/admin` 里有明文凭证页。
+
+### 二 名字变了(上面 §二 表格第 ① 行与 §"实跑输出"引的是**旧名**)
+
+    Go 腿   TestConsolePlatformAgentGroupsEntryIsManagementOnly
+         →  TestConsolePlatformAgentGroupsEntryIsInternalTabForBothRoles
+            🔴 旧名在新口径下会变成**假名字**(它字面说"只对 management 发"),而假名字会继续指挥下一个人
+               ⇒ 改名,不删历史;新名与翻转理由都写在该测试的函数头注里。
+    浏览器腿 G4「owner 左栏也不得出现已删除的 builtin Agents」
+         →  G4「owner 左栏**必须有** agent-groups 内部 tab,且仍不得出现 builtin Agents / admin」
+            (ids 改成用 deepStrictEqual 钉**全集** ⇒ 多出一项 admin 就红,这是派工判据② 的浏览器侧同形判据)
+
+### 三 顺带订正:上面判据① 的**形态**也已过期(与本次翻转无关,更早)
+
+判据① 写的是 `href=/admin/agent-groups` + `target=_blank`。
+**0.2.1.55 起该入口已改成 console 内部 tab**:`href` 为 console 内锚、**无 target**
+(见 `internal/m8/console_platform.go` 该项的注释)。
+⇒ 现在阳性对照 `POSITIVE_CONTROL=1` 施加的变异正是"把它改回上面那个旧形态",
+   红格集合应为 **G1/G2/G4**、G3 仍绿(本件在末尾**逐格核集合**,不再只看"有没有红")。
+
+### 四 本件第十节第 6 条("G3/G4 改前是零红腿")现状
+
+仍然成立,但**G4 的判别力现在多了一层证据**:S-GROUP-ENTRY 那一单里,
+G4 在产品改动**之前**先红过一次(test-first,红文案点名 agent-groups),
+并在反向变异(把该项挪回 management 块)下**再红一次** ⇒ 它不是零红腿了。

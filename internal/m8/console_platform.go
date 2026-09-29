@@ -137,28 +137,43 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	}, {
 		ID: "task-board", Kind: "task-board", Title: "任务管理",
 		Href: "#task-board", Status: "approved", Active: true,
+	}, {
+		// Agent 编组入口:0.2.1.55 起由 console 自己接成内部 tab;
+		// S-GROUP-ENTRY(2026-09-29)起对**所有 principal** 下发,不再关在 role==management 里。
+		//
+		// 🔴 为什么必须发给普通业主(修缺陷,不是放宽策略):
+		//   「加入到其他业主编组」那个面板**只在这个入口里面** —— console_auth.go 的
+		//   openGroupWorkspace 全文件仅一个调用点(renderPlatform 里 item.id==='agent-groups'
+		//   的 onclick),没有第二条打开路径。而该功能的目标用户恰恰是"另一位业主",其默认角色
+		//   是 owner(ResolveConsolePlatformRole 对每个 active principal COALESCE(…, 'owner'))。
+		//   ⇒ 入口只发 management = 功能对它的目标用户不存在。取证与派工见板件
+		//   runbooks/DEFECT-group-entry-is-management-only-20260929.md ·
+		//   runbooks/DISPATCH-20260929-S-GROUP-ENTRY.md。
+		//
+		// 🔵 可见面**不是**授权面(与下面 admin 那一项同一条道理):六条 /api/console/agent-groups*
+		//   挂的是 RequireConsolePrincipal(不是 RequireConsoleManagement);列表按 principal 逐组算
+		//   可见性(visible = canManage || 该组成员里有我自己的 Agent);删除/剔除/开关添加另由
+		//   canManageConsoleAgentGroup 守 ⇒ 本项对所有角色可见**不放宽任何授权**。
+		// 🔴 角色口径与 platformActions **不再同一个**:动作集仍只对 management 放开
+		//   (add/edit/delete/approve),本项只是"看得见、点得开自己有权的那部分"。
+		// 🔴 形态是内部 tab(href 为 console 内锚、**无 target**):顶层导航会带走右栏那一堆活
+		//   iframe 与它们的 SSE(实测 pane 数 2→0),指向旧 admin 独立文档的形态已被否掉。
+		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 编组",
+		Href: "#agent-groups", Status: "approved", Active: true,
 	}}
-	// Agent 编组入口(0.2.1.55)由 console 自己接成内部 tab;旧 admin 仍可直接访问,
-	// 但 console 不再向那个独立鉴权域跳转。
-	// 角色口径与 platformActions 同一个(只对 management 发)。UI 可见性不是授权判据:
-	// /admin/* 自己还有 wp_admin 那道**独立**鉴权,两者是两个域。
 	if role == consolePlatformRoleManagement {
-		builtins = append(builtins, model.ConsolePlatformItem{
-			ID: "agent-groups", Kind: "agent-groups", Title: "Agent 编组",
-			Href: "#agent-groups", Status: "approved", Active: true,
-		})
 		// 平台管理入口(Nova-260921-A / B1-b):admin 能力搬进 console。
 		//
-		// 🔴 与上面那条编组入口的**关键区别是方向**,不是形态:
-		//    编组入口指向 `/admin/agent-groups` —— 那是**旧 admin 后台**,走 wp_admin 那道
-		//    独立鉴权,业主点进去是 303 → /admin/login(板件 SPEC-OWNER-TAB-ADMIN-20260920.md §二
-		//    判定为「形态对上了,**方向相反**」)。
-		//    本项指向 `/console/admin` —— 由**console 角色**授权的新门(internal/admin/console_door.go),
-		//    业主不需要在 console 里再登一次(业主原话「admin 接纳 console 的鉴权方式」)。
-		// 🔴 形态仍是 `_blank`(独立文档):顶层导航会带走右栏那一堆活 iframe 与它们的 SSE,
-		//    与上面编组入口同一条实测理由。
+		// 🔴 与上面编组入口的区别是**授权域**:本项指向 `/console/admin` —— 由 console 角色授权的
+		// 新门(internal/admin/console_door.go),业主不需要在 console 里再登一次
+		// (业主原话「admin 接纳 console 的鉴权方式」)。
+		// 🔴 它**留在本块内不动**:role==management 同时是 RequireConsoleManagement 那道门的判据,
+		// 而 /console/admin 里有**明文凭证页** ⇒ 跟着 agent-groups 一起移出去,等于把凭证页开给
+		// 每个默认角色的业主。S-GROUP-ENTRY 只改编组那一项的可见面。
 		// 🔵 UI 可见性不是授权判据:`/console/admin/*` 自己还有 RequireConsoleManagement 那道门,
-		//    "只对 management 发这一项"只是为了不让普通业主看到一个点了就 403 的入口。
+		// "只对 management 发这一项"只是为了不让普通业主看到一个点了就 403 的入口。
+		// 🔴 形态仍是 `_blank`(独立文档):顶层导航会带走右栏那一堆活 iframe 与它们的 SSE ——
+		// 与编组入口当初被改成内部 tab 的同一条实测理由。
 		builtins = append(builtins, model.ConsolePlatformItem{
 			ID: "admin", Kind: "admin", Title: "平台管理",
 			Href: "/console/admin", Target: "_blank", Status: "approved", Active: true,

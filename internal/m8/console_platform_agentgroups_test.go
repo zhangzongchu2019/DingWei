@@ -47,7 +47,15 @@ func findPlatformItem(items []model.ConsolePlatformItem, id string) (model.Conso
 	return model.ConsolePlatformItem{}, false
 }
 
-func TestConsolePlatformAgentGroupsEntryIsManagementOnly(t *testing.T) {
+// 🔴 本测试原名 TestConsolePlatformAgentGroupsEntryIsManagementOnly,已随 S-GROUP-ENTRY 改名。
+//
+//	原名在改口径之后会**变成假的**(它说的是"只对 management 发"),而假名字会继续指挥下一个人
+//	⇒ 改名,不删历史:0.2.1.7 那份交付件
+//	   runbooks/DELIVERY-AGENT-GROUPS-ENTRY-0.2.1.7-qwen38maxkhovvob4.md 引的是旧名,
+//	   已在该件加追记指向新名。
+//	为什么口径翻了:「加入到其他业主编组」这个面板只在这个入口里面,而它的目标用户
+//	(另一位业主,默认 role=owner)恰恰不是 management ⇒ 入口不发给 owner = 功能对他不存在。
+func TestConsolePlatformAgentGroupsEntryIsInternalTabForBothRoles(t *testing.T) {
 	role, items := consolePlatformItemsFor(t, "manager")
 	if role != consolePlatformRoleManagement {
 		t.Fatalf("夹具前提坏了:manager 应解析为 management,实为 %q", role)
@@ -66,17 +74,28 @@ func TestConsolePlatformAgentGroupsEntryIsManagementOnly(t *testing.T) {
 		t.Errorf("入口必须是已批准的活平台项,实为 %+v", entry)
 	}
 
-	// 🔴 排他腿:owner 看不到它。只验"management 看得到"不排他 ——
-	//    「对所有角色都发」这个变异必须在这里转红。
+	// 🔴 口径已翻(见函数头注):这一腿现在验的是「owner **也**拿得到,且形状与 management 那条逐项相同」。
+	//    只验"management 看得到"不排他 —— 但排他的对象换了:
+	//    「把 agent-groups 从 builtins 里整个删掉」这个变异必须在这里转红
+	//    (它会让 management 那腿先红,而 owner 这腿抓住"只对 management 发"的回退)。
+	//    🔵 「管理面不得一刀切放出去」那条排他腿现在钉的是 **admin**,
+	//       在 console_platform_group_entry_owner_test.go 的子格 ②。
 	ownerRole, ownerItems := consolePlatformItemsFor(t, "owner")
 	if ownerRole != consolePlatformRoleOwner {
 		t.Fatalf("夹具前提坏了:owner 应解析为 owner,实为 %q", ownerRole)
 	}
-	if _, leaked := findPlatformItem(ownerItems, "agent-groups"); leaked {
-		t.Errorf("非 management 也拿到了 Agent 编组入口,items=%+v", ownerItems)
+	ownerEntry, ownerOK := findPlatformItem(ownerItems, "agent-groups")
+	if !ownerOK {
+		t.Fatalf("🔴 owner 拿不到 Agent 编组入口,items=%+v ⇒ 又退回\"只对 management 发\"了。\n"+
+			"   查 internal/m8/console_platform.go:ID:\"agent-groups\" 那一项是否被挪回\n"+
+			"   if role == consolePlatformRoleManagement 块内。", ownerItems)
 	}
-	if len(ownerItems) != 2 || ownerItems[0].ID != "specs" || ownerItems[1].ID != "task-board" {
-		t.Errorf("owner 的平台项应只有可操作的 builtin specs/task-board,实为 %+v", ownerItems)
+	if ownerEntry.Href != entry.Href || ownerEntry.Target != entry.Target ||
+		ownerEntry.Kind != entry.Kind || ownerEntry.Status != entry.Status || ownerEntry.Active != entry.Active {
+		t.Errorf("owner 与 management 拿到的入口形状必须逐项相同(同一个内部 tab),\n owner=%+v\n mgmt =%+v", ownerEntry, entry)
+	}
+	if len(ownerItems) != 3 || ownerItems[0].ID != "specs" || ownerItems[1].ID != "task-board" || ownerItems[2].ID != "agent-groups" {
+		t.Errorf("owner 的平台项应为 specs/task-board/agent-groups 三项,实为 %+v", ownerItems)
 	}
 }
 
