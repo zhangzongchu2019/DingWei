@@ -84,6 +84,7 @@ function productionHTML() {
   if (MUTATION === 'tree-dedupes-agent') mutateHTML('agentTreeAllowDuplicates=true', 'agentTreeAllowDuplicates=false');
   // 不倒退:扁平列表今天就按 online 置灰(b.disabled=!a.online);树里若忽略 members[].online 即为倒退
   if (MUTATION === 'tree-ignores-member-online') mutateHTML('b.disabled=agentTreeMemberDisabled(member);', 'b.disabled=false;');
+  if (MUTATION === 'tree-keeps-stale-online') mutateHTML('function agentTreeMemberOnline(member){var fresh=agentListSnapshot.find(function(agent){return agent.session===member.session_name;});return fresh?fresh.online===true:member.online===true;}', 'function agentTreeMemberOnline(member){return member.online===true;}');
   // ⑦ 占位守卫:锚点绑在 agentTreeCanOpen( 上 —— 这个名字只有本次实现落地后才存在,落地前必然
   //    报「锚点未命中」。合同名在此钉死:实现方请用 agentTreeCanOpen(node) 决定要不要绑点击。
   if (MUTATION === 'foreign-agent-can-open') mutateHTML('if(agentTreeCanOpen(member,ownedIDs))', 'if(true)');
@@ -97,7 +98,8 @@ function productionHTML() {
     "section.append(title,members);nav.append(section);});var b=document.createElement('button');b.dataset.session='zzc-beta-2642';nav.append(b);\n}");
   if (MUTATION && !['tree-back-to-flat', 'member-short-name', 'stale-tree-after-remove',
     'mode-switch-rebuilds-panes', 'tree-dedupes-agent', 'tree-ignores-member-online',
-    'foreign-agent-can-open', 'tree-keeps-stale-groups', 'tree-shows-ungrouped'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+    'foreign-agent-can-open', 'tree-keeps-stale-groups', 'tree-shows-ungrouped',
+    'tree-keeps-stale-online'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -117,6 +119,7 @@ async function main() {
   const foreign = { agent_id: 'agent-x', key_id: 'k-x', session_name: 'other-gamma-2642', owner_key: 'other-owner', online: false };
   let removed = false;
   let droppedTeam01 = false;   // ⑧ 用:让响应里不再给 team01
+  let agentAOnline = true;
   const groupsPayload = () => {
     const teamMembers = [
       { agent_id: 'agent-a', key_id: 'k-a', session_name: 'zzc-alpha-2642', owner_key: 'zzc', online: true },
@@ -140,7 +143,9 @@ async function main() {
     if (req.url === '/console') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(html); return; }
     if (req.url === '/fixture/remove-foreign' && req.method === 'POST') { removed = true; res.writeHead(204); res.end(); return; }
     if (req.url === '/fixture/drop-team01' && req.method === 'POST') { droppedTeam01 = true; res.writeHead(204); res.end(); return; }
-    if (req.url === '/api/console/agents') return json({ agents: [...mine.map((a) => ({ session: a.session_name, online: a.online })), { session: foreign.session_name, online: true }] });
+    if (req.url === '/fixture/agent-a-offline' && req.method === 'POST') { agentAOnline = false; res.writeHead(204); res.end(); return; }
+    if (req.url === '/fixture/agent-a-online' && req.method === 'POST') { agentAOnline = true; res.writeHead(204); res.end(); return; }
+    if (req.url === '/api/console/agents') return json({ agents: [...mine.map((a) => ({ session: a.session_name, online: a.id === 'agent-a' ? agentAOnline : a.online })), { session: foreign.session_name, online: true }] });
     if (req.url === '/api/console/platform') return json({ role: 'management', actions: ['read', 'submit'], items: [] });
     if (String(req.url).startsWith('/api/console/agent-groups')) return json(groupsPayload());
     if (String(req.url).startsWith('/view/')) { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><title>v</title>'); return; }
@@ -219,6 +224,34 @@ async function main() {
       'members[].online 为 false 的成员必须在树里表现为不可用(扁平列表今天就是这么做的,树不得倒退)');
     assert.strictEqual(ownOnline.disabled, false, 'online 为 true 的成员不得被置灰');
     passed += 2;
+
+    // S-GROUP-LIVE:既有 15 秒 refreshAgents 取回的新鲜 online 必须覆盖编组快照里的旧值。
+    // 不等待真实定时器:主动执行的就是定时器每周期调用的同一函数，失败必须即时给显式断言。
+    const groupMembershipBefore = await page.evaluate(() => [...document.querySelectorAll('#a .agent-tree-group')].map((group) => ({
+      code: group.dataset.groupCode,
+      members: [...group.querySelectorAll('.agent-tree-agent')].map((member) => member.dataset.session),
+    })));
+    await page.request.post(`http://127.0.0.1:${port}/fixture/agent-a-offline`);
+    await page.evaluate(() => window.refreshAgents());
+    const liveTree = await page.evaluate(() => ({
+      alpha: [...document.querySelectorAll('#a .agent-tree-agent[data-session="zzc-alpha-2642"]')].map((el) => el.disabled),
+      groups: [...document.querySelectorAll('#a .agent-tree-group')].map((group) => ({
+        code: group.dataset.groupCode,
+        members: [...group.querySelectorAll('.agent-tree-agent')].map((member) => member.dataset.session),
+      })),
+    }));
+    assert.ok(liveTree.alpha.length === 2 && liveTree.alpha.every(Boolean),
+      `新鲜 Agent 快照已离线时，两个编组节点都必须立即置灰，实测 ${JSON.stringify(liveTree.alpha)}`);
+    assert.deepStrictEqual(liveTree.groups, groupMembershipBefore,
+      'online 覆盖不得用普通 Agent 列表改写编组成员集合');
+    await page.click('#agentNavMode');
+    const flatAlphaDisabled = await page.evaluate(() => [...document.querySelectorAll('#a button')]
+      .find((el) => el.title === 'zzc-alpha-2642').disabled);
+    assert.strictEqual(flatAlphaDisabled, true, '阳性对照:同一次 refreshAgents 仍须更新普通 Agent 列表');
+    await page.click('#agentNavMode');
+    await page.request.post(`http://127.0.0.1:${port}/fixture/agent-a-online`);
+    await page.evaluate(() => window.refreshAgents());
+    passed += 3;
 
     // ⑦ 【占位守卫 · 待业主裁定】别人的 Agent 点了不得打开会话。
     //   🔴 这条**不是**在规定业主该怎么裁,而是在业主裁定前**把门关上**:
