@@ -339,4 +339,7 @@ func TestAMROffRosterMentionGetsVisibleExplanation(t *testing.T) {
 	if json.Unmarshal(data, &got) != nil || !strings.Contains(got.Body, "当前会话未启用正文提及投递") {
 		t.Fatalf("名单外反馈没有说清权限状态: raw=%q", string(data))
 	}
+	if !strings.Contains(got.Body, "本条为系统通知，不可回程") {
+		t.Fatalf("非失败通知未标明不可回程，回复会形成新的失败通知: body=%q", got.Body)
+	}
 }
