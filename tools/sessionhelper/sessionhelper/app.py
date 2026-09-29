@@ -17,6 +17,7 @@ from . import __version__
 from .config import Config, load_config
 from .llm import LLMProvider
 from .inbox import DeliveryInbox
+from .hub_meta import HUB_META_TYPE_DELIVERY_FAILURE, HUB_META_TYPE_DELIVERY_RESULT
 from .protocol import AddressBook, envelope, is_feishu_addr, is_mirror_control, reply_target, session_addr
 from .reply_origin import classify_reply_decision, reply_carryforward_meta
 from .provision import Provisioner, is_provision_envelope
@@ -127,6 +128,59 @@ def is_no_mirror_envelope(env: dict) -> bool:
     """
     meta = env.get("meta") or {}
     return truthy_meta(meta.get("system"))
+
+
+# Hub 自发系统通知的 meta.type 集合。值来自 internal/model/model.go 的单一真源
+# (tools/sessionhelper/gen_hub_meta.py 生成 hub_meta.py)。
+# 🔴 不要在这里写字面量:tests/test_hub_notice_no_inject.py 有一格专门扫 app.py 的源码,
+#    命中字面量即红(派工单第三节:「不得在 helper 里另抄一份字面量 —— 两份必漂移」)。
+HUB_NOTICE_META_TYPES = frozenset({HUB_META_TYPE_DELIVERY_FAILURE, HUB_META_TYPE_DELIVERY_RESULT})
+
+
+def is_hub_notice_envelope(env: dict) -> bool:
+    """是否为 Hub 自发的系统通知(投递失败回执 / AMR 路由结果通知)。
+
+    🔴 S-HELPER-NOTICE-NO-INJECT:这两类信封此前【既不进 delivery_inbox、又会被注入 CLI】。
+    原因是 dispatch 链上每一道判据都判否:
+      · is_delivery 要 type=="delivery" + ack_required —— 它们两者都不带;
+      · is_no_mirror_envelope 自 T-045 起只按 system 判 —— 它们不带 system=true
+        (T-045 那次正是把 no_mirror 当丢弃理由,把该投的 AMR 提及静默丢掉、计数还说成功;
+         所以这里【不能】靠给通知补 system/no_mirror 来解决,那会重演同一种越界)。
+    ⇒ 落到兜底 process_inbound_message / buffer_if_busy ⇒ 注入 CLI ⇒ 产生新一轮。
+
+    而新一轮必然再产生一条通知(有正文会通知;没正文也通知,见 amr.go 的 empty 分支),
+    限速器 dedupKey 不含 DeliveryID/TurnID、窗口 1 分钟 ⇒ 约 60 轮/小时、零业务产出,
+    且席位侧无法自己退出。这就是要断的环。
+
+    🔴 处理方式是「留痕 + 不注入」(见 hub_notice_trace),不是丢弃:
+    丢弃会把可见故障换成不可见故障。
+    🔴 也不得改成写进 delivery_inbox —— inbox 的行会被 delivery_worker_loop claim 出来注入,
+    等于把环换个地方接回去。判据③正是逐个量这三个出口(adapter.handle /
+    pending_inbound / inbox)都为空。
+    """
+    meta = env.get("meta") or {}
+    return str(meta.get("type") or "") in HUB_NOTICE_META_TYPES
+
+
+def hub_notice_trace(env: dict) -> str:
+    """通知的留痕行:只记坐标与长度,不记正文。
+
+    🔴 坐标必须齐(type / id / source_id / from / to / body_len):本次事故的直接代价
+    就是通知正文里既没有 delivery_id 也没有目标(writeDeliveryFailure 把正文整个换成了
+    那句「组内找不到该Agent」),收件方无从定位,组长据此把事情归错了人。
+    🔴 不记正文与本函数上方 recv_loop 的既有口径一致:正文可能含凭据,日志不是它该去的地方。
+    """
+    meta = env.get("meta") or {}
+    body = str(env.get("body") or "")
+    return (
+        "[hub-notice] suppressed cli injection"
+        f" type={meta.get('type') or ''}"
+        f" id={env.get('id') or ''}"
+        f" source_id={meta.get('source_id') or ''}"
+        f" from={env.get('from') or ''}"
+        f" to={env.get('to') or ''}"
+        f" body_len={len(body)}"
+    )
 
 
 def is_online_directory_text(text: str) -> bool:
@@ -607,6 +661,13 @@ class SessionHelper:
                 continue
             if self.is_delivery_cancel(env):
                 await self.handle_delivery_cancel(ws, env)
+                continue
+            if is_hub_notice_envelope(env):
+                # 留痕但不注入 CLI:断「通知 → 新一轮 → 新通知」那个环。
+                # 🔴 必须放在 buffer_if_busy 之前 —— 否则通知会进 pending_inbound,
+                #    由 pending_drain_loop 稍后注入,环只是晚一点接上(实测形状:
+                #    未加本分支时 pending_inbound=1)。
+                print(hub_notice_trace(env), flush=True)
                 continue
             body = str(env.get("body") or "")
             if is_online_directory_text(body):

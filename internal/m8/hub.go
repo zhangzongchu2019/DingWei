@@ -3152,7 +3152,7 @@ func (h *Hub) routeSessionSelectorEnvelope(ctx context.Context, c *sessionClient
 }
 
 func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, original model.Envelope, target string, routeErr error) {
-	if c == nil || routeErr == nil || metaString(original.Meta, "type") == "delivery_failure" {
+	if c == nil || routeErr == nil || metaString(original.Meta, "type") == model.MetaTypeDeliveryFailure {
 		log.Printf("delivery failure notification=suppressed reason=recursive_or_missing")
 		return
 	}
@@ -3265,12 +3265,13 @@ func deliveryFailureEnvelopeWithOriginal(c *sessionClient, sourceID, target, rea
 		Body: body,
 		TS:   now.Unix(),
 		Meta: map[string]any{
-			"type":      "delivery_failure",
+			"type":      model.MetaTypeDeliveryFailure,
 			"source_id": sourceID,
 			// Failure notices remain visible to the CLI, but a turn caused by
 			// one is a system-notification turn: it must not reply or generate
 			// another failure notice. The helper propagates this explicit
 			// semantic marker instead of inferring from the envelope ID.
+			// 🔴 两支合并:类型值用 HNI 的 model 常量,语义标记保留回程修复那一支的。
 			"suppress_reply_origin": true,
 		},
 	}

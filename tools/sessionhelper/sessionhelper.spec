@@ -24,6 +24,12 @@ a = Analysis(
         "sessionhelper.unified_queue",
         "sessionhelper.llm",
         "sessionhelper.protocol",
+        # 🔴 显式登记(组长裁定 2026-09-29):hub_meta.py 是 S-HELPER-NOTICE-NO-INJECT 的生成件,
+        #    由 sessionhelper/app.py 静态 import。打包后若漏收,症状是运行时 ModuleNotFoundError
+        #    —— 那个发现成本远高于现在这一行。
+        # 🔵 本列表其余仍靠静态 import 侥幸成立的项(inbox / provision / reply_origin 等)
+        #    **本次不动**:没量过就不改(组长明令,另一件事)。
+        "sessionhelper.hub_meta",
     ],
     hookspath=[],
     hooksconfig={},

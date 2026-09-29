@@ -924,8 +924,10 @@ func (p *amrProcessor) notifySourceNotice(key amrTurnKey, target, reason string,
 		Body: body,
 		TS:   now.Unix(),
 		Meta: map[string]any{
-			"type":                  "delivery_result",
-			"source_id":             key.DeliveryID,
+			"type":      model.MetaTypeDeliveryResult,
+			"source_id": key.DeliveryID,
+			// 🔴 两支合并:HNI 把字面量换成 model 常量(跨语言单一真源),
+			// 回程修复加 suppress_reply_origin —— **两者都要**,不是二选一。
 			"suppress_reply_origin": true,
 		},
 	}

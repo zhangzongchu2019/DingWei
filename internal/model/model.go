@@ -804,3 +804,26 @@ type Envelope struct {
 	TS   int64          `json:"ts"`
 	Meta map[string]any `json:"meta,omitempty"`
 }
+
+// hub-meta-types:begin
+// Envelope.Meta["type"] 的跨语言单一真源。
+//
+// 🔴 sessionHelper(Python)侧不得另抄这些字面量:
+//
+//	tools/sessionhelper/sessionhelper/hub_meta.py 由
+//	tools/sessionhelper/gen_hub_meta.py 从本块生成,
+//	tools/sessionhelper/tests/test_hub_notice_no_inject.py 的漂移闸逐字节比对两侧。
+//	两侧漂移的后果不是编译错,是「通知不再被识别 ⇒ 重新注入 CLI ⇒ 配额环复活」,
+//	即静默失效。改本块后须重跑生成器:
+//	  python3 tools/sessionhelper/gen_hub_meta.py
+//
+// 注意:annotateRestartWindow 的 reason 标签(如 hub.go 里的 "delivery_failure")
+// 是另一套词汇,语义不同,不要复用这里的常量。
+const (
+	// MetaTypeDeliveryFailure 是 Hub 自发的投递失败回执(hub.go writeDeliveryFailure)。
+	MetaTypeDeliveryFailure = "delivery_failure"
+	// MetaTypeDeliveryResult 是 AMR 路由结果通知(amr.go notify)。
+	MetaTypeDeliveryResult = "delivery_result"
+)
+
+// hub-meta-types:end
