@@ -46,6 +46,11 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 	if job.key.DeliveryID == "" || job.body == "" {
 		return
 	}
+	if job.systemNotification {
+		log.Printf("[reply-origin] R1 跳过 reason=system_notification session=%s delivery_id=%s", job.key.Session, job.key.DeliveryID)
+		p.bumpReplyOrigin(&p.stats.replyOriginSkipped)
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), p.routeTimeout)
 	defer cancel()
 

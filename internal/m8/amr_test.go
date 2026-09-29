@@ -135,8 +135,24 @@ func TestAMRRouteResultNoticeIncludesDeliveryID(t *testing.T) {
 	key := amrTurnKey{KeyID: "result-key", Session: "result-source", DeliveryID: "delivery-coordinate-42", TurnID: "turn-1"}
 	p.notifyRouteResults(key, []amrTargetResult{{selector: "#target", resolved: "target#result-key", ok: true}})
 	got := readAMRNotice(t, ctx, client)
+	if !metaBool(got.Meta, "suppress_reply_origin") {
+		t.Fatalf("system route-result notice lacks reply-origin suppression marker: %+v", got.Meta)
+	}
 	if !strings.Contains(got.Body, "delivery_id=delivery-coordinate-42") || metaString(got.Meta, "source_id") != key.DeliveryID {
 		t.Fatalf("提及结果通知缺少可对账 delivery_id: %+v", got)
+	}
+}
+
+func TestAMRFailureNoticeCarriesReplyOriginSuppressionMarker(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	p := testAMRProcessor()
+	p.hub = h
+	client := attachAMRNoticeClient(t, h, ctx, "failure-key", "failure-source")
+	key := amrTurnKey{KeyID: "failure-key", Session: "failure-source", DeliveryID: "delivery-failure-source", TurnID: "turn-1"}
+	p.notifySourceVisible(key, "", "来源记录已不可用", true, "原文")
+	got := readAMRNotice(t, ctx, client)
+	if metaString(got.Meta, "type") != "delivery_failure" || !metaBool(got.Meta, "suppress_reply_origin") {
+		t.Fatalf("failure notice lacks explicit reply-origin suppression semantics: %+v", got.Meta)
 	}
 }
 

@@ -3264,7 +3264,15 @@ func deliveryFailureEnvelopeWithOriginal(c *sessionClient, sourceID, target, rea
 		From: sessionAddress("workpulse", c.keyID),
 		Body: body,
 		TS:   now.Unix(),
-		Meta: map[string]any{"type": "delivery_failure", "source_id": sourceID},
+		Meta: map[string]any{
+			"type":      "delivery_failure",
+			"source_id": sourceID,
+			// Failure notices remain visible to the CLI, but a turn caused by
+			// one is a system-notification turn: it must not reply or generate
+			// another failure notice. The helper propagates this explicit
+			// semantic marker instead of inferring from the envelope ID.
+			"suppress_reply_origin": true,
+		},
 	}
 	if amrSupportsStructuredFailure(c.version) {
 		env.Meta["presentation"] = "structured"

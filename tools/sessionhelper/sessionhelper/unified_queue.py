@@ -163,6 +163,13 @@ class UnifiedCommandQueue:
             "queue_seq": command.queue_seq,
             "enqueued_at": command.enqueued_at,
         }
+        # Hub system notices intentionally enter the CLI so the failure remains
+        # visible, but any resulting turn must not be treated as a user message
+        # eligible for reply-to-origin. Preserve the explicit semantic marker;
+        # never infer it from a delivery-id prefix.
+        meta = command.envelope.get("meta") or {}
+        if meta.get("suppress_reply_origin") is True:
+            data["system_notification"] = True
         if lifecycle == "admitted":
             data["admitted_at"] = self._clock()
         return {

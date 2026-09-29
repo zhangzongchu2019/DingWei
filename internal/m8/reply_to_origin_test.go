@@ -87,6 +87,79 @@ func TestReplyToOriginR1RoutesTurnOutputBackToSender(t *testing.T) {
 	}
 }
 
+// Production reliable deliveries carry meta.type="delivery". That value is a
+// transport wrapper, not a protocol control message, and must not suppress R1.
+func TestReplyToOriginTransportDeliveryTypeStillRoutes(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	key := replyOriginFixture(t, h, ctx, "dw-dlv_transport", "msg-transport", sessionAddress("ant", "k1"),
+		map[string]any{"type": "delivery"})
+	p, routed := replyOriginProcessor(h)
+
+	p.replyToOrigin(amrRouteJob{key: key, body: "生产同形的普通投递输出"})
+
+	if len(*routed) != 1 {
+		t.Fatalf("transport type=delivery was mistaken for control: routed=%d want=1", len(*routed))
+	}
+	if got := metaString((*routed)[0].Meta, "route_source"); got != replyToOriginRouteSource {
+		t.Fatalf("transport delivery reply route_source=%q want=%q", got, replyToOriginRouteSource)
+	}
+}
+
+func TestReplyToOriginTrueControlTypesStillSkip(t *testing.T) {
+	for _, controlType := range []string{"delivery_ack", "provision", "mirror_control"} {
+		t.Run(controlType, func(t *testing.T) {
+			h, _, ctx := newTestHub(t)
+			key := replyOriginFixture(t, h, ctx, "dw-dlv_"+controlType, "msg-"+controlType, sessionAddress("ant", "k1"),
+				map[string]any{"type": controlType})
+			p, routed := replyOriginProcessor(h)
+
+			p.replyToOrigin(amrRouteJob{key: key, body: "控制消息不应回程"})
+
+			if len(*routed) != 0 || p.stats.replyOriginSkipped != 1 {
+				t.Fatalf("control type=%s was not skipped: routed=%d skipped=%d", controlType, len(*routed), p.stats.replyOriginSkipped)
+			}
+		})
+	}
+}
+
+// A Hub-authored system notice is injected into the CLI for visibility. The
+// admitted lifecycle event carries its semantic marker into the completed turn,
+// which must neither reply nor create another failure notice.
+func TestReplyToOriginSystemNotificationTurnStopsWithoutFailureNotice(t *testing.T) {
+	h, _, _ := newTestHub(t)
+	p, routed := replyOriginProcessor(h)
+	base := amrSessionEvent{DeliveryID: "opaque-delivery-coordinate", TurnID: "turn-system-notice"}
+	admitted := base
+	admitted.Kind = "user_input"
+	admitted.Data = map[string]any{"lifecycle": "admitted", "system_notification": true}
+	p.ingest("k1", "bee", amrEventJSON(t, admitted))
+	text := base
+	text.Kind, text.Text = "assistant_text", "我看到了系统通知"
+	p.ingest("k1", "bee", amrEventJSON(t, text))
+	done := base
+	done.Kind = "state_change"
+	done.Data = map[string]any{"change": "turn_completed", "status": "completed"}
+	p.ingest("k1", "bee", amrEventJSON(t, done))
+
+	var job amrRouteJob
+	select {
+	case job = <-p.queue:
+	default:
+		t.Fatal("system notification turn did not reach reply-to-origin worker")
+	}
+	if !job.systemNotification {
+		t.Fatal("system notification semantic marker was lost before reply-to-origin")
+	}
+	p.replyToOrigin(job)
+	if len(*routed) != 0 || p.stats.replyOriginUnavailable != 0 || p.stats.notificationsSent != 0 {
+		t.Fatalf("system notification self-reproduced: routed=%d unavailable=%d notices=%d",
+			len(*routed), p.stats.replyOriginUnavailable, p.stats.notificationsSent)
+	}
+	if p.stats.replyOriginSkipped != 1 {
+		t.Fatalf("system notification skip was not counted: skipped=%d want=1", p.stats.replyOriginSkipped)
+	}
+}
+
 // R-2:A 收到该回复之后的输出【不再】自动回 B —— 结构性,不靠兜底。
 // 🔴 同一条用例里配阳性对照:换成一条【显式】入站,回程必须仍然发生。
 //
