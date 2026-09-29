@@ -101,3 +101,37 @@ func TestConsolePageRefreshesOnlyAgentList(t *testing.T) {
 		}
 	}
 }
+
+func TestConsolePageFreshAgentStatusOverlaysGroupMembersWithoutNewPoller(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	rr := httptest.NewRecorder()
+	hub.HandleConsolePage(rr, httptest.NewRequest(http.MethodGet, "/console", nil))
+	body := rr.Body.String()
+	for _, required := range []string{
+		"function agentTreeMemberOnline(member)",
+		"agent.session===member.session_name",
+		"fresh?fresh.online===true:member.online===true",
+		"agentListSnapshot=agents;renderAgentNav();if(groupMode)renderGroups();",
+	} {
+		if !strings.Contains(body, required) {
+			t.Fatalf("编组成员 online 没有接到既有 Agent 新鲜快照: missing=%q", required)
+		}
+	}
+	if got := strings.Count(body, "setInterval(refreshAgents,15000)"); got != 1 {
+		t.Fatalf("必须复用唯一的 15 秒轮询，不得新增轮询: count=%d want=1", got)
+	}
+	start := strings.Index(body, "function agentTreeMemberOnline(member)")
+	if start < 0 {
+		t.Fatal("无法定位 online 覆盖函数")
+	}
+	end := strings.Index(body[start:], "function agentTreeMemberDisabled")
+	if end < 0 {
+		t.Fatal("无法定位 online 覆盖函数末尾")
+	}
+	overlay := body[start : start+end]
+	for _, forbidden := range []string{"groupSnapshot.groups=", "group.members=", "members.push", "members.splice"} {
+		if strings.Contains(overlay, forbidden) {
+			t.Fatalf("online 覆盖不得改写编组成员集合: found=%q", forbidden)
+		}
+	}
+}
