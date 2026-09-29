@@ -17,6 +17,21 @@ class UnifiedCommandQueueTest(unittest.TestCase):
         ticks = iter(range(1000, 1100))
         self.queue = UnifiedCommandQueue(3, clock=lambda: float(next(ticks)))
 
+    def test_system_notification_marker_is_preserved_in_lifecycle_events(self):
+        result = self.queue.enqueue({
+            "id": "notice-opaque",
+            "body": "系统通知",
+            "meta": {"suppress_reply_origin": True},
+        })
+        self.assertIs(result.event["data"].get("system_notification"), True)
+        self.assertEqual(self.queue.start_next().delivery_id, result.command.delivery_id)
+        admitted = self.queue.admit(result.command.delivery_id, "turn-notice")
+        self.assertIs(admitted["data"].get("system_notification"), True)
+
+    def test_unmarked_message_does_not_claim_system_notification(self):
+        result = self.queue.enqueue({"id": "ordinary-opaque", "body": "普通消息"})
+        self.assertNotIn("system_notification", result.event["data"])
+
     def test_three_sources_share_fifo_and_schema(self):
         fixtures = [
             ({"id": "view-1", "body": "用户第一行\n用户第二行", "meta": {"source_kind": "user"}}, "user"),

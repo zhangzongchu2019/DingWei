@@ -78,7 +78,10 @@ var reservedControlPayloadTokens = []string{
 func isReservedControlPayload(env model.Envelope) bool {
 	if t := metaString(env.Meta, "type"); t != "" {
 		switch t {
-		case "delivery", "delivery_ack", "delivery_cancel", "delivery_cancel_ack",
+		// "delivery" is a transport-layer wrapper used by every reliable
+		// session message, not a protocol-semantic control type. Treating it
+		// as control structurally disables reply-to-origin for normal traffic.
+		case "delivery_ack", "delivery_cancel", "delivery_cancel_ack",
 			"mirror_control", "provision", "provision_ack":
 			return true
 		}

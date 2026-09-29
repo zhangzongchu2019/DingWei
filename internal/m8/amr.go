@@ -97,17 +97,19 @@ type amrTurnKey struct {
 }
 
 type amrTurn struct {
-	text      string
-	updated   time.Time
-	started   time.Time
-	ttl       time.Duration
-	observed  int
-	truncated bool
+	text               string
+	updated            time.Time
+	started            time.Time
+	ttl                time.Duration
+	observed           int
+	truncated          bool
+	systemNotification bool
 }
 
 type amrRouteJob struct {
-	key  amrTurnKey
-	body string
+	key                amrTurnKey
+	body               string
+	systemNotification bool
 }
 
 type amrNoticeJob struct {
@@ -277,6 +279,12 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 		p.stats.opened++
 	}
 	t.updated = now
+	// The helper copies this Hub-authored semantic marker from the inbound
+	// envelope into the admitted lifecycle event. It deliberately does not
+	// infer notification origin from the synthetic delivery-id prefix.
+	if metaBool(ev.Data, "system_notification") {
+		t.systemNotification = true
+	}
 	if ev.Kind == "assistant_text" && ev.Text != "" {
 		switch {
 		case t.text == "":
@@ -330,7 +338,7 @@ func (p *amrProcessor) ingest(keyID, sessionName, raw string) {
 		body = amrTruncatedBody(body, p.routeBodyMax)
 	}
 	select {
-	case p.queue <- amrRouteJob{key: key, body: body}:
+	case p.queue <- amrRouteJob{key: key, body: body, systemNotification: t.systemNotification}:
 		p.stats.queued++
 		p.mu.Unlock()
 	default:
@@ -802,7 +810,11 @@ func (p *amrProcessor) notifySourceVisible(key amrTurnKey, target, reason string
 		From: sessionAddress("workpulse", key.KeyID),
 		Body: body,
 		TS:   now.Unix(),
-		Meta: map[string]any{"type": "delivery_result", "source_id": key.DeliveryID},
+		Meta: map[string]any{
+			"type":                  "delivery_result",
+			"source_id":             key.DeliveryID,
+			"suppress_reply_origin": true,
+		},
 	}
 	if failure {
 		env = deliveryFailureEnvelopeWithOriginal(c, key.DeliveryID, target, reason, originalBody, now)
