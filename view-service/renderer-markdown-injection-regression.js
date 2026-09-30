@@ -228,9 +228,12 @@ const MUTATIONS = {
   },
   'M-I3': {
     label: 'highlightCode 掏空(代码围栏内不转义)',
+    // 🔴 锚点随 `af0da67f`(2026-09-25,修共享渲染器二次高亮)改过:那一行尾部多了一段剔占位控制字符的 replace。
+    //    **意图不变**:只把 `escapeHtml(code)` 换成 `String(code)`,后面那段 replace 原样保留
+    //    (JS 模板串里反斜杠要写两遍,才对得上渲染器里的字面 `\u0001\u0002`)。
     steps: [[
-      `      let html = escapeHtml(code);`,
-      `      let html = String(code);`,
+      `      let html = escapeHtml(code).replace(/[\\u0001\\u0002]/g, '');`,
+      `      let html = String(code).replace(/[\\u0001\\u0002]/g, '');`,
     ]],
     breached: (s) => s.liveInTimeline.length > 0 || s.canary !== null || s.onAttrs.length > 0,
     want: '代码围栏里出现活元素(或 canary 被置)',
