@@ -41,6 +41,8 @@ SUITES = (
     ("md_render_core_parity", "node", ROOT / "view-service/md-render-core-parity.js"),
     ("renderer_markdown_image", "node", ROOT / "view-service/renderer-markdown-image-regression.js"),
     ("renderer_markdown_injection", "node", ROOT / "view-service/renderer-markdown-injection-regression.js"),
+    ("renderer_failure_dock_embedded", "node", ROOT / "view-service/renderer-failure-dock-embedded-regression.js"),
+    ("renderer_failure_dock", "node", ROOT / "view-service/renderer-failure-dock-regression.js"),
 )
 
 # Only names are recorded; values may contain local paths or credentials. These
