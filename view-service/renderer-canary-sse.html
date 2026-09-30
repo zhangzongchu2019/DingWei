@@ -492,7 +492,10 @@
       cursor: pointer; font-size: 13px; white-space: nowrap;
     }
     .workspace-dock-body {
-      width: 320px; max-height: 60vh; overflow-y: auto;
+      /* 🔴 宽度必须带视口上限:dock 是 position:fixed 的 flex row-reverse 容器,承载面
+         (console 右栏 iframe)窄于「面板＋把手」时,定值 320px 会把整个 dock 顶出视口。
+         判据:renderer-failure-dock-embedded-regression.js 腿二(窄档量溢出)。 */
+      width: min(320px, calc(100vw - 64px)); max-height: 60vh; overflow-y: auto;
       background: var(--bg-elev, #1e1e24); border: 1px solid var(--danger, #d66);
       border-radius: 8px 0 0 8px;
     }
@@ -506,7 +509,6 @@
       overflow: hidden;
     }
     .workspace-dock-toggle, .dock-section-title {
-      width: 100%;
       border: 0;
       background: transparent;
       color: var(--text);
@@ -520,6 +522,12 @@
       font-weight: 750;
       text-align: left;
     }
+    /* 🔴 上面这条规则里【不要再加 width:100%】。它由 .workspace-dock-toggle 与
+       .dock-section-title 共用,而把手是 flex row-reverse 容器里的一项:
+       width:100% 会让把手吃满整个 dock(实测 365.7px),把 .workspace-dock-body
+       挤到只剩两条 1px 红边(clientWidth=0)⇒ 角标照涨、卡片照进 DOM、点开却是空白。
+       区块标题不需要它:那是 block 级的 flex 容器,宽度本就填满父级(实测撤掉后仍为 318px)。
+       判据:renderer-failure-dock-embedded-regression.js 腿二/腿三/腿四(量几何,不量计数)。 */
     .workspace-dock-toggle::before { content: '▸'; transition: transform .15s ease; }
     .workspace-dock-toggle[aria-expanded="true"]::before { transform: rotate(90deg); }
     .workspace-dock-label { flex: 1; }
