@@ -19,12 +19,14 @@
 //
 // ── 四腿 ────────────────────────────────────────────────────────────────────
 //   腿一 装置自证   事件到了、卡进了 DOM、角标=2 —— 🔴 这一格【绿不代表看得见】,它就是本件存在的理由
-//   腿二 主判据     嵌入态四档窗口宽度:面板有可读宽度、卡片填满面板、卡片高度不病态、
-//                   把手仍是竖条、整个 dock 在 iframe 视口内、面板中心命中的是卡片
+//   腿二 主判据     嵌入态四档窗口宽度,每档量七维:面板 clientWidth 有可读宽度、
+//                   卡片横向落在面板 client 盒内、卡片填满面板、卡片高度不病态、
+//                   把手仍是竖条、dock 不溢出 iframe 视口、首卡中心那一点真的命中它自己
 //   腿三 同判据     独立态再验一次(补既有那件的盲区;判据与腿二**同一个函数**,不抄第二份)
 //   腿四 阳性对照   同进程把 `width: 100%` 塞回那条共用规则 ⇒ 腿二的判据**必须红**;
 //                   🔴 塞不回去(锚串被正当改动挪走)就直接失败并报"对照素材被掏空",不静默跳过
 const assert = require('assert');
+const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -175,6 +177,12 @@ function startServer(rendererBytesProvider, consoleHTML) {
 (async () => {
   const consoleHTML = consoleHTMLFromProductionSource();
   const repoBytes = fs.readFileSync(RENDERER);
+  const RENDERER_SHA = crypto.createHash('sha256').update(repoBytes).digest('hex');
+  // 🔴 被检字节的身份必须在【所有格之前】打印:红跑也要能自证测的是哪一份字节。
+  //    缺口由组长 2026-09-30 复跑时指出 —— 原先这一行写在 checks.finish() 之后,只要有格红就不打印
+  //    ⇒ "哪一份红的"只能靠人记得刚换过文件。📌 与本板「状态列必须写取自哪个 tip」同一条。
+  console.log(`被检字节 ${path.basename(RENDERER)} sha256=${RENDERER_SHA} ${repoBytes.length} 字节`);
+  console.log('  🔴 换文件跑变体时以这一行为准核对;它与末行 sha 必须相同(不同即装置中途被换过)');
   const fixtureRaw = fs.readFileSync(FIXTURE, 'utf8').trim();
   const fixture = JSON.parse(fixtureRaw);
   let served = repoBytes;
@@ -263,6 +271,9 @@ function startServer(rendererBytesProvider, consoleHTML) {
       assert.strictEqual(text.indexOf(SHARED_RULE_ANCHOR, at + 1), -1, '锚串出现多次 ⇒ 变异点不唯一,先修对照');
       const mutated = `${text.slice(0, at + SHARED_RULE_ANCHOR.length)}\n      width: 100%;${text.slice(at + SHARED_RULE_ANCHOR.length)}`;
       assert.notStrictEqual(mutated, text, '变异没有改变字节 ⇒ 对照无意义');
+      const mutatedSha = crypto.createHash('sha256').update(mutated).digest('hex');
+      console.log(`     (变异副本 sha256=${mutatedSha} ${Buffer.byteLength(mutated)} 字节,`
+        + `由被检字节 ${RENDERER_SHA.slice(0, 16)}… 在本进程内合成、不落盘)`);
       served = Buffer.from(mutated, 'utf8');
       try {
         const { context, frame, panes } = await openEmbedded(WINDOWS[0]);
@@ -283,7 +294,7 @@ function startServer(rendererBytesProvider, consoleHTML) {
 
     checks.finish();
     console.log('failure-dock-embedded regression: ALL PASS (4/4)');
-    console.log(`  · renderer sha256=${require('crypto').createHash('sha256').update(repoBytes).digest('hex').slice(0, 16)}… ${repoBytes.length} 字节`);
+    console.log(`  · renderer sha256=${RENDERER_SHA.slice(0, 16)}… ${repoBytes.length} 字节(与首行同一份)`);
   } finally {
     if (browser) await browser.close();
     await server.close();
