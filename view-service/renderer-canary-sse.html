@@ -894,6 +894,27 @@
       padding: 8px;
       box-shadow: var(--shadow);
     }
+    /* V11 输入框 @ 候选:浮层在输入框上方、紧贴输入框;每行 CLI 图标＋在线点＋「短名（长名）」,首行默认高亮 */
+    .composer-inner { position: relative; }
+    .mention-popup {
+      position: absolute; left: 8px; bottom: calc(100% + 6px); z-index: 20;
+      width: min(420px, calc(100% - 16px)); max-height: 232px; overflow-y: auto;
+      background: var(--panel); color: var(--text); border: 1px solid var(--line);
+      border-radius: 10px; box-shadow: var(--shadow); padding: 6px;
+    }
+    .mention-popup[hidden] { display: none; }
+    .mention-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; line-height: 1.3; }
+    .mention-row[aria-selected="true"] { background: var(--panel-2); outline: 1px solid var(--accent); }
+    .mention-row.mention-note { cursor: default; color: var(--muted); }
+    .mention-ico { position: relative; flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; background: #6b7280; }
+    .mention-ico[data-cli="claude"] { background: #c2410c; }
+    .mention-ico[data-cli="codex"] { background: #15803d; }
+    .mention-ico[data-cli="opencode"] { background: #6d28d9; }
+    .mention-ico[data-cli="deepseek"] { background: #1d4ed8; }
+    .mention-dot { position: absolute; right: -2px; bottom: -2px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--panel); background: #9ca3af; }
+    .mention-dot[data-online="true"] { background: #16a34a; }
+    .mention-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mention-label .mention-full { color: var(--muted); }
     textarea {
       width: 100%;
       min-height: 42px;
@@ -4948,6 +4969,118 @@
         uploadFiles(event.dataTransfer?.files);
       });
     })();
+    // ── V11 输入框 @ 候选 ─────────────────────────────────────────────────────────
+    // 键入＠(行首或空白之后)⇒ 在输入框上方弹出同组 Agent 候选;每行「短名（长名）」,CLI 图标＋在线点;
+    // 继续输入按短名或长名前缀过滤;↑↓ 移动、回车/Tab/点击选中、Esc 关闭;选中把「＠词」换成「＠insert 」。
+    // 🔴 Hub 掌握事实:候选只含本组 Agent、`insert`(组内短名唯一 ⇒ 短名,否则全名)由 Hub 给,页面不自己算。
+    // 🔴 浮层打开且有可选项时,回车=选中而不是发送;没有可选项(加载中/失败/无匹配)回车照常发送;输入法选字中一律不拦截。
+    // 🔴 候选加载失败不影响正常输入与发送。
+    const MENTION_TTL_MS = 10000, MENTION_FETCH_TIMEOUT_MS = 5000;
+    const mentionPopup = document.createElement('div');
+    mentionPopup.id = 'mentionPopup'; mentionPopup.className = 'mention-popup'; mentionPopup.setAttribute('role', 'listbox');
+    mentionPopup.setAttribute('aria-label', '同组 Agent 候选'); mentionPopup.hidden = true;
+    composerInner.append(mentionPopup);
+    humanInput.setAttribute('aria-controls', 'mentionPopup'); humanInput.setAttribute('aria-expanded', 'false');
+    const mention = { open: false, items: [], active: 0, token: null, status: 'idle', loadedAt: 0, gen: 0 };
+    function mentionToken() {
+      const pos = humanInput.selectionStart;
+      if (humanInput.selectionEnd !== pos) return null;
+      const m = /(^|\s)@([A-Za-z0-9.]*)$/.exec(humanInput.value.slice(0, pos));
+      return m ? { start: pos - m[2].length - 1, caret: pos, query: m[2] } : null;
+    }
+    function mentionMatches() {
+      const q = (mention.token ? mention.token.query : '').toLowerCase();
+      return mention.items.filter((it) => !q || String(it.name || '').toLowerCase().startsWith(q) || String(it.full_name || '').toLowerCase().startsWith(q));
+    }
+    function mentionClose() {
+      mention.open = false; mention.token = null; mentionPopup.hidden = true; mentionPopup.replaceChildren();
+      humanInput.setAttribute('aria-expanded', 'false'); humanInput.removeAttribute('aria-activedescendant');
+    }
+    function mentionNote(text, retry) {
+      const row = document.createElement('div'); row.className = 'mention-row mention-note'; row.textContent = text;
+      if (retry) { row.style.cursor = 'pointer'; row.dataset.retry = '1'; row.addEventListener('mousedown', (e) => { e.preventDefault(); mentionLoad(true); }); }
+      return row;
+    }
+    function mentionRender() {
+      if (!mention.open) return;
+      mentionPopup.replaceChildren();
+      const rows = mentionMatches();
+      if (mention.active >= rows.length) mention.active = Math.max(0, rows.length - 1);
+      if (mention.status === 'loading' && !mention.items.length) mentionPopup.append(mentionNote('加载候选…'));
+      else if (mention.status === 'error' && !mention.items.length) mentionPopup.append(mentionNote('候选加载失败，点此重试', true));
+      else if (!mention.items.length) mentionPopup.append(mentionNote('本组没有其他 Agent'));
+      else if (!rows.length) mentionPopup.append(mentionNote('没有匹配的 Agent'));
+      rows.forEach((it, i) => {
+        const row = document.createElement('div');
+        row.className = 'mention-row'; row.id = `mentionOpt${i}`; row.setAttribute('role', 'option');
+        row.setAttribute('aria-selected', i === mention.active ? 'true' : 'false'); row.dataset.insert = it.insert || it.full_name || '';
+        const ico = document.createElement('span'); ico.className = 'mention-ico'; ico.dataset.cli = String(it.cli || '').toLowerCase();
+        ico.textContent = ({ claude: 'C', codex: 'X', opencode: 'O', deepseek: 'D' })[ico.dataset.cli] || '?';
+        const dot = document.createElement('span'); dot.className = 'mention-dot'; dot.dataset.online = it.online === true ? 'true' : 'false';
+        dot.title = it.online === true ? '在线' : '离线'; ico.append(dot);
+        const label = document.createElement('span'); label.className = 'mention-label';
+        const full = document.createElement('span'); full.className = 'mention-full'; full.textContent = `（${it.full_name || ''}）`;
+        label.append(document.createTextNode(it.name || ''), full);
+        row.append(ico, label);
+        row.addEventListener('mousedown', (e) => { e.preventDefault(); mentionSelect(i); });   // 不抢走输入框焦点
+        mentionPopup.append(row);
+      });
+      if (rows.length) humanInput.setAttribute('aria-activedescendant', `mentionOpt${mention.active}`);
+      else humanInput.removeAttribute('aria-activedescendant');
+      const sel = mentionPopup.querySelector('[aria-selected="true"]'); if (sel) sel.scrollIntoView({ block: 'nearest' });
+    }
+    function mentionSelectable() { return mention.open && mentionMatches().length > 0; }
+    function mentionSelect(index) {
+      const it = mentionMatches()[index]; const tok = mention.token;
+      if (!it || !tok) return;
+      const insert = it.insert || it.full_name || it.name || '';
+      humanInput.setRangeText(`@${insert} `, tok.start, tok.caret, 'end');
+      humanInput.dispatchEvent(new Event('input', { bubbles: true }));   // 约束:改 humanInput.value 必须派发 input
+      mentionClose(); humanInput.focus();
+    }
+    async function mentionLoad(force) {
+      const fresh = mention.status === 'ok' && Date.now() - mention.loadedAt < MENTION_TTL_MS;
+      if (fresh && !force) return;
+      const gen = ++mention.gen; mention.status = 'loading'; mentionRender();
+      const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), MENTION_FETCH_TIMEOUT_MS);
+      try {
+        const r = await fetch(apiEp('mention-candidates'), { cache: 'no-store', signal: controller.signal });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        if (!data || !Array.isArray(data.candidates)) throw new Error('bad shape');
+        if (gen !== mention.gen) return;                       // 过期应答不得覆盖新应答
+        mention.items = data.candidates.filter((c) => c && c.full_name); mention.status = 'ok'; mention.loadedAt = Date.now();
+      } catch (_) {
+        if (gen !== mention.gen) return;
+        mention.status = 'error'; mention.items = [];
+      } finally { clearTimeout(timer); }
+      mentionRender();
+    }
+    function mentionSync() {
+      if (humanInput.disabled) { if (mention.open) mentionClose(); return; }
+      const tok = mentionToken();
+      if (!tok) { if (mention.open) mentionClose(); return; }
+      const opening = !mention.open;
+      mention.token = tok;
+      if (opening) { mention.open = true; mention.active = 0; mentionPopup.hidden = false; humanInput.setAttribute('aria-expanded', 'true'); }
+      else mention.active = 0;
+      mentionRender(); mentionLoad(false);
+    }
+    humanInput.addEventListener('input', (e) => { if (!e.isComposing) mentionSync(); });
+    humanInput.addEventListener('compositionend', () => mentionSync());
+    humanInput.addEventListener('click', mentionSync);
+    humanInput.addEventListener('keyup', (e) => { if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) mentionSync(); });
+    humanInput.addEventListener('blur', () => { if (mention.open) mentionClose(); });
+    // 捕获阶段先于下面那个 Enter=发送 的监听;只在"有可选项"时拦截,其余一律放行。
+    humanInput.addEventListener('keydown', (e) => {
+      if (!mention.open || e.isComposing) return;
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); mentionClose(); return; }
+      if (!mentionSelectable()) return;
+      const n = mentionMatches().length;
+      if (e.key === 'ArrowDown') { e.preventDefault(); e.stopImmediatePropagation(); mention.active = (mention.active + 1) % n; mentionRender(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); mention.active = (mention.active - 1 + n) % n; mentionRender(); }
+      else if ((e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.shiftKey) || e.key === 'Tab') { e.preventDefault(); e.stopImmediatePropagation(); mentionSelect(mention.active); }
+    }, true);
     // Enter 发送；Ctrl/Cmd/Shift+Enter 在光标或选区处插入换行。
     // isComposing 守卫：中文输入法选字回车只确认候选，不误发送。
     humanInput.addEventListener('keydown', (e) => {
