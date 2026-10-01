@@ -348,4 +348,19 @@ func TestClearMalformedLsattrFailClosed(t *testing.T) {
 	if err := (xfsQuota{}).Clear(root, "ag_c3"); err != nil {
 		t.Fatalf("目录已不在应幂等成功: %v", err)
 	}
+	// ⑤ r6 正向删闸：项目号明确为 0（可验证的无配额状态）⇒ 删目录、零 xfs 命令、成功
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	lsattrOut = func(d string) (string, error) { return "0 --------------e-- " + d, nil }
+	calls = nil
+	if err := (xfsQuota{}).Clear(root, "ag_c3"); err != nil {
+		t.Fatalf("项目号 0（预记账席）应直接删目录成功: %v", err)
+	}
+	if len(calls) != 0 {
+		t.Fatalf("项目号 0 不得发任何 xfs 命令: %v", calls)
+	}
+	if _, serr := os.Stat(dir); !os.IsNotExist(serr) {
+		t.Fatalf("项目号 0 路径目录必须已删: %v", serr)
+	}
 }
