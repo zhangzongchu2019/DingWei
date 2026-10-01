@@ -161,7 +161,7 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 		//   (add/edit/delete/approve),本项只是"看得见、点得开自己有权的那部分"。
 		// 🔴 形态是内部 tab(href 为 console 内锚、**无 target**):顶层导航会带走右栏那一堆活
 		//   iframe 与它们的 SSE(实测 pane 数 2→0),指向旧 admin 独立文档的形态已被否掉。
-		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 编组",
+		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 管理",
 		Href: "#agent-groups", Status: "approved", Active: true,
 	}}
 	if role == consolePlatformRoleManagement {
