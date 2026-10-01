@@ -65,6 +65,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"V8_suspend_records_who_and_when_resume_clears", suspendRecordsWhoWhen},
 		{"V2_A5_find_agent_by_name_tie_breaks_by_id", findAgentByNameTie},
 		{"G_no_group_choice_joins_nothing", noGroupJoinsNothing},
+		{"G_approve_only_into_own_or_member_group", approveOnlyIntoUsableGroup},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
 	}
 	for _, c := range cases {
@@ -1096,4 +1097,47 @@ func noGroupJoinsNothing(t *testing.T, s identity.Store) {
 	if gs, _ := s.ListGroups(ctx); len(gs) != 0 {
 		t.Fatalf("a group was created: %+v", gs)
 	}
+}
+
+// 「本人可用」（组长令，收紧 GroupAllowed）：批准与托管新建只能入本人建的组、或本人已有未吊销成员在内的组；
+// 别人的组与不存在同一答复 ErrGroupNotFound（不暴露组存在），且什么也不改。
+func approveOnlyIntoUsableGroup(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-lbl", "lbl", "Lee", "app-lbl", t0)
+	if err := s.CreateGroup(ctx, mkGroup("lg", "李组", "lbl", "ag-lbl", t0)); err != nil {
+		t.Fatal(err)
+	}
+	mustApp(t, s, "app-1", "zzc", "dev-1", t0)
+	in := identity.ApproveInput{AppID: "app-1", OwnerLC: "zzc", AgentID: "ag-1", Name: "Worker", GroupID: "lg"}
+	_, err := s.Approve(ctx, in, t0)
+	wantErr(t, "approve into someone else's group", err, identity.ErrGroupNotFound)
+	if a, _ := s.GetApplication(ctx, "app-1"); a.State != identity.AppPending {
+		t.Fatalf("application left %s", a.State)
+	}
+	if _, err := s.GetAgent(ctx, "ag-1"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("agent created anyway: %v", err)
+	}
+	err = s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-h", OwnerLC: "zzc", Name: "Hosted", GroupID: "lg", CreatedAt: t0},
+		identity.Application{ID: "app-h", PollTokenHash: "tok-h", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, nil)
+	wantErr(t, "hosted into someone else's group", err, identity.ErrGroupNotFound)
+	if got := memberIDs(t, s, "lg"); got != "ag-lbl" {
+		t.Fatalf("someone else's group gained members: %q", got)
+	}
+	// 本人已有成员在内 ⇒ 可用（成员经 JoinGroup 入组；JoinGroup 的收紧另待组长裁）
+	mustHosted(t, s, "ag-z", "zzc", "Zed", "app-z", t0)
+	if err := s.JoinGroup(ctx, "lg", "ag-z", "zzc", t0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Approve(ctx, in, t0.Add(time.Minute)); err != nil {
+		t.Fatalf("approve into a group where I already have a member: %v", err)
+	}
+	// 成员被吊销后不再算「本人已有成员」
+	mustApp(t, s, "app-2", "zzc", "dev-2", t0)
+	if _, err := s.RetireAgent(ctx, "ag-z", "g4", t0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.RetireAgent(ctx, "ag-1", "g4", t0); err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.Approve(ctx, identity.ApproveInput{AppID: "app-2", OwnerLC: "zzc", AgentID: "ag-2", Name: "Second", GroupID: "lg"}, t0)
+	wantErr(t, "only revoked members left", err, identity.ErrGroupNotFound)
 }

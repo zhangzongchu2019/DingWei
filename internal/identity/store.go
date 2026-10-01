@@ -47,7 +47,8 @@ type EnrollStore interface {
 	// ⇒ 建 Agent ⇒ 申请转 approved ⇒ 同 owner 同设备的其它 pending 申请转 superseded（V1 A10）。
 	// 编组：in.GroupID 与 in.NewGroup 都空 ⇒ 不入组（业主令：编组不是必须的）。
 	// in.NewGroup 非空 ⇒ 同一事务建组（组名冲突 ErrGroupNameTaken）、以新 Agent 为组长；否则 in.GroupID 须存在
-	// （ErrGroupNotFound）且未关闭添加（ErrGroupClosed）⇒ 同一事务入组。任一失败整个批准不生效。
+	// 且「本人可用」——本人建的或本人已有未吊销成员在内（否则一律 ErrGroupNotFound，不暴露别人的组）——且未关闭添加（ErrGroupClosed）
+	// ⇒ 同一事务入组。任一失败整个批准不生效。
 	Approve(ctx context.Context, in ApproveInput, now time.Time) (*Agent, error)
 	Reject(ctx context.Context, appID, ownerLC string, now time.Time) error
 	// TakeCredential 一个事务：申请 approved、未过期、凭据未被取走、Agent 仍 active ⇒ 写凭据哈希与取走时刻 ⇒ true。

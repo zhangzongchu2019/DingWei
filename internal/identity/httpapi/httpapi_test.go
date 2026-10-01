@@ -481,6 +481,14 @@ func TestApproveGroupErrorsOverHTTP(t *testing.T) {
 	if err := e.svc.SetGroupAdditionsClosed(context.Background(), "zzc", g.Code, false); err != nil {
 		t.Fatal(err)
 	}
+	// 别人的组（本人既未建、也无成员在内）⇒ 与不存在同一答复 422 group_not_found
+	other, err := e.svc.IssueHostedAgentWithNewGroup(context.Background(), "lbl", "Lee", "李组", "lbl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := approve(a2, map[string]any{"group_code": other.Agent.GroupID}); r.status != 422 || r.body["error"] != "group_not_found" {
+		t.Errorf("someone else's group: %d %v, want 422 group_not_found", r.status, r.body)
+	}
 	if r := approve(a2, map[string]any{"group_code": g.Code}); r.status != 200 {
 		t.Fatalf("approve into existing group: %d %v", r.status, r.body)
 	}

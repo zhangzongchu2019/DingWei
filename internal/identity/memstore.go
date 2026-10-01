@@ -317,7 +317,7 @@ func (m *MemStore) Approve(_ context.Context, in ApproveInput, now time.Time) (*
 			return nil, ErrNameTaken
 		}
 	}
-	if err := m.checkGroupChoiceLocked(in.GroupID, in.NewGroup); err != nil {
+	if err := m.checkGroupChoiceLocked(a.OwnerLC, in.GroupID, in.NewGroup); err != nil {
 		return nil, err
 	}
 	ag := &Agent{
@@ -461,7 +461,7 @@ func (m *MemStore) CreateHostedAgent(_ context.Context, ag Agent, app Applicatio
 	if m.nameTakenLocked(owner, ag.NameLC()) {
 		return ErrNameTaken
 	}
-	if err := m.checkGroupChoiceLocked(ag.GroupID, newGroup); err != nil {
+	if err := m.checkGroupChoiceLocked(owner, ag.GroupID, newGroup); err != nil {
 		return err
 	}
 	a := ag
@@ -726,7 +726,7 @@ func (m *MemStore) DeleteGroup(_ context.Context, code, actorLC string) error {
 }
 
 // checkGroupChoiceLocked 批准／托管新建前校验编组选择（不改状态）：新组 ⇒ 组码与组名不撞；已有组 ⇒ 存在且未关闭添加。
-func (m *MemStore) checkGroupChoiceLocked(code string, newGroup *Group) error {
+func (m *MemStore) checkGroupChoiceLocked(ownerLC, code string, newGroup *Group) error {
 	if code == "" && newGroup == nil {
 		return nil // 不入组（业主令：编组不是必须的）
 	}
@@ -742,13 +742,28 @@ func (m *MemStore) checkGroupChoiceLocked(code string, newGroup *Group) error {
 		return nil
 	}
 	g, ok := m.groups[code]
-	if !ok {
-		return ErrGroupNotFound
+	if !ok || !m.groupUsableByLocked(g, ownerLC) {
+		return ErrGroupNotFound // 别人的组与不存在同一答复，不暴露组存在
 	}
 	if g.AdditionsClosed {
 		return ErrGroupClosed
 	}
 	return nil
+}
+
+// groupUsableByLocked「本人可用」（组长令 2026-10-01，收紧 GroupAllowed）：本人建的组，或本人已有（未吊销）成员在内的组。
+// 业主 S5 已把「加入他人编组」从页面拿掉；只凭组码就能把自己的 Agent 塞进别人的组，等于绕过。
+func (m *MemStore) groupUsableByLocked(g *Group, ownerLC string) bool {
+	owner := Lower(ownerLC)
+	if g.CreatorLC == owner {
+		return true
+	}
+	for id := range m.members[g.Code] {
+		if ag := m.agents[id]; ag != nil && ag.OwnerLC == owner && ag.Current() {
+			return true
+		}
+	}
+	return false
 }
 
 // applyGroupChoiceLocked 校验通过后落地：建新组（该 Agent 为组长）或入已有组。

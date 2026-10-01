@@ -519,7 +519,7 @@ func (s *PGStore) Approve(ctx context.Context, in ApproveInput, now time.Time) (
 		if err := insertAgent(ctx, tx, ag); err != nil {
 			return err
 		}
-		if err := groupChoiceTx(ctx, tx, ag.ID, in.GroupID, in.NewGroup, now); err != nil {
+		if err := groupChoiceTx(ctx, tx, ag.ID, a.OwnerLC, in.GroupID, in.NewGroup, now); err != nil {
 			return err
 		}
 		if _, err := tx.Exec(ctx, `UPDATE np_enroll_application SET state = 'approved', agent_id = $2 WHERE id = $1`, a.ID, ag.ID); err != nil {
@@ -674,7 +674,7 @@ func (s *PGStore) CreateHostedAgent(ctx context.Context, ag Agent, app Applicati
 		if err := insertAgent(ctx, tx, a); err != nil {
 			return err
 		}
-		if err := groupChoiceTx(ctx, tx, a.ID, a.GroupID, newGroup, a.CreatedAt); err != nil {
+		if err := groupChoiceTx(ctx, tx, a.ID, a.OwnerLC, a.GroupID, newGroup, a.CreatedAt); err != nil {
 			return err
 		}
 		return insertApprovedApp(ctx, tx, app, Lower(ag.OwnerLC), ag.ID)
@@ -958,7 +958,7 @@ func (s *PGStore) DeleteGroup(ctx context.Context, code, actorLC string) error {
 
 // groupChoiceTx 批准／托管新建事务内落地编组选择：新组 ⇒ 建组（该 Agent 为组长）＋组长入组；
 // 已有组 ⇒ 行锁（FOR SHARE，与关闭添加、删组互斥）后判存在与未关闭 ⇒ 入组。
-func groupChoiceTx(ctx context.Context, tx repo.Tx, agentID, code string, newGroup *Group, now time.Time) error {
+func groupChoiceTx(ctx context.Context, tx repo.Tx, agentID, ownerLC, code string, newGroup *Group, now time.Time) error {
 	if code == "" && newGroup == nil {
 		return nil // 不入组（业主令：编组不是必须的）
 	}
@@ -983,10 +983,29 @@ func groupChoiceTx(ctx context.Context, tx repo.Tx, agentID, code string, newGro
 		if err != nil {
 			return err
 		}
+		usable, err := groupUsableByTx(ctx, tx, g, ownerLC)
+		if err != nil {
+			return err
+		}
+		if !usable {
+			return ErrGroupNotFound // 别人的组与不存在同一答复，不暴露组存在
+		}
 		if g.AdditionsClosed {
 			return ErrGroupClosed
 		}
 	}
 	_, err := tx.Exec(ctx, `INSERT INTO np_group_member (code, agent_id, created_at) VALUES ($1,$2,$3)`, code, agentID, now.UTC())
 	return err
+}
+
+// groupUsableByTx「本人可用」（组长令 2026-10-01，收紧 GroupAllowed）：本人建的组，或本人已有未吊销成员在内的组。
+func groupUsableByTx(ctx context.Context, tx repo.Tx, g *Group, ownerLC string) (bool, error) {
+	owner := Lower(ownerLC)
+	if g.CreatorLC == owner {
+		return true, nil
+	}
+	var ok bool
+	err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM np_group_member m JOIN np_agent a ON a.id = m.agent_id
+		WHERE m.code = $1 AND a.owner_lc = $2 AND a.state IN ('active', 'suspended'))`, g.Code, owner).Scan(&ok)
+	return ok, err
 }
