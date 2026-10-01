@@ -866,7 +866,10 @@ async function hostedCreate(){
 }
 function hostedOpButtons(a,hs){
   var name=a.name,busy=hs.state==='busy',list=[];
-  [['upgrade','升级',false],['restart','重启',false],[hs.state==='disabled'?'enable':'disable',hs.state==='disabled'?'启用':'停用',true],['destroy','销毁',true]].forEach(function(d){
+  var ops=hs.state==='disabled'
+    ?[['enable','启用',true],['destroy','销毁',true]]   // 停用中:容器已停,重启无意义;暂停中不能升级,须先启用(f0fe9794)——给了也只会被 Hub 拒绝
+    :[['upgrade','升级',false],['restart','重启',false],['disable','停用',true],['destroy','销毁',true]];
+  ops.forEach(function(d){
     var b=document.createElement('button');b.type='button';b.className='hosted-op';b.dataset.op=d[0];b.textContent=d[1];b.disabled=busy;
     b.onclick=async function(){
       var body={};
