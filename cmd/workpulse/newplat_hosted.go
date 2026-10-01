@@ -15,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/hosted"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
@@ -51,7 +52,23 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, cfg *newPlatformConfig, po
 	gate := nodegate.New(hst)
 	idp := newHostedIdentity[hosted.EnrollToken, hosted.IssuedAgent](svc, hosted.ErrGroupNotFound, hosted.ErrGroupClosed)
 	orch := hosted.NewOrchestrator(hst, poolSvc, idp, gate, combos, images)
-	life := hosted.NewLifecycle(hst, poolSvc, idp, idp, gate, images, notReadyBackups{})
+	// T-G4-53 备份管线（真实现）：销毁先备份——节点出卷流式回传，落 dw 的 /data，14 天到期删
+	backupDir := os.Getenv("DW_G4_BACKUP_DIR")
+	if backupDir == "" {
+		backupDir = "/data/dingwei-newplat/backups/hosted"
+	}
+	backups := hosted.NewHubBackuper(hst, gate, cfg.publicOrigin, backupDir)
+	mux.HandleFunc("POST /api/node/backup/{id}", backups.BackupHandler().ServeHTTP)
+	go func() { // 到期清扫（每小时一轮；失败记日志不炸进程）
+		t := time.NewTicker(time.Hour)
+		defer t.Stop()
+		for range t.C {
+			if err := backups.SweepExpiredBackups(context.Background(), time.Now()); err != nil {
+				log.Printf("hosted backup sweep: %v", err)
+			}
+		}
+	}()
+	life := hosted.NewLifecycle(hst, poolSvc, idp, idp, gate, images, backups)
 	gate.OnConnect = orch.ReconcileNode // 节点重连对账（离线销毁补清——组长 7fabddb0 ⑤）
 
 	mux.HandleFunc("GET /api/node/connect", gate.Handler().ServeHTTP) // 节点代理拨入（Bearer 节点凭据）

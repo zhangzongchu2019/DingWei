@@ -152,6 +152,11 @@ func (g *Gate) serve(ctx context.Context, nodeID string, conn *websocket.Conn) {
 
 // Send 实现 hosted.NodeGateway：下发指令并等结果。节点未连接 ⇒ ErrNodeOffline。
 func (g *Gate) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
+	return g.SendWithTimeout(ctx, nodeID, cmd, g.sendMax)
+}
+
+// SendWithTimeout 自定义等结果上限（备份回传等大件用——T-G4-53）。
+func (g *Gate) SendWithTimeout(ctx context.Context, nodeID string, cmd hosted.NodeCommand, max time.Duration) (hosted.NodeResult, error) {
 	g.mu.Lock()
 	nc := g.conns[nodeID]
 	g.mu.Unlock()
@@ -184,7 +189,7 @@ func (g *Gate) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) 
 	select {
 	case res := <-ch:
 		return res, nil
-	case <-time.After(g.sendMax):
+	case <-time.After(max):
 		return hosted.NodeResult{}, errors.New("node_command_timeout")
 	case <-ctx.Done():
 		return hosted.NodeResult{}, ctx.Err()

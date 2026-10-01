@@ -61,14 +61,21 @@ func main() {
 	if seatProxy == "" {
 		log.Fatal("nodeagent: NODEAGENT_SEAT_PROXY 必填（席位代理，如 http://172.30.68.1:11080）")
 	}
+	seatRoot := envOr("NODEAGENT_SEAT_ROOT", "/data/dingwei-newplat/agents")
 	ag.RegisterDockerHandlers(
 		nodeagent.NewEngine(sockPath),
 		nodeagent.XFSQuota(),
-		envOr("NODEAGENT_SEAT_ROOT", "/data/dingwei-newplat/agents"),
+		seatRoot,
 		envOr("NODEAGENT_IMAGE_REGISTRY", "hub.local/dingwei"),
 		cgroupParent,
 		seatProxy,
 	)
+	// T-G4-53：席位卷备份回传（销毁先备份；不落节点盘）
+	exportH, err := nodeagent.NewExportSeatHandler(seatRoot, cfg.HubURL, cfg.Secret, cfg.HubCertSHA256)
+	if err != nil {
+		log.Fatalf("nodeagent: export_seat: %v", err)
+	}
+	ag.Register(nodeagent.CmdExportSeat, exportH)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	if err := ag.Run(ctx); err != nil && ctx.Err() == nil {

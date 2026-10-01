@@ -42,6 +42,9 @@ func (c Config) validate() error {
 	return nil
 }
 
+// Secret 节点凭据（导出给 export_seat 这类需要直连 Hub 的指令用；读取纪律同 secret()）。
+func (c Config) Secret() (string, error) { return c.secret() }
+
 func (c Config) secret() (string, error) {
 	raw, err := os.ReadFile(c.SecretPath)
 	if err != nil {
@@ -89,11 +92,13 @@ const (
 	CmdUpgradeSeat    = "upgrade_seat"
 	CmdDestroySeat    = "destroy_seat"
 	CmdReportCapacity = "report_capacity"
+	CmdExportSeat     = "export_seat" // T-G4-53：席位卷备份回传
 )
 
 var commandWhitelist = map[string]bool{
 	CmdPullImage: true, CmdCreateSeat: true, CmdStopSeat: true, CmdStartSeat: true,
 	CmdRestartSeat: true, CmdUpgradeSeat: true, CmdDestroySeat: true, CmdReportCapacity: true,
+	CmdExportSeat: true,
 }
 
 const reconnectBase = 2 * time.Second

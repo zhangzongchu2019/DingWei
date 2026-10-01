@@ -111,6 +111,19 @@ CREATE TABLE IF NOT EXISTS g4_audit (
   detail JSONB,
   at     timestamptz NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS g4_audit_action_idx ON g4_audit(action, id);
+
+-- 销毁备份登记（T-G4-53 备份管线：节点出卷→Hub 收落 dw 的 /data→14 天到期删；不落节点盘）
+CREATE TABLE IF NOT EXISTS g4_backup (
+  id          TEXT PRIMARY KEY,             -- bk_<hex16>
+  node_id     TEXT NOT NULL,
+  seat_id     TEXT NOT NULL,
+  state       TEXT NOT NULL DEFAULT 'pending'
+              CHECK (state IN ('pending','complete','expired')),
+  path        TEXT NOT NULL DEFAULT '',     -- Hub 本地落盘路径（dw 的 /data 下）
+  size_bytes  BIGINT NOT NULL DEFAULT 0,
+  expires_at  timestamptz NOT NULL,         -- 保留 14 天到期删（业主 8971bddf）
+  created_at  timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS g4_backup_state_idx ON g4_backup(state, expires_at);
 `
 
 // DropDDL 仅测试用：逆向拆除（rollback 的可重复性验证载体）。

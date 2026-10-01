@@ -34,10 +34,14 @@
 #       与「新代码请走仓储包」反向，且允许清单对判据二不豁免。
 open 5
 escape 1
-pending 84
+pending 90
 pending:datad 25
 pending:fanout 30
-pending:hosted 29  # 调用点单位（htx() 与 dtx/ftx 同型）
+pending:hosted 35  # 调用点单位（htx() 与 dtx/ftx 同型）
+# 🔴 pending:hosted 29 → 35（kimi30kqtuxerh，T-G4-53 备份管线）：
+#    键／旧值／新值／依据／谁批：pending:hosted／29／35／backup.go 六处（CreateBackup／GetBackup／
+#    FailBackup／CompleteBackup／ListExpiredBackups／MarkBackupExpired——备份登记表的读写；
+#    同一 PendingCtx 占位债形态，SP7b 收口随 hosted 领域归零）／组长令（53 派工）
 # 🔴 pending:hosted 25 → 29 的构成（kimi30kqtuxerh 落盘，merge main 468ca0ec 后按闸实数 rc=0 复跑确认）：
 #    键／旧值／新值／依据／谁批（裁定 ruling-2026-10-01T124750Z 二(b) 口径）：
 #      pending:hosted／25／29／解冻批新增四处 htx() 调用点（store.go：ListNodes、NodeUsedVCPU、
