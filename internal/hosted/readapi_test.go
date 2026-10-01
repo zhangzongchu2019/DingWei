@@ -168,6 +168,34 @@ func TestOptionsPlanFitsEachGate(t *testing.T) {
 			t.Errorf("fits %v, want both false when no agent slot left", got)
 		}
 	})
+	t.Run("memory short but vcpu ample", func(t *testing.T) {
+		// 剩 6G 内存、vCPU 64：2C/4G 能放，4C/8G 不能 —— 只能是内存闸在起作用（tosonnet50ts 复验存活刀）。
+		got := fitsOf(t, Quota{UserLC: "zzc", AgentsLimit: 8, VCPULimit: 64, MemMBLimit: 6144, DiskMBLimit: 1 << 20}, nil)
+		if !got["2c4g"] || got["4c8g"] {
+			t.Errorf("fits %v, want 2c4g=true 4c8g=false (memory gate)", got)
+		}
+	})
+	t.Run("disk short but vcpu and memory ample", func(t *testing.T) {
+		// 两档套餐的 DiskMB 现在都是 0（待 G1 定档，plans.go），磁盘闸用真档位永远为真、测不出。
+		// 本格只在格内给两档临时设磁盘（10G／20G，格结束还原），让这道闸可被证伪；G1 定档后可改用真档位。
+		saved := map[string]Plan{}
+		for id, p := range plans {
+			saved[id] = p
+		}
+		t.Cleanup(func() {
+			for id, p := range saved {
+				plans[id] = p
+			}
+		})
+		p2, p4 := plans["2c4g"], plans["4c8g"]
+		p2.DiskMB, p4.DiskMB = 10240, 20480
+		plans["2c4g"], plans["4c8g"] = p2, p4
+		// 剩 15G 磁盘、vCPU 与内存都宽裕：10G 能放，20G 不能 —— 只能是磁盘闸在起作用。
+		got := fitsOf(t, Quota{UserLC: "zzc", AgentsLimit: 8, VCPULimit: 64, MemMBLimit: 1 << 20, DiskMBLimit: 15360}, nil)
+		if !got["2c4g"] || got["4c8g"] {
+			t.Errorf("fits %v, want 2c4g=true 4c8g=false (disk gate)", got)
+		}
+	})
 	t.Run("vcpu short but memory ample", func(t *testing.T) {
 		// 剩 3 个 vCPU、内存 1TB：2C 能放，4C 不能 —— 只能是 vCPU 闸在起作用。
 		got := fitsOf(t, Quota{UserLC: "zzc", AgentsLimit: 8, VCPULimit: 3, MemMBLimit: 1 << 20, DiskMBLimit: 1 << 20}, nil)
