@@ -9,8 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -55,6 +57,8 @@ const (
 
 // Service 入网、审批、吊销与凭据认证的业务层。
 type Service struct {
+	auditFailures atomic.Uint64
+
 	Store Store
 	Now   func() time.Time
 	Rand  io.Reader
@@ -117,9 +121,17 @@ func isHex(s string, n int) bool {
 	return err == nil
 }
 
+// audit 写一条审计。写失败不挡业务动作（fail-open，是否改 fail-closed 待组长裁，qwen 复验 🟡④），
+// 但不再静默丢：打一行日志（只记动作与对象，不记 detail）并计数，计数由 AuditFailures 读出（qwen 复验，组长 15:22:39Z ②）。
 func (s *Service) audit(ctx context.Context, actor, action, target, detail string) {
-	_ = s.Store.AppendAudit(ctx, AuditEvent{Actor: actor, Action: action, Target: target, Detail: detail, At: s.Now()})
+	if err := s.Store.AppendAudit(ctx, AuditEvent{Actor: actor, Action: action, Target: target, Detail: detail, At: s.Now()}); err != nil {
+		n := s.auditFailures.Add(1)
+		log.Printf("identity audit write failed: action=%s target=%s failures=%d err=%v", action, target, n, err)
+	}
 }
+
+// AuditFailures 自进程启动以来审计写失败的次数（供心跳／监控读；非 0 即审计在丢）。
+func (s *Service) AuditFailures() uint64 { return s.auditFailures.Load() }
 
 // ── 客户端接口 ──────────────────────────────────────────────────────────────
 

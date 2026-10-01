@@ -53,7 +53,10 @@ CREATE TABLE IF NOT EXISTS np_agent (
     credential_hash text        UNIQUE,
     created_at      timestamptz NOT NULL,
     revoked_at      timestamptz,
-    revoked_by      text        NOT NULL DEFAULT ''
+    revoked_by      text        NOT NULL DEFAULT '',
+    -- 当前这次暂停（V8 停用）的时刻与操作者；恢复即清空（qwen 复验 🟡①）
+    suspended_at    timestamptz,
+    suspended_by    text        NOT NULL DEFAULT ''
 );
 -- 名字只在「未吊销」（active 或 suspended）范围内唯一：吊销即释放名字，暂停中仍占用。
 CREATE UNIQUE INDEX IF NOT EXISTS np_agent_owner_name_current

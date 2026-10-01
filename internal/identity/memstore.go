@@ -523,7 +523,8 @@ func (m *MemStore) FindAgentByName(_ context.Context, ownerLC, nameLC string) (*
 			cp := *ag
 			return &cp, nil
 		}
-		if best == nil || ag.RevokedAt.After(best.RevokedAt) {
+		// 吊销时刻相同（平票）时取 id 大的，与 PG 的 ORDER BY revoked_at DESC, id DESC 一致（qwen 复验 🔵1）
+		if best == nil || ag.RevokedAt.After(best.RevokedAt) || (ag.RevokedAt.Equal(best.RevokedAt) && ag.ID > best.ID) {
 			best = ag
 		}
 	}
@@ -550,9 +551,9 @@ func (m *MemStore) SetAgentSuspended(_ context.Context, agentID string, suspend 
 	case suspend && ag.State == AgentSuspended, !suspend && ag.State == AgentActive:
 		return true, nil
 	case suspend:
-		ag.State = AgentSuspended
+		ag.State, ag.SuspendedAt, ag.SuspendedBy = AgentSuspended, now, by
 	default:
-		ag.State = AgentActive
+		ag.State, ag.SuspendedAt, ag.SuspendedBy = AgentActive, time.Time{}, ""
 	}
 	return false, nil
 }

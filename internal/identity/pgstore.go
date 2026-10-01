@@ -115,16 +115,17 @@ func scanUser(r rowScanner) (*User, error) {
 	return &u, nil
 }
 
-const agentCols = `id, owner_lc, name, group_code, origin, state, coalesce(credential_hash, ''), created_at, revoked_at, revoked_by`
+const agentCols = `id, owner_lc, name, group_code, origin, state, coalesce(credential_hash, ''), created_at, revoked_at, revoked_by, suspended_at, suspended_by`
 
 func scanAgent(r rowScanner) (*Agent, error) {
 	var a Agent
 	var origin, st string
-	var revokedAt sql.NullTime
-	if err := r.Scan(&a.ID, &a.OwnerLC, &a.Name, &a.GroupID, &origin, &st, &a.CredentialHash, &a.CreatedAt, &revokedAt, &a.RevokedBy); err != nil {
+	var revokedAt, suspendedAt sql.NullTime
+	if err := r.Scan(&a.ID, &a.OwnerLC, &a.Name, &a.GroupID, &origin, &st, &a.CredentialHash, &a.CreatedAt, &revokedAt, &a.RevokedBy, &suspendedAt, &a.SuspendedBy); err != nil {
 		return nil, err
 	}
 	a.Origin, a.State, a.CreatedAt, a.RevokedAt = AgentOrigin(origin), AgentState(st), a.CreatedAt.UTC(), fromNull(revokedAt)
+	a.SuspendedAt = fromNull(suspendedAt)
 	return &a, nil
 }
 
@@ -611,7 +612,7 @@ func (s *PGStore) GetAgent(ctx context.Context, agentID string) (*Agent, error) 
 
 func (s *PGStore) FindAgentByName(ctx context.Context, ownerLC, nameLC string) (*Agent, error) {
 	return s.agentBy(ctx, `owner_lc = $1 AND name_lc = $2
-		ORDER BY (state IN ('active', 'suspended')) DESC, revoked_at DESC NULLS LAST LIMIT 1`, Lower(ownerLC), Lower(nameLC))
+		ORDER BY (state IN ('active', 'suspended')) DESC, revoked_at DESC NULLS LAST, id DESC LIMIT 1`, Lower(ownerLC), Lower(nameLC))
 }
 
 func (s *PGStore) ListAgents(ctx context.Context, ownerLC string) ([]Agent, error) {
@@ -740,11 +741,11 @@ func (s *PGStore) SetAgentSuspended(ctx context.Context, agentID string, suspend
 			already = true
 			return nil
 		}
-		target := AgentActive
 		if suspend {
-			target = AgentSuspended
+			_, err = tx.Exec(ctx, `UPDATE np_agent SET state = 'suspended', suspended_at = $2, suspended_by = $3 WHERE id = $1`, agentID, now.UTC(), by)
+		} else {
+			_, err = tx.Exec(ctx, `UPDATE np_agent SET state = 'active', suspended_at = NULL, suspended_by = '' WHERE id = $1`, agentID)
 		}
-		_, err = tx.Exec(ctx, `UPDATE np_agent SET state = $2 WHERE id = $1`, agentID, string(target))
 		return err
 	})
 	return already, err

@@ -56,7 +56,8 @@ type EnrollStore interface {
 	ResolveAgentByCredential(ctx context.Context, credentialHash string) (*Agent, error)
 	// GetAgent 按 agent_id 取（含 revoked 行）；Hub 据此在吊销后找到在线连接。
 	GetAgent(ctx context.Context, agentID string) (*Agent, error)
-	// FindAgentByName 按 (owner, 名称小写) 查：有未吊销的（active 或 suspended）返回它；否则返回最近一次被吊销的；都没有 ⇒ ErrNotFound。
+	// FindAgentByName 按 (owner, 名称小写) 查：有未吊销的（active 或 suspended）返回它；否则返回最近一次被吊销的
+	// （吊销时刻相同则取 agent_id 大的，两个实现一致）；都没有 ⇒ ErrNotFound。
 	// 供路由失败时区分「目标已吊销」与「目标不存在／离线」（V2 A5）。
 	FindAgentByName(ctx context.Context, ownerLC, nameLC string) (*Agent, error)
 	// ListAgents 列该 owner 的未吊销 Agent（active 与 suspended；调用方看 State 区分）。

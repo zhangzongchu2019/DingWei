@@ -180,6 +180,8 @@ func run(logger *slog.Logger) error {
 		adm.Datad = datad.NewClient(datadURL, datadToken)
 		logger.Info("portal board direct-connect datad", "url", datadURL)
 	}
+	// 新平台不注册旧 admin 编组页（须在 Mount 之前置位；配置读错在下面 newPlatformConfigFromEnv 那里报）。
+	_, adm.NewPlatform, _ = newPlatformConfigFromEnv()
 	adm.Mount(mux)                          // /healthz /readyz /admin*
 	portal.NewScheduleServer(st).Mount(mux) // /schedule/
 	// Nova-260921-A(B1-b):admin 能力的 console 门(/console/admin/*),由 console 角色授权。

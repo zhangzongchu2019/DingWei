@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"log"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -354,5 +356,43 @@ func TestResolveFullName(t *testing.T) {
 	}
 	if _, _, err := f.svc.ResolveFullName(bg, "kimi.zzc"); !errors.Is(err, identity.ErrNotFound) {
 		t.Fatalf("revoked agent must not resolve: %v", err)
+	}
+}
+
+// failingAuditStore 审计写一律失败的存储（其余照常）。
+type failingAuditStore struct{ *identity.MemStore }
+
+func (failingAuditStore) AppendAudit(context.Context, identity.AuditEvent) error {
+	return errors.New("audit_log: null value in column id")
+}
+
+// 审计写失败不得静默丢（qwen 复验 🟡④，组长 15:22:39Z ②）：业务动作照常成功（fail-open 待组长裁），
+// 但每次失败都打日志、计数可读。撤掉日志或计数 ⇒ 红。
+func TestAuditFailureLoggedAndCounted(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	store := failingAuditStore{identity.NewMemStore()}
+	if err := store.CreateUser(bg, identity.User{UserID: "zzc", ShortName: "zzc", Type: identity.UserMember, State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	svc := identity.NewService(store, nil, nil)
+	if svc.AuditFailures() != 0 {
+		t.Fatal("fresh service reports audit failures")
+	}
+	hi, err := svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Codex1", "开发组", "g4")
+	if err != nil {
+		t.Fatalf("business action must still succeed when audit fails: %v", err)
+	}
+	if _, err := svc.SuspendHostedAgent(bg, hi.Agent.ID, "g4"); err != nil {
+		t.Fatal(err)
+	}
+	if n := svc.AuditFailures(); n != 2 {
+		t.Fatalf("AuditFailures=%d, want 2 (issue + suspend)", n)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "identity audit write failed: action=agent.hosted_issue") ||
+		!strings.Contains(out, "action=agent.hosted_suspend") || !strings.Contains(out, "failures=2") {
+		t.Fatalf("audit failures not logged:\n%s", out)
 	}
 }

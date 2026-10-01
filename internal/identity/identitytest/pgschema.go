@@ -7,6 +7,8 @@ import (
 )
 
 // testAuditLogDDL 审计复用既有 audit_log；正式环境由 G2 的迁移账本建。测试里建一张字段兼容的最小表。
+// 🔴 这张不是生产形状：生产形状由 G2 账本 0001 条目定案，id 必须有默认（PGStore.AppendAudit 不给 id）、ts 为 timestamptz；
+// 若照旧平台 SQLite 的 id TEXT 必填直译，身份审计会写不进去（qwen 复验 🟡④；写失败现在会打日志并计数，见 Service.AuditFailures）。
 const testAuditLogDDL = `CREATE TABLE IF NOT EXISTS audit_log (
 	id bigserial PRIMARY KEY, actor text, action text, target text, before_json text, after_json text, ts timestamptz)`
 

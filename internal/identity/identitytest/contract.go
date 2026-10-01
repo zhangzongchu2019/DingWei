@@ -62,6 +62,8 @@ func Run(t *testing.T, newStore Factory) {
 		{"V6_hosted_token_expires", hostedTokenExpires},
 		{"V2_A5_find_agent_by_name_prefers_active_then_latest_revoked", findAgentByName},
 		{"V8_hosted_suspend_resume_keeps_credential_and_name", hostedSuspendResume},
+		{"V8_suspend_records_who_and_when_resume_clears", suspendRecordsWhoWhen},
+		{"V2_A5_find_agent_by_name_tie_breaks_by_id", findAgentByNameTie},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
 	}
 	for _, c := range cases {
@@ -1004,5 +1006,69 @@ func hostedGroupChoice(t *testing.T, s identity.Store) {
 	}
 	if g, err := s.GetGroup(ctx, "g2"); err != nil || g.LeaderAgentID != "ag-e" || memberIDs(t, s, "g2") != "ag-e" {
 		t.Fatalf("new hosted group: %+v %v", g, err)
+	}
+}
+
+// 暂停记下谁停的、何时停的；已是暂停时再停不覆盖；恢复即清空（qwen 复验 🟡①：by／now 曾是两个实现里的死参数）。
+// 每一步用互不相同的操作者与时刻，写错字段或写成别一步的值都会红。
+func suspendRecordsWhoWhen(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-s", "zzc", "Sleepy", "app-s", t0)
+	t1, t2, t3, t4 := t0.Add(time.Minute), t0.Add(2*time.Minute), t0.Add(3*time.Minute), t0.Add(4*time.Minute)
+	get := func() *identity.Agent {
+		t.Helper()
+		g, err := s.GetAgent(ctx, "ag-s")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return g
+	}
+	if g := get(); !g.SuspendedAt.IsZero() || g.SuspendedBy != "" {
+		t.Fatalf("fresh agent has suspend fields: %+v", g)
+	}
+	if _, err := s.SetAgentSuspended(ctx, "ag-s", true, "g4", t1); err != nil {
+		t.Fatal(err)
+	}
+	if g := get(); !g.SuspendedAt.Equal(t1) || g.SuspendedBy != "g4" {
+		t.Fatalf("after suspend: at=%v by=%q, want %v g4", g.SuspendedAt, g.SuspendedBy, t1)
+	}
+	if already, err := s.SetAgentSuspended(ctx, "ag-s", true, "other", t2); !already || err != nil {
+		t.Fatalf("second suspend: %v %v", already, err)
+	}
+	if g := get(); !g.SuspendedAt.Equal(t1) || g.SuspendedBy != "g4" {
+		t.Fatalf("no-op suspend overwrote fields: at=%v by=%q", g.SuspendedAt, g.SuspendedBy)
+	}
+	if _, err := s.SetAgentSuspended(ctx, "ag-s", false, "resumer", t3); err != nil {
+		t.Fatal(err)
+	}
+	if g := get(); !g.SuspendedAt.IsZero() || g.SuspendedBy != "" || g.State != identity.AgentActive {
+		t.Fatalf("after resume: %+v", g)
+	}
+	if _, err := s.SetAgentSuspended(ctx, "ag-s", true, "ops", t4); err != nil {
+		t.Fatal(err)
+	}
+	if g, _ := s.ResolveAgentByCredential(ctx, "cred-none"); g != nil {
+		t.Fatalf("unexpected credential hit: %+v", g)
+	}
+	if list, _ := s.ListAgents(ctx, "zzc"); len(list) != 1 || !list[0].SuspendedAt.Equal(t4) || list[0].SuspendedBy != "ops" {
+		t.Fatalf("ListAgents must carry suspend fields: %+v", list)
+	}
+}
+
+// 两条同名 Agent 在同一时刻被吊销（平票）：FindAgentByName 取 agent_id 大的，两个实现一致（qwen 复验 🔵1）。
+// 建两组：先建 id 大的、再建 id 小的，排除「按插入序」碰巧对上。
+func findAgentByNameTie(t *testing.T, s identity.Store) {
+	at := t0.Add(time.Hour)
+	for _, id := range []string{"ag-z9", "ag-a1"} {
+		mustHosted(t, s, id, "zzc", "Twin", "app-"+id, t0)
+		if _, err := s.RetireAgent(ctx, id, "by-"+id, at); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// 连查 20 次：内存实现遍历 map 的顺序每次随机，平票若不确定，20 次全对的概率只有 2^-20
+	for i := 0; i < 20; i++ {
+		g, err := s.FindAgentByName(ctx, "zzc", "twin")
+		if err != nil || g.ID != "ag-z9" || g.RevokedBy != "by-ag-z9" {
+			t.Fatalf("tie (call %d): %+v %v, want ag-z9", i, g, err)
+		}
 	}
 }

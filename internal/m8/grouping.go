@@ -128,6 +128,9 @@ func (h *Hub) groupingKeys(ctx context.Context, endpoint agentEndpointIdentity) 
 }
 
 func (h *Hub) enforceAgentGrouping(ctx context.Context, from address, env model.Envelope, targetKeyID, targetSession string) error {
+	if h.Identity != nil {
+		return h.enforceNewPlatformGrouping(ctx, from, env, targetKeyID, targetSession)
+	}
 	if h.Repo == nil {
 		return nil
 	}

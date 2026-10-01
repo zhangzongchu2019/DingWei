@@ -132,13 +132,16 @@ type Agent struct {
 	ID             string
 	OwnerLC        string
 	Name           string
-	GroupID        string
+	GroupID        string // 入网时选的编组码；PG 列名是 np_agent.group_code，对应 np_group.code
 	Origin         AgentOrigin
 	State          AgentState
 	CredentialHash string // 为空＝凭据尚未被客户端取走（设计件 1.3）
 	CreatedAt      time.Time
 	RevokedAt      time.Time
 	RevokedBy      string
+	// SuspendedAt／SuspendedBy 当前这次暂停的时刻与操作者（V8 停用）；未暂停时为零值。恢复即清空（qwen 复验 🟡①）。
+	SuspendedAt time.Time
+	SuspendedBy string
 }
 
 func (a Agent) NameLC() string { return Lower(a.Name) }
