@@ -143,6 +143,8 @@ async function main() {
       }));
       return;
     }
+    if (req.url === '/api/console/hosted/options') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ nodes: [], combos: [], accounts: [], plans: [], quota: { remaining: {} } })); return; } // G3 托管区的挂载请求;本件不测它,只让桩认得路由
+    if (req.url === '/api/console/hosted/agents') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ agents: [] })); return; }
     if (req.url === '/api/console/enroll/applications') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ applications: [] })); return; } // G3 新增面板的挂载请求;本件不测它,只让桩认得这条路由
     if (req.url === '/api/console/agent-groups') {
       if (req.method === 'POST') {
