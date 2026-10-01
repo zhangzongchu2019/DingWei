@@ -56,6 +56,7 @@ type dockerOps struct {
 	seatRoot     string // /data/dingwei-newplat/agents 或 /data/dingwei-node
 	registry     string // 固定镜像仓库（如 hub.local/dingwei）
 	cgroupParent string // 🔴 必填：cgroup 父切片（如 dingwei-hosted.slice——组长 eccc54bc）
+	seatProxy    string // 🔴 必填：席位代理（第 12 条②：注入容器 env，如 http://172.30.68.1:11080）
 	waitMax      time.Duration
 }
 
@@ -120,8 +121,8 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources) 
 	memBytes := res.MemoryMB * 1024 * 1024
 	return map[string]any{
 		"Image": image,
-		"User":  "10001:10001", // 非 root（隔离底线；与 seatRunUID 一致）
-		"Env":   []string{},    // 🔴 凭据永不经 env（B7）；令牌走文件
+		"User":  "10001:10001",       // 非 root（隔离底线；与 seatRunUID 一致）
+		"Env":   d.seatEnv(),         // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
 		"HostConfig": map[string]any{
 			"ReadonlyRootfs": true,
 			"Tmpfs":          map[string]string{"/tmp": "size=8m"},
@@ -153,6 +154,18 @@ var chownForSeatFn = func(path string) error {
 }
 
 func chownForSeat(path string) error { return chownForSeatFn(path) }
+
+// seatEnv 席位容器的环境变量：仅代理（席位出网经 relay，第 12 条②）；凭据永不进这里。
+func (d *dockerOps) seatEnv() []string {
+	if d.seatProxy == "" {
+		return []string{}
+	}
+	return []string{
+		"HTTP_PROXY=" + d.seatProxy,
+		"HTTPS_PROXY=" + d.seatProxy,
+		"NO_PROXY=localhost,127.0.0.1", // 本机回环不经代理
+	}
+}
 
 func (d *dockerOps) writeTokenFile(seatID string, tf *tokenFile) error {
 	if tf == nil {
@@ -221,6 +234,9 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	}
 	if d.cgroupParent == "" {
 		return nil, fmt.Errorf("%w: cgroup 父切片未配置（eccc54bc：漏设即拒）", ErrParams)
+	}
+	if d.seatProxy == "" {
+		return nil, fmt.Errorf("%w: 席位代理未配置（第 12 条②：漏设即拒）", ErrParams)
 	}
 
 	name := containerName(p.SeatID)
@@ -419,8 +435,8 @@ func (d *dockerOps) destroy(ctx context.Context, params json.RawMessage) (json.R
 // RegisterDockerHandlers 把 Docker 指令集挂进代理骨架（cmd/nodeagent 在真机上调用）。
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 // cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent string) {
-	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, waitMax: 60 * time.Second}
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy string) {
+	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, waitMax: 60 * time.Second}
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)

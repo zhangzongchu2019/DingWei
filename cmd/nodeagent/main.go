@@ -55,12 +55,19 @@ func main() {
 	if cgroupParent == "" {
 		log.Fatal("nodeagent: NODEAGENT_CGROUP_PARENT 必填（cgroup 父切片，如 dingwei-hosted.slice）")
 	}
+	// 🔴 NODEAGENT_SEAT_PROXY 必填（第 12 条②）：席位出网经 relay（如 http://172.30.68.1:11080），
+	//    注入容器 env；漏设＝席位可能直连外网绕过 relay 链。
+	seatProxy := os.Getenv("NODEAGENT_SEAT_PROXY")
+	if seatProxy == "" {
+		log.Fatal("nodeagent: NODEAGENT_SEAT_PROXY 必填（席位代理，如 http://172.30.68.1:11080）")
+	}
 	ag.RegisterDockerHandlers(
 		nodeagent.NewEngine(sockPath),
 		nodeagent.XFSQuota(),
 		envOr("NODEAGENT_SEAT_ROOT", "/data/dingwei-newplat/agents"),
 		envOr("NODEAGENT_IMAGE_REGISTRY", "hub.local/dingwei"),
 		cgroupParent,
+		seatProxy,
 	)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

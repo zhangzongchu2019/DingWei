@@ -47,6 +47,15 @@ func last4Of(secret string) string {
 	return secret[len(secret)-4:]
 }
 
+// displayLast4 按显示口径（组长 M1 返修第 16 条④）：api_key 类照旧后四位；
+// token_file 类不落内容尾部（JSON 结构尾无识别意义）——返回空串，页面显示「已入池＋登记时间」。
+func displayLast4(kind, secret string) string {
+	if kind == "token_file" {
+		return ""
+	}
+	return last4Of(secret)
+}
+
 func admin(by string, isAdmin bool) error {
 	if !isAdmin {
 		return ErrForbiddenRole
@@ -76,7 +85,7 @@ func (p *PoolService) Register(ctx context.Context, by string, isAdmin bool, nam
 	if err != nil {
 		return Account{}, err
 	}
-	a := Account{ID: id, Name: name, Kind: kind, CLI: cli, LLM: llm, KeyVersion: kv, Last4: last4Of(secret)}
+	a := Account{ID: id, Name: name, Kind: kind, CLI: cli, LLM: llm, KeyVersion: kv, Last4: displayLast4(kind, secret)}
 	if err := p.st.CreateAccount(ctx, a, enc, by); err != nil {
 		return Account{}, err
 	}
@@ -98,7 +107,11 @@ func (p *PoolService) UpdateSecret(ctx context.Context, by string, isAdmin bool,
 	if err != nil {
 		return err
 	}
-	if err := p.st.UpdateAccountSecret(ctx, accountID, enc, kv, last4Of(secret)); err != nil {
+	a, gerr := p.st.GetAccount(ctx, accountID)
+	if gerr != nil {
+		return gerr
+	}
+	if err := p.st.UpdateAccountSecret(ctx, accountID, enc, kv, displayLast4(a.Kind, secret)); err != nil {
 		return err
 	}
 	return p.st.AddAudit(ctx, by, "account.secret_update", accountID, nil)

@@ -60,15 +60,15 @@ func TestPoolServiceLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("register: %v", err)
 	}
-	if a.Last4 != "abcd" {
-		t.Fatalf("last4: %q", a.Last4)
+	if a.Last4 != "" { // token_file 类不落内容尾部（第 16 条④；api_key 类才显示后四位）
+		t.Fatalf("token_file last4 应为空, 得 %q", a.Last4)
 	}
 	lst, err := svc.ListAdmin(ctx, "admin", true)
 	if err != nil || len(lst) != 1 {
 		t.Fatalf("list: %v", err)
 	}
-	if lst[0].Last4 != "abcd" {
-		t.Fatal("列表应带后四位")
+	if lst[0].Last4 != "" {
+		t.Fatal("token_file 列表不应带内容尾部")
 	}
 
 	// 授权 → 用户下拉可见；绑定 → 不再可选；解密只给绑定席
@@ -99,8 +99,8 @@ func TestPoolServiceLifecycle(t *testing.T) {
 		t.Fatalf("换密后应解新值: %v", err)
 	}
 	got, _ := s.GetAccount(ctx, a.ID)
-	if got.Last4 != "wxyz" {
-		t.Fatalf("换密后 last4: %q", got.Last4)
+	if got.Last4 != "" { // token_file 类换密后同样不落内容尾部
+		t.Fatalf("换密后 token_file last4 应为空, 得 %q", got.Last4)
 	}
 
 	// 审计：register/grant/bind/decrypt×2/secret_update 各自恰好一条（T-G4-03）
@@ -137,5 +137,25 @@ func TestPoolServiceLifecycle(t *testing.T) {
 	usable, err = s.ListUsableAccounts(ctx, "zzc", "codex", "gpt")
 	if err != nil || len(usable) != 0 {
 		t.Fatalf("停用后不可选: %+v", usable)
+	}
+}
+
+// M1 返修第 16 条④：token_file 类不落内容尾部（页面显示「已入池＋登记时间」）；api_key 类照旧。
+func TestTokenFileDisplayNoContentTail(t *testing.T) {
+	svc, _ := mkPoolSvc(t)
+	ctx := context.Background()
+	a, err := svc.Register(ctx, "admin", true, "team-codex", "token_file", "codex", "gpt", `{"access_token":"abcd1234","refresh_token":"zz"}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Last4 != "" {
+		t.Fatalf("token_file 类 Last4 必须为空（不落内容尾部）, 得 %q", a.Last4)
+	}
+	b, err := svc.Register(ctx, "admin", true, "team-ds", "api_key", "deepseek", "ds", "sk-test-5678")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.Last4 != "5678" {
+		t.Fatalf("api_key 类照旧后四位, 得 %q", b.Last4)
 	}
 }

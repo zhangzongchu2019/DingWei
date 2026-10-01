@@ -21,6 +21,7 @@ type fakeEngine struct {
 	ids   map[string]string
 	next  int
 	failAt string
+	unhealthyNew bool // D2 反向：新容器不健康（upgrade 须回滚保留旧）
 	srv   *httptest.Server
 }
 
@@ -66,9 +67,13 @@ func newFakeDocker(t *testing.T) *fakeEngine {
 					id = i
 				}
 			}
+			running := true
+			if f.unhealthyNew && name == f.ids[func() string { for n := range f.ids { if strings.HasSuffix(n, "-new") { return n } }; return "" }()] {
+				running = false // D2 反向：新容器不健康（以 ID 寻址的 inspect）
+			}
 			json.NewEncoder(w).Encode(map[string]any{
 				"Id": id, "Name": name,
-				"State": map[string]any{"Status": "running", "Running": true},
+				"State": map[string]any{"Status": map[bool]string{true: "running", false: "created"}[running], "Running": running},
 				"Image": "x",
 			})
 		case strings.HasPrefix(key, "POST /networks/create") || strings.HasPrefix(key, "DELETE /networks/"):
@@ -90,6 +95,7 @@ func (f *fakeEngine) ops(root string) *dockerOps {
 		seatRoot:     root,
 		registry:     "hub.local/dingwei",
 		cgroupParent: "dingwei-hosted.slice",
+		seatProxy:    "http://172.30.68.1:11080",
 		waitMax:      2 * time.Second,
 	}
 }
@@ -152,8 +158,17 @@ func TestCreateSeatSecuritySpecAndTokenFile(t *testing.T) {
 	if spec["User"] != "10001:10001" {
 		t.Fatal("必须非 root UID")
 	}
-	if env, _ := spec["Env"].([]any); len(env) != 0 {
-		t.Fatalf("凭据永不经 env（B7）: %v", env)
+	// B7 语义精确化（第 12 条②后）：env 里只许代理三键，凭据类（key/token/secret/auth）零出现
+	if env, _ := spec["Env"].([]any); len(env) > 0 {
+		for _, e := range env {
+			s, _ := e.(string)
+			if !strings.HasPrefix(s, "HTTP_PROXY=") && !strings.HasPrefix(s, "HTTPS_PROXY=") && !strings.HasPrefix(s, "NO_PROXY=") {
+				t.Fatalf("凭据永不经 env（B7），实得: %v", env)
+			}
+			if strings.Contains(strings.ToLower(s), "key=") || strings.Contains(strings.ToLower(s), "token=") || strings.Contains(strings.ToLower(s), "secret") {
+				t.Fatalf("env 不得含凭据形态: %v", env)
+			}
+		}
 	}
 	if hc["ReadonlyRootfs"] != true {
 		t.Fatal("只读 rootfs")
@@ -286,6 +301,114 @@ func TestCgroupParentRequiredAndSet(t *testing.T) {
 	callsBefore := len(f.calls)
 	if _, err := d2.create(context.Background(), json.RawMessage(raw)); err == nil {
 		t.Fatal("漏设父切片必须拒")
+	}
+	if len(f.calls) != callsBefore {
+		t.Fatal("漏设拒时不得产生任何引擎调用")
+	}
+}
+
+// ---------- M1 返修 阻断5（B3/D2 判别力）＋席位代理 ----------
+
+// B3 补强：清理自身失败必须上抛（清理都失败而报"已清理"是比残留更糟的假象）。
+func TestCreateCleanupFailureIsSurfaced(t *testing.T) {
+	f := newFakeDocker(t)
+	f.failAt = "/start" // 启动失败触发清理
+	root := t.TempDir()
+	d := f.ops(root)
+	raw := `{"seat_id":"ag_b3","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	if _, err := d.create(context.Background(), json.RawMessage(raw)); err == nil {
+		t.Fatal("启动失败应报错")
+	}
+	// 再制造：清理闸失效（quota clear 失败）
+	d.quota.(*fakeQuota).failAt = "clear"
+	if _, err := d.create(context.Background(), json.RawMessage(raw)); err == nil {
+		t.Fatal("应报错")
+	} else if !strings.Contains(err.Error(), "清理失败") {
+		t.Fatalf("清理失败必须上抛（B3）: %v", err)
+	}
+}
+
+// D2 补强：完整顺序 start-new → healthy-new(inspect) → stop-old → remove-old → rename；
+// 反向：新容器不健康 ⇒ 旧容器全程不动（无 stop/remove 旧）。
+func TestUpgradeFullOrderAndRollbackPreservesOld(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	raw := `{"seat_id":"ag_d2","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	if _, err := d.upgrade(context.Background(), json.RawMessage(raw)); err != nil {
+		t.Fatalf("upgrade: %v", err)
+	}
+	newID := f.ids["seat-ag_d2-new"]
+	if newID == "" {
+		t.Fatalf("假引擎未建 -new 容器: %v", f.ids)
+	}
+	var iStartNew, iHealthyNew, iStopOld, iRemoveOld, iRename = -1, -1, -1, -1, -1
+	for i, c := range f.calls {
+		switch {
+		case c == "POST /containers/"+newID+"/start" && iStartNew == -1:
+			iStartNew = i
+		case c == "GET /containers/"+newID+"/json" && iHealthyNew == -1 && iStartNew >= 0:
+			iHealthyNew = i // 新容器健康检查（waitRunning 的 inspect，以新容器 ID 寻址）
+		case strings.Contains(c, "/stop") && !strings.Contains(c, newID) && iStopOld == -1 && iHealthyNew >= 0:
+			iStopOld = i
+		case strings.HasPrefix(c, "DELETE /containers/") && !strings.Contains(c, newID) && iRemoveOld == -1 && iStopOld >= 0:
+			iRemoveOld = i
+		case strings.Contains(c, "/rename") && iRename == -1 && iRemoveOld >= 0:
+			iRename = i
+		}
+	}
+	if !(iStartNew >= 0 && iHealthyNew > iStartNew && iStopOld > iHealthyNew && iRemoveOld > iStopOld && iRename > iRemoveOld) {
+		t.Fatalf("顺序必须 起新→健康新→停旧→删旧→改名: %v", f.calls)
+	}
+
+	// 反向：新容器不健康 ⇒ 回滚，旧容器全程不动
+	f2 := newFakeDocker(t)
+	f2.unhealthyNew = true
+	d2 := f2.ops(t.TempDir())
+	if _, err := d2.upgrade(context.Background(), json.RawMessage(raw)); err == nil || !strings.Contains(err.Error(), "rolled_back") {
+		t.Fatalf("新不健康应回滚, 得 %v", err)
+	}
+	newID2 := f2.ids["seat-ag_d2-new"]
+	if newID2 == "" {
+		t.Fatalf("假引擎未建 -new 容器: %v", f2.ids)
+	}
+	for _, c := range f2.calls {
+		// 旧容器按 seat 名寻址（seat-ag_d2，不含新容器 ID）；新容器的停/删（按 newID2）是回滚的正当事
+		if (strings.Contains(c, "/stop") || strings.HasPrefix(c, "DELETE /containers/")) &&
+			!strings.Contains(c, newID2) && strings.Contains(c, "seat-ag_d2") {
+			t.Fatalf("回滚路径不得动旧容器: %s", c)
+		}
+	}
+}
+
+// 席位代理（第 12 条②）：注入容器 env；漏设 ⇒ create 必拒（与 cgroup 父切片同型的反向）。
+func TestSeatProxyInjection(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	d.seatProxy = "http://172.30.68.1:11080"
+	raw := `{"seat_id":"ag_px","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	if _, err := d.create(context.Background(), json.RawMessage(raw)); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	env, _ := f.specs[0]["Env"].([]any)
+	var sawHTTP, sawHTTPS bool
+	for _, e := range env {
+		s, _ := e.(string)
+		if s == "HTTP_PROXY=http://172.30.68.1:11080" {
+			sawHTTP = true
+		}
+		if s == "HTTPS_PROXY=http://172.30.68.1:11080" {
+			sawHTTPS = true
+		}
+	}
+	if !sawHTTP || !sawHTTPS {
+		t.Fatalf("代理环境变量须注入容器: %v", env)
+	}
+	// 反向：漏设 ⇒ 必拒且零引擎调用
+	d2 := f.ops(t.TempDir())
+	d2.seatProxy = ""
+	callsBefore := len(f.calls)
+	if _, err := d2.create(context.Background(), json.RawMessage(raw)); err == nil {
+		t.Fatal("漏设代理必须拒")
 	}
 	if len(f.calls) != callsBefore {
 		t.Fatal("漏设拒时不得产生任何引擎调用")

@@ -42,6 +42,12 @@ var xfsRun = func(args ...string) ([]byte, error) {
 	return exec.Command("xfs_quota", full...).CombinedOutput()
 }
 
+// lsattrOut 取目录的项目号输出（lsattr -d -p；可注入——D5 复查用例要伪造"有项目号"）。
+var lsattrOut = func(dir string) (string, error) {
+	out, err := exec.Command("lsattr", "-d", "-p", dir).CombinedOutput()
+	return string(out), err
+}
+
 // quotaLockPath 项目配额分配的跨进程锁（flock）。
 var quotaLockPath = "/run/lock/dingwei-node-quota.lock"
 
@@ -148,7 +154,7 @@ func (xfsQuota) Setup(root, seatID string, diskMB int64) error {
 			return fmt.Errorf("xfs project -s: %v: %s", err, out)
 		}
 		// lsattr 断言项目号落对（v3 同款闸：两目录同落一个 ID 的 bug 不得回潮）
-		if out, err := exec.Command("lsattr", "-d", "-p", dir).CombinedOutput(); err != nil {
+		if out, err := lsattrOut(dir); err != nil {
 			return fmt.Errorf("lsattr -d -p %s: %v: %s", dir, err, out)
 		} else {
 			got, aerr := strconv.Atoi(strings.Fields(string(out))[0])
@@ -198,8 +204,8 @@ func (xfsQuota) Clear(root, seatID string) error {
 	}
 	// 找该目录绑定的项目号（lsattr）——没有配额项目的席位（diskMB=0 预记账席）直接删目录即可
 	pid := -1
-	if out, err := exec.Command("lsattr", "-d", "-p", dir).CombinedOutput(); err == nil {
-		if fields := strings.Fields(string(out)); len(fields) > 0 {
+	if out, err := lsattrOut(dir); err == nil {
+		if fields := strings.Fields(out); len(fields) > 0 {
 			pid, _ = strconv.Atoi(fields[0]) // 解析失败按无项目处理
 		}
 	}
