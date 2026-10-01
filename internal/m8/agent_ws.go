@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -118,4 +119,28 @@ func (h *Hub) AgentOnline(agentID string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.sessionClients[AgentKeyID(ag.OwnerLC)][ag.NameLC()] != nil
+}
+
+// isInternalSource 新平台下 /ws/service 只收本机与内网来源（台账 c796e65e）。
+// 直连方与代理头里出现的【每一个】地址都必须是回环或私网：X-Forwarded-For 的首项可由客户端伪造，
+// 只看首项（clientIPFromRequest 的取法）会被「先塞一个内网地址」绕过。
+func isInternalSource(r *http.Request) bool {
+	internal := func(s string) bool {
+		ip := net.ParseIP(strings.TrimSpace(s))
+		return ip != nil && (ip.IsLoopback() || ip.IsPrivate())
+	}
+	if !internal(hostOnly(r.RemoteAddr)) {
+		return false
+	}
+	if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
+		for _, hop := range strings.Split(xff, ",") {
+			if !internal(hop) {
+				return false
+			}
+		}
+	}
+	if real := strings.TrimSpace(r.Header.Get("X-Real-IP")); real != "" && !internal(real) {
+		return false
+	}
+	return true
 }

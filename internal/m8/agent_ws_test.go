@@ -270,3 +270,58 @@ func TestSessionWS_GoneWhenCredentialOnly(t *testing.T) {
 		t.Fatalf("old entry: %d %s", resp.StatusCode, b)
 	}
 }
+
+func TestIsInternalSource(t *testing.T) {
+	cases := []struct {
+		remote, xff, real string
+		want              bool
+	}{
+		{"127.0.0.1:5000", "", "", true},
+		{"10.1.2.3:5000", "", "", true},
+		{"192.168.0.9:5000", "172.16.0.4", "", true},
+		{"203.0.113.9:5000", "", "", false},                    // 公网直连
+		{"127.0.0.1:5000", "203.0.113.9", "", false},           // 经 nginx 的公网请求
+		{"127.0.0.1:5000", "10.0.0.1, 203.0.113.9", "", false}, // 客户端先塞一个内网地址
+		{"127.0.0.1:5000", "", "198.51.100.7", false},
+		{"127.0.0.1:5000", "not-an-ip", "", false},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest("GET", "/ws/service/x", nil)
+		r.RemoteAddr = c.remote
+		if c.xff != "" {
+			r.Header.Set("X-Forwarded-For", c.xff)
+		}
+		if c.real != "" {
+			r.Header.Set("X-Real-IP", c.real)
+		}
+		if got := isInternalSource(r); got != c.want {
+			t.Errorf("remote=%s xff=%q real=%q: got %v want %v", c.remote, c.xff, c.real, got, c.want)
+		}
+	}
+}
+
+func TestServiceWS_InternalOnlyInNewPlatformMode(t *testing.T) {
+	e := newAgentEnv(t)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/service/{serviceID}", e.hub.HandleWS)
+	call := func(xff string) (int, string) {
+		r := httptest.NewRequest("GET", "/ws/service/svc1?api_key=nope", nil)
+		r.RemoteAddr = "127.0.0.1:4000"
+		if xff != "" {
+			r.Header.Set("X-Forwarded-For", xff)
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, r)
+		return rec.Code, strings.TrimSpace(rec.Body.String())
+	}
+	if code, _ := call("203.0.113.9"); code != 401 {
+		t.Fatalf("legacy mode must not add the source gate: %d", code)
+	}
+	e.hub.AgentCredentialOnly = true
+	if code, body := call("203.0.113.9"); code != 403 || body != `{"error":"internal_only"}` {
+		t.Fatalf("public source in new-platform mode: %d %s", code, body)
+	}
+	if code, _ := call(""); code != 401 { // 内网来源照常走服务 key 鉴权（这里 key 是假的 ⇒ 401）
+		t.Fatalf("internal source should reach key auth: %d", code)
+	}
+}

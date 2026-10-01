@@ -72,7 +72,8 @@ type Hub struct {
 
 	// Identity 新平台 G3：/ws/agent 按专属凭据认人（为空＝不启用该入口）。
 	Identity *identity.Service
-	// AgentCredentialOnly 为真时旧入口 /ws/session 一律回 410：新平台只认凭据（设计件 2.3）。
+	// AgentCredentialOnly 新平台模式：旧入口 /ws/session 一律回 410（只认凭据，设计件 2.3）；
+	// /ws/service 只收本机与内网来源（台账 c796e65e）。
 	AgentCredentialOnly bool
 
 	// NowFunc 只为测试注入时钟。D1 的滑动续期要验「跨过 12 小时」,
@@ -731,6 +732,10 @@ func (h *Hub) AddPrefixRule(ctx context.Context, rule model.RoutingRule) error {
 }
 
 func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
+	if h.AgentCredentialOnly && !isInternalSource(r) {
+		writeAgentWSError(w, http.StatusForbidden, "internal_only")
+		return
+	}
 	serviceID := r.PathValue("serviceID")
 	key := r.URL.Query().Get("api_key")
 	if key == "" {
