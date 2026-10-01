@@ -113,8 +113,6 @@ func mapErr(w http.ResponseWriter, err error) {
 		writeErr(w, http.StatusNotFound, "unknown_owner", nil)
 	case errors.Is(err, identity.ErrNotFound):
 		writeErr(w, http.StatusNotFound, "not_found", nil)
-	case errors.Is(err, identity.ErrGroupRequired):
-		writeErr(w, http.StatusUnprocessableEntity, "group_required", nil)
 	case errors.Is(err, identity.ErrGroupNotFound):
 		writeErr(w, http.StatusUnprocessableEntity, "group_not_found", nil)
 	case errors.Is(err, identity.ErrGroupClosed):
