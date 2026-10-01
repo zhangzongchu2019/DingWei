@@ -308,6 +308,9 @@ func TestNewPlatformConsolePlatform(t *testing.T) {
 	call := func(method, path, tok string) (int, string) {
 		req, _ := http.NewRequest(method, srv.URL+path, nil)
 		req.Header.Set("Accept", "application/json")
+		if method != "GET" {
+			req.Header.Set("Origin", npOrigin)
+		}
 		if tok != "" {
 			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: tok})
 		}
@@ -323,11 +326,13 @@ func TestNewPlatformConsolePlatform(t *testing.T) {
 		t.Errorf("manager platform: %d %s", st, body)
 	}
 	st, body := call("GET", "/api/console/platform", "tok-mem")
-	if st != 200 || !strings.Contains(body, `"role":"owner"`) || strings.Contains(body, "platform-admin") || !strings.Contains(body, `"items":[]`) {
+	if st != 200 || !strings.Contains(body, `"role":"owner"`) || strings.Contains(body, "platform-admin") ||
+		!strings.Contains(body, `"items":[{"id":"agent-groups","kind":"agent-groups","title":"Agent 管理","href":"#agent-groups","status":"approved","active":true,`) ||
+		strings.Count(body, `"id":`) != 1 {
 		t.Errorf("member platform: %d %s", st, body)
 	}
-	if strings.Contains(body, `"id":"specs"`) || strings.Contains(body, `"id":"agent-groups"`) {
-		t.Errorf("new platform must not serve legacy or unmigrated entries: %s", body)
+	if strings.Contains(body, `"id":"specs"`) {
+		t.Errorf("new platform must not serve legacy specs entry: %s", body)
 	}
 	if st, body := call("POST", "/api/console/platform/items", "tok-mem"); st != 403 || body != `{"error":"forbidden"}` {
 		t.Errorf("member add: %d %s", st, body)
@@ -337,6 +342,18 @@ func TestNewPlatformConsolePlatform(t *testing.T) {
 	}
 	if st, _ := call("GET", "/api/console/platform", ""); st != 401 {
 		t.Errorf("no session: %d", st)
+	}
+	// 写操作缺 Origin ⇒ 403（与 N3、入网接口、view 授权同口径）
+	req, _ := http.NewRequest("POST", srv.URL+"/api/console/platform/items", nil)
+	req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: "tok-mgr"})
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(res.Body)
+	res.Body.Close()
+	if res.StatusCode != 403 || strings.TrimSpace(string(b)) != `{"error":"origin_mismatch"}` {
+		t.Errorf("write without Origin: %d %s", res.StatusCode, b)
 	}
 }
 

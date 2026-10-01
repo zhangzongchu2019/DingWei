@@ -35,8 +35,8 @@ func NewPGStore(pool *repo.Pool) *PGStore {
 	return &PGStore{pool: pool, t: repo.SystemCtx()}
 }
 
-// pgRequiredTables 身份存储要用的表：本包 pgschema.sql 的六张，加复用的 audit_log（由 G2 的迁移账本建）。
-var pgRequiredTables = []string{"np_user", "np_identity", "np_registration_code", "np_session", "np_agent", "np_enroll_application", "audit_log"}
+// pgRequiredTables 身份存储要用的表：本包 pgschema.sql 的八张，加复用的 audit_log（由 G2 的迁移账本建）。
+var pgRequiredTables = []string{"np_user", "np_identity", "np_registration_code", "np_session", "np_agent", "np_enroll_application", "np_group", "np_group_member", "audit_log"}
 
 // CheckSchema 表都在才返回 nil；缺表时报出缺哪几张。本包不自行建表 —— 建表归迁移账本，
 // Hub 与初始化脚本启动时据此拒绝在没建好表的库上运行，不在半套表上写入。
@@ -742,4 +742,209 @@ func (s *PGStore) SetAgentSuspended(ctx context.Context, agentID string, suspend
 		return err
 	})
 	return already, err
+}
+
+// ── GroupStore ─────────────────────────────────────────────────────────────
+
+const groupCols = `code, short_name, creator_lc, leader_agent_id, additions_closed, created_at, updated_at`
+
+func scanGroup(r rowScanner) (*Group, error) {
+	var g Group
+	if err := r.Scan(&g.Code, &g.ShortName, &g.CreatorLC, &g.LeaderAgentID, &g.AdditionsClosed, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		return nil, err
+	}
+	g.CreatedAt, g.UpdatedAt = g.CreatedAt.UTC(), g.UpdatedAt.UTC()
+	return &g, nil
+}
+
+// lockGroup 取组并加行锁（share ⇒ FOR SHARE：与关闭添加、删组的写互斥，但多个入组可并行）。
+func lockGroup(ctx context.Context, tx repo.Tx, code string, share bool) (*Group, error) {
+	mode := "FOR UPDATE"
+	if share {
+		mode = "FOR SHARE"
+	}
+	g, err := scanGroup(tx.QueryRow(ctx, `SELECT `+groupCols+` FROM np_group WHERE code = $1 `+mode, code))
+	if noRows(err) {
+		return nil, ErrNotFound
+	}
+	return g, err
+}
+
+// ownedCurrentAgentShared Agent 属 ownerLC 且未吊销；FOR SHARE 挡住同时进行的吊销（吊销取 FOR UPDATE）。
+func ownedCurrentAgentShared(ctx context.Context, tx repo.Tx, agentID, ownerLC string) (bool, error) {
+	ag, err := scanAgent(tx.QueryRow(ctx, `SELECT `+agentCols+` FROM np_agent WHERE id = $1 FOR SHARE`, agentID))
+	if noRows(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return ag.OwnerLC == Lower(ownerLC) && ag.Current(), nil
+}
+
+func (s *PGStore) CreateGroup(ctx context.Context, g Group) error {
+	return s.inTx(ctx, func(tx repo.Tx) error {
+		ok, err := ownedCurrentAgentShared(ctx, tx, g.LeaderAgentID, g.CreatorLC)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return ErrGroupAgentUnavailable
+		}
+		_, err = tx.Exec(ctx, `INSERT INTO np_group (`+groupCols+`) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+			g.Code, g.ShortName, Lower(g.CreatorLC), g.LeaderAgentID, g.AdditionsClosed, g.CreatedAt.UTC(), g.UpdatedAt.UTC())
+		if code, constraint := pgCode(err); code == pgUniqueViolation {
+			if constraint == "np_group_pkey" {
+				return ErrConflict
+			}
+			return ErrGroupNameTaken
+		}
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(ctx, `INSERT INTO np_group_member (code, agent_id, created_at) VALUES ($1,$2,$3)`, g.Code, g.LeaderAgentID, g.CreatedAt.UTC())
+		return err
+	})
+}
+
+func (s *PGStore) GetGroup(ctx context.Context, code string) (*Group, error) {
+	row, err := s.queryRow(ctx, `SELECT `+groupCols+` FROM np_group WHERE code = $1`, code)
+	if err != nil {
+		return nil, err
+	}
+	g, err := scanGroup(row)
+	if noRows(err) {
+		return nil, ErrNotFound
+	}
+	return g, err
+}
+
+func (s *PGStore) ListGroups(ctx context.Context) ([]Group, error) {
+	rows, err := s.pool.Query(ctx, s.t, `SELECT `+groupCols+` FROM np_group ORDER BY created_at, code`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]Group, 0)
+	for rows.Next() {
+		g, err := scanGroup(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *g)
+	}
+	return out, rows.Err()
+}
+
+func (s *PGStore) ListGroupMembers(ctx context.Context, code string) ([]GroupMember, error) {
+	rows, err := s.pool.Query(ctx, s.t, `SELECT code, agent_id, created_at FROM np_group_member WHERE code = $1 ORDER BY created_at, agent_id`, code)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]GroupMember, 0)
+	for rows.Next() {
+		var m GroupMember
+		if err := rows.Scan(&m.Code, &m.AgentID, &m.CreatedAt); err != nil {
+			return nil, err
+		}
+		m.CreatedAt = m.CreatedAt.UTC()
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+func (s *PGStore) ListAgentGroups(ctx context.Context, agentID string) ([]string, error) {
+	rows, err := s.pool.Query(ctx, s.t, `SELECT code FROM np_group_member WHERE agent_id = $1 ORDER BY code`, agentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var c string
+		if err := rows.Scan(&c); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+func (s *PGStore) JoinGroup(ctx context.Context, code, agentID, ownerLC string, now time.Time) error {
+	return s.inTx(ctx, func(tx repo.Tx) error {
+		g, err := lockGroup(ctx, tx, code, true)
+		if err != nil {
+			return err
+		}
+		if g.AdditionsClosed {
+			return ErrGroupClosed
+		}
+		ok, err := ownedCurrentAgentShared(ctx, tx, agentID, ownerLC)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return ErrGroupAgentUnavailable
+		}
+		res, err := tx.Exec(ctx, `INSERT INTO np_group_member (code, agent_id, created_at) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`, code, agentID, now.UTC())
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrGroupMemberExists
+		}
+		return nil
+	})
+}
+
+func (s *PGStore) LeaveGroup(ctx context.Context, code, agentID, actorLC string) error {
+	return s.inTx(ctx, func(tx repo.Tx) error {
+		g, err := lockGroup(ctx, tx, code, false)
+		if err != nil {
+			return err
+		}
+		var owner string
+		err = tx.QueryRow(ctx, `SELECT a.owner_lc FROM np_group_member m JOIN np_agent a ON a.id = m.agent_id
+			WHERE m.code = $1 AND m.agent_id = $2`, code, agentID).Scan(&owner)
+		if noRows(err) {
+			return ErrGroupMemberNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if agentID == g.LeaderAgentID {
+			return ErrGroupLeaderProtected
+		}
+		if actor := Lower(actorLC); g.CreatorLC != actor && owner != actor {
+			return ErrForbidden
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM np_group_member WHERE code = $1 AND agent_id = $2`, code, agentID)
+		return err
+	})
+}
+
+// creatorOnly 对「建组人才可」的单条改写：改到 1 行即成；0 行时再分辨不存在与无权。
+func (s *PGStore) creatorOnly(ctx context.Context, code string, res sql.Result, err error) error {
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 1 {
+		return nil
+	}
+	if _, err := s.GetGroup(ctx, code); err != nil {
+		return err
+	}
+	return ErrForbidden
+}
+
+func (s *PGStore) SetGroupAdditionsClosed(ctx context.Context, code, actorLC string, closed bool, now time.Time) error {
+	res, err := s.pool.Exec(ctx, s.t, `UPDATE np_group SET additions_closed = $3, updated_at = $4 WHERE code = $1 AND creator_lc = $2`,
+		code, Lower(actorLC), closed, now.UTC())
+	return s.creatorOnly(ctx, code, res, err)
+}
+
+func (s *PGStore) DeleteGroup(ctx context.Context, code, actorLC string) error {
+	res, err := s.pool.Exec(ctx, s.t, `DELETE FROM np_group WHERE code = $1 AND creator_lc = $2`, code, Lower(actorLC))
+	return s.creatorOnly(ctx, code, res, err)
 }

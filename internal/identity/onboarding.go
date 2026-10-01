@@ -70,7 +70,7 @@ func (o *Onboarding) BootstrapAdmin(ctx context.Context, userID, shortName, disp
 	if !ValidUserID(userID) || !ValidShortName(shortName) || len(displayName) > 64 {
 		return "", ErrBadRequest
 	}
-	pw, err := o.randFrom(codeAlphabet, InitialPasswordLen)
+	pw, err := randFrom(o.Rand, codeAlphabet, InitialPasswordLen)
 	if err != nil {
 		return "", err
 	}
@@ -239,18 +239,19 @@ func (o *Onboarding) issueRegistrationCode(ctx context.Context, actor *User, use
 	return code, exp, nil
 }
 
-func (o *Onboarding) randCode() (string, error) { return o.randFrom(codeAlphabet, codeLen) }
+func (o *Onboarding) randCode() (string, error) { return randFrom(o.Rand, codeAlphabet, codeLen) }
 
 // randFrom 从字母表等概率取 n 个字符。拒绝采样：只收小于字母表长度整数倍的字节，避免取模偏差。
-func (o *Onboarding) randFrom(alphabet string, n int) (string, error) {
-	limit := byte(256 / len(alphabet) * len(alphabet))
+func randFrom(rnd io.Reader, alphabet string, n int) (string, error) {
+	// 上限用 int 算：字母表长度整除 256 时（如 64 位组码字母表）上限正是 256，放进 byte 会溢出成 0、永远取不到字符。
+	limit := 256 / len(alphabet) * len(alphabet)
 	out := make([]byte, 0, n)
 	b := make([]byte, 1)
 	for len(out) < n {
-		if _, err := io.ReadFull(o.Rand, b); err != nil {
+		if _, err := io.ReadFull(rnd, b); err != nil {
 			return "", err
 		}
-		if b[0] < limit {
+		if int(b[0]) < limit {
 			out = append(out, alphabet[int(b[0])%len(alphabet)])
 		}
 	}

@@ -267,6 +267,9 @@ func (s *Service) takePollSlot(appID string, now time.Time) error {
 	return nil
 }
 
+// FullName Agent 的 full_name（名称.属主简称，保留原大小写；与 GET /api/console/agents 的 full_name 同形）。
+func (s *Service) FullName(ctx context.Context, ag *Agent) string { return s.fullName(ctx, ag) }
+
 func (s *Service) fullName(ctx context.Context, ag *Agent) string {
 	u, err := s.Store.GetUser(ctx, ag.OwnerLC)
 	if err != nil {

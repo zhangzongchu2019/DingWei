@@ -78,3 +78,23 @@ CREATE TABLE IF NOT EXISTS np_enroll_application (
 -- 审核区：按时刻、再按申请号升序（同一时刻顺序必须确定，契约 V1_pending_order_is_deterministic）。
 CREATE INDEX IF NOT EXISTS np_enroll_application_pending
     ON np_enroll_application (owner_lc, state, requested_at, id);
+
+-- 新平台编组（组长裁定 132246Z：甲；旧编组数据不迁）。组名全局唯一、区分大小写（与旧平台同）。
+CREATE TABLE IF NOT EXISTS np_group (
+    code             text        PRIMARY KEY,
+    short_name       text        NOT NULL UNIQUE,
+    creator_lc       text        NOT NULL REFERENCES np_user (user_id_lc),
+    leader_agent_id  text        NOT NULL REFERENCES np_agent (id),
+    additions_closed boolean     NOT NULL DEFAULT false,
+    created_at       timestamptz NOT NULL,
+    updated_at       timestamptz NOT NULL
+);
+
+-- 成员引 np_agent.id；Agent 吊销后成员行保留作历史，由业务层不予展示。删组即删成员行。
+CREATE TABLE IF NOT EXISTS np_group_member (
+    code       text        NOT NULL REFERENCES np_group (code) ON DELETE CASCADE,
+    agent_id   text        NOT NULL REFERENCES np_agent (id),
+    created_at timestamptz NOT NULL,
+    PRIMARY KEY (code, agent_id)
+);
+CREATE INDEX IF NOT EXISTS np_group_member_agent ON np_group_member (agent_id);

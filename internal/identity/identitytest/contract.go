@@ -32,6 +32,10 @@ func Run(t *testing.T, newStore Factory) {
 		{"N3_user_id_and_short_name_conflict_by_lowercase", userConflictLowercase},
 		{"N3_first_admin_only_when_no_management_user", firstAdminOnlyOnce},
 		{"N3_first_admin_refused_when_only_manager", firstAdminRefusedByManager},
+		{"G_group_create_leader_name_code", groupCreateRules},
+		{"G_group_join_leave_close", groupJoinLeaveClose},
+		{"G_group_delete_creator_only_cascades", groupDeleteRules},
+		{"G_group_member_rows_survive_revoke", groupMemberAfterRevoke},
 		{"N3_disable_revokes_sessions", disableRevokesSessions},
 		{"N3_get_user_by_short_name_case_insensitive", getUserByShortName},
 		{"N3_list_users_sorted_by_lowercase_id", listUsers},
@@ -681,4 +685,183 @@ func firstAdminRefusedByManager(t *testing.T, s identity.Store) {
 	if n, _ := s.CountUsers(ctx); n != 1 {
 		t.Fatalf("CountUsers=%d, want 1", n)
 	}
+}
+
+// ── 编组（组长裁定 132246Z）────────────────────────────────────────────────
+
+func groupFixture(t *testing.T, s identity.Store) {
+	t.Helper()
+	mustUser(t, s, "zzc", "zz", identity.UserActive)
+	mustUser(t, s, "lbl", "lb", identity.UserActive)
+	mustUser(t, s, "mmm", "mm", identity.UserActive)
+	mustHosted(t, s, "ag-z", "zzc", "Zed", "app-z", t0)
+	mustHosted(t, s, "ag-z2", "zzc", "Zed2", "app-z2", t0)
+	mustHosted(t, s, "ag-l", "lbl", "Lee", "app-l", t0)
+	mustHosted(t, s, "ag-m", "mmm", "Moe", "app-m", t0)
+}
+
+func mkGroup(code, name, creator, leader string, at time.Time) identity.Group {
+	return identity.Group{Code: code, ShortName: name, CreatorLC: creator, LeaderAgentID: leader, CreatedAt: at, UpdatedAt: at}
+}
+
+func memberIDs(t *testing.T, s identity.Store, code string) string {
+	t.Helper()
+	ms, err := s.ListGroupMembers(ctx, code)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, m := range ms {
+		ids = append(ids, m.AgentID)
+	}
+	return strings.Join(ids, ",")
+}
+
+// 建组：组长须属建组人且未吊销；组名全局唯一、区分大小写；组码唯一；组长自动入组；列表顺序确定。
+func groupCreateRules(t *testing.T, s identity.Store) {
+	groupFixture(t, s)
+	mustHosted(t, s, "ag-r", "zzc", "Rev", "app-r", t0)
+	if _, err := s.RetireAgent(ctx, "ag-r", "test", t0); err != nil {
+		t.Fatal(err)
+	}
+	for what, leader := range map[string]string{"other owner's agent": "ag-l", "revoked agent": "ag-r", "no such agent": "ag-none"} {
+		wantErr(t, what, s.CreateGroup(ctx, mkGroup("c0", "开发组", "zzc", leader, t0)), identity.ErrGroupAgentUnavailable)
+	}
+	if err := s.CreateGroup(ctx, mkGroup("c1", "开发组", "ZZC", "ag-z", t0.Add(time.Minute))); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	g, err := s.GetGroup(ctx, "c1")
+	if err != nil || g.ShortName != "开发组" || g.CreatorLC != "zzc" || g.LeaderAgentID != "ag-z" || g.AdditionsClosed || !g.CreatedAt.Equal(t0.Add(time.Minute)) {
+		t.Fatalf("GetGroup: %+v %v", g, err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-z" {
+		t.Fatalf("leader must be the first member: %q", got)
+	}
+	if codes, _ := s.ListAgentGroups(ctx, "ag-z"); strings.Join(codes, ",") != "c1" {
+		t.Fatalf("ListAgentGroups: %v", codes)
+	}
+	wantErr(t, "same name, other user", s.CreateGroup(ctx, mkGroup("c2", "开发组", "lbl", "ag-l", t0)), identity.ErrGroupNameTaken)
+	wantErr(t, "same code", s.CreateGroup(ctx, mkGroup("c1", "别的", "lbl", "ag-l", t0)), identity.ErrConflict)
+	if _, err := s.GetGroup(ctx, "c2"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("refused group was created: %v", err)
+	}
+	// 区分大小写（与旧平台同）
+	if err := s.CreateGroup(ctx, mkGroup("zz", "Dev", "zzc", "ag-z2", t0)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CreateGroup(ctx, mkGroup("aa", "dev", "lbl", "ag-l", t0)); err != nil {
+		t.Fatalf("names differing only in case must both be allowed: %v", err)
+	}
+	gs, err := s.ListGroups(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var order []string
+	for _, g := range gs {
+		order = append(order, g.Code)
+	}
+	if strings.Join(order, ",") != "aa,zz,c1" {
+		t.Fatalf("ListGroups order = %v, want aa,zz,c1 (created_at, then code)", order)
+	}
+}
+
+// 入组、退出、关闭添加：组长不可剔除；成员属主或建组人才可剔除；关闭后不能再入；只有建组人能开关。
+func groupJoinLeaveClose(t *testing.T, s identity.Store) {
+	groupFixture(t, s)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "开发组", "zzc", "ag-z", t0)); err != nil {
+		t.Fatal(err)
+	}
+	t1 := t0.Add(time.Minute)
+	wantErr(t, "join missing group", s.JoinGroup(ctx, "nope", "ag-l", "lbl", t1), identity.ErrNotFound)
+	wantErr(t, "join someone else's agent", s.JoinGroup(ctx, "c1", "ag-l", "zzc", t1), identity.ErrGroupAgentUnavailable)
+	if err := s.JoinGroup(ctx, "c1", "ag-l", "LBL", t1); err != nil {
+		t.Fatalf("join own agent: %v", err)
+	}
+	wantErr(t, "join twice", s.JoinGroup(ctx, "c1", "ag-l", "lbl", t1), identity.ErrGroupMemberExists)
+	if err := s.JoinGroup(ctx, "c1", "ag-m", "mmm", t1); err != nil {
+		t.Fatal(err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-z,ag-l,ag-m" {
+		t.Fatalf("members %q, want ag-z,ag-l,ag-m (joined_at, then agent_id)", got)
+	}
+	wantErr(t, "leader removed by creator", s.LeaveGroup(ctx, "c1", "ag-z", "zzc"), identity.ErrGroupLeaderProtected)
+	wantErr(t, "third party removes a member", s.LeaveGroup(ctx, "c1", "ag-l", "mmm"), identity.ErrForbidden)
+	wantErr(t, "leave missing group", s.LeaveGroup(ctx, "nope", "ag-l", "lbl"), identity.ErrNotFound)
+	if err := s.LeaveGroup(ctx, "c1", "ag-l", "lbl"); err != nil {
+		t.Fatalf("owner leaves: %v", err)
+	}
+	wantErr(t, "leave twice", s.LeaveGroup(ctx, "c1", "ag-l", "lbl"), identity.ErrGroupMemberNotFound)
+	if err := s.LeaveGroup(ctx, "c1", "ag-m", "zzc"); err != nil {
+		t.Fatalf("creator removes a member: %v", err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-z" {
+		t.Fatalf("members after leaves: %q", got)
+	}
+	t2 := t0.Add(2 * time.Minute)
+	wantErr(t, "non-creator closes", s.SetGroupAdditionsClosed(ctx, "c1", "lbl", true, t2), identity.ErrForbidden)
+	wantErr(t, "close missing group", s.SetGroupAdditionsClosed(ctx, "nope", "zzc", true, t2), identity.ErrNotFound)
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "ZZC", true, t2); err != nil {
+		t.Fatal(err)
+	}
+	if g, _ := s.GetGroup(ctx, "c1"); !g.AdditionsClosed || !g.UpdatedAt.Equal(t2) {
+		t.Fatalf("after close: %+v", g)
+	}
+	wantErr(t, "join closed group", s.JoinGroup(ctx, "c1", "ag-l", "lbl", t2), identity.ErrGroupClosed)
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", false, t2); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.JoinGroup(ctx, "c1", "ag-l", "lbl", t2); err != nil {
+		t.Fatalf("join after reopen: %v", err)
+	}
+}
+
+// 删组：建组人才可；成员行随之删除；组名可再用。
+func groupDeleteRules(t *testing.T, s identity.Store) {
+	groupFixture(t, s)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "开发组", "zzc", "ag-z", t0)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.JoinGroup(ctx, "c1", "ag-l", "lbl", t0); err != nil {
+		t.Fatal(err)
+	}
+	wantErr(t, "member's owner deletes", s.DeleteGroup(ctx, "c1", "lbl"), identity.ErrForbidden)
+	wantErr(t, "delete missing", s.DeleteGroup(ctx, "nope", "zzc"), identity.ErrNotFound)
+	if err := s.DeleteGroup(ctx, "c1", "ZZC"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GetGroup(ctx, "c1"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("group still there: %v", err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "" {
+		t.Fatalf("member rows survived delete: %q", got)
+	}
+	for _, ag := range []string{"ag-z", "ag-l"} {
+		if codes, _ := s.ListAgentGroups(ctx, ag); len(codes) != 0 {
+			t.Fatalf("%s still in groups %v", ag, codes)
+		}
+	}
+	if err := s.CreateGroup(ctx, mkGroup("c2", "开发组", "lbl", "ag-l", t0)); err != nil {
+		t.Fatalf("name must be reusable after delete: %v", err)
+	}
+}
+
+// 吊销不删成员行（留作历史，由业务层不予展示）；吊销后的 Agent 不能再入组、不能当组长。
+func groupMemberAfterRevoke(t *testing.T, s identity.Store) {
+	groupFixture(t, s)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "开发组", "zzc", "ag-z", t0)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.JoinGroup(ctx, "c1", "ag-l", "lbl", t0.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.RetireAgent(ctx, "ag-l", "test", t0); err != nil {
+		t.Fatal(err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-z,ag-l" {
+		t.Fatalf("store must keep the revoked member row: %q", got)
+	}
+	if err := s.CreateGroup(ctx, mkGroup("c2", "二组", "zzc", "ag-z2", t0)); err != nil {
+		t.Fatal(err)
+	}
+	wantErr(t, "revoked agent joins", s.JoinGroup(ctx, "c2", "ag-l", "lbl", t0), identity.ErrGroupAgentUnavailable)
 }

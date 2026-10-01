@@ -117,11 +117,16 @@ func (h *Hub) newPlatformPrincipal(w http.ResponseWriter, r *http.Request) (stri
 	} else {
 		err = identity.ErrNotFound
 	}
-	if err == nil {
-		return user.UserIDLC(), true
+	if err != nil {
+		newPlatformDeny(w, r, errors.Is(err, identity.ErrMustChange))
+		return "", false
 	}
-	newPlatformDeny(w, r, errors.Is(err, identity.ErrMustChange))
-	return "", false
+	// 写操作校验 Origin（与 N3、入网接口、view 授权同一口径；cookie 之外再挡一层跨站请求）。
+	if r.Method != http.MethodGet && r.Method != http.MethodHead && (h.PublicOrigin == "" || r.Header.Get("Origin") != h.PublicOrigin) {
+		writeAgentWSError(w, http.StatusForbidden, "origin_mismatch")
+		return "", false
+	}
+	return user.UserIDLC(), true
 }
 
 // newPlatformWantsPage 浏览器打开页面：GET、要 HTML、不是 WebSocket 升级、不是 /api/ 接口。

@@ -41,7 +41,11 @@ func (h *Hub) newPlatformRequireAction(action string, w http.ResponseWriter, r *
 //	Specs 与任务管理（旧平台功能，「旧功能带哪些」未定）。
 func (h *Hub) handleNewPlatformConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	role := platformRole(r)
-	items := []model.ConsolePlatformItem{}
+	// 编组已接上新平台（np_group，组长裁定 132246Z）⇒ 人人都有「Agent 管理」入口（编排件第八节定的标题；页面据 id 打开编组工作区）。
+	items := []model.ConsolePlatformItem{{
+		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 管理",
+		Href: "#agent-groups", Status: "approved", Active: true,
+	}}
 	if role == consolePlatformRoleManagement {
 		items = append(items, model.ConsolePlatformItem{
 			ID: "platform-admin", Kind: "platform-admin", Title: "平台管理",

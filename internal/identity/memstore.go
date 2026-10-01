@@ -20,6 +20,8 @@ type MemStore struct {
 	apps       map[string]*Application
 	agents     map[string]*Agent
 	creds      map[string]string // credential_hash → agent_id
+	groups     map[string]*Group
+	members    map[string]map[string]time.Time // code → agent_id → 入组时刻
 }
 
 type regCode struct {
@@ -39,6 +41,8 @@ func NewMemStore() *MemStore {
 		apps:       map[string]*Application{},
 		agents:     map[string]*Agent{},
 		creds:      map[string]string{},
+		groups:     map[string]*Group{},
+		members:    map[string]map[string]time.Time{},
 	}
 }
 
@@ -565,4 +569,149 @@ func (m *MemStore) ListUsers(context.Context) ([]User, error) {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].UserIDLC() < out[j].UserIDLC() })
 	return out, nil
+}
+
+// ── GroupStore ─────────────────────────────────────────────────────────────
+
+// ownedCurrentAgentLocked agentID 是否为 ownerLC 名下未吊销的 Agent。
+func (m *MemStore) ownedCurrentAgentLocked(agentID, ownerLC string) bool {
+	ag := m.agents[agentID]
+	return ag != nil && ag.OwnerLC == Lower(ownerLC) && ag.Current()
+}
+
+func (m *MemStore) CreateGroup(_ context.Context, g Group) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if !m.ownedCurrentAgentLocked(g.LeaderAgentID, g.CreatorLC) {
+		return ErrGroupAgentUnavailable
+	}
+	if _, ok := m.groups[g.Code]; ok {
+		return ErrConflict
+	}
+	for _, o := range m.groups {
+		if o.ShortName == g.ShortName {
+			return ErrGroupNameTaken
+		}
+	}
+	cp := g
+	cp.CreatorLC = Lower(g.CreatorLC)
+	m.groups[g.Code] = &cp
+	m.members[g.Code] = map[string]time.Time{g.LeaderAgentID: g.CreatedAt}
+	return nil
+}
+
+func (m *MemStore) GetGroup(_ context.Context, code string) (*Group, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	g, ok := m.groups[code]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	cp := *g
+	return &cp, nil
+}
+
+func (m *MemStore) ListGroups(context.Context) ([]Group, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]Group, 0, len(m.groups))
+	for _, g := range m.groups {
+		out = append(out, *g)
+	}
+	sortGroups(out)
+	return out, nil
+}
+
+func (m *MemStore) ListGroupMembers(_ context.Context, code string) ([]GroupMember, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]GroupMember, 0, len(m.members[code]))
+	for id, at := range m.members[code] {
+		out = append(out, GroupMember{Code: code, AgentID: id, CreatedAt: at})
+	}
+	sortGroupMembers(out)
+	return out, nil
+}
+
+func (m *MemStore) ListAgentGroups(_ context.Context, agentID string) ([]string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []string
+	for code, ms := range m.members {
+		if _, ok := ms[agentID]; ok {
+			out = append(out, code)
+		}
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+func (m *MemStore) JoinGroup(_ context.Context, code, agentID, ownerLC string, now time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	g, ok := m.groups[code]
+	if !ok {
+		return ErrNotFound
+	}
+	if g.AdditionsClosed {
+		return ErrGroupClosed
+	}
+	if !m.ownedCurrentAgentLocked(agentID, ownerLC) {
+		return ErrGroupAgentUnavailable
+	}
+	if _, in := m.members[code][agentID]; in {
+		return ErrGroupMemberExists
+	}
+	m.members[code][agentID] = now
+	return nil
+}
+
+func (m *MemStore) LeaveGroup(_ context.Context, code, agentID, actorLC string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	g, ok := m.groups[code]
+	if !ok {
+		return ErrNotFound
+	}
+	if _, in := m.members[code][agentID]; !in {
+		return ErrGroupMemberNotFound
+	}
+	if agentID == g.LeaderAgentID {
+		return ErrGroupLeaderProtected
+	}
+	actor := Lower(actorLC)
+	if ag := m.agents[agentID]; g.CreatorLC != actor && (ag == nil || ag.OwnerLC != actor) {
+		return ErrForbidden
+	}
+	delete(m.members[code], agentID)
+	return nil
+}
+
+func (m *MemStore) SetGroupAdditionsClosed(_ context.Context, code, actorLC string, closed bool, now time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	g, ok := m.groups[code]
+	if !ok {
+		return ErrNotFound
+	}
+	if g.CreatorLC != Lower(actorLC) {
+		return ErrForbidden
+	}
+	g.AdditionsClosed, g.UpdatedAt = closed, now
+	return nil
+}
+
+func (m *MemStore) DeleteGroup(_ context.Context, code, actorLC string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	g, ok := m.groups[code]
+	if !ok {
+		return ErrNotFound
+	}
+	if g.CreatorLC != Lower(actorLC) {
+		return ErrForbidden
+	}
+	delete(m.groups, code)
+	delete(m.members, code)
+	return nil
 }

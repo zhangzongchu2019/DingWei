@@ -75,8 +75,34 @@ type EnrollStore interface {
 	RetireAgent(ctx context.Context, agentID, by string, now time.Time) (already bool, err error)
 }
 
-// Store 两个接口的合集；内存实现与 PG 实现都实现它。
+// GroupStore 新平台编组（组长裁定 132246Z）。授权判定都在存储的同一事务里做（与旧平台同），避免查后改的竞态。
+type GroupStore interface {
+	// CreateGroup 一个事务：组长 Agent 属 g.CreatorLC 且未吊销（否则 ErrGroupAgentUnavailable）⇒ 建组 ⇒ 组长入组。
+	// 组名全局唯一、区分大小写（与旧平台同）⇒ ErrGroupNameTaken；组码撞 ⇒ ErrConflict。
+	CreateGroup(ctx context.Context, g Group) error
+	// GetGroup 不存在 ⇒ ErrNotFound。
+	GetGroup(ctx context.Context, code string) (*Group, error)
+	// ListGroups 全部编组，按 created_at 升序、同时刻按 code（确定顺序，契约会测）。
+	ListGroups(ctx context.Context) ([]Group, error)
+	// ListGroupMembers 该组全部成员行（含已吊销 Agent 的行，由业务层过滤），按入组时刻升序、同时刻按 agent_id。
+	ListGroupMembers(ctx context.Context, code string) ([]GroupMember, error)
+	// ListAgentGroups 该 Agent 所在的全部组码（升序）。V11 候选取「所在全部编组成员的并集」用。
+	ListAgentGroups(ctx context.Context, agentID string) ([]string, error)
+	// JoinGroup 一个事务：组存在（ErrNotFound）⇒ 未关闭添加（ErrGroupClosed）⇒ Agent 属 ownerLC 且未吊销（ErrGroupAgentUnavailable）
+	// ⇒ 未在组（ErrGroupMemberExists）⇒ 入组。
+	JoinGroup(ctx context.Context, code, agentID, ownerLC string, now time.Time) error
+	// LeaveGroup 一个事务：组存在（ErrNotFound）⇒ 在组（ErrGroupMemberNotFound）⇒ 不是组长（ErrGroupLeaderProtected）
+	// ⇒ actorLC 是该 Agent 的属主或建组人（ErrForbidden）⇒ 移出。
+	LeaveGroup(ctx context.Context, code, agentID, actorLC string) error
+	// SetGroupAdditionsClosed 建组人才可（ErrForbidden）；不存在 ⇒ ErrNotFound。
+	SetGroupAdditionsClosed(ctx context.Context, code, actorLC string, closed bool, now time.Time) error
+	// DeleteGroup 建组人才可（ErrForbidden）；不存在 ⇒ ErrNotFound；成员行随之删除。
+	DeleteGroup(ctx context.Context, code, actorLC string) error
+}
+
+// Store 三个接口的合集；内存实现与 PG 实现都实现它。
 type Store interface {
 	IdentityStore
 	EnrollStore
+	GroupStore
 }
