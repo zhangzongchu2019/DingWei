@@ -103,8 +103,8 @@ func wantErr(t *testing.T, what string, got, want error) {
 
 func userConflictLowercase(t *testing.T, s identity.Store) {
 	mustUser(t, s, "zzc", "zc", identity.UserActive)
-	wantErr(t, "same user_id different case", s.CreateUser(ctx, identity.User{UserID: "ZZC", ShortName: "other", State: identity.UserActive}), identity.ErrConflict)
-	wantErr(t, "same short_name different case", s.CreateUser(ctx, identity.User{UserID: "lbl", ShortName: "ZC", State: identity.UserActive}), identity.ErrConflict)
+	wantErr(t, "same user_id different case", s.CreateUser(ctx, identity.User{UserID: "ZZC", ShortName: "other", Type: identity.UserMember, State: identity.UserActive}), identity.ErrConflict)
+	wantErr(t, "same short_name different case", s.CreateUser(ctx, identity.User{UserID: "lbl", ShortName: "ZC", Type: identity.UserMember, State: identity.UserActive}), identity.ErrConflict)
 	if n, _ := s.CountUsers(ctx); n != 1 {
 		t.Fatalf("CountUsers=%d after two rejected creates, want 1", n)
 	}
