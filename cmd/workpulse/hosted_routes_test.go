@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/hosted"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
@@ -35,7 +36,9 @@ func (f *fakeIDP) IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode
 		}
 	}
 	if !ok {
-		return hosted.IssuedAgent{}, hosted.EnrollToken{}, errors.New("name_invalid")
+		// 与真装配同一条路：G3 适配器把 identity.ErrNameInvalid 原样透传上来（其文本是 Go 错误文本，不是机器码），
+		// 由 handler 译成 name_invalid。原先这里直接返回 "name_invalid" 文本，恰好掩盖了联调第 3 条。
+		return hosted.IssuedAgent{}, hosted.EnrollToken{}, identity.ErrNameInvalid
 	}
 	id := fmt.Sprintf("ag_rt%d", len(f.ids)+1)
 	f.ids = append(f.ids, id)
@@ -62,10 +65,14 @@ func (f *fakeIDP) ListHostedAgentIDsByOwner(ctx context.Context, ownerLC string)
 type fakeGW struct {
 	sent   []hosted.NodeCommand
 	failOn string // 命中该 Type 即失败（故障注入）
+	downOn string // 命中该 Type 即发不到节点（传输错误）
 }
 
 func (g *fakeGW) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
 	g.sent = append(g.sent, cmd)
+	if cmd.Type == g.downOn {
+		return hosted.NodeResult{}, errors.New("injected: node unreachable")
+	}
 	if cmd.Type == g.failOn {
 		return hosted.NodeResult{OK: false, Error: "injected"}, nil
 	}
@@ -138,11 +145,16 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP, *fakeGW, *
 			if a == "" {
 				return "", errors.New("unauthorized")
 			}
+			if a == "must-change" { // N3.Actor 对必须改密的会话返回 identity.ErrMustChange
+				return "", identity.ErrMustChange
+			}
 			return a, nil
 		},
 		ownsAgent: func(r *http.Request, userLC, agentID string) bool { return userLC == "zzc" },
 		isManager: func(r *http.Request, userLC string) bool { return userLC == "admin" },
-		listUsers: func(r *http.Request) ([]string, error) { return []string{"zzc"}, nil },
+		listUsers: func(r *http.Request) ([]hostedUser, error) {
+			return []hostedUser{{ID: "Zzc", IDLC: "zzc", ShortName: "zz"}}, nil
+		},
 	}
 	return deps, st, idp, gw, poolSvc
 }

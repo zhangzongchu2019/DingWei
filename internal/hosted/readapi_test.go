@@ -3,6 +3,7 @@ package hosted
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"sort"
 	"strings"
@@ -203,6 +204,32 @@ func TestJobReasonOnlyContractCodes(t *testing.T) {
 		jv, err := o.JobProgress(ctx, id)
 		if err != nil || jv.Stage != "failed" || jv.Reason != want || jv.AgentID != "" {
 			t.Errorf("detail %q: %+v %v, want failed/%s without agent_id", detail, jv, err, want)
+		}
+	}
+}
+
+// 组长裁定 lead-g4-joint-run-1 第 2 条：jobs 归属按席位 created_by——创建失败后 Agent 已 Retire（身份侧不再列出它），
+// 业主仍须读到 {stage:failed, reason}；别人与不存在同答 not_owner。
+func TestJobProgressForOwnerBySeat(t *testing.T) {
+	o, idp, gw, _ := mkOrch(t)
+	ctx := context.Background()
+	gw.failOn = "pull_image"
+	out, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "w1", NodeID: "auto",
+		CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	o.RunJob(ctx, out.AgentID)
+	if len(idp.retired) != 1 || idp.retired[0] != out.AgentID {
+		t.Fatalf("fixture: failed job must have retired its agent: %v", idp.retired)
+	}
+	jv, err := o.JobProgressFor(ctx, out.JobID, "zzc")
+	if err != nil || jv.Stage != "failed" || jv.Reason != "image_pull_failed" || jv.AgentID != "" {
+		t.Fatalf("owner reads own failed job: %+v %v", jv, err)
+	}
+	for _, c := range []struct{ job, actor string }{{out.JobID, "eve"}, {out.JobID, ""}, {"ag_nosuch", "zzc"}} {
+		if _, err := o.JobProgressFor(ctx, c.job, c.actor); !errors.Is(err, ErrNotOwner) {
+			t.Errorf("job %s as %q: %v, want not_owner", c.job, c.actor, err)
 		}
 	}
 }

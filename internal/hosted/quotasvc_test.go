@@ -2,6 +2,7 @@ package hosted
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 )
@@ -108,5 +109,52 @@ func TestQuotaListWithUsage(t *testing.T) {
 	r := rows[0]
 	if r.Usage.Agents != 1 || r.Usage.VCPU != 4 || r.Usage.MemMB != 8192 || r.Quota.AgentsLimit != 4 {
 		t.Fatalf("已用/上限并排: %+v", r)
+	}
+}
+
+// 组长裁定 lead-g4-joint-run-1 第 6 条：Agent 数剩 0 ⇒ quota_exceeded；Agent 数还有、套餐超 vCPU／内存剩余 ⇒ plan_exceeds_quota。
+// 两种都带剩余；两者同时成立时答 quota_exceeded。
+func TestCheckCreateCodeSplit(t *testing.T) {
+	ctx := context.Background()
+	big, _ := PlanByID("4c8g")
+	for _, c := range []struct {
+		name      string
+		q         Quota
+		want      error
+		remaining string
+	}{
+		{"vcpu short", Quota{UserLC: "zzc", AgentsLimit: 3, VCPULimit: 3, MemMBLimit: 1 << 20, DiskMBLimit: 1 << 20}, ErrPlanExceedsQuota,
+			`{"agents":3,"disk_gb":1024,"mem_gb":1024,"vcpu":3}`},
+		{"memory short", Quota{UserLC: "zzc", AgentsLimit: 3, VCPULimit: 64, MemMBLimit: 6144, DiskMBLimit: 1 << 20}, ErrPlanExceedsQuota,
+			`{"agents":3,"disk_gb":1024,"mem_gb":6,"vcpu":64}`},
+		{"no agent slot", Quota{UserLC: "zzc", AgentsLimit: 0, VCPULimit: 64, MemMBLimit: 1 << 20, DiskMBLimit: 1 << 20}, ErrQuotaExceeded,
+			`{"agents":0,"disk_gb":1024,"mem_gb":1024,"vcpu":64}`},
+		{"both: agents wins", Quota{UserLC: "zzc", AgentsLimit: 0, VCPULimit: 1, MemMBLimit: 1, DiskMBLimit: 1 << 20}, ErrQuotaExceeded,
+			`{"agents":0,"disk_gb":1024,"mem_gb":0,"vcpu":1}`},
+	} {
+		qs, _, _ := mkQuotaSvc(t)
+		if err := qs.Put(ctx, "admin", true, c.q); err != nil {
+			t.Fatal(err)
+		}
+		err := qs.CheckCreate(ctx, "zzc", big)
+		if !errors.Is(err, c.want) {
+			t.Errorf("%s: %v, want %v", c.name, err, c.want)
+			continue
+		}
+		if c.want == ErrQuotaExceeded && errors.Is(err, ErrPlanExceedsQuota) || c.want == ErrPlanExceedsQuota && errors.Is(err, ErrQuotaExceeded) {
+			t.Errorf("%s: %v matches both codes", c.name, err)
+		}
+		var raw json.RawMessage
+		var qe *QuotaExceededError
+		var pe *PlanExceedsQuotaError
+		switch {
+		case errors.As(err, &qe):
+			raw = qe.RemainingJSON()
+		case errors.As(err, &pe):
+			raw = pe.RemainingJSON()
+		}
+		if string(raw) != c.remaining {
+			t.Errorf("%s: remaining %s, want %s", c.name, raw, c.remaining)
+		}
 	}
 }

@@ -29,8 +29,9 @@ func (l *evLog) get() []string {
 func (l *evLog) reset() { l.mu.Lock(); l.ev = nil; l.mu.Unlock() }
 
 type lcSusp struct {
-	log    *evLog
-	failOn string // "suspend"/"resume"/"reissue"
+	log       *evLog
+	failOn    string // "suspend"/"resume"/"reissue"
+	suspended bool   // 凭据当前是否暂停：与真 identity 一样，already 反映「本来就是这个态」
 }
 
 func (f *lcSusp) SuspendHostedAgent(ctx context.Context, id, by string) (bool, error) {
@@ -38,14 +39,18 @@ func (f *lcSusp) SuspendHostedAgent(ctx context.Context, id, by string) (bool, e
 	if f.failOn == "suspend" {
 		return false, errors.New("injected suspend")
 	}
-	return false, nil
+	already := f.suspended
+	f.suspended = true
+	return already, nil
 }
 func (f *lcSusp) ResumeHostedAgent(ctx context.Context, id, by string) (bool, error) {
 	f.log.add("idp:resume")
 	if f.failOn == "resume" {
 		return false, errors.New("injected resume")
 	}
-	return false, nil
+	already := !f.suspended
+	f.suspended = false
+	return already, nil
 }
 func (f *lcSusp) ReissueHostedToken(ctx context.Context, id, by string) (EnrollToken, error) {
 	f.log.add("idp:reissue")
@@ -71,13 +76,17 @@ func (z *lcIdp) RetireHostedAgent(ctx context.Context, id, by string) (bool, err
 
 type lcGw struct {
 	log    *evLog
-	failOn string
+	failOn string // 命中 ⇒ 节点在线、报告失败
+	downOn string // 命中 ⇒ 发不到节点（传输错误：节点不通）
 	sent   []NodeCommand
 }
 
 func (g *lcGw) Send(ctx context.Context, nodeID string, c NodeCommand) (NodeResult, error) {
 	g.log.add("node:" + c.Type)
 	g.sent = append(g.sent, c)
+	if c.Type == g.downOn {
+		return NodeResult{}, errors.New("injected: node unreachable")
+	}
 	if c.Type == g.failOn {
 		return NodeResult{OK: false, Error: "injected"}, nil
 	}
@@ -225,13 +234,17 @@ func TestFailedGateStopsTheChain(t *testing.T) {
 	})
 }
 
-// 复验阻断 3：停用中停容器失败（凭据已暂停）⇒ 重启必须先 Resume 再发 restart_seat。
+// 复验阻断 3：重启一律先 Resume 再发 restart_seat（凭据若处于暂停，不先恢复就会「页面在跑、凭据拒连」）。
+// 第 7 条之后停用失败已不再留下暂停的凭据（见 TestNodeDownLeavesStateAndCredential）；这里的 Resume 是兜底。
 func TestRestartAfterFailedStopResumesCredential(t *testing.T) {
 	ctx := context.Background()
 	lc, log, _, gw, _, s, id := mkLifecycle(t)
 	gw.failOn = "stop_seat"
 	if err := lc.Disable(ctx, id, "zzc", true, true); !errors.Is(err, ErrNodeOffline) {
 		t.Fatalf("停容器失败应报 node_offline: %v", err)
+	}
+	if seat, _ := s.GetSeat(ctx, id); seat.State != "online" {
+		t.Fatalf("停用失败席位状态不得改: %+v", seat)
 	}
 	gw.failOn = ""
 	log.reset()
@@ -413,4 +426,114 @@ func TestReconcileOnNodeReconnect(t *testing.T) {
 	if len(pending) != 0 {
 		t.Fatalf("对账后应无待清: %v", pending)
 	}
+}
+
+// 组长裁定 lead-g4-joint-run-1 第 7 条：节点离线 ⇒ 503 node_offline，且不改席位状态、不动凭据。
+// 两种「离线」都要守：库里已记离线（guard 先判，什么都不发生）；库里还记在线但发不到（发送失败后撤回凭据动作）。
+func TestNodeDownLeavesStateAndCredential(t *testing.T) {
+	ctx := context.Background()
+	t.Run("node recorded offline: nothing happens", func(t *testing.T) {
+		for _, op := range []string{"disable", "restart", "upgrade"} {
+			lc, log, susp, _, _, s, id := mkLifecycle(t)
+			seat, _ := s.GetSeat(ctx, id)
+			if err := s.SetNodeState(ctx, seat.NodeID, "offline"); err != nil {
+				t.Fatal(err)
+			}
+			var err error
+			switch op {
+			case "disable":
+				err = lc.Disable(ctx, id, "zzc", false, true)
+			case "restart":
+				err = lc.Restart(ctx, id, "zzc", false)
+			case "upgrade":
+				err = lc.Upgrade(ctx, id, "zzc", newerImage, false)
+			}
+			if !errors.Is(err, ErrNodeOffline) {
+				t.Errorf("%s: %v, want node_offline", op, err)
+			}
+			eqSeq(t, op+" offline", log.get(), nil)
+			if after, _ := s.GetSeat(ctx, id); after.State != "online" || susp.suspended {
+				t.Errorf("%s: state %s suspended=%v, want online and credential untouched", op, after.State, susp.suspended)
+			}
+		}
+	})
+	t.Run("disable: stop unreachable ⇒ suspend undone", func(t *testing.T) {
+		lc, log, susp, gw, _, s, id := mkLifecycle(t)
+		gw.downOn = "stop_seat"
+		if err := lc.Disable(ctx, id, "zzc", false, true); !errors.Is(err, ErrNodeOffline) {
+			t.Fatalf("%v, want node_offline", err)
+		}
+		eqSeq(t, "disable down", log.get(), []string{"idp:suspend", "node:stop_seat", "idp:resume"})
+		if seat, _ := s.GetSeat(ctx, id); seat.State != "online" || susp.suspended {
+			t.Fatalf("state %s suspended=%v, want online and credential active", seat.State, susp.suspended)
+		}
+	})
+	t.Run("disable on already-suspended credential: no resume on failure", func(t *testing.T) {
+		lc, log, susp, gw, _, _, id := mkLifecycle(t)
+		susp.suspended = true // 凭据本来就暂停（例如别的路径先停了）：撤回不能把它放开
+		gw.downOn = "stop_seat"
+		_ = lc.Disable(ctx, id, "zzc", false, true)
+		eqSeq(t, "disable down, already suspended", log.get(), []string{"idp:suspend", "node:stop_seat"})
+		if !susp.suspended {
+			t.Fatal("credential that was suspended before must stay suspended")
+		}
+	})
+	t.Run("enable: start unreachable ⇒ resume undone, still disabled", func(t *testing.T) {
+		lc, log, susp, gw, _, s, id := mkLifecycle(t)
+		if err := lc.Disable(ctx, id, "zzc", false, true); err != nil {
+			t.Fatal(err)
+		}
+		log.reset()
+		gw.downOn = "start_seat"
+		if err := lc.Enable(ctx, id, "zzc", false); !errors.Is(err, ErrNodeOffline) {
+			t.Fatalf("%v, want node_offline", err)
+		}
+		eqSeq(t, "enable down", log.get(), []string{"idp:resume", "node:start_seat", "idp:suspend"})
+		if seat, _ := s.GetSeat(ctx, id); seat.State != "disabled" || !susp.suspended {
+			t.Fatalf("state %s suspended=%v, want disabled and credential suspended", seat.State, susp.suspended)
+		}
+	})
+	t.Run("restart: unreachable ⇒ state back to online, no credential change", func(t *testing.T) {
+		lc, log, susp, gw, _, s, id := mkLifecycle(t)
+		gw.downOn = "restart_seat"
+		if err := lc.Restart(ctx, id, "zzc", false); !errors.Is(err, ErrNodeOffline) {
+			t.Fatalf("%v, want node_offline", err)
+		}
+		// 凭据本来在用：Resume 是 no-op（already），不撤回。
+		eqSeq(t, "restart down", log.get(), []string{"idp:resume", "node:restart_seat"})
+		if seat, _ := s.GetSeat(ctx, id); seat.State != "online" || susp.suspended {
+			t.Fatalf("state %s suspended=%v, want online and credential active", seat.State, susp.suspended)
+		}
+	})
+	t.Run("upgrade: unreachable ⇒ node_offline, not rolled_back; image unchanged", func(t *testing.T) {
+		lc, _, _, gw, _, s, id := mkLifecycle(t)
+		before, _ := s.GetSeat(ctx, id)
+		gw.downOn = "upgrade_seat"
+		if err := lc.Upgrade(ctx, id, "zzc", newerImage, false); !errors.Is(err, ErrNodeOffline) {
+			t.Fatalf("%v, want node_offline", err)
+		}
+		if after, _ := s.GetSeat(ctx, id); after.State != "online" || after.ImageRef != before.ImageRef {
+			t.Fatalf("after %+v, want online with image %s", after, before.ImageRef)
+		}
+	})
+	t.Run("node reports failure (reachable): start_failed sentinel, not Go text", func(t *testing.T) {
+		lc, _, _, gw, _, _, id := mkLifecycle(t)
+		gw.failOn = "restart_seat"
+		if err := lc.Restart(ctx, id, "zzc", false); !errors.Is(err, ErrStartFailed) {
+			t.Fatalf("%v, want start_failed sentinel", err)
+		}
+	})
+}
+
+// 组长裁定第 4 条：备份不可用 ⇒ backup_failed，原因放 Detail；Retire 与销毁都没发生。
+func TestDestroyBackupFailedTyped(t *testing.T) {
+	ctx := context.Background()
+	lc, log, _, _, bk, _, id := mkLifecycle(t)
+	bk.failOn = true
+	err := lc.Destroy(ctx, id, "zzc", false, true)
+	var be *BackupFailedError
+	if !errors.As(err, &be) || !errors.Is(err, ErrBackupFailed) || err.Error() != "backup_failed" || be.Detail() != "injected backup" {
+		t.Fatalf("%v (%T), want BackupFailedError{injected backup}", err, err)
+	}
+	eqSeq(t, "backup_failed", log.get(), []string{"backup"})
 }
