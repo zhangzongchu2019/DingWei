@@ -53,6 +53,7 @@ const server = http.createServer(async (req, res) => {
   const pathName = req.url.split('?')[0];
   if (pathName === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   if (pathName === '/api/console/agents') return json(res, 200, { agents: [] });
+  if (pathName === '/api/console/enroll/applications') return json(res, 200, { applications: [] }); // G3 新增面板的挂载请求;本件不测它,只让桩认得这条路由
   if (pathName === '/api/console/platform') return json(res, 200, { role: 'management', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'approved' }] });
   if (pathName === '/api/console/agent-groups' && req.method === 'GET') {
     if (failInitialGroupsLoad) { failInitialGroupsLoad = false; res.writeHead(503, { 'content-type': 'text/plain' }); return res.end('initial load failed'); }
