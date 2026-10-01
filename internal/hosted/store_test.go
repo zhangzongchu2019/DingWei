@@ -125,10 +125,10 @@ func TestNodeSeatPoolQuotaFlow(t *testing.T) {
 		t.Fatalf("回池后应重新可选, 得 %+v err=%v", usable, err)
 	}
 
-	// 配额：默认零→设上限→已用聚合（disabled 计入）
+	// 配额：业主裁定默认值→设上限→已用聚合（disabled 计入）
 	q, err := s.GetQuota(ctx, "zzc")
-	if err != nil || q.AgentsLimit != 0 {
-		t.Fatalf("未设置应默认零, 得 %+v err=%v", q, err)
+	if err != nil || q.AgentsLimit != 4 || q.MemMBLimit != 16384 || q.DiskMBLimit != 65536 || q.VCPULimit != 4 {
+		t.Fatalf("未设置应取默认配额（8971bddf）, 得 %+v err=%v", q, err)
 	}
 	if err := s.PutQuota(ctx, Quota{UserLC: "zzc", AgentsLimit: 2, VCPULimit: 4, MemMBLimit: 8192}, "tester"); err != nil {
 		t.Fatalf("put quota: %v", err)

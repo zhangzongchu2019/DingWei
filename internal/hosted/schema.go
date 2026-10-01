@@ -87,10 +87,10 @@ CREATE INDEX IF NOT EXISTS g4_seat_event_agent_idx ON g4_seat_event(agent_id, id
 -- 用户配额（管理层设；新上限低于已用量允许保存、只限新建——G6）
 CREATE TABLE IF NOT EXISTS g4_quota (
   user_lc       TEXT PRIMARY KEY,
-  agents_limit  INT    NOT NULL DEFAULT 0,   -- 默认零（报业主项 2 的默认口径）
-  mem_mb_limit  BIGINT NOT NULL DEFAULT 0,
-  disk_mb_limit BIGINT NOT NULL DEFAULT 0,
-  vcpu_limit    INT    NOT NULL DEFAULT 0,
+  agents_limit  INT    NOT NULL DEFAULT 4,      -- 业主 8971bddf：默认 Agent 数 4
+  mem_mb_limit  BIGINT NOT NULL DEFAULT 16384,  -- 默认内存 16GB
+  disk_mb_limit BIGINT NOT NULL DEFAULT 65536,  -- 默认磁盘 64GB
+  vcpu_limit    INT    NOT NULL DEFAULT 4,      -- 默认 vCPU 4
   updated_by    TEXT NOT NULL,
   updated_at    timestamptz NOT NULL DEFAULT now());
 

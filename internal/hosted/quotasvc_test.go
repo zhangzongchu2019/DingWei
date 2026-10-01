@@ -18,12 +18,19 @@ func TestQuotaCheckBoundaries(t *testing.T) {
 	ctx := context.Background()
 	plan, _ := PlanByID("2c4g")
 
-	// 未设置＝默认零 ⇒ 新建即拒（报业主项 2 默认口径）
-	if err := qs.CheckCreate(ctx, "zzc", plan); !errors.Is(err, ErrQuotaExceeded) {
-		t.Fatalf("默认零应拒: %v", err)
+	// 未设置＝默认 4 席 ⇒ 仍放行；超额响应必须带各维度剩余（先造满再验）
+	if err := qs.CheckCreate(ctx, "zzc", plan); err != nil {
+		t.Fatalf("默认 4 席内应放行: %v", err)
+	}
+	if err := qs.Put(ctx, "admin", true, Quota{UserLC: "zzc", AgentsLimit: 0, VCPULimit: 0, MemMBLimit: 0, DiskMBLimit: 0}); err != nil {
+		t.Fatal(err)
+	}
+	err := qs.CheckCreate(ctx, "zzc", plan)
+	if !errors.Is(err, ErrQuotaExceeded) {
+		t.Fatalf("零上限应拒: %v", err)
 	}
 	var qe *QuotaExceededError
-	if errors.As(err0(ctx, qs, plan), &qe) {
+	if errors.As(err, &qe) {
 		if len(qe.RemainingJSON()) == 0 {
 			t.Fatal("超额响应应带各维度剩余")
 		}

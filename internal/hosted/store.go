@@ -377,6 +377,11 @@ type Quota struct {
 	MemMBLimit, DiskMBLimit                        int64
 }
 
+// DefaultQuota 业主裁定的新用户默认配额（8971bddf）：未单独设置时按此计。
+func DefaultQuota(userLC string) Quota {
+	return Quota{UserLC: userLC, AgentsLimit: 4, VCPULimit: 4, MemMBLimit: 16384, DiskMBLimit: 65536}
+}
+
 type Usage struct {
 	Agents          int
 	VCPU            int
@@ -401,8 +406,8 @@ SELECT user_lc, agents_limit, mem_mb_limit, disk_mb_limit, vcpu_limit FROM g4_qu
 
 	}()
 	if errors.Is(err, sql.ErrNoRows) {
-		// 未单独设置＝默认零（报业主项 2 的默认口径）：须管理层先配才能建
-		return Quota{UserLC: userLC}, nil
+		// 未单独设置＝业主裁定默认值（8971bddf）：Agent 数 4／内存 16GB／磁盘 64GB／vCPU 4
+		return DefaultQuota(userLC), nil
 	}
 	return q, err
 }
