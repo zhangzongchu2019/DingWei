@@ -5043,6 +5043,7 @@
       const fresh = mention.status === 'ok' && Date.now() - mention.loadedAt < MENTION_TTL_MS;
       if (fresh && !force) return;
       if (mention.status === 'loading' && !force) return;   // 沿用在途那次,慢接口下连敲不重复请求
+      if (mention.status === 'error' && !force) return;     // 失败后打字不自动重取(Hub 故障/限流时不放大);点「重试」或重新打开浮层才重取
       const gen = ++mention.gen; mention.status = 'loading'; mentionRender();
       const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), MENTION_FETCH_TIMEOUT_MS);
       try {
@@ -5064,7 +5065,7 @@
       if (!tok) { if (mention.open) mentionClose(); return; }
       const opening = !mention.open;
       mention.token = tok;
-      if (opening && mention.status === 'loading') mention.status = 'idle';   // 重新打开:在途那次可能带着旧数据,重取(只在打开时;打字不重取)
+      if (opening && (mention.status === 'loading' || mention.status === 'error')) mention.status = 'idle';   // 重新打开:在途那次可能带着旧数据,重取(只在打开时;打字不重取)
       if (opening) { mention.open = true; mention.active = 0; mentionPopup.hidden = false; humanInput.setAttribute('aria-expanded', 'true'); }
       else mention.active = 0;
       mentionRender(); mentionLoad(false);

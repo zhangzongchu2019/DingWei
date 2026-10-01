@@ -22,7 +22,7 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['enter-sends-while-open', 'ignore-insert-field', 'no-stale-guard', 'trigger-mid-word', 'no-ime-guard', 'enter-ignored-when-no-items', 'refetch-while-loading', 'fixed-max-height'];
+const MUTATIONS = ['enter-sends-while-open', 'ignore-insert-field', 'no-stale-guard', 'trigger-mid-word', 'no-ime-guard', 'enter-ignored-when-no-items', 'refetch-while-loading', 'fixed-max-height', 'refetch-after-error'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'enter-sends-while-open') mutate("e.preventDefault(); e.stopImmediatePropagation(); mentionSelect(mention.active); }\n    }, true);", "mentionSelect(mention.active); }\n    }, true);");
 if (mutation === 'ignore-insert-field') mutate("const insert = it.insert || it.full_name || it.name || '';", "const insert = it.name || '';");
@@ -31,6 +31,7 @@ if (mutation === 'trigger-mid-word') mutate("/(^|\\s)@([A-Za-z0-9.]*)$/.exec(", 
 if (mutation === 'no-ime-guard') mutate("if (!mention.open || e.isComposing) return;", "if (!mention.open) return;");
 if (mutation === 'enter-ignored-when-no-items') mutate("if (!mentionSelectable()) return;\n      const n = mentionMatches().length;", "const n = Math.max(1, mentionMatches().length);");
 if (mutation === 'refetch-while-loading') mutate("      if (mention.status === 'loading' && !force) return;   // 沿用在途那次,慢接口下连敲不重复请求\n", '');
+if (mutation === 'refetch-after-error') mutate("      if (mention.status === 'error' && !force) return;     // 失败后打字不自动重取(Hub 故障/限流时不放大);点「重试」或重新打开浮层才重取\n", '');
 if (mutation === 'fixed-max-height') mutate("mentionPopup.style.maxHeight = `${Math.max(64, Math.min(232, Math.floor(composerInner.getBoundingClientRect().top) - 14))}px`;", "mentionPopup.style.maxHeight = '232px';");
 
 const NAME = 'dev.zzc';
@@ -232,6 +233,19 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await typeAt('@alp');
       await page.waitForFunction(() => document.querySelectorAll('#mentionPopup .mention-row:not(.mention-note)').length === 1);
       assert.strictEqual(candidateGets, 1, `typing while loading must not start new requests (got ${candidateGets})`);
+    });
+
+    await test('a failing interface gets ONE request however fast the user types; reopening or Retry asks again', async () => {
+      await reset(CANDS, 'error');
+      await typeAt('@');
+      await page.waitForFunction(() => /候选加载失败/.test(document.getElementById('mentionPopup').textContent));   // 先等失败落定,再继续打字
+      await page.keyboard.type('alpha');
+      await page.waitForTimeout(150);
+      assert.strictEqual(candidateGets, 1, `typing after a failure must not re-request (got ${candidateGets})`);
+      candidateMode = 'ok';
+      await page.keyboard.press('Escape'); await input.fill(''); await typeAt('@');   // 重新打开 ⇒ 再取
+      await page.waitForFunction(() => document.querySelectorAll('#mentionPopup .mention-row:not(.mention-note)').length === 5);
+      assert.strictEqual(candidateGets, 2);
     });
 
     await test('on a short viewport the popup is capped to the room above the input and is never clipped at the top', async () => {
