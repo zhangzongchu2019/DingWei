@@ -623,7 +623,7 @@ var CONSOLE_ERRORS={
   hosted_agent:'托管 Agent 请用托管操作（停用、销毁），不在这里吊销',origin_hosted:'托管 Agent 请用托管操作（停用、销毁），不在这里吊销',
   unauthenticated:'登录已失效，请重新登录',origin_mismatch:'请求来源不符，请刷新页面',
   combo_incompatible:'所选 CLI、LLM 和账号类型不兼容',combo_not_verified:'这个 CLI 与 LLM 的组合还没有验通，暂不能创建',forbidden_role:'你的角色不足以执行这个操作',plan_exceeds_quota:'所选资源套餐超出剩余额度',
-  quota_exceeded:'Agent 数量已达上限',node_no_capacity:'没有节点有足够的剩余资源',account_not_allowed:'你不能使用这个 LLM 账号',
+  quota_exceeded:'配额不足，请联系管理员调整配额',node_no_capacity:'没有节点有足够的剩余资源',account_not_allowed:'你不能使用这个 LLM 账号',
   node_offline:'该 Agent 所在节点离线，操作无法执行',invalid_state:'该 Agent 当前状态不允许这个操作',confirm_required:'这个操作需要先确认',
   upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',
   user_exists:'该用户 ID 或简称已被使用，请换一个',bad_request:'填写的内容不符合规则：用户 ID 2～32 位字母数字，简称 2～16 位字母数字',
@@ -643,7 +643,7 @@ function consoleErrorText(status,data){
   if(code==='rate_limited'){var wait=data&&Number.isFinite(data.retry_after_s)?data.retry_after_s:null;return '操作过于频繁'+(wait===null?'，请稍后再试':'，请 '+wait+' 秒后再试');}
   if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){   // 被触发的维度剩余为 0:按维度给具体文案
     var DIMS=[['agents','Agent 数量'],['vcpu','CPU'],['mem_gb','内存'],['disk_gb','磁盘']],used=[];
-    DIMS.forEach(function(d){if(data.remaining[d[0]]===0)used.push(d[1]);});
+    DIMS.forEach(function(d){if(data.remaining[d[0]]===0)used.push(d[1]);});   // 契约把负数归 0,故只认 0;remaining 里没有 0 时落到中性回退文案
     if(used.length)return '配额不足：'+used.join('、')+'已用完，请换小一点的规格或联系管理员调整配额';
   }
   return CONSOLE_ERRORS[code]||('操作失败（HTTP '+status+(code?'：'+code:'')+'）');

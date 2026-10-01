@@ -26,8 +26,9 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
+const MUTATIONS = ['quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
 if (mutation === 'quota-generic') mutate("if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){", "if(false){");
 if (mutation === 'unseal-review') mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;');
 if (mutation === 'nav-opens-by-name') mutate('b.onclick=function(){ openTab(a.full_name) };', 'b.onclick=function(){ openTab(a.name) };');
@@ -107,6 +108,8 @@ const server = http.createServer(async (req, res) => {
     const body = await read(req); writes.push({ path: p, body });
     if (!/^[A-Za-z0-9]+$/.test(String(body.name))) return err(res, 422, 'name_invalid');
     if (agents.some((a) => a.session_name.split('-')[1].toLowerCase() === String(body.name).toLowerCase())) return err(res, 409, 'name_taken');
+    if (String(body.name) === 'Quotaodd') return err(res, 403, 'quota_exceeded', { remaining: { agents: 2, vcpu: -1, mem_gb: 3, disk_gb: 3 } });
+    if (String(body.name) === 'Quotabare') return err(res, 403, 'quota_exceeded');
     if (String(body.name) === 'Quotamem') return err(res, 403, 'quota_exceeded', { remaining: { agents: 2, vcpu: 6, mem_gb: 0, disk_gb: 0 } });
     const o = options(); const acct = o.accounts.find((a) => a.id === body.account_id);
     if (!o.combos.some((c) => c.cli === body.cli && c.llm === body.llm)) return err(res, 422, 'combo_incompatible');
@@ -239,6 +242,15 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       const t = await page.locator('#hostedFeedback').textContent();
       assert.match(t, /内存、磁盘已用完/);
       assert.doesNotMatch(t, /CPU|SECRET-HUB-TEXT/);
+    });
+
+    await test('quota_exceeded without an exhausted dimension gets the neutral wording, never a misleading Agent-count one', async () => {
+      for (const name of ['Quotaodd', 'Quotabare']) {
+        await fillValid(name);
+        await page.locator('#hostedCreateBtn').click();
+        await page.locator('#hostedFeedback').filter({ hasText: '配额不足，请联系管理员' }).waitFor({ state: 'visible' });
+        assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(), /Agent 数量|SECRET-HUB-TEXT/);
+      }
     });
 
     await test('successful create opens a mask that reports the REAL stage the Hub reports, step by step', async () => {
