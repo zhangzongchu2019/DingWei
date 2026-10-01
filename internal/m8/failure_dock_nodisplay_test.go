@@ -182,7 +182,7 @@ func TestFailureDockEventAbsentWithoutFailure(t *testing.T) {
 	t.Setenv("WP_AMR_NO_DISPLAY_NOTICE_MIN_VERSION", "0.2.0.0")
 	p := testAMRProcessor()
 	p.hub = h
-	h.amr = p
+	replaceAMR(h, p)
 
 	key := amrTurnKey{KeyID: "clean-key", Session: "clean-source", DeliveryID: "dlv-clean", TurnID: "turn-1"}
 	// 全成功的一轮:与业主那条 b 无关,行为必须与今天逐字相同。
@@ -263,7 +263,7 @@ func TestFailureDockEventFromNotifySourceVisible(t *testing.T) {
 	setClientVersion(t, h, "nsv-key", "nsv-source", "9.9.9.9")
 	p := testAMRProcessor()
 	p.hub = h
-	h.amr = p
+	replaceAMR(h, p)
 
 	key := amrTurnKey{KeyID: "nsv-key", Session: "nsv-source", DeliveryID: "dlv-nsv", TurnID: "turn-1"}
 	p.notifySourceVisible(key, "@offender", "提及格式正确但目标无权限、不可达或超过数量限制", true, "正文 @offender")
@@ -285,7 +285,7 @@ func TestFailureDockEventWhenSourceOffline(t *testing.T) {
 	h, _, ctx := newTestHub(t)
 	p := testAMRProcessor()
 	p.hub = h
-	h.amr = p
+	replaceAMR(h, p)
 
 	key := amrTurnKey{KeyID: "off-key", Session: "off-source", DeliveryID: "dlv-off", TurnID: "turn-1"}
 	p.notifySourceVisible(key, "@gone", "本轮没有可路由的完整文本", true, "")
@@ -308,7 +308,7 @@ func TestRouteResultFailuresReachDockPerTarget(t *testing.T) {
 	setClientVersion(t, h, "rr-key", "rr-source", "9.9.9.9")
 	p := testAMRProcessor()
 	p.hub = h
-	h.amr = p
+	replaceAMR(h, p)
 
 	key := amrTurnKey{KeyID: "rr-key", Session: "rr-source", DeliveryID: "dlv-rr", TurnID: "turn-1"}
 	p.notifyRouteResults(key, []amrTargetResult{
@@ -345,7 +345,7 @@ func TestNoDisplayGateOnAMRChokePoint(t *testing.T) {
 	c := setClientVersion(t, h, "amrgate-key", "amrgate-old", "0.1.0.0")
 	p := testAMRProcessor()
 	p.hub = h
-	h.amr = p
+	replaceAMR(h, p)
 
 	key := amrTurnKey{KeyID: "amrgate-key", Session: "amrgate-old", DeliveryID: "dlv-amrgate", TurnID: "turn-1"}
 	p.notifySourceVisible(key, "@old", "Hub 路由队列已满", true, "")

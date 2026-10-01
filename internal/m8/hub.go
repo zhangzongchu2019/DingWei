@@ -86,6 +86,11 @@ type Hub struct {
 	consoleTouchMu sync.Mutex
 	consoleTouched map[string]time.Time
 
+	// sessionWG 正在服务中的会话（serveSession）个数；Close 等它们收尾。
+	// httptest.Server.Close 不等已升级为 WebSocket 的连接 ⇒ 不等的话，会话收尾（释放投递租约、写库、打日志）
+	// 会拖到下一条用例里，撞进别人的日志捕获窗口（复验方 qwen38maxkhovvob4 的日志卫生用例即被打红过）。
+	sessionWG sync.WaitGroup
+
 	mu                    hubMutex
 	serviceClients        map[string]*client
 	sessionClients        map[string]map[string]*sessionClient
@@ -893,6 +898,8 @@ type sessionAdmission struct {
 
 // serveSession 的函数体是从 HandleSessionWS 原样搬来的（逐字未改），开头只做同名解包。
 func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmission) {
+	h.sessionWG.Add(1)
+	defer h.sessionWG.Done()
 	keyID, ownerKey, requestedSessionName, sessionName, fullSessionName := a.keyID, a.ownerKey, a.requestedSessionName, a.sessionName, a.fullSessionName
 	accounts, clientIP, tool, modelName, clientVersion := a.accounts, a.clientIP, a.tool, a.modelName, a.clientVersion
 	producer, targetGroup, noDirectory, mirrorTo := a.producer, a.targetGroup, a.noDirectory, a.mirrorTo
@@ -5915,4 +5922,36 @@ func randomDigits(n int) string {
 		out[i] = '0' + b[i]%10
 	}
 	return string(out)
+}
+
+// Close 收掉 Hub 自己起的后台 goroutine：amr 处理器的心跳与路由循环，以及在线会话的处理 goroutine（先断连、再等收尾）；幂等。
+// 生产进程随退出一并回收，不必调；测试里每建一个 Hub 都应 t.Cleanup(hub.Close)，否则泄漏的心跳会污染全局 log。
+func (h *Hub) Close() {
+	if h == nil {
+		return
+	}
+	if h.amr != nil {
+		h.amr.close()
+	}
+	// 关掉所有在线会话连接，并等各自的收尾跑完（最多 5 秒，防测试里有连接卡住时 Close 挂死）。
+	h.mu.Lock()
+	var conns []*websocket.Conn
+	for _, sessions := range h.sessionClients {
+		for _, c := range sessions {
+			if c != nil && c.conn != nil {
+				conns = append(conns, c.conn)
+			}
+		}
+	}
+	h.mu.Unlock()
+	for _, c := range conns {
+		_ = c.CloseNow()
+	}
+	done := make(chan struct{})
+	go func() { h.sessionWG.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		log.Printf("hub close: session handlers still running after 5s")
+	}
 }
