@@ -90,3 +90,53 @@ func TestProjectUsageReportParsing(t *testing.T) {
 		t.Fatalf("不存在的项目应 present=false: %v %v", present, err)
 	}
 }
+
+// 复验 r2 阻断①：Setup 中途失败必须自拆（目录不留、项目不残留）。
+func TestSetupFailureLeavesNoResidue(t *testing.T) {
+	origFind, origRun, origLs, origCh := findmntTarget, xfsRun, lsattrOut, chownForSeatFn
+	defer func() { findmntTarget, xfsRun, lsattrOut, chownForSeatFn = origFind, origRun, origLs, origCh }()
+	root := t.TempDir()
+	dir := seatDir(root, "ag_s1")
+	findmntTarget = func(path string) (string, error) { return "/data", nil }
+	lsattrOut = func(d string) (string, error) { return "61001 --------------e-- " + d, nil }
+	chownForSeatFn = func(string) error { return nil }
+	xfsRun = func(args ...string) ([]byte, error) {
+		j := strings.Join(args, " ")
+		if strings.Contains(j, "limit -p") {
+			return nil, errors.New("limit failed")
+		}
+		return []byte(""), nil
+	}
+	if err := (xfsQuota{}).Setup(root, "ag_s1", 16384); err == nil {
+		t.Fatal("limit 失败 Setup 必须报错")
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Fatalf("Setup 失败目录必须自拆（无残留）: %v", err)
+	}
+}
+
+// 复验 r2 阻断②：Clear 清后项目【仍在报表】（哪怕用量 0）⇒ 必红；摘净 ⇒ 绿。
+func TestClearRedWhenProjectStillPresent(t *testing.T) {
+	origFind, origRun, origLs := findmntTarget, xfsRun, lsattrOut
+	defer func() { findmntTarget, xfsRun, lsattrOut = origFind, origRun, origLs }()
+	root := t.TempDir()
+	dir := seatDir(root, "ag_c1")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	findmntTarget = func(string) (string, error) { return "/data", nil }
+	lsattrOut = func(d string) (string, error) { return "61001 --------------e-- " + d, nil }
+	xfsRun = func(args ...string) ([]byte, error) {
+		if strings.Contains(strings.Join(args, " "), "report -p -n") {
+			return []byte("#61001    0 0 16384\n"), nil // present, used=0
+		}
+		return []byte(""), nil
+	}
+	if err := (xfsQuota{}).Clear(root, "ag_c1"); err == nil || !strings.Contains(err.Error(), "D5") {
+		t.Fatalf("项目仍在报表（用量0）必须红, 得 %v", err)
+	}
+	xfsRun = func(args ...string) ([]byte, error) { return []byte(""), nil }
+	if err := (xfsQuota{}).Clear(root, "ag_c1"); err != nil {
+		t.Fatalf("摘净后应通: %v", err)
+	}
+}

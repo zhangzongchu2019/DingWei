@@ -129,12 +129,16 @@ func (xfsQuota) Setup(root, seatID string, diskMB int64) error {
 		return fmt.Errorf("seat_id 非法: %q", seatID)
 	}
 	dir := seatDir(root, seatID)
+	// 🔴 复验 r2 阻断①：Setup 中途失败必须自拆——任何一步失败，目录与已设项目都不留
+	//（否则 create 看到 Setup 错误时目录已在，半成品残留）。
+	cleanupSelf := func() { _ = os.RemoveAll(dir) }
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
 	// 🔴 M1 复验阻断 2：目录必须归席位运行用户（10001:10001）——容器强制该 UID，
 	// root:0700 会让席位连 /work 都进不去。权限保持 0700，不放宽 world-readable。
 	if err := chownForSeat(dir); err != nil {
+		cleanupSelf()
 		return err
 	}
 	if diskMB <= 0 {
@@ -142,27 +146,33 @@ func (xfsQuota) Setup(root, seatID string, diskMB int64) error {
 	}
 	mnt, err := resolveMountPoint(root)
 	if err != nil {
+		cleanupSelf()
 		return err
 	}
 	return withQuotaLock(func() error {
 		pid, err := allocProjectID(mnt)
 		if err != nil {
+			cleanupSelf()
 			return err
 		}
 		// v3 直设法：project -s -p <dir> <id>（不经 /etc/projects|projid）
 		if out, err := xfsRun(fmt.Sprintf("project -s -p %s %d", dir, pid), mnt); err != nil {
+			cleanupSelf()
 			return fmt.Errorf("xfs project -s: %v: %s", err, out)
 		}
 		// lsattr 断言项目号落对（v3 同款闸：两目录同落一个 ID 的 bug 不得回潮）
 		if out, err := lsattrOut(dir); err != nil {
+			cleanupSelf()
 			return fmt.Errorf("lsattr -d -p %s: %v: %s", dir, err, out)
 		} else {
-			got, aerr := strconv.Atoi(strings.Fields(string(out))[0])
+			got, aerr := strconv.Atoi(strings.Fields(out)[0])
 			if aerr != nil || got != pid {
-				return fmt.Errorf("项目号断言失败: 期望 %d, 实得 %q", pid, strings.TrimSpace(string(out)))
+				cleanupSelf()
+				return fmt.Errorf("项目号断言失败: 期望 %d, 实得 %q", pid, strings.TrimSpace(out))
 			}
 		}
 		if out, err := xfsRun(fmt.Sprintf("limit -p bhard=%dm %d", diskMB, pid), mnt); err != nil {
+			cleanupSelf()
 			return fmt.Errorf("xfs limit: %v: %s", err, out)
 		}
 		return nil
@@ -214,19 +224,24 @@ func (xfsQuota) Clear(root, seatID string) error {
 		if out, err := xfsRun(fmt.Sprintf("limit -p bhard=0 %d", pid), mnt); err != nil {
 			return fmt.Errorf("xfs limit bhard=0: %v: %s", err, out)
 		}
+		// 摘掉项目映射（project -C）——否则目录删了项目还在报表上（复验 r2 阻断②：
+		// "项目在但用量 0"不算清除）。
+		if out, err := xfsRun(fmt.Sprintf("project -C %d", pid), mnt); err != nil {
+			return fmt.Errorf("xfs project -C: %v: %s", err, out)
+		}
 	}
 	if err := os.RemoveAll(dir); err != nil {
 		return fmt.Errorf("删除席位目录: %v", err)
 	}
 	if pid > 0 {
-		// 清完复查（D5）：report 里该项目要么不在、要么用量归 0 且目录已不在；
-		// 任一清理闸失效（残留用量或目录还在）都必须红。
+		// 清完复查（D5＋复验 r2 阻断②）：report 里该项目必须【消失】——存在即红
+		//（不论用量；存在就证明映射没摘净）。
 		present, used, err := projectUsage(mnt, pid)
 		if err != nil {
 			return err
 		}
-		if present && used > 0 {
-			return fmt.Errorf("D5 清除未闭合: 项目 %d 仍计 %d blocks", pid, used)
+		if present {
+			return fmt.Errorf("D5 清除未闭合: 项目 %d 仍在报表（用量 %d blocks）——项目存在即红", pid, used)
 		}
 		if _, err := os.Stat(dir); !os.IsNotExist(err) {
 			return fmt.Errorf("D5 清除未闭合: 席位目录仍在 %s", dir)

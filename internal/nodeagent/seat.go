@@ -269,8 +269,10 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	}
 
 	// ① 磁盘三件套之席位目录＋XFS 项目配额
+	// 🔴 复验 r2 阻断①：Setup 失败也要进清理（Setup 虽自拆目录，但网络/容器侧若已动过
+	//    不能假设没有半成品——一律走同一 fail 路径）。
 	if err := d.quota.Setup(d.seatRoot, p.SeatID, p.Resources.DiskMB); err != nil {
-		return nil, err
+		return fail(err, "")
 	}
 	// ② 令牌文件（0600，不经 env）
 	if err := d.writeTokenFile(p.SeatID, p.Token); err != nil {
