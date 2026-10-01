@@ -73,5 +73,22 @@ func wireNewPlatform(ctx context.Context, mux *http.ServeMux, hub *m8.Hub, cfg n
 	n3.Register(mux)
 	api.Register(mux)
 	mux.HandleFunc("GET /ws/agent", hub.HandleAgentWS)
+	registerNewPlatformLoginPage(mux, hub)
 	return nil
+}
+
+// newPlatformLoginPager 新平台登录页（tosonnet50ts 承办，Hub.HandleNewPlatformLoginPage）。
+// 用接口断言登记：两条分支谁先合都能编译；登录页那一侧合入后自动生效（组长台账 9c647ee7 ①）。
+type newPlatformLoginPager interface {
+	HandleNewPlatformLoginPage(http.ResponseWriter, *http.Request)
+}
+
+func registerNewPlatformLoginPage(mux *http.ServeMux, hub any) bool {
+	lp, ok := hub.(newPlatformLoginPager)
+	if !ok {
+		log.Printf("newplat login page not built into this binary: GET /console/login not registered")
+		return false
+	}
+	mux.HandleFunc("GET /console/login", lp.HandleNewPlatformLoginPage)
+	return true
 }

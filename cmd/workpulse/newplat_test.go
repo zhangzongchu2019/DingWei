@@ -102,3 +102,31 @@ func TestWireNewPlatformRoutes(t *testing.T) {
 		t.Fatalf("bootstrap users=%d, want 1", n)
 	}
 }
+
+type fakeLoginPager struct{}
+
+func (fakeLoginPager) HandleNewPlatformLoginPage(w http.ResponseWriter, _ *http.Request) {
+	_, _ = w.Write([]byte("login-page"))
+}
+
+// 登录页按接口断言登记：有这个方法就挂到 GET /console/login，没有就不挂（不 panic、不挂占位）。
+func TestRegisterNewPlatformLoginPage(t *testing.T) {
+	mux := http.NewServeMux()
+	if !registerNewPlatformLoginPage(mux, fakeLoginPager{}) {
+		t.Fatal("pager with the method must be registered")
+	}
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/console/login", nil))
+	if rec.Code != 200 || rec.Body.String() != "login-page" {
+		t.Fatalf("GET /console/login: %d %q", rec.Code, rec.Body.String())
+	}
+	mux2 := http.NewServeMux()
+	if registerNewPlatformLoginPage(mux2, struct{}{}) {
+		t.Fatal("value without the method must not be registered")
+	}
+	rec2 := httptest.NewRecorder()
+	mux2.ServeHTTP(rec2, httptest.NewRequest("GET", "/console/login", nil))
+	if rec2.Code != 404 {
+		t.Fatalf("unregistered route should 404, got %d", rec2.Code)
+	}
+}

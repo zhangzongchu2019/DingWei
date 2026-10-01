@@ -240,3 +240,50 @@ func TestNewPlatformViewSubpathWithLegacyConsoleAuthOn(t *testing.T) {
 		t.Fatalf("other user with legacy console auth on: %d, want 404", st)
 	}
 }
+
+// 新平台 console 主页与接口的认人：页面跳登录页、接口回机器码；登录后放行并带上用户（tosonnet50ts 登录页的进入条件）。
+func TestNewPlatformConsolePrincipal(t *testing.T) {
+	v := newViewEnv(t)
+	var gotPrincipal string
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /console", v.hub.RequireConsolePrincipal(func(w http.ResponseWriter, r *http.Request) {
+		gotPrincipal, _ = r.Context().Value(consolePrincipalContextKey{}).(string)
+		_, _ = io.WriteString(w, "console")
+	}))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	noFollow := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	call := func(tok, accept string) (int, string, string) {
+		req, _ := http.NewRequest("GET", srv.URL+"/console", nil)
+		if tok != "" {
+			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: tok})
+		}
+		if accept != "" {
+			req.Header.Set("Accept", accept)
+		}
+		res, err := noFollow.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		b, _ := io.ReadAll(res.Body)
+		return res.StatusCode, res.Header.Get("Location"), strings.TrimSpace(string(b))
+	}
+	if st, loc, _ := call("", "text/html,application/xhtml+xml"); st != 302 || loc != "/console/login" {
+		t.Errorf("page, no session: %d %q", st, loc)
+	}
+	if st, _, body := call("", "application/json"); st != 401 || body != `{"error":"unauthenticated"}` {
+		t.Errorf("api, no session: %d %s", st, body)
+	}
+	_ = v.svc.Store.CreateUser(v.ctx, identity.User{UserID: "temp2", ShortName: "t2", Type: identity.UserManager, State: identity.UserActive, PasswordHash: "x", MustChangePassword: true})
+	_ = v.svc.Store.CreateSession(v.ctx, identity.Session{TokenHash: identity.HashSecret("tok-mc"), UserIDLC: "temp2", ExpiresAt: v.svc.Now().Add(identity.SessionTTL)})
+	if st, loc, _ := call("tok-mc", "text/html"); st != 302 || loc != "/console/login#change" {
+		t.Errorf("page, must change: %d %q", st, loc)
+	}
+	if st, _, body := call("tok-mc", "application/json"); st != 403 || body != `{"error":"must_change_password"}` {
+		t.Errorf("api, must change: %d %s", st, body)
+	}
+	if st, _, body := call(v.tokZZC, "text/html"); st != 200 || body != "console" || gotPrincipal != "zzc" {
+		t.Errorf("logged in: %d %s principal=%q", st, body, gotPrincipal)
+	}
+}

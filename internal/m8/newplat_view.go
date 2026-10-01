@@ -109,3 +109,34 @@ func (h *Hub) dispatchNewPlatformTerminalInput(ctx context.Context, msg model.Me
 	}
 	return model.PrefixDispatchResult{Matched: true, Reply: "已解锁输入，8小时无交互自动回收。"}, true, nil
 }
+
+// newPlatformPrincipal 新平台 console 页面与接口的认人（RequireConsolePrincipal 的新平台分支）。
+// 浏览器打开页面（GET 且要 HTML）：未登录 ⇒ 302 到 /console/login；必须改密 ⇒ 302 到 /console/login#change。
+// 接口：未登录 ⇒ 401 unauthenticated；必须改密 ⇒ 403 must_change_password（console 页的守卫认这两个码弹回登录页）。
+func (h *Hub) newPlatformPrincipal(w http.ResponseWriter, r *http.Request) (string, bool) {
+	wantsPage := r.Method == http.MethodGet && strings.Contains(r.Header.Get("Accept"), "text/html")
+	var user *identity.User
+	var err error
+	if c, cerr := r.Cookie(httpapi.SessionCookie); cerr == nil && c.Value != "" {
+		user, err = h.Onboarding.ResolveSession(r.Context(), c.Value)
+	} else {
+		err = identity.ErrNotFound
+	}
+	switch {
+	case err == nil:
+		return user.UserIDLC(), true
+	case errors.Is(err, identity.ErrMustChange):
+		if wantsPage {
+			http.Redirect(w, r, "/console/login#change", http.StatusFound)
+		} else {
+			writeAgentWSError(w, http.StatusForbidden, "must_change_password")
+		}
+	default:
+		if wantsPage {
+			http.Redirect(w, r, "/console/login", http.StatusFound)
+		} else {
+			writeAgentWSError(w, http.StatusUnauthorized, "unauthenticated")
+		}
+	}
+	return "", false
+}

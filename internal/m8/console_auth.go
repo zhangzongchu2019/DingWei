@@ -174,6 +174,13 @@ func (h *Hub) authenticateConsole(w http.ResponseWriter, r *http.Request) (conso
 
 func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.Onboarding != nil {
+			// 新平台：按 N3 会话认人（newplat_view.go newPlatformPrincipal）。
+			if userLC, ok := h.newPlatformPrincipal(w, r); ok {
+				next(w, r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, userLC)))
+			}
+			return
+		}
 		// 🔴 2026-09-15 修：开关关闭时【拒绝】，不再放行。
 		//
 		// 原来是 next(w, r) 直接放行，且**不设 principal 的 context 值** ——
