@@ -25,8 +25,9 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke'];
+const MUTATIONS = ['unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'unseal-review') mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;');
 if (mutation === 'unverified-selectable') mutate("o.disabled=!!it.disabled;", 'o.disabled=false;');
 if (mutation === 'no-linkage') mutate("var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});", 'var rows=(opts.accounts||[]);');
 if (mutation === 'hardcoded-mask') mutate("hostedMaskRender(name,stage,'',lastStage);\n    if(stage==='online')", "hostedMaskRender(name,'online','',lastStage);\n    if(stage==='online')");
@@ -324,6 +325,12 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-offline"] td:nth-child(2)')?.textContent === '处理中…');
       const states = await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] .hosted-op').evaluateAll((els) => els.map((e) => e.disabled));
       assert.deepStrictEqual(states, [true, true, true, true]);
+    });
+
+    await test('self-hosted review area is sealed by default: not rendered, its endpoint never called', async () => {
+      assert.strictEqual(await page.locator('#enrollReview').count(), 0);
+      assert.ok(!getPaths.includes('/api/console/enroll/applications'), 'a sealed area must not request anything');
+      assert.deepStrictEqual(await page.locator('.group-workspace h3').allTextContents().then((a) => a.filter((t) => ['编组列表', '自备 Agent 审核', '托管 Agent 生成', 'Agent 列表'].includes(t))), ['编组列表', '托管 Agent 生成', 'Agent 列表']);
     });
 
     await test('lifecycle state rides on /api/console/agents: no separate hosted-agents read; a hosted row without state shows only online/offline', async () => {
