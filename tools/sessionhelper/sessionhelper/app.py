@@ -18,8 +18,20 @@ from .config import Config, load_config
 from .llm import LLMProvider
 from .inbox import DeliveryInbox
 from .hub_meta import HUB_META_TYPE_DELIVERY_FAILURE, HUB_META_TYPE_DELIVERY_RESULT
-from .protocol import AddressBook, envelope, is_feishu_addr, is_mirror_control, reply_target, session_addr
-from .reply_origin import classify_reply_decision, reply_carryforward_meta
+from .protocol import AddressBook, envelope, is_mirror_control, session_addr
+# 路由／提及判定已收进 routing.py（R3）。下面是**临时兼容再导出**（tests 与旧 import 路径在用，
+# agent_route_envelope 及三条路由常量仍可从 app 取到）；V9 把这些逻辑上移到 Hub 后移除。
+from .routing import (  # noqa: F401
+    CONTROL_ROUTE_RE,
+    LEGACY_AGENT_ROUTE_RE,
+    ROUTE_BODY_MAX,
+    ROUTE_TARGET_RE,
+    agent_route_envelope,
+    classify_reply_decision,
+    is_feishu_addr,
+    reply_carryforward_meta,
+    reply_target,
+)
 from .provision import Provisioner, is_provision_envelope
 
 
@@ -88,9 +100,6 @@ class MirrorState:
 
 
 COMM_SKILL_ACK = "DINGWEI_COMM_SKILL_INSTALLED"
-LEGACY_AGENT_ROUTE_RE = re.compile(r"^(#[A-Za-z0-9_.-]+|@[^\s#]+#[A-Za-z0-9_.-]+)\s+(.+)$", re.S)
-CONTROL_ROUTE_RE = re.compile(r"^\s*\[\[DW_ROUTE_V1\s*\n(?P<json>.*?)\n\]\]\s*$", re.S)
-ROUTE_BODY_MAX = 100_000
 
 
 def truthy_meta(value: object) -> bool:
@@ -214,34 +223,6 @@ def comm_skill_ack_envelope(book: AddressBook) -> dict:
         book.self_addr,
         {"type": "agent_network_skill_ack", "ack_token": COMM_SKILL_ACK, "no_mirror": True},
     )
-
-
-def agent_route_envelope(text: str, book: AddressBook) -> dict | None:
-    text = str(text or "").strip()
-    control = CONTROL_ROUTE_RE.match(text)
-    if control:
-        try:
-            payload = json.loads(control.group("json"))
-        except (TypeError, ValueError, json.JSONDecodeError):
-            return None
-        if not isinstance(payload, dict) or set(payload) != {"to", "body"}:
-            return None
-        if not isinstance(payload.get("to"), str) or not isinstance(payload.get("body"), str):
-            return None
-        to = payload["to"].strip()
-        body = payload["body"].strip()
-        if not re.fullmatch(r"#[A-Za-z0-9_.-]+|@[^\s#]+#[A-Za-z0-9_.-]+", to):
-            return None
-        if not body or len(body) > ROUTE_BODY_MAX:
-            return None
-        return envelope(to, body, book.self_addr, {"type": "agent_route", "no_mirror": True})
-    match = LEGACY_AGENT_ROUTE_RE.match(text)
-    if not match:
-        return None
-    to, body = match.group(1).strip(), match.group(2).strip()
-    if not body:
-        return None
-    return envelope(to, body, book.self_addr, {"type": "agent_route", "no_mirror": True})
 
 
 class SessionHelper:
