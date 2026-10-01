@@ -244,6 +244,23 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.ok(pb.y >= 0, `popup top must stay inside the viewport (top ${pb.y})`);
     });
 
+    for (const [w, h] of [[420, 300], [320, 240]]) {
+      await test(`at ${w}x${h} the popup stays inside the viewport and its first row is visible`, async () => {
+        await reset();
+        await page.setViewportSize({ width: w, height: h });
+        await typeAt('@');
+        await page.waitForFunction(() => document.querySelectorAll('#mentionPopup .mention-row').length >= 5);
+        const g = await page.evaluate(() => {
+          const pr = document.getElementById('mentionPopup').getBoundingClientRect();
+          const rr = document.querySelector('#mentionPopup .mention-row').getBoundingClientRect();
+          return { pt: pr.top, pl: pr.left, pr: pr.right, rt: rr.top, rb: rr.bottom, rh: rr.height, vw: innerWidth };
+        });
+        await page.setViewportSize({ width: 1000, height: 700 });
+        assert.ok(g.pt >= 0 && g.pl >= 0 && g.pr <= g.vw + 1, `popup inside viewport: ${JSON.stringify(g)}`);
+        assert.ok(g.rt >= g.pt - 1 && g.rt >= 0 && g.rb > g.rt && g.rh > 10, `first row visible: ${JSON.stringify(g)}`);
+      });
+    }
+
     await test('the popup follows the dark theme', async () => {
       await reset();
       await typeAt('@');
