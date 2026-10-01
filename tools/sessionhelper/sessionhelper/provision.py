@@ -17,8 +17,6 @@ from urllib.parse import urlparse
 
 from . import __version__
 from .config import Config, detect_os
-# 临时兼容再导出：is_provision_envelope 已搬到 routing.py（R3-B）；V9 上移后移除。
-from .routing import is_provision_envelope  # noqa: F401
 
 
 class ProvisionError(RuntimeError):
@@ -48,6 +46,10 @@ class ProvisionResult:
             "system": True,
             "no_mirror": True,
         }
+
+
+# 临时兼容再导出：is_provision_envelope 已搬到 routing.py（R3-B）；V9 上移后移除。
+from .routing import is_provision_envelope  # noqa: F401
 
 
 class Provisioner:
