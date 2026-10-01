@@ -235,8 +235,8 @@ G3 设计件 `runbooks/DESIGN-G3-ENROLL-AUTH-API-20261001.md` 第五节定了 `I
 
 | 序 | 切片 | 涉及表 | 主要改动点 | 粗排依据 |
 |---|---|---|---|---|
-| 1 | 过 `repo` 包收口 | 主库全部 | `internal/store/sqlite.go:53` 的 `sql.Open` 换成 `repo.OpenPG`；4552 行的实现是主战场 | 不先收口，后面每张表都要改两次 |
-| 2 | 用户与鉴权 | A 组 5 ＋ B 组 2 ＋ O 组 `audit_log` ＋ 第六节 4 张净新建 | 与 G3 接口对齐 | G3 已在等 PG 实现（设计件第五节 🔵 条明写「R0 就绪前用内存实现」） |
+| 1 | 过 `repo` 包收口 ＋ 出 PG 骨架 | 主库全部 | `internal/store/sqlite.go:53` 的 `sql.Open` 换成 `repo.OpenPG`；4552 行的实现是主战场 | 🔴 真实工作量见第九节：**198 个去重方法**，不是「换个驱动」。不先收口，后面每张表都要改两次 |
+| 2 | 用户与鉴权 | A 组 5 ＋ B 组 2 ＋ O 组 `audit_log` ＋ 第六节 3 张净新建与 1 处扩展 | 与 G3 接口对齐 | G3 已在等 PG 实现（设计件第五节 🔵 条明写「R0 就绪前用内存实现」） |
 | 3 | 会话端点 | D 组 `session_endpoint`、`session_delivery` ＋ E 组 `service_api_key` | 🔴 `session_endpoint` 的连接 secret 只存 `service_api_key.key_hash`（0003 迁移注释），两张表必须同一事务语义 | 引用 45 ＋ 14 ＋ 8，且跨表约束 |
 | 4 | 编组 | C 组 3 | 相对独立 | 引用 20/10/3 |
 | 5 | 文件元数据 | fileservice 3 张 | **跨进程**：`file-service` 不在 Hub 里，要单独起、单独测 | 见第三节要点 1 |
@@ -250,8 +250,113 @@ G3 设计件 `runbooks/DESIGN-G3-ENROLL-AUTH-API-20261001.md` 第五节定了 `I
 2. **「view 页存储」何指**：第四节。现网 0 张表、无状态 HMAC。是新增持久化，还是范围里本无对象？
 3. **错误看板**：现网完全不落库（只发 SSE）。新平台要不要给错误看板**加**持久化？若要，属新增功能，不在「删 SQLite」这条里，建议单开一格。
 4. **退役两表**（`contact_cache`、`session_delivery_attempt`）：不迁 PG 是否可行？还是业主要带（带则需先补出读写路径，现状零代码使用）。
-5. **分表切分由谁切**：G2 是 qwen38maxkhovvob4（承办）＋ togpt56terrats（协作）＋ 待回线的 coder56solzzc。本件已给出 15 组归属，建议按**组**切而不是按表切（组内表有跨表约束，见第七节序 3）。切法请组长定，本席不自行认领他人份。
+5. **分表切分由谁切**：G2 是 qwen38maxkhovvob4（承办）＋ togpt56terrats（协作）＋ 待回线的 coder56solzzc。🔴 **本席在第 9.4 节实测后改口：按表切、按组切都不可行**（编译单元是一个类型；且表与方法段不是一一对应）。替代切法与第一步归属建议都在第 9.4 节，请据该节裁定。切法请您定，本席不自行认领他人份。
 6. **PG schema 首版是否含 G3 净新建表**：第六节。建议含，避免出两版。
+7. 🔴 **编译期断言要不要加**：第 9.3 节。21 处断言里 **7 处是无检查写法**，只实现大接口的 PG 类型**编译能过、运行期 panic**。建议 PG 类型落地时加 7 行 `var _ 小接口 = (*PG)(nil)` 钉死在编译期。属改产品代码，本件未动，请裁定。
+8. 🔴 **系统上下文棘轮额度**：R0 的 PG `Migrate` 路径**必然**要新增系统上下文调用点，而 `scripts/repo-boundary-gate.sh` 那条棘轮基线是 12、「每处都是评审面，不许悄悄增长」。198 个方法迁过去会涨多少、走谁的评审，请**在开工前**定，否则第一步就会顶出一条红。详见 `docs/newplat/R0-pg-testenv.md` 第 6.2 节。
+9. 🔴 **两条基线既有红**（与本件无关，但会盖住新红）：依赖棘轮 6→8、边界闸判据一 4→5，在 `fcd3a3dd` 上就已红；本席用 worktree 在基线上跑同两道闸复现，确认非本件引入。是否单开一单处理？
+10. 🔴 **一条闸缺陷**：那条系统上下文棘轮是**纯正则**计数，**连注释一起数**（基线 12 处里已有 2 处是注释）。本席首版只在注释里写了一遍那个调用字面量，就把它顶成 13。散文能推动一条声称在量「调用点」的棘轮。修法与证据见 `docs/newplat/R0-pg-testenv.md` 第 6.2 节；改闸＝改判据，本席未动。
+
+## 九 · R0 的真实工作量（实测接口面）—— 直接回答「怎么切分」
+
+前八节数的是**表**。但 R0 要交的不是表，是一个能被 Hub 接受的**存储实现**。实测这个实现要满足多大的面：
+
+### 9.1 Hub 已经解耦，但只解了一半
+
+好消息，也是本席实测前没料到的：Hub 顶层**已经**是接口，不是绑死 SQLite。
+
+    internal/store/store.go:15   type Repository interface      —— 大接口，134 个方法
+    internal/m8/hub.go:61        Hub.Repo store.Repository
+    internal/m8/hub.go:244       func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub
+
+⇒ 换存储**不需要**改 Hub 的装配签名。（`internal/m8/hub_test.go:49` 的 `newTestHub`
+返回 `*store.SQLite` 只是测试助手的返回类型，传进 `New` 时仍是接口。）
+
+坏消息在另一半：`internal/m8` 里有 **21 处**把 `h.Repo` 断言回**按功能拆的小接口**，
+用来取大接口没覆盖的能力。这些小接口不在 `store.Repository` 里：
+
+| 小接口 | 方法数 | 定义处 | 断言点数 |
+|---|---|---|---|
+| `consoleSpecRepository` | 44 | `internal/m8/console_specs.go:21` | 1 |
+| `consoleAgentGroupRepository` | 10 | `internal/m8/console_agent_groups.go:19` | 3 |
+| `consolePlatformRepository` | 6 | `internal/m8/console_platform.go:26` | 7 |
+| `consoleAuthRepository` | 6 | `internal/m8/console_auth.go:108` | 7 |
+| `consoleLoginRepository` | 2 | `internal/m8/console_login.go:130` | 1 |
+| `consoleOwnerScopeRepository` | 1 | `internal/m8/file_capability.go:197` | 2 |
+| `groupingConsoleOwnerRepository` | 1 | `internal/m8/grouping.go:38` | 1 |
+| 7 个小接口去重合计 | **66** | — | **21** |
+
+7 个小接口去重 66 个方法，与大接口重叠 **2** 个。
+
+### 9.2 PG 实现必须满足的去重方法总数 ＝ 198
+
+    大接口 Repository             134
+    7 个小接口去重                 66
+    两者重叠                       -2
+    ─────────────────────────────────
+    PG 实现须实现的去重方法         198
+
+对照现有 SQLite 侧实现规模：`func (s *SQLite) …` 共 **253** 个，分布在 7 个文件——
+`sqlite.go` 173、`console_specs.go` 33、`console_auth.go` 21、`console_task_driver.go` 9、
+`console_spec_presplit.go` 6、`console_platform.go` 6、`console_task_case_result.go` 5。
+（253 ＞ 198：多出的是未导出 helper 与大接口外的方法。）
+
+⇒ **R0 不是「把 SQLite 换成 PG 驱动」，而是重写一个 198 方法的存储实现。**
+
+### 9.3 🔴 只满足大接口能编译通过，但会在运行期 panic
+
+21 处断言里，**7 处是无检查断言**（写法是 `repo := h.Repo.(x)`，不是 `repo, ok := …`）：
+
+    internal/m8/console_auth.go:601          consoleAuthRepository
+    internal/m8/console_agent_groups.go:266  consoleAgentGroupRepository
+    internal/m8/console_platform.go:125      consolePlatformRepository
+    internal/m8/console_platform.go:210      consolePlatformRepository
+    internal/m8/console_platform.go:239      consolePlatformRepository
+    internal/m8/console_platform.go:252      consolePlatformRepository
+    internal/m8/console_platform.go:265      consolePlatformRepository
+
+含义很硬：**一个只实现了 `store.Repository`（134 方法）的 PG 类型，编译能过、`m8.New` 能收下、
+大部分路由能跑，然后在这 7 处 panic。** 编译期没有任何东西拦得住它。
+
+⇒ 建议（属改产品代码，本件未动，请裁定）：PG 类型落地时加编译期断言，把这 7 个小接口
+一并钉死，形如 `var _ consoleAuthRepository = (*PG)(nil)` 共 7 行。
+不加的话，「198 方法」这条约束只存在于文档里、不存在于编译器里 —— 与仓内一贯要求
+（`internal/repo/tenant.go:24`「不是运行期错误」同款说法）相反。
+
+### 9.4 ⇒ 切分单位不该是「表」
+
+第八节第 5 问（分表切分由谁切）本席先前建议「按组切」，**实测后改口：按表切、按组切都不可行**，
+两条硬理由：
+
+1. **编译单元是一个类型，不是一张表。** `m8.New` 收的是 `store.Repository` 整体；
+   21 处断言要求**同一个对象**还实现 7 个小接口。
+   每人交一个「只管自己那几张表」的部分实现，**无法被 Hub 接受**，也无法各自独立跑起来 ——
+   拼起来之前谁手上都没有可运行的东西。
+2. **表与方法段不是一一对应。** 例如 `consoleSpecRepository` 的 44 个方法横跨
+   G 组（spec 6 张）与 H 组（任务 6 张）；`consoleAuthRepository` 的 6 个方法横跨
+   A 组与 B 组。按表切会把一个方法段劈成两半，两人改同一个方法。
+
+**建议改按「方法段」切，且共用一个类型：**
+
+    第一步（单人，必须先做）：出 PG 骨架 —— 一个类型，198 个方法全部返回「未实现」错误，
+            并加上 9.3 那 7 行编译期断言，接通 Migrate。
+            这一步之后，任何人都能在【同一个类型】上并行填实不同方法段而不撞车。
+    第二步（并行）：按接口分节认领，例如
+            · consoleSpecRepository 44 法（G＋H 组 12 张表）
+            · consoleAuth／AgentGroup／Platform／Login 各小接口（A／B／C／I 组）
+            · 大接口的消息总线段（F 组）· 项目段（L 组）· 名册段（M 组）· 日程段（K 组）…
+    第三步：Migrate 路径的系统上下文额度（见 R0-pg-testenv.md 第 6.2 节，需先裁定）。
+
+第一步不先做，并行就会退化成「各自 fork 一个类型、最后合并时撞车」。
+**本席可承担第一步**（骨架＋7 行断言＋Migrate 通路），但请组长明确：
+骨架落地后，方法段怎么分给 togpt56terrats 与待回线的 coder56solzzc，由谁定。
+
+### 9.5 测试环境已就绪（第二件）
+
+「临时 PG＋真 Hub，随起随清」的**前半句已交付并实测通过**：免特权、免 docker、免 sudo 起
+PostgreSQL 18.3，6 条用例全 PASS（含 2 条反向对照），`-race` 干净。
+**后半句「真 Hub」还做不到** —— 要等 198 方法的 PG 实现落地，届时才有 Hub 级用例。
+详见 `docs/newplat/R0-pg-testenv.md`。
 
 ## 附 · 取证方法（可重现）
 
