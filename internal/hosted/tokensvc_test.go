@@ -31,7 +31,7 @@ func TestTokenWriteBackAndUnbindPrep(t *testing.T) {
 		t.Fatalf("回写后应解到新值: %v", err)
 	}
 	got, _ := s.GetAccount(ctx, a.ID)
-	if got.Last4 != "wed}" {
+	if got.Last4 != `ed"}` { // token_file 的内容尾部（JSON 结构符）——见设计注记
 		t.Fatalf("回写后 last4: %q", got.Last4)
 	}
 	var n int
