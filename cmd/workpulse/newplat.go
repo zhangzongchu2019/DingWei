@@ -53,6 +53,7 @@ func wireNewPlatform(ctx context.Context, mux *http.ServeMux, hub *m8.Hub, cfg n
 	store := identity.NewMemStore()
 	svc := identity.NewService(store, nil, nil)
 	svc.OnRevoked = hub.DisconnectAgent
+	svc.OnSuspended = hub.DisconnectAgent
 	svc.NameAllowed = m8.AgentNameAllowed
 	ob := identity.NewOnboarding(svc)
 	created, err := ob.Bootstrap(ctx, cfg.passwordFile)

@@ -36,7 +36,7 @@ type EnrollStore interface {
 	ListPendingApplications(ctx context.Context, ownerLC string, now time.Time) ([]Application, error)
 	// RecordPairingFailure 错误核码计数；达到 max 时申请转 rejected。
 	RecordPairingFailure(ctx context.Context, appID, ownerLC string, max int, now time.Time) (remaining int, rejected bool, err error)
-	// Approve 一个事务：申请属该 owner、仍 pending 未过期 ⇒ 名称在该 owner 的 active Agent 中按小写不重
+	// Approve 一个事务：申请属该 owner、仍 pending 未过期 ⇒ 名称在该 owner 的【未吊销】（active 或 suspended）Agent 中按小写不重
 	// ⇒ 建 Agent ⇒ 申请转 approved ⇒ 同 owner 同设备的其它 pending 申请转 superseded（V1 A10）。
 	Approve(ctx context.Context, in ApproveInput, now time.Time) (*Agent, error)
 	Reject(ctx context.Context, appID, ownerLC string, now time.Time) error
@@ -47,10 +47,10 @@ type EnrollStore interface {
 	ResolveAgentByCredential(ctx context.Context, credentialHash string) (*Agent, error)
 	// GetAgent 按 agent_id 取（含 revoked 行）；Hub 据此在吊销后找到在线连接。
 	GetAgent(ctx context.Context, agentID string) (*Agent, error)
-	// FindAgentByName 按 (owner, 名称小写) 查：有 active 的返回它；否则返回最近一次被吊销的那个；都没有 ⇒ ErrNotFound。
+	// FindAgentByName 按 (owner, 名称小写) 查：有未吊销的（active 或 suspended）返回它；否则返回最近一次被吊销的；都没有 ⇒ ErrNotFound。
 	// 供路由失败时区分「目标已吊销」与「目标不存在／离线」（V2 A5）。
 	FindAgentByName(ctx context.Context, ownerLC, nameLC string) (*Agent, error)
-	// ListAgents 只列该 owner 的 active Agent。
+	// ListAgents 列该 owner 的未吊销 Agent（active 与 suspended；调用方看 State 区分）。
 	ListAgents(ctx context.Context, ownerLC string) ([]Agent, error)
 	// Revoke 不属于该 owner ⇒ ErrForbidden；托管 ⇒ ErrHosted；已吊销 ⇒ already=true 且不改任何字段。
 	Revoke(ctx context.Context, agentID, ownerLC, by string, now time.Time) (already bool, err error)
@@ -61,7 +61,10 @@ type EnrollStore interface {
 	CreateHostedAgent(ctx context.Context, ag Agent, app Application) error
 	// AddHostedToken 给已有的 active 托管 Agent 再发一条已批准申请（容器重建、升级时重签）。非托管 ⇒ ErrHosted 的反义：ErrNotHosted。
 	AddHostedToken(ctx context.Context, agentID string, app Application) error
-	// RetireAgent 内部吊销（V8 销毁）：不验归属、不拒托管；已吊销 ⇒ already=true 且不改任何字段。
+	// SetAgentSuspended 托管席位暂停／恢复（V8 停用／启用；组长裁定：停用期间凭据拒连）。
+	// 只改状态、不动凭据哈希（恢复后原凭据照常可用）；非托管 ⇒ ErrNotHosted；已吊销 ⇒ ErrNotPending；已是目标状态 ⇒ already=true。
+	SetAgentSuspended(ctx context.Context, agentID string, suspend bool, by string, now time.Time) (already bool, err error)
+	// RetireAgent 内部吊销（V8 销毁）：不验归属、不拒托管；暂停中的也可吊销；已吊销 ⇒ already=true 且不改任何字段。
 	RetireAgent(ctx context.Context, agentID, by string, now time.Time) (already bool, err error)
 }
 

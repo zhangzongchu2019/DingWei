@@ -123,3 +123,37 @@ func TestHostedRetire(t *testing.T) {
 	}
 	_ = time.Second
 }
+
+// 组长裁定：停用期间凭据拒连（credential_suspended），启用后原凭据照常可用；断开钩子只在真正暂停时触发一次。
+func TestHostedSuspendResume(t *testing.T) {
+	f := newFixture(t)
+	var suspended []string
+	f.svc.OnSuspended = func(id string) { suspended = append(suspended, id) }
+	hi, _ := f.svc.IssueHostedAgent(bg, "zzc", "Codex1", "g", "zzc")
+	p, _ := f.svc.Poll(bg, hi.Token.ApplicationID, hi.Token.PollToken)
+	if already, err := f.svc.SuspendHostedAgent(bg, hi.Agent.ID, "g4"); already || err != nil || len(suspended) != 1 {
+		t.Fatalf("suspend: %v %v hook=%v", already, err, suspended)
+	}
+	if already, _ := f.svc.SuspendHostedAgent(bg, hi.Agent.ID, "g4"); !already || len(suspended) != 1 {
+		t.Fatalf("second suspend: already=%v hook=%v", already, suspended)
+	}
+	if _, _, err := f.svc.AuthenticateAgent(bg, p.Credential); !errors.Is(err, identity.ErrCredentialSuspended) {
+		t.Fatalf("auth while suspended: %v, want ErrCredentialSuspended", err)
+	}
+	if len(f.revoked) != 0 {
+		t.Fatalf("suspend must not fire the revoke hook: %v", f.revoked)
+	}
+	if already, err := f.svc.ResumeHostedAgent(bg, hi.Agent.ID, "g4"); already || err != nil {
+		t.Fatalf("resume: %v %v", already, err)
+	}
+	if ag, _, err := f.svc.AuthenticateAgent(bg, p.Credential); err != nil || ag.ID != hi.Agent.ID {
+		t.Fatalf("auth after resume (same credential, no reissue): %+v %v", ag, err)
+	}
+	n := map[string]int{}
+	for _, e := range f.store.AuditLog() {
+		n[e.Action]++
+	}
+	if n["agent.hosted_suspend"] != 1 || n["agent.hosted_resume"] != 1 {
+		t.Fatalf("audits: %v", n)
+	}
+}

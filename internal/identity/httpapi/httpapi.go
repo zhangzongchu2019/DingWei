@@ -269,7 +269,7 @@ func (a *API) listAgents(w http.ResponseWriter, r *http.Request, actor string) {
 		}
 		out = append(out, map[string]any{
 			"agent_id": ag.ID, "name": ag.Name, "full_name": ag.Name + "." + short,
-			"origin": string(ag.Origin), "group_code": ag.GroupID, "online": online,
+			"origin": string(ag.Origin), "group_code": ag.GroupID, "state": string(ag.State), "online": online,
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"agents": out})

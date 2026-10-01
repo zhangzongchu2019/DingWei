@@ -15,12 +15,13 @@ import (
 
 // 业务层错误（HTTP 层据此映射状态码与机器码，设计件第二、三节）。
 var (
-	ErrBadRequest        = errors.New("identity: bad request")
-	ErrUnknownOwner      = errors.New("identity: unknown owner")
-	ErrNameInvalid       = errors.New("identity: agent name invalid")
-	ErrGroupRequired     = errors.New("identity: group required")
-	ErrCredentialInvalid = errors.New("identity: credential invalid")
-	ErrCredentialRevoked = errors.New("identity: credential revoked")
+	ErrBadRequest          = errors.New("identity: bad request")
+	ErrUnknownOwner        = errors.New("identity: unknown owner")
+	ErrNameInvalid         = errors.New("identity: agent name invalid")
+	ErrGroupRequired       = errors.New("identity: group required")
+	ErrCredentialInvalid   = errors.New("identity: credential invalid")
+	ErrCredentialRevoked   = errors.New("identity: credential revoked")
+	ErrCredentialSuspended = errors.New("identity: credential suspended")
 )
 
 // RateLimitedError 限频；RetryAfter 供应答头与正文。
@@ -58,6 +59,8 @@ type Service struct {
 	Rand  io.Reader
 	// OnRevoked 在吊销成功（非重复吊销）后、Revoke 返回前同步调用：Hub 据此以 4401 断开在线连接并重推在线清单（V2 A1）。
 	OnRevoked func(agentID string)
+	// OnSuspended 托管席位被暂停后、SuspendHostedAgent 返回前同步调用：Hub 据此以 4401（原因 credential_suspended）断开。
+	OnSuspended func(agentID string)
 	// NameAllowed 额外的名称检查（Hub 注入渠道保留字检查）；返回 false ⇒ ErrNameInvalid。为空则不查。
 	NameAllowed func(name string) bool
 	// GroupAllowed 编组是否存在且归该 owner（新平台 Agent 接入编组后由 Hub 注入）；为空则只查非空。
@@ -273,8 +276,11 @@ func (s *Service) AuthenticateAgent(ctx context.Context, credential string) (*Ag
 	if err != nil {
 		return nil, "", err
 	}
-	if ag.State == AgentRevoked {
+	switch ag.State {
+	case AgentRevoked:
 		return nil, "", ErrCredentialRevoked
+	case AgentSuspended:
+		return nil, "", ErrCredentialSuspended
 	}
 	return ag, s.fullName(ctx, ag), nil
 }

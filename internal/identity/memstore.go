@@ -294,7 +294,7 @@ func (m *MemStore) Approve(_ context.Context, in ApproveInput, now time.Time) (*
 	}
 	nameLC := Lower(in.Name)
 	for _, ag := range m.agents {
-		if ag.OwnerLC == a.OwnerLC && ag.State == AgentActive && ag.NameLC() == nameLC {
+		if ag.OwnerLC == a.OwnerLC && ag.Current() && ag.NameLC() == nameLC {
 			return nil, ErrNameTaken
 		}
 	}
@@ -386,7 +386,7 @@ func (m *MemStore) ListAgents(_ context.Context, ownerLC string) ([]Agent, error
 	owner := Lower(ownerLC)
 	var out []Agent
 	for _, ag := range m.agents {
-		if ag.OwnerLC == owner && ag.State == AgentActive {
+		if ag.OwnerLC == owner && ag.Current() {
 			out = append(out, *ag)
 		}
 	}
@@ -418,7 +418,7 @@ func (m *MemStore) Revoke(_ context.Context, agentID, ownerLC, by string, now ti
 
 func (m *MemStore) nameTakenLocked(ownerLC, nameLC string) bool {
 	for _, ag := range m.agents {
-		if ag.OwnerLC == ownerLC && ag.State == AgentActive && ag.NameLC() == nameLC {
+		if ag.OwnerLC == ownerLC && ag.Current() && ag.NameLC() == nameLC {
 			return true
 		}
 	}
@@ -492,7 +492,7 @@ func (m *MemStore) FindAgentByName(_ context.Context, ownerLC, nameLC string) (*
 		if ag.OwnerLC != owner || ag.NameLC() != name {
 			continue
 		}
-		if ag.State == AgentActive {
+		if ag.Current() {
 			cp := *ag
 			return &cp, nil
 		}
@@ -505,4 +505,27 @@ func (m *MemStore) FindAgentByName(_ context.Context, ownerLC, nameLC string) (*
 	}
 	cp := *best
 	return &cp, nil
+}
+
+func (m *MemStore) SetAgentSuspended(_ context.Context, agentID string, suspend bool, by string, now time.Time) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	ag, ok := m.agents[agentID]
+	if !ok {
+		return false, ErrNotFound
+	}
+	if ag.Origin != OriginHosted {
+		return false, ErrNotHosted
+	}
+	switch {
+	case ag.State == AgentRevoked:
+		return false, ErrNotPending
+	case suspend && ag.State == AgentSuspended, !suspend && ag.State == AgentActive:
+		return true, nil
+	case suspend:
+		ag.State = AgentSuspended
+	default:
+		ag.State = AgentActive
+	}
+	return false, nil
 }

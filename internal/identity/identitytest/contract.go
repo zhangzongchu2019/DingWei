@@ -51,6 +51,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"V8_hosted_reissue_rotates_credential", hostedReissueRotatesCredential},
 		{"V6_hosted_token_expires", hostedTokenExpires},
 		{"V2_A5_find_agent_by_name_prefers_active_then_latest_revoked", findAgentByName},
+		{"V8_hosted_suspend_resume_keeps_credential_and_name", hostedSuspendResume},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
 	}
 	for _, c := range cases {
@@ -546,4 +547,57 @@ func findAgentByName(t *testing.T, s identity.Store) {
 	if _, err := s.FindAgentByName(ctx, "lbl", "kimi"); !errors.Is(err, identity.ErrNotFound) {
 		t.Fatalf("other owner: %v", err)
 	}
+}
+
+func hostedSuspendResume(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-p", "zzc", "Pausy", "app-p", t0)
+	if _, ok, _ := s.TakeCredential(ctx, "app-p", "cred-p", t0); !ok {
+		t.Fatal("take")
+	}
+	if already, err := s.SetAgentSuspended(ctx, "ag-p", true, "g4", t0.Add(time.Minute)); already || err != nil {
+		t.Fatalf("suspend: %v %v", already, err)
+	}
+	if already, err := s.SetAgentSuspended(ctx, "ag-p", true, "g4", t0.Add(2*time.Minute)); !already || err != nil {
+		t.Fatalf("second suspend: already=%v err=%v", already, err)
+	}
+	g, err := s.ResolveAgentByCredential(ctx, "cred-p")
+	if err != nil || g.State != identity.AgentSuspended || g.CredentialHash != "cred-p" {
+		t.Fatalf("suspended agent by credential: %+v %v (credential must be kept)", g, err)
+	}
+	// 暂停中仍占名字、仍在列表里
+	err = s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-p2", OwnerLC: "zzc", Name: "PAUSY"},
+		identity.Application{ID: "app-p2", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	wantErr(t, "name of suspended agent reused", err, identity.ErrNameTaken)
+	if list, _ := s.ListAgents(ctx, "zzc"); len(list) != 1 || list[0].ID != "ag-p" || list[0].State != identity.AgentSuspended {
+		t.Fatalf("ListAgents while suspended: %+v", list)
+	}
+	if f, _ := s.FindAgentByName(ctx, "zzc", "pausy"); f.ID != "ag-p" || f.State != identity.AgentSuspended {
+		t.Fatalf("FindAgentByName while suspended: %+v", f)
+	}
+	// 暂停中不能领新凭据（重签被拒）
+	err = s.AddHostedToken(ctx, "ag-p", identity.Application{ID: "app-p3", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	wantErr(t, "reissue while suspended", err, identity.ErrNotPending)
+	if already, err := s.SetAgentSuspended(ctx, "ag-p", false, "g4", t0.Add(3*time.Minute)); already || err != nil {
+		t.Fatalf("resume: %v %v", already, err)
+	}
+	if g, _ := s.ResolveAgentByCredential(ctx, "cred-p"); g.State != identity.AgentActive || g.CredentialHash != "cred-p" {
+		t.Fatalf("after resume the same credential must work: %+v", g)
+	}
+	if already, _ := s.SetAgentSuspended(ctx, "ag-p", false, "g4", t0); !already {
+		t.Fatal("second resume must be already=true")
+	}
+	// 暂停中可直接销毁；销毁后不能再暂停／恢复
+	_, _ = s.SetAgentSuspended(ctx, "ag-p", true, "g4", t0.Add(4*time.Minute))
+	if already, err := s.RetireAgent(ctx, "ag-p", "g4", t0.Add(5*time.Minute)); already || err != nil {
+		t.Fatalf("retire from suspended: %v %v", already, err)
+	}
+	_, err = s.SetAgentSuspended(ctx, "ag-p", false, "g4", t0)
+	wantErr(t, "resume after retire", err, identity.ErrNotPending)
+	// 自备席位不能暂停
+	mustApp(t, s, "app-s", "zzc", "dev-s", t0)
+	mustApprove(t, s, "app-s", "zzc", "ag-s", "Selfie", t0)
+	_, err = s.SetAgentSuspended(ctx, "ag-s", true, "g4", t0)
+	wantErr(t, "suspend selfhost", err, identity.ErrNotHosted)
+	_, err = s.SetAgentSuspended(ctx, "ag-none", true, "g4", t0)
+	wantErr(t, "suspend unknown", err, identity.ErrNotFound)
 }

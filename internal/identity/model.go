@@ -113,8 +113,10 @@ func (a Application) EffectiveState(now time.Time) AppState {
 type AgentState string
 
 const (
-	AgentActive  AgentState = "active"
-	AgentRevoked AgentState = "revoked"
+	AgentActive AgentState = "active"
+	// AgentSuspended 可逆的暂停（托管停用，组长裁定 2026-10-01）：凭据拒连但不作废，名字仍被占用。
+	AgentSuspended AgentState = "suspended"
+	AgentRevoked   AgentState = "revoked"
 )
 
 // AgentOrigin 来源。
@@ -140,6 +142,9 @@ type Agent struct {
 }
 
 func (a Agent) NameLC() string { return Lower(a.Name) }
+
+// Current 未吊销（active 或 suspended）：占用名字、出现在 Agent 列表里。
+func (a Agent) Current() bool { return a.State == AgentActive || a.State == AgentSuspended }
 
 // ApproveInput 批准一条申请所需的输入。配对码比对在调用方完成（需要先读出盐）。
 type ApproveInput struct {

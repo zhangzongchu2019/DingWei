@@ -112,3 +112,28 @@ func (s *Service) RetireHostedAgent(ctx context.Context, agentID, by string) (bo
 	}
 	return false, nil
 }
+
+// SuspendHostedAgent 停用托管席位（组长裁定 2026-10-01：停用期间凭据拒连）。
+// 先暂停凭据、再由调用方停容器；在线连接经 OnSuspended 以 4401（credential_suspended）断开。
+// 凭据不作废：ResumeHostedAgent 后原凭据照常可用，客户端收到暂停时不得删本地凭据。重复调用 already=true。
+func (s *Service) SuspendHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
+	already, err := s.Store.SetAgentSuspended(ctx, agentID, true, by, s.Now())
+	if err != nil || already {
+		return already, err
+	}
+	s.audit(ctx, by, "agent.hosted_suspend", agentID, "")
+	if s.OnSuspended != nil {
+		s.OnSuspended(agentID)
+	}
+	return false, nil
+}
+
+// ResumeHostedAgent 启用：恢复凭据（不重新签发），再由调用方起容器。重复调用 already=true。
+func (s *Service) ResumeHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
+	already, err := s.Store.SetAgentSuspended(ctx, agentID, false, by, s.Now())
+	if err != nil || already {
+		return already, err
+	}
+	s.audit(ctx, by, "agent.hosted_resume", agentID, "")
+	return false, nil
+}
