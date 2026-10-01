@@ -30,7 +30,7 @@ var (
 	// invalid_state 复用包级 ErrInvalidState（store.go）。
 )
 
-// IdentitySuspender 停语义两接口（G3 f0fe9794 签名）。
+// IdentitySuspender 停语义两接口（G3 ab3b4c5b 签名）。
 type IdentitySuspender interface {
 	SuspendHostedAgent(ctx context.Context, agentID, by string) (bool, error)
 	ResumeHostedAgent(ctx context.Context, agentID, by string) (bool, error)
@@ -86,7 +86,7 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 	if err != nil {
 		return err
 	}
-	if seat.State != "online" { // 暂停中不可升级（f0fe9794：先启用）；busy 同理
+	if seat.State != "online" { // 暂停中不可升级（ab3b4c5b：先启用）；busy 同理
 		return ErrInvalidState
 	}
 	imageRef := version
@@ -195,7 +195,7 @@ func (l *Lifecycle) Enable(ctx context.Context, agentID, actorLC string, isAdmin
 }
 
 // Destroy 销毁：confirm 必带（D8）；先备份卷（留 14 天）→ Retire 吊销 → 停删容器 → 清配额 → 账号回池。
-// 暂停中可直接销毁（f0fe9794 规则）。
+// 暂停中可直接销毁（ab3b4c5b 规则）。
 func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmin, confirm bool) error {
 	if !confirm {
 		return ErrConfirmRequired

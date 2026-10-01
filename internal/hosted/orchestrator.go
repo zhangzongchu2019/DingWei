@@ -3,7 +3,7 @@ package hosted
 // T-G4-30 · 创建编排器（M3 主线；首个打通的组合＝Codex，业主 31405e84）。
 //
 // 依赖全部接口注入（G3 分支合入前不接真件）：
-//  · IdentityIssuer——G3 identity 的托管签发族（签名照 internal/identity/hosted.go，7beeb96d＋f0fe9794）；
+//  · IdentityIssuer——G3 identity 的托管签发族（签名照 internal/identity/hosted.go，760a7a45＋ab3b4c5b（g3-hosted-r1））；
 //  · NodeGateway——Hub 到节点代理的指令通道（WSS 服务端，接线在 T-G4-35 同批的 Hub 网关落地）；
 //  · CombosSource——逐家验通制的事实源（B12；T-G4-15 的验通结果回板后填充）。
 //
@@ -103,7 +103,7 @@ type CreateRequest struct {
 	OwnerLC   string // 归属用户（console 当前用户，N3.Actor）
 	By        string // 操作者（审计）
 	Name      string
-	GroupCode string
+	GroupCode string // 编组可不选（业主令 8582acc4：三键皆缺＝不入组合法；给了才校验）
 	NodeID    string // "auto" 或节点 id
 	Pool      string // 节点池标签（V8-D1：非空 ⇒ 只在该池落位；空 ⇒ 全池最闲）
 	CLI, LLM  string

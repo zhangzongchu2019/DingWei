@@ -290,3 +290,19 @@ func TestPoolScheduling(t *testing.T) {
 		t.Fatalf("不指定应全池最闲 nd_pa: %+v err=%v", n, err)
 	}
 }
+
+// 业主令 8582acc4：编组可不选——不给编组的创建必成功且不建组（反向：强制编组必红）。
+func TestCreateWithoutGroupSucceeds(t *testing.T) {
+	o, _, _, _ := mkOrch(t)
+	out, err := o.Create(context.Background(), CreateRequest{
+		OwnerLC: "zzc", By: "zzc", Name: "nogroup1", GroupCode: "", // 不选编组
+		NodeID: "auto", CLI: "codex", LLM: "gpt", CredKind: "token_file",
+		AccountID: acctOf(t, o.pool), Plan: "2c4g",
+	})
+	if err != nil {
+		t.Fatalf("不给编组的创建必须成功: %v", err)
+	}
+	if out.State != "queued" {
+		t.Fatalf("应 queued: %+v", out)
+	}
+}
