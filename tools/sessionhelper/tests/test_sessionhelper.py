@@ -65,6 +65,21 @@ BASE_ENV = {
 }
 
 
+def _real_state_files():
+    return {p.name: p.stat().st_mtime_ns
+            for p in (Path.home() / ".dingwei").glob("sessionhelper_update_state-*.json")}
+
+
+_REAL_STATE_BEFORE = _real_state_files()
+
+
+def tearDownModule():
+    # 机械检查：本模块不得新增或改写真实 ~/.dingwei 下的升级状态文件（泄漏会让下一轮无声退出）。
+    after = _real_state_files()
+    changed = sorted(k for k, v in after.items() if _REAL_STATE_BEFORE.get(k) != v)
+    assert not changed, f"测试泄漏到真实 ~/.dingwei: {changed}"
+
+
 def setUpModule():
     # 兜底：任何路径走到 request_restart 都不许真的 os._exit 掉测试进程。
     patcher = mock.patch.dict("os.environ", {"SH_PROVISION_NO_EXIT": "1"})
