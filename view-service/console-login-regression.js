@@ -63,8 +63,8 @@ const server = http.createServer(async (req, res) => {
   if (p === '/console/login/password' && req.method === 'POST') {
     const b = await read(req); posts.push({ p, b });
     if (wrongAttempts >= 3) return err(res, 429, 'rate_limited', { retry_after_s: 30 });
-    if (b.user_id !== 'systemdefault' || b.password !== currentPw) { wrongAttempts += 1; return err(res, 401, 'bad_credentials'); }
-    return json(res, 200, { user_id: 'systemdefault', must_change_password: mustChange }, { 'set-cookie': 'np=s1; Path=/; HttpOnly' });
+    if (b.user_id !== 'rootadmin' || b.password !== currentPw) { wrongAttempts += 1; return err(res, 401, 'bad_credentials'); }
+    return json(res, 200, { user_id: 'rootadmin', must_change_password: mustChange }, { 'set-cookie': 'np=s1; Path=/; HttpOnly' });
   }
   if (p === '/api/console/account/password' && req.method === 'POST') {
     const b = await read(req); posts.push({ p, b });
@@ -116,12 +116,12 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
 
     await test('wrong password: our wording (never the Hub text), the password is cleared, the user ID is kept', async () => {
-      await type('#pwUser', 'systemdefault'); await type('#pwPass', 'wrong-one');
+      await type('#pwUser', 'rootadmin'); await type('#pwPass', 'wrong-one');
       await page.locator('#pwGo').click();
       await page.locator('#pwErr').filter({ hasText: '用户 ID 或密码不对' }).waitFor({ state: 'visible' });
       assert.doesNotMatch(await page.locator('#pwErr').textContent(), /SECRET-HUB-TEXT/);
       assert.strictEqual(await page.locator('#pwPass').inputValue(), '', 'a failed attempt must not leave the typed password in the field');
-      assert.strictEqual(await page.locator('#pwUser').inputValue(), 'systemdefault');
+      assert.strictEqual(await page.locator('#pwUser').inputValue(), 'rootadmin');
       assert.match(page.url(), /\/console\/login$/);
     });
 
