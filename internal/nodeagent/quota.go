@@ -184,11 +184,20 @@ func (xfsQuota) Setup(root, seatID string, diskMB int64) error {
 			return rollback(fmt.Errorf("xfs project -s: %v: %s", err, out))
 		}
 		projectSet = true
-		// lsattr 断言项目号落对（v3 同款闸：两目录同落一个 ID 的 bug 不得回潮）
+		// lsattr 断言项目号落对（v3 同款闸：两目录同落一个 ID 的 bug 不得回潮）。
+		// 🔴 r4 复验：err=nil 但输出空/畸形时下标会 panic（strings.Fields("")[0]）——
+		//    畸形一律走同一 rollback（project 已设 ⇒ 摘映射＋删目录，绝不 panic 留残留）。
 		if out, err := lsattrOut(dir); err != nil {
 			return rollback(fmt.Errorf("lsattr -d -p %s: %v: %s", dir, err, out))
 		} else {
-			got, aerr := strconv.Atoi(strings.Fields(out)[0])
+			fields := strings.Fields(out)
+			var got int
+			var aerr error
+			if len(fields) == 0 {
+				aerr = fmt.Errorf("空输出")
+			} else {
+				got, aerr = strconv.Atoi(fields[0])
+			}
 			if aerr != nil || got != pid {
 				return rollback(fmt.Errorf("项目号断言失败: 期望 %d, 实得 %q", pid, strings.TrimSpace(out)))
 			}

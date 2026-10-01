@@ -231,3 +231,42 @@ func TestClearUsesProjectCWithPath(t *testing.T) {
 		t.Fatalf("顺序与参数必须 limit归零→project -C -p <dir>: %v", calls)
 	}
 }
+
+// r4 复验：lsattr 返回 err=nil 但输出空/畸形 ⇒ 不得 panic、走同一 rollback
+//（摘映射 project -C -p 完整调用、目录消失）。
+func TestSetupMalformedLsattrNoPanicFullRollback(t *testing.T) {
+	origFind, origRun, origLs, origCh := findmntTarget, xfsRun, lsattrOut, chownForSeatFn
+	defer func() { findmntTarget, xfsRun, lsattrOut, chownForSeatFn = origFind, origRun, origLs, origCh }()
+	root := t.TempDir()
+	dir := seatDir(root, "ag_r4")
+	findmntTarget = func(string) (string, error) { return "/data", nil }
+	lsattrOut = func(string) (string, error) { return "", nil } // 🔴 err=nil 空输出（探针形状）
+	chownForSeatFn = func(string) error { return nil }
+	var calls []string
+	xfsRun = func(args ...string) ([]byte, error) {
+		calls = append(calls, strings.Join(args, " "))
+		return []byte(""), nil
+	}
+	// 无 panic 是第一条断言（修复前这里下标越界）
+	err := (xfsQuota{}).Setup(root, "ag_r4", 16384)
+	if err == nil {
+		t.Fatal("畸形 lsattr 输出必须报错")
+	}
+	if !strings.Contains(err.Error(), "项目号断言失败") {
+		t.Fatalf("错误应为项目号断言失败: %v", err)
+	}
+	// rollback 完整：摘映射带 -p 与目录
+	wantC := "project -C -p " + dir + " 60000 /data"
+	var sawC bool
+	for _, c := range calls {
+		if strings.Contains(c, wantC) {
+			sawC = true
+		}
+	}
+	if !sawC {
+		t.Fatalf("回滚必须含 %q, 实得 %v", wantC, calls)
+	}
+	if _, serr := os.Stat(dir); !os.IsNotExist(serr) {
+		t.Fatalf("回滚后目录必须消失: %v", serr)
+	}
+}
