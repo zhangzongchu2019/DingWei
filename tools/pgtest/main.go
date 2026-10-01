@@ -71,6 +71,12 @@ func main() {
 }
 
 func run(port uint, listen, version, cacheRoot, runtime, db, user, password string, startTO time.Duration, keepRuntime bool, staleCut time.Duration) error {
+	// 🔴 第一件事:忽略 SIGPIPE。必须在【任何一次写 stdout/stderr 之前】,包括下面那句警告。
+	// 理由与实测两场读数见 sigpipe_unix.go 的头注(一句话:父进程被杀 ⇒ 两头管道都破裂 ⇒
+	// Go 运行时对 fd 1/2 的 SIGPIPE 走默认处置直接打死本进程,于是收尾死在半路:
+	// 库停了,但目录没删、postmaster 没收到 ⇒ 留残留＋留一个 PID 1 永不收的僵尸)。
+	ignoreSigPipe()
+
 	// 🔴 先接管「后代孤儿」,再起库。
 	// pg_ctl start 把 postmaster 起来之后自己就退出了 ⇒ postmaster 是孤儿,默认过继给 PID 1;
 	// 而跑测试的容器 PID 1 是 `sleep infinity`,不收尸 ⇒ 每起一次库就在进程表里留一个

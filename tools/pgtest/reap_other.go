@@ -2,7 +2,10 @@
 
 package main
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 // errNoKillOnPlatform 见 terminatePID。
 var errNoKillOnPlatform = errors.New("pgtest: 本平台不终止进程（判不出 PID 归属，杀错比留残留更糟）")
