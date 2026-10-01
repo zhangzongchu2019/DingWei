@@ -178,7 +178,13 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 		// 🔴 形态仍是 `_blank`(独立文档):顶层导航会带走右栏那一堆活 iframe 与它们的 SSE ——
 		// 与编组入口当初被改成内部 tab 的同一条实测理由。
 		builtins = append(builtins, model.ConsolePlatformItem{
-			ID: "admin", Kind: "admin", Title: "平台管理",
+			// 新:console 内部「平台管理」页签(组长令 2026-10-01;第一期先承载 N3「新用户注册邀请」)。
+			// 仍只发给 management —— 可见面不是授权面,接口自己按用户类型再判一次(G3 设计件 3.3)。
+			ID: "platform-admin", Kind: "platform-admin", Title: "平台管理",
+			Href: "#platform-admin", Status: "approved", Active: true,
+		}, model.ConsolePlatformItem{
+			// 旧:独立文档的后台,保持原样(id/target 不动,既有测试钉着);改名只为与上面新页签区分。
+			ID: "admin", Kind: "admin", Title: "旧版后台",
 			Href: "/console/admin", Target: "_blank", Status: "approved", Active: true,
 		})
 	}

@@ -445,6 +445,7 @@ function renderPlatform(platform){
     var a=document.createElement('a'); a.textContent=item.title; a.href=item.href; a.dataset.itemId=item.id;
     if(item.target) a.target=item.target;
     if(item.id==='agent-groups') a.onclick=function(ev){ev.preventDefault();openGroupWorkspace();};
+    if(item.id==='platform-admin') a.onclick=function(ev){ev.preventDefault();openPlatformAdminWorkspace();};
     if(item.id==='specs') a.onclick=function(ev){ev.preventDefault();openSpecsWorkspace();};
     if(item.id==='task-board') a.onclick=function(ev){ev.preventDefault();openTaskBoardWorkspace();};
     if(item.status==='pending') a.dataset.status='pending';
@@ -607,7 +608,9 @@ var CONSOLE_ERRORS={
   combo_not_verified:'这个 CLI 与 LLM 的组合还没有验通，暂不能创建',plan_exceeds_quota:'所选资源套餐超出剩余额度',
   quota_exceeded:'Agent 数量已达上限',node_no_capacity:'没有节点有足够的剩余资源',account_not_allowed:'你不能使用这个 LLM 账号',
   node_offline:'该 Agent 所在节点离线，操作无法执行',invalid_state:'该 Agent 当前状态不允许这个操作',confirm_required:'这个操作需要先确认',
-  upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本'
+  upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',
+  user_exists:'该用户 ID 或简称已被使用，请换一个',bad_request:'填写的内容不符合规则：用户 ID 2～32 位字母数字，简称 2～16 位字母数字',
+  must_change_password:'请先修改初始密码，再使用平台管理',internal:'服务端出错了，请稍后再试'
 };
 var HOSTED_FAIL_REASONS={
   image_pull_failed:'拉取镜像失败',start_timeout:'启动超时',node_offline:'节点离线',credential_inject_failed:'凭据写入失败',cancelled:'已取消'
@@ -863,6 +866,104 @@ function mountEnrollPanels(pane){
   document.getElementById('hostedCreateBtn').onclick=hostedCreate;
   refreshRoster();if(FEATURE_SELFHOST_REVIEW)refreshEnroll();refreshHostedOptions();
   var rosterTimer=setInterval(function(){if(!document.getElementById('rosterItems')){clearInterval(rosterTimer);return;}refreshRoster();},15000);
+}
+// 平台管理 Tab(组长令 2026-10-01:外壳 + 第一期的「新用户注册邀请」,示意图「平台管理 Tab」)。
+// 入口只发给管理用户(服务端按角色下发);可见面不是授权面——接口自己再按用户类型判一次,403 forbidden 时这里只说"没有权限"。
+// 接口按 G3 设计件 3.3:POST /api/console/platform/users 返回的注册码【只此一次】,页面只在"结果块"里显示、点完成即清掉,
+// 不写 localStorage、不进日志。能力菜单只放已做的项(没有动作的假入口不放),以后每开放一项加一行。
+var ADMIN_API={
+  users:'/api/console/platform/users',
+  regen:function(id){return '/api/console/platform/users/'+encodeURIComponent(id)+'/registration-code';}
+};
+var ADMIN_CAPABILITIES=[{id:'invite',title:'新用户注册邀请'}];
+var ADMIN_USER_STATE={pending_bind:'待绑定飞书',active:'正常',disabled:'已停用'};
+var ADMIN_USER_TYPE={member:'普通用户',manager:'管理用户',platform_admin:'平台管理员'};
+var adminUsersGeneration=0;
+function adminErrText(code,fallback){return code==='forbidden'?'你没有管理用户的权限':fallback;}   // forbidden 在这里指"不是管理用户",共用文案里指别的
+function adminShowCode(user,res){
+  var box=document.getElementById('inviteResult');if(!box)return;
+  var code=String(res.registration_code||'');
+  document.getElementById('inviteResultUser').textContent=user;
+  document.getElementById('inviteCode').textContent=code;
+  document.getElementById('inviteCmd').textContent='#register '+code;
+  document.getElementById('inviteExpiry').textContent='有效至 '+enrollTime(res.code_expires_at)+'；重新生成会让旧码作废';
+  enrollFeedback('inviteCopyFeedback','');box.hidden=false;
+}
+function adminClearCode(){
+  var box=document.getElementById('inviteResult');if(!box)return;
+  ['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});
+  enrollFeedback('inviteCopyFeedback','');box.hidden=true;
+}
+async function adminCopyCode(){
+  var code=document.getElementById('inviteCode').textContent;if(!code)return;
+  try{await navigator.clipboard.writeText(code);enrollFeedback('inviteCopyFeedback','已复制注册码');}
+  catch(_){enrollFeedback('inviteCopyFeedback','复制失败,请手动选中注册码复制');}
+}
+async function adminCreateUser(){
+  var v=function(id){return document.getElementById(id).value.trim();};
+  var body={display_name:v('inviteName'),user_id:v('inviteUserId'),short_name:v('inviteShort'),type:v('inviteType')};
+  if(!body.display_name||!body.user_id||!body.short_name){enrollFeedback('inviteFeedback','请填写用户名、用户 ID 和用户 ID 简称');return;}
+  var btn=document.getElementById('inviteCreate');btn.disabled=true;
+  var res=await consolePost(ADMIN_API.users,body);btn.disabled=false;
+  if(!res.ok){enrollFeedback('inviteFeedback',adminErrText(res.code,res.text));return;}   // 输入保留,改完可再点
+  enrollFeedback('inviteFeedback','');
+  ['inviteName','inviteUserId','inviteShort'].forEach(function(id){document.getElementById(id).value='';});
+  adminShowCode(String(res.data.user_id||body.user_id),res.data);refreshAdminUsers();
+}
+async function adminRegen(userId){
+  var res=await consolePost(ADMIN_API.regen(userId));
+  if(!res.ok){enrollFeedback('adminUsersFeedback',adminErrText(res.code,res.text));return;}
+  enrollFeedback('adminUsersFeedback','');adminShowCode(userId,res.data);
+}
+function renderAdminUsers(users){
+  var body=document.getElementById('adminUsersItems'),empty=document.getElementById('adminUsersEmpty');if(!body||!empty)return;
+  body.replaceChildren();
+  users.forEach(function(u){
+    var row=document.createElement('tr');row.className='admin-user-row';row.dataset.userId=u.user_id;
+    [u.user_id,u.display_name||'',u.short_name||'',ADMIN_USER_TYPE[u.type]||u.type||'',ADMIN_USER_STATE[u.state]||u.state||''].forEach(function(t){var td=document.createElement('td');td.textContent=t;row.append(td);});
+    var action=document.createElement('td');
+    if(u.state==='pending_bind'){var b=document.createElement('button');b.type='button';b.className='admin-regen';b.textContent='重新生成注册码';b.onclick=function(){adminRegen(u.user_id);};action.append(b);}
+    row.append(action);body.append(row);
+  });
+  empty.hidden=users.length>0;
+}
+async function refreshAdminUsers(){
+  var generation=++adminUsersGeneration,status=document.getElementById('adminUsersStatus'),retry=document.getElementById('adminUsersRetry');
+  if(!status||!retry)return null;
+  status.textContent='用户列表加载中…';retry.hidden=true;
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);
+  try{
+    var r=await fetch(ADMIN_API.users,{cache:'no-store',signal:controller.signal});
+    var data=null;try{data=await r.json();}catch(_){}
+    if(!r.ok)throw new Error(adminErrText(data&&data.error,consoleErrorText(r.status,data)));
+    if(!data||!Array.isArray(data.users))throw new Error('响应格式无效');
+    if(generation!==adminUsersGeneration)return null;
+    renderAdminUsers(data.users);status.textContent='';return data;
+  }catch(err){
+    if(generation===adminUsersGeneration){renderAdminUsers([]);document.getElementById('adminUsersEmpty').hidden=true;status.textContent='用户列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;}
+    return null;
+  }finally{clearTimeout(timer);}
+}
+function openPlatformAdminWorkspace(){
+  if(tabs.has('__platform-admin')){activate('__platform-admin');return;}
+  var tab=document.createElement('span');tab.className='tab';tab.title='平台管理';
+  var label=document.createElement('span'),x=document.createElement('span');label.textContent='平台管理';x.className='x';x.textContent='×';tab.append(label,x);
+  var pane=document.createElement('section');pane.className='group-workspace';
+  pane.innerHTML='<h2>平台管理</h2><nav id=adminMenu></nav><section id=adminInvite class="group-block"><h3>新用户注册邀请</h3>'
+   +'<label>用户名 <input id=inviteName autocomplete=off placeholder="显示名称,如 张三"></label>'
+   +'<label>用户 ID <input id=inviteUserId autocomplete=off placeholder="2～32 位大小写字母和数字"></label>'
+   +'<label>用户 ID 简称 <input id=inviteShort autocomplete=off placeholder="2～16 位大小写字母和数字"></label>'
+   +'<label>用户类型 <select id=inviteType><option value=member>普通用户</option><option value=manager>管理用户</option></select></label>'
+   +'<button id=inviteCreate type=button>生成注册码</button><div id=inviteFeedback class=group-feedback></div>'
+   +'<section id=inviteResult class=enroll-editor hidden><h4>注册码(只显示这一次)</h4><div>用户 <b id=inviteResultUser></b></div><div><code id=inviteCode></code> <button id=inviteCopy type=button>复制注册码</button><span id=inviteCopyFeedback class=group-feedback></span></div><div id=inviteExpiry></div><div>让该用户在飞书里向机器人发送：<code id=inviteCmd></code></div><button id=inviteDone type=button>完成,关闭</button></section>'
+   +'<h4>用户</h4><table id=adminUsersTable class=group-table><thead><tr><th>用户 ID</th><th>用户名</th><th>简称</th><th>类型</th><th>状态</th><th>操作</th></tr></thead><tbody id=adminUsersItems></tbody></table><div id=adminUsersEmpty hidden>暂无用户。</div><div id=adminUsersStatus role=status></div><button id=adminUsersRetry type=button hidden>重试加载</button><div id=adminUsersFeedback class=group-feedback></div></section>';
+  tab.onclick=function(e){if(e.target===x){e.stopPropagation();closeTab('__platform-admin');}else activate('__platform-admin');};
+  document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__platform-admin',{tab:tab,pane:pane});
+  var menu=pane.querySelector('#adminMenu');
+  ADMIN_CAPABILITIES.forEach(function(c,i){var b=document.createElement('button');b.type='button';b.dataset.capability=c.id;b.textContent=c.title;if(i===0)b.setAttribute('aria-current','true');menu.append(b);});
+  document.getElementById('inviteCreate').onclick=adminCreateUser;document.getElementById('inviteCopy').onclick=adminCopyCode;document.getElementById('inviteDone').onclick=adminClearCode;
+  document.getElementById('adminUsersRetry').onclick=refreshAdminUsers;
+  activate('__platform-admin');refreshAdminUsers();
 }
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}
 function openTaskBoardWorkspace(){if(tabs.has('__task-board')){activate('__task-board');return;}var tab=document.createElement('span');tab.className='tab';tab.title='任务管理';var label=document.createElement('span');label.textContent='任务管理';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='任务管理';pane.src='/console/tasks?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__task-board');}else activate('__task-board');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__task-board',{tab:tab,pane:pane});activate('__task-board');}
