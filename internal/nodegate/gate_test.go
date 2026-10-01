@@ -153,3 +153,22 @@ func TestGateAuthCommandCapacityLifecycle(t *testing.T) {
 		t.Fatalf("断线后应 node_offline: %v", err)
 	}
 }
+
+// 组长 7fabddb0 ⑤：节点接入成功须触发 OnConnect 对账回调。
+func TestGateOnConnectFires(t *testing.T) {
+	g, _, nodeID, secret := mkGate(t)
+	fired := make(chan string, 1)
+	g.OnConnect = func(ctx context.Context, id string) { fired <- id }
+	srv := httptest.NewServer(g.Handler())
+	defer srv.Close()
+	conn := dial(t, srv, nodeID, secret)
+	defer conn.CloseNow()
+	select {
+	case id := <-fired:
+		if id != nodeID {
+			t.Fatalf("回调节点 id: %s", id)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("接入后 OnConnect 未触发")
+	}
+}

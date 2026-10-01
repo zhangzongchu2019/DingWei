@@ -395,6 +395,22 @@ WHERE state IN ('queued','pulling','starting')`)
 	}
 }
 
+// ReconcileNode 节点重连对账（组长 7fabddb0 ⑤：离线销毁的席位，节点重连后补清容器与配额）。
+// 接入点：nodegate 在节点接入成功时回调。每个待对账席位补发 destroy_seat（节点侧幂等）；
+// 成功即写 reconcile_done 事件（SeatsPendingReconcile 不再命中）。失败留待下次重连再试。
+func (o *Orchestrator) ReconcileNode(ctx context.Context, nodeID string) {
+	ids, err := o.st.SeatsPendingReconcile(ctx, nodeID)
+	if err != nil {
+		return
+	}
+	for _, id := range ids {
+		res, err := o.gw.Send(ctx, nodeID, NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(id) + `}`)})
+		if err == nil && res.OK {
+			_ = o.st.SetSeatState(ctx, id, "destroyed", "", "reconcile_done", nil)
+		}
+	}
+}
+
 func jsonStr(s string) string {
 	raw, _ := json.Marshal(s)
 	return string(raw)

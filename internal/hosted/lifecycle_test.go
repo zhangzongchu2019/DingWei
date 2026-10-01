@@ -389,3 +389,28 @@ func mkPoolSvcFromStore(t *testing.T, s *Store) *PoolService {
 	}
 	return svc
 }
+
+// 组长 7fabddb0 ⑤后半句：重连后清理——ReconcileNode 对待对账席位补发 destroy_seat，
+// 成功写 reconcile_done；再次对账不再发（幂等收口）。
+func TestReconcileOnNodeReconnect(t *testing.T) {
+	ctx := context.Background()
+	lc, _, _, _, _, s, id := mkLifecycle(t)
+	seat, _ := s.GetSeat(ctx, id)
+	if err := s.SetNodeState(ctx, seat.NodeID, "offline"); err != nil {
+		t.Fatal(err)
+	}
+	if err := lc.Destroy(ctx, id, "zzc", true, true); err != nil {
+		t.Fatal(err)
+	}
+	pending, err := s.SeatsPendingReconcile(ctx, seat.NodeID)
+	if err != nil || len(pending) != 1 || pending[0] != id {
+		t.Fatalf("离线销毁后应有一席待对账: %v err=%v", pending, err)
+	}
+	// 节点重连（对账走编排器的 gw——mkOrch 的假网关记录指令）
+	orch := NewOrchestrator(s, lc.pool, lc.idp, lc.gw, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
+	orch.ReconcileNode(ctx, seat.NodeID)
+	pending, _ = s.SeatsPendingReconcile(ctx, seat.NodeID)
+	if len(pending) != 0 {
+		t.Fatalf("对账后应无待清: %v", pending)
+	}
+}

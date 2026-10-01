@@ -57,6 +57,9 @@ type nodeConn struct {
 type Gate struct {
 	st      *hosted.Store
 	sendMax time.Duration // 单指令等结果上限（默认 60s）
+	// OnConnect 节点接入成功回调（Hub 侧对账入口：离线销毁的补清——组长 7fabddb0 ⑤）。
+	// 在置 online 之后、读循环之前同步调用；nil 跳过。
+	OnConnect func(ctx context.Context, nodeID string)
 
 	mu      sync.Mutex
 	conns   map[string]*nodeConn              // nodeID → 活连接
@@ -106,6 +109,9 @@ func (g *Gate) serve(ctx context.Context, nodeID string, conn *websocket.Conn) {
 	}()
 	// 接入即在线（容量空对象入账；首帧 capacity_report 随后覆盖）
 	_ = g.st.SetNodeOnline(context.Background(), nodeID, json.RawMessage(`{}`))
+	if g.OnConnect != nil {
+		g.OnConnect(context.Background(), nodeID)
+	}
 
 	for {
 		_, raw, err := conn.Read(ctx)

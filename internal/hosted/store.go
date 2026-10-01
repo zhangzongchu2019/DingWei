@@ -225,6 +225,30 @@ type Seat struct {
 	CreatedBy                           string
 }
 
+// SeatsPendingReconcile 节点重连对账（组长 7fabddb0 ⑤）：该节点上「离线销毁」留下
+// reconcile_pending 标记且尚未 reconcile_done 的席位。
+func (s *Store) SeatsPendingReconcile(ctx context.Context, nodeID string) ([]string, error) {
+	rows, err := s.pool.Query(ctx, htx(), `
+SELECT s.agent_id FROM g4_hosted_seat s
+WHERE s.node_id=$1 AND s.state='destroyed'
+  AND EXISTS (SELECT 1 FROM g4_seat_event e WHERE e.agent_id=s.agent_id AND e.kind='destroy'
+              AND e.detail @> '{"reconcile_pending":true}'::jsonb)
+  AND NOT EXISTS (SELECT 1 FROM g4_seat_event e2 WHERE e2.agent_id=s.agent_id AND e2.kind='reconcile_done')`, nodeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) CreateSeat(ctx context.Context, st Seat) error {
 	if _, ok := PlanByID(st.Plan); !ok {
 		return fmt.Errorf("%w: plan %q", ErrInvalidState, st.Plan)
