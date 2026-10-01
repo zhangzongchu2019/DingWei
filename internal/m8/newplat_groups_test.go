@@ -2,10 +2,13 @@ package m8
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/coder/websocket"
@@ -83,6 +86,13 @@ func TestNewPlatformAgentGroupsHTTP(t *testing.T) {
 		if st != 200 || json.Unmarshal([]byte(body), &l) != nil {
 			t.Fatalf("GET as %s: %d %s", tok, st, body)
 		}
+		kept := l.Groups[:0]
+		for _, g := range l.Groups {
+			if !fixtureGroupName.MatchString(g.ShortName) { // 夹具批准时给每个 Agent 建的 t<n> 组
+				kept = append(kept, g)
+			}
+		}
+		l.Groups = kept
 		return l
 	}
 
@@ -174,3 +184,10 @@ func TestNewPlatformAgentGroupsHTTP(t *testing.T) {
 		t.Fatalf("after delete: %+v", l.Groups)
 	}
 }
+
+var tgSeq atomic.Int64
+
+// tg 测试用的新组名：每次不同（组名全局唯一、1～8 个字母或数字）。批准与托管新建都必须带编组（GroupAllowed）。
+func tg() string { return fmt.Sprintf("t%d", tgSeq.Add(1)) }
+
+var fixtureGroupName = regexp.MustCompile(`^t[0-9]+$`)

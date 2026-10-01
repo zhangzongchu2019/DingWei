@@ -15,7 +15,7 @@ import (
 // 发往它的消息 ⇒「目标已停用」；启用后同一凭据照常连入（不重签）。
 func TestHostedSuspendResumeOverWS(t *testing.T) {
 	e := newAgentEnv(t) // e.cred＝自备 Agent Opus50TS，用作发送方
-	hi, err := e.svc.IssueHostedAgent(e.ctx, "zzc", "Codex1", "g1", "zzc")
+	hi, err := e.svc.IssueHostedAgentWithNewGroup(e.ctx, "zzc", "Codex1", tg(), "zzc")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func errorsAsClose(err error, ce *websocket.CloseError) bool { return errors.As(
 // 且一条拿作废凭据建立的连接会一直挂到旧容器被撤为止。
 func TestHostedReissueTakeKicksOldConnection(t *testing.T) {
 	e := newAgentEnv(t)
-	hi, err := e.svc.IssueHostedAgent(e.ctx, "zzc", "Codex2", "g1", "zzc")
+	hi, err := e.svc.IssueHostedAgentWithNewGroup(e.ctx, "zzc", "Codex2", tg(), "zzc")
 	if err != nil {
 		t.Fatal(err)
 	}

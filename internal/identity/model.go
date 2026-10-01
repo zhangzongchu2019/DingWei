@@ -152,7 +152,10 @@ type ApproveInput struct {
 	OwnerLC string
 	AgentID string
 	Name    string
+	// GroupID 新 Agent 入的组：NewGroup 为空时须是已有组（存在且未关闭添加）；否则等于 NewGroup.Code。
 	GroupID string
+	// NewGroup 非空 ⇒ 同一事务建这个组，以新 Agent 为组长（新用户第一个组，见 GroupChoice）。
+	NewGroup *Group
 }
 
 // 存储层错误。调用方按 errors.Is 判别。

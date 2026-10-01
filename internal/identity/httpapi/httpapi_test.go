@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -149,12 +151,12 @@ func TestFullFlowOverHTTP(t *testing.T) {
 	}
 
 	bad := e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
-		map[string]any{"pairing_code": "999999", "agent_name": "Opus50ts", "group_code": "g1"}, owner("zzc"))
+		map[string]any{"pairing_code": "999999", "agent_name": "Opus50ts", "new_group_name": tg()}, owner("zzc"))
 	if bad.status != 422 || bad.body["error"] != "pairing_mismatch" || bad.body["remaining"] != float64(4) {
 		t.Fatalf("V1 A2 wrong code: %d %v", bad.status, bad.body)
 	}
 	ok := e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
-		map[string]any{"pairing_code": code, "agent_name": "Opus50ts", "group_code": "g1"}, owner("zzc"))
+		map[string]any{"pairing_code": code, "agent_name": "Opus50ts", "new_group_name": tg()}, owner("zzc"))
 	if ok.status != 200 || ok.body["agent_full_name"] != "Opus50ts.zzc" {
 		t.Fatalf("approve: %d %v", ok.status, ok.body)
 	}
@@ -263,7 +265,7 @@ func TestErrorMapping(t *testing.T) {
 	}
 	approve := func(id, name string) resp {
 		return e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
-			map[string]any{"pairing_code": code, "agent_name": name, "group_code": "g"}, owner("zzc"))
+			map[string]any{"pairing_code": code, "agent_name": name, "new_group_name": tg()}, owner("zzc"))
 	}
 	if r := approve(id1, "bad.name"); r.status != 422 || r.body["error"] != "name_invalid" {
 		t.Errorf("name_invalid: %d %v", r.status, r.body)
@@ -290,7 +292,7 @@ func TestNameTakenAndExpiredOverHTTP(t *testing.T) {
 	a1, a2, a3 := mk("dev-a"), mk("dev-b"), mk("dev-c")
 	approve := func(id, name string) resp {
 		return e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
-			map[string]any{"pairing_code": code, "agent_name": name, "group_code": "g"}, owner("zzc"))
+			map[string]any{"pairing_code": code, "agent_name": name, "new_group_name": tg()}, owner("zzc"))
 	}
 	if r := approve(a1, "opus50ts"); r.status != 200 {
 		t.Fatal(r.body)
@@ -363,12 +365,12 @@ func TestApproveGroupRequiredOverHTTP(t *testing.T) {
 // G4 注入点：只给 origin=hosted 的项出 hosted 子对象，且只在注入函数返回 true 时出；自备项与无数据时不出。
 func TestAgentsListHostedInjection(t *testing.T) {
 	e := newEnv(t)
-	hi, err := e.svc.IssueHostedAgent(context.Background(), "zzc", "Codex1", "g", "zzc")
+	hi, err := e.svc.IssueHostedAgentWithNewGroup(context.Background(), "zzc", "Codex1", tg(), "zzc")
 	if err != nil {
 		t.Fatal(err)
 	}
 	self := e.do("POST", "/api/enroll/applications", applyBody("zzc"), nil).body["application_id"].(string)
-	if r := e.do("POST", "/api/console/enroll/applications/"+self+"/approve", map[string]any{"pairing_code": code, "agent_name": "Selfie", "group_code": "g"}, owner("zzc")); r.status != 200 {
+	if r := e.do("POST", "/api/console/enroll/applications/"+self+"/approve", map[string]any{"pairing_code": code, "agent_name": "Selfie", "new_group_name": tg()}, owner("zzc")); r.status != 200 {
 		t.Fatal(r.body)
 	}
 	calls := map[string]int{}
@@ -405,5 +407,70 @@ func TestAgentsListHostedInjection(t *testing.T) {
 		if _, has := it.(map[string]any)["hosted"]; has {
 			t.Fatalf("no data ⇒ no hosted object: %v", it)
 		}
+	}
+}
+
+var tgSeq atomic.Int64
+
+// tg 测试用的新组名：每次不同（组名全局唯一、1～8 个字母或数字）。批准与托管新建都必须带编组（GroupAllowed）。
+func tg() string { return fmt.Sprintf("t%d", tgSeq.Add(1)) }
+
+// 批准时的编组（GroupAllowed）错误码：二选一、已有组须存在且未关闭添加、新组名合规且不撞。
+func TestApproveGroupErrorsOverHTTP(t *testing.T) {
+	e := newEnv(t)
+	mk := func(fp string) string {
+		b := applyBody("zzc")
+		b["device_fingerprint"] = fp
+		return e.do("POST", "/api/enroll/applications", b, nil).body["application_id"].(string)
+	}
+	a1, a2 := mk("dev-a"), mk("dev-b")
+	approve := func(id string, extra map[string]any) resp {
+		body := map[string]any{"pairing_code": code, "agent_name": "Worker" + id[:4]}
+		for k, v := range extra {
+			body[k] = v
+		}
+		return e.do("POST", "/api/console/enroll/applications/"+id+"/approve", body, owner("zzc"))
+	}
+	for _, c := range []struct {
+		name   string
+		extra  map[string]any
+		status int
+		code   string
+	}{
+		{"neither", map[string]any{}, 422, "group_required"},
+		{"both", map[string]any{"group_code": "x", "new_group_name": "开发组"}, 422, "group_ambiguous"},
+		{"missing group", map[string]any{"group_code": "nope"}, 422, "group_not_found"},
+		{"bad new name", map[string]any{"new_group_name": "九个字九个字九个字"}, 422, "group_name_invalid"},
+	} {
+		if r := approve(a1, c.extra); r.status != c.status || r.body["error"] != c.code {
+			t.Errorf("%s: %d %v, want %d %s", c.name, r.status, r.body, c.status, c.code)
+		}
+	}
+	r := approve(a1, map[string]any{"new_group_name": " 开发组 "})
+	if r.status != 200 {
+		t.Fatalf("approve with new group: %d %v", r.status, r.body)
+	}
+	ag, err := e.store.GetAgent(context.Background(), r.body["agent_id"].(string))
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, err := e.store.GetGroup(context.Background(), ag.GroupID)
+	if err != nil || g.ShortName != "开发组" || g.LeaderAgentID != ag.ID {
+		t.Fatalf("new group: %+v %v", g, err)
+	}
+	if r := approve(a2, map[string]any{"new_group_name": "开发组"}); r.status != 409 || r.body["error"] != "group_name_taken" {
+		t.Errorf("name taken: %d %v", r.status, r.body)
+	}
+	if err := e.svc.SetGroupAdditionsClosed(context.Background(), "zzc", g.Code, true); err != nil {
+		t.Fatal(err)
+	}
+	if r := approve(a2, map[string]any{"group_code": g.Code}); r.status != 409 || r.body["error"] != "group_closed" {
+		t.Errorf("closed: %d %v", r.status, r.body)
+	}
+	if err := e.svc.SetGroupAdditionsClosed(context.Background(), "zzc", g.Code, false); err != nil {
+		t.Fatal(err)
+	}
+	if r := approve(a2, map[string]any{"group_code": g.Code}); r.status != 200 {
+		t.Fatalf("approve into existing group: %d %v", r.status, r.body)
 	}
 }

@@ -83,7 +83,7 @@ CREATE INDEX IF NOT EXISTS np_enroll_application_pending
 CREATE TABLE IF NOT EXISTS np_group (
     code             text        PRIMARY KEY,
     short_name       text        NOT NULL UNIQUE,
-    creator_lc       text        NOT NULL REFERENCES np_user (user_id_lc),
+    creator_lc       text        NOT NULL, -- 与 np_agent.owner_lc 同：不挂外键
     leader_agent_id  text        NOT NULL REFERENCES np_agent (id),
     additions_closed boolean     NOT NULL DEFAULT false,
     created_at       timestamptz NOT NULL,

@@ -115,6 +115,14 @@ func mapErr(w http.ResponseWriter, err error) {
 		writeErr(w, http.StatusNotFound, "not_found", nil)
 	case errors.Is(err, identity.ErrGroupRequired):
 		writeErr(w, http.StatusUnprocessableEntity, "group_required", nil)
+	case errors.Is(err, identity.ErrGroupNotFound):
+		writeErr(w, http.StatusUnprocessableEntity, "group_not_found", nil)
+	case errors.Is(err, identity.ErrGroupClosed):
+		writeErr(w, http.StatusConflict, "group_closed", nil)
+	case errors.Is(err, identity.ErrGroupNameInvalid):
+		writeErr(w, http.StatusUnprocessableEntity, "group_name_invalid", nil)
+	case errors.Is(err, identity.ErrGroupNameTaken):
+		writeErr(w, http.StatusConflict, "group_name_taken", nil)
 	case errors.Is(err, identity.ErrNameInvalid):
 		writeErr(w, http.StatusUnprocessableEntity, "name_invalid", nil)
 	case errors.Is(err, identity.ErrNameTaken):
@@ -241,15 +249,26 @@ func (a *API) listPending(w http.ResponseWriter, r *http.Request, actor string) 
 }
 
 func (a *API) approve(w http.ResponseWriter, r *http.Request, actor string) {
+	// 编组二选一：group_code（已有组，须存在且未关闭添加）或 new_group_name（就地新建、新 Agent 当组长）。
 	var req struct {
-		PairingCode string `json:"pairing_code"`
-		AgentName   string `json:"agent_name"`
-		GroupCode   string `json:"group_code"`
+		PairingCode  string `json:"pairing_code"`
+		AgentName    string `json:"agent_name"`
+		GroupCode    string `json:"group_code"`
+		NewGroupName string `json:"new_group_name"`
 	}
 	if !decode(w, r, &req) {
 		return
 	}
-	ag, full, err := a.Svc.Approve(r.Context(), actor, r.PathValue("id"), req.PairingCode, req.AgentName, req.GroupCode)
+	if req.GroupCode != "" && req.NewGroupName != "" {
+		writeErr(w, http.StatusUnprocessableEntity, "group_ambiguous", nil)
+		return
+	}
+	approve := a.Svc.Approve
+	group := req.GroupCode
+	if req.NewGroupName != "" {
+		approve, group = a.Svc.ApproveWithNewGroup, strings.TrimSpace(req.NewGroupName)
+	}
+	ag, full, err := approve(r.Context(), actor, r.PathValue("id"), req.PairingCode, req.AgentName, group)
 	if err != nil {
 		mapErr(w, err)
 		return

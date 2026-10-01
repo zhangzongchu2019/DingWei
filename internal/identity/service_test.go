@@ -160,8 +160,8 @@ func TestPollTokenAndRate(t *testing.T) {
 func TestApproveFlowCredentialOnce(t *testing.T) {
 	f := newFixture(t)
 	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
-	ag, full, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Opus50ts", "grp-1")
-	if err != nil || ag.Name != "Opus50ts" || ag.GroupID != "grp-1" || full != "Opus50ts.zzc" {
+	ag, full, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Opus50ts", "开发组")
+	if err != nil || ag.Name != "Opus50ts" || len(ag.GroupID) != identity.GroupCodeLen || full != "Opus50ts.zzc" {
 		t.Fatalf("approve: %+v %q %v", ag, full, err)
 	}
 	f.clk.Advance(identity.PollMinInterval)
@@ -197,7 +197,7 @@ func TestApprovePairingMismatchKeepsThenRejects(t *testing.T) {
 	f := newFixture(t)
 	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
 	for i := 1; i < identity.MaxPairingFailures; i++ {
-		_, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, "654321", "Name1", "g")
+		_, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, "654321", "Name1", tg())
 		var pm *identity.PairingMismatchError
 		if !errors.As(err, &pm) || pm.Rejected || pm.Remaining != identity.MaxPairingFailures-i {
 			t.Fatalf("wrong code #%d: %v", i, err)
@@ -206,12 +206,12 @@ func TestApprovePairingMismatchKeepsThenRejects(t *testing.T) {
 	if list, _ := f.svc.ListPending(bg, "zzc"); len(list) != 1 {
 		t.Fatalf("V1 A2: application must stay pending after wrong codes, pending=%d", len(list))
 	}
-	_, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, "000000", "Name1", "g")
+	_, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, "000000", "Name1", tg())
 	var pm *identity.PairingMismatchError
 	if !errors.As(err, &pm) || !pm.Rejected {
 		t.Fatalf("5th wrong code: %v, want rejected", err)
 	}
-	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Name1", "g"); !errors.Is(err, identity.ErrNotPending) {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Name1", tg()); !errors.Is(err, identity.ErrNotPending) {
 		t.Fatalf("correct code after auto-reject: %v, want ErrNotPending", err)
 	}
 	f.clk.Advance(identity.PollMinInterval)
@@ -225,21 +225,21 @@ func TestApproveNameRulesAndOwnership(t *testing.T) {
 	r1 := f.apply(t, "zzc", "dev-1", "1.1.1.1")
 	r2 := f.apply(t, "zzc", "dev-2", "1.1.1.1")
 	for _, bad := range []string{"a", "opus.ts", "opus_ts", "名字", strings.Repeat("a", 33)} {
-		if _, _, err := f.svc.Approve(bg, "zzc", r1.ApplicationID, code, bad, "g"); !errors.Is(err, identity.ErrNameInvalid) {
+		if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r1.ApplicationID, code, bad, tg()); !errors.Is(err, identity.ErrNameInvalid) {
 			t.Errorf("name %q: %v, want ErrNameInvalid", bad, err)
 		}
 	}
 	f.svc.NameAllowed = func(n string) bool { return identity.Lower(n) != "feishu" }
-	if _, _, err := f.svc.Approve(bg, "zzc", r1.ApplicationID, code, "Feishu", "g"); !errors.Is(err, identity.ErrNameInvalid) {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r1.ApplicationID, code, "Feishu", tg()); !errors.Is(err, identity.ErrNameInvalid) {
 		t.Errorf("reserved name via NameAllowed: %v, want ErrNameInvalid", err)
 	}
-	if _, _, err := f.svc.Approve(bg, "lbl", r1.ApplicationID, code, "Thief", "g"); !errors.Is(err, identity.ErrNotFound) {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "lbl", r1.ApplicationID, code, "Thief", tg()); !errors.Is(err, identity.ErrNotFound) {
 		t.Fatalf("other owner approves: %v, want ErrNotFound", err)
 	}
-	if _, _, err := f.svc.Approve(bg, "zzc", r1.ApplicationID, code, "opus50ts", "g"); err != nil {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r1.ApplicationID, code, "opus50ts", tg()); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := f.svc.Approve(bg, "zzc", r2.ApplicationID, code, "OPUS50TS", "g"); !errors.Is(err, identity.ErrNameTaken) {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r2.ApplicationID, code, "OPUS50TS", tg()); !errors.Is(err, identity.ErrNameTaken) {
 		t.Fatalf("V1 A11: %v, want ErrNameTaken", err)
 	}
 }
@@ -247,7 +247,7 @@ func TestApproveNameRulesAndOwnership(t *testing.T) {
 func TestRevokeHookAuditAndAuth(t *testing.T) {
 	f := newFixture(t)
 	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
-	ag, _, _ := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "kimi", "g")
+	ag, _, _ := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "kimi", tg())
 	f.clk.Advance(identity.PollMinInterval)
 	p, _ := f.svc.Poll(bg, r.ApplicationID, r.PollToken)
 	if _, err := f.svc.Revoke(bg, "lbl", ag.ID); !errors.Is(err, identity.ErrForbidden) || len(f.revoked) != 0 {
@@ -292,16 +292,36 @@ func TestApproveGroupRequired(t *testing.T) {
 	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", ""); !errors.Is(err, identity.ErrGroupRequired) {
 		t.Fatalf("empty group: %v, want ErrGroupRequired", err)
 	}
-	f.svc.GroupAllowed = func(owner, g string) bool { return owner == "zzc" && g == "team-a" }
-	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-b"); !errors.Is(err, identity.ErrGroupRequired) {
-		t.Fatalf("group not owned: %v, want ErrGroupRequired", err)
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Worker", ""); !errors.Is(err, identity.ErrGroupRequired) {
+		t.Fatalf("empty new group name: %v, want ErrGroupRequired", err)
+	}
+	// GroupAllowed：已有组须存在（且未关闭添加，见契约 G_approve_group_choice_atomic）
+	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-b"); !errors.Is(err, identity.ErrGroupNotFound) {
+		t.Fatalf("missing group: %v, want ErrGroupNotFound", err)
+	}
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Worker", "九个字九个字九个字"); !errors.Is(err, identity.ErrGroupNameInvalid) {
+		t.Fatalf("bad new group name: %v, want ErrGroupNameInvalid", err)
 	}
 	if list, _ := f.svc.ListPending(bg, "zzc"); len(list) != 1 {
 		t.Fatal("group rejection must keep the application pending")
 	}
-	ag, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-a")
-	if err != nil || ag.GroupID != "team-a" {
-		t.Fatalf("approve with group: %+v %v", ag, err)
+	// 新用户第一个组：批准时就地新建，新 Agent 当组长
+	ag, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Worker", "开发组")
+	if err != nil {
+		t.Fatalf("approve with new group: %v", err)
+	}
+	g, err := f.store.GetGroup(bg, ag.GroupID)
+	if err != nil || g.ShortName != "开发组" || g.LeaderAgentID != ag.ID || g.CreatorLC != "zzc" || len(g.Code) != identity.GroupCodeLen {
+		t.Fatalf("new group: %+v %v", g, err)
+	}
+	// 第二个 Agent 入已有组
+	r2 := f.apply(t, "zzc", "dev-2", "1.1.1.2")
+	ag2, _, err := f.svc.Approve(bg, "zzc", r2.ApplicationID, code, "Second", g.Code)
+	if err != nil || ag2.GroupID != g.Code {
+		t.Fatalf("approve into existing group: %+v %v", ag2, err)
+	}
+	if ms, _ := f.store.ListGroupMembers(bg, g.Code); len(ms) != 2 {
+		t.Fatalf("members %+v", ms)
 	}
 }
 
@@ -310,7 +330,7 @@ func TestResolveFullName(t *testing.T) {
 	f := newFixture(t)
 	mk := func(owner, device, name string) string {
 		r := f.apply(t, owner, device, "1.1.1.1")
-		ag, _, err := f.svc.Approve(bg, owner, r.ApplicationID, code, name, "g")
+		ag, _, err := f.svc.ApproveWithNewGroup(bg, owner, r.ApplicationID, code, name, tg())
 		if err != nil {
 			t.Fatal(err)
 		}

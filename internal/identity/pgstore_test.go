@@ -102,8 +102,9 @@ func TestPGStoreConcurrentTakeCredentialOnce(t *testing.T) {
 	s := pgFactory(t)(t)
 	ctx := context.Background()
 	t0 := time.Date(2026, 10, 1, 9, 0, 0, 0, time.UTC)
-	if err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-race", OwnerLC: "zzc", Name: "Racer", CreatedAt: t0},
-		identity.Application{ID: "app-race", PollTokenHash: "tok", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}); err != nil {
+	if err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-race", OwnerLC: "zzc", Name: "Racer", GroupID: "g-race", CreatedAt: t0},
+		identity.Application{ID: "app-race", PollTokenHash: "tok", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)},
+		&identity.Group{Code: "g-race", ShortName: "race", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}); err != nil {
 		t.Fatal(err)
 	}
 	const n = 20
@@ -149,7 +150,8 @@ func TestPGStoreConcurrentApproveSameName(t *testing.T) {
 		wg.Add(1)
 		go func(i int, id string) {
 			defer wg.Done()
-			_, errs[i] = s.Approve(ctx, identity.ApproveInput{AppID: id, OwnerLC: "zzc", AgentID: "ag-" + id, Name: []string{"Twin", "TWIN"}[i], GroupID: "g"}, t0)
+			_, errs[i] = s.Approve(ctx, identity.ApproveInput{AppID: id, OwnerLC: "zzc", AgentID: "ag-" + id, Name: []string{"Twin", "TWIN"}[i], GroupID: "g-" + id,
+				NewGroup: &identity.Group{Code: "g-" + id, ShortName: "n-" + id, CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}}, t0)
 		}(i, id)
 	}
 	wg.Wait()

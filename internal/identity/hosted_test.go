@@ -12,7 +12,7 @@ import (
 // 托管全链路：签发 → 容器用一次性令牌经现有轮询接口取凭据 → 凭据认人（V6）。
 func TestHostedIssueThenContainerTakesCredential(t *testing.T) {
 	f := newFixture(t)
-	hi, err := f.svc.IssueHostedAgent(bg, "ZZC", "Codex1", "team-a", "zzc")
+	hi, err := f.svc.IssueHostedAgentWithNewGroup(bg, "ZZC", "Codex1", tg(), "zzc")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,17 +48,18 @@ func TestHostedIssueValidation(t *testing.T) {
 		{"zzc", "bad.name", "g", identity.ErrNameInvalid},
 		{"zzc", "Codex1", "", identity.ErrGroupRequired},
 		{"nosuch", "Codex1", "g", identity.ErrUnknownOwner},
-		{"newbie", "Codex1", "g", identity.ErrUnknownOwner}, // 未绑定的用户不能拥有托管席位
+		{"newbie", "Codex1", "g", identity.ErrUnknownOwner},  // 未绑定的用户不能拥有托管席位
+		{"zzc", "Codex1", "nope", identity.ErrGroupNotFound}, // GroupAllowed：已有组须存在
 	}
 	for _, c := range cases {
 		if _, err := f.svc.IssueHostedAgent(bg, c.owner, c.name, c.group, "admin"); !errors.Is(err, c.want) {
 			t.Errorf("%+v: err=%v", c, err)
 		}
 	}
-	if _, err := f.svc.IssueHostedAgent(bg, "zzc", "Codex1", "g", "zzc"); err != nil {
+	if _, err := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Codex1", tg(), "zzc"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.svc.IssueHostedAgent(bg, "zzc", "CODEX1", "g", "zzc"); !errors.Is(err, identity.ErrNameTaken) {
+	if _, err := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "CODEX1", tg(), "zzc"); !errors.Is(err, identity.ErrNameTaken) {
 		t.Fatalf("duplicate hosted name: %v", err)
 	}
 }
@@ -66,7 +67,7 @@ func TestHostedIssueValidation(t *testing.T) {
 // 容器重建／升级（V8）：重签 ⇒ 新凭据取走前旧凭据仍有效；取走后旧凭据作废、新凭据认得同一个席位。
 func TestHostedReissueRotation(t *testing.T) {
 	f := newFixture(t)
-	hi, _ := f.svc.IssueHostedAgent(bg, "zzc", "Codex1", "g", "zzc")
+	hi, _ := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Codex1", tg(), "zzc")
 	old, _ := f.svc.Poll(bg, hi.Token.ApplicationID, hi.Token.PollToken)
 	tok, err := f.svc.ReissueHostedToken(bg, hi.Agent.ID, "g4")
 	if err != nil {
@@ -96,7 +97,7 @@ func TestHostedReissueRotation(t *testing.T) {
 // 销毁（V8 D5）：吊销、断开钩子只触发一次、console 吊销托管仍被拒、自备席位不可走此路。
 func TestHostedRetire(t *testing.T) {
 	f := newFixture(t)
-	hi, _ := f.svc.IssueHostedAgent(bg, "zzc", "Codex1", "g", "zzc")
+	hi, _ := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Codex1", tg(), "zzc")
 	p, _ := f.svc.Poll(bg, hi.Token.ApplicationID, hi.Token.PollToken)
 	if _, err := f.svc.Revoke(bg, "zzc", hi.Agent.ID); !errors.Is(err, identity.ErrHosted) {
 		t.Fatalf("console revoke of hosted: %v", err)
@@ -114,7 +115,7 @@ func TestHostedRetire(t *testing.T) {
 		t.Fatalf("reissue after retire: %v", err)
 	}
 	r := f.apply(t, "zzc", "dev-9", "1.1.1.1")
-	self, _, _ := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Selfie", "g")
+	self, _, _ := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Selfie", tg())
 	if _, err := f.svc.RetireHostedAgent(bg, self.ID, "g4"); !errors.Is(err, identity.ErrNotHosted) {
 		t.Fatalf("retire selfhost via hosted path: %v", err)
 	}
@@ -129,7 +130,7 @@ func TestHostedSuspendResume(t *testing.T) {
 	f := newFixture(t)
 	var suspended []string
 	f.svc.OnSuspended = func(id string) { suspended = append(suspended, id) }
-	hi, _ := f.svc.IssueHostedAgent(bg, "zzc", "Codex1", "g", "zzc")
+	hi, _ := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Codex1", tg(), "zzc")
 	p, _ := f.svc.Poll(bg, hi.Token.ApplicationID, hi.Token.PollToken)
 	if already, err := f.svc.SuspendHostedAgent(bg, hi.Agent.ID, "g4"); already || err != nil || len(suspended) != 1 {
 		t.Fatalf("suspend: %v %v hook=%v", already, err, suspended)

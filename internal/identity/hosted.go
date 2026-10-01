@@ -47,11 +47,20 @@ func (s *Service) newEnrollToken(now time.Time) (Application, EnrollToken, error
 // IssueHostedAgent 建托管席位并签发一次性入网令牌。ownerLC＝该席归属用户；by＝操作者（审计用）。
 // 配额校验（V7）由调用方在此之前完成。
 func (s *Service) IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode, by string) (*HostedIssue, error) {
+	return s.issueHosted(ctx, ownerLC, name, GroupChoice{Code: groupCode}, by)
+}
+
+// IssueHostedAgentWithNewGroup 同 IssueHostedAgent，但就地新建编组、以新托管 Agent 为组长。
+func (s *Service) IssueHostedAgentWithNewGroup(ctx context.Context, ownerLC, name, newGroupName, by string) (*HostedIssue, error) {
+	return s.issueHosted(ctx, ownerLC, name, GroupChoice{NewName: newGroupName}, by)
+}
+
+func (s *Service) issueHosted(ctx context.Context, ownerLC, name string, group GroupChoice, by string) (*HostedIssue, error) {
 	if !ValidAgentName(name) || (s.NameAllowed != nil && !s.NameAllowed(name)) {
 		return nil, ErrNameInvalid
 	}
 	owner := Lower(ownerLC)
-	if groupCode == "" || (s.GroupAllowed != nil && !s.GroupAllowed(owner, groupCode)) {
+	if group.Code == "" && group.NewName == "" {
 		return nil, ErrGroupRequired
 	}
 	u, err := s.Store.GetUser(ctx, owner)
@@ -70,8 +79,12 @@ func (s *Service) IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode
 	if err != nil {
 		return nil, err
 	}
+	groupCode, newGroup, err := s.resolveGroupChoice(group, owner, "ag_"+agentID, now)
+	if err != nil {
+		return nil, err
+	}
 	ag := Agent{ID: "ag_" + agentID, OwnerLC: owner, Name: name, GroupID: groupCode, Origin: OriginHosted, State: AgentActive, CreatedAt: now}
-	if err := s.Store.CreateHostedAgent(ctx, ag, app); err != nil {
+	if err := s.Store.CreateHostedAgent(ctx, ag, app, newGroup); err != nil {
 		return nil, err
 	}
 	s.audit(ctx, by, "agent.hosted_issue", ag.ID, "owner="+owner)

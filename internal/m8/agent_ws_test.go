@@ -57,7 +57,7 @@ func (e *agentEnv) enroll(device, name string) (cred, agentID string) {
 	if err != nil {
 		e.t.Fatal(err)
 	}
-	ag, _, err := e.svc.Approve(e.ctx, "zzc", r.ApplicationID, "123456", name, "g1")
+	ag, _, err := e.svc.ApproveWithNewGroup(e.ctx, "zzc", r.ApplicationID, "123456", name, tg())
 	if err != nil {
 		e.t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestAgentWS_ReservedNameRejectedAtApproval(t *testing.T) {
 	digest, _ := identity.PairingDigest("000102030405060708090a0b0c0d0e0f", "123456")
 	r, _ := e.svc.Apply(e.ctx, identity.ApplyRequest{OwnerUserID: "zzc", PairingSalt: "000102030405060708090a0b0c0d0e0f",
 		PairingDigest: digest, DeviceFingerprint: "dev-x", SourceIP: "127.0.0.1"})
-	if _, _, err := e.svc.Approve(e.ctx, "zzc", r.ApplicationID, "123456", "Feishu", "g"); !errors.Is(err, identity.ErrNameInvalid) {
+	if _, _, err := e.svc.ApproveWithNewGroup(e.ctx, "zzc", r.ApplicationID, "123456", "Feishu", tg()); !errors.Is(err, identity.ErrNameInvalid) {
 		t.Fatalf("reserved channel word approved: %v", err)
 	}
 }

@@ -68,8 +68,6 @@ type Service struct {
 	OnSuspended func(agentID string)
 	// NameAllowed 额外的名称检查（Hub 注入渠道保留字检查）；返回 false ⇒ ErrNameInvalid。为空则不查。
 	NameAllowed func(name string) bool
-	// GroupAllowed 编组是否存在且归该 owner（新平台 Agent 接入编组后由 Hub 注入）；为空则只查非空。
-	GroupAllowed func(ownerLC, groupCode string) bool
 
 	mu        sync.Mutex
 	applyHits map[string][]time.Time // 来源 IP → 最近一小时的申请时刻
@@ -304,12 +302,21 @@ func (s *Service) ListPending(ctx context.Context, actorLC string) ([]Applicatio
 }
 
 // Approve 核对配对码、下发名称与编组（V1 第二节 4、5；设计件 3.1）。
-func (s *Service) Approve(ctx context.Context, actorLC, appID, pairingCode, name, groupID string) (*Agent, string, error) {
+func (s *Service) Approve(ctx context.Context, actorLC, appID, pairingCode, name, groupCode string) (*Agent, string, error) {
+	return s.approve(ctx, actorLC, appID, pairingCode, name, GroupChoice{Code: groupCode})
+}
+
+// ApproveWithNewGroup 批准并就地新建编组（以新 Agent 为组长）：新用户的第一个组从这里来。
+func (s *Service) ApproveWithNewGroup(ctx context.Context, actorLC, appID, pairingCode, name, newGroupName string) (*Agent, string, error) {
+	return s.approve(ctx, actorLC, appID, pairingCode, name, GroupChoice{NewName: newGroupName})
+}
+
+func (s *Service) approve(ctx context.Context, actorLC, appID, pairingCode, name string, group GroupChoice) (*Agent, string, error) {
 	if !ValidAgentName(name) || (s.NameAllowed != nil && !s.NameAllowed(name)) {
 		return nil, "", ErrNameInvalid
 	}
-	// 组长裁定 ruling-2026-10-01T090434Z：审核时编组必选，不提供「不加入编组」。
-	if groupID == "" || (s.GroupAllowed != nil && !s.GroupAllowed(Lower(actorLC), groupID)) {
+	// 组长裁定 ruling-2026-10-01T090434Z：审核时编组必选，不提供「不加入编组」。组是否存在、能否加入由存储在批准事务里判。
+	if group.Code == "" && group.NewName == "" {
 		return nil, "", ErrGroupRequired
 	}
 	now := s.Now()
@@ -343,7 +350,11 @@ func (s *Service) Approve(ctx context.Context, actorLC, appID, pairingCode, name
 	if err != nil {
 		return nil, "", err
 	}
-	ag, err := s.Store.Approve(ctx, ApproveInput{AppID: appID, OwnerLC: actorLC, AgentID: "ag_" + agentID, Name: name, GroupID: groupID}, now)
+	groupCode, newGroup, err := s.resolveGroupChoice(group, actorLC, "ag_"+agentID, now)
+	if err != nil {
+		return nil, "", err
+	}
+	ag, err := s.Store.Approve(ctx, ApproveInput{AppID: appID, OwnerLC: actorLC, AgentID: "ag_" + agentID, Name: name, GroupID: groupCode, NewGroup: newGroup}, now)
 	if err != nil {
 		return nil, "", err
 	}

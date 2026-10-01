@@ -36,6 +36,8 @@ func Run(t *testing.T, newStore Factory) {
 		{"G_group_join_leave_close", groupJoinLeaveClose},
 		{"G_group_delete_creator_only_cascades", groupDeleteRules},
 		{"G_group_member_rows_survive_revoke", groupMemberAfterRevoke},
+		{"G_approve_group_choice_atomic", approveGroupChoice},
+		{"G_hosted_group_choice_atomic", hostedGroupChoice},
 		{"N3_disable_revokes_sessions", disableRevokesSessions},
 		{"N3_get_user_by_short_name_case_insensitive", getUserByShortName},
 		{"N3_list_users_sorted_by_lowercase_id", listUsers},
@@ -89,9 +91,14 @@ func mustApp(t *testing.T, s identity.Store, id, owner, device string, at time.T
 	}
 }
 
+// newGroupFor 夹具：每个 Agent 就地建一个自己当组长的组（组码 gc-<id>、组名 gn-<id>），编组用例据此识别并滤掉夹具组。
+func newGroupFor(agentID, owner string, at time.Time) *identity.Group {
+	return &identity.Group{Code: "gc-" + agentID, ShortName: "gn-" + agentID, CreatorLC: owner, LeaderAgentID: agentID, CreatedAt: at, UpdatedAt: at}
+}
+
 func mustApprove(t *testing.T, s identity.Store, app, owner, agentID, name string, now time.Time) *identity.Agent {
 	t.Helper()
-	ag, err := s.Approve(ctx, identity.ApproveInput{AppID: app, OwnerLC: owner, AgentID: agentID, Name: name, GroupID: "g-" + agentID}, now)
+	ag, err := s.Approve(ctx, identity.ApproveInput{AppID: app, OwnerLC: owner, AgentID: agentID, Name: name, GroupID: "gc-" + agentID, NewGroup: newGroupFor(agentID, owner, now)}, now)
 	if err != nil {
 		t.Fatalf("Approve(%s as %s): %v", app, name, err)
 	}
@@ -383,7 +390,7 @@ func revokeFreesName(t *testing.T, s identity.Store) {
 	}
 	approveAndTake(t, s, "app-new", "zzc", "dev-1", "ag-new", "kimi", "cred-new", t0.Add(2*time.Minute))
 	nw, _ := s.ResolveAgentByCredential(ctx, "cred-new")
-	if nw.ID != "ag-new" || nw.State != identity.AgentActive || nw.GroupID != "g-ag-new" {
+	if nw.ID != "ag-new" || nw.State != identity.AgentActive || nw.GroupID != "gc-ag-new" {
 		t.Fatalf("new agent: %+v", nw)
 	}
 	if old2, _ := s.ResolveAgentByCredential(ctx, "cred-old"); old2.ID != "ag-old" || old2.State != identity.AgentRevoked {
@@ -418,8 +425,8 @@ func revokeIdempotent(t *testing.T, s identity.Store) {
 
 func mustHosted(t *testing.T, s identity.Store, agentID, owner, name, app string, at time.Time) {
 	t.Helper()
-	err := s.CreateHostedAgent(ctx, identity.Agent{ID: agentID, OwnerLC: owner, Name: name, GroupID: "g-" + agentID, CreatedAt: at},
-		identity.Application{ID: app, PollTokenHash: "tok-" + app, RequestedAt: at, ExpiresAt: at.Add(time.Hour)})
+	err := s.CreateHostedAgent(ctx, identity.Agent{ID: agentID, OwnerLC: owner, Name: name, GroupID: "gc-" + agentID, CreatedAt: at},
+		identity.Application{ID: app, PollTokenHash: "tok-" + app, RequestedAt: at, ExpiresAt: at.Add(time.Hour)}, newGroupFor(agentID, owner, at))
 	if err != nil {
 		t.Fatalf("CreateHostedAgent(%s): %v", name, err)
 	}
@@ -444,8 +451,8 @@ func revokeHosted(t *testing.T, s identity.Store) {
 func hostedCreateAndTake(t *testing.T, s identity.Store) {
 	mustApp(t, s, "app-self", "zzc", "dev-1", t0)
 	mustApprove(t, s, "app-self", "zzc", "ag-self", "Worker", t0)
-	err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-h1", OwnerLC: "zzc", Name: "WORKER"},
-		identity.Application{ID: "app-h1", PollTokenHash: "tok-h1", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-h1", OwnerLC: "zzc", Name: "WORKER", GroupID: "gc-ag-h1"},
+		identity.Application{ID: "app-h1", PollTokenHash: "tok-h1", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, newGroupFor("ag-h1", "zzc", t0))
 	wantErr(t, "hosted name clashes with selfhost (case-insensitive)", err, identity.ErrNameTaken)
 	if _, err := s.GetApplication(ctx, "app-h1"); !errors.Is(err, identity.ErrNotFound) {
 		t.Fatalf("failed create must leave no application: %v", err)
@@ -456,7 +463,7 @@ func hostedCreateAndTake(t *testing.T, s identity.Store) {
 		t.Fatalf("hosted application: %+v", a)
 	}
 	ag, ok, err := s.TakeCredential(ctx, "app-h2", "cred-h2", t0.Add(time.Minute))
-	if err != nil || !ok || ag.Origin != identity.OriginHosted || ag.Name != "Codex1" || ag.GroupID != "g-ag-h2" {
+	if err != nil || !ok || ag.Origin != identity.OriginHosted || ag.Name != "Codex1" || ag.GroupID != "gc-ag-h2" {
 		t.Fatalf("take hosted: %+v %v %v", ag, ok, err)
 	}
 	if list, _ := s.ListAgents(ctx, "zzc"); len(list) != 2 {
@@ -573,8 +580,8 @@ func hostedSuspendResume(t *testing.T, s identity.Store) {
 		t.Fatalf("suspended agent by credential: %+v %v (credential must be kept)", g, err)
 	}
 	// 暂停中仍占名字、仍在列表里
-	err = s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-p2", OwnerLC: "zzc", Name: "PAUSY"},
-		identity.Application{ID: "app-p2", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	err = s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-p2", OwnerLC: "zzc", Name: "PAUSY", GroupID: "gc-ag-p2"},
+		identity.Application{ID: "app-p2", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, newGroupFor("ag-p2", "zzc", t0))
 	wantErr(t, "name of suspended agent reused", err, identity.ErrNameTaken)
 	if list, _ := s.ListAgents(ctx, "zzc"); len(list) != 1 || list[0].ID != "ag-p" || list[0].State != identity.AgentSuspended {
 		t.Fatalf("ListAgents while suspended: %+v", list)
@@ -737,7 +744,7 @@ func groupCreateRules(t *testing.T, s identity.Store) {
 	if got := memberIDs(t, s, "c1"); got != "ag-z" {
 		t.Fatalf("leader must be the first member: %q", got)
 	}
-	if codes, _ := s.ListAgentGroups(ctx, "ag-z"); strings.Join(codes, ",") != "c1" {
+	if codes, _ := s.ListAgentGroups(ctx, "ag-z"); strings.Join(notFixture(codes), ",") != "c1" {
 		t.Fatalf("ListAgentGroups: %v", codes)
 	}
 	wantErr(t, "same name, other user", s.CreateGroup(ctx, mkGroup("c2", "开发组", "lbl", "ag-l", t0)), identity.ErrGroupNameTaken)
@@ -760,7 +767,7 @@ func groupCreateRules(t *testing.T, s identity.Store) {
 	for _, g := range gs {
 		order = append(order, g.Code)
 	}
-	if strings.Join(order, ",") != "aa,zz,c1" {
+	if strings.Join(notFixture(order), ",") != "aa,zz,c1" {
 		t.Fatalf("ListGroups order = %v, want aa,zz,c1 (created_at, then code)", order)
 	}
 }
@@ -836,7 +843,7 @@ func groupDeleteRules(t *testing.T, s identity.Store) {
 		t.Fatalf("member rows survived delete: %q", got)
 	}
 	for _, ag := range []string{"ag-z", "ag-l"} {
-		if codes, _ := s.ListAgentGroups(ctx, ag); len(codes) != 0 {
+		if codes, _ := s.ListAgentGroups(ctx, ag); len(notFixture(codes)) != 0 {
 			t.Fatalf("%s still in groups %v", ag, codes)
 		}
 	}
@@ -864,4 +871,121 @@ func groupMemberAfterRevoke(t *testing.T, s identity.Store) {
 		t.Fatal(err)
 	}
 	wantErr(t, "revoked agent joins", s.JoinGroup(ctx, "c2", "ag-l", "lbl", t0), identity.ErrGroupAgentUnavailable)
+}
+
+// notFixture 滤掉夹具给每个 Agent 建的 gc-<id> 组。
+func notFixture(codes []string) []string {
+	var out []string
+	for _, c := range codes {
+		if !strings.HasPrefix(c, "gc-") {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// 批准时的编组（GroupAllowed）：入已有组须存在且未关闭添加；新组同一事务建、以新 Agent 为组长；任一失败整个批准不生效。
+func approveGroupChoice(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-lead", "zzc", "Lead", "app-lead", t0)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "一组", "zzc", "ag-lead", t0)); err != nil {
+		t.Fatal(err)
+	}
+	mustApp(t, s, "app-1", "zzc", "dev-1", t0)
+	in := func(group string, ng *identity.Group) identity.ApproveInput {
+		return identity.ApproveInput{AppID: "app-1", OwnerLC: "zzc", AgentID: "ag-1", Name: "Worker", GroupID: group, NewGroup: ng}
+	}
+	nothingChanged := func(what string) {
+		t.Helper()
+		if a, _ := s.GetApplication(ctx, "app-1"); a.State != identity.AppPending {
+			t.Fatalf("%s: application left %s, want pending", what, a.State)
+		}
+		if _, err := s.GetAgent(ctx, "ag-1"); !errors.Is(err, identity.ErrNotFound) {
+			t.Fatalf("%s: agent created anyway: %v", what, err)
+		}
+	}
+	_, err := s.Approve(ctx, in("nope", nil), t0)
+	wantErr(t, "missing group", err, identity.ErrGroupNotFound)
+	nothingChanged("missing group")
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", true, t0); err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.Approve(ctx, in("c1", nil), t0)
+	wantErr(t, "closed group", err, identity.ErrGroupClosed)
+	nothingChanged("closed group")
+	_, err = s.Approve(ctx, in("gx", &identity.Group{Code: "gx", ShortName: "一组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}), t0)
+	wantErr(t, "new group name taken", err, identity.ErrGroupNameTaken)
+	nothingChanged("new group name taken")
+	if _, err := s.GetGroup(ctx, "gx"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("refused new group was created: %v", err)
+	}
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", false, t0); err != nil {
+		t.Fatal(err)
+	}
+	t1 := t0.Add(time.Minute)
+	ag, err := s.Approve(ctx, in("c1", nil), t1)
+	if err != nil || ag.GroupID != "c1" {
+		t.Fatalf("approve into c1: %+v %v", ag, err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-lead,ag-1" {
+		t.Fatalf("c1 members %q", got)
+	}
+	// 新组：另一份申请，就地建组、以新 Agent 为组长
+	mustApp(t, s, "app-2", "zzc", "dev-2", t0)
+	ag2, err := s.Approve(ctx, identity.ApproveInput{AppID: "app-2", OwnerLC: "zzc", AgentID: "ag-2", Name: "Second", GroupID: "g2",
+		NewGroup: &identity.Group{Code: "g2", ShortName: "二组", CreatorLC: "ZZC", CreatedAt: t1, UpdatedAt: t1}}, t1)
+	if err != nil || ag2.GroupID != "g2" {
+		t.Fatalf("approve with new group: %+v %v", ag2, err)
+	}
+	g, err := s.GetGroup(ctx, "g2")
+	if err != nil || g.LeaderAgentID != "ag-2" || g.CreatorLC != "zzc" || g.ShortName != "二组" || g.AdditionsClosed {
+		t.Fatalf("new group: %+v %v", g, err)
+	}
+	if got := memberIDs(t, s, "g2"); got != "ag-2" {
+		t.Fatalf("g2 members %q", got)
+	}
+}
+
+// 托管新建的编组：语义同批准；失败时连申请（一次性令牌）也不留。
+func hostedGroupChoice(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-lead", "zzc", "Lead", "app-lead", t0)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "一组", "zzc", "ag-lead", t0)); err != nil {
+		t.Fatal(err)
+	}
+	create := func(id, app, group string, ng *identity.Group) error {
+		return s.CreateHostedAgent(ctx, identity.Agent{ID: id, OwnerLC: "zzc", Name: "H" + id[3:], GroupID: group, CreatedAt: t0},
+			identity.Application{ID: app, PollTokenHash: "tok-" + app, RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, ng)
+	}
+	nothing := func(what, id, app string) {
+		t.Helper()
+		if _, err := s.GetAgent(ctx, id); !errors.Is(err, identity.ErrNotFound) {
+			t.Fatalf("%s: agent created anyway: %v", what, err)
+		}
+		if _, err := s.GetApplication(ctx, app); !errors.Is(err, identity.ErrNotFound) {
+			t.Fatalf("%s: application left behind: %v", what, err)
+		}
+	}
+	wantErr(t, "hosted into missing group", create("ag-a", "app-a", "nope", nil), identity.ErrGroupNotFound)
+	nothing("missing group", "ag-a", "app-a")
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", true, t0); err != nil {
+		t.Fatal(err)
+	}
+	wantErr(t, "hosted into closed group", create("ag-b", "app-b", "c1", nil), identity.ErrGroupClosed)
+	nothing("closed group", "ag-b", "app-b")
+	wantErr(t, "hosted new group name taken", create("ag-c", "app-c", "gx", &identity.Group{Code: "gx", ShortName: "一组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}), identity.ErrGroupNameTaken)
+	nothing("new group name taken", "ag-c", "app-c")
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", false, t0); err != nil {
+		t.Fatal(err)
+	}
+	if err := create("ag-d", "app-d", "c1", nil); err != nil {
+		t.Fatalf("hosted into c1: %v", err)
+	}
+	if err := create("ag-e", "app-e", "g2", &identity.Group{Code: "g2", ShortName: "二组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}); err != nil {
+		t.Fatalf("hosted with new group: %v", err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-d,ag-lead" && got != "ag-lead,ag-d" {
+		t.Fatalf("c1 members %q", got)
+	}
+	if g, err := s.GetGroup(ctx, "g2"); err != nil || g.LeaderAgentID != "ag-e" || memberIDs(t, s, "g2") != "ag-e" {
+		t.Fatalf("new hosted group: %+v %v", g, err)
+	}
 }

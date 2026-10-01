@@ -518,6 +518,9 @@ func (s *PGStore) Approve(ctx context.Context, in ApproveInput, now time.Time) (
 		if err := insertAgent(ctx, tx, ag); err != nil {
 			return err
 		}
+		if err := groupChoiceTx(ctx, tx, ag.ID, in.GroupID, in.NewGroup, now); err != nil {
+			return err
+		}
 		if _, err := tx.Exec(ctx, `UPDATE np_enroll_application SET state = 'approved', agent_id = $2 WHERE id = $1`, a.ID, ag.ID); err != nil {
 			return err
 		}
@@ -663,11 +666,14 @@ func (s *PGStore) Revoke(ctx context.Context, agentID, ownerLC, by string, now t
 	return already, err
 }
 
-func (s *PGStore) CreateHostedAgent(ctx context.Context, ag Agent, app Application) error {
+func (s *PGStore) CreateHostedAgent(ctx context.Context, ag Agent, app Application, newGroup *Group) error {
 	return s.inTx(ctx, func(tx repo.Tx) error {
 		a := ag
 		a.Origin, a.State, a.CredentialHash = OriginHosted, AgentActive, ""
 		if err := insertAgent(ctx, tx, a); err != nil {
+			return err
+		}
+		if err := groupChoiceTx(ctx, tx, a.ID, a.GroupID, newGroup, a.CreatedAt); err != nil {
 			return err
 		}
 		return insertApprovedApp(ctx, tx, app, Lower(ag.OwnerLC), ag.ID)
@@ -947,4 +953,36 @@ func (s *PGStore) SetGroupAdditionsClosed(ctx context.Context, code, actorLC str
 func (s *PGStore) DeleteGroup(ctx context.Context, code, actorLC string) error {
 	res, err := s.pool.Exec(ctx, s.t, `DELETE FROM np_group WHERE code = $1 AND creator_lc = $2`, code, Lower(actorLC))
 	return s.creatorOnly(ctx, code, res, err)
+}
+
+// groupChoiceTx 批准／托管新建事务内落地编组选择：新组 ⇒ 建组（该 Agent 为组长）＋组长入组；
+// 已有组 ⇒ 行锁（FOR SHARE，与关闭添加、删组互斥）后判存在与未关闭 ⇒ 入组。
+func groupChoiceTx(ctx context.Context, tx repo.Tx, agentID, code string, newGroup *Group, now time.Time) error {
+	if newGroup != nil {
+		_, err := tx.Exec(ctx, `INSERT INTO np_group (`+groupCols+`) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+			newGroup.Code, newGroup.ShortName, Lower(newGroup.CreatorLC), agentID, false, now.UTC(), now.UTC())
+		if c, constraint := pgCode(err); c == pgUniqueViolation {
+			if constraint == "np_group_pkey" {
+				return ErrConflict
+			}
+			return ErrGroupNameTaken
+		}
+		if err != nil {
+			return err
+		}
+		code = newGroup.Code
+	} else {
+		g, err := lockGroup(ctx, tx, code, true)
+		if errors.Is(err, ErrNotFound) {
+			return ErrGroupNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if g.AdditionsClosed {
+			return ErrGroupClosed
+		}
+	}
+	_, err := tx.Exec(ctx, `INSERT INTO np_group_member (code, agent_id, created_at) VALUES ($1,$2,$3)`, code, agentID, now.UTC())
+	return err
 }

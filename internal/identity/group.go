@@ -40,7 +40,37 @@ var (
 	ErrGroupMemberNotFound   = errors.New("identity: agent not in group")
 	ErrGroupLeaderProtected  = errors.New("identity: group leader cannot be removed")
 	ErrGroupAgentUnavailable = errors.New("identity: agent unavailable (not found, revoked or not owned)")
+	ErrGroupNotFound         = errors.New("identity: group not found")
+	ErrGroupNameInvalid      = errors.New("identity: group name invalid")
 )
+
+// GroupChoice 批准自备 Agent 或新建托管 Agent 时选的编组，二选一（组长裁定 090434Z c：编组必选）。
+// 新用户名下既无 Agent 也无组：建组要有组长、批准又要选组 ⇒ 允许就地新建（本席建议甲，e5c6244635a6）。
+type GroupChoice struct {
+	Code    string // 已有组码：须存在且未关闭添加（即 GroupAllowed），同一事务入组
+	NewName string // 新组名：同一事务建组，以新 Agent 为组长
+}
+
+// resolve 校验二选一并在新建时备好 Group（组码随机）；返回写进 Agent.GroupID 的组码。
+func (s *Service) resolveGroupChoice(c GroupChoice, ownerLC, agentID string, now time.Time) (string, *Group, error) {
+	switch {
+	case c.Code == "" && c.NewName == "":
+		return "", nil, ErrGroupRequired
+	case c.Code != "" && c.NewName != "":
+		return "", nil, ErrBadRequest
+	case c.Code != "":
+		return c.Code, nil, nil
+	}
+	if !ValidGroupName(c.NewName) {
+		return "", nil, ErrGroupNameInvalid
+	}
+	code, err := randFrom(s.Rand, groupCodeAlphabet, GroupCodeLen)
+	if err != nil {
+		return "", nil, err
+	}
+	g := &Group{Code: code, ShortName: c.NewName, CreatorLC: Lower(ownerLC), LeaderAgentID: agentID, CreatedAt: now, UpdatedAt: now}
+	return code, g, nil
+}
 
 // GroupCodeLen 组码长度；字母表与旧平台 randomGroupSuffix 相同。
 const (

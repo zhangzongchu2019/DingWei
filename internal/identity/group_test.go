@@ -2,7 +2,10 @@ package identity_test
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -11,7 +14,7 @@ import (
 
 func (f *fixture) hosted(t *testing.T, owner, name string) *identity.Agent {
 	t.Helper()
-	hi, err := f.svc.IssueHostedAgent(bg, owner, name, "team-a", owner)
+	hi, err := f.svc.IssueHostedAgentWithNewGroup(bg, owner, name, tg(), owner)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,13 +99,23 @@ func TestListVisibleGroups(t *testing.T) {
 	if _, err := f.svc.CreateGroup(bg, "lbl", l.ID, "乙组"); err != nil {
 		t.Fatal(err)
 	}
-	names := func(actor string) string {
+	// visible 只看本用例建的组：夹具给每个托管 Agent 建的 t<n> 组一律滤掉（它们与本用例的组同刻、组码随机，位置不定）。
+	visible := func(actor string) []identity.GroupInfo {
 		gs, err := f.svc.ListVisibleGroups(bg, actor)
 		if err != nil {
 			t.Fatal(err)
 		}
-		var out []string
+		var out []identity.GroupInfo
 		for _, g := range gs {
+			if !fixtureGroup.MatchString(g.ShortName) {
+				out = append(out, g)
+			}
+		}
+		return out
+	}
+	names := func(actor string) string {
+		var out []string
+		for _, g := range visible(actor) {
 			out = append(out, g.ShortName)
 		}
 		return strings.Join(out, ",")
@@ -117,7 +130,7 @@ func TestListVisibleGroups(t *testing.T) {
 	if got := names("lbl"); got != "甲组,乙组" {
 		t.Fatalf("lbl sees %q (member of 甲组, creator of 乙组)", got)
 	}
-	gs, _ := f.svc.ListVisibleGroups(bg, "lbl")
+	gs := visible("lbl")
 	g := gs[0]
 	if g.CanManage || g.LeaderFullName != "Zed.zzc" || g.Creator == nil || g.Creator.UserID != "zzc" || len(g.Members) != 2 ||
 		g.Members[0].FullName != "Zed.zzc" || g.Members[1].FullName != "Lee.lb" {
@@ -133,11 +146,18 @@ func TestListVisibleGroups(t *testing.T) {
 	if got := names("lbl"); got != "乙组" {
 		t.Fatalf("after revoke lbl sees %q", got)
 	}
-	gs, _ = f.svc.ListVisibleGroups(bg, "zzc")
-	if len(gs) != 1 || len(gs[0].Members) != 1 || gs[0].Members[0].Agent.ID != z.ID {
+	gs = visible("zzc")
+	if len(gs) != 1 || gs[0].ShortName != "甲组" || len(gs[0].Members) != 1 || gs[0].Members[0].Agent.ID != z.ID {
 		t.Fatalf("revoked member still shown: %+v", gs)
 	}
 	if got := names("newbie"); got != "" {
 		t.Fatalf("outsider sees %q", got)
 	}
 }
+
+var tgSeq atomic.Int64
+
+// tg 测试用的新组名：每次不同（组名全局唯一、1～8 个字母或数字）。批准与托管新建都必须带编组（GroupAllowed）。
+func tg() string { return fmt.Sprintf("t%d", tgSeq.Add(1)) }
+
+var fixtureGroup = regexp.MustCompile(`^t[0-9]+$`)

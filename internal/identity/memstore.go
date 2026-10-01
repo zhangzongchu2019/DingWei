@@ -317,6 +317,9 @@ func (m *MemStore) Approve(_ context.Context, in ApproveInput, now time.Time) (*
 			return nil, ErrNameTaken
 		}
 	}
+	if err := m.checkGroupChoiceLocked(in.GroupID, in.NewGroup); err != nil {
+		return nil, err
+	}
 	ag := &Agent{
 		ID:        in.AgentID,
 		OwnerLC:   a.OwnerLC,
@@ -327,6 +330,7 @@ func (m *MemStore) Approve(_ context.Context, in ApproveInput, now time.Time) (*
 		CreatedAt: now,
 	}
 	m.agents[ag.ID] = ag
+	m.applyGroupChoiceLocked(ag.ID, in.GroupID, in.NewGroup, now)
 	a.State = AppApproved
 	a.AgentID = ag.ID
 	for _, o := range m.apps {
@@ -444,7 +448,7 @@ func (m *MemStore) nameTakenLocked(ownerLC, nameLC string) bool {
 	return false
 }
 
-func (m *MemStore) CreateHostedAgent(_ context.Context, ag Agent, app Application) error {
+func (m *MemStore) CreateHostedAgent(_ context.Context, ag Agent, app Application, newGroup *Group) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, ok := m.agents[ag.ID]; ok {
@@ -457,9 +461,13 @@ func (m *MemStore) CreateHostedAgent(_ context.Context, ag Agent, app Applicatio
 	if m.nameTakenLocked(owner, ag.NameLC()) {
 		return ErrNameTaken
 	}
+	if err := m.checkGroupChoiceLocked(ag.GroupID, newGroup); err != nil {
+		return err
+	}
 	a := ag
 	a.OwnerLC, a.Origin, a.State, a.CredentialHash = owner, OriginHosted, AgentActive, ""
 	m.agents[a.ID] = &a
+	m.applyGroupChoiceLocked(a.ID, a.GroupID, newGroup, a.CreatedAt)
 	ap := app
 	ap.OwnerLC, ap.State, ap.AgentID = owner, AppApproved, a.ID
 	m.apps[ap.ID] = &ap
@@ -714,4 +722,39 @@ func (m *MemStore) DeleteGroup(_ context.Context, code, actorLC string) error {
 	delete(m.groups, code)
 	delete(m.members, code)
 	return nil
+}
+
+// checkGroupChoiceLocked 批准／托管新建前校验编组选择（不改状态）：新组 ⇒ 组码与组名不撞；已有组 ⇒ 存在且未关闭添加。
+func (m *MemStore) checkGroupChoiceLocked(code string, newGroup *Group) error {
+	if newGroup != nil {
+		if _, ok := m.groups[newGroup.Code]; ok {
+			return ErrConflict
+		}
+		for _, o := range m.groups {
+			if o.ShortName == newGroup.ShortName {
+				return ErrGroupNameTaken
+			}
+		}
+		return nil
+	}
+	g, ok := m.groups[code]
+	if !ok {
+		return ErrGroupNotFound
+	}
+	if g.AdditionsClosed {
+		return ErrGroupClosed
+	}
+	return nil
+}
+
+// applyGroupChoiceLocked 校验通过后落地：建新组（该 Agent 为组长）或入已有组。
+func (m *MemStore) applyGroupChoiceLocked(agentID, code string, newGroup *Group, now time.Time) {
+	if newGroup != nil {
+		g := *newGroup
+		g.CreatorLC, g.LeaderAgentID = Lower(g.CreatorLC), agentID
+		m.groups[g.Code] = &g
+		m.members[g.Code] = map[string]time.Time{agentID: now}
+		return
+	}
+	m.members[code][agentID] = now
 }

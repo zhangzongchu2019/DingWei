@@ -62,7 +62,7 @@ func (v *viewEnv) enrollFor(owner, device, name string) (string, string) {
 	if err != nil {
 		v.t.Fatal(err)
 	}
-	ag, _, err := v.svc.Approve(v.ctx, owner, r.ApplicationID, "123456", name, "g")
+	ag, _, err := v.svc.ApproveWithNewGroup(v.ctx, owner, r.ApplicationID, "123456", name, tg())
 	if err != nil {
 		v.t.Fatal(err)
 	}

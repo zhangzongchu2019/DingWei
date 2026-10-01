@@ -45,6 +45,8 @@ type EnrollStore interface {
 	RecordPairingFailure(ctx context.Context, appID, ownerLC string, max int, now time.Time) (remaining int, rejected bool, err error)
 	// Approve 一个事务：申请属该 owner、仍 pending 未过期 ⇒ 名称在该 owner 的【未吊销】（active 或 suspended）Agent 中按小写不重
 	// ⇒ 建 Agent ⇒ 申请转 approved ⇒ 同 owner 同设备的其它 pending 申请转 superseded（V1 A10）。
+	// 编组：in.NewGroup 非空 ⇒ 同一事务建组（组名冲突 ErrGroupNameTaken）、以新 Agent 为组长；否则 in.GroupID 须存在
+	// （ErrGroupNotFound）且未关闭添加（ErrGroupClosed）⇒ 同一事务入组。任一失败整个批准不生效。
 	Approve(ctx context.Context, in ApproveInput, now time.Time) (*Agent, error)
 	Reject(ctx context.Context, appID, ownerLC string, now time.Time) error
 	// TakeCredential 一个事务：申请 approved、未过期、凭据未被取走、Agent 仍 active ⇒ 写凭据哈希与取走时刻 ⇒ true。
@@ -65,7 +67,8 @@ type EnrollStore interface {
 	// ── 托管（V6／V8，Hub 内部调用，不经 console）──
 	// CreateHostedAgent 一个事务：名称在该 owner 的 active Agent 中按小写不重（ErrNameTaken）⇒ 建 origin=hosted 的 Agent
 	// ⇒ 建一条已批准、指向它的申请（其 PollTokenHash 即一次性入网令牌的哈希）。
-	CreateHostedAgent(ctx context.Context, ag Agent, app Application) error
+	// 编组同 Approve：newGroup 非空 ⇒ 同一事务建组、以该 Agent 为组长；否则 ag.GroupID 须存在且未关闭添加 ⇒ 入组。
+	CreateHostedAgent(ctx context.Context, ag Agent, app Application, newGroup *Group) error
 	// AddHostedToken 给已有的 active 托管 Agent 再发一条已批准申请（容器重建、升级时重签）。非托管 ⇒ ErrHosted 的反义：ErrNotHosted。
 	AddHostedToken(ctx context.Context, agentID string, app Application) error
 	// SetAgentSuspended 托管席位暂停／恢复（V8 停用／启用；组长裁定：停用期间凭据拒连）。
