@@ -172,3 +172,46 @@ func TestGateOnConnectFires(t *testing.T) {
 		t.Fatal("接入后 OnConnect 未触发")
 	}
 }
+
+// 复验阻断（review-g4-t50-rework 86d78377）：OnConnect 回调里经 Gate.Send 等结果必须可行——
+// 同步回调会把读循环卡死在 60s 超时（结果靠读循环收，读循环等回调返回）。相接用例：
+// 回调里 Send 一条指令，节点侧应答，回调须毫秒级完成（而不是撑满超时）。
+func TestOnConnectCallbackCanSendAndReceive(t *testing.T) {
+	g, _, nodeID, secret := mkGate(t)
+	type outcome struct {
+		ok  bool
+		err error
+	}
+	done := make(chan outcome, 1)
+	g.OnConnect = func(ctx context.Context, id string) {
+		res, err := g.Send(ctx, id, hosted.NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":"ag_rc"}`)})
+		done <- outcome{ok: res.OK, err: err}
+	}
+	srv := httptest.NewServer(g.Handler())
+	defer srv.Close()
+	conn := dial(t, srv, nodeID, secret)
+	defer conn.CloseNow()
+	// 节点侧：读指令→回 ok（真读循环路径）
+	go func() {
+		_, raw, err := conn.Read(context.Background())
+		if err != nil {
+			return
+		}
+		var rc struct {
+			CommandID string `json:"command_id"`
+		}
+		if json.Unmarshal(raw, &rc) != nil || rc.CommandID == "" {
+			return
+		}
+		resp, _ := json.Marshal(map[string]any{"command_id": rc.CommandID, "ok": true})
+		_ = conn.Write(context.Background(), websocket.MessageText, resp)
+	}()
+	select {
+	case o := <-done:
+		if o.err != nil || !o.ok {
+			t.Fatalf("回调内 Send 应成功: %+v", o)
+		}
+	case <-time.After(5 * time.Second): // 修复前会撑满 60s sendMax；5s 裕度足够卡死现形
+		t.Fatal("回调内 Send 卡死——同步回调把读循环堵住了")
+	}
+}

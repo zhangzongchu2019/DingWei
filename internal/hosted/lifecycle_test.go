@@ -537,3 +537,58 @@ func TestDestroyBackupFailedTyped(t *testing.T) {
 	}
 	eqSeq(t, "backup_failed", log.get(), []string{"backup"})
 }
+
+// 复验三刀守卫（86d78377 附录 A）：①对账只发 destroy_seat ②节点失败不标记完成 ③只清本节点的。
+func TestReconcileGuards(t *testing.T) {
+	ctx := context.Background()
+	lc, _, _, gw, _, s, id := mkLifecycle(t)
+	seat, _ := s.GetSeat(ctx, id)
+	if err := s.SetNodeState(ctx, seat.NodeID, "offline"); err != nil {
+		t.Fatal(err)
+	}
+	if err := lc.Destroy(ctx, id, "zzc", true, true); err != nil {
+		t.Fatal(err)
+	}
+	// 另一个节点的待对账席位（不得被本节点对账清掉）
+	if err := s.UpsertNode(ctx, Node{ID: "nd_other", Name: "other", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_other", NodeID: "nd_other", CLI: "codex", LLM: "gpt",
+		CredKind: "token_file", Plan: "2c4g", ImageRef: "r", CreatedBy: "zzc"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetSeatState(ctx, "ag_other", "destroyed", "", "destroy", json.RawMessage(`{"reconcile_pending":true}`)); err != nil {
+		t.Fatal(err)
+	}
+	// ③ 节点过滤：对本节点对账
+	orch := NewOrchestrator(s, lc.pool, lc.idp, gw, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
+	orch.ReconcileNode(ctx, seat.NodeID)
+	for _, c := range gw.sent {
+		// ① 只许 destroy_seat
+		if c.Type != "destroy_seat" {
+			t.Fatalf("对账只许补发 destroy_seat: %+v", gw.sent)
+		}
+	}
+	if len(gw.sent) != 1 {
+		t.Fatalf("本节点一席待清 ⇒ 恰好一条 destroy_seat: %+v", gw.sent)
+	}
+	// ③ 别的节点的待对账席位不动
+	pending, _ := s.SeatsPendingReconcile(ctx, "nd_other")
+	if len(pending) != 1 {
+		t.Fatalf("别节点的待对账不得被清: %v", pending)
+	}
+	// ② 失败不标记完成
+	lc2, _, _, gw2, _, s2, id2 := mkLifecycle(t)
+	seat2, _ := s2.GetSeat(ctx, id2)
+	_ = s2.SetNodeState(ctx, seat2.NodeID, "offline")
+	if err := lc2.Destroy(ctx, id2, "zzc", true, true); err != nil {
+		t.Fatal(err)
+	}
+	gw2.failOn = "destroy_seat"
+	orch2 := NewOrchestrator(s2, lc2.pool, lc2.idp, gw2, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
+	orch2.ReconcileNode(ctx, seat2.NodeID)
+	pending2, _ := s2.SeatsPendingReconcile(ctx, seat2.NodeID)
+	if len(pending2) != 1 {
+		t.Fatalf("失败不得标记完成（留待下次重连）: %v", pending2)
+	}
+}
