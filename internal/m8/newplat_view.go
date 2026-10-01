@@ -140,3 +140,26 @@ func (h *Hub) newPlatformPrincipal(w http.ResponseWriter, r *http.Request) (stri
 	}
 	return "", false
 }
+
+// newPlatformCanonicalName full_name 的规范写法：名称小写.简称小写。
+// view-service 的会话键（X-DW-Session ⇒ /status 的 session）、上传票据的会话名都用它 ——
+// 页面拿 /status 的 session 拼 capability 与上传票据的路径、带上传头，并与票据的 session 严格比较，
+// 所以这几处必须同值；地址栏里大小写不同的写法（Kimi.ZZC）也落到同一个键上。
+func (h *Hub) newPlatformCanonicalName(ctx context.Context, fullName string) (string, *identity.Agent, bool) {
+	ag, u, err := h.Identity.ResolveFullName(ctx, fullName)
+	if err != nil {
+		return "", nil, false
+	}
+	return ag.NameLC() + "." + identity.Lower(u.ShortName), ag, true
+}
+
+// handleNewPlatformFileUploadTicket 新平台的上传票据（RequireConsoleAgent 已按 cookie＋full_name 认过归属用户、校过 Origin）。
+// 票据的会话名＝规范 full_name：上传时页面带的 X-DingWei-Session 头就是它，文件服务要求两者相等。
+func (h *Hub) handleNewPlatformFileUploadTicket(w http.ResponseWriter, r *http.Request) {
+	canon, ag, ok := h.newPlatformCanonicalName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
+	if !ok {
+		writeAgentWSError(w, http.StatusNotFound, "not_found")
+		return
+	}
+	h.writeConsoleUploadTicket(w, r, AgentKeyID(ag.OwnerLC), ag.NameLC(), canon)
+}

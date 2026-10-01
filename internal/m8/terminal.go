@@ -906,6 +906,13 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 		return false
 	}
 	prefix := "/view/" + sessionName
+	header := sessionName
+	if h.Identity != nil {
+		// 新平台：view-service 的会话键用规范 full_name（见 newPlatformCanonicalName）。
+		if canon, _, ok := h.newPlatformCanonicalName(r.Context(), sessionName); ok {
+			header = canon
+		}
+	}
 	rp := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = u.Scheme
@@ -916,7 +923,7 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 			}
 			req.URL.Path = strings.TrimRight(u.Path, "/") + p
 			req.Host = u.Host
-			req.Header.Set("X-DW-Session", sessionName)
+			req.Header.Set("X-DW-Session", header)
 		},
 	}
 	reached := true

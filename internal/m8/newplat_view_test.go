@@ -2,6 +2,8 @@ package m8
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -335,5 +337,95 @@ func TestNewPlatformConsolePlatform(t *testing.T) {
 	}
 	if st, _ := call("GET", "/api/console/platform", ""); st != 401 {
 		t.Errorf("no session: %d", st)
+	}
+}
+
+// 页面拿 /status 的 session 拼 capability 与上传票据的路径、带 X-DingWei-Session 上传头，并与票据的 session 严格比较
+// ⇒ 反代给 view-service 的 X-DW-Session（即 /status 的 session）与票据的会话名必须是同一个规范 full_name。
+func TestNewPlatformViewProxySessionIsCanonicalFullName(t *testing.T) {
+	v := newViewEnv(t)
+	vs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, r.URL.Path+" session="+r.Header.Get("X-DW-Session"))
+	}))
+	defer vs.Close()
+	// 简称本身带大写的用户：规范写法里简称也得转小写
+	if err := v.svc.Store.CreateUser(v.ctx, identity.User{UserID: "mix", ShortName: "Mx", State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	v.enrollFor("mix", "dev-mx", "Bot")
+	for ref, want := range map[string]string{"Kimi.zzc": "kimi.zzc", "KIMI.ZZC": "kimi.zzc", "kimi.zzc": "kimi.zzc", "kimi.LB": "kimi.lb", "Bot.Mx": "bot.mx"} {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/view/"+ref+"/status", nil)
+		if !v.hub.proxyToViewService(rec, req, ref, vs.URL) {
+			t.Fatalf("%s: proxy unreachable", ref)
+		}
+		if got := rec.Body.String(); got != "/status session="+want {
+			t.Errorf("%s: %q, want /status session=%s", ref, got, want)
+		}
+	}
+}
+
+func TestNewPlatformConsoleUploadTicketAndCapability(t *testing.T) {
+	v := newViewEnv(t)
+	issuer := &recordingFileIssuer{}
+	v.hub.fileIssuer = issuer
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", v.hub.RequireConsoleAgent("interact", v.hub.HandleConsoleCapability))
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", v.hub.RequireConsoleAgent("interact", v.hub.HandleConsoleFileUploadTicket))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	post := func(path, tok, body string) (int, map[string]any) {
+		t.Helper()
+		req, _ := http.NewRequest("POST", srv.URL+path, strings.NewReader(body))
+		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: tok})
+		req.Header.Set("Origin", npOrigin)
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		out := map[string]any{}
+		_ = json.NewDecoder(res.Body).Decode(&out)
+		return res.StatusCode, out
+	}
+	const ticketPath = "/api/console/agents/%s/file-upload-ticket"
+	// 离线：认过人，但没有在线会话 ⇒ 409，不发票
+	if st, _ := post(fmt.Sprintf(ticketPath, "Kimi.zzc"), v.tokZZC, `{"max_bytes":10}`); st != http.StatusConflict || issuer.calls != 0 {
+		t.Fatalf("offline: %d calls=%d", st, issuer.calls)
+	}
+	for _, cred := range []string{v.zKimiCred, v.lKimiCr} {
+		c, st, body := v.dial(cred, "")
+		if c == nil {
+			t.Fatalf("dial: %d %s", st, body)
+		}
+		defer c.Close(websocket.StatusNormalClosure, "done")
+		reader(c)
+	}
+	waitSessionOnline(t, v.hub, "u_zzc", "kimi")
+	waitSessionOnline(t, v.hub, "u_lbl", "kimi")
+	st, out := post(fmt.Sprintf(ticketPath, "KIMI.ZZC"), v.tokZZC, `{"max_bytes":10}`)
+	if st != 200 || out["session"] != "kimi.zzc" || out["ticket"] != "opaque-ticket" || out["upload_url"] != "https://files.example/files/upload" {
+		t.Fatalf("owner ticket: %d %v", st, out)
+	}
+	if issuer.calls != 1 || issuer.req.SessionName != "kimi.zzc" || issuer.req.OwnerKey != "u_zzc" || issuer.req.MaxBytes != 10 || issuer.req.Operation != "upload" {
+		t.Fatalf("issued: calls=%d %+v", issuer.calls, issuer.req)
+	}
+	// 同名的另一人的 Agent：各发各的，不串号
+	if st, out := post(fmt.Sprintf(ticketPath, "kimi.lb"), v.tokLBL, `{"max_bytes":7}`); st != 200 || out["session"] != "kimi.lb" || issuer.req.OwnerKey != "u_lbl" || issuer.req.SessionName != "kimi.lb" {
+		t.Fatalf("lbl ticket: %d %v %+v", st, out, issuer.req)
+	}
+	// 非归属用户 ⇒ 404，不发票
+	if st, out := post(fmt.Sprintf(ticketPath, "Kimi.zzc"), v.tokLBL, `{"max_bytes":10}`); st != 404 || out["error"] != "not_found" || issuer.calls != 2 {
+		t.Fatalf("other user: %d %v calls=%d", st, out, issuer.calls)
+	}
+	if st, _ := post(fmt.Sprintf(ticketPath, "Kimi.zzc"), v.tokZZC, `{"max_bytes":0}`); st != 400 || issuer.calls != 2 {
+		t.Fatalf("bad size: %d calls=%d", st, issuer.calls)
+	}
+	// capability：新平台不发（页面收 404 即按无 capability 处理）；认人仍在前面
+	if st, out := post("/api/console/agents/Kimi.zzc/capability", v.tokZZC, `{"page_id":"p1"}`); st != 404 || out["error"] != "capability_not_used" {
+		t.Fatalf("owner capability: %d %v", st, out)
+	}
+	if st, out := post("/api/console/agents/Kimi.zzc/capability", v.tokLBL, `{"page_id":"p1"}`); st != 404 || out["error"] != "not_found" {
+		t.Fatalf("other user capability: %d %v", st, out)
 	}
 }

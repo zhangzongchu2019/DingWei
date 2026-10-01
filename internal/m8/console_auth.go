@@ -670,6 +670,12 @@ func ConsoleAgentCapabilityPageAllowed(pageID string) bool {
 }
 
 func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
+	// 新平台不发页面 capability：写操作已由 RequireConsoleAgent 按 cookie＋Origin 授权，
+	// 写权仍走飞书 ＃unlock（「登录即可写」须业主定）。页面收到 404 即按无 capability 处理（只读看 can_write）。
+	if h.Identity != nil {
+		writeAgentWSError(w, http.StatusNotFound, "capability_not_used")
+		return
+	}
 	// 🔴 本 handler 挂在 RequireConsoleAgent 下，而该守卫在开关关闭时**仍然放行**
 	//    （它同时包着 /view/* 这条回滚路径，**不能**改成拒绝）
 	//    ⇒ 本 handler 在开关关闭时**确实会被无凭据请求打到**，下面这几行不是多余的。
