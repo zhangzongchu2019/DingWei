@@ -641,6 +641,11 @@ function consoleErrorText(status,data){
     return '配对码不符'+(left===null?'':'（还可再试 '+left+' 次）');
   }
   if(code==='rate_limited'){var wait=data&&Number.isFinite(data.retry_after_s)?data.retry_after_s:null;return '操作过于频繁'+(wait===null?'，请稍后再试':'，请 '+wait+' 秒后再试');}
+  if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){   // 被触发的维度剩余为 0:按维度给具体文案
+    var DIMS=[['agents','Agent 数量'],['vcpu','CPU'],['mem_gb','内存'],['disk_gb','磁盘']],used=[];
+    DIMS.forEach(function(d){if(data.remaining[d[0]]===0)used.push(d[1]);});
+    if(used.length)return '配额不足：'+used.join('、')+'已用完，请换小一点的规格或联系管理员调整配额';
+  }
   return CONSOLE_ERRORS[code]||('操作失败（HTTP '+status+(code?'：'+code:'')+'）');
 }
 async function consolePost(path,body){

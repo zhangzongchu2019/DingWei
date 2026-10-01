@@ -26,8 +26,9 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
+const MUTATIONS = ['quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'quota-generic') mutate("if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){", "if(false){");
 if (mutation === 'unseal-review') mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;');
 if (mutation === 'nav-opens-by-name') mutate('b.onclick=function(){ openTab(a.full_name) };', 'b.onclick=function(){ openTab(a.name) };');
 if (mutation === 'ignore-cred-kind') mutate('&&(!a.kind||c.cred_kind===a.kind);});', '&&true;});');
@@ -106,6 +107,7 @@ const server = http.createServer(async (req, res) => {
     const body = await read(req); writes.push({ path: p, body });
     if (!/^[A-Za-z0-9]+$/.test(String(body.name))) return err(res, 422, 'name_invalid');
     if (agents.some((a) => a.session_name.split('-')[1].toLowerCase() === String(body.name).toLowerCase())) return err(res, 409, 'name_taken');
+    if (String(body.name) === 'Quotamem') return err(res, 403, 'quota_exceeded', { remaining: { agents: 2, vcpu: 6, mem_gb: 0, disk_gb: 0 } });
     const o = options(); const acct = o.accounts.find((a) => a.id === body.account_id);
     if (!o.combos.some((c) => c.cli === body.cli && c.llm === body.llm)) return err(res, 422, 'combo_incompatible');
     if (!o.combos.some((c) => c.cli === body.cli && c.llm === body.llm && c.verified && (!acct || c.cred_kind === acct.kind))) return err(res, 422, 'combo_not_verified');
@@ -228,6 +230,15 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await page.locator('#hostedMask').isHidden(), true, 'no mask for a refused create');
       await type('#hostedName', 'bad-name'); await page.locator('#hostedCreateBtn').click();
       await page.locator('#hostedFeedback').filter({ hasText: '只能用大小写字母和数字' }).waitFor({ state: 'visible' });
+    });
+
+    await test('quota_exceeded names the exhausted dimensions from remaining, in our wording', async () => {
+      await fillValid('Quotamem');
+      await page.locator('#hostedCreateBtn').click();
+      await page.locator('#hostedFeedback').filter({ hasText: '配额不足' }).waitFor({ state: 'visible' });
+      const t = await page.locator('#hostedFeedback').textContent();
+      assert.match(t, /内存、磁盘已用完/);
+      assert.doesNotMatch(t, /CPU|SECRET-HUB-TEXT/);
     });
 
     await test('successful create opens a mask that reports the REAL stage the Hub reports, step by step', async () => {
