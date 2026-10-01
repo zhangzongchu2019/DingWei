@@ -369,3 +369,52 @@ func TestN3_A5_A14_AuditHasNoSecretsAndCoversActions(t *testing.T) {
 		t.Fatal("positive control: scan failed to see a planted secret")
 	}
 }
+
+// 运维重置口令（组长令）：新口令一次性、必须改密；旧会话与旧口令失效；用户不存在、本无口令登录 ⇒ 拒；审计不含口令。
+func TestResetPassword(t *testing.T) {
+	e := newN3(t)
+	e.boot(t)
+	if err := e.ob.ChangePassword(bg, "admin", e.pw, "Admin-Pass-0042"); err != nil {
+		t.Fatal(err)
+	}
+	tok, _, err := e.ob.PasswordLogin(bg, "admin", "Admin-Pass-0042", "1.1.1.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.ob.ResetPassword(bg, "nobody"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("missing user: %v", err)
+	}
+	if err := e.store.CreateUser(bg, identity.User{UserID: "mem", ShortName: "me", Type: identity.UserMember, State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.ob.ResetPassword(bg, "mem"); !errors.Is(err, identity.ErrNoPasswordLogin) {
+		t.Fatalf("user without password login: %v", err)
+	}
+	pw, err := e.ob.ResetPassword(bg, "ADMIN")
+	if err != nil || len(pw) != identity.InitialPasswordLen || pw == e.pw {
+		t.Fatalf("reset: %q %v", pw, err)
+	}
+	if _, err := e.ob.ResolveSession(bg, tok); err == nil {
+		t.Fatal("old session survived reset")
+	}
+	if _, _, err := e.ob.PasswordLogin(bg, "admin", "Admin-Pass-0042", "1.1.1.1"); !errors.Is(err, identity.ErrBadCredentials) {
+		t.Fatalf("old password after reset: %v", err)
+	}
+	tok2, _, err := e.ob.PasswordLogin(bg, "admin", pw, "1.1.1.2")
+	if err != nil {
+		t.Fatalf("new password: %v", err)
+	}
+	if _, err := e.ob.ResolveSession(bg, tok2); !errors.Is(err, identity.ErrMustChange) {
+		t.Fatalf("reset password must force change: %v", err)
+	}
+	found := false
+	for _, a := range e.store.AuditLog() {
+		if strings.Contains(a.Detail, pw) || strings.Contains(a.Target, pw) || strings.Contains(a.Actor, pw) {
+			t.Fatalf("audit leaks the new password: %+v", a)
+		}
+		found = found || (a.Action == "user.password_reset_by_ops" && a.Target == "admin" && a.Actor == "reset-password")
+	}
+	if !found {
+		t.Fatal("no audit for the reset")
+	}
+}

@@ -134,6 +134,22 @@ func (m *MemStore) SetPassword(_ context.Context, userIDLC, hash string, mustCha
 	return nil
 }
 
+func (m *MemStore) ResetPassword(_ context.Context, userIDLC, hash string, now time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	u, ok := m.users[Lower(userIDLC)]
+	if !ok {
+		return ErrNotFound
+	}
+	u.PasswordHash, u.MustChangePassword = hash, true
+	for _, s := range m.sessions {
+		if s.UserIDLC == u.UserIDLC() && s.RevokedAt.IsZero() {
+			s.RevokedAt = now
+		}
+	}
+	return nil
+}
+
 func (m *MemStore) ResolveIdentity(_ context.Context, ident Identity) (*User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -66,6 +66,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"V2_A5_find_agent_by_name_tie_breaks_by_id", findAgentByNameTie},
 		{"G_no_group_choice_joins_nothing", noGroupJoinsNothing},
 		{"G_approve_only_into_own_or_member_group", approveOnlyIntoUsableGroup},
+		{"N3_reset_password_revokes_only_that_users_sessions", resetPasswordRevokesSessions},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
 	}
 	for _, c := range cases {
@@ -1140,4 +1141,35 @@ func approveOnlyIntoUsableGroup(t *testing.T, s identity.Store) {
 	}
 	_, err = s.Approve(ctx, identity.ApproveInput{AppID: "app-2", OwnerLC: "zzc", AgentID: "ag-2", Name: "Second", GroupID: "lg"}, t0)
 	wantErr(t, "only revoked members left", err, identity.ErrGroupNotFound)
+}
+
+// 运维重置口令（组长令，reset-password）：一个事务里换哈希、置必须改密、吊销该用户全部会话；别的用户会话不动；用户不存在 ⇒ ErrNotFound。
+func resetPasswordRevokesSessions(t *testing.T, s identity.Store) {
+	mustUser(t, s, "alice", "al", identity.UserActive)
+	mustUser(t, s, "bob", "bo", identity.UserActive)
+	exp := t0.Add(time.Hour)
+	for _, se := range []identity.Session{{TokenHash: "s-a1", UserIDLC: "alice", ExpiresAt: exp}, {TokenHash: "s-a2", UserIDLC: "alice", ExpiresAt: exp}, {TokenHash: "s-b1", UserIDLC: "bob", ExpiresAt: exp}} {
+		if err := s.CreateSession(ctx, se); err != nil {
+			t.Fatal(err)
+		}
+	}
+	wantErr(t, "reset missing user", s.ResetPassword(ctx, "nobody", "h-x", t0), identity.ErrNotFound)
+	if err := s.ResetPassword(ctx, "ALICE", "h-new", t0.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	u, _ := s.GetUser(ctx, "alice")
+	if u.PasswordHash != "h-new" || !u.MustChangePassword {
+		t.Fatalf("after reset: %+v", u)
+	}
+	for _, tok := range []string{"s-a1", "s-a2"} {
+		if _, _, err := s.ResolveSession(ctx, tok, t0.Add(2*time.Minute)); !errors.Is(err, identity.ErrNotFound) {
+			t.Fatalf("alice session %s survived reset: %v", tok, err)
+		}
+	}
+	if _, _, err := s.ResolveSession(ctx, "s-b1", t0.Add(2*time.Minute)); err != nil {
+		t.Fatalf("bob's session must be untouched: %v", err)
+	}
+	if b, _ := s.GetUser(ctx, "bob"); b.MustChangePassword {
+		t.Fatal("bob marked must-change by alice's reset")
+	}
 }

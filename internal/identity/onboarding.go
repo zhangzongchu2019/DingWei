@@ -33,11 +33,13 @@ const (
 
 var (
 	// ErrAdminExists 库中已有管理用户（platform_admin 或 manager，不论状态）：初始化脚本拒绝执行。
-	ErrAdminExists    = errors.New("identity: a management user already exists")
-	ErrBadCredentials = errors.New("identity: bad credentials")
-	ErrWeakPassword   = errors.New("identity: password too weak")
-	ErrNotAllowed     = errors.New("identity: not allowed for this role")
-	ErrMustChange     = errors.New("identity: must change password first")
+	ErrAdminExists = errors.New("identity: a management user already exists")
+	// ErrNoPasswordLogin 该用户不用口令登录（飞书登录的普通用户没有口令可忘）：reset-password 拒绝，免得凭空给他开口令登录。
+	ErrNoPasswordLogin = errors.New("identity: user does not log in with a password")
+	ErrBadCredentials  = errors.New("identity: bad credentials")
+	ErrWeakPassword    = errors.New("identity: password too weak")
+	ErrNotAllowed      = errors.New("identity: not allowed for this role")
+	ErrMustChange      = errors.New("identity: must change password first")
 )
 
 // Onboarding N3 的业务层。与入网的 Service 共用存储、时钟、随机源。
@@ -86,6 +88,32 @@ func (o *Onboarding) BootstrapAdmin(ctx context.Context, userID, shortName, disp
 		return "", err
 	}
 	o.audit(ctx, "bootstrap-admin", "user.bootstrap_admin", u.UserIDLC(), "")
+	return pw, nil
+}
+
+// ResetPassword 运维重置口令（组长令，workpulse reset-password，主机上执行）：生成一次性新口令（与初始化脚本同字母表与长度），
+// 置必须改密，吊销该用户全部会话，写一笔审计（不含口令）。用户不存在 ⇒ ErrNotFound；用户本无口令登录 ⇒ ErrNoPasswordLogin。
+// 返回的新口令明文只在返回值里出现这一次。
+func (o *Onboarding) ResetPassword(ctx context.Context, userID string) (string, error) {
+	u, err := o.Store.GetUser(ctx, userID)
+	if err != nil {
+		return "", ErrNotFound
+	}
+	if u.PasswordHash == "" {
+		return "", ErrNoPasswordLogin
+	}
+	pw, err := randFrom(o.Rand, codeAlphabet, InitialPasswordLen)
+	if err != nil {
+		return "", err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	if err := o.Store.ResetPassword(ctx, u.UserIDLC(), string(hash), o.Now()); err != nil {
+		return "", err
+	}
+	o.audit(ctx, "reset-password", "user.password_reset_by_ops", u.UserIDLC(), "")
 	return pw, nil
 }
 

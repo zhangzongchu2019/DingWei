@@ -188,3 +188,73 @@ func TestBootstrapAdminRefusesBadInvocation(t *testing.T) {
 		t.Fatalf("valid after bad: %q %v", out, err)
 	}
 }
+
+// 运维重置口令（组长令）：PG 端到端。重置后旧会话失效、新口令只出一次、库里无明文；用户不存在与本无口令登录 ⇒ 拒。
+func TestResetPasswordEndToEnd(t *testing.T) {
+	dsn := pgSchemaDSN(t, true)
+	out, err := runCLI(t, dsn, "bootstrap-admin", "--user-id", "Boss", "--short-name", "bs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	initial := strings.TrimPrefix(strings.Split(out, "\n")[1], "initial_password=")
+	store, closeStore, err := openNewPlatformStore(context.Background(), dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeStore()
+	ob := identity.NewOnboarding(identity.NewService(store, nil, nil))
+	tok, _, err := ob.PasswordLogin(context.Background(), "boss", initial, "1.1.1.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := runCLI(t, dsn, "reset-password", "--user-id", "nobody"); err == nil || !strings.Contains(err.Error(), "no such user") {
+		t.Fatalf("missing user: %v", err)
+	}
+	if err := store.CreateUser(context.Background(), identity.User{UserID: "mem", ShortName: "me", Type: identity.UserMember, State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := runCLI(t, dsn, "reset-password", "--user-id", "mem"); err == nil || !strings.Contains(err.Error(), "logs in via Feishu") {
+		t.Fatalf("user without password login: %v", err)
+	}
+	if _, err := runCLI(t, dsn, "reset-password"); err == nil || !strings.HasPrefix(err.Error(), "usage: workpulse reset-password") {
+		t.Fatalf("usage: %v", err)
+	}
+	out, err = runCLI(t, dsn, "reset-password", "--user-id", "BOSS")
+	lines := strings.Split(out, "\n")
+	if err != nil || len(lines) < 2 || lines[0] != "PASSWORD_RESET user_id=BOSS" || !strings.HasPrefix(lines[1], "new_password=") {
+		t.Fatalf("reset: %q %v", out, err)
+	}
+	pw := strings.TrimPrefix(lines[1], "new_password=")
+	if len(pw) != identity.InitialPasswordLen || pw == initial || strings.Count(out, pw) != 1 {
+		t.Fatalf("new password %q (printed %d times)", pw, strings.Count(out, pw))
+	}
+	if _, err := ob.ResolveSession(context.Background(), tok); err == nil {
+		t.Fatal("old session survived reset")
+	}
+	if _, _, err := ob.PasswordLogin(context.Background(), "boss", initial, "1.1.1.2"); err == nil {
+		t.Fatal("old password still works")
+	}
+	if _, _, err := ob.PasswordLogin(context.Background(), "boss", pw, "1.1.1.3"); err != nil {
+		t.Fatalf("new password: %v", err)
+	}
+	pool, err := repo.OpenPG(context.Background(), dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	tc, _ := repo.NewAccessCtx("test", "reset-password")
+	for _, q := range []string{`SELECT row_to_json(u)::text FROM np_user u`, `SELECT row_to_json(a)::text FROM audit_log a`} {
+		rows, err := pool.Query(context.Background(), tc, q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for rows.Next() {
+			var row string
+			_ = rows.Scan(&row)
+			if strings.Contains(row, pw) {
+				t.Fatalf("plaintext new password stored in DB: %s", row)
+			}
+		}
+		rows.Close()
+	}
+}

@@ -266,6 +266,20 @@ func (s *PGStore) SetPassword(ctx context.Context, userIDLC, hash string, mustCh
 	return nil
 }
 
+func (s *PGStore) ResetPassword(ctx context.Context, userIDLC, hash string, now time.Time) error {
+	return s.inTx(ctx, func(tx repo.Tx) error {
+		res, err := tx.Exec(ctx, `UPDATE np_user SET password_hash = $2, must_change_password = true WHERE user_id_lc = $1`, Lower(userIDLC), hash)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrNotFound
+		}
+		_, err = tx.Exec(ctx, `UPDATE np_session SET revoked_at = $2 WHERE user_id_lc = $1 AND revoked_at IS NULL`, Lower(userIDLC), now.UTC())
+		return err
+	})
+}
+
 func (s *PGStore) ResolveIdentity(ctx context.Context, ident Identity) (*User, error) {
 	row, err := s.queryRow(ctx, `SELECT u.user_id, u.short_name, u.display_name, u.type, u.state, u.password_hash, u.must_change_password, u.created_at
 		FROM np_identity i JOIN np_user u ON u.user_id_lc = i.user_id_lc
