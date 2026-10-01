@@ -311,7 +311,7 @@ main{display:flex;flex-direction:column;min-width:0}
 .agent-offline-reason{position:absolute;inset:0;z-index:2;align-items:center;justify-content:center;background:var(--bg);color:#9d1b1b;font-weight:600}
 .group-workspace{position:absolute;inset:0;overflow:auto;padding:16px;background:inherit}
 .group-workspace label{display:block;margin:8px 0}.group-workspace input,.group-workspace select{min-width:320px;padding:5px}
-.group-workspace button{margin:4px;padding:5px 9px}.enroll-editor{border:1px solid #ccd;border-radius:6px;padding:10px;margin:8px 0}html[data-theme="dark"] .enroll-editor{border-color:#445}.agent-group{border:1px solid #ddd;border-radius:6px;padding:10px;margin:8px 0}
+.group-workspace button{margin:4px;padding:5px 9px}.enroll-editor{border:1px solid #ccd;border-radius:6px;padding:10px;margin:8px 0}#hostedMask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:50}#hostedMask[hidden]{display:none}.hosted-mask-box{background:#fff;color:#222;border-radius:8px;padding:18px 24px;min-width:300px}html[data-theme="dark"] .hosted-mask-box{background:#222;color:#eee}.hosted-stage{margin:6px 0}.hosted-stage[data-state="done"]{color:#1a7f37}.hosted-stage[data-state="current"]{font-weight:bold}.hosted-stage[data-state="failed"]{color:#9d1b1b;font-weight:bold}.hosted-stage[data-state="todo"]{opacity:.55}html[data-theme="dark"] .enroll-editor{border-color:#445}.agent-group{border:1px solid #ddd;border-radius:6px;padding:10px;margin:8px 0}
 .group-toolbar{display:flex;align-items:center;justify-content:space-between}.group-table{width:100%;table-layout:fixed;border-collapse:collapse}.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-table tbody tr:nth-child(even){background:var(--row-alt)}.group-table th:nth-child(1),.group-table td:nth-child(1){width:28%}.group-table th:nth-child(2),.group-table td:nth-child(2){width:28%}.group-table th:nth-child(3),.group-table td:nth-child(3){width:28%}.group-table th:nth-child(4),.group-table td:nth-child(4){width:16%}.group-row{cursor:pointer}.group-member-row{display:flex;align-items:center;gap:18px;max-width:520px;min-height:34px}.group-member-remove{visibility:hidden}.group-member-row:hover .group-member-remove,.group-member-row:focus-within .group-member-remove{visibility:visible}
 .agent-tree-group{margin:5px 0}.agent-tree-group-label{display:block;font-weight:700;padding:4px 6px}.agent-tree-members{padding-left:10px}.agent-tree-agent{width:100%;text-align:left}
 .group-row .group-pick{margin-right:auto}.group-feedback{min-height:1.2em;color:#9d1b1b}.group-block{border-radius:7px;padding:12px;margin:10px 0}.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}
@@ -585,27 +585,34 @@ var ENROLL_API={
 var enrollGeneration=0,enrollSnapshot=[],enrollOpenId='';
 function enrollFeedback(id,text){var e=document.getElementById(id);if(e)e.textContent=text||'';}
 function enrollTime(v){var d=new Date(v);return isNaN(d.getTime())?String(v||''):d.toLocaleString('zh-CN',{hour12:false});}
-var ENROLL_ERRORS={
+var CONSOLE_ERRORS={
   name_taken:'名称已被占用（按小写判重），请换一个名称',
   name_invalid:'名称无效：只能使用大小写字母和数字',
   expired:'该申请已过期',superseded:'同一设备的另一条申请已被批复，本条已作废',rejected:'该申请已被拒绝',
   not_owner:'这不是你名下的申请或 Agent',origin_hosted:'托管 Agent 请用托管操作，不在这里吊销',
-  rate_limited:'操作太频繁，请稍后再试',origin_mismatch:'请求来源不被允许，请刷新页面后重试'
+  rate_limited:'操作太频繁，请稍后再试',origin_mismatch:'请求来源不被允许，请刷新页面后重试',
+  combo_not_verified:'这个 CLI 与 LLM 的组合还没有验通，暂不能创建',plan_exceeds_quota:'所选资源套餐超出剩余额度',
+  quota_exceeded:'Agent 数量已达上限',node_no_capacity:'没有节点有足够的剩余资源',account_not_allowed:'你不能使用这个 LLM 账号',
+  node_offline:'该 Agent 所在节点离线，操作无法执行',invalid_state:'该 Agent 当前状态不允许这个操作',confirm_required:'这个操作需要先确认',
+  upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本'
 };
-function enrollErrorText(status,data){
+var HOSTED_FAIL_REASONS={
+  image_pull_failed:'拉取镜像失败',start_timeout:'启动超时',node_offline:'节点离线',credential_inject_failed:'凭据写入失败',cancelled:'已取消'
+};
+function consoleErrorText(status,data){
   var code=data&&typeof data.error==='string'?data.error:'';
   if(code==='pairing_mismatch'){
     var left=data&&Number.isFinite(data.remaining)?data.remaining:null;
     return left===0?'配对码不符，错误次数已达上限，该申请已被拒绝':('配对码不符'+(left===null?'':'，还可以再试 '+left+' 次'));
   }
-  return ENROLL_ERRORS[code]||('操作失败（HTTP '+status+(code?'：'+code:'')+'）');
+  return CONSOLE_ERRORS[code]||('操作失败（HTTP '+status+(code?'：'+code:'')+'）');
 }
-async function enrollPost(path,body){
+async function consolePost(path,body){
   try{
     var r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
     var data=null;try{data=await r.json();}catch(_){}
     if(r.ok)return {ok:true,text:'',data:data||{}};
-    return {ok:false,status:r.status,text:enrollErrorText(r.status,data),code:data&&data.error||''};
+    return {ok:false,status:r.status,text:consoleErrorText(r.status,data),code:data&&data.error||''};
   }catch(err){return {ok:false,status:0,text:'请求失败: '+String(err&&err.message||err),code:''};}
 }
 function enrollCloseEditor(){
@@ -658,13 +665,13 @@ function enrollBusy(on){['enrollApprove','enrollReject'].forEach(function(id){va
 async function enrollApprove(){
   var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),group=document.getElementById('enrollGroup').value,openedId=enrollOpenId;
   if(!code||!name||!group){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码、Agent 名称,并选择所属编组');return;}
-  enrollBusy(true);var res=await enrollPost(ENROLL_API.approve(openedId),{pairing_code:code,agent_name:name,group_id:group});enrollBusy(false);
+  enrollBusy(true);var res=await consolePost(ENROLL_API.approve(openedId),{pairing_code:code,agent_name:name,group_id:group});enrollBusy(false);
   if(!res.ok){var gone=res.status===410||(res.code==='pairing_mismatch'&&/已被拒绝/.test(res.text));if(!gone){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
   enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();refreshGroups('enroll');refreshAgents();
 }
 async function enrollReject(){
   if(!confirm('拒绝即踢走：该申请将作废,客户端需重新申请。确认拒绝？'))return;
-  enrollBusy(true);var res=await enrollPost(ENROLL_API.reject(enrollOpenId));enrollBusy(false);
+  enrollBusy(true);var res=await consolePost(ENROLL_API.reject(enrollOpenId));enrollBusy(false);
   if(!res.ok){if(res.status!==410){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}
   enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();
 }
@@ -674,11 +681,12 @@ function renderRoster(){
   owned.forEach(function(a){
     var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.id;
     var name=document.createElement('td');name.textContent=groupShortName(a.session_name);name.title=a.session_name;
-    var st=document.createElement('td');st.textContent=a.online?'在线':'离线';
-    var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted';
+    var hs=hostedStates[a.id],st=document.createElement('td');st.textContent=hs?hostedStateText(hs):(a.online?'在线':'离线');
+    var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted'||!!hs;
+    if(hs)hostedOpButtons(a,hs).forEach(function(b){action.append(b);});
     revoke.onclick=async function(){
       if(!confirm('吊销 '+groupShortName(a.session_name)+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;
-      revoke.disabled=true;var res=await enrollPost(ENROLL_API.revoke(a.id));revoke.disabled=false;
+      revoke.disabled=true;var res=await consolePost(ENROLL_API.revoke(a.id));revoke.disabled=false;
       if(!res.ok){enrollFeedback('rosterFeedback',res.text);return;}
       enrollFeedback('rosterFeedback','');refreshGroups('revoke');refreshAgents();
     };
@@ -686,13 +694,155 @@ function renderRoster(){
   });
   empty.hidden=owned.length>0;
 }
+// G3 · 托管 Agent 生成区、进度蒙版、托管生命周期操作(业主 2026-10-01 改序:托管先行)。
+// 🔴 接口为【提案】(与 G4 kimi30kqtuxerh 对齐中),全部集中在 HOSTED_API;Hub 掌握事实:
+//    CLI×LLM 兼容与验通、套餐是否超额、节点可用与否都由应答给出,页面只据此置灰,不自己判定。
+//    密钥永不出现:账号只显示名称与后四位。错误一律机器码,页面写中文。
+var HOSTED_API={
+  options:'/api/console/hosted/options',
+  create:'/api/console/hosted/agents',
+  job:function(id){return '/api/console/hosted/jobs/'+encodeURIComponent(id);},
+  roster:'/api/console/hosted/agents',
+  op:function(id,op){return '/api/console/hosted/agents/'+encodeURIComponent(id)+'/'+op;}
+};
+var HOSTED_STAGES=[['queued','排队'],['pulling','拉镜像'],['starting','启动'],['online','上线']];
+var hostedOptions=null,hostedOptionsGeneration=0,hostedStates={},hostedRosterGeneration=0,hostedJobTimer=null,hostedPollMs=2000;
+function hostedStateText(hs){
+  var t={running:'运行中',disabled:'已停用',abnormal:'异常',busy:'处理中…'}[hs.state]||hs.state;
+  return t+(hs.upgradable&&hs.state!=='busy'?'（可升级）':'');
+}
+function hostedFill(id,items,placeholder){
+  var sel=document.getElementById(id);if(!sel)return;var keep=sel.value;sel.replaceChildren();
+  var ph=document.createElement('option');ph.value='';ph.textContent=placeholder;sel.append(ph);
+  items.forEach(function(it){var o=document.createElement('option');o.value=it.value;o.textContent=it.text;o.disabled=!!it.disabled;sel.append(o);});
+  if(keep&&items.some(function(it){return it.value===keep&&!it.disabled;}))sel.value=keep;
+}
+function renderHostedForm(){
+  var opts=hostedOptions;if(!opts)return;
+  var combos=opts.combos||[],clis=[];combos.forEach(function(c){if(clis.indexOf(c.cli)<0)clis.push(c.cli);});
+  hostedFill('hostedNode',(opts.nodes||[]).map(function(n){return {value:n.id,text:n.name+'（剩余 '+n.free_mem_gb+'G / '+n.free_vcpu+'C）'+(n.online?'':'（离线）'),disabled:!n.online};}),'自动');
+  hostedFill('hostedCli',clis.map(function(c){var ok=combos.some(function(x){return x.cli===c&&x.verified;});return {value:c,text:c+(ok?'':'（未验通）'),disabled:!ok};}),'请选择 CLI');
+  renderHostedLlm();
+  hostedFill('hostedPlan',(opts.plans||[]).map(function(p){return {value:p.id,text:p.name+(p.fits?'':'（超出剩余额度）'),disabled:!p.fits};}),'请选择资源套餐');
+  var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});
+  hostedFill('hostedGroup',own.map(function(g){return {value:g.code,text:g.short_name||'历史组'};}),own.length?'请选择编组':'（暂无可选编组,请先添加编组）');
+  var rem=(opts.quota&&opts.quota.remaining)||{};
+  document.getElementById('hostedQuota').textContent='剩余额度:Agent '+rem.agents+' 个 · vCPU '+rem.vcpu+' · 内存 '+rem.mem_gb+'G · 磁盘 '+rem.disk_gb+'G';
+}
+function renderHostedLlm(){
+  var opts=hostedOptions||{},cli=document.getElementById('hostedCli').value;
+  var rows=(opts.combos||[]).filter(function(c){return c.cli===cli;});   // 不在表里=不兼容,根本不列
+  hostedFill('hostedLlm',rows.map(function(c){return {value:c.llm,text:c.llm+(c.verified?'':'（未验通）'),disabled:!c.verified};}),cli?'请选择 LLM':'请先选择 CLI');
+  renderHostedAccounts();
+}
+function renderHostedAccounts(){
+  var opts=hostedOptions||{},llm=document.getElementById('hostedLlm').value;
+  var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});
+  hostedFill('hostedAccount',rows.map(function(a){return {value:a.id,text:a.name+'（…'+a.last4+'）'};}),!llm?'请先选择 LLM':(rows.length?'请选择账号':'（该 LLM 暂无可用团队账号）'));
+}
+async function refreshHostedOptions(){
+  var generation=++hostedOptionsGeneration,status=document.getElementById('hostedStatus'),retry=document.getElementById('hostedRetry'),form=document.getElementById('hostedForm');
+  if(!status||!retry||!form)return null;
+  status.textContent='托管选项加载中…';retry.hidden=true;
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);
+  try{
+    var r=await fetch(HOSTED_API.options,{cache:'no-store',signal:controller.signal});
+    if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
+    var data=await r.json();if(!data||!Array.isArray(data.combos)||!Array.isArray(data.plans))throw new Error('响应格式无效');
+    if(generation!==hostedOptionsGeneration)return null;
+    hostedOptions=data;form.hidden=false;status.textContent='';renderHostedForm();return data;
+  }catch(err){
+    if(generation===hostedOptionsGeneration){hostedOptions=null;form.hidden=true;status.textContent='托管选项加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;}
+    return null;
+  }finally{clearTimeout(timer);}
+}
+function hostedMaskRender(name,stage,failReason,lastStage){
+  var box=document.getElementById('hostedMaskBox');if(!box)return;box.replaceChildren();
+  var title=document.createElement('h3');title.textContent='创建 Agent：'+name;box.append(title);
+  var at=HOSTED_STAGES.findIndex(function(x){return x[0]===(stage==='failed'?lastStage:stage);});
+  HOSTED_STAGES.forEach(function(x,i){
+    var row=document.createElement('div');row.className='hosted-stage';row.dataset.stage=x[0];
+    var state=stage==='failed'?(i<at?'done':(i===at?'failed':'todo')):(stage==='online'?'done':(i<at?'done':(i===at?'current':'todo')));
+    row.dataset.state=state;row.textContent=(state==='done'?'✓ ':state==='failed'?'✗ ':state==='current'?'… ':'○ ')+x[1];box.append(row);
+  });
+  var line=document.createElement('div');line.id='hostedMaskResult';
+  if(stage==='failed')line.textContent='创建失败：'+(HOSTED_FAIL_REASONS[failReason]||('创建失败（原因码 '+(failReason||'未知')+'）'));
+  else if(stage==='online')line.textContent='已上线';
+  var hint=document.createElement('div');hint.className='group-feedback';hint.textContent='点击任意处关闭（不影响后台创建）';
+  box.append(line,hint);
+}
+function hostedMaskHide(){var m=document.getElementById('hostedMask');if(m)m.hidden=true;}
+async function hostedTrackJob(jobId,name){
+  var mask=document.getElementById('hostedMask');if(!mask)return;mask.hidden=false;
+  var lastStage='queued';hostedMaskRender(name,'queued','',lastStage);
+  clearTimeout(hostedJobTimer);
+  async function tick(){
+    if(!document.getElementById('hostedMask'))return;   // 面板已关
+    var stage='',reason='';
+    try{
+      var r=await fetch(HOSTED_API.job(jobId),{cache:'no-store'});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      var d=await r.json();stage=String(d.stage||'');reason=String(d.reason||'');
+    }catch(err){hostedJobTimer=setTimeout(tick,hostedPollMs);return;}   // 网络抖动:继续轮询,不当成失败
+    if(stage==='failed'){hostedMaskRender(name,'failed',reason,lastStage);enrollFeedback('hostedFeedback','创建 '+name+' 失败：'+(HOSTED_FAIL_REASONS[reason]||('原因码 '+(reason||'未知'))));return;}
+    if(HOSTED_STAGES.some(function(x){return x[0]===stage;}))lastStage=stage;
+    hostedMaskRender(name,stage,'',lastStage);
+    if(stage==='online'){enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');refreshAgents();refreshHostedRoster();refreshHostedOptions();return;}
+    hostedJobTimer=setTimeout(tick,hostedPollMs);
+  }
+  tick();
+}
+async function hostedCreate(){
+  var v=function(id){return document.getElementById(id).value.trim();};
+  var body={name:v('hostedName'),group_id:v('hostedGroup'),node_id:v('hostedNode')||'auto',cli:v('hostedCli'),llm:v('hostedLlm'),account_id:v('hostedAccount'),plan_id:v('hostedPlan')};
+  if(!body.name||!body.group_id||!body.cli||!body.llm||!body.account_id||!body.plan_id){enrollFeedback('hostedFeedback','请填写名称并选择编组、CLI、LLM、账号和资源套餐');return;}
+  var btn=document.getElementById('hostedCreateBtn');btn.disabled=true;
+  var res=await consolePost(HOSTED_API.create,body);btn.disabled=false;
+  if(!res.ok){enrollFeedback('hostedFeedback',res.text);return;}   // 输入保留,业主改名/改选后可再点创建
+  enrollFeedback('hostedFeedback','');document.getElementById('hostedName').value='';
+  hostedTrackJob(String(res.data.job_id||''),body.name);
+}
+function hostedOpButtons(a,hs){
+  var name=groupShortName(a.session_name),busy=hs.state==='busy',list=[];
+  [['upgrade','升级',false],['restart','重启',false],[hs.state==='disabled'?'enable':'disable',hs.state==='disabled'?'启用':'停用',true],['destroy','销毁',true]].forEach(function(d){
+    var b=document.createElement('button');b.type='button';b.className='hosted-op';b.dataset.op=d[0];b.textContent=d[1];b.disabled=busy;
+    b.onclick=async function(){
+      var body={};
+      if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器和数据卷将被删除,凭据立即吊销,不可恢复。确认销毁？'))return;body.confirm=true;}
+      if(d[0]==='disable'){if(!confirm('停用 '+name+'：容器将停止,数据卷保留,可再启用;停用期间仍计配额。确认停用？'))return;body.confirm=true;}
+      list.forEach(function(x){x.disabled=true;});
+      var res=await consolePost(HOSTED_API.op(a.id,d[0]),body);
+      if(!res.ok){enrollFeedback('rosterFeedback',res.text);list.forEach(function(x){x.disabled=busy;});return;}
+      enrollFeedback('rosterFeedback','');refreshHostedRoster();refreshGroups('hosted-op');refreshAgents();
+    };
+    list.push(b);
+  });
+  return list;
+}
+async function refreshHostedRoster(){
+  var generation=++hostedRosterGeneration;
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);
+  try{
+    var r=await fetch(HOSTED_API.roster,{cache:'no-store',signal:controller.signal});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var d=await r.json();if(!d||!Array.isArray(d.agents))throw new Error('响应格式无效');
+    if(generation!==hostedRosterGeneration)return;
+    var m={};d.agents.forEach(function(x){m[x.agent_id]=x;});hostedStates=m;renderRoster();
+  }catch(err){
+    if(generation===hostedRosterGeneration)enrollFeedback('rosterFeedback','托管 Agent 状态加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err));
+  }finally{clearTimeout(timer);}
+}
 function mountEnrollPanels(pane){
   var anchor=pane.querySelector('#group-status');if(!anchor)return;
-  anchor.insertAdjacentHTML('beforebegin','<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
+  anchor.insertAdjacentHTML('beforebegin','<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section><section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><label>运行资源套餐 <select id=hostedPlan></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
   document.getElementById('enrollRefresh').onclick=refreshEnroll;document.getElementById('enrollRetry').onclick=refreshEnroll;
   document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;
   document.getElementById('enrollCancel').onclick=enrollCloseEditor;
-  renderRoster();refreshEnroll();
+  var mask=document.createElement('div');mask.id='hostedMask';mask.hidden=true;mask.innerHTML='<div id=hostedMaskBox class=hosted-mask-box></div>';mask.onclick=hostedMaskHide;pane.append(mask);
+  document.getElementById('hostedRefresh').onclick=refreshHostedOptions;document.getElementById('hostedRetry').onclick=refreshHostedOptions;
+  document.getElementById('hostedCli').onchange=renderHostedLlm;document.getElementById('hostedLlm').onchange=renderHostedAccounts;
+  document.getElementById('hostedCreateBtn').onclick=hostedCreate;
+  renderRoster();refreshEnroll();refreshHostedOptions();refreshHostedRoster();
 }
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}
 function openTaskBoardWorkspace(){if(tabs.has('__task-board')){activate('__task-board');return;}var tab=document.createElement('span');tab.className='tab';tab.title='任务管理';var label=document.createElement('span');label.textContent='任务管理';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='任务管理';pane.src='/console/tasks?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__task-board');}else activate('__task-board');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__task-board',{tab:tab,pane:pane});activate('__task-board');}
