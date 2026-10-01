@@ -44,11 +44,11 @@ pending:fanout 30
 #    两者相加就是「注释也进计数」——不藏，逐处列明）：
 #      · 生产 6：datad/pgstore.go:123（建表）· :163（Ping）· fanout/spool.go:61 · fanout/inspool.go:29
 #               · identity/pgstore.go:35（身份存储；组长已认可 12→13，ruling-2026-10-01T152239Z）
-#               · store/migrate/migrate.go:233（迁移账本：建账表、读账、每条一个事务地应用 DDL。
+#               · store/migrate/migrate.go:303（迁移账本：建账表、读账、每条一个事务地应用 DDL。
 #                 DDL 与账本表本就无租户语义，与 datad/pgstore.go:123 同型 ⇒ 这是【新增的那 1 处】）
 #      · 测试 6：datad/assignment_pg_integration_test.go（三池分权的越权断言）
 #      · 注释 4：datad/pgstore.go:93 · fanout/spool.go:40（两处都是「不要换成 SystemCtx」的告诫）
-#               · store/migrate/migrate.go:188 · store/migrate/migrate_test.go:52（后者写的正是
+#               · store/migrate/migrate.go:258 · store/migrate/migrate_test.go:54（后者写的正是
 #                 「用例里故意不用系统上下文，免得把生产侧的评审面数搅浑」）
 #    🔴 本分支底座 dd69f88a 上该键写 12、实数已 13（identity 那处未同步落盘）⇒ 本次一并补齐；
 #       即「+1 是 migrate 的，另 +3 是把已有实数与注释如实登记进来」，不是四笔新债。

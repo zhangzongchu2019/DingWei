@@ -2,6 +2,8 @@ package migrate
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"sort"
 	"strings"
@@ -29,7 +31,10 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	if err := identity.NewPGStore(empty).CheckSchema(ctx); err == nil {
 		t.Fatalf("空库上 CheckSchema 竟然通过 —— 那道「缺表即拒」的判据是死的")
 	} else {
-		for _, tbl := range []string{"np_user", "np_identity", "np_registration_code", "np_session", "np_agent", "np_enroll_application", "audit_log"} {
+		// 🔴 这张名单＝identity.pgRequiredTables 的逐字副本（G3 终版 800f24d8；编组两张表自 41feec50 起）。
+		// 它【故意】写死而不引那个变量：引了就会跟着一起变，于是「账本漏建一张表」再也判不出来。
+		// 代价是 G3 增表时要同步改这里 —— 漂移由下面那条双轨指纹格与 CheckSchema 一起兜住。
+		for _, tbl := range []string{"np_user", "np_identity", "np_registration_code", "np_session", "np_agent", "np_enroll_application", "np_group", "np_group_member", "audit_log"} {
 			if !strings.Contains(err.Error(), tbl) {
 				t.Errorf("缺表错误没点出 %s: %v", tbl, err)
 			}
@@ -146,14 +151,17 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 	ctx := context.Background()
 
 	// 轨 A：各域自己的幂等 DDL。身份域的 pgschema.sql 不建 audit_log（头注写明由账本保证先存在），
-	// 故这一轨只有 np_* 六张表 —— 这正是「core 的表归 core 的条目」的分工。
+	// 故这一轨只有 np_* 那几张 —— 这正是「core 的表归 core 的条目」的分工。
+	// 🔴 张数写死是有意的（它是「账本漏建」的判据）：G3 终版 800f24d8 是 8 张
+	// （原 6 张 ＋ 编组 np_group／np_group_member）。身份域再增表 ⇒ 改这里，并在同一批里
+	// 重冻 0100 或新增 0101（口径页 §五）；只改一处就会让本格或双轨比对红，红比默默漂走好。
 	trackA := testSchema(t, dsn)
 	if _, err := trackA.Exec(ctx, testCtx(t), identity.PGSchemaSQL); err != nil {
 		t.Fatalf("轨 A 建表失败: %v", err)
 	}
 	aTables := baseTables(t, trackA, schemaOf(t, trackA))
-	if len(aTables) != 6 {
-		t.Fatalf("轨 A 建出 %d 张表（%v），要身份域那 6 张", len(aTables), aTables)
+	if len(aTables) != 8 {
+		t.Fatalf("轨 A 建出 %d 张表（%v），要身份域那 8 张（G3 终版 800f24d8：原 6 张＋编组两张）", len(aTables), aTables)
 	}
 
 	// 轨 B：账本。
@@ -271,4 +279,62 @@ func shapeDump(t *testing.T, pool *repo.Pool, schema string, only map[string]boo
 	}
 	sort.Strings(lines)
 	return strings.Join(lines, "\n")
+}
+
+// ── 冻结副本的字节身份（不需库） ───────────────────────────────────────────────
+//
+// frozenBodyMarker 是 0100 里「头注到此为止」的那一行。🔴 它与条目文件里的那行必须逐字相同
+// （含末尾那一串制表符样式的横线）；改标记行会让本格与重冻脚本两头都对不上，故这里写死。
+const frozenBodyMarker = "-- ── 以下为冻结正文 ──────────────────────────────────────────────────────\n"
+
+// TestFrozenIdentityCopyEqualsSource 钉「0100 是 internal/identity/pgschema.sql 的【逐字】副本」。
+//
+// 🔴 为什么要有这一格（它下面那条双轨指纹格管不了这件事）：
+//
+//	双轨比的是【形状】，故意不比字节 —— 因为将来正确的增量做法是新增 0101，那时字节必然不同。
+//	但"重冻"这一步是【字节级】动作：手改过正文、或源已变而副本没跟上，形状可能仍然一致
+//	（例如只改了注释、或改了源里一段还没建表的部分），于是漂移会一直藏到部署那天。
+//	⇒ 两格分工：本格判「副本＝当次冻结的那份源」，双轨格判「账本建出的形状＝各域 DDL 建出的形状」。
+//
+// 🔴 顺带钉头注里自报的源 sha256：那行字若不与真值一致，它就是装饰，而读它的人会拿它当坐标。
+func TestFrozenIdentityCopyEqualsSource(t *testing.T) {
+	entries, err := Ledger()
+	if err != nil {
+		t.Fatalf("Ledger: %v", err)
+	}
+	const name = "0100_identity_baseline.sql"
+	var body string
+	for _, e := range entries {
+		if e.Name == name {
+			body = e.Body
+		}
+	}
+	if body == "" {
+		t.Fatalf("账本里没有 %s（重冻时改过文件名？号段规则见口径页 §五）", name)
+	}
+
+	i := strings.Index(body, frozenBodyMarker)
+	if i < 0 {
+		t.Fatalf("找不到冻结正文标记行 —— 头注或标记行被改动过；本格的判据依赖它定位正文起点")
+	}
+	head, got := body[:i+len(frozenBodyMarker)], body[i+len(frozenBodyMarker):]
+	if got != identity.PGSchemaSQL {
+		t.Errorf("冻结副本与 internal/identity/pgschema.sql 不逐字相同（副本 %d 字节、源 %d 字节）—— "+
+			"重冻时手改过正文，或源已变而副本没跟上（源变 ⇒ 新增 0101，不改本条）", len(got), len(identity.PGSchemaSQL))
+	}
+
+	wantSHA := sha256Hex(identity.PGSchemaSQL)
+	if !strings.Contains(head, wantSHA) {
+		t.Errorf("头注自报的源 sha256 与真值不符：真值 %s（头注里找不到）—— 那行坐标是假的", wantSHA)
+	}
+	if !strings.Contains(head, "internal/identity/pgschema.sql") {
+		t.Error("头注没写明冻结自哪个文件 —— 后来者无法自己复核这一格")
+	}
+}
+
+// sha256Hex 与 Digest 同算法，单列一个名字是为了让上面那格读起来是「源文件的 sha256」，
+// 而不是「账本 digest」（两者恰好同算法，但语义不同：一个指文件，一个指条目正文）。
+func sha256Hex(s string) string {
+	sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sum[:])
 }

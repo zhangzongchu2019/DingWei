@@ -5,10 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
@@ -479,5 +481,180 @@ func TestMigrateEntries_NilClockUsesReal(t *testing.T) {
 func TestMigrateEntries_NilPoolIsError(t *testing.T) {
 	if _, err := MigrateEntries(context.Background(), nil, twoEntries(), clock.Real{}); err == nil {
 		t.Fatalf("缺连接池没被拒")
+	}
+}
+
+// ── 事务边界与并发启动（组长裁定 ruling-2026-10-01T170223Z 的 ①③ 两件） ─────────
+//
+// 🔴 这两格的出处都是【复验方抓到、本席原用例抓不到】的变异，不是补覆盖率：
+//   ① A6（DDL 挪到事务外、只在事务里记账）⇒ 本席原 15 格全绿；
+//   ③ 并发启动 ⇒ 原实现明写「不做跨进程互斥」，6 路并发 1 成 5 败（撞唯一键），
+//      而那在运维眼里长得跟「库坏了」一样。
+// 两格的用例形状取自复验件 REVIEW-G2-MIGRATE-LEDGER-tosonnet55tc2k-20261001.md 附录 A.1，
+// 本席在此基础上各加了断言（见各格注里「比复验方原格多钉的」）。
+
+// TestMigrateEntries_LedgerInsertFailureRollsBackDDL 钉「DDL 与记账是同一个事务」。
+//
+// 办法（复验方 A.1 的办法，照用）：预建一张同名同形、但带 CHECK 的账表，让第二条的记账必败；
+// 账表 DDL 是 IF NOT EXISTS ⇒ runner 会沿用这张预建表。
+// 断言第二条建的表【不存在】：留着它就等于「库里有这条建的表、账上没这条」，
+// 下次启动会再跑一遍这条，遇到非幂等 DDL（ALTER／CREATE INDEX 无 IF NOT EXISTS）就起不来。
+//
+// 比复验方原格多钉的两处：
+//
+//	· 第一条的表【必须还在】且账上有它 —— 否则本格会因为「整个 Migrate 什么都没做」而假绿；
+//	· 出错时交回的 Report 要点名第一条已应用（排障要知道卡在哪条之后）。
+func TestMigrateEntries_LedgerInsertFailureRollsBackDDL(t *testing.T) {
+	ctx := context.Background()
+	pool := testSchema(t, pgtest.DSN(t))
+	mustExec(t, pool, `CREATE TABLE schema_migrations(
+		version    text        PRIMARY KEY,
+		digest     text        NOT NULL,
+		applied_at timestamptz NOT NULL,
+		CHECK (version <> '0002_zz.sql'))`)
+
+	entries := []Entry{
+		{Name: "0001_zz.sql", Body: `CREATE TABLE zz_a(x int)`},
+		{Name: "0002_zz.sql", Body: `CREATE TABLE zz_b(x int)`},
+	}
+	rep, err := MigrateEntries(ctx, pool, entries, nil)
+	if err == nil {
+		t.Fatalf("第二条的记账被 CHECK 挡住，Migrate 却报成功（rep=%v）", rep)
+	}
+	if !strings.Contains(err.Error(), "0002_zz.sql") {
+		t.Errorf("错误没点出是哪一条: %v", err)
+	}
+	if tableExists(t, pool, "zz_b") {
+		t.Error("zz_b 还在 —— DDL 与记账不是同一个事务（记账失败而表留下了）")
+	}
+	if !tableExists(t, pool, "zz_a") {
+		t.Error("zz_a 不在 —— 第一条本该已【各自一个事务】提交；本格要判的是第二条回滚，不是全批没跑")
+	}
+	if strings.Join(rep.Applied, ",") != "0001_zz.sql" {
+		t.Errorf("出错时交回的 Applied = %v，要 [0001_zz.sql]（反映出错之前已做的事）", rep.Applied)
+	}
+	rows := ledgerRows(t, pool)
+	if len(rows) != 1 {
+		t.Fatalf("账上 %d 条，要 1 条", len(rows))
+	}
+	if rows["0001_zz.sql"].digest != Digest(entries[0].Body) {
+		t.Error("第一条的 digest 与正文不符")
+	}
+}
+
+// sameSchemaPools 在【同一个 schema】上开 n 个池。
+//
+// 🔴 为什么不给 n 个 goroutine 共用一个池：真并发启动是 n 个【进程】，各有各的连接池；
+// 共用一个池时，锁可能恰好落在同一条连接上（于是看起来"串行得很干净"），
+// 那会把「跨会话串行化」这半判据偷偷换成「同会话内排队」。
+func sameSchemaPools(t *testing.T, dsn string, n int) []*repo.Pool {
+	t.Helper()
+	ctx := context.Background()
+	admin, err := repo.OpenPG(ctx, dsn)
+	if err != nil {
+		t.Fatalf("开管理池失败: %v", err)
+	}
+	defer func() { _ = admin.Close() }()
+	schema := uniqueSchema()
+	if _, err := admin.Exec(ctx, testCtx(t), `CREATE SCHEMA `+schema); err != nil {
+		t.Fatalf("建 schema 失败: %v", err)
+	}
+	out := make([]*repo.Pool, n)
+	for i := range out {
+		p, err := repo.OpenPG(ctx, withSearchPath(dsn, schema))
+		if err != nil {
+			t.Fatalf("开第 %d 个池失败: %v", i, err)
+		}
+		out[i] = p
+	}
+	t.Cleanup(func() {
+		for _, p := range out {
+			_ = p.Close()
+		}
+	})
+	return out
+}
+
+// TestMigrate_ConcurrentRunnersAllSucceed 钉「多进程同时启动不再互相拒启」。
+//
+// 判据（组长裁定 ruling-2026-10-01T170223Z 第③件）：6 路并发【全成功】、账上 2 条。
+// 🔴 反向对照＝撤掉 takeLock 那两句（ensureLedgerTable 与 applyOne 里各一处）⇒ 本格必红：
+// 撤锁后两处并发 CREATE TABLE IF NOT EXISTS 撞 pg_type_typname_nsp_index、
+// 或两处并发记账撞 schema_migrations 主键，6 路里只有 1 路能成（复验方在未加锁的版本上实测 1 成 5 败）。
+//
+// 🔴 断言的是「每条条目被应用【恰好一次】」，不是「某一路 applied=2」：
+// 锁是【条目粒度】的，A 应用 0001、B 应用 0100 这种交错是允许的终态（头注已写明不保证公平），
+// 断言"某一路独揽两条"会把一个正确实现判成红。
+func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
+	ctx := context.Background()
+	dsn := pgtest.DSN(t)
+	const n = 6
+	pools := sameSchemaPools(t, dsn, n)
+
+	entries, err := Ledger()
+	if err != nil {
+		t.Fatalf("Ledger: %v", err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("账本 %d 条，本格按 2 条写断言（变了就改本格，别改断言数字糊过去）", len(entries))
+	}
+
+	reps := make([]Report, n)
+	errs := make([]error, n)
+	var wg sync.WaitGroup
+	start := make(chan struct{}) // 起跑屏障：6 路真同时进去，不靠"碰巧撞上"
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			<-start
+			reps[i], errs[i] = Migrate(ctx, pools[i])
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+
+	appliedCount := map[string]int{}
+	for i, err := range errs {
+		if err != nil {
+			t.Errorf("第 %d 路并发迁移失败（并发启动不该互相拒启）: %v", i, err)
+			continue
+		}
+		for _, name := range reps[i].Applied {
+			appliedCount[name]++
+		}
+		for _, name := range reps[i].Applied {
+			if appliedCount[name] > 1 {
+				t.Errorf("条目 %s 被 %d 路都报成 applied —— 每条只该被应用一次", name, appliedCount[name])
+			}
+		}
+	}
+	for _, e := range entries {
+		if appliedCount[e.Name] != 1 {
+			t.Errorf("条目 %s 被应用了 %d 次，要恰好 1 次（各路 Applied=%v）", e.Name, appliedCount[e.Name], reps)
+		}
+	}
+
+	// 终态：账 2 条、digest 与正文一致、身份域 CheckSchema 过（＝Hub 真起得来）。
+	probe := pools[0]
+	rows := ledgerRows(t, probe)
+	if len(rows) != 2 {
+		t.Fatalf("账上 %d 条，要 2 条", len(rows))
+	}
+	for _, e := range entries {
+		if rows[e.Name].digest != Digest(e.Body) {
+			t.Errorf("%s: 账内 digest 与正文不符", e.Name)
+		}
+	}
+	if err := identity.NewPGStore(probe).CheckSchema(ctx); err != nil {
+		t.Errorf("并发迁完 CheckSchema 仍失败: %v", err)
+	}
+	// 事后再迁一次：空转（不重复应用、不报错）。
+	rep, err := Migrate(ctx, probe)
+	if err != nil {
+		t.Fatalf("并发之后重跑 Migrate: %v", err)
+	}
+	if len(rep.Applied) != 0 || len(rep.Skipped) != 2 {
+		t.Errorf("重跑 Applied=%v Skipped=%v，要空转两条", rep.Applied, rep.Skipped)
 	}
 }

@@ -27,11 +27,23 @@
 // 手工 psql 改库、外部工具建表不在其内。身份域启动时另有一道 CheckSchema（缺表即拒），
 // 那是【库的真实状态】的核对，与本账本互补：账本管「有没有按账迁过」，CheckSchema 管「表现在在不在」。
 //
-// 🔴 本 runner 【不做跨进程互斥】（写明不假装）：两个进程同时对同一个库跑 Migrate 时，
-// 后到的那个会在记账时撞 schema_migrations 主键而【拒绝启动】——fail-closed，不会静默半迁移，
-// 但也不会自动让路。运维顺序是「先 workpulse bootstrap-admin，再起 Hub」（两者共用同一个
-// openNewPlatformStore，见 cmd/workpulse/newplat.go）。真要支持并发启动，得连「单连接持有
-// pg_advisory_xact_lock」一起解决——repo.Pool 按判据二不交连接，故那不是加一行能了事的。
+// 🔴 跨进程互斥：本 runner 按【条目粒度】持 PG 咨询锁（pg_advisory_xact_lock）串行化。
+// 多个进程同时启动时（Hub 与 bootstrap-admin 撞在一起、或多副本同时起），同一条条目只会被
+// 一个进程应用；其余进程在【锁内复读】里看到账上已有 ⇒ 计入 Skipped 并成功返回，
+// 既不撞 schema_migrations 主键、也不撞并发建表的 pg_type 唯一键（见 ensureLedgerTable 注）。
+// 依据：组长裁定 ruling-2026-10-01T170223Z 第③件（反向对照：撤锁 ⇒ 6 路并发用例必红）。
+//
+// ⚠️ 仍然【不保证】的三件，写明不假装：
+//
+//	① 先后公平：只保证「每条一次」，不保证谁先跑完；
+//	② 与本 runner 之外的写入者互斥：手工 psql、别的工具建表不在锁的保护范围内
+//	   （与本包开篇那条「只保证经由本 runner 的路径」是同一句免责）；
+//	③ 锁在 PG 侧 ⇒ 只对【同一个库】有效，跨库不是一把锁。
+//
+// 🔵 为什么锁取在每条条目自己的事务里、而不是「整个 Migrate 一把锁」：会话级锁要一条专用连接
+// 从头持到尾，而 repo.Pool 按判据二不把连接交出去；xact 级锁天然落在 InTx 回调里。
+// 代价是并发时两个进程可以在【条目边界】上交错，但所有 runner 都按同一字典序推进、
+// 且每条条目原子地只被应用一次 ⇒ 与「整把锁」得到同一个终态。
 package migrate
 
 import (
@@ -66,6 +78,64 @@ const ledgerDDL = `CREATE TABLE IF NOT EXISTS schema_migrations(
 	digest     text        NOT NULL,
 	applied_at timestamptz NOT NULL
 )`
+
+// 迁移串行化用的咨询锁键（pg_advisory_xact_lock 的 (int4, int4) 形态）。
+//
+// 🔴 为什么用两半而不是一个 bigint：本仓现在只有一本账，但键空间分两半之后，将来若真出现
+// 第二本账（例如按域分库），类不变、名递增即可，不必重新分配 64 位键。
+// 类取 "dwmg"（DingWei MiGrate）的字面字节，便于在库里一眼认出是谁持锁：
+//
+//	SELECT classid, objid, mode FROM pg_locks WHERE locktype = 'advisory';
+const (
+	advisoryLockClass int32 = 0x64776d67 // "dwmg"
+	advisoryLockName  int32 = 1          // 1 ＝ 新平台 PG 的这一本账（schema_migrations）
+)
+
+// lockSQL 取锁那一句。🔴 xact 级：事务结束（提交或回滚）即自动释放 —— 不需要、也不允许
+// 由调用方记得去解锁（会话级锁忘了释放会一直卡住后来者，而那条路径在本包根本无法保证）。
+const lockSQL = `SELECT pg_advisory_xact_lock($1, $2)`
+
+// errAppliedElsewhere 是【锁内复读】发现「并发的另一次迁移已经应用了这条」的内部信号。
+//
+// 它不是故障：该做的事别人做完了、账上也记着了 ⇒ 本次计入 Skipped 并成功返回。
+// 🔴 不用它就会走到 INSERT 撞账本主键 ⇒ 把「两个进程同时启动」这件正常事变成【拒绝启动】，
+// 那正是本机制要消掉的形状（复验方 tosonnet55tc2k 实测：6 路并发 1 成 5 败）。
+var errAppliedElsewhere = errors.New("migrate: 该条目已由并发的另一次迁移应用")
+
+// takeLock 在【当前事务里】取迁移锁。必须是在事务内的第一件事：
+// 后于任何读写取锁，就等于在没有锁保护的那段里已经做了判断。
+func takeLock(ctx context.Context, tx repo.Tx) error {
+	if _, err := tx.Exec(ctx, lockSQL, advisoryLockClass, advisoryLockName); err != nil {
+		return fmt.Errorf("migrate: 取迁移咨询锁失败（并发启动时它负责串行化，取不到就不该继续）: %w", err)
+	}
+	return nil
+}
+
+// tamperErr 是「已应用的条目内容变了」的拒绝错误。两处会判到它：
+// 进事务之前对整账的核对、以及锁内复读那一次（并发时账可能在两次读之间被人改过）。
+func tamperErr(name, recorded, current string) error {
+	return fmt.Errorf("migrate %s: 已应用的迁移内容已变更（账内 digest=%s，当前 digest=%s）—— 拒绝启动。"+
+		"迁移条目应视为不可变；如确需修正，请【新增一条】", name, recorded, current)
+}
+
+// ensureLedgerTable 在【持锁的事务里】建账表。
+//
+// 🔴 为什么建表也要持锁（这是复验方实测到的那处并发报错的真因）：两个事务同时执行
+// CREATE TABLE IF NOT EXISTS 时，"IF NOT EXISTS" 判的是各自事务开始时的系统表快照，
+// 两边都会去建 ⇒ 后提交的那个撞 duplicate key value violates unique constraint
+// "pg_type_typname_nsp_index"。那不是「库坏了」，是并发建表的已知形状；
+// 交给锁，而不是交给「先 bootstrap-admin 再起 Hub」这句口头运维约定。
+func ensureLedgerTable(ctx context.Context, pool *repo.Pool, t repo.AccessCtx) error {
+	return pool.InTx(ctx, t, nil, func(tx repo.Tx) error {
+		if err := takeLock(ctx, tx); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, ledgerDDL); err != nil {
+			return fmt.Errorf("migrate: 建迁移账失败: %w", err)
+		}
+		return nil
+	})
+}
 
 // Entry 是一条已登记的迁移。
 //
@@ -231,9 +301,12 @@ func MigrateEntries(ctx context.Context, pool *repo.Pool, entries []Entry, clk c
 	// 全包唯一一处 SystemCtx：建表与迁移本就无租户语义（repo 包注释要求每处都被问一句
 	// 「这个操作真的与租户无关吗」——答案是「是」，且它只用于 DDL 与账本表，不碰任何业务表）。
 	t := repo.SystemCtx()
-	if _, err := pool.Exec(ctx, t, ledgerDDL); err != nil {
-		return Report{}, fmt.Errorf("migrate: 建迁移账失败: %w", err)
+	if err := ensureLedgerTable(ctx, pool, t); err != nil {
+		return Report{}, err
 	}
+	// 🔵 这次读账【不在锁内】，是有意的：它只是「大概哪些已应用」的快路径，
+	// 真正作数的是 applyOne 里【锁内复读】的那一次。把整轮迁移都塞进一把锁里，
+	// 就得改「每条一个事务」那条语义（那是 SQLite 侧两次事故换来的），代价不对等。
 	applied, err := appliedLedger(ctx, pool, t)
 	if err != nil {
 		return Report{}, err
@@ -244,21 +317,33 @@ func MigrateEntries(ctx context.Context, pool *repo.Pool, entries []Entry, clk c
 		digest := Digest(e.Body)
 		if old, ok := applied[e.Name]; ok {
 			if old != digest {
-				return rep, fmt.Errorf("migrate %s: 已应用的迁移内容已变更（账内 digest=%s，当前 digest=%s）—— 拒绝启动。"+
-					"迁移条目应视为不可变；如确需修正，请【新增一条】", e.Name, old, digest)
+				return rep, tamperErr(e.Name, old, digest)
 			}
 			rep.Skipped = append(rep.Skipped, e.Name)
 			continue
 		}
-		if err := applyOne(ctx, pool, t, e, digest, clk); err != nil {
+		switch err := applyOne(ctx, pool, t, e, digest, clk); {
+		case err == nil:
+			rep.Applied = append(rep.Applied, e.Name)
+		case errors.Is(err, errAppliedElsewhere):
+			// 并发的另一次迁移刚应用了它 ⇒ 本次没动库。Report 的语义是「本次真做了什么」，
+			// 故计入 Skipped 而不是 Applied：启动日志里"applied=2"必须意味着【这个进程】建了那两张表。
+			rep.Skipped = append(rep.Skipped, e.Name)
+		default:
 			return rep, err
 		}
-		rep.Applied = append(rep.Applied, e.Name)
 	}
 	return rep, nil
 }
 
-// applyOne 应用一条：DDL 与账同一个事务提交。
+// applyOne 应用一条：取锁 → 锁内复读账 → DDL 与记账同一个事务提交。
+//
+// 🔴 三步都在【同一个事务】里，这不是风格问题，是两条判据：
+//
+//	① DDL 与记账同事务 ⇒ 记账失败时这条的表也不留下（否则库里有条目建的表、账上没这条，
+//	   下次启动再跑一遍，遇到非幂等 DDL 就起不来）。反向对照见
+//	   TestMigrateEntries_LedgerInsertFailureRollsBackDDL（取自复验件附录 A.1）。
+//	② 锁与复读同事务 ⇒ 锁释放之前，「有没有这条」的答案不会被人从底下换掉。
 func applyOne(ctx context.Context, pool *repo.Pool, t repo.AccessCtx, e Entry, digest string, clk clock.Clock) error {
 	now := clk.Now()
 	if now.IsZero() {
@@ -266,6 +351,25 @@ func applyOne(ctx context.Context, pool *repo.Pool, t repo.AccessCtx, e Entry, d
 			"拒绝盖零时刻（那会让审计上看不出先后）", e.Name)
 	}
 	return pool.InTx(ctx, t, nil, func(tx repo.Tx) error {
+		if err := takeLock(ctx, tx); err != nil {
+			return err
+		}
+		// 锁内复读：进事务前那份快照可能已过期（另一个进程刚应用了这条）。
+		// 🔴 用 count(*)＋COALESCE 而不是「查一行再判 sql.ErrNoRows」：本包不必为此引 database/sql，
+		// 且「没有这一条」与「查不出来」不会被同一个分支吞掉 —— 后者照样报错上抛（不吞错的同款要求）。
+		var n int
+		var recorded string
+		if err := tx.QueryRow(ctx,
+			`SELECT count(*), COALESCE(max(digest), '') FROM schema_migrations WHERE version = $1`,
+			e.Name).Scan(&n, &recorded); err != nil {
+			return fmt.Errorf("migrate %s: 锁内复读迁移账失败: %w", e.Name, err)
+		}
+		if n > 0 {
+			if recorded != digest {
+				return tamperErr(e.Name, recorded, digest)
+			}
+			return errAppliedElsewhere
+		}
 		// 🔴 一次 Exec 里放多条语句，靠的是【无参数】：pgx/v5@v5.7.1/conn.go:500-503
 		// 「Always use simple protocol when there are no arguments」——只有简单协议允许多语句。
 		// 先例＝datad 的 SchemaDDL 与 hosted 的 ApplySchema（均已实测）。

@@ -180,7 +180,7 @@ func TestBootstrapAdminRefusesBadInvocation(t *testing.T) {
 	// 🔴 这一格原来断言的是「表没建 ⇒ 拒绝并报缺哪几张」。那道判据没有消失，只是不再由这条
 	//    路径触发（账本先建了表）；它仍被两处钉住：internal/identity/pgstore_test.go 的
 	//    TestPGStoreCheckSchema，与 internal/store/migrate/ledger_test.go 里的反向对照
-	//    （空库不跑账本 ⇒ 必须报缺那 7 张，含 audit_log）。
+	//    （空库不跑账本 ⇒ 必须报缺那 9 张，含 audit_log 与编组两张）。
 	if out, err := runCLI(t, pgSchemaDSN(t, false), "bootstrap-admin", "--user-id", "Boss", "--short-name", "bs"); err != nil || !strings.HasPrefix(out, "BOOTSTRAP_ADMIN_CREATED") {
 		t.Fatalf("empty db should be migrated by the ledger: %q %v", out, err)
 	}
