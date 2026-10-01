@@ -60,8 +60,10 @@ type NodeGateway interface {
 }
 
 type Combo struct {
-	CLI, LLM, CredKind string
-	Verified           bool
+	CLI      string `json:"cli"`
+	LLM      string `json:"llm"`
+	CredKind string `json:"cred_kind"`
+	Verified bool   `json:"verified"`
 }
 
 type CombosSource interface {
