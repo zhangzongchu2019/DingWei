@@ -50,6 +50,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"V6_hosted_create_and_take", hostedCreateAndTake},
 		{"V8_hosted_reissue_rotates_credential", hostedReissueRotatesCredential},
 		{"V6_hosted_token_expires", hostedTokenExpires},
+		{"V2_A5_find_agent_by_name_prefers_active_then_latest_revoked", findAgentByName},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
 	}
 	for _, c := range cases {
@@ -524,5 +525,25 @@ func pendingOrderDeterministic(t *testing.T, s identity.Store) {
 		if strings.Join(ids(got), ",") != "app-a,app-b,app-c,app-0" {
 			t.Fatalf("order = %v, want [app-a app-b app-c app-0]", ids(got))
 		}
+	}
+}
+
+func findAgentByName(t *testing.T, s identity.Store) {
+	_, err := s.FindAgentByName(ctx, "zzc", "kimi")
+	wantErr(t, "never existed", err, identity.ErrNotFound)
+	approveAndTake(t, s, "app-1", "zzc", "dev-1", "ag-1", "Kimi", "cred-1", t0)
+	_, _ = s.Revoke(ctx, "ag-1", "zzc", "zzc", t0.Add(time.Minute))
+	approveAndTake(t, s, "app-2", "zzc", "dev-2", "ag-2", "kimi", "cred-2", t0.Add(2*time.Minute))
+	_, _ = s.Revoke(ctx, "ag-2", "zzc", "zzc", t0.Add(3*time.Minute))
+	g, err := s.FindAgentByName(ctx, "ZZC", "KIMI")
+	if err != nil || g.ID != "ag-2" || g.State != identity.AgentRevoked {
+		t.Fatalf("latest revoked: %+v %v, want ag-2 revoked", g, err)
+	}
+	approveAndTake(t, s, "app-3", "zzc", "dev-3", "ag-3", "KIMI", "cred-3", t0.Add(4*time.Minute))
+	if g, _ := s.FindAgentByName(ctx, "zzc", "kimi"); g.ID != "ag-3" || g.State != identity.AgentActive {
+		t.Fatalf("active must win over revoked: %+v", g)
+	}
+	if _, err := s.FindAgentByName(ctx, "lbl", "kimi"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("other owner: %v", err)
 	}
 }

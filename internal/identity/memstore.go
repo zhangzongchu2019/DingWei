@@ -482,3 +482,27 @@ func (m *MemStore) RetireAgent(_ context.Context, agentID, by string, now time.T
 	ag.State, ag.RevokedAt, ag.RevokedBy = AgentRevoked, now, by
 	return false, nil
 }
+
+func (m *MemStore) FindAgentByName(_ context.Context, ownerLC, nameLC string) (*Agent, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	owner, name := Lower(ownerLC), Lower(nameLC)
+	var best *Agent
+	for _, ag := range m.agents {
+		if ag.OwnerLC != owner || ag.NameLC() != name {
+			continue
+		}
+		if ag.State == AgentActive {
+			cp := *ag
+			return &cp, nil
+		}
+		if best == nil || ag.RevokedAt.After(best.RevokedAt) {
+			best = ag
+		}
+	}
+	if best == nil {
+		return nil, ErrNotFound
+	}
+	cp := *best
+	return &cp, nil
+}

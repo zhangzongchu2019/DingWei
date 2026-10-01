@@ -3216,6 +3216,7 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 		log.Printf("delivery failure notification=suppressed reason=recursive_or_missing")
 		return
 	}
+	routeErr = h.explainRevokedTarget(ctx, target, routeErr)
 	now := time.Now().UTC()
 	dedupKey := c.keyID + "\x00" + c.sessionName + "\x00" + target + "\x00" + routeErr.Error()
 	h.mu.Lock()
