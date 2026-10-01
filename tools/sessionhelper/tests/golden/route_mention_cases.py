@@ -56,6 +56,47 @@ ROUTE_TEXTS = [
     '[[DW_ROUTE_V1\n{"to":"#alice","body":"hi"}\n]] trailing', 'lead [[DW_ROUTE_V1\n{"to":"#alice","body":"hi"}\n]]',
     '[[DW_ROUTE_V1\r\n{"to":"#alice","body":"hi"}\r\n]]', '[[DW_ROUTE_V2\n{"to":"#alice","body":"hi"}\n]]',
     '[[dw_route_v1\n{"to":"#alice","body":"hi"}\n]]',
+    # —— 补黄金盲点（R3 复验方发现）：标签后换行/空白/闭合形态的各种变体、legacy 分隔符变体 ——
+    '[[DW_ROUTE_V1{"to":"#alice","body":"hi"}\n]]',                 # 标签后无换行
+    '[[DW_ROUTE_V1 {"to":"#alice","body":"hi"}\n]]',                # 标签后仅空格
+    '[[DW_ROUTE_V1\n{"to":"#alice","body":"hi"}]]',                  # JSON 与 ]] 之间无换行
+    '[[DW_ROUTE_V1\r\n{"to":"#alice","body":"hi"}\r\n]]',            # 仅 \r\n（重复旧例，保留位置稳定）
+    '[[DW_ROUTE_V1 \n{"to":"#alice","body":"hi"}\n]]',              # 标签后空格再换行
+    '[[DW_ROUTE_V1\n\n{"to":"#alice","body":"hi"}\n]]',              # 标签后两个换行
+    '[[DW_ROUTE_V1\n{"to":"#alice","body":"hi"}\n\n]]',              # ]] 前两个换行
+    '[[DW_ROUTE_V1\n{"to":"#alice","body":"hi"}\n ]]',               # ]] 前有空格
+    '[[DW_ROUTE_V1\n{"to":"#alice","body":"hi"}\n]] \n',            # ]] 后空白
+    '\t[[DW_ROUTE_V1\n{"to":"#alice","body":"hi"}\n]]',              # 前导制表符
+    '[[DW_ROUTE_V1\n{"to":"#alice",\n"body":"hi"}\n]]',              # JSON 内含换行（lazy 匹配）
+    '[[DW_ROUTE_V1\n{"to":"#alice","body":"a\\n]]b"}\n]]',            # 正文里转义出现 ]]
+    '[[DW_ROUTE_V1\n{"to":"#alice","body":"hi"}\n]]\n[[DW_ROUTE_V1\n{"to":"#bob","body":"x"}\n]]',  # 连续两段
+    '[[DW_ROUTE_V1\n{"to":"#alice","body":"中文\\u00e9"}\n]]',          # Unicode
+    '[[ DW_ROUTE_V1\n{"to":"#alice","body":"hi"}\n]]',              # 标签前有空格
+    '[DW_ROUTE_V1\n{"to":"#alice","body":"hi"}\n]',                 # 单括号
+    '#alice\u00a0hi', '#alice\u3000hi', '#alice\x0bhi', '#alice\x0chi', '#alice\rhi',   # 各种空白当分隔符
+    '#alice\n\nhi', '#alice \n hi', '@zzc#agent1\thi', '@zzc#agent1\r\nhi',
+    '#a.b.c hi', '#_x hi', '#-x hi', '#x- hi', '#a#b hi', '@zzc#a hi\nsecond line', '#Alice HI',
+    '@zzc.lisa#agent hi', '@zzc#agent.zzc hi', '@@zzc#agent hi', '@zzc## hi', '@#a#b hi',
+    _CTRL.format('{"to":"@zzc#a#b","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@#a","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@zzc#","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"#","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@zzc#a b","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@zzc#a.b-c_d","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"#a#b","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"#a b","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"##a","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@a@b#c","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@zzc#中文","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"#中文","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@z.z#a","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@zzc#a.","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@zzc#.","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"#.","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"#-","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@zzc#a-","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@ #a","body":"hi"}'),   # control 目标地址边界
+    _CTRL.format('{"to":"@zzc#a\\n","body":"hi"}'),   # control 目标地址边界
     # 非字符串输入
     None, 123, 0, [], {},
 ]

@@ -63,8 +63,24 @@ class RouteMentionGoldenReplayTest(unittest.TestCase):
                         (reserved(env), control(env), [d.allow, d.reason], carry(env)),
                         (rec["reserved"], rec["control"], rec["decision"], rec["carry"]), env)
 
+    def test_route_regexes_and_limits_match_the_old_code(self):
+        # 复验方发现的盲点：把正则字面量改一个字符（如 \\n → \\n?），常见输入不受影响，重放就抓不到。
+        # 所以直接比对三条路由正则的 pattern 与 flags（取自旧代码，含当年内联的目标地址字面量）。
+        rx = GOLDEN["regexes"]
+        for name, getter in (("LEGACY_AGENT_ROUTE_RE", lambda m: m.LEGACY_AGENT_ROUTE_RE),
+                             ("CONTROL_ROUTE_RE", lambda m: m.CONTROL_ROUTE_RE)):
+            for label, mod in (("routing", routing), ("app", app)):
+                got = getter(mod)
+                self.assertEqual([got.pattern, got.flags], rx[name], f"{name} via {label}")
+        self.assertEqual(routing.ROUTE_TARGET_RE.pattern, rx["ROUTE_TARGET_PATTERN_inline"])
+        self.assertEqual(routing.ROUTE_BODY_MAX, rx["ROUTE_BODY_MAX"])
+        self.assertEqual(app.ROUTE_BODY_MAX, rx["ROUTE_BODY_MAX"])
+
     def test_golden_has_discriminating_power(self):
         # 反向对照：黄金不能是"全 None/全 False"的退化输出，否则任何实现都能过。
+        no_newline = [r for r in GOLDEN["route"] if isinstance(r["text"], str) and r["text"].startswith("[[DW_ROUTE_V1{")]
+        self.assertTrue(no_newline and all(r["out"] is None for r in no_newline),
+                        "黄金应含“标签后无换行”形态，且旧代码拒绝它（\\n 改成可选必须能被抓到）")
         self.assertGreater(sum(1 for r in GOLDEN["route"] if r["out"] is not None), 15)
         self.assertGreater(sum(1 for r in GOLDEN["route"] if r["out"] is None), 15)
         self.assertEqual({r["decision"][1] for r in GOLDEN["reply"]},
