@@ -50,6 +50,14 @@ func newFakeDocker(t *testing.T) *fakeEngine {
 			json.NewEncoder(w).Encode(map[string]string{"Id": id})
 		case strings.Contains(key, "/start") || strings.Contains(key, "/stop") || strings.Contains(key, "/restart") || strings.Contains(key, "/rename"):
 			w.Write([]byte(`{}`))
+		case key == "GET /containers/json":
+			json.NewEncoder(w).Encode([]map[string]any{
+				{"Id": "c1", "Names": []string{"/seat-a"}, "State": "running"},
+				{"Id": "c2", "Names": []string{"/seat-b-new"}, "State": "exited"},
+				{"Id": "c3", "Names": []string{"/other-x"}, "State": "running"},
+			})
+		case key == "GET /images/json":
+			json.NewEncoder(w).Encode([]map[string]any{{"Size": 104857600}, {"Size": 52428800}})
 		case strings.HasPrefix(key, "GET /containers/"):
 			name := strings.TrimSuffix(strings.TrimPrefix(key, "GET /containers/"), "/json")
 			id := name

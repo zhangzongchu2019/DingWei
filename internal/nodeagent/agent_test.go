@@ -24,11 +24,12 @@ type stubHub struct {
 	secrets map[string]string // node_id → secret（绑定校验：换身份持真凭据必拒）
 	cmds   chan Command
 	results chan Result
+	all    chan []byte // 全部原始帧（capacity_report 等非 Result 帧断言用）
 	srv    *httptest.Server
 }
 
 func newStubHub(t *testing.T, secrets map[string]string) *stubHub {
-	h := &stubHub{t: t, secrets: secrets, cmds: make(chan Command, 8), results: make(chan Result, 8)}
+	h := &stubHub{t: t, secrets: secrets, cmds: make(chan Command, 8), results: make(chan Result, 8), all: make(chan []byte, 32)}
 	h.srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nodeID := r.URL.Query().Get("node_id")
 		auth := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
@@ -51,8 +52,12 @@ func newStubHub(t *testing.T, secrets map[string]string) *stubHub {
 					return
 				}
 				var res Result
-				if json.Unmarshal(raw, &res) == nil {
+				if json.Unmarshal(raw, &res) == nil && res.CommandID != "" {
 					h.results <- res
+				}
+				select {
+				case h.all <- raw:
+				default:
 				}
 			}
 		}()
@@ -73,6 +78,7 @@ func (h *stubHub) certSHA256() string {
 	return hex.EncodeToString(sum[:])
 }
 func (h *stubHub) close()      { close(h.cmds); h.srv.Close() }
+func (h *stubHub) frames() chan []byte { return h.all }
 
 func mkConfig(t *testing.T, hubURL, secret string) Config {
 	t.Helper()

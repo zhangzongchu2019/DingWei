@@ -375,6 +375,7 @@ func (d *dockerOps) destroy(ctx context.Context, params json.RawMessage) (json.R
 }
 
 // RegisterDockerHandlers 把 Docker 指令集挂进代理骨架（cmd/nodeagent 在真机上调用）。
+// 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry string) {
 	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, waitMax: 60 * time.Second}
 	a.Register(CmdPullImage, d.pull)
@@ -384,4 +385,9 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 	a.Register(CmdRestartSeat, d.restart)
 	a.Register(CmdUpgradeSeat, d.upgrade)
 	a.Register(CmdDestroySeat, d.destroy)
+	a.Register(CmdReportCapacity, d.reportCapacity)
+	a.capacity = d.collectCapacity
 }
+
+// SetHeartbeatInterval 测试用（心跳周期，默认 60s）。
+func (a *Agent) SetHeartbeatInterval(d time.Duration) { a.heartbeatInterval = d }

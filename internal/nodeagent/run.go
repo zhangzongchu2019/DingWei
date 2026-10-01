@@ -21,6 +21,9 @@ type Agent struct {
 	cfg      Config
 	handlers map[string]Handler
 	ledger   *ledger
+	// T-G4-13：容量采集器（dockerOps 注册；未注册则心跳静默跳过）
+	capacity          func(ctx context.Context) (Capacity, error)
+	heartbeatInterval time.Duration
 }
 
 func New(cfg Config) (*Agent, error) {
@@ -94,6 +97,14 @@ func (a *Agent) serve(ctx context.Context) error {
 	defer conn.CloseNow()
 	conn.SetReadLimit(1 << 20)
 
+	w := &wsWriter{conn: conn}
+	// 重连对账＋周期心跳＋变更触发（T-G4-13）；容量采集器未注册时静默跳过
+	hbCtx, hbStop := context.WithCancel(ctx)
+	defer hbStop()
+	if a.capacity != nil {
+		go a.heartbeat(hbCtx, w)
+	}
+
 	for {
 		_, raw, err := conn.Read(ctx)
 		if err != nil {
@@ -101,10 +112,73 @@ func (a *Agent) serve(ctx context.Context) error {
 		}
 		var cmd Command
 		if err := json.Unmarshal(raw, &cmd); err != nil {
-			a.reply(ctx, conn, Result{CommandID: "", OK: false, Error: "bad_command_frame"})
+			a.reply(ctx, w, Result{CommandID: "", OK: false, Error: "bad_command_frame"})
 			continue
 		}
-		a.reply(ctx, conn, a.execute(ctx, cmd))
+		a.reply(ctx, w, a.execute(ctx, cmd))
+	}
+}
+
+// wsWriter 并发写锁（心跳 goroutine 与指令回送同用一条连接）。
+type wsWriter struct {
+	conn *websocket.Conn
+}
+
+func (w *wsWriter) write(ctx context.Context, raw []byte) error {
+	wctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	return w.conn.Write(wctx, websocket.MessageText, raw)
+}
+
+// capacityFrame 容量上报帧（与 Result 区分：type=capacity_report）。
+type capacityFrame struct {
+	Type    string          `json:"type"`
+	Payload json.RawMessage `json:"payload"`
+}
+
+// heartbeat 重连对账即发一次；此后每 15s 检查一次：距上次满一个周期 ⇒ 周期心跳；
+// 余量/席位清单变化超阈值 ⇒ 变更触发即发（不等周期）。
+func (a *Agent) heartbeat(ctx context.Context, w *wsWriter) {
+	interval := a.heartbeatInterval
+	if interval <= 0 {
+		interval = 60 * time.Second
+	}
+	var last Capacity
+	lastSent := time.Now()
+	send := func() {
+		c, err := a.capacity(ctx)
+		if err != nil {
+			return
+		}
+		raw, err := json.Marshal(c)
+		if err != nil {
+			return
+		}
+		frame, err := json.Marshal(capacityFrame{Type: "capacity_report", Payload: raw})
+		if err != nil {
+			return
+		}
+		if w.write(ctx, frame) == nil {
+			last = c
+			lastSent = time.Now()
+		}
+	}
+	send() // 对账：连上即发
+	t := time.NewTicker(15 * time.Second)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			c, err := a.capacity(ctx)
+			if err != nil {
+				continue
+			}
+			if time.Since(lastSent) >= interval || changedBeyond(last, c) {
+				send()
+			}
+		}
 	}
 }
 
@@ -135,14 +209,12 @@ func (a *Agent) execute(ctx context.Context, cmd Command) Result {
 	return r
 }
 
-func (a *Agent) reply(ctx context.Context, conn *websocket.Conn, r Result) {
+func (a *Agent) reply(ctx context.Context, w *wsWriter, r Result) {
 	raw, err := json.Marshal(r)
 	if err != nil {
 		return
 	}
-	wctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
-	_ = conn.Write(wctx, websocket.MessageText, raw)
+	_ = w.write(ctx, raw)
 }
 
 // TLSPinnedTransport 节点验 Hub 的一层：钉住服务证书 SHA-256（自签阶段尤其要钉）。
