@@ -583,15 +583,21 @@ var ENROLL_API={
   revoke:function(id){return '/api/console/agents/'+encodeURIComponent(id)+'/revoke';},
   agents:'/api/console/agents'   // 设计件 3.2 新形状:{agents:[{agent_id,name,full_name,origin,group_code,online}]}
 };
+var ENROLL_GONE=['expired','not_pending','not_found','superseded','rejected'];
 var enrollGeneration=0,enrollSnapshot=[],enrollOpenId='';
 function enrollFeedback(id,text){var e=document.getElementById(id);if(e)e.textContent=text||'';}
 function enrollTime(v){var d=new Date(v);return isNaN(d.getTime())?String(v||''):d.toLocaleString('zh-CN',{hour12:false});}
 var CONSOLE_ERRORS={
-  name_taken:'名称已被占用（按小写判重），请换一个名称',
-  name_invalid:'名称无效：只能使用大小写字母和数字',
-  expired:'该申请已过期',superseded:'同一设备的另一条申请已被批复，本条已作废',rejected:'该申请已被拒绝',
-  not_owner:'这不是你名下的申请或 Agent',forbidden:'这不是你名下的 Agent',origin_hosted:'托管 Agent 请用托管操作，不在这里吊销',
-  rate_limited:'操作太频繁，请稍后再试',origin_mismatch:'请求来源不被允许，请刷新页面后重试',
+  name_taken:'该名称已被你名下的 Agent 使用（不区分大小写），请换一个',
+  name_invalid:'名称只能用大小写字母和数字，2～32 位，且不能是渠道保留字',
+  group_required:'请选择所属编组',
+  expired:'申请已超过 24 小时，已作废',
+  not_pending:'该申请已被处理（已批准、已拒绝，或同设备的另一条已被批准）',
+  not_found:'申请不存在',
+  superseded:'同一设备的另一条申请已被批复，本条已作废',rejected:'该申请已被拒绝',
+  not_owner:'这不是你名下的申请或 Agent',forbidden:'这不是你名下的 Agent',
+  hosted_agent:'托管 Agent 请用托管操作（停用、销毁），不在这里吊销',origin_hosted:'托管 Agent 请用托管操作（停用、销毁），不在这里吊销',
+  unauthenticated:'登录已失效，请重新登录',origin_mismatch:'请求来源不符，请刷新页面',
   combo_not_verified:'这个 CLI 与 LLM 的组合还没有验通，暂不能创建',plan_exceeds_quota:'所选资源套餐超出剩余额度',
   quota_exceeded:'Agent 数量已达上限',node_no_capacity:'没有节点有足够的剩余资源',account_not_allowed:'你不能使用这个 LLM 账号',
   node_offline:'该 Agent 所在节点离线，操作无法执行',invalid_state:'该 Agent 当前状态不允许这个操作',confirm_required:'这个操作需要先确认',
@@ -603,9 +609,11 @@ var HOSTED_FAIL_REASONS={
 function consoleErrorText(status,data){
   var code=data&&typeof data.error==='string'?data.error:'';
   if(code==='pairing_mismatch'){
+    if(data&&data.rejected===true)return '错误次数过多，该申请已自动拒绝';
     var left=data&&Number.isFinite(data.remaining)?data.remaining:null;
-    return left===0?'配对码不符，错误次数已达上限，该申请已被拒绝':('配对码不符'+(left===null?'':'，还可以再试 '+left+' 次'));
+    return '配对码不符'+(left===null?'':'（还可再试 '+left+' 次）');
   }
+  if(code==='rate_limited'){var wait=data&&Number.isFinite(data.retry_after_s)?data.retry_after_s:null;return '操作过于频繁'+(wait===null?'，请稍后再试':'，请 '+wait+' 秒后再试');}
   return CONSOLE_ERRORS[code]||('操作失败（HTTP '+status+(code?'：'+code:'')+'）');
 }
 async function consolePost(path,body){
@@ -613,7 +621,7 @@ async function consolePost(path,body){
     var r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
     var data=null;try{data=await r.json();}catch(_){}
     if(r.ok)return {ok:true,text:'',data:data||{}};
-    return {ok:false,status:r.status,text:consoleErrorText(r.status,data),code:data&&data.error||''};
+    return {ok:false,status:r.status,text:consoleErrorText(r.status,data),code:data&&data.error||'',data:data||{}};
   }catch(err){return {ok:false,status:0,text:'请求失败: '+String(err&&err.message||err),code:''};}
 }
 function enrollCloseEditor(){
@@ -639,7 +647,7 @@ function renderEnroll(){
   enrollSnapshot.forEach(function(app){
     var row=document.createElement('tr');row.className='enroll-row';row.dataset.applicationId=app.application_id;
     var fp=String(app.device_fingerprint||'');
-    [app.source_ip||'',fp.slice(0,12),app.client_version||'',enrollTime(app.requested_at)].forEach(function(v,i){var td=document.createElement('td');td.textContent=v;if(i===1){td.title=fp;if(app.same_device_count>1){var same=document.createElement('span');same.className='enroll-same-device';same.textContent=' · 同设备共 '+app.same_device_count+' 条申请,批其一即可';td.append(same);}}row.append(td);});
+    [app.source_ip||'',fp.slice(0,12),app.client_version||'',enrollTime(app.requested_at)].forEach(function(v,i){var td=document.createElement('td');td.textContent=v;if(i===1){td.title=fp;if(app.same_device_count>1){var same=document.createElement('span');same.className='enroll-same-device';same.textContent=' · 同一设备重复申请（共 '+app.same_device_count+' 条）';td.append(same);}}row.append(td);});
     var action=document.createElement('td'),open=document.createElement('button');open.type='button';open.className='enroll-open';open.textContent='审核';
     open.onclick=function(){enrollOpenEditor(app);};action.append(open);row.append(action);body.append(row);
   });
@@ -666,14 +674,14 @@ function enrollBusy(on){['enrollApprove','enrollReject'].forEach(function(id){va
 async function enrollApprove(){
   var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),group=document.getElementById('enrollGroup').value,openedId=enrollOpenId;
   if(!code||!name||!group){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码、Agent 名称,并选择所属编组');return;}
-  enrollBusy(true);var res=await consolePost(ENROLL_API.approve(openedId),{pairing_code:code,agent_name:name,group_id:group});enrollBusy(false);
-  if(!res.ok){var gone=res.status===410||(res.code==='pairing_mismatch'&&/已被拒绝/.test(res.text));if(!gone){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
+  enrollBusy(true);var res=await consolePost(ENROLL_API.approve(openedId),{pairing_code:code,agent_name:name,group_code:group});enrollBusy(false);
+  if(!res.ok){var gone=ENROLL_GONE.indexOf(res.code)>=0||res.status===410||(res.code==='pairing_mismatch'&&res.data.rejected===true);if(!gone){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
   enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();refreshRoster();refreshGroups('enroll');refreshAgents();
 }
 async function enrollReject(){
   if(!confirm('拒绝即踢走：该申请将作废,客户端需重新申请。确认拒绝？'))return;
   enrollBusy(true);var res=await consolePost(ENROLL_API.reject(enrollOpenId));enrollBusy(false);
-  if(!res.ok){if(res.status!==410){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}
+  if(!res.ok){if(ENROLL_GONE.indexOf(res.code)<0&&res.status!==410){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}
   enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();
 }
 var rosterAgents=[],rosterGeneration=0;
@@ -703,7 +711,7 @@ function renderRoster(){
       if(!confirm('吊销 '+a.name+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;
       revoke.disabled=true;var res=await consolePost(ENROLL_API.revoke(a.agent_id));revoke.disabled=false;
       if(!res.ok){enrollFeedback('rosterFeedback',res.text);return;}
-      enrollFeedback('rosterFeedback','');refreshRoster();refreshGroups('revoke');refreshAgents();
+      enrollFeedback('rosterFeedback',res.data&&res.data.already_revoked?'已吊销':'');refreshRoster();refreshGroups('revoke');refreshAgents();
     };
     action.append(revoke);row.append(name,st,action);body.append(row);
   });

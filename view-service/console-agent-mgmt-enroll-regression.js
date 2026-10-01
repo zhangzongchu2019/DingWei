@@ -3,7 +3,7 @@
 //
 // 装置与 console-agent-groups-vega-regression.js 同源:console 页从生产源码实时抠,Hub 用本地桩。
 // 接口按 runbooks/DESIGN-G3-ENROLL-AUTH-API-20261001.md v1 第三节:字段 application_id/source_ip/same_device_count、
-//    批准带 group_id、错误一律 JSON 机器码(页面只认机器码,不显示 Hub 原文)。
+//    批准带 group_code(必填,Hub 回 422 group_required)、错误一律 JSON 机器码(页面只认机器码,不显示 Hub 原文)。
 // 判据口径:真键盘(click + keyboard.type,不用 fill);pageerror 与 console error 两路监听,末尾断言为空
 //    (只放行桩有意返回的 4xx/5xx 资源加载行)。
 //
@@ -34,7 +34,7 @@ if (mutation === 'no-stale-guard') mutate('if(generation!==enrollGeneration)retu
 if (mutation === 'keep-inputs') mutate("if(!gone){enrollFeedback('enrollFeedback',res.text);return;}", "if(!gone){enrollFeedback('enrollFeedback',res.text);enrollCloseEditor();return;}");
 if (mutation === 'no-confirm-revoke') mutate("if(!confirm('吊销 '+a.name+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;", '');
 if (mutation === 'roster-not-following') mutate("refreshEnroll();refreshRoster();refreshGroups('enroll');", "refreshEnroll();refreshGroups('enroll');"); // 批准后列表必须重取(列表现在直接取 /api/console/agents,不再跟编组快照)
-if (mutation === 'show-hub-text') mutate("function enrollErrorText(status,data){", "function enrollErrorText(status,data){if(data&&data.detail)return String(data.detail);");
+if (mutation === 'show-hub-text') mutate("function consoleErrorText(status,data){", "function consoleErrorText(status,data){if(data&&data.detail)return String(data.detail);");
 if (mutation === 'ignore-hosted') mutate("revoke.hidden=a.origin==='hosted'||!!hs;", 'revoke.hidden=!!hs;');
 if (mutation === 'notice-in-hidden-editor') mutate("enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留", "enrollCloseEditor();enrollFeedback('enrollFeedback',res.text);refreshEnroll();return;}   // 申请保留");
 if (mutation === 'leak-nonmanage-group') mutate('.filter(function(g){return g.can_manage;});', '.filter(function(){return true;});');
@@ -97,24 +97,24 @@ const server = http.createServer(async (req, res) => {
     const id = decodeURIComponent(m[1]); const app = apps.find((a) => a.application_id === id);
     const body = await read(req); writes.push({ path: p, body });
     if (!app) return err(res, 404, 'not_found');
-    if (forceGone === id) { apps = apps.filter((a) => a.application_id !== id); return err(res, 410, 'expired'); }
+    if (forceGone === id) { apps = apps.filter((a) => a.application_id !== id); return err(res, 409, 'not_pending'); }
     if (m[2] === 'reject') { apps = apps.filter((a) => a.application_id !== id); return json(res, 200, {}); }
     if (body.pairing_code !== PAIRING[id]) {
       pairingFailures[id] = (pairingFailures[id] || 0) + 1; const remaining = 5 - pairingFailures[id];
       if (remaining <= 0) apps = apps.filter((a) => a.application_id !== id); // 5 次错码自动转 rejected
-      return err(res, 422, 'pairing_mismatch', { remaining });
+      return err(res, 422, 'pairing_mismatch', { remaining: Math.max(remaining, 0), rejected: remaining <= 0 });
     }
     if (!/^[A-Za-z0-9]+$/.test(String(body.agent_name))) return err(res, 422, 'name_invalid');
     if (agents.some((a) => a.session_name.split('-')[1].toLowerCase() === String(body.agent_name).toLowerCase())) return err(res, 409, 'name_taken');
     const created = { id: `ag-${String(body.agent_name).toLowerCase()}`, key_id: `key-${body.agent_name}`, session_name: `zzc-${String(body.agent_name).toLowerCase()}-2642`, online: true };
-    agents.push(created); if (body.group_id === GROUP_MINE) extraMembers.push(created);
+    agents.push(created); if (body.group_code === GROUP_MINE) extraMembers.push(created);
     apps = apps.filter((a) => a.device_fingerprint !== app.device_fingerprint); // 同设备其余申请自动转 superseded、从列表消失
     return json(res, 200, { agent_id: created.id, agent_full_name: `${body.agent_name}.zzc` });
   }
   const r = p.match(/^\/api\/console\/agents\/([^/]+)\/revoke$/);
   if (r && req.method === 'POST') {
     const id = decodeURIComponent(r[1]); writes.push({ path: p, body: null });
-    if (id === 'ag-hosted') return err(res, 409, 'origin_hosted');
+    if (id === 'ag-hosted') return err(res, 409, 'hosted_agent');
     if (id === 'ag-locked') return json(res, 200, { already_revoked: true });
     agents = agents.filter((a) => a.id !== id); const at = extraMembers.findIndex((a) => a.id === id); if (at >= 0) extraMembers.splice(at, 1); return json(res, 200, { revoked_at: '2026-10-01T09:00:00Z' });
   }
@@ -159,7 +159,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       const cells = await first.locator('td').allTextContents();
       assert.strictEqual(cells[0], '10.0.0.8');
       assert.ok(cells[1].startsWith('dev-AAAAAAAA'), cells[1]);
-      assert.match(cells[1], /同设备共 2 条申请/, 'same_device_count>1 is flagged');
+      assert.match(cells[1], /同一设备重复申请（共 2 条）/, 'same_device_count>1 is flagged');
       assert.doesNotMatch(await rows().nth(2).locator('td').nth(1).textContent(), /同设备/, 'a lone application is not flagged');
       assert.strictEqual(cells[2], '0.2.1.95');
       assert.ok(cells[3].length > 6, 'request time rendered');
@@ -211,7 +211,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await type('#enrollCode', '000000'); await type('#enrollName', 'Alpha');
       await page.locator('#enrollApprove').click();
       await page.locator('#enrollFeedback').filter({ hasText: '配对码不符' }).waitFor({ state: 'visible' });
-      assert.match(await feedbackText(), /还可以再试 4 次/, 'remaining attempts are shown');
+      assert.match(await feedbackText(), /配对码不符（还可再试 4 次）/, 'remaining attempts are shown');
       assert.doesNotMatch(await feedbackText(), /SECRET-HUB-TEXT/, 'Hub detail text is never displayed');
       assert.strictEqual(await page.locator('#enrollEditor').isVisible(), true);
       assert.strictEqual(await page.locator('#enrollCode').inputValue(), '000000');
@@ -223,7 +223,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#enrollCode').click(); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('123456');
       await page.locator('#enrollName').click(); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('LEADER');
       await page.locator('#enrollApprove').click();
-      await page.locator('#enrollFeedback').filter({ hasText: '已被占用' }).waitFor({ state: 'visible' });
+      await page.locator('#enrollFeedback').filter({ hasText: '已被你名下的 Agent 使用' }).waitFor({ state: 'visible' });
       assert.doesNotMatch(await feedbackText(), /SECRET-HUB-TEXT/);
       assert.strictEqual(await page.locator('#enrollName').inputValue(), 'LEADER', 'name left for the owner to change');
     });
@@ -231,7 +231,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await test('invalid name is refused by the Hub, shown in our own words, input kept', async () => {
       await page.locator('#enrollName').click(); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type('bad-name');
       await page.locator('#enrollApprove').click();
-      await page.locator('#enrollFeedback').filter({ hasText: '只能使用大小写字母和数字' }).waitFor({ state: 'visible' });
+      await page.locator('#enrollFeedback').filter({ hasText: '只能用大小写字母和数字' }).waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('#enrollName').inputValue(), 'bad-name');
     });
 
@@ -243,7 +243,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.waitForFunction(() => document.querySelectorAll('#enrollItems .enroll-row').length === 1);
       assert.deepStrictEqual(await ids(), ['a3'], 'a1 approved and a2 (same device) gone');
       const last = writes[writes.length - 1];
-      assert.deepStrictEqual(last.body, { pairing_code: '123456', agent_name: 'Beta', group_id: GROUP_MINE });
+      assert.deepStrictEqual(last.body, { pairing_code: '123456', agent_name: 'Beta', group_code: GROUP_MINE });
       await page.locator('#rosterItems .roster-row').filter({ hasText: 'beta' }).waitFor({ state: 'visible' });
       await page.locator('#a button').filter({ hasText: 'beta' }).first().waitFor({ state: 'attached' });
     });
@@ -272,7 +272,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       dialogAccept = true;
       await page.locator('#rosterItems .roster-row[data-agent-id="ag-locked"] .roster-revoke').click();
       await page.waitForFunction(() => true); await page.waitForTimeout(300);
-      assert.strictEqual(await page.locator('#rosterFeedback').textContent(), '', 'already_revoked is a success, not an error');
+      assert.strictEqual(await page.locator('#rosterFeedback').textContent(), '已吊销', 'a repeated revoke says so (already_revoked), without an error');
       assert.strictEqual(writes[writes.length - 1].path, '/api/console/agents/ag-locked/revoke');
       await page.locator('#rosterItems .roster-row[data-agent-id="ag-beta"] .roster-revoke').click();
       await page.waitForFunction(() => !document.querySelector('#rosterItems .roster-row[data-agent-id="ag-beta"]'));
@@ -285,19 +285,19 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await rows().nth(2).locator('.enroll-open').click();           // a3
       await type('#enrollCode', '999999'); await type('#enrollName', 'Gamma');
       for (let i = 0; i < 5; i++) await page.locator('#enrollApprove').click();
-      await page.locator('#enrollNotice').filter({ hasText: '已被拒绝' }).waitFor({ state: 'visible' });
-      assert.match(await noticeText(), /错误次数已达上限/);
+      await page.locator('#enrollNotice').filter({ hasText: '已自动拒绝' }).waitFor({ state: 'visible' });
+      assert.match(await noticeText(), /错误次数过多，该申请已自动拒绝/);
       await page.waitForFunction(() => !document.querySelector('#enrollItems .enroll-row[data-application-id="a3"]'));
       assert.strictEqual(await page.locator('#enrollEditor').isHidden(), true);
     });
 
-    await test('410 on approve (expired/superseded elsewhere): our wording, editor closes, list refreshes', async () => {
+    await test('not_pending on approve (handled elsewhere): our wording, editor closes, list refreshes', async () => {
       resetApps(); forceGone = 'a1'; await page.locator('#enrollRefresh').click();
       await page.waitForFunction(() => document.querySelectorAll('#enrollItems .enroll-row').length === 3);
       await rows().first().locator('.enroll-open').click();
       await type('#enrollCode', '123456'); await type('#enrollName', 'Delta');
       await page.locator('#enrollApprove').click();
-      await page.locator('#enrollNotice').filter({ hasText: '已过期' }).waitFor({ state: 'visible' });
+      await page.locator('#enrollNotice').filter({ hasText: '已被处理' }).waitFor({ state: 'visible' });
       assert.doesNotMatch(await noticeText(), /SECRET-HUB-TEXT/);
       await page.waitForFunction(() => !document.querySelector('#enrollItems .enroll-row[data-application-id="a1"]'));
       assert.strictEqual(await page.locator('#enrollEditor').isHidden(), true);

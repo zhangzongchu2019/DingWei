@@ -203,12 +203,12 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await test('Hub refusals are shown in our wording, never the Hub text, and the typed values are kept', async () => {
       await fillValid('Leader');                                    // 与已有 leader 同名(按小写)
       await page.locator('#hostedCreateBtn').click();
-      await page.locator('#hostedFeedback').filter({ hasText: '已被占用' }).waitFor({ state: 'visible' });
+      await page.locator('#hostedFeedback').filter({ hasText: '已被你名下的 Agent 使用' }).waitFor({ state: 'visible' });
       assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(), /SECRET-HUB-TEXT/);
       assert.strictEqual(await page.locator('#hostedName').inputValue(), 'Leader');
       assert.strictEqual(await page.locator('#hostedMask').isHidden(), true, 'no mask for a refused create');
       await type('#hostedName', 'bad-name'); await page.locator('#hostedCreateBtn').click();
-      await page.locator('#hostedFeedback').filter({ hasText: '只能使用大小写字母和数字' }).waitFor({ state: 'visible' });
+      await page.locator('#hostedFeedback').filter({ hasText: '只能用大小写字母和数字' }).waitFor({ state: 'visible' });
     });
 
     await test('successful create opens a mask that reports the REAL stage the Hub reports, step by step', async () => {
