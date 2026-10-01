@@ -59,9 +59,7 @@ func (m *MemStore) CountUsers(context.Context) (int, error) {
 	return len(m.users), nil
 }
 
-func (m *MemStore) CreateUser(_ context.Context, u User) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m *MemStore) createUserLocked(u User) error {
 	if _, ok := m.users[u.UserIDLC()]; ok {
 		return ErrConflict
 	}
@@ -72,6 +70,23 @@ func (m *MemStore) CreateUser(_ context.Context, u User) error {
 	m.users[u.UserIDLC()] = &cp
 	m.shortNames[u.ShortNameLC()] = u.UserIDLC()
 	return nil
+}
+
+func (m *MemStore) CreateUser(_ context.Context, u User) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.createUserLocked(u)
+}
+
+func (m *MemStore) CreateFirstAdmin(_ context.Context, u User) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, x := range m.users {
+		if x.Type == UserPlatformAdmin || x.Type == UserManager {
+			return ErrAdminExists
+		}
+	}
+	return m.createUserLocked(u)
 }
 
 func (m *MemStore) GetUser(_ context.Context, userIDLC string) (*User, error) {

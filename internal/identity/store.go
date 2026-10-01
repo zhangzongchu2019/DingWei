@@ -10,6 +10,9 @@ type IdentityStore interface {
 	CountUsers(ctx context.Context) (int, error)
 	// CreateUser user_id 或 short_name 按小写冲突 ⇒ ErrConflict。
 	CreateUser(ctx context.Context, u User) error
+	// CreateFirstAdmin 初始化脚本建第一个管理用户：一个原子操作内「库中没有任何管理用户（platform_admin 或 manager，
+	// 不论状态）⇒ 插入」；已有 ⇒ ErrAdminExists；user_id 或 short_name 冲突 ⇒ ErrConflict。并发执行只能成功一次。
+	CreateFirstAdmin(ctx context.Context, u User) error
 	GetUser(ctx context.Context, userIDLC string) (*User, error)
 	// GetUserByShortName 按简称（小写）找用户；full_name（名称.简称）解析用。
 	GetUserByShortName(ctx context.Context, shortNameLC string) (*User, error)

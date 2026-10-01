@@ -16,7 +16,7 @@ import (
 type UserType string
 
 const (
-	UserPlatformAdmin UserType = "platform_admin" // systemdefault
+	UserPlatformAdmin UserType = "platform_admin" // 初始化脚本建的第一个管理用户
 	UserManager       UserType = "manager"        // 管理用户
 	UserMember        UserType = "member"         // 普通用户
 )
@@ -37,7 +37,7 @@ type User struct {
 	DisplayName        string
 	Type               UserType
 	State              UserState
-	PasswordHash       string // 只有 systemdefault 有
+	PasswordHash       string // 只有初始化脚本建的管理用户有
 	MustChangePassword bool
 	CreatedAt          time.Time
 }

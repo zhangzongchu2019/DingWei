@@ -6,6 +6,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -31,6 +33,32 @@ var PGSchemaSQL string
 // 身份数据是平台级、不属任何租户，故用系统上下文；全包只在这一处取（边界闸「显式系统上下文调用点」+1，须评审）。
 func NewPGStore(pool *repo.Pool) *PGStore {
 	return &PGStore{pool: pool, t: repo.SystemCtx()}
+}
+
+// pgRequiredTables 身份存储要用的表：本包 pgschema.sql 的六张，加复用的 audit_log（由 G2 的迁移账本建）。
+var pgRequiredTables = []string{"np_user", "np_identity", "np_registration_code", "np_session", "np_agent", "np_enroll_application", "audit_log"}
+
+// CheckSchema 表都在才返回 nil；缺表时报出缺哪几张。本包不自行建表 —— 建表归迁移账本，
+// Hub 与初始化脚本启动时据此拒绝在没建好表的库上运行，不在半套表上写入。
+func (s *PGStore) CheckSchema(ctx context.Context) error {
+	var missing []string
+	for _, tbl := range pgRequiredTables {
+		row, err := s.queryRow(ctx, `SELECT to_regclass($1) IS NOT NULL`, tbl)
+		if err != nil {
+			return err
+		}
+		var ok bool
+		if err := row.Scan(&ok); err != nil {
+			return err
+		}
+		if !ok {
+			missing = append(missing, tbl)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("identity: PG schema not applied, missing tables: %s", strings.Join(missing, ", "))
+	}
+	return nil
 }
 
 // ── 小工具 ────────────────────────────────────────────────────────────────
@@ -134,15 +162,42 @@ func (s *PGStore) CountUsers(ctx context.Context) (int, error) {
 	return n, row.Scan(&n)
 }
 
+const insertUserSQL = `INSERT INTO np_user (user_id_lc, user_id, short_name, short_name_lc, display_name, type, state,
+		password_hash, must_change_password, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
+
+func insertUserArgs(u User) []any {
+	return []any{u.UserIDLC(), u.UserID, u.ShortName, u.ShortNameLC(), u.DisplayName, string(u.Type), string(u.State),
+		u.PasswordHash, u.MustChangePassword, u.CreatedAt.UTC()}
+}
+
 func (s *PGStore) CreateUser(ctx context.Context, u User) error {
-	_, err := s.pool.Exec(ctx, s.t, `INSERT INTO np_user (user_id_lc, user_id, short_name, short_name_lc, display_name, type, state,
-		password_hash, must_change_password, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-		u.UserIDLC(), u.UserID, u.ShortName, u.ShortNameLC(), u.DisplayName, string(u.Type), string(u.State),
-		u.PasswordHash, u.MustChangePassword, u.CreatedAt.UTC())
+	_, err := s.pool.Exec(ctx, s.t, insertUserSQL, insertUserArgs(u)...)
 	if code, _ := pgCode(err); code == pgUniqueViolation {
 		return ErrConflict
 	}
 	return err
+}
+
+// CreateFirstAdmin 表锁（SHARE ROW EXCLUSIVE 与自身互斥）把「查有无管理用户 ⇒ 插入」串成一步：
+// 两个初始化脚本同时执行，后到的等前一个提交后再查，必然看到已有管理用户。
+func (s *PGStore) CreateFirstAdmin(ctx context.Context, u User) error {
+	return s.inTx(ctx, func(tx repo.Tx) error {
+		if _, err := tx.Exec(ctx, `LOCK TABLE np_user IN SHARE ROW EXCLUSIVE MODE`); err != nil {
+			return err
+		}
+		var exists bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM np_user WHERE type IN ('platform_admin', 'manager'))`).Scan(&exists); err != nil {
+			return err
+		}
+		if exists {
+			return ErrAdminExists
+		}
+		_, err := tx.Exec(ctx, insertUserSQL, insertUserArgs(u)...)
+		if code, _ := pgCode(err); code == pgUniqueViolation {
+			return ErrConflict
+		}
+		return err
+	})
 }
 
 func (s *PGStore) getUserBy(ctx context.Context, col, val string) (*User, error) {

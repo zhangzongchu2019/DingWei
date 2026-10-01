@@ -30,6 +30,8 @@ func Run(t *testing.T, newStore Factory) {
 		fn   func(t *testing.T, s identity.Store)
 	}{
 		{"N3_user_id_and_short_name_conflict_by_lowercase", userConflictLowercase},
+		{"N3_first_admin_only_when_no_management_user", firstAdminOnlyOnce},
+		{"N3_first_admin_refused_when_only_manager", firstAdminRefusedByManager},
 		{"N3_disable_revokes_sessions", disableRevokesSessions},
 		{"N3_get_user_by_short_name_case_insensitive", getUserByShortName},
 		{"N3_list_users_sorted_by_lowercase_id", listUsers},
@@ -634,5 +636,49 @@ func listUsers(t *testing.T, s identity.Store) {
 	}
 	if strings.Join(ids, ",") != "Alice/pending_bind,bob/active,carol/active" {
 		t.Fatalf("order/fields = %v", ids)
+	}
+}
+
+// 初始化脚本建第一个管理用户（台账 8971bddf）：库中已有 platform_admin 或 manager（不论状态）⇒ ErrAdminExists 且不插入；
+// 只有普通用户时可建；用户 ID／简称冲突 ⇒ ErrConflict。
+func firstAdminOnlyOnce(t *testing.T, s identity.Store) {
+	t0 := time.Date(2026, 10, 1, 9, 0, 0, 0, time.UTC)
+	admin := func(id, short string) identity.User {
+		return identity.User{UserID: id, ShortName: short, Type: identity.UserPlatformAdmin, State: identity.UserActive,
+			PasswordHash: "h-" + id, MustChangePassword: true, CreatedAt: t0}
+	}
+	mustUser(t, s, "member1", "m1", identity.UserActive)
+	wantErr(t, "user id taken by member", s.CreateFirstAdmin(ctx, admin("MEMBER1", "zz")), identity.ErrConflict)
+	wantErr(t, "short name taken by member", s.CreateFirstAdmin(ctx, admin("fresh", "M1")), identity.ErrConflict)
+	if err := s.CreateFirstAdmin(ctx, admin("Boss", "bs")); err != nil {
+		t.Fatalf("first admin with only members present: %v", err)
+	}
+	u, err := s.GetUser(ctx, "boss")
+	if err != nil || u.Type != identity.UserPlatformAdmin || u.State != identity.UserActive || !u.MustChangePassword || u.PasswordHash != "h-Boss" {
+		t.Fatalf("stored admin: %+v %v", u, err)
+	}
+	wantErr(t, "second admin", s.CreateFirstAdmin(ctx, admin("Boss2", "b2")), identity.ErrAdminExists)
+	if _, err := s.GetUser(ctx, "boss2"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("refused admin was inserted: %v", err)
+	}
+	// 已有的管理用户被停用，或只有 manager：仍算「已有管理用户」
+	if err := s.SetUserState(ctx, "boss", identity.UserDisabled, t0); err != nil {
+		t.Fatal(err)
+	}
+	wantErr(t, "admin disabled", s.CreateFirstAdmin(ctx, admin("Boss3", "b3")), identity.ErrAdminExists)
+	if n, _ := s.CountUsers(ctx); n != 2 {
+		t.Fatalf("CountUsers=%d, want 2", n)
+	}
+}
+
+// 库里只有一个 manager（尚未绑定）也算「已有管理用户」。
+func firstAdminRefusedByManager(t *testing.T, s identity.Store) {
+	if err := s.CreateUser(ctx, identity.User{UserID: "mgr", ShortName: "mg", Type: identity.UserManager, State: identity.UserPendingBind, CreatedAt: t0}); err != nil {
+		t.Fatal(err)
+	}
+	err := s.CreateFirstAdmin(ctx, identity.User{UserID: "Boss", ShortName: "bs", Type: identity.UserPlatformAdmin, State: identity.UserActive, CreatedAt: t0})
+	wantErr(t, "manager exists", err, identity.ErrAdminExists)
+	if n, _ := s.CountUsers(ctx); n != 1 {
+		t.Fatalf("CountUsers=%d, want 1", n)
 	}
 }

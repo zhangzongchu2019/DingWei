@@ -2,8 +2,6 @@ package identity_test
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -12,36 +10,35 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 )
 
-const bootPw = "Boot-Pass-0001"
+// adminID 初始化脚本建的第一个管理用户（台账 8971bddf：取消 systemdefault）。
+const adminID, adminShort = "Admin", "ad"
 
 type n3 struct {
 	clk   *clock.Fake
 	store *identity.MemStore
 	ob    *identity.Onboarding
-	pwf   string
+	pw    string // 初始化脚本给出的一次性初始口令
 }
 
 func newN3(t *testing.T) *n3 {
 	t.Helper()
 	e := &n3{clk: &clock.Fake{T: time.Date(2026, 10, 1, 9, 0, 0, 0, time.UTC)}, store: identity.NewMemStore()}
 	e.ob = identity.NewOnboarding(identity.NewService(e.store, e.clk.Now, nil))
-	e.pwf = filepath.Join(t.TempDir(), "systemdefault.pw")
-	if err := os.WriteFile(e.pwf, []byte(bootPw+"\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
 	return e
 }
 
 func (e *n3) boot(t *testing.T) {
 	t.Helper()
-	if created, err := e.ob.Bootstrap(bg, e.pwf); err != nil || !created {
-		t.Fatalf("bootstrap: created=%v err=%v", created, err)
+	pw, err := e.ob.BootstrapAdmin(bg, adminID, adminShort, "")
+	if err != nil {
+		t.Fatalf("bootstrap-admin: %v", err)
 	}
+	e.pw = pw
 }
 
 func (e *n3) admin(t *testing.T) *identity.User {
 	t.Helper()
-	u, err := e.store.GetUser(bg, identity.SystemDefaultUserID)
+	u, err := e.store.GetUser(bg, adminID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,86 +50,122 @@ var (
 	fsB = identity.Identity{Provider: "feishu", Issuer: "devplatform", Subject: "ou_bob"}
 )
 
-func TestN3_A1_BootstrapEmptyDB(t *testing.T) {
+func TestN3_A1_BootstrapAdmin(t *testing.T) {
 	e := newN3(t)
 	e.boot(t)
 	if n, _ := e.store.CountUsers(bg); n != 1 {
 		t.Fatalf("users=%d, want 1", n)
 	}
 	u := e.admin(t)
-	if u.Type != identity.UserPlatformAdmin || u.State != identity.UserActive || !u.MustChangePassword || u.PasswordHash == "" || u.PasswordHash == bootPw {
-		t.Fatalf("systemdefault = %+v", u)
+	if u.UserID != adminID || u.ShortName != adminShort || u.DisplayName != adminID || u.Type != identity.UserPlatformAdmin ||
+		u.State != identity.UserActive || !u.MustChangePassword || u.PasswordHash == "" || u.PasswordHash == e.pw {
+		t.Fatalf("admin = %+v", u)
+	}
+	if len(e.pw) != identity.InitialPasswordLen || len(e.pw) < identity.MinPasswordLen || strings.Trim(e.pw, "ABCDEFGHJKMNPQRSTUVWXYZ23456789") != "" {
+		t.Fatalf("initial password %q", e.pw)
+	}
+	// 不再有常驻 systemdefault
+	if _, err := e.store.GetUser(bg, "systemdefault"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("systemdefault must not exist: %v", err)
+	}
+	// 口令是随机的：另一个空库再执行一次，得到不同的口令
+	e2 := newN3(t)
+	e2.boot(t)
+	if e2.pw == e.pw {
+		t.Fatal("two bootstraps produced the same initial password")
 	}
 }
 
-func TestN3_A3_BootstrapNonEmptyNoop(t *testing.T) {
+// 库中已有管理用户（platform_admin 或 manager，不论状态）⇒ 拒绝，什么也不改；只有普通用户时允许。
+func TestN3_A3_BootstrapAdminRefusedWhenAdminExists(t *testing.T) {
 	e := newN3(t)
 	e.boot(t)
 	before := e.admin(t).PasswordHash
-	if err := os.WriteFile(e.pwf, []byte("Another-Pass-999\n"), 0o600); err != nil {
-		t.Fatal(err)
+	if pw, err := e.ob.BootstrapAdmin(bg, "Other", "ot", ""); !errors.Is(err, identity.ErrAdminExists) || pw != "" {
+		t.Fatalf("second bootstrap: %q %v", pw, err)
 	}
-	created, err := e.ob.Bootstrap(bg, e.pwf)
-	if err != nil || created {
-		t.Fatalf("second bootstrap: created=%v err=%v", created, err)
+	if n, _ := e.store.CountUsers(bg); n != 1 || e.admin(t).PasswordHash != before {
+		t.Fatalf("second bootstrap changed state: users=%d", n)
 	}
-	if n, _ := e.store.CountUsers(bg); n != 1 {
-		t.Fatalf("users=%d", n)
+	// 再以同一用户 ID 执行（想借此重置口令）也一样拒
+	if _, err := e.ob.BootstrapAdmin(bg, adminID, adminShort, ""); !errors.Is(err, identity.ErrAdminExists) || e.admin(t).PasswordHash != before {
+		t.Fatalf("re-bootstrap same admin: %v", err)
 	}
-	if e.admin(t).PasswordHash != before {
-		t.Fatal("password hash reset by second bootstrap")
-	}
-	// 非空库时连密码文件都不读：文件缺失也不报错。
-	_ = os.Remove(e.pwf)
-	if created, err := e.ob.Bootstrap(bg, e.pwf); err != nil || created {
-		t.Fatalf("non-empty with missing file: created=%v err=%v", created, err)
-	}
-}
-
-func TestN3_A4_BootstrapFailsClosed(t *testing.T) {
-	for name, prep := range map[string]func(path string){
-		"missing":   func(p string) { _ = os.Remove(p) },
-		"mode 0644": func(p string) { _ = os.Chmod(p, 0o644) },
-		"empty":     func(p string) { _ = os.WriteFile(p, []byte("\n"), 0o600) },
+	for name, existing := range map[string]identity.User{
+		"manager":        {UserID: "Mgr", ShortName: "mg", Type: identity.UserManager, State: identity.UserPendingBind},
+		"disabled admin": {UserID: "Old", ShortName: "od", Type: identity.UserPlatformAdmin, State: identity.UserDisabled},
 	} {
 		e := newN3(t)
-		prep(e.pwf)
-		created, err := e.ob.Bootstrap(bg, e.pwf)
-		if !errors.Is(err, identity.ErrBootstrapSecret) || created {
-			t.Errorf("%s: created=%v err=%v", name, created, err)
+		if err := e.store.CreateUser(bg, existing); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := e.ob.BootstrapAdmin(bg, adminID, adminShort, ""); !errors.Is(err, identity.ErrAdminExists) {
+			t.Errorf("%s exists: %v, want ErrAdminExists", name, err)
+		}
+	}
+	e = newN3(t)
+	if err := e.store.CreateUser(bg, identity.User{UserID: "Mem", ShortName: "me", Type: identity.UserMember, State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	e.boot(t)
+}
+
+func TestN3_A4_BootstrapAdminValidation(t *testing.T) {
+	for _, c := range []struct{ id, short, display string }{
+		{"a", "ad", ""}, {"has space", "ad", ""}, {strings.Repeat("a", 33), "ad", ""},
+		{adminID, "x", ""}, {adminID, "ad!", ""}, {adminID, strings.Repeat("s", 17), ""},
+		{adminID, adminShort, strings.Repeat("名", 30)},
+	} {
+		e := newN3(t)
+		if _, err := e.ob.BootstrapAdmin(bg, c.id, c.short, c.display); !errors.Is(err, identity.ErrBadRequest) {
+			t.Errorf("%q/%q/%d: %v, want ErrBadRequest", c.id, c.short, len(c.display), err)
 		}
 		if n, _ := e.store.CountUsers(bg); n != 0 {
-			t.Errorf("%s: users=%d, want 0", name, n)
+			t.Errorf("%q/%q: users=%d, want 0", c.id, c.short, n)
 		}
+	}
+	// 与已有普通用户的用户 ID 或简称冲突 ⇒ ErrConflict
+	e := newN3(t)
+	_ = e.store.CreateUser(bg, identity.User{UserID: "Mem", ShortName: "me", Type: identity.UserMember, State: identity.UserActive})
+	for _, c := range [][2]string{{"MEM", "zz"}, {"Fresh", "ME"}} {
+		if _, err := e.ob.BootstrapAdmin(bg, c[0], c[1], ""); !errors.Is(err, identity.ErrConflict) {
+			t.Errorf("%v: %v, want ErrConflict", c, err)
+		}
+	}
+	if pw, err := e.ob.BootstrapAdmin(bg, "Boss", "bs", "老板"); err != nil || pw == "" {
+		t.Fatalf("valid: %v", err)
+	}
+	if u, _ := e.store.GetUser(bg, "boss"); u.DisplayName != "老板" {
+		t.Fatalf("display name: %+v", u)
 	}
 }
 
 func TestN3_A2_MustChangePasswordThenOldFails(t *testing.T) {
 	e := newN3(t)
 	e.boot(t)
-	tok, u, err := e.ob.PasswordLogin(bg, "SystemDefault", bootPw, "1.1.1.1")
-	if err != nil || u.UserID != identity.SystemDefaultUserID || tok == "" {
+	tok, u, err := e.ob.PasswordLogin(bg, "ADMIN", e.pw, "1.1.1.1")
+	if err != nil || u.UserID != adminID || tok == "" {
 		t.Fatalf("login: %v", err)
 	}
 	if _, err := e.ob.ResolveSession(bg, tok); !errors.Is(err, identity.ErrMustChange) {
 		t.Fatalf("session before change: %v, want ErrMustChange", err)
 	}
-	if err := e.ob.ChangePassword(bg, "systemdefault", bootPw, "short"); !errors.Is(err, identity.ErrWeakPassword) {
+	if err := e.ob.ChangePassword(bg, "admin", e.pw, "short"); !errors.Is(err, identity.ErrWeakPassword) {
 		t.Fatalf("weak: %v", err)
 	}
-	if err := e.ob.ChangePassword(bg, "systemdefault", bootPw, bootPw); !errors.Is(err, identity.ErrWeakPassword) {
+	if err := e.ob.ChangePassword(bg, "admin", e.pw, e.pw); !errors.Is(err, identity.ErrWeakPassword) {
 		t.Fatalf("same as old: %v", err)
 	}
-	if err := e.ob.ChangePassword(bg, "systemdefault", bootPw, "New-Strong-Pass-42"); err != nil {
+	if err := e.ob.ChangePassword(bg, "admin", e.pw, "New-Strong-Pass-42"); err != nil {
 		t.Fatal(err)
 	}
-	if u, err := e.ob.ResolveSession(bg, tok); err != nil || u.UserID != identity.SystemDefaultUserID {
+	if u, err := e.ob.ResolveSession(bg, tok); err != nil || u.UserID != adminID {
 		t.Fatalf("session after change: %v", err)
 	}
-	if _, _, err := e.ob.PasswordLogin(bg, "systemdefault", bootPw, "1.1.1.1"); !errors.Is(err, identity.ErrBadCredentials) {
+	if _, _, err := e.ob.PasswordLogin(bg, "admin", e.pw, "1.1.1.1"); !errors.Is(err, identity.ErrBadCredentials) {
 		t.Fatalf("old password: %v", err)
 	}
-	if _, _, err := e.ob.PasswordLogin(bg, "systemdefault", "New-Strong-Pass-42", "1.1.1.1"); err != nil {
+	if _, _, err := e.ob.PasswordLogin(bg, "admin", "New-Strong-Pass-42", "1.1.1.1"); err != nil {
 		t.Fatalf("new password: %v", err)
 	}
 }
@@ -141,19 +174,19 @@ func TestN3_PasswordLoginRateLimited(t *testing.T) {
 	e := newN3(t)
 	e.boot(t)
 	for i := 0; i < 5; i++ {
-		if _, _, err := e.ob.PasswordLogin(bg, "systemdefault", "wrong", "6.6.6.6"); !errors.Is(err, identity.ErrBadCredentials) {
+		if _, _, err := e.ob.PasswordLogin(bg, "admin", "wrong", "6.6.6.6"); !errors.Is(err, identity.ErrBadCredentials) {
 			t.Fatalf("attempt %d: %v", i, err)
 		}
 	}
 	var rl *identity.RateLimitedError
-	if _, _, err := e.ob.PasswordLogin(bg, "systemdefault", bootPw, "6.6.6.6"); !errors.As(err, &rl) {
+	if _, _, err := e.ob.PasswordLogin(bg, "admin", e.pw, "6.6.6.6"); !errors.As(err, &rl) {
 		t.Fatalf("6th attempt with right password: %v, want rate limited", err)
 	}
-	if _, _, err := e.ob.PasswordLogin(bg, "systemdefault", bootPw, "7.7.7.7"); err != nil {
+	if _, _, err := e.ob.PasswordLogin(bg, "admin", e.pw, "7.7.7.7"); err != nil {
 		t.Fatalf("other IP: %v", err)
 	}
 	e.clk.Advance(15 * time.Minute)
-	if _, _, err := e.ob.PasswordLogin(bg, "systemdefault", bootPw, "6.6.6.6"); err != nil {
+	if _, _, err := e.ob.PasswordLogin(bg, "admin", e.pw, "6.6.6.6"); err != nil {
 		t.Fatalf("after window: %v", err)
 	}
 }
@@ -301,25 +334,25 @@ func TestN3_A13_DisableKillsSession(t *testing.T) {
 func TestN3_A5_A14_AuditHasNoSecretsAndCoversActions(t *testing.T) {
 	e := newN3(t)
 	e.boot(t)
-	tok, _, _ := e.ob.PasswordLogin(bg, "systemdefault", bootPw, "1.1.1.1")
-	_ = e.ob.ChangePassword(bg, "systemdefault", bootPw, "New-Strong-Pass-42")
+	tok, _, _ := e.ob.PasswordLogin(bg, "admin", e.pw, "1.1.1.1")
+	_ = e.ob.ChangePassword(bg, "admin", e.pw, "New-Strong-Pass-42")
 	regCode := onboardAlice(t, e)
 	e.ob.HandleRegister(bg, fsA, regCode)
 	lc, _ := e.ob.IssueLoginCode("alice")
 	e.ob.HandleLogin(bg, fsA, lc)
 	sess, _ := e.ob.ClaimLogin(lc)
-	_, _, _ = e.ob.PasswordLogin(bg, "systemdefault", "wrong", "1.1.1.1")
+	_, _, _ = e.ob.PasswordLogin(bg, "admin", "wrong", "1.1.1.1")
 	seen := map[string]bool{}
 	for _, ev := range e.store.AuditLog() {
 		seen[ev.Action] = true
 		blob := ev.Actor + "|" + ev.Action + "|" + ev.Target + "|" + ev.Detail
-		for _, s := range []string{bootPw, "New-Strong-Pass-42", regCode, lc, tok, sess} {
+		for _, s := range []string{e.pw, "New-Strong-Pass-42", regCode, lc, tok, sess} {
 			if s != "" && strings.Contains(blob, s) {
 				t.Fatalf("audit %s leaks a secret", ev.Action)
 			}
 		}
 	}
-	for _, a := range []string{"user.bootstrap", "login.ok", "login.rejected", "password.change", "user.create", "user.registration_code", "user.bind"} {
+	for _, a := range []string{"user.bootstrap_admin", "login.ok", "login.rejected", "password.change", "user.create", "user.registration_code", "user.bind"} {
 		if !seen[a] {
 			t.Errorf("A14: no audit for %s", a)
 		}
