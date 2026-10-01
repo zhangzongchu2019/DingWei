@@ -1,4 +1,5 @@
 """Hosted-seat enrollment: the Hub issues a one-time token; the container polls it directly."""
+import calendar
 import json
 import os
 import shutil
@@ -16,6 +17,8 @@ POLL = "ab" * 32
 APP = "cd" * 16
 APPROVED = {"state": "approved", "agent_name": "Codex1", "agent_full_name": "Codex1.zzc", "credential": SECRET}
 
+
+FIXED_NOW = calendar.timegm((2026, 10, 1, 7, 0, 0))   # 固定时钟:令牌过期判断不得依赖真实时间
 
 class Hub:
     """Scripted Hub: poll replies are dicts or exceptions; no apply endpoint exists on this route."""
@@ -188,14 +191,22 @@ class HostedEnrollTest(unittest.TestCase):
         self.assertNotIn(POLL, " ".join(self.notes))
 
     def test_prepare_client_env_picks_the_hosted_route_without_an_owner(self):
-        self.put_token()
+        self.put_token(expires_at="2026-10-01T08:00:00Z")      # 按真实时钟已过期、按注入的 07:00Z 仍有效:只有用了注入时钟才过
         env, cred, state_dir = enroll.prepare_client_env(
             {"SH_WS_BASE": "wss://h", "SH_STATE_DIR": self.dir, "SH_ENROLL": "1", "SH_ENROLL_TOKEN_FILE": self.token_file},
             show=lambda _c: self.fail("a hosted seat has no pairing code to show"), notify=self.notes.append,
-            transport=Hub([APPROVED]))
+            transport=Hub([APPROVED]), now=lambda: FIXED_NOW)
         self.assertEqual((cred.secret, env["SH_SESSION_NAME"]), (SECRET, "codex1"))
         self.assertNotIn(POLL, " ".join(env.values()))
         self.assertFalse(os.path.exists(self.token_file))
+
+    def test_prepare_client_env_uses_the_injected_clock_for_token_expiry(self):
+        self.put_token()                                        # 远期令牌:按真实时钟有效、按注入的 2100 年已过期
+        env = {"SH_WS_BASE": "wss://h", "SH_STATE_DIR": self.dir, "SH_ENROLL": "1", "SH_ENROLL_TOKEN_FILE": self.token_file}
+        past_grace = calendar.timegm((2100, 1, 1, 0, 0, 0))
+        with self.assertRaises(EnrollStopped):
+            enroll.prepare_client_env(env, show=lambda _c: None, notify=self.notes.append,
+                                      transport=Hub([APPROVED]), now=lambda: past_grace)
 
 
 if __name__ == "__main__":

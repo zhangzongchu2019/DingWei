@@ -541,7 +541,8 @@ def hub_http_base(ws_base: str) -> str:
 
 
 def prepare_client_env(environ, *, show: Callable[[str], None], notify: Callable[[str], None],
-                       transport: Transport | None = None) -> tuple[dict[str, str], Credential, str]:
+                       transport: Transport | None = None,
+                       now: Callable[[], float] = time.time) -> tuple[dict[str, str], Credential, str]:
     """SH_ENROLL=1 startup: enroll if needed, then return (env for load_config, credential, state_dir).
 
     config.py stays untouched (R1 owns it): load_config still wants SH_KEY_ID/SH_SECRET, so they get
@@ -556,7 +557,7 @@ def prepare_client_env(environ, *, show: Callable[[str], None], notify: Callable
     token_file = os.path.expanduser(env.get("SH_ENROLL_TOKEN_FILE", "") or os.path.join(state_dir, TOKEN_FILE))
     if os.path.exists(token_file) or _load_pending(state_dir, "hosted"):
         # hosted seat: the platform put a one-time token file in the container; no owner, no pairing code
-        cred = enroll_with_token(state_dir=state_dir, token_file=token_file, transport=transport, notify=notify)
+        cred = enroll_with_token(state_dir=state_dir, token_file=token_file, transport=transport, notify=notify, now=now)
     else:
         cred = enroll(
             state_dir=state_dir, owner=env.get("SH_ENROLL_OWNER", ""),
