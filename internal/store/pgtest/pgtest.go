@@ -9,8 +9,10 @@
 //	   并【说明原因】,不静默降级成「假装过了」。
 //
 // 🔴 Skip 只许用于【环境本就缺失】。「环境在却起不来」(工具编得出而库起不来、协议行缺 DSN、
-// 起库超时)是真故障:默认也 Skip 会把它盖成绿 —— 复验 🟡② 指出,将来挂在 Pool 上的
-// G3 PG 契约会因此静默全跳。置 HUB_TEST_PG_STRICT=1 后这类情况改判 Fail(CI 上应当置位)。
+// 起库超时)是真故障,**默认判 Fail**。首版默认是 Skip,复验 🟡② 指出那会把真故障盖成绿:
+// 挂在 Pool 上的其它域用例(G3 身份存储的 PG 契约、G4 hosted)会静默全跳,而整包仍然报 ok。
+// ⇒ 默认已翻转(组长裁定 ruling-2026-10-01T130835Z,取复验 bd6942a3 的甲案)。
+// 🔴 要允许 Skip 只有一条路:显式置 HUB_TEST_PG_SKIP_OK=1(见 SkipOKEnv)。
 // 🔴「随起随清」不采信子进程自报:见 residue.go,起库前后各拍一次快照,只报【新增】残留
 // (系统临时目录里的 PG 日志文件、进程表里的 postgres 僵尸)。
 //
@@ -51,15 +53,29 @@ const DSNEnv = "HUB_TEST_PG_DSN"
 // 本包首版把这条写反了(=0 反而允许),是跑 Skip 路径时当场露出来的,已修并补了用例。
 const EmbeddedOffEnv = "HUB_TEST_PG_EMBEDDED"
 
-// StrictEnv 是「严格模式」开关:置位后,【环境在却起不来】改判 Fail,不再降级成 Skip。
+// SkipOKEnv 是「允许把【环境在却起不来】降级成 Skip」的**唯一**开关。
 //
-// 🔴 与 EmbeddedOffEnv 一样按【字面】读,而且认不出的值【报错】而不是当成关:
-// 把一个打错的开关静默当成「关」,正是本开关要防的那类事(判据死了但看着还绿)。
-// 未设 = 关,便于本地直接跑;CI 应当置 1。
+// 🔴 未设 = 不允许 = 判 Fail(默认严)。理由见包首注与 SkipOKEnv 的裁定号:
+// 默认宽会让起库失败静默变成 Skip,而 Skip 在日志里看上去像通过。
+// 🔴 与 EmbeddedOffEnv 一样按【字面】读,认不出的值【报错】而不是当成「不允许」:
+// 一个打错的开关静默生效,正是本开关要防的那类事(判据死了但看着还绿)。
+const SkipOKEnv = "HUB_TEST_PG_SKIP_OK"
+
+// StrictEnv 是默认翻转**之前**的旧开关(那时要显式置位才判 Fail)。翻转后它不再表达任何新语义,
+// 但 🔴 仍然被读取,且只接受两种处置:
+//
+//	· 置「开」的值(1/true/on/yes/是)⇒ 与默认一致(判 Fail),原样认下 ——
+//	  过渡期各组被要求「PG 读数一律带 HUB_TEST_PG_STRICT=1」(裁定 ruling-2026-10-01T130835Z 末行),
+//	  翻转合入后那些读数不该反过来报错;
+//	· 置「关」的值(0/false/off/no/否)⇒ **报错**并指名改用 SkipOKEnv。
+//	  理由:旧语义里「关」＝允许 Skip。若翻转后静默忽略它,一处 CI 上遗留的 STRICT=0 就会
+//	  让人以为「这里允许跳过」而实际判据已翻 —— 那是开关读错里最坏的一种(看着绿、判据不明)。
+//
+// 认不出的值同样报错。旧读数全部改口后本常量可删(删时连它的用例一起删)。
 const StrictEnv = "HUB_TEST_PG_STRICT"
 
 // errEnvMissing 标记「环境本就缺失」这一类失败(没有 go 工具链、按令禁用内嵌 PG)。
-// 只有这一类在严格模式下仍然 Skip;其余一律算「环境在却起不来」。
+// 🔴 只有这一类仍然 Skip(与 SkipOKEnv 无关);其余一律算「环境在却起不来」。
 var errEnvMissing = errors.New("PG 测试环境缺失")
 
 // 起库与收尾的时间上限。首次要下载 PG 二进制,故给足;之后走缓存,实测 4 秒级。
@@ -165,19 +181,40 @@ func embeddedDisabled() (bool, string) {
 	}
 }
 
-// unavailKind 区分「拿不到库」的两类原因。这一区分决定了严格模式下是 Skip 还是 Fail,
+// unavailKind 区分「拿不到库」的两类原因。这一区分决定了是 Skip 还是 Fail,
 // 分错就等于把真故障盖成绿(envBroken 报成 envMissing),或把「按令不许起库」判成故障。
 type unavailKind int
 
 const (
 	envMissing unavailKind = iota // 环境本就缺失 ⇒ 一律 Skip
-	envBroken                     // 环境在却起不来 ⇒ 严格模式 Fail,否则 Skip
+	envBroken                     // 环境在却起不来 ⇒ 默认 Fail;只有显式 SkipOKEnv 才 Skip
 )
 
-// strictMode 判严格模式是否开启。认不出的值返回错误(理由见 StrictEnv 的注释)。
-func strictMode() (bool, error) {
-	raw := strings.TrimSpace(os.Getenv(StrictEnv))
-	switch strings.ToLower(raw) {
+// skipAllowed 判「环境在却起不来」这一类失败**能否**降级成 Skip。认不出的值返回错误
+// (理由见 SkipOKEnv 与 StrictEnv 的注释)。
+//
+// 🔴 抽成纯函数是为了可单测:这条判据控制的是【会不会把真故障盖成绿】,写反了不会有任何用例变红 ——
+// 失效之后的表现恰恰是【全绿】(与 embeddedDisabled 同一条理由)。
+//
+// 🔴 返回 true 只有【一个】来源:SkipOKEnv 显式置了「开」的值。StrictEnv 的任何取值都不会让本函数
+// 返回 true —— 旧开关的「关」不再等于「允许 Skip」,而是报错(见 StrictEnv 注释)。
+func skipAllowed() (bool, error) {
+	switch raw := strings.ToLower(strings.TrimSpace(os.Getenv(StrictEnv))); raw {
+	case "":
+	case "1", "true", "on", "yes", "是":
+		// 旧开关的「开」＝新默认(判 Fail):认下,不改变判定。
+	case "0", "false", "off", "no", "否":
+		return false, fmt.Errorf(
+			"%s=%s 已不再表示「允许 Skip」:判据默认已翻转为 Fail(组长裁定 ruling-2026-10-01T130835Z)。"+
+				"要允许 Skip 请显式置 %s=1;不需要就把 %s 从环境里去掉(旧读数的 =1 仍可原样带着,与本默认一致)",
+			StrictEnv, raw, SkipOKEnv, StrictEnv)
+	default:
+		return false, fmt.Errorf(
+			"%s=%q 认不出:本开关已随默认翻转废弃(只认「开」值,效果与默认相同);允许 Skip 请用 %s=1",
+			StrictEnv, raw, SkipOKEnv)
+	}
+
+	switch raw := strings.ToLower(strings.TrimSpace(os.Getenv(SkipOKEnv))); raw {
 	case "":
 		return false, nil
 	case "1", "true", "on", "yes", "是":
@@ -185,7 +222,9 @@ func strictMode() (bool, error) {
 	case "0", "false", "off", "no", "否":
 		return false, nil
 	default:
-		return false, fmt.Errorf("%s=%q 认不出:只接受 1/true/on/yes/是(开)与 0/false/off/no/否(关)", StrictEnv, raw)
+		return false, fmt.Errorf(
+			"%s=%q 认不出:只接受 1/true/on/yes/是(允许 Skip)与 0/false/off/no/否(不允许,即默认)",
+			SkipOKEnv, raw)
 	}
 }
 
@@ -197,15 +236,15 @@ func strictMode() (bool, error) {
 func unavailable(t *testing.T, kind unavailKind, format string, args ...any) {
 	t.Helper()
 	msg := fmt.Sprintf(format, args...)
-	strict, err := strictMode()
+	allowSkip, err := skipAllowed()
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	if kind == envBroken && strict {
-		t.Fatalf("🔴 严格模式(%s 已置位):环境在却起不来,不许降级成 Skip。%s", StrictEnv, msg)
-	}
 	if kind == envBroken {
-		t.Skipf("%s\n(提示:这是「环境在却起不来」,默认按 Skip 处理;置 %s=1 可让它改判 Fail)", msg, StrictEnv)
+		if allowSkip {
+			t.Skipf("%s\n(提示:这是「环境在却起不来」,本属真故障;因 %s 已显式置位才降级成 Skip)", msg, SkipOKEnv)
+		}
+		t.Fatalf("🔴 环境在却起不来,默认判 Fail,不许盖成 Skip(确需跳过请显式置 %s=1)。%s", SkipOKEnv, msg)
 	}
 	t.Skipf("%s", msg)
 }

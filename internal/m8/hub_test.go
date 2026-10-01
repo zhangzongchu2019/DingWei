@@ -58,6 +58,7 @@ func newTestHub(t *testing.T) (*Hub, *store.SQLite, context.Context) {
 		t.Fatalf("Migrate: %v", err)
 	}
 	hub := New(db, ConsoleAuthDisabled())
+	t.Cleanup(hub.Close)
 	// Feature-specific tests enable the lightweight first-seen notification;
 	// unrelated tests keep their historical outbound-queue assumptions.
 	hub.newSessionNotice = false
@@ -5759,6 +5760,7 @@ func TestOnboardUsesOwnerScopedDBIdentityAndBrief(t *testing.T) {
 
 func TestOnboardReconnectDebouncePerSession(t *testing.T) {
 	hub := New(nil, ConsoleAuthDisabled())
+	t.Cleanup(hub.Close)
 	hub.onboardInterval = time.Hour
 	now := time.Date(2026, 7, 11, 12, 0, 0, 0, time.UTC)
 	home := &sessionClient{keyID: "key", sessionName: "home", connSeq: 1}
