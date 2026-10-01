@@ -20,7 +20,19 @@
 #    真实债一直是 55，一处未还。
 #
 # ⚠️ pending 非零【不等于】隔离已实现 —— 甲域 sol 明确要求：不得借 allowlist 批准宣称隔离已完成。
-open 4
+#
+# 🔴 open 4 → 5 是【既成债登记】，不是新许可（组长裁定 ruling-2026-10-01T124750Z，板 09a6adf1）。
+#    事实链（发现件：板 11b93262 · runbooks/FINDING-REPO-BOUNDARY-OPEN-DRIFT-20261001-qwen38maxkhovvob4.md）：
+#      · 基线 open 4 由 78a91ab8（2026-08-24）写入，那棵树实数正好 4 处（datad 测试 2 ＋ mcs/board 1 ＋ store/sqlite 1），当时是准的；
+#      · 第 5 处由 bc95d2c4（2026-09-16，files 可配置元数据那批）加入 internal/fileservice/repository.go:24 的 sql.Open，未同步本文件；
+#      · 故 preprod fcd3a3dd 与 newplat/main 22778c9a 上本闸判据一恒红（5 > 4），两个席位独立复现。
+#    登记它的理由：恒红只有两种结局，都坏 —— 被读成「某组新增了」而错怪人，或「这闸一直是红的」变成常识、判据一从此没人看。
+#    🔴 终值仍是 0，且本次上调【不豁免任何新代码】：各组交付判据为「增量 0（等于集成分支计数）」，这处既有红只挂本条。
+#    🔴 归还路径：G2「删 SQLite」那一批把 internal/fileservice 收进 repo.Pool 后，本键须显式改回 4 并随该改动一起提交
+#       （脚本末段明写：棘轮收紧不接受「跑一次就算收紧」，非 pre-commit 上下文一律要求显式落盘）。
+#    ⚠️ 不得把 internal/fileservice 加进 specs/gates/repo-packages.txt 来「修」这条 —— 那是给非仓储包发建库许可，
+#       与「新代码请走仓储包」反向，且允许清单对判据二不豁免。
+open 5
 escape 1
 pending 55
 pending:datad 25
