@@ -105,13 +105,29 @@ func (s *Store) SetNodeState(ctx context.Context, id, state string) error {
 // PickNodeAuto 「自动」落位：online 节点中剩余内存最大者（组长定 da622016）。
 // 容量 JSON 形如 {"mem_free_mb":N}；无 online 节点返回 ErrNotFound（上层译 node_no_capacity）。
 func (s *Store) PickNodeAuto(ctx context.Context) (Node, error) {
+	return s.PickNodeByPool(ctx, "")
+}
+
+// PickNodeByPool 多节点池调度（T-G4-52，V8-D1）：pool 非空 ⇒ 只在该标签池内按剩余内存最大落位；
+// pool 为空 ⇒ 全池最闲。池内无 online 节点 ⇒ ErrNotFound（上层译 node_no_capacity）。
+func (s *Store) PickNodeByPool(ctx context.Context, pool string) (Node, error) {
 	var n Node
-	err := s.qrow(ctx, `
+	var err error
+	if pool == "" {
+		err = s.qrow(ctx, `
 SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at
 FROM g4_node WHERE state='online'
 ORDER BY COALESCE((capacity->>'mem_free_mb')::bigint, 0) DESC, id
 LIMIT 1`).Scan(
-		&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+			&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+	} else {
+		err = s.qrow(ctx, `
+SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at
+FROM g4_node WHERE state='online' AND labels->>'pool' = $1
+ORDER BY COALESCE((capacity->>'mem_free_mb')::bigint, 0) DESC, id
+LIMIT 1`, pool).Scan(
+			&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return n, ErrNotFound
 	}

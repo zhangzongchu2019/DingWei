@@ -258,3 +258,35 @@ func TestSweepTimeouts(t *testing.T) {
 }
 
 var _ = errors.New
+
+func TestPoolScheduling(t *testing.T) {
+	o, _, _, s := mkOrch(t)
+	ctx := context.Background()
+	// 三个节点：pool-a 大余量、pool-b 小余量（标签落位不得被全池最闲抢走——D1 反向）
+	if err := s.UpsertNode(ctx, Node{ID: "nd_pa", Name: "pa", Labels: json.RawMessage(`{"pool":"a"}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetNodeOnline(ctx, "nd_pa", json.RawMessage(`{"mem_free_mb":32768}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.UpsertNode(ctx, Node{ID: "nd_pb", Name: "pb", Labels: json.RawMessage(`{"pool":"b"}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetNodeOnline(ctx, "nd_pb", json.RawMessage(`{"mem_free_mb":8192}`)); err != nil {
+		t.Fatal(err)
+	}
+	// 指定 pool=b ⇒ 必须落在 b（尽管 a 更闲）
+	n, err := o.pickNode(ctx, "auto", "b", Plan{ID: "2c4g", VCPU: 2, MemMB: 4096})
+	if err != nil || n.ID != "nd_pb" {
+		t.Fatalf("指定池应落 nd_pb: %+v err=%v", n, err)
+	}
+	// 指定不存在的池 ⇒ node_no_capacity
+	if _, err := o.pickNode(ctx, "auto", "no-such-pool", Plan{ID: "2c4g"}); err != ErrNoNodeCapacity {
+		t.Fatalf("空池应 node_no_capacity, 得 %v", err)
+	}
+	// 不指定 ⇒ 全池最闲（nd_pa 32768）
+	n, err = o.pickNode(ctx, "auto", "", Plan{ID: "2c4g"})
+	if err != nil || n.ID != "nd_pa" {
+		t.Fatalf("不指定应全池最闲 nd_pa: %+v err=%v", n, err)
+	}
+}

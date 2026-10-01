@@ -105,6 +105,7 @@ type CreateRequest struct {
 	Name      string
 	GroupCode string
 	NodeID    string // "auto" 或节点 id
+	Pool      string // 节点池标签（V8-D1：非空 ⇒ 只在该池落位；空 ⇒ 全池最闲）
 	CLI, LLM  string
 	CredKind  string // api_key | token_file
 	AccountID string
@@ -153,7 +154,7 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 		return CreateOutcome{}, ErrAccountNotAllowed
 	}
 	// ⑤ 节点：指定或自动（余量最大）；容量须容得下套餐
-	node, err := o.pickNode(ctx, req.NodeID, plan)
+	node, err := o.pickNode(ctx, req.NodeID, req.Pool, plan)
 	if err != nil {
 		return CreateOutcome{}, err
 	}
@@ -187,16 +188,16 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	return CreateOutcome{JobID: ag.ID, AgentID: ag.ID, State: "queued"}, nil
 }
 
-func (o *Orchestrator) pickNode(ctx context.Context, nodeID string, plan Plan) (Node, error) {
+func (o *Orchestrator) pickNode(ctx context.Context, nodeID, pool string, plan Plan) (Node, error) {
 	var n Node
 	var err error
-	if nodeID == "" || nodeID == "auto" {
-		n, err = o.st.PickNodeAuto(ctx)
-	} else {
+	if nodeID != "" && nodeID != "auto" {
 		n, err = o.st.GetNode(ctx, nodeID)
 		if err == nil && n.State != "online" {
 			err = ErrNoNodeCapacity
 		}
+	} else {
+		n, err = o.st.PickNodeByPool(ctx, pool)
 	}
 	if err != nil {
 		return n, ErrNoNodeCapacity
