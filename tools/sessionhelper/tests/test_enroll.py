@@ -161,6 +161,13 @@ class EnrollFlowTest(unittest.TestCase):
     def test_auth_headers_use_the_dedicated_credential(self):
         self.assertEqual(enroll.auth_headers(Credential("a", "s3")), {"Authorization": "Bearer s3"})
 
+    def test_ws_url_never_self_declares_identity(self):
+        url = enroll.agent_ws_url("wss://hub.example:55055/", {"key_id": "FB-1", "name": "dev55", "tool": "CLAUDE"})
+        self.assertTrue(url.startswith("wss://hub.example:55055/ws/agent?"))
+        for bad in ("key_id", "FB-1", "dev55", "name="):
+            self.assertNotIn(bad, url)
+        self.assertIn("tool=CLAUDE", url)
+
 
 if __name__ == "__main__":
     unittest.main()

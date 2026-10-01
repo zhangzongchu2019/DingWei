@@ -21,6 +21,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from urllib.parse import urlencode
 from typing import Callable, Protocol
 
 from . import __version__
@@ -277,3 +278,18 @@ def auth_headers(cred: Credential) -> dict[str, str]:
     """Headers for the dedicated-credential WebSocket handshake (draft: Bearer)."""
     return {"Authorization": f"Bearer {cred.secret}"}
 
+
+AGENT_WS_PATH = "/ws/agent"  # placeholder until the Hub fixes the path (ENROLL-API-DRAFT s.4)
+
+
+def agent_ws_url(ws_base: str, query: dict[str, str] | None = None) -> str:
+    """Connect URL for a dedicated-credential agent.
+
+    Identity (name.owner) is resolved by the Hub from the credential, so the
+    URL carries neither the agent name nor any account key: a self-declared
+    name is exactly the impersonation entry point.
+    """
+    q = {"version": __version__, **(query or {})}
+    for forbidden in ("key_id", "name", "agent_name", "session_name"):
+        q.pop(forbidden, None)
+    return f"{ws_base.rstrip('/')}{AGENT_WS_PATH}?{urlencode(q)}"

@@ -34,9 +34,10 @@ Hub 用 sha256(X-Poll-Secret) 与 poll_digest 常量时间比较，不符一律 
 业主在 console 输入的配对码 → 用该申请的 pairing_salt 算摘要 → 与 pairing_digest 常量时间比较；不符拒绝且申请保留（A2）。配对码一次性：批准成功即失效。
 注意：6 位码只有 10^6 种，摘要库一旦泄露可被离线穷举——配对码的保护靠"24 小时作废＋限频＋业主在场核对"，不靠摘要；请 Hub 侧勿把它当作秘密存储对待。
 
-## 4 以专属凭据连入（待定）
+## 4 以专属凭据连入（组长裁定 2026-10-01，台账 bfc84543）
 
-客户端暂按 `Authorization: Bearer <credential>` 握手、不再带账号 key；握手形态与 WebSocket 路径请 Hub 侧定稿。
+连接**只带专属凭据**：`Authorization: Bearer <credential>`，不再带账号 key。Agent 身份（名称.业主）由 Hub 按凭据查出；客户端不在连接地址里自报名称，即使带了也以凭据为准（自报名称正是冒名入口）。
+客户端实现 `enroll.agent_ws_url`：路径暂为占位 `/ws/agent`，查询串只含 version 及能力类参数（tool、os 等），并主动剥掉 key_id／name 类字段。WebSocket 路径请 Hub 侧定稿。
 
 ## 5 本地文件（客户端，状态目录 SH_STATE_DIR，默认 ~/.dingwei，目录 0700）
 
