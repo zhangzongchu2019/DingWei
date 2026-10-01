@@ -13,6 +13,7 @@ import (
 	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
 const npOrigin = "https://dw.cmjrt.com:55055"
@@ -197,12 +198,19 @@ func TestNewPlatformUnlockOnlyOwner(t *testing.T) {
 	term := v.hub.terminalForSession("u_ann", "worker")
 	term.viewers["vw1"] = &terminalViewer{id: "vw1", code: "PGCODE01"}
 	v.hub.mu.Unlock()
-	send := func(openID, text string) string {
-		res, handled, err := v.hub.dispatchTerminalInputCommand(context.Background(), msgFrom(openID, "devplatform"), text)
+	sendAs := func(m model.Message, text string) string {
+		res, handled, err := v.hub.dispatchTerminalInputCommand(context.Background(), m, text)
 		if err != nil || !handled {
 			t.Fatalf("dispatch %q: handled=%v err=%v", text, handled, err)
 		}
 		return res.Reply
+	}
+	send := func(openID, text string) string {
+		return sendAs(trustedMsgFrom(openID, "devplatform", model.IngressFeishuWSAuthenticated), text)
+	}
+	// 不可信入站（未签名 webhook）冒充属主：拒，不授写权（板 6c90284e）
+	if r := sendAs(msgFrom("ou_ann", "devplatform"), "#unlock PGCODE01"); r != untrustedIngressReply {
+		t.Fatalf("untrusted owner unlock: %q", r)
 	}
 	if r := send("ou_ben", "#unlock PGCODE01"); !strings.Contains(r, "未找到") {
 		t.Fatalf("non-owner unlock: %q", r)
