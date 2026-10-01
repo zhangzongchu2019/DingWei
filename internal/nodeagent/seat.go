@@ -117,7 +117,7 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources) 
 	memBytes := res.MemoryMB * 1024 * 1024
 	return map[string]any{
 		"Image": image,
-		"User":  "10001:10001", // 非 root（隔离底线）
+		"User":  "10001:10001", // 非 root（隔离底线；与 seatRunUID 一致）
 		"Env":   []string{},    // 🔴 凭据永不经 env（B7）；令牌走文件
 		"HostConfig": map[string]any{
 			"ReadonlyRootfs": true,
@@ -134,11 +134,25 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources) 
 	}
 }
 
+// 席位容器内运行用户（安全参数清单：非 root UID；令牌文件与席位目录属主亦为它——
+// G3 确认件：0600 且属主＝容器内运行客户端的用户，否则客户端读不到）。
+const seatRunUID = 10001
+const seatRunGID = 10001
+
+// chownForSeat 把路径属主改为席位运行用户。生产代理以 root（systemd）运行必执行；
+// 非 root 环境（单测）跳过——chown 本身就需要特权。
+func chownForSeat(path string) error {
+	if os.Geteuid() != 0 {
+		return nil
+	}
+	return os.Chown(path, seatRunUID, seatRunGID)
+}
+
 func (d *dockerOps) writeTokenFile(seatID string, tf *tokenFile) error {
 	if tf == nil {
 		return nil
 	}
-	raw, err := json.Marshal(tf)
+	raw, err := json.Marshal(tf) // 字段名由 struct tag 钉为小写下划线（G3 确认件第 1 条）
 	if err != nil {
 		return err
 	}
@@ -146,11 +160,17 @@ func (d *dockerOps) writeTokenFile(seatID string, tf *tokenFile) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil { // 防御：配额实现未建目录时也能落文件
 		return err
 	}
+	if err := chownForSeat(dir); err != nil {
+		return err
+	}
 	path := filepath.Join(dir, "enroll-token.json")
 	if err := os.WriteFile(path, raw, 0o600); err != nil {
 		return err
 	}
-	return os.Chmod(path, 0o600)
+	if err := os.Chmod(path, 0o600); err != nil {
+		return err
+	}
+	return chownForSeat(path)
 }
 
 func (d *dockerOps) waitRunning(ctx context.Context, id string) error {
