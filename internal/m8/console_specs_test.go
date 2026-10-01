@@ -43,7 +43,9 @@ func newConsoleSpecTestHub(t *testing.T) *Hub {
 	if err := db.UpsertConsolePlatformRole(context.Background(), model.ConsolePlatformRole{PrincipalID: "manager", Role: "management", Active: true}); err != nil {
 		t.Fatal(err)
 	}
-	return New(db, ConsoleAuthMode{enabled: true})
+	h := New(db, ConsoleAuthMode{enabled: true})
+	t.Cleanup(h.Close)
+	return h
 }
 
 type recordingSpecPermanentClient struct {

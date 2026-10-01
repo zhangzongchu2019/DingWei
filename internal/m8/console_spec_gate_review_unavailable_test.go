@@ -45,7 +45,9 @@ func newConsoleSpecTestHubAtPath(t *testing.T) (*Hub, string) {
 			t.Fatal(err)
 		}
 	}
-	return New(db, ConsoleAuthMode{enabled: true}), path
+	h := New(db, ConsoleAuthMode{enabled: true})
+	t.Cleanup(h.Close)
+	return h, path
 }
 
 func getConsoleSpecDetail(t *testing.T, hub *Hub, specID string) *httptest.ResponseRecorder {
