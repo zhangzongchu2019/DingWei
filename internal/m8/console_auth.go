@@ -350,6 +350,23 @@ html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="da
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <div id=app-version data-version="{{CONSOLE_VERSION}}" data-commit="{{CONSOLE_COMMIT}}">{{CONSOLE_VERSION_TEXT}}</div>
 <script>
+// 会话守卫(新平台 N3,第一期):接口回 401 {error:unauthenticated} ⇒ 回登录页;回 403 {error:must_change_password} ⇒ 登录页的改密表单。
+// 旧平台的接口回的是纯文本、不是这种 JSON,所以对旧平台不起作用。window 不存在(测试把脚本抠出来在无 window 环境里求值)时跳过。
+(function(){
+  if(typeof window==='undefined'||typeof window.fetch!=='function')return;
+  var raw=window.fetch.bind(window);
+  window.fetch=async function(){
+    var r=await raw.apply(null,arguments);
+    if(r.status===401||r.status===403){
+      try{
+        var d=await r.clone().json();
+        if(d&&d.error==='unauthenticated')location.assign('/console/login');
+        else if(d&&d.error==='must_change_password')location.assign('/console/login#change');
+      }catch(_){}
+    }
+    return r;
+  };
+})();
 const MAX_TABS = 8;   // 业主 2026-09-16 定;见上方注释:HTTP/1.1 每源 6 条长连接的硬限制
 // 短名 = 三段式 <owner>-<name>-<suffix> 的中间段;取不到就原样显示(T-138,业主裁定命名归他)
 function dwShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s}
