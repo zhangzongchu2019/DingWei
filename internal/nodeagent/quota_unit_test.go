@@ -89,6 +89,24 @@ func TestProjectUsageReportParsing(t *testing.T) {
 	if err != nil || present {
 		t.Fatalf("不存在的项目应 present=false: %v %v", present, err)
 	}
+	// r7 删闸：目标 ID 的截断行（只有 #pid 没有用量列）⇒ 解析错误，不得谎报 present=false
+	xfsRun = func(args ...string) ([]byte, error) {
+		return []byte("Project quota on /data\n#61001\n"), nil
+	}
+	if _, _, err := projectUsage("/data", 61001); err == nil {
+		t.Fatal("目标行字段不足必须报解析错误")
+	}
+	// r7 删闸：目标行用量非整数 ⇒ 解析错误
+	xfsRun = func(args ...string) ([]byte, error) {
+		return []byte("#61001    notanumber 0 16384\n"), nil
+	}
+	if _, _, err := projectUsage("/data", 61001); err == nil {
+		t.Fatal("目标行用量非整数必须报解析错误")
+	}
+	// 其它项目的截断行不影响对目标 ID 的判定（不命中即跳过，不误伤）
+	if present, _, err := projectUsage("/data", 61002); err != nil || present {
+		t.Fatalf("其它项目截断行不应影响: present=%v err=%v", present, err)
+	}
 }
 
 // 复验 r2 阻断①：Setup 中途失败必须自拆（目录不留、项目不残留）。
@@ -134,6 +152,16 @@ func TestClearRedWhenProjectStillPresent(t *testing.T) {
 	}
 	if err := (xfsQuota{}).Clear(root, "ag_c1"); err == nil || !strings.Contains(err.Error(), "D5") {
 		t.Fatalf("项目仍在报表（用量0）必须红, 得 %v", err)
+	}
+	// r7 删闸：清后复查遇到目标 ID 的截断行 ⇒ Clear 必须报错（不得当"已不在报表"放行）
+	xfsRun = func(args ...string) ([]byte, error) {
+		if strings.Contains(strings.Join(args, " "), "report -p -n") {
+			return []byte("#61001\n"), nil // 截断行：只有 ID 没有用量列
+		}
+		return []byte(""), nil
+	}
+	if err := (xfsQuota{}).Clear(root, "ag_c1"); err == nil {
+		t.Fatal("复查遇截断目标行必须红（残留漏报闸）")
 	}
 	xfsRun = func(args ...string) ([]byte, error) { return []byte(""), nil }
 	if err := (xfsQuota{}).Clear(root, "ag_c1"); err != nil {

@@ -219,12 +219,17 @@ func projectUsage(mnt string, pid int) (present bool, usedBlocks int64, err erro
 	}
 	for _, ln := range strings.Split(string(out), "\n") {
 		fields := strings.Fields(ln)
-		if len(fields) < 2 || !strings.HasPrefix(fields[0], "#") {
+		if len(fields) == 0 || !strings.HasPrefix(fields[0], "#") {
 			continue
 		}
 		id, aerr := strconv.Atoi(strings.TrimPrefix(fields[0], "#"))
 		if aerr != nil || id != pid {
 			continue
+		}
+		// 🔴 r7 复验：命中目标 ID 后字段不足（截断行 #pid）或用量非整数 ⇒ 解析错误上抛——
+		//    先判 ID 再判长度，截断行不得撞 len<2 跳过而谎报 present=false（残留漏报）。
+		if len(fields) < 2 {
+			return false, 0, fmt.Errorf("report 目标行字段不足（疑似截断）: %q", ln)
 		}
 		blocks, berr := strconv.ParseInt(fields[1], 10, 64)
 		if berr != nil {
