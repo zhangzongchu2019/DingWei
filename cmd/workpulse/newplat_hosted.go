@@ -15,17 +15,19 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/hosted"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/nodegate"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
 // wireHosted G4 装配。返回 false＝未装（缺主密钥配置）；错误＝装配失败（启动即拒）。
 // 须在 httpapi.API 构造之前调用（cfg.hosted 注入点在其上）。
-func wireHosted(ctx context.Context, mux httpapi.Mux, cfg *newPlatformConfig, pool *repo.Pool,
+func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatformConfig, pool *repo.Pool,
 	idStore identity.Store, svc *identity.Service, actor func(r *http.Request) (string, error)) (bool, error) {
 	mkPath := os.Getenv("DW_G4_MASTER_KEY_FILE")
 	if mkPath == "" {
@@ -88,7 +90,32 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, cfg *newPlatformConfig, po
 		},
 	})
 	cfg.hosted = orch.HostedItem // 那一行：G3 列表注入点接上
+	// online 语义（板 ac33b1cb）：托管 Agent 以专属凭据真正连入时才 starting → online；
+	// 永不连入的由周期清扫按 starting 5 分钟清成 start_timeout。原先两者都没接：容器一起就 online，清扫也没人调。
+	hub.OnHostedAgentOnline = func(ctx context.Context, agentID string) {
+		if err := orch.MarkOnline(ctx, agentID); err != nil {
+			log.Printf("newplat hosted: MarkOnline agent=%s: %v", agentID, err)
+		}
+	}
+	go runHostedSweeper(ctx, orch, hostedSweepEvery)
 	return true, nil
+}
+
+// hostedSweepEvery 超时清扫周期：远小于最短的阶段时限（starting 5 分钟），超时后至多晚这么久被清。
+var hostedSweepEvery = 30 * time.Second // 变量：接线用例里缩短以实测清扫真在跑
+
+// runHostedSweeper 周期调用 SweepTimeouts（排队 10m／拉镜像 30m／启动 5m），ctx 结束即停。
+func runHostedSweeper(ctx context.Context, orch *hosted.Orchestrator, every time.Duration) {
+	t := time.NewTicker(every)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case now := <-t.C:
+			orch.SweepTimeouts(ctx, now)
+		}
+	}
 }
 
 // notReadyBackups 备份管线未就位期的占位（T-G4-53 真实现前）：销毁一律 backup_failed——

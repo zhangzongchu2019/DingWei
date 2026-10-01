@@ -306,6 +306,31 @@ INSERT INTO g4_seat_event (agent_id, kind, detail) VALUES ($1,$2,$3)`, agentID, 
 	})
 }
 
+// TransitionSeatState 条件迁移：席位当前是 from 才改成 to（同事务记事件），返回是否迁移了。
+// 当前不是 from（含席位不存在）⇒ false、不记事件、不报错 —— 供「只在某一态下才生效」的回调用（如 MarkOnline）。
+func (s *Store) TransitionSeatState(ctx context.Context, agentID, from, to, detail, eventKind string, eventDetail json.RawMessage) (bool, error) {
+	if !seatStates[to] {
+		return false, ErrInvalidState
+	}
+	moved := false
+	err := s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
+		res, err := tx.Exec(ctx, `
+UPDATE g4_hosted_seat SET state=$2, state_detail=$3, updated_at=now() WHERE agent_id=$1 AND state=$4`,
+			agentID, to, detail, from)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return nil
+		}
+		moved = true
+		_, err = tx.Exec(ctx, `
+INSERT INTO g4_seat_event (agent_id, kind, detail) VALUES ($1,$2,$3)`, agentID, eventKind, eventDetail)
+		return err
+	})
+	return moved, err
+}
+
 // ---------- 团队账号池 ----------
 
 type Account struct {

@@ -66,6 +66,8 @@ type fakeGW struct {
 	sent   []hosted.NodeCommand
 	failOn string // 命中该 Type 即失败（故障注入）
 	downOn string // 命中该 Type 即发不到节点（传输错误）
+	// onCreated create_seat 成功时调用（入参 seat_id）：模拟容器里的 Agent 以专属凭据连入（真装配里是 Hub.OnHostedAgentOnline）。
+	onCreated func(seatID string)
 }
 
 func (g *fakeGW) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
@@ -75,6 +77,13 @@ func (g *fakeGW) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand
 	}
 	if cmd.Type == g.failOn {
 		return hosted.NodeResult{OK: false, Error: "injected"}, nil
+	}
+	if cmd.Type == "create_seat" && g.onCreated != nil {
+		var p struct {
+			SeatID string `json:"seat_id"`
+		}
+		_ = json.Unmarshal(cmd.Params, &p)
+		g.onCreated(p.SeatID)
 	}
 	return hosted.NodeResult{OK: true}, nil
 }
@@ -121,6 +130,7 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP, *fakeGW, *
 	gw := &fakeGW{}
 	orch := hosted.NewOrchestrator(st, poolSvc, idp, gw, fakeCombosRT{}, fakeImagesRT{})
 	life := hosted.NewLifecycle(st, poolSvc, idp, idpSusp{}, gw, fakeImagesRT{}, notReadyBackups{})
+	gw.onCreated = func(seatID string) { _ = orch.MarkOnline(context.Background(), seatID) }
 	// 节点一枚（有余量）＋配额＋账号一枚授权给 zzc
 	if err := st.UpsertNode(ctx, hosted.Node{ID: "nd_rt", Name: "rt", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)

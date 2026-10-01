@@ -118,6 +118,9 @@ func mkLifecycle(t *testing.T) (*Lifecycle, *evLog, *lcSusp, *lcGw, *lcBk, *Stor
 		t.Fatalf("create: %v", err)
 	}
 	o.RunJob(context.Background(), out.AgentID)
+	if err := o.MarkOnline(context.Background(), out.AgentID); err != nil { // Agent 以专属凭据连入（板 ac33b1cb）
+		t.Fatalf("mark online: %v", err)
+	}
 	log := &evLog{}
 	susp := &lcSusp{log: log}
 	gw := &lcGw{log: log}
