@@ -25,9 +25,10 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review'];
+const MUTATIONS = ['unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'unseal-review') mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;');
+if (mutation === 'nav-opens-by-name') mutate('b.onclick=function(){ openTab(a.full_name) };', 'b.onclick=function(){ openTab(a.name) };');
 if (mutation === 'unverified-selectable') mutate("o.disabled=!!it.disabled;", 'o.disabled=false;');
 if (mutation === 'no-linkage') mutate("var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});", 'var rows=(opts.accounts||[]);');
 if (mutation === 'hardcoded-mask') mutate("hostedMaskRender(name,stage,'',lastStage);\n    if(stage==='online')", "hostedMaskRender(name,'online','',lastStage);\n    if(stage==='online')");
@@ -83,11 +84,10 @@ const server = http.createServer(async (req, res) => {
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   // 设计件 3.2 新形状(agent_id/name/full_name/origin/group_code/online);session 一并带上只为让左栏(尚未迁移的旧调用方)继续工作
   // GET /api/console/agents:设计件 3.2 新形状 + G4 在其上加的托管生命周期字段(state/upgradable/node_name);
-  // session 一并带上只为让左栏(尚未迁移)继续工作
   if (p === '/api/console/agents') {
     return json(res, 200, { agents: agents.map((a) => {
       const name = a.session_name.split('-')[1]; const h = hostedAgents.find((x) => x.agent_id === a.id);
-      return { session: a.session_name, online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE, ...(h ? { state: h.state, upgradable: h.upgradable, node_name: h.node_name } : {}) };
+      return { online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE, ...(h ? { state: h.state, upgradable: h.upgradable, node_name: h.node_name } : {}) };
     }) });
   }
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
@@ -129,6 +129,7 @@ const server = http.createServer(async (req, res) => {
     if (op === 'destroy') { hostedAgents = hostedAgents.filter((x) => x.agent_id !== id); agents = agents.filter((a) => a.id !== id); }
     return json(res, 200, { state: h.state });
   }
+  if (p.startsWith('/view/')) { res.writeHead(200, { 'content-type': 'text/html' }); return res.end('<!doctype html><title>v</title>'); }
   if (p === '/favicon.ico') { res.writeHead(204); return res.end(); }
   res.writeHead(404); res.end();
 });
@@ -344,6 +345,18 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await row.locator('.roster-revoke').isHidden(), true);
       agents = agents.filter((a) => a.id !== 'ag-nostate');
       await page.evaluate(() => refreshRoster());
+    });
+
+    await test('left list uses full_name: button shows the short name, title/tab/iframe use full_name', async () => {
+      await page.locator('#agentNavMode').click();            // 树 -> 纯 Agent 列表
+      const btn = page.locator('#a button').filter({ hasText: /^leader$/ });
+      await btn.waitFor({ state: 'visible' });
+      assert.strictEqual(await btn.getAttribute('title'), 'leader.zzc');
+      await btn.click();
+      await page.locator('#tabs .tab[title="leader.zzc"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#panes iframe').first().getAttribute('src'), '/view/leader.zzc');
+      await page.locator('#tabs .tab[title="leader.zzc"] .x').click();
+      await page.locator('#agentNavMode').click();
     });
 
     await test('the group panel is still there: list, create toggle; join-by-code stays removed', async () => {

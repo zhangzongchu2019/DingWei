@@ -504,7 +504,7 @@ function openTab(session){
   activate(session);
 }
 function applyAgentSnapshot(agents){
-  agentSnapshot = new Map(agents.map(function(a){return [a.session, !!a.online]}));
+  agentSnapshot = new Map(agents.map(function(a){return [a.full_name, !!a.online]}));   // 页签与成员一律按 full_name(名称.业主简称)
   // 🔴 只更新既有 tab 的可用状态。tab/pane 对象与 iframe src 均不得在列表刷新时改变。
   tabs.forEach(function(e,session){
     if(String(session).startsWith('__')) return; // Specs/编组是平台 tab,不是 Agent session
@@ -524,8 +524,8 @@ function renderAgentList(agents){
   nav.replaceChildren(); // 只重建左栏;右侧 tabs/panes 不在本函数所有权内
   function mk(a){
     var b=document.createElement('button');
-    b.textContent=dwShortName(a.session); b.title=a.session; b.disabled=!a.online;
-    b.onclick=function(){ openTab(a.session) };
+    b.textContent=a.name||a.full_name; b.title=a.full_name; b.disabled=!a.online;
+    b.onclick=function(){ openTab(a.full_name) };
     return b;
   }
   var on=agents.filter(function(a){return a.online});
@@ -537,14 +537,18 @@ function renderAgentList(agents){
     d.append(sm); off.forEach(function(a){d.append(mk(a))}); nav.append(d);
   }
 }
-function agentTreeMemberLabel(member,ownedIDs){return ownedIDs.has(member.agent_id)?dwShortName(member.session_name):member.session_name;}
-function agentTreeMemberOnline(member){var fresh=agentListSnapshot.find(function(agent){return agent.session===member.session_name;});return fresh?fresh.online===true:member.online===true;}
+// 编组成员的名字口径:full_name(名称.业主简称)。🔵 过渡:编组接口(旧形状)目前还只给 session_name,G3 后续让它也返回 full_name;
+//    在那之前 memberName 退回 session_name,这样编组面板与现有 Hub 照常工作。编组接口迁完后删掉退回分支。
+function memberName(member){return member.full_name||member.session_name;}
+function memberShort(member){return member.full_name?String(member.full_name).split('.')[0]:dwShortName(member.session_name);}
+function agentTreeMemberLabel(member,ownedIDs){return ownedIDs.has(member.agent_id)?memberShort(member):memberName(member);}
+function agentTreeMemberOnline(member){var fresh=agentListSnapshot.find(function(agent){return agent.full_name===memberName(member);});return fresh?fresh.online===true:member.online===true;}
 function agentTreeMemberDisabled(member){return !agentTreeMemberOnline(member);}
 function agentTreeCanOpen(member,ownedIDs){return ownedIDs.has(member.agent_id)&&agentTreeMemberOnline(member);}
 function renderAgentNav(){
   if(agentNavMode==='flat'||!groupSnapshot.groups.length){renderAgentList(agentListSnapshot);return;}
   var nav=document.getElementById('a'),ownedIDs=new Set((groupSnapshot.owned_agents||[]).map(function(a){return a.id;})),seen=new Set();nav.replaceChildren();
-  (groupSnapshot.groups||[]).forEach(function(group){var section=document.createElement('section');section.className='agent-tree-group';section.dataset.groupCode=group.code;var title=document.createElement('span');title.className='agent-tree-group-label';title.textContent=group.short_name||'历史组';var members=document.createElement('div');members.className='agent-tree-members';(group.members||[]).forEach(function(member){if(!agentTreeAllowDuplicates&&seen.has(member.agent_id))return;seen.add(member.agent_id);var b=document.createElement('button');b.type='button';b.className='agent-tree-agent';b.dataset.session=member.session_name;b.title=member.session_name;b.textContent=agentTreeMemberLabel(member,ownedIDs);b.disabled=agentTreeMemberDisabled(member);b.setAttribute('aria-disabled',b.disabled?'true':'false');if(agentTreeCanOpen(member,ownedIDs))b.onclick=function(){openTab(member.session_name);};members.append(b);});section.append(title,members);nav.append(section);});
+  (groupSnapshot.groups||[]).forEach(function(group){var section=document.createElement('section');section.className='agent-tree-group';section.dataset.groupCode=group.code;var title=document.createElement('span');title.className='agent-tree-group-label';title.textContent=group.short_name||'历史组';var members=document.createElement('div');members.className='agent-tree-members';(group.members||[]).forEach(function(member){if(!agentTreeAllowDuplicates&&seen.has(member.agent_id))return;seen.add(member.agent_id);var b=document.createElement('button');b.type='button';b.className='agent-tree-agent';b.dataset.session=memberName(member);b.title=memberName(member);b.textContent=agentTreeMemberLabel(member,ownedIDs);b.disabled=agentTreeMemberDisabled(member);b.setAttribute('aria-disabled',b.disabled?'true':'false');if(agentTreeCanOpen(member,ownedIDs))b.onclick=function(){openTab(memberName(member));};members.append(b);});section.append(title,members);nav.append(section);});
 }
 function agentNavSetMode(mode){agentNavMode=mode;document.getElementById('agentNavMode').textContent=mode==='tree'?'列表':'编组';renderAgentNav();}
 async function refreshAgents(){

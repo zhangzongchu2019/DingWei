@@ -19,6 +19,7 @@
 //          在线 Agent 的 iframe 仍为 ""(不受影响)
 //    T+25s Specs 内点击与输入全部失败;T+29s 编组「团队名称」框点不进
 const assert = require('assert');
+const { agentRecord } = require('./fixture-agents');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -55,7 +56,7 @@ const listen = (server) => new Promise((resolve, reject) => {
 
 async function main() {
   const html = productionHTML();
-  const agents = [{ session: 'owner-alpha-2642', online: true }, { session: 'owner-offline-2642', online: false }];
+  const agents = [agentRecord('owner-alpha-2642', true), agentRecord('owner-offline-2642', false)];
   const server = http.createServer((req, res) => {
     const json = (body) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); };
     if (req.url === '/console') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(html); return; }

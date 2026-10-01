@@ -61,6 +61,7 @@
 //        **逐项比对已登记观测量**;全同 ⇒ "(i) 是空操作"成立;
 //        🔴 任一项不同 ⇒ (i) **非**空操作 ⇒ 「M-D2 必须红」**自动恢复生效**(阴格)。
 const assert = require('assert');
+const { agentRecord } = require('./fixture-agents');
 const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
@@ -127,7 +128,7 @@ async function startServer(opt) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       return res.end(consoleHTML);
     }
-    if (u === '/api/console/agents') return json({ agents: [{ session: SESSION, online: true }] });
+    if (u === '/api/console/agents') return json({ agents: [agentRecord(SESSION)] });
     if (u === '/api/console/platform') return json({ role: 'owner', actions: ['read', 'submit'], items: [] });
     if (u === '/tasks' || u === '/alerts') return json(u === '/alerts' ? [] : {});
     if (u.endsWith('/status')) return json({ session: SESSION, state: 'running', readonly: false, can_write: true, auth_mode: 'legacy', owner: 'zzc', model: 'm', cost_total: 0, cost_last: 0, turns: 1 });

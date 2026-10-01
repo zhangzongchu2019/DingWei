@@ -32,6 +32,7 @@
 //    GO_BIN=<path>       go 可执行文件(默认 PATH 里的 go)
 // 退出码:0 全过 · 1 断言失败 · 3 环境缺失(没有 go toolchain ⇒ 本件**不验**,不是产品坏了)
 const assert = require('assert');
+const { agentRecord } = require('./fixture-agents');
 const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
@@ -150,7 +151,7 @@ async function t(name, fn) {
   const server = http.createServer((req, res) => {
     const u = req.url.split('?')[0];
     if (u === '/console') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(consoleHTML); }
-    if (u === '/api/console/agents') return json(res, { agents: [{ session: A, online: true }, { session: B, online: true }] });
+    if (u === '/api/console/agents') return json(res, { agents: [agentRecord(A), agentRecord(B)] });
     if (u === '/api/console/platform') {
       const p = payloads[currentPrincipal] || { role: 'owner', actions: [], items: [] };
       return json(res, CONTROL ? makeControlPayload(p) : p);

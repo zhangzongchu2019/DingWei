@@ -1,6 +1,7 @@
 // Console browser harness: serves the real consolePageHTML embedded in
 // internal/m8/console_auth.go and replaces only its HTTP dependencies.
 const assert = require('assert');
+const { agentRecord } = require('./fixture-agents');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -83,8 +84,8 @@ function listen(server) {
 async function main() {
   const html = consoleHTMLFromProductionSource();
   const agents = [
-    { session: 'owner-alpha-2642', online: true },
-    { session: 'owner-offline-2642', online: false },
+    agentRecord('owner-alpha-2642', true),
+    agentRecord('owner-offline-2642', false),
   ];
   let raceGroupResponses = false;
   let raceGroupRequest = 0;
