@@ -176,7 +176,7 @@ func (p *PoolService) ListAdmin(ctx context.Context, by string, isAdmin bool) ([
 	if err := admin(by, isAdmin); err != nil {
 		return nil, err
 	}
-	rows, err := p.st.pool.Query(ctx, actx, `
+	rows, err := p.st.pool.Query(ctx, htx(), `
 SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id
 FROM g4_account_pool ORDER BY name`)
 	if err != nil {

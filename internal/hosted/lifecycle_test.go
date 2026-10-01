@@ -209,7 +209,7 @@ func mkPoolSvcFromStore(t *testing.T, s *Store) *PoolService {
 
 func mustOnlineSeat(t *testing.T, s *Store) string {
 	t.Helper()
-	rows, err := s.pool.Query(context.Background(), actx, `SELECT agent_id FROM g4_hosted_seat WHERE state='online' LIMIT 1`)
+	rows, err := s.pool.Query(context.Background(), htx(), `SELECT agent_id FROM g4_hosted_seat WHERE state='online' LIMIT 1`)
 	if err != nil {
 		t.Fatal(err)
 	}

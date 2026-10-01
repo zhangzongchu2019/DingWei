@@ -158,12 +158,16 @@ func TestNodeSeatPoolQuotaFlow(t *testing.T) {
 	}
 }
 
-// TestAccessCtxValid actx（包级 PendingCtx 占位）必须恒可用——qrow 丢弃 QueryRow 错误的安全前提。
+// TestAccessCtxValid htx 占位必须恒可用；且 qrow 的错误必须当场可见（M1 返修：不丢 QueryRow error）。
 func TestAccessCtxValid(t *testing.T) {
 	pool := testpool(t)
 	s := NewStore(pool)
 	var n int
-	if err := s.qrow(context.Background(), "SELECT 1").Scan(&n); err != nil || n != 1 {
-		t.Fatalf("actx 占位不可用: n=%d err=%v", n, err)
+	row, err := s.qrow(context.Background(), "SELECT 1")
+	if err != nil {
+		t.Fatalf("qrow 错误必须当场可见（M1 返修）: %v", err)
+	}
+	if err := row.Scan(&n); err != nil || n != 1 {
+		t.Fatalf("htx 占位不可用: n=%d err=%v", n, err)
 	}
 }

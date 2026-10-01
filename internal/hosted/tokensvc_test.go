@@ -35,7 +35,13 @@ func TestTokenWriteBackAndUnbindPrep(t *testing.T) {
 		t.Fatalf("回写后 last4: %q", got.Last4)
 	}
 	var n int
-	if err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action='account.token_writeback' AND target=$1`, a.ID).Scan(&n); err != nil || n != 1 {
+	if err := func() error {
+ 	row, err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action='account.token_writeback' AND target=$1`, a.ID)
+ 	if err != nil {
+ 		return err
+ 	}
+ 	return row.Scan(&n)
+ }(); err != nil || n != 1 {
 		t.Fatalf("回写审计应恰好一条: n=%d err=%v", n, err)
 	}
 
@@ -43,7 +49,13 @@ func TestTokenWriteBackAndUnbindPrep(t *testing.T) {
 	if err := svc.WriteBackRenewedToken(ctx, "ag_1", "", "ag_1"); err != nil {
 		t.Fatalf("空内容应静默不回写: %v", err)
 	}
-	if err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action='account.token_writeback' AND target=$1`, a.ID).Scan(&n); err != nil || n != 1 {
+	if err := func() error {
+ 	row, err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action='account.token_writeback' AND target=$1`, a.ID)
+ 	if err != nil {
+ 		return err
+ 	}
+ 	return row.Scan(&n)
+ }(); err != nil || n != 1 {
 		t.Fatalf("空内容不应新增审计: n=%d", n)
 	}
 

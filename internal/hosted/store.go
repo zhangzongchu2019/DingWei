@@ -21,9 +21,12 @@ var (
 	ErrParams        = errors.New("hosted: 参数不合要求")
 )
 
-// actx hosted 域占位（PendingCtx——SP7b 双轴化收口前；domain 与闸的分组键同源）。
+// htx hosted 域占位（与 datad 的 dtx／fanout 的 ftx 同型：PendingCtx 调用点单位，
+// 供 pending-debt 按效果计数；SP7b 双轴化收口时本域归零）。
 // 迁移（ApplySchema/DropSchema）用系统上下文——建表本就无租户语义（评审面，两处已登记入基线）。
-var actx = repo.PendingCtx("hosted", "SP7b", "hosted 域双轴化占位——user_lc 是否算租户列待 SP7b 定（已问 qwen38maxkhovvob4）")
+func htx() repo.AccessCtx {
+	return repo.PendingCtx("hosted", "SP7b", "hosted 域双轴化占位——user_lc 是否算租户列待 SP7b 定（已问 qwen38maxkhovvob4）")
+}
 
 type Store struct{ pool *repo.Pool }
 
@@ -41,12 +44,10 @@ func (s *Store) DropSchema(ctx context.Context) error {
 	return err
 }
 
-// qrow 统一取行：repo.Pool.QueryRow 的错误只可能来自 AccessCtx.check——
-// actx 是本包级合法占位（PendingCtx，check 恒过；有 TestAccessCtxValid 钉住），
-// 故丢弃该 error 是安全的；查询自身的错误仍由 Scan 如实暴露。
-func (s *Store) qrow(ctx context.Context, q string, args ...any) *sql.Row {
-	r, _ := s.pool.QueryRow(ctx, actx, q, args...)
-	return r
+// qrow 统一取行并如实上交错误（M1 返修：不得丢 QueryRow 的 error——
+// htx 调用点若哪天构造失效，拒绝必须当场可见，不能推迟到 Scan 变成"扫不出行"）。
+func (s *Store) qrow(ctx context.Context, q string, args ...any) (*sql.Row, error) {
+	return s.pool.QueryRow(ctx, htx(), q, args...)
 }
 
 // ---------- 节点 ----------
@@ -62,7 +63,7 @@ type Node struct {
 }
 
 func (s *Store) UpsertNode(ctx context.Context, n Node) error {
-	_, err := s.pool.Exec(ctx, actx, `
+	_, err := s.pool.Exec(ctx, htx(), `
 INSERT INTO g4_node (id, name, labels, state, docker_version, node_protocol_version)
 VALUES ($1,$2,$3,'offline',$4,$5)
 ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, labels=EXCLUDED.labels,
@@ -74,10 +75,22 @@ ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, labels=EXCLUDED.labels,
 
 func (s *Store) GetNode(ctx context.Context, id string) (Node, error) {
 	var n Node
-	err := s.qrow(ctx, `
+	err := func() error {
+
+		row, err := s.qrow(ctx, `
 SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at
-FROM g4_node WHERE id=$1`, id).Scan(
+FROM g4_node WHERE id=$1`, id)
+
+		if err != nil {
+
+			return err
+
+		}
+
+		return row.Scan(
 		&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+
+	}()
 	if errors.Is(err, sql.ErrNoRows) {
 		return n, ErrNotFound
 	}
@@ -86,7 +99,7 @@ FROM g4_node WHERE id=$1`, id).Scan(
 
 // SetNodeOnline 节点心跳：上线＋容量＋last_seen；离线由 Hub 探测断连后调 SetNodeState。
 func (s *Store) SetNodeOnline(ctx context.Context, id string, capacity json.RawMessage) error {
-	_, err := s.pool.Exec(ctx, actx, `
+	_, err := s.pool.Exec(ctx, htx(), `
 UPDATE g4_node SET state='online', capacity=$2, last_seen_at=now(), updated_at=now() WHERE id=$1`, id, capacity)
 	return err
 }
@@ -97,7 +110,7 @@ func (s *Store) SetNodeState(ctx context.Context, id, state string) error {
 	default:
 		return ErrInvalidState
 	}
-	_, err := s.pool.Exec(ctx, actx,
+	_, err := s.pool.Exec(ctx, htx(),
 		`UPDATE g4_node SET state=$2, updated_at=now() WHERE id=$1`, id, state)
 	return err
 }
@@ -114,19 +127,43 @@ func (s *Store) PickNodeByPool(ctx context.Context, pool string) (Node, error) {
 	var n Node
 	var err error
 	if pool == "" {
-		err = s.qrow(ctx, `
+		err = func() error {
+
+			row, err := s.qrow(ctx, `
 SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at
 FROM g4_node WHERE state='online'
 ORDER BY COALESCE((capacity->>'mem_free_mb')::bigint, 0) DESC, id
-LIMIT 1`).Scan(
+LIMIT 1`)
+
+			if err != nil {
+
+				return err
+
+			}
+
+			return row.Scan(
 			&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+
+		}()
 	} else {
-		err = s.qrow(ctx, `
+		err = func() error {
+
+			row, err := s.qrow(ctx, `
 SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at
 FROM g4_node WHERE state='online' AND labels->>'pool' = $1
 ORDER BY COALESCE((capacity->>'mem_free_mb')::bigint, 0) DESC, id
-LIMIT 1`, pool).Scan(
+LIMIT 1`, pool)
+
+			if err != nil {
+
+				return err
+
+			}
+
+			return row.Scan(
 			&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+
+		}()
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return n, ErrNotFound
@@ -152,7 +189,7 @@ func (s *Store) CreateSeat(ctx context.Context, st Seat) error {
 	if _, ok := PlanByID(st.Plan); !ok {
 		return fmt.Errorf("%w: plan %q", ErrInvalidState, st.Plan)
 	}
-	_, err := s.pool.Exec(ctx, actx, `
+	_, err := s.pool.Exec(ctx, htx(), `
 INSERT INTO g4_hosted_seat (agent_id, node_id, cli, llm, cred_kind, account_ref, plan, state, image_ref, created_by)
 VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9)`,
 		st.AgentID, st.NodeID, st.CLI, st.LLM, st.CredKind, st.AccountRef, st.Plan, st.ImageRef, st.CreatedBy)
@@ -161,11 +198,23 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9)`,
 
 func (s *Store) GetSeat(ctx context.Context, agentID string) (Seat, error) {
 	var st Seat
-	err := s.qrow(ctx, `
+	err := func() error {
+
+		row, err := s.qrow(ctx, `
 SELECT agent_id, node_id, cli, llm, cred_kind, account_ref, plan, state, state_detail, image_ref, created_by
-FROM g4_hosted_seat WHERE agent_id=$1`, agentID).Scan(
+FROM g4_hosted_seat WHERE agent_id=$1`, agentID)
+
+		if err != nil {
+
+			return err
+
+		}
+
+		return row.Scan(
 		&st.AgentID, &st.NodeID, &st.CLI, &st.LLM, &st.CredKind, &st.AccountRef,
 		&st.Plan, &st.State, &st.StateDetail, &st.ImageRef, &st.CreatedBy)
+
+	}()
 	if errors.Is(err, sql.ErrNoRows) {
 		return st, ErrNotFound
 	}
@@ -177,7 +226,7 @@ func (s *Store) SetSeatState(ctx context.Context, agentID, state, detail, eventK
 	if !seatStates[state] {
 		return ErrInvalidState
 	}
-	return s.pool.InTx(ctx, actx, nil, func(tx repo.Tx) error {
+	return s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
 		res, err := tx.Exec(ctx, `
 UPDATE g4_hosted_seat SET state=$2, state_detail=$3, updated_at=now() WHERE agent_id=$1`,
 			agentID, state, detail)
@@ -204,7 +253,7 @@ type Account struct {
 }
 
 func (s *Store) CreateAccount(ctx context.Context, a Account, secretEnc []byte, by string) error {
-	_, err := s.pool.Exec(ctx, actx, `
+	_, err := s.pool.Exec(ctx, htx(), `
 INSERT INTO g4_account_pool (id, name, kind, cli, llm, secret_enc, key_version, last4, created_by)
 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
 		a.ID, a.Name, a.Kind, a.CLI, a.LLM, secretEnc, a.KeyVersion, a.Last4, by)
@@ -213,9 +262,21 @@ VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
 
 func (s *Store) GetAccount(ctx context.Context, id string) (Account, error) {
 	var a Account
-	err := s.qrow(ctx, `
-SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id FROM g4_account_pool WHERE id=$1`, id).Scan(
+	err := func() error {
+
+		row, err := s.qrow(ctx, `
+SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id FROM g4_account_pool WHERE id=$1`, id)
+
+		if err != nil {
+
+			return err
+
+		}
+
+		return row.Scan(
 		&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID)
+
+	}()
 	if errors.Is(err, sql.ErrNoRows) {
 		return a, ErrNotFound
 	}
@@ -224,7 +285,7 @@ SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id FROM 
 
 // UpdateAccountSecret 换密：新密文与后四位一并更新（key_version 取当前 active——调用方给）。
 func (s *Store) UpdateAccountSecret(ctx context.Context, accountID string, secretEnc []byte, keyVersion int, last4 string) error {
-	res, err := s.pool.Exec(ctx, actx, `
+	res, err := s.pool.Exec(ctx, htx(), `
 UPDATE g4_account_pool SET secret_enc=$2, key_version=$3, last4=$4, updated_at=now() WHERE id=$1`,
 		accountID, secretEnc, keyVersion, last4)
 	if err != nil {
@@ -243,7 +304,7 @@ func (s *Store) SetAccountState(ctx context.Context, accountID, state string) er
 	default:
 		return ErrInvalidState
 	}
-	res, err := s.pool.Exec(ctx, actx, `
+	res, err := s.pool.Exec(ctx, htx(), `
 UPDATE g4_account_pool SET state=$2, updated_at=now() WHERE id=$1 AND state <> 'bound'`, accountID, state)
 	if err != nil {
 		return err
@@ -257,7 +318,7 @@ UPDATE g4_account_pool SET state=$2, updated_at=now() WHERE id=$1 AND state <> '
 // ListUsableAccounts 新建表单账号下拉：本人被授权（grant）＋未绑定＋CLI/LLM 匹配。
 // 永不返回 secret_enc（B7：密钥不出现在任何应答里）。
 func (s *Store) ListUsableAccounts(ctx context.Context, userLC, cli, llm string) ([]Account, error) {
-	rows, err := s.pool.Query(ctx, actx, `
+	rows, err := s.pool.Query(ctx, htx(), `
 SELECT p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id
 FROM g4_account_pool p
 JOIN g4_account_grant g ON g.account_id = p.id AND g.user_lc = $1
@@ -280,7 +341,7 @@ ORDER BY p.name`, userLC, cli, llm)
 
 // BindAccount 一席一账号：仅当 available 才绑定成功（并发安全，反向用例的锚）。
 func (s *Store) BindAccount(ctx context.Context, accountID, agentID string) error {
-	res, err := s.pool.Exec(ctx, actx, `
+	res, err := s.pool.Exec(ctx, htx(), `
 UPDATE g4_account_pool SET state='bound', bound_agent_id=$2, updated_at=now()
 WHERE id=$1 AND state='available'`, accountID, agentID)
 	if err != nil {
@@ -294,7 +355,7 @@ WHERE id=$1 AND state='available'`, accountID, agentID)
 
 // UnbindAccount 销毁/解绑回池（组长定：自动回池）。
 func (s *Store) UnbindAccount(ctx context.Context, accountID string) error {
-	_, err := s.pool.Exec(ctx, actx, `
+	_, err := s.pool.Exec(ctx, htx(), `
 UPDATE g4_account_pool SET state='available', bound_agent_id=NULL, updated_at=now()
 WHERE id=$1 AND state='bound'`, accountID)
 	return err
@@ -302,7 +363,7 @@ WHERE id=$1 AND state='bound'`, accountID)
 
 // GrantAccount 按用户授权（组长定 da622016；幂等）。
 func (s *Store) GrantAccount(ctx context.Context, accountID, userLC, by string) error {
-	_, err := s.pool.Exec(ctx, actx, `
+	_, err := s.pool.Exec(ctx, htx(), `
 INSERT INTO g4_account_grant (account_id, user_lc, granted_by) VALUES ($1,$2,$3)
 ON CONFLICT (account_id, user_lc) DO NOTHING`, accountID, userLC, by)
 	return err
@@ -324,9 +385,21 @@ type Usage struct {
 
 func (s *Store) GetQuota(ctx context.Context, userLC string) (Quota, error) {
 	var q Quota
-	err := s.qrow(ctx, `
-SELECT user_lc, agents_limit, mem_mb_limit, disk_mb_limit, vcpu_limit FROM g4_quota WHERE user_lc=$1`, userLC).Scan(
+	err := func() error {
+
+		row, err := s.qrow(ctx, `
+SELECT user_lc, agents_limit, mem_mb_limit, disk_mb_limit, vcpu_limit FROM g4_quota WHERE user_lc=$1`, userLC)
+
+		if err != nil {
+
+			return err
+
+		}
+
+		return row.Scan(
 		&q.UserLC, &q.AgentsLimit, &q.MemMBLimit, &q.DiskMBLimit, &q.VCPULimit)
+
+	}()
 	if errors.Is(err, sql.ErrNoRows) {
 		// 未单独设置＝默认零（报业主项 2 的默认口径）：须管理层先配才能建
 		return Quota{UserLC: userLC}, nil
@@ -336,7 +409,7 @@ SELECT user_lc, agents_limit, mem_mb_limit, disk_mb_limit, vcpu_limit FROM g4_qu
 
 // PutQuota 设上限。允许低于已用量（G6：只限制之后新建）——本层不做"低于已用拒存"。
 func (s *Store) PutQuota(ctx context.Context, q Quota, by string) error {
-	_, err := s.pool.Exec(ctx, actx, `
+	_, err := s.pool.Exec(ctx, htx(), `
 INSERT INTO g4_quota (user_lc, agents_limit, mem_mb_limit, disk_mb_limit, vcpu_limit, updated_by)
 VALUES ($1,$2,$3,$4,$5,$6)
 ON CONFLICT (user_lc) DO UPDATE SET agents_limit=EXCLUDED.agents_limit,
@@ -354,7 +427,7 @@ func (s *Store) UsageFor(ctx context.Context, agentIDs []string) (Usage, error) 
 	if len(agentIDs) == 0 {
 		return u, nil
 	}
-	rows, err := s.pool.Query(ctx, actx, `
+	rows, err := s.pool.Query(ctx, htx(), `
 SELECT plan, COUNT(*) FROM g4_hosted_seat
 WHERE agent_id = ANY($1) AND state <> 'destroyed'
 GROUP BY plan`, agentIDs)
@@ -383,7 +456,7 @@ GROUP BY plan`, agentIDs)
 // ---------- 审计 ----------
 
 func (s *Store) AddAudit(ctx context.Context, actor, action, target string, detail json.RawMessage) error {
-	_, err := s.pool.Exec(ctx, actx, `
+	_, err := s.pool.Exec(ctx, htx(), `
 INSERT INTO g4_audit (actor, action, target, detail) VALUES ($1,$2,$3,$4)`,
 		actor, action, target, detail)
 	return err

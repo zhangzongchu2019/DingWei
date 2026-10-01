@@ -51,7 +51,7 @@ func (s *Store) RegisterNode(ctx context.Context, n Node, by string) (string, er
 	if err != nil {
 		return "", err
 	}
-	err = s.pool.InTx(ctx, actx, nil, func(tx repo.Tx) error {
+	err = s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
 		if _, err := tx.Exec(ctx, `
 INSERT INTO g4_node (id, name, labels, state, docker_version, node_protocol_version)
 VALUES ($1,$2,$3,'offline',$4,$5)
@@ -83,7 +83,7 @@ func (s *Store) RotateNodeCredential(ctx context.Context, nodeID, by string) (st
 	if err != nil {
 		return "", err
 	}
-	res, err := s.pool.Exec(ctx, actx, `
+	res, err := s.pool.Exec(ctx, htx(), `
 UPDATE g4_node_credential SET secret_hash=$2, issued_by=$3, issued_at=now(), rotated_at=now(), revoked_at=NULL
 WHERE node_id=$1`, nodeID, hashNodeSecret(secret), by)
 	if err != nil {
@@ -100,7 +100,7 @@ WHERE node_id=$1`, nodeID, hashNodeSecret(secret), by)
 
 // RevokeNodeCredential 撤销：此后一切认证必拒（ErrNodeRevoked 优先于口令比对）。
 func (s *Store) RevokeNodeCredential(ctx context.Context, nodeID, by string) error {
-	res, err := s.pool.Exec(ctx, actx, `
+	res, err := s.pool.Exec(ctx, htx(), `
 UPDATE g4_node_credential SET revoked_at=$2 WHERE node_id=$1`, nodeID, time.Now().UTC())
 	if err != nil {
 		return err
@@ -115,8 +115,20 @@ UPDATE g4_node_credential SET revoked_at=$2 WHERE node_id=$1`, nodeID, time.Now(
 func (s *Store) AuthenticateNode(ctx context.Context, nodeID, secret string) error {
 	var hash string
 	var revokedAt *time.Time
-	err := s.qrow(ctx, `
-SELECT secret_hash, revoked_at FROM g4_node_credential WHERE node_id=$1`, nodeID).Scan(&hash, &revokedAt)
+	err := func() error {
+
+		row, err := s.qrow(ctx, `
+SELECT secret_hash, revoked_at FROM g4_node_credential WHERE node_id=$1`, nodeID)
+
+		if err != nil {
+
+			return err
+
+		}
+
+		return row.Scan(&hash, &revokedAt)
+
+	}()
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNodeAuth
 	}

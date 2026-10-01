@@ -58,9 +58,15 @@ func TestNodeCredentialLifecycle(t *testing.T) {
 
 	// 审计：register/rotate/revoke 各一条
 	var n int
-	if err := s.qrow(ctx, `
+	if err := func() error {
+ 	row, err := s.qrow(ctx, `
 SELECT COUNT(*) FROM g4_audit WHERE target='nd_c1'
-AND action IN ('node.register','node.credential_rotate','node.credential_revoke')`).Scan(&n); err != nil {
+AND action IN ('node.register','node.credential_rotate','node.credential_revoke')`)
+ 	if err != nil {
+ 		return err
+ 	}
+ 	return row.Scan(&n)
+ }(); err != nil {
 		t.Fatalf("audit count: %v", err)
 	}
 	if n != 3 {

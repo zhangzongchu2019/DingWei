@@ -110,7 +110,13 @@ func TestPoolServiceLifecycle(t *testing.T) {
 	}
 	for action, want := range expect {
 		var n int
-		if err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action=$1 AND target=$2`, action, a.ID).Scan(&n); err != nil {
+		if err := func() error {
+ 	row, err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action=$1 AND target=$2`, action, a.ID)
+ 	if err != nil {
+ 		return err
+ 	}
+ 	return row.Scan(&n)
+ }(); err != nil {
 			t.Fatal(err)
 		}
 		if n != want {

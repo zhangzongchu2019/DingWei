@@ -119,7 +119,7 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 
 // setSeatImage 升级成功后更新镜像位并回到 online。
 func (s *Store) setSeatImage(ctx context.Context, agentID, imageRef string) error {
-	if _, err := s.pool.Exec(ctx, actx, `
+	if _, err := s.pool.Exec(ctx, htx(), `
 UPDATE g4_hosted_seat SET image_ref=$2, updated_at=now() WHERE agent_id=$1`, agentID, imageRef); err != nil {
 		return err
 	}
