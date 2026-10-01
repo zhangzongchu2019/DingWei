@@ -26,7 +26,7 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
+const MUTATIONS = ['suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
@@ -34,7 +34,9 @@ if (mutation === 'quota-generic') mutate("if(code==='quota_exceeded'&&data&&data
 if (mutation === 'unseal-review') mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;');
 if (mutation === 'nav-opens-by-name') mutate('b.onclick=function(){ openTab(a.full_name) };', 'b.onclick=function(){ openTab(a.name) };');
 if (mutation === 'ignore-cred-kind') mutate('&&(!a.kind||c.cred_kind===a.kind);});', '&&true;});');
-if (mutation === 'ignore-suspended') mutate("a.state==='suspended'?{state:'disabled'}:{},", '{},');
+if (mutation === 'suspended-loses-to-hosted') mutate("Object.assign({online:a.online},a.hosted||{},a.state==='suspended'?{state:'disabled'}:{})", "Object.assign({online:a.online},a.state==='suspended'?{state:'disabled'}:{},a.hosted||{})");
+if (mutation === 'selfhost-suspended-plain') mutate("(a.state==='suspended'?'已停用':(a.online?'在线':'离线'))", "(a.online?'在线':'离线')");
+if (mutation === 'ignore-suspended') mutate("a.hosted||{},a.state==='suspended'?{state:'disabled'}:{})", "a.hosted||{})");
 if (mutation === 'unverified-selectable') mutate("o.disabled=!!it.disabled;", 'o.disabled=false;');
 if (mutation === 'no-linkage') mutate("var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});", 'var rows=(opts.accounts||[]);');
 if (mutation === 'hardcoded-mask') mutate("hostedMaskRender(name,stage,'',lastStage);\n    if(stage==='online')", "hostedMaskRender(name,'online','',lastStage);\n    if(stage==='online')");
@@ -365,6 +367,19 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await row.locator('td').nth(1).textContent(), '已停用');
       assert.deepStrictEqual(await row.locator('.hosted-op').allTextContents(), ['升级', '重启', '启用', '销毁']);
       agents = agents.filter((a) => a.id !== 'ag-susp'); await page.evaluate(() => refreshRoster());
+    });
+
+    await test('top-level state=suspended wins over hosted.state=running; a suspended self-hosted row is also shown as stopped', async () => {
+      hostedAgents.push({ agent_id: 'ag-sw', state: 'running', upgradable: false, node_name: 'node-a' });
+      agents.push({ id: 'ag-sw', key_id: 'key-sw', session_name: 'zzc-sw-2642', online: true, origin: 'hosted', suspended: true });
+      agents.push({ id: 'ag-sh', key_id: 'key-sh', session_name: 'zzc-sh-2642', online: false, origin: 'selfhost', suspended: true });
+      await page.evaluate(() => refreshRoster());
+      const hosted = page.locator('#rosterItems .roster-row[data-agent-id="ag-sw"]');
+      await hosted.waitFor({ state: 'visible' });
+      assert.strictEqual(await hosted.locator('td').nth(1).textContent(), '已停用', 'suspended on top must beat hosted.state=running');
+      assert.deepStrictEqual(await hosted.locator('.hosted-op').allTextContents(), ['升级', '重启', '启用', '销毁']);
+      assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-sh"] td').nth(1).textContent(), '已停用');
+      agents = agents.filter((a) => a.id !== 'ag-sw' && a.id !== 'ag-sh'); hostedAgents = hostedAgents.filter((h) => h.agent_id !== 'ag-sw'); await page.evaluate(() => refreshRoster());
     });
 
     await test('a role-refused operation says so in our wording', async () => {

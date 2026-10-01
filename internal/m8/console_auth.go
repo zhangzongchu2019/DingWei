@@ -736,9 +736,9 @@ function renderRoster(){
   rosterAgents.forEach(function(a){
     var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.agent_id;
     var name=document.createElement('td');name.textContent=a.name||'';name.title=a.full_name||'';
-    var hs=a.origin==='hosted'?Object.assign({online:a.online},a.state==='suspended'?{state:'disabled'}:{},a.hosted||{}):null,st=document.createElement('td');   // 行级 state=suspended(G3 已有)即托管视图的 disabled;hosted 子对象(G4)到了以它为准
+    var hs=a.origin==='hosted'?Object.assign({online:a.online},a.hosted||{},a.state==='suspended'?{state:'disabled'}:{}):null,st=document.createElement('td');   // 「是否停用」以顶层 state 为准(G3 口径):suspended ⇒ 已停用,不论有没有 hosted 子对象,也不论它说 running;hosted.state 只补运行细节
        // 托管生命周期在行里的 hosted 子对象(契约 v2:过渡形态)
-    st.textContent=hs?hostedStateText(hs):(a.online?'在线':'离线');
+    st.textContent=hs?hostedStateText(hs):(a.state==='suspended'?'已停用':(a.online?'在线':'离线'));
     var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted';
     if(hs)hostedOpButtons(a,hs).forEach(function(b){action.append(b);});
     revoke.onclick=async function(){
