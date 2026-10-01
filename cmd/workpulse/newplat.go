@@ -31,6 +31,8 @@ type newPlatformConfig struct {
 	publicOrigin string
 	pgDSN        string
 	trustProxy   bool
+	// hosted 列表托管子对象的提供函数（G4 注入，见 hostedListHook）；为空时列表不出 hosted 子对象，页面按契约降级为只显示在线／离线。
+	hosted func(ctx context.Context, agentID string) (map[string]any, bool)
 }
 
 var (
@@ -109,7 +111,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	hub.PublicOrigin = cfg.publicOrigin
 
 	n3 := &httpapi.N3{OB: ob, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Secure: true}
-	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline}
+	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted}
 	n3.Register(mux)
 	api.Register(mux)
 	mux.HandleFunc("GET /ws/agent", hub.HandleAgentWS)
