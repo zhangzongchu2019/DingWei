@@ -404,10 +404,20 @@ func (o *Orchestrator) ReconcileNode(ctx context.Context, nodeID string) {
 		return
 	}
 	for _, id := range ids {
-		res, err := o.gw.Send(ctx, nodeID, NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(id) + `}`)})
-		if err == nil && res.OK {
-			_ = o.st.SetSeatState(ctx, id, "destroyed", "", "reconcile_done", nil)
-		}
+		o.reconcileSeat(ctx, nodeID, id)
+	}
+}
+
+// ReconcileSeatTimeout 对账时单个席位等节点回执的上限（复验建议：别让一个席位卡死整批）。
+var ReconcileSeatTimeout = 30 * time.Second
+
+func (o *Orchestrator) reconcileSeat(ctx context.Context, nodeID, id string) {
+	sctx, cancel := context.WithTimeout(ctx, ReconcileSeatTimeout)
+	defer cancel()
+	res, err := o.gw.Send(sctx, nodeID, NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(id) + `}`)})
+	if err == nil && res.OK {
+		// 写回执用外层 ctx：节点已执行，不能因单席超时恰在此刻到点而丢掉 reconcile_done。
+		_ = o.st.SetSeatState(ctx, id, "destroyed", "", "reconcile_done", nil)
 	}
 }
 

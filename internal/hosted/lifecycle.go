@@ -78,7 +78,8 @@ func (l *Lifecycle) guard(ctx context.Context, agentID, actorLC string, isAdmin 
 	if err != nil {
 		return seat, err
 	}
-	if actorLC == "" || (seat.CreatedBy != "" && actorLC != seat.CreatedBy && !isAdmin) {
+	// created_by 为空串（列 NOT NULL 但可为空串）：归属不明一律拒，管理用户也不豁免（复验 REVIEW-G4-T50-REWORK 第四节）。
+	if actorLC == "" || seat.CreatedBy == "" || (actorLC != seat.CreatedBy && !isAdmin) {
 		return seat, ErrNotOwner
 	}
 	node, err := l.st.GetNode(ctx, seat.NodeID)
@@ -99,6 +100,12 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 	}
 	if seat.State != "online" { // 暂停中不可升级（ab3b4c5b：先启用）；busy 同理
 		return ErrInvalidState
+	}
+	// 套餐查不到不能吞（复验第四节）：零资源下发会被节点以参数错拒、再被译成 upgrade_failed_rolled_back，信息误导。
+	// 在改任何状态、签任何令牌之前判。
+	plan, ok := PlanByID(seat.Plan)
+	if !ok {
+		return fmt.Errorf("%w: 席位套餐 %q 未登记", ErrParams, seat.Plan)
 	}
 	imageRef := version
 	if imageRef == "" {
@@ -125,7 +132,6 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 	}
 	// ② 节点升级（先起新容器、健康后再删旧）。参数满足节点契约：image＋resources＋token_file
 	//    一个都不能少（复验阻断 1——节点 validate 缺 resources 一律 ErrParams）。
-	plan, _ := PlanByID(seat.Plan)
 	params, _ := json.Marshal(map[string]any{
 		"seat_id": agentID,
 		"image":   imageRef,
@@ -268,7 +274,7 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 	}
 	// 🔴 归属严格（复验阻断 4＋业主 8971bddf：管理者不能吊销别人的 Agent——isAdmin 不豁免）：
 	//    只有建席者（＝归属业主）本人能销毁。
-	if actorLC == "" || (seat.CreatedBy != "" && actorLC != seat.CreatedBy) {
+	if actorLC == "" || seat.CreatedBy == "" || actorLC != seat.CreatedBy {
 		return ErrNotOwner
 	}
 	if seat.State == "destroyed" {
