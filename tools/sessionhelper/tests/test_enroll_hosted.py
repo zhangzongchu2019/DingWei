@@ -48,7 +48,9 @@ class HostedEnrollTest(unittest.TestCase):
         self.notes = []
 
     def put_token(self, **over):
-        body = {"application_id": APP, "poll_token": POLL, "expires_at": "2026-10-01T12:00:00Z"}
+        # Far-future default so tests that use the REAL clock (prepare_client_env has no clock parameter) never go stale;
+        # tests that care about expiry pass their own expires_at together with an injected clock.
+        body = {"application_id": APP, "poll_token": POLL, "expires_at": "2099-01-01T00:00:00Z"}
         body.update(over)
         with open(self.token_file, "w") as fh:
             json.dump(body, fh)
