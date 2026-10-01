@@ -1,4 +1,9 @@
 # 依赖清单棘轮基线（scripts/dependency-ratchet.sh）——「依赖不增」默认约束的对应物（§4.7.1a）
 # 🔴 上调基线＝放宽判据，属评审面，须随 spec §4.7.1 ⑤ 的突破论证一并提交，不得静默改。
-direct_count=6
-direct_sha256=af0fb4d1916764b84b5f3dd58d2e8fddc6fdc19e4f6b1d0a74ae66086bc50e8c
+# 2026-10-01 上调 6→7（G3，组长台账 4496f6c5 准；只认这一条，另两条既有红 minio-go/v7、x/sys 不在本次上调内）：
+#   Violation：golang.org/x/crypto 由 indirect 转为直接依赖
+#   Why Needed：internal/identity/onboarding.go:14 直接 import golang.org/x/crypto/bcrypt —— systemdefault 密码哈希（spec N3 A2）
+#   Simpler Alternative Rejected Because：标准库无口令哈希（只有通用摘要，不抗离线穷举）；该模块原已在 go.sum（indirect），不引入新模块
+#   新集合＝原 6 项（sha 前缀 af0fb4d1916764b8，复核一致）＋ golang.org/x/crypto
+direct_count=7
+direct_sha256=ff83314ffff997320b25fcfc488a23093f1593c107bd0c0a88ae42c4d0390a31

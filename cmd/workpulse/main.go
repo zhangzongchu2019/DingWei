@@ -275,9 +275,20 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewWS))
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewPage))
 	mux.HandleFunc("GET /console", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsolePage))
-	mux.HandleFunc("GET /console/login", prefixHub.HandleConsoleLoginPage)
-	mux.HandleFunc("GET /console/login/status", prefixHub.HandleConsoleLoginStatus)
-	mux.HandleFunc("GET /api/console/agents", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgents))
+	// 新平台（G3）：这三条路由由 wireNewPlatform 的新实现替换，不并存（同路径重复注册会 panic）。
+	newplatCfg, newplatOn, newplatErr := newPlatformConfigFromEnv()
+	if newplatErr != nil {
+		return fmt.Errorf("newplat config: %w", newplatErr)
+	}
+	if newplatOn {
+		if err := wireNewPlatform(ctx, mux, prefixHub, newplatCfg); err != nil {
+			return fmt.Errorf("newplat wiring refused to start: %w", err)
+		}
+	} else {
+		mux.HandleFunc("GET /console/login", prefixHub.HandleConsoleLoginPage)
+		mux.HandleFunc("GET /console/login/status", prefixHub.HandleConsoleLoginStatus)
+		mux.HandleFunc("GET /api/console/agents", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgents))
+	}
 	mux.HandleFunc("GET /api/console/agent-groups", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroups))
 	mux.HandleFunc("POST /api/console/agent-groups", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroups))
 	mux.HandleFunc("DELETE /api/console/agent-groups/{code}", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroup))
