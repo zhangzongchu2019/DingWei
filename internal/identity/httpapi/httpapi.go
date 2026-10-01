@@ -29,7 +29,8 @@ type API struct {
 	TrustProxy bool
 	// Online 报告某 Agent 当前是否在线；为空时一律 false。
 	Online func(agentID string) bool
-	// Hosted 由 G4 注入：给 origin=hosted 的 Agent 提供 hosted 子对象（node_name、state、upgradable、image_version、plan、account_last4）。
+	// Hosted 由 G4 注入：给 origin=hosted 的 Agent 提供 hosted 子对象，原样放进列表项。子对象有哪些字段以 G4 契约为准，本包不解析、不改名
+	// （例如 token_file 类账号不出 account_last4、改出账号类别与登记时间 —— 组长认可 kimi30kqtuxerh 的提议，字段名由 G4 定）。
 	// 返回 false 表示暂无数据，此时不出 hosted 子对象。顶层 state（身份：active／suspended）仍由 G3 给、是「是否停用」的权威来源。
 	Hosted func(ctx context.Context, agentID string) (map[string]any, bool)
 }
