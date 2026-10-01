@@ -3,6 +3,7 @@ import asyncio
 import hashlib
 import io
 import json
+import shutil
 import stat
 import sqlite3
 import subprocess
@@ -49,12 +50,27 @@ from sessionhelper.provision import Provisioner, compare_versions
 from sessionhelper.inbox import DeliveryInbox
 
 
+# 测试不得读写真实 ~/.dingwei：升级状态文件遗留在真实 HOME 里，下一轮 SessionHelper() 构造
+# 会触发 rollback_stale_update_if_needed → request_restart → os._exit(0)，整个测试进程
+# 无声退出且退出码为 0（pytest 把后面的用例连同红灯一起吞掉）。
+_ISOLATED_DIR = tempfile.mkdtemp(prefix="sessionhelper-test-")
+
 BASE_ENV = {
     "SH_SESSION_NAME": "home",
     "SH_OWNER": "zzc",
     "SH_KEY_ID": "FB-2642",
     "SH_SECRET": "secret",
+    "SH_PROVISION_STATE_FILE": str(Path(_ISOLATED_DIR) / "update_state.json"),
+    "SH_PROVISION_VERSIONS_FILE": str(Path(_ISOLATED_DIR) / "versions.json"),
 }
+
+
+def setUpModule():
+    # 兜底：任何路径走到 request_restart 都不许真的 os._exit 掉测试进程。
+    patcher = mock.patch.dict("os.environ", {"SH_PROVISION_NO_EXIT": "1"})
+    patcher.start()
+    unittest.addModuleCleanup(patcher.stop)
+    unittest.addModuleCleanup(shutil.rmtree, _ISOLATED_DIR, True)
 
 ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT.parents[1]
@@ -435,8 +451,11 @@ class SessionHelperTest(unittest.TestCase):
 
     def test_provision_state_files_are_session_scoped_and_overridable(self):
         # F3: 单机多 helper 不得共用 versions/update_state 文件（否则陈旧记录会把新下发误判为 already installed）。
-        a = load_config(dict(BASE_ENV, SH_SESSION_NAME="tester"))
-        b = load_config(dict(BASE_ENV, SH_SESSION_NAME="reviewer"))
+        # 本例验证"默认路径"，所以去掉 BASE_ENV 里的测试隔离覆盖项。
+        base = {k: v for k, v in BASE_ENV.items()
+                if k not in ("SH_PROVISION_STATE_FILE", "SH_PROVISION_VERSIONS_FILE")}
+        a = load_config(dict(base, SH_SESSION_NAME="tester"))
+        b = load_config(dict(base, SH_SESSION_NAME="reviewer"))
         self.assertTrue(a.provision_versions_file.endswith("/.dingwei/sessionhelper_versions-tester.json"))
         self.assertTrue(a.provision_update_state_file.endswith("/.dingwei/sessionhelper_update_state-tester.json"))
         self.assertNotEqual(a.provision_versions_file, b.provision_versions_file)
@@ -2059,10 +2078,6 @@ class SessionHelperTest(unittest.TestCase):
         self.assertNotIn("test-backend.com", text)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class AMRRouteDeliveryTest(unittest.TestCase):
     """T-045:AMR 路由的 @ 提及必须能进入会话,不得被控制面过滤器吞掉。
 
@@ -2145,3 +2160,7 @@ class PortedDeployedFeaturesTest(unittest.TestCase):
                     # 关键：没有进 inbox = 不会被 worker 注入 CLI
                     self.assertEqual(helper.delivery_inbox.claim_next(), None,
                                      f"{name} 不得进入 inbox（会被注入 CLI 对话）")
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -170,10 +170,6 @@ class HandleConnectionWiringTest(unittest.TestCase):
                 self.assertFalse(worker.is_alive(), "Unix socket fixture did not finish")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class DatadEnvWiringTest(unittest.TestCase):
     """T18 补漏回归钉:datad_url/datad_token 必须从 env 接入 load_config
     (0f92e90/5aa58a2 只加字段未接 env,cfg.datad_* 恒空 ⇒ vsapi 管道死禁用)。"""
@@ -207,3 +203,7 @@ class DatadEnvWiringTest(unittest.TestCase):
         cfg = load_config(dict(self.BASE))
         self.assertEqual(cfg.datad_url, "")
         self.assertEqual(cfg.datad_token, "")
+
+
+if __name__ == "__main__":
+    unittest.main()
