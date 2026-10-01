@@ -384,6 +384,16 @@ func TestAgentsListHostedInjection(t *testing.T) {
 	if r := e.do("POST", "/api/console/enroll/applications/"+self+"/approve", map[string]any{"pairing_code": code, "agent_name": "Selfie", "new_group_name": tg()}, owner("zzc")); r.status != 200 {
 		t.Fatal(r.body)
 	}
+	// 未接 G4（Hosted 为空）而库里已有托管行：列表照常 200，托管行不出 hosted 子对象（不得对空函数调用而 500）。
+	if r := e.do("GET", "/api/console/agents", nil, map[string]string{"X-Test-Actor": "zzc"}); r.status != 200 {
+		t.Fatalf("list without Hosted provider: %d %v", r.status, r.body)
+	} else {
+		for _, it := range r.body["agents"].([]any) {
+			if _, has := it.(map[string]any)["hosted"]; has {
+				t.Fatalf("no provider ⇒ no hosted object: %v", it)
+			}
+		}
+	}
 	calls := map[string]int{}
 	e.api.Hosted = func(_ context.Context, id string) (map[string]any, bool) {
 		calls[id]++
