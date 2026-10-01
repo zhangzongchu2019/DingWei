@@ -85,11 +85,12 @@ func newFakeDocker(t *testing.T) *fakeEngine {
 
 func (f *fakeEngine) ops(root string) *dockerOps {
 	return &dockerOps{
-		eng:      newFakeEngine(f.srv.Client(), f.srv.URL),
-		quota:    &fakeQuota{},
-		seatRoot: root,
-		registry: "hub.local/dingwei",
-		waitMax:  2 * time.Second,
+		eng:          newFakeEngine(f.srv.Client(), f.srv.URL),
+		quota:        &fakeQuota{},
+		seatRoot:     root,
+		registry:     "hub.local/dingwei",
+		cgroupParent: "dingwei-hosted.slice",
+		waitMax:      2 * time.Second,
 	}
 }
 
@@ -262,5 +263,31 @@ func TestDestroyClearsQuota(t *testing.T) {
 	}
 	if !sawClear {
 		t.Fatalf("销毁必须清配额项目: %+v", q.calls)
+	}
+}
+
+// TestCgroupParentRequiredAndSet 反向用例（组长 eccc54bc）：create 的 --cgroup-parent
+// 必须指向配置父切片；漏设（空值）create 直接拒。
+func TestCgroupParentRequiredAndSet(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	raw := `{"seat_id":"ag_cg","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	if _, err := d.create(context.Background(), json.RawMessage(raw)); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	hc := f.specs[0]["HostConfig"].(map[string]any)
+	if hc["CgroupParent"] != "dingwei-hosted.slice" {
+		t.Fatalf("--cgroup-parent 必须指向配置父切片: %v", hc["CgroupParent"])
+	}
+
+	// 漏设父切片 ⇒ create 直接拒（不留下任何引擎调用）
+	d2 := f.ops(t.TempDir())
+	d2.cgroupParent = ""
+	callsBefore := len(f.calls)
+	if _, err := d2.create(context.Background(), json.RawMessage(raw)); err == nil {
+		t.Fatal("漏设父切片必须拒")
+	}
+	if len(f.calls) != callsBefore {
+		t.Fatal("漏设拒时不得产生任何引擎调用")
 	}
 }

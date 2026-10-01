@@ -49,11 +49,18 @@ func main() {
 	if sockPath == "" {
 		log.Fatal("nodeagent: NODEAGENT_DOCKER_SOCK 必填（独立 dockerd 实例的 socket；不得使用默认 /var/run/docker.sock）")
 	}
+	// 🔴 NODEAGENT_CGROUP_PARENT 必填（组长 eccc54bc）：托管席位统一挂可配置父切片
+	//    （如 dingwei-hosted.slice）做资源切片；漏设＝席位逃逸出平台切片。
+	cgroupParent := os.Getenv("NODEAGENT_CGROUP_PARENT")
+	if cgroupParent == "" {
+		log.Fatal("nodeagent: NODEAGENT_CGROUP_PARENT 必填（cgroup 父切片，如 dingwei-hosted.slice）")
+	}
 	ag.RegisterDockerHandlers(
 		nodeagent.NewEngine(sockPath),
 		nodeagent.XFSQuota(),
 		envOr("NODEAGENT_SEAT_ROOT", "/data/dingwei-newplat/agents"),
 		envOr("NODEAGENT_IMAGE_REGISTRY", "hub.local/dingwei"),
+		cgroupParent,
 	)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

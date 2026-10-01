@@ -37,8 +37,10 @@ type IdentitySuspender interface {
 	ReissueHostedToken(ctx context.Context, agentID, by string) (EnrollToken, error)
 }
 
-// VolumeBackuper 数据卷备份（业主 8971bddf：销毁先备份、留 14 天到期自动删）。
-// 实现挂节点代理或宿主侧件（接线时定）；备份件须可读、内容与销毁前一致（D5 判据）。
+// VolumeBackuper 数据卷备份（业主 8971bddf：销毁先备份、留 14 天到期删除）。
+// 🔴 目的地口径（组长 2026-10-01T11:23:25Z，台账 eccc54bc）：备份**统一送 dw.cmjrt.com 的 /data，
+// 不落节点**——实现按此选址（节点侧只出卷内容，不落盘在节点本地）。
+// 备份件须可读、内容与销毁前一致（D5 判据）。
 type VolumeBackuper interface {
 	BackupSeatVolume(ctx context.Context, nodeID, seatID string) (backupRef string, err error)
 }

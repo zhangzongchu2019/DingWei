@@ -51,11 +51,12 @@ func strictDecode(raw json.RawMessage, v any) error {
 }
 
 type dockerOps struct {
-	eng      *engine
-	quota    quotaOps
-	seatRoot string // /data/dingwei-newplat/agents 或 /data/dingwei-node
-	registry string // 固定镜像仓库（如 hub.local/dingwei）
-	waitMax  time.Duration
+	eng          *engine
+	quota        quotaOps
+	seatRoot     string // /data/dingwei-newplat/agents 或 /data/dingwei-node
+	registry     string // 固定镜像仓库（如 hub.local/dingwei）
+	cgroupParent string // 🔴 必填：cgroup 父切片（如 dingwei-hosted.slice——组长 eccc54bc）
+	waitMax      time.Duration
 }
 
 func containerName(seatID string) string { return "seat-" + seatID }
@@ -113,6 +114,8 @@ type tokenFile struct {
 }
 
 // buildSpec 安全参数清单（白名单固定，不可被指令关改）。
+// 🔴 CgroupParent 必带（组长 eccc54bc：托管席位统一挂在可配置父切片下做资源切片；
+// 漏设＝席位逃逸出平台切片，故 create 在空值时直接拒）。
 func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources) map[string]any {
 	memBytes := res.MemoryMB * 1024 * 1024
 	return map[string]any{
@@ -125,6 +128,7 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources) 
 			"Memory":         memBytes,
 			"MemorySwap":     memBytes, // memory＝memory-swap（禁 swap 绕过）
 			"CpuShares":      res.CPUShares,
+			"CgroupParent":   d.cgroupParent, // --cgroup-parent＝可配置父切片（eccc54bc）
 			"CapDrop":        []string{"ALL"},
 			"SecurityOpt":    []string{"no-new-privileges"},
 			"Privileged":     false,
@@ -212,6 +216,9 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	}
 	if err := p.Resources.validate(); err != nil {
 		return nil, err
+	}
+	if d.cgroupParent == "" {
+		return nil, fmt.Errorf("%w: cgroup 父切片未配置（eccc54bc：漏设即拒）", ErrParams)
 	}
 
 	name := containerName(p.SeatID)
@@ -396,8 +403,9 @@ func (d *dockerOps) destroy(ctx context.Context, params json.RawMessage) (json.R
 
 // RegisterDockerHandlers 把 Docker 指令集挂进代理骨架（cmd/nodeagent 在真机上调用）。
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry string) {
-	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, waitMax: 60 * time.Second}
+// cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent string) {
+	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, waitMax: 60 * time.Second}
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)
