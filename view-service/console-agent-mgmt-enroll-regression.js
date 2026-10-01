@@ -3,7 +3,7 @@
 //
 // 装置与 console-agent-groups-vega-regression.js 同源:console 页从生产源码实时抠,Hub 用本地桩。
 // 接口按 runbooks/DESIGN-G3-ENROLL-AUTH-API-20261001.md v1 第三节:字段 application_id/source_ip/same_device_count、
-//    批准带 group_code(必填,Hub 回 422 group_required)、错误一律 JSON 机器码(页面只认机器码,不显示 Hub 原文)。
+//    批准带 group_code(可选:业主令「编组不是必须的」,不选编组即不带该键)、错误一律 JSON 机器码(页面只认机器码,不显示 Hub 原文)。
 // 判据口径:真键盘(click + keyboard.type,不用 fill);pageerror 与 console error 两路监听,末尾断言为空
 //    (只放行桩有意返回的 4xx/5xx 资源加载行)。
 //
@@ -29,8 +29,9 @@ function mutate(from, to) {
   html = html.replace(from, to);
 }
 mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;'); // 自备审核区默认封存(开关关闭);本件测的就是它,所以装置里把开关打开
-const MUTATIONS = ['new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
+const MUTATIONS = ['group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'new-group-no-check') mutate("if(!n)return {error:'请填写新编组的名字(1～8 位字母或数字)'};", '');
 if (mutation === 'new-group-no-regex') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
 if (mutation === 'no-stale-guard') mutate('if(generation!==enrollGeneration)return null;', '');
@@ -106,6 +107,7 @@ const server = http.createServer(async (req, res) => {
       if (remaining <= 0) apps = apps.filter((a) => a.application_id !== id); // 5 次错码自动转 rejected
       return err(res, 422, 'pairing_mismatch', { remaining: Math.max(remaining, 0), rejected: remaining <= 0 });
     }
+    if (String(body.agent_name) === 'Nogroup') return err(res, 409, 'name_taken');   // 只为抓不选编组时的请求体、不消耗申请
     if (!/^[A-Za-z0-9]+$/.test(String(body.agent_name))) return err(res, 422, 'name_invalid');
     if (agents.some((a) => a.session_name.split('-')[1].toLowerCase() === String(body.agent_name).toLowerCase())) return err(res, 409, 'name_taken');
     const created = { id: `ag-${String(body.agent_name).toLowerCase()}`, key_id: `key-${body.agent_name}`, session_name: `zzc-${String(body.agent_name).toLowerCase()}-2642`, online: true };
@@ -184,9 +186,10 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.waitForFunction(() => document.querySelectorAll('#enrollItems .enroll-row').length === 3);
     });
 
-    await test('group dropdown offers only manageable groups', async () => {
+    await test('group dropdown: no-group first and default, then manageable groups, then new group', async () => {
       await rows().first().locator('.enroll-open').click();
-      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['团队甲', '新建编组…'], 'only manageable groups, plus the new-group choice; no "no group" choice');
+      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['不加入编组', '团队甲', '新建编组…'], 'first "no group" (default), then manageable groups, then the new-group choice');
+      assert.strictEqual(await page.locator('#enrollGroup').inputValue(), '', 'the default is not joining any group');
     });
 
     await test('empty required fields are hinted locally and nothing is sent', async () => {
@@ -196,15 +199,17 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(writes.length, before);
     });
 
-    await test('with no manageable group, approve is blocked locally and nothing is sent', async () => {
+    await test('the group is optional: with no manageable group (or none chosen) approve still goes out, with no group key at all', async () => {
       noManageableGroup = true; await page.evaluate(() => refreshGroups('no-group')); await page.waitForTimeout(150);
       await page.locator('#enrollCancel').click(); await rows().first().locator('.enroll-open').click();
-      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['（暂无编组,可直接新建）', '新建编组…']);
+      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['不加入编组', '新建编组…']);
       await type('#enrollCode', '123456'); await type('#enrollName', 'Nogroup');
       const before = writes.length;
       await page.locator('#enrollApprove').click();
-      assert.match(await feedbackText(), /选择所属编组/);
-      assert.strictEqual(writes.length, before);
+      for (let i = 0; i < 100 && writes.length === before; i++) await page.waitForTimeout(20);
+      assert.strictEqual(writes.length, before + 1, 'not choosing a group must not block the approval');
+      const last = writes[writes.length - 1].body;
+      assert.deepStrictEqual(last, { pairing_code: '123456', agent_name: 'Nogroup' }, 'no group_code and no new_group_name');
       noManageableGroup = false; await page.evaluate(() => refreshGroups('group-back')); await page.waitForTimeout(150);
       await page.locator('#enrollCancel').click(); await rows().first().locator('.enroll-open').click();
     });

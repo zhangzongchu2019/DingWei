@@ -26,8 +26,9 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
+const MUTATIONS = ['hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'hosted-group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
@@ -224,6 +225,20 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await test('no secret is ever rendered anywhere on the page', async () => {
       assert.doesNotMatch(await page.locator('body').innerText(), /SK-LEAK/);
       assert.doesNotMatch(await page.locator('#hostedAccount').evaluate((s) => s.outerHTML), /SK-LEAK/);
+    });
+
+    await test('the group is optional on the create form: no-group is first and default, and a create without a group sends neither group_id nor new_group_name', async () => {
+      await fillValid('Gnew');
+      assert.deepStrictEqual(await page.locator('#hostedGroup option').allTextContents(), ['不加入编组', '团队甲', '新建编组…']);
+      await page.locator('#hostedGroup').selectOption('');
+      const before = writes.length;
+      await page.evaluate(() => { document.getElementById('hostedFeedback').textContent = ''; });
+      await page.locator('#hostedCreateBtn').click();
+      for (let i = 0; i < 100 && writes.length === before; i++) await page.waitForTimeout(20);
+      assert.strictEqual(writes.length, before + 1, 'not choosing a group must not block the create');
+      const body = writes[writes.length - 1].body;
+      assert.ok(!('group_id' in body) && !('new_group_name' in body), `no group keys at all, got ${JSON.stringify(body)}`);
+      await page.locator('#hostedName').fill('');
     });
 
     await test('new group on the create form: an empty or malformed name is blocked locally; a valid name sends new_group_name instead of group_id; an existing group still sends group_id', async () => {

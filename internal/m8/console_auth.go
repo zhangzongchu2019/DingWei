@@ -670,8 +670,8 @@ function groupWireNew(selId,boxId,inputId){
   sel.onchange=function(){box.hidden=sel.value!==NEW_GROUP;if(!box.hidden){var i=document.getElementById(inputId);if(i)i.focus();}};
   box.hidden=sel.value!==NEW_GROUP;
 }
-// 返回 {fields:{...}} 或 {error:'提示'}:已有编组 ⇒ {<existingKey>:code};新建 ⇒ {new_group_name:名};没选 ⇒ error
-function groupChoice(selId,inputId,existingKey,emptyMsg){
+// 返回 {fields:{...}} 或 {error:'提示'}:不加入编组(默认,业主令:编组不是必须的) ⇒ {};已有编组 ⇒ {<existingKey>:code};新建 ⇒ {new_group_name:名}
+function groupChoice(selId,inputId,existingKey){
   var v=document.getElementById(selId).value;
   if(v===NEW_GROUP){
     var n=document.getElementById(inputId).value.trim();
@@ -679,13 +679,13 @@ function groupChoice(selId,inputId,existingKey,emptyMsg){
     if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};
     var f={};f[NEW_GROUP_FIELD]=n;return {fields:f};
   }
-  if(!v)return {error:emptyMsg};
+  if(!v)return {fields:{}};
   var e={};e[existingKey]=v;return {fields:e};
 }
 function enrollFillGroups(){
   var sel=document.getElementById('enrollGroup');if(!sel)return;var keep=sel.value;sel.replaceChildren();
   var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});
-  if(!own.length){var none=document.createElement('option');none.value='';none.textContent='（暂无编组,可直接新建）';sel.append(none);}
+  var none=document.createElement('option');none.value='';none.textContent='不加入编组';sel.append(none);   // 默认项:编组不是必须的
   own.forEach(function(g){var o=document.createElement('option');o.value=g.code;o.textContent=g.short_name||'历史组';sel.append(o);});
   groupAddNewOption(sel);
   if(keep&&(keep===NEW_GROUP||own.some(function(g){return g.code===keep;})))sel.value=keep;
@@ -729,8 +729,8 @@ async function refreshEnroll(){
 function enrollBusy(on){['enrollApprove','enrollReject'].forEach(function(id){var b=document.getElementById(id);if(b)b.disabled=on;});}
 async function enrollApprove(){
   var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),openedId=enrollOpenId;
-  if(!code||!name){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码、Agent 名称,并选择所属编组');return;}
-  var gc=groupChoice('enrollGroup','enrollNewGroup','group_code','请填写客户端屏幕上的配对码、Agent 名称,并选择所属编组');
+  if(!code||!name){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码和 Agent 名称');return;}
+  var gc=groupChoice('enrollGroup','enrollNewGroup','group_code');
   if(gc.error){enrollFeedback('enrollFeedback',gc.error);return;}
   var abody=Object.assign({pairing_code:code,agent_name:name},gc.fields);
   enrollBusy(true);var res=await consolePost(ENROLL_API.approve(openedId),abody);enrollBusy(false);
@@ -811,7 +811,7 @@ function renderHostedForm(){
   hostedFill('hostedPlan',(opts.plans||[]).map(function(p){return {value:p.id,text:p.name+(p.fits?'':'（超出剩余额度）'),disabled:!p.fits};}),'请选择资源套餐');
   var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});
   var hg=document.getElementById('hostedGroup'),wasNew=hg&&hg.value===NEW_GROUP;
-  hostedFill('hostedGroup',own.map(function(g){return {value:g.code,text:g.short_name||'历史组'};}),own.length?'请选择编组':'（暂无编组,可直接新建）');
+  hostedFill('hostedGroup',own.map(function(g){return {value:g.code,text:g.short_name||'历史组'};}),'不加入编组');
   if(hg){groupAddNewOption(hg);if(wasNew)hg.value=NEW_GROUP;}
   groupWireNew('hostedGroup','hostedNewGroupBox','hostedNewGroup');
   var rem=(opts.quota&&opts.quota.remaining)||{};
@@ -887,9 +887,9 @@ async function hostedTrackJob(jobId,name){
 async function hostedCreate(){
   var v=function(id){return document.getElementById(id).value.trim();};
   var body={name:v('hostedName'),node_id:v('hostedNode')||'auto',cli:v('hostedCli'),llm:v('hostedLlm'),account_id:v('hostedAccount'),plan_id:v('hostedPlan')};
-  var fillMsg='请填写名称并选择编组、CLI、LLM、账号和资源套餐';
+  var fillMsg='请填写名称并选择 CLI、LLM、账号和资源套餐';
   if(!body.name||!body.cli||!body.llm||!body.account_id||!body.plan_id){enrollFeedback('hostedFeedback',fillMsg);return;}
-  var gc=groupChoice('hostedGroup','hostedNewGroup','group_id',fillMsg);
+  var gc=groupChoice('hostedGroup','hostedNewGroup','group_id');
   if(gc.error){enrollFeedback('hostedFeedback',gc.error);return;}
   Object.assign(body,gc.fields);
   var btn=document.getElementById('hostedCreateBtn');btn.disabled=true;
