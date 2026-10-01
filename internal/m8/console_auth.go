@@ -572,9 +572,10 @@ function groupAction(path,method,body,feedback){return fetch(path,{method:method
 function groupShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s;}
 async function refreshGroups(source){var generation=++groupRequestGeneration;if(groupMode){var leader=document.getElementById('groupLeader');if(leader&&leader.value)groupLeaderSelection=leader.value;setGroupSelectState('加载中…',true);groupStatus('Agent 列表加载中…');}var controller=new AbortController();var timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);try{var r=await fetch('/api/console/agent-groups',{cache:'no-store',signal:controller.signal});if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}var data=await r.json();if(!data||!Array.isArray(data.owned_agents)||!Array.isArray(data.groups))throw new Error('响应格式无效');if(generation!==groupRequestGeneration)return null;groupSnapshot=data;renderAgentNav();if(groupMode){renderGroups();renderRoster();if(!data.owned_agents.length){setGroupSelectState('没有自己的 Agent',true);groupStatus('没有自己的 Agent，无法建组或加入');}else if(source==='retry'){groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');groupStatus('');}else groupStatus('');}return data;}catch(err){if(groupMode&&generation===groupRequestGeneration){setGroupSelectState('加载失败',true);var message='编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);}return null;}finally{clearTimeout(timer);}}
 // G3 · Agent 管理 Tab 的两块新增区(自备 Agent 审核 / Agent 列表)。
-// 🔴 接口路径为【暂定】(G3 Hub 设计件落板前以此为准,落板后只改 ENROLL_API 一处);
+// 接口按 runbooks/DESIGN-G3-ENROLL-AUTH-API-20261001.md v1 第三节(定稿);错误一律是 JSON {"error":机器码,...},
+//    页面只认机器码、自己写中文,不显示 Hub 的原文(设计件第四节)。
 //    不重写 refreshGroups/renderGroups —— 它们的三态文案、AbortController、generation 守卫由 group 回归守着。
-//    本块自带同款守卫:加载中/空/失败三态、超时、过期应答丢弃;失败文案原样显示 Hub 应答(重名/配对码错/已吊销等),不在前端预判。
+//    本块自带同款守卫:加载中/空/失败三态、超时、过期应答丢弃;名称有效性、重名、核码一律由 Hub 判,前端不预判。
 var ENROLL_API={
   list:'/api/console/enroll/applications',
   approve:function(id){return '/api/console/enroll/applications/'+encodeURIComponent(id)+'/approve';},
@@ -584,13 +585,28 @@ var ENROLL_API={
 var enrollGeneration=0,enrollSnapshot=[],enrollOpenId='';
 function enrollFeedback(id,text){var e=document.getElementById(id);if(e)e.textContent=text||'';}
 function enrollTime(v){var d=new Date(v);return isNaN(d.getTime())?String(v||''):d.toLocaleString('zh-CN',{hour12:false});}
+var ENROLL_ERRORS={
+  name_taken:'名称已被占用（按小写判重），请换一个名称',
+  name_invalid:'名称无效：只能使用大小写字母和数字',
+  expired:'该申请已过期',superseded:'同一设备的另一条申请已被批复，本条已作废',rejected:'该申请已被拒绝',
+  not_owner:'这不是你名下的申请或 Agent',origin_hosted:'托管 Agent 请用托管操作，不在这里吊销',
+  rate_limited:'操作太频繁，请稍后再试',origin_mismatch:'请求来源不被允许，请刷新页面后重试'
+};
+function enrollErrorText(status,data){
+  var code=data&&typeof data.error==='string'?data.error:'';
+  if(code==='pairing_mismatch'){
+    var left=data&&Number.isFinite(data.remaining)?data.remaining:null;
+    return left===0?'配对码不符，错误次数已达上限，该申请已被拒绝':('配对码不符'+(left===null?'':'，还可以再试 '+left+' 次'));
+  }
+  return ENROLL_ERRORS[code]||('操作失败（HTTP '+status+(code?'：'+code:'')+'）');
+}
 async function enrollPost(path,body){
   try{
     var r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
-    if(r.ok)return {ok:true,text:''};
-    var detail=(await r.text()).trim();
-    return {ok:false,text:detail||('HTTP '+r.status)};
-  }catch(err){return {ok:false,text:'请求失败: '+String(err&&err.message||err)};}
+    var data=null;try{data=await r.json();}catch(_){}
+    if(r.ok)return {ok:true,text:'',data:data||{}};
+    return {ok:false,status:r.status,text:enrollErrorText(r.status,data),code:data&&data.error||''};
+  }catch(err){return {ok:false,status:0,text:'请求失败: '+String(err&&err.message||err),code:''};}
 }
 function enrollCloseEditor(){
   enrollOpenId='';var ed=document.getElementById('enrollEditor');if(ed)ed.hidden=true;
@@ -604,8 +620,8 @@ function enrollFillGroups(){
   if(keep&&own.some(function(g){return g.code===keep;}))sel.value=keep;
 }
 function enrollOpenEditor(app){
-  enrollOpenId=app.id;var ed=document.getElementById('enrollEditor');if(!ed)return;
-  document.getElementById('enrollEditorTitle').textContent='审核申请 · 来源 '+(app.ip||'未知')+' · '+enrollTime(app.requested_at);
+  enrollOpenId=app.application_id;var ed=document.getElementById('enrollEditor');if(!ed)return;
+  document.getElementById('enrollEditorTitle').textContent='审核申请 · 来源 '+(app.source_ip||'未知')+' · '+enrollTime(app.requested_at);
   enrollFillGroups();enrollFeedback('enrollFeedback','');ed.hidden=false;
   document.getElementById('enrollCode').focus();
 }
@@ -613,14 +629,14 @@ function renderEnroll(){
   var body=document.getElementById('enrollItems'),empty=document.getElementById('enrollEmpty');if(!body||!empty)return;
   body.replaceChildren();
   enrollSnapshot.forEach(function(app){
-    var row=document.createElement('tr');row.className='enroll-row';row.dataset.applicationId=app.id;
+    var row=document.createElement('tr');row.className='enroll-row';row.dataset.applicationId=app.application_id;
     var fp=String(app.device_fingerprint||'');
-    [app.ip||'',fp.slice(0,12),app.client_version||'',enrollTime(app.requested_at)].forEach(function(v,i){var td=document.createElement('td');td.textContent=v;if(i===1)td.title=fp;row.append(td);});
+    [app.source_ip||'',fp.slice(0,12),app.client_version||'',enrollTime(app.requested_at)].forEach(function(v,i){var td=document.createElement('td');td.textContent=v;if(i===1){td.title=fp;if(app.same_device_count>1){var same=document.createElement('span');same.className='enroll-same-device';same.textContent=' · 同设备共 '+app.same_device_count+' 条申请,批其一即可';td.append(same);}}row.append(td);});
     var action=document.createElement('td'),open=document.createElement('button');open.type='button';open.className='enroll-open';open.textContent='审核';
     open.onclick=function(){enrollOpenEditor(app);};action.append(open);row.append(action);body.append(row);
   });
   empty.hidden=enrollSnapshot.length>0;
-  if(enrollOpenId&&!enrollSnapshot.some(function(a){return a.id===enrollOpenId;})){enrollCloseEditor();enrollFeedback('enrollFeedback','该申请已不在待审核列表(可能已处理,或同一设备的另一条已被批复)');}
+  if(enrollOpenId&&!enrollSnapshot.some(function(a){return a.application_id===enrollOpenId;})){enrollCloseEditor();enrollFeedback('enrollNotice','该申请已不在待审核列表(可能已处理,或同一设备的另一条已被批复)');}
 }
 async function refreshEnroll(){
   var generation=++enrollGeneration,status=document.getElementById('enrollStatus'),retry=document.getElementById('enrollRetry');
@@ -640,17 +656,17 @@ async function refreshEnroll(){
 }
 function enrollBusy(on){['enrollApprove','enrollReject'].forEach(function(id){var b=document.getElementById(id);if(b)b.disabled=on;});}
 async function enrollApprove(){
-  var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),group=document.getElementById('enrollGroup').value;
+  var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),group=document.getElementById('enrollGroup').value,openedId=enrollOpenId;
   if(!code||!name){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码和 Agent 名称');return;}
-  enrollBusy(true);var res=await enrollPost(ENROLL_API.approve(enrollOpenId),{pairing_code:code,agent_name:name,group_code:group});enrollBusy(false);
-  if(!res.ok){enrollFeedback('enrollFeedback',res.text);return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
-  enrollCloseEditor();enrollFeedback('enrollFeedback','');refreshEnroll();refreshGroups('enroll');refreshAgents();
+  enrollBusy(true);var res=await enrollPost(ENROLL_API.approve(openedId),{pairing_code:code,agent_name:name,group_id:group});enrollBusy(false);
+  if(!res.ok){var gone=res.status===410||(res.code==='pairing_mismatch'&&/已被拒绝/.test(res.text));if(!gone){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
+  enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();refreshGroups('enroll');refreshAgents();
 }
 async function enrollReject(){
   if(!confirm('拒绝即踢走：该申请将作废,客户端需重新申请。确认拒绝？'))return;
   enrollBusy(true);var res=await enrollPost(ENROLL_API.reject(enrollOpenId));enrollBusy(false);
-  if(!res.ok){enrollFeedback('enrollFeedback',res.text);return;}
-  enrollCloseEditor();refreshEnroll();
+  if(!res.ok){if(res.status!==410){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}
+  enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();
 }
 function renderRoster(){
   var body=document.getElementById('rosterItems'),empty=document.getElementById('rosterEmpty');if(!body||!empty)return;
@@ -659,7 +675,7 @@ function renderRoster(){
     var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.id;
     var name=document.createElement('td');name.textContent=groupShortName(a.session_name);name.title=a.session_name;
     var st=document.createElement('td');st.textContent=a.online?'在线':'离线';
-    var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';
+    var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted';
     revoke.onclick=async function(){
       if(!confirm('吊销 '+groupShortName(a.session_name)+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;
       revoke.disabled=true;var res=await enrollPost(ENROLL_API.revoke(a.id));revoke.disabled=false;
@@ -672,7 +688,7 @@ function renderRoster(){
 }
 function mountEnrollPanels(pane){
   var anchor=pane.querySelector('#group-status');if(!anchor)return;
-  anchor.insertAdjacentHTML('beforebegin','<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
+  anchor.insertAdjacentHTML('beforebegin','<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
   document.getElementById('enrollRefresh').onclick=refreshEnroll;document.getElementById('enrollRetry').onclick=refreshEnroll;
   document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;
   document.getElementById('enrollCancel').onclick=enrollCloseEditor;
