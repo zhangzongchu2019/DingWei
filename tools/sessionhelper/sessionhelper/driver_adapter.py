@@ -18,12 +18,13 @@ import time
 
 from .contract import SessionEvent
 from .unified_queue import EnqueueResult, QueuedCommand, UnifiedCommandQueue
+from .config import env_get
 
 
 class DriverAdapter:
     def __init__(self, cfg):
         self.cfg = cfg
-        which = (os.environ.get("SH_DRIVER") or "codex").strip().lower()
+        which = (env_get("SH_DRIVER") or "codex").strip().lower()
         self._which = which
         self.driver = self._build_driver(which)
         self._term_q: queue.Queue[str] = queue.Queue(maxsize=4000)
@@ -43,23 +44,23 @@ class DriverAdapter:
 
     def _build_driver(self, which: str):
         # 按机器取路径,别写死 pilot 开发机路径(否则每台都挂):
-        cwd = os.environ.get("SH_CLI_CWD") or os.path.expanduser("~")
+        cwd = env_get("SH_CLI_CWD") or os.path.expanduser("~")
         store = os.path.join(os.path.expanduser("~"), f".dw-{which}-ledger.sqlite3")
         if which == "claude":
             from .claudeDriver import ClaudeProtocolDriver
             return ClaudeProtocolDriver(store_path=store, cwd=cwd)
         if which == "opencode":
             from .openCodeDriver import OpenCodeProtocolDriver
-            pw = os.environ.get("OPENCODE_SERVER_PASSWORD", "pilotpw")
-            port = int(os.environ.get("SH_OPENCODE_PORT", "19300"))
+            pw = env_get("OPENCODE_SERVER_PASSWORD", "pilotpw")
+            port = int(env_get("SH_OPENCODE_PORT", "19300"))
             return OpenCodeProtocolDriver(password=pw, port=port, workdir=cwd,
-                                          model=os.environ.get("SH_OPENCODE_MODEL", "deepseek-anthropic/deepseek-v4-pro"),
+                                          model=env_get("SH_OPENCODE_MODEL", "deepseek-anthropic/deepseek-v4-pro"),
                                           store_path=store)
         # 默认 codex —— sandbox/approval 给足权限(对齐 claude 的 --dangerously-skip-permissions 意图),可用 env 收紧
         from .codexDriver import CodexProtocolDriver
         return CodexProtocolDriver(store_path=store, workdir=cwd,
-                                   sandbox=os.environ.get("SH_CODEX_SANDBOX", "danger-full-access"),
-                                   approval_policy=os.environ.get("SH_CODEX_APPROVAL", "never"))
+                                   sandbox=env_get("SH_CODEX_SANDBOX", "danger-full-access"),
+                                   approval_policy=env_get("SH_CODEX_APPROVAL", "never"))
 
     # ------------------------------------------------------------ 生命周期
 
@@ -75,7 +76,7 @@ class DriverAdapter:
             print(f"[driver-adapter] started, driver={self._which}", flush=True)
 
     def _maybe_start_sidecar(self) -> None:
-        port = os.environ.get("SH_SIDECAR_PORT")
+        port = env_get("SH_SIDECAR_PORT")
         if not port:
             return
         try:

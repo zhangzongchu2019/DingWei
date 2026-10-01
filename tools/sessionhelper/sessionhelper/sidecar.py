@@ -20,7 +20,9 @@ import time
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-_RENDERER = os.environ.get(
+from .config import env_get
+
+_RENDERER = env_get(
     "SH_SIDECAR_RENDERER",
     "/home/ai-dev/transport-v2/view-mock/renderer.html",
 )

@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, Optional
 
+from .config import env_get
 from .contract import (
     Capabilities,
     DeliveryReceipt,
@@ -42,7 +43,7 @@ from .contract import (
 log = logging.getLogger("claude-driver")
 
 # claude 二进制:按 SH_CLI_BIN env → PATH 解析,别写死开发机路径(否则每台都挂)
-_CLAUDE_BIN = os.environ.get("SH_CLI_BIN") or shutil.which("claude") or "/home/ai-dev/.local/bin/claude"
+_CLAUDE_BIN = env_get("SH_CLI_BIN") or shutil.which("claude") or "/home/ai-dev/.local/bin/claude"
 DEFAULT_CMD = [
     _CLAUDE_BIN,
     "-p",
