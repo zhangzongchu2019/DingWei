@@ -66,6 +66,7 @@ func wireNewPlatform(ctx context.Context, mux *http.ServeMux, hub *m8.Hub, cfg n
 	hub.Identity = svc
 	hub.Onboarding = ob
 	hub.AgentCredentialOnly = true
+	hub.PublicOrigin = cfg.publicOrigin
 
 	n3 := &httpapi.N3{OB: ob, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Secure: true}
 	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline}

@@ -11,6 +11,8 @@ type IdentityStore interface {
 	// CreateUser user_id 或 short_name 按小写冲突 ⇒ ErrConflict。
 	CreateUser(ctx context.Context, u User) error
 	GetUser(ctx context.Context, userIDLC string) (*User, error)
+	// GetUserByShortName 按简称（小写）找用户；full_name（名称.简称）解析用。
+	GetUserByShortName(ctx context.Context, shortNameLC string) (*User, error)
 	// SetUserState 转 disabled 时同一事务吊销该用户全部会话（N3 A13）。
 	SetUserState(ctx context.Context, userIDLC string, state UserState, now time.Time) error
 	SetPassword(ctx context.Context, userIDLC, hash string, mustChange bool) error

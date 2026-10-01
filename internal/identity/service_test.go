@@ -304,3 +304,35 @@ func TestApproveGroupRequired(t *testing.T) {
 		t.Fatalf("approve with group: %+v %v", ag, err)
 	}
 }
+
+// 新平台 view 路由以 full_name 为键（组长 738c4a03）：两个用户的同名 Agent 必须解析到各自那一个，绝不串号。
+func TestResolveFullName(t *testing.T) {
+	f := newFixture(t)
+	mk := func(owner, device, name string) string {
+		r := f.apply(t, owner, device, "1.1.1.1")
+		ag, _, err := f.svc.Approve(bg, owner, r.ApplicationID, code, name, "g")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return ag.ID
+	}
+	zk := mk("zzc", "d1", "Kimi")
+	lk := mk("lbl", "d2", "kimi")
+	if ag, u, err := f.svc.ResolveFullName(bg, "Kimi.zzc"); err != nil || ag.ID != zk || u.UserID != "zzc" {
+		t.Fatalf("Kimi.zzc: %+v %+v %v", ag, u, err)
+	}
+	if ag, u, err := f.svc.ResolveFullName(bg, "KIMI.LB"); err != nil || ag.ID != lk || u.UserID != "lbl" {
+		t.Fatalf("KIMI.LB (case-insensitive, other owner): %+v %+v %v", ag, u, err)
+	}
+	for _, bad := range []string{"kimi", ".zzc", "kimi.", "ki.mi.zzc", "kimi.nosuch", "ghost.zzc", "kimi.lbl"} {
+		if _, _, err := f.svc.ResolveFullName(bg, bad); !errors.Is(err, identity.ErrNotFound) {
+			t.Errorf("%q: %v, want ErrNotFound", bad, err)
+		}
+	}
+	if _, err := f.svc.Revoke(bg, "zzc", zk); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := f.svc.ResolveFullName(bg, "kimi.zzc"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("revoked agent must not resolve: %v", err)
+	}
+}

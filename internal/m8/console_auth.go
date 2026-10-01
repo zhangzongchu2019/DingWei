@@ -211,6 +211,13 @@ func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 // key_id and session_name are returned after authorization as runtime targets.
 func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.Onboarding != nil {
+			// 新平台：路径段是 full_name，按新平台会话＋归属用户授权（newplat_view.go）。
+			if h.newPlatformViewAuth(w, r) {
+				next(w, r)
+			}
+			return
+		}
 		if !h.consoleAuthEnabled {
 			next(w, r)
 			return
@@ -704,6 +711,14 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 		// including the compatibility path where unified auth is disabled.
 		r.Header.Del("X-DW-Console-Capability-Verified")
 		r.Header.Del("X-DW-Console-Principal")
+		if h.Onboarding != nil {
+			// 新平台：子路径同样按新平台会话＋归属用户授权；写操作在 newPlatformViewAuth 里校验 Origin，
+			// 取代旧平台挂在 console_agent 上的页面 capability。
+			if h.newPlatformViewAuth(w, r) {
+				next(w, r)
+			}
+			return
+		}
 		permission := "view"
 		if r.Method != http.MethodGet {
 			permission = "interact"

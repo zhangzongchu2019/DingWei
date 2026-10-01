@@ -31,6 +31,7 @@ func Run(t *testing.T, newStore Factory) {
 	}{
 		{"N3_user_id_and_short_name_conflict_by_lowercase", userConflictLowercase},
 		{"N3_disable_revokes_sessions", disableRevokesSessions},
+		{"N3_get_user_by_short_name_case_insensitive", getUserByShortName},
 		{"N3_session_expiry_and_inactive_user", sessionExpiryAndInactive},
 		{"N3_registration_code_one_shot_binds_identity", regCodeOneShot},
 		{"N3_registration_code_expired_or_unknown_changes_nothing", regCodeInvalidChangesNothing},
@@ -600,4 +601,17 @@ func hostedSuspendResume(t *testing.T, s identity.Store) {
 	wantErr(t, "suspend selfhost", err, identity.ErrNotHosted)
 	_, err = s.SetAgentSuspended(ctx, "ag-none", true, "g4", t0)
 	wantErr(t, "suspend unknown", err, identity.ErrNotFound)
+}
+
+func getUserByShortName(t *testing.T, s identity.Store) {
+	mustUser(t, s, "Alice", "Al", identity.UserActive)
+	mustUser(t, s, "bob", "bb", identity.UserActive)
+	if u, err := s.GetUserByShortName(ctx, "AL"); err != nil || u.UserID != "Alice" {
+		t.Fatalf("short AL: %+v %v", u, err)
+	}
+	if u, err := s.GetUserByShortName(ctx, "bb"); err != nil || u.UserID != "bob" {
+		t.Fatalf("short bb: %+v %v", u, err)
+	}
+	_, err := s.GetUserByShortName(ctx, "alice") // 用户 ID 不是简称
+	wantErr(t, "user id used as short name", err, identity.ErrNotFound)
 }

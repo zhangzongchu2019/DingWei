@@ -529,3 +529,14 @@ func (m *MemStore) SetAgentSuspended(_ context.Context, agentID string, suspend 
 	}
 	return false, nil
 }
+
+func (m *MemStore) GetUserByShortName(_ context.Context, shortNameLC string) (*User, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	lc, ok := m.shortNames[Lower(shortNameLC)]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	cp := *m.users[lc]
+	return &cp, nil
+}

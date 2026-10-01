@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 )
@@ -365,4 +366,26 @@ func (s *Service) Revoke(ctx context.Context, actorLC, agentID string) (bool, er
 		s.OnRevoked(agentID)
 	}
 	return false, nil
+}
+
+// ResolveFullName 把 full_name（名称.用户简称）解析成未吊销的 Agent 及其归属用户（新平台 view 路由的键，组长台账 738c4a03）。
+// 格式不符、简称或名称不存在、Agent 已吊销 ⇒ ErrNotFound。大小写不敏感。
+func (s *Service) ResolveFullName(ctx context.Context, fullName string) (*Agent, *User, error) {
+	i := strings.LastIndex(fullName, ".")
+	if i <= 0 || i == len(fullName)-1 {
+		return nil, nil, ErrNotFound
+	}
+	name, short := fullName[:i], fullName[i+1:]
+	if !ValidAgentName(name) || !ValidShortName(short) {
+		return nil, nil, ErrNotFound
+	}
+	u, err := s.Store.GetUserByShortName(ctx, short)
+	if err != nil {
+		return nil, nil, ErrNotFound
+	}
+	ag, err := s.Store.FindAgentByName(ctx, u.UserIDLC(), name)
+	if err != nil || !ag.Current() {
+		return nil, nil, ErrNotFound
+	}
+	return ag, u, nil
 }
