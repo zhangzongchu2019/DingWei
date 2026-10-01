@@ -142,14 +142,7 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP, *fakeGW, *
 		},
 		ownsAgent: func(r *http.Request, userLC, agentID string) bool { return userLC == "zzc" },
 		isManager: func(r *http.Request, userLC string) bool { return userLC == "admin" },
-		listUsers: func(r *http.Request) ([]quotaUser, error) { return []quotaUser{{ID: "zzc", ShortName: "zzc"}}, nil },
-		seatOwnerOf: func(r *http.Request, agentID string) (string, bool) {
-			seat, err := st.GetSeat(r.Context(), agentID)
-			if err != nil {
-				return "", false
-			}
-			return seat.CreatedBy, true
-		},
+		listUsers: func(r *http.Request) ([]string, error) { return []string{"zzc"}, nil },
 	}
 	return deps, st, idp, gw, poolSvc
 }
@@ -250,7 +243,7 @@ func TestHostedRoutesContractCodes(t *testing.T) {
 	if rec := as("admin", "GET", "/api/console/admin/quotas", ""); rec.Code != 200 {
 		t.Fatalf("管理读配额: %d %s", rec.Code, rec.Body)
 	}
-	if rec := as("admin", "PUT", "/api/console/admin/quotas/zzc", `{"agents_limit":4}`); codeOf(rec) != "params_invalid" {
+	if rec := as("admin", "PUT", "/api/console/admin/quotas/zzc", `{"agents_limit":4}`); codeOf(rec) != "name_invalid" {
 		t.Fatalf("缺键: %d %s", rec.Code, rec.Body)
 	}
 	if rec := as("admin", "PUT", "/api/console/admin/quotas/zzc", `{"agents_limit":4,"vcpu_limit":8,"mem_gb_limit":16,"disk_gb_limit":64}`); rec.Code != 200 {

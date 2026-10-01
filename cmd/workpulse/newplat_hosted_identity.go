@@ -64,20 +64,9 @@ func (h *hostedIdentity[Tok, Ag]) groupErr(err error) error {
 		return h.errGroupNotFound
 	case errors.Is(err, identity.ErrGroupClosed):
 		return h.errGroupClosed
-	case errors.Is(err, identity.ErrNameInvalid):
-		return errNameInvalidMC // 契约机器码（联调第 3 条：错误字段不许是 Go 文本）
-	case errors.Is(err, identity.ErrNameTaken):
-		return errNameTakenMC
 	}
 	return err
 }
-
-// 契约机器码（与 hosted.ErrNameInvalid/ErrNameTaken 同文——本文件不 import hosted 的纪律不变，
-// 机器码文本即接口；G4 侧的 errors.Is 走 sentinel，这里纯文本即可，路由按文本出码）。
-var (
-	errNameInvalidMC = errors.New("name_invalid")
-	errNameTakenMC   = errors.New("name_taken")
-)
 
 func (h *hostedIdentity[Tok, Ag]) RetireHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
 	return h.svc.RetireHostedAgent(ctx, agentID, by)

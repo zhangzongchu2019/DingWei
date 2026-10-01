@@ -20,15 +20,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 )
-
-// BackupFailedError 备份不可用（契约：error=backup_failed＋detail 字段；detail 只供日志与审计，页面不读）。
-type BackupFailedError struct{ Detail string }
-
-func (e *BackupFailedError) Error() string { return ErrBackupFailed.Error() }
-func (e *BackupFailedError) Unwrap() error { return ErrBackupFailed }
 
 var (
 	ErrNotOwner        = errors.New("not_owner")
@@ -177,7 +170,7 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "restart_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
 	if err != nil || !res.OK {
 		_ = l.st.SetSeatState(ctx, agentID, "error", "start_failed", "fail", nil)
-		return ErrStartFailed
+		return fmt.Errorf("start_failed")
 	}
 	return l.st.SetSeatState(ctx, agentID, "online", "", "online", nil)
 }
@@ -214,9 +207,7 @@ func (l *Lifecycle) Enable(ctx context.Context, agentID, actorLC string, isAdmin
 	if err != nil {
 		return err
 	}
-	// disabled 或 error（停用失败留下的"凭据已暂停、容器状态未知"——联调第 7 条：
-	// 否则停用失败后启用也回不去，席位永久卡死）都可启用；启用＝Resume＋起容器，正是恢复路径
-	if seat.State != "disabled" && seat.State != "error" {
+	if seat.State != "disabled" {
 		return ErrInvalidState
 	}
 	if _, err := l.susp.ResumeHostedAgent(ctx, agentID, actorLC); err != nil {
@@ -225,7 +216,7 @@ func (l *Lifecycle) Enable(ctx context.Context, agentID, actorLC string, isAdmin
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "start_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
 	if err != nil || !res.OK {
 		_ = l.st.SetSeatState(ctx, agentID, "error", "start_failed", "fail", nil)
-		return ErrStartFailed
+		return fmt.Errorf("start_failed")
 	}
 	return l.st.SetSeatState(ctx, agentID, "online", "", "online", json.RawMessage(`{"resumed":true}`))
 }
@@ -251,9 +242,7 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 	// ① 先备份数据卷（业主 8971bddf：留 14 天到期自动删；备份件须可读且与销毁前一致——D5）
 	backupRef, err := l.backups.BackupSeatVolume(ctx, seat.NodeID, agentID)
 	if err != nil {
-		// 🔴 契约机器码不拼原因（联调第 4 条）：细节进日志/审计，错误只回 backup_failed
-		log.Printf("hosted destroy backup failed agent=%s: %v", agentID, err)
-		return &BackupFailedError{Detail: err.Error()}
+		return fmt.Errorf("backup_failed: %v", err)
 	}
 	// ② Retire 吊销（返回前 4401 断开，D5 五秒口径；自备席位不可走此路——G3 侧约束）
 	if _, err := l.idp.RetireHostedAgent(ctx, agentID, actorLC); err != nil {

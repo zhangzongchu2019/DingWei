@@ -27,14 +27,9 @@ func (q *QuotaService) CheckCreate(ctx context.Context, ownerLC string, plan Pla
 	if err != nil {
 		return err
 	}
-	// 契约分工（tosonnet50ts 联调第 6 条）：席位数超额 ⇒ quota_exceeded（带 remaining）；
-	// 套餐本身超剩余额度（vcpu/mem/disk）⇒ plan_exceeds_quota（页面文案不同）。
-	if usage.Agents+1 > quota.AgentsLimit {
-		return &QuotaExceededError{Quota: quota, Usage: usage}
-	}
-	if usage.MemMB+plan.MemMB > quota.MemMBLimit ||
+	if usage.Agents+1 > quota.AgentsLimit || usage.MemMB+plan.MemMB > quota.MemMBLimit ||
 		usage.DiskMB+plan.DiskMB > quota.DiskMBLimit || usage.VCPU+plan.VCPU > quota.VCPULimit {
-		return &PlanExceededError{Quota: quota, Usage: usage}
+		return &QuotaExceededError{Quota: quota, Usage: usage}
 	}
 	return nil
 }
@@ -47,20 +42,6 @@ type QuotaExceededError struct {
 
 func (e *QuotaExceededError) Error() string { return ErrQuotaExceeded.Error() }
 func (e *QuotaExceededError) Unwrap() error { return ErrQuotaExceeded }
-
-// PlanExceededError 套餐超剩余（契约：plan_exceeds_quota 也带 remaining，同 quota_exceeded 形状）。
-type PlanExceededError struct {
-	Quota Quota
-	Usage Usage
-}
-
-func (e *PlanExceededError) Error() string { return ErrPlanExceedsQuota.Error() }
-func (e *PlanExceededError) Unwrap() error { return ErrPlanExceedsQuota }
-
-// RemainingJSON 各维度剩余（契约响应附加字段）。
-func (e *PlanExceededError) RemainingJSON() json.RawMessage {
-	return (&QuotaExceededError{Quota: e.Quota, Usage: e.Usage}).RemainingJSON()
-}
 
 // RemainingJSON 各维度剩余（契约响应附加字段）。
 func (e *QuotaExceededError) RemainingJSON() json.RawMessage {
