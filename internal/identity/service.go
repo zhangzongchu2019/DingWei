@@ -60,6 +60,10 @@ type Service struct {
 	Rand  io.Reader
 	// OnRevoked 在吊销成功（非重复吊销）后、Revoke 返回前同步调用：Hub 据此以 4401 断开在线连接并重推在线清单（V2 A1）。
 	OnRevoked func(agentID string)
+	// OnCredentialIssued 凭据被取走（旧凭据随之作废）后、Poll 返回前同步调用：Hub 据此断开该 Agent 仍在线的连接
+	// —— 那条连接拿的只能是刚作废的旧凭据（托管升级：Reissue ⇒ 新容器取走凭据 ⇒ 旧容器的连接在此断开，
+	// 新容器才连得进来，不撞「已在线」的 409）。首次取凭据时不会有人在线，调用即空操作。
+	OnCredentialIssued func(agentID string)
 	// OnSuspended 托管席位被暂停后、SuspendHostedAgent 返回前同步调用：Hub 据此以 4401（原因 credential_suspended）断开。
 	OnSuspended func(agentID string)
 	// NameAllowed 额外的名称检查（Hub 注入渠道保留字检查）；返回 false ⇒ ErrNameInvalid。为空则不查。
@@ -247,6 +251,9 @@ func (s *Service) Poll(ctx context.Context, appID, pollToken string) (*PollResul
 	res.AgentFullName = s.fullName(ctx, ag)
 	res.Credential = cred
 	s.audit(ctx, "client", "agent.credential_issued", ag.ID, "application="+appID)
+	if s.OnCredentialIssued != nil {
+		s.OnCredentialIssued(ag.ID)
+	}
 	return res, nil
 }
 

@@ -35,6 +35,7 @@ func newAgentEnv(t *testing.T) *agentEnv {
 	svc := identity.NewService(store, nil, nil)
 	svc.OnRevoked = hub.DisconnectAgent
 	svc.OnSuspended = hub.DisconnectAgent
+	svc.OnCredentialIssued = hub.DisconnectAgent
 	svc.NameAllowed = func(n string) bool { return !isReservedForNaming(n) }
 	hub.Identity = svc
 	mux := http.NewServeMux()

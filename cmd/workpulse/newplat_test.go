@@ -101,6 +101,11 @@ func TestWireNewPlatformRoutes(t *testing.T) {
 	if n, _ := hub.Identity.Store.CountUsers(context.Background()); n != 1 {
 		t.Fatalf("bootstrap users=%d, want 1", n)
 	}
+	// 吊销、停用、凭据被取走（旧凭据作废）三处都要让 Hub 断开在线连接；漏接任何一处，生产上那条连接会挂着不断。
+	if hub.Identity.OnRevoked == nil || hub.Identity.OnSuspended == nil || hub.Identity.OnCredentialIssued == nil {
+		t.Fatalf("disconnect hooks not wired: revoked=%v suspended=%v credential_issued=%v",
+			hub.Identity.OnRevoked != nil, hub.Identity.OnSuspended != nil, hub.Identity.OnCredentialIssued != nil)
+	}
 }
 
 type fakeLoginPager struct{}
