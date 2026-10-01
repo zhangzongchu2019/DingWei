@@ -187,10 +187,17 @@ func TestCreateRejections(t *testing.T) {
 	if len(idp.issued) != issuedBefore {
 		t.Fatal("账号预检拒绝不应签发（不占名字）")
 	}
-	// 指定离线节点 ⇒ node_no_capacity
+	// 指定离线节点 ⇒ node_no_capacity（需一个能过账号预检的新账号，才能走到节点格）
+	a2, err := o.pool.Register(context.Background(), "admin", true, "team-codex-2", "token_file", "codex", "gpt", "sk-y")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := o.pool.Grant(context.Background(), "admin", true, a2.ID, "zzc"); err != nil {
+		t.Fatal(err)
+	}
 	r3 := base
 	r3.NodeID = "nd_offline"
-	r3.AccountID = "acct_any"
+	r3.AccountID = a2.ID
 	if _, err := o.Create(context.Background(), r3); err != ErrNoNodeCapacity {
 		t.Fatalf("离线节点应 node_no_capacity, 得 %v", err)
 	}
