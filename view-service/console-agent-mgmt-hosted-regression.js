@@ -26,10 +26,11 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
+const MUTATIONS = ['backup-failed-unmapped', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'hosted-group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
+if (mutation === 'backup-failed-unmapped') mutate("backup_failed:'销毁前备份数据卷失败,容器没有被删除,请稍后再试或联系管理员',", '');
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
 if (mutation === 'quota-generic') mutate("if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){", "if(false){");
@@ -144,6 +145,9 @@ const server = http.createServer(async (req, res) => {
     if (!h) return err(res, 404, 'not_found');
     if (id === 'ag-offline') return err(res, 409, 'node_offline');
     if (id === 'ag-nope') return err(res, 403, 'forbidden_role');
+    if (id === 'ag-nobackup' && op === 'destroy' && body.confirm === true) return err(res, 503, 'backup_failed', { detail: 'backup_pipeline_not_ready' });
+    if (id === 'ag-boom') return err(res, 500, 'internal_error');
+    if (id === 'ag-params') return err(res, 400, 'params_invalid');
     if ((op === 'disable' || op === 'destroy') && body.confirm !== true) return err(res, 400, 'confirm_required');
     if (op === 'disable') h.state = 'disabled';
     if (op === 'enable') h.state = 'running';
@@ -433,6 +437,25 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       agents = agents.filter((a) => a.id !== 'ag-sw' && a.id !== 'ag-sh'); hostedAgents = hostedAgents.filter((h) => h.agent_id !== 'ag-sw'); await page.evaluate(() => refreshRoster());
     });
 
+    await test('backup_failed / internal_error / params_invalid are shown in our wording; the Hub detail never reaches the page', async () => {
+      for (const id of ['ag-nobackup', 'ag-boom', 'ag-params']) {
+        hostedAgents.push({ agent_id: id, state: 'running', upgradable: false, node_name: 'node-a' });
+        agents.push({ id, key_id: `key-${id}`, session_name: `zzc-${id.slice(3)}-2642`, online: true, origin: 'hosted' });
+      }
+      await page.evaluate(() => refreshRoster());
+      dialogAccept = true;
+      const cases = [['ag-nobackup', 'destroy', /销毁前备份数据卷失败/], ['ag-boom', 'restart', /服务端出错了/], ['ag-params', 'restart', /内容不完整或格式不对/]];
+      for (const [id, op, re] of cases) {
+        await page.evaluate(() => { document.getElementById('rosterFeedback').textContent = ''; });
+        await page.locator(`#rosterItems .roster-row[data-agent-id="${id}"] [data-op="${op}"]`).click();
+        await page.locator('#rosterFeedback').filter({ hasText: re }).waitFor({ state: 'visible' });
+        assert.doesNotMatch(await page.locator('#rosterFeedback').textContent(), /backup_pipeline_not_ready|SECRET-HUB-TEXT|HTTP/, `${id}: only our wording`);
+      }
+      hostedAgents = hostedAgents.filter((x) => !['ag-nobackup', 'ag-boom', 'ag-params'].includes(x.agent_id));
+      agents = agents.filter((a) => !['ag-nobackup', 'ag-boom', 'ag-params'].includes(a.id));
+      await page.evaluate(() => refreshRoster());
+    });
+
     await test('a role-refused operation says so in our wording', async () => {
       hostedAgents.push({ agent_id: 'ag-nope', state: 'running', upgradable: false, node_name: 'node-a' });
       agents.push({ id: 'ag-nope', key_id: 'key-nope', session_name: 'zzc-nope-2642', online: true, origin: 'hosted' });
@@ -502,7 +525,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
 
     await test('no pageerror and no unexpected console error across the whole run', async () => {
       assert.deepStrictEqual(pageErrors, []);
-      assert.deepStrictEqual(consoleErrors.filter((t) => !/status of (400|403|404|409|422|503)/.test(t)), []);
+      assert.deepStrictEqual(consoleErrors.filter((t) => !/status of (400|403|404|409|422|500|503)/.test(t)), []);
     });
   } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`hosted console browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);
