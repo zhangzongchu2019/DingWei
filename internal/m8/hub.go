@@ -24,6 +24,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/router"
@@ -68,6 +69,14 @@ type Hub struct {
 	// 统一登录的一次性登录票据(T-113)。仅内存、短 TTL、与页面写锁 code 池分开。
 	consoleLoginStore *consoleLoginStore
 	consoleLoginOnce  sync.Once
+
+	// Identity 新平台 G3：/ws/agent 按专属凭据认人（为空＝不启用该入口）。
+	Identity *identity.Service
+	// Onboarding 新平台 N3：飞书里的登录与注册指令改由它处理（为空＝沿用旧登录）。
+	Onboarding *identity.Onboarding
+	// AgentCredentialOnly 新平台模式：旧入口 /ws/session 一律回 410（只认凭据，设计件 2.3）；
+	// /ws/service 只收本机与内网来源（台账 c796e65e）。
+	AgentCredentialOnly bool
 
 	// NowFunc 只为测试注入时钟。D1 的滑动续期要验「跨过 12 小时」,
 	// 真等 12 小时不是验收,是浪费;而只看代码里有 UPDATE 又证明不了行为。
@@ -725,6 +734,10 @@ func (h *Hub) AddPrefixRule(ctx context.Context, rule model.RoutingRule) error {
 }
 
 func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
+	if h.AgentCredentialOnly && !isInternalSource(r) {
+		writeAgentWSError(w, http.StatusForbidden, "internal_only")
+		return
+	}
 	serviceID := r.PathValue("serviceID")
 	key := r.URL.Query().Get("api_key")
 	if key == "" {
@@ -764,6 +777,10 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
+	if h.AgentCredentialOnly {
+		writeAgentWSError(w, http.StatusGone, "use_ws_agent")
+		return
+	}
 	timingStart := time.Now()
 	timingLast := timingStart
 	var timingParts []string
@@ -851,6 +868,42 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			log.Printf("session version warning key_id=%s owner=%s session=%s version=%q required=%s: %s", keyID, ownerKey, requestedSessionName, clientVersion, dwversion.Version, versionWarn)
 		}
 	}
+	h.serveSession(w, r, sessionAdmission{
+		keyID: keyID, ownerKey: ownerKey, requestedSessionName: requestedSessionName, sessionName: sessionName,
+		fullSessionName: fullSessionName, accounts: accounts, clientIP: clientIP, tool: tool, modelName: modelName,
+		clientVersion: clientVersion, producer: producer, targetGroup: targetGroup, noDirectory: noDirectory,
+		mirrorTo: mirrorTo, targetBot: targetBot, webTerminal: webTerminal, osName: osName,
+		deviceID: deviceID, deviceIDV1: deviceIDV1,
+		timingStart: timingStart, timingLast: timingLast, timingParts: timingParts,
+	})
+}
+
+// sessionAdmission 是「已认出是谁」之后进入会话所需的全部输入。
+// HandleSessionWS（账号 key＋自报名字，旧平台）与 HandleAgentWS（专属凭据，新平台 G3）各自认人，然后交给 serveSession。
+// 桥接裁定见台账 ruling-2026-10-01T090343Z-lead-ws-agent-bridge。
+type sessionAdmission struct {
+	keyID, ownerKey, requestedSessionName, sessionName, fullSessionName string
+	accounts                                                            []string
+	clientIP, tool, modelName, clientVersion, targetGroup, mirrorTo     string
+	targetBot, osName, deviceID                                         string
+	producer, noDirectory, webTerminal, deviceIDV1                      bool
+	timingStart, timingLast                                             time.Time
+	timingParts                                                         []string
+}
+
+// serveSession 的函数体是从 HandleSessionWS 原样搬来的（逐字未改），开头只做同名解包。
+func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmission) {
+	keyID, ownerKey, requestedSessionName, sessionName, fullSessionName := a.keyID, a.ownerKey, a.requestedSessionName, a.sessionName, a.fullSessionName
+	accounts, clientIP, tool, modelName, clientVersion := a.accounts, a.clientIP, a.tool, a.modelName, a.clientVersion
+	producer, targetGroup, noDirectory, mirrorTo := a.producer, a.targetGroup, a.noDirectory, a.mirrorTo
+	targetBot, webTerminal, osName, deviceID, deviceIDV1 := a.targetBot, a.webTerminal, a.osName, a.deviceID, a.deviceIDV1
+	timingStart, timingLast, timingParts := a.timingStart, a.timingLast, a.timingParts
+	markTiming := func(name string) {
+		now := time.Now()
+		timingParts = append(timingParts, fmt.Sprintf("%s=%s", name, now.Sub(timingLast).Round(time.Millisecond)))
+		timingLast = now
+	}
+	var err error
 	h.loadSeenSessions(r.Context())
 	sessionName, err = h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
 		KeyID:           keyID,

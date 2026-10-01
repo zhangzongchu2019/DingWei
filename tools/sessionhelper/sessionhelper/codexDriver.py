@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Optional
 
+from .config import env_get
 from .contract import (
     Capabilities,
     DeliveryReceipt,
@@ -35,7 +36,7 @@ from .contract import (
 log = logging.getLogger(__name__)
 
 # codex 二进制:SH_CODEX_BIN env → PATH 解析,别写死开发机路径(否则每台都挂)
-_CODEX_BIN = os.environ.get("SH_CODEX_BIN") or shutil.which("codex") or "codex"
+_CODEX_BIN = env_get("SH_CODEX_BIN") or shutil.which("codex") or "codex"
 DEFAULT_WORKDIR = os.path.expanduser("~")
 DEFAULT_STORE = os.path.join(os.path.expanduser("~"), ".codex-driver-delivery.sqlite3")
 JSONRPC_TIMEOUT = 30.0

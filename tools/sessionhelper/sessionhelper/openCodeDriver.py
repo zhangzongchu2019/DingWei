@@ -31,6 +31,7 @@ from typing import Iterator, Optional
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
+from .config import env_get
 from .contract import (
     Capabilities,
     DeliveryReceipt,
@@ -45,7 +46,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------- 常量
 
 # opencode 二进制:SH_OPENCODE_BIN env → PATH 解析,别写死开发机路径(否则每台都挂)
-_OPENCODE_BIN = os.environ.get("SH_OPENCODE_BIN") or shutil.which("opencode") or "opencode"
+_OPENCODE_BIN = env_get("SH_OPENCODE_BIN") or shutil.which("opencode") or "opencode"
 DEFAULT_USERNAME = "opencode"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 0  # random

@@ -1,0 +1,6675 @@
+{
+ "_recorded_from": {
+  "git_head": "ea22f2030d5056be808d3217091a68d4e6a8a76c",
+  "hub_notice_types": [
+   "delivery_failure",
+   "delivery_result"
+  ],
+  "note": "录制于 R3-B 改动之前的代码；改动后用同一组输入经新接口重放，逐条比对。",
+  "source_sha256": {
+   "sessionhelper/app.py": "451d9f04843373b5c2dd02fa1c36014cf4664ddb0dc1f1c89edff4b1e97cd6f9",
+   "sessionhelper/protocol.py": "76c60809395d7cc97440de746fdefbb8595b6f3f99f31e19ae947ec1deed8603",
+   "sessionhelper/provision.py": "50d2cd7b2d9df56f73bf55f7267d167a295d3cedf1ac590c05ffc5fa682867f6",
+   "sessionhelper/routing.py": "44a4ff250f9216d79f07e433e489ae0e1b3035a4ab9664b163a026784d8841b4"
+  }
+ },
+ "env": [
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {},
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "delivery_ack"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "delivery_cancel"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": true
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "delivery_cancel_ack"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "agent_network_skill"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": true
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "agent_network_skill_ack"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "terminal_input"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": true
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "terminal_interrupt"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": true
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "terminal_resize"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": true
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "terminal_refresh"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": true
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "file_capability_response"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": true
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "file_capability_request"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "mirror_control"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": true
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "provision"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": true
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "provision_ack"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "delivery_failure"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": true
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "delivery_result"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": true
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "online_directory"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "agent_route"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "collect"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": ""
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": " "
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "Delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "DELIVERY"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "delivery "
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": " delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "provisions"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "mirror_control2"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "terminal"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": null
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": 0
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": 123
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": [
+      "delivery"
+     ]
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": {
+      "t": "delivery"
+     }
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": true
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": true,
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": true
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": false,
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": null,
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": 0,
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": 1,
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": true
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": "",
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": "false",
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": true
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": "0",
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": true
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": "true",
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": true
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": [],
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": [
+      0
+     ],
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": true
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": {},
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "ack_required": true,
+     "type": "delivery_cancel"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": true
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": true
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": false
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": null
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": 0
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": 1
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": 2
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": -1
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": 0.0
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": 1.5
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": ""
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": " "
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "0"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "1"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "true"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "TRUE"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "True"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": " true "
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "yes"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "Y"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "y"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "on"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "ON"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "off"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "false"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "no"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "n"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "2"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "enabled"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": []
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": [
+      0
+     ]
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": {}
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": {
+      "a": 1
+     }
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": []
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "no_mirror": true
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "no_mirror": false
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "no_mirror": "true"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "no_mirror": 1
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "system": true
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "system": false
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "no_mirror": false,
+     "system": "yes"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": null
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": ""
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": " "
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": " k "
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "\n"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": 0
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": 123
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": false
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": true
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "0"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": true
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": false
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": null
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": 0
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": 1
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": 2
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": -1
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": 0.0
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": 1.5
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": ""
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": " "
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": "0"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": "1"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "broadcast_dedup_key": "k",
+     "mirror_primary": "true"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": true
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": true,
+     "type": "delivery"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": true,
+     "type": "delivery_failure"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": true
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": true,
+     "type": "provision"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": true
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": true,
+     "type": "terminal_input"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": true
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": true
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": false,
+     "type": "delivery_failure"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": true
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": "0",
+     "type": "delivery_failure"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": true
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "system": null,
+     "type": "delivery_failure"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": true
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "body": "b",
+    "from": "peer#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "delivery_result"
+    },
+    "to": "home#FB-2642"
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": true
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {},
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "meta": null
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "meta": []
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  },
+  {
+   "env": {
+    "meta": ""
+   },
+   "is_agent_network_skill": {
+    "v": false
+   },
+   "is_broadcast_envelope": {
+    "v": false
+   },
+   "is_delivery": {
+    "v": false
+   },
+   "is_delivery_cancel": {
+    "v": false
+   },
+   "is_file_capability_response": {
+    "v": false
+   },
+   "is_hub_notice_envelope": {
+    "v": false
+   },
+   "is_mirror_control": {
+    "v": false
+   },
+   "is_no_mirror_envelope": {
+    "v": false
+   },
+   "is_provision_envelope": {
+    "v": false
+   },
+   "is_terminal_input": {
+    "v": false
+   },
+   "is_terminal_interrupt": {
+    "v": false
+   },
+   "is_terminal_refresh": {
+    "v": false
+   },
+   "is_terminal_resize": {
+    "v": false
+   }
+  }
+ ],
+ "text": [
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": ""
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": null
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": 123
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "plain"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": true
+   },
+   "text": "【DingWei在线清单】同账号在线AI会话\n1. #home\n**********"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": true
+   },
+   "text": "【DingWei 在线清单】x **********"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "【DingWei在线清单】只有标题没有星号"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "只有星号 **********"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": true
+   },
+   "text": "**********\n【DingWei在线清单】"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": true
+   },
+   "text": "【DingWei在线清单】【DingWei 在线清单】**********"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": true
+   },
+   "text": "前缀【DingWei在线清单】中间**********后缀"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "【dingwei在线清单】**********"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "【DingWei在线清单】*********"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": true
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "DingWei 客户端上线指南\nsessionHelper 每分钟刷新"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "DingWei 客户端上线指南"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "sessionHelper 每分钟刷新"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": true
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "…DingWei 客户端上线指南…sessionHelper 每分钟刷新…"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "DingWei客户端上线指南 sessionHelper 每分钟刷新"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "DingWei 客户端上线指南 sessionHelper每分钟刷新"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": true
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "sessionHelper 每分钟刷新 DingWei 客户端上线指南"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": "<len=2000 sha256=5c0e0ea421571c300b5df6aec0a118b5c3dc02e0683a546341d5efc689df2f58>"
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": [
+    "a"
+   ]
+  },
+  {
+   "is_client_onboarding_text": {
+    "v": false
+   },
+   "is_online_directory_text": {
+    "v": false
+   },
+   "text": {
+    "b": 1
+   }
+  }
+ ],
+ "truthy": [
+  {
+   "out": {
+    "v": true
+   },
+   "value": "True"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "False"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "None"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "0"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "1"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "2"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "-1"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "0.0"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "1.5"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "''"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "' '"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "'0'"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "'1'"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "'true'"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "'TRUE'"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "'True'"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "' true '"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "'yes'"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "'Y'"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "'y'"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "'on'"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "'ON'"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "'off'"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "'false'"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "'no'"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "'n'"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "'2'"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "'enabled'"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "[]"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "[0]"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "{}"
+  },
+  {
+   "out": {
+    "v": true
+   },
+   "value": "{'a': 1}"
+  },
+  {
+   "out": {
+    "v": false
+   },
+   "value": "()"
+  }
+ ]
+}

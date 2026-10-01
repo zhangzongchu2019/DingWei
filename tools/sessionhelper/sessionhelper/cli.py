@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pexpect
 
-from .config import Config
+from .config import Config, env_get
 
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
@@ -762,7 +762,7 @@ def transcript_candidates(cli_name: str, cwd: str, started_at: float) -> list[Pa
 def claude_transcript_candidates(cwd: str, started_at: float) -> list[Path]:
     # 支持 SH_CLAUDE_PROJECTS_ROOT 覆盖 claude 变体/fork 的 transcript 根目录
     # (如 claude-deepseek 用 ~/.claude-deepseek/projects);未设则回落默认。
-    root_env = os.environ.get("SH_CLAUDE_PROJECTS_ROOT", "").strip()
+    root_env = env_get("SH_CLAUDE_PROJECTS_ROOT", "").strip()
     root = Path(root_env).expanduser() if root_env else Path.home() / ".claude" / "projects"
     if not root.exists():
         return []
@@ -779,7 +779,7 @@ def claude_transcript_candidates(cwd: str, started_at: float) -> list[Path]:
 
 def codex_transcript_candidates(started_at: float) -> list[Path]:
     # codex 用 CODEX_HOME 重定位配置目录(默认 ~/.codex);对齐它, 以免多实例/迁移时采集失效。
-    codex_home = os.environ.get("CODEX_HOME", "").strip()
+    codex_home = env_get("CODEX_HOME", "").strip()
     base = Path(codex_home).expanduser() if codex_home else Path.home() / ".codex"
     root = base / "sessions"
     if not root.exists():

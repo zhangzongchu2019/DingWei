@@ -9,7 +9,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Literal
 
-from .protocol import is_feishu_addr
+from .routing import is_feishu_addr
 
 
 CommandSource = Literal["user", "agent", "feishu"]

@@ -112,6 +112,18 @@ class Config:
         return f"{self.ws_base.rstrip('/')}/ws/session/{self.session_name}?{urlencode(query)}"
 
 
+def env_get(name: str, default: str | None = None) -> str | None:
+    """进程环境变量的统一读取入口（R1 配置读取收口）。
+
+    语义与 ``os.environ.get`` 完全一致，且**每次调用时刻读取** ``os.environ``（不缓存），
+    所以 ``mock.patch.dict(os.environ, ...)`` 与改动前行为相同；import 期读取的常量
+    仍在 import 期调用本函数。以后 Hub 下发配置从这里接入。
+    sessionhelper/ 下除本文件与 tests/test_env_read_single_entry.py 的白名单外，
+    不得再直接读 os.environ / os.getenv。
+    """
+    return os.environ.get(name, default)
+
+
 def load_config(env: dict[str, str] | None = None) -> Config:
     env = env or os.environ
     cli_cmd = shlex.split(env.get("SH_CLI_CMD", ""))
