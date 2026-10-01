@@ -26,8 +26,9 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
+const MUTATIONS = ['quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
 if (mutation === 'quota-generic') mutate("if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){", "if(false){");
 if (mutation === 'unseal-review') mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;');
@@ -108,7 +109,8 @@ const server = http.createServer(async (req, res) => {
     const body = await read(req); writes.push({ path: p, body });
     if (!/^[A-Za-z0-9]+$/.test(String(body.name))) return err(res, 422, 'name_invalid');
     if (agents.some((a) => a.session_name.split('-')[1].toLowerCase() === String(body.name).toLowerCase())) return err(res, 409, 'name_taken');
-    if (String(body.name) === 'Quotaodd') return err(res, 403, 'quota_exceeded', { remaining: { agents: 2, vcpu: -1, mem_gb: 3, disk_gb: 3 } });
+    if (String(body.name) === 'Quotaodd') return err(res, 403, 'quota_exceeded', { remaining: { agents: 2, vcpu: 6, mem_gb: '0', disk_gb: null } });
+    if (String(body.name) === 'Quotaneg') return err(res, 403, 'quota_exceeded', { remaining: { agents: 2, vcpu: -1, mem_gb: 3, disk_gb: 3 } });
     if (String(body.name) === 'Quotabare') return err(res, 403, 'quota_exceeded');
     if (String(body.name) === 'Quotamem') return err(res, 403, 'quota_exceeded', { remaining: { agents: 2, vcpu: 6, mem_gb: 0, disk_gb: 0 } });
     const o = options(); const acct = o.accounts.find((a) => a.id === body.account_id);
@@ -244,9 +246,17 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.doesNotMatch(t, /CPU|SECRET-HUB-TEXT/);
     });
 
+    await test('a non-positive remaining counts as exhausted (<=0), not just exactly 0', async () => {
+      await fillValid('Quotaneg');
+      await page.locator('#hostedCreateBtn').click();
+      await page.locator('#hostedFeedback').filter({ hasText: 'CPU已用完' }).waitFor({ state: 'visible' });
+      assert.match(await page.locator('#hostedFeedback').textContent(), /CPU已用完/);
+    });
+
     await test('quota_exceeded without an exhausted dimension gets the neutral wording, never a misleading Agent-count one', async () => {
       for (const name of ['Quotaodd', 'Quotabare']) {
         await fillValid(name);
+        await page.evaluate(() => { document.getElementById('hostedFeedback').textContent = ''; });   // 清掉上一例的提示,免得陈旧文案冒充本例结果
         await page.locator('#hostedCreateBtn').click();
         await page.locator('#hostedFeedback').filter({ hasText: '配额不足，请联系管理员' }).waitFor({ state: 'visible' });
         assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(), /Agent 数量|SECRET-HUB-TEXT/);

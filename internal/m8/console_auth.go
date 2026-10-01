@@ -643,7 +643,7 @@ function consoleErrorText(status,data){
   if(code==='rate_limited'){var wait=data&&Number.isFinite(data.retry_after_s)?data.retry_after_s:null;return '操作过于频繁'+(wait===null?'，请稍后再试':'，请 '+wait+' 秒后再试');}
   if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){   // 被触发的维度剩余为 0:按维度给具体文案
     var DIMS=[['agents','Agent 数量'],['vcpu','CPU'],['mem_gb','内存'],['disk_gb','磁盘']],used=[];
-    DIMS.forEach(function(d){if(data.remaining[d[0]]===0)used.push(d[1]);});   // 契约把负数归 0,故只认 0;remaining 里没有 0 时落到中性回退文案
+    DIMS.forEach(function(d){if(Number.isFinite(data.remaining[d[0]])&&data.remaining[d[0]]<=0)used.push(d[1]);});   // 契约把负数归 0;<=0 是组长采纳的防御写法;没有用完的维度时落到中性回退文案
     if(used.length)return '配额不足：'+used.join('、')+'已用完，请换小一点的规格或联系管理员调整配额';
   }
   return CONSOLE_ERRORS[code]||('操作失败（HTTP '+status+(code?'：'+code:'')+'）');
