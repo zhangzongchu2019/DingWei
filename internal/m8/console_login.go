@@ -139,6 +139,9 @@ type consoleLoginRepository interface {
 //	· 身份取自 msg.SenderOpenID（信道给的），**不取正文里任何自称**;
 //	· ResolveConsolePrincipal 未命中 ⇒ 拒绝,**不建 principal、不建会话**。
 func (h *Hub) dispatchConsoleLogin(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
+	if h.Onboarding != nil {
+		return h.dispatchNewPlatformCommand(ctx, msg, text)
+	}
 	code, ok := parseConsoleLoginCommand(text)
 	if !ok {
 		return model.PrefixDispatchResult{}, false, nil
