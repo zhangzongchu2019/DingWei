@@ -70,3 +70,7 @@ view-service/node_modules/
 # 因为查忽略规则的人先看仓根这一份 —— 只在子目录有,等于对查的人不存在。
 view-service/fixtures-0206/sample-large.txt
 view-service/fixtures-0206/oversize-*.bin
+
+# R0 临时 PG 测试环境:tools/pgtest 是【独立 module】(理由见其 go.mod 头注),
+# 这里只忽略本地构建产物,源码照常入库。
+/tools/pgtest/pgtest
