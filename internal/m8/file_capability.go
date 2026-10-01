@@ -233,8 +233,22 @@ func (h *Hub) HandleConsoleFileArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleConsoleFileUploadTicket(w http.ResponseWriter, r *http.Request) {
+	if h.Identity != nil {
+		h.handleNewPlatformFileUploadTicket(w, r)
+		return
+	}
 	agent, ok := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
-	if !ok || h.fileIssuer == nil {
+	if !ok {
+		http.Error(w, "file upload unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	h.writeConsoleUploadTicket(w, r, agent.KeyID, agent.SessionName, agent.SessionName)
+}
+
+// writeConsoleUploadTicket (keyID, sessionName) 定位在线会话；ticketSession 是票据与应答里的会话名
+// （旧平台＝会话名；新平台＝规范 full_name）。
+func (h *Hub) writeConsoleUploadTicket(w http.ResponseWriter, r *http.Request, keyID, sessionName, ticketSession string) {
+	if h.fileIssuer == nil {
 		http.Error(w, "file upload unavailable", http.StatusServiceUnavailable)
 		return
 	}
@@ -248,7 +262,7 @@ func (h *Hub) HandleConsoleFileUploadTicket(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	h.mu.Lock()
-	c := h.sessionClients[agent.KeyID][agent.SessionName]
+	c := h.sessionClients[keyID][sessionName]
 	ownerKey := ""
 	if c != nil {
 		ownerKey = c.ownerKey
@@ -259,7 +273,7 @@ func (h *Hub) HandleConsoleFileUploadTicket(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	ticket, err := h.fileIssuer.IssueFileTicket(r.Context(), FileTicketRequest{
-		Operation: "upload", OwnerKey: ownerKey, SessionName: agent.SessionName,
+		Operation: "upload", OwnerKey: ownerKey, SessionName: ticketSession,
 		MaxBytes: input.MaxBytes, TTL: time.Minute,
 	})
 	if err != nil {
@@ -270,7 +284,7 @@ func (h *Hub) HandleConsoleFileUploadTicket(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"upload_url": ticket.PublicBaseURL + "/files/upload", "ticket": ticket.Token,
-		"expires_at": ticket.ExpiresAt.UTC().Format(time.RFC3339Nano), "session": agent.SessionName,
+		"expires_at": ticket.ExpiresAt.UTC().Format(time.RFC3339Nano), "session": ticketSession,
 	})
 }
 

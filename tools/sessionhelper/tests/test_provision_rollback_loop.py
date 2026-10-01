@@ -14,6 +14,21 @@ from unittest import mock
 from sessionhelper.config import load_config
 from sessionhelper.provision import Provisioner
 
+try:
+    from _home_isolation import HomeIsolation
+except ImportError:
+    from tests._home_isolation import HomeIsolation
+
+_HOME = HomeIsolation()
+
+
+def setUpModule():
+    _HOME.start()
+
+
+def tearDownModule():
+    _HOME.finish()
+
 
 class RolledBackIsTerminalTest(unittest.TestCase):
     def setUp(self):

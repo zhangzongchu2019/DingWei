@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -14,13 +13,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// N3：系统自举、开户、飞书注册码绑定、以用户 ID 登录。spec：SPEC-THIN-SH-N3-bootstrap-onboarding-DRAFT.md。
+// N3：初始化第一个管理用户、开户、飞书注册码绑定、以用户 ID 登录。spec：SPEC-THIN-SH-N3-bootstrap-onboarding-DRAFT.md。
+// 业主裁定（台账 8971bddf）：取消常驻 systemdefault 与「空库首启自动建号」，改由初始化脚本（workpulse bootstrap-admin）建第一个管理用户。
 
 const (
-	SystemDefaultUserID = "systemdefault"
-	// SystemDefaultShortName systemdefault 的简称；spec 未定，暂取 sys（简称上限 16 位，systemdefault 本身超长）。
-	SystemDefaultShortName = "sys"
-
 	RegistrationCodeTTL = 24 * time.Hour // 台账 c5981300
 	LoginCodeTTL        = 5 * time.Minute
 	SessionTTL          = 12 * time.Hour // 与旧平台 consoleSessionTTL 一致
@@ -31,10 +27,15 @@ const (
 	// 注册码与登录码的字母表：去掉易混的 0/O、1/I/L。
 	codeAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 	codeLen      = 8
+	// InitialPasswordLen 初始化脚本给出的一次性初始口令长度（同一字母表，约 99 位熵；首登强制改密）。
+	InitialPasswordLen = 20
 )
 
 var (
-	ErrBootstrapSecret = errors.New("identity: bootstrap password file missing or not 0600")
+	// ErrAdminExists 库中已有管理用户（platform_admin 或 manager，不论状态）：初始化脚本拒绝执行。
+	ErrAdminExists = errors.New("identity: a management user already exists")
+	// ErrNoPasswordLogin 该用户不用口令登录（飞书登录的普通用户没有口令可忘）：reset-password 拒绝，免得凭空给他开口令登录。
+	ErrNoPasswordLogin = errors.New("identity: user does not log in with a password")
 	ErrBadCredentials  = errors.New("identity: bad credentials")
 	ErrWeakPassword    = errors.New("identity: password too weak")
 	ErrNotAllowed      = errors.New("identity: not allowed for this role")
@@ -61,44 +62,62 @@ func NewOnboarding(s *Service) *Onboarding {
 	return &Onboarding{Service: s, pwFails: map[string][]time.Time{}, loginCodes: map[string]*loginTicket{}}
 }
 
-// Bootstrap Hub 启动时调用（N3 第二节 1）。用户表为空才建 systemdefault；非空直接返回 false，什么也不改。
-// 用户表为空而密码文件缺失、为空或权限宽于 0600 ⇒ 返回 ErrBootstrapSecret，调用方须拒绝启动（失败即关闭）。
-func (o *Onboarding) Bootstrap(ctx context.Context, passwordFile string) (bool, error) {
-	n, err := o.Store.CountUsers(ctx)
+// BootstrapAdmin 初始化脚本（workpulse bootstrap-admin，运维在主机上执行）建第一个管理用户：
+// 用户 ID 与简称由执行者给；类型 platform_admin、直接 active、必须改密；返回一次性初始口令（明文只在返回值里出现这一次）。
+// 库中已有管理用户 ⇒ ErrAdminExists，什么也不改；用户 ID 或简称格式不对 ⇒ ErrBadRequest；与已有用户冲突 ⇒ ErrConflict。
+func (o *Onboarding) BootstrapAdmin(ctx context.Context, userID, shortName, displayName string) (string, error) {
+	if displayName == "" {
+		displayName = userID
+	}
+	if !ValidUserID(userID) || !ValidShortName(shortName) || len(displayName) > 64 {
+		return "", ErrBadRequest
+	}
+	pw, err := randFrom(o.Rand, codeAlphabet, InitialPasswordLen)
 	if err != nil {
-		return false, err
-	}
-	if n > 0 {
-		return false, nil
-	}
-	fi, err := os.Stat(passwordFile)
-	if err != nil || !fi.Mode().IsRegular() || fi.Mode().Perm()&0o077 != 0 {
-		return false, ErrBootstrapSecret
-	}
-	raw, err := os.ReadFile(passwordFile)
-	if err != nil {
-		return false, ErrBootstrapSecret
-	}
-	pw := strings.TrimRight(string(raw), "\r\n")
-	if pw == "" {
-		return false, ErrBootstrapSecret
+		return "", err
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	u := User{
-		UserID: SystemDefaultUserID, ShortName: SystemDefaultShortName, DisplayName: SystemDefaultUserID,
+		UserID: userID, ShortName: shortName, DisplayName: displayName,
 		Type: UserPlatformAdmin, State: UserActive, PasswordHash: string(hash), MustChangePassword: true, CreatedAt: o.Now(),
 	}
-	if err := o.Store.CreateUser(ctx, u); err != nil {
-		return false, err
+	if err := o.Store.CreateFirstAdmin(ctx, u); err != nil {
+		return "", err
 	}
-	o.audit(ctx, "system", "user.bootstrap", SystemDefaultUserID, "")
-	return true, nil
+	o.audit(ctx, "bootstrap-admin", "user.bootstrap_admin", u.UserIDLC(), "")
+	return pw, nil
 }
 
-// PasswordLogin 用户 ID＋密码登录（本版只有 systemdefault 有密码）。成功返回会话令牌（只此一次）与用户。
+// ResetPassword 运维重置口令（组长令，workpulse reset-password，主机上执行）：生成一次性新口令（与初始化脚本同字母表与长度），
+// 置必须改密，吊销该用户全部会话，写一笔审计（不含口令）。用户不存在 ⇒ ErrNotFound；用户本无口令登录 ⇒ ErrNoPasswordLogin。
+// 返回的新口令明文只在返回值里出现这一次。
+func (o *Onboarding) ResetPassword(ctx context.Context, userID string) (string, error) {
+	u, err := o.Store.GetUser(ctx, userID)
+	if err != nil {
+		return "", ErrNotFound
+	}
+	if u.PasswordHash == "" {
+		return "", ErrNoPasswordLogin
+	}
+	pw, err := randFrom(o.Rand, codeAlphabet, InitialPasswordLen)
+	if err != nil {
+		return "", err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	if err := o.Store.ResetPassword(ctx, u.UserIDLC(), string(hash), o.Now()); err != nil {
+		return "", err
+	}
+	o.audit(ctx, "reset-password", "user.password_reset_by_ops", u.UserIDLC(), "")
+	return pw, nil
+}
+
+// PasswordLogin 用户 ID＋密码登录（本版只有初始化脚本建的管理用户有密码）。成功返回会话令牌（只此一次）与用户。
 func (o *Onboarding) PasswordLogin(ctx context.Context, userID, password, sourceIP string) (string, *User, error) {
 	key := sourceIP + "|" + Lower(userID)
 	now := o.Now()
@@ -248,17 +267,20 @@ func (o *Onboarding) issueRegistrationCode(ctx context.Context, actor *User, use
 	return code, exp, nil
 }
 
-func (o *Onboarding) randCode() (string, error) {
-	// 拒绝采样：只收 < 248（31 的 8 倍）的字节，避免取模偏差。
-	limit := byte(256 / len(codeAlphabet) * len(codeAlphabet))
-	out := make([]byte, 0, codeLen)
+func (o *Onboarding) randCode() (string, error) { return randFrom(o.Rand, codeAlphabet, codeLen) }
+
+// randFrom 从字母表等概率取 n 个字符。拒绝采样：只收小于字母表长度整数倍的字节，避免取模偏差。
+func randFrom(rnd io.Reader, alphabet string, n int) (string, error) {
+	// 上限用 int 算：字母表长度整除 256 时（如 64 位组码字母表）上限正是 256，放进 byte 会溢出成 0、永远取不到字符。
+	limit := 256 / len(alphabet) * len(alphabet)
+	out := make([]byte, 0, n)
 	b := make([]byte, 1)
-	for len(out) < codeLen {
-		if _, err := io.ReadFull(o.Rand, b); err != nil {
+	for len(out) < n {
+		if _, err := io.ReadFull(rnd, b); err != nil {
 			return "", err
 		}
-		if b[0] < limit {
-			out = append(out, codeAlphabet[int(b[0])%len(codeAlphabet)])
+		if int(b[0]) < limit {
+			out = append(out, alphabet[int(b[0])%len(alphabet)])
 		}
 	}
 	return string(out), nil

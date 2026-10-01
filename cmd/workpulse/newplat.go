@@ -11,6 +11,8 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/store/migrate"
 )
 
 // 新平台（G3）装配。DW_NEWPLAT=1 时启用：
@@ -21,15 +23,24 @@ import (
 // 环境变量（不含任何值，值由部署方给）：
 //
 //	DW_PUBLIC_ORIGIN            对外源，例如 https://dw.cmjrt.com:55055（console 写接口校验 Origin 用；必填）
-//	DW_BOOTSTRAP_PASSWORD_FILE  systemdefault 初始密码文件，须 0600（用户表为空时必填，否则拒绝启动）
+//	DW_NEWPLAT_PG_DSN           身份存储所在 PG 的连接串（与 G2 同一个 PG 库；必填）。表由迁移账本建，缺表拒绝启动
 //	DW_TRUST_PROXY=1            Hub 在本机 nginx 之后时开启：直连方为回环时采信 X-Real-IP
+//
+// 第一个管理用户不再由 Hub 自动建（业主裁定，台账 8971bddf：取消常驻 systemdefault 与空库首启自动建号），
+// 由运维在主机上执行初始化脚本 workpulse bootstrap-admin 建（见 bootstrap_admin.go）。
 type newPlatformConfig struct {
 	publicOrigin string
-	passwordFile string
+	pgDSN        string
 	trustProxy   bool
+	// hosted 列表托管子对象的提供函数，签名即 httpapi.API.Hosted。G4 装配编排器处一行：cfg.hosted = orch.HostedItem
+	// （kimi30kqtuxerh/g4-m0-m1 5a811f0d 起签名逐字相同）。为空时列表不出 hosted 子对象，页面按契约降级为只显示在线／离线。
+	hosted func(ctx context.Context, agentID string) (map[string]any, bool)
 }
 
-var errNewPlatformConfig = errors.New("DW_NEWPLAT=1 需要 DW_PUBLIC_ORIGIN")
+var (
+	errNewPlatformConfig = errors.New("DW_NEWPLAT=1 需要 DW_PUBLIC_ORIGIN")
+	errNewPlatformPGDSN  = errors.New("新平台身份存储需要 DW_NEWPLAT_PG_DSN（Hub 与 bootstrap-admin 必须连同一个 PG 库）")
+)
 
 func newPlatformConfigFromEnv() (newPlatformConfig, bool, error) {
 	if strings.TrimSpace(os.Getenv("DW_NEWPLAT")) != "1" {
@@ -37,39 +48,104 @@ func newPlatformConfigFromEnv() (newPlatformConfig, bool, error) {
 	}
 	cfg := newPlatformConfig{
 		publicOrigin: strings.TrimSpace(os.Getenv("DW_PUBLIC_ORIGIN")),
-		passwordFile: strings.TrimSpace(os.Getenv("DW_BOOTSTRAP_PASSWORD_FILE")),
+		pgDSN:        strings.TrimSpace(os.Getenv("DW_NEWPLAT_PG_DSN")),
 		trustProxy:   strings.TrimSpace(os.Getenv("DW_TRUST_PROXY")) == "1",
 	}
 	if cfg.publicOrigin == "" {
 		return cfg, true, errNewPlatformConfig
 	}
+	if cfg.pgDSN == "" {
+		return cfg, true, errNewPlatformPGDSN
+	}
 	return cfg, true, nil
 }
 
-// wireNewPlatform 建身份存储、自举、挂路由。自举失败（密码文件缺失或权限过宽）返回错误，调用方须拒绝启动。
-func wireNewPlatform(ctx context.Context, mux *http.ServeMux, hub *m8.Hub, cfg newPlatformConfig) error {
-	// 🔴 PG 实现（G2 的 R0）到位前用内存存储：重启即丢，只供内部验证，不得用于业主体验版本。
-	log.Printf("newplat identity store=memory (NON-PERSISTENT until R0 PG implementation is wired)")
-	store := identity.NewMemStore()
+// openNewPlatformStore Hub 与初始化脚本共用：连 PG（只经 internal/repo）、按迁移账本建表、再核对表都在。
+// 不再有内存实现的退路 —— 初始化脚本与 Hub 是两个进程，只有落库，脚本建的管理用户 Hub 才看得见。
+func openNewPlatformStore(ctx context.Context, dsn string) (identity.Store, func(), error) {
+	if dsn == "" {
+		return nil, nil, errNewPlatformPGDSN
+	}
+	pool, err := repo.OpenPG(ctx, dsn)
+	if err != nil {
+		return nil, nil, err
+	}
+	// 🔴 先 Migrate 再用（组长裁定 ruling-2026-10-01T145840Z：建表归 G2 迁移账本，
+	// Hub 启动与 bootstrap-admin 均先 Migrate）。账本失败即拒绝启动，不在半套表上写。
+	// 🔵 两步不互相替代，也不因账本到位就删掉 CheckSchema：
+	//    账本管「有没有按账迁过、账内 digest 与条目正文是否一致」，
+	//    CheckSchema 管「此刻库里表到底在不在」（例如迁过之后被人手工 drop）。
+	rep, err := migrate.Migrate(ctx, pool)
+	if err != nil {
+		_ = pool.Close()
+		return nil, nil, err
+	}
+	if len(rep.Applied) > 0 {
+		log.Printf("newplat migrate: applied %s", strings.Join(rep.Applied, ", "))
+	}
+	st := identity.NewPGStore(pool)
+	if err := st.CheckSchema(ctx); err != nil {
+		_ = pool.Close()
+		return nil, nil, err
+	}
+	return st, func() { _ = pool.Close() }, nil
+}
+
+// hasManagementUser 库中是否已有管理用户（platform_admin 或 manager，不论状态；与初始化脚本的拒绝条件一致）。
+func hasManagementUser(ctx context.Context, store identity.Store) (bool, error) {
+	users, err := store.ListUsers(ctx)
+	if err != nil {
+		return false, err
+	}
+	for _, u := range users {
+		if u.Type == identity.UserPlatformAdmin || u.Type == identity.UserManager {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// wireNewPlatform 在给定身份存储上装配新平台、挂路由。不建任何账号；库中还没有管理用户时只提示运维执行初始化脚本。
+func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newPlatformConfig, store identity.Store) error {
 	svc := identity.NewService(store, nil, nil)
 	svc.OnRevoked = hub.DisconnectAgent
+	svc.OnSuspended = hub.DisconnectAgent
+	svc.OnCredentialIssued = hub.DisconnectAgent
 	svc.NameAllowed = m8.AgentNameAllowed
 	ob := identity.NewOnboarding(svc)
-	created, err := ob.Bootstrap(ctx, cfg.passwordFile)
+	hasAdmin, err := hasManagementUser(ctx, store)
 	if err != nil {
 		return err
 	}
-	if created {
-		log.Printf("newplat bootstrap: systemdefault created (must change password on first login)")
+	if !hasAdmin {
+		log.Printf("newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>")
 	}
 	hub.Identity = svc
 	hub.Onboarding = ob
 	hub.AgentCredentialOnly = true
+	hub.PublicOrigin = cfg.publicOrigin
 
 	n3 := &httpapi.N3{OB: ob, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Secure: true}
-	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline}
+	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted}
 	n3.Register(mux)
 	api.Register(mux)
 	mux.HandleFunc("GET /ws/agent", hub.HandleAgentWS)
+	registerNewPlatformLoginPage(mux, hub)
 	return nil
+}
+
+// newPlatformLoginPager 新平台登录页（tosonnet50ts 承办，Hub.HandleNewPlatformLoginPage）。
+// 用接口断言登记：两条分支谁先合都能编译；登录页那一侧合入后自动生效（组长台账 9c647ee7 ①）。
+type newPlatformLoginPager interface {
+	HandleNewPlatformLoginPage(http.ResponseWriter, *http.Request)
+}
+
+func registerNewPlatformLoginPage(mux httpapi.Mux, hub any) bool {
+	lp, ok := hub.(newPlatformLoginPager)
+	if !ok {
+		log.Printf("newplat login page not built into this binary: GET /console/login not registered")
+		return false
+	}
+	mux.HandleFunc("GET /console/login", lp.HandleNewPlatformLoginPage)
+	return true
 }

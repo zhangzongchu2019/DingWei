@@ -1058,3 +1058,37 @@ func TestWriteDatadTaskBoardLayout(t *testing.T) {
 		t.Fatal("标题渲染缺失")
 	}
 }
+
+// 新平台不注册旧 admin 编组页，也不给入口（qwen 复验 G3 托管＋PG 层 🟡第七节第 3 条，组长 15:22:39Z ①）：
+// 它读写旧 agent_group* 表，而这三张表在新平台不用、不 PG 化。旧平台照旧（对照格）。
+func TestAdminLegacyGroupsPageNotMountedOnNewPlatform(t *testing.T) {
+	for _, newPlatform := range []bool{false, true} {
+		db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "admin.db"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := db.Migrate(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		srv := New(db)
+		srv.NewPlatform = newPlatform
+		srv.sessions["tok"] = "admin"
+		mux := http.NewServeMux()
+		srv.Mount(mux)
+		pageReq := httptest.NewRequest(http.MethodGet, "/admin/agent-groups", nil)
+		pageReq.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+		page := httptest.NewRecorder()
+		mux.ServeHTTP(page, pageReq) // 不用 getAuth：它断言 200，而新平台这里应是 404
+		post := postFormRaw(mux, "/admin/agent-groups", url.Values{"action": {"upsert_group"}})
+		status := getAuth(t, mux, "/admin")
+		hasLink := strings.Contains(status.Body.String(), `href="/admin/agent-groups"`)
+		if newPlatform {
+			if page.Code != http.StatusNotFound || post.Code != http.StatusNotFound || hasLink {
+				t.Errorf("new platform: GET %d POST %d link=%v, want 404 404 false", page.Code, post.Code, hasLink)
+			}
+		} else if page.Code != http.StatusOK || !hasLink {
+			t.Errorf("legacy: GET %d link=%v, want 200 true", page.Code, hasLink)
+		}
+		_ = db.Close()
+	}
+}

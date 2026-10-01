@@ -16,8 +16,9 @@ ALLOWED = {
     "claudeDriver.py": (1, "dict(os.environ)：把整份环境透传给子进程，语义是继承而非读配置值"),
     "codexDriver.py": (1, "os.environ.copy()：同上，子进程环境透传"),
     "openCodeDriver.py": (1, "os.environ.copy()：同上，子进程环境透传"),
-    "app.py": (3, "启动时清理代理变量（1 处 pop）及同批变量的诊断打印（1 行里 2 处读取）：改写/检视同一批进程环境，"
-                  "不是读配置；硬迁到入口会改变语义"),
+    "app.py": (5, "启动时清理代理变量（1 处 pop）及同批变量的诊断打印（1 行里 2 处读取）：改写/检视同一批进程环境，"
+                  "不是读配置；硬迁到入口会改变语义。另 main() 里 2 处：进程入口把环境整体交给入网引导"
+                  "（enroll.enabled_for_env / prepare_client_env），与 config 入口同类，不是读某个配置项"),
     "mcp_shim.py": (1, "自包含入口：无包内 import，可能被当脚本直接启动，加相对 import 会改启动语义"),
     "dingwei_file.py": (1, "自包含入口：同 mcp_shim"),
     "send_dingwei.py": (2, "被拷贝成 ~/.dingwei/send.py 单文件独立运行，无法 import 包"),

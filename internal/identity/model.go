@@ -16,7 +16,7 @@ import (
 type UserType string
 
 const (
-	UserPlatformAdmin UserType = "platform_admin" // systemdefault
+	UserPlatformAdmin UserType = "platform_admin" // 初始化脚本建的第一个管理用户
 	UserManager       UserType = "manager"        // 管理用户
 	UserMember        UserType = "member"         // 普通用户
 )
@@ -37,7 +37,7 @@ type User struct {
 	DisplayName        string
 	Type               UserType
 	State              UserState
-	PasswordHash       string // 只有 systemdefault 有
+	PasswordHash       string // 只有初始化脚本建的管理用户有
 	MustChangePassword bool
 	CreatedAt          time.Time
 }
@@ -113,8 +113,10 @@ func (a Application) EffectiveState(now time.Time) AppState {
 type AgentState string
 
 const (
-	AgentActive  AgentState = "active"
-	AgentRevoked AgentState = "revoked"
+	AgentActive AgentState = "active"
+	// AgentSuspended 可逆的暂停（托管停用，组长裁定 2026-10-01）：凭据拒连但不作废，名字仍被占用。
+	AgentSuspended AgentState = "suspended"
+	AgentRevoked   AgentState = "revoked"
 )
 
 // AgentOrigin 来源。
@@ -130,16 +132,22 @@ type Agent struct {
 	ID             string
 	OwnerLC        string
 	Name           string
-	GroupID        string
+	GroupID        string // 入网时选的编组码；PG 列名是 np_agent.group_code，对应 np_group.code
 	Origin         AgentOrigin
 	State          AgentState
 	CredentialHash string // 为空＝凭据尚未被客户端取走（设计件 1.3）
 	CreatedAt      time.Time
 	RevokedAt      time.Time
 	RevokedBy      string
+	// SuspendedAt／SuspendedBy 当前这次暂停的时刻与操作者（V8 停用）；未暂停时为零值。恢复即清空（qwen 复验 🟡①）。
+	SuspendedAt time.Time
+	SuspendedBy string
 }
 
 func (a Agent) NameLC() string { return Lower(a.Name) }
+
+// Current 未吊销（active 或 suspended）：占用名字、出现在 Agent 列表里。
+func (a Agent) Current() bool { return a.State == AgentActive || a.State == AgentSuspended }
 
 // ApproveInput 批准一条申请所需的输入。配对码比对在调用方完成（需要先读出盐）。
 type ApproveInput struct {
@@ -147,7 +155,10 @@ type ApproveInput struct {
 	OwnerLC string
 	AgentID string
 	Name    string
+	// GroupID 新 Agent 入的组：NewGroup 为空时须是已有组（存在且未关闭添加）；否则等于 NewGroup.Code。
 	GroupID string
+	// NewGroup 非空 ⇒ 同一事务建这个组，以新 Agent 为组长（新用户第一个组，见 GroupChoice）。
+	NewGroup *Group
 }
 
 // 存储层错误。调用方按 errors.Is 判别。
@@ -160,6 +171,7 @@ var (
 	ErrExpired       = errors.New("identity: expired")
 	ErrForbidden     = errors.New("identity: forbidden")
 	ErrHosted        = errors.New("identity: hosted agent")
+	ErrNotHosted     = errors.New("identity: not a hosted agent")
 	ErrCodeInvalid   = errors.New("identity: code invalid, used or expired")
 )
 

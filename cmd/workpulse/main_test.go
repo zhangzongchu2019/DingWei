@@ -697,3 +697,42 @@ func resetUnsignedWebhookWarnings() {
 		return true
 	})
 }
+
+// 新平台不注册旧 admin 编组页：run() 必须在 adm.Mount 之前给 NewPlatform 赋值（Mount 时据此跳过注册）。
+// 撤掉赋值或挪到 Mount 之后 ⇒ 新平台下旧编组页又被挂上（qwen 复验 🟡第七节第 3 条）。
+func TestRunSetsAdminNewPlatformBeforeMount(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "main.go", nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var runBody *ast.BlockStmt
+	for _, d := range file.Decls {
+		if fn, ok := d.(*ast.FuncDecl); ok && fn.Name.Name == "run" {
+			runBody = fn.Body
+		}
+	}
+	if runBody == nil {
+		t.Fatal("no run() in main.go")
+	}
+	var assignAt, mountAt token.Pos
+	ast.Inspect(runBody, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.AssignStmt:
+			for _, lhs := range x.Lhs {
+				if sel, ok := lhs.(*ast.SelectorExpr); ok && sel.Sel.Name == "NewPlatform" {
+					assignAt = x.Pos()
+				}
+			}
+		case *ast.CallExpr:
+			if sel, ok := x.Fun.(*ast.SelectorExpr); ok && sel.Sel.Name == "Mount" && mountAt == token.NoPos {
+				if id, ok := sel.X.(*ast.Ident); ok && id.Name == "adm" {
+					mountAt = x.Pos()
+				}
+			}
+		}
+		return true
+	})
+	if assignAt == token.NoPos || mountAt == token.NoPos || assignAt > mountAt {
+		t.Fatalf("adm.NewPlatform must be assigned before adm.Mount: assign=%v mount=%v", assignAt, mountAt)
+	}
+}

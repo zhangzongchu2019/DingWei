@@ -24,6 +24,10 @@ var (
 
 var identitySegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 
+// sessionSegment 会话段另允许新平台的 full_name（名称.用户简称，均为小写字母数字；简称 2～16 位），
+// 只许一个点、点不在首尾 ⇒ 不会出现 . 与 .. 路径段。
+var sessionSegment = regexp.MustCompile(`^[a-z0-9_-]{1,64}(\.[a-z0-9]{2,16})?$`)
+
 func normalizedMedia(mediaType, originalName string) (string, string) {
 	base := strings.ToLower(strings.TrimSpace(strings.SplitN(mediaType, ";", 2)[0]))
 	nameExt := strings.TrimPrefix(strings.ToLower(path.Ext(safeName(originalName))), ".")
@@ -155,7 +159,7 @@ func (m *Manager) SetArchivedByOwner(ctx context.Context, id string, archived bo
 }
 
 func (m *Manager) Put(ctx context.Context, in Upload) (File, error) {
-	if m.Repo == nil || m.Objects == nil || m.Clock == nil || in.Body == nil || in.ContentLength < 0 || in.ContentLength > m.MaxFileBytes || !identitySegment.MatchString(in.OwnerKey) || !identitySegment.MatchString(in.SessionName) {
+	if m.Repo == nil || m.Objects == nil || m.Clock == nil || in.Body == nil || in.ContentLength < 0 || in.ContentLength > m.MaxFileBytes || !identitySegment.MatchString(in.OwnerKey) || !sessionSegment.MatchString(in.SessionName) {
 		return File{}, ErrInvalidUpload
 	}
 	m.mu.Lock()

@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -23,6 +21,7 @@ type n3env struct {
 	clk *clock.Fake
 	ob  *identity.Onboarding
 	srv *httptest.Server
+	pw  string // 初始化脚本给出的一次性初始口令
 }
 
 func newN3Env(t *testing.T) *n3env {
@@ -31,11 +30,12 @@ func newN3Env(t *testing.T) *n3env {
 	store := identity.NewMemStore()
 	svc := identity.NewService(store, e.clk.Now, nil)
 	e.ob = identity.NewOnboarding(svc)
-	pwf := filepath.Join(t.TempDir(), "pw")
-	_ = os.WriteFile(pwf, []byte("Boot-Pass-0001"), 0o600)
-	if _, err := e.ob.Bootstrap(context.Background(), pwf); err != nil {
+	// 第一个管理用户由初始化脚本建（台账 8971bddf）；ID 取 Root，好让用户列表按小写排序时排在 Alice 之后。
+	pw, err := e.ob.BootstrapAdmin(context.Background(), "Root", "rt", "")
+	if err != nil {
 		t.Fatal(err)
 	}
+	e.pw = pw
 	n3 := &httpapi.N3{OB: e.ob, PublicOrigin: origin}
 	api := &httpapi.API{Svc: svc, PublicOrigin: origin, Actor: n3.Actor}
 	mux := http.NewServeMux()
@@ -77,10 +77,10 @@ var feishuAlice = identity.Identity{Provider: "feishu", Issuer: "devplatform", S
 func TestN3HTTP_FullOnboardingFlow(t *testing.T) {
 	e := newN3Env(t)
 	admin := e.browser()
-	if st, b := e.call(admin, "POST", "/console/login/password", map[string]any{"user_id": "systemdefault", "password": "nope"}, true); st != 401 || b["error"] != "bad_credentials" {
+	if st, b := e.call(admin, "POST", "/console/login/password", map[string]any{"user_id": "Root", "password": "nope"}, true); st != 401 || b["error"] != "bad_credentials" {
 		t.Fatalf("bad password: %d %v", st, b)
 	}
-	st, b := e.call(admin, "POST", "/console/login/password", map[string]any{"user_id": "systemdefault", "password": "Boot-Pass-0001"}, true)
+	st, b := e.call(admin, "POST", "/console/login/password", map[string]any{"user_id": "Root", "password": e.pw}, true)
 	if st != 200 || b["must_change_password"] != true {
 		t.Fatalf("login: %d %v", st, b)
 	}
@@ -88,13 +88,20 @@ func TestN3HTTP_FullOnboardingFlow(t *testing.T) {
 	if st, b := e.call(admin, "GET", "/api/console/platform/users", nil, false); st != 403 || b["error"] != "must_change_password" {
 		t.Fatalf("before change: %d %v", st, b)
 	}
-	if st, b := e.call(admin, "GET", "/api/console/agents", nil, false); st != 401 {
-		t.Fatalf("enroll API before change: %d %v (must-change session is not a login)", st, b)
+	// 组长裁定 140013Z ②（003a5de4 已定「一律 403」）：入网接口对必须改密的会话同样 403，不是 401。
+	for _, c := range []struct{ method, path string }{
+		{"GET", "/api/console/agents"}, {"GET", "/api/console/enroll/applications"},
+		{"POST", "/api/console/enroll/applications/x/approve"}, {"POST", "/api/console/enroll/applications/x/reject"},
+		{"POST", "/api/console/agents/x/revoke"},
+	} {
+		if st, b := e.call(admin, c.method, c.path, map[string]any{}, true); st != 403 || b["error"] != "must_change_password" {
+			t.Fatalf("%s %s before change: %d %v, want 403 must_change_password", c.method, c.path, st, b)
+		}
 	}
-	if st, b := e.call(admin, "POST", "/api/console/account/password", map[string]any{"old_password": "Boot-Pass-0001", "new_password": "x"}, true); st != 422 || b["error"] != "weak_password" {
+	if st, b := e.call(admin, "POST", "/api/console/account/password", map[string]any{"old_password": e.pw, "new_password": "x"}, true); st != 422 || b["error"] != "weak_password" {
 		t.Fatalf("weak: %d %v", st, b)
 	}
-	if st, _ := e.call(admin, "POST", "/api/console/account/password", map[string]any{"old_password": "Boot-Pass-0001", "new_password": "New-Strong-Pass-42"}, true); st != 200 {
+	if st, _ := e.call(admin, "POST", "/api/console/account/password", map[string]any{"old_password": e.pw, "new_password": "New-Strong-Pass-42"}, true); st != 200 {
 		t.Fatalf("change: %d", st)
 	}
 	if st, _ := e.call(admin, "GET", "/api/console/platform/users", nil, false); st != 200 {
@@ -133,6 +140,19 @@ func TestN3HTTP_FullOnboardingFlow(t *testing.T) {
 		t.Fatalf("alice agents: %d %v", st, b)
 	}
 	// N3 A7：普通用户不能开户。
+	// 真用户列表：只给管理用户，字段恰为五项、不含任何秘密
+	st, ul := e.call(admin, "GET", "/api/console/platform/users", nil, false)
+	users, _ := ul["users"].([]any)
+	if st != 200 || len(users) != 2 {
+		t.Fatalf("admin list users: %d %v", st, ul)
+	}
+	first := users[0].(map[string]any)
+	if keys(first) != "display_name,short_name,state,type,user_id" || first["user_id"] != "Alice" || first["state"] != "active" || first["type"] != "member" {
+		t.Fatalf("user row: %v", first)
+	}
+	if second := users[1].(map[string]any); second["user_id"] != "Root" || second["type"] != "platform_admin" {
+		t.Fatalf("second row: %v", second)
+	}
 	if st, b := e.call(alice, "POST", "/api/console/platform/users", map[string]any{"user_id": "eve", "short_name": "ev", "type": "member"}, true); st != 403 || b["error"] != "forbidden" {
 		t.Fatalf("member creates user: %d %v", st, b)
 	}
@@ -150,14 +170,14 @@ func TestN3HTTP_OriginRequiredOnLoginAndWrites(t *testing.T) {
 	e := newN3Env(t)
 	c := e.browser()
 	for _, p := range []string{"/console/login/password", "/console/login/code"} {
-		if st, b := e.call(c, "POST", p, map[string]any{"user_id": "systemdefault", "password": "Boot-Pass-0001"}, false); st != 403 || b["error"] != "origin_mismatch" {
+		if st, b := e.call(c, "POST", p, map[string]any{"user_id": "Root", "password": e.pw}, false); st != 403 || b["error"] != "origin_mismatch" {
 			t.Errorf("%s without Origin: %d %v", p, st, b)
 		}
 	}
-	if st, _ := e.call(c, "POST", "/console/login/password", map[string]any{"user_id": "systemdefault", "password": "Boot-Pass-0001"}, true); st != 200 {
+	if st, _ := e.call(c, "POST", "/console/login/password", map[string]any{"user_id": "Root", "password": e.pw}, true); st != 200 {
 		t.Fatalf("login: %d", st)
 	}
-	if st, b := e.call(c, "POST", "/api/console/account/password", map[string]any{"old_password": "Boot-Pass-0001", "new_password": "New-Strong-Pass-42"}, false); st != 403 || b["error"] != "origin_mismatch" {
+	if st, b := e.call(c, "POST", "/api/console/account/password", map[string]any{"old_password": e.pw, "new_password": "New-Strong-Pass-42"}, false); st != 403 || b["error"] != "origin_mismatch" {
 		t.Fatalf("change without Origin: %d %v", st, b)
 	}
 }

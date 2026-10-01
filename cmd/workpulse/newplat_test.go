@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -39,33 +38,35 @@ func TestNewPlatformConfigFromEnv(t *testing.T) {
 		t.Fatalf("missing origin: on=%v err=%v", on, err)
 	}
 	t.Setenv("DW_PUBLIC_ORIGIN", "https://dw.cmjrt.com:55055")
+	t.Setenv("DW_NEWPLAT_PG_DSN", "")
+	if _, on, err := newPlatformConfigFromEnv(); !on || !errors.Is(err, errNewPlatformPGDSN) {
+		t.Fatalf("missing PG DSN: on=%v err=%v", on, err)
+	}
+	t.Setenv("DW_NEWPLAT_PG_DSN", "postgres://h/db")
 	t.Setenv("DW_TRUST_PROXY", "1")
 	cfg, on, err := newPlatformConfigFromEnv()
-	if !on || err != nil || cfg.publicOrigin != "https://dw.cmjrt.com:55055" || !cfg.trustProxy {
+	if !on || err != nil || cfg.publicOrigin != "https://dw.cmjrt.com:55055" || cfg.pgDSN != "postgres://h/db" || !cfg.trustProxy {
 		t.Fatalf("cfg=%+v on=%v err=%v", cfg, on, err)
 	}
 }
 
-func TestWireNewPlatformRefusesWithoutBootstrapSecret(t *testing.T) {
+// 不再有自动建号：空库上装配成功，但一个用户也不建（第一个管理用户由初始化脚本建）。
+func TestWireNewPlatformCreatesNoUser(t *testing.T) {
 	hub := newplatHub(t)
-	pwf := filepath.Join(t.TempDir(), "pw")
-	_ = os.WriteFile(pwf, []byte("Boot-Pass-0001"), 0o644) // 权限过宽
-	err := wireNewPlatform(context.Background(), http.NewServeMux(), hub, newPlatformConfig{publicOrigin: "https://x", passwordFile: pwf})
-	if !errors.Is(err, identity.ErrBootstrapSecret) {
-		t.Fatalf("err=%v, want ErrBootstrapSecret", err)
+	store := identity.NewMemStore()
+	if err := wireNewPlatform(context.Background(), http.NewServeMux(), hub, newPlatformConfig{publicOrigin: "https://x"}, store); err != nil {
+		t.Fatal(err)
 	}
-	if hub.Identity != nil || hub.AgentCredentialOnly {
-		t.Fatal("hub must not be switched to new-platform mode when bootstrap fails")
+	if n, _ := store.CountUsers(context.Background()); n != 0 {
+		t.Fatalf("users=%d after wiring, want 0 (no systemdefault, no auto-create)", n)
 	}
 }
 
 func TestWireNewPlatformRoutes(t *testing.T) {
 	hub := newplatHub(t)
-	pwf := filepath.Join(t.TempDir(), "pw")
-	_ = os.WriteFile(pwf, []byte("Boot-Pass-0001"), 0o600)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS) // main.go 照常注册旧入口，由 Hub 回 410
-	if err := wireNewPlatform(context.Background(), mux, hub, newPlatformConfig{publicOrigin: "https://x", passwordFile: pwf}); err != nil {
+	if err := wireNewPlatform(context.Background(), mux, hub, newPlatformConfig{publicOrigin: "https://x"}, identity.NewMemStore()); err != nil {
 		t.Fatal(err)
 	}
 	srv := httptest.NewServer(mux)
@@ -98,7 +99,37 @@ func TestWireNewPlatformRoutes(t *testing.T) {
 			t.Errorf("%s %s: %d %s, want %d %s", c.method, c.path, st, body, c.status, c.want)
 		}
 	}
-	if n, _ := hub.Identity.Store.CountUsers(context.Background()); n != 1 {
-		t.Fatalf("bootstrap users=%d, want 1", n)
+	// 吊销、停用、凭据被取走（旧凭据作废）三处都要让 Hub 断开在线连接；漏接任何一处，生产上那条连接会挂着不断。
+	if hub.Identity.OnRevoked == nil || hub.Identity.OnSuspended == nil || hub.Identity.OnCredentialIssued == nil {
+		t.Fatalf("disconnect hooks not wired: revoked=%v suspended=%v credential_issued=%v",
+			hub.Identity.OnRevoked != nil, hub.Identity.OnSuspended != nil, hub.Identity.OnCredentialIssued != nil)
+	}
+}
+
+type fakeLoginPager struct{}
+
+func (fakeLoginPager) HandleNewPlatformLoginPage(w http.ResponseWriter, _ *http.Request) {
+	_, _ = w.Write([]byte("login-page"))
+}
+
+// 登录页按接口断言登记：有这个方法就挂到 GET /console/login，没有就不挂（不 panic、不挂占位）。
+func TestRegisterNewPlatformLoginPage(t *testing.T) {
+	mux := http.NewServeMux()
+	if !registerNewPlatformLoginPage(mux, fakeLoginPager{}) {
+		t.Fatal("pager with the method must be registered")
+	}
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/console/login", nil))
+	if rec.Code != 200 || rec.Body.String() != "login-page" {
+		t.Fatalf("GET /console/login: %d %q", rec.Code, rec.Body.String())
+	}
+	mux2 := http.NewServeMux()
+	if registerNewPlatformLoginPage(mux2, struct{}{}) {
+		t.Fatal("value without the method must not be registered")
+	}
+	rec2 := httptest.NewRecorder()
+	mux2.ServeHTTP(rec2, httptest.NewRequest("GET", "/console/login", nil))
+	if rec2.Code != 404 {
+		t.Fatalf("unregistered route should 404, got %d", rec2.Code)
 	}
 }

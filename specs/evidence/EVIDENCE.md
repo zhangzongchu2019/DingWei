@@ -1,7 +1,7 @@
 # 评审证据包（作者产出，供门方复算）
 
-生成时刻：2026-08-31T03:23:03Z
-分支头：`6afd7ce4a18a359df8828dd988c3e836090a05f8`
+生成时刻：2026-10-01T18:58:03Z
+分支头：`038ac9c8bd34de5433c0681a34550535907c3ce6`
 
 > 🔴 **本包不含任何门方结论。** 每行给出【命令】与【该次输出】，门方可原样重跑。
 > ⚠️ **机器旁证的能力边界**：它们证明的是「形状对不对」，不是「语义对不对」。
@@ -35,6 +35,7 @@ REVIEWED 668c60263af6cc277bed585cb29f119c4e25e050176a94fb188f147eca0d7932  scrip
 REVIEWED 15464d1f637362c0ca022c951c6bfe17b8a84e2f38df139320a2b633da882650  scripts/reliable_delivery_canary.sh
 REVIEWED ca0bea89991080cb1c4a512b5f83fb00c20475602d4bfd3c4165d4d04cbebbb4  scripts/repo-boundary-gate.sh
 REVIEWED 679e8c6f73f15972895348cab70bf184c4b3763e64efb05ab1de0f716c661a6b  scripts/reviewer-repro-gate.sh
+REVIEWED 97defb379175d8345f8aa6ad14c4f9dcc1739132823bbb5970e518cb5a6d1dcf  scripts/run-build-tests.sh
 REVIEWED e0aba3236b58915d416809d4e53b90244a0cc4a3f12e19212a3a07d7d1802f36  scripts/rv-integrity-gate.sh
 REVIEWED 43060f3d3a5064b2e5c93c68526cd6cefbe2cb301a8c0c8e94abcf45ba40085c  scripts/speclint-gate.sh
 REVIEWED 65ca074adfd69fd0315f78991b9bfe21579f27e7d8f3e586fc85b60b857149b6  scripts/specs-index-check.sh
@@ -51,9 +52,9 @@ REVIEWED c9e7863be91d960226690197832bf66434ec20070a0c693fdcc892b576b6d7d3  specs
 REVIEWED c598b3199e0c418af5d6f207fff5a4b2e093edf0e3412562bccd8524612a337b  specs/tools/rv-state-check.py
 REVIEWED 49b6196087629e5500f99da9b11a74a7bf035f79e0db24988e9194839d264288  specs/tools/safe-replace.py
 REVIEWED 9328cd8abaf6e6ceacf8e0968e8431ae28080ca67044c32457c9283ef467b552  docs/tools/speclint.py
-REVIEWED 2ca28e44ad27f466487859548c69cf3f321a2f03200fbe1731fe36ca75651e5a  specs/gates/boundary-baseline.txt
+REVIEWED 4af87a6a6606afa9fab8abdac2318c6a4ee16184abb574d1bf830556d258dec5  specs/gates/boundary-baseline.txt
 REVIEWED 16e5ba25e2b662a97269723d229d138cd7f0e2ebc7bd5177f9575eb2470fdbae  specs/gates/checklist-execution-exceptions.txt
-REVIEWED 659cb7dd7e4a9ae1c57ea5575f52f008595b5fd55eec319f8ed697e71b7d2760  specs/gates/dependency-baseline.txt
+REVIEWED fb6a2c04184989bf24515f051242aa7a978297ebb21dc14cf9fcafc1335b5b85  specs/gates/dependency-baseline.txt
 REVIEWED fecc8c2f2a3e8ddfd515d492cac5c2d2560f88cc3729c53fad31c0f2a46665b9  specs/gates/disputed.txt
 REVIEWED 5f5a725e0536ec20bb07ee5fd0dd0820c8545ad871cfd5e0dece61ce1edb1670  specs/gates/gate-witness-baseline.txt
 REVIEWED ba6921e8c0eee7ff9ae0de1a910ac4a5041ecd7c44290e9c6897bad194f9d52c  specs/gates/gate-witness-debt.txt
@@ -155,7 +156,7 @@ $ specs/tools/analyze.sh
 
 ```
 $ ls -d internal/*/ | wc -l
-  28
+  31
   (rc=0)
 ```
 
@@ -163,7 +164,7 @@ $ ls -d internal/*/ | wc -l
 
 ```
 $ grep -rhoE 'zhangzongchu2019/dingwei/internal/[a-z0-9]+' cmd/workpulse --include=*.go | grep -v _test | sed 's|.*/||' | sort -u | paste -sd' '
-  admin bus clock config coordination datad evidence fcs feishu llm m8 model portal reminder schedule scheduler secretbox store worker
+  admin bus clock config coordination datad evidence fcs feishu identity llm m8 model portal reminder repo schedule scheduler secretbox store version worker
   (rc=0)
 ```
 
@@ -182,19 +183,20 @@ $ scripts/repo-boundary-gate.sh
   ⑦ 仓储包边界（SP7a 甲组·收口 / §22.2c #1 两半）
     仓储包允许清单（本次生效的全部条目）：
       - internal/repo
-    判据一·仓储包外建库句柄：4 处（基线 4，终值 0）
-      internal/mcs/board/board.go:62:	db, err := sql.Open("sqlite", path)
-      internal/store/sqlite.go:53:	db, err := sql.Open("sqlite", dsn)
+    判据一·仓储包外建库句柄：5 处（基线 5，终值 0）
+      internal/fileservice/repository.go:24:	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path)+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)")
+      internal/store/sqlite.go:55:	db, err := sql.Open("sqlite", dsn)
       internal/datad/assignment_pg_integration_test.go:58:	w.appDB, err = sql.Open("pgx", dsn)
       internal/datad/assignment_pg_integration_test.go:64:		w.setupDB, err = sql.Open("pgx", sup)
+      internal/mcs/board/board.go:62:	db, err := sql.Open("sqlite", path)
     债·尚未租户化的调用点：55 处（基线 55，终值 0，随 SP7b 归零）
       ↳ 按效果判（specs/tools/pending-debt），按领域各记各的棘轮：
          · datad：25 处（基线 25，SP7b 收口时本领域须归零）
          · fanout：30 处（基线 30，SP7b 收口时本领域须归零）
-    债·显式 SystemCtx 调用点：12 处（基线 12；每处都是评审面，不许悄悄增长）
+    债·显式 SystemCtx 调用点：16 处（基线 16；每处都是评审面，不许悄悄增长）
     判据二·裸库句柄逃出包外：1 处（基线 1，终值 0；允许清单对本条不豁免）
       internal/mcs/board/board.go:84:func-returns-handle DB
-    ⑦ 持平（建库 4 · 逃逸 1）✓ 未回升；终值均为 0，尚未达标
+    ⑦ 持平（建库 5 · 逃逸 1）✓ 未回升；终值均为 0，尚未达标
   (rc=0)
 ```
 
@@ -202,7 +204,7 @@ $ scripts/repo-boundary-gate.sh
 
 ```
 $ for p in internal/store/migrations internal/mcs/board/schema.sql internal/fanout internal/datad; do printf '%-34s ' $p; grep -rhoP 'CREATE TABLE (IF NOT EXISTS )?\K\w+' $p | sort -u | wc -l; done
-  internal/store/migrations          36
+  internal/store/migrations          61
   internal/mcs/board/schema.sql      11
   internal/fanout                    5
   internal/datad                     9

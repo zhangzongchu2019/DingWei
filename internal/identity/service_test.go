@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"log"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -160,8 +162,8 @@ func TestPollTokenAndRate(t *testing.T) {
 func TestApproveFlowCredentialOnce(t *testing.T) {
 	f := newFixture(t)
 	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
-	ag, full, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Opus50ts", "grp-1")
-	if err != nil || ag.Name != "Opus50ts" || ag.GroupID != "grp-1" || full != "Opus50ts.zzc" {
+	ag, full, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Opus50ts", "开发组")
+	if err != nil || ag.Name != "Opus50ts" || len(ag.GroupID) != identity.GroupCodeLen || full != "Opus50ts.zzc" {
 		t.Fatalf("approve: %+v %q %v", ag, full, err)
 	}
 	f.clk.Advance(identity.PollMinInterval)
@@ -197,7 +199,7 @@ func TestApprovePairingMismatchKeepsThenRejects(t *testing.T) {
 	f := newFixture(t)
 	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
 	for i := 1; i < identity.MaxPairingFailures; i++ {
-		_, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, "654321", "Name1", "g")
+		_, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, "654321", "Name1", tg())
 		var pm *identity.PairingMismatchError
 		if !errors.As(err, &pm) || pm.Rejected || pm.Remaining != identity.MaxPairingFailures-i {
 			t.Fatalf("wrong code #%d: %v", i, err)
@@ -206,12 +208,12 @@ func TestApprovePairingMismatchKeepsThenRejects(t *testing.T) {
 	if list, _ := f.svc.ListPending(bg, "zzc"); len(list) != 1 {
 		t.Fatalf("V1 A2: application must stay pending after wrong codes, pending=%d", len(list))
 	}
-	_, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, "000000", "Name1", "g")
+	_, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, "000000", "Name1", tg())
 	var pm *identity.PairingMismatchError
 	if !errors.As(err, &pm) || !pm.Rejected {
 		t.Fatalf("5th wrong code: %v, want rejected", err)
 	}
-	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Name1", "g"); !errors.Is(err, identity.ErrNotPending) {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Name1", tg()); !errors.Is(err, identity.ErrNotPending) {
 		t.Fatalf("correct code after auto-reject: %v, want ErrNotPending", err)
 	}
 	f.clk.Advance(identity.PollMinInterval)
@@ -225,21 +227,21 @@ func TestApproveNameRulesAndOwnership(t *testing.T) {
 	r1 := f.apply(t, "zzc", "dev-1", "1.1.1.1")
 	r2 := f.apply(t, "zzc", "dev-2", "1.1.1.1")
 	for _, bad := range []string{"a", "opus.ts", "opus_ts", "名字", strings.Repeat("a", 33)} {
-		if _, _, err := f.svc.Approve(bg, "zzc", r1.ApplicationID, code, bad, "g"); !errors.Is(err, identity.ErrNameInvalid) {
+		if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r1.ApplicationID, code, bad, tg()); !errors.Is(err, identity.ErrNameInvalid) {
 			t.Errorf("name %q: %v, want ErrNameInvalid", bad, err)
 		}
 	}
 	f.svc.NameAllowed = func(n string) bool { return identity.Lower(n) != "feishu" }
-	if _, _, err := f.svc.Approve(bg, "zzc", r1.ApplicationID, code, "Feishu", "g"); !errors.Is(err, identity.ErrNameInvalid) {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r1.ApplicationID, code, "Feishu", tg()); !errors.Is(err, identity.ErrNameInvalid) {
 		t.Errorf("reserved name via NameAllowed: %v, want ErrNameInvalid", err)
 	}
-	if _, _, err := f.svc.Approve(bg, "lbl", r1.ApplicationID, code, "Thief", "g"); !errors.Is(err, identity.ErrNotFound) {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "lbl", r1.ApplicationID, code, "Thief", tg()); !errors.Is(err, identity.ErrNotFound) {
 		t.Fatalf("other owner approves: %v, want ErrNotFound", err)
 	}
-	if _, _, err := f.svc.Approve(bg, "zzc", r1.ApplicationID, code, "opus50ts", "g"); err != nil {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r1.ApplicationID, code, "opus50ts", tg()); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := f.svc.Approve(bg, "zzc", r2.ApplicationID, code, "OPUS50TS", "g"); !errors.Is(err, identity.ErrNameTaken) {
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r2.ApplicationID, code, "OPUS50TS", tg()); !errors.Is(err, identity.ErrNameTaken) {
 		t.Fatalf("V1 A11: %v, want ErrNameTaken", err)
 	}
 }
@@ -247,7 +249,7 @@ func TestApproveNameRulesAndOwnership(t *testing.T) {
 func TestRevokeHookAuditAndAuth(t *testing.T) {
 	f := newFixture(t)
 	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
-	ag, _, _ := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "kimi", "g")
+	ag, _, _ := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "kimi", tg())
 	f.clk.Advance(identity.PollMinInterval)
 	p, _ := f.svc.Poll(bg, r.ApplicationID, r.PollToken)
 	if _, err := f.svc.Revoke(bg, "lbl", ag.ID); !errors.Is(err, identity.ErrForbidden) || len(f.revoked) != 0 {
@@ -286,21 +288,117 @@ func TestRandomnessSourceUsed(t *testing.T) {
 	}
 }
 
-func TestApproveGroupRequired(t *testing.T) {
+func TestApproveGroupOptional(t *testing.T) {
 	f := newFixture(t)
-	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
-	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", ""); !errors.Is(err, identity.ErrGroupRequired) {
-		t.Fatalf("empty group: %v, want ErrGroupRequired", err)
+	// 业主令（15:34:17Z，板 8582acc4）：编组不是必须的 —— 不给即不入组，批准照常成功、不建组
+	r0 := f.apply(t, "zzc", "dev-0", "1.1.1.9")
+	ag0, _, err := f.svc.Approve(bg, "zzc", r0.ApplicationID, code, "Loner", "")
+	if err != nil || ag0.GroupID != "" {
+		t.Fatalf("approve without group: %+v %v", ag0, err)
 	}
-	f.svc.GroupAllowed = func(owner, g string) bool { return owner == "zzc" && g == "team-a" }
-	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-b"); !errors.Is(err, identity.ErrGroupRequired) {
-		t.Fatalf("group not owned: %v, want ErrGroupRequired", err)
+	if codes, _ := f.store.ListAgentGroups(bg, ag0.ID); len(codes) != 0 {
+		t.Fatalf("agent without group joined %v", codes)
+	}
+	if gs, _ := f.store.ListGroups(bg); len(gs) != 0 {
+		t.Fatalf("approve without group created %+v", gs)
+	}
+	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
+	// GroupAllowed：已有组须存在（且未关闭添加，见契约 G_approve_group_choice_atomic）
+	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-b"); !errors.Is(err, identity.ErrGroupNotFound) {
+		t.Fatalf("missing group: %v, want ErrGroupNotFound", err)
+	}
+	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Worker", "九个字九个字九个字"); !errors.Is(err, identity.ErrGroupNameInvalid) {
+		t.Fatalf("bad new group name: %v, want ErrGroupNameInvalid", err)
 	}
 	if list, _ := f.svc.ListPending(bg, "zzc"); len(list) != 1 {
 		t.Fatal("group rejection must keep the application pending")
 	}
-	ag, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-a")
-	if err != nil || ag.GroupID != "team-a" {
-		t.Fatalf("approve with group: %+v %v", ag, err)
+	// 新用户第一个组：批准时就地新建，新 Agent 当组长
+	ag, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Worker", "开发组")
+	if err != nil {
+		t.Fatalf("approve with new group: %v", err)
+	}
+	g, err := f.store.GetGroup(bg, ag.GroupID)
+	if err != nil || g.ShortName != "开发组" || g.LeaderAgentID != ag.ID || g.CreatorLC != "zzc" || len(g.Code) != identity.GroupCodeLen {
+		t.Fatalf("new group: %+v %v", g, err)
+	}
+	// 第二个 Agent 入已有组
+	r2 := f.apply(t, "zzc", "dev-2", "1.1.1.2")
+	ag2, _, err := f.svc.Approve(bg, "zzc", r2.ApplicationID, code, "Second", g.Code)
+	if err != nil || ag2.GroupID != g.Code {
+		t.Fatalf("approve into existing group: %+v %v", ag2, err)
+	}
+	if ms, _ := f.store.ListGroupMembers(bg, g.Code); len(ms) != 2 {
+		t.Fatalf("members %+v", ms)
+	}
+}
+
+// 新平台 view 路由以 full_name 为键（组长 738c4a03）：两个用户的同名 Agent 必须解析到各自那一个，绝不串号。
+func TestResolveFullName(t *testing.T) {
+	f := newFixture(t)
+	mk := func(owner, device, name string) string {
+		r := f.apply(t, owner, device, "1.1.1.1")
+		ag, _, err := f.svc.ApproveWithNewGroup(bg, owner, r.ApplicationID, code, name, tg())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return ag.ID
+	}
+	zk := mk("zzc", "d1", "Kimi")
+	lk := mk("lbl", "d2", "kimi")
+	if ag, u, err := f.svc.ResolveFullName(bg, "Kimi.zzc"); err != nil || ag.ID != zk || u.UserID != "zzc" {
+		t.Fatalf("Kimi.zzc: %+v %+v %v", ag, u, err)
+	}
+	if ag, u, err := f.svc.ResolveFullName(bg, "KIMI.LB"); err != nil || ag.ID != lk || u.UserID != "lbl" {
+		t.Fatalf("KIMI.LB (case-insensitive, other owner): %+v %+v %v", ag, u, err)
+	}
+	for _, bad := range []string{"kimi", ".zzc", "kimi.", "ki.mi.zzc", "kimi.nosuch", "ghost.zzc", "kimi.lbl"} {
+		if _, _, err := f.svc.ResolveFullName(bg, bad); !errors.Is(err, identity.ErrNotFound) {
+			t.Errorf("%q: %v, want ErrNotFound", bad, err)
+		}
+	}
+	if _, err := f.svc.Revoke(bg, "zzc", zk); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := f.svc.ResolveFullName(bg, "kimi.zzc"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("revoked agent must not resolve: %v", err)
+	}
+}
+
+// failingAuditStore 审计写一律失败的存储（其余照常）。
+type failingAuditStore struct{ *identity.MemStore }
+
+func (failingAuditStore) AppendAudit(context.Context, identity.AuditEvent) error {
+	return errors.New("audit_log: null value in column id")
+}
+
+// 审计写失败不得静默丢（qwen 复验 🟡④，组长 15:22:39Z ②）：业务动作照常成功（fail-open 待组长裁），
+// 但每次失败都打日志、计数可读。撤掉日志或计数 ⇒ 红。
+func TestAuditFailureLoggedAndCounted(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	store := failingAuditStore{identity.NewMemStore()}
+	if err := store.CreateUser(bg, identity.User{UserID: "zzc", ShortName: "zzc", Type: identity.UserMember, State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	svc := identity.NewService(store, nil, nil)
+	if svc.AuditFailures() != 0 {
+		t.Fatal("fresh service reports audit failures")
+	}
+	hi, err := svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Codex1", "开发组", "g4")
+	if err != nil {
+		t.Fatalf("business action must still succeed when audit fails: %v", err)
+	}
+	if _, err := svc.SuspendHostedAgent(bg, hi.Agent.ID, "g4"); err != nil {
+		t.Fatal(err)
+	}
+	if n := svc.AuditFailures(); n != 2 {
+		t.Fatalf("AuditFailures=%d, want 2 (issue + suspend)", n)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "identity audit write failed: action=agent.hosted_issue") ||
+		!strings.Contains(out, "action=agent.hosted_suspend") || !strings.Contains(out, "failures=2") {
+		t.Fatalf("audit failures not logged:\n%s", out)
 	}
 }

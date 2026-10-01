@@ -58,6 +58,10 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, identity.ErrCredentialRevoked):
 		writeAgentWSError(w, http.StatusUnauthorized, "credential_revoked")
 		return
+	case errors.Is(err, identity.ErrCredentialSuspended):
+		// 停用中（组长裁定）：客户端据此停止重连，但【不删】本地凭据，等启用。
+		writeAgentWSError(w, http.StatusUnauthorized, "credential_suspended")
+		return
 	case err != nil:
 		writeAgentWSError(w, http.StatusUnauthorized, "credential_invalid")
 		return
@@ -89,7 +93,7 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DisconnectAgent 吊销后由 identity.Service.OnRevoked 调用：在线则以 4401 断开（V2 A1）。
+// DisconnectAgent 吊销或暂停后由 identity.Service.OnRevoked／OnSuspended 调用：在线则以 4401 断开（V2 A1；V8 停用）。
 // 必须在吊销请求返回之前完成，所以是同步的。
 func (h *Hub) DisconnectAgent(agentID string) {
 	if h.Identity == nil {
@@ -102,9 +106,15 @@ func (h *Hub) DisconnectAgent(agentID string) {
 	h.mu.Lock()
 	c := h.sessionClients[AgentKeyID(ag.OwnerLC)][ag.NameLC()]
 	h.mu.Unlock()
-	if c != nil && c.conn != nil {
-		_ = c.conn.Close(StatusCredentialRevoked, "credential_revoked")
+	if c == nil || c.conn == nil {
+		return
 	}
+	// 关闭码同为 4401，原因按当前状态区分：吊销 ⇒ 客户端删凭据；暂停 ⇒ 不删，等启用。
+	reason := "credential_revoked"
+	if ag.State == identity.AgentSuspended {
+		reason = "credential_suspended"
+	}
+	_ = c.conn.Close(StatusCredentialRevoked, reason)
 }
 
 // AgentOnline 供 console 的 Agent 列表显示在线状态。
@@ -113,7 +123,7 @@ func (h *Hub) AgentOnline(agentID string) bool {
 		return false
 	}
 	ag, err := h.Identity.Store.GetAgent(context.Background(), agentID)
-	if err != nil || ag.State != identity.AgentActive {
+	if err != nil || !ag.Current() {
 		return false
 	}
 	h.mu.Lock()

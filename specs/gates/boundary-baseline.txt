@@ -37,4 +37,22 @@ escape 1
 pending 55
 pending:datad 25
 pending:fanout 30
-system 12
+#
+# 🔴 system 12 → 16 的构成（本行由 qwen38maxkhovvob4 在 g2-migrate-ledger 上落盘，请组长复核）：
+#    真调用点 12 处 ＝ 生产 6 ＋ 测试 6；另 4 处是【注释文本】（闸按文本计数，注释与测试都算，
+#    本席在 G3 叠复验里已报过这条口径；tenant.go 又故意把 SystemCtx 写成便于 grep 清点的样子，
+#    两者相加就是「注释也进计数」——不藏，逐处列明）：
+#      · 生产 6：datad/pgstore.go:123（建表）· :163（Ping）· fanout/spool.go:61 · fanout/inspool.go:29
+#               · identity/pgstore.go:35（身份存储；组长已认可 12→13，ruling-2026-10-01T152239Z）
+#               · store/migrate/migrate.go:303（迁移账本：建账表、读账、每条一个事务地应用 DDL。
+#                 DDL 与账本表本就无租户语义，与 datad/pgstore.go:123 同型 ⇒ 这是【新增的那 1 处】）
+#      · 测试 6：datad/assignment_pg_integration_test.go（三池分权的越权断言）
+#      · 注释 4：datad/pgstore.go:93 · fanout/spool.go:40（两处都是「不要换成 SystemCtx」的告诫）
+#               · store/migrate/migrate.go:258 · store/migrate/migrate_test.go:54（后者写的正是
+#                 「用例里故意不用系统上下文，免得把生产侧的评审面数搅浑」）
+#    🔴 本分支底座 dd69f88a 上该键写 12、实数已 13（identity 那处未同步落盘）⇒ 本次一并补齐；
+#       即「+1 是 migrate 的，另 +3 是把已有实数与注释如实登记进来」，不是四笔新债。
+#    🔴 归还路径：SP7b 逐领域收口时，datad/fanout 那几处随各自领域归零；migrate 与 identity 那两处
+#       是【建表/迁移】本身，租户化不适用于它们，故它们的归还方式是「评审确认后长期保留」，
+#       不是改数字。若要下调本键，必须先说清哪一处真调用点消失了。
+system 16
