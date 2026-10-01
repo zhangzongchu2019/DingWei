@@ -261,7 +261,7 @@ async function main() {
       await timerPage.locator('#platform-items a[data-item-id="specs"]').click();
       const specsPane = timerPage.locator('#panes iframe[title="Specs workspace"]');
       await specsPane.waitFor({state:'visible'});
-      await timerPage.locator('#tabs .tab[title="Agent 编组"]').click();
+      await timerPage.locator('#tabs .tab[title="Agent 管理"]').click();
 
       const agentGETsBeforeTimer = agentGETs;
       await waitPastAgentRefreshCycle(timerPage);
@@ -622,7 +622,7 @@ async function main() {
       slowGroupLoad = true;
       await entry.click();
       await page.evaluate(() => refreshGroups('owner-selector'));
-      await page.locator('#tabs .tab[title="Agent 编组"]').waitFor({ state: 'visible' });
+      await page.locator('#tabs .tab[title="Agent 管理"]').waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('.group-workspace').count(), 1);
       assert.strictEqual(await page.locator('.group-workspace:visible').count(), 1);
       for (const id of ['groupLeader', 'groupJoinCode', 'groupCodeJoinAgent', 'joinByCode', 'groupListItems', 'groupDetail', 'retryGroups']) {

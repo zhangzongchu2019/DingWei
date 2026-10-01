@@ -94,7 +94,7 @@ async function main() {
         groups: pick((el) => el.classList && el.classList.contains('group-workspace')),
         agent: pick((el) => el.tagName === 'IFRAME' && el.src.includes('/view/owner-alpha-2642')),
         offlineAgent: pick((el) => el.tagName === 'IFRAME' && el.src.includes('/view/owner-offline-2642')),
-        specsTab: tab('Specs'), groupsTab: tab('Agent 编组'),
+        specsTab: tab('Specs'), groupsTab: tab('Agent 管理'),
       };
     });
 
@@ -127,7 +127,7 @@ async function main() {
     await page.waitForTimeout(200);
     const frame = page.frames().find((f) => f.url().includes('/console/specs'));
     await frame.locator('#stub').click({ timeout: 4000 });
-    await page.locator('#tabs .tab').filter({ hasText: 'Agent 编组' }).click();
+    await page.locator('#tabs .tab').filter({ hasText: 'Agent 管理' }).click();
     await page.waitForTimeout(200);
     await page.locator('#groupAddOpen').click({ timeout: 4000 });
     await page.locator('#groupShortName').click({ timeout: 4000 });

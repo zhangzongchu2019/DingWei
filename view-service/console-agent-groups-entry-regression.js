@@ -282,7 +282,7 @@ async function t(name, fn) {
         //    红了只看得见"没开新页",看不见"pane 全丢、SSE 全断"——而那才是业主要赔的东西。
         const after = await snapshot(page);
         const markersAfter = await readMarkers(page);
-        const groupTab = await page.locator('#tabs .tab[title="Agent 编组"]').count();
+        const groupTab = await page.locator('#tabs .tab[title="Agent 管理"]').count();
         const workspace = await page.locator('#panes .group-workspace').count();
         const scene = `\n      点击前=${JSON.stringify(before)}\n      点击后=${JSON.stringify(after)}\n      标记/SSE=${JSON.stringify(markersAfter)}\n      编组tab=${groupTab} workspace=${workspace}`;
         const v = [];
