@@ -16,15 +16,22 @@ package hosted
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 )
 
 // HostedItem G3 注入点形状：单席位托管子对象。错误一律收敛为 false——列表读路径
 // 不放大为整页 500；无数据（非托管/已销毁/未落席位）与出错同回 false，页面降级兜底。
-// 需要区分错误语义的内部调用方用 HostedOverlay（批量、错误上抛）。
+// 🔵 但出错必须留痕（opus50tc2k 复核观察：静默降级运维看不出来）——收敛前打日志一行；
+// 无数据（ok=false, err=nil）不打，那是正常缺席。需要区分错误语义的内部调用方用
+// HostedOverlay（批量、错误上抛）。
 func (o *Orchestrator) HostedItem(ctx context.Context, agentID string) (map[string]any, bool) {
 	m, ok, err := o.hostedItem(ctx, agentID)
-	if err != nil || !ok {
+	if err != nil {
+		log.Printf("hosted item agent=%s 查询失败，该行降级不出 hosted 子对象: %v", agentID, err)
+		return nil, false
+	}
+	if !ok {
 		return nil, false
 	}
 	return m, true
