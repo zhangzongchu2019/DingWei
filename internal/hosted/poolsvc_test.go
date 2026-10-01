@@ -7,6 +7,16 @@ import (
 	"testing"
 )
 
+func mkMasterKeyPath(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	mkPath := filepath.Join(dir, "master.key")
+	if err := os.WriteFile(mkPath, []byte(hexOf(mustKey(t, 0x99))), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return mkPath
+}
+
 func mkPoolSvc(t *testing.T) (*PoolService, *Store) {
 	t.Helper()
 	pool := testpool(t)
@@ -18,12 +28,7 @@ func mkPoolSvc(t *testing.T) (*PoolService, *Store) {
 	if err := s.ApplySchema(ctx); err != nil {
 		t.Fatalf("apply: %v", err)
 	}
-	dir := t.TempDir()
-	mkPath := filepath.Join(dir, "master.key")
-	mk := mustKey(t, 0x99)
-	if err := os.WriteFile(mkPath, []byte(hexOf(mk)), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	mkPath := mkMasterKeyPath(t)
 	svc, err := NewPoolService(s, mkPath)
 	if err != nil {
 		t.Fatalf("svc: %v", err)
