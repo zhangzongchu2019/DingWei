@@ -37,16 +37,12 @@ func (h *Hub) newPlatformTerminalLocked(fullName string) (*terminalState, bool) 
 func (h *Hub) newPlatformViewAuth(w http.ResponseWriter, r *http.Request) bool {
 	c, err := r.Cookie(httpapi.SessionCookie)
 	if err != nil || c.Value == "" {
-		writeAgentWSError(w, http.StatusUnauthorized, "unauthenticated")
+		newPlatformDeny(w, r, false)
 		return false
 	}
 	user, err := h.Onboarding.ResolveSession(r.Context(), c.Value)
-	if errors.Is(err, identity.ErrMustChange) {
-		writeAgentWSError(w, http.StatusForbidden, "must_change_password")
-		return false
-	}
 	if err != nil {
-		writeAgentWSError(w, http.StatusUnauthorized, "unauthenticated")
+		newPlatformDeny(w, r, errors.Is(err, identity.ErrMustChange))
 		return false
 	}
 	ag, _, err := h.Identity.ResolveFullName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
@@ -114,7 +110,6 @@ func (h *Hub) dispatchNewPlatformTerminalInput(ctx context.Context, msg model.Me
 // 浏览器打开页面（GET 且要 HTML）：未登录 ⇒ 302 到 /console/login；必须改密 ⇒ 302 到 /console/login#change。
 // 接口：未登录 ⇒ 401 unauthenticated；必须改密 ⇒ 403 must_change_password（console 页的守卫认这两个码弹回登录页）。
 func (h *Hub) newPlatformPrincipal(w http.ResponseWriter, r *http.Request) (string, bool) {
-	wantsPage := r.Method == http.MethodGet && strings.Contains(r.Header.Get("Accept"), "text/html")
 	var user *identity.User
 	var err error
 	if c, cerr := r.Cookie(httpapi.SessionCookie); cerr == nil && c.Value != "" {
@@ -122,23 +117,33 @@ func (h *Hub) newPlatformPrincipal(w http.ResponseWriter, r *http.Request) (stri
 	} else {
 		err = identity.ErrNotFound
 	}
-	switch {
-	case err == nil:
+	if err == nil {
 		return user.UserIDLC(), true
-	case errors.Is(err, identity.ErrMustChange):
-		if wantsPage {
-			http.Redirect(w, r, "/console/login#change", http.StatusFound)
-		} else {
-			writeAgentWSError(w, http.StatusForbidden, "must_change_password")
-		}
-	default:
-		if wantsPage {
-			http.Redirect(w, r, "/console/login", http.StatusFound)
-		} else {
-			writeAgentWSError(w, http.StatusUnauthorized, "unauthenticated")
-		}
 	}
+	newPlatformDeny(w, r, errors.Is(err, identity.ErrMustChange))
 	return "", false
+}
+
+// newPlatformWantsPage 浏览器打开页面：GET、要 HTML、不是 WebSocket 升级、不是 /api/ 接口。
+// 接口一律不重定向（组长裁定 140013Z ②：必须改密访问任何 /api/console/* 一律 403，不论 Accept）。
+func newPlatformWantsPage(r *http.Request) bool {
+	return r.Method == http.MethodGet && strings.Contains(r.Header.Get("Accept"), "text/html") &&
+		!strings.EqualFold(r.Header.Get("Upgrade"), "websocket") && !strings.HasPrefix(r.URL.Path, "/api/")
+}
+
+// newPlatformDeny 未登录或必须改密时的拒绝应答（/console 与 /view 同一口径，组长裁定 140013Z ①）：
+// 浏览器打开页面 ⇒ 302 到 /console/login（必须改密 ⇒ /console/login#change）；接口与 WebSocket ⇒ 401 unauthenticated／403 must_change_password。
+func newPlatformDeny(w http.ResponseWriter, r *http.Request, mustChange bool) {
+	switch {
+	case newPlatformWantsPage(r) && mustChange:
+		http.Redirect(w, r, "/console/login#change", http.StatusFound)
+	case newPlatformWantsPage(r):
+		http.Redirect(w, r, "/console/login", http.StatusFound)
+	case mustChange:
+		writeAgentWSError(w, http.StatusForbidden, "must_change_password")
+	default:
+		writeAgentWSError(w, http.StatusUnauthorized, "unauthenticated")
+	}
 }
 
 // newPlatformCanonicalName full_name 的规范写法：名称小写.简称小写。

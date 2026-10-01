@@ -88,8 +88,15 @@ func TestN3HTTP_FullOnboardingFlow(t *testing.T) {
 	if st, b := e.call(admin, "GET", "/api/console/platform/users", nil, false); st != 403 || b["error"] != "must_change_password" {
 		t.Fatalf("before change: %d %v", st, b)
 	}
-	if st, b := e.call(admin, "GET", "/api/console/agents", nil, false); st != 401 {
-		t.Fatalf("enroll API before change: %d %v (must-change session is not a login)", st, b)
+	// 组长裁定 140013Z ②（003a5de4 已定「一律 403」）：入网接口对必须改密的会话同样 403，不是 401。
+	for _, c := range []struct{ method, path string }{
+		{"GET", "/api/console/agents"}, {"GET", "/api/console/enroll/applications"},
+		{"POST", "/api/console/enroll/applications/x/approve"}, {"POST", "/api/console/enroll/applications/x/reject"},
+		{"POST", "/api/console/agents/x/revoke"},
+	} {
+		if st, b := e.call(admin, c.method, c.path, map[string]any{}, true); st != 403 || b["error"] != "must_change_password" {
+			t.Fatalf("%s %s before change: %d %v, want 403 must_change_password", c.method, c.path, st, b)
+		}
 	}
 	if st, b := e.call(admin, "POST", "/api/console/account/password", map[string]any{"old_password": e.pw, "new_password": "x"}, true); st != 422 || b["error"] != "weak_password" {
 		t.Fatalf("weak: %d %v", st, b)

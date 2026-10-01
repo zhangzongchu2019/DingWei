@@ -20,8 +20,9 @@ import (
 // API 路由与依赖。
 type API struct {
 	Svc *identity.Service
-	// Actor 取当前 console 用户的 user_id_lc；未登录返回 ok=false。
-	Actor func(r *http.Request) (userIDLC string, ok bool)
+	// Actor 取当前 console 用户的 user_id_lc。未登录返回非 nil 错误；必须改密的会话返回 identity.ErrMustChange
+	// （组长裁定 140013Z ②：必须改密访问任何 /api/console/* 一律 403 must_change_password，与 N3 自己的接口同口径）。
+	Actor func(r *http.Request) (userIDLC string, err error)
 	// PublicOrigin console 写接口要求的 Origin（例如 https://dw.cmjrt.com:55055）。为空则拒绝一切 console 写请求。
 	PublicOrigin string
 	// TrustProxy 为真且直连方是回环地址时，来源 IP 取 X-Real-IP（Hub 在本机 nginx 之后）。
@@ -35,8 +36,13 @@ type API struct {
 
 const maxBody = 4 << 10
 
+// Mux 挂路由所需的最小接口（*http.ServeMux 即满足）；cmd 的路由全扫描用例借它记下真实注册了哪些路由。
+type Mux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+}
+
 // Register 挂到 mux（Go 1.22 方法＋路径写法，与 cmd/workpulse/main.go 一致）。
-func (a *API) Register(mux *http.ServeMux) {
+func (a *API) Register(mux Mux) {
 	mux.HandleFunc("POST /api/enroll/applications", a.apply)
 	mux.HandleFunc("GET /api/enroll/applications/{id}", a.poll)
 	mux.HandleFunc("GET /api/console/enroll/applications", a.console(a.listPending))
@@ -185,11 +191,15 @@ func (a *API) poll(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) console(next func(w http.ResponseWriter, r *http.Request, actor string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		actor, ok := "", false
+		actor, err := "", error(identity.ErrNotFound)
 		if a.Actor != nil {
-			actor, ok = a.Actor(r)
+			actor, err = a.Actor(r)
 		}
-		if !ok {
+		if errors.Is(err, identity.ErrMustChange) {
+			writeErr(w, http.StatusForbidden, "must_change_password", nil)
+			return
+		}
+		if err != nil || actor == "" {
 			writeErr(w, http.StatusUnauthorized, "unauthenticated", nil)
 			return
 		}

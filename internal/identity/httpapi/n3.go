@@ -21,7 +21,7 @@ type N3 struct {
 }
 
 // Register 挂路由。飞书侧的注册与登录指令不走 HTTP，由 Hub 的飞书入口调用 OB.HandleRegister / OB.HandleLogin。
-func (n *N3) Register(mux *http.ServeMux) {
+func (n *N3) Register(mux Mux) {
 	mux.HandleFunc("POST /console/login/password", n.passwordLogin)
 	mux.HandleFunc("POST /console/login/code", n.issueLoginCode)
 	mux.HandleFunc("GET /console/login/status", n.loginStatus)
@@ -33,12 +33,12 @@ func (n *N3) Register(mux *http.ServeMux) {
 }
 
 // Actor 供 API.Actor 使用：按会话 cookie 认出当前用户；必须改密的会话不算登录（N3 A2）。
-func (n *N3) Actor(r *http.Request) (string, bool) {
+func (n *N3) Actor(r *http.Request) (string, error) {
 	u, err := n.user(r)
 	if err != nil {
-		return "", false
+		return "", err // 含 identity.ErrMustChange：API 据此回 403 must_change_password
 	}
-	return u.UserIDLC(), true
+	return u.UserIDLC(), nil
 }
 
 func (n *N3) user(r *http.Request) (*identity.User, error) {

@@ -89,7 +89,7 @@ func hasManagementUser(ctx context.Context, store identity.Store) (bool, error) 
 }
 
 // wireNewPlatform 在给定身份存储上装配新平台、挂路由。不建任何账号；库中还没有管理用户时只提示运维执行初始化脚本。
-func wireNewPlatform(ctx context.Context, mux *http.ServeMux, hub *m8.Hub, cfg newPlatformConfig, store identity.Store) error {
+func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newPlatformConfig, store identity.Store) error {
 	svc := identity.NewService(store, nil, nil)
 	svc.OnRevoked = hub.DisconnectAgent
 	svc.OnSuspended = hub.DisconnectAgent
@@ -123,7 +123,7 @@ type newPlatformLoginPager interface {
 	HandleNewPlatformLoginPage(http.ResponseWriter, *http.Request)
 }
 
-func registerNewPlatformLoginPage(mux *http.ServeMux, hub any) bool {
+func registerNewPlatformLoginPage(mux httpapi.Mux, hub any) bool {
 	lp, ok := hub.(newPlatformLoginPager)
 	if !ok {
 		log.Printf("newplat login page not built into this binary: GET /console/login not registered")

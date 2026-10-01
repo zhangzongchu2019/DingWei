@@ -30,7 +30,7 @@ import (
 //
 // 🔴 本件只钉**可见面**。授权面一个字不动,由下面 ④ 与既有闸各自守:
 //
-//	cmd/workpulse/main.go 里六条 /api/console/agent-groups* 挂的是 **RequireConsolePrincipal**
+//	cmd/workpulse/console_routes.go（registerConsoleRoutes）里六条 /api/console/agent-groups* 挂的是 **RequireConsolePrincipal**
 //	  (不是 RequireConsoleManagement);
 //	internal/m8/console_agent_groups.go 的列表 visible = canManage || 该组成员里有我自己的 Agent;
 //	canManageConsoleAgentGroup 另行守删除/剔除/开关添加。

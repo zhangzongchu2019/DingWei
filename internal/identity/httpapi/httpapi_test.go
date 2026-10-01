@@ -49,7 +49,12 @@ func newEnv(t *testing.T) *env {
 		Svc:          e.svc,
 		PublicOrigin: origin,
 		// 测试桩：用请求头冒充 console 会话。生产由 Hub 注入真会话解析。
-		Actor: func(r *http.Request) (string, bool) { a := r.Header.Get("X-Test-Actor"); return a, a != "" },
+		Actor: func(r *http.Request) (string, error) {
+			if a := r.Header.Get("X-Test-Actor"); a != "" {
+				return a, nil
+			}
+			return "", identity.ErrNotFound
+		},
 	}
 	mux := http.NewServeMux()
 	e.api.Register(mux)

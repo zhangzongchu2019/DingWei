@@ -181,7 +181,10 @@ type amrProcessor struct {
 	stop     chan struct{}
 	stopOnce sync.Once
 	// done 在 run() 返回时关闭；close() 等它，保证 Close 返回后不会再有一行心跳落进别人的日志窗口。
-	done          chan struct{}
+	done chan struct{}
+	// beforeExit 只供测试：run() 收到 stop 后、返回前调用。用例借它把 run 卡在「已收到停止、尚未退出」，
+	// 确定性地验 close() 真的在等 run 返回（此前只有 -cpu 1 才抓得到撤掉同步等待，台账 132352Z）。
+	beforeExit    func()
 	hub           *Hub
 	queue         chan amrRouteJob
 	noticeQueue   chan amrNoticeJob
@@ -615,6 +618,9 @@ func (p *amrProcessor) run() {
 	for {
 		select {
 		case <-p.stop:
+			if p.beforeExit != nil {
+				p.beforeExit()
+			}
 			return
 		case job := <-p.queue:
 			p.process(job)

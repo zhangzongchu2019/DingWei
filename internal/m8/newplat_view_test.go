@@ -429,3 +429,60 @@ func TestNewPlatformConsoleUploadTicketAndCapability(t *testing.T) {
 		t.Fatalf("other user capability: %d %v", st, out)
 	}
 }
+
+// 组长裁定 140013Z ①②：浏览器打开 /view 页（含子路径）与 /console 同一口径 ⇒ 未登录 302 /console/login、
+// 必须改密 302 /console/login#change；WebSocket 升级保持 401／403；/api/ 接口不论 Accept 一律不重定向。
+func TestNewPlatformPagesRedirectAPIsDoNot(t *testing.T) {
+	v := newViewEnv(t)
+	_ = v.svc.Store.CreateUser(v.ctx, identity.User{UserID: "temp", ShortName: "tp", State: identity.UserActive, PasswordHash: "x", MustChangePassword: true})
+	_ = v.svc.Store.CreateSession(v.ctx, identity.Session{TokenHash: identity.HashSecret("tok-tmp"), UserIDLC: "temp", ExpiresAt: v.svc.Now().Add(identity.SessionTTL)})
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /view/{sessionName}", v.hub.RequireConsoleAgent("view", func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "page") }))
+	mux.HandleFunc("/view/{sessionName}/{rest...}", v.hub.RequireConsoleViewSubPath(func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "sub") }))
+	mux.HandleFunc("GET /console", v.hub.RequireConsolePrincipal(func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "console") }))
+	mux.HandleFunc("GET /api/console/agent-groups", v.hub.RequireConsolePrincipal(func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "api") }))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	noFollow := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	const html = "text/html,application/xhtml+xml"
+	cases := []struct {
+		name, path, tok, accept string
+		ws                      bool
+		status                  int
+		loc, body               string
+	}{
+		{"view page, no session", "/view/Kimi.zzc", "", html, false, 302, "/console/login", ""},
+		{"view page, must change", "/view/Kimi.zzc", "tok-tmp", html, false, 302, "/console/login#change", ""},
+		{"view subpath, no session", "/view/Kimi.zzc/index.html", "", html, false, 302, "/console/login", ""},
+		{"view subpath, must change", "/view/Kimi.zzc/index.html", "tok-tmp", html, false, 302, "/console/login#change", ""},
+		{"view page json, no session", "/view/Kimi.zzc", "", "application/json", false, 401, "", `{"error":"unauthenticated"}`},
+		{"view ws with html accept, no session", "/view/Kimi.zzc", "", html, true, 401, "", `{"error":"unauthenticated"}`},
+		{"view ws with html accept, must change", "/view/Kimi.zzc", "tok-tmp", html, true, 403, "", `{"error":"must_change_password"}`},
+		{"console page, must change", "/console", "tok-tmp", html, false, 302, "/console/login#change", ""},
+		{"api with html accept, no session", "/api/console/agent-groups", "", html, false, 401, "", `{"error":"unauthenticated"}`},
+		{"api with html accept, must change", "/api/console/agent-groups", "tok-tmp", html, false, 403, "", `{"error":"must_change_password"}`},
+		{"view page, owner", "/view/Kimi.zzc", v.tokZZC, html, false, 200, "", "page"},
+	}
+	for _, c := range cases {
+		req, _ := http.NewRequest("GET", srv.URL+c.path, nil)
+		if c.tok != "" {
+			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: c.tok})
+		}
+		req.Header.Set("Accept", c.accept)
+		if c.ws {
+			req.Header.Set("Upgrade", "websocket")
+			req.Header.Set("Connection", "Upgrade")
+			req.Header.Set("Origin", npOrigin)
+		}
+		res, err := noFollow.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		body := strings.TrimSpace(string(b))
+		if res.StatusCode != c.status || res.Header.Get("Location") != c.loc || (c.body != "" && body != c.body) {
+			t.Errorf("%s: %d loc=%q %s, want %d loc=%q %s", c.name, res.StatusCode, res.Header.Get("Location"), body, c.status, c.loc, c.body)
+		}
+	}
+}
