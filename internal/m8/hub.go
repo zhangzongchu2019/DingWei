@@ -851,6 +851,42 @@ func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
 			log.Printf("session version warning key_id=%s owner=%s session=%s version=%q required=%s: %s", keyID, ownerKey, requestedSessionName, clientVersion, dwversion.Version, versionWarn)
 		}
 	}
+	h.serveSession(w, r, sessionAdmission{
+		keyID: keyID, ownerKey: ownerKey, requestedSessionName: requestedSessionName, sessionName: sessionName,
+		fullSessionName: fullSessionName, accounts: accounts, clientIP: clientIP, tool: tool, modelName: modelName,
+		clientVersion: clientVersion, producer: producer, targetGroup: targetGroup, noDirectory: noDirectory,
+		mirrorTo: mirrorTo, targetBot: targetBot, webTerminal: webTerminal, osName: osName,
+		deviceID: deviceID, deviceIDV1: deviceIDV1,
+		timingStart: timingStart, timingLast: timingLast, timingParts: timingParts,
+	})
+}
+
+// sessionAdmission 是「已认出是谁」之后进入会话所需的全部输入。
+// HandleSessionWS（账号 key＋自报名字，旧平台）与 HandleAgentWS（专属凭据，新平台 G3）各自认人，然后交给 serveSession。
+// 桥接裁定见台账 ruling-2026-10-01T090343Z-lead-ws-agent-bridge。
+type sessionAdmission struct {
+	keyID, ownerKey, requestedSessionName, sessionName, fullSessionName string
+	accounts                                                            []string
+	clientIP, tool, modelName, clientVersion, targetGroup, mirrorTo     string
+	targetBot, osName, deviceID                                         string
+	producer, noDirectory, webTerminal, deviceIDV1                      bool
+	timingStart, timingLast                                             time.Time
+	timingParts                                                         []string
+}
+
+// serveSession 的函数体是从 HandleSessionWS 原样搬来的（逐字未改），开头只做同名解包。
+func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmission) {
+	keyID, ownerKey, requestedSessionName, sessionName, fullSessionName := a.keyID, a.ownerKey, a.requestedSessionName, a.sessionName, a.fullSessionName
+	accounts, clientIP, tool, modelName, clientVersion := a.accounts, a.clientIP, a.tool, a.modelName, a.clientVersion
+	producer, targetGroup, noDirectory, mirrorTo := a.producer, a.targetGroup, a.noDirectory, a.mirrorTo
+	targetBot, webTerminal, osName, deviceID, deviceIDV1 := a.targetBot, a.webTerminal, a.osName, a.deviceID, a.deviceIDV1
+	timingStart, timingLast, timingParts := a.timingStart, a.timingLast, a.timingParts
+	markTiming := func(name string) {
+		now := time.Now()
+		timingParts = append(timingParts, fmt.Sprintf("%s=%s", name, now.Sub(timingLast).Round(time.Millisecond)))
+		timingLast = now
+	}
+	var err error
 	h.loadSeenSessions(r.Context())
 	sessionName, err = h.registerSessionEndpoint(r.Context(), model.SessionEndpoint{
 		KeyID:           keyID,
