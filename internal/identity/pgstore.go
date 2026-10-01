@@ -165,6 +165,23 @@ func (s *PGStore) GetUserByShortName(ctx context.Context, shortNameLC string) (*
 	return s.getUserBy(ctx, "short_name_lc", shortNameLC)
 }
 
+func (s *PGStore) ListUsers(ctx context.Context) ([]User, error) {
+	rows, err := s.pool.Query(ctx, s.t, `SELECT `+userCols+` FROM np_user ORDER BY user_id_lc`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []User
+	for rows.Next() {
+		u, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *u)
+	}
+	return out, rows.Err()
+}
+
 func (s *PGStore) SetUserState(ctx context.Context, userIDLC string, state UserState, now time.Time) error {
 	return s.inTx(ctx, func(tx repo.Tx) error {
 		res, err := tx.Exec(ctx, `UPDATE np_user SET state = $2 WHERE user_id_lc = $1`, Lower(userIDLC), string(state))
