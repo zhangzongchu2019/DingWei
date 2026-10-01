@@ -36,31 +36,40 @@
 |---|---|---|
 | ① | `HUB_TEST_PG_DSN` 已设 | 直接用它。本包**不拥有**其生命周期（不启不删），也就**不**断言它有没有删净 |
 | ② | 未设，且未禁用内嵌 | 起 `tools/pgtest` 子进程（内嵌 PG），用完停掉并删净，**两处独立验证** |
-| ③ | 都不通（无 go 工具链／模块缓存冷且无网／`HUB_TEST_PG_EMBEDDED=0`） | `t.Skip` 并**说明原因**，不静默降级成「假装过了」。🔴 只有**环境本就缺失**才走这一格；「环境在却起不来」另算，见下面的严格模式 |
+| ③ | 都不通（无 go 工具链／模块缓存冷且无网／`HUB_TEST_PG_EMBEDDED=0`） | `t.Skip` 并**说明原因**，不静默降级成「假装过了」。🔴 只有**环境本就缺失**才走这一格；「环境在却起不来」另算 —— **默认判 Fail**，见下面的 `HUB_TEST_PG_SKIP_OK` 与五之三 |
 
 🔴 `HUB_TEST_PG_DSN` 必须指**独立测试库**，**永不指生产库**——与 `DATAD_TEST_PG_DSN` 同一条纪律。
 
-开关语义按**字面**读（本包首版写反过，见第五节）：
+开关语义按**字面**读（本包首版写反过，见第五节；`STRICT` 那一格的默认值后来被翻转，见**五之三**）：
 
     HUB_TEST_PG_EMBEDDED 未设 / 1 / true / on / yes  ⇒ 允许自行起内嵌 PG
     HUB_TEST_PG_EMBEDDED 0 / false / off / no / 任何认不出的值 ⇒ 禁用（fail-closed）
 
-    HUB_TEST_PG_STRICT   未设 / 0 / false / off / no / 否  ⇒ 宽松：拿不到库一律 Skip
-    HUB_TEST_PG_STRICT   1 / true / on / yes / 是          ⇒ 严格：「环境在却起不来」改判 Fail
-    HUB_TEST_PG_STRICT   任何认不出的值                    ⇒ 用例直接 Fail（打错的开关不许静默当成「关」）
+    HUB_TEST_PG_SKIP_OK  未设 / 0 / false / off / no / 否  ⇒ **默认**：「环境在却起不来」判 Fail
+    HUB_TEST_PG_SKIP_OK  1 / true / on / yes / 是          ⇒ 放行：这类失败降级成 Skip（文案点明是谁放行的）
+    HUB_TEST_PG_SKIP_OK  任何认不出的值                    ⇒ 用例直接 Fail（打错的开关不许静默生效）
+
+    HUB_TEST_PG_STRICT   未设                              ⇒ 无影响（判据只由上面那个开关决定）
+    HUB_TEST_PG_STRICT   1 / true / on / yes / 是          ⇒ 无影响，与默认一致（过渡期读数原样认下）
+    HUB_TEST_PG_STRICT   0 / false / off / no / 否         ⇒ **Fail**：旧「关」不再表示「允许 Skip」，报错并指名改用 SKIP_OK
+    HUB_TEST_PG_STRICT   任何认不出的值                    ⇒ **Fail**：本开关已随默认翻转废弃
 
 「环境本就缺失」与「环境在却起不来」的分界（判据只有 `unavailable()` 一个出口，免得漏分类）：
 
-| 情况 | 归类 | 宽松 | 严格 |
+| 情况 | 归类 | 默认 | `HUB_TEST_PG_SKIP_OK=1` |
 |---|---|---|---|
 | `HUB_TEST_PG_EMBEDDED=0`（按令不起库） | 缺失 | Skip | Skip |
 | 找不到 `go` 工具链 | 缺失 | Skip | Skip |
-| `PGTEST_BIN` 指的文件不存在 | 坏了 | Skip | **Fail** |
-| 工具编不出来／仓根定位不到／源目录不像工具源 | 坏了 | Skip | **Fail** |
-| 工具起了但在 `READY=1` 前退出、起库超时、协议行缺 `DSN` | 坏了 | Skip | **Fail** |
+| `PGTEST_BIN` 指的文件不存在 | 坏了 | **Fail** | Skip |
+| 工具编不出来／仓根定位不到／源目录不像工具源 | 坏了 | **Fail** | Skip |
+| 工具起了但在 `READY=1` 前退出、起库超时、协议行缺 `DSN` | 坏了 | **Fail** | Skip |
 
-🔴 CI 上应当置 `HUB_TEST_PG_STRICT=1`。不置的话，将来挂在 `Pool` 上的 G3 PG 契约会
-在起库失败时**静默全跳**，而整包仍然报 `ok`——这正是复验 🟡② 撞上的形状。
+🔴 **默认即严格**：CI 与交付读数**不需要**再置任何开关。过渡期（翻转合入前）各组被要求带的
+`HUB_TEST_PG_STRICT=1` 仍可原样带着，效果与默认相同。
+
+🔴 `HUB_TEST_PG_SKIP_OK=1` 只用于**本地**确实没有 PG、又只想跑非 PG 用例的场合。它会把
+「环境在却起不来」放行成 Skip，所以**不得**写进 CI 或交付读数的环境里——那等于把这道判据关掉，
+而整包仍然报 `ok`，正是复验 🟡② 撞上的形状。
 
 ## 三 · 怎么用
 
@@ -102,10 +111,20 @@ cd tools/pgtest && go build -o pgtest .
 修复前攒下的 25 个僵尸谁都清不掉；按绝对值判会让历史残留把之后每一次跑都判红，
 而判据一红就没人看了——那比没有判据更糟。代价如实写：增量判据看不见**本次之前**就存在的残留。
 
-## 四 · 实测读数（本机 is3，2026-10-01；本版＝复验 `93a10885` 后的修订版）
+## 四 · 实测读数（本机 is3，2026-10-01；本版＝复验 `93a10885` 后的修订版 ＋ 默认翻转（五之三）后重测）
 
     go test ./internal/store/pgtest/ -count=1               ok  10.5s     10 条全 PASS
     go test ./internal/store/pgtest/ -race -count=1         ok  11.174s   竞态干净
+
+    🔁 默认翻转（五之三）后重测,2026-10-01T13:2xZ,基 newplat/main 97c69c2e:
+       go test ./internal/store/pgtest/ -count=1            ok  11.907s   10 条全 PASS、**0 SKIP**
+       go test ./internal/store/pgtest/ -race -count=1      ok  12.816s   竞态干净
+       🔴 反向对照(复验方要跑的那一格,本席先自证):把 skipAllowed 的默认改回「允许 Skip」⇒ **4 格立刻变红**
+          · TestSkipAllowed_SemanticsByLiteralReading/两个都不设
+          · TestSkipAllowed_SemanticsByLiteralReading/STRICT=1
+          · TestSkipOKDefault_EndToEnd/默认_⇒_FAIL,不许盖成_SKIP
+          · TestSkipOKDefault_EndToEnd/过渡期读数_STRICT=1_⇒_仍_FAIL
+          改回原样后同一批用例复绿(ok 4.497s)。
     go test ./internal/store/pgtest/ -count=50 -shuffle=on  ok  495.603s  0 FAIL（板 a9dbf12e 的新规矩）
                                                             seed 1790852949886354352
                                                             11:09:08Z → 11:17:25Z
@@ -122,9 +141,17 @@ cd tools/pgtest && go build -o pgtest .
     🔴 那两个基线数不是 0：是修复前攒下的历史残留，本席这台上清不掉（僵尸只能由父进程收，
     而 PID 1 是 sleep infinity）。按绝对值判会让它们把之后每一次跑都判红，故按增量判 —— 见第七节第 8 条。
 
+    🔁 翻转后重测时的环境残留绝对值:`embedded_postgres_log*` **45**、`postgres` 僵尸 **46**。
+       比上面那轮的 26／27 多出的 **19／19 不是本件漏的**,已归因:那 19 个日志的 mtime 全落在
+       2026-10-01T12:39:26Z–12:40:20Z、每 3 秒一个,是本席在 `kimi30kqtuxerh/g4-m0-m1`(tip `90bc3c02`)
+       那棵树上跑 `go test ./internal/hosted/ -count=1 -v`(24 条用例)时留下的 —— 那棵树上的 pgtest 还是
+       **旧版**(`c7f4ecda` 的 5 文件版),🟡③(漏日志)与 🔵④(漏僵尸)两个缺陷它都还带着。
+       本版重跑一轮(起停 2 次真 PG):logs 45→45、zombies 46→46,**增量 0**;`/tmp/dingwei-pgtest*` 跑完 0 个。
+
     两道仓闸（与复验核过的读数逐行一致 ⇒ 本版新增红 0）:
       dependency-ratchet   直接依赖 8（基线 6）—— 既有红，已单开给 togpt56terrats
       repo-boundary-gate   判据一 5（基线 4）既有红 · SystemCtx 12＝12 · 判据二 1＝1
+                          🔁 翻转那一提交之后重跑同读数（5／55／12／1）⇒ 本提交新增红 **0**
       git diff c7f4ecda 起未碰任何 go.mod／go.sum（本包的依赖仍全关在 tools/pgtest 那个独立 module 里）
 
 | 用例 | 判什么 | 读数 |
@@ -136,8 +163,8 @@ cd tools/pgtest && go build -o pgtest .
 | `TestEmbeddedDisabled_SemanticsByLiteralReading` | 开关语义按字面读，12 格逐个锁死；判为禁用时**必须给出理由**（否则 Skip 文案缺原因，等于没说明为什么没跑） | PASS（12 子例） |
 | `TestPool_SkipsEndToEndWhenEmbeddedDisabled` | 🔴 **端到端对照**：子进程真跑 `-run TestPool_RoundTrip`，要求输出含 `--- SKIP`、且**不许**出现版本日志行（出现即说明库其实被起起来了，Skip 没生效） | PASS 0.83s |
 | `TestToolBinaryCache_KeyedOnContentNotMtime` | 🔴 **🔴① 的反向对照**：两份内容不同、mtime 相同的源 ⇒ 产物名**必须不同**；内容相同 ⇒ 名相同（缓存没被修坏）；只改 mtime ⇒ 名不变（证明时间戳不再参与判定）；多一个源文件 ⇒ 名必须变（挡住「写死只哈希两个文件」）；内容在两文件间挪一挪 ⇒ 名必须变（挡纯拼接歧义）；构建产物自己不算进哈希（否则缓存永不命中） | PASS 0.01s（6 子例） |
-| `TestStrictMode_SemanticsByLiteralReading` | 🟡② 的开关判据：14 格逐个锁死，含**认不出的值必须报错**（打错的 `STRICT=ture` 静默当成「关」＝判据死了但看着全绿） | PASS（14 子例） |
-| `TestStrictMode_EndToEnd` | 🔴 **🟡② 的端到端对照**：拿「起了就死、连一行协议都不打」的假工具当故障环境（形状同复验 M5）⇒ 默认必须 `--- SKIP`、置 1 必须 `--- FAIL`、认不出的值必须 `--- FAIL` 且文案点明是哪个开关 | PASS 2.71s（3 子例） |
+| `TestSkipAllowed_SemanticsByLiteralReading` | 🟡② ＋ 五之三翻转的开关判据：19 格逐个锁死。含**认不出的值必须报错**（打错的 `SKIP_OK=ture` 静默生效＝判据死了但看着全绿）；含翻转的两条不变量——**都不设必须「不允许 Skip」**（撤翻转本格立刻变红）、`STRICT` 的任何取值都不得让判据返回「允许」（旧「关」＝报错，不静默忽略，且即便同时置了 `SKIP_OK=1` 也报错） | PASS（19 子例） |
+| `TestSkipOKDefault_EndToEnd` | 🔴 **翻转的端到端对照**：拿「起了就死、连一行协议都不打」的假工具当故障环境（形状同复验 M5），在子进程里真跑 `TestPool_RoundTrip` ⇒ 默认必须 `--- FAIL`、`SKIP_OK=1` 必须 `--- SKIP` 且文案点明是谁放行的、`SKIP_OK=ture` 必须 `--- FAIL`、`STRICT=1` 必须 `--- FAIL` 且**不得**冒废弃报错、`STRICT=0` 必须 `--- FAIL` 且文案指名改用 `SKIP_OK` | PASS 4.62s（5 子例） |
 | `TestResidueWatch_NegativeControls` | 🔴 **独立核对不是摆设**（🟡③／🔵④）：故意在系统临时目录造一个同前缀文件 ⇒ 必须被抓到，收掉后必须**不再**报；**真造一个** `comm=postgres` 的僵尸（把 `true` 复制成名叫 `postgres` 的可执行文件、起了不 `Wait`）⇒ 必须抓到，收尸后必须不再报；另判 `/proc/pid/stat` 解析在 comm 含空格与含右括号时不取错列 | PASS 0.15s（3 子例） |
 
 ### 为什么「随清」必须有反向对照
@@ -178,7 +205,7 @@ cd tools/pgtest && go build -o pgtest .
 | # | 来源 | 缺陷 | 修法 | 反向对照（证明判据会红） |
 |---|---|---|---|---|
 | 🔴① | 复验 | 构建缓存 `~/.cache/dingwei-pgtest/pgtest` **全机共用**，却只按「源不比产物新」判复用 ⇒ 在 A 工作树里拿到 B 工作树的源码编出的二进制。复验实测 5 连红（**假红**）；顺序反过来就是**假绿** | 缓存产物按**源内容哈希**定名 `pgtest-<sha256(工具源)[:16]>`；源文件按目录**枚举**（不写死 `main.go`＋`go.mod`，免得工具拆文件后又漏哈希）；先编到临时名再 `rename`（同目录原子，并发不会读到半成品；撞 `ETXTBSY` 时同哈希⇒同内容，用现成那份）。树内预构建 `tools/pgtest/pgtest` 是每工作树各一份、无跨树污染，仍按 mtime 判 | `TestToolBinaryCache_KeyedOnContentNotMtime` 6 子例：**两份内容不同、mtime 相同 ⇒ 产物名必须不同**；内容相同 ⇒ 名相同（缓存没被修坏）；只改 mtime ⇒ 名不变（证明时间戳不再参与）；多一个源文件 ⇒ 名必须变；内容在两文件间挪一挪 ⇒ 名必须变（挡纯拼接歧义）；构建产物自己不算进哈希 |
-| 🟡② | 复验 | 起库失败一律 `t.Skip`，整包仍报 `ok` ⇒ 将来挂在 `Pool` 上的 G3 PG 契约会静默全跳；且 `KeepRuntime` 反证的内联 reader 在 EOF 时不发信号 ⇒ 工具早退就卡满 6 分钟 `startTimeout`（复验 M5 实测卡死） | 加 `HUB_TEST_PG_STRICT`：严格模式下「环境在却起不来」改 `Fail`，「环境缺失」仍 `Skip`（分界表见第二节）；认不出的开关值直接 Fail。反证用例改用生产那套 `newProtocol`（`await` 在 EOF 时会返回错误 ⇒ 不再卡死；`kv` 由互斥锁看着 ⇒ 顺带消掉一处数据竞争） | `TestStrictMode_SemanticsByLiteralReading` 14 格（含 `ture`／`2` 必须报错）＋ `TestStrictMode_EndToEnd` 3 格：拿「起了就死」的假工具当故障环境，默认必须 `--- SKIP`、置 1 必须 `--- FAIL`、认不出的值必须 `--- FAIL` 且文案点明是哪个开关 |
+| 🟡② | 复验 | 起库失败一律 `t.Skip`，整包仍报 `ok` ⇒ 将来挂在 `Pool` 上的 G3 PG 契约会静默全跳；且 `KeepRuntime` 反证的内联 reader 在 EOF 时不发信号 ⇒ 工具早退就卡满 6 分钟 `startTimeout`（复验 M5 实测卡死） | 加 `HUB_TEST_PG_STRICT`：严格模式下「环境在却起不来」改 `Fail`，「环境缺失」仍 `Skip`（分界表见第二节）；认不出的开关值直接 Fail。反证用例改用生产那套 `newProtocol`（`await` 在 EOF 时会返回错误 ⇒ 不再卡死；`kv` 由互斥锁看着 ⇒ 顺带消掉一处数据竞争） | `TestStrictMode_SemanticsByLiteralReading`（🔴 已随五之三的翻转改名为 `TestSkipAllowed_SemanticsByLiteralReading`，格数与不变量都变了）14 格（含 `ture`／`2` 必须报错）＋ `TestStrictMode_EndToEnd`（🔴 已改名为 `TestSkipOKDefault_EndToEnd`，且「默认」那一格由 `--- SKIP` 翻成 `--- FAIL`）3 格：拿「起了就死」的假工具当故障环境，默认必须 `--- SKIP`、置 1 必须 `--- FAIL`、认不出的值必须 `--- FAIL` 且文案点明是哪个开关 |
 | 🟡③ | 复验 | 每起一次 PG 在系统临时目录漏一个 `embedded_postgres_log*`（约 2.7KB）。来源是 embedded-postgres v1.34.0 的 `logging.go:18`（`os.CreateTemp("",…)`，认 `TMPDIR`，用完不删）；助手只 stat 运行目录 ⇒ 两道自证都看不见 | 工具建**独立日志目录**，起库前把 `TMPDIR` 指过去，退出时两个目录都删，`CLEANED` 以**两个都没了**为准，并多发 `LOGDIR=`／`PGLOG_REDIRECTED=`。🔴 日志目录**不能**放运行目录里：那次 `CreateTemp` 发生在 `embedded_postgres.go:95` 的 `RemoveAll(runtimePath)` **之前**，放进去会被连锅端（句柄还开着、文件已 unlink ⇒「看着不漏了」而日志也没了）。助手侧对 `RUNTIME` 与 `LOGDIR` 都 stat，再加 `residue.go` 的独立快照 | `TestCleanupIsReal_KeepRuntimeNegativeControl` 加了**正证**：`-keep-runtime` 下日志目录必须在，且里面**真的有** `embedded_postgres_log*`（证明重定向接住的是库那个文件，不是假想中的文件）；`TestResidueWatch_NegativeControls` 故意在系统临时目录造一个同前缀文件 ⇒ 必须被抓到，收掉后必须**不再**报（一直红的判据等于没有） |
 | 🔵④ | **自查** | 每起一次库在进程表留一个 `postgres` **僵尸**：`pg_ctl start` 起了 postmaster 就退出 ⇒ postmaster 是孤儿，过继给 PID 1，而容器 PID 1 是 `sleep infinity`，**不收尸**。本席实测攒了 25 个且谁都清不掉。后果不只是难看：复查残留的人 `pgrep postgres` 会数到僵尸，**读成「库还活着」** | 工具起库前设 `PR_SET_CHILD_SUBREAPER`（孤儿改为过继给它自己），`Stop()` 返回**之后**再 `Wait4(-1, WNOHANG)` 收尸（顺序很要紧：中途插手会抢走库自己 `cmd.Run()` 的退出状态，让它报 `wait: no child processes` 这种假错）。Linux 专有 ⇒ 拆 `reap_linux.go`／`reap_other.go`，非 Linux 为 no-op | `TestResidueWatch_NegativeControls` 里**真造一个** `comm=postgres` 的僵尸（把 `true` 复制成名叫 `postgres` 的可执行文件、起了不 `Wait`）⇒ 探测器必须抓到；收尸后必须不再报。另判 `/proc/<pid>/stat` 解析：comm 含空格（本容器 PID 1 就叫 `sleep infinity`）与含右括号时不能取错列 |
 | 🔵⑤ | **自查** | 给了 `-runtime` 就把二进制与下载缓存也塞进运行目录，而 `Start()` 上来 `RemoveAll(runtimePath)` ⇒ **每跑一次都重新解压一遍 PG**。实测那条反证用例 8.4s，默认路径只要 3.0s；`-count=50` 就是 50 次解压（每次约 250MB 写）。另有两处自相矛盾：`-cache-root` 与 `-runtime` 同给时 `-cache-root` 被吃掉；取不到 `HOME` 时 `binaries` 会变成相对路径 `extracted` | `-runtime` 只管数据目录与「留着给人看的现场」；`cache` 由 `-cache-root` 决定（缺省 `~/.embedded-postgres-go`），`binaries` 在 `cache` 下。反证用例实测 8.42s → 2.85s | 该反证用例本身：目录该在的还得在、`CLEANED` 该是 `kept` 还得是 `kept`（判据一字未动，只是不再重复解压） |
@@ -191,6 +218,48 @@ cd tools/pgtest && go build -o pgtest .
    主树会去跑那棵树的二进制。这就是复验说的假红／假绿，两个时间戳都在上面。
 4. 换成修好的助手重跑同一实验：共用缓存里并存 `pgtest-67eba24ddd3a4bd4`（主树）与
    `pgtest-a31bfe1de530cf55`（对照树，源多一行），**互不覆盖**；主树第二次跑不再构建（产物改时未变）。
+
+🔴 上表 🟡② 那一格的**默认值后来被翻转**（见下一节）：表中「默认必须 `--- SKIP`、置 1 必须 `--- FAIL`」
+是当时的判据，现已反过来 —— 默认必须 `--- FAIL`，只有显式 `HUB_TEST_PG_SKIP_OK=1` 才 `--- SKIP`。
+
+## 五之三 · 默认翻转：`STRICT` 换成 `SKIP_OK`（裁定 `ruling-2026-10-01T130835Z`）
+
+复验第二轮（板 `bd6942a3`）判 R0 通过，但点出 🟡② 的**默认值与组长派法相反**：派的是「默认判失败，
+只有显式设了跳过开关才允许跳过」，实现的是「默认跳过，显式 `HUB_TEST_PG_STRICT=1` 才判失败」。
+复验方给了二选一（甲＝翻转默认；乙＝保留现状但把「CI 与所有交付读数一律带 `STRICT=1`」写进编排件第〇节），
+组长**取甲**。
+
+为什么甲更好（不只是「照派法办」）：乙把判据的正确性寄托在**每个调用方都记得置一个环境变量**上——
+漏置的表现是**全绿**，而漏置的人恰好是最不知道该置的人（新接 `Pool` 的域）。甲把默认设成安全侧，
+要放宽必须**显式**、且放宽这件事会写在 Skip 文案里（日志上看得出这次绿是「真过」还是「被放过」）。
+
+**改了什么**
+
+| 面 | 翻转前 | 翻转后 |
+|---|---|---|
+| 默认（两个开关都不设） | 「环境在却起不来」⇒ Skip | ⇒ **Fail** |
+| 允许 Skip 的开关 | `HUB_TEST_PG_STRICT` 未设／置「关」 | **只有** `HUB_TEST_PG_SKIP_OK` 置「开」 |
+| `HUB_TEST_PG_STRICT=1` | 判 Fail | 无影响（与默认一致）；**原样认下**，过渡期读数不报错 |
+| `HUB_TEST_PG_STRICT=0` | 允许 Skip | **报错并指名改用 `SKIP_OK`**（不静默忽略，见下） |
+| 认不出的开关值 | Fail | Fail（不变） |
+| 「环境本就缺失」（无 go 工具链、按令禁用内嵌 PG） | Skip | Skip（不变，与 `SKIP_OK` 无关） |
+
+🔴 **为什么遗留的 `STRICT=0` 选择报错而不是忽略**：旧语义里「关」＝允许 Skip。翻转后若静默忽略它，
+一处 CI 上遗留的 `STRICT=0` 就会让人以为「这里允许跳过」，而实际判据已翻——那是开关读错里最坏的一种
+（看着绿、判据不明）。报错文案直接给出改口办法（置 `SKIP_OK=1`，或把旧变量从环境里去掉）。
+
+**判据（反向对照）**
+
+- `TestSkipAllowed_SemanticsByLiteralReading` 19 格：两个开关的每个字面值各判一遍，含三条翻转不变量——
+  都不设必须**不允许** Skip（撤翻转本格立刻变）、`STRICT` 的任何取值都不得让判据返回「允许」、
+  `STRICT=0` 即使同时置了 `SKIP_OK=1` 也必须报错（不静默）；认不出的值（`ture`／`2`）必须报错且**不得**
+  同时返回「允许」。
+- `TestSkipOKDefault_EndToEnd` 5 格：拿「起了就死」的假工具当故障环境（`PGTEST_BIN` 指过去），
+  在子进程里真跑 `TestPool_RoundTrip` —— 默认必须 `--- FAIL`、`SKIP_OK=1` 必须 `--- SKIP` 且文案点明是谁放行的、
+  `SKIP_OK=ture` 必须 `--- FAIL`、`STRICT=1` 必须 `--- FAIL` 且**不得**冒出废弃报错、
+  `STRICT=0` 必须 `--- FAIL` 且文案指名 `SKIP_OK`。
+- 🔴 复验方的反向对照（裁定明写的那一格）：**撤掉翻转**（把默认改回宽松）⇒ 默认模式下起库失败的用例
+  必须由 `--- FAIL` 变 `--- SKIP`，上面两个用例的第一格同时变红。
 
 ## 六 · 与两道仓闸的关系（🔴 这里是本件最需要组长裁定的部分）
 
@@ -280,7 +349,7 @@ cd tools/pgtest && go build -o pgtest .
 | `tools/pgtest/go.sum` | 新增 | 同上 |
 | `tools/pgtest/reap_linux.go` | 新增 | `PR_SET_CHILD_SUBREAPER` ＋ `Wait4` 收尸（🔵④）；数值常量自带来源注明，不为此添 `x/sys` 依赖 |
 | `tools/pgtest/reap_other.go` | 新增 | 非 Linux 的 no-op，保证 `go build` 在任何平台都过 |
-| `internal/store/pgtest/pgtest.go` | 新增 | 主模块测试助手，**只用 stdlib＋`internal/repo`**，不给主 `go.mod` 添依赖；构建缓存按源内容哈希定名（🔴①）、严格模式开关（🟡②） |
+| `internal/store/pgtest/pgtest.go` | 新增 | 主模块测试助手，**只用 stdlib＋`internal/repo`**，不给主 `go.mod` 添依赖；构建缓存按源内容哈希定名（🔴①）、Skip 放行开关（🟡②，默认已翻转为判 Fail，见五之三） |
 | `internal/store/pgtest/residue.go` | 新增 | 「随起随清」的**独立核对**：临时目录日志文件与 postgres 僵尸的前后快照增量（🟡③／🔵④） |
 | `internal/store/pgtest/pgtest_test.go` | 新增 | 10 条用例（其中 6 条是反向／正向对照），含 3 条端到端子进程对照 |
 | `.gitignore` | 改 1 处 | 忽略本地构建产物 `/tools/pgtest/pgtest`，源码照常入库 |
