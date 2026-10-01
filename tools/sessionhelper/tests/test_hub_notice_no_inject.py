@@ -355,17 +355,44 @@ class HubMetaSameSourceTest(unittest.TestCase):
         self.assertFalse(app.is_hub_notice_envelope({}),
                          "判据④:无 meta 的信封不得被认成通知")
 
+    NOTICE_LITERALS = ('"delivery_failure"', "'delivery_failure'", '"delivery_result"', "'delivery_result'")
+
+    @staticmethod
+    def _scanned_sources():
+        """扫描范围：sessionhelper/*.py，除 hub_meta.py（单一真源的生成件，字面量本就在那儿）。
+
+        R3-B 起判定（含 is_hub_notice_envelope）搬到了 routing.py；原先只扫 app.py，搬走后会悄悄失效，
+        所以范围扩到整个包——只扩范围、不放宽断言。
+        """
+        pkg = ROOT / "sessionhelper"
+        return {p.name: p.read_text(encoding="utf-8") for p in sorted(pkg.glob("*.py")) if p.name != "hub_meta.py"}
+
     def test_07_helper_source_carries_no_hardcoded_notice_literals(self):
         """机器钉住「不得另抄字面量」这条,不靠人记得。
 
-        🔴 变异 M4:把 app.py 里引用的常量换回字面量 ⇒ 本格必须红。
+        🔴 变异 M4:把 helper 源码里引用的常量换回字面量 ⇒ 本格必须红。
         """
-        src = (ROOT / "sessionhelper" / "app.py").read_text(encoding="utf-8")
-        for lit in ('"delivery_failure"', "'delivery_failure'",
-                    '"delivery_result"', "'delivery_result'"):
-            self.assertNotIn(lit, src,
-                             "判据:helper 侧不得另抄 type 字面量(两份必漂移);"
-                             "请引用 sessionhelper/hub_meta.py 里的常量。命中:" + lit)
+        sources = self._scanned_sources()
+        self.assertIn("app.py", sources)
+        self.assertIn("routing.py", sources, "扫描范围必须含 routing.py（is_hub_notice_envelope 的新家）")
+        for name, src in sources.items():
+            for lit in self.NOTICE_LITERALS:
+                self.assertNotIn(lit, src,
+                                 "判据:helper 侧不得另抄 type 字面量(两份必漂移);"
+                                 "请引用 sessionhelper/hub_meta.py 里的常量。命中:" + lit + " 于 " + name)
+
+    def test_07b_m4_goes_red_when_a_literal_lands_in_routing(self):
+        """M4 的反向对照（R3-B）：往 routing.py 塞一个字面量，M4 的判据必须命中。
+
+        直接用 test_07 同一组字面量与同一扫描范围，对"routing.py 源码＋注入的字面量"判定；
+        同时验证真实的 routing.py 通过常量引用 hub_meta、自身不含字面量（阳性对照，防检查空转）。
+        """
+        routing_src = self._scanned_sources()["routing.py"]
+        self.assertIn("HUB_META_TYPE_DELIVERY_FAILURE", routing_src, "阳性对照:routing.py 应经常量引用 hub_meta")
+        self.assertFalse(any(lit in routing_src for lit in self.NOTICE_LITERALS))
+        for injected in ('x = "delivery_failure"\n', "x = 'delivery_result'\n"):
+            self.assertTrue(any(lit in routing_src + "\n" + injected for lit in self.NOTICE_LITERALS),
+                            "M4 对注入 routing.py 的字面量没有反应 ⇒ 检查失效")
 
     def test_08_packaging_contract_registers_hub_meta(self):
         """判据(打包合同):sessionhelper.spec 的 hiddenimports 必须显式登记 hub_meta。

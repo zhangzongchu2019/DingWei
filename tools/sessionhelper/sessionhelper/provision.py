@@ -52,8 +52,8 @@ class ProvisionResult:
         }
 
 
-def is_provision_envelope(env: dict) -> bool:
-    return (env.get("meta") or {}).get("type") == "provision"
+# 临时兼容再导出：is_provision_envelope 已搬到 routing.py（R3-B）；V9 上移后移除。
+from .routing import is_provision_envelope  # noqa: F401
 
 
 class Provisioner:
