@@ -40,7 +40,8 @@ type EnrollStore interface {
 	// ⇒ 建 Agent ⇒ 申请转 approved ⇒ 同 owner 同设备的其它 pending 申请转 superseded（V1 A10）。
 	Approve(ctx context.Context, in ApproveInput, now time.Time) (*Agent, error)
 	Reject(ctx context.Context, appID, ownerLC string, now time.Time) error
-	// TakeCredential 一个事务：申请 approved、凭据未被取走、Agent 仍 active ⇒ 写凭据哈希与取走时刻 ⇒ true。
+	// TakeCredential 一个事务：申请 approved、未过期、凭据未被取走、Agent 仍 active ⇒ 写凭据哈希与取走时刻 ⇒ true。
+	// Agent 原有凭据（若有）随之作废：之后用旧凭据认人 ⇒ ErrNotFound（凭据轮换，V8 重建／升级）。
 	TakeCredential(ctx context.Context, appID, credentialHash string, now time.Time) (*Agent, bool, error)
 	// ResolveAgentByCredential 含 revoked 行，供握手区分 credential_invalid 与 credential_revoked。
 	ResolveAgentByCredential(ctx context.Context, credentialHash string) (*Agent, error)
@@ -50,6 +51,15 @@ type EnrollStore interface {
 	ListAgents(ctx context.Context, ownerLC string) ([]Agent, error)
 	// Revoke 不属于该 owner ⇒ ErrForbidden；托管 ⇒ ErrHosted；已吊销 ⇒ already=true 且不改任何字段。
 	Revoke(ctx context.Context, agentID, ownerLC, by string, now time.Time) (already bool, err error)
+
+	// ── 托管（V6／V8，Hub 内部调用，不经 console）──
+	// CreateHostedAgent 一个事务：名称在该 owner 的 active Agent 中按小写不重（ErrNameTaken）⇒ 建 origin=hosted 的 Agent
+	// ⇒ 建一条已批准、指向它的申请（其 PollTokenHash 即一次性入网令牌的哈希）。
+	CreateHostedAgent(ctx context.Context, ag Agent, app Application) error
+	// AddHostedToken 给已有的 active 托管 Agent 再发一条已批准申请（容器重建、升级时重签）。非托管 ⇒ ErrHosted 的反义：ErrNotHosted。
+	AddHostedToken(ctx context.Context, agentID string, app Application) error
+	// RetireAgent 内部吊销（V8 销毁）：不验归属、不拒托管；已吊销 ⇒ already=true 且不改任何字段。
+	RetireAgent(ctx context.Context, agentID, by string, now time.Time) (already bool, err error)
 }
 
 // Store 两个接口的合集；内存实现与 PG 实现都实现它。

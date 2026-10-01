@@ -46,7 +46,10 @@ func Run(t *testing.T, newStore Factory) {
 		{"V2_A4_A12_revoke_frees_name_old_credential_stays_revoked", revokeFreesName},
 		{"V2_A6_revoke_other_owner_forbidden", revokeOtherOwnerForbidden},
 		{"V2_A10_revoke_idempotent", revokeIdempotent},
-		{"V2_hosted_agent_not_revocable_here", revokeHosted},
+		{"V2_V8_hosted_not_revocable_in_console_but_retirable", revokeHosted},
+		{"V6_hosted_create_and_take", hostedCreateAndTake},
+		{"V8_hosted_reissue_rotates_credential", hostedReissueRotatesCredential},
+		{"V6_hosted_token_expires", hostedTokenExpires},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
 	}
 	for _, c := range cases {
@@ -403,16 +406,90 @@ func revokeIdempotent(t *testing.T, s identity.Store) {
 	}
 }
 
-func revokeHosted(t *testing.T, s identity.Store) {
-	hs, ok := s.(interface {
-		InsertHostedAgentForTest(identity.Agent)
-	})
-	if !ok {
-		t.Skip("store has no hosted-agent test hook (hosted agents arrive with V6)")
+func mustHosted(t *testing.T, s identity.Store, agentID, owner, name, app string, at time.Time) {
+	t.Helper()
+	err := s.CreateHostedAgent(ctx, identity.Agent{ID: agentID, OwnerLC: owner, Name: name, GroupID: "g-" + agentID, CreatedAt: at},
+		identity.Application{ID: app, PollTokenHash: "tok-" + app, RequestedAt: at, ExpiresAt: at.Add(time.Hour)})
+	if err != nil {
+		t.Fatalf("CreateHostedAgent(%s): %v", name, err)
 	}
-	hs.InsertHostedAgentForTest(identity.Agent{ID: "ag-h", OwnerLC: "zzc", Name: "hosted1", Origin: identity.OriginHosted, State: identity.AgentActive})
+}
+
+func revokeHosted(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-h", "zzc", "hosted1", "app-h", t0)
 	_, err := s.Revoke(ctx, "ag-h", "zzc", "zzc", t0)
-	wantErr(t, "revoke hosted", err, identity.ErrHosted)
+	wantErr(t, "console revoke of hosted", err, identity.ErrHosted)
+	if already, err := s.RetireAgent(ctx, "ag-h", "g4", t0.Add(time.Minute)); already || err != nil {
+		t.Fatalf("retire: %v %v", already, err)
+	}
+	if already, err := s.RetireAgent(ctx, "ag-h", "other", t0.Add(2*time.Minute)); !already || err != nil {
+		t.Fatalf("second retire: already=%v err=%v", already, err)
+	}
+	g, _ := s.GetAgent(ctx, "ag-h")
+	if g.State != identity.AgentRevoked || g.RevokedBy != "g4" || !g.RevokedAt.Equal(t0.Add(time.Minute)) {
+		t.Fatalf("retired agent: %+v", g)
+	}
+}
+
+func hostedCreateAndTake(t *testing.T, s identity.Store) {
+	mustApp(t, s, "app-self", "zzc", "dev-1", t0)
+	mustApprove(t, s, "app-self", "zzc", "ag-self", "Worker", t0)
+	err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-h1", OwnerLC: "zzc", Name: "WORKER"},
+		identity.Application{ID: "app-h1", PollTokenHash: "tok-h1", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	wantErr(t, "hosted name clashes with selfhost (case-insensitive)", err, identity.ErrNameTaken)
+	if _, err := s.GetApplication(ctx, "app-h1"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("failed create must leave no application: %v", err)
+	}
+	mustHosted(t, s, "ag-h2", "ZZC", "Codex1", "app-h2", t0)
+	a, _ := s.GetApplication(ctx, "app-h2")
+	if a.State != identity.AppApproved || a.AgentID != "ag-h2" || a.OwnerLC != "zzc" {
+		t.Fatalf("hosted application: %+v", a)
+	}
+	ag, ok, err := s.TakeCredential(ctx, "app-h2", "cred-h2", t0.Add(time.Minute))
+	if err != nil || !ok || ag.Origin != identity.OriginHosted || ag.Name != "Codex1" || ag.GroupID != "g-ag-h2" {
+		t.Fatalf("take hosted: %+v %v %v", ag, ok, err)
+	}
+	if list, _ := s.ListAgents(ctx, "zzc"); len(list) != 2 {
+		t.Fatalf("ListAgents = %d, want selfhost＋hosted", len(list))
+	}
+}
+
+func hostedReissueRotatesCredential(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-r", "zzc", "Rebuilt", "app-r1", t0)
+	if _, ok, _ := s.TakeCredential(ctx, "app-r1", "cred-old", t0); !ok {
+		t.Fatal("first take")
+	}
+	if err := s.AddHostedToken(ctx, "ag-r", identity.Application{ID: "app-r2", PollTokenHash: "tok-r2", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ResolveAgentByCredential(ctx, "cred-old"); err != nil {
+		t.Fatalf("old credential must stay valid until the new one is taken: %v", err)
+	}
+	if _, ok, _ := s.TakeCredential(ctx, "app-r2", "cred-new", t0.Add(time.Minute)); !ok {
+		t.Fatal("take reissued")
+	}
+	_, err := s.ResolveAgentByCredential(ctx, "cred-old")
+	wantErr(t, "old credential after rotation", err, identity.ErrNotFound)
+	if g, err := s.ResolveAgentByCredential(ctx, "cred-new"); err != nil || g.ID != "ag-r" || g.State != identity.AgentActive {
+		t.Fatalf("new credential: %+v %v", g, err)
+	}
+	mustApp(t, s, "app-s", "zzc", "dev-s", t0)
+	mustApprove(t, s, "app-s", "zzc", "ag-s", "Selfie", t0)
+	err = s.AddHostedToken(ctx, "ag-s", identity.Application{ID: "app-x", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	wantErr(t, "reissue for selfhost agent", err, identity.ErrNotHosted)
+	_, _ = s.RetireAgent(ctx, "ag-r", "g4", t0)
+	err = s.AddHostedToken(ctx, "ag-r", identity.Application{ID: "app-r3", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	wantErr(t, "reissue for retired agent", err, identity.ErrNotPending)
+}
+
+func hostedTokenExpires(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-e", "zzc", "Late", "app-e", t0)
+	if _, ok, err := s.TakeCredential(ctx, "app-e", "cred-e", t0.Add(time.Hour)); ok || err != nil {
+		t.Fatalf("take at expiry: ok=%v err=%v, want false nil", ok, err)
+	}
+	if _, ok, _ := s.TakeCredential(ctx, "app-e", "cred-e", t0.Add(time.Hour-time.Second)); !ok {
+		t.Fatal("take 1s before expiry")
+	}
 }
 
 func revokedBeforePickup(t *testing.T, s identity.Store) {

@@ -160,6 +160,7 @@ var (
 	ErrExpired       = errors.New("identity: expired")
 	ErrForbidden     = errors.New("identity: forbidden")
 	ErrHosted        = errors.New("identity: hosted agent")
+	ErrNotHosted     = errors.New("identity: not a hosted agent")
 	ErrCodeInvalid   = errors.New("identity: code invalid, used or expired")
 )
 

@@ -338,7 +338,7 @@ func (m *MemStore) TakeCredential(_ context.Context, appID, credentialHash strin
 	if !ok {
 		return nil, false, ErrNotFound
 	}
-	if a.State != AppApproved || !a.CredentialTakenAt.IsZero() {
+	if a.State != AppApproved || !a.CredentialTakenAt.IsZero() || !now.Before(a.ExpiresAt) {
 		return nil, false, nil
 	}
 	ag := m.agents[a.AgentID]
@@ -347,6 +347,9 @@ func (m *MemStore) TakeCredential(_ context.Context, appID, credentialHash strin
 	}
 	if _, dup := m.creds[credentialHash]; dup {
 		return nil, false, ErrConflict
+	}
+	if ag.CredentialHash != "" {
+		delete(m.creds, ag.CredentialHash) // 凭据轮换：旧凭据作废
 	}
 	ag.CredentialHash = credentialHash
 	m.creds[credentialHash] = ag.ID
@@ -413,10 +416,69 @@ func (m *MemStore) Revoke(_ context.Context, agentID, ownerLC, by string, now ti
 	return false, nil
 }
 
-// InsertHostedAgentForTest 直接放入一个 Agent（托管 Agent 的生成在 V6，此前只供契约测试用）。
-func (m *MemStore) InsertHostedAgentForTest(a Agent) {
+func (m *MemStore) nameTakenLocked(ownerLC, nameLC string) bool {
+	for _, ag := range m.agents {
+		if ag.OwnerLC == ownerLC && ag.State == AgentActive && ag.NameLC() == nameLC {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *MemStore) CreateHostedAgent(_ context.Context, ag Agent, app Application) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	cp := a
-	m.agents[a.ID] = &cp
+	if _, ok := m.agents[ag.ID]; ok {
+		return ErrConflict
+	}
+	if _, ok := m.apps[app.ID]; ok {
+		return ErrConflict
+	}
+	owner := Lower(ag.OwnerLC)
+	if m.nameTakenLocked(owner, ag.NameLC()) {
+		return ErrNameTaken
+	}
+	a := ag
+	a.OwnerLC, a.Origin, a.State, a.CredentialHash = owner, OriginHosted, AgentActive, ""
+	m.agents[a.ID] = &a
+	ap := app
+	ap.OwnerLC, ap.State, ap.AgentID = owner, AppApproved, a.ID
+	m.apps[ap.ID] = &ap
+	return nil
+}
+
+func (m *MemStore) AddHostedToken(_ context.Context, agentID string, app Application) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	ag, ok := m.agents[agentID]
+	if !ok {
+		return ErrNotFound
+	}
+	if ag.Origin != OriginHosted {
+		return ErrNotHosted
+	}
+	if ag.State != AgentActive {
+		return ErrNotPending
+	}
+	if _, ok := m.apps[app.ID]; ok {
+		return ErrConflict
+	}
+	ap := app
+	ap.OwnerLC, ap.State, ap.AgentID = ag.OwnerLC, AppApproved, ag.ID
+	m.apps[ap.ID] = &ap
+	return nil
+}
+
+func (m *MemStore) RetireAgent(_ context.Context, agentID, by string, now time.Time) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	ag, ok := m.agents[agentID]
+	if !ok {
+		return false, ErrNotFound
+	}
+	if ag.State == AgentRevoked {
+		return true, nil
+	}
+	ag.State, ag.RevokedAt, ag.RevokedBy = AgentRevoked, now, by
+	return false, nil
 }
