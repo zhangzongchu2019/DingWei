@@ -86,6 +86,41 @@ func TestBootstrapAdminEndToEnd(t *testing.T) {
 	if len(pw) != identity.InitialPasswordLen {
 		t.Fatalf("initial password %q", pw)
 	}
+	// 口令只出一次（tosonnet55tc2k 复验建议：多打印一次本用例原先不红）
+	if n := strings.Count(out, pw); n != 1 {
+		t.Fatalf("initial password printed %d times, want exactly once:\n%s", n, out)
+	}
+	// 库里无明文：用户表与审计表的每一列（整行转成 JSON 文本）都不得含口令（同一复验建议：明文写进 display_name 原先不红）
+	pool, err := repo.OpenPG(context.Background(), dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	tc, err := repo.NewAccessCtx("test", "bootstrap-admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, q := range []string{`SELECT row_to_json(u)::text FROM np_user u`, `SELECT row_to_json(a)::text FROM audit_log a`} {
+		rows, err := pool.Query(context.Background(), tc, q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		n := 0
+		for rows.Next() {
+			var row string
+			if err := rows.Scan(&row); err != nil {
+				t.Fatal(err)
+			}
+			n++
+			if strings.Contains(row, pw) {
+				t.Fatalf("plaintext initial password stored in DB (%s): %s", q, row)
+			}
+		}
+		rows.Close()
+		if n == 0 {
+			t.Fatalf("%s returned no rows: the check would be vacuous", q)
+		}
+	}
 	// 已有管理用户 ⇒ 拒绝，不输出任何口令
 	out2, err := runCLI(t, dsn, "bootstrap-admin", "--user-id", "Boss2", "--short-name", "b2")
 	if err == nil || !strings.Contains(err.Error(), "refused: a management user already exists") || out2 != "" {
