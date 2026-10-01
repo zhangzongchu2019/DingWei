@@ -288,15 +288,21 @@ func TestRandomnessSourceUsed(t *testing.T) {
 	}
 }
 
-func TestApproveGroupRequired(t *testing.T) {
+func TestApproveGroupOptional(t *testing.T) {
 	f := newFixture(t)
+	// 业主令（15:34:17Z，板 8582acc4）：编组不是必须的 —— 不给即不入组，批准照常成功、不建组
+	r0 := f.apply(t, "zzc", "dev-0", "1.1.1.9")
+	ag0, _, err := f.svc.Approve(bg, "zzc", r0.ApplicationID, code, "Loner", "")
+	if err != nil || ag0.GroupID != "" {
+		t.Fatalf("approve without group: %+v %v", ag0, err)
+	}
+	if codes, _ := f.store.ListAgentGroups(bg, ag0.ID); len(codes) != 0 {
+		t.Fatalf("agent without group joined %v", codes)
+	}
+	if gs, _ := f.store.ListGroups(bg); len(gs) != 0 {
+		t.Fatalf("approve without group created %+v", gs)
+	}
 	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
-	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", ""); !errors.Is(err, identity.ErrGroupRequired) {
-		t.Fatalf("empty group: %v, want ErrGroupRequired", err)
-	}
-	if _, _, err := f.svc.ApproveWithNewGroup(bg, "zzc", r.ApplicationID, code, "Worker", ""); !errors.Is(err, identity.ErrGroupRequired) {
-		t.Fatalf("empty new group name: %v, want ErrGroupRequired", err)
-	}
 	// GroupAllowed：已有组须存在（且未关闭添加，见契约 G_approve_group_choice_atomic）
 	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-b"); !errors.Is(err, identity.ErrGroupNotFound) {
 		t.Fatalf("missing group: %v, want ErrGroupNotFound", err)

@@ -60,9 +60,6 @@ func (s *Service) issueHosted(ctx context.Context, ownerLC, name string, group G
 		return nil, ErrNameInvalid
 	}
 	owner := Lower(ownerLC)
-	if group.Code == "" && group.NewName == "" {
-		return nil, ErrGroupRequired
-	}
 	u, err := s.Store.GetUser(ctx, owner)
 	if errors.Is(err, ErrNotFound) || (err == nil && u.State != UserActive) {
 		return nil, ErrUnknownOwner

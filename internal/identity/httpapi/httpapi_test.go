@@ -348,17 +348,28 @@ func TestSourceIPIgnoresHeaderFromNonLoopback(t *testing.T) {
 	}
 }
 
-func TestApproveGroupRequiredOverHTTP(t *testing.T) {
+// 业主令（15:34:17Z，板 8582acc4）：编组不是必须的 —— 三键都不给即合法、不入组。
+func TestApproveWithoutGroupOverHTTP(t *testing.T) {
 	e := newEnv(t)
 	id := e.do("POST", "/api/enroll/applications", applyBody("zzc"), nil).body["application_id"].(string)
-	r := e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
-		map[string]any{"pairing_code": code, "agent_name": "Worker"}, owner("zzc"))
-	if r.status != 422 || r.body["error"] != "group_required" {
-		t.Fatalf("missing group_code: %d %v", r.status, r.body)
-	}
 	if r := e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
 		map[string]any{"pairing_code": code, "agent_name": "Worker", "group_id": "g"}, owner("zzc")); r.status != 400 {
 		t.Fatalf("old field name group_id must be rejected as unknown: %d %v", r.status, r.body)
+	}
+	r := e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
+		map[string]any{"pairing_code": code, "agent_name": "Worker"}, owner("zzc"))
+	if r.status != 200 {
+		t.Fatalf("approve without group: %d %v", r.status, r.body)
+	}
+	ag, err := e.store.GetAgent(context.Background(), r.body["agent_id"].(string))
+	if err != nil || ag.GroupID != "" {
+		t.Fatalf("agent without group: %+v %v", ag, err)
+	}
+	if codes, _ := e.store.ListAgentGroups(context.Background(), ag.ID); len(codes) != 0 {
+		t.Fatalf("agent joined groups %v", codes)
+	}
+	if gs, _ := e.store.ListGroups(context.Background()); len(gs) != 0 {
+		t.Fatalf("a group was created: %+v", gs)
 	}
 }
 
@@ -437,7 +448,7 @@ func TestApproveGroupErrorsOverHTTP(t *testing.T) {
 		status int
 		code   string
 	}{
-		{"neither", map[string]any{}, 422, "group_required"},
+		{"blank new name", map[string]any{"new_group_name": "   "}, 422, "group_name_invalid"}, // 只有空白不当作「没给」
 		{"both", map[string]any{"group_code": "x", "new_group_name": "开发组"}, 422, "group_ambiguous"},
 		{"missing group", map[string]any{"group_code": "nope"}, 422, "group_not_found"},
 		{"bad new name", map[string]any{"new_group_name": "九个字九个字九个字"}, 422, "group_name_invalid"},

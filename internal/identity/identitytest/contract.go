@@ -64,6 +64,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"V8_hosted_suspend_resume_keeps_credential_and_name", hostedSuspendResume},
 		{"V8_suspend_records_who_and_when_resume_clears", suspendRecordsWhoWhen},
 		{"V2_A5_find_agent_by_name_tie_breaks_by_id", findAgentByNameTie},
+		{"G_no_group_choice_joins_nothing", noGroupJoinsNothing},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
 	}
 	for _, c := range cases {
@@ -1070,5 +1071,29 @@ func findAgentByNameTie(t *testing.T, s identity.Store) {
 		if err != nil || g.ID != "ag-z9" || g.RevokedBy != "by-ag-z9" {
 			t.Fatalf("tie (call %d): %+v %v, want ag-z9", i, g, err)
 		}
+	}
+}
+
+// 业主令（15:34:17Z，板 8582acc4）：编组不是必须的 —— 批准与托管新建都可不给组，不入任何组、不建组。
+func noGroupJoinsNothing(t *testing.T, s identity.Store) {
+	mustApp(t, s, "app-1", "zzc", "dev-1", t0)
+	ag, err := s.Approve(ctx, identity.ApproveInput{AppID: "app-1", OwnerLC: "zzc", AgentID: "ag-1", Name: "Loner"}, t0)
+	if err != nil || ag.GroupID != "" {
+		t.Fatalf("approve without group: %+v %v", ag, err)
+	}
+	if err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-h", OwnerLC: "zzc", Name: "Solo", CreatedAt: t0},
+		identity.Application{ID: "app-h", PollTokenHash: "tok-h", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, nil); err != nil {
+		t.Fatalf("hosted without group: %v", err)
+	}
+	for _, id := range []string{"ag-1", "ag-h"} {
+		if codes, _ := s.ListAgentGroups(ctx, id); len(codes) != 0 {
+			t.Fatalf("%s joined %v", id, codes)
+		}
+		if g, _ := s.GetAgent(ctx, id); g == nil || g.GroupID != "" {
+			t.Fatalf("%s group code: %+v", id, g)
+		}
+	}
+	if gs, _ := s.ListGroups(ctx); len(gs) != 0 {
+		t.Fatalf("a group was created: %+v", gs)
 	}
 }

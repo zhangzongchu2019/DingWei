@@ -259,6 +259,7 @@ func (a *API) approve(w http.ResponseWriter, r *http.Request, actor string) {
 	if !decode(w, r, &req) {
 		return
 	}
+	// 两个都不给 ⇒ 不入组（业主令 15:34:17Z：编组不是必须的）。给了 new_group_name 却只有空白 ⇒ 名字不合规，不当作「没给」。
 	if req.GroupCode != "" && req.NewGroupName != "" {
 		writeErr(w, http.StatusUnprocessableEntity, "group_ambiguous", nil)
 		return
@@ -266,7 +267,12 @@ func (a *API) approve(w http.ResponseWriter, r *http.Request, actor string) {
 	approve := a.Svc.Approve
 	group := req.GroupCode
 	if req.NewGroupName != "" {
-		approve, group = a.Svc.ApproveWithNewGroup, strings.TrimSpace(req.NewGroupName)
+		name := strings.TrimSpace(req.NewGroupName)
+		if name == "" {
+			writeErr(w, http.StatusUnprocessableEntity, "group_name_invalid", nil)
+			return
+		}
+		approve, group = a.Svc.ApproveWithNewGroup, name
 	}
 	ag, full, err := approve(r.Context(), actor, r.PathValue("id"), req.PairingCode, req.AgentName, group)
 	if err != nil {

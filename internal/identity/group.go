@@ -44,18 +44,20 @@ var (
 	ErrGroupNameInvalid      = errors.New("identity: group name invalid")
 )
 
-// GroupChoice 批准自备 Agent 或新建托管 Agent 时选的编组，二选一（组长裁定 090434Z c：编组必选）。
+// GroupChoice 批准自备 Agent 或新建托管 Agent 时选的编组：可不选（业主令 15:34:17Z，板 8582acc4：编组不是必须的），
+// 选则二选一。
 // 新用户名下既无 Agent 也无组：建组要有组长、批准又要选组 ⇒ 允许就地新建（本席建议甲，e5c6244635a6）。
 type GroupChoice struct {
 	Code    string // 已有组码：须存在且未关闭添加（即 GroupAllowed），同一事务入组
 	NewName string // 新组名：同一事务建组，以新 Agent 为组长
+	// 两个都空 ⇒ 不入组（Agent.GroupID 为空、不写成员行）
 }
 
-// resolve 校验二选一并在新建时备好 Group（组码随机）；返回写进 Agent.GroupID 的组码。
+// resolveGroupChoice 校验选择并在新建时备好 Group（组码随机）；返回写进 Agent.GroupID 的组码。都不给 ⇒ ("", nil)：不入组。
 func (s *Service) resolveGroupChoice(c GroupChoice, ownerLC, agentID string, now time.Time) (string, *Group, error) {
 	switch {
 	case c.Code == "" && c.NewName == "":
-		return "", nil, ErrGroupRequired
+		return "", nil, nil
 	case c.Code != "" && c.NewName != "":
 		return "", nil, ErrBadRequest
 	case c.Code != "":

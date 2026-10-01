@@ -959,6 +959,9 @@ func (s *PGStore) DeleteGroup(ctx context.Context, code, actorLC string) error {
 // groupChoiceTx 批准／托管新建事务内落地编组选择：新组 ⇒ 建组（该 Agent 为组长）＋组长入组；
 // 已有组 ⇒ 行锁（FOR SHARE，与关闭添加、删组互斥）后判存在与未关闭 ⇒ 入组。
 func groupChoiceTx(ctx context.Context, tx repo.Tx, agentID, code string, newGroup *Group, now time.Time) error {
+	if code == "" && newGroup == nil {
+		return nil // 不入组（业主令：编组不是必须的）
+	}
 	if newGroup != nil {
 		_, err := tx.Exec(ctx, `INSERT INTO np_group (`+groupCols+`) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
 			newGroup.Code, newGroup.ShortName, Lower(newGroup.CreatorLC), agentID, false, now.UTC(), now.UTC())

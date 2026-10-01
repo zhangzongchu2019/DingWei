@@ -46,7 +46,6 @@ func TestHostedIssueValidation(t *testing.T) {
 		want               error
 	}{
 		{"zzc", "bad.name", "g", identity.ErrNameInvalid},
-		{"zzc", "Codex1", "", identity.ErrGroupRequired},
 		{"nosuch", "Codex1", "g", identity.ErrUnknownOwner},
 		{"newbie", "Codex1", "g", identity.ErrUnknownOwner},  // 未绑定的用户不能拥有托管席位
 		{"zzc", "Codex1", "nope", identity.ErrGroupNotFound}, // GroupAllowed：已有组须存在
@@ -55,6 +54,14 @@ func TestHostedIssueValidation(t *testing.T) {
 		if _, err := f.svc.IssueHostedAgent(bg, c.owner, c.name, c.group, "admin"); !errors.Is(err, c.want) {
 			t.Errorf("%+v: err=%v", c, err)
 		}
+	}
+	// 编组不是必须的（业主令 15:34:17Z）：不给组码即不入组
+	hi, err := f.svc.IssueHostedAgent(bg, "zzc", "Loner", "", "admin")
+	if err != nil || hi.Agent.GroupID != "" {
+		t.Fatalf("hosted without group: %+v %v", hi, err)
+	}
+	if codes, _ := f.store.ListAgentGroups(bg, hi.Agent.ID); len(codes) != 0 {
+		t.Fatalf("hosted without group joined %v", codes)
 	}
 	if _, err := f.svc.IssueHostedAgentWithNewGroup(bg, "zzc", "Codex1", tg(), "zzc"); err != nil {
 		t.Fatal(err)

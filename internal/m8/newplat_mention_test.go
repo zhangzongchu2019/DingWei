@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/coder/websocket"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 )
 
@@ -115,8 +116,20 @@ func TestNewPlatformMentionCandidates(t *testing.T) {
 	if st, _ := get("/view/Kimi.zzc/mention-candidates", ""); st != 401 {
 		t.Fatalf("no session: %d", st)
 	}
-	// 不在任何编组 ⇒ 空列表（不是 null）
+	// 自己那组里只有自己 ⇒ 空列表（不是 null）
 	if st, body := get("/view/Outsider.zzc/mention-candidates", v.tokZZC); st != 200 || body != `{"candidates":[]}` {
 		t.Fatalf("lonely agent: %d %s", st, body)
+	}
+	// 未入组的 Agent（业主令 15:34:17Z：编组不是必须的）⇒ 候选为空
+	digest, _ := identity.PairingDigest("000102030405060708090a0b0c0d0e0f", "123456")
+	app, err := v.svc.Apply(ctx, identity.ApplyRequest{OwnerUserID: "zzc", PairingSalt: "000102030405060708090a0b0c0d0e0f", PairingDigest: digest, DeviceFingerprint: "dev-ng", SourceIP: "127.0.0.9"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := v.svc.Approve(ctx, "zzc", app.ApplicationID, "123456", "NoGroup", ""); err != nil {
+		t.Fatal(err)
+	}
+	if st, body := get("/view/NoGroup.zzc/mention-candidates", v.tokZZC); st != 200 || body != `{"candidates":[]}` {
+		t.Fatalf("ungrouped agent: %d %s", st, body)
 	}
 }

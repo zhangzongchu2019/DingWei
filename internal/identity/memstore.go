@@ -727,6 +727,9 @@ func (m *MemStore) DeleteGroup(_ context.Context, code, actorLC string) error {
 
 // checkGroupChoiceLocked 批准／托管新建前校验编组选择（不改状态）：新组 ⇒ 组码与组名不撞；已有组 ⇒ 存在且未关闭添加。
 func (m *MemStore) checkGroupChoiceLocked(code string, newGroup *Group) error {
+	if code == "" && newGroup == nil {
+		return nil // 不入组（业主令：编组不是必须的）
+	}
 	if newGroup != nil {
 		if _, ok := m.groups[newGroup.Code]; ok {
 			return ErrConflict
@@ -750,6 +753,9 @@ func (m *MemStore) checkGroupChoiceLocked(code string, newGroup *Group) error {
 
 // applyGroupChoiceLocked 校验通过后落地：建新组（该 Agent 为组长）或入已有组。
 func (m *MemStore) applyGroupChoiceLocked(agentID, code string, newGroup *Group, now time.Time) {
+	if code == "" && newGroup == nil {
+		return
+	}
 	if newGroup != nil {
 		g := *newGroup
 		g.CreatorLC, g.LeaderAgentID = Lower(g.CreatorLC), agentID

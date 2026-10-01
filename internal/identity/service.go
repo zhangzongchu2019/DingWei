@@ -21,7 +21,7 @@ var (
 	ErrBadRequest          = errors.New("identity: bad request")
 	ErrUnknownOwner        = errors.New("identity: unknown owner")
 	ErrNameInvalid         = errors.New("identity: agent name invalid")
-	ErrGroupRequired       = errors.New("identity: group required")
+	ErrGroupRequired       = errors.New("identity: group required") // 业主令 15:34:17Z 起编组可不选，本错误已不再返回；保留变量供既有调用方编译
 	ErrCredentialInvalid   = errors.New("identity: credential invalid")
 	ErrCredentialRevoked   = errors.New("identity: credential revoked")
 	ErrCredentialSuspended = errors.New("identity: credential suspended")
@@ -327,10 +327,8 @@ func (s *Service) approve(ctx context.Context, actorLC, appID, pairingCode, name
 	if !ValidAgentName(name) || (s.NameAllowed != nil && !s.NameAllowed(name)) {
 		return nil, "", ErrNameInvalid
 	}
-	// 组长裁定 ruling-2026-10-01T090434Z：审核时编组必选，不提供「不加入编组」。组是否存在、能否加入由存储在批准事务里判。
-	if group.Code == "" && group.NewName == "" {
-		return nil, "", ErrGroupRequired
-	}
+	// 业主令（2026-10-01T15:34:17Z，台账 owner-group-optional／板 8582acc4）：编组不是必须的 —— 不选即不入组（取代 090434Z c 的「必选」）。
+	// 给了才校验：组是否存在、能否加入由存储在批准事务里判。
 	now := s.Now()
 	app, err := s.Store.GetApplication(ctx, appID)
 	if err != nil {
