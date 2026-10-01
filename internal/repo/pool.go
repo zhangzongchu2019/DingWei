@@ -22,10 +22,30 @@ type Pool struct {
 }
 
 // OpenPG 是本仓【唯一】允许出现 sql.Open 的地方之一(另见同包其它 Open*)。
-func OpenPG(ctx context.Context, dsn string) (*Pool, error) {
+//
+// opts 与 OpenSQLite 同一套(Option／PoolTuner),故收编与并发语义的表达能力两侧一致。
+//
+// 🔴 为什么 PG 侧也必须能调池参数(G3 身份层复验 🟡③,组长裁定 ruling-2026-10-01T152239Z 六③):
+//
+//	database/sql 的默认是 MaxIdleConns=2、MaxOpenConns=0(无上限)。
+//	「无上限」不等于「并发用例就能造出并发」:空闲连接只有 2 条时,第 3 个及以后的 goroutine
+//	各自要【现建一条连接】(TCP＋认证,毫秒级),而它要撞的临界窗口
+//	(SELECT … FOR UPDATE 到同事务里那句 UPDATE 之间)是微秒级 ⇒ 抖动比窗口大三个量级。
+//	实测:撤掉身份层 TakeCredential 里那句 SELECT … FOR UPDATE 的行锁(在 G3 的
+//	g3-identity-pg-r1 叠上,本分支底座还没有那个文件,故不写行号),原样 -count=30 与
+//	加起跑屏障 -count=10 共 40 轮 0 红 —— 🔴 那不能读成「锁没用」,而是两边根本没
+//	同时待在窗口里(于是那次变异与没变异等价,复验把它记成覆盖缺口而不是判据失效)。
+//	⇒ 要造真并发,调用方得能把池【预热】成 N 条常驻连接:MaxOpenConns(N)＋MaxIdleConns(N),
+//	  跑之前先用 N 条查询把它们建出来,再放起跑屏障。
+//	🔴 本函数只给这个能力,【不代为预热】:预热几条、什么时候预热是调用方的语义,
+//	  仓储包代做就等于替所有调用方决定并发形状(与 Option 那条「不代为拼装 dsn」同理)。
+func OpenPG(ctx context.Context, dsn string, opts ...Option) (*Pool, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
+	}
+	for _, o := range opts {
+		o(tuner{db: db})
 	}
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
@@ -179,6 +199,28 @@ func (t tuner) SetConnMaxIdleTime(d time.Duration) { t.db.SetConnMaxIdleTime(d) 
 
 // MaxOpenConns 固定池上限。n=1 即单连接串行。
 func MaxOpenConns(n int) Option { return func(t PoolTuner) { t.SetMaxOpenConns(n) } }
+
+// MaxIdleConns 固定【空闲】连接上限。
+//
+// 🔴 不设就是 database/sql 的默认 2,不是 0(见 OpenPG 注:这正是并发用例造不出并发的成因)。
+// 要 N 条连接同时在场,MaxOpenConns 与 MaxIdleConns 得【一起】抬到 N:只抬前者,
+// 用完的连接会被关掉,下一轮又得现建。
+func MaxIdleConns(n int) Option { return func(t PoolTuner) { t.SetMaxIdleConns(n) } }
+
+// ConnMaxLifetime 一条连接的最长寿命(到点即关,零值＝不限)。
+func ConnMaxLifetime(d time.Duration) Option {
+	return func(t PoolTuner) { t.SetConnMaxLifetime(d) }
+}
+
+// ConnMaxIdleTime 一条连接最长空闲多久(到点即关,零值＝不限)。
+//
+// 🔴 这两个是【收编用】的表达能力,不是本仓自己新发明的策略:PoolTuner 早就列了这四个方法
+// (被收编的包各自带着用事故换来的连接层语义,收编不得抹掉),而此前只有 MaxOpenConns 导出了
+// 构造器 ⇒ 另三个能力【写得出接口、调不到】。补齐它们不放宽任何判据:Option 拿到的仍是
+// 本包未导出的 tuner,断不回 *sql.DB(反测见 pool_option_test.go)。
+func ConnMaxIdleTime(d time.Duration) Option {
+	return func(t PoolTuner) { t.SetConnMaxIdleTime(d) }
+}
 
 // OpenSQLite 打开 SQLite 池。dsn 由调用方给全（含 pragma），本包不代为拼装 ——
 // pragma 属被收编包的既有行为，代拼即改语义。
