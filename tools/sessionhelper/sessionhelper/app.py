@@ -17,20 +17,36 @@ from . import __version__
 from .config import Config, load_config
 from .llm import LLMProvider
 from .inbox import DeliveryInbox
-from .hub_meta import HUB_META_TYPE_DELIVERY_FAILURE, HUB_META_TYPE_DELIVERY_RESULT
-from .protocol import AddressBook, envelope, is_mirror_control, session_addr
-# 路由／提及判定已收进 routing.py（R3）。下面是**临时兼容再导出**（tests 与旧 import 路径在用，
-# agent_route_envelope 及三条路由常量仍可从 app 取到）；V9 把这些逻辑上移到 Hub 后移除。
+from .protocol import AddressBook, envelope, session_addr
+# 路由／提及判定与收件分类已收进 routing.py（R3 / R3-B）。下面是**临时兼容再导出**（tests 与旧 import 路径在用，
+# 这些名字仍可从 app 取到）；V9 把这些逻辑上移到 Hub 后移除。
 from .routing import (  # noqa: F401
     CONTROL_ROUTE_RE,
     LEGACY_AGENT_ROUTE_RE,
     ROUTE_BODY_MAX,
+    HUB_NOTICE_META_TYPES,
     ROUTE_TARGET_RE,
     agent_route_envelope,
     classify_reply_decision,
+    is_agent_network_skill_envelope,
+    is_broadcast_envelope,
+    is_client_onboarding_text,
+    is_delivery_cancel_envelope,
+    is_delivery_envelope,
     is_feishu_addr,
+    is_file_capability_response_envelope,
+    is_hub_notice_envelope,
+    is_mirror_control,
+    is_no_mirror_envelope,
+    is_online_directory_text,
+    is_provision_envelope,
+    is_terminal_input_envelope,
+    is_terminal_interrupt_envelope,
+    is_terminal_refresh_envelope,
+    is_terminal_resize_envelope,
     reply_carryforward_meta,
     reply_target,
+    truthy_meta,
 )
 from .provision import Provisioner, is_provision_envelope
 
@@ -102,75 +118,6 @@ class MirrorState:
 COMM_SKILL_ACK = "DINGWEI_COMM_SKILL_INSTALLED"
 
 
-def truthy_meta(value: object) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes", "y", "on"}
-    return bool(value)
-
-
-def is_broadcast_envelope(env: dict) -> bool:
-    meta = env.get("meta") or {}
-    return bool(str(meta.get("broadcast_dedup_key") or "").strip())
-
-
-def is_no_mirror_envelope(env: dict) -> bool:
-    """是否为不应进入会话的控制面信封。
-
-    🔴 T-045:本函数此前把 no_mirror 也当作丢弃理由,导致 AMR 路由的 @ 提及被静默丢弃 ——
-    帧到达了连接(coder 在 runtime.log 的 [recv] 里找到了原文、from 为发件方本体),
-    但因这道判定在 delivery_inbox.accept 之前执行,它既不入库也不留痕,
-    而 Hub 侧 RouteEnvelope 成功、计为 targets_dispatched。计数说成功、收件库是空的。
-
-    no_mirror 的字面含义就是「不要镜像」,Hub 侧也只由 shouldSkipMirror 消费
-    (决定要不要镜像到飞书等外部面),与「要不要投递给本会话」无关。
-    把它读成「不要投递」是语义越界。
-
-    改为只按 system 判定,安全性已逐个核对:Hub 侧每一个 no_mirror=true 的信封
-    **都同时带 system=true** —— terminal_interrupt/resize/refresh、delivery_cancel、
-    provision、mirror_control、agent_network_skill_push、online_directory、
-    delivery_status、errorEnvelope,无一例外。
-    唯二例外是 amr.go:583 的路由信封与本文件 agent_route_envelope 自己产的信封,
-    而这两者**正是应当被投递的**。
-    另:在线清单在本函数之前已由 is_online_directory_text 分支单独处理,不受影响。
-    """
-    meta = env.get("meta") or {}
-    return truthy_meta(meta.get("system"))
-
-
-# Hub 自发系统通知的 meta.type 集合。值来自 internal/model/model.go 的单一真源
-# (tools/sessionhelper/gen_hub_meta.py 生成 hub_meta.py)。
-# 🔴 不要在这里写字面量:tests/test_hub_notice_no_inject.py 有一格专门扫 app.py 的源码,
-#    命中字面量即红(派工单第三节:「不得在 helper 里另抄一份字面量 —— 两份必漂移」)。
-HUB_NOTICE_META_TYPES = frozenset({HUB_META_TYPE_DELIVERY_FAILURE, HUB_META_TYPE_DELIVERY_RESULT})
-
-
-def is_hub_notice_envelope(env: dict) -> bool:
-    """是否为 Hub 自发的系统通知(投递失败回执 / AMR 路由结果通知)。
-
-    🔴 S-HELPER-NOTICE-NO-INJECT:这两类信封此前【既不进 delivery_inbox、又会被注入 CLI】。
-    原因是 dispatch 链上每一道判据都判否:
-      · is_delivery 要 type=="delivery" + ack_required —— 它们两者都不带;
-      · is_no_mirror_envelope 自 T-045 起只按 system 判 —— 它们不带 system=true
-        (T-045 那次正是把 no_mirror 当丢弃理由,把该投的 AMR 提及静默丢掉、计数还说成功;
-         所以这里【不能】靠给通知补 system/no_mirror 来解决,那会重演同一种越界)。
-    ⇒ 落到兜底 process_inbound_message / buffer_if_busy ⇒ 注入 CLI ⇒ 产生新一轮。
-
-    而新一轮必然再产生一条通知(有正文会通知;没正文也通知,见 amr.go 的 empty 分支),
-    限速器 dedupKey 不含 DeliveryID/TurnID、窗口 1 分钟 ⇒ 约 60 轮/小时、零业务产出,
-    且席位侧无法自己退出。这就是要断的环。
-
-    🔴 处理方式是「留痕 + 不注入」(见 hub_notice_trace),不是丢弃:
-    丢弃会把可见故障换成不可见故障。
-    🔴 也不得改成写进 delivery_inbox —— inbox 的行会被 delivery_worker_loop claim 出来注入,
-    等于把环换个地方接回去。判据③正是逐个量这三个出口(adapter.handle /
-    pending_inbound / inbox)都为空。
-    """
-    meta = env.get("meta") or {}
-    return str(meta.get("type") or "") in HUB_NOTICE_META_TYPES
-
-
 def hub_notice_trace(env: dict) -> str:
     """通知的留痕行:只记坐标与长度,不记正文。
 
@@ -190,22 +137,6 @@ def hub_notice_trace(env: dict) -> str:
         f" to={env.get('to') or ''}"
         f" body_len={len(body)}"
     )
-
-
-def is_online_directory_text(text: str) -> bool:
-    text = str(text or "")
-    return ("【DingWei在线清单】" in text or "【DingWei 在线清单】" in text) and "**********" in text
-
-
-def is_client_onboarding_text(text: str) -> bool:
-    """上线指南文本识别。移植自部署版(T-048)。
-
-    Hub 会在重连后重推《DingWei 客户端上线指南》。若不识别,它会作为普通正文
-    被注入 CLI 对话 —— 每次重连刷一遍。部署版有此函数、仓内版没有,
-    是 2026-09-10 T-048 逐行 diff 查出的三处「部署版独有、覆盖即丢」之一。
-    """
-    text = str(text or "")
-    return "DingWei 客户端上线指南" in text and "sessionHelper 每分钟刷新" in text
 
 
 def normalized_text(text: str) -> str:
@@ -492,7 +423,7 @@ class SessionHelper:
         return enriched
 
     def is_file_capability_response(self, env: dict) -> bool:
-        return (env.get("meta") or {}).get("type") == "file_capability_response"
+        return is_file_capability_response_envelope(env)
 
     def handle_file_capability_response(self, env: dict) -> None:
         meta = env.get("meta") or {}
@@ -805,8 +736,7 @@ class SessionHelper:
         print(f"[reply] to={to} meta={meta}", flush=True)
 
     def is_delivery(self, env: dict) -> bool:
-        meta = env.get("meta") or {}
-        return meta.get("type") == "delivery" and bool(meta.get("ack_required"))
+        return is_delivery_envelope(env)
 
     def delivery_ack(self, delivery_id: str, state: str, **extra: object) -> dict:
         meta = {"type": "delivery_ack", "delivery_id": delivery_id, "state": state, "no_mirror": True}
@@ -814,7 +744,7 @@ class SessionHelper:
         return envelope(session_addr("workpulse", self.book.key_id), "", self.book.self_addr, meta)
 
     def is_delivery_cancel(self, env: dict) -> bool:
-        return (env.get("meta") or {}).get("type") == "delivery_cancel"
+        return is_delivery_cancel_envelope(env)
 
     def delivery_cancel_ack(self, message_id: str, delivery_id: str, result: str, **extra: object) -> dict:
         # 走甲最小·真删除链末段:cancelled ACK 带双键(message_id + delivery_id),
@@ -977,13 +907,13 @@ class SessionHelper:
         return f"{prefix}{reply_body}"
 
     def is_agent_network_skill(self, env: dict) -> bool:
-        return (env.get("meta") or {}).get("type") == "agent_network_skill"
+        return is_agent_network_skill_envelope(env)
 
     def is_terminal_input(self, env: dict) -> bool:
-        return (env.get("meta") or {}).get("type") == "terminal_input"
+        return is_terminal_input_envelope(env)
 
     def is_terminal_interrupt(self, env: dict) -> bool:
-        return (env.get("meta") or {}).get("type") == "terminal_interrupt"
+        return is_terminal_interrupt_envelope(env)
 
     async def handle_terminal_interrupt(self, ws, env: dict) -> None:
         meta = env.get("meta") or {}
@@ -1006,7 +936,7 @@ class SessionHelper:
         await asyncio.to_thread(self.adapter.write_terminal_input, data)
 
     def is_terminal_resize(self, env: dict) -> bool:
-        return (env.get("meta") or {}).get("type") == "terminal_resize"
+        return is_terminal_resize_envelope(env)
 
     async def handle_terminal_resize(self, env: dict) -> None:
         meta = env.get("meta") or {}
@@ -1020,7 +950,7 @@ class SessionHelper:
         await asyncio.to_thread(self.adapter.set_winsize, rows, cols)
 
     def is_terminal_refresh(self, env: dict) -> bool:
-        return (env.get("meta") or {}).get("type") == "terminal_refresh"
+        return is_terminal_refresh_envelope(env)
 
     async def handle_terminal_refresh(self, ws, env: dict) -> None:
         if self.cfg.mode != "cli" or not hasattr(self.adapter, "request_terminal_refresh"):

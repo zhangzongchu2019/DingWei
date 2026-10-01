@@ -41,11 +41,6 @@ def envelope(to: str, body: str, from_addr: str, meta: dict[str, Any] | None = N
     }
 
 
-def is_mirror_control(env: dict[str, Any]) -> bool:
-    meta = env.get("meta") or {}
-    return meta.get("type") == "mirror_control"
-
-
 def required_env(name: str, env: dict[str, str]) -> str:
     value = env.get(name, "").strip()
     if not value:
@@ -53,9 +48,9 @@ def required_env(name: str, env: dict[str, str]) -> str:
     return value
 
 
-# 临时兼容再导出：is_feishu_addr / reply_target 已搬到 routing.py（R3）。
+# 临时兼容再导出：is_feishu_addr / reply_target / is_mirror_control 已搬到 routing.py（R3）。
 # 用模块级 __getattr__ 延迟取，避免 protocol <-> routing 循环 import；V9 把这些逻辑上移到 Hub 后移除。
-_MOVED_TO_ROUTING = ("is_feishu_addr", "reply_target")
+_MOVED_TO_ROUTING = ("is_feishu_addr", "reply_target", "is_mirror_control")
 
 
 def __getattr__(name: str):
