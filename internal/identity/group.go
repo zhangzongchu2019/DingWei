@@ -223,3 +223,56 @@ func sortGroupMembers(ms []GroupMember) {
 		return ms[i].AgentID < ms[j].AgentID
 	})
 }
+
+// MentionCandidate V11 ＠候选的一项（不含在线状态与 CLI 类型，那两样在 Hub）。
+type MentionCandidate struct {
+	Agent    Agent
+	FullName string
+	// Insert 选中后插入的写法：在「所在全部编组成员的并集」（含自己）里短名唯一 ⇒ 短名，否则 full_name（业主裁定 9.5）。
+	// 并集算上自己：自己与某候选同短名时，写短名对 Hub 来说就是歧义，必须写全名。
+	Insert string
+}
+
+// MentionCandidates V11（组长 9f0cd6ab）：selfID 所在全部编组的成员并集，去掉自己与已吊销的；只列 Agent。
+// 顺序由调用方定（Hub 按在线优先、再按短名）。
+func (s *Service) MentionCandidates(ctx context.Context, selfID string) ([]MentionCandidate, error) {
+	codes, err := s.Store.ListAgentGroups(ctx, selfID)
+	if err != nil {
+		return nil, err
+	}
+	union := map[string]*Agent{}
+	for _, code := range codes {
+		members, err := s.Store.ListGroupMembers(ctx, code)
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range members {
+			if _, seen := union[m.AgentID]; seen {
+				continue
+			}
+			ag, err := s.Store.GetAgent(ctx, m.AgentID)
+			if err != nil || !ag.Current() {
+				continue
+			}
+			union[m.AgentID] = ag
+		}
+	}
+	names := map[string]int{}
+	for _, ag := range union {
+		names[ag.NameLC()]++
+	}
+	out := make([]MentionCandidate, 0, len(union))
+	for id, ag := range union {
+		if id == selfID {
+			continue
+		}
+		c := MentionCandidate{Agent: *ag, FullName: s.fullName(ctx, ag)}
+		c.Insert = c.FullName
+		if names[ag.NameLC()] == 1 {
+			c.Insert = ag.Name
+		}
+		out = append(out, c)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Agent.ID < out[j].Agent.ID })
+	return out, nil
+}
