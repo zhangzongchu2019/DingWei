@@ -149,7 +149,7 @@ func TestSetupRollbackClearsProjectMapping(t *testing.T) {
 	root := t.TempDir()
 	dir := seatDir(root, "ag_r3")
 	findmntTarget = func(string) (string, error) { return "/data", nil }
-	lsattrOut = func(d string) (string, error) { return "61001 --------------e-- " + d, nil }
+	lsattrOut = func(d string) (string, error) { return "60000 --------------e-- " + d, nil } // report 空 ⇒ 分配 60000，断言过
 	chownForSeatFn = func(string) error { return nil }
 	var calls []string
 	xfsRun = func(args ...string) ([]byte, error) {
@@ -158,8 +158,8 @@ func TestSetupRollbackClearsProjectMapping(t *testing.T) {
 		if strings.Contains(j, "report -p -n") {
 			return []byte(""), nil
 		}
-		if strings.Contains(j, "limit -p bhard=16m") {
-			return nil, errors.New("limit failed") // limit 步失败触发回滚
+		if strings.Contains(j, "limit -p bhard=16384m") {
+			return nil, errors.New("limit failed") // 🔴 limit 步失败触发回滚（此时 project+limit 都已碰过）
 		}
 		return []byte(""), nil
 	}
@@ -179,6 +179,17 @@ func TestSetupRollbackClearsProjectMapping(t *testing.T) {
 	}
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
 		t.Fatalf("回滚后目录必须不在: %v", err)
+	}
+	// 回滚还须含 limit 归零（r5："limit（若已设）归零"——limit 步碰过即算已设，失败也归零兜底）
+	wantLimit0 := "limit -p bhard=0 60000 /data"
+	var sawLimit0 bool
+	for _, c := range calls {
+		if strings.Contains(c, wantLimit0) {
+			sawLimit0 = true
+		}
+	}
+	if !sawLimit0 {
+		t.Fatalf("回滚必须含 limit 归零 %q, 实得 %v", wantLimit0, calls)
 	}
 	// 阶段覆盖：project -s 成功但 lsattr 失败 ⇒ 同样摘映射＋删目录
 	lsattrOut = func(string) (string, error) { return "", errors.New("lsattr failed") }
@@ -268,5 +279,73 @@ func TestSetupMalformedLsattrNoPanicFullRollback(t *testing.T) {
 	}
 	if _, serr := os.Stat(dir); !os.IsNotExist(serr) {
 		t.Fatalf("回滚后目录必须消失: %v", serr)
+	}
+	// r5：畸形输出（err=nil 非数字首列）同一形状——无 panic、进同一回滚
+	lsattrOut = func(d string) (string, error) { return "garbage-no-number " + d, nil }
+	calls = nil
+	err = (xfsQuota{}).Setup(root, "ag_r4", 16384)
+	if err == nil || !strings.Contains(err.Error(), "项目号断言失败") {
+		t.Fatalf("畸形输出必须报项目号断言失败: %v", err)
+	}
+	sawC = false
+	for _, c := range calls {
+		if strings.Contains(c, wantC) {
+			sawC = true
+		}
+	}
+	if !sawC {
+		t.Fatalf("畸形输出的回滚也必须摘映射 %q, 实得 %v", wantC, calls)
+	}
+	if _, serr := os.Stat(dir); !os.IsNotExist(serr) {
+		t.Fatalf("畸形输出回滚后目录必须消失: %v", serr)
+	}
+}
+
+// r5 修类不修实例：Clear 的 lsattr 解析同型加固——err/空输出/畸形输出一律失败上抛，
+// 不得静默按"无项目"跳过的摘映射与复查（否则报表残留无人认领）。目录已不在 ⇒ 幂等绿。
+func TestClearMalformedLsattrFailClosed(t *testing.T) {
+	origFind, origRun, origLs := findmntTarget, xfsRun, lsattrOut
+	defer func() { findmntTarget, xfsRun, lsattrOut = origFind, origRun, origLs }()
+	root := t.TempDir()
+	dir := seatDir(root, "ag_c3")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	findmntTarget = func(string) (string, error) { return "/data", nil }
+	var calls []string
+	xfsRun = func(args ...string) ([]byte, error) {
+		calls = append(calls, strings.Join(args, " "))
+		return []byte(""), nil
+	}
+	// ① err=nil 空输出 ⇒ 拒，且不得动 xfs（没有可摘的映射）也不得删目录
+	lsattrOut = func(string) (string, error) { return "", nil }
+	if err := (xfsQuota{}).Clear(root, "ag_c3"); err == nil {
+		t.Fatal("空输出必须报错")
+	}
+	if len(calls) != 0 {
+		t.Fatalf("空输出时不得发任何 xfs 命令: %v", calls)
+	}
+	if _, serr := os.Stat(dir); serr != nil {
+		t.Fatalf("失败上抛时目录必须还在（留给人查）: %v", serr)
+	}
+	// ② err=nil 畸形输出 ⇒ 同拒
+	lsattrOut = func(d string) (string, error) { return "junk " + d, nil }
+	if err := (xfsQuota{}).Clear(root, "ag_c3"); err == nil {
+		t.Fatal("畸形输出必须报错")
+	}
+	if _, serr := os.Stat(dir); serr != nil {
+		t.Fatalf("失败上抛时目录必须还在: %v", serr)
+	}
+	// ③ lsattr 出错但目录还在 ⇒ 拒（不得当无项目删目录）
+	lsattrOut = func(string) (string, error) { return "", errors.New("lsattr boom") }
+	if err := (xfsQuota{}).Clear(root, "ag_c3"); err == nil {
+		t.Fatal("lsattr 出错且目录还在必须报错")
+	}
+	// ④ lsattr 出错且目录已不在 ⇒ 幂等绿（无配额可清）
+	if err := os.RemoveAll(dir); err != nil {
+		t.Fatal(err)
+	}
+	if err := (xfsQuota{}).Clear(root, "ag_c3"); err != nil {
+		t.Fatalf("目录已不在应幂等成功: %v", err)
 	}
 }

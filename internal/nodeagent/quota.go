@@ -244,12 +244,27 @@ func (xfsQuota) Clear(root, seatID string) error {
 	if err != nil {
 		return err
 	}
-	// 找该目录绑定的项目号（lsattr）——没有配额项目的席位（diskMB=0 预记账席）直接删目录即可
-	pid := -1
-	if out, err := lsattrOut(dir); err == nil {
-		if fields := strings.Fields(out); len(fields) > 0 {
-			pid, _ = strconv.Atoi(fields[0]) // 解析失败按无项目处理
+	// 找该目录绑定的项目号（lsattr -d -p 首列）——没有配额项目的席位（diskMB=0 预记账席，
+	// 项目号 0）直接删目录即可。
+	// 🔴 r5 修类不修实例：读不出项目号时不得静默当"无项目"——目录还在而项目号未知时继续
+	//    删目录＝报表里项目残留无人认领。故 lsattr 出错/空输出/畸形输出一律失败上抛
+	//    （目录已不在 ⇒ 无配额可清，幂等收口）。
+	pid := 0
+	out, lerr := lsattrOut(dir)
+	if lerr != nil {
+		if _, serr := os.Stat(dir); os.IsNotExist(serr) {
+			return nil
 		}
+		return fmt.Errorf("lsattr -d -p %s: %v: %s", dir, lerr, out)
+	}
+	fields := strings.Fields(out)
+	if len(fields) == 0 {
+		return fmt.Errorf("lsattr %s 输出为空——无法判定项目号，拒按无项目处理", dir)
+	}
+	if got, aerr := strconv.Atoi(fields[0]); aerr != nil {
+		return fmt.Errorf("lsattr %s 输出畸形（%q）——无法判定项目号，拒按无项目处理", dir, strings.TrimSpace(out))
+	} else {
+		pid = got
 	}
 	if pid > 0 {
 		// 🔴 M1 复验阻断 4＋r3：每步失败上抛；摘映射必须 project -C -p <dir>（缺 -p 会按
