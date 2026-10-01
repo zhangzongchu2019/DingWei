@@ -414,3 +414,48 @@ func TestSeatProxyInjection(t *testing.T) {
 		t.Fatal("漏设拒时不得产生任何引擎调用")
 	}
 }
+
+// T-G4-32：credential_file 写席位目录固定名 account-credential（0600、内容逐字、不经 env）。
+func TestCreateWritesCredentialFile(t *testing.T) {
+	f := newFakeDocker(t)
+	root := t.TempDir()
+	d := f.ops(root)
+	out, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_cr1","image":"`+goodImage+`",
+		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},
+		"token_file":{"application_id":"app1","poll_token":"tok","expires_at":"2026-10-01T12:00:00Z"},
+		"credential_file":{"content":"sk-test-credential-逐字"}}`))
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	var res map[string]string
+	_ = json.Unmarshal(out, &res)
+	if res["state"] != "running" {
+		t.Fatalf("应 running: %s", out)
+	}
+	raw, err := os.ReadFile(filepath.Join(root, "ag_cr1", "account-credential"))
+	if err != nil {
+		t.Fatalf("凭据件必须落盘: %v", err)
+	}
+	if string(raw) != "sk-test-credential-逐字" {
+		t.Fatalf("内容须逐字: %q", raw)
+	}
+	fi, _ := os.Stat(filepath.Join(root, "ag_cr1", "account-credential"))
+	if fi.Mode().Perm() != 0o600 {
+		t.Fatalf("权限须 0600: %o", fi.Mode().Perm())
+	}
+	// env 闸不受影响：凭据类零出现（spec 的 Env 只许代理三键——已由 TestCreateSeatSecuritySpecAndTokenFile 钉死）
+	if _, err := os.Stat(filepath.Join(root, "ag_cr1", "enroll-token.json")); err != nil {
+		t.Fatalf("令牌件应同在: %v", err)
+	}
+	// 缺省 credential_file ⇒ 不写文件、不报错（旧指令兼容）
+	f2 := newFakeDocker(t)
+	root2 := t.TempDir()
+	d2 := f2.ops(root2)
+	if _, err := d2.create(context.Background(), json.RawMessage(`{"seat_id":"ag_cr2","image":"`+goodImage+`",
+		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384}}`)); err != nil {
+		t.Fatalf("无 credential_file 应照常: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root2, "ag_cr2", "account-credential")); !os.IsNotExist(err) {
+		t.Fatalf("未下发不得落凭据件: %v", err)
+	}
+}

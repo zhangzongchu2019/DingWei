@@ -142,6 +142,46 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 	if len(gw.sent) != 2 || gw.sent[0].Type != "pull_image" || gw.sent[1].Type != "create_seat" {
 		t.Fatalf("指令序列: %+v", gw.sent)
 	}
+	// T-G4-32：create_seat 参数带齐——resources（套餐换算）、token_file（一次性入网令牌）、
+	// credential_file（解密一次的账号凭据）
+	var cp struct {
+		SeatID    string `json:"seat_id"`
+		Image     string `json:"image"`
+		Resources struct {
+			MemoryMB  int64 `json:"memory_mb"`
+			CPUShares int   `json:"cpu_shares"`
+			DiskMB    int64 `json:"disk_mb"`
+		} `json:"resources"`
+		Token struct {
+			ApplicationID string `json:"application_id"`
+			PollToken     string `json:"poll_token"`
+			ExpiresAt     string `json:"expires_at"`
+		} `json:"token_file"`
+		Cred struct {
+			Content string `json:"content"`
+		} `json:"credential_file"`
+	}
+	if err := json.Unmarshal(gw.sent[1].Params, &cp); err != nil {
+		t.Fatalf("create_seat 参数: %v", err)
+	}
+	if cp.Resources.MemoryMB != 4096 || cp.Resources.CPUShares != 2048 { // 2c4g ⇒ clamp(1024×2)
+		t.Fatalf("resources 换算: %+v", cp.Resources)
+	}
+	if cp.Token.ApplicationID != "app1" || cp.Token.PollToken != "tok" || cp.Token.ExpiresAt == "" {
+		t.Fatalf("token_file: %+v", cp.Token)
+	}
+	if cp.Cred.Content != "sk-x" {
+		t.Fatalf("credential_file 应是解密明文一次下发: %q", cp.Cred.Content)
+	}
+	// 解密审计恰好一条
+	row, err := s.qrow(context.Background(), `SELECT COUNT(*) FROM g4_audit WHERE action='account.decrypt_issue' AND target=$1`, acctID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	if err := row.Scan(&n); err != nil || n != 1 {
+		t.Fatalf("解密审计应恰好一条: n=%d err=%v", n, err)
+	}
 	if len(idp.retired) != 0 {
 		t.Fatalf("成功路径不应 Retire: %v", idp.retired)
 	}
@@ -418,5 +458,40 @@ func TestHostedOverlay(t *testing.T) {
 	}
 	if m, ok := o.HostedItem(ctx, "ag_run"); !ok || m["state"] != "running" {
 		t.Fatalf("HostedItem 正常格: %v %v", m, ok)
+	}
+}
+
+// T-G4-32 反向：Hub 重启丢了内存暂存令牌（直接对已有席位 RunJob、未经 Create 暂存）⇒
+// 启动阶段 credential_inject_failed 失败清理：Retire＋解绑＋状态 error，不硬撑不带凭据起容器。
+func TestRunJobMissingTokenFailsClosed(t *testing.T) {
+	o, idp, gw, s := mkOrch(t)
+	ctx := context.Background()
+	acctID := acctOf(t, o.pool)
+	out, err := o.Create(ctx, CreateRequest{
+		OwnerLC: "zzc", By: "zzc", Name: "w1", GroupCode: "",
+		NodeID: "auto", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctID, Plan: "2c4g",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	o.dropToken(out.AgentID) // 模拟 Hub 重启丢失暂存
+	o.RunJob(ctx, out.AgentID)
+	seat, err := s.GetSeat(ctx, out.AgentID)
+	if err != nil || seat.State != "error" || seat.StateDetail != "credential_inject_failed" {
+		t.Fatalf("应 credential_inject_failed: %+v err=%v", seat, err)
+	}
+	if len(idp.retired) != 1 || idp.retired[0] != out.AgentID {
+		t.Fatalf("必须 Retire 释放名字: %v", idp.retired)
+	}
+	// 未起容器：只发了 pull_image，create_seat 未发
+	for _, c := range gw.sent {
+		if c.Type == "create_seat" {
+			t.Fatalf("无令牌不得发 create_seat: %+v", gw.sent)
+		}
+	}
+	// 账号已解绑（回池可再绑）
+	a, err := s.GetAccount(ctx, acctID)
+	if err != nil || a.State != "available" || a.BoundAgentID.Valid {
+		t.Fatalf("账号应回池: %+v err=%v", a, err)
 	}
 }

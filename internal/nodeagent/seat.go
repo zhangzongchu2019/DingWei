@@ -114,6 +114,13 @@ type tokenFile struct {
 	ExpiresAt     string `json:"expires_at"`
 }
 
+// credentialFile 团队账号凭据件（T-G4-32）：内容经白名单指令一次性下发，写席位目录固定名
+// account-credential（0600、属主 10001）——🔴 凭据不经 env/命令行/镜像层（B7）；
+// CLI 各自的落点（auth.json、settings.json…）由容器内启动脚本从该文件扇出，指令不带路径。
+type credentialFile struct {
+	Content string `json:"content"`
+}
+
 // buildSpec 安全参数清单（白名单固定，不可被指令关改）。
 // 🔴 CgroupParent 必带（组长 eccc54bc：托管席位统一挂在可配置父切片下做资源切片；
 // 漏设＝席位逃逸出平台切片，故 create 在空值时直接拒）。
@@ -192,6 +199,28 @@ func (d *dockerOps) writeTokenFile(seatID string, tf *tokenFile) error {
 	return chownForSeat(path)
 }
 
+// writeCredentialFile 账号凭据件（T-G4-32）：固定名 account-credential、0600、属主 10001。
+func (d *dockerOps) writeCredentialFile(seatID string, cf *credentialFile) error {
+	if cf == nil {
+		return nil
+	}
+	dir := seatDir(d.seatRoot, seatID)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	if err := chownForSeat(dir); err != nil {
+		return err
+	}
+	path := filepath.Join(dir, "account-credential")
+	if err := os.WriteFile(path, []byte(cf.Content), 0o600); err != nil {
+		return err
+	}
+	if err := os.Chmod(path, 0o600); err != nil {
+		return err
+	}
+	return chownForSeat(path)
+}
+
 func (d *dockerOps) waitRunning(ctx context.Context, id string) error {
 	deadline := time.Now().Add(d.waitMax)
 	for {
@@ -218,7 +247,8 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		SeatID    string        `json:"seat_id"`
 		Image     string        `json:"image"`
 		Resources seatResources `json:"resources"`
-		Token     *tokenFile    `json:"token_file"`
+		Token     *tokenFile      `json:"token_file"`
+		Cred      *credentialFile `json:"credential_file"`
 	}
 	if err := strictDecode(params, &p); err != nil {
 		return nil, err
@@ -276,6 +306,10 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	}
 	// ② 令牌文件（0600，不经 env）
 	if err := d.writeTokenFile(p.SeatID, p.Token); err != nil {
+		return fail(err, "")
+	}
+	// ②b 账号凭据件（固定名，0600，不经 env）
+	if err := d.writeCredentialFile(p.SeatID, p.Cred); err != nil {
 		return fail(err, "")
 	}
 	// ③ 每席独占网络

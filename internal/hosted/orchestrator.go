@@ -100,10 +100,46 @@ type Orchestrator struct {
 	combos  CombosSource
 	images  ImageCatalog
 	sweepMu sync.Mutex
+	// pendingTok 一次性入网令牌的内存暂存（T-G4-32）：Create 签发后暂存，RunJob 的
+	// create_seat 随参数下发后清除。🔴 不落库不落盘——Hub 重启即丢，滞留席位在启动阶段
+	// 以 credential_inject_failed 失败清理（Retire＋解绑，不占名），fail-closed 不硬撑。
+	tokMu       sync.Mutex
+	pendingTok  map[string]EnrollToken
 }
 
 func NewOrchestrator(st *Store, pool *PoolService, idp IdentityIssuer, gw NodeGateway, combos CombosSource, images ImageCatalog) *Orchestrator {
-	return &Orchestrator{st: st, pool: pool, idp: idp, gw: gw, combos: combos, images: images}
+	return &Orchestrator{st: st, pool: pool, idp: idp, gw: gw, combos: combos, images: images, pendingTok: map[string]EnrollToken{}}
+}
+
+func (o *Orchestrator) stashToken(agentID string, tok EnrollToken) {
+	o.tokMu.Lock()
+	defer o.tokMu.Unlock()
+	o.pendingTok[agentID] = tok
+}
+
+func (o *Orchestrator) takeToken(agentID string) (EnrollToken, bool) {
+	o.tokMu.Lock()
+	defer o.tokMu.Unlock()
+	t, ok := o.pendingTok[agentID]
+	return t, ok
+}
+
+func (o *Orchestrator) dropToken(agentID string) {
+	o.tokMu.Lock()
+	defer o.tokMu.Unlock()
+	delete(o.pendingTok, agentID)
+}
+
+// cpuShares vCPU 软上限换算：clamp(1024×N, 2, 262144)（组长裁定）。
+func cpuShares(vcpu int) int {
+	shares := vcpu * 1024
+	if shares < 2 {
+		return 2
+	}
+	if shares > 262144 {
+		return 262144
+	}
+	return shares
 }
 
 type CreateRequest struct {
@@ -176,7 +212,7 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	if err != nil {
 		return CreateOutcome{}, err
 	}
-	_ = tok // 令牌随 profile 注入容器（T-G4-31/32：RunJob 的 create_seat 参数里带上）
+	o.stashToken(ag.ID, tok) // T-G4-32：RunJob 的 create_seat 随参数下发后清除
 	// ⑦ 绑定账号（CAS）；失败 ⇒ 一律 Retire 释放名字
 	if err := o.pool.Bind(ctx, req.By, true, req.AccountID, ag.ID); err != nil {
 		_, _ = o.idp.RetireHostedAgent(ctx, ag.ID, req.By)
@@ -229,6 +265,7 @@ func freeMB(n Node) int64 {
 // 超时由 SweepTimeouts 兜底（排队 10m／拉镜像 30m／启动 5m）。
 func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 	fail := func(stage, reason string) {
+		o.dropToken(agentID)
 		seat, err := o.st.GetSeat(ctx, agentID)
 		if err == nil {
 			_ = o.st.SetSeatState(ctx, agentID, "error", reason, "fail", json.RawMessage(`{"stage":"`+stage+`"}`))
@@ -253,10 +290,43 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 	if err := o.st.SetSeatState(ctx, agentID, "starting", "", "start", nil); err != nil {
 		return
 	}
-	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "create_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)}); err != nil || !res.OK {
+	// T-G4-32：create_seat 携带资源（套餐换算）、一次性入网令牌（内存暂存）、
+	// 账号凭据件（DecryptForSeat 解密一次、审计一条——最小暴露：只下发给本席）。
+	tok, ok := o.takeToken(agentID)
+	if !ok {
+		fail("starting", "credential_inject_failed") // Hub 重启丢了暂存令牌：fail-closed 清理
+		return
+	}
+	var cred string
+	if seat.AccountRef.Valid {
+		c, derr := o.pool.DecryptForSeat(ctx, "system", seat.AccountRef.String, agentID)
+		if derr != nil {
+			fail("starting", "credential_inject_failed")
+			return
+		}
+		cred = c
+	}
+	plan, _ := PlanByID(seat.Plan)
+	params, _ := json.Marshal(map[string]any{
+		"seat_id": agentID,
+		"image":   seat.ImageRef,
+		"resources": map[string]any{
+			"memory_mb":  plan.MemMB,
+			"cpu_shares": cpuShares(plan.VCPU),
+			"disk_mb":    plan.DiskMB,
+		},
+		"token_file": map[string]string{
+			"application_id": tok.ApplicationID,
+			"poll_token":     tok.PollToken,
+			"expires_at":     tok.ExpiresAt.UTC().Format(time.RFC3339),
+		},
+		"credential_file": map[string]string{"content": cred},
+	})
+	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "create_seat", Params: params}); err != nil || !res.OK {
 		fail("starting", "start_failed")
 		return
 	}
+	o.dropToken(agentID)
 	// online 的最终确认＝席位以专属凭据连入（Hub 侧连接事件回调 MarkOnline）
 	if err := o.st.SetSeatState(ctx, agentID, "online", "", "online", nil); err != nil {
 		return
@@ -302,6 +372,7 @@ WHERE state IN ('queued','pulling','starting')`)
 		}
 	}
 	for _, p := range timedOut {
+		o.dropToken(p.id)
 		seat, err := o.st.GetSeat(ctx, p.id)
 		if err == nil && seat.AccountRef.Valid {
 			_ = o.pool.Unbind(ctx, "system", true, seat.AccountRef.String)
