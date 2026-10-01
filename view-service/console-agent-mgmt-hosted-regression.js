@@ -35,8 +35,8 @@ if (mutation === 'ignore-suspended') mutate("a.state==='suspended'?{state:'disab
 if (mutation === 'unverified-selectable') mutate("o.disabled=!!it.disabled;", 'o.disabled=false;');
 if (mutation === 'no-linkage') mutate("var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});", 'var rows=(opts.accounts||[]);');
 if (mutation === 'hardcoded-mask') mutate("hostedMaskRender(name,stage,'',lastStage);\n    if(stage==='online')", "hostedMaskRender(name,'online','',lastStage);\n    if(stage==='online')");
-if (mutation === 'destroy-no-confirm') mutate("if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期自动删除(保留期内可请管理员恢复)。确认销毁？'))return;", '');
-if (mutation === 'drop-confirm-flag') mutate("if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期自动删除(保留期内可请管理员恢复)。确认销毁？'))return;body.confirm=true;}", "if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期自动删除(保留期内可请管理员恢复)。确认销毁？'))return;}");
+if (mutation === 'destroy-no-confirm') mutate("if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期自动删除。确认销毁？'))return;", '');
+if (mutation === 'drop-confirm-flag') mutate("if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期自动删除。确认销毁？'))return;body.confirm=true;}", "if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期自动删除。确认销毁？'))return;}");
 if (mutation === 'show-secret') mutate("text:a.name+'（…'+a.last4+'）'", "text:a.name+'（'+a.secret+'）'");
 if (mutation === 'hosted-shows-revoke') mutate("revoke.hidden=a.origin==='hosted';", 'revoke.hidden=false;');
 
@@ -348,7 +348,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       const gamma = page.locator('#rosterItems .roster-row[data-agent-id="ag-gamma"]');
       const before = writes.length; dialogAccept = false; dialogs.length = 0;
       await gamma.locator('[data-op="destroy"]').click(); await page.waitForTimeout(250);
-      assert.strictEqual(writes.length, before); assert.match(dialogs[0], /先备份一次并保留 14 天,到期自动删除/); assert.match(dialogs[0], /凭据立即吊销/); assert.doesNotMatch(dialogs[0], /不可恢复/, 'the old "unrecoverable" wording is wrong now: the volume is backed up for 14 days');
+      assert.strictEqual(writes.length, before); assert.match(dialogs[0], /先备份一次并保留 14 天,到期自动删除/); assert.match(dialogs[0], /凭据立即吊销/); assert.doesNotMatch(dialogs[0], /不可恢复/, 'the old "unrecoverable" wording is wrong now: the volume is backed up for 14 days'); assert.doesNotMatch(dialogs[0], /恢复/, 'the page must not promise a restore: there is no restore entry in this release');
       dialogAccept = true;
       await gamma.locator('[data-op="destroy"]').click();
       await page.waitForFunction(() => !document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"]'));

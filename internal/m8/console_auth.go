@@ -865,7 +865,7 @@ function hostedOpButtons(a,hs){
     var b=document.createElement('button');b.type='button';b.className='hosted-op';b.dataset.op=d[0];b.textContent=d[1];b.disabled=busy;
     b.onclick=async function(){
       var body={};
-      if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期自动删除(保留期内可请管理员恢复)。确认销毁？'))return;body.confirm=true;}
+      if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器将被删除,凭据立即吊销;数据卷会先备份一次并保留 14 天,到期自动删除。确认销毁？'))return;body.confirm=true;}
       if(d[0]==='disable'){if(!confirm('停用 '+name+'：容器将停止,数据卷保留,可再启用;该 Agent 离线且凭据暂停、无法再接入;停用期间仍计配额。确认停用？'))return;body.confirm=true;}
       list.forEach(function(x){x.disabled=true;});
       var res=await consolePost(HOSTED_API.op(a.agent_id,d[0]),body);
