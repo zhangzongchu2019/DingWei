@@ -5,9 +5,10 @@ Flow (SPEC-THIN-SH-V1 s.2, DESIGN-THIN-SH s.3.1):
   for approval -> poll until the owner approves -> store the dedicated
   credential in a 0600 file -> caller connects with it.
 
-The Hub only ever sees a salted digest of the pairing code and a digest of the
-poll secret, never the code itself.  The credential value is never logged or
-printed by this module.
+Interface: provisional contract from G3 (opus50tc2k), 2026-10-01; the Hub's
+design doc is authoritative once published.  The Hub only ever sees a salted
+digest of the pairing code, never the code itself.  The credential and the
+poll token are never logged or printed by this module.
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ from . import __version__
 CREDENTIAL_FILE = "credential.json"
 PENDING_FILE = "enroll-pending.json"
 DEVICE_FILE = "enroll-device.id"
-OWNER_RE = re.compile(r"^[a-z0-9]+$")
+OWNER_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 
 
 class EnrollError(RuntimeError):
@@ -38,6 +39,14 @@ class EnrollError(RuntimeError):
 
 class EnrollRejected(EnrollError):
     """The owner rejected the request (= kicked); do not retry silently."""
+
+
+class EnrollStopped(EnrollError):
+    """Application ended without a credential (expired / superseded); do not retry silently."""
+
+
+class CredentialAlreadyIssued(EnrollError):
+    """Hub says approved but the one-time credential was already handed out."""
 
 
 class CredentialFileError(EnrollError):
@@ -99,12 +108,9 @@ def generate_pairing_code() -> str:
     return f"{secrets.randbelow(10**6):06d}"
 
 
-def pairing_digest(code: str, salt: str) -> str:
-    return hashlib.sha256(f"{salt}:{code}".encode("utf-8")).hexdigest()
-
-
-def secret_digest(secret: str) -> str:
-    return hashlib.sha256(secret.encode("utf-8")).hexdigest()
+def pairing_digest(code: str, salt_hex: str) -> str:
+    """sha256(salt bytes + ASCII code), hex (contract item 1)."""
+    return hashlib.sha256(bytes.fromhex(salt_hex) + code.encode("ascii")).hexdigest()
 
 
 def write_private_file(path: str, data: str) -> None:
@@ -180,7 +186,7 @@ def _load_pending(state_dir: str) -> dict | None:
         _assert_private(path)
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
-        if all(isinstance(data.get(k), str) and data[k] for k in ("code", "salt", "poll_secret", "request_id")):
+        if all(isinstance(data.get(k), str) and data[k] for k in ("code", "application_id", "poll_token")):
             return data
     except (OSError, ValueError, CredentialFileError):
         pass
@@ -202,80 +208,102 @@ def enroll(
     owner: str,
     transport: Transport,
     show: Callable[[str], None],
-    poll_interval: float = 3.0,
+    notify: Callable[[str], None] = lambda _m: None,
+    poll_interval: float = 4.0,
     sleep: Callable[[float], None] = time.sleep,
     max_polls: int | None = None,
-    capabilities: dict | None = None,
 ) -> Credential:
     """Return a Credential, enrolling first if none is stored.
 
-    Raises EnrollRejected on rejection.  An expired request is replaced by a
-    fresh one (new pairing code, shown again).  A restart while waiting resumes
-    the same request and re-shows the same code.
+    Raises EnrollRejected on rejection and EnrollStopped on expired/superseded:
+    the screen is told why (notify) and nothing is re-applied silently.  A
+    restart while waiting resumes the same application and re-shows its code.
     """
     existing = load_credential(state_dir)
     if existing:
         return existing
     if not OWNER_RE.fullmatch(owner or ""):
-        raise EnrollError("owner must be lowercase letters and digits")
+        raise EnrollError("owner_user_id is missing or malformed")
 
+    pending = _load_pending(state_dir) or _apply(state_dir, owner, transport)
+    show(pending["code"])
     polls = 0
     while True:
-        pending = _load_pending(state_dir)
-        if pending is None:
-            pending = _apply(state_dir, owner, transport, capabilities or {})
-        show(pending["code"])
-        while True:
-            reply = transport.get_json(
-                f"/api/enroll/{pending['request_id']}",
-                {"X-Poll-Secret": pending["poll_secret"]},
-            )
-            status = reply.get("status")
-            if status == "approved":
-                name, secret = str(reply.get("agent_name") or ""), str(reply.get("credential") or "")
-                if not name or not secret:
-                    raise EnrollError("hub approved without a credential")
-                cred = Credential(agent_name=name, secret=secret)
-                save_credential(state_dir, cred)  # persist before dropping the pending state
+        reply = transport.get_json(
+            f"/api/enroll/applications/{pending['application_id']}",
+            {"Authorization": f"Bearer {pending['poll_token']}"},
+        )
+        state = reply.get("state")
+        if state == "approved":
+            name, secret = str(reply.get("agent_name") or ""), str(reply.get("credential") or "")
+            if not name:
+                raise EnrollError("hub approved without an agent_name")
+            if not secret:
                 _clear_pending(state_dir)
-                return cred
-            if status == "rejected":
-                _clear_pending(state_dir)
-                raise EnrollRejected("owner rejected this client")
-            if status == "expired":
-                _clear_pending(state_dir)
-                break  # outer loop: fresh request, fresh code
-            if status != "pending":
-                raise EnrollError(f"unexpected enroll status: {status!r}")
-            polls += 1
-            if max_polls is not None and polls >= max_polls:
-                raise EnrollError("gave up waiting for approval")
-            sleep(poll_interval)
+                raise CredentialAlreadyIssued(
+                    "approved, but the one-time credential was already issued; "
+                    "ask the owner to revoke this agent and apply again"
+                )
+            cred = Credential(agent_name=name, secret=secret)
+            save_credential(state_dir, cred)  # persist before dropping the pending state
+            _clear_pending(state_dir)  # poll_token is discarded with it
+            return cred
+        if state in ("rejected", "expired", "superseded"):
+            _clear_pending(state_dir)
+            reason = {
+                "rejected": "the owner rejected this client",
+                "expired": "the application expired; restart the client to apply again",
+                "superseded": "another application from this device was approved; this one is void",
+            }[state]
+            notify(reason)
+            raise (EnrollRejected if state == "rejected" else EnrollStopped)(reason)
+        if state != "pending":
+            raise EnrollError(f"unexpected enroll state: {state!r}")
+        polls += 1
+        if max_polls is not None and polls >= max_polls:
+            raise EnrollError("gave up waiting for approval")
+        sleep(poll_interval)
 
 
-def _apply(state_dir: str, owner: str, transport: Transport, capabilities: dict) -> dict:
+def _apply(state_dir: str, owner: str, transport: Transport) -> dict:
     code = generate_pairing_code()
-    salt = secrets.token_hex(8)
-    poll_secret = secrets.token_urlsafe(24)
-    reply = transport.post_json("/api/enroll/apply", {
-        "owner": owner,
+    salt = secrets.token_hex(16)  # 16 bytes
+    reply = transport.post_json("/api/enroll/applications", {
+        "owner_user_id": owner,
         "pairing_salt": salt,
         "pairing_digest": pairing_digest(code, salt),
-        "poll_digest": secret_digest(poll_secret),
-        "device_digest": device_fingerprint(state_dir),
+        "device_fingerprint": device_fingerprint(state_dir),
         "client_version": __version__,
-        "capabilities": capabilities,
     })
-    request_id = str(reply.get("request_id") or "")
-    if not request_id:
-        raise EnrollError("hub did not return a request_id")
-    pending = {"code": code, "salt": salt, "poll_secret": poll_secret, "request_id": request_id}
+    application_id = str(reply.get("application_id") or "")
+    poll_token = str(reply.get("poll_token") or "")
+    if not application_id or not poll_token:
+        raise EnrollError("hub reply lacks application_id or poll_token")
+    pending = {"code": code, "application_id": application_id, "poll_token": poll_token,
+               "expires_at": str(reply.get("expires_at") or "")}
     write_private_file(os.path.join(state_dir, PENDING_FILE), json.dumps(pending))
     return pending
 
 
+def revoke_local(state_dir: str, notify: Callable[[str], None]) -> None:
+    """Hub says this agent was revoked: drop the credential, tell the user,
+    and do NOT re-apply on our own (contract item 5)."""
+    for name in (CREDENTIAL_FILE, PENDING_FILE):
+        try:
+            os.unlink(os.path.join(state_dir, name))
+        except FileNotFoundError:
+            pass
+    notify("this agent was revoked by its owner; the local credential was removed. "
+           "Apply again manually if you want to re-bind.")
+
+
+def run_enrolled(*, connect: Callable[[Credential], object], **kw):
+    """Credential in hand -> hand it to the connect function (stub-able)."""
+    return connect(enroll(**kw))
+
+
 def auth_headers(cred: Credential) -> dict[str, str]:
-    """Headers for the dedicated-credential WebSocket handshake (draft: Bearer)."""
+    """Headers for the dedicated-credential WebSocket handshake (Bearer)."""
     return {"Authorization": f"Bearer {cred.secret}"}
 
 

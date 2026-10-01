@@ -1,47 +1,46 @@
-# 入网接口草案（客户端侧所需，供 Hub 侧 opus50tc2k 对照；以 Hub 定稿为准）
+# 客户端入网：实现对齐说明（接口以 G3 设计件为准）
 
-- 起草：tosonnet50ts · 派工 R-NEWPLAT-G3-tosonnet50ts-20261001084334 · 对应 SPEC-THIN-SH-V1（含第七节修订）
-- 客户端实现：`sessionhelper/enroll.py`；传输层 `UrllibTransport` 是唯一依赖下列路径的地方，改路径只动这一处
+- 作者：tosonnet50ts · 派工 R-NEWPLAT-G3-tosonnet50ts-20261001084334 · 对应 SPEC-THIN-SH-V1（含第七节修订）
+- 接口来源：G3 承办 opus50tc2k 2026-10-01 的【暂定】接口（本文第 1、2 节已改为与之一致）；设计件落板后以设计件为准，改动处会另行告知
+- 实现：`sessionhelper/enroll.py`；`UrllibTransport` 与 `enroll()` 里的两条路径是唯一依赖接口形状的地方
 
-## 1 申请  POST /api/enroll/apply（无需认证，Hub 须按来源限频）
+## 1 发起申请  POST /api/enroll/applications
 
-请求体（JSON）：
+    owner_user_id        使用者安装时填写（客户端配置）
+    pairing_salt         16 字节随机，hex
+    pairing_digest       sha256(salt 字节 + 6 位配对码 ASCII)，hex；配对码明文不上送
+    device_fingerprint   见第 5 节
+    client_version
+  响应 201：application_id · poll_token（Hub 签发）· expires_at（UTC，RFC3339）
 
-    owner            申请所属业主（小写字母数字）
-    pairing_salt     客户端随机盐
-    pairing_digest   sha256(pairing_salt + ":" + 配对码) 的十六进制；Hub 不收配对码明文
-    poll_digest      sha256(poll_secret) 的十六进制；poll_secret 只在客户端
-    device_digest    设备指纹的 sha256（同一设备重复申请据此归并，判据 A10）
-    client_version   客户端版本
-    capabilities     客户端自报（自备模式不含 CLI 选择；字段可空）
+## 2 轮询  GET /api/enroll/applications/{application_id}，Authorization: Bearer <poll_token>
 
-应答：`{"request_id": "<不可猜的串>"}`
-Hub 记录：来源 IP、申请时刻（A1）。24 小时作废（A7）。
+    state  pending | approved | rejected | expired | superseded
+    approved 时：agent_name（保留大小写）· agent_full_name · credential（只给一次）
+  客户端行为：间隔默认 4 秒；rejected／expired／superseded 即停止并在屏幕说明，**不自动重新申请**（重启客户端才重新申请）。
+  approved 但 credential 为空（已被取走一次）⇒ 明确报错，要求业主吊销后重新申请；不写空凭据文件。
 
-## 2 取回  GET /api/enroll/{request_id}，请求头 X-Poll-Secret: <poll_secret>
+## 3 凭据落盘
 
-Hub 用 sha256(X-Poll-Secret) 与 poll_digest 常量时间比较，不符一律 404（不泄露 request_id 是否存在）。
-
-应答 status 取值：
-
-    pending    等待业主批准
-    approved   附 agent_name 与 credential（专属凭据，**只在此应答出现一次**，之后该请求不再返回凭据）
-    rejected   业主拒绝（＝踢走）
-    expired    24 小时作废；客户端自动重新申请并显示新配对码
-
-## 3 业主批准时的校验（Hub 侧，客户端不参与）
-
-业主在 console 输入的配对码 → 用该申请的 pairing_salt 算摘要 → 与 pairing_digest 常量时间比较；不符拒绝且申请保留（A2）。配对码一次性：批准成功即失效。
-注意：6 位码只有 10^6 种，摘要库一旦泄露可被离线穷举——配对码的保护靠"24 小时作废＋限频＋业主在场核对"，不靠摘要；请 Hub 侧勿把它当作秘密存储对待。
+credential.json（{agent_name, secret}）：目录 0700、文件 0600，创建即 0600，先写临时文件 fsync 再 rename。写成功后才删除 pending 状态（poll_token 随之丢弃）。读取时权限宽于 600 ⇒ 拒绝使用，不自动改权限，报错不带凭据值。
 
 ## 4 以专属凭据连入（组长裁定 2026-10-01，台账 bfc84543）
 
-连接**只带专属凭据**：`Authorization: Bearer <credential>`，不再带账号 key。Agent 身份（名称.业主）由 Hub 按凭据查出；客户端不在连接地址里自报名称，即使带了也以凭据为准（自报名称正是冒名入口）。
-客户端实现 `enroll.agent_ws_url`：路径暂为占位 `/ws/agent`，查询串只含 version 及能力类参数（tool、os 等），并主动剥掉 key_id／name 类字段。WebSocket 路径请 Hub 侧定稿。
+只带专属凭据：`Authorization: Bearer <credential>`；身份由 Hub 按凭据查出，客户端不自报名称、不带账号 key。`enroll.agent_ws_url` 暂用占位路径 `/ws/agent`，查询串只含 version 与能力类参数，并主动剥掉 key_id／name 类字段。路径待 Hub 设计件定。
+目前只有桩：`run_enrolled(connect=...)` 把凭据交给传入的连接函数；真连接待设计件。
 
-## 5 本地文件（客户端，状态目录 SH_STATE_DIR，默认 ~/.dingwei，目录 0700）
+## 5 设备指纹（我这边定的算法，请 Hub 侧知悉）
 
-    credential.json       {agent_name, secret}，权限 600，原子写入（创建即 600，无先写后改权限的窗口）
-    enroll-pending.json   申请进行中的状态（配对码、盐、poll_secret、request_id），600；重启后沿用同一配对码
-    enroll-device.id      设备指纹原值，600；上送的是其 sha256
-读取时若 credential.json 权限宽于 600 ⇒ 拒绝使用并报错（不自动改权限，不在报错里带凭据值）。
+首次生成 128 位随机数，存 `enroll-device.id`（0600）；上送其 sha256（hex）。同一安装多次申请相同；重装系统或清掉状态目录则变化——这是"同设备"在客户端侧的边界，不是硬件指纹。若要求更强的设备绑定（读 machine-id 等），请说明，会涉及隐私与容器重建后的稳定性取舍。
+
+## 6 吊销（V2）
+
+`revoke_local(state_dir, notify)`：删除凭据文件与 pending 状态、屏幕提示、不自动重新申请。触发点（收到"已吊销"通知／连接被拒且原因为已吊销）待连接鉴权设计件给出原因码后接入。
+
+## 7 本地文件（SH_STATE_DIR，默认 ~/.dingwei）
+
+    credential.json · enroll-pending.json（配对码、application_id、poll_token、expires_at；0600，重启沿用同一配对码）· enroll-device.id
+
+## 8 提醒
+
+配对码仅 6 位（10^6），摘要泄露后可离线穷举；保护靠作废时限、来源限频、业主在场核对，Hub 侧勿视摘要为秘密。
