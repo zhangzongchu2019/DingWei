@@ -613,7 +613,8 @@ function enrollFeedback(id,text){var e=document.getElementById(id);if(e)e.textCo
 function enrollTime(v){var d=new Date(v);return isNaN(d.getTime())?String(v||''):d.toLocaleString('zh-CN',{hour12:false});}
 var CONSOLE_ERRORS={
   name_taken:'该名称已被你名下的 Agent 使用（不区分大小写），请换一个',
-  group_name_taken:'这个编组名已被使用,请换一个',group_name_invalid:'编组名只能用 1～8 位字母或数字',   // 🟡 错误码暂定,待编组接口定稿对齐
+  group_name_taken:'这个编组名已被使用,请换一个',group_name_invalid:'编组名只能用 1～8 位字母或数字',
+  group_not_found:'所选编组不存在或已被删除,请刷新后重选',group_closed:'该编组已关闭添加,请换一个编组或新建',group_ambiguous:'编组只能二选一:选已有编组,或新建编组',   // 错误码以 Hub 的 g3-group-allowed 为准
   name_invalid:'名称只能用大小写字母和数字，2～32 位，且不能是渠道保留字',
   group_required:'请选择所属编组',
   expired:'申请已超过 24 小时，已作废',
