@@ -24,8 +24,9 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text'];
+const MUTATIONS = ['fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
 if (mutation === 'persist-code') mutate("var code=String(res.registration_code||'');", "var code=String(res.registration_code||'');try{localStorage.setItem('last-code',code);}catch(_){}");
 if (mutation === 'show-hub-text') mutate("function consoleErrorText(status,data){", "function consoleErrorText(status,data){if(data&&data.detail)return String(data.detail);");
@@ -160,6 +161,14 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await row.waitFor({ state: 'visible' });
       assert.deepStrictEqual(await row.locator('td').allTextContents(), ['zhangsan', '张三', 'zs', '管理用户', '待绑定飞书', '重新生成注册码']);
       assert.doesNotMatch(await page.locator('#adminUsersTable').textContent(), /REG-/, 'the code never lands in the table');
+    });
+
+    await test('every column of the users table has real width, so the status and the regenerate button are actually visible (real-Hub finding: fixed layout squeezed them to 0)', async () => {
+      const widths = await page.locator('#adminUsersTable th').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
+      assert.ok(widths.every((w) => w >= 40), `column widths must all be >= 40px, got ${JSON.stringify(widths)}`);
+      const btn = await page.locator('#adminUsersItems .admin-user-row[data-user-id="zhangsan"] .admin-regen').boundingBox();
+      const tbl = await page.locator('#adminUsersTable').boundingBox();
+      assert.ok(btn && btn.width > 20 && btn.x + btn.width <= tbl.x + tbl.width + 1, `the regenerate button must sit inside the table, got ${JSON.stringify(btn)} vs ${JSON.stringify(tbl)}`);
     });
 
     await test('copy puts exactly the code on the clipboard and says so', async () => {
