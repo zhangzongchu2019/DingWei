@@ -25,15 +25,13 @@ if (mutation === 'detach-remove-row') mutate('row.append(rm);}members.append(row
 if (mutation === 'ux-table-align') mutate('.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}', '.group-table th{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-table td{padding:7px 7px 7px 31px;border-bottom:1px solid #ddd;text-align:left}');
 if (mutation === 'drop-group-row-stripe') mutate('.group-table tbody tr:nth-child(even){background:var(--row-alt)}', '');
 if (mutation === 'ux-member-gap') mutate('gap:18px;max-width:520px', 'justify-content:space-between;max-width:none');
-if (mutation === 'ux-placeholder') mutate('placeholder="请输入完整的 32 位编组码"', 'placeholder=""');
 if (mutation === 'ux-block-colors') {
-  mutate('.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}.group-block-join{background:#fff7eb}', '.group-block-list,.group-block-detail,.group-block-add{background:#f4f7fb}.group-block-join{background:#fff7eb}');
-  mutate('html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="dark"] .group-block-detail{background:#252033}html[data-theme="dark"] .group-block-add{background:#182a22}html[data-theme="dark"] .group-block-join{background:#30251a}', 'html[data-theme="dark"] .group-block-list,html[data-theme="dark"] .group-block-detail,html[data-theme="dark"] .group-block-add{background:#1b2530}html[data-theme="dark"] .group-block-join{background:#30251a}');
+  mutate('.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}', '.group-block-list,.group-block-detail,.group-block-add{background:#f4f7fb}');
+  mutate('html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="dark"] .group-block-detail{background:#252033}html[data-theme="dark"] .group-block-add{background:#182a22}', 'html[data-theme="dark"] .group-block-list,html[data-theme="dark"] .group-block-detail,html[data-theme="dark"] .group-block-add{background:#1b2530}');
 }
 if (mutation === 'ux-add-focus') mutate("document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};", "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
 if (mutation === 'ux-detail-exclusive') mutate("row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();setGroupPanelMode('detail');}", "row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();if(globalThis.__testExclusive)document.getElementById('groupDetail').hidden=false;else setGroupPanelMode('detail');}");
-if (mutation === 'ux-join-exclusive') mutate("document.getElementById('groupCodeJoinOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='join'?'':'join');}", "document.getElementById('groupCodeJoinOpen').onclick=function(){if(globalThis.__testExclusive){document.getElementById('groupCodeJoin').hidden=false;document.getElementById('groupJoinCode').focus();}else setGroupPanelMode(groupPanelMode==='join'?'':'join');}");
-if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'drop-group-row-stripe', 'ux-member-gap', 'ux-placeholder', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive', 'ux-join-exclusive'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'drop-group-row-stripe', 'ux-member-gap', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 
 let groups = [];
 let additionsClosed = false;
@@ -133,28 +131,15 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#groupShortName').click(); await page.locator('#groupShortName').press('ControlOrMeta+A'); await page.locator('#groupShortName').press('Backspace'); await page.locator('#groupShortName').pressSequentially('团队1'); await page.locator('#createGroup').click();
       await page.locator('#groupNameFeedback').filter({ hasText: '团队名称不可用' }).waitFor({ state: 'visible' });
       assert.match(await page.locator('#groupNameFeedback').textContent(), /团队名称不可用；建议名称：团队11、团队12/);
-      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
       await page.locator('#groupAddOpen').click();
     });
     await test('retry success is visible', async () => {
       await page.evaluate(() => refreshGroups('retry')); await page.locator('#groupRetryFeedback').getByText('已刷新 · 1 个编组').waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('#groupRetryFeedback').textContent(), '已刷新 · 1 个编组');
     });
-    await test('keeps the 32-character code credential visible and submits the code the operator enters', async () => {
-      const code = 'B'.repeat(32);
-      await page.locator('#groupCodeJoinOpen').click();
-      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
-      await page.locator('#groupJoinCode').click(); await page.locator('#groupJoinCode').press('ControlOrMeta+A'); await page.locator('#groupJoinCode').pressSequentially(code);
-      await page.locator('#groupCodeJoinAgent').selectOption('member'); await page.locator('#joinByCode').click();
-      await page.waitForTimeout(20);
-      assert.deepStrictEqual(membershipWrites.at(-1), { code, agent_id: 'member' });
-      nextJoinFailure = '该 Agent 已在该编组中';
-      await page.locator('#joinByCode').click();
-      await page.locator('#groupCodeJoinFeedback').getByText('该 Agent 已在该编组中').waitFor({ state: 'visible' });
-      assert.strictEqual(await page.locator('#groupCodeJoinFeedback').textContent(), '该 Agent 已在该编组中');
-      groups[0].members = groups[0].members.filter((member) => member.agent_id !== 'member');
-      await page.evaluate(() => refreshGroups('credential-reset'));
-    });
+    // 夹具复位(原「32 位编组码」用例末尾的两行;后续用例依赖它,故保留):
+    groups[0].members = groups[0].members.filter((member) => member.agent_id !== 'member');
+    await page.evaluate(() => refreshGroups('credential-reset'));
     await test('renders the owner table and keeps cross-owner management controls absent', async () => {
       groups.push({ code: 'C'.repeat(32), short_name: '他组', creator_principal: 'owner-b', owner_display_name: '业主乙', can_manage: false, leader_key_id: 'foreign-key', leader_session_name: 'foreign-leader-2642', members: [
         { agent_id: 'foreign-leader', key_id: 'foreign-key', session_name: 'foreign-leader-2642', online: false },
@@ -203,41 +188,34 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
         await page.evaluate(() => refreshGroups('ux-member-gap-reset'));
       }
     });
-    await test('labels the 32-character group code input with meaningful placeholder text', async () => {
-      const placeholder = await page.locator('#groupJoinCode').getAttribute('placeholder');
-      assert.ok(placeholder && placeholder.includes('32'), `group code placeholder=${JSON.stringify(placeholder)}`);
-    });
-    await test('distinguishes all four functional blocks in light and dark themes', async () => {
-      const selectors = ['.group-block-list', '.group-block-detail', '#groupMemberAdd', '.group-block-join'];
+    await test('distinguishes all three functional blocks in light and dark themes', async () => {
+      const selectors = ['.group-block-list', '.group-block-detail', '#groupMemberAdd'];
       const colors = async () => page.evaluate((items) => items.map((selector) => getComputedStyle(document.querySelector(selector)).backgroundColor), selectors);
       const light = await colors();
-      assert.strictEqual(new Set(light).size, 4, `all four light-theme functional blocks must have distinct colors: ${JSON.stringify(light)}`);
+      assert.strictEqual(new Set(light).size, 3, `all three light-theme functional blocks must have distinct colors: ${JSON.stringify(light)}`);
       await page.locator('html').evaluate((html) => html.dataset.theme = 'dark');
       try {
         const dark = await colors();
-        assert.strictEqual(new Set(dark).size, 4, `all four dark-theme functional blocks must have distinct colors: ${JSON.stringify(dark)}`);
+        assert.strictEqual(new Set(dark).size, 3, `all three dark-theme functional blocks must have distinct colors: ${JSON.stringify(dark)}`);
         assert.notDeepStrictEqual(dark, light, 'dark theme must not reuse light block colors');
       } finally {
         await page.locator('html').evaluate((html) => html.dataset.theme = 'light');
       }
     });
-    await test('keeps the list resident and makes detail, add, and cross-owner join pairwise exclusive', async () => {
+    await test('keeps the list resident and makes detail and add mutually exclusive', async () => {
       const visible = async () => page.evaluate(() => ({
         list: !document.getElementById('groupListTable').closest('.group-block-list').hidden,
         detail: !document.getElementById('groupDetail').hidden,
         add: !document.getElementById('groupAddPanel').hidden,
-        join: !document.getElementById('groupCodeJoin').hidden,
       }));
       await page.evaluate(() => { globalThis.__testExclusive = true; });
       try {
         await page.locator('#groupListItems tr').first().click();
-        assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '点组名后只能展开组详情');
+        assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false }, '点组名后只能展开组详情');
         await page.locator('#groupAddOpen').click();
-        assert.deepStrictEqual(await visible(), { list: true, detail: false, add: true, join: false }, '点添加后必须收起详情且只展开添加编组');
-        await page.locator('#groupCodeJoinOpen').click();
-        assert.deepStrictEqual(await visible(), { list: true, detail: false, add: false, join: true }, '点加入入口后必须收起添加且只展开加入其他业主编组');
+        assert.deepStrictEqual(await visible(), { list: true, detail: false, add: true }, '点添加后必须收起详情且只展开添加编组');
         await page.locator('#groupListItems tr').first().click();
-        assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false, join: false }, '从加入返回组详情时前一个展开项必须收起');
+        assert.deepStrictEqual(await visible(), { list: true, detail: true, add: false }, '从添加返回组详情时前一个展开项必须收起');
       } finally {
         await page.evaluate(() => { globalThis.__testExclusive = false; setGroupPanelMode('detail'); });
       }

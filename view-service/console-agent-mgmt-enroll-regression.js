@@ -287,10 +287,13 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       forceGone = '';
     });
 
-    await test('the existing group panel is still there (list, create toggle, code-join)', async () => {
+    await test('the group panel keeps list and create, and no longer offers join-by-code (owner S5)', async () => {
       assert.strictEqual(await page.locator('#groupListTable').count(), 1);
       assert.strictEqual(await page.locator('#groupAddOpen').count(), 1);
-      assert.strictEqual(await page.locator('#groupCodeJoinOpen').count(), 1);
+      for (const id of ['groupCodeJoinOpen', 'groupCodeJoin', 'groupJoinCode', 'joinByCode', 'groupCodeJoinAgent']) {
+        assert.strictEqual(await page.locator(`#${id}`).count(), 0, `${id} must be gone`);
+      }
+      assert.doesNotMatch(await page.locator('.group-workspace').textContent(), /加入到其他业主编组/);
     });
 
     await test('no pageerror and no unexpected console error across the whole run', async () => {

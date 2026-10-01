@@ -59,8 +59,6 @@ function consoleHTMLFromProductionSource() {
   }
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
   if (MUTATION === 'legacy-group-deadlock') {
-    html = html.replace(/<section id=groupCodeJoin>.*?<\/section>/, '');
-    html = html.replace('<section id=groupDetail hidden>', '<section id=groupDetail hidden><label>完整 32 字符组码 <input id=groupJoinCode maxlength=32></label>');
     html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
   }
   // 🔴 阴性对照:把角标显示值写死。写死之后页面显示的就不再是服务端喂进来的那一版,
@@ -270,15 +268,15 @@ async function main() {
       const groupPane = timerPage.locator('#panes .group-workspace');
       assert.notStrictEqual(await groupPane.evaluate((node) => node.style.pointerEvents), 'none', 'Agent timer must not disable the group platform pane');
       assert.notStrictEqual(await specsPane.evaluate((node) => node.style.pointerEvents), 'none', 'Agent timer must not disable the Specs platform pane');
-      await timerPage.locator('#groupCodeJoinOpen').click();
-      const code = timerPage.locator('#groupJoinCode');
+      await timerPage.locator('#groupAddOpen').click();
+      const code = timerPage.locator('#groupShortName');
       await code.scrollIntoViewIfNeeded();
       const box = await code.boundingBox();
-      assert.ok(box, 'group code input must have a visible box after timer tick');
-      assert.strictEqual(await timerPage.evaluate(({x,y}) => document.elementFromPoint(x,y)?.id, {x:box.x+box.width/2,y:box.y+box.height/2}), 'groupJoinCode');
+      assert.ok(box, 'group name input must have a visible box after timer tick');
+      assert.strictEqual(await timerPage.evaluate(({x,y}) => document.elementFromPoint(x,y)?.id, {x:box.x+box.width/2,y:box.y+box.height/2}), 'groupShortName');
       await code.click();
-      await timerPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
-      assert.strictEqual(await code.inputValue(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
+      await timerPage.keyboard.type('team1');
+      assert.strictEqual(await code.inputValue(), 'team1');
       await timerPage.locator('#tabs .tab[title="Specs"]').click();
       const specsProbe = timerPage.frameLocator('iframe[title="Specs workspace"]').locator('#specsProbe');
       await specsProbe.click();
@@ -297,7 +295,6 @@ async function main() {
         const leader = createPage.locator('#groupLeader');
         await createPage.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
         assert.deepStrictEqual(await leader.locator('option').allTextContents(), ['alpha', 'beta']);
-        assert.deepStrictEqual(await createPage.locator('#groupCodeJoinAgent option').allTextContents(), ['alpha', 'beta']);
         await leader.selectOption('agent-b');
         assert.strictEqual(await leader.inputValue(), 'agent-b');
         const name = createPage.locator('#groupShortName');
@@ -323,8 +320,8 @@ async function main() {
         await offlinePage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
         await offlinePage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
         await offlinePage.locator('#platform-items a[data-item-id="agent-groups"]').click();
-        await offlinePage.waitForFunction(() => document.getElementById('groupCodeJoinAgent').disabled === false);
-        assert.deepStrictEqual(await offlinePage.locator('#groupCodeJoinAgent option').allTextContents(), ['alpha', 'beta', 'gamma（offline）']);
+        await offlinePage.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
+        assert.deepStrictEqual(await offlinePage.locator('#groupLeader option').allTextContents(), ['alpha', 'beta', 'gamma（offline）']);
         assert.deepStrictEqual(await offlinePage.locator('#groupJoinAgent option').allTextContents(), ['beta', 'gamma（offline）']);
       } finally {
         await offlinePage.close();
@@ -446,14 +443,10 @@ async function main() {
       const entry = emptyPage.locator('#platform-items a[data-item-id="agent-groups"]');
       await entry.waitFor({ state: 'visible' });
       await entry.click();
-      await emptyPage.locator('#groupCodeJoinOpen').click();
-      await emptyPage.locator('#groupCodeJoin').waitFor({ state: 'visible' });
       await emptyPage.locator('#group-status').filter({ hasText: '没有自己的 Agent，无法建组或加入' }).waitFor({ state: 'visible' });
       assert.strictEqual(await emptyPage.locator('#groupDetail').isHidden(), true);
       assert.strictEqual(await emptyPage.locator('#groupLeader').isDisabled(), true);
       assert.strictEqual(await emptyPage.locator('#groupJoinAgent').isDisabled(), true);
-      assert.strictEqual(await emptyPage.locator('#groupCodeJoinAgent').isDisabled(), true);
-      assert.strictEqual(await emptyPage.locator('#groupJoinCode').isEnabled(), true);
       async function humanHit(selector) {
         const target = emptyPage.locator(selector);
         const box = await target.boundingBox();
@@ -464,11 +457,7 @@ async function main() {
           return Boolean(wanted && hit && (hit === wanted || wanted.contains(hit)));
         }, { selector, x: box.x + box.width / 2, y: box.y + box.height / 2 });
       }
-      assert.strictEqual(await humanHit('#groupJoinCode'), true);
       assert.strictEqual(await humanHit('#retryGroups'), true);
-      await emptyPage.locator('#groupJoinCode').click();
-      await emptyPage.keyboard.type('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
-      assert.strictEqual(await emptyPage.locator('#groupJoinCode').inputValue(), 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
       const getsBeforeRetry = groupGETs;
       const refreshed = emptyPage.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups') && response.status() === 200);
       await emptyPage.locator('#retryGroups').click();
@@ -541,45 +530,20 @@ async function main() {
       await auditPage.locator('#createGroup').click();
       await auditPage.locator('#groupNameFeedback').filter({ hasText: '团队名称不可用；建议名称：dingwei1、dingwei2' }).waitFor({ state: 'visible' });
       await auditPage.locator('#groupAddOpen').click();
-      await auditPage.locator('#groupCodeJoinOpen').click();
-
-      await auditPage.locator('#groupJoinCode').click();
-      await auditPage.keyboard.type('short');
-      assert.strictEqual(await humanHit('#joinByCode'), true);
-      await auditPage.locator('#joinByCode').click();
-      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '请输入完整 32 字符组码' }).waitFor({ state: 'visible' });
-
-      async function keyboardReplace(selector, value) {
-        await auditPage.locator(selector).click();
-        await auditPage.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-        await auditPage.keyboard.type(value);
-      }
-      await keyboardReplace('#groupJoinCode', 'missing-1AAAAAAAAAAAAAAAAAAAAAAA');
-      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
-      assert.strictEqual(await humanHit('#joinByCode'), true);
-      await auditPage.locator('#joinByCode').click();
-      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '组码不存在' }).waitFor({ state: 'visible' });
-
-      await keyboardReplace('#groupJoinCode', 'team-001AAAAAAAAAAAAAAAAAAAAAAAA');
-      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-a');
-      await auditPage.locator('#joinByCode').click();
-      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '该 Agent 已在该编组中' }).waitFor({ state: 'visible' });
 
       await auditPage.locator('#groupListItems tr').first().click();
       assert.strictEqual(await humanHit('#groupAdditionsToggle'), true);
       await auditPage.locator('#groupAdditionsToggle').click();
       await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '开放添加' }).waitFor({ state: 'visible' });
-      await auditPage.locator('#groupCodeJoinOpen').click();
-      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
-      await auditPage.locator('#joinByCode').click();
-      await auditPage.locator('#groupCodeJoinFeedback').filter({ hasText: '该编组已关闭添加' }).waitFor({ state: 'visible' });
+      await auditPage.locator('#groupJoinAgent').selectOption('agent-b');
+      await auditPage.locator('#joinGroup').click();
+      await auditPage.locator('#groupJoinFeedback').filter({ hasText: '该编组已关闭添加' }).waitFor({ state: 'visible' });
       await auditPage.locator('#groupListItems tr').first().click();
       await auditPage.locator('#groupAdditionsToggle').click();
       await auditPage.locator('#groupAdditionsToggle').filter({ hasText: '关闭添加' }).waitFor({ state: 'visible' });
 
-      await auditPage.locator('#groupCodeJoinOpen').click();
-      await auditPage.locator('#groupCodeJoinAgent').selectOption('agent-b');
-      await auditPage.locator('#joinByCode').click();
+      await auditPage.locator('#groupJoinAgent').selectOption('agent-b');
+      await auditPage.locator('#joinGroup').click();
       await auditPage.locator('#groupListItems tr').first().click();
       const member = auditPage.locator('#groupMembers .group-member-row').filter({ hasText: 'beta' });
       await member.waitFor({ state: 'visible' });
@@ -602,10 +566,8 @@ async function main() {
       auditPage.once('dialog', (dialog) => dialog.accept());
       await deleteGroup.click();
       await auditPage.locator('#groupEmptyCreate').waitFor({ state: 'visible' });
-      assert.strictEqual(await auditPage.locator('#groupCodeJoin').isHidden(), true);
-      assert.strictEqual(await auditPage.locator('#groupCodeJoinOpen').isVisible(), true);
       assert.deepStrictEqual(await auditPage.evaluate(() => globalThis.__dwLongTasks), []);
-      assert.strictEqual(auditExpectedHTTPDiagnostics.length, 4, 'four deliberate HTTP failures must stay narrowly classified');
+      assert.strictEqual(auditExpectedHTTPDiagnostics.length, 2, 'two deliberate HTTP failures (duplicate name, additions closed) must stay narrowly classified');
       assert.deepStrictEqual(auditErrors, []);
       await auditContext.close();
       auditGroupMode = false;
@@ -625,7 +587,7 @@ async function main() {
       await page.locator('#tabs .tab[title="Agent 管理"]').waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('.group-workspace').count(), 1);
       assert.strictEqual(await page.locator('.group-workspace:visible').count(), 1);
-      for (const id of ['groupLeader', 'groupJoinCode', 'groupCodeJoinAgent', 'joinByCode', 'groupListItems', 'groupDetail', 'retryGroups']) {
+      for (const id of ['groupLeader', 'groupListItems', 'groupDetail', 'retryGroups']) {
         assert.strictEqual(await page.locator(`#${id}`).count(), 1, `${id} must have one live DOM node`);
       }
       await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
@@ -633,10 +595,6 @@ async function main() {
       assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['alpha', 'beta']);
       await page.locator('#groupListItems tr').first().click();
       assert.deepStrictEqual(await page.locator('#groupJoinAgent option').allTextContents(), ['beta']);
-      assert.strictEqual(await page.locator('#groupJoinCode').count(), 1);
-      assert.strictEqual(await page.locator('#groupJoinCode').inputValue(), '');
-      await page.locator('#groupCodeJoinOpen').click();
-      assert.deepStrictEqual(await page.locator('#groupCodeJoinAgent option').allTextContents(), ['alpha', 'beta']);
       assert.strictEqual(await page.locator('.group-workspace input[name="key_id"]').count(), 0);
     });
 
@@ -671,21 +629,6 @@ async function main() {
       assert.deepStrictEqual(groupWrites[0].body, { agent_id: 'agent-a', short_name: '团队2' });
       assert.strictEqual('key_id' in groupWrites[0].body, false);
       assert.strictEqual('session_name' in groupWrites[0].body, false);
-    });
-
-    await test('joins through visible controls and leaves no uncaught page error', async () => {
-      await page.locator('#groupCodeJoinOpen').click();
-      await page.locator('#groupJoinCode').pressSequentially('team-001AAAAAAAAAAAAAAAAAAAAAAAA');
-      await page.locator('#groupCodeJoinAgent').selectOption('agent-b');
-      const joined = page.waitForResponse((response) => response.url().endsWith('/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members') && response.status() === 204);
-      await page.locator('#joinByCode').click();
-      await joined;
-      assert.deepStrictEqual(groupJoinWrites, [{
-        url: '/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members',
-        body: { agent_id: 'agent-b' },
-      }]);
-      assert.deepStrictEqual(pageErrors, []);
-      assert.deepStrictEqual(consoleErrors, []);
     });
 
     await test('shows group load and network action failures beside their controls', async () => {

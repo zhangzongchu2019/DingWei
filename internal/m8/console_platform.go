@@ -141,6 +141,9 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 		// Agent 编组入口:0.2.1.55 起由 console 自己接成内部 tab;
 		// S-GROUP-ENTRY(2026-09-29)起对**所有 principal** 下发,不再关在 role==management 里。
 		//
+		// 🟡 2026-10-01 更新:「加入到其他业主编组」面板已按业主 S5 从本页移除(组长裁定台账 494ac55b);
+		//    入口仍对所有 principal 下发 —— 本页现在承载「Agent 管理」(自备审核、Agent 列表、托管)。
+		//    下面是 S-GROUP-ENTRY 当时的历史理由,留作取证。
 		// 🔴 为什么必须发给普通业主(修缺陷,不是放宽策略):
 		//   「加入到其他业主编组」那个面板**只在这个入口里面** —— console_auth.go 的
 		//   openGroupWorkspace 全文件仅一个调用点(renderPlatform 里 item.id==='agent-groups'
