@@ -613,6 +613,7 @@ function enrollFeedback(id,text){var e=document.getElementById(id);if(e)e.textCo
 function enrollTime(v){var d=new Date(v);return isNaN(d.getTime())?String(v||''):d.toLocaleString('zh-CN',{hour12:false});}
 var CONSOLE_ERRORS={
   name_taken:'该名称已被你名下的 Agent 使用（不区分大小写），请换一个',
+  group_name_taken:'这个编组名已被使用,请换一个',group_name_invalid:'编组名只能用 1～8 位字母或数字',   // 🟡 错误码暂定,待编组接口定稿对齐
   name_invalid:'名称只能用大小写字母和数字，2～32 位，且不能是渠道保留字',
   group_required:'请选择所属编组',
   expired:'申请已超过 24 小时，已作废',
@@ -660,12 +661,35 @@ function enrollCloseEditor(){
   enrollOpenId='';var ed=document.getElementById('enrollEditor');if(ed)ed.hidden=true;
   ['enrollCode','enrollName'].forEach(function(id){var i=document.getElementById(id);if(i)i.value='';});
 }
+// 编组可选已有,或就地新建(编组互锁取甲):选"新建编组…"出名字输入框,名字 1～8 位字母或数字(全局唯一由 Hub 判)。
+// 🟡 新建时的请求字段名 NEW_GROUP_FIELD 是暂定值,待 opus50tc2k 的编组接口定稿后对齐(只改这一处)。
+var NEW_GROUP='__new__',NEW_GROUP_RE=/^[A-Za-z0-9]{1,8}$/,NEW_GROUP_FIELD='new_group_name';
+function groupAddNewOption(sel){var o=document.createElement('option');o.value=NEW_GROUP;o.textContent='新建编组…';sel.append(o);}
+function groupWireNew(selId,boxId,inputId){
+  var sel=document.getElementById(selId),box=document.getElementById(boxId);if(!sel||!box)return;
+  sel.onchange=function(){box.hidden=sel.value!==NEW_GROUP;if(!box.hidden){var i=document.getElementById(inputId);if(i)i.focus();}};
+  box.hidden=sel.value!==NEW_GROUP;
+}
+// 返回 {fields:{...}} 或 {error:'提示'}:已有编组 ⇒ {<existingKey>:code};新建 ⇒ {new_group_name:名};没选 ⇒ error
+function groupChoice(selId,inputId,existingKey,emptyMsg){
+  var v=document.getElementById(selId).value;
+  if(v===NEW_GROUP){
+    var n=document.getElementById(inputId).value.trim();
+    if(!n)return {error:'请填写新编组的名字(1～8 位字母或数字)'};
+    if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};
+    var f={};f[NEW_GROUP_FIELD]=n;return {fields:f};
+  }
+  if(!v)return {error:emptyMsg};
+  var e={};e[existingKey]=v;return {fields:e};
+}
 function enrollFillGroups(){
   var sel=document.getElementById('enrollGroup');if(!sel)return;var keep=sel.value;sel.replaceChildren();
   var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});
-  if(!own.length){var none=document.createElement('option');none.value='';none.textContent='（暂无可选编组,请先添加编组）';sel.append(none);}
+  if(!own.length){var none=document.createElement('option');none.value='';none.textContent='（暂无编组,可直接新建）';sel.append(none);}
   own.forEach(function(g){var o=document.createElement('option');o.value=g.code;o.textContent=g.short_name||'历史组';sel.append(o);});
-  if(keep&&own.some(function(g){return g.code===keep;}))sel.value=keep;
+  groupAddNewOption(sel);
+  if(keep&&(keep===NEW_GROUP||own.some(function(g){return g.code===keep;})))sel.value=keep;
+  groupWireNew('enrollGroup','enrollNewGroupBox','enrollNewGroup');
 }
 function enrollOpenEditor(app){
   enrollOpenId=app.application_id;var ed=document.getElementById('enrollEditor');if(!ed)return;
@@ -704,9 +728,12 @@ async function refreshEnroll(){
 }
 function enrollBusy(on){['enrollApprove','enrollReject'].forEach(function(id){var b=document.getElementById(id);if(b)b.disabled=on;});}
 async function enrollApprove(){
-  var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),group=document.getElementById('enrollGroup').value,openedId=enrollOpenId;
-  if(!code||!name||!group){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码、Agent 名称,并选择所属编组');return;}
-  enrollBusy(true);var res=await consolePost(ENROLL_API.approve(openedId),{pairing_code:code,agent_name:name,group_code:group});enrollBusy(false);
+  var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),openedId=enrollOpenId;
+  if(!code||!name){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码、Agent 名称,并选择所属编组');return;}
+  var gc=groupChoice('enrollGroup','enrollNewGroup','group_code','请填写客户端屏幕上的配对码、Agent 名称,并选择所属编组');
+  if(gc.error){enrollFeedback('enrollFeedback',gc.error);return;}
+  var abody=Object.assign({pairing_code:code,agent_name:name},gc.fields);
+  enrollBusy(true);var res=await consolePost(ENROLL_API.approve(openedId),abody);enrollBusy(false);
   if(!res.ok){var gone=ENROLL_GONE.indexOf(res.code)>=0||res.status===410||(res.code==='pairing_mismatch'&&res.data.rejected===true);if(!gone){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
   enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();refreshRoster();refreshGroups('enroll');refreshAgents();
 }
@@ -783,7 +810,10 @@ function renderHostedForm(){
   renderHostedLlm();
   hostedFill('hostedPlan',(opts.plans||[]).map(function(p){return {value:p.id,text:p.name+(p.fits?'':'（超出剩余额度）'),disabled:!p.fits};}),'请选择资源套餐');
   var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});
-  hostedFill('hostedGroup',own.map(function(g){return {value:g.code,text:g.short_name||'历史组'};}),own.length?'请选择编组':'（暂无可选编组,请先添加编组）');
+  var hg=document.getElementById('hostedGroup'),wasNew=hg&&hg.value===NEW_GROUP;
+  hostedFill('hostedGroup',own.map(function(g){return {value:g.code,text:g.short_name||'历史组'};}),own.length?'请选择编组':'（暂无编组,可直接新建）');
+  if(hg){groupAddNewOption(hg);if(wasNew)hg.value=NEW_GROUP;}
+  groupWireNew('hostedGroup','hostedNewGroupBox','hostedNewGroup');
   var rem=(opts.quota&&opts.quota.remaining)||{};
   document.getElementById('hostedQuota').textContent='剩余额度:Agent '+rem.agents+' 个 · vCPU '+rem.vcpu+' · 内存 '+rem.mem_gb+'G · 磁盘 '+rem.disk_gb+'G';
 }
@@ -856,8 +886,12 @@ async function hostedTrackJob(jobId,name){
 }
 async function hostedCreate(){
   var v=function(id){return document.getElementById(id).value.trim();};
-  var body={name:v('hostedName'),group_id:v('hostedGroup'),node_id:v('hostedNode')||'auto',cli:v('hostedCli'),llm:v('hostedLlm'),account_id:v('hostedAccount'),plan_id:v('hostedPlan')};
-  if(!body.name||!body.group_id||!body.cli||!body.llm||!body.account_id||!body.plan_id){enrollFeedback('hostedFeedback','请填写名称并选择编组、CLI、LLM、账号和资源套餐');return;}
+  var body={name:v('hostedName'),node_id:v('hostedNode')||'auto',cli:v('hostedCli'),llm:v('hostedLlm'),account_id:v('hostedAccount'),plan_id:v('hostedPlan')};
+  var fillMsg='请填写名称并选择编组、CLI、LLM、账号和资源套餐';
+  if(!body.name||!body.cli||!body.llm||!body.account_id||!body.plan_id){enrollFeedback('hostedFeedback',fillMsg);return;}
+  var gc=groupChoice('hostedGroup','hostedNewGroup','group_id',fillMsg);
+  if(gc.error){enrollFeedback('hostedFeedback',gc.error);return;}
+  Object.assign(body,gc.fields);
   var btn=document.getElementById('hostedCreateBtn');btn.disabled=true;
   var res=await consolePost(HOSTED_API.create,body);btn.disabled=false;
   if(!res.ok){enrollFeedback('hostedFeedback',res.text);return;}   // 输入保留,业主改名/改选后可再点创建
@@ -886,7 +920,7 @@ function hostedOpButtons(a,hs){
 }
 function mountEnrollPanels(pane){
   var anchor=pane.querySelector('#group-status');if(!anchor)return;
-  anchor.insertAdjacentHTML('beforebegin',(FEATURE_SELFHOST_REVIEW?'<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section>':'')+'<section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><label>运行资源套餐 <select id=hostedPlan></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterStatus role=status></div><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
+  anchor.insertAdjacentHTML('beforebegin',(FEATURE_SELFHOST_REVIEW?'<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><label id=enrollNewGroupBox hidden>新编组名 <input id=enrollNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section>':'')+'<section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><label>运行资源套餐 <select id=hostedPlan></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><label id=hostedNewGroupBox hidden>新编组名 <input id=hostedNewGroup autocomplete=off placeholder="1～8 位字母或数字"></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterStatus role=status></div><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
   if(FEATURE_SELFHOST_REVIEW){
     document.getElementById('enrollRefresh').onclick=refreshEnroll;document.getElementById('enrollRetry').onclick=refreshEnroll;
     document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;

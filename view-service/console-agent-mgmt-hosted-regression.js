@@ -26,8 +26,9 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
+const MUTATIONS = ['hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
 if (mutation === 'quota-generic') mutate("if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){", "if(false){");
@@ -113,6 +114,8 @@ const server = http.createServer(async (req, res) => {
     const body = await read(req); writes.push({ path: p, body });
     if (!/^[A-Za-z0-9]+$/.test(String(body.name))) return err(res, 422, 'name_invalid');
     if (agents.some((a) => a.session_name.split('-')[1].toLowerCase() === String(body.name).toLowerCase())) return err(res, 409, 'name_taken');
+    if (body.new_group_name === 'Newteam') return err(res, 409, 'group_name_taken');   // 只为抓请求体、不开遮罩
+    if (String(body.name) === 'Gnew') return err(res, 409, 'name_taken');   // 同上:抓已有编组的请求体,不开遮罩
     if (String(body.name) === 'Quotaodd') return err(res, 403, 'quota_exceeded', { remaining: { agents: 2, vcpu: 6, mem_gb: '0', disk_gb: null } });
     if (String(body.name) === 'Quotaneg') return err(res, 403, 'quota_exceeded', { remaining: { agents: 2, vcpu: -1, mem_gb: 3, disk_gb: 3 } });
     if (String(body.name) === 'Quotabare') return err(res, 403, 'quota_exceeded');
@@ -221,6 +224,37 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await test('no secret is ever rendered anywhere on the page', async () => {
       assert.doesNotMatch(await page.locator('body').innerText(), /SK-LEAK/);
       assert.doesNotMatch(await page.locator('#hostedAccount').evaluate((s) => s.outerHTML), /SK-LEAK/);
+    });
+
+    await test('new group on the create form: an empty or malformed name is blocked locally; a valid name sends new_group_name instead of group_id; an existing group still sends group_id', async () => {
+      await fillValid('Gnew');
+      assert.ok((await page.locator('#hostedGroup option').allTextContents()).includes('新建编组…'), 'the new-group choice is offered');
+      assert.strictEqual(await page.locator('#hostedNewGroupBox').isHidden(), true);
+      await page.locator('#hostedGroup').selectOption('__new__');
+      await page.locator('#hostedNewGroupBox').waitFor({ state: 'visible' });
+      let before = writes.length;
+      await page.evaluate(() => { document.getElementById('hostedFeedback').textContent = ''; });
+      await page.locator('#hostedCreateBtn').click();
+      assert.match(await page.locator('#hostedFeedback').textContent(), /请填写新编组的名字/);
+      assert.strictEqual(writes.length, before, 'no name ⇒ nothing sent');
+      await page.locator('#hostedNewGroup').fill('a b'); await page.locator('#hostedCreateBtn').click();
+      assert.match(await page.locator('#hostedFeedback').textContent(), /1～8 位字母或数字/);
+      assert.strictEqual(writes.length, before, 'malformed name ⇒ nothing sent');
+      await page.locator('#hostedNewGroup').fill(''); await page.locator('#hostedNewGroup').click(); await page.keyboard.type('Newteam');
+      await page.locator('#hostedCreateBtn').click();
+      await page.locator('#hostedFeedback').filter({ hasText: '编组名已被使用' }).waitFor({ state: 'visible' });
+      const last = writes[writes.length - 1];
+      assert.strictEqual(last.body.new_group_name, 'Newteam');
+      assert.ok(!('group_id' in last.body), 'a new group is not sent together with a group_id');
+      assert.doesNotMatch(await page.locator('#hostedFeedback').textContent(), /SECRET-HUB-TEXT/);
+      // 再选已有编组:收起名字框,发 group_id、不带 new_group_name
+      await page.locator('#hostedGroup').selectOption(GROUP_MINE);
+      assert.strictEqual(await page.locator('#hostedNewGroupBox').isHidden(), true, 'choosing an existing group hides the name box');
+      await page.locator('#hostedCreateBtn').click();
+      for (let i = 0; i < 100 && writes[writes.length - 1] === last; i++) await page.waitForTimeout(20);
+      assert.strictEqual(writes[writes.length - 1].body.group_id, GROUP_MINE);
+      assert.ok(!('new_group_name' in writes[writes.length - 1].body));
+      await page.locator('#hostedName').fill(''); await page.evaluate(() => { document.getElementById('hostedNewGroup').value = ''; });
     });
 
     await test('incomplete form is hinted locally and nothing is sent', async () => {

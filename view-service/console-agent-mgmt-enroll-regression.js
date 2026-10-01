@@ -29,8 +29,10 @@ function mutate(from, to) {
   html = html.replace(from, to);
 }
 mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;'); // 自备审核区默认封存(开关关闭);本件测的就是它,所以装置里把开关打开
-const MUTATIONS = ['no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
+const MUTATIONS = ['new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'new-group-no-check') mutate("if(!n)return {error:'请填写新编组的名字(1～8 位字母或数字)'};", '');
+if (mutation === 'new-group-no-regex') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
 if (mutation === 'no-stale-guard') mutate('if(generation!==enrollGeneration)return null;', '');
 if (mutation === 'keep-inputs') mutate("if(!gone){enrollFeedback('enrollFeedback',res.text);return;}", "if(!gone){enrollFeedback('enrollFeedback',res.text);enrollCloseEditor();return;}");
 if (mutation === 'no-confirm-revoke') mutate("if(!confirm('吊销 '+a.name+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;", '');
@@ -184,7 +186,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
 
     await test('group dropdown offers only manageable groups', async () => {
       await rows().first().locator('.enroll-open').click();
-      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['团队甲'], 'group is required: no "no group" choice');
+      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['团队甲', '新建编组…'], 'only manageable groups, plus the new-group choice; no "no group" choice');
     });
 
     await test('empty required fields are hinted locally and nothing is sent', async () => {
@@ -197,7 +199,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await test('with no manageable group, approve is blocked locally and nothing is sent', async () => {
       noManageableGroup = true; await page.evaluate(() => refreshGroups('no-group')); await page.waitForTimeout(150);
       await page.locator('#enrollCancel').click(); await rows().first().locator('.enroll-open').click();
-      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['（暂无可选编组,请先添加编组）']);
+      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['（暂无编组,可直接新建）', '新建编组…']);
       await type('#enrollCode', '123456'); await type('#enrollName', 'Nogroup');
       const before = writes.length;
       await page.locator('#enrollApprove').click();
@@ -302,6 +304,31 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.waitForFunction(() => !document.querySelector('#enrollItems .enroll-row[data-application-id="a1"]'));
       assert.strictEqual(await page.locator('#enrollEditor').isHidden(), true);
       forceGone = '';
+    });
+
+    await test('new group: choosing it shows a name box; an empty or malformed name is blocked locally with nothing sent; a valid name sends new_group_name and no group_code', async () => {
+      resetApps(); await page.locator('#enrollRefresh').click();
+      await page.waitForFunction(() => document.querySelectorAll('#enrollItems .enroll-row').length === 3);
+      await rows().first().locator('.enroll-open').click();
+      assert.strictEqual(await page.locator('#enrollNewGroupBox').isHidden(), true, 'no name box until "new group" is chosen');
+      await page.locator('#enrollCode').click(); await page.keyboard.type('123456');
+      await page.locator('#enrollName').click(); await page.keyboard.type('Gamma');
+      await page.locator('#enrollGroup').selectOption('__new__');
+      await page.locator('#enrollNewGroupBox').waitFor({ state: 'visible' });
+      let before = writes.length;
+      await page.locator('#enrollApprove').click();
+      assert.match(await feedbackText(), /请填写新编组的名字/);
+      assert.strictEqual(writes.length, before, 'selecting "new group" without a name must send nothing');
+      for (const bad of ['a b', 'toolong99', '组名']) {
+        await page.locator('#enrollNewGroup').fill(bad);   // fill 不受 maxlength 约束:键入会被截成 8 位,这里要测的是脚本化/粘贴写入的越界值
+        await page.locator('#enrollApprove').click();
+        assert.match(await feedbackText(), /1～8 位字母或数字/, `bad name ${JSON.stringify(bad)}`);
+        assert.strictEqual(writes.length, before, `bad name ${JSON.stringify(bad)} must send nothing`);
+      }
+      await page.locator('#enrollNewGroup').fill(''); await page.locator('#enrollNewGroup').click(); await page.keyboard.type('Newteam');
+      await page.locator('#enrollApprove').click();
+      await page.locator('#enrollEditor').waitFor({ state: 'hidden' });
+      assert.deepStrictEqual(writes[writes.length - 1].body, { pairing_code: '123456', agent_name: 'Gamma', new_group_name: 'Newteam' });
     });
 
     await test('the group panel keeps list and create, and no longer offers join-by-code (owner S5)', async () => {
