@@ -38,10 +38,25 @@ func main() {
 	if err != nil {
 		log.Fatalf("nodeagent: %v", err)
 	}
+	// T-G4-12 · Docker 指令集（真机 Engine＋XFS 项目配额）。
+	// NODEAGENT_IMAGE_REGISTRY 固定镜像仓库（白名单）；NODEAGENT_SEAT_ROOT 席位目录根
+	// （生产 /data/dingwei-newplat/agents；实验节点 /data/dingwei-node）。
+	ag.RegisterDockerHandlers(
+		nodeagent.NewEngine(envOr("NODEAGENT_DOCKER_SOCK", "/var/run/docker.sock")),
+		nodeagent.XFSQuota(),
+		envOr("NODEAGENT_SEAT_ROOT", "/data/dingwei-newplat/agents"),
+		envOr("NODEAGENT_IMAGE_REGISTRY", "hub.local/dingwei"),
+	)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	// T-G4-12 的 Docker 指令集在此注册（骨架自带 report_capacity）。
 	if err := ag.Run(ctx); err != nil && ctx.Err() == nil {
 		log.Fatalf("nodeagent: %v", err)
 	}
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }
