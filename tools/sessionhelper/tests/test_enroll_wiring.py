@@ -23,6 +23,22 @@ from sessionhelper import app as app_module
 from sessionhelper.app import SessionHelper
 from sessionhelper.config import load_config
 
+try:
+    from _home_isolation import HomeIsolation
+except ImportError:
+    from tests._home_isolation import HomeIsolation
+
+_HOME = HomeIsolation()   # SessionHelper() installs send.py / inbox / audit files under ~/.dingwei: keep them out of the real one
+
+
+def setUpModule():
+    _HOME.start()
+
+
+def tearDownModule():
+    _HOME.finish()
+
+
 SECRET = "dwa_" + "cd" * 32
 BASE = {"SH_SESSION_NAME": "dev55", "SH_KEY_ID": "FB-2642", "SH_SECRET": "legacy-secret",
         "SH_WS_BASE": "wss://hub.example:55055", "SH_TOOL": "claude"}
