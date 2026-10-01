@@ -19,6 +19,10 @@ from . import __version__
 from .config import Config, detect_os
 
 
+# 升级状态文件的终态：到了这两个状态，启动时不再做"陈旧升级回滚"。
+UPDATE_TERMINAL_STATUSES = ("confirmed", "rolled_back")
+
+
 class ProvisionError(RuntimeError):
     pass
 
@@ -177,7 +181,8 @@ class Provisioner:
 
     def confirm_update_connected(self) -> None:
         state = self.load_update_state()
-        if not state or state.get("status") == "confirmed":
+        if not state or state.get("status") in UPDATE_TERMINAL_STATUSES:
+            # rolled_back：此刻连上的是回滚后的旧版本，不能把失败的新版本记成 confirmed。
             return
         state["status"] = "confirmed"
         state["connected_at"] = int(time.time())
@@ -185,7 +190,9 @@ class Provisioner:
 
     def rollback_stale_update_if_needed(self, timeout_seconds: int = 30) -> bool:
         state = self.load_update_state()
-        if not state or state.get("status") == "confirmed":
+        # 终态（confirmed / rolled_back）不再回滚：否则 rolled_back 的状态文件会在 timeout 之后
+        # 每次启动都被判陈旧 → 再回滚 → request_restart(os._exit) → 重启循环。
+        if not state or state.get("status") in UPDATE_TERMINAL_STATUSES:
             return False
         ts = int(state.get("ts") or 0)
         if ts <= 0 or int(time.time()) - ts < timeout_seconds:
