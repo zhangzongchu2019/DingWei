@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS g4_account_pool (
   llm        TEXT NOT NULL,
   secret_enc BYTEA NOT NULL,              -- 团队数据密钥加密的密文（信封加密）
   key_version INT NOT NULL,               -- 团队数据密钥版本号
+  last4      TEXT NOT NULL DEFAULT '',    -- 登记时算好存下——console 只显示后四位，永不为此解密
   state      TEXT NOT NULL DEFAULT 'available'
              CHECK (state IN ('available','bound','disabled')),
   bound_agent_id TEXT,                    -- 一席一账号；NULL＝在池可分配

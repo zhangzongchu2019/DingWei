@@ -16,6 +16,7 @@ var (
 	ErrNotFound      = errors.New("hosted: not found")
 	ErrAccountBound  = errors.New("hosted: account already bound")   // 一席一账号冲突
 	ErrInvalidState  = errors.New("hosted: invalid state")
+	ErrParams        = errors.New("hosted: 参数不合要求")
 )
 
 type Store struct{ db *sql.DB }
@@ -172,34 +173,67 @@ INSERT INTO g4_seat_event (agent_id, kind, detail) VALUES ($1,$2,$3)`, agentID, 
 type Account struct {
 	ID, Name, Kind, CLI, LLM string
 	KeyVersion               int
+	Last4                    string
 	State                    string
 	BoundAgentID             sql.NullString
 }
 
 func (s *Store) CreateAccount(ctx context.Context, a Account, secretEnc []byte, by string) error {
 	_, err := s.db.ExecContext(ctx, `
-INSERT INTO g4_account_pool (id, name, kind, cli, llm, secret_enc, key_version, created_by)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-		a.ID, a.Name, a.Kind, a.CLI, a.LLM, secretEnc, a.KeyVersion, by)
+INSERT INTO g4_account_pool (id, name, kind, cli, llm, secret_enc, key_version, last4, created_by)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+		a.ID, a.Name, a.Kind, a.CLI, a.LLM, secretEnc, a.KeyVersion, a.Last4, by)
 	return err
 }
 
 func (s *Store) GetAccount(ctx context.Context, id string) (Account, error) {
 	var a Account
 	err := s.db.QueryRowContext(ctx, `
-SELECT id, name, kind, cli, llm, key_version, state, bound_agent_id FROM g4_account_pool WHERE id=$1`, id).Scan(
-		&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.State, &a.BoundAgentID)
+SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id FROM g4_account_pool WHERE id=$1`, id).Scan(
+		&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return a, ErrNotFound
 	}
 	return a, err
 }
 
+// UpdateAccountSecret 换密：新密文与后四位一并更新（key_version 取当前 active——调用方给）。
+func (s *Store) UpdateAccountSecret(ctx context.Context, accountID string, secretEnc []byte, keyVersion int, last4 string) error {
+	res, err := s.db.ExecContext(ctx, `
+UPDATE g4_account_pool SET secret_enc=$2, key_version=$3, last4=$4, updated_at=now() WHERE id=$1`,
+		accountID, secretEnc, keyVersion, last4)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// SetAccountState 停用/恢复 available（disabled 的账号不可选不可绑）。
+func (s *Store) SetAccountState(ctx context.Context, accountID, state string) error {
+	switch state {
+	case "available", "disabled":
+	default:
+		return ErrInvalidState
+	}
+	res, err := s.db.ExecContext(ctx, `
+UPDATE g4_account_pool SET state=$2, updated_at=now() WHERE id=$1 AND state <> 'bound'`, accountID, state)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrInvalidState // 不存在或处于 bound（须先解绑）
+	}
+	return nil
+}
+
 // ListUsableAccounts 新建表单账号下拉：本人被授权（grant）＋未绑定＋CLI/LLM 匹配。
 // 永不返回 secret_enc（B7：密钥不出现在任何应答里）。
 func (s *Store) ListUsableAccounts(ctx context.Context, userLC, cli, llm string) ([]Account, error) {
 	rows, err := s.db.QueryContext(ctx, `
-SELECT p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.state, p.bound_agent_id
+SELECT p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id
 FROM g4_account_pool p
 JOIN g4_account_grant g ON g.account_id = p.id AND g.user_lc = $1
 WHERE p.state = 'available' AND p.cli = $2 AND p.llm = $3
@@ -211,7 +245,7 @@ ORDER BY p.name`, userLC, cli, llm)
 	var out []Account
 	for rows.Next() {
 		var a Account
-		if err := rows.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.State, &a.BoundAgentID); err != nil {
+		if err := rows.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID); err != nil {
 			return nil, err
 		}
 		out = append(out, a)
