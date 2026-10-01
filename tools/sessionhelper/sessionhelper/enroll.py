@@ -5,8 +5,7 @@ Flow (SPEC-THIN-SH-V1 s.2, DESIGN-THIN-SH s.3.1):
   for approval -> poll until the owner approves -> store the dedicated
   credential in a 0600 file -> caller connects with it.
 
-Interface: provisional contract from G3 (opus50tc2k), 2026-10-01; the Hub's
-design doc is authoritative once published.  The Hub only ever sees a salted
+Interface: runbooks/DESIGN-G3-ENROLL-AUTH-API-20261001.md v1 (sections 2.1-2.3).  The Hub only ever sees a salted
 digest of the pairing code, never the code itself.  The credential and the
 poll token are never logged or printed by this module.
 """
@@ -30,6 +29,10 @@ from . import __version__
 CREDENTIAL_FILE = "credential.json"
 PENDING_FILE = "enroll-pending.json"
 DEVICE_FILE = "enroll-device.id"
+CREDENTIAL_RE = re.compile(r"^dwa_[0-9a-f]{64}$")  # format self-check only; never log a value
+MIN_POLL_INTERVAL = 2.0  # Hub allows one poll per 2 s per application (429 beyond that)
+REVOKE_CLOSE_CODE = 4401
+WS_QUERY_ALLOWED = ("version", "tool", "os")
 OWNER_RE = re.compile(r"^[A-Za-z0-9]{2,32}$")  # user-ID rule (ledger c5981300); the Hub compares case-insensitively
 
 
@@ -51,6 +54,29 @@ class CredentialAlreadyIssued(EnrollError):
 
 class CredentialFileError(EnrollError):
     """Credential file exists but is unsafe or unreadable."""
+
+
+class HubHTTPError(EnrollError):
+    """Hub answered with an HTTP error; only the machine code is kept, never a body text."""
+
+    def __init__(self, status: int, code: str = "", retry_after_s: float = 0.0):
+        super().__init__(f"hub http {status}" + (f": {code}" if code else ""))
+        self.status, self.code, self.retry_after_s = status, code, retry_after_s
+
+
+class CredentialInvalid(EnrollError):
+    """Handshake: credential unknown (maybe the wrong Hub). Stop; keep the file."""
+
+
+class CredentialRevoked(EnrollError):
+    """Handshake refused or connection closed because the agent was revoked."""
+
+
+class AlreadyConnected(EnrollError):
+    """Handshake: the same credential already has a live connection. Stop; keep the file."""
+
+
+FATAL_CONNECT_ERRORS = (CredentialInvalid, CredentialRevoked, AlreadyConnected)
 
 
 @dataclass(frozen=True)
@@ -80,12 +106,14 @@ class UrllibTransport:
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # noqa: S310
                 return json.loads(resp.read().decode("utf-8") or "{}")
         except urllib.error.HTTPError as exc:
-            detail = ""
+            code, retry = "", 0.0
             try:
-                detail = exc.read().decode("utf-8", "replace")[:200]
-            except OSError:
+                parsed = json.loads(exc.read().decode("utf-8", "replace") or "{}")
+                code = str(parsed.get("error") or "")[:64]
+                retry = float(parsed.get("retry_after_s") or 0)
+            except (OSError, ValueError, AttributeError, TypeError):
                 pass
-            raise EnrollError(f"hub http {exc.code}: {detail}") from exc
+            raise HubHTTPError(exc.code, code, retry) from exc
         except (urllib.error.URLError, OSError, ValueError) as exc:
             raise EnrollError(f"hub unreachable: {type(exc).__name__}") from exc
 
@@ -225,14 +253,36 @@ def enroll(
     if not OWNER_RE.fullmatch(owner or ""):
         raise EnrollError("owner_user_id is missing or malformed")
 
-    pending = _load_pending(state_dir) or _apply(state_dir, owner, transport)
+    poll_interval = max(poll_interval, MIN_POLL_INTERVAL)
+    try:
+        pending = _load_pending(state_dir) or _apply(state_dir, owner, transport)
+    except HubHTTPError as exc:
+        if exc.status == 404 and exc.code == "unknown_owner":
+            reason = "owner_user_id does not exist or is not active; check the user ID you entered"
+        elif exc.status == 429:
+            reason = f"too many applications; try again in about {int(exc.retry_after_s) or 60} seconds"
+        else:
+            raise
+        notify(reason)
+        raise EnrollStopped(reason) from exc
     show(pending["code"])
     polls = 0
     while True:
-        reply = transport.get_json(
-            f"/api/enroll/applications/{pending['application_id']}",
-            {"Authorization": f"Bearer {pending['poll_token']}"},
-        )
+        try:
+            reply = transport.get_json(
+                f"/api/enroll/applications/{pending['application_id']}",
+                {"Authorization": f"Bearer {pending['poll_token']}"},
+            )
+        except HubHTTPError as exc:
+            if exc.status == 429:  # polled too fast: wait as told, not counted as a failed poll
+                sleep(max(exc.retry_after_s, poll_interval))
+                continue
+            if exc.status == 404:  # unknown application or wrong poll token: the saved request is useless
+                _clear_pending(state_dir)
+                reason = "this application no longer exists; restart the client to apply again"
+                notify(reason)
+                raise EnrollStopped(reason) from exc
+            raise
         state = reply.get("state")
         if state == "approved":
             name, secret = str(reply.get("agent_name") or ""), str(reply.get("credential") or "")
@@ -244,6 +294,9 @@ def enroll(
                     "approved, but the one-time credential was already issued; "
                     "ask the owner to revoke this agent and apply again"
                 )
+            if not CREDENTIAL_RE.fullmatch(secret):
+                # Saved anyway: it is handed out only once, so refusing it would lose it for good.
+                notify("the credential has an unexpected format; saved, but report this to the platform team")
             cred = Credential(agent_name=name, secret=secret)
             save_credential(state_dir, cred)  # persist before dropping the pending state
             _clear_pending(state_dir)  # poll_token is discarded with it
@@ -307,17 +360,83 @@ def auth_headers(cred: Credential) -> dict[str, str]:
     return {"Authorization": f"Bearer {cred.secret}"}
 
 
-AGENT_WS_PATH = "/ws/agent"  # placeholder until the Hub fixes the path (ENROLL-API-DRAFT s.4)
+AGENT_WS_PATH = "/ws/agent"
 
 
 def agent_ws_url(ws_base: str, query: dict[str, str] | None = None) -> str:
-    """Connect URL for a dedicated-credential agent.
+    """Connect URL for a dedicated-credential agent (design 2.3).
 
-    Identity (name.owner) is resolved by the Hub from the credential, so the
-    URL carries neither the agent name nor any account key: a self-declared
-    name is exactly the impersonation entry point.
+    Identity (name.owner) is resolved by the Hub from the credential, so the URL
+    carries neither the agent name nor any account key; only capability
+    parameters (version, tool, os) are allowed through.
     """
     q = {"version": __version__, **(query or {})}
-    for forbidden in ("key_id", "name", "agent_name", "session_name"):
-        q.pop(forbidden, None)
+    q = {k: v for k, v in q.items() if k in WS_QUERY_ALLOWED and v}
     return f"{ws_base.rstrip('/')}{AGENT_WS_PATH}?{urlencode(q)}"
+
+
+def connection_params(cred: Credential, ws_base: str, query: dict[str, str] | None = None) -> tuple[str, dict[str, str]]:
+    return agent_ws_url(ws_base, query), auth_headers(cred)
+
+
+def on_handshake_failure(state_dir: str, status: int, body: bytes | str, notify: Callable[[str], None]) -> None:
+    """Interpret a refused WebSocket handshake. Raises for the three fatal cases,
+    returns for anything else (ordinary reconnect logic then applies)."""
+    code = ""
+    try:
+        raw = body.decode("utf-8", "replace") if isinstance(body, (bytes, bytearray)) else str(body or "")
+        code = str(json.loads(raw or "{}").get("error") or "")
+    except (ValueError, AttributeError):
+        pass
+    if status == 401 and code == "credential_revoked":
+        revoke_local(state_dir, notify)
+        raise CredentialRevoked("credential revoked")
+    if status == 401 and code == "credential_invalid":
+        notify("the Hub does not know this credential (wrong Hub?); the local credential file was kept")
+        raise CredentialInvalid("credential invalid")
+    if status == 409 and code == "already_connected":
+        notify("this credential is already connected elsewhere; stopping. The local credential file was kept")
+        raise AlreadyConnected("already connected")
+
+
+def on_ws_closed(state_dir: str, code: int, reason: str, notify: Callable[[str], None]) -> None:
+    """A live connection was closed by the Hub: 4401 + credential_revoked means revoked."""
+    if code == REVOKE_CLOSE_CODE and reason == "credential_revoked":
+        revoke_local(state_dir, notify)
+        raise CredentialRevoked("credential revoked")
+
+
+def enabled_for_env(environ) -> bool:
+    return str(environ.get("SH_ENROLL", "")).strip().lower() in ("1", "true", "yes", "on")
+
+
+def hub_http_base(ws_base: str) -> str:
+    """wss://host -> https://host ; ws:// -> http:// (enroll endpoints are plain HTTP)."""
+    if ws_base.startswith("wss://"):
+        return "https://" + ws_base[len("wss://"):]
+    if ws_base.startswith("ws://"):
+        return "http://" + ws_base[len("ws://"):]
+    return ws_base
+
+
+def prepare_client_env(environ, *, show: Callable[[str], None], notify: Callable[[str], None],
+                       transport: Transport | None = None) -> tuple[dict[str, str], Credential, str]:
+    """SH_ENROLL=1 startup: enroll if needed, then return (env for load_config, credential, state_dir).
+
+    config.py stays untouched (R1 owns it): load_config still wants SH_KEY_ID/SH_SECRET, so they get
+    inert placeholders here; the connection layer ignores them whenever a credential is present.
+    """
+    env = dict(environ)
+    state_dir = os.path.expanduser(env.get("SH_STATE_DIR", "~/.dingwei"))
+    ws_base = env.get("SH_WS_BASE", "")
+    if not ws_base:
+        raise EnrollError("SH_WS_BASE is required")
+    cred = enroll(
+        state_dir=state_dir, owner=env.get("SH_ENROLL_OWNER", ""),
+        transport=transport or UrllibTransport(hub_http_base(ws_base)),
+        show=show, notify=notify,
+    )
+    env["SH_SESSION_NAME"] = cred.agent_name.lower()
+    env.setdefault("SH_KEY_ID", "enrolled")
+    env["SH_SECRET"] = "enrolled"
+    return env, cred, state_dir
