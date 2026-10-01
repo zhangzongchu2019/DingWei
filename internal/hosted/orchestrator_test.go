@@ -546,8 +546,8 @@ func TestOptionsViewAndJobProgress(t *testing.T) {
 		t.Fatalf("已绑账号不得再出现: %+v", v.Accounts)
 	}
 	// 配额剩余：agents 2−1＝1、vcpu 4−2＝2、mem 8−4＝4G（mkOrch 配额 2/4/8192）
-	if v.Quota.Agents != 1 || v.Quota.VCPU != 2 || v.Quota.MemGB != 4 {
-		t.Fatalf("剩余额度: %+v", v.Quota)
+	if r := v.Quota.Remaining; r.Agents != 1 || r.VCPU != 2 || r.MemGB != 4 {
+		t.Fatalf("剩余额度: %+v", v.Quota.Remaining)
 	}
 	// fits：2c4g 还剩 1 席 2C/4G ⇒ 可；4c8g 超剩余 ⇒ 置灰
 	var fits map[string]bool = map[string]bool{}

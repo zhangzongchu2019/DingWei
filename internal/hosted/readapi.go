@@ -53,18 +53,24 @@ type QuotaRemaining struct {
 	DiskGB int64 `json:"disk_gb"`
 }
 
+// QuotaView 契约第一节：quota: {remaining:{agents, vcpu, mem_gb, disk_gb}}——多包一层 remaining（页面读 opts.quota.remaining）。
+type QuotaView struct {
+	Remaining QuotaRemaining `json:"remaining"`
+}
+
 type OptionsView struct {
 	Nodes    []NodeOption    `json:"nodes"`
 	Combos   []ComboOption   `json:"combos"`
 	Accounts []AccountOption `json:"accounts"`
 	Plans    []PlanOption    `json:"plans"`
-	Quota    QuotaRemaining  `json:"quota"`
+	Quota    QuotaView       `json:"quota"`
 }
 
 // Options 新建表单数据源（一次返回不拆；本期几十条级不分页——契约第一节）。
 // 账号＝本人被授权且未绑定（ListUsableAccounts 口径；席位创建后该账号即绑定，下拉开不出）。
 func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView, error) {
-	var v OptionsView
+	// 四个列表一律非 nil：空时序列化为 []，不是 null（页面按数组遍历）。
+	v := OptionsView{Nodes: []NodeOption{}, Combos: []ComboOption{}, Accounts: []AccountOption{}, Plans: []PlanOption{}}
 
 	// 节点：剩余内存/磁盘来自容量上报（心跳真采集）；free_vcpu＝cpu_total−在席套餐占用
 	nodes, err := o.st.ListNodes(ctx)
@@ -112,7 +118,7 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 	if err != nil {
 		return v, err
 	}
-	v.Quota = QuotaRemaining{
+	v.Quota.Remaining = QuotaRemaining{
 		Agents: max0(int64(quota.AgentsLimit) - int64(usage.Agents)),
 		VCPU:   max0(int64(quota.VCPULimit) - int64(usage.VCPU)),
 		MemGB:  max0(quota.MemMBLimit-usage.MemMB) / 1024,
@@ -157,10 +163,21 @@ func (o *Orchestrator) JobProgress(ctx context.Context, jobID string) (JobView, 
 	case "busy":
 		return JobView{Stage: "online", AgentID: seat.AgentID}, nil // 升级/重启中：席位仍在线（蒙版用于创建链）
 	default: // error/failed/destroyed 等 ⇒ failed，reason＝状态机记录的机器码
-		reason := seat.StateDetail
-		if reason == "" {
-			reason = "start_failed"
-		}
-		return JobView{Stage: "failed", Reason: reason}, nil
+		return JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)}, nil
 	}
+}
+
+// jobFailReasons 契约第四节「进度」一栏的七个机器码——jobs.reason 只出这七个（页面按码配中文）。
+var jobFailReasons = map[string]bool{
+	"queue_timeout": true, "pull_timeout": true, "start_timeout": true,
+	"image_pull_failed": true, "start_failed": true, "credential_inject_failed": true, "node_offline": true,
+}
+
+// jobFailReason 状态机记下的失败原因若不是这七个码（空、Go 错误文本、生命周期操作留下的其他记号），
+// 一律收成 start_failed：页面只认码，原文留在席位事件与审计里供诊断，不外漏。
+func jobFailReason(detail string) string {
+	if jobFailReasons[detail] {
+		return detail
+	}
+	return "start_failed"
 }
