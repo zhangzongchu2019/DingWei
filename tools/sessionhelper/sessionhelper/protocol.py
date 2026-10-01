@@ -41,45 +41,6 @@ def envelope(to: str, body: str, from_addr: str, meta: dict[str, Any] | None = N
     }
 
 
-def is_feishu_addr(addr: str) -> bool:
-    return addr.count("#") == 2
-
-
-def reply_target(inbound: dict[str, Any], book: AddressBook) -> tuple[str, dict[str, Any]]:
-    """Return target address and meta for replying to an inbound envelope."""
-    from_addr = str(inbound.get("from") or "")
-    meta = inbound.get("meta") or {}
-    source_bot = str(meta.get("source_bot_channel_id") or "").strip()
-    rmeta: dict[str, Any] = {}
-    if source_bot:
-        rmeta["source_bot_channel_id"] = source_bot
-        chat_type = str(meta.get("source_chat_type") or meta.get("chat_type") or "").strip()
-        if chat_type:
-            rmeta["source_chat_type"] = chat_type
-        for key in ("source_open_id", "source_chat_id", "source_sender_openid"):
-            value = str(meta.get(key) or "").strip()
-            if value:
-                rmeta[key] = value
-
-    chat_type = str(meta.get("source_chat_type") or meta.get("chat_type") or "").strip()
-    if chat_type == "group" and (meta.get("source_chat_id") or meta.get("group_chat_id")):
-        chat_id = str(meta.get("source_chat_id") or meta.get("group_chat_id"))
-        sender = str(meta.get("source_sender_openid") or meta.get("sender_open_id") or "").strip()
-        if sender:
-            rmeta["at"] = [sender]
-        return book.feishu_addr(chat_id, source_bot or None), rmeta
-    if chat_type == "personal" and source_bot:
-        open_id = str(meta.get("source_open_id") or meta.get("source_sender_openid") or meta.get("source_chat_id") or "").strip()
-        if open_id:
-            return book.feishu_addr(open_id, source_bot), rmeta
-    if meta.get("chat_type") == "group" and meta.get("group_chat_id"):
-        rmeta: dict[str, Any] = {}
-        if meta.get("sender_open_id"):
-            rmeta["at"] = [meta["sender_open_id"]]
-        return book.feishu_addr(str(meta["group_chat_id"])), rmeta
-    return from_addr, {}
-
-
 def is_mirror_control(env: dict[str, Any]) -> bool:
     meta = env.get("meta") or {}
     return meta.get("type") == "mirror_control"
@@ -90,3 +51,15 @@ def required_env(name: str, env: dict[str, str]) -> str:
     if not value:
         raise RuntimeError(f"{name} is required")
     return value
+
+
+# 临时兼容再导出：is_feishu_addr / reply_target 已搬到 routing.py（R3）。
+# 用模块级 __getattr__ 延迟取，避免 protocol <-> routing 循环 import；V9 把这些逻辑上移到 Hub 后移除。
+_MOVED_TO_ROUTING = ("is_feishu_addr", "reply_target")
+
+
+def __getattr__(name: str):
+    if name in _MOVED_TO_ROUTING:
+        from . import routing
+        return getattr(routing, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

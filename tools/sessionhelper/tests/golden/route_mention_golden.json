@@ -1,0 +1,5886 @@
+{
+ "_recorded_from": {
+  "git_head": "97fb07b9ed528a9c6f69f7e1934f5912ddcec2b8",
+  "note": "录制于 R3 改动之前的旧代码；改动后用同一组输入经新接口重放，逐条比对。",
+  "source_sha256": {
+   "sessionhelper/app.py": "9e168237cf2264dab0f000facbd0cacb876c11698115452cc4ef121573169f20",
+   "sessionhelper/protocol.py": "40be4830b2e941c05af5546e21cac4e4aa614ea3d87172b4c82a0598499a54b6",
+   "sessionhelper/reply_origin.py": "995bfb7b683f6dcbc8a2d4594d6bce89da5fde7b587d1fb611bd7ecd6aa9faa5"
+  }
+ },
+ "is_feishu_addr": [
+  {
+   "addr": "",
+   "out": false
+  },
+  {
+   "addr": "a",
+   "out": false
+  },
+  {
+   "addr": "a#b",
+   "out": false
+  },
+  {
+   "addr": "a#b#c",
+   "out": true
+  },
+  {
+   "addr": "a#b#c#d",
+   "out": false
+  },
+  {
+   "addr": "##",
+   "out": true
+  },
+  {
+   "addr": "a##",
+   "out": true
+  },
+  {
+   "addr": "#a#",
+   "out": true
+  },
+  {
+   "addr": "ou_1#FB-1#bot",
+   "out": true
+  },
+  {
+   "addr": "peer#FB-2642",
+   "out": false
+  },
+  {
+   "addr": "x#y#z ",
+   "out": true
+  }
+ ],
+ "reply": [
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "delivery_cancel"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "delivery_cancel_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "mirror_control"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "provision"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "provision_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "agent_route"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "mirror"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {}
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "no_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "ack_only"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "weird"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "protocol_class": "conversation",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "protocol_class": "control",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "conversation_terminal": false,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "conversation_terminal"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "conversation_terminal": true,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "conversation_terminal"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "conversation_terminal": "false",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "conversation_terminal": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "conversation_terminal"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "conversation_terminal": 1,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "max_hops": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": 4
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "max_hops": 4,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": "6"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "max_hops": "6",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": "y"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "max_hops": "y",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": 16
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "max_hops": 16,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 0,
+     "max_hops": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": 4
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 0,
+     "max_hops": 4,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": "6"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 0,
+     "max_hops": "6",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": "y"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 0,
+     "max_hops": "y",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": 16
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 0,
+     "max_hops": 16,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 3,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 3,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 3,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 3,
+     "max_hops": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 3,
+    "kind": "reply",
+    "max_hops": 4
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 3,
+     "max_hops": 4,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 3,
+    "kind": "reply",
+    "max_hops": "6"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 3,
+     "max_hops": "6",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 3,
+    "kind": "reply",
+    "max_hops": "y"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 3,
+     "max_hops": "y",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 3,
+    "kind": "reply",
+    "max_hops": 16
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 3,
+     "max_hops": 16,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 5,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "5",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 5,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "5",
+     "max_hops": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 5,
+    "kind": "reply",
+    "max_hops": 4
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "5",
+     "max_hops": 4,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 5,
+    "kind": "reply",
+    "max_hops": "6"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "5",
+     "max_hops": "6",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 5,
+    "kind": "reply",
+    "max_hops": "y"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "5",
+     "max_hops": "y",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 5,
+    "kind": "reply",
+    "max_hops": 16
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "5",
+     "max_hops": 16,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "x",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "x",
+     "max_hops": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": 4
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "x",
+     "max_hops": 4,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": "6"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "x",
+     "max_hops": "6",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": "y"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "x",
+     "max_hops": "y",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply",
+    "max_hops": 16
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": "x",
+     "max_hops": 16,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 16,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 16,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 16,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 16,
+     "max_hops": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 16,
+    "kind": "reply",
+    "max_hops": 4
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 16,
+     "max_hops": 4,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 16,
+    "kind": "reply",
+    "max_hops": "6"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 16,
+     "max_hops": "6",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 16,
+    "kind": "reply",
+    "max_hops": "y"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 16,
+     "max_hops": "y",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 16,
+    "kind": "reply",
+    "max_hops": 16
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 16,
+     "max_hops": 16,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 17,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 17,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 17,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 17,
+     "max_hops": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 17,
+    "kind": "reply",
+    "max_hops": 4
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 17,
+     "max_hops": 4,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 17,
+    "kind": "reply",
+    "max_hops": "6"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 17,
+     "max_hops": "6",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 17,
+    "kind": "reply",
+    "max_hops": "y"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 17,
+     "max_hops": "y",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 17,
+    "kind": "reply",
+    "max_hops": 16
+   },
+   "control": false,
+   "decision": [
+    false,
+    "hop_backstop"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": 17,
+     "max_hops": 16,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": -1,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": -1,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": -1,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": -1,
+     "max_hops": 0,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": -1,
+    "kind": "reply",
+    "max_hops": 4
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": -1,
+     "max_hops": 4,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": -1,
+    "kind": "reply",
+    "max_hops": "6"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": -1,
+     "max_hops": "6",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": -1,
+    "kind": "reply",
+    "max_hops": "y"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": -1,
+     "max_hops": "y",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": -1,
+    "kind": "reply",
+    "max_hops": 16
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "hop_count": -1,
+     "max_hops": 16,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "{\"mcs_dispatch_v1\": 1}",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "x \"mcs_receipt_v1\" y",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "\"board_control\"",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "\"delivery_ack\"",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "mcs_dispatch_v1",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {}
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "no_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "reply_policy": "no_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "reply_policy": "no_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "reply_policy": "no_reply"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "mirror"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "mirror"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "mirror"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "reply_policy": "no_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "no_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "reply_policy": "expect_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "reply_policy": "no_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "reply_policy": "expect_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "reply_policy": "no_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "reply_policy": "expect_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "reply_policy": "no_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "reply_policy": "expect_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "reply_policy": "no_reply",
+     "type": "delivery"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "no_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "reply_policy": "expect_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "reply_policy": "no_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "reply_policy": "expect_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "reply_policy": "no_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "reply_policy": "expect_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "reply_policy": "no_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "reply_policy": "expect_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "reply_policy": "no_reply",
+     "type": "delivery_ack"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "expect_reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "reply_policy": "no_reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "reply_policy": "expect_reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "content",
+     "reply_policy": "no_reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "reply_policy": "expect_reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "reply",
+     "reply_policy": "no_reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "type": "other"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "reply_policy": "expect_reply",
+     "type": "other"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": true,
+   "decision": [
+    false,
+    "control"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "ack",
+     "reply_policy": "no_reply",
+     "type": "other"
+    }
+   },
+   "reserved": true
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "mirror"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "mirror"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "reply_policy": "expect_reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "mirror"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "meta": {
+     "kind": "mirror",
+     "reply_policy": "no_reply",
+     "type": "other"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_id": "conv-1",
+    "conversation_terminal": true,
+    "hop_count": 2,
+    "in_reply_to": "m-1",
+    "kind": "reply",
+    "max_hops": 8
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "id": "m-1",
+    "meta": {
+     "conversation_id": "conv-1",
+     "hop_count": 2,
+     "max_hops": 8,
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_id": "conv-2",
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "in_reply_to": "m-2",
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "id": "  m-2  ",
+    "meta": {
+     "conversation_id": "  conv-2  ",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "id": "",
+    "meta": {
+     "conversation_id": "",
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    true,
+    "ok"
+   ],
+   "env": {
+    "body": "plain",
+    "from": "peer#FB-2642",
+    "id": null,
+    "meta": {
+     "reply_policy": "expect_reply"
+    }
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "no meta",
+    "from": "peer#FB-2642"
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {
+    "body": "meta none",
+    "from": "peer#FB-2642",
+    "meta": null
+   },
+   "reserved": false
+  },
+  {
+   "carry": {
+    "conversation_terminal": true,
+    "hop_count": 0,
+    "kind": "reply"
+   },
+   "control": false,
+   "decision": [
+    false,
+    "no_expect_reply"
+   ],
+   "env": {},
+   "reserved": false
+  }
+ ],
+ "reply_target": [
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {}
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {}
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "botX"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "botX"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "group_chat_id": "oc_group1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "group_chat_id": "oc_group1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "sender_open_id": "ou_sender2"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "sender_open_id": "ou_sender2"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal",
+      "source_bot_channel_id": "botX"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal",
+      "source_bot_channel_id": "botX"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_bot_channel_id": "botX"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_bot_channel_id": "botX"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_bot_channel_id": "botX"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_bot_channel_id": "botX"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#UnifiedRobot",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#UnifiedRobot",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "oc_group1#FB-2642#UnifiedRobot",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "oc_group1#FB-2642#UnifiedRobot",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_chat_type": "group",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_chat_type": "group",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_chat_type": "group",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_chat_type": "group",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal",
+      "group_chat_id": "oc_group1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal",
+      "group_chat_id": "oc_group1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal",
+      "sender_open_id": "ou_sender2"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal",
+      "sender_open_id": "ou_sender2"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_chat_id": "oc_chat1",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_chat_id": "oc_chat1",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_chat_id": "oc_chat1",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_chat_id": "oc_chat1",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "sender_open_id": "ou_sender2"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "sender_open_id": "ou_sender2"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "group_chat_id": "oc_group1",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_open_id": "ou_open1",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_open_id": "ou_open1",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "sender_open_id": "ou_sender2",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "ou_abc#FB-2642#botX",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#botX",
+    {
+     "at": [
+      "ou_sender1"
+     ],
+     "source_bot_channel_id": "botX",
+     "source_chat_id": "oc_chat1",
+     "source_chat_type": "group",
+     "source_sender_openid": "ou_sender1"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#botX",
+    {
+     "at": [
+      "ou_sender1"
+     ],
+     "source_bot_channel_id": "botX",
+     "source_chat_id": "oc_chat1",
+     "source_chat_type": "group",
+     "source_sender_openid": "ou_sender1"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_type": "personal",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "ou_open1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_type": "personal",
+     "source_open_id": "ou_open1"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_type": "personal",
+      "source_open_id": "ou_open1"
+     }
+    }
+   },
+   "out": [
+    "ou_open1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_type": "personal",
+     "source_open_id": "ou_open1"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal",
+      "source_bot_channel_id": "botX",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_sender1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_type": "personal",
+     "source_sender_openid": "ou_sender1"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal",
+      "source_bot_channel_id": "botX",
+      "source_sender_openid": "ou_sender1"
+     }
+    }
+   },
+   "out": [
+    "ou_sender1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_type": "personal",
+     "source_sender_openid": "ou_sender1"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "personal",
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_id": "oc_chat1",
+     "source_chat_type": "personal"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "personal",
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_id": "oc_chat1",
+     "source_chat_type": "personal"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "group",
+      "group_chat_id": "oc_group1",
+      "sender_open_id": "ou_sender2"
+     }
+    }
+   },
+   "out": [
+    "oc_group1#FB-2642#UnifiedRobot",
+    {
+     "at": [
+      "ou_sender2"
+     ]
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "group",
+      "group_chat_id": "oc_group1",
+      "sender_open_id": "ou_sender2"
+     }
+    }
+   },
+   "out": [
+    "oc_group1#FB-2642#UnifiedRobot",
+    {
+     "at": [
+      "ou_sender2"
+     ]
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "group",
+      "group_chat_id": "oc_group1"
+     }
+    }
+   },
+   "out": [
+    "oc_group1#FB-2642#UnifiedRobot",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "group",
+      "group_chat_id": "oc_group1"
+     }
+    }
+   },
+   "out": [
+    "oc_group1#FB-2642#UnifiedRobot",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "chat_type": "group",
+      "group_chat_id": "oc_group1",
+      "sender_open_id": "ou_s2",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group",
+      "source_sender_openid": "ou_s"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#UnifiedRobot",
+    {
+     "at": [
+      "ou_s"
+     ]
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "chat_type": "group",
+      "group_chat_id": "oc_group1",
+      "sender_open_id": "ou_s2",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group",
+      "source_sender_openid": "ou_s"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#UnifiedRobot",
+    {
+     "at": [
+      "ou_s"
+     ]
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "  ",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#UnifiedRobot",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "  ",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#UnifiedRobot",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": " group "
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_id": "oc_chat1",
+     "source_chat_type": "group"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": " group "
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_id": "oc_chat1",
+     "source_chat_type": "group"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group",
+      "source_sender_openid": "   "
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_id": "oc_chat1",
+     "source_chat_type": "group"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "ou_abc#FB-2642#botX",
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc_chat1",
+      "source_chat_type": "group",
+      "source_sender_openid": "   "
+     }
+    }
+   },
+   "out": [
+    "oc_chat1#FB-2642#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_id": "oc_chat1",
+     "source_chat_type": "group"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642"
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {
+     "from": "peer#FB-2642",
+     "meta": null
+    }
+   },
+   "out": [
+    "peer#FB-2642",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "UnifiedRobot",
+     "key_id": "FB-2642",
+     "session_name": "home"
+    },
+    "inbound": {}
+   },
+   "out": [
+    "",
+    {}
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "OtherBot",
+     "key_id": "FB-9",
+     "session_name": "dev"
+    },
+    "inbound": {
+     "meta": {
+      "source_bot_channel_id": "botX",
+      "source_chat_id": "oc",
+      "source_chat_type": "group"
+     }
+    }
+   },
+   "out": [
+    "oc#FB-9#botX",
+    {
+     "source_bot_channel_id": "botX",
+     "source_chat_id": "oc",
+     "source_chat_type": "group"
+    }
+   ]
+  },
+  {
+   "case": {
+    "book": {
+     "bot_name": "OtherBot",
+     "key_id": "FB-9",
+     "session_name": "dev"
+    },
+    "inbound": {
+     "from": "p#1",
+     "meta": {
+      "chat_type": "group",
+      "group_chat_id": "g",
+      "sender_open_id": "s"
+     }
+    }
+   },
+   "out": [
+    "g#FB-9#OtherBot",
+    {
+     "at": [
+      "s"
+     ]
+    }
+   ]
+  }
+ ],
+ "route": [
+  {
+   "out": {
+    "body": "hello",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice hello"
+  },
+  {
+   "out": {
+    "body": "hello world",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice  hello world"
+  },
+  {
+   "out": {
+    "body": "body",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#a.b-c_1"
+   },
+   "text": "#a.b-c_1 body"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#agent1"
+   },
+   "text": "@zzc#agent1 hi"
+  },
+  {
+   "out": {
+    "body": "multiline\nbody",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#agent-1"
+   },
+   "text": "@zzc#agent-1\nmultiline\nbody"
+  },
+  {
+   "out": null,
+   "text": "#alice"
+  },
+  {
+   "out": null,
+   "text": "#alice   "
+  },
+  {
+   "out": null,
+   "text": "#alice\n"
+  },
+  {
+   "out": null,
+   "text": "@zzc hi"
+  },
+  {
+   "out": null,
+   "text": "@#x hi"
+  },
+  {
+   "out": null,
+   "text": "##x hi"
+  },
+  {
+   "out": null,
+   "text": "hello #alice hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": " #alice hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "\n#alice hi\n"
+  },
+  {
+   "out": null,
+   "text": "#中文 hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice\thi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice\nhi"
+  },
+  {
+   "out": null,
+   "text": "@a b#c hi"
+  },
+  {
+   "out": null,
+   "text": "@zzc#agent1"
+  },
+  {
+   "out": null,
+   "text": "@zzc#agent1  "
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#a"
+   },
+   "text": "#a hi\n\n"
+  },
+  {
+   "out": {
+    "body": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice\r\nhi"
+  },
+  {
+   "out": null,
+   "text": "# alice hi"
+  },
+  {
+   "out": null,
+   "text": "@zzc#a#b hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#a.b-c_d"
+   },
+   "text": "@zzc#a.b-c_d hi"
+  },
+  {
+   "out": {
+    "body": "[[DW_ROUTE_V1\n{}\n]]",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice [[DW_ROUTE_V1\n{}\n]]"
+  },
+  {
+   "out": null,
+   "text": "plain text no route"
+  },
+  {
+   "out": null,
+   "text": ""
+  },
+  {
+   "out": null,
+   "text": "   "
+  },
+  {
+   "out": null,
+   "text": "\n\n"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi there",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#agent1"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#agent1\",\"body\":\"hi there\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "b",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"body\":\"b\",\"to\":\"#alice\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "padded",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\" #alice \",\"body\":\"  padded  \"}\n]]"
+  },
+  {
+   "out": {
+    "body": "多\n行\n正文",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"多\\n行\\n正文\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "<len=100000 sha256=d69e68988157833272305aaf21f453c800346e8a3640db6578e260215542e5d4>",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "<len=100042 sha256=026056c2896cb664b9bcc547cdd7505356cedeb14f7968e0a29d97809d21e64a>"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "  [[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]  "
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "\n[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]\n"
+  },
+  {
+   "out": null,
+   "text": "<len=100043 sha256=f188b616b90eab1dd2f944cb67d1680baac360a0508893febb7538ebd931a245>"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"   \"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\",\"extra\":1}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":1,\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":2}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#al ice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc agent\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n[1,2]\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n\"str\"\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\nnull\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{bad json\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1 {\"to\":\"#alice\",\"body\":\"hi\"} ]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]] trailing"
+  },
+  {
+   "out": null,
+   "text": "lead [[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\r\n{\"to\":\"#alice\",\"body\":\"hi\"}\r\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V2\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[dw_route_v1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": null
+  },
+  {
+   "out": null,
+   "text": 123
+  },
+  {
+   "out": null,
+   "text": 0
+  },
+  {
+   "out": null,
+   "text": []
+  },
+  {
+   "out": null,
+   "text": {}
+  }
+ ],
+ "route_book2": [
+  {
+   "out": {
+    "body": "hello",
+    "from": "dev#FB-9",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice hello"
+  },
+  {
+   "out": {
+    "body": "hello world",
+    "from": "dev#FB-9",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice  hello world"
+  },
+  {
+   "out": {
+    "body": "body",
+    "from": "dev#FB-9",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#a.b-c_1"
+   },
+   "text": "#a.b-c_1 body"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "dev#FB-9",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#agent1"
+   },
+   "text": "@zzc#agent1 hi"
+  },
+  {
+   "out": {
+    "body": "multiline\nbody",
+    "from": "dev#FB-9",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#agent-1"
+   },
+   "text": "@zzc#agent-1\nmultiline\nbody"
+  },
+  {
+   "out": null,
+   "text": "#alice"
+  },
+  {
+   "out": null,
+   "text": "#alice   "
+  },
+  {
+   "out": null,
+   "text": "#alice\n"
+  },
+  {
+   "out": null,
+   "text": "@zzc hi"
+  },
+  {
+   "out": null,
+   "text": "@#x hi"
+  },
+  {
+   "out": null,
+   "text": "##x hi"
+  },
+  {
+   "out": null,
+   "text": "hello #alice hi"
+  }
+ ]
+}
