@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,24 +21,54 @@ import (
 
 // ---------- 路由级假件（hosted 包的测试假件不导出，这里自带最小集） ----------
 
-type fakeIDP struct{ ids []string }
+type fakeIDP struct {
+	ids     []string
+	retired map[string]bool
+}
 
 func (f *fakeIDP) IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode, by string) (hosted.IssuedAgent, hosted.EnrollToken, error) {
-	id := "ag_rt1"
+	// 与 identity.ValidAgentName 同形状的名称校验（B6：拒绝须以契约机器码透传）
+	ok := len(name) > 0
+	for _, r := range name {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9') {
+			ok = false
+		}
+	}
+	if !ok {
+		return hosted.IssuedAgent{}, hosted.EnrollToken{}, errors.New("name_invalid")
+	}
+	id := fmt.Sprintf("ag_rt%d", len(f.ids)+1)
 	f.ids = append(f.ids, id)
 	return hosted.IssuedAgent{ID: id, FullName: name + ".zzc"},
 		hosted.EnrollToken{ApplicationID: "app1", PollToken: "tok", ExpiresAt: time.Now().Add(2 * time.Hour)}, nil
 }
 func (f *fakeIDP) RetireHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
-	return false, nil
+	if f.retired == nil {
+		f.retired = map[string]bool{}
+	}
+	f.retired[agentID] = true
+	return true, nil
 }
 func (f *fakeIDP) ListHostedAgentIDsByOwner(ctx context.Context, ownerLC string) ([]string, error) {
-	return f.ids, nil
+	var out []string // 与 identity 语义对齐：已吊销（Retire）的不在名下
+	for _, id := range f.ids {
+		if !f.retired[id] {
+			out = append(out, id)
+		}
+	}
+	return out, nil
 }
 
-type fakeGW struct{}
+type fakeGW struct {
+	sent   []hosted.NodeCommand
+	failOn string // 命中该 Type 即失败（故障注入）
+}
 
-func (fakeGW) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
+func (g *fakeGW) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
+	g.sent = append(g.sent, cmd)
+	if cmd.Type == g.failOn {
+		return hosted.NodeResult{OK: false, Error: "injected"}, nil
+	}
 	return hosted.NodeResult{OK: true}, nil
 }
 
@@ -59,7 +90,8 @@ func (fakeImagesRT) Latest(cli string) (string, bool) {
 	return "hub.local/dingwei/base-codex@sha256:" + strings.Repeat("ab", 32), true
 }
 
-func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP) {
+// 返回里的 fakeGW 供集成套件注入故障／核对指令日志（T-G4-34 B2/B3）。
+func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP, *fakeGW, *hosted.PoolService) {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -79,8 +111,9 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP) {
 		t.Fatal(err)
 	}
 	idp := &fakeIDP{}
-	orch := hosted.NewOrchestrator(st, poolSvc, idp, fakeGW{}, fakeCombosRT{}, fakeImagesRT{})
-	life := hosted.NewLifecycle(st, poolSvc, idp, idpSusp{}, fakeGW{}, fakeImagesRT{}, notReadyBackups{})
+	gw := &fakeGW{}
+	orch := hosted.NewOrchestrator(st, poolSvc, idp, gw, fakeCombosRT{}, fakeImagesRT{})
+	life := hosted.NewLifecycle(st, poolSvc, idp, idpSusp{}, gw, fakeImagesRT{}, notReadyBackups{})
 	// 节点一枚（有余量）＋配额＋账号一枚授权给 zzc
 	if err := st.UpsertNode(ctx, hosted.Node{ID: "nd_rt", Name: "rt", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}); err != nil {
 		t.Fatal(err)
@@ -111,7 +144,7 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP) {
 		isManager: func(r *http.Request, userLC string) bool { return userLC == "admin" },
 		listUsers: func(r *http.Request) ([]string, error) { return []string{"zzc"}, nil },
 	}
-	return deps, st, idp
+	return deps, st, idp, gw, poolSvc
 }
 
 type idpSusp struct{ fakeIDP }
@@ -127,7 +160,7 @@ func (idpSusp) ReissueHostedToken(ctx context.Context, agentID, by string) (host
 }
 
 func TestHostedRoutesContractCodes(t *testing.T) {
-	deps, st, _ := mkHostedDeps(t)
+	deps, st, _, _, _ := mkHostedDeps(t)
 	mux := http.NewServeMux()
 	registerHostedRoutes(mux, deps)
 	as := func(actor, method, path, body string) *httptest.ResponseRecorder {

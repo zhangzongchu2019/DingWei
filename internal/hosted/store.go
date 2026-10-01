@@ -525,6 +525,33 @@ GROUP BY plan`, agentIDs)
 
 // ---------- 审计 ----------
 
+// CountAudit 审计计数（B8「恰好一条」与集成套件断言用）。
+func (s *Store) CountAudit(ctx context.Context, action, target string) (int, error) {
+	row, err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action=$1 AND target=$2`, action, target)
+	if err != nil {
+		return 0, err
+	}
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+// SecretPlaintextHits B7 反向闸：全库扫明文命中数（应恒 0）。
+func (s *Store) SecretPlaintextHits(ctx context.Context, plaintext string) (int, error) {
+	// bytea 子串匹配（密文不是合法 UTF-8，convert_from 会报错——那本身即密文的旁证，但探针不能靠报错）
+	row, err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_account_pool WHERE position($1::bytea in secret_enc) > 0`, []byte(plaintext))
+	if err != nil {
+		return 0, err
+	}
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
 func (s *Store) AddAudit(ctx context.Context, actor, action, target string, detail json.RawMessage) error {
 	_, err := s.pool.Exec(ctx, htx(), `
 INSERT INTO g4_audit (actor, action, target, detail) VALUES ($1,$2,$3,$4)`,
