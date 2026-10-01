@@ -113,6 +113,10 @@ func (h *Hub) terminalForSession(keyID, sessionName string) *terminalState {
 }
 
 func (h *Hub) terminalBySessionNameLocked(sessionName string) (*terminalState, bool) {
+	if h.Identity != nil {
+		// 新平台：只认 full_name（名称.用户简称），按 (u_用户, 名称小写) 精确定位；裸会话名一律查不到（防串号）。
+		return h.newPlatformTerminalLocked(sessionName)
+	}
 	var found *terminalState
 	for keyID, sessions := range h.sessionClients {
 		if sessions[sessionName] == nil {
@@ -902,6 +906,13 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 		return false
 	}
 	prefix := "/view/" + sessionName
+	header := sessionName
+	if h.Identity != nil {
+		// 新平台：view-service 的会话键用规范 full_name（见 newPlatformCanonicalName）。
+		if canon, _, ok := h.newPlatformCanonicalName(r.Context(), sessionName); ok {
+			header = canon
+		}
+	}
 	rp := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = u.Scheme
@@ -912,7 +923,7 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 			}
 			req.URL.Path = strings.TrimRight(u.Path, "/") + p
 			req.Host = u.Host
-			req.Header.Set("X-DW-Session", sessionName)
+			req.Header.Set("X-DW-Session", header)
 		},
 	}
 	reached := true
@@ -1343,6 +1354,9 @@ func (h *Hub) requestTerminalRefreshAfterInitialResize(ctx context.Context, keyI
 
 func (h *Hub) dispatchTerminalInputCommand(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
 	commandText := h.stripLeadingBotMentions(msg.BotChannelID, text)
+	if h.Identity != nil {
+		return h.dispatchNewPlatformTerminalInput(ctx, msg, commandText)
+	}
 	if fullSessionName, pageCode, ok := parseViewUnlockV2Command(commandText); ok {
 		return h.dispatchViewUnlockV2(ctx, msg, fullSessionName, pageCode)
 	}

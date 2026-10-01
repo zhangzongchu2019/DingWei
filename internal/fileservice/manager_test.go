@@ -485,3 +485,25 @@ func TestFinishRemovalRequiresDurableDeletingIntent(t *testing.T) {
 		t.Fatal("bytes deleted before intent")
 	}
 }
+
+// 会话段另允许新平台 full_name（名称.简称）；不能借点号造出 . 或 .. 段、也不能多段。
+func TestPutSessionSegmentAcceptsFullNameOnly(t *testing.T) {
+	m, _, o := testManager(t, 100)
+	put := func(session string) (File, error) {
+		return m.Put(context.Background(), Upload{OwnerKey: "u_zzc", SessionName: session, OriginalName: "x.txt", ContentLength: 3, Body: strings.NewReader("abc")})
+	}
+	f, err := put("kimi.zzc")
+	if err != nil || !strings.HasPrefix(f.ObjectKey, "u_zzc/kimi.zzc/") || f.SessionName != "kimi.zzc" {
+		t.Fatalf("full_name: %+v %v", f, err)
+	}
+	for _, bad := range []string{".", "..", ".zzc", "kimi.", "kimi..zzc", "a.b.c", "kimi.z", "Kimi.zzc", "kimi.zz-c", "kimi/zzc", "kimi.zzc/.."} {
+		if _, err := put(bad); err == nil {
+			t.Errorf("%q accepted", bad)
+		}
+	}
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	if len(o.data) != 1 {
+		t.Fatalf("objects=%d, want 1", len(o.data))
+	}
+}

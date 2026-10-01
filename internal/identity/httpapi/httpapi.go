@@ -5,6 +5,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net"
@@ -19,20 +20,30 @@ import (
 // API 路由与依赖。
 type API struct {
 	Svc *identity.Service
-	// Actor 取当前 console 用户的 user_id_lc；未登录返回 ok=false。
-	Actor func(r *http.Request) (userIDLC string, ok bool)
+	// Actor 取当前 console 用户的 user_id_lc。未登录返回非 nil 错误；必须改密的会话返回 identity.ErrMustChange
+	// （组长裁定 140013Z ②：必须改密访问任何 /api/console/* 一律 403 must_change_password，与 N3 自己的接口同口径）。
+	Actor func(r *http.Request) (userIDLC string, err error)
 	// PublicOrigin console 写接口要求的 Origin（例如 https://dw.cmjrt.com:55055）。为空则拒绝一切 console 写请求。
 	PublicOrigin string
 	// TrustProxy 为真且直连方是回环地址时，来源 IP 取 X-Real-IP（Hub 在本机 nginx 之后）。
 	TrustProxy bool
 	// Online 报告某 Agent 当前是否在线；为空时一律 false。
 	Online func(agentID string) bool
+	// Hosted 由 G4 注入：给 origin=hosted 的 Agent 提供 hosted 子对象，原样放进列表项。子对象有哪些字段以 G4 契约为准，本包不解析、不改名
+	// （例如 token_file 类账号不出 account_last4、改出账号类别与登记时间 —— 组长认可 kimi30kqtuxerh 的提议，字段名由 G4 定）。
+	// 返回 false 表示暂无数据，此时不出 hosted 子对象。顶层 state（身份：active／suspended）仍由 G3 给、是「是否停用」的权威来源。
+	Hosted func(ctx context.Context, agentID string) (map[string]any, bool)
 }
 
 const maxBody = 4 << 10
 
+// Mux 挂路由所需的最小接口（*http.ServeMux 即满足）；cmd 的路由全扫描用例借它记下真实注册了哪些路由。
+type Mux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+}
+
 // Register 挂到 mux（Go 1.22 方法＋路径写法，与 cmd/workpulse/main.go 一致）。
-func (a *API) Register(mux *http.ServeMux) {
+func (a *API) Register(mux Mux) {
 	mux.HandleFunc("POST /api/enroll/applications", a.apply)
 	mux.HandleFunc("GET /api/enroll/applications/{id}", a.poll)
 	mux.HandleFunc("GET /api/console/enroll/applications", a.console(a.listPending))
@@ -102,8 +113,14 @@ func mapErr(w http.ResponseWriter, err error) {
 		writeErr(w, http.StatusNotFound, "unknown_owner", nil)
 	case errors.Is(err, identity.ErrNotFound):
 		writeErr(w, http.StatusNotFound, "not_found", nil)
-	case errors.Is(err, identity.ErrGroupRequired):
-		writeErr(w, http.StatusUnprocessableEntity, "group_required", nil)
+	case errors.Is(err, identity.ErrGroupNotFound):
+		writeErr(w, http.StatusUnprocessableEntity, "group_not_found", nil)
+	case errors.Is(err, identity.ErrGroupClosed):
+		writeErr(w, http.StatusConflict, "group_closed", nil)
+	case errors.Is(err, identity.ErrGroupNameInvalid):
+		writeErr(w, http.StatusUnprocessableEntity, "group_name_invalid", nil)
+	case errors.Is(err, identity.ErrGroupNameTaken):
+		writeErr(w, http.StatusConflict, "group_name_taken", nil)
 	case errors.Is(err, identity.ErrNameInvalid):
 		writeErr(w, http.StatusUnprocessableEntity, "name_invalid", nil)
 	case errors.Is(err, identity.ErrNameTaken):
@@ -181,11 +198,15 @@ func (a *API) poll(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) console(next func(w http.ResponseWriter, r *http.Request, actor string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		actor, ok := "", false
+		actor, err := "", error(identity.ErrNotFound)
 		if a.Actor != nil {
-			actor, ok = a.Actor(r)
+			actor, err = a.Actor(r)
 		}
-		if !ok {
+		if errors.Is(err, identity.ErrMustChange) {
+			writeErr(w, http.StatusForbidden, "must_change_password", nil)
+			return
+		}
+		if err != nil || actor == "" {
 			writeErr(w, http.StatusUnauthorized, "unauthenticated", nil)
 			return
 		}
@@ -226,15 +247,32 @@ func (a *API) listPending(w http.ResponseWriter, r *http.Request, actor string) 
 }
 
 func (a *API) approve(w http.ResponseWriter, r *http.Request, actor string) {
+	// 编组二选一：group_code（已有组，须存在且未关闭添加）或 new_group_name（就地新建、新 Agent 当组长）。
 	var req struct {
-		PairingCode string `json:"pairing_code"`
-		AgentName   string `json:"agent_name"`
-		GroupCode   string `json:"group_code"`
+		PairingCode  string `json:"pairing_code"`
+		AgentName    string `json:"agent_name"`
+		GroupCode    string `json:"group_code"`
+		NewGroupName string `json:"new_group_name"`
 	}
 	if !decode(w, r, &req) {
 		return
 	}
-	ag, full, err := a.Svc.Approve(r.Context(), actor, r.PathValue("id"), req.PairingCode, req.AgentName, req.GroupCode)
+	// 两个都不给 ⇒ 不入组（业主令 15:34:17Z：编组不是必须的）。给了 new_group_name 却只有空白 ⇒ 名字不合规，不当作「没给」。
+	if req.GroupCode != "" && req.NewGroupName != "" {
+		writeErr(w, http.StatusUnprocessableEntity, "group_ambiguous", nil)
+		return
+	}
+	approve := a.Svc.Approve
+	group := req.GroupCode
+	if req.NewGroupName != "" {
+		name := strings.TrimSpace(req.NewGroupName)
+		if name == "" {
+			writeErr(w, http.StatusUnprocessableEntity, "group_name_invalid", nil)
+			return
+		}
+		approve, group = a.Svc.ApproveWithNewGroup, name
+	}
+	ag, full, err := approve(r.Context(), actor, r.PathValue("id"), req.PairingCode, req.AgentName, group)
 	if err != nil {
 		mapErr(w, err)
 		return
@@ -267,10 +305,18 @@ func (a *API) listAgents(w http.ResponseWriter, r *http.Request, actor string) {
 		if a.Online != nil {
 			online = a.Online(ag.ID)
 		}
-		out = append(out, map[string]any{
+		// session：兼容旧形状 {session, online}（console 左栏仍读它）——值即该 Agent 在 Hub 会话机制里的会话名（名称小写）。
+		item := map[string]any{
+			"session":  ag.NameLC(),
 			"agent_id": ag.ID, "name": ag.Name, "full_name": ag.Name + "." + short,
-			"origin": string(ag.Origin), "group_code": ag.GroupID, "online": online,
-		})
+			"origin": string(ag.Origin), "group_code": ag.GroupID, "state": string(ag.State), "online": online,
+		}
+		if ag.Origin == identity.OriginHosted && a.Hosted != nil {
+			if h, ok := a.Hosted(r.Context(), ag.ID); ok {
+				item["hosted"] = h
+			}
+		}
+		out = append(out, item)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"agents": out})
 }

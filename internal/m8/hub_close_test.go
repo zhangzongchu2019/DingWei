@@ -68,13 +68,30 @@ func replaceAMR(h *Hub, p *amrProcessor) {
 }
 
 // Close 返回后，run() 必须已经退出（同步收尾），不是只发了信号。
+// 确定性写法（台账 132352Z）：用 beforeExit 把 run 卡在「已收到停止、尚未返回」—— 此时 Close 必须还没返回；
+// 放行后 Close 才返回。撤掉 close() 里的同步等待 ⇒ Close 在 run 卡住时就返回了 ⇒ 必红，与核数、调度无关。
 func TestHubCloseWaitsForRunToExit(t *testing.T) {
-	before := amrRunGoroutines()
 	hub := New(nil, ConsoleAuthDisabled())
-	waitAMRRunGoroutines(t, before+1)
-	hub.Close()
-	if got := amrRunGoroutines(); got != before {
-		t.Fatalf("right after Close: run goroutines = %d, want %d (Close must wait for run to return)", got, before)
+	reached, release := make(chan struct{}), make(chan struct{})
+	hub.amr.beforeExit = func() { close(reached); <-release }
+	closed := make(chan struct{})
+	go func() { hub.Close(); close(closed) }()
+	select {
+	case <-reached:
+	case <-time.After(5 * time.Second):
+		t.Fatal("run never received stop")
+	}
+	select {
+	case <-closed:
+		close(release)
+		t.Fatal("Close returned while run had not returned yet (Close must wait for run)")
+	case <-time.After(200 * time.Millisecond):
+	}
+	close(release)
+	select {
+	case <-closed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Close did not return after run was released")
 	}
 }
 

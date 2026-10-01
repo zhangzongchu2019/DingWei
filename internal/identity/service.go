@@ -9,18 +9,22 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 // 业务层错误（HTTP 层据此映射状态码与机器码，设计件第二、三节）。
 var (
-	ErrBadRequest        = errors.New("identity: bad request")
-	ErrUnknownOwner      = errors.New("identity: unknown owner")
-	ErrNameInvalid       = errors.New("identity: agent name invalid")
-	ErrGroupRequired     = errors.New("identity: group required")
-	ErrCredentialInvalid = errors.New("identity: credential invalid")
-	ErrCredentialRevoked = errors.New("identity: credential revoked")
+	ErrBadRequest          = errors.New("identity: bad request")
+	ErrUnknownOwner        = errors.New("identity: unknown owner")
+	ErrNameInvalid         = errors.New("identity: agent name invalid")
+	ErrGroupRequired       = errors.New("identity: group required") // 业主令 15:34:17Z 起编组可不选，本错误已不再返回；保留变量供既有调用方编译
+	ErrCredentialInvalid   = errors.New("identity: credential invalid")
+	ErrCredentialRevoked   = errors.New("identity: credential revoked")
+	ErrCredentialSuspended = errors.New("identity: credential suspended")
 )
 
 // RateLimitedError 限频；RetryAfter 供应答头与正文。
@@ -53,15 +57,21 @@ const (
 
 // Service 入网、审批、吊销与凭据认证的业务层。
 type Service struct {
+	auditFailures atomic.Uint64
+
 	Store Store
 	Now   func() time.Time
 	Rand  io.Reader
 	// OnRevoked 在吊销成功（非重复吊销）后、Revoke 返回前同步调用：Hub 据此以 4401 断开在线连接并重推在线清单（V2 A1）。
 	OnRevoked func(agentID string)
+	// OnCredentialIssued 凭据被取走（旧凭据随之作废）后、Poll 返回前同步调用：Hub 据此断开该 Agent 仍在线的连接
+	// —— 那条连接拿的只能是刚作废的旧凭据（托管升级：Reissue ⇒ 新容器取走凭据 ⇒ 旧容器的连接在此断开，
+	// 新容器才连得进来，不撞「已在线」的 409）。首次取凭据时不会有人在线，调用即空操作。
+	OnCredentialIssued func(agentID string)
+	// OnSuspended 托管席位被暂停后、SuspendHostedAgent 返回前同步调用：Hub 据此以 4401（原因 credential_suspended）断开。
+	OnSuspended func(agentID string)
 	// NameAllowed 额外的名称检查（Hub 注入渠道保留字检查）；返回 false ⇒ ErrNameInvalid。为空则不查。
 	NameAllowed func(name string) bool
-	// GroupAllowed 编组是否存在且归该 owner（新平台 Agent 接入编组后由 Hub 注入）；为空则只查非空。
-	GroupAllowed func(ownerLC, groupCode string) bool
 
 	mu        sync.Mutex
 	applyHits map[string][]time.Time // 来源 IP → 最近一小时的申请时刻
@@ -111,9 +121,17 @@ func isHex(s string, n int) bool {
 	return err == nil
 }
 
+// audit 写一条审计。写失败不挡业务动作（fail-open，是否改 fail-closed 待组长裁，qwen 复验 🟡④），
+// 但不再静默丢：打一行日志（只记动作与对象，不记 detail）并计数，计数由 AuditFailures 读出（qwen 复验，组长 15:22:39Z ②）。
 func (s *Service) audit(ctx context.Context, actor, action, target, detail string) {
-	_ = s.Store.AppendAudit(ctx, AuditEvent{Actor: actor, Action: action, Target: target, Detail: detail, At: s.Now()})
+	if err := s.Store.AppendAudit(ctx, AuditEvent{Actor: actor, Action: action, Target: target, Detail: detail, At: s.Now()}); err != nil {
+		n := s.auditFailures.Add(1)
+		log.Printf("identity audit write failed: action=%s target=%s failures=%d err=%v", action, target, n, err)
+	}
 }
+
+// AuditFailures 自进程启动以来审计写失败的次数（供心跳／监控读；非 0 即审计在丢）。
+func (s *Service) AuditFailures() uint64 { return s.auditFailures.Load() }
 
 // ── 客户端接口 ──────────────────────────────────────────────────────────────
 
@@ -243,6 +261,9 @@ func (s *Service) Poll(ctx context.Context, appID, pollToken string) (*PollResul
 	res.AgentFullName = s.fullName(ctx, ag)
 	res.Credential = cred
 	s.audit(ctx, "client", "agent.credential_issued", ag.ID, "application="+appID)
+	if s.OnCredentialIssued != nil {
+		s.OnCredentialIssued(ag.ID)
+	}
 	return res, nil
 }
 
@@ -255,6 +276,9 @@ func (s *Service) takePollSlot(appID string, now time.Time) error {
 	s.lastPoll[appID] = now
 	return nil
 }
+
+// FullName Agent 的 full_name（名称.属主简称，保留原大小写；与 GET /api/console/agents 的 full_name 同形）。
+func (s *Service) FullName(ctx context.Context, ag *Agent) string { return s.fullName(ctx, ag) }
 
 func (s *Service) fullName(ctx context.Context, ag *Agent) string {
 	u, err := s.Store.GetUser(ctx, ag.OwnerLC)
@@ -273,8 +297,11 @@ func (s *Service) AuthenticateAgent(ctx context.Context, credential string) (*Ag
 	if err != nil {
 		return nil, "", err
 	}
-	if ag.State == AgentRevoked {
+	switch ag.State {
+	case AgentRevoked:
 		return nil, "", ErrCredentialRevoked
+	case AgentSuspended:
+		return nil, "", ErrCredentialSuspended
 	}
 	return ag, s.fullName(ctx, ag), nil
 }
@@ -287,14 +314,21 @@ func (s *Service) ListPending(ctx context.Context, actorLC string) ([]Applicatio
 }
 
 // Approve 核对配对码、下发名称与编组（V1 第二节 4、5；设计件 3.1）。
-func (s *Service) Approve(ctx context.Context, actorLC, appID, pairingCode, name, groupID string) (*Agent, string, error) {
+func (s *Service) Approve(ctx context.Context, actorLC, appID, pairingCode, name, groupCode string) (*Agent, string, error) {
+	return s.approve(ctx, actorLC, appID, pairingCode, name, GroupChoice{Code: groupCode})
+}
+
+// ApproveWithNewGroup 批准并就地新建编组（以新 Agent 为组长）：新用户的第一个组从这里来。
+func (s *Service) ApproveWithNewGroup(ctx context.Context, actorLC, appID, pairingCode, name, newGroupName string) (*Agent, string, error) {
+	return s.approve(ctx, actorLC, appID, pairingCode, name, GroupChoice{NewName: newGroupName})
+}
+
+func (s *Service) approve(ctx context.Context, actorLC, appID, pairingCode, name string, group GroupChoice) (*Agent, string, error) {
 	if !ValidAgentName(name) || (s.NameAllowed != nil && !s.NameAllowed(name)) {
 		return nil, "", ErrNameInvalid
 	}
-	// 组长裁定 ruling-2026-10-01T090434Z：审核时编组必选，不提供「不加入编组」。
-	if groupID == "" || (s.GroupAllowed != nil && !s.GroupAllowed(Lower(actorLC), groupID)) {
-		return nil, "", ErrGroupRequired
-	}
+	// 业主令（2026-10-01T15:34:17Z，台账 owner-group-optional／板 8582acc4）：编组不是必须的 —— 不选即不入组（取代 090434Z c 的「必选」）。
+	// 给了才校验：组是否存在、能否加入由存储在批准事务里判。
 	now := s.Now()
 	app, err := s.Store.GetApplication(ctx, appID)
 	if err != nil {
@@ -326,7 +360,11 @@ func (s *Service) Approve(ctx context.Context, actorLC, appID, pairingCode, name
 	if err != nil {
 		return nil, "", err
 	}
-	ag, err := s.Store.Approve(ctx, ApproveInput{AppID: appID, OwnerLC: actorLC, AgentID: "ag_" + agentID, Name: name, GroupID: groupID}, now)
+	groupCode, newGroup, err := s.resolveGroupChoice(group, actorLC, "ag_"+agentID, now)
+	if err != nil {
+		return nil, "", err
+	}
+	ag, err := s.Store.Approve(ctx, ApproveInput{AppID: appID, OwnerLC: actorLC, AgentID: "ag_" + agentID, Name: name, GroupID: groupCode, NewGroup: newGroup}, now)
 	if err != nil {
 		return nil, "", err
 	}
@@ -359,4 +397,26 @@ func (s *Service) Revoke(ctx context.Context, actorLC, agentID string) (bool, er
 		s.OnRevoked(agentID)
 	}
 	return false, nil
+}
+
+// ResolveFullName 把 full_name（名称.用户简称）解析成未吊销的 Agent 及其归属用户（新平台 view 路由的键，组长台账 738c4a03）。
+// 格式不符、简称或名称不存在、Agent 已吊销 ⇒ ErrNotFound。大小写不敏感。
+func (s *Service) ResolveFullName(ctx context.Context, fullName string) (*Agent, *User, error) {
+	i := strings.LastIndex(fullName, ".")
+	if i <= 0 || i == len(fullName)-1 {
+		return nil, nil, ErrNotFound
+	}
+	name, short := fullName[:i], fullName[i+1:]
+	if !ValidAgentName(name) || !ValidShortName(short) {
+		return nil, nil, ErrNotFound
+	}
+	u, err := s.Store.GetUserByShortName(ctx, short)
+	if err != nil {
+		return nil, nil, ErrNotFound
+	}
+	ag, err := s.Store.FindAgentByName(ctx, u.UserIDLC(), name)
+	if err != nil || !ag.Current() {
+		return nil, nil, ErrNotFound
+	}
+	return ag, u, nil
 }

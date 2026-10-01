@@ -53,6 +53,13 @@ func consolePlatformActionAllowed(role, action string) bool {
 // principal ID. UI visibility is never an authorization decision.
 func (h *Hub) RequireConsolePlatformAction(action string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.Onboarding != nil {
+			// 新平台：角色由身份用户类型推出（newplat_console.go）。
+			if r2, ok := h.newPlatformRequireAction(action, w, r); ok {
+				next(w, r2)
+			}
+			return
+		}
 		principalID, ok := r.Context().Value(consolePrincipalContextKey{}).(string)
 		repo, repoOK := h.Repo.(consolePlatformRepository)
 		if !ok || principalID == "" || !repoOK {
@@ -122,6 +129,10 @@ func platformActions(role string) []string {
 }
 
 func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
+	if h.Onboarding != nil {
+		h.handleNewPlatformConsolePlatform(w, r)
+		return
+	}
 	repo := h.Repo.(consolePlatformRepository)
 	role := platformRole(r)
 	items, err := repo.ListConsolePlatformItems(r.Context(), role == consolePlatformRoleManagement)

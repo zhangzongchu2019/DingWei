@@ -30,7 +30,17 @@ func Run(t *testing.T, newStore Factory) {
 		fn   func(t *testing.T, s identity.Store)
 	}{
 		{"N3_user_id_and_short_name_conflict_by_lowercase", userConflictLowercase},
+		{"N3_first_admin_only_when_no_management_user", firstAdminOnlyOnce},
+		{"N3_first_admin_refused_when_only_manager", firstAdminRefusedByManager},
+		{"G_group_create_leader_name_code", groupCreateRules},
+		{"G_group_join_leave_close", groupJoinLeaveClose},
+		{"G_group_delete_creator_only_cascades", groupDeleteRules},
+		{"G_group_member_rows_survive_revoke", groupMemberAfterRevoke},
+		{"G_approve_group_choice_atomic", approveGroupChoice},
+		{"G_hosted_group_choice_atomic", hostedGroupChoice},
 		{"N3_disable_revokes_sessions", disableRevokesSessions},
+		{"N3_get_user_by_short_name_case_insensitive", getUserByShortName},
+		{"N3_list_users_sorted_by_lowercase_id", listUsers},
 		{"N3_session_expiry_and_inactive_user", sessionExpiryAndInactive},
 		{"N3_registration_code_one_shot_binds_identity", regCodeOneShot},
 		{"N3_registration_code_expired_or_unknown_changes_nothing", regCodeInvalidChangesNothing},
@@ -46,7 +56,17 @@ func Run(t *testing.T, newStore Factory) {
 		{"V2_A4_A12_revoke_frees_name_old_credential_stays_revoked", revokeFreesName},
 		{"V2_A6_revoke_other_owner_forbidden", revokeOtherOwnerForbidden},
 		{"V2_A10_revoke_idempotent", revokeIdempotent},
-		{"V2_hosted_agent_not_revocable_here", revokeHosted},
+		{"V2_V8_hosted_not_revocable_in_console_but_retirable", revokeHosted},
+		{"V6_hosted_create_and_take", hostedCreateAndTake},
+		{"V8_hosted_reissue_rotates_credential", hostedReissueRotatesCredential},
+		{"V6_hosted_token_expires", hostedTokenExpires},
+		{"V2_A5_find_agent_by_name_prefers_active_then_latest_revoked", findAgentByName},
+		{"V8_hosted_suspend_resume_keeps_credential_and_name", hostedSuspendResume},
+		{"V8_suspend_records_who_and_when_resume_clears", suspendRecordsWhoWhen},
+		{"V2_A5_find_agent_by_name_tie_breaks_by_id", findAgentByNameTie},
+		{"G_no_group_choice_joins_nothing", noGroupJoinsNothing},
+		{"G_approve_only_into_own_or_member_group", approveOnlyIntoUsableGroup},
+		{"N3_reset_password_revokes_only_that_users_sessions", resetPasswordRevokesSessions},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
 	}
 	for _, c := range cases {
@@ -76,9 +96,14 @@ func mustApp(t *testing.T, s identity.Store, id, owner, device string, at time.T
 	}
 }
 
+// newGroupFor 夹具：每个 Agent 就地建一个自己当组长的组（组码 gc-<id>、组名 gn-<id>），编组用例据此识别并滤掉夹具组。
+func newGroupFor(agentID, owner string, at time.Time) *identity.Group {
+	return &identity.Group{Code: "gc-" + agentID, ShortName: "gn-" + agentID, CreatorLC: owner, LeaderAgentID: agentID, CreatedAt: at, UpdatedAt: at}
+}
+
 func mustApprove(t *testing.T, s identity.Store, app, owner, agentID, name string, now time.Time) *identity.Agent {
 	t.Helper()
-	ag, err := s.Approve(ctx, identity.ApproveInput{AppID: app, OwnerLC: owner, AgentID: agentID, Name: name, GroupID: "g-" + agentID}, now)
+	ag, err := s.Approve(ctx, identity.ApproveInput{AppID: app, OwnerLC: owner, AgentID: agentID, Name: name, GroupID: "gc-" + agentID, NewGroup: newGroupFor(agentID, owner, now)}, now)
 	if err != nil {
 		t.Fatalf("Approve(%s as %s): %v", app, name, err)
 	}
@@ -96,8 +121,8 @@ func wantErr(t *testing.T, what string, got, want error) {
 
 func userConflictLowercase(t *testing.T, s identity.Store) {
 	mustUser(t, s, "zzc", "zc", identity.UserActive)
-	wantErr(t, "same user_id different case", s.CreateUser(ctx, identity.User{UserID: "ZZC", ShortName: "other", State: identity.UserActive}), identity.ErrConflict)
-	wantErr(t, "same short_name different case", s.CreateUser(ctx, identity.User{UserID: "lbl", ShortName: "ZC", State: identity.UserActive}), identity.ErrConflict)
+	wantErr(t, "same user_id different case", s.CreateUser(ctx, identity.User{UserID: "ZZC", ShortName: "other", Type: identity.UserMember, State: identity.UserActive}), identity.ErrConflict)
+	wantErr(t, "same short_name different case", s.CreateUser(ctx, identity.User{UserID: "lbl", ShortName: "ZC", Type: identity.UserMember, State: identity.UserActive}), identity.ErrConflict)
 	if n, _ := s.CountUsers(ctx); n != 1 {
 		t.Fatalf("CountUsers=%d after two rejected creates, want 1", n)
 	}
@@ -370,7 +395,7 @@ func revokeFreesName(t *testing.T, s identity.Store) {
 	}
 	approveAndTake(t, s, "app-new", "zzc", "dev-1", "ag-new", "kimi", "cred-new", t0.Add(2*time.Minute))
 	nw, _ := s.ResolveAgentByCredential(ctx, "cred-new")
-	if nw.ID != "ag-new" || nw.State != identity.AgentActive || nw.GroupID != "g-ag-new" {
+	if nw.ID != "ag-new" || nw.State != identity.AgentActive || nw.GroupID != "gc-ag-new" {
 		t.Fatalf("new agent: %+v", nw)
 	}
 	if old2, _ := s.ResolveAgentByCredential(ctx, "cred-old"); old2.ID != "ag-old" || old2.State != identity.AgentRevoked {
@@ -403,16 +428,90 @@ func revokeIdempotent(t *testing.T, s identity.Store) {
 	}
 }
 
-func revokeHosted(t *testing.T, s identity.Store) {
-	hs, ok := s.(interface {
-		InsertHostedAgentForTest(identity.Agent)
-	})
-	if !ok {
-		t.Skip("store has no hosted-agent test hook (hosted agents arrive with V6)")
+func mustHosted(t *testing.T, s identity.Store, agentID, owner, name, app string, at time.Time) {
+	t.Helper()
+	err := s.CreateHostedAgent(ctx, identity.Agent{ID: agentID, OwnerLC: owner, Name: name, GroupID: "gc-" + agentID, CreatedAt: at},
+		identity.Application{ID: app, PollTokenHash: "tok-" + app, RequestedAt: at, ExpiresAt: at.Add(time.Hour)}, newGroupFor(agentID, owner, at))
+	if err != nil {
+		t.Fatalf("CreateHostedAgent(%s): %v", name, err)
 	}
-	hs.InsertHostedAgentForTest(identity.Agent{ID: "ag-h", OwnerLC: "zzc", Name: "hosted1", Origin: identity.OriginHosted, State: identity.AgentActive})
+}
+
+func revokeHosted(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-h", "zzc", "hosted1", "app-h", t0)
 	_, err := s.Revoke(ctx, "ag-h", "zzc", "zzc", t0)
-	wantErr(t, "revoke hosted", err, identity.ErrHosted)
+	wantErr(t, "console revoke of hosted", err, identity.ErrHosted)
+	if already, err := s.RetireAgent(ctx, "ag-h", "g4", t0.Add(time.Minute)); already || err != nil {
+		t.Fatalf("retire: %v %v", already, err)
+	}
+	if already, err := s.RetireAgent(ctx, "ag-h", "other", t0.Add(2*time.Minute)); !already || err != nil {
+		t.Fatalf("second retire: already=%v err=%v", already, err)
+	}
+	g, _ := s.GetAgent(ctx, "ag-h")
+	if g.State != identity.AgentRevoked || g.RevokedBy != "g4" || !g.RevokedAt.Equal(t0.Add(time.Minute)) {
+		t.Fatalf("retired agent: %+v", g)
+	}
+}
+
+func hostedCreateAndTake(t *testing.T, s identity.Store) {
+	mustApp(t, s, "app-self", "zzc", "dev-1", t0)
+	mustApprove(t, s, "app-self", "zzc", "ag-self", "Worker", t0)
+	err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-h1", OwnerLC: "zzc", Name: "WORKER", GroupID: "gc-ag-h1"},
+		identity.Application{ID: "app-h1", PollTokenHash: "tok-h1", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, newGroupFor("ag-h1", "zzc", t0))
+	wantErr(t, "hosted name clashes with selfhost (case-insensitive)", err, identity.ErrNameTaken)
+	if _, err := s.GetApplication(ctx, "app-h1"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("failed create must leave no application: %v", err)
+	}
+	mustHosted(t, s, "ag-h2", "ZZC", "Codex1", "app-h2", t0)
+	a, _ := s.GetApplication(ctx, "app-h2")
+	if a.State != identity.AppApproved || a.AgentID != "ag-h2" || a.OwnerLC != "zzc" {
+		t.Fatalf("hosted application: %+v", a)
+	}
+	ag, ok, err := s.TakeCredential(ctx, "app-h2", "cred-h2", t0.Add(time.Minute))
+	if err != nil || !ok || ag.Origin != identity.OriginHosted || ag.Name != "Codex1" || ag.GroupID != "gc-ag-h2" {
+		t.Fatalf("take hosted: %+v %v %v", ag, ok, err)
+	}
+	if list, _ := s.ListAgents(ctx, "zzc"); len(list) != 2 {
+		t.Fatalf("ListAgents = %d, want selfhost＋hosted", len(list))
+	}
+}
+
+func hostedReissueRotatesCredential(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-r", "zzc", "Rebuilt", "app-r1", t0)
+	if _, ok, _ := s.TakeCredential(ctx, "app-r1", "cred-old", t0); !ok {
+		t.Fatal("first take")
+	}
+	if err := s.AddHostedToken(ctx, "ag-r", identity.Application{ID: "app-r2", PollTokenHash: "tok-r2", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ResolveAgentByCredential(ctx, "cred-old"); err != nil {
+		t.Fatalf("old credential must stay valid until the new one is taken: %v", err)
+	}
+	if _, ok, _ := s.TakeCredential(ctx, "app-r2", "cred-new", t0.Add(time.Minute)); !ok {
+		t.Fatal("take reissued")
+	}
+	_, err := s.ResolveAgentByCredential(ctx, "cred-old")
+	wantErr(t, "old credential after rotation", err, identity.ErrNotFound)
+	if g, err := s.ResolveAgentByCredential(ctx, "cred-new"); err != nil || g.ID != "ag-r" || g.State != identity.AgentActive {
+		t.Fatalf("new credential: %+v %v", g, err)
+	}
+	mustApp(t, s, "app-s", "zzc", "dev-s", t0)
+	mustApprove(t, s, "app-s", "zzc", "ag-s", "Selfie", t0)
+	err = s.AddHostedToken(ctx, "ag-s", identity.Application{ID: "app-x", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	wantErr(t, "reissue for selfhost agent", err, identity.ErrNotHosted)
+	_, _ = s.RetireAgent(ctx, "ag-r", "g4", t0)
+	err = s.AddHostedToken(ctx, "ag-r", identity.Application{ID: "app-r3", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	wantErr(t, "reissue for retired agent", err, identity.ErrNotPending)
+}
+
+func hostedTokenExpires(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-e", "zzc", "Late", "app-e", t0)
+	if _, ok, err := s.TakeCredential(ctx, "app-e", "cred-e", t0.Add(time.Hour)); ok || err != nil {
+		t.Fatalf("take at expiry: ok=%v err=%v, want false nil", ok, err)
+	}
+	if _, ok, _ := s.TakeCredential(ctx, "app-e", "cred-e", t0.Add(time.Hour-time.Second)); !ok {
+		t.Fatal("take 1s before expiry")
+	}
 }
 
 func revokedBeforePickup(t *testing.T, s identity.Store) {
@@ -447,5 +546,630 @@ func pendingOrderDeterministic(t *testing.T, s identity.Store) {
 		if strings.Join(ids(got), ",") != "app-a,app-b,app-c,app-0" {
 			t.Fatalf("order = %v, want [app-a app-b app-c app-0]", ids(got))
 		}
+	}
+}
+
+func findAgentByName(t *testing.T, s identity.Store) {
+	_, err := s.FindAgentByName(ctx, "zzc", "kimi")
+	wantErr(t, "never existed", err, identity.ErrNotFound)
+	approveAndTake(t, s, "app-1", "zzc", "dev-1", "ag-1", "Kimi", "cred-1", t0)
+	_, _ = s.Revoke(ctx, "ag-1", "zzc", "zzc", t0.Add(time.Minute))
+	approveAndTake(t, s, "app-2", "zzc", "dev-2", "ag-2", "kimi", "cred-2", t0.Add(2*time.Minute))
+	_, _ = s.Revoke(ctx, "ag-2", "zzc", "zzc", t0.Add(3*time.Minute))
+	g, err := s.FindAgentByName(ctx, "ZZC", "KIMI")
+	if err != nil || g.ID != "ag-2" || g.State != identity.AgentRevoked {
+		t.Fatalf("latest revoked: %+v %v, want ag-2 revoked", g, err)
+	}
+	approveAndTake(t, s, "app-3", "zzc", "dev-3", "ag-3", "KIMI", "cred-3", t0.Add(4*time.Minute))
+	if g, _ := s.FindAgentByName(ctx, "zzc", "kimi"); g.ID != "ag-3" || g.State != identity.AgentActive {
+		t.Fatalf("active must win over revoked: %+v", g)
+	}
+	if _, err := s.FindAgentByName(ctx, "lbl", "kimi"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("other owner: %v", err)
+	}
+}
+
+func hostedSuspendResume(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-p", "zzc", "Pausy", "app-p", t0)
+	if _, ok, _ := s.TakeCredential(ctx, "app-p", "cred-p", t0); !ok {
+		t.Fatal("take")
+	}
+	if already, err := s.SetAgentSuspended(ctx, "ag-p", true, "g4", t0.Add(time.Minute)); already || err != nil {
+		t.Fatalf("suspend: %v %v", already, err)
+	}
+	if already, err := s.SetAgentSuspended(ctx, "ag-p", true, "g4", t0.Add(2*time.Minute)); !already || err != nil {
+		t.Fatalf("second suspend: already=%v err=%v", already, err)
+	}
+	g, err := s.ResolveAgentByCredential(ctx, "cred-p")
+	if err != nil || g.State != identity.AgentSuspended || g.CredentialHash != "cred-p" {
+		t.Fatalf("suspended agent by credential: %+v %v (credential must be kept)", g, err)
+	}
+	// 暂停中仍占名字、仍在列表里
+	err = s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-p2", OwnerLC: "zzc", Name: "PAUSY", GroupID: "gc-ag-p2"},
+		identity.Application{ID: "app-p2", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, newGroupFor("ag-p2", "zzc", t0))
+	wantErr(t, "name of suspended agent reused", err, identity.ErrNameTaken)
+	if list, _ := s.ListAgents(ctx, "zzc"); len(list) != 1 || list[0].ID != "ag-p" || list[0].State != identity.AgentSuspended {
+		t.Fatalf("ListAgents while suspended: %+v", list)
+	}
+	if f, _ := s.FindAgentByName(ctx, "zzc", "pausy"); f.ID != "ag-p" || f.State != identity.AgentSuspended {
+		t.Fatalf("FindAgentByName while suspended: %+v", f)
+	}
+	// 暂停中不能领新凭据（重签被拒）
+	err = s.AddHostedToken(ctx, "ag-p", identity.Application{ID: "app-p3", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)})
+	wantErr(t, "reissue while suspended", err, identity.ErrNotPending)
+	if already, err := s.SetAgentSuspended(ctx, "ag-p", false, "g4", t0.Add(3*time.Minute)); already || err != nil {
+		t.Fatalf("resume: %v %v", already, err)
+	}
+	if g, _ := s.ResolveAgentByCredential(ctx, "cred-p"); g.State != identity.AgentActive || g.CredentialHash != "cred-p" {
+		t.Fatalf("after resume the same credential must work: %+v", g)
+	}
+	if already, _ := s.SetAgentSuspended(ctx, "ag-p", false, "g4", t0); !already {
+		t.Fatal("second resume must be already=true")
+	}
+	// 暂停中可直接销毁；销毁后不能再暂停／恢复
+	_, _ = s.SetAgentSuspended(ctx, "ag-p", true, "g4", t0.Add(4*time.Minute))
+	if already, err := s.RetireAgent(ctx, "ag-p", "g4", t0.Add(5*time.Minute)); already || err != nil {
+		t.Fatalf("retire from suspended: %v %v", already, err)
+	}
+	_, err = s.SetAgentSuspended(ctx, "ag-p", false, "g4", t0)
+	wantErr(t, "resume after retire", err, identity.ErrNotPending)
+	// 自备席位不能暂停
+	mustApp(t, s, "app-s", "zzc", "dev-s", t0)
+	mustApprove(t, s, "app-s", "zzc", "ag-s", "Selfie", t0)
+	_, err = s.SetAgentSuspended(ctx, "ag-s", true, "g4", t0)
+	wantErr(t, "suspend selfhost", err, identity.ErrNotHosted)
+	_, err = s.SetAgentSuspended(ctx, "ag-none", true, "g4", t0)
+	wantErr(t, "suspend unknown", err, identity.ErrNotFound)
+}
+
+func getUserByShortName(t *testing.T, s identity.Store) {
+	mustUser(t, s, "Alice", "Al", identity.UserActive)
+	mustUser(t, s, "bob", "bb", identity.UserActive)
+	if u, err := s.GetUserByShortName(ctx, "AL"); err != nil || u.UserID != "Alice" {
+		t.Fatalf("short AL: %+v %v", u, err)
+	}
+	if u, err := s.GetUserByShortName(ctx, "bb"); err != nil || u.UserID != "bob" {
+		t.Fatalf("short bb: %+v %v", u, err)
+	}
+	_, err := s.GetUserByShortName(ctx, "alice") // 用户 ID 不是简称
+	wantErr(t, "user id used as short name", err, identity.ErrNotFound)
+}
+
+func listUsers(t *testing.T, s identity.Store) {
+	if got, err := s.ListUsers(ctx); err != nil || len(got) != 0 {
+		t.Fatalf("empty store: %v %v", got, err)
+	}
+	mustUser(t, s, "carol", "ca", identity.UserActive)
+	mustUser(t, s, "Alice", "al", identity.UserPendingBind)
+	mustUser(t, s, "bob", "bo", identity.UserActive)
+	got, err := s.ListUsers(ctx)
+	if err != nil || len(got) != 3 {
+		t.Fatalf("ListUsers: %v %v", got, err)
+	}
+	var ids []string
+	for _, u := range got {
+		ids = append(ids, u.UserID+"/"+string(u.State))
+	}
+	if strings.Join(ids, ",") != "Alice/pending_bind,bob/active,carol/active" {
+		t.Fatalf("order/fields = %v", ids)
+	}
+}
+
+// 初始化脚本建第一个管理用户（台账 8971bddf）：库中已有 platform_admin 或 manager（不论状态）⇒ ErrAdminExists 且不插入；
+// 只有普通用户时可建；用户 ID／简称冲突 ⇒ ErrConflict。
+func firstAdminOnlyOnce(t *testing.T, s identity.Store) {
+	t0 := time.Date(2026, 10, 1, 9, 0, 0, 0, time.UTC)
+	admin := func(id, short string) identity.User {
+		return identity.User{UserID: id, ShortName: short, Type: identity.UserPlatformAdmin, State: identity.UserActive,
+			PasswordHash: "h-" + id, MustChangePassword: true, CreatedAt: t0}
+	}
+	mustUser(t, s, "member1", "m1", identity.UserActive)
+	wantErr(t, "user id taken by member", s.CreateFirstAdmin(ctx, admin("MEMBER1", "zz")), identity.ErrConflict)
+	wantErr(t, "short name taken by member", s.CreateFirstAdmin(ctx, admin("fresh", "M1")), identity.ErrConflict)
+	if err := s.CreateFirstAdmin(ctx, admin("Boss", "bs")); err != nil {
+		t.Fatalf("first admin with only members present: %v", err)
+	}
+	u, err := s.GetUser(ctx, "boss")
+	if err != nil || u.Type != identity.UserPlatformAdmin || u.State != identity.UserActive || !u.MustChangePassword || u.PasswordHash != "h-Boss" {
+		t.Fatalf("stored admin: %+v %v", u, err)
+	}
+	wantErr(t, "second admin", s.CreateFirstAdmin(ctx, admin("Boss2", "b2")), identity.ErrAdminExists)
+	if _, err := s.GetUser(ctx, "boss2"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("refused admin was inserted: %v", err)
+	}
+	// 已有的管理用户被停用，或只有 manager：仍算「已有管理用户」
+	if err := s.SetUserState(ctx, "boss", identity.UserDisabled, t0); err != nil {
+		t.Fatal(err)
+	}
+	wantErr(t, "admin disabled", s.CreateFirstAdmin(ctx, admin("Boss3", "b3")), identity.ErrAdminExists)
+	if n, _ := s.CountUsers(ctx); n != 2 {
+		t.Fatalf("CountUsers=%d, want 2", n)
+	}
+}
+
+// 库里只有一个 manager（尚未绑定）也算「已有管理用户」。
+func firstAdminRefusedByManager(t *testing.T, s identity.Store) {
+	if err := s.CreateUser(ctx, identity.User{UserID: "mgr", ShortName: "mg", Type: identity.UserManager, State: identity.UserPendingBind, CreatedAt: t0}); err != nil {
+		t.Fatal(err)
+	}
+	err := s.CreateFirstAdmin(ctx, identity.User{UserID: "Boss", ShortName: "bs", Type: identity.UserPlatformAdmin, State: identity.UserActive, CreatedAt: t0})
+	wantErr(t, "manager exists", err, identity.ErrAdminExists)
+	if n, _ := s.CountUsers(ctx); n != 1 {
+		t.Fatalf("CountUsers=%d, want 1", n)
+	}
+}
+
+// ── 编组（组长裁定 132246Z）────────────────────────────────────────────────
+
+func groupFixture(t *testing.T, s identity.Store) {
+	t.Helper()
+	mustUser(t, s, "zzc", "zz", identity.UserActive)
+	mustUser(t, s, "lbl", "lb", identity.UserActive)
+	mustUser(t, s, "mmm", "mm", identity.UserActive)
+	mustHosted(t, s, "ag-z", "zzc", "Zed", "app-z", t0)
+	mustHosted(t, s, "ag-z2", "zzc", "Zed2", "app-z2", t0)
+	mustHosted(t, s, "ag-l", "lbl", "Lee", "app-l", t0)
+	mustHosted(t, s, "ag-m", "mmm", "Moe", "app-m", t0)
+}
+
+func mkGroup(code, name, creator, leader string, at time.Time) identity.Group {
+	return identity.Group{Code: code, ShortName: name, CreatorLC: creator, LeaderAgentID: leader, CreatedAt: at, UpdatedAt: at}
+}
+
+func memberIDs(t *testing.T, s identity.Store, code string) string {
+	t.Helper()
+	ms, err := s.ListGroupMembers(ctx, code)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, m := range ms {
+		ids = append(ids, m.AgentID)
+	}
+	return strings.Join(ids, ",")
+}
+
+// 建组：组长须属建组人且未吊销；组名全局唯一、区分大小写；组码唯一；组长自动入组；列表顺序确定。
+func groupCreateRules(t *testing.T, s identity.Store) {
+	groupFixture(t, s)
+	mustHosted(t, s, "ag-r", "zzc", "Rev", "app-r", t0)
+	if _, err := s.RetireAgent(ctx, "ag-r", "test", t0); err != nil {
+		t.Fatal(err)
+	}
+	for what, leader := range map[string]string{"other owner's agent": "ag-l", "revoked agent": "ag-r", "no such agent": "ag-none"} {
+		wantErr(t, what, s.CreateGroup(ctx, mkGroup("c0", "开发组", "zzc", leader, t0)), identity.ErrGroupAgentUnavailable)
+	}
+	if err := s.CreateGroup(ctx, mkGroup("c1", "开发组", "ZZC", "ag-z", t0.Add(time.Minute))); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	g, err := s.GetGroup(ctx, "c1")
+	if err != nil || g.ShortName != "开发组" || g.CreatorLC != "zzc" || g.LeaderAgentID != "ag-z" || g.AdditionsClosed || !g.CreatedAt.Equal(t0.Add(time.Minute)) {
+		t.Fatalf("GetGroup: %+v %v", g, err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-z" {
+		t.Fatalf("leader must be the first member: %q", got)
+	}
+	if codes, _ := s.ListAgentGroups(ctx, "ag-z"); strings.Join(notFixture(codes), ",") != "c1" {
+		t.Fatalf("ListAgentGroups: %v", codes)
+	}
+	wantErr(t, "same name, other user", s.CreateGroup(ctx, mkGroup("c2", "开发组", "lbl", "ag-l", t0)), identity.ErrGroupNameTaken)
+	wantErr(t, "same code", s.CreateGroup(ctx, mkGroup("c1", "别的", "lbl", "ag-l", t0)), identity.ErrConflict)
+	if _, err := s.GetGroup(ctx, "c2"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("refused group was created: %v", err)
+	}
+	// 区分大小写（与旧平台同）
+	if err := s.CreateGroup(ctx, mkGroup("zz", "Dev", "zzc", "ag-z2", t0)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.CreateGroup(ctx, mkGroup("aa", "dev", "lbl", "ag-l", t0)); err != nil {
+		t.Fatalf("names differing only in case must both be allowed: %v", err)
+	}
+	gs, err := s.ListGroups(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var order []string
+	for _, g := range gs {
+		order = append(order, g.Code)
+	}
+	if strings.Join(notFixture(order), ",") != "aa,zz,c1" {
+		t.Fatalf("ListGroups order = %v, want aa,zz,c1 (created_at, then code)", order)
+	}
+}
+
+// 入组、退出、关闭添加：组长不可剔除；成员属主或建组人才可剔除；关闭后不能再入；只有建组人能开关。
+func groupJoinLeaveClose(t *testing.T, s identity.Store) {
+	groupFixture(t, s)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "开发组", "zzc", "ag-z", t0)); err != nil {
+		t.Fatal(err)
+	}
+	t1 := t0.Add(time.Minute)
+	wantErr(t, "join missing group", s.JoinGroup(ctx, "nope", "ag-l", "lbl", t1), identity.ErrNotFound)
+	wantErr(t, "join someone else's agent", s.JoinGroup(ctx, "c1", "ag-l", "zzc", t1), identity.ErrGroupAgentUnavailable)
+	if err := s.JoinGroup(ctx, "c1", "ag-l", "LBL", t1); err != nil {
+		t.Fatalf("join own agent: %v", err)
+	}
+	wantErr(t, "join twice", s.JoinGroup(ctx, "c1", "ag-l", "lbl", t1), identity.ErrGroupMemberExists)
+	if err := s.JoinGroup(ctx, "c1", "ag-m", "mmm", t1); err != nil {
+		t.Fatal(err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-z,ag-l,ag-m" {
+		t.Fatalf("members %q, want ag-z,ag-l,ag-m (joined_at, then agent_id)", got)
+	}
+	wantErr(t, "leader removed by creator", s.LeaveGroup(ctx, "c1", "ag-z", "zzc"), identity.ErrGroupLeaderProtected)
+	wantErr(t, "third party removes a member", s.LeaveGroup(ctx, "c1", "ag-l", "mmm"), identity.ErrForbidden)
+	wantErr(t, "leave missing group", s.LeaveGroup(ctx, "nope", "ag-l", "lbl"), identity.ErrNotFound)
+	if err := s.LeaveGroup(ctx, "c1", "ag-l", "lbl"); err != nil {
+		t.Fatalf("owner leaves: %v", err)
+	}
+	wantErr(t, "leave twice", s.LeaveGroup(ctx, "c1", "ag-l", "lbl"), identity.ErrGroupMemberNotFound)
+	if err := s.LeaveGroup(ctx, "c1", "ag-m", "zzc"); err != nil {
+		t.Fatalf("creator removes a member: %v", err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-z" {
+		t.Fatalf("members after leaves: %q", got)
+	}
+	t2 := t0.Add(2 * time.Minute)
+	wantErr(t, "non-creator closes", s.SetGroupAdditionsClosed(ctx, "c1", "lbl", true, t2), identity.ErrForbidden)
+	wantErr(t, "close missing group", s.SetGroupAdditionsClosed(ctx, "nope", "zzc", true, t2), identity.ErrNotFound)
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "ZZC", true, t2); err != nil {
+		t.Fatal(err)
+	}
+	if g, _ := s.GetGroup(ctx, "c1"); !g.AdditionsClosed || !g.UpdatedAt.Equal(t2) {
+		t.Fatalf("after close: %+v", g)
+	}
+	wantErr(t, "join closed group", s.JoinGroup(ctx, "c1", "ag-l", "lbl", t2), identity.ErrGroupClosed)
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", false, t2); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.JoinGroup(ctx, "c1", "ag-l", "lbl", t2); err != nil {
+		t.Fatalf("join after reopen: %v", err)
+	}
+}
+
+// 删组：建组人才可；成员行随之删除；组名可再用。
+func groupDeleteRules(t *testing.T, s identity.Store) {
+	groupFixture(t, s)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "开发组", "zzc", "ag-z", t0)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.JoinGroup(ctx, "c1", "ag-l", "lbl", t0); err != nil {
+		t.Fatal(err)
+	}
+	wantErr(t, "member's owner deletes", s.DeleteGroup(ctx, "c1", "lbl"), identity.ErrForbidden)
+	wantErr(t, "delete missing", s.DeleteGroup(ctx, "nope", "zzc"), identity.ErrNotFound)
+	if err := s.DeleteGroup(ctx, "c1", "ZZC"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GetGroup(ctx, "c1"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("group still there: %v", err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "" {
+		t.Fatalf("member rows survived delete: %q", got)
+	}
+	for _, ag := range []string{"ag-z", "ag-l"} {
+		if codes, _ := s.ListAgentGroups(ctx, ag); len(notFixture(codes)) != 0 {
+			t.Fatalf("%s still in groups %v", ag, codes)
+		}
+	}
+	if err := s.CreateGroup(ctx, mkGroup("c2", "开发组", "lbl", "ag-l", t0)); err != nil {
+		t.Fatalf("name must be reusable after delete: %v", err)
+	}
+}
+
+// 吊销不删成员行（留作历史，由业务层不予展示）；吊销后的 Agent 不能再入组、不能当组长。
+func groupMemberAfterRevoke(t *testing.T, s identity.Store) {
+	groupFixture(t, s)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "开发组", "zzc", "ag-z", t0)); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.JoinGroup(ctx, "c1", "ag-l", "lbl", t0.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.RetireAgent(ctx, "ag-l", "test", t0); err != nil {
+		t.Fatal(err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-z,ag-l" {
+		t.Fatalf("store must keep the revoked member row: %q", got)
+	}
+	if err := s.CreateGroup(ctx, mkGroup("c2", "二组", "zzc", "ag-z2", t0)); err != nil {
+		t.Fatal(err)
+	}
+	wantErr(t, "revoked agent joins", s.JoinGroup(ctx, "c2", "ag-l", "lbl", t0), identity.ErrGroupAgentUnavailable)
+}
+
+// notFixture 滤掉夹具给每个 Agent 建的 gc-<id> 组。
+func notFixture(codes []string) []string {
+	var out []string
+	for _, c := range codes {
+		if !strings.HasPrefix(c, "gc-") {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// 批准时的编组（GroupAllowed）：入已有组须存在且未关闭添加；新组同一事务建、以新 Agent 为组长；任一失败整个批准不生效。
+func approveGroupChoice(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-lead", "zzc", "Lead", "app-lead", t0)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "一组", "zzc", "ag-lead", t0)); err != nil {
+		t.Fatal(err)
+	}
+	mustApp(t, s, "app-1", "zzc", "dev-1", t0)
+	in := func(group string, ng *identity.Group) identity.ApproveInput {
+		return identity.ApproveInput{AppID: "app-1", OwnerLC: "zzc", AgentID: "ag-1", Name: "Worker", GroupID: group, NewGroup: ng}
+	}
+	nothingChanged := func(what string) {
+		t.Helper()
+		if a, _ := s.GetApplication(ctx, "app-1"); a.State != identity.AppPending {
+			t.Fatalf("%s: application left %s, want pending", what, a.State)
+		}
+		if _, err := s.GetAgent(ctx, "ag-1"); !errors.Is(err, identity.ErrNotFound) {
+			t.Fatalf("%s: agent created anyway: %v", what, err)
+		}
+	}
+	_, err := s.Approve(ctx, in("nope", nil), t0)
+	wantErr(t, "missing group", err, identity.ErrGroupNotFound)
+	nothingChanged("missing group")
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", true, t0); err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.Approve(ctx, in("c1", nil), t0)
+	wantErr(t, "closed group", err, identity.ErrGroupClosed)
+	nothingChanged("closed group")
+	_, err = s.Approve(ctx, in("gx", &identity.Group{Code: "gx", ShortName: "一组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}), t0)
+	wantErr(t, "new group name taken", err, identity.ErrGroupNameTaken)
+	nothingChanged("new group name taken")
+	if _, err := s.GetGroup(ctx, "gx"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("refused new group was created: %v", err)
+	}
+	// 事务中途失败（新组本身没问题，但 Agent 名已被占）⇒ 不留空组、不留 Agent（组长台账 6f3b6edd 反向第二条）
+	_, err = s.Approve(ctx, identity.ApproveInput{AppID: "app-1", OwnerLC: "zzc", AgentID: "ag-1", Name: "LEAD", GroupID: "gy",
+		NewGroup: &identity.Group{Code: "gy", ShortName: "空组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}}, t0)
+	wantErr(t, "agent name taken with new group", err, identity.ErrNameTaken)
+	nothingChanged("agent name taken with new group")
+	if _, err := s.GetGroup(ctx, "gy"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("empty group left behind after failed approve: %v", err)
+	}
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", false, t0); err != nil {
+		t.Fatal(err)
+	}
+	t1 := t0.Add(time.Minute)
+	ag, err := s.Approve(ctx, in("c1", nil), t1)
+	if err != nil || ag.GroupID != "c1" {
+		t.Fatalf("approve into c1: %+v %v", ag, err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-lead,ag-1" {
+		t.Fatalf("c1 members %q", got)
+	}
+	// 新组：另一份申请，就地建组、以新 Agent 为组长
+	mustApp(t, s, "app-2", "zzc", "dev-2", t0)
+	ag2, err := s.Approve(ctx, identity.ApproveInput{AppID: "app-2", OwnerLC: "zzc", AgentID: "ag-2", Name: "Second", GroupID: "g2",
+		NewGroup: &identity.Group{Code: "g2", ShortName: "二组", CreatorLC: "ZZC", CreatedAt: t1, UpdatedAt: t1}}, t1)
+	if err != nil || ag2.GroupID != "g2" {
+		t.Fatalf("approve with new group: %+v %v", ag2, err)
+	}
+	g, err := s.GetGroup(ctx, "g2")
+	if err != nil || g.LeaderAgentID != "ag-2" || g.CreatorLC != "zzc" || g.ShortName != "二组" || g.AdditionsClosed {
+		t.Fatalf("new group: %+v %v", g, err)
+	}
+	if got := memberIDs(t, s, "g2"); got != "ag-2" {
+		t.Fatalf("g2 members %q", got)
+	}
+}
+
+// 托管新建的编组：语义同批准；失败时连申请（一次性令牌）也不留。
+func hostedGroupChoice(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-lead", "zzc", "Lead", "app-lead", t0)
+	if err := s.CreateGroup(ctx, mkGroup("c1", "一组", "zzc", "ag-lead", t0)); err != nil {
+		t.Fatal(err)
+	}
+	create := func(id, app, group string, ng *identity.Group) error {
+		return s.CreateHostedAgent(ctx, identity.Agent{ID: id, OwnerLC: "zzc", Name: "H" + id[3:], GroupID: group, CreatedAt: t0},
+			identity.Application{ID: app, PollTokenHash: "tok-" + app, RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, ng)
+	}
+	nothing := func(what, id, app string) {
+		t.Helper()
+		if _, err := s.GetAgent(ctx, id); !errors.Is(err, identity.ErrNotFound) {
+			t.Fatalf("%s: agent created anyway: %v", what, err)
+		}
+		if _, err := s.GetApplication(ctx, app); !errors.Is(err, identity.ErrNotFound) {
+			t.Fatalf("%s: application left behind: %v", what, err)
+		}
+	}
+	wantErr(t, "hosted into missing group", create("ag-a", "app-a", "nope", nil), identity.ErrGroupNotFound)
+	nothing("missing group", "ag-a", "app-a")
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", true, t0); err != nil {
+		t.Fatal(err)
+	}
+	wantErr(t, "hosted into closed group", create("ag-b", "app-b", "c1", nil), identity.ErrGroupClosed)
+	nothing("closed group", "ag-b", "app-b")
+	wantErr(t, "hosted new group name taken", create("ag-c", "app-c", "gx", &identity.Group{Code: "gx", ShortName: "一组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}), identity.ErrGroupNameTaken)
+	nothing("new group name taken", "ag-c", "app-c")
+	// 事务中途失败（Agent 名已被占：夹具里组长 Agent 名为 Lead）⇒ 不留空组、不留 Agent、不留申请
+	err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-f", OwnerLC: "zzc", Name: "LEAD", GroupID: "gy", CreatedAt: t0},
+		identity.Application{ID: "app-f", PollTokenHash: "tok-f", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)},
+		&identity.Group{Code: "gy", ShortName: "空组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0})
+	wantErr(t, "hosted agent name taken with new group", err, identity.ErrNameTaken)
+	nothing("agent name taken with new group", "ag-f", "app-f")
+	if _, err := s.GetGroup(ctx, "gy"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("empty group left behind after failed hosted create: %v", err)
+	}
+	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", false, t0); err != nil {
+		t.Fatal(err)
+	}
+	if err := create("ag-d", "app-d", "c1", nil); err != nil {
+		t.Fatalf("hosted into c1: %v", err)
+	}
+	if err := create("ag-e", "app-e", "g2", &identity.Group{Code: "g2", ShortName: "二组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}); err != nil {
+		t.Fatalf("hosted with new group: %v", err)
+	}
+	if got := memberIDs(t, s, "c1"); got != "ag-d,ag-lead" && got != "ag-lead,ag-d" {
+		t.Fatalf("c1 members %q", got)
+	}
+	if g, err := s.GetGroup(ctx, "g2"); err != nil || g.LeaderAgentID != "ag-e" || memberIDs(t, s, "g2") != "ag-e" {
+		t.Fatalf("new hosted group: %+v %v", g, err)
+	}
+}
+
+// 暂停记下谁停的、何时停的；已是暂停时再停不覆盖；恢复即清空（qwen 复验 🟡①：by／now 曾是两个实现里的死参数）。
+// 每一步用互不相同的操作者与时刻，写错字段或写成别一步的值都会红。
+func suspendRecordsWhoWhen(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-s", "zzc", "Sleepy", "app-s", t0)
+	t1, t2, t3, t4 := t0.Add(time.Minute), t0.Add(2*time.Minute), t0.Add(3*time.Minute), t0.Add(4*time.Minute)
+	get := func() *identity.Agent {
+		t.Helper()
+		g, err := s.GetAgent(ctx, "ag-s")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return g
+	}
+	if g := get(); !g.SuspendedAt.IsZero() || g.SuspendedBy != "" {
+		t.Fatalf("fresh agent has suspend fields: %+v", g)
+	}
+	if _, err := s.SetAgentSuspended(ctx, "ag-s", true, "g4", t1); err != nil {
+		t.Fatal(err)
+	}
+	if g := get(); !g.SuspendedAt.Equal(t1) || g.SuspendedBy != "g4" {
+		t.Fatalf("after suspend: at=%v by=%q, want %v g4", g.SuspendedAt, g.SuspendedBy, t1)
+	}
+	if already, err := s.SetAgentSuspended(ctx, "ag-s", true, "other", t2); !already || err != nil {
+		t.Fatalf("second suspend: %v %v", already, err)
+	}
+	if g := get(); !g.SuspendedAt.Equal(t1) || g.SuspendedBy != "g4" {
+		t.Fatalf("no-op suspend overwrote fields: at=%v by=%q", g.SuspendedAt, g.SuspendedBy)
+	}
+	if _, err := s.SetAgentSuspended(ctx, "ag-s", false, "resumer", t3); err != nil {
+		t.Fatal(err)
+	}
+	if g := get(); !g.SuspendedAt.IsZero() || g.SuspendedBy != "" || g.State != identity.AgentActive {
+		t.Fatalf("after resume: %+v", g)
+	}
+	if _, err := s.SetAgentSuspended(ctx, "ag-s", true, "ops", t4); err != nil {
+		t.Fatal(err)
+	}
+	if g, _ := s.ResolveAgentByCredential(ctx, "cred-none"); g != nil {
+		t.Fatalf("unexpected credential hit: %+v", g)
+	}
+	if list, _ := s.ListAgents(ctx, "zzc"); len(list) != 1 || !list[0].SuspendedAt.Equal(t4) || list[0].SuspendedBy != "ops" {
+		t.Fatalf("ListAgents must carry suspend fields: %+v", list)
+	}
+}
+
+// 两条同名 Agent 在同一时刻被吊销（平票）：FindAgentByName 取 agent_id 大的，两个实现一致（qwen 复验 🔵1）。
+// 建两组：先建 id 大的、再建 id 小的，排除「按插入序」碰巧对上。
+func findAgentByNameTie(t *testing.T, s identity.Store) {
+	at := t0.Add(time.Hour)
+	for _, id := range []string{"ag-z9", "ag-a1"} {
+		mustHosted(t, s, id, "zzc", "Twin", "app-"+id, t0)
+		if _, err := s.RetireAgent(ctx, id, "by-"+id, at); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// 连查 20 次：内存实现遍历 map 的顺序每次随机，平票若不确定，20 次全对的概率只有 2^-20
+	for i := 0; i < 20; i++ {
+		g, err := s.FindAgentByName(ctx, "zzc", "twin")
+		if err != nil || g.ID != "ag-z9" || g.RevokedBy != "by-ag-z9" {
+			t.Fatalf("tie (call %d): %+v %v, want ag-z9", i, g, err)
+		}
+	}
+}
+
+// 业主令（15:34:17Z，板 8582acc4）：编组不是必须的 —— 批准与托管新建都可不给组，不入任何组、不建组。
+func noGroupJoinsNothing(t *testing.T, s identity.Store) {
+	mustApp(t, s, "app-1", "zzc", "dev-1", t0)
+	ag, err := s.Approve(ctx, identity.ApproveInput{AppID: "app-1", OwnerLC: "zzc", AgentID: "ag-1", Name: "Loner"}, t0)
+	if err != nil || ag.GroupID != "" {
+		t.Fatalf("approve without group: %+v %v", ag, err)
+	}
+	if err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-h", OwnerLC: "zzc", Name: "Solo", CreatedAt: t0},
+		identity.Application{ID: "app-h", PollTokenHash: "tok-h", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, nil); err != nil {
+		t.Fatalf("hosted without group: %v", err)
+	}
+	for _, id := range []string{"ag-1", "ag-h"} {
+		if codes, _ := s.ListAgentGroups(ctx, id); len(codes) != 0 {
+			t.Fatalf("%s joined %v", id, codes)
+		}
+		if g, _ := s.GetAgent(ctx, id); g == nil || g.GroupID != "" {
+			t.Fatalf("%s group code: %+v", id, g)
+		}
+	}
+	if gs, _ := s.ListGroups(ctx); len(gs) != 0 {
+		t.Fatalf("a group was created: %+v", gs)
+	}
+}
+
+// 「本人可用」（组长令，收紧 GroupAllowed）：批准与托管新建只能入本人建的组、或本人已有未吊销成员在内的组；
+// 别人的组与不存在同一答复 ErrGroupNotFound（不暴露组存在），且什么也不改。
+func approveOnlyIntoUsableGroup(t *testing.T, s identity.Store) {
+	mustHosted(t, s, "ag-lbl", "lbl", "Lee", "app-lbl", t0)
+	if err := s.CreateGroup(ctx, mkGroup("lg", "李组", "lbl", "ag-lbl", t0)); err != nil {
+		t.Fatal(err)
+	}
+	mustApp(t, s, "app-1", "zzc", "dev-1", t0)
+	in := identity.ApproveInput{AppID: "app-1", OwnerLC: "zzc", AgentID: "ag-1", Name: "Worker", GroupID: "lg"}
+	_, err := s.Approve(ctx, in, t0)
+	wantErr(t, "approve into someone else's group", err, identity.ErrGroupNotFound)
+	if a, _ := s.GetApplication(ctx, "app-1"); a.State != identity.AppPending {
+		t.Fatalf("application left %s", a.State)
+	}
+	if _, err := s.GetAgent(ctx, "ag-1"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("agent created anyway: %v", err)
+	}
+	err = s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-h", OwnerLC: "zzc", Name: "Hosted", GroupID: "lg", CreatedAt: t0},
+		identity.Application{ID: "app-h", PollTokenHash: "tok-h", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)}, nil)
+	wantErr(t, "hosted into someone else's group", err, identity.ErrGroupNotFound)
+	if got := memberIDs(t, s, "lg"); got != "ag-lbl" {
+		t.Fatalf("someone else's group gained members: %q", got)
+	}
+	// 本人已有成员在内 ⇒ 可用（成员经 JoinGroup 入组；JoinGroup 的收紧另待组长裁）
+	mustHosted(t, s, "ag-z", "zzc", "Zed", "app-z", t0)
+	if err := s.JoinGroup(ctx, "lg", "ag-z", "zzc", t0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Approve(ctx, in, t0.Add(time.Minute)); err != nil {
+		t.Fatalf("approve into a group where I already have a member: %v", err)
+	}
+	// 成员被吊销后不再算「本人已有成员」
+	mustApp(t, s, "app-2", "zzc", "dev-2", t0)
+	if _, err := s.RetireAgent(ctx, "ag-z", "g4", t0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.RetireAgent(ctx, "ag-1", "g4", t0); err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.Approve(ctx, identity.ApproveInput{AppID: "app-2", OwnerLC: "zzc", AgentID: "ag-2", Name: "Second", GroupID: "lg"}, t0)
+	wantErr(t, "only revoked members left", err, identity.ErrGroupNotFound)
+}
+
+// 运维重置口令（组长令，reset-password）：一个事务里换哈希、置必须改密、吊销该用户全部会话；别的用户会话不动；用户不存在 ⇒ ErrNotFound。
+func resetPasswordRevokesSessions(t *testing.T, s identity.Store) {
+	mustUser(t, s, "alice", "al", identity.UserActive)
+	mustUser(t, s, "bob", "bo", identity.UserActive)
+	exp := t0.Add(time.Hour)
+	for _, se := range []identity.Session{{TokenHash: "s-a1", UserIDLC: "alice", ExpiresAt: exp}, {TokenHash: "s-a2", UserIDLC: "alice", ExpiresAt: exp}, {TokenHash: "s-b1", UserIDLC: "bob", ExpiresAt: exp}} {
+		if err := s.CreateSession(ctx, se); err != nil {
+			t.Fatal(err)
+		}
+	}
+	wantErr(t, "reset missing user", s.ResetPassword(ctx, "nobody", "h-x", t0), identity.ErrNotFound)
+	if err := s.ResetPassword(ctx, "ALICE", "h-new", t0.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	u, _ := s.GetUser(ctx, "alice")
+	if u.PasswordHash != "h-new" || !u.MustChangePassword {
+		t.Fatalf("after reset: %+v", u)
+	}
+	for _, tok := range []string{"s-a1", "s-a2"} {
+		if _, _, err := s.ResolveSession(ctx, tok, t0.Add(2*time.Minute)); !errors.Is(err, identity.ErrNotFound) {
+			t.Fatalf("alice session %s survived reset: %v", tok, err)
+		}
+	}
+	if _, _, err := s.ResolveSession(ctx, "s-b1", t0.Add(2*time.Minute)); err != nil {
+		t.Fatalf("bob's session must be untouched: %v", err)
+	}
+	if b, _ := s.GetUser(ctx, "bob"); b.MustChangePassword {
+		t.Fatal("bob marked must-change by alice's reset")
 	}
 }

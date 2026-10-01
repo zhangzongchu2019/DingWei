@@ -11,7 +11,7 @@ import (
 )
 
 func TestConsolePlatformRoutesAreAssembledWithServerGuards(t *testing.T) {
-	file, err := parser.ParseFile(token.NewFileSet(), "main.go", nil, 0)
+	file, err := parseRouteSources(token.NewFileSet())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +140,7 @@ func agentCapabilityPageID(expr ast.Expr) (string, bool) {
 
 func TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry(t *testing.T) {
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, "main.go", nil, 0)
+	file, err := parseRouteSources(fset)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry(t *testing.T) 
 }
 
 func TestAgentTaskDriverRouteRequiresAgentCapability(t *testing.T) {
-	source, err := parser.ParseFile(token.NewFileSet(), "main.go", nil, 0)
+	source, err := parseRouteSources(token.NewFileSet())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,4 +231,22 @@ func TestAgentTaskDriverRouteRequiresAgentCapability(t *testing.T) {
 	if !found {
 		t.Fatal("agent task driver route is not assembled")
 	}
+}
+
+// parseRouteSources 路由注册分在 main.go 与 console_routes.go 两处（registerConsoleRoutes 抽出后，组长裁定 140013Z ③）。
+// 源码扫描类用例把两份的声明合起来看，判据本身不变。
+func parseRouteSources(fset *token.FileSet) (*ast.File, error) {
+	var merged *ast.File
+	for _, name := range []string{"main.go", "console_routes.go"} {
+		f, err := parser.ParseFile(fset, name, nil, 0)
+		if err != nil {
+			return nil, err
+		}
+		if merged == nil {
+			merged = f
+			continue
+		}
+		merged.Decls = append(merged.Decls, f.Decls...)
+	}
+	return merged, nil
 }

@@ -2,8 +2,6 @@ package m8
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,13 +12,11 @@ func TestNewPlatformFeishuRegisterAndLogin(t *testing.T) {
 	hub, _, ctx := newTestHub(t)
 	svc := identity.NewService(identity.NewMemStore(), nil, nil)
 	ob := identity.NewOnboarding(svc)
-	pwf := filepath.Join(t.TempDir(), "pw")
-	_ = os.WriteFile(pwf, []byte("Boot-Pass-0001"), 0o600)
-	if _, err := ob.Bootstrap(ctx, pwf); err != nil {
+	if _, err := ob.BootstrapAdmin(ctx, "Root", "rt", ""); err != nil {
 		t.Fatal(err)
 	}
 	hub.Onboarding = ob
-	admin, _ := svc.Store.GetUser(ctx, identity.SystemDefaultUserID)
+	admin, _ := svc.Store.GetUser(ctx, "root")
 	_, regCode, _, err := ob.CreateUser(ctx, admin, identity.CreateUserRequest{UserID: "alice", ShortName: "al", Type: identity.UserMember})
 	if err != nil {
 		t.Fatal(err)

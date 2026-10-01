@@ -95,6 +95,10 @@ func suggestedConsoleGroupNames(name string, groups []model.AgentGroup, count in
 }
 
 func (h *Hub) HandleConsoleAgentGroups(w http.ResponseWriter, r *http.Request) {
+	if h.Identity != nil {
+		h.handleNewPlatformAgentGroups(w, r)
+		return
+	}
 	repo, ok := h.Repo.(consoleAgentGroupRepository)
 	if !ok {
 		http.Error(w, "agent groups unavailable", http.StatusServiceUnavailable)
@@ -263,6 +267,10 @@ func randomGroupSuffix(n int) (string, error) {
 }
 
 func (h *Hub) HandleConsoleAgentGroup(w http.ResponseWriter, r *http.Request) {
+	if h.Identity != nil {
+		h.handleNewPlatformAgentGroup(w, r)
+		return
+	}
 	repo := h.Repo.(consoleAgentGroupRepository)
 	principal, code := platformPrincipal(r), r.PathValue("code")
 	management := platformRole(r) == consolePlatformRoleManagement

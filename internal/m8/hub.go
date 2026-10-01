@@ -72,6 +72,8 @@ type Hub struct {
 
 	// Identity 新平台 G3：/ws/agent 按专属凭据认人（为空＝不启用该入口）。
 	Identity *identity.Service
+	// PublicOrigin 新平台对外源（例如 https://dw.cmjrt.com:55055）：view 写操作与 WebSocket 升级校验 Origin 用。
+	PublicOrigin string
 	// Onboarding 新平台 N3：飞书里的登录与注册指令改由它处理（为空＝沿用旧登录）。
 	Onboarding *identity.Onboarding
 	// AgentCredentialOnly 新平台模式：旧入口 /ws/session 一律回 410（只认凭据，设计件 2.3）；
@@ -3216,6 +3218,7 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 		log.Printf("delivery failure notification=suppressed reason=recursive_or_missing")
 		return
 	}
+	routeErr = h.explainRevokedTarget(ctx, target, routeErr)
 	now := time.Now().UTC()
 	dedupKey := c.keyID + "\x00" + c.sessionName + "\x00" + target + "\x00" + routeErr.Error()
 	h.mu.Lock()
@@ -5926,6 +5929,8 @@ func randomDigits(n int) string {
 
 // Close 收掉 Hub 自己起的后台 goroutine：amr 处理器的心跳与路由循环，以及在线会话的处理 goroutine（先断连、再等收尾）；幂等。
 // 生产进程随退出一并回收，不必调；测试里每建一个 Hub 都应 t.Cleanup(hub.Close)，否则泄漏的心跳会污染全局 log。
+// 🔴 调用前提：调用时不应再有新连接进来（先关监听或测试服务器，再 Close）。serveSession 里的 sessionWG.Add 与这里的
+// Wait 并发时属 WaitGroup 的未定义用法（Wait 已开始后再 Add），可能漏等刚进来的会话（组长 13:22:28Z 复验意见）。
 func (h *Hub) Close() {
 	if h == nil {
 		return

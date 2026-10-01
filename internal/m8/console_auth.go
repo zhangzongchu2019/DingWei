@@ -174,6 +174,13 @@ func (h *Hub) authenticateConsole(w http.ResponseWriter, r *http.Request) (conso
 
 func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.Onboarding != nil {
+			// 新平台：按 N3 会话认人（newplat_view.go newPlatformPrincipal）。
+			if userLC, ok := h.newPlatformPrincipal(w, r); ok {
+				next(w, r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, userLC)))
+			}
+			return
+		}
 		// 🔴 2026-09-15 修：开关关闭时【拒绝】，不再放行。
 		//
 		// 原来是 next(w, r) 直接放行，且**不设 principal 的 context 值** ——
@@ -211,6 +218,13 @@ func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 // key_id and session_name are returned after authorization as runtime targets.
 func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.Onboarding != nil {
+			// 新平台：路径段是 full_name，按新平台会话＋归属用户授权（newplat_view.go）。
+			if h.newPlatformViewAuth(w, r) {
+				next(w, r)
+			}
+			return
+		}
 		if !h.consoleAuthEnabled {
 			next(w, r)
 			return
@@ -656,6 +670,12 @@ func ConsoleAgentCapabilityPageAllowed(pageID string) bool {
 }
 
 func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
+	// 新平台不发页面 capability：写操作已由 RequireConsoleAgent 按 cookie＋Origin 授权，
+	// 写权仍走飞书 ＃unlock（「登录即可写」须业主定）。页面收到 404 即按无 capability 处理（只读看 can_write）。
+	if h.Identity != nil {
+		writeAgentWSError(w, http.StatusNotFound, "capability_not_used")
+		return
+	}
 	// 🔴 本 handler 挂在 RequireConsoleAgent 下，而该守卫在开关关闭时**仍然放行**
 	//    （它同时包着 /view/* 这条回滚路径，**不能**改成拒绝）
 	//    ⇒ 本 handler 在开关关闭时**确实会被无凭据请求打到**，下面这几行不是多余的。
@@ -704,6 +724,14 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 		// including the compatibility path where unified auth is disabled.
 		r.Header.Del("X-DW-Console-Capability-Verified")
 		r.Header.Del("X-DW-Console-Principal")
+		if h.Onboarding != nil {
+			// 新平台：子路径同样按新平台会话＋归属用户授权；写操作在 newPlatformViewAuth 里校验 Origin，
+			// 取代旧平台挂在 console_agent 上的页面 capability。
+			if h.newPlatformViewAuth(w, r) {
+				next(w, r)
+			}
+			return
+		}
 		permission := "view"
 		if r.Method != http.MethodGet {
 			permission = "interact"

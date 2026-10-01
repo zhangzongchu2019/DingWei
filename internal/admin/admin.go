@@ -53,8 +53,11 @@ type Server struct {
 	Scheduler *scheduler.Service
 	SecretKey string
 	Files     FileBrowser
-	mu        sync.Mutex
-	sessions  map[string]string // token -> username
+	// NewPlatform 新平台模式（DW_NEWPLAT=1）：不注册旧 admin 编组页 —— 它读写的旧 agent_group* 表在新平台不用、不 PG 化，
+	// 新平台编组走 console 的 /api/console/agent-groups（np_group）。须在 Mount 之前置位（qwen 复验 🟡第七节第 3 条）。
+	NewPlatform bool
+	mu          sync.Mutex
+	sessions    map[string]string // token -> username
 }
 
 func New(repo store.Repository) *Server {
@@ -101,8 +104,10 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("POST /admin/routes", s.requireAuth(s.addRoute))
 	mux.HandleFunc("GET /admin/sessions", s.requireAuth(s.sessionsPage))
 	mux.HandleFunc("POST /admin/sessions", s.requireAuth(s.manageSession))
-	mux.HandleFunc("GET /admin/agent-groups", s.requireAuth(s.agentGroupsPage))
-	mux.HandleFunc("POST /admin/agent-groups", s.requireAuth(s.manageAgentGroups))
+	if !s.NewPlatform {
+		mux.HandleFunc("GET /admin/agent-groups", s.requireAuth(s.agentGroupsPage))
+		mux.HandleFunc("POST /admin/agent-groups", s.requireAuth(s.manageAgentGroups))
+	}
 	mux.HandleFunc("GET /admin/provision", s.requireAuthCap(capProvision, s.provisionPage))
 	mux.HandleFunc("POST /admin/provision", s.requireAuthCap(capProvision, s.manageProvision))
 	mux.HandleFunc("GET /admin/config", s.requireAuth(s.configs))
@@ -157,6 +162,10 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	groupsLink := "<li><a href=\"/admin/agent-groups\">Agent 编组（最简入口）</a></li>\n"
+	if s.NewPlatform {
+		groupsLink = "" // 新平台不注册旧编组页，也不给入口
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = fmt.Fprintf(w, `<!doctype html><meta charset=utf-8><title>WorkPulse</title>
 <h3>WorkPulse 后台</h3><p>服务运行中。</p>
@@ -169,14 +178,13 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 <li><a href="/admin/projects">项目组 / 排期文档</a></li>
 <li><a href="/admin/services">租户 / 成员空间</a></li><li><a href="/admin/api-keys">凭证 API key</a></li>
 <li><a href="/admin/sessions">会话端点 / 通配 / 镜像</a></li>
-<li><a href="/admin/agent-groups">Agent 编组（最简入口）</a></li>
-<li><a href="/admin/provision">Provision 下发</a></li>
+%s<li><a href="/admin/provision">Provision 下发</a></li>
 <li><a href="/admin/control-plane">总控指标看板</a></li>
 <li><a href="/admin/files">文件对象浏览</a></li>
 <li><a href="/admin/config">运行配置</a></li>
 </ul>`, stats.Total, stats.Queued, stats.Processing, stats.Done, stats.Dead,
 		controlStats.Depth, controlStats.Total, controlStats.Status["queued"], controlStats.Status["llm_pending"], controlStats.Status["done"], controlStats.Status["failed"], controlStats.Status["expired"], controlStats.FailedRate*100, controlStats.ExpiredRate*100,
-		controlStats.L2InFlight, controlStats.L2P50MS, controlStats.L2P95MS, controlStats.L2FailureRate*100)
+		controlStats.L2InFlight, controlStats.L2P50MS, controlStats.L2P95MS, controlStats.L2FailureRate*100, groupsLink)
 }
 
 func (s *Server) agentGroupsPage(w http.ResponseWriter, r *http.Request) {
