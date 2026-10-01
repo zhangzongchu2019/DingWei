@@ -176,6 +176,12 @@ type amrStats struct {
 }
 
 type amrProcessor struct {
+	// stop 关闭即令 run() 退出（Hub.Close 调用）。此前 run() 无任何退出分支 ⇒ 每建一个 Hub 永久泄漏一个心跳 goroutine，
+	// 每分钟往全局 log 打一行 amr heartbeat，随机撞进日志卫生用例的捕获窗口（复验方 qwen38maxkhovvob4 定位到 amr.go:597）。
+	stop     chan struct{}
+	stopOnce sync.Once
+	// done 在 run() 返回时关闭；close() 等它，保证 Close 返回后不会再有一行心跳落进别人的日志窗口。
+	done          chan struct{}
 	hub           *Hub
 	queue         chan amrRouteJob
 	noticeQueue   chan amrNoticeJob
@@ -211,6 +217,8 @@ func newAMRProcessor(h *Hub) *amrProcessor {
 		turnTTL:      envDuration("WP_AMR_TURN_TTL", 5*time.Minute),
 		routeTimeout: envDuration("WP_AMR_ROUTE_TIMEOUT", 5*time.Second),
 		maxTargets:   envInt("WP_AMR_MAX_TARGETS", 20),
+		stop:         make(chan struct{}),
+		done:         make(chan struct{}),
 	}
 	p.stats.terminalUnknown = map[string]uint64{}
 	p.routeEnvelope = h.RouteEnvelope
@@ -601,8 +609,13 @@ func (p *amrProcessor) run() {
 	}
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
+	if p.done != nil {
+		defer close(p.done)
+	}
 	for {
 		select {
+		case <-p.stop:
+			return
 		case job := <-p.queue:
 			p.process(job)
 		case notice := <-p.noticeQueue:
@@ -614,6 +627,17 @@ func (p *amrProcessor) run() {
 			p.logStatsLocked()
 			p.mu.Unlock()
 		}
+	}
+}
+
+// close 令 run() 退出并等它真正返回；幂等。p 或 stop 为空（测试里直接字面量构造、未经 newAMRProcessor）时什么也不做。
+func (p *amrProcessor) close() {
+	if p == nil || p.stop == nil {
+		return
+	}
+	p.stopOnce.Do(func() { close(p.stop) })
+	if p.done != nil {
+		<-p.done
 	}
 }
 

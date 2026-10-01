@@ -5899,3 +5899,11 @@ func randomDigits(n int) string {
 	}
 	return string(out)
 }
+
+// Close 收掉 Hub 自己起的后台 goroutine（目前是 amr 处理器的心跳与路由循环）；幂等。
+// 生产进程随退出一并回收，不必调；测试里每建一个 Hub 都应 t.Cleanup(hub.Close)，否则泄漏的心跳会污染全局 log。
+func (h *Hub) Close() {
+	if h != nil && h.amr != nil {
+		h.amr.close()
+	}
+}
