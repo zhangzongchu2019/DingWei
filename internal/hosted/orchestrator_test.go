@@ -598,3 +598,23 @@ func TestOptionsViewAndJobProgress(t *testing.T) {
 	}
 	// 无 cancelled：合同无此态（排队不可取消）——JobView 结构无该值即判据
 }
+
+// 组长 18:56:12Z：HostedItem 收敛 false 必须留痕——计数＋1 且返回 false（日志同路径）。
+func TestHostedItemErrorCounted(t *testing.T) {
+	o, _, _, s := mkOrch(t)
+	ctx := context.Background()
+	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_x", NodeID: "nd_free", CLI: "codex", LLM: "gpt",
+		CredKind: "token_file", Plan: "2c4g", ImageRef: "r", CreatedBy: "zzc"}); err != nil {
+		t.Fatal(err)
+	}
+	before := HostedItemErrorCount()
+	if err := s.DropSchema(ctx); err != nil { // 库面破坏 ⇒ GetSeat 必错
+		t.Fatal(err)
+	}
+	if m, ok := o.HostedItem(ctx, "ag_x"); ok || m != nil {
+		t.Fatalf("库坏应降级 false: %v %v", m, ok)
+	}
+	if HostedItemErrorCount() != before+1 {
+		t.Fatalf("错误应计数: before=%d after=%d", before, HostedItemErrorCount())
+	}
+}

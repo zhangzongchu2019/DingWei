@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"sync/atomic"
 	"time"
 )
 
@@ -28,6 +29,7 @@ import (
 func (o *Orchestrator) HostedItem(ctx context.Context, agentID string) (map[string]any, bool) {
 	m, ok, err := o.hostedItem(ctx, agentID)
 	if err != nil {
+		hostedItemErrCount.Add(1) // 计数＋日志双留痕（组长 18:56:12Z；不含凭据，只有 agent_id 与错误）
 		log.Printf("hosted item agent=%s 查询失败，该行降级不出 hosted 子对象: %v", agentID, err)
 		return nil, false
 	}
@@ -36,6 +38,12 @@ func (o *Orchestrator) HostedItem(ctx context.Context, agentID string) (map[stri
 	}
 	return m, true
 }
+
+// hostedItemErrCount HostedItem 读路径错误计数（运维观测面；测试亦据此断言）。
+var hostedItemErrCount atomic.Uint64
+
+// HostedItemErrorCount 读计数（metrics 接线或测试用）。
+func HostedItemErrorCount() uint64 { return hostedItemErrCount.Load() }
 
 // HostedOverlay 批量版（内部/测试用；错误上抛，不做 false 收敛）。缺席语义同 HostedItem。
 func (o *Orchestrator) HostedOverlay(ctx context.Context, agentIDs []string) (map[string]map[string]any, error) {
