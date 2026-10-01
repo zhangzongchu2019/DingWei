@@ -36,6 +36,7 @@
 //   登记理由(照裁定原文):本缺陷是布局类(面板被挤到 clientWidth=0);计算样式判据是新维度,低风险只记录、不扩围。
 //   🔴 引用纪律:谁要把本闸的绿当"渲染层可见"的证据,先补绘制层判据(计算样式或截图像素),别引这一格。
 const assert = require('assert');
+const { agentRecord } = require('./fixture-agents');
 const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
@@ -185,7 +186,7 @@ function startServer(rendererBytesProvider, consoleHTML) {
     const json = (o) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(o)); };
     if (u === '/console') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(consoleHTML); }
     if (u === '/renderer-canary-sse.html') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(rendererBytesProvider()); }
-    if (u === '/api/console/agents') return json({ agents: [{ session: SESSION, online: true }] });
+    if (u === '/api/console/agents') return json({ agents: [agentRecord(SESSION)] });
     if (u === '/api/console/platform') return json({ role: 'owner', actions: ['read', 'submit'], items: [] });
     if (u === `/view/${encodeURIComponent(SESSION)}`) { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(rendererBytesProvider()); }
     // 🔴 相对路径:iframe 内的 renderer 请求的是 /view/<session>/status 与 /events
