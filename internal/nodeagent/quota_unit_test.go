@@ -34,6 +34,21 @@ func TestAllocProjectIDParsesReportAndRejectsCollisions(t *testing.T) {
 	if _, err := allocProjectID("/data"); err == nil {
 		t.Fatal("段满必须拒（冲突不覆盖）")
 	}
+	// r7② 删闸：井号行 ID 读不出 ⇒ 无法判定占用 ⇒ 上抛（不得静默跳过而把在用号再分出去）
+	xfsRun = func(args ...string) ([]byte, error) {
+		return []byte("Project quota on /data\n#garbage 100 0 16384\n"), nil
+	}
+	if _, err := allocProjectID("/data"); err == nil {
+		t.Fatal("项目行 ID 解析失败必须拒分配（防同号双分）")
+	}
+	// 截断行（井号 ID 但无用量列）：ID 可读 ⇒ 照记占用，保守方向安全
+	xfsRun = func(args ...string) ([]byte, error) {
+		return []byte("#61001\n"), nil
+	}
+	id, err = allocProjectID("/data")
+	if err != nil || id != 60000 { // 61001 占用但不在 60000 段内 ⇒ 仍分 60000
+		t.Fatalf("截断行 ID 可读应照记: id=%d err=%v", id, err)
+	}
 }
 
 // 阻断4：Clear 各步失败上抛＋清后复查残留即红（lsattr/xfsRun 注入伪造项目号与残留）。

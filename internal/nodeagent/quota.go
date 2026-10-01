@@ -99,11 +99,13 @@ func usedProjectIDs(mnt string) (map[int]bool, error) {
 	for _, ln := range strings.Split(string(out), "\n") {
 		fields := strings.Fields(ln)
 		if len(fields) == 0 || !strings.HasPrefix(fields[0], "#") {
-			continue
+			continue // 表头/空行可安全跳过：-n 模式下项目行恒以井号＋数字 ID 开头，无前缀的行不可能携带项目号
 		}
 		id, err := strconv.Atoi(strings.TrimPrefix(fields[0], "#"))
 		if err != nil {
-			continue // 表头等非数字行跳过
+			// 🔴 r7②（组长追问）：井号行 ID 读不出 ⇒ 无法判定该号是否在用。分配方向是破坏性
+			//    的——漏记一个在用号 ⇒ 同号双分（v3 两目录同落一项目的回潮形状），故上抛不跳过。
+			return nil, fmt.Errorf("report 项目行 ID 解析失败（无法判定占用，拒分配）: %q", ln)
 		}
 		used[id] = true
 	}
