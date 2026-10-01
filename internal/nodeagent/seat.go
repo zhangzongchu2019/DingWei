@@ -143,14 +143,16 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources) 
 const seatRunUID = 10001
 const seatRunGID = 10001
 
-// chownForSeat 把路径属主改为席位运行用户。生产代理以 root（systemd）运行必执行；
-// 非 root 环境（单测）跳过——chown 本身就需要特权。
-func chownForSeat(path string) error {
+// chownForSeatFn 把路径属主改为席位运行用户（可注入——M1 返修阻断 2 的正反断言用）。
+// 生产代理以 root（systemd）运行必执行；非 root 环境（单测）跳过——chown 本身就需要特权。
+var chownForSeatFn = func(path string) error {
 	if os.Geteuid() != 0 {
 		return nil
 	}
 	return os.Chown(path, seatRunUID, seatRunGID)
 }
+
+func chownForSeat(path string) error { return chownForSeatFn(path) }
 
 func (d *dockerOps) writeTokenFile(seatID string, tf *tokenFile) error {
 	if tf == nil {
@@ -223,13 +225,31 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 
 	name := containerName(p.SeatID)
 	netName := networkName(p.SeatID)
-	// 失败清理（V6-B3：不留半成品）——逆序：容器→网络→配额与目录
-	cleanup := func(containerID string) {
+	// 失败清理（V6-B3：不留半成品）——逆序：容器→网络→配额与目录。
+	// 🔴 M1 复验阻断 5：清理自身失败必须上抛（清理都失败而报"已清理"是比残留更糟的假象）。
+	cleanup := func(containerID string) error {
+		var errs []string
 		if containerID != "" {
-			_ = d.eng.containerRemove(context.Background(), containerID)
+			if err := d.eng.containerRemove(context.Background(), containerID); err != nil {
+				errs = append(errs, "container_remove: "+err.Error())
+			}
 		}
-		_ = d.eng.networkRemove(context.Background(), netName)
-		_ = d.quota.Clear(d.seatRoot, p.SeatID)
+		if err := d.eng.networkRemove(context.Background(), netName); err != nil {
+			errs = append(errs, "network_remove: "+err.Error())
+		}
+		if err := d.quota.Clear(d.seatRoot, p.SeatID); err != nil {
+			errs = append(errs, "quota_clear: "+err.Error())
+		}
+		if len(errs) > 0 {
+			return fmt.Errorf("清理失败（半成品可能残留）: %s", strings.Join(errs, "; "))
+		}
+		return nil
+	}
+	fail := func(stageErr error, containerID string) (json.RawMessage, error) {
+		if cerr := cleanup(containerID); cerr != nil {
+			return nil, fmt.Errorf("create 失败(%v)，且%v", stageErr, cerr)
+		}
+		return nil, stageErr
 	}
 
 	// ① 磁盘三件套之席位目录＋XFS 项目配额
@@ -238,27 +258,22 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	}
 	// ② 令牌文件（0600，不经 env）
 	if err := d.writeTokenFile(p.SeatID, p.Token); err != nil {
-		cleanup("")
-		return nil, err
+		return fail(err, "")
 	}
 	// ③ 每席独占网络
 	if err := d.eng.networkCreate(ctx, netName); err != nil {
-		cleanup("")
-		return nil, err
+		return fail(err, "")
 	}
 	// ④ 安全参数清单起容器
 	id, err := d.eng.containerCreate(ctx, name, d.buildSpec(p.Image, p.SeatID, netName, p.Resources))
 	if err != nil {
-		cleanup("")
-		return nil, err
+		return fail(err, "")
 	}
 	if err := d.eng.containerStart(ctx, id); err != nil {
-		cleanup(id)
-		return nil, err
+		return fail(err, id)
 	}
 	if err := d.waitRunning(ctx, id); err != nil {
-		cleanup(id)
-		return nil, err
+		return fail(err, id)
 	}
 	return json.Marshal(map[string]string{"seat_id": p.SeatID, "container_id": id, "state": "running"})
 }
