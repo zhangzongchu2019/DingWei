@@ -9,9 +9,9 @@ import (
 
 func mkPoolSvc(t *testing.T) (*PoolService, *Store) {
 	t.Helper()
-	db := dsnpool(t)
+	pool := testpool(t)
 	ctx := context.Background()
-	s := NewStore(db)
+	s := NewStore(pool)
 	if err := s.DropSchema(ctx); err != nil {
 		t.Fatalf("drop: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestPoolServiceLifecycle(t *testing.T) {
 	}
 	for action, want := range expect {
 		var n int
-		if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action=$1 AND target=$2`, action, a.ID).Scan(&n); err != nil {
+		if err := s.qrow(ctx, `SELECT COUNT(*) FROM g4_audit WHERE action=$1 AND target=$2`, action, a.ID).Scan(&n); err != nil {
 			t.Fatal(err)
 		}
 		if n != want {

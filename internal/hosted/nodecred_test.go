@@ -7,9 +7,9 @@ import (
 )
 
 func TestNodeCredentialLifecycle(t *testing.T) {
-	db := dsnpool(t)
+	pool := testpool(t)
 	ctx := context.Background()
-	s := NewStore(db)
+	s := NewStore(pool)
 	if err := s.DropSchema(ctx); err != nil {
 		t.Fatalf("drop: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestNodeCredentialLifecycle(t *testing.T) {
 
 	// 审计：register/rotate/revoke 各一条
 	var n int
-	if err := db.QueryRowContext(ctx, `
+	if err := s.qrow(ctx, `
 SELECT COUNT(*) FROM g4_audit WHERE target='nd_c1'
 AND action IN ('node.register','node.credential_rotate','node.credential_revoke')`).Scan(&n); err != nil {
 		t.Fatalf("audit count: %v", err)

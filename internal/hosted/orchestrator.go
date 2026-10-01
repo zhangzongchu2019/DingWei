@@ -264,7 +264,7 @@ func (o *Orchestrator) MarkOnline(ctx context.Context, agentID string) error {
 func (o *Orchestrator) SweepTimeouts(ctx context.Context, now time.Time) {
 	o.sweepMu.Lock()
 	defer o.sweepMu.Unlock()
-	rows, err := o.st.db.QueryContext(ctx, `
+	rows, err := o.st.pool.Query(ctx, actx, `
 SELECT agent_id, state, updated_at FROM g4_hosted_seat
 WHERE state IN ('queued','pulling','starting')`)
 	if err != nil {

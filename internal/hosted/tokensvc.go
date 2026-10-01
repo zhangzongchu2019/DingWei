@@ -45,7 +45,7 @@ func (p *PoolService) PrepareUnbind(ctx context.Context, agentID string) (string
 
 func (p *PoolService) boundAccountOf(ctx context.Context, agentID string) (string, error) {
 	var id string
-	err := p.st.db.QueryRowContext(ctx, `
+	err := p.st.qrow(ctx, `
 SELECT id FROM g4_account_pool WHERE bound_agent_id=$1 AND state='bound'`, agentID).Scan(&id)
 	if err != nil {
 		return "", ErrNoBoundAccount

@@ -22,7 +22,8 @@
 # ⚠️ pending 非零【不等于】隔离已实现 —— 甲域 sol 明确要求：不得借 allowlist 批准宣称隔离已完成。
 open 4
 escape 1
-pending 55
+pending 56
 pending:datad 25
 pending:fanout 30
-system 12
+pending:hosted 1
+system 14  # +2：hosted 迁移建表两处（ApplySchema/DropSchema，建表无租户语义——评审记录见 kimi30kqtuxerh/g4-m0-m1 提交注记）

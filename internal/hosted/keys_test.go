@@ -90,9 +90,9 @@ func TestLoadMasterKeyPermAndForms(t *testing.T) {
 }
 
 func TestTeamKeyServiceFlow(t *testing.T) {
-	db := dsnpool(t)
+	pool := testpool(t)
 	ctx := context.Background()
-	s := NewStore(db)
+	s := NewStore(pool)
 	if err := s.DropSchema(ctx); err != nil {
 		t.Fatalf("drop: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestTeamKeyServiceFlow(t *testing.T) {
 
 	// 全库凭据明文扫描命中 0（V6-B7 的库层）
 	var hits int
-	if err := db.QueryRowContext(ctx, `
+	if err := s.qrow(ctx, `
 SELECT COUNT(*) FROM g4_account_pool
 WHERE position($1::bytea in secret_enc) > 0`, []byte("sk-live-MARKER")).Scan(&hits); err != nil {
 		t.Fatalf("scan: %v", err)

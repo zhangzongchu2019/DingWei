@@ -135,7 +135,7 @@ func EqualConstantTime(a, b []byte) bool { return subtle.ConstantTimeCompare(a, 
 // EnsureTeamKey 无 active 团队数据密钥时生成并包裹入库（幂等）；返回 active 版本号。
 func (s *Store) EnsureTeamKey(ctx context.Context, master []byte, by string) (int, error) {
 	var v int
-	err := s.db.QueryRowContext(ctx, `SELECT version FROM g4_team_key WHERE state='active' ORDER BY version DESC LIMIT 1`).Scan(&v)
+	err := s.qrow(ctx, `SELECT version FROM g4_team_key WHERE state='active' ORDER BY version DESC LIMIT 1`).Scan(&v)
 	if err == nil {
 		return v, nil
 	}
@@ -150,7 +150,7 @@ func (s *Store) EnsureTeamKey(ctx context.Context, master []byte, by string) (in
 	if err != nil {
 		return 0, err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO g4_team_key (version, wrapped, created_by) VALUES (1,$1,$2) ON CONFLICT (version) DO NOTHING`, wrapped, by)
+	_, err = s.pool.Exec(ctx, actx, `INSERT INTO g4_team_key (version, wrapped, created_by) VALUES (1,$1,$2) ON CONFLICT (version) DO NOTHING`, wrapped, by)
 	if err != nil {
 		return 0, err
 	}
@@ -161,7 +161,7 @@ func (s *Store) EnsureTeamKey(ctx context.Context, master []byte, by string) (in
 func (s *Store) ActiveDataKey(ctx context.Context, master []byte) (int, []byte, error) {
 	var v int
 	var wrapped []byte
-	err := s.db.QueryRowContext(ctx, `SELECT version, wrapped FROM g4_team_key WHERE state='active' ORDER BY version DESC LIMIT 1`).Scan(&v, &wrapped)
+	err := s.qrow(ctx, `SELECT version, wrapped FROM g4_team_key WHERE state='active' ORDER BY version DESC LIMIT 1`).Scan(&v, &wrapped)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil, ErrNoActiveTeamKey
 	}
@@ -193,7 +193,7 @@ func (s *Store) EncryptAccountSecret(ctx context.Context, master, plaintext []by
 func (s *Store) DecryptAccountSecret(ctx context.Context, master []byte, accountID string) ([]byte, error) {
 	var enc []byte
 	var v int
-	err := s.db.QueryRowContext(ctx, `SELECT secret_enc, key_version FROM g4_account_pool WHERE id=$1`, accountID).Scan(&enc, &v)
+	err := s.qrow(ctx, `SELECT secret_enc, key_version FROM g4_account_pool WHERE id=$1`, accountID).Scan(&enc, &v)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -201,7 +201,7 @@ func (s *Store) DecryptAccountSecret(ctx context.Context, master []byte, account
 		return nil, err
 	}
 	var wrapped []byte
-	err = s.db.QueryRowContext(ctx, `SELECT wrapped FROM g4_team_key WHERE version=$1`, v).Scan(&wrapped)
+	err = s.qrow(ctx, `SELECT wrapped FROM g4_team_key WHERE version=$1`, v).Scan(&wrapped)
 	if err != nil {
 		return nil, err
 	}

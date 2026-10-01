@@ -2,7 +2,7 @@ package hosted
 
 import (
 	"context"
-	"database/sql"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"encoding/json"
 	"testing"
 
@@ -12,15 +12,10 @@ import (
 // 集成测试取库三级顺序与 G2 R0 的 pgtest 同一纪律：① HUB_TEST_PG_DSN（独立测试库、永不指生产）
 // ② 内嵌 PG（随起随清）③ 都不通则 t.Skip 并说明原因，不静默降级。
 // pgtest 自 G2 R0 分支（c7f4ecda）整目录引入，R0 合入主线后去重（merge 时以主线为准）。
-func dsnpool(t *testing.T) *sql.DB {
+// testpool 取库一律 pgtest.Pool——边界闸判据一「仓储包外 sql.Open 恒零」（判据二同守）。
+func testpool(t *testing.T) *repo.Pool {
 	t.Helper()
-	dsn := pgtest.DSN(t)
-	db, err := sql.Open("pgx", dsn)
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	t.Cleanup(func() { db.Close() })
-	return db
+	return pgtest.Pool(t)
 }
 
 func TestPlanTable(t *testing.T) {
@@ -37,9 +32,9 @@ func TestPlanTable(t *testing.T) {
 }
 
 func TestSchemaApplyRollbackRepeatable(t *testing.T) {
-	db := dsnpool(t)
+	pool := testpool(t)
 	ctx := context.Background()
-	s := NewStore(db)
+	s := NewStore(pool)
 	for i := 0; i < 2; i++ { // apply 可重复
 		if err := s.ApplySchema(ctx); err != nil {
 			t.Fatalf("apply #%d: %v", i, err)
@@ -57,9 +52,9 @@ func TestSchemaApplyRollbackRepeatable(t *testing.T) {
 }
 
 func TestNodeSeatPoolQuotaFlow(t *testing.T) {
-	db := dsnpool(t)
+	pool := testpool(t)
 	ctx := context.Background()
-	s := NewStore(db)
+	s := NewStore(pool)
 	if err := s.DropSchema(ctx); err != nil {
 		t.Fatalf("drop: %v", err)
 	}
@@ -160,5 +155,15 @@ func TestNodeSeatPoolQuotaFlow(t *testing.T) {
 	// 审计
 	if err := s.AddAudit(ctx, "tester", "account.bind", "acct_1", json.RawMessage(`{"agent":"ag_1"}`)); err != nil {
 		t.Fatalf("audit: %v", err)
+	}
+}
+
+// TestAccessCtxValid actx（包级 PendingCtx 占位）必须恒可用——qrow 丢弃 QueryRow 错误的安全前提。
+func TestAccessCtxValid(t *testing.T) {
+	pool := testpool(t)
+	s := NewStore(pool)
+	var n int
+	if err := s.qrow(context.Background(), "SELECT 1").Scan(&n); err != nil || n != 1 {
+		t.Fatalf("actx 占位不可用: n=%d err=%v", n, err)
 	}
 }

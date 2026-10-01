@@ -9,6 +9,8 @@ package hosted
 import (
 	"context"
 	"database/sql"
+
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -49,31 +51,27 @@ func (s *Store) RegisterNode(ctx context.Context, n Node, by string) (string, er
 	if err != nil {
 		return "", err
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return "", err
-	}
-	defer tx.Rollback()
-	if _, err := tx.ExecContext(ctx, `
+	err = s.pool.InTx(ctx, actx, nil, func(tx repo.Tx) error {
+		if _, err := tx.Exec(ctx, `
 INSERT INTO g4_node (id, name, labels, state, docker_version, node_protocol_version)
 VALUES ($1,$2,$3,'offline',$4,$5)
 ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, labels=EXCLUDED.labels,
   docker_version=EXCLUDED.docker_version, node_protocol_version=EXCLUDED.node_protocol_version,
   updated_at=now()`, n.ID, n.Name, n.Labels, n.DockerVersion, n.ProtocolVersion); err != nil {
-		return "", err
-	}
-	if _, err := tx.ExecContext(ctx, `
+			return err
+		}
+		if _, err := tx.Exec(ctx, `
 INSERT INTO g4_node_credential (node_id, secret_hash, issued_by) VALUES ($1,$2,$3)
 ON CONFLICT (node_id) DO UPDATE SET secret_hash=EXCLUDED.secret_hash,
   issued_by=EXCLUDED.issued_by, issued_at=now(), rotated_at=now(), revoked_at=NULL`,
-		n.ID, hashNodeSecret(secret), by); err != nil {
-		return "", err
-	}
-	if _, err := tx.ExecContext(ctx, `
-INSERT INTO g4_audit (actor, action, target, detail) VALUES ($1,'node.register',$2,NULL)`, by, n.ID); err != nil {
-		return "", err
-	}
-	if err := tx.Commit(); err != nil {
+			n.ID, hashNodeSecret(secret), by); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `
+INSERT INTO g4_audit (actor, action, target, detail) VALUES ($1,'node.register',$2,NULL)`, by, n.ID)
+		return err
+	})
+	if err != nil {
 		return "", err
 	}
 	return secret, nil
@@ -85,7 +83,7 @@ func (s *Store) RotateNodeCredential(ctx context.Context, nodeID, by string) (st
 	if err != nil {
 		return "", err
 	}
-	res, err := s.db.ExecContext(ctx, `
+	res, err := s.pool.Exec(ctx, actx, `
 UPDATE g4_node_credential SET secret_hash=$2, issued_by=$3, issued_at=now(), rotated_at=now(), revoked_at=NULL
 WHERE node_id=$1`, nodeID, hashNodeSecret(secret), by)
 	if err != nil {
@@ -102,7 +100,7 @@ WHERE node_id=$1`, nodeID, hashNodeSecret(secret), by)
 
 // RevokeNodeCredential 撤销：此后一切认证必拒（ErrNodeRevoked 优先于口令比对）。
 func (s *Store) RevokeNodeCredential(ctx context.Context, nodeID, by string) error {
-	res, err := s.db.ExecContext(ctx, `
+	res, err := s.pool.Exec(ctx, actx, `
 UPDATE g4_node_credential SET revoked_at=$2 WHERE node_id=$1`, nodeID, time.Now().UTC())
 	if err != nil {
 		return err
@@ -117,7 +115,7 @@ UPDATE g4_node_credential SET revoked_at=$2 WHERE node_id=$1`, nodeID, time.Now(
 func (s *Store) AuthenticateNode(ctx context.Context, nodeID, secret string) error {
 	var hash string
 	var revokedAt *time.Time
-	err := s.db.QueryRowContext(ctx, `
+	err := s.qrow(ctx, `
 SELECT secret_hash, revoked_at FROM g4_node_credential WHERE node_id=$1`, nodeID).Scan(&hash, &revokedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNodeAuth
