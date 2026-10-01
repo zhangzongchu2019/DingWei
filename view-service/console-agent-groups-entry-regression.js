@@ -32,6 +32,7 @@
 //    GO_BIN=<path>       go 可执行文件(默认 PATH 里的 go)
 // 退出码:0 全过 · 1 断言失败 · 3 环境缺失(没有 go toolchain ⇒ 本件**不验**,不是产品坏了)
 const assert = require('assert');
+const { agentRecord } = require('./fixture-agents');
 const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
@@ -150,7 +151,7 @@ async function t(name, fn) {
   const server = http.createServer((req, res) => {
     const u = req.url.split('?')[0];
     if (u === '/console') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(consoleHTML); }
-    if (u === '/api/console/agents') return json(res, { agents: [{ session: A, online: true }, { session: B, online: true }] });
+    if (u === '/api/console/agents') return json(res, { agents: [agentRecord(A), agentRecord(B)] });
     if (u === '/api/console/platform') {
       const p = payloads[currentPrincipal] || { role: 'owner', actions: [], items: [] };
       return json(res, CONTROL ? makeControlPayload(p) : p);
@@ -282,7 +283,7 @@ async function t(name, fn) {
         //    红了只看得见"没开新页",看不见"pane 全丢、SSE 全断"——而那才是业主要赔的东西。
         const after = await snapshot(page);
         const markersAfter = await readMarkers(page);
-        const groupTab = await page.locator('#tabs .tab[title="Agent 编组"]').count();
+        const groupTab = await page.locator('#tabs .tab[title="Agent 管理"]').count();
         const workspace = await page.locator('#panes .group-workspace').count();
         const scene = `\n      点击前=${JSON.stringify(before)}\n      点击后=${JSON.stringify(after)}\n      标记/SSE=${JSON.stringify(markersAfter)}\n      编组tab=${groupTab} workspace=${workspace}`;
         const v = [];

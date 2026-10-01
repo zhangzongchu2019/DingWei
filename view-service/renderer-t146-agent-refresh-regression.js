@@ -1,5 +1,6 @@
 // T-146:左栏轮询不得重建右侧 tab/pane。直接抽 Go 中真实页面脚本求值。
 const fs = require('fs'), assert = require('assert');
+const { agentRecord } = require('./fixture-agents');
 const src = fs.readFileSync('../internal/m8/console_auth.go', 'utf8');
 const i = src.indexOf('<script>'), j = src.indexOf('</script>', i);
 assert.ok(i > 0 && j > i, '抽取失败:未找到页面脚本段');
@@ -78,8 +79,8 @@ const ifr = (env) => env.byId.panes.children.filter((c) => c.tag === 'iframe').l
 
 let pass = 0, fail = 0;
 const t = (name, f) => { try { f(); console.log('  ✅', name); pass++; } catch (e) { console.log('  🔴', name, '->', e.message); fail++; } };
-const online = session => ({session, online: true});
-const offline = session => ({session, online: false});
+const online = session => agentRecord(session, true);     // 新形状(组长裁定:页签按 full_name);桩的会话串直接当 full_name
+const offline = session => agentRecord(session, false);
 
 console.log('T-146 Agent 列表刷新（源自 internal/m8/console_auth.go 实际文本）');
 

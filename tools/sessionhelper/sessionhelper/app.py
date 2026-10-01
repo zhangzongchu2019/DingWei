@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from . import __version__
+from . import enroll
 from .config import Config, load_config
 from .llm import LLMProvider
 from .config import env_get
@@ -160,6 +161,8 @@ def comm_skill_ack_envelope(book: AddressBook) -> dict:
 class SessionHelper:
     def __init__(self, cfg: Config):
         self.cfg = cfg
+        self.enroll_credential: "enroll.Credential | None" = None  # set by main() under SH_ENROLL=1
+        self.enroll_state_dir = ""
         self.book = AddressBook(cfg.session_name, cfg.key_id, cfg.bot_name)
         self.mirror = MirrorState(bool(cfg.mirror_to), cfg.mirror_to)
         self.non_primary_broadcast_texts: deque[str] = deque(maxlen=32)
@@ -215,7 +218,14 @@ class SessionHelper:
                 if self.cfg.producer:
                     return
                 delay = self.cfg.reconnect_min
+            except websockets.InvalidStatus as exc:
+                if self.enroll_credential is not None:
+                    # raises for revoked / invalid / already_connected: those must end the loop, not retry
+                    enroll.on_handshake_failure(self.enroll_state_dir, exc.response.status_code, exc.response.body, self._enroll_say)
+                print(f"[sessionHelper] error: {exc}; reconnect in {delay:.1f}s", flush=True)
             except websockets.ConnectionClosedError as exc:
+                if self.enroll_credential is not None and exc.rcvd is not None:
+                    enroll.on_ws_closed(self.enroll_state_dir, exc.rcvd.code, exc.rcvd.reason, self._enroll_say)
                 if "replaced" in str(exc).lower():
                     delay = max(delay, 10.0)
                 print(f"[sessionHelper] ws closed: {exc}; reconnect in {delay:.1f}s", flush=True)
@@ -223,6 +233,19 @@ class SessionHelper:
                 print(f"[sessionHelper] error: {exc}; reconnect in {delay:.1f}s", flush=True)
             await asyncio.sleep(delay)
             delay = min(self.cfg.reconnect_max, max(self.cfg.reconnect_min, delay * 2))
+
+    @staticmethod
+    def _enroll_say(message: str) -> None:
+        print(f"[sessionHelper] {message}", flush=True)
+
+    def _connection(self) -> "tuple[str, dict[str, str]]":
+        """URL and headers for the WebSocket handshake: legacy account key, or the dedicated credential."""
+        if self.enroll_credential is None:
+            return self.cfg.ws_url, {"Authorization": f"Bearer {self.cfg.secret}"}
+        return enroll.connection_params(
+            self.enroll_credential, self.cfg.ws_base,
+            {"tool": self.cfg.tool, "os": self.cfg.os_name},
+        )
 
     def _debug_probe(self) -> None:
         """SH_DEBUG=1 时打详细连接诊断:DNS解析IP/TCP/TLS耗时,方便追踪连不上。"""
@@ -449,8 +472,8 @@ class SessionHelper:
     async def _run_once(self) -> None:
         import websockets, time
 
-        headers = {"Authorization": f"Bearer {self.cfg.secret}"}
-        print(f"[sessionHelper] connect {self.cfg.ws_url} mode={self.cfg.mode}", flush=True)
+        ws_url, headers = self._connection()
+        print(f"[sessionHelper] connect {ws_url} mode={self.cfg.mode}", flush=True)
         # 代理:off/none/direct=强制直连(清掉HTTPS_PROXY等环境变量);URL=用该代理;空=跟随环境变量
         import os as _os
         _p = self.cfg.proxy.strip().lower()
@@ -470,7 +493,7 @@ class SessionHelper:
             self._debug_probe()
         _t0 = time.monotonic()
         async with websockets.connect(
-            self.cfg.ws_url,
+            ws_url,
             additional_headers=headers,
             ping_interval=20,
             ping_timeout=20,
@@ -1222,10 +1245,23 @@ class SessionHelper:
 
 
 def main() -> None:
-    cfg = load_config()
+    credential, state_dir, env = None, "", None
+    if enroll.enabled_for_env(os.environ):
+        def show(code: str) -> None:
+            print(f"[sessionHelper] 配对码 {code}  —— 请在 console「自备 Agent 审核」里核对并通过", flush=True)
+        try:
+            env, credential, state_dir = enroll.prepare_client_env(os.environ, show=show, notify=SessionHelper._enroll_say)
+        except enroll.EnrollError as exc:
+            print(f"[sessionHelper] enroll stopped: {exc}", flush=True)
+            raise SystemExit(2)
+    cfg = load_config(env) if env else load_config()
     helper = SessionHelper(cfg)
+    helper.enroll_credential, helper.enroll_state_dir = credential, state_dir
     try:
         asyncio.run(helper.run_forever())
+    except enroll.FATAL_CONNECT_ERRORS as exc:
+        print(f"[sessionHelper] stopped: {exc}", flush=True)
+        raise SystemExit(3)
     except KeyboardInterrupt:
         pass
 

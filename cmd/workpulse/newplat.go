@@ -12,6 +12,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/store/migrate"
 )
 
 // 新平台（G3）装配。DW_NEWPLAT=1 时启用：
@@ -31,6 +32,9 @@ type newPlatformConfig struct {
 	publicOrigin string
 	pgDSN        string
 	trustProxy   bool
+	// hosted 列表托管子对象的提供函数，签名即 httpapi.API.Hosted。G4 装配编排器处一行：cfg.hosted = orch.HostedItem
+	// （kimi30kqtuxerh/g4-m0-m1 5a811f0d 起签名逐字相同）。为空时列表不出 hosted 子对象，页面按契约降级为只显示在线／离线。
+	hosted func(ctx context.Context, agentID string) (map[string]any, bool)
 }
 
 var (
@@ -56,7 +60,7 @@ func newPlatformConfigFromEnv() (newPlatformConfig, bool, error) {
 	return cfg, true, nil
 }
 
-// openNewPlatformStore Hub 与初始化脚本共用：连 PG（只经 internal/repo）、核对表都已建好。
+// openNewPlatformStore Hub 与初始化脚本共用：连 PG（只经 internal/repo）、按迁移账本建表、再核对表都在。
 // 不再有内存实现的退路 —— 初始化脚本与 Hub 是两个进程，只有落库，脚本建的管理用户 Hub 才看得见。
 func openNewPlatformStore(ctx context.Context, dsn string) (identity.Store, func(), error) {
 	if dsn == "" {
@@ -65,6 +69,19 @@ func openNewPlatformStore(ctx context.Context, dsn string) (identity.Store, func
 	pool, err := repo.OpenPG(ctx, dsn)
 	if err != nil {
 		return nil, nil, err
+	}
+	// 🔴 先 Migrate 再用（组长裁定 ruling-2026-10-01T145840Z：建表归 G2 迁移账本，
+	// Hub 启动与 bootstrap-admin 均先 Migrate）。账本失败即拒绝启动，不在半套表上写。
+	// 🔵 两步不互相替代，也不因账本到位就删掉 CheckSchema：
+	//    账本管「有没有按账迁过、账内 digest 与条目正文是否一致」，
+	//    CheckSchema 管「此刻库里表到底在不在」（例如迁过之后被人手工 drop）。
+	rep, err := migrate.Migrate(ctx, pool)
+	if err != nil {
+		_ = pool.Close()
+		return nil, nil, err
+	}
+	if len(rep.Applied) > 0 {
+		log.Printf("newplat migrate: applied %s", strings.Join(rep.Applied, ", "))
 	}
 	st := identity.NewPGStore(pool)
 	if err := st.CheckSchema(ctx); err != nil {
@@ -109,7 +126,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	hub.PublicOrigin = cfg.publicOrigin
 
 	n3 := &httpapi.N3{OB: ob, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Secure: true}
-	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline}
+	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted}
 	n3.Register(mux)
 	api.Register(mux)
 	mux.HandleFunc("GET /ws/agent", hub.HandleAgentWS)

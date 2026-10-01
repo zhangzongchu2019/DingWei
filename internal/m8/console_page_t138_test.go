@@ -21,7 +21,7 @@ func TestConsolePageShortNameAndOfflineGrouping(t *testing.T) {
 	for _, want := range []struct{ frag, why string }{
 		{"function dwShortName(", "短名函数必须在页面里"},
 		{"p.length===3?p[1]:s", "短名取法:三段式取中间段,否则原样"},
-		{"b.title=a.session", "全名须仍可得(悬停),短名不等于丢掉全名"},
+		{"b.title=a.full_name", "全名须仍可得(悬停),短名不等于丢掉全名(名字口径 full_name,组长裁定 2026-10-01)"},
 		{"createElement('details')", "离线项必须折叠,不与在线项平铺"},
 		{"return a.online", "必须按在线与否分流"},
 	} {
@@ -109,7 +109,7 @@ func TestConsolePageFreshAgentStatusOverlaysGroupMembersWithoutNewPoller(t *test
 	body := rr.Body.String()
 	for _, required := range []string{
 		"function agentTreeMemberOnline(member)",
-		"agent.session===member.session_name",
+		"agent.full_name===memberName(member)",
 		"fresh?fresh.online===true:member.online===true",
 		"agentListSnapshot=agents;renderAgentNav();if(groupMode)renderGroups();",
 	} {
