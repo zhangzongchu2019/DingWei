@@ -152,6 +152,9 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 		// Agent 编组入口:0.2.1.55 起由 console 自己接成内部 tab;
 		// S-GROUP-ENTRY(2026-09-29)起对**所有 principal** 下发,不再关在 role==management 里。
 		//
+		// 🟡 2026-10-01 更新:「加入到其他业主编组」面板已按业主 S5 从本页移除(组长裁定台账 494ac55b);
+		//    入口仍对所有 principal 下发 —— 本页现在承载「Agent 管理」(自备审核、Agent 列表、托管)。
+		//    下面是 S-GROUP-ENTRY 当时的历史理由,留作取证。
 		// 🔴 为什么必须发给普通业主(修缺陷,不是放宽策略):
 		//   「加入到其他业主编组」那个面板**只在这个入口里面** —— console_auth.go 的
 		//   openGroupWorkspace 全文件仅一个调用点(renderPlatform 里 item.id==='agent-groups'
@@ -169,7 +172,7 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 		//   (add/edit/delete/approve),本项只是"看得见、点得开自己有权的那部分"。
 		// 🔴 形态是内部 tab(href 为 console 内锚、**无 target**):顶层导航会带走右栏那一堆活
 		//   iframe 与它们的 SSE(实测 pane 数 2→0),指向旧 admin 独立文档的形态已被否掉。
-		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 编组",
+		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 管理",
 		Href: "#agent-groups", Status: "approved", Active: true,
 	}}
 	if role == consolePlatformRoleManagement {
@@ -186,7 +189,13 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 		// 🔴 形态仍是 `_blank`(独立文档):顶层导航会带走右栏那一堆活 iframe 与它们的 SSE ——
 		// 与编组入口当初被改成内部 tab 的同一条实测理由。
 		builtins = append(builtins, model.ConsolePlatformItem{
-			ID: "admin", Kind: "admin", Title: "平台管理",
+			// 新:console 内部「平台管理」页签(组长令 2026-10-01;第一期先承载 N3「新用户注册邀请」)。
+			// 仍只发给 management —— 可见面不是授权面,接口自己按用户类型再判一次(G3 设计件 3.3)。
+			ID: "platform-admin", Kind: "platform-admin", Title: "平台管理",
+			Href: "#platform-admin", Status: "approved", Active: true,
+		}, model.ConsolePlatformItem{
+			// 旧:独立文档的后台,保持原样(id/target 不动,既有测试钉着);改名只为与上面新页签区分。
+			ID: "admin", Kind: "admin", Title: "旧版后台",
 			Href: "/console/admin", Target: "_blank", Status: "approved", Active: true,
 		})
 	}

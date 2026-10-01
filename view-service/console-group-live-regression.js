@@ -1,5 +1,6 @@
 // S-GROUP-LIVE:从 Go 页面抽取真实脚本求值，不依赖浏览器或复制生产实现。
 const assert = require('assert');
+const { agentRecord } = require('./fixture-agents');
 const fs = require('fs');
 const path = require('path');
 
@@ -16,7 +17,7 @@ for (const re of [/^\s*refreshPlatform\(\);\s*$/m, /^\s*refreshAgents\(\);\s*$/m
 if (process.argv.includes('--mutate=drop-fresh-online-overlay')) {
   const before = script;
   script = script.replace(
-    'function agentTreeMemberOnline(member){var fresh=agentListSnapshot.find(function(agent){return agent.session===member.session_name;});return fresh?fresh.online===true:member.online===true;}',
+    'function agentTreeMemberOnline(member){var fresh=agentListSnapshot.find(function(agent){return agent.full_name===memberName(member);});return fresh?fresh.online===true:member.online===true;}',
     'function agentTreeMemberOnline(member){return member.online===true;}',
   );
   assert.notStrictEqual(script, before, '反向变异未改动任何生产字节');
@@ -38,7 +39,7 @@ const ids = { a: element('nav'), tabs: element('div'), panes: element('div'), hi
   retryPlatform: element('button'), retryAgents: element('button'), agentNavMode: element('button'),
   'agents-status': element('div'), 'platform-items': element('div'), 'platform-status': element('div') };
 const document = { createElement: element, getElementById: id => ids[id] || null };
-let agents = [{ session: 'zzc-alpha-2642', online: true }, { session: 'zzc-unassigned-2642', online: true }];
+let agents = [agentRecord('zzc-alpha-2642', true), agentRecord('zzc-unassigned-2642', true)];
 const fetchImpl = url => {
   if (url !== '/api/console/agents') throw new Error(`unexpected fetch ${url}`);
   return Promise.resolve({ ok: true, json: () => Promise.resolve({ agents }), text: () => Promise.resolve('') });
@@ -63,7 +64,7 @@ const api = load(document, fetchImpl, () => { throw new Error('不得新增或�
   await api.refreshAgents();
   assert.strictEqual(api.online(staleMember), true, '前置:新鲜列表在线时应为在线');
 
-  agents = [{ session: 'zzc-alpha-2642', online: false }, { session: 'zzc-unassigned-2642', online: true }];
+  agents = [agentRecord('zzc-alpha-2642', false), agentRecord('zzc-unassigned-2642', true)];
   await api.refreshAgents();
   assert.strictEqual(api.online(staleMember), false,
     '新鲜列表已离线，但编组成员仍使用陈旧 online=true');

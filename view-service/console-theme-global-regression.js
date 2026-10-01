@@ -20,6 +20,7 @@
 //   RENDERER_OVERRIDE=<path>  换一份 renderer 字节(阳性对照用)
 //   PW_CHANNEL=chrome         用系统 Chrome
 const assert = require('assert');
+const { agentRecord } = require('./fixture-agents');
 const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
@@ -114,7 +115,7 @@ async function selftestFrameOfTimeout() {
   const server = http.createServer((req, res) => {
     const u = req.url.split('?')[0];
     if (u === '/console') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(consoleHTML); }
-    if (u === '/api/console/agents') return json(res, { agents: [{ session: A, online: true }, { session: B, online: true }] });
+    if (u === '/api/console/agents') return json(res, { agents: [agentRecord(A), agentRecord(B)] });
     if (u === '/api/console/platform') return json(res, { role: 'owner', actions: ['read', 'submit'], items: [] });
     if (u === `/view/${encodeURIComponent(A)}` || u === `/view/${encodeURIComponent(B)}`) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });

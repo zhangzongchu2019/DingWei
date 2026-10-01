@@ -37,6 +37,14 @@ var newPlatformAuthExempt = map[string]string{
 	"GET /api/enroll/applications/{id}":  "客户端轮询：凭轮询令牌",
 }
 
+// newPlatformOptionalExempt 只在某些编译形态下才注册的公开路由：注册了 ⇒ 按豁免处理，并且必须真的公开（无会话 200）；
+// 没注册 ⇒ 不要求（与 newPlatformAuthExempt 不同，后者要求「豁免项必须已注册」）。
+var newPlatformOptionalExempt = map[string]string{
+	// registerNewPlatformLoginPage 只在 Hub 带有登录页实现（tosonnet50ts/g3-enroll-client 合入）时注册；
+	// 登录页本身必须不认人，否则未登录的人永远到不了登录页。
+	"GET /console/login": "登录页本身（公开页）；仅在页面件合入后注册",
+}
+
 // 新平台全路由扫描：路由取自 wireNewPlatform 与 registerConsoleRoutes 的【真实注册】（与 run 同一份），
 // 对每条非豁免路由，以「无会话」与「必须改密的会话」各发 JSON 与 HTML 两种请求：
 //
@@ -106,6 +114,19 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			t.Errorf("GET %s: %d, want 404 (not registered)", path, st)
 		}
 	}
+	// 可选豁免：注册了就必须真公开 —— 无会话、不跟随跳转地取 HTML，得 200（不是 302 回登录页、也不是 401）。
+	for p := range newPlatformOptionalExempt {
+		if _, dup := newPlatformAuthExempt[p]; dup {
+			t.Errorf("%q is in both exempt lists", p)
+		}
+		if !seen[p] {
+			continue
+		}
+		path := p[strings.Index(p, " ")+1:]
+		if st, loc, _ := do("GET", path, "", "text/html,application/xhtml+xml"); st != 200 {
+			t.Errorf("optional public route %s: %d loc=%q, want 200 without a session", p, st, loc)
+		}
+	}
 	for p := range newPlatformAuthExempt {
 		if !seen[p] {
 			t.Errorf("exempt route %q is no longer registered; drop it from the exempt list", p)
@@ -121,6 +142,9 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 	checked := 0
 	for _, k := range keys {
 		if _, ok := newPlatformAuthExempt[k]; ok {
+			continue
+		}
+		if _, ok := newPlatformOptionalExempt[k]; ok {
 			continue
 		}
 		methods, path := []string{"GET", "POST"}, k // 不带方法的模式两种都扫

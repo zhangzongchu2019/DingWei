@@ -175,9 +175,14 @@ func TestBootstrapAdminRefusesBadInvocation(t *testing.T) {
 	if _, err := runCLI(t, "", "bootstrap-admin", "--user-id", "Boss", "--short-name", "bs"); !errors.Is(err, errNewPlatformPGDSN) {
 		t.Fatalf("no DSN: %v", err)
 	}
-	// 表没建 ⇒ 拒绝并报缺哪几张，不在半套表上写
-	if _, err := runCLI(t, pgSchemaDSN(t, false), "bootstrap-admin", "--user-id", "Boss", "--short-name", "bs"); err == nil || !strings.Contains(err.Error(), "missing tables: np_user") {
-		t.Fatalf("no tables: %v", err)
+	// 表没建 ⇒ 账本先把表建出来，脚本照常建号（组长裁定 ruling-2026-10-01T145840Z：
+	// 建表归 G2 迁移账本，Hub 启动与 bootstrap-admin 均先 Migrate 再用）。
+	// 🔴 这一格原来断言的是「表没建 ⇒ 拒绝并报缺哪几张」。那道判据没有消失，只是不再由这条
+	//    路径触发（账本先建了表）；它仍被两处钉住：internal/identity/pgstore_test.go 的
+	//    TestPGStoreCheckSchema，与 internal/store/migrate/ledger_test.go 里的反向对照
+	//    （空库不跑账本 ⇒ 必须报缺那 9 张，含 audit_log 与编组两张）。
+	if out, err := runCLI(t, pgSchemaDSN(t, false), "bootstrap-admin", "--user-id", "Boss", "--short-name", "bs"); err != nil || !strings.HasPrefix(out, "BOOTSTRAP_ADMIN_CREATED") {
+		t.Fatalf("empty db should be migrated by the ledger: %q %v", out, err)
 	}
 	// 格式不对 ⇒ 拒绝，不建
 	dsn := pgSchemaDSN(t, true)
