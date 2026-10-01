@@ -241,7 +241,12 @@ func (m *MemStore) ListPendingApplications(_ context.Context, ownerLC string, no
 			out = append(out, *a)
 		}
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].RequestedAt.Before(out[j].RequestedAt) })
+	sort.Slice(out, func(i, j int) bool {
+		if !out[i].RequestedAt.Equal(out[j].RequestedAt) {
+			return out[i].RequestedAt.Before(out[j].RequestedAt)
+		}
+		return out[i].ID < out[j].ID // 同一时刻按申请号，保证顺序确定（契约要求）
+	})
 	return out, nil
 }
 

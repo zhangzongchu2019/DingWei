@@ -32,6 +32,7 @@ type EnrollStore interface {
 	CreateApplication(ctx context.Context, a Application) error
 	GetApplication(ctx context.Context, appID string) (*Application, error)
 	// ListPendingApplications 只列该 owner 名下、仍 pending 且未过期的申请（V1 A6、A7）。
+	// 顺序：按 requested_at 升序，同一时刻按 application_id 升序（必须确定，契约会测）。
 	ListPendingApplications(ctx context.Context, ownerLC string, now time.Time) ([]Application, error)
 	// RecordPairingFailure 错误核码计数；达到 max 时申请转 rejected。
 	RecordPairingFailure(ctx context.Context, appID, ownerLC string, max int, now time.Time) (remaining int, rejected bool, err error)

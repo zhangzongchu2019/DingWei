@@ -11,6 +11,7 @@ package identitytest
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -37,6 +38,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"N3_new_registration_code_voids_old", regCodeRegenVoidsOld},
 		{"V1_A6_pending_list_scoped_to_owner", pendingScopedToOwner},
 		{"V1_A7_application_expires_by_clock", applicationExpires},
+		{"V1_pending_order_is_deterministic", pendingOrderDeterministic},
 		{"V1_A3_A11_name_taken_case_insensitive", nameTakenCaseInsensitive},
 		{"V1_A10_same_device_superseded_on_approve", sameDeviceSuperseded},
 		{"V1_A2_pairing_failures_reject_at_max", pairingFailuresReject},
@@ -432,4 +434,18 @@ func ids(as []identity.Application) []string {
 		out = append(out, a.ID)
 	}
 	return out
+}
+
+// 同一时刻的申请按 application_id 升序：审核区的顺序必须确定，否则界面每次刷新都可能换序。
+func pendingOrderDeterministic(t *testing.T, s identity.Store) {
+	for _, id := range []string{"app-c", "app-a", "app-b"} {
+		mustApp(t, s, id, "zzc", "dev-"+id, t0)
+	}
+	mustApp(t, s, "app-0", "zzc", "dev-0", t0.Add(time.Minute))
+	for i := 0; i < 20; i++ {
+		got, _ := s.ListPendingApplications(ctx, "zzc", t0.Add(2*time.Minute))
+		if strings.Join(ids(got), ",") != "app-a,app-b,app-c,app-0" {
+			t.Fatalf("order = %v, want [app-a app-b app-c app-0]", ids(got))
+		}
+	}
 }

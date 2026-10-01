@@ -311,6 +311,7 @@ func TestSourceIPTrustProxy(t *testing.T) {
 	for _, a := range l.body["applications"].([]any) {
 		ips = append(ips, a.(map[string]any)["source_ip"].(string))
 	}
+	sort.Strings(ips) // 要验的是采信了哪个来源，不是顺序（两条申请同一时刻）
 	if strings.Join(ips, ",") != "127.0.0.1,203.0.113.7" {
 		t.Fatalf("source ips = %v (untrusted header must be ignored, trusted one used)", ips)
 	}
