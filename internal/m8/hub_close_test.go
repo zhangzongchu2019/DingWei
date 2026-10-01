@@ -1,6 +1,9 @@
 package m8
 
 import (
+	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"net/http"
+	"net/http/httptest"
 	"runtime"
 	"strings"
 	"testing"
@@ -84,5 +87,47 @@ func TestReplaceAMRStopsOriginal(t *testing.T) {
 	replaceAMR(hub, &amrProcessor{})
 	if got := amrRunGoroutines(); got != before {
 		t.Fatalf("after replaceAMR: run goroutines = %d, want %d", got, before)
+	}
+}
+
+// Close 必须等在线会话的处理 goroutine 收尾完（释放投递租约等）再返回：
+// 否则它们会拖到下一条用例里写已关闭的库、往全局 log 打「session delivery lease release failed」
+// （复验 -count=8 -shuffle 时，日志卫生用例因此 8 轮红 7 轮，前一条用例正是开着 WS 会话的那条）。
+func TestHubCloseWaitsForSessionHandlers(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc-close", Name: "svc-close", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := hub.IssueAPIKey(ctx, "svc-close", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hub.BindAccount(ctx, key.ID, "dev:personal:closer"); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn := dialSessionWithHeaderRaw(t, ctx, srv.URL, "closer", key.ID, secret, nil)
+	defer conn.CloseNow()
+	waitSessionOnline(t, hub, key.ID, "closer")
+	hub.Close() // 未先关客户端：Close 自己断连并等收尾
+	if hub.sessionOnline(key.ID, "closer") {
+		t.Fatal("session still registered after Close returned")
+	}
+	if n := goroutinesIn("(*Hub).serveSession("); n != 0 {
+		t.Fatalf("%d serveSession goroutines still running after Close", n)
+	}
+}
+
+func goroutinesIn(frame string) int {
+	buf := make([]byte, 1<<20)
+	for {
+		n := runtime.Stack(buf, true)
+		if n < len(buf) {
+			return strings.Count(string(buf[:n]), frame)
+		}
+		buf = make([]byte, 2*len(buf))
 	}
 }
