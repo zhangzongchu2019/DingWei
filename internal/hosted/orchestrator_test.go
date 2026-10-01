@@ -207,7 +207,7 @@ func TestCreateRejections(t *testing.T) {
 	}
 	r4 := base
 	r4.AccountID = "acct_any"
-	if _, err := o.Create(context.Background(), r4); err != ErrQuotaExceeded {
+	if _, err := o.Create(context.Background(), r4); !errors.Is(err, ErrQuotaExceeded) {
 		t.Fatalf("满额新建应 quota_exceeded, 得 %v", err)
 	}
 }

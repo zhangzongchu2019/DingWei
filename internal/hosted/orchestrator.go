@@ -133,22 +133,9 @@ func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOut
 	if !ok {
 		return CreateOutcome{}, fmt.Errorf("%w: plan %q", ErrParams, req.Plan)
 	}
-	// ③ 配额与归属（我方职责；Reissue 不算新建不占——此处只管新建）
-	quota, err := o.st.GetQuota(ctx, req.OwnerLC)
-	if err != nil {
+	// ③ 配额与归属（我方职责；规则集中在 QuotaService——轮换不占配额，此处只管新建）
+	if err := NewQuotaService(o.st, o.idp).CheckCreate(ctx, req.OwnerLC, plan); err != nil {
 		return CreateOutcome{}, err
-	}
-	agentIDs, err := o.idp.ListHostedAgentIDsByOwner(ctx, req.OwnerLC)
-	if err != nil {
-		return CreateOutcome{}, err
-	}
-	usage, err := o.st.UsageFor(ctx, agentIDs)
-	if err != nil {
-		return CreateOutcome{}, err
-	}
-	if usage.Agents+1 > quota.AgentsLimit || usage.MemMB+plan.MemMB > quota.MemMBLimit ||
-		usage.DiskMB+plan.DiskMB > quota.DiskMBLimit || usage.VCPU+plan.VCPU > quota.VCPULimit {
-		return CreateOutcome{}, ErrQuotaExceeded
 	}
 	// ④ 账号：本人可用（授权）＋未绑定＋CLI/LLM 匹配＋凭据形态匹配
 	usable, err := o.st.ListUsableAccounts(ctx, req.OwnerLC, req.CLI, req.LLM)
