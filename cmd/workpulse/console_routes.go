@@ -32,12 +32,27 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("PATCH /api/console/platform/items/{itemID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("edit", prefixHub.HandleConsolePlatformEdit)))
 	mux.HandleFunc("DELETE /api/console/platform/items/{itemID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("delete", prefixHub.HandleConsolePlatformDelete)))
 	mux.HandleFunc("POST /api/console/platform/items/{itemID}/approve", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("approve", prefixHub.HandleConsolePlatformApprove)))
+	if !newplat {
+		// 新平台第一版不含 specs 与 task-board（组长令：第一版范围＝登录、改密、平台管理、自备入网、Agent 列表、view、＠候选），
+		// 这两组路由一律不注册 ⇒ 404，不暴露（含旧共享 spec 页，组长裁定 140013Z ④）。
+		registerSpecTaskRoutes(mux, prefixHub)
+	}
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleCapability))
+	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleFileUploadTicket))
+	mux.HandleFunc("POST /api/console/files/{fileID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleFileArchive))
+	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleTerminalViewCookie))
+	// V11 ＠候选：Hub 自己答，不反代给 view-service（比下面的子路径更具体，优先匹配）。
+	mux.HandleFunc("GET /view/{sessionName}/mention-candidates", prefixHub.RequireConsoleAgent("view", prefixHub.HandleViewMentionCandidates))
+	mux.HandleFunc("/view/{sessionName}/{rest...}", prefixHub.RequireConsoleViewSubPath(prefixHub.HandleViewSubPath)) // 新 view 子路径(events/input/status)→ 反代 View 服务
+}
+
+var _ httpapi.Mux = (*http.ServeMux)(nil)
+
+// registerSpecTaskRoutes specs 与 task-board 两组功能的全部路由（页面、console 接口、Agent capability 接口、共享链接）。只在旧平台注册。
+func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 	mux.HandleFunc("GET /console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpecsPage)))
 	mux.HandleFunc("GET /console/tasks", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleTaskBoardPage)))
-	if !newplat {
-		// 旧平台共享 spec 页：新平台第一版不含 specs，不注册 ⇒ 404（组长裁定 140013Z ④）。
-		mux.HandleFunc("GET /console/specs/{specID}", prefixHub.HandleSharedConsoleSpecPage)
-	}
+	mux.HandleFunc("GET /console/specs/{specID}", prefixHub.HandleSharedConsoleSpecPage) // 旧平台共享 spec 页
 	mux.HandleFunc("GET /console/spec-assets/{name}", prefixHub.HandleConsoleSpecAsset)
 	mux.HandleFunc("GET /api/console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpecs)))
 	mux.HandleFunc("GET /api/console/task-board", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleTaskBoard)))
@@ -72,13 +87,4 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("POST /api/console/specs/{specID}/presplit", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecPresplit)))
 	mux.HandleFunc("POST /api/console/specs/{specID}/workflow/{action}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("submit", prefixHub.HandleConsoleSpecWorkflow)))
 	mux.HandleFunc("GET /api/console/spec-editors", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleSpecEditors))
-	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleCapability))
-	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleFileUploadTicket))
-	mux.HandleFunc("POST /api/console/files/{fileID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleFileArchive))
-	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleTerminalViewCookie))
-	// V11 ＠候选：Hub 自己答，不反代给 view-service（比下面的子路径更具体，优先匹配）。
-	mux.HandleFunc("GET /view/{sessionName}/mention-candidates", prefixHub.RequireConsoleAgent("view", prefixHub.HandleViewMentionCandidates))
-	mux.HandleFunc("/view/{sessionName}/{rest...}", prefixHub.RequireConsoleViewSubPath(prefixHub.HandleViewSubPath)) // 新 view 子路径(events/input/status)→ 反代 View 服务
 }
-
-var _ httpapi.Mux = (*http.ServeMux)(nil)

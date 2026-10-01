@@ -27,22 +27,14 @@ func (r *routeRecorder) HandleFunc(p string, h func(http.ResponseWriter, *http.R
 // newPlatformAuthExempt 新平台模式下【不】按 N3 会话认人的路由，每条写明凭什么放行。
 // 不在此表的路由一律按 N3 会话认人；新增路由若漏包认人中间件，下面的扫描用例必红（组长裁定 140013Z ③）。
 var newPlatformAuthExempt = map[string]string{
-	"POST /console/login/password":                                       "登录本身",
-	"POST /console/login/code":                                           "登录本身（取登录码）",
-	"GET /console/login/status":                                          "登录轮询，凭一次性登录码",
-	"POST /console/logout":                                               "退出；无会话也幂等",
-	"POST /api/console/account/password":                                 "改密：必须改密的会话正需要它；自身校验旧口令（另有一格：无会话 401）",
-	"GET /console/spec-assets/{name}":                                    "静态资源（文件名白名单）",
-	"GET /ws/agent":                                                      "Agent 专属凭据",
-	"POST /api/enroll/applications":                                      "客户端入网申请：凭配对码摘要",
-	"GET /api/enroll/applications/{id}":                                  "客户端轮询：凭轮询令牌",
-	"GET /api/agent/console/task-driver/specs/{specID}/{revision}/tasks": "Agent 服务凭据＋capability",
-	"POST /api/agent/console/specs":                                      "Agent 服务凭据＋capability",
-	"PATCH /api/agent/console/specs/{specID}":                            "Agent 服务凭据＋capability",
-	"POST /api/agent/console/specs/{specID}/inferences":                  "Agent 服务凭据＋capability",
-	"GET /api/specs/shared/{specID}":                                     "分享链接：凭不透明 capability",
-	"PATCH /api/specs/shared/{specID}":                                   "分享链接：凭不透明 capability",
-	"POST /api/specs/shared/{specID}/versions":                           "分享链接：凭不透明 capability",
+	"POST /console/login/password":       "登录本身",
+	"POST /console/login/code":           "登录本身（取登录码）",
+	"GET /console/login/status":          "登录轮询，凭一次性登录码",
+	"POST /console/logout":               "退出；无会话也幂等",
+	"POST /api/console/account/password": "改密：必须改密的会话正需要它；自身校验旧口令（另有一格：无会话 401）",
+	"GET /ws/agent":                      "Agent 专属凭据",
+	"POST /api/enroll/applications":      "客户端入网申请：凭配对码摘要",
+	"GET /api/enroll/applications/{id}":  "客户端轮询：凭轮询令牌",
 }
 
 // 新平台全路由扫描：路由取自 wireNewPlatform 与 registerConsoleRoutes 的【真实注册】（与 run 同一份），
@@ -102,12 +94,17 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			t.Fatalf("route %q not registered; recorded %d routes", must, len(rec.patterns))
 		}
 	}
-	// ④ 新平台不注册旧共享 spec 页
-	if seen["GET /console/specs/{specID}"] {
-		t.Fatal("legacy shared spec page registered in new-platform mode")
+	// 新平台第一版不含 specs 与 task-board：这两组路由一律不注册（含旧共享 spec 页，140013Z ④），访问 404
+	for _, p := range rec.patterns {
+		if specTaskRoute.MatchString(p) {
+			t.Errorf("specs/task-board route registered in new-platform mode: %s", p)
+		}
 	}
-	if st, _, _ := do("GET", "/console/specs/x", "", "text/html"); st != 404 {
-		t.Fatalf("GET /console/specs/x: %d, want 404", st)
+	for _, path := range []string{"/console/specs", "/console/tasks", "/console/specs/x", "/console/spec-assets/x.js",
+		"/api/console/specs", "/api/console/task-board", "/api/console/spec-editors", "/api/specs/shared/x"} {
+		if st, _, _ := do("GET", path, "", "application/json"); st != 404 {
+			t.Errorf("GET %s: %d, want 404 (not registered)", path, st)
+		}
 	}
 	for p := range newPlatformAuthExempt {
 		if !seen[p] {
@@ -156,3 +153,6 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 	}
 	t.Logf("routes recorded=%d exempt=%d requests checked=%d", len(rec.patterns), len(newPlatformAuthExempt), checked)
 }
+
+// specTaskRoute specs 与 task-board 两组功能的路由形状（页面、console 接口、Agent capability 接口、共享链接）。
+var specTaskRoute = regexp.MustCompile(`/(console/specs|console/tasks|console/spec-assets|api/console/specs|api/console/task-|api/console/spec-editors|api/agent/console/|api/specs/shared)`)
