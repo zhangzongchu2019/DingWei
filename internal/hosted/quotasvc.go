@@ -21,17 +21,38 @@ func NewQuotaService(st *Store, idp IdentityIssuer) *QuotaService {
 	return &QuotaService{st: st, idp: idp}
 }
 
-// CheckCreate 新建硬校验：四项任一超额 ⇒ ErrQuotaExceeded（响应附带各维度剩余，供 C1 提示）。
+// CheckCreate 新建硬校验（组长裁定 lead-g4-joint-run-1 第 6 条，两个码的分界）：
+//   - Agent 数已无剩余 ⇒ quota_exceeded（换哪个套餐都建不了）；
+//   - Agent 数还有、但所选套餐超出 vCPU／内存／磁盘剩余 ⇒ plan_exceeds_quota（换小套餐可能就行）。
+//
+// 两种都带各维度剩余（契约第四节）。Agent 数先判：两者同时成立时答 quota_exceeded。
 func (q *QuotaService) CheckCreate(ctx context.Context, ownerLC string, plan Plan) error {
 	quota, usage, err := q.quotaAndUsage(ctx, ownerLC)
 	if err != nil {
 		return err
 	}
-	if usage.Agents+1 > quota.AgentsLimit || usage.MemMB+plan.MemMB > quota.MemMBLimit ||
-		usage.DiskMB+plan.DiskMB > quota.DiskMBLimit || usage.VCPU+plan.VCPU > quota.VCPULimit {
+	if usage.Agents+1 > quota.AgentsLimit {
 		return &QuotaExceededError{Quota: quota, Usage: usage}
 	}
+	if usage.MemMB+plan.MemMB > quota.MemMBLimit || usage.DiskMB+plan.DiskMB > quota.DiskMBLimit ||
+		usage.VCPU+plan.VCPU > quota.VCPULimit {
+		return &PlanExceedsQuotaError{Quota: quota, Usage: usage}
+	}
 	return nil
+}
+
+// PlanExceedsQuotaError 所选套餐超剩余额度（机器码 plan_exceeds_quota，响应同样带各维度剩余）。
+type PlanExceedsQuotaError struct {
+	Quota Quota
+	Usage Usage
+}
+
+func (e *PlanExceedsQuotaError) Error() string { return ErrPlanExceedsQuota.Error() }
+func (e *PlanExceedsQuotaError) Unwrap() error { return ErrPlanExceedsQuota }
+
+// RemainingJSON 各维度剩余（与 quota_exceeded 同形状）。
+func (e *PlanExceedsQuotaError) RemainingJSON() json.RawMessage {
+	return remainingJSON(e.Quota, e.Usage)
 }
 
 // QuotaExceededError 带各维度已用/上限的超额错误（契约：quota_exceeded 响应带剩余）。
@@ -44,12 +65,14 @@ func (e *QuotaExceededError) Error() string { return ErrQuotaExceeded.Error() }
 func (e *QuotaExceededError) Unwrap() error { return ErrQuotaExceeded }
 
 // RemainingJSON 各维度剩余（契约响应附加字段）。
-func (e *QuotaExceededError) RemainingJSON() json.RawMessage {
+func (e *QuotaExceededError) RemainingJSON() json.RawMessage { return remainingJSON(e.Quota, e.Usage) }
+
+func remainingJSON(quota Quota, usage Usage) json.RawMessage {
 	raw, _ := json.Marshal(map[string]any{
-		"agents":  max0(int64(e.Quota.AgentsLimit) - int64(e.Usage.Agents)),
-		"vcpu":    max0(int64(e.Quota.VCPULimit) - int64(e.Usage.VCPU)),
-		"mem_gb":  max0(e.Quota.MemMBLimit-e.Usage.MemMB) / 1024,
-		"disk_gb": max0(e.Quota.DiskMBLimit-e.Usage.DiskMB) / 1024,
+		"agents":  max0(int64(quota.AgentsLimit) - int64(usage.Agents)),
+		"vcpu":    max0(int64(quota.VCPULimit) - int64(usage.VCPU)),
+		"mem_gb":  max0(quota.MemMBLimit-usage.MemMB) / 1024,
+		"disk_gb": max0(quota.DiskMBLimit-usage.DiskMB) / 1024,
 	})
 	return raw
 }

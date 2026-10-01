@@ -28,8 +28,17 @@ var (
 	ErrConfirmRequired = errors.New("confirm_required")
 	ErrNodeOffline     = errors.New("node_offline")
 	ErrRolledBack      = errors.New("upgrade_failed_rolled_back")
+	ErrStartFailed     = errors.New("start_failed")  // 节点在线、但报告起容器失败（契约第四节「进度/操作」）
+	ErrBackupFailed    = errors.New("backup_failed") // 销毁前备份不可用（组长裁定 lead-g4-joint-run-1 第 4 条）
 	// invalid_state 复用包级 ErrInvalidState（store.go）。
 )
+
+// BackupFailedError 销毁前备份失败：机器码 backup_failed，原因放 Detail（页面不读，供日志与审计）。
+type BackupFailedError struct{ Cause error }
+
+func (e *BackupFailedError) Error() string  { return ErrBackupFailed.Error() }
+func (e *BackupFailedError) Unwrap() error  { return ErrBackupFailed }
+func (e *BackupFailedError) Detail() string { return e.Cause.Error() }
 
 // IdentitySuspender 停语义两接口（G3 ab3b4c5b 签名）。
 type IdentitySuspender interface {
@@ -132,7 +141,12 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 		},
 	})
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "upgrade_seat", Params: params})
-	if err != nil || !res.OK {
+	if err != nil {
+		// 节点不通（第 7 条）：席位回 online、旧凭据未动（新令牌未被取走，两小时自然过期），答 node_offline。
+		_ = l.st.SetSeatState(ctx, agentID, "online", "", "node_offline", nil)
+		return ErrNodeOffline
+	}
+	if !res.OK {
 		// 自动回滚：席位回到 online（旧容器与旧凭据未受影响——回滚本身即"旧态仍在"）
 		_ = l.st.SetSeatState(ctx, agentID, "online", "", "online", json.RawMessage(`{"rolled_back":true}`))
 		return ErrRolledBack
@@ -158,19 +172,27 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 	if seat.State != "online" && seat.State != "error" {
 		return ErrInvalidState
 	}
-	// 🔴 复验阻断 3：停用失败留下的席位是「容器活着但凭据已暂停」——重启若不先 Resume，
-	//    席位回 online 而凭据仍 4401，页面显示运行中却永远连不上。Resume 幂等（未暂停则
-	//    no-op），故一律先 Resume 再起。
-	if _, err := l.susp.ResumeHostedAgent(ctx, agentID, actorLC); err != nil {
+	// 🔴 复验阻断 3：凭据处于暂停的席位重启时若不先 Resume，席位回 online 而凭据仍 4401，
+	//    页面显示运行中却永远连不上。Resume 幂等（未暂停则 no-op），故一律先 Resume 再起。
+	alreadyActive, err := l.susp.ResumeHostedAgent(ctx, agentID, actorLC)
+	if err != nil {
 		return err
 	}
 	if err := l.st.SetSeatState(ctx, agentID, "busy", "restart", "restart", nil); err != nil {
 		return err
 	}
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "restart_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
-	if err != nil || !res.OK {
+	if err != nil {
+		// 节点不通（组长裁定 lead-g4-joint-run-1 第 7 条）：席位状态回原样、凭据回原样，答 node_offline。
+		_ = l.st.SetSeatState(ctx, agentID, seat.State, seat.StateDetail, "node_offline", nil)
+		if !alreadyActive {
+			l.undo(ctx, agentID, actorLC, "suspend")
+		}
+		return ErrNodeOffline
+	}
+	if !res.OK {
 		_ = l.st.SetSeatState(ctx, agentID, "error", "start_failed", "fail", nil)
-		return fmt.Errorf("start_failed")
+		return ErrStartFailed
 	}
 	return l.st.SetSeatState(ctx, agentID, "online", "", "online", nil)
 }
@@ -188,14 +210,19 @@ func (l *Lifecycle) Disable(ctx context.Context, agentID, actorLC string, isAdmi
 		return ErrInvalidState
 	}
 	// ① 先暂停凭据（返回前 4401/credential_suspended 断开；客户端不删凭据）
-	if _, err := l.susp.SuspendHostedAgent(ctx, agentID, actorLC); err != nil {
+	alreadySuspended, err := l.susp.SuspendHostedAgent(ctx, agentID, actorLC)
+	if err != nil {
 		return err
 	}
 	// ② 再停容器
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "stop_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
 	if err != nil || !res.OK {
-		// 停容器失败 ⇒ 凭据已暂停是安全态（连接已不可能），如实上报，不回滚暂停
-		_ = l.st.SetSeatState(ctx, agentID, "error", "node_offline", "fail", json.RawMessage(`{"after":"suspended"}`))
+		// 🔴 停容器没成（节点不通或节点报失败）⇒ 撤回刚才的暂停、席位状态不动，答 node_offline
+		//    （组长裁定 lead-g4-joint-run-1 第 7 条：停用不得先暂停凭据再失败——那会留下「页面说在跑、凭据却拒连」）。
+		if !alreadySuspended {
+			l.undo(ctx, agentID, actorLC, "resume")
+		}
+		_ = l.st.AddAudit(ctx, actorLC, "seat.disable_failed", agentID, json.RawMessage(`{"reason":"node_offline"}`))
 		return ErrNodeOffline
 	}
 	return l.st.SetSeatState(ctx, agentID, "disabled", "", "disable", nil)
@@ -210,13 +237,21 @@ func (l *Lifecycle) Enable(ctx context.Context, agentID, actorLC string, isAdmin
 	if seat.State != "disabled" {
 		return ErrInvalidState
 	}
-	if _, err := l.susp.ResumeHostedAgent(ctx, agentID, actorLC); err != nil {
+	alreadyActive, err := l.susp.ResumeHostedAgent(ctx, agentID, actorLC)
+	if err != nil {
 		return err
 	}
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "start_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
-	if err != nil || !res.OK {
+	if err != nil {
+		// 节点不通（第 7 条）：撤回恢复、席位仍 disabled，答 node_offline。
+		if !alreadyActive {
+			l.undo(ctx, agentID, actorLC, "suspend")
+		}
+		return ErrNodeOffline
+	}
+	if !res.OK {
 		_ = l.st.SetSeatState(ctx, agentID, "error", "start_failed", "fail", nil)
-		return fmt.Errorf("start_failed")
+		return ErrStartFailed
 	}
 	return l.st.SetSeatState(ctx, agentID, "online", "", "online", json.RawMessage(`{"resumed":true}`))
 }
@@ -242,7 +277,7 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 	// ① 先备份数据卷（业主 8971bddf：留 14 天到期自动删；备份件须可读且与销毁前一致——D5）
 	backupRef, err := l.backups.BackupSeatVolume(ctx, seat.NodeID, agentID)
 	if err != nil {
-		return fmt.Errorf("backup_failed: %v", err)
+		return &BackupFailedError{Cause: err}
 	}
 	// ② Retire 吊销（返回前 4401 断开，D5 五秒口径；自备席位不可走此路——G3 侧约束）
 	if _, err := l.idp.RetireHostedAgent(ctx, agentID, actorLC); err != nil {
@@ -276,4 +311,20 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 		detail += `,"reconcile_pending":true`
 	}
 	return l.st.SetSeatState(ctx, agentID, "destroyed", "", "destroy", json.RawMessage(detail+`}`))
+}
+
+// undo 撤回一次凭据动作（节点不通时把凭据恢复到操作前）。撤回本身失败只记审计——
+// 不能让第二个错误盖住真正的原因（node_offline），也不能静默丢掉。
+func (l *Lifecycle) undo(ctx context.Context, agentID, actorLC, op string) {
+	var err error
+	switch op {
+	case "resume":
+		_, err = l.susp.ResumeHostedAgent(ctx, agentID, actorLC)
+	case "suspend":
+		_, err = l.susp.SuspendHostedAgent(ctx, agentID, actorLC)
+	}
+	if err != nil {
+		_ = l.st.AddAudit(ctx, actorLC, "seat.credential_undo_failed", agentID,
+			json.RawMessage(`{"undo":`+jsonStr(op)+`,"error":`+jsonStr(err.Error())+`}`))
+	}
 }

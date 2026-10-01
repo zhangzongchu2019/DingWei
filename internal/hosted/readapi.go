@@ -8,6 +8,7 @@ package hosted
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -53,18 +54,24 @@ type QuotaRemaining struct {
 	DiskGB int64 `json:"disk_gb"`
 }
 
+// QuotaView 契约第一节：quota: {remaining:{agents, vcpu, mem_gb, disk_gb}}——多包一层 remaining（页面读 opts.quota.remaining）。
+type QuotaView struct {
+	Remaining QuotaRemaining `json:"remaining"`
+}
+
 type OptionsView struct {
 	Nodes    []NodeOption    `json:"nodes"`
 	Combos   []ComboOption   `json:"combos"`
 	Accounts []AccountOption `json:"accounts"`
 	Plans    []PlanOption    `json:"plans"`
-	Quota    QuotaRemaining  `json:"quota"`
+	Quota    QuotaView       `json:"quota"`
 }
 
 // Options 新建表单数据源（一次返回不拆；本期几十条级不分页——契约第一节）。
 // 账号＝本人被授权且未绑定（ListUsableAccounts 口径；席位创建后该账号即绑定，下拉开不出）。
 func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView, error) {
-	var v OptionsView
+	// 四个列表一律非 nil：空时序列化为 []，不是 null（页面按数组遍历）。
+	v := OptionsView{Nodes: []NodeOption{}, Combos: []ComboOption{}, Accounts: []AccountOption{}, Plans: []PlanOption{}}
 
 	// 节点：剩余内存/磁盘来自容量上报（心跳真采集）；free_vcpu＝cpu_total−在席套餐占用
 	nodes, err := o.st.ListNodes(ctx)
@@ -112,7 +119,7 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 	if err != nil {
 		return v, err
 	}
-	v.Quota = QuotaRemaining{
+	v.Quota.Remaining = QuotaRemaining{
 		Agents: max0(int64(quota.AgentsLimit) - int64(usage.Agents)),
 		VCPU:   max0(int64(quota.VCPULimit) - int64(usage.VCPU)),
 		MemGB:  max0(quota.MemMBLimit-usage.MemMB) / 1024,
@@ -142,6 +149,24 @@ type JobView struct {
 	AgentID string `json:"agent_id,omitempty"`
 }
 
+// JobProgressFor jobs 端点的读面，归属按席位 created_by 判（组长裁定 lead-g4-joint-run-1 第 2 条）：
+// 创建失败的任务已 Retire 了 Agent，身份侧「名下 Agent」里再也找不到它，按身份归属判会把业主自己的失败任务
+// 答成 not_owner、蒙版永远等不到 failed。席位行不随 Retire 删除，created_by 就是建席的业主。
+// 不存在与非本人同答 ErrNotOwner：不暴露别人的 job 是否存在。
+func (o *Orchestrator) JobProgressFor(ctx context.Context, jobID, actorLC string) (JobView, error) {
+	seat, err := o.st.GetSeat(ctx, jobID)
+	if errors.Is(err, ErrNotFound) {
+		return JobView{}, ErrNotOwner
+	}
+	if err != nil {
+		return JobView{}, err
+	}
+	if actorLC == "" || seat.CreatedBy != actorLC {
+		return JobView{}, ErrNotOwner
+	}
+	return jobViewOf(seat), nil
+}
+
 // JobProgress 席位状态机对外读面（B1 进度数据源真实——写死阶段的反向由本函数与状态机同库保证）。
 // 归属判定在 handler（jobID＝agent_id，非本人 ⇒ not_owner/404 由 handler 择一，本层不含归属信息）。
 func (o *Orchestrator) JobProgress(ctx context.Context, jobID string) (JobView, error) {
@@ -149,18 +174,33 @@ func (o *Orchestrator) JobProgress(ctx context.Context, jobID string) (JobView, 
 	if err != nil {
 		return JobView{}, err
 	}
+	return jobViewOf(seat), nil
+}
+
+func jobViewOf(seat Seat) JobView {
 	switch seat.State {
 	case "queued", "pulling", "starting":
-		return JobView{Stage: seat.State}, nil
+		return JobView{Stage: seat.State}
 	case "online":
-		return JobView{Stage: "online", AgentID: seat.AgentID}, nil
+		return JobView{Stage: "online", AgentID: seat.AgentID}
 	case "busy":
-		return JobView{Stage: "online", AgentID: seat.AgentID}, nil // 升级/重启中：席位仍在线（蒙版用于创建链）
+		return JobView{Stage: "online", AgentID: seat.AgentID} // 升级/重启中：席位仍在线（蒙版用于创建链）
 	default: // error/failed/destroyed 等 ⇒ failed，reason＝状态机记录的机器码
-		reason := seat.StateDetail
-		if reason == "" {
-			reason = "start_failed"
-		}
-		return JobView{Stage: "failed", Reason: reason}, nil
+		return JobView{Stage: "failed", Reason: jobFailReason(seat.StateDetail)}
 	}
+}
+
+// jobFailReasons 契约第四节「进度」一栏的七个机器码——jobs.reason 只出这七个（页面按码配中文）。
+var jobFailReasons = map[string]bool{
+	"queue_timeout": true, "pull_timeout": true, "start_timeout": true,
+	"image_pull_failed": true, "start_failed": true, "credential_inject_failed": true, "node_offline": true,
+}
+
+// jobFailReason 状态机记下的失败原因若不是这七个码（空、Go 错误文本、生命周期操作留下的其他记号），
+// 一律收成 start_failed：页面只认码，原文留在席位事件与审计里供诊断，不外漏。
+func jobFailReason(detail string) string {
+	if jobFailReasons[detail] {
+		return detail
+	}
+	return "start_failed"
 }
