@@ -918,6 +918,14 @@ func approveGroupChoice(t *testing.T, s identity.Store) {
 	if _, err := s.GetGroup(ctx, "gx"); !errors.Is(err, identity.ErrNotFound) {
 		t.Fatalf("refused new group was created: %v", err)
 	}
+	// 事务中途失败（新组本身没问题，但 Agent 名已被占）⇒ 不留空组、不留 Agent（组长台账 6f3b6edd 反向第二条）
+	_, err = s.Approve(ctx, identity.ApproveInput{AppID: "app-1", OwnerLC: "zzc", AgentID: "ag-1", Name: "LEAD", GroupID: "gy",
+		NewGroup: &identity.Group{Code: "gy", ShortName: "空组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}}, t0)
+	wantErr(t, "agent name taken with new group", err, identity.ErrNameTaken)
+	nothingChanged("agent name taken with new group")
+	if _, err := s.GetGroup(ctx, "gy"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("empty group left behind after failed approve: %v", err)
+	}
 	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", false, t0); err != nil {
 		t.Fatal(err)
 	}
@@ -973,6 +981,15 @@ func hostedGroupChoice(t *testing.T, s identity.Store) {
 	nothing("closed group", "ag-b", "app-b")
 	wantErr(t, "hosted new group name taken", create("ag-c", "app-c", "gx", &identity.Group{Code: "gx", ShortName: "一组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0}), identity.ErrGroupNameTaken)
 	nothing("new group name taken", "ag-c", "app-c")
+	// 事务中途失败（Agent 名已被占：夹具里组长 Agent 名为 Lead）⇒ 不留空组、不留 Agent、不留申请
+	err := s.CreateHostedAgent(ctx, identity.Agent{ID: "ag-f", OwnerLC: "zzc", Name: "LEAD", GroupID: "gy", CreatedAt: t0},
+		identity.Application{ID: "app-f", PollTokenHash: "tok-f", RequestedAt: t0, ExpiresAt: t0.Add(time.Hour)},
+		&identity.Group{Code: "gy", ShortName: "空组", CreatorLC: "zzc", CreatedAt: t0, UpdatedAt: t0})
+	wantErr(t, "hosted agent name taken with new group", err, identity.ErrNameTaken)
+	nothing("agent name taken with new group", "ag-f", "app-f")
+	if _, err := s.GetGroup(ctx, "gy"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("empty group left behind after failed hosted create: %v", err)
+	}
 	if err := s.SetGroupAdditionsClosed(ctx, "c1", "zzc", false, t0); err != nil {
 		t.Fatal(err)
 	}
