@@ -67,6 +67,8 @@ type Combo struct {
 type CombosSource interface {
 	// Lookup 返回该组合的验通状态；ok=false＝不兼容（combo_incompatible）。
 	Lookup(cli, llm, credKind string) (verified bool, ok bool)
+	// List 全量组合表（options 读模型；唯一事实源——不在表＝不兼容）。
+	List() []Combo
 }
 
 // ImageCatalog 基础镜像版本登记（G1 挂接）：按 CLI 取当前 pinned 镜像 ref（含 digest）。

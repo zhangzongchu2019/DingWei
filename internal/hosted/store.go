@@ -171,6 +171,46 @@ LIMIT 1`, pool)
 	return n, err
 }
 
+// ListNodes 节点清单（options 读模型用；本期节点个位数级）。
+func (s *Store) ListNodes(ctx context.Context) ([]Node, error) {
+	rows, err := s.pool.Query(ctx, htx(), `
+SELECT id, name, labels, state, capacity, docker_version, node_protocol_version, last_seen_at FROM g4_node ORDER BY id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Node
+	for rows.Next() {
+		var n Node
+		if err := rows.Scan(&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt); err != nil {
+			return nil, err
+		}
+		out = append(out, n)
+	}
+	return out, rows.Err()
+}
+
+// NodeUsedVCPU 节点上在席（未销毁）套餐的 vCPU 占用合计（options 的 free_vcpu＝cpu_total−本值）。
+func (s *Store) NodeUsedVCPU(ctx context.Context, nodeID string) (int, error) {
+	rows, err := s.pool.Query(ctx, htx(), `
+SELECT plan FROM g4_hosted_seat WHERE node_id=$1 AND state NOT IN ('destroyed')`, nodeID)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	used := 0
+	for rows.Next() {
+		var pid string
+		if err := rows.Scan(&pid); err != nil {
+			return 0, err
+		}
+		if p, ok := PlanByID(pid); ok {
+			used += p.VCPU
+		}
+	}
+	return used, rows.Err()
+}
+
 // ---------- 托管席位 ----------
 
 var seatStates = map[string]bool{
@@ -323,7 +363,7 @@ func (s *Store) ListUsableAccounts(ctx context.Context, userLC, cli, llm string)
 SELECT p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id, p.created_at
 FROM g4_account_pool p
 JOIN g4_account_grant g ON g.account_id = p.id AND g.user_lc = $1
-WHERE p.state = 'available' AND p.cli = $2 AND p.llm = $3
+WHERE p.state = 'available' AND ($2 = '' OR p.cli = $2) AND ($3 = '' OR p.llm = $3)
 ORDER BY p.name`, userLC, cli, llm)
 	if err != nil {
 		return nil, err

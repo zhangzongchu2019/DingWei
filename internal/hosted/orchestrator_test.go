@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -56,6 +57,18 @@ type fakeCombos struct{ m map[string]bool } // key: cli|llm|kind → verified；
 func (c fakeCombos) Lookup(cli, llm, kind string) (bool, bool) {
 	v, ok := c.m[cli+"|"+llm+"|"+kind]
 	return v, ok
+}
+
+func (c fakeCombos) List() []Combo {
+	var out []Combo
+	for k, v := range c.m {
+		parts := strings.SplitN(k, "|", 3)
+		if len(parts) != 3 {
+			continue
+		}
+		out = append(out, Combo{CLI: parts[0], LLM: parts[1], CredKind: parts[2], Verified: v})
+	}
+	return out
 }
 
 type fakeCatalog struct{}
@@ -494,4 +507,94 @@ func TestRunJobMissingTokenFailsClosed(t *testing.T) {
 	if err != nil || a.State != "available" || a.BoundAgentID.Valid {
 		t.Fatalf("账号应回池: %+v err=%v", a, err)
 	}
+}
+
+// T-G4-35：options 读模型＋jobs 进度（契约第一节字段逐字）。
+func TestOptionsViewAndJobProgress(t *testing.T) {
+	o, _, _, s := mkOrch(t)
+	ctx := context.Background()
+	// 容量读数（模拟心跳上报）：nd_free 16C 总、15G 余、100G 盘余
+	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"cpu_total":16,"mem_free_mb":15360,"disk_free_mb":102400}`)); err != nil {
+		t.Fatal(err)
+	}
+	// 先建一席占资源：2c4g 落 nd_free
+	acctID := acctOf(t, o.pool)
+	out, err := o.Create(ctx, CreateRequest{
+		OwnerLC: "zzc", By: "zzc", Name: "w1", GroupCode: "",
+		NodeID: "auto", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctID, Plan: "2c4g",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	v, err := o.Options(ctx, "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 节点两枚：free_vcpu＝16−2＝14（一席占 2C）、online 两态
+	var free *NodeOption
+	for i := range v.Nodes {
+		if v.Nodes[i].ID == "nd_free" {
+			free = &v.Nodes[i]
+		}
+	}
+	if free == nil || !free.Online || free.FreeVCPU != 14 || free.FreeMemGB != 15 || free.FreeDiskGB != 100 {
+		t.Fatalf("节点格: %+v", free)
+	}
+	// 账号：唯一一枚已绑定 ⇒ 下拉开不出（一席一账号）
+	if len(v.Accounts) != 0 {
+		t.Fatalf("已绑账号不得再出现: %+v", v.Accounts)
+	}
+	// 配额剩余：agents 2−1＝1、vcpu 4−2＝2、mem 8−4＝4G（mkOrch 配额 2/4/8192）
+	if v.Quota.Agents != 1 || v.Quota.VCPU != 2 || v.Quota.MemGB != 4 {
+		t.Fatalf("剩余额度: %+v", v.Quota)
+	}
+	// fits：2c4g 还剩 1 席 2C/4G ⇒ 可；4c8g 超剩余 ⇒ 置灰
+	var fits map[string]bool = map[string]bool{}
+	for _, p := range v.Plans {
+		fits[p.ID] = p.Fits
+		if p.ID == "2c4g" && (p.Name != "2C/4G" || p.VCPU != 2 || p.MemGB != 4) {
+			t.Fatalf("套餐格: %+v", p)
+		}
+	}
+	if !fits["2c4g"] || fits["4c8g"] {
+		t.Fatalf("fits: %v", fits)
+	}
+	// combos：验通表原样下发
+	if len(v.Combos) != 1 || !v.Combos[0].Verified || v.Combos[0].CLI != "codex" {
+		t.Fatalf("combos: %+v", v.Combos)
+	}
+
+	// jobs 进度：queued→pulling→starting→online→failed 逐格（状态机真实读面，不写死）
+	jv, err := o.JobProgress(ctx, out.AgentID)
+	if err != nil || jv.Stage != "queued" || jv.AgentID != "" {
+		t.Fatalf("queued 格: %+v %v", jv, err)
+	}
+	o.RunJob(ctx, out.AgentID) // 假网关全成 ⇒ online
+	jv, _ = o.JobProgress(ctx, out.AgentID)
+	if jv.Stage != "online" || jv.AgentID != out.AgentID {
+		t.Fatalf("online 格: %+v", jv)
+	}
+	// failed 格：另一席制造失败
+	acct2, err := o.pool.Register(ctx, "admin", true, "team-codex-2", "token_file", "codex", "gpt", "sk-y")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := o.pool.Grant(ctx, "admin", true, acct2.ID, "zzc"); err != nil {
+		t.Fatal(err)
+	}
+	out2, err := o.Create(ctx, CreateRequest{
+		OwnerLC: "zzc", By: "zzc", Name: "w2", GroupCode: "",
+		NodeID: "auto", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acct2.ID, Plan: "2c4g",
+	})
+	if err != nil { // 配额 agents=2 已满（w1 online 占一席）
+		t.Fatalf("第二席在额度内: %v", err)
+	}
+	o.dropToken(out2.AgentID) // 丢令牌 ⇒ credential_inject_failed
+	o.RunJob(ctx, out2.AgentID)
+	jv, _ = o.JobProgress(ctx, out2.AgentID)
+	if jv.Stage != "failed" || jv.Reason != "credential_inject_failed" || jv.AgentID != "" {
+		t.Fatalf("failed 格: %+v", jv)
+	}
+	// 无 cancelled：合同无此态（排队不可取消）——JobView 结构无该值即判据
 }
