@@ -273,18 +273,24 @@ func TestHandleFeishuWebhookPlaintextWithoutTokenWarnsOnce(t *testing.T) {
 	if err := db.Migrate(ctx); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
+	// 「只警告一次」的记忆是包级 sync.Map，-count>1 时跨轮不复位 ⇒ 第 2 轮起抓不到警告、必红（复验方 qwen38maxkhovvob4 实测 19/20）。
+	// 用例前后各清一次，每轮从干净状态起；同时把用例补成名副其实：同一 bot 连发两次，警告恰好一次。
+	resetUnsignedWebhookWarnings()
+	t.Cleanup(resetUnsignedWebhookWarnings)
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&logs, nil))
-	body := `{"msg_id":"fm1","chat_type":"personal","open_id":"ou_1","sender_open_id":"ou_1","text":"帮助","ingress_provenance":"webhook_verified"}`
-	req, err := http.NewRequest(http.MethodPost, "/webhook/plain", strings.NewReader(body))
-	if err != nil {
-		t.Fatalf("NewRequest: %v", err)
+	for i, id := range []string{"fm1", "fm2"} {
+		body := `{"msg_id":"` + id + `","chat_type":"personal","open_id":"ou_1","sender_open_id":"ou_1","text":"帮助","ingress_provenance":"webhook_verified"}`
+		req, err := http.NewRequest(http.MethodPost, "/webhook/plain", strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("NewRequest: %v", err)
+		}
+		if handled, err := handleFeishuWebhook(ctx, logger, db, bus.NewDBQueue(db, model.DirectionIn), "plain", req, httptest.NewRecorder()); err != nil || handled {
+			t.Fatalf("handleFeishuWebhook plaintext #%d handled=%t err=%v", i+1, handled, err)
+		}
 	}
-	if handled, err := handleFeishuWebhook(ctx, logger, db, bus.NewDBQueue(db, model.DirectionIn), "plain", req, httptest.NewRecorder()); err != nil || handled {
-		t.Fatalf("handleFeishuWebhook plaintext handled=%t err=%v", handled, err)
-	}
-	if !strings.Contains(logs.String(), "unsigned plaintext") {
-		t.Fatalf("missing unsigned plaintext warning: %s", logs.String())
+	if n := strings.Count(logs.String(), "unsigned plaintext"); n != 1 {
+		t.Fatalf("unsigned plaintext warning appeared %d times for two requests, want exactly 1: %s", n, logs.String())
 	}
 	msg, err := db.ClaimNextMessage(ctx, model.DirectionIn)
 	if err != nil || msg == nil {
@@ -682,4 +688,12 @@ func TestRunWiresConsoleAdminDoor(t *testing.T) {
 			"后果:门 B 的路由注册在一个没人监听的表上,请求打不到(与「没接上」同型)。\n"+
 			"判据:MountConsole 必须与 Mount 用同一个 mux。", wired.mux, mountMux)
 	}
+}
+
+// resetUnsignedWebhookWarnings 清空「每个 bot 只警告一次」的包级记忆（只供测试；用 Range＋Delete，不复制锁）。
+func resetUnsignedWebhookWarnings() {
+	unsignedWebhookWarned.Range(func(k, _ any) bool {
+		unsignedWebhookWarned.Delete(k)
+		return true
+	})
 }
