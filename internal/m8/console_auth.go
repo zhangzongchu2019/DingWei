@@ -663,7 +663,7 @@ function enrollCloseEditor(){
 }
 // 编组可选已有,或就地新建(编组互锁取甲):选"新建编组…"出名字输入框,名字 1～8 位字母或数字(全局唯一由 Hub 判)。
 // 🟡 新建时的请求字段名 NEW_GROUP_FIELD 是暂定值,待 opus50tc2k 的编组接口定稿后对齐(只改这一处)。
-var NEW_GROUP='__new__',NEW_GROUP_RE=/^[A-Za-z0-9]{1,8}$/,NEW_GROUP_FIELD='new_group_name';
+var NEW_GROUP='__new__',NEW_GROUP_RE=/^[\p{L}\p{N}]{1,8}$/u,NEW_GROUP_FIELD='new_group_name';
 function groupAddNewOption(sel){var o=document.createElement('option');o.value=NEW_GROUP;o.textContent='新建编组…';sel.append(o);}
 function groupWireNew(selId,boxId,inputId){
   var sel=document.getElementById(selId),box=document.getElementById(boxId);if(!sel||!box)return;

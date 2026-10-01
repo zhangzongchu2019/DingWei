@@ -29,9 +29,10 @@ function mutate(from, to) {
   html = html.replace(from, to);
 }
 mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;'); // 自备审核区默认封存(开关关闭);本件测的就是它,所以装置里把开关打开
-const MUTATIONS = ['group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
+const MUTATIONS = ['new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
+if (mutation === 'new-group-ascii-only') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[A-Za-z0-9]{1,8}$/,');
 if (mutation === 'new-group-no-check') mutate("if(!n)return {error:'请填写新编组的名字(1～8 位字母或数字)'};", '');
 if (mutation === 'new-group-no-regex') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
 if (mutation === 'no-stale-guard') mutate('if(generation!==enrollGeneration)return null;', '');
@@ -324,7 +325,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#enrollApprove').click();
       assert.match(await feedbackText(), /请填写新编组的名字/);
       assert.strictEqual(writes.length, before, 'selecting "new group" without a name must send nothing');
-      for (const bad of ['a b', 'toolong99', '组名']) {
+      for (const bad of ['a b', 'toolong99', 'a-b', '组 名']) {
         await page.locator('#enrollNewGroup').fill(bad);   // fill 不受 maxlength 约束:键入会被截成 8 位,这里要测的是脚本化/粘贴写入的越界值
         await page.locator('#enrollApprove').click();
         assert.match(await feedbackText(), /1～8 位字母或数字/, `bad name ${JSON.stringify(bad)}`);
@@ -334,6 +335,17 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#enrollApprove').click();
       await page.locator('#enrollEditor').waitFor({ state: 'hidden' });
       assert.deepStrictEqual(writes[writes.length - 1].body, { pairing_code: '123456', agent_name: 'Gamma', new_group_name: 'Newteam' });
+      // 中文组名合法(旧平台就有"团队甲"这类名字;Hub 的 ValidGroupName 认 Unicode 字母数字)——页面不得比 Hub 更严
+      resetApps(); await page.locator('#enrollRefresh').click();
+      await page.waitForFunction(() => document.querySelectorAll('#enrollItems .enroll-row').length === 3);
+      await rows().first().locator('.enroll-open').click();
+      await page.locator('#enrollCode').click(); await page.keyboard.type('123456');
+      await page.locator('#enrollName').click(); await page.keyboard.type('Delta');
+      await page.locator('#enrollGroup').selectOption('__new__');
+      await page.locator('#enrollNewGroup').fill('团队乙');
+      await page.locator('#enrollApprove').click();
+      await page.locator('#enrollEditor').waitFor({ state: 'hidden' });
+      assert.deepStrictEqual(writes[writes.length - 1].body, { pairing_code: '123456', agent_name: 'Delta', new_group_name: '团队乙' });
     });
 
     await test('the group panel keeps list and create, and no longer offers join-by-code (owner S5)', async () => {
