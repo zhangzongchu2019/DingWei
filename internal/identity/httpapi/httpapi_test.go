@@ -144,12 +144,12 @@ func TestFullFlowOverHTTP(t *testing.T) {
 	}
 
 	bad := e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
-		map[string]any{"pairing_code": "999999", "agent_name": "Opus50ts", "group_id": "g1"}, owner("zzc"))
+		map[string]any{"pairing_code": "999999", "agent_name": "Opus50ts", "group_code": "g1"}, owner("zzc"))
 	if bad.status != 422 || bad.body["error"] != "pairing_mismatch" || bad.body["remaining"] != float64(4) {
 		t.Fatalf("V1 A2 wrong code: %d %v", bad.status, bad.body)
 	}
 	ok := e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
-		map[string]any{"pairing_code": code, "agent_name": "Opus50ts", "group_id": "g1"}, owner("zzc"))
+		map[string]any{"pairing_code": code, "agent_name": "Opus50ts", "group_code": "g1"}, owner("zzc"))
 	if ok.status != 200 || ok.body["agent_full_name"] != "Opus50ts.zzc" {
 		t.Fatalf("approve: %d %v", ok.status, ok.body)
 	}
@@ -257,7 +257,7 @@ func TestErrorMapping(t *testing.T) {
 	}
 	approve := func(id, name string) resp {
 		return e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
-			map[string]any{"pairing_code": code, "agent_name": name, "group_id": "g"}, owner("zzc"))
+			map[string]any{"pairing_code": code, "agent_name": name, "group_code": "g"}, owner("zzc"))
 	}
 	if r := approve(id1, "bad.name"); r.status != 422 || r.body["error"] != "name_invalid" {
 		t.Errorf("name_invalid: %d %v", r.status, r.body)
@@ -284,7 +284,7 @@ func TestNameTakenAndExpiredOverHTTP(t *testing.T) {
 	a1, a2, a3 := mk("dev-a"), mk("dev-b"), mk("dev-c")
 	approve := func(id, name string) resp {
 		return e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
-			map[string]any{"pairing_code": code, "agent_name": name, "group_id": "g"}, owner("zzc"))
+			map[string]any{"pairing_code": code, "agent_name": name, "group_code": "g"}, owner("zzc"))
 	}
 	if r := approve(a1, "opus50ts"); r.status != 200 {
 		t.Fatal(r.body)
@@ -336,5 +336,19 @@ func TestSourceIPIgnoresHeaderFromNonLoopback(t *testing.T) {
 	apps := l.body["applications"].([]any)
 	if len(apps) != 1 || apps[0].(map[string]any)["source_ip"] != "198.51.100.9" {
 		t.Fatalf("source_ip = %v, want 198.51.100.9 (header from non-loopback peer must be ignored)", apps)
+	}
+}
+
+func TestApproveGroupRequiredOverHTTP(t *testing.T) {
+	e := newEnv(t)
+	id := e.do("POST", "/api/enroll/applications", applyBody("zzc"), nil).body["application_id"].(string)
+	r := e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
+		map[string]any{"pairing_code": code, "agent_name": "Worker"}, owner("zzc"))
+	if r.status != 422 || r.body["error"] != "group_required" {
+		t.Fatalf("missing group_code: %d %v", r.status, r.body)
+	}
+	if r := e.do("POST", "/api/console/enroll/applications/"+id+"/approve",
+		map[string]any{"pairing_code": code, "agent_name": "Worker", "group_id": "g"}, owner("zzc")); r.status != 400 {
+		t.Fatalf("old field name group_id must be rejected as unknown: %d %v", r.status, r.body)
 	}
 }

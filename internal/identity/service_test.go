@@ -285,3 +285,22 @@ func TestRandomnessSourceUsed(t *testing.T) {
 		t.Fatalf("ids not drawn from injected source: %s %s", r.ApplicationID, r.PollToken)
 	}
 }
+
+func TestApproveGroupRequired(t *testing.T) {
+	f := newFixture(t)
+	r := f.apply(t, "zzc", "dev-1", "1.1.1.1")
+	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", ""); !errors.Is(err, identity.ErrGroupRequired) {
+		t.Fatalf("empty group: %v, want ErrGroupRequired", err)
+	}
+	f.svc.GroupAllowed = func(owner, g string) bool { return owner == "zzc" && g == "team-a" }
+	if _, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-b"); !errors.Is(err, identity.ErrGroupRequired) {
+		t.Fatalf("group not owned: %v, want ErrGroupRequired", err)
+	}
+	if list, _ := f.svc.ListPending(bg, "zzc"); len(list) != 1 {
+		t.Fatal("group rejection must keep the application pending")
+	}
+	ag, _, err := f.svc.Approve(bg, "zzc", r.ApplicationID, code, "Worker", "team-a")
+	if err != nil || ag.GroupID != "team-a" {
+		t.Fatalf("approve with group: %+v %v", ag, err)
+	}
+}

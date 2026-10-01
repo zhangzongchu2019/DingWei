@@ -18,6 +18,7 @@ var (
 	ErrBadRequest        = errors.New("identity: bad request")
 	ErrUnknownOwner      = errors.New("identity: unknown owner")
 	ErrNameInvalid       = errors.New("identity: agent name invalid")
+	ErrGroupRequired     = errors.New("identity: group required")
 	ErrCredentialInvalid = errors.New("identity: credential invalid")
 	ErrCredentialRevoked = errors.New("identity: credential revoked")
 )
@@ -59,6 +60,8 @@ type Service struct {
 	OnRevoked func(agentID string)
 	// NameAllowed 额外的名称检查（Hub 注入渠道保留字检查）；返回 false ⇒ ErrNameInvalid。为空则不查。
 	NameAllowed func(name string) bool
+	// GroupAllowed 编组是否存在且归该 owner（新平台 Agent 接入编组后由 Hub 注入）；为空则只查非空。
+	GroupAllowed func(ownerLC, groupCode string) bool
 
 	mu        sync.Mutex
 	applyHits map[string][]time.Time // 来源 IP → 最近一小时的申请时刻
@@ -287,6 +290,10 @@ func (s *Service) ListPending(ctx context.Context, actorLC string) ([]Applicatio
 func (s *Service) Approve(ctx context.Context, actorLC, appID, pairingCode, name, groupID string) (*Agent, string, error) {
 	if !ValidAgentName(name) || (s.NameAllowed != nil && !s.NameAllowed(name)) {
 		return nil, "", ErrNameInvalid
+	}
+	// 组长裁定 ruling-2026-10-01T090434Z：审核时编组必选，不提供「不加入编组」。
+	if groupID == "" || (s.GroupAllowed != nil && !s.GroupAllowed(Lower(actorLC), groupID)) {
+		return nil, "", ErrGroupRequired
 	}
 	now := s.Now()
 	app, err := s.Store.GetApplication(ctx, appID)

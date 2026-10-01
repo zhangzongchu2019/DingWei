@@ -102,6 +102,8 @@ func mapErr(w http.ResponseWriter, err error) {
 		writeErr(w, http.StatusNotFound, "unknown_owner", nil)
 	case errors.Is(err, identity.ErrNotFound):
 		writeErr(w, http.StatusNotFound, "not_found", nil)
+	case errors.Is(err, identity.ErrGroupRequired):
+		writeErr(w, http.StatusUnprocessableEntity, "group_required", nil)
 	case errors.Is(err, identity.ErrNameInvalid):
 		writeErr(w, http.StatusUnprocessableEntity, "name_invalid", nil)
 	case errors.Is(err, identity.ErrNameTaken):
@@ -227,12 +229,12 @@ func (a *API) approve(w http.ResponseWriter, r *http.Request, actor string) {
 	var req struct {
 		PairingCode string `json:"pairing_code"`
 		AgentName   string `json:"agent_name"`
-		GroupID     string `json:"group_id"`
+		GroupCode   string `json:"group_code"`
 	}
 	if !decode(w, r, &req) {
 		return
 	}
-	ag, full, err := a.Svc.Approve(r.Context(), actor, r.PathValue("id"), req.PairingCode, req.AgentName, req.GroupID)
+	ag, full, err := a.Svc.Approve(r.Context(), actor, r.PathValue("id"), req.PairingCode, req.AgentName, req.GroupCode)
 	if err != nil {
 		mapErr(w, err)
 		return
@@ -267,7 +269,7 @@ func (a *API) listAgents(w http.ResponseWriter, r *http.Request, actor string) {
 		}
 		out = append(out, map[string]any{
 			"agent_id": ag.ID, "name": ag.Name, "full_name": ag.Name + "." + short,
-			"origin": string(ag.Origin), "group_id": ag.GroupID, "online": online,
+			"origin": string(ag.Origin), "group_code": ag.GroupID, "online": online,
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"agents": out})
