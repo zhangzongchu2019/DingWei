@@ -57,6 +57,8 @@ type Service struct {
 	Rand  io.Reader
 	// OnRevoked 在吊销成功（非重复吊销）后、Revoke 返回前同步调用：Hub 据此以 4401 断开在线连接并重推在线清单（V2 A1）。
 	OnRevoked func(agentID string)
+	// NameAllowed 额外的名称检查（Hub 注入渠道保留字检查）；返回 false ⇒ ErrNameInvalid。为空则不查。
+	NameAllowed func(name string) bool
 
 	mu        sync.Mutex
 	applyHits map[string][]time.Time // 来源 IP → 最近一小时的申请时刻
@@ -283,7 +285,7 @@ func (s *Service) ListPending(ctx context.Context, actorLC string) ([]Applicatio
 
 // Approve 核对配对码、下发名称与编组（V1 第二节 4、5；设计件 3.1）。
 func (s *Service) Approve(ctx context.Context, actorLC, appID, pairingCode, name, groupID string) (*Agent, string, error) {
-	if !ValidAgentName(name) {
+	if !ValidAgentName(name) || (s.NameAllowed != nil && !s.NameAllowed(name)) {
 		return nil, "", ErrNameInvalid
 	}
 	now := s.Now()

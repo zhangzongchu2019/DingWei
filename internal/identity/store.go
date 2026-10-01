@@ -43,6 +43,8 @@ type EnrollStore interface {
 	TakeCredential(ctx context.Context, appID, credentialHash string, now time.Time) (*Agent, bool, error)
 	// ResolveAgentByCredential 含 revoked 行，供握手区分 credential_invalid 与 credential_revoked。
 	ResolveAgentByCredential(ctx context.Context, credentialHash string) (*Agent, error)
+	// GetAgent 按 agent_id 取（含 revoked 行）；Hub 据此在吊销后找到在线连接。
+	GetAgent(ctx context.Context, agentID string) (*Agent, error)
 	// ListAgents 只列该 owner 的 active Agent。
 	ListAgents(ctx context.Context, ownerLC string) ([]Agent, error)
 	// Revoke 不属于该 owner ⇒ ErrForbidden；托管 ⇒ ErrHosted；已吊销 ⇒ already=true 且不改任何字段。

@@ -356,6 +356,12 @@ func revokeFreesName(t *testing.T, s identity.Store) {
 	if list, _ := s.ListAgents(ctx, "zzc"); len(list) != 0 {
 		t.Fatalf("revoked agent still listed: %v", list)
 	}
+	if g, err := s.GetAgent(ctx, "ag-old"); err != nil || g.State != identity.AgentRevoked || g.Name != "Kimi" || g.OwnerLC != "zzc" {
+		t.Fatalf("GetAgent of revoked: %+v %v", g, err)
+	}
+	if _, err := s.GetAgent(ctx, "ag-none"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("GetAgent unknown: %v", err)
+	}
 	old, err := s.ResolveAgentByCredential(ctx, "cred-old")
 	if err != nil || old.State != identity.AgentRevoked || old.RevokedBy != "zzc" || !old.RevokedAt.Equal(t0.Add(time.Minute)) {
 		t.Fatalf("old credential must resolve to revoked row: %+v %v", old, err)

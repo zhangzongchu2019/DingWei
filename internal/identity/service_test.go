@@ -229,6 +229,10 @@ func TestApproveNameRulesAndOwnership(t *testing.T) {
 			t.Errorf("name %q: %v, want ErrNameInvalid", bad, err)
 		}
 	}
+	f.svc.NameAllowed = func(n string) bool { return identity.Lower(n) != "feishu" }
+	if _, _, err := f.svc.Approve(bg, "zzc", r1.ApplicationID, code, "Feishu", "g"); !errors.Is(err, identity.ErrNameInvalid) {
+		t.Errorf("reserved name via NameAllowed: %v, want ErrNameInvalid", err)
+	}
 	if _, _, err := f.svc.Approve(bg, "lbl", r1.ApplicationID, code, "Thief", "g"); !errors.Is(err, identity.ErrNotFound) {
 		t.Fatalf("other owner approves: %v, want ErrNotFound", err)
 	}

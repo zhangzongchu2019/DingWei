@@ -361,6 +361,17 @@ func (m *MemStore) ResolveAgentByCredential(_ context.Context, credentialHash st
 	return &cp, nil
 }
 
+func (m *MemStore) GetAgent(_ context.Context, agentID string) (*Agent, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	ag, ok := m.agents[agentID]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	cp := *ag
+	return &cp, nil
+}
+
 func (m *MemStore) ListAgents(_ context.Context, ownerLC string) ([]Agent, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

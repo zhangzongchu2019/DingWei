@@ -24,6 +24,7 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/router"
@@ -68,6 +69,11 @@ type Hub struct {
 	// 统一登录的一次性登录票据(T-113)。仅内存、短 TTL、与页面写锁 code 池分开。
 	consoleLoginStore *consoleLoginStore
 	consoleLoginOnce  sync.Once
+
+	// Identity 新平台 G3：/ws/agent 按专属凭据认人（为空＝不启用该入口）。
+	Identity *identity.Service
+	// AgentCredentialOnly 为真时旧入口 /ws/session 一律回 410：新平台只认凭据（设计件 2.3）。
+	AgentCredentialOnly bool
 
 	// NowFunc 只为测试注入时钟。D1 的滑动续期要验「跨过 12 小时」,
 	// 真等 12 小时不是验收,是浪费;而只看代码里有 UPDATE 又证明不了行为。
@@ -764,6 +770,10 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
+	if h.AgentCredentialOnly {
+		writeAgentWSError(w, http.StatusGone, "use_ws_agent")
+		return
+	}
 	timingStart := time.Now()
 	timingLast := timingStart
 	var timingParts []string
