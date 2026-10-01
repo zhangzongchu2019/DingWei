@@ -16,7 +16,9 @@ import (
 // TestPool_RoundTrip 是测试环境的【正向】验收:临时 PG 起得来、走的是 R0 真正要走的
 // 连接路径(repo.OpenPG,pgx 驱动)、能建表能读写能回滚、收尾自证删净。
 //
-// 拿不到 PG 时 Skip 而非 Fail:本用例是集成层,与 internal/datad 的 DATAD_TEST_PG_DSN 门控同理。
+// 🔴 拿不到 PG 时分两类(判据只有 unavailable 一个出口):**环境本就缺失** ⇒ Skip(集成层,与
+// internal/datad 的 DATAD_TEST_PG_DSN 门控同理);**环境在却起不来** ⇒ 默认 Fail(翻转见包首注),
+// 只有显式置 HUB_TEST_PG_SKIP_OK=1 才降级成 Skip。本用例同时是端到端对照里被当靶子跑的那一个。
 func TestPool_RoundTrip(t *testing.T) {
 	pool := Pool(t)
 	ctx := context.Background()
@@ -503,64 +505,81 @@ func digestOf(t *testing.T, dir string) string {
 	return digest
 }
 
-// TestStrictMode_SemanticsByLiteralReading 锁住严格模式开关怎么读。
+// TestSkipAllowed_SemanticsByLiteralReading 锁住「环境在却起不来能否降级成 Skip」这条判据怎么读。
 //
-// 🔴 与 TestEmbeddedDisabled_SemanticsByLiteralReading 同理,而这里的失误更隐蔽:
-// 开关读错不会有任何用例变红,只会让「起库失败改判 Fail」这条悄悄失效 ——
-// 失效之后的表现恰恰是【全绿】。故连「认不出的值怎么办」也要判:必须报错,不许滑成「关」,
-// 否则一个打错的 STRICT=ture 就把 CI 的判据关掉了,而日志上什么也看不见。
-func TestStrictMode_SemanticsByLiteralReading(t *testing.T) {
+// 🔴 与被它替换掉的 TestStrictMode_SemanticsByLiteralReading 同理,而这里的失误更隐蔽:
+// 判据控制的是【会不会 Skip】,写反不会有任何用例变红 —— 失效之后的表现恰恰是【全绿】。
+// 故连「认不出的值怎么办」也要判:必须报错,不许滑成「允许」也不许滑成「不允许」,
+// 否则一个打错的 SKIP_OK=ture 就把判据悄悄改了向,而日志上什么也看不见。
+//
+// 🔴 翻转之后有两条不变量,本用例逐格钉住:
+//
+//	一、返回 true 只有【一个】来源 —— SkipOKEnv 显式置了「开」的值;
+//	二、StrictEnv 的任何取值都不得让本函数返回 true(旧「关」不再等于「允许 Skip」,而是报错)。
+func TestSkipAllowed_SemanticsByLiteralReading(t *testing.T) {
 	cases := []struct {
-		value   string
+		name    string
+		strict  string // 旧开关 HUB_TEST_PG_STRICT:翻转后只认「开」值,效果与默认相同
+		skipOK  string // 新开关 HUB_TEST_PG_SKIP_OK:唯一能允许 Skip 的那个
 		want    bool
 		wantErr bool
 		why     string
 	}{
-		{"", false, false, "未设 = 关(本地默认好跑;CI 自己置 1)"},
-		{"1", true, false, "1 是开"},
-		{"true", true, false, "true 是开"},
-		{"TRUE", true, false, "大小写不该改变语义"},
-		{"on", true, false, "on 是开"},
-		{"yes", true, false, "yes 是开"},
-		{"是", true, false, "中文「是」也是开(与 EmbeddedOffEnv 认「否」对称)"},
-		{"0", false, false, "0 是关"},
-		{"false", false, false, "false 是关"},
-		{"off", false, false, "off 是关"},
-		{"no", false, false, "no 是关"},
-		{"否", false, false, "中文「否」是关"},
-		{"ture", false, true, "🔴 打错的 true 必须报错:它看上去像开了、其实没开,是最坏的一种静默失效"},
-		{"2", false, true, "认不出的值一律报错,不许滑成「关」"},
+		{"两个都不设", "", "", false, false, "🔴 默认不允许 Skip —— 这一格就是翻转本身(反向对照:把默认改回宽松,本格立刻变 true)"},
+		{"SKIP_OK=1", "", "1", true, false, "显式置 1 是唯一能允许 Skip 的路"},
+		{"SKIP_OK=true", "", "true", true, false, "true 是允许"},
+		{"SKIP_OK=TRUE", "", "TRUE", true, false, "大小写不该改变语义"},
+		{"SKIP_OK=on", "", "on", true, false, "on 是允许"},
+		{"SKIP_OK=yes", "", "yes", true, false, "yes 是允许"},
+		{"SKIP_OK=是", "", "是", true, false, "中文「是」也是允许(与 EmbeddedOffEnv 认「否」对称)"},
+		{"SKIP_OK=0", "", "0", false, false, "显式 0 是不允许,与默认同"},
+		{"SKIP_OK=false", "", "false", false, false, "false 是不允许"},
+		{"SKIP_OK=off", "", "off", false, false, "off 是不允许"},
+		{"SKIP_OK=no", "", "no", false, false, "no 是不允许"},
+		{"SKIP_OK=否", "", "否", false, false, "中文「否」是不允许"},
+		{"SKIP_OK=ture", "", "ture", false, true, "🔴 打错的 true 必须报错:它看上去像允许了、其实没允许,是最坏的一种静默失效"},
+		{"SKIP_OK=2", "", "2", false, true, "认不出的值一律报错,不许滑成任何一侧"},
+		{"STRICT=1", "1", "", false, false, "旧开关的「开」原样认下:过渡期各组读数带着 STRICT=1,翻转后不该反而报错"},
+		{"STRICT=1 且 SKIP_OK=1", "1", "1", true, false, "旧「开」不压制新开关:允许 Skip 仍只由 SKIP_OK 决定"},
+		{"STRICT=0", "0", "", false, true, "🔴 旧「关」不再表示「允许 Skip」⇒ 必须报错并指名改口,不许静默忽略(遗留的 =0 会让人以为这里能跳)"},
+		{"STRICT=0 且 SKIP_OK=1", "0", "1", false, true, "即便新开关已置,遗留的 STRICT=0 仍报错:要跳过先把旧变量从环境里去掉"},
+		{"STRICT=ture", "ture", "", false, true, "旧开关认不出的值同样报错"},
 	}
 	for _, tc := range cases {
 		tc := tc
-		t.Run("value="+tc.value, func(t *testing.T) {
-			t.Setenv(StrictEnv, tc.value)
-			got, err := strictMode()
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv(StrictEnv, tc.strict)
+			t.Setenv(SkipOKEnv, tc.skipOK)
+			got, err := skipAllowed()
 			if tc.wantErr {
 				if err == nil {
-					t.Fatalf("%s=%q 本该报错,却返回 (%v, nil):%s", StrictEnv, tc.value, got, tc.why)
+					t.Fatalf("STRICT=%q SKIP_OK=%q 本该报错,却返回 (%v, nil):%s", tc.strict, tc.skipOK, got, tc.why)
 				}
-				if !strings.Contains(err.Error(), StrictEnv) {
+				if !strings.Contains(err.Error(), StrictEnv) && !strings.Contains(err.Error(), SkipOKEnv) {
 					t.Errorf("报错文案没点明是哪个环境变量读不懂: %v", err)
+				}
+				if got {
+					t.Errorf("🔴 报错的同时返回了「允许 Skip」⇒ 只看布尔值的调用方会照样放行: %v", got)
 				}
 				return
 			}
 			if err != nil {
-				t.Fatalf("%s=%q 不该报错: %v", StrictEnv, tc.value, err)
+				t.Fatalf("STRICT=%q SKIP_OK=%q 不该报错: %v", tc.strict, tc.skipOK, err)
 			}
 			if got != tc.want {
-				t.Errorf("%s=%q: strictMode()=%v,要 %v(%s)", StrictEnv, tc.value, got, tc.want, tc.why)
+				t.Errorf("STRICT=%q SKIP_OK=%q: skipAllowed()=%v,要 %v(%s)", tc.strict, tc.skipOK, got, tc.want, tc.why)
 			}
 		})
 	}
 }
 
-// TestStrictMode_EndToEnd 是严格模式的【端到端】对照:纯函数判对了不等于 Pool 真会 Fail。
+// TestSkipOKDefault_EndToEnd 是默认翻转的【端到端】对照:纯函数判对了不等于 Pool 真会 Fail。
 //
 // 用一个「起了就死、连一行协议都不打」的假工具充当故障环境(PGTEST_BIN 指过去),
-// 形状与复验 M5 那一刀相同:环境在、工具在,库起不来。三格都要判 ——
-// 默认 Skip(本地没库不该判红)、置 1 必须 Fail(不许盖成绿)、认不出的值必须 Fail 并说清缘由。
-func TestStrictMode_EndToEnd(t *testing.T) {
+// 形状与复验 M5 那一刀相同:环境在、工具在,库起不来。
+// 🔴 第一格就是翻转本身 —— 把默认改回宽松,这一格立刻由 --- FAIL 变 --- SKIP,
+// 这正是复验方要跑的反向对照(裁定 ruling-2026-10-01T130835Z)。
+func TestSkipOKDefault_EndToEnd(t *testing.T) {
 	goBin, err := exec.LookPath("go")
 	if err != nil {
 		t.Skipf("找不到 go 工具链,跑不了端到端对照: %v", err)
@@ -569,46 +588,75 @@ func TestStrictMode_EndToEnd(t *testing.T) {
 	if err := os.WriteFile(fake, []byte("#!/bin/sh\nexit 1\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	runPool := func(strict string) string {
+	// runPool 在子进程里只跑 TestPool_RoundTrip,返回它的输出。
+	// extra 里给的开关排在最后 ⇒ os/exec 的 dedupEnv 以【最后一次】为准,盖得住 os.Environ() 里的遗留值。
+	runPool := func(extra ...string) string {
 		cmd := exec.Command(goBin, "test", "-run", "TestPool_RoundTrip", "-v", "-count=1", ".")
 		cmd.Env = append(os.Environ(),
 			"PGTEST_BIN="+fake, // 工具「在」,但它起不了库 ⇒ 属「环境在却起不来」
 			DSNEnv+"=",         // 🔴 必须清掉外部 DSN,否则三级顺序走①,这一格根本没测到
 			EmbeddedOffEnv+"=", // 也不许被「禁用内嵌 PG」抢先 Skip 掉(那是另一格)
-			StrictEnv+"="+strict,
+			StrictEnv+"=",      // 两个开关都先清空,免得环境里的遗留值替本格做了决定
+			SkipOKEnv+"=",
 		)
+		cmd.Env = append(cmd.Env, extra...)
 		var out strings.Builder
 		cmd.Stdout = &out
 		cmd.Stderr = &out
 		_ = cmd.Run() // 退出码不作判据:Fail 与「没有用例可跑」都可能非零,判据是输出里的行
 		return out.String()
 	}
+	const (
+		failLine = "--- FAIL: TestPool_RoundTrip"
+		skipLine = "--- SKIP: TestPool_RoundTrip"
+	)
 
-	t.Run("默认 ⇒ SKIP,且文案要指认这是「环境在却起不来」", func(t *testing.T) {
-		got := runPool("")
-		if !strings.Contains(got, "--- SKIP: TestPool_RoundTrip") {
-			t.Fatalf("默认没 Skip(本地没有可用 PG 时会判红)。输出:\n%s", got)
+	t.Run("默认 ⇒ FAIL,不许盖成 SKIP", func(t *testing.T) {
+		got := runPool()
+		if strings.Contains(got, skipLine) {
+			t.Fatalf("🔴 默认仍然 Skip ⇒ 起库失败照旧被盖成绿(翻转没生效,复验 🟡② 未修)。输出:\n%s", got)
 		}
-		if !strings.Contains(got, StrictEnv) {
-			t.Errorf("Skip 文案没提到 %s ⇒ 读日志的人不知道该开哪个开关把这类失败暴露出来。输出:\n%s", StrictEnv, got)
+		if !strings.Contains(got, failLine) {
+			t.Fatalf("默认没 Fail。输出:\n%s", got)
 		}
-	})
-	t.Run("置 1 ⇒ FAIL,不许盖成 SKIP", func(t *testing.T) {
-		got := runPool("1")
-		if strings.Contains(got, "--- SKIP: TestPool_RoundTrip") {
-			t.Fatalf("🔴 严格模式下仍然 Skip ⇒ 起库失败照旧被盖成绿(复验 🟡② 没修好)。输出:\n%s", got)
-		}
-		if !strings.Contains(got, "--- FAIL: TestPool_RoundTrip") {
-			t.Fatalf("🔴 严格模式下没 Fail。输出:\n%s", got)
+		if !strings.Contains(got, SkipOKEnv) {
+			t.Errorf("Fail 文案没提到 %s ⇒ 读日志的人不知道确需跳过时该置哪个开关。输出:\n%s", SkipOKEnv, got)
 		}
 	})
-	t.Run("认不出的值 ⇒ FAIL,并说清是开关读不懂", func(t *testing.T) {
-		got := runPool("ture")
-		if !strings.Contains(got, "--- FAIL: TestPool_RoundTrip") {
-			t.Fatalf("打错的开关值没让用例失败 ⇒ 被当成「关」而静默放行。输出:\n%s", got)
+	t.Run("SKIP_OK=1 ⇒ SKIP,且文案点明是谁放行的", func(t *testing.T) {
+		got := runPool(SkipOKEnv + "=1")
+		if !strings.Contains(got, skipLine) {
+			t.Fatalf("显式置了 %s=1 却没 Skip。输出:\n%s", SkipOKEnv, got)
 		}
-		if !strings.Contains(got, StrictEnv) {
+		if !strings.Contains(got, SkipOKEnv) {
+			t.Errorf("Skip 文案没点明是 %s 放行的 ⇒ 日志上看不出这次绿是「真过」还是「被放过」。输出:\n%s", SkipOKEnv, got)
+		}
+	})
+	t.Run("SKIP_OK 认不出的值 ⇒ FAIL,并说清是开关读不懂", func(t *testing.T) {
+		got := runPool(SkipOKEnv + "=ture")
+		if !strings.Contains(got, failLine) {
+			t.Fatalf("打错的开关值没让用例失败 ⇒ 被静默当成某一侧。输出:\n%s", got)
+		}
+		if !strings.Contains(got, SkipOKEnv) {
 			t.Errorf("报错没点明是哪个环境变量读不懂。输出:\n%s", got)
+		}
+	})
+	t.Run("过渡期读数 STRICT=1 ⇒ 仍 FAIL,且不因旧开关报错", func(t *testing.T) {
+		got := runPool(StrictEnv + "=1")
+		if !strings.Contains(got, failLine) {
+			t.Fatalf("带着过渡期要求的 %s=1 反而没 Fail。输出:\n%s", StrictEnv, got)
+		}
+		if strings.Contains(got, "已不再表示") {
+			t.Errorf("🔴 %s=1 被判成废弃报错 ⇒ 过渡期各组照裁定带的读数会全红。输出:\n%s", StrictEnv, got)
+		}
+	})
+	t.Run("遗留 STRICT=0 ⇒ FAIL,且文案指名改用 SKIP_OK", func(t *testing.T) {
+		got := runPool(StrictEnv + "=0")
+		if !strings.Contains(got, failLine) {
+			t.Fatalf("遗留的 %s=0 没让用例失败 ⇒ 旧「关」被静默忽略,判据翻了而环境里还写着允许跳过。输出:\n%s", StrictEnv, got)
+		}
+		if !strings.Contains(got, SkipOKEnv) {
+			t.Errorf("报错没指名改用 %s ⇒ 撞上来的人不知道怎么改口。输出:\n%s", SkipOKEnv, got)
 		}
 	})
 }
