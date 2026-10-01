@@ -168,6 +168,15 @@ func TestOptionsPlanFitsEachGate(t *testing.T) {
 			t.Errorf("fits %v, want both false when no agent slot left", got)
 		}
 	})
+	t.Run("memory short but vcpu ample", func(t *testing.T) {
+		// 剩 6G 内存、vCPU 64：2C/4G 能放，4C/8G 不能 —— 只能是内存闸在起作用（tosonnet50ts 复验存活刀）。
+		got := fitsOf(t, Quota{UserLC: "zzc", AgentsLimit: 8, VCPULimit: 64, MemMBLimit: 6144, DiskMBLimit: 1 << 20}, nil)
+		if !got["2c4g"] || got["4c8g"] {
+			t.Errorf("fits %v, want 2c4g=true 4c8g=false (memory gate)", got)
+		}
+	})
+	// 磁盘闸：两档套餐的 DiskMB 都是 0（待 G1 定档，plans.go），这道闸目前不可能为假 —— 撤掉它是等价变异。
+	// G1 定出磁盘档位后，在此补「磁盘不够而其余够 ⇒ fits=false」一格。
 	t.Run("vcpu short but memory ample", func(t *testing.T) {
 		// 剩 3 个 vCPU、内存 1TB：2C 能放，4C 不能 —— 只能是 vCPU 闸在起作用。
 		got := fitsOf(t, Quota{UserLC: "zzc", AgentsLimit: 8, VCPULimit: 3, MemMBLimit: 1 << 20, DiskMBLimit: 1 << 20}, nil)
