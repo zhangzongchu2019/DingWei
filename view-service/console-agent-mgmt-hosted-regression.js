@@ -26,11 +26,12 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind'];
+const MUTATIONS = ['unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'unseal-review') mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;');
 if (mutation === 'nav-opens-by-name') mutate('b.onclick=function(){ openTab(a.full_name) };', 'b.onclick=function(){ openTab(a.name) };');
 if (mutation === 'ignore-cred-kind') mutate('&&(!a.kind||c.cred_kind===a.kind);});', '&&true;});');
+if (mutation === 'ignore-suspended') mutate("a.state==='suspended'?{state:'disabled'}:{},", '{},');
 if (mutation === 'unverified-selectable') mutate("o.disabled=!!it.disabled;", 'o.disabled=false;');
 if (mutation === 'no-linkage') mutate("var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});", 'var rows=(opts.accounts||[]);');
 if (mutation === 'hardcoded-mask') mutate("hostedMaskRender(name,stage,'',lastStage);\n    if(stage==='online')", "hostedMaskRender(name,'online','',lastStage);\n    if(stage==='online')");
@@ -91,7 +92,7 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/console/agents') {
     return json(res, 200, { agents: agents.map((a) => {
       const name = a.session_name.split('-')[1]; const h = hostedAgents.find((x) => x.agent_id === a.id);
-      return { online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE, ...(h ? { hosted: { state: h.state, upgradable: h.upgradable, node_name: h.node_name } } : {}) };
+      return { ...(a.suspended ? { state: 'suspended' } : { state: 'active' }), online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE, ...(h ? { hosted: { state: h.state, upgradable: h.upgradable, node_name: h.node_name } } : {}) };
     }) });
   }
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
@@ -305,7 +306,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       const gamma = page.locator('#rosterItems .roster-row[data-agent-id="ag-gamma"]');
       const before = writes.length; dialogAccept = false; dialogs.length = 0;
       await gamma.locator('[data-op="disable"]').click(); await page.waitForTimeout(250);
-      assert.strictEqual(writes.length, before); assert.match(dialogs[0], /数据卷保留/);
+      assert.strictEqual(writes.length, before); assert.match(dialogs[0], /数据卷保留/); assert.match(dialogs[0], /凭据暂停、无法再接入/, 'the confirmation says what suspension means for the credential');
       dialogAccept = true;
       await gamma.locator('[data-op="disable"]').click();
       await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-gamma"] td:nth-child(2)')?.textContent === '已停用');
@@ -321,6 +322,16 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#rosterFeedback').filter({ hasText: '节点离线' }).waitFor({ state: 'visible' });
       assert.doesNotMatch(await page.locator('#rosterFeedback').textContent(), /SECRET-HUB-TEXT/);
       assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] [data-op="restart"]').isEnabled(), true, 'buttons come back after a failure');
+    });
+
+    await test('a hosted row the Hub reports only as state=suspended (no hosted sub-object yet) is shown as stopped, with enable offered', async () => {
+      agents.push({ id: 'ag-susp', key_id: 'key-susp', session_name: 'zzc-susp-2642', online: false, origin: 'hosted', suspended: true });
+      await page.evaluate(() => refreshRoster());
+      const row = page.locator('#rosterItems .roster-row[data-agent-id="ag-susp"]');
+      await row.waitFor({ state: 'visible' });
+      assert.strictEqual(await row.locator('td').nth(1).textContent(), '已停用');
+      assert.deepStrictEqual(await row.locator('.hosted-op').allTextContents(), ['升级', '重启', '启用', '销毁']);
+      agents = agents.filter((a) => a.id !== 'ag-susp'); await page.evaluate(() => refreshRoster());
     });
 
     await test('a role-refused operation says so in our wording', async () => {

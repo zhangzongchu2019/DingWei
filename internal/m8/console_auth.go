@@ -731,7 +731,8 @@ function renderRoster(){
   rosterAgents.forEach(function(a){
     var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.agent_id;
     var name=document.createElement('td');name.textContent=a.name||'';name.title=a.full_name||'';
-    var hs=a.origin==='hosted'?Object.assign({online:a.online},a.hosted||{}):null,st=document.createElement('td');   // 托管生命周期在行里的 hosted 子对象(契约 v2:过渡形态)
+    var hs=a.origin==='hosted'?Object.assign({online:a.online},a.state==='suspended'?{state:'disabled'}:{},a.hosted||{}):null,st=document.createElement('td');   // 行级 state=suspended(G3 已有)即托管视图的 disabled;hosted 子对象(G4)到了以它为准
+       // 托管生命周期在行里的 hosted 子对象(契约 v2:过渡形态)
     st.textContent=hs?hostedStateText(hs):(a.online?'在线':'离线');
     var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted';
     if(hs)hostedOpButtons(a,hs).forEach(function(b){action.append(b);});
@@ -865,7 +866,7 @@ function hostedOpButtons(a,hs){
     b.onclick=async function(){
       var body={};
       if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器和数据卷将被删除,凭据立即吊销,不可恢复。确认销毁？'))return;body.confirm=true;}
-      if(d[0]==='disable'){if(!confirm('停用 '+name+'：容器将停止,数据卷保留,可再启用;停用期间仍计配额。确认停用？'))return;body.confirm=true;}
+      if(d[0]==='disable'){if(!confirm('停用 '+name+'：容器将停止,数据卷保留,可再启用;该 Agent 离线且凭据暂停、无法再接入;停用期间仍计配额。确认停用？'))return;body.confirm=true;}
       list.forEach(function(x){x.disabled=true;});
       var res=await consolePost(HOSTED_API.op(a.agent_id,d[0]),body);
       if(!res.ok){enrollFeedback('rosterFeedback',res.text);list.forEach(function(x){x.disabled=busy;});return;}
