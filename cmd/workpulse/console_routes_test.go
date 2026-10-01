@@ -95,7 +95,9 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 		seen[p] = true
 	}
 	// 防空转：扫描必须真的拿到了路由（记录器坏了、注册函数被绕过时这里先红）。
-	for _, must := range []string{"GET /console", "GET /api/console/agents", "GET /view/{sessionName}", "/view/{sessionName}/{rest...}", "GET /ws/view/{sessionName}", "GET /api/console/agent-groups"} {
+	// 防空转，也是验收三格之①（板 003a5de4：新平台下 /console、/api/console/platform、/api/console/agent-groups 曾 404）。
+	for _, must := range []string{"GET /console", "GET /api/console/platform", "GET /api/console/agent-groups", "GET /api/console/agents",
+		"GET /api/console/enroll/applications", "GET /view/{sessionName}", "/view/{sessionName}/{rest...}", "GET /ws/view/{sessionName}"} {
 		if !seen[must] {
 			t.Fatalf("route %q not registered; recorded %d routes", must, len(rec.patterns))
 		}
