@@ -267,7 +267,9 @@ func (a *API) listAgents(w http.ResponseWriter, r *http.Request, actor string) {
 		if a.Online != nil {
 			online = a.Online(ag.ID)
 		}
+		// session：兼容旧形状 {session, online}（console 左栏仍读它）——值即该 Agent 在 Hub 会话机制里的会话名（名称小写）。
 		out = append(out, map[string]any{
+			"session":  ag.NameLC(),
 			"agent_id": ag.ID, "name": ag.Name, "full_name": ag.Name + "." + short,
 			"origin": string(ag.Origin), "group_code": ag.GroupID, "state": string(ag.State), "online": online,
 		})

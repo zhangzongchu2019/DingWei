@@ -169,7 +169,8 @@ func TestFullFlowOverHTTP(t *testing.T) {
 
 	ag := e.do("GET", "/api/console/agents", nil, map[string]string{"X-Test-Actor": "zzc"})
 	list := ag.body["agents"].([]any)
-	if len(list) != 1 || list[0].(map[string]any)["full_name"] != "Opus50ts.zzc" || list[0].(map[string]any)["origin"] != "selfhost" {
+	if len(list) != 1 || list[0].(map[string]any)["full_name"] != "Opus50ts.zzc" || list[0].(map[string]any)["origin"] != "selfhost" ||
+		list[0].(map[string]any)["session"] != "opus50ts" || list[0].(map[string]any)["state"] != "active" {
 		t.Fatalf("agents: %v", ag.body)
 	}
 	if rv := e.do("POST", "/api/console/agents/"+agentID+"/revoke", nil, owner("lbl")); rv.status != 403 || rv.body["error"] != "forbidden" {
