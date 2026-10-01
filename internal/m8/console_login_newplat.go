@@ -116,7 +116,7 @@ async function changePassword(){
   var btn=$('chGo');btn.disabled=true;
   var res=await post('/api/console/account/password',{old_password:oldPw,new_password:n1});
   btn.disabled=false;
-  if(!res.ok){say('chErr',res.text);$('chOld').value='';return;}   // 旧密码输错就清掉再输;新密码保留
+  if(!res.ok){say('chErr',res.text);if(res.status===401)$('chOld').value='';return;}   // 只有"旧密码不对"才清旧密码框;弱密码等其它失败保留它,新密码也保留
   say('chErr','');['chOld','chNew','chNew2'].forEach(function(id){$(id).value='';});enter();
 }
 function fsStop(){clearTimeout(fsTimer);fsTimer=null;fsGeneration++;}

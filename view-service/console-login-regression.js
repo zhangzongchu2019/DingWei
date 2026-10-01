@@ -30,7 +30,7 @@ function mutate(which, from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   if (which === 'login') loginHtml = loginHtml.replace(from, to); else consoleHtml = consoleHtml.replace(from, to);
 }
-const MUTATIONS = ['password-visible', 'keep-password-after-fail', 'skip-force-change', 'no-expiry-check', 'show-hub-text', 'allow-mismatch', 'guard-off'];
+const MUTATIONS = ['password-visible', 'keep-password-after-fail', 'skip-force-change', 'no-expiry-check', 'show-hub-text', 'allow-mismatch', 'guard-off', 'clear-old-on-any-failure'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'password-visible') mutate('login', 'id=pwPass type=password', 'id=pwPass type=text');
 if (mutation === 'keep-password-after-fail') mutate('login', "if(!res.ok){say('pwErr',res.text);$('pwPass').value='';return;}", "if(!res.ok){say('pwErr',res.text);return;}");
@@ -38,6 +38,7 @@ if (mutation === 'skip-force-change') mutate('login', "if(res.data.must_change_p
 if (mutation === 'no-expiry-check') mutate('login', 'if(Number.isFinite(expires)&&Date.now()>=expires){', 'if(false){');
 if (mutation === 'show-hub-text') mutate('login', "function errText(status,data){", "function errText(status,data){if(data&&data.detail)return String(data.detail);");
 if (mutation === 'allow-mismatch') mutate('login', "if(n1!==n2){say('chErr','两次输入的新密码不一致');return;}", '');
+if (mutation === 'clear-old-on-any-failure') mutate('login', "if(res.status===401)$('chOld').value='';return;}", "$('chOld').value='';return;}");
 if (mutation === 'guard-off') mutate('console', "else if(d&&d.error==='must_change_password')location.assign('/console/login#change');", '');
 
 const OLD_PW = 'Init-Password-1!';
@@ -149,6 +150,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(posts.length, before, 'a mismatch must not reach the Hub');
       await type('#chNew', 'short'); await type('#chNew2', 'short'); await page.locator('#chGo').click();
       await page.locator('#chErr').filter({ hasText: '至少 12 位' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#chOld').inputValue(), OLD_PW, 'a weak new password is not an old-password problem: the old password stays in the field');
       await type('#chOld', 'not-the-old-password'); await type('#chNew', 'A-brand-new-password-1'); await type('#chNew2', 'A-brand-new-password-1');
       await page.locator('#chGo').click();
       await page.locator('#chErr').filter({ hasText: '用户 ID 或密码不对' }).waitFor({ state: 'visible' });
