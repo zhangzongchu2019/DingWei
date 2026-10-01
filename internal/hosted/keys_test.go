@@ -122,14 +122,14 @@ func TestTeamKeyServiceFlow(t *testing.T) {
 	// 全库凭据明文扫描命中 0（V6-B7 的库层）
 	var hits int
 	if err := func() error {
- 	row, err := s.qrow(ctx, `
+		row, err := s.qrow(ctx, `
 SELECT COUNT(*) FROM g4_account_pool
 WHERE position($1::bytea in secret_enc) > 0`, []byte("sk-live-MARKER"))
- 	if err != nil {
- 		return err
- 	}
- 	return row.Scan(&hits)
- }(); err != nil {
+		if err != nil {
+			return err
+		}
+		return row.Scan(&hits)
+	}(); err != nil {
 		t.Fatalf("scan: %v", err)
 	}
 	if hits != 0 {

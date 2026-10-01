@@ -19,7 +19,7 @@ func TestNodeCredentialLifecycle(t *testing.T) {
 
 	// 登记 → 认证通
 	secret, err := s.RegisterNode(ctx, Node{ID: "nd_c1", Name: "node-c1",
-		Labels: json.RawMessage(`{"site":"tc","spec":"8c16g","pool":"p1"}`),
+		Labels:        json.RawMessage(`{"site":"tc","spec":"8c16g","pool":"p1"}`),
 		DockerVersion: "29.1.3", ProtocolVersion: 1}, "tester")
 	if err != nil {
 		t.Fatalf("register: %v", err)
@@ -59,14 +59,14 @@ func TestNodeCredentialLifecycle(t *testing.T) {
 	// 审计：register/rotate/revoke 各一条
 	var n int
 	if err := func() error {
- 	row, err := s.qrow(ctx, `
+		row, err := s.qrow(ctx, `
 SELECT COUNT(*) FROM g4_audit WHERE target='nd_c1'
 AND action IN ('node.register','node.credential_rotate','node.credential_revoke')`)
- 	if err != nil {
- 		return err
- 	}
- 	return row.Scan(&n)
- }(); err != nil {
+		if err != nil {
+			return err
+		}
+		return row.Scan(&n)
+	}(); err != nil {
 		t.Fatalf("audit count: %v", err)
 	}
 	if n != 3 {

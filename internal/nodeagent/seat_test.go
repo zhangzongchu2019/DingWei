@@ -15,14 +15,14 @@ import (
 
 // fakeEngine 内存假 Docker Engine：记录调用序列、回放各端点、可注入失败（反向用例）。
 type fakeEngine struct {
-	mu    sync.Mutex
-	calls []string
-	specs []map[string]any // containerCreate 收到的 spec（安全参数清单断言用）
-	ids   map[string]string
-	next  int
-	failAt string
+	mu           sync.Mutex
+	calls        []string
+	specs        []map[string]any // containerCreate 收到的 spec（安全参数清单断言用）
+	ids          map[string]string
+	next         int
+	failAt       string
 	unhealthyNew bool // D2 反向：新容器不健康（upgrade 须回滚保留旧）
-	srv   *httptest.Server
+	srv          *httptest.Server
 }
 
 func newFakeDocker(t *testing.T) *fakeEngine {
@@ -68,7 +68,14 @@ func newFakeDocker(t *testing.T) *fakeEngine {
 				}
 			}
 			running := true
-			if f.unhealthyNew && name == f.ids[func() string { for n := range f.ids { if strings.HasSuffix(n, "-new") { return n } }; return "" }()] {
+			if f.unhealthyNew && name == f.ids[func() string {
+				for n := range f.ids {
+					if strings.HasSuffix(n, "-new") {
+						return n
+					}
+				}
+				return ""
+			}()] {
 				running = false // D2 反向：新容器不健康（以 ID 寻址的 inspect）
 			}
 			json.NewEncoder(w).Encode(map[string]any{
@@ -108,8 +115,8 @@ func TestValidateImageRef(t *testing.T) {
 	}
 	bad := []string{
 		"evil.registry/x/base@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", // 仓库不符
-		"hub.local/dingwei/base:latest",                       // 无 digest
-		"hub.local/dingwei/base@sha256:xyz",                   // digest 非法
+		"hub.local/dingwei/base:latest",     // 无 digest
+		"hub.local/dingwei/base@sha256:xyz", // digest 非法
 		"hub.local/dingwei@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", // 无路径
 	}
 	for _, ref := range bad {

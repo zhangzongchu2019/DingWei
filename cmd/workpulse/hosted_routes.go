@@ -229,7 +229,7 @@ func (d hostedDeps) handleQuotaPut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = d.qs.Put(r.Context(), actor, true, hosted.Quota{
-		UserLC:     r.PathValue("userID"),
+		UserLC:      r.PathValue("userID"),
 		AgentsLimit: *body.AgentsLimit, VCPULimit: *body.VCPULimit,
 		MemMBLimit: *body.MemGBLimit * 1024, DiskMBLimit: *body.DiskGBLimit * 1024,
 	})

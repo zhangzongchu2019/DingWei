@@ -79,7 +79,7 @@ func TestImagePullStreamErrorSurfaced(t *testing.T) {
 		return newFakeEngine(srv.Client(), srv.URL)
 	}
 	// ① 200 但流内 error（digest 不存在的真实形状）
-	if err := mk(`{"status":"Pulling from dingwei/base"}` + "\n" +
+	if err := mk(`{"status":"Pulling from dingwei/base"}`+"\n"+
 		`{"errorDetail":{"message":"manifest unknown"},"error":"manifest unknown"}`).imagePull(context.Background(), ref); err == nil ||
 		!strings.Contains(err.Error(), "manifest unknown") {
 		t.Fatalf("流内 error 必须上抛: %v", err)
@@ -89,8 +89,8 @@ func TestImagePullStreamErrorSurfaced(t *testing.T) {
 		t.Fatal("应答流畸形必须报错")
 	}
 	// ③ 正常进度流 ⇒ 绿
-	if err := mk(`{"status":"Pulling from dingwei/base"}` + "\n" +
-		`{"status":"Digest: sha256:0123"}` + "\n" + `{"status":"Status: Downloaded newer image"}`).imagePull(context.Background(), ref); err != nil {
+	if err := mk(`{"status":"Pulling from dingwei/base"}`+"\n"+
+		`{"status":"Digest: sha256:0123"}`+"\n"+`{"status":"Status: Downloaded newer image"}`).imagePull(context.Background(), ref); err != nil {
 		t.Fatalf("正常进度流应绿: %v", err)
 	}
 }

@@ -102,9 +102,10 @@ func (e *engine) call(ctx context.Context, method, path string, body any, out an
 
 // imagePull 拉取并校验 digest（fromImage 带 @sha256:）。
 // 🔴 r6 整包自查（真 fail-open，组长点名 pull 返回体）：images/create 的拉取失败以
-//    NDJSON 进度流内的 {"error":...} 回报、HTTP 状态仍是 200——原实现 out=nil 把返回体
-//    整个丢弃，digest 不存在等失败会被当成功。现逐行扫流：error/errorDetail 非空即拒；
-//    非空行解不出 JSON 同样拒（应答流畸形不得静默放过）。
+//
+//	NDJSON 进度流内的 {"error":...} 回报、HTTP 状态仍是 200——原实现 out=nil 把返回体
+//	整个丢弃，digest 不存在等失败会被当成功。现逐行扫流：error/errorDetail 非空即拒；
+//	非空行解不出 JSON 同样拒（应答流畸形不得静默放过）。
 func (e *engine) imagePull(ctx context.Context, ref string) error {
 	// fromImage 与 tag 分传：repo@sha256:digest 时 tag 置空，Engine 按 digest 拉。
 	raw, err := e.callRaw(ctx, "POST", "/images/create?fromImage="+urlQueryEscape(ref), nil)

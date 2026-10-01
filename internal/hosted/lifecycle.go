@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 )
 
 var (
@@ -59,15 +60,16 @@ func NewLifecycle(st *Store, pool *PoolService, idp IdentityIssuer, susp Identit
 	return &Lifecycle{st: st, pool: pool, idp: idp, susp: susp, gw: gw, images: images, backups: backups}
 }
 
-// guard 归属与节点健康预检。
+// guard 归属与节点健康预检。🔴 归属本层强制（复验阻断 4：任何非空操作者都能动任意席位
+// 不可接受）：操作者必须是建席者（＝归属业主，hosted_seat.created_by）；管理用户可在
+// 升级/重启/停用/启用上代操作；销毁不走 guard——Destroy 里更严（业主 8971bddf：
+// 管理者不能吊销别人的 Agent，isAdmin 不豁免）。
 func (l *Lifecycle) guard(ctx context.Context, agentID, actorLC string, isAdmin bool) (Seat, error) {
 	seat, err := l.st.GetSeat(ctx, agentID)
 	if err != nil {
 		return seat, err
 	}
-	// 归属：owner 在 identity 侧——接线时由 handler 以 N3.Actor 与 Agent.OwnerLC 比对后传入 isAdmin||isOwner
-	// 本层以 actor 非空＋（管理用户或传入的归属断言）为准；归属断言失败的翻译在 handler（not_owner）。
-	if actorLC == "" {
+	if actorLC == "" || (seat.CreatedBy != "" && actorLC != seat.CreatedBy && !isAdmin) {
 		return seat, ErrNotOwner
 	}
 	node, err := l.st.GetNode(ctx, seat.NodeID)
@@ -103,14 +105,33 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 	if err := l.st.SetSeatState(ctx, agentID, "busy", "upgrade", "upgrade", json.RawMessage(`{"to":`+jsonStr(imageRef)+`}`)); err != nil {
 		return err
 	}
-	// ① 先 Reissue（轮换：新凭据被取走旧才作废——旧容器不被提前踢下线）
-	if _, err := l.susp.ReissueHostedToken(ctx, agentID, actorLC); err != nil {
+	// ① 先 Reissue（轮换：新凭据被取走旧才作废——旧容器不被提前踢下线）。
+	// 🔴 复验阻断 2：新令牌必须随 upgrade_seat 下发（节点起新容器前写入令牌文件）——
+	//    丢弃返回值＝轮换永不发生＋身份层多一枚悬空令牌。节点侧失败回滚时该令牌未取走，
+	//    两小时自然过期（旧凭据全程有效）。
+	tok, err := l.susp.ReissueHostedToken(ctx, agentID, actorLC)
+	if err != nil {
 		_ = l.st.SetSeatState(ctx, agentID, "online", "", "online", nil)
 		return err
 	}
-	// ② 节点升级（先起新容器、健康后再删旧）
-	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "upgrade_seat", Params: json.RawMessage(
-		`{"seat_id":` + jsonStr(agentID) + `,"image":` + jsonStr(imageRef) + `}`)})
+	// ② 节点升级（先起新容器、健康后再删旧）。参数满足节点契约：image＋resources＋token_file
+	//    一个都不能少（复验阻断 1——节点 validate 缺 resources 一律 ErrParams）。
+	plan, _ := PlanByID(seat.Plan)
+	params, _ := json.Marshal(map[string]any{
+		"seat_id": agentID,
+		"image":   imageRef,
+		"resources": map[string]any{
+			"memory_mb":  plan.MemMB,
+			"cpu_shares": cpuShares(plan.VCPU),
+			"disk_mb":    plan.DiskMB,
+		},
+		"token_file": map[string]string{
+			"application_id": tok.ApplicationID,
+			"poll_token":     tok.PollToken,
+			"expires_at":     tok.ExpiresAt.UTC().Format(time.RFC3339),
+		},
+	})
+	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "upgrade_seat", Params: params})
 	if err != nil || !res.OK {
 		// 自动回滚：席位回到 online（旧容器与旧凭据未受影响——回滚本身即"旧态仍在"）
 		_ = l.st.SetSeatState(ctx, agentID, "online", "", "online", json.RawMessage(`{"rolled_back":true}`))
@@ -136,6 +157,12 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 	}
 	if seat.State != "online" && seat.State != "error" {
 		return ErrInvalidState
+	}
+	// 🔴 复验阻断 3：停用失败留下的席位是「容器活着但凭据已暂停」——重启若不先 Resume，
+	//    席位回 online 而凭据仍 4401，页面显示运行中却永远连不上。Resume 幂等（未暂停则
+	//    no-op），故一律先 Resume 再起。
+	if _, err := l.susp.ResumeHostedAgent(ctx, agentID, actorLC); err != nil {
+		return err
 	}
 	if err := l.st.SetSeatState(ctx, agentID, "busy", "restart", "restart", nil); err != nil {
 		return err
@@ -204,7 +231,9 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 	if err != nil {
 		return err
 	}
-	if actorLC == "" {
+	// 🔴 归属严格（复验阻断 4＋业主 8971bddf：管理者不能吊销别人的 Agent——isAdmin 不豁免）：
+	//    只有建席者（＝归属业主）本人能销毁。
+	if actorLC == "" || (seat.CreatedBy != "" && actorLC != seat.CreatedBy) {
 		return ErrNotOwner
 	}
 	if seat.State == "destroyed" {
@@ -221,6 +250,7 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 	}
 	// ③ 停删容器＋清 XFS 项目配额（节点侧 destroy_seat 内含配额清除；离线节点也可销毁——
 	//    节点离线时凭据已吊销是安全态，容器清理由节点重连后对账，登记 degraded 而不阻塞）
+	degraded := false
 	node, nerr := l.st.GetNode(ctx, seat.NodeID)
 	if nerr == nil && node.State == "online" {
 		res, serr := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
@@ -228,6 +258,12 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 			_ = l.st.SetSeatState(ctx, agentID, "error", "node_offline", "fail", json.RawMessage(`{"after":"retired"}`))
 			return ErrNodeOffline
 		}
+	} else {
+		// 🔴 复验阻断 5：节点离线销毁必须留对账记录——凭据已吊销是安全态，容器与配额
+		//    待节点重连后对账清理；审计一条＋销毁事件带 reconcile_pending 标记。
+		degraded = true
+		_ = l.st.AddAudit(ctx, actorLC, "seat.destroy_degraded", agentID,
+			json.RawMessage(`{"node":`+jsonStr(seat.NodeID)+`,"reason":"node_offline","reconcile":"pending"}`))
 	}
 	// ④ 账号回池（组长定：自动回池＋审计）
 	if seat.AccountRef.Valid {
@@ -235,5 +271,9 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 			return err
 		}
 	}
-	return l.st.SetSeatState(ctx, agentID, "destroyed", "", "destroy", json.RawMessage(`{"backup":`+jsonStr(backupRef)+`,"ttl_days":14}`))
+	detail := `{"backup":` + jsonStr(backupRef) + `,"ttl_days":14`
+	if degraded {
+		detail += `,"reconcile_pending":true`
+	}
+	return l.st.SetSeatState(ctx, agentID, "destroyed", "", "destroy", json.RawMessage(detail+`}`))
 }

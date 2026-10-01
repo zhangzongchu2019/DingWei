@@ -28,7 +28,9 @@ func (f *fakeIDP) IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode
 	return hosted.IssuedAgent{ID: id, FullName: name + ".zzc"},
 		hosted.EnrollToken{ApplicationID: "app1", PollToken: "tok", ExpiresAt: time.Now().Add(2 * time.Hour)}, nil
 }
-func (f *fakeIDP) RetireHostedAgent(ctx context.Context, agentID, by string) (bool, error) { return false, nil }
+func (f *fakeIDP) RetireHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
+	return false, nil
+}
 func (f *fakeIDP) ListHostedAgentIDsByOwner(ctx context.Context, ownerLC string) ([]string, error) {
 	return f.ids, nil
 }
@@ -114,8 +116,12 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP) {
 
 type idpSusp struct{ fakeIDP }
 
-func (idpSusp) SuspendHostedAgent(ctx context.Context, agentID, by string) (bool, error) { return true, nil }
-func (idpSusp) ResumeHostedAgent(ctx context.Context, agentID, by string) (bool, error)  { return true, nil }
+func (idpSusp) SuspendHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
+	return true, nil
+}
+func (idpSusp) ResumeHostedAgent(ctx context.Context, agentID, by string) (bool, error) {
+	return true, nil
+}
 func (idpSusp) ReissueHostedToken(ctx context.Context, agentID, by string) (hosted.EnrollToken, error) {
 	return hosted.EnrollToken{}, nil
 }

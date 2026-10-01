@@ -2,8 +2,8 @@ package hosted
 
 import (
 	"context"
-	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"encoding/json"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"testing"
 
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"

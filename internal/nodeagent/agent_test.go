@@ -21,13 +21,13 @@ import (
 // stubHub 桩 Hub：校验节点凭据（node_id＋secret 绑定），下发指令并读结果。
 // 对应 T-G4-10 判据的"Hub 验节点"一侧——真 Hub 用 hosted.AuthenticateNode，桩里用等价映射。
 type stubHub struct {
-	t      *testing.T
+	t       *testing.T
 	secrets map[string]string // node_id → secret（绑定校验：换身份持真凭据必拒）
-	cmds   chan Command
+	cmds    chan Command
 	rawCmds chan []byte // 原始帧（坏帧探针用——Command 结构 marshal 不出畸形 JSON）
 	results chan Result
-	all    chan []byte // 全部原始帧（capacity_report 等非 Result 帧断言用）
-	srv    *httptest.Server
+	all     chan []byte // 全部原始帧（capacity_report 等非 Result 帧断言用）
+	srv     *httptest.Server
 }
 
 func newStubHub(t *testing.T, secrets map[string]string) *stubHub {
@@ -83,13 +83,15 @@ func newStubHub(t *testing.T, secrets map[string]string) *stubHub {
 	return h
 }
 
-func (h *stubHub) url() string { return "wss" + strings.TrimPrefix(h.srv.URL, "https") + "/api/node/connect?node_id=nd_t1" }
+func (h *stubHub) url() string {
+	return "wss" + strings.TrimPrefix(h.srv.URL, "https") + "/api/node/connect?node_id=nd_t1"
+}
 
 func (h *stubHub) certSHA256() string {
 	sum := sha256.Sum256(h.srv.Certificate().Raw)
 	return hex.EncodeToString(sum[:])
 }
-func (h *stubHub) close()      { close(h.cmds); h.srv.Close() }
+func (h *stubHub) close()              { close(h.cmds); h.srv.Close() }
 func (h *stubHub) frames() chan []byte { return h.all }
 
 func mkConfig(t *testing.T, hubURL, secret string) Config {

@@ -2,8 +2,8 @@ package nodeagent
 
 import (
 	"errors"
-	"os"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
@@ -287,7 +287,7 @@ func TestClearUsesProjectCWithPath(t *testing.T) {
 }
 
 // r4 复验：lsattr 返回 err=nil 但输出空/畸形 ⇒ 不得 panic、走同一 rollback
-//（摘映射 project -C -p 完整调用、目录消失）。
+// （摘映射 project -C -p 完整调用、目录消失）。
 func TestSetupMalformedLsattrNoPanicFullRollback(t *testing.T) {
 	origFind, origRun, origLs, origCh := findmntTarget, xfsRun, lsattrOut, chownForSeatFn
 	defer func() { findmntTarget, xfsRun, lsattrOut, chownForSeatFn = origFind, origRun, origLs, origCh }()

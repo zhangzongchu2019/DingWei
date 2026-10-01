@@ -31,11 +31,11 @@ type ComboOption struct {
 }
 
 type AccountOption struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	LLM    string `json:"llm"`
-	Kind   string `json:"kind"`  // api_key|token_file
-	Last4  string `json:"last4"` // token_file 类为空串（页面改显示类别＋登记时间——见 HostedItem 同口径）
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	LLM   string `json:"llm"`
+	Kind  string `json:"kind"`  // api_key|token_file
+	Last4 string `json:"last4"` // token_file 类为空串（页面改显示类别＋登记时间——见 HostedItem 同口径）
 }
 
 type PlanOption struct {
@@ -73,9 +73,9 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 	}
 	for _, n := range nodes {
 		var c struct {
-			CPUTotal    int   `json:"cpu_total"`
-			MemFreeMB   int64 `json:"mem_free_mb"`
-			DiskFreeMB  int64 `json:"disk_free_mb"`
+			CPUTotal   int   `json:"cpu_total"`
+			MemFreeMB  int64 `json:"mem_free_mb"`
+			DiskFreeMB int64 `json:"disk_free_mb"`
 		}
 		_ = json.Unmarshal(n.Capacity, &c)
 		usedVCPU, uerr := o.st.NodeUsedVCPU(ctx, n.ID)

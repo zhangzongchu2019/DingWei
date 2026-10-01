@@ -1,12 +1,13 @@
 // Package nodegate Hub 侧节点网关（T-G4-35 同批装配①）：节点代理的 WSS 服务端。
 //
 // 协议（与 internal/nodeagent 对偶）：
-//   · 节点拨入 GET /api/node/connect?node_id=nd_x，Authorization: Bearer <节点凭据>，
-//     子协议 dingwei-node；验签＝hosted.Store.AuthenticateNode（哈希比对、撤销即拒）；
-//   · Hub→节点：Command{command_id, type, params}；节点→Hub：Result{command_id, ok, payload|error}
-//     与容量帧 {"type":"capacity_report","payload":{...}}；
-//   · 节点台账幂等（command_id 去重），Hub 侧断线即该连接的未决指令一律失败
-//     （node_offline——编排器失败链走 Retire/解绑清理；重发策略留给后续切片，节点侧重放安全）。
+//
+//	· 节点拨入 GET /api/node/connect?node_id=nd_x，Authorization: Bearer <节点凭据>，
+//	  子协议 dingwei-node；验签＝hosted.Store.AuthenticateNode（哈希比对、撤销即拒）；
+//	· Hub→节点：Command{command_id, type, params}；节点→Hub：Result{command_id, ok, payload|error}
+//	  与容量帧 {"type":"capacity_report","payload":{...}}；
+//	· 节点台账幂等（command_id 去重），Hub 侧断线即该连接的未决指令一律失败
+//	  （node_offline——编排器失败链走 Retire/解绑清理；重发策略留给后续切片，节点侧重放安全）。
 //
 // 连接即在线：接入成功置节点 online（首帧容量入账）；断线置 offline。同 node_id 新连接顶掉旧的。
 package nodegate
@@ -58,7 +59,7 @@ type Gate struct {
 	sendMax time.Duration // 单指令等结果上限（默认 60s）
 
 	mu      sync.Mutex
-	conns   map[string]*nodeConn            // nodeID → 活连接
+	conns   map[string]*nodeConn              // nodeID → 活连接
 	waiters map[string]chan hosted.NodeResult // commandID → 等待者
 }
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"time"
 )
 
@@ -15,10 +15,10 @@ import (
 // 编排与校验（配额/归属/联动）在上层（T-G4-30/40），本层只做忠实读写与约束内判定。
 
 var (
-	ErrNotFound      = errors.New("hosted: not found")
-	ErrAccountBound  = errors.New("hosted: account already bound")   // 一席一账号冲突
-	ErrInvalidState  = errors.New("hosted: invalid state")
-	ErrParams        = errors.New("hosted: 参数不合要求")
+	ErrNotFound     = errors.New("hosted: not found")
+	ErrAccountBound = errors.New("hosted: account already bound") // 一席一账号冲突
+	ErrInvalidState = errors.New("hosted: invalid state")
+	ErrParams       = errors.New("hosted: 参数不合要求")
 )
 
 // htx hosted 域占位（与 datad 的 dtx／fanout 的 ftx 同型：PendingCtx 调用点单位，
@@ -53,13 +53,13 @@ func (s *Store) qrow(ctx context.Context, q string, args ...any) (*sql.Row, erro
 // ---------- 节点 ----------
 
 type Node struct {
-	ID, Name         string
-	Labels           json.RawMessage
-	State            string
-	Capacity         json.RawMessage
-	DockerVersion    string
-	ProtocolVersion  int
-	LastSeenAt       *time.Time
+	ID, Name        string
+	Labels          json.RawMessage
+	State           string
+	Capacity        json.RawMessage
+	DockerVersion   string
+	ProtocolVersion int
+	LastSeenAt      *time.Time
 }
 
 func (s *Store) UpsertNode(ctx context.Context, n Node) error {
@@ -88,7 +88,7 @@ FROM g4_node WHERE id=$1`, id)
 		}
 
 		return row.Scan(
-		&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+			&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
 
 	}()
 	if errors.Is(err, sql.ErrNoRows) {
@@ -142,7 +142,7 @@ LIMIT 1`)
 			}
 
 			return row.Scan(
-			&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+				&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
 
 		}()
 	} else {
@@ -161,7 +161,7 @@ LIMIT 1`, pool)
 			}
 
 			return row.Scan(
-			&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
+				&n.ID, &n.Name, &n.Labels, &n.State, &n.Capacity, &n.DockerVersion, &n.ProtocolVersion, &n.LastSeenAt)
 
 		}()
 	}
@@ -251,8 +251,8 @@ FROM g4_hosted_seat WHERE agent_id=$1`, agentID)
 		}
 
 		return row.Scan(
-		&st.AgentID, &st.NodeID, &st.CLI, &st.LLM, &st.CredKind, &st.AccountRef,
-		&st.Plan, &st.State, &st.StateDetail, &st.ImageRef, &st.CreatedBy)
+			&st.AgentID, &st.NodeID, &st.CLI, &st.LLM, &st.CredKind, &st.AccountRef,
+			&st.Plan, &st.State, &st.StateDetail, &st.ImageRef, &st.CreatedBy)
 
 	}()
 	if errors.Is(err, sql.ErrNoRows) {
@@ -315,7 +315,7 @@ SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id, crea
 		}
 
 		return row.Scan(
-		&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.CreatedAt)
+			&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.CreatedAt)
 
 	}()
 	if errors.Is(err, sql.ErrNoRows) {
@@ -413,9 +413,9 @@ ON CONFLICT (account_id, user_lc) DO NOTHING`, accountID, userLC, by)
 // ---------- 配额 ----------
 
 type Quota struct {
-	UserLC                                         string
-	AgentsLimit, VCPULimit                         int
-	MemMBLimit, DiskMBLimit                        int64
+	UserLC                  string
+	AgentsLimit, VCPULimit  int
+	MemMBLimit, DiskMBLimit int64
 }
 
 // DefaultQuota 业主裁定的新用户默认配额（8971bddf）：未单独设置时按此计。
@@ -424,9 +424,9 @@ func DefaultQuota(userLC string) Quota {
 }
 
 type Usage struct {
-	Agents          int
-	VCPU            int
-	MemMB, DiskMB   int64
+	Agents        int
+	VCPU          int
+	MemMB, DiskMB int64
 }
 
 func (s *Store) GetQuota(ctx context.Context, userLC string) (Quota, error) {
@@ -443,7 +443,7 @@ SELECT user_lc, agents_limit, mem_mb_limit, disk_mb_limit, vcpu_limit FROM g4_qu
 		}
 
 		return row.Scan(
-		&q.UserLC, &q.AgentsLimit, &q.MemMBLimit, &q.DiskMBLimit, &q.VCPULimit)
+			&q.UserLC, &q.AgentsLimit, &q.MemMBLimit, &q.DiskMBLimit, &q.VCPULimit)
 
 	}()
 	if errors.Is(err, sql.ErrNoRows) {

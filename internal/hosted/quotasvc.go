@@ -48,8 +48,8 @@ func (e *QuotaExceededError) RemainingJSON() json.RawMessage {
 	raw, _ := json.Marshal(map[string]any{
 		"agents":  max0(int64(e.Quota.AgentsLimit) - int64(e.Usage.Agents)),
 		"vcpu":    max0(int64(e.Quota.VCPULimit) - int64(e.Usage.VCPU)),
-		"mem_gb":  max0(e.Quota.MemMBLimit - e.Usage.MemMB) / 1024,
-		"disk_gb": max0(e.Quota.DiskMBLimit - e.Usage.DiskMB) / 1024,
+		"mem_gb":  max0(e.Quota.MemMBLimit-e.Usage.MemMB) / 1024,
+		"disk_gb": max0(e.Quota.DiskMBLimit-e.Usage.DiskMB) / 1024,
 	})
 	return raw
 }

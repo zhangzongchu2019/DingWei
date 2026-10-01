@@ -16,17 +16,17 @@ import (
 )
 
 type Capacity struct {
-	NodeID       string            `json:"node_id"`
-	Labels       map[string]string `json:"labels,omitempty"`
-	At           time.Time         `json:"at"`
-	CPUTotal     int               `json:"cpu_total"`
-	MemTotalMB   int64             `json:"mem_total_mb"`
-	MemFreeMB    int64             `json:"mem_free_mb"`
-	DiskTotalMB  int64             `json:"disk_total_mb"`
-	DiskFreeMB   int64             `json:"disk_free_mb"`
-	Seats        []seatInfo        `json:"seats"`
-	ImageCount   int               `json:"image_count"`
-	ImageSizeMB  int64             `json:"image_size_mb"`
+	NodeID      string            `json:"node_id"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	At          time.Time         `json:"at"`
+	CPUTotal    int               `json:"cpu_total"`
+	MemTotalMB  int64             `json:"mem_total_mb"`
+	MemFreeMB   int64             `json:"mem_free_mb"`
+	DiskTotalMB int64             `json:"disk_total_mb"`
+	DiskFreeMB  int64             `json:"disk_free_mb"`
+	Seats       []seatInfo        `json:"seats"`
+	ImageCount  int               `json:"image_count"`
+	ImageSizeMB int64             `json:"image_size_mb"`
 }
 
 type seatInfo struct {
@@ -51,9 +51,9 @@ func (d *dockerOps) collectCapacity(ctx context.Context) (Capacity, error) {
 
 	// 容器清单（seat- 前缀）
 	var containers []struct {
-		ID     string   `json:"Id"`
-		Names  []string `json:"Names"`
-		State  string   `json:"State"`
+		ID    string   `json:"Id"`
+		Names []string `json:"Names"`
+		State string   `json:"State"`
 	}
 	if err := d.eng.call(ctx, "GET", "/containers/json?all=1", nil, &containers); err != nil {
 		return c, err

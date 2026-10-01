@@ -107,8 +107,8 @@ type Orchestrator struct {
 	// pendingTok 一次性入网令牌的内存暂存（T-G4-32）：Create 签发后暂存，RunJob 的
 	// create_seat 随参数下发后清除。🔴 不落库不落盘——Hub 重启即丢，滞留席位在启动阶段
 	// 以 credential_inject_failed 失败清理（Retire＋解绑，不占名），fail-closed 不硬撑。
-	tokMu       sync.Mutex
-	pendingTok  map[string]EnrollToken
+	tokMu      sync.Mutex
+	pendingTok map[string]EnrollToken
 }
 
 func NewOrchestrator(st *Store, pool *PoolService, idp IdentityIssuer, gw NodeGateway, combos CombosSource, images ImageCatalog) *Orchestrator {

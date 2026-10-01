@@ -336,6 +336,5 @@ func (f *fakeQuota) Clear(root, seatID string) error {
 	return nil
 }
 
-
 // XFSQuota 真机配额实现（root/systemd；cmd/nodeagent 用）。
 func XFSQuota() quotaOps { return xfsQuota{} }

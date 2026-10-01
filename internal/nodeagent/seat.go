@@ -92,8 +92,8 @@ func (d *dockerOps) seatContainerID(ctx context.Context, seatID string) (string,
 
 type seatResources struct {
 	MemoryMB  int64 `json:"memory_mb"`
-	CPUShares int    `json:"cpu_shares"`
-	DiskMB    int64  `json:"disk_mb"`
+	CPUShares int   `json:"cpu_shares"`
+	DiskMB    int64 `json:"disk_mb"`
 }
 
 func (r seatResources) validate() error {
@@ -128,8 +128,8 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources) 
 	memBytes := res.MemoryMB * 1024 * 1024
 	return map[string]any{
 		"Image": image,
-		"User":  "10001:10001",       // 非 root（隔离底线；与 seatRunUID 一致）
-		"Env":   d.seatEnv(),         // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
+		"User":  "10001:10001", // 非 root（隔离底线；与 seatRunUID 一致）
+		"Env":   d.seatEnv(),   // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
 		"HostConfig": map[string]any{
 			"ReadonlyRootfs": true,
 			"Tmpfs":          map[string]string{"/tmp": "size=8m"},
@@ -244,9 +244,9 @@ func (d *dockerOps) waitRunning(ctx context.Context, id string) error {
 
 func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
 	var p struct {
-		SeatID    string        `json:"seat_id"`
-		Image     string        `json:"image"`
-		Resources seatResources `json:"resources"`
+		SeatID    string          `json:"seat_id"`
+		Image     string          `json:"image"`
+		Resources seatResources   `json:"resources"`
 		Token     *tokenFile      `json:"token_file"`
 		Cred      *credentialFile `json:"credential_file"`
 	}
@@ -395,6 +395,7 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 		SeatID    string        `json:"seat_id"`
 		Image     string        `json:"image"`
 		Resources seatResources `json:"resources"`
+		Token     *tokenFile    `json:"token_file"` // 轮换的新令牌（Hub Reissue 先行；写新令牌文件再起新容器）
 	}
 	if err := strictDecode(params, &p); err != nil {
 		return nil, err
@@ -408,11 +409,22 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if err := p.Resources.validate(); err != nil {
 		return nil, err
 	}
+	// 与 create 同一闸（复验同型加固）：父切片与代理漏设即拒
+	if d.cgroupParent == "" {
+		return nil, fmt.Errorf("%w: cgroup 父切片未配置（eccc54bc：漏设即拒）", ErrParams)
+	}
+	if d.seatProxy == "" {
+		return nil, fmt.Errorf("%w: 席位代理未配置（第 12 条②：漏设即拒）", ErrParams)
+	}
 	oldID, err := d.seatContainerID(ctx, p.SeatID)
 	if err != nil {
 		return nil, err
 	}
 	if err := d.eng.imagePull(ctx, p.Image); err != nil {
+		return nil, err
+	}
+	// 新令牌文件先于新容器写入（轮换：新容器凭它取新凭据，取走旧才作废）
+	if err := d.writeTokenFile(p.SeatID, p.Token); err != nil {
 		return nil, err
 	}
 	newName := containerName(p.SeatID) + "-new"

@@ -12,11 +12,11 @@ package hosted
 
 import (
 	"context"
-	"database/sql"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"

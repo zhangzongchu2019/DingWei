@@ -110,4 +110,3 @@ func TestReportCapacityHandler(t *testing.T) {
 		t.Fatalf("采集内容: %s", out)
 	}
 }
-

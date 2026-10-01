@@ -10,7 +10,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -18,12 +17,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"io"
 	"time"
 )
 
 var (
-	ErrNodeAuth   = errors.New("hosted: node authentication failed")
+	ErrNodeAuth    = errors.New("hosted: node authentication failed")
 	ErrNodeRevoked = errors.New("hosted: node credential revoked")
 )
 

@@ -12,11 +12,11 @@ import (
 // ---------- 注入假件 ----------
 
 type fakeIdentity struct {
-	issued      []string
-	retired     []string
-	agentIDs    []string
-	issueErr    error
-	nextID      int
+	issued   []string
+	retired  []string
+	agentIDs []string
+	issueErr error
+	nextID   int
 }
 
 func (f *fakeIdentity) IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode, by string) (IssuedAgent, EnrollToken, error) {
@@ -40,8 +40,8 @@ func (f *fakeIdentity) ListHostedAgentIDsByOwner(ctx context.Context, ownerLC st
 }
 
 type fakeGateway struct {
-	sent    []NodeCommand
-	failOn  string // 命中该 Type 即返回失败（反向）
+	sent   []NodeCommand
+	failOn string // 命中该 Type 即返回失败（反向）
 }
 
 func (f *fakeGateway) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
@@ -362,7 +362,7 @@ func TestCreateWithoutGroupSucceeds(t *testing.T) {
 
 // 解冻批①（T-G4-50 解冻后对齐 G3 终版 800f24d8）：编组错误码映射——签发侧报
 // ErrGroupNotFound/ErrGroupClosed 时 Create 原样透传哨兵（契约机器码），且不留任何副作用
-//（未签发成功 ⇒ 无席位、无绑定、无 Retire）。
+// （未签发成功 ⇒ 无席位、无绑定、无 Retire）。
 func TestCreateGroupErrorsPropagate(t *testing.T) {
 	for _, want := range []error{ErrGroupNotFound, ErrGroupClosed} {
 		o, idp, _, s := mkOrch(t)

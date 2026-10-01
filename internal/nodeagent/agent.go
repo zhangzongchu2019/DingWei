@@ -4,12 +4,13 @@
 // 部署边界（隔离四条）：受 systemd 管理的宿主进程；payload 容器永不可见 Docker socket。
 //
 // 骨架四件：
-//  ① WSS 长连：节点验 Hub（TLS＋钉住的服务证书 SHA-256），Hub 验节点（node_id＋凭据，
-//    由 Hub 侧 AuthenticateNode 核——本包只管把凭据放对地方：Authorization 头，不进 URL）。
-//  ② 指令接收/结果回报框架：Command{command_id,type,params} → Handler → Result 回送。
-//  ③ command_id 幂等台账：已执行的指令重发 ⇒ 直接重报首次结果、不重复执行；
-//    台账落盘（0600）⇒ 进程重启、断线重连后重放旧指令同样不重复执行（重放用例的锚）。
-//  ④ Handler 注册表：T-G4-12 的 Docker 指令集按类型注册进来；骨架自带 report_capacity 桩。
+//
+//	① WSS 长连：节点验 Hub（TLS＋钉住的服务证书 SHA-256），Hub 验节点（node_id＋凭据，
+//	  由 Hub 侧 AuthenticateNode 核——本包只管把凭据放对地方：Authorization 头，不进 URL）。
+//	② 指令接收/结果回报框架：Command{command_id,type,params} → Handler → Result 回送。
+//	③ command_id 幂等台账：已执行的指令重发 ⇒ 直接重报首次结果、不重复执行；
+//	  台账落盘（0600）⇒ 进程重启、断线重连后重放旧指令同样不重复执行（重放用例的锚）。
+//	④ Handler 注册表：T-G4-12 的 Docker 指令集按类型注册进来；骨架自带 report_capacity 桩。
 package nodeagent
 
 import (
