@@ -13,6 +13,21 @@ from sessionhelper.driver_adapter import DriverAdapter
 from sessionhelper.openCodeDriver import OpenCodeProtocolDriver
 from sessionhelper.app import SessionHelper
 
+try:
+    from _home_isolation import HomeIsolation
+except ImportError:
+    from tests._home_isolation import HomeIsolation
+
+_HOME = HomeIsolation()
+
+
+def setUpModule():
+    _HOME.start()
+
+
+def tearDownModule():
+    _HOME.finish()
+
 
 BASE_ENV = {
     "SH_SESSION_NAME": "dev",
