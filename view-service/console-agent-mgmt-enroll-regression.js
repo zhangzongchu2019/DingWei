@@ -52,12 +52,13 @@ function groupsPayload() {
   return {
     principal: 'owner', owned_agents: agents,
     groups: [
-      { code: GROUP_MINE, short_name: '团队甲', creator_principal: 'owner', can_manage: true, owner_display_name: '业主甲', leader_key_id: 'key-leader', leader_session_name: 'zzc-leader-2642', additions_closed: false, members: [member(agents[0]), ...extraMembers.map(member)] },
+      { code: GROUP_MINE, short_name: '团队甲', creator_principal: 'owner', can_manage: !noManageableGroup, owner_display_name: '业主甲', leader_key_id: 'key-leader', leader_session_name: 'zzc-leader-2642', additions_closed: false, members: [member(agents[0]), ...extraMembers.map(member)] },
       { code: GROUP_OTHER, short_name: '别人组', creator_principal: 'someone', can_manage: false, owner_display_name: '业主乙', leader_key_id: 'key-x', leader_session_name: 'zzc-x-2642', additions_closed: false, members: [] },
     ],
   };
 }
 let apps = [];
+let noManageableGroup = false;
 const PAIRING = { a1: '123456', a2: '654321', a3: '111111' };
 function resetApps() {
   apps = [
@@ -180,7 +181,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
 
     await test('group dropdown offers only manageable groups', async () => {
       await rows().first().locator('.enroll-open').click();
-      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['（不加入编组）', '团队甲']);
+      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['团队甲'], 'group is required: no "no group" choice');
     });
 
     await test('empty required fields are hinted locally and nothing is sent', async () => {
@@ -188,6 +189,19 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#enrollApprove').click();
       assert.match(await page.locator('#enrollFeedback').textContent(), /请填写/);
       assert.strictEqual(writes.length, before);
+    });
+
+    await test('with no manageable group, approve is blocked locally and nothing is sent', async () => {
+      noManageableGroup = true; await page.evaluate(() => refreshGroups('no-group')); await page.waitForTimeout(150);
+      await page.locator('#enrollCancel').click(); await rows().first().locator('.enroll-open').click();
+      assert.deepStrictEqual(await page.locator('#enrollGroup option').allTextContents(), ['（暂无可选编组,请先添加编组）']);
+      await type('#enrollCode', '123456'); await type('#enrollName', 'Nogroup');
+      const before = writes.length;
+      await page.locator('#enrollApprove').click();
+      assert.match(await feedbackText(), /选择所属编组/);
+      assert.strictEqual(writes.length, before);
+      noManageableGroup = false; await page.evaluate(() => refreshGroups('group-back')); await page.waitForTimeout(150);
+      await page.locator('#enrollCancel').click(); await rows().first().locator('.enroll-open').click();
     });
 
     await test('wrong pairing code: Hub message shown, application kept, typed inputs kept, editor stays open', async () => {

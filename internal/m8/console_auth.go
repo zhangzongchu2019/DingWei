@@ -615,7 +615,7 @@ function enrollCloseEditor(){
 function enrollFillGroups(){
   var sel=document.getElementById('enrollGroup');if(!sel)return;var keep=sel.value;sel.replaceChildren();
   var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});
-  var none=document.createElement('option');none.value='';none.textContent=own.length?'（不加入编组）':'（暂无可选编组）';sel.append(none);
+  if(!own.length){var none=document.createElement('option');none.value='';none.textContent='（暂无可选编组,请先添加编组）';sel.append(none);}
   own.forEach(function(g){var o=document.createElement('option');o.value=g.code;o.textContent=g.short_name||'历史组';sel.append(o);});
   if(keep&&own.some(function(g){return g.code===keep;}))sel.value=keep;
 }
@@ -657,7 +657,7 @@ async function refreshEnroll(){
 function enrollBusy(on){['enrollApprove','enrollReject'].forEach(function(id){var b=document.getElementById(id);if(b)b.disabled=on;});}
 async function enrollApprove(){
   var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),group=document.getElementById('enrollGroup').value,openedId=enrollOpenId;
-  if(!code||!name){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码和 Agent 名称');return;}
+  if(!code||!name||!group){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码、Agent 名称,并选择所属编组');return;}
   enrollBusy(true);var res=await enrollPost(ENROLL_API.approve(openedId),{pairing_code:code,agent_name:name,group_id:group});enrollBusy(false);
   if(!res.ok){var gone=res.status===410||(res.code==='pairing_mismatch'&&/已被拒绝/.test(res.text));if(!gone){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
   enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();refreshGroups('enroll');refreshAgents();
