@@ -82,7 +82,9 @@ func newManagementTestHub(t *testing.T) (*Hub, *store.SQLite) {
 			}
 		}
 	}
-	return New(db, ConsoleAuthMode{enabled: true}), db
+	h := New(db, ConsoleAuthMode{enabled: true})
+	t.Cleanup(h.Close)
+	return h, db
 }
 
 func runManagementGuard(hub *Hub, principalID string) (*httptest.ResponseRecorder, bool) {
@@ -194,6 +196,7 @@ func TestRequireConsoleManagementFailsClosed(t *testing.T) {
 	})
 	t.Run("repo 不具备角色取数面 ⇒ 403", func(t *testing.T) {
 		hub := New(&stubNoPlatformRole{}, ConsoleAuthMode{enabled: true})
+		t.Cleanup(hub.Close)
 		rec, called := runManagementGuard(hub, "p-mgmt")
 		if called || rec.Code != http.StatusForbidden {
 			t.Fatalf("查不了 ≠ 通过:code=%d called=%v", rec.Code, called)
@@ -211,6 +214,7 @@ func TestRequireConsoleManagementFailsClosed(t *testing.T) {
 			t.Fatal(err)
 		}
 		hub := New(&stubRoleError{SQLite: db}, ConsoleAuthMode{enabled: true})
+		t.Cleanup(hub.Close)
 		rec, called := runManagementGuard(hub, "p-mgmt")
 		if called || rec.Code != http.StatusServiceUnavailable {
 			t.Fatalf("查不了 ≠ 通过:code=%d called=%v", rec.Code, called)

@@ -110,7 +110,7 @@ func TestIPCSendBodyAMRUsesSharedSyntaxFeedbackWithoutReplacingDirectPath(t *tes
 	h, _, ctx := newTestHub(t)
 	p := testAMRProcessor()
 	p.hub = h
-	h.amr = p
+	replaceAMR(h, p)
 	client := attachAMRNoticeClient(t, h, ctx, "ipc-key", "ipc-source")
 	c := h.sessionClients["ipc-key"]["ipc-source"]
 	original := model.Envelope{ID: "ipc-delivery-1", To: "primary#ipc-key", From: "ipc-source#ipc-key", Body: "正文提到 @张宗楚 但这不是合法地址"}

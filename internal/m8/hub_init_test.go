@@ -9,6 +9,7 @@ import (
 // reads and then panic on the first production write while h.mu is held.
 func TestNewInitializesEveryHubMap(t *testing.T) {
 	hub := New(nil, ConsoleAuthDisabled())
+	t.Cleanup(hub.Close)
 	v := reflect.ValueOf(hub).Elem()
 	typ := v.Type()
 	for i := 0; i < v.NumField(); i++ {
