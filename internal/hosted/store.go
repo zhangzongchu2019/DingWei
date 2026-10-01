@@ -250,6 +250,7 @@ type Account struct {
 	Last4                    string
 	State                    string
 	BoundAgentID             sql.NullString
+	CreatedAt                time.Time // 登记时间（token_file 类账号的 console 显示用——无后四位）
 }
 
 func (s *Store) CreateAccount(ctx context.Context, a Account, secretEnc []byte, by string) error {
@@ -265,7 +266,7 @@ func (s *Store) GetAccount(ctx context.Context, id string) (Account, error) {
 	err := func() error {
 
 		row, err := s.qrow(ctx, `
-SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id FROM g4_account_pool WHERE id=$1`, id)
+SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id, created_at FROM g4_account_pool WHERE id=$1`, id)
 
 		if err != nil {
 
@@ -274,7 +275,7 @@ SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id FROM 
 		}
 
 		return row.Scan(
-		&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID)
+		&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.CreatedAt)
 
 	}()
 	if errors.Is(err, sql.ErrNoRows) {
@@ -319,7 +320,7 @@ UPDATE g4_account_pool SET state=$2, updated_at=now() WHERE id=$1 AND state <> '
 // 永不返回 secret_enc（B7：密钥不出现在任何应答里）。
 func (s *Store) ListUsableAccounts(ctx context.Context, userLC, cli, llm string) ([]Account, error) {
 	rows, err := s.pool.Query(ctx, htx(), `
-SELECT p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id
+SELECT p.id, p.name, p.kind, p.cli, p.llm, p.key_version, p.last4, p.state, p.bound_agent_id, p.created_at
 FROM g4_account_pool p
 JOIN g4_account_grant g ON g.account_id = p.id AND g.user_lc = $1
 WHERE p.state = 'available' AND p.cli = $2 AND p.llm = $3
@@ -331,7 +332,7 @@ ORDER BY p.name`, userLC, cli, llm)
 	var out []Account
 	for rows.Next() {
 		var a Account
-		if err := rows.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID); err != nil {
+		if err := rows.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, a)

@@ -329,8 +329,9 @@ func TestCreateGroupErrorsPropagate(t *testing.T) {
 	}
 }
 
-// 解冻批②：hosted 列表注入（T-G4-35 配套，函数形状给 opus50tc2k）——状态映射与
-// upgradable 逐格断言；未落席位/已销毁 ⇒ 缺席（页面降级，不编造状态）。
+// 解冻批②（T-G4-51）：hosted 列表注入——G3 注入点形状 HostedItem(ctx, agentID)
+// (map[string]any, bool)；契约字段 node_name/state/upgradable/image_version/plan/account_last4，
+// token_file 类出 account_kind＋account_registered_at。状态映射逐格＋缺席语义＋账号两形态。
 func TestHostedOverlay(t *testing.T) {
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
@@ -345,41 +346,77 @@ func TestHostedOverlay(t *testing.T) {
 			}
 		}
 	}
-	mkSeat("ag_run", "nd_free", "online", "old-ref")       // 有新镜像 ⇒ running＋upgradable
-	mkSeat("ag_dis", "nd_free", "disabled", "old-ref")     // disabled（upgradable 必须 false）
-	mkSeat("ag_busy", "nd_free", "busy", "old-ref")        // 操作中
-	mkSeat("ag_off", "nd_full", "online", "old-ref")       // 节点离线 ⇒ abnormal
-	mkSeat("ag_err", "nd_free", "error", "old-ref")        // error ⇒ abnormal
-	mkSeat("ag_dead", "nd_free", "destroyed", "old-ref")   // 已销毁 ⇒ 缺席
+	mkSeat("ag_run", "nd_free", "online", "old-ref")     // running＋upgradable
+	mkSeat("ag_dis", "nd_free", "disabled", "old-ref")   // disabled（不可升级）
+	mkSeat("ag_busy", "nd_free", "busy", "old-ref")      // busy
+	mkSeat("ag_off", "nd_full", "online", "old-ref")     // 节点离线 ⇒ abnormal
+	mkSeat("ag_err", "nd_free", "error", "old-ref")      // error ⇒ abnormal
+	mkSeat("ag_dead", "nd_free", "destroyed", "old-ref") // 已销毁 ⇒ 缺席
 	mkSeat("ag_fresh", "nd_free", "online", "hub.local/dingwei/base-codex@sha256:"+
-		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef") // 已是最新 ⇒ 不可升级
-	// 节点离线化
+		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef") // 已最新
+	// 账号两形态：token_file（池里那枚）绑 ag_run；另登记一枚 api_key 绑 ag_dis
+	acctID := acctOf(t, o.pool)
+	if err := s.BindAccount(ctx, acctID, "ag_run"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetSeatState(ctx, "ag_run", "online", "", "", nil); err != nil {
+		t.Fatal(err)
+	}
+	// 直接补 account_ref（CreateSeat 后绑定的列不同步——席位列是快照）
+	if _, err := s.pool.Exec(ctx, htx(), `UPDATE g4_hosted_seat SET account_ref=$1 WHERE agent_id='ag_run'`, acctID); err != nil {
+		t.Fatal(err)
+	}
+	apiAcct, err := o.pool.Register(ctx, "admin", true, "team-deepseek", "api_key", "codex", "gpt", "sk-1234567890abcd")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.pool.Exec(ctx, htx(), `UPDATE g4_hosted_seat SET account_ref=$1 WHERE agent_id='ag_dis'`, apiAcct.ID); err != nil {
+		t.Fatal(err)
+	}
 	if err := s.SetNodeState(ctx, "nd_full", "offline"); err != nil {
 		t.Fatal(err)
 	}
+
 	ov, err := o.HostedOverlay(ctx, []string{"ag_run", "ag_dis", "ag_busy", "ag_off", "ag_err", "ag_dead", "ag_fresh", "ag_ghost"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(ov) != 6 { // destroyed 与未落席位（ag_ghost）缺席
+	if len(ov) != 6 { // destroyed 与未落席位缺席
 		t.Fatalf("缺席语义: %v", ov)
 	}
-	if ov["ag_run"].State != "running" || !ov["ag_run"].Upgradable || ov["ag_run"].NodeName != "free" {
-		t.Fatalf("running 格: %+v", ov["ag_run"])
+	run := ov["ag_run"]
+	if run["state"] != "running" || run["upgradable"] != true || run["node_name"] != "free" ||
+		run["plan"] != "2c4g" || run["image_version"] != "old-ref" {
+		t.Fatalf("running 格: %v", run)
 	}
-	if ov["ag_dis"].State != "disabled" || ov["ag_dis"].Upgradable {
-		t.Fatalf("disabled 格（disabled 不可升级）: %+v", ov["ag_dis"])
+	// token_file 账号 ⇒ 类别＋登记时间，无 account_last4
+	if run["account_kind"] != "token_file" || run["account_registered_at"] == "" {
+		t.Fatalf("token_file 显示格: %v", run)
 	}
-	if ov["ag_busy"].State != "busy" {
-		t.Fatalf("busy 格: %+v", ov["ag_busy"])
+	if _, has := run["account_last4"]; has {
+		t.Fatalf("token_file 不得出后四位: %v", run)
 	}
-	if ov["ag_off"].State != "abnormal" {
-		t.Fatalf("节点离线＝abnormal: %+v", ov["ag_off"])
+	dis := ov["ag_dis"]
+	if dis["state"] != "disabled" || dis["upgradable"] != false {
+		t.Fatalf("disabled 格: %v", dis)
 	}
-	if ov["ag_err"].State != "abnormal" {
-		t.Fatalf("error＝abnormal: %+v", ov["ag_err"])
+	if dis["account_last4"] != "abcd" { // api_key ⇒ 后四位
+		t.Fatalf("api_key 显示格: %v", dis)
 	}
-	if ov["ag_fresh"].State != "running" || ov["ag_fresh"].Upgradable {
-		t.Fatalf("已最新＝running 不可升级: %+v", ov["ag_fresh"])
+	if ov["ag_busy"]["state"] != "busy" || ov["ag_off"]["state"] != "abnormal" || ov["ag_err"]["state"] != "abnormal" {
+		t.Fatalf("busy/offline/error 格: %v", ov)
+	}
+	if ov["ag_fresh"]["state"] != "running" || ov["ag_fresh"]["upgradable"] != false {
+		t.Fatalf("已最新格: %v", ov["ag_fresh"])
+	}
+	// G3 注入点形状：缺席/错误收敛 false
+	if m, ok := o.HostedItem(ctx, "ag_ghost"); ok || m != nil {
+		t.Fatalf("未落席位应 false: %v %v", m, ok)
+	}
+	if m, ok := o.HostedItem(ctx, "ag_dead"); ok || m != nil {
+		t.Fatalf("已销毁应 false: %v %v", m, ok)
+	}
+	if m, ok := o.HostedItem(ctx, "ag_run"); !ok || m["state"] != "running" {
+		t.Fatalf("HostedItem 正常格: %v %v", m, ok)
 	}
 }

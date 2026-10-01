@@ -190,7 +190,7 @@ func (p *PoolService) ListAdmin(ctx context.Context, by string, isAdmin bool) ([
 		return nil, err
 	}
 	rows, err := p.st.pool.Query(ctx, htx(), `
-SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id
+SELECT id, name, kind, cli, llm, key_version, last4, state, bound_agent_id, created_at
 FROM g4_account_pool ORDER BY name`)
 	if err != nil {
 		return nil, err
@@ -199,7 +199,7 @@ FROM g4_account_pool ORDER BY name`)
 	var out []Account
 	for rows.Next() {
 		var a Account
-		if err := rows.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID); err != nil {
+		if err := rows.Scan(&a.ID, &a.Name, &a.Kind, &a.CLI, &a.LLM, &a.KeyVersion, &a.Last4, &a.State, &a.BoundAgentID, &a.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, a)
