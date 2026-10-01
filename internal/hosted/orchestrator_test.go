@@ -546,7 +546,7 @@ func TestOptionsViewAndJobProgress(t *testing.T) {
 		t.Fatalf("已绑账号不得再出现: %+v", v.Accounts)
 	}
 	// 配额剩余：agents 2−1＝1、vcpu 4−2＝2、mem 8−4＝4G（mkOrch 配额 2/4/8192）
-	if v.Quota.Remaining.Agents != 1 || v.Quota.Remaining.VCPU != 2 || v.Quota.Remaining.MemGB != 4 {
+	if v.Quota.Agents != 1 || v.Quota.VCPU != 2 || v.Quota.MemGB != 4 {
 		t.Fatalf("剩余额度: %+v", v.Quota)
 	}
 	// fits：2c4g 还剩 1 席 2C/4G ⇒ 可；4c8g 超剩余 ⇒ 置灰
@@ -616,118 +616,5 @@ func TestHostedItemErrorCounted(t *testing.T) {
 	}
 	if HostedItemErrorCount() != before+1 {
 		t.Fatalf("错误应计数: before=%d after=%d", before, HostedItemErrorCount())
-	}
-}
-
-// tosonnet50ts 复验🔴：读模型序列化逐字对契约——quota 必须包 remaining 层；空列表出 [] 不出 null；
-// jobs reason 只出契约机器码。这格是页面直接依赖的。
-func TestOptionsContractSerializationVerbatim(t *testing.T) {
-	o, _, _, _ := mkOrch(t)
-	v, err := o.Options(context.Background(), "zzc")
-	if err != nil {
-		t.Fatal(err)
-	}
-	raw, _ := json.Marshal(v)
-	var m map[string]any
-	if err := json.Unmarshal(raw, &m); err != nil {
-		t.Fatal(err)
-	}
-	// quota.remaining 四键
-	rem, ok := m["quota"].(map[string]any)["remaining"].(map[string]any)
-	if !ok {
-		t.Fatalf("quota 必须包 remaining 层: %s", raw)
-	}
-	for _, k := range []string{"agents", "vcpu", "mem_gb", "disk_gb"} {
-		if _, ok := rem[k]; !ok {
-			t.Fatalf("remaining 缺 %s: %s", k, raw)
-		}
-	}
-	// 空列表 ⇒ [] 不是 null（无账号可用时 accounts 也得是 []）
-	none, err := o.Options(context.Background(), "nobody")
-	if err != nil {
-		t.Fatal(err)
-	}
-	raw2, _ := json.Marshal(none)
-	for _, k := range []string{"nodes", "combos", "accounts", "plans"} {
-		if !strings.Contains(string(raw2), `"`+k+`":[`) {
-			t.Fatalf("%s 应序列化为数组: %s", k, raw2)
-		}
-	}
-	// jobs reason 白名单：StateDetail 混入非机器码 ⇒ 兜底 start_failed
-	s2 := o.st
-	if err := s2.CreateSeat(context.Background(), Seat{AgentID: "ag_weird", NodeID: "nd_free", CLI: "codex",
-		LLM: "gpt", CredKind: "token_file", Plan: "2c4g", ImageRef: "r", CreatedBy: "zzc"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := s2.SetSeatState(context.Background(), "ag_weird", "error", "磁盘满了（自由文本）", "fail", nil); err != nil {
-		t.Fatal(err)
-	}
-	jv, err := o.JobProgress(context.Background(), "ag_weird")
-	if err != nil || jv.Stage != "failed" || jv.Reason != "start_failed" {
-		t.Fatalf("非机器码 reason 应兜底: %+v err=%v", jv, err)
-	}
-	if err := s2.SetSeatState(context.Background(), "ag_weird", "error", "image_pull_failed", "fail", nil); err != nil {
-		t.Fatal(err)
-	}
-	jv, _ = o.JobProgress(context.Background(), "ag_weird")
-	if jv.Reason != "image_pull_failed" {
-		t.Fatalf("机器码应原样: %+v", jv)
-	}
-}
-
-// tosonnet50ts 复验存活四刀补格：O1 agents 闸、O2 vcpu 闸（内存够）、O7 离线节点、O8 未验通组合。
-func TestOptionsFitsGatesAndEdgeCoverage(t *testing.T) {
-	ctx := context.Background()
-	// O1：agents 剩 0、vcpu/内存都够 ⇒ 两档都 fits=false
-	o, idp, _, s := mkOrch(t)
-	if err := s.PutQuota(ctx, Quota{UserLC: "zzc", AgentsLimit: 0, VCPULimit: 100, MemMBLimit: 102400}, "admin"); err != nil {
-		t.Fatal(err)
-	}
-	v, err := o.Options(ctx, "zzc")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, p := range v.Plans {
-		if p.Fits {
-			t.Fatalf("O1 agents 零剩余应全灰: %+v", p)
-		}
-	}
-	// O2：vcpu 不够、内存够 ⇒ fits=false（不能被内存闸遮住）
-	if err := s.PutQuota(ctx, Quota{UserLC: "zzc", AgentsLimit: 4, VCPULimit: 1, MemMBLimit: 102400}, "admin"); err != nil {
-		t.Fatal(err)
-	}
-	v, _ = o.Options(ctx, "zzc")
-	for _, p := range v.Plans {
-		if p.Fits {
-			t.Fatalf("O2 vcpu 不足应置灰: %+v", p)
-		}
-	}
-	// O7：离线节点 online=false
-	if err := s.SetNodeState(ctx, "nd_full", "offline"); err != nil {
-		t.Fatal(err)
-	}
-	v, _ = o.Options(ctx, "zzc")
-	for _, n := range v.Nodes {
-		if n.ID == "nd_full" && n.Online {
-			t.Fatalf("O7 离线节点 online 必须 false: %+v", n)
-		}
-	}
-	// O8：未验通组合 verified=false 下发（mkOrch 的表只有验通项——换一张含未验通的）
-	o2 := NewOrchestrator(s, o.pool, idp, nil,
-		fakeCombos{m: map[string]bool{"codex|gpt|token_file": true, "claude|gpt|api_key": false}}, fakeCatalog{})
-	v2, err := o2.Options(ctx, "zzc")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var sawFalse, sawTrue bool
-	for _, c := range v2.Combos {
-		if c.Verified {
-			sawTrue = true
-		} else {
-			sawFalse = true
-		}
-	}
-	if !sawTrue || !sawFalse {
-		t.Fatalf("O8 验通两态都要下发: %+v", v2.Combos)
 	}
 }

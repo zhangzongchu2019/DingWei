@@ -53,27 +53,18 @@ type QuotaRemaining struct {
 	DiskGB int64 `json:"disk_gb"`
 }
 
-// OptionsQuota 契约第一节的形状：quota 包一层 remaining（页面按 opts.quota.remaining 读——
-// tosonnet50ts 复验🔴：扁平序列化让页面读出 undefined）。
-type OptionsQuota struct {
-	Remaining QuotaRemaining `json:"remaining"`
-}
-
 type OptionsView struct {
 	Nodes    []NodeOption    `json:"nodes"`
 	Combos   []ComboOption   `json:"combos"`
 	Accounts []AccountOption `json:"accounts"`
 	Plans    []PlanOption    `json:"plans"`
-	Quota    OptionsQuota    `json:"quota"`
+	Quota    QuotaRemaining  `json:"quota"`
 }
 
 // Options 新建表单数据源（一次返回不拆；本期几十条级不分页——契约第一节）。
 // 账号＝本人被授权且未绑定（ListUsableAccounts 口径；席位创建后该账号即绑定，下拉开不出）。
 func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView, error) {
-	// 空列表序列化成 [] 而不是 null（契约示例是数组；nil 切片会出 null——tosonnet50ts 复验小意见）
-	v := OptionsView{
-		Nodes: []NodeOption{}, Combos: []ComboOption{}, Accounts: []AccountOption{}, Plans: []PlanOption{},
-	}
+	var v OptionsView
 
 	// 节点：剩余内存/磁盘来自容量上报（心跳真采集）；free_vcpu＝cpu_total−在席套餐占用
 	nodes, err := o.st.ListNodes(ctx)
@@ -121,7 +112,7 @@ func (o *Orchestrator) Options(ctx context.Context, ownerLC string) (OptionsView
 	if err != nil {
 		return v, err
 	}
-	v.Quota.Remaining = QuotaRemaining{
+	v.Quota = QuotaRemaining{
 		Agents: max0(int64(quota.AgentsLimit) - int64(usage.Agents)),
 		VCPU:   max0(int64(quota.VCPULimit) - int64(usage.VCPU)),
 		MemGB:  max0(quota.MemMBLimit-usage.MemMB) / 1024,
@@ -165,19 +156,11 @@ func (o *Orchestrator) JobProgress(ctx context.Context, jobID string) (JobView, 
 		return JobView{Stage: "online", AgentID: seat.AgentID}, nil
 	case "busy":
 		return JobView{Stage: "online", AgentID: seat.AgentID}, nil // 升级/重启中：席位仍在线（蒙版用于创建链）
-	default: // error/failed/destroyed 等 ⇒ failed
-		// 🔴 reason 只许契约机器码（tosonnet50ts 复验小意见：StateDetail 若混入非机器码文本
-		//    会漏给页面）——白名单外一律 start_failed 兜底
-		return JobView{Stage: "failed", Reason: jobReasonMachineCode(seat.StateDetail)}, nil
+	default: // error/failed/destroyed 等 ⇒ failed，reason＝状态机记录的机器码
+		reason := seat.StateDetail
+		if reason == "" {
+			reason = "start_failed"
+		}
+		return JobView{Stage: "failed", Reason: reason}, nil
 	}
-}
-
-// jobReasonMachineCode 失败原因白名单（契约第一节七个机器码；非白名单一律 start_failed）。
-func jobReasonMachineCode(detail string) string {
-	switch detail {
-	case "queue_timeout", "pull_timeout", "start_timeout",
-		"image_pull_failed", "start_failed", "credential_inject_failed", "node_offline":
-		return detail
-	}
-	return "start_failed"
 }
