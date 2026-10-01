@@ -142,7 +142,7 @@ func TestB3PullFailureCleanup(t *testing.T) {
 	}
 	// 配额归还的可观察面：options 剩余回到满格
 	_, ov := r.call("zzc", "GET", "/api/console/hosted/options", "")
-	quota := ov["quota"].(map[string]any)
+	quota := ov["quota"].(map[string]any)["remaining"].(map[string]any) // 契约：quota 包一层 remaining
 	if quota["agents"].(float64) != 2 {
 		t.Fatalf("B3 配额应归还: %v", quota)
 	}
