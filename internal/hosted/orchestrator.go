@@ -35,6 +35,9 @@ type IssuedAgent struct {
 }
 
 type IdentityIssuer interface {
+	// IssueHostedAgent 签发。编组可缺省（groupCode 空＝不入组）；实现方（接线适配器）
+	// 必须把 identity.ErrGroupNotFound/ErrGroupClosed 译为本包 ErrGroupNotFound/ErrGroupClosed
+	// 哨兵（契约机器码 group_not_found/group_closed——页面只认机器码）。
 	IssueHostedAgent(ctx context.Context, ownerLC, name, groupCode, by string) (IssuedAgent, EnrollToken, error)
 	RetireHostedAgent(ctx context.Context, agentID, by string) (bool, error)
 	// ListHostedAgentIDsByOwner 配额已用统计需名下席位清单（hosted_seat 不存 owner——G3 重审③）。
@@ -81,6 +84,10 @@ var (
 	ErrPlanExceedsQuota  = errors.New("plan_exceeds_quota")
 	ErrNoNodeCapacity    = errors.New("node_no_capacity")
 	ErrAccountNotAllowed = errors.New("account_not_allowed")
+	// 编组两码（契约 v2 第一节；G3 终版 800f24d8 的 identity.ErrGroupNotFound/ErrGroupClosed
+	// 由接线适配器译成这两个哨兵——编组可缺省，给了才校验）。
+	ErrGroupNotFound = errors.New("group_not_found")
+	ErrGroupClosed   = errors.New("group_closed")
 )
 
 // ---------- 编排器 ----------

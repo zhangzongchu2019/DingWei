@@ -306,3 +306,80 @@ func TestCreateWithoutGroupSucceeds(t *testing.T) {
 		t.Fatalf("应 queued: %+v", out)
 	}
 }
+
+// 解冻批①（T-G4-50 解冻后对齐 G3 终版 800f24d8）：编组错误码映射——签发侧报
+// ErrGroupNotFound/ErrGroupClosed 时 Create 原样透传哨兵（契约机器码），且不留任何副作用
+//（未签发成功 ⇒ 无席位、无绑定、无 Retire）。
+func TestCreateGroupErrorsPropagate(t *testing.T) {
+	for _, want := range []error{ErrGroupNotFound, ErrGroupClosed} {
+		o, idp, _, s := mkOrch(t)
+		acctID := acctOf(t, o.pool)
+		idp.issueErr = want
+		_, err := o.Create(context.Background(), CreateRequest{
+			OwnerLC: "zzc", By: "zzc", Name: "w", GroupCode: "g-dead",
+			NodeID: "auto", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctID, Plan: "2c4g",
+		})
+		if !errors.Is(err, want) {
+			t.Fatalf("应透传 %v, 得 %v", want, err)
+		}
+		if len(idp.issued) != 0 || len(idp.retired) != 0 {
+			t.Fatalf("签发失败不应有签发/吊销副作用: %+v", idp)
+		}
+		_ = s
+	}
+}
+
+// 解冻批②：hosted 列表注入（T-G4-35 配套，函数形状给 opus50tc2k）——状态映射与
+// upgradable 逐格断言；未落席位/已销毁 ⇒ 缺席（页面降级，不编造状态）。
+func TestHostedOverlay(t *testing.T) {
+	o, _, _, s := mkOrch(t)
+	ctx := context.Background()
+	mkSeat := func(agentID, nodeID, state, imageRef string) {
+		if err := s.CreateSeat(ctx, Seat{AgentID: agentID, NodeID: nodeID, CLI: "codex", LLM: "gpt",
+			CredKind: "token_file", Plan: "2c4g", ImageRef: imageRef, CreatedBy: "zzc"}); err != nil {
+			t.Fatal(err)
+		}
+		if state != "queued" {
+			if err := s.SetSeatState(ctx, agentID, state, "", "", nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	mkSeat("ag_run", "nd_free", "online", "old-ref")       // 有新镜像 ⇒ running＋upgradable
+	mkSeat("ag_dis", "nd_free", "disabled", "old-ref")     // disabled（upgradable 必须 false）
+	mkSeat("ag_busy", "nd_free", "busy", "old-ref")        // 操作中
+	mkSeat("ag_off", "nd_full", "online", "old-ref")       // 节点离线 ⇒ abnormal
+	mkSeat("ag_err", "nd_free", "error", "old-ref")        // error ⇒ abnormal
+	mkSeat("ag_dead", "nd_free", "destroyed", "old-ref")   // 已销毁 ⇒ 缺席
+	mkSeat("ag_fresh", "nd_free", "online", "hub.local/dingwei/base-codex@sha256:"+
+		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef") // 已是最新 ⇒ 不可升级
+	// 节点离线化
+	if err := s.SetNodeState(ctx, "nd_full", "offline"); err != nil {
+		t.Fatal(err)
+	}
+	ov, err := o.HostedOverlay(ctx, []string{"ag_run", "ag_dis", "ag_busy", "ag_off", "ag_err", "ag_dead", "ag_fresh", "ag_ghost"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ov) != 6 { // destroyed 与未落席位（ag_ghost）缺席
+		t.Fatalf("缺席语义: %v", ov)
+	}
+	if ov["ag_run"].State != "running" || !ov["ag_run"].Upgradable || ov["ag_run"].NodeName != "free" {
+		t.Fatalf("running 格: %+v", ov["ag_run"])
+	}
+	if ov["ag_dis"].State != "disabled" || ov["ag_dis"].Upgradable {
+		t.Fatalf("disabled 格（disabled 不可升级）: %+v", ov["ag_dis"])
+	}
+	if ov["ag_busy"].State != "busy" {
+		t.Fatalf("busy 格: %+v", ov["ag_busy"])
+	}
+	if ov["ag_off"].State != "abnormal" {
+		t.Fatalf("节点离线＝abnormal: %+v", ov["ag_off"])
+	}
+	if ov["ag_err"].State != "abnormal" {
+		t.Fatalf("error＝abnormal: %+v", ov["ag_err"])
+	}
+	if ov["ag_fresh"].State != "running" || ov["ag_fresh"].Upgradable {
+		t.Fatalf("已最新＝running 不可升级: %+v", ov["ag_fresh"])
+	}
+}
