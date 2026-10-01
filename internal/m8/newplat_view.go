@@ -69,6 +69,9 @@ func (h *Hub) dispatchNewPlatformTerminalInput(ctx context.Context, msg model.Me
 	if sessionName != "" || pageCode == "" {
 		return model.PrefixDispatchResult{Matched: true, Reply: "新平台请用「＃unlock 页面码」或「＃lock 页面码」，页面码在 view 页上。"}, true, nil
 	}
+	if !trustedViewUnlockIngress(msg.IngressProvenance) { // 同 dispatchNewPlatformCommand：不可信入站一律拒（板 6c90284e）
+		return model.PrefixDispatchResult{Matched: true, Reply: untrustedIngressReply}, true, nil
+	}
 	sender := identity.Identity{Provider: "feishu", Issuer: strings.TrimSpace(msg.BotChannelID), Subject: strings.TrimSpace(msg.SenderOpenID)}
 	user, err := h.Identity.Store.ResolveIdentity(ctx, sender)
 	if err != nil || user.State != identity.UserActive {
