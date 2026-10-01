@@ -5013,7 +5013,7 @@
       rows.forEach((it, i) => {
         const row = document.createElement('div');
         row.className = 'mention-row'; row.id = `mentionOpt${i}`; row.setAttribute('role', 'option');
-        row.setAttribute('aria-selected', i === mention.active ? 'true' : 'false'); row.dataset.insert = it.insert || it.full_name || '';
+        row.setAttribute('aria-selected', i === mention.active ? 'true' : 'false'); row.dataset.insert = it.insert || it.full_name || it.name || '';
         const ico = document.createElement('span'); ico.className = 'mention-ico'; ico.dataset.cli = String(it.cli || '').toLowerCase();
         ico.textContent = ({ claude: 'C', codex: 'X', opencode: 'O', deepseek: 'D' })[ico.dataset.cli] || '?';
         const dot = document.createElement('span'); dot.className = 'mention-dot'; dot.dataset.online = it.online === true ? 'true' : 'false';
@@ -5027,6 +5027,7 @@
       });
       if (rows.length) humanInput.setAttribute('aria-activedescendant', `mentionOpt${mention.active}`);
       else humanInput.removeAttribute('aria-activedescendant');
+      mentionPopup.style.maxHeight = `${Math.max(64, Math.min(232, Math.floor(composerInner.getBoundingClientRect().top) - 14))}px`;   // 矮视口:不超出输入框上方可用空间
       const sel = mentionPopup.querySelector('[aria-selected="true"]'); if (sel) sel.scrollIntoView({ block: 'nearest' });
     }
     function mentionSelectable() { return mention.open && mentionMatches().length > 0; }
@@ -5041,6 +5042,7 @@
     async function mentionLoad(force) {
       const fresh = mention.status === 'ok' && Date.now() - mention.loadedAt < MENTION_TTL_MS;
       if (fresh && !force) return;
+      if (mention.status === 'loading' && !force) return;   // 沿用在途那次,慢接口下连敲不重复请求
       const gen = ++mention.gen; mention.status = 'loading'; mentionRender();
       const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), MENTION_FETCH_TIMEOUT_MS);
       try {
@@ -5062,6 +5064,7 @@
       if (!tok) { if (mention.open) mentionClose(); return; }
       const opening = !mention.open;
       mention.token = tok;
+      if (opening && mention.status === 'loading') mention.status = 'idle';   // 重新打开:在途那次可能带着旧数据,重取(只在打开时;打字不重取)
       if (opening) { mention.open = true; mention.active = 0; mentionPopup.hidden = false; humanInput.setAttribute('aria-expanded', 'true'); }
       else mention.active = 0;
       mentionRender(); mentionLoad(false);

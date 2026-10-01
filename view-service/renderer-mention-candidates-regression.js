@@ -22,7 +22,7 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['enter-sends-while-open', 'ignore-insert-field', 'no-stale-guard', 'trigger-mid-word', 'no-ime-guard', 'enter-ignored-when-no-items'];
+const MUTATIONS = ['enter-sends-while-open', 'ignore-insert-field', 'no-stale-guard', 'trigger-mid-word', 'no-ime-guard', 'enter-ignored-when-no-items', 'refetch-while-loading', 'fixed-max-height'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'enter-sends-while-open') mutate("e.preventDefault(); e.stopImmediatePropagation(); mentionSelect(mention.active); }\n    }, true);", "mentionSelect(mention.active); }\n    }, true);");
 if (mutation === 'ignore-insert-field') mutate("const insert = it.insert || it.full_name || it.name || '';", "const insert = it.name || '';");
@@ -30,10 +30,12 @@ if (mutation === 'no-stale-guard') mutate("if (gen !== mention.gen) return;     
 if (mutation === 'trigger-mid-word') mutate("/(^|\\s)@([A-Za-z0-9.]*)$/.exec(", "/()@([A-Za-z0-9.]*)$/.exec(");
 if (mutation === 'no-ime-guard') mutate("if (!mention.open || e.isComposing) return;", "if (!mention.open) return;");
 if (mutation === 'enter-ignored-when-no-items') mutate("if (!mentionSelectable()) return;\n      const n = mentionMatches().length;", "const n = Math.max(1, mentionMatches().length);");
+if (mutation === 'refetch-while-loading') mutate("      if (mention.status === 'loading' && !force) return;   // 沿用在途那次,慢接口下连敲不重复请求\n", '');
+if (mutation === 'fixed-max-height') mutate("mentionPopup.style.maxHeight = `${Math.max(64, Math.min(232, Math.floor(composerInner.getBoundingClientRect().top) - 14))}px`;", "mentionPopup.style.maxHeight = '232px';");
 
 const NAME = 'dev.zzc';
 let candidates = [];
-let candidateMode = 'ok';     // ok | error | slow-first
+let candidateMode = 'ok';     // ok | error | slow-first | slow-all
 let candidateGets = 0;
 const inputs = [];
 const server = http.createServer((req, res) => {
@@ -45,6 +47,7 @@ const server = http.createServer((req, res) => {
     if (candidateMode === 'error') return json({ error: 'internal' }, 500);
     const body = { candidates };
     if (candidateMode === 'slow-first' && nth === 1) return setTimeout(() => json(body), 700);
+    if (candidateMode === 'slow-all') return setTimeout(() => json(body), 400);
     return json(body);
   }
   if (u === `/view/${NAME}/status`) return json({ session: NAME, state: 'idle', readonly: false, can_write: true, auth_mode: 'legacy', owner: 'zzc', model: 'm', cost_total: 0, cost_last: 0, turns: 0 });
@@ -222,6 +225,23 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.waitForFunction(() => /new/.test(document.getElementById('mentionPopup').textContent));
       await page.waitForTimeout(1000);                           // 让慢的那条迟到
       assert.deepStrictEqual((await rowsText()).map((t) => t.slice(1)), ['new（new.zzc）']);
+    });
+
+    await test('a slow interface gets ONE request however fast the user types (the in-flight one is reused)', async () => {
+      await reset(CANDS, 'slow-all');
+      await typeAt('@alp');
+      await page.waitForFunction(() => document.querySelectorAll('#mentionPopup .mention-row:not(.mention-note)').length === 1);
+      assert.strictEqual(candidateGets, 1, `typing while loading must not start new requests (got ${candidateGets})`);
+    });
+
+    await test('on a short viewport the popup is capped to the room above the input and is never clipped at the top', async () => {
+      await reset();
+      await page.setViewportSize({ width: 1000, height: 260 });
+      await typeAt('@');
+      await page.waitForFunction(() => document.querySelectorAll('#mentionPopup .mention-row').length >= 5);
+      const pb = await popup.boundingBox();
+      await page.setViewportSize({ width: 1000, height: 700 });
+      assert.ok(pb.y >= 0, `popup top must stay inside the viewport (top ${pb.y})`);
     });
 
     await test('the popup follows the dark theme', async () => {
