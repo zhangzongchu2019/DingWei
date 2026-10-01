@@ -287,3 +287,53 @@ func TestNewPlatformConsolePrincipal(t *testing.T) {
 		t.Errorf("logged in: %d %s principal=%q", st, body, gotPrincipal)
 	}
 }
+
+// 新平台 /api/console/platform：角色由用户类型推出；管理角色才有 platform-admin；普通用户做管理动作 ⇒ 403。
+func TestNewPlatformConsolePlatform(t *testing.T) {
+	v := newViewEnv(t)
+	for _, u := range []identity.User{
+		{UserID: "mgr", ShortName: "mg", Type: identity.UserManager, State: identity.UserActive},
+		{UserID: "mem", ShortName: "me", Type: identity.UserMember, State: identity.UserActive},
+	} {
+		_ = v.svc.Store.CreateUser(v.ctx, u)
+		_ = v.svc.Store.CreateSession(v.ctx, identity.Session{TokenHash: identity.HashSecret("tok-" + u.UserID), UserIDLC: u.UserID, ExpiresAt: v.svc.Now().Add(identity.SessionTTL)})
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/console/platform", v.hub.RequireConsolePrincipal(v.hub.RequireConsolePlatformAction("read", v.hub.HandleConsolePlatform)))
+	mux.HandleFunc("POST /api/console/platform/items", v.hub.RequireConsolePrincipal(v.hub.RequireConsolePlatformAction("add", func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "added") })))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	call := func(method, path, tok string) (int, string) {
+		req, _ := http.NewRequest(method, srv.URL+path, nil)
+		req.Header.Set("Accept", "application/json")
+		if tok != "" {
+			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: tok})
+		}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		b, _ := io.ReadAll(res.Body)
+		return res.StatusCode, strings.TrimSpace(string(b))
+	}
+	if st, body := call("GET", "/api/console/platform", "tok-mgr"); st != 200 || !strings.Contains(body, `"role":"management"`) || !strings.Contains(body, `"id":"platform-admin"`) {
+		t.Errorf("manager platform: %d %s", st, body)
+	}
+	st, body := call("GET", "/api/console/platform", "tok-mem")
+	if st != 200 || !strings.Contains(body, `"role":"owner"`) || strings.Contains(body, "platform-admin") || !strings.Contains(body, `"items":[]`) {
+		t.Errorf("member platform: %d %s", st, body)
+	}
+	if strings.Contains(body, `"id":"specs"`) || strings.Contains(body, `"id":"agent-groups"`) {
+		t.Errorf("new platform must not serve legacy or unmigrated entries: %s", body)
+	}
+	if st, body := call("POST", "/api/console/platform/items", "tok-mem"); st != 403 || body != `{"error":"forbidden"}` {
+		t.Errorf("member add: %d %s", st, body)
+	}
+	if st, body := call("POST", "/api/console/platform/items", "tok-mgr"); st != 200 || body != "added" {
+		t.Errorf("manager add: %d %s", st, body)
+	}
+	if st, _ := call("GET", "/api/console/platform", ""); st != 401 {
+		t.Errorf("no session: %d", st)
+	}
+}

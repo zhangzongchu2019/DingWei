@@ -13,6 +13,8 @@ type IdentityStore interface {
 	GetUser(ctx context.Context, userIDLC string) (*User, error)
 	// GetUserByShortName 按简称（小写）找用户；full_name（名称.简称）解析用。
 	GetUserByShortName(ctx context.Context, shortNameLC string) (*User, error)
+	// ListUsers 全部用户，按 user_id 小写升序（平台管理 Tab 的用户列表）。
+	ListUsers(ctx context.Context) ([]User, error)
 	// SetUserState 转 disabled 时同一事务吊销该用户全部会话（N3 A13）。
 	SetUserState(ctx context.Context, userIDLC string, state UserState, now time.Time) error
 	SetPassword(ctx context.Context, userIDLC, hash string, mustChange bool) error

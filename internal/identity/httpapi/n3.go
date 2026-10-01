@@ -27,7 +27,7 @@ func (n *N3) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /console/login/status", n.loginStatus)
 	mux.HandleFunc("POST /console/logout", n.logout)
 	mux.HandleFunc("POST /api/console/account/password", n.authed(true, n.changePassword))
-	mux.HandleFunc("GET /api/console/platform/users", n.authed(false, n.listUsersStub))
+	mux.HandleFunc("GET /api/console/platform/users", n.authed(false, n.listUsers))
 	mux.HandleFunc("POST /api/console/platform/users", n.authed(false, n.createUser))
 	mux.HandleFunc("POST /api/console/platform/users/{user_id}/registration-code", n.authed(false, n.regenCode))
 }
@@ -163,13 +163,26 @@ func (n *N3) changePassword(w http.ResponseWriter, r *http.Request, u *identity.
 	}
 }
 
-// listUsersStub 只校验权限并回空列表：用户列表要按 R0 的 PG 实现分页，本刀不做。
-func (n *N3) listUsersStub(w http.ResponseWriter, r *http.Request, u *identity.User) {
+// listUsers 平台管理 Tab 的用户列表（字段按 tosonnet50ts 页面：user_id、display_name、short_name、type、state）。
+// 只给管理用户；不含任何密码、码、会话。
+func (n *N3) listUsers(w http.ResponseWriter, r *http.Request, u *identity.User) {
 	if !identity.CanManageUsers(u) {
 		writeErr(w, http.StatusForbidden, "forbidden", nil)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"users": []any{}})
+	users, err := n.OB.Store.ListUsers(r.Context())
+	if err != nil {
+		mapErr(w, err)
+		return
+	}
+	out := make([]map[string]any, 0, len(users))
+	for _, x := range users {
+		out = append(out, map[string]any{
+			"user_id": x.UserID, "display_name": x.DisplayName, "short_name": x.ShortName,
+			"type": string(x.Type), "state": string(x.State),
+		})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"users": out})
 }
 
 func (n *N3) createUser(w http.ResponseWriter, r *http.Request, u *identity.User) {

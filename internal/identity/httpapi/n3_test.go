@@ -133,6 +133,19 @@ func TestN3HTTP_FullOnboardingFlow(t *testing.T) {
 		t.Fatalf("alice agents: %d %v", st, b)
 	}
 	// N3 A7：普通用户不能开户。
+	// 真用户列表：只给管理用户，字段恰为五项、不含任何秘密
+	st, ul := e.call(admin, "GET", "/api/console/platform/users", nil, false)
+	users, _ := ul["users"].([]any)
+	if st != 200 || len(users) != 2 {
+		t.Fatalf("admin list users: %d %v", st, ul)
+	}
+	first := users[0].(map[string]any)
+	if keys(first) != "display_name,short_name,state,type,user_id" || first["user_id"] != "Alice" || first["state"] != "active" || first["type"] != "member" {
+		t.Fatalf("user row: %v", first)
+	}
+	if second := users[1].(map[string]any); second["user_id"] != "systemdefault" || second["type"] != "platform_admin" {
+		t.Fatalf("second row: %v", second)
+	}
 	if st, b := e.call(alice, "POST", "/api/console/platform/users", map[string]any{"user_id": "eve", "short_name": "ev", "type": "member"}, true); st != 403 || b["error"] != "forbidden" {
 		t.Fatalf("member creates user: %d %v", st, b)
 	}

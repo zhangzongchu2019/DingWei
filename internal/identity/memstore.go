@@ -540,3 +540,14 @@ func (m *MemStore) GetUserByShortName(_ context.Context, shortNameLC string) (*U
 	cp := *m.users[lc]
 	return &cp, nil
 }
+
+func (m *MemStore) ListUsers(context.Context) ([]User, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]User, 0, len(m.users))
+	for _, u := range m.users {
+		out = append(out, *u)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].UserIDLC() < out[j].UserIDLC() })
+	return out, nil
+}

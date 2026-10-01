@@ -32,6 +32,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"N3_user_id_and_short_name_conflict_by_lowercase", userConflictLowercase},
 		{"N3_disable_revokes_sessions", disableRevokesSessions},
 		{"N3_get_user_by_short_name_case_insensitive", getUserByShortName},
+		{"N3_list_users_sorted_by_lowercase_id", listUsers},
 		{"N3_session_expiry_and_inactive_user", sessionExpiryAndInactive},
 		{"N3_registration_code_one_shot_binds_identity", regCodeOneShot},
 		{"N3_registration_code_expired_or_unknown_changes_nothing", regCodeInvalidChangesNothing},
@@ -614,4 +615,24 @@ func getUserByShortName(t *testing.T, s identity.Store) {
 	}
 	_, err := s.GetUserByShortName(ctx, "alice") // 用户 ID 不是简称
 	wantErr(t, "user id used as short name", err, identity.ErrNotFound)
+}
+
+func listUsers(t *testing.T, s identity.Store) {
+	if got, err := s.ListUsers(ctx); err != nil || len(got) != 0 {
+		t.Fatalf("empty store: %v %v", got, err)
+	}
+	mustUser(t, s, "carol", "ca", identity.UserActive)
+	mustUser(t, s, "Alice", "al", identity.UserPendingBind)
+	mustUser(t, s, "bob", "bo", identity.UserActive)
+	got, err := s.ListUsers(ctx)
+	if err != nil || len(got) != 3 {
+		t.Fatalf("ListUsers: %v %v", got, err)
+	}
+	var ids []string
+	for _, u := range got {
+		ids = append(ids, u.UserID+"/"+string(u.State))
+	}
+	if strings.Join(ids, ",") != "Alice/pending_bind,bob/active,carol/active" {
+		t.Fatalf("order/fields = %v", ids)
+	}
 }
