@@ -93,6 +93,14 @@ CREATE TABLE IF NOT EXISTS g4_quota (
   updated_by    TEXT NOT NULL,
   updated_at    timestamptz NOT NULL DEFAULT now());
 
+-- 团队数据密钥（信封加密的中层）：库里只存被主密钥包裹后的密文＋版本号；主密钥不进库
+CREATE TABLE IF NOT EXISTS g4_team_key (
+  version    INT PRIMARY KEY,
+  wrapped    BYTEA NOT NULL,              -- 主密钥包裹后的团队数据密钥
+  state      TEXT NOT NULL DEFAULT 'active' CHECK (state IN ('active','retired')),
+  created_by TEXT NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now());
+
 -- G4 审计（账号登记/改密/授权变更/解密下发/绑定解绑/生命周期；actor/action/target 三段）
 CREATE TABLE IF NOT EXISTS g4_audit (
   id     BIGSERIAL PRIMARY KEY,
@@ -106,6 +114,6 @@ CREATE INDEX IF NOT EXISTS g4_audit_action_idx ON g4_audit(action, id);
 
 // DropDDL 仅测试用：逆向拆除（rollback 的可重复性验证载体）。
 const DropDDL = `
-DROP TABLE IF EXISTS g4_audit, g4_quota, g4_account_grant, g4_account_pool,
+DROP TABLE IF EXISTS g4_audit, g4_team_key, g4_quota, g4_account_grant, g4_account_pool,
   g4_seat_event, g4_hosted_seat, g4_node_credential, g4_node CASCADE;
 `
