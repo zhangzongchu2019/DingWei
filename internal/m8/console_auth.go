@@ -704,8 +704,8 @@ function renderRoster(){
   rosterAgents.forEach(function(a){
     var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.agent_id;
     var name=document.createElement('td');name.textContent=a.name||'';name.title=a.full_name||'';
-    var hs=hostedStates[a.agent_id],st=document.createElement('td');st.textContent=hs?hostedStateText(hs):(a.online?'在线':'离线');
-    var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted'||!!hs;
+    var hs=a.origin==='hosted'?a:null,st=document.createElement('td');st.textContent=hs?hostedStateText(hs):(a.online?'在线':'离线');
+    var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted';
     if(hs)hostedOpButtons(a,hs).forEach(function(b){action.append(b);});
     revoke.onclick=async function(){
       if(!confirm('吊销 '+a.name+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;
@@ -718,19 +718,20 @@ function renderRoster(){
   empty.hidden=rosterAgents.length>0;
 }
 // G3 · 托管 Agent 生成区、进度蒙版、托管生命周期操作(业主 2026-10-01 改序:托管先行)。
-// 🔴 接口为【提案】(与 G4 kimi30kqtuxerh 对齐中),全部集中在 HOSTED_API;Hub 掌握事实:
+// 🔴 接口为【提案】(与 G4 kimi30kqtuxerh 对齐中),全部集中在 HOSTED_API;托管行的生命周期状态(state/upgradable/node_name)由
+//    GET /api/console/agents 的同一批对象携带(组长裁定:不另开 hosted/agents 读接口);Hub 掌握事实:
 //    CLI×LLM 兼容与验通、套餐是否超额、节点可用与否都由应答给出,页面只据此置灰,不自己判定。
 //    密钥永不出现:账号只显示名称与后四位。错误一律机器码,页面写中文。
 var HOSTED_API={
   options:'/api/console/hosted/options',
   create:'/api/console/hosted/agents',
   job:function(id){return '/api/console/hosted/jobs/'+encodeURIComponent(id);},
-  roster:'/api/console/hosted/agents',
   op:function(id,op){return '/api/console/hosted/agents/'+encodeURIComponent(id)+'/'+op;}
 };
 var HOSTED_STAGES=[['queued','排队'],['pulling','拉镜像'],['starting','启动'],['online','上线']];
-var hostedOptions=null,hostedOptionsGeneration=0,hostedStates={},hostedRosterGeneration=0,hostedJobTimer=null,hostedPollMs=2000;
+var hostedOptions=null,hostedOptionsGeneration=0,hostedJobTimer=null,hostedPollMs=2000;
 function hostedStateText(hs){
+  if(!hs.state)return hs.online?'在线':'离线';   // 后端尚未给生命周期状态时,只显示在线与否,不编造状态
   var t={running:'运行中',disabled:'已停用',abnormal:'异常',busy:'处理中…'}[hs.state]||hs.state;
   return t+(hs.upgradable&&hs.state!=='busy'?'（可升级）':'');
 }
@@ -810,7 +811,7 @@ async function hostedTrackJob(jobId,name){
     if(stage==='failed'){hostedMaskRender(name,'failed',reason,lastStage);enrollFeedback('hostedFeedback','创建 '+name+' 失败：'+(HOSTED_FAIL_REASONS[reason]||('原因码 '+(reason||'未知'))));return;}
     if(HOSTED_STAGES.some(function(x){return x[0]===stage;}))lastStage=stage;
     hostedMaskRender(name,stage,'',lastStage);
-    if(stage==='online'){enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');refreshAgents();refreshRoster();refreshHostedRoster();refreshHostedOptions();return;}
+    if(stage==='online'){enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');refreshAgents();refreshRoster();refreshHostedOptions();return;}
     hostedJobTimer=setTimeout(tick,hostedPollMs);
   }
   tick();
@@ -836,24 +837,11 @@ function hostedOpButtons(a,hs){
       list.forEach(function(x){x.disabled=true;});
       var res=await consolePost(HOSTED_API.op(a.agent_id,d[0]),body);
       if(!res.ok){enrollFeedback('rosterFeedback',res.text);list.forEach(function(x){x.disabled=busy;});return;}
-      enrollFeedback('rosterFeedback','');refreshHostedRoster();refreshRoster();refreshGroups('hosted-op');refreshAgents();
+      enrollFeedback('rosterFeedback','');refreshRoster();refreshGroups('hosted-op');refreshAgents();
     };
     list.push(b);
   });
   return list;
-}
-async function refreshHostedRoster(){
-  var generation=++hostedRosterGeneration;
-  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);
-  try{
-    var r=await fetch(HOSTED_API.roster,{cache:'no-store',signal:controller.signal});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    var d=await r.json();if(!d||!Array.isArray(d.agents))throw new Error('响应格式无效');
-    if(generation!==hostedRosterGeneration)return;
-    var m={};d.agents.forEach(function(x){m[x.agent_id]=x;});hostedStates=m;renderRoster();
-  }catch(err){
-    if(generation===hostedRosterGeneration)enrollFeedback('rosterFeedback','托管 Agent 状态加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err));
-  }finally{clearTimeout(timer);}
 }
 function mountEnrollPanels(pane){
   var anchor=pane.querySelector('#group-status');if(!anchor)return;
@@ -865,7 +853,7 @@ function mountEnrollPanels(pane){
   document.getElementById('hostedRefresh').onclick=refreshHostedOptions;document.getElementById('hostedRetry').onclick=refreshHostedOptions;
   document.getElementById('hostedCli').onchange=renderHostedLlm;document.getElementById('hostedLlm').onchange=renderHostedAccounts;
   document.getElementById('hostedCreateBtn').onclick=hostedCreate;
-  refreshRoster();refreshEnroll();refreshHostedOptions();refreshHostedRoster();
+  refreshRoster();refreshEnroll();refreshHostedOptions();
   var rosterTimer=setInterval(function(){if(!document.getElementById('rosterItems')){clearInterval(rosterTimer);return;}refreshRoster();},15000);
 }
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}

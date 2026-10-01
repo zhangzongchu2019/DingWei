@@ -33,7 +33,7 @@ if (mutation === 'hardcoded-mask') mutate("hostedMaskRender(name,stage,'',lastSt
 if (mutation === 'destroy-no-confirm') mutate("if(!confirm('销毁 '+name+'：容器和数据卷将被删除,凭据立即吊销,不可恢复。确认销毁？'))return;", '');
 if (mutation === 'drop-confirm-flag') mutate("if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器和数据卷将被删除,凭据立即吊销,不可恢复。确认销毁？'))return;body.confirm=true;}", "if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器和数据卷将被删除,凭据立即吊销,不可恢复。确认销毁？'))return;}");
 if (mutation === 'show-secret') mutate("text:a.name+'（…'+a.last4+'）'", "text:a.name+'（'+a.secret+'）'");
-if (mutation === 'hosted-shows-revoke') mutate("revoke.hidden=a.origin==='hosted'||!!hs;", 'revoke.hidden=false;');
+if (mutation === 'hosted-shows-revoke') mutate("revoke.hidden=a.origin==='hosted';", 'revoke.hidden=false;');
 
 const GROUP_MINE = 'A'.repeat(32);
 let agents = [{ id: 'ag-leader', key_id: 'key-leader', session_name: 'zzc-leader-2642', online: true }];
@@ -75,11 +75,20 @@ function groupsPayload() {
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function err(res, status, code, extra) { json(res, status, { error: code, detail: 'SECRET-HUB-TEXT', ...extra }); }
+const getPaths = [];
 const server = http.createServer(async (req, res) => {
   const p = req.url.split('?')[0];
+  if (req.method === 'GET') getPaths.push(p);
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   // 设计件 3.2 新形状(agent_id/name/full_name/origin/group_code/online);session 一并带上只为让左栏(尚未迁移的旧调用方)继续工作
-  if (p === '/api/console/agents') return json(res, 200, { agents: agents.map((a) => { const name = a.session_name.split('-')[1]; return { session: a.session_name, online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE }; }) });
+  // GET /api/console/agents:设计件 3.2 新形状 + G4 在其上加的托管生命周期字段(state/upgradable/node_name);
+  // session 一并带上只为让左栏(尚未迁移)继续工作
+  if (p === '/api/console/agents') {
+    return json(res, 200, { agents: agents.map((a) => {
+      const name = a.session_name.split('-')[1]; const h = hostedAgents.find((x) => x.agent_id === a.id);
+      return { session: a.session_name, online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE, ...(h ? { state: h.state, upgradable: h.upgradable, node_name: h.node_name } : {}) };
+    }) });
+  }
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
   if (p === '/api/console/agent-groups' && req.method === 'GET') return json(res, 200, groupsPayload());
   if (p === '/api/console/enroll/applications') return json(res, 200, { applications: [] });
@@ -87,7 +96,6 @@ const server = http.createServer(async (req, res) => {
     if (failOptions > 0) { failOptions -= 1; res.writeHead(503, { 'content-type': 'text/plain' }); return res.end('options unavailable'); }
     return json(res, 200, options());
   }
-  if (p === '/api/console/hosted/agents' && req.method === 'GET') return json(res, 200, { agents: hostedAgents });
   if (p === '/api/console/hosted/agents' && req.method === 'POST') {
     const body = await read(req); writes.push({ path: p, body });
     if (!/^[A-Za-z0-9]+$/.test(String(body.name))) return err(res, 422, 'name_invalid');
@@ -312,10 +320,23 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await test('busy hosted agent: every operation button is greyed', async () => {
       hostedAgents.push({ agent_id: 'ag-offline', state: 'busy', upgradable: true, node_name: 'node-b' });
       hostedAgents = hostedAgents.filter((x, i, arr) => arr.findLastIndex((y) => y.agent_id === x.agent_id) === i);
-      await page.evaluate(() => refreshHostedRoster());
+      await page.evaluate(() => refreshRoster());
       await page.waitForFunction(() => document.querySelector('#rosterItems .roster-row[data-agent-id="ag-offline"] td:nth-child(2)')?.textContent === '处理中…');
       const states = await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] .hosted-op').evaluateAll((els) => els.map((e) => e.disabled));
       assert.deepStrictEqual(states, [true, true, true, true]);
+    });
+
+    await test('lifecycle state rides on /api/console/agents: no separate hosted-agents read; a hosted row without state shows only online/offline', async () => {
+      assert.ok(getPaths.includes('/api/console/agents'));
+      assert.ok(!getPaths.includes('/api/console/hosted/agents'), 'the page must not read a separate hosted-agents list');
+      agents.push({ id: 'ag-nostate', key_id: 'key-ns', session_name: 'zzc-nostate-2642', online: true, origin: 'hosted' });
+      await page.evaluate(() => refreshRoster());
+      const row = page.locator('#rosterItems .roster-row[data-agent-id="ag-nostate"]');
+      await row.waitFor({ state: 'visible' });
+      assert.strictEqual(await row.locator('td').nth(1).textContent(), '在线', 'no lifecycle state invented');
+      assert.strictEqual(await row.locator('.roster-revoke').isHidden(), true);
+      agents = agents.filter((a) => a.id !== 'ag-nostate');
+      await page.evaluate(() => refreshRoster());
     });
 
     await test('the group panel is still there: list, create toggle; join-by-code stays removed', async () => {

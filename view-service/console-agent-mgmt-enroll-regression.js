@@ -85,7 +85,6 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
   if (p === '/api/console/agent-groups' && req.method === 'GET') return json(res, 200, groupsPayload());
   if (p === '/api/console/hosted/options') return json(res, 200, { nodes: [], combos: [], accounts: [], plans: [], quota: { remaining: {} } }); // 托管区挂载请求;本件不测托管
-  if (p === '/api/console/hosted/agents') return json(res, 200, { agents: [] });
   if (p === '/api/console/enroll/applications' && req.method === 'GET') {
     if (failNextList > 0) { failNextList -= 1; return text(res, 503, 'enroll list unavailable'); }
     const snapshot = apps.map((a) => ({ ...a, same_device_count: apps.filter((x) => x.device_fingerprint === a.device_fingerprint).length })); // 请求到达时刻的快照:慢应答会带着旧数据迟到
