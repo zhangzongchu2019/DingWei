@@ -16,6 +16,7 @@ from typing import Protocol
 from . import __version__
 from .config import Config, load_config
 from .llm import LLMProvider
+from .config import env_get
 from .inbox import DeliveryInbox
 from .hub_meta import HUB_META_TYPE_DELIVERY_FAILURE, HUB_META_TYPE_DELIVERY_RESULT
 from .protocol import AddressBook, envelope, is_feishu_addr, is_mirror_control, reply_target, session_addr
@@ -1099,7 +1100,7 @@ class SessionHelper:
 
     def online_list_path(self) -> str:
         """会话专属的在线清单共享文件路径（会话名前缀，区隔同机多会话）。"""
-        override = os.environ.get("SH_ONLINE_LIST_PATH", "").strip()
+        override = env_get("SH_ONLINE_LIST_PATH", "").strip()
         if override:
             return override
         base = os.path.expanduser(os.path.join("~", ".dingwei"))
@@ -1294,7 +1295,7 @@ class SessionHelper:
             await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), body, self.book.self_addr, meta), ensure_ascii=False))
 
     async def session_event_loop(self, ws) -> None:
-        if os.environ.get("SH_EMIT_SESSION_EVENT") != "1":
+        if env_get("SH_EMIT_SESSION_EVENT") != "1":
             await asyncio.Future()
         if not hasattr(self.adapter, "next_session_event"):
             await asyncio.Future()

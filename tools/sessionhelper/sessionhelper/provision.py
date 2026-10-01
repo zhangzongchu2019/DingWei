@@ -16,7 +16,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from . import __version__
-from .config import Config, detect_os
+from .config import Config, detect_os, env_get
 
 
 class ProvisionError(RuntimeError):
@@ -111,7 +111,7 @@ class Provisioner:
         tmpdir = Path(tempfile.mkdtemp(prefix="sessionhelper-provision-"))
         dst = tmpdir / "artifact"
         ctx = None
-        cafile = os.environ.get("SSL_CERT_FILE", "").strip()
+        cafile = env_get("SSL_CERT_FILE", "").strip()
         if cafile:
             import ssl
 
@@ -207,7 +207,7 @@ class Provisioner:
 
     def request_restart(self) -> None:
         # Guard/launchd supervise the process. Tests can disable exit by setting the env var.
-        if os.environ.get("SH_PROVISION_NO_EXIT") == "1":
+        if env_get("SH_PROVISION_NO_EXIT") == "1":
             return
         os._exit(0)
 
@@ -264,7 +264,7 @@ class Provisioner:
         text = artifact.read_text(encoding="utf-8")
         server = parse_mcp_server(target, text)
         if self.cfg.cli_name == "codex":
-            path = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser() / "config.toml"
+            path = Path(env_get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser() / "config.toml"
             self.install_codex_mcp(path, target, server, text, version)
         elif self.cfg.cli_name == "claude":
             path = Path.home() / ".claude.json"
@@ -352,7 +352,7 @@ def safe_target_name(target: str) -> bool:
 def skill_base_dir(cli_name: str) -> Path:
     cli = (cli_name or "").lower()
     if cli == "codex":
-        return Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser() / "skills"
+        return Path(env_get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser() / "skills"
     if cli == "opencode":
         return Path.home() / ".config" / "opencode" / "skills"
     return Path.home() / ".claude" / "skills"
