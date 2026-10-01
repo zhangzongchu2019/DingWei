@@ -10,7 +10,7 @@ from unittest import mock
 from sessionhelper import enroll
 from sessionhelper.enroll import (
     AlreadyConnected, Credential, CredentialAlreadyIssued, CredentialFileError, CredentialInvalid,
-    CredentialRevoked, EnrollError, EnrollRejected, EnrollStopped, HubHTTPError, enroll as run_enroll,
+    CredentialRevoked, CredentialSuspended, EnrollError, EnrollRejected, EnrollStopped, HubHTTPError, enroll as run_enroll,
 )
 
 SECRET = "dwa_" + "ab" * 32
@@ -302,6 +302,30 @@ class EnrollFlowTest(unittest.TestCase):
         with self.assertRaises(CredentialRevoked):
             enroll.on_ws_closed(self.dir, 4401, "credential_revoked", self.notes.append)
         self.assertFalse(os.path.exists(self.path(enroll.CREDENTIAL_FILE)))
+
+    def test_suspended_by_close_4401_stops_but_keeps_the_credential(self):
+        enroll.save_credential(self.dir, Credential("Dev55", SECRET))
+        with self.assertRaises(CredentialSuspended):
+            enroll.on_ws_closed(self.dir, 4401, "credential_suspended", self.notes.append)
+        self.assertTrue(os.path.exists(self.path(enroll.CREDENTIAL_FILE)), "pause is reversible: the credential stays")
+        self.assertEqual(enroll.load_credential(self.dir).secret, SECRET)
+        self.assertEqual(len(self.notes), 1)
+
+    def test_suspended_at_handshake_stops_but_keeps_the_credential(self):
+        enroll.save_credential(self.dir, Credential("Dev55", SECRET))
+        with self.assertRaises(CredentialSuspended):
+            enroll.on_handshake_failure(self.dir, 401, b'{"error":"credential_suspended"}', self.notes.append)
+        self.assertTrue(os.path.exists(self.path(enroll.CREDENTIAL_FILE)))
+
+    def test_suspended_is_not_confused_with_revoked_or_other_codes(self):
+        enroll.save_credential(self.dir, Credential("Dev55", SECRET))
+        for code, reason in ((4400, "credential_suspended"), (1006, "")):
+            enroll.on_ws_closed(self.dir, code, reason, self.notes.append)  # neither is a pause
+        self.assertTrue(os.path.exists(self.path(enroll.CREDENTIAL_FILE)))
+        enroll.on_handshake_failure(self.dir, 409, b'{"error":"credential_suspended"}', self.notes.append)  # wrong status: ordinary failure
+        with self.assertRaises(CredentialRevoked):
+            enroll.on_ws_closed(self.dir, 4401, "credential_revoked", self.notes.append)
+        self.assertFalse(os.path.exists(self.path(enroll.CREDENTIAL_FILE)), "revocation still deletes it")
 
     def test_hub_http_base_and_prepare_env(self):
         self.assertEqual(enroll.hub_http_base("wss://dw.example:55055"), "https://dw.example:55055")

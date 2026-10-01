@@ -72,11 +72,18 @@ class CredentialRevoked(EnrollError):
     """Handshake refused or connection closed because the agent was revoked."""
 
 
+class CredentialSuspended(EnrollError):
+    """The owner paused (disabled) this hosted seat: the credential is refused for now.
+
+    Reversible, unlike revocation: the local credential file is KEPT, so after the seat is enabled
+    again the restarted client simply reconnects with it (ledger 4ecd2246)."""
+
+
 class AlreadyConnected(EnrollError):
     """Handshake: the same credential already has a live connection. Stop; keep the file."""
 
 
-FATAL_CONNECT_ERRORS = (CredentialInvalid, CredentialRevoked, AlreadyConnected)
+FATAL_CONNECT_ERRORS = (CredentialInvalid, CredentialRevoked, CredentialSuspended, AlreadyConnected)
 
 
 @dataclass(frozen=True)
@@ -498,6 +505,9 @@ def on_handshake_failure(state_dir: str, status: int, body: bytes | str, notify:
     if status == 401 and code == "credential_revoked":
         revoke_local(state_dir, notify)
         raise CredentialRevoked("credential revoked")
+    if status == 401 and code == "credential_suspended":
+        notify("this seat is paused (disabled) by its owner; stopping. The local credential was kept")
+        raise CredentialSuspended("credential suspended")
     if status == 401 and code == "credential_invalid":
         notify("the Hub does not know this credential (wrong Hub?); the local credential file was kept")
         raise CredentialInvalid("credential invalid")
@@ -507,10 +517,14 @@ def on_handshake_failure(state_dir: str, status: int, body: bytes | str, notify:
 
 
 def on_ws_closed(state_dir: str, code: int, reason: str, notify: Callable[[str], None]) -> None:
-    """A live connection was closed by the Hub: 4401 + credential_revoked means revoked."""
+    """A live connection was closed by the Hub: 4401 + credential_revoked = revoked (credential removed);
+    4401 + credential_suspended = paused (credential kept)."""
     if code == REVOKE_CLOSE_CODE and reason == "credential_revoked":
         revoke_local(state_dir, notify)
         raise CredentialRevoked("credential revoked")
+    if code == REVOKE_CLOSE_CODE and reason == "credential_suspended":
+        notify("this seat was paused (disabled) by its owner; stopping. The local credential was kept")
+        raise CredentialSuspended("credential suspended")
 
 
 def enabled_for_env(environ) -> bool:

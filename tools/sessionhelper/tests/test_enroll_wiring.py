@@ -19,6 +19,7 @@ except ImportError:  # pragma: no cover
     websockets = None
 
 from sessionhelper import enroll
+from sessionhelper import app as app_module
 from sessionhelper.app import SessionHelper
 from sessionhelper.config import load_config
 
@@ -106,6 +107,20 @@ class EnrollWiringTest(unittest.TestCase):
             self.run_loop(self.helper(), ConnectionClosedError(Close(4401, "credential_revoked"), None))
         self.assertFalse(os.path.exists(self.cred_path))
 
+    def test_close_4401_credential_suspended_is_fatal_and_keeps_the_credential(self):
+        with self.assertRaises(enroll.CredentialSuspended):
+            self.run_loop(self.helper(), ConnectionClosedError(Close(4401, "credential_suspended"), None))
+        self.assertTrue(os.path.exists(self.cred_path), "a paused seat keeps its credential for the next enable")
+
+    def test_suspended_at_handshake_is_fatal_and_keeps_the_credential(self):
+        with self.assertRaises(enroll.CredentialSuspended):
+            self.run_loop(self.helper(), refused(401, b'{"error":"credential_suspended"}'))
+        self.assertTrue(os.path.exists(self.cred_path))
+
+    def test_legacy_mode_ignores_suspended(self):
+        with self.assertRaises(Stop):
+            self.run_loop(self.helper(enrolled=False), ConnectionClosedError(Close(4401, "credential_suspended"), None))
+
     def test_other_closes_keep_reconnecting(self):
         for code, reason in ((1006, ""), (4401, "something_else"), (4400, "credential_revoked")):
             with self.subTest(code=code):
@@ -117,6 +132,25 @@ class EnrollWiringTest(unittest.TestCase):
         with self.assertRaises(Stop):
             self.run_loop(self.helper(enrolled=False), ConnectionClosedError(Close(4401, "credential_revoked"), None))
         self.assertTrue(os.path.exists(self.cred_path))
+
+
+@unittest.skipIf(websockets is None, "websockets not installed")
+class MainExitTest(unittest.TestCase):
+    """main() turns every fatal connect outcome into a clean stop (exit code 3), never a traceback or a retry."""
+
+    def run_main(self, exc):
+        async def boom(self):
+            raise exc
+        with mock.patch.dict(os.environ, BASE), mock.patch.object(SessionHelper, "run_forever", boom):
+            with self.assertRaises(SystemExit) as ctx:
+                app_module.main()
+        return ctx.exception.code
+
+    def test_every_fatal_connect_error_exits_with_3(self):
+        for exc in (enroll.CredentialRevoked("x"), enroll.CredentialSuspended("x"),
+                    enroll.CredentialInvalid("x"), enroll.AlreadyConnected("x")):
+            with self.subTest(exc=type(exc).__name__):
+                self.assertEqual(self.run_main(exc), 3)
 
 
 if __name__ == "__main__":
