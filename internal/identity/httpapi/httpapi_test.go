@@ -354,3 +354,51 @@ func TestApproveGroupRequiredOverHTTP(t *testing.T) {
 		t.Fatalf("old field name group_id must be rejected as unknown: %d %v", r.status, r.body)
 	}
 }
+
+// G4 注入点：只给 origin=hosted 的项出 hosted 子对象，且只在注入函数返回 true 时出；自备项与无数据时不出。
+func TestAgentsListHostedInjection(t *testing.T) {
+	e := newEnv(t)
+	hi, err := e.svc.IssueHostedAgent(context.Background(), "zzc", "Codex1", "g", "zzc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	self := e.do("POST", "/api/enroll/applications", applyBody("zzc"), nil).body["application_id"].(string)
+	if r := e.do("POST", "/api/console/enroll/applications/"+self+"/approve", map[string]any{"pairing_code": code, "agent_name": "Selfie", "group_code": "g"}, owner("zzc")); r.status != 200 {
+		t.Fatal(r.body)
+	}
+	calls := map[string]int{}
+	e.api.Hosted = func(_ context.Context, id string) (map[string]any, bool) {
+		calls[id]++
+		if id != hi.Agent.ID {
+			return nil, false
+		}
+		return map[string]any{"node_name": "node-a", "state": "running", "account_last4": "9z8y"}, true
+	}
+	list := e.do("GET", "/api/console/agents", nil, map[string]string{"X-Test-Actor": "zzc"}).body["agents"].([]any)
+	if len(list) != 2 {
+		t.Fatalf("agents: %v", list)
+	}
+	for _, it := range list {
+		m := it.(map[string]any)
+		h, has := m["hosted"].(map[string]any)
+		switch m["name"] {
+		case "Codex1":
+			if !has || h["node_name"] != "node-a" || h["state"] != "running" || m["state"] != "active" {
+				t.Fatalf("hosted item: %v", m)
+			}
+		case "Selfie":
+			if has {
+				t.Fatalf("selfhost item must not carry hosted: %v", m)
+			}
+		}
+	}
+	if calls[hi.Agent.ID] != 1 || len(calls) != 1 {
+		t.Fatalf("Hosted must be called once and only for hosted items: %v", calls)
+	}
+	e.api.Hosted = func(context.Context, string) (map[string]any, bool) { return nil, false }
+	for _, it := range e.do("GET", "/api/console/agents", nil, map[string]string{"X-Test-Actor": "zzc"}).body["agents"].([]any) {
+		if _, has := it.(map[string]any)["hosted"]; has {
+			t.Fatalf("no data ⇒ no hosted object: %v", it)
+		}
+	}
+}

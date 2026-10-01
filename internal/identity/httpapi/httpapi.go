@@ -5,6 +5,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net"
@@ -27,6 +28,9 @@ type API struct {
 	TrustProxy bool
 	// Online 报告某 Agent 当前是否在线；为空时一律 false。
 	Online func(agentID string) bool
+	// Hosted 由 G4 注入：给 origin=hosted 的 Agent 提供 hosted 子对象（node_name、state、upgradable、image_version、plan、account_last4）。
+	// 返回 false 表示暂无数据，此时不出 hosted 子对象。顶层 state（身份：active／suspended）仍由 G3 给、是「是否停用」的权威来源。
+	Hosted func(ctx context.Context, agentID string) (map[string]any, bool)
 }
 
 const maxBody = 4 << 10
@@ -268,11 +272,17 @@ func (a *API) listAgents(w http.ResponseWriter, r *http.Request, actor string) {
 			online = a.Online(ag.ID)
 		}
 		// session：兼容旧形状 {session, online}（console 左栏仍读它）——值即该 Agent 在 Hub 会话机制里的会话名（名称小写）。
-		out = append(out, map[string]any{
+		item := map[string]any{
 			"session":  ag.NameLC(),
 			"agent_id": ag.ID, "name": ag.Name, "full_name": ag.Name + "." + short,
 			"origin": string(ag.Origin), "group_code": ag.GroupID, "state": string(ag.State), "online": online,
-		})
+		}
+		if ag.Origin == identity.OriginHosted && a.Hosted != nil {
+			if h, ok := a.Hosted(r.Context(), ag.ID); ok {
+				item["hosted"] = h
+			}
+		}
+		out = append(out, item)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"agents": out})
 }
