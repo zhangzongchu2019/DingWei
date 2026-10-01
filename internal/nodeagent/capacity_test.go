@@ -17,6 +17,11 @@ func TestMemInfoMB(t *testing.T) {
 	if err != nil || total != 16000 || avail != 8000 {
 		t.Fatalf("meminfo 解析: total=%d avail=%d err=%v", total, avail, err)
 	}
+	// r6 整包自查补漏：畸形/空 meminfo（读不出 MemTotal）⇒ 报错，不得拿 0 上报容量
+	os.WriteFile(p, []byte("garbage line\nMemFree: 1 kB\n"), 0o644)
+	if _, _, err := memInfoMB(p); err == nil {
+		t.Fatal("畸形 meminfo 必须报错")
+	}
 }
 
 func TestDiskMB(t *testing.T) {

@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -37,5 +40,28 @@ func TestDedicatedSocketIsolation(t *testing.T) {
 		if a == def {
 			t.Fatalf("任何指令不得落到默认 socket %s", def)
 		}
+	}
+}
+
+// r6 整包自查补漏：docker 应答——200 但 JSON 畸形 ⇒ 解析错误上抛（不拿零值结构继续跑）；
+// ≥300 ⇒ engineError 带状态码。
+func TestEngineMalformedResponseFailsClosed(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/json") {
+			_, _ = w.Write([]byte("{malformed-json"))
+			return
+		}
+		http.Error(w, `{"message":"boom"}`, http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+	eng := newFakeEngine(srv.Client(), srv.URL)
+	if _, err := eng.containerInspect(context.Background(), "abc"); err == nil {
+		t.Fatal("200 但畸形 JSON 必须报错（不得拿零值继续）")
+	}
+	err := eng.imagePull(context.Background(), "hub.local/dingwei/base@sha256:"+
+		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+	ee, ok := err.(*engineError)
+	if !ok || ee.Status != 500 {
+		t.Fatalf("≥300 应为 engineError 带状态码: %v", err)
 	}
 }

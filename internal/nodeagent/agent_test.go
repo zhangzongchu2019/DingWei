@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,13 +24,14 @@ type stubHub struct {
 	t      *testing.T
 	secrets map[string]string // node_id → secret（绑定校验：换身份持真凭据必拒）
 	cmds   chan Command
+	rawCmds chan []byte // 原始帧（坏帧探针用——Command 结构 marshal 不出畸形 JSON）
 	results chan Result
 	all    chan []byte // 全部原始帧（capacity_report 等非 Result 帧断言用）
 	srv    *httptest.Server
 }
 
 func newStubHub(t *testing.T, secrets map[string]string) *stubHub {
-	h := &stubHub{t: t, secrets: secrets, cmds: make(chan Command, 8), results: make(chan Result, 8), all: make(chan []byte, 32)}
+	h := &stubHub{t: t, secrets: secrets, cmds: make(chan Command, 8), rawCmds: make(chan []byte, 8), results: make(chan Result, 8), all: make(chan []byte, 32)}
 	h.srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nodeID := r.URL.Query().Get("node_id")
 		auth := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
@@ -61,10 +63,20 @@ func newStubHub(t *testing.T, secrets map[string]string) *stubHub {
 				}
 			}
 		}()
-		for cmd := range h.cmds {
-			raw, _ := json.Marshal(cmd)
-			if err := conn.Write(ctx, websocket.MessageText, raw); err != nil {
-				return
+		for {
+			select {
+			case cmd, ok := <-h.cmds:
+				if !ok {
+					return
+				}
+				raw, _ := json.Marshal(cmd)
+				if err := conn.Write(ctx, websocket.MessageText, raw); err != nil {
+					return
+				}
+			case raw := <-h.rawCmds: // 坏帧探针：原样下发
+				if err := conn.Write(ctx, websocket.MessageText, raw); err != nil {
+					return
+				}
 			}
 		}
 	}))
@@ -190,5 +202,85 @@ func TestAgentAuthBindsIdentity(t *testing.T) {
 	err = ag.serve(ctx)
 	if err == nil {
 		t.Fatal("换身份持真凭据必须被拒（反向）")
+	}
+}
+
+// r6 整包自查补漏：台账文件损坏 ⇒ fail-closed（errLedgerCorrupt），不得静默清空重跑指令。
+func TestLedgerCorruptFailsClosed(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "ledger.json")
+	if err := os.WriteFile(p, []byte("{corrupt-not-json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := loadLedger(p); !errors.Is(err, errLedgerCorrupt) {
+		t.Fatalf("损坏台账必须报 errLedgerCorrupt: %v", err)
+	}
+}
+
+// r6 整包自查补漏：畸形指令帧 ⇒ 回 bad_command_frame 且连接不断（继续收后续指令）。
+func TestBadCommandFrameReplied(t *testing.T) {
+	secret := "node-secret-t1"
+	hub := newStubHub(t, map[string]string{"nd_t1": secret})
+	defer hub.close()
+	cfg := mkConfig(t, hub.url(), secret)
+	cfg.HubCertSHA256 = hub.certSHA256()
+	ag, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ag.Register(CmdPullImage, func(ctx context.Context, params json.RawMessage) (json.RawMessage, error) {
+		return json.Marshal(map[string]bool{"pulled": true})
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go ag.Run(ctx)
+	time.Sleep(300 * time.Millisecond) // 等连上
+
+	hub.rawCmds <- []byte("{not-a-command-frame")
+	deadline := time.After(3 * time.Second)
+	for {
+		select {
+		case raw := <-hub.frames():
+			var res Result
+			if json.Unmarshal(raw, &res) == nil && res.Error == "bad_command_frame" {
+				goto gotBadFrame
+			}
+		case <-deadline:
+			t.Fatal("畸形帧应回 bad_command_frame")
+		}
+	}
+gotBadFrame:
+	// 连接未断：后续合法指令仍正常执行
+	hub.cmds <- Command{CommandID: "cmd_ok", Type: CmdPullImage}
+	select {
+	case r := <-hub.results:
+		if !r.OK {
+			t.Fatalf("坏帧后合法指令应照常执行: %+v", r)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("坏帧后连接不应断")
+	}
+}
+
+// r6 整包自查补漏：钉证校验——指纹格式错/对端不出证/指纹不符三拒，相符才放行。
+func TestTLSPinnedTransportRejectsMismatch(t *testing.T) {
+	if _, err := TLSPinnedTransport("abcd"); err == nil {
+		t.Fatal("指纹非 64 位 hex 必须拒")
+	}
+	blob := []byte("fake-hub-cert-der")
+	sum := sha256.Sum256(blob)
+	want := hex.EncodeToString(sum[:])
+	tr, err := TLSPinnedTransport(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	verify := tr.TLSClientConfig.VerifyPeerCertificate
+	if err := verify(nil, nil); err == nil {
+		t.Fatal("对端不出示证书必须拒")
+	}
+	if err := verify([][]byte{[]byte("other-cert")}, nil); err == nil {
+		t.Fatal("指纹不符必须拒")
+	}
+	if err := verify([][]byte{blob}, nil); err != nil {
+		t.Fatalf("指纹相符应放行: %v", err)
 	}
 }
