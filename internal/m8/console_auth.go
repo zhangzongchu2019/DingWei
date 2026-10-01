@@ -570,7 +570,7 @@ function groupFeedback(id,text){var e=document.getElementById(id);if(e)e.textCon
 function setGroupPanelMode(mode){var selected=(groupSnapshot.groups||[]).some(function(group){return group.code===window.selectedGroupCode;});groupPanelMode=mode==='detail'&&!selected?'':mode;document.getElementById('groupDetail').hidden=groupPanelMode!=='detail';document.getElementById('groupAddPanel').hidden=groupPanelMode!=='add';document.getElementById('groupAddOpen').textContent=groupPanelMode==='add'?'取消添加':'⊕ 添加编组';if(groupPanelMode==='add')document.getElementById('groupShortName').focus();}
 function groupAction(path,method,body,feedback){return fetch(path,{method:method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined}).then(async function(r){if(!r.ok){groupFeedback(feedback||'group-status',(await r.text()).trim()||('HTTP '+r.status));return false;}await refreshGroups('action');groupFeedback(feedback||'group-status','操作成功');return true;}).catch(function(e){groupFeedback(feedback||'group-status','请求失败: '+String(e&&e.message||e));return false;});}
 function groupShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s;}
-async function refreshGroups(source){var generation=++groupRequestGeneration;if(groupMode){var leader=document.getElementById('groupLeader');if(leader&&leader.value)groupLeaderSelection=leader.value;setGroupSelectState('加载中…',true);groupStatus('Agent 列表加载中…');}var controller=new AbortController();var timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);try{var r=await fetch('/api/console/agent-groups',{cache:'no-store',signal:controller.signal});if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}var data=await r.json();if(!data||!Array.isArray(data.owned_agents)||!Array.isArray(data.groups))throw new Error('响应格式无效');if(generation!==groupRequestGeneration)return null;groupSnapshot=data;renderAgentNav();if(groupMode){renderGroups();renderRoster();if(!data.owned_agents.length){setGroupSelectState('没有自己的 Agent',true);groupStatus('没有自己的 Agent，无法建组或加入');}else if(source==='retry'){groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');groupStatus('');}else groupStatus('');}return data;}catch(err){if(groupMode&&generation===groupRequestGeneration){setGroupSelectState('加载失败',true);var message='编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);}return null;}finally{clearTimeout(timer);}}
+async function refreshGroups(source){var generation=++groupRequestGeneration;if(groupMode){var leader=document.getElementById('groupLeader');if(leader&&leader.value)groupLeaderSelection=leader.value;setGroupSelectState('加载中…',true);groupStatus('Agent 列表加载中…');}var controller=new AbortController();var timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);try{var r=await fetch('/api/console/agent-groups',{cache:'no-store',signal:controller.signal});if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}var data=await r.json();if(!data||!Array.isArray(data.owned_agents)||!Array.isArray(data.groups))throw new Error('响应格式无效');if(generation!==groupRequestGeneration)return null;groupSnapshot=data;renderAgentNav();if(groupMode){renderGroups();if(!data.owned_agents.length){setGroupSelectState('没有自己的 Agent',true);groupStatus('没有自己的 Agent，无法建组或加入');}else if(source==='retry'){groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');groupStatus('');}else groupStatus('');}return data;}catch(err){if(groupMode&&generation===groupRequestGeneration){setGroupSelectState('加载失败',true);var message='编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);}return null;}finally{clearTimeout(timer);}}
 // G3 · Agent 管理 Tab 的两块新增区(自备 Agent 审核 / Agent 列表)。
 // 接口按 runbooks/DESIGN-G3-ENROLL-AUTH-API-20261001.md v1 第三节(定稿);错误一律是 JSON {"error":机器码,...},
 //    页面只认机器码、自己写中文,不显示 Hub 的原文(设计件第四节)。
@@ -580,7 +580,8 @@ var ENROLL_API={
   list:'/api/console/enroll/applications',
   approve:function(id){return '/api/console/enroll/applications/'+encodeURIComponent(id)+'/approve';},
   reject:function(id){return '/api/console/enroll/applications/'+encodeURIComponent(id)+'/reject';},
-  revoke:function(id){return '/api/console/agents/'+encodeURIComponent(id)+'/revoke';}
+  revoke:function(id){return '/api/console/agents/'+encodeURIComponent(id)+'/revoke';},
+  agents:'/api/console/agents'   // 设计件 3.2 新形状:{agents:[{agent_id,name,full_name,origin,group_code,online}]}
 };
 var enrollGeneration=0,enrollSnapshot=[],enrollOpenId='';
 function enrollFeedback(id,text){var e=document.getElementById(id);if(e)e.textContent=text||'';}
@@ -589,7 +590,7 @@ var CONSOLE_ERRORS={
   name_taken:'名称已被占用（按小写判重），请换一个名称',
   name_invalid:'名称无效：只能使用大小写字母和数字',
   expired:'该申请已过期',superseded:'同一设备的另一条申请已被批复，本条已作废',rejected:'该申请已被拒绝',
-  not_owner:'这不是你名下的申请或 Agent',origin_hosted:'托管 Agent 请用托管操作，不在这里吊销',
+  not_owner:'这不是你名下的申请或 Agent',forbidden:'这不是你名下的 Agent',origin_hosted:'托管 Agent 请用托管操作，不在这里吊销',
   rate_limited:'操作太频繁，请稍后再试',origin_mismatch:'请求来源不被允许，请刷新页面后重试',
   combo_not_verified:'这个 CLI 与 LLM 的组合还没有验通，暂不能创建',plan_exceeds_quota:'所选资源套餐超出剩余额度',
   quota_exceeded:'Agent 数量已达上限',node_no_capacity:'没有节点有足够的剩余资源',account_not_allowed:'你不能使用这个 LLM 账号',
@@ -667,7 +668,7 @@ async function enrollApprove(){
   if(!code||!name||!group){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码、Agent 名称,并选择所属编组');return;}
   enrollBusy(true);var res=await consolePost(ENROLL_API.approve(openedId),{pairing_code:code,agent_name:name,group_id:group});enrollBusy(false);
   if(!res.ok){var gone=res.status===410||(res.code==='pairing_mismatch'&&/已被拒绝/.test(res.text));if(!gone){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
-  enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();refreshGroups('enroll');refreshAgents();
+  enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();refreshRoster();refreshGroups('enroll');refreshAgents();
 }
 async function enrollReject(){
   if(!confirm('拒绝即踢走：该申请将作废,客户端需重新申请。确认拒绝？'))return;
@@ -675,24 +676,38 @@ async function enrollReject(){
   if(!res.ok){if(res.status!==410){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}
   enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();
 }
+var rosterAgents=[],rosterGeneration=0;
+async function refreshRoster(){
+  var generation=++rosterGeneration;
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);
+  try{
+    var r=await fetch(ENROLL_API.agents,{cache:'no-store',signal:controller.signal});
+    if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
+    var d=await r.json();if(!d||!Array.isArray(d.agents))throw new Error('响应格式无效');
+    if(generation!==rosterGeneration)return;
+    rosterAgents=d.agents.filter(function(a){return a&&a.agent_id;});renderRoster();enrollFeedback('rosterStatus','');
+  }catch(err){
+    if(generation===rosterGeneration)enrollFeedback('rosterStatus','Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err));
+  }finally{clearTimeout(timer);}
+}
 function renderRoster(){
   var body=document.getElementById('rosterItems'),empty=document.getElementById('rosterEmpty');if(!body||!empty)return;
-  body.replaceChildren();var owned=groupSnapshot.owned_agents||[];
-  owned.forEach(function(a){
-    var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.id;
-    var name=document.createElement('td');name.textContent=groupShortName(a.session_name);name.title=a.session_name;
-    var hs=hostedStates[a.id],st=document.createElement('td');st.textContent=hs?hostedStateText(hs):(a.online?'在线':'离线');
+  body.replaceChildren();
+  rosterAgents.forEach(function(a){
+    var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.agent_id;
+    var name=document.createElement('td');name.textContent=a.name||'';name.title=a.full_name||'';
+    var hs=hostedStates[a.agent_id],st=document.createElement('td');st.textContent=hs?hostedStateText(hs):(a.online?'在线':'离线');
     var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted'||!!hs;
     if(hs)hostedOpButtons(a,hs).forEach(function(b){action.append(b);});
     revoke.onclick=async function(){
-      if(!confirm('吊销 '+groupShortName(a.session_name)+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;
-      revoke.disabled=true;var res=await consolePost(ENROLL_API.revoke(a.id));revoke.disabled=false;
+      if(!confirm('吊销 '+a.name+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;
+      revoke.disabled=true;var res=await consolePost(ENROLL_API.revoke(a.agent_id));revoke.disabled=false;
       if(!res.ok){enrollFeedback('rosterFeedback',res.text);return;}
-      enrollFeedback('rosterFeedback','');refreshGroups('revoke');refreshAgents();
+      enrollFeedback('rosterFeedback','');refreshRoster();refreshGroups('revoke');refreshAgents();
     };
     action.append(revoke);row.append(name,st,action);body.append(row);
   });
-  empty.hidden=owned.length>0;
+  empty.hidden=rosterAgents.length>0;
 }
 // G3 · 托管 Agent 生成区、进度蒙版、托管生命周期操作(业主 2026-10-01 改序:托管先行)。
 // 🔴 接口为【提案】(与 G4 kimi30kqtuxerh 对齐中),全部集中在 HOSTED_API;Hub 掌握事实:
@@ -787,7 +802,7 @@ async function hostedTrackJob(jobId,name){
     if(stage==='failed'){hostedMaskRender(name,'failed',reason,lastStage);enrollFeedback('hostedFeedback','创建 '+name+' 失败：'+(HOSTED_FAIL_REASONS[reason]||('原因码 '+(reason||'未知'))));return;}
     if(HOSTED_STAGES.some(function(x){return x[0]===stage;}))lastStage=stage;
     hostedMaskRender(name,stage,'',lastStage);
-    if(stage==='online'){enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');refreshAgents();refreshHostedRoster();refreshHostedOptions();return;}
+    if(stage==='online'){enrollFeedback('hostedFeedback',name+' 已上线');refreshGroups('hosted');refreshAgents();refreshRoster();refreshHostedRoster();refreshHostedOptions();return;}
     hostedJobTimer=setTimeout(tick,hostedPollMs);
   }
   tick();
@@ -803,7 +818,7 @@ async function hostedCreate(){
   hostedTrackJob(String(res.data.job_id||''),body.name);
 }
 function hostedOpButtons(a,hs){
-  var name=groupShortName(a.session_name),busy=hs.state==='busy',list=[];
+  var name=a.name,busy=hs.state==='busy',list=[];
   [['upgrade','升级',false],['restart','重启',false],[hs.state==='disabled'?'enable':'disable',hs.state==='disabled'?'启用':'停用',true],['destroy','销毁',true]].forEach(function(d){
     var b=document.createElement('button');b.type='button';b.className='hosted-op';b.dataset.op=d[0];b.textContent=d[1];b.disabled=busy;
     b.onclick=async function(){
@@ -811,9 +826,9 @@ function hostedOpButtons(a,hs){
       if(d[0]==='destroy'){if(!confirm('销毁 '+name+'：容器和数据卷将被删除,凭据立即吊销,不可恢复。确认销毁？'))return;body.confirm=true;}
       if(d[0]==='disable'){if(!confirm('停用 '+name+'：容器将停止,数据卷保留,可再启用;停用期间仍计配额。确认停用？'))return;body.confirm=true;}
       list.forEach(function(x){x.disabled=true;});
-      var res=await consolePost(HOSTED_API.op(a.id,d[0]),body);
+      var res=await consolePost(HOSTED_API.op(a.agent_id,d[0]),body);
       if(!res.ok){enrollFeedback('rosterFeedback',res.text);list.forEach(function(x){x.disabled=busy;});return;}
-      enrollFeedback('rosterFeedback','');refreshHostedRoster();refreshGroups('hosted-op');refreshAgents();
+      enrollFeedback('rosterFeedback','');refreshHostedRoster();refreshRoster();refreshGroups('hosted-op');refreshAgents();
     };
     list.push(b);
   });
@@ -834,7 +849,7 @@ async function refreshHostedRoster(){
 }
 function mountEnrollPanels(pane){
   var anchor=pane.querySelector('#group-status');if(!anchor)return;
-  anchor.insertAdjacentHTML('beforebegin','<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section><section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><label>运行资源套餐 <select id=hostedPlan></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
+  anchor.insertAdjacentHTML('beforebegin','<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><div id=enrollNotice class=group-feedback role=status></div><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section><section id=hostedCreate class="group-block"><div class=group-toolbar><h3>托管 Agent 生成</h3><span><button id=hostedRefresh type=button>刷新</button></span></div><div id=hostedStatus role=status></div><button id=hostedRetry type=button hidden>重试加载</button><div id=hostedForm hidden><label>节点 <select id=hostedNode></select></label><label>CLI <select id=hostedCli></select></label><label>LLM <select id=hostedLlm></select></label><label>LLM 账号 <select id=hostedAccount></select></label><label>运行资源套餐 <select id=hostedPlan></select></label><label>Agent 名称 <input id=hostedName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=hostedGroup></select></label><button id=hostedCreateBtn type=button>创建</button><div id=hostedQuota role=status></div><div id=hostedFeedback class=group-feedback></div></div></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterStatus role=status></div><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
   document.getElementById('enrollRefresh').onclick=refreshEnroll;document.getElementById('enrollRetry').onclick=refreshEnroll;
   document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;
   document.getElementById('enrollCancel').onclick=enrollCloseEditor;
@@ -842,7 +857,8 @@ function mountEnrollPanels(pane){
   document.getElementById('hostedRefresh').onclick=refreshHostedOptions;document.getElementById('hostedRetry').onclick=refreshHostedOptions;
   document.getElementById('hostedCli').onchange=renderHostedLlm;document.getElementById('hostedLlm').onchange=renderHostedAccounts;
   document.getElementById('hostedCreateBtn').onclick=hostedCreate;
-  renderRoster();refreshEnroll();refreshHostedOptions();refreshHostedRoster();
+  refreshRoster();refreshEnroll();refreshHostedOptions();refreshHostedRoster();
+  var rosterTimer=setInterval(function(){if(!document.getElementById('rosterItems')){clearInterval(rosterTimer);return;}refreshRoster();},15000);
 }
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}
 function openTaskBoardWorkspace(){if(tabs.has('__task-board')){activate('__task-board');return;}var tab=document.createElement('span');tab.className='tab';tab.title='任务管理';var label=document.createElement('span');label.textContent='任务管理';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='任务管理';pane.src='/console/tasks?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__task-board');}else activate('__task-board');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__task-board',{tab:tab,pane:pane});activate('__task-board');}

@@ -32,10 +32,10 @@ const MUTATIONS = ['no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'no-stale-guard') mutate('if(generation!==enrollGeneration)return null;', '');
 if (mutation === 'keep-inputs') mutate("if(!gone){enrollFeedback('enrollFeedback',res.text);return;}", "if(!gone){enrollFeedback('enrollFeedback',res.text);enrollCloseEditor();return;}");
-if (mutation === 'no-confirm-revoke') mutate("if(!confirm('吊销 '+groupShortName(a.session_name)+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;", '');
-if (mutation === 'roster-not-following') mutate('renderGroups();renderRoster();', 'renderGroups();');
+if (mutation === 'no-confirm-revoke') mutate("if(!confirm('吊销 '+a.name+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;", '');
+if (mutation === 'roster-not-following') mutate("refreshEnroll();refreshRoster();refreshGroups('enroll');", "refreshEnroll();refreshGroups('enroll');"); // 批准后列表必须重取(列表现在直接取 /api/console/agents,不再跟编组快照)
 if (mutation === 'show-hub-text') mutate("function enrollErrorText(status,data){", "function enrollErrorText(status,data){if(data&&data.detail)return String(data.detail);");
-if (mutation === 'ignore-hosted') mutate("revoke.hidden=a.origin==='hosted';", '');
+if (mutation === 'ignore-hosted') mutate("revoke.hidden=a.origin==='hosted'||!!hs;", 'revoke.hidden=!!hs;');
 if (mutation === 'notice-in-hidden-editor') mutate("enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留", "enrollCloseEditor();enrollFeedback('enrollFeedback',res.text);refreshEnroll();return;}   // 申请保留");
 if (mutation === 'leak-nonmanage-group') mutate('.filter(function(g){return g.can_manage;});', '.filter(function(){return true;});');
 
@@ -80,7 +80,8 @@ let forceGone = '';
 const server = http.createServer(async (req, res) => {
   const p = req.url.split('?')[0];
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
-  if (p === '/api/console/agents') return json(res, 200, { agents: agents.map((a) => ({ session: a.session_name, online: a.online })) });
+  // 设计件 3.2 新形状(agent_id/name/full_name/origin/group_code/online);session 一并带上只为让左栏(尚未迁移的旧调用方)继续工作
+  if (p === '/api/console/agents') return json(res, 200, { agents: [{ session: 'zzc-solo-2642', online: true, agent_id: 'ag-solo', name: 'solo', full_name: 'solo.zzc', origin: 'selfhost', group_code: '' }].concat(agents.map((a) => { const name = a.session_name.split('-')[1]; return { session: a.session_name, online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE }; })) });
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
   if (p === '/api/console/agent-groups' && req.method === 'GET') return json(res, 200, groupsPayload());
   if (p === '/api/console/hosted/options') return json(res, 200, { nodes: [], combos: [], accounts: [], plans: [], quota: { remaining: {} } }); // 托管区挂载请求;本件不测托管
@@ -261,7 +262,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
 
     await test('roster lists own agents; revoke is confirmed, dismiss sends nothing, Hub refusal is shown, success removes the row', async () => {
-      assert.deepStrictEqual(await page.locator('#rosterItems .roster-row').evaluateAll((els) => els.map((e) => e.dataset.agentId)), ['ag-leader', 'ag-locked', 'ag-hosted', 'ag-beta']);
+      assert.deepStrictEqual(await page.locator('#rosterItems .roster-row').evaluateAll((els) => els.map((e) => e.dataset.agentId)), ['ag-solo', 'ag-leader', 'ag-locked', 'ag-hosted', 'ag-beta'], 'the list comes from /api/console/agents: ag-solo is in no group snapshot');
       assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-hosted"] .roster-revoke').isHidden(), true, 'hosted agents are not revoked here (Hub answers 409 origin_hosted)');
       const before = writes.length; dialogAccept = false; dialogs.length = 0;
       await page.locator('#rosterItems .roster-row[data-agent-id="ag-beta"] .roster-revoke').click();

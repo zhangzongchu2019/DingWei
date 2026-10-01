@@ -78,7 +78,8 @@ function err(res, status, code, extra) { json(res, status, { error: code, detail
 const server = http.createServer(async (req, res) => {
   const p = req.url.split('?')[0];
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
-  if (p === '/api/console/agents') return json(res, 200, { agents: agents.map((a) => ({ session: a.session_name, online: a.online })) });
+  // 设计件 3.2 新形状(agent_id/name/full_name/origin/group_code/online);session 一并带上只为让左栏(尚未迁移的旧调用方)继续工作
+  if (p === '/api/console/agents') return json(res, 200, { agents: agents.map((a) => { const name = a.session_name.split('-')[1]; return { session: a.session_name, online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE }; }) });
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
   if (p === '/api/console/agent-groups' && req.method === 'GET') return json(res, 200, groupsPayload());
   if (p === '/api/console/enroll/applications') return json(res, 200, { applications: [] });
