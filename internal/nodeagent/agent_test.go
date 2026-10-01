@@ -284,3 +284,26 @@ func TestTLSPinnedTransportRejectsMismatch(t *testing.T) {
 		t.Fatalf("指纹相符应放行: %v", err)
 	}
 }
+
+// r6 整包自查补漏：节点凭据文件读取——缺失/权限宽于 600/空内容三拒（fail-closed）。
+func TestSecretFileFailsClosed(t *testing.T) {
+	dir := t.TempDir()
+	missing := Config{SecretPath: filepath.Join(dir, "nope")}
+	if _, err := missing.secret(); err == nil {
+		t.Fatal("凭据文件缺失必须拒")
+	}
+	wide := filepath.Join(dir, "wide.secret")
+	if err := os.WriteFile(wide, []byte("s"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (Config{SecretPath: wide}).secret(); err == nil {
+		t.Fatal("权限宽于 600 必须拒")
+	}
+	empty := filepath.Join(dir, "empty.secret")
+	if err := os.WriteFile(empty, []byte("  \n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (Config{SecretPath: empty}).secret(); err == nil {
+		t.Fatal("空凭据必须拒")
+	}
+}

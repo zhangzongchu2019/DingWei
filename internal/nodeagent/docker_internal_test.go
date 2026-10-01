@@ -65,3 +65,47 @@ func TestEngineMalformedResponseFailsClosed(t *testing.T) {
 		t.Fatalf("≥300 应为 engineError 带状态码: %v", err)
 	}
 }
+
+// r6 整包自查（组长点名 pull 返回体）：images/create 拉取失败以流内 error 回报、HTTP 仍 200
+// ——必须逐行扫流；digest 不存在/流畸形 ⇒ imagePull 报错；正常进度流 ⇒ 绿。
+func TestImagePullStreamErrorSurfaced(t *testing.T) {
+	const ref = "hub.local/dingwei/base@sha256:" +
+		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	mk := func(body string) *engine {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte(body))
+		}))
+		t.Cleanup(srv.Close)
+		return newFakeEngine(srv.Client(), srv.URL)
+	}
+	// ① 200 但流内 error（digest 不存在的真实形状）
+	if err := mk(`{"status":"Pulling from dingwei/base"}` + "\n" +
+		`{"errorDetail":{"message":"manifest unknown"},"error":"manifest unknown"}`).imagePull(context.Background(), ref); err == nil ||
+		!strings.Contains(err.Error(), "manifest unknown") {
+		t.Fatalf("流内 error 必须上抛: %v", err)
+	}
+	// ② 200 但流畸形（非 JSON 行）⇒ fail-closed
+	if err := mk("not-json-at-all").imagePull(context.Background(), ref); err == nil {
+		t.Fatal("应答流畸形必须报错")
+	}
+	// ③ 正常进度流 ⇒ 绿
+	if err := mk(`{"status":"Pulling from dingwei/base"}` + "\n" +
+		`{"status":"Digest: sha256:0123"}` + "\n" + `{"status":"Status: Downloaded newer image"}`).imagePull(context.Background(), ref); err != nil {
+		t.Fatalf("正常进度流应绿: %v", err)
+	}
+}
+
+// r6 整包自查：create/inspect 返回体缺 Id ⇒ 报错（不得拿空 ID/零值续跑）。
+func TestEngineMissingIDFailsClosed(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{}`)) // 合法 JSON 但缺 Id
+	}))
+	defer srv.Close()
+	eng := newFakeEngine(srv.Client(), srv.URL)
+	if _, err := eng.containerCreate(context.Background(), "seat-x", map[string]any{}); err == nil {
+		t.Fatal("create 返回体缺 Id 必须报错")
+	}
+	if _, err := eng.containerInspect(context.Background(), "abc"); err == nil {
+		t.Fatal("inspect 返回体缺 Id 必须报错")
+	}
+}

@@ -59,31 +59,40 @@ type engineError struct {
 
 func (e *engineError) Error() string { return fmt.Sprintf("docker engine %d: %s", e.Status, e.Message) }
 
-func (e *engine) call(ctx context.Context, method, path string, body any, out any) error {
+// callRaw 发请求并返回原始应答体；状态码 ≥300 ⇒ engineError 带状态码与报文。
+func (e *engine) callRaw(ctx context.Context, method, path string, body any) ([]byte, error) {
 	var rdr io.Reader
 	if body != nil {
 		raw, err := json.Marshal(body)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		rdr = bytes.NewReader(raw)
 	}
 	req, err := http.NewRequestWithContext(ctx, method, e.base+path, rdr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	resp, err := e.hc.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 	if resp.StatusCode >= 300 {
 		msg := strings.TrimSpace(string(raw))
-		return &engineError{Status: resp.StatusCode, Message: msg}
+		return nil, &engineError{Status: resp.StatusCode, Message: msg}
+	}
+	return raw, nil
+}
+
+func (e *engine) call(ctx context.Context, method, path string, body any, out any) error {
+	raw, err := e.callRaw(ctx, method, path, body)
+	if err != nil {
+		return err
 	}
 	if out != nil && len(raw) > 0 {
 		return json.Unmarshal(raw, out)
@@ -92,9 +101,38 @@ func (e *engine) call(ctx context.Context, method, path string, body any, out an
 }
 
 // imagePull 拉取并校验 digest（fromImage 带 @sha256:）。
+// 🔴 r6 整包自查（真 fail-open，组长点名 pull 返回体）：images/create 的拉取失败以
+//    NDJSON 进度流内的 {"error":...} 回报、HTTP 状态仍是 200——原实现 out=nil 把返回体
+//    整个丢弃，digest 不存在等失败会被当成功。现逐行扫流：error/errorDetail 非空即拒；
+//    非空行解不出 JSON 同样拒（应答流畸形不得静默放过）。
 func (e *engine) imagePull(ctx context.Context, ref string) error {
 	// fromImage 与 tag 分传：repo@sha256:digest 时 tag 置空，Engine 按 digest 拉。
-	return e.call(ctx, "POST", "/images/create?fromImage="+urlQueryEscape(ref), nil, nil)
+	raw, err := e.callRaw(ctx, "POST", "/images/create?fromImage="+urlQueryEscape(ref), nil)
+	if err != nil {
+		return err
+	}
+	for _, ln := range strings.Split(string(raw), "\n") {
+		ln = strings.TrimSpace(ln)
+		if ln == "" {
+			continue
+		}
+		var pl struct {
+			Error       string `json:"error"`
+			ErrorDetail struct {
+				Message string `json:"message"`
+			} `json:"errorDetail"`
+		}
+		if jerr := json.Unmarshal([]byte(ln), &pl); jerr != nil {
+			return fmt.Errorf("image pull %s: 应答流畸形行 %q", ref, ln)
+		}
+		if pl.Error != "" {
+			return fmt.Errorf("image pull %s: %s", ref, pl.Error)
+		}
+		if pl.ErrorDetail.Message != "" {
+			return fmt.Errorf("image pull %s: %s", ref, pl.ErrorDetail.Message)
+		}
+	}
+	return nil
 }
 
 func urlQueryEscape(s string) string {
@@ -126,6 +164,10 @@ func (e *engine) containerCreate(ctx context.Context, name string, spec map[stri
 	if err := e.call(ctx, "POST", "/containers/create?name="+name, spec, &out); err != nil {
 		return "", err
 	}
+	// 🔴 r6 整包自查：201 但返回体缺 Id ⇒ 不得拿空 ID 续跑（后续 start/inspect 会打到空路径）
+	if out.ID == "" {
+		return "", fmt.Errorf("docker create %s: 返回体缺 Id", name)
+	}
 	return out.ID, nil
 }
 
@@ -156,7 +198,14 @@ func (e *engine) containerRemove(ctx context.Context, id string) error {
 func (e *engine) containerInspect(ctx context.Context, id string) (containerInspectResp, error) {
 	var out containerInspectResp
 	err := e.call(ctx, "GET", "/containers/"+id+"/json", nil, &out)
-	return out, err
+	if err != nil {
+		return out, err
+	}
+	// 🔴 r6 整包自查：200 但返回体空/缺 Id ⇒ 不得拿零值结构续跑（调用方会把空 ID 当存在）
+	if out.ID == "" {
+		return out, fmt.Errorf("docker inspect %s: 返回体缺 Id", id)
+	}
+	return out, nil
 }
 
 func (e *engine) networkCreate(ctx context.Context, name string) error {
