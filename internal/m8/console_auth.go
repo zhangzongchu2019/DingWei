@@ -605,7 +605,7 @@ var CONSOLE_ERRORS={
   not_owner:'这不是你名下的申请或 Agent',forbidden:'这不是你名下的 Agent',
   hosted_agent:'托管 Agent 请用托管操作（停用、销毁），不在这里吊销',origin_hosted:'托管 Agent 请用托管操作（停用、销毁），不在这里吊销',
   unauthenticated:'登录已失效，请重新登录',origin_mismatch:'请求来源不符，请刷新页面',
-  combo_not_verified:'这个 CLI 与 LLM 的组合还没有验通，暂不能创建',plan_exceeds_quota:'所选资源套餐超出剩余额度',
+  combo_incompatible:'所选 CLI、LLM 和账号类型不兼容',combo_not_verified:'这个 CLI 与 LLM 的组合还没有验通，暂不能创建',forbidden_role:'你的角色不足以执行这个操作',plan_exceeds_quota:'所选资源套餐超出剩余额度',
   quota_exceeded:'Agent 数量已达上限',node_no_capacity:'没有节点有足够的剩余资源',account_not_allowed:'你不能使用这个 LLM 账号',
   node_offline:'该 Agent 所在节点离线，操作无法执行',invalid_state:'该 Agent 当前状态不允许这个操作',confirm_required:'这个操作需要先确认',
   upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',
@@ -613,7 +613,8 @@ var CONSOLE_ERRORS={
   must_change_password:'请先修改初始密码，再使用平台管理',internal:'服务端出错了，请稍后再试'
 };
 var HOSTED_FAIL_REASONS={
-  image_pull_failed:'拉取镜像失败',start_timeout:'启动超时',node_offline:'节点离线',credential_inject_failed:'凭据写入失败',cancelled:'已取消'
+  queue_timeout:'排队超时（超过 10 分钟）',pull_timeout:'拉取镜像超时（超过 30 分钟）',start_timeout:'启动超时（超过 5 分钟）',
+  image_pull_failed:'拉取镜像失败',start_failed:'启动失败',credential_inject_failed:'凭据写入失败',node_offline:'节点离线'
 };
 function consoleErrorText(status,data){
   var code=data&&typeof data.error==='string'?data.error:'';
@@ -713,7 +714,8 @@ function renderRoster(){
   rosterAgents.forEach(function(a){
     var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.agent_id;
     var name=document.createElement('td');name.textContent=a.name||'';name.title=a.full_name||'';
-    var hs=a.origin==='hosted'?a:null,st=document.createElement('td');st.textContent=hs?hostedStateText(hs):(a.online?'在线':'离线');
+    var hs=a.origin==='hosted'?Object.assign({online:a.online},a.hosted||{}):null,st=document.createElement('td');   // 托管生命周期在行里的 hosted 子对象(契约 v2:过渡形态)
+    st.textContent=hs?hostedStateText(hs):(a.online?'在线':'离线');
     var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';revoke.hidden=a.origin==='hosted';
     if(hs)hostedOpButtons(a,hs).forEach(function(b){action.append(b);});
     revoke.onclick=async function(){
@@ -727,8 +729,8 @@ function renderRoster(){
   empty.hidden=rosterAgents.length>0;
 }
 // G3 · 托管 Agent 生成区、进度蒙版、托管生命周期操作(业主 2026-10-01 改序:托管先行)。
-// 🔴 接口为【提案】(与 G4 kimi30kqtuxerh 对齐中),全部集中在 HOSTED_API;托管行的生命周期状态(state/upgradable/node_name)由
-//    GET /api/console/agents 的同一批对象携带(组长裁定:不另开 hosted/agents 读接口);Hub 掌握事实:
+// 接口按 G4 契约 v2(runbooks/CONTRACT-G4-CONSOLE-API-DRAFT-20261001.md,草稿待冻结),全部集中在 HOSTED_API;托管行的生命周期状态
+//    在 GET /api/console/agents 每行的 hosted 子对象里 {node_name,state,upgradable}(组长裁定:不另开读接口);Hub 掌握事实:
 //    CLI×LLM 兼容与验通、套餐是否超额、节点可用与否都由应答给出,页面只据此置灰,不自己判定。
 //    密钥永不出现:账号只显示名称与后四位。错误一律机器码,页面写中文。
 var HOSTED_API={
@@ -753,7 +755,7 @@ function hostedFill(id,items,placeholder){
 function renderHostedForm(){
   var opts=hostedOptions;if(!opts)return;
   var combos=opts.combos||[],clis=[];combos.forEach(function(c){if(clis.indexOf(c.cli)<0)clis.push(c.cli);});
-  hostedFill('hostedNode',(opts.nodes||[]).map(function(n){return {value:n.id,text:n.name+'（剩余 '+n.free_mem_gb+'G / '+n.free_vcpu+'C）'+(n.online?'':'（离线）'),disabled:!n.online};}),'自动');
+  hostedFill('hostedNode',(opts.nodes||[]).map(function(n){return {value:n.id,text:n.name+'（剩余 '+n.free_mem_gb+'G / '+n.free_vcpu+'C'+(n.free_disk_gb!==undefined?' / 盘 '+n.free_disk_gb+'G':'')+'）'+(n.online?'':'（离线）'),disabled:!n.online};}),'自动');
   hostedFill('hostedCli',clis.map(function(c){var ok=combos.some(function(x){return x.cli===c&&x.verified;});return {value:c,text:c+(ok?'':'（未验通）'),disabled:!ok};}),'请选择 CLI');
   renderHostedLlm();
   hostedFill('hostedPlan',(opts.plans||[]).map(function(p){return {value:p.id,text:p.name+(p.fits?'':'（超出剩余额度）'),disabled:!p.fits};}),'请选择资源套餐');
@@ -762,16 +764,20 @@ function renderHostedForm(){
   var rem=(opts.quota&&opts.quota.remaining)||{};
   document.getElementById('hostedQuota').textContent='剩余额度:Agent '+rem.agents+' 个 · vCPU '+rem.vcpu+' · 内存 '+rem.mem_gb+'G · 磁盘 '+rem.disk_gb+'G';
 }
+// combos 是 CLI×LLM×凭据形态(cred_kind)的唯一事实源:不在表里=不兼容(不列);verified=false=未验通(置灰)。
 function renderHostedLlm(){
-  var opts=hostedOptions||{},cli=document.getElementById('hostedCli').value;
-  var rows=(opts.combos||[]).filter(function(c){return c.cli===cli;});   // 不在表里=不兼容,根本不列
-  hostedFill('hostedLlm',rows.map(function(c){return {value:c.llm,text:c.llm+(c.verified?'':'（未验通）'),disabled:!c.verified};}),cli?'请选择 LLM':'请先选择 CLI');
+  var opts=hostedOptions||{},cli=document.getElementById('hostedCli').value,seen=[];
+  var rows=(opts.combos||[]).filter(function(c){return c.cli===cli;}),llms=[];
+  rows.forEach(function(c){if(seen.indexOf(c.llm)<0){seen.push(c.llm);llms.push({value:c.llm,ok:rows.some(function(x){return x.llm===c.llm&&x.verified;})});}});
+  hostedFill('hostedLlm',llms.map(function(l){return {value:l.value,text:l.value+(l.ok?'':'（未验通）'),disabled:!l.ok};}),cli?'请选择 LLM':'请先选择 CLI');
   renderHostedAccounts();
 }
 function renderHostedAccounts(){
-  var opts=hostedOptions||{},llm=document.getElementById('hostedLlm').value;
+  var opts=hostedOptions||{},cli=document.getElementById('hostedCli').value,llm=document.getElementById('hostedLlm').value;
   var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});
-  hostedFill('hostedAccount',rows.map(function(a){return {value:a.id,text:a.name+'（…'+a.last4+'）'};}),!llm?'请先选择 LLM':(rows.length?'请选择账号':'（该 LLM 暂无可用团队账号）'));
+  // 账号可选 ⇔ 存在 (该 CLI, 该 LLM, 该账号的凭据形态) 且已验通的组合
+  var items=rows.map(function(a){var ok=(opts.combos||[]).some(function(c){return c.cli===cli&&c.llm===llm&&c.verified&&(!a.kind||c.cred_kind===a.kind);});return {value:a.id,text:a.name+'（…'+a.last4+'）'+(ok?'':'（未验通）'),disabled:!ok};});
+  hostedFill('hostedAccount',items,!llm?'请先选择 LLM':(rows.length?'请选择账号':'（该 LLM 暂无可用团队账号）'));
 }
 async function refreshHostedOptions(){
   var generation=++hostedOptionsGeneration,status=document.getElementById('hostedStatus'),retry=document.getElementById('hostedRetry'),form=document.getElementById('hostedForm');

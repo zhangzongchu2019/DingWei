@@ -2,7 +2,8 @@
 // 派工 R-NEWPLAT-G3-tosonnet50ts-20261001084334 · 台账 31738b3b(业主改序:托管先行) · 依据 V6/V8 草稿与示意图评审件第五节
 //
 // 装置与 console-agent-mgmt-enroll-regression.js 同源:console 页从生产源码实时抠,Hub 用本地桩。
-// 🔴 Hub 接口为【提案】(HOSTED_API,已发 G4 kimi30kqtuxerh 对齐);落板后只改页面里的 HOSTED_API 与本件桩路由两处。
+// 接口按 G4 契约 v2(runbooks/CONTRACT-G4-CONSOLE-API-DRAFT-20261001.md,草稿待冻结):combos 带 cred_kind、托管状态在行里的 hosted 子对象。
+//    契约改动只需改页面里的 HOSTED_API 与本件桩路由。
 // 口径:真键盘(click + keyboard.type);pageerror 与 console error 两路监听,末尾断言为空(只放行桩有意返回的 4xx)。
 //
 // MUTATION=<name> 删除对应守卫;对应那条断言必须红(判"首红是不是该条",后续用例共享桩状态会级联):
@@ -25,10 +26,11 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name'];
+const MUTATIONS = ['unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'unseal-review') mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;');
 if (mutation === 'nav-opens-by-name') mutate('b.onclick=function(){ openTab(a.full_name) };', 'b.onclick=function(){ openTab(a.name) };');
+if (mutation === 'ignore-cred-kind') mutate('&&(!a.kind||c.cred_kind===a.kind);});', '&&true;});');
 if (mutation === 'unverified-selectable') mutate("o.disabled=!!it.disabled;", 'o.disabled=false;');
 if (mutation === 'no-linkage') mutate("var rows=(opts.accounts||[]).filter(function(a){return a.llm===llm;});", 'var rows=(opts.accounts||[]);');
 if (mutation === 'hardcoded-mask') mutate("hostedMaskRender(name,stage,'',lastStage);\n    if(stage==='online')", "hostedMaskRender(name,'online','',lastStage);\n    if(stage==='online')");
@@ -49,17 +51,19 @@ let jobSeq = 0;
 function options() {
   return {
     nodes: [
-      { id: 'n1', name: 'node-a', pool: 'p', online: true, free_mem_gb: 12, free_vcpu: 6 },
-      { id: 'n2', name: 'node-b', pool: 'p', online: false, free_mem_gb: 30, free_vcpu: 8 },
+      { id: 'n1', name: 'node-a', pool: 'p', online: true, free_mem_gb: 12, free_vcpu: 6, free_disk_gb: 80 },
+      { id: 'n2', name: 'node-b', pool: 'p', online: false, free_mem_gb: 30, free_vcpu: 8, free_disk_gb: 200 },
     ],
     combos: [
-      { cli: 'codex', llm: 'openai', verified: true }, { cli: 'codex', llm: 'deepseek', verified: false },
-      { cli: 'opencode', llm: 'deepseek', verified: false }, { cli: 'claude', llm: 'anthropic', verified: true },
+      { cli: 'codex', llm: 'openai', cred_kind: 'api_key', verified: true }, { cli: 'codex', llm: 'openai', cred_kind: 'token_file', verified: false },
+      { cli: 'codex', llm: 'deepseek', cred_kind: 'api_key', verified: false },
+      { cli: 'opencode', llm: 'deepseek', cred_kind: 'api_key', verified: false }, { cli: 'claude', llm: 'anthropic', cred_kind: 'api_key', verified: true },
     ],
     accounts: [
-      { id: 'acc1', name: '团队主账号', llm: 'openai', last4: '7f3a', secret: 'SK-LEAK-1' },
-      { id: 'acc2', name: '备用账号', llm: 'openai', last4: '91bc', secret: 'SK-LEAK-2' },
-      { id: 'acc3', name: '团队 anthropic', llm: 'anthropic', last4: '0d2e', secret: 'SK-LEAK-3' },
+      { id: 'acc1', name: '团队主账号', llm: 'openai', kind: 'api_key', last4: '7f3a', secret: 'SK-LEAK-1' },
+      { id: 'acc2', name: '备用账号', llm: 'openai', kind: 'api_key', last4: '91bc', secret: 'SK-LEAK-2' },
+      { id: 'acc4', name: '订阅令牌账号', llm: 'openai', kind: 'token_file', last4: 'aa11', secret: 'SK-LEAK-4' },
+      { id: 'acc3', name: '团队 anthropic', llm: 'anthropic', kind: 'api_key', last4: '0d2e', secret: 'SK-LEAK-3' },
     ],
     plans: [
       { id: '2c4g', name: '2C/4G', vcpu: 2, mem_gb: 4, fits: true },
@@ -83,11 +87,11 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET') getPaths.push(p);
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   // 设计件 3.2 新形状(agent_id/name/full_name/origin/group_code/online);session 一并带上只为让左栏(尚未迁移的旧调用方)继续工作
-  // GET /api/console/agents:设计件 3.2 新形状 + G4 在其上加的托管生命周期字段(state/upgradable/node_name);
+  // GET /api/console/agents:设计件 3.2 新形状 + G4 契约 v2 的 hosted 子对象 {node_name,state,upgradable}(仅托管行);
   if (p === '/api/console/agents') {
     return json(res, 200, { agents: agents.map((a) => {
       const name = a.session_name.split('-')[1]; const h = hostedAgents.find((x) => x.agent_id === a.id);
-      return { online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE, ...(h ? { state: h.state, upgradable: h.upgradable, node_name: h.node_name } : {}) };
+      return { online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE, ...(h ? { hosted: { state: h.state, upgradable: h.upgradable, node_name: h.node_name } } : {}) };
     }) });
   }
   if (p === '/api/console/platform') return json(res, 200, { role: 'owner', actions: [], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'ready' }] });
@@ -101,7 +105,9 @@ const server = http.createServer(async (req, res) => {
     const body = await read(req); writes.push({ path: p, body });
     if (!/^[A-Za-z0-9]+$/.test(String(body.name))) return err(res, 422, 'name_invalid');
     if (agents.some((a) => a.session_name.split('-')[1].toLowerCase() === String(body.name).toLowerCase())) return err(res, 409, 'name_taken');
-    if (!options().combos.some((c) => c.cli === body.cli && c.llm === body.llm && c.verified)) return err(res, 422, 'combo_not_verified');
+    const o = options(); const acct = o.accounts.find((a) => a.id === body.account_id);
+    if (!o.combos.some((c) => c.cli === body.cli && c.llm === body.llm)) return err(res, 422, 'combo_incompatible');
+    if (!o.combos.some((c) => c.cli === body.cli && c.llm === body.llm && c.verified && (!acct || c.cred_kind === acct.kind))) return err(res, 422, 'combo_not_verified');
     const id = `j${++jobSeq}`; jobs[id] = { stage: 'queued', reason: '', name: body.name, made: false };
     return json(res, 202, { job_id: id });
   }
@@ -121,6 +127,7 @@ const server = http.createServer(async (req, res) => {
     const h = hostedAgents.find((x) => x.agent_id === id);
     if (!h) return err(res, 404, 'not_found');
     if (id === 'ag-offline') return err(res, 409, 'node_offline');
+    if (id === 'ag-nope') return err(res, 403, 'forbidden_role');
     if ((op === 'disable' || op === 'destroy') && body.confirm !== true) return err(res, 400, 'confirm_required');
     if (op === 'disable') h.state = 'disabled';
     if (op === 'enable') h.state = 'running';
@@ -173,7 +180,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.match(cli.find((o) => o.value === 'opencode').text, /未验通/);
       const nodes = await opts('#hostedNode');
       assert.deepStrictEqual(nodes.map((o) => [o.value, o.disabled]), [['', false], ['n1', false], ['n2', true]]);
-      assert.match(nodes[1].text, /剩余 12G \/ 6C/);
+      assert.match(nodes[1].text, /剩余 12G \/ 6C \/ 盘 80G/);
       assert.strictEqual(nodes[0].text, '自动');
     });
 
@@ -181,11 +188,12 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.deepStrictEqual((await opts('#hostedLlm')).map((o) => o.text), ['请先选择 CLI']);
       await page.locator('#hostedCli').selectOption('codex');
       const llm = await opts('#hostedLlm');
-      assert.deepStrictEqual(llm.map((o) => [o.value, o.disabled]), [['', false], ['openai', false], ['deepseek', true]], 'only codex combos; anthropic is not even listed');
+      assert.deepStrictEqual(llm.map((o) => [o.value, o.disabled]), [['', false], ['openai', false], ['deepseek', true]], 'only codex combos (openai once although it has two credential kinds); anthropic is not even listed');
       await page.locator('#hostedLlm').selectOption('openai');
       const acc = await opts('#hostedAccount');
-      assert.deepStrictEqual(acc.map((o) => o.value), ['', 'acc1', 'acc2'], 'accounts of the chosen LLM only');
+      assert.deepStrictEqual(acc.map((o) => [o.value, o.disabled]), [['', false], ['acc1', false], ['acc2', false], ['acc4', true]], 'accounts of the chosen LLM; the token_file one needs a verified token_file combo, which does not exist yet');
       assert.strictEqual(acc[1].text, '团队主账号（…7f3a）');
+      assert.match(acc[3].text, /未验通/);
       await page.locator('#hostedAccount').selectOption('acc1');
       await page.locator('#hostedCli').selectOption('claude');
       assert.strictEqual(await page.locator('#hostedLlm').inputValue(), '', 'LLM reset after CLI change');
@@ -261,6 +269,13 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       jobs.j3.stage = 'failed'; jobs.j3.reason = 'something_new';
       await page.locator('#hostedMaskResult').filter({ hasText: '原因码 something_new' }).waitFor({ state: 'visible' });
       await page.mouse.click(5, 5);
+      await fillValid('Foxtrot'); await page.locator('#hostedCreateBtn').click();      // 契约 v2 的排队超时原因码(不可取消,10 分钟超时算失败)
+      await page.locator('#hostedMask').waitFor({ state: 'visible' });
+      jobs.j4.stage = 'failed'; jobs.j4.reason = 'queue_timeout';
+      await page.locator('#hostedMaskResult').filter({ hasText: '排队超时' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#hostedMaskResult').textContent(), '创建失败：排队超时（超过 10 分钟）');
+      assert.strictEqual(await page.locator('#hostedMaskBox button').count(), 0, 'no cancel button: queued jobs are not cancellable');
+      await page.mouse.click(5, 5);
     });
 
     await test('hosted rows show state and lifecycle buttons, never revoke; self-hosted/legacy rows are unchanged', async () => {
@@ -306,6 +321,16 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#rosterFeedback').filter({ hasText: '节点离线' }).waitFor({ state: 'visible' });
       assert.doesNotMatch(await page.locator('#rosterFeedback').textContent(), /SECRET-HUB-TEXT/);
       assert.strictEqual(await page.locator('#rosterItems .roster-row[data-agent-id="ag-offline"] [data-op="restart"]').isEnabled(), true, 'buttons come back after a failure');
+    });
+
+    await test('a role-refused operation says so in our wording', async () => {
+      hostedAgents.push({ agent_id: 'ag-nope', state: 'running', upgradable: false, node_name: 'node-a' });
+      agents.push({ id: 'ag-nope', key_id: 'key-nope', session_name: 'zzc-nope-2642', online: true, origin: 'hosted' });
+      await page.evaluate(() => refreshRoster());
+      await page.locator('#rosterItems .roster-row[data-agent-id="ag-nope"] [data-op="restart"]').click();
+      await page.locator('#rosterFeedback').filter({ hasText: '你的角色不足' }).waitFor({ state: 'visible' });
+      hostedAgents = hostedAgents.filter((x) => x.agent_id !== 'ag-nope'); agents = agents.filter((a) => a.id !== 'ag-nope');
+      await page.evaluate(() => refreshRoster());
     });
 
     await test('destroy needs a second confirmation naming the consequence; dismiss sends nothing, accept sends confirm:true and the row goes', async () => {
@@ -367,7 +392,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
 
     await test('no pageerror and no unexpected console error across the whole run', async () => {
       assert.deepStrictEqual(pageErrors, []);
-      assert.deepStrictEqual(consoleErrors.filter((t) => !/status of (400|404|409|422|503)/.test(t)), []);
+      assert.deepStrictEqual(consoleErrors.filter((t) => !/status of (400|403|404|409|422|503)/.test(t)), []);
     });
   } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`hosted console browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);
