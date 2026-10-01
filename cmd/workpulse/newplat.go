@@ -31,7 +31,8 @@ type newPlatformConfig struct {
 	publicOrigin string
 	pgDSN        string
 	trustProxy   bool
-	// hosted 列表托管子对象的提供函数（G4 注入，见 hostedListHook）；为空时列表不出 hosted 子对象，页面按契约降级为只显示在线／离线。
+	// hosted 列表托管子对象的提供函数，签名即 httpapi.API.Hosted。G4 装配编排器处一行：cfg.hosted = orch.HostedItem
+	// （kimi30kqtuxerh/g4-m0-m1 5a811f0d 起签名逐字相同）。为空时列表不出 hosted 子对象，页面按契约降级为只显示在线／离线。
 	hosted func(ctx context.Context, agentID string) (map[string]any, bool)
 }
 

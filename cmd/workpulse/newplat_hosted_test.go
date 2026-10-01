@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -14,61 +13,23 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 )
 
-// fakeHostedItem 仿 G4 的 hosted.HostedListItem（契约 v2 第二节；本包不 import G4，只认 json 标签）。
-// 三个值互不相同、类型各异，钉的是「键名照抄标签、值与类型原样」，不是碰巧相等。
-type fakeHostedItem struct {
-	NodeName   string `json:"node_name"`
-	State      string `json:"state"`
-	Upgradable bool   `json:"upgradable"`
-}
-
-func TestHostedListHook(t *testing.T) {
-	ctx := context.Background()
-	var calls [][]string
-	overlay := func(_ context.Context, ids []string) (map[string]fakeHostedItem, error) {
-		calls = append(calls, append([]string(nil), ids...))
-		switch ids[0] {
-		case "ag-boom":
-			return nil, errors.New("seat store down")
-		case "ag-h":
-			return map[string]fakeHostedItem{"ag-h": {NodeName: "node-106", State: "busy", Upgradable: true}}, nil
-		}
-		return map[string]fakeHostedItem{}, nil
-	}
-	hook := hostedListHook(overlay)
-
-	got, ok := hook(ctx, "ag-h")
-	want := map[string]any{"node_name": "node-106", "state": "busy", "upgradable": true}
-	if !ok || !reflect.DeepEqual(got, want) {
-		t.Fatalf("hosted row: ok=%v %#v, want %#v", ok, got, want)
-	}
-	if got, ok := hook(ctx, "ag-gone"); ok || got != nil {
-		t.Errorf("absent from overlay (未落席位／已销毁) must yield no sub-object: ok=%v %#v", ok, got)
-	}
-	if got, ok := hook(ctx, "ag-boom"); ok || got != nil {
-		t.Errorf("overlay error must degrade to no sub-object: ok=%v %#v", ok, got)
-	}
-	if !reflect.DeepEqual(calls, [][]string{{"ag-h"}, {"ag-gone"}, {"ag-boom"}}) {
-		t.Errorf("overlay calls %v, want exactly one id per call", calls)
-	}
-}
-
-// 接线：cfg.hosted 经 wireNewPlatform 真到了 GET /api/console/agents —— 托管行带 hosted 子对象，自备行不调、不带；
-// 叠加里缺席的托管行不带。
+// 接线：cfg.hosted 经 wireNewPlatform 真到了 GET /api/console/agents —— 托管行带 hosted 子对象（原样，不改名），
+// 自备行不调、不带；提供函数答 false 的托管行不带。
 func TestWireNewPlatformHostedOverlay(t *testing.T) {
 	ctx := context.Background()
 	hub := newplatHub(t)
 	st := identity.NewMemStore()
+	// 仿 G4 的 Orchestrator.HostedItem：只认 ag-hosted；其余（未落席位、非托管）答 false。三个值互不相同、类型各异。
 	var asked []string
-	overlay := func(_ context.Context, ids []string) (map[string]fakeHostedItem, error) {
-		asked = append(asked, ids...)
-		if ids[0] == "ag-hosted" {
-			return map[string]fakeHostedItem{"ag-hosted": {NodeName: "node-68", State: "running", Upgradable: false}}, nil
+	hostedItem := func(_ context.Context, agentID string) (map[string]any, bool) {
+		asked = append(asked, agentID)
+		if agentID == "ag-hosted" {
+			return map[string]any{"node_name": "node-68", "state": "running", "upgradable": false}, true
 		}
-		return nil, nil
+		return nil, false
 	}
 	mux := http.NewServeMux()
-	if err := wireNewPlatform(ctx, mux, hub, newPlatformConfig{publicOrigin: "https://x", hosted: hostedListHook(overlay)}, st); err != nil {
+	if err := wireNewPlatform(ctx, mux, hub, newPlatformConfig{publicOrigin: "https://x", hosted: hostedItem}, st); err != nil {
 		t.Fatal(err)
 	}
 	t0 := hub.Identity.Now()
