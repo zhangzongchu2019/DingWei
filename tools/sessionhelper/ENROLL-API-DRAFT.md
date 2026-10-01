@@ -6,7 +6,7 @@
 
 ## 1 发起申请  POST /api/enroll/applications
 
-    owner_user_id        使用者安装时填写（客户端配置）
+    owner_user_id        使用者安装时填写（客户端配置）；只允许大小写字母与数字，2～32 位（台账 c5981300），客户端原样上送，Hub 按小写判定
     pairing_salt         16 字节随机，hex
     pairing_digest       sha256(salt 字节 + 6 位配对码 ASCII)，hex；配对码明文不上送
     device_fingerprint   见第 5 节

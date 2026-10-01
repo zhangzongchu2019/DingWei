@@ -30,7 +30,7 @@ from . import __version__
 CREDENTIAL_FILE = "credential.json"
 PENDING_FILE = "enroll-pending.json"
 DEVICE_FILE = "enroll-device.id"
-OWNER_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+OWNER_RE = re.compile(r"^[A-Za-z0-9]{2,32}$")  # user-ID rule (ledger c5981300); the Hub compares case-insensitively
 
 
 class EnrollError(RuntimeError):

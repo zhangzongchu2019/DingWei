@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import shutil
 import stat
 import tempfile
 import unittest
@@ -143,10 +144,18 @@ class EnrollFlowTest(unittest.TestCase):
 
     def test_bad_owner_rejected_before_network(self):
         hub = StubHub([])
-        for bad in ("", "Z ZC", "a/b"):
+        for bad in ("", "Z ZC", "a/b", "a", "a.b", "a_b", "a-b", "x" * 33):
             with self.assertRaises(EnrollError):
                 run_enroll(state_dir=self.dir, owner=bad, transport=hub, show=print)
         self.assertEqual(hub.applies, [])
+
+    def test_owner_user_id_accepts_the_rule_boundaries_and_keeps_case(self):
+        for ok in ("zz", "ZzC9", "x" * 32):
+            with self.subTest(owner=ok):
+                hub = StubHub([APPROVED])
+                shutil.rmtree(self.dir, ignore_errors=True)
+                run_enroll(state_dir=self.dir, owner=ok, transport=hub, show=print, sleep=lambda _s: None)
+                self.assertEqual(hub.applies[0][1]["owner_user_id"], ok)  # sent as typed; Hub lowercases
 
     def test_group_readable_credential_is_refused(self):
         enroll.save_credential(self.dir, Credential("Dev55", SECRET))
