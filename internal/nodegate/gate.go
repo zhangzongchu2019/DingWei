@@ -109,8 +109,14 @@ func (g *Gate) serve(ctx context.Context, nodeID string, conn *websocket.Conn) {
 	}()
 	// 接入即在线（容量空对象入账；首帧 capacity_report 随后覆盖）
 	_ = g.st.SetNodeOnline(context.Background(), nodeID, json.RawMessage(`{}`))
+	// 🔴 OnConnect 必须异步跑（复验 REVIEW-G4-T50-REWORK 第三节）：装配里它是 orch.ReconcileNode，会经 Send 下发
+	//    destroy_seat 并【等结果】，而结果帧要靠下面这个读循环来收。同步调用 ⇒ 读循环没起来 ⇒ Send 等满 sendMax
+	//    超时 ⇒ reconcile_done 永远写不下（节点其实已执行），且每个待对账席位卡住本连接的读循环。
+	//    连接一断 connCtx 即取消，回调里尚未完成的 Send 随之返回。
+	connCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	if g.OnConnect != nil {
-		g.OnConnect(context.Background(), nodeID)
+		go g.OnConnect(connCtx, nodeID)
 	}
 
 	for {
