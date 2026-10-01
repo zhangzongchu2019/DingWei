@@ -22,13 +22,30 @@ type engine struct {
 	base string // "http://d"（socket 语义占位）
 }
 
-func newEngine(sockPath string) *engine {
-	tr := &http.Transport{
-		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-			var d net.Dialer
-			return d.DialContext(ctx, "unix", sockPath)
-		},
+// dialFunc 拨号器（可注入——socket 路径隔离的反向用例要核拨号目标）。
+type dialFunc func(ctx context.Context, network, addr string) (net.Conn, error)
+
+// netDial 底层拨号（测试可替换以记录拨号目标；生产即 net.Dialer）。
+var netDial dialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
+	var d net.Dialer
+	return d.DialContext(ctx, network, addr)
+}
+
+func unixDialer(sockPath string) dialFunc {
+	return func(ctx context.Context, _, _ string) (net.Conn, error) {
+		// 🔴 拨号目标只取配置值（闭包里的 sockPath），忽略调用方传入的 addr——
+		// 组长硬要求（台账 01e52e7d）：任何指令不得落到默认 /var/run/docker.sock。
+		return netDial(ctx, "unix", sockPath)
 	}
+}
+
+func newEngine(sockPath string) *engine {
+	return newEngineWithDial(unixDialer(sockPath))
+}
+
+// newEngineWithDial 自定义拨号器的 Engine（测试记录拨号目标用）。
+func newEngineWithDial(d dialFunc) *engine {
+	tr := &http.Transport{DialContext: d}
 	return &engine{hc: &http.Client{Transport: tr, Timeout: 10 * time.Minute}, base: "http://d"}
 }
 

@@ -39,10 +39,18 @@ func main() {
 		log.Fatalf("nodeagent: %v", err)
 	}
 	// T-G4-12 · Docker 指令集（真机 Engine＋XFS 项目配额）。
+	// 🔴 NODEAGENT_DOCKER_SOCK【必填、无默认值】（组长硬要求，台账 01e52e7d）：
+	//    节点上托管席位用【独立的 dockerd 实例】（独立 socket/data-root/网段），
+	//    代理只能连该实例、绝不能碰节点现有 Docker——默认值写死成 /var/run/docker.sock
+	//    就是把"误连业务 Docker"做成默认行为，故不设默认、缺省即拒起。
 	// NODEAGENT_IMAGE_REGISTRY 固定镜像仓库（白名单）；NODEAGENT_SEAT_ROOT 席位目录根
 	// （生产 /data/dingwei-newplat/agents；实验节点 /data/dingwei-node）。
+	sockPath := os.Getenv("NODEAGENT_DOCKER_SOCK")
+	if sockPath == "" {
+		log.Fatal("nodeagent: NODEAGENT_DOCKER_SOCK 必填（独立 dockerd 实例的 socket；不得使用默认 /var/run/docker.sock）")
+	}
 	ag.RegisterDockerHandlers(
-		nodeagent.NewEngine(envOr("NODEAGENT_DOCKER_SOCK", "/var/run/docker.sock")),
+		nodeagent.NewEngine(sockPath),
 		nodeagent.XFSQuota(),
 		envOr("NODEAGENT_SEAT_ROOT", "/data/dingwei-newplat/agents"),
 		envOr("NODEAGENT_IMAGE_REGISTRY", "hub.local/dingwei"),
