@@ -127,13 +127,13 @@ func TestBootstrapAdminEndToEnd(t *testing.T) {
 		t.Fatalf("second run: %q %v", out2, err)
 	}
 
-	store, closeStore, err := openNewPlatformStore(context.Background(), dsn)
+	store, _, closeStore, err := openNewPlatformStore(context.Background(), dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer closeStore()
 	mux := http.NewServeMux()
-	if err := wireNewPlatform(context.Background(), mux, newplatHub(t), newPlatformConfig{publicOrigin: "https://x"}, store); err != nil {
+	if err := wireNewPlatform(context.Background(), mux, newplatHub(t), newPlatformConfig{publicOrigin: "https://x"}, store, nil); err != nil {
 		t.Fatal(err)
 	}
 	srv := httptest.NewServer(mux)
@@ -197,7 +197,7 @@ func TestResetPasswordEndToEnd(t *testing.T) {
 		t.Fatal(err)
 	}
 	initial := strings.TrimPrefix(strings.Split(out, "\n")[1], "initial_password=")
-	store, closeStore, err := openNewPlatformStore(context.Background(), dsn)
+	store, _, closeStore, err := openNewPlatformStore(context.Background(), dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

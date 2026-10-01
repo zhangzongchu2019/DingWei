@@ -46,7 +46,7 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 	hub := newplatHub(t)
 	rec := &routeRecorder{mux: http.NewServeMux()}
 	const origin = "https://dw.szuma.net:55055"
-	if err := wireNewPlatform(context.Background(), rec, hub, newPlatformConfig{publicOrigin: origin}, identity.NewMemStore()); err != nil {
+	if err := wireNewPlatform(context.Background(), rec, hub, newPlatformConfig{publicOrigin: origin}, identity.NewMemStore(), nil); err != nil {
 		t.Fatal(err)
 	}
 	registerConsoleRoutes(rec, hub, true)

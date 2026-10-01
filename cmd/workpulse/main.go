@@ -286,12 +286,12 @@ func run(logger *slog.Logger) error {
 		return fmt.Errorf("newplat config: %w", newplatErr)
 	}
 	if newplatOn {
-		npStore, closeNPStore, err := openNewPlatformStore(ctx, newplatCfg.pgDSN)
+		npStore, npPool, closeNPStore, err := openNewPlatformStore(ctx, newplatCfg.pgDSN)
 		if err != nil {
 			return fmt.Errorf("newplat identity store: %w", err)
 		}
 		defer closeNPStore()
-		if err := wireNewPlatform(ctx, mux, prefixHub, newplatCfg, npStore); err != nil {
+		if err := wireNewPlatform(ctx, mux, prefixHub, newplatCfg, npStore, npPool); err != nil {
 			return fmt.Errorf("newplat wiring refused to start: %w", err)
 		}
 	}

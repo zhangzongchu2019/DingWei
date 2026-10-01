@@ -168,6 +168,15 @@ type CreateOutcome struct {
 // Create 创建托管 Agent：同步校验（失败即 4xx）→ 签发 → 绑定 → 席位落库（queued）。
 // 异步执行链（pull→create→online）由 RunJob 驱动；超时清扫见 SweepTimeouts。
 func (o *Orchestrator) Create(ctx context.Context, req CreateRequest) (CreateOutcome, error) {
+	// ⓪ 凭据形态由账号决定（契约：创建请求体只有 account_id，没有 cred_kind——
+	//    账号的 kind 即凭据形态；账号不存在 ⇒ account_not_allowed）
+	if req.CredKind == "" {
+		a, err := o.st.GetAccount(ctx, req.AccountID)
+		if err != nil {
+			return CreateOutcome{}, ErrAccountNotAllowed
+		}
+		req.CredKind = a.Kind
+	}
 	// ① 联动过滤＋逐家验通（B12：验通一家放开一家）
 	verified, ok := o.combos.Lookup(req.CLI, req.LLM, req.CredKind)
 	if !ok {
