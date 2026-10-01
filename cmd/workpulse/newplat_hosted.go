@@ -70,18 +70,25 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, cfg *newPlatformConfig, po
 			}
 			return false
 		},
+		seatOwnerOf: func(r *http.Request, agentID string) (string, bool) {
+			seat, err := hst.GetSeat(r.Context(), agentID)
+			if err != nil {
+				return "", false
+			}
+			return seat.CreatedBy, true
+		},
 		isManager: func(r *http.Request, userLC string) bool {
 			u, err := idStore.GetUser(r.Context(), userLC)
 			return err == nil && (u.Type == identity.UserPlatformAdmin || u.Type == identity.UserManager)
 		},
-		listUsers: func(r *http.Request) ([]string, error) {
+		listUsers: func(r *http.Request) ([]quotaUser, error) {
 			us, err := idStore.ListUsers(r.Context())
 			if err != nil {
 				return nil, err
 			}
-			out := make([]string, 0, len(us))
+			out := make([]quotaUser, 0, len(us))
 			for _, u := range us {
-				out = append(out, u.UserID)
+				out = append(out, quotaUser{ID: u.UserID, ShortName: u.ShortName})
 			}
 			return out, nil
 		},

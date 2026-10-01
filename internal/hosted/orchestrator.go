@@ -92,6 +92,13 @@ var (
 	// 由接线适配器译成这两个哨兵——编组可缺省，给了才校验）。
 	ErrGroupNotFound = errors.New("group_not_found")
 	ErrGroupClosed   = errors.New("group_closed")
+	// 名称两码＋备份失败码（tosonnet50ts 真 Hub 联调 1/4：错误字段只许机器码，不拼原因）
+	ErrNameInvalid  = errors.New("name_invalid")
+	ErrNameTaken    = errors.New("name_taken")
+	ErrBackupFailed = errors.New("backup_failed")
+	ErrStartFailed  = errors.New("start_failed")
+	// params_invalid：请求体/参数不合契约形状（联调契约表新增行）
+	ErrParamsInvalid = errors.New("params_invalid")
 )
 
 // ---------- 编排器 ----------

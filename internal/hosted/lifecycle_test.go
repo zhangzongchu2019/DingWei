@@ -414,3 +414,23 @@ func TestReconcileOnNodeReconnect(t *testing.T) {
 		t.Fatalf("对账后应无待清: %v", pending)
 	}
 }
+
+// 联调第 7 条：停用失败（error 态）后启用可恢复——Resume＋起容器，回 online。
+func TestEnableFromErrorRecoversFailedDisable(t *testing.T) {
+	ctx := context.Background()
+	lc, log, _, gw, _, s, id := mkLifecycle(t)
+	gw.failOn = "stop_seat"
+	if err := lc.Disable(ctx, id, "zzc", true, true); !errors.Is(err, ErrNodeOffline) {
+		t.Fatalf("停用失败应 node_offline: %v", err)
+	}
+	gw.failOn = ""
+	log.reset()
+	if err := lc.Enable(ctx, id, "zzc", true); err != nil {
+		t.Fatalf("error 态启用应可恢复: %v", err)
+	}
+	eqSeq(t, "enable_from_error", log.get(), []string{"idp:resume", "node:start_seat"})
+	seat, _ := s.GetSeat(ctx, id)
+	if seat.State != "online" {
+		t.Fatalf("恢复后应 online: %+v", seat)
+	}
+}

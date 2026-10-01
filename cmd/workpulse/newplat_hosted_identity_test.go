@@ -122,9 +122,10 @@ func TestHostedIdentityIssue(t *testing.T) {
 	if _, _, err := idp.IssueHostedAgent(ctx, "Own", "Closed", codeOf("mine"), "g4"); err != errG4GroupClosed {
 		t.Errorf("closed own group: err %v, want %v", err, errG4GroupClosed)
 	}
-	// 非编组错误原样透传（G4 只认编组两码，其余按它自己的口径处理）。
-	if _, _, err := idp.IssueHostedAgent(ctx, "Own", "walker", "", "g4"); !errors.Is(err, identity.ErrNameTaken) {
-		t.Errorf("name taken: %v, want identity.ErrNameTaken passed through", err)
+	// 名称两码译成契约机器码（联调第 3 条：错误字段不许是 Go 文本；kimi30kqtuxerh 修订，
+	// 已报 opus50tc2k——「其余原样透传」口径因此收窄为「编组两码＋名称两码之外原样透传」）。
+	if _, _, err := idp.IssueHostedAgent(ctx, "Own", "walker", "", "g4"); err == nil || err.Error() != "name_taken" {
+		t.Errorf("name taken: %v, want 契约机器码 name_taken", err)
 	}
 	if _, _, err := idp.IssueHostedAgent(ctx, "Nobody", "Ghost", "", "g4"); !errors.Is(err, identity.ErrUnknownOwner) {
 		t.Errorf("unknown owner: %v, want identity.ErrUnknownOwner passed through", err)
