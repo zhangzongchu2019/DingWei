@@ -311,7 +311,7 @@ main{display:flex;flex-direction:column;min-width:0}
 .agent-offline-reason{position:absolute;inset:0;z-index:2;align-items:center;justify-content:center;background:var(--bg);color:#9d1b1b;font-weight:600}
 .group-workspace{position:absolute;inset:0;overflow:auto;padding:16px;background:inherit}
 .group-workspace label{display:block;margin:8px 0}.group-workspace input,.group-workspace select{min-width:320px;padding:5px}
-.group-workspace button{margin:4px;padding:5px 9px}.agent-group{border:1px solid #ddd;border-radius:6px;padding:10px;margin:8px 0}
+.group-workspace button{margin:4px;padding:5px 9px}.enroll-editor{border:1px solid #ccd;border-radius:6px;padding:10px;margin:8px 0}html[data-theme="dark"] .enroll-editor{border-color:#445}.agent-group{border:1px solid #ddd;border-radius:6px;padding:10px;margin:8px 0}
 .group-toolbar{display:flex;align-items:center;justify-content:space-between}.group-table{width:100%;table-layout:fixed;border-collapse:collapse}.group-table th,.group-table td{padding:7px;border-bottom:1px solid #ddd;text-align:left}.group-table tbody tr:nth-child(even){background:var(--row-alt)}.group-table th:nth-child(1),.group-table td:nth-child(1){width:28%}.group-table th:nth-child(2),.group-table td:nth-child(2){width:28%}.group-table th:nth-child(3),.group-table td:nth-child(3){width:28%}.group-table th:nth-child(4),.group-table td:nth-child(4){width:16%}.group-row{cursor:pointer}.group-member-row{display:flex;align-items:center;gap:18px;max-width:520px;min-height:34px}.group-member-remove{visibility:hidden}.group-member-row:hover .group-member-remove,.group-member-row:focus-within .group-member-remove{visibility:visible}
 .agent-tree-group{margin:5px 0}.agent-tree-group-label{display:block;font-weight:700;padding:4px 6px}.agent-tree-members{padding-left:10px}.agent-tree-agent{width:100%;text-align:left}
 .group-row .group-pick{margin-right:auto}.group-feedback{min-height:1.2em;color:#9d1b1b}.group-block{border-radius:7px;padding:12px;margin:10px 0}.group-block-list{background:#f4f7fb}.group-block-detail{background:#f8f5ff}.group-block-add{background:#eef8f1}.group-block-join{background:#fff7eb}
@@ -570,7 +570,114 @@ function groupFeedback(id,text){var e=document.getElementById(id);if(e)e.textCon
 function setGroupPanelMode(mode){var selected=(groupSnapshot.groups||[]).some(function(group){return group.code===window.selectedGroupCode;});groupPanelMode=mode==='detail'&&!selected?'':mode;document.getElementById('groupDetail').hidden=groupPanelMode!=='detail';document.getElementById('groupAddPanel').hidden=groupPanelMode!=='add';document.getElementById('groupCodeJoin').hidden=groupPanelMode!=='join';document.getElementById('groupAddOpen').textContent=groupPanelMode==='add'?'取消添加':'⊕ 添加编组';document.getElementById('groupCodeJoinOpen').textContent=groupPanelMode==='join'?'取消加入':'加入到其他业主编组';if(groupPanelMode==='add')document.getElementById('groupShortName').focus();if(groupPanelMode==='join')document.getElementById('groupJoinCode').focus();}
 function groupAction(path,method,body,feedback){return fetch(path,{method:method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined}).then(async function(r){if(!r.ok){groupFeedback(feedback||'group-status',(await r.text()).trim()||('HTTP '+r.status));return false;}await refreshGroups('action');groupFeedback(feedback||'group-status','操作成功');return true;}).catch(function(e){groupFeedback(feedback||'group-status','请求失败: '+String(e&&e.message||e));return false;});}
 function groupShortName(s){var p=String(s).split('-');return p.length===3?p[1]:s;}
-async function refreshGroups(source){var generation=++groupRequestGeneration;if(groupMode){var leader=document.getElementById('groupLeader');if(leader&&leader.value)groupLeaderSelection=leader.value;setGroupSelectState('加载中…',true);groupStatus('Agent 列表加载中…');}var controller=new AbortController();var timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);try{var r=await fetch('/api/console/agent-groups',{cache:'no-store',signal:controller.signal});if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}var data=await r.json();if(!data||!Array.isArray(data.owned_agents)||!Array.isArray(data.groups))throw new Error('响应格式无效');if(generation!==groupRequestGeneration)return null;groupSnapshot=data;renderAgentNav();if(groupMode){renderGroups();if(!data.owned_agents.length){setGroupSelectState('没有自己的 Agent',true);groupStatus('没有自己的 Agent，无法建组或加入');}else if(source==='retry'){groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');groupStatus('');}else groupStatus('');}return data;}catch(err){if(groupMode&&generation===groupRequestGeneration){setGroupSelectState('加载失败',true);var message='编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);}return null;}finally{clearTimeout(timer);}}
+async function refreshGroups(source){var generation=++groupRequestGeneration;if(groupMode){var leader=document.getElementById('groupLeader');if(leader&&leader.value)groupLeaderSelection=leader.value;setGroupSelectState('加载中…',true);groupStatus('Agent 列表加载中…');}var controller=new AbortController();var timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);try{var r=await fetch('/api/console/agent-groups',{cache:'no-store',signal:controller.signal});if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}var data=await r.json();if(!data||!Array.isArray(data.owned_agents)||!Array.isArray(data.groups))throw new Error('响应格式无效');if(generation!==groupRequestGeneration)return null;groupSnapshot=data;renderAgentNav();if(groupMode){renderGroups();renderRoster();if(!data.owned_agents.length){setGroupSelectState('没有自己的 Agent',true);groupStatus('没有自己的 Agent，无法建组或加入');}else if(source==='retry'){groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');groupStatus('');}else groupStatus('');}return data;}catch(err){if(groupMode&&generation===groupRequestGeneration){setGroupSelectState('加载失败',true);var message='编组加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);}return null;}finally{clearTimeout(timer);}}
+// G3 · Agent 管理 Tab 的两块新增区(自备 Agent 审核 / Agent 列表)。
+// 🔴 接口路径为【暂定】(G3 Hub 设计件落板前以此为准,落板后只改 ENROLL_API 一处);
+//    不重写 refreshGroups/renderGroups —— 它们的三态文案、AbortController、generation 守卫由 group 回归守着。
+//    本块自带同款守卫:加载中/空/失败三态、超时、过期应答丢弃;失败文案原样显示 Hub 应答(重名/配对码错/已吊销等),不在前端预判。
+var ENROLL_API={
+  list:'/api/console/enroll/applications',
+  approve:function(id){return '/api/console/enroll/applications/'+encodeURIComponent(id)+'/approve';},
+  reject:function(id){return '/api/console/enroll/applications/'+encodeURIComponent(id)+'/reject';},
+  revoke:function(id){return '/api/console/agents/'+encodeURIComponent(id)+'/revoke';}
+};
+var enrollGeneration=0,enrollSnapshot=[],enrollOpenId='';
+function enrollFeedback(id,text){var e=document.getElementById(id);if(e)e.textContent=text||'';}
+function enrollTime(v){var d=new Date(v);return isNaN(d.getTime())?String(v||''):d.toLocaleString('zh-CN',{hour12:false});}
+async function enrollPost(path,body){
+  try{
+    var r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+    if(r.ok)return {ok:true,text:''};
+    var detail=(await r.text()).trim();
+    return {ok:false,text:detail||('HTTP '+r.status)};
+  }catch(err){return {ok:false,text:'请求失败: '+String(err&&err.message||err)};}
+}
+function enrollCloseEditor(){
+  enrollOpenId='';var ed=document.getElementById('enrollEditor');if(ed)ed.hidden=true;
+  ['enrollCode','enrollName'].forEach(function(id){var i=document.getElementById(id);if(i)i.value='';});
+}
+function enrollFillGroups(){
+  var sel=document.getElementById('enrollGroup');if(!sel)return;var keep=sel.value;sel.replaceChildren();
+  var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});
+  var none=document.createElement('option');none.value='';none.textContent=own.length?'（不加入编组）':'（暂无可选编组）';sel.append(none);
+  own.forEach(function(g){var o=document.createElement('option');o.value=g.code;o.textContent=g.short_name||'历史组';sel.append(o);});
+  if(keep&&own.some(function(g){return g.code===keep;}))sel.value=keep;
+}
+function enrollOpenEditor(app){
+  enrollOpenId=app.id;var ed=document.getElementById('enrollEditor');if(!ed)return;
+  document.getElementById('enrollEditorTitle').textContent='审核申请 · 来源 '+(app.ip||'未知')+' · '+enrollTime(app.requested_at);
+  enrollFillGroups();enrollFeedback('enrollFeedback','');ed.hidden=false;
+  document.getElementById('enrollCode').focus();
+}
+function renderEnroll(){
+  var body=document.getElementById('enrollItems'),empty=document.getElementById('enrollEmpty');if(!body||!empty)return;
+  body.replaceChildren();
+  enrollSnapshot.forEach(function(app){
+    var row=document.createElement('tr');row.className='enroll-row';row.dataset.applicationId=app.id;
+    var fp=String(app.device_fingerprint||'');
+    [app.ip||'',fp.slice(0,12),app.client_version||'',enrollTime(app.requested_at)].forEach(function(v,i){var td=document.createElement('td');td.textContent=v;if(i===1)td.title=fp;row.append(td);});
+    var action=document.createElement('td'),open=document.createElement('button');open.type='button';open.className='enroll-open';open.textContent='审核';
+    open.onclick=function(){enrollOpenEditor(app);};action.append(open);row.append(action);body.append(row);
+  });
+  empty.hidden=enrollSnapshot.length>0;
+  if(enrollOpenId&&!enrollSnapshot.some(function(a){return a.id===enrollOpenId;})){enrollCloseEditor();enrollFeedback('enrollFeedback','该申请已不在待审核列表(可能已处理,或同一设备的另一条已被批复)');}
+}
+async function refreshEnroll(){
+  var generation=++enrollGeneration,status=document.getElementById('enrollStatus'),retry=document.getElementById('enrollRetry');
+  if(!status||!retry)return null;
+  status.textContent='自备 Agent 申请加载中…';retry.hidden=true;
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);
+  try{
+    var r=await fetch(ENROLL_API.list,{cache:'no-store',signal:controller.signal});
+    if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
+    var data=await r.json();if(!data||!Array.isArray(data.applications))throw new Error('响应格式无效');
+    if(generation!==enrollGeneration)return null;
+    enrollSnapshot=data.applications;renderEnroll();status.textContent='';return data;
+  }catch(err){
+    if(generation===enrollGeneration){enrollSnapshot=[];renderEnroll();document.getElementById('enrollEmpty').hidden=true;status.textContent='自备 Agent 申请加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;}
+    return null;
+  }finally{clearTimeout(timer);}
+}
+function enrollBusy(on){['enrollApprove','enrollReject'].forEach(function(id){var b=document.getElementById(id);if(b)b.disabled=on;});}
+async function enrollApprove(){
+  var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),group=document.getElementById('enrollGroup').value;
+  if(!code||!name){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码和 Agent 名称');return;}
+  enrollBusy(true);var res=await enrollPost(ENROLL_API.approve(enrollOpenId),{pairing_code:code,agent_name:name,group_code:group});enrollBusy(false);
+  if(!res.ok){enrollFeedback('enrollFeedback',res.text);return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
+  enrollCloseEditor();enrollFeedback('enrollFeedback','');refreshEnroll();refreshGroups('enroll');refreshAgents();
+}
+async function enrollReject(){
+  if(!confirm('拒绝即踢走：该申请将作废,客户端需重新申请。确认拒绝？'))return;
+  enrollBusy(true);var res=await enrollPost(ENROLL_API.reject(enrollOpenId));enrollBusy(false);
+  if(!res.ok){enrollFeedback('enrollFeedback',res.text);return;}
+  enrollCloseEditor();refreshEnroll();
+}
+function renderRoster(){
+  var body=document.getElementById('rosterItems'),empty=document.getElementById('rosterEmpty');if(!body||!empty)return;
+  body.replaceChildren();var owned=groupSnapshot.owned_agents||[];
+  owned.forEach(function(a){
+    var row=document.createElement('tr');row.className='roster-row';row.dataset.agentId=a.id;
+    var name=document.createElement('td');name.textContent=groupShortName(a.session_name);name.title=a.session_name;
+    var st=document.createElement('td');st.textContent=a.online?'在线':'离线';
+    var action=document.createElement('td'),revoke=document.createElement('button');revoke.type='button';revoke.className='roster-revoke';revoke.textContent='吊销';
+    revoke.onclick=async function(){
+      if(!confirm('吊销 '+groupShortName(a.session_name)+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;
+      revoke.disabled=true;var res=await enrollPost(ENROLL_API.revoke(a.id));revoke.disabled=false;
+      if(!res.ok){enrollFeedback('rosterFeedback',res.text);return;}
+      enrollFeedback('rosterFeedback','');refreshGroups('revoke');refreshAgents();
+    };
+    action.append(revoke);row.append(name,st,action);body.append(row);
+  });
+  empty.hidden=owned.length>0;
+}
+function mountEnrollPanels(pane){
+  var anchor=pane.querySelector('#group-status');if(!anchor)return;
+  anchor.insertAdjacentHTML('beforebegin','<section id=enrollReview class="group-block"><div class=group-toolbar><h3>自备 Agent 审核</h3><span><button id=enrollRefresh type=button>刷新</button></span></div><table id=enrollTable class=group-table><thead><tr><th>IP 来源</th><th>设备指纹</th><th>客户端版本</th><th>申请时间</th><th>操作</th></tr></thead><tbody id=enrollItems></tbody></table><div id=enrollEmpty hidden>暂无待审核的自备 Agent 申请。</div><div id=enrollStatus role=status></div><button id=enrollRetry type=button hidden>重试加载</button><section id=enrollEditor class=enroll-editor hidden><h4 id=enrollEditorTitle></h4><label>配对码 <input id=enrollCode maxlength=6 inputmode=numeric autocomplete=off placeholder="照客户端屏幕填写 6 位配对码"></label><label>Agent 名称 <input id=enrollName autocomplete=off placeholder="大小写字母和数字"></label><label>Agent 编组 <select id=enrollGroup></select></label><button id=enrollApprove type=button>通过</button><button id=enrollReject type=button>拒绝</button><button id=enrollCancel type=button>收起</button><div id=enrollFeedback class=group-feedback></div></section></section><section id=agentRoster class="group-block"><h3>Agent 列表</h3><table id=rosterTable class=group-table><thead><tr><th>Agent</th><th>状态</th><th>操作</th></tr></thead><tbody id=rosterItems></tbody></table><div id=rosterEmpty hidden>没有自己的 Agent。</div><div id=rosterFeedback class=group-feedback></div></section>');
+  document.getElementById('enrollRefresh').onclick=refreshEnroll;document.getElementById('enrollRetry').onclick=refreshEnroll;
+  document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;
+  document.getElementById('enrollCancel').onclick=enrollCloseEditor;
+  renderRoster();refreshEnroll();
+}
 function openSpecsWorkspace(){if(tabs.has('__specs')){activate('__specs');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Specs';var label=document.createElement('span');label.textContent='Specs';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='Specs workspace';pane.src='/console/specs?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__specs');}else activate('__specs');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__specs',{tab:tab,pane:pane});activate('__specs');}
 function openTaskBoardWorkspace(){if(tabs.has('__task-board')){activate('__task-board');return;}var tab=document.createElement('span');tab.className='tab';tab.title='任务管理';var label=document.createElement('span');label.textContent='任务管理';var x=document.createElement('span');x.className='x';x.textContent='×';x.title='关闭';tab.append(label,x);var pane=document.createElement('iframe');pane.title='任务管理';pane.src='/console/tasks?embedded=1';pane.style.display='none';tab.onclick=function(ev){if(ev.target===x){ev.stopPropagation();closeTab('__task-board');}else activate('__task-board');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__task-board',{tab:tab,pane:pane});activate('__task-board');}
 dwThemeInit();   // 🔴 主题先行:先把已存偏好应用到外壳,再渲染列表(否则先白一下再变暗)
@@ -592,7 +699,7 @@ function renderGroups(){
 function openGroupWorkspace(){
  if(tabs.has('__agent-groups')){activate('__agent-groups');return;}var tab=document.createElement('span');tab.className='tab';tab.title='Agent 编组';var label=document.createElement('span'),x=document.createElement('span');label.textContent='Agent 编组';x.className='x';x.textContent='×';tab.append(label,x);var pane=document.createElement('section');pane.className='group-workspace';
  pane.innerHTML='<h2>Agent 编组</h2><section class="group-block group-block-list"><div class=group-toolbar><h3>编组列表</h3><span><button id=groupAddOpen type=button>⊕ 添加编组</button><button id=groupCodeJoinOpen type=button>加入到其他业主编组</button></span></div><table id=groupListTable class=group-table><thead><tr><th>组名</th><th>组长</th><th>业主</th><th>操作</th></tr></thead><tbody id=groupListItems></tbody></table><div id=groupEmptyCreate>尚无编组，可以添加第一个编组。</div><div id=groupRetry><button id=retryGroups type=button>重试加载</button><div id=groupRetryFeedback class=group-feedback></div></div></section><section id=groupAddPanel class="group-block group-block-add" hidden><label>8 字符组名 <input id=groupShortName maxlength=8></label><label>指定组长 <select id=groupLeader disabled></select></label><button id=createGroup type=button>创建编组</button><div id=groupNameFeedback class=group-feedback></div></section><section id=groupDetail class="group-block group-block-detail" hidden><h3 id=selectedGroupName></h3><h4>成员列表</h4><div id=groupMembers></div><div id=groupMemberFeedback class=group-feedback></div><section id=groupMemberAdd class="group-block group-block-add"><h4>继续添加新成员</h4><select id=groupJoinAgent disabled></select><button id=joinGroup type=button>添加</button><div id=groupJoinFeedback class=group-feedback></div></section><button id=groupAdditionsToggle type=button></button><div id=groupManageFeedback class=group-feedback></div></section><section id=groupCodeJoin class="group-block group-block-join" hidden><h3>加入到其他业主编组</h3><select id=groupCodeJoinAgent disabled></select><label>32 位编组码 <input id=groupJoinCode maxlength=32 placeholder="请输入完整的 32 位编组码"></label><button id=joinByCode type=button>加入</button><div id=groupCodeJoinFeedback class=group-feedback></div></section><div id=group-status></div>';
- tab.onclick=function(e){if(e.target===x){e.stopPropagation();closeTab('__agent-groups');}else activate('__agent-groups');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__agent-groups',{tab:tab,pane:pane});groupMode=true;document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};document.getElementById('groupCodeJoinOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='join'?'':'join');};document.getElementById('retryGroups').onclick=function(){refreshGroups('retry');};document.getElementById('createGroup').onclick=function(){var input=document.getElementById('groupShortName'),name=input.value.trim(),id=document.getElementById('groupLeader').value;if(!name){groupFeedback('groupNameFeedback','请输入团队名称');return;}groupAction('/api/console/agent-groups','POST',{agent_id:id,short_name:name},'groupNameFeedback').then(function(ok){if(ok){input.value='';setGroupPanelMode('detail');}});};document.getElementById('joinGroup').onclick=function(){var g=(groupSnapshot.groups||[]).find(function(v){return v.code===window.selectedGroupCode;}),id=document.getElementById('groupJoinAgent').value;if(g&&id)groupAction('/api/console/agent-groups/'+encodeURIComponent(g.code)+'/members','POST',{agent_id:id},'groupJoinFeedback');};document.getElementById('joinByCode').onclick=function(){var code=document.getElementById('groupJoinCode').value.trim(),id=document.getElementById('groupCodeJoinAgent').value;if(code.length!==32){groupFeedback('groupCodeJoinFeedback','请输入完整 32 字符组码');return;}groupAction('/api/console/agent-groups/'+encodeURIComponent(code)+'/members','POST',{agent_id:id},'groupCodeJoinFeedback');};activate('__agent-groups');refreshGroups('initial');
+ tab.onclick=function(e){if(e.target===x){e.stopPropagation();closeTab('__agent-groups');}else activate('__agent-groups');};document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__agent-groups',{tab:tab,pane:pane});groupMode=true;document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};document.getElementById('groupCodeJoinOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='join'?'':'join');};document.getElementById('retryGroups').onclick=function(){refreshGroups('retry');};document.getElementById('createGroup').onclick=function(){var input=document.getElementById('groupShortName'),name=input.value.trim(),id=document.getElementById('groupLeader').value;if(!name){groupFeedback('groupNameFeedback','请输入团队名称');return;}groupAction('/api/console/agent-groups','POST',{agent_id:id,short_name:name},'groupNameFeedback').then(function(ok){if(ok){input.value='';setGroupPanelMode('detail');}});};document.getElementById('joinGroup').onclick=function(){var g=(groupSnapshot.groups||[]).find(function(v){return v.code===window.selectedGroupCode;}),id=document.getElementById('groupJoinAgent').value;if(g&&id)groupAction('/api/console/agent-groups/'+encodeURIComponent(g.code)+'/members','POST',{agent_id:id},'groupJoinFeedback');};document.getElementById('joinByCode').onclick=function(){var code=document.getElementById('groupJoinCode').value.trim(),id=document.getElementById('groupCodeJoinAgent').value;if(code.length!==32){groupFeedback('groupCodeJoinFeedback','请输入完整 32 字符组码');return;}groupAction('/api/console/agent-groups/'+encodeURIComponent(code)+'/members','POST',{agent_id:id},'groupCodeJoinFeedback');};mountEnrollPanels(pane);activate('__agent-groups');refreshGroups('initial');
 }
 
 	</script>`
