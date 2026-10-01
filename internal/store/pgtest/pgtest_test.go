@@ -1,7 +1,6 @@
 package pgtest
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"os"
@@ -131,7 +130,12 @@ func TestPool_RoundTrip(t *testing.T) {
 func TestCleanupIsReal_KeepRuntimeNegativeControl(t *testing.T) {
 	bin, err := toolBinary(t)
 	if err != nil {
-		t.Skipf("内嵌 PG 工具不可用: %v", err)
+		// 与 acquire 同一套分类:工具编不出来属「环境在却坏了」,严格模式下要 Fail。
+		kind := envBroken
+		if errors.Is(err, errEnvMissing) {
+			kind = envMissing
+		}
+		unavailable(t, kind, "内嵌 PG 工具不可用: %v", err)
 	}
 	if strings.TrimSpace(os.Getenv(DSNEnv)) != "" {
 		t.Skipf("%s 已设:外部给库,本反证针对内嵌 PG 的清理自证,不适用", DSNEnv)
@@ -152,38 +156,36 @@ func TestCleanupIsReal_KeepRuntimeNegativeControl(t *testing.T) {
 		t.Fatalf("起工具: %v", err)
 	}
 	// 🔴 这里【不】用 readProtocol:它读到 READY=1 就收工,而本反证要的是 READY 之后
-	// 那两行(STOPPED/CLEANED)。自己全程读到 EOF,既拿到收尾值,也不会因为没人读
-	// stdout 而让子进程堵在写上。
-	kv := map[string]string{}
-	ready := make(chan struct{})
-	go func() {
-		sc := bufio.NewScanner(stdout)
-		for sc.Scan() {
-			key, value, ok := strings.Cut(strings.TrimSpace(sc.Text()), "=")
-			if !ok || key == "" {
-				continue
-			}
-			kv[key] = value
-			if key == "READY" && value == "1" {
-				close(ready)
-			}
-		}
-	}()
-	select {
-	case <-ready:
-	case <-time.After(startTimeout):
+	// 那几行(STOPPED/CLEANED/RUNTIME_STATE/LOGDIR_STATE/PGLOG_REDIRECTED/REAPED)。
+	// 改用生产那套 newProtocol:await 等就绪、waitEOF 等收尾行、snapshot 取值。
+	//
+	// 🔴 旧版在这儿自己抄了一遍扫描器,抄出两个毛病(复验 🟡② 撞上其一):
+	//   ① stdout 在 READY 之前就关了(工具早退)⇒ 那个 reader 不发任何信号,
+	//      select 只剩 startTimeout 一条出口 ⇒ 一路卡满 6 分钟,复验 M5 就是这么把整包卡死的;
+	//   ② kv 由 goroutine 写、主流程读,没有同步 ⇒ -race 下是实打实的数据竞争。
+	// 换成 newProtocol 之后两个毛病一起没:它在 EOF 时会给 ready 发错误,kv 由互斥锁看着。
+	// 顺带的好处是:本反证走的解析路径与生产完全同一条,不再是「另抄一份、各测各的」。
+	proto := newProtocol(stdout)
+	if err := proto.await(startTimeout); err != nil {
 		_ = stdin.Close()
 		_ = cmd.Process.Kill()
 		_, _ = cmd.Process.Wait()
-		t.Fatalf("内嵌 PG 在 %s 内未就绪\nstderr 末尾:\n%s", startTimeout, stderr.String())
+		t.Fatalf("内嵌 PG 在 %s 内未就绪: %v\nstderr 末尾:\n%s",
+			startTimeout, err, tail(stderr.String(), 2000))
 	}
 	if _, err := os.Stat(runtime); err != nil {
 		t.Errorf("-keep-runtime 下运行目录本该在,却 stat 不到: %v", err)
 	}
 	_ = stdin.Close()
+	if !proto.waitEOF(stopTimeout) {
+		_ = cmd.Process.Kill()
+		proto.waitEOF(5 * time.Second)
+		t.Fatalf("工具在 %s 内没关 stdout,已 kill:收尾那几行读不到,本反证无从判", stopTimeout)
+	}
 	if err := cmd.Wait(); err != nil {
 		t.Logf("收尾非零(-keep-runtime 下属预期之外,记录不判失败): %v", err)
 	}
+	kv := proto.snapshot()
 	if got := kv["CLEANED"]; got == "1" {
 		t.Errorf("🔴 -keep-runtime 下仍自报 CLEANED=1 ⇒ CLEANED 是写死的,不是真信号")
 	}
@@ -193,6 +195,55 @@ func TestCleanupIsReal_KeepRuntimeNegativeControl(t *testing.T) {
 	if kv["STOPPED"] != "1" {
 		t.Errorf("STOPPED=%q,期望 1:库没真停下就不该算收尾完成", kv["STOPPED"])
 	}
+	// 两个目录各自的状态都要能指出来:CLEANED 是合成值,合成值对了不代表两边都对
+	// (旧版只有一个布尔,「运行目录删了、日志目录漏了」会合成出同一个「删了」)。
+	if got := kv["RUNTIME_STATE"]; got != "kept" {
+		t.Errorf("RUNTIME_STATE=%q,期望 kept", got)
+	}
+	if got := kv["LOGDIR_STATE"]; got != "kept" {
+		t.Errorf("LOGDIR_STATE=%q,期望 kept", got)
+	}
+	if _, ok := kv["REAPED"]; !ok {
+		t.Errorf("工具没报 REAPED:「有没有收掉孤儿 postmaster」就只剩推断,没有读数")
+	} else {
+		t.Logf("REAPED=%s(收掉的孤儿 postmaster 数;僵尸残留由 residue 那道独立核对判)", kv["REAPED"])
+	}
+
+	// 🔴 日志泄漏(复验 🟡③)的【正证】:库那个日志文件确实落进了工具自己的日志目录。
+	// embedded-postgres v1.34.0 的 logging.go:18 用 os.CreateTemp("",…) 建它,认 TMPDIR;
+	// 工具起库前把 TMPDIR 指到了日志目录 ⇒ 文件该在这儿。它在这儿,系统临时目录里就没有它。
+	// 反过来,PGLOG_REDIRECTED 只是工具的自报,真正的判据是下面这次 ReadDir。
+	logDir := kv["LOGDIR"]
+	if logDir == "" {
+		t.Errorf("工具没报 LOGDIR:PG 日志漏在哪儿都无从核对")
+	} else {
+		entries, err := os.ReadDir(logDir)
+		if err != nil {
+			t.Errorf("-keep-runtime 下日志目录本该在,却读不了 %s: %v", logDir, err)
+		} else {
+			found := ""
+			for _, e := range entries {
+				if strings.HasPrefix(e.Name(), pgLogPrefix) {
+					found = e.Name()
+					break
+				}
+			}
+			if found == "" {
+				t.Errorf("🔴 日志目录 %s 里没有 %s* ⇒ TMPDIR 重定向没接住库的日志文件,系统临时目录仍在漏", logDir, pgLogPrefix)
+			} else {
+				t.Logf("库的日志文件确实落在工具的日志目录里: %s", filepath.Join(logDir, found))
+			}
+		}
+		if got := kv["PGLOG_REDIRECTED"]; got != "1" {
+			t.Errorf("PGLOG_REDIRECTED=%q,期望 1(与上面那次 ReadDir 应互相印证)", got)
+		}
+		// 本反证用 -keep-runtime 把它留下来了,自己收:留在系统临时目录就是新残留。
+		_ = os.RemoveAll(logDir)
+		if _, err := os.Stat(logDir); err == nil {
+			t.Errorf("日志目录删不掉,本反证自己留了残留: %s", logDir)
+		}
+	}
+
 	// 反证结束后自己收拾:这是 t.TempDir() 下的目录,t 会删,但库进程要先真停下。
 	if _, err := os.Stat(runtime); err == nil {
 		_ = os.RemoveAll(runtime)
@@ -339,4 +390,333 @@ func TestPool_SkipsEndToEndWhenEmbeddedDisabled(t *testing.T) {
 	if !strings.Contains(got, EmbeddedOffEnv) {
 		t.Errorf("Skip 文案里没点明是哪个环境变量导致的 ⇒ 读日志的人不知道为什么没跑。输出:\n%s", got)
 	}
+}
+
+// TestToolBinaryCache_KeyedOnContentNotMtime 判「构建产物可复用」的凭据是【源内容】,不是时间戳。
+//
+// 🔴 这条是复验 🔴① 的反向对照。旧版把产物放在【全机共用】的 ~/.cache/dingwei-pgtest/pgtest,
+// 又只按「源文件不比产物新」判复用 ⇒ 在 A 工作树里会拿到 B 工作树的源码编出来的二进制。
+// 复验实测撞上过:先在一次性工作树里编了个变异工具(时间较新),回到被检工作树后 5 次连红 ——
+// 那是【假红】,跑的是别处编的工具;顺序反过来就是【假绿】(修好的源码被更晚编出的未修版顶替)。
+// 两种都不会有任何判据报警,因为判据看的是时间,而时间跟内容无关。
+//
+// 这里不真去 go build(一次要几秒,而且被判的不是编译器),只判【定名】这一步:
+// 定名只由内容决定 ⇒ 内容不同就不可能互相顶替,内容相同就仍然复用(缓存没被修坏)。
+func TestToolBinaryCache_KeyedOnContentNotMtime(t *testing.T) {
+	// 🔴 时间戳一律钉成同一个值:本条要判的正是「时间戳完全相同时还分不分得清」。
+	fixed := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
+	write := func(dir, name, body string) {
+		t.Helper()
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(path, fixed, fixed); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// newTree 造一棵「工具源目录」,返回它的内容哈希。
+	newTree := func(files map[string]string) string {
+		t.Helper()
+		dir := t.TempDir()
+		for name, body := range files {
+			write(dir, name, body)
+		}
+		return digestOf(t, dir)
+	}
+	base := map[string]string{"main.go": "package main // 甲\n", "go.mod": "module x\n", "go.sum": ""}
+
+	t.Run("内容不同、时间戳相同 ⇒ 产物名必须不同", func(t *testing.T) {
+		other := map[string]string{"main.go": "package main // 乙\n", "go.mod": "module x\n", "go.sum": ""}
+		d1, d2 := newTree(base), newTree(other)
+		if d1 == d2 {
+			t.Errorf("🔴 两份内容不同、时间戳相同的源得到了同一个产物名 %s ⇒ 跨工作树会互相顶替(复验 🔴① 原样重演)",
+				cacheBinaryPath("CACHE", d1))
+		}
+	})
+	t.Run("内容相同 ⇒ 产物名相同(缓存仍然生效)", func(t *testing.T) {
+		d1, d2 := newTree(base), newTree(base)
+		if d1 != d2 {
+			t.Errorf("同样的源算出两个哈希(%s / %s) ⇒ 每次跑都要重新构建,缓存等于废了", d1, d2)
+		}
+		if got, want := cacheBinaryPath("/x", d1), filepath.Join("/x", "pgtest-"+d1); got != want {
+			t.Errorf("产物名没按 pgtest-<hash> 定: got %s, want %s", got, want)
+		}
+	})
+	t.Run("只改时间戳、内容不变 ⇒ 产物名不变", func(t *testing.T) {
+		dir := t.TempDir()
+		for name, body := range base {
+			write(dir, name, body)
+		}
+		before := digestOf(t, dir)
+		future := time.Now().Add(time.Hour)
+		if err := os.Chtimes(filepath.Join(dir, "main.go"), future, future); err != nil {
+			t.Fatal(err)
+		}
+		if after := digestOf(t, dir); after != before {
+			t.Errorf("时间戳一变哈希就变(%s → %s) ⇒ 还在拿时间当凭据,只是换了个地方", before, after)
+		}
+	})
+	t.Run("多一个源文件 ⇒ 产物名必须变", func(t *testing.T) {
+		dir := t.TempDir()
+		for name, body := range base {
+			write(dir, name, body)
+		}
+		before := digestOf(t, dir)
+		write(dir, "extra.go", "package main\n")
+		if after := digestOf(t, dir); after == before {
+			t.Errorf("🔴 新增源文件不影响哈希 ⇒ 写死「只哈希 main.go＋go.mod」的老毛病还在,工具拆文件后又会拿旧二进制跑")
+		}
+	})
+	t.Run("内容在两个文件之间挪一挪 ⇒ 产物名必须变", func(t *testing.T) {
+		// 光把内容拼起来哈希的话,这两棵树的字节流一模一样(都是 ABCD),会撞成同一个名字。
+		d1 := newTree(map[string]string{"main.go": "AB", "go.mod": "CD", "go.sum": ""})
+		d2 := newTree(map[string]string{"main.go": "ABC", "go.mod": "D", "go.sum": ""})
+		if d1 == d2 {
+			t.Errorf("拼接歧义没挡住:两棵树哈希相同(%s)", d1)
+		}
+	})
+	t.Run("构建产物自己不参与哈希", func(t *testing.T) {
+		dir := t.TempDir()
+		for name, body := range base {
+			write(dir, name, body)
+		}
+		before := digestOf(t, dir)
+		write(dir, "pgtest", "\x7fELF 假装是个二进制")
+		if after := digestOf(t, dir); after != before {
+			t.Errorf("把构建产物算进了哈希(%s → %s) ⇒ 构建一次名字就变,缓存永不命中", before, after)
+		}
+	})
+}
+
+// digestOf 算一棵「工具源目录」的内容哈希(测试用薄封装,把两个错误出口收成 t.Fatal)。
+func digestOf(t *testing.T, dir string) string {
+	t.Helper()
+	sources, err := toolSources(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	digest, err := sourcesDigest(dir, sources)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return digest
+}
+
+// TestStrictMode_SemanticsByLiteralReading 锁住严格模式开关怎么读。
+//
+// 🔴 与 TestEmbeddedDisabled_SemanticsByLiteralReading 同理,而这里的失误更隐蔽:
+// 开关读错不会有任何用例变红,只会让「起库失败改判 Fail」这条悄悄失效 ——
+// 失效之后的表现恰恰是【全绿】。故连「认不出的值怎么办」也要判:必须报错,不许滑成「关」,
+// 否则一个打错的 STRICT=ture 就把 CI 的判据关掉了,而日志上什么也看不见。
+func TestStrictMode_SemanticsByLiteralReading(t *testing.T) {
+	cases := []struct {
+		value   string
+		want    bool
+		wantErr bool
+		why     string
+	}{
+		{"", false, false, "未设 = 关(本地默认好跑;CI 自己置 1)"},
+		{"1", true, false, "1 是开"},
+		{"true", true, false, "true 是开"},
+		{"TRUE", true, false, "大小写不该改变语义"},
+		{"on", true, false, "on 是开"},
+		{"yes", true, false, "yes 是开"},
+		{"是", true, false, "中文「是」也是开(与 EmbeddedOffEnv 认「否」对称)"},
+		{"0", false, false, "0 是关"},
+		{"false", false, false, "false 是关"},
+		{"off", false, false, "off 是关"},
+		{"no", false, false, "no 是关"},
+		{"否", false, false, "中文「否」是关"},
+		{"ture", false, true, "🔴 打错的 true 必须报错:它看上去像开了、其实没开,是最坏的一种静默失效"},
+		{"2", false, true, "认不出的值一律报错,不许滑成「关」"},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run("value="+tc.value, func(t *testing.T) {
+			t.Setenv(StrictEnv, tc.value)
+			got, err := strictMode()
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("%s=%q 本该报错,却返回 (%v, nil):%s", StrictEnv, tc.value, got, tc.why)
+				}
+				if !strings.Contains(err.Error(), StrictEnv) {
+					t.Errorf("报错文案没点明是哪个环境变量读不懂: %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("%s=%q 不该报错: %v", StrictEnv, tc.value, err)
+			}
+			if got != tc.want {
+				t.Errorf("%s=%q: strictMode()=%v,要 %v(%s)", StrictEnv, tc.value, got, tc.want, tc.why)
+			}
+		})
+	}
+}
+
+// TestStrictMode_EndToEnd 是严格模式的【端到端】对照:纯函数判对了不等于 Pool 真会 Fail。
+//
+// 用一个「起了就死、连一行协议都不打」的假工具充当故障环境(PGTEST_BIN 指过去),
+// 形状与复验 M5 那一刀相同:环境在、工具在,库起不来。三格都要判 ——
+// 默认 Skip(本地没库不该判红)、置 1 必须 Fail(不许盖成绿)、认不出的值必须 Fail 并说清缘由。
+func TestStrictMode_EndToEnd(t *testing.T) {
+	goBin, err := exec.LookPath("go")
+	if err != nil {
+		t.Skipf("找不到 go 工具链,跑不了端到端对照: %v", err)
+	}
+	fake := filepath.Join(t.TempDir(), "pgtest-fake")
+	if err := os.WriteFile(fake, []byte("#!/bin/sh\nexit 1\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	runPool := func(strict string) string {
+		cmd := exec.Command(goBin, "test", "-run", "TestPool_RoundTrip", "-v", "-count=1", ".")
+		cmd.Env = append(os.Environ(),
+			"PGTEST_BIN="+fake, // 工具「在」,但它起不了库 ⇒ 属「环境在却起不来」
+			DSNEnv+"=",         // 🔴 必须清掉外部 DSN,否则三级顺序走①,这一格根本没测到
+			EmbeddedOffEnv+"=", // 也不许被「禁用内嵌 PG」抢先 Skip 掉(那是另一格)
+			StrictEnv+"="+strict,
+		)
+		var out strings.Builder
+		cmd.Stdout = &out
+		cmd.Stderr = &out
+		_ = cmd.Run() // 退出码不作判据:Fail 与「没有用例可跑」都可能非零,判据是输出里的行
+		return out.String()
+	}
+
+	t.Run("默认 ⇒ SKIP,且文案要指认这是「环境在却起不来」", func(t *testing.T) {
+		got := runPool("")
+		if !strings.Contains(got, "--- SKIP: TestPool_RoundTrip") {
+			t.Fatalf("默认没 Skip(本地没有可用 PG 时会判红)。输出:\n%s", got)
+		}
+		if !strings.Contains(got, StrictEnv) {
+			t.Errorf("Skip 文案没提到 %s ⇒ 读日志的人不知道该开哪个开关把这类失败暴露出来。输出:\n%s", StrictEnv, got)
+		}
+	})
+	t.Run("置 1 ⇒ FAIL,不许盖成 SKIP", func(t *testing.T) {
+		got := runPool("1")
+		if strings.Contains(got, "--- SKIP: TestPool_RoundTrip") {
+			t.Fatalf("🔴 严格模式下仍然 Skip ⇒ 起库失败照旧被盖成绿(复验 🟡② 没修好)。输出:\n%s", got)
+		}
+		if !strings.Contains(got, "--- FAIL: TestPool_RoundTrip") {
+			t.Fatalf("🔴 严格模式下没 Fail。输出:\n%s", got)
+		}
+	})
+	t.Run("认不出的值 ⇒ FAIL,并说清是开关读不懂", func(t *testing.T) {
+		got := runPool("ture")
+		if !strings.Contains(got, "--- FAIL: TestPool_RoundTrip") {
+			t.Fatalf("打错的开关值没让用例失败 ⇒ 被当成「关」而静默放行。输出:\n%s", got)
+		}
+		if !strings.Contains(got, StrictEnv) {
+			t.Errorf("报错没点明是哪个环境变量读不懂。输出:\n%s", got)
+		}
+	})
+}
+
+// TestResidueWatch_NegativeControls 判「独立核对残留」这道防线不是摆设。
+//
+// 🔴 与复验 M4′ 同型:工具可以撒谎(把 CLEANED 写死成 1),那时只有这道独立核对会红。
+// 可这道核对本身要是恒不报(前缀写错、/proc 解析取错列),表现【恰恰像通过】——
+// 所以必须用「故意造出残留」的方式证明它真会报,而不是等它哪天自己红。
+func TestResidueWatch_NegativeControls(t *testing.T) {
+	w := newResidueWatch()
+
+	t.Run("系统临时目录里新出现的 PG 日志文件必须被抓到", func(t *testing.T) {
+		if !w.logsOK {
+			t.Skipf("读不到系统临时目录 %s,本项不适用", w.tempDir)
+		}
+		f, err := os.CreateTemp(w.tempDir, pgLogPrefix) // 与库同一个前缀(logging.go:18)
+		if err != nil {
+			t.Fatal(err)
+		}
+		name := filepath.Base(f.Name())
+		f.Close()
+		defer func() { _ = os.Remove(f.Name()) }() // 自己造的残留自己收
+		now, ok := listPGLogs(w.tempDir)
+		if !ok {
+			t.Fatal("第二次快照没拍成")
+		}
+		if added := addedNames(w.logs, now); len(added) != 1 || added[0] != name {
+			t.Errorf("🔴 增量没抓到刚造的残留: got %v, want [%s] ⇒ 这道独立核对是摆设", added, name)
+		}
+		// 收掉之后必须【不再】报:一直红的判据等于没有判据(没人会看第二次)。
+		if err := os.Remove(f.Name()); err != nil {
+			t.Fatal(err)
+		}
+		if after, ok := listPGLogs(w.tempDir); ok {
+			if added := addedNames(w.logs, after); len(added) != 0 {
+				t.Errorf("残留已经收掉了却还在报 %v ⇒ 判据不随实况走", added)
+			}
+		}
+	})
+
+	t.Run("真造一个 comm=postgres 的僵尸,必须被抓到", func(t *testing.T) {
+		if !w.zombiesOK {
+			t.Skip("/proc 读不到(非 Linux),本项不适用")
+		}
+		trueBin, err := exec.LookPath("true")
+		if err != nil {
+			t.Skipf("找不到 true,造不出僵尸: %v", err)
+		}
+		body, err := os.ReadFile(trueBin)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fake := filepath.Join(t.TempDir(), "postgres") // comm 取自可执行文件名
+		if err := os.WriteFile(fake, body, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command(fake)
+		if err := cmd.Start(); err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = cmd.Wait() }() // 兜底:自己造的僵尸必须自己收,别留给下一次跑
+		// 故意不 Wait ⇒ 它退出后就是本进程的僵尸,与 postmaster 被 PID 1 挂着同型。
+		deadline := time.Now().Add(10 * time.Second)
+		found := false
+		for time.Now().Before(deadline) {
+			if z, ok := listZombiePostgres(); ok {
+				if _, hit := z[cmd.Process.Pid]; hit {
+					found = true
+					break
+				}
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		if !found {
+			t.Fatalf("🔴 真造了一个 comm=postgres 的僵尸(pid %d)却没被抓到 ⇒ /proc 解析或前缀判错了,这道核对是摆设",
+				cmd.Process.Pid)
+		}
+		if err := cmd.Wait(); err != nil {
+			t.Logf("收尸返回(true 退出码 0,这里通常不该有错): %v", err)
+		}
+		if z, ok := listZombiePostgres(); ok {
+			if _, hit := z[cmd.Process.Pid]; hit {
+				t.Errorf("收尸之后还报同一个 pid ⇒ 判据不随实况走(那样历史残留会让它永远红)")
+			}
+		}
+	})
+
+	t.Run("/proc/<pid>/stat 解析:comm 里有空格和右括号也不能取错列", func(t *testing.T) {
+		cases := []struct {
+			in        string
+			wantComm  string
+			wantState string
+			wantOK    bool
+			why       string
+		}{
+			{"604120 (postgres) Z 1 604120 604120 0 -1 4227340", "postgres", "Z", true, "本席实测那行僵尸"},
+			{"1 (sleep infinity) S 0 1 1 0 -1 4227340", "sleep infinity", "S", true, "comm 含空格:按空格分列会取错(本容器 PID 1 就是它)"},
+			{"7 (a ) b) R 1 7 7 0 -1", "a ) b", "R", true, "comm 含右括号:必须按【最后一个】')' 切"},
+			{"garbage", "", "", false, "没有括号 ⇒ 认不出来,宁可说认不出,不要瞎取一列"},
+			{"7 (x)", "", "", false, "括号后没有字段 ⇒ 取不到状态"},
+		}
+		for _, tc := range cases {
+			comm, state, ok := parseProcStat(tc.in)
+			if ok != tc.wantOK || (ok && (comm != tc.wantComm || state != tc.wantState)) {
+				t.Errorf("parseProcStat(%q) = (%q,%q,%v),要 (%q,%q,%v):%s",
+					tc.in, comm, state, ok, tc.wantComm, tc.wantState, tc.wantOK, tc.why)
+			}
+		}
+	})
 }
