@@ -35,7 +35,20 @@ def book(d):
 def main():
     sha = lambda rel: hashlib.sha256((ROOT / rel).read_bytes()).hexdigest()
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    import inspect
+    import re as _re
+    src_fn = inspect.getsource(agent_route_envelope)
+    m = _re.search(r're\.fullmatch\(r"([^"]+)", to\)', src_fn)
+    assert m, "旧代码里应有内联的目标地址 fullmatch 字面量"
+    from sessionhelper import app as _app
+    regexes = {
+        "LEGACY_AGENT_ROUTE_RE": [_app.LEGACY_AGENT_ROUTE_RE.pattern, _app.LEGACY_AGENT_ROUTE_RE.flags],
+        "CONTROL_ROUTE_RE": [_app.CONTROL_ROUTE_RE.pattern, _app.CONTROL_ROUTE_RE.flags],
+        "ROUTE_TARGET_PATTERN_inline": m.group(1),
+        "ROUTE_BODY_MAX": _app.ROUTE_BODY_MAX,
+    }
     out = {
+        "regexes": regexes,
         "_recorded_from": {
             "git_head": head,
             "source_sha256": {r: sha(r) for r in ("sessionhelper/app.py", "sessionhelper/protocol.py",

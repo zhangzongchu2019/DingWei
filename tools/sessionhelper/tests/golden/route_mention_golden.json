@@ -54,6 +54,18 @@
    "out": true
   }
  ],
+ "regexes": {
+  "CONTROL_ROUTE_RE": [
+   "^\\s*\\[\\[DW_ROUTE_V1\\s*\\n(?P<json>.*?)\\n\\]\\]\\s*$",
+   48
+  ],
+  "LEGACY_AGENT_ROUTE_RE": [
+   "^(#[A-Za-z0-9_.-]+|@[^\\s#]+#[A-Za-z0-9_.-]+)\\s+(.+)$",
+   48
+  ],
+  "ROUTE_BODY_MAX": 100000,
+  "ROUTE_TARGET_PATTERN_inline": "#[A-Za-z0-9_.-]+|@[^\\s#]+#[A-Za-z0-9_.-]+"
+ },
  "reply": [
   {
    "carry": {
@@ -5771,6 +5783,522 @@
   {
    "out": null,
    "text": "[[dw_route_v1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1 {\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\r\n{\"to\":\"#alice\",\"body\":\"hi\"}\r\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1 \n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n ]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]] \n"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "\t[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\n\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "a\n]]b",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"a\\n]]b\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]\n[[DW_ROUTE_V1\n{\"to\":\"#bob\",\"body\":\"x\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "中文é",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"中文\\u00e9\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[ DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[DW_ROUTE_V1\n{\"to\":\"#alice\",\"body\":\"hi\"}\n]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice　hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice\u000bhi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice\fhi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice\rhi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice\n\nhi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#alice"
+   },
+   "text": "#alice \n hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#agent1"
+   },
+   "text": "@zzc#agent1\thi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#agent1"
+   },
+   "text": "@zzc#agent1\r\nhi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#a.b.c"
+   },
+   "text": "#a.b.c hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#_x"
+   },
+   "text": "#_x hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#-x"
+   },
+   "text": "#-x hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#x-"
+   },
+   "text": "#x- hi"
+  },
+  {
+   "out": null,
+   "text": "#a#b hi"
+  },
+  {
+   "out": {
+    "body": "hi\nsecond line",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#a"
+   },
+   "text": "@zzc#a hi\nsecond line"
+  },
+  {
+   "out": {
+    "body": "HI",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#Alice"
+   },
+   "text": "#Alice HI"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc.lisa#agent"
+   },
+   "text": "@zzc.lisa#agent hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#agent.zzc"
+   },
+   "text": "@zzc#agent.zzc hi"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@@zzc#agent"
+   },
+   "text": "@@zzc#agent hi"
+  },
+  {
+   "out": null,
+   "text": "@zzc## hi"
+  },
+  {
+   "out": null,
+   "text": "@#a#b hi"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#a#b\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@#a\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#a b\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#a.b-c_d"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#a.b-c_d\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#a#b\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#a b\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"##a\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@a@b#c"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@a@b#c\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#中文\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#中文\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@z.z#a"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@z.z#a\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#a."
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#a.\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#."
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#.\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#."
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#.\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "#-"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"#-\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#a-"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#a-\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": null,
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@ #a\",\"body\":\"hi\"}\n]]"
+  },
+  {
+   "out": {
+    "body": "hi",
+    "from": "home#FB-2642",
+    "meta": {
+     "no_mirror": true,
+     "type": "agent_route"
+    },
+    "to": "@zzc#a"
+   },
+   "text": "[[DW_ROUTE_V1\n{\"to\":\"@zzc#a\\n\",\"body\":\"hi\"}\n]]"
   },
   {
    "out": null,
