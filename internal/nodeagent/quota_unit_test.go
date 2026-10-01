@@ -140,3 +140,94 @@ func TestClearRedWhenProjectStillPresent(t *testing.T) {
 		t.Fatalf("摘净后应通: %v", err)
 	}
 }
+
+// r3：Setup 回滚必须摘映射（project -C -p <dir> <pid>，目录尚在时）再删目录；
+// 命令参数完整断言＋阶段覆盖。
+func TestSetupRollbackClearsProjectMapping(t *testing.T) {
+	origFind, origRun, origLs, origCh := findmntTarget, xfsRun, lsattrOut, chownForSeatFn
+	defer func() { findmntTarget, xfsRun, lsattrOut, chownForSeatFn = origFind, origRun, origLs, origCh }()
+	root := t.TempDir()
+	dir := seatDir(root, "ag_r3")
+	findmntTarget = func(string) (string, error) { return "/data", nil }
+	lsattrOut = func(d string) (string, error) { return "61001 --------------e-- " + d, nil }
+	chownForSeatFn = func(string) error { return nil }
+	var calls []string
+	xfsRun = func(args ...string) ([]byte, error) {
+		j := strings.Join(args, " ")
+		calls = append(calls, j)
+		if strings.Contains(j, "report -p -n") {
+			return []byte(""), nil
+		}
+		if strings.Contains(j, "limit -p bhard=16m") {
+			return nil, errors.New("limit failed") // limit 步失败触发回滚
+		}
+		return []byte(""), nil
+	}
+	if err := (xfsQuota{}).Setup(root, "ag_r3", 16384); err == nil {
+		t.Fatal("limit 失败 Setup 必须报错")
+	}
+	// 完整命令参数断言：摘映射必须是 project -C -p <dir> 61001 /data（缺 -p 会按 /etc 映射找而失败——r3 探针抓的就是这个）
+	wantC := "project -C -p " + dir + " 60000 /data" // report 空 ⇒ 首个空闲 ID 是 60000
+	var sawC bool
+	for _, c := range calls {
+		if strings.Contains(c, wantC) {
+			sawC = true
+		}
+	}
+	if !sawC {
+		t.Fatalf("回滚必须含 %q, 实得 %v", wantC, calls)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Fatalf("回滚后目录必须不在: %v", err)
+	}
+	// 阶段覆盖：project -s 成功但 lsattr 失败 ⇒ 同样摘映射＋删目录
+	lsattrOut = func(string) (string, error) { return "", errors.New("lsattr failed") }
+	calls = nil
+	if err := (xfsQuota{}).Setup(root, "ag_r3", 16384); err == nil {
+		t.Fatal("lsattr 失败 Setup 必须报错")
+	}
+	sawC = false
+	for _, c := range calls {
+		if strings.Contains(c, wantC) {
+			sawC = true
+		}
+	}
+	if !sawC {
+		t.Fatalf("lsattr 失败的回滚也必须摘映射 %q, 实得 %v", wantC, calls)
+	}
+}
+
+// r3：Clear 的摘映射也用 project -C -p <dir>（缺 -p 按 /etc 找会失败——探针记录的形状）。
+func TestClearUsesProjectCWithPath(t *testing.T) {
+	origFind, origRun, origLs := findmntTarget, xfsRun, lsattrOut
+	defer func() { findmntTarget, xfsRun, lsattrOut = origFind, origRun, origLs }()
+	root := t.TempDir()
+	dir := seatDir(root, "ag_c2")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	findmntTarget = func(string) (string, error) { return "/data", nil }
+	lsattrOut = func(d string) (string, error) { return "61002 --------------e-- " + d, nil }
+	var calls []string
+	xfsRun = func(args ...string) ([]byte, error) {
+		calls = append(calls, strings.Join(args, " "))
+		return []byte(""), nil // report 空 ⇒ 项目已不在 ⇒ 绿
+	}
+	if err := (xfsQuota{}).Clear(root, "ag_c2"); err != nil {
+		t.Fatalf("clear: %v", err)
+	}
+	wantLimit := "limit -p bhard=0 61002 /data"
+	wantC := "project -C -p " + dir + " 61002 /data"
+	var iLimit, iC = -1, -1
+	for i, c := range calls {
+		if strings.Contains(c, wantLimit) && iLimit == -1 {
+			iLimit = i
+		}
+		if strings.Contains(c, wantC) && iC == -1 {
+			iC = i
+		}
+	}
+	if iLimit == -1 || iC == -1 || iC < iLimit {
+		t.Fatalf("顺序与参数必须 limit归零→project -C -p <dir>: %v", calls)
+	}
+}

@@ -155,26 +155,49 @@ func (xfsQuota) Setup(root, seatID string, diskMB int64) error {
 			cleanupSelf()
 			return err
 		}
+		// 🔴 r3 复验：回滚按已完成阶段逆序——limit 归零（如已设）→ project -C -p 摘映射
+		// （目录尚在时）→ 删目录；回滚自身失败也要上抛（不装"已清"）。
+		projectSet := false
+		limitSet := false
+		rollback := func(stageErr error) error {
+			var errs []string
+			if limitSet {
+				if out, rerr := xfsRun(fmt.Sprintf("limit -p bhard=0 %d", pid), mnt); rerr != nil {
+					errs = append(errs, "limit回滚: "+rerr.Error()+": "+string(out))
+				}
+			}
+			if projectSet {
+				if out, rerr := xfsRun(fmt.Sprintf("project -C -p %s %d", dir, pid), mnt); rerr != nil {
+					errs = append(errs, "摘映射: "+rerr.Error()+": "+string(out))
+				}
+			}
+			if rerr := os.RemoveAll(dir); rerr != nil {
+				errs = append(errs, "删目录: "+rerr.Error())
+			}
+			if len(errs) > 0 {
+				return fmt.Errorf("%v；且回滚失败: %s", stageErr, strings.Join(errs, "; "))
+			}
+			return stageErr
+		}
 		// v3 直设法：project -s -p <dir> <id>（不经 /etc/projects|projid）
 		if out, err := xfsRun(fmt.Sprintf("project -s -p %s %d", dir, pid), mnt); err != nil {
-			cleanupSelf()
-			return fmt.Errorf("xfs project -s: %v: %s", err, out)
+			return rollback(fmt.Errorf("xfs project -s: %v: %s", err, out))
 		}
+		projectSet = true
 		// lsattr 断言项目号落对（v3 同款闸：两目录同落一个 ID 的 bug 不得回潮）
 		if out, err := lsattrOut(dir); err != nil {
-			cleanupSelf()
-			return fmt.Errorf("lsattr -d -p %s: %v: %s", dir, err, out)
+			return rollback(fmt.Errorf("lsattr -d -p %s: %v: %s", dir, err, out))
 		} else {
 			got, aerr := strconv.Atoi(strings.Fields(out)[0])
 			if aerr != nil || got != pid {
-				cleanupSelf()
-				return fmt.Errorf("项目号断言失败: 期望 %d, 实得 %q", pid, strings.TrimSpace(out))
+				return rollback(fmt.Errorf("项目号断言失败: 期望 %d, 实得 %q", pid, strings.TrimSpace(out)))
 			}
 		}
 		if out, err := xfsRun(fmt.Sprintf("limit -p bhard=%dm %d", diskMB, pid), mnt); err != nil {
-			cleanupSelf()
-			return fmt.Errorf("xfs limit: %v: %s", err, out)
+			limitSet = true // limit 调用失败也算"碰过 limit"——回滚里归零兜底
+			return rollback(fmt.Errorf("xfs limit: %v: %s", err, out))
 		}
+		limitSet = true
 		return nil
 	})
 }
@@ -220,13 +243,12 @@ func (xfsQuota) Clear(root, seatID string) error {
 		}
 	}
 	if pid > 0 {
-		// 🔴 M1 复验阻断 4：每步失败上抛，不再静默吞错
+		// 🔴 M1 复验阻断 4＋r3：每步失败上抛；摘映射必须 project -C -p <dir>（缺 -p 会按
+		//    /etc 映射找而失败——直设法本无 /etc 条目；目录尚在时摘）
 		if out, err := xfsRun(fmt.Sprintf("limit -p bhard=0 %d", pid), mnt); err != nil {
 			return fmt.Errorf("xfs limit bhard=0: %v: %s", err, out)
 		}
-		// 摘掉项目映射（project -C）——否则目录删了项目还在报表上（复验 r2 阻断②：
-		// "项目在但用量 0"不算清除）。
-		if out, err := xfsRun(fmt.Sprintf("project -C %d", pid), mnt); err != nil {
+		if out, err := xfsRun(fmt.Sprintf("project -C -p %s %d", dir, pid), mnt); err != nil {
 			return fmt.Errorf("xfs project -C: %v: %s", err, out)
 		}
 	}
@@ -234,8 +256,7 @@ func (xfsQuota) Clear(root, seatID string) error {
 		return fmt.Errorf("删除席位目录: %v", err)
 	}
 	if pid > 0 {
-		// 清完复查（D5＋复验 r2 阻断②）：report 里该项目必须【消失】——存在即红
-		//（不论用量；存在就证明映射没摘净）。
+		// 清完复查（D5＋r3）：report 里该项目必须【消失】——存在即红（不论用量）。
 		present, used, err := projectUsage(mnt, pid)
 		if err != nil {
 			return err
