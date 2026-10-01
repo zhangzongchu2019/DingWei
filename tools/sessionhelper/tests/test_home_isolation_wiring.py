@@ -4,9 +4,13 @@
 Provisioner 的升级状态文件留在真实 HOME 里还会让下一轮测试进程 os._exit(0) 无声退出。
 隔离是"按模块接入"的（tests/_home_isolation.py），新增模块若忘了接，没有任何东西会提醒——这条检查补上。
 
-"接了助手" = 模块级有 `X = HomeIsolation()`，且 setUpModule 里调 X.start()、tearDownModule 里调 X.finish()。
-检查按 AST 扫 tests/*.py 里对 SessionHelper(...) / Provisioner(...) 的直接调用（含 app.SessionHelper 这类属性写法）。
-局限：经由别的测试模块里的构造函数间接构造的，扫不到。
+"接了助手" = 模块级有 `X = HomeIsolation()`，且 setUpModule 的函数体里**无条件、顶层**有一句 X.start()、
+tearDownModule 里同样有一句 X.finish()（放在 if/try 里不算——"纸面接线"不算接线）；并且该模块**不得在
+import 时（模块级/类体）构造**——那会早于 setUpModule 的 HOME 重定向，照样泄漏。
+识别构造的写法（AST）：直接 SessionHelper(...)、属性链 app.SessionHelper(...)、别名导入
+`from … import SessionHelper as SH; SH(...)`、变量别名 `CLS = SessionHelper; CLS(...)`、
+子类 `class Fake(SessionHelper)` 的实例化、getattr(app, "SessionHelper")(...)。
+局限：经由别的测试模块里的构造函数间接构造的扫不到；蓄意规避（exec/eval/动态 import 等）不防。
 """
 import ast
 import unittest
@@ -26,31 +30,83 @@ ALLOWED = {
 }
 
 
-def constructions(tree: ast.AST) -> list:
-    out = []
+def _bound_names(tree: ast.AST) -> set:
+    """收集指向 SessionHelper/Provisioner 的名字：别名导入、变量别名、子类（求不动点）。"""
+    names = set(CONSTRUCTED)
     for node in ast.walk(tree):
-        if isinstance(node, ast.Call):
-            f = node.func
-            name = f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else None
-            if name in CONSTRUCTED:
-                out.append((node.lineno, name))
+        if isinstance(node, ast.ImportFrom):
+            for al in node.names:
+                if al.name in CONSTRUCTED:
+                    names.add(al.asname or al.name)
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            targets, value = [], None
+            if isinstance(node, ast.Assign):
+                targets, value = [t for t in node.targets if isinstance(t, ast.Name)], node.value
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.value is not None:
+                targets, value = [node.target], node.value
+            if value is not None and _refers_to(value, names):
+                for t in targets:
+                    if t.id not in names:
+                        names.add(t.id)
+                        changed = True
+            if isinstance(node, ast.ClassDef) and node.name not in names \
+                    and any(_refers_to(b, names) for b in node.bases):
+                names.add(node.name)
+                changed = True
+    return names
+
+
+def _refers_to(node: ast.AST, names: set) -> bool:
+    """表达式是不是"指向被关注的类"：Name、属性链末端、getattr(x, "SessionHelper")。"""
+    if isinstance(node, ast.Name):
+        return node.id in names
+    if isinstance(node, ast.Attribute):
+        return node.attr in CONSTRUCTED or node.attr in names
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "getattr" \
+            and len(node.args) >= 2 and isinstance(node.args[1], ast.Constant):
+        return node.args[1].value in CONSTRUCTED
+    return False
+
+
+def constructions(tree: ast.AST) -> list:
+    """返回 [(行号, 名字, 是否在 import 时执行)]；"import 时执行"＝不在任何函数/lambda 体内（模块级或类体）。"""
+    names = _bound_names(tree)
+    out = []
+
+    def walk(node, in_func):
+        for child in ast.iter_child_nodes(node):
+            func = in_func or isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
+            if isinstance(child, ast.Call) and _refers_to(child.func, names):
+                f = child.func
+                nm = f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else "getattr(...)"
+                out.append((child.lineno, nm, not in_func))
+            walk(child, func)
+
+    walk(tree, False)
     return sorted(out)
 
 
-def _calls_method_on(func: ast.FunctionDef, var: str, method: str) -> bool:
-    return any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == method
-               and isinstance(n.func.value, ast.Name) and n.func.value.id == var
-               for n in ast.walk(func))
+def _top_level_call(func: ast.FunctionDef, var: str, method: str) -> bool:
+    """函数体的**顶层语句**里有一句 var.method()（放在 if/try/with 里不算——防"纸面接线"）。"""
+    for stmt in func.body:
+        if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call) and isinstance(stmt.value.func, ast.Attribute) \
+                and stmt.value.func.attr == method and isinstance(stmt.value.func.value, ast.Name) \
+                and stmt.value.func.value.id == var:
+            return True
+    return False
 
 
 def wired_to_isolation(tree: ast.Module) -> bool:
-    """模块级：X = HomeIsolation()；setUpModule 调 X.start()；tearDownModule 调 X.finish()。"""
+    """模块级：X = HomeIsolation()；setUpModule 顶层调 X.start()；tearDownModule 顶层调 X.finish()。"""
     holders = {t.id for n in tree.body if isinstance(n, ast.Assign) and isinstance(n.value, ast.Call)
                and isinstance(n.value.func, ast.Name) and n.value.func.id == "HomeIsolation"
                for t in n.targets if isinstance(t, ast.Name)}
     funcs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
     up, down = funcs.get("setUpModule"), funcs.get("tearDownModule")
-    return bool(up and down and any(_calls_method_on(up, h, "start") and _calls_method_on(down, h, "finish")
+    return bool(up and down and any(_top_level_call(up, h, "start") and _top_level_call(down, h, "finish")
                                     for h in holders))
 
 
@@ -63,8 +119,13 @@ def problems_for(filename: str, source: str, allowed=ALLOWED) -> list:
             if allowed[filename][1] not in source:
                 out.append(f"{filename}: 白名单的证据串 {allowed[filename][1]!r} 已不在文件里，理由失效")
         elif not wired_to_isolation(tree):
-            out.append(f"{filename}: 构造了 {sorted({n for _, n in built})}（行 {[l for l, _ in built][:3]}…）"
-                       "却没接 HomeIsolation（setUpModule 调 start、tearDownModule 调 finish），也不在白名单")
+            out.append(f"{filename}: 构造了 {sorted({n for _, n, _ in built})}（行 {[l for l, _, _ in built][:3]}…）"
+                       "却没接 HomeIsolation（setUpModule 顶层调 start、tearDownModule 顶层调 finish），也不在白名单")
+        else:
+            at_import = [(l, n) for l, n, imp in built if imp]
+            if at_import:
+                out.append(f"{filename}: 已接 HomeIsolation，但在 import 时就构造了 {at_import[:3]}"
+                           "——早于 setUpModule 的 HOME 重定向，照样泄漏；请挪进测试方法/setUp 里")
     elif filename in allowed:
         out.append(f"{filename}: 在白名单里但已不再构造 SessionHelper/Provisioner，请移出白名单")
     return out
@@ -115,6 +176,47 @@ class HomeIsolationWiringTest(unittest.TestCase):
         self.assertEqual(problems_for("x.py", no_wiring + "# EVIDENCE\n", ok), [])          # 白名单＋证据在 ⇒ 过
         self.assertEqual(len(problems_for("x.py", no_wiring, ok)), 1)                        # 证据没了 ⇒ 红
         self.assertEqual(len(problems_for("x.py", clean, ok)), 1)                            # 过期白名单 ⇒ 红
+
+    def test_checker_reverse_controls_for_evasions(self):
+        # 反向对照（来自 R1/R3 之外的复验反馈）：别名/变量/getattr/子类 都要抓；
+        # "接了但 import 时就构造""纸面接线" 也要抓。
+        up = "def setUpModule():\n    _H.start()\n\ndef tearDownModule():\n    _H.finish()\n\n"
+        head = "from _home_isolation import HomeIsolation\n_H = HomeIsolation()\n\n"
+        wired = head + up
+        imp = "from sessionhelper.app import SessionHelper as SH\n"
+        evasions = {
+            "① 别名导入": imp + "def t():\n    return SH(None)\n",
+            "② 变量别名": "from sessionhelper.app import SessionHelper\nCLS = SessionHelper\ndef t():\n    return CLS(None)\n",
+            "③ getattr": "import sessionhelper.app as app\ndef t():\n    return getattr(app, 'SessionHelper')(None)\n",
+            "④ 子类": "from sessionhelper.app import SessionHelper\nclass Fake(SessionHelper):\n    pass\ndef t():\n    return Fake(None)\n",
+            "④b 子类的别名链": "from sessionhelper.app import SessionHelper as S\nclass Fake(S):\n    pass\nF2 = Fake\ndef t():\n    return F2(None)\n",
+            "②b 带类型注解的别名": "from sessionhelper.app import SessionHelper\nCLS: type = SessionHelper\ndef t():\n    return CLS(None)\n",
+        }
+        for label, src in evasions.items():
+            self.assertEqual(len(problems_for("x.py", src)), 1, label + " 未被抓到")
+            # 接上隔离后（构造在函数里）都应放行
+            self.assertEqual(problems_for("x.py", wired + src), [], label + " 接线后不应报")
+        # ⑤ 接了助手，但 import 时就构造（模块级、类体内）⇒ 红；放在函数/lambda 里 ⇒ 过
+        mod_level = wired + "from sessionhelper.app import SessionHelper\nH = SessionHelper(None)\n"
+        cls_level = wired + "from sessionhelper.app import SessionHelper\nclass T:\n    H = SessionHelper(None)\n"
+        in_lambda = wired + "from sessionhelper.app import SessionHelper\nmk = lambda: SessionHelper(None)\n"
+        in_func = wired + "from sessionhelper.app import SessionHelper\ndef mk():\n    return SessionHelper(None)\n"
+        self.assertEqual(len(problems_for("x.py", mod_level)), 1)
+        self.assertIn("import 时", problems_for("x.py", mod_level)[0])
+        self.assertEqual(len(problems_for("x.py", cls_level)), 1)
+        self.assertEqual(problems_for("x.py", in_lambda), [])
+        self.assertEqual(problems_for("x.py", in_func), [])
+        # ⑥ 纸面接线：start/finish 放在 if/try 里、或根本不在函数顶层 ⇒ 红
+        body = "from sessionhelper.app import SessionHelper\ndef t():\n    return SessionHelper(None)\n"
+        paper_if = head + "def setUpModule():\n    if False:\n        _H.start()\n\ndef tearDownModule():\n    _H.finish()\n\n" + body
+        paper_if_down = head + "def setUpModule():\n    _H.start()\n\ndef tearDownModule():\n    if False:\n        _H.finish()\n\n" + body
+        paper_try = head + "def setUpModule():\n    try:\n        _H.start()\n    except Exception:\n        pass\n\ndef tearDownModule():\n    _H.finish()\n\n" + body
+        for label, src in (("start 在 if False 里", paper_if), ("finish 在 if False 里", paper_if_down), ("start 在 try 里", paper_try)):
+            self.assertEqual(len(problems_for("x.py", src)), 1, label + " 未被抓到")
+        # 阴性：不相关的同名变量、字符串里提到 SessionHelper、不构造 ⇒ 不误报
+        self.assertEqual(problems_for("x.py", "x = 'SessionHelper(None)'\ndef t():\n    return 1\n"), [])
+        self.assertEqual(problems_for("x.py", "from sessionhelper.app import SessionHelper\ndef t():\n    return SessionHelper.is_delivery\n"), [])
+        self.assertEqual(problems_for("x.py", "from sessionhelper.app import SessionHelper as SH\ndef t():\n    return SH.__name__\n"), [])
 
 
 if __name__ == "__main__":
