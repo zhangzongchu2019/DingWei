@@ -44,3 +44,14 @@ credential.json（{agent_name, secret}）：目录 0700、文件 0600，创建�
 ## 8 提醒
 
 配对码仅 6 位（10^6），摘要泄露后可离线穷举；保护靠作废时限、来源限频、业主在场核对，Hub 侧勿视摘要为秘密。
+
+## 9 托管席位入网入口（组长令 2026-10-01 09:46Z；对应 opus50tc2k/g3-hosted-cred 的 IssueHostedAgent）
+
+Hub 新建托管 Agent 时直接签发一次性入网令牌＝一条已批准的申请 {application_id, poll_token, expires_at}（2 小时有效）。容器里的客户端**跳过"生成配对码、发起申请"**，直接用它轮询取凭据。
+- 入口：`enroll.enroll_with_token`；`SH_ENROLL=1` 且存在令牌文件（`SH_ENROLL_TOKEN_FILE`，默认 `<状态目录>/enroll-token.json`）时由 `prepare_client_env` 自动选用；此时不需要 `SH_ENROLL_OWNER`，也不显示配对码。
+- 令牌文件：JSON `{"application_id": …, "poll_token": …, "expires_at": RFC3339}`，由节点代理在容器里一次性写入；**不经环境变量、不进镜像层**（环境变量里至多放文件路径）。
+- 读完即删：先把状态存入 `enroll-pending.json`（0600，kind=hosted，重启可续轮询），再删除令牌文件；存不下状态则不删（留给下一次重试）。令牌文件读不出或缺字段则删除并报错，不留半截秘密。
+- 轮询、`superseded／expired／rejected` 停止、429 等待、凭据 600 原子落盘、取过一次再取为空（明确报错）——全部复用自备路径同一段代码。
+- 过期：Hub 回 expired ⇒ 明确失败、清理状态、不留半成品；令牌文件里的 expires_at 明显已过（超出 5 分钟时钟偏差宽限）则不再打扰 Hub，直接同样失败。
+- 轮换（容器重建、升级时 `ReissueHostedToken`）：新令牌文件优先于已有凭据；新凭据被真正取回之前旧凭据原样保留，取回失败不破坏旧的。
+- 请 G4 节点代理确认：令牌文件路径与权限（建议 0600、属容器内运行用户）、写入时机（在客户端启动前）。

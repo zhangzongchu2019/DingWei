@@ -208,15 +208,17 @@ def save_credential(state_dir: str, cred: Credential) -> str:
     return path
 
 
-def _load_pending(state_dir: str) -> dict | None:
+def _load_pending(state_dir: str, kind: str = "selfhost") -> dict | None:
+    """The saved in-flight application of this kind (a file without 'kind' is a self-hosted one)."""
     path = os.path.join(state_dir, PENDING_FILE)
     try:
         _assert_private(path)
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
-        if all(isinstance(data.get(k), str) and data[k] for k in ("code", "application_id", "poll_token")):
+        need = ("application_id", "poll_token") + (("code",) if kind == "selfhost" else ())
+        if data.get("kind", "selfhost") == kind and all(isinstance(data.get(k), str) and data[k] for k in need):
             return data
-    except (OSError, ValueError, CredentialFileError):
+    except (OSError, ValueError, CredentialFileError, AttributeError):
         pass
     return None
 
@@ -266,6 +268,27 @@ def enroll(
         notify(reason)
         raise EnrollStopped(reason) from exc
     show(pending["code"])
+    return _await_credential(state_dir, pending, transport, notify, poll_interval, sleep, max_polls)
+
+
+_TERMINAL_REASONS = {
+    "selfhost": {
+        "rejected": "the owner rejected this client",
+        "expired": "the application expired; restart the client to apply again",
+        "superseded": "another application from this device was approved; this one is void",
+    },
+    "hosted": {
+        "rejected": "the platform withdrew this enrollment token",
+        "expired": "the enrollment token expired; the platform has to issue a new one",
+        "superseded": "this enrollment token was replaced; the platform has to issue a new one",
+    },
+}
+
+
+def _await_credential(state_dir: str, pending: dict, transport: Transport, notify: Callable[[str], None],
+                      poll_interval: float, sleep: Callable[[float], None], max_polls: int | None) -> Credential:
+    """Poll one application until the Hub hands out the credential (shared by both enrollment routes)."""
+    kind = pending.get("kind", "selfhost")
     polls = 0
     while True:
         try:
@@ -279,7 +302,8 @@ def enroll(
                 continue
             if exc.status == 404:  # unknown application or wrong poll token: the saved request is useless
                 _clear_pending(state_dir)
-                reason = "this application no longer exists; restart the client to apply again"
+                reason = ("this application no longer exists; restart the client to apply again" if kind == "selfhost"
+                          else "the enrollment token is unknown to the Hub; the platform has to issue a new one")
                 notify(reason)
                 raise EnrollStopped(reason) from exc
             raise
@@ -292,8 +316,8 @@ def enroll(
                 _clear_pending(state_dir)
                 raise CredentialAlreadyIssued(
                     "approved, but the one-time credential was already issued; "
-                    "ask the owner to revoke this agent and apply again"
-                )
+                    + ("ask the owner to revoke this agent and apply again" if kind == "selfhost"
+                       else "the platform has to issue a new enrollment token"))
             if not CREDENTIAL_RE.fullmatch(secret):
                 # Saved anyway: it is handed out only once, so refusing it would lose it for good.
                 notify("the credential has an unexpected format; saved, but report this to the platform team")
@@ -303,11 +327,7 @@ def enroll(
             return cred
         if state in ("rejected", "expired", "superseded"):
             _clear_pending(state_dir)
-            reason = {
-                "rejected": "the owner rejected this client",
-                "expired": "the application expired; restart the client to apply again",
-                "superseded": "another application from this device was approved; this one is void",
-            }[state]
+            reason = _TERMINAL_REASONS[kind][state]
             notify(reason)
             raise (EnrollRejected if state == "rejected" else EnrollStopped)(reason)
         if state != "pending":
@@ -316,6 +336,93 @@ def enroll(
         if max_polls is not None and polls >= max_polls:
             raise EnrollError("gave up waiting for approval")
         sleep(poll_interval)
+
+
+# ---------------------------------------------------------------- hosted route
+
+TOKEN_FILE = "enroll-token.json"
+TOKEN_EXPIRY_GRACE_S = 300  # tolerate clock skew between the container and the Hub before refusing locally
+
+
+def _parse_rfc3339(value: str) -> float | None:
+    from datetime import datetime, timezone
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).timestamp()
+
+
+def enroll_with_token(
+    *,
+    state_dir: str,
+    token_file: str,
+    transport: Transport,
+    notify: Callable[[str], None] = lambda _m: None,
+    poll_interval: float = 4.0,
+    sleep: Callable[[float], None] = time.sleep,
+    max_polls: int | None = None,
+    now: Callable[[], float] = time.time,
+) -> Credential:
+    """Hosted-seat enrollment: the Hub already issued a one-time token (an approved application).
+
+    The container receives {application_id, poll_token, expires_at} as a file (never via the
+    environment or an image layer).  This reads it, saves the in-flight state (0600), deletes the
+    file, then polls exactly like the self-hosted route — no pairing code, no application step.
+
+      * token file present  -> use it (also when a credential exists: that is a rotation, the old
+        credential stays until the new one is actually taken);
+      * else a saved hosted application -> resume polling it;
+      * else a stored credential -> return it.
+    An expired or unknown token fails clearly and leaves nothing half-done.
+    """
+    poll_interval = max(poll_interval, MIN_POLL_INTERVAL)
+    if os.path.exists(token_file):
+        pending = _read_token_file(state_dir, token_file)
+        exp = _parse_rfc3339(pending.get("expires_at", ""))
+        if exp is not None and now() > exp + TOKEN_EXPIRY_GRACE_S:
+            _clear_pending(state_dir)
+            reason = "the enrollment token expired; the platform has to issue a new one"
+            notify(reason)
+            raise EnrollStopped(reason)
+    else:
+        pending = _load_pending(state_dir, "hosted")
+        if pending is None:
+            existing = load_credential(state_dir)
+            if existing:
+                return existing
+            raise EnrollError("no enrollment token file and no stored credential")
+    return _await_credential(state_dir, pending, transport, notify, poll_interval, sleep, max_polls)
+
+
+def _read_token_file(state_dir: str, token_file: str) -> dict:
+    """Read the one-time token file, keep the state in a 0600 file, then delete the token file.
+
+    The file is deleted as soon as its content is safely held (or found unusable), so the token does
+    not sit on disk twice.  If the state cannot be saved the file is left for another try.
+    """
+    try:
+        with open(token_file, encoding="utf-8") as fh:
+            raw = json.load(fh)
+        app_id, tok = str(raw.get("application_id") or ""), str(raw.get("poll_token") or "")
+        exp = str(raw.get("expires_at") or "")
+    except (OSError, ValueError, AttributeError) as exc:
+        _remove_quietly(token_file)  # unusable: do not leave a half-written secret behind
+        raise EnrollError(f"enrollment token file is unreadable: {type(exc).__name__}") from exc
+    if not app_id or not tok:
+        _remove_quietly(token_file)
+        raise EnrollError("enrollment token file lacks application_id or poll_token")
+    pending = {"kind": "hosted", "application_id": app_id, "poll_token": tok, "expires_at": exp}
+    write_private_file(os.path.join(state_dir, PENDING_FILE), json.dumps(pending))
+    os.unlink(token_file)
+    return pending
+
+
+def _remove_quietly(path: str) -> None:
+    try:
+        os.unlink(path)
+    except OSError:
+        pass
 
 
 def _apply(state_dir: str, owner: str, transport: Transport) -> dict:
@@ -431,11 +538,16 @@ def prepare_client_env(environ, *, show: Callable[[str], None], notify: Callable
     ws_base = env.get("SH_WS_BASE", "")
     if not ws_base:
         raise EnrollError("SH_WS_BASE is required")
-    cred = enroll(
-        state_dir=state_dir, owner=env.get("SH_ENROLL_OWNER", ""),
-        transport=transport or UrllibTransport(hub_http_base(ws_base)),
-        show=show, notify=notify,
-    )
+    transport = transport or UrllibTransport(hub_http_base(ws_base))
+    token_file = os.path.expanduser(env.get("SH_ENROLL_TOKEN_FILE", "") or os.path.join(state_dir, TOKEN_FILE))
+    if os.path.exists(token_file) or _load_pending(state_dir, "hosted"):
+        # hosted seat: the platform put a one-time token file in the container; no owner, no pairing code
+        cred = enroll_with_token(state_dir=state_dir, token_file=token_file, transport=transport, notify=notify)
+    else:
+        cred = enroll(
+            state_dir=state_dir, owner=env.get("SH_ENROLL_OWNER", ""),
+            transport=transport, show=show, notify=notify,
+        )
     env["SH_SESSION_NAME"] = cred.agent_name.lower()
     env.setdefault("SH_KEY_ID", "enrolled")
     env["SH_SECRET"] = "enrolled"
