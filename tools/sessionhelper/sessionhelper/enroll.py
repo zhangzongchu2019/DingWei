@@ -506,7 +506,7 @@ def on_handshake_failure(state_dir: str, status: int, body: bytes | str, notify:
         revoke_local(state_dir, notify)
         raise CredentialRevoked("credential revoked")
     if status == 401 and code == "credential_suspended":
-        notify("this seat is paused (disabled) by its owner; stopping. The local credential was kept")
+        notify("本 Agent 已被停用 (this seat is paused by its owner); stopping. The local credential was kept")
         raise CredentialSuspended("credential suspended")
     if status == 401 and code == "credential_invalid":
         notify("the Hub does not know this credential (wrong Hub?); the local credential file was kept")
@@ -523,7 +523,7 @@ def on_ws_closed(state_dir: str, code: int, reason: str, notify: Callable[[str],
         revoke_local(state_dir, notify)
         raise CredentialRevoked("credential revoked")
     if code == REVOKE_CLOSE_CODE and reason == "credential_suspended":
-        notify("this seat was paused (disabled) by its owner; stopping. The local credential was kept")
+        notify("本 Agent 已被停用 (this seat is paused by its owner); stopping. The local credential was kept")
         raise CredentialSuspended("credential suspended")
 
 

@@ -310,12 +310,14 @@ class EnrollFlowTest(unittest.TestCase):
         self.assertTrue(os.path.exists(self.path(enroll.CREDENTIAL_FILE)), "pause is reversible: the credential stays")
         self.assertEqual(enroll.load_credential(self.dir).secret, SECRET)
         self.assertEqual(len(self.notes), 1)
+        self.assertIn("本 Agent 已被停用", self.notes[0])
 
     def test_suspended_at_handshake_stops_but_keeps_the_credential(self):
         enroll.save_credential(self.dir, Credential("Dev55", SECRET))
         with self.assertRaises(CredentialSuspended):
             enroll.on_handshake_failure(self.dir, 401, b'{"error":"credential_suspended"}', self.notes.append)
         self.assertTrue(os.path.exists(self.path(enroll.CREDENTIAL_FILE)))
+        self.assertIn("本 Agent 已被停用", self.notes[0])
 
     def test_suspended_is_not_confused_with_revoked_or_other_codes(self):
         enroll.save_credential(self.dir, Credential("Dev55", SECRET))
