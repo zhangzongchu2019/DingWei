@@ -970,3 +970,45 @@ func TestSeatCLIMustMatchAllowlistExactly(t *testing.T) {
 		}
 	}
 }
+
+// 透传层（复验中期存活刀）：RegisterDockerHandlers 的 seatHubViaProxy 参数必须真进 dockerOps——
+// 用 Agent 注册（true）后走 ag.handlers[CmdCreateSeat]，从 fake Docker 的 create spec Env 断言。
+// 反向：RegisterDockerHandlers 构造 dockerOps 时把该字段写 false ⇒ 本格红（此前直改 dockerOps 的格全部存活）。
+func TestHubViaProxyThroughRegisterDockerHandlers(t *testing.T) {
+	f := newFakeDocker(t)
+	ag := &Agent{handlers: map[string]Handler{}}
+	if err := ag.RegisterDockerHandlers(
+		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+		"http://172.30.68.1:11080", "wss://dw.cmjrt.com:55055", "", true,
+	); err != nil {
+		t.Fatalf("register: %v", err)
+	}
+	h, ok := ag.handlers[CmdCreateSeat]
+	if !ok {
+		t.Fatal("CmdCreateSeat 未注册")
+	}
+	raw := `{"seat_id":"ag_tp","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`
+	if _, err := h(context.Background(), json.RawMessage(raw)); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if len(f.specs) != 1 {
+		t.Fatalf("应有一次 create: %d", len(f.specs))
+	}
+	envs, _ := f.specs[0]["Env"].([]any)
+	joined := "\n"
+	for _, e := range envs {
+		v, _ := e.(string)
+		joined += v + "\n"
+	}
+	for _, want := range []string{
+		"\nSH_PROXY=http://172.30.68.1:11080\n",
+		"\nHTTP_PROXY=http://172.30.68.1:11080\n",
+		"\nHTTPS_PROXY=http://172.30.68.1:11080\n",
+		"\nNO_PROXY=localhost,127.0.0.1\n",
+	} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("透传后 create spec 的 Env 缺精确项 %q: %v", want, envs)
+		}
+	}
+}
