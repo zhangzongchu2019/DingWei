@@ -46,6 +46,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"N3_registration_code_expired_or_unknown_changes_nothing", regCodeInvalidChangesNothing},
 		{"N3_identity_already_bound_rejected", identityAlreadyBound},
 		{"N3_new_registration_code_voids_old", regCodeRegenVoidsOld},
+		{"N3_list_active_registration_codes", regCodeListActive},
 		{"V1_A6_pending_list_scoped_to_owner", pendingScopedToOwner},
 		{"V1_A7_application_expires_by_clock", applicationExpires},
 		{"V1_pending_order_is_deterministic", pendingOrderDeterministic},
@@ -244,6 +245,51 @@ func regCodeRegenVoidsOld(t *testing.T, s identity.Store) {
 	wantErr(t, "old code after regenerate", err, identity.ErrCodeInvalid)
 	if _, err := s.RedeemRegistrationCode(ctx, "code-ivy-2", feishuA, t0); err != nil {
 		t.Fatalf("new code: %v", err)
+	}
+}
+
+// 当前有效注册码（业主反馈，板 7a138dcf：用户列表一直显示到绑定、过期或重新生成）：
+// 只列未用、未过期的；新码顶替旧码；只出哈希，不出明文（库里本就没有明文）。
+func regCodeListActive(t *testing.T, s identity.Store) {
+	mustUser(t, s, "jack", "jk", identity.UserPendingBind)
+	mustUser(t, s, "kate", "kt", identity.UserPendingBind)
+	exp := t0.Add(24 * time.Hour)
+	_ = s.CreateRegistrationCode(ctx, "JACK", "code-jack-1", exp)
+	_ = s.CreateRegistrationCode(ctx, "jack", "code-jack-2", exp.Add(time.Minute)) // 顶替 1
+	_ = s.CreateRegistrationCode(ctx, "kate", "code-kate", t0.Add(time.Hour))
+	digests := func(now time.Time) map[string]string {
+		rows, err := s.ListActiveRegistrationCodes(ctx, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		m := map[string]string{}
+		for _, r := range rows {
+			if _, dup := m[r.UserIDLC]; dup {
+				t.Fatalf("user %s listed twice", r.UserIDLC)
+			}
+			m[r.UserIDLC] = r.CodeDigest
+		}
+		return m
+	}
+	if got := digests(t0); got["jack"] != "code-jack-2" || got["kate"] != "code-kate" || len(got) != 2 {
+		t.Fatalf("active at t0: %v, want jack→code-jack-2 kate→code-kate", got)
+	}
+	rows, _ := s.ListActiveRegistrationCodes(ctx, t0)
+	for _, r := range rows {
+		if r.UserIDLC == "jack" && !r.ExpiresAt.Equal(exp.Add(time.Minute)) {
+			t.Fatalf("expires_at %v, want %v", r.ExpiresAt, exp.Add(time.Minute))
+		}
+	}
+	// kate 的码过期 ⇒ 不列
+	if got := digests(t0.Add(2 * time.Hour)); got["kate"] != "" || got["jack"] != "code-jack-2" {
+		t.Fatalf("after kate's code expired: %v", got)
+	}
+	// jack 绑定（码已用）⇒ 不列
+	if _, err := s.RedeemRegistrationCode(ctx, "code-jack-2", feishuA, t0); err != nil {
+		t.Fatal(err)
+	}
+	if got := digests(t0); got["jack"] != "" {
+		t.Fatalf("redeemed code still listed: %v", got)
 	}
 }
 

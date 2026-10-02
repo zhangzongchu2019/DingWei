@@ -180,6 +180,19 @@ func (m *MemStore) CreateRegistrationCode(_ context.Context, userIDLC, codeDiges
 	return nil
 }
 
+func (m *MemStore) ListActiveRegistrationCodes(_ context.Context, now time.Time) ([]RegistrationCodeRow, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []RegistrationCodeRow
+	for d, c := range m.regCodes {
+		if !c.redeemed && c.expiresAt.After(now) {
+			out = append(out, RegistrationCodeRow{UserIDLC: c.userLC, CodeDigest: d, ExpiresAt: c.expiresAt})
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].UserIDLC < out[j].UserIDLC })
+	return out, nil
+}
+
 func (m *MemStore) RedeemRegistrationCode(_ context.Context, codeDigest string, ident Identity, now time.Time) (*User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

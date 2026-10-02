@@ -316,6 +316,24 @@ func (s *PGStore) CreateRegistrationCode(ctx context.Context, userIDLC, codeDige
 	})
 }
 
+func (s *PGStore) ListActiveRegistrationCodes(ctx context.Context, now time.Time) ([]RegistrationCodeRow, error) {
+	rows, err := s.pool.Query(ctx, s.t, `SELECT user_id_lc, code_digest, expires_at FROM np_registration_code
+		WHERE redeemed_at IS NULL AND expires_at > $1 ORDER BY user_id_lc`, now.UTC())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []RegistrationCodeRow
+	for rows.Next() {
+		var r RegistrationCodeRow
+		if err := rows.Scan(&r.UserIDLC, &r.CodeDigest, &r.ExpiresAt); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
 func (s *PGStore) RedeemRegistrationCode(ctx context.Context, codeDigest string, ident Identity, now time.Time) (*User, error) {
 	var out *User
 	err := s.inTx(ctx, func(tx repo.Tx) error {

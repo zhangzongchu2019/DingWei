@@ -175,12 +175,24 @@ func (n *N3) listUsers(w http.ResponseWriter, r *http.Request, u *identity.User)
 		mapErr(w, err)
 		return
 	}
+	// 待绑定飞书的用户：当前有效的注册码一直可见，直到绑定、过期或重新生成（业主反馈，板 7a138dcf）。
+	// 取不回（未配密钥等）就不出这两个键，页面退回「重新生成」。
+	codes, err := n.OB.RecoverableRegistrationCodes(r.Context())
+	if err != nil {
+		mapErr(w, err)
+		return
+	}
 	out := make([]map[string]any, 0, len(users))
 	for _, x := range users {
-		out = append(out, map[string]any{
+		row := map[string]any{
 			"user_id": x.UserID, "display_name": x.DisplayName, "short_name": x.ShortName,
 			"type": string(x.Type), "state": string(x.State),
-		})
+		}
+		if c, ok := codes[x.UserIDLC()]; ok && x.State == identity.UserPendingBind {
+			row["registration_code"] = c.Code
+			row["code_expires_at"] = c.ExpiresAt.Format(time.RFC3339)
+		}
+		out = append(out, row)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"users": out})
 }
