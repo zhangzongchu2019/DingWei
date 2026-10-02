@@ -172,6 +172,19 @@ func (m *MemStore) ResolveIdentity(_ context.Context, ident Identity) (*User, er
 	return &cp, nil
 }
 
+func (m *MemStore) GetIdentity(_ context.Context, userIDLC, provider string) (*Identity, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	userIDLC = Lower(userIDLC)
+	for ident, owner := range m.idents {
+		if owner == userIDLC && ident.Provider == provider {
+			cp := ident
+			return &cp, nil
+		}
+	}
+	return nil, ErrNotFound
+}
+
 func (m *MemStore) CreateRegistrationCode(_ context.Context, userIDLC, codeDigest string, expiresAt time.Time) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
