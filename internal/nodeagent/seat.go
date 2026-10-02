@@ -57,6 +57,7 @@ type dockerOps struct {
 	registry     string // 固定镜像仓库（如 hub.local/dingwei）
 	cgroupParent string // 🔴 必填：cgroup 父切片（如 dingwei-hosted.slice——组长 eccc54bc）
 	seatProxy    string // 🔴 必填：席位代理（第 12 条②：注入容器 env，如 http://172.30.68.1:11080）
+	hubWSBase    string // 🔴 必填（容器启动契约 R-G1-HOSTED-IMAGE-CONTRACT）：SH_WS_BASE＝代理配置 HubURL 的 ws 源
 	waitMax      time.Duration
 }
 
@@ -124,12 +125,12 @@ type credentialFile struct {
 // buildSpec 安全参数清单（白名单固定，不可被指令关改）。
 // 🔴 CgroupParent 必带（组长 eccc54bc：托管席位统一挂在可配置父切片下做资源切片；
 // 漏设＝席位逃逸出平台切片，故 create 在空值时直接拒）。
-func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources) map[string]any {
+func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, credKind string) map[string]any {
 	memBytes := res.MemoryMB * 1024 * 1024
 	return map[string]any{
 		"Image": image,
 		"User":  "10001:10001", // 非 root（隔离底线；与 seatRunUID 一致）
-		"Env":   d.seatEnv(),   // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
+		"Env":   d.seatEnv(credKind),   // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
 		"HostConfig": map[string]any{
 			"ReadonlyRootfs": true,
 			"Tmpfs":          map[string]string{"/tmp": "size=8m"},
@@ -162,16 +163,24 @@ var chownForSeatFn = func(path string) error {
 
 func chownForSeat(path string) error { return chownForSeatFn(path) }
 
-// seatEnv 席位容器的环境变量：仅代理（席位出网经 relay，第 12 条②）；凭据永不进这里。
-func (d *dockerOps) seatEnv() []string {
+// seatEnv 席位容器环境变量。容器启动契约（R-G1-HOSTED-IMAGE-CONTRACT 一）：四个非凭据键
+// 由节点代理注入——SH_WS_BASE（Hub 的 ws 源）／SH_ENROLL_TOKEN_FILE／SH_CRED_FILE（均为路径）／
+// SH_CRED_KIND（api_key|token_file，create 参数 cred_kind 带入）。🔴 凭据内容永不进 env/日志。
+func (d *dockerOps) seatEnv(credKind string) []string {
+	env := []string{
+		"SH_WS_BASE=" + d.hubWSBase,
+		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_CRED_FILE=/work/account-credential",
+		"SH_CRED_KIND=" + credKind,
+	}
 	if d.seatProxy == "" {
-		return []string{}
+		return env
 	}
-	return []string{
-		"HTTP_PROXY=" + d.seatProxy,
-		"HTTPS_PROXY=" + d.seatProxy,
+	return append(env,
+		"HTTP_PROXY="+d.seatProxy,
+		"HTTPS_PROXY="+d.seatProxy,
 		"NO_PROXY=localhost,127.0.0.1", // 本机回环不经代理
-	}
+	)
 }
 
 func (d *dockerOps) writeTokenFile(seatID string, tf *tokenFile) error {
@@ -249,6 +258,7 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		Resources seatResources   `json:"resources"`
 		Token     *tokenFile      `json:"token_file"`
 		Cred      *credentialFile `json:"credential_file"`
+		CredKind  string          `json:"cred_kind"` // api_key|token_file（容器启动契约：账号形态）
 	}
 	if err := strictDecode(params, &p); err != nil {
 		return nil, err
@@ -267,6 +277,13 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	}
 	if d.seatProxy == "" {
 		return nil, fmt.Errorf("%w: 席位代理未配置（第 12 条②：漏设即拒）", ErrParams)
+	}
+	// 容器启动契约：带凭据件必须带形态（缺 ⇒ 启动脚本无法扇出）；SH_WS_BASE 漏设即拒
+	if d.hubWSBase == "" {
+		return nil, fmt.Errorf("%w: SH_WS_BASE 未配置（容器启动契约：漏设即拒）", ErrParams)
+	}
+	if p.CredKind != "api_key" && p.CredKind != "token_file" {
+		return nil, fmt.Errorf("%w: cred_kind 须 api_key|token_file（容器启动契约：缺任一键即拒）", ErrParams)
 	}
 
 	name := containerName(p.SeatID)
@@ -317,7 +334,7 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		return fail(err, "")
 	}
 	// ④ 安全参数清单起容器
-	id, err := d.eng.containerCreate(ctx, name, d.buildSpec(p.Image, p.SeatID, netName, p.Resources))
+	id, err := d.eng.containerCreate(ctx, name, d.buildSpec(p.Image, p.SeatID, netName, p.Resources, p.CredKind))
 	if err != nil {
 		return fail(err, "")
 	}
@@ -396,6 +413,7 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 		Image     string        `json:"image"`
 		Resources seatResources `json:"resources"`
 		Token     *tokenFile    `json:"token_file"` // 轮换的新令牌（Hub Reissue 先行；写新令牌文件再起新容器）
+		CredKind  string        `json:"cred_kind"`
 	}
 	if err := strictDecode(params, &p); err != nil {
 		return nil, err
@@ -416,6 +434,10 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if d.seatProxy == "" {
 		return nil, fmt.Errorf("%w: 席位代理未配置（第 12 条②：漏设即拒）", ErrParams)
 	}
+	// 容器启动契约：带凭据件必须带形态（缺 ⇒ 启动脚本无法扇出）；SH_WS_BASE 漏设即拒
+	if d.hubWSBase == "" {
+		return nil, fmt.Errorf("%w: SH_WS_BASE 未配置（容器启动契约：漏设即拒）", ErrParams)
+	}
 	oldID, err := d.seatContainerID(ctx, p.SeatID)
 	if err != nil {
 		return nil, err
@@ -428,7 +450,7 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 		return nil, err
 	}
 	newName := containerName(p.SeatID) + "-new"
-	newID, err := d.eng.containerCreate(ctx, newName, d.buildSpec(p.Image, p.SeatID, networkName(p.SeatID), p.Resources))
+	newID, err := d.eng.containerCreate(ctx, newName, d.buildSpec(p.Image, p.SeatID, networkName(p.SeatID), p.Resources, p.CredKind))
 	if err != nil {
 		return nil, err
 	}
@@ -483,8 +505,17 @@ func (d *dockerOps) destroy(ctx context.Context, params json.RawMessage) (json.R
 // RegisterDockerHandlers 把 Docker 指令集挂进代理骨架（cmd/nodeagent 在真机上调用）。
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 // cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy string) {
-	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, waitMax: 60 * time.Second}
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS string) {
+	// SH_WS_BASE＝HubURL 的 ws 源（wss://host[:port]；路径剥掉）
+	base := hubWSS
+	if i := strings.Index(base, "://"); i >= 0 {
+		rest := base[i+3:]
+		if j := strings.IndexByte(rest, '/'); j >= 0 {
+			rest = rest[:j]
+		}
+		base = base[:i+3] + rest
+	}
+	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, waitMax: 60 * time.Second}
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)

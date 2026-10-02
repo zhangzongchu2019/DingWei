@@ -69,6 +69,7 @@ func main() {
 		envOr("NODEAGENT_IMAGE_REGISTRY", "hub.local/dingwei"),
 		cgroupParent,
 		seatProxy,
+		cfg.HubURL,
 	)
 	// T-G4-53：席位卷备份回传（销毁先备份；不落节点盘）
 	exportH, err := nodeagent.NewExportSeatHandler(seatRoot, cfg.HubURL, cfg.Secret, cfg.HubCertSHA256)

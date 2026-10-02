@@ -336,6 +336,7 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 			"expires_at":     tok.ExpiresAt.UTC().Format(time.RFC3339),
 		},
 		"credential_file": map[string]string{"content": cred},
+		"cred_kind":       seat.CredKind, // 容器启动契约（R-G1-HOSTED-IMAGE-CONTRACT）：账号形态随参数下发
 	})
 	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "create_seat", Params: params}); err != nil || !res.OK {
 		fail("starting", "start_failed")

@@ -180,6 +180,7 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 		Cred struct {
 			Content string `json:"content"`
 		} `json:"credential_file"`
+		CredKind string `json:"cred_kind"`
 	}
 	if err := json.Unmarshal(gw.sent[1].Params, &cp); err != nil {
 		t.Fatalf("create_seat 参数: %v", err)
@@ -192,6 +193,9 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 	}
 	if cp.Cred.Content != "sk-x" {
 		t.Fatalf("credential_file 应是解密明文一次下发: %q", cp.Cred.Content)
+	}
+	if cp.CredKind != "token_file" { // 容器启动契约：账号形态随参数下发
+		t.Fatalf("cred_kind: %q", cp.CredKind)
 	}
 	// 解密审计恰好一条
 	row, err := s.qrow(context.Background(), `SELECT COUNT(*) FROM g4_audit WHERE action='account.decrypt_issue' AND target=$1`, acctID)

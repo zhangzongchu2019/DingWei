@@ -3,6 +3,7 @@ package nodeagent
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -97,6 +98,7 @@ func newFakeDocker(t *testing.T) *fakeEngine {
 
 func (f *fakeEngine) ops(root string) *dockerOps {
 	return &dockerOps{
+		hubWSBase:    "wss://hub.test",
 		eng:          newFakeEngine(f.srv.Client(), f.srv.URL),
 		quota:        &fakeQuota{},
 		seatRoot:     root,
@@ -130,10 +132,10 @@ func TestStrictDecodeRejectsArbitraryFields(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
 	for _, raw := range []string{
-		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"env":["KEY=x"]}`,
-		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"mounts":["/:/host"]}`,
-		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"network":"host"}`,
-		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"capabilities":["SYS_ADMIN"]}`,
+		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","env":["KEY=x"]}`,
+		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","mounts":["/:/host"]}`,
+		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","network":"host"}`,
+		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","capabilities":["SYS_ADMIN"]}`,
 	} {
 		if _, err := d.create(context.Background(), json.RawMessage(raw)); err == nil {
 			t.Fatalf("任意字段必须拒（白名单）: %s", raw)
@@ -146,7 +148,7 @@ func TestCreateSeatSecuritySpecAndTokenFile(t *testing.T) {
 	root := t.TempDir()
 	d := f.ops(root)
 	raw := `{"seat_id":"ag_t1","image":"` + goodImage + `",
-		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},
+		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},"cred_kind":"api_key",
 		"token_file":{"application_id":"app1","poll_token":"tok","expires_at":"2026-10-01T12:00:00Z"}}`
 	out, err := d.create(context.Background(), json.RawMessage(raw))
 	if err != nil {
@@ -165,16 +167,33 @@ func TestCreateSeatSecuritySpecAndTokenFile(t *testing.T) {
 	if spec["User"] != "10001:10001" {
 		t.Fatal("必须非 root UID")
 	}
-	// B7 语义精确化（第 12 条②后）：env 里只许代理三键，凭据类（key/token/secret/auth）零出现
+	// B7＋容器启动契约：env 只许代理三键＋契约四键（路径/形态，非凭据）；凭据类零出现
 	if env, _ := spec["Env"].([]any); len(env) > 0 {
+		allowed := map[string]bool{"HTTP_PROXY=": true, "HTTPS_PROXY=": true, "NO_PROXY=": true,
+			"SH_WS_BASE=": true, "SH_ENROLL_TOKEN_FILE=": true, "SH_CRED_FILE=": true, "SH_CRED_KIND=": true}
+		seen := map[string]bool{}
 		for _, e := range env {
 			s, _ := e.(string)
-			if !strings.HasPrefix(s, "HTTP_PROXY=") && !strings.HasPrefix(s, "HTTPS_PROXY=") && !strings.HasPrefix(s, "NO_PROXY=") {
+			ok := false
+			for p := range allowed {
+				if strings.HasPrefix(s, p) {
+					ok = true
+					seen[p] = true
+				}
+			}
+			if !ok {
 				t.Fatalf("凭据永不经 env（B7），实得: %v", env)
 			}
-			if strings.Contains(strings.ToLower(s), "key=") || strings.Contains(strings.ToLower(s), "token=") || strings.Contains(strings.ToLower(s), "secret") {
-				t.Fatalf("env 不得含凭据形态: %v", env)
+		}
+		for _, p := range []string{"SH_WS_BASE=", "SH_ENROLL_TOKEN_FILE=", "SH_CRED_FILE=", "SH_CRED_KIND="} {
+			if !seen[p] {
+				t.Fatalf("契约四键缺 %s: %v", p, env)
 			}
+		}
+		// 契约验收反向：env 任何值不得出现本次下发的令牌内容（值级断言——poll_token 是 "tok"，
+		// 若哪天上屏写错把令牌值塞进 env，这格红）
+		if joined := fmt.Sprintf("%v", env); strings.Contains(joined, `"tok"`) || strings.Contains(joined, "=tok ") || strings.Contains(joined, "=tok]") {
+			t.Fatalf("env 出现令牌内容: %v", env)
 		}
 	}
 	if hc["ReadonlyRootfs"] != true {
@@ -221,7 +240,7 @@ func TestCreateFailureLeavesNoPartial(t *testing.T) {
 	f.failAt = "/start"
 	root := t.TempDir()
 	d := f.ops(root)
-	raw := `{"seat_id":"ag_t2","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	raw := `{"seat_id":"ag_t2","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
 	if _, err := d.create(context.Background(), json.RawMessage(raw)); err == nil {
 		t.Fatal("注入启动失败应报错")
 	}
@@ -247,7 +266,7 @@ func TestCreateFailureLeavesNoPartial(t *testing.T) {
 func TestUpgradeNewHealthyBeforeOldRemoved(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
-	raw := `{"seat_id":"ag_t3","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	raw := `{"seat_id":"ag_t3","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
 	if _, err := d.upgrade(context.Background(), json.RawMessage(raw)); err != nil {
 		t.Fatalf("upgrade: %v", err)
 	}
@@ -293,7 +312,7 @@ func TestDestroyClearsQuota(t *testing.T) {
 func TestCgroupParentRequiredAndSet(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
-	raw := `{"seat_id":"ag_cg","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	raw := `{"seat_id":"ag_cg","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
 	if _, err := d.create(context.Background(), json.RawMessage(raw)); err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -322,7 +341,7 @@ func TestCreateCleanupFailureIsSurfaced(t *testing.T) {
 	f.failAt = "/start" // 启动失败触发清理
 	root := t.TempDir()
 	d := f.ops(root)
-	raw := `{"seat_id":"ag_b3","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	raw := `{"seat_id":"ag_b3","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
 	if _, err := d.create(context.Background(), json.RawMessage(raw)); err == nil {
 		t.Fatal("启动失败应报错")
 	}
@@ -340,7 +359,7 @@ func TestCreateCleanupFailureIsSurfaced(t *testing.T) {
 func TestUpgradeFullOrderAndRollbackPreservesOld(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
-	raw := `{"seat_id":"ag_d2","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	raw := `{"seat_id":"ag_d2","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
 	if _, err := d.upgrade(context.Background(), json.RawMessage(raw)); err != nil {
 		t.Fatalf("upgrade: %v", err)
 	}
@@ -392,7 +411,7 @@ func TestSeatProxyInjection(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
 	d.seatProxy = "http://172.30.68.1:11080"
-	raw := `{"seat_id":"ag_px","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`
+	raw := `{"seat_id":"ag_px","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
 	if _, err := d.create(context.Background(), json.RawMessage(raw)); err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -428,7 +447,7 @@ func TestCreateWritesCredentialFile(t *testing.T) {
 	root := t.TempDir()
 	d := f.ops(root)
 	out, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_cr1","image":"`+goodImage+`",
-		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},
+		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},"cred_kind":"api_key",
 		"token_file":{"application_id":"app1","poll_token":"tok","expires_at":"2026-10-01T12:00:00Z"},
 		"credential_file":{"content":"sk-test-credential-逐字"}}`))
 	if err != nil {
@@ -459,10 +478,26 @@ func TestCreateWritesCredentialFile(t *testing.T) {
 	root2 := t.TempDir()
 	d2 := f2.ops(root2)
 	if _, err := d2.create(context.Background(), json.RawMessage(`{"seat_id":"ag_cr2","image":"`+goodImage+`",
-		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384}}`)); err != nil {
+		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},"cred_kind":"api_key"}`)); err != nil {
 		t.Fatalf("无 credential_file 应照常: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root2, "ag_cr2", "account-credential")); !os.IsNotExist(err) {
 		t.Fatalf("未下发不得落凭据件: %v", err)
+	}
+}
+
+// 容器启动契约反向：缺 cred_kind ⇒ create 拒（缺任一键红），零引擎调用。
+func TestCreateRejectsMissingCredKind(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	before := len(f.calls)
+	_, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_nok","image":"`+goodImage+`",
+		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},
+		"token_file":{"application_id":"a","poll_token":"t","expires_at":"2026-10-02T00:00:00Z"}}`))
+	if err == nil || !strings.Contains(err.Error(), "cred_kind") {
+		t.Fatalf("缺 cred_kind 必拒: %v", err)
+	}
+	if len(f.calls) != before {
+		t.Fatal("拒绝在引擎调用之前")
 	}
 }
