@@ -138,7 +138,7 @@ func mkHostedDeps(t *testing.T) (hostedDeps, *hosted.Store, *fakeIDP, *fakeGW, *
 	if err := st.SetNodeOnline(ctx, "nd_rt", json.RawMessage(`{"cpu_total":16,"mem_free_mb":16384,"disk_free_mb":102400}`)); err != nil {
 		t.Fatal(err)
 	}
-	if err := st.PutQuota(ctx, hosted.Quota{UserLC: "zzc", AgentsLimit: 2, VCPULimit: 4, MemMBLimit: 8192}, "admin"); err != nil {
+	if err := st.PutQuota(ctx, hosted.Quota{UserLC: "zzc", AgentsLimit: 2, VCPULimit: 4, MemMBLimit: 8192, DiskMBLimit: 1 << 20}, "admin"); err != nil {
 		t.Fatal(err)
 	}
 	a, err := poolSvc.Register(ctx, "admin", true, "team-codex", "token_file", "codex", "gpt", "sk-x")

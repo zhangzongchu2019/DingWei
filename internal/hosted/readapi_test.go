@@ -75,8 +75,8 @@ func TestOptionsJSONMatchesContract(t *testing.T) {
 	if got, want := keysOf(t, m), []string{"accounts", "combos", "nodes", "plans", "quota"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("top-level keys %v, want %v", got, want)
 	}
-	// quota：契约原文 quota: {remaining:{agents, vcpu, mem_gb, disk_gb}}；配额 2/4/8G/0，已占一席 2C/4G。
-	if !strings.Contains(raw, `"quota":{"remaining":{"agents":1,"vcpu":2,"mem_gb":4,"disk_gb":0}}`) {
+	// quota：契约原文 quota: {remaining:{agents, vcpu, mem_gb, disk_gb}}；配额 2/4/8G/1T（R-G4-DISK-TIER 后磁盘档定 8192），已占一席 2C/4G/8G。
+	if !strings.Contains(raw, `"quota":{"remaining":{"agents":1,"vcpu":2,"mem_gb":4,"disk_gb":1016}}`) {
 		t.Fatalf("quota not in contract shape: %s", raw)
 	}
 	elemKeys := map[string][]string{
@@ -176,21 +176,8 @@ func TestOptionsPlanFitsEachGate(t *testing.T) {
 		}
 	})
 	t.Run("disk short but vcpu and memory ample", func(t *testing.T) {
-		// 两档套餐的 DiskMB 现在都是 0（待 G1 定档，plans.go），磁盘闸用真档位永远为真、测不出。
-		// 本格只在格内给两档临时设磁盘（10G／20G，格结束还原），让这道闸可被证伪；G1 定档后可改用真档位。
-		saved := map[string]Plan{}
-		for id, p := range plans {
-			saved[id] = p
-		}
-		t.Cleanup(func() {
-			for id, p := range saved {
-				plans[id] = p
-			}
-		})
-		p2, p4 := plans["2c4g"], plans["4c8g"]
-		p2.DiskMB, p4.DiskMB = 10240, 20480
-		plans["2c4g"], plans["4c8g"] = p2, p4
-		// 剩 15G 磁盘、vCPU 与内存都宽裕：10G 能放，20G 不能 —— 只能是磁盘闸在起作用。
+		// R-G4-DISK-TIER 后两档磁盘是真档位（8192／16384），磁盘闸直接用真档位证伪（原临时覆盖撤除）。
+		// 剩 15G 磁盘、vCPU 与内存都宽裕：8G 能放，16G 不能 —— 只能是磁盘闸在起作用。
 		got := fitsOf(t, Quota{UserLC: "zzc", AgentsLimit: 8, VCPULimit: 64, MemMBLimit: 1 << 20, DiskMBLimit: 15360}, nil)
 		if !got["2c4g"] || got["4c8g"] {
 			t.Errorf("fits %v, want 2c4g=true 4c8g=false (disk gate)", got)
