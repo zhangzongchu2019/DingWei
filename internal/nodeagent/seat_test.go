@@ -58,6 +58,17 @@ func newFakeDocker(t *testing.T) *fakeEngine {
 				{"Id": "c2", "Names": []string{"/seat-b-new"}, "State": "exited"},
 				{"Id": "c3", "Names": []string{"/other-x"}, "State": "running"},
 			})
+		case strings.HasPrefix(key, "GET /images/") && strings.HasSuffix(key, "/json") && key != "GET /images/json":
+			id := strings.TrimSuffix(strings.TrimPrefix(key, "GET /images/"), "/json")
+			if strings.Contains(key, "beefbeef") { // 登记过但本机不存在的探针形状
+				http.Error(w, "no such image", 404)
+				return
+			}
+			if strings.Contains(key, "cafecafe") { // 引擎读出的 ID 与 ref 逐字不等（探针形状）
+				json.NewEncoder(w).Encode(map[string]any{"Id": "sha256:" + strings.Repeat("00", 32)})
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]any{"Id": "sha256:" + id}) // 引擎惯例带前缀
 		case key == "GET /images/json":
 			json.NewEncoder(w).Encode([]map[string]any{{"Size": 104857600}, {"Size": 52428800}})
 		case strings.HasPrefix(key, "GET /containers/"):
@@ -99,6 +110,7 @@ func newFakeDocker(t *testing.T) *fakeEngine {
 func (f *fakeEngine) ops(root string) *dockerOps {
 	return &dockerOps{
 		hubWSBase:    "wss://hub.test",
+		localImages:  map[string]bool{strings.Repeat("ab", 32): true},
 		eng:          newFakeEngine(f.srv.Client(), f.srv.URL),
 		quota:        &fakeQuota{},
 		seatRoot:     root,
@@ -499,5 +511,44 @@ func TestCreateRejectsMissingCredKind(t *testing.T) {
 	}
 	if len(f.calls) != before {
 		t.Fatal("拒绝在引擎调用之前")
+	}
+}
+
+// local 形态（组长 a26a825f528a：local@sha256:<64 位>，白名单＋inspect 逐字相等，免 pull）。
+func TestLocalImageForm(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	registered := strings.Repeat("ab", 32)
+	out, err := d.pull(context.Background(), json.RawMessage(`{"image":"local@sha256:`+registered+`"}`))
+	if err != nil {
+		t.Fatalf("登记过的 local 形态应免拉通过: %v", err)
+	}
+	if !strings.Contains(string(out), "present") {
+		t.Fatalf("应 present: %s", out)
+	}
+	for _, c := range f.calls {
+		if strings.Contains(c, "images/create") {
+			t.Fatalf("local 形态不得拉取: %v", f.calls)
+		}
+	}
+	// 反向①：未登记的 ID ⇒ 拒
+	if _, err := d.pull(context.Background(), json.RawMessage(`{"image":"local@sha256:`+strings.Repeat("cd", 32)+`"}`)); err == nil {
+		t.Fatal("未登记 ID 必须拒")
+	}
+	// 反向②：带 tag／短 ID ⇒ 拒
+	if _, err := d.pull(context.Background(), json.RawMessage(`{"image":"local@sha256:abcd"}`)); err == nil {
+		t.Fatal("短 ID 必须拒")
+	}
+	// 反向③：登记过但本机不存在（inspect 404）⇒ 拒
+	missing := strings.Repeat("beef", 16)
+	d.localImages[missing] = true
+	if _, err := d.pull(context.Background(), json.RawMessage(`{"image":"local@sha256:`+missing+`"}`)); err == nil {
+		t.Fatal("本机不存在必须拒")
+	}
+	// 反向④：inspect 读出的 ID 与 ref 逐字不等 ⇒ 拒
+	mismatch := strings.Repeat("cafe", 16)
+	d.localImages[mismatch] = true
+	if _, err := d.pull(context.Background(), json.RawMessage(`{"image":"local@sha256:`+mismatch+`"}`)); err == nil {
+		t.Fatal("ID 逐字不等必须拒")
 	}
 }

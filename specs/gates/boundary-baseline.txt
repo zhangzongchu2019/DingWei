@@ -34,10 +34,13 @@
 #       与「新代码请走仓储包」反向，且允许清单对判据二不豁免。
 open 5
 escape 1
-pending 91
+pending 94
 pending:datad 25
 pending:fanout 30
-pending:hosted 36  # 调用点单位（htx() 与 dtx/ftx 同型）
+pending:hosted 39  # 调用点单位（htx() 与 dtx/ftx 同型）
+# 🔴 pending:hosted 36 → 39（kimi30kqtuxerh，合入 T-53 返修 db471c91 后按闸实数）：
+#    键／旧值／新值／依据／谁批：pending:hosted／36／39／be6a2b93 合入的 53 返修（他的 backup 重写
+#    新增三处 htx() 调用点）／同裁定二(b) 口径
 # 🔴 pending:hosted 35 → 36（kimi30kqtuxerh，合入 g4-t50-fix5 后按闸实数）：
 #    键／旧值／新值／依据／谁批：pending:hosted／35／36／fix5 的 reconcileSeat 一处新增 htx() 调用点
 #    （离线销毁对账补清——组长令 fdce5301 ⑤再修）／同裁定二(b) 口径

@@ -306,6 +306,10 @@ func TestHubParamsSatisfyNodeContract(t *testing.T) {
 	if tf["application_id"] != "app2" || tf["poll_token"] != "tok2" {
 		t.Fatalf("升级令牌必须是 Reissue 的新令牌: %v", tf)
 	}
+	// 容器启动契约（a26a825f528a）：升级后新容器 SH_CRED_KIND＝席位账号形态（删掉这行必红）
+	if up["cred_kind"] != "token_file" {
+		t.Fatalf("upgrade_seat 须带 cred_kind: %v", up)
+	}
 	if tf["expires_at"] == "" || up["image"] != newerImage {
 		t.Fatalf("token/image: %v", up)
 	}

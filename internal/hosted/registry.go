@@ -70,10 +70,14 @@ func LoadImages(path string) (*StaticImages, error) {
 		return nil, fmt.Errorf("镜像登记畸形: %v", err)
 	}
 	for cli, ref := range m {
-		// 形状闸：必须带 sha256 digest（与节点侧 validateImageRef 同一条纪律的 Hub 半段）
+		// 形状闸：digest 锚定，两形态（与节点侧 validateImageRef 同一条纪律的 Hub 半段）：
+		// 仓库@sha256:64hex（拉取式）或 local 前缀＋sha256:64hex（本机 image ID，免 pull——a26a825f528a）
+		if strings.HasPrefix(ref, "local@sha256:") && len(ref) == 13+64 {
+			continue
+		}
 		parts := strings.Split(ref, "@")
 		if len(parts) != 2 || !strings.HasPrefix(parts[1], "sha256:") || len(parts[1]) != 7+64 {
-			return nil, fmt.Errorf("镜像登记 %q 的 ref 必须是 仓库@sha256:64hex: %q", cli, ref)
+			return nil, fmt.Errorf("镜像登记 %q 的 ref 必须是 仓库@sha256:64hex 或裸 sha256:64hex: %q", cli, ref)
 		}
 	}
 	return &StaticImages{m: m}, nil

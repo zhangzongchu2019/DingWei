@@ -70,6 +70,7 @@ func main() {
 		cgroupParent,
 		seatProxy,
 		cfg.HubURL,
+		os.Getenv("NODEAGENT_LOCAL_IMAGES"), // local 形态白名单（与板上 HOSTED-IMAGE-VERSIONS 同源）
 	)
 	// T-G4-53：席位卷备份回传（销毁先备份；不落节点盘）
 	exportH, err := nodeagent.NewExportSeatHandler(seatRoot, cfg.HubURL, cfg.Secret, cfg.HubCertSHA256)

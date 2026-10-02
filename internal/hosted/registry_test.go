@@ -67,4 +67,19 @@ func TestStaticRegistriesFailClosed(t *testing.T) {
 	if ref, ok := i1.Latest("codex"); !ok || ref == "" {
 		t.Fatal("登记镜像应可取")
 	}
+	// 本机 image ID 形态（a26a825f528a：只收登记的裸 sha256 形）收；畸形仍拒
+	localImg := filepath.Join(dir, "local.json")
+	os.WriteFile(localImg, []byte(`{"codex":"local@sha256:`+
+		`0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}`), 0o600)
+	i2, err := LoadImages(localImg)
+	if err != nil {
+		t.Fatalf("本机 ID 形态应收: %v", err)
+	}
+	if _, ok := i2.Latest("codex"); !ok {
+		t.Fatal("本机 ID 登记应可取")
+	}
+	os.WriteFile(localImg, []byte(`{"codex":"sha256:tooshort"}`), 0o600)
+	if _, err := LoadImages(localImg); err == nil {
+		t.Fatal("短 digest 必须拒")
+	}
 }

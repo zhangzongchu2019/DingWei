@@ -172,6 +172,22 @@ func (e *engine) containerCreate(ctx context.Context, name string, spec map[stri
 	return out.ID, nil
 }
 
+// imageInspectID 本机镜像核对：返回引擎存的 Id（调用方与 ref 逐字比对——组长 a26a825f528a）。
+func (e *engine) imageInspectID(ctx context.Context, id string) (string, error) {
+	var out struct {
+		ID string `json:"Id"`
+	}
+	err := e.call(ctx, "GET", "/images/"+id+"/json", nil, &out)
+	if ee, ok := err.(*engineError); ok && ee.Status == 404 {
+		return "", fmt.Errorf("image %s 不在本机", id)
+	}
+	if err != nil {
+		return "", err
+	}
+	// 引擎的 Id 常带 sha256: 前缀；比对外层统一剥
+	return strings.TrimPrefix(out.ID, "sha256:"), nil
+}
+
 func (e *engine) containerStart(ctx context.Context, id string) error {
 	return e.call(ctx, "POST", "/containers/"+id+"/start", nil, nil)
 }

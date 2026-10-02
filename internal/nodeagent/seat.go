@@ -33,11 +33,31 @@ var (
 var digestPattern = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 
 func validateImageRef(ref, registry string) error {
+	// 形态二（组长 a26a825f528a）：local@sha256:<64 位 image ID>——本机构建本机用，免 pull；
+	// 钉扎从「固定仓库」换成「固定 ID 白名单」：节点只接受配置里登记过的 ID
+	// （NODEAGENT_LOCAL_IMAGES，与板上 HOSTED-IMAGE-VERSIONS 同源），且 create 前 inspect
+	// 读出的 ID 必须与 ref 逐字相等。
+	if repo, digest, ok := strings.Cut(ref, "@"); ok && repo == "local" {
+		if !digestPattern.MatchString(digest) {
+			return fmt.Errorf("%w: local 形态的 ID 须 64 位 hex: %q", ErrImageRef, ref)
+		}
+		return nil
+	}
 	repo, digest, ok := strings.Cut(ref, "@")
 	if !ok || !strings.HasPrefix(repo, registry+"/") || !digestPattern.MatchString(digest) {
 		return fmt.Errorf("%w: %q", ErrImageRef, ref)
 	}
 	return nil
+}
+
+// localImageID 取出 local 形态的 image ID（64 位裸 hex；不是 local 形态 ⇒ ""）。
+// 白名单与 inspect 比对都用裸 hex（引擎的 Id 常带 sha256: 前缀，docker.go 剥）。
+func localImageID(ref string) string {
+	repo, digest, ok := strings.Cut(ref, "@")
+	if !ok || repo != "local" {
+		return ""
+	}
+	return strings.TrimPrefix(digest, "sha256:")
 }
 
 // strictDecode 白名单解码：任何未知字段（env/mount/network/capability/…）一律拒。
@@ -58,6 +78,7 @@ type dockerOps struct {
 	cgroupParent string // 🔴 必填：cgroup 父切片（如 dingwei-hosted.slice——组长 eccc54bc）
 	seatProxy    string // 🔴 必填：席位代理（第 12 条②：注入容器 env，如 http://172.30.68.1:11080）
 	hubWSBase    string // 🔴 必填（容器启动契约 R-G1-HOSTED-IMAGE-CONTRACT）：SH_WS_BASE＝代理配置 HubURL 的 ws 源
+	localImages  map[string]bool // local 形态白名单（NODEAGENT_LOCAL_IMAGES；与板上登记同源）
 	waitMax      time.Duration
 }
 
@@ -73,6 +94,20 @@ func (d *dockerOps) pull(ctx context.Context, params json.RawMessage) (json.RawM
 	}
 	if err := validateImageRef(p.Image, d.registry); err != nil {
 		return nil, err
+	}
+	if id := localImageID(p.Image); id != "" {
+		// local 形态：白名单＋inspect 逐字相等，免 pull
+		if !d.localImages[id] {
+			return nil, fmt.Errorf("%w: 未登记的本机 image ID", ErrImageRef)
+		}
+		got, err := d.eng.imageInspectID(ctx, id)
+		if err != nil {
+			return nil, fmt.Errorf("本机镜像不存在: %v", err)
+		}
+		if got != id {
+			return nil, fmt.Errorf("%w: inspect 读出 %q 与 ref 逐字不等", ErrImageRef, got)
+		}
+		return json.Marshal(map[string]string{"image": p.Image, "state": "present"})
 	}
 	if err := d.eng.imagePull(ctx, p.Image); err != nil {
 		return nil, err
@@ -442,7 +477,18 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if err != nil {
 		return nil, err
 	}
-	if err := d.eng.imagePull(ctx, p.Image); err != nil {
+	if id := localImageID(p.Image); id != "" {
+		if !d.localImages[id] {
+			return nil, fmt.Errorf("%w: 未登记的本机 image ID", ErrImageRef)
+		}
+		got, err := d.eng.imageInspectID(ctx, id)
+		if err != nil {
+			return nil, fmt.Errorf("本机镜像不存在: %v", err)
+		}
+		if got != id {
+			return nil, fmt.Errorf("%w: inspect 读出 %q 与 ref 逐字不等", ErrImageRef, got)
+		}
+	} else if err := d.eng.imagePull(ctx, p.Image); err != nil {
 		return nil, err
 	}
 	// 新令牌文件先于新容器写入（轮换：新容器凭它取新凭据，取走旧才作废）
@@ -505,7 +551,7 @@ func (d *dockerOps) destroy(ctx context.Context, params json.RawMessage) (json.R
 // RegisterDockerHandlers 把 Docker 指令集挂进代理骨架（cmd/nodeagent 在真机上调用）。
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 // cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS string) {
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string) {
 	// SH_WS_BASE＝HubURL 的 ws 源（wss://host[:port]；路径剥掉）
 	base := hubWSS
 	if i := strings.Index(base, "://"); i >= 0 {
@@ -515,7 +561,13 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 		}
 		base = base[:i+3] + rest
 	}
-	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, waitMax: 60 * time.Second}
+	allow := map[string]bool{}
+	for _, id := range strings.Split(localImagesCSV, ",") {
+		if id = strings.TrimSpace(id); id != "" {
+			allow[id] = true
+		}
+	}
+	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second}
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)
