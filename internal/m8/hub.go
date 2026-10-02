@@ -2208,10 +2208,14 @@ func (h *Hub) dispatchMirrorCommand(ctx context.Context, msg model.Message, text
 	}
 	if user, ok := h.newPlatformFeishuUser(ctx, msg); ok {
 		if user.State != identity.UserActive {
+			logFeishuDispatchRejected("sender_inactive", msg.SenderOpenID, sessionName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "你的账号已停用，无法投递消息"}, true, nil
 		}
 		resolved := h.resolveNewPlatformFeishuSession(ctx, user.UserIDLC(), sessionName)
 		keyID, found = resolved.keyID, resolved.status == ownerSessionUniqueHit
+	} else if h.Identity != nil && msg.SenderOpenID != "" {
+		logFeishuDispatchRejected("sender_not_active_member", msg.SenderOpenID, sessionName, msg.BotChannelID)
+		return model.PrefixDispatchResult{Matched: true, Reply: "你的账号未绑定或已停用，无法控制会话"}, true, nil
 	}
 	if !found {
 		return model.PrefixDispatchResult{Matched: true, Reply: "未找到可控制的会话，请确认会话已注册且当前账号已绑定。"}, true, nil
@@ -2271,7 +2275,12 @@ func (h *Hub) dispatchFeishuSyncCommand(ctx context.Context, msg model.Message, 
 		botChannelID: msg.BotChannelID,
 	}
 	newUser, hasNewUser := h.newPlatformFeishuUser(ctx, msg)
+	if !hasNewUser && h.Identity != nil && msg.SenderOpenID != "" {
+		logFeishuDispatchRejected("sender_not_active_member", msg.SenderOpenID, sessionName, msg.BotChannelID)
+		return model.PrefixDispatchResult{Matched: true, Reply: "你的账号未绑定或已停用，无法控制会话"}, true, nil
+	}
 	if hasNewUser && newUser.State != identity.UserActive {
+		logFeishuDispatchRejected("sender_inactive", msg.SenderOpenID, sessionName, msg.BotChannelID)
 		return model.PrefixDispatchResult{Matched: true, Reply: "你的账号已停用，无法控制会话"}, true, nil
 	}
 	if action == "unsync" {
@@ -3619,6 +3628,7 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 	keyID, found := h.lookupKeyIDForSession(source, sessionName)
 	if user, ok := h.newPlatformFeishuUser(ctx, msg); ok {
 		if user.State != identity.UserActive {
+			logFeishuDispatchRejected("sender_inactive", msg.SenderOpenID, sessionName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "你的账号已停用，无法投递消息"}, true, nil
 		}
 		resolved := h.resolveNewPlatformFeishuSession(ctx, user.UserIDLC(), sessionName)
@@ -3626,9 +3636,13 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 			return model.PrefixDispatchResult{Matched: true, Reply: ambiguousSessionError(sessionName, resolved.candidates).Error()}, true, nil
 		}
 		if resolved.status != ownerSessionUniqueHit {
+			logFeishuDispatchRejected("target_agent_unavailable", msg.SenderOpenID, sessionName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "未找到你名下在线且可用的 Agent：" + sessionName}, true, nil
 		}
 		keyID, sessionName, found = resolved.keyID, resolved.sessionName, true
+	} else if h.Identity != nil && msg.SenderOpenID != "" {
+		logFeishuDispatchRejected("sender_not_active_member", msg.SenderOpenID, sessionName, msg.BotChannelID)
+		return model.PrefixDispatchResult{Matched: true, Reply: "你的账号未绑定或已停用，无法投递消息"}, true, nil
 	}
 	if !found {
 		resolved := h.resolveOwnerSessionByShort(ctx, h.controlOwnerKey(ctx, msg), sessionName, "")
@@ -3676,6 +3690,7 @@ func (h *Hub) dispatchDefaultPersonalSession(ctx context.Context, msg model.Mess
 	source := sourceAccount(msg)
 	if user, ok := h.newPlatformFeishuUser(ctx, msg); ok {
 		if user.State != identity.UserActive {
+			logFeishuDispatchRejected("sender_inactive", msg.SenderOpenID, "", msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "你的账号已停用，无法投递消息"}, true, nil
 		}
 		keyID := AgentKeyID(user.UserIDLC())
@@ -3687,12 +3702,16 @@ func (h *Hub) dispatchDefaultPersonalSession(ctx context.Context, msg model.Mess
 			env := model.Envelope{ID: firstNonEmpty(msg.ID, msg.FeishuMsgID, randomHex(16)), To: sessionAddress(sessions[0], keyID), From: feishuAddress(feishuOpenIDFromAccount(source), keyID, h.botName(msg.BotChannelID)), Body: text, TS: time.Now().Unix(), Meta: map[string]any{"chat_type": string(msg.ChatType), "raw": msg.Content, "bot_channel_id": msg.BotChannelID, "reply_prefix": fmt.Sprintf("【%s】", sessions[0])}}
 			h.annotateSourceContext(ctx, env.Meta, msg)
 			if err := h.RouteEnvelope(ctx, env); err != nil {
+				logFeishuDispatchRejected("route_error", msg.SenderOpenID, sessions[0], msg.BotChannelID)
 				return model.PrefixDispatchResult{Matched: true, Reply: "该消息投递失败：" + text}, true, nil
 			}
 			return model.PrefixDispatchResult{Matched: true}, true, nil
 		default:
 			return model.PrefixDispatchResult{Matched: true, Reply: fmt.Sprintf("你有多个在线会话（%s），请用 #会话名 内容 指定", strings.Join(sessions, "、"))}, true, nil
 		}
+	} else if h.Identity != nil && msg.SenderOpenID != "" {
+		logFeishuDispatchRejected("sender_not_active_member", msg.SenderOpenID, "", msg.BotChannelID)
+		return model.PrefixDispatchResult{Matched: true, Reply: "你的账号未绑定或已停用，无法投递消息"}, true, nil
 	}
 	keyID, sessions, err := h.onlineSessionsForAccount(ctx, source)
 	if err != nil {
@@ -3738,27 +3757,36 @@ func (h *Hub) dispatchMemberMention(ctx context.Context, msg model.Message, text
 	}
 	if sender, senderOK := h.newPlatformFeishuUser(ctx, msg); senderOK {
 		if sender.State != identity.UserActive {
+			logFeishuDispatchRejected("sender_inactive", msg.SenderOpenID, sessionName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "你的账号已停用，无法投递消息"}, true, nil
 		}
 		targetUser, err := h.Identity.Store.GetUserByShortName(ctx, identity.Lower(targetName))
 		if err != nil || targetUser.State != identity.UserActive {
+			logFeishuDispatchRejected("target_member_unavailable", msg.SenderOpenID, targetName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "未找到可用成员：" + targetName}, true, nil
 		}
 		resolved := h.resolveNewPlatformFeishuSession(ctx, targetUser.UserIDLC(), sessionName)
 		if resolved.status != ownerSessionUniqueHit {
+			logFeishuDispatchRejected("target_agent_unavailable", msg.SenderOpenID, sessionName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "未找到该成员的在线 Agent：" + sessionName}, true, nil
 		}
 		targetAgent, active := h.newPlatformAgentAt(ctx, resolved.keyID, resolved.sessionName)
 		if !active || targetAgent.State != identity.AgentActive || !h.newPlatformUsersShareAgentGroup(ctx, sender.UserIDLC(), targetAgent) {
+			err := newGroupingRejection("cross_group_denied")
+			logFeishuDispatchRejected(groupingRejectionReason(err), msg.SenderOpenID, resolved.sessionName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: groupAgentNotFoundText}, true, nil
 		}
 		source := sourceAccount(msg)
 		env := model.Envelope{ID: firstNonEmpty(msg.ID, msg.FeishuMsgID, randomHex(16)), To: sessionAddress(resolved.sessionName, resolved.keyID), From: feishuAddress(feishuOpenIDFromAccount(source), resolved.keyID, h.botName(msg.BotChannelID)), Body: body, TS: time.Now().Unix(), Meta: map[string]any{"chat_type": string(msg.ChatType), "raw": msg.Content, "bot_channel_id": msg.BotChannelID, "cross_member": targetUser.UserIDLC(), "cross_member_name": targetUser.ShortName, "cross_session_name": resolved.sessionName, "reply_prefix": fmt.Sprintf("【%s·%s】", targetUser.ShortName, resolved.sessionName), "source_chat_entity": msg.ChatEntityID, "source_sender_openid": msg.SenderOpenID}}
 		h.annotateSourceContext(ctx, env.Meta, msg)
 		if err := h.RouteEnvelope(ctx, env); err != nil {
+			logFeishuDispatchRejected("route_error", msg.SenderOpenID, resolved.sessionName, msg.BotChannelID)
 			return model.PrefixDispatchResult{Matched: true, Reply: "该成员会话投递失败：" + err.Error()}, true, nil
 		}
 		return model.PrefixDispatchResult{Matched: true}, true, nil
+	} else if h.Identity != nil && msg.SenderOpenID != "" {
+		logFeishuDispatchRejected("sender_not_active_member", msg.SenderOpenID, sessionName, msg.BotChannelID)
+		return model.PrefixDispatchResult{Matched: true, Reply: "你的账号未绑定或已停用，无法投递消息"}, true, nil
 	}
 	target, err := h.resolveMemberByName(ctx, targetName)
 	if err != nil {

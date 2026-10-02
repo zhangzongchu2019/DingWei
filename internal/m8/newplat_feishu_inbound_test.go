@@ -95,6 +95,34 @@ func TestNewPlatformFeishuInboundMultipleSessionsRequireSelector(t *testing.T) {
 	}
 }
 
+func TestNewPlatformFeishuDefaultCountsOnlySenderOwnedSessions(t *testing.T) {
+	e := newAgentEnv(t)
+	bindFeishuForAgentEnv(t, e, "ou_alice")
+	if err := e.svc.Store.CreateUser(e.ctx, identity.User{UserID: "lbl", ShortName: "lb", State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	otherCred := e.enrollForOwner("lbl", "dev-default-other", "Other")
+	own, _, _ := e.dial(e.cred, "")
+	other, _, _ := e.dial(otherCred, "")
+	if own == nil || other == nil {
+		t.Fatal("agent websocket did not connect")
+	}
+	defer own.CloseNow()
+	defer other.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	waitSessionOnline(t, e.hub, AgentKeyID("lbl"), "other")
+	res, err := e.hub.Dispatch(e.ctx, feishuInboundMessage("owned-unique", "owned-only"), "owned-only")
+	if err != nil || res.Reply != "" {
+		t.Fatalf("default with foreign online Agent: %+v err=%v", res, err)
+	}
+	if got := e.readEnvUntil(own, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "owned-only" }); got == nil {
+		t.Fatal("sender's unique Agent did not receive default message")
+	}
+	if leaked := e.readEnvUntil(other, 250*time.Millisecond, func(env model.Envelope) bool { return env.Body == "owned-only" }); leaked != nil {
+		t.Fatalf("default message leaked across owner: %+v", leaked)
+	}
+}
+
 func TestNewPlatformFeishuMemberMentionRejectsCrossGroup(t *testing.T) {
 	v := newViewEnv(t)
 	digest := "feishu-zzc-digest"
@@ -118,9 +146,50 @@ func TestNewPlatformFeishuMemberMentionRejectsCrossGroup(t *testing.T) {
 	}
 }
 
+func TestNewPlatformFeishuMemberMentionDeliversWithinGroup(t *testing.T) {
+	e := newAgentEnv(t)
+	bindFeishuForAgentEnv(t, e, "ou_alice")
+	if err := e.svc.Store.CreateUser(e.ctx, identity.User{UserID: "lbl", ShortName: "lb", State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	targetCred := e.enrollForOwner("lbl", "dev-lbl", "Kimi")
+	target, err := e.svc.Store.FindAgentByName(e.ctx, "lbl", "kimi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes, err := e.svc.Store.ListAgentGroups(e.ctx, e.agID)
+	if err != nil || len(codes) == 0 {
+		t.Fatalf("source groups: %v %v", codes, err)
+	}
+	if err := e.svc.JoinGroup(e.ctx, "lbl", codes[0], target.ID); err != nil {
+		t.Fatal(err)
+	}
+	source, _, _ := e.dial(e.cred, "")
+	targetConn, _, _ := e.dial(targetCred, "")
+	if source == nil || targetConn == nil {
+		t.Fatal("agent websocket did not connect")
+	}
+	defer source.CloseNow()
+	defer targetConn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	waitSessionOnline(t, e.hub, AgentKeyID("lbl"), "kimi")
+	msg := feishuInboundMessage("member-positive", "@lb#kimi hello-member")
+	res, err := e.hub.Dispatch(e.ctx, msg, "@lb#kimi hello-member")
+	if err != nil || res.Reply != "" {
+		t.Fatalf("same-group member dispatch: %+v err=%v", res, err)
+	}
+	got := e.readEnvUntil(targetConn, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "hello-member" })
+	if got == nil || got.To != sessionAddress("kimi", AgentKeyID("lbl")) {
+		t.Fatalf("same-group member delivery: %+v", got)
+	}
+}
+
 func TestNewPlatformFeishuDisabledUserCannotUseStaleLegacyMapping(t *testing.T) {
 	e := newAgentEnv(t)
 	bindFeishuForAgentEnv(t, e, "ou_alice")
+	e.hub.mu.Lock()
+	e.hub.sessionClients[AgentKeyID("zzc")] = map[string]*sessionClient{"opus50ts": {keyID: AgentKeyID("zzc"), sessionName: "opus50ts"}}
+	e.hub.mu.Unlock()
 	if err := e.svc.Store.SetUserState(e.ctx, "zzc", identity.UserDisabled, time.Now()); err != nil {
 		t.Fatal(err)
 	}
@@ -132,6 +201,32 @@ func TestNewPlatformFeishuDisabledUserCannotUseStaleLegacyMapping(t *testing.T) 
 	res, handled, err := e.hub.dispatchSelector(e.ctx, feishuInboundMessage("disabled", "#opus50ts blocked"), "#opus50ts blocked")
 	if err != nil || !handled || !strings.Contains(res.Reply, "账号已停用") {
 		t.Fatalf("disabled identity fell through: handled=%v reply=%q err=%v", handled, res.Reply, err)
+	}
+	checks := []struct {
+		name string
+		call func() (model.PrefixDispatchResult, bool, error)
+	}{
+		{"default", func() (model.PrefixDispatchResult, bool, error) {
+			return e.hub.dispatchDefaultPersonalSession(e.ctx, feishuInboundMessage("disabled-default", "plain"), "plain")
+		}},
+		{"member", func() (model.PrefixDispatchResult, bool, error) {
+			return e.hub.dispatchMemberMention(e.ctx, feishuInboundMessage("disabled-member", "@lb#kimi blocked"), "@lb#kimi blocked")
+		}},
+		{"mirror", func() (model.PrefixDispatchResult, bool, error) {
+			return e.hub.dispatchMirrorCommand(e.ctx, feishuInboundMessage("disabled-mirror", "mirror on opus50ts"), "mirror on opus50ts")
+		}},
+		{"sync", func() (model.PrefixDispatchResult, bool, error) {
+			return e.hub.dispatchFeishuSyncCommand(e.ctx, feishuInboundMessage("disabled-sync", "#sync opus50ts"), "#sync opus50ts")
+		}},
+	}
+	for _, tc := range checks {
+		res, handled, err := tc.call()
+		if err != nil || !handled || !strings.Contains(res.Reply, "账号已停用") {
+			t.Errorf("disabled %s fell through: handled=%v reply=%q err=%v", tc.name, handled, res.Reply, err)
+		}
+	}
+	if got := e.hub.ownerFeishuOpenID(e.ctx, AgentKeyID("zzc")); got != "" {
+		t.Fatalf("disabled owner's Feishu identity remained a fallback: %q", got)
 	}
 }
 
@@ -155,5 +250,71 @@ func TestH17NewPlatformFeishuRosterAndSyncUseIdentityOwner(t *testing.T) {
 	sync, err := e.hub.Dispatch(e.ctx, msg, "#sync opus50ts")
 	if err != nil || !sync.Matched || !strings.Contains(sync.Reply, "已开启同步 opus50ts") {
 		t.Fatalf("H17 sync did not resolve new-platform owner: %+v err=%v", sync, err)
+	}
+	msg = feishuInboundMessage("h17-unsync", "#unsync opus50ts")
+	unsync, err := e.hub.Dispatch(e.ctx, msg, "#unsync opus50ts")
+	if err != nil || !unsync.Matched || !strings.Contains(unsync.Reply, "已停止同步 opus50ts") {
+		t.Fatalf("H17 unsync did not resolve new-platform owner: %+v err=%v", unsync, err)
+	}
+	msg = feishuInboundMessage("mirror-new-identity", "mirror on opus50ts")
+	mirror, handled, err := e.hub.dispatchMirrorCommand(e.ctx, msg, "mirror on opus50ts")
+	if err != nil || !handled || !strings.Contains(mirror.Reply, "镜像已开启") {
+		t.Fatalf("mirror did not resolve new-platform owner: %+v handled=%v err=%v", mirror, handled, err)
+	}
+}
+
+func TestNewPlatformFeishuGroupIntentAndUnboundGate(t *testing.T) {
+	e := newAgentEnv(t)
+	bindFeishuForAgentEnv(t, e, "ou_alice")
+	conn, _, _ := e.dial(e.cred, "")
+	if conn == nil {
+		t.Fatal("agent websocket did not connect")
+	}
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	groupMsg := func(id, sender, text string) model.Message {
+		return model.Message{ID: id, ChatEntityID: "devplatform:group:oc_team", BotChannelID: "devplatform", ChatType: model.ChatGroup, SenderOpenID: sender, IngressProvenance: model.IngressFeishuWSAuthenticated, Content: `{"text":"` + text + `"}`}
+	}
+	res, err := e.hub.Dispatch(e.ctx, groupMsg("group-explicit", "ou_alice", "#opus50ts group-task"), "#opus50ts group-task")
+	if err != nil || res.Reply != "" {
+		t.Fatalf("explicit group dispatch: %+v err=%v", res, err)
+	}
+	if got := e.readEnvUntil(conn, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "group-task" }); got == nil {
+		t.Fatal("explicit group selector was not delivered")
+	}
+	quiet, err := e.hub.Dispatch(e.ctx, groupMsg("group-idle", "ou_alice", "ordinary group chat"), "ordinary group chat")
+	if err != nil || quiet.Matched || quiet.Reply != "" {
+		t.Fatalf("group idle chat was not silent: %+v err=%v", quiet, err)
+	}
+	unbound, err := e.hub.Dispatch(e.ctx, groupMsg("group-unbound", "ou_unknown", "#opus50ts forbidden"), "#opus50ts forbidden")
+	if err != nil || !unbound.Matched || !strings.Contains(unbound.Reply, "未绑定或已停用") {
+		t.Fatalf("unbound group sender was not rejected: %+v err=%v", unbound, err)
+	}
+}
+
+func TestNewPlatformFeishuLiveAgentRevocationStopsInbound(t *testing.T) {
+	e := newAgentEnv(t)
+	bindFeishuForAgentEnv(t, e, "ou_alice")
+	conn, _, _ := e.dial(e.cred, "")
+	if conn == nil {
+		t.Fatal("agent websocket did not connect")
+	}
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	closed := reader(conn)
+	if _, err := e.svc.Revoke(e.ctx, "zzc", e.agID); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-closed:
+	case <-time.After(6 * time.Second):
+		t.Fatal("revoked live websocket did not close")
+	}
+	waitFor(t, 6*time.Second, "revoked Agent removed from live session bucket", func() bool {
+		return !e.hub.sessionOnline(AgentKeyID("zzc"), "opus50ts")
+	})
+	res, handled, err := e.hub.dispatchSelector(e.ctx, feishuInboundMessage("revoked-live", "#opus50ts blocked"), "#opus50ts blocked")
+	if err != nil || !handled || !strings.Contains(res.Reply, "未找到你名下在线且可用") {
+		t.Fatalf("live-revoked Agent remained routable: %+v handled=%v err=%v", res, handled, err)
 	}
 }
