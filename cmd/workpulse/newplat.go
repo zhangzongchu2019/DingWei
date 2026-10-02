@@ -131,7 +131,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	// G4 托管装配（88928305）：pool 非 nil（PG 模式）才尝试；内部按 DW_G4_MASTER_KEY_FILE 开关。
 	// 须在 api 构造前——cfg.hosted 注入点（orch.HostedItem）在 api 上。
 	if pool != nil {
-		if _, err := wireHosted(ctx, mux, &cfg, pool, store, svc, n3.Actor, hub.AgentOnline); err != nil {
+		if _, err := wireHosted(ctx, mux, hub, &cfg, pool, store, svc, n3.Actor); err != nil {
 			return fmt.Errorf("newplat hosted wiring: %w", err)
 		}
 	}

@@ -146,11 +146,18 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 	if seat.ImageRef == "" {
 		t.Fatal("镜像 ref 应来自版本登记")
 	}
-	// 执行链：pull→create→online
+	// 执行链：pull→create→starting；Agent 以专属凭据连入（MarkOnline）才 online（板 ac33b1cb）
 	o.RunJob(context.Background(), out.AgentID)
 	seat, _ = s.GetSeat(context.Background(), out.AgentID)
+	if seat.State != "starting" {
+		t.Fatalf("容器起来后、Agent 连入前应 starting: %+v", seat)
+	}
+	if err := o.MarkOnline(context.Background(), out.AgentID); err != nil {
+		t.Fatal(err)
+	}
+	seat, _ = s.GetSeat(context.Background(), out.AgentID)
 	if seat.State != "online" {
-		t.Fatalf("执行链后应 online: %+v", seat)
+		t.Fatalf("Agent 连入后应 online: %+v", seat)
 	}
 	if len(gw.sent) != 2 || gw.sent[0].Type != "pull_image" || gw.sent[1].Type != "create_seat" {
 		t.Fatalf("指令序列: %+v", gw.sent)
@@ -570,7 +577,11 @@ func TestOptionsViewAndJobProgress(t *testing.T) {
 	if err != nil || jv.Stage != "queued" || jv.AgentID != "" {
 		t.Fatalf("queued 格: %+v %v", jv, err)
 	}
-	o.RunJob(ctx, out.AgentID) // 假网关全成 ⇒ online
+	o.RunJob(ctx, out.AgentID) // 假网关全成 ⇒ starting（Agent 未连入）
+	if jv, _ = o.JobProgress(ctx, out.AgentID); jv.Stage != "starting" || jv.AgentID != "" {
+		t.Fatalf("starting 格: %+v", jv)
+	}
+	_ = o.MarkOnline(ctx, out.AgentID) // Agent 连入 ⇒ online
 	jv, _ = o.JobProgress(ctx, out.AgentID)
 	if jv.Stage != "online" || jv.AgentID != out.AgentID {
 		t.Fatalf("online 格: %+v", jv)
@@ -619,12 +630,10 @@ func TestHostedItemErrorCounted(t *testing.T) {
 	}
 }
 
-// T-G4-34 复验行为登记：online＝以专属凭据连入（探针确认），不是容器已创建。
-// 探针 false 期间席位停 starting；永连不上 ⇒ 5 分钟 start_timeout 清扫（fail+Retire）。
-func TestOnlineRequiresConnectionProbe(t *testing.T) {
+// T-G4-34 复验行为登记：online＝以专属凭据连入（连接层回调 MarkOnline——opus50tc2k 的
+// cd71197d 接线，复验已过），不是容器已创建。RunJob 走完只到 starting；未连入 ⇒ starting 不动。
+func TestOnlineOnlyViaMarkOnline(t *testing.T) {
 	o, idp, _, s := mkOrch(t)
-	connected := false
-	o.SetOnlineProbe(func(ctx context.Context, agentID string) bool { return connected })
 	ctx := context.Background()
 	out, err := o.Create(ctx, CreateRequest{
 		OwnerLC: "zzc", By: "zzc", Name: "probe1", GroupCode: "",
@@ -638,29 +647,19 @@ func TestOnlineRequiresConnectionProbe(t *testing.T) {
 	if seat.State != "starting" { // 容器起了但未连入：不得 online
 		t.Fatalf("未连入不得 online: %+v", seat)
 	}
-	connected = true
-	deadline := time.Now().Add(8 * time.Second)
-	for {
-		seat, _ = s.GetSeat(ctx, out.AgentID)
-		if seat.State == "online" {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatal("连入后应转 online")
-		}
-		time.Sleep(100 * time.Millisecond)
+	if err := o.MarkOnline(ctx, out.AgentID); err != nil {
+		t.Fatal(err)
 	}
-	// 反向：连入探针真被调过（不是直置）
-	if !connected {
-		t.Fatal("探针路径")
+	seat, _ = s.GetSeat(ctx, out.AgentID)
+	if seat.State != "online" {
+		t.Fatalf("连入回调后应 online: %+v", seat)
 	}
 	_ = idp
 }
 
-// 反向格：探针恒 false（容器起了但 CLI 永远连不上）⇒ start_timeout 清扫：failed＋Retire＋回池。
+// 反向格：永不连入（容器起了但 CLI 崩溃/凭据件错）⇒ 5 分钟 start_timeout 清扫：failed＋Retire。
 func TestNeverConnectsSweepedStartTimeout(t *testing.T) {
 	o, idp, _, s := mkOrch(t)
-	o.SetOnlineProbe(func(ctx context.Context, agentID string) bool { return false })
 	ctx := context.Background()
 	out, err := o.Create(ctx, CreateRequest{
 		OwnerLC: "zzc", By: "zzc", Name: "probe2", GroupCode: "",

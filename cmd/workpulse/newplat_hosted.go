@@ -20,15 +20,15 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/hosted"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/nodegate"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
 // wireHosted G4 装配。返回 false＝未装（缺主密钥配置）；错误＝装配失败（启动即拒）。
 // 须在 httpapi.API 构造之前调用（cfg.hosted 注入点在其上）。
-func wireHosted(ctx context.Context, mux httpapi.Mux, cfg *newPlatformConfig, pool *repo.Pool,
-	idStore identity.Store, svc *identity.Service, actor func(r *http.Request) (string, error),
-	agentOnline func(agentID string) bool) (bool, error) {
+func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatformConfig, pool *repo.Pool,
+	idStore identity.Store, svc *identity.Service, actor func(r *http.Request) (string, error)) (bool, error) {
 	mkPath := os.Getenv("DW_G4_MASTER_KEY_FILE")
 	if mkPath == "" {
 		log.Printf("newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）")
@@ -70,10 +70,6 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, cfg *newPlatformConfig, po
 		}
 	}()
 	life := hosted.NewLifecycle(hst, poolSvc, idp, idp, gate, images, backups)
-	if agentOnline != nil {
-		// B1 语义（T-G4-34 复验登记）：online＝以专属凭据连入，探针来自连接层
-		orch.SetOnlineProbe(func(ctx context.Context, agentID string) bool { return agentOnline(agentID) })
-	}
 	gate.OnConnect = orch.ReconcileNode // 节点重连对账（离线销毁补清——组长 7fabddb0 ⑤）
 
 	mux.HandleFunc("GET /api/node/connect", gate.Handler().ServeHTTP) // 节点代理拨入（Bearer 节点凭据）
@@ -110,7 +106,32 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, cfg *newPlatformConfig, po
 		},
 	})
 	cfg.hosted = orch.HostedItem // 那一行：G3 列表注入点接上
+	// online 语义（板 ac33b1cb）：托管 Agent 以专属凭据真正连入时才 starting → online；
+	// 永不连入的由周期清扫按 starting 5 分钟清成 start_timeout。原先两者都没接：容器一起就 online，清扫也没人调。
+	hub.OnHostedAgentOnline = func(ctx context.Context, agentID string) {
+		if err := orch.MarkOnline(ctx, agentID); err != nil {
+			log.Printf("newplat hosted: MarkOnline agent=%s: %v", agentID, err)
+		}
+	}
+	go runHostedSweeper(ctx, orch, hostedSweepEvery)
 	return true, nil
+}
+
+// hostedSweepEvery 超时清扫周期：远小于最短的阶段时限（starting 5 分钟），超时后至多晚这么久被清。
+var hostedSweepEvery = 30 * time.Second // 变量：接线用例里缩短以实测清扫真在跑
+
+// runHostedSweeper 周期调用 SweepTimeouts（排队 10m／拉镜像 30m／启动 5m），ctx 结束即停。
+func runHostedSweeper(ctx context.Context, orch *hosted.Orchestrator, every time.Duration) {
+	t := time.NewTicker(every)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case now := <-t.C:
+			orch.SweepTimeouts(ctx, now)
+		}
+	}
 }
 
 // notReadyBackups 备份管线未就位期的占位（T-G4-53 真实现前）：销毁一律 backup_failed——

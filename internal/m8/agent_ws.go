@@ -84,13 +84,18 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	q := r.URL.Query() // 只采信能力类参数；名字、key_id 一律不看
-	h.serveSession(w, r, sessionAdmission{
+	adm := sessionAdmission{
 		keyID: keyID, ownerKey: keyID, requestedSessionName: sessionName, sessionName: sessionName,
 		fullSessionName: fullName, clientIP: clientIPFromRequest(r),
 		tool: strings.TrimSpace(q.Get("tool")), clientVersion: strings.TrimSpace(q.Get("version")),
 		osName:      strings.TrimSpace(q.Get("os")),
 		timingStart: timingStart, timingLast: time.Now(),
-	})
+	}
+	if ag.Origin == identity.OriginHosted && h.OnHostedAgentOnline != nil {
+		agentID, cb := ag.ID, h.OnHostedAgentOnline
+		adm.onRegistered = func() { cb(context.Background(), agentID) }
+	}
+	h.serveSession(w, r, adm)
 }
 
 // DisconnectAgent 吊销或暂停后由 identity.Service.OnRevoked／OnSuspended 调用：在线则以 4401 断开（V2 A1；V8 停用）。
