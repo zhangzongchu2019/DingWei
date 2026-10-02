@@ -363,7 +363,10 @@ time.sleep(30)
 
     def test_trust_folder_and_update_screens_are_blocking(self):
         # 组长 R-B12-CODEX-AUTH-II 补：需回车继续的屏会吞掉第一次注入，不得判就绪
-        for text in ("\u203a Trust this folder? (y/n)\n", "\u203a Update available: 0.160.0 -> press enter\n"):
+        # \u66f4\u65b0\u63d0\u793a\u6539\u4e3a\u53ea\u62e6\u6a21\u6001\uff08R-HELPER-UPDATE-MARKER\uff09\u3002\u6b64\u5904\u6a21\u6001\u5c4f\u4e3a\u5408\u6210\uff1a\u9009\u9879\u5217\u8868\u6eda\u5230\u53ea\u5269\u9ad8\u4eae\u7684\u7b2c 1 \u9879\u3001
+        # \u5c4f\u4e0a\u53ea\u6709\u300cUpdate now (runs\u300d\u4e00\u4e2a\u6807\u8bb0\uff08\u6e90\u7801 update_prompt.rs \u9009\u4e2d\u9879\u4fdd\u6301\u53ef\u89c1\uff0c\u89c1 28x12 \u5feb\u7167\uff09
+        for text in ("\u203a Trust this folder? (y/n)\n",
+                     "  Update available \u00b7 0.159.2 \u2192 0.160.0\n\u203a 1. Update now (runs `npm install -g @openai/codex`)\n"):
             a = self._alive_screen(text)
             self.assertFalse(a.ready.is_set(), text)
 
@@ -412,6 +415,9 @@ _TRUST = os.path.join(_FIXDIR, "codex-0.159.2-trust-folder.pty.txt")  # ii-cr-60
 _TRUST_THEN_UPDATE = os.path.join(_FIXDIR, "codex-0.159.2-trust-then-update-home.pty.txt")  # ii-cr-90s-after-ok
 _LOGIN_THEN_KEY = os.path.join(_FIXDIR, "codex-0.159.2-login-then-api-key-detected.pty.txt")  # i-cr-90s-after-ok
 _HEALTHY = os.path.join(_FIXDIR, "codex-0.159.2-healthy-home.pty.txt")  # b12-auth-ii-trust 60s（真 401 那轮）
+# 更新模态：Codex rust-v0.159.2 tui/src/snapshots 自带的两份 insta 快照正文（去掉 4 行头）
+_UPDATE_MODAL_80 = os.path.join(_FIXDIR, "codex-0.159.2-update-modal-80x12.snap.txt")
+_UPDATE_MODAL_28 = os.path.join(_FIXDIR, "codex-0.159.2-update-modal-28x12.snap.txt")
 
 # 假 CLI：回放抓屏（可只取 cut 标记起的后半段＝回车之后那一屏），之后可再隔 later_delay 秒吐一段 later 文字，然后一直活着
 _REPLAY_TAIL = """#!/usr/bin/env python3
@@ -432,7 +438,8 @@ time.sleep(60)
 @unittest.skipUnless(pexpect is not None, "needs pexpect")
 class CodexStartupBlockers(unittest.TestCase):
     """组长 WORKGROUPS 第十节第 1、2 条：拦路标记只在启动期（首次就绪之前）判，启动期一遇即 start 立即失败；
-    就绪之后正文里出现拦路字样不得撤销就绪。拦路清单补 Trust this folder／Update available／Detected OPENAI_API_KEY。"""
+    就绪之后正文里出现拦路字样不得撤销就绪。拦路清单补 Trust this folder／Update available／Detected OPENAI_API_KEY
+    （更新提示后改为只拦模态：Skip until next version／Update now (runs，R-HELPER-UPDATE-MARKER）。"""
 
     def _adapter(self, fixture, cut=b"", later="", later_delay=0.0, timeout="20"):
         d = tempfile.mkdtemp(prefix="sh-cli-startup-")
@@ -464,10 +471,26 @@ class CodexStartupBlockers(unittest.TestCase):
     def test_real_trust_folder_screen_fails_start_immediately(self):
         self._blocked_fast(self._adapter(_TRUST), "Trust this folder")
 
-    def test_real_update_available_home_is_blocking(self):
-        # 934fa246 ii-cr 90 秒屏里回车越过信任页之后那一屏（主页＋更新提示框）
-        self._blocked_fast(self._adapter(_TRUST_THEN_UPDATE, cut=b"\x1b[1;1H\x1b[J\x1b[?2026h\x1b[2;3H\x1b[38;5;75;49m>_"),
-                           "Update available")
+    def test_real_update_banner_home_is_ready(self):
+        # 934fa246 ii-cr 90 秒屏里回车越过信任页之后那一屏（主页＋历史区「✨ Update available!」横幅）。
+        # 组长 R-HELPER-UPDATE-MARKER（板 817792f0）：横幅不挡输入 ⇒ 不拦、就绪
+        a = self._adapter(_TRUST_THEN_UPDATE, cut=b"\x1b[1;1H\x1b[J\x1b[?2026h\x1b[2;3H\x1b[38;5;75;49m>_")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertTrue(a.start())
+        self.assertIn(_squash("Update available!"), _squash(a.screen), "banner must be on the current screen")
+        self.assertTrue(a.ready.is_set(), "update banner on the home screen must not block")
+        self.assertEqual(a.blocked_by, "")
+        self.assertNotIn("blocked at screen", out.getvalue())
+
+    def test_update_modal_80x12_snapshot_is_blocking(self):
+        # Codex rust-v0.159.2 自带快照 update_prompt_modal（80x12）：屏上有「› 1. Update now」，不拦就会判就绪；
+        # 回车默认选 Update now ⇒ 退出去升级，必须拦
+        self._blocked_fast(self._adapter(_UPDATE_MODAL_80), "Skip until next version")
+
+    def test_update_modal_28x12_snapshot_is_blocking(self):
+        # 同上自带快照 update_picker_selected_28x12：窄屏只剩「› 3. Skip until next version」，没有「Update now (runs」
+        self._blocked_fast(self._adapter(_UPDATE_MODAL_28), "Skip until next version")
 
     def test_real_api_key_detected_screen_is_blocking(self):
         # 934fa246 i-cr 90 秒屏里回车之后的 API key 输入框（检测到环境里的 key、待保存）

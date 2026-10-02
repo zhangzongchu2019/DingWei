@@ -101,9 +101,12 @@ CLI_PROFILES: dict[str, CLIProfile] = {
     # 0.159.2 的实际提示符以 prodops 抓屏为准，不符时用 SH_CLI_READY_PATTERNS 覆盖。
     # 拦路界面（组长 R-B12-CODEX-PKG 第 4 条补，样本＝prodops 00e5020e 抓屏）：0.159.2 的登录选择菜单下方同时画着
     # 「› Ask Codex to do anything?」输入框，只看提示符会误判就绪。
+    # 更新提示（组长 R-HELPER-UPDATE-MARKER，板 817792f0；读数 VERIFY-CODEX-UPDATE-PROMPT）：只拦模态（回车默认「Update now」
+    # 即退出去升级），用它独有的两句；主页历史区的「✨ Update available!」横幅不挡输入，不拦——故不用两者共有的「Update available」。
     "codex": CLIProfile(["codex"], ("›", "❯"), "transcript", block_patterns=(
         "Sign in with ChatGPT", "Provide your own API key", "Sign in with Device Code",
-        "Press enter to continue", "Do you trust", "Trust this folder", "Update available",
+        "Press enter to continue", "Do you trust", "Trust this folder",
+        "Skip until next version", "Update now (runs",
         "Detected OPENAI_API_KEY", "no complete local package")),
     "aider": CLIProfile(["aider"], ("aider", ">", "Tokens")),
     "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db"),
