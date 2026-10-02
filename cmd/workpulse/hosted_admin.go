@@ -59,6 +59,7 @@ func runHostedAdmin(args []string) error {
 		return nil
 	case "seed-account":
 		fs := flag.NewFlagSet("seed-account", flag.ContinueOnError)
+		fs.Bool("secret-stdin", true, "凭据从标准输入读（唯一通道；该开关只是显式标记）")
 		name := fs.String("name", "", "账号名")
 		kind := fs.String("kind", "", "api_key|token_file")
 		cli := fs.String("cli", "", "如 codex")
