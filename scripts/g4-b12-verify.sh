@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# g4-b12-verify.sh — 逐家验通制（V6 判据 B12）干净容器假凭据验通脚本
+# g4-b12-verify.sh — 逐家验通制（V6 判据 B12）干净容器假凭据验通脚本（r2：复验 tosonnet55tc2k 修订）
 #
 # 用法（在 G1 托管节点，有 docker；prodops 代跑）：
-#   BASE_IMAGE=hub.local/dingwei/base-codex@sha256:<digest> ./g4-b12-verify.sh            # 默认只跑 Codex 两条（首期首家）
+#   BASE_IMAGE=hub.local/dingwei/base-codex@sha256:<digest> ./g4-b12-verify.sh            # 默认只跑 Codex 两条
 #   BASE_IMAGE=<ref> ./g4-b12-verify.sh codex-apikey codex-tokenfile claude-apikey ...    # 指定组合
 #
-# 判定（B12 口径）：CLI 报【鉴权失败判词】（401／unauthorized／incorrect|invalid api key／
-# authentication）＝凭据通路成立 ⇒ PASS；其它失败（网络、参数、找不到凭据、交互阻塞）⇒ FAIL。
-# 🔴 凭据纪律：只用假凭据（sk-test-invalid-*）；绝不对在用身份执行 login 类命令——
-#    本脚本全部在一次性容器的临时 HOME 里跑（丙1 教训：Codex device-auth 会删在用 auth.json）。
+# 判定（B12 口径）：输出里出现【词边界上的】鉴权失败判词（401／unauthorized／incorrect api key／
+# invalid api key／authentication_error／invalid x-api-key）＝凭据通路成立 ⇒ PASS。
+# 🔴 r2 修订（复验第三节）：
+#   · "not logged in"/"not authenticated" 不再算 PASS——令牌文件路径下这恰恰是「凭据没被读到」；
+#   · docker/镜像层错误（pull access denied／registry unauthorized／manifest unknown／
+#     connection／dns lookup）一律 FAIL——容器或 CLI 根本没跑起来，谈不上验通；
+#   · 判词匹配带词边界（\b），网络错误里的请求号子串（如 id 4012ab）不再误中 401；
+#   · 默认不带参数时跑 Codex 两条（r1 的 "${@:-…}" 带引号整串是一个词，默认根本不跑）。
+# 🔴 容器参数与生产同口径（nodeagent buildSpec）：只读根＋带限 tmpfs＋非 root＋降权。
+# 🔴 凭据纪律：只用假凭据；一次性容器＋tmp HOME；绝不对在用身份执行 login 类命令。
 #
-# 读数格式（逐行，供 tosonnet55tc2k 判读）：
-#   COMBO <组合> <PASS|FAIL> <判词摘录>
-# 末尾一行：VERDICT <PASS|FAIL>（全 PASS 才 PASS）
+# 读数格式（逐行，供判读）：COMBO <组合> <PASS|FAIL> <判词摘录>；末尾 VERDICT <PASS|FAIL>。
 
 set -u
 BASE_IMAGE="${BASE_IMAGE:?BASE_IMAGE 必填（固定仓库＋sha256 digest 的基镜像）}"
@@ -20,31 +24,48 @@ FAKE_KEY="sk-test-invalid-b12"
 FAKE_TOKEN_JSON='{"access_token":"tok-test-invalid-b12","account_id":"acct_test"}'
 
 pass=0; fail=0
-report() { # combo verdict detail
+report() {
   echo "COMBO $1 $2 $3"
   if [ "$2" = PASS ]; then pass=$((pass+1)); else fail=$((fail+1)); fi
 }
 
-# judge <combo> <输出>：鉴权失败判词 ⇒ PASS
+# 鉴权失败判词（词边界）⇒ PASS；基建/镜像/网络错误 ⇒ FAIL；其余 ⇒ FAIL
 judge() {
   local combo="$1" out="$2"
-  if printf '%s' "$out" | grep -qiE '401|unauthorized|incorrect api key|invalid api key|authentication_error|invalid x-api-key|not logged in|not authenticated'; then
-    report "$combo" PASS "$(printf '%s' "$out" | grep -oiE '401|unauthorized|incorrect api key|invalid api key|authentication_error|invalid x-api-key|not logged in|not authenticated' | head -1)"
+  if printf '%s' "$out" | grep -qiE 'pull access denied|manifest unknown|connection (reset|refused)|dns lookup|no such host|Error response from daemon|authentication required'; then
+    report "$combo" FAIL "$(printf '%s' "$out" | grep -oiE 'pull access denied|manifest unknown|connection (reset|refused)|dns lookup|no such host|Error response from daemon|authentication required' | head -1)（基建层失败，未验到凭据通路）"
+    return
+  fi
+  if printf '%s' "$out" | grep -qiE '\bnot logged in\b|\bnot authenticated\b'; then
+    report "$combo" FAIL "not-logged-in（凭据没被读到——令牌件路径恰是要验的东西）"
+    return
+  fi
+  local hit
+  hit=$(printf '%s' "$out" | grep -oiE '\b401\b|\bunauthorized\b|incorrect api key|invalid api key|authentication_error|invalid x-api-key' | head -1)
+  if [ -n "$hit" ]; then
+    report "$combo" PASS "$hit"
   else
     report "$combo" FAIL "$(printf '%s' "$out" | tail -2 | tr '\n' ' ' | cut -c1-120)"
   fi
 }
 
-# 在干净容器里跑一段脚本（tmp HOME、无网络假定不成立——要能到 API 才谈得上鉴权失败）
+# 生产同款容器参数（nodeagent buildSpec 口径：只读根、带限 tmpfs、非 root、降权、no-new-privileges）
+DOCKER_RUN=(docker run --rm --network bridge
+  --read-only --tmpfs /tmp:size=8m --user 10001:10001
+  --cap-drop ALL --security-opt no-new-privileges
+  -e HOME=/tmp/b12home)
+
 run_case() { # <combo> <script>
   local combo="$1" script="$2"
   local out
-  out=$(docker run --rm --network bridge -e HOME=/tmp/b12home "$BASE_IMAGE" \
+  out=$("${DOCKER_RUN[@]}" "$BASE_IMAGE" \
         sh -c "mkdir -p /tmp/b12home && $script" 2>&1)
   judge "$combo" "$out"
 }
 
-for combo in "${@:-codex-apikey codex-tokenfile}"; do
+if [ $# -eq 0 ]; then set -- codex-apikey codex-tokenfile; fi
+
+for combo in "$@"; do
   case "$combo" in
     codex-apikey)
       # Codex API key 路径①：stdin 送 key（SPIKE：with-api-key 从 stdin 读）后非交互调用
@@ -52,7 +73,7 @@ for combo in "${@:-codex-apikey codex-tokenfile}"; do
       ;;
     codex-tokenfile)
       # Codex 订阅令牌文件路径②：平台写入 auth.json 后直接用（无需任何 login）
-      run_case codex-tokenfile "mkdir -p ~/.codex && printf '%s' '$FAKE_TOKEN_JSON' > ~/.codex/auth.json && chmod 600 ~/.codex/auth.json && codex exec --skip-git-repo-check 'ping' 2>&1 || true"
+      run_case codex-tokenfile "mkdir -p /tmp/b12home/.codex && printf '%s' '$FAKE_TOKEN_JSON' > /tmp/b12home/.codex/auth.json && chmod 600 /tmp/b12home/.codex/auth.json && codex exec --skip-git-repo-check 'ping' 2>&1 || true"
       ;;
     claude-apikey)
       # Claude Code：启动脚本读文件后进程内导出（B7：不经 docker env）——这里等价模拟
@@ -60,7 +81,7 @@ for combo in "${@:-codex-apikey codex-tokenfile}"; do
       ;;
     deepseek-settings)
       # DeepSeek：~/.deepcode/settings.json 的 env.API_KEY（不认环境变量——SPIKE 实测）
-      run_case deepseek-settings "mkdir -p ~/.deepcode && printf '{\"env\":{\"API_KEY\":\"$FAKE_KEY\"}}' > ~/.deepcode/settings.json && deepcode 'ping' 2>&1 || true"
+      run_case deepseek-settings "mkdir -p /tmp/b12home/.deepcode && printf '{\"env\":{\"API_KEY\":\"$FAKE_KEY\"}}' > /tmp/b12home/.deepcode/settings.json && deepcode 'ping' 2>&1 || true"
       ;;
     opencode-env)
       run_case opencode-env "printf '%s' '$FAKE_KEY' > /tmp/b12home/.k && export OPENAI_API_KEY=\$(cat /tmp/b12home/.k) && opencode run 'ping' 2>&1 || true"

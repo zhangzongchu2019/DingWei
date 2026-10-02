@@ -27,7 +27,8 @@ import (
 // wireHosted G4 装配。返回 false＝未装（缺主密钥配置）；错误＝装配失败（启动即拒）。
 // 须在 httpapi.API 构造之前调用（cfg.hosted 注入点在其上）。
 func wireHosted(ctx context.Context, mux httpapi.Mux, cfg *newPlatformConfig, pool *repo.Pool,
-	idStore identity.Store, svc *identity.Service, actor func(r *http.Request) (string, error)) (bool, error) {
+	idStore identity.Store, svc *identity.Service, actor func(r *http.Request) (string, error),
+	agentOnline func(agentID string) bool) (bool, error) {
 	mkPath := os.Getenv("DW_G4_MASTER_KEY_FILE")
 	if mkPath == "" {
 		log.Printf("newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）")
@@ -69,6 +70,10 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, cfg *newPlatformConfig, po
 		}
 	}()
 	life := hosted.NewLifecycle(hst, poolSvc, idp, idp, gate, images, backups)
+	if agentOnline != nil {
+		// B1 语义（T-G4-34 复验登记）：online＝以专属凭据连入，探针来自连接层
+		orch.SetOnlineProbe(func(ctx context.Context, agentID string) bool { return agentOnline(agentID) })
+	}
 	gate.OnConnect = orch.ReconcileNode // 节点重连对账（离线销毁补清——组长 7fabddb0 ⑤）
 
 	mux.HandleFunc("GET /api/node/connect", gate.Handler().ServeHTTP) // 节点代理拨入（Bearer 节点凭据）

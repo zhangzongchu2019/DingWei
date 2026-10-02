@@ -109,6 +109,15 @@ type Orchestrator struct {
 	// 以 credential_inject_failed 失败清理（Retire＋解绑，不占名），fail-closed 不硬撑。
 	tokMu      sync.Mutex
 	pendingTok map[string]EnrollToken
+	// probeOnline 席位连入探针（T-G4-34 复验行为登记：B1 的 online 必须是「Agent 以专属凭据
+	// 连入」，不是「容器已创建」——MarkOnline 此前无调用方）。装配处接 m8 的 AgentOnline；
+	// nil＝保持旧行为（create 成功即 online，仅限未接线环境）。
+	probeOnline func(ctx context.Context, agentID string) bool
+}
+
+// SetOnlineProbe 接线处注入连入探针（wireHosted：m8 Hub 的 AgentOnline）。
+func (o *Orchestrator) SetOnlineProbe(f func(ctx context.Context, agentID string) bool) {
+	o.probeOnline = f
 }
 
 func NewOrchestrator(st *Store, pool *PoolService, idp IdentityIssuer, gw NodeGateway, combos CombosSource, images ImageCatalog) *Orchestrator {
@@ -340,9 +349,39 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		return
 	}
 	o.dropToken(agentID)
-	// online 的最终确认＝席位以专属凭据连入（Hub 侧连接事件回调 MarkOnline）
-	if err := o.st.SetSeatState(ctx, agentID, "online", "", "online", nil); err != nil {
+	// 🔴 T-G4-34 复验行为登记：online＝席位以专属凭据连入（探针确认），不是容器已创建。
+	//    探针确认前席位停在 starting——5 分钟 start_timeout 清扫管得住「容器起了但永远连不上」
+	//    （凭据件错、CLI 崩溃）的情形。探针未接线（nil）⇒ 旧行为直置 online（仅未接线环境）。
+	if o.probeOnline == nil {
+		if err := o.st.SetSeatState(ctx, agentID, "online", "", "online", nil); err != nil {
+			return
+		}
 		return
+	}
+	go o.waitOnline(agentID)
+}
+
+// waitOnline 轮询连入探针直至连入（MarkOnline）或超时清扫接管（starting 5m 在 SweepTimeouts）。
+func (o *Orchestrator) waitOnline(agentID string) {
+	ctx := context.Background()
+	t := time.NewTicker(2 * time.Second)
+	defer t.Stop()
+	deadline := time.Now().Add(4*time.Minute + 30*time.Second) // 略早于清扫线，避免竞争
+	for {
+		select {
+		case <-t.C:
+			seat, err := o.st.GetSeat(ctx, agentID)
+			if err != nil || seat.State != "starting" {
+				return // 已被清扫或转移
+			}
+			if o.probeOnline(ctx, agentID) {
+				_ = o.MarkOnline(ctx, agentID)
+				return
+			}
+			if time.Now().After(deadline) {
+				return
+			}
+		}
 	}
 }
 

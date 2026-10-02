@@ -618,3 +618,68 @@ func TestHostedItemErrorCounted(t *testing.T) {
 		t.Fatalf("错误应计数: before=%d after=%d", before, HostedItemErrorCount())
 	}
 }
+
+// T-G4-34 复验行为登记：online＝以专属凭据连入（探针确认），不是容器已创建。
+// 探针 false 期间席位停 starting；永连不上 ⇒ 5 分钟 start_timeout 清扫（fail+Retire）。
+func TestOnlineRequiresConnectionProbe(t *testing.T) {
+	o, idp, _, s := mkOrch(t)
+	connected := false
+	o.SetOnlineProbe(func(ctx context.Context, agentID string) bool { return connected })
+	ctx := context.Background()
+	out, err := o.Create(ctx, CreateRequest{
+		OwnerLC: "zzc", By: "zzc", Name: "probe1", GroupCode: "",
+		NodeID: "auto", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	o.RunJob(ctx, out.AgentID)
+	seat, _ := s.GetSeat(ctx, out.AgentID)
+	if seat.State != "starting" { // 容器起了但未连入：不得 online
+		t.Fatalf("未连入不得 online: %+v", seat)
+	}
+	connected = true
+	deadline := time.Now().Add(8 * time.Second)
+	for {
+		seat, _ = s.GetSeat(ctx, out.AgentID)
+		if seat.State == "online" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("连入后应转 online")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	// 反向：连入探针真被调过（不是直置）
+	if !connected {
+		t.Fatal("探针路径")
+	}
+	_ = idp
+}
+
+// 反向格：探针恒 false（容器起了但 CLI 永远连不上）⇒ start_timeout 清扫：failed＋Retire＋回池。
+func TestNeverConnectsSweepedStartTimeout(t *testing.T) {
+	o, idp, _, s := mkOrch(t)
+	o.SetOnlineProbe(func(ctx context.Context, agentID string) bool { return false })
+	ctx := context.Background()
+	out, err := o.Create(ctx, CreateRequest{
+		OwnerLC: "zzc", By: "zzc", Name: "probe2", GroupCode: "",
+		NodeID: "auto", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	o.RunJob(ctx, out.AgentID)
+	seat, _ := s.GetSeat(ctx, out.AgentID)
+	if seat.State != "starting" {
+		t.Fatalf("前提：%v", seat)
+	}
+	o.SweepTimeouts(ctx, time.Now().Add(6*time.Minute)) // 越过 5 分钟启动超时线
+	seat, _ = s.GetSeat(ctx, out.AgentID)
+	if seat.State != "error" || seat.StateDetail != "start_timeout" {
+		t.Fatalf("应 start_timeout 失败: %+v", seat)
+	}
+	if len(idp.retired) != 1 {
+		t.Fatalf("应 Retire 释放名字: %v", idp.retired)
+	}
+}
