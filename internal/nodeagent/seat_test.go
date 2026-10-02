@@ -569,3 +569,35 @@ func TestCreateRejectsUnregisteredLocalImage(t *testing.T) {
 		}
 	}
 }
+
+// 复验 G3：local 形态给引擎的是裸 sha256 ID（不是 local@ 引用——引擎会当仓库摘要 404）。
+// 复验 G5：upgrade 缺 cred_kind 即拒（与 create 同口径）。删闸矩阵：upgrade 的 local 白名单格。
+func TestLocalFormEngineTranslationAndUpgradeGuards(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	registered := strings.Repeat("ab", 32)
+	// G3：create 用 local 形态 ⇒ 引擎 spec 的 Image 是裸 sha256 ID
+	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_g3","image":"local@sha256:`+registered+
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
+		t.Fatalf("登记过的 local 形态 create: %v", err)
+	}
+	if got := f.specs[len(f.specs)-1]["Image"]; got != "sha256:"+registered {
+		t.Fatalf("引擎拿到的必须是裸 image ID: %v", got)
+	}
+	// G5：upgrade 缺 cred_kind ⇒ 拒
+	f2 := newFakeDocker(t)
+	d2 := f2.ops(t.TempDir())
+	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_g5","image":"`+goodImage+
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d2.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_g5","image":"`+goodImage+
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`)); err == nil || !strings.Contains(err.Error(), "cred_kind") {
+		t.Fatalf("upgrade 缺 cred_kind 必拒: %v", err)
+	}
+	// 删闸格：upgrade 收未登记 local ID ⇒ 拒（白名单闸在 upgrade 路径同样有效）
+	if _, err := d2.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_g5","image":"local@sha256:`+
+		strings.Repeat("cd", 32)+`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err == nil {
+		t.Fatal("upgrade 未登记 local ID 必拒")
+	}
+}

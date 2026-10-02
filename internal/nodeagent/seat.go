@@ -170,13 +170,22 @@ type credentialFile struct {
 	Content string `json:"content"`
 }
 
+// engineImage 给引擎的镜像引用：local 形态翻成裸 sha256 ID（引擎把 local@… 当仓库摘要会 404——
+// 复验 G3）；其余形态原样。
+func engineImage(ref string) string {
+	if id := localImageID(ref); id != "" {
+		return "sha256:" + id
+	}
+	return ref
+}
+
 // buildSpec 安全参数清单（白名单固定，不可被指令关改）。
 // 🔴 CgroupParent 必带（组长 eccc54bc：托管席位统一挂在可配置父切片下做资源切片；
 // 漏设＝席位逃逸出平台切片，故 create 在空值时直接拒）。
 func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, credKind string) map[string]any {
 	memBytes := res.MemoryMB * 1024 * 1024
 	return map[string]any{
-		"Image": image,
+		"Image": engineImage(image),
 		"User":  "10001:10001", // 非 root（隔离底线；与 seatRunUID 一致）
 		"Env":   d.seatEnv(credKind),   // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
 		"HostConfig": map[string]any{
@@ -489,6 +498,10 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	// 容器启动契约：带凭据件必须带形态（缺 ⇒ 启动脚本无法扇出）；SH_WS_BASE 漏设即拒
 	if d.hubWSBase == "" {
 		return nil, fmt.Errorf("%w: SH_WS_BASE 未配置（容器启动契约：漏设即拒）", ErrParams)
+	}
+	// G5：与 create 同口径——cred_kind 缺即拒（否则新容器带空 SH_CRED_KIND 起）
+	if p.CredKind != "api_key" && p.CredKind != "token_file" {
+		return nil, fmt.Errorf("%w: cred_kind 须 api_key|token_file（与 create 同口径，G5）", ErrParams)
 	}
 	oldID, err := d.seatContainerID(ctx, p.SeatID)
 	if err != nil {
