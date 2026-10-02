@@ -107,5 +107,76 @@ class CLIExitVisible(unittest.TestCase):
         self.assertEqual(a.launch_attempts, attempts, "no respawn inside the backoff window")
 
 
+_BANNER_PROMPT_EXIT = """#!/usr/bin/env python3
+import sys
+sys.stdout.write("OpenAI Codex (v0.159.2)\\n\\u203a \\nError: no complete local package\\n"); sys.stdout.flush()
+sys.exit(1)
+"""
+_BANNER_STAYS = """#!/usr/bin/env python3
+import sys, time
+sys.stdout.write("OpenAI Codex (v0.159.2)\\nloading...\\n"); sys.stdout.flush()
+time.sleep(30)
+"""
+_BANNER_THEN_PROMPT = """#!/usr/bin/env python3
+import sys, time
+sys.stdout.write("OpenAI Codex (v0.159.2)\\n"); sys.stdout.flush()
+time.sleep(0.5)
+sys.stdout.write("\\u203a "); sys.stdout.flush()
+time.sleep(30)
+"""
+_CUSTOM_PROMPT = """#!/usr/bin/env python3
+import sys, time
+sys.stdout.write("booting\\nREADY-NOW\\n"); sys.stdout.flush()
+time.sleep(30)
+"""
+
+
+@unittest.skipUnless(pexpect is not None, "needs pexpect")
+class CodexReadiness(unittest.TestCase):
+    """组长 R-B12-CODEX-PKG 修订第 4 条：横幅里的「Codex」字样不算就绪；就绪＝子进程活着且出现输入提示符。"""
+
+    def _adapter(self, src: str, **extra) -> "CLIAdapter":
+        d = tempfile.mkdtemp(prefix="sh-cli-ready-")
+        path = os.path.join(d, "fakecli.py")
+        with open(path, "w") as f:
+            f.write(src)
+        os.chmod(path, 0o755)
+        env = dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_CMD=path, SH_CLI_CWD=tempfile.gettempdir(),
+                   SH_CLI_READY_TIMEOUT="4", SH_CLI_LAUNCH_RETRIES="1", **extra)
+        a = CLIAdapter(load_config(env))
+        self.addCleanup(a.stop)
+        sets = []
+        orig = a.ready.set
+        a.ready.set = lambda: (sets.append(time.time()), orig())[1]
+        a._ready_sets = sets
+        return a
+
+    def test_banner_with_prompt_glyph_then_exit_is_never_ready(self):
+        a = self._adapter(_BANNER_PROMPT_EXIT)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertFalse(a.start())
+        self.assertEqual(a._ready_sets, [], "an exiting process must never be marked ready")
+
+    def test_banner_alone_is_not_ready(self):
+        a = self._adapter(_BANNER_STAYS)
+        with contextlib.redirect_stdout(io.StringIO()):
+            a.start()  # 等满 4 秒未就绪；子进程活着则保留（原行为）
+            self.assertFalse(a.ready.is_set(), "the 'Codex' banner is not an input prompt")
+            with self.assertRaises(CLIUnavailable):
+                a.handle_delivery({"body": "task"}, on_injected=lambda: None)
+
+    def test_prompt_after_banner_is_ready(self):
+        a = self._adapter(_BANNER_THEN_PROMPT)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(a.start())
+        self.assertTrue(a.ready.is_set())
+
+    def test_ready_patterns_override(self):
+        a = self._adapter(_CUSTOM_PROMPT, SH_CLI_READY_PATTERNS="READY-NOW")
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(a.start())
+        self.assertTrue(a.ready.is_set())
+
+
 if __name__ == "__main__":
     unittest.main()

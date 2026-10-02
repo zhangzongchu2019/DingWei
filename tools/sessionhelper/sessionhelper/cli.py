@@ -55,7 +55,10 @@ class CLIProfile:
 
 CLI_PROFILES: dict[str, CLIProfile] = {
     "claude": CLIProfile(["claude", "--dangerously-skip-permissions"], ("claude", ">", "❯", "╭", "Welcome"), "transcript"),
-    "codex": CLIProfile(["codex"], ("codex", ">", "›", "❯", "Welcome"), "transcript"),
+    # codex 只认输入提示符，不认「codex」「Welcome」这类横幅字样（组长 R-B12-CODEX-PKG 修订第 4 条：B12 里横幅
+    # 「OpenAI Codex (v0.159.2)」把一个随即退出的进程判成了就绪）。0.159.2 的实际提示符以 prodops 抓屏为准，
+    # 不符时用 SH_CLI_READY_PATTERNS 覆盖。
+    "codex": CLIProfile(["codex"], ("›", "❯", ">"), "transcript"),
     "aider": CLIProfile(["aider"], ("aider", ">", "Tokens")),
     "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db"),
     "cline": CLIProfile(["cline"], ("cline", ">", "Welcome")),
@@ -86,6 +89,7 @@ class CLIAdapter:
         self.cfg = cfg
         self.cli_name = cfg.cli_name
         self.profile = CLI_PROFILES.get(cfg.cli_name, CLI_PROFILES["claude"])
+        self.ready_patterns = cfg.cli_ready_patterns or self.profile.ready_patterns
         self.command = cfg.cli_cmd or self.profile.command
         self.cwd = cfg.cli_cwd or os.getcwd()
         self.launch_mode = cfg.cli_launch or self.profile.launch
@@ -228,7 +232,7 @@ class CLIAdapter:
                 last_pane = cleaned
                 last_change = time.time()
                 self.last_output_at = last_change
-            has_prompt = any(pat.lower() in cleaned.lower() for pat in self.profile.ready_patterns)
+            has_prompt = any(pat.lower() in cleaned.lower() for pat in self.ready_patterns)
             has_transcript = self.profile.output_source == "transcript" and has_fresh_transcript(self.cli_name, self.cwd, self.started_at, self.cfg.cli_transcript)
             idle = time.time() - last_change >= self.cfg.cli_settle_seconds
             if (has_prompt and idle) or has_transcript:
@@ -641,7 +645,8 @@ class CLIAdapter:
                     self.output_tail.append(ln.strip())
             self.last_output_at = time.time()
             buf += "\n" + cleaned
-            if any(pat.lower() in cleaned.lower() for pat in self.profile.ready_patterns):
+            # 出现输入提示符即置就绪；「子进程还活着」由 start_pty（等静默期间退出即报）与退出时 _note_exit（清就绪）保证
+            if any(pat.lower() in cleaned.lower() for pat in self.ready_patterns):
                 self.ready.set()
                 self.respawn_count = 0
             if self.profile.output_source == "pty":

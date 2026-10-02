@@ -44,6 +44,8 @@ class Config:
     cli_transcript: str = ""
     opencode_db: str = ""
     cli_ready_timeout: float = 90.0
+    # 就绪标记覆盖（SH_CLI_READY_PATTERNS，以「|」分隔）：空 ⇒ 用 CLI 档自带的。镜像可据实际界面设定，不必改代码。
+    cli_ready_patterns: tuple[str, ...] = ()
     cli_reply_wait: float = 45.0
     cli_settle_seconds: float = 1.2
     cli_user_ack_wait: float = 10.0
@@ -159,6 +161,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         cli_transcript=expand_path(env.get("SH_CLI_TRANSCRIPT", "")),
         opencode_db=expand_path(env.get("SH_OPENCODE_DB", "")),
         cli_ready_timeout=float(env.get("SH_CLI_READY_TIMEOUT", "90")),
+        cli_ready_patterns=tuple(p for p in env.get("SH_CLI_READY_PATTERNS", "").split("|") if p.strip()),
         cli_reply_wait=float(env.get("SH_CLI_REPLY_WAIT", env.get("SH_OUT_WAIT", "45"))),
         cli_settle_seconds=float(env.get("SH_CLI_SETTLE_SECONDS", "1.2")),
         cli_user_ack_wait=float(env.get("SH_CLI_USER_ACK_WAIT", "10")),
