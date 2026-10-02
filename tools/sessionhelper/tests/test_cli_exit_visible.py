@@ -114,7 +114,7 @@ sys.exit(1)
 """
 _BANNER_STAYS = """#!/usr/bin/env python3
 import sys, time
-sys.stdout.write("OpenAI Codex (v0.159.2)\\nloading...\\n"); sys.stdout.flush()
+sys.stdout.write(">_ OpenAI Codex (v0.159.2)\\nloading...\\n"); sys.stdout.flush()
 time.sleep(30)
 """
 _BANNER_THEN_PROMPT = """#!/usr/bin/env python3

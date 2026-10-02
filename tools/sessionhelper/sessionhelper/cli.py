@@ -56,9 +56,9 @@ class CLIProfile:
 CLI_PROFILES: dict[str, CLIProfile] = {
     "claude": CLIProfile(["claude", "--dangerously-skip-permissions"], ("claude", ">", "❯", "╭", "Welcome"), "transcript"),
     # codex 只认输入提示符，不认「codex」「Welcome」这类横幅字样（组长 R-B12-CODEX-PKG 修订第 4 条：B12 里横幅
-    # 「OpenAI Codex (v0.159.2)」把一个随即退出的进程判成了就绪）。0.159.2 的实际提示符以 prodops 抓屏为准，
-    # 不符时用 SH_CLI_READY_PATTERNS 覆盖。
-    "codex": CLIProfile(["codex"], ("›", "❯", ">"), "transcript"),
+    # 「>_ OpenAI Codex (v0.159.2)」把一个随即退出的进程判成了就绪）。横幅本身以「>_」开头，故「>」也不能当标记。
+    # 0.159.2 的实际提示符以 prodops 抓屏为准，不符时用 SH_CLI_READY_PATTERNS 覆盖。
+    "codex": CLIProfile(["codex"], ("›", "❯"), "transcript"),
     "aider": CLIProfile(["aider"], ("aider", ">", "Tokens")),
     "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db"),
     "cline": CLIProfile(["cline"], ("cline", ">", "Welcome")),
