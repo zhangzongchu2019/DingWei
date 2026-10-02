@@ -9,6 +9,7 @@ from unittest import mock
 
 from sessionhelper.app import SessionHelper
 from sessionhelper.config import load_config
+from sessionhelper.cli import CLIAdapter
 from sessionhelper.contract import DeliveryReceipt
 from sessionhelper.driver_adapter import DriverAdapter
 from sessionhelper.guide_state import (
@@ -332,6 +333,113 @@ class DriverAdmissionCallbackTest(unittest.TestCase):
         self.assertEqual(order, ["injected", "processed"])
         self.assertTrue(admitted.wait(1))
         self.assertEqual(order, ["injected", "processed", "admitted"])
+
+
+class GuideRealAdapterBoundaryTest(unittest.TestCase):
+    @staticmethod
+    def wait_for(predicate, timeout=2.0):
+        deadline = __import__("time").time() + timeout
+        while __import__("time").time() < deadline:
+            if predicate():
+                return
+            threading.Event().wait(0.01)
+        raise AssertionError("timed out waiting for adapter boundary")
+
+    def make_driver_helper(self, tmp, driver):
+        cfg = load_config(dict(
+            BASE_ENV,
+            SH_MODE="driver",
+            SH_INBOX_DB=str(Path(tmp) / "inbox.db"),
+            SH_PROVISION_STATE_FILE=str(Path(tmp) / "provision.json"),
+            SH_PROVISION_VERSIONS_FILE=str(Path(tmp) / "versions.json"),
+        ))
+        with mock.patch.object(DriverAdapter, "_build_driver", return_value=driver):
+            adapter = DriverAdapter(cfg)
+        adapter.start()
+        with mock.patch.object(SessionHelper, "_build_adapter", return_value=adapter):
+            helper = SessionHelper(cfg)
+        return helper, adapter
+
+    def test_real_driver_adapter_boundary_counts_zero_one_two(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            driver = FakeProtocolDriver()
+            helper, _ = self.make_driver_helper(tmp, driver)
+            asyncio.run(helper.inject_agent_network_skill(guide_env()))
+            self.assertEqual(driver.calls, [], "guide-only must not reach Driver.deliver")
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
+            self.wait_for(lambda: len(driver.calls) == 1)
+            self.assertIn("GUIDE", driver.calls[0])
+            self.assertTrue(driver.calls[0].endswith("FIRST"))
+            self.wait_for(lambda: helper.guide_store.state().get("state") == "consumed")
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))
+            self.wait_for(lambda: len(driver.calls) == 2)
+            self.assertEqual(driver.calls[1], "SECOND")
+
+    def test_duplicate_releases_claim_for_next_business_command(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            driver = FakeProtocolDriver()
+            helper, _ = self.make_driver_helper(tmp, driver)
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("BEFORE", eid="same")))
+            self.wait_for(lambda: len(driver.calls) == 1)
+            asyncio.run(helper.inject_agent_network_skill(guide_env()))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("DUP", eid="same")))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("THIRD", eid="third")))
+            self.wait_for(lambda: len(driver.calls) == 2)
+            self.assertIn("GUIDE", driver.calls[1])
+            self.assertTrue(driver.calls[1].endswith("THIRD"))
+            self.assertEqual(helper.guide_store.state()["state"], "consumed")
+
+    def test_driver_deliver_exception_releases_claim_for_next_command(self):
+        class RaiseOnceDriver(FakeProtocolDriver):
+            def deliver(self, delivery_id, text):
+                self.calls.append(text)
+                if len(self.calls) == 1:
+                    raise RuntimeError("fixture deliver boom")
+                turn = f"turn-{len(self.calls)}"
+                self.turns[delivery_id] = turn
+                return DeliveryReceipt(delivery_id, "processing", "fixture", f"turn={turn}")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            driver = RaiseOnceDriver()
+            helper, _ = self.make_driver_helper(tmp, driver)
+            asyncio.run(helper.inject_agent_network_skill(guide_env()))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
+            self.wait_for(lambda: len(driver.calls) == 1)
+            self.wait_for(lambda: helper.guide_store._claimed is None)
+            self.assertEqual(helper.guide_store.state()["state"], "staged")
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))
+            self.wait_for(lambda: len(driver.calls) == 2)
+            self.assertIn("GUIDE", driver.calls[1])
+            self.assertTrue(driver.calls[1].endswith("SECOND"))
+            self.wait_for(lambda: helper.guide_store.state().get("state") == "consumed")
+
+    def test_real_cli_adapter_fake_pty_counts_zero_one_two(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = load_config(dict(
+                BASE_ENV,
+                SH_MODE="cli",
+                SH_CLI="aider",
+                SH_ASYNC_REPLY="1",
+                SH_INBOX_DB=str(Path(tmp) / "inbox.db"),
+                SH_PROVISION_STATE_FILE=str(Path(tmp) / "provision.json"),
+                SH_PROVISION_VERSIONS_FILE=str(Path(tmp) / "versions.json"),
+            ))
+            adapter = CLIAdapter(cfg)
+            injected = []
+            adapter.ready.set()
+            adapter.start = lambda: True
+            adapter._child_gone = lambda: False
+            adapter.inject_text = injected.append
+            with mock.patch.object(SessionHelper, "_build_adapter", return_value=adapter):
+                helper = SessionHelper(cfg)
+            asyncio.run(helper.inject_agent_network_skill(guide_env()))
+            self.assertEqual(injected, [], "guide-only must not reach CLI injection")
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
+            self.assertEqual(len(injected), 1)
+            self.assertIn("GUIDE", injected[0])
+            self.assertTrue(injected[0].endswith("FIRST"))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))
+            self.assertEqual(injected[1], "SECOND")
 
 
 if __name__ == "__main__":
