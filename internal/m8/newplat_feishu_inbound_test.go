@@ -1,6 +1,8 @@
 package m8
 
 import (
+	"bytes"
+	"log"
 	"strings"
 	"testing"
 	"time"
@@ -128,9 +130,16 @@ func TestNewPlatformFeishuDefaultRejectsUnboundSender(t *testing.T) {
 	msg := feishuInboundMessage("unbound-default", "plain-unbound")
 	msg.SenderOpenID = "ou_unknown"
 	msg.ChatEntityID = "devplatform:personal:ou_unknown"
+	var logs bytes.Buffer
+	oldLogWriter := log.Writer()
+	log.SetOutput(&logs)
+	t.Cleanup(func() { log.SetOutput(oldLogWriter) })
 	res, handled, err := e.hub.dispatchDefaultPersonalSession(e.ctx, msg, "plain-unbound")
 	if err != nil || !handled || !strings.Contains(res.Reply, "未绑定或已停用") {
 		t.Fatalf("unbound default sender was not rejected: %+v handled=%v err=%v", res, handled, err)
+	}
+	if !strings.Contains(logs.String(), "reason=sender_not_active_member") {
+		t.Fatalf("unbound default rejection lacked structured reason: %q", logs.String())
 	}
 }
 
