@@ -134,3 +134,26 @@ func TestNewPlatformFeishuDisabledUserCannotUseStaleLegacyMapping(t *testing.T) 
 		t.Fatalf("disabled identity fell through: handled=%v reply=%q err=%v", handled, res.Reply, err)
 	}
 }
+
+// H17: Feishu roster and sync commands must resolve the bound np_user owner;
+// neither command may depend on legacy member/api_key_account rows.
+func TestH17NewPlatformFeishuRosterAndSyncUseIdentityOwner(t *testing.T) {
+	e := newAgentEnv(t)
+	bindFeishuForAgentEnv(t, e, "ou_alice")
+	conn, st, body := e.dial(e.cred, "")
+	if conn == nil {
+		t.Fatalf("dial: %d %s", st, body)
+	}
+	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	msg := feishuInboundMessage("h17-roster", "#roster")
+	roster, err := e.hub.Dispatch(e.ctx, msg, "#roster")
+	if err != nil || !roster.Matched || !strings.Contains(roster.Reply, "opus50ts") {
+		t.Fatalf("H17 roster did not list new-platform Agent: %+v err=%v", roster, err)
+	}
+	msg = feishuInboundMessage("h17-sync", "#sync opus50ts")
+	sync, err := e.hub.Dispatch(e.ctx, msg, "#sync opus50ts")
+	if err != nil || !sync.Matched || !strings.Contains(sync.Reply, "已开启同步 opus50ts") {
+		t.Fatalf("H17 sync did not resolve new-platform owner: %+v err=%v", sync, err)
+	}
+}

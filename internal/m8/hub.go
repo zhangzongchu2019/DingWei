@@ -1805,6 +1805,9 @@ func (h *Hub) dispatchOnlineRosterCommand(ctx context.Context, msg model.Message
 }
 
 func (h *Hub) controlOwnerKey(ctx context.Context, msg model.Message) string {
+	if user, ok := h.newPlatformFeishuUser(ctx, msg); ok && user.State == identity.UserActive {
+		return user.UserIDLC()
+	}
 	source := sourceAccount(msg)
 	if h.Repo == nil {
 		return source
