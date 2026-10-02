@@ -8,6 +8,7 @@
 //    keep-code-after-done · persist-code · show-hub-text · fake-capabilities · forbidden-wrong-text
 //    row-code-ignores-expiry · row-code-no-timer · row-code-for-nonpending · row-code-persist · row-copy-wrong-text · row-code-without-expiry-key · no-invite-toggle · invite-toggle-static-arrow · invite-collapsed-keeps-visible
 //    logout-in-title-row · logout-footer-not-sticky · logout-footer-no-bottom-push · logout-footer-dark-light(退出贴左栏底)
+//    fb-ignores-bound · fb-note-never-shown · fb-done-no-refresh · fb-unknown-as-bound · fb-409-no-refresh · fb-initial-not-applied(已绑定隐藏按钮)
 //    绑定飞书(口令再认证): bind-persist · bind-password-persist · bind-hub-text · bind-no-expiry-timer · bind-copy-without-prefix · bind-done-keeps-code · bind-sends-target · bind-sends-no-password · bind-no-already-bound-wording · bind-forbidden-agent-wording · bind-no-bad-credentials-wording · bind-no-rate-limit-wording · bind-keeps-password-on-failure · bind-form-stays-open-on-success · bind-no-enter-submit · bind-no-empty-check · bind-password-visible
 // 环境变量: PW_CHANNEL=chrome 用系统 Chrome;NODE_PATH 指向含 playwright 的 node_modules。
 const assert = require('assert');
@@ -27,7 +28,7 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-password-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-target', 'bind-sends-no-password', 'bind-no-already-bound-wording', 'bind-forbidden-agent-wording', 'bind-no-bad-credentials-wording', 'bind-no-rate-limit-wording', 'bind-keeps-password-on-failure', 'bind-form-stays-open-on-success', 'bind-no-enter-submit', 'bind-no-empty-check', 'bind-password-visible', 'logout-in-title-row', 'logout-footer-not-sticky', 'logout-footer-no-bottom-push', 'logout-footer-dark-light'];
+const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-password-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-target', 'bind-sends-no-password', 'bind-no-already-bound-wording', 'bind-forbidden-agent-wording', 'bind-no-bad-credentials-wording', 'bind-no-rate-limit-wording', 'bind-keeps-password-on-failure', 'bind-form-stays-open-on-success', 'bind-no-enter-submit', 'bind-no-empty-check', 'bind-password-visible', 'fb-ignores-bound', 'fb-note-never-shown', 'fb-done-no-refresh', 'fb-unknown-as-bound', 'fb-409-no-refresh', 'fb-initial-not-applied', 'logout-in-title-row', 'logout-footer-not-sticky', 'logout-footer-no-bottom-push', 'logout-footer-dark-light'];
 if (mutation === 'logout-without-post') mutate("try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}", "location.assign('/console/login');return;");
 if (mutation === 'logout-ignores-failure') mutate("if(r.ok||r.status===401){location.assign('/console/login');return;}", "location.assign('/console/login');return;");
 if (mutation === 'no-logout-button') mutate('<button id=logoutBtn type=button>退出</button>', '');
@@ -61,6 +62,12 @@ if (mutation === 'logout-in-title-row') { mutate('<div id=navFoot><button id=log
 if (mutation === 'logout-footer-not-sticky') mutate('position:sticky;bottom:0;', '');
 if (mutation === 'logout-footer-no-bottom-push') mutate('#navFoot{margin-top:auto;', '#navFoot{');
 if (mutation === 'logout-footer-dark-light') mutate('html[data-theme="dark"] #navFoot{background:#111316;border-top-color:#38414c}', '');
+if (mutation === 'fb-ignores-bound') mutate("var isBound=bound===true;", "var isBound=false;");
+if (mutation === 'fb-note-never-shown') mutate("btn.hidden=isBound;note.hidden=!isBound;", "btn.hidden=isBound;note.hidden=true;");
+if (mutation === 'fb-done-no-refresh') mutate("clearBox();say('');window.refreshFeishuBound();};", "clearBox();say('');};");
+if (mutation === 'fb-unknown-as-bound') mutate("var isBound=bound===true;", "var isBound=bound!==false;");
+if (mutation === 'fb-409-no-refresh') mutate("window.refreshFeishuBound();return;}   // 409", "return;}   // 409");
+if (mutation === 'fb-initial-not-applied') mutate("if(window.applyFeishuBound)window.applyFeishuBound(data.feishu_bound);", "");
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
@@ -77,6 +84,8 @@ let codeSeq = 0;
 const writes = [];
 let logoutStatus = 204;
 let agentCount = 0;
+let feishuBound; // undefined=键不存在(未知) · false · true;绑定码发出后由 bindFlipsBound 置真(模拟用户在飞书里兑换成功)
+let bindFlipsBound = false; let platformGets = 0;
 const BIND_PASSWORD = 'Right-Pass-2026'; let bindMode = 'ok'; let bindSeq = 0; let bindTtlMs = 3600e3;
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
@@ -101,11 +110,12 @@ const server = http.createServer(async (req, res) => {
     if (bindMode === 'boom') return err(res, 500, 'internal');
     if (bindMode === 'ratelimit') return err(res, 429, 'rate_limited', { retry_after_s: 30 });
     if (body.password !== BIND_PASSWORD) return err(res, 401, 'bad_credentials');
+    if (bindFlipsBound) feishuBound = true;
     return json(res, 200, { registration_code: `BIND${++bindSeq}XYZ`.slice(0, 8).padEnd(8, 'Q'), code_expires_at: new Date(Date.now() + bindTtlMs).toISOString() });
   }
   if (p === '/api/console/agents') return json(res, 200, { agents: Array.from({ length: agentCount }, (_, i) => ({ online: true, agent_id: `ag-${i}`, name: `agent${i}`, full_name: `agent${i}.zzc`, origin: 'selfhost', group_code: '' })) });
   if (p === '/api/console/agent-groups') return json(res, 200, { owned_agents: [], groups: [] });
-  if (p === '/api/console/platform') return json(res, 200, { role, actions: [], items: platformItems(role) });
+  if (p === '/api/console/platform') { platformGets += 1; return json(res, 200, { role, actions: [], items: platformItems(role), ...(feishuBound === undefined ? {} : { feishu_bound: feishuBound }) }); }
   if (p === '/api/console/platform/users' && req.method === 'GET') {
     if (failUsersList > 0) { failUsersList -= 1; res.writeHead(503, { 'content-type': 'text/plain' }); return res.end('users unavailable'); }
     return json(res, 200, { users: users.map((u) => ({ ...u, ...(rowCodes[u.user_id] || {}) })) });
@@ -498,6 +508,68 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       const ratio = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
       assert.ok(ratio(c.bfg, c.bbg) >= 4.5, `button text contrast must be >= 4.5, got ${ratio(c.bfg, c.bbg).toFixed(2)}`);
       await pg.close();
+    });
+
+    await test('绑定飞书 button follows the Hub flag: unbound/unknown keep the button; bound shows only the non-clickable 「飞书已绑定」 line', async () => {
+      const cases = [[false, true], [undefined, true], [true, false]];
+      for (const [flag, buttonShown] of cases) {
+        feishuBound = flag;
+        const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+        await pg.goto(`${base}/console`);
+        await pg.locator('#platform-items a').first().waitFor({ state: 'visible' });
+        await pg.waitForFunction(() => document.getElementById('platform-status').textContent === '');
+        const label = `feishu_bound=${flag}`;
+        assert.strictEqual(await pg.locator('#bindFeishuBtn').isVisible(), buttonShown, `${label}: button visible must be ${buttonShown}`);
+        assert.strictEqual(await pg.locator('#feishuBoundNote').isVisible(), !buttonShown, `${label}: note visible must be ${!buttonShown}`);
+        if (!buttonShown) {
+          assert.strictEqual((await pg.locator('#feishuBoundNote').textContent()).trim(), '飞书已绑定');
+          assert.strictEqual(await pg.locator('#feishuBoundNote').evaluate((el) => el.tagName !== 'BUTTON' && !el.onclick && !el.closest('button')), true, 'the note is plain text, not clickable');
+          assert.strictEqual(await pg.locator('#bindFeishuForm').isHidden(), true);
+        }
+        await pg.close();
+      }
+      feishuBound = undefined;
+    });
+
+    await test('绑定飞书 flow: after a successful bind, 「完成,关闭」 re-fetches the state and the button turns into 「飞书已绑定」; an already-bound 409 does the same', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      feishuBound = false; bindFlipsBound = true;
+      await pg.goto(`${base}/console`);
+      await pg.locator('#platform-items a').first().waitFor({ state: 'visible' });
+      await askBind(pg, BIND_PASSWORD);
+      await pg.locator('#bindFeishuBox').waitFor({ state: 'visible' });
+      assert.strictEqual(await pg.locator('#bindFeishuBtn').isVisible(), true, 'while the code is shown the button is still there (not bound yet)');
+      const before = platformGets;
+      await pg.locator('#bindFeishuDone').click();
+      await pg.locator('#feishuBoundNote').waitFor({ state: 'visible' });
+      assert.ok(platformGets > before, 'closing re-fetched /api/console/platform');
+      assert.strictEqual(await pg.locator('#bindFeishuBtn').isHidden(), true);
+      assert.strictEqual(await pg.locator('#bindFeishuBox').isHidden(), true);
+      await pg.close();
+      // 未绑定时点完成(用户没去飞书兑换):重取仍是 false,按钮保持
+      feishuBound = false; bindFlipsBound = false;
+      const pg2 = await context.newPage(); watch(pg2); pg2.setDefaultTimeout(2500);
+      await pg2.goto(`${base}/console`);
+      await pg2.locator('#platform-items a').first().waitFor({ state: 'visible' });
+      await askBind(pg2, BIND_PASSWORD);
+      await pg2.locator('#bindFeishuBox').waitFor({ state: 'visible' });
+      await pg2.locator('#bindFeishuDone').click();
+      await pg2.locator('#bindFeishuBox').waitFor({ state: 'hidden' });
+      await pg2.waitForTimeout(200);
+      assert.strictEqual(await pg2.locator('#bindFeishuBtn').isVisible(), true, 'not bound yet: the button stays');
+      assert.strictEqual(await pg2.locator('#feishuBoundNote').isHidden(), true);
+      // 409 already_bound:状态在别处已变(例如另一标签页刚绑定),重取后按钮换成小字
+      feishuBound = false; bindFlipsBound = false;
+      bindMode = 'already';
+      const pg3 = await context.newPage(); watch(pg3); pg3.setDefaultTimeout(2500);
+      await pg3.goto(`${base}/console`);
+      await pg3.locator('#platform-items a').first().waitFor({ state: 'visible' });
+      feishuBound = true; // 页面载入之后,服务端那头才变成已绑定
+      await askBind(pg3, BIND_PASSWORD);
+      await pg3.locator('#feishuBoundNote').waitFor({ state: 'visible' });
+      assert.strictEqual(await pg3.locator('#bindFeishuBtn').isHidden(), true);
+      bindMode = 'ok'; feishuBound = undefined;
+      await pg2.close(); await pg3.close();
     });
 
     await test('the console has a 退出 button: it POSTs /console/logout once and then goes to /console/login', async () => {

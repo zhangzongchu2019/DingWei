@@ -363,7 +363,7 @@ html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="da
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div><div id=navFoot><button id=logoutBtn type=button>退出</button></div></nav>
+<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button><span id=feishuBoundNote hidden style="font-size:12px;color:#666">飞书已绑定</span></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div><div id=navFoot><button id=logoutBtn type=button>退出</button></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <div id=app-version data-version="{{CONSOLE_VERSION}}" data-commit="{{CONSOLE_COMMIT}}">{{CONSOLE_VERSION_TEXT}}</div>
 <script>
@@ -496,7 +496,7 @@ async function refreshPlatform(){
     var r=await fetch('/api/console/platform',{cache:'no-store',signal:controller.signal});
     if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
     var data=await r.json();if(!data||!Array.isArray(data.items))throw new Error('响应格式无效');
-    renderPlatform(data);status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;
+    renderPlatform(data);if(window.applyFeishuBound)window.applyFeishuBound(data.feishu_bound);status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;
   }catch(err){renderPlatform({items:[],role:document.documentElement.dataset.platformRole||''});status.textContent='工作台加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
   }finally{clearTimeout(timer);}
 }
@@ -623,7 +623,16 @@ var FEATURE_SELFHOST_REVIEW=true;    // 第一版入网批准走这块(业主实
   var timer=null;
   function say(t){document.getElementById('bindFeishuStatus').textContent=t||'';}
   function clearBox(){clearTimeout(timer);timer=null;box.hidden=true;delete box.dataset.code;document.getElementById('bindFeishuCmd').textContent='';document.getElementById('bindFeishuExpiry').textContent='';document.getElementById('bindFeishuCopyFb').textContent='';}
-  document.getElementById('bindFeishuDone').onclick=function(){clearBox();say('');};
+  // 已绑定 ⇒ 不显示按钮,原位只留一行不可点的小字;缺键(未知)或 false ⇒ 按钮照旧。绑定成功后点「完成,关闭」会重取一次状态。
+  var note=document.getElementById('feishuBoundNote');
+  window.applyFeishuBound=function(bound){
+    var isBound=bound===true;btn.hidden=isBound;note.hidden=!isBound;
+    if(isBound){clearBox();say('');var f=document.getElementById('bindFeishuForm');if(f){f.hidden=true;document.getElementById('bindFeishuPw').value='';}}
+  };
+  window.refreshFeishuBound=async function(){
+    try{var r=await fetch('/api/console/platform',{cache:'no-store'});if(!r.ok)return;var d=await r.json();window.applyFeishuBound(d&&d.feishu_bound);}catch(_){}   // 取不到就保持现状,不乱改
+  };
+  document.getElementById('bindFeishuDone').onclick=function(){clearBox();say('');window.refreshFeishuBound();};
   document.getElementById('bindFeishuCopy').onclick=async function(){
     var code=box.dataset.code||'';if(!code)return;var fb=document.getElementById('bindFeishuCopyFb');
     try{await navigator.clipboard.writeText('#register '+code);fb.textContent='已复制';}catch(_){fb.textContent='复制失败,请手动选中复制';}
@@ -638,7 +647,7 @@ var FEATURE_SELFHOST_REVIEW=true;    // 第一版入网批准走这块(业主实
     var res=await consolePost('/api/console/account/feishu-bind-code',{password:password});
     go.disabled=false;
     if(!res.ok){
-      if(res.code==='already_bound'){closeForm();say('你已经绑定过飞书，无需再绑定');return;}
+      if(res.code==='already_bound'){closeForm();say('你已经绑定过飞书，无需再绑定');window.refreshFeishuBound();return;}   // 409 就是「已绑定」的事实:重取状态,按钮随之换成小字
       pw.value='';   // 失败一律清掉口令框,不留在页面里
       if(res.code==='bad_credentials')say('口令不对');
       else if(res.code==='rate_limited'){var w=res.data&&Number.isFinite(res.data.retry_after_s)?res.data.retry_after_s:null;say('尝试次数过多，'+(w===null?'请稍后再试':'请 '+w+' 秒后再试'));}

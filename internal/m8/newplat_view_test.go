@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
@@ -510,5 +511,59 @@ func TestNewPlatformPagesRedirectAPIsDoNot(t *testing.T) {
 		if res.StatusCode != c.status || res.Header.Get("Location") != c.loc || (c.body != "" && body != c.body) {
 			t.Errorf("%s: %d loc=%q %s, want %d loc=%q %s", c.name, res.StatusCode, res.Header.Get("Location"), body, c.status, c.loc, c.body)
 		}
+	}
+}
+
+// feishu_bound：/api/console/platform 告诉页面「当前登录者本人」是否已有飞书身份（业主反馈：已绑定的人不该再看到「绑定飞书」按钮）。
+// 三件：未绑定 ⇒ false；绑定之后 ⇒ true；只回本人（别人绑了不影响我；也不回任何身份值）。
+func TestNewPlatformConsolePlatformFeishuBound(t *testing.T) {
+	v := newViewEnv(t)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/console/platform", v.hub.RequireConsolePrincipal(v.hub.RequireConsolePlatformAction("read", v.hub.HandleConsolePlatform)))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	bound := func(tok string) (any, bool, string) {
+		t.Helper()
+		req, _ := http.NewRequest("GET", srv.URL+"/api/console/platform", nil)
+		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: tok})
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		raw, _ := io.ReadAll(res.Body)
+		if res.StatusCode != 200 {
+			t.Fatalf("GET platform as %s: %d %s", tok, res.StatusCode, raw)
+		}
+		var body map[string]any
+		if err := json.Unmarshal(raw, &body); err != nil {
+			t.Fatal(err)
+		}
+		val, present := body["feishu_bound"]
+		return val, present, string(raw)
+	}
+	for _, tok := range []string{v.tokZZC, v.tokLBL} {
+		if val, present, raw := bound(tok); !present || val != false {
+			t.Fatalf("未绑定飞书的用户必须得到 feishu_bound=false（键在、值假），实为 present=%v val=%v: %s", present, val, raw)
+		}
+	}
+	// zzc 经真实的兑换路径绑定飞书（本人自取绑定码的那条：active 用户只绑身份、状态不变）。
+	digest := identity.HashSecret("bind-code-for-zzc")
+	if err := v.svc.Store.CreateRegistrationCode(v.ctx, "zzc", digest, v.svc.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := v.svc.Store.RedeemRegistrationCode(v.ctx, digest, identity.Identity{Provider: "feishu", Issuer: "app", Subject: "ou_zzc_openid_secret"}, v.svc.Now()); err != nil {
+		t.Fatal(err)
+	}
+	val, present, raw := bound(v.tokZZC)
+	if !present || val != true {
+		t.Fatalf("绑定之后 zzc 必须得到 feishu_bound=true，实为 present=%v val=%v: %s", present, val, raw)
+	}
+	if strings.Contains(raw, "ou_zzc_openid_secret") || strings.Contains(raw, "openid") {
+		t.Fatalf("响应里不得出现飞书身份值（open_id 等）: %s", raw)
+	}
+	// 只回本人：zzc 绑了，lbl 仍是 false。
+	if val, present, raw := bound(v.tokLBL); !present || val != false {
+		t.Fatalf("zzc 绑定飞书不得影响 lbl：lbl 应仍是 feishu_bound=false，实为 present=%v val=%v: %s", present, val, raw)
 	}
 }
