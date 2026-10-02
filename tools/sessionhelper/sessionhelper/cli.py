@@ -11,6 +11,7 @@ import sqlite3
 import subprocess
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
@@ -22,6 +23,21 @@ from .config import Config, env_get
 
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+# CLI 退出时日志里的屏幕尾巴要脱敏：像密钥／令牌的长串一律遮掉（组长 R-B12-CODEX-PKG 第 2 条）。
+_SECRET_RE = re.compile(r"(?i)(sk-[A-Za-z0-9_-]{8,}|bearer\s+\S+|[A-Za-z0-9_\-]{32,})")
+EXIT_TAIL_LINES = 6
+
+
+class CLIUnavailable(RuntimeError):
+    """CLI 子进程起不来或已退出：投递以失败（可重试）上报，而不是假装注入成功（组长 R-B12-CODEX-PKG 第 2 条）。"""
+
+
+def redact_tail(lines) -> str:
+    out = []
+    for ln in lines:
+        ln = _SECRET_RE.sub("<redacted>", ln)
+        out.append(ln[:200])
+    return " | ".join(out)
 CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 BRACKETED_PASTE_START = "\x1b[200~"
 BRACKETED_PASTE_END = "\x1b[201~"
@@ -93,18 +109,36 @@ class CLIAdapter:
         self.transcript: TranscriptTailer | None = None
         self.launch_attempts = 0
         self.last_launch_error = ""
+        self.output_tail: deque[str] = deque(maxlen=EXIT_TAIL_LINES)  # 最近几行屏幕输出（退出时打日志用）
+        self.last_exit = ""  # 最近一次子进程退出的「code=… tail=…」
+        # 启动期就退出的退避：连续退出 n 次后 min(2^n, 60) 秒内不再重起（mirror／终端循环会反复调 start()，
+        # 不退避就是每两三秒起一次、刷一屏日志）。成功就绪即清零。
+        self.exit_streak = 0
+        self.start_backoff_until = 0.0
+
+    def _child_gone(self) -> bool:
+        """PTY 模式下子进程已退出（tmux 模式不在此判）。"""
+        return self.launch_mode != "tmux" and self.child is not None and not self.child.isalive()
 
     def start(self) -> bool:
+        # 就绪标志只在子进程还活着时才算数：原先 ready 一经置位就直接返回真，子进程早退后仍被当成可注入
+        # （B12：Codex 打一屏就退出，三次注入写进死进程、142 秒后才以「注入未被接收」收场，全程无日志）。
+        if self.ready.is_set() and self._child_gone():
+            self._note_exit()
         if self.ready.is_set():
             return True
         # 快路径：子进程已在跑就直接算成功（不抢锁，避免被 ready 等待长期占锁而阻塞其它调用）
         if self.launch_mode != "tmux" and self.child is not None and self.child.isalive():
             return True
         with self._start_lock:
+            if self.ready.is_set() and self._child_gone():
+                self._note_exit()
             if self.ready.is_set():
                 return True
             if self.launch_mode != "tmux" and self.child is not None and self.child.isalive():
                 return True
+            if time.time() < self.start_backoff_until:
+                return False  # 退避中：不重起、不刷日志；原因仍在 last_launch_error
             self.launch_attempts += 1
             try:
                 if self.launch_mode == "tmux":
@@ -117,11 +151,15 @@ class CLIAdapter:
                 # PTY 模式：子进程可能已起来只是没到 ready，别清空——留给终端转发用
                 if self.launch_mode == "tmux" or self.child is None or not self.child.isalive():
                     self.ready.clear()
+                    if self._child_gone():
+                        self.exit_streak += 1
+                        self.start_backoff_until = time.time() + min(2 ** self.exit_streak, 60)
                     return False
                 print("[cli] child is alive though not 'ready'; keeping it for terminal streaming", flush=True)
                 return True
             if self.ready.is_set():
                 self.last_launch_error = ""
+                self.exit_streak = 0
                 return True
             return self.launch_mode != "tmux" and self.child is not None and self.child.isalive()
 
@@ -131,6 +169,9 @@ class CLIAdapter:
                 return
             self.child = None
         self.started_at = time.time()
+        if not self.stopping.is_set():
+            self.closed.clear()
+        self.output_tail.clear()
         self.child = pexpect.spawn(
             self.command[0],
             self.command[1:],
@@ -145,6 +186,10 @@ class CLIAdapter:
         self.reader.start()
         deadline = time.time() + self.cfg.cli_ready_timeout
         while time.time() < deadline:
+            if self._child_gone():
+                # 等就绪期间就退出：不再等满 cli_ready_timeout，立刻带退出码与屏幕尾巴报出
+                self._note_exit()
+                raise RuntimeError(f"CLI exited during startup: {self.last_exit}")
             if self.ready.is_set() and self.is_idle():
                 return
             time.sleep(0.1)
@@ -193,6 +238,9 @@ class CLIAdapter:
         raise RuntimeError(f"CLI did not become ready in tmux {self.tmux_session}: {shlex.join(self.command)}")
 
     def is_idle(self) -> bool:
+        # 子进程已退出：不算「忙」——让投递走到 handle_delivery 以失败上报，而不是永远回 busy
+        if self._child_gone():
+            return True
         if self.last_output_at <= 0:
             return False
         return time.time() - self.last_output_at >= self.cfg.cli_settle_seconds
@@ -212,7 +260,11 @@ class CLIAdapter:
             pass
 
     def handle(self, env: dict) -> str:
-        return self.handle_delivery(env, None)
+        # 实时（非持久）路径：起不来就把原因作为回复文字给出（与原行为同）；持久投递走 handle_delivery，失败以异常上报。
+        try:
+            return self.handle_delivery(env, None)
+        except CLIUnavailable as exc:
+            return str(exc)
 
     def handle_delivery(self, env: dict, on_injected=None) -> str:
         for attempt in range(max(1, self.cfg.cli_launch_retries)):
@@ -221,10 +273,12 @@ class CLIAdapter:
             if attempt + 1 < max(1, self.cfg.cli_launch_retries):
                 time.sleep(1.0)
         else:
-            return self.not_ready_message()
+            raise CLIUnavailable(self.not_ready_message())
         body = str(env.get("body") or "")
-        if not self.ready.wait(0.1):
-            return self.not_ready_message()
+        if not self.ready.wait(0.1) or self._child_gone():
+            if self._child_gone():
+                self._note_exit()
+            raise CLIUnavailable(self.not_ready_message())
         if self.profile.output_source == "transcript" and self.transcript is None:
             self.transcript = locate_transcript(
                 self.cli_name,
@@ -285,8 +339,36 @@ class CLIAdapter:
                 return
 
     def not_ready_message(self) -> str:
-        reason = self.last_launch_error or "启动超时"
+        reason = self.last_launch_error or (f"CLI 已退出：{self.last_exit}" if self.last_exit else "启动超时")
         return f"（CLI未就绪：{reason}；sessionHelper仍在线，稍后可重试）"
+
+    def _note_exit(self) -> None:
+        """记一次子进程退出：打「[cli] exited code=… tail=…」并清就绪（同一子进程只记一次）。"""
+        child = self.child
+        if child is None or getattr(child, "_sh_exit_logged", False):
+            self.ready.clear()
+            return
+        child._sh_exit_logged = True
+        # 子进程退出得快时读线程可能还在 startup_grace 里没读过：把 PTY 里剩下的输出读干净再取尾巴
+        for _ in range(64):
+            try:
+                raw = child.read_nonblocking(size=4096, timeout=0.05)
+            except Exception:  # noqa: BLE001  (EOF／TIMEOUT／已关闭)
+                break
+            if not raw:
+                break
+            self.terminal_q.put(raw)
+            for ln in clean_output(raw).splitlines():
+                if ln.strip():
+                    self.output_tail.append(ln.strip())
+        try:
+            child.isalive()  # 回收退出状态
+        except Exception:  # noqa: BLE001
+            pass
+        code = child.exitstatus if child.exitstatus is not None else f"signal:{child.signalstatus}"
+        self.last_exit = f"code={code} tail={redact_tail(self.output_tail)!r}"
+        self.ready.clear()
+        print(f"[cli] exited {self.last_exit}", flush=True)
 
     def inject_text(self, text: str) -> None:
         self.wait_for_web_idle()
@@ -537,10 +619,13 @@ class CLIAdapter:
             except pexpect.TIMEOUT:
                 continue
             except pexpect.EOF:
-                # 真关闭 / 非 PTY 模式：照旧退出
-                if self.stopping.is_set() or self.profile.output_source != "pty":
+                if self.stopping.is_set():
                     self.closed.set()
                     return
+                # 子进程退出（任何原因）：先留痕再说（原先 transcript 档在此静默结束）
+                self._note_exit()
+                if self.profile.output_source != "pty":
+                    return  # 本读线程结束；下次 start() 会重起子进程与读线程
                 # PTY 模式下 CLI 子进程退出（多为自动更新/崩溃）→ 自动重生，拿到新版本、会话不断
                 if not self._respawn_child():
                     self.closed.set()
@@ -551,6 +636,9 @@ class CLIAdapter:
             cleaned = clean_output(raw)
             if not cleaned:
                 continue
+            for ln in cleaned.splitlines():
+                if ln.strip():
+                    self.output_tail.append(ln.strip())
             self.last_output_at = time.time()
             buf += "\n" + cleaned
             if any(pat.lower() in cleaned.lower() for pat in self.profile.ready_patterns):
