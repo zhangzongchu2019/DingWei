@@ -9,8 +9,11 @@ package hosted
 // （销毁中止——不跳过备份）。
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
@@ -26,6 +29,9 @@ import (
 
 // BackupTTL 备份保留期（业主 8971bddf：14 天到期删除）。
 const BackupTTL = 14 * 24 * time.Hour
+
+// BackupSHA256Trailer 节点回传流的 sha256（hex），随 HTTP 请求 trailer 送来（与 nodeagent 同名）。
+const BackupSHA256Trailer = "X-Backup-Sha256"
 
 // HubBackuper 实现 VolumeBackuper：指挥节点回传席位卷并落 Hub 本地（dw 的 /data 下）。
 type HubBackuper struct {
@@ -72,12 +78,15 @@ func (b *HubBackuper) BackupSeatVolume(ctx context.Context, nodeID, seatID strin
 	}
 	bk, err := b.st.GetBackup(ctx, id)
 	if err != nil {
+		_ = b.st.FailBackup(ctx, id)
 		return "", err
 	}
 	if bk.State != "complete" || bk.SizeBytes <= 0 {
+		// 异常分支也清 pending（复验第四节）：不清的话这条记录之后仍会被 BackupHandler 当可写目标收一次迟到的上传。
+		_ = b.st.FailBackup(ctx, id)
 		return "", fmt.Errorf("备份回传未完成（state=%s size=%d）", bk.State, bk.SizeBytes)
 	}
-	// 备份件须可读、内容可读校验（D5）：tar 完整性由接收端 gzip 解码保证；此处复核文件在且非空
+	// 落盘件在、非空；内容的完整性已在 BackupHandler 落盘时核过（sha256 对上、gzip＋tar 头到尾解得开）才会 complete。
 	fi, err := os.Stat(bk.Path)
 	if err != nil || fi.Size() == 0 {
 		return "", fmt.Errorf("备份件缺失或为空: %v", err)
@@ -110,11 +119,24 @@ func (b *HubBackuper) BackupHandler() http.Handler {
 			http.Error(w, `{"error":"backup_store_unavailable"}`, http.StatusInternalServerError)
 			return
 		}
-		n, werr := io.Copy(f, io.LimitReader(r.Body, 32<<30)) // 上限 32GiB 防爆
+		h := sha256.New()
+		n, werr := io.Copy(io.MultiWriter(f, h), io.LimitReader(r.Body, 32<<30)) // 上限 32GiB 防爆；落盘同步算 sha256
 		cerr := f.Close()
 		if werr != nil || cerr != nil {
 			os.Remove(tmp)
 			http.Error(w, `{"error":"backup_write_failed"}`, http.StatusInternalServerError)
+			return
+		}
+		// 🔴 完整性两道（复验缺陷二；台账 lead-g4-t53-review 🔴2），任一不过 ⇒ 删临时件、记录作废、422 拒收：
+		//   ① 节点边打边算的 sha256（请求 trailer，读完 body 才有）必须与 Hub 落盘同步算的一致 —— 缺了也拒；
+		//   ② 落盘件 gzip＋tar 从头到尾解得开 —— 非 gzip、截断、tar 坏块都在这里现形。
+		// 原先只 os.Stat 看非空：非 gzip、截断 gzip 都被当成功，随后销毁容器与卷，数据就丢了。
+		if got, want := hex.EncodeToString(h.Sum(nil)), strings.ToLower(strings.TrimSpace(r.Trailer.Get(BackupSHA256Trailer))); want == "" || got != want {
+			b.rejectBackup(w, r.Context(), id, tmp, "backup_checksum_mismatch")
+			return
+		}
+		if err := verifyTarGz(tmp); err != nil {
+			b.rejectBackup(w, r.Context(), id, tmp, "backup_corrupt")
 			return
 		}
 		if err := os.Rename(tmp, bk.Path); err != nil {
@@ -129,6 +151,52 @@ func (b *HubBackuper) BackupHandler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"ok":true}`))
 	})
+}
+
+// rejectBackup 完整性不过：删临时件、作废记录（迟到的重传也进不来），回 422。
+func (b *HubBackuper) rejectBackup(w http.ResponseWriter, ctx context.Context, id, tmp, code string) {
+	_ = os.Remove(tmp)
+	_ = b.st.FailBackup(ctx, id)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnprocessableEntity)
+	_, _ = w.Write([]byte(`{"error":"` + code + `"}`))
+}
+
+// verifyTarGz 落盘件头到尾解一遍：gzip 流完整（含尾部校验）、tar 每个条目读得完、正常结束。
+func verifyTarGz(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		return err
+	}
+	defer gz.Close()
+	tr := tar.NewReader(gz)
+	entries := 0
+	for {
+		_, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(io.Discard, tr); err != nil {
+			return err
+		}
+		entries++
+	}
+	if entries == 0 {
+		return errors.New("备份件里一个条目都没有")
+	}
+	// tar 结束之后 gzip 也必须读到干净的结尾（含 CRC 与长度校验）
+	if _, err := io.Copy(io.Discard, gz); err != nil {
+		return err
+	}
+	return nil
 }
 
 // SweepExpiredBackups 到期删除（14 天）：删文件＋置 expired。由 Hub 侧周期任务驱动。
