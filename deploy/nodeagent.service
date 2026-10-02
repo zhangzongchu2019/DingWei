@@ -32,6 +32,9 @@ TimeoutStopSec=30s
 
 # Hardening。可写面＝席位目录根＋台账/凭据所在目录（部署侧按实配改）；
 # 备份不落节点盘（流式回传 Hub），故不含备份路径。
+# ProtectSystem=full 只把 /usr、/boot、/efi 置只读——/run 与 /var 不受影响，
+# 独立 dockerd 的 socket（NODEAGENT_DOCKER_SOCK 所指）照常可连；若 socket 被放到
+# 其它路径，装机时核一次可达性（socket 不可连会以权限错误起不来）。
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full

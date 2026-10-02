@@ -7,6 +7,8 @@
 #   DW_G4_MASTER_KEY_FILE（开关：不设＝托管面不注册）· DW_G4_COMBOS_FILE · DW_G4_IMAGES_FILE
 #   · DW_G4_BACKUP_DIR（默认 /data/dingwei-newplat/backups/hosted，须在 ReadWritePaths 里）
 # 值全部走 EnvironmentFile（{{WORKDIR}}/.env），本文件不放任何生产值。
+# 🔴 hosted-admin 是子命令不是服务、不进本 unit；它每次运行都会对目标库施加迁移账本
+# ＋ ApplySchema（hosted_admin.go:15-16,43-45）⇒ 只在维护窗口内跑，并记录谁跑的。
 Description=WorkPulse Hub (new platform, DW_NEWPLAT=1)
 After=network-online.target
 Wants=network-online.target
