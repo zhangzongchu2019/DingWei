@@ -756,6 +756,42 @@ func TestParseLocalImagesNormalizeAndReject(t *testing.T) {
 	}
 }
 
+// 长度闸 fail-closed：64 位以外的都拒，重点钉 65 位上界
+// （复验存活刀 P3：长度判断改成「< 64」时 65 位会漏过，本格必须红）。
+func TestParseLocalImagesRejectsWrongLength(t *testing.T) {
+	id := strings.Repeat("ab", 32) // 64 位基准
+	for _, bad := range []string{
+		id[:63],              // 63 位
+		id + "f",             // 65 位（P3 存活刀的漏口）
+		"sha256:" + id + "f", // 带前缀的 65 位（剥前缀后仍须拒）
+	} {
+		if _, err := ParseLocalImages(bad); err == nil || !strings.Contains(err.Error(), "NODEAGENT_LOCAL_IMAGES") {
+			t.Fatalf("%q（剥前缀后 %d 位）必须拒且报键名: %v", bad, len(strings.TrimPrefix(bad, "sha256:")), err)
+		}
+	}
+}
+
+// 坏白名单必须向上报错让调用方拒启
+// （复验存活刀 P5：RegisterDockerHandlers 若吞掉 ParseLocalImages 的错误返回 nil，本格必须红）。
+func TestRegisterDockerHandlersRejectsBadAllowlist(t *testing.T) {
+	f := newFakeDocker(t)
+	newAgent := func() *Agent { return &Agent{handlers: map[string]Handler{}} }
+	register := func(csv string) error {
+		return newAgent().RegisterDockerHandlers(
+			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+			"http://172.30.68.1:11080", "wss://hub.test", csv,
+		)
+	}
+	if err := register(strings.Repeat("ab", 32) + "f"); err == nil || !strings.Contains(err.Error(), "NODEAGENT_LOCAL_IMAGES") {
+		t.Fatalf("坏白名单（65 位）必须返回错误并点名键名: %v", err)
+	}
+	// 对照：好白名单注册成功——错误路径不是「逢调必错」
+	if err := register(strings.Repeat("ab", 32)); err != nil {
+		t.Fatalf("好白名单应注册成功: %v", err)
+	}
+}
+
 // 带前缀的白名单配置（106 的失误形态）经归一后，local 形态闸照常放行登记镜像。
 func TestLocalImageGateWithPrefixedAllowlist(t *testing.T) {
 	f := newFakeDocker(t)
