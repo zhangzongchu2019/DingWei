@@ -202,15 +202,35 @@ func run(port uint, listen, version, cacheRoot, runtime, db, user, password stri
 		"fsync":              "on",
 	})
 
-	pg := embeddedpostgres.NewDatabase(cfg)
+	// 🔴 换端口必须【重建】一个 Database 实例,不能拿同一个实例重试:
+	// embeddedpostgres 的 Start() 第一行就判 ep.started,第二次只会拿到 ErrServerAlreadyStarted
+	// —— 那会被读成"库起来了",比原来的直接失败更坏。
+	var pg *embeddedpostgres.EmbeddedPostgres
+	startOnce := func(p uint) error {
+		pg = embeddedpostgres.NewDatabase(cfg.Port(uint32(p)))
+		return pg.Start()
+	}
 
 	// 这三个键在 Start() 之前就报出去(理由见文件头注):失败路径上助手也要能核对残留。
 	emit("PORT", fmt.Sprint(port))
 	emit("RUNTIME", runtime)
 	emit("LOGDIR", logDir)
 
+	// 🔴 START_SECONDS 覆盖【全部尝试】的耗时,不是最后一次的:这个数的意思是
+	// "拿到一个能用的库花了多久",重试真发生过就该体现出来(PORT_RETRY 同时也在,不会误读)。
 	startedAt := time.Now()
-	if err := pg.Start(); err != nil {
+	// 端口被抢时换端口重试(上限 portAttempts;只认那两种签名,别的失败立刻原样交回 ——
+	// 判据与理由见 portretry.go)。
+	// 🔴 notify 里【重报一次 PORT】:消费方 internal/store/pgtest 的协议解析是同键后写覆盖
+	// (pgtest.go 的 p.kv[key] = value),故它最终读到的是成功那次的端口;
+	// DSN 本来就在起库成功之后才 emit,两处不会打架。
+	port, err = startWithPortRetry(port, portAttempts, startOnce,
+		func() (uint, error) { return pickFreePort(listen) },
+		func(from, to uint) {
+			emit("PORT_RETRY", fmt.Sprintf("%d->%d", from, to))
+			emit("PORT", fmt.Sprint(to))
+		})
+	if err != nil {
 		if ownRuntime {
 			_ = os.RemoveAll(runtime)
 		}
@@ -374,8 +394,12 @@ func pgLogInDir(dir string) bool {
 
 // pickFreePort 向内核要一个空闲端口。
 //
-// ⚠️ 取到后要先关掉监听再交给 PG,这中间存在【理论上的】抢占窗口。
-// 不做重试:端口被抢时 PG 启动会直接失败并报端口号,比静默重试更容易定位。
+// ⚠️ 取到后要先关掉监听再交给 PG,这中间存在抢占窗口(实测会撞上,不是"理论上的":
+// 两个 pgtest 消费方并行时 port 46399 被抢,红的是【与端口无关的用例】)。
+// 🔴 本函数【自己不重试】—— 重试在调用侧 startWithPortRetry,理由是重试要能换端口、
+// 要能出声(PORT_RETRY)、还要能分辨"端口被抢"与"真失败",那三件都不是挑端口这一步的职责。
+// 原先这里写的"不做重试…比静默重试更容易定位"已被推翻:静默由 PORT_RETRY 解决,
+// 而"让无关用例红"比"慢三轮"坏得多(排障的人会去怀疑自己刚改的代码)。详见 portretry.go 头注。
 func pickFreePort(listen string) (uint, error) {
 	l, err := net.Listen("tcp", net.JoinHostPort(listen, "0"))
 	if err != nil {
