@@ -567,7 +567,7 @@ func TestControlPlaneP3DecomposeChildrenAggregateAndNotify(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "子任务 p3-parent-sub-01 done 且结果「需求完成」、父任务 p3-parent 进入 awaiting_children", func() bool {
 		child, err := db.GetControlTask(ctx, "p3-parent-sub-01")
 		if err != nil || child == nil || child.Status != "done" || child.Result != "需求完成" {
 			return false
@@ -584,7 +584,7 @@ func TestControlPlaneP3DecomposeChildrenAggregateAndNotify(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "父任务 p3-parent done、intent=aggregate、结果含「综合回复」", func() bool {
 		parent, err = db.GetControlTask(ctx, "p3-parent")
 		return err == nil && parent != nil && parent.Status == "done" && parent.Intent == "aggregate" && strings.Contains(parent.Result, "综合回复")
 	})
@@ -2052,7 +2052,7 @@ func TestAgentNetworkSkillPushAckAndSessionSelectorEnvelope(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "会话 home 已标记 skillInstalled（收到技能安装确认）", func() bool {
 		hub.mu.Lock()
 		c := hub.sessionClients[key.ID][homeName]
 		hub.mu.Unlock()
@@ -3216,7 +3216,7 @@ func TestSessionEndpointConnSeqAndLastSeenOnReconnectAndMessage(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, envelopeReadTimeout, func() bool {
+	waitFor(t, envelopeReadTimeout, "会话端点 LastSeenAt 晚于上次读数 oldSeen", func() bool {
 		endpoints, err := db.ListSessionEndpoints(ctx)
 		if err != nil || len(endpoints) != 1 {
 			return false
@@ -4095,6 +4095,13 @@ func TestSessionChurnDoesNotAffectOtherSessionLookupAndRoute(t *testing.T) {
 	<-churnDone
 }
 
+// 飞书同步的出站要先过 Hub 的聚合窗口（hub.go queueFeishuSyncItem 里 time.AfterFunc(time.Second, …)）才入队，
+// 通用的 envelopeReadTimeout（默认 2s）里有一半被窗口吃掉，负载高时余量不够（组长 lead-m8-flake-findings 测试侧 ①）。
+// 这一格的等待预算单独给：窗口＋通用预算。判据不变。
+const feishuSyncAggregationWindow = time.Second
+
+var feishuSyncWaitBudget = feishuSyncAggregationWindow + envelopeReadTimeout
+
 func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
 	hub.Outbound = bus.NewDBQueue(db, model.DirectionOut)
@@ -4133,7 +4140,7 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	waitFor(t, envelopeReadTimeout, func() bool {
+	waitFor(t, envelopeReadTimeout, "recentTerminal 缓存恰 10 条且首条 line-03、末条 line-12", func() bool {
 		hub.mu.Lock()
 		defer hub.mu.Unlock()
 		items := hub.recentTerminal[terminalKey(key.ID, homeName)]
@@ -4152,7 +4159,7 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 	}
 	backfillLines := map[string]bool{}
 	for i := 0; i < 10; i++ {
-		msg := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+		msg := waitOutboundWithin(t, ctx, hub.Outbound.(*bus.DBQueue), feishuSyncWaitBudget)
 		if msg == nil || msg.ChatEntityID != "dev:personal:ou_alice" {
 			t.Fatalf("backfill msg=%+v", msg)
 		}
@@ -4204,7 +4211,7 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	live := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	live := waitOutboundWithin(t, ctx, hub.Outbound.(*bus.DBQueue), feishuSyncWaitBudget)
 	if live == nil {
 		t.Fatal("missing live sync message")
 	}
@@ -4229,7 +4236,7 @@ func TestFeishuSyncBackfillsRecentTerminalAndStreamsUTC(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	toolSummary := waitOutbound(t, ctx, hub.Outbound.(*bus.DBQueue))
+	toolSummary := waitOutboundWithin(t, ctx, hub.Outbound.(*bus.DBQueue), feishuSyncWaitBudget)
 	if toolSummary == nil {
 		t.Fatal("missing turn-level tool summary")
 	}
@@ -4407,7 +4414,7 @@ func TestTerminalViewResizeForwardsToSessionAndCachesSize(t *testing.T) {
 	if metaInt(env.Meta, "cols") != 132 || metaInt(env.Meta, "rows") != 43 {
 		t.Fatalf("resize meta=%+v", env.Meta)
 	}
-	waitFor(t, envelopeReadTimeout, func() bool {
+	waitFor(t, envelopeReadTimeout, "终端尺寸记录为 132x43", func() bool {
 		hub.mu.Lock()
 		defer hub.mu.Unlock()
 		return hub.terminalLastSize[terminalKey(key.ID, "home")] == [2]int{132, 43}
@@ -4480,7 +4487,7 @@ func TestTerminalUnlockAllowsSameOwnerAccountWithoutExactKeyBinding(t *testing.T
 	if err != nil || !handled || !strings.Contains(result.Reply, "已解锁输入") {
 		t.Fatalf("alice unlock result=%+v handled=%v err=%v", result, handled, err)
 	}
-	waitFor(t, envelopeReadTimeout, func() bool {
+	waitFor(t, envelopeReadTimeout, "终端已登记 writerPage 与 writerToken", func() bool {
 		hub.mu.Lock()
 		defer hub.mu.Unlock()
 		st := hub.terminals[terminalKey(key.ID, registeredName)]
@@ -5277,7 +5284,7 @@ func TestReliableSessionDeliveryWaitsForProcessedAck(t *testing.T) {
 		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "投递记录 deliveryID 进入 processed", func() bool {
 		record, _ = db.GetSessionDelivery(ctx, deliveryID)
 		return record != nil && record.State == "processed"
 	})
@@ -5310,14 +5317,14 @@ func TestReliableSessionDeliveryQueuesWhileDisconnectedAndDrainsOnceAfterReconne
 		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "会话 home 端点已登记 delivery_ack 能力", func() bool {
 		enabled, found, _ := db.SessionEndpointDeliveryACK(ctx, key.ID, "home")
 		return found && enabled
 	})
 	if err := first.Close(websocket.StatusNormalClosure, "offline-window"); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "会话 home 已从 sessionClients 下线", func() bool {
 		hub.mu.Lock()
 		defer hub.mu.Unlock()
 		return hub.sessionClients[key.ID] == nil || hub.sessionClients[key.ID]["home"] == nil
@@ -5347,7 +5354,7 @@ func TestReliableSessionDeliveryQueuesWhileDisconnectedAndDrainsOnceAfterReconne
 		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "processed"}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "投递记录 deliveryID processed 且 attempts=1", func() bool {
 		record, _ := db.GetSessionDelivery(ctx, deliveryID)
 		return record != nil && record.State == "processed" && record.Attempts == 1
 	})
@@ -5389,7 +5396,7 @@ func TestDeliveredLeaseIsReleasedOnDisconnectAndFIFOResumesAfterReconnect(t *tes
 		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "会话 home 端点已登记 delivery_ack 能力", func() bool {
 		enabled, found, _ := db.SessionEndpointDeliveryACK(ctx, key.ID, "home")
 		return found && enabled
 	})
@@ -5409,7 +5416,7 @@ func TestDeliveredLeaseIsReleasedOnDisconnectAndFIFOResumesAfterReconnect(t *tes
 		Meta: map[string]any{"type": "delivery_ack", "delivery_id": firstID, "state": "delivered"}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "首条投递 delivered 且下次重试在一分钟以后", func() bool {
 		record, _ := db.GetSessionDelivery(ctx, firstID)
 		return record != nil && record.State == "delivered" &&
 			record.NextAttemptAt.After(time.Now().UTC().Add(time.Minute))
@@ -5417,7 +5424,7 @@ func TestDeliveredLeaseIsReleasedOnDisconnectAndFIFOResumesAfterReconnect(t *tes
 	if err := firstConn.Close(websocket.StatusNormalClosure, "drop-before-processed"); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "首条投递回到 queued 且已到重试时刻", func() bool {
 		record, _ := db.GetSessionDelivery(ctx, firstID)
 		return record != nil && record.State == "queued" &&
 			!record.NextAttemptAt.After(time.Now().UTC())
@@ -5451,7 +5458,7 @@ func TestDeliveredLeaseIsReleasedOnDisconnectAndFIFOResumesAfterReconnect(t *tes
 		Meta: map[string]any{"type": "delivery_ack", "delivery_id": secondID, "state": "processed"}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "两条投递都 processed 且 attempts 各为 1", func() bool {
 		firstRecord, _ := db.GetSessionDelivery(ctx, firstID)
 		secondRecord, _ := db.GetSessionDelivery(ctx, secondID)
 		return firstRecord != nil && firstRecord.State == "processed" && firstRecord.Attempts == 1 &&
@@ -5498,7 +5505,7 @@ func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplic
 		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "会话 home 在线且支持 delivery_ack", func() bool {
 		hub.mu.Lock()
 		c := hub.sessionClients[key.ID]["home"]
 		hub.mu.Unlock()
@@ -5565,7 +5572,7 @@ func TestSessionToSessionReliableAdmissionPublishesBothEventRings(t *testing.T) 
 		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "会话 target 在线且支持 delivery_ack", func() bool {
 		hub.mu.Lock()
 		c := hub.sessionClients[key.ID]["target"]
 		hub.mu.Unlock()
@@ -5697,7 +5704,7 @@ func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T
 		Meta: map[string]any{"type": "delivery_ack", "delivery_id": deliveryID, "state": "busy", "reason": "cli_busy", "retryable": true}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "投递记录 deliveryID 回到 queued、attempts=0、last_error=cli_busy", func() bool {
 		record, _ = db.GetSessionDelivery(ctx, deliveryID)
 		return record != nil && record.State == "queued" && record.Attempts == 0 && record.LastError == "cli_busy"
 	})
@@ -6442,7 +6449,9 @@ func waitEndpointInactive(t *testing.T, ctx context.Context, db *store.SQLite, k
 	}
 }
 
-func waitFor(t *testing.T, timeout time.Duration, ok func() bool) {
+// waitFor 轮询到 ok 为真或超时。what 是等待条件的描述，超时时写进报错正文
+// （组长 lead-m8-flake-findings 测试侧 ③：偶发红只看到「condition not met」时无从知道等的是哪一条）。
+func waitFor(t *testing.T, timeout time.Duration, what string, ok func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
@@ -6451,7 +6460,7 @@ func waitFor(t *testing.T, timeout time.Duration, ok func() bool) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	t.Fatal("condition not met before timeout")
+	t.Fatalf("condition not met before timeout (%s): %s", timeout, what)
 }
 
 func waitSessionOnline(t *testing.T, hub *Hub, keyID, sessionName string) {
@@ -6541,7 +6550,13 @@ func hasUTCPrefix(text string) bool {
 
 func waitOutbound(t *testing.T, ctx context.Context, q *bus.DBQueue) *model.Message {
 	t.Helper()
-	deadline := time.Now().Add(envelopeReadTimeout)
+	return waitOutboundWithin(t, ctx, q, envelopeReadTimeout)
+}
+
+// waitOutboundWithin 同 waitOutbound，等待预算由调用方单独给。
+func waitOutboundWithin(t *testing.T, ctx context.Context, q *bus.DBQueue, budget time.Duration) *model.Message {
+	t.Helper()
+	deadline := time.Now().Add(budget)
 	for time.Now().Before(deadline) {
 		msg, err := q.Dequeue(ctx)
 		if err != nil {
@@ -7063,7 +7078,7 @@ func TestViewServiceFullChainIntegration(t *testing.T) {
 		Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, time.Second, func() bool {
+	waitFor(t, time.Second, "会话 home 在线且支持 delivery_ack", func() bool {
 		hub.mu.Lock()
 		c := hub.sessionClients[keyID]["home"]
 		hub.mu.Unlock()
