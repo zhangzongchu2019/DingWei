@@ -202,9 +202,22 @@ func run(port uint, listen, version, cacheRoot, runtime, db, user, password stri
 		"fsync":              "on",
 	})
 
-	// 🔴 换端口必须【重建】一个 Database 实例,不能拿同一个实例重试:
-	// embeddedpostgres 的 Start() 第一行就判 ep.started,第二次只会拿到 ErrServerAlreadyStarted
-	// —— 那会被读成"库起来了",比原来的直接失败更坏。
+	// 🔴 换端口必须【重建】一个 Database 实例,不能拿同一个实例重试 —— 但理由【不是】started 标志:
+	// 端口只在构造时进实例:NewDatabase(config) 把 Config 存进私有字段 config 的【副本】
+	// (embedded_postgres.go:36,44,57),而 Config.Port 是值接收者、返回一个新 Config(config.go:57),
+	// *EmbeddedPostgres 又只导出 Start/Stop ⇒ 已建好的实例【没有任何改端口的口子】,换号只能重新 NewDatabase。
+	//
+	// 🔴 订正(复验 R-G2-REVIEW-QUEUE-50 ② 指出;已在 v1.34.0 源码逐行核过,行号均指该版):
+	// 旧注写「Start() 第一行就判 ep.started,第二次只会拿到 ErrServerAlreadyStarted」—— 不成立。
+	// started 只在【成功路径】置 true(:127,在 startPostgres :119 与日志 flush 之后),
+	// 而两条可重试的端口签名都在 :127 之前就返回了:① ensurePortAvailable :74(文案在 :247)、
+	// ② pg_ctl 起失败 :119(错误里包着 PG 日志原文)。这两种失败时 started 仍是 false,
+	// 重用同一实例并不会拿到 ErrServerAlreadyStarted。
+	// (唯一「出错却把 started 留在 true」的是 :130 createDatabase 与 :139 healthCheck 两条失败路径,
+	//  它们都不是端口签名、按 isPortTaken 的窄判据不重试 ⇒ 永远走不到第二次 Start。)
+	//
+	// 🔴 顺带一条对签名②有用的事实:Start() 每次都先 os.RemoveAll(ep.config.runtimePath)(:95)
+	// 再重新解压二进制,所以每次重试天然从干净目录开始,不会捡上一次「起到一半」的残留。
 	var pg *embeddedpostgres.EmbeddedPostgres
 	startOnce := func(p uint) error {
 		pg = embeddedpostgres.NewDatabase(cfg.Port(uint32(p)))

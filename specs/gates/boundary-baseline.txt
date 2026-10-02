@@ -78,7 +78,8 @@ pending:hosted 39  # 调用点单位（htx() 与 dtx/ftx 同型）
 #    （闸按文本计数，注释与测试都算，
 #    本席在 G3 叠复验里已报过这条口径；tenant.go 又故意把 SystemCtx 写成便于 grep 清点的样子，
 #    两者相加就是「注释也进计数」——不藏，逐处列明）：
-#      · 生产 5：datad/pgstore.go:123（建表）· :163（Ping）· fanout/spool.go:103（五表一次建齐）
+#      · 生产 5：datad/pgstore.go:123（建表）· :163（Ping）· fanout/spool.go:103（CheckSchema 读系统
+#                目录核对五表；原为五表建表 DDL，R-G2-LEDGER-DOMAIN 起建表归账本 0400，本处只读不建）
 #               · identity/pgstore.go:35（身份存储；组长已认可 12→13，ruling-2026-10-01T152239Z）
 #               · store/migrate/migrate.go:332（迁移账本：建账表、读账、每条一个事务地应用 DDL。
 #                 DDL 与账本表本就无租户语义，与 datad/pgstore.go:123 同型）
@@ -87,10 +88,14 @@ pending:hosted 39  # 调用点单位（htx() 与 dtx/ftx 同型）
 #               · store/migrate/migrate.go:277 · store/migrate/migrate_test.go:54（后者写的正是
 #                 「用例里故意不用系统上下文，免得把生产侧的评审面数搅浑」）
 #    🔴 16 → 15 减少的那一处 ＝ 原 fanout/inspool.go:29（initInbound 建入站三表的 DDL）。
-#       initInbound 已删除，入站三表的建表语句搬进 pgschema.sql，由 spool.go:68 那一处统一施加
-#       ⇒ 不是「评审后认定某处不再需要系统上下文」，而是【两处 DDL 合成一处】。
-#       fanout/spool.go 的行号由 61 变 68、注释由 40 变 49，是同一次改动带来的位移，不是新增
-#       （合并 main 后再位移为 103 与 55 —— 上面四处指针已按合并树实数改过，数值一个没动）。
+#       initInbound 已删除，入站三表的建表语句搬进 pgschema.sql；而 pgschema.sql 自 R-G2-LEDGER-DOMAIN
+#       起由【账本 0400】施加（cmd/feishu-fanout 的 openSpoolPool 里 migrate 那一步），fanout 包自己
+#       一条 DDL 都不发。🔴 故不是「两处 DDL 合成一处」（那是账本化之前的说法，已过期，
+#       复验方 tosonnet50ts 2026-10-02 指出），而是【两处 DDL 都离开 fanout 包，归到账本那一处
+#       系统上下文（store/migrate/migrate.go:332）名下】。
+#       fanout 包里留下的那一处（spool.go:103）性质也变了：由建表 DDL 变成 CheckSchema 的
+#       to_regclass 只读核对 —— 处数不变，故本键只减 1，不是减 2。
+#       行号由 61 变 103、注释由 40 变 55，是同两次改动带来的位移，不是新增（数值一个没动）。
 #    🔴 归还路径：SP7b 逐领域收口时，datad/fanout 那几处随各自领域归零；migrate 与 identity 那两处
 #       是【建表/迁移】本身，租户化不适用于它们，故它们的归还方式是「评审确认后长期保留」，
 #       不是改数字。若要下调本键，必须先说清哪一处真调用点消失了（本行已按此说清）。
