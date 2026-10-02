@@ -348,6 +348,21 @@ class DriverAdmissionCallbackTest(unittest.TestCase):
         self.assertTrue(admitted.wait(1))
         self.assertEqual(order, ["injected", "processed", "admitted"])
 
+    def test_duplicate_reacks_injected_and_releases_unadmitted_claim(self):
+        driver = FakeProtocolDriver()
+        adapter = self.make_adapter(driver)
+        first_injected = threading.Event()
+        adapter.handle_delivery(business_env("FIRST", eid="same"), first_injected.set)
+        self.assertTrue(first_injected.wait(1))
+        duplicate_calls = []
+        adapter.handle_delivery(
+            business_env("DUP", eid="same"),
+            lambda: duplicate_calls.append("injected"),
+            lambda: duplicate_calls.append("admitted"),
+            lambda: duplicate_calls.append("admission_failed"),
+        )
+        self.assertEqual(duplicate_calls, ["injected", "admission_failed"])
+
 
 class GuideRealAdapterBoundaryTest(unittest.TestCase):
     @staticmethod

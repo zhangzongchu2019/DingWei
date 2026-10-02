@@ -119,6 +119,11 @@ class DriverAdapter:
                 on_admission_failed()
             raise OverflowError(result.reason or "queue_full")
         if result.state == "duplicate":
+            # Preserve main's ACK semantics: a Hub redelivery may mean the
+            # previous injected ACK was lost, so acknowledge the duplicate
+            # again even though it creates no new model admission.
+            if on_injected is not None:
+                on_injected()
             if on_admission_failed is not None:
                 on_admission_failed()
             return ""
