@@ -331,7 +331,13 @@ class CLIAdapter:
         except CLIDeliveryFailed as exc:
             return str(exc)
 
-    def handle_delivery(self, env: dict, on_injected=None, on_admission_failed=None) -> str:
+    def handle_delivery(self, env: dict, on_injected=None, on_admitted=None, on_admission_failed=None) -> str:
+        def mark_admitted() -> None:
+            if on_injected is not None:
+                on_injected()
+            if on_admitted is not None:
+                on_admitted()
+
         for attempt in range(max(1, self.cfg.cli_launch_retries)):
             if self.start():
                 break
@@ -360,10 +366,9 @@ class CLIAdapter:
                     confirmer(body)
                 else:
                     self.inject_text(body)
-                if on_injected is not None:
-                    on_injected()
+                mark_admitted()
                 return ""
-            status, reply = self.inject_and_collect_transcript_reply(body, on_injected)
+            status, reply = self.inject_and_collect_transcript_reply(body, mark_admitted)
             if status == "ok" and reply:
                 return reply
             if status == "no_user":
@@ -373,8 +378,7 @@ class CLIAdapter:
         if self.profile.output_source == "opencode_db":
             injected_at = time.time()
             self.inject_text(body)
-            if on_injected is not None:
-                on_injected()
+            mark_admitted()
             if self.cfg.async_reply:
                 return ""
             status, reply = self.collect_opencode_db_reply(body, injected_at, self.cfg.cli_reply_wait)
@@ -387,8 +391,7 @@ class CLIAdapter:
             return "（答案超时：已确认 opencode user 轮落库，但未取到 assistant 回答）"
         self.discard_pending_output()
         self.inject_text(body)
-        if on_injected is not None:
-            on_injected()
+        mark_admitted()
         if self.cfg.async_reply:
             return ""
         chunks = self.collect_output(self.cfg.cli_reply_wait)

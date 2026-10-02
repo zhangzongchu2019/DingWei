@@ -750,11 +750,13 @@ class SessionHelper:
                         business_env["meta"] = dict(env.get("meta") or {})
                         business_env["body"] = guide_store.merge(guide_claim, str(env.get("body") or ""))
 
+                def injected() -> None:
+                    if on_injected is not None:
+                        on_injected()
+
                 def admitted() -> None:
                     if guide_claim is not None:
                         guide_store.consume(guide_claim)
-                    if on_injected is not None:
-                        on_injected()
 
                 def admission_failed() -> None:
                     if guide_claim is not None:
@@ -763,20 +765,22 @@ class SessionHelper:
                 delivery_handler = getattr(self.adapter, "handle_delivery", None)
                 if callable(delivery_handler):
                     parameters = inspect.signature(delivery_handler).parameters.values()
-                    supports_failure_callback = (
+                    supports_admission_callbacks = (
                         any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in parameters)
-                        or len(inspect.signature(delivery_handler).parameters) >= 3
+                        or len(inspect.signature(delivery_handler).parameters) >= 4
                     )
-                    if supports_failure_callback:
+                    if supports_admission_callbacks:
                         reply_body = await asyncio.to_thread(
-                            delivery_handler, business_env, admitted, admission_failed
+                            delivery_handler, business_env, injected, admitted, admission_failed
                         )
                     else:
                         # Compatibility for third-party/fixture adapters that
                         # implement the established (env, on_injected) shape.
-                        reply_body = await asyncio.to_thread(delivery_handler, business_env, admitted)
+                        reply_body = await asyncio.to_thread(delivery_handler, business_env, injected)
+                        admitted()
                 else:
                     reply_body = await asyncio.to_thread(self.adapter.handle, business_env)
+                    injected()
                     admitted()
         except Exception as exc:
             if guide_claim is not None:

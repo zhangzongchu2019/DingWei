@@ -103,7 +103,7 @@ class DriverAdapter:
     def handle(self, env: dict) -> str:
         return self.handle_delivery(env, None)
 
-    def handle_delivery(self, env: dict, on_injected=None, on_admission_failed=None) -> str:
+    def handle_delivery(self, env: dict, on_injected=None, on_admitted=None, on_admission_failed=None) -> str:
         body = str(env.get("body") or "")
         if not body:
             return ""
@@ -118,10 +118,16 @@ class DriverAdapter:
             if on_admission_failed is not None:
                 on_admission_failed()
             raise OverflowError(result.reason or "queue_full")
-        if result.state == "queued" and (on_injected is not None or on_admission_failed is not None):
-            self._admission_callbacks[result.command.delivery_id] = (on_injected, on_admission_failed)
+        if result.state == "duplicate":
+            if on_admission_failed is not None:
+                on_admission_failed()
+            return ""
+        if result.state == "queued" and (on_admitted is not None or on_admission_failed is not None):
+            self._admission_callbacks[result.command.delivery_id] = (on_admitted, on_admission_failed)
         if result.state == "queued":
             self._work_available.set()
+            if on_injected is not None:
+                on_injected()
         return ""
 
     def enqueue_envelope(self, env: dict) -> EnqueueResult:

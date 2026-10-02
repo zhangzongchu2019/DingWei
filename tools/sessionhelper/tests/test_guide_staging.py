@@ -73,14 +73,16 @@ class CountingAdapter:
         self.calls.append(dict(env))
         return "standalone guide answer"
 
-    def handle_delivery(self, env, on_injected=None, on_admission_failed=None):
+    def handle_delivery(self, env, on_injected=None, on_admitted=None, on_admission_failed=None):
         self.calls.append(dict(env))
         if self.fail:
             if on_admission_failed:
                 on_admission_failed()
             raise RuntimeError("fixture admission failure")
-        if self.admit and on_injected:
+        if on_injected:
             on_injected()
+        if self.admit and on_admitted:
+            on_admitted()
         return "business answer"
 
 
@@ -117,7 +119,7 @@ class GuideStoreTest(unittest.TestCase):
             restarted = StagedGuideStore(path, "seat-A")
             self.assertEqual(restarted.claim().body, "GUIDE")
 
-    def test_consumed_same_version_does_not_restage_but_new_hash_does(self):
+    def test_consumed_same_version_does_not_restage_but_new_version_does(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = StagedGuideStore(str(Path(tmp) / "guide.json"), "seat-A")
             store.stage("GUIDE", "v1")
@@ -125,7 +127,7 @@ class GuideStoreTest(unittest.TestCase):
             self.assertTrue(store.consume(claim))
             self.assertTrue(store.stage("GUIDE", "v1"))
             self.assertIsNone(store.claim())
-            self.assertTrue(store.stage("GUIDE changed", "v1"))
+            self.assertTrue(store.stage("GUIDE changed", "v2"))
             self.assertEqual(store.claim().body, "GUIDE changed")
 
     def test_identity_mismatch_cannot_consume_another_seat_guide(self):
@@ -247,10 +249,25 @@ class GuideSessionHelperTest(unittest.TestCase):
             asyncio.run(restarted.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))
             self.assertEqual(second_adapter.calls[0]["body"], "SECOND")
 
+    def test_hub_shape_timestamp_drift_does_not_restage_consumed_guide(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            adapter = CountingAdapter()
+            helper = self.make_helper(tmp, adapter)
+            first_guide = "DingWei 客户端上线指南\n生成时间（UTC）：2026-10-02T15:40:09Z\nRULES"
+            second_guide = "DingWei 客户端上线指南\n生成时间（UTC）：2026-10-02T16:40:09Z\nRULES"
+            asyncio.run(helper.inject_agent_network_skill(guide_env(first_guide, version="")))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
+            asyncio.run(helper.inject_agent_network_skill(guide_env(second_guide, version="")))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))
+            self.assertEqual(len(adapter.calls), 2)
+            self.assertIn("RULES", adapter.calls[0]["body"])
+            self.assertEqual(adapter.calls[1]["body"], "SECOND")
+
 
 class FakeProtocolDriver:
-    def __init__(self, state="processing"):
+    def __init__(self, state="processing", delay=0.0):
         self.state = state
+        self.delay = delay
         self.calls = []
         self.turns = {}
 
@@ -258,6 +275,8 @@ class FakeProtocolDriver:
         return None
 
     def deliver(self, delivery_id, text):
+        if self.delay:
+            threading.Event().wait(self.delay)
         self.calls.append(text)
         turn = f"turn-{len(self.calls)}"
         self.turns[delivery_id] = turn
@@ -285,7 +304,7 @@ class DriverAdmissionCallbackTest(unittest.TestCase):
                 driver = FakeProtocolDriver()
                 adapter = self.make_adapter(driver)
                 admitted = threading.Event()
-                adapter.handle_delivery(business_env("WORK"), admitted.set)
+                adapter.handle_delivery(business_env("WORK"), None, admitted.set)
                 self.assertTrue(admitted.wait(1))
                 self.assertEqual(driver.calls, ["WORK"])
 
@@ -294,9 +313,25 @@ class DriverAdmissionCallbackTest(unittest.TestCase):
         adapter = self.make_adapter(driver)
         admitted = threading.Event()
         failed = threading.Event()
-        adapter.handle_delivery(business_env("WORK"), admitted.set, failed.set)
+        adapter.handle_delivery(business_env("WORK"), None, admitted.set, failed.set)
         self.assertTrue(failed.wait(1))
         self.assertFalse(admitted.is_set())
+
+    def test_slow_protocol_admission_preserves_injected_before_processed(self):
+        driver = FakeProtocolDriver(delay=0.3)
+        adapter = self.make_adapter(driver)
+        order = []
+        admitted = threading.Event()
+
+        def on_admitted():
+            order.append("admitted")
+            admitted.set()
+
+        adapter.handle_delivery(business_env("WORK"), lambda: order.append("injected"), on_admitted)
+        order.append("processed")  # delivery_worker_loop sends this after handle_delivery returns
+        self.assertEqual(order, ["injected", "processed"])
+        self.assertTrue(admitted.wait(1))
+        self.assertEqual(order, ["injected", "processed", "admitted"])
 
 
 if __name__ == "__main__":

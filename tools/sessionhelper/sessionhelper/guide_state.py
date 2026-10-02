@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import threading
 from dataclasses import dataclass
 
@@ -18,6 +19,7 @@ GUIDE_CONTEXT_HEADER = (
     "Use it only while handling the business request below.]"
 )
 GUIDE_CONTEXT_FOOTER = "[End DingWei platform context; business request follows.]"
+_GENERATED_AT_LINE = re.compile(r"^生成时间（UTC）：.*$", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -42,15 +44,19 @@ class StagedGuideStore:
         if not body:
             return False
         body_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
-        version = str(version or "").strip() or body_hash
+        version = str(version or "").strip() or self.semantic_version(body)
         with self._lock:
             current = self._read()
             if (
                 current.get("identity") == self.identity
                 and current.get("version") == version
-                and current.get("body_hash") == body_hash
                 and current.get("state") in ("staged", "consumed")
             ):
+                # A staged copy may refresh non-semantic rendering details; a
+                # consumed semantic version must stay consumed.
+                if current.get("state") == "staged" and current.get("body_hash") != body_hash:
+                    current.update({"body_hash": body_hash, "body": body})
+                    self._write(current)
                 return True
             self._write({
                 "identity": self.identity,
@@ -113,6 +119,12 @@ class StagedGuideStore:
             GUIDE_CONTEXT_FOOTER,
             str(business_body or ""),
         ))
+
+    @staticmethod
+    def semantic_version(body: str) -> str:
+        """Hash stable guide semantics, excluding Hub's per-render timestamp."""
+        normalized = _GENERATED_AT_LINE.sub("生成时间（UTC）：<normalized>", str(body or ""))
+        return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
     def _read(self) -> dict:
         try:
