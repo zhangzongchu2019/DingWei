@@ -474,7 +474,7 @@ class SessionHelper:
 
         ws_url, headers = self._connection()
         print(f"[sessionHelper] connect {ws_url} mode={self.cfg.mode}", flush=True)
-        # 代理:off/none/direct=强制直连(清掉HTTPS_PROXY等环境变量);URL=用该代理;空=跟随环境变量
+        # 代理(SH_PROXY):off/none/direct=强制直连(另清掉HTTPS_PROXY等环境变量);URL=用该代理;空=也直连——以 proxy=None 传给 websockets.connect,15.0 起 None 即不用代理、不读 HTTPS_PROXY(proxy 参数 15.0 才有,故依赖须 websockets>=15)
         import os as _os
         _p = self.cfg.proxy.strip().lower()
         if _p in ("off", "none", "false", "direct", "no", "0"):
