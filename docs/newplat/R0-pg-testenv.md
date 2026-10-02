@@ -279,6 +279,42 @@ cd tools/pgtest && go build -o pgtest .
     直接依赖：8（基线 6）  ✗ 依赖数回升 6 → 8
     多出的两条：github.com/minio/minio-go/v7、golang.org/x/sys（go.mod 里未标 indirect）
 
+🔴 **2026-10-02 追记（分支 `qwen38maxkhovvob4/dep-ratchet-deadcode`）：上面这段读数已过时两处，如实更正**
+
+1. **基线值变了**：2026-10-01 由 6 上调到 7（G3 那条 `golang.org/x/crypto`，组长台账 `4496f6c5` 准），
+   所以现在的对照是「直接依赖 8（基线 7）」，不是「8（基线 6）」。
+2. **多出的两条已清掉一条**：`github.com/minio/minio-go/v7` 是**死代码带进来的**——
+   `a1d3a70e`（2026-09-11 加 MinIO 适配）之后紧跟 `8eabfe07`（2026-09-16 改用本地文件存储），
+   此后 `NewMinIOObjectStore` **全仓零调用方**（实测：整仓只剩它自己那一行定义），
+   生产只走 `NewLocalObjectStore`（`cmd/file-service/main.go:50`、`cmd/file-service/verify_retention.go:31`），
+   `deploy/H-FILE-SERVICE-DEPLOYMENT.md:10` 明写「MinIO is not deployed」，
+   `deploy/test_file_service_deploy.py:98-100` 还断言部署面不得出现 `FS_MINIO_`／`minio.service`。
+   ⇒ 删 `internal/fileservice/minio_store.go` 与 `minio_store_test.go`（后者只拿进程内 `fakeMinIO`
+   测那具死代码；同一份契约由 `local_store_test.go` 的 10 个格覆盖：原子落盘、不可执行、拒绝既有目标与
+   符号链接、失败不留半成品、删除规则、保留期），再 `go mod tidy`：minio-go 连同 6 条传递依赖
+   （go-ini／goccy-go-json／klauspost compress＋cpuid／minio md5-simd／rs xid／x-net v0.30.0）一并移出
+   go.mod／go.sum。实测 `go build ./...` rc=0、`go test ./internal/fileservice/ -count=1` rc=0、`go mod verify` 全过。
+   ⚠️ tidy 还会往 go.mod 添一行 `github.com/stretchr/testify v1.9.0 // indirect`：那是 `pgx/v5/pgconn` 的**测试**依赖
+   （`go mod why -m` 实证路径），原先由 minio-go 的剪枝图供给（minio-go 自己的 go.mod 里就写着
+   `testify v1.9.0 // indirect`），minio-go 一走就得显式记账。**版本没变、go.sum 里它的两条哈希本来就有**，
+   不是新引入模块，也不进本闸的计数（只数非 indirect 行）。
+
+⇒ **现存只剩 `golang.org/x/sys` 一条**，而它不是新依赖，是**被误标的真直接依赖**：
+   `internal/m5/blite_linux.go:53,61` 用 `unix.PidfdOpen` 与 `unix.Syscall(unix.SYS_PIDFD_SEND_SIGNAL, …)`，
+   `internal/fileservice/local_store.go:142,227` 用 `unix.Renameat2(…, unix.RENAME_NOREPLACE)`。
+   标准库换不了：go1.22.2 的 `go doc syscall` 实测只有 `Renameat`／`Flock`／`Fchmod`，
+   **没有** `Renameat2`、`RENAME_NOREPLACE`、`PidfdOpen`、`SYS_PIDFD_SEND_SIGNAL`
+   （少了 `RENAME_NOREPLACE` 就毁掉本地存储「不覆盖既有对象」那条判据，少了 pidfd 就有 PID 复用误杀风险）。
+   登记它＝上调基线（评审面）——**组长裁定 `2026-10-02T12:44:05Z` 已准**（原文「x/sys 基线 7→8 准（标注修正）」），
+   故本分支同批把 `specs/gates/dependency-baseline.txt` 的 `direct_count` 由 7 改到 8、`direct_sha256` 换成新集合
+   （原 7 项 ＋ x/sys，已用闸自己那套 awk｜sort -u｜sha256sum 复算一致），三段论证按 x/crypto 先例
+   （`ruling-2026-10-01T101757Z` 六-1）写在该文件注释里。
+   🔴 **登记与删除不可分离合入**：只合基线 ⇒ main 上仍是 9（minio-go 还在），红；只合删除 ⇒ 8 vs 7，也红。
+
+🔴 **顺带实证一道闸的强度**：把 x/sys 那行手工标成 `// indirect`，本闸立刻变绿（7 vs 7）；
+   但紧接着 `go mod tidy` 会把标注改回来（改回后 go.mod 与 tidy 结果逐字相同）。
+   ⇒ 这个「8」糊不过去，只剩两条路：删依赖，或按 §4.7.1 ⑤ 论证后上调基线。
+
 ### 6.2 边界闸：本件新增红 **0**，但暴露一条闸缺陷
 
 `scripts/repo-boundary-gate.sh` 三条棘轮，本件前后对比（基线值取自 `fcd3a3dd` 的 worktree 实测）：
