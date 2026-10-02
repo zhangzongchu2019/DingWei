@@ -799,7 +799,9 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return
 			}
-			// 回复交给在等的 forward；没人等就丢弃（超时的调用已关掉连接，不会有下一次调用在这条连接上等）。
+			// 🔴 签注（组长 R-HUB-WSB-COMMENT）：服务只许应答，不得主动发帧。c.resp 容量 1：无请求在途时的主动帧会进缓冲，
+			//    被下一次调用当成答案（之后整体错位）。缓冲 1 是为了接住 forward 写完请求、尚未进入接收时就先到的快回复；
+			//    缓冲已满（不合协议的多余帧）才丢弃。超时的调用已关掉连接，迟到回复不会留到下一次调用。
 			select {
 			case c.resp <- data:
 			default:
