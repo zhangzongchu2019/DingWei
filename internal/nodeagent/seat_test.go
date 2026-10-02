@@ -615,18 +615,38 @@ func TestLocalFormInspectPerPath(t *testing.T) {
 	d := f.ops(t.TempDir())
 	missing := strings.Repeat("beef", 16) // 白名单里登记、引擎里没有（fake 对 beefbeef 形 404）
 	d.localImages[missing] = true
-	// create 路径
-	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_ip1","image":"local@sha256:`+missing+
-		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err == nil {
-		t.Fatal("create：登记但本机不存在必须拒（inspect 闸）")
+	// create 路径：拒因文本＋零变更调用（复验口径）
+	before := len(f.calls)
+	err := func() error {
+		_, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_ip1","image":"local@sha256:`+missing+
+			`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`))
+		return err
+	}()
+	if err == nil || !strings.Contains(err.Error(), "本机镜像不存在") {
+		t.Fatalf("create inspect 404 必拒，拒因文本：%v", err)
+	}
+	for _, c := range f.calls[before:] {
+		if strings.Contains(c, "containers/create") || strings.Contains(c, "/start") || strings.Contains(c, "/stop") {
+			t.Fatalf("被拒不得有变更类引擎调用: %v", f.calls[before:])
+		}
 	}
 	// upgrade 路径：先有一个正常席位，再用不存在的 local ID 升级
 	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_ip2","image":"`+goodImage+
 		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := d.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_ip2","image":"local@sha256:`+missing+
-		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err == nil {
-		t.Fatal("upgrade：本机不存在必须拒（inspect 闸）")
+	before = len(f.calls)
+	err = func() error {
+		_, err := d.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_ip2","image":"local@sha256:`+missing+
+			`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`))
+		return err
+	}()
+	if err == nil || !strings.Contains(err.Error(), "本机镜像不存在") {
+		t.Fatalf("upgrade inspect 404 必拒，拒因文本：%v", err)
+	}
+	for _, c := range f.calls[before:] {
+		if strings.Contains(c, "containers/create") || strings.Contains(c, "/start") || strings.Contains(c, "/stop") {
+			t.Fatalf("被拒不得有变更类引擎调用: %v", f.calls[before:])
+		}
 	}
 }
