@@ -362,8 +362,13 @@ func TestBackupChecksumControlPlane(t *testing.T) {
 	// 未补报 ⇒ 不转 complete、报错（不销毁）；记录与文件清掉
 	t.Run("report missing blocks", func(t *testing.T) {
 		s, bk, dir := mkBackupRig(t, &gwBackupNode{body: good, reportSHA: "-"})
-		if ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c"); err == nil || ref != "" {
+		ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c")
+		if err == nil || ref != "" {
 			t.Fatalf("未补报必须失败: ref=%q err=%v", ref, err)
+		}
+		// 字样区分「旧版节点根本没补报」与「补报了但对不上」（正式单排障要靠它分因）
+		if !strings.Contains(err.Error(), "未补报") {
+			t.Fatalf("未补报的错误字样须含『未补报』: %v", err)
 		}
 		if n := backupCount(t, s); n != 0 {
 			t.Fatalf("记录应作废: %d", n)
@@ -417,6 +422,9 @@ func TestBackupChecksumControlPlane(t *testing.T) {
 		var be *BackupFailedError
 		if !errors.As(err, &be) {
 			t.Fatalf("%v, want backup_failed", err)
+		}
+		if !strings.Contains(be.Detail(), "未补报") {
+			t.Fatalf("销毁侧 Detail 须带『未补报』字样: %v", be.Detail())
 		}
 		eqSeq(t, "missing report stops destroy", log.get(), []string{"node:stop_seat"})
 		if seat, _ := s.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
