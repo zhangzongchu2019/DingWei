@@ -111,11 +111,18 @@ func newDurRig(t *testing.T) *durRig {
 	dsn := pgtest.DSN(t)
 	ctx := context.Background()
 
-	prod, err := openSpoolPool(ctx, dsn) // ← 装配层同一入口（理由见文件头注 ①）
+	prod, rep, err := openSpoolPool(ctx, dsn) // ← 装配层同一入口（理由见文件头注 ①）
 	if err != nil {
 		t.Fatalf("装配层建产品池失败（openSpoolPool）: %v", err)
 	}
 	t.Cleanup(func() { _ = prod.Close() })
+	// 🔴 装配层那个入口现在【顺带施加 fanout 域账本】（R-G2-LEDGER-DOMAIN）⇒ 本格因此也在钉
+	// 「被测的表是账本建出来的那五张」。少了这半句，耐久判据可以绑在一个手工建表的库上照样绿，
+	// 而产品其实起不来（OpenSpool 只核对不建表）。
+	if strings.Join(rep.Applied, ",") != "0400_fanout_baseline.sql" {
+		t.Fatalf("装配层建池没有施加 fanout 域账本：Applied=%v Skipped=%v（要恰好 0400 一条）",
+			rep.Applied, rep.Skipped)
+	}
 
 	watch, err := repo.OpenPG(ctx, dsn)
 	if err != nil {
@@ -565,7 +572,7 @@ func TestPGOutboundPersistFailureIsNotAccepted(t *testing.T) {
 }
 
 // TestOutboundCustodyWithoutSpoolIs503 是同一判据的另一种失败形态：spool【从未开起来】
-// （装配层没注入池，或 OpenSpool 建表失败 ⇒ fanout.New 不置 s.spool，只记一条 error 日志）。
+// （装配层没注入池，或 OpenSpool 核对五表失败 ⇒ fanout.New 不置 s.spool，只记一条 error 日志）。
 //
 // 🔴 与上一格的分工：上一格是"池开着但写不进去"，本格是"根本没有池"。两条分支在 custody.go 里
 // 是两个不同的 if（s.spool == nil ／ Accept 返回 err），🔴 任一被改成放行都不会让另一格红 ——

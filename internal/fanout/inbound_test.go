@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
-	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
 func wsMsg(bot, msgID, sender, chatID string) model.Message {
@@ -61,7 +60,7 @@ func inboundServer(t *testing.T, sinks []SinkConfig, wl Whitelist) (*Server, str
 	}
 	s := New(Config{
 		ProdURL: "http://127.0.0.1:1", WhitelistFile: wlPath,
-		SpoolPool: pgtest.Pool(t), Sinks: sinks,
+		SpoolPool: spoolTestPool(t), Sinks: sinks,
 		MaxAttempts: 3, BesteffortMaxAttempts: 2,
 	})
 	if s.spool == nil {
@@ -146,7 +145,7 @@ func TestSinkCrashWindowRecovery(t *testing.T) { // G2:WAL→sink 间崩溃=重�
 	hub := &sinkHub{}
 	ts := httptest.NewServer(hub.handler())
 	defer ts.Close()
-	pool := pgtest.Pool(t)
+	pool := spoolTestPool(t)
 	sinks := []SinkConfig{{Name: "p", HubURL: ts.URL, Channel: "c",
 		Role: "authoritative", Filter: "all", Token: "k"}}
 	s1 := New(Config{ProdURL: "http://127.0.0.1:1", SpoolPool: pool, Sinks: sinks})

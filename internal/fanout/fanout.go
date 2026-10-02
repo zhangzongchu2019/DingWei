@@ -161,7 +161,8 @@ func New(cfg Config) *Server {
 	}
 	s.reloadWhitelist()
 	if cfg.SpoolPool != nil {
-		// OpenSpool 一次建齐五表(pgschema.sql);建表失败=spool 不置位。
+		// OpenSpool 只核对五表在不在(建表归迁移账本 0400,由装配层 openSpoolPool 施加);
+		// 缺表/查不通=spool 不置位。
 		sp, err := OpenSpool(cfg.SpoolPool)
 		if err != nil {
 			// fail-closed(§B):spool 起不来=托管路 503,不静默降级为立发

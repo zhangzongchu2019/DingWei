@@ -1,6 +1,13 @@
 -- fanout spool PG 表结构（G2；五表，组长裁定 R-G2-FANOUT-HARDEN／RULING-REGISTER 2026-10-02T09:41:37Z）
--- 本文件是 fanout 建表的【唯一来源】：产品侧由 OpenSpool 一次无参 Exec 施加（幂等），
--- 迁移账本另持一份冻结副本 internal/store/migrate/migrations/0400_fanout_baseline.sql（号段见口径页 §五）。
+-- 本文件是 fanout 五表 DDL 的【唯一真源】。谁施加它（裁定 R-G2-LEDGER-DOMAIN，2026-10-02T11:06:25Z）：
+--   · 产品侧＝迁移账本条目 0400_fanout_baseline.sql（本文件的冻结副本，号段见口径页 §五），
+--     由装配层 cmd/feishu-fanout 的 openSpoolPool 施加：migrate.Migrate(…, FanoutDomains())。
+--     🔴 fanout 是独立服务、独立库，只施加 fanout 域（0400-0499）；Hub 那本账不进这个库，反之亦然。
+--   · fanout.OpenSpool 只【核对】五表在不在（只读，一条 DDL 都不发）——它不再自建表。
+--   · 临时库／用例夹具直接施加本文件的字节（internal/fanout 的 spoolTestPool）。
+-- 🔵 本文件与 0400 的冻结正文自本次起在【头注】上不再逐字相同（本段改写过；DDL 部分逐字相同）。
+--    这不是漂移：源 ↔ 账本的判据是【形状】（internal/store/migrate 的双轨形状格），
+--    字节那一轨只管「已施加的条目不可变」（组长 2026-10-02T01:31:16Z 改的口径）。
 -- 🔴 改本文件之后【不要】回去改 0400 的正文（已施加条目不可变，改一个注释字 digest 就对不上，
 --    runner 会拒绝启动）—— 正确做法是【新增一条】0401_fanout_*.sql 写增量（ALTER／CREATE INDEX …）。
 --    源与账本的漂移由 internal/store/migrate 的双轨形状格守着：漂移即在 CI 上红。
