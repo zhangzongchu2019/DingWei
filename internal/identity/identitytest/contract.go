@@ -70,6 +70,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"G_approve_only_into_own_or_member_group", approveOnlyIntoUsableGroup},
 		{"N3_reset_password_revokes_only_that_users_sessions", resetPasswordRevokesSessions},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
+		{"V2_list_agents_scoped_to_owner_case_insensitive", listAgentsOwnerScoped},
 	}
 	for _, c := range cases {
 		c := c

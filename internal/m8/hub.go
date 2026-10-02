@@ -84,6 +84,9 @@ type Hub struct {
 	// NowFunc 只为测试注入时钟。D1 的滑动续期要验「跨过 12 小时」,
 	// 真等 12 小时不是验收,是浪费;而只看代码里有 UPDATE 又证明不了行为。
 	NowFunc func() time.Time
+	// IdleTickerFunc 只为测试注入会话空闲巡检的 tick（组长 R-M8-TESTSIDE 取甲：挂在实例上，不用包级变量）；
+	// 返回 tick 通道与停止函数。nil ⇒ time.NewTicker（生产行为不变）。会话活跃时刻同用 h.now()（NowFunc）。
+	IdleTickerFunc func(d time.Duration) (<-chan time.Time, func())
 
 	// D1 滑动续期的写放大闸:同一会话在 consoleSessionTouchMin 内只写一次库。
 	consoleTouchMu sync.Mutex
@@ -972,14 +975,14 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		InsecureSkipVerify: true,
 		OnPingReceived: func(ctx context.Context, payload []byte) bool {
 			if c != nil {
-				c.recordActivity(time.Now().UTC())
+				c.recordActivity(h.now().UTC())
 				go h.touchSessionEndpoint(context.Background(), c)
 			}
 			return true
 		},
 		OnPongReceived: func(ctx context.Context, payload []byte) {
 			if c != nil {
-				c.recordActivity(time.Now().UTC())
+				c.recordActivity(h.now().UTC())
 				go h.touchSessionEndpoint(context.Background(), c)
 			}
 		},
@@ -997,7 +1000,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		return
 	}
 	markTiming("conn_seq")
-	c = &sessionClient{conn: conn, keyID: keyID, ownerKey: ownerKey, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
+	c = &sessionClient{conn: conn, keyID: keyID, ownerKey: ownerKey, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: h.now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	go h.watchSessionKeepalive(idleWatchdogCtx, c)
@@ -5107,7 +5110,7 @@ func yesNo(v bool) string {
 func (h *Hub) readSessionMessage(ctx context.Context, c *sessionClient) (websocket.MessageType, []byte, error) {
 	typ, data, err := c.conn.Read(ctx)
 	if err == nil {
-		c.recordActivity(time.Now().UTC())
+		c.recordActivity(h.now().UTC())
 	}
 	return typ, data, err
 }
@@ -5124,19 +5127,27 @@ func (h *Hub) watchSessionIdle(ctx context.Context, c *sessionClient) {
 	if interval <= 0 {
 		interval = 15 * time.Second
 	}
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
+	tick, stop := h.idleTicker(interval)
+	defer stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case now := <-ticker.C:
+		case now := <-tick:
 			if now.Sub(c.lastSeen()) > idleTimeout {
 				_ = c.conn.Close(websocket.StatusGoingAway, "idle timeout")
 				return
 			}
 		}
 	}
+}
+
+func (h *Hub) idleTicker(d time.Duration) (<-chan time.Time, func()) {
+	if h.IdleTickerFunc != nil {
+		return h.IdleTickerFunc(d)
+	}
+	t := time.NewTicker(d)
+	return t.C, t.Stop
 }
 
 func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
