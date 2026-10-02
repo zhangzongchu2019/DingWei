@@ -5,5 +5,21 @@
 #   Why Needed：internal/identity/onboarding.go:14 直接 import golang.org/x/crypto/bcrypt —— systemdefault 密码哈希（spec N3 A2）
 #   Simpler Alternative Rejected Because：标准库无口令哈希（只有通用摘要，不抗离线穷举）；该模块原已在 go.sum（indirect），不引入新模块
 #   新集合＝原 6 项（sha 前缀 af0fb4d1916764b8，复核一致）＋ golang.org/x/crypto
-direct_count=7
-direct_sha256=ff83314ffff997320b25fcfc488a23093f1593c107bd0c0a88ae42c4d0390a31
+# 2026-10-02 上调 7→8（组长裁定 2026-10-02T12:44:05Z：「x/sys 基线 7→8 准（标注修正）」；
+#   同批把另一条既有红 minio-go/v7 随死代码删除移出，故本次只登记 x/sys 一条）：
+#   Violation：golang.org/x/sys 由【误标】的 `// indirect` 修正为直接依赖 —— 不是新增模块
+#              （2026-08-06 起就在用，go.sum 里本来就有它），是 go.mod 的标注与实际 import 不符，
+#              被本闸按「require 块内非 indirect 行」数进来；`go mod tidy` 每次都会把标注改回直接。
+#   Why Needed：internal/m5/blite_linux.go:53,61 用 unix.PidfdOpen 与 unix.Syscall(unix.SYS_PIDFD_SEND_SIGNAL,…)
+#              —— 对已收尸的进程组发信号，靠 pidfd 而不是裸 pid，避免 PID 复用误杀别的进程；
+#              internal/fileservice/local_store.go:142,227 用 unix.Renameat2(…, unix.RENAME_NOREPLACE)
+#              —— 本地对象存储「原子落盘且不覆盖既有对象」这条判据就落在这个 flag 上。
+#   Simpler Alternative Rejected Because：标准库换不了 —— go1.22.2 `go doc syscall` 实测只有
+#              Renameat／Flock／Fchmod，【没有】Renameat2、RENAME_NOREPLACE、PidfdOpen、
+#              SYS_PIDFD_SEND_SIGNAL；退到 os.Rename 会覆盖既有目标（毁判据），退到 kill(2) 有 PID 复用窗口。
+#              真要「不加这条依赖」得重构 m5 与 fileservice 两域的信号与落盘路径，与「修一处标注」不成比例。
+#              🔴 实证这条糊不过去：手工把该行标回 `// indirect`，本闸立刻变绿（7 vs 7），但紧接着
+#              `go mod tidy` 会把标注改回来（改回后 go.mod 与 tidy 结果逐字相同）⇒ 只有删依赖或登记两条路。
+#   新集合＝原 7 项 ＋ golang.org/x/sys（minio-go/v7 从未入过基线：它一直是既有红，本批随死代码删除移出）
+direct_count=8
+direct_sha256=ba89fadfb091a9cacbbe174ac02204134e52dbc2ce132c2f9e1a3f3708888538
