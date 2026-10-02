@@ -340,15 +340,16 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		return
 	}
 	o.dropToken(agentID)
-	// online 的最终确认＝席位以专属凭据连入（Hub 侧连接事件回调 MarkOnline）
-	if err := o.st.SetSeatState(ctx, agentID, "online", "", "online", nil); err != nil {
-		return
-	}
+	// 🔴 容器起来 ≠ online（组长裁定，板 ac33b1cb）：席位停在 starting，直到 Agent 以专属凭据真正连入、
+	//    Hub 连接层回调 MarkOnline 才算 online。永不连入 ⇒ SweepTimeouts 按 starting 5 分钟清成 start_timeout。
+	//    原先这里直接置 online：容器起来但 Agent 连不上时蒙版仍显示 online，超时清扫也管不到它。
 }
 
-// MarkOnline 席位以专属凭据连入时由 Hub 连接层回调（T-G4-32 同通道）。
+// MarkOnline 席位以专属凭据连入时由 Hub 连接层回调（Hub.OnHostedAgentOnline，wireHosted 接线）。
+// 只认 starting → online：已 online 的重连、升级中（busy）新容器连入、已超时清掉的席位等一律不改（返回 nil）。
 func (o *Orchestrator) MarkOnline(ctx context.Context, agentID string) error {
-	return o.st.SetSeatState(ctx, agentID, "online", "", "online", nil)
+	_, err := o.st.TransitionSeatState(ctx, agentID, "starting", "online", "", "online", nil)
+	return err
 }
 
 // SweepTimeouts 超时清扫（排队 10 分钟不可取消／拉镜像 30m／启动 5m；超时即失败不留半成品）。
