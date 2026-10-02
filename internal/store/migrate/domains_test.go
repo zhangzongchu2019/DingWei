@@ -95,7 +95,12 @@ func TestDomainOf_NumberRangeMapping(t *testing.T) {
 		}
 	}
 	// 未分配号段那条还要指出【去哪儿登记】，否则运维只能翻代码。
+	// 🔴 先判 err 再读文案：nil 上调 Error() 会 panic，把整包的读数（含上面那些 t.Errorf）一起带走 ——
+	// 一个会 panic 的用例比一个会红的用例差，红的时候只剩一条"panic"看不出判据。
 	_, err := DomainOf("0500_unassigned.sql")
+	if err == nil {
+		t.Fatal("未分配号段竟然没拒（上面那半段已报过读数，这里不再重复）")
+	}
 	for _, want := range []string{"口径页 §五", "domains.go"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("未分配号段的拒绝文案缺 %q: %v", want, err)
