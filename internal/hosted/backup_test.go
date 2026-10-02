@@ -285,6 +285,8 @@ func TestBackupIntegrityRejected(t *testing.T) {
 		{"truncated gzip", good[:len(good)/2], ""},
 		{"checksum mismatch", good, sha256Hex([]byte("something else"))},
 		{"checksum missing", good, "-"},
+		// 复验遗留 X4（tosonnet50ts）：合法 gzip＋合法 tar、sha256 也对，但一个条目都没有 ⇒ 仍须拒收（空卷备份不可用于恢复）。
+		{"empty archive", mkTarGz(t, map[string]string{}), ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
