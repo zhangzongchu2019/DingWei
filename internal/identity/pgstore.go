@@ -294,6 +294,21 @@ func (s *PGStore) ResolveIdentity(ctx context.Context, ident Identity) (*User, e
 	return u, err
 }
 
+func (s *PGStore) GetIdentity(ctx context.Context, userIDLC, provider string) (*Identity, error) {
+	row, err := s.queryRow(ctx, `SELECT provider, issuer, subject FROM np_identity
+		WHERE user_id_lc = $1 AND provider = $2 ORDER BY issuer, subject LIMIT 1`, Lower(userIDLC), provider)
+	if err != nil {
+		return nil, err
+	}
+	var ident Identity
+	if err := row.Scan(&ident.Provider, &ident.Issuer, &ident.Subject); noRows(err) {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return &ident, nil
+}
+
 func (s *PGStore) CreateRegistrationCode(ctx context.Context, userIDLC, codeDigest string, expiresAt time.Time) error {
 	lc := Lower(userIDLC)
 	return s.inTx(ctx, func(tx repo.Tx) error {

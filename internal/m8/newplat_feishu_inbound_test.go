@@ -28,6 +28,9 @@ func feishuInboundMessage(id, text string) model.Message {
 func TestNewPlatformFeishuInboundSelectorAndDefaultUseIdentityBucket(t *testing.T) {
 	e := newAgentEnv(t)
 	bindFeishuForAgentEnv(t, e, "ou_alice")
+	if got := e.hub.ownerFeishuOpenID(e.ctx, AgentKeyID("zzc")); got != "ou_alice" {
+		t.Fatalf("new identity owner fallback=%q", got)
+	}
 	conn, st, body := e.dial(e.cred, "")
 	if conn == nil {
 		t.Fatalf("dial: %d %s", st, body)
