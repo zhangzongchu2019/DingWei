@@ -689,3 +689,37 @@ func TestLocalFormIDMismatchPerPath(t *testing.T) {
 		}
 	}
 }
+
+// 组长 R-B12-NOPROXY：席位 NO_PROXY 须含 Hub 主机（精确 IP 或域名，不含端口），回环两项保留。
+// 反向：不追加 ⇒ 入网 HTTP 被送进 relay（B12 独立网络里 relay 够不到网关 IP）。
+func TestSeatEnvNoProxyIncludesHubHost(t *testing.T) {
+	for _, c := range []struct{ base, host string }{
+		{"wss://172.31.250.1:8443", "172.31.250.1"},
+		{"wss://hub.test", "hub.test"},
+		{"wss://[fd00::1]:8443", "fd00::1"},
+	} {
+		t.Run(c.base, func(t *testing.T) {
+			f := newFakeDocker(t)
+			d := f.ops(t.TempDir())
+			d.hubWSBase = c.base
+			var noProxy string
+			for _, e := range d.seatEnv("api_key") {
+				if v, ok := strings.CutPrefix(e, "NO_PROXY="); ok {
+					noProxy = v
+				}
+			}
+			entries := map[string]bool{}
+			for _, x := range strings.Split(noProxy, ",") {
+				entries[x] = true
+			}
+			if !entries[c.host] || !entries["localhost"] || !entries["127.0.0.1"] {
+				t.Fatalf("NO_PROXY=%q must contain the Hub host %q plus localhost and 127.0.0.1", noProxy, c.host)
+			}
+			for x := range entries {
+				if strings.Contains(x, ":8443") {
+					t.Fatalf("NO_PROXY entry %q must not carry a port", x)
+				}
+			}
+		})
+	}
+}
