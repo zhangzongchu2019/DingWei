@@ -87,6 +87,7 @@ class ReliableWrapperReplyDecision(unittest.TestCase):
             "delivery_version=2": {"delivery_version": 2},
             "delivery_version='1'": {"delivery_version": "1"},
             "delivery_version=True": {"delivery_version": True},
+            "delivery_version=1.0": {"delivery_version": 1.0},
             "delivery_version missing": {"delivery_version": None},
             "ack_required='true'": {"ack_required": "true"},
             "ack_required=1": {"ack_required": 1},
@@ -94,12 +95,16 @@ class ReliableWrapperReplyDecision(unittest.TestCase):
             "delivery_id empty": {"delivery_id": ""},
             "delivery_id blank": {"delivery_id": "  "},
             "delivery_id missing": {"delivery_id": None},
+            "delivery_id=None": {"delivery_id": "<explicit-none>"},
+            "ack_required=None": {"ack_required": "<explicit-none>"},
         }
         for name, bad in cases.items():
             env = _wrapped(reply_policy="expect_reply", **bad)
             for k, v in bad.items():
                 if v is None:
                     env["meta"].pop(k)
+                elif v == "<explicit-none>":
+                    env["meta"][k] = None
             self.assertFalse(is_reliable_delivery_wrapper(env), name)
             d = classify_reply_decision(env)
             self.assertEqual((d.allow, d.reason), (False, "control"), name)
@@ -114,6 +119,17 @@ class ReliableWrapperReplyDecision(unittest.TestCase):
                          "hop_backstop")
         self.assertEqual(classify_reply_decision(_wrapped(hop_count=3, max_hops=3,
                                                           reply_policy="expect_reply")).reason, "hop_backstop")
+
+    def test_order_inside_reliable_wrapper_is_mirror_terminal_hop_policy(self):
+        # 搭档 tosonnet55tc2k 前置意见第 3 条：顺序 mirror→terminal→hop→reply_policy 不变（几项同时成立时取最前一项）
+        both = dict(kind="mirror", conversation_terminal=True, hop_count=16, reply_policy="no_reply")
+        self.assertEqual(classify_reply_decision(_wrapped(**both)).reason, "mirror")
+        both.pop("kind")
+        self.assertEqual(classify_reply_decision(_wrapped(**both)).reason, "conversation_terminal")
+        both.pop("conversation_terminal")
+        self.assertEqual(classify_reply_decision(_wrapped(**both)).reason, "hop_backstop")
+        both.pop("hop_count")
+        self.assertEqual(classify_reply_decision(_wrapped(**both)).reason, "no_expect_reply")
 
     def test_reply_to_a_reliable_delivery_is_terminal_and_rewrapped_reply_stops(self):
         # 回信经 Hub 再包成可靠外壳：对端走到 conversation_terminal 停，不再回（两跳终止）
