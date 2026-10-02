@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
+	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
 type v1rec struct {
@@ -90,7 +91,7 @@ func TestG9CustodyAndFlipE2E(t *testing.T) {
 
 	cfgPath := filepath.Join(tmp, "fanout.yaml")
 	writeG9Config(t, cfgPath, hub.URL, 1)
-	spoolPath := filepath.Join(tmp, "spool.db")
+	spoolDSN := pgtest.DSN(t)
 	port := freePort(t)
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	base := "http://" + addr
@@ -99,7 +100,7 @@ func TestG9CustodyAndFlipE2E(t *testing.T) {
 		"FANOUT_ADDR="+addr,
 		"FANOUT_PROD_URL="+hub.URL, // v1 探测路
 		"FANOUT_CONFIG_FILE="+cfgPath,
-		"FANOUT_SPOOL_PATH="+spoolPath,
+		"FANOUT_PG_DSN="+spoolDSN,
 		"FANOUT_OUTBOUND_FAKE=1",
 		"FANOUT_TEST_INJECT=1",
 		`FANOUT_ADMIN_TOKENS={"adm":{"id":"ops-a","role":"admin"}}`,
