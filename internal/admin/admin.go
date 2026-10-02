@@ -78,8 +78,10 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/datad/sessions", s.requireAuth(s.datadSessionsProxy))
 	mux.HandleFunc("GET /admin/control-plane", s.requireAuth(s.controlPlaneDashboard))
 	mux.HandleFunc("GET /admin/messages", s.requireAuth(s.messages))
-	mux.HandleFunc("GET /admin/members", s.requireAuth(s.members))
-	mux.HandleFunc("POST /admin/members", s.requireAuth(s.upsertMember))
+	if !s.NewPlatform {
+		mux.HandleFunc("GET /admin/members", s.requireAuth(s.members))
+		mux.HandleFunc("POST /admin/members", s.requireAuth(s.upsertMember))
+	}
 	mux.HandleFunc("GET /admin/projects", s.requireAuth(s.projects))
 	mux.HandleFunc("POST /admin/projects", s.requireAuth(s.upsertProject))
 	mux.HandleFunc("GET /admin/projects/{id}/members", s.requireAuth(s.projectMembers))
@@ -98,24 +100,32 @@ func (s *Server) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("POST /admin/bot-channels", s.requireAuthCap(capBotChannels, s.upsertBotChannel))
 	mux.HandleFunc("GET /admin/services", s.requireAuth(s.services))
 	mux.HandleFunc("POST /admin/services", s.requireAuth(s.upsertService))
-	mux.HandleFunc("GET /admin/api-keys", s.requireAuthCap(capAPIKeys, s.apiKeys))
-	mux.HandleFunc("POST /admin/api-keys", s.requireAuthCap(capAPIKeys, s.manageAPIKey))
+	if !s.NewPlatform {
+		mux.HandleFunc("GET /admin/api-keys", s.requireAuthCap(capAPIKeys, s.apiKeys))
+		mux.HandleFunc("POST /admin/api-keys", s.requireAuthCap(capAPIKeys, s.manageAPIKey))
+	}
 	mux.HandleFunc("GET /admin/routes", s.requireAuth(s.routes))
 	mux.HandleFunc("POST /admin/routes", s.requireAuth(s.addRoute))
-	mux.HandleFunc("GET /admin/sessions", s.requireAuth(s.sessionsPage))
-	mux.HandleFunc("POST /admin/sessions", s.requireAuth(s.manageSession))
+	if !s.NewPlatform {
+		mux.HandleFunc("GET /admin/sessions", s.requireAuth(s.sessionsPage))
+		mux.HandleFunc("POST /admin/sessions", s.requireAuth(s.manageSession))
+	}
 	if !s.NewPlatform {
 		mux.HandleFunc("GET /admin/agent-groups", s.requireAuth(s.agentGroupsPage))
 		mux.HandleFunc("POST /admin/agent-groups", s.requireAuth(s.manageAgentGroups))
 	}
-	mux.HandleFunc("GET /admin/provision", s.requireAuthCap(capProvision, s.provisionPage))
-	mux.HandleFunc("POST /admin/provision", s.requireAuthCap(capProvision, s.manageProvision))
+	if !s.NewPlatform {
+		mux.HandleFunc("GET /admin/provision", s.requireAuthCap(capProvision, s.provisionPage))
+		mux.HandleFunc("POST /admin/provision", s.requireAuthCap(capProvision, s.manageProvision))
+	}
 	mux.HandleFunc("GET /admin/config", s.requireAuth(s.configs))
 	mux.HandleFunc("POST /admin/config", s.requireAuth(s.upsertConfig))
 	mux.HandleFunc("POST /admin/delegate/schedule", s.requireAuth(s.delegateSchedule))
 	mux.HandleFunc("POST /admin/aggregate/draft-now", s.requireAuth(s.aggregateDraftNow))
 	mux.HandleFunc("POST /admin/aggregate/publish-now", s.requireAuth(s.aggregatePublishNow))
-	mux.HandleFunc("POST /admin/cleanup", s.requireAuth(s.cleanup))
+	if !s.NewPlatform {
+		mux.HandleFunc("POST /admin/cleanup", s.requireAuth(s.cleanup))
+	}
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
@@ -163,8 +173,13 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	groupsLink := "<li><a href=\"/admin/agent-groups\">Agent 编组（最简入口）</a></li>\n"
+	membersLink := `<li><a href="/admin/members">成员 / 租户候选</a></li>`
+	apiKeysLink := `<li><a href="/admin/api-keys">凭证 API key</a></li>`
+	sessionsLink := `<li><a href="/admin/sessions">会话端点 / 通配 / 镜像</a></li>`
+	provisionLink := `<li><a href="/admin/provision">Provision 下发</a></li>`
 	if s.NewPlatform {
 		groupsLink = "" // 新平台不注册旧编组页，也不给入口
+		membersLink, apiKeysLink, sessionsLink, provisionLink = "", "", "", ""
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = fmt.Fprintf(w, `<!doctype html><meta charset=utf-8><title>WorkPulse</title>
@@ -174,17 +189,18 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 <p>L2 in_flight: %d | p50: %dms | p95: %dms | triage_failed_rate: %.2f%%</p>
 <ul>
 <li><a href="/portal">团队门户</a></li><li><a href="/admin/messages">最近 100 条消息</a></li>
-<li><a href="/admin/members">成员 / 租户候选</a></li><li><a href="/admin/bot-channels">机器人管道</a></li>
+%s<li><a href="/admin/bot-channels">机器人管道</a></li>
 <li><a href="/admin/projects">项目组 / 排期文档</a></li>
-<li><a href="/admin/services">租户 / 成员空间</a></li><li><a href="/admin/api-keys">凭证 API key</a></li>
-<li><a href="/admin/sessions">会话端点 / 通配 / 镜像</a></li>
-%s<li><a href="/admin/provision">Provision 下发</a></li>
+<li><a href="/admin/services">租户 / 成员空间</a></li>%s
+%s
+%s%s
 <li><a href="/admin/control-plane">总控指标看板</a></li>
 <li><a href="/admin/files">文件对象浏览</a></li>
 <li><a href="/admin/config">运行配置</a></li>
 </ul>`, stats.Total, stats.Queued, stats.Processing, stats.Done, stats.Dead,
 		controlStats.Depth, controlStats.Total, controlStats.Status["queued"], controlStats.Status["llm_pending"], controlStats.Status["done"], controlStats.Status["failed"], controlStats.Status["expired"], controlStats.FailedRate*100, controlStats.ExpiredRate*100,
-		controlStats.L2InFlight, controlStats.L2P50MS, controlStats.L2P95MS, controlStats.L2FailureRate*100, groupsLink)
+		controlStats.L2InFlight, controlStats.L2P50MS, controlStats.L2P95MS, controlStats.L2FailureRate*100,
+		membersLink, apiKeysLink, sessionsLink, groupsLink, provisionLink)
 }
 
 func (s *Server) agentGroupsPage(w http.ResponseWriter, r *http.Request) {

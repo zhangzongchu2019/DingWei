@@ -1092,3 +1092,52 @@ func TestAdminLegacyGroupsPageNotMountedOnNewPlatform(t *testing.T) {
 		_ = db.Close()
 	}
 }
+
+func TestAdminLegacyIdentityPagesHiddenAndUnmountedOnNewPlatform(t *testing.T) {
+	getPaths := []string{"/admin/members", "/admin/api-keys", "/admin/sessions", "/admin/provision"}
+	postPaths := []string{"/admin/members", "/admin/api-keys", "/admin/sessions", "/admin/provision", "/admin/cleanup"}
+	for _, newPlatform := range []bool{false, true} {
+		t.Run(map[bool]string{false: "legacy", true: "new-platform"}[newPlatform], func(t *testing.T) {
+			db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "admin.db"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer db.Close()
+			if err := db.Migrate(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			srv := New(db)
+			srv.NewPlatform = newPlatform
+			srv.sessions["tok"] = "admin"
+			mux := http.NewServeMux()
+			srv.Mount(mux)
+
+			status := getAuth(t, mux, "/admin").Body.String()
+			for _, path := range getPaths {
+				hasLink := strings.Contains(status, `href="`+path+`"`)
+				if hasLink == newPlatform {
+					t.Errorf("navigation %s present=%v in newPlatform=%v", path, hasLink, newPlatform)
+				}
+				req := httptest.NewRequest(http.MethodGet, path, nil)
+				req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+				rec := httptest.NewRecorder()
+				mux.ServeHTTP(rec, req)
+				if newPlatform && rec.Code != http.StatusNotFound {
+					t.Errorf("new platform GET %s=%d, want 404", path, rec.Code)
+				}
+				if !newPlatform && rec.Code == http.StatusNotFound {
+					t.Errorf("legacy GET %s unexpectedly unmounted", path)
+				}
+			}
+			for _, path := range postPaths {
+				rec := postFormRaw(mux, path, url.Values{})
+				if newPlatform && rec.Code != http.StatusNotFound {
+					t.Errorf("new platform POST %s=%d, want 404", path, rec.Code)
+				}
+				if !newPlatform && rec.Code == http.StatusNotFound {
+					t.Errorf("legacy POST %s unexpectedly unmounted", path)
+				}
+			}
+		})
+	}
+}
