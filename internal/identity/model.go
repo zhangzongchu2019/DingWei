@@ -169,11 +169,13 @@ var (
 	ErrIdentityTaken = errors.New("identity: channel identity already bound")
 	ErrNotPending    = errors.New("identity: not pending")
 	ErrAlreadyBound  = errors.New("identity: user already has an identity from this provider")
-	ErrExpired       = errors.New("identity: expired")
-	ErrForbidden     = errors.New("identity: forbidden")
-	ErrHosted        = errors.New("identity: hosted agent")
-	ErrNotHosted     = errors.New("identity: not a hosted agent")
-	ErrCodeInvalid   = errors.New("identity: code invalid, used or expired")
+	// ErrLastManager 停用或降级会让平台上不再有可管理用户的人（A11 护栏）。
+	ErrLastManager = errors.New("identity: would remove the last management user")
+	ErrExpired     = errors.New("identity: expired")
+	ErrForbidden   = errors.New("identity: forbidden")
+	ErrHosted      = errors.New("identity: hosted agent")
+	ErrNotHosted   = errors.New("identity: not a hosted agent")
+	ErrCodeInvalid = errors.New("identity: code invalid, used or expired")
 )
 
 // Lower 标识规范化：一律转小写（业主裁定：判定标识只以小写字母＋数字判定）。

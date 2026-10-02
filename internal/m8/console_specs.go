@@ -703,6 +703,14 @@ func (h *Hub) HandleConsoleSpecEditors(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]map[string]string, 0, len(items))
 	for _, p := range items {
+		if h.Identity != nil {
+			// 新平台（R-V2-SPEC-TASK-SHIM-IMPL G5）：候选只取垫片投影的新平台用户；其 owner 作用域是 u_<用户>，
+			// 不是给人看的简称 ⇒ 不下发 short_name，页面只显示 display_name（＝新平台简称）。
+			if p.Provider != store.NewPlatformConsoleProvider {
+				continue
+			}
+			p.ShortName = ""
+		}
 		if item, ok := consoleSpecEditorItem(p); ok {
 			out = append(out, item)
 		}

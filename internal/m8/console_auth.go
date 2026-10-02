@@ -176,8 +176,11 @@ func (h *Hub) RequireConsolePrincipal(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if h.Onboarding != nil {
 			// 新平台：按 N3 会话认人（newplat_view.go newPlatformPrincipal）。
+			// 认人后同步垫片（R-V2-SPEC-TASK-SHIM-IMPL）：放入 principal 与投影会话（文件归档 C15、推论辅助、capability 用）。
 			if userLC, ok := h.newPlatformPrincipal(w, r); ok {
-				next(w, r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, userLC)))
+				if r2, ok := h.newPlatformConsoleContext(w, r, userLC); ok {
+					next(w, r2)
+				}
 			}
 			return
 		}
@@ -1211,8 +1214,9 @@ func ConsoleAgentCapabilityPageAllowed(pageID string) bool {
 func (h *Hub) HandleConsoleCapability(w http.ResponseWriter, r *http.Request) {
 	// 新平台不发页面 capability：写操作已由 RequireConsoleAgent 按 cookie＋Origin 授权，
 	// 写权仍走飞书 ＃unlock（「登录即可写」须业主定）。页面收到 404 即按无 capability 处理（只读看 can_write）。
+	// 例外（R-V2-SPEC-TASK-SHIM-IMPL，复验方先审一）：spec／任务三类页面 id 新平台照签，Agent 侧 spec 与拉任务要它。
 	if h.Identity != nil {
-		writeAgentWSError(w, http.StatusNotFound, "capability_not_used")
+		h.handleNewPlatformCapability(w, r)
 		return
 	}
 	// 🔴 本 handler 挂在 RequireConsoleAgent 下，而该守卫在开关关闭时**仍然放行**
@@ -1308,6 +1312,10 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 
 func (h *Hub) RequireConsoleSpecAgentCapability(pageID func(*http.Request) string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.Identity != nil {
+			h.newPlatformSpecAgentCapability(pageID, next, w, r)
+			return
+		}
 		repo, repoOK := h.Repo.(consoleAuthRepository)
 		specRepo, specOK := h.consoleSpecs()
 		keyID := strings.TrimSpace(r.Header.Get("X-DW-Agent-Key-ID"))

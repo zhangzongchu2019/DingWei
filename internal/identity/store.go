@@ -20,6 +20,8 @@ type IdentityStore interface {
 	ListUsers(ctx context.Context) ([]User, error)
 	// SetUserState 转 disabled 时同一事务吊销该用户全部会话（N3 A13）。
 	SetUserState(ctx context.Context, userIDLC string, state UserState, now time.Time) error
+	// SetUserType 改用户类型（manager／member；A11 改角色）。用户不存在 ⇒ ErrNotFound。
+	SetUserType(ctx context.Context, userIDLC string, t UserType) error
 	SetPassword(ctx context.Context, userIDLC, hash string, mustChange bool) error
 	// ResetPassword 运维重置口令（组长令，workpulse reset-password）：一个事务里写新口令哈希、置必须改密、
 	// 吊销该用户全部未吊销会话。用户不存在 ⇒ ErrNotFound。
