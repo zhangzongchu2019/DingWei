@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -233,11 +234,27 @@ func (d *dockerOps) seatEnv(credKind string) []string {
 	if d.seatProxy == "" {
 		return env
 	}
+	noProxy := "localhost,127.0.0.1" // 本机回环不经代理
+	// Hub 主机也不经代理（组长 R-B12-NOPROXY／R-B12-NET）：席位里 sessionHelper 的入网 HTTP（urllib）认 HTTP(S)_PROXY
+	// 与 NO_PROXY，不排除 Hub 就会把申请／轮询送进 relay；WS 本已直连。Python 的 NO_PROXY 只认主机名后缀与精确 IP、
+	// 不认网段 ⇒ 追加 HubURL 的精确 host（不含端口）。生产同样适用。
+	if host := hubHost(d.hubWSBase); host != "" {
+		noProxy += "," + host
+	}
 	return append(env,
 		"HTTP_PROXY="+d.seatProxy,
 		"HTTPS_PROXY="+d.seatProxy,
-		"NO_PROXY=localhost,127.0.0.1", // 本机回环不经代理
+		"NO_PROXY="+noProxy,
 	)
+}
+
+// hubHost 取 Hub ws 源的主机部分（去端口；IPv6 去方括号）；解析不出 ⇒ ""。
+func hubHost(wsBase string) string {
+	u, err := url.Parse(wsBase)
+	if err != nil {
+		return ""
+	}
+	return u.Hostname()
 }
 
 func (d *dockerOps) writeTokenFile(seatID string, tf *tokenFile) error {
