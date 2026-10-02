@@ -345,6 +345,26 @@ time.sleep(30)
         # 全屏 TUI 用光标定位代替空格：抓屏里读出来是「3.ProvideyourownAPIkey」
         self.assertIn(_squash("Provide your own API key"), _squash("3.ProvideyourownAPIkey"))
 
+    def test_real_package_error_screen_then_exit_fails_fast(self):
+        # prodops 2a3afdcc 原屏（横幅＋「no complete local package」）回放后即退出 ⇒ 不就绪、持久投递立即以 CLIUnavailable 失败
+        fixture = os.path.join(os.path.dirname(_FIXTURE), "codex-0.159.2-package-error.pty.txt")
+        d = tempfile.mkdtemp(prefix="sh-cli-pkg-")
+        path = os.path.join(d, "fakecli.py")
+        with open(path, "w") as f:
+            f.write("#!/usr/bin/env python3\nimport sys\nsys.stdout.buffer.write(open(%r, 'rb').read()); sys.stdout.flush()\nsys.exit(1)\n" % fixture)
+        os.chmod(path, 0o755)
+        a = CLIAdapter(load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_CMD=path, SH_CLI_CWD=d,
+                                        SH_CLI_READY_TIMEOUT="20", SH_CLI_LAUNCH_RETRIES="2")))
+        self.addCleanup(a.stop)
+        out = io.StringIO()
+        t0 = time.time()
+        with contextlib.redirect_stdout(out):
+            with self.assertRaises(CLIUnavailable):
+                a.handle_delivery({"body": "task"}, on_injected=lambda: None)
+        self.assertLess(time.time() - t0, 15)
+        self.assertIn("[cli] exited code=1", out.getvalue())
+        self.assertFalse(a.ready.is_set())
+
     def test_same_screen_without_menu_is_ready(self):
         a = self._adapter(menu_removed=True)
         with contextlib.redirect_stdout(io.StringIO()):
