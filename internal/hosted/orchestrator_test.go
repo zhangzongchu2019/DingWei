@@ -181,6 +181,7 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 			Content string `json:"content"`
 		} `json:"credential_file"`
 		CredKind string `json:"cred_kind"`
+		CLI      string `json:"cli"`
 	}
 	if err := json.Unmarshal(gw.sent[1].Params, &cp); err != nil {
 		t.Fatalf("create_seat 参数: %v", err)
@@ -196,6 +197,9 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 	}
 	if cp.CredKind != "token_file" { // 容器启动契约：账号形态随参数下发
 		t.Fatalf("cred_kind: %q", cp.CredKind)
+	}
+	if cp.CLI != "codex" { // 组长 R-B12-SEATMODE 第 2 条：节点代理据此注入 SH_MODE=cli、SH_CLI
+		t.Fatalf("create_seat 须带 cli: %q", cp.CLI)
 	}
 	// 解密审计恰好一条
 	row, err := s.qrow(context.Background(), `SELECT COUNT(*) FROM g4_audit WHERE action='account.decrypt_issue' AND target=$1`, acctID)
