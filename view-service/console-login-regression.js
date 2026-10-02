@@ -24,6 +24,8 @@ function extract(file, constName, end) {
 let loginHtml = extract('console_login_newplat.go', 'newPlatformLoginPageHTML', '`\n');
 let consoleHtml = extract('console_auth.go', 'consolePageHTML', '`\n\nfunc (h *Hub) HandleConsoleAgents');
 const mutation = process.env.MUTATION || '';
+// 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
+if (process.argv.some((a) => a.startsWith('--mutate'))) { console.error('MUTATION-SWITCH-WRONG-FORM: this script reads env MUTATION=<name>, not --mutate=<name> (the argv form would be silently ignored)'); process.exit(3); }
 function mutate(which, from, to) {
   const hay = which === 'login' ? loginHtml : consoleHtml;
   const hits = hay.split(from).length - 1;
@@ -37,7 +39,7 @@ function mutate(which, from, to) {
 }
 const MUTATIONS = ['mutation-anchor-selftest', 'password-visible', 'keep-password-after-fail', 'skip-force-change', 'no-expiry-check', 'show-hub-text', 'allow-mismatch', 'guard-off', 'clear-old-on-any-failure'];
 if (mutation === 'mutation-anchor-selftest') mutate('console', 'THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
-if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'password-visible') mutate('login', 'id=pwPass type=password', 'id=pwPass type=text');
 if (mutation === 'keep-password-after-fail') mutate('login', "if(!res.ok){say('pwErr',res.text);$('pwPass').value='';return;}", "if(!res.ok){say('pwErr',res.text);return;}");
 if (mutation === 'skip-force-change') mutate('login', "if(res.data.must_change_password){", "if(false){");

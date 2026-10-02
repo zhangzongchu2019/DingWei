@@ -17,6 +17,8 @@ const { chromium } = require('playwright');
 const RENDERER = path.join(__dirname, 'renderer-canary-sse.html');
 let html = fs.readFileSync(RENDERER, 'utf8');
 const mutation = process.env.MUTATION || '';
+// 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
+if (process.argv.some((a) => a.startsWith('--mutate'))) { console.error('MUTATION-SWITCH-WRONG-FORM: this script reads env MUTATION=<name>, not --mutate=<name> (the argv form would be silently ignored)'); process.exit(3); }
 function mutate(from, to) {
   const hits = html.split(from).length - 1;
   // 🔴 锚点失效（页面改了，变异的目标文本没了或不唯一）必须【大声】失败：stderr 打 MUTATION-ANCHOR-STALE、退出码 3，不得静默——
@@ -29,7 +31,7 @@ function mutate(from, to) {
 }
 const MUTATIONS = ['mutation-anchor-selftest', 'enter-sends-while-open', 'ignore-insert-field', 'no-stale-guard', 'trigger-mid-word', 'no-ime-guard', 'enter-ignored-when-no-items', 'refetch-while-loading', 'fixed-max-height', 'refetch-after-error'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
-if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'enter-sends-while-open') mutate("e.preventDefault(); e.stopImmediatePropagation(); mentionSelect(mention.active); }\n    }, true);", "mentionSelect(mention.active); }\n    }, true);");
 if (mutation === 'ignore-insert-field') mutate("const insert = it.insert || it.full_name || it.name || '';", "const insert = it.name || '';");
 if (mutation === 'no-stale-guard') mutate("if (gen !== mention.gen) return;                       // 过期应答不得覆盖新应答", '');

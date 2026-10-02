@@ -23,6 +23,8 @@ const end = source.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents', start);
 assert(start >= 0 && end > start, 'cannot extract consolePageHTML from production source');
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
+// 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
+if (process.argv.some((a) => a.startsWith('--mutate'))) { console.error('MUTATION-SWITCH-WRONG-FORM: this script reads env MUTATION=<name>, not --mutate=<name> (the argv form would be silently ignored)'); process.exit(3); }
 function mutate(from, to) {
   const hits = html.split(from).length - 1;
   // 🔴 锚点失效（页面改了，变异的目标文本没了或不唯一）必须【大声】失败：stderr 打 MUTATION-ANCHOR-STALE、退出码 3，不得静默——
@@ -36,7 +38,7 @@ function mutate(from, to) {
 // 第一版:自备审核区默认开(业主实测关着则入网批准走不通),托管区默认关(第二版)——本件按页面的默认值测,不打开任何开关。
 const MUTATIONS = ['mutation-anchor-selftest', 'seal-review', 'hosted-on-by-default', 'new-group-limit-9', 'group-closed-unmapped', 'new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
-if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'seal-review') mutate('var FEATURE_SELFHOST_REVIEW=true;', 'var FEATURE_SELFHOST_REVIEW=false;');
 if (mutation === 'hosted-on-by-default') mutate('var FEATURE_HOSTED=false;', 'var FEATURE_HOSTED=true;');
 if (mutation === 'group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");

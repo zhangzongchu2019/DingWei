@@ -16,7 +16,7 @@
 - 退出码 0 全过；这些脚本末行打印 `passed=N failed=M`。
 - 脚本自己从 `internal/m8/console_auth.go` 实时抠出 console 页，Hub 用本地桩，不需要起真 Hub。
 - 变异对照：`console-agent-mgmt-enroll-regression.js` 与 vega 用环境变量 `MUTATION=<名>`；`console-browser-regression.js` 用参数 `--mutate=<名>`。
-  判读按"首红是不是该条"，不按红的总数（后续用例共享桩状态会级联变红）。锚点失效时脚本会抛 `mutation anchor missing`（退出码 2），那是变异没打上，不是对照成立。
+  判读按"首红是不是该条"，不按红的总数（后续用例共享桩状态会级联变红）。变异结果一律用 `view-service/mutation-classify.sh` 判（约定见板 runbooks/CONVENTION-MUTATION-EXIT-CODES-20261002.md）：env 形态六个脚本的退出码 **1＝变异被杀（红，有 FAIL 行）、0＝存活、3＝变异没打上（MUTATION-ANCHOR-STALE／MUTATION-UNKNOWN／MUTATION-SWITCH-WRONG-FORM），不是对照成立**、2＝脚本崩。
 
 ## 2 客户端用例
 

@@ -12,6 +12,8 @@ const end = source.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents', start);
 assert(start >= 0 && end > start, 'cannot extract consolePageHTML from production source');
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
+// 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
+if (process.argv.some((a) => a.startsWith('--mutate'))) { console.error('MUTATION-SWITCH-WRONG-FORM: this script reads env MUTATION=<name>, not --mutate=<name> (the argv form would be silently ignored)'); process.exit(3); }
 function mutate(from, to) {
   const hits = html.split(from).length - 1;
   // 🔴 锚点失效（页面改了，变异的目标文本没了或不唯一）必须【大声】失败：stderr 打 MUTATION-ANCHOR-STALE、退出码 3，不得静默——
@@ -37,7 +39,7 @@ if (mutation === 'ux-block-colors') {
 }
 if (mutation === 'ux-add-focus') mutate("document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};", "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
 if (mutation === 'ux-detail-exclusive') mutate("row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();setGroupPanelMode('detail');}", "row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();if(globalThis.__testExclusive)document.getElementById('groupDetail').hidden=false;else setGroupPanelMode('detail');}");
-if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'drop-group-row-stripe', 'ux-member-gap', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'drop-group-row-stripe', 'ux-member-gap', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive'].includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 
 let groups = [];
 let additionsClosed = false;
