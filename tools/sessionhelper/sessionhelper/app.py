@@ -90,6 +90,12 @@ class Adapter(Protocol):
         ...
 
 
+def delivery_failure_ack_fields(exc: BaseException) -> "tuple[str, bool]":
+    """持久投递失败的 ACK 字段：CLI 适配器的失败带自己的 reason／retryable（cli.CLIDeliveryFailed），其余照旧
+    cli_injection_failed、可重试（组长 R-B12-CODEX-PKG 第 4 条）。"""
+    return str(getattr(exc, "reason", "") or "cli_injection_failed"), bool(getattr(exc, "retryable", True))
+
+
 class EchoAdapter:
     name = "echo"
 
@@ -918,8 +924,9 @@ class SessionHelper:
                     continue
                 await asyncio.to_thread(self.delivery_inbox.finish, delivery_id, str(exc))
                 self.delivery_busy_acked.discard(delivery_id)
+                reason, retryable = delivery_failure_ack_fields(exc)
                 await ws.send(json.dumps(self.delivery_ack(
-                    delivery_id, "failed", reason="cli_injection_failed", retryable=True
+                    delivery_id, "failed", reason=reason, retryable=retryable
                 ), ensure_ascii=False))
             else:
                 await asyncio.to_thread(self.delivery_inbox.finish, delivery_id)
