@@ -2,9 +2,10 @@
 """P1 test Agent (real client enrollment code + a bare /ws/agent connection, no real helper).
 
   enroll --hub URL --owner USER --state DIR   prints PAIRING_CODE=<code>, waits for approval, saves the credential
+  call   --hub URL --state DIR --path P [--method M --cap C --cred X]   one-shot http with the saved credential
   serve  --hub URL --state DIR                connects /ws/agent with the saved credential, prints every envelope as a
                                               JSON line, and executes JSON commands read from stdin:
-                                              {"op":"http","method":"GET","path":"/api/...","cap":"<capability>"}
+                                              {"op":"http","method":"GET","path":"/api/...","cap":"<capability>","cred":"<optional forged secret>"}
                                               -> prints {"http":{"status":N,"body":"..."}}
 Credential values never reach stdout.
 """
@@ -35,9 +36,9 @@ def cmd_enroll(a):
     print("ENROLLED agent_name=" + cred.agent_name, flush=True)
 
 
-def http_call(hub, method, path, cred, cap):
+def http_call(hub, method, path, cred, cap, secret_override=""):
     req = urllib.request.Request(hub.rstrip("/") + path, method=method)
-    req.add_header("Authorization", "Bearer " + cred.secret)
+    req.add_header("Authorization", "Bearer " + (secret_override or cred.secret))
     if cap:
         req.add_header("X-DW-Console-Capability", cap)
     try:
@@ -75,23 +76,38 @@ async def cmd_serve(a):
                     continue
                 if c.get("op") == "http":
                     st, body = await loop.run_in_executor(
-                        None, http_call, a.hub, c.get("method", "GET"), c["path"], cred, c.get("cap", ""))
+                        None, http_call, a.hub, c.get("method", "GET"), c["path"], cred, c.get("cap", ""), c.get("cred", ""))
                     emit({"http": {"status": st, "body": body}})
 
         await asyncio.gather(reader(), commands())
 
 
+def cmd_call(a):
+    cred = E.load_credential(a.state)
+    if not cred:
+        raise SystemExit("no credential in state dir")
+    st, body = http_call(a.hub, a.method, a.path, cred, a.cap, a.cred)
+    emit({"http": {"status": st, "body": body}})
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("enroll", "serve"):
+    for name in ("enroll", "serve", "call"):
         p = sub.add_parser(name)
         p.add_argument("--hub", required=True)
         p.add_argument("--state", required=True)
         if name == "enroll":
             p.add_argument("--owner", required=True)
+        if name == "call":
+            p.add_argument("--method", default="GET")
+            p.add_argument("--path", required=True)
+            p.add_argument("--cap", default="")
+            p.add_argument("--cred", default="")
     args = ap.parse_args()
     if args.cmd == "enroll":
         cmd_enroll(args)
+    elif args.cmd == "call":
+        cmd_call(args)
     else:
         asyncio.run(cmd_serve(args))

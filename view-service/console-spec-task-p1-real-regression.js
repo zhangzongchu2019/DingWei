@@ -19,6 +19,7 @@
  *   cd <repo>
  *   NODE_PATH=<含 playwright 的 node_modules> P1_PYTHON=<含 websockets 的 python3> PW_CHANNEL=chrome \
  *     node view-service/console-spec-task-p1-real-regression.js [--mutate=<名>]
+ *   无系统 Chrome 时用 PW_CHANNEL=chromium（playwright 自带 Chromium）。
  *   环境：P1_PYTHON（缺省 python3）、P1_KEEP=1 保留临时目录与日志、P1_BIN_DIR 复用已编二进制（跳过 go build，仅限无变异）。
  *   同机一次只跑一个本脚本／一个 pgtest 消费方。
  *
@@ -27,7 +28,17 @@
  *   no-spec-task-routes    关 spec／任务路由注册                  ⇒ 红在「Specs 页」
  *   no-online-agents       任务页在线 Agent 候选恒空              ⇒ 红在「指派候选」
  *   agent-pull-denied      新平台 Agent 能力令牌校验恒拒          ⇒ 红在「Agent 拉任务」
+ *   offline-agents-offered 任务页把离线 Agent 也列进候选          ⇒ 红在「指派候选（反）」
+ *   no-cap-issue           撤令牌签发口（新平台分支恒 404）          ⇒ 红在「开工并签发令牌」
+ *   cap-optional           令牌可缺失（缺／错令牌照放行）          ⇒ 红在「无令牌被拒」
+ *   cap-agent-unbound      令牌不绑定 Agent（别的 Agent 可拿去用）  ⇒ 红在「别的 Agent 的凭据」
+ *   cap-page-unbound       令牌不绑定页面 id                      ⇒ 红在「错页面 id 的令牌」
  * 退出码：0 通过（变异下＝存活）、1 有红（变异下＝被杀）、2 崩、3 变异无效（锚失配／未知名）。
+ *
+
+ * 隔离范围（如实）：令牌绑定 Agent、绑定页面 id、凭据伪造、吊销后失效在本脚本里有格；【跨属主】本场景只有一个用户，不覆盖，
+ * 「令牌属主＝Agent 属主」那条比对（newplat_spec_agent.go）在当前不变量下属纵深防御冗余，撤掉它本脚本与 m8 层都无测试变红
+ * （复验方 tosonnet55tc2k 实测：owner-check-off 存活）；跨用户隔离由 m8 层 H10 守。
  *
  * 已知边界（如实）：Hub 把 console-tasks 令牌交到 Agent 手里的链路 095 本就没有（方案第六节答复①），本脚本由「人」在页面会话里
  * 签发后经 Agent 进程的命令口交给它，只验 Hub 侧签发与校验；「开工」在页面上没有按钮，用同一浏览器会话的 fetch 调接口。
@@ -62,6 +73,37 @@ const MUTATIONS = {
     file: 'internal/m8/newplat_spec_agent.go',
     from: '\tif capability == nil || capability.PrincipalID != identity.Lower(ag.OwnerLC) ||',
     to: '\tif true || capability == nil || capability.PrincipalID != identity.Lower(ag.OwnerLC) ||',
+  },
+  'offline-agents-offered': {
+    file: 'internal/m8/console_task_board_page.go',
+    from: '\t\tif h.consoleTaskAgentOnline(agent) {\n\t\t\tonline = append(online, agent)\n\t\t\tonlineIDs[agent.ID] = true',
+    to: '\t\tif true || h.consoleTaskAgentOnline(agent) {\n\t\t\tonline = append(online, agent)\n\t\t\tonlineIDs[agent.ID] = true',
+  },
+  'no-cap-issue': {
+    file: 'internal/m8/newplat_spec_agent.go',
+    from: '\tif !ConsoleAgentCapabilityPageAllowed(pageID) {',
+    to: '\tif true || !ConsoleAgentCapabilityPageAllowed(pageID) {',
+  },
+  'cap-optional': {
+    edits: [{
+      file: 'internal/m8/newplat_spec_agent.go',
+      from: '\tif !repoOK || cred == "" || raw == "" || expectedPage == "" {',
+      to: '\tif !repoOK || cred == "" || expectedPage == "" {',
+    }, {
+      file: 'internal/m8/newplat_spec_agent.go',
+      from: '\tif capability == nil || capability.PrincipalID != identity.Lower(ag.OwnerLC) ||\n\t\t!h.newPlatformSessionValid(r.Context(), capability.SessionID, capability.PrincipalID) {',
+      to: '\tif capability == nil {\n\t\tcapability = &model.ConsolePageCapability{PrincipalID: identity.Lower(ag.OwnerLC), AgentID: ag.ID}\n\t} else if capability.PrincipalID != identity.Lower(ag.OwnerLC) ||\n\t\t!h.newPlatformSessionValid(r.Context(), capability.SessionID, capability.PrincipalID) {',
+    }],
+  },
+  'cap-agent-unbound': {
+    file: 'internal/store/console_auth.go',
+    from: 'WHERE c.token_hash=? AND c.agent_id=? AND c.page_id=?',
+    to: 'WHERE c.token_hash=? AND (c.agent_id=? OR 1=1) AND c.page_id=?',
+  },
+  'cap-page-unbound': {
+    file: 'internal/store/console_auth.go',
+    from: 'WHERE c.token_hash=? AND c.agent_id=? AND c.page_id=?',
+    to: 'WHERE c.token_hash=? AND c.agent_id=? AND (c.page_id=? OR 1=1)',
   },
 };
 const mutationArg = (process.argv.find((a) => a.startsWith('--mutate=')) || '').slice(9);
@@ -119,14 +161,16 @@ function prepareSource() {
     fs.mkdirSync(path.dirname(to), { recursive: true });
     if (fs.existsSync(path.join(ROOT, f))) fs.copyFileSync(path.join(ROOT, f), to);
   }
-  const target = path.join(dst, m.file);
-  const text = fs.readFileSync(target, 'utf8');
-  const hits = text.split(m.from).length - 1;
-  if (hits !== 1) {
-    console.error(`MUTATION-ANCHOR-STALE: mutation ${mutationArg} anchor must match exactly once, hits=${hits} in ${m.file}`);
-    process.exit(3);
+  for (const e of (m.edits || [m])) {
+    const target = path.join(dst, e.file);
+    const text = fs.readFileSync(target, 'utf8');
+    const hits = text.split(e.from).length - 1;
+    if (hits !== 1) {
+      console.error(`MUTATION-ANCHOR-STALE: mutation ${mutationArg} anchor must match exactly once, hits=${hits} in ${e.file}`);
+      process.exit(3);
+    }
+    fs.writeFileSync(target, text.replace(e.from, e.to));
   }
-  fs.writeFileSync(target, text.replace(m.from, m.to));
   return dst;
 }
 
@@ -197,15 +241,25 @@ class TestAgent {
       });
   }
   startServe() {
+    this.events = []; this.https = [];
     this.serve = spawnLines(PYTHON, [path.join(__dirname, 'p1_agent.py'), 'serve', '--hub', this.hub, '--state', this.state],
       { env: this.env() }, (l) => {
         try { const o = JSON.parse(l); if (o.http) this.https.push(o.http); else this.events.push(o); } catch (_) { /* ignore */ }
       });
   }
+  // 一次性调用（不依赖 /ws/agent 连接还活着；吊销后连接已被 4401 关掉，serve 进程随之退出）
+  callOnce(method, p, cap) {
+    const r = spawnSync(PYTHON, [path.join(__dirname, 'p1_agent.py'), 'call', '--hub', this.hub, '--state', this.state,
+      '--method', method, '--path', p, '--cap', cap || ''], { encoding: 'utf8', env: this.env() });
+    const line = (r.stdout || '').split('\n').find((l) => l.startsWith('{"http"'));
+    if (!line) throw new Error(`agent call produced no result: ${(r.stderr || '').slice(-200)}`);
+    return JSON.parse(line).http;
+  }
   online() { return this.events.some((e) => e.online); }
-  async http(method, p, cap) {
+  stopServe() { try { this.serve.kill('SIGTERM'); } catch (_) { /* gone */ } }
+  async http(method, p, cap, cred) {
     const before = this.https.length;
-    this.serve.stdin.write(JSON.stringify({ op: 'http', method, path: p, cap: cap || '' }) + '\n');
+    this.serve.stdin.write(JSON.stringify({ op: 'http', method, path: p, cap: cap || '', cred: cred || '' }) + '\n');
     await waitFor(() => this.https.length > before, 20000, `agent ${this.name} http ${p}`);
     return this.https[before];
   }
@@ -320,6 +374,15 @@ async function test(name, fn, { standalone = false } = {}) {
 
     const specs = () => page.frameLocator('iframe[src*="/console/specs"]');
     const tasks = () => page.frameLocator('iframe[src*="/console/tasks"]');
+    // 刷新后重新进入任务页：选中 spec 行、点「编辑」，返回研发下拉的候选文本（排序）
+    const assigneeCandidates = async () => {
+      await page.reload();
+      await page.click('a:has-text("任务管理")');
+      const f = tasks();
+      await f.locator('table:not(#task-table) tbody tr').filter({ hasText: 'P1 真页面 spec' }).first().click();
+      await f.locator('#edit-tasks').click();
+      return f.locator('.assignee-select').first().evaluate((sel) => [...sel.options].map((o) => o.textContent).filter(Boolean).sort());
+    };
 
     await test('Specs 页：点 Specs 入口，iframe 里空库出现「添加 spec」入口', async () => {
       await page.click('a:has-text("Specs")');
@@ -380,7 +443,15 @@ async function test(name, fn, { standalone = false } = {}) {
       await f.locator('#task-dod').click(); await page.keyboard.type('脚本在真页面上绿');
       await f.locator('#task-hours').click(); await page.keyboard.type('2');
       await f.locator('#create-task').click();
-      await f.locator('#task-create-status').filter({ hasText: '已拆解' }).waitFor({ timeout: 10000 });
+      // 「已拆解」状态行会随详情重绘被清掉，轮询抓不稳；以任务板接口里真有这条任务为准，并核页面任务列表已重绘
+      await waitFor(async () => {
+        const sl = await jsonOf(await get('/api/console/specs'));
+        const spec = (sl.specs || sl.items || []).find((x) => x.title === 'P1 真页面 spec');
+        if (!spec) return false;
+        const board = await jsonOf(await get(`/api/console/task-board?spec_id=${spec.id}`));
+        return (board.tasks || []).length === 1;
+      }, 30000, '任务板出现 1 条任务');
+      await f.locator('#task-list').filter({ hasText: 'P1 任务一' }).waitFor({ state: 'attached', timeout: 30000 });
     });
 
     await test('任务管理页：点任务管理入口，iframe 里见该 spec 与它的任务', async () => {
@@ -395,6 +466,22 @@ async function test(name, fn, { standalone = false } = {}) {
       await f.locator('#edit-tasks').click();
       const opts = await f.locator('.assignee-select').first().evaluate((s) => [...s.options].map((o) => o.textContent).filter(Boolean).sort());
       assert.deepStrictEqual(opts, ['kimi', 'opus50ts'], `候选应为两个在线 Agent，实得 ${JSON.stringify(opts)}`);
+    });
+
+    await test('指派候选（反）：断开一个 Agent 后候选缩小为 kimi，重连后恢复两个', async () => {
+      agents.opus.stopServe();
+      await waitFor(async () => {
+        const al = await jsonOf(await get('/api/console/agents'));
+        return (al.agents || []).some((a) => a.session === 'opus50ts' && a.online === false);
+      }, 20000, 'Hub 见 opus50ts 离线');
+      assert.deepStrictEqual(await assigneeCandidates(), ['kimi'], '断开 opus50ts 后候选应只剩 kimi');
+      agents.opus.startServe();
+      await waitFor(() => agents.opus.online(), 20000, 'opus50ts 重新在线');
+      await waitFor(async () => {
+        const al = await jsonOf(await get('/api/console/agents'));
+        return (al.agents || []).some((a) => a.session === 'opus50ts' && a.online === true);
+      }, 20000, 'Hub 见 opus50ts 重新在线');
+      assert.deepStrictEqual(await assigneeCandidates(), ['kimi', 'opus50ts'], '重连后候选应恢复为两个');
     });
 
     await test('指派：研发＝kimi、验收＝opus50ts，编辑完成后刷新仍在', async () => {
@@ -454,6 +541,45 @@ async function test(name, fn, { standalone = false } = {}) {
       assert.ok(r.status === 401 || r.status === 403, `无令牌应 401/403，实得 ${r.status}`);
     });
 
+    const pullPath = () => `/api/agent/console/task-driver/specs/${state.specID}/${state.revision}/tasks`;
+    const denied = (r) => r.status === 401 || r.status === 403;
+    await test('Agent 拉任务（反）：别的 Agent（opus）的凭据配 kimi 的令牌被拒', async () => {
+      const r = await agents.opus.http('GET', pullPath(), state.cap);
+      assert.ok(denied(r), `令牌应绑定 Agent：opus 凭据＋kimi 令牌应 401/403，实得 ${r.status}`);
+    });
+    await test('Agent 拉任务（反）：错页面 id 的令牌被拒（console-specs:new 令牌拉任务）', async () => {
+      const cap = await post('/api/console/agents/Kimi.ad/capability', { page_id: 'console-specs:new' });
+      assert.strictEqual(cap.status(), 200, `签发 console-specs:new 应 200，实得 ${cap.status()}`);
+      const r = await agents.kimi.http('GET', pullPath(), (await jsonOf(cap)).capability);
+      assert.ok(denied(r), `令牌应绑定页面 id：错页面令牌应 401/403，实得 ${r.status}`);
+    });
+    await test('Agent 拉任务（反）：乱写的令牌被拒；对照：正确令牌仍能拉', async () => {
+      const bad = await agents.kimi.http('GET', pullPath(), 'x'.repeat(64));
+      assert.ok(denied(bad), `乱写令牌应 401/403，实得 ${bad.status}`);
+      const good = await agents.kimi.http('GET', pullPath(), state.cap);
+      assert.strictEqual(good.status, 200, `对照：正确令牌应仍 200，实得 ${good.status}（否则上面的拒绝可能只是令牌失效）`);
+    });
+
+    await test('Agent 拉任务（反）：伪造的 Agent 凭据配有效令牌被拒', async () => {
+      const r = await agents.kimi.http('GET', pullPath(), state.cap, 'dwa_' + '0'.repeat(40));
+      assert.ok(denied(r), `伪造凭据应 401/403，实得 ${r.status}`);
+    });
+    await test('Agent 拉任务（反）：console-tasks 令牌打 spec 新建口被拒（令牌页面方向的另一头）', async () => {
+      const r = await agents.kimi.http('POST', '/api/agent/console/specs', state.cap);
+      assert.ok(denied(r), `任务令牌不得用于 spec 新建口：应 401/403，实得 ${r.status}`);
+    });
+    await test('吊销（反）：属主吊销研发 Agent 后，它从候选消失，原凭据＋原令牌不再能拉', async () => {
+      const rv = await post(`/api/console/agents/${state.kimiID}/revoke`, {});
+      assert.strictEqual(rv.status(), 200, `吊销应 200，实得 ${rv.status()} ${await rv.text()}`);
+      const r = agents.kimi.callOnce('GET', pullPath(), state.cap);
+      assert.ok(denied(r), `吊销后原凭据＋原令牌应 401/403，实得 ${r.status}`);
+      await waitFor(async () => {
+        const al = await jsonOf(await get('/api/console/agents'));
+        const k = (al.agents || []).find((a) => a.session === 'kimi');
+        return !k || k.online === false || k.state !== 'active';
+      }, 20000, 'kimi 不再在线／不再 active');
+    });
+
     await test('页面无错：console 与 pageerror 两路全程为空', async () => {
       assert.deepStrictEqual(pageErrors, [], `pageerror: ${pageErrors.join(' | ')}`);
       assert.deepStrictEqual(consoleErrors, [], `console error: ${consoleErrors.join(' | ')}`);
@@ -467,7 +593,7 @@ async function test(name, fn, { standalone = false } = {}) {
     try { if (browser) await browser.close(); } catch (_) { /* gone */ }
     await cleanup();
     log(`P1 spec/task real-hub browser: passed=${passed} failed=${failed} skipped=${skipped} mutation=${mutationArg || 'none'}`);
-    if (mutationArg) log(`MUTATION-VERDICT: ${mutationArg} ${failed > 0 ? 'KILLED' : 'SURVIVED'}${firstRed ? ` first-red=${firstRed}` : ''}`);
+    if (mutationArg) log(`MUTATION-VERDICT: ${mutationArg} ${process.exitCode === 2 ? 'CRASHED' : failed > 0 ? 'KILLED' : 'SURVIVED'}${firstRed ? ` first-red=${firstRed}` : ''}`);
     if (process.exitCode !== 2) process.exitCode = failed > 0 ? 1 : 0;
     if (mutationArg && process.exitCode === 1) process.exitCode = 1;
   }
