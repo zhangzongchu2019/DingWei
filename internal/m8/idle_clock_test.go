@@ -19,7 +19,7 @@ type idleClock struct {
 
 func installIdleClock(t *testing.T, hub *Hub) *idleClock {
 	t.Helper()
-	c := &idleClock{now: time.Date(2026, 10, 2, 3, 0, 0, 0, time.UTC), ticks: make(chan time.Time), armed: make(chan struct{})}
+	c := &idleClock{now: time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC), ticks: make(chan time.Time), armed: make(chan struct{})}
 	hub.NowFunc = c.Now
 	hub.IdleTickerFunc = func(time.Duration) (<-chan time.Time, func()) {
 		c.once.Do(func() { close(c.armed) })
