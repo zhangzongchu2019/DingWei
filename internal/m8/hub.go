@@ -87,6 +87,10 @@ type Hub struct {
 	// IdleTickerFunc 只为测试注入会话空闲巡检的 tick（组长 R-M8-TESTSIDE 取甲：挂在实例上，不用包级变量）；
 	// 返回 tick 通道与停止函数。nil ⇒ time.NewTicker（生产行为不变）。会话活跃时刻同用 h.now()（NowFunc）。
 	IdleTickerFunc func(d time.Duration) (<-chan time.Time, func())
+	// keepaliveInterval／keepaliveTimeout 会话保活 ping 的间隔与等 pong 上限（组长 R-M8-KEEPALIVE-RACE：挂实例，
+	// 原为包级变量，测试改写时与上一个会话仍在跑的保活协程竞争）。0 ⇒ 默认 30s／5s（生产行为不变）；间隔为负 ⇒ 不保活。
+	keepaliveInterval time.Duration
+	keepaliveTimeout  time.Duration
 
 	// D1 滑动续期的写放大闸:同一会话在 consoleSessionTouchMin 内只写一次库。
 	consoleTouchMu sync.Mutex
@@ -245,11 +249,6 @@ var (
 	// A 15 second cadence bounds an idle disconnect to 90 seconds while avoiding
 	// a per-connection timer for every activity update.
 	sessionIdleWatchdogInterval = 15 * time.Second
-	// Server-initiated WebSocket control pings keep otherwise idle helpers alive
-	// through proxies and detect half-open connections before a replacement
-	// reconnect starts a 1008 churn loop.
-	sessionKeepaliveInterval = 30 * time.Second
-	sessionKeepaliveTimeout  = 5 * time.Second
 	// keepalivePingHook 仅供用例观察保活 Ping 的起止（done=false 发出前，true 返回后）；生产为 nil。
 	keepalivePingHook atomic.Pointer[func(done bool)]
 	// agentDisconnectWait DisconnectAgent 等关闭握手的上限：关闭帧发出即生效（之后该连接一切写都失败），
@@ -5150,14 +5149,33 @@ func (h *Hub) idleTicker(d time.Duration) (<-chan time.Time, func()) {
 	return t.C, t.Stop
 }
 
-func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
-	interval := sessionKeepaliveInterval
-	if interval <= 0 || c == nil || c.conn == nil {
-		return
+// Server-initiated WebSocket control pings keep otherwise idle helpers alive
+// through proxies and detect half-open connections before a replacement
+// reconnect starts a 1008 churn loop.
+const (
+	defaultSessionKeepaliveInterval = 30 * time.Second
+	defaultSessionKeepaliveTimeout  = 5 * time.Second
+)
+
+// keepaliveParams 由实例字段取保活参数（组长 R-M8-KEEPALIVE-DEFAULT：抽成纯函数，好让「零值取默认、负数关闭」有格钉住）。
+// 间隔 0 ⇒ 默认 30s；间隔为负 ⇒ 不保活（enabled=false）；等 pong 上限 <=0 ⇒ 默认 5s。
+func keepaliveParams(interval, timeout time.Duration) (time.Duration, time.Duration, bool) {
+	if interval == 0 {
+		interval = defaultSessionKeepaliveInterval
 	}
-	timeout := sessionKeepaliveTimeout
+	if interval < 0 {
+		return 0, 0, false
+	}
 	if timeout <= 0 {
-		timeout = 5 * time.Second
+		timeout = defaultSessionKeepaliveTimeout
+	}
+	return interval, timeout, true
+}
+
+func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
+	interval, timeout, enabled := keepaliveParams(h.keepaliveInterval, h.keepaliveTimeout)
+	if !enabled || c == nil || c.conn == nil {
+		return
 	}
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()

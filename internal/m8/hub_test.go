@@ -111,13 +111,10 @@ func useTestSessionReadIdleTimeout(t *testing.T, d time.Duration) {
 	})
 }
 
-func useTestSessionKeepalive(t *testing.T, interval, timeout time.Duration) {
+// useTestSessionKeepalive 只改这一个 Hub 实例的保活参数（须在建连之前调用）；不碰任何包级状态。
+func useTestSessionKeepalive(t *testing.T, hub *Hub, interval, timeout time.Duration) {
 	t.Helper()
-	oldInterval, oldTimeout := sessionKeepaliveInterval, sessionKeepaliveTimeout
-	sessionKeepaliveInterval, sessionKeepaliveTimeout = interval, timeout
-	t.Cleanup(func() {
-		sessionKeepaliveInterval, sessionKeepaliveTimeout = oldInterval, oldTimeout
-	})
+	hub.keepaliveInterval, hub.keepaliveTimeout = interval, timeout
 }
 
 func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
@@ -3145,8 +3142,8 @@ func TestSessionEndpointPingKeepsIdleConnectionOnline(t *testing.T) {
 
 func TestServerPingKeepsIdleSessionOnline(t *testing.T) {
 	useTestSessionReadIdleTimeout(t, 150*time.Millisecond)
-	useTestSessionKeepalive(t, 25*time.Millisecond, time.Second) // 保活 ping 照常走真时钟，只负责让 pong 发生
 	hub, db, ctx := newTestHub(t)
+	useTestSessionKeepalive(t, hub, 25*time.Millisecond, time.Second) // 保活 ping 照常走真时钟，只负责让 pong 发生
 	clock := installIdleClock(t, hub)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
