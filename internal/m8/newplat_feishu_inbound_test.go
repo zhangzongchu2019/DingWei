@@ -123,6 +123,17 @@ func TestNewPlatformFeishuDefaultCountsOnlySenderOwnedSessions(t *testing.T) {
 	}
 }
 
+func TestNewPlatformFeishuDefaultRejectsUnboundSender(t *testing.T) {
+	e := newAgentEnv(t)
+	msg := feishuInboundMessage("unbound-default", "plain-unbound")
+	msg.SenderOpenID = "ou_unknown"
+	msg.ChatEntityID = "devplatform:personal:ou_unknown"
+	res, handled, err := e.hub.dispatchDefaultPersonalSession(e.ctx, msg, "plain-unbound")
+	if err != nil || !handled || !strings.Contains(res.Reply, "未绑定或已停用") {
+		t.Fatalf("unbound default sender was not rejected: %+v handled=%v err=%v", res, handled, err)
+	}
+}
+
 func TestNewPlatformFeishuMemberMentionRejectsCrossGroup(t *testing.T) {
 	v := newViewEnv(t)
 	digest := "feishu-zzc-digest"
