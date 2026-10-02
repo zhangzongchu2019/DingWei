@@ -233,10 +233,19 @@ func (d *dockerOps) seatEnv(credKind string) []string {
 	if d.seatProxy == "" {
 		return env
 	}
+	// 🔴 R-B12-NET（opus50tc2k 只读答复 c1）：NO_PROXY 追加 Hub 主机——席位连 Hub 走直连
+	//（urllib 只认精确 IP/主机名后缀，不认网段；不追加则入网 HTTP 被送进 relay）。
+	hubHost := d.hubWSBase
+	if i := strings.Index(hubHost, "://"); i >= 0 {
+		hubHost = hubHost[i+3:]
+	}
+	if j := strings.IndexByte(hubHost, ':'); j >= 0 { // 剥端口
+		hubHost = hubHost[:j]
+	}
 	return append(env,
 		"HTTP_PROXY="+d.seatProxy,
 		"HTTPS_PROXY="+d.seatProxy,
-		"NO_PROXY=localhost,127.0.0.1", // 本机回环不经代理
+		"NO_PROXY=localhost,127.0.0.1,"+hubHost,
 	)
 }
 
