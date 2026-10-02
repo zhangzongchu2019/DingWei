@@ -363,8 +363,8 @@ time.sleep(30)
 
     def test_trust_folder_and_update_screens_are_blocking(self):
         # 组长 R-B12-CODEX-AUTH-II 补：需回车继续的屏会吞掉第一次注入，不得判就绪
-        # \u66f4\u65b0\u63d0\u793a\u6539\u4e3a\u53ea\u62e6\u6a21\u6001\uff08R-HELPER-UPDATE-MARKER\uff09\u3002\u6b64\u5904\u6a21\u6001\u5c4f\u4e3a\u5408\u6210\uff1a\u9009\u9879\u5217\u8868\u6eda\u5230\u53ea\u5269\u9ad8\u4eae\u7684\u7b2c 1 \u9879\u3001
-        # \u5c4f\u4e0a\u53ea\u6709\u300cUpdate now (runs\u300d\u4e00\u4e2a\u6807\u8bb0\uff08\u6e90\u7801 update_prompt.rs \u9009\u4e2d\u9879\u4fdd\u6301\u53ef\u89c1\uff0c\u89c1 28x12 \u5feb\u7167\uff09
+        # 更新提示改为只拦模态（R-HELPER-UPDATE-MARKER）。此处模态屏为合成：选项列表滚到只剩高亮的第 1 项、
+        # 屏上只有「Update now (runs」一个标记（源码 update_prompt.rs 选中项保持可见，见 28x12 快照）
         for text in ("\u203a Trust this folder? (y/n)\n",
                      "  Update available \u00b7 0.159.2 \u2192 0.160.0\n\u203a 1. Update now (runs `npm install -g @openai/codex`)\n"):
             a = self._alive_screen(text)
