@@ -141,11 +141,14 @@ func TestHostedAdminLimitsAndVersionFlags(t *testing.T) {
 	}
 	t.Setenv("DW_G4_MASTER_KEY_FILE", mk)
 
-	// S8 超限 stdin（1MiB+2）⇒ 拒，账号不入库
+	// S8 超限 stdin（1MiB+2）⇒ 拒，账号不入库，错误不含 stdin 内容
 	huge := strings.Repeat("x", maxSecretStdinBytes+2)
 	_, err := hostedAdminRun(t, dsn, huge, "seed-account", "--name", "zz-huge", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin")
 	if err == nil || !strings.Contains(err.Error(), "超长") {
 		t.Fatalf("S8 oversized stdin must be rejected: %v", err)
+	}
+	if strings.Contains(err.Error(), huge[:64]) {
+		t.Fatalf("S8 error must not echo stdin content: %v", err)
 	}
 	if d := hostedAdminDump(t, dsn, `SELECT row_to_json(a)::text FROM g4_account_pool a`); strings.Contains(d, "zz-huge") {
 		t.Fatalf("S8 oversized secret must not be stored: %s", d)

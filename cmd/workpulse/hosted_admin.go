@@ -11,6 +11,9 @@ package main
 //     ⇒ 凭据从标准输入读（不进命令行、不进 shell 历史）；按用户授权（grant-to 可省）
 //
 // 环境：DW_NEWPLAT_PG_DSN（同一测试/生产库）；seed-account 另需 DW_G4_MASTER_KEY_FILE。
+//
+// 注意：本工具每次运行先 openNewPlatformStore（含迁移账本）再 ApplySchema——对生产库同样会执行，
+// 与 Hub 启动同行为，运维须知（tosonnet55tc2k 复验观察）。
 
 import (
 	"context"
