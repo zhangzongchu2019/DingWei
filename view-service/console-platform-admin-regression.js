@@ -6,6 +6,7 @@
 //
 // MUTATION=<name> 删除对应守卫,对应那条断言必须红(判"首红是不是该条",后续用例共享桩状态会级联):
 //    keep-code-after-done · persist-code · show-hub-text · fake-capabilities · forbidden-wrong-text
+//    row-code-ignores-expiry · row-code-no-timer · row-code-for-nonpending · row-code-persist · row-copy-wrong-text · row-code-without-expiry-key · no-invite-toggle · invite-toggle-static-arrow · invite-collapsed-keeps-visible
 // 环境变量: PW_CHANNEL=chrome 用系统 Chrome;NODE_PATH 指向含 playwright 的 node_modules。
 const assert = require('assert');
 const fs = require('fs');
@@ -24,10 +25,19 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text'];
+const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible'];
 if (mutation === 'logout-without-post') mutate("try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}", "location.assign('/console/login');return;");
 if (mutation === 'logout-ignores-failure') mutate("if(r.ok||r.status===401){location.assign('/console/login');return;}", "location.assign('/console/login');return;");
 if (mutation === 'no-logout-button') mutate('<button id=logoutBtn type=button>退出</button>', '');
+if (mutation === 'row-code-ignores-expiry') mutate("||exp<=Date.now())return;", "||false)return;");
+if (mutation === 'row-code-no-timer') mutate("adminRowTimers.push(setTimeout(function(){box.remove();},exp-Date.now()+50));", "");
+if (mutation === 'row-code-for-nonpending') mutate("if(i===4&&u.state==='pending_bind')adminRowCode(u,td);", "if(i===4)adminRowCode(u,td);");
+if (mutation === 'row-code-persist') mutate("var box=document.createElement('div');box.className='admin-row-codebox';", "try{localStorage.setItem('row-code',code);}catch(_){}var box=document.createElement('div');box.className='admin-row-codebox';");
+if (mutation === 'row-copy-wrong-text') mutate("await navigator.clipboard.writeText(code);fb.textContent='已复制';", "await navigator.clipboard.writeText(code+' ');fb.textContent='已复制';");
+if (mutation === 'row-code-without-expiry-key') mutate("if(!code||!Number.isFinite(exp)||exp<=Date.now())return;", "if(!code)return;");
+if (mutation === 'no-invite-toggle') mutate("document.getElementById('inviteToggle').onclick=adminToggleInvite;", "");
+if (mutation === 'invite-toggle-static-arrow') mutate("document.getElementById('inviteArrow').textContent=open?'▾':'▸';", "");
+if (mutation === 'invite-collapsed-keeps-visible') mutate("var open=body.hidden;body.hidden=!open;", "var open=body.hidden;");
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
@@ -37,6 +47,7 @@ if (mutation === 'fake-capabilities') mutate("var ADMIN_CAPABILITIES=[{id:'invit
 if (mutation === 'forbidden-wrong-text') mutate("function adminErrText(code,fallback){return code==='forbidden'?'你没有管理用户的权限':fallback;}", 'function adminErrText(code,fallback){return fallback;}');
 
 let users = [];
+const rowCodes = {};   // user_id -> {registration_code?, code_expires_at?}:桌面端按 Hub 契约,键不存在=没有有效码
 let failUsersList = 1;
 let nextCreateError = null;
 let codeSeq = 0;
@@ -63,7 +74,7 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/console/platform') return json(res, 200, { role, actions: [], items: platformItems(role) });
   if (p === '/api/console/platform/users' && req.method === 'GET') {
     if (failUsersList > 0) { failUsersList -= 1; res.writeHead(503, { 'content-type': 'text/plain' }); return res.end('users unavailable'); }
-    return json(res, 200, { users });
+    return json(res, 200, { users: users.map((u) => ({ ...u, ...(rowCodes[u.user_id] || {}) })) });
   }
   if (p === '/api/console/platform/users' && req.method === 'POST') {
     const body = await read(req); writes.push({ path: p, body });
@@ -119,7 +130,7 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#platform-items a[data-item-id="platform-admin"]').click();
       await page.locator('#tabs .tab[title="平台管理"]').waitFor({ state: 'visible' });
       assert.deepStrictEqual(await page.locator('#adminMenu button').allTextContents(), ['新用户注册邀请']);
-      assert.strictEqual(await page.locator('#adminInvite h3').textContent(), '新用户注册邀请');
+      assert.match(await page.locator('#adminInvite h3').textContent(), /新用户注册邀请/);
     });
 
     await test('user list: first load failure shows the reason with a retry; retry shows the empty state', async () => {
@@ -198,6 +209,75 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.strictEqual(await page.locator('#inviteResultUser').textContent(), 'zhangsan');
       assert.strictEqual(writes.at(-1).path, '/api/console/platform/users/zhangsan/registration-code');
       assert.doesNotMatch(await page.locator('body').innerHTML(), /REG-1-ABCD/);
+    });
+
+    await test('pending row shows the Hub-provided code, its expiry and a copy button; copy puts exactly the code on the clipboard', async () => {
+      const future = new Date(Date.now() + 3600e3).toISOString();
+      rowCodes.zhangsan = { registration_code: 'ROWCODE1', code_expires_at: future };
+      await page.locator('#adminUsersRetry').evaluate(() => refreshAdminUsers());
+      const box = page.locator('#adminUsersItems .admin-user-row[data-user-id="zhangsan"] .admin-row-codebox');
+      await box.waitFor({ state: 'visible' });
+      assert.strictEqual(await box.locator('.admin-row-code').textContent(), 'ROWCODE1');
+      assert.match(await box.locator('.admin-row-expiry').textContent(), /有效至/);
+      await box.locator('.admin-row-copy').click();
+      await box.locator('.admin-row-copyfb').filter({ hasText: '已复制' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await page.evaluate(() => navigator.clipboard.readText()), 'ROWCODE1');
+      const stored = await page.evaluate(() => JSON.stringify({ l: { ...localStorage }, s: { ...sessionStorage } }));
+      assert.doesNotMatch(stored, /ROWCODE1/, 'row codes are never persisted in browser storage');
+    });
+
+    await test('the row code disappears when the Hub stops sending the keys (used / regenerated / expired server-side), and never shows for a non-pending user', async () => {
+      delete rowCodes.zhangsan;
+      await page.evaluate(() => refreshAdminUsers());
+      await page.locator('#adminUsersItems .admin-row-codebox').waitFor({ state: 'detached' });
+      users.push({ user_id: 'lisi', display_name: '李四', short_name: 'ls', type: 'member', state: 'active' });
+      rowCodes.lisi = { registration_code: 'LEAKCODE', code_expires_at: new Date(Date.now() + 3600e3).toISOString() };
+      await page.evaluate(() => refreshAdminUsers());
+      await page.locator('#adminUsersItems .admin-user-row[data-user-id="lisi"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#adminUsersItems .admin-row-codebox').count(), 0, 'an active user never shows a code');
+      delete rowCodes.lisi; users.pop();
+    });
+
+    await test('a code without an expiry key, or already expired by the browser clock, is never even rendered (watched with a MutationObserver, so a remove-right-after-render cannot hide it)', async () => {
+      await page.evaluate(() => { window.__codeboxSeen = 0; new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && (n.matches('.admin-row-codebox') || n.querySelector('.admin-row-codebox'))) window.__codeboxSeen++; }).observe(document.getElementById('adminUsersItems'), { childList: true, subtree: true }); });
+      rowCodes.zhangsan = { registration_code: 'NOEXPIRY' };
+      await page.evaluate(() => refreshAdminUsers());
+      rowCodes.zhangsan = { registration_code: 'PASTCODE', code_expires_at: new Date(Date.now() - 1000).toISOString() };
+      await page.evaluate(() => refreshAdminUsers());
+      await page.locator('#adminUsersItems .admin-user-row[data-user-id="zhangsan"]').waitFor({ state: 'visible' });
+      await page.waitForTimeout(150);
+      assert.strictEqual(await page.evaluate(() => window.__codeboxSeen), 0, 'no code box was ever rendered for these rows');
+      assert.doesNotMatch(await page.locator('#adminUsersTable').textContent(), /NOEXPIRY|PASTCODE/);
+    });
+
+    await test('a shown row code vanishes by itself when it expires, without a refresh', async () => {
+      rowCodes.zhangsan = { registration_code: 'SHORTLIV', code_expires_at: new Date(Date.now() + 1200).toISOString() };
+      await page.evaluate(() => refreshAdminUsers());
+      await page.locator('#adminUsersItems .admin-row-codebox').waitFor({ state: 'visible' });
+      await page.locator('#adminUsersItems .admin-row-codebox').waitFor({ state: 'detached', timeout: 4000 });
+      assert.doesNotMatch(await page.locator('#adminUsersTable').textContent(), /SHORTLIV/);
+      assert.strictEqual(await page.locator('#adminUsersItems .admin-user-row[data-user-id="zhangsan"] .admin-regen').count(), 1, 'the regenerate fallback stays');
+      delete rowCodes.zhangsan;
+    });
+
+    await test('the invite section has an explicit expand/collapse control: arrow + hint, form folds away and comes back with typed values intact', async () => {
+      const toggle = page.locator('#inviteToggle');
+      assert.strictEqual(await toggle.getAttribute('aria-expanded'), 'true', 'default is expanded');
+      assert.strictEqual(await page.locator('#inviteArrow').textContent(), '▾');
+      assert.strictEqual(await page.locator('#inviteToggleHint').textContent(), '点击收起');
+      await type('#inviteName', '王五');
+      await toggle.click();
+      await page.locator('#inviteBody').waitFor({ state: 'hidden' });
+      assert.strictEqual(await toggle.getAttribute('aria-expanded'), 'false');
+      assert.strictEqual(await page.locator('#inviteArrow').textContent(), '▸');
+      assert.strictEqual(await page.locator('#inviteToggleHint').textContent(), '点击展开');
+      assert.strictEqual(await page.locator('#inviteCreate').isHidden(), true, 'the form is folded');
+      assert.strictEqual(await page.locator('#adminUsersTable').isVisible(), true, 'the user list stays visible when the form is folded');
+      await toggle.click();
+      await page.locator('#inviteBody').waitFor({ state: 'visible' });
+      assert.strictEqual(await page.locator('#inviteArrow').textContent(), '▾');
+      assert.strictEqual(await page.locator('#inviteName').inputValue(), '王五');
+      await page.locator('#inviteName').fill('');
     });
 
     await test('closing the tab throws the page state away: reopening shows no code', async () => {

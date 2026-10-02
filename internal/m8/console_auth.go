@@ -977,6 +977,25 @@ function adminShowCode(user,res){
   document.getElementById('inviteExpiry').textContent='有效至 '+enrollTime(res.code_expires_at)+'；重新生成会让旧码作废';
   enrollFeedback('inviteCopyFeedback','');box.hidden=false;
 }
+function adminToggleInvite(){
+  var body=document.getElementById('inviteBody'),btn=document.getElementById('inviteToggle');if(!body||!btn)return;
+  var open=body.hidden;body.hidden=!open;btn.setAttribute('aria-expanded',open?'true':'false');
+  document.getElementById('inviteArrow').textContent=open?'▾':'▸';document.getElementById('inviteToggleHint').textContent=open?'点击收起':'点击展开';
+}
+var adminRowTimers=[];
+// 待绑定行的注册码:只在 Hub 带了 registration_code 与 code_expires_at 两个键、且未过期时显示;键缺失(已用/过期/重新生成/无密钥)就不显示,不缓存、不落盘。
+function adminRowCode(u,cell){
+  var code=typeof u.registration_code==='string'?u.registration_code:'',exp=Date.parse(u.code_expires_at||'');
+  if(!code||!Number.isFinite(exp)||exp<=Date.now())return;
+  var box=document.createElement('div');box.className='admin-row-codebox';
+  var c=document.createElement('code');c.className='admin-row-code';c.textContent=code;
+  var t=document.createElement('span');t.className='admin-row-expiry';t.textContent=' 有效至 '+enrollTime(u.code_expires_at)+' ';
+  var b=document.createElement('button');b.type='button';b.className='admin-row-copy';b.textContent='复制';
+  var fb=document.createElement('span');fb.className='group-feedback admin-row-copyfb';
+  b.onclick=async function(){try{await navigator.clipboard.writeText(code);fb.textContent='已复制';}catch(_){fb.textContent='复制失败,请手动选中复制';}};
+  box.append(c,t,b,fb);cell.append(box);
+  adminRowTimers.push(setTimeout(function(){box.remove();},exp-Date.now()+50));   // 到期当场消失,不等下次刷新
+}
 function adminClearCode(){
   var box=document.getElementById('inviteResult');if(!box)return;
   ['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});
@@ -1001,14 +1020,14 @@ async function adminCreateUser(){
 async function adminRegen(userId){
   var res=await consolePost(ADMIN_API.regen(userId));
   if(!res.ok){enrollFeedback('adminUsersFeedback',adminErrText(res.code,res.text));return;}
-  enrollFeedback('adminUsersFeedback','');adminShowCode(userId,res.data);
+  enrollFeedback('adminUsersFeedback','');adminShowCode(userId,res.data);refreshAdminUsers();   // 行内旧码随之换新
 }
 function renderAdminUsers(users){
   var body=document.getElementById('adminUsersItems'),empty=document.getElementById('adminUsersEmpty');if(!body||!empty)return;
-  body.replaceChildren();
+  body.replaceChildren();adminRowTimers.forEach(clearTimeout);adminRowTimers=[];
   users.forEach(function(u){
     var row=document.createElement('tr');row.className='admin-user-row';row.dataset.userId=u.user_id;
-    [u.user_id,u.display_name||'',u.short_name||'',ADMIN_USER_TYPE[u.type]||u.type||'',ADMIN_USER_STATE[u.state]||u.state||''].forEach(function(t){var td=document.createElement('td');td.textContent=t;row.append(td);});
+    [u.user_id,u.display_name||'',u.short_name||'',ADMIN_USER_TYPE[u.type]||u.type||'',ADMIN_USER_STATE[u.state]||u.state||''].forEach(function(t,i){var td=document.createElement('td');td.textContent=t;if(i===4&&u.state==='pending_bind')adminRowCode(u,td);row.append(td);});
     var action=document.createElement('td');
     if(u.state==='pending_bind'){var b=document.createElement('button');b.type='button';b.className='admin-regen';b.textContent='重新生成注册码';b.onclick=function(){adminRegen(u.user_id);};action.append(b);}
     row.append(action);body.append(row);
@@ -1037,19 +1056,19 @@ function openPlatformAdminWorkspace(){
   var tab=document.createElement('span');tab.className='tab';tab.title='平台管理';
   var label=document.createElement('span'),x=document.createElement('span');label.textContent='平台管理';x.className='x';x.textContent='×';tab.append(label,x);
   var pane=document.createElement('section');pane.className='group-workspace';
-  pane.innerHTML='<h2>平台管理</h2><nav id=adminMenu></nav><section id=adminInvite class="group-block"><h3>新用户注册邀请</h3>'
+  pane.innerHTML='<h2>平台管理</h2><nav id=adminMenu></nav><section id=adminInvite class="group-block"><h3><button id=inviteToggle type=button aria-expanded=true aria-controls=inviteBody style="font:inherit;font-weight:600;background:none;border:0;cursor:pointer;padding:0"><span id=inviteArrow aria-hidden=true>▾</span> 新用户注册邀请 <span id=inviteToggleHint style="font-weight:400;font-size:12px;color:#666">点击收起</span></button></h3><div id=inviteBody>'
    +'<label>用户名 <input id=inviteName autocomplete=off placeholder="显示名称,如 张三"></label>'
    +'<label>用户 ID <input id=inviteUserId autocomplete=off placeholder="2～32 位大小写字母和数字"></label>'
    +'<label>用户 ID 简称 <input id=inviteShort autocomplete=off placeholder="2～16 位大小写字母和数字"></label>'
    +'<label>用户类型 <select id=inviteType><option value=member>普通用户</option><option value=manager>管理用户</option></select></label>'
    +'<button id=inviteCreate type=button>生成注册码</button><div id=inviteFeedback class=group-feedback></div>'
-   +'<section id=inviteResult class=enroll-editor hidden><h4>注册码(只显示这一次)</h4><div>用户 <b id=inviteResultUser></b></div><div><code id=inviteCode></code> <button id=inviteCopy type=button>复制注册码</button><span id=inviteCopyFeedback class=group-feedback></span></div><div id=inviteExpiry></div><div>让该用户在飞书里向机器人发送：<code id=inviteCmd></code></div><button id=inviteDone type=button>完成,关闭</button></section>'
+   +'<section id=inviteResult class=enroll-editor hidden><h4>注册码(只显示这一次)</h4><div>用户 <b id=inviteResultUser></b></div><div><code id=inviteCode></code> <button id=inviteCopy type=button>复制注册码</button><span id=inviteCopyFeedback class=group-feedback></span></div><div id=inviteExpiry></div><div>让该用户在飞书里向机器人发送：<code id=inviteCmd></code></div><button id=inviteDone type=button>完成,关闭</button></section></div>'
    +'<h4>用户</h4><table id=adminUsersTable class=group-table><thead><tr><th>用户 ID</th><th>用户名</th><th>简称</th><th>类型</th><th>状态</th><th>操作</th></tr></thead><tbody id=adminUsersItems></tbody></table><div id=adminUsersEmpty hidden>暂无用户。</div><div id=adminUsersStatus role=status></div><button id=adminUsersRetry type=button hidden>重试加载</button><div id=adminUsersFeedback class=group-feedback></div></section>';
   tab.onclick=function(e){if(e.target===x){e.stopPropagation();closeTab('__platform-admin');}else activate('__platform-admin');};
   document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__platform-admin',{tab:tab,pane:pane});
   var menu=pane.querySelector('#adminMenu');
   ADMIN_CAPABILITIES.forEach(function(c,i){var b=document.createElement('button');b.type='button';b.dataset.capability=c.id;b.textContent=c.title;if(i===0)b.setAttribute('aria-current','true');menu.append(b);});
-  document.getElementById('inviteCreate').onclick=adminCreateUser;document.getElementById('inviteCopy').onclick=adminCopyCode;document.getElementById('inviteDone').onclick=adminClearCode;
+  document.getElementById('inviteToggle').onclick=adminToggleInvite;document.getElementById('inviteCreate').onclick=adminCreateUser;document.getElementById('inviteCopy').onclick=adminCopyCode;document.getElementById('inviteDone').onclick=adminClearCode;
   document.getElementById('adminUsersRetry').onclick=refreshAdminUsers;
   activate('__platform-admin');refreshAdminUsers();
 }
