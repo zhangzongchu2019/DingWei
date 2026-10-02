@@ -235,6 +235,7 @@ func TestG3aConsoleDoorRouteTableIsExactlyOwnerScope(t *testing.T) {
 		t.Run(map[bool]string{false: "legacy", true: "new-platform"}[newPlatform], func(t *testing.T) {
 			srv := New(db)
 			srv.NewPlatform = newPlatform
+			hiddenOnNewPlatform := map[adminCapability]bool{capProvision: true, capAPIKeys: true, capPlatformRoles: true}
 			want := map[string]adminCapability{
 				"/console/admin": capConsoleIndex, "/console/admin/files": capFiles,
 				"/console/admin/files/{id}/content": capFileContent, "/console/admin/bot-channels": capBotChannels,
@@ -257,15 +258,43 @@ func TestG3aConsoleDoorRouteTableIsExactlyOwnerScope(t *testing.T) {
 					t.Fatalf("门 B %s 能力=%q want=%q", pattern, got[pattern], capability)
 				}
 			}
-			titles := 0
-			for _, route := range srv.consoleDoorRoutes() {
-				if route.title != "" {
-					titles++
+			// 能力表 → 路由表：未来往 adminCapabilitiesInScope 新增能力时，若忘了挂路由必须红。
+			for _, capability := range adminCapabilitiesInScope() {
+				if newPlatform && hiddenOnNewPlatform[capability] {
+					continue
+				}
+				found := false
+				for _, route := range srv.consoleDoorRoutes() {
+					if route.capability == capability {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatalf("能力 %s 在当前模式范围内，但门 B 没有对应路由 ⇒ 两份清单漂移", capability)
 				}
 			}
-			wantTitles := map[bool]int{false: 5, true: 2}[newPlatform]
-			if titles != wantTitles {
-				t.Fatalf("导航项=%d want=%d", titles, wantTitles)
+			// 导航能力集合 → 路由表：文件内容页只从文件页进入，不得单列；其余可见能力恰好单列一次。
+			wantTitles := map[adminCapability]bool{capFiles: true, capBotChannels: true}
+			if !newPlatform {
+				wantTitles[capProvision], wantTitles[capAPIKeys], wantTitles[capPlatformRoles] = true, true, true
+			}
+			gotTitles := map[adminCapability]bool{}
+			for _, route := range srv.consoleDoorRoutes() {
+				if route.title != "" {
+					if gotTitles[route.capability] {
+						t.Fatalf("能力 %s 在导航中重复", route.capability)
+					}
+					gotTitles[route.capability] = true
+				}
+			}
+			if len(gotTitles) != len(wantTitles) {
+				t.Fatalf("导航能力=%v want=%v", gotTitles, wantTitles)
+			}
+			for capability := range wantTitles {
+				if !gotTitles[capability] {
+					t.Fatalf("能力 %s 有路由但没有导航入口", capability)
+				}
 			}
 		})
 	}
