@@ -249,9 +249,22 @@ func (o *Onboarding) CreateUser(ctx context.Context, actor *User, r CreateUserRe
 // IssueBindCode 本人自取的飞书绑定码（组长取甲，台账 e483f147）：已登录、active、尚无飞书身份的用户，
 // 给自己出一个一次性码，在飞书里发注册指令兑换 —— 只绑身份、不改状态。只能给 actor 自己出（没有替别人出的入口）；
 // 已有飞书身份 ⇒ ErrAlreadyBound。码与注册码同表同法（同样 24 小时、新码顶替旧码、派生可取回）。
-func (o *Onboarding) IssueBindCode(ctx context.Context, actor *User) (string, time.Time, error) {
+// 🔴 再认证（组长 01be74c0，复验方登记②）：会话被盗者可借此把自己的飞书身份绑到受害账号上做持久化 ⇒
+// 须带当前口令；口令错 ⇒ ErrBadCredentials，并与口令登录共用同一失败限速（来源＋用户 ID 为键，15 分钟 5 次）。
+func (o *Onboarding) IssueBindCode(ctx context.Context, actor *User, password, sourceIP string) (string, time.Time, error) {
 	if actor == nil || actor.State != UserActive {
 		return "", time.Time{}, ErrNotAllowed
+	}
+	key := sourceIP + "|" + actor.UserIDLC()
+	now := o.Now()
+	if err := o.checkPasswordFails(key, now); err != nil {
+		return "", time.Time{}, err
+	}
+	u, err := o.Store.GetUser(ctx, actor.UserIDLC())
+	if err != nil || u.PasswordHash == "" || bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)) != nil {
+		o.recordPasswordFail(key, now)
+		o.audit(ctx, actor.UserIDLC(), "bind_code.rejected", actor.UserIDLC(), "reason=bad_credentials")
+		return "", time.Time{}, ErrBadCredentials
 	}
 	has, err := o.Store.UserHasIdentity(ctx, actor.UserIDLC(), "feishu")
 	if err != nil {

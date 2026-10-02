@@ -163,11 +163,11 @@ func TestFeishuBindCodeSelfOnly(t *testing.T) {
 	before, _ := e.ob.Store.GetUser(ctx, "root")
 
 	// 写操作要同源
-	if st, _ := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{}, false); st == 200 {
+	if st, _ := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{"password": "New-Strong-Pass-42"}, false); st == 200 {
 		t.Fatal("bind code without Origin must be refused")
 	}
 	// ① 点名别人（Alice）也只给自己：兑换绑的是 Root，Alice 仍待绑定
-	st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{"user_id": "Alice"}, true)
+	st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{"user_id": "Alice", "password": "New-Strong-Pass-42"}, true)
 	if st != 200 || len(b["registration_code"].(string)) != 8 || b["code_expires_at"] == nil {
 		t.Fatalf("bind code: %d %v", st, b)
 	}
@@ -190,11 +190,59 @@ func TestFeishuBindCodeSelfOnly(t *testing.T) {
 		t.Fatalf("session after bind: %d", st)
 	}
 	// ② 已绑定：不再出码
-	if st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{}, true); st != 409 || b["error"] != "already_bound" {
+	if st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{"password": "New-Strong-Pass-42"}, true); st != 409 || b["error"] != "already_bound" {
 		t.Fatalf("already bound: %d %v", st, b)
 	}
 	// 无会话：401
 	if st, _ := e.call(e.browser(), "POST", "/api/console/account/feishu-bind-code", map[string]any{}, true); st != 401 {
 		t.Fatalf("no session: %d", st)
+	}
+}
+
+// 组长 01be74c0：自取绑定码须带当前口令（被盗会话不能借它绑上攻击者的飞书）。
+// 缺口令、错口令 ⇒ 401 bad_credentials 且不出码；失败计入口令登录的限速 ⇒ 第 6 次起 429，口令登录也 429。
+func TestFeishuBindCodeRequiresPassword(t *testing.T) {
+	e := newN3Env(t)
+	e.ob.CodeKey = "k-secret-1"
+	admin := e.browser()
+	if st, _ := e.call(admin, "POST", "/console/login/password", map[string]any{"user_id": "Root", "password": e.pw}, true); st != 200 {
+		t.Fatalf("login: %d", st)
+	}
+	const newPw = "New-Strong-Pass-42"
+	if st, _ := e.call(admin, "POST", "/api/console/account/password", map[string]any{"old_password": e.pw, "new_password": newPw}, true); st != 200 {
+		t.Fatalf("change password: %d", st)
+	}
+	for i, body := range []map[string]any{{}, {"password": ""}, {"password": "wrong-password"}, {"password": e.pw}} { // e.pw 已是旧口令
+		st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", body, true)
+		if st != 401 || b["error"] != "bad_credentials" || b["registration_code"] != nil {
+			t.Fatalf("case %d %v: %d %v, want 401 bad_credentials without a code", i, body, st, b)
+		}
+	}
+	// 第 5 次失败
+	if st, _ := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{"password": "wrong-again"}, true); st != 401 {
+		t.Fatalf("5th failure: %d", st)
+	}
+	if st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{"password": newPw}, true); st != 429 || b["error"] != "rate_limited" {
+		t.Fatalf("after 5 failures: %d %v, want 429 rate_limited", st, b)
+	}
+	if st, b := e.call(e.browser(), "POST", "/console/login/password", map[string]any{"user_id": "Root", "password": newPw}, true); st != 429 {
+		t.Fatalf("password login after 5 bind-code failures: %d %v, want 429 (shared limit)", st, b)
+	}
+}
+
+// 正确口令 ⇒ 200 出码（与上一格同环境，未触限速）。
+func TestFeishuBindCodeRightPassword(t *testing.T) {
+	e := newN3Env(t)
+	e.ob.CodeKey = "k-secret-1"
+	admin := e.browser()
+	if st, _ := e.call(admin, "POST", "/console/login/password", map[string]any{"user_id": "Root", "password": e.pw}, true); st != 200 {
+		t.Fatalf("login: %d", st)
+	}
+	if st, _ := e.call(admin, "POST", "/api/console/account/password", map[string]any{"old_password": e.pw, "new_password": "New-Strong-Pass-42"}, true); st != 200 {
+		t.Fatalf("change password: %d", st)
+	}
+	st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{"password": "New-Strong-Pass-42"}, true)
+	if st != 200 || len(b["registration_code"].(string)) != 8 {
+		t.Fatalf("right password: %d %v", st, b)
 	}
 }

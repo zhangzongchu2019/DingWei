@@ -5,6 +5,7 @@ package identity_test
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -15,16 +16,24 @@ import (
 
 func regcodeEnv(t *testing.T, key string) (*identity.Onboarding, *clock.Fake, *identity.User) {
 	t.Helper()
+	ob, clk, admin, _ := regcodeEnvPw(t, key)
+	return ob, clk, admin
+}
+
+// regcodeEnvPw 同 regcodeEnv，另返回初始化脚本给 Root 的一次性口令（自取绑定码要再认证）。
+func regcodeEnvPw(t *testing.T, key string) (*identity.Onboarding, *clock.Fake, *identity.User, string) {
+	t.Helper()
 	clk := &clock.Fake{T: time.Date(2026, 10, 2, 1, 0, 0, 123456789, time.UTC)} // 带纳秒：钉住「截到微秒」
 	svc := identity.NewService(identity.NewMemStore(), clk.Now, nil)
 	ob := identity.NewOnboarding(svc)
 	ob.CodeKey = key
 	ctx := context.Background()
-	if _, err := ob.BootstrapAdmin(ctx, "Root", "rt", ""); err != nil {
+	pw, err := ob.BootstrapAdmin(ctx, "Root", "rt", "")
+	if err != nil {
 		t.Fatal(err)
 	}
 	admin, _ := svc.Store.GetUser(ctx, "root")
-	return ob, clk, admin
+	return ob, clk, admin, pw
 }
 
 func TestRegistrationCodeRecoverable(t *testing.T) {
@@ -133,12 +142,12 @@ func TestRegistrationCodeRecoverableOnPG(t *testing.T) {
 // 已有飞书身份 ⇒ 不再出码；待绑定用户不走这条（他们有管理员发的注册码）。
 func TestBindCodeForActivePasswordUser(t *testing.T) {
 	ctx := context.Background()
-	ob, _, admin := regcodeEnv(t, "k-secret-1")
+	ob, _, admin, pw := regcodeEnvPw(t, "k-secret-1")
 	if err := ob.Store.CreateSession(ctx, identity.Session{TokenHash: identity.HashSecret("tok-root"), UserIDLC: "root",
 		ExpiresAt: ob.Now().Add(identity.SessionTTL)}); err != nil {
 		t.Fatal(err)
 	}
-	code, _, err := ob.IssueBindCode(ctx, admin)
+	code, _, err := ob.IssueBindCode(ctx, admin, pw, "10.0.0.1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,11 +161,42 @@ func TestBindCodeForActivePasswordUser(t *testing.T) {
 	if _, u, err := ob.Store.ResolveSession(ctx, identity.HashSecret("tok-root"), ob.Now()); err != nil || u.UserIDLC() != "root" {
 		t.Fatalf("existing session must survive the bind: %+v %v", u, err)
 	}
-	if _, _, err := ob.IssueBindCode(ctx, after); err != identity.ErrAlreadyBound {
+	if _, _, err := ob.IssueBindCode(ctx, after, pw, "10.0.0.1"); err != identity.ErrAlreadyBound {
 		t.Fatalf("second bind code: %v, want ErrAlreadyBound", err)
 	}
 	pending := &identity.User{UserID: "zed", State: identity.UserPendingBind}
-	if _, _, err := ob.IssueBindCode(ctx, pending); err != identity.ErrNotAllowed {
+	if _, _, err := ob.IssueBindCode(ctx, pending, pw, "10.0.0.1"); err != identity.ErrNotAllowed {
 		t.Fatalf("pending user: %v, want ErrNotAllowed", err)
+	}
+}
+
+// 组长 01be74c0（复验方登记②）：自取绑定码须再认证。缺口令、错口令 ⇒ ErrBadCredentials 且不出码；
+// 失败计入口令登录的同一限速（同来源＋同用户）：5 次后连正确口令也 rate_limited，口令登录同样被限。
+func TestBindCodeRequiresCurrentPassword(t *testing.T) {
+	ctx := context.Background()
+	ob, _, admin, pw := regcodeEnvPw(t, "k-secret-1")
+	for _, bad := range []string{"", "wrong-password"} {
+		if code, _, err := ob.IssueBindCode(ctx, admin, bad, "10.0.0.1"); err != identity.ErrBadCredentials || code != "" {
+			t.Fatalf("password %q: code=%q err=%v, want ErrBadCredentials and no code", bad, code, err)
+		}
+	}
+	if codes, _ := ob.RecoverableRegistrationCodes(ctx); len(codes) != 0 {
+		t.Fatalf("a refused bind-code request must not issue anything: %v", codes)
+	}
+	// 另一来源不受这两次失败影响（键是来源＋用户），正确口令照常出码
+	if _, _, err := ob.IssueBindCode(ctx, admin, pw, "10.0.0.2"); err != nil {
+		t.Fatalf("right password from another source: %v", err)
+	}
+	for i := 0; i < 3; i++ { // 同来源再错 3 次 ⇒ 共 5 次
+		if _, _, err := ob.IssueBindCode(ctx, admin, "wrong-password", "10.0.0.1"); err != identity.ErrBadCredentials {
+			t.Fatalf("fail %d: %v", i+3, err)
+		}
+	}
+	var rl *identity.RateLimitedError
+	if _, _, err := ob.IssueBindCode(ctx, admin, pw, "10.0.0.1"); !errors.As(err, &rl) {
+		t.Fatalf("after 5 failures even the right password must be rate limited: %v", err)
+	}
+	if _, _, err := ob.PasswordLogin(ctx, "Root", pw, "10.0.0.1"); !errors.As(err, &rl) {
+		t.Fatalf("bind-code failures must count toward the password-login limit: %v", err)
 	}
 }
