@@ -163,3 +163,32 @@ func TestHostedAdminLimitsAndVersionFlags(t *testing.T) {
 		t.Fatalf("S9 versions must land: %q", d)
 	}
 }
+
+// 复验存活刀补格（L3/L5）：上限边界与旗标默认值钉住。
+func TestHostedAdminBoundaryAndDefaults(t *testing.T) {
+	dsn := pgtest.DSN(t)
+	mk := filepath.Join(t.TempDir(), "master.key")
+	if err := os.WriteFile(mk, []byte(strings.Repeat("ab", 32)+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("DW_G4_MASTER_KEY_FILE", mk)
+
+	// L3 边界：恰好 1MiB（含末尾换行——TrimSpace 后净长上限内）的凭据必须被接受
+	exact := strings.Repeat("k", maxSecretStdinBytes-1) + "\n"
+	if _, err := hostedAdminRun(t, dsn, exact, "seed-account", "--name", "zz-exact", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin"); err != nil {
+		t.Fatalf("L3 exactly-1MiB secret must be accepted: %v", err)
+	}
+	// 1MiB+1（净长超上限）必须拒
+	over := strings.Repeat("k", maxSecretStdinBytes) + "\n"
+	if _, err := hostedAdminRun(t, dsn, over, "seed-account", "--name", "zz-over", "--kind", "api_key", "--cli", "codex", "--llm", "gpt", "--secret-stdin"); err == nil || !strings.Contains(err.Error(), "超长") {
+		t.Fatalf("L3 1MiB+1 must be rejected: %v", err)
+	}
+
+	// L5 默认值：不带版本旗标 ⇒ 落库 29/1
+	if _, err := hostedAdminRun(t, dsn, "", "register-node", "--id", "nd_def", "--name", "def"); err != nil {
+		t.Fatalf("L5 register-node defaults: %v", err)
+	}
+	if d := hostedAdminDump(t, dsn, `SELECT docker_version || '/' || node_protocol_version FROM g4_node WHERE id='nd_def'`); strings.TrimSpace(d) != "29/1" {
+		t.Fatalf("L5 default versions must be 29/1: %q", d)
+	}
+}
