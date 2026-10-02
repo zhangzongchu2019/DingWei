@@ -5,8 +5,9 @@
 #   BASE_IMAGE=hub.local/dingwei/base-codex@sha256:<digest> ./g4-b12-verify.sh            # 默认只跑 Codex 两条
 #   BASE_IMAGE=<ref> ./g4-b12-verify.sh codex-apikey codex-tokenfile claude-apikey ...    # 指定组合
 #
-# 判定（B12 口径）：输出里出现【词边界上的】鉴权失败判词（401／unauthorized／incorrect api key／
-# invalid api key／authentication_error／invalid x-api-key）＝凭据通路成立 ⇒ PASS。
+# 判定（B12 口径，r3 收紧——组长令）：PASS 只认两类——① 401 且紧邻 Unauthorized/HTTP/status/
+# code 字样（窗口 40 字符内）；② 明确的 API 鉴权失败判词（incorrect api key／invalid api key／
+# authentication_error／invalid x-api-key）。裸 401 子串、裸 unauthorized 不算数。
 # 🔴 r2 修订（复验第三节）：
 #   · "not logged in"/"not authenticated" 不再算 PASS——令牌文件路径下这恰恰是「凭据没被读到」；
 #   · docker/镜像层错误（pull access denied／registry unauthorized／manifest unknown／
@@ -41,7 +42,8 @@ judge() {
     return
   fi
   local hit
-  hit=$(printf '%s' "$out" | grep -oiE '\b401\b|\bunauthorized\b|incorrect api key|invalid api key|authentication_error|invalid x-api-key' | head -1)
+  # r3：401 须有紧邻伴生词（Unauthorized/HTTP/status/code，40 字符窗口）；API 鉴权短语单列
+  hit=$(printf '%s' "$out" | grep -oiE '(\b401\b.{0,40}(unauthorized|HTTP|status|code)|(unauthorized|HTTP|status|code).{0,40}\b401\b|incorrect api key|invalid api key|authentication_error|invalid x-api-key)' | head -1)
   if [ -n "$hit" ]; then
     report "$combo" PASS "$hit"
   else
@@ -57,9 +59,14 @@ DOCKER_RUN=(docker run --rm --network bridge
 
 run_case() { # <combo> <script>
   local combo="$1" script="$2"
-  local out
+  local out rc
   out=$("${DOCKER_RUN[@]}" "$BASE_IMAGE" \
         sh -c "mkdir -p /tmp/b12home && $script" 2>&1)
+  rc=$?  # r3：docker run 的退出码不吞——非零即 FAIL（容器/CLI 没跑成）
+  if [ "$rc" -ne 0 ]; then
+    report "$combo" FAIL "docker rc=$rc（$(printf '%s' "$out" | tail -1 | cut -c1-100)）"
+    return
+  fi
   judge "$combo" "$out"
 }
 
