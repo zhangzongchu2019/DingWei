@@ -24,7 +24,10 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text'];
+const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text'];
+if (mutation === 'logout-without-post') mutate("try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}", "location.assign('/console/login');return;");
+if (mutation === 'logout-ignores-failure') mutate("if(r.ok||r.status===401){location.assign('/console/login');return;}", "location.assign('/console/login');return;");
+if (mutation === 'no-logout-button') mutate('<button id=logoutBtn type=button>退出</button>', '');
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
@@ -38,6 +41,7 @@ let failUsersList = 1;
 let nextCreateError = null;
 let codeSeq = 0;
 const writes = [];
+let logoutStatus = 204;
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function err(res, status, code, extra) { json(res, status, { error: code, detail: 'SECRET-HUB-TEXT', ...extra }); }
@@ -52,6 +56,8 @@ const server = http.createServer(async (req, res) => {
   const p = req.url.split('?')[0];
   const role = /fixture-role=management/.test(req.headers.cookie || '') ? 'management' : 'owner';
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
+  if (p === '/console/login') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end('<!doctype html><title>LOGIN-PAGE</title>'); }
+  if (p === '/console/logout' && req.method === 'POST') { writes.push({ path: p, body: null }); res.writeHead(logoutStatus); return res.end(); }
   if (p === '/api/console/agents') return json(res, 200, { agents: [] });
   if (p === '/api/console/agent-groups') return json(res, 200, { owned_agents: [], groups: [] });
   if (p === '/api/console/platform') return json(res, 200, { role, actions: [], items: platformItems(role) });
@@ -203,9 +209,37 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.doesNotMatch(await page.locator('body').innerHTML(), /REG-2-WXYZ/);
     });
 
+    await test('the top of the console has a 退出 button: it POSTs /console/logout once and then goes to /console/login', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      await pg.goto(`${base}/console`);
+      const btn = pg.locator('#logoutBtn');
+      await btn.waitFor({ state: 'visible' });
+      assert.strictEqual((await btn.textContent()).trim(), '退出');
+      const before = writes.filter((w) => w.path === '/console/logout').length;
+      await btn.click();
+      await pg.waitForURL(/\/console\/login$/);
+      assert.strictEqual(writes.filter((w) => w.path === '/console/logout').length, before + 1, 'exactly one logout POST');
+      assert.match(await pg.title(), /LOGIN-PAGE/);
+      await pg.close();
+    });
+
+    await test('a failed logout does not pretend to have logged out: stays on the console, says so, and the button works again', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      logoutStatus = 500;
+      await pg.goto(`${base}/console`);
+      await pg.locator('#logoutBtn').click();
+      await pg.locator('#platform-status').filter({ hasText: '退出失败' }).waitFor({ state: 'visible' });
+      assert.match(pg.url(), /\/console$/, 'must not navigate away on failure');
+      assert.strictEqual(await pg.locator('#logoutBtn').isDisabled(), false, 'the button is usable again');
+      logoutStatus = 204;
+      await pg.locator('#logoutBtn').click();
+      await pg.waitForURL(/\/console\/login$/);
+      await pg.close();
+    });
+
     await test('no pageerror and no unexpected console error across the whole run', async () => {
       assert.deepStrictEqual(pageErrors, []);
-      assert.deepStrictEqual(consoleErrors.filter((t) => !/status of (400|403|409|503)/.test(t)), []);
+      assert.deepStrictEqual(consoleErrors.filter((t) => !/status of (400|403|409|500|503)/.test(t)), []);
     });
   } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`platform admin browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);

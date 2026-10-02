@@ -360,7 +360,7 @@ html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="da
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div></nav>
+<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><button id=logoutBtn type=button>退出</button></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <div id=app-version data-version="{{CONSOLE_VERSION}}" data-commit="{{CONSOLE_COMMIT}}">{{CONSOLE_VERSION_TEXT}}</div>
 <script>
@@ -613,7 +613,13 @@ async function refreshGroups(source){var generation=++groupRequestGeneration;if(
 //    不重写 refreshGroups/renderGroups —— 它们的三态文案、AbortController、generation 守卫由 group 回归守着。
 //    本块自带同款守卫:加载中/空/失败三态、超时、过期应答丢弃;名称有效性、重名、核码一律由 Hub 判,前端不预判。
 // 自备审核区开关(组长裁定 2026-10-01:托管先行,自备封存,第五期再打开)。关闭时该区块不渲染、不发任何请求。
-var FEATURE_SELFHOST_REVIEW=false;
+var FEATURE_SELFHOST_REVIEW=true;    // 第一版入网批准走这块(业主实测:关着时第一版批准走不通)
+(function(){var b=document.getElementById('logoutBtn');if(!b)return;b.onclick=async function(){
+  b.disabled=true;
+  try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}
+  b.disabled=false;var st=document.getElementById('platform-status');if(st)st.textContent='退出失败,请重试';
+};})();
+var FEATURE_HOSTED=false;            // 托管区是第二版:第一版没有 G4 后端(选项接口 404),整块不渲染、不请求;第二版再开
 var ENROLL_API={
   list:'/api/console/enroll/applications',
   approve:function(id){return '/api/console/enroll/applications/'+encodeURIComponent(id)+'/approve';},
@@ -847,6 +853,7 @@ function renderHostedAccounts(){
   hostedFill('hostedAccount',items,!llm?'请先选择 LLM':(rows.length?'请选择账号':'（该 LLM 暂无可用团队账号）'));
 }
 async function refreshHostedOptions(){
+  if(!FEATURE_HOSTED||!document.getElementById('hostedForm'))return null;
   var generation=++hostedOptionsGeneration,status=document.getElementById('hostedStatus'),retry=document.getElementById('hostedRetry'),form=document.getElementById('hostedForm');
   if(!status||!retry||!form)return null;
   status.textContent='托管选项加载中…';retry.hidden=true;
@@ -940,6 +947,7 @@ function mountEnrollPanels(pane){
     document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;
     document.getElementById('enrollCancel').onclick=enrollCloseEditor;
   }
+  if(!FEATURE_HOSTED){var hc=pane.querySelector('#hostedCreate');if(hc)hc.remove();refreshRoster();if(FEATURE_SELFHOST_REVIEW)refreshEnroll();var rt0=setInterval(function(){if(!document.getElementById('rosterItems')){clearInterval(rt0);return;}refreshRoster();},15000);return;}
   var mask=document.createElement('div');mask.id='hostedMask';mask.hidden=true;mask.innerHTML='<div id=hostedMaskBox class=hosted-mask-box></div>';mask.onclick=hostedMaskHide;pane.append(mask);
   document.getElementById('hostedRefresh').onclick=refreshHostedOptions;document.getElementById('hostedRetry').onclick=refreshHostedOptions;
   document.getElementById('hostedCli').onchange=renderHostedLlm;document.getElementById('hostedLlm').onchange=renderHostedAccounts;
