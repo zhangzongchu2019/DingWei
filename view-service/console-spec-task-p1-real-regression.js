@@ -29,6 +29,8 @@
  *   no-online-agents       任务页在线 Agent 候选恒空              ⇒ 红在「指派候选」
  *   agent-pull-denied      新平台 Agent 能力令牌校验恒拒          ⇒ 红在「Agent 拉任务」
  *   offline-agents-offered 任务页把离线 Agent 也列进候选          ⇒ 红在「指派候选（反）」
+ *   task-pull-owner-scope-off 任务拉取不再按「开工人＝令牌属主」限定  ⇒ 红在「跨属主（反）」
+ *   owner-check-off        【已知存活】撤令牌属主＝Agent 属主比对    ⇒ 本脚本与 m8 层都不红（见下「隔离范围」）
  *   no-cap-issue           撤令牌签发口（新平台分支恒 404）          ⇒ 红在「开工并签发令牌」
  *   cap-optional           令牌可缺失（缺／错令牌照放行）          ⇒ 红在「无令牌被拒」
  *   cap-agent-unbound      令牌不绑定 Agent（别的 Agent 可拿去用）  ⇒ 红在「别的 Agent 的凭据」
@@ -36,9 +38,10 @@
  * 退出码：0 通过（变异下＝存活）、1 有红（变异下＝被杀）、2 崩、3 变异无效（锚失配／未知名）。
  *
 
- * 隔离范围（如实）：令牌绑定 Agent、绑定页面 id、凭据伪造、吊销后失效在本脚本里有格；【跨属主】本场景只有一个用户，不覆盖，
- * 「令牌属主＝Agent 属主」那条比对（newplat_spec_agent.go）在当前不变量下属纵深防御冗余，撤掉它本脚本与 m8 层都无测试变红
- * （复验方 tosonnet55tc2k 实测：owner-check-off 存活）；跨用户隔离由 m8 层 H10 守。
+ * 隔离范围（如实）：令牌绑定 Agent、绑定页面 id、凭据伪造、吊销后失效、【跨属主】（第二个用户 bobtwo，由 view-service/p1seed 播种、
+ * 经口令登录与批准入网；他看不到别人的 spec，他的 Agent 凭自己合法令牌也拉不到别人的任务）在本脚本里都有格。
+ * 「令牌属主＝Agent 属主」那条比对（newplat_spec_agent.go）在当前不变量下是纵深防御冗余：令牌只能由属主给自己的 Agent 签发，
+ * 合法流程造不出「属主不一致」的令牌，故撤掉它本脚本与 m8 层都无法变红（复验方与本席实测：owner-check-off 存活），不装作覆盖了它。
  *
  * 已知边界（如实）：Hub 把 console-tasks 令牌交到 Agent 手里的链路 095 本就没有（方案第六节答复①），本脚本由「人」在页面会话里
  * 签发后经 Agent 进程的命令口交给它，只验 Hub 侧签发与校验；「开工」在页面上没有按钮，用同一浏览器会话的 fetch 调接口。
@@ -50,7 +53,7 @@ const os = require('os');
 const path = require('path');
 const readline = require('readline');
 const { spawn, spawnSync } = require('child_process');
-const { chromium } = require('playwright');
+const { chromium, request: playwrightRequest } = require('playwright');
 
 const ROOT = path.join(__dirname, '..');
 const MUTATIONS = {
@@ -78,6 +81,17 @@ const MUTATIONS = {
     file: 'internal/m8/console_task_board_page.go',
     from: '\t\tif h.consoleTaskAgentOnline(agent) {\n\t\t\tonline = append(online, agent)\n\t\t\tonlineIDs[agent.ID] = true',
     to: '\t\tif true || h.consoleTaskAgentOnline(agent) {\n\t\t\tonline = append(online, agent)\n\t\t\tonlineIDs[agent.ID] = true',
+  },
+  'task-pull-owner-scope-off': {
+    file: 'internal/m8/console_task_driver.go',
+    from: '\tif err != nil || start.AnnouncedBy != platformPrincipal(r) {\n\t\thttp.Error(w, "项目尚未开工，取不到任务清单", http.StatusConflict)',
+    to: '\tif err != nil {\n\t\thttp.Error(w, "项目尚未开工，取不到任务清单", http.StatusConflict)',
+  },
+  // 已知存活（如实）：令牌属主比对在当前不变量下是纵深防御冗余，合法流程造不出「属主不一致」的令牌；保留此刀只为让存活可复现、可核
+  'owner-check-off': {
+    file: 'internal/m8/newplat_spec_agent.go',
+    from: 'capability.PrincipalID != identity.Lower(ag.OwnerLC) ||',
+    to: '(capability.PrincipalID != identity.Lower(ag.OwnerLC) && false) ||',
   },
   'no-cap-issue': {
     file: 'internal/m8/newplat_spec_agent.go',
@@ -176,13 +190,15 @@ function prepareSource() {
 
 function buildBinaries(src) {
   if (process.env.P1_BIN_DIR && !mutationArg) {
-    return { hub: path.join(process.env.P1_BIN_DIR, 'workpulse'), pg: path.join(process.env.P1_BIN_DIR, 'pgtest-bin') };
+    return { hub: path.join(process.env.P1_BIN_DIR, 'workpulse'), pg: path.join(process.env.P1_BIN_DIR, 'pgtest-bin'), seed: path.join(process.env.P1_BIN_DIR, 'p1seed') };
   }
   const hub = path.join(TMP, 'workpulse');
   const pgBin = path.join(TMP, 'pgtest-bin');
   sh('go', ['build', '-o', hub, './cmd/workpulse'], { cwd: src });
   sh('go', ['build', '-o', pgBin, '.'], { cwd: path.join(ROOT, 'tools', 'pgtest') });
-  return { hub, pg: pgBin };
+  const seed = path.join(TMP, 'p1seed');
+  sh('go', ['build', '-o', seed, './view-service/p1seed'], { cwd: ROOT });
+  return { hub, pg: pgBin, seed };
 }
 
 async function startPG(bin) {
@@ -319,7 +335,9 @@ async function test(name, fn, { standalone = false } = {}) {
     const post = (p, data) => ctx.request.post(base + p, { data, headers: { Origin: base } });
     const get = (p) => ctx.request.get(base + p, { headers: { Origin: base } });
 
-    const agents = { opus: new TestAgent('Opus50ts', base, ROOT), kimi: new TestAgent('Kimi', base, ROOT) };
+    const agents = { opus: new TestAgent('Opus50ts', base, ROOT), kimi: new TestAgent('Kimi', base, ROOT), bob: new TestAgent('Bob', base, ROOT) };
+    const bobPassword = 'Bob-P1-test-2026!';
+    let bobApi = null;
     const state = {};
 
     await test('登录：真键盘输入口令，首登强制改密后进入 console', async () => {
@@ -568,6 +586,42 @@ async function test(name, fn, { standalone = false } = {}) {
       const r = await agents.kimi.http('POST', '/api/agent/console/specs', state.cap);
       assert.ok(denied(r), `任务令牌不得用于 spec 新建口：应 401/403，实得 ${r.status}`);
     });
+    await test('跨属主：第二个用户 bobtwo 经口令登录，批准自己的 Agent 入网并连入 /ws/agent', async () => {
+      sh(bins.seed, [dsn, 'bobtwo', 'bo', bobPassword]);
+      const tmpApi = await playwrightRequest.newContext({ baseURL: base, extraHTTPHeaders: { Origin: base } });
+      const login = await tmpApi.post('/console/login/password', { data: { user_id: 'bobtwo', password: bobPassword } });
+      assert.strictEqual(login.status(), 200, `bobtwo 登录应 200，实得 ${login.status()}`);
+      const m = /dw_np_session=([^;]+)/.exec(login.headers()['set-cookie'] || '');
+      assert.ok(m, '登录应下发会话 cookie');
+      await tmpApi.dispose();
+      // Secure cookie 在 Node 请求上下文里不稳，手工带 Cookie 头
+      bobApi = await playwrightRequest.newContext({ baseURL: base, extraHTTPHeaders: { Origin: base, Cookie: `dw_np_session=${m[1]}` } });
+      agents.bob.startEnroll('bobtwo');
+      await waitFor(() => agents.bob.pairing, 30000, 'bob pairing code');
+      const apps = (await jsonOf(await bobApi.get('/api/console/enroll/applications'))).applications || [];
+      assert.strictEqual(apps.length, 1, 'bobtwo 应只看到自己的一条待批申请');
+      const ap = await bobApi.post(`/api/console/enroll/applications/${apps[0].application_id}/approve`, { data: { pairing_code: agents.bob.pairing, agent_name: 'Bob', new_group_name: 'bobgrp' } });
+      assert.strictEqual(ap.status(), 200, `bobtwo 批准自己的 Agent 应 200，实得 ${ap.status()} ${await ap.text()}`);
+      await waitFor(() => agents.bob.enrolled, 40000, 'bob enrolled');
+      agents.bob.startServe();
+      await waitFor(() => agents.bob.online(), 20000, 'bob online');
+    });
+
+    await test('跨属主（反）：bobtwo 的 spec 列表里没有 adminone 的 spec', async () => {
+      const sl = await jsonOf(await bobApi.get('/api/console/specs'));
+      const items = sl.specs || sl.items || [];
+      assert.ok(!items.some((x) => x.id === state.specID || x.title === 'P1 真页面 spec'), `bobtwo 不应看到 adminone 的 spec：${JSON.stringify(items).slice(0, 160)}`);
+    });
+
+    await test('跨属主（反）：他人 Agent 凭自己合法的 console-tasks 令牌，拉不到 adminone 的 spec 任务', async () => {
+      const cap = await bobApi.post('/api/console/agents/Bob.bo/capability', { data: { page_id: 'console-tasks' } });
+      assert.strictEqual(cap.status(), 200, `bobtwo 给自己的 Agent 签令牌应 200，实得 ${cap.status()}`);
+      const bobCap = (await jsonOf(cap)).capability;
+      const r = await agents.bob.http('GET', pullPath(), bobCap);
+      assert.ok(r.status === 401 || r.status === 403 || r.status === 404 || r.status === 409, `他人 Agent 拉本属主 spec 任务应被拒，实得 ${r.status}`);
+      assert.ok(!r.body.includes(state.taskID), '返回里不得含 adminone 的任务 id');
+    });
+
     await test('吊销（反）：属主吊销研发 Agent 后，它从候选消失，原凭据＋原令牌不再能拉', async () => {
       const rv = await post(`/api/console/agents/${state.kimiID}/revoke`, {});
       assert.strictEqual(rv.status(), 200, `吊销应 200，实得 ${rv.status()} ${await rv.text()}`);
