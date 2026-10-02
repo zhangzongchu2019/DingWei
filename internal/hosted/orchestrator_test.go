@@ -98,7 +98,7 @@ func mkOrch(t *testing.T) (*Orchestrator, *fakeIdentity, *fakeGateway, *Store) {
 		t.Fatal(err)
 	}
 	// 配额与账号
-	if err := s.PutQuota(context.Background(), Quota{UserLC: "zzc", AgentsLimit: 2, VCPULimit: 4, MemMBLimit: 8192}, "admin"); err != nil {
+	if err := s.PutQuota(context.Background(), Quota{UserLC: "zzc", AgentsLimit: 2, VCPULimit: 4, MemMBLimit: 8192, DiskMBLimit: 1 << 20}, "admin"); err != nil {
 		t.Fatal(err)
 	}
 	a, err := svc.Register(context.Background(), "admin", true, "team-codex", "token_file", "codex", "gpt", "sk-x")
@@ -189,6 +189,9 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 	if cp.Resources.MemoryMB != 4096 || cp.Resources.CPUShares != 2048 { // 2c4g ⇒ clamp(1024×2)
 		t.Fatalf("resources 换算: %+v", cp.Resources)
 	}
+	if cp.Resources.DiskMB != 8192 { // R-G4-DISK-TIER：create_seat 参数 disk_mb＝套餐档（2c4g=8192）
+		t.Fatalf("resources.disk_mb: %+v", cp.Resources)
+	}
 	if cp.Token.ApplicationID != "app1" || cp.Token.PollToken != "tok" || cp.Token.ExpiresAt == "" {
 		t.Fatalf("token_file: %+v", cp.Token)
 	}
@@ -270,7 +273,7 @@ func TestCreateRejections(t *testing.T) {
 		t.Fatalf("离线节点应 node_no_capacity, 得 %v", err)
 	}
 	// 配额满员：agents_limit=2 已发 1 席，再设 limit=1 ⇒ 新上限低于已用量允许保存、只限新建
-	if err := s.PutQuota(context.Background(), Quota{UserLC: "zzc", AgentsLimit: 1, VCPULimit: 4, MemMBLimit: 8192}, "admin"); err != nil {
+	if err := s.PutQuota(context.Background(), Quota{UserLC: "zzc", AgentsLimit: 1, VCPULimit: 4, MemMBLimit: 8192, DiskMBLimit: 1 << 20}, "admin"); err != nil {
 		t.Fatal(err)
 	}
 	r4 := base

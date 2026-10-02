@@ -150,9 +150,9 @@ func TestHostedDestroyBackupFailed(t *testing.T) {
 // 第 5 条：GET admin/quotas 契约形状（GB）逐字；PUT 路径里的用户 ID 不分大小写落到同一行。
 func TestHostedAdminQuotasShape(t *testing.T) {
 	h, deps, st, _, _ := mkHostedHTTP(t)
-	onlineSeat(t, deps, st) // 已用一席 2C/4G
+	onlineSeat(t, deps, st) // 已用一席 2C/4G/8G（R-G4-DISK-TIER 后 2c4g 磁盘档 8192MB）
 	code, body, _ := h.do("admin", "GET", "/api/console/admin/quotas", "")
-	want := `[{"user":{"id":"Zzc","short_name":"zz"},"agents":{"used":1,"limit":2},"vcpu":{"used":2,"limit":4},"mem_gb":{"used":4,"limit":8},"disk_gb":{"used":0,"limit":0}}]`
+	want := `[{"user":{"id":"Zzc","short_name":"zz"},"agents":{"used":1,"limit":2},"vcpu":{"used":2,"limit":4},"mem_gb":{"used":4,"limit":8},"disk_gb":{"used":8,"limit":1024}}]`
 	if code != 200 || strings.TrimSpace(body) != want {
 		t.Fatalf("GET quotas: %d\n got %s\nwant %s", code, body, want)
 	}
@@ -160,7 +160,7 @@ func TestHostedAdminQuotasShape(t *testing.T) {
 		t.Fatalf("PUT: %d %s", code, body)
 	}
 	_, body, _ = h.do("admin", "GET", "/api/console/admin/quotas", "")
-	if !strings.Contains(body, `"agents":{"used":1,"limit":5},"vcpu":{"used":2,"limit":6},"mem_gb":{"used":4,"limit":12},"disk_gb":{"used":0,"limit":20}`) {
+	if !strings.Contains(body, `"agents":{"used":1,"limit":5},"vcpu":{"used":2,"limit":6},"mem_gb":{"used":4,"limit":12},"disk_gb":{"used":8,"limit":20}`) {
 		t.Fatalf("PUT with upper-case ID must land on the lower-case row: %s", body)
 	}
 }

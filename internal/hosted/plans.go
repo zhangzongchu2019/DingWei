@@ -1,8 +1,8 @@
 package hosted
 
 // 资源套餐（组长裁定 da622016：平台管理侧预设，本版两档）。
-// disk_mb 待 G1 配额档位确认（契约第五节待办 1）；配额记账在磁盘档未定前按 0 预记账——
-// 与 V7-C8"实测前 Hub 只预记账、不声称磁盘硬限生效"同一条纪律。
+// 磁盘档位已定（R-G4-DISK-TIER 57d9a01a3ad6：2c4g=8192MB、4c8g=16384MB；业主可调）。
+// 定档前 DiskMB=0 的口径（只预记账、不设硬限）作废；旧席位按 0 记的差额见交件说明。
 
 type Plan struct {
 	ID     string
@@ -12,8 +12,8 @@ type Plan struct {
 }
 
 var plans = map[string]Plan{
-	"2c4g": {ID: "2c4g", VCPU: 2, MemMB: 4096, DiskMB: 0}, // DiskMB 待 G1 定档
-	"4c8g": {ID: "4c8g", VCPU: 4, MemMB: 8192, DiskMB: 0},
+	"2c4g": {ID: "2c4g", VCPU: 2, MemMB: 4096, DiskMB: 8192},
+	"4c8g": {ID: "4c8g", VCPU: 4, MemMB: 8192, DiskMB: 16384},
 }
 
 // PlanByID 取套餐；未知 id 返回 ok=false（调用方判 plan_exceeds_quota/name_invalid 层）。
