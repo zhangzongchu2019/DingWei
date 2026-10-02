@@ -367,3 +367,68 @@ func TestCleanStaleDoesNotKillForeignPostmaster(t *testing.T) {
 		t.Errorf("目录该删: %s", dir)
 	}
 }
+
+// ── 补格（组长 2026-10-02T02:52:19Z 令）：读 /proc 那半对【不存在的 PID】必须报「判不出」 ──
+//
+// TestPidOwnerReason 钉的是纯函数那半（procOK=false ⇒ pidOwnerUnknown）；这一格钉真去读
+// /proc 的那半：PID 不在 ⇒ comm 读不出来 ⇒ 必须落到同一个 pidOwnerUnknown，一个口径。
+//
+// 🔴 为什么值得单钉一格：这个返回值是 stale.go 授权动作的唯一依据 ——
+//
+//	报 ""（判成本目录的 postmaster）⇒ terminate ⇒ 对一个我们不认识的 PID 发 SIGTERM；
+//	报任何「不属于」的理由          ⇒ pid_reused ⇒ 删目录（可能抽走一个活 PG 的脚下）；
+//	只有 pidOwnerUnknown            ⇒ skip_live_pg（不杀也不删，只报数）。
+//
+//	PID 恰恰是内核会回收复用的东西：读不到只能等于「判不出」，不能等于任何一种结论。
+//	反向对照两刀都红：把那一支改成 return ""（⇒ 误杀）或 return "datadir_mismatch"
+//	（⇒ 误删目录），本格都抓得到 —— 它钉的是【确切的值】，不是「非空就算过」。
+func TestPidOwnsDataDirReportsUnknownForAbsentPID(t *testing.T) {
+	dataDir := filepath.Join(t.TempDir(), "data")
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// 🔴 挑五次而不是挑一次：PID 会被回收，「扫到它不在」与「真去读它」之间理论上可能被
+	// 别的进程占走。占了就重挑；五次都挑不出就红 —— 不静默 skip，那一格等于没跑过。
+	for attempt := 0; attempt < 5; attempt++ {
+		pid := candidateAbsentPID()
+		if pid <= 0 || procDirExists(pid) {
+			continue
+		}
+		got := pidOwnsDataDir(pid, dataDir)
+		if procDirExists(pid) {
+			continue // 调用期间被占走了 ⇒ 这次的读数不作数
+		}
+		if got != pidOwnerUnknown {
+			t.Fatalf("PID %d 此刻不存在 ⇒ 必须报判不出 %q，实得 %q（报空串就会去 SIGTERM 一个不认识的进程；报别的理由就会删掉目录）",
+				pid, pidOwnerUnknown, got)
+		}
+		return
+	}
+	t.Fatal("五次都没挑到一个【调用期间始终不存在】的 PID ⇒ 本格什么也没验到，不算通过")
+}
+
+// candidateAbsentPID 交回一个大概率不存在的 PID：Linux 上从 pid_max 往下扫，取第一个没有
+// /proc 条目的；非 Linux 没有 /proc（reap_other.go 那一版对任何 PID 都报判不出），扫第一个
+// 就返回 —— 本格要的口径在两个平台上是同一句，所以不 skip。
+func candidateAbsentPID() int {
+	start := 4194304
+	if b, err := os.ReadFile("/proc/sys/kernel/pid_max"); err == nil {
+		if n, err := strconv.Atoi(strings.TrimSpace(string(b))); err == nil && n > 1024 {
+			start = n - 1
+		}
+	}
+	for pid := start; pid > start-4096 && pid > 1; pid-- {
+		if !procDirExists(pid) {
+			return pid
+		}
+	}
+	return -1
+}
+
+// procDirExists 只看 /proc/<pid> 这个目录在不在。
+// 🔴 与被测函数读 comm 那条路【不同源】：前提核对若与被测代码同源，就是自己给自己作证
+// （同 commOf／psState 的理由）。非 Linux 上恒 false —— 那里本来就没有 /proc。
+func procDirExists(pid int) bool {
+	_, err := os.Stat("/proc/" + strconv.Itoa(pid))
+	return err == nil
+}
