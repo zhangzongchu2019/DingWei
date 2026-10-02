@@ -256,8 +256,8 @@ func TestRestartAfterFailedStopResumesCredential(t *testing.T) {
 	}
 	eqSeq(t, "restart_after_failed_stop", log.get(), []string{"idp:resume", "node:restart_seat"})
 	seat, _ := s.GetSeat(ctx, id)
-	if seat.State != "online" {
-		t.Fatalf("重启后应 online: %+v", seat)
+	if seat.State != "starting" { // 容器重启后等 Agent 连入（板 79498c60）
+		t.Fatalf("重启后应 starting: %+v", seat)
 	}
 }
 

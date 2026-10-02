@@ -345,6 +345,31 @@ INSERT INTO g4_seat_event (agent_id, kind, detail) VALUES ($1,$2,$3)`, agentID, 
 	return moved, err
 }
 
+// OnlineAfterExistingTimeout 既有席位（重启／启用）启动超时后 Agent 才连入：error/start_timeout ⇒ online（lead-enable-restart-race ②）。
+// 只认「最近一条事件是既有席位超时（detail 含 existing:true）」——新建超时的那条不带此标记（且已吊销回收），
+// 其后任何操作（重启、销毁…）都会再记事件，届时不再命中。
+func (s *Store) OnlineAfterExistingTimeout(ctx context.Context, agentID string) (bool, error) {
+	moved := false
+	err := s.pool.InTx(ctx, htx(), nil, func(tx repo.Tx) error {
+		res, err := tx.Exec(ctx, `
+UPDATE g4_hosted_seat s SET state='online', state_detail='', updated_at=now()
+WHERE s.agent_id=$1 AND s.state='error' AND s.state_detail='start_timeout'
+  AND (SELECT e.detail FROM g4_seat_event e WHERE e.agent_id=s.agent_id ORDER BY e.id DESC LIMIT 1)
+      @> '{"existing":true}'::jsonb`, agentID)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return nil
+		}
+		moved = true
+		_, err = tx.Exec(ctx, `
+INSERT INTO g4_seat_event (agent_id, kind, detail) VALUES ($1,'online','{"after":"start_timeout"}'::jsonb)`, agentID)
+		return err
+	})
+	return moved, err
+}
+
 // ---------- 团队账号池 ----------
 
 type Account struct {

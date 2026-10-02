@@ -350,27 +350,43 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 // MarkOnline 席位以专属凭据连入时由 Hub 连接层回调（Hub.OnHostedAgentOnline，wireHosted 接线）。
 // 只认 starting → online：已 online 的重连、升级中（busy）新容器连入、已超时清掉的席位等一律不改（返回 nil）。
 func (o *Orchestrator) MarkOnline(ctx context.Context, agentID string) error {
-	_, err := o.st.TransitionSeatState(ctx, agentID, "starting", "online", "", "online", nil)
+	moved, err := o.st.TransitionSeatState(ctx, agentID, "starting", "online", "", "online", nil)
+	if err != nil || moved {
+		return err
+	}
+	// 既有席位重启／启用超时记了 error/start_timeout 之后 Agent 才连入（lead-enable-restart-race ②）：照样置 online。
+	// 新建超时已吊销回收，不涉及（OnlineAfterExistingTimeout 只认既有席位那条超时事件）。
+	_, err = o.st.OnlineAfterExistingTimeout(ctx, agentID)
 	return err
 }
+
+// starting 态的 state_detail：区分「新建席位起来」（空）与「既有席位重启／启用」。
+// 超时清扫对两者的处置不同：新建的超时整个回收（吊销、解绑）；既有席位只记 start_timeout，Agent 与账号原样保留，可再重启。
+const (
+	seatStartingRestart = "restart"
+	seatStartingEnable  = "enable"
+)
 
 // SweepTimeouts 超时清扫（排队 10 分钟不可取消／拉镜像 30m／启动 5m；超时即失败不留半成品）。
 func (o *Orchestrator) SweepTimeouts(ctx context.Context, now time.Time) {
 	o.sweepMu.Lock()
 	defer o.sweepMu.Unlock()
 	rows, err := o.st.pool.Query(ctx, htx(), `
-SELECT agent_id, state, updated_at FROM g4_hosted_seat
+SELECT agent_id, state, state_detail, updated_at FROM g4_hosted_seat
 WHERE state IN ('queued','pulling','starting')`)
 	if err != nil {
 		return
 	}
 	defer rows.Close()
-	type pending struct{ id, state string }
+	type pending struct {
+		id, state string
+		existing  bool // 既有席位的重启／启用（不是新建）
+	}
 	var timedOut []pending
 	for rows.Next() {
-		var id, state string
+		var id, state, detail string
 		var updated time.Time
-		if err := rows.Scan(&id, &state, &updated); err != nil {
+		if err := rows.Scan(&id, &state, &detail, &updated); err != nil {
 			return
 		}
 		var limit time.Duration
@@ -384,10 +400,18 @@ WHERE state IN ('queued','pulling','starting')`)
 			limit, reason = 5*time.Minute, "start_timeout"
 		}
 		if now.Sub(updated) > limit {
-			timedOut = append(timedOut, pending{id: id, state: reason})
+			existing := state == "starting" && (detail == seatStartingRestart || detail == seatStartingEnable)
+			timedOut = append(timedOut, pending{id: id, state: reason, existing: existing})
 		}
 	}
 	for _, p := range timedOut {
+		if p.existing {
+			// 🔴 既有席位重启／启用后 Agent 没连上：只记错，不吊销、不解绑 —— 那是用户在用的 Agent，
+			//    把新建失败的回收套在它身上会把它的凭据吊销掉。记 error 后 Restart 仍可再试（guard 放行 error）。
+			//    条件迁移：选出之后、写之前 Agent 恰好连入置 online 的，不被盖回 error。
+			_, _ = o.st.TransitionSeatState(ctx, p.id, "starting", "error", p.state, "fail", json.RawMessage(`{"reason":"`+p.state+`","existing":true}`))
+			continue
+		}
 		o.dropToken(p.id)
 		seat, err := o.st.GetSeat(ctx, p.id)
 		if err == nil && seat.AccountRef.Valid {
