@@ -50,6 +50,26 @@ func validateImageRef(ref, registry string) error {
 	return nil
 }
 
+// checkLocalImage local 形态闸（三条指令共用）：白名单＋inspect 读出 ID 逐字相等。
+// 复验关注点：任何一条路径都不得让未登记的本机镜像被用上。
+func (d *dockerOps) checkLocalImage(ctx context.Context, ref string) (bool, error) {
+	id := localImageID(ref)
+	if id == "" {
+		return false, nil // 非 local 形态，不管
+	}
+	if !d.localImages[id] {
+		return false, fmt.Errorf("%w: 未登记的本机 image ID", ErrImageRef)
+	}
+	got, err := d.eng.imageInspectID(ctx, id)
+	if err != nil {
+		return false, fmt.Errorf("本机镜像不存在: %v", err)
+	}
+	if got != id {
+		return false, fmt.Errorf("%w: inspect 读出 %q 与 ref 逐字不等", ErrImageRef, got)
+	}
+	return true, nil
+}
+
 // localImageID 取出 local 形态的 image ID（64 位裸 hex；不是 local 形态 ⇒ ""）。
 // 白名单与 inspect 比对都用裸 hex（引擎的 Id 常带 sha256: 前缀，docker.go 剥）。
 func localImageID(ref string) string {
@@ -95,18 +115,11 @@ func (d *dockerOps) pull(ctx context.Context, params json.RawMessage) (json.RawM
 	if err := validateImageRef(p.Image, d.registry); err != nil {
 		return nil, err
 	}
-	if id := localImageID(p.Image); id != "" {
-		// local 形态：白名单＋inspect 逐字相等，免 pull
-		if !d.localImages[id] {
-			return nil, fmt.Errorf("%w: 未登记的本机 image ID", ErrImageRef)
-		}
-		got, err := d.eng.imageInspectID(ctx, id)
+	if ok, err := d.checkLocalImage(ctx, p.Image); localImageID(p.Image) != "" {
 		if err != nil {
-			return nil, fmt.Errorf("本机镜像不存在: %v", err)
+			return nil, err
 		}
-		if got != id {
-			return nil, fmt.Errorf("%w: inspect 读出 %q 与 ref 逐字不等", ErrImageRef, got)
-		}
+		_ = ok
 		return json.Marshal(map[string]string{"image": p.Image, "state": "present"})
 	}
 	if err := d.eng.imagePull(ctx, p.Image); err != nil {
@@ -304,6 +317,10 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	if err := validateImageRef(p.Image, d.registry); err != nil {
 		return nil, err
 	}
+	// 🔴 create 也过 local 闸（复验关注面：未经 pull 直达 create 时，未登记本机镜像不得起容器）
+	if _, err := d.checkLocalImage(ctx, p.Image); err != nil {
+		return nil, err
+	}
 	if err := p.Resources.validate(); err != nil {
 		return nil, err
 	}
@@ -477,16 +494,9 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if err != nil {
 		return nil, err
 	}
-	if id := localImageID(p.Image); id != "" {
-		if !d.localImages[id] {
-			return nil, fmt.Errorf("%w: 未登记的本机 image ID", ErrImageRef)
-		}
-		got, err := d.eng.imageInspectID(ctx, id)
-		if err != nil {
-			return nil, fmt.Errorf("本机镜像不存在: %v", err)
-		}
-		if got != id {
-			return nil, fmt.Errorf("%w: inspect 读出 %q 与 ref 逐字不等", ErrImageRef, got)
+	if localImageID(p.Image) != "" {
+		if _, err := d.checkLocalImage(ctx, p.Image); err != nil {
+			return nil, err
 		}
 	} else if err := d.eng.imagePull(ctx, p.Image); err != nil {
 		return nil, err

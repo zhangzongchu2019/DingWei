@@ -552,3 +552,20 @@ func TestLocalImageForm(t *testing.T) {
 		t.Fatal("ID 逐字不等必须拒")
 	}
 }
+
+// 复验关注面：create 直达路径上的 local 形态闸——未登记的本机 ID 不得起容器（不经 pull）。
+func TestCreateRejectsUnregisteredLocalImage(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	before := len(f.calls)
+	_, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_lk","image":"local@sha256:`+
+		strings.Repeat("cd", 32)+`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`))
+	if err == nil {
+		t.Fatal("未登记本机 ID 不得建席")
+	}
+	for _, c := range f.calls[before:] {
+		if strings.Contains(c, "containers/create") {
+			t.Fatalf("未登记镜像不得建容器: %v", f.calls)
+		}
+	}
+}
