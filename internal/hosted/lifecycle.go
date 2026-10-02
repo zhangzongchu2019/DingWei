@@ -146,6 +146,7 @@ func (l *Lifecycle) Upgrade(ctx context.Context, agentID, actorLC, version strin
 			"expires_at":     tok.ExpiresAt.UTC().Format(time.RFC3339),
 		},
 		"cred_kind": seat.CredKind, // 容器启动契约：升级后的新容器同形态（a26a825f528a 解冻这一行）
+		"cli":       seat.CLI,      // 升级后的新容器同一 CLI（组长 R-B12-SEATMODE 第 2 条）
 	})
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "upgrade_seat", Params: params})
 	if err != nil {
