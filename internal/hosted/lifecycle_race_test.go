@@ -341,3 +341,39 @@ func TestOnlineAfterExistingTimeoutKeepsDetailCondition(t *testing.T) {
 		}
 	}
 }
+
+// 复验方 tosonnet55tc2k 补格（REVIEW-G4-RACE-FOLD 附录，组长 R-G4-RACE-D3 并入，去 ZZ 前缀）：
+// 置 starting 写库失败时的撤回只对「这次 Resume 真的恢复了凭据」成立（alreadyActive=false）；
+// 凭据本来就是活的（alreadyActive=true）时，回滚不得把这个在用的凭据暂停掉。
+func TestStartingWriteFailureDoesNotSuspendALiveCredential(t *testing.T) {
+	ctx := context.Background()
+	for _, op := range []string{"restart", "enable"} {
+		t.Run(op, func(t *testing.T) {
+			lc, _, susp, gw, _, s, id := mkLifecycle(t)
+			if op == "enable" {
+				if err := lc.Disable(ctx, id, "zzc", false, true); err != nil {
+					t.Fatal(err)
+				}
+			}
+			susp.suspended = false // 凭据本来就是活的：Resume 返回 already=true
+			before, _ := s.GetSeat(ctx, id)
+			failStartingWrite(t, s, id)
+			gw.sent = nil
+			var err error
+			if op == "enable" {
+				err = lc.Enable(ctx, id, "zzc", false)
+			} else {
+				err = lc.Restart(ctx, id, "zzc", false)
+			}
+			if err == nil {
+				t.Fatal("the starting write failed; the operation must fail")
+			}
+			if susp.suspended {
+				t.Fatal("a credential that was already live was suspended by the rollback")
+			}
+			if seat, _ := s.GetSeat(ctx, id); seat.State != before.State {
+				t.Fatalf("seat changed: %s want %s", seat.State, before.State)
+			}
+		})
+	}
+}
