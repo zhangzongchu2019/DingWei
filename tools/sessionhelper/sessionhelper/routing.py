@@ -192,9 +192,22 @@ def _max_hops(env: dict[str, Any]) -> int:
     return m if m > 0 else DEFAULT_MAX_HOPS
 
 
+def is_reliable_delivery_wrapper(env: dict[str, Any]) -> bool:
+    """Hub 可靠投递外壳(hub.go 覆写 type=delivery 并补 delivery_id/delivery_version=1/ack_required=true)。
+
+    只认严格形状:畸形或伪造的 type=delivery 不享受下面的外壳例外。
+    """
+    meta = _meta(env)
+    version = meta.get("delivery_version")
+    return (meta.get("type") == "delivery" and type(version) is int and version == 1
+            and meta.get("ack_required") is True and bool(str(meta.get("delivery_id") or "").strip()))
+
+
 def is_reserved_control_payload(env: dict[str, Any]) -> bool:
     meta = _meta(env)
-    if str(meta.get("type") or "") in _CONTROL_META_TYPES:
+    # 组长 R-AGENT-REPLY-CONTROL(板 57f0e517,依 ANALYSIS-R-AGENT-REPLY-CONTROL 第二节):type=delivery 对严格可靠外壳
+    # 只是传输外壳,忽略这一项;kind=ack、正文保留 token 照判,其后 terminal/hop/reply_policy 照判。
+    if str(meta.get("type") or "") in _CONTROL_META_TYPES and not is_reliable_delivery_wrapper(env):
         return True
     if str(meta.get(META_KIND) or "") == KIND_ACK:
         return True

@@ -12,6 +12,15 @@
   S3 A--kind=mirror-->B:R1,B 不产 reply(T3 e2e)。
   终局断言:静置后 A 恰一次终止、B 恰一次 reply、无环状增长。
 
+可靠外壳(组长 R-AGENT-REPLY-CONTROL-IMPL-20261002154009,ANALYSIS-R-AGENT-REPLY-CONTROL 第四节第 6、7 格):
+  第 6 格 S1 机械确认 B 收件、A 收回信都是 Hub 可靠外壳(type=delivery、ack_required=true,读两侧 inbox 库),
+        A 收回信保留 conversation_terminal=true;修前 B 红在「suppress … control」,修后 A 绿在「suppress … conversation_terminal」。
+  第 7 格 S4 两个「旧 helper」(启动时打补丁:无第二道闸、回信不带 terminal、一律 expect_reply)互回,
+        Hub R4 在 max_hops 精确停:恰一条 R4 丢弃(hop=16 max=16)、两侧收件合计 16、静置后不增长。
+
+🔴 环境隔离与机械闸(组长 R-SMOKE-IPC-HIJACK-20261002154248):helper 一律经 _smoke_isolation.spawn_helper 启动,
+  IPC 路径与 HOME 不在本次临时目录内即退出、不启动;跑前跑后打印真 IPC 路径状态并断言未变。
+
 harness(build/seed/wait)基座采 251dd64 的 source-bot smoke,场景全新。
 """
 
@@ -30,6 +39,11 @@ import time
 import urllib.request
 from pathlib import Path
 
+try:
+    from _smoke_isolation import isolated_helper_env, print_real_ipc_state, spawn_helper
+except ImportError:  # 作为 tests.reply_origin_binary_smoke 导入时
+    from tests._smoke_isolation import isolated_helper_env, print_real_ipc_state, spawn_helper
+
 ROOT = Path(__file__).resolve().parents[3]
 
 KEY_ID = "FB-rig-2642"
@@ -39,6 +53,37 @@ SESSION_A = "asess"
 SESSION_B = "bsess"
 ADDR_A = f"{SESSION_A}#{KEY_ID}"
 ADDR_B = f"{SESSION_B}#{KEY_ID}"
+# 第 7 格两只「旧 helper」
+SESSION_C = "csess"
+SESSION_D = "dsess"
+ADDR_C = f"{SESSION_C}#{KEY_ID}"
+ADDR_D = f"{SESSION_D}#{KEY_ID}"
+DEFAULT_MAX_HOPS = 16  # internal/m8/reply_origin.go defaultMaxHops
+
+# 旧 helper 模拟:进程内打补丁后照常 `python -m sessionhelper`。去掉 helper 第二道闸(control/terminal/hop/reply_policy),
+# 回信不带 conversation_terminal、一律 expect_reply,hop 照常带回 ⇒ 双方每次都回,只剩 Hub R4 兜底。
+OLD_HELPER_BOOT = r'''
+import runpy
+import sessionhelper.app as app
+import sessionhelper.routing as routing
+
+def classify(env):
+    kind = str((env.get("meta") or {}).get("kind") or "")
+    if kind in ("ack", "mirror"):
+        return routing.ReplyDecision(False, kind)
+    return routing.ReplyDecision(True, "ok")
+
+def carry(env):
+    meta = env.get("meta") or {}
+    out = {"kind": "content", "reply_policy": "expect_reply", "hop_count": routing._hop_count(env)}
+    if meta.get("conversation_id"):
+        out["conversation_id"] = meta["conversation_id"]
+    return out
+
+app.classify_reply_decision = classify
+app.reply_carryforward_meta = carry
+runpy.run_module("sessionhelper", run_name="__main__", alter_sys=True)
+'''
 
 
 def go_binary() -> str:
@@ -137,9 +182,8 @@ def wait_in_log(stream, marker: str, timeout: float = 8) -> str:
     raise AssertionError(f"missing log marker={marker!r}:\n{read_log(stream)}")
 
 
-def helper_env(tmp: Path, session_short: str, ipc_sock: str | None, hub_ws: str) -> dict:
-    env = {
-        **os.environ,
+def helper_env(tmp: Path, session_short: str, hub_ws: str) -> dict:
+    return isolated_helper_env(tmp, session_short, {
         "PYTHONPATH": str(ROOT / "tools/sessionhelper"),
         "SH_SESSION_NAME": session_short,
         "SH_OWNER": "alice",
@@ -153,13 +197,131 @@ def helper_env(tmp: Path, session_short: str, ipc_sock: str | None, hub_ws: str)
         "SH_PROXY": "off",
         "SH_PROVISION_NO_EXIT": "1",
         "SH_INBOX_DB": str(tmp / f"helper-{session_short}-inbox.db"),
-    }
-    if ipc_sock:
-        env["SH_MCP_IPC_SOCK"] = ipc_sock
-    return env
+    })
+
+
+def inbox_envelopes(tmp: Path, session_short: str) -> list[dict]:
+    """helper 本地持久收件箱里每封可靠投递的信封(按收件序)。"""
+    db = tmp / f"helper-{session_short}-inbox.db"
+    if not db.exists():
+        return []
+    with sqlite3.connect(f"file:{db}?mode=ro", uri=True) as conn:
+        rows = conn.execute("SELECT envelope_json FROM delivery_inbox ORDER BY received_at").fetchall()
+    return [json.loads(r[0]) for r in rows]
+
+
+def inbox_metas(tmp: Path, session_short: str) -> list[dict]:
+    return [env.get("meta") or {} for env in inbox_envelopes(tmp, session_short)]
+
+
+def is_reliable(meta: dict) -> bool:
+    return (meta.get("type") == "delivery" and meta.get("ack_required") is True
+            and meta.get("delivery_version") == 1 and bool(meta.get("delivery_id")))
+
+
+def start_helper(tmp: Path, session_short: str, hub_ws: str, log, old_helper: bool = False):
+    env = helper_env(tmp, session_short, hub_ws)
+    cmd = [sys.executable, "-c", OLD_HELPER_BOOT] if old_helper else [sys.executable, "-m", "sessionhelper"]
+    proc = spawn_helper(cmd, tmp, env, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
+    return proc, env["SH_MCP_IPC_SOCK"]
+
+
+def scenario_s1_to_s3(tmp: Path, hub_ws: str, db: Path, logs: dict) -> None:
+    helper_a, ipc_a = start_helper(tmp, SESSION_A, hub_ws, logs["helper_a"])
+    helper_b, _ = start_helper(tmp, SESSION_B, hub_ws, logs["helper_b"])
+    try:
+        wait_session(db, SESSION_A)
+        wait_session(db, SESSION_B)
+        wait_in_log(logs["helper_a"], "[ipc_listener] listening")
+
+        # S1(第 6 格): content + expect_reply → B 回源到 A(T6),A 收 reply 后 R3 终止(T1)
+        resp = ipc_send(ipc_a, {
+            "type": "mcp_send", "to": ADDR_B, "body": "e2e-ping-s1",
+            "request_id": "s1", "reply_policy": "expect_reply", "kind": "content",
+        })
+        assert resp.get("ok") is True, resp
+        try:
+            b_log = wait_in_log(logs["helper_b"], f"[reply] to={ADDR_A}")
+        except AssertionError:
+            b_log = read_log(logs["helper_b"])
+            if f"suppress reply from={ADDR_A}: control" in b_log:
+                raise AssertionError(f"S1 RED: B suppress reply from={ADDR_A}: control "
+                                     "(reliable delivery wrapper judged control)") from None
+            raise
+        # helper 日志不打正文(日志卫生),正文从 B 的收件箱取
+        assert [e.get("body") for e in inbox_envelopes(tmp, SESSION_B)] == ["e2e-ping-s1"], inbox_envelopes(tmp, SESSION_B)
+        a_log = wait_in_log(logs["helper_a"], "[reply-origin] suppress reply")
+        assert f"suppress reply from={ADDR_B}: conversation_terminal" in a_log, a_log
+        b_in, a_in = inbox_metas(tmp, SESSION_B), inbox_metas(tmp, SESSION_A)
+        assert len(b_in) == 1 and is_reliable(b_in[0]) and b_in[0].get("reply_policy") == "expect_reply", b_in
+        assert len(a_in) == 1 and is_reliable(a_in[0]), a_in
+        assert a_in[0].get("kind") == "reply" and a_in[0].get("conversation_terminal") is True, a_in
+        print(f"[smoke] S1 B inbox meta type={b_in[0]['type']} ack_required={b_in[0]['ack_required']} "
+              f"reply_policy={b_in[0]['reply_policy']}; A inbox meta type={a_in[0]['type']} "
+              f"kind={a_in[0]['kind']} conversation_terminal={a_in[0]['conversation_terminal']}", flush=True)
+
+        # S2: kind=ack → B1/control,B 不产 reply(T7)
+        resp = ipc_send(ipc_a, {
+            "type": "mcp_send", "to": ADDR_B, "body": "e2e-ping-s2",
+            "request_id": "s2", "kind": "ack",
+        })
+        assert resp.get("ok") is True, resp
+        wait_in_log(logs["helper_b"], f"suppress reply from={ADDR_A}: control")
+
+        # S3: kind=mirror → R1,B 不产 reply(T3)
+        resp = ipc_send(ipc_a, {
+            "type": "mcp_send", "to": ADDR_B, "body": "e2e-ping-s3",
+            "request_id": "s3", "kind": "mirror",
+        })
+        assert resp.get("ok") is True, resp
+        wait_in_log(logs["helper_b"], f"suppress reply from={ADDR_A}: mirror")
+
+        # 终局:静置后无环状增长——B 恰 1 次 reply,A 恰 1 次终止,A 零 auto-reply;两侧 inbox 无新增循环件
+        time.sleep(2)
+        a_log, b_log = read_log(logs["helper_a"]), read_log(logs["helper_b"])
+        assert b_log.count(f"[reply] to={ADDR_A}") == 1, b_log
+        assert a_log.count("suppress reply") == 1, a_log
+        assert f"[reply] to={ADDR_B}" not in a_log, a_log
+        assert len(inbox_metas(tmp, SESSION_A)) == 1, inbox_metas(tmp, SESSION_A)
+        assert len(inbox_metas(tmp, SESSION_B)) == 3, inbox_metas(tmp, SESSION_B)  # s1、s2、s3 各一
+    finally:
+        stop(helper_a)
+        stop(helper_b)
+
+
+def scenario_s4_hub_r4(tmp: Path, hub_ws: str, db: Path, logs: dict) -> None:
+    helper_c, ipc_c = start_helper(tmp, SESSION_C, hub_ws, logs["helper_c"], old_helper=True)
+    helper_d, _ = start_helper(tmp, SESSION_D, hub_ws, logs["helper_d"], old_helper=True)
+    try:
+        wait_session(db, SESSION_C)
+        wait_session(db, SESSION_D)
+        wait_in_log(logs["helper_c"], "[ipc_listener] listening")
+        resp = ipc_send(ipc_c, {
+            "type": "mcp_send", "to": ADDR_D, "body": "e2e-ping-s4",
+            "request_id": "s4", "reply_policy": "expect_reply", "kind": "content",
+        })
+        assert resp.get("ok") is True, resp
+        hub_log = wait_in_log(logs["hub"], "R4 hop 兜底丢弃", timeout=60)
+        time.sleep(3)  # 静置:Hub 丢弃之后不得再有投递
+        hub_log = read_log(logs["hub"])
+        drops = [ln for ln in hub_log.splitlines() if "R4 hop 兜底丢弃" in ln]
+        assert len(drops) == 1, drops
+        assert f"hop={DEFAULT_MAX_HOPS} max={DEFAULT_MAX_HOPS}" in drops[0], drops
+        c_in, d_in = inbox_metas(tmp, SESSION_C), inbox_metas(tmp, SESSION_D)
+        hops = sorted(int(m.get("hop_count") or 0) for m in c_in + d_in)
+        assert hops == list(range(1, DEFAULT_MAX_HOPS + 1)), hops
+        assert all(is_reliable(m) and not m.get("conversation_terminal") for m in c_in + d_in), c_in + d_in
+        replies = read_log(logs["helper_c"]).count("[reply] to=") + read_log(logs["helper_d"]).count("[reply] to=")
+        assert replies == DEFAULT_MAX_HOPS, replies  # 16 封回信:15 封投到、第 16 封被 Hub R4 丢
+        print(f"[smoke] S4 Hub R4: deliveries={len(hops)} hops=1..{hops[-1]} replies_sent={replies} "
+              f"drop='{drops[0].split('[reply-origin] ')[-1]}'", flush=True)
+    finally:
+        stop(helper_c)
+        stop(helper_d)
 
 
 def main() -> None:
+    before = print_real_ipc_state("before")
     port = free_port()
     hub_http = f"http://127.0.0.1:{port}"
     hub_ws = f"ws://127.0.0.1:{port}"
@@ -180,72 +342,28 @@ def main() -> None:
         stop(bootstrap)
         seed(db)
 
-        ipc_sock = str(tmp / "a-mcp.sock")
-        logs = {name: open(tmp / f"{name}.log", "w+") for name in ("hub", "helper_a", "helper_b")}
-        hub = helper_a = helper_b = None
+        names = ("hub", "helper_a", "helper_b", "helper_c", "helper_d")
+        logs = {name: open(tmp / f"{name}.log", "w+") for name in names}
+        hub = None
         try:
             hub = subprocess.Popen([binary], cwd=ROOT, env=hub_env, stdout=logs["hub"], stderr=subprocess.STDOUT)
             wait_http(hub_http + "/readyz")
-            helper_a = subprocess.Popen(
-                [sys.executable, "-m", "sessionhelper"], cwd=ROOT,
-                env=helper_env(tmp, "asess", ipc_sock, hub_ws),
-                stdout=logs["helper_a"], stderr=subprocess.STDOUT,
-            )
-            helper_b = subprocess.Popen(
-                [sys.executable, "-m", "sessionhelper"], cwd=ROOT,
-                env=helper_env(tmp, "bsess", None, hub_ws),
-                stdout=logs["helper_b"], stderr=subprocess.STDOUT,
-            )
             try:
-                wait_session(db, SESSION_A)
-                wait_session(db, SESSION_B)
-                wait_in_log(logs["helper_a"], "[ipc_listener] listening")
+                scenario_s1_to_s3(tmp, hub_ws, db, logs)
+                scenario_s4_hub_r4(tmp, hub_ws, db, logs)
             except Exception:
-                for name in ("hub", "helper_a", "helper_b"):
-                    print(f"----- {name} -----\n{read_log(logs[name])}", file=sys.stderr)
+                for name in names:
+                    print(f"----- {name} -----\n{read_log(logs[name])[-6000:]}", file=sys.stderr)
                 raise
-
-            # S1: content + expect_reply → B 回源到 A(T6),A 收 reply 后 R3 终止(T1)
-            resp = ipc_send(ipc_sock, {
-                "type": "mcp_send", "to": ADDR_B, "body": "e2e-ping-s1",
-                "request_id": "s1", "reply_policy": "expect_reply", "kind": "content",
-            })
-            assert resp.get("ok") is True, resp
-            b_log = wait_in_log(logs["helper_b"], f"[reply] to={ADDR_A}")
-            assert "e2e-ping-s1" in b_log, b_log
-            a_log = wait_in_log(logs["helper_a"], "[reply-origin] suppress reply")
-            assert f"suppress reply from={ADDR_B}: conversation_terminal" in a_log, a_log
-
-            # S2: kind=ack → B1/control,B 不产 reply(T7)
-            resp = ipc_send(ipc_sock, {
-                "type": "mcp_send", "to": ADDR_B, "body": "e2e-ping-s2",
-                "request_id": "s2", "kind": "ack",
-            })
-            assert resp.get("ok") is True, resp
-            wait_in_log(logs["helper_b"], f"suppress reply from={ADDR_A}: control")
-
-            # S3: kind=mirror → R1,B 不产 reply(T3)
-            resp = ipc_send(ipc_sock, {
-                "type": "mcp_send", "to": ADDR_B, "body": "e2e-ping-s3",
-                "request_id": "s3", "kind": "mirror",
-            })
-            assert resp.get("ok") is True, resp
-            wait_in_log(logs["helper_b"], f"suppress reply from={ADDR_A}: mirror")
-
-            # 终局:静置后无环状增长——B 恰 1 次 reply,A 恰 1 次终止,A 零 auto-reply
-            time.sleep(2)
-            a_log, b_log = read_log(logs["helper_a"]), read_log(logs["helper_b"])
-            assert b_log.count(f"[reply] to={ADDR_A}") == 1, b_log
-            assert a_log.count("suppress reply") == 1, a_log
-            assert f"[reply] to={ADDR_B}" not in a_log, a_log
             print("reply-origin e2e binary smoke PASS: "
-                  "S1 reply-to-origin+R3 terminal / S2 ack control / S3 mirror / no loop growth")
+                  "S1 reliable reply-to-origin+R3 terminal / S2 ack control / S3 mirror / no loop growth / "
+                  "S4 Hub R4 exact stop")
         finally:
-            stop(helper_a)
-            stop(helper_b)
             stop(hub)
             for stream in logs.values():
                 stream.close()
+            after = print_real_ipc_state("after")
+            assert after == before, f"real IPC path changed during smoke: {before} -> {after}"
 
 
 if __name__ == "__main__":
