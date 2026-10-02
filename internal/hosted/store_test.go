@@ -51,6 +51,45 @@ func TestSchemaApplyRollbackRepeatable(t *testing.T) {
 	}
 }
 
+// TestSchemaDropLeavesNoG4Tables：DropSchema 必须把 g4_ 十表全拆净
+// （R-V2-DEPLOY-ARTIFACTS 甲案：DropDDL 曾漏拆 g4_backup——反向：从 DropDDL 去掉
+// g4_backup ⇒ 本格红）。apply→drop→apply 全链后核两端：建后十表齐、拆后零残留。
+func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
+	pool := testpool(t)
+	ctx := context.Background()
+	s := NewStore(pool)
+	if err := s.ApplySchema(ctx); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	countG4 := func() int {
+		var n int
+		row, err := pool.QueryRow(ctx, htx(),
+			"SELECT count(*) FROM information_schema.tables WHERE table_name LIKE 'g4\\_%'")
+		if err != nil {
+			t.Fatalf("数 g4_ 表: %v", err)
+		}
+		if err := row.Scan(&n); err != nil {
+			t.Fatalf("数 g4_ 表: %v", err)
+		}
+		return n
+	}
+	if n := countG4(); n != 10 {
+		t.Fatalf("建后应有十张 g4_ 表，实得 %d", n)
+	}
+	if err := s.DropSchema(ctx); err != nil {
+		t.Fatalf("drop: %v", err)
+	}
+	if n := countG4(); n != 0 {
+		t.Fatalf("拆后残留 %d 张 g4_ 表（DropDDL 漏拆）", n)
+	}
+	if err := s.ApplySchema(ctx); err != nil { // 拆净后重建须绿
+		t.Fatalf("重建: %v", err)
+	}
+	if n := countG4(); n != 10 {
+		t.Fatalf("重建后应有十张 g4_ 表，实得 %d", n)
+	}
+}
+
 func TestNodeSeatPoolQuotaFlow(t *testing.T) {
 	pool := testpool(t)
 	ctx := context.Background()
