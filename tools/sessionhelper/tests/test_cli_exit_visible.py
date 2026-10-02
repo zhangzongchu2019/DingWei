@@ -102,6 +102,38 @@ class CLIExitVisible(unittest.TestCase):
         self.assertFalse(a.ready.is_set(), "a dead child must not stay 'ready'")
         self.assertTrue(a.is_idle(), "a dead CLI is not 'busy': deliveries must reach handle_delivery and fail explicitly")
 
+    def test_exit_tail_redacts_key_value_secrets(self):
+        # 复验 tosonnet55tc2k：短串或「键名=值」形态也要遮
+        a = self._adapter(self._cli("""#!/usr/bin/env python3
+import sys
+sys.stdout.write("OPENAI_API_KEY=abcd1234efgh5678\\naccess_token: tok-test-invalid-b12\\nrefresh_token=rt-test-invalid-b12\\n")
+sys.stdout.flush()
+sys.exit(3)
+"""))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            a.start()
+        log = out.getvalue()
+        self.assertIn("[cli] exited code=3", log)
+        for leaked in ("abcd1234efgh5678", "tok-test-invalid-b12", "rt-test-invalid-b12"):
+            self.assertNotIn(leaked, log)
+        self.assertIn("OPENAI_API_KEY=<redacted>", log)
+        self.assertIn("access_token: <redacted>", log)
+
+    def test_start_checks_liveness_even_when_ready_is_set(self):
+        # 就绪已置但子进程已死、读线程尚未察觉（这里不起读线程）：start() 必须先记退出、不得直接返回真
+        a = self._adapter(self._cli(_EXIT_NOW))
+        dead = pexpect.spawn("/bin/sh", ["-c", "exit 4"], encoding="utf-8")
+        deadline = time.time() + 5
+        while dead.isalive() and time.time() < deadline:
+            time.sleep(0.05)
+        a.child = dead
+        a.ready.set()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertFalse(a.start(), "a dead child must not pass as ready")
+        self.assertIn("[cli] exited code=4", out.getvalue())
+
     def test_startup_exit_backs_off_instead_of_respawning_in_a_loop(self):
         a = self._adapter(self._cli(_EXIT_NOW))
         with contextlib.redirect_stdout(io.StringIO()):

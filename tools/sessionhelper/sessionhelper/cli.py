@@ -25,6 +25,9 @@ from .config import Config, env_get
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 # CLI 退出时日志里的屏幕尾巴要脱敏：像密钥／令牌的长串一律遮掉（组长 R-B12-CODEX-PKG 第 2 条）。
 _SECRET_RE = re.compile(r"(?i)(sk-[A-Za-z0-9_-]{8,}|bearer\s+\S+|[A-Za-z0-9_\-]{32,})")
+# 「键名=值」「键名: 值」形态：键名里带 key／token／secret／password／credential／auth 的，值一律遮（短串也遮；复验 tosonnet55tc2k）
+_SECRET_KV_RE = re.compile(
+    r"(?i)\b([A-Za-z0-9_.-]*(?:key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_.-]*)(\s*[:=]\s*)(\"[^\"]*\"|'[^']*'|\S+)")
 EXIT_TAIL_LINES = 6
 
 
@@ -57,6 +60,7 @@ def _squash(text: str) -> str:
 def redact_tail(lines) -> str:
     out = []
     for ln in lines:
+        ln = _SECRET_KV_RE.sub(lambda m: m.group(1) + m.group(2) + "<redacted>", ln)
         ln = _SECRET_RE.sub("<redacted>", ln)
         out.append(ln[:200])
     return " | ".join(out)
