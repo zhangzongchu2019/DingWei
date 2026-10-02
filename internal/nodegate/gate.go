@@ -156,8 +156,19 @@ func (g *Gate) serve(ctx context.Context, nodeID string, conn *websocket.Conn) {
 	}
 }
 
-// Send 实现 hosted.NodeGateway：下发指令并等结果。节点未连接 ⇒ ErrNodeOffline。
+// Send 实现 hosted.NodeGateway：下发指令并等结果（上限 sendMax，默认 60s）。节点未连接 ⇒ ErrNodeOffline。
 func (g *Gate) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
+	return g.send(ctx, nodeID, cmd, g.sendMax)
+}
+
+// SendWithTimeout 同 Send，但等结果上限由调用方给（R-G4-BACKUP-CHECKSUM-CTRL 并入项：
+// export_seat 大卷回传要 15 分钟——hosted/backup.go 探测的正是本方法；此前全仓无实现，
+// 生产恒落回 60s（死代码）。其余调用点不动、仍走 Send。
+func (g *Gate) SendWithTimeout(ctx context.Context, nodeID string, cmd hosted.NodeCommand, d time.Duration) (hosted.NodeResult, error) {
+	return g.send(ctx, nodeID, cmd, d)
+}
+
+func (g *Gate) send(ctx context.Context, nodeID string, cmd hosted.NodeCommand, max time.Duration) (hosted.NodeResult, error) {
 	g.mu.Lock()
 	nc := g.conns[nodeID]
 	g.mu.Unlock()
@@ -190,7 +201,7 @@ func (g *Gate) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) 
 	select {
 	case res := <-ch:
 		return res, nil
-	case <-time.After(g.sendMax):
+	case <-time.After(max):
 		return hosted.NodeResult{}, errors.New("node_command_timeout")
 	case <-ctx.Done():
 		return hosted.NodeResult{}, ctx.Err()

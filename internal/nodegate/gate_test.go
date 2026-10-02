@@ -215,3 +215,43 @@ func TestOnConnectCallbackCanSendAndReceive(t *testing.T) {
 		t.Fatal("回调内 Send 卡死——同步回调把读循环堵住了")
 	}
 }
+
+// TestSendWithTimeoutHonorsCallerDeadline（G11，R-G4-BACKUP-CHECKSUM-CTRL 并入）：
+// SendWithTimeout 的上限必须真生效——慢节点（睡 500ms 再回）在 200ms 上限下 ⇒ node_command_timeout；
+// 同节点 3s 上限下 ⇒ 正常返回。反向：上限被忽略（回落 sendMax 60s）⇒ 本格红（200ms 那一支会等到 500ms 的正常回包）。
+func TestSendWithTimeoutHonorsCallerDeadline(t *testing.T) {
+	g, _, nodeID, secret := mkGate(t)
+	srv := httptest.NewServer(g.Handler())
+	defer srv.Close()
+	ctx := context.Background()
+	conn := dial(t, srv, nodeID, secret)
+	defer conn.CloseNow()
+
+	// 慢节点：每条指令睡 500ms 再回 ok
+	go func() {
+		for {
+			_, raw, err := conn.Read(ctx)
+			if err != nil {
+				return
+			}
+			var rc struct {
+				CommandID string `json:"command_id"`
+			}
+			if json.Unmarshal(raw, &rc) != nil || rc.CommandID == "" {
+				continue
+			}
+			time.Sleep(500 * time.Millisecond)
+			resp, _ := json.Marshal(map[string]any{"command_id": rc.CommandID, "ok": true})
+			if err := conn.Write(ctx, websocket.MessageText, resp); err != nil {
+				return
+			}
+		}
+	}()
+
+	if _, err := g.SendWithTimeout(ctx, nodeID, hosted.NodeCommand{Type: "export_seat"}, 200*time.Millisecond); err == nil || !strings.Contains(err.Error(), "node_command_timeout") {
+		t.Fatalf("200ms 上限对 500ms 慢节点必须超时: %v", err)
+	}
+	if res, err := g.SendWithTimeout(ctx, nodeID, hosted.NodeCommand{Type: "export_seat"}, 3*time.Second); err != nil || !res.OK {
+		t.Fatalf("3s 上限应正常返回: %+v %v", res, err)
+	}
+}

@@ -500,3 +500,37 @@ func TestBackupFailureClearsPending(t *testing.T) {
 		})
 	}
 }
+
+// gwWithTimeout 实现 SendWithTimeout 可选接口的网关：记录是否被用、给的上限是多少。
+// （丙案并入项：export_seat 的 15 分钟上限此前是死代码——全仓无实现。）
+type gwWithTimeout struct {
+	inner  *gwBackupNode
+	usedD  time.Duration
+	called bool
+}
+
+func (g *gwWithTimeout) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+	return g.inner.Send(ctx, nodeID, cmd)
+}
+
+func (g *gwWithTimeout) SendWithTimeout(ctx context.Context, nodeID string, cmd NodeCommand, d time.Duration) (NodeResult, error) {
+	g.called = true
+	g.usedD = d
+	return g.inner.Send(ctx, nodeID, cmd)
+}
+
+// BackupSeatVolume 对 export_seat 必须走 SendWithTimeout(15min)（长指令上限）；
+// 反向：探测分支被去掉（只用 Send）⇒ 本格红。
+func TestBackupUsesLongTimeout(t *testing.T) {
+	body := mkTarGz(t, map[string]string{"ag_lt/work.log": "卷内容"})
+	inner := &gwBackupNode{body: body}
+	_, bk, _ := mkBackupRig(t, inner) // rig 把节点凭据装到 inner 上
+	gw := &gwWithTimeout{inner: inner}
+	bk.gw = gw
+	if _, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_lt"); err != nil {
+		t.Fatalf("备份: %v", err)
+	}
+	if !gw.called || gw.usedD != 15*time.Minute {
+		t.Fatalf("export_seat 必须走 SendWithTimeout(15min): called=%v d=%v", gw.called, gw.usedD)
+	}
+}
