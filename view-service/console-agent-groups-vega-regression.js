@@ -1,5 +1,5 @@
 // Vega-260923-D: 从生产 consolePageHTML 抽取真实页面，在系统 Chrome 中验证编组面板。
-// MUTATION=retry-feedback / can-manage 分别删除相应守卫；该模式必须只使对应断言失败。
+// MUTATION=<名> 删除相应守卫；判据：首个失败的用例必须是该变异的目标格（见 MUTATION_TARGET），级联出来的次红允许。
 const assert = require('assert');
 const fs = require('fs');
 const http = require('http');
@@ -25,6 +25,10 @@ function mutate(from, to) {
   html = html.replace(from, to);
 }
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
+if (mutation === 'retry-reachability') { // 重试区被放进默认隐藏的详情块里 ⇒ 零编组加载失败时点不到「重试加载」（HTML 半截在 2026-09-24 重建页面时丢了，这里按现行结构恢复）
+  mutate('<div id=groupRetry><button id=retryGroups type=button>重试加载</button><div id=groupRetryFeedback class=group-feedback></div></div></section><section id=groupAddPanel', '</section><section id=groupAddPanel');
+  mutate('id=groupDetail class="group-block group-block-detail" hidden>', 'id=groupDetail class="group-block group-block-detail" hidden><div id=groupRetry><button id=retryGroups type=button>重试加载</button><div id=groupRetryFeedback class=group-feedback></div></div>');
+}
 if (mutation === 'retry-feedback') mutate("groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');", '');
 if (mutation === 'leak-delete') mutate('if(g.can_manage){var del=', 'if(true){var del=');
 if (mutation === 'leak-remove') mutate('if(selected.can_manage&&!leader){var rm=', 'if(!leader){var rm=');
@@ -39,7 +43,7 @@ if (mutation === 'ux-block-colors') {
 }
 if (mutation === 'ux-add-focus') mutate("document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};", "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
 if (mutation === 'ux-detail-exclusive') mutate("row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();setGroupPanelMode('detail');}", "row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();if(globalThis.__testExclusive)document.getElementById('groupDetail').hidden=false;else setGroupPanelMode('detail');}");
-if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'drop-group-row-stripe', 'ux-member-gap', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive'].includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
+if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'drop-group-row-stripe', 'ux-member-gap', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive', 'retry-reachability'].includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 
 let groups = [];
 let additionsClosed = false;
@@ -88,8 +92,24 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(404); res.end();
 });
 
-let pass = 0; let fail = 0;
-async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${name}`); } catch (e) { fail++; console.log(`FAIL ${name}: ${e.message}`); } }
+let pass = 0; let fail = 0; const failedNames = [];
+async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${name}`); } catch (e) { fail++; failedNames.push(name); console.log(`FAIL ${name}: ${e.message}`); } }
+// 每个变异的【目标格】（组长 2026-10-02 裁定：判据是「首红必须是目标那格」，之后级联出来的次红允许，不整理夹具）。
+// 值是目标用例名的一段子串；首个失败的用例名必须含它，否则变异没有打在它该打的地方 ⇒ 退出码 5（MUTATION-NOT-ISOLATED，不算红）。
+const MUTATION_TARGET = {
+  'retry-feedback': 'retry success is visible',
+  'retry-reachability': 'reachable retry control',
+  'leak-delete': 'keeps cross-owner management controls absent',
+  'leak-remove': 'keeps cross-owner management controls absent',
+  'foreign-candidate': 'only own online short names are candidates',
+  'detach-remove-row': 'keeps member action close to its Agent name',
+  'ux-table-align': 'aligns table headers with row cells',
+  'drop-group-row-stripe': 'keeps cross-owner management controls absent',
+  'ux-member-gap': 'keeps member action close to its Agent name',
+  'ux-block-colors': 'distinguishes all three functional blocks',
+  'ux-add-focus': 'makes detail and add mutually exclusive',
+  'ux-detail-exclusive': 'makes detail and add mutually exclusive',
+};
 (async () => {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch(process.env.PW_CHANNEL ? { headless: true, channel: process.env.PW_CHANNEL } : { headless: true });
@@ -263,8 +283,15 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
   } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`vega group browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);
   // 退出码约定同其它脚本：1＝变异被杀（有 FAIL 行）· 0＝存活 · 3＝MUTATION-ANCHOR-STALE（变异无效）· 2＝脚本崩。
-  // 🔴 本脚本的变异【必须只使对应的那一条断言失败】（文件头）：失败数多于 1 ⇒ 变异没有隔离，退出码 5（MUTATION-NOT-ISOLATED），不算红。
-  if (mutation && fail > 1) { console.error(`MUTATION-NOT-ISOLATED: mutation ${mutation} made ${fail} cases fail, expected exactly 1`); process.exit(5); }
+  // 🔴 本脚本的变异判据是「【首个失败的用例】必须是该变异的目标格」（MUTATION_TARGET）；之后级联出来的次红允许（共享桩状态所致）。
+  //    首红不是目标格（或该变异没登记目标格）⇒ 变异没打在它该打的地方，退出码 5（MUTATION-NOT-ISOLATED），不算红。
+  if (mutation && fail >= 1) {
+    const want = MUTATION_TARGET[mutation];
+    if (!want || !failedNames[0].includes(want)) {
+      console.error(`MUTATION-NOT-ISOLATED: mutation ${mutation}: first failing case is "${failedNames[0]}", expected one containing "${want}"`);
+      process.exit(5);
+    }
+  }
   if (mutation) console.log(`MUTATION-VERDICT: ${mutation} ${fail >= 1 ? 'KILLED' : 'SURVIVED'}`);
   if (fail) process.exit(1);
 })().catch((err) => { console.error(err); process.exit(2); });

@@ -14,7 +14,7 @@
 #   SURVIVED      退出码 0，且有 MUTATION-VERDICT: <名> SURVIVED                      ＝变异存活（对照没守住——要补格）
 #   INVALID       退出码 3，且 stderr 有 MUTATION-ANCHOR-STALE｜MUTATION-UNKNOWN｜MUTATION-SWITCH-WRONG-FORM
 #                                                                              ＝变异【没打上】，什么也没证明；不是红，也不是存活
-#   NOT-ISOLATED  退出码 5（仅 vega：变异必须只让一条断言失败，却失败了多条）          ＝不算红，要整理夹具
+#   NOT-ISOLATED  退出码 5（仅 vega：首个失败的用例不是该变异登记的目标格）               ＝变异没打在它该打的地方，不算红；级联出来的次红允许
 #   NO-VERDICT    退出码 0 却没有 MUTATION-VERDICT 行 ＝ 变异根本没生效（例如用错开关形态）；按无效处理，绝不能当「存活」或「通过」
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
