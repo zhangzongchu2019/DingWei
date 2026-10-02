@@ -25,6 +25,8 @@ type IdentityStore interface {
 	// 吊销该用户全部未吊销会话。用户不存在 ⇒ ErrNotFound。
 	ResetPassword(ctx context.Context, userIDLC, hash string, now time.Time) error
 	ResolveIdentity(ctx context.Context, ident Identity) (*User, error)
+	// GetIdentity returns the user's binding for provider; missing ⇒ ErrNotFound.
+	GetIdentity(ctx context.Context, userIDLC, provider string) (*Identity, error)
 	// UserHasIdentity 该用户是否已有某渠道（provider）的身份。
 	UserHasIdentity(ctx context.Context, userIDLC, provider string) (bool, error)
 	// CreateRegistrationCode 同时作废该用户的旧码。
