@@ -966,6 +966,7 @@ func TestNewPlatformConsoleDoorWithRealIdentitySessionHidesLegacyPages(t *testin
 	srv := New(db)
 	srv.NewPlatform = true
 	srv.Prefix = hub
+	srv.Files = &fakeFileBrowser{}
 	mux := http.NewServeMux()
 	srv.Mount(mux)
 	srv.MountConsole(mux)
@@ -976,8 +977,17 @@ func TestNewPlatformConsoleDoorWithRealIdentitySessionHidesLegacyPages(t *testin
 		mux.ServeHTTP(rec, req)
 		return rec
 	}
-	if rec := do(http.MethodGet, consoleDoorPrefix); rec.Code != http.StatusOK {
-		t.Fatalf("real new-platform management session index=%d body=%s", rec.Code, rec.Body.String())
+	index := do(http.MethodGet, consoleDoorPrefix)
+	if index.Code != http.StatusOK {
+		t.Fatalf("real new-platform management session index=%d body=%s", index.Code, index.Body.String())
+	}
+	for _, path := range []string{"/console/admin/files", "/console/admin/bot-channels"} {
+		if !strings.Contains(index.Body.String(), `href="`+path+`"`) {
+			t.Errorf("new-platform index removed retained link %s", path)
+		}
+		if rec := do(http.MethodGet, path); rec.Code != http.StatusOK {
+			t.Errorf("real new-platform session GET retained %s=%d, want 200", path, rec.Code)
+		}
 	}
 	for _, path := range []string{"/console/admin/provision", "/console/admin/api-keys", "/console/admin/platform-roles"} {
 		if rec := do(http.MethodGet, path); rec.Code != http.StatusNotFound {

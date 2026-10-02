@@ -1096,6 +1096,10 @@ func TestAdminLegacyGroupsPageNotMountedOnNewPlatform(t *testing.T) {
 func TestAdminLegacyIdentityPagesHiddenAndUnmountedOnNewPlatform(t *testing.T) {
 	getPaths := []string{"/admin/members", "/admin/api-keys", "/admin/sessions", "/admin/provision"}
 	postPaths := []string{"/admin/members", "/admin/api-keys", "/admin/sessions", "/admin/provision", "/admin/cleanup"}
+	// 现行旧门实际共 9 条：前四页各 GET+POST，加 cleanup 的 POST；历史上没有 GET /admin/cleanup。
+	if len(getPaths)+len(postPaths) != 9 {
+		t.Fatal("legacy admin route fixture must enumerate all nine registered routes")
+	}
 	for _, newPlatform := range []bool{false, true} {
 		t.Run(map[bool]string{false: "legacy", true: "new-platform"}[newPlatform], func(t *testing.T) {
 			db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "admin.db"))
