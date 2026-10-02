@@ -1092,3 +1092,61 @@ func TestAdminLegacyGroupsPageNotMountedOnNewPlatform(t *testing.T) {
 		_ = db.Close()
 	}
 }
+
+func TestAdminLegacyIdentityPagesHiddenAndUnmountedOnNewPlatform(t *testing.T) {
+	getPaths := []string{"/admin/members", "/admin/api-keys", "/admin/sessions", "/admin/provision"}
+	postPaths := []string{"/admin/members", "/admin/api-keys", "/admin/sessions", "/admin/provision", "/admin/cleanup"}
+	// 现行旧门实际共 9 条：前四页各 GET+POST，加 cleanup 的 POST；历史上没有 GET /admin/cleanup。
+	if len(getPaths)+len(postPaths) != 9 {
+		t.Fatal("legacy admin route fixture must enumerate all nine registered routes")
+	}
+	for _, newPlatform := range []bool{false, true} {
+		t.Run(map[bool]string{false: "legacy", true: "new-platform"}[newPlatform], func(t *testing.T) {
+			db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "admin.db"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer db.Close()
+			if err := db.Migrate(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			srv := New(db)
+			srv.NewPlatform = newPlatform
+			srv.sessions["tok"] = "admin"
+			mux := http.NewServeMux()
+			srv.Mount(mux)
+
+			status := getAuth(t, mux, "/admin").Body.String()
+			for _, path := range []string{"/portal", "/admin/messages", "/admin/bot-channels", "/admin/projects", "/admin/services", "/admin/control-plane", "/admin/files", "/admin/config"} {
+				if !strings.Contains(status, `href="`+path+`"`) {
+					t.Errorf("navigation removed unrelated entry %s in newPlatform=%v", path, newPlatform)
+				}
+			}
+			for _, path := range getPaths {
+				hasLink := strings.Contains(status, `href="`+path+`"`)
+				if hasLink == newPlatform {
+					t.Errorf("navigation %s present=%v in newPlatform=%v", path, hasLink, newPlatform)
+				}
+				req := httptest.NewRequest(http.MethodGet, path, nil)
+				req.AddCookie(&http.Cookie{Name: "wp_admin", Value: "tok"})
+				rec := httptest.NewRecorder()
+				mux.ServeHTTP(rec, req)
+				if newPlatform && rec.Code != http.StatusNotFound {
+					t.Errorf("new platform GET %s=%d, want 404", path, rec.Code)
+				}
+				if !newPlatform && rec.Code != http.StatusOK {
+					t.Errorf("legacy GET %s=%d, want 200", path, rec.Code)
+				}
+			}
+			for _, path := range postPaths {
+				rec := postFormRaw(mux, path, url.Values{})
+				if newPlatform && rec.Code != http.StatusNotFound {
+					t.Errorf("new platform POST %s=%d, want 404", path, rec.Code)
+				}
+				if !newPlatform && rec.Code == http.StatusNotFound {
+					t.Errorf("legacy POST %s unexpectedly unmounted", path)
+				}
+			}
+		})
+	}
+}
