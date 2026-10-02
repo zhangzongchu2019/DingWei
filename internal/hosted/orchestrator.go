@@ -53,6 +53,8 @@ type NodeCommand struct {
 type NodeResult struct {
 	OK    bool
 	Error string
+	// Payload 指令成功的回执载荷（R-G4-BACKUP-CHECKSUM-CTRL：export_seat 经此补报 sha256）。
+	Payload json.RawMessage
 }
 
 type NodeGateway interface {

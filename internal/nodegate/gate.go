@@ -151,7 +151,7 @@ func (g *Gate) serve(ctx context.Context, nodeID string, conn *websocket.Conn) {
 		delete(g.waiters, rf.CommandID)
 		g.mu.Unlock()
 		if ch != nil {
-			ch <- hosted.NodeResult{OK: rf.OK, Error: rf.Error}
+			ch <- hosted.NodeResult{OK: rf.OK, Error: rf.Error, Payload: rf.Payload}
 		}
 	}
 }

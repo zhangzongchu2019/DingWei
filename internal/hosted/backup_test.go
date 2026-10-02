@@ -91,14 +91,16 @@ func (e *eofHook) Read(p []byte) (int, error) {
 
 // gwBackupNode 假网关：收到 export_seat 就扮演节点——把 body 回传到 upload_url（带真凭据与 sha256 trailer）。
 // sha 为空 ⇒ 用 body 的真 sha256；"-" ⇒ 不带 trailer；其它 ⇒ 原样（造校验和不符）。
+// reportSHA 控制【控制面补报】（丙案，结果载荷里的 sha256）：空 ⇒ 补报真值；"-" ⇒ 不补报；其它 ⇒ 谎报。
 type gwBackupNode struct {
-	secret  string
-	body    []byte
-	sha     string
-	sendErr error // 非空 ⇒ 扮演网关发不出去
-	fail    bool  // 扮演节点回失败
-	lie     bool  // 扮演节点不回传却报成功
-	called  []string
+	secret    string
+	body      []byte
+	sha       string
+	reportSHA string
+	sendErr   error // 非空 ⇒ 扮演网关发不出去
+	fail      bool  // 扮演节点回失败
+	lie       bool  // 扮演节点不回传却报成功
+	called    []string
 }
 
 func (g *gwBackupNode) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
@@ -130,7 +132,16 @@ func (g *gwBackupNode) Send(ctx context.Context, nodeID string, cmd NodeCommand)
 	if code/100 != 2 {
 		return NodeResult{OK: false, Error: "upload rejected"}, nil // 节点见 Hub 拒收即报失败（nodeagent 同口径）
 	}
-	return NodeResult{OK: true}, nil
+	// 控制面补报（与 nodeagent 结果载荷同形；丙案后这是权威通道）
+	report := g.reportSHA
+	if report == "" {
+		report = sha256Hex(g.body)
+	}
+	payload, _ := json.Marshal(map[string]string{"seat_id": "ag", "state": "exported", "sha256": report})
+	if report == "-" {
+		payload, _ = json.Marshal(map[string]string{"seat_id": "ag", "state": "exported"}) // 不补报
+	}
+	return NodeResult{OK: true, Payload: payload}, nil
 }
 
 // mkBackupRig 节点登记＋Hub 接收端点＋Backuper（origin 指向测试服务）。
@@ -272,8 +283,10 @@ func TestBackupHandlerAuthAndStates(t *testing.T) {
 	}
 }
 
-// 🔴 完整性（台账 lead-g4-t53-review 🔴2；复验缺陷二）：非 gzip、截断 gzip、校验和不符、缺校验和
+// 🔴 完整性（台账 lead-g4-t53-review 🔴2；复验缺陷二）：非 gzip、截断 gzip、trailer 校验和与落盘不符
 // ⇒ Hub 422 拒收、不落盘、记录作废；BackupSeatVolume 报错；Destroy 不继续（不吊销、不删、不改状态）。
+// 丙案（R-G4-BACKUP-CHECKSUM-CTRL）：trailer 缺失不再拒收（反代会丢）——校验移到控制面补报，
+// 由 TestBackupChecksumControlPlane 钉。
 func TestBackupIntegrityRejected(t *testing.T) {
 	good := mkTarGz(t, map[string]string{"ag_i/work.log": strings.Repeat("卷内容", 2000)})
 	cases := []struct {
@@ -284,7 +297,6 @@ func TestBackupIntegrityRejected(t *testing.T) {
 		{"not a gzip", []byte("THIS IS NOT A GZIP"), ""},
 		{"truncated gzip", good[:len(good)/2], ""},
 		{"checksum mismatch", good, sha256Hex([]byte("something else"))},
-		{"checksum missing", good, "-"},
 		// 复验遗留 X4（tosonnet50ts）：合法 gzip＋合法 tar、sha256 也对，但一个条目都没有 ⇒ 仍须拒收（空卷备份不可用于恢复）。
 		{"empty archive", mkTarGz(t, map[string]string{}), ""},
 	}
@@ -320,6 +332,95 @@ func TestBackupIntegrityRejected(t *testing.T) {
 		eqSeq(t, "corrupt backup stops destroy", log.get(), []string{"node:stop_seat"}) // 已停容器；不吊销、不发 destroy_seat
 		if seat, _ := s.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
 			t.Fatalf("seat must show backup_failed (container stopped, nothing deleted): %+v", seat)
+		}
+	})
+}
+
+// 🔴 丙案（R-G4-BACKUP-CHECKSUM-CTRL；106 实测 nginx 1.24.0 丢弃请求 trailer）：
+// 校验值经控制面补报（export_seat 结果载荷）、Hub 落盘自算、相等才转 complete；
+// 未补报或不等 ⇒ 不销毁、backup_failed。反向：去掉 BackupSeatVolume 的补报比对 ⇒ 本格红。
+func TestBackupChecksumControlPlane(t *testing.T) {
+	good := mkTarGz(t, map[string]string{"ag_c/work.log": "卷内容"})
+
+	// 丢 trailer 的反代形态：上传不带 trailer 也须走通全链（补报正确 ⇒ complete）
+	t.Run("no trailer full chain ok", func(t *testing.T) {
+		s, bk, dir := mkBackupRig(t, &gwBackupNode{body: good, sha: "-"})
+		ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c")
+		if err != nil {
+			t.Fatalf("丢 trailer 不应挡路: %v", err)
+		}
+		raw, err := os.ReadFile(ref)
+		if err != nil || !bytes.Equal(raw, good) {
+			t.Fatalf("落盘内容应逐字节相同: %v", err)
+		}
+		rec, _ := s.GetBackup(context.Background(), strings.TrimSuffix(strings.TrimPrefix(ref, dir+"/"), ".tar.gz"))
+		if rec.State != "complete" {
+			t.Fatalf("补报相等应转 complete: %+v", rec)
+		}
+	})
+
+	// 未补报 ⇒ 不转 complete、报错（不销毁）；记录与文件清掉
+	t.Run("report missing blocks", func(t *testing.T) {
+		s, bk, dir := mkBackupRig(t, &gwBackupNode{body: good, reportSHA: "-"})
+		if ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c"); err == nil || ref != "" {
+			t.Fatalf("未补报必须失败: ref=%q err=%v", ref, err)
+		}
+		if n := backupCount(t, s); n != 0 {
+			t.Fatalf("记录应作废: %d", n)
+		}
+		if left, _ := os.ReadDir(dir); len(left) != 0 {
+			t.Fatalf("落盘件不得留: %v", left)
+		}
+	})
+
+	// 补报与落盘自算不等 ⇒ 不转 complete、报错
+	t.Run("report mismatch blocks", func(t *testing.T) {
+		s, bk, dir := mkBackupRig(t, &gwBackupNode{body: good, reportSHA: sha256Hex([]byte("lying"))})
+		if ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c"); err == nil || ref != "" {
+			t.Fatalf("补报不等必须失败: ref=%q err=%v", ref, err)
+		}
+		if n := backupCount(t, s); n != 0 {
+			t.Fatalf("记录应作废: %d", n)
+		}
+		if left, _ := os.ReadDir(dir); len(left) != 0 {
+			t.Fatalf("落盘件不得留: %v", left)
+		}
+	})
+
+	// 完整销毁链过丢 trailer 反代：destroy 走到底（补报是唯一校验依据）
+	t.Run("destroy chain via trailer-dropping proxy", func(t *testing.T) {
+		lc, log, _, _, _, s, id := mkLifecycle(t)
+		gw := &gwBackupNode{body: good, sha: "-"}
+		_, bk, _ := mkBackupRigOn(t, s, gw)
+		lc.backups = bk
+		log.reset()
+		if err := lc.Destroy(context.Background(), id, "zzc", false, true); err != nil {
+			t.Fatalf("丢 trailer 下销毁链应走通: %v", err)
+		}
+		seat, _ := s.GetSeat(context.Background(), id)
+		if seat.State != "destroyed" {
+			t.Fatalf("席位应 destroyed: %+v", seat)
+		}
+		if n := backupCount(t, s); n != 1 {
+			t.Fatalf("备份记录应留存（complete 待 TTL）: %d", n)
+		}
+	})
+
+	// 补报缺失 ⇒ 销毁链中止在 backup_failed（不发 destroy_seat）
+	t.Run("missing report stops destroy", func(t *testing.T) {
+		lc, log, _, _, _, s, id := mkLifecycle(t)
+		gw := &gwBackupNode{body: good, reportSHA: "-"}
+		_, bk, _ := mkBackupRigOn(t, s, gw)
+		lc.backups = bk
+		log.reset()
+		err := lc.Destroy(context.Background(), id, "zzc", false, true)
+		var be *BackupFailedError
+		if !errors.As(err, &be) {
+			t.Fatalf("%v, want backup_failed", err)
+		}
+		eqSeq(t, "missing report stops destroy", log.get(), []string{"node:stop_seat"})
+		if seat, _ := s.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
+			t.Fatalf("seat must show backup_failed: %+v", seat)
 		}
 	})
 }

@@ -5,8 +5,13 @@ package hosted
 //
 // 链路：Lifecycle.Destroy → HubBackuper.BackupSeatVolume（建 pending 记录→经网关发
 // export_seat（带 upload_url）→节点 tar 流式 POST /api/node/backup/{id}（Bearer 节点凭据）
-// →BackupHandler 落盘＋complete）→ Destroy 拿到 backupRef。任一环失败 ⇒ backup_failed
+// →BackupHandler 落盘＋自算 sha256）→ 节点在 export_seat 结果载荷里经控制面补报 sha256
+// →BackupSeatVolume 比对相等才转 complete → Destroy 拿到 backupRef。任一环失败 ⇒ backup_failed
 // （销毁中止——不跳过备份）。
+//
+// 🔴 R-G4-BACKUP-CHECKSUM-CTRL（丙案；106 实测 nginx 1.24.0 丢弃请求 trailer）：
+// 校验的权威通道是控制面补报（WSS 结果载荷），trailer 到达只作第三方一致性旁证，
+// 不得作为唯一依据；未补报或不等 ⇒ 不销毁。不得降级为只靠 verifyTarGz。
 
 import (
 	"archive/tar"
@@ -24,6 +29,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -31,6 +37,7 @@ import (
 const BackupTTL = 14 * 24 * time.Hour
 
 // BackupSHA256Trailer 节点回传流的 sha256（hex），随 HTTP 请求 trailer 送来（与 nodeagent 同名）。
+// 🔴 丙案后它只是旁证：到了就与落盘自算对一遍（不符即拒），不到不挡路（反代会丢）。
 const BackupSHA256Trailer = "X-Backup-Sha256"
 
 // HubBackuper 实现 VolumeBackuper：指挥节点回传席位卷并落 Hub 本地（dw 的 /data 下）。
@@ -40,10 +47,22 @@ type HubBackuper struct {
 	origin string // Hub 公网地址（节点回传的 upload_url 基底；DW_PUBLIC_ORIGIN）
 	dir    string // 备份落盘目录（/data/dingwei-newplat/backups/hosted）
 	now    func() time.Time
+	// landed 已落盘备份的自算 sha256 与大小（id→…）：BackupHandler 写入，
+	// BackupSeatVolume 拿它与控制面补报比对，相等才转 complete。
+	// 进程内存即可——比对在同一次同步流里完成；Hub 中途重启则 pending 记录留待重试（与旧口径同）。
+	mu     sync.Mutex
+	landed map[string]struct {
+		sha  string
+		size int64
+	}
 }
 
 func NewHubBackuper(st *Store, gw NodeGateway, publicOrigin, dir string) *HubBackuper {
-	return &HubBackuper{st: st, gw: gw, origin: strings.TrimRight(publicOrigin, "/"), dir: dir, now: time.Now}
+	return &HubBackuper{st: st, gw: gw, origin: strings.TrimRight(publicOrigin, "/"), dir: dir, now: time.Now,
+		landed: map[string]struct {
+			sha  string
+			size int64
+		}{}}
 }
 
 // BackupSeatVolume 备份席位卷：pending 记录 → export_seat → 等回传完成 → 落盘路径即 backupRef。
@@ -74,8 +93,35 @@ func (b *HubBackuper) BackupSeatVolume(ctx context.Context, nodeID, seatID strin
 	}
 	if !res.OK {
 		_ = b.st.FailBackup(ctx, id)
+		b.forget(id)
 		return "", fmt.Errorf("export_seat: %s", res.Error)
 	}
+	// 🔴 丙案校验闸（权威通道）：节点在结果载荷里补报的 sha256 必须等于落盘自算值——
+	// 未补报、未落盘或两值不等 ⇒ 不销毁（销毁侧拿到 error 即中止，席位 backup_failed）。
+	var rep struct {
+		SHA256 string `json:"sha256"`
+	}
+	_ = json.Unmarshal(res.Payload, &rep)
+	b.mu.Lock()
+	land, landed := b.landed[id]
+	b.mu.Unlock()
+	if rep.SHA256 == "" {
+		b.rejectLanded(ctx, id)
+		return "", fmt.Errorf("节点未补报 sha256（控制面）")
+	}
+	if !landed {
+		b.rejectLanded(ctx, id)
+		return "", fmt.Errorf("备份回传未完成（未落盘）")
+	}
+	if !strings.EqualFold(rep.SHA256, land.sha) {
+		b.rejectLanded(ctx, id)
+		return "", fmt.Errorf("补报 sha256 与落盘自算不符")
+	}
+	if err := b.st.CompleteBackup(ctx, id, land.size); err != nil {
+		b.rejectLanded(ctx, id)
+		return "", err
+	}
+	b.forget(id)
 	bk, err := b.st.GetBackup(ctx, id)
 	if err != nil {
 		_ = b.st.FailBackup(ctx, id)
@@ -86,12 +132,25 @@ func (b *HubBackuper) BackupSeatVolume(ctx context.Context, nodeID, seatID strin
 		_ = b.st.FailBackup(ctx, id)
 		return "", fmt.Errorf("备份回传未完成（state=%s size=%d）", bk.State, bk.SizeBytes)
 	}
-	// 落盘件在、非空；内容的完整性已在 BackupHandler 落盘时核过（sha256 对上、gzip＋tar 头到尾解得开）才会 complete。
+	// 落盘件在、非空；完整性两道：gzip＋tar 头到尾解得开（落盘时已核），sha256 控制面比对（上面已核）。
 	fi, err := os.Stat(bk.Path)
 	if err != nil || fi.Size() == 0 {
 		return "", fmt.Errorf("备份件缺失或为空: %v", err)
 	}
 	return bk.Path, nil
+}
+
+// forget 摘掉落盘登记（终态已定后）。
+func (b *HubBackuper) forget(id string) {
+	b.mu.Lock()
+	delete(b.landed, id)
+	b.mu.Unlock()
+}
+
+// rejectLanded 校验闸不过的清理：作废 pending 记录（FailBackup 连落盘件一起删）、摘登记。
+func (b *HubBackuper) rejectLanded(ctx context.Context, id string) {
+	_ = b.st.FailBackup(ctx, id)
+	b.forget(id)
 }
 
 // BackupHandler 回传接收端点（POST /api/node/backup/{id}；Bearer 节点凭据，且必须是该备份
@@ -101,6 +160,13 @@ func (b *HubBackuper) BackupHandler() http.Handler {
 		id := r.PathValue("id")
 		bk, err := b.st.GetBackup(r.Context(), id)
 		if err != nil || bk.State != "pending" {
+			http.Error(w, `{"error":"backup_not_pending"}`, http.StatusNotFound)
+			return
+		}
+		b.mu.Lock()
+		_, already := b.landed[id]
+		b.mu.Unlock()
+		if already { // 已落盘的同一 id 再传 ⇒ 不覆写（记录尚在 pending，等控制面比对）
 			http.Error(w, `{"error":"backup_not_pending"}`, http.StatusNotFound)
 			return
 		}
@@ -127,11 +193,12 @@ func (b *HubBackuper) BackupHandler() http.Handler {
 			http.Error(w, `{"error":"backup_write_failed"}`, http.StatusInternalServerError)
 			return
 		}
-		// 🔴 完整性两道（复验缺陷二；台账 lead-g4-t53-review 🔴2），任一不过 ⇒ 删临时件、记录作废、422 拒收：
-		//   ① 节点边打边算的 sha256（请求 trailer，读完 body 才有）必须与 Hub 落盘同步算的一致 —— 缺了也拒；
-		//   ② 落盘件 gzip＋tar 从头到尾解得开 —— 非 gzip、截断、tar 坏块都在这里现形。
-		// 原先只 os.Stat 看非空：非 gzip、截断 gzip 都被当成功，随后销毁容器与卷，数据就丢了。
-		if got, want := hex.EncodeToString(h.Sum(nil)), strings.ToLower(strings.TrimSpace(r.Trailer.Get(BackupSHA256Trailer))); want == "" || got != want {
+		// 🔴 完整性（复验缺陷二；台账 lead-g4-t53-review 🔴2）＋ 丙案（R-G4-BACKUP-CHECKSUM-CTRL）：
+		//   ① 落盘件 gzip＋tar 从头到尾解得开 —— 非 gzip、截断、tar 坏块都在这里现形；
+		//   ② trailer 的 sha256 到达即与落盘自算对一遍（不符即拒）；🔴 不到不挡路——
+		//      106 实测 nginx 丢 trailer，权威校验在控制面补报（BackupSeatVolume 比对后才转 complete）。
+		if tr := strings.ToLower(strings.TrimSpace(r.Trailer.Get(BackupSHA256Trailer))); tr != "" &&
+			!strings.EqualFold(hex.EncodeToString(h.Sum(nil)), tr) {
 			b.rejectBackup(w, r.Context(), id, tmp, "backup_checksum_mismatch")
 			return
 		}
@@ -144,10 +211,13 @@ func (b *HubBackuper) BackupHandler() http.Handler {
 			http.Error(w, `{"error":"backup_write_failed"}`, http.StatusInternalServerError)
 			return
 		}
-		if err := b.st.CompleteBackup(r.Context(), id, n); err != nil {
-			http.Error(w, `{"error":"backup_write_failed"}`, http.StatusInternalServerError)
-			return
-		}
+		// 落盘成功：登记自算 sha256 与大小，等控制面补报比对（BackupSeatVolume）后才转 complete。
+		b.mu.Lock()
+		b.landed[id] = struct {
+			sha  string
+			size int64
+		}{sha: hex.EncodeToString(h.Sum(nil)), size: n}
+		b.mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"ok":true}`))
 	})
