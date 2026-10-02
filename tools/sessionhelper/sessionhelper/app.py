@@ -486,7 +486,7 @@ class SessionHelper:
         else:
             _proxy = None
         if self.cfg.debug:
-            hint = {False: "强制直连(忽略HTTPS_PROXY)", None: "跟随HTTPS_PROXY环境变量(若有)"}.get(_proxy, _proxy)
+            hint = "直连(不用代理、不读HTTPS_PROXY)" if _proxy is None else _proxy
             print(f"[sessionHelper][debug] 代理: {hint}", flush=True)
             import os as _os
             print(f"[sessionHelper][debug] 环境HTTPS_PROXY={_os.environ.get('HTTPS_PROXY') or _os.environ.get('https_proxy') or '未设'}", flush=True)
