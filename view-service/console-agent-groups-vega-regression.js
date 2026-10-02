@@ -12,11 +12,19 @@ const end = source.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents', start);
 assert(start >= 0 && end > start, 'cannot extract consolePageHTML from production source');
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
+// 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
+if (process.argv.some((a) => a.startsWith('--mutate'))) { console.error('MUTATION-SWITCH-WRONG-FORM: this script reads env MUTATION=<name>, not --mutate=<name> (the argv form would be silently ignored)'); process.exit(3); }
 function mutate(from, to) {
   const hits = html.split(from).length - 1;
-  assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
+  // 🔴 锚点失效（页面改了，变异的目标文本没了或不唯一）必须【大声】失败：stderr 打 MUTATION-ANCHOR-STALE、退出码 3，不得静默——
+  // 打不上去的变异什么也没测，却会被当成「已经验过」。退出码约定见文件末尾（1＝变异被杀·0＝存活·3＝变异无效）。
+  if (hits !== 1) {
+    console.error(`MUTATION-ANCHOR-STALE: mutation ${mutation} anchor must match exactly once, hits=${hits}: ${from.slice(0, 160)}`);
+    process.exit(3);
+  }
   html = html.replace(from, to);
 }
+if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation === 'retry-feedback') mutate("groupFeedback('groupRetryFeedback','已刷新 · '+data.groups.length+' 个编组');", '');
 if (mutation === 'leak-delete') mutate('if(g.can_manage){var del=', 'if(true){var del=');
 if (mutation === 'leak-remove') mutate('if(selected.can_manage&&!leader){var rm=', 'if(!leader){var rm=');
@@ -31,7 +39,7 @@ if (mutation === 'ux-block-colors') {
 }
 if (mutation === 'ux-add-focus') mutate("document.getElementById('groupAddOpen').onclick=function(){setGroupPanelMode(groupPanelMode==='add'?'':'add');};", "document.getElementById('groupAddOpen').onclick=function(){var p=document.getElementById('groupAddPanel');p.hidden=!p.hidden;};");
 if (mutation === 'ux-detail-exclusive') mutate("row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();setGroupPanelMode('detail');}", "row.onclick=function(e){if(e.target.closest('button'))return;window.selectedGroupCode=g.code;renderGroups();if(globalThis.__testExclusive)document.getElementById('groupDetail').hidden=false;else setGroupPanelMode('detail');}");
-if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'drop-group-row-stripe', 'ux-member-gap', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive'].includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation && !['retry-feedback', 'leak-delete', 'leak-remove', 'foreign-candidate', 'detach-remove-row', 'ux-table-align', 'drop-group-row-stripe', 'ux-member-gap', 'ux-block-colors', 'ux-add-focus', 'ux-detail-exclusive'].includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 
 let groups = [];
 let additionsClosed = false;
@@ -254,5 +262,9 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
   } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`vega group browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);
-  if (mutation) { if (fail !== 1) process.exit(1); } else if (fail) process.exit(1);
+  // 退出码约定同其它脚本：1＝变异被杀（有 FAIL 行）· 0＝存活 · 3＝MUTATION-ANCHOR-STALE（变异无效）· 2＝脚本崩。
+  // 🔴 本脚本的变异【必须只使对应的那一条断言失败】（文件头）：失败数多于 1 ⇒ 变异没有隔离，退出码 5（MUTATION-NOT-ISOLATED），不算红。
+  if (mutation && fail > 1) { console.error(`MUTATION-NOT-ISOLATED: mutation ${mutation} made ${fail} cases fail, expected exactly 1`); process.exit(5); }
+  if (mutation) console.log(`MUTATION-VERDICT: ${mutation} ${fail >= 1 ? 'KILLED' : 'SURVIVED'}`);
+  if (fail) process.exit(1);
 })().catch((err) => { console.error(err); process.exit(2); });

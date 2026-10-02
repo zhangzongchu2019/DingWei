@@ -21,14 +21,22 @@ const end = source.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents', start);
 assert(start >= 0 && end > start, 'cannot extract consolePageHTML from production source');
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
+// 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
+if (process.argv.some((a) => a.startsWith('--mutate'))) { console.error('MUTATION-SWITCH-WRONG-FORM: this script reads env MUTATION=<name>, not --mutate=<name> (the argv form would be silently ignored)'); process.exit(3); }
 function mutate(from, to) {
   const hits = html.split(from).length - 1;
-  assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
+  // 🔴 锚点失效（页面改了，变异的目标文本没了或不唯一）必须【大声】失败：stderr 打 MUTATION-ANCHOR-STALE、退出码 3，不得静默——
+  // 打不上去的变异什么也没测，却会被当成「已经验过」。退出码约定见文件末尾（1＝变异被杀·0＝存活·3＝变异无效）。
+  if (hits !== 1) {
+    console.error(`MUTATION-ANCHOR-STALE: mutation ${mutation} anchor must match exactly once, hits=${hits}: ${from.slice(0, 160)}`);
+    process.exit(3);
+  }
   html = html.replace(from, to);
 }
 mutate('var FEATURE_HOSTED=false;', 'var FEATURE_HOSTED=true;'); // 托管区第二版才开;本件测的就是它,装置里把开关打开
-const MUTATIONS = ['hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
-if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+const MUTATIONS = ['mutation-anchor-selftest', 'hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
+if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
+if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'hosted-group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
@@ -507,5 +515,10 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
   } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`hosted console browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);
-  if (mutation) { if (fail < 1) process.exit(1); } else if (fail) process.exit(1);
+  // 退出码约定（变异模式与正常模式一致：用例失败即 1）：
+  //   1 ＝ 有用例失败（变异被杀＝「红」，且输出里有 FAIL 行）· 0 ＝ 全绿（变异模式下＝变异【存活】）
+  //   3 ＝ MUTATION-ANCHOR-STALE（变异的锚点没命中，变异无效——不得算红，也不得算存活）· 2 ＝ 脚本自己崩了
+  // 判「变异红」只认【退出码 1 且有 FAIL 行】；其余一律不是红。
+  if (mutation) console.log(`MUTATION-VERDICT: ${mutation} ${fail >= 1 ? 'KILLED' : 'SURVIVED'}`);
+  if (fail) process.exit(1);
 })().catch((e) => { console.error(e); process.exit(2); });
