@@ -1113,6 +1113,11 @@ func TestAdminLegacyIdentityPagesHiddenAndUnmountedOnNewPlatform(t *testing.T) {
 			srv.Mount(mux)
 
 			status := getAuth(t, mux, "/admin").Body.String()
+			for _, path := range []string{"/portal", "/admin/messages", "/admin/bot-channels", "/admin/projects", "/admin/services", "/admin/control-plane", "/admin/files", "/admin/config"} {
+				if !strings.Contains(status, `href="`+path+`"`) {
+					t.Errorf("navigation removed unrelated entry %s in newPlatform=%v", path, newPlatform)
+				}
+			}
 			for _, path := range getPaths {
 				hasLink := strings.Contains(status, `href="`+path+`"`)
 				if hasLink == newPlatform {
@@ -1125,8 +1130,8 @@ func TestAdminLegacyIdentityPagesHiddenAndUnmountedOnNewPlatform(t *testing.T) {
 				if newPlatform && rec.Code != http.StatusNotFound {
 					t.Errorf("new platform GET %s=%d, want 404", path, rec.Code)
 				}
-				if !newPlatform && rec.Code == http.StatusNotFound {
-					t.Errorf("legacy GET %s unexpectedly unmounted", path)
+				if !newPlatform && rec.Code != http.StatusOK {
+					t.Errorf("legacy GET %s=%d, want 200", path, rec.Code)
 				}
 			}
 			for _, path := range postPaths {
