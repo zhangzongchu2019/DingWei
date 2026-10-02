@@ -41,6 +41,24 @@ func (e *agentEnv) enrollInGroup(device, name, groupCode string) (cred string) {
 	return p.Credential
 }
 
+func (e *agentEnv) enrollForOwner(owner, device, name string) (cred string) {
+	e.t.Helper()
+	digest, _ := identity.PairingDigest("000102030405060708090a0b0c0d0e0f", "123456")
+	r, err := e.svc.Apply(e.ctx, identity.ApplyRequest{OwnerUserID: owner, PairingSalt: "000102030405060708090a0b0c0d0e0f",
+		PairingDigest: digest, DeviceFingerprint: device, ClientVersion: "0.3.0", SourceIP: "127.0.0.1"})
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	if _, _, err := e.svc.ApproveWithNewGroup(e.ctx, owner, r.ApplicationID, "123456", name, tg()); err != nil {
+		e.t.Fatal(err)
+	}
+	p, err := e.svc.Poll(e.ctx, r.ApplicationID, r.PollToken)
+	if err != nil || p.Credential == "" {
+		e.t.Fatalf("poll: %+v %v", p, err)
+	}
+	return p.Credential
+}
+
 func (e *agentEnv) sendEnv(conn *websocket.Conn, env model.Envelope) {
 	e.t.Helper()
 	b, err := json.Marshal(env)
@@ -113,6 +131,65 @@ func TestAgentWSPlaceholderFromAgentToAgentIsDelivered(t *testing.T) {
 	}
 	if want := sessionAddress("opus50ts", AgentKeyID("zzc")); got.From != want {
 		t.Fatalf("收方看到的 from=%q，要求改写后的真地址 %q", got.From, want)
+	}
+}
+
+func TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster(t *testing.T) {
+	e := newAgentEnv(t)
+	codes, err := e.svc.Store.ListAgentGroups(e.ctx, e.agID)
+	if err != nil || len(codes) == 0 {
+		t.Fatalf("source group: %v %v", codes, err)
+	}
+	credB := e.enrollInGroup("dev-owner-b", "Kimi", codes[0])
+	if err := e.svc.Store.CreateUser(e.ctx, identity.User{UserID: "lbl", ShortName: "lb", State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	credOther := e.enrollForOwner("lbl", "dev-other", "Outsider")
+	a, _, _ := e.dial(e.cred, "")
+	b, _, _ := e.dial(credB, "")
+	other, _, _ := e.dial(credOther, "")
+	if a == nil || b == nil || other == nil {
+		t.Fatal("agent websocket did not connect")
+	}
+	defer a.CloseNow()
+	defer b.CloseNow()
+	defer other.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "kimi")
+	waitSessionOnline(t, e.hub, AgentKeyID("lbl"), "outsider")
+
+	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "#kimi", Body: "same-owner-short-selector"})
+	got := e.readEnvUntil(b, envelopeReadTimeout, func(env model.Envelope) bool { return env.Body == "same-owner-short-selector" })
+	if got == nil || got.To != sessionAddress("kimi", AgentKeyID("zzc")) {
+		t.Fatalf("same-owner short selector was not delivered: %+v", got)
+	}
+
+	items, owner, err := e.hub.onlineDirectory(e.ctx, "zzc")
+	if err != nil || owner.OwnerKey != "zzc" {
+		t.Fatalf("new-platform roster owner=%+v err=%v", owner, err)
+	}
+	var names []string
+	for _, item := range items {
+		names = append(names, item.Endpoint.SessionName)
+		if item.Endpoint.KeyID != AgentKeyID("zzc") {
+			t.Fatalf("cross-owner session leaked into roster: %+v", item.Endpoint)
+		}
+	}
+	if strings.Join(names, ",") != "kimi,opus50ts" {
+		t.Fatalf("new-platform roster=%v", names)
+	}
+
+	// A name that exists only under another owner must be rejected, not globally
+	// resolved to that owner's Agent.
+	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "#outsider", Body: "must-not-cross-owner"})
+	rejected := e.readEnvUntil(a, envelopeReadTimeout, func(env model.Envelope) bool {
+		return strings.Contains(env.Body, "目标会话无法补全为在线 canonical 地址")
+	})
+	if rejected == nil {
+		t.Fatal("cross-owner short selector was not rejected")
+	}
+	if leaked := e.readEnvUntil(other, 250*time.Millisecond, func(env model.Envelope) bool { return env.Body == "must-not-cross-owner" }); leaked != nil {
+		t.Fatalf("short selector crossed owner boundary: %+v", leaked)
 	}
 }
 

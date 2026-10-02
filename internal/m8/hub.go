@@ -4627,6 +4627,15 @@ func (h *Hub) onlineOwners(ctx context.Context) ([]string, error) {
 }
 
 func (h *Hub) ownerKeyForKey(ctx context.Context, keyID string) string {
+	if h.Identity != nil {
+		if owner, ok := strings.CutPrefix(keyID, "u_"); ok && owner != "" {
+			u, err := h.Identity.Store.GetUser(ctx, owner)
+			if err == nil && u.State == identity.UserActive {
+				return u.UserIDLC()
+			}
+			return ""
+		}
+	}
 	accounts, err := h.Repo.ListAPIKeyAccounts(ctx, keyID)
 	if err != nil || len(accounts) == 0 {
 		return ""
@@ -4764,6 +4773,11 @@ func (h *Hub) onlineDirectory(ctx context.Context, ownerKey string) ([]onlineSes
 			owner = member
 		}
 	}
+	if owner.OwnerKey == "" && h.Identity != nil {
+		if u, err := h.Identity.Store.GetUser(ctx, ownerKey); err == nil && u.State == identity.UserActive {
+			owner = model.Member{OwnerKey: u.UserIDLC(), DisplayName: firstNonEmpty(u.DisplayName, u.ShortName, u.UserID), Active: true}
+		}
+	}
 	if owner.OwnerKey == "" {
 		return nil, model.Member{}, nil
 	}
@@ -4818,7 +4832,11 @@ func (h *Hub) onlineDirectory(ctx context.Context, ownerKey string) ([]onlineSes
 		if len(accounts) == 0 {
 			accounts = accountByKey[snap.KeyID]
 		}
-		if ownerKeyForAccounts(accounts, byOwner, boundOwners) != ownerKey {
+		resolvedOwner := ownerKeyForAccounts(accounts, byOwner, boundOwners)
+		if resolvedOwner == "" {
+			resolvedOwner = h.ownerKeyForKey(ctx, snap.KeyID)
+		}
+		if resolvedOwner != ownerKey {
 			continue
 		}
 		ep := endpointByID[snap.KeyID+"#"+snap.Session]
