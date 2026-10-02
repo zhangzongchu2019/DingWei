@@ -316,6 +316,24 @@ func (s *PGStore) CreateRegistrationCode(ctx context.Context, userIDLC, codeDige
 	})
 }
 
+func (s *PGStore) ListActiveRegistrationCodes(ctx context.Context, now time.Time) ([]RegistrationCodeRow, error) {
+	rows, err := s.pool.Query(ctx, s.t, `SELECT user_id_lc, code_digest, expires_at FROM np_registration_code
+		WHERE redeemed_at IS NULL AND expires_at > $1 ORDER BY user_id_lc`, now.UTC())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []RegistrationCodeRow
+	for rows.Next() {
+		var r RegistrationCodeRow
+		if err := rows.Scan(&r.UserIDLC, &r.CodeDigest, &r.ExpiresAt); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
 func (s *PGStore) RedeemRegistrationCode(ctx context.Context, codeDigest string, ident Identity, now time.Time) (*User, error) {
 	var out *User
 	err := s.inTx(ctx, func(tx repo.Tx) error {
@@ -349,7 +367,20 @@ func (s *PGStore) RedeemRegistrationCode(ctx context.Context, codeDigest string,
 		if err != nil {
 			return err
 		}
-		if u.State != UserPendingBind {
+		activate := false
+		switch u.State {
+		case UserPendingBind:
+			activate = true
+		case UserActive: // 本人自取的绑定码：只绑身份、状态不变；已有该渠道身份则拒
+			var has bool
+			if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM np_identity WHERE user_id_lc = $1 AND provider = $2)`,
+				lc, ident.Provider).Scan(&has); err != nil {
+				return err
+			}
+			if has {
+				return ErrAlreadyBound
+			}
+		default:
 			return ErrNotPending
 		}
 		if _, err := tx.Exec(ctx, `UPDATE np_registration_code SET redeemed_at = $2 WHERE code_digest = $1`, codeDigest, now.UTC()); err != nil {
@@ -362,14 +393,26 @@ func (s *PGStore) RedeemRegistrationCode(ctx context.Context, codeDigest string,
 			}
 			return err
 		}
-		if _, err := tx.Exec(ctx, `UPDATE np_user SET state = 'active' WHERE user_id_lc = $1`, lc); err != nil {
-			return err
+		if activate {
+			if _, err := tx.Exec(ctx, `UPDATE np_user SET state = 'active' WHERE user_id_lc = $1`, lc); err != nil {
+				return err
+			}
+			u.State = UserActive
 		}
-		u.State = UserActive
 		out = u
 		return nil
 	})
 	return out, err
+}
+
+func (s *PGStore) UserHasIdentity(ctx context.Context, userIDLC, provider string) (bool, error) {
+	var has bool
+	row, err := s.queryRow(ctx, `SELECT EXISTS (SELECT 1 FROM np_identity WHERE user_id_lc = $1 AND provider = $2)`, Lower(userIDLC), provider)
+	if err != nil {
+		return false, err
+	}
+	err = row.Scan(&has)
+	return has, err
 }
 
 func (s *PGStore) CreateSession(ctx context.Context, se Session) error {

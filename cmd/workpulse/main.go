@@ -71,8 +71,11 @@ func execute(args []string, out io.Writer, logger *slog.Logger, runServer func(*
 		if args[1] == "reset-password" {
 			return runResetPassword(context.Background(), args[2:], out, strings.TrimSpace(os.Getenv("DW_NEWPLAT_PG_DSN")))
 		}
+		if args[1] == "hosted-admin" {
+			return runHostedAdmin(args[2:])
+		}
 		if args[1] != "validate-console-seed" || len(args) != 3 {
-			return errors.New("usage: workpulse version | workpulse validate-console-seed <seed.json> | " + bootstrapAdminUsage + " | " + resetPasswordUsage)
+			return errors.New("usage: workpulse version | workpulse validate-console-seed <seed.json> | workpulse hosted-admin register-node|seed-account ... | " + bootstrapAdminUsage + " | " + resetPasswordUsage)
 		}
 		if err := validateConsoleSeedFile(args[2]); err != nil {
 			return err
@@ -286,12 +289,12 @@ func run(logger *slog.Logger) error {
 		return fmt.Errorf("newplat config: %w", newplatErr)
 	}
 	if newplatOn {
-		npStore, closeNPStore, err := openNewPlatformStore(ctx, newplatCfg.pgDSN)
+		npStore, npPool, closeNPStore, err := openNewPlatformStore(ctx, newplatCfg.pgDSN)
 		if err != nil {
 			return fmt.Errorf("newplat identity store: %w", err)
 		}
 		defer closeNPStore()
-		if err := wireNewPlatform(ctx, mux, prefixHub, newplatCfg, npStore); err != nil {
+		if err := wireNewPlatform(ctx, mux, prefixHub, newplatCfg, npStore, npPool); err != nil {
 			return fmt.Errorf("newplat wiring refused to start: %w", err)
 		}
 	}

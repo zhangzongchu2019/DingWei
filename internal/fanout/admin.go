@@ -329,13 +329,14 @@ func (sp *Spool) ReplayDLQ(ctx context.Context) (outbound, inbound int64, err er
 }
 
 // SelfCheck pre-arm③:真写读删一轮(证 fsync 路活)。
+// 🔴 本方法【不建表】:selfcheck 由迁移账本条目 0400 建(源＝pgschema.sql;装配层经
+// migrate.Migrate(FanoutDomains()) 施加,OpenSpool 只核对表在不在),故这里只做写读删。
+// 原先在此懒建有两处坏处:① 建表 DDL 走在 ftx() 下,把「无租户语义的 DDL」
+// 记成租户债;② 五表分散三处建,账本登记哪一张由代码顺序决定,漏一张没有判据能发现。
 func (sp *Spool) SelfCheck(ctx context.Context) error {
 	if _, err := sp.db.Exec(ctx, ftx(),
-		`CREATE TABLE IF NOT EXISTS selfcheck(k TEXT PRIMARY KEY, v TEXT)`); err != nil {
-		return err
-	}
-	if _, err := sp.db.Exec(ctx, ftx(),
-		`INSERT OR REPLACE INTO selfcheck(k,v) VALUES('probe','ok')`); err != nil {
+		`INSERT INTO selfcheck(k,v) VALUES('probe','ok')
+ON CONFLICT (k) DO UPDATE SET v=EXCLUDED.v`); err != nil {
 		return err
 	}
 	var v string

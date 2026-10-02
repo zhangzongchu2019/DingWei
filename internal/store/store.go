@@ -64,6 +64,9 @@ type Repository interface {
 	ClaimSessionDelivery(ctx context.Context, keyID, sessionName string, now time.Time) (*model.SessionDelivery, error)
 	UpdateSessionDelivery(ctx context.Context, id, state, errText string, nextAttemptAt time.Time) error
 	UpdateSessionDeliveryBusy(ctx context.Context, id, errText string, nextAttemptAt time.Time) error
+	// FailSessionDeliveryRetryable 记一次可重试的 failed：连续次数＋1；到 maxFailed 即转 dead，否则回 queued、
+	// next_attempt＝now＋min(base×2^(n−1), maxDelay)。返回是否已转 dead、累计次数与下次重投时刻。
+	FailSessionDeliveryRetryable(ctx context.Context, id, reason string, now time.Time, base, maxDelay time.Duration, maxFailed int) (dead bool, failed int, next time.Time, err error)
 	ReleaseSessionDeliveryLeases(ctx context.Context, keyID, sessionName, reason string, now time.Time) (int64, error)
 	GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error)
 	CancelPendingSessionDelivery(ctx context.Context, messageID, deliveryID, keyID, sessionName string) (bool, error)

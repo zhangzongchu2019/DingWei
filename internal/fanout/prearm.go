@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
@@ -52,20 +51,7 @@ func (s *Server) PreArm(ctx context.Context) error {
 	if err := s.spool.SelfCheck(ctx); err != nil {
 		return fmt.Errorf("pre-arm③: spool 自检失败: %w", err)
 	}
-	// ④ 磁盘水位(默认>10%可用)
-	if s.cfg.SpoolPath != "" {
-		var st syscall.Statfs_t
-		if err := syscall.Statfs(s.cfg.SpoolPath, &st); err == nil && st.Blocks > 0 {
-			freePct := float64(st.Bavail) / float64(st.Blocks) * 100
-			min := s.cfg.DiskMinFreePct
-			if min <= 0 {
-				min = 10
-			}
-			if freePct < min {
-				return fmt.Errorf("pre-arm④: 磁盘余量 %.1f%% < %.0f%%", freePct, min)
-			}
-		}
-	}
+	// ④ 数据盘水位由 PG 运维面统一监控；fanout 不再持有本地 SQLite 路径。
 	// ⑤ 告警通道 attest(runbook 0.6 人工实测后置 alerts_verified:true)
 	if fileCfg != nil && !fileCfg.AlertsVerified {
 		return fmt.Errorf("pre-arm⑤: alerts_verified 未置(先按 runbook 0.6 实测告警通道)")

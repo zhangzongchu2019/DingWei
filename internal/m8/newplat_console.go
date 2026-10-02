@@ -54,5 +54,15 @@ func (h *Hub) handleNewPlatformConsolePlatform(w http.ResponseWriter, r *http.Re
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
-	_ = json.NewEncoder(w).Encode(map[string]any{"role": role, "actions": platformActions(role), "items": items})
+	resp := map[string]any{"role": role, "actions": platformActions(role), "items": items}
+	// feishu_bound：【当前登录者本人】是否已有飞书身份（页面据此在「绑定飞书」按钮与「飞书已绑定」小字间切换）。
+	// 🔴 只回一个布尔、只回本人（principal 取自会话，不接任何请求参数）；不回 open_id 等身份值。
+	// 🔵 查不出（库出错）就【不给这个键】——页面把缺键当「未知」，按钮照旧显示（点了由出码接口回 409 兜底），
+	//    不把一次库错误说成「已绑定」或「未绑定」。
+	if userLC := platformPrincipal(r); userLC != "" {
+		if has, err := h.Identity.Store.UserHasIdentity(r.Context(), userLC, "feishu"); err == nil {
+			resp["feishu_bound"] = has
+		}
+	}
+	_ = json.NewEncoder(w).Encode(resp)
 }

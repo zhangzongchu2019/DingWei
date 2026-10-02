@@ -16,6 +16,8 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/fanout"
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/store/migrate"
 )
 
 type fakeSender struct{}
@@ -72,9 +74,18 @@ func run() error {
 		logger.Warn("outbound disabled (FANOUT_LARK_APP_ID/SECRET unset)")
 	}
 
-	// v2.3(§E/§F):声明式配置文件+spool+管理面。全部可选=v1 纯 env 部署零回归。
+	// v2.3(§E/§F):声明式配置文件+PG spool+管理面。
 	cfg.ConfigPath = os.Getenv("FANOUT_CONFIG_FILE") // fanout.yaml,文件=唯一真源
-	cfg.SpoolPath = os.Getenv("FANOUT_SPOOL_PATH")
+	if dsn := os.Getenv("FANOUT_PG_DSN"); dsn != "" {
+		pool, rep, err := openSpoolPool(context.Background(), dsn)
+		if err != nil {
+			return fmt.Errorf("FANOUT_PG_DSN: %w", err)
+		}
+		defer pool.Close()
+		// 启动时把账本读数打出来:哪几条进了这个库、这次动没动库,不靠人去库里反推。
+		logger.Info("spool ledger", "report", rep.String(), "applied", rep.Applied, "skipped", rep.Skipped)
+		cfg.SpoolPool = pool
+	}
 	if raw := os.Getenv("FANOUT_ADMIN_TOKENS"); raw != "" { // {"<token>":{"id":"ops-a","role":"admin"}}
 		if err := json.Unmarshal([]byte(raw), &cfg.AdminTokens); err != nil {
 			return fmt.Errorf("FANOUT_ADMIN_TOKENS bad json: %w", err)
@@ -120,4 +131,45 @@ func run() error {
 	shutCtx, shutCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutCancel()
 	return httpSrv.Shutdown(shutCtx)
+}
+
+// openSpoolPool 建 fanout spool 的产品池，并把【fanout 域】的迁移账本施加到这个库上
+// （唯一建池处；DSN 仍只在装配层读取，见 FPG-1）。
+//
+// 🔴 账本在这里施加，不在 fanout.OpenSpool 里（裁定 R-G2-LEDGER-DOMAIN，
+// RULING-REGISTER 2026-10-02T11:06:25Z：取乙，fanout 是独立服务、独立库）：
+//
+//	· 本库只施加 fanout 域（号段 0400-0499），Hub 那本账（core／identity／hosted／view／cross）不进这个库；
+//	· 反过来 0400 也不进 Hub 库（Hub 侧 cmd/workpulse/newplat.go 用 migrate.HubDomains()）；
+//	· migrate 内部还有一道隔离核对：库里若已记着【别的域】的账（＝FANOUT_PG_DSN 指到了 Hub 库），
+//	  拒绝启动且不施加任何条目 —— 指错库在第一条 DDL 之前就出声。
+//
+// 🔵 0400 的 DDL 全是 CREATE TABLE IF NOT EXISTS ⇒ 「老库已有五表、但账还是空的」这种形状吃得下：
+//
+//	补记一条 0400，表与表里的数据都不动（升级路径由 TestOpenSpoolPool_LegacyUnledgaredDB 钉住）。
+//
+// 🔵 fanout.OpenSpool 此后只核对五表在不在（只读），不再自建表 —— 两处都能建表时，
+//
+//	账本的 digest 保护形同虚设（漏挂一条增量条目不会红）。
+//
+// 🔴 抽成具名函数不是为了好看，是为了让耐久判据绑在【产品真的会建出来的那个会话】上：
+//
+//	FPG-3 半一要求「真实测试连接的 synchronous_commit 必须为 on」。若测试自己另调一次
+//	OpenPG，它证明的就是夹具的会话参数，与装配层无关 —— 交接件坑#3「只检查 DSN 或工具
+//	默认值不足以证明调用连接未漂移」说的正是这类冒充。共用本函数后，被测会话与产品会话
+//	由同一处代码建，参数漂移无处可藏（本目录 durability_test.go 直接调它）。
+//
+// MaxOpenConns(1)：沿用 spool 收编前的既有并发语义（单连接串行，杜绝游标互等），
+// 由 repo.OpenPG 的 Option 表达，不在此处另设开关。
+func openSpoolPool(ctx context.Context, dsn string) (*repo.Pool, migrate.Report, error) {
+	pool, err := repo.OpenPG(ctx, dsn, repo.MaxOpenConns(1))
+	if err != nil {
+		return nil, migrate.Report{}, err
+	}
+	rep, err := migrate.Migrate(ctx, pool, migrate.FanoutDomains())
+	if err != nil {
+		_ = pool.Close()
+		return nil, migrate.Report{}, err
+	}
+	return pool, rep, nil
 }

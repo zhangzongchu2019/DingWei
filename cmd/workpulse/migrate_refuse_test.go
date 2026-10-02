@@ -61,7 +61,7 @@ func ledgerProbeCount(t *testing.T, dsn, q string, args ...any) int {
 // 正向对照：空库经 Hub 入口自己迁出表，不建任何账号；重启再开一次是空转（账不增）。
 func TestEmptyDBHubEntryMigratesAndCreatesNoAccount(t *testing.T) {
 	dsn := pgSchemaDSN(t, false)
-	st, closeFn, err := openNewPlatformStore(context.Background(), dsn)
+	st, _, closeFn, err := openNewPlatformStore(context.Background(), dsn)
 	if err != nil {
 		t.Fatalf("空库上 openNewPlatformStore: %v", err)
 	}
@@ -76,7 +76,7 @@ func TestEmptyDBHubEntryMigratesAndCreatesNoAccount(t *testing.T) {
 		t.Fatalf("账上 %d 条，要 2 条（0001 core ＋ 0100 identity）", n)
 	}
 	// 重启：仍成功，且账不增（digest 记账只跑一次那条语义在装配点上也要成立）。
-	_, c2, err := openNewPlatformStore(context.Background(), dsn)
+	_, _, c2, err := openNewPlatformStore(context.Background(), dsn)
 	if err != nil {
 		t.Fatalf("重启 openNewPlatformStore: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestEmptyDBHubEntryMigratesAndCreatesNoAccount(t *testing.T) {
 func TestMigrateFailureRefusesHubEntryAndBootstrap(t *testing.T) {
 	dsn := pgSchemaDSN(t, false)
 	// 先正常迁一遍（这一段同时是本格的正向对照：同一个入口在账没被改时必须能起）。
-	_, closeFn, err := openNewPlatformStore(context.Background(), dsn)
+	_, _, closeFn, err := openNewPlatformStore(context.Background(), dsn)
 	if err != nil {
 		t.Fatalf("首次 openNewPlatformStore: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestMigrateFailureRefusesHubEntryAndBootstrap(t *testing.T) {
 
 	ledgerProbeExec(t, dsn, `UPDATE schema_migrations SET digest = 'deadbeef' WHERE version = '0100_identity_baseline.sql'`)
 
-	_, _, err = openNewPlatformStore(context.Background(), dsn)
+	_, _, _, err = openNewPlatformStore(context.Background(), dsn)
 	if err == nil {
 		t.Fatal("账被篡改后 Hub 入口竟然起来了 —— 那正是「启动成功冒充 schema 如预期」")
 	}
@@ -122,7 +122,7 @@ func TestBrokenLedgerTableRefuses(t *testing.T) {
 	dsn := pgSchemaDSN(t, false)
 	ledgerProbeExec(t, dsn, `CREATE TABLE schema_migrations(version text PRIMARY KEY)`)
 
-	if _, _, err := openNewPlatformStore(context.Background(), dsn); err == nil {
+	if _, _, _, err := openNewPlatformStore(context.Background(), dsn); err == nil {
 		t.Fatal("账表缺列却照样起来 —— runner 把「读不出账」当成了「账是空的」")
 	}
 	if n := ledgerProbeCount(t, dsn,
