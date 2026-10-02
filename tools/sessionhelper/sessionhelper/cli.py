@@ -28,8 +28,25 @@ _SECRET_RE = re.compile(r"(?i)(sk-[A-Za-z0-9_-]{8,}|bearer\s+\S+|[A-Za-z0-9_\-]{
 EXIT_TAIL_LINES = 6
 
 
-class CLIUnavailable(RuntimeError):
-    """CLI 子进程起不来或已退出：投递以失败（可重试）上报，而不是假装注入成功（组长 R-B12-CODEX-PKG 第 2 条）。"""
+class CLIDeliveryFailed(RuntimeError):
+    """持久投递在 CLI 侧失败：delivery worker 据 reason／retryable 回 failed ACK（不再当正常结果回 processed）。"""
+
+    reason = "cli_injection_failed"
+    retryable = True
+
+
+class CLIUnavailable(CLIDeliveryFailed):
+    """CLI 子进程起不来或已退出，正文没写进 CLI：可重试（组长 R-B12-CODEX-PKG 第 2 条）。"""
+
+    reason = "cli_unavailable"
+    retryable = True
+
+
+class CLIInjectionNotReceived(CLIDeliveryFailed):
+    """正文已写进 CLI，但会话文件里始终没出现对应 user 轮：不可重试——重投会把同一任务再敲进 CLI 一遍。"""
+
+    reason = "cli_injection_not_received"
+    retryable = False
 
 
 def redact_tail(lines) -> str:
@@ -267,7 +284,7 @@ class CLIAdapter:
         # 实时（非持久）路径：起不来就把原因作为回复文字给出（与原行为同）；持久投递走 handle_delivery，失败以异常上报。
         try:
             return self.handle_delivery(env, None)
-        except CLIUnavailable as exc:
+        except CLIDeliveryFailed as exc:
             return str(exc)
 
     def handle_delivery(self, env: dict, on_injected=None) -> str:
@@ -277,12 +294,12 @@ class CLIAdapter:
             if attempt + 1 < max(1, self.cfg.cli_launch_retries):
                 time.sleep(1.0)
         else:
-            raise CLIUnavailable(self.not_ready_message())
+            raise self._delivery_failed(CLIUnavailable, self.not_ready_message())
         body = str(env.get("body") or "")
         if not self.ready.wait(0.1) or self._child_gone():
             if self._child_gone():
                 self._note_exit()
-            raise CLIUnavailable(self.not_ready_message())
+            raise self._delivery_failed(CLIUnavailable, self.not_ready_message())
         if self.profile.output_source == "transcript" and self.transcript is None:
             self.transcript = locate_transcript(
                 self.cli_name,
@@ -306,7 +323,8 @@ class CLIAdapter:
             if status == "ok" and reply:
                 return reply
             if status == "no_user":
-                return "（注入未被 CLI 接收：transcript 未出现对应 user 轮）"
+                # 失败不再当正常结果回 processed（B12：142 秒后以这句文字收场、被 control 压掉、日志里什么都没有）
+                raise self._delivery_failed(CLIInjectionNotReceived, "（注入未被 CLI 接收：transcript 未出现对应 user 轮）")
             return "（答案超时：已确认 user 轮落盘，但未取到 assistant 回答）"
         if self.profile.output_source == "opencode_db":
             injected_at = time.time()
@@ -345,6 +363,12 @@ class CLIAdapter:
     def not_ready_message(self) -> str:
         reason = self.last_launch_error or (f"CLI 已退出：{self.last_exit}" if self.last_exit else "启动超时")
         return f"（CLI未就绪：{reason}；sessionHelper仍在线，稍后可重试）"
+
+    @staticmethod
+    def _delivery_failed(kind: type, message: str) -> CLIDeliveryFailed:
+        """失败原因进 helper 日志（原先只在会被 control 抑制的回信里）。"""
+        print(f"[cli] delivery failed reason={kind.reason} retryable={str(kind.retryable).lower()} detail={message}", flush=True)
+        return kind(message)
 
     def _note_exit(self) -> None:
         """记一次子进程退出：打「[cli] exited code=… tail=…」并清就绪（同一子进程只记一次）。"""

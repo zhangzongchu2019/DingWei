@@ -21,7 +21,8 @@ except ImportError:  # pragma: no cover
     pexpect = None
 
 if pexpect is not None:
-    from sessionhelper.cli import CLIAdapter, CLIUnavailable
+    from sessionhelper.app import delivery_failure_ack_fields
+    from sessionhelper.cli import CLIAdapter, CLIInjectionNotReceived, CLIUnavailable
     from sessionhelper.config import load_config
 
 BASE_ENV = {"SH_SESSION_NAME": "seat", "SH_KEY_ID": "u_owner", "SH_SECRET": "s"}
@@ -74,10 +75,13 @@ class CLIExitVisible(unittest.TestCase):
     def test_durable_delivery_fails_explicitly_when_cli_cannot_stay_up(self):
         a = self._adapter(self._cli(_EXIT_NOW))
         injected = []
-        with contextlib.redirect_stdout(io.StringIO()):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
             with self.assertRaises(CLIUnavailable) as cm:
                 a.handle_delivery({"body": "task"}, on_injected=lambda: injected.append(1))
         self.assertIn("code=7", str(cm.exception))
+        self.assertIn("[cli] delivery failed reason=cli_unavailable retryable=true", out.getvalue())
+        self.assertEqual(delivery_failure_ack_fields(cm.exception), ("cli_unavailable", True))
         self.assertEqual(injected, [], "nothing may be reported as injected")
         # 实时路径仍以文字给出原因
         with contextlib.redirect_stdout(io.StringIO()):
@@ -176,6 +180,50 @@ class CodexReadiness(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertTrue(a.start())
         self.assertTrue(a.ready.is_set())
+
+
+_PROMPT_NO_TRANSCRIPT = """#!/usr/bin/env python3
+import sys
+sys.stdout.write("\\u203a "); sys.stdout.flush()
+for line in sys.stdin:
+    sys.stdout.write("\\u203a "); sys.stdout.flush()
+"""
+
+
+@unittest.skipUnless(pexpect is not None, "needs pexpect")
+class InjectionNotReceivedFails(unittest.TestCase):
+    """组长 R-B12-CODEX-PKG 第 4 条第 2 项：「注入未被接收」以失败结束（Hub 记 failed）、原因进 helper 日志；
+    不可重试——正文已敲进 CLI，重投会重复。"""
+
+    def test_no_session_file_fails_not_processed(self):
+        d = tempfile.mkdtemp(prefix="sh-cli-nouser-")
+        path = os.path.join(d, "fakecli.py")
+        with open(path, "w") as f:
+            f.write(_PROMPT_NO_TRANSCRIPT)
+        os.chmod(path, 0o755)
+        codex_home = os.path.join(d, "codex-home")  # 空目录：没有任何会话文件
+        os.makedirs(codex_home)
+        env = dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_CMD=path, SH_CLI_CWD=d,
+                   SH_CLI_READY_TIMEOUT="10", SH_CLI_REPLY_WAIT="1", SH_CLI_USER_ACK_WAIT="1")
+        old = os.environ.get("CODEX_HOME")
+        os.environ["CODEX_HOME"] = codex_home
+        self.addCleanup(lambda: os.environ.__setitem__("CODEX_HOME", old) if old is not None else os.environ.pop("CODEX_HOME", None))
+        a = CLIAdapter(load_config(env))
+        self.addCleanup(a.stop)
+        out = io.StringIO()
+        injected = []
+        with contextlib.redirect_stdout(out):
+            with self.assertRaises(CLIInjectionNotReceived) as cm:
+                a.handle_delivery({"body": "task"}, on_injected=lambda: injected.append(1))
+        self.assertIn("注入未被 CLI 接收", str(cm.exception))
+        self.assertTrue(injected, "the text was written into the CLI")
+        self.assertIn("[cli] delivery failed reason=cli_injection_not_received retryable=false", out.getvalue())
+        self.assertEqual(delivery_failure_ack_fields(cm.exception), ("cli_injection_not_received", False))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertIn("注入未被 CLI 接收", a.handle({"body": "task"}))  # 实时路径仍以文字给原因
+
+    def test_generic_failure_keeps_old_ack_fields(self):
+        self.assertEqual(delivery_failure_ack_fields(RuntimeError("x")), ("cli_injection_failed", True))
 
 
 if __name__ == "__main__":
