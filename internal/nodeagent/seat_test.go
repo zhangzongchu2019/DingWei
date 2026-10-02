@@ -723,3 +723,50 @@ func TestSeatEnvNoProxyIncludesHubHost(t *testing.T) {
 		})
 	}
 }
+
+// R-B12-WHITELIST-FIX 附派：NODEAGENT_LOCAL_IMAGES 启动期归一 sha256: 前缀、格式不对即拒（报键名）。
+// 反向：去掉归一 ⇒ 带前缀格红；去掉格式校验 ⇒ 畸形格红。
+func TestParseLocalImagesNormalizeAndReject(t *testing.T) {
+	id := strings.Repeat("ab", 32)
+	// 裸 hex 与 sha256: 前缀都归一到裸 hex 键（后者即 106 image_pull_failed 的根因形态）
+	allow, err := ParseLocalImages("sha256:" + id + " , " + id + ",,")
+	if err != nil {
+		t.Fatalf("合法输入应过: %v", err)
+	}
+	if len(allow) != 1 || !allow[id] {
+		t.Fatalf("归一后应只剩裸 hex 键: %v", allow)
+	}
+	// 空串＝空白名单（合法——不设 local 形态）
+	if allow, err := ParseLocalImages(""); err != nil || len(allow) != 0 {
+		t.Fatalf("空串应得空白名单: %v %v", allow, err)
+	}
+	// 畸形逐项拒，错误须点名键名
+	for _, bad := range []string{
+		"abcd",                    // 短
+		strings.Repeat("zz", 32),  // 非 hex
+		strings.Repeat("AB", 32),  // 大写（engine ID 是小写，fail-closed）
+		"local@sha256:" + id,      // 镜像引用形态不是白名单形态
+		"SHA256:" + id,            // 大写前缀不归一（大小写敏感，fail-closed）
+		"sha256:" + id + "@extra", // 尾巴脏
+	} {
+		if _, err := ParseLocalImages(bad); err == nil || !strings.Contains(err.Error(), "NODEAGENT_LOCAL_IMAGES") {
+			t.Fatalf("%q 必须拒且报键名: %v", bad, err)
+		}
+	}
+}
+
+// 带前缀的白名单配置（106 的失误形态）经归一后，local 形态闸照常放行登记镜像。
+func TestLocalImageGateWithPrefixedAllowlist(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	registered := strings.Repeat("ab", 32)
+	allow, err := ParseLocalImages("sha256:" + registered)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.localImages = allow
+	out, err := d.pull(context.Background(), json.RawMessage(`{"image":"local@sha256:`+registered+`"}`))
+	if err != nil || !strings.Contains(string(out), "present") {
+		t.Fatalf("前缀归一后登记镜像应免拉通过: %v %s", err, out)
+	}
+}

@@ -588,10 +588,43 @@ func (d *dockerOps) destroy(ctx context.Context, params json.RawMessage) (json.R
 	return json.Marshal(map[string]string{"seat_id": id, "state": "destroyed", "quota": "cleared"})
 }
 
+// ParseLocalImages 解析 NODEAGENT_LOCAL_IMAGES（CSV，每项一个本机镜像 ID）：
+// 归一 sha256: 前缀（剥掉）；剥后每项须为 64 位小写裸 hex，否则报错并点名键名——
+// 启动期拒启用（R-B12-WHITELIST-FIX 附派；前缀形态曾是 106 的 image_pull_failed 根因）。
+func ParseLocalImages(csv string) (map[string]bool, error) {
+	allow := map[string]bool{}
+	for _, item := range strings.Split(csv, ",") {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		item = strings.TrimPrefix(item, "sha256:")
+		if !isBareImageID(item) {
+			return nil, fmt.Errorf("NODEAGENT_LOCAL_IMAGES 项 %q 格式不对（须 64 位小写裸 hex，可带 sha256: 前缀）", item)
+		}
+		allow[item] = true
+	}
+	return allow, nil
+}
+
+// isBareImageID：64 位小写裸 hex（Docker 镜像 ID 形态）。
+func isBareImageID(s string) bool {
+	if len(s) != 64 {
+		return false
+	}
+	for _, c := range s {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
+}
+
 // RegisterDockerHandlers 把 Docker 指令集挂进代理骨架（cmd/nodeagent 在真机上调用）。
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 // cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string) {
+// localImagesCSV 格式不对即报错（报键名），调用方拒启。
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string) error {
 	// SH_WS_BASE＝HubURL 的 ws 源（wss://host[:port]；路径剥掉）
 	base := hubWSS
 	if i := strings.Index(base, "://"); i >= 0 {
@@ -601,11 +634,9 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 		}
 		base = base[:i+3] + rest
 	}
-	allow := map[string]bool{}
-	for _, id := range strings.Split(localImagesCSV, ",") {
-		if id = strings.TrimSpace(id); id != "" {
-			allow[id] = true
-		}
+	allow, err := ParseLocalImages(localImagesCSV)
+	if err != nil {
+		return err
 	}
 	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second}
 	a.Register(CmdPullImage, d.pull)
@@ -617,6 +648,7 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 	a.Register(CmdDestroySeat, d.destroy)
 	a.Register(CmdReportCapacity, d.reportCapacity)
 	a.capacity = d.collectCapacity
+	return nil
 }
 
 // SetHeartbeatInterval 测试用（心跳周期，默认 60s）。

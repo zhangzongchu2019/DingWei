@@ -62,7 +62,7 @@ func main() {
 		log.Fatal("nodeagent: NODEAGENT_SEAT_PROXY 必填（席位代理，如 http://172.30.68.1:11080）")
 	}
 	seatRoot := envOr("NODEAGENT_SEAT_ROOT", "/data/dingwei-newplat/agents")
-	ag.RegisterDockerHandlers(
+	if err := ag.RegisterDockerHandlers(
 		nodeagent.NewEngine(sockPath),
 		nodeagent.XFSQuota(),
 		seatRoot,
@@ -70,8 +70,10 @@ func main() {
 		cgroupParent,
 		seatProxy,
 		cfg.HubURL,
-		os.Getenv("NODEAGENT_LOCAL_IMAGES"), // local 形态白名单（与板上 HOSTED-IMAGE-VERSIONS 同源）
-	)
+		os.Getenv("NODEAGENT_LOCAL_IMAGES"), // local 形态白名单（与板上 HOSTED-IMAGE-VERSIONS 同源；格式不对即拒启报键名）
+	); err != nil {
+		log.Fatalf("nodeagent: %v", err)
+	}
 	// T-G4-53：席位卷备份回传（销毁先备份；不落节点盘）
 	exportH, err := nodeagent.NewExportSeatHandler(seatRoot, cfg.HubURL, cfg.Secret, cfg.HubCertSHA256)
 	if err != nil {
