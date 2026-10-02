@@ -629,7 +629,7 @@ var FEATURE_SELFHOST_REVIEW=true;    // 第一版入网批准走这块(业主实
     btn.disabled=true;say('');clearBox();
     var res=await consolePost('/api/console/account/feishu-bind-code');
     btn.disabled=false;
-    if(!res.ok){say(res.code==='already_bound'?'你已经绑定过飞书，无需再绑定':res.text);return;}
+    if(!res.ok){say(res.code==='already_bound'?'你已经绑定过飞书，无需再绑定':res.code==='forbidden'?'你没有权限绑定飞书':res.text);return;   // forbidden 的共用文案讲的是 Agent 归属,这里不适用}
     var code=String(res.data.registration_code||''),exp=Date.parse(res.data.code_expires_at||'');
     if(!code){say('没有拿到绑定码，请重试');return;}
     box.dataset.code=code;

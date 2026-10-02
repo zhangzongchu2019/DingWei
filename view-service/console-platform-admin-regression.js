@@ -26,7 +26,7 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-body', 'bind-no-already-bound-wording'];
+const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-body', 'bind-no-already-bound-wording', 'bind-forbidden-agent-wording'];
 if (mutation === 'logout-without-post') mutate("try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}", "location.assign('/console/login');return;");
 if (mutation === 'logout-ignores-failure') mutate("if(r.ok||r.status===401){location.assign('/console/login');return;}", "location.assign('/console/login');return;");
 if (mutation === 'no-logout-button') mutate('<button id=logoutBtn type=button>退出</button>', '');
@@ -46,6 +46,7 @@ if (mutation === 'bind-copy-without-prefix') mutate("await navigator.clipboard.w
 if (mutation === 'bind-done-keeps-code') mutate("document.getElementById('bindFeishuDone').onclick=function(){clearBox();say('');};", "document.getElementById('bindFeishuDone').onclick=function(){box.hidden=true;say('');};");
 if (mutation === 'bind-sends-body') mutate("consolePost('/api/console/account/feishu-bind-code')", "consolePost('/api/console/account/feishu-bind-code',{user_id:'someone'})");
 if (mutation === 'bind-no-already-bound-wording') mutate("say(res.code==='already_bound'?'你已经绑定过飞书，无需再绑定':res.text);return;", "say('操作失败');return;");
+if (mutation === 'bind-forbidden-agent-wording') mutate(":res.code==='forbidden'?'你没有权限绑定飞书'", '');
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
@@ -81,6 +82,7 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/console/account/feishu-bind-code' && req.method === 'POST') {
     writes.push({ path: p, contentLength: req.headers['content-length'] || '0' }); await read(req);
     if (bindMode === 'already') return err(res, 409, 'already_bound');
+    if (bindMode === 'forbidden') return err(res, 403, 'forbidden');
     if (bindMode === 'boom') return err(res, 500, 'internal');
     return json(res, 200, { registration_code: `BIND${++bindSeq}XYZ`.slice(0, 8).padEnd(8, 'Q'), code_expires_at: new Date(Date.now() + bindTtlMs).toISOString() });
   }
@@ -338,6 +340,10 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await pg.locator('#bindFeishuStatus').filter({ hasText: '已经绑定过飞书' }).waitFor({ state: 'visible' });
       assert.strictEqual(await pg.locator('#bindFeishuBox').isHidden(), true);
       assert.strictEqual(await pg.locator('#bindFeishuBtn').isDisabled(), false, 'the button works again');
+      bindMode = 'forbidden';
+      await pg.locator('#bindFeishuBtn').click();
+      await pg.locator('#bindFeishuStatus').filter({ hasText: '没有权限绑定飞书' }).waitFor({ state: 'visible' });
+      assert.doesNotMatch(await pg.locator('#bindFeishuStatus').textContent(), /Agent/, 'the shared forbidden wording is about Agent ownership');
       bindMode = 'boom';
       await pg.locator('#bindFeishuBtn').click();
       await pg.locator('#bindFeishuStatus').filter({ hasText: '服务端出错了' }).waitFor({ state: 'visible' });
