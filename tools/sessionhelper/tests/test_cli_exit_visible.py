@@ -334,6 +334,12 @@ time.sleep(30)
         a = self._alive_screen("\u203a Do you trust the files in this folder?\n")
         self.assertFalse(a.ready.is_set())
 
+    def test_trust_folder_and_update_screens_are_blocking(self):
+        # 组长 R-B12-CODEX-AUTH-II 补：需回车继续的屏会吞掉第一次注入，不得判就绪
+        for text in ("\u203a Trust this folder? (y/n)\n", "\u203a Update available: 0.160.0 -> press enter\n"):
+            a = self._alive_screen(text)
+            self.assertFalse(a.ready.is_set(), text)
+
     def test_block_patterns_can_be_extended_by_env(self):
         # SH_CLI_BLOCK_PATTERNS 在默认拦路标记之外追加
         a = self._alive_screen("\u203a MAINTENANCE WINDOW\n", SH_CLI_BLOCK_PATTERNS="maintenance window")

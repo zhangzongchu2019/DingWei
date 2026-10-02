@@ -90,7 +90,8 @@ CLI_PROFILES: dict[str, CLIProfile] = {
     # 「› Ask Codex to do anything?」输入框，只看提示符会误判就绪。
     "codex": CLIProfile(["codex"], ("›", "❯"), "transcript", block_patterns=(
         "Sign in with ChatGPT", "Provide your own API key", "Sign in with Device Code",
-        "Press enter to continue", "Do you trust", "no complete local package")),
+        "Press enter to continue", "Do you trust", "Trust this folder", "Update available",
+        "no complete local package")),
     "aider": CLIProfile(["aider"], ("aider", ">", "Tokens")),
     "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db"),
     "cline": CLIProfile(["cline"], ("cline", ">", "Welcome")),
