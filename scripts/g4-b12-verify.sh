@@ -2,7 +2,7 @@
 # g4-b12-verify.sh — 逐家验通制（V6 判据 B12）干净容器假凭据验通脚本（r2：复验 tosonnet55tc2k 修订）
 #
 # 用法（在 G1 托管节点，有 docker；prodops 代跑）：
-#   BASE_IMAGE=hub.local/dingwei/base-codex@sha256:<digest> ./g4-b12-verify.sh            # 默认只跑 Codex 两条
+#   BASE_IMAGE=hub.local/dingwei/base-codex@sha256:<digest> ./g4-b12-verify.sh            # 默认跑 Codex 三条（组长补正：env 一格并入默认）
 #   BASE_IMAGE=<ref> ./g4-b12-verify.sh codex-apikey codex-tokenfile claude-apikey ...    # 指定组合
 #
 # 判定（B12 口径，r3 收紧——组长令）：PASS 只认两类——① 401 且紧邻 Unauthorized/HTTP/status/
@@ -22,7 +22,8 @@
 set -u
 BASE_IMAGE="${BASE_IMAGE:?BASE_IMAGE 必填（固定仓库＋sha256 digest 的基镜像）}"
 FAKE_KEY="sk-test-invalid-b12"
-FAKE_TOKEN_JSON='{"access_token":"tok-test-invalid-b12","account_id":"acct_test"}'
+# Codex auth.json 的真实形状（字段名照 CLI，值全假）：tokens 三段＋last_refresh
+FAKE_TOKEN_JSON='{"OPENAI_API_KEY":null,"tokens":{"id_token":"id.test.invalid","access_token":"tok-test-invalid-b12","refresh_token":"rt-test-invalid-b12","account_id":"acct_test"},"last_refresh":"2026-10-02T00:00:00Z"}'
 
 pass=0; fail=0
 report() {
@@ -73,13 +74,18 @@ run_case() { # <combo> <script>
   judge "$combo" "$out"
 }
 
-if [ $# -eq 0 ]; then set -- codex-apikey codex-tokenfile; fi
+if [ $# -eq 0 ]; then set -- codex-apikey codex-apikey-env codex-tokenfile; fi
 
 for combo in "$@"; do
   case "$combo" in
     codex-apikey)
       # Codex API key 路径①：stdin 送 key（SPIKE：with-api-key 从 stdin 读）后非交互调用
       run_case codex-apikey "echo '$FAKE_KEY' | codex login --with-api-key 2>&1; codex exec --skip-git-repo-check 'ping' 2>&1 || true"
+      ;;
+    codex-apikey-env)
+      # Codex API key 路径①b（组长补正）：env 给 key、容器内无 auth.json——
+      # 启动脚本读文件后进程内导出（B7：不经 docker env）；断言 auth.json 不存在
+      run_case codex-apikey-env "printf '%s' '$FAKE_KEY' > /tmp/b12home/.k && export OPENAI_API_KEY=\$(cat /tmp/b12home/.k) && test ! -e /tmp/b12home/.codex/auth.json && codex exec --skip-git-repo-check 'ping' 2>&1 || true"
       ;;
     codex-tokenfile)
       # Codex 订阅令牌文件路径②：平台写入 auth.json 后直接用（无需任何 login）
