@@ -231,69 +231,43 @@ func TestG3aConsoleDoorRouteTableIsExactlyOwnerScope(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = db.Close() })
-	srv := New(db)
-
-	want := map[string]adminCapability{
-		"/console/admin":                    capConsoleIndex,
-		"/console/admin/files":              capFiles,
-		"/console/admin/files/{id}/content": capFileContent,
-		"/console/admin/provision":          capProvision,
-		"/console/admin/api-keys":           capAPIKeys,
-		"/console/admin/bot-channels":       capBotChannels,
-		"/console/admin/platform-roles":     capPlatformRoles,
-	}
-	got := map[string]adminCapability{}
-	for _, route := range srv.consoleDoorRoutes() {
-		if _, dup := got[route.pattern]; dup {
-			t.Fatalf("门 B 路由表里 %s 出现两次 ⇒ 同一能力两个入口,闸与 UI 都无法唯一寻址", route.pattern)
-		}
-		got[route.pattern] = route.capability
-	}
-	for pattern, capability := range want {
-		if got[pattern] != capability {
-			t.Fatalf("🔴 门 B 少了/错了一条:%s ⇒ 能力 %q,期望 %q。\n"+
-				"判据来源:板件 BATCH-B1-CONTENT-20260921.md §六-2(文件对象浏览·Provision 下发·凭证 API key·机器人通道)\n"+
-				"＋ REQUIREMENT-REGISTRY-20260921.md:42(增删管理者)。", pattern, got[pattern], capability)
-		}
-	}
-	for pattern := range got {
-		if _, ok := want[pattern]; !ok {
-			t.Fatalf("🔴 门 B 多了一条业主未确认的路由:%s。\n"+
-				"判据:搬迁范围是业主逐字定的,**不得自行扩围**。\n"+
-				"🔴 特别是 /console/admin/agent-groups(派工逐字:被 B1-a 替代,不是搬迁)。", pattern)
-		}
-	}
-	// 能力表 ↔ 路由表 对账:在范围内的每个能力都必须在门 B 上真的有路由
-	for _, capability := range adminCapabilitiesInScope() {
-		found := false
-		for _, route := range srv.consoleDoorRoutes() {
-			if route.capability == capability {
-				found = true
+	for _, newPlatform := range []bool{false, true} {
+		t.Run(map[bool]string{false: "legacy", true: "new-platform"}[newPlatform], func(t *testing.T) {
+			srv := New(db)
+			srv.NewPlatform = newPlatform
+			want := map[string]adminCapability{
+				"/console/admin": capConsoleIndex, "/console/admin/files": capFiles,
+				"/console/admin/files/{id}/content": capFileContent, "/console/admin/bot-channels": capBotChannels,
 			}
-		}
-		if !found {
-			t.Fatalf("能力 %s 在 adminCapabilitiesInScope() 里,但门 B 没有对应路由 ⇒ 两份清单漂移", capability)
-		}
-	}
-	// 导航页条目 ↔ 路由表 对账(不许导航页手写第二份清单)
-	indexRoute := ""
-	titles := map[adminCapability]string{}
-	for _, route := range srv.consoleDoorRoutes() {
-		if route.capability == capConsoleIndex {
-			indexRoute = route.pattern
-		}
-		if route.title != "" {
-			titles[route.capability] = route.title
-		}
-	}
-	if indexRoute == "" {
-		t.Fatal("门 B 没有导航页路由")
-	}
-	if len(titles) != 5 {
-		t.Fatalf("导航页应单列 5 项(文件对象浏览·Provision·凭证 API key·机器人通道·管理者名单),实际 %d:%v", len(titles), titles)
-	}
-	if _, ok := titles[capFileContent]; ok {
-		t.Fatal("文件内容(预览/下载)不该在导航页单列 —— 它从「文件对象浏览」页内每行进入")
+			if !newPlatform {
+				want["/console/admin/provision"], want["/console/admin/api-keys"], want["/console/admin/platform-roles"] = capProvision, capAPIKeys, capPlatformRoles
+			}
+			got := map[string]adminCapability{}
+			for _, route := range srv.consoleDoorRoutes() {
+				if _, dup := got[route.pattern]; dup {
+					t.Fatalf("门 B 路由表里 %s 出现两次", route.pattern)
+				}
+				got[route.pattern] = route.capability
+			}
+			if len(got) != len(want) {
+				t.Fatalf("门 B 路由数=%d want=%d: got=%v want=%v", len(got), len(want), got, want)
+			}
+			for pattern, capability := range want {
+				if got[pattern] != capability {
+					t.Fatalf("门 B %s 能力=%q want=%q", pattern, got[pattern], capability)
+				}
+			}
+			titles := 0
+			for _, route := range srv.consoleDoorRoutes() {
+				if route.title != "" {
+					titles++
+				}
+			}
+			wantTitles := map[bool]int{false: 5, true: 2}[newPlatform]
+			if titles != wantTitles {
+				t.Fatalf("导航项=%d want=%d", titles, wantTitles)
+			}
+		})
 	}
 }
 

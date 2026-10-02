@@ -71,6 +71,10 @@ type twoDoorFixture struct {
 // 那样门 B 会恒 404 ⇒ 每一格都"绿"而什么都没验(假绿)。所以这里显式换成开启的 hub,
 // 并由 selfCheck 断言"management 确实进得去" —— **装置不成立时先红装置,不产出结论**。
 func newTwoDoorFixture(t *testing.T, consoleAuthEnabled bool) *twoDoorFixture {
+	return newTwoDoorFixtureMode(t, consoleAuthEnabled, false)
+}
+
+func newTwoDoorFixtureMode(t *testing.T, consoleAuthEnabled, newPlatform bool) *twoDoorFixture {
 	t.Helper()
 	f := &twoDoorFixture{ctx: context.Background(), now: time.Now(), cookies: map[string]*http.Cookie{}}
 	db, err := store.OpenSQLite(t.TempDir() + "/two-door.db")
@@ -113,6 +117,7 @@ func newTwoDoorFixture(t *testing.T, consoleAuthEnabled bool) *twoDoorFixture {
 	f.upsertPlatformRole("p-inactive", "management", true)
 
 	srv := New(db)
+	srv.NewPlatform = newPlatform
 	srv.Outbound = bus.NewDBQueue(db, model.DirectionOut)
 	srv.SecretKey = "gate-secret-key"
 	srv.Files = &fakeFileBrowser{}
@@ -907,6 +912,26 @@ func TestGateConsoleAdminIndexHasNoSecondListAndNoDeadLink(t *testing.T) {
 		if probe.Code != http.StatusOK {
 			t.Fatalf("🔴 导航页上的死链:%s ⇒ management 身份 GET code=%d(期望 200)。\n"+
 				"判据:导航页上每一条链接都必须真能打开 —— 点不动的入口等于没有入口。", href, probe.Code)
+		}
+	}
+}
+
+func TestNewPlatformConsoleDoorHidesLegacyIdentityAndRolePages(t *testing.T) {
+	f := newTwoDoorFixtureMode(t, true, true)
+	mgmt := []*http.Cookie{f.consoleCookie("p-mgmt-1")}
+	index := f.do(t, http.MethodGet, consoleDoorPrefix, mgmt, nil)
+	if index.Code != http.StatusOK {
+		t.Fatalf("new-platform console admin index=%d", index.Code)
+	}
+	for _, path := range []string{"/console/admin/provision", "/console/admin/api-keys", "/console/admin/platform-roles"} {
+		if strings.Contains(index.Body.String(), `href="`+path+`"`) {
+			t.Errorf("new-platform index leaked legacy link %s", path)
+		}
+		for _, method := range []string{http.MethodGet, http.MethodPost} {
+			rec := f.do(t, method, path, mgmt, nil)
+			if rec.Code != http.StatusNotFound {
+				t.Errorf("new-platform %s %s=%d, want 404", method, path, rec.Code)
+			}
 		}
 	}
 }
