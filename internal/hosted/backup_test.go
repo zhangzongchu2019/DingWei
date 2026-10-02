@@ -1,11 +1,19 @@
 package hosted
 
 // T-G4-53 备份管线用例：全链（pending→export_seat→回传落盘→complete→Destroy 拿 ref）、
-// 鉴权（别节点凭据/未知 id 拒）、半截文件不标记、TTL 到期清扫。
+// 鉴权（别节点凭据/未知 id 拒）、半截文件不标记、TTL 到期清扫；
+// 返修（台账 lead-g4-t53-review，opus50tc2k）：完整性两道（sha256 trailer、gzip＋tar 解码）、失败分支一律清 pending。
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,59 +22,154 @@ import (
 	"time"
 )
 
-// gwBackupFake 假网关：收到 export_seat 就扮演节点——把内容 POST 到 upload_url。
-type gwBackupFake struct {
-	st      *Store
-	content string
-	called  []string
-	fail    bool
+// mkTarGz 造一个真 tar.gz（条目名→内容）。
+func mkTarGz(t *testing.T, files map[string]string) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gz)
+	for name, body := range files {
+		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o600, Size: int64(len(body))}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tw.Write([]byte(body)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := gz.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
 }
 
-func (g *gwBackupFake) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+func sha256Hex(b []byte) string { s := sha256.Sum256(b); return hex.EncodeToString(s[:]) }
+
+// uploadBackup 扮演节点回传：流式 POST，sha256 走请求 trailer（与 nodeagent 同一协议）。
+// sha 为 "-" 表示不带 trailer。
+func uploadBackup(ctx context.Context, url, secret string, body []byte, sha string) (int, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
+	if err != nil {
+		return 0, err
+	}
+	pr, pw := io.Pipe()
+	go func() { _, _ = pw.Write(body); _ = pw.Close() }()
+	if sha != "-" {
+		req.Trailer = http.Header{BackupSHA256Trailer: nil}
+		req.Body = io.NopCloser(&eofHook{r: pr, onEOF: func() { req.Trailer.Set(BackupSHA256Trailer, sha) }})
+	} else {
+		req.Body = pr
+	}
+	req.ContentLength = -1
+	if secret != "" {
+		req.Header.Set("Authorization", "Bearer "+secret)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode, nil
+}
+
+type eofHook struct {
+	r     io.Reader
+	onEOF func()
+	done  bool
+}
+
+func (e *eofHook) Read(p []byte) (int, error) {
+	n, err := e.r.Read(p)
+	if err == io.EOF && !e.done {
+		e.done = true
+		e.onEOF()
+	}
+	return n, err
+}
+
+// gwBackupNode 假网关：收到 export_seat 就扮演节点——把 body 回传到 upload_url（带真凭据与 sha256 trailer）。
+// sha 为空 ⇒ 用 body 的真 sha256；"-" ⇒ 不带 trailer；其它 ⇒ 原样（造校验和不符）。
+type gwBackupNode struct {
+	secret  string
+	body    []byte
+	sha     string
+	sendErr error // 非空 ⇒ 扮演网关发不出去
+	fail    bool  // 扮演节点回失败
+	lie     bool  // 扮演节点不回传却报成功
+	called  []string
+}
+
+func (g *gwBackupNode) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
 	g.called = append(g.called, cmd.Type)
 	if cmd.Type != "export_seat" {
 		return NodeResult{OK: true}, nil
 	}
+	if g.sendErr != nil {
+		return NodeResult{}, g.sendErr
+	}
 	if g.fail {
 		return NodeResult{OK: false, Error: "injected"}, nil
 	}
+	if g.lie {
+		return NodeResult{OK: true}, nil
+	}
 	var p struct {
-		SeatID    string `json:"seat_id"`
 		UploadURL string `json:"upload_url"`
 	}
 	_ = json.Unmarshal(cmd.Params, &p)
-	// 节点侧动作：POST 卷内容（鉴权变体见 gwBackupWithAuth）
-	resp, err := http.Post(p.UploadURL, "application/gzip", strings.NewReader(g.content))
+	sha := g.sha
+	if sha == "" {
+		sha = sha256Hex(g.body)
+	}
+	code, err := uploadBackup(ctx, p.UploadURL, g.secret, g.body, sha)
 	if err != nil {
 		return NodeResult{OK: false, Error: err.Error()}, nil
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode/100 != 2 {
-		return NodeResult{OK: false, Error: "upload rejected"}, nil
+	if code/100 != 2 {
+		return NodeResult{OK: false, Error: "upload rejected"}, nil // 节点见 Hub 拒收即报失败（nodeagent 同口径）
 	}
 	return NodeResult{OK: true}, nil
 }
 
-
-func TestBackupPipelineEndToEnd(t *testing.T) {
+// mkBackupRig 节点登记＋Hub 接收端点＋Backuper（origin 指向测试服务）。
+func mkBackupRig(t *testing.T, gw *gwBackupNode) (*Store, *HubBackuper, string) {
+	t.Helper()
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
-	// 节点登记（鉴权要真凭据）
 	secret, err := s.RegisterNode(ctx, Node{ID: "nd_bk", Name: "bk", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
+	gw.secret = secret
 	dir := t.TempDir()
-	gw := &gwBackupFake{st: s, content: "tar-bytes-卷内容"}
-	// 回传须带凭据——假网关补上真 secret
-	gwWithAuth := &gwBackupWithAuth{inner: gw, secret: secret}
-	bk := NewHubBackuper(s, gwWithAuth, "", dir)
-	// Hub 接收端点（PathValue 依赖 mux 模式注册——真接线处亦然）
+	bk := NewHubBackuper(s, gw, "", dir)
 	mux := http.NewServeMux()
 	mux.Handle("POST /api/node/backup/{id}", bk.BackupHandler())
 	srv := httptest.NewServer(mux)
-	defer srv.Close()
+	t.Cleanup(srv.Close)
 	bk.origin = srv.URL
+	return s, bk, dir
+}
+
+func backupCount(t *testing.T, s *Store) int {
+	t.Helper()
+	rows, err := s.pool.Query(context.Background(), htx(), `SELECT COUNT(*) FROM g4_backup`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var n int
+	rows.Next()
+	_ = rows.Scan(&n)
+	return n
+}
+
+func TestBackupPipelineEndToEnd(t *testing.T) {
+	body := mkTarGz(t, map[string]string{"ag_bks/work.log": "卷内容"})
+	s, bk, dir := mkBackupRig(t, &gwBackupNode{body: body})
+	ctx := context.Background()
 
 	ref, err := bk.BackupSeatVolume(ctx, "nd_bk", "ag_bks")
 	if err != nil {
@@ -76,8 +179,8 @@ func TestBackupPipelineEndToEnd(t *testing.T) {
 		t.Fatalf("backupRef: %s", ref)
 	}
 	raw, err := os.ReadFile(ref)
-	if err != nil || string(raw) != "tar-bytes-卷内容" {
-		t.Fatalf("落盘内容: %v %q", err, raw)
+	if err != nil || !bytes.Equal(raw, body) {
+		t.Fatalf("落盘内容应与回传逐字节相同: %v", err)
 	}
 	fi, _ := os.Stat(ref)
 	if fi.Mode().Perm() != 0o600 {
@@ -85,7 +188,7 @@ func TestBackupPipelineEndToEnd(t *testing.T) {
 	}
 	// 记录 complete＋expires 约 14 天
 	rec, _ := s.GetBackup(ctx, strings.TrimSuffix(strings.TrimPrefix(ref, dir+"/"), ".tar.gz"))
-	if rec.State != "complete" || rec.SizeBytes <= 0 {
+	if rec.State != "complete" || rec.SizeBytes != int64(len(body)) {
 		t.Fatalf("记录: %+v", rec)
 	}
 	if d := rec.ExpiresAt.Sub(time.Now()); d < 13*24*time.Hour || d > 15*24*time.Hour {
@@ -104,33 +207,6 @@ func TestBackupPipelineEndToEnd(t *testing.T) {
 	}
 }
 
-// gwBackupWithAuth 带真凭据的回传桩。
-type gwBackupWithAuth struct {
-	inner  *gwBackupFake
-	secret string
-}
-
-func (g *gwBackupWithAuth) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
-	if cmd.Type != "export_seat" {
-		return g.inner.Send(ctx, nodeID, cmd)
-	}
-	var p struct {
-		UploadURL string `json:"upload_url"`
-	}
-	_ = json.Unmarshal(cmd.Params, &p)
-	req, _ := http.NewRequestWithContext(ctx, "POST", p.UploadURL, strings.NewReader(g.inner.content))
-	req.Header.Set("Authorization", "Bearer "+g.secret)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return NodeResult{OK: false, Error: err.Error()}, nil
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode/100 != 2 {
-		return NodeResult{OK: false, Error: "rejected"}, nil
-	}
-	return NodeResult{OK: true}, nil
-}
-
 func TestBackupHandlerAuthAndStates(t *testing.T) {
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
@@ -139,11 +215,12 @@ func TestBackupHandlerAuthAndStates(t *testing.T) {
 		t.Fatal(err)
 	}
 	// 第二个节点凭据（串用必拒）
-	if _, err := s.RegisterNode(ctx, Node{ID: "nd_b2", Name: "b2", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
+	secret2, err := s.RegisterNode(ctx, Node{ID: "nd_b2", Name: "b2", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	if err != nil {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
-	bk := NewHubBackuper(s, &gwBackupFake{}, "", dir)
+	bk := NewHubBackuper(s, &gwBackupNode{}, "", dir)
 	mux := http.NewServeMux()
 	mux.Handle("POST /api/node/backup/{id}", bk.BackupHandler())
 	srv := httptest.NewServer(mux)
@@ -156,60 +233,134 @@ func TestBackupHandlerAuthAndStates(t *testing.T) {
 		}
 		return id
 	}
-	post := func(id, auth string) int {
-		req, _ := http.NewRequest("POST", srv.URL+"/api/node/backup/"+id, strings.NewReader("data"))
-		req.Header.Set("Authorization", auth)
-		resp, err := http.DefaultClient.Do(req)
+	good := mkTarGz(t, map[string]string{"ag_x/f": "data"})
+	post := func(id, secret string) int {
+		code, err := uploadBackup(ctx, srv.URL+"/api/node/backup/"+id, secret, good, sha256Hex(good))
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer resp.Body.Close()
-		return resp.StatusCode
+		return code
 	}
-	if c := post("bk_nope", "Bearer "+secret); c != 404 {
+	if c := post("bk_nope", secret); c != 404 {
 		t.Fatalf("未知 id 应 404: %d", c)
 	}
-	if c := post(mk(), "Bearer wrong"); c != 401 {
+	if c := post(mk(), "wrong"); c != 401 {
 		t.Fatalf("坏凭据应 401: %d", c)
 	}
 	if c := post(mk(), ""); c != 401 {
 		t.Fatalf("无凭据应 401: %d", c)
 	}
-	// 正常：pending＋对节点凭据 ⇒ 200＋complete
+	if c := post(mk(), secret2); c != 401 {
+		t.Fatalf("别的节点的凭据应 401: %d", c)
+	}
+	// 正常：pending＋对节点凭据＋sha 对上＋解得开 ⇒ 200＋complete
 	id := mk()
-	if c := post(id, "Bearer "+secret); c != 200 {
+	if c := post(id, secret); c != 200 {
 		t.Fatalf("正常回传: %d", c)
 	}
 	// 已 complete 的再传 ⇒ 404（不覆写）
-	if c := post(id, "Bearer "+secret); c != 404 {
+	if c := post(id, secret); c != 404 {
 		t.Fatalf("重复回传应 404: %d", c)
+	}
+	// 完整性不过 ⇒ 422，且这条记录当场作废：之后哪怕补传好的也 404（不留可写目标）
+	bad := mk()
+	if code, err := uploadBackup(ctx, srv.URL+"/api/node/backup/"+bad, secret, []byte("garbage"), sha256Hex([]byte("garbage"))); err != nil || code != 422 {
+		t.Fatalf("corrupt upload: %d %v, want 422", code, err)
+	}
+	if c := post(bad, secret); c != 404 {
+		t.Fatalf("rejected record must be void, later upload got %d", c)
 	}
 }
 
-func TestBackupFailureFailsDestroy(t *testing.T) {
-	// 回传失败 ⇒ BackupSeatVolume 报错 ⇒ Destroy backup_failed（链路在 lifecycle 层已由
-	// TestFailedGateStopsTheChain/backup_fail 钉住；此格钉 Backuper 自身的失败传播与 pending 清理）
-	_, s := mkPoolSvc(t)
+// 🔴 完整性（台账 lead-g4-t53-review 🔴2；复验缺陷二）：非 gzip、截断 gzip、校验和不符、缺校验和
+// ⇒ Hub 422 拒收、不落盘、记录作废；BackupSeatVolume 报错；Destroy 不继续（不吊销、不删、不改状态）。
+func TestBackupIntegrityRejected(t *testing.T) {
+	good := mkTarGz(t, map[string]string{"ag_i/work.log": strings.Repeat("卷内容", 2000)})
+	cases := []struct {
+		name string
+		body []byte
+		sha  string // "" ⇒ 用 body 的真 sha256
+	}{
+		{"not a gzip", []byte("THIS IS NOT A GZIP"), ""},
+		{"truncated gzip", good[:len(good)/2], ""},
+		{"checksum mismatch", good, sha256Hex([]byte("something else"))},
+		{"checksum missing", good, "-"},
+		// 复验遗留 X4（tosonnet50ts）：合法 gzip＋合法 tar、sha256 也对，但一个条目都没有 ⇒ 仍须拒收（空卷备份不可用于恢复）。
+		{"empty archive", mkTarGz(t, map[string]string{}), ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			gw := &gwBackupNode{body: c.body, sha: c.sha}
+			s, bk, dir := mkBackupRig(t, gw)
+			ctx := context.Background()
+			ref, err := bk.BackupSeatVolume(ctx, "nd_bk", "ag_i")
+			if err == nil || ref != "" {
+				t.Fatalf("must fail: ref=%q err=%v", ref, err)
+			}
+			if n := backupCount(t, s); n != 0 {
+				t.Fatalf("rejected backup record must be gone: %d", n)
+			}
+			left, _ := os.ReadDir(dir)
+			if len(left) != 0 {
+				t.Fatalf("nothing may stay on disk: %v", left)
+			}
+		})
+	}
+	t.Run("destroy does not continue", func(t *testing.T) {
+		lc, log, _, _, _, s, id := mkLifecycle(t)
+		gw := &gwBackupNode{body: []byte("THIS IS NOT A GZIP")}
+		_, bk, _ := mkBackupRigOn(t, s, gw)
+		lc.backups = bk
+		log.reset()
+		err := lc.Destroy(context.Background(), id, "zzc", false, true)
+		var be *BackupFailedError
+		if !errors.As(err, &be) {
+			t.Fatalf("%v, want backup_failed", err)
+		}
+		eqSeq(t, "corrupt backup stops destroy", log.get(), []string{"node:stop_seat"}) // 已停容器；不吊销、不发 destroy_seat
+		if seat, _ := s.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
+			t.Fatalf("seat must show backup_failed (container stopped, nothing deleted): %+v", seat)
+		}
+	})
+}
+
+// mkBackupRigOn 在已有 Store 上搭接收端点（席位所在节点 nd_free 登记凭据）。
+func mkBackupRigOn(t *testing.T, s *Store, gw *gwBackupNode) (*Store, *HubBackuper, string) {
+	t.Helper()
 	ctx := context.Background()
-	if _, err := s.RegisterNode(ctx, Node{ID: "nd_bf", Name: "bf", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
-		t.Fatal(err)
-	}
-	dir := t.TempDir()
-	gw := &gwBackupFake{st: s, fail: true}
-	bk := NewHubBackuper(s, gw, "http://127.0.0.1:1", dir)
-	if _, err := bk.BackupSeatVolume(ctx, "nd_bf", "ag_bf"); err == nil {
-		t.Fatal("回传失败必须报错")
-	}
-	// pending 记录与文件残留都清掉
-	rows, err := s.pool.Query(ctx, htx(), `SELECT COUNT(*) FROM g4_backup`)
+	secret, err := s.RegisterNode(ctx, Node{ID: "nd_free", Name: "free", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
-	var n int
-	rows.Next()
-	_ = rows.Scan(&n)
-	if n != 0 {
-		t.Fatalf("失败的 pending 记录应清掉: %d", n)
+	if err := s.SetNodeOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384}`)); err != nil {
+		t.Fatal(err)
+	}
+	gw.secret = secret
+	dir := t.TempDir()
+	bk := NewHubBackuper(s, gw, "", dir)
+	mux := http.NewServeMux()
+	mux.Handle("POST /api/node/backup/{id}", bk.BackupHandler())
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	bk.origin = srv.URL
+	return s, bk, dir
+}
+
+// 失败分支一律清 pending（复验存活刀 B4 与第四节）：网关发不出去、节点回失败两路。
+func TestBackupFailureClearsPending(t *testing.T) {
+	for name, gw := range map[string]*gwBackupNode{
+		"gateway error":                    {sendErr: errors.New("injected: node unreachable")},
+		"node failure":                     {fail: true},
+		"node claims ok without uploading": {lie: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s, bk, _ := mkBackupRig(t, gw)
+			if _, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_bf"); err == nil {
+				t.Fatal("回传失败必须报错")
+			}
+			if n := backupCount(t, s); n != 0 {
+				t.Fatalf("失败的 pending 记录应清掉: %d", n)
+			}
+		})
 	}
 }

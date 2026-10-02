@@ -629,3 +629,56 @@ func TestHostedItemErrorCounted(t *testing.T) {
 		t.Fatalf("错误应计数: before=%d after=%d", before, HostedItemErrorCount())
 	}
 }
+
+// T-G4-34 复验行为登记：online＝以专属凭据连入（连接层回调 MarkOnline——opus50tc2k 的
+// cd71197d 接线，复验已过），不是容器已创建。RunJob 走完只到 starting；未连入 ⇒ starting 不动。
+func TestOnlineOnlyViaMarkOnline(t *testing.T) {
+	o, idp, _, s := mkOrch(t)
+	ctx := context.Background()
+	out, err := o.Create(ctx, CreateRequest{
+		OwnerLC: "zzc", By: "zzc", Name: "probe1", GroupCode: "",
+		NodeID: "auto", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	o.RunJob(ctx, out.AgentID)
+	seat, _ := s.GetSeat(ctx, out.AgentID)
+	if seat.State != "starting" { // 容器起了但未连入：不得 online
+		t.Fatalf("未连入不得 online: %+v", seat)
+	}
+	if err := o.MarkOnline(ctx, out.AgentID); err != nil {
+		t.Fatal(err)
+	}
+	seat, _ = s.GetSeat(ctx, out.AgentID)
+	if seat.State != "online" {
+		t.Fatalf("连入回调后应 online: %+v", seat)
+	}
+	_ = idp
+}
+
+// 反向格：永不连入（容器起了但 CLI 崩溃/凭据件错）⇒ 5 分钟 start_timeout 清扫：failed＋Retire。
+func TestNeverConnectsSweepedStartTimeout(t *testing.T) {
+	o, idp, _, s := mkOrch(t)
+	ctx := context.Background()
+	out, err := o.Create(ctx, CreateRequest{
+		OwnerLC: "zzc", By: "zzc", Name: "probe2", GroupCode: "",
+		NodeID: "auto", CLI: "codex", LLM: "gpt", CredKind: "token_file", AccountID: acctOf(t, o.pool), Plan: "2c4g",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	o.RunJob(ctx, out.AgentID)
+	seat, _ := s.GetSeat(ctx, out.AgentID)
+	if seat.State != "starting" {
+		t.Fatalf("前提：%v", seat)
+	}
+	o.SweepTimeouts(ctx, time.Now().Add(6*time.Minute)) // 越过 5 分钟启动超时线
+	seat, _ = s.GetSeat(ctx, out.AgentID)
+	if seat.State != "error" || seat.StateDetail != "start_timeout" {
+		t.Fatalf("应 start_timeout 失败: %+v", seat)
+	}
+	if len(idp.retired) != 1 {
+		t.Fatalf("应 Retire 释放名字: %v", idp.retired)
+	}
+}

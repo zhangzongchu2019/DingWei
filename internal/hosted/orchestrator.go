@@ -109,6 +109,8 @@ type Orchestrator struct {
 	// 以 credential_inject_failed 失败清理（Retire＋解绑，不占名），fail-closed 不硬撑。
 	tokMu      sync.Mutex
 	pendingTok map[string]EnrollToken
+	// backups 离线销毁的席位在重连对账时先备份（SetBackuper 注入；为空 ⇒ 待备份的席位一律留待下次，不删数据）。
+	backups VolumeBackuper
 }
 
 func NewOrchestrator(st *Store, pool *PoolService, idp IdentityIssuer, gw NodeGateway, combos CombosSource, images ImageCatalog) *Orchestrator {
@@ -436,7 +438,29 @@ func (o *Orchestrator) ReconcileNode(ctx context.Context, nodeID string) {
 // ReconcileSeatTimeout 对账时单个席位等节点回执的上限（复验建议：别让一个席位卡死整批）。
 var ReconcileSeatTimeout = 30 * time.Second
 
+// SetBackuper 注入备份器（装配处与 Lifecycle 用同一个 HubBackuper）。
+func (o *Orchestrator) SetBackuper(b VolumeBackuper) { o.backups = b }
+
 func (o *Orchestrator) reconcileSeat(ctx context.Context, nodeID, id string) {
+	// 离线销毁的席位：先备份、成功才删（组长裁定 lead-g4-t53-review 第 4 条，业主 8971bddf「先备份再删数据」）。
+	// 备份失败或没有备份器 ⇒ 本次不删、留待下次重连。备份走它自己的长时限（大卷），不受下面单席超时约束。
+	pending, err := o.st.SeatBackupPending(ctx, id)
+	if err != nil {
+		return
+	}
+	if pending {
+		if o.backups == nil {
+			return
+		}
+		ref, err := o.backups.BackupSeatVolume(ctx, nodeID, id)
+		if err != nil {
+			return
+		}
+		if err := o.st.SetSeatState(ctx, id, "destroyed", "", "reconcile_backup_done",
+			json.RawMessage(`{"backup":`+jsonStr(ref)+`,"ttl_days":14}`)); err != nil {
+			return
+		}
+	}
 	sctx, cancel := context.WithTimeout(ctx, ReconcileSeatTimeout)
 	defer cancel()
 	res, err := o.gw.Send(sctx, nodeID, NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(id) + `}`)})

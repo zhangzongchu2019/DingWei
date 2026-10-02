@@ -59,6 +59,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 		backupDir = "/data/dingwei-newplat/backups/hosted"
 	}
 	backups := hosted.NewHubBackuper(hst, gate, cfg.publicOrigin, backupDir)
+	orch.SetBackuper(backups) // 离线销毁的席位在重连对账时先备份、成功才删（lead-g4-t53-review 第 4 条）
 	mux.HandleFunc("POST /api/node/backup/{id}", backups.BackupHandler().ServeHTTP)
 	go func() { // 到期清扫（每小时一轮；失败记日志不炸进程）
 		t := time.NewTicker(time.Hour)

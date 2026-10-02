@@ -34,10 +34,13 @@
 #       与「新代码请走仓储包」反向，且允许清单对判据二不豁免。
 open 5
 escape 1
-pending 90
+pending 91
 pending:datad 25
 pending:fanout 30
-pending:hosted 35  # 调用点单位（htx() 与 dtx/ftx 同型）
+pending:hosted 36  # 调用点单位（htx() 与 dtx/ftx 同型）
+# 🔴 pending:hosted 35 → 36（kimi30kqtuxerh，合入 g4-t50-fix5 后按闸实数）：
+#    键／旧值／新值／依据／谁批：pending:hosted／35／36／fix5 的 reconcileSeat 一处新增 htx() 调用点
+#    （离线销毁对账补清——组长令 fdce5301 ⑤再修）／同裁定二(b) 口径
 # 🔴 pending:hosted 29 → 35（kimi30kqtuxerh，T-G4-53 备份管线）：
 #    键／旧值／新值／依据／谁批：pending:hosted／29／35／backup.go 六处（CreateBackup／GetBackup／
 #    FailBackup／CompleteBackup／ListExpiredBackups／MarkBackupExpired——备份登记表的读写；

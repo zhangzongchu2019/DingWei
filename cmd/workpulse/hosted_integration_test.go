@@ -276,3 +276,23 @@ func TestB6NameInvalidRejected(t *testing.T) {
 		t.Fatalf("B6: %d %v", code, v)
 	}
 }
+
+// B7 补格（复验附录 A，tosonnet55tc2k）：明文凭据在 create_seat 参数里必须【恰好一次】
+//（只在 credential_file.content——多一个 env／api_key 键即红）。
+func TestB7PlaintextExactlyOnceInCreateSeat(t *testing.T) {
+	r := mkRig(t)
+	r.createAndDrive(t, "zb7", r.usableAcct(t))
+	seen := false
+	for _, c := range r.gw.sent {
+		if c.Type != "create_seat" {
+			continue
+		}
+		seen = true
+		if n := strings.Count(string(c.Params), "sk-x"); n != 1 {
+			t.Fatalf("明文凭据出现 %d 次（应恰好 1 次，只在 credential_file.content）: %s", n, c.Params)
+		}
+	}
+	if !seen {
+		t.Fatal("未发 create_seat")
+	}
+}

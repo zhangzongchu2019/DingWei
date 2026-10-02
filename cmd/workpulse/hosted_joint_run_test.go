@@ -141,8 +141,9 @@ func TestHostedDestroyBackupFailed(t *testing.T) {
 	if code != 503 || m["error"] != "backup_failed" || m["detail"] != "backup_pipeline_not_ready" || len(m) != 2 {
 		t.Fatalf("%d %s", code, body)
 	}
-	if seat, _ := st.GetSeat(context.Background(), id); seat.State != "online" {
-		t.Fatalf("seat must be untouched: %+v", seat)
+	// 组长取甲（2026-10-02）：在线销毁先停容器再备份；备份不成 ⇒ 不吊销、不删，席位如实记 error／backup_failed。
+	if seat, _ := st.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
+		t.Fatalf("seat must show backup_failed, nothing deleted: %+v", seat)
 	}
 }
 
