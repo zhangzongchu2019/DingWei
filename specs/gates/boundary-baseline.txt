@@ -34,25 +34,37 @@
 #       与「新代码请走仓储包」反向，且允许清单对判据二不豁免。
 open 5
 escape 1
-pending 55
+pending 54
 pending:datad 25
-pending:fanout 30
+pending:fanout 29
 #
-# 🔴 system 12 → 16 的构成（本行由 qwen38maxkhovvob4 在 g2-migrate-ledger 上落盘，请组长复核）：
-#    真调用点 12 处 ＝ 生产 6 ＋ 测试 6；另 4 处是【注释文本】（闸按文本计数，注释与测试都算，
+# 🔴 pending 55 → 54 与 pending:fanout 30 → 29 是【真还债 1 处】（R-G2-FANOUT-HARDEN，
+#    裁定 RULING-REGISTER 2026-10-02T09:41:37Z「五表纳入账本」的连带收口，qwen38maxkhovvob4 落盘）：
+#    消失的那一处 ＝ 原 internal/fanout/admin.go:334 —— SelfCheck 里懒建 selfcheck 表的
+#    `sp.db.Exec(ctx, ftx(), CREATE TABLE IF NOT EXISTS selfcheck…)`。
+#    建表现已收进 internal/fanout/pgschema.sql、由 OpenSpool 一次无参 Exec 施加（DDL 走 SystemCtx），
+#    SelfCheck 只剩写读删三步 ⇒ 那一处 ftx() 调用点随之消失。
+#    🔴 不要把它读成「租户化推进了」：fanout 五表【仍然没有双轴列】，29 处债一处未提前还，
+#       只是同一笔债少了一个调用点。SP7b 收口时本领域仍须归零。
+#
+# 🔴 system 12 → 16 → 15 的构成（12→16 那行由 qwen38maxkhovvob4 在 g2-migrate-ledger 上落盘，
+#    组长已复核；16→15 由 R-G2-FANOUT-HARDEN 落盘，请组长复核）：
+#    真调用点 11 处 ＝ 生产 5 ＋ 测试 6；另 4 处是【注释文本】（闸按文本计数，注释与测试都算，
 #    本席在 G3 叠复验里已报过这条口径；tenant.go 又故意把 SystemCtx 写成便于 grep 清点的样子，
 #    两者相加就是「注释也进计数」——不藏，逐处列明）：
-#      · 生产 6：datad/pgstore.go:123（建表）· :163（Ping）· fanout/spool.go:61 · fanout/inspool.go:29
+#      · 生产 5：datad/pgstore.go:123（建表）· :163（Ping）· fanout/spool.go:68（五表一次建齐）
 #               · identity/pgstore.go:35（身份存储；组长已认可 12→13，ruling-2026-10-01T152239Z）
 #               · store/migrate/migrate.go:303（迁移账本：建账表、读账、每条一个事务地应用 DDL。
-#                 DDL 与账本表本就无租户语义，与 datad/pgstore.go:123 同型 ⇒ 这是【新增的那 1 处】）
+#                 DDL 与账本表本就无租户语义，与 datad/pgstore.go:123 同型）
 #      · 测试 6：datad/assignment_pg_integration_test.go（三池分权的越权断言）
-#      · 注释 4：datad/pgstore.go:93 · fanout/spool.go:40（两处都是「不要换成 SystemCtx」的告诫）
+#      · 注释 4：datad/pgstore.go:93 · fanout/spool.go:49（两处都是「不要换成 SystemCtx」的告诫）
 #               · store/migrate/migrate.go:258 · store/migrate/migrate_test.go:54（后者写的正是
 #                 「用例里故意不用系统上下文，免得把生产侧的评审面数搅浑」）
-#    🔴 本分支底座 dd69f88a 上该键写 12、实数已 13（identity 那处未同步落盘）⇒ 本次一并补齐；
-#       即「+1 是 migrate 的，另 +3 是把已有实数与注释如实登记进来」，不是四笔新债。
+#    🔴 16 → 15 减少的那一处 ＝ 原 fanout/inspool.go:29（initInbound 建入站三表的 DDL）。
+#       initInbound 已删除，入站三表的建表语句搬进 pgschema.sql，由 spool.go:68 那一处统一施加
+#       ⇒ 不是「评审后认定某处不再需要系统上下文」，而是【两处 DDL 合成一处】。
+#       fanout/spool.go 的行号由 61 变 68、注释由 40 变 49，是同一次改动带来的位移，不是新增。
 #    🔴 归还路径：SP7b 逐领域收口时，datad/fanout 那几处随各自领域归零；migrate 与 identity 那两处
 #       是【建表/迁移】本身，租户化不适用于它们，故它们的归还方式是「评审确认后长期保留」，
-#       不是改数字。若要下调本键，必须先说清哪一处真调用点消失了。
-system 16
+#       不是改数字。若要下调本键，必须先说清哪一处真调用点消失了（本行已按此说清）。
+system 15

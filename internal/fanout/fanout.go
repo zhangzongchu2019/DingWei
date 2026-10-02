@@ -81,7 +81,6 @@ type Config struct {
 	AdminTokens      map[string]AdminIdentity // 空=admin 端点全 401
 	AdminAllowRemote bool                     // false=仅 loopback(§F 默认)
 	SkipPreArm       bool                     // 测试用;生产恒 false
-	DiskMinFreePct   float64                  // pre-arm④,默认 10
 	ReplayWatermark  int                      // DLQ replay 水位门,默认 1000
 	SenderFactory    SenderFactory            // outbound_bots→Sender;默认真 LarkGateway
 	TestInject       bool                     // 仅测试(G9 e2e):/_test/inject 驱动 ws 管道;生产恒 false
@@ -162,13 +161,11 @@ func New(cfg Config) *Server {
 	}
 	s.reloadWhitelist()
 	if cfg.SpoolPool != nil {
+		// OpenSpool 一次建齐五表(pgschema.sql);建表失败=spool 不置位。
 		sp, err := OpenSpool(cfg.SpoolPool)
 		if err != nil {
 			// fail-closed(§B):spool 起不来=托管路 503,不静默降级为立发
 			cfg.Logger.Error("PG spool初始化失败,托管路禁用", "error", err)
-		} else if err := sp.initInbound(); err != nil {
-			cfg.Logger.Error("入站表初始化失败,spool禁用", "error", err)
-			_ = sp.Close()
 		} else {
 			s.spool = sp
 		}

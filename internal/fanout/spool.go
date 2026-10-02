@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	_ "embed"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -17,6 +18,14 @@ import (
 )
 
 var ErrBodyConflict = errors.New("request_id exists with different body hash")
+
+// PGSchemaSQL 本包五表的建表语句（幂等）。迁移账本据此登记冻结副本；OpenSpool 也用它建表，
+// 测试用它在新库上建形状 —— 三处同一份字节，故「源 ↔ 账本」漂移能被双轨格判出来。
+// 🔴 表结构只改 pgschema.sql，🔴 不要把 DDL 再写回 Go 字符串里（那正是本件收口之前的形状：
+// 五表分散在 spool.go／inspool.go／admin.go 三处，任一处改了账本都看不见）。
+//
+//go:embed pgschema.sql
+var PGSchemaSQL string
 
 type OutboundJob struct {
 	OutboundID string
@@ -53,20 +62,10 @@ func OpenSpool(pool *repo.Pool) (*Spool, error) {
 	}
 	ctx := context.Background()
 	// 建表是 DDL，本就无租户语义 -> 显式 SystemCtx，不用 ftx。
-	if _, err := pool.Exec(ctx, repo.SystemCtx(), `CREATE TABLE IF NOT EXISTS outbound(
-  outbound_id TEXT PRIMARY KEY,
-  caller_id   TEXT NOT NULL,
-  request_id  TEXT NOT NULL,
-  body_hash   TEXT NOT NULL,
-  body        BYTEA NOT NULL,
-  status      TEXT NOT NULL DEFAULT 'queued',
-  attempts    INTEGER NOT NULL DEFAULT 0,
-  next_retry  INTEGER NOT NULL DEFAULT 0,
-  lark_msg_id TEXT NOT NULL DEFAULT '',
-  last_error  TEXT NOT NULL DEFAULT '',
-  created_at  INTEGER NOT NULL,
-  updated_at  INTEGER NOT NULL,
-  UNIQUE(caller_id, request_id))`); err != nil {
+	// 五表一次建齐（原先 outbound 在这里、入站三表在 initInbound、selfcheck 在 SelfCheck 里懒建）：
+	// 全部 CREATE TABLE IF NOT EXISTS ⇒ 幂等，重复 OpenSpool 与「账本已建过」两种先前状态都吃得下。
+	// 🔴 无参多语句走简单协议（口径页 §五；先例＝identity.PGSchemaSQL、hosted.ApplySchema）。
+	if _, err := pool.Exec(ctx, repo.SystemCtx(), PGSchemaSQL); err != nil {
 		return nil, err
 	}
 	return &Spool{db: pool}, nil
