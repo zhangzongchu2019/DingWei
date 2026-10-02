@@ -409,14 +409,29 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             driver = FakeProtocolDriver()
             helper, adapter = self.make_driver_helper(tmp, driver)
-            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("BEFORE", eid="same")))
+            injected = []
+            asyncio.run(helper.process_inbound_message(
+                FakeWS(), business_env("BEFORE", eid="same"),
+                on_injected=lambda: injected.append("same-1"),
+            ))
             self.wait_for(lambda: len(driver.calls) == 1)
             asyncio.run(helper.inject_agent_network_skill(guide_env()))
-            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("DUP", eid="same")))
-            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("THIRD", eid="third")))
+            asyncio.run(helper.process_inbound_message(
+                FakeWS(), business_env("DUP", eid="same"),
+                on_injected=lambda: injected.append("same-2"),
+            ))
+            self.assertEqual(injected, ["same-1", "same-2"],
+                             "same delivery id must re-ACK injected exactly like main")
+            self.assertIsNone(helper.guide_store._claimed)
+            asyncio.run(helper.process_inbound_message(
+                FakeWS(), business_env("THIRD", eid="third"),
+                on_injected=lambda: injected.append("third"),
+            ))
             self.wait_for(lambda: len(driver.calls) == 2)
             self.assertIn("GUIDE", driver.calls[1])
             self.assertTrue(driver.calls[1].endswith("THIRD"))
+            self.assertEqual(driver.calls[1].count("GUIDE"), 1)
+            self.assertEqual(injected, ["same-1", "same-2", "third"])
             self.assertEqual(helper.guide_store.state()["state"], "consumed")
             self.wait_for(lambda: adapter._commands.depth == 0)
 
