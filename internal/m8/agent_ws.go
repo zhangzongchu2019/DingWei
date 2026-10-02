@@ -94,7 +94,9 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 }
 
 // DisconnectAgent 吊销或暂停后由 identity.Service.OnRevoked／OnSuspended 调用：在线则以 4401 断开（V2 A1；V8 停用）。
-// 必须在吊销请求返回之前完成，所以是同步的。
+// 关闭帧在吊销请求返回之前发出；但不陪对端走完关闭握手（组长 lead-m8-flake-findings ②）：
+// 对端不读时库会等满 5 秒，这里最多等 agentDisconnectWait，余下的握手与拆连接在后台完成。
+// 关闭帧发出后该连接上的一切写都失败，所以提前返回不会再有消息投给它。
 func (h *Hub) DisconnectAgent(agentID string) {
 	if h.Identity == nil {
 		return
@@ -114,7 +116,17 @@ func (h *Hub) DisconnectAgent(agentID string) {
 	if ag.State == identity.AgentSuspended {
 		reason = "credential_suspended"
 	}
-	_ = c.conn.Close(StatusCredentialRevoked, reason)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_ = c.conn.Close(StatusCredentialRevoked, reason)
+	}()
+	t := time.NewTimer(agentDisconnectWait)
+	defer t.Stop()
+	select {
+	case <-done:
+	case <-t.C:
+	}
 }
 
 // AgentOnline 供 console 的 Agent 列表显示在线状态。

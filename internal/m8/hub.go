@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -83,6 +84,9 @@ type Hub struct {
 	// NowFunc 只为测试注入时钟。D1 的滑动续期要验「跨过 12 小时」,
 	// 真等 12 小时不是验收,是浪费;而只看代码里有 UPDATE 又证明不了行为。
 	NowFunc func() time.Time
+	// IdleTickerFunc 只为测试注入会话空闲巡检的 tick（组长 R-M8-TESTSIDE 取甲：挂在实例上，不用包级变量）；
+	// 返回 tick 通道与停止函数。nil ⇒ time.NewTicker（生产行为不变）。会话活跃时刻同用 h.now()（NowFunc）。
+	IdleTickerFunc func(d time.Duration) (<-chan time.Time, func())
 
 	// D1 滑动续期的写放大闸:同一会话在 consoleSessionTouchMin 内只写一次库。
 	consoleTouchMu sync.Mutex
@@ -142,7 +146,11 @@ type L2Config struct {
 
 type client struct {
 	conn *websocket.Conn
-	mu   sync.Mutex
+	mu   sync.Mutex // 串行化 forward 的「写请求→等回复」
+	// HandleWS 的读协程是这条连接唯一的读者（组长 lead-m8-flake-findings ③）：回复经 resp 交给 forward；
+	// readDone 在连接结束时关闭。
+	resp     chan []byte
+	readDone chan struct{}
 }
 
 type sessionClient struct {
@@ -242,6 +250,11 @@ var (
 	// reconnect starts a 1008 churn loop.
 	sessionKeepaliveInterval = 30 * time.Second
 	sessionKeepaliveTimeout  = 5 * time.Second
+	// keepalivePingHook 仅供用例观察保活 Ping 的起止（done=false 发出前，true 返回后）；生产为 nil。
+	keepalivePingHook atomic.Pointer[func(done bool)]
+	// agentDisconnectWait DisconnectAgent 等关闭握手的上限：关闭帧发出即生效（之后该连接一切写都失败），
+	// 对端不读时库会等满 5 秒握手 —— 不让吊销／暂停请求陪着等（组长 lead-m8-flake-findings ②）。
+	agentDisconnectWait = 500 * time.Millisecond
 )
 
 var (
@@ -759,7 +772,7 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	c := &client{conn: conn}
+	c := &client{conn: conn, resp: make(chan []byte, 1), readDone: make(chan struct{})}
 	var oldConn *websocket.Conn
 	h.mu.Lock()
 	if old := h.serviceClients[serviceID]; old != nil {
@@ -780,7 +793,28 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 		h.mu.Unlock()
 		_ = conn.Close(websocket.StatusNormalClosure, "bye")
 	}()
-	<-r.Context().Done()
+	// 🔴 建连后必须一直有人读（组长 lead-m8-flake-findings ③）：原先只有 forward 在途时才 Read，
+	//    空闲时对端发来的关闭帧／ping 无人处理 —— 对端优雅关闭必等满 5 秒，Hub 也察觉不到对端已走。
+	go func() {
+		defer close(c.readDone)
+		for {
+			_, data, err := conn.Read(context.Background())
+			if err != nil {
+				return
+			}
+			// 🔴 签注（组长 R-HUB-WSB-COMMENT）：服务只许应答，不得主动发帧。c.resp 容量 1：无请求在途时的主动帧会进缓冲，
+			//    被下一次调用当成答案（之后整体错位）。缓冲 1 是为了接住 forward 写完请求、尚未进入接收时就先到的快回复；
+			//    缓冲已满（不合协议的多余帧）才丢弃。超时的调用已关掉连接，迟到回复不会留到下一次调用。
+			select {
+			case c.resp <- data:
+			default:
+			}
+		}
+	}()
+	select {
+	case <-r.Context().Done():
+	case <-c.readDone:
+	}
 }
 
 func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
@@ -941,14 +975,14 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		InsecureSkipVerify: true,
 		OnPingReceived: func(ctx context.Context, payload []byte) bool {
 			if c != nil {
-				c.recordActivity(time.Now().UTC())
+				c.recordActivity(h.now().UTC())
 				go h.touchSessionEndpoint(context.Background(), c)
 			}
 			return true
 		},
 		OnPongReceived: func(ctx context.Context, payload []byte) {
 			if c != nil {
-				c.recordActivity(time.Now().UTC())
+				c.recordActivity(h.now().UTC())
 				go h.touchSessionEndpoint(context.Background(), c)
 			}
 		},
@@ -966,7 +1000,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		return
 	}
 	markTiming("conn_seq")
-	c = &sessionClient{conn: conn, keyID: keyID, ownerKey: ownerKey, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
+	c = &sessionClient{conn: conn, keyID: keyID, ownerKey: ownerKey, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: h.now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	go h.watchSessionKeepalive(idleWatchdogCtx, c)
@@ -2812,9 +2846,17 @@ func (h *Hub) forward(ctx context.Context, serviceID string, req ForwardRequest,
 	if err := c.conn.Write(callCtx, websocket.MessageText, payload); err != nil {
 		return "", err
 	}
-	_, data, err := c.conn.Read(callCtx)
-	if err != nil {
-		return "", err
+	var data []byte
+	select {
+	case data = <-c.resp:
+	case <-c.readDone:
+		return "", errors.New("service websocket closed")
+	case <-callCtx.Done():
+		// 🔴 超时即关掉这条服务连接（复验 tosonnet55tc2k，hub-ws-blocking ③）：ForwardResponse 不带请求 ID，
+		//    回复只能按先后对应 —— 连接留着，这次调用的迟到回复会被下一次调用当成自己的答案（且之后整体错位）。
+		//    关掉后迟到回复无处可去，下一次调用写不出去、报错；服务重连后从干净的连接重新开始。
+		_ = c.conn.CloseNow()
+		return "", callCtx.Err()
 	}
 	var resp ForwardResponse
 	if err := json.Unmarshal(data, &resp); err != nil {
@@ -5068,7 +5110,7 @@ func yesNo(v bool) string {
 func (h *Hub) readSessionMessage(ctx context.Context, c *sessionClient) (websocket.MessageType, []byte, error) {
 	typ, data, err := c.conn.Read(ctx)
 	if err == nil {
-		c.recordActivity(time.Now().UTC())
+		c.recordActivity(h.now().UTC())
 	}
 	return typ, data, err
 }
@@ -5085,19 +5127,27 @@ func (h *Hub) watchSessionIdle(ctx context.Context, c *sessionClient) {
 	if interval <= 0 {
 		interval = 15 * time.Second
 	}
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
+	tick, stop := h.idleTicker(interval)
+	defer stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case now := <-ticker.C:
+		case now := <-tick:
 			if now.Sub(c.lastSeen()) > idleTimeout {
 				_ = c.conn.Close(websocket.StatusGoingAway, "idle timeout")
 				return
 			}
 		}
 	}
+}
+
+func (h *Hub) idleTicker(d time.Duration) (<-chan time.Time, func()) {
+	if h.IdleTickerFunc != nil {
+		return h.IdleTickerFunc(d)
+	}
+	t := time.NewTicker(d)
+	return t.C, t.Stop
 }
 
 func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
@@ -5116,10 +5166,16 @@ func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			// 🔴 Ping 不持 c.mu（组长 lead-m8-flake-findings ①）：Ping 要等对端回 pong，最长 timeout；
+			//    持写锁期间该会话的所有出站写都被挡住。库本身对控制帧与数据帧的写已有帧级互斥，无需再加锁。
 			pingCtx, cancel := context.WithTimeout(ctx, timeout)
-			c.mu.Lock()
+			if hook := keepalivePingHook.Load(); hook != nil {
+				(*hook)(false)
+			}
 			err := c.conn.Ping(pingCtx)
-			c.mu.Unlock()
+			if hook := keepalivePingHook.Load(); hook != nil {
+				(*hook)(true)
+			}
 			cancel()
 			if err != nil {
 				_ = c.conn.Close(websocket.StatusGoingAway, "keepalive failed")
