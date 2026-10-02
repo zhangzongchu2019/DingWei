@@ -5,8 +5,11 @@
 # 环境键全集与必填性见 deploy/nodeagent.env.example（键名取自 cmd/nodeagent/main.go，
 # 🔴 三个无默认必填：NODEAGENT_DOCKER_SOCK／NODEAGENT_CGROUP_PARENT／NODEAGENT_SEAT_PROXY）。
 Description=DingWei newplat node agent (hosted seats)
-After=network-online.target docker.service
+After=network-online.target
 Wants=network-online.target
+# 🔴 不写 After=docker.service：本代理连的是【独立 dockerd 实例】（独立 socket/data-root/网段），
+# 不是宿主 docker.service；且 After= 不带 Wants= 只做排序不拉起。若独立 dockerd 由 systemd
+# 管理，部署侧按其单元名补 After=/Wants=（占位不猜单元名）。
 # 重启限流断路器（同 workpulse.service 的教训：2026-07-14 hub 冻结复盘）：
 # 60s 内超过 5 次重启即进入 failed，不静默狂重启。
 StartLimitIntervalSec=60
@@ -27,18 +30,30 @@ ExecStart={{WORKDIR}}/bin/nodeagent
 Restart=always
 RestartSec=3s
 Environment=GOTRACEBACK=all
+# 进程级代理环境中和（结构性断言，不靠运维自觉）：钉证模式（NODEAGENT_HUB_CERT_SHA256
+# 非空）下 Transport 无 Proxy 字段、直连；pin 为空（系统 CA）时 WSS 拨号与 export_seat
+# 的 client 回落默认 Transport ⇒ 会读 HTTP(S)_PROXY。置空＝任何情况下都直连 Hub。
+Environment=HTTP_PROXY=
+Environment=HTTPS_PROXY=
+Environment=ALL_PROXY=
+Environment=WS_PROXY=
+Environment=WSS_PROXY=
+Environment=NO_PROXY=localhost,127.0.0.1
 KillSignal=SIGTERM
+# 🔴 SIGTERM 立刻取消同一 ctx（main.go → run.go → backup.go）⇒ 停服会打断【进行中】的
+# 备份回传，Hub 侧判 corrupt；正式单的停服步骤须先确认无进行中备份再 systemctl stop。
 TimeoutStopSec=30s
 
 # Hardening。可写面＝席位目录根＋台账/凭据所在目录（部署侧按实配改）；
 # 备份不落节点盘（流式回传 Hub），故不含备份路径。
+# 减号前缀＝路径不存在不报错（这两个目录都是进程首跑时才懒建，ledger.go:69 MkdirAll 0700）。
 # ProtectSystem=full 只把 /usr、/boot、/efi 置只读——/run 与 /var 不受影响，
 # 独立 dockerd 的 socket（NODEAGENT_DOCKER_SOCK 所指）照常可连；若 socket 被放到
 # 其它路径，装机时核一次可达性（socket 不可连会以权限错误起不来）。
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
-ReadWritePaths={{SEAT_ROOT}} {{STATE_DIR}}
+ReadWritePaths=-{{SEAT_ROOT}} -{{STATE_DIR}}
 
 [Install]
 WantedBy=multi-user.target

@@ -42,11 +42,13 @@ TimeoutStopSec=30s
 
 # Hardening。可写面：{{WORKDIR}}（SQLite、导出件）＋托管备份落盘目录
 # （下行取 DW_G4_BACKUP_DIR 的默认值；若 .env 里改了这个键，这里同步改。
-#  不开托管面＝不设 DW_G4_MASTER_KEY_FILE，则该目录不会被写）。
+#  不开托管面＝不设 DW_G4_MASTER_KEY_FILE，则该目录不会被写。
+#  减号前缀＝路径不存在不报错——它是 Hub 懒创建的（internal/hosted/backup.go:112 MkdirAll 0700），
+#  全新宿主首启前不存在）。
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
-ReadWritePaths={{WORKDIR}} /data/dingwei-newplat/backups/hosted
+ReadWritePaths={{WORKDIR}} -/data/dingwei-newplat/backups/hosted
 
 [Install]
 WantedBy=multi-user.target
