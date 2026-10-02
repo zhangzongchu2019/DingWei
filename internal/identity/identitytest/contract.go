@@ -195,6 +195,12 @@ func regCodeOneShot(t *testing.T, s identity.Store) {
 	if got, err := s.ResolveIdentity(ctx, feishuA); err != nil || got.UserID != "erin" {
 		t.Fatalf("ResolveIdentity after bind: %+v %v", got, err)
 	}
+	if got, err := s.GetIdentity(ctx, "ERIN", "feishu"); err != nil || *got != feishuA {
+		t.Fatalf("GetIdentity after bind: %+v %v", got, err)
+	}
+	if _, err := s.GetIdentity(ctx, "erin", "unknown"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("GetIdentity unknown provider: %v", err)
+	}
 	_, err = s.RedeemRegistrationCode(ctx, "code-erin", feishuB, t0.Add(2*time.Hour))
 	wantErr(t, "second redeem of same code", err, identity.ErrCodeInvalid)
 	_, err = s.ResolveIdentity(ctx, feishuB)

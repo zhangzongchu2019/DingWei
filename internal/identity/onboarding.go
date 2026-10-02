@@ -277,42 +277,71 @@ func (o *Onboarding) IssueBindCode(ctx context.Context, actor *User, password, s
 	return o.issueRegistrationCode(ctx, actor, actor.UserIDLC())
 }
 
-// SetUserState 停用／恢复用户（R-V2-SPEC-TASK-SHIM-IMPL A11，组长 16:55:17Z／16:55:51Z）。
-// 只许可管理用户调用；不能动自己；停用不得让平台上不再有 active 的可管理用户（ErrLastManager）。
-// 只接受 disabled（任何状态均可停用）与 active（只从 disabled 恢复；待绑定用户的激活只走飞书注册码）。
+// SetUserState 停用／恢复用户（R-V2-SPEC-TASK-SHIM-IMPL A11，组长 16:55:17Z／16:55:51Z／17:56:12Z）。返回操作后的实际状态。
+// 只许可管理用户调用；不能动自己；平台管理者不可停用或恢复（与改类型同一护栏，R2）；
+// 停用不得让平台上不再有 active 的可管理用户（ErrLastManager）。
+// 请求只接受 disabled（任何状态均可停用）与 active（＝「恢复」，只从 disabled 起）。
+// 🔴 恢复只回到停用前的状态（R1）：库里不存停用前状态，按激活痕迹推回——已有飞书身份或有口令（初始化脚本建的管理用户）
+// ⇒ active；两者都无 ⇒ 停用前必是待绑定 ⇒ 回 pending_bind，激活仍只走飞书注册码。
 // 停用时存储层同一事务吊销该用户全部会话；成功后同步调 OnUserChanged。
-func (o *Onboarding) SetUserState(ctx context.Context, actor *User, userID string, state UserState) error {
+func (o *Onboarding) SetUserState(ctx context.Context, actor *User, userID string, state UserState) (UserState, error) {
 	if !CanManageUsers(actor) {
-		return ErrNotAllowed
+		return "", ErrNotAllowed
 	}
 	if state != UserDisabled && state != UserActive {
-		return ErrBadRequest
+		return "", ErrBadRequest
 	}
 	o.umu.Lock() // 「最后一个可管理用户」的判定与写入串行，免得两个管理者同时互相停用
 	defer o.umu.Unlock()
 	target, err := o.userChangeTarget(ctx, actor, userID)
 	if err != nil {
-		return err
+		return "", err
 	}
-	if target.State == state {
-		return nil
+	if target.Type == UserPlatformAdmin {
+		return "", ErrNotAllowed
 	}
-	if state == UserActive && target.State != UserDisabled {
-		return ErrBadRequest
+	if state == UserDisabled && target.State == UserDisabled {
+		return UserDisabled, nil
+	}
+	if state == UserActive {
+		if target.State != UserDisabled {
+			if target.State == UserActive {
+				return UserActive, nil // 已是 active：无变化
+			}
+			return "", ErrBadRequest // 待绑定不能经「恢复」激活
+		}
+		if state, err = o.restoredState(ctx, target); err != nil {
+			return "", err
+		}
 	}
 	if state == UserDisabled {
 		if err := o.keepOneManager(ctx, target); err != nil {
-			return err
+			return "", err
 		}
 	}
 	if err := o.Store.SetUserState(ctx, target.UserIDLC(), state, o.Now()); err != nil {
-		return err
+		return "", err
 	}
 	o.audit(ctx, actor.UserIDLC(), "user.state", target.UserIDLC(), "state="+string(state))
 	if o.OnUserChanged != nil {
 		o.OnUserChanged(target.UserIDLC())
 	}
-	return nil
+	return state, nil
+}
+
+// restoredState 停用用户恢复后应回到的状态（见 SetUserState 的 R1 说明）。
+func (o *Onboarding) restoredState(ctx context.Context, u *User) (UserState, error) {
+	if u.PasswordHash != "" {
+		return UserActive, nil
+	}
+	bound, err := o.Store.UserHasIdentity(ctx, u.UserIDLC(), "feishu")
+	if err != nil {
+		return "", err
+	}
+	if bound {
+		return UserActive, nil
+	}
+	return UserPendingBind, nil
 }
 
 // SetUserType 改用户类型（manager／member）。护栏同 SetUserState；平台管理者（初始化脚本建的）类型不可改。

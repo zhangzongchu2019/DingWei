@@ -268,7 +268,8 @@ func (n *N3) regenCode(w http.ResponseWriter, r *http.Request, u *identity.User)
 	}
 }
 
-// setUserState 停用／恢复用户：{"state": "disabled"|"active"}。只给可管理用户；不能改自己；不能停掉最后一个可管理用户。
+// setUserState 停用／恢复用户：{"state": "disabled"|"active"}，"active"＝恢复到停用前状态；应答 {"state": 实际状态}。
+// 只给可管理用户；不能改自己；不能动平台管理者；不能停掉最后一个可管理用户。
 func (n *N3) setUserState(w http.ResponseWriter, r *http.Request, u *identity.User) {
 	var req struct {
 		State string `json:"state"`
@@ -276,7 +277,13 @@ func (n *N3) setUserState(w http.ResponseWriter, r *http.Request, u *identity.Us
 	if !decode(w, r, &req) {
 		return
 	}
-	n.writeUserChange(w, n.OB.SetUserState(r.Context(), u, r.PathValue("user_id"), identity.UserState(req.State)))
+	st, err := n.OB.SetUserState(r.Context(), u, r.PathValue("user_id"), identity.UserState(req.State))
+	if err == nil {
+		// 回实际状态：「恢复」一个停用前待绑定的用户得到的是 pending_bind，不是 active（R1）。
+		writeJSON(w, http.StatusOK, map[string]any{"state": string(st)})
+		return
+	}
+	n.writeUserChange(w, err)
 }
 
 // setUserType 改用户类型：{"type": "manager"|"member"}。护栏同 setUserState；平台管理者类型不可改。
