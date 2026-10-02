@@ -771,6 +771,7 @@ func TestLocalImageGateWithPrefixedAllowlist(t *testing.T) {
 		t.Fatalf("前缀归一后登记镜像应免拉通过: %v %s", err, out)
 	}
 }
+
 // 组长 R-B12-SEATMODE 第 2 条（取乙）：席位 env 按 create／upgrade 参数 cli 注入 SH_MODE=cli、SH_CLI=<cli>——
 // sessionHelper 未设 SH_MODE 默认 echo（不起任何 CLI）。反向：不注入 ⇒ 红；cli 缺或不在白名单 ⇒ create／upgrade 拒且零引擎调用。
 func TestSeatEnvInjectsCLIMode(t *testing.T) {
