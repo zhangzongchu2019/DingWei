@@ -299,3 +299,29 @@ func TestForwardTimeoutClosesServiceConnection(t *testing.T) {
 		t.Fatalf("after reconnect: %q %v, want re:two", got, err)
 	}
 }
+
+// ③ 复验方 tosonnet55tc2k 补格（REVIEW-HUB-WSB-FIX 附录，组长 R-HUB-WSB-CLOSENOW 并入，去 ZZ 前缀）：
+// 服务端根本不读时，forward 超时后的关连接也必须立即返回，不得陪对端走 5 秒的关闭握手
+// （持着 c.mu，别的调用都被挡住）——钉住 CloseNow 而不是 Close。
+func TestForwardTimeoutReturnsPromptlyWhenPeerNeverReads(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	plain := setupRoute(t, hub, ctx, "svc1", "dev:personal:alice", "bot", true)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/service/{serviceID}", hub.HandleWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	conn, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http")+"/ws/service/svc1?api_key="+plain, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.CloseNow()
+	waitServiceOnline(t, hub, "svc1", true) // 对端从此不读
+	start := time.Now()
+	if _, err := hub.forward(ctx, "svc1", ForwardRequest{ID: "one", Text: "one"}, 100); err == nil {
+		t.Fatal("forward should time out")
+	}
+	if d := time.Since(start); d > 2*time.Second {
+		t.Fatalf("forward took %s to return after a 100ms timeout with a non-reading peer (graceful close handshake while holding the call lock?)", d)
+	}
+	waitServiceOnline(t, hub, "svc1", false)
+}
