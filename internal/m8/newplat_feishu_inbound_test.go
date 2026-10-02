@@ -228,6 +228,9 @@ func TestNewPlatformFeishuDisabledUserCannotUseStaleLegacyMapping(t *testing.T) 
 	if got := e.hub.ownerFeishuOpenID(e.ctx, AgentKeyID("zzc")); got != "" {
 		t.Fatalf("disabled owner's Feishu identity remained a fallback: %q", got)
 	}
+	if got := e.hub.ownerKeyForKey(e.ctx, AgentKeyID("zzc")); got != "" {
+		t.Fatalf("disabled user's virtual key still resolved an owner: %q", got)
+	}
 }
 
 // H17: Feishu roster and sync commands must resolve the bound np_user owner;
