@@ -143,7 +143,9 @@ func TestLedger_EmbeddedEntries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Ledger: %v", err)
 	}
-	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql"}
+	// 🔴 这份名单写死而不引 embed 去比：本格钉的就是「内嵌进二进制的账本是这几条、这个序」。
+	// 加一条条目 ⇒ 改这里（红一次是应当的：账本主键集合变了，必须有人看过一眼）。
+	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql", "0400_fanout_baseline.sql"}
 	if len(entries) != len(want) {
 		t.Fatalf("账本条数 = %d（%v），要 %d", len(entries), names(entries), len(want))
 	}
@@ -227,12 +229,17 @@ func TestLedger_RegisteredEntriesSortWithEmbedded(t *testing.T) {
 
 	Register(Entry{Name: "0200_hosted_test.sql", Body: "CREATE TABLE IF NOT EXISTS t_h(a int);"})
 	Register(Entry{Name: "0050_core_test.sql", Body: "CREATE TABLE IF NOT EXISTS t_c(a int);"})
+	// 🔴 0900 这条是随 0400（fanout 基线）进账本后补的：原先登记的两条分别落在内嵌条目的
+	// 【中间】与【末尾之后】，0400 一加进来就没有任何东西排在它后面了 —— 少了「末位之后也要排对」
+	// 这一半，排序格对「新条目该落哪儿」的判别力就缺了一角（判据有几半，格就得有几半）。
+	Register(Entry{Name: "0900_cross_test.sql", Body: "CREATE TABLE IF NOT EXISTS t_x(a int);"})
 	entries, err := Ledger()
 	if err != nil {
 		t.Fatalf("Ledger: %v", err)
 	}
 	got := names(entries)
-	want := []string{"0001_core_baseline.sql", "0050_core_test.sql", "0100_identity_baseline.sql", "0200_hosted_test.sql"}
+	want := []string{"0001_core_baseline.sql", "0050_core_test.sql", "0100_identity_baseline.sql",
+		"0200_hosted_test.sql", "0400_fanout_baseline.sql", "0900_cross_test.sql"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("账本顺序 = %v，要 %v（字典序，与来源无关）", got, want)
 	}
@@ -577,14 +584,14 @@ func sameSchemaPools(t *testing.T, dsn string, n int) []*repo.Pool {
 
 // TestMigrate_ConcurrentRunnersAllSucceed 钉「多进程同时启动不再互相拒启」。
 //
-// 判据（组长裁定 ruling-2026-10-01T170223Z 第③件）：6 路并发【全成功】、账上 2 条。
+// 判据（组长裁定 ruling-2026-10-01T170223Z 第③件）：6 路并发【全成功】、账上每条恰好一次。
 // 🔴 反向对照＝撤掉 takeLock 那两句（ensureLedgerTable 与 applyOne 里各一处）⇒ 本格必红：
 // 撤锁后两处并发 CREATE TABLE IF NOT EXISTS 撞 pg_type_typname_nsp_index、
 // 或两处并发记账撞 schema_migrations 主键，6 路里只有 1 路能成（复验方在未加锁的版本上实测 1 成 5 败）。
 //
 // 🔴 断言的是「每条条目被应用【恰好一次】」，不是「某一路 applied=2」：
 // 锁是【条目粒度】的，A 应用 0001、B 应用 0100 这种交错是允许的终态（头注已写明不保证公平），
-// 断言"某一路独揽两条"会把一个正确实现判成红。
+// 断言"某一路独揽全部条目"会把一个正确实现判成红。
 func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	ctx := context.Background()
 	dsn := pgtest.DSN(t)
@@ -595,8 +602,9 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Ledger: %v", err)
 	}
-	if len(entries) != 2 {
-		t.Fatalf("账本 %d 条，本格按 2 条写断言（变了就改本格，别改断言数字糊过去）", len(entries))
+	if len(entries) != 3 {
+		t.Fatalf("账本 %d 条（%v），本格按 3 条写断言（变了就改本格，别改断言数字糊过去）",
+			len(entries), names(entries))
 	}
 
 	reps := make([]Report, n)
@@ -635,11 +643,11 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 		}
 	}
 
-	// 终态：账 2 条、digest 与正文一致、身份域 CheckSchema 过（＝Hub 真起得来）。
+	// 终态：账 3 条、digest 与正文一致、身份域 CheckSchema 过（＝Hub 真起得来）。
 	probe := pools[0]
 	rows := ledgerRows(t, probe)
-	if len(rows) != 2 {
-		t.Fatalf("账上 %d 条，要 2 条", len(rows))
+	if len(rows) != 3 {
+		t.Fatalf("账上 %d 条，要 3 条", len(rows))
 	}
 	for _, e := range entries {
 		if rows[e.Name].digest != Digest(e.Body) {
@@ -654,7 +662,7 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("并发之后重跑 Migrate: %v", err)
 	}
-	if len(rep.Applied) != 0 || len(rep.Skipped) != 2 {
-		t.Errorf("重跑 Applied=%v Skipped=%v，要空转两条", rep.Applied, rep.Skipped)
+	if len(rep.Applied) != 0 || len(rep.Skipped) != 3 {
+		t.Errorf("重跑 Applied=%v Skipped=%v，要空转三条", rep.Applied, rep.Skipped)
 	}
 }

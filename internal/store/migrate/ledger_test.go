@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/fanout"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
@@ -46,13 +47,15 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
-	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql" {
-		t.Errorf("Applied = %v，要两条按字典序", rep.Applied)
+	// 🔴 这份名单写死是有意的（与上面「缺表名单」同理）：它钉的是【账本里到底有哪几条】，
+	// 引 Ledger() 去比就变成自己比自己。加一条条目 ⇒ 改这里，红一次是应当的。
+	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0400_fanout_baseline.sql" {
+		t.Errorf("Applied = %v，要三条按字典序", rep.Applied)
 	}
 	if err := identity.NewPGStore(pool).CheckSchema(ctx); err != nil {
 		t.Fatalf("跑完账本 CheckSchema 仍失败: %v", err)
 	}
-	// 账本自己也记了账（两条，digest 与内嵌正文一致）。
+	// 账本自己也记了账（三条，digest 与内嵌正文一致）。
 	rows := ledgerRows(t, pool)
 	entries, err := Ledger()
 	if err != nil {
@@ -71,8 +74,8 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("重跑 Migrate: %v", err)
 	}
-	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 2 {
-		t.Errorf("重跑 Applied=%v Skipped=%v，要空转两条", rep2.Applied, rep2.Skipped)
+	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 3 {
+		t.Errorf("重跑 Applied=%v Skipped=%v，要空转三条", rep2.Applied, rep2.Skipped)
 	}
 }
 
@@ -157,18 +160,30 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 	dsn := pgtest.DSN(t)
 	ctx := context.Background()
 
-	// 轨 A：各域自己的幂等 DDL。身份域的 pgschema.sql 不建 audit_log（头注写明由账本保证先存在），
-	// 故这一轨只有 np_* 那几张 —— 这正是「core 的表归 core 的条目」的分工。
-	// 🔴 张数写死是有意的（它是「账本漏建」的判据）：G3 终版 800f24d8 是 8 张
-	// （原 6 张 ＋ 编组 np_group／np_group_member）。身份域再增表 ⇒ 改这里，并在同一批里
-	// 重冻 0100 或新增 0101（口径页 §五）；只改一处就会让本格或双轨比对红，红比默默漂走好。
+	// 轨 A：各域自己的幂等 DDL（identity.PGSchemaSQL ＋ fanout.PGSchemaSQL）。
+	// 身份域的 pgschema.sql 不建 audit_log（头注写明由账本保证先存在），故那 8 张只有 np_* ——
+	// 这正是「core 的表归 core 的条目」的分工。
+	// 🔴 张数写死是有意的（它是「账本漏建」的判据）：身份域 G3 终版 800f24d8 是 8 张
+	// （原 6 张 ＋ 编组 np_group／np_group_member），fanout 是 5 张。任一域再增表 ⇒ 改这里，
+	// 并在同一批里重冻对应基线或新增一条增量（口径页 §五）；只改一处就会让本格或双轨比对红，
+	// 红比默默漂走好。
+	// 🔴 新增一个域进账本时，本格的轨 A 必须【同时】加它的 SchemaDDL：只加条目不加轨 A，
+	// 双轨比对会因为「B 多出几张表」而红（表集合那一句），这是设计好的 fail-closed，不是误报。
+	// 🔴 施加顺序照号段（0100 identity → 0400 fanout），与账本同序：fanout 五表无外键指向
+	// np_*／audit_log，顺序其实不影响结果，但让轨 A 与轨 B 同序，红的时候两边可逐条对照。
 	trackA := testSchema(t, dsn)
 	if _, err := trackA.Exec(ctx, testCtx(t), identity.PGSchemaSQL); err != nil {
-		t.Fatalf("轨 A 建表失败: %v", err)
+		t.Fatalf("轨 A 建表失败（identity）: %v", err)
+	}
+	if _, err := trackA.Exec(ctx, testCtx(t), fanout.PGSchemaSQL); err != nil {
+		t.Fatalf("轨 A 建表失败（fanout）: %v", err)
 	}
 	aTables := baseTables(t, trackA, schemaOf(t, trackA))
-	if len(aTables) != 8 {
-		t.Fatalf("轨 A 建出 %d 张表（%v），要身份域那 8 张（G3 终版 800f24d8：原 6 张＋编组两张）", len(aTables), aTables)
+	// 13 ＝ 身份域 8 ＋ fanout 域 5（outbound／inbound_msg／inbound_sink／waive_audit／selfcheck，
+	// R-G2-FANOUT-HARDEN ① 把五表收口进 internal/fanout/pgschema.sql 后才有这一项）。
+	if len(aTables) != 13 {
+		t.Fatalf("轨 A 建出 %d 张表（%v），要 13 张＝身份域 8（G3 终版 800f24d8：原 6 张＋编组两张）"+
+			"＋ fanout 域 5（0400）", len(aTables), aTables)
 	}
 
 	// 轨 B：账本。
@@ -322,9 +337,25 @@ func shapeDump(t *testing.T, pool *repo.Pool, schema string, only map[string]boo
 // （含末尾那一串制表符样式的横线）；改标记行会让本格与重冻脚本两头都对不上，故这里写死。
 const frozenBodyMarker = "-- ── 以下为冻结正文 ──────────────────────────────────────────────────────\n"
 
-// frozenIdentityEntry 是身份域那条冻结条目的名字。写死而不按前缀找：
+// frozenIdentityEntry／frozenFanoutEntry 是两条【冻结副本】条目的名字。写死而不按前缀找：
 // 改名（＝改账本主键）本身就是一件必须红出来、必须人来确认的事。
-const frozenIdentityEntry = "0100_identity_baseline.sql"
+// 🔴 0001_core_baseline.sql 【不在】这份名单里：它是手写的基线快照，不是某个源文件的逐字副本，
+// 文件里没有 frozenBodyMarker 那一行（splitFrozen 会 Fatalf）。名单只收「冻结自某个源」的条目。
+const (
+	frozenIdentityEntry = "0100_identity_baseline.sql"
+	frozenFanoutEntry   = "0400_fanout_baseline.sql"
+)
+
+// frozenEntry 一条冻结条目的自报坐标：源文件路径与冻结时的提交号。
+// 🔴 提交号写死在这里而不是去问 git：本格不依赖仓状态（CI 上可能是浅克隆／tarball），
+// 且「这条冻结自哪一版」必须是条目自己能被复核的事实，不是运行期查出来的。
+type frozenEntry struct{ name, source, commit string }
+
+var frozenEntries = []frozenEntry{
+	{name: frozenIdentityEntry, source: "internal/identity/pgschema.sql", commit: "800f24d8"},
+	// R-G2-FANOUT-HARDEN ①：fanout 五表收口进 pgschema.sql 的那一版（时间列已改 BIGINT）。
+	{name: frozenFanoutEntry, source: "internal/fanout/pgschema.sql", commit: "0228e0d4"},
+}
 
 // splitFrozen 把一条冻结条目切成「头注（含标记行）」与「冻结正文」。
 func splitFrozen(t *testing.T, body string) (head, frozen string) {
@@ -355,30 +386,52 @@ func TestFrozenBodyMatchesSelfReportedSHA(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Ledger: %v", err)
 	}
-	var body string
+	byName := make(map[string]string, len(entries))
 	for _, e := range entries {
-		if e.Name == frozenIdentityEntry {
-			body = e.Body
-		}
+		byName[e.Name] = e.Body
 	}
-	if body == "" {
-		t.Fatalf("账本里没有 %s（重冻时改过文件名？号段规则见口径页 §五）", frozenIdentityEntry)
-	}
-	head, frozen := splitFrozen(t, body)
+	for _, fe := range frozenEntries {
+		t.Run(fe.name, func(t *testing.T) {
+			body := byName[fe.name]
+			if body == "" {
+				t.Fatalf("账本里没有 %s（重冻时改过文件名？号段规则见口径页 §五）", fe.name)
+			}
+			head, frozen := splitFrozen(t, body)
 
-	want := sha256Hex(frozen)
-	if !strings.Contains(head, want) {
-		t.Errorf("头注自报的 sha256 与【冻结正文】的真值不符：真值 %s（头注里找不到）—— "+
-			"要么正文被手改过（🔴 已施加条目不可变，要改就新增一条增量），要么那行坐标是装饰", want)
+			want := sha256Hex(frozen)
+			if !strings.Contains(head, want) {
+				t.Errorf("头注自报的 sha256 与【冻结正文】的真值不符：真值 %s（头注里找不到）—— "+
+					"要么正文被手改过（🔴 已施加条目不可变，要改就新增一条增量），要么那行坐标是装饰", want)
+			}
+			for _, coord := range []string{fe.source, fe.commit} {
+				if !strings.Contains(head, coord) {
+					t.Errorf("头注缺坐标 %q —— 后来者无法自己复核这条冻结自哪一份源", coord)
+				}
+			}
+			// 🔴 本格【不引】各域的 PGSchemaSQL：这不是偷懒，是判据本身 ——
+			// 冻结正文与当前的源是否逐字相同，从今往后不是任何一格的判据（理由见本节头注）。
+			// 源与账本的漂移由形状轨判；本格的读数只来自条目文件自己。
+		})
 	}
-	for _, coord := range []string{"internal/identity/pgschema.sql", "800f24d8"} {
-		if !strings.Contains(head, coord) {
-			t.Errorf("头注缺坐标 %q —— 后来者无法自己复核这条冻结自哪一份源", coord)
+	// 🔴 反向对照（名单本身也要被守）：账本里凡是带 frozenBodyMarker 的条目，都必须在
+	// frozenEntries 名单里。否则「新增一条冻结条目而忘了登记坐标」会让本格静默少判一条 ——
+	// 判据少一半就是没判（同 scripts/repo-boundary-gate.sh 头注 ①②「闸有几半」那条教训）。
+	for _, e := range entries {
+		if !strings.Contains(e.Body, frozenBodyMarker) {
+			continue
+		}
+		found := false
+		for _, fe := range frozenEntries {
+			if fe.name == e.Name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("条目 %s 带冻结正文标记却不在 frozenEntries 名单里 —— "+
+				"它的自报 sha256 与坐标没人核；补进名单（改名＝改账本主键，须人来确认）", e.Name)
 		}
 	}
-	// 🔴 本格【不引】identity.PGSchemaSQL：这不是偷懒，是判据本身 ——
-	// 冻结正文与当前的源是否逐字相同，从今往后不是任何一格的判据（理由见本节头注）。
-	// 源与账本的漂移由形状轨判；本格的读数只来自条目文件自己。
 }
 
 // TestAppliedEntriesAreImmutable 钉字节轨的另一半：【账实相符，且改一个字就被拒】。
@@ -451,7 +504,7 @@ func TestAppliedEntriesAreImmutable(t *testing.T) {
 	if len(rep.Applied) != 0 {
 		t.Errorf("拒绝的那次竟然执行了 %v", rep.Applied)
 	}
-	// ③ 拒绝不得把账写脏：还是那两条、digest 还是原来那两个。
+	// ③ 拒绝不得把账写脏：还是那三条、digest 还是原来那三个。
 	after := ledgerRows(t, pool)
 	if len(after) != len(rows) {
 		t.Fatalf("账被写脏了：原 %d 条、现 %d 条", len(rows), len(after))
