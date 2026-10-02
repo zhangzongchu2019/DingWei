@@ -25,16 +25,22 @@ import (
 )
 
 // gwToNodeAgent 网关：export_seat 直接交给真 nodeagent 处理器（同步等它回传完）。
-type gwToNodeAgent struct{ h nodeagent.Handler }
+// 🔴 结果载荷必须透传（丙案：sha256 控制面补报走这里；复验终验抓到过把载荷丢了的回归）。
+type gwToNodeAgent struct {
+	h           nodeagent.Handler
+	lastPayload json.RawMessage // 最近一次 export_seat 的结果载荷（断言用）
+}
 
-func (g gwToNodeAgent) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
+func (g *gwToNodeAgent) Send(ctx context.Context, nodeID string, cmd hosted.NodeCommand) (hosted.NodeResult, error) {
 	if cmd.Type != "export_seat" {
 		return hosted.NodeResult{OK: true}, nil
 	}
-	if _, err := g.h(ctx, cmd.Params); err != nil {
+	payload, err := g.h(ctx, cmd.Params)
+	if err != nil {
 		return hosted.NodeResult{OK: false, Error: err.Error()}, nil
 	}
-	return hosted.NodeResult{OK: true}, nil
+	g.lastPayload = payload
+	return hosted.NodeResult{OK: true, Payload: payload}, nil
 }
 
 func TestBackupRealNodeAgentToRealHub(t *testing.T) {
@@ -77,12 +83,28 @@ func TestBackupRealNodeAgentToRealHub(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bk := hosted.NewHubBackuper(st, gwToNodeAgent{h: export}, srv.URL, backupDir)
+	gw := &gwToNodeAgent{h: export}
+	bk := hosted.NewHubBackuper(st, gw, srv.URL, backupDir)
 	mux.Handle("POST /api/node/backup/{id}", bk.BackupHandler())
 
 	ref, err := bk.BackupSeatVolume(ctx, "nd_io", "ag_io")
 	if err != nil {
 		t.Fatalf("real node agent → real hub backup failed: %v", err)
+	}
+	// 丙案真链路证据：落盘件 sha256 ＝ 真 handler 经控制面补报的那个值
+	var rep struct {
+		SHA256 string `json:"sha256"`
+	}
+	if err := json.Unmarshal(gw.lastPayload, &rep); err != nil || rep.SHA256 == "" {
+		t.Fatalf("真 handler 必须经结果载荷补报 sha256: %s %v", gw.lastPayload, err)
+	}
+	landedRaw, err := os.ReadFile(ref)
+	if err != nil {
+		t.Fatal(err)
+	}
+	landedSum := sha256.Sum256(landedRaw)
+	if rep.SHA256 != hex.EncodeToString(landedSum[:]) {
+		t.Fatalf("补报值须等于落盘件自算: 报 %s 算 %s", rep.SHA256, hex.EncodeToString(landedSum[:]))
 	}
 	f, err := os.Open(ref)
 	if err != nil {

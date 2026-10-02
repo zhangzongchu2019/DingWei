@@ -91,14 +91,16 @@ func (e *eofHook) Read(p []byte) (int, error) {
 
 // gwBackupNode 假网关：收到 export_seat 就扮演节点——把 body 回传到 upload_url（带真凭据与 sha256 trailer）。
 // sha 为空 ⇒ 用 body 的真 sha256；"-" ⇒ 不带 trailer；其它 ⇒ 原样（造校验和不符）。
+// reportSHA 控制【控制面补报】（丙案，结果载荷里的 sha256）：空 ⇒ 补报真值；"-" ⇒ 不补报；其它 ⇒ 谎报。
 type gwBackupNode struct {
-	secret  string
-	body    []byte
-	sha     string
-	sendErr error // 非空 ⇒ 扮演网关发不出去
-	fail    bool  // 扮演节点回失败
-	lie     bool  // 扮演节点不回传却报成功
-	called  []string
+	secret    string
+	body      []byte
+	sha       string
+	reportSHA string
+	sendErr   error // 非空 ⇒ 扮演网关发不出去
+	fail      bool  // 扮演节点回失败
+	lie       bool  // 扮演节点不回传却报成功
+	called    []string
 }
 
 func (g *gwBackupNode) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
@@ -130,7 +132,16 @@ func (g *gwBackupNode) Send(ctx context.Context, nodeID string, cmd NodeCommand)
 	if code/100 != 2 {
 		return NodeResult{OK: false, Error: "upload rejected"}, nil // 节点见 Hub 拒收即报失败（nodeagent 同口径）
 	}
-	return NodeResult{OK: true}, nil
+	// 控制面补报（与 nodeagent 结果载荷同形；丙案后这是权威通道）
+	report := g.reportSHA
+	if report == "" {
+		report = sha256Hex(g.body)
+	}
+	payload, _ := json.Marshal(map[string]string{"seat_id": "ag", "state": "exported", "sha256": report})
+	if report == "-" {
+		payload, _ = json.Marshal(map[string]string{"seat_id": "ag", "state": "exported"}) // 不补报
+	}
+	return NodeResult{OK: true, Payload: payload}, nil
 }
 
 // mkBackupRig 节点登记＋Hub 接收端点＋Backuper（origin 指向测试服务）。
@@ -272,8 +283,10 @@ func TestBackupHandlerAuthAndStates(t *testing.T) {
 	}
 }
 
-// 🔴 完整性（台账 lead-g4-t53-review 🔴2；复验缺陷二）：非 gzip、截断 gzip、校验和不符、缺校验和
+// 🔴 完整性（台账 lead-g4-t53-review 🔴2；复验缺陷二）：非 gzip、截断 gzip、trailer 校验和与落盘不符
 // ⇒ Hub 422 拒收、不落盘、记录作废；BackupSeatVolume 报错；Destroy 不继续（不吊销、不删、不改状态）。
+// 丙案（R-G4-BACKUP-CHECKSUM-CTRL）：trailer 缺失不再拒收（反代会丢）——校验移到控制面补报，
+// 由 TestBackupChecksumControlPlane 钉。
 func TestBackupIntegrityRejected(t *testing.T) {
 	good := mkTarGz(t, map[string]string{"ag_i/work.log": strings.Repeat("卷内容", 2000)})
 	cases := []struct {
@@ -284,7 +297,6 @@ func TestBackupIntegrityRejected(t *testing.T) {
 		{"not a gzip", []byte("THIS IS NOT A GZIP"), ""},
 		{"truncated gzip", good[:len(good)/2], ""},
 		{"checksum mismatch", good, sha256Hex([]byte("something else"))},
-		{"checksum missing", good, "-"},
 		// 复验遗留 X4（tosonnet50ts）：合法 gzip＋合法 tar、sha256 也对，但一个条目都没有 ⇒ 仍须拒收（空卷备份不可用于恢复）。
 		{"empty archive", mkTarGz(t, map[string]string{}), ""},
 	}
@@ -322,6 +334,138 @@ func TestBackupIntegrityRejected(t *testing.T) {
 			t.Fatalf("seat must show backup_failed (container stopped, nothing deleted): %+v", seat)
 		}
 	})
+}
+
+// 🔴 丙案（R-G4-BACKUP-CHECKSUM-CTRL；106 实测 nginx 1.24.0 丢弃请求 trailer）：
+// 校验值经控制面补报（export_seat 结果载荷）、Hub 落盘自算、相等才转 complete；
+// 未补报或不等 ⇒ 不销毁、backup_failed。反向：去掉 BackupSeatVolume 的补报比对 ⇒ 本格红。
+func TestBackupChecksumControlPlane(t *testing.T) {
+	good := mkTarGz(t, map[string]string{"ag_c/work.log": "卷内容"})
+
+	// 丢 trailer 的反代形态：上传不带 trailer 也须走通全链（补报正确 ⇒ complete）
+	t.Run("no trailer full chain ok", func(t *testing.T) {
+		s, bk, dir := mkBackupRig(t, &gwBackupNode{body: good, sha: "-"})
+		ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c")
+		if err != nil {
+			t.Fatalf("丢 trailer 不应挡路: %v", err)
+		}
+		raw, err := os.ReadFile(ref)
+		if err != nil || !bytes.Equal(raw, good) {
+			t.Fatalf("落盘内容应逐字节相同: %v", err)
+		}
+		rec, _ := s.GetBackup(context.Background(), strings.TrimSuffix(strings.TrimPrefix(ref, dir+"/"), ".tar.gz"))
+		if rec.State != "complete" {
+			t.Fatalf("补报相等应转 complete: %+v", rec)
+		}
+	})
+
+	// 未补报 ⇒ 不转 complete、报错（不销毁）；记录与文件清掉
+	t.Run("report missing blocks", func(t *testing.T) {
+		s, bk, dir := mkBackupRig(t, &gwBackupNode{body: good, reportSHA: "-"})
+		ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c")
+		if err == nil || ref != "" {
+			t.Fatalf("未补报必须失败: ref=%q err=%v", ref, err)
+		}
+		// 字样区分「旧版节点根本没补报」与「补报了但对不上」（正式单排障要靠它分因）
+		if !strings.Contains(err.Error(), "未补报") {
+			t.Fatalf("未补报的错误字样须含『未补报』: %v", err)
+		}
+		if n := backupCount(t, s); n != 0 {
+			t.Fatalf("记录应作废: %d", n)
+		}
+		if left, _ := os.ReadDir(dir); len(left) != 0 {
+			t.Fatalf("落盘件不得留: %v", left)
+		}
+	})
+
+	// 补报与落盘自算不等 ⇒ 不转 complete、报错
+	t.Run("report mismatch blocks", func(t *testing.T) {
+		s, bk, dir := mkBackupRig(t, &gwBackupNode{body: good, reportSHA: sha256Hex([]byte("lying"))})
+		if ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c"); err == nil || ref != "" {
+			t.Fatalf("补报不等必须失败: ref=%q err=%v", ref, err)
+		}
+		if n := backupCount(t, s); n != 0 {
+			t.Fatalf("记录应作废: %d", n)
+		}
+		if left, _ := os.ReadDir(dir); len(left) != 0 {
+			t.Fatalf("落盘件不得留: %v", left)
+		}
+	})
+
+	// 完整销毁链过丢 trailer 反代：destroy 走到底（补报是唯一校验依据）
+	t.Run("destroy chain via trailer-dropping proxy", func(t *testing.T) {
+		lc, log, _, _, _, s, id := mkLifecycle(t)
+		gw := &gwBackupNode{body: good, sha: "-"}
+		_, bk, _ := mkBackupRigOn(t, s, gw)
+		lc.backups = bk
+		log.reset()
+		if err := lc.Destroy(context.Background(), id, "zzc", false, true); err != nil {
+			t.Fatalf("丢 trailer 下销毁链应走通: %v", err)
+		}
+		seat, _ := s.GetSeat(context.Background(), id)
+		if seat.State != "destroyed" {
+			t.Fatalf("席位应 destroyed: %+v", seat)
+		}
+		if n := backupCount(t, s); n != 1 {
+			t.Fatalf("备份记录应留存（complete 待 TTL）: %d", n)
+		}
+	})
+
+	// 补报缺失 ⇒ 销毁链中止在 backup_failed（不发 destroy_seat）
+	t.Run("missing report stops destroy", func(t *testing.T) {
+		lc, log, _, _, _, s, id := mkLifecycle(t)
+		gw := &gwBackupNode{body: good, reportSHA: "-"}
+		_, bk, _ := mkBackupRigOn(t, s, gw)
+		lc.backups = bk
+		log.reset()
+		err := lc.Destroy(context.Background(), id, "zzc", false, true)
+		var be *BackupFailedError
+		if !errors.As(err, &be) {
+			t.Fatalf("%v, want backup_failed", err)
+		}
+		if !strings.Contains(be.Detail(), "未补报") {
+			t.Fatalf("销毁侧 Detail 须带『未补报』字样: %v", be.Detail())
+		}
+		eqSeq(t, "missing report stops destroy", log.get(), []string{"node:stop_seat"})
+		if seat, _ := s.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
+			t.Fatalf("seat must show backup_failed: %+v", seat)
+		}
+	})
+
+	// 甲形状的安全方向（复验预审 G9）：Hub 重启 ⇒ landed 内存丢失 ⇒ 补报到了也比对无门
+	// ⇒ 必须失败朝安全方向（不销毁）。扮演：上传落盘后、结果返回前清掉 landed（等价重启丢内存）。
+	t.Run("hub restart loses landed, report blocked", func(t *testing.T) {
+		inner := &gwBackupNode{body: good}
+		s, bk, dir := mkBackupRig(t, inner)
+		bk.gw = gwFunc(func(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+			res, err := inner.Send(ctx, nodeID, cmd)
+			if cmd.Type == "export_seat" && err == nil && res.OK {
+				bk.mu.Lock() // 等价 Hub 重启：落盘登记（内存）丢光
+				bk.landed = map[string]struct {
+					sha  string
+					size int64
+				}{}
+				bk.mu.Unlock()
+			}
+			return res, err
+		})
+		if ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c"); err == nil || ref != "" {
+			t.Fatalf("重启丢内存后补报必须失败（不销毁）: ref=%q err=%v", ref, err)
+		}
+		if n := backupCount(t, s); n != 0 {
+			t.Fatalf("记录应作废: %d", n)
+		}
+		if left, _ := os.ReadDir(dir); len(left) != 0 {
+			t.Fatalf("落盘件不得留: %v", left)
+		}
+	})
+}
+
+// gwFunc 适配器：把函数包装成 NodeGateway（G9 包层用）。
+type gwFunc func(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error)
+
+func (f gwFunc) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+	return f(ctx, nodeID, cmd)
 }
 
 // mkBackupRigOn 在已有 Store 上搭接收端点（席位所在节点 nd_free 登记凭据）。
@@ -362,5 +506,97 @@ func TestBackupFailureClearsPending(t *testing.T) {
 				t.Fatalf("失败的 pending 记录应清掉: %d", n)
 			}
 		})
+	}
+}
+
+// gwWithTimeout 实现 SendWithTimeout 可选接口的网关：记录是否被用、给的上限是多少。
+// （丙案并入项：export_seat 的 15 分钟上限此前是死代码——全仓无实现。）
+type gwWithTimeout struct {
+	inner  *gwBackupNode
+	usedD  time.Duration
+	called bool
+}
+
+func (g *gwWithTimeout) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+	return g.inner.Send(ctx, nodeID, cmd)
+}
+
+func (g *gwWithTimeout) SendWithTimeout(ctx context.Context, nodeID string, cmd NodeCommand, d time.Duration) (NodeResult, error) {
+	g.called = true
+	g.usedD = d
+	return g.inner.Send(ctx, nodeID, cmd)
+}
+
+// BackupSeatVolume 对 export_seat 必须走 SendWithTimeout(15min)（长指令上限）；
+// 反向：探测分支被去掉（只用 Send）⇒ 本格红。
+func TestBackupUsesLongTimeout(t *testing.T) {
+	body := mkTarGz(t, map[string]string{"ag_lt/work.log": "卷内容"})
+	inner := &gwBackupNode{body: body}
+	_, bk, _ := mkBackupRig(t, inner) // rig 把节点凭据装到 inner 上
+	gw := &gwWithTimeout{inner: inner}
+	bk.gw = gw
+	if _, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_lt"); err != nil {
+		t.Fatalf("备份: %v", err)
+	}
+	if !gw.called || gw.usedD != 15*time.Minute {
+		t.Fatalf("export_seat 必须走 SendWithTimeout(15min): called=%v d=%v", gw.called, gw.usedD)
+	}
+}
+
+// 丙案新分支（复验二轮 G8 半格）：已 landed 但记录仍 pending 时，同一 id 再传 ⇒ 404 不覆写，
+// landed 登记与落盘件都不动。
+func TestBackupDuplicateUploadWhilePending(t *testing.T) {
+	_, s := mkPoolSvc(t)
+	ctx := context.Background()
+	secret, err := s.RegisterNode(ctx, Node{ID: "nd_dup", Name: "dup", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	bk := NewHubBackuper(s, &gwBackupNode{}, "", dir)
+	mux := http.NewServeMux()
+	mux.Handle("POST /api/node/backup/{id}", bk.BackupHandler())
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	id, _ := newBackupID()
+	if err := s.CreateBackup(ctx, Backup{ID: id, NodeID: "nd_dup", SeatID: "ag_d", State: "pending",
+		Path: dir + "/" + id + ".tar.gz", ExpiresAt: time.Now().Add(BackupTTL)}); err != nil {
+		t.Fatal(err)
+	}
+	good := mkTarGz(t, map[string]string{"ag_d/f": "first"})
+	if c, err := uploadBackup(ctx, srv.URL+"/api/node/backup/"+id, secret, good, sha256Hex(good)); err != nil || c != 200 {
+		t.Fatalf("首传应 200: %d %v", c, err)
+	}
+	landedSha := bk.landed[id].sha
+	// 第二次传（内容不同）⇒ 404；落盘件与 landed 都不被覆写
+	other := mkTarGz(t, map[string]string{"ag_d/f": "second"})
+	if c, err := uploadBackup(ctx, srv.URL+"/api/node/backup/"+id, secret, other, sha256Hex(other)); err != nil || c != 404 {
+		t.Fatalf("pending 期重复回传应 404: %d %v", c, err)
+	}
+	raw, _ := os.ReadFile(dir + "/" + id + ".tar.gz")
+	if !bytes.Equal(raw, good) {
+		t.Fatal("落盘件被覆写")
+	}
+	if bk.landed[id].sha != landedSha {
+		t.Fatal("landed 登记被覆写")
+	}
+}
+
+// G10（复验二轮）：节点掉线 ⇒ 销毁链断在备份步、backup_failed、不发 destroy_seat。
+func TestBackupNodeOfflineStopsDestroy(t *testing.T) {
+	lc, log, _, _, _, s, id := mkLifecycle(t)
+	gw := &gwBackupNode{sendErr: errors.New("node_offline")}
+	_, bk, _ := mkBackupRigOn(t, s, gw)
+	lc.backups = bk
+	log.reset()
+	err := lc.Destroy(context.Background(), id, "zzc", false, true)
+	var be *BackupFailedError
+	if !errors.As(err, &be) {
+		t.Fatalf("%v, want backup_failed", err)
+	}
+	eqSeq(t, "node offline stops destroy", log.get(), []string{"node:stop_seat"})
+	if seat, _ := s.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
+		t.Fatalf("seat must show backup_failed: %+v", seat)
 	}
 }

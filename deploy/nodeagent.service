@@ -32,16 +32,23 @@ RestartSec=3s
 Environment=GOTRACEBACK=all
 # 进程级代理环境中和（结构性断言，不靠运维自觉）：钉证模式（NODEAGENT_HUB_CERT_SHA256
 # 非空）下 Transport 无 Proxy 字段、直连；pin 为空（系统 CA）时 WSS 拨号与 export_seat
-# 的 client 回落默认 Transport ⇒ 会读 HTTP(S)_PROXY。置空＝任何情况下都直连 Hub。
+# 的 client 回落默认 Transport ⇒ 会读代理 env。置空＝任何情况下都直连 Hub。
+# Go 的 httpproxy「大写优先、小写兜底」（proxy.go getEnvAny）⇒ 大小写两对都要清
+# （helper 同款清场：tools/sessionhelper/sessionhelper/app.py:487 大小写十键）。
 Environment=HTTP_PROXY=
+Environment=http_proxy=
 Environment=HTTPS_PROXY=
+Environment=https_proxy=
+# 以下四个是惰性键（Go 代理解析不读；仓内读它们的只有席位侧 Python helper）——顺手清掉防歧义。
+Environment=NO_PROXY=localhost,127.0.0.1
+Environment=no_proxy=localhost,127.0.0.1
 Environment=ALL_PROXY=
 Environment=WS_PROXY=
 Environment=WSS_PROXY=
-Environment=NO_PROXY=localhost,127.0.0.1
 KillSignal=SIGTERM
-# 🔴 SIGTERM 立刻取消同一 ctx（main.go → run.go → backup.go）⇒ 停服会打断【进行中】的
-# 备份回传，Hub 侧判 corrupt；正式单的停服步骤须先确认无进行中备份再 systemctl stop。
+# 🔴 SIGTERM 立刻取消同一 ctx（cmd/nodeagent/main.go:83 → internal/nodeagent/run.go:199
+# → internal/nodeagent/backup.go:119/150，http 与 tar 都吃这个 ctx）⇒ 停服会打断【进行中】
+# 的备份回传，Hub 侧判 corrupt；正式单的停服步骤须先确认无进行中备份再 systemctl stop。
 TimeoutStopSec=30s
 
 # Hardening。可写面＝席位目录根＋台账/凭据所在目录（部署侧按实配改）；
