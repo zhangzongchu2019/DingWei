@@ -7,6 +7,7 @@
 // MUTATION=<name> 删除对应守卫,对应那条断言必须红(判"首红是不是该条",后续用例共享桩状态会级联):
 //    keep-code-after-done · persist-code · show-hub-text · fake-capabilities · forbidden-wrong-text
 //    row-code-ignores-expiry · row-code-no-timer · row-code-for-nonpending · row-code-persist · row-copy-wrong-text · row-code-without-expiry-key · no-invite-toggle · invite-toggle-static-arrow · invite-collapsed-keeps-visible
+//    bind-persist · bind-hub-text · bind-no-expiry-timer · bind-copy-without-prefix · bind-done-keeps-code · bind-sends-body · bind-no-already-bound-wording(绑定飞书)
 // 环境变量: PW_CHANNEL=chrome 用系统 Chrome;NODE_PATH 指向含 playwright 的 node_modules。
 const assert = require('assert');
 const fs = require('fs');
@@ -25,7 +26,7 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible'];
+const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-body', 'bind-no-already-bound-wording'];
 if (mutation === 'logout-without-post') mutate("try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}", "location.assign('/console/login');return;");
 if (mutation === 'logout-ignores-failure') mutate("if(r.ok||r.status===401){location.assign('/console/login');return;}", "location.assign('/console/login');return;");
 if (mutation === 'no-logout-button') mutate('<button id=logoutBtn type=button>退出</button>', '');
@@ -38,6 +39,13 @@ if (mutation === 'row-code-without-expiry-key') mutate("if(!code||!Number.isFini
 if (mutation === 'no-invite-toggle') mutate("document.getElementById('inviteToggle').onclick=adminToggleInvite;", "");
 if (mutation === 'invite-toggle-static-arrow') mutate("document.getElementById('inviteArrow').textContent=open?'▾':'▸';", "");
 if (mutation === 'invite-collapsed-keeps-visible') mutate("var open=body.hidden;body.hidden=!open;", "var open=body.hidden;");
+if (mutation === 'bind-persist') mutate("box.dataset.code=code;", "box.dataset.code=code;try{localStorage.setItem('bind',code);}catch(_){}");
+if (mutation === 'bind-hub-text') mutate("say(res.code==='already_bound'?'你已经绑定过飞书，无需再绑定':res.text);return;", "say(res.data&&res.data.detail?String(res.data.detail):res.text);return;");
+if (mutation === 'bind-no-expiry-timer') mutate("if(Number.isFinite(exp))timer=setTimeout(", "if(false)timer=setTimeout(");
+if (mutation === 'bind-copy-without-prefix') mutate("await navigator.clipboard.writeText('#register '+code);fb.textContent='已复制';", "await navigator.clipboard.writeText(code);fb.textContent='已复制';");
+if (mutation === 'bind-done-keeps-code') mutate("document.getElementById('bindFeishuDone').onclick=function(){clearBox();say('');};", "document.getElementById('bindFeishuDone').onclick=function(){box.hidden=true;say('');};");
+if (mutation === 'bind-sends-body') mutate("consolePost('/api/console/account/feishu-bind-code')", "consolePost('/api/console/account/feishu-bind-code',{user_id:'someone'})");
+if (mutation === 'bind-no-already-bound-wording') mutate("say(res.code==='already_bound'?'你已经绑定过飞书，无需再绑定':res.text);return;", "say('操作失败');return;");
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
@@ -53,6 +61,7 @@ let nextCreateError = null;
 let codeSeq = 0;
 const writes = [];
 let logoutStatus = 204;
+let bindMode = 'ok'; let bindSeq = 0; let bindTtlMs = 3600e3;
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function err(res, status, code, extra) { json(res, status, { error: code, detail: 'SECRET-HUB-TEXT', ...extra }); }
@@ -69,6 +78,12 @@ const server = http.createServer(async (req, res) => {
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   if (p === '/console/login') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end('<!doctype html><title>LOGIN-PAGE</title>'); }
   if (p === '/console/logout' && req.method === 'POST') { writes.push({ path: p, body: null }); res.writeHead(logoutStatus); return res.end(); }
+  if (p === '/api/console/account/feishu-bind-code' && req.method === 'POST') {
+    writes.push({ path: p, contentLength: req.headers['content-length'] || '0' }); await read(req);
+    if (bindMode === 'already') return err(res, 409, 'already_bound');
+    if (bindMode === 'boom') return err(res, 500, 'internal');
+    return json(res, 200, { registration_code: `BIND${++bindSeq}XYZ`.slice(0, 8).padEnd(8, 'Q'), code_expires_at: new Date(Date.now() + bindTtlMs).toISOString() });
+  }
   if (p === '/api/console/agents') return json(res, 200, { agents: [] });
   if (p === '/api/console/agent-groups') return json(res, 200, { owned_agents: [], groups: [] });
   if (p === '/api/console/platform') return json(res, 200, { role, actions: [], items: platformItems(role) });
@@ -287,6 +302,62 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await page.locator('#adminInvite').waitFor({ state: 'visible' });
       assert.strictEqual(await page.locator('#inviteResult').isHidden(), true);
       assert.doesNotMatch(await page.locator('body').innerHTML(), /REG-2-WXYZ/);
+    });
+
+    await test('绑定飞书: the button asks for a code for the signed-in user only (empty body), shows "#register 码" + expiry, and the copy puts the full command on the clipboard', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      await pg.goto(`${base}/console`);
+      await pg.locator('#bindFeishuBtn').click();
+      await pg.locator('#bindFeishuBox').waitFor({ state: 'visible' });
+      const w = writes.filter((x) => x.path === '/api/console/account/feishu-bind-code');
+      assert.strictEqual(w.length, 1);
+      assert.strictEqual(w[0].contentLength, '0', 'no target in the request: the Hub decides from the session');
+      const cmd = await pg.locator('#bindFeishuCmd').textContent();
+      assert.match(cmd, /^#register BIND\d+XYZ$/);
+      assert.match(await pg.locator('#bindFeishuExpiry').textContent(), /有效至/);
+      await pg.locator('#bindFeishuCopy').click();
+      await pg.locator('#bindFeishuCopyFb').filter({ hasText: '已复制' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await pg.evaluate(() => navigator.clipboard.readText()), cmd);
+      const stored = await pg.evaluate(() => JSON.stringify({ l: { ...localStorage }, s: { ...sessionStorage } }));
+      assert.doesNotMatch(stored, /BIND\d/, 'the bind code is never persisted in browser storage');
+      const first = cmd;
+      await pg.locator('#bindFeishuBtn').click();
+      await pg.locator('#bindFeishuCmd').filter({ hasNotText: first }).waitFor({ state: 'visible' });
+      assert.doesNotMatch(await pg.locator('body').innerHTML(), new RegExp(first.split(' ')[1]), 'asking again replaces the old code on the page');
+      await pg.locator('#bindFeishuDone').click();
+      await pg.locator('#bindFeishuBox').waitFor({ state: 'hidden' });
+      assert.doesNotMatch(await pg.locator('body').innerHTML(), /BIND\d+XYZ/, '完成 wipes the code from the DOM');
+      await pg.close();
+    });
+
+    await test('绑定飞书: already bound (409) says so in our wording and shows no code; a 500 shows our wording, never the Hub text', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      await pg.goto(`${base}/console`);
+      bindMode = 'already';
+      await pg.locator('#bindFeishuBtn').click();
+      await pg.locator('#bindFeishuStatus').filter({ hasText: '已经绑定过飞书' }).waitFor({ state: 'visible' });
+      assert.strictEqual(await pg.locator('#bindFeishuBox').isHidden(), true);
+      assert.strictEqual(await pg.locator('#bindFeishuBtn').isDisabled(), false, 'the button works again');
+      bindMode = 'boom';
+      await pg.locator('#bindFeishuBtn').click();
+      await pg.locator('#bindFeishuStatus').filter({ hasText: '服务端出错了' }).waitFor({ state: 'visible' });
+      assert.doesNotMatch(await pg.locator('#bindFeishuStatus').textContent(), /SECRET-HUB-TEXT/);
+      assert.strictEqual(await pg.locator('#bindFeishuBox').isHidden(), true);
+      bindMode = 'ok';
+      await pg.close();
+    });
+
+    await test('绑定飞书: an expired code disappears by itself and says so', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      await pg.goto(`${base}/console`);
+      bindTtlMs = 1200;
+      await pg.locator('#bindFeishuBtn').click();
+      await pg.locator('#bindFeishuBox').waitFor({ state: 'visible' });
+      await pg.locator('#bindFeishuBox').waitFor({ state: 'hidden', timeout: 4000 });
+      await pg.locator('#bindFeishuStatus').filter({ hasText: '已过期' }).waitFor({ state: 'visible' });
+      assert.doesNotMatch(await pg.locator('body').innerHTML(), /BIND\d+XYZ/);
+      bindTtlMs = 3600e3;
+      await pg.close();
     });
 
     await test('the top of the console has a 退出 button: it POSTs /console/logout once and then goes to /console/login', async () => {
