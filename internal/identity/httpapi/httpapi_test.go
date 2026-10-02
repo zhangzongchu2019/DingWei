@@ -373,6 +373,40 @@ func TestApproveWithoutGroupOverHTTP(t *testing.T) {
 	}
 }
 
+// GET /api/console/agents 只列【当前会话本人】的 Agent：别的业主的 Agent 一条都不出现（属主名大小写不同的会话仍是同一人）。
+// 这是 console 左栏「别人的编组成员不在自己的 Agent 列表里、只能信编组快照自带的 online」的事实依据
+// （见 view-service/console-agent-tree-regression.js 夹具）。
+func TestAgentsListOwnerScopedOverHTTP(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	for _, c := range []struct{ owner, name string }{{"zzc", "Alpha"}, {"zzc", "Beta"}, {"lbl", "Gamma"}} {
+		if _, err := e.svc.IssueHostedAgentWithNewGroup(ctx, c.owner, c.name, tg(), c.owner); err != nil {
+			t.Fatal(err)
+		}
+	}
+	names := func(actor string) string {
+		r := e.do("GET", "/api/console/agents", nil, map[string]string{"X-Test-Actor": actor})
+		if r.status != 200 {
+			t.Fatalf("%s: %d %v", actor, r.status, r.body)
+		}
+		var out []string
+		for _, it := range r.body["agents"].([]any) {
+			out = append(out, it.(map[string]any)["name"].(string))
+		}
+		sort.Strings(out)
+		return strings.Join(out, ",")
+	}
+	if got := names("zzc"); got != "Alpha,Beta" {
+		t.Fatalf("zzc sees [%s], want [Alpha,Beta]", got)
+	}
+	if got := names("ZZC"); got != "Alpha,Beta" {
+		t.Fatalf("session owner in another case sees [%s], want [Alpha,Beta]", got)
+	}
+	if got := names("lbl"); got != "Gamma" {
+		t.Fatalf("lbl sees [%s], want [Gamma] (never zzc's agents)", got)
+	}
+}
+
 // G4 注入点：只给 origin=hosted 的项出 hosted 子对象，且只在注入函数返回 true 时出；自备项与无数据时不出。
 func TestAgentsListHostedInjection(t *testing.T) {
 	e := newEnv(t)

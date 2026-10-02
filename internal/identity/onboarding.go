@@ -2,6 +2,8 @@ package identity
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"crypto/subtle"
 	"errors"
 	"fmt"
@@ -45,6 +47,11 @@ var (
 // Onboarding N3 的业务层。与入网的 Service 共用存储、时钟、随机源。
 type Onboarding struct {
 	*Service
+
+	// CodeKey 注册码派生密钥（Hub 的 WP_SECRET_KEY）。非空 ⇒ 注册码由它、用户与到期时刻 HMAC 派生，
+	// 管理用户在用户列表里可随时取回「当前有效」的码（业主反馈，板 7a138dcf）；库里照旧只存哈希。
+	// 为空 ⇒ 随机码，取不回（页面退回「重新生成」）。
+	CodeKey string
 
 	omu        sync.Mutex
 	pwFails    map[string][]time.Time // 来源 IP＋用户 ID → 失败时刻
@@ -239,6 +246,36 @@ func (o *Onboarding) CreateUser(ctx context.Context, actor *User, r CreateUserRe
 	return &u, code, exp, nil
 }
 
+// IssueBindCode 本人自取的飞书绑定码（组长取甲，台账 e483f147）：已登录、active、尚无飞书身份的用户，
+// 给自己出一个一次性码，在飞书里发注册指令兑换 —— 只绑身份、不改状态。只能给 actor 自己出（没有替别人出的入口）；
+// 已有飞书身份 ⇒ ErrAlreadyBound。码与注册码同表同法（同样 24 小时、新码顶替旧码、派生可取回）。
+// 🔴 再认证（组长 01be74c0，复验方登记②）：会话被盗者可借此把自己的飞书身份绑到受害账号上做持久化 ⇒
+// 须带当前口令；口令错 ⇒ ErrBadCredentials，并与口令登录共用同一失败限速（来源＋用户 ID 为键，15 分钟 5 次）。
+func (o *Onboarding) IssueBindCode(ctx context.Context, actor *User, password, sourceIP string) (string, time.Time, error) {
+	if actor == nil || actor.State != UserActive {
+		return "", time.Time{}, ErrNotAllowed
+	}
+	key := sourceIP + "|" + actor.UserIDLC()
+	now := o.Now()
+	if err := o.checkPasswordFails(key, now); err != nil {
+		return "", time.Time{}, err
+	}
+	u, err := o.Store.GetUser(ctx, actor.UserIDLC())
+	if err != nil || u.PasswordHash == "" || bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)) != nil {
+		o.recordPasswordFail(key, now)
+		o.audit(ctx, actor.UserIDLC(), "bind_code.rejected", actor.UserIDLC(), "reason=bad_credentials")
+		return "", time.Time{}, ErrBadCredentials
+	}
+	has, err := o.Store.UserHasIdentity(ctx, actor.UserIDLC(), "feishu")
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	if has {
+		return "", time.Time{}, ErrAlreadyBound
+	}
+	return o.issueRegistrationCode(ctx, actor, actor.UserIDLC())
+}
+
 // RegenerateRegistrationCode 重新生成注册码（旧码作废）。
 func (o *Onboarding) RegenerateRegistrationCode(ctx context.Context, actor *User, userID string) (string, time.Time, error) {
 	if !CanManageUsers(actor) {
@@ -255,11 +292,26 @@ func (o *Onboarding) RegenerateRegistrationCode(ctx context.Context, actor *User
 }
 
 func (o *Onboarding) issueRegistrationCode(ctx context.Context, actor *User, userLC string) (string, time.Time, error) {
-	code, err := o.randCode()
-	if err != nil {
+	// 到期时刻截到微秒（PG timestamptz 的精度），派生与取回用的是同一个值。
+	exp := o.Now().Add(RegistrationCodeTTL).UTC().Truncate(time.Microsecond)
+	var code string
+	var err error
+	if o.CodeKey != "" {
+		// 新码必须与现有有效码不同（重新生成即作废旧码）：同一微秒内再生成会派生出同一个码，故顺延 1 微秒直到不撞。
+		active, err := o.Store.ListActiveRegistrationCodes(ctx, o.Now())
+		if err != nil {
+			return "", time.Time{}, err
+		}
+		taken := map[string]bool{}
+		for _, r := range active {
+			taken[r.CodeDigest] = true
+		}
+		for code = deriveRegistrationCode(o.CodeKey, userLC, exp); taken[HashSecret(code)]; code = deriveRegistrationCode(o.CodeKey, userLC, exp) {
+			exp = exp.Add(time.Microsecond)
+		}
+	} else if code, err = o.randCode(); err != nil {
 		return "", time.Time{}, err
 	}
-	exp := o.Now().Add(RegistrationCodeTTL)
 	if err := o.Store.CreateRegistrationCode(ctx, userLC, HashSecret(code), exp); err != nil {
 		return "", time.Time{}, err
 	}
@@ -268,6 +320,50 @@ func (o *Onboarding) issueRegistrationCode(ctx context.Context, actor *User, use
 }
 
 func (o *Onboarding) randCode() (string, error) { return randFrom(o.Rand, codeAlphabet, codeLen) }
+
+// deriveRegistrationCode 由密钥、用户、到期时刻派生注册码：HMAC-SHA256 的字节按拒绝采样映到 codeAlphabet
+// （只收小于字母表长度整数倍的字节，无取模偏差）。不知密钥则不可预测；同一组输入恒得同一个码，故可取回。
+func deriveRegistrationCode(key, userLC string, exp time.Time) string {
+	limit := 256 - 256%len(codeAlphabet)
+	out := make([]byte, 0, codeLen)
+	for counter := 0; len(out) < codeLen; counter++ {
+		mac := hmac.New(sha256.New, []byte(key))
+		fmt.Fprintf(mac, "dingwei-regcode-v1|%s|%s|%d", Lower(userLC), exp.UTC().Format(time.RFC3339Nano), counter)
+		for _, b := range mac.Sum(nil) {
+			if int(b) < limit && len(out) < codeLen {
+				out = append(out, codeAlphabet[int(b)%len(codeAlphabet)])
+			}
+		}
+	}
+	return string(out)
+}
+
+// RegistrationCodeView 管理用户在用户列表里看到的「当前有效」注册码。
+type RegistrationCodeView struct {
+	Code      string
+	ExpiresAt time.Time
+}
+
+// RecoverableRegistrationCodes 待绑定用户当前有效的注册码（未用、未过期、未被重新生成顶替），按小写用户 ID。
+// 只给派生得出且哈希对得上的：未配 CodeKey、换过密钥、随机码时代发的码一律不给（取不回就不给，不猜）。
+// 调用方负责只对管理用户展示（httpapi 的用户列表本就只对管理用户开放）。
+func (o *Onboarding) RecoverableRegistrationCodes(ctx context.Context) (map[string]RegistrationCodeView, error) {
+	out := map[string]RegistrationCodeView{}
+	if o.CodeKey == "" {
+		return out, nil
+	}
+	rows, err := o.Store.ListActiveRegistrationCodes(ctx, o.Now())
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range rows {
+		code := deriveRegistrationCode(o.CodeKey, r.UserIDLC, r.ExpiresAt)
+		if subtle.ConstantTimeCompare([]byte(HashSecret(code)), []byte(r.CodeDigest)) == 1 {
+			out[r.UserIDLC] = RegistrationCodeView{Code: code, ExpiresAt: r.ExpiresAt.UTC()}
+		}
+	}
+	return out, nil
+}
 
 // randFrom 从字母表等概率取 n 个字符。拒绝采样：只收小于字母表长度整数倍的字节，避免取模偏差。
 func randFrom(rnd io.Reader, alphabet string, n int) (string, error) {
@@ -303,6 +399,9 @@ func (o *Onboarding) HandleRegister(ctx context.Context, sender Identity, code s
 	case errors.Is(err, ErrIdentityTaken):
 		o.audit(ctx, "feishu", "user.bind_rejected", "", "reason=identity_taken")
 		return "此飞书身份已绑定到其它账号，注册被拒绝。"
+	case errors.Is(err, ErrAlreadyBound):
+		o.audit(ctx, "feishu", "user.bind_rejected", "", "reason=already_bound")
+		return "该用户已绑定飞书，无需再绑定。"
 	default:
 		o.audit(ctx, "feishu", "user.bind_rejected", "", "reason=code_invalid")
 		return "注册码无效、已使用或已过期，请联系管理者重新生成。"

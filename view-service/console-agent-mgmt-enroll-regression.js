@@ -28,9 +28,11 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;'); // 自备审核区默认封存(开关关闭);本件测的就是它,所以装置里把开关打开
-const MUTATIONS = ['new-group-limit-9', 'group-closed-unmapped', 'new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
+// 第一版:自备审核区默认开(业主实测关着则入网批准走不通),托管区默认关(第二版)——本件按页面的默认值测,不打开任何开关。
+const MUTATIONS = ['seal-review', 'hosted-on-by-default', 'new-group-limit-9', 'group-closed-unmapped', 'new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation === 'seal-review') mutate('var FEATURE_SELFHOST_REVIEW=true;', 'var FEATURE_SELFHOST_REVIEW=false;');
+if (mutation === 'hosted-on-by-default') mutate('var FEATURE_HOSTED=false;', 'var FEATURE_HOSTED=true;');
 if (mutation === 'group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'new-group-limit-9') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,9}$/u,');
 if (mutation === 'new-group-ascii-only') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[A-Za-z0-9]{1,8}$/,');
@@ -78,6 +80,7 @@ resetApps();
 let failNextList = 0;
 let nextListDelayMs = 0;
 const writes = [];
+const getPaths = [];
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function text(res, status, body) { res.writeHead(status, { 'content-type': 'text/plain' }); res.end(body); }
@@ -86,6 +89,7 @@ const pairingFailures = {};
 let forceGone = '';
 const server = http.createServer(async (req, res) => {
   const p = req.url.split('?')[0];
+  if (req.method === 'GET') getPaths.push(p);
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   // 设计件 3.2 新形状(agent_id/name/full_name/origin/group_code/online)
   if (p === '/api/console/agents') return json(res, 200, { agents: [{ online: true, agent_id: 'ag-solo', name: 'solo', full_name: 'solo.zzc', origin: 'selfhost', group_code: '' }].concat(agents.map((a) => { const name = a.session_name.split('-')[1]; return { online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE }; })) });
@@ -190,6 +194,14 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       resetApps();
       await page.locator('#enrollRefresh').click();
       await page.waitForFunction(() => document.querySelectorAll('#enrollItems .enroll-row').length === 3);
+    });
+
+    await test('first-version defaults: the self-hosted review area is there; the hosted area is not rendered and the page never asks for hosted options', async () => {
+      assert.strictEqual(await page.locator('#enrollReview').count(), 1, 'the review area must be offered by default');
+      assert.strictEqual(await page.locator('#enrollApprove').count(), 1, 'the approve button must exist by default');
+      assert.strictEqual(await page.locator('#hostedCreate').count(), 0, 'the hosted area is second-version: not rendered');
+      assert.strictEqual(await page.locator('#hostedStatus').count(), 0);
+      assert.deepStrictEqual(getPaths.filter((q) => q.startsWith('/api/console/hosted')), [], 'no request to the hosted endpoints (they 404 on the first version)');
     });
 
     await test('group dropdown: no-group first and default, then manageable groups, then new group', async () => {
