@@ -11,6 +11,10 @@ package main
 //	  → TestPGDurabilityOutboundCommitVisibleOnIndependentConn （反向刀 M1／M2）
 //	FPG-3 半二 · 入站（WAL 提交之前不得 ack）
 //	  → TestPGDurabilityInboundCommitVisibleOnIndependentConn  （反向刀 M3）
+//	FPG-3 的【另半边】「未提交 ⇒ 不得成功返回」（R-G2-FANOUT-HARDEN ③ 补的出站失败格；
+//	判据原文＝spec「磁盘满风险登记 · 后果与可恢复性」第一条）
+//	  → TestPGOutboundPersistFailureIsNotAccepted（持久化失败 ⇒ 503，不给 id、不计数、库里无行）
+//	  → TestOutboundCustodyWithoutSpoolIs503    （spool 未开 ⇒ 503，不起 PG）
 //
 // 🔴 为什么这三条用例落在 cmd/feishu-fanout 而不是 internal/fanout —— 两条硬理由，都不是图方便：
 //
@@ -78,6 +82,11 @@ const (
 
 	durSinkAuth = "sink-auth"
 	durSinkBest = "sink-best"
+
+	// failRequestID 是「落盘失败」那一格用的第二个合法 UUIDv5 形（只验形，理由同 durRequestID）。
+	// 🔴 必须与 durRequestID 不同：同一 request_id 会走幂等重放路（200），那就不是在测落盘失败了。
+	failRequestID = "11111111-2222-5333-8444-555555555555"
+	failOutText   = "durability-outbound-persist-failure"
 )
 
 // durRig 一条用例的全部现场：一个内嵌 PG（只起一次）＋两个池（产品池／独立观测池）＋真 Server。
@@ -102,11 +111,18 @@ func newDurRig(t *testing.T) *durRig {
 	dsn := pgtest.DSN(t)
 	ctx := context.Background()
 
-	prod, err := openSpoolPool(ctx, dsn) // ← 装配层同一入口（理由见文件头注 ①）
+	prod, rep, err := openSpoolPool(ctx, dsn) // ← 装配层同一入口（理由见文件头注 ①）
 	if err != nil {
 		t.Fatalf("装配层建产品池失败（openSpoolPool）: %v", err)
 	}
 	t.Cleanup(func() { _ = prod.Close() })
+	// 🔴 装配层那个入口现在【顺带施加 fanout 域账本】（R-G2-LEDGER-DOMAIN）⇒ 本格因此也在钉
+	// 「被测的表是账本建出来的那五张」。少了这半句，耐久判据可以绑在一个手工建表的库上照样绿，
+	// 而产品其实起不来（OpenSpool 只核对不建表）。
+	if strings.Join(rep.Applied, ",") != "0400_fanout_baseline.sql" {
+		t.Fatalf("装配层建池没有施加 fanout 域账本：Applied=%v Skipped=%v（要恰好 0400 一条）",
+			rep.Applied, rep.Skipped)
+	}
 
 	watch, err := repo.OpenPG(ctx, dsn)
 	if err != nil {
@@ -455,5 +471,147 @@ func assertInboundBody(t *testing.T, body []byte) {
 	}
 	if len(got) != len(want)+1 { // +1 = ts
 		t.Fatalf("落盘 payload 有 %d 个字段，要求 %d 个: %s", len(got), len(want)+1, body)
+	}
+}
+
+// metricsJSON 经【导出面】读一次 /metrics。
+//
+// 🔴 走 HTTP 而不是取 s.metrics：那是 fanout 的私有字段，本包（cmd/feishu-fanout）够不着，
+// 也不该够 —— 本文件头注 ① 说的「全部经导出面驱动，同时是黑盒证据」对读数同样成立。
+// 调用方看到的"已接管多少件"就是 /metrics 这个数，故断言它才是断言对外契约。
+func (r *durRig) metricsJSON(t *testing.T) map[string]int64 {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	w := httptest.NewRecorder()
+	r.srv.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("GET /metrics = %d，要求 200: %s", w.Code, w.Body.String())
+	}
+	var m map[string]int64
+	if err := json.Unmarshal(w.Body.Bytes(), &m); err != nil {
+		t.Fatalf("/metrics 响应不是 JSON: %v (%s)", err, w.Body.String())
+	}
+	return m
+}
+
+// ---- 用例四：FPG-3 的另半边 · 落盘失败不得报成功（R-G2-FANOUT-HARDEN ③） ----
+
+// TestPGOutboundPersistFailureIsNotAccepted 钉的是 spec「磁盘满风险登记 · 后果与可恢复性」第一条：
+//
+//	新出站接管：INSERT／COMMIT 失败时【不得】返回 202；该条未进入 spool，需由上游按原请求键重试。
+//
+// 🔴 为什么这一格非补不可：FPG-3 原三格钉的都是「成功返回 ⇒ 已提交」这半边。只有那半边的话，
+// 一个【对所有请求都答 202、其实什么都没写】的实现能全绿 —— 那正是 fail-closed 要防的冒充
+// （与交接件坑#1「不要用日志顺序冒充提交顺序」同一类：拿一个恒真的信号冒充一个有条件的性质）。
+//
+// 造失败的方式＝把【产品池】关掉（r.prod.Close()）：
+//
+//	· 不用 DROP TABLE：那要在测试里对 fanout 的表发 DDL，而本包够不着 fanout 的 ftx()（私有），
+//	  改用双轴上下文去改租户数据同样别扭；且"表没了"不是产品会遇到的失败形态。
+//	· 不另开一条 sql.Open 去改库：边界闸判据一按【处】计数且口径含 _test.go（基线 5，
+//	  specs/gates/boundary-baseline.txt），为一格测试顶高建库处数不划算，也会让棘轮失去意义。
+//	· 关池让 Spool.Accept 的 INSERT 与随后冲突路的 QueryRow/Scan 都拿到"池已关"错误，
+//	  走的正是产品那条分支（custody.go handleOutboundCustody：err ⇒ 记日志 ＋ 503 "spool failure"），
+//	  不是测试专用旁路。
+//
+// ⚠️ 作用域（不夸大）：本格证明的是【持久化返回错误 ⇒ 不 202、不给 id、不计数、库里无行】
+// 这条控制流。它🔴不证明 PG 在磁盘满／只读文件系统／WAL 写失败时都一定返回错误 ——
+// 那属 PG 自身语义，本切片不覆盖，spec 的「当前缺口」一段照旧成立（没有容量预警）。
+func TestPGOutboundPersistFailureIsNotAccepted(t *testing.T) {
+	r := newDurRig(t)
+
+	payload := func(requestID, text string) map[string]any {
+		return map[string]any{
+			"v": 1, "request_id": requestID, "bot_channel": durBot,
+			"to_id": durToID, "to_type": "group", "text": text,
+		}
+	}
+
+	// ① 正例先把夹具证活：关池之前，同一入口／同一 caller／同一 bot 必须 202。
+	//    🔴 少了这一步，下面那个 503 可以来自任何原因（token 不认、bot 未知、schema 不对、
+	//    request_id 不是 v5 形），本格就退化成"某条错误路返回了 503"，与"落盘失败"无关。
+	if w := r.postJSON(t, "/outbound", durCallerToken, payload(durRequestID, durOutText)); w.Code != http.StatusAccepted {
+		t.Fatalf("关池前的正例返回 %d，要求 202（夹具不活 ⇒ 本格的 503 说明不了任何事）: %s", w.Code, w.Body.String())
+	}
+	queuedBefore := r.metricsJSON(t)["outbound_queued"]
+	if queuedBefore != 1 {
+		t.Fatalf("正例之后 outbound_queued=%d，要求 1（计数不从 1 起，下面「不得增」就没有基准）", queuedBefore)
+	}
+
+	// ② 关掉产品池 ⇒ 此后任何持久化都不可能成功。
+	if err := r.prod.Close(); err != nil {
+		t.Fatalf("关产品池失败（本格的前提造不出来）: %v", err)
+	}
+
+	// ③ 换一个【新】request_id 再投：必须 503（fail-closed），且不得回 outbound_id。
+	w := r.postJSON(t, "/outbound", durCallerToken, payload(failRequestID, failOutText))
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("落盘失败却返回 %d，要求 503：202／200 都是把「没接管」报成「已接管」，"+
+			"上游据此认为消息在账、不再重试 ⇒ 消息静默丢失（FPG-3 的另半边）: %s", w.Code, w.Body.String())
+	}
+	if strings.Contains(w.Body.String(), "outbound_id") {
+		t.Fatalf("503 的响应体里出现了 outbound_id —— 调用方会拿它去轮询一件从未入队的事: %s", w.Body.String())
+	}
+
+	// ④ 对外读数不得跟着谎报：outbound_queued 还是 1（只有正例那一件）。
+	if got := r.metricsJSON(t)["outbound_queued"]; got != queuedBefore {
+		t.Fatalf("落盘失败后 outbound_queued=%d，要求仍是 %d —— 未入队却计数＝把失败报成已接管", got, queuedBefore)
+	}
+
+	// ⑤ 库里也确实没有那一件。观测池与产品池同库、另一条会话（newDurRig 已按 pid 实测过），
+	//    关的是产品池 ⇒ 观测池仍活，这一步读得到真值。
+	var n int
+	if err := r.watchRow(t, `SELECT count(*) FROM outbound WHERE caller_id=$1 AND request_id=$2`,
+		durCallerID, failRequestID).Scan(&n); err != nil {
+		t.Fatalf("观测池数失败件的行数失败: %v", err)
+	}
+	if n != 0 {
+		t.Fatalf("落盘「失败」的那件却在库里有 %d 行 —— 那 503 就是误报，上游会白重试一次", n)
+	}
+	r.assertTableRows(t, "outbound", 1) // 只有正例那一行：失败路既没写入、也没把已有行改坏
+}
+
+// TestOutboundCustodyWithoutSpoolIs503 是同一判据的另一种失败形态：spool【从未开起来】
+// （装配层没注入池，或 OpenSpool 核对五表失败 ⇒ fanout.New 不置 s.spool，只记一条 error 日志）。
+//
+// 🔴 与上一格的分工：上一格是"池开着但写不进去"，本格是"根本没有池"。两条分支在 custody.go 里
+// 是两个不同的 if（s.spool == nil ／ Accept 返回 err），🔴 任一被改成放行都不会让另一格红 ——
+// 故各钉各的，不合并（与边界闸「每条判据各判各的，不看和」同理）。
+// 🔴 本格【不起 PG】（不注入 SpoolPool 即可），故对 FPG-4 的 -count=50 预算零成本。
+func TestOutboundCustodyWithoutSpoolIs503(t *testing.T) {
+	srv := fanout.New(fanout.Config{
+		ProdURL: "http://127.0.0.1:1",
+		Logger:  slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Sender:  fakeSender{},
+		Callers: map[string]fanout.CallerConfig{durCallerToken: {Name: durCallerID}},
+		// SpoolPool 故意不注入 ⇒ s.spool == nil
+	})
+	b, err := json.Marshal(map[string]any{
+		"v": 1, "request_id": failRequestID, "bot_channel": durBot,
+		"to_id": durToID, "to_type": "group", "text": failOutText,
+	})
+	if err != nil {
+		t.Fatalf("构造请求体失败: %v", err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/outbound", strings.NewReader(string(b)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+durCallerToken)
+	w := httptest.NewRecorder()
+	srv.ServeHTTP(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("spool 未开却返回 %d，要求 503（fail-closed §B：不得静默降级为立发）: %s", w.Code, w.Body.String())
+	}
+	if strings.Contains(w.Body.String(), "outbound_id") {
+		t.Fatalf("503 的响应体里出现了 outbound_id: %s", w.Body.String())
+	}
+	// 鉴权必须先于 spool 判定：无 token 时是 401 而不是 503（否则"没配池"会掩盖"没带票"，
+	// 运维按 503 去查数据库，查不出真因）。
+	req2 := httptest.NewRequest(http.MethodPost, "/outbound", strings.NewReader(string(b)))
+	req2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	srv.ServeHTTP(w2, req2)
+	if w2.Code != http.StatusUnauthorized {
+		t.Fatalf("未带 token 却返回 %d，要求 401（鉴权须先于 spool 判定）: %s", w2.Code, w2.Body.String())
 	}
 }

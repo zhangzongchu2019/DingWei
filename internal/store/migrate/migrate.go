@@ -23,6 +23,11 @@
 // 那是为「账为空但库里已有业务表」的旧 SQLite 库准备的；PG 侧是绿地＋有基线快照，不存在这个状态。
 // 将来若要把旧平台 SQLite 数据导进 PG，走 G2 的导入件，不由各域写 UPDATE 兜。
 //
+// 🔴 账本是【一本】，库是【多个】：条目按号段分域（domains.go，口径页 §五），
+// 每个装配点只把自己那几个域施加到自己那个库上 —— Hub（core／identity／hosted／view／cross）
+// 与 fanout（fanout 域，独立库）各走各的（裁定 R-G2-LEDGER-DOMAIN，2026-10-02T11:06:25Z）。
+// 于是 Migrate 少了域集合参数就编译不过，而「把整个账本倒进手上这个库」的生产入口不存在。
+//
 // ⚠️ 保证范围（不夸大，与 repo 包同款免责）：只保证【经由本 runner 的路径】。
 // 手工 psql 改库、外部工具建表不在其内。身份域启动时另有一道 CheckSchema（缺表即拒），
 // 那是【库的真实状态】的核对，与本账本互补：账本管「有没有按账迁过」，CheckSchema 管「表现在在不在」。
@@ -192,10 +197,14 @@ func Register(e Entry) {
 	registered = append(registered, e)
 }
 
-// Ledger 返回将要应用的全部条目：内嵌 migrations/*.sql ∪ Register 登记的，按 Name 字典序。
+// Ledger 返回账本里的全部条目：内嵌 migrations/*.sql ∪ Register 登记的，按 Name 字典序。
 //
 // 顺序是【语义】的一部分（一条迁移只能依赖比它早的版本），故这里显式排；
 // MigrateEntries 里还会再排一次——调用方自己拼的切片同样不许依赖给的顺序。
+//
+// 🔴 「全部条目」不等于「都施加到同一个库」：装配点经 Migrate 只施加自己域的那一份
+// （LedgerInDomains／HubDomains／FanoutDomains，见 domains.go）。本函数是读账本的口径，
+// 不是施加口径 —— 用例（双轨形状格）与「先看看账本里有什么」的诊断代码用它。
 func Ledger() ([]Entry, error) {
 	emb, err := loadEmbedded()
 	if err != nil {
@@ -251,25 +260,45 @@ func loadEmbedded() ([]Entry, error) {
 	return embedEntries, embedErr
 }
 
-// Migrate 把账本（Ledger()）应用到 pool，时钟用 clock.Real。
+// Migrate 把账本里【属于给定域】的条目应用到 pool，时钟用 clock.Real。
 //
-// 这是各域与装配点【唯一】要调的入口：Hub 与 bootstrap-admin 在 repo.OpenPG 之后、
-// 建存储之前调一次（cmd/workpulse/newplat.go 的 openNewPlatformStore）。
+// 这是各装配点【唯一】要调的入口，且它【必须】点名域：
+//
+//	Hub 与 bootstrap-admin（cmd/workpulse/newplat.go 的 openNewPlatformStore）→ HubDomains()
+//	fanout 服务（cmd/feishu-fanout 的 openSpoolPool，自己那个独立库）        → FanoutDomains()
+//
+// 🔴 域集合不是可选参数（少写就编译不过），这是有意的：本包曾经只有「施加整个账本」一个口径，
+// 于是 fanout 有了自己的条目 0400 之后，Hub 部署会把 fanout 五表建进生产 Hub 库
+// （组长裁定 R-G2-LEDGER-DOMAIN，RULING-REGISTER 2026-10-02T11:06:25Z；未部署，拦在合流之前）。
+// 「全账本」的生产入口因此【不存在】；要施加一整批明确条目（用例、导库工具）走 MigrateEntries。
+//
+// 🔴 附带一道隔离核对：库里若已记着【别的域】的账，拒绝启动且不施加任何条目
+// （DSN 指错库时它在第一条 DDL 之前就出声，而不是建完表再让人反推）。
 // DDL 无租户语义 ⇒ 内部用 repo.SystemCtx()（评审面，与 internal/datad/pgstore.go:123 同型）。
-func Migrate(ctx context.Context, pool *repo.Pool) (Report, error) {
-	entries, err := Ledger()
+func Migrate(ctx context.Context, pool *repo.Pool, domains []Domain) (Report, error) {
+	entries, err := LedgerInDomains(domains)
 	if err != nil {
 		return Report{}, err
 	}
-	return MigrateEntries(ctx, pool, entries, clock.Real{})
+	return migrateEntries(ctx, pool, entries, clock.Real{}, domains)
 }
 
-// MigrateEntries 应用给定条目（不读全局账本）。时钟可注入 ⇒ applied_at 可被用例断言。
+// MigrateEntries 应用给定条目（不读全局账本，也不做按域隔离核对）。时钟可注入 ⇒ applied_at 可被用例断言。
 //
 // clk 为 nil 时用 clock.Real（不给「零时刻」留后门：见下面对 now.IsZero() 的拒绝）。
 // 🔴 出错时返回的 Report 反映【出错之前】已做的事，不是全空——那正是排障要的信息
 // （哪条成了、卡在哪条），丢掉它等于让人去库里反推。
+// 🔵 装配点请用 Migrate（它按域取子集并做隔离核对）；本函数留给「条目集合自己说了算」的调用方：
+// 用例（双轨形状格按全账本比对）、以及将来可能的导库工具。
 func MigrateEntries(ctx context.Context, pool *repo.Pool, entries []Entry, clk clock.Clock) (Report, error) {
+	return migrateEntries(ctx, pool, entries, clk, nil)
+}
+
+// migrateEntries 是 Migrate 与 MigrateEntries 的共同实现。
+//
+// domains 为 nil ⇒ 不做隔离核对（调用方自己点名了条目，本包不替它猜「这些条目属于哪个库」）；
+// 非 nil ⇒ 施加之前先核「库里有没有别的域的账」。
+func migrateEntries(ctx context.Context, pool *repo.Pool, entries []Entry, clk clock.Clock, domains []Domain) (Report, error) {
 	if pool == nil {
 		return Report{}, errors.New("migrate: 缺连接池（建库只许在 internal/repo，故这里不接受库句柄）")
 	}
@@ -310,6 +339,18 @@ func MigrateEntries(ctx context.Context, pool *repo.Pool, entries []Entry, clk c
 	applied, err := appliedLedger(ctx, pool, t)
 	if err != nil {
 		return Report{}, err
+	}
+
+	// 🔴 隔离核对在【施加任何条目之前】：账上已有别的域的账 ⇒ 这个库不是本装配点的库，
+	// 拒了就走，一条 DDL 都不发（此时 schema_migrations 若已存在，本次调用不会往里多写一行）。
+	if domains != nil {
+		foreign, err := foreignEntries(applied, domains)
+		if err != nil {
+			return Report{}, err
+		}
+		if len(foreign) > 0 {
+			return Report{}, isolationErr(foreign, domains)
+		}
 	}
 
 	var rep Report

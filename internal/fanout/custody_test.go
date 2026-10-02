@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
-	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
 const testUUID = "9b2f8a4e-1c3d-5e6f-8a9b-0c1d2e3f4a5b" // 合法 v5 形(第13位=5,第17位=8)
@@ -38,7 +37,7 @@ func (f *failSender) Send(ctx context.Context, out feishu.OutMessage) (string, e
 
 func custodyServer(t *testing.T, sender Sender, bots map[string]Sender, maxAttempts int) (*Server, string) {
 	t.Helper()
-	pool := pgtest.Pool(t)
+	pool := spoolTestPool(t)
 	s := New(Config{
 		ProdURL: "http://127.0.0.1:1", TestURL: "",
 		Sender: sender, Bots: bots, SpoolPool: pool, MaxAttempts: maxAttempts,
@@ -207,7 +206,7 @@ func TestCustodyDLQ(t *testing.T) { // G10 出站侧:终败入 DLQ+计数
 }
 
 func TestCustodyRestartRecovery(t *testing.T) { // G13:代理已WAL+响应丢→重启→同id恰一发
-	pool := pgtest.Pool(t)
+	pool := spoolTestPool(t)
 	rec1 := &sendRec{}
 	s1 := New(Config{ProdURL: "http://127.0.0.1:1", Sender: rec1, SpoolPool: pool,
 		Callers: map[string]CallerConfig{"tok-prod": {Name: "prod-hub"}}})

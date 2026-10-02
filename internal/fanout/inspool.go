@@ -24,33 +24,6 @@ type InboundSinkJob struct {
 	Attempts int
 }
 
-func (s *Spool) initInbound() error {
-	// 建表是 DDL,本就无租户语义 -> 显式 SystemCtx。
-	_, err := s.db.Exec(context.Background(), repo.SystemCtx(), `CREATE TABLE IF NOT EXISTS inbound_msg(
-  msg_key    TEXT PRIMARY KEY,
-  body       BYTEA NOT NULL,
-  status     TEXT NOT NULL DEFAULT 'pending',
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL);
-CREATE TABLE IF NOT EXISTS inbound_sink(
-  msg_key    TEXT NOT NULL,
-  sink_name  TEXT NOT NULL,
-  role       TEXT NOT NULL,
-  status     TEXT NOT NULL DEFAULT 'queued',
-  attempts   INTEGER NOT NULL DEFAULT 0,
-  next_retry INTEGER NOT NULL DEFAULT 0,
-  last_error TEXT NOT NULL DEFAULT '',
-  updated_at INTEGER NOT NULL,
-  PRIMARY KEY(msg_key, sink_name));
-CREATE TABLE IF NOT EXISTS waive_audit(
-  msg_key   TEXT NOT NULL,
-  sink_name TEXT NOT NULL,
-  actor     TEXT NOT NULL,
-  reason    TEXT NOT NULL,
-  at        INTEGER NOT NULL)`)
-	return err
-}
-
 // AcceptInbound 接管落盘:主记录+各 sink 行单事务提交(COMMIT=fsync)。
 // 幂等:同 msg_key 二投=已在账,返回 (false,nil) 不重复建行(at-least-once 吸收)。
 func (s *Spool) AcceptInbound(ctx context.Context, msgKey string, body []byte, sinks []SinkTarget) (fresh bool, err error) {
