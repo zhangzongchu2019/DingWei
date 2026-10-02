@@ -20,7 +20,7 @@
  *   NODE_PATH=<含 playwright 的 node_modules> P1_PYTHON=<含 websockets 的 python3> PW_CHANNEL=chrome \
  *     node view-service/console-spec-task-p1-real-regression.js [--mutate=<名>]
  *   无系统 Chrome 时用 PW_CHANNEL=chromium（playwright 自带 Chromium）。
- *   环境：P1_NO_CHAIN=1 某步红后不跳过其后的步骤（看一把变异到底红了哪几格；缺省跳过）、P1_PYTHON（缺省 python3）、P1_KEEP=1 保留临时目录与日志、P1_BIN_DIR 复用已编二进制（跳过 go build，仅限无变异）。
+ *   环境：P1_FAIL_ON_SKIP=1 把 SKIP 记成红（node:sqlite 不可用时污染数据格会 SKIP，等于悄悄丢一把刀；当门槛用请开它）、P1_NO_CHAIN=1 某步红后不跳过其后的步骤（看一把变异到底红了哪几格；缺省跳过）、P1_PYTHON（缺省 python3）、P1_KEEP=1 保留临时目录与日志、P1_BIN_DIR 复用已编二进制（跳过 go build，仅限无变异）。
  *   同机一次只跑一个本脚本／一个 pgtest 消费方。
  *
  * 变异（--mutate=<名>，在【临时源码副本】里改 Go 源并重编，不动工作树）：
@@ -43,7 +43,8 @@
  * 经口令登录与批准入网；他看不到别人的 spec，他的 Agent 凭自己合法令牌也拉不到别人的任务）在本脚本里都有格。
  * 「令牌属主＝Agent 属主」那条比对（newplat_spec_agent.go）是纵深防御：令牌只能由属主给自己的 Agent 签发，合法流程造不出「属主不一致」
  * 的令牌，所以本脚本用【污染数据】的办法单独钉它——直接向 Hub 的 SQLite 投影表塞一枚「属主＝adminone、绑定 bob 的 Agent」的令牌（含必需的授权行），
- * 其余比对全放行，唯一挡它的就是这条（需要 node:sqlite，即 node ≥ 22.5；没有则该格 SKIP 并写明）。撤掉它 ⇒ owner-check-off 变红。
+ * 其余比对全放行，唯一挡它的就是这条（需要 node:sqlite，即 node ≥ 22.5；没有则该格 SKIP 并写明）。
+ * 该格常规跑只断言「被拒」，它不空洞的证据来自变异 owner-check-off：撤掉比对后该格实得 200 且返回体带开工信息。
  *
  * 已知边界（如实）：Hub 把 console-tasks 令牌交到 Agent 手里的链路 095 本就没有（方案第六节答复①），本脚本由「人」在页面会话里
  * 签发后经 Agent 进程的命令口交给它，只验 Hub 侧签发与校验；「开工」在页面上没有按钮，用同一浏览器会话的 fetch 调接口。
@@ -650,7 +651,10 @@ async function test(name, fn, { standalone = false } = {}) {
       // 合法流程造不出「属主不一致」的令牌（令牌只能由属主给自己的 Agent 签发），所以直接向 Hub 的 SQLite 投影表塞一条：
       // adminone 的会话＋adminone 对 bob 的 Agent 的 interact 授权＋一枚绑定 bob 的 Agent、属主写成 adminone 的 console-tasks 令牌。
       // 其余比对全放行，唯一挡它的就是「令牌属主＝Agent 属主」那一条（Agent 侧 newplat_spec_agent.go）。
-      if (!DatabaseSync) { skipped += 1; log('SKIP 令牌属主比对（node:sqlite 不可用，需 node ≥ 22.5）'); return; }
+      if (!DatabaseSync) {
+        if (process.env.P1_FAIL_ON_SKIP) throw new Error('node:sqlite 不可用（需 node ≥ 22.5），P1_FAIL_ON_SKIP=1 下记红');
+        skipped += 1; log('SKIP 令牌属主比对（node:sqlite 不可用，需 node ≥ 22.5）'); return;
+      }
       const al = await jsonOf(await bobApi.get('/api/console/agents'));
       const bobAgent = (al.agents || []).find((a) => a.session === 'bob');
       assert.ok(bobAgent && bobAgent.agent_id, 'bobtwo 应见自己的 Agent');
