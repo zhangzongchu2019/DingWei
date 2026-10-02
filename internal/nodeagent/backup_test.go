@@ -6,6 +6,8 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -96,9 +98,23 @@ func TestExportSeatTarContent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h(context.Background(), json.RawMessage(
-		`{"seat_id":"ag_bk2","upload_url":"`+srv.URL+`/api/node/backup/bk_2"}`)); err != nil {
+	out, err := h(context.Background(), json.RawMessage(
+		`{"seat_id":"ag_bk2","upload_url":"`+srv.URL+`/api/node/backup/bk_2"}`))
+	if err != nil {
 		t.Fatal(err)
+	}
+	// 控制面补报（丙案）：结果载荷必须带 sha256，且等于回传流的真值
+	var payload struct {
+		SHA256 string `json:"sha256"`
+	}
+	if err := json.Unmarshal(out, &payload); err != nil || payload.SHA256 == "" {
+		t.Fatalf("结果载荷必须补报 sha256: %s %v", out, err)
+	}
+	{
+		sum := sha256.Sum256(body)
+		if payload.SHA256 != hex.EncodeToString(sum[:]) {
+			t.Fatalf("补报 sha256 应等于回传流真值: %s", payload.SHA256)
+		}
 	}
 	gz, err := gzip.NewReader(strings.NewReader(string(body)))
 	if err != nil {

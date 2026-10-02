@@ -20,7 +20,10 @@ import (
 )
 
 // BackupSHA256Trailer 回传流的 sha256（hex）随 HTTP 请求 trailer 送出：边打边算，流结束才知道，
-// 故不能是请求头（放头里就得先把整卷打包落在节点盘上再算，违背「不落节点盘」）。Hub 落盘时同步算、不符即拒。
+// 故不能是请求头（放头里就得先把整卷打包落在节点盘上再算，违背「不落节点盘」）。
+// 🔴 R-G4-BACKUP-CHECKSUM-CTRL（106 实测 nginx 1.24.0 丢弃请求 trailer ⇒ 丙案）：
+// trailer 只是第三方一致性信号；权威通道是 export_seat 结果载荷里的 sha256（控制面补报），
+// Hub 落盘自算、两值相等才认。trailer 该发还发（到达即多一道旁证），但不再是唯一依据。
 const BackupSHA256Trailer = "X-Backup-Sha256"
 
 // backupExcluded 席位根目录下不得进备份的凭据文件（复验 REVIEW-G4-T53 缺陷一；台账 lead-g4-t53-review 🔴1）：
@@ -112,13 +115,16 @@ func (d *exportSeatDeps) handle(ctx context.Context, params json.RawMessage) (js
 
 	// 边打边算 sha256：读侧每读一段就喂哈希；读到 EOF（流结束）时把结果写进请求 trailer。
 	h := sha256.New()
+	sumCh := make(chan string, 1) // 补报值：trailer（可丢）与结果载荷（控制面）同出一路
 	req, err := http.NewRequestWithContext(ctx, "POST", p.UploadURL, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Trailer = http.Header{BackupSHA256Trailer: nil}
 	req.Body = io.NopCloser(&trailerHashReader{r: io.TeeReader(pr, h), onEOF: func() {
-		req.Trailer.Set(BackupSHA256Trailer, hex.EncodeToString(h.Sum(nil)))
+		sum := hex.EncodeToString(h.Sum(nil))
+		req.Trailer.Set(BackupSHA256Trailer, sum)
+		sumCh <- sum
 	}})
 	req.ContentLength = -1
 	req.Header.Set("Authorization", "Bearer "+secret)
@@ -135,7 +141,9 @@ func (d *exportSeatDeps) handle(ctx context.Context, params json.RawMessage) (js
 	if werr := <-tarDone; werr != nil {
 		return nil, fmt.Errorf("tar 失败: %v", werr)
 	}
-	return json.Marshal(map[string]string{"seat_id": p.SeatID, "state": "exported"})
+	// 🔴 控制面补报（丙案）：sha256 随结果载荷走 WSS 回 Hub——trailer 会被反代丢弃，这条才是权威通道。
+	sum := <-sumCh
+	return json.Marshal(map[string]string{"seat_id": p.SeatID, "state": "exported", "sha256": sum})
 }
 
 func defaultTarCmd(ctx context.Context, args ...string) *exec.Cmd {
