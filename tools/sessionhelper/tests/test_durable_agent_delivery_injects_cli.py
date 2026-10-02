@@ -6,8 +6,9 @@
 
 钉住两件事：
 1 cli 模式下，来自别的 Agent 的可靠投递正文会注入 CLI（假 CLI 的记录里出现原文），并回 injected ACK；
-2 现状：这类投递的结果不回信给发送方（routing.classify_reply_decision 把 type=delivery 外壳判 control）——
-  只记现状，改不改由组长定；改了这一格要随之改。
+2 现状：这类投递的结果不回信给发送方——只记现状，改不改由组长定；改了这一格要随之改。
+终态：假 CLI 不写 codex 会话文件（rollout-*.jsonl），helper 加固（newplat/main 0c884154，e8713133 起）后
+「transcript 未出现对应 user 轮」以 failed 结束（cli_injection_not_received、不可重试），不再回 processed。
 需要 websockets>=15 与 pexpect（helper 运行依赖）；缺则跳过。
 """
 import asyncio
@@ -130,11 +131,13 @@ class DurableAgentDeliveryInjectsCLI(unittest.TestCase):
         self._wait(lambda: os.path.exists(self.cli_log) and body in open(self.cli_log).read(), 20,
                    "fake CLI received the injected body")
         self._wait(lambda: "injected" in self._acks("dw-dlv_t1"), 10, "injected ACK")
-        self._wait(lambda: "processed" in self._acks("dw-dlv_t1"), 60, "processed ACK")
+        self._wait(lambda: "failed" in self._acks("dw-dlv_t1"), 60, "failed ACK (no session file)")
+        final = [f["meta"] for f in self.frames if f.get("meta", {}).get("type") == "delivery_ack"
+                 and f["meta"].get("delivery_id") == "dw-dlv_t1" and f["meta"].get("state") == "failed"][0]
+        self.assertEqual((final.get("reason"), final.get("retryable")), ("cli_injection_not_received", False))
+        self.assertNotIn("processed", self._acks("dw-dlv_t1"))
         replies = [f for f in self.frames if f.get("to") == "sender" + _HASH + "u_owner"]
         self.assertEqual(replies, [], "durable delivery result is currently not replied to the sending agent")
-        with open(os.path.join(self.tmp, "helper.log")) as f:
-            self.assertIn("suppress reply from=sender" + _HASH + "u_owner: control", f.read())
 
 
 if __name__ == "__main__":
