@@ -20,7 +20,7 @@ import (
 // 判据是先后而不是时长：持锁实现下写只能在 Ping 返回之后完成，所以「Ping 先返回」即红。
 func TestKeepalivePingDoesNotBlockSessionWrites(t *testing.T) {
 	hub, _, _ := newTestHub(t)
-	useTestSessionKeepalive(t, 20*time.Millisecond, 3*time.Second)
+	useTestSessionKeepalive(t, hub, 20*time.Millisecond, 3*time.Second)
 	pingStarted := make(chan struct{})
 	pingReturned := make(chan struct{})
 	var started, returned bool
