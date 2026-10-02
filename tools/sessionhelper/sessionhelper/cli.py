@@ -49,6 +49,11 @@ class CLIInjectionNotReceived(CLIDeliveryFailed):
     retryable = False
 
 
+def _squash(text: str) -> str:
+    """去空白、转小写再比：全屏 TUI 常用光标定位代替空格（抓屏里「Provide your own API key」读出来是 ProvideyourownAPIkey）。"""
+    return re.sub(r"\s+", "", text).lower()
+
+
 def redact_tail(lines) -> str:
     out = []
     for ln in lines:
@@ -68,6 +73,8 @@ class CLIProfile:
     output_source: str = "pty"
     startup_grace: float = 1.5
     launch: str = "pty"
+    # 拦路界面标记：输出里一出现即撤销就绪（登录选择、包缺失之类，界面上可能同时带着提示符）。
+    block_patterns: tuple[str, ...] = ()
 
 
 CLI_PROFILES: dict[str, CLIProfile] = {
@@ -75,7 +82,11 @@ CLI_PROFILES: dict[str, CLIProfile] = {
     # codex 只认输入提示符，不认「codex」「Welcome」这类横幅字样（组长 R-B12-CODEX-PKG 修订第 4 条：B12 里横幅
     # 「>_ OpenAI Codex (v0.159.2)」把一个随即退出的进程判成了就绪）。横幅本身以「>_」开头，故「>」也不能当标记。
     # 0.159.2 的实际提示符以 prodops 抓屏为准，不符时用 SH_CLI_READY_PATTERNS 覆盖。
-    "codex": CLIProfile(["codex"], ("›", "❯"), "transcript"),
+    # 拦路界面（组长 R-B12-CODEX-PKG 第 4 条补，样本＝prodops 00e5020e 抓屏）：0.159.2 的登录选择菜单下方同时画着
+    # 「› Ask Codex to do anything?」输入框，只看提示符会误判就绪。
+    "codex": CLIProfile(["codex"], ("›", "❯"), "transcript", block_patterns=(
+        "Sign in with ChatGPT", "Provide your own API key", "Sign in with Device Code",
+        "Press enter to continue", "no complete local package")),
     "aider": CLIProfile(["aider"], ("aider", ">", "Tokens")),
     "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db"),
     "cline": CLIProfile(["cline"], ("cline", ">", "Welcome")),
@@ -107,6 +118,7 @@ class CLIAdapter:
         self.cli_name = cfg.cli_name
         self.profile = CLI_PROFILES.get(cfg.cli_name, CLI_PROFILES["claude"])
         self.ready_patterns = cfg.cli_ready_patterns or self.profile.ready_patterns
+        self.blocked_by = ""  # 当前停在的拦路界面（未停则空）
         self.command = cfg.cli_cmd or self.profile.command
         self.cwd = cfg.cli_cwd or os.getcwd()
         self.launch_mode = cfg.cli_launch or self.profile.launch
@@ -193,6 +205,7 @@ class CLIAdapter:
         if not self.stopping.is_set():
             self.closed.clear()
         self.output_tail.clear()
+        self.blocked_by = ""
         self.child = pexpect.spawn(
             self.command[0],
             self.command[1:],
@@ -362,6 +375,8 @@ class CLIAdapter:
 
     def not_ready_message(self) -> str:
         reason = self.last_launch_error or (f"CLI 已退出：{self.last_exit}" if self.last_exit else "启动超时")
+        if self.blocked_by:
+            reason = f"CLI 停在拦路界面（{self.blocked_by}）；{reason}"
         return f"（CLI未就绪：{reason}；sessionHelper仍在线，稍后可重试）"
 
     @staticmethod
@@ -669,8 +684,17 @@ class CLIAdapter:
                     self.output_tail.append(ln.strip())
             self.last_output_at = time.time()
             buf += "\n" + cleaned
-            # 出现输入提示符即置就绪；「子进程还活着」由 start_pty（等静默期间退出即报）与退出时 _note_exit（清就绪）保证
-            if any(pat.lower() in cleaned.lower() for pat in self.ready_patterns):
+            # 拦路界面优先：输出里出现登录选择等标记即撤销就绪并留痕；本子进程此后不再判就绪（全屏 TUI 局部重绘
+            # 可能单独送来一块只含「›」的输出，而菜单仍在屏上；helper 也无法自行越过登录）。新子进程（start_pty）才重置。
+            # 否则出现输入提示符才置就绪。「子进程还活着」由 start_pty（等静默期间退出即报）与 _note_exit（清就绪）保证。
+            squashed = _squash(cleaned)
+            blocker = next((pat for pat in self.profile.block_patterns if _squash(pat) in squashed), "")
+            if blocker:
+                self.ready.clear()
+                if not self.blocked_by:
+                    self.blocked_by = blocker
+                    print(f"[cli] blocked at screen: {blocker!r}", flush=True)
+            elif not self.blocked_by and any(_squash(pat) in squashed for pat in self.ready_patterns):
                 self.ready.set()
                 self.respawn_count = 0
             if self.profile.output_source == "pty":

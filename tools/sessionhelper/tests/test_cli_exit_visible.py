@@ -22,7 +22,7 @@ except ImportError:  # pragma: no cover
 
 if pexpect is not None:
     from sessionhelper.app import delivery_failure_ack_fields
-    from sessionhelper.cli import CLIAdapter, CLIInjectionNotReceived, CLIUnavailable
+    from sessionhelper.cli import CLIAdapter, CLIInjectionNotReceived, CLIUnavailable, _squash
     from sessionhelper.config import load_config
 
 BASE_ENV = {"SH_SESSION_NAME": "seat", "SH_KEY_ID": "u_owner", "SH_SECRET": "s"}
@@ -224,6 +224,75 @@ class InjectionNotReceivedFails(unittest.TestCase):
 
     def test_generic_failure_keeps_old_ack_fields(self):
         self.assertEqual(delivery_failure_ack_fields(RuntimeError("x")), ("cli_injection_failed", True))
+
+
+_FIXTURE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures", "codex-0.159.2-login-menu.pty.txt")
+_REPLAY_SCREEN = """#!/usr/bin/env python3
+import sys, time
+data = open(%r, "rb").read()
+if %r:
+    data = data.split(b"Welcome", 1)[0]  # 对照：只留横幅与「› Ask Codex to do anything?」输入框，去掉登录菜单
+sys.stdout.buffer.write(data); sys.stdout.flush()
+time.sleep(30)
+"""
+
+
+@unittest.skipUnless(pexpect is not None, "needs pexpect")
+class CodexLoginMenuNotReady(unittest.TestCase):
+    """组长 R-B12-CODEX-PKG 第 4 条补：0.159.2 登录选择菜单（屏上同时画着「› Ask Codex to do anything?」）不得判就绪。
+    假 CLI 原样回放 prodops 00e5020e 的 60 秒抓屏（evidence/codex-nodaemon-probe，已脱敏），进程一直活着。"""
+
+    def _adapter(self, menu_removed: bool):
+        d = tempfile.mkdtemp(prefix="sh-cli-menu-")
+        path = os.path.join(d, "fakecli.py")
+        with open(path, "w") as f:
+            f.write(_REPLAY_SCREEN % (_FIXTURE, menu_removed))
+        os.chmod(path, 0o755)
+        a = CLIAdapter(load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_CMD=path, SH_CLI_CWD=d,
+                                        SH_CLI_READY_TIMEOUT="4", SH_CLI_LAUNCH_RETRIES="1")))
+        self.addCleanup(a.stop)
+        return a
+
+    def test_login_menu_is_not_ready(self):
+        a = self._adapter(menu_removed=False)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            a.start()
+            self.assertFalse(a.ready.is_set(), "login selection menu must not count as ready")
+            with self.assertRaises(CLIUnavailable) as cm:
+                a.handle_delivery({"body": "task"}, on_injected=lambda: None)
+        self.assertIn("[cli] blocked at screen:", out.getvalue())
+        self.assertIn("拦路界面", str(cm.exception))
+
+    def test_partial_redraw_with_prompt_does_not_unblock(self):
+        # 菜单之后再单独送来一块只含「›」的局部重绘：本子进程仍不得判就绪
+        d = tempfile.mkdtemp(prefix="sh-cli-menu2-")
+        path = os.path.join(d, "fakecli.py")
+        with open(path, "w") as f:
+            f.write("""#!/usr/bin/env python3
+import sys, time
+sys.stdout.write("Welcome to Codex\\n1. Sign in with ChatGPT\\nPress enter to continue\\n"); sys.stdout.flush()
+time.sleep(2.5)
+sys.stdout.write("\\u203a "); sys.stdout.flush()
+time.sleep(30)
+""")
+        os.chmod(path, 0o755)
+        a = CLIAdapter(load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_CMD=path, SH_CLI_CWD=d,
+                                        SH_CLI_READY_TIMEOUT="6", SH_CLI_LAUNCH_RETRIES="1")))
+        self.addCleanup(a.stop)
+        with contextlib.redirect_stdout(io.StringIO()):
+            a.start()
+        self.assertFalse(a.ready.is_set())
+
+    def test_block_markers_match_without_spaces(self):
+        # 全屏 TUI 用光标定位代替空格：抓屏里读出来是「3.ProvideyourownAPIkey」
+        self.assertIn(_squash("Provide your own API key"), _squash("3.ProvideyourownAPIkey"))
+
+    def test_same_screen_without_menu_is_ready(self):
+        a = self._adapter(menu_removed=True)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(a.start())
+        self.assertTrue(a.ready.is_set(), "banner + '› Ask Codex…' composer alone is the input prompt")
 
 
 if __name__ == "__main__":
