@@ -796,22 +796,58 @@ func TestRegisterDockerHandlersRejectsBadAllowlist(t *testing.T) {
 // （两个动作缺一不可——a 管入网 HTTP、b 管 WS；helper WS 只认 SH_PROXY）。
 // 反向：去掉 SH_PROXY 注入 ⇒ 红；恢复 NO_PROXY 追加 ⇒ 红。
 func TestSeatEnvHubViaProxyOn(t *testing.T) {
+	for _, hubWSBase := range []string{
+		"wss://dw.cmjrt.com:55055",  // 域名
+		"wss://58.251.94.69:55055",  // IPv4
+		"wss://[2001:db8::1]:55055", // IPv6（hubHost 须剥方括号）
+	} {
+		t.Run(hubWSBase, func(t *testing.T) {
+			f := newFakeDocker(t)
+			d := f.ops(t.TempDir())
+			d.seatProxy = "http://172.30.68.1:11080"
+			d.hubWSBase = hubWSBase
+			d.seatHubViaProxy = true
+			env := d.seatEnv("api_key", "codex")
+			joined := "\n" + strings.Join(env, "\n") + "\n"
+			for _, want := range []string{
+				"\nSH_PROXY=http://172.30.68.1:11080\n",
+				"\nHTTP_PROXY=http://172.30.68.1:11080\n",
+				"\nHTTPS_PROXY=http://172.30.68.1:11080\n",
+				"\nNO_PROXY=localhost,127.0.0.1\n", // 精确：恰这两个，不含 Hub
+			} {
+				if !strings.Contains(joined, want) {
+					t.Fatalf("开 ⇒ 缺精确项 %q: %v", want, env)
+				}
+			}
+		})
+	}
+}
+
+// 复验预审第三层：走真 create，Docker create spec 的 Env 必须真含开态结果（不只内部函数）。
+func TestSeatEnvHubViaProxyInCreateSpec(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
 	d.seatProxy = "http://172.30.68.1:11080"
 	d.hubWSBase = "wss://dw.cmjrt.com:55055"
 	d.seatHubViaProxy = true
-	env := d.seatEnv("api_key", "codex")
-	joined := "\n" + strings.Join(env, "\n") + "\n"
-	if !strings.Contains(joined, "\nSH_PROXY=http://172.30.68.1:11080\n") {
-		t.Fatalf("开 ⇒ 必须注 SH_PROXY＝seatProxy: %v", env)
+	raw := `{"seat_id":"ag_vp","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`
+	if _, err := d.create(context.Background(), json.RawMessage(raw)); err != nil {
+		t.Fatalf("create: %v", err)
 	}
-	for _, e := range env {
-		if strings.HasPrefix(e, "NO_PROXY=") {
-			if strings.Contains(e, "dw.cmjrt.com") {
-				t.Fatalf("开 ⇒ NO_PROXY 不得含 Hub 主机: %q", e)
-			}
-		}
+	if len(f.specs) != 1 {
+		t.Fatalf("应有一次 create: %d", len(f.specs))
+	}
+	envs, _ := f.specs[0]["Env"].([]any)
+	joined := "\n"
+	for _, e := range envs {
+		v, _ := e.(string)
+		joined += v + "\n"
+	}
+	if !strings.Contains(joined, "\nSH_PROXY=http://172.30.68.1:11080\n") {
+		t.Fatalf("create spec 的 Env 必须含 SH_PROXY: %v", envs)
+	}
+	if !strings.Contains(joined, "\nNO_PROXY=localhost,127.0.0.1\n") {
+		t.Fatalf("create spec 的 NO_PROXY 必须恰为 localhost,127.0.0.1: %v", envs)
 	}
 }
 
