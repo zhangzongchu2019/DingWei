@@ -330,7 +330,8 @@ func TestNewPlatformConsolePlatform(t *testing.T) {
 		b, _ := io.ReadAll(res.Body)
 		return res.StatusCode, strings.TrimSpace(string(b))
 	}
-	if st, body := call("GET", "/api/console/platform", "tok-mgr"); st != 200 || !strings.Contains(body, `"role":"management"`) || !strings.Contains(body, `"id":"platform-admin"`) {
+	if st, body := call("GET", "/api/console/platform", "tok-mgr"); st != 200 || !strings.Contains(body, `"role":"management"`) || !strings.Contains(body, `"id":"platform-admin"`) ||
+		strings.Contains(body, `"id":"specs"`) || strings.Contains(body, `"id":"task-board"`) { // 第一版不含 specs 与 task-board，管理员也不下发入口
 		t.Errorf("manager platform: %d %s", st, body)
 	}
 	st, body := call("GET", "/api/console/platform", "tok-mem")
