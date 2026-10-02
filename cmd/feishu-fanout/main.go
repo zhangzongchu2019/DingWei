@@ -76,7 +76,7 @@ func run() error {
 	// v2.3(§E/§F):声明式配置文件+PG spool+管理面。
 	cfg.ConfigPath = os.Getenv("FANOUT_CONFIG_FILE") // fanout.yaml,文件=唯一真源
 	if dsn := os.Getenv("FANOUT_PG_DSN"); dsn != "" {
-		pool, err := repo.OpenPG(context.Background(), dsn, repo.MaxOpenConns(1))
+		pool, err := openSpoolPool(context.Background(), dsn)
 		if err != nil {
 			return fmt.Errorf("FANOUT_PG_DSN: %w", err)
 		}
@@ -128,4 +128,19 @@ func run() error {
 	shutCtx, shutCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutCancel()
 	return httpSrv.Shutdown(shutCtx)
+}
+
+// openSpoolPool 建 fanout spool 的产品池（唯一建池处；DSN 仍只在装配层读取，见 FPG-1）。
+//
+// 🔴 抽成具名函数不是为了好看，是为了让耐久判据绑在【产品真的会建出来的那个会话】上：
+//
+//	FPG-3 半一要求「真实测试连接的 synchronous_commit 必须为 on」。若测试自己另调一次
+//	OpenPG，它证明的就是夹具的会话参数，与装配层无关 —— 交接件坑#3「只检查 DSN 或工具
+//	默认值不足以证明调用连接未漂移」说的正是这类冒充。共用本函数后，被测会话与产品会话
+//	由同一处代码建，参数漂移无处可藏（本目录 durability_test.go 直接调它）。
+//
+// MaxOpenConns(1)：沿用 spool 收编前的既有并发语义（单连接串行，杜绝游标互等），
+// 由 repo.OpenPG 的 Option 表达，不在此处另设开关。
+func openSpoolPool(ctx context.Context, dsn string) (*repo.Pool, error) {
+	return repo.OpenPG(ctx, dsn, repo.MaxOpenConns(1))
 }
