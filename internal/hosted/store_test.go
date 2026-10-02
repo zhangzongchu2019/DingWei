@@ -63,7 +63,8 @@ func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 	}
 	countG4 := func() int {
 		var n int
-		row, err := pool.QueryRow(ctx, htx(),
+		// 走租户化入口 s.qrow（不新增 htx() 直调点——边界闸按效果计债，R-BOUNDARY-GATE-REGRESS 还债）
+		row, err := s.qrow(ctx,
 			"SELECT count(*) FROM information_schema.tables WHERE table_name LIKE 'g4\\_%'")
 		if err != nil {
 			t.Fatalf("数 g4_ 表: %v", err)
