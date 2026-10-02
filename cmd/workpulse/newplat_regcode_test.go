@@ -21,7 +21,7 @@ func TestNewPlatformRegistrationCodeKeyWired(t *testing.T) {
 		t.Fatalf("config: on=%v err=%v codeKey=%q", on, err, cfg.codeKey)
 	}
 	hub := newplatHub(t)
-	if err := wireNewPlatform(context.Background(), http.NewServeMux(), hub, cfg, identity.NewMemStore()); err != nil {
+	if err := wireNewPlatform(context.Background(), http.NewServeMux(), hub, cfg, identity.NewMemStore(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if hub.Onboarding == nil || hub.Onboarding.CodeKey != "k-wired" {

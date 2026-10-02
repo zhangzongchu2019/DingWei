@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -65,13 +66,14 @@ func newPlatformConfigFromEnv() (newPlatformConfig, bool, error) {
 
 // openNewPlatformStore Hub 与初始化脚本共用：连 PG（只经 internal/repo）、按迁移账本建表、再核对表都在。
 // 不再有内存实现的退路 —— 初始化脚本与 Hub 是两个进程，只有落库，脚本建的管理用户 Hub 才看得见。
-func openNewPlatformStore(ctx context.Context, dsn string) (identity.Store, func(), error) {
+// pool 一并返回：G4 托管面（hosted.Store）与身份共用同一个连接池（装配④，88928305）。
+func openNewPlatformStore(ctx context.Context, dsn string) (identity.Store, *repo.Pool, func(), error) {
 	if dsn == "" {
-		return nil, nil, errNewPlatformPGDSN
+		return nil, nil, nil, errNewPlatformPGDSN
 	}
 	pool, err := repo.OpenPG(ctx, dsn)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	// 🔴 先 Migrate 再用（组长裁定 ruling-2026-10-01T145840Z：建表归 G2 迁移账本，
 	// Hub 启动与 bootstrap-admin 均先 Migrate）。账本失败即拒绝启动，不在半套表上写。
@@ -86,7 +88,7 @@ func openNewPlatformStore(ctx context.Context, dsn string) (identity.Store, func
 	rep, err := migrate.Migrate(ctx, pool, migrate.HubDomains())
 	if err != nil {
 		_ = pool.Close()
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if len(rep.Applied) > 0 {
 		log.Printf("newplat migrate: applied %s", strings.Join(rep.Applied, ", "))
@@ -94,9 +96,9 @@ func openNewPlatformStore(ctx context.Context, dsn string) (identity.Store, func
 	st := identity.NewPGStore(pool)
 	if err := st.CheckSchema(ctx); err != nil {
 		_ = pool.Close()
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return st, func() { _ = pool.Close() }, nil
+	return st, pool, func() { _ = pool.Close() }, nil
 }
 
 // hasManagementUser 库中是否已有管理用户（platform_admin 或 manager，不论状态；与初始化脚本的拒绝条件一致）。
@@ -114,7 +116,7 @@ func hasManagementUser(ctx context.Context, store identity.Store) (bool, error) 
 }
 
 // wireNewPlatform 在给定身份存储上装配新平台、挂路由。不建任何账号；库中还没有管理用户时只提示运维执行初始化脚本。
-func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newPlatformConfig, store identity.Store) error {
+func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newPlatformConfig, store identity.Store, pool *repo.Pool) error {
 	svc := identity.NewService(store, nil, nil)
 	svc.OnRevoked = hub.DisconnectAgent
 	svc.OnSuspended = hub.DisconnectAgent
@@ -135,6 +137,13 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	hub.PublicOrigin = cfg.publicOrigin
 
 	n3 := &httpapi.N3{OB: ob, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Secure: true}
+	// G4 托管装配（88928305）：pool 非 nil（PG 模式）才尝试；内部按 DW_G4_MASTER_KEY_FILE 开关。
+	// 须在 api 构造前——cfg.hosted 注入点（orch.HostedItem）在 api 上。
+	if pool != nil {
+		if _, err := wireHosted(ctx, mux, hub, &cfg, pool, store, svc, n3.Actor); err != nil {
+			return fmt.Errorf("newplat hosted wiring: %w", err)
+		}
+	}
 	api := &httpapi.API{Svc: svc, Actor: n3.Actor, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted}
 	n3.Register(mux)
 	api.Register(mux)

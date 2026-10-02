@@ -23,7 +23,7 @@ func runResetPassword(ctx context.Context, args []string, out io.Writer, dsn str
 	if err := fs.Parse(args); err != nil || fs.NArg() != 0 || *userID == "" {
 		return errors.New("usage: " + resetPasswordUsage)
 	}
-	store, closeStore, err := openNewPlatformStore(ctx, dsn)
+	store, _, closeStore, err := openNewPlatformStore(ctx, dsn)
 	if err != nil {
 		return fmt.Errorf("reset-password: %w", err)
 	}

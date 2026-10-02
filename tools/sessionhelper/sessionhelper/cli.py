@@ -11,6 +11,7 @@ import sqlite3
 import subprocess
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
@@ -22,6 +23,56 @@ from .config import Config, env_get
 
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+# CLI 退出时日志里的屏幕尾巴要脱敏：像密钥／令牌的长串一律遮掉（组长 R-B12-CODEX-PKG 第 2 条）。
+_SECRET_RE = re.compile(r"(?i)(sk-[A-Za-z0-9_-]{8,}|[A-Za-z0-9_\-]{32,})")
+# 认证方案后的令牌（Authorization: Bearer xxx／Basic xxx）：先于键值规则遮，否则键值规则把方案词当成值、令牌外露
+# （复验 tosonnet55tc2k 对 b2c91a8a；组长 WORKGROUPS 第十节第 3 条）
+_AUTH_SCHEME_RE = re.compile(r"(?i)\b(bearer|basic)(\s+)[^\s\"',;]+")
+_SECRET_KEY_NAME = r"[A-Za-z0-9_.-]*(?:key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_.-]*"
+# 命令行旗标：--api-key xxx／--api-key=xxx
+_SECRET_FLAG_RE = re.compile(r"(?i)(--?" + _SECRET_KEY_NAME + r")(=|\s+)(?!-)(\"[^\"]*\"|'[^']*'|\S+)")
+# 「键名=值」「键名: 值」及 JSON「"键名": "值"」形态：键名里带 key／token／secret／password／credential／auth 的，值一律遮
+# （短串也遮；复验 tosonnet55tc2k）。值若以认证方案词开头（已由 _AUTH_SCHEME_RE 遮过令牌）则不再动。
+_SECRET_KV_RE = re.compile(
+    r"(?i)\b(" + _SECRET_KEY_NAME + r"\"?)(\s*[:=]\s*)(?!(?:bearer|basic)\s)(\"[^\"]*\"|'[^']*'|\S+)")
+EXIT_TAIL_LINES = 6
+
+
+class CLIDeliveryFailed(RuntimeError):
+    """持久投递在 CLI 侧失败：delivery worker 据 reason／retryable 回 failed ACK（不再当正常结果回 processed）。"""
+
+    reason = "cli_injection_failed"
+    retryable = True
+
+
+class CLIUnavailable(CLIDeliveryFailed):
+    """CLI 子进程起不来或已退出，正文没写进 CLI：可重试（组长 R-B12-CODEX-PKG 第 2 条）。"""
+
+    reason = "cli_unavailable"
+    retryable = True
+
+
+class CLIInjectionNotReceived(CLIDeliveryFailed):
+    """正文已写进 CLI，但会话文件里始终没出现对应 user 轮：不可重试——重投会把同一任务再敲进 CLI 一遍。"""
+
+    reason = "cli_injection_not_received"
+    retryable = False
+
+
+def _squash(text: str) -> str:
+    """去空白、转小写再比：全屏 TUI 常用光标定位代替空格（抓屏里「Provide your own API key」读出来是 ProvideyourownAPIkey）。"""
+    return re.sub(r"\s+", "", text).lower()
+
+
+def redact_tail(lines) -> str:
+    out = []
+    for ln in lines:
+        ln = _AUTH_SCHEME_RE.sub(lambda m: m.group(1) + m.group(2) + "<redacted>", ln)
+        ln = _SECRET_FLAG_RE.sub(lambda m: m.group(1) + m.group(2) + "<redacted>", ln)
+        ln = _SECRET_KV_RE.sub(lambda m: m.group(1) + m.group(2) + "<redacted>", ln)
+        ln = _SECRET_RE.sub("<redacted>", ln)
+        out.append(ln[:200])
+    return " | ".join(out)
 CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 BRACKETED_PASTE_START = "\x1b[200~"
 BRACKETED_PASTE_END = "\x1b[201~"
@@ -35,11 +86,21 @@ class CLIProfile:
     output_source: str = "pty"
     startup_grace: float = 1.5
     launch: str = "pty"
+    # 拦路界面标记：启动期（首次就绪之前）输出里一出现即撤销就绪、启动立即失败（登录选择、包缺失之类，界面上可能同时带着提示符）。
+    block_patterns: tuple[str, ...] = ()
 
 
 CLI_PROFILES: dict[str, CLIProfile] = {
     "claude": CLIProfile(["claude", "--dangerously-skip-permissions"], ("claude", ">", "❯", "╭", "Welcome"), "transcript"),
-    "codex": CLIProfile(["codex"], ("codex", ">", "›", "❯", "Welcome"), "transcript"),
+    # codex 只认输入提示符，不认「codex」「Welcome」这类横幅字样（组长 R-B12-CODEX-PKG 修订第 4 条：B12 里横幅
+    # 「>_ OpenAI Codex (v0.159.2)」把一个随即退出的进程判成了就绪）。横幅本身以「>_」开头，故「>」也不能当标记。
+    # 0.159.2 的实际提示符以 prodops 抓屏为准，不符时用 SH_CLI_READY_PATTERNS 覆盖。
+    # 拦路界面（组长 R-B12-CODEX-PKG 第 4 条补，样本＝prodops 00e5020e 抓屏）：0.159.2 的登录选择菜单下方同时画着
+    # 「› Ask Codex to do anything?」输入框，只看提示符会误判就绪。
+    "codex": CLIProfile(["codex"], ("›", "❯"), "transcript", block_patterns=(
+        "Sign in with ChatGPT", "Provide your own API key", "Sign in with Device Code",
+        "Press enter to continue", "Do you trust", "Trust this folder", "Update available",
+        "Detected OPENAI_API_KEY", "no complete local package")),
     "aider": CLIProfile(["aider"], ("aider", ">", "Tokens")),
     "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db"),
     "cline": CLIProfile(["cline"], ("cline", ">", "Welcome")),
@@ -70,6 +131,12 @@ class CLIAdapter:
         self.cfg = cfg
         self.cli_name = cfg.cli_name
         self.profile = CLI_PROFILES.get(cfg.cli_name, CLI_PROFILES["claude"])
+        self.ready_patterns = cfg.cli_ready_patterns or self.profile.ready_patterns
+        self.block_patterns = self.profile.block_patterns + cfg.cli_block_patterns
+        self.blocked_by = ""  # 当前停在的拦路界面（未停则空）
+        # 启动期已过（本子进程首次「出现提示符且静默」）：此后正文里出现拦路字样不再撤销就绪（组长 WORKGROUPS 第十节第 1 条：
+        # 回答里一句 Sign in with ChatGPT 曾把健康座席判死）。新子进程（start_pty／_respawn_child）重置。
+        self.startup_done = False
         self.command = cfg.cli_cmd or self.profile.command
         self.cwd = cfg.cli_cwd or os.getcwd()
         self.launch_mode = cfg.cli_launch or self.profile.launch
@@ -93,18 +160,36 @@ class CLIAdapter:
         self.transcript: TranscriptTailer | None = None
         self.launch_attempts = 0
         self.last_launch_error = ""
+        self.output_tail: deque[str] = deque(maxlen=EXIT_TAIL_LINES)  # 最近几行屏幕输出（退出时打日志用）
+        self.last_exit = ""  # 最近一次子进程退出的「code=… tail=…」
+        # 启动期就退出的退避：连续退出 n 次后 min(2^n, 60) 秒内不再重起（mirror／终端循环会反复调 start()，
+        # 不退避就是每两三秒起一次、刷一屏日志）。成功就绪即清零。
+        self.exit_streak = 0
+        self.start_backoff_until = 0.0
+
+    def _child_gone(self) -> bool:
+        """PTY 模式下子进程已退出（tmux 模式不在此判）。"""
+        return self.launch_mode != "tmux" and self.child is not None and not self.child.isalive()
 
     def start(self) -> bool:
+        # 就绪标志只在子进程还活着时才算数：原先 ready 一经置位就直接返回真，子进程早退后仍被当成可注入
+        # （B12：Codex 打一屏就退出，三次注入写进死进程、142 秒后才以「注入未被接收」收场，全程无日志）。
+        if self.ready.is_set() and self._child_gone():
+            self._note_exit()
         if self.ready.is_set():
             return True
         # 快路径：子进程已在跑就直接算成功（不抢锁，避免被 ready 等待长期占锁而阻塞其它调用）
         if self.launch_mode != "tmux" and self.child is not None and self.child.isalive():
             return True
         with self._start_lock:
+            if self.ready.is_set() and self._child_gone():
+                self._note_exit()
             if self.ready.is_set():
                 return True
             if self.launch_mode != "tmux" and self.child is not None and self.child.isalive():
                 return True
+            if time.time() < self.start_backoff_until:
+                return False  # 退避中：不重起、不刷日志；原因仍在 last_launch_error
             self.launch_attempts += 1
             try:
                 if self.launch_mode == "tmux":
@@ -117,11 +202,15 @@ class CLIAdapter:
                 # PTY 模式：子进程可能已起来只是没到 ready，别清空——留给终端转发用
                 if self.launch_mode == "tmux" or self.child is None or not self.child.isalive():
                     self.ready.clear()
+                    if self._child_gone():
+                        self.exit_streak += 1
+                        self.start_backoff_until = time.time() + min(2 ** self.exit_streak, 60)
                     return False
                 print("[cli] child is alive though not 'ready'; keeping it for terminal streaming", flush=True)
                 return True
             if self.ready.is_set():
                 self.last_launch_error = ""
+                self.exit_streak = 0
                 return True
             return self.launch_mode != "tmux" and self.child is not None and self.child.isalive()
 
@@ -131,6 +220,11 @@ class CLIAdapter:
                 return
             self.child = None
         self.started_at = time.time()
+        if not self.stopping.is_set():
+            self.closed.clear()
+        self.output_tail.clear()
+        self.blocked_by = ""
+        self.startup_done = False
         self.child = pexpect.spawn(
             self.command[0],
             self.command[1:],
@@ -145,6 +239,13 @@ class CLIAdapter:
         self.reader.start()
         deadline = time.time() + self.cfg.cli_ready_timeout
         while time.time() < deadline:
+            if self._child_gone():
+                # 等就绪期间就退出：不再等满 cli_ready_timeout，立刻带退出码与屏幕尾巴报出
+                self._note_exit()
+                raise RuntimeError(f"CLI exited during startup: {self.last_exit}")
+            if self.blocked_by:
+                # 启动期遇拦路界面：立即失败返回，不等满就绪超时（helper 自己越不过这些屏）
+                raise RuntimeError(f"CLI blocked at screen: {self.blocked_by!r}")
             if self.ready.is_set() and self.is_idle():
                 return
             time.sleep(0.1)
@@ -183,7 +284,7 @@ class CLIAdapter:
                 last_pane = cleaned
                 last_change = time.time()
                 self.last_output_at = last_change
-            has_prompt = any(pat.lower() in cleaned.lower() for pat in self.profile.ready_patterns)
+            has_prompt = any(pat.lower() in cleaned.lower() for pat in self.ready_patterns)
             has_transcript = self.profile.output_source == "transcript" and has_fresh_transcript(self.cli_name, self.cwd, self.started_at, self.cfg.cli_transcript)
             idle = time.time() - last_change >= self.cfg.cli_settle_seconds
             if (has_prompt and idle) or has_transcript:
@@ -193,6 +294,9 @@ class CLIAdapter:
         raise RuntimeError(f"CLI did not become ready in tmux {self.tmux_session}: {shlex.join(self.command)}")
 
     def is_idle(self) -> bool:
+        # 子进程已退出：不算「忙」——让投递走到 handle_delivery 以失败上报，而不是永远回 busy
+        if self._child_gone():
+            return True
         if self.last_output_at <= 0:
             return False
         return time.time() - self.last_output_at >= self.cfg.cli_settle_seconds
@@ -212,7 +316,11 @@ class CLIAdapter:
             pass
 
     def handle(self, env: dict) -> str:
-        return self.handle_delivery(env, None)
+        # 实时（非持久）路径：起不来就把原因作为回复文字给出（与原行为同）；持久投递走 handle_delivery，失败以异常上报。
+        try:
+            return self.handle_delivery(env, None)
+        except CLIDeliveryFailed as exc:
+            return str(exc)
 
     def handle_delivery(self, env: dict, on_injected=None) -> str:
         for attempt in range(max(1, self.cfg.cli_launch_retries)):
@@ -221,10 +329,12 @@ class CLIAdapter:
             if attempt + 1 < max(1, self.cfg.cli_launch_retries):
                 time.sleep(1.0)
         else:
-            return self.not_ready_message()
+            raise self._delivery_failed(CLIUnavailable, self.not_ready_message())
         body = str(env.get("body") or "")
-        if not self.ready.wait(0.1):
-            return self.not_ready_message()
+        if not self.ready.wait(0.1) or self._child_gone():
+            if self._child_gone():
+                self._note_exit()
+            raise self._delivery_failed(CLIUnavailable, self.not_ready_message())
         if self.profile.output_source == "transcript" and self.transcript is None:
             self.transcript = locate_transcript(
                 self.cli_name,
@@ -248,7 +358,8 @@ class CLIAdapter:
             if status == "ok" and reply:
                 return reply
             if status == "no_user":
-                return "（注入未被 CLI 接收：transcript 未出现对应 user 轮）"
+                # 失败不再当正常结果回 processed（B12：142 秒后以这句文字收场、被 control 压掉、日志里什么都没有）
+                raise self._delivery_failed(CLIInjectionNotReceived, "（注入未被 CLI 接收：transcript 未出现对应 user 轮）")
             return "（答案超时：已确认 user 轮落盘，但未取到 assistant 回答）"
         if self.profile.output_source == "opencode_db":
             injected_at = time.time()
@@ -285,8 +396,44 @@ class CLIAdapter:
                 return
 
     def not_ready_message(self) -> str:
-        reason = self.last_launch_error or "启动超时"
+        reason = self.last_launch_error or (f"CLI 已退出：{self.last_exit}" if self.last_exit else "启动超时")
+        if self.blocked_by:
+            reason = f"CLI 停在拦路界面（{self.blocked_by}）；{reason}"
         return f"（CLI未就绪：{reason}；sessionHelper仍在线，稍后可重试）"
+
+    @staticmethod
+    def _delivery_failed(kind: type, message: str) -> CLIDeliveryFailed:
+        """失败原因进 helper 日志（原先只在会被 control 抑制的回信里）。"""
+        print(f"[cli] delivery failed reason={kind.reason} retryable={str(kind.retryable).lower()} detail={message}", flush=True)
+        return kind(message)
+
+    def _note_exit(self) -> None:
+        """记一次子进程退出：打「[cli] exited code=… tail=…」并清就绪（同一子进程只记一次）。"""
+        child = self.child
+        if child is None or getattr(child, "_sh_exit_logged", False):
+            self.ready.clear()
+            return
+        child._sh_exit_logged = True
+        # 子进程退出得快时读线程可能还在 startup_grace 里没读过：把 PTY 里剩下的输出读干净再取尾巴
+        for _ in range(64):
+            try:
+                raw = child.read_nonblocking(size=4096, timeout=0.05)
+            except Exception:  # noqa: BLE001  (EOF／TIMEOUT／已关闭)
+                break
+            if not raw:
+                break
+            self.terminal_q.put(raw)
+            for ln in clean_output(raw).splitlines():
+                if ln.strip():
+                    self.output_tail.append(ln.strip())
+        try:
+            child.isalive()  # 回收退出状态
+        except Exception:  # noqa: BLE001
+            pass
+        code = child.exitstatus if child.exitstatus is not None else f"signal:{child.signalstatus}"
+        self.last_exit = f"code={code} tail={redact_tail(self.output_tail)!r}"
+        self.ready.clear()
+        print(f"[cli] exited {self.last_exit}", flush=True)
 
     def inject_text(self, text: str) -> None:
         self.wait_for_web_idle()
@@ -509,6 +656,8 @@ class CLIAdapter:
         if self.stopping.is_set():
             return False
         self.ready.clear()
+        self.blocked_by = ""
+        self.startup_done = False
         self.last_output_at = 0.0
         self.started_at = time.time()
         try:
@@ -537,23 +686,44 @@ class CLIAdapter:
             except pexpect.TIMEOUT:
                 continue
             except pexpect.EOF:
-                # 真关闭 / 非 PTY 模式：照旧退出
-                if self.stopping.is_set() or self.profile.output_source != "pty":
+                if self.stopping.is_set():
                     self.closed.set()
                     return
+                # 子进程退出（任何原因）：先留痕再说（原先 transcript 档在此静默结束）
+                self._note_exit()
+                if self.profile.output_source != "pty":
+                    return  # 本读线程结束；下次 start() 会重起子进程与读线程
                 # PTY 模式下 CLI 子进程退出（多为自动更新/崩溃）→ 自动重生，拿到新版本、会话不断
                 if not self._respawn_child():
                     self.closed.set()
                     return
                 continue
+            # 启动期在「出现提示符且已静默」时结束——与 start_pty 判启动成功同一判据，在新输出更新静默计时之前判。
+            # 放在读线程里：PTY 档自动重生的子进程不经 start_pty，也靠这里结束各自的启动期。
+            if not self.startup_done and self.ready.is_set() and self.is_idle():
+                self.startup_done = True
             if raw:
                 self.terminal_q.put(raw)
             cleaned = clean_output(raw)
             if not cleaned:
                 continue
+            for ln in cleaned.splitlines():
+                if ln.strip():
+                    self.output_tail.append(ln.strip())
             self.last_output_at = time.time()
             buf += "\n" + cleaned
-            if any(pat.lower() in cleaned.lower() for pat in self.profile.ready_patterns):
+            # 启动期（首次就绪之前）拦路界面优先：输出里出现登录选择等标记即撤销就绪并留痕；本子进程此后不再判就绪
+            # （全屏 TUI 局部重绘可能单独送来一块只含「›」的输出，而菜单仍在屏上；helper 也无法自行越过登录）。
+            # 新子进程才重置。启动期过后不再看拦路标记——那时屏上是模型回答，里面出现这些字样不说明 CLI 卡住。
+            # 否则出现输入提示符才置就绪。「子进程还活着」由 start_pty（等静默期间退出即报）与 _note_exit（清就绪）保证。
+            squashed = _squash(cleaned)
+            blocker = "" if self.startup_done else next((pat for pat in self.block_patterns if _squash(pat) in squashed), "")
+            if blocker:
+                self.ready.clear()
+                if not self.blocked_by:
+                    self.blocked_by = blocker
+                    print(f"[cli] blocked at screen: {blocker!r}", flush=True)
+            elif not self.blocked_by and any(_squash(pat) in squashed for pat in self.ready_patterns):
                 self.ready.set()
                 self.respawn_count = 0
             if self.profile.output_source == "pty":
