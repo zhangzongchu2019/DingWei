@@ -650,3 +650,42 @@ func TestLocalFormInspectPerPath(t *testing.T) {
 		}
 	}
 }
+
+// RV2 余项（tosonnet55tc2k）：ID 不等的单路径格——inspect 返回的 ID 与 ref 逐字不等 ⇒ 必拒，
+// create 与 upgrade 各一格（断言拒因文本＋零变更调用）。
+func TestLocalFormIDMismatchPerPath(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	mismatch := strings.Repeat("cafe", 16) // fake 引擎对 cafe 形返回全零 ID（逐字不等）
+	d.localImages[mismatch] = true
+	before := len(f.calls)
+	err := func() error {
+		_, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_mm1","image":"local@sha256:`+mismatch+
+			`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`))
+		return err
+	}()
+	if err == nil || !strings.Contains(err.Error(), "逐字不等") {
+		t.Fatalf("create ID 不等必拒: %v", err)
+	}
+	for _, c := range f.calls[before:] {
+		if strings.Contains(c, "containers/create") {
+			t.Fatalf("被拒不得建容器: %v", f.calls[before:])
+		}
+	}
+	// upgrade 同形
+	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_mm2","image":"`+goodImage+
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
+		t.Fatal(err)
+	}
+	before = len(f.calls)
+	if _, err := d.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_mm2","image":"local@sha256:`+mismatch+
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err == nil ||
+		!strings.Contains(err.Error(), "逐字不等") {
+		t.Fatalf("upgrade ID 不等必拒: %v", err)
+	}
+	for _, c := range f.calls[before:] {
+		if strings.Contains(c, "containers/create") || strings.Contains(c, "/start") || strings.Contains(c, "/stop") {
+			t.Fatalf("被拒不得动容器: %v", f.calls[before:])
+		}
+	}
+}
