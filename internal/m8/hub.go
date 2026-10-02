@@ -901,6 +901,9 @@ type sessionAdmission struct {
 	timingParts                                                         []string
 	// onRegistered 会话登记成功（未被设备冲突拒绝、旧连接已顶掉）后异步调用一次；为空不调。
 	onRegistered func()
+
+	// credentialIdentity 为真＝身份由专属凭据认定（HandleAgentWS）：信封里自报的 from 不是身份的来源，见 serveSession 读循环里的改写。
+	credentialIdentity bool
 }
 
 // serveSession 的函数体是从 HandleSessionWS 原样搬来的（逐字未改），开头只做同名解包。
@@ -910,6 +913,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	keyID, ownerKey, requestedSessionName, sessionName, fullSessionName := a.keyID, a.ownerKey, a.requestedSessionName, a.sessionName, a.fullSessionName
 	accounts, clientIP, tool, modelName, clientVersion := a.accounts, a.clientIP, a.tool, a.modelName, a.clientVersion
 	producer, targetGroup, noDirectory, mirrorTo := a.producer, a.targetGroup, a.noDirectory, a.mirrorTo
+	credentialIdentity := a.credentialIdentity
 	targetBot, webTerminal, osName, deviceID, deviceIDV1 := a.targetBot, a.webTerminal, a.osName, a.deviceID, a.deviceIDV1
 	timingStart, timingLast, timingParts := a.timingStart, a.timingLast, a.timingParts
 	markTiming := func(name string) {
@@ -1116,6 +1120,16 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		}
 		if env.From == sessionAddress(requestedSessionName, keyID) && requestedSessionName != sessionName {
 			env.From = sessionAddress(sessionName, keyID)
+		}
+		// 🔴 凭据连接（/ws/agent）由凭据定身份，不由信封自报定（组长裁定·甲，R-HUB-FROM-REWRITE）：
+		//    入网 helper 的 from 是「会话名#key」，而它的 key 只是占位（SH_KEY_ID 缺省 "enrolled"，真身份是 Hub 按凭据查出的 u_属主），
+		//    原先这里一律判 from≠会话地址而丢弃——terminal_output、回飞书、Agent 间发信、session_event 全被拒。
+		//    现在：from 的【会话名部分】等于本连接的会话名 ⇒ 改写成真地址 sessionAddress(会话名, 本连接 keyID) 再往下走；
+		//    会话名不同 ⇒ 仍落到下面的拒绝（不得冒用同属主下另一会话）。key 部分不看：它是占位，真值恒取本连接的 keyID。
+		if credentialIdentity && env.From != sessionAddress(sessionName, keyID) {
+			if i := strings.LastIndex(env.From, "#"); i > 0 && strings.EqualFold(env.From[:i], sessionName) {
+				env.From = sessionAddress(sessionName, keyID)
+			}
 		}
 		if env.From != sessionAddress(sessionName, keyID) {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "from 地址必须等于当前会话地址"))

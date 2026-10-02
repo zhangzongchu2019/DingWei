@@ -86,7 +86,7 @@ func (h *Hub) HandleAgentWS(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query() // 只采信能力类参数；名字、key_id 一律不看
 	adm := sessionAdmission{
 		keyID: keyID, ownerKey: keyID, requestedSessionName: sessionName, sessionName: sessionName,
-		fullSessionName: fullName, clientIP: clientIPFromRequest(r),
+		fullSessionName: fullName, clientIP: clientIPFromRequest(r), credentialIdentity: true,
 		tool: strings.TrimSpace(q.Get("tool")), clientVersion: strings.TrimSpace(q.Get("version")),
 		osName:      strings.TrimSpace(q.Get("os")),
 		timingStart: timingStart, timingLast: time.Now(),
