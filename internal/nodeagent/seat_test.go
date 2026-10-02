@@ -780,7 +780,7 @@ func TestRegisterDockerHandlersRejectsBadAllowlist(t *testing.T) {
 		return newAgent().RegisterDockerHandlers(
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-			"http://172.30.68.1:11080", "wss://hub.test", csv,
+			"http://172.30.68.1:11080", "wss://hub.test", csv, false,
 		)
 	}
 	if err := register(strings.Repeat("ab", 32) + "f"); err == nil || !strings.Contains(err.Error(), "NODEAGENT_LOCAL_IMAGES") {
@@ -789,6 +789,53 @@ func TestRegisterDockerHandlersRejectsBadAllowlist(t *testing.T) {
 	// 对照：好白名单注册成功——错误路径不是「逢调必错」
 	if err := register(strings.Repeat("ab", 32)); err != nil {
 		t.Fatalf("好白名单应注册成功: %v", err)
+	}
+}
+
+// R-SEAT-HUB-VIA-PROXY 案②：开关开 ⇒ 席位 env 含 SH_PROXY＝seatProxy 且 NO_PROXY 不含 Hub 主机
+// （两个动作缺一不可——a 管入网 HTTP、b 管 WS；helper WS 只认 SH_PROXY）。
+// 反向：去掉 SH_PROXY 注入 ⇒ 红；恢复 NO_PROXY 追加 ⇒ 红。
+func TestSeatEnvHubViaProxyOn(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	d.seatProxy = "http://172.30.68.1:11080"
+	d.hubWSBase = "wss://dw.cmjrt.com:55055"
+	d.seatHubViaProxy = true
+	env := d.seatEnv("api_key", "codex")
+	joined := "\n" + strings.Join(env, "\n") + "\n"
+	if !strings.Contains(joined, "\nSH_PROXY=http://172.30.68.1:11080\n") {
+		t.Fatalf("开 ⇒ 必须注 SH_PROXY＝seatProxy: %v", env)
+	}
+	for _, e := range env {
+		if strings.HasPrefix(e, "NO_PROXY=") {
+			if strings.Contains(e, "dw.cmjrt.com") {
+				t.Fatalf("开 ⇒ NO_PROXY 不得含 Hub 主机: %q", e)
+			}
+		}
+	}
+}
+
+// 开关关 ⇒ 与 ebd17f43 现行为逐字相同（B12／本机 Hub 场景不受冲击）。
+func TestSeatEnvHubViaProxyOffUnchanged(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	d.seatProxy = "http://172.30.68.1:11080"
+	d.hubWSBase = "wss://dw.cmjrt.com:55055"
+	d.seatHubViaProxy = false
+	env := d.seatEnv("api_key", "codex")
+	want := []string{
+		"SH_WS_BASE=wss://dw.cmjrt.com:55055",
+		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_CRED_FILE=/work/account-credential",
+		"SH_CRED_KIND=api_key",
+		"SH_MODE=cli",
+		"SH_CLI=codex",
+		"HTTP_PROXY=http://172.30.68.1:11080",
+		"HTTPS_PROXY=http://172.30.68.1:11080",
+		"NO_PROXY=localhost,127.0.0.1,dw.cmjrt.com",
+	}
+	if strings.Join(env, "|") != strings.Join(want, "|") {
+		t.Fatalf("关 ⇒ 与 ebd17f43 逐字不同:\n得 %v\n要 %v", env, want)
 	}
 }
 

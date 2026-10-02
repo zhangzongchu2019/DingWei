@@ -71,6 +71,9 @@ func main() {
 		seatProxy,
 		cfg.HubURL,
 		os.Getenv("NODEAGENT_LOCAL_IMAGES"), // local 形态白名单（与板上 HOSTED-IMAGE-VERSIONS 同源；格式不对即拒启报键名）
+		// R-SEAT-HUB-VIA-PROXY 案②（生产默认开）：席位到 Hub 全走 relay
+		//（NO_PROXY 不含 Hub＋注 SH_PROXY）；不设/非真值＝关（B12／本机 Hub 旧行为逐字不变）。
+		envTruthy("NODEAGENT_SEAT_HUB_VIA_PROXY"),
 	); err != nil {
 		log.Fatalf("nodeagent: %v", err)
 	}
@@ -85,6 +88,15 @@ func main() {
 	if err := ag.Run(ctx); err != nil && ctx.Err() == nil {
 		log.Fatalf("nodeagent: %v", err)
 	}
+}
+
+// envTruthy 开关解析：1/true/yes/on（大小写不敏感）为真，其余（含未设）为假——缺省即关， fail-closed 到旧行为。
+func envTruthy(key string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(key))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
 }
 
 func envOr(key, def string) string {

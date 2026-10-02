@@ -104,7 +104,11 @@ type dockerOps struct {
 	seatProxy    string          // 🔴 必填：席位代理（第 12 条②：注入容器 env，如 http://172.30.68.1:11080）
 	hubWSBase    string          // 🔴 必填（容器启动契约 R-G1-HOSTED-IMAGE-CONTRACT）：SH_WS_BASE＝代理配置 HubURL 的 ws 源
 	localImages  map[string]bool // local 形态白名单（NODEAGENT_LOCAL_IMAGES；与板上登记同源）
-	waitMax      time.Duration
+	// seatHubViaProxy 席位到 Hub 全走 relay（R-SEAT-HUB-VIA-PROXY-IMPL-20261002232257 取案②）：
+	// 开 ⇒ NO_PROXY 不含 Hub 主机（入网 HTTP 走 relay）＋注 SH_PROXY=seatProxy（WS 走 relay CONNECT）；
+	// 关 ⇒ 现行为逐字不变（B12／本机 Hub 场景：Hub 主机追加进 NO_PROXY、WS 直连）。
+	seatHubViaProxy bool
+	waitMax         time.Duration
 }
 
 func containerName(seatID string) string { return "seat-" + seatID }
@@ -243,17 +247,27 @@ func (d *dockerOps) seatEnv(credKind, cli string) []string {
 		return env
 	}
 	noProxy := "localhost,127.0.0.1" // 本机回环不经代理
-	// Hub 主机也不经代理（组长 R-B12-NOPROXY／R-B12-NET）：席位里 sessionHelper 的入网 HTTP（urllib）认 HTTP(S)_PROXY
-	// 与 NO_PROXY，不排除 Hub 就会把申请／轮询送进 relay；WS 本已直连。Python 的 NO_PROXY 只认主机名后缀与精确 IP、
-	// 不认网段 ⇒ 追加 HubURL 的精确 host（不含端口）。生产同样适用。
-	if host := hubHost(d.hubWSBase); host != "" {
-		noProxy += "," + host
+	if !d.seatHubViaProxy {
+		// 关（现行为逐字不变）：Hub 主机也不经代理（组长 R-B12-NOPROXY／R-B12-NET）——席位里
+		// sessionHelper 的入网 HTTP（urllib）认 HTTP(S)_PROXY 与 NO_PROXY，不排除 Hub 就会把
+		// 申请／轮询送进 relay；WS 本已直连。Python 的 NO_PROXY 只认主机名后缀与精确 IP、
+		// 不认网段 ⇒ 追加 HubURL 的精确 host（不含端口）。B12／本机 Hub 场景适用。
+		if host := hubHost(d.hubWSBase); host != "" {
+			noProxy += "," + host
+		}
 	}
-	return append(env,
+	env = append(env,
 		"HTTP_PROXY="+d.seatProxy,
 		"HTTPS_PROXY="+d.seatProxy,
 		"NO_PROXY="+noProxy,
 	)
+	if d.seatHubViaProxy {
+		// 开（R-SEAT-HUB-VIA-PROXY 案②，生产默认）：Hub 主机不入 NO_PROXY（入网 HTTP 走 relay），
+		// 且必须另注 SH_PROXY——helper WS 只认它（app.py:487-497：空＝显式 proxy=None 不读 HTTPS_PROXY）。
+		// 两个动作缺一不可：a 管 HTTP、b 管 WS。
+		env = append(env, "SH_PROXY="+d.seatProxy)
+	}
+	return env
 }
 
 // hubHost 取 Hub ws 源的主机部分（去端口；IPv6 去方括号）；解析不出 ⇒ ""。
@@ -640,7 +654,7 @@ func isBareImageID(s string) bool {
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 // cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
 // localImagesCSV 格式不对即报错（报键名），调用方拒启。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string) error {
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool) error {
 	// SH_WS_BASE＝HubURL 的 ws 源（wss://host[:port]；路径剥掉）
 	base := hubWSS
 	if i := strings.Index(base, "://"); i >= 0 {
@@ -654,7 +668,7 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 	if err != nil {
 		return err
 	}
-	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second}
+	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second, seatHubViaProxy: seatHubViaProxy}
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)
