@@ -34,6 +34,7 @@ class DriverAdapter:
         self._commands = UnifiedCommandQueue(cfg.busy_buffer_max)
         self._work_available = threading.Event()
         self._turn_progress: dict[tuple[str, str], float] = {}
+        self._admission_callbacks: dict[str, tuple[object | None, object | None]] = {}
         self._timed_out_turns: set[tuple[str, str]] = set()
         self._interrupt_confirmed: set[tuple[str, str]] = set()
         self._terminal_timeout = max(0.1, float(cfg.turn_terminal_timeout_seconds))
@@ -102,17 +103,36 @@ class DriverAdapter:
     def handle(self, env: dict) -> str:
         return self.handle_delivery(env, None)
 
-    def handle_delivery(self, env: dict, on_injected=None) -> str:
+    def handle_delivery(self, env: dict, on_injected=None, on_admitted=None, on_admission_failed=None) -> str:
         body = str(env.get("body") or "")
         if not body:
             return ""
         if not self._started:
             self.start()
-        result = self.enqueue_envelope(env)
+        # Register admission callbacks before waking the worker.  Calling the
+        # public enqueue_envelope here would set _work_available first, allowing
+        # a fast fake/local driver to admit before the callback is installed.
+        result = self._commands.enqueue(env)
+        self._publish_queue_event(result.event)
         if result.state == "rejected":
+            if on_admission_failed is not None:
+                on_admission_failed()
             raise OverflowError(result.reason or "queue_full")
-        if on_injected is not None:
-            on_injected()
+        if result.state == "duplicate":
+            # Preserve main's ACK semantics: a Hub redelivery may mean the
+            # previous injected ACK was lost, so acknowledge the duplicate
+            # again even though it creates no new model admission.
+            if on_injected is not None:
+                on_injected()
+            if on_admission_failed is not None:
+                on_admission_failed()
+            return ""
+        if result.state == "queued" and (on_admitted is not None or on_admission_failed is not None):
+            self._admission_callbacks[result.command.delivery_id] = (on_admitted, on_admission_failed)
+        if result.state == "queued":
+            self._work_available.set()
+            if on_injected is not None:
+                on_injected()
         return ""
 
     def enqueue_envelope(self, env: dict) -> EnqueueResult:
@@ -156,6 +176,7 @@ class DriverAdapter:
         except Exception as exc:
             print(f"[driver-adapter][FAILED] id={command.delivery_id} deliver raised: {exc}", flush=True)
             self._publish_terminal_failure(command, "deliver_failed", str(exc))
+            self._fail_admission(command.delivery_id)
             self._commands.finish(command.delivery_id, "failed")
 
     def _settle_command(self, command: QueuedCommand, receipt) -> None:
@@ -164,6 +185,8 @@ class DriverAdapter:
             if not admitted:
                 admitted = self._admit_from_receipt(command, receipt)
             if receipt.state in ("done", "failed"):
+                if not admitted:
+                    self._fail_admission(command.delivery_id)
                 key = (command.delivery_id, command.turn_id)
                 outcome = (
                     "completed" if receipt.state == "done"
@@ -229,7 +252,15 @@ class DriverAdapter:
             return command.turn_id == turn_id and command.state == "admitted"
         self._turn_progress[(command.delivery_id, turn_id)] = time.monotonic()
         self._publish_queue_event(event)
+        callback, _ = self._admission_callbacks.pop(command.delivery_id, (None, None))
+        if callable(callback):
+            callback()
         return True
+
+    def _fail_admission(self, delivery_id: str) -> None:
+        _, callback = self._admission_callbacks.pop(delivery_id, (None, None))
+        if callable(callback):
+            callback()
 
     def _publish_queue_event(self, event: dict | None) -> None:
         if event is None:
