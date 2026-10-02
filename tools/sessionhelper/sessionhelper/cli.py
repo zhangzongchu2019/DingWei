@@ -90,7 +90,7 @@ CLI_PROFILES: dict[str, CLIProfile] = {
     # 「› Ask Codex to do anything?」输入框，只看提示符会误判就绪。
     "codex": CLIProfile(["codex"], ("›", "❯"), "transcript", block_patterns=(
         "Sign in with ChatGPT", "Provide your own API key", "Sign in with Device Code",
-        "Press enter to continue", "no complete local package")),
+        "Press enter to continue", "Do you trust", "no complete local package")),
     "aider": CLIProfile(["aider"], ("aider", ">", "Tokens")),
     "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db"),
     "cline": CLIProfile(["cline"], ("cline", ">", "Welcome")),
@@ -122,6 +122,7 @@ class CLIAdapter:
         self.cli_name = cfg.cli_name
         self.profile = CLI_PROFILES.get(cfg.cli_name, CLI_PROFILES["claude"])
         self.ready_patterns = cfg.cli_ready_patterns or self.profile.ready_patterns
+        self.block_patterns = self.profile.block_patterns + cfg.cli_block_patterns
         self.blocked_by = ""  # 当前停在的拦路界面（未停则空）
         self.command = cfg.cli_cmd or self.profile.command
         self.cwd = cfg.cli_cwd or os.getcwd()
@@ -692,7 +693,7 @@ class CLIAdapter:
             # 可能单独送来一块只含「›」的输出，而菜单仍在屏上；helper 也无法自行越过登录）。新子进程（start_pty）才重置。
             # 否则出现输入提示符才置就绪。「子进程还活着」由 start_pty（等静默期间退出即报）与 _note_exit（清就绪）保证。
             squashed = _squash(cleaned)
-            blocker = next((pat for pat in self.profile.block_patterns if _squash(pat) in squashed), "")
+            blocker = next((pat for pat in self.block_patterns if _squash(pat) in squashed), "")
             if blocker:
                 self.ready.clear()
                 if not self.blocked_by:

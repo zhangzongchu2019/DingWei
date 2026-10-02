@@ -316,6 +316,31 @@ time.sleep(30)
             a.start()
         self.assertFalse(a.ready.is_set())
 
+    def _alive_screen(self, text: str, **extra):
+        d = tempfile.mkdtemp(prefix="sh-cli-block-")
+        path = os.path.join(d, "fakecli.py")
+        with open(path, "w") as f:
+            f.write("#!/usr/bin/env python3\nimport sys, time\nsys.stdout.write(%r); sys.stdout.flush()\ntime.sleep(30)\n" % text)
+        os.chmod(path, 0o755)
+        a = CLIAdapter(load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_CMD=path, SH_CLI_CWD=d,
+                                        SH_CLI_READY_TIMEOUT="3", SH_CLI_LAUNCH_RETRIES="1", **extra)))
+        self.addCleanup(a.stop)
+        with contextlib.redirect_stdout(io.StringIO()):
+            a.start()
+        return a
+
+    def test_trust_prompt_is_blocking(self):
+        # 复验 tosonnet55tc2k：目录信任确认屏（Do you trust …）同样不算就绪
+        a = self._alive_screen("\u203a Do you trust the files in this folder?\n")
+        self.assertFalse(a.ready.is_set())
+
+    def test_block_patterns_can_be_extended_by_env(self):
+        # SH_CLI_BLOCK_PATTERNS 在默认拦路标记之外追加
+        a = self._alive_screen("\u203a MAINTENANCE WINDOW\n", SH_CLI_BLOCK_PATTERNS="maintenance window")
+        self.assertFalse(a.ready.is_set())
+        b = self._alive_screen("\u203a MAINTENANCE WINDOW\n")
+        self.assertTrue(b.ready.is_set(), "without the extra marker the same screen is a prompt (control)")
+
     def test_block_markers_match_without_spaces(self):
         # 全屏 TUI 用光标定位代替空格：抓屏里读出来是「3.ProvideyourownAPIkey」
         self.assertIn(_squash("Provide your own API key"), _squash("3.ProvideyourownAPIkey"))
