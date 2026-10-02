@@ -8,6 +8,7 @@
 //    keep-code-after-done · persist-code · show-hub-text · fake-capabilities · forbidden-wrong-text
 //    row-code-ignores-expiry · row-code-no-timer · row-code-for-nonpending · row-code-persist · row-copy-wrong-text · row-code-without-expiry-key · no-invite-toggle · invite-toggle-static-arrow · invite-collapsed-keeps-visible
 //    logout-in-title-row · logout-footer-not-sticky · logout-footer-no-bottom-push · logout-footer-dark-light(退出贴左栏底)
+//    fb-ignores-bound · fb-note-never-shown · fb-done-no-refresh · fb-unknown-as-bound · fb-409-no-refresh · fb-initial-not-applied(已绑定隐藏按钮)
 //    绑定飞书(口令再认证): bind-persist · bind-password-persist · bind-hub-text · bind-no-expiry-timer · bind-copy-without-prefix · bind-done-keeps-code · bind-sends-target · bind-sends-no-password · bind-no-already-bound-wording · bind-forbidden-agent-wording · bind-no-bad-credentials-wording · bind-no-rate-limit-wording · bind-keeps-password-on-failure · bind-form-stays-open-on-success · bind-no-enter-submit · bind-no-empty-check · bind-password-visible
 // 环境变量: PW_CHANNEL=chrome 用系统 Chrome;NODE_PATH 指向含 playwright 的 node_modules。
 const assert = require('assert');
@@ -24,10 +25,15 @@ let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
 function mutate(from, to) {
   const hits = html.split(from).length - 1;
-  assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
+  // 🔴 锚点失效（页面改了，变异的目标文本没了或不唯一）必须【大声】失败：以退出码 3 与固定标记 MUTATION-ANCHOR-STALE 报告，
+  // 不得静默——一个打不上去的变异什么也没测，却会被当成「已经验过」。（复验 tosonnet55tc2k 发现三个失效变异时的补救）
+  if (hits !== 1) {
+    console.error(`MUTATION-ANCHOR-STALE: mutation ${mutation} anchor must match exactly once, hits=${hits}: ${from.slice(0, 160)}`);
+    process.exit(3);
+  }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-password-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-target', 'bind-sends-no-password', 'bind-no-already-bound-wording', 'bind-forbidden-agent-wording', 'bind-no-bad-credentials-wording', 'bind-no-rate-limit-wording', 'bind-keeps-password-on-failure', 'bind-form-stays-open-on-success', 'bind-no-enter-submit', 'bind-no-empty-check', 'bind-password-visible', 'logout-in-title-row', 'logout-footer-not-sticky', 'logout-footer-no-bottom-push', 'logout-footer-dark-light'];
+const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-password-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-target', 'bind-sends-no-password', 'bind-no-already-bound-wording', 'bind-forbidden-agent-wording', 'bind-no-bad-credentials-wording', 'bind-no-rate-limit-wording', 'bind-keeps-password-on-failure', 'bind-form-stays-open-on-success', 'bind-no-enter-submit', 'bind-no-empty-check', 'bind-password-visible', 'fb-ignores-bound', 'fb-note-never-shown', 'fb-done-no-refresh', 'fb-unknown-as-bound', 'fb-409-no-refresh', 'fb-initial-not-applied', 'mutation-anchor-selftest', 'logout-in-title-row', 'logout-footer-not-sticky', 'logout-footer-no-bottom-push', 'logout-footer-dark-light'];
 if (mutation === 'logout-without-post') mutate("try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}", "location.assign('/console/login');return;");
 if (mutation === 'logout-ignores-failure') mutate("if(r.ok||r.status===401){location.assign('/console/login');return;}", "location.assign('/console/login');return;");
 if (mutation === 'no-logout-button') mutate('<button id=logoutBtn type=button>退出</button>', '');
@@ -45,10 +51,10 @@ if (mutation === 'bind-password-persist') mutate("var password=pw.value;if(!pass
 if (mutation === 'bind-hub-text') mutate("else say(res.text);\n      return;", "else say(res.data&&res.data.detail?String(res.data.detail):res.text);\n      return;");
 if (mutation === 'bind-no-expiry-timer') mutate("if(Number.isFinite(exp))timer=setTimeout(", "if(false)timer=setTimeout(");
 if (mutation === 'bind-copy-without-prefix') mutate("await navigator.clipboard.writeText('#register '+code);fb.textContent='已复制';", "await navigator.clipboard.writeText(code);fb.textContent='已复制';");
-if (mutation === 'bind-done-keeps-code') mutate("document.getElementById('bindFeishuDone').onclick=function(){clearBox();say('');};", "document.getElementById('bindFeishuDone').onclick=function(){box.hidden=true;say('');};");
+if (mutation === 'bind-done-keeps-code') mutate("document.getElementById('bindFeishuDone').onclick=function(){clearBox();say('');window.refreshFeishuBound();};", "document.getElementById('bindFeishuDone').onclick=function(){box.hidden=true;say('');window.refreshFeishuBound();};");
 if (mutation === 'bind-sends-target') mutate("{password:password}", "{password:password,user_id:'someone'}");
 if (mutation === 'bind-sends-no-password') mutate("consolePost('/api/console/account/feishu-bind-code',{password:password})", "consolePost('/api/console/account/feishu-bind-code')");
-if (mutation === 'bind-no-already-bound-wording') mutate("say('你已经绑定过飞书，无需再绑定');return;", "say('操作失败');return;");
+if (mutation === 'bind-no-already-bound-wording') mutate("say('你已经绑定过飞书，无需再绑定');window.refreshFeishuBound();return;}", "say('操作失败');window.refreshFeishuBound();return;}");
 if (mutation === 'bind-forbidden-agent-wording') mutate("else if(res.code==='forbidden')say('你没有权限绑定飞书');", "");
 if (mutation === 'bind-no-bad-credentials-wording') mutate("if(res.code==='bad_credentials')say('口令不对');\n      else ", "");
 if (mutation === 'bind-no-rate-limit-wording') mutate("say('尝试次数过多，'+(w===null?'请稍后再试':'请 '+w+' 秒后再试'));", "say(res.text);");
@@ -57,10 +63,17 @@ if (mutation === 'bind-form-stays-open-on-success') mutate("    closeForm();\n  
 if (mutation === 'bind-no-enter-submit') mutate("pw.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();go.click();}};", "");
 if (mutation === 'bind-no-empty-check') mutate("if(!password){say('请输入当前口令');return;}", "");
 if (mutation === 'bind-password-visible') mutate("<input id=bindFeishuPw type=password", "<input id=bindFeishuPw type=text");
-if (mutation === 'logout-in-title-row') { mutate('<div id=navFoot><button id=logoutBtn type=button>退出</button></div>', ''); mutate('<button id=bindFeishuBtn type=button>绑定飞书</button></span>', '<button id=bindFeishuBtn type=button>绑定飞书</button> <button id=logoutBtn type=button>退出</button></span>'); }
+if (mutation === 'logout-in-title-row') { mutate('<div id=navFoot><button id=logoutBtn type=button>退出</button></div>', ''); mutate('飞书已绑定</span></span>', '飞书已绑定</span> <button id=logoutBtn type=button>退出</button></span>'); }
 if (mutation === 'logout-footer-not-sticky') mutate('position:sticky;bottom:0;', '');
 if (mutation === 'logout-footer-no-bottom-push') mutate('#navFoot{margin-top:auto;', '#navFoot{');
 if (mutation === 'logout-footer-dark-light') mutate('html[data-theme="dark"] #navFoot{background:#111316;border-top-color:#38414c}', '');
+if (mutation === 'fb-ignores-bound') mutate("var isBound=bound===true;", "var isBound=false;");
+if (mutation === 'fb-note-never-shown') mutate("btn.hidden=isBound;note.hidden=!isBound;", "btn.hidden=isBound;note.hidden=true;");
+if (mutation === 'fb-done-no-refresh') mutate("clearBox();say('');window.refreshFeishuBound();};", "clearBox();say('');};");
+if (mutation === 'fb-unknown-as-bound') mutate("var isBound=bound===true;", "var isBound=bound!==false;");
+if (mutation === 'fb-409-no-refresh') mutate("window.refreshFeishuBound();return;}   // 409", "return;}   // 409");
+if (mutation === 'fb-initial-not-applied') mutate("if(window.applyFeishuBound)window.applyFeishuBound(data.feishu_bound);", "");
+if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
@@ -77,6 +90,8 @@ let codeSeq = 0;
 const writes = [];
 let logoutStatus = 204;
 let agentCount = 0;
+let feishuBound; // undefined=键不存在(未知) · false · true;绑定码发出后由 bindFlipsBound 置真(模拟用户在飞书里兑换成功)
+let bindFlipsBound = false; let platformGets = 0;
 const BIND_PASSWORD = 'Right-Pass-2026'; let bindMode = 'ok'; let bindSeq = 0; let bindTtlMs = 3600e3;
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
@@ -101,11 +116,12 @@ const server = http.createServer(async (req, res) => {
     if (bindMode === 'boom') return err(res, 500, 'internal');
     if (bindMode === 'ratelimit') return err(res, 429, 'rate_limited', { retry_after_s: 30 });
     if (body.password !== BIND_PASSWORD) return err(res, 401, 'bad_credentials');
+    if (bindFlipsBound) feishuBound = true;
     return json(res, 200, { registration_code: `BIND${++bindSeq}XYZ`.slice(0, 8).padEnd(8, 'Q'), code_expires_at: new Date(Date.now() + bindTtlMs).toISOString() });
   }
   if (p === '/api/console/agents') return json(res, 200, { agents: Array.from({ length: agentCount }, (_, i) => ({ online: true, agent_id: `ag-${i}`, name: `agent${i}`, full_name: `agent${i}.zzc`, origin: 'selfhost', group_code: '' })) });
   if (p === '/api/console/agent-groups') return json(res, 200, { owned_agents: [], groups: [] });
-  if (p === '/api/console/platform') return json(res, 200, { role, actions: [], items: platformItems(role) });
+  if (p === '/api/console/platform') { platformGets += 1; return json(res, 200, { role, actions: [], items: platformItems(role), ...(feishuBound === undefined ? {} : { feishu_bound: feishuBound }) }); }
   if (p === '/api/console/platform/users' && req.method === 'GET') {
     if (failUsersList > 0) { failUsersList -= 1; res.writeHead(503, { 'content-type': 'text/plain' }); return res.end('users unavailable'); }
     return json(res, 200, { users: users.map((u) => ({ ...u, ...(rowCodes[u.user_id] || {}) })) });
@@ -500,6 +516,68 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await pg.close();
     });
 
+    await test('绑定飞书 button follows the Hub flag: unbound/unknown keep the button; bound shows only the non-clickable 「飞书已绑定」 line', async () => {
+      const cases = [[false, true], [undefined, true], [true, false]];
+      for (const [flag, buttonShown] of cases) {
+        feishuBound = flag;
+        const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+        await pg.goto(`${base}/console`);
+        await pg.locator('#platform-items a').first().waitFor({ state: 'visible' });
+        await pg.waitForFunction(() => document.getElementById('platform-status').textContent === '');
+        const label = `feishu_bound=${flag}`;
+        assert.strictEqual(await pg.locator('#bindFeishuBtn').isVisible(), buttonShown, `${label}: button visible must be ${buttonShown}`);
+        assert.strictEqual(await pg.locator('#feishuBoundNote').isVisible(), !buttonShown, `${label}: note visible must be ${!buttonShown}`);
+        if (!buttonShown) {
+          assert.strictEqual((await pg.locator('#feishuBoundNote').textContent()).trim(), '飞书已绑定');
+          assert.strictEqual(await pg.locator('#feishuBoundNote').evaluate((el) => el.tagName !== 'BUTTON' && !el.onclick && !el.closest('button')), true, 'the note is plain text, not clickable');
+          assert.strictEqual(await pg.locator('#bindFeishuForm').isHidden(), true);
+        }
+        await pg.close();
+      }
+      feishuBound = undefined;
+    });
+
+    await test('绑定飞书 flow: after a successful bind, 「完成,关闭」 re-fetches the state and the button turns into 「飞书已绑定」; an already-bound 409 does the same', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      feishuBound = false; bindFlipsBound = true;
+      await pg.goto(`${base}/console`);
+      await pg.locator('#platform-items a').first().waitFor({ state: 'visible' });
+      await askBind(pg, BIND_PASSWORD);
+      await pg.locator('#bindFeishuBox').waitFor({ state: 'visible' });
+      assert.strictEqual(await pg.locator('#bindFeishuBtn').isVisible(), true, 'while the code is shown the button is still there (not bound yet)');
+      const before = platformGets;
+      await pg.locator('#bindFeishuDone').click();
+      await pg.locator('#feishuBoundNote').waitFor({ state: 'visible' });
+      assert.ok(platformGets > before, 'closing re-fetched /api/console/platform');
+      assert.strictEqual(await pg.locator('#bindFeishuBtn').isHidden(), true);
+      assert.strictEqual(await pg.locator('#bindFeishuBox').isHidden(), true);
+      await pg.close();
+      // 未绑定时点完成(用户没去飞书兑换):重取仍是 false,按钮保持
+      feishuBound = false; bindFlipsBound = false;
+      const pg2 = await context.newPage(); watch(pg2); pg2.setDefaultTimeout(2500);
+      await pg2.goto(`${base}/console`);
+      await pg2.locator('#platform-items a').first().waitFor({ state: 'visible' });
+      await askBind(pg2, BIND_PASSWORD);
+      await pg2.locator('#bindFeishuBox').waitFor({ state: 'visible' });
+      await pg2.locator('#bindFeishuDone').click();
+      await pg2.locator('#bindFeishuBox').waitFor({ state: 'hidden' });
+      await pg2.waitForTimeout(200);
+      assert.strictEqual(await pg2.locator('#bindFeishuBtn').isVisible(), true, 'not bound yet: the button stays');
+      assert.strictEqual(await pg2.locator('#feishuBoundNote').isHidden(), true);
+      // 409 already_bound:状态在别处已变(例如另一标签页刚绑定),重取后按钮换成小字
+      feishuBound = false; bindFlipsBound = false;
+      bindMode = 'already';
+      const pg3 = await context.newPage(); watch(pg3); pg3.setDefaultTimeout(2500);
+      await pg3.goto(`${base}/console`);
+      await pg3.locator('#platform-items a').first().waitFor({ state: 'visible' });
+      feishuBound = true; // 页面载入之后,服务端那头才变成已绑定
+      await askBind(pg3, BIND_PASSWORD);
+      await pg3.locator('#feishuBoundNote').waitFor({ state: 'visible' });
+      assert.strictEqual(await pg3.locator('#bindFeishuBtn').isHidden(), true);
+      bindMode = 'ok'; feishuBound = undefined;
+      await pg2.close(); await pg3.close();
+    });
+
     await test('the console has a 退出 button: it POSTs /console/logout once and then goes to /console/login', async () => {
       const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
       await pg.goto(`${base}/console`);
@@ -534,5 +612,10 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
   } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`platform admin browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);
-  if (mutation) { if (fail < 1) process.exit(1); } else if (fail) process.exit(1);
+  // 退出码约定（变异模式与正常模式一致：用例失败即 1）：
+  //   1 ＝ 有用例失败（变异被杀＝「红」，且输出里有 FAIL 行）· 0 ＝ 全绿（变异模式下＝变异【存活】）
+  //   3 ＝ MUTATION-ANCHOR-STALE（变异的锚点没命中，变异无效——不得算红，也不得算存活）· 2 ＝ 脚本自己崩了
+  // 判「变异红」只认【退出码 1 且有 FAIL 行】；其余一律不是红。
+  if (mutation) console.log(`MUTATION-VERDICT: ${mutation} ${fail >= 1 ? 'KILLED' : 'SURVIVED'}`);
+  if (fail) process.exit(1);
 })().catch((e) => { console.error(e); process.exit(2); });
