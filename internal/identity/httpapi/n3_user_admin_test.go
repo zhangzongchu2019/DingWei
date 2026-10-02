@@ -61,7 +61,7 @@ func TestA11HTTP_UserStateAndTypeEndpoints(t *testing.T) {
 	if st, b := e.call(mgr, "POST", "/api/console/platform/users/alice/type", map[string]any{"type": "member"}, true); st != 200 {
 		t.Fatalf("demote: %d %v", st, b)
 	}
-	if st, b := e.call(mgr, "POST", "/api/console/platform/users/alice/state", map[string]any{"state": "disabled"}, true); st != 200 {
+	if st, b := e.call(mgr, "POST", "/api/console/platform/users/alice/state", map[string]any{"state": "disabled"}, true); st != 200 || b["state"] != "disabled" {
 		t.Fatalf("disable: %d %v", st, b)
 	}
 	if st, _ := e.call(alice, "GET", "/api/console/agents", nil, false); st != 401 {
@@ -81,9 +81,34 @@ func TestA11HTTP_UserStateAndTypeEndpoints(t *testing.T) {
 		{"/api/console/platform/users/alice/type", map[string]any{"type": "platform_admin"}, 400},
 		{"/api/console/platform/users/nobody/state", map[string]any{"state": "disabled"}, 404},
 		{"/api/console/platform/users/root/type", map[string]any{"type": "member"}, 403},
+		{"/api/console/platform/users/root/state", map[string]any{"state": "disabled"}, 403}, // R2：平台管理者不可停用
 	} {
 		if st, b := e.call(mgr, "POST", c.path, c.body, true); st != c.st {
 			t.Errorf("%s %v: %d %v, want %d", c.path, c.body, st, b, c.st)
 		}
+	}
+}
+
+// R1 经 HTTP：恢复一个停用前待绑定的用户，应答的实际状态是 pending_bind。
+func TestA11HTTP_RestoreReportsActualState(t *testing.T) {
+	e := newN3Env(t)
+	ctx := context.Background()
+	for _, u := range []identity.User{
+		{UserID: "Mgr", ShortName: "mg", Type: identity.UserManager, State: identity.UserActive},
+		{UserID: "Pend", ShortName: "pe", Type: identity.UserMember, State: identity.UserPendingBind},
+	} {
+		if err := e.ob.Store.CreateUser(ctx, u); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mgr := e.sessionAs("mgr", "tok-mgr")
+	if st, b := e.call(mgr, "POST", "/api/console/platform/users/pend/state", map[string]any{"state": "disabled"}, true); st != 200 || b["state"] != "disabled" {
+		t.Fatalf("disable: %d %v", st, b)
+	}
+	if st, b := e.call(mgr, "POST", "/api/console/platform/users/pend/state", map[string]any{"state": "active"}, true); st != 200 || b["state"] != "pending_bind" {
+		t.Fatalf("restore: %d %v, want 200 state=pending_bind", st, b)
+	}
+	if st, b := e.call(mgr, "POST", "/api/console/platform/users/pend/state", map[string]any{"state": "active"}, true); st != 400 {
+		t.Fatalf("restore a pending user again: %d %v, want 400", st, b)
 	}
 }

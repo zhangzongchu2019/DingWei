@@ -253,6 +253,10 @@ func TestShimU4_UserDisableDisconnectsAndBlocksReconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	boss, _ := e.svc.Store.GetUser(e.ctx, "boss")
+	// zzc 是夹具直接建的 active 用户：补上激活痕迹（口令），恢复才回 active（R1：恢复只回停用前状态）。
+	if err := e.svc.Store.SetPassword(e.ctx, "zzc", "x", false); err != nil {
+		t.Fatal(err)
+	}
 	if err := e.hub.ReconcileNewPlatformConsole(e.ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -271,7 +275,7 @@ func TestShimU4_UserDisableDisconnectsAndBlocksReconnect(t *testing.T) {
 		}
 	}()
 	waitSessionOnline(t, e.hub, "u_zzc", "kimi")
-	if err := e.ob.SetUserState(e.ctx, boss, "zzc", identity.UserDisabled); err != nil {
+	if _, err := e.ob.SetUserState(e.ctx, boss, "zzc", identity.UserDisabled); err != nil {
 		t.Fatal(err)
 	}
 	if p, _ := e.db.GetConsolePrincipal(e.ctx, "zzc"); p == nil || p.Active {
@@ -294,7 +298,7 @@ func TestShimU4_UserDisableDisconnectsAndBlocksReconnect(t *testing.T) {
 		t.Fatalf("reconnect while owner disabled: %d %s", st, body)
 	}
 	// 恢复后凭据照旧可用（停用不是吊销）。
-	if err := e.ob.SetUserState(e.ctx, boss, "zzc", identity.UserActive); err != nil {
+	if _, err := e.ob.SetUserState(e.ctx, boss, "zzc", identity.UserActive); err != nil {
 		t.Fatal(err)
 	}
 	c2, st, body := e.dial(e.zKimiCred, "")
@@ -428,7 +432,7 @@ func TestShimH5H14_CapabilityDiesWithSessionAndOwner(t *testing.T) {
 		t.Fatal(err)
 	}
 	boss, _ := e.svc.Store.GetUser(e.ctx, "boss")
-	if err := e.ob.SetUserState(e.ctx, boss, "zzc", identity.UserDisabled); err != nil {
+	if _, err := e.ob.SetUserState(e.ctx, boss, "zzc", identity.UserDisabled); err != nil {
 		t.Fatal(err)
 	}
 	if st, body := e.do("POST", "/api/agent/console/specs", "", e.zKimiCred, cap3, agentSpecBody(t, "after disable")); st != 403 {
