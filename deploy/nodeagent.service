@@ -1,0 +1,41 @@
+[Unit]
+# nodeagent —— DingWei 新平台托管节点代理（G4）。
+# 长连拨入 Hub 的 WSS（GET /api/node/connect，子协议 dingwei-node），执行 Docker 指令集、
+# 容量上报、席位卷备份回传（export_seat）。
+# 环境键全集与必填性见 deploy/nodeagent.env.example（键名取自 cmd/nodeagent/main.go，
+# 🔴 三个无默认必填：NODEAGENT_DOCKER_SOCK／NODEAGENT_CGROUP_PARENT／NODEAGENT_SEAT_PROXY）。
+Description=DingWei newplat node agent (hosted seats)
+After=network-online.target docker.service
+Wants=network-online.target
+# 重启限流断路器（同 workpulse.service 的教训：2026-07-14 hub 冻结复盘）：
+# 60s 内超过 5 次重启即进入 failed，不静默狂重启。
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+# 🔴 无权 sd_notify（main.go 不调 NOTIFY_SOCKET）⇒ 不得写 Type=notify。
+User={{USER}}
+# 跑在哪个宿主、用哪个用户由 prodops 按现网定（板记宿主 106）。
+# 该用户须能：连独立 dockerd 的 socket（NODEAGENT_DOCKER_SOCK 指向的那个，🔴 不是默认
+# /var/run/docker.sock）、对 NODEAGENT_SEAT_ROOT 做 XFS 项目配额（通常须 root 或
+# CAP_SYS_ADMIN 委托——按现网 quota 工具链定）、读 600 的凭据文件。
+WorkingDirectory={{WORKDIR}}
+EnvironmentFile={{WORKDIR}}/nodeagent.env
+ExecStart={{WORKDIR}}/bin/nodeagent
+# 崩溃/退出即拉起；代理内部本有断线退避重连（run.go），进程级重启是最后兜底。
+Restart=always
+RestartSec=3s
+Environment=GOTRACEBACK=all
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+# Hardening。可写面＝席位目录根＋台账/凭据所在目录（部署侧按实配改）；
+# 备份不落节点盘（流式回传 Hub），故不含备份路径。
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths={{SEAT_ROOT}} {{STATE_DIR}}
+
+[Install]
+WantedBy=multi-user.target

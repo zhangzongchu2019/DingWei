@@ -1,5 +1,13 @@
 [Unit]
-Description=WorkPulse Feishu robot gateway
+# WorkPulse Hub —— 新平台形态（DW_NEWPLAT=1）。
+# 与旧平台形状的差异：二进制是 bin/workpulse（不是 bin/dingwei）；
+# 必填环境键（缺即拒启，cmd/workpulse/newplat.go:48-64）：
+#   DW_NEWPLAT=1 · DW_PUBLIC_ORIGIN · DW_NEWPLAT_PG_DSN · WP_SECRET_KEY（🔴 不得重新生成）
+# G4 托管面（开则四键，cmd/workpulse/newplat_hosted.go:32-60）：
+#   DW_G4_MASTER_KEY_FILE（开关：不设＝托管面不注册）· DW_G4_COMBOS_FILE · DW_G4_IMAGES_FILE
+#   · DW_G4_BACKUP_DIR（默认 /data/dingwei-newplat/backups/hosted，须在 ReadWritePaths 里）
+# 值全部走 EnvironmentFile（{{WORKDIR}}/.env），本文件不放任何生产值。
+Description=WorkPulse Hub (new platform, DW_NEWPLAT=1)
 After=network-online.target
 Wants=network-online.target
 # 重启限流断路器:60s 内超过 5 次重启即进入 failed(而非静默狂重启)。
@@ -18,7 +26,7 @@ WatchdogSignal=SIGABRT
 User={{USER}}
 WorkingDirectory={{WORKDIR}}
 EnvironmentFile={{WORKDIR}}/.env
-ExecStart={{WORKDIR}}/bin/dingwei
+ExecStart={{WORKDIR}}/bin/workpulse
 # 崩溃/退出即自动拉起(注:对"冻结但不退出"无效,那需看门狗;见上)。
 Restart=always
 RestartSec=3s
@@ -30,12 +38,13 @@ Environment=WP_HUB_LOCK_WATCHDOG_CONFIRM_INTERVAL=500ms
 KillSignal=SIGTERM
 TimeoutStopSec=30s
 
-# Hardening. Keep write access to the project directory because SQLite, exported
-# schedules, and local data live under {{WORKDIR}} by default.
+# Hardening。可写面：{{WORKDIR}}（SQLite、导出件）＋托管备份落盘目录
+# （下行取 DW_G4_BACKUP_DIR 的默认值；若 .env 里改了这个键，这里同步改。
+#  不开托管面＝不设 DW_G4_MASTER_KEY_FILE，则该目录不会被写）。
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
-ReadWritePaths={{WORKDIR}}
+ReadWritePaths={{WORKDIR}} /data/dingwei-newplat/backups/hosted
 
 [Install]
 WantedBy=multi-user.target
