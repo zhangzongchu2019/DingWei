@@ -9,13 +9,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
+	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
 const testUUID = "9b2f8a4e-1c3d-5e6f-8a9b-0c1d2e3f4a5b" // 合法 v5 形(第13位=5,第17位=8)
@@ -38,10 +38,10 @@ func (f *failSender) Send(ctx context.Context, out feishu.OutMessage) (string, e
 
 func custodyServer(t *testing.T, sender Sender, bots map[string]Sender, maxAttempts int) (*Server, string) {
 	t.Helper()
-	spool := filepath.Join(t.TempDir(), "spool.db")
+	pool := pgtest.Pool(t)
 	s := New(Config{
 		ProdURL: "http://127.0.0.1:1", TestURL: "",
-		Sender: sender, Bots: bots, SpoolPath: spool, MaxAttempts: maxAttempts,
+		Sender: sender, Bots: bots, SpoolPool: pool, MaxAttempts: maxAttempts,
 		Callers: map[string]CallerConfig{
 			"tok-prod": {Name: "prod-hub", TestSuffix: false},
 			"tok-test": {Name: "test-hub", TestSuffix: true},
@@ -50,7 +50,7 @@ func custodyServer(t *testing.T, sender Sender, bots map[string]Sender, maxAttem
 	if s.spool == nil {
 		t.Fatal("spool 未打开")
 	}
-	return s, spool
+	return s, "pgtest"
 }
 
 func postCustody(t *testing.T, s *Server, token, body string) *httptest.ResponseRecorder {
@@ -207,9 +207,9 @@ func TestCustodyDLQ(t *testing.T) { // G10 出站侧:终败入 DLQ+计数
 }
 
 func TestCustodyRestartRecovery(t *testing.T) { // G13:代理已WAL+响应丢→重启→同id恰一发
-	spoolPath := filepath.Join(t.TempDir(), "spool.db")
+	pool := pgtest.Pool(t)
 	rec1 := &sendRec{}
-	s1 := New(Config{ProdURL: "http://127.0.0.1:1", Sender: rec1, SpoolPath: spoolPath,
+	s1 := New(Config{ProdURL: "http://127.0.0.1:1", Sender: rec1, SpoolPool: pool,
 		Callers: map[string]CallerConfig{"tok-prod": {Name: "prod-hub"}}})
 	w := postCustody(t, s1, "tok-prod", custodyBody(testUUID, "b", "x"))
 	if w.Code != 202 {
@@ -218,10 +218,9 @@ func TestCustodyRestartRecovery(t *testing.T) { // G13:代理已WAL+响应丢→
 	var r1 map[string]string
 	_ = json.Unmarshal(w.Body.Bytes(), &r1)
 	// 模拟崩溃:未投递即关闭(响应已 202=已落盘,Hub 视角可能没收到→会重试)
-	_ = s1.spool.Close()
 
 	rec2 := &sendRec{}
-	s2 := New(Config{ProdURL: "http://127.0.0.1:1", Sender: rec2, SpoolPath: spoolPath,
+	s2 := New(Config{ProdURL: "http://127.0.0.1:1", Sender: rec2, SpoolPool: pool,
 		Callers: map[string]CallerConfig{"tok-prod": {Name: "prod-hub"}}})
 	if _, err := s2.spool.RecoverSending(context.Background()); err != nil {
 		t.Fatal(err)

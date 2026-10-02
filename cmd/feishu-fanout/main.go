@@ -16,6 +16,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/fanout"
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
 type fakeSender struct{}
@@ -72,9 +73,16 @@ func run() error {
 		logger.Warn("outbound disabled (FANOUT_LARK_APP_ID/SECRET unset)")
 	}
 
-	// v2.3(§E/§F):声明式配置文件+spool+管理面。全部可选=v1 纯 env 部署零回归。
+	// v2.3(§E/§F):声明式配置文件+PG spool+管理面。
 	cfg.ConfigPath = os.Getenv("FANOUT_CONFIG_FILE") // fanout.yaml,文件=唯一真源
-	cfg.SpoolPath = os.Getenv("FANOUT_SPOOL_PATH")
+	if dsn := os.Getenv("FANOUT_PG_DSN"); dsn != "" {
+		pool, err := repo.OpenPG(context.Background(), dsn, repo.MaxOpenConns(1))
+		if err != nil {
+			return fmt.Errorf("FANOUT_PG_DSN: %w", err)
+		}
+		defer pool.Close()
+		cfg.SpoolPool = pool
+	}
 	if raw := os.Getenv("FANOUT_ADMIN_TOKENS"); raw != "" { // {"<token>":{"id":"ops-a","role":"admin"}}
 		if err := json.Unmarshal([]byte(raw), &cfg.AdminTokens); err != nil {
 			return fmt.Errorf("FANOUT_ADMIN_TOKENS bad json: %w", err)
