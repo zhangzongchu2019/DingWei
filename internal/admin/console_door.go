@@ -90,7 +90,7 @@ type consoleDoorRoute struct {
 
 func (s *Server) consoleDoorRoutes() []consoleDoorRoute {
 	p := consoleDoorPrefix
-	return []consoleDoorRoute{
+	routes := []consoleDoorRoute{
 		{pattern: p, capability: capConsoleIndex, title: "", get: s.consoleAdminIndex},
 		{pattern: p + "/files", capability: capFiles, title: "文件对象浏览", get: s.filesPage},
 		// capFileContent 从"文件对象浏览"页内每行的链接进入 ⇒ **不单列**(单列它没有意义)。
@@ -100,6 +100,21 @@ func (s *Server) consoleDoorRoutes() []consoleDoorRoute {
 		{pattern: p + "/bot-channels", capability: capBotChannels, title: "机器人通道", get: s.botChannels, post: s.upsertBotChannel},
 		{pattern: p + "/platform-roles", capability: capPlatformRoles, title: "管理者名单(增删)", get: s.consolePlatformRolesPage, post: s.manageConsolePlatformRole},
 	}
+	if !s.NewPlatform {
+		return routes
+	}
+	// 新平台的身份与角色由 np_user/np_identity 及管理 JSON 入口维护；
+	// provision、旧 API key 和手工管理者名单都依赖旧表或会被垫片覆盖。
+	out := make([]consoleDoorRoute, 0, len(routes)-3)
+	for _, route := range routes {
+		switch route.capability {
+		case capProvision, capAPIKeys, capPlatformRoles:
+			continue
+		default:
+			out = append(out, route)
+		}
+	}
+	return out
 }
 
 // MountConsole 注册门 B。**必须在 s.Prefix 被装配成"console 鉴权开启"的 hub 之后调用**
