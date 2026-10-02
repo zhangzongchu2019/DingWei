@@ -280,6 +280,10 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 	if seat.State == "destroyed" {
 		return nil // 幂等
 	}
+	node, nerr := l.st.GetNode(ctx, seat.NodeID)
+	if nerr != nil || node.State != "online" {
+		return l.destroyOffline(ctx, seat, actorLC)
+	}
 	// ① 先备份数据卷（业主 8971bddf：留 14 天到期自动删；备份件须可读且与销毁前一致——D5）
 	backupRef, err := l.backups.BackupSeatVolume(ctx, seat.NodeID, agentID)
 	if err != nil {
@@ -289,22 +293,11 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 	if _, err := l.idp.RetireHostedAgent(ctx, agentID, actorLC); err != nil {
 		return err
 	}
-	// ③ 停删容器＋清 XFS 项目配额（节点侧 destroy_seat 内含配额清除；离线节点也可销毁——
-	//    节点离线时凭据已吊销是安全态，容器清理由节点重连后对账，登记 degraded 而不阻塞）
-	degraded := false
-	node, nerr := l.st.GetNode(ctx, seat.NodeID)
-	if nerr == nil && node.State == "online" {
-		res, serr := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
-		if serr != nil || !res.OK {
-			_ = l.st.SetSeatState(ctx, agentID, "error", "node_offline", "fail", json.RawMessage(`{"after":"retired"}`))
-			return ErrNodeOffline
-		}
-	} else {
-		// 🔴 复验阻断 5：节点离线销毁必须留对账记录——凭据已吊销是安全态，容器与配额
-		//    待节点重连后对账清理；审计一条＋销毁事件带 reconcile_pending 标记。
-		degraded = true
-		_ = l.st.AddAudit(ctx, actorLC, "seat.destroy_degraded", agentID,
-			json.RawMessage(`{"node":`+jsonStr(seat.NodeID)+`,"reason":"node_offline","reconcile":"pending"}`))
+	// ③ 停删容器＋清 XFS 项目配额（节点侧 destroy_seat 内含配额清除）
+	res, serr := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
+	if serr != nil || !res.OK {
+		_ = l.st.SetSeatState(ctx, agentID, "error", "node_offline", "fail", json.RawMessage(`{"after":"retired"}`))
+		return ErrNodeOffline
 	}
 	// ④ 账号回池（组长定：自动回池＋审计）
 	if seat.AccountRef.Valid {
@@ -312,11 +305,29 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 			return err
 		}
 	}
-	detail := `{"backup":` + jsonStr(backupRef) + `,"ttl_days":14`
-	if degraded {
-		detail += `,"reconcile_pending":true`
+	return l.st.SetSeatState(ctx, agentID, "destroyed", "", "destroy",
+		json.RawMessage(`{"backup":`+jsonStr(backupRef)+`,"ttl_days":14}`))
+}
+
+// destroyOffline 节点离线的销毁（组长裁定 lead-g4-t53-review 第 4 条）。「离线可销毁」与「先备份再删数据」（业主 8971bddf）两条同时成立：
+//   - 凭据立即吊销（Retire）、账号回池、席位记 destroyed —— 销毁的首要目的是立刻断掉凭据，在线与否都要做；
+//   - 此刻节点不通，备份做不了，数据也删不了 ⇒ 销毁事件带 reconcile_pending＋backup_pending，数据一字不动；
+//   - 节点重连时 ReconcileNode 先备份、备份成功才 destroy_seat；备份失败留待下次，不删数据。
+//
+// 原先离线销毁第一步就是经网关备份 ⇒ 节点不通即 backup_failed，「离线可销毁」实际走不通（复验第四节）。
+func (l *Lifecycle) destroyOffline(ctx context.Context, seat Seat, actorLC string) error {
+	if _, err := l.idp.RetireHostedAgent(ctx, seat.AgentID, actorLC); err != nil {
+		return err
 	}
-	return l.st.SetSeatState(ctx, agentID, "destroyed", "", "destroy", json.RawMessage(detail+`}`))
+	_ = l.st.AddAudit(ctx, actorLC, "seat.destroy_degraded", seat.AgentID,
+		json.RawMessage(`{"node":`+jsonStr(seat.NodeID)+`,"reason":"node_offline","reconcile":"pending","backup":"pending"}`))
+	if seat.AccountRef.Valid {
+		if err := l.pool.Unbind(ctx, actorLC, true, seat.AccountRef.String); err != nil {
+			return err
+		}
+	}
+	return l.st.SetSeatState(ctx, seat.AgentID, "destroyed", "", "destroy",
+		json.RawMessage(`{"ttl_days":14,"reconcile_pending":true,"backup_pending":true}`))
 }
 
 // undo 撤回一次凭据动作（节点不通时把凭据恢复到操作前）。撤回本身失败只记审计——

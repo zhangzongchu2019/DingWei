@@ -319,7 +319,8 @@ func TestDestroyOfflineNodeLeavesReconcileRecord(t *testing.T) {
 	if err := lc.Destroy(ctx, id, "zzc", true, true); err != nil {
 		t.Fatal(err)
 	}
-	eqSeq(t, "offline_destroy", log.get(), []string{"backup", "idp:retire"}) // 无 node:destroy_seat
+	// 节点离线：只吊销，不备份、不删（备份与删数据都留给重连对账，lead-g4-t53-review 第 4 条）
+	eqSeq(t, "offline_destroy", log.get(), []string{"idp:retire"})
 	seat, _ = s.GetSeat(ctx, id)
 	if seat.State != "destroyed" {
 		t.Fatalf("应 destroyed: %+v", seat)
@@ -338,8 +339,11 @@ func TestDestroyOfflineNodeLeavesReconcileRecord(t *testing.T) {
 		t.Fatal(err)
 	}
 	var detail string
-	if err := row.Scan(&detail); err != nil || !strings.Contains(detail, "reconcile_pending") {
-		t.Fatalf("销毁事件须带 reconcile_pending: %s err=%v", detail, err)
+	if err := row.Scan(&detail); err != nil || !strings.Contains(detail, "reconcile_pending") || !strings.Contains(detail, "backup_pending") {
+		t.Fatalf("销毁事件须带 reconcile_pending 与 backup_pending: %s err=%v", detail, err)
+	}
+	if p, err := s.SeatBackupPending(ctx, id); err != nil || !p {
+		t.Fatalf("离线销毁后应待备份: %v %v", p, err)
 	}
 }
 
@@ -407,7 +411,7 @@ func mkPoolSvcFromStore(t *testing.T, s *Store) *PoolService {
 // 成功写 reconcile_done；再次对账不再发（幂等收口）。
 func TestReconcileOnNodeReconnect(t *testing.T) {
 	ctx := context.Background()
-	lc, _, _, _, _, s, id := mkLifecycle(t)
+	lc, log, _, gw, bk, s, id := mkLifecycle(t)
 	seat, _ := s.GetSeat(ctx, id)
 	if err := s.SetNodeState(ctx, seat.NodeID, "offline"); err != nil {
 		t.Fatal(err)
@@ -419,12 +423,63 @@ func TestReconcileOnNodeReconnect(t *testing.T) {
 	if err != nil || len(pending) != 1 || pending[0] != id {
 		t.Fatalf("离线销毁后应有一席待对账: %v err=%v", pending, err)
 	}
-	// 节点重连（对账走编排器的 gw——mkOrch 的假网关记录指令）
+	// 节点重连（对账走编排器的 gw；备份器与销毁同一个，事件记在同一条日志上）
 	orch := NewOrchestrator(s, lc.pool, lc.idp, lc.gw, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
+
+	// ① 没有备份器 ⇒ 不删，留待下次
+	log.reset()
 	orch.ReconcileNode(ctx, seat.NodeID)
+	eqSeq(t, "no backuper", log.get(), nil)
+	if pending, _ = s.SeatsPendingReconcile(ctx, seat.NodeID); len(pending) != 1 {
+		t.Fatalf("没有备份器不得删数据: %v", pending)
+	}
+	orch.SetBackuper(bk)
+
+	// ② 备份失败 ⇒ 不发 destroy_seat，仍待备份、仍待对账
+	bk.failOn = true
+	log.reset()
+	orch.ReconcileNode(ctx, seat.NodeID)
+	eqSeq(t, "backup failed", log.get(), []string{"backup"})
+	if p, _ := s.SeatBackupPending(ctx, id); !p {
+		t.Fatal("备份失败后仍应待备份")
+	}
+
+	// ③ 备份成功 ⇒ 先备份、再 destroy_seat，两步都完成
+	bk.failOn = false
+	log.reset()
+	orch.ReconcileNode(ctx, seat.NodeID)
+	eqSeq(t, "backup then destroy", log.get(), []string{"backup", "node:destroy_seat"})
 	pending, _ = s.SeatsPendingReconcile(ctx, seat.NodeID)
 	if len(pending) != 0 {
 		t.Fatalf("对账后应无待清: %v", pending)
+	}
+	if p, _ := s.SeatBackupPending(ctx, id); p {
+		t.Fatal("备份成功后不应再待备份")
+	}
+	_ = gw
+}
+
+// 备份已在某次重连里做过、但当时 destroy_seat 失败：下次重连不再重复备份，只补删。
+func TestReconcileDoesNotBackupTwice(t *testing.T) {
+	ctx := context.Background()
+	lc, log, _, gw, bk, s, id := mkLifecycle(t)
+	seat, _ := s.GetSeat(ctx, id)
+	_ = s.SetNodeState(ctx, seat.NodeID, "offline")
+	if err := lc.Destroy(ctx, id, "zzc", true, true); err != nil {
+		t.Fatal(err)
+	}
+	orch := NewOrchestrator(s, lc.pool, lc.idp, lc.gw, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
+	orch.SetBackuper(bk)
+	gw.failOn = "destroy_seat"
+	log.reset()
+	orch.ReconcileNode(ctx, seat.NodeID)
+	eqSeq(t, "first reconnect", log.get(), []string{"backup", "node:destroy_seat"})
+	gw.failOn = ""
+	log.reset()
+	orch.ReconcileNode(ctx, seat.NodeID)
+	eqSeq(t, "second reconnect", log.get(), []string{"node:destroy_seat"})
+	if pending, _ := s.SeatsPendingReconcile(ctx, seat.NodeID); len(pending) != 0 {
+		t.Fatalf("still pending: %v", pending)
 	}
 }
 
@@ -541,7 +596,7 @@ func TestDestroyBackupFailedTyped(t *testing.T) {
 // 复验三刀守卫（86d78377 附录 A）：①对账只发 destroy_seat ②节点失败不标记完成 ③只清本节点的。
 func TestReconcileGuards(t *testing.T) {
 	ctx := context.Background()
-	lc, _, _, gw, _, s, id := mkLifecycle(t)
+	lc, _, _, gw, bk, s, id := mkLifecycle(t)
 	seat, _ := s.GetSeat(ctx, id)
 	if err := s.SetNodeState(ctx, seat.NodeID, "offline"); err != nil {
 		t.Fatal(err)
@@ -562,6 +617,7 @@ func TestReconcileGuards(t *testing.T) {
 	}
 	// ③ 节点过滤：对本节点对账
 	orch := NewOrchestrator(s, lc.pool, lc.idp, gw, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
+	orch.SetBackuper(bk)
 	orch.ReconcileNode(ctx, seat.NodeID)
 	for _, c := range gw.sent {
 		// ① 只许 destroy_seat
@@ -578,7 +634,7 @@ func TestReconcileGuards(t *testing.T) {
 		t.Fatalf("别节点的待对账不得被清: %v", pending)
 	}
 	// ② 失败不标记完成
-	lc2, _, _, gw2, _, s2, id2 := mkLifecycle(t)
+	lc2, _, _, gw2, bk2, s2, id2 := mkLifecycle(t)
 	seat2, _ := s2.GetSeat(ctx, id2)
 	_ = s2.SetNodeState(ctx, seat2.NodeID, "offline")
 	if err := lc2.Destroy(ctx, id2, "zzc", true, true); err != nil {
@@ -586,6 +642,7 @@ func TestReconcileGuards(t *testing.T) {
 	}
 	gw2.failOn = "destroy_seat"
 	orch2 := NewOrchestrator(s2, lc2.pool, lc2.idp, gw2, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
+	orch2.SetBackuper(bk2)
 	orch2.ReconcileNode(ctx, seat2.NodeID)
 	pending2, _ := s2.SeatsPendingReconcile(ctx, seat2.NodeID)
 	if len(pending2) != 1 {

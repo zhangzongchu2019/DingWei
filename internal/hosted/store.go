@@ -249,6 +249,20 @@ WHERE s.node_id=$1 AND s.state='destroyed'
 	return out, rows.Err()
 }
 
+// SeatBackupPending 离线销毁的席位是否还欠一次备份：销毁事件带 backup_pending，且之后没有 reconcile_backup_done。
+func (s *Store) SeatBackupPending(ctx context.Context, agentID string) (bool, error) {
+	var pending bool
+	row, err := s.qrow(ctx, `
+SELECT EXISTS (SELECT 1 FROM g4_seat_event e WHERE e.agent_id=$1 AND e.kind='destroy'
+               AND e.detail @> '{"backup_pending":true}'::jsonb)
+   AND NOT EXISTS (SELECT 1 FROM g4_seat_event e2 WHERE e2.agent_id=$1 AND e2.kind='reconcile_backup_done')`, agentID)
+	if err != nil {
+		return false, err
+	}
+	err = row.Scan(&pending)
+	return pending, err
+}
+
 func (s *Store) CreateSeat(ctx context.Context, st Seat) error {
 	if _, ok := PlanByID(st.Plan); !ok {
 		return fmt.Errorf("%w: plan %q", ErrInvalidState, st.Plan)
