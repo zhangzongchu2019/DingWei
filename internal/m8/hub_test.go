@@ -111,15 +111,6 @@ func useTestSessionReadIdleTimeout(t *testing.T, d time.Duration) {
 	})
 }
 
-func useTestSessionIdleWatchdogInterval(t *testing.T, d time.Duration) {
-	t.Helper()
-	old := sessionIdleWatchdogInterval
-	sessionIdleWatchdogInterval = d
-	t.Cleanup(func() {
-		sessionIdleWatchdogInterval = old
-	})
-}
-
 func useTestSessionKeepalive(t *testing.T, interval, timeout time.Duration) {
 	t.Helper()
 	oldInterval, oldTimeout := sessionKeepaliveInterval, sessionKeepaliveTimeout
@@ -3080,10 +3071,13 @@ func TestSessionEndpointVersionEnforceAllowsCDDrift(t *testing.T) {
 	}
 }
 
+// 下面三格原是「真时钟＋毫秒级时限」的实时竞速（空闲 120／150ms、巡检 20ms、Sleep 等到点），负载高时偶发红；
+// 改用假时钟（idleClock，挂 Hub.NowFunc／Hub.IdleTickerFunc）：时间只在 advance 时前进，巡检的每一拍由用例送出。
+// （组长 R-M8-TESTSIDE ②，台账 lead-m8-flake-findings 测试侧；WORKGROUPS 第〇节）
 func TestSessionEndpointIdleTimeoutMarksOffline(t *testing.T) {
 	useTestSessionReadIdleTimeout(t, 120*time.Millisecond)
-	useTestSessionIdleWatchdogInterval(t, 20*time.Millisecond)
 	hub, db, ctx := newTestHub(t)
+	clock := installIdleClock(t, hub)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -3100,13 +3094,21 @@ func TestSessionEndpointIdleTimeoutMarksOffline(t *testing.T) {
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	go readSessionControls(conn)
 	waitSessionOnline(t, hub, key.ID, "developer")
+	clock.advance(100 * time.Millisecond) // 未到空闲时限
+	clock.fire(t, "100ms idle")
+	clock.confirmAlive(t, "still within the idle timeout")
+	if !hub.sessionOnline(key.ID, "developer") {
+		t.Fatal("session closed before the idle timeout")
+	}
+	clock.advance(21 * time.Millisecond) // 共 121ms > 120ms
+	clock.fire(t, "121ms idle")
 	waitEndpointInactive(t, ctx, db, key.ID, "developer")
 }
 
 func TestSessionEndpointPingKeepsIdleConnectionOnline(t *testing.T) {
 	useTestSessionReadIdleTimeout(t, 120*time.Millisecond)
-	useTestSessionIdleWatchdogInterval(t, 20*time.Millisecond)
 	hub, db, ctx := newTestHub(t)
+	clock := installIdleClock(t, hub)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -3122,27 +3124,30 @@ func TestSessionEndpointPingKeepsIdleConnectionOnline(t *testing.T) {
 	conn := dialSession(t, ctx, srv.URL, "developer", key.ID, secret)
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	go readSessionControls(conn)
-	deadline := time.Now().Add(3 * sessionReadIdleTimeout)
-	for time.Now().Before(deadline) {
-		pingCtx, cancel := context.WithTimeout(ctx, time.Second)
-		err := conn.Ping(pingCtx)
+	waitSessionOnline(t, hub, key.ID, "developer")
+	// 每轮推进 100ms（单看不超时限，累计远超），客户端只发 ping；Hub 收到 ping 即记活跃，巡检不得判空闲。
+	for round := 1; round <= 3; round++ {
+		clock.advance(100 * time.Millisecond)
+		pingCtx, cancel := context.WithTimeout(ctx, envelopeReadTimeout)
+		err := conn.Ping(pingCtx) // 返回时 Hub 已处理该 ping（先记活跃再回 pong）
 		cancel()
 		if err != nil {
-			t.Fatalf("ping failed before idle timeout: %v", err)
+			t.Fatalf("round %d: ping failed: %v", round, err)
 		}
-		time.Sleep(25 * time.Millisecond)
+		clock.fire(t, fmt.Sprintf("round %d after ping", round))
+		clock.confirmAlive(t, fmt.Sprintf("round %d: ping-only session must stay online (300ms total > 120ms idle)", round))
 	}
 	endpoints, err := db.ListSessionEndpoints(ctx)
-	if err != nil || len(endpoints) != 1 || !endpoints[0].Active {
+	if err != nil || len(endpoints) != 1 || !endpoints[0].Active || !hub.sessionOnline(key.ID, "developer") {
 		t.Fatalf("ping-only session was marked offline: endpoints=%+v err=%v", endpoints, err)
 	}
 }
 
 func TestServerPingKeepsIdleSessionOnline(t *testing.T) {
 	useTestSessionReadIdleTimeout(t, 150*time.Millisecond)
-	useTestSessionIdleWatchdogInterval(t, 20*time.Millisecond)
-	useTestSessionKeepalive(t, 25*time.Millisecond, 100*time.Millisecond)
+	useTestSessionKeepalive(t, 25*time.Millisecond, time.Second) // 保活 ping 照常走真时钟，只负责让 pong 发生
 	hub, db, ctx := newTestHub(t)
+	clock := installIdleClock(t, hub)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -3159,9 +3164,20 @@ func TestServerPingKeepsIdleSessionOnline(t *testing.T) {
 	defer conn.Close(websocket.StatusNormalClosure, "done")
 	go readSessionControls(conn)
 	waitSessionOnline(t, hub, key.ID, "developer")
-	time.Sleep(3 * sessionReadIdleTimeout)
+	hub.mu.Lock()
+	c := hub.sessionClients[key.ID]["developer"]
+	hub.mu.Unlock()
+	// 每轮推进 100ms；客户端什么都不发，只有服务端保活的 pong 能把活跃时刻推到假时钟的当前值。
+	for round := 1; round <= 3; round++ {
+		at := clock.advance(100 * time.Millisecond)
+		waitFor(t, envelopeReadTimeout, fmt.Sprintf("round %d: 服务端保活的 pong 把会话活跃时刻推到假时钟当前值", round), func() bool {
+			return !c.lastSeen().Before(at)
+		})
+		clock.fire(t, fmt.Sprintf("round %d after pong", round))
+		clock.confirmAlive(t, fmt.Sprintf("round %d: server-ping session must stay online (300ms total > 150ms idle)", round))
+	}
 	endpoints, err := db.ListSessionEndpoints(ctx)
-	if err != nil || len(endpoints) != 1 || !endpoints[0].Active {
+	if err != nil || len(endpoints) != 1 || !endpoints[0].Active || !hub.sessionOnline(key.ID, "developer") {
 		t.Fatalf("server-ping session was marked offline: endpoints=%+v err=%v", endpoints, err)
 	}
 }
