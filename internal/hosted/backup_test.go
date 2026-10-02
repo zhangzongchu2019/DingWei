@@ -423,6 +423,41 @@ func TestBackupChecksumControlPlane(t *testing.T) {
 			t.Fatalf("seat must show backup_failed: %+v", seat)
 		}
 	})
+
+	// 甲形状的安全方向（复验预审 G9）：Hub 重启 ⇒ landed 内存丢失 ⇒ 补报到了也比对无门
+	// ⇒ 必须失败朝安全方向（不销毁）。扮演：上传落盘后、结果返回前清掉 landed（等价重启丢内存）。
+	t.Run("hub restart loses landed, report blocked", func(t *testing.T) {
+		inner := &gwBackupNode{body: good}
+		s, bk, dir := mkBackupRig(t, inner)
+		bk.gw = gwFunc(func(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+			res, err := inner.Send(ctx, nodeID, cmd)
+			if cmd.Type == "export_seat" && err == nil && res.OK {
+				bk.mu.Lock() // 等价 Hub 重启：落盘登记（内存）丢光
+				bk.landed = map[string]struct {
+					sha  string
+					size int64
+				}{}
+				bk.mu.Unlock()
+			}
+			return res, err
+		})
+		if ref, err := bk.BackupSeatVolume(context.Background(), "nd_bk", "ag_c"); err == nil || ref != "" {
+			t.Fatalf("重启丢内存后补报必须失败（不销毁）: ref=%q err=%v", ref, err)
+		}
+		if n := backupCount(t, s); n != 0 {
+			t.Fatalf("记录应作废: %d", n)
+		}
+		if left, _ := os.ReadDir(dir); len(left) != 0 {
+			t.Fatalf("落盘件不得留: %v", left)
+		}
+	})
+}
+
+// gwFunc 适配器：把函数包装成 NodeGateway（G9 包层用）。
+type gwFunc func(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error)
+
+func (f gwFunc) Send(ctx context.Context, nodeID string, cmd NodeCommand) (NodeResult, error) {
+	return f(ctx, nodeID, cmd)
 }
 
 // mkBackupRigOn 在已有 Store 上搭接收端点（席位所在节点 nd_free 登记凭据）。
