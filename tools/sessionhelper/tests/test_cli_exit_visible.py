@@ -338,7 +338,9 @@ time.sleep(30)
                                         SH_CLI_READY_TIMEOUT="6", SH_CLI_LAUNCH_RETRIES="1")))
         self.addCleanup(a.stop)
         with contextlib.redirect_stdout(io.StringIO()):
-            a.start()
+            a.start()  # 启动期遇拦路即返回（约 1.5 秒），此时「›」那块还没来
+            time.sleep(3)  # 等「›」那块到达并被读到
+        self.assertIn("\u203a", a.screen)
         self.assertFalse(a.ready.is_set())
 
     def _alive_screen(self, text: str, **extra):
@@ -471,6 +473,62 @@ class CodexStartupBlockers(unittest.TestCase):
         # 934fa246 i-cr 90 秒屏里回车之后的 API key 输入框（检测到环境里的 key、待保存）
         self._blocked_fast(self._adapter(_LOGIN_THEN_KEY, cut=b"\x1b[3;1H>\x1b[3;3H\x1b[1mUse your own OpenAI API key"),
                            "Detected OPENAI_API_KEY")
+
+    def test_leaving_trust_page_unblocks_on_full_redraw(self):
+        # tosonnet55tc2k 复验 54238415：有人在终端里按回车离开信任页后仍被压着不就绪 ⇒ 按「当前屏幕」判。
+        # 真屏：先回放 934fa246 ii-cr-60s 信任页；3 秒后送 ii-cr-90s 里回车之后的整屏重画（ESC[1;1H ESC[J 起，到更新提示框之前）
+        d = tempfile.mkdtemp(prefix="sh-cli-leave-")
+        path = os.path.join(d, "fakecli.py")
+        with open(path, "w") as f:
+            f.write("""#!/usr/bin/env python3
+import sys, time
+sys.stdout.buffer.write(open(%r, "rb").read()); sys.stdout.flush()
+time.sleep(3)
+d = open(%r, "rb").read()
+a = d.index(b"\\x1b[1;1H\\x1b[J\\x1b[?2026h\\x1b[2;3H\\x1b[38;5;75;49m>_", d.index(b"Trust and continue"))
+e = d.index("\\x1b[1;1H\\x1b[2m\\u256d".encode(), a)
+sys.stdout.buffer.write(d[a:e]); sys.stdout.flush()
+time.sleep(60)
+""" % (_TRUST, _TRUST_THEN_UPDATE))
+        os.chmod(path, 0o755)
+        a = CLIAdapter(load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_CMD=path, SH_CLI_CWD=d,
+                                        SH_CLI_READY_TIMEOUT="20", SH_CLI_LAUNCH_RETRIES="1")))
+        self.addCleanup(a.stop)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            a.start()
+            self.assertEqual(a.blocked_by, "Trust this folder")
+            self.assertFalse(a.ready.is_set())
+            end = time.time() + 10
+            while time.time() < end and not a.ready.is_set():
+                time.sleep(0.1)
+        self.assertTrue(a.ready.is_set(), "home redrawn after leaving the trust page must become ready")
+        self.assertEqual(a.blocked_by, "")
+        self.assertIn("[cli] left blocking screen: 'Trust this folder'", out.getvalue())
+
+    def test_restarted_child_does_not_inherit_previous_screen(self):
+        # 第一个子进程停在拦路屏（无整屏重画）后退出；经 start_pty 起的第二个正常 ⇒ 就绪（当前屏幕随新子进程清空）
+        d = tempfile.mkdtemp(prefix="sh-cli-restart2-")
+        path = os.path.join(d, "fakecli.py")
+        with open(path, "w") as f:
+            f.write(_RESPAWN_PLAN % ([("1. Sign in with ChatGPT \u203a ", "", 0, 3), ("\u203a Ask Codex to do anything ", "", 0, 60)],))
+        os.chmod(path, 0o755)
+        a = CLIAdapter(load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_CMD=path, SH_CLI_CWD=d,
+                                        SH_CLI_READY_TIMEOUT="10", SH_CLI_LAUNCH_RETRIES="1")))
+        self.addCleanup(a.stop)
+        with contextlib.redirect_stdout(io.StringIO()):
+            a.start()
+            self.assertEqual(a.blocked_by, "Sign in with ChatGPT")
+            end = time.time() + 10
+            while time.time() < end and not a._child_gone():
+                time.sleep(0.1)
+            self.assertTrue(a._child_gone())
+            time.sleep(0.5)
+            end = time.time() + 15
+            while time.time() < end and not a.start():
+                time.sleep(0.5)
+        self.assertTrue(a.ready.is_set(), "second child shows only the prompt")
+        self.assertEqual(a.blocked_by, "")
 
     def test_healthy_home_stays_ready_when_answer_mentions_blocker_text(self):
         # tosonnet55tc2k 实测：就绪后回答里一句 Sign in with ChatGPT 就把健康座席判死

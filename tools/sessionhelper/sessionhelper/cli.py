@@ -36,6 +36,10 @@ _SECRET_FLAG_RE = re.compile(r"(?i)(--?" + _SECRET_KEY_NAME + r")(=|\s+)(?!-)(\"
 _SECRET_KV_RE = re.compile(
     r"(?i)\b(" + _SECRET_KEY_NAME + r"\"?)(\s*[:=]\s*)(?!(?:bearer|basic)\s)(\"[^\"]*\"|'[^']*'|\S+)")
 EXIT_TAIL_LINES = 6
+# 全屏 TUI 整屏重画的起点：光标回左上角再清到屏尾、清全屏、进备用屏。启动期据此维护「当前屏幕」——
+# Codex 0.159.2 在信任页按回车后即以「ESC[1;1H ESC[J」整屏重画主页（934fa246 ii-cr-90s 原始流）。
+_SCREEN_CLEAR_RE = re.compile(r"\x1b\[(?:1;1)?H\x1b\[0?J|\x1b\[2J|\x1b\[\?1049h")
+SCREEN_MAX = 65536
 
 
 class CLIDeliveryFailed(RuntimeError):
@@ -137,6 +141,7 @@ class CLIAdapter:
         # 启动期已过（本子进程首次「出现提示符且静默」）：此后正文里出现拦路字样不再撤销就绪（组长 WORKGROUPS 第十节第 1 条：
         # 回答里一句 Sign in with ChatGPT 曾把健康座席判死）。新子进程（start_pty／_respawn_child）重置。
         self.startup_done = False
+        self.screen = ""  # 自上次整屏重画以来的屏幕文字（启动期内拦路／就绪按它判）
         self.command = cfg.cli_cmd or self.profile.command
         self.cwd = cfg.cli_cwd or os.getcwd()
         self.launch_mode = cfg.cli_launch or self.profile.launch
@@ -225,6 +230,7 @@ class CLIAdapter:
         self.output_tail.clear()
         self.blocked_by = ""
         self.startup_done = False
+        self.screen = ""
         self.child = pexpect.spawn(
             self.command[0],
             self.command[1:],
@@ -656,8 +662,8 @@ class CLIAdapter:
         if self.stopping.is_set():
             return False
         self.ready.clear()
-        self.blocked_by = ""
         self.startup_done = False
+        self.screen = ""  # 拦路状态随之在新子进程第一块输出时按当前屏幕重算
         self.last_output_at = 0.0
         self.started_at = time.time()
         try:
@@ -704,6 +710,12 @@ class CLIAdapter:
                 self.startup_done = True
             if raw:
                 self.terminal_q.put(raw)
+            if raw:
+                clears = list(_SCREEN_CLEAR_RE.finditer(raw))
+                if clears:
+                    self.screen = clean_output(raw[clears[-1].end():])
+                else:
+                    self.screen = (self.screen + "\n" + clean_output(raw))[-SCREEN_MAX:]
             cleaned = clean_output(raw)
             if not cleaned:
                 continue
@@ -712,18 +724,27 @@ class CLIAdapter:
                     self.output_tail.append(ln.strip())
             self.last_output_at = time.time()
             buf += "\n" + cleaned
-            # 启动期（首次就绪之前）拦路界面优先：输出里出现登录选择等标记即撤销就绪并留痕；本子进程此后不再判就绪
-            # （全屏 TUI 局部重绘可能单独送来一块只含「›」的输出，而菜单仍在屏上；helper 也无法自行越过登录）。
-            # 新子进程才重置。启动期过后不再看拦路标记——那时屏上是模型回答，里面出现这些字样不说明 CLI 卡住。
-            # 否则出现输入提示符才置就绪。「子进程还活着」由 start_pty（等静默期间退出即报）与 _note_exit（清就绪）保证。
-            squashed = _squash(cleaned)
-            blocker = "" if self.startup_done else next((pat for pat in self.block_patterns if _squash(pat) in squashed), "")
-            if blocker:
-                self.ready.clear()
-                if not self.blocked_by:
-                    self.blocked_by = blocker
-                    print(f"[cli] blocked at screen: {blocker!r}", flush=True)
-            elif not self.blocked_by and any(_squash(pat) in squashed for pat in self.ready_patterns):
+            # 启动期（首次就绪之前）按「当前屏幕」判（组长 WORKGROUPS 第十节第 1 条）：当前屏幕＝自上次整屏重画以来的文字。
+            # 屏上有拦路标记 ⇒ 撤销就绪并留痕（全屏 TUI 局部重绘可能单独送来一块只含「›」的输出，而菜单仍在屏上，
+            # 所以不按单块输出判）；整屏重画后拦路标记不在了（如有人在终端里按回车离开信任页）⇒ 解除拦路，有提示符即就绪。
+            # 启动期过后不再看拦路标记——那时屏上是模型回答，里面出现这些字样不说明 CLI 卡住。
+            # 「子进程还活着」由 start_pty（等静默期间退出即报）与 _note_exit（清就绪）保证。
+            if not self.startup_done:
+                squashed = _squash(self.screen)
+                blocker = next((pat for pat in self.block_patterns if _squash(pat) in squashed), "")
+                if blocker:
+                    self.ready.clear()
+                    if self.blocked_by != blocker:
+                        self.blocked_by = blocker
+                        print(f"[cli] blocked at screen: {blocker!r}", flush=True)
+                else:
+                    if self.blocked_by:
+                        print(f"[cli] left blocking screen: {self.blocked_by!r}", flush=True)
+                        self.blocked_by = ""
+                    if any(_squash(pat) in squashed for pat in self.ready_patterns):
+                        self.ready.set()
+                        self.respawn_count = 0
+            elif any(_squash(pat) in _squash(cleaned) for pat in self.ready_patterns):
                 self.ready.set()
                 self.respawn_count = 0
             if self.profile.output_source == "pty":
