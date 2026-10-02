@@ -42,27 +42,36 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 		}
 	}
 
+	// 🔴 走【Hub 装配点】的口径（HubDomains()），不是全账本：本格钉的是「Hub 真会施加的那一份
+	// 就够身份域起来」，而 fanout 的 0400 按裁定 R-G2-LEDGER-DOMAIN 不进 Hub 库。
 	pool := testSchema(t, dsn)
-	rep, err := Migrate(ctx, pool)
+	rep, err := Migrate(ctx, pool, HubDomains())
 	if err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
-	// 🔴 这份名单写死是有意的（与上面「缺表名单」同理）：它钉的是【账本里到底有哪几条】，
-	// 引 Ledger() 去比就变成自己比自己。加一条条目 ⇒ 改这里，红一次是应当的。
-	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0400_fanout_baseline.sql" {
-		t.Errorf("Applied = %v，要三条按字典序", rep.Applied)
+	// 🔴 这份名单写死是有意的（与上面「缺表名单」同理）：它钉的是【Hub 域里到底有哪几条】，
+	// 引 LedgerInDomains() 去比就变成自己比自己。加一条 Hub 域条目 ⇒ 改这里，红一次是应当的。
+	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql" {
+		t.Errorf("Applied = %v，要 Hub 域两条按字典序（0400 属 fanout 域，不得进 Hub 库）", rep.Applied)
 	}
 	if err := identity.NewPGStore(pool).CheckSchema(ctx); err != nil {
 		t.Fatalf("跑完账本 CheckSchema 仍失败: %v", err)
 	}
-	// 账本自己也记了账（三条，digest 与内嵌正文一致）。
+	// 🔴 反过来也要钉：CheckSchema 通过【不需要】fanout 的表。少了这半句，
+	// 「Hub 域就够」与「其实还悄悄建了 fanout 五表」两种世界在本格里长得一样。
+	for _, tbl := range []string{"outbound", "inbound_msg", "inbound_sink", "waive_audit", "selfcheck"} {
+		if tableExists(t, pool, tbl) {
+			t.Errorf("Hub 库里出现了 fanout 域的表 %s —— HubDomains() 不含 fanout（裁定 R-G2-LEDGER-DOMAIN）", tbl)
+		}
+	}
+	// 账本自己也记了账（Hub 域两条，digest 与内嵌正文一致）。
 	rows := ledgerRows(t, pool)
-	entries, err := Ledger()
+	entries, err := LedgerInDomains(HubDomains())
 	if err != nil {
-		t.Fatalf("Ledger: %v", err)
+		t.Fatalf("LedgerInDomains: %v", err)
 	}
 	if len(rows) != len(entries) {
-		t.Fatalf("账上 %d 条，账本 %d 条", len(rows), len(entries))
+		t.Fatalf("账上 %d 条，Hub 域账本 %d 条", len(rows), len(entries))
 	}
 	for _, e := range entries {
 		if rows[e.Name].digest != Digest(e.Body) {
@@ -70,12 +79,12 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 		}
 	}
 	// 重启空转：再跑一次，什么都不动。
-	rep2, err := Migrate(ctx, pool)
+	rep2, err := Migrate(ctx, pool, HubDomains())
 	if err != nil {
 		t.Fatalf("重跑 Migrate: %v", err)
 	}
-	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 3 {
-		t.Errorf("重跑 Applied=%v Skipped=%v，要空转三条", rep2.Applied, rep2.Skipped)
+	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 2 {
+		t.Errorf("重跑 Applied=%v Skipped=%v，要空转两条", rep2.Applied, rep2.Skipped)
 	}
 }
 
@@ -89,7 +98,7 @@ func TestMigrate_AuditLogAcceptsIdentityWrites(t *testing.T) {
 	dsn := pgtest.DSN(t)
 	pool := testSchema(t, dsn)
 	ctx := context.Background()
-	if _, err := Migrate(ctx, pool); err != nil {
+	if _, err := Migrate(ctx, pool, HubDomains()); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
 
@@ -186,19 +195,22 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 			"＋ fanout 域 5（0400）", len(aTables), aTables)
 	}
 
-	// 轨 B：账本。
-	trackB := testSchema(t, dsn)
-	repB, err := Migrate(ctx, trackB)
-	if err != nil {
-		t.Fatalf("轨 B Migrate: %v", err)
-	}
-	// 🔴 「全部后续增量依次施加」这半句要自己证，不能靠 Migrate 的实现替本格担保：
-	// 将来漏挂一条增量（例如新文件没被 embed 进来）时，本格会比出形状差，却说不出是「少跑了一条」。
-	// 把两个读数并排，红的时候能直接指到条目名。
+	// 轨 B：账本。🔴 本格用【全账本】（Ledger()＋MigrateEntries），不是某个装配点的域子集：
+	// 它比的是「各域源 DDL ↔ 各自的冻结副本」两轨的形状，本来就跨域；按域取子集会让
+	// fanout 那半边形不出来（轨 A 建了 13 张，轨 B 只建 10 张 ⇒ 表集合那一句红，却是本格自己造的红）。
+	// 🔵 生产装配点没有「全账本」这个口径（Migrate 必须点名域）——本格是账本自身的性质，不是装配。
 	all, err := Ledger()
 	if err != nil {
 		t.Fatalf("Ledger: %v", err)
 	}
+	trackB := testSchema(t, dsn)
+	repB, err := MigrateEntries(ctx, trackB, all, nil)
+	if err != nil {
+		t.Fatalf("轨 B MigrateEntries: %v", err)
+	}
+	// 🔴 「全部后续增量依次施加」这半句要自己证，不能靠 runner 的实现替本格担保：
+	// 将来漏挂一条增量（例如新文件没被 embed 进来）时，本格会比出形状差，却说不出是「少跑了一条」。
+	// 把两个读数并排，红的时候能直接指到条目名。
 	var wantApplied []string
 	for _, e := range all {
 		wantApplied = append(wantApplied, e.Name)
@@ -452,8 +464,10 @@ func TestAppliedEntriesAreImmutable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Ledger: %v", err)
 	}
-	if _, err := Migrate(ctx, pool); err != nil {
-		t.Fatalf("Migrate: %v", err)
+	// 🔴 全账本口径（同双轨形状格的理由）：本格钉的是「任何已施加条目都不可变」，
+	// 与条目属哪个域无关；域子集会让 fanout 那条不在场，于是它的不可变性没人守。
+	if _, err := MigrateEntries(ctx, pool, entries, nil); err != nil {
+		t.Fatalf("MigrateEntries: %v", err)
 	}
 
 	// ① 账实相符：账上每条 digest 与当前正文逐个相符（不是抽一条看看）。

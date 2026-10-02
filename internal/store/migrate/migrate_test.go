@@ -592,6 +592,9 @@ func sameSchemaPools(t *testing.T, dsn string, n int) []*repo.Pool {
 // 🔴 断言的是「每条条目被应用【恰好一次】」，不是「某一路 applied=2」：
 // 锁是【条目粒度】的，A 应用 0001、B 应用 0100 这种交错是允许的终态（头注已写明不保证公平），
 // 断言"某一路独揽全部条目"会把一个正确实现判成红。
+//
+// 🔵 本格用【全账本】口径（Ledger()＋MigrateEntries）：并发串行化是 runner 的性质，与条目属哪个域无关；
+// 生产装配点经 Migrate 点名域（domains.go），域过滤另有本格（TestMigrate_DomainScoping…）。
 func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	ctx := context.Background()
 	dsn := pgtest.DSN(t)
@@ -616,7 +619,7 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 			<-start
-			reps[i], errs[i] = Migrate(ctx, pools[i])
+			reps[i], errs[i] = MigrateEntries(ctx, pools[i], entries, nil)
 		}(i)
 	}
 	close(start)
@@ -658,9 +661,9 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 		t.Errorf("并发迁完 CheckSchema 仍失败: %v", err)
 	}
 	// 事后再迁一次：空转（不重复应用、不报错）。
-	rep, err := Migrate(ctx, probe)
+	rep, err := MigrateEntries(ctx, probe, entries, nil)
 	if err != nil {
-		t.Fatalf("并发之后重跑 Migrate: %v", err)
+		t.Fatalf("并发之后重跑 MigrateEntries: %v", err)
 	}
 	if len(rep.Applied) != 0 || len(rep.Skipped) != 3 {
 		t.Errorf("重跑 Applied=%v Skipped=%v，要空转三条", rep.Applied, rep.Skipped)

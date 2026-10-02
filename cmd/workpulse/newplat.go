@@ -75,10 +75,15 @@ func openNewPlatformStore(ctx context.Context, dsn string) (identity.Store, func
 	}
 	// 🔴 先 Migrate 再用（组长裁定 ruling-2026-10-01T145840Z：建表归 G2 迁移账本，
 	// Hub 启动与 bootstrap-admin 均先 Migrate）。账本失败即拒绝启动，不在半套表上写。
+	// 🔴 只施加【Hub 域】的条目（core／identity／hosted／view／cross），🔴 不含 fanout：
+	// fanout 是独立服务、独立库（裁定 R-G2-LEDGER-DOMAIN，2026-10-02T11:06:25Z）。
+	// 少了这一层，0400 的五张 fanout 表会被建进生产 Hub 库。
+	// 隔离核对由 migrate 内部做：库里若已记着别的域的账（例如误把 FANOUT_PG_DSN 指到 Hub 库、
+	// 或反过来），拒绝启动且不施加任何条目。
 	// 🔵 两步不互相替代，也不因账本到位就删掉 CheckSchema：
 	//    账本管「有没有按账迁过、账内 digest 与条目正文是否一致」，
 	//    CheckSchema 管「此刻库里表到底在不在」（例如迁过之后被人手工 drop）。
-	rep, err := migrate.Migrate(ctx, pool)
+	rep, err := migrate.Migrate(ctx, pool, migrate.HubDomains())
 	if err != nil {
 		_ = pool.Close()
 		return nil, nil, err
