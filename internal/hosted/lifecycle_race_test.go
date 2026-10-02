@@ -8,6 +8,8 @@ package hosted
 import (
 	"context"
 	"errors"
+	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -208,4 +210,134 @@ func TestLateConnectOnlyForExistingTimeout(t *testing.T) {
 			t.Fatalf("create timeout + connect: %s/%s, want error/start_timeout unchanged", seat.State, seat.StateDetail)
 		}
 	})
+}
+
+// 复验方 tosonnet55tc2k 补格（REVIEW-G4-RACE-FIX 附录，组长 R-G4-RACE-FOLD 第 1 条并入，去掉 ZZ 前缀）：
+// 重启路径上「命令途中 Agent 已连入、之后节点才报失败／不通」——失败回写必须是条件迁移，
+// 不得把已 online 的席位盖回 error／原态，也不得暂停它的凭据。
+func TestRestartFailureAfterAgentConnectedKeepsOnline(t *testing.T) {
+	ctx := context.Background()
+	t.Run("node_reports_failure_from_online", func(t *testing.T) {
+		lc, _, susp, gw, _, s, id := mkLifecycle(t)
+		o := NewOrchestrator(s, lc.pool, lc.idp, lc.gw, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
+		gw.failOn = "restart_seat"
+		lc.gw = &zzConnectThenGw{NodeGateway: gw, connect: func() { _ = o.MarkOnline(ctx, id) }}
+		if err := lc.Restart(ctx, id, "zzc", false); err == nil {
+			t.Fatal("restart should report the node failure")
+		}
+		if seat, _ := s.GetSeat(ctx, id); seat.State != "online" {
+			t.Fatalf("agent connected during the command: %s/%s, want online kept", seat.State, seat.StateDetail)
+		}
+		if susp.suspended {
+			t.Fatal("online agent's credential must not be suspended")
+		}
+	})
+	t.Run("node_unreachable_from_error", func(t *testing.T) {
+		lc, _, susp, gw, _, s, id := mkLifecycle(t)
+		o := NewOrchestrator(s, lc.pool, lc.idp, lc.gw, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
+		if err := s.SetSeatState(ctx, id, "error", "start_failed", "fail", nil); err != nil {
+			t.Fatal(err)
+		}
+		gw.downOn = "restart_seat"
+		lc.gw = &zzConnectThenGw{NodeGateway: gw, connect: func() { _ = o.MarkOnline(ctx, id) }}
+		if err := lc.Restart(ctx, id, "zzc", false); err == nil {
+			t.Fatal("restart should report the node being unreachable")
+		}
+		if seat, _ := s.GetSeat(ctx, id); seat.State != "online" {
+			t.Fatalf("agent connected during the command: %s/%s, want online kept (not rolled back to error)", seat.State, seat.StateDetail)
+		}
+		if susp.suspended {
+			t.Fatal("online agent's credential must not be suspended")
+		}
+	})
+}
+
+// 组长 R-G4-RACE-FOLD 第 2 条：置 starting 写库失败 ⇒ 席位不动、刚才的 Resume 撤回（凭据回暂停），不发节点命令。
+// 重启（从暂停凭据的 error 席位起）与启用两条。写库失败用库内触发器确定性制造（只拦本席位改成 starting 的那一次 UPDATE）。
+func TestStartingWriteFailureUndoesResume(t *testing.T) {
+	ctx := context.Background()
+	for _, op := range []string{"restart", "enable"} {
+		t.Run(op, func(t *testing.T) {
+			lc, log, susp, gw, _, s, id := mkLifecycle(t)
+			if op == "enable" {
+				if err := lc.Disable(ctx, id, "zzc", false, true); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				// 凭据暂停中的 error 席位重启：Resume 会真的恢复一次（alreadyActive=false）
+				if err := s.SetSeatState(ctx, id, "error", "start_failed", "fail", nil); err != nil {
+					t.Fatal(err)
+				}
+				susp.suspended = true
+			}
+			before, _ := s.GetSeat(ctx, id)
+			failStartingWrite(t, s, id)
+			log.reset()
+			gw.sent = nil
+			var err error
+			if op == "enable" {
+				err = lc.Enable(ctx, id, "zzc", false)
+			} else {
+				err = lc.Restart(ctx, id, "zzc", false)
+			}
+			if err == nil {
+				t.Fatal("the starting write failed; the operation must fail")
+			}
+			if seat, _ := s.GetSeat(ctx, id); seat.State != before.State || seat.StateDetail != before.StateDetail {
+				t.Fatalf("seat changed: %s/%s, want %s/%s", seat.State, seat.StateDetail, before.State, before.StateDetail)
+			}
+			if !susp.suspended {
+				t.Fatal("the starting write failed but the Resume was not undone (credential left active)")
+			}
+			if len(gw.sent) != 0 {
+				t.Fatalf("no node command may be sent after the write failed: %+v", gw.sent)
+			}
+		})
+	}
+}
+
+// failStartingWrite 在测试库里装一个触发器：本席位被改成 starting 的 UPDATE 一律报错；用例结束卸掉。
+func failStartingWrite(t *testing.T, s *Store, agentID string) {
+	t.Helper()
+	ctx := context.Background()
+	for _, q := range []string{
+		`CREATE OR REPLACE FUNCTION g4_test_fail_starting() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN RAISE EXCEPTION 'injected: starting write fails'; END $$`,
+		`DROP TRIGGER IF EXISTS g4_test_fail_starting ON g4_hosted_seat`,
+		`CREATE TRIGGER g4_test_fail_starting BEFORE UPDATE ON g4_hosted_seat FOR EACH ROW
+WHEN (NEW.state = 'starting' AND NEW.agent_id = '` + agentID + `') EXECUTE FUNCTION g4_test_fail_starting()`,
+	} {
+		if _, err := s.pool.Exec(ctx, htx(), q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() {
+		_, _ = s.pool.Exec(context.Background(), htx(), `DROP TRIGGER IF EXISTS g4_test_fail_starting ON g4_hosted_seat`)
+	})
+}
+
+// N8（复验变异「晚连入接受任意 error 态」，去掉 state_detail='start_timeout'）是产品路径上的等价变异：
+// 带 existing:true 的事件只由 SweepTimeouts 的既有席位超时写入，而那一条同时把 state_detail 置为 start_timeout；
+// 任何其他 error（start_failed、node_offline、backup_failed…）写的最近事件都不带该标记，已被另一半条件挡住。
+// 行为路抓不到（R3 \s* 教训，WORKGROUPS 第〇节）⇒ 以字面比对守住这半条件，防止日后有人以为它多余而删掉、
+// 或别处开始写 existing:true 时它不再冗余。
+func TestOnlineAfterExistingTimeoutKeepsDetailCondition(t *testing.T) {
+	src, err := os.ReadFile("store.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(src)
+	i := strings.Index(body, "func (s *Store) OnlineAfterExistingTimeout(")
+	if i < 0 {
+		t.Fatal("OnlineAfterExistingTimeout not found in store.go")
+	}
+	body = body[i:]
+	if j := strings.Index(body[1:], "\nfunc "); j >= 0 {
+		body = body[:j+1]
+	}
+	for _, want := range []string{"s.state='error'", "s.state_detail='start_timeout'", `@> '{"existing":true}'::jsonb`} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("OnlineAfterExistingTimeout must keep the condition %q", want)
+		}
+	}
 }

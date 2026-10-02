@@ -188,6 +188,10 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 	//    之前就连入，MarkOnline 只认 starting —— 若此刻席位还不是 starting，这次连入就丢了，5 分钟后被误记 start_timeout。
 	//    失败分支一律条件迁移（当前仍是 starting 才改）：命令途中 Agent 已连入置 online 的，不被回写盖掉。
 	if err := l.st.SetSeatState(ctx, agentID, "starting", seatStartingRestart, "restart", nil); err != nil {
+		// 写库失败：席位没动，刚才的 Resume 也撤回（与 Enable 同处对齐，复验 R-G4-RACE-FOLD 第 2 条）。
+		if !alreadyActive {
+			l.undo(ctx, agentID, actorLC, "suspend")
+		}
 		return err
 	}
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "restart_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
