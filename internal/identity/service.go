@@ -70,6 +70,9 @@ type Service struct {
 	OnCredentialIssued func(agentID string)
 	// OnSuspended 托管席位被暂停后、SuspendHostedAgent 返回前同步调用：Hub 据此以 4401（原因 credential_suspended）断开。
 	OnSuspended func(agentID string)
+	// OnUserChanged 用户被停用、恢复或改类型（Onboarding.SetUserState／SetUserType）成功后、返回前同步调用：
+	// Hub 据此断开该用户 Agent 的在线连接并同步 console 投影（R-V2-SPEC-TASK-SHIM-IMPL A11）。
+	OnUserChanged func(userIDLC string)
 	// NameAllowed 额外的名称检查（Hub 注入渠道保留字检查）；返回 false ⇒ ErrNameInvalid。为空则不查。
 	NameAllowed func(name string) bool
 

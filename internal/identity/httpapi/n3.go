@@ -32,6 +32,9 @@ func (n *N3) Register(mux Mux) {
 	mux.HandleFunc("GET /api/console/platform/users", n.authed(false, n.listUsers))
 	mux.HandleFunc("POST /api/console/platform/users", n.authed(false, n.createUser))
 	mux.HandleFunc("POST /api/console/platform/users/{user_id}/registration-code", n.authed(false, n.regenCode))
+	// A11 最小管理接口（组长 16:55:51Z：管理专用 JSON 端点，不做页面）：停用／恢复、改类型。
+	mux.HandleFunc("POST /api/console/platform/users/{user_id}/state", n.authed(false, n.setUserState))
+	mux.HandleFunc("POST /api/console/platform/users/{user_id}/type", n.authed(false, n.setUserType))
 }
 
 // Actor 供 API.Actor 使用：按会话 cookie 认出当前用户；必须改密的会话不算登录（N3 A2）。
@@ -260,6 +263,41 @@ func (n *N3) regenCode(w http.ResponseWriter, r *http.Request, u *identity.User)
 		writeJSON(w, http.StatusOK, map[string]any{"registration_code": code, "code_expires_at": exp.UTC().Format(time.RFC3339)})
 	case errors.Is(err, identity.ErrNotAllowed):
 		writeErr(w, http.StatusForbidden, "forbidden", nil)
+	default:
+		mapErr(w, err)
+	}
+}
+
+// setUserState 停用／恢复用户：{"state": "disabled"|"active"}。只给可管理用户；不能改自己；不能停掉最后一个可管理用户。
+func (n *N3) setUserState(w http.ResponseWriter, r *http.Request, u *identity.User) {
+	var req struct {
+		State string `json:"state"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	n.writeUserChange(w, n.OB.SetUserState(r.Context(), u, r.PathValue("user_id"), identity.UserState(req.State)))
+}
+
+// setUserType 改用户类型：{"type": "manager"|"member"}。护栏同 setUserState；平台管理者类型不可改。
+func (n *N3) setUserType(w http.ResponseWriter, r *http.Request, u *identity.User) {
+	var req struct {
+		Type string `json:"type"`
+	}
+	if !decode(w, r, &req) {
+		return
+	}
+	n.writeUserChange(w, n.OB.SetUserType(r.Context(), u, r.PathValue("user_id"), identity.UserType(req.Type)))
+}
+
+func (n *N3) writeUserChange(w http.ResponseWriter, err error) {
+	switch {
+	case err == nil:
+		writeJSON(w, http.StatusOK, map[string]any{})
+	case errors.Is(err, identity.ErrNotAllowed):
+		writeErr(w, http.StatusForbidden, "forbidden", nil)
+	case errors.Is(err, identity.ErrLastManager):
+		writeErr(w, http.StatusConflict, "last_manager", nil)
 	default:
 		mapErr(w, err)
 	}

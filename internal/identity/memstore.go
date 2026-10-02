@@ -122,6 +122,17 @@ func (m *MemStore) SetUserState(_ context.Context, userIDLC string, state UserSt
 	return nil
 }
 
+func (m *MemStore) SetUserType(_ context.Context, userIDLC string, t UserType) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	u, ok := m.users[Lower(userIDLC)]
+	if !ok {
+		return ErrNotFound
+	}
+	u.Type = t
+	return nil
+}
+
 func (m *MemStore) SetPassword(_ context.Context, userIDLC, hash string, mustChange bool) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

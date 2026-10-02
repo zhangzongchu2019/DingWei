@@ -54,6 +54,7 @@ type Onboarding struct {
 	CodeKey string
 
 	omu        sync.Mutex
+	umu        sync.Mutex             // 停用／改类型串行（SetUserState、SetUserType）；与 omu 分开，OnUserChanged 在其下调用
 	pwFails    map[string][]time.Time // 来源 IP＋用户 ID → 失败时刻
 	loginCodes map[string]*loginTicket
 }
@@ -274,6 +275,108 @@ func (o *Onboarding) IssueBindCode(ctx context.Context, actor *User, password, s
 		return "", time.Time{}, ErrAlreadyBound
 	}
 	return o.issueRegistrationCode(ctx, actor, actor.UserIDLC())
+}
+
+// SetUserState 停用／恢复用户（R-V2-SPEC-TASK-SHIM-IMPL A11，组长 16:55:17Z／16:55:51Z）。
+// 只许可管理用户调用；不能动自己；停用不得让平台上不再有 active 的可管理用户（ErrLastManager）。
+// 只接受 disabled（任何状态均可停用）与 active（只从 disabled 恢复；待绑定用户的激活只走飞书注册码）。
+// 停用时存储层同一事务吊销该用户全部会话；成功后同步调 OnUserChanged。
+func (o *Onboarding) SetUserState(ctx context.Context, actor *User, userID string, state UserState) error {
+	if !CanManageUsers(actor) {
+		return ErrNotAllowed
+	}
+	if state != UserDisabled && state != UserActive {
+		return ErrBadRequest
+	}
+	o.umu.Lock() // 「最后一个可管理用户」的判定与写入串行，免得两个管理者同时互相停用
+	defer o.umu.Unlock()
+	target, err := o.userChangeTarget(ctx, actor, userID)
+	if err != nil {
+		return err
+	}
+	if target.State == state {
+		return nil
+	}
+	if state == UserActive && target.State != UserDisabled {
+		return ErrBadRequest
+	}
+	if state == UserDisabled {
+		if err := o.keepOneManager(ctx, target); err != nil {
+			return err
+		}
+	}
+	if err := o.Store.SetUserState(ctx, target.UserIDLC(), state, o.Now()); err != nil {
+		return err
+	}
+	o.audit(ctx, actor.UserIDLC(), "user.state", target.UserIDLC(), "state="+string(state))
+	if o.OnUserChanged != nil {
+		o.OnUserChanged(target.UserIDLC())
+	}
+	return nil
+}
+
+// SetUserType 改用户类型（manager／member）。护栏同 SetUserState；平台管理者（初始化脚本建的）类型不可改。
+func (o *Onboarding) SetUserType(ctx context.Context, actor *User, userID string, t UserType) error {
+	if !CanManageUsers(actor) {
+		return ErrNotAllowed
+	}
+	if t != UserManager && t != UserMember {
+		return ErrBadRequest
+	}
+	o.umu.Lock()
+	defer o.umu.Unlock()
+	target, err := o.userChangeTarget(ctx, actor, userID)
+	if err != nil {
+		return err
+	}
+	if target.Type == UserPlatformAdmin {
+		return ErrNotAllowed
+	}
+	if target.Type == t {
+		return nil
+	}
+	if t == UserMember {
+		if err := o.keepOneManager(ctx, target); err != nil {
+			return err
+		}
+	}
+	if err := o.Store.SetUserType(ctx, target.UserIDLC(), t); err != nil {
+		return err
+	}
+	o.audit(ctx, actor.UserIDLC(), "user.type", target.UserIDLC(), "type="+string(t))
+	if o.OnUserChanged != nil {
+		o.OnUserChanged(target.UserIDLC())
+	}
+	return nil
+}
+
+// userChangeTarget 取被改的用户；不能是 actor 自己（ErrNotAllowed）。
+func (o *Onboarding) userChangeTarget(ctx context.Context, actor *User, userID string) (*User, error) {
+	target, err := o.Store.GetUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if target.UserIDLC() == actor.UserIDLC() {
+		return nil, ErrNotAllowed
+	}
+	return target, nil
+}
+
+// keepOneManager target 失去管理能力后，平台上须仍有别的 active 可管理用户。调用方须持 umu。
+func (o *Onboarding) keepOneManager(ctx context.Context, target *User) error {
+	if !CanManageUsers(target) {
+		return nil
+	}
+	users, err := o.Store.ListUsers(ctx)
+	if err != nil {
+		return err
+	}
+	for i := range users {
+		if users[i].UserIDLC() != target.UserIDLC() && CanManageUsers(&users[i]) {
+			return nil
+		}
+	}
+	return ErrLastManager
 }
 
 // RegenerateRegistrationCode 重新生成注册码（旧码作废）。

@@ -254,6 +254,17 @@ func (s *PGStore) SetUserState(ctx context.Context, userIDLC string, state UserS
 	})
 }
 
+func (s *PGStore) SetUserType(ctx context.Context, userIDLC string, t UserType) error {
+	res, err := s.pool.Exec(ctx, s.t, `UPDATE np_user SET type = $2 WHERE user_id_lc = $1`, Lower(userIDLC), string(t))
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (s *PGStore) SetPassword(ctx context.Context, userIDLC, hash string, mustChange bool) error {
 	res, err := s.pool.Exec(ctx, s.t, `UPDATE np_user SET password_hash = $2, must_change_password = $3 WHERE user_id_lc = $1`,
 		Lower(userIDLC), hash, mustChange)

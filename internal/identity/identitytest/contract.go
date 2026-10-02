@@ -39,6 +39,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"G_approve_group_choice_atomic", approveGroupChoice},
 		{"G_hosted_group_choice_atomic", hostedGroupChoice},
 		{"N3_disable_revokes_sessions", disableRevokesSessions},
+		{"A11_set_user_type", setUserType},
 		{"N3_get_user_by_short_name_case_insensitive", getUserByShortName},
 		{"N3_list_users_sorted_by_lowercase_id", listUsers},
 		{"N3_session_expiry_and_inactive_user", sessionExpiryAndInactive},
@@ -1253,4 +1254,27 @@ func resetPasswordRevokesSessions(t *testing.T, s identity.Store) {
 	if b, _ := s.GetUser(ctx, "bob"); b.MustChangePassword {
 		t.Fatal("bob marked must-change by alice's reset")
 	}
+}
+
+// setUserType A11 改角色：只改该用户的类型，其他字段与其他用户不动；不存在 ⇒ ErrNotFound。
+func setUserType(t *testing.T, s identity.Store) {
+	mustUser(t, s, "erin", "er", identity.UserActive)
+	mustUser(t, s, "finn", "fi", identity.UserActive)
+	if err := s.SetUserType(ctx, "ERIN", identity.UserManager); err != nil {
+		t.Fatal(err)
+	}
+	u, err := s.GetUser(ctx, "erin")
+	if err != nil || u.Type != identity.UserManager || u.State != identity.UserActive || u.ShortName != "er" {
+		t.Fatalf("after SetUserType(manager): %+v %v", u, err)
+	}
+	if o, _ := s.GetUser(ctx, "finn"); o.Type != identity.UserMember {
+		t.Fatalf("other user's type changed: %+v", o)
+	}
+	if err := s.SetUserType(ctx, "erin", identity.UserMember); err != nil {
+		t.Fatal(err)
+	}
+	if u, _ := s.GetUser(ctx, "erin"); u.Type != identity.UserMember {
+		t.Fatalf("after SetUserType(member): %+v", u)
+	}
+	wantErr(t, "SetUserType unknown user", s.SetUserType(ctx, "nobody", identity.UserManager), identity.ErrNotFound)
 }
