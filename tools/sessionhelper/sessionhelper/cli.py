@@ -24,10 +24,17 @@ from .config import Config, env_get
 
 ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 # CLI 退出时日志里的屏幕尾巴要脱敏：像密钥／令牌的长串一律遮掉（组长 R-B12-CODEX-PKG 第 2 条）。
-_SECRET_RE = re.compile(r"(?i)(sk-[A-Za-z0-9_-]{8,}|bearer\s+\S+|[A-Za-z0-9_\-]{32,})")
-# 「键名=值」「键名: 值」形态：键名里带 key／token／secret／password／credential／auth 的，值一律遮（短串也遮；复验 tosonnet55tc2k）
+_SECRET_RE = re.compile(r"(?i)(sk-[A-Za-z0-9_-]{8,}|[A-Za-z0-9_\-]{32,})")
+# 认证方案后的令牌（Authorization: Bearer xxx／Basic xxx）：先于键值规则遮，否则键值规则把方案词当成值、令牌外露
+# （复验 tosonnet55tc2k 对 b2c91a8a；组长 WORKGROUPS 第十节第 3 条）
+_AUTH_SCHEME_RE = re.compile(r"(?i)\b(bearer|basic)(\s+)[^\s\"',;]+")
+_SECRET_KEY_NAME = r"[A-Za-z0-9_.-]*(?:key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_.-]*"
+# 命令行旗标：--api-key xxx／--api-key=xxx
+_SECRET_FLAG_RE = re.compile(r"(?i)(--?" + _SECRET_KEY_NAME + r")(=|\s+)(?!-)(\"[^\"]*\"|'[^']*'|\S+)")
+# 「键名=值」「键名: 值」及 JSON「"键名": "值"」形态：键名里带 key／token／secret／password／credential／auth 的，值一律遮
+# （短串也遮；复验 tosonnet55tc2k）。值若以认证方案词开头（已由 _AUTH_SCHEME_RE 遮过令牌）则不再动。
 _SECRET_KV_RE = re.compile(
-    r"(?i)\b([A-Za-z0-9_.-]*(?:key|token|secret|passwd|password|credential|auth)[A-Za-z0-9_.-]*)(\s*[:=]\s*)(\"[^\"]*\"|'[^']*'|\S+)")
+    r"(?i)\b(" + _SECRET_KEY_NAME + r"\"?)(\s*[:=]\s*)(?!(?:bearer|basic)\s)(\"[^\"]*\"|'[^']*'|\S+)")
 EXIT_TAIL_LINES = 6
 
 
@@ -60,6 +67,8 @@ def _squash(text: str) -> str:
 def redact_tail(lines) -> str:
     out = []
     for ln in lines:
+        ln = _AUTH_SCHEME_RE.sub(lambda m: m.group(1) + m.group(2) + "<redacted>", ln)
+        ln = _SECRET_FLAG_RE.sub(lambda m: m.group(1) + m.group(2) + "<redacted>", ln)
         ln = _SECRET_KV_RE.sub(lambda m: m.group(1) + m.group(2) + "<redacted>", ln)
         ln = _SECRET_RE.sub("<redacted>", ln)
         out.append(ln[:200])
@@ -77,7 +86,7 @@ class CLIProfile:
     output_source: str = "pty"
     startup_grace: float = 1.5
     launch: str = "pty"
-    # 拦路界面标记：输出里一出现即撤销就绪（登录选择、包缺失之类，界面上可能同时带着提示符）。
+    # 拦路界面标记：启动期（首次就绪之前）输出里一出现即撤销就绪、启动立即失败（登录选择、包缺失之类，界面上可能同时带着提示符）。
     block_patterns: tuple[str, ...] = ()
 
 
@@ -91,7 +100,7 @@ CLI_PROFILES: dict[str, CLIProfile] = {
     "codex": CLIProfile(["codex"], ("›", "❯"), "transcript", block_patterns=(
         "Sign in with ChatGPT", "Provide your own API key", "Sign in with Device Code",
         "Press enter to continue", "Do you trust", "Trust this folder", "Update available",
-        "no complete local package")),
+        "Detected OPENAI_API_KEY", "no complete local package")),
     "aider": CLIProfile(["aider"], ("aider", ">", "Tokens")),
     "opencode": CLIProfile(["opencode"], ("opencode", ">", "❯", "Welcome"), "opencode_db"),
     "cline": CLIProfile(["cline"], ("cline", ">", "Welcome")),
@@ -125,6 +134,9 @@ class CLIAdapter:
         self.ready_patterns = cfg.cli_ready_patterns or self.profile.ready_patterns
         self.block_patterns = self.profile.block_patterns + cfg.cli_block_patterns
         self.blocked_by = ""  # 当前停在的拦路界面（未停则空）
+        # 启动期已过（本子进程首次「出现提示符且静默」）：此后正文里出现拦路字样不再撤销就绪（组长 WORKGROUPS 第十节第 1 条：
+        # 回答里一句 Sign in with ChatGPT 曾把健康座席判死）。新子进程（start_pty／_respawn_child）重置。
+        self.startup_done = False
         self.command = cfg.cli_cmd or self.profile.command
         self.cwd = cfg.cli_cwd or os.getcwd()
         self.launch_mode = cfg.cli_launch or self.profile.launch
@@ -212,6 +224,7 @@ class CLIAdapter:
             self.closed.clear()
         self.output_tail.clear()
         self.blocked_by = ""
+        self.startup_done = False
         self.child = pexpect.spawn(
             self.command[0],
             self.command[1:],
@@ -230,6 +243,9 @@ class CLIAdapter:
                 # 等就绪期间就退出：不再等满 cli_ready_timeout，立刻带退出码与屏幕尾巴报出
                 self._note_exit()
                 raise RuntimeError(f"CLI exited during startup: {self.last_exit}")
+            if self.blocked_by:
+                # 启动期遇拦路界面：立即失败返回，不等满就绪超时（helper 自己越不过这些屏）
+                raise RuntimeError(f"CLI blocked at screen: {self.blocked_by!r}")
             if self.ready.is_set() and self.is_idle():
                 return
             time.sleep(0.1)
@@ -640,6 +656,8 @@ class CLIAdapter:
         if self.stopping.is_set():
             return False
         self.ready.clear()
+        self.blocked_by = ""
+        self.startup_done = False
         self.last_output_at = 0.0
         self.started_at = time.time()
         try:
@@ -680,6 +698,10 @@ class CLIAdapter:
                     self.closed.set()
                     return
                 continue
+            # 启动期在「出现提示符且已静默」时结束——与 start_pty 判启动成功同一判据，在新输出更新静默计时之前判。
+            # 放在读线程里：PTY 档自动重生的子进程不经 start_pty，也靠这里结束各自的启动期。
+            if not self.startup_done and self.ready.is_set() and self.is_idle():
+                self.startup_done = True
             if raw:
                 self.terminal_q.put(raw)
             cleaned = clean_output(raw)
@@ -690,11 +712,12 @@ class CLIAdapter:
                     self.output_tail.append(ln.strip())
             self.last_output_at = time.time()
             buf += "\n" + cleaned
-            # 拦路界面优先：输出里出现登录选择等标记即撤销就绪并留痕；本子进程此后不再判就绪（全屏 TUI 局部重绘
-            # 可能单独送来一块只含「›」的输出，而菜单仍在屏上；helper 也无法自行越过登录）。新子进程（start_pty）才重置。
+            # 启动期（首次就绪之前）拦路界面优先：输出里出现登录选择等标记即撤销就绪并留痕；本子进程此后不再判就绪
+            # （全屏 TUI 局部重绘可能单独送来一块只含「›」的输出，而菜单仍在屏上；helper 也无法自行越过登录）。
+            # 新子进程才重置。启动期过后不再看拦路标记——那时屏上是模型回答，里面出现这些字样不说明 CLI 卡住。
             # 否则出现输入提示符才置就绪。「子进程还活着」由 start_pty（等静默期间退出即报）与 _note_exit（清就绪）保证。
             squashed = _squash(cleaned)
-            blocker = next((pat for pat in self.block_patterns if _squash(pat) in squashed), "")
+            blocker = "" if self.startup_done else next((pat for pat in self.block_patterns if _squash(pat) in squashed), "")
             if blocker:
                 self.ready.clear()
                 if not self.blocked_by:
