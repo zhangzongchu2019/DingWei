@@ -799,7 +799,7 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return
 			}
-			// 回复交给在等的 forward；没人等（调用已超时）就丢弃，下一次 forward 发请求前也会清掉残留。
+			// 回复交给在等的 forward；没人等就丢弃（超时的调用已关掉连接，不会有下一次调用在这条连接上等）。
 			select {
 			case c.resp <- data:
 			default:
@@ -2838,10 +2838,6 @@ func (h *Hub) forward(ctx context.Context, serviceID string, req ForwardRequest,
 	payload, _ := json.Marshal(req)
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	select {
-	case <-c.resp: // 上一次超时调用迟到的回复
-	default:
-	}
 	if err := c.conn.Write(callCtx, websocket.MessageText, payload); err != nil {
 		return "", err
 	}
@@ -2851,6 +2847,10 @@ func (h *Hub) forward(ctx context.Context, serviceID string, req ForwardRequest,
 	case <-c.readDone:
 		return "", errors.New("service websocket closed")
 	case <-callCtx.Done():
+		// 🔴 超时即关掉这条服务连接（复验 tosonnet55tc2k，hub-ws-blocking ③）：ForwardResponse 不带请求 ID，
+		//    回复只能按先后对应 —— 连接留着，这次调用的迟到回复会被下一次调用当成自己的答案（且之后整体错位）。
+		//    关掉后迟到回复无处可去，下一次调用写不出去、报错；服务重连后从干净的连接重新开始。
+		_ = c.conn.CloseNow()
 		return "", callCtx.Err()
 	}
 	var resp ForwardResponse

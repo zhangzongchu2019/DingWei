@@ -63,7 +63,9 @@ func TestKeepalivePingDoesNotBlockSessionWrites(t *testing.T) {
 	c := <-clients
 	<-pingStarted
 	writeDone := make(chan error, 1)
-	go func() { writeDone <- c.write(context.Background(), model.Envelope{Body: "outbound while ping in flight"}) }()
+	go func() {
+		writeDone <- c.write(context.Background(), model.Envelope{Body: "outbound while ping in flight"})
+	}()
 	select {
 	case err := <-writeDone:
 		if err != nil {
@@ -205,8 +207,10 @@ func waitServiceOnline(t *testing.T, hub *Hub, serviceID string, want bool) {
 	}
 }
 
-// ③ 超时调用的迟到回复不得串给下一次调用：forward 发请求前清掉残留。
-func TestForwardDropsLateReplyOfTimedOutCall(t *testing.T) {
+// ③ 复验方 tosonnet55tc2k 补格（REVIEW-HUB-WS-BLOCKING 附录，去 ZZ 前缀并入）：第一次调用超时之后，它的迟到回复
+// 在【第二次调用已把请求写出去之后】才到。ForwardResponse 没有请求 ID，回复只能按先后对应 —— 第二次调用绝不能
+// 把第一次的迟到回复当成自己的答案。修法（超时即关连接）下第二次调用报错；断言：报错或拿到 re:two，绝不能是 re:one。
+func TestLateReplyArrivingAfterNextRequestIsNotMisattributed(t *testing.T) {
 	hub, _, ctx := newTestHub(t)
 	plain := setupRoute(t, hub, ctx, "svc1", "dev:personal:alice", "bot", true)
 	mux := http.NewServeMux()
@@ -217,9 +221,9 @@ func TestForwardDropsLateReplyOfTimedOutCall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close(websocket.StatusNormalClosure, "done")
+	defer conn.CloseNow()
 	waitServiceOnline(t, hub, "svc1", true)
-	firstTimedOut := make(chan struct{})
+	releaseFirst := make(chan struct{})
 	go func() {
 		for i := 0; ; i++ {
 			_, data, err := conn.Read(ctx)
@@ -229,7 +233,7 @@ func TestForwardDropsLateReplyOfTimedOutCall(t *testing.T) {
 			var req ForwardRequest
 			_ = json.Unmarshal(data, &req)
 			if i == 0 {
-				<-firstTimedOut // 第一次调用已超时返回，才回它
+				<-releaseFirst // 第二次调用的请求已经写出去之后，才回第一次
 			}
 			resp, _ := json.Marshal(ForwardResponse{Reply: "re:" + req.Text})
 			_ = conn.Write(ctx, websocket.MessageText, resp)
@@ -238,19 +242,60 @@ func TestForwardDropsLateReplyOfTimedOutCall(t *testing.T) {
 	if _, err := hub.forward(ctx, "svc1", ForwardRequest{ID: "one", Text: "one"}, 100); err == nil {
 		t.Fatal("first forward should time out")
 	}
-	close(firstTimedOut)
-	hub.mu.Lock()
-	c := hub.serviceClients["svc1"]
-	hub.mu.Unlock()
-	deadline := time.Now().Add(envelopeReadTimeout)
-	for len(c.resp) == 0 { // 迟到的 re:one 已进缓冲
-		if time.Now().After(deadline) {
-			t.Fatal("late reply never arrived")
-		}
-		time.Sleep(5 * time.Millisecond)
+	type result struct {
+		got string
+		err error
 	}
-	got, err := hub.forward(ctx, "svc1", ForwardRequest{ID: "two", Text: "two"}, 5000)
-	if err != nil || got != "re:two" {
-		t.Fatalf("second forward got %q %v, want re:two (the late reply of the timed-out call leaked)", got, err)
+	res := make(chan result, 1)
+	go func() {
+		g, e := hub.forward(ctx, "svc1", ForwardRequest{ID: "two", Text: "two"}, 5000)
+		res <- result{g, e}
+	}()
+	time.Sleep(300 * time.Millisecond) // 第二次调用已写出请求（或已失败）
+	close(releaseFirst)                // 服务现在才回第一次（迟到），随后回第二次
+	r := <-res
+	if r.got == "re:one" || (r.err == nil && r.got != "re:two") {
+		t.Fatalf("second forward got %q %v: the first call's late reply was taken as the second call's answer", r.got, r.err)
+	}
+}
+
+// ③ 超时即关连接：这条服务连接随即下线；服务重连后，新调用拿到的是自己的回复。
+func TestForwardTimeoutClosesServiceConnection(t *testing.T) {
+	hub, _, ctx := newTestHub(t)
+	plain := setupRoute(t, hub, ctx, "svc1", "dev:personal:alice", "bot", true)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/service/{serviceID}", hub.HandleWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	url := "ws" + strings.TrimPrefix(srv.URL, "http") + "/ws/service/svc1?api_key=" + plain
+	slow, _, err := websocket.Dial(ctx, url, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer slow.CloseNow()
+	waitServiceOnline(t, hub, "svc1", true)
+	go func() { _, _, _ = slow.Read(ctx) }() // 收请求，不回
+	if _, err := hub.forward(ctx, "svc1", ForwardRequest{ID: "one", Text: "one"}, 100); err == nil {
+		t.Fatal("forward to a silent service should time out")
+	}
+	waitServiceOnline(t, hub, "svc1", false)
+	fresh, _, err := websocket.Dial(ctx, url, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fresh.Close(websocket.StatusNormalClosure, "done")
+	waitServiceOnline(t, hub, "svc1", true)
+	go func() {
+		_, data, err := fresh.Read(ctx)
+		if err != nil {
+			return
+		}
+		var req ForwardRequest
+		_ = json.Unmarshal(data, &req)
+		resp, _ := json.Marshal(ForwardResponse{Reply: "re:" + req.Text})
+		_ = fresh.Write(ctx, websocket.MessageText, resp)
+	}()
+	if got, err := hub.forward(ctx, "svc1", ForwardRequest{ID: "two", Text: "two"}, 5000); err != nil || got != "re:two" {
+		t.Fatalf("after reconnect: %q %v, want re:two", got, err)
 	}
 }
