@@ -94,11 +94,11 @@ func strictDecode(raw json.RawMessage, v any) error {
 type dockerOps struct {
 	eng          *engine
 	quota        quotaOps
-	seatRoot     string // /data/dingwei-newplat/agents 或 /data/dingwei-node
-	registry     string // 固定镜像仓库（如 hub.local/dingwei）
-	cgroupParent string // 🔴 必填：cgroup 父切片（如 dingwei-hosted.slice——组长 eccc54bc）
-	seatProxy    string // 🔴 必填：席位代理（第 12 条②：注入容器 env，如 http://172.30.68.1:11080）
-	hubWSBase    string // 🔴 必填（容器启动契约 R-G1-HOSTED-IMAGE-CONTRACT）：SH_WS_BASE＝代理配置 HubURL 的 ws 源
+	seatRoot     string          // /data/dingwei-newplat/agents 或 /data/dingwei-node
+	registry     string          // 固定镜像仓库（如 hub.local/dingwei）
+	cgroupParent string          // 🔴 必填：cgroup 父切片（如 dingwei-hosted.slice——组长 eccc54bc）
+	seatProxy    string          // 🔴 必填：席位代理（第 12 条②：注入容器 env，如 http://172.30.68.1:11080）
+	hubWSBase    string          // 🔴 必填（容器启动契约 R-G1-HOSTED-IMAGE-CONTRACT）：SH_WS_BASE＝代理配置 HubURL 的 ws 源
 	localImages  map[string]bool // local 形态白名单（NODEAGENT_LOCAL_IMAGES；与板上登记同源）
 	waitMax      time.Duration
 }
@@ -187,8 +187,8 @@ func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, 
 	memBytes := res.MemoryMB * 1024 * 1024
 	return map[string]any{
 		"Image": engineImage(image),
-		"User":  "10001:10001", // 非 root（隔离底线；与 seatRunUID 一致）
-		"Env":   d.seatEnv(credKind),   // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
+		"User":  "10001:10001",       // 非 root（隔离底线；与 seatRunUID 一致）
+		"Env":   d.seatEnv(credKind), // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
 		"HostConfig": map[string]any{
 			"ReadonlyRootfs": true,
 			"Tmpfs":          map[string]string{"/tmp": "size=8m"},
