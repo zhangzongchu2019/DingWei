@@ -184,6 +184,39 @@ func TestAgentWSForgedOtherSessionFromStillRejected(t *testing.T) {
 	}
 }
 
+// ④′ 近似名反例（复验 tosonnet55tc2k 对 b4812876 的建议，非阻断）：会话名只许【逐字相等（不分大小写）】才改写。
+// 把比较换成前缀／后缀／包含之类的宽松判断时，下面四个近似名里至少有一个会被放行：
+//
+//	opus50ts2  ＝「自身名＋多一位」（自身名是它的前缀）；xopus50ts ＝「前面多一位」（自身名是它的后缀）；
+//	pus50ts    ＝「自身名去首字母」（它是自身名的后缀）；opus50t ＝「自身名去末字母」（它是自身名的前缀）。
+//
+// 每个都必须收到「from 地址必须等于当前会话地址」，且不进任何终端缓冲。
+func TestAgentWSNearNameFromStillRejected(t *testing.T) {
+	e := newAgentEnv(t)
+	conn, _, _ := e.dial(e.cred, "")
+	defer conn.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	for _, forged := range []string{
+		"opus50ts2#" + placeholderFromKey,
+		"xopus50ts#" + placeholderFromKey,
+		"pus50ts#" + placeholderFromKey,
+		"opus50t#" + placeholderFromKey,
+	} {
+		e.sendEnv(conn, model.Envelope{ID: "near-" + forged, From: forged, Body: "near-name-terminal-line", Meta: map[string]any{"type": terminalOutputType}})
+		got := e.readEnvUntil(conn, envelopeReadTimeout, func(env model.Envelope) bool {
+			return strings.Contains(env.Body, "from 地址必须等于当前会话地址")
+		})
+		if got == nil {
+			t.Fatalf("近似名 from=%q 没有被拒（会话名比较被放宽了：只有逐字相等才该改写）", forged)
+		}
+	}
+	e.hub.mu.Lock()
+	defer e.hub.mu.Unlock()
+	if st := e.hub.terminals[terminalKey(AgentKeyID("zzc"), "opus50ts")]; st != nil && strings.Contains(st.buffer, "near-name-terminal-line") {
+		t.Fatal("近似名 from 的 terminal_output 进了终端缓冲")
+	}
+}
+
 // ⑤ 旧平台连接（账号 key＋自报名字，HandleSessionWS）不改写：from 的 key 部分写错照旧被拒。
 // 凭据定身份的改写只属于 /ws/agent；账号 key 连接的身份仍由「自报名字＋key」组成，信封里的 from 必须逐字等于它。
 func TestLegacySessionWSWrongKeyFromStillRejected(t *testing.T) {
