@@ -62,11 +62,14 @@ run_case() { # <combo> <script>
   local out rc
   out=$("${DOCKER_RUN[@]}" "$BASE_IMAGE" \
         sh -c "mkdir -p /tmp/b12home && $script" 2>&1)
-  rc=$?  # r3：docker run 的退出码不吞——非零即 FAIL（容器/CLI 没跑成）
-  if [ "$rc" -ne 0 ]; then
-    report "$combo" FAIL "docker rc=$rc（$(printf '%s' "$out" | tail -1 | cut -c1-100)）"
-    return
-  fi
+  rc=$?  # r3 再修（组长令）：docker run 的退出码＝容器内 CLI 的退出码——CLI 拿到 401 本就以
+  # 非零退出，那正是要验的 PASS。只有 docker 自身的 125/126/127 算基建失败。
+  case "$rc" in
+    125|126|127)
+      report "$combo" FAIL "docker rc=$rc（基建层失败：$(printf '%s' "$out" | tail -1 | cut -c1-100)）"
+      return
+      ;;
+  esac
   judge "$combo" "$out"
 }
 
