@@ -1,7 +1,7 @@
 package fanout
 
-// 出站托管 spool(设计 v2.3 §C/§D):WAL 持久队列,202 仅在事务提交(synchronous=FULL,
-// 提交即 fsync)之后;幂等键=(caller_id,request_id)唯一+body_sha256;状态机
+// 出站托管 spool(设计 v2.3 §C/§D):PG 持久队列,202 仅在事务提交
+// (synchronous_commit=on)之后;幂等键=(caller_id,request_id)唯一+body_sha256;状态机
 // queued→sending→sent|dlq。入站 sink 投递(段2)复用本存储。
 
 import (
@@ -45,25 +45,20 @@ func ftx() repo.AccessCtx {
 	return repo.PendingCtx("fanout", "SP7b", "fanout 出站/入站表尚无双轴列,待领域 schema 落地")
 }
 
-// OpenSpool 打开/初始化 spool 库。synchronous=FULL:COMMIT 返回=已 fsync,
-// 202 的耐久承诺(§C2)由此成立。
-func OpenSpool(path string) (*Spool, error) {
-	ctx := context.Background()
-	// 🔴 SetMaxOpenConns(1) 必须保留：原注释「面板自死锁教训:单连接串行,杜绝游标互等」。
-	//    收编不得顺手抹掉用事故换来的并发语义（§4.5）。dsn 里的 pragma 亦原样保留。
-	pool, err := repo.OpenSQLite(ctx,
-		"file:"+path+"?_pragma=journal_mode(WAL)&_pragma=synchronous(FULL)&_pragma=busy_timeout(5000)",
-		repo.MaxOpenConns(1))
-	if err != nil {
-		return nil, err
+// OpenSpool 在调用方注入的 PG 池上初始化 spool。池的创建与生命周期属于装配层；
+// 本包不接收 DSN，也不保留 SQLite 兼容入口。
+func OpenSpool(pool *repo.Pool) (*Spool, error) {
+	if pool == nil {
+		return nil, errors.New("fanout spool: nil PG pool")
 	}
+	ctx := context.Background()
 	// 建表是 DDL，本就无租户语义 -> 显式 SystemCtx，不用 ftx。
 	if _, err := pool.Exec(ctx, repo.SystemCtx(), `CREATE TABLE IF NOT EXISTS outbound(
   outbound_id TEXT PRIMARY KEY,
   caller_id   TEXT NOT NULL,
   request_id  TEXT NOT NULL,
   body_hash   TEXT NOT NULL,
-  body        BLOB NOT NULL,
+  body        BYTEA NOT NULL,
   status      TEXT NOT NULL DEFAULT 'queued',
   attempts    INTEGER NOT NULL DEFAULT 0,
   next_retry  INTEGER NOT NULL DEFAULT 0,
@@ -72,7 +67,6 @@ func OpenSpool(path string) (*Spool, error) {
   created_at  INTEGER NOT NULL,
   updated_at  INTEGER NOT NULL,
   UNIQUE(caller_id, request_id))`); err != nil {
-		_ = pool.Close()
 		return nil, err
 	}
 	return &Spool{db: pool}, nil
@@ -94,14 +88,14 @@ func (s *Spool) Accept(ctx context.Context, callerID, requestID string, body []b
 	now := time.Now().UTC().Unix()
 	_, err := s.db.Exec(ctx, ftx(), `INSERT INTO outbound
   (outbound_id, caller_id, request_id, body_hash, body, status, next_retry, created_at, updated_at)
-  VALUES(?,?,?,?,?,'queued',0,?,?)`, id, callerID, requestID, bodyHash, body, now, now)
+  VALUES($1,$2,$3,$4,$5,'queued',0,$6,$7)`, id, callerID, requestID, bodyHash, body, now, now)
 	if err == nil {
 		return id, false, nil
 	}
 	// 冲突路:读回既有行判 hash
 	var haveHash string
 	row, qErr := s.db.QueryRow(ctx, ftx(),
-		`SELECT body_hash FROM outbound WHERE caller_id=? AND request_id=?`, callerID, requestID)
+		`SELECT body_hash FROM outbound WHERE caller_id=$1 AND request_id=$2`, callerID, requestID)
 	if qErr != nil {
 		return "", false, fmt.Errorf("accept: %w (lookup: %v)", err, qErr)
 	}
@@ -117,7 +111,7 @@ func (s *Spool) Accept(ctx context.Context, callerID, requestID string, body []b
 // NextDue 取一件到期待发件并置 sending(单 worker 语义)。无件=nil。
 func (s *Spool) NextDue(ctx context.Context, now time.Time) (*OutboundJob, error) {
 	row, qErr := s.db.QueryRow(ctx, ftx(), `SELECT outbound_id, caller_id, request_id, body, attempts
-  FROM outbound WHERE status IN('queued','sending') AND next_retry<=? ORDER BY created_at LIMIT 1`,
+  FROM outbound WHERE status IN('queued','sending') AND next_retry<=$1 ORDER BY created_at LIMIT 1`,
 		now.UTC().Unix())
 	if qErr != nil {
 		return nil, qErr
@@ -130,14 +124,14 @@ func (s *Spool) NextDue(ctx context.Context, now time.Time) (*OutboundJob, error
 		return nil, err
 	}
 	_, err := s.db.Exec(ctx, ftx(),
-		`UPDATE outbound SET status='sending', updated_at=? WHERE outbound_id=?`,
+		`UPDATE outbound SET status='sending', updated_at=$1 WHERE outbound_id=$2`,
 		now.UTC().Unix(), j.OutboundID)
 	return j, err
 }
 
 func (s *Spool) MarkSent(ctx context.Context, outboundID, larkMsgID string) error {
-	_, err := s.db.Exec(ctx, ftx(), `UPDATE outbound SET status='sent', lark_msg_id=?, last_error='',
-  updated_at=? WHERE outbound_id=?`, larkMsgID, time.Now().UTC().Unix(), outboundID)
+	_, err := s.db.Exec(ctx, ftx(), `UPDATE outbound SET status='sent', lark_msg_id=$1, last_error='',
+  updated_at=$2 WHERE outbound_id=$3`, larkMsgID, time.Now().UTC().Unix(), outboundID)
 	return err
 }
 
@@ -145,12 +139,12 @@ func (s *Spool) MarkSent(ctx context.Context, outboundID, larkMsgID string) erro
 func (s *Spool) MarkRetry(ctx context.Context, outboundID, sendErr string, attempts, maxAttempts int, backoff time.Duration) (dlq bool, err error) {
 	now := time.Now().UTC()
 	if attempts+1 >= maxAttempts {
-		_, err = s.db.Exec(ctx, ftx(), `UPDATE outbound SET status='dlq', attempts=?, last_error=?,
-  updated_at=? WHERE outbound_id=?`, attempts+1, sendErr, now.Unix(), outboundID)
+		_, err = s.db.Exec(ctx, ftx(), `UPDATE outbound SET status='dlq', attempts=$1, last_error=$2,
+  updated_at=$3 WHERE outbound_id=$4`, attempts+1, sendErr, now.Unix(), outboundID)
 		return true, err
 	}
-	_, err = s.db.Exec(ctx, ftx(), `UPDATE outbound SET status='queued', attempts=?, last_error=?,
-  next_retry=?, updated_at=? WHERE outbound_id=?`,
+	_, err = s.db.Exec(ctx, ftx(), `UPDATE outbound SET status='queued', attempts=$1, last_error=$2,
+  next_retry=$3, updated_at=$4 WHERE outbound_id=$5`,
 		attempts+1, sendErr, now.Add(backoff).Unix(), now.Unix(), outboundID)
 	return false, err
 }
@@ -168,7 +162,7 @@ func (s *Spool) RecoverSending(ctx context.Context) (int64, error) {
 // Status K3:仅本 caller 可查。
 func (s *Spool) Status(ctx context.Context, callerID, outboundID string) (*OutboundJob, error) {
 	row, qErr := s.db.QueryRow(ctx, ftx(), `SELECT outbound_id, status, attempts, lark_msg_id, last_error
-  FROM outbound WHERE outbound_id=? AND caller_id=?`, outboundID, callerID)
+  FROM outbound WHERE outbound_id=$1 AND caller_id=$2`, outboundID, callerID)
 	if qErr != nil {
 		return nil, qErr
 	}
@@ -185,7 +179,7 @@ func (s *Spool) Status(ctx context.Context, callerID, outboundID string) (*Outbo
 func (s *Spool) CountByStatus(ctx context.Context, status string) (int64, error) {
 	var n int64
 	row, qErr := s.db.QueryRow(ctx, ftx(),
-		`SELECT COUNT(*) FROM outbound WHERE status=?`, status)
+		`SELECT COUNT(*) FROM outbound WHERE status=$1`, status)
 	if qErr != nil {
 		return 0, qErr
 	}

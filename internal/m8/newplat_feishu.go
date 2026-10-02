@@ -19,6 +19,9 @@ const newPlatformRegisterVerb = "#register"
 // AgentNameAllowed 供 identity.Service.NameAllowed：渠道保留字不得用作 Agent 名（审批时就拦）。
 func AgentNameAllowed(name string) bool { return !isReservedForNaming(name) }
 
+// untrustedIngressReply 新平台三条飞书指令遇不可信入站时的答复（不做任何身份动作）。
+const untrustedIngressReply = "拒绝：消息来源未通过可信入站认证。"
+
 func parseNewPlatformCommand(text string) (verb, code string, ok bool) {
 	fields := strings.Fields(strings.TrimSpace(text))
 	if len(fields) != 2 || (fields[0] != consoleLoginVerb && fields[0] != newPlatformRegisterVerb) {
@@ -40,6 +43,12 @@ func (h *Hub) dispatchNewPlatformCommand(ctx context.Context, msg model.Message,
 	verb, code, ok := parseNewPlatformCommand(text)
 	if !ok {
 		return model.PrefixDispatchResult{}, false, nil
+	}
+	// 🔴 只认可信入站（组长裁定，板 6c90284e；与 V2 解锁 trustedViewUnlockIngress 同口径）：
+	//    身份取自信道给的发信人，而 POST /webhook/{channel} 公网可达、管道未配 token／key 时接受未签名明文 ——
+	//    不拦的话，知道某人 open_id 与管道 id 就能伪造一条回调替他登录、绑定。
+	if !trustedViewUnlockIngress(msg.IngressProvenance) {
+		return model.PrefixDispatchResult{Matched: true, Reply: untrustedIngressReply}, true, nil
 	}
 	sender := identity.Identity{Provider: "feishu", Issuer: strings.TrimSpace(msg.BotChannelID), Subject: strings.TrimSpace(msg.SenderOpenID)}
 	var reply string

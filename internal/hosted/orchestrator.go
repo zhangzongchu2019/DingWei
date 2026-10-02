@@ -337,6 +337,7 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 		},
 		"credential_file": map[string]string{"content": cred},
 		"cred_kind":       seat.CredKind, // 容器启动契约（R-G1-HOSTED-IMAGE-CONTRACT）：账号形态随参数下发
+		"cli":             seat.CLI,      // 节点代理据此注入 SH_MODE=cli、SH_CLI（组长 R-B12-SEATMODE 第 2 条）
 	})
 	if res, err := o.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "create_seat", Params: params}); err != nil || !res.OK {
 		fail("starting", "start_failed")

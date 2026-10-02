@@ -33,6 +33,10 @@ var (
 
 var digestPattern = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 
+// seatCLIs 席位可选的 CLI——与 sessionHelper 的 CLI 档（tools/sessionhelper/sessionhelper/cli.py CLI_PROFILES）同名；
+// 其它值 sessionHelper 会静默回落到 claude 档，故在节点代理处即拒。
+var seatCLIs = map[string]bool{"claude": true, "codex": true, "aider": true, "opencode": true, "cline": true, "gemini": true}
+
 func validateImageRef(ref, registry string) error {
 	// 形态二（组长 a26a825f528a）：local@sha256:<64 位 image ID>——本机构建本机用，免 pull；
 	// 钉扎从「固定仓库」换成「固定 ID 白名单」：节点只接受配置里登记过的 ID
@@ -183,12 +187,12 @@ func engineImage(ref string) string {
 // buildSpec 安全参数清单（白名单固定，不可被指令关改）。
 // 🔴 CgroupParent 必带（组长 eccc54bc：托管席位统一挂在可配置父切片下做资源切片；
 // 漏设＝席位逃逸出平台切片，故 create 在空值时直接拒）。
-func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, credKind string) map[string]any {
+func (d *dockerOps) buildSpec(image, seatID, netName string, res seatResources, credKind, cli string) map[string]any {
 	memBytes := res.MemoryMB * 1024 * 1024
 	return map[string]any{
 		"Image": engineImage(image),
-		"User":  "10001:10001",       // 非 root（隔离底线；与 seatRunUID 一致）
-		"Env":   d.seatEnv(credKind), // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
+		"User":  "10001:10001",            // 非 root（隔离底线；与 seatRunUID 一致）
+		"Env":   d.seatEnv(credKind, cli), // 🔴 凭据永不经 env（B7）；令牌走文件。代理非凭据（eccc54bc②）
 		"HostConfig": map[string]any{
 			"ReadonlyRootfs": true,
 			"Tmpfs":          map[string]string{"/tmp": "size=8m"},
@@ -224,12 +228,16 @@ func chownForSeat(path string) error { return chownForSeatFn(path) }
 // seatEnv 席位容器环境变量。容器启动契约（R-G1-HOSTED-IMAGE-CONTRACT 一）：四个非凭据键
 // 由节点代理注入——SH_WS_BASE（Hub 的 ws 源）／SH_ENROLL_TOKEN_FILE／SH_CRED_FILE（均为路径）／
 // SH_CRED_KIND（api_key|token_file，create 参数 cred_kind 带入）。🔴 凭据内容永不进 env/日志。
-func (d *dockerOps) seatEnv(credKind string) []string {
+func (d *dockerOps) seatEnv(credKind, cli string) []string {
 	env := []string{
 		"SH_WS_BASE=" + d.hubWSBase,
 		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
 		"SH_CRED_FILE=/work/account-credential",
 		"SH_CRED_KIND=" + credKind,
+		// 席位的 CLI 由 create／upgrade 参数 cli 定（组长 R-B12-SEATMODE 第 2 条取乙：基础镜像含多家 CLI，模式按席位定、不写死进镜像）。
+		// sessionHelper 未设 SH_MODE 时默认 echo（不起任何 CLI）；SH_CLI 选 CLI 档。
+		"SH_MODE=cli",
+		"SH_CLI=" + cli,
 	}
 	if d.seatProxy == "" {
 		return env
@@ -333,6 +341,7 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		Token     *tokenFile      `json:"token_file"`
 		Cred      *credentialFile `json:"credential_file"`
 		CredKind  string          `json:"cred_kind"` // api_key|token_file（容器启动契约：账号形态）
+		CLI       string          `json:"cli"`       // 席位 CLI（seatCLIs 白名单；漏设即拒）
 	}
 	if err := strictDecode(params, &p); err != nil {
 		return nil, err
@@ -362,6 +371,9 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 	}
 	if p.CredKind != "api_key" && p.CredKind != "token_file" {
 		return nil, fmt.Errorf("%w: cred_kind 须 api_key|token_file（容器启动契约：缺任一键即拒）", ErrParams)
+	}
+	if !seatCLIs[p.CLI] {
+		return nil, fmt.Errorf("%w: cli %q 不在白名单（漏设即拒）", ErrParams, p.CLI)
 	}
 
 	name := containerName(p.SeatID)
@@ -412,7 +424,7 @@ func (d *dockerOps) create(ctx context.Context, params json.RawMessage) (json.Ra
 		return fail(err, "")
 	}
 	// ④ 安全参数清单起容器
-	id, err := d.eng.containerCreate(ctx, name, d.buildSpec(p.Image, p.SeatID, netName, p.Resources, p.CredKind))
+	id, err := d.eng.containerCreate(ctx, name, d.buildSpec(p.Image, p.SeatID, netName, p.Resources, p.CredKind, p.CLI))
 	if err != nil {
 		return fail(err, "")
 	}
@@ -492,6 +504,7 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 		Resources seatResources `json:"resources"`
 		Token     *tokenFile    `json:"token_file"` // 轮换的新令牌（Hub Reissue 先行；写新令牌文件再起新容器）
 		CredKind  string        `json:"cred_kind"`
+		CLI       string        `json:"cli"` // 与 create 同口径：升级后的新容器同一 CLI
 	}
 	if err := strictDecode(params, &p); err != nil {
 		return nil, err
@@ -520,6 +533,9 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 	if p.CredKind != "api_key" && p.CredKind != "token_file" {
 		return nil, fmt.Errorf("%w: cred_kind 须 api_key|token_file（与 create 同口径，G5）", ErrParams)
 	}
+	if !seatCLIs[p.CLI] {
+		return nil, fmt.Errorf("%w: cli %q 不在白名单（与 create 同口径）", ErrParams, p.CLI)
+	}
 	oldID, err := d.seatContainerID(ctx, p.SeatID)
 	if err != nil {
 		return nil, err
@@ -536,7 +552,7 @@ func (d *dockerOps) upgrade(ctx context.Context, params json.RawMessage) (json.R
 		return nil, err
 	}
 	newName := containerName(p.SeatID) + "-new"
-	newID, err := d.eng.containerCreate(ctx, newName, d.buildSpec(p.Image, p.SeatID, networkName(p.SeatID), p.Resources, p.CredKind))
+	newID, err := d.eng.containerCreate(ctx, newName, d.buildSpec(p.Image, p.SeatID, networkName(p.SeatID), p.Resources, p.CredKind, p.CLI))
 	if err != nil {
 		return nil, err
 	}

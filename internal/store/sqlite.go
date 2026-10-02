@@ -2133,9 +2133,48 @@ func (s *SQLite) UpdateSessionDelivery(ctx context.Context, id, state, errText s
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 	_, err := s.db.ExecContext(ctx, `UPDATE session_delivery SET state=?,last_error=?,next_attempt_at=?,lease_until=NULL,updated_at=?,
 		delivered_at=CASE WHEN ?='delivered' THEN COALESCE(delivered_at,?) ELSE delivered_at END,
-		processed_at=CASE WHEN ?='processed' THEN COALESCE(processed_at,?) ELSE processed_at END WHERE id=? AND state NOT IN ('processed','dead','cancelled')`,
-		state, errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now, state, now, state, now, id)
+		processed_at=CASE WHEN ?='processed' THEN COALESCE(processed_at,?) ELSE processed_at END,
+		failed_count=CASE WHEN ? IN ('injected','processed') THEN 0 ELSE failed_count END WHERE id=? AND state NOT IN ('processed','dead','cancelled')`,
+		state, errText, nextAttemptAt.UTC().Format(time.RFC3339Nano), now, state, now, state, now, state, id)
 	return err
+}
+
+func (s *SQLite) FailSessionDeliveryRetryable(ctx context.Context, id, reason string, now time.Time, base, maxDelay time.Duration, maxFailed int) (bool, int, time.Time, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, 0, time.Time{}, err
+	}
+	defer tx.Rollback()
+	var failed int
+	err = tx.QueryRowContext(ctx, `SELECT failed_count FROM session_delivery WHERE id=? AND state NOT IN ('processed','dead','cancelled')`, id).Scan(&failed)
+	if err == sql.ErrNoRows {
+		return false, 0, time.Time{}, nil // 已终态：不动
+	}
+	if err != nil {
+		return false, 0, time.Time{}, err
+	}
+	failed++
+	nowText := now.UTC().Format(time.RFC3339Nano)
+	if maxFailed > 0 && failed >= maxFailed {
+		if _, err = tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',failed_count=?,last_error=?,lease_until=NULL,next_attempt_at=?,updated_at=? WHERE id=?`,
+			failed, reason, nowText, nowText, id); err != nil {
+			return false, 0, time.Time{}, err
+		}
+		return true, failed, time.Time{}, tx.Commit()
+	}
+	delay := base
+	for i := 1; i < failed && delay < maxDelay; i++ {
+		delay *= 2
+	}
+	if delay > maxDelay {
+		delay = maxDelay
+	}
+	next := now.Add(delay).UTC()
+	if _, err = tx.ExecContext(ctx, `UPDATE session_delivery SET state='queued',failed_count=?,last_error=?,lease_until=NULL,next_attempt_at=?,updated_at=? WHERE id=?`,
+		failed, reason, next.Format(time.RFC3339Nano), nowText, id); err != nil {
+		return false, 0, time.Time{}, err
+	}
+	return false, failed, next, tx.Commit()
 }
 
 func (s *SQLite) UpdateSessionDeliveryBusy(ctx context.Context, id, errText string, nextAttemptAt time.Time) error {

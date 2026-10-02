@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
 func wsMsg(bot, msgID, sender, chatID string) model.Message {
@@ -60,7 +61,7 @@ func inboundServer(t *testing.T, sinks []SinkConfig, wl Whitelist) (*Server, str
 	}
 	s := New(Config{
 		ProdURL: "http://127.0.0.1:1", WhitelistFile: wlPath,
-		SpoolPath: filepath.Join(dir, "spool.db"), Sinks: sinks,
+		SpoolPool: pgtest.Pool(t), Sinks: sinks,
 		MaxAttempts: 3, BesteffortMaxAttempts: 2,
 	})
 	if s.spool == nil {
@@ -145,17 +146,16 @@ func TestSinkCrashWindowRecovery(t *testing.T) { // G2:WAL→sink 间崩溃=重�
 	hub := &sinkHub{}
 	ts := httptest.NewServer(hub.handler())
 	defer ts.Close()
-	dir := t.TempDir()
-	spoolPath := filepath.Join(dir, "spool.db")
+	pool := pgtest.Pool(t)
 	sinks := []SinkConfig{{Name: "p", HubURL: ts.URL, Channel: "c",
 		Role: "authoritative", Filter: "all", Token: "k"}}
-	s1 := New(Config{ProdURL: "http://127.0.0.1:1", SpoolPath: spoolPath, Sinks: sinks})
+	s1 := New(Config{ProdURL: "http://127.0.0.1:1", SpoolPool: pool, Sinks: sinks})
 	if err := s1.onWSInbound(context.Background(), wsMsg("b", "om_4", "ou", "oc")); err != nil {
 		t.Fatal(err)
 	}
-	_ = s1.spool.Close() // 落盘后、投递前崩溃
+	// 模拟进程边界：保留同一个 PG 库中的已提交行，重新构造服务对象。
 
-	s2 := New(Config{ProdURL: "http://127.0.0.1:1", SpoolPath: spoolPath, Sinks: sinks})
+	s2 := New(Config{ProdURL: "http://127.0.0.1:1", SpoolPool: pool, Sinks: sinks})
 	drainSinks(t, s2, 4)
 	if hub.count() != 1 {
 		t.Fatalf("崩溃窗恢复失败:投递数=%d", hub.count())

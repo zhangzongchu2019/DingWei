@@ -46,6 +46,8 @@ func Run(t *testing.T, newStore Factory) {
 		{"N3_registration_code_expired_or_unknown_changes_nothing", regCodeInvalidChangesNothing},
 		{"N3_identity_already_bound_rejected", identityAlreadyBound},
 		{"N3_new_registration_code_voids_old", regCodeRegenVoidsOld},
+		{"N3_list_active_registration_codes", regCodeListActive},
+		{"N3_bind_code_binds_active_user_without_changing_state", bindCodeActiveUser},
 		{"V1_A6_pending_list_scoped_to_owner", pendingScopedToOwner},
 		{"V1_A7_application_expires_by_clock", applicationExpires},
 		{"V1_pending_order_is_deterministic", pendingOrderDeterministic},
@@ -68,6 +70,7 @@ func Run(t *testing.T, newStore Factory) {
 		{"G_approve_only_into_own_or_member_group", approveOnlyIntoUsableGroup},
 		{"N3_reset_password_revokes_only_that_users_sessions", resetPasswordRevokesSessions},
 		{"V2_revoked_before_pickup_no_credential", revokedBeforePickup},
+		{"V2_list_agents_scoped_to_owner_case_insensitive", listAgentsOwnerScoped},
 	}
 	for _, c := range cases {
 		c := c
@@ -245,6 +248,84 @@ func regCodeRegenVoidsOld(t *testing.T, s identity.Store) {
 	if _, err := s.RedeemRegistrationCode(ctx, "code-ivy-2", feishuA, t0); err != nil {
 		t.Fatalf("new code: %v", err)
 	}
+}
+
+// 当前有效注册码（业主反馈，板 7a138dcf：用户列表一直显示到绑定、过期或重新生成）：
+// 只列未用、未过期的；新码顶替旧码；只出哈希，不出明文（库里本就没有明文）。
+func regCodeListActive(t *testing.T, s identity.Store) {
+	mustUser(t, s, "jack", "jk", identity.UserPendingBind)
+	mustUser(t, s, "kate", "kt", identity.UserPendingBind)
+	exp := t0.Add(24 * time.Hour)
+	_ = s.CreateRegistrationCode(ctx, "JACK", "code-jack-1", exp)
+	_ = s.CreateRegistrationCode(ctx, "jack", "code-jack-2", exp.Add(time.Minute)) // 顶替 1
+	_ = s.CreateRegistrationCode(ctx, "kate", "code-kate", t0.Add(time.Hour))
+	digests := func(now time.Time) map[string]string {
+		rows, err := s.ListActiveRegistrationCodes(ctx, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		m := map[string]string{}
+		for _, r := range rows {
+			if _, dup := m[r.UserIDLC]; dup {
+				t.Fatalf("user %s listed twice", r.UserIDLC)
+			}
+			m[r.UserIDLC] = r.CodeDigest
+		}
+		return m
+	}
+	if got := digests(t0); got["jack"] != "code-jack-2" || got["kate"] != "code-kate" || len(got) != 2 {
+		t.Fatalf("active at t0: %v, want jack→code-jack-2 kate→code-kate", got)
+	}
+	rows, _ := s.ListActiveRegistrationCodes(ctx, t0)
+	for _, r := range rows {
+		if r.UserIDLC == "jack" && !r.ExpiresAt.Equal(exp.Add(time.Minute)) {
+			t.Fatalf("expires_at %v, want %v", r.ExpiresAt, exp.Add(time.Minute))
+		}
+	}
+	// kate 的码过期 ⇒ 不列
+	if got := digests(t0.Add(2 * time.Hour)); got["kate"] != "" || got["jack"] != "code-jack-2" {
+		t.Fatalf("after kate's code expired: %v", got)
+	}
+	// jack 绑定（码已用）⇒ 不列
+	if _, err := s.RedeemRegistrationCode(ctx, "code-jack-2", feishuA, t0); err != nil {
+		t.Fatal(err)
+	}
+	if got := digests(t0); got["jack"] != "" {
+		t.Fatalf("redeemed code still listed: %v", got)
+	}
+}
+
+// 本人自取的飞书绑定码（组长 e483f147）：active 且尚无该渠道身份 ⇒ 只绑身份、状态不变；
+// 已有该渠道身份 ⇒ ErrAlreadyBound；停用 ⇒ ErrNotPending。
+func bindCodeActiveUser(t *testing.T, s identity.Store) {
+	mustUser(t, s, "liam", "lm", identity.UserActive)
+	mustUser(t, s, "mona", "mo", identity.UserDisabled)
+	if has, err := s.UserHasIdentity(ctx, "LIAM", "feishu"); err != nil || has {
+		t.Fatalf("before bind: has=%v err=%v", has, err)
+	}
+	_ = s.CreateRegistrationCode(ctx, "liam", "code-liam-1", t0.Add(24*time.Hour))
+	u, err := s.RedeemRegistrationCode(ctx, "code-liam-1", feishuA, t0)
+	if err != nil || u.State != identity.UserActive {
+		t.Fatalf("bind active user: %+v %v", u, err)
+	}
+	if got, err := s.ResolveIdentity(ctx, feishuA); err != nil || got.UserIDLC() != "liam" {
+		t.Fatalf("identity bound to %+v %v, want liam", got, err)
+	}
+	if got, _ := s.GetUser(ctx, "liam"); got.State != identity.UserActive {
+		t.Fatalf("state changed by bind: %s", got.State)
+	}
+	if has, _ := s.UserHasIdentity(ctx, "liam", "feishu"); !has {
+		t.Fatal("UserHasIdentity after bind")
+	}
+	// 已有飞书身份：第二个码拒绝（不论用哪个飞书身份来兑）
+	_ = s.CreateRegistrationCode(ctx, "liam", "code-liam-2", t0.Add(24*time.Hour))
+	other := identity.Identity{Provider: "feishu", Issuer: "devplatform", Subject: "ou_other"}
+	_, err = s.RedeemRegistrationCode(ctx, "code-liam-2", other, t0)
+	wantErr(t, "already bound", err, identity.ErrAlreadyBound)
+	// 停用用户：不绑
+	_ = s.CreateRegistrationCode(ctx, "mona", "code-mona", t0.Add(24*time.Hour))
+	_, err = s.RedeemRegistrationCode(ctx, "code-mona", other, t0)
+	wantErr(t, "disabled user", err, identity.ErrNotPending)
 }
 
 // ── V1 ─────────────────────────────────────────────────────────────────────

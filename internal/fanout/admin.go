@@ -335,7 +335,8 @@ func (sp *Spool) SelfCheck(ctx context.Context) error {
 		return err
 	}
 	if _, err := sp.db.Exec(ctx, ftx(),
-		`INSERT OR REPLACE INTO selfcheck(k,v) VALUES('probe','ok')`); err != nil {
+		`INSERT INTO selfcheck(k,v) VALUES('probe','ok')
+ON CONFLICT (k) DO UPDATE SET v=EXCLUDED.v`); err != nil {
 		return err
 	}
 	var v string

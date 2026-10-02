@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -209,6 +210,21 @@ func TestCleanupIsReal_KeepRuntimeNegativeControl(t *testing.T) {
 		t.Errorf("工具没报 REAPED:「有没有收掉孤儿 postmaster」就只剩推断,没有读数")
 	} else {
 		t.Logf("REAPED=%s(收掉的孤儿 postmaster 数;僵尸残留由 residue 那道独立核对判)", kv["REAPED"])
+	}
+	// 🔴 REAP_SECONDS 是【收尸自己花了多久】的自报。必须有它:上一版收尸改用静默窗后
+	// 每次起停贵了 5–9 秒,而这件事只能靠「两棵树各跑整包 -count=2」对出来 ——
+	// 耗时藏在整包读数里,归因全靠推断。有了这个数,「收尸贵不贵」是一条直接读数。
+	if v, ok := kv["REAP_SECONDS"]; !ok {
+		t.Errorf("工具没报 REAP_SECONDS:收尸耗时又只能从整包用例时间外推(上一版就是这么把 2.55 倍变慢查出来的)")
+	} else if _, err := strconv.ParseFloat(v, 64); err != nil {
+		t.Errorf("REAP_SECONDS=%q 不是个数:自报的读数解析不了就等于没报", v)
+	} else {
+		t.Logf("REAP_SECONDS=%s(主扫＋收尾两遍合计;终止条件是「已无后代」,正常路径不该撞到上限)", v)
+	}
+	// REAP_LEFTOVER 只在【时间上限触发】时出现。它是排障坐标,不是失败判据 ⇒ 只如实转述:
+	// 出现了就说明有后代在 5 秒里没退出,那时候残留格红不红都由 residue 那道独立核对说了算。
+	if v, ok := kv["REAP_LEFTOVER"]; ok {
+		t.Logf("🔵 REAP_LEFTOVER=%s:收尸撞到时间上限,还有这么多个后代没退出(排障坐标,不是判据)", v)
 	}
 
 	// 🔴 日志泄漏(复验 🟡③)的【正证】:库那个日志文件确实落进了工具自己的日志目录。

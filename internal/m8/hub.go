@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -86,6 +87,17 @@ type Hub struct {
 	// NowFunc 只为测试注入时钟。D1 的滑动续期要验「跨过 12 小时」,
 	// 真等 12 小时不是验收,是浪费;而只看代码里有 UPDATE 又证明不了行为。
 	NowFunc func() time.Time
+	// IdleTickerFunc 只为测试注入会话空闲巡检的 tick（组长 R-M8-TESTSIDE 取甲：挂在实例上，不用包级变量）；
+	// 返回 tick 通道与停止函数。nil ⇒ time.NewTicker（生产行为不变）。会话活跃时刻同用 h.now()（NowFunc）。
+	IdleTickerFunc func(d time.Duration) (<-chan time.Time, func())
+	// deliveryFailedBackoffBase／Cap／Max 可重试 failed 的退避与上限；0 ⇒ 默认 2s／300s／30（只为测试注入）。
+	deliveryFailedBackoffBase time.Duration
+	deliveryFailedBackoffCap  time.Duration
+	deliveryFailedMax         int
+	// keepaliveInterval／keepaliveTimeout 会话保活 ping 的间隔与等 pong 上限（组长 R-M8-KEEPALIVE-RACE：挂实例，
+	// 原为包级变量，测试改写时与上一个会话仍在跑的保活协程竞争）。0 ⇒ 默认 30s／5s（生产行为不变）；间隔为负 ⇒ 不保活。
+	keepaliveInterval time.Duration
+	keepaliveTimeout  time.Duration
 
 	// D1 滑动续期的写放大闸:同一会话在 consoleSessionTouchMin 内只写一次库。
 	consoleTouchMu sync.Mutex
@@ -145,7 +157,11 @@ type L2Config struct {
 
 type client struct {
 	conn *websocket.Conn
-	mu   sync.Mutex
+	mu   sync.Mutex // 串行化 forward 的「写请求→等回复」
+	// HandleWS 的读协程是这条连接唯一的读者（组长 lead-m8-flake-findings ③）：回复经 resp 交给 forward；
+	// readDone 在连接结束时关闭。
+	resp     chan []byte
+	readDone chan struct{}
 }
 
 type sessionClient struct {
@@ -240,11 +256,11 @@ var (
 	// A 15 second cadence bounds an idle disconnect to 90 seconds while avoiding
 	// a per-connection timer for every activity update.
 	sessionIdleWatchdogInterval = 15 * time.Second
-	// Server-initiated WebSocket control pings keep otherwise idle helpers alive
-	// through proxies and detect half-open connections before a replacement
-	// reconnect starts a 1008 churn loop.
-	sessionKeepaliveInterval = 30 * time.Second
-	sessionKeepaliveTimeout  = 5 * time.Second
+	// keepalivePingHook 仅供用例观察保活 Ping 的起止（done=false 发出前，true 返回后）；生产为 nil。
+	keepalivePingHook atomic.Pointer[func(done bool)]
+	// agentDisconnectWait DisconnectAgent 等关闭握手的上限：关闭帧发出即生效（之后该连接一切写都失败），
+	// 对端不读时库会等满 5 秒握手 —— 不让吊销／暂停请求陪着等（组长 lead-m8-flake-findings ②）。
+	agentDisconnectWait = 500 * time.Millisecond
 )
 
 var (
@@ -762,7 +778,7 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	c := &client{conn: conn}
+	c := &client{conn: conn, resp: make(chan []byte, 1), readDone: make(chan struct{})}
 	var oldConn *websocket.Conn
 	h.mu.Lock()
 	if old := h.serviceClients[serviceID]; old != nil {
@@ -783,7 +799,28 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 		h.mu.Unlock()
 		_ = conn.Close(websocket.StatusNormalClosure, "bye")
 	}()
-	<-r.Context().Done()
+	// 🔴 建连后必须一直有人读（组长 lead-m8-flake-findings ③）：原先只有 forward 在途时才 Read，
+	//    空闲时对端发来的关闭帧／ping 无人处理 —— 对端优雅关闭必等满 5 秒，Hub 也察觉不到对端已走。
+	go func() {
+		defer close(c.readDone)
+		for {
+			_, data, err := conn.Read(context.Background())
+			if err != nil {
+				return
+			}
+			// 🔴 签注（组长 R-HUB-WSB-COMMENT）：服务只许应答，不得主动发帧。c.resp 容量 1：无请求在途时的主动帧会进缓冲，
+			//    被下一次调用当成答案（之后整体错位）。缓冲 1 是为了接住 forward 写完请求、尚未进入接收时就先到的快回复；
+			//    缓冲已满（不合协议的多余帧）才丢弃。超时的调用已关掉连接，迟到回复不会留到下一次调用。
+			select {
+			case c.resp <- data:
+			default:
+			}
+		}
+	}()
+	select {
+	case <-r.Context().Done():
+	case <-c.readDone:
+	}
 }
 
 func (h *Hub) HandleSessionWS(w http.ResponseWriter, r *http.Request) {
@@ -950,14 +987,14 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		InsecureSkipVerify: true,
 		OnPingReceived: func(ctx context.Context, payload []byte) bool {
 			if c != nil {
-				c.recordActivity(time.Now().UTC())
+				c.recordActivity(h.now().UTC())
 				go h.touchSessionEndpoint(context.Background(), c)
 			}
 			return true
 		},
 		OnPongReceived: func(ctx context.Context, payload []byte) {
 			if c != nil {
-				c.recordActivity(time.Now().UTC())
+				c.recordActivity(h.now().UTC())
 				go h.touchSessionEndpoint(context.Background(), c)
 			}
 		},
@@ -975,7 +1012,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		return
 	}
 	markTiming("conn_seq")
-	c = &sessionClient{conn: conn, keyID: keyID, ownerKey: ownerKey, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: time.Now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
+	c = &sessionClient{conn: conn, keyID: keyID, ownerKey: ownerKey, sessionName: sessionName, localName: requestedSessionName, connSeq: connSeq, lastSeenAt: h.now().UTC(), targetBot: targetBot, webTerminal: webTerminal, osName: osName, tool: tool, version: clientVersion, deviceID: deviceID, deviceIDV1: deviceIDV1}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	go h.watchSessionIdle(idleWatchdogCtx, c)
 	go h.watchSessionKeepalive(idleWatchdogCtx, c)
@@ -2834,9 +2871,17 @@ func (h *Hub) forward(ctx context.Context, serviceID string, req ForwardRequest,
 	if err := c.conn.Write(callCtx, websocket.MessageText, payload); err != nil {
 		return "", err
 	}
-	_, data, err := c.conn.Read(callCtx)
-	if err != nil {
-		return "", err
+	var data []byte
+	select {
+	case data = <-c.resp:
+	case <-c.readDone:
+		return "", errors.New("service websocket closed")
+	case <-callCtx.Done():
+		// 🔴 超时即关掉这条服务连接（复验 tosonnet55tc2k，hub-ws-blocking ③）：ForwardResponse 不带请求 ID，
+		//    回复只能按先后对应 —— 连接留着，这次调用的迟到回复会被下一次调用当成自己的答案（且之后整体错位）。
+		//    关掉后迟到回复无处可去，下一次调用写不出去、报错；服务重连后从干净的连接重新开始。
+		_ = c.conn.CloseNow()
+		return "", callCtx.Err()
 	}
 	var resp ForwardResponse
 	if err := json.Unmarshal(data, &resp); err != nil {
@@ -3935,9 +3980,24 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	} else if state == "failed" {
 		retryable := metaBool(env.Meta, "retryable")
 		if retryable {
-			_ = h.Repo.UpdateSessionDelivery(ctx, id, "queued", metaString(env.Meta, "reason"), time.Now().UTC().Add(2*time.Second))
-			h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", metaString(env.Meta, "reason"))
-			h.scheduleSessionDeliveryDrain(c, 2*time.Second)
+			// 可重试的失败：指数退避（2 秒起翻倍、封顶 300 秒），连续 30 次转 dead 并通知发送方（组长取甲；原为恒 2 秒、无上限）。
+			reason := metaString(env.Meta, "reason")
+			now := time.Now().UTC()
+			base, maxDelay, maxFailed := h.deliveryFailedRetryParams()
+			dead, failed, next, err := h.Repo.FailSessionDeliveryRetryable(ctx, id, reason, now, base, maxDelay, maxFailed)
+			if err != nil {
+				log.Printf("session delivery failed-retry record error delivery_id=%s err=%v", id, err)
+				return true
+			}
+			if dead {
+				log.Printf("session delivery dead reason=retry_exhausted delivery_id=%s failed=%d last_reason=%s", id, failed, reason)
+				h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", reason)
+				h.notifyDeliveryRetryExhausted(ctx, *d, failed, reason)
+				go h.drainSessionDeliveries(context.Background(), c)
+			} else {
+				h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", reason)
+				h.scheduleSessionDeliveryDrain(c, next.Sub(now))
+			}
 		} else {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "dead", metaString(env.Meta, "reason"), time.Now().UTC())
 			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", metaString(env.Meta, "reason"))
@@ -4023,6 +4083,43 @@ func (h *Hub) scheduleSessionDeliveryDrain(c *sessionClient, delay time.Duration
 		delay = 10 * time.Millisecond
 	}
 	time.AfterFunc(delay, func() { h.drainSessionDeliveries(context.Background(), c) })
+}
+
+// 可重试 failed 的退避与上限（组长取甲）。实例字段为 0 ⇒ 默认：2 秒起翻倍、封顶 300 秒、连续 30 次转 dead。
+const (
+	defaultDeliveryFailedBackoffBase = 2 * time.Second
+	defaultDeliveryFailedBackoffCap  = 300 * time.Second
+	defaultDeliveryFailedMax         = 30
+	deliveryRetryExhaustedCode       = "retry_exhausted"
+)
+
+func (h *Hub) deliveryFailedRetryParams() (time.Duration, time.Duration, int) {
+	base, maxDelay, maxFailed := h.deliveryFailedBackoffBase, h.deliveryFailedBackoffCap, h.deliveryFailedMax
+	if base <= 0 {
+		base = defaultDeliveryFailedBackoffBase
+	}
+	if maxDelay <= 0 {
+		maxDelay = defaultDeliveryFailedBackoffCap
+	}
+	if maxFailed <= 0 {
+		maxFailed = defaultDeliveryFailedMax
+	}
+	return base, maxDelay, maxFailed
+}
+
+// notifyDeliveryRetryExhausted 连续失败到限转 dead 时给发送方一条可见的投递失败通知：原因码＋最后一次失败原因。
+func (h *Hub) notifyDeliveryRetryExhausted(ctx context.Context, d model.SessionDelivery, failed int, lastReason string) {
+	var original model.Envelope
+	if json.Unmarshal([]byte(d.Envelope), &original) != nil || original.From == "" {
+		return
+	}
+	notice := model.Envelope{ID: "delivery_failed_" + randomHex(8), From: sessionAddress(d.SessionName, d.KeyID), To: original.From,
+		Body: fmt.Sprintf("消息投递失败，已连续重试 %d 次仍未成功，不再重投（原因码 %s；最后一次失败原因：%s）", failed, deliveryRetryExhaustedCode, lastReason),
+		Meta: map[string]any{"type": "delivery_status", "no_mirror": true, "system": true,
+			"delivery_id": d.ID, "reason_code": deliveryRetryExhaustedCode, "last_error": lastReason}}
+	if err := h.RouteEnvelope(ctx, notice); err != nil {
+		log.Printf("session delivery dead notice route failed delivery_id=%s err=%v", d.ID, err)
+	}
 }
 
 func (h *Hub) notifyDeliveryQueued(ctx context.Context, d model.SessionDelivery, position int) {
@@ -5090,7 +5187,7 @@ func yesNo(v bool) string {
 func (h *Hub) readSessionMessage(ctx context.Context, c *sessionClient) (websocket.MessageType, []byte, error) {
 	typ, data, err := c.conn.Read(ctx)
 	if err == nil {
-		c.recordActivity(time.Now().UTC())
+		c.recordActivity(h.now().UTC())
 	}
 	return typ, data, err
 }
@@ -5107,13 +5204,13 @@ func (h *Hub) watchSessionIdle(ctx context.Context, c *sessionClient) {
 	if interval <= 0 {
 		interval = 15 * time.Second
 	}
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
+	tick, stop := h.idleTicker(interval)
+	defer stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case now := <-ticker.C:
+		case now := <-tick:
 			if now.Sub(c.lastSeen()) > idleTimeout {
 				_ = c.conn.Close(websocket.StatusGoingAway, "idle timeout")
 				return
@@ -5122,14 +5219,41 @@ func (h *Hub) watchSessionIdle(ctx context.Context, c *sessionClient) {
 	}
 }
 
-func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
-	interval := sessionKeepaliveInterval
-	if interval <= 0 || c == nil || c.conn == nil {
-		return
+func (h *Hub) idleTicker(d time.Duration) (<-chan time.Time, func()) {
+	if h.IdleTickerFunc != nil {
+		return h.IdleTickerFunc(d)
 	}
-	timeout := sessionKeepaliveTimeout
+	t := time.NewTicker(d)
+	return t.C, t.Stop
+}
+
+// Server-initiated WebSocket control pings keep otherwise idle helpers alive
+// through proxies and detect half-open connections before a replacement
+// reconnect starts a 1008 churn loop.
+const (
+	defaultSessionKeepaliveInterval = 30 * time.Second
+	defaultSessionKeepaliveTimeout  = 5 * time.Second
+)
+
+// keepaliveParams 由实例字段取保活参数（组长 R-M8-KEEPALIVE-DEFAULT：抽成纯函数，好让「零值取默认、负数关闭」有格钉住）。
+// 间隔 0 ⇒ 默认 30s；间隔为负 ⇒ 不保活（enabled=false）；等 pong 上限 <=0 ⇒ 默认 5s。
+func keepaliveParams(interval, timeout time.Duration) (time.Duration, time.Duration, bool) {
+	if interval == 0 {
+		interval = defaultSessionKeepaliveInterval
+	}
+	if interval < 0 {
+		return 0, 0, false
+	}
 	if timeout <= 0 {
-		timeout = 5 * time.Second
+		timeout = defaultSessionKeepaliveTimeout
+	}
+	return interval, timeout, true
+}
+
+func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
+	interval, timeout, enabled := keepaliveParams(h.keepaliveInterval, h.keepaliveTimeout)
+	if !enabled || c == nil || c.conn == nil {
+		return
 	}
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -5138,10 +5262,16 @@ func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			// 🔴 Ping 不持 c.mu（组长 lead-m8-flake-findings ①）：Ping 要等对端回 pong，最长 timeout；
+			//    持写锁期间该会话的所有出站写都被挡住。库本身对控制帧与数据帧的写已有帧级互斥，无需再加锁。
 			pingCtx, cancel := context.WithTimeout(ctx, timeout)
-			c.mu.Lock()
+			if hook := keepalivePingHook.Load(); hook != nil {
+				(*hook)(false)
+			}
 			err := c.conn.Ping(pingCtx)
-			c.mu.Unlock()
+			if hook := keepalivePingHook.Load(); hook != nil {
+				(*hook)(true)
+			}
 			cancel()
 			if err != nil {
 				_ = c.conn.Close(websocket.StatusGoingAway, "keepalive failed")

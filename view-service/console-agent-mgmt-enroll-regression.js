@@ -23,14 +23,24 @@ const end = source.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents', start);
 assert(start >= 0 && end > start, 'cannot extract consolePageHTML from production source');
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
+// 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
+if (process.argv.some((a) => a.startsWith('--mutate'))) { console.error('MUTATION-SWITCH-WRONG-FORM: this script reads env MUTATION=<name>, not --mutate=<name> (the argv form would be silently ignored)'); process.exit(3); }
 function mutate(from, to) {
   const hits = html.split(from).length - 1;
-  assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
+  // 🔴 锚点失效（页面改了，变异的目标文本没了或不唯一）必须【大声】失败：stderr 打 MUTATION-ANCHOR-STALE、退出码 3，不得静默——
+  // 打不上去的变异什么也没测，却会被当成「已经验过」。退出码约定见文件末尾（1＝变异被杀·0＝存活·3＝变异无效）。
+  if (hits !== 1) {
+    console.error(`MUTATION-ANCHOR-STALE: mutation ${mutation} anchor must match exactly once, hits=${hits}: ${from.slice(0, 160)}`);
+    process.exit(3);
+  }
   html = html.replace(from, to);
 }
-mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;'); // 自备审核区默认封存(开关关闭);本件测的就是它,所以装置里把开关打开
-const MUTATIONS = ['new-group-limit-9', 'group-closed-unmapped', 'new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
-if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+// 第一版:自备审核区默认开(业主实测关着则入网批准走不通),托管区默认关(第二版)——本件按页面的默认值测,不打开任何开关。
+const MUTATIONS = ['mutation-anchor-selftest', 'seal-review', 'hosted-on-by-default', 'new-group-limit-9', 'group-closed-unmapped', 'new-group-ascii-only', 'group-still-required', 'new-group-no-check', 'new-group-no-regex', 'no-stale-guard', 'keep-inputs', 'no-confirm-revoke', 'roster-not-following', 'leak-nonmanage-group', 'show-hub-text', 'ignore-hosted', 'notice-in-hidden-editor'];
+if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
+if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
+if (mutation === 'seal-review') mutate('var FEATURE_SELFHOST_REVIEW=true;', 'var FEATURE_SELFHOST_REVIEW=false;');
+if (mutation === 'hosted-on-by-default') mutate('var FEATURE_HOSTED=false;', 'var FEATURE_HOSTED=true;');
 if (mutation === 'group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'new-group-limit-9') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,9}$/u,');
 if (mutation === 'new-group-ascii-only') mutate('NEW_GROUP_RE=/^[\\p{L}\\p{N}]{1,8}$/u,', 'NEW_GROUP_RE=/^[A-Za-z0-9]{1,8}$/,');
@@ -42,9 +52,9 @@ if (mutation === 'keep-inputs') mutate("if(!gone){enrollFeedback('enrollFeedback
 if (mutation === 'no-confirm-revoke') mutate("if(!confirm('吊销 '+a.name+'：该 Agent 将在 5 秒内断开,凭据作废;重装后需重新申请。确认吊销？'))return;", '');
 if (mutation === 'roster-not-following') mutate("refreshEnroll();refreshRoster();refreshGroups('enroll');", "refreshEnroll();refreshGroups('enroll');"); // 批准后列表必须重取(列表现在直接取 /api/console/agents,不再跟编组快照)
 if (mutation === 'show-hub-text') mutate("function consoleErrorText(status,data){", "function consoleErrorText(status,data){if(data&&data.detail)return String(data.detail);");
-if (mutation === 'ignore-hosted') mutate("revoke.hidden=a.origin==='hosted'||!!hs;", 'revoke.hidden=!!hs;');
+if (mutation === 'ignore-hosted') mutate("revoke.hidden=a.origin==='hosted';", 'revoke.hidden=false;');   // 锚点随页面更新:托管区按 FEATURE_HOSTED 拆出后，名册行只剩 origin 判断
 if (mutation === 'notice-in-hidden-editor') mutate("enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留", "enrollCloseEditor();enrollFeedback('enrollFeedback',res.text);refreshEnroll();return;}   // 申请保留");
-if (mutation === 'leak-nonmanage-group') mutate('.filter(function(g){return g.can_manage;});', '.filter(function(){return true;});');
+if (mutation === 'leak-nonmanage-group') mutate("var sel=document.getElementById('enrollGroup');if(!sel)return;var keep=sel.value;sel.replaceChildren();\n  var own=(groupSnapshot.groups||[]).filter(function(g){return g.can_manage;});", "var sel=document.getElementById('enrollGroup');if(!sel)return;var keep=sel.value;sel.replaceChildren();\n  var own=(groupSnapshot.groups||[]).filter(function(){return true;});");   // 页面里同一句有两处(审核区与托管区)，锚点带上审核区那处独有的前一句
 
 const GROUP_MINE = 'A'.repeat(32);
 const GROUP_OTHER = 'B'.repeat(32);
@@ -78,6 +88,7 @@ resetApps();
 let failNextList = 0;
 let nextListDelayMs = 0;
 const writes = [];
+const getPaths = [];
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function text(res, status, body) { res.writeHead(status, { 'content-type': 'text/plain' }); res.end(body); }
@@ -86,6 +97,7 @@ const pairingFailures = {};
 let forceGone = '';
 const server = http.createServer(async (req, res) => {
   const p = req.url.split('?')[0];
+  if (req.method === 'GET') getPaths.push(p);
   if (p === '/console') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(html); }
   // 设计件 3.2 新形状(agent_id/name/full_name/origin/group_code/online)
   if (p === '/api/console/agents') return json(res, 200, { agents: [{ online: true, agent_id: 'ag-solo', name: 'solo', full_name: 'solo.zzc', origin: 'selfhost', group_code: '' }].concat(agents.map((a) => { const name = a.session_name.split('-')[1]; return { online: a.online, agent_id: a.id, name, full_name: `${name}.zzc`, origin: a.origin === 'hosted' ? 'hosted' : 'selfhost', group_code: GROUP_MINE }; })) });
@@ -190,6 +202,14 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       resetApps();
       await page.locator('#enrollRefresh').click();
       await page.waitForFunction(() => document.querySelectorAll('#enrollItems .enroll-row').length === 3);
+    });
+
+    await test('first-version defaults: the self-hosted review area is there; the hosted area is not rendered and the page never asks for hosted options', async () => {
+      assert.strictEqual(await page.locator('#enrollReview').count(), 1, 'the review area must be offered by default');
+      assert.strictEqual(await page.locator('#enrollApprove').count(), 1, 'the approve button must exist by default');
+      assert.strictEqual(await page.locator('#hostedCreate').count(), 0, 'the hosted area is second-version: not rendered');
+      assert.strictEqual(await page.locator('#hostedStatus').count(), 0);
+      assert.deepStrictEqual(getPaths.filter((q) => q.startsWith('/api/console/hosted')), [], 'no request to the hosted endpoints (they 404 on the first version)');
     });
 
     await test('group dropdown: no-group first and default, then manageable groups, then new group', async () => {
@@ -385,5 +405,10 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
   } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`enroll review browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);
-  if (mutation) { if (fail < 1) process.exit(1); } else if (fail) process.exit(1);
+  // 退出码约定（变异模式与正常模式一致：用例失败即 1）：
+  //   1 ＝ 有用例失败（变异被杀＝「红」，且输出里有 FAIL 行）· 0 ＝ 全绿（变异模式下＝变异【存活】）
+  //   3 ＝ MUTATION-ANCHOR-STALE（变异的锚点没命中，变异无效——不得算红，也不得算存活）· 2 ＝ 脚本自己崩了
+  // 判「变异红」只认【退出码 1 且有 FAIL 行】；其余一律不是红。
+  if (mutation) console.log(`MUTATION-VERDICT: ${mutation} ${fail >= 1 ? 'KILLED' : 'SURVIVED'}`);
+  if (fail) process.exit(1);
 })().catch((err) => { console.error(err); process.exit(2); });
