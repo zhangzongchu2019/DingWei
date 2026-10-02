@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import socket
 import sqlite3
 import subprocess
@@ -19,6 +20,11 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "tools/sessionhelper"))
 
 from sessionhelper.protocol import AddressBook, reply_target  # noqa: E402
+
+try:
+    from _smoke_isolation import isolated_helper_env, print_real_ipc_state, spawn_helper  # noqa: E402
+except ImportError:  # 作为 tests.source_bot_reply_binary_smoke 导入时
+    from tests._smoke_isolation import isolated_helper_env, print_real_ipc_state, spawn_helper  # noqa: E402
 
 
 KEY_ID = "FB-rig-2642"
@@ -155,13 +161,14 @@ def send_webhook(hub_http: str, channel: str, sender: str, text: str, event_id: 
 
 
 def main() -> None:
+    before = print_real_ipc_state("before")
     port = free_port()
     hub_http = f"http://127.0.0.1:{port}"
     hub_ws = f"ws://127.0.0.1:{port}"
     with tempfile.TemporaryDirectory(prefix="dw-reply-origin-") as raw_tmp:
         tmp = Path(raw_tmp)
         binary, db = tmp / "workpulse", tmp / "hub.db"
-        subprocess.run(["/usr/local/go/bin/go", "build", "-o", binary, "./cmd/workpulse"], cwd=ROOT, check=True)
+        subprocess.run([shutil.which("go") or "/usr/local/go/bin/go", "build", "-o", binary, "./cmd/workpulse"], cwd=ROOT, check=True)
         hub_env = {
             **os.environ,
             "WP_DB_PATH": str(db),
@@ -180,8 +187,8 @@ def main() -> None:
         try:
             hub = subprocess.Popen([binary], cwd=ROOT, env=hub_env, stdout=logs["hub"], stderr=subprocess.STDOUT)
             wait_http(hub_http + "/readyz")
-            helper_env = {
-                **os.environ,
+            # 🔴 环境隔离＋IPC 路径机械闸(组长 R-SMOKE-IPC-HIJACK-20261002154248):不以 os.environ 整体为底
+            helper_env = isolated_helper_env(tmp, "echo", {
                 "PYTHONPATH": str(ROOT / "tools/sessionhelper"),
                 "SH_SESSION_NAME": "echo",
                 "SH_OWNER": "alice",
@@ -194,9 +201,9 @@ def main() -> None:
                 "SH_NO_DIRECTORY": "1",
                 "SH_PROXY": "off",
                 "SH_INBOX_DB": str(tmp / "helper-inbox.db"),
-            }
-            helper = subprocess.Popen(
-                [sys.executable, "-m", "sessionhelper"], cwd=ROOT, env=helper_env,
+            })
+            helper = spawn_helper(
+                [sys.executable, "-m", "sessionhelper"], tmp, helper_env, cwd=ROOT,
                 stdout=logs["helper"], stderr=subprocess.STDOUT,
             )
             try:
@@ -238,6 +245,8 @@ def main() -> None:
             stop(hub)
             for stream in logs.values():
                 stream.close()
+            after = print_real_ipc_state("after")
+            assert after == before, f"real IPC path changed during smoke: {before} -> {after}"
 
 
 if __name__ == "__main__":
