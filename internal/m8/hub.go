@@ -5157,17 +5157,25 @@ const (
 	defaultSessionKeepaliveTimeout  = 5 * time.Second
 )
 
-func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
-	interval := h.keepaliveInterval
+// keepaliveParams 由实例字段取保活参数（组长 R-M8-KEEPALIVE-DEFAULT：抽成纯函数，好让「零值取默认、负数关闭」有格钉住）。
+// 间隔 0 ⇒ 默认 30s；间隔为负 ⇒ 不保活（enabled=false）；等 pong 上限 <=0 ⇒ 默认 5s。
+func keepaliveParams(interval, timeout time.Duration) (time.Duration, time.Duration, bool) {
 	if interval == 0 {
 		interval = defaultSessionKeepaliveInterval
 	}
-	if interval < 0 || c == nil || c.conn == nil {
-		return
+	if interval < 0 {
+		return 0, 0, false
 	}
-	timeout := h.keepaliveTimeout
 	if timeout <= 0 {
 		timeout = defaultSessionKeepaliveTimeout
+	}
+	return interval, timeout, true
+}
+
+func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
+	interval, timeout, enabled := keepaliveParams(h.keepaliveInterval, h.keepaliveTimeout)
+	if !enabled || c == nil || c.conn == nil {
+		return
 	}
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
