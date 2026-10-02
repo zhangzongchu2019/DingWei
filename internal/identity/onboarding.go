@@ -246,6 +246,23 @@ func (o *Onboarding) CreateUser(ctx context.Context, actor *User, r CreateUserRe
 	return &u, code, exp, nil
 }
 
+// IssueBindCode 本人自取的飞书绑定码（组长取甲，台账 e483f147）：已登录、active、尚无飞书身份的用户，
+// 给自己出一个一次性码，在飞书里发注册指令兑换 —— 只绑身份、不改状态。只能给 actor 自己出（没有替别人出的入口）；
+// 已有飞书身份 ⇒ ErrAlreadyBound。码与注册码同表同法（同样 24 小时、新码顶替旧码、派生可取回）。
+func (o *Onboarding) IssueBindCode(ctx context.Context, actor *User) (string, time.Time, error) {
+	if actor == nil || actor.State != UserActive {
+		return "", time.Time{}, ErrNotAllowed
+	}
+	has, err := o.Store.UserHasIdentity(ctx, actor.UserIDLC(), "feishu")
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	if has {
+		return "", time.Time{}, ErrAlreadyBound
+	}
+	return o.issueRegistrationCode(ctx, actor, actor.UserIDLC())
+}
+
 // RegenerateRegistrationCode 重新生成注册码（旧码作废）。
 func (o *Onboarding) RegenerateRegistrationCode(ctx context.Context, actor *User, userID string) (string, time.Time, error) {
 	if !CanManageUsers(actor) {
@@ -369,6 +386,9 @@ func (o *Onboarding) HandleRegister(ctx context.Context, sender Identity, code s
 	case errors.Is(err, ErrIdentityTaken):
 		o.audit(ctx, "feishu", "user.bind_rejected", "", "reason=identity_taken")
 		return "此飞书身份已绑定到其它账号，注册被拒绝。"
+	case errors.Is(err, ErrAlreadyBound):
+		o.audit(ctx, "feishu", "user.bind_rejected", "", "reason=already_bound")
+		return "该用户已绑定飞书，无需再绑定。"
 	default:
 		o.audit(ctx, "feishu", "user.bind_rejected", "", "reason=code_invalid")
 		return "注册码无效、已使用或已过期，请联系管理者重新生成。"

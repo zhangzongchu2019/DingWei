@@ -27,6 +27,7 @@ func (n *N3) Register(mux Mux) {
 	mux.HandleFunc("GET /console/login/status", n.loginStatus)
 	mux.HandleFunc("POST /console/logout", n.logout)
 	mux.HandleFunc("POST /api/console/account/password", n.authed(true, n.changePassword))
+	mux.HandleFunc("POST /api/console/account/feishu-bind-code", n.authed(false, n.feishuBindCode))
 	mux.HandleFunc("GET /api/console/platform/users", n.authed(false, n.listUsers))
 	mux.HandleFunc("POST /api/console/platform/users", n.authed(false, n.createUser))
 	mux.HandleFunc("POST /api/console/platform/users/{user_id}/registration-code", n.authed(false, n.regenCode))
@@ -165,6 +166,21 @@ func (n *N3) changePassword(w http.ResponseWriter, r *http.Request, u *identity.
 
 // listUsers 平台管理 Tab 的用户列表（字段按 tosonnet50ts 页面：user_id、display_name、short_name、type、state）。
 // 只给管理用户；不含任何密码、码、会话。
+// feishuBindCode 本人自取飞书绑定码（组长 e483f147）：只给当前会话的用户自己，请求体里的任何目标一律不看。
+func (n *N3) feishuBindCode(w http.ResponseWriter, r *http.Request, u *identity.User) {
+	code, exp, err := n.OB.IssueBindCode(r.Context(), u)
+	switch {
+	case err == nil:
+		writeJSON(w, http.StatusOK, map[string]any{"registration_code": code, "code_expires_at": exp.UTC().Format(time.RFC3339)})
+	case errors.Is(err, identity.ErrAlreadyBound):
+		writeErr(w, http.StatusConflict, "already_bound", nil)
+	case errors.Is(err, identity.ErrNotAllowed):
+		writeErr(w, http.StatusForbidden, "forbidden", nil)
+	default:
+		mapErr(w, err)
+	}
+}
+
 func (n *N3) listUsers(w http.ResponseWriter, r *http.Request, u *identity.User) {
 	if !identity.CanManageUsers(u) {
 		writeErr(w, http.StatusForbidden, "forbidden", nil)

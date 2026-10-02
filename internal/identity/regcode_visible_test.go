@@ -128,3 +128,35 @@ func TestRegistrationCodeRecoverableOnPG(t *testing.T) {
 		t.Fatalf("PG round trip: %+v %v, want %s %v", got, err, code, exp)
 	}
 }
+
+// 本人自取飞书绑定码（组长 e483f147）：口令建的 active 管理员给自己出码 ⇒ 兑换只绑身份，状态、改密标记、会话都不变；
+// 已有飞书身份 ⇒ 不再出码；待绑定用户不走这条（他们有管理员发的注册码）。
+func TestBindCodeForActivePasswordUser(t *testing.T) {
+	ctx := context.Background()
+	ob, _, admin := regcodeEnv(t, "k-secret-1")
+	if err := ob.Store.CreateSession(ctx, identity.Session{TokenHash: identity.HashSecret("tok-root"), UserIDLC: "root",
+		ExpiresAt: ob.Now().Add(identity.SessionTTL)}); err != nil {
+		t.Fatal(err)
+	}
+	code, _, err := ob.IssueBindCode(ctx, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := ob.HandleRegister(ctx, identity.Identity{Provider: "feishu", Issuer: "devplatform", Subject: "ou_root"}, code); !strings.Contains(r, "绑定成功") {
+		t.Fatalf("redeem: %s", r)
+	}
+	after, _ := ob.Store.GetUser(ctx, "root")
+	if after.State != identity.UserActive || after.MustChangePassword != admin.MustChangePassword || after.Type != admin.Type {
+		t.Fatalf("bind changed the user: before %+v after %+v", admin, after)
+	}
+	if _, u, err := ob.Store.ResolveSession(ctx, identity.HashSecret("tok-root"), ob.Now()); err != nil || u.UserIDLC() != "root" {
+		t.Fatalf("existing session must survive the bind: %+v %v", u, err)
+	}
+	if _, _, err := ob.IssueBindCode(ctx, after); err != identity.ErrAlreadyBound {
+		t.Fatalf("second bind code: %v, want ErrAlreadyBound", err)
+	}
+	pending := &identity.User{UserID: "zed", State: identity.UserPendingBind}
+	if _, _, err := ob.IssueBindCode(ctx, pending); err != identity.ErrNotAllowed {
+		t.Fatalf("pending user: %v, want ErrNotAllowed", err)
+	}
+}

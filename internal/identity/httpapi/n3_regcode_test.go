@@ -138,3 +138,63 @@ func toString(m map[string]any) string {
 	}
 	return sb.String()
 }
+
+// 组长 e483f147：本人自取飞书绑定码 POST /api/console/account/feishu-bind-code。反向三格：
+// ① 别人的会话取不到码（请求里点名别人也只给自己）② 已绑定的用户取不到码（409 already_bound）③ 兑换后用户状态不变。
+func TestFeishuBindCodeSelfOnly(t *testing.T) {
+	e := newN3Env(t)
+	e.ob.CodeKey = "k-secret-1"
+	ctx := context.Background()
+
+	// 改密前：拒（与其它 console 接口同口径）
+	admin := e.browser()
+	if st, _ := e.call(admin, "POST", "/console/login/password", map[string]any{"user_id": "Root", "password": e.pw}, true); st != 200 {
+		t.Fatalf("login: %d", st)
+	}
+	if st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{}, true); st != 403 || b["error"] != "must_change_password" {
+		t.Fatalf("before password change: %d %v", st, b)
+	}
+	if st, _ := e.call(admin, "POST", "/api/console/account/password", map[string]any{"old_password": e.pw, "new_password": "New-Strong-Pass-42"}, true); st != 200 {
+		t.Fatalf("change password: %d", st)
+	}
+	if st, b := e.call(admin, "POST", "/api/console/platform/users", map[string]any{"user_id": "Alice", "short_name": "al", "type": "member"}, true); st != 201 {
+		t.Fatalf("create alice: %d %v", st, b)
+	}
+	before, _ := e.ob.Store.GetUser(ctx, "root")
+
+	// 写操作要同源
+	if st, _ := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{}, false); st == 200 {
+		t.Fatal("bind code without Origin must be refused")
+	}
+	// ① 点名别人（Alice）也只给自己：兑换绑的是 Root，Alice 仍待绑定
+	st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{"user_id": "Alice"}, true)
+	if st != 200 || len(b["registration_code"].(string)) != 8 || b["code_expires_at"] == nil {
+		t.Fatalf("bind code: %d %v", st, b)
+	}
+	ident := identity.Identity{Provider: "feishu", Issuer: "devplatform", Subject: "ou_root"}
+	if r := e.ob.HandleRegister(ctx, ident, b["registration_code"].(string)); !strings.Contains(r, "绑定成功") {
+		t.Fatalf("redeem: %s", r)
+	}
+	if u, err := e.ob.Store.ResolveIdentity(ctx, ident); err != nil || u.UserIDLC() != "root" {
+		t.Fatalf("code must bind the caller (root), got %+v %v", u, err)
+	}
+	if alice, _ := e.ob.Store.GetUser(ctx, "alice"); alice.State != identity.UserPendingBind {
+		t.Fatalf("alice must be untouched: %s", alice.State)
+	}
+	// ③ 兑换后状态不变、会话照用
+	after, _ := e.ob.Store.GetUser(ctx, "root")
+	if after.State != before.State || after.MustChangePassword != before.MustChangePassword || after.Type != before.Type {
+		t.Fatalf("bind changed the user: before %+v after %+v", before, after)
+	}
+	if st, _ := e.call(admin, "GET", "/api/console/platform/users", nil, false); st != 200 {
+		t.Fatalf("session after bind: %d", st)
+	}
+	// ② 已绑定：不再出码
+	if st, b := e.call(admin, "POST", "/api/console/account/feishu-bind-code", map[string]any{}, true); st != 409 || b["error"] != "already_bound" {
+		t.Fatalf("already bound: %d %v", st, b)
+	}
+	// 无会话：401
+	if st, _ := e.call(e.browser(), "POST", "/api/console/account/feishu-bind-code", map[string]any{}, true); st != 401 {
+		t.Fatalf("no session: %d", st)
+	}
+}
