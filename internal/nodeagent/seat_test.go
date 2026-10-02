@@ -595,9 +595,15 @@ func TestLocalFormEngineTranslationAndUpgradeGuards(t *testing.T) {
 		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024}}`)); err == nil || !strings.Contains(err.Error(), "cred_kind") {
 		t.Fatalf("upgrade 缺 cred_kind 必拒: %v", err)
 	}
-	// 删闸格：upgrade 收未登记 local ID ⇒ 拒（白名单闸在 upgrade 路径同样有效）
+	// 删闸格：upgrade 收未登记 local ID ⇒ 拒且旧容器零动作（复验补：拒在引擎动作之前）
+	before := len(f2.calls)
 	if _, err := d2.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_g5","image":"local@sha256:`+
 		strings.Repeat("cd", 32)+`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err == nil {
 		t.Fatal("upgrade 未登记 local ID 必拒")
+	}
+	for _, c := range f2.calls[before:] {
+		if strings.Contains(c, "/stop") || strings.Contains(c, "/start") || strings.Contains(c, "create") {
+			t.Fatalf("被拒的 upgrade 不得动容器: %v", f2.calls[before:])
+		}
 	}
 }
