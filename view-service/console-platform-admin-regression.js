@@ -7,6 +7,7 @@
 // MUTATION=<name> 删除对应守卫,对应那条断言必须红(判"首红是不是该条",后续用例共享桩状态会级联):
 //    keep-code-after-done · persist-code · show-hub-text · fake-capabilities · forbidden-wrong-text
 //    row-code-ignores-expiry · row-code-no-timer · row-code-for-nonpending · row-code-persist · row-copy-wrong-text · row-code-without-expiry-key · no-invite-toggle · invite-toggle-static-arrow · invite-collapsed-keeps-visible
+//    logout-in-title-row · logout-footer-not-sticky · logout-footer-no-bottom-push · logout-footer-dark-light(退出贴左栏底)
 //    绑定飞书(口令再认证): bind-persist · bind-password-persist · bind-hub-text · bind-no-expiry-timer · bind-copy-without-prefix · bind-done-keeps-code · bind-sends-target · bind-sends-no-password · bind-no-already-bound-wording · bind-forbidden-agent-wording · bind-no-bad-credentials-wording · bind-no-rate-limit-wording · bind-keeps-password-on-failure · bind-form-stays-open-on-success · bind-no-enter-submit · bind-no-empty-check · bind-password-visible
 // 环境变量: PW_CHANNEL=chrome 用系统 Chrome;NODE_PATH 指向含 playwright 的 node_modules。
 const assert = require('assert');
@@ -26,7 +27,7 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-password-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-target', 'bind-sends-no-password', 'bind-no-already-bound-wording', 'bind-forbidden-agent-wording', 'bind-no-bad-credentials-wording', 'bind-no-rate-limit-wording', 'bind-keeps-password-on-failure', 'bind-form-stays-open-on-success', 'bind-no-enter-submit', 'bind-no-empty-check', 'bind-password-visible'];
+const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-password-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-target', 'bind-sends-no-password', 'bind-no-already-bound-wording', 'bind-forbidden-agent-wording', 'bind-no-bad-credentials-wording', 'bind-no-rate-limit-wording', 'bind-keeps-password-on-failure', 'bind-form-stays-open-on-success', 'bind-no-enter-submit', 'bind-no-empty-check', 'bind-password-visible', 'logout-in-title-row', 'logout-footer-not-sticky', 'logout-footer-no-bottom-push', 'logout-footer-dark-light'];
 if (mutation === 'logout-without-post') mutate("try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}", "location.assign('/console/login');return;");
 if (mutation === 'logout-ignores-failure') mutate("if(r.ok||r.status===401){location.assign('/console/login');return;}", "location.assign('/console/login');return;");
 if (mutation === 'no-logout-button') mutate('<button id=logoutBtn type=button>退出</button>', '');
@@ -56,6 +57,10 @@ if (mutation === 'bind-form-stays-open-on-success') mutate("    closeForm();\n  
 if (mutation === 'bind-no-enter-submit') mutate("pw.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();go.click();}};", "");
 if (mutation === 'bind-no-empty-check') mutate("if(!password){say('请输入当前口令');return;}", "");
 if (mutation === 'bind-password-visible') mutate("<input id=bindFeishuPw type=password", "<input id=bindFeishuPw type=text");
+if (mutation === 'logout-in-title-row') { mutate('<div id=navFoot><button id=logoutBtn type=button>退出</button></div>', ''); mutate('<button id=bindFeishuBtn type=button>绑定飞书</button></span>', '<button id=bindFeishuBtn type=button>绑定飞书</button> <button id=logoutBtn type=button>退出</button></span>'); }
+if (mutation === 'logout-footer-not-sticky') mutate('position:sticky;bottom:0;', '');
+if (mutation === 'logout-footer-no-bottom-push') mutate('#navFoot{margin-top:auto;', '#navFoot{');
+if (mutation === 'logout-footer-dark-light') mutate('html[data-theme="dark"] #navFoot{background:#111316;border-top-color:#38414c}', '');
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
@@ -71,6 +76,7 @@ let nextCreateError = null;
 let codeSeq = 0;
 const writes = [];
 let logoutStatus = 204;
+let agentCount = 0;
 const BIND_PASSWORD = 'Right-Pass-2026'; let bindMode = 'ok'; let bindSeq = 0; let bindTtlMs = 3600e3;
 function read(req) { return new Promise((resolve) => { let body = ''; req.on('data', (c) => { body += c; }); req.on('end', () => resolve(body ? JSON.parse(body) : {})); }); }
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
@@ -97,7 +103,7 @@ const server = http.createServer(async (req, res) => {
     if (body.password !== BIND_PASSWORD) return err(res, 401, 'bad_credentials');
     return json(res, 200, { registration_code: `BIND${++bindSeq}XYZ`.slice(0, 8).padEnd(8, 'Q'), code_expires_at: new Date(Date.now() + bindTtlMs).toISOString() });
   }
-  if (p === '/api/console/agents') return json(res, 200, { agents: [] });
+  if (p === '/api/console/agents') return json(res, 200, { agents: Array.from({ length: agentCount }, (_, i) => ({ online: true, agent_id: `ag-${i}`, name: `agent${i}`, full_name: `agent${i}.zzc`, origin: 'selfhost', group_code: '' })) });
   if (p === '/api/console/agent-groups') return json(res, 200, { owned_agents: [], groups: [] });
   if (p === '/api/console/platform') return json(res, 200, { role, actions: [], items: platformItems(role) });
   if (p === '/api/console/platform/users' && req.method === 'GET') {
@@ -432,7 +438,69 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       await pg.close();
     });
 
-    await test('the top of the console has a 退出 button: it POSTs /console/logout once and then goes to /console/login', async () => {
+    await test('退出 sits at the bottom of the left nav (own footer container), no longer in the "Work platform" title row; 绑定飞书 stays where it was', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      await pg.goto(`${base}/console`);
+      await pg.locator('#logoutBtn').waitFor({ state: 'visible' });
+      assert.strictEqual(await pg.locator('nav > #navFoot > #logoutBtn').count(), 1, 'logoutBtn lives in the nav footer container');
+      assert.strictEqual(await pg.locator('#platform h3 ~ * #logoutBtn, #platform #logoutBtn').count(), 0, 'not inside the platform title row section');
+      assert.strictEqual(await pg.evaluate(() => document.querySelector('nav').lastElementChild.id), 'navFoot', 'the footer is the last thing in the nav');
+      assert.strictEqual(await pg.locator('#platform #bindFeishuBtn').count(), 1, '绑定飞书 is untouched in the title row');
+      await pg.close();
+    });
+
+    const navMetrics = (pg) => pg.evaluate(() => {
+      const nav = document.querySelector('nav').getBoundingClientRect(); const b = document.getElementById('logoutBtn').getBoundingClientRect();
+      const items = [...document.querySelectorAll('#a button')]; const last = items.at(-1); const lr = last ? last.getBoundingClientRect() : null;
+      return { navBottom: nav.bottom, navTop: nav.top, btnTop: b.top, btnBottom: b.bottom, vh: window.innerHeight, lastBottom: lr && lr.bottom, scrollable: document.querySelector('nav').scrollHeight > document.querySelector('nav').clientHeight };
+    });
+    await test('退出 is pinned to the bottom of the viewport with a very short agent list (not hugging the list)', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      await pg.setViewportSize({ width: 1100, height: 800 });
+      agentCount = 1;
+      await pg.goto(`${base}/console`);
+      await pg.locator('#a button').first().waitFor({ state: 'visible' });
+      const m = await navMetrics(pg);
+      assert.strictEqual(m.scrollable, false, 'precondition: the short list does not overflow');
+      assert.ok(m.navBottom - m.btnBottom < 24, `the button must sit at the nav bottom, got gap ${m.navBottom - m.btnBottom}`);
+      assert.ok(m.btnTop - m.lastBottom > 200, `and far below the list, got ${m.btnTop - m.lastBottom}`);
+      await pg.close();
+    });
+
+    await test('退出 stays visible at the viewport bottom with a very long agent list, does not scroll away, and never covers the last item (also on a narrow, short screen)', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      await pg.setViewportSize({ width: 420, height: 420 });
+      agentCount = 60;
+      await pg.goto(`${base}/console`);
+      await pg.locator('#a button').first().waitFor({ state: 'visible' });
+      let m = await navMetrics(pg);
+      assert.strictEqual(m.scrollable, true, 'precondition: the long list overflows');
+      assert.ok(m.btnBottom <= m.vh + 1 && m.btnTop >= 0, `at scrollTop=0 the button is inside the viewport, got ${JSON.stringify(m)}`);
+      await pg.evaluate(() => { const n = document.querySelector('nav'); n.scrollTop = Math.floor(n.scrollHeight / 2); });
+      m = await navMetrics(pg);
+      assert.ok(m.btnBottom <= m.vh + 1 && m.btnTop >= 0, `after scrolling the list the button has not scrolled away, got ${JSON.stringify(m)}`);
+      await pg.evaluate(() => { const n = document.querySelector('nav'); n.scrollTop = n.scrollHeight; });
+      m = await navMetrics(pg);
+      assert.ok(m.lastBottom <= m.btnTop + 1, `scrolled to the end, the last agent (${m.lastBottom}) must not be under the button (${m.btnTop})`);
+      assert.ok(m.btnBottom <= m.vh + 1);
+      agentCount = 0;
+      await pg.close();
+    });
+
+    await test('dark theme: the footer follows the dark shell (not a white strip) and the button text is readable', async () => {
+      const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
+      await pg.goto(`${base}/console`);
+      await pg.locator('#logoutBtn').waitFor({ state: 'visible' });
+      await pg.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+      const c = await pg.evaluate(() => { const f = getComputedStyle(document.getElementById('navFoot')), b = getComputedStyle(document.getElementById('logoutBtn')); return { fbg: f.backgroundColor, bbg: b.backgroundColor, bfg: b.color }; });
+      assert.strictEqual(c.fbg, 'rgb(17, 19, 22)', 'the footer background is the dark shell colour');
+      const lum = (rgb) => { const [r, g, b] = rgb.match(/\d+/g).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+      const ratio = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+      assert.ok(ratio(c.bfg, c.bbg) >= 4.5, `button text contrast must be >= 4.5, got ${ratio(c.bfg, c.bbg).toFixed(2)}`);
+      await pg.close();
+    });
+
+    await test('the console has a 退出 button: it POSTs /console/logout once and then goes to /console/login', async () => {
       const pg = await context.newPage(); watch(pg); pg.setDefaultTimeout(2500);
       await pg.goto(`${base}/console`);
       const btn = pg.locator('#logoutBtn');

@@ -306,7 +306,9 @@ const consolePageHTML = `<!doctype html><meta charset=utf-8><title>DingWei Agent
 <style>
 :root{--row-alt:#e9eef5}body{margin:0;display:grid;grid-template-columns:240px 1fr;height:100vh;font:14px sans-serif}
 [hidden]{display:none!important}
-nav{overflow:auto;border-right:1px solid #ddd;padding:10px}
+nav{overflow:auto;border-right:1px solid #ddd;padding:10px;display:flex;flex-direction:column}nav>*{flex:none}
+/* 退出贴左栏底:列表短时 margin-top:auto 把它推到底,列表长时 sticky 让它不随列表滚走;它在流里排在列表之后,滚到底也不会盖住最后一项 */
+#navFoot{margin-top:auto;position:sticky;bottom:0;background:#fff;border-top:1px solid #ddd;padding:8px 0 2px}
 nav button{display:block;width:100%;margin:3px 0;text-align:left;padding:4px 6px}
 #platform-items a{display:block;padding:4px 6px;margin:3px 0;border:1px solid #ddd;border-radius:4px;color:#174f8a;text-decoration:none}
 #platform-actions{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 12px}
@@ -345,6 +347,7 @@ html[data-theme="dark"] #app-version{color:#7c8896}
 html[data-theme="dark"]{color-scheme:dark;--row-alt:#242a31}
 html[data-theme="dark"] body{background:#111316;color:#eef2f6}
 html[data-theme="dark"] nav{border-right-color:#38414c}
+html[data-theme="dark"] #navFoot{background:#111316;border-top-color:#38414c}
 html[data-theme="dark"] nav button{background:#1b1f24;color:#eef2f6;border:1px solid #38414c}
 html[data-theme="dark"] nav button:disabled{color:#a8b0bb}
 html[data-theme="dark"] #platform-items a{background:#1b1f24;border-color:#38414c;color:#6cb6ff}
@@ -360,7 +363,7 @@ html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="da
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button> <button id=logoutBtn type=button>退出</button></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div></nav>
+<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div><div id=navFoot><button id=logoutBtn type=button>退出</button></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <div id=app-version data-version="{{CONSOLE_VERSION}}" data-commit="{{CONSOLE_COMMIT}}">{{CONSOLE_VERSION_TEXT}}</div>
 <script>
