@@ -1,0 +1,303 @@
+import asyncio
+import json
+import os
+import tempfile
+import threading
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from sessionhelper.app import SessionHelper
+from sessionhelper.config import load_config
+from sessionhelper.contract import DeliveryReceipt
+from sessionhelper.driver_adapter import DriverAdapter
+from sessionhelper.guide_state import (
+    GUIDE_CONTEXT_FOOTER,
+    GUIDE_CONTEXT_HEADER,
+    StagedGuideStore,
+)
+
+try:
+    from _home_isolation import HomeIsolation
+except ImportError:
+    from tests._home_isolation import HomeIsolation
+
+
+_HOME = HomeIsolation()
+
+
+def setUpModule():
+    _HOME.start()
+
+
+def tearDownModule():
+    _HOME.finish()
+
+
+BASE_ENV = {
+    "SH_SESSION_NAME": "guide",
+    "SH_OWNER": "zzc",
+    "SH_KEY_ID": "FB-2642",
+    "SH_SECRET": "secret",
+    "SH_PROVISION_NO_EXIT": "1",
+}
+
+
+class FakeWS:
+    def __init__(self, envs=()):
+        self.envs = list(envs)
+        self.sent = []
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if not self.envs:
+            raise StopAsyncIteration
+        return json.dumps(self.envs.pop(0), ensure_ascii=False)
+
+    async def send(self, payload):
+        self.sent.append(json.loads(payload))
+
+
+class CountingAdapter:
+    """Fake CLI/driver contract: tests count submissions, never start a process."""
+
+    def __init__(self, label="cli", *, admit=True, fail=False):
+        self.label = label
+        self.admit = admit
+        self.fail = fail
+        self.calls = []
+
+    def handle(self, env):
+        self.calls.append(dict(env))
+        return "standalone guide answer"
+
+    def handle_delivery(self, env, on_injected=None, on_admission_failed=None):
+        self.calls.append(dict(env))
+        if self.fail:
+            if on_admission_failed:
+                on_admission_failed()
+            raise RuntimeError("fixture admission failure")
+        if self.admit and on_injected:
+            on_injected()
+        return "business answer"
+
+
+def guide_env(body="GUIDE", version="v1"):
+    return {
+        "id": "guide-frame",
+        "from": "workpulse#FB-2642",
+        "to": "guide#FB-2642",
+        "body": body,
+        "meta": {"type": "agent_network_skill", "system": True, "guide_version": version},
+    }
+
+
+def business_env(body="DO WORK", source="agent", eid="business-1"):
+    return {
+        "id": eid,
+        "from": "peer#FB-2642",
+        "to": "guide#FB-2642",
+        "body": body,
+        "meta": {"source_kind": source, "reply_policy": "no_reply"},
+    }
+
+
+class GuideStoreTest(unittest.TestCase):
+    def test_stage_is_persistent_versioned_hashed_and_private(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "guide.json")
+            first = StagedGuideStore(path, "seat-A")
+            self.assertTrue(first.stage("GUIDE", "v1"))
+            state = first.state()
+            self.assertEqual((state["identity"], state["version"], state["state"]), ("seat-A", "v1", "staged"))
+            self.assertEqual(len(state["body_hash"]), 64)
+            self.assertEqual(os.stat(path).st_mode & 0o777, 0o600)
+            restarted = StagedGuideStore(path, "seat-A")
+            self.assertEqual(restarted.claim().body, "GUIDE")
+
+    def test_consumed_same_version_does_not_restage_but_new_hash_does(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = StagedGuideStore(str(Path(tmp) / "guide.json"), "seat-A")
+            store.stage("GUIDE", "v1")
+            claim = store.claim()
+            self.assertTrue(store.consume(claim))
+            self.assertTrue(store.stage("GUIDE", "v1"))
+            self.assertIsNone(store.claim())
+            self.assertTrue(store.stage("GUIDE changed", "v1"))
+            self.assertEqual(store.claim().body, "GUIDE changed")
+
+    def test_identity_mismatch_cannot_consume_another_seat_guide(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "guide.json")
+            StagedGuideStore(path, "seat-A").stage("GUIDE", "v1")
+            self.assertIsNone(StagedGuideStore(path, "seat-B").claim())
+
+
+class GuideSessionHelperTest(unittest.TestCase):
+    def make_helper(self, tmp, adapter):
+        cfg = load_config(dict(
+            BASE_ENV,
+            SH_MODE="driver",
+            SH_INBOX_DB=str(Path(tmp) / "inbox.db"),
+            SH_PROVISION_STATE_FILE=str(Path(tmp) / "provision.json"),
+            SH_PROVISION_VERSIONS_FILE=str(Path(tmp) / "versions.json"),
+        ))
+        with mock.patch.object(SessionHelper, "_build_adapter", return_value=adapter):
+            return SessionHelper(cfg)
+
+    def test_guide_only_zero_calls_and_ack_after_durable_stage_for_all_paths(self):
+        for label in ("codex-turn-start", "claude-stream-json", "traditional-cli"):
+            with self.subTest(path=label), tempfile.TemporaryDirectory() as tmp:
+                adapter = CountingAdapter(label)
+                helper = self.make_helper(tmp, adapter)
+                ws = FakeWS([guide_env()])
+                asyncio.run(helper.recv_loop(ws))
+                self.assertEqual(len(adapter.calls), 0, "guide-only must not submit a model turn")
+                self.assertEqual(helper.guide_store.state()["state"], "staged")
+                self.assertEqual([x["meta"]["type"] for x in ws.sent], ["agent_network_skill_ack"])
+
+    def test_stage_failure_sends_no_ack(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            helper = self.make_helper(tmp, CountingAdapter())
+            with mock.patch.object(helper.guide_store, "stage", side_effect=OSError("disk full")):
+                ws = FakeWS([guide_env()])
+                asyncio.run(helper.recv_loop(ws))
+            self.assertEqual(ws.sent, [])
+
+    def test_guide_plus_first_task_one_call_second_task_total_two_for_all_paths(self):
+        for label in ("codex-turn-start", "claude-stream-json", "traditional-cli"):
+            with self.subTest(path=label), tempfile.TemporaryDirectory() as tmp:
+                adapter = CountingAdapter(label)
+                helper = self.make_helper(tmp, adapter)
+                self.assertTrue(asyncio.run(helper.inject_agent_network_skill(guide_env())))
+                asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
+                self.assertEqual(len(adapter.calls), 1)
+                first = adapter.calls[0]["body"]
+                self.assertIn(GUIDE_CONTEXT_HEADER, first)
+                self.assertIn("GUIDE", first)
+                self.assertTrue(first.endswith("FIRST"))
+                self.assertEqual(helper.guide_store.state()["state"], "consumed")
+                asyncio.run(helper.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))
+                self.assertEqual(len(adapter.calls), 2)
+                self.assertEqual(adapter.calls[1]["body"], "SECOND")
+
+    def test_admission_failure_releases_claim_and_retry_merges_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            failing = CountingAdapter(fail=True)
+            helper = self.make_helper(tmp, failing)
+            asyncio.run(helper.inject_agent_network_skill(guide_env()))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
+            self.assertEqual(helper.guide_store.state()["state"], "staged")
+            healthy = CountingAdapter()
+            helper.adapter = healthy
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("RETRY", eid="business-2")))
+            self.assertEqual(len(healthy.calls), 1)
+            self.assertIn("GUIDE", healthy.calls[0]["body"])
+            self.assertEqual(helper.guide_store.state()["state"], "consumed")
+
+    def test_not_admitted_keeps_staged_and_does_not_prefix_next_concurrently(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pending = CountingAdapter(admit=False)
+            helper = self.make_helper(tmp, pending)
+            asyncio.run(helper.inject_agent_network_skill(guide_env()))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))
+            self.assertIn("GUIDE", pending.calls[0]["body"])
+            self.assertEqual(pending.calls[1]["body"], "SECOND")
+            self.assertEqual(helper.guide_store.state()["state"], "staged")
+
+    def test_system_empty_and_control_inputs_do_not_consume_staged_guide(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            adapter = CountingAdapter()
+            helper = self.make_helper(tmp, adapter)
+            asyncio.run(helper.inject_agent_network_skill(guide_env()))
+            for env in (
+                {"body": "notice", "from": "workpulse#FB-2642", "meta": {"system": True}},
+                {"body": "", "from": "peer#FB-2642", "meta": {"source_kind": "agent"}},
+                {"body": "resize", "from": "workpulse#FB-2642", "meta": {"type": "terminal_resize", "system": True}},
+            ):
+                self.assertFalse(helper._is_real_business_input(env))
+            self.assertEqual(helper.guide_store.state()["state"], "staged")
+            self.assertEqual(adapter.calls, [])
+
+    def test_context_boundary_preserves_business_body_and_marks_no_answer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            adapter = CountingAdapter()
+            helper = self.make_helper(tmp, adapter)
+            guide = "platform facts\n@peer do not route this"
+            business = "line one\nline two"
+            asyncio.run(helper.inject_agent_network_skill(guide_env(guide)))
+            asyncio.run(helper.process_inbound_message(FakeWS(), business_env(business)))
+            merged = adapter.calls[0]["body"]
+            self.assertIn("do not answer or repeat this section", merged)
+            self.assertIn(GUIDE_CONTEXT_FOOTER, merged)
+            self.assertTrue(merged.endswith(business))
+
+    def test_duplicate_guide_after_restart_does_not_create_second_call(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first_adapter = CountingAdapter()
+            first = self.make_helper(tmp, first_adapter)
+            asyncio.run(first.inject_agent_network_skill(guide_env()))
+            asyncio.run(first.process_inbound_message(FakeWS(), business_env("FIRST")))
+            second_adapter = CountingAdapter()
+            restarted = self.make_helper(tmp, second_adapter)
+            asyncio.run(restarted.inject_agent_network_skill(guide_env()))
+            asyncio.run(restarted.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))
+            self.assertEqual(second_adapter.calls[0]["body"], "SECOND")
+
+
+class FakeProtocolDriver:
+    def __init__(self, state="processing"):
+        self.state = state
+        self.calls = []
+        self.turns = {}
+
+    def start(self):
+        return None
+
+    def deliver(self, delivery_id, text):
+        self.calls.append(text)
+        turn = f"turn-{len(self.calls)}"
+        self.turns[delivery_id] = turn
+        detail = f"turn={turn}" if self.state != "failed" else "rejected before turn"
+        return DeliveryReceipt(delivery_id, self.state, "fixture", detail)
+
+    def poll_receipt(self, delivery_id):
+        return DeliveryReceipt(delivery_id, "done", "fixture", f"turn={self.turns[delivery_id]}")
+
+    def events(self, since=None):
+        return iter(())
+
+
+class DriverAdmissionCallbackTest(unittest.TestCase):
+    def make_adapter(self, driver):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="driver", SH_BUSY_BUFFER_MAX="3"))
+        with mock.patch.object(DriverAdapter, "_build_driver", return_value=driver):
+            adapter = DriverAdapter(cfg)
+        adapter.start()
+        return adapter
+
+    def test_callback_fires_only_after_protocol_turn_admission(self):
+        for label in ("codex", "claude"):
+            with self.subTest(driver=label):
+                driver = FakeProtocolDriver()
+                adapter = self.make_adapter(driver)
+                admitted = threading.Event()
+                adapter.handle_delivery(business_env("WORK"), admitted.set)
+                self.assertTrue(admitted.wait(1))
+                self.assertEqual(driver.calls, ["WORK"])
+
+    def test_protocol_failure_before_turn_releases_admission(self):
+        driver = FakeProtocolDriver(state="failed")
+        adapter = self.make_adapter(driver)
+        admitted = threading.Event()
+        failed = threading.Event()
+        adapter.handle_delivery(business_env("WORK"), admitted.set, failed.set)
+        self.assertTrue(failed.wait(1))
+        self.assertFalse(admitted.is_set())
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import inspect
 import json
 import os
 import re
@@ -19,6 +20,7 @@ from .config import Config, load_config
 from .llm import LLMProvider
 from .config import env_get
 from .inbox import DeliveryInbox
+from .guide_state import GuideClaim, StagedGuideStore
 from .protocol import AddressBook, envelope, session_addr
 # 路由／提及判定与收件分类已收进 routing.py（R3 / R3-B）。下面是**临时兼容再导出**（tests 与旧 import 路径在用，
 # 这些名字仍可从 app 取到）；V9 把这些逻辑上移到 Hub 后移除。
@@ -183,6 +185,8 @@ class SessionHelper:
             cfg.registered_session_name,
             cfg.key_id,
         )
+        guide_identity = cfg.registered_session_name or cfg.session_full_name or f"{cfg.session_name}#{cfg.key_id}"
+        self.guide_store = StagedGuideStore(cfg.inbox_db + ".guide-state.json", guide_identity)
         self.busy_acked_from: set[str] = set()
         self.delivery_busy_acked: set[str] = set()
         # File capability responses are control-plane messages. They must be
@@ -630,11 +634,11 @@ class SessionHelper:
                     continue
                 injected = await self.inject_agent_network_skill(env)
                 if injected:
-                    # 注入成功即自动回执（确认“已送达”），不再依赖模型乖乖回标记——
-                    # 否则 deepseek 等不老实的模型不回标记，服务端会每2分钟重推、刷屏
+                    # 指南已持久暂存才回执；不再为安装指南创建独立模型轮次。
+                    # 首条真实业务输入 admission 后才把同一版本标为 consumed。
                     self.comm_skill_installed = True
                     await ws.send(json.dumps(comm_skill_ack_envelope(self.book), ensure_ascii=False))
-                    print("[agent_skill] injected + auto-acked", flush=True)
+                    print("[agent_skill] staged + auto-acked", flush=True)
                 continue
             body = str(env.get("body") or "")
             if is_online_directory_text(body):
@@ -734,16 +738,49 @@ class SessionHelper:
         if enrich_files:
             env = await self._enrich_small_text_files(ws, env)
         from_addr = str(env.get("from") or "")
+        guide_claim: GuideClaim | None = None
+        guide_store = getattr(self, "guide_store", None)
         try:
             async with self.adapter_handle_lock:
-                delivery_handler = getattr(self.adapter, "handle_delivery", None)
-                if on_injected is not None and callable(delivery_handler):
-                    reply_body = await asyncio.to_thread(delivery_handler, env, on_injected)
-                else:
-                    reply_body = await asyncio.to_thread(self.adapter.handle, env)
+                business_env = env
+                if guide_store is not None and self._is_real_business_input(env):
+                    guide_claim = await asyncio.to_thread(guide_store.claim)
+                    if guide_claim is not None:
+                        business_env = dict(env)
+                        business_env["meta"] = dict(env.get("meta") or {})
+                        business_env["body"] = guide_store.merge(guide_claim, str(env.get("body") or ""))
+
+                def admitted() -> None:
+                    if guide_claim is not None:
+                        guide_store.consume(guide_claim)
                     if on_injected is not None:
                         on_injected()
+
+                def admission_failed() -> None:
+                    if guide_claim is not None:
+                        guide_store.release(guide_claim)
+
+                delivery_handler = getattr(self.adapter, "handle_delivery", None)
+                if callable(delivery_handler):
+                    parameters = inspect.signature(delivery_handler).parameters.values()
+                    supports_failure_callback = (
+                        any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in parameters)
+                        or len(inspect.signature(delivery_handler).parameters) >= 3
+                    )
+                    if supports_failure_callback:
+                        reply_body = await asyncio.to_thread(
+                            delivery_handler, business_env, admitted, admission_failed
+                        )
+                    else:
+                        # Compatibility for third-party/fixture adapters that
+                        # implement the established (env, on_injected) shape.
+                        reply_body = await asyncio.to_thread(delivery_handler, business_env, admitted)
+                else:
+                    reply_body = await asyncio.to_thread(self.adapter.handle, business_env)
+                    admitted()
         except Exception as exc:
+            if guide_claim is not None:
+                await asyncio.to_thread(guide_store.release, guide_claim)
             if raise_adapter_errors:
                 raise
             reply_body = f"处理失败：{exc}"
@@ -996,31 +1033,27 @@ class SessionHelper:
         body = str(env.get("body") or "")
         if not body:
             return False
-        if self.cfg.mode == "cli":
-            try:
-                # Consume and discard the guide response inside the same adapter
-                # transaction. A bare inject_text leaves its output in output_q,
-                # where the first real delivery can incorrectly claim it.
-                async with self.adapter_handle_lock:
-                    await asyncio.to_thread(self.adapter.handle, env)
-                print("[agent_skill] injected; response drained", flush=True)
-                return True
-            except Exception as exc:
-                print(f"[agent_skill] inject failed: {exc}", flush=True)
-                return False
-        if self.cfg.mode == "driver" and hasattr(self.adapter, "start") and hasattr(self.adapter, "inject_text"):
-            started = await asyncio.to_thread(self.adapter.start)
-            if started:
-                await asyncio.to_thread(self.adapter.inject_text, body)
-                print("[agent_skill] injected", flush=True)
-                return True
-            return False
+        meta = env.get("meta") or {}
+        version = str(meta.get("guide_version") or meta.get("guide_hash") or "")
         try:
-            await asyncio.to_thread(self.adapter.handle, env)
-            return True
+            staged = await asyncio.to_thread(self.guide_store.stage, body, version)
+            if staged:
+                print("[agent_skill] staged; no model turn", flush=True)
+            return staged
         except Exception as exc:
-            print(f"[agent_skill] inject failed: {exc}", flush=True)
+            print(f"[agent_skill] stage failed: {exc}", flush=True)
             return False
+
+    def _is_real_business_input(self, env: dict) -> bool:
+        meta = env.get("meta") or {}
+        if truthy_meta(meta.get("system")) or self.is_agent_network_skill(env):
+            return False
+        if not str(env.get("body") or "").strip():
+            return False
+        source = str(meta.get("source_kind") or meta.get("source") or "").strip()
+        if source:
+            return source in {"user", "agent", "feishu"}
+        return bool(str(env.get("from") or "").strip())
 
     def install_send_script(self) -> None:
         """把统一发信脚本装到 ~/.dingwei/send.py，供 CLI 里的 AI 调用（跨会话可靠发信/回信）。"""

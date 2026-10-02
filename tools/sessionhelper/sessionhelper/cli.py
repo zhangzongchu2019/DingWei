@@ -331,7 +331,7 @@ class CLIAdapter:
         except CLIDeliveryFailed as exc:
             return str(exc)
 
-    def handle_delivery(self, env: dict, on_injected=None) -> str:
+    def handle_delivery(self, env: dict, on_injected=None, on_admission_failed=None) -> str:
         for attempt in range(max(1, self.cfg.cli_launch_retries)):
             if self.start():
                 break

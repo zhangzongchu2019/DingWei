@@ -749,7 +749,7 @@ class SessionHelperTest(unittest.TestCase):
         self.assertIsNone(agent_route_envelope("普通回答", book))
         self.assertIsNone(agent_route_envelope("# 中文标题", book))
 
-    def test_agent_network_skill_drains_its_cli_response(self):
+    def test_agent_network_skill_is_staged_without_cli_or_model_call(self):
         class FakeAdapter:
             name = "cli"
 
@@ -767,12 +767,19 @@ class SessionHelperTest(unittest.TestCase):
                 self.handled.append(env)
                 return "should not happen"
 
-        helper = SessionHelper(load_config(dict(BASE_ENV, SH_MODE="cli")))
-        fake = FakeAdapter()
-        helper.adapter = fake
-        asyncio.run(helper.inject_agent_network_skill({"body": "指南", "meta": {"type": "agent_network_skill"}}))
-        self.assertEqual(fake.injected, [])
-        self.assertEqual([item["body"] for item in fake.handled], ["指南"])
+        with tempfile.TemporaryDirectory() as tmp:
+            helper = SessionHelper(load_config(dict(
+                BASE_ENV, SH_MODE="cli", SH_INBOX_DB=str(Path(tmp) / "inbox.db")
+            )))
+            fake = FakeAdapter()
+            helper.adapter = fake
+            ok = asyncio.run(helper.inject_agent_network_skill({
+                "body": "指南", "meta": {"type": "agent_network_skill", "guide_version": "v1"}
+            }))
+            self.assertTrue(ok)
+            self.assertEqual(fake.injected, [])
+            self.assertEqual(fake.handled, [])
+            self.assertEqual(helper.guide_store.state()["state"], "staged")
 
     def test_terminal_input_writes_cli_adapter(self):
         class FakeAdapter:
