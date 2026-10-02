@@ -47,6 +47,12 @@ func listAgentsOwnerScoped(t *testing.T, s identity.Store) {
 			t.Fatalf("owner %q sees [%s], want [Delta,Gamma]", owner, got)
 		}
 	}
+	// 属主名是别人属主名的前缀（zz⊂zzc、lb⊂lbl）：不得看到对方的 Agent
+	for _, owner := range []string{"zz", "lb", "z"} {
+		if got := names(owner); got != "" {
+			t.Fatalf("owner %q (a prefix of another owner) sees [%s], want none", owner, got)
+		}
+	}
 	if got := names("nobody"); got != "" {
 		t.Fatalf("an owner with no agents sees [%s], want none", got)
 	}
