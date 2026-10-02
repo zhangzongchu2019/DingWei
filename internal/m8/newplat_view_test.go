@@ -3,6 +3,7 @@ package m8
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -565,5 +566,68 @@ func TestNewPlatformConsolePlatformFeishuBound(t *testing.T) {
 	// 只回本人：zzc 绑了，lbl 仍是 false。
 	if val, present, raw := bound(v.tokLBL); !present || val != false {
 		t.Fatalf("zzc 绑定飞书不得影响 lbl：lbl 应仍是 feishu_bound=false，实为 present=%v val=%v: %s", present, val, raw)
+	}
+}
+
+// failBoundStore 让 UserHasIdentity 恒失败（模拟库出错），其余走真实现。
+type failBoundStore struct{ identity.Store }
+
+func (failBoundStore) UserHasIdentity(context.Context, string, string) (bool, error) {
+	return false, errors.New("injected db failure")
+}
+
+// 复验方 tosonnet55tc2k 补格（REVIEW-BIND-FEISHU-HIDE 附录，去 ZZ 前缀并入）：
+// ① 「本人」只由会话决定，请求参数（?user=、user_id、principal）一概不看；
+// ② 查库出错 ⇒ 响应里【不得有】feishu_bound 键（页面据此当「未知」、按钮照旧），不得把出错说成 false。
+// 反向：B5（出错吞成 false）红在 ②；B7（principal 可被 ?user= 覆盖）红在 ①。
+func TestNewPlatformConsolePlatformFeishuBoundIsSessionOnlyAndAbsentOnDBError(t *testing.T) {
+	v := newViewEnv(t)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/console/platform", v.hub.RequireConsolePrincipal(v.hub.RequireConsolePlatformAction("read", v.hub.HandleConsolePlatform)))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	get := func(tok, query string) (map[string]any, string) {
+		t.Helper()
+		req, _ := http.NewRequest("GET", srv.URL+"/api/console/platform"+query, nil)
+		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: tok})
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer res.Body.Close()
+		raw, _ := io.ReadAll(res.Body)
+		if res.StatusCode != 200 {
+			t.Fatalf("GET platform as %s%s: %d %s", tok, query, res.StatusCode, raw)
+		}
+		var body map[string]any
+		if err := json.Unmarshal(raw, &body); err != nil {
+			t.Fatal(err)
+		}
+		return body, string(raw)
+	}
+	digest := identity.HashSecret("bind-code-session-only")
+	if err := v.svc.Store.CreateRegistrationCode(v.ctx, "zzc", digest, v.svc.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := v.svc.Store.RedeemRegistrationCode(v.ctx, digest, identity.Identity{Provider: "feishu", Issuer: "app", Subject: "ou_session_only"}, v.svc.Now()); err != nil {
+		t.Fatal(err)
+	}
+	// ① zzc 已绑、lbl 未绑：带上对方名字的参数不改变结果。
+	if b, raw := get(v.tokLBL, "?user=zzc&user_id=zzc&principal=zzc"); b["feishu_bound"] != false {
+		t.Fatalf("lbl 的会话带 ?user=zzc 仍必须得到 false（本人只看会话）: %s", raw)
+	}
+	if b, raw := get(v.tokZZC, "?user=lbl&user_id=lbl&principal=lbl"); b["feishu_bound"] != true {
+		t.Fatalf("zzc 的会话带 ?user=lbl 仍必须得到 true: %s", raw)
+	}
+	// ② 查库出错：键必须缺席。
+	orig := v.hub.Identity.Store
+	v.hub.Identity.Store = failBoundStore{Store: orig}
+	defer func() { v.hub.Identity.Store = orig }()
+	b, raw := get(v.tokZZC, "")
+	if _, has := b["feishu_bound"]; has {
+		t.Fatalf("查库出错时响应里不得有 feishu_bound 键（不得说成 false 或 true）: %s", raw)
+	}
+	if b["role"] == nil || b["items"] == nil {
+		t.Fatalf("查库出错只丢这一个键，其余响应照常: %s", raw)
 	}
 }

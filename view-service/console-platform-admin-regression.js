@@ -25,10 +25,15 @@ let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
 function mutate(from, to) {
   const hits = html.split(from).length - 1;
-  assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
+  // 🔴 锚点失效（页面改了，变异的目标文本没了或不唯一）必须【大声】失败：以退出码 3 与固定标记 MUTATION-ANCHOR-STALE 报告，
+  // 不得静默——一个打不上去的变异什么也没测，却会被当成「已经验过」。（复验 tosonnet55tc2k 发现三个失效变异时的补救）
+  if (hits !== 1) {
+    console.error(`MUTATION-ANCHOR-STALE: mutation ${mutation} anchor must match exactly once, hits=${hits}: ${from.slice(0, 160)}`);
+    process.exit(3);
+  }
   html = html.replace(from, to);
 }
-const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-password-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-target', 'bind-sends-no-password', 'bind-no-already-bound-wording', 'bind-forbidden-agent-wording', 'bind-no-bad-credentials-wording', 'bind-no-rate-limit-wording', 'bind-keeps-password-on-failure', 'bind-form-stays-open-on-success', 'bind-no-enter-submit', 'bind-no-empty-check', 'bind-password-visible', 'fb-ignores-bound', 'fb-note-never-shown', 'fb-done-no-refresh', 'fb-unknown-as-bound', 'fb-409-no-refresh', 'fb-initial-not-applied', 'logout-in-title-row', 'logout-footer-not-sticky', 'logout-footer-no-bottom-push', 'logout-footer-dark-light'];
+const MUTATIONS = ['logout-without-post', 'logout-ignores-failure', 'no-logout-button', 'fixed-table-layout', 'keep-code-after-done', 'persist-code', 'show-hub-text', 'fake-capabilities', 'forbidden-wrong-text', 'row-code-ignores-expiry', 'row-code-no-timer', 'row-code-for-nonpending', 'row-code-persist', 'row-copy-wrong-text', 'row-code-without-expiry-key', 'no-invite-toggle', 'invite-toggle-static-arrow', 'invite-collapsed-keeps-visible', 'bind-persist', 'bind-password-persist', 'bind-hub-text', 'bind-no-expiry-timer', 'bind-copy-without-prefix', 'bind-done-keeps-code', 'bind-sends-target', 'bind-sends-no-password', 'bind-no-already-bound-wording', 'bind-forbidden-agent-wording', 'bind-no-bad-credentials-wording', 'bind-no-rate-limit-wording', 'bind-keeps-password-on-failure', 'bind-form-stays-open-on-success', 'bind-no-enter-submit', 'bind-no-empty-check', 'bind-password-visible', 'fb-ignores-bound', 'fb-note-never-shown', 'fb-done-no-refresh', 'fb-unknown-as-bound', 'fb-409-no-refresh', 'fb-initial-not-applied', 'mutation-anchor-selftest', 'logout-in-title-row', 'logout-footer-not-sticky', 'logout-footer-no-bottom-push', 'logout-footer-dark-light'];
 if (mutation === 'logout-without-post') mutate("try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}", "location.assign('/console/login');return;");
 if (mutation === 'logout-ignores-failure') mutate("if(r.ok||r.status===401){location.assign('/console/login');return;}", "location.assign('/console/login');return;");
 if (mutation === 'no-logout-button') mutate('<button id=logoutBtn type=button>退出</button>', '');
@@ -46,10 +51,10 @@ if (mutation === 'bind-password-persist') mutate("var password=pw.value;if(!pass
 if (mutation === 'bind-hub-text') mutate("else say(res.text);\n      return;", "else say(res.data&&res.data.detail?String(res.data.detail):res.text);\n      return;");
 if (mutation === 'bind-no-expiry-timer') mutate("if(Number.isFinite(exp))timer=setTimeout(", "if(false)timer=setTimeout(");
 if (mutation === 'bind-copy-without-prefix') mutate("await navigator.clipboard.writeText('#register '+code);fb.textContent='已复制';", "await navigator.clipboard.writeText(code);fb.textContent='已复制';");
-if (mutation === 'bind-done-keeps-code') mutate("document.getElementById('bindFeishuDone').onclick=function(){clearBox();say('');};", "document.getElementById('bindFeishuDone').onclick=function(){box.hidden=true;say('');};");
+if (mutation === 'bind-done-keeps-code') mutate("document.getElementById('bindFeishuDone').onclick=function(){clearBox();say('');window.refreshFeishuBound();};", "document.getElementById('bindFeishuDone').onclick=function(){box.hidden=true;say('');window.refreshFeishuBound();};");
 if (mutation === 'bind-sends-target') mutate("{password:password}", "{password:password,user_id:'someone'}");
 if (mutation === 'bind-sends-no-password') mutate("consolePost('/api/console/account/feishu-bind-code',{password:password})", "consolePost('/api/console/account/feishu-bind-code')");
-if (mutation === 'bind-no-already-bound-wording') mutate("say('你已经绑定过飞书，无需再绑定');return;", "say('操作失败');return;");
+if (mutation === 'bind-no-already-bound-wording') mutate("say('你已经绑定过飞书，无需再绑定');window.refreshFeishuBound();return;}", "say('操作失败');window.refreshFeishuBound();return;}");
 if (mutation === 'bind-forbidden-agent-wording') mutate("else if(res.code==='forbidden')say('你没有权限绑定飞书');", "");
 if (mutation === 'bind-no-bad-credentials-wording') mutate("if(res.code==='bad_credentials')say('口令不对');\n      else ", "");
 if (mutation === 'bind-no-rate-limit-wording') mutate("say('尝试次数过多，'+(w===null?'请稍后再试':'请 '+w+' 秒后再试'));", "say(res.text);");
@@ -58,7 +63,7 @@ if (mutation === 'bind-form-stays-open-on-success') mutate("    closeForm();\n  
 if (mutation === 'bind-no-enter-submit') mutate("pw.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();go.click();}};", "");
 if (mutation === 'bind-no-empty-check') mutate("if(!password){say('请输入当前口令');return;}", "");
 if (mutation === 'bind-password-visible') mutate("<input id=bindFeishuPw type=password", "<input id=bindFeishuPw type=text");
-if (mutation === 'logout-in-title-row') { mutate('<div id=navFoot><button id=logoutBtn type=button>退出</button></div>', ''); mutate('<button id=bindFeishuBtn type=button>绑定飞书</button></span>', '<button id=bindFeishuBtn type=button>绑定飞书</button> <button id=logoutBtn type=button>退出</button></span>'); }
+if (mutation === 'logout-in-title-row') { mutate('<div id=navFoot><button id=logoutBtn type=button>退出</button></div>', ''); mutate('飞书已绑定</span></span>', '飞书已绑定</span> <button id=logoutBtn type=button>退出</button></span>'); }
 if (mutation === 'logout-footer-not-sticky') mutate('position:sticky;bottom:0;', '');
 if (mutation === 'logout-footer-no-bottom-push') mutate('#navFoot{margin-top:auto;', '#navFoot{');
 if (mutation === 'logout-footer-dark-light') mutate('html[data-theme="dark"] #navFoot{background:#111316;border-top-color:#38414c}', '');
@@ -68,6 +73,7 @@ if (mutation === 'fb-done-no-refresh') mutate("clearBox();say('');window.refresh
 if (mutation === 'fb-unknown-as-bound') mutate("var isBound=bound===true;", "var isBound=bound!==false;");
 if (mutation === 'fb-409-no-refresh') mutate("window.refreshFeishuBound();return;}   // 409", "return;}   // 409");
 if (mutation === 'fb-initial-not-applied') mutate("if(window.applyFeishuBound)window.applyFeishuBound(data.feishu_bound);", "");
+if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
