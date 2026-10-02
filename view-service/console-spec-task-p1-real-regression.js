@@ -20,7 +20,7 @@
  *   NODE_PATH=<含 playwright 的 node_modules> P1_PYTHON=<含 websockets 的 python3> PW_CHANNEL=chrome \
  *     node view-service/console-spec-task-p1-real-regression.js [--mutate=<名>]
  *   无系统 Chrome 时用 PW_CHANNEL=chromium（playwright 自带 Chromium）。
- *   环境：P1_PYTHON（缺省 python3）、P1_KEEP=1 保留临时目录与日志、P1_BIN_DIR 复用已编二进制（跳过 go build，仅限无变异）。
+ *   环境：P1_NO_CHAIN=1 某步红后不跳过其后的步骤（看一把变异到底红了哪几格；缺省跳过）、P1_PYTHON（缺省 python3）、P1_KEEP=1 保留临时目录与日志、P1_BIN_DIR 复用已编二进制（跳过 go build，仅限无变异）。
  *   同机一次只跑一个本脚本／一个 pgtest 消费方。
  *
  * 变异（--mutate=<名>，在【临时源码副本】里改 Go 源并重编，不动工作树）：
@@ -34,6 +34,7 @@
  *   no-cap-issue           撤令牌签发口（新平台分支恒 404）          ⇒ 红在「开工并签发令牌」
  *   cap-optional           令牌可缺失（缺／错令牌照放行）          ⇒ 红在「无令牌被拒」
  *   cap-agent-unbound      令牌不绑定 Agent（别的 Agent 可拿去用）  ⇒ 红在「别的 Agent 的凭据」
+ *   agent-and-owner-unbound 令牌不绑 Agent 且撤属主比对（两层都撤）  ⇒ 跨属主格与同属主 opus 格同红（需 P1_NO_CHAIN=1 看全貌）
  *   cap-page-unbound       令牌不绑定页面 id                      ⇒ 红在「错页面 id 的令牌」
  * 退出码：0 通过（变异下＝存活）、1 有红（变异下＝被杀）、2 崩、3 变异无效（锚失配／未知名）。
  *
@@ -117,6 +118,19 @@ const MUTATIONS = {
     file: 'internal/store/console_auth.go',
     from: 'WHERE c.token_hash=? AND c.agent_id=? AND c.page_id=?',
     to: 'WHERE c.token_hash=? AND (c.agent_id=? OR 1=1) AND c.page_id=?',
+  },
+  // 跨属主格是「双层把关」：令牌不绑 Agent（SQL）＋属主比对（Hub）。只撤第一层，他人 Agent 仍被属主比对拦下，所以跨属主格不红；
+  // 两层都撤才红（同属主的 opus 格只要第一层撤就红）。看全貌用 P1_NO_CHAIN=1。
+  'agent-and-owner-unbound': {
+    edits: [{
+      file: 'internal/store/console_auth.go',
+      from: 'WHERE c.token_hash=? AND c.agent_id=? AND c.page_id=?',
+      to: 'WHERE c.token_hash=? AND (c.agent_id=? OR 1=1) AND c.page_id=?',
+    }, {
+      file: 'internal/m8/newplat_spec_agent.go',
+      from: 'capability.PrincipalID != identity.Lower(ag.OwnerLC) ||',
+      to: '(capability.PrincipalID != identity.Lower(ag.OwnerLC) && false) ||',
+    }],
   },
   'cap-page-unbound': {
     file: 'internal/store/console_auth.go',
@@ -299,7 +313,7 @@ async function test(name, fn, { standalone = false } = {}) {
   if (chainBroken && !standalone) { skipped += 1; log(`SKIP ${name}（上游已红）`); return; }
   try { await fn(); passed += 1; log(`PASS ${name}`); } catch (e) {
     failed += 1;
-    if (!standalone) chainBroken = true;
+    if (!standalone && !process.env.P1_NO_CHAIN) chainBroken = true;
     if (!firstRed) firstRed = name;
     log(`FAIL ${name}: ${String(e && e.message || e).split('\n')[0].slice(0, 300)}`);
   }
