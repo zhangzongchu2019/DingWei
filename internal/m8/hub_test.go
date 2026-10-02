@@ -111,13 +111,10 @@ func useTestSessionReadIdleTimeout(t *testing.T, d time.Duration) {
 	})
 }
 
-func useTestSessionKeepalive(t *testing.T, interval, timeout time.Duration) {
+// useTestSessionKeepalive 只改这一个 Hub 实例的保活参数（须在建连之前调用）；不碰任何包级状态。
+func useTestSessionKeepalive(t *testing.T, hub *Hub, interval, timeout time.Duration) {
 	t.Helper()
-	oldInterval, oldTimeout := sessionKeepaliveInterval, sessionKeepaliveTimeout
-	sessionKeepaliveInterval, sessionKeepaliveTimeout = interval, timeout
-	t.Cleanup(func() {
-		sessionKeepaliveInterval, sessionKeepaliveTimeout = oldInterval, oldTimeout
-	})
+	hub.keepaliveInterval, hub.keepaliveTimeout = interval, timeout
 }
 
 func TestControlPlaneP1DispatchPersistsL1DoneAndLLMPending(t *testing.T) {
@@ -3145,8 +3142,8 @@ func TestSessionEndpointPingKeepsIdleConnectionOnline(t *testing.T) {
 
 func TestServerPingKeepsIdleSessionOnline(t *testing.T) {
 	useTestSessionReadIdleTimeout(t, 150*time.Millisecond)
-	useTestSessionKeepalive(t, 25*time.Millisecond, time.Second) // 保活 ping 照常走真时钟，只负责让 pong 发生
 	hub, db, ctx := newTestHub(t)
+	useTestSessionKeepalive(t, hub, 25*time.Millisecond, time.Second) // 保活 ping 照常走真时钟，只负责让 pong 发生
 	clock := installIdleClock(t, hub)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
@@ -3194,6 +3191,9 @@ func readSessionControls(conn *websocket.Conn) {
 
 func TestSessionEndpointConnSeqAndLastSeenOnReconnectAndMessage(t *testing.T) {
 	hub, db, ctx := newTestHub(t)
+	// 组长 R-M8-READ-ACTIVITY-GUARD（qwen FINDING-M8-READ-ACTIVITY-UNGUARDED）：会话活跃时刻走注入的假时钟，
+	// 好让「收到数据帧 ⇒ 记活跃」成为断言成立的唯一途径。
+	clock := installIdleClock(t, hub)
 	if err := hub.UpsertService(ctx, model.RegisteredService{ID: "svc1", Name: "svc1", DeliveryType: "ws", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -3219,9 +3219,13 @@ func TestSessionEndpointConnSeqAndLastSeenOnReconnectAndMessage(t *testing.T) {
 	if endpoints[0].ConnSeq != 2 {
 		t.Fatalf("conn_seq after reconnect=%d want 2 endpoints=%+v", endpoints[0].ConnSeq, endpoints)
 	}
-	oldSeen := time.Now().UTC().Add(-time.Minute)
-	if err := db.TouchSessionEndpoint(ctx, key.ID, "developer", oldSeen); err != nil {
-		t.Fatal(err)
+	// 原写法 oldSeen＝真时钟 now-1min：注册／重连时库里的 LastSeenAt 本就晚于它，断言在发帧之前已成立（恒真）。
+	// 改为：记下库里现值 L0 → 假时钟推进 1 分钟 → 只发一帧数据（不发 ping） → 库里 LastSeenAt 必须到达推进后的假时刻。
+	// 期望值取自假时钟，不取自被检对象；库存 RFC3339 到秒，比较按秒截断。
+	l0 := endpoints[0].LastSeenAt
+	want := clock.advance(time.Minute).Truncate(time.Second)
+	if !want.After(l0) {
+		t.Fatalf("precondition: advanced fake clock %s must be after stored LastSeenAt %s", want, l0)
 	}
 	if err := writeEnvelope(ctx, reconnect, model.Envelope{
 		ID:   "touch-last-seen",
@@ -3232,12 +3236,12 @@ func TestSessionEndpointConnSeqAndLastSeenOnReconnectAndMessage(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	waitFor(t, envelopeReadTimeout, "会话端点 LastSeenAt 晚于上次读数 oldSeen", func() bool {
+	waitFor(t, envelopeReadTimeout, "收到数据帧后会话端点 LastSeenAt 到达推进后的假时刻 "+want.Format(time.RFC3339), func() bool {
 		endpoints, err := db.ListSessionEndpoints(ctx)
 		if err != nil || len(endpoints) != 1 {
 			return false
 		}
-		return endpoints[0].LastSeenAt.After(oldSeen)
+		return !endpoints[0].LastSeenAt.Before(want)
 	})
 }
 

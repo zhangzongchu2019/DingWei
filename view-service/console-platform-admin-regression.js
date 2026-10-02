@@ -23,6 +23,8 @@ const end = source.indexOf('`\n\nfunc (h *Hub) HandleConsoleAgents', start);
 assert(start >= 0 && end > start, 'cannot extract consolePageHTML from production source');
 let html = source.slice(start + 'const consolePageHTML = `'.length, end);
 const mutation = process.env.MUTATION || '';
+// 变异开关形态：本脚本读【环境变量】MUTATION=<名>。给了 --mutate=<名>（argv 形态，别的脚本用它）会被静默忽略、跑成「未变异」而全绿——fail-closed。
+if (process.argv.some((a) => a.startsWith('--mutate'))) { console.error('MUTATION-SWITCH-WRONG-FORM: this script reads env MUTATION=<name>, not --mutate=<name> (the argv form would be silently ignored)'); process.exit(3); }
 function mutate(from, to) {
   const hits = html.split(from).length - 1;
   // 🔴 锚点失效（页面改了，变异的目标文本没了或不唯一）必须【大声】失败：以退出码 3 与固定标记 MUTATION-ANCHOR-STALE 报告，
@@ -74,7 +76,7 @@ if (mutation === 'fb-unknown-as-bound') mutate("var isBound=bound===true;", "var
 if (mutation === 'fb-409-no-refresh') mutate("window.refreshFeishuBound();return;}   // 409", "return;}   // 409");
 if (mutation === 'fb-initial-not-applied') mutate("if(window.applyFeishuBound)window.applyFeishuBound(data.feishu_bound);", "");
 if (mutation === 'mutation-anchor-selftest') mutate('THIS-TEXT-IS-NOT-IN-THE-PAGE', 'x'); // 自检:必须以退出码 3 报 MUTATION-ANCHOR-STALE
-if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
+if (mutation && !MUTATIONS.includes(mutation)) { console.error(`MUTATION-UNKNOWN: ${mutation} is not a mutation of this script`); process.exit(3); }
 if (mutation === 'fixed-table-layout') mutate('#adminUsersTable{table-layout:auto}#adminUsersTable th:nth-child(n+4),#adminUsersTable td:nth-child(n+4){white-space:nowrap}', '');
 if (mutation === 'keep-code-after-done') mutate("['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});", '');
 if (mutation === 'persist-code') mutate("var code=String(res.registration_code||'');", "var code=String(res.registration_code||'');try{localStorage.setItem('last-code',code);}catch(_){}");
@@ -612,5 +614,10 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     });
   } finally { await context.close(); await browser.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log(`platform admin browser: passed=${pass} failed=${fail} mutation=${mutation || 'none'}`);
-  if (mutation) { if (fail < 1) process.exit(1); } else if (fail) process.exit(1);
+  // 退出码约定（变异模式与正常模式一致：用例失败即 1）：
+  //   1 ＝ 有用例失败（变异被杀＝「红」，且输出里有 FAIL 行）· 0 ＝ 全绿（变异模式下＝变异【存活】）
+  //   3 ＝ MUTATION-ANCHOR-STALE（变异的锚点没命中，变异无效——不得算红，也不得算存活）· 2 ＝ 脚本自己崩了
+  // 判「变异红」只认【退出码 1 且有 FAIL 行】；其余一律不是红。
+  if (mutation) console.log(`MUTATION-VERDICT: ${mutation} ${fail >= 1 ? 'KILLED' : 'SURVIVED'}`);
+  if (fail) process.exit(1);
 })().catch((e) => { console.error(e); process.exit(2); });
