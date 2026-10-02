@@ -127,7 +127,9 @@ CREATE INDEX IF NOT EXISTS g4_backup_state_idx ON g4_backup(state, expires_at);
 `
 
 // DropDDL 仅测试用：逆向拆除（rollback 的可重复性验证载体）。
+// 🔴 表名集合必须与 SchemaDDL 一致（R-V2-DEPLOY-ARTIFACTS 甲案补拆 g4_backup；
+// 漏拆由 TestSchemaDropLeavesNoG4Tables 钉住——少一张即红）。
 const DropDDL = `
-DROP TABLE IF EXISTS g4_audit, g4_team_key, g4_quota, g4_account_grant, g4_account_pool,
+DROP TABLE IF EXISTS g4_audit, g4_team_key, g4_quota, g4_backup, g4_account_grant, g4_account_pool,
   g4_seat_event, g4_hosted_seat, g4_node_credential, g4_node CASCADE;
 `
