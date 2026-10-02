@@ -174,7 +174,7 @@ func TestLifecycleOrderOnOneLog(t *testing.T) {
 		if err := lc.Destroy(ctx, id, "zzc", true, true); err != nil {
 			t.Fatal(err)
 		}
-		eqSeq(t, "destroy", log.get(), []string{"backup", "idp:retire", "node:destroy_seat"})
+		eqSeq(t, "destroy", log.get(), []string{"node:stop_seat", "backup", "idp:retire", "node:destroy_seat"})
 	})
 }
 
@@ -187,7 +187,7 @@ func TestFailedGateStopsTheChain(t *testing.T) {
 		if err := lc.Destroy(ctx, id, "zzc", true, true); err == nil {
 			t.Fatal("备份失败必须拒销毁")
 		}
-		eqSeq(t, "backup_fail", log.get(), []string{"backup"}) // 只有备份，Retire/销毁都没发生
+		eqSeq(t, "backup_fail", log.get(), []string{"node:stop_seat", "backup"}) // 先停、再备份失败：Retire/销毁都没发生
 	})
 	t.Run("suspend_fail_no_stop", func(t *testing.T) {
 		lc, log, susp, _, _, _, id := mkLifecycle(t)
@@ -590,7 +590,7 @@ func TestDestroyBackupFailedTyped(t *testing.T) {
 	if !errors.As(err, &be) || !errors.Is(err, ErrBackupFailed) || err.Error() != "backup_failed" || be.Detail() != "injected backup" {
 		t.Fatalf("%v (%T), want BackupFailedError{injected backup}", err, err)
 	}
-	eqSeq(t, "backup_failed", log.get(), []string{"backup"})
+	eqSeq(t, "backup_failed", log.get(), []string{"node:stop_seat", "backup"})
 }
 
 // 复验三刀守卫（86d78377 附录 A）：①对账只发 destroy_seat ②节点失败不标记完成 ③只清本节点的。
@@ -648,4 +648,46 @@ func TestReconcileGuards(t *testing.T) {
 	if len(pending2) != 1 {
 		t.Fatalf("失败不得标记完成（留待下次重连）: %v", pending2)
 	}
+}
+
+// 组长取甲（2026-10-02）：在线销毁先停容器、再备份、再删。停不下来 ⇒ node_offline，不备份、不吊销、不删、席位不变；
+// 停了但备份失败 ⇒ 席位记 error／backup_failed（Agent 确实不在了），凭据与账号都不动。
+func TestDestroyStopsBeforeBackup(t *testing.T) {
+	ctx := context.Background()
+	for name, setup := range map[string]func(gw *lcGw){
+		"stop unreachable":   func(gw *lcGw) { gw.downOn = "stop_seat" },
+		"stop reported fail": func(gw *lcGw) { gw.failOn = "stop_seat" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			lc, log, _, gw, _, s, id := mkLifecycle(t)
+			setup(gw)
+			if err := lc.Destroy(ctx, id, "zzc", false, true); !errors.Is(err, ErrNodeOffline) {
+				t.Fatalf("%v, want node_offline", err)
+			}
+			eqSeq(t, name, log.get(), []string{"node:stop_seat"}) // 没备份、没吊销、没删
+			seat, _ := s.GetSeat(ctx, id)
+			if seat.State != "online" {
+				t.Fatalf("seat changed: %+v", seat)
+			}
+			if a, _ := s.GetAccount(ctx, seat.AccountRef.String); a.State != "bound" {
+				t.Fatalf("account must stay bound: %+v", a)
+			}
+		})
+	}
+	t.Run("backup fails after stop", func(t *testing.T) {
+		lc, log, _, _, bk, s, id := mkLifecycle(t)
+		bk.failOn = true
+		var be *BackupFailedError
+		if err := lc.Destroy(ctx, id, "zzc", false, true); !errors.As(err, &be) {
+			t.Fatalf("%v, want backup_failed", err)
+		}
+		eqSeq(t, "backup fails after stop", log.get(), []string{"node:stop_seat", "backup"})
+		seat, _ := s.GetSeat(ctx, id)
+		if seat.State != "error" || seat.StateDetail != "backup_failed" {
+			t.Fatalf("stopped but not backed up: %+v, want error/backup_failed", seat)
+		}
+		if a, _ := s.GetAccount(ctx, seat.AccountRef.String); a.State != "bound" {
+			t.Fatalf("account must stay bound: %+v", a)
+		}
+	})
 }

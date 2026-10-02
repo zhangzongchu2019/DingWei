@@ -315,9 +315,9 @@ func TestBackupIntegrityRejected(t *testing.T) {
 		if !errors.As(err, &be) {
 			t.Fatalf("%v, want backup_failed", err)
 		}
-		eqSeq(t, "corrupt backup stops destroy", log.get(), nil) // 不吊销、不发 destroy_seat
-		if seat, _ := s.GetSeat(context.Background(), id); seat.State != "online" {
-			t.Fatalf("seat changed: %+v", seat)
+		eqSeq(t, "corrupt backup stops destroy", log.get(), []string{"node:stop_seat"}) // 已停容器；不吊销、不发 destroy_seat
+		if seat, _ := s.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
+			t.Fatalf("seat must show backup_failed (container stopped, nothing deleted): %+v", seat)
 		}
 	})
 }

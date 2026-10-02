@@ -284,17 +284,25 @@ func (l *Lifecycle) Destroy(ctx context.Context, agentID, actorLC string, isAdmi
 	if nerr != nil || node.State != "online" {
 		return l.destroyOffline(ctx, seat, actorLC)
 	}
-	// ① 先备份数据卷（业主 8971bddf：留 14 天到期自动删；备份件须可读且与销毁前一致——D5）
+	// ⓪ 先停容器（组长取甲，2026-10-02）：销毁本来就要停；先停再备份，数据一致，tar 也不会因「打包期间文件有变动」
+	//    退出 1（「tar 非零即失败」保持不变）。停不下来 ⇒ node_offline，不吊销、不删、席位状态不变。
+	res, serr := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "stop_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
+	if serr != nil || !res.OK {
+		return ErrNodeOffline
+	}
+	// ① 再备份数据卷（业主 8971bddf：留 14 天到期自动删；备份件须可读且与销毁前一致——D5）
 	backupRef, err := l.backups.BackupSeatVolume(ctx, seat.NodeID, agentID)
 	if err != nil {
+		// 容器已停、备份没成：不吊销、不删数据；席位如实记 error／backup_failed（Agent 确实不在线了），可再销毁或重启。
+		_ = l.st.SetSeatState(ctx, agentID, "error", "backup_failed", "fail", json.RawMessage(`{"after":"stopped"}`))
 		return &BackupFailedError{Cause: err}
 	}
 	// ② Retire 吊销（返回前 4401 断开，D5 五秒口径；自备席位不可走此路——G3 侧约束）
 	if _, err := l.idp.RetireHostedAgent(ctx, agentID, actorLC); err != nil {
 		return err
 	}
-	// ③ 停删容器＋清 XFS 项目配额（节点侧 destroy_seat 内含配额清除）
-	res, serr := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
+	// ③ 删容器＋清 XFS 项目配额（节点侧 destroy_seat 内含配额清除）
+	res, serr = l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "destroy_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
 	if serr != nil || !res.OK {
 		_ = l.st.SetSeatState(ctx, agentID, "error", "node_offline", "fail", json.RawMessage(`{"after":"retired"}`))
 		return ErrNodeOffline
