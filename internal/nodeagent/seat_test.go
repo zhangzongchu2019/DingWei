@@ -775,3 +775,32 @@ func TestSeatEnvInjectsCLIMode(t *testing.T) {
 		}
 	})
 }
+
+// 组长 R-SEAT-CLI-STRICT（tosonnet55tc2k 复验 716ee4c8 存活一刀：校验改成小写＋去空白后比对，原用例全绿）：
+// cli 必须与白名单逐字相等——大小写不同、带首尾空白一律拒，create 与 upgrade 同口径，且拒在任何引擎调用之前。
+// 镜像 start.py（prodops/hosted-image-20261002）对 SH_CLI 逐字比对 codex，节点若放过「Codex」「codex 」，要到容器里才拒启。
+func TestSeatCLIMustMatchAllowlistExactly(t *testing.T) {
+	for name, cli := range map[string]string{"upper": "Codex", "trailing space": "codex ", "leading space": " codex", "all caps": "CODEX"} {
+		for _, op := range []string{"create", "upgrade"} {
+			t.Run(op+" rejects "+name, func(t *testing.T) {
+				f := newFakeDocker(t)
+				d := f.ops(t.TempDir())
+				raw := `{"seat_id":"ag_cs","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"` + cli + `"}`
+				var err error
+				if op == "create" {
+					_, err = d.create(context.Background(), json.RawMessage(raw))
+				} else {
+					_, err = d.upgrade(context.Background(), json.RawMessage(raw))
+				}
+				if err == nil || !strings.Contains(err.Error(), "cli") {
+					t.Fatalf("%s cli=%q must be rejected: %v", op, cli, err)
+				}
+				f.mu.Lock()
+				defer f.mu.Unlock()
+				if len(f.calls) != 0 || len(f.specs) != 0 {
+					t.Fatalf("%s cli=%q rejected but reached the engine: calls=%v", op, cli, f.calls)
+				}
+			})
+		}
+	}
+}
