@@ -180,6 +180,19 @@ func (m *MemStore) CreateRegistrationCode(_ context.Context, userIDLC, codeDiges
 	return nil
 }
 
+func (m *MemStore) ListActiveRegistrationCodes(_ context.Context, now time.Time) ([]RegistrationCodeRow, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []RegistrationCodeRow
+	for d, c := range m.regCodes {
+		if !c.redeemed && c.expiresAt.After(now) {
+			out = append(out, RegistrationCodeRow{UserIDLC: c.userLC, CodeDigest: d, ExpiresAt: c.expiresAt})
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].UserIDLC < out[j].UserIDLC })
+	return out, nil
+}
+
 func (m *MemStore) RedeemRegistrationCode(_ context.Context, codeDigest string, ident Identity, now time.Time) (*User, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -194,14 +207,35 @@ func (m *MemStore) RedeemRegistrationCode(_ context.Context, codeDigest string, 
 	if u == nil {
 		return nil, ErrCodeInvalid
 	}
-	if u.State != UserPendingBind {
+	switch {
+	case u.State == UserPendingBind:
+		u.State = UserActive
+	case u.State == UserActive:
+		for id, lc := range m.idents {
+			if lc == c.userLC && id.Provider == ident.Provider {
+				return nil, ErrAlreadyBound
+			}
+		}
+		// 本人自取的绑定码：只绑身份，状态不变
+	default:
 		return nil, ErrNotPending
 	}
 	c.redeemed = true
 	m.idents[ident] = c.userLC
-	u.State = UserActive
 	cp := *u
 	return &cp, nil
+}
+
+func (m *MemStore) UserHasIdentity(_ context.Context, userIDLC, provider string) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	lc := Lower(userIDLC)
+	for id, u := range m.idents {
+		if u == lc && id.Provider == provider {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (m *MemStore) CreateSession(_ context.Context, s Session) error {

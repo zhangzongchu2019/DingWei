@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
 const TestEnvSuffix = "[测试环境]"
@@ -63,10 +64,10 @@ type Config struct {
 	Logger        *slog.Logger
 	Sender        Sender // nil=出站禁用(healthz 报 degraded);Bots 空时的退化单发送器
 
-	// v2.3 托管出站(§C):caller token→身份/后缀策略;bot_channel→发送器;spool 路径。
+	// v2.3 托管出站(§C):caller token→身份/后缀策略;bot_channel→发送器;PG spool 池。
 	Callers     map[string]CallerConfig // token→caller;空=托管路禁用(503)
 	Bots        map[string]Sender       // bot_channel→Sender;空=退化用 Sender
-	SpoolPath   string                  // 空=不开 spool(v:1 请求得 503)
+	SpoolPool   *repo.Pool              // nil=不开 spool(v:1 请求得 503);由装配层创建并注入
 	MaxAttempts int                     // 终败入 DLQ 阈值,默认 8
 
 	// v2.3 入站(§A/§B):接入实例+N 路 sink;ReceiverFactory 测试可注入。
@@ -160,11 +161,11 @@ func New(cfg Config) *Server {
 		accessCancel: map[string]context.CancelFunc{},
 	}
 	s.reloadWhitelist()
-	if cfg.SpoolPath != "" {
-		sp, err := OpenSpool(cfg.SpoolPath)
+	if cfg.SpoolPool != nil {
+		sp, err := OpenSpool(cfg.SpoolPool)
 		if err != nil {
 			// fail-closed(§B):spool 起不来=托管路 503,不静默降级为立发
-			cfg.Logger.Error("spool打开失败,托管路禁用", "path", cfg.SpoolPath, "error", err)
+			cfg.Logger.Error("PG spool初始化失败,托管路禁用", "error", err)
 		} else if err := sp.initInbound(); err != nil {
 			cfg.Logger.Error("入站表初始化失败,spool禁用", "error", err)
 			_ = sp.Close()

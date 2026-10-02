@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -27,6 +28,7 @@ func (n *N3) Register(mux Mux) {
 	mux.HandleFunc("GET /console/login/status", n.loginStatus)
 	mux.HandleFunc("POST /console/logout", n.logout)
 	mux.HandleFunc("POST /api/console/account/password", n.authed(true, n.changePassword))
+	mux.HandleFunc("POST /api/console/account/feishu-bind-code", n.authed(false, n.feishuBindCode))
 	mux.HandleFunc("GET /api/console/platform/users", n.authed(false, n.listUsers))
 	mux.HandleFunc("POST /api/console/platform/users", n.authed(false, n.createUser))
 	mux.HandleFunc("POST /api/console/platform/users/{user_id}/registration-code", n.authed(false, n.regenCode))
@@ -163,6 +165,33 @@ func (n *N3) changePassword(w http.ResponseWriter, r *http.Request, u *identity.
 	}
 }
 
+// feishuBindCode 本人自取飞书绑定码（组长 e483f147）：只给当前会话的用户自己，请求体里的任何目标一律不看。
+// 请求体须带当前口令 {"password": "..."}（组长 01be74c0 再认证）：错或缺 ⇒ 401 bad_credentials，计入口令登录的失败限速。
+func (n *N3) feishuBindCode(w http.ResponseWriter, r *http.Request, u *identity.User) {
+	var req struct {
+		Password string `json:"password"`
+	}
+	// 只取 password；其余字段（如点名别人的 user_id）照旧不看、不报错 —— 目标永远是会话本人。
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxBody)).Decode(&req); err != nil {
+		writeErr(w, http.StatusBadRequest, "bad_request", nil)
+		return
+	}
+	api := &API{TrustProxy: n.TrustProxy}
+	code, exp, err := n.OB.IssueBindCode(r.Context(), u, req.Password, api.sourceIP(r))
+	switch {
+	case err == nil:
+		writeJSON(w, http.StatusOK, map[string]any{"registration_code": code, "code_expires_at": exp.UTC().Format(time.RFC3339)})
+	case errors.Is(err, identity.ErrBadCredentials):
+		writeErr(w, http.StatusUnauthorized, "bad_credentials", nil)
+	case errors.Is(err, identity.ErrAlreadyBound):
+		writeErr(w, http.StatusConflict, "already_bound", nil)
+	case errors.Is(err, identity.ErrNotAllowed):
+		writeErr(w, http.StatusForbidden, "forbidden", nil)
+	default:
+		mapErr(w, err)
+	}
+}
+
 // listUsers 平台管理 Tab 的用户列表（字段按 tosonnet50ts 页面：user_id、display_name、short_name、type、state）。
 // 只给管理用户；不含任何密码、码、会话。
 func (n *N3) listUsers(w http.ResponseWriter, r *http.Request, u *identity.User) {
@@ -175,12 +204,24 @@ func (n *N3) listUsers(w http.ResponseWriter, r *http.Request, u *identity.User)
 		mapErr(w, err)
 		return
 	}
+	// 待绑定飞书的用户：当前有效的注册码一直可见，直到绑定、过期或重新生成（业主反馈，板 7a138dcf）。
+	// 取不回（未配密钥等）就不出这两个键，页面退回「重新生成」。
+	codes, err := n.OB.RecoverableRegistrationCodes(r.Context())
+	if err != nil {
+		mapErr(w, err)
+		return
+	}
 	out := make([]map[string]any, 0, len(users))
 	for _, x := range users {
-		out = append(out, map[string]any{
+		row := map[string]any{
 			"user_id": x.UserID, "display_name": x.DisplayName, "short_name": x.ShortName,
 			"type": string(x.Type), "state": string(x.State),
-		})
+		}
+		if c, ok := codes[x.UserIDLC()]; ok && x.State == identity.UserPendingBind {
+			row["registration_code"] = c.Code
+			row["code_expires_at"] = c.ExpiresAt.Format(time.RFC3339)
+		}
+		out = append(out, row)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"users": out})
 }

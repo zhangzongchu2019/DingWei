@@ -12,13 +12,14 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
 func adminServer(t *testing.T, cfgPath string) *Server {
 	t.Helper()
-	dir := t.TempDir()
 	s := New(Config{
-		ProdURL: "http://127.0.0.1:1", SpoolPath: filepath.Join(dir, "spool.db"),
+		ProdURL: "http://127.0.0.1:1", SpoolPool: pgtest.Pool(t),
 		ConfigPath: cfgPath,
 		AdminTokens: map[string]AdminIdentity{
 			"adm-tok": {ID: "ops-a", Role: "admin"},
@@ -214,10 +215,9 @@ func TestPreArmGate(t *testing.T) { // B2 pre-arm:探测失败=拒连;全绿=起
 		w.WriteHeader(401)
 	}))
 	defer okHub.Close()
-	dir := t.TempDir()
 	mk := func(token string, alerts bool) *Server {
 		s := New(Config{ProdURL: "http://127.0.0.1:1",
-			SpoolPath: filepath.Join(dir, token+"-spool.db")})
+			SpoolPool: pgtest.Pool(t)})
 		fc := validFC(1)
 		fc.AlertsVerified = alerts
 		fc.Sinks[0].HubURL = okHub.URL

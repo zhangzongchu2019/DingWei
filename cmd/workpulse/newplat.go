@@ -33,6 +33,8 @@ type newPlatformConfig struct {
 	publicOrigin string
 	pgDSN        string
 	trustProxy   bool
+	// codeKey 注册码派生密钥（WP_SECRET_KEY，与旧平台加密管道密钥同一个环境变量）；空 ⇒ 注册码随机、列表里取不回。
+	codeKey string
 	// hosted 列表托管子对象的提供函数，签名即 httpapi.API.Hosted。G4 装配编排器处一行：cfg.hosted = orch.HostedItem
 	// （kimi30kqtuxerh/g4-m0-m1 5a811f0d 起签名逐字相同）。为空时列表不出 hosted 子对象，页面按契约降级为只显示在线／离线。
 	hosted func(ctx context.Context, agentID string) (map[string]any, bool)
@@ -51,6 +53,7 @@ func newPlatformConfigFromEnv() (newPlatformConfig, bool, error) {
 		publicOrigin: strings.TrimSpace(os.Getenv("DW_PUBLIC_ORIGIN")),
 		pgDSN:        strings.TrimSpace(os.Getenv("DW_NEWPLAT_PG_DSN")),
 		trustProxy:   strings.TrimSpace(os.Getenv("DW_TRUST_PROXY")) == "1",
+		codeKey:      os.Getenv("WP_SECRET_KEY"),
 	}
 	if cfg.publicOrigin == "" {
 		return cfg, true, errNewPlatformConfig
@@ -115,6 +118,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	svc.OnCredentialIssued = hub.DisconnectAgent
 	svc.NameAllowed = m8.AgentNameAllowed
 	ob := identity.NewOnboarding(svc)
+	ob.CodeKey = cfg.codeKey
 	hasAdmin, err := hasManagementUser(ctx, store)
 	if err != nil {
 		return err

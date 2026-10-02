@@ -25,10 +25,16 @@ type IdentityStore interface {
 	// 吊销该用户全部未吊销会话。用户不存在 ⇒ ErrNotFound。
 	ResetPassword(ctx context.Context, userIDLC, hash string, now time.Time) error
 	ResolveIdentity(ctx context.Context, ident Identity) (*User, error)
+	// UserHasIdentity 该用户是否已有某渠道（provider）的身份。
+	UserHasIdentity(ctx context.Context, userIDLC, provider string) (bool, error)
 	// CreateRegistrationCode 同时作废该用户的旧码。
 	CreateRegistrationCode(ctx context.Context, userIDLC, codeDigest string, expiresAt time.Time) error
+	// ListActiveRegistrationCodes 当前有效的注册码：未用、未过期（expires_at 晚于 now）。每个用户至多一条（新码顶替旧码）。
+	ListActiveRegistrationCodes(ctx context.Context, now time.Time) ([]RegistrationCodeRow, error)
 	// RedeemRegistrationCode 一个事务：码有效 ⇒ 绑定身份 ⇒ 标记已用 ⇒ 用户转 active。
-	// 码不存在／已用／过期 ⇒ ErrCodeInvalid；身份已绑定 ⇒ ErrIdentityTaken；用户非 pending_bind ⇒ ErrNotPending。
+	// 码不存在／已用／过期 ⇒ ErrCodeInvalid；身份已绑定 ⇒ ErrIdentityTaken。
+	// 用户 pending_bind ⇒ 绑定并转 active；用户 active 且尚无该渠道身份（本人自取的绑定码，组长 e483f147）⇒ 只绑身份、状态不变；
+	// active 但已有该渠道身份 ⇒ ErrAlreadyBound；其它状态 ⇒ ErrNotPending。
 	// 任一失败都不改任何状态。
 	RedeemRegistrationCode(ctx context.Context, codeDigest string, ident Identity, now time.Time) (*User, error)
 	CreateSession(ctx context.Context, s Session) error
@@ -107,6 +113,13 @@ type GroupStore interface {
 	SetGroupAdditionsClosed(ctx context.Context, code, actorLC string, closed bool, now time.Time) error
 	// DeleteGroup 建组人才可（ErrForbidden）；不存在 ⇒ ErrNotFound；成员行随之删除。
 	DeleteGroup(ctx context.Context, code, actorLC string) error
+}
+
+// RegistrationCodeRow 库里一条注册码（只有哈希，没有明文）。
+type RegistrationCodeRow struct {
+	UserIDLC   string
+	CodeDigest string
+	ExpiresAt  time.Time
 }
 
 // Store 三个接口的合集；内存实现与 PG 实现都实现它。

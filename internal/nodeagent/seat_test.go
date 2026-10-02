@@ -144,10 +144,10 @@ func TestStrictDecodeRejectsArbitraryFields(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
 	for _, raw := range []string{
-		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","env":["KEY=x"]}`,
-		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","mounts":["/:/host"]}`,
-		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","network":"host"}`,
-		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","capabilities":["SYS_ADMIN"]}`,
+		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex","env":["KEY=x"]}`,
+		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex","mounts":["/:/host"]}`,
+		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex","network":"host"}`,
+		`{"seat_id":"s1","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex","capabilities":["SYS_ADMIN"]}`,
 	} {
 		if _, err := d.create(context.Background(), json.RawMessage(raw)); err == nil {
 			t.Fatalf("任意字段必须拒（白名单）: %s", raw)
@@ -160,7 +160,7 @@ func TestCreateSeatSecuritySpecAndTokenFile(t *testing.T) {
 	root := t.TempDir()
 	d := f.ops(root)
 	raw := `{"seat_id":"ag_t1","image":"` + goodImage + `",
-		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},"cred_kind":"api_key",
+		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},"cred_kind":"api_key","cli":"codex",
 		"token_file":{"application_id":"app1","poll_token":"tok","expires_at":"2026-10-01T12:00:00Z"}}`
 	out, err := d.create(context.Background(), json.RawMessage(raw))
 	if err != nil {
@@ -182,7 +182,8 @@ func TestCreateSeatSecuritySpecAndTokenFile(t *testing.T) {
 	// B7＋容器启动契约：env 只许代理三键＋契约四键（路径/形态，非凭据）；凭据类零出现
 	if env, _ := spec["Env"].([]any); len(env) > 0 {
 		allowed := map[string]bool{"HTTP_PROXY=": true, "HTTPS_PROXY=": true, "NO_PROXY=": true,
-			"SH_WS_BASE=": true, "SH_ENROLL_TOKEN_FILE=": true, "SH_CRED_FILE=": true, "SH_CRED_KIND=": true}
+			"SH_WS_BASE=": true, "SH_ENROLL_TOKEN_FILE=": true, "SH_CRED_FILE=": true, "SH_CRED_KIND=": true,
+			"SH_MODE=": true, "SH_CLI=": true}
 		seen := map[string]bool{}
 		for _, e := range env {
 			s, _ := e.(string)
@@ -197,7 +198,7 @@ func TestCreateSeatSecuritySpecAndTokenFile(t *testing.T) {
 				t.Fatalf("凭据永不经 env（B7），实得: %v", env)
 			}
 		}
-		for _, p := range []string{"SH_WS_BASE=", "SH_ENROLL_TOKEN_FILE=", "SH_CRED_FILE=", "SH_CRED_KIND="} {
+		for _, p := range []string{"SH_WS_BASE=", "SH_ENROLL_TOKEN_FILE=", "SH_CRED_FILE=", "SH_CRED_KIND=", "SH_MODE=", "SH_CLI="} {
 			if !seen[p] {
 				t.Fatalf("契约四键缺 %s: %v", p, env)
 			}
@@ -252,7 +253,7 @@ func TestCreateFailureLeavesNoPartial(t *testing.T) {
 	f.failAt = "/start"
 	root := t.TempDir()
 	d := f.ops(root)
-	raw := `{"seat_id":"ag_t2","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
+	raw := `{"seat_id":"ag_t2","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`
 	if _, err := d.create(context.Background(), json.RawMessage(raw)); err == nil {
 		t.Fatal("注入启动失败应报错")
 	}
@@ -278,7 +279,7 @@ func TestCreateFailureLeavesNoPartial(t *testing.T) {
 func TestUpgradeNewHealthyBeforeOldRemoved(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
-	raw := `{"seat_id":"ag_t3","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
+	raw := `{"seat_id":"ag_t3","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`
 	if _, err := d.upgrade(context.Background(), json.RawMessage(raw)); err != nil {
 		t.Fatalf("upgrade: %v", err)
 	}
@@ -324,7 +325,7 @@ func TestDestroyClearsQuota(t *testing.T) {
 func TestCgroupParentRequiredAndSet(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
-	raw := `{"seat_id":"ag_cg","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
+	raw := `{"seat_id":"ag_cg","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`
 	if _, err := d.create(context.Background(), json.RawMessage(raw)); err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -353,7 +354,7 @@ func TestCreateCleanupFailureIsSurfaced(t *testing.T) {
 	f.failAt = "/start" // 启动失败触发清理
 	root := t.TempDir()
 	d := f.ops(root)
-	raw := `{"seat_id":"ag_b3","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
+	raw := `{"seat_id":"ag_b3","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`
 	if _, err := d.create(context.Background(), json.RawMessage(raw)); err == nil {
 		t.Fatal("启动失败应报错")
 	}
@@ -371,7 +372,7 @@ func TestCreateCleanupFailureIsSurfaced(t *testing.T) {
 func TestUpgradeFullOrderAndRollbackPreservesOld(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
-	raw := `{"seat_id":"ag_d2","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
+	raw := `{"seat_id":"ag_d2","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`
 	if _, err := d.upgrade(context.Background(), json.RawMessage(raw)); err != nil {
 		t.Fatalf("upgrade: %v", err)
 	}
@@ -423,7 +424,7 @@ func TestSeatProxyInjection(t *testing.T) {
 	f := newFakeDocker(t)
 	d := f.ops(t.TempDir())
 	d.seatProxy = "http://172.30.68.1:11080"
-	raw := `{"seat_id":"ag_px","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
+	raw := `{"seat_id":"ag_px","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`
 	if _, err := d.create(context.Background(), json.RawMessage(raw)); err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -459,7 +460,7 @@ func TestCreateWritesCredentialFile(t *testing.T) {
 	root := t.TempDir()
 	d := f.ops(root)
 	out, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_cr1","image":"`+goodImage+`",
-		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},"cred_kind":"api_key",
+		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},"cred_kind":"api_key","cli":"codex",
 		"token_file":{"application_id":"app1","poll_token":"tok","expires_at":"2026-10-01T12:00:00Z"},
 		"credential_file":{"content":"sk-test-credential-逐字"}}`))
 	if err != nil {
@@ -490,7 +491,7 @@ func TestCreateWritesCredentialFile(t *testing.T) {
 	root2 := t.TempDir()
 	d2 := f2.ops(root2)
 	if _, err := d2.create(context.Background(), json.RawMessage(`{"seat_id":"ag_cr2","image":"`+goodImage+`",
-		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},"cred_kind":"api_key"}`)); err != nil {
+		"resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":16384},"cred_kind":"api_key","cli":"codex"}`)); err != nil {
 		t.Fatalf("无 credential_file 应照常: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(root2, "ag_cr2", "account-credential")); !os.IsNotExist(err) {
@@ -559,7 +560,7 @@ func TestCreateRejectsUnregisteredLocalImage(t *testing.T) {
 	d := f.ops(t.TempDir())
 	before := len(f.calls)
 	_, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_lk","image":"local@sha256:`+
-		strings.Repeat("cd", 32)+`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`))
+		strings.Repeat("cd", 32)+`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`))
 	if err == nil {
 		t.Fatal("未登记本机 ID 不得建席")
 	}
@@ -578,7 +579,7 @@ func TestLocalFormEngineTranslationAndUpgradeGuards(t *testing.T) {
 	registered := strings.Repeat("ab", 32)
 	// G3：create 用 local 形态 ⇒ 引擎 spec 的 Image 是裸 sha256 ID
 	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_g3","image":"local@sha256:`+registered+
-		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`)); err != nil {
 		t.Fatalf("登记过的 local 形态 create: %v", err)
 	}
 	if got := f.specs[len(f.specs)-1]["Image"]; got != "sha256:"+registered {
@@ -588,7 +589,7 @@ func TestLocalFormEngineTranslationAndUpgradeGuards(t *testing.T) {
 	f2 := newFakeDocker(t)
 	d2 := f2.ops(t.TempDir())
 	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_g5","image":"`+goodImage+
-		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := d2.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_g5","image":"`+goodImage+
@@ -598,7 +599,7 @@ func TestLocalFormEngineTranslationAndUpgradeGuards(t *testing.T) {
 	// 删闸格：upgrade 收未登记 local ID ⇒ 拒且旧容器零动作（复验补：拒在引擎动作之前）
 	before := len(f2.calls)
 	if _, err := d2.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_g5","image":"local@sha256:`+
-		strings.Repeat("cd", 32)+`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err == nil {
+		strings.Repeat("cd", 32)+`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`)); err == nil {
 		t.Fatal("upgrade 未登记 local ID 必拒")
 	}
 	for _, c := range f2.calls[before:] {
@@ -619,7 +620,7 @@ func TestLocalFormInspectPerPath(t *testing.T) {
 	before := len(f.calls)
 	err := func() error {
 		_, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_ip1","image":"local@sha256:`+missing+
-			`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`))
+			`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`))
 		return err
 	}()
 	if err == nil || !strings.Contains(err.Error(), "本机镜像不存在") {
@@ -632,13 +633,13 @@ func TestLocalFormInspectPerPath(t *testing.T) {
 	}
 	// upgrade 路径：先有一个正常席位，再用不存在的 local ID 升级
 	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_ip2","image":"`+goodImage+
-		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`)); err != nil {
 		t.Fatal(err)
 	}
 	before = len(f.calls)
 	err = func() error {
 		_, err := d.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_ip2","image":"local@sha256:`+missing+
-			`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`))
+			`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`))
 		return err
 	}()
 	if err == nil || !strings.Contains(err.Error(), "本机镜像不存在") {
@@ -661,7 +662,7 @@ func TestLocalFormIDMismatchPerPath(t *testing.T) {
 	before := len(f.calls)
 	err := func() error {
 		_, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_mm1","image":"local@sha256:`+mismatch+
-			`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`))
+			`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`))
 		return err
 	}()
 	if err == nil || !strings.Contains(err.Error(), "逐字不等") {
@@ -674,12 +675,12 @@ func TestLocalFormIDMismatchPerPath(t *testing.T) {
 	}
 	// upgrade 同形
 	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_mm2","image":"`+goodImage+
-		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`)); err != nil {
 		t.Fatal(err)
 	}
 	before = len(f.calls)
 	if _, err := d.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_mm2","image":"local@sha256:`+mismatch+
-		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err == nil ||
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"codex"}`)); err == nil ||
 		!strings.Contains(err.Error(), "逐字不等") {
 		t.Fatalf("upgrade ID 不等必拒: %v", err)
 	}
@@ -703,7 +704,7 @@ func TestSeatEnvNoProxyIncludesHubHost(t *testing.T) {
 			d := f.ops(t.TempDir())
 			d.hubWSBase = c.base
 			var noProxy string
-			for _, e := range d.seatEnv("api_key") {
+			for _, e := range d.seatEnv("api_key", "codex") {
 				if v, ok := strings.CutPrefix(e, "NO_PROXY="); ok {
 					noProxy = v
 				}
@@ -721,5 +722,85 @@ func TestSeatEnvNoProxyIncludesHubHost(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// 组长 R-B12-SEATMODE 第 2 条（取乙）：席位 env 按 create／upgrade 参数 cli 注入 SH_MODE=cli、SH_CLI=<cli>——
+// sessionHelper 未设 SH_MODE 默认 echo（不起任何 CLI）。反向：不注入 ⇒ 红；cli 缺或不在白名单 ⇒ create／upgrade 拒且零引擎调用。
+func TestSeatEnvInjectsCLIMode(t *testing.T) {
+	envOf := func(t *testing.T, f *fakeEngine) map[string]string {
+		t.Helper()
+		got := map[string]string{}
+		env, _ := f.specs[len(f.specs)-1]["Env"].([]any)
+		for _, e := range env {
+			s, _ := e.(string)
+			if k, v, ok := strings.Cut(s, "="); ok {
+				got[k] = v
+			}
+		}
+		return got
+	}
+	for _, cli := range []string{"codex", "claude"} {
+		t.Run("create "+cli, func(t *testing.T) {
+			f := newFakeDocker(t)
+			d := f.ops(t.TempDir())
+			raw := `{"seat_id":"ag_cm","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"` + cli + `"}`
+			if _, err := d.create(context.Background(), json.RawMessage(raw)); err != nil {
+				t.Fatalf("create: %v", err)
+			}
+			if got := envOf(t, f); got["SH_MODE"] != "cli" || got["SH_CLI"] != cli {
+				t.Fatalf("seat env SH_MODE=%q SH_CLI=%q, want cli/%s", got["SH_MODE"], got["SH_CLI"], cli)
+			}
+		})
+	}
+	for name, tail := range map[string]string{"missing": ``, "unknown": `,"cli":"bash"`, "empty": `,"cli":""`} {
+		t.Run("create rejects "+name, func(t *testing.T) {
+			f := newFakeDocker(t)
+			d := f.ops(t.TempDir())
+			raw := `{"seat_id":"ag_cm","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"` + tail + `}`
+			if _, err := d.create(context.Background(), json.RawMessage(raw)); err == nil || !strings.Contains(err.Error(), "cli") {
+				t.Fatalf("cli %s must be rejected: %v", name, err)
+			}
+			if len(f.specs) != 0 {
+				t.Fatalf("rejected create must not reach the engine: %d specs", len(f.specs))
+			}
+		})
+	}
+	t.Run("upgrade rejects missing cli", func(t *testing.T) {
+		f := newFakeDocker(t)
+		d := f.ops(t.TempDir())
+		raw := `{"seat_id":"ag_cm","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`
+		if _, err := d.upgrade(context.Background(), json.RawMessage(raw)); err == nil || !strings.Contains(err.Error(), "cli") {
+			t.Fatalf("upgrade without cli must be rejected: %v", err)
+		}
+	})
+}
+
+// 组长 R-SEAT-CLI-STRICT（tosonnet55tc2k 复验 716ee4c8 存活一刀：校验改成小写＋去空白后比对，原用例全绿）：
+// cli 必须与白名单逐字相等——大小写不同、带首尾空白一律拒，create 与 upgrade 同口径，且拒在任何引擎调用之前。
+// 镜像 start.py（prodops/hosted-image-20261002）对 SH_CLI 逐字比对 codex，节点若放过「Codex」「codex 」，要到容器里才拒启。
+func TestSeatCLIMustMatchAllowlistExactly(t *testing.T) {
+	for name, cli := range map[string]string{"upper": "Codex", "trailing space": "codex ", "leading space": " codex", "all caps": "CODEX"} {
+		for _, op := range []string{"create", "upgrade"} {
+			t.Run(op+" rejects "+name, func(t *testing.T) {
+				f := newFakeDocker(t)
+				d := f.ops(t.TempDir())
+				raw := `{"seat_id":"ag_cs","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key","cli":"` + cli + `"}`
+				var err error
+				if op == "create" {
+					_, err = d.create(context.Background(), json.RawMessage(raw))
+				} else {
+					_, err = d.upgrade(context.Background(), json.RawMessage(raw))
+				}
+				if err == nil || !strings.Contains(err.Error(), "cli") {
+					t.Fatalf("%s cli=%q must be rejected: %v", op, cli, err)
+				}
+				f.mu.Lock()
+				defer f.mu.Unlock()
+				if len(f.calls) != 0 || len(f.specs) != 0 {
+					t.Fatalf("%s cli=%q rejected but reached the engine: calls=%v", op, cli, f.calls)
+				}
+			})
+		}
 	}
 }

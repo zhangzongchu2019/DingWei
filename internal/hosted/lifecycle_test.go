@@ -310,6 +310,9 @@ func TestHubParamsSatisfyNodeContract(t *testing.T) {
 	if up["cred_kind"] != "token_file" {
 		t.Fatalf("upgrade_seat 须带 cred_kind: %v", up)
 	}
+	if up["cli"] != "codex" { // 组长 R-B12-SEATMODE 第 2 条：升级后的新容器同一 CLI
+		t.Fatalf("upgrade_seat 须带 cli: %v", up)
+	}
 	if tf["expires_at"] == "" || up["image"] != newerImage {
 		t.Fatalf("token/image: %v", up)
 	}

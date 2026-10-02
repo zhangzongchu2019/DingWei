@@ -306,7 +306,9 @@ const consolePageHTML = `<!doctype html><meta charset=utf-8><title>DingWei Agent
 <style>
 :root{--row-alt:#e9eef5}body{margin:0;display:grid;grid-template-columns:240px 1fr;height:100vh;font:14px sans-serif}
 [hidden]{display:none!important}
-nav{overflow:auto;border-right:1px solid #ddd;padding:10px}
+nav{overflow:auto;border-right:1px solid #ddd;padding:10px;display:flex;flex-direction:column}nav>*{flex:none}
+/* 退出贴左栏底:列表短时 margin-top:auto 把它推到底,列表长时 sticky 让它不随列表滚走;它在流里排在列表之后,滚到底也不会盖住最后一项 */
+#navFoot{margin-top:auto;position:sticky;bottom:0;background:#fff;border-top:1px solid #ddd;padding:8px 0 2px}
 nav button{display:block;width:100%;margin:3px 0;text-align:left;padding:4px 6px}
 #platform-items a{display:block;padding:4px 6px;margin:3px 0;border:1px solid #ddd;border-radius:4px;color:#174f8a;text-decoration:none}
 #platform-actions{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 12px}
@@ -345,6 +347,7 @@ html[data-theme="dark"] #app-version{color:#7c8896}
 html[data-theme="dark"]{color-scheme:dark;--row-alt:#242a31}
 html[data-theme="dark"] body{background:#111316;color:#eef2f6}
 html[data-theme="dark"] nav{border-right-color:#38414c}
+html[data-theme="dark"] #navFoot{background:#111316;border-top-color:#38414c}
 html[data-theme="dark"] nav button{background:#1b1f24;color:#eef2f6;border:1px solid #38414c}
 html[data-theme="dark"] nav button:disabled{color:#a8b0bb}
 html[data-theme="dark"] #platform-items a{background:#1b1f24;border-color:#38414c;color:#6cb6ff}
@@ -360,7 +363,7 @@ html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="da
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><h3 style="margin:4px 0 8px">Work platform</h3><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div></nav>
+<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button><span id=feishuBoundNote hidden style="font-size:12px;color:#666">飞书已绑定</span></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=a></div><div id=navFoot><button id=logoutBtn type=button>退出</button></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <div id=app-version data-version="{{CONSOLE_VERSION}}" data-commit="{{CONSOLE_COMMIT}}">{{CONSOLE_VERSION_TEXT}}</div>
 <script>
@@ -493,7 +496,7 @@ async function refreshPlatform(){
     var r=await fetch('/api/console/platform',{cache:'no-store',signal:controller.signal});
     if(!r.ok){var detail=(await r.text()).trim();throw new Error('HTTP '+r.status+(detail?': '+detail:''));}
     var data=await r.json();if(!data||!Array.isArray(data.items))throw new Error('响应格式无效');
-    renderPlatform(data);status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;
+    renderPlatform(data);if(window.applyFeishuBound)window.applyFeishuBound(data.feishu_bound);status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;
   }catch(err){renderPlatform({items:[],role:document.documentElement.dataset.platformRole||''});status.textContent='工作台加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
   }finally{clearTimeout(timer);}
 }
@@ -613,7 +616,61 @@ async function refreshGroups(source){var generation=++groupRequestGeneration;if(
 //    不重写 refreshGroups/renderGroups —— 它们的三态文案、AbortController、generation 守卫由 group 回归守着。
 //    本块自带同款守卫:加载中/空/失败三态、超时、过期应答丢弃;名称有效性、重名、核码一律由 Hub 判,前端不预判。
 // 自备审核区开关(组长裁定 2026-10-01:托管先行,自备封存,第五期再打开)。关闭时该区块不渲染、不发任何请求。
-var FEATURE_SELFHOST_REVIEW=false;
+var FEATURE_SELFHOST_REVIEW=true;    // 第一版入网批准走这块(业主实测:关着时第一版批准走不通)
+// 绑定飞书(取甲:本人自取码):只给当前会话本人;码只在这个小块里显示,点完成/到期/再次点击前都不落盘、不进 storage。
+(function(){
+  var btn=document.getElementById('bindFeishuBtn'),box=document.getElementById('bindFeishuBox');if(!btn||!box)return;
+  var timer=null;
+  function say(t){document.getElementById('bindFeishuStatus').textContent=t||'';}
+  function clearBox(){clearTimeout(timer);timer=null;box.hidden=true;delete box.dataset.code;document.getElementById('bindFeishuCmd').textContent='';document.getElementById('bindFeishuExpiry').textContent='';document.getElementById('bindFeishuCopyFb').textContent='';}
+  // 已绑定 ⇒ 不显示按钮,原位只留一行不可点的小字;缺键(未知)或 false ⇒ 按钮照旧。绑定成功后点「完成,关闭」会重取一次状态。
+  var note=document.getElementById('feishuBoundNote');
+  window.applyFeishuBound=function(bound){
+    var isBound=bound===true;btn.hidden=isBound;note.hidden=!isBound;
+    if(isBound){clearBox();say('');var f=document.getElementById('bindFeishuForm');if(f){f.hidden=true;document.getElementById('bindFeishuPw').value='';}}
+  };
+  window.refreshFeishuBound=async function(){
+    try{var r=await fetch('/api/console/platform',{cache:'no-store'});if(!r.ok)return;var d=await r.json();window.applyFeishuBound(d&&d.feishu_bound);}catch(_){}   // 取不到就保持现状,不乱改
+  };
+  document.getElementById('bindFeishuDone').onclick=function(){clearBox();say('');window.refreshFeishuBound();};
+  document.getElementById('bindFeishuCopy').onclick=async function(){
+    var code=box.dataset.code||'';if(!code)return;var fb=document.getElementById('bindFeishuCopyFb');
+    try{await navigator.clipboard.writeText('#register '+code);fb.textContent='已复制';}catch(_){fb.textContent='复制失败,请手动选中复制';}
+  };
+  var form=document.getElementById('bindFeishuForm'),pw=document.getElementById('bindFeishuPw'),go=document.getElementById('bindFeishuGo');
+  function closeForm(){form.hidden=true;pw.value='';}
+  btn.onclick=function(){say('');clearBox();if(form.hidden){form.hidden=false;pw.focus();}else closeForm();};   // 再点一次收起表单,口令随之清掉
+  pw.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();go.click();}};
+  go.onclick=async function(){
+    var password=pw.value;if(!password){say('请输入当前口令');return;}
+    go.disabled=true;say('');clearBox();
+    var res=await consolePost('/api/console/account/feishu-bind-code',{password:password});
+    go.disabled=false;
+    if(!res.ok){
+      if(res.code==='already_bound'){closeForm();say('你已经绑定过飞书，无需再绑定');window.refreshFeishuBound();return;}   // 409 就是「已绑定」的事实:重取状态,按钮随之换成小字
+      pw.value='';   // 失败一律清掉口令框,不留在页面里
+      if(res.code==='bad_credentials')say('口令不对');
+      else if(res.code==='rate_limited'){var w=res.data&&Number.isFinite(res.data.retry_after_s)?res.data.retry_after_s:null;say('尝试次数过多，'+(w===null?'请稍后再试':'请 '+w+' 秒后再试'));}
+      else if(res.code==='forbidden')say('你没有权限绑定飞书');   // forbidden 的共用文案讲的是 Agent 归属,这里不适用
+      else say(res.text);
+      return;
+    }
+    closeForm();
+    var code=String(res.data.registration_code||''),exp=Date.parse(res.data.code_expires_at||'');
+    if(!code){say('没有拿到绑定码，请重试');return;}
+    box.dataset.code=code;
+    document.getElementById('bindFeishuCmd').textContent='#register '+code;
+    document.getElementById('bindFeishuExpiry').textContent='有效至 '+enrollTime(res.data.code_expires_at)+'；用过或重新获取后旧码作废';
+    box.hidden=false;
+    if(Number.isFinite(exp))timer=setTimeout(function(){clearBox();say('绑定码已过期，请重新获取');},Math.max(0,exp-Date.now()));
+  };
+})();
+(function(){var b=document.getElementById('logoutBtn');if(!b)return;b.onclick=async function(){
+  b.disabled=true;
+  try{var r=await fetch('/console/logout',{method:'POST'});if(r.ok||r.status===401){location.assign('/console/login');return;}}catch(_){}
+  b.disabled=false;var st=document.getElementById('platform-status');if(st)st.textContent='退出失败,请重试';
+};})();
+var FEATURE_HOSTED=false;            // 托管区是第二版:第一版没有 G4 后端(选项接口 404),整块不渲染、不请求;第二版再开
 var ENROLL_API={
   list:'/api/console/enroll/applications',
   approve:function(id){return '/api/console/enroll/applications/'+encodeURIComponent(id)+'/approve';},
@@ -642,7 +699,7 @@ var CONSOLE_ERRORS={
   node_offline:'该 Agent 所在节点离线，操作无法执行',invalid_state:'该 Agent 当前状态不允许这个操作',confirm_required:'这个操作需要先确认',
   upgrade_failed_rolled_back:'升级失败，已自动回滚到原版本',
   user_exists:'该用户 ID 或简称已被使用，请换一个',bad_request:'填写的内容不符合规则：用户 ID 2～32 位字母数字，简称 2～16 位字母数字',
-  must_change_password:'请先修改初始密码，再使用平台管理',internal:'服务端出错了，请稍后再试'
+  must_change_password:'请先修改初始密码，再使用平台管理',already_bound:'你已经绑定过飞书，无需再绑定',internal:'服务端出错了，请稍后再试'
 };
 var HOSTED_FAIL_REASONS={
   queue_timeout:'排队超时（超过 10 分钟）',pull_timeout:'拉取镜像超时（超过 30 分钟）',start_timeout:'启动超时（超过 5 分钟）',
@@ -847,6 +904,7 @@ function renderHostedAccounts(){
   hostedFill('hostedAccount',items,!llm?'请先选择 LLM':(rows.length?'请选择账号':'（该 LLM 暂无可用团队账号）'));
 }
 async function refreshHostedOptions(){
+  if(!FEATURE_HOSTED||!document.getElementById('hostedForm'))return null;
   var generation=++hostedOptionsGeneration,status=document.getElementById('hostedStatus'),retry=document.getElementById('hostedRetry'),form=document.getElementById('hostedForm');
   if(!status||!retry||!form)return null;
   status.textContent='托管选项加载中…';retry.hidden=true;
@@ -940,6 +998,7 @@ function mountEnrollPanels(pane){
     document.getElementById('enrollApprove').onclick=enrollApprove;document.getElementById('enrollReject').onclick=enrollReject;
     document.getElementById('enrollCancel').onclick=enrollCloseEditor;
   }
+  if(!FEATURE_HOSTED){var hc=pane.querySelector('#hostedCreate');if(hc)hc.remove();refreshRoster();if(FEATURE_SELFHOST_REVIEW)refreshEnroll();var rt0=setInterval(function(){if(!document.getElementById('rosterItems')){clearInterval(rt0);return;}refreshRoster();},15000);return;}
   var mask=document.createElement('div');mask.id='hostedMask';mask.hidden=true;mask.innerHTML='<div id=hostedMaskBox class=hosted-mask-box></div>';mask.onclick=hostedMaskHide;pane.append(mask);
   document.getElementById('hostedRefresh').onclick=refreshHostedOptions;document.getElementById('hostedRetry').onclick=refreshHostedOptions;
   document.getElementById('hostedCli').onchange=renderHostedLlm;document.getElementById('hostedLlm').onchange=renderHostedAccounts;
@@ -969,6 +1028,25 @@ function adminShowCode(user,res){
   document.getElementById('inviteExpiry').textContent='有效至 '+enrollTime(res.code_expires_at)+'；重新生成会让旧码作废';
   enrollFeedback('inviteCopyFeedback','');box.hidden=false;
 }
+function adminToggleInvite(){
+  var body=document.getElementById('inviteBody'),btn=document.getElementById('inviteToggle');if(!body||!btn)return;
+  var open=body.hidden;body.hidden=!open;btn.setAttribute('aria-expanded',open?'true':'false');
+  document.getElementById('inviteArrow').textContent=open?'▾':'▸';document.getElementById('inviteToggleHint').textContent=open?'点击收起':'点击展开';
+}
+var adminRowTimers=[];
+// 待绑定行的注册码:只在 Hub 带了 registration_code 与 code_expires_at 两个键、且未过期时显示;键缺失(已用/过期/重新生成/无密钥)就不显示,不缓存、不落盘。
+function adminRowCode(u,cell){
+  var code=typeof u.registration_code==='string'?u.registration_code:'',exp=Date.parse(u.code_expires_at||'');
+  if(!code||!Number.isFinite(exp)||exp<=Date.now())return;
+  var box=document.createElement('div');box.className='admin-row-codebox';
+  var c=document.createElement('code');c.className='admin-row-code';c.textContent=code;
+  var t=document.createElement('span');t.className='admin-row-expiry';t.textContent=' 有效至 '+enrollTime(u.code_expires_at)+' ';
+  var b=document.createElement('button');b.type='button';b.className='admin-row-copy';b.textContent='复制';
+  var fb=document.createElement('span');fb.className='group-feedback admin-row-copyfb';
+  b.onclick=async function(){try{await navigator.clipboard.writeText(code);fb.textContent='已复制';}catch(_){fb.textContent='复制失败,请手动选中复制';}};
+  box.append(c,t,b,fb);cell.append(box);
+  adminRowTimers.push(setTimeout(function(){box.remove();},exp-Date.now()+50));   // 到期当场消失,不等下次刷新
+}
 function adminClearCode(){
   var box=document.getElementById('inviteResult');if(!box)return;
   ['inviteResultUser','inviteCode','inviteCmd','inviteExpiry'].forEach(function(id){document.getElementById(id).textContent='';});
@@ -993,14 +1071,14 @@ async function adminCreateUser(){
 async function adminRegen(userId){
   var res=await consolePost(ADMIN_API.regen(userId));
   if(!res.ok){enrollFeedback('adminUsersFeedback',adminErrText(res.code,res.text));return;}
-  enrollFeedback('adminUsersFeedback','');adminShowCode(userId,res.data);
+  enrollFeedback('adminUsersFeedback','');adminShowCode(userId,res.data);refreshAdminUsers();   // 行内旧码随之换新
 }
 function renderAdminUsers(users){
   var body=document.getElementById('adminUsersItems'),empty=document.getElementById('adminUsersEmpty');if(!body||!empty)return;
-  body.replaceChildren();
+  body.replaceChildren();adminRowTimers.forEach(clearTimeout);adminRowTimers=[];
   users.forEach(function(u){
     var row=document.createElement('tr');row.className='admin-user-row';row.dataset.userId=u.user_id;
-    [u.user_id,u.display_name||'',u.short_name||'',ADMIN_USER_TYPE[u.type]||u.type||'',ADMIN_USER_STATE[u.state]||u.state||''].forEach(function(t){var td=document.createElement('td');td.textContent=t;row.append(td);});
+    [u.user_id,u.display_name||'',u.short_name||'',ADMIN_USER_TYPE[u.type]||u.type||'',ADMIN_USER_STATE[u.state]||u.state||''].forEach(function(t,i){var td=document.createElement('td');td.textContent=t;if(i===4&&u.state==='pending_bind')adminRowCode(u,td);row.append(td);});
     var action=document.createElement('td');
     if(u.state==='pending_bind'){var b=document.createElement('button');b.type='button';b.className='admin-regen';b.textContent='重新生成注册码';b.onclick=function(){adminRegen(u.user_id);};action.append(b);}
     row.append(action);body.append(row);
@@ -1029,19 +1107,19 @@ function openPlatformAdminWorkspace(){
   var tab=document.createElement('span');tab.className='tab';tab.title='平台管理';
   var label=document.createElement('span'),x=document.createElement('span');label.textContent='平台管理';x.className='x';x.textContent='×';tab.append(label,x);
   var pane=document.createElement('section');pane.className='group-workspace';
-  pane.innerHTML='<h2>平台管理</h2><nav id=adminMenu></nav><section id=adminInvite class="group-block"><h3>新用户注册邀请</h3>'
+  pane.innerHTML='<h2>平台管理</h2><nav id=adminMenu></nav><section id=adminInvite class="group-block"><h3><button id=inviteToggle type=button aria-expanded=true aria-controls=inviteBody style="font:inherit;font-weight:600;background:none;border:0;cursor:pointer;padding:0"><span id=inviteArrow aria-hidden=true>▾</span> 新用户注册邀请 <span id=inviteToggleHint style="font-weight:400;font-size:12px;color:#666">点击收起</span></button></h3><div id=inviteBody>'
    +'<label>用户名 <input id=inviteName autocomplete=off placeholder="显示名称,如 张三"></label>'
    +'<label>用户 ID <input id=inviteUserId autocomplete=off placeholder="2～32 位大小写字母和数字"></label>'
    +'<label>用户 ID 简称 <input id=inviteShort autocomplete=off placeholder="2～16 位大小写字母和数字"></label>'
    +'<label>用户类型 <select id=inviteType><option value=member>普通用户</option><option value=manager>管理用户</option></select></label>'
    +'<button id=inviteCreate type=button>生成注册码</button><div id=inviteFeedback class=group-feedback></div>'
-   +'<section id=inviteResult class=enroll-editor hidden><h4>注册码(只显示这一次)</h4><div>用户 <b id=inviteResultUser></b></div><div><code id=inviteCode></code> <button id=inviteCopy type=button>复制注册码</button><span id=inviteCopyFeedback class=group-feedback></span></div><div id=inviteExpiry></div><div>让该用户在飞书里向机器人发送：<code id=inviteCmd></code></div><button id=inviteDone type=button>完成,关闭</button></section>'
+   +'<section id=inviteResult class=enroll-editor hidden><h4>注册码(只显示这一次)</h4><div>用户 <b id=inviteResultUser></b></div><div><code id=inviteCode></code> <button id=inviteCopy type=button>复制注册码</button><span id=inviteCopyFeedback class=group-feedback></span></div><div id=inviteExpiry></div><div>让该用户在飞书里向机器人发送：<code id=inviteCmd></code></div><button id=inviteDone type=button>完成,关闭</button></section></div>'
    +'<h4>用户</h4><table id=adminUsersTable class=group-table><thead><tr><th>用户 ID</th><th>用户名</th><th>简称</th><th>类型</th><th>状态</th><th>操作</th></tr></thead><tbody id=adminUsersItems></tbody></table><div id=adminUsersEmpty hidden>暂无用户。</div><div id=adminUsersStatus role=status></div><button id=adminUsersRetry type=button hidden>重试加载</button><div id=adminUsersFeedback class=group-feedback></div></section>';
   tab.onclick=function(e){if(e.target===x){e.stopPropagation();closeTab('__platform-admin');}else activate('__platform-admin');};
   document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__platform-admin',{tab:tab,pane:pane});
   var menu=pane.querySelector('#adminMenu');
   ADMIN_CAPABILITIES.forEach(function(c,i){var b=document.createElement('button');b.type='button';b.dataset.capability=c.id;b.textContent=c.title;if(i===0)b.setAttribute('aria-current','true');menu.append(b);});
-  document.getElementById('inviteCreate').onclick=adminCreateUser;document.getElementById('inviteCopy').onclick=adminCopyCode;document.getElementById('inviteDone').onclick=adminClearCode;
+  document.getElementById('inviteToggle').onclick=adminToggleInvite;document.getElementById('inviteCreate').onclick=adminCreateUser;document.getElementById('inviteCopy').onclick=adminCopyCode;document.getElementById('inviteDone').onclick=adminClearCode;
   document.getElementById('adminUsersRetry').onclick=refreshAdminUsers;
   activate('__platform-admin');refreshAdminUsers();
 }
