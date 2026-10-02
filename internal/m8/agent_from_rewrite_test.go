@@ -193,6 +193,37 @@ func TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster(t *testing.T)
 	}
 }
 
+func TestDisabledNewPlatformOwnerAgentShortSelectorIsRejected(t *testing.T) {
+	e := newAgentEnv(t)
+	codes, err := e.svc.Store.ListAgentGroups(e.ctx, e.agID)
+	if err != nil || len(codes) == 0 {
+		t.Fatalf("source group: %v %v", codes, err)
+	}
+	credB := e.enrollInGroup("dev-disabled-target", "Kimi", codes[0])
+	a, _, _ := e.dial(e.cred, "")
+	b, _, _ := e.dial(credB, "")
+	if a == nil || b == nil {
+		t.Fatal("agent websocket did not connect")
+	}
+	defer a.CloseNow()
+	defer b.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "kimi")
+	if err := e.svc.Store.SetUserState(e.ctx, "zzc", identity.UserDisabled, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	e.sendEnv(a, model.Envelope{From: "opus50ts#" + placeholderFromKey, To: "#kimi", Body: "disabled-owner-must-not-route"})
+	rejected := e.readEnvUntil(a, envelopeReadTimeout, func(env model.Envelope) bool {
+		return strings.Contains(env.Body, "目标会话无法补全为在线 canonical 地址")
+	})
+	if rejected == nil {
+		t.Fatal("disabled owner's short selector was not rejected")
+	}
+	if leaked := e.readEnvUntil(b, 250*time.Millisecond, func(env model.Envelope) bool { return env.Body == "disabled-owner-must-not-route" }); leaked != nil {
+		t.Fatalf("disabled owner's short selector reached target: %+v", leaked)
+	}
+}
+
 // ③ 回飞书回复：占位 key 的信封能入出站队列（用户在飞书里收到）。
 func TestAgentWSPlaceholderFromFeishuReplyIsDelivered(t *testing.T) {
 	e := newAgentEnv(t)
