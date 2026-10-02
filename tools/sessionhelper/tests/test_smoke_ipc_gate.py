@@ -4,10 +4,12 @@
 最后一格是真进程：IPC 路径指向临时目录外的一个哨兵文件（代替在线 helper 的真路径；它在另一个测试临时目录里，
 不碰 /run/sessionhelper）。有闸 ⇒ 不启动、哨兵原样；去掉闸 ⇒ helper 启动即先删后绑，哨兵被删，本格红。
 """
+import asyncio
 import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -18,7 +20,49 @@ try:
 except ImportError:  # pragma: no cover
     from tests._smoke_isolation import check_helper_env_isolated, isolated_helper_env, spawn_helper
 
+try:
+    import websockets
+    _WS_OK = int(websockets.__version__.split(".")[0]) >= 15
+except ImportError:  # pragma: no cover
+    websockets = None
+    _WS_OK = False
+
 _PKG_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+class _FakeHub:
+    """只收不发的本地 WS：helper 连上之后才起 IPC 监听，闸失效时哨兵才会真被先删后绑。"""
+
+    def __init__(self):
+        self.loop = asyncio.new_event_loop()
+        ready = threading.Event()
+
+        async def handler(ws):
+            async for _ in ws:
+                pass
+
+        async def serve():
+            self.server = await websockets.serve(handler, "127.0.0.1", 0)
+            self.port = self.server.sockets[0].getsockname()[1]
+            ready.set()
+
+        def run():
+            self.loop.run_until_complete(serve())
+            self.loop.run_forever()
+
+        self.thread = threading.Thread(target=run, daemon=True)
+        self.thread.start()
+        if not ready.wait(5):
+            raise RuntimeError("fake hub did not start")
+
+    def close(self):
+        async def shutdown():
+            self.server.close()
+            await self.server.wait_closed()
+
+        asyncio.run_coroutine_threadsafe(shutdown(), self.loop).result(10)
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.thread.join(5)
 
 
 class SmokeIpcGate(unittest.TestCase):
@@ -70,11 +114,14 @@ class SmokeIpcGate(unittest.TestCase):
         with self.assertRaises(SystemExit):
             check_helper_env_isolated(env, self.tmp)
 
+    @unittest.skipUnless(_WS_OK, "needs websockets>=15")
     def test_gate_stops_real_helper_from_hijacking_a_path_outside_tmp(self):
+        hub = _FakeHub()
+        self.addCleanup(hub.close)
         sentinel = self.outside / "live-ipc.sock"
         sentinel.write_text("live helper socket stand-in\n")
         env = self._env(SH_MCP_IPC_SOCK=str(sentinel), PYTHONPATH=_PKG_DIR, SH_SESSION_NAME="gateprobe",
-                        SH_KEY_ID="k", SH_SECRET="s", SH_WS_BASE="ws://127.0.0.1:9", SH_MODE="echo",
+                        SH_KEY_ID="k", SH_SECRET="s", SH_WS_BASE=f"ws://127.0.0.1:{hub.port}", SH_MODE="echo",
                         SH_MIRROR_TO="", SH_COLLECT="0", SH_NO_DIRECTORY="1", SH_PROXY="off",
                         SH_INBOX_DB=str(self.tmp / "inbox.db"))
         proc = None
@@ -86,7 +133,7 @@ class SmokeIpcGate(unittest.TestCase):
             except SystemExit:
                 proc = None
             if proc is not None:  # 闸失效：给 helper 时间走到先删后绑，好让读数说清后果
-                deadline = time.time() + 10
+                deadline = time.time() + 15
                 while time.time() < deadline and sentinel.exists() and not sentinel.is_socket():
                     time.sleep(0.1)
         finally:
