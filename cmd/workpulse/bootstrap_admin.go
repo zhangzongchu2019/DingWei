@@ -26,7 +26,7 @@ func runBootstrapAdmin(ctx context.Context, args []string, out io.Writer, dsn st
 	if err := fs.Parse(args); err != nil || fs.NArg() != 0 || *userID == "" || *shortName == "" {
 		return errors.New("usage: " + bootstrapAdminUsage)
 	}
-	store, closeStore, err := openNewPlatformStore(ctx, dsn)
+	store, _, closeStore, err := openNewPlatformStore(ctx, dsn)
 	if err != nil {
 		return fmt.Errorf("bootstrap-admin: %w", err)
 	}

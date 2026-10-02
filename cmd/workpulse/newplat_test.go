@@ -54,7 +54,7 @@ func TestNewPlatformConfigFromEnv(t *testing.T) {
 func TestWireNewPlatformCreatesNoUser(t *testing.T) {
 	hub := newplatHub(t)
 	store := identity.NewMemStore()
-	if err := wireNewPlatform(context.Background(), http.NewServeMux(), hub, newPlatformConfig{publicOrigin: "https://x"}, store); err != nil {
+	if err := wireNewPlatform(context.Background(), http.NewServeMux(), hub, newPlatformConfig{publicOrigin: "https://x"}, store, nil); err != nil {
 		t.Fatal(err)
 	}
 	if n, _ := store.CountUsers(context.Background()); n != 0 {
@@ -66,7 +66,7 @@ func TestWireNewPlatformRoutes(t *testing.T) {
 	hub := newplatHub(t)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ws/session/{sessionName}", hub.HandleSessionWS) // main.go 照常注册旧入口，由 Hub 回 410
-	if err := wireNewPlatform(context.Background(), mux, hub, newPlatformConfig{publicOrigin: "https://x"}, identity.NewMemStore()); err != nil {
+	if err := wireNewPlatform(context.Background(), mux, hub, newPlatformConfig{publicOrigin: "https://x"}, identity.NewMemStore(), nil); err != nil {
 		t.Fatal(err)
 	}
 	srv := httptest.NewServer(mux)

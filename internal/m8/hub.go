@@ -73,6 +73,9 @@ type Hub struct {
 
 	// Identity 新平台 G3：/ws/agent 按专属凭据认人（为空＝不启用该入口）。
 	Identity *identity.Service
+	// OnHostedAgentOnline 托管 Agent 以专属凭据连入、会话登记成功后异步回调（G4 接 orch.MarkOnline：starting → online，板 ac33b1cb）。
+	// 自备 Agent 不回调。为空＝不回调。
+	OnHostedAgentOnline func(ctx context.Context, agentID string)
 	// PublicOrigin 新平台对外源（例如 https://dw.cmjrt.com:55055）：view 写操作与 WebSocket 升级校验 Origin 用。
 	PublicOrigin string
 	// Onboarding 新平台 N3：飞书里的登录与注册指令改由它处理（为空＝沿用旧登录）。
@@ -933,6 +936,8 @@ type sessionAdmission struct {
 	producer, noDirectory, webTerminal, deviceIDV1                      bool
 	timingStart, timingLast                                             time.Time
 	timingParts                                                         []string
+	// onRegistered 会话登记成功（未被设备冲突拒绝、旧连接已顶掉）后异步调用一次；为空不调。
+	onRegistered func()
 
 	// credentialIdentity 为真＝身份由专属凭据认定（HandleAgentWS）：信封里自报的 from 不是身份的来源，见 serveSession 读循环里的改写。
 	credentialIdentity bool
@@ -1049,6 +1054,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	}
 	if oldConn != nil {
 		_ = oldConn.Close(websocket.StatusPolicyViolation, "replaced")
+	}
+	if a.onRegistered != nil {
+		go a.onRegistered()
 	}
 	if h.markSessionSeen(ownerKey, sessionName) {
 		h.notifyNewSession(r.Context(), ownerKey, sessionName)
