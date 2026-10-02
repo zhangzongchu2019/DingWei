@@ -124,6 +124,54 @@ func pidAlive(pid int) bool {
 	return s[i+2] != 'Z'
 }
 
+// pidOwnsDataDir 核一个 PID 是不是 dataDir 的 postmaster：返回「不是」的理由，""＝确是。
+//
+// 🔴 这一格是【杀进程之前的最后一道闸】。上一版没有它，于是 stale.go 只看
+//
+//	「pid 文件里的数字还活着吗」就发 SIGTERM —— 而那个数字熬过 2 小时之后很可能
+//	已经被同一用户的别的进程复用（复验方 tosonnet50ts 用一个 `sleep 3000` 现场复现：
+//	旧目录里写上受害者的 PID，工具就把受害者 SIGTERM 了）。杀错的代价远大于留残留。
+//
+// 判据本身在 pidOwnerReason（纯函数，可确定性反测），这里只负责从 /proc 取三样东西：
+//
+//	comm     /proc/<pid>/comm     —— 真 postmaster 实测逐字是 postgres
+//	cmdline  /proc/<pid>/cmdline  —— 实测形如 <bin>/postgres -D <datadir> -p <port> -k /tmp
+//	cwd      /proc/<pid>/cwd      —— 实测就指向 <datadir>
+//
+// 🔴 comm 读不到 ⇒ 返回 pidOwnerUnknown（判不出），不是「判成不属于」：
+//
+//	判不出时连删目录都不安全，见 pidOwnerUnknown 的头注。cmdline／cwd 读不到不升级成
+//	判不出 —— comm 已经读到了，说明 /proc 对这个 PID 是开的，剩下两条只是没命中。
+//
+// 🔴 不采信 postmaster.pid 第 2 行（PG 自己写的 datadir，实测与 <dir>/data 同值）：
+//
+//	那是文件里的字节，而本函数的结论要用来授权杀进程 ⇒ 以【进程侧】的读数为准。
+func pidOwnsDataDir(pid int, dataDir string) string {
+	if pid <= 0 {
+		return "no_pid"
+	}
+	base := "/proc/" + strconv.Itoa(pid) + "/"
+	comm, err := os.ReadFile(base + "comm")
+	if err != nil {
+		return pidOwnerUnknown
+	}
+	var cmdline []string
+	if b, err := os.ReadFile(base + "cmdline"); err == nil {
+		cmdline = splitNUL(string(b))
+	}
+	cwd, _ := os.Readlink(base + "cwd")
+	return pidOwnerReason(true, string(comm), cmdline, cwd, dataDir)
+}
+
+// splitNUL 把 /proc/<pid>/cmdline 按 NUL 切成各段（末尾那个 NUL 不算一段）。
+func splitNUL(s string) []string {
+	s = strings.TrimSuffix(s, "\x00")
+	if s == "" {
+		return nil
+	}
+	return strings.Split(s, "\x00")
+}
+
 // terminatePID 给孤儿 postmaster 发 SIGTERM（不是 SIGKILL：让它走自己的快速关停，
 // 把 WAL 收干净；杀急了下次起库要恢复，那是把「残留」换成更难查的东西）。
 func terminatePID(pid int) error { return syscall.Kill(pid, syscall.SIGTERM) }

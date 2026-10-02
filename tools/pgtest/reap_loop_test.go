@@ -104,8 +104,22 @@ func TestReapUntilGoneCapsAndReportsLeftover(t *testing.T) {
 	reap := func() (int, error) { return 0, nil }
 	remaining := func() (int, bool) { return 3, true }
 	clk := &fakeClock{t: time.Unix(0, 0)}
+	sleep := func(d time.Duration) { clk.Sleep(d); runtime.Gosched() }
 
-	got := reapUntilGone(reap, remaining, clk.Sleep, clk.Now, 5*time.Millisecond, 50*time.Millisecond)
+	// 🔴 本格自带时限（复验件 🟡 那条）：把「时间上限兜底」从 reapUntilGone 里去掉之后，
+	// 这一格会变成【永不返回】—— 原先就是这么红的：不是断言失败，而是整包 2 分钟超时 panic，
+	// 读数上看不出是这一格的问题。放进 goroutine 再拿真时钟卡一道，同一个变异就会在这里干净地红。
+	// （真时钟只用于本格自己的时限；被测逻辑走的仍是注入的假时钟，判据不受机器快慢影响。）
+	done := make(chan reapReport, 1)
+	go func() {
+		done <- reapUntilGone(reap, remaining, sleep, clk.Now, 5*time.Millisecond, 50*time.Millisecond)
+	}()
+	var got reapReport
+	select {
+	case got = <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("reapUntilGone 10 秒没返回 ⇒ 时间上限兜底不生效（收尾会卡死；这一格就该在这里红，不该拖到整包超时）")
+	}
 	if !got.Capped {
 		t.Fatalf("上限没生效（会卡死收尾）: %+v", got)
 	}

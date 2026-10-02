@@ -29,7 +29,9 @@
 //	STOPPED=1/0 CLEANED=1/kept/0 RUNTIME_STATE=… LOGDIR_STATE=…
 //	PGLOG_REDIRECTED=1/0 REAPED=n(累计:主扫＋收尾那一遍) REAP_SECONDS=…(收尸自己花了多久,自证不靠外推)
 //	REAP_LEFTOVER=n(只在时间上限触发时出现:还有几个后代没退出)
-//	STALE_CLEANED=n STALE_LIVE_PG=n STALE_SKIPPED=n(启动时按前缀清上一次被杀留下的现场;见 stale.go)
+//	STALE_CLEANED=n STALE_LIVE_PG=n STALE_SKIPPED=n STALE_PID_REUSED=n
+//	                      (启动时按前缀清上一次被杀留下的现场;见 stale.go。
+//	                       PID_REUSED＝pid 文件里的 PID 已被别的进程复用 ⇒ 只删目录、不杀进程)
 //	PARENT_GONE=1(只在「父进程被过继」这条退出路径上出现;见 watchdog.go)
 package main
 
@@ -95,11 +97,17 @@ func run(port uint, listen, version, cacheRoot, runtime, db, user, password stri
 	emit("STALE_CLEANED", fmt.Sprint(stale.total()))
 	emit("STALE_LIVE_PG", fmt.Sprint(len(stale.SkippedLive)))
 	emit("STALE_SKIPPED", fmt.Sprint(len(stale.SkippedNew)))
+	emit("STALE_PID_REUSED", fmt.Sprint(len(stale.Reused)))
 	if n := len(stale.Terminated); n > 0 {
 		fmt.Fprintf(os.Stderr, "pgtest: 终止了 %d 个孤儿 postmaster 并删掉其目录: %v\n", n, stale.Terminated)
 	}
+	// 🔴 这一档必须出声:它说的是「pid 文件里那个数字已经指向别的进程了」——
+	// 上一版没有归属核对,在这里会直接 SIGTERM 那个无关进程(复验方已现场复现)。
+	if n := len(stale.Reused); n > 0 {
+		fmt.Fprintf(os.Stderr, "pgtest: 有 %d 个残留目录的 postmaster.pid 里那个 PID 【不是本目录的 postmaster】(已被别的进程复用),只删目录、不碰进程: %v\n", n, stale.Reused)
+	}
 	if n := len(stale.SkippedLive); n > 0 {
-		fmt.Fprintf(os.Stderr, "pgtest: 有 %d 个残留目录里 PG 还活着但【不够旧】,只报不杀: %v\n", n, stale.SkippedLive)
+		fmt.Fprintf(os.Stderr, "pgtest: 有 %d 个残留目录只报不动(PG 还活着但【不够旧】,或 PID 归属判不出): %v\n", n, stale.SkippedLive)
 	}
 	if n := len(stale.Failed); n > 0 {
 		fmt.Fprintf(os.Stderr, "pgtest: 有 %d 个残留目录删不掉(不假装清过): %v\n", n, stale.Failed)

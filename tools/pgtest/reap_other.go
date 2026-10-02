@@ -33,6 +33,15 @@ func descendantCount() (int, bool) { return 0, false }
 // 本就没有「留成永久僵尸」那条缺陷）；🔴 不得把它读成「跨平台等价」。
 func pidAlive(pid int) bool { return false }
 
+// pidOwnsDataDir 在非 Linux 上恒报「归属判不出」（没有 /proc）。
+//
+// 🔴 这条路【走不到】：同文件的 pidAlive 恒 false ⇒ staleVerdict 在「remove」那一档就返回了，
+//
+//	永远不会问到归属。桩存在的唯一理由是让本工具在任何平台都编得出来（见 xbuild_test.go）。
+//	返回 pidOwnerUnknown 而不是「判成不属于」，是为了万一将来有人改了 pidAlive 的口径，
+//	这里也不会悄悄变成「删掉一个活 PG 的数据目录」。
+func pidOwnsDataDir(pid int, dataDir string) string { return pidOwnerUnknown }
+
 // terminatePID 在非 Linux 上不杀进程（判不出 PID 是否属于本工具起的那个 postmaster，
 // 杀错进程比留残留更糟），只报一个明确的错误让调用方在 stderr 上看得见。
 func terminatePID(pid int) error { return errNoKillOnPlatform }

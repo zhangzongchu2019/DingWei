@@ -33,21 +33,31 @@ var stalePrefixes = []string{"dingwei-pgtest-"}
 // 若真有人跑超过 2 小时的单次起库，本清理会误判 —— 故 -stale-cutoff 可调、可关（≤0 即关）。
 const staleCutoff = 2 * time.Hour
 
+// pidOwnerUnknown 是「归属判不出」这个专用记号（见 pidOwnsDataDir）。
+//
+// 🔴 它与「判成不属于本目录」是两件事，不得合并：判成不属于 ⇒ 可以放心删目录（那个进程
+//
+//	与这个目录无关）；判不出 ⇒ 连「删目录」都不安全（万一它真是本目录的 postmaster，
+//	删掉数据目录等于把一个活 PG 的脚下抽走，还留下一个谁都清不掉的孤儿）。
+const pidOwnerUnknown = "unknown"
+
 // staleReport 是一次清理的实况，逐目录点名（不报一个总数了事）。
 type staleReport struct {
 	Removed     []string // 目录已删且 stat 不到
 	Terminated  []string // 目录里有【够旧】的活 postmaster：先 SIGTERM 再删
+	Reused      []string // postmaster.pid 里的 PID 【不是本目录的 postmaster】⇒ 不杀，只删目录
 	SkippedNew  []string // 不够旧 ⇒ 不敢动（可能属于正在跑的另一次）
-	SkippedLive []string // 有活 postmaster 但【不够旧】⇒ 只报不杀
+	SkippedLive []string // 只报不动：活 postmaster 不够旧，或 PID 归属判不出
 	Failed      []string // 该删而删不掉（RemoveAll 报错，或报了成功却还在）
 }
 
-// total 是「动了几个」（删掉的＋先杀再删的），供协议行用。
-func (r staleReport) total() int { return len(r.Removed) + len(r.Terminated) }
+// total 是「动了几个」（删掉的＋先杀再删的＋PID 被复用只删目录的），供协议行用。
+// 🔴 三个名单互斥：一个目录只进其中一个，加起来才是「动了几个」。
+func (r staleReport) total() int { return len(r.Removed) + len(r.Terminated) + len(r.Reused) }
 
 func (r staleReport) String() string {
-	return fmt.Sprintf("removed=%d terminated=%d skipped_new=%d skipped_live=%d failed=%d",
-		len(r.Removed), len(r.Terminated), len(r.SkippedNew), len(r.SkippedLive), len(r.Failed))
+	return fmt.Sprintf("removed=%d terminated=%d pid_reused=%d skipped_new=%d skipped_live=%d failed=%d",
+		len(r.Removed), len(r.Terminated), len(r.Reused), len(r.SkippedNew), len(r.SkippedLive), len(r.Failed))
 }
 
 // staleVerdict 是清理的【全部判断】，纯函数（不碰文件系统 ⇒ 可确定性反测）。
@@ -55,16 +65,26 @@ func (r staleReport) String() string {
 //	dirMtime   目录本身的修改时刻
 //	pidMtime   data/postmaster.pid 的修改时刻（≈ PG 的启动时刻）；没有 pid 文件时传零值
 //	pidAlive   postmaster.pid 里那个 PID 现在还活着吗
+//	pidOwner   那个 PID 是不是【本目录的】postmaster：""＝确是；pidOwnerUnknown＝判不出；
+//	           其余值＝判成不是（值本身就是理由，会原样进读数）
 //
 // 取值：remove（直接删）· terminate（先 SIGTERM 再删）· skip_new（不够旧）
 //
-//	· skip_live_pg（有活 PG 且不够旧 ⇒ 只报不杀）
+//	· skip_live_pg（只报不动）· pid_reused（PID 已被别的进程复用 ⇒ 不杀，只删目录）
 //
 // 🔴 为什么「活 PG」还要再判一次够不够旧：目录够旧而 PG 还活着，有两种可能 ——
 //
 //	上一次被杀留下的孤儿（该杀），或某次跑得很久的并发运行（不该杀）。
 //	用 postmaster.pid 的时刻再卡一道：PG 自己也够旧，才认定是孤儿。
-func staleVerdict(now time.Time, cutoff time.Duration, dirMtime, pidMtime time.Time, pidAlive bool) string {
+//
+// 🔴 为什么「够旧」还不够、必须再核归属（复验件 REVIEW-G2-PGTEST-REAP-tosonnet50ts-20261001
+//
+//	第二节，复验方已现场复现）：pid 文件里那个数字只是【当时】的 postmaster。目录与 pid 文件
+//	都熬过 2 小时之后，这个 PID 完全可能已被同一用户的别的进程复用（容器里 PID 空间小，
+//	跑了几小时的机器上不稀奇），于是「够旧 ＋ 还活着」这条原判据会把一个【毫不相干】的
+//	进程 SIGTERM 掉。杀错进程的代价远大于留一个残留目录 ⇒ 归属核对放在时刻判断【之前】：
+//	判成不是我们的 ⇒ 一律不杀；判不出 ⇒ 连目录也不动。
+func staleVerdict(now time.Time, cutoff time.Duration, dirMtime, pidMtime time.Time, pidAlive bool, pidOwner string) string {
 	if cutoff <= 0 {
 		return "skip_new" // 清理已关（-stale-cutoff ≤ 0）：一个都不动
 	}
@@ -74,15 +94,87 @@ func staleVerdict(now time.Time, cutoff time.Duration, dirMtime, pidMtime time.T
 	if !pidAlive {
 		return "remove"
 	}
+	if pidOwner == pidOwnerUnknown {
+		return "skip_live_pg" // 归属判不出 ⇒ 不杀也不删（删了可能是抽走一个活 PG 的脚下）
+	}
+	if pidOwner != "" {
+		return "pid_reused" // 确是别的进程占着这个 PID ⇒ 不杀，只删目录
+	}
 	if pidMtime.IsZero() || now.Sub(pidMtime) < cutoff {
 		return "skip_live_pg"
 	}
 	return "terminate"
 }
 
+// normPath 把一条路径归一成「解析符号链接之后的绝对路径」，供归属核对逐字比。
+//
+// 🔴 为什么必须解析：临时目录本身就常是符号链接（macOS 的 /var → /private/var、
+//
+//	容器里把 /tmp 挂成 symlink 的也有），而 postmaster 的 cmdline 里写的是它自己
+//	看到的那一条 ⇒ 逐字比会把【同一个目录】判成两个，于是该杀的孤儿杀不掉。
+//	两侧都过这一道，才算「双向」核对。
+//
+// 解析不了（路径已不存在等）就退回 Abs＋Clean：比不出来就【不匹配】，方向是保守的。
+func normPath(p string) string {
+	if p == "" {
+		return ""
+	}
+	if r, err := filepath.EvalSymlinks(p); err == nil {
+		p = r
+	}
+	if a, err := filepath.Abs(p); err == nil {
+		p = a
+	}
+	return filepath.Clean(p)
+}
+
+// pidOwnerReason 是归属判据的【纯函数】部分（读 /proc 的那半在 pidOwnsDataDir）：
+// 给它已经从 /proc 取来的三样东西，它只回答「是不是本目录的 postmaster」，不是就说为什么。
+//
+//	procOK   comm 读到了吗；读不到 ⇒ 归属判不出（返回 pidOwnerUnknown，不猜）
+//	comm     /proc/<pid>/comm 原样内容
+//	cmdline  /proc/<pid>/cmdline 按 NUL 切开的各段
+//	cwd      /proc/<pid>/cwd 的读链接结果
+//
+// 判据（与本席一次性 PG 探针的实测读数同源）：comm 逐字等于 postgres，
+// 且 cmdline 里 -D 的下一格 ＝ dataDir，或 cwd ＝ dataDir —— 两条命中一条即算归属。
+//
+// 🔴 comm 用【逐字等于】而不是前缀/包含：前缀匹配会把 postgres-foo 这类名字放进来，
+//
+//	而这一格的用途是「授权杀进程」，宁可漏杀不可错杀。
+//
+// 🔴 cwd 那条不是多余的兜底：cmdline 只认 `-D <dir>` 分成两格的写法（实测 pg_ctl 就是这么起的），
+//
+//	若将来换成 `-D<dir>` 这种 glued 写法，cmdline 这条会失配，而 postmaster 的 cwd 实测就在
+//	数据目录里 ⇒ 归属仍然判得出来，不至于把该杀的孤儿判成「不是我们的」。
+func pidOwnerReason(procOK bool, comm string, cmdline []string, cwd, dataDir string) string {
+	if !procOK {
+		return pidOwnerUnknown
+	}
+	if name := strings.TrimSpace(comm); name != "postgres" {
+		return "comm=" + name
+	}
+	want := normPath(dataDir)
+	if want == "" {
+		return "no_datadir"
+	}
+	for i, f := range cmdline {
+		if f == "-D" && i+1 < len(cmdline) && normPath(cmdline[i+1]) == want {
+			return ""
+		}
+	}
+	if normPath(cwd) == want {
+		return ""
+	}
+	return "datadir_mismatch"
+}
+
 // cleanStale 扫 root 下前缀命中的目录，按 staleVerdict 处置。
 //
 // 🔴 不采信 RemoveAll 的返回值：删完再 stat 一次，还在就算 Failed（与 cleanDir 同款要求）。
+// 🔴 也不采信 postmaster.pid 里的 PID「就是我们起的那个」：SIGTERM 之前必须核归属
+//
+//	（见 staleVerdict／pidOwnsDataDir）。核不过就只删目录、不碰进程，并在读数里如实标出来。
 func cleanStale(root string, prefixes []string, now time.Time, cutoff time.Duration) staleReport {
 	var rep staleReport
 	entries, err := os.ReadDir(root)
@@ -100,14 +192,24 @@ func cleanStale(root string, prefixes []string, now time.Time, cutoff time.Durat
 			continue
 		}
 		pid, pidMtime, alive := readPostmaster(dir)
-		terminated := false
-		switch staleVerdict(now, cutoff, info.ModTime(), pidMtime, alive) {
+		// 🔴 杀之前先核归属：这个 PID 现在还是不是【本目录的】postmaster。
+		// 判据与理由见 staleVerdict 的头注（复验方已现场复现「PID 复用 ⇒ 误杀无关进程」）。
+		owner := pidOwnsDataDir(pid, filepath.Join(dir, "data"))
+		terminated, reused := false, false
+		switch staleVerdict(now, cutoff, info.ModTime(), pidMtime, alive, owner) {
 		case "skip_new":
 			rep.SkippedNew = append(rep.SkippedNew, dir)
 			continue
 		case "skip_live_pg":
-			rep.SkippedLive = append(rep.SkippedLive, fmt.Sprintf("%s(pid=%d)", dir, pid))
+			if owner == pidOwnerUnknown {
+				rep.SkippedLive = append(rep.SkippedLive, fmt.Sprintf("%s(pid=%d,归属判不出)", dir, pid))
+			} else {
+				rep.SkippedLive = append(rep.SkippedLive, fmt.Sprintf("%s(pid=%d)", dir, pid))
+			}
 			continue
+		case "pid_reused":
+			rep.Reused = append(rep.Reused, fmt.Sprintf("%s(pid=%d,%s)", dir, pid, owner))
+			reused = true
 		case "terminate":
 			if err := terminatePID(pid); err != nil {
 				fmt.Fprintf(os.Stderr, "pgtest: 给孤儿 postmaster %d 发 SIGTERM 失败: %v\n", pid, err)
@@ -127,8 +229,8 @@ func cleanStale(root string, prefixes []string, now time.Time, cutoff time.Durat
 			rep.Failed = append(rep.Failed, dir)
 			continue
 		}
-		if terminated {
-			continue // 已记进 Terminated，不重复记 Removed（两个名单互斥，加起来才是「动了几个」）
+		if terminated || reused {
+			continue // 已记进 Terminated／Reused，不重复记 Removed（三个名单互斥，加起来才是「动了几个」）
 		}
 		rep.Removed = append(rep.Removed, dir)
 	}
