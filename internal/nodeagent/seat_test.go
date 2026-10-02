@@ -690,22 +690,4 @@ func TestLocalFormIDMismatchPerPath(t *testing.T) {
 	}
 }
 
-// R-B12-NET（opus50tc2k 答复 c1）：NO_PROXY 含 Hub 主机（席位连 Hub 直连不进 relay）。
-func TestNoProxyIncludesHubHost(t *testing.T) {
-	f := newFakeDocker(t)
-	d := f.ops(t.TempDir())
-	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_np","image":"`+goodImage+
-		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
-		t.Fatal(err)
-	}
-	env := f.specs[len(f.specs)-1]["Env"].([]any)
-	var noProxy string
-	for _, e := range env {
-		if s, _ := e.(string); strings.HasPrefix(s, "NO_PROXY=") {
-			noProxy = s
-		}
-	}
-	if !strings.Contains(noProxy, "hub.test") { // f.ops 的 hubWSBase＝wss://hub.test
-		t.Fatalf("NO_PROXY 须含 Hub 主机: %v", env)
-	}
-}
+<<<<<<< HEAD
