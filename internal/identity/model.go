@@ -168,6 +168,7 @@ var (
 	ErrNameTaken     = errors.New("identity: agent name taken")
 	ErrIdentityTaken = errors.New("identity: channel identity already bound")
 	ErrNotPending    = errors.New("identity: not pending")
+	ErrAlreadyBound  = errors.New("identity: user already has an identity from this provider")
 	ErrExpired       = errors.New("identity: expired")
 	ErrForbidden     = errors.New("identity: forbidden")
 	ErrHosted        = errors.New("identity: hosted agent")

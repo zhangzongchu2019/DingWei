@@ -26,14 +26,14 @@ function mutate(from, to) {
   assert.strictEqual(hits, 1, `mutation anchor must match exactly once: ${from} hits=${hits}`);
   html = html.replace(from, to);
 }
-const MUTATIONS = ['hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'unseal-review', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
+mutate('var FEATURE_HOSTED=false;', 'var FEATURE_HOSTED=true;'); // 托管区第二版才开;本件测的就是它,装置里把开关打开
+const MUTATIONS = ['hosted-group-still-required', 'hosted-new-group-no-check', 'disabled-offers-upgrade', 'disabled-offers-restart', 'suspended-loses-to-hosted', 'selfhost-suspended-plain', 'quota-only-zero', 'quota-old-fallback', 'quota-generic', 'unverified-selectable', 'no-linkage', 'hardcoded-mask', 'destroy-no-confirm', 'drop-confirm-flag', 'show-secret', 'hosted-shows-revoke', 'nav-opens-by-name', 'ignore-cred-kind', 'ignore-suspended'];
 if (mutation && !MUTATIONS.includes(mutation)) throw new Error(`unknown mutation ${mutation}`);
 if (mutation === 'hosted-group-still-required') mutate("if(!v)return {fields:{}};", "if(!v)return {error:'请选择所属编组'};");
 if (mutation === 'hosted-new-group-no-check') mutate("if(!NEW_GROUP_RE.test(n))return {error:'编组名只能用 1～8 位字母或数字'};", '');
 if (mutation === 'quota-only-zero') mutate('&&data.remaining[d[0]]<=0)used.push', '&&data.remaining[d[0]]===0)used.push');
 if (mutation === 'quota-old-fallback') mutate("quota_exceeded:'配额不足，请联系管理员调整配额',", "quota_exceeded:'Agent 数量已达上限',");
 if (mutation === 'quota-generic') mutate("if(code==='quota_exceeded'&&data&&data.remaining&&typeof data.remaining==='object'){", "if(false){");
-if (mutation === 'unseal-review') mutate('var FEATURE_SELFHOST_REVIEW=false;', 'var FEATURE_SELFHOST_REVIEW=true;');
 if (mutation === 'nav-opens-by-name') mutate('b.onclick=function(){ openTab(a.full_name) };', 'b.onclick=function(){ openTab(a.name) };');
 if (mutation === 'ignore-cred-kind') mutate('&&(!a.kind||c.cred_kind===a.kind);});', '&&true;});');
 if (mutation === 'suspended-loses-to-hosted') mutate("Object.assign({online:a.online},a.hosted||{},a.state==='suspended'?{state:'disabled'}:{})", "Object.assign({online:a.online},a.state==='suspended'?{state:'disabled'}:{},a.hosted||{})");
@@ -463,10 +463,11 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       assert.deepStrictEqual(states, [true, true, true, true]);
     });
 
-    await test('self-hosted review area is sealed by default: not rendered, its endpoint never called', async () => {
-      assert.strictEqual(await page.locator('#enrollReview').count(), 0);
-      assert.ok(!getPaths.includes('/api/console/enroll/applications'), 'a sealed area must not request anything');
-      assert.deepStrictEqual(await page.locator('.group-workspace h3').allTextContents().then((a) => a.filter((t) => ['编组列表', '自备 Agent 审核', '托管 Agent 生成', 'Agent 列表'].includes(t))), ['编组列表', '托管 Agent 生成', 'Agent 列表']);
+    await test('the self-hosted review area is offered by default alongside the hosted area (the hosted flag is switched on in this harness)', async () => {
+      assert.strictEqual(await page.locator('#enrollReview').count(), 1);
+      assert.ok(getPaths.includes('/api/console/enroll/applications'), 'the review list is requested');
+      const heads = (await page.locator('.group-workspace h3').allTextContents()).map((t) => t.trim()).filter((t) => ['编组列表', '自备 Agent 审核', '托管 Agent 生成', 'Agent 列表'].includes(t));
+      assert.ok(heads.includes('自备 Agent 审核') && heads.includes('托管 Agent 生成'), `headings: ${JSON.stringify(heads)}`);
     });
 
     await test('lifecycle state rides on /api/console/agents: no separate hosted-agents read; a hosted row without state shows only online/offline', async () => {

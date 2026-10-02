@@ -85,6 +85,8 @@ function productionHTML() {
   if (MUTATION === 'tree-dedupes-agent') mutateHTML('agentTreeAllowDuplicates=true', 'agentTreeAllowDuplicates=false');
   // 不倒退:扁平列表今天就按 online 置灰(b.disabled=!a.online);树里若忽略 members[].online 即为倒退
   if (MUTATION === 'tree-ignores-member-online') mutateHTML('b.disabled=agentTreeMemberDisabled(member);', 'b.disabled=false;');
+  // 外来成员不在自己的 Agent 列表里 ⇒ 只能信编组快照自带的 members[].online；若「列表里查不到就当在线」，离线的外来成员会显示为可用
+  if (MUTATION === 'tree-assumes-unlisted-member-online') mutateHTML('return fresh?fresh.online===true:member.online===true;}', 'return fresh?fresh.online===true:true;}');
   if (MUTATION === 'tree-keeps-stale-online') mutateHTML('function agentTreeMemberOnline(member){var fresh=agentListSnapshot.find(function(agent){return agent.full_name===memberName(member);});return fresh?fresh.online===true:member.online===true;}', 'function agentTreeMemberOnline(member){return member.online===true;}');
   // ⑦ 占位守卫:锚点绑在 agentTreeCanOpen( 上 —— 这个名字只有本次实现落地后才存在,落地前必然
   //    报「锚点未命中」。合同名在此钉死:实现方请用 agentTreeCanOpen(node) 决定要不要绑点击。
@@ -100,7 +102,7 @@ function productionHTML() {
   if (MUTATION && !['tree-back-to-flat', 'member-short-name', 'stale-tree-after-remove',
     'mode-switch-rebuilds-panes', 'tree-dedupes-agent', 'tree-ignores-member-online',
     'foreign-agent-can-open', 'tree-keeps-stale-groups', 'tree-shows-ungrouped',
-    'tree-keeps-stale-online'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+    'tree-keeps-stale-online', 'tree-assumes-unlisted-member-online'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -146,7 +148,7 @@ async function main() {
     if (req.url === '/fixture/drop-team01' && req.method === 'POST') { droppedTeam01 = true; res.writeHead(204); res.end(); return; }
     if (req.url === '/fixture/agent-a-offline' && req.method === 'POST') { agentAOnline = false; res.writeHead(204); res.end(); return; }
     if (req.url === '/fixture/agent-a-online' && req.method === 'POST') { agentAOnline = true; res.writeHead(204); res.end(); return; }
-    if (req.url === '/api/console/agents') return json({ agents: [...mine.map((a) => agentRecord(a.session_name, a.id === 'agent-a' ? agentAOnline : a.online)), agentRecord(foreign.session_name, true)] });
+    if (req.url === '/api/console/agents') return json({ agents: [...mine.map((a) => agentRecord(a.session_name, a.id === 'agent-a' ? agentAOnline : a.online))] });   // 🔴 只给【自己的】Agent：现行 Hub 的 GET /api/console/agents 按属主过滤（PGStore.ListAgents 的 WHERE owner_lc=$1），别人的成员不会出现在这个列表里——此前夹具把离线的外来成员也列成在线，是 5d36bb12(新鲜快照覆盖 online)之后用例变红的根因
     if (req.url === '/api/console/platform') return json({ role: 'management', actions: ['read', 'submit'], items: [] });
     if (String(req.url).startsWith('/api/console/agent-groups')) return json(groupsPayload());
     if (String(req.url).startsWith('/view/')) { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><title>v</title>'); return; }

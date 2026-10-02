@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -47,9 +48,42 @@ func newN3Env(t *testing.T) *n3env {
 }
 
 // browser 一个带 cookie 的浏览器。
+//
+// 🔴 不用 net/http/cookiejar：它拿【墙上时钟】判 cookie 过期，而本格的服务端跑在假时钟上
+// （2026-10-01T09:00Z 起，会话 12 小时 ⇒ cookie Expires＝21:00Z）。墙上时钟一过 21:00Z，jar 就把会话 cookie
+// 当过期丢掉，整套用例在每天这个时刻之后一律 401（2026-10-01 22:3xZ 实测，newplat/main 上同样红）。
+// 会话过期由服务端按假时钟判，浏览器这边只需记住、按删除指令删除，不需要自己判时间。
 func (e *n3env) browser() *http.Client {
-	jar, _ := cookiejar.New(nil)
-	return &http.Client{Jar: jar}
+	return &http.Client{Jar: &fakeClockJar{cookies: map[string]*http.Cookie{}}}
+}
+
+// fakeClockJar 不看墙上时钟的 cookie 罐：本地测试服务只有一个主机，按名字存；
+// Max-Age<0（服务端要求删除，如退出登录）即删除。
+type fakeClockJar struct {
+	mu      sync.Mutex
+	cookies map[string]*http.Cookie
+}
+
+func (j *fakeClockJar) SetCookies(_ *url.URL, cs []*http.Cookie) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	for _, c := range cs {
+		if c.MaxAge < 0 {
+			delete(j.cookies, c.Name)
+			continue
+		}
+		j.cookies[c.Name] = &http.Cookie{Name: c.Name, Value: c.Value}
+	}
+}
+
+func (j *fakeClockJar) Cookies(_ *url.URL) []*http.Cookie {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	out := make([]*http.Cookie, 0, len(j.cookies))
+	for _, c := range j.cookies {
+		out = append(out, c)
+	}
+	return out
 }
 
 func (e *n3env) call(c *http.Client, method, path string, body any, withOrigin bool) (int, map[string]any) {
