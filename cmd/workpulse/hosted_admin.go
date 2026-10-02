@@ -23,6 +23,9 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/hosted"
 )
 
+// maxSecretStdinBytes 凭据 stdin 读入上限（1MiB；凭据件 KB 级，超限即拒）。
+const maxSecretStdinBytes = 1 << 20
+
 func runHostedAdmin(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("用法: hosted-admin register-node|seed-account ...")
@@ -44,6 +47,9 @@ func runHostedAdmin(args []string) error {
 		id := fs.String("id", "", "节点 ID（nd_ 前缀）")
 		name := fs.String("name", "", "节点名")
 		labels := fs.String("labels", "{}", "标签 JSON（如 pool）")
+		// R-G4-HOSTED-ADMIN-TESTS：默认 29/1 仅联调用；接真节点时按节点实际版本显式传。
+		dockerVer := fs.String("docker-version", "29", "节点 Docker 主版本（默认 29 仅联调）")
+		protoVer := fs.Int("protocol-version", 1, "节点协议版本（默认 1 仅联调）")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
@@ -51,7 +57,7 @@ func runHostedAdmin(args []string) error {
 			return fmt.Errorf("--id 与 --name 必填")
 		}
 		secret, err := st.RegisterNode(ctx, hosted.Node{ID: *id, Name: *name, Labels: []byte(*labels),
-			DockerVersion: "29", ProtocolVersion: 1}, "hosted-admin")
+			DockerVersion: *dockerVer, ProtocolVersion: *protoVer}, "hosted-admin")
 		if err != nil {
 			return err
 		}
@@ -75,9 +81,14 @@ func runHostedAdmin(args []string) error {
 		if err != nil {
 			return err
 		}
-		raw, err := io.ReadAll(os.Stdin)
+		// R-G4-HOSTED-ADMIN-TESTS：stdin 读入限 1MiB（凭据件 KB 级，1MiB 已极宽；
+		// 超限即拒——LimitReader 多读一字节探溢出，不静默截断）。
+		raw, err := io.ReadAll(io.LimitReader(os.Stdin, maxSecretStdinBytes+1))
 		if err != nil {
 			return err
+		}
+		if int64(len(raw)) > maxSecretStdinBytes {
+			return fmt.Errorf("凭据超长（上限 %d 字节）", maxSecretStdinBytes)
 		}
 		a, err := svc.Register(ctx, "hosted-admin", true, *name, *kind, *cli, *llm, strings.TrimSpace(string(raw)))
 		if err != nil {
