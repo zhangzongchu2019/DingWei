@@ -30,7 +30,7 @@
  *   agent-pull-denied      新平台 Agent 能力令牌校验恒拒          ⇒ 红在「Agent 拉任务」
  *   offline-agents-offered 任务页把离线 Agent 也列进候选          ⇒ 红在「指派候选（反）」
  *   task-pull-owner-scope-off 任务拉取不再按「开工人＝令牌属主」限定  ⇒ 红在「跨属主（反）」
- *   owner-check-off        【已知存活】撤令牌属主＝Agent 属主比对    ⇒ 本脚本与 m8 层都不红（见下「隔离范围」）
+ *   owner-check-off        撤令牌属主＝Agent 属主比对（纵深防御）    ⇒ 红在「令牌属主比对」（污染数据格，见下）
  *   no-cap-issue           撤令牌签发口（新平台分支恒 404）          ⇒ 红在「开工并签发令牌」
  *   cap-optional           令牌可缺失（缺／错令牌照放行）          ⇒ 红在「无令牌被拒」
  *   cap-agent-unbound      令牌不绑定 Agent（别的 Agent 可拿去用）  ⇒ 红在「别的 Agent 的凭据」
@@ -40,8 +40,9 @@
 
  * 隔离范围（如实）：令牌绑定 Agent、绑定页面 id、凭据伪造、吊销后失效、【跨属主】（第二个用户 bobtwo，由 view-service/p1seed 播种、
  * 经口令登录与批准入网；他看不到别人的 spec，他的 Agent 凭自己合法令牌也拉不到别人的任务）在本脚本里都有格。
- * 「令牌属主＝Agent 属主」那条比对（newplat_spec_agent.go）在当前不变量下是纵深防御冗余：令牌只能由属主给自己的 Agent 签发，
- * 合法流程造不出「属主不一致」的令牌，故撤掉它本脚本与 m8 层都无法变红（复验方与本席实测：owner-check-off 存活），不装作覆盖了它。
+ * 「令牌属主＝Agent 属主」那条比对（newplat_spec_agent.go）是纵深防御：令牌只能由属主给自己的 Agent 签发，合法流程造不出「属主不一致」
+ * 的令牌，所以本脚本用【污染数据】的办法单独钉它——直接向 Hub 的 SQLite 投影表塞一枚「属主＝adminone、绑定 bob 的 Agent」的令牌（含必需的授权行），
+ * 其余比对全放行，唯一挡它的就是这条（需要 node:sqlite，即 node ≥ 22.5；没有则该格 SKIP 并写明）。撤掉它 ⇒ owner-check-off 变红。
  *
  * 已知边界（如实）：Hub 把 console-tasks 令牌交到 Agent 手里的链路 095 本就没有（方案第六节答复①），本脚本由「人」在页面会话里
  * 签发后经 Agent 进程的命令口交给它，只验 Hub 侧签发与校验；「开工」在页面上没有按钮，用同一浏览器会话的 fetch 调接口。
@@ -52,7 +53,10 @@ const net = require('net');
 const os = require('os');
 const path = require('path');
 const readline = require('readline');
+const crypto = require('crypto');
 const { spawn, spawnSync } = require('child_process');
+let DatabaseSync = null;
+try { ({ DatabaseSync } = require('node:sqlite')); } catch (_) { /* 旧 node：污染数据格记 SKIP */ }
 const { chromium, request: playwrightRequest } = require('playwright');
 
 const ROOT = path.join(__dirname, '..');
@@ -87,7 +91,7 @@ const MUTATIONS = {
     from: '\tif err != nil || start.AnnouncedBy != platformPrincipal(r) {\n\t\thttp.Error(w, "项目尚未开工，取不到任务清单", http.StatusConflict)',
     to: '\tif err != nil {\n\t\thttp.Error(w, "项目尚未开工，取不到任务清单", http.StatusConflict)',
   },
-  // 已知存活（如实）：令牌属主比对在当前不变量下是纵深防御冗余，合法流程造不出「属主不一致」的令牌；保留此刀只为让存活可复现、可核
+  // 令牌属主比对：纵深防御，合法流程造不出「属主不一致」的令牌，故由「令牌属主比对」格（污染数据）单独钉住
   'owner-check-off': {
     file: 'internal/m8/newplat_spec_agent.go',
     from: 'capability.PrincipalID != identity.Lower(ag.OwnerLC) ||',
@@ -620,6 +624,38 @@ async function test(name, fn, { standalone = false } = {}) {
       const r = await agents.bob.http('GET', pullPath(), bobCap);
       assert.ok(r.status === 401 || r.status === 403 || r.status === 404 || r.status === 409, `他人 Agent 拉本属主 spec 任务应被拒，实得 ${r.status}`);
       assert.ok(!r.body.includes(state.taskID), '返回里不得含 adminone 的任务 id');
+    });
+
+    await test('跨属主（反）：他人 Agent（bob）的凭据配 adminone 研发 Agent 的令牌被拒', async () => {
+      const r = await agents.bob.http('GET', pullPath(), state.cap);
+      assert.ok(denied(r), `他人凭据＋本属主令牌应 401/403，实得 ${r.status}`);
+      assert.ok(!r.body.includes(state.taskID), '返回里不得含 adminone 的任务 id');
+    });
+
+    await test('令牌属主比对（纵深防御）：令牌属主≠Agent 属主（数据被污染）时仍被拒', async () => {
+      // 合法流程造不出「属主不一致」的令牌（令牌只能由属主给自己的 Agent 签发），所以直接向 Hub 的 SQLite 投影表塞一条：
+      // adminone 的会话＋adminone 对 bob 的 Agent 的 interact 授权＋一枚绑定 bob 的 Agent、属主写成 adminone 的 console-tasks 令牌。
+      // 其余比对全放行，唯一挡它的就是「令牌属主＝Agent 属主」那一条（Agent 侧 newplat_spec_agent.go）。
+      if (!DatabaseSync) { skipped += 1; log('SKIP 令牌属主比对（node:sqlite 不可用，需 node ≥ 22.5）'); return; }
+      const al = await jsonOf(await bobApi.get('/api/console/agents'));
+      const bobAgent = (al.agents || []).find((a) => a.session === 'bob');
+      assert.ok(bobAgent && bobAgent.agent_id, 'bobtwo 应见自己的 Agent');
+      const poked = 'p1-poked-capability-' + crypto.randomBytes(16).toString('hex');
+      const db = new DatabaseSync(path.join(TMP, 'data', 'wp.db'));
+      try {
+        db.exec('PRAGMA busy_timeout=5000');
+        const sess = db.prepare("SELECT id FROM console_session WHERE principal_id='adminone' AND revoked_at IS NULL ORDER BY created_at DESC LIMIT 1").get();
+        assert.ok(sess && sess.id, '库里应有 adminone 的有效会话');
+        const agentRow = db.prepare('SELECT id FROM console_agent WHERE id=? AND active=1').get(bobAgent.agent_id);
+        assert.ok(agentRow, 'bob 的 Agent 应已被垫片投影进 console_agent');
+        db.prepare("INSERT OR REPLACE INTO console_agent_grant(principal_id,agent_id,permission,active) VALUES('adminone',?, 'interact', 1)").run(bobAgent.agent_id);
+        db.prepare('INSERT INTO console_page_capability(id,session_id,principal_id,agent_id,page_id,token_hash,generation,expires_at,created_at) VALUES(?,?,?,?,?,?,?,?,?)').run(
+          'p1-poked-' + crypto.randomBytes(6).toString('hex'), sess.id, 'adminone', bobAgent.agent_id, 'console-tasks',
+          crypto.createHash('sha256').update(poked).digest('hex'), 1,
+          new Date(Date.now() + 3600e3).toISOString(), new Date().toISOString());
+      } finally { db.close(); }
+      const r = await agents.bob.http('GET', pullPath(), poked);
+      assert.ok(denied(r), `令牌属主≠Agent 属主应 401/403，实得 ${r.status} ${r.body.slice(0, 80)}`);
     });
 
     await test('吊销（反）：属主吊销研发 Agent 后，它从候选消失，原凭据＋原令牌不再能拉', async () => {
