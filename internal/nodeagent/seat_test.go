@@ -607,3 +607,26 @@ func TestLocalFormEngineTranslationAndUpgradeGuards(t *testing.T) {
 		}
 	}
 }
+
+// 复验 RV2 缺口（tosonnet55tc2k fc604d8b）：单路径去 inspect 也必须红——
+// 白名单在而 inspect 不在 ⇒ 本机没有该镜像也照起。两格：create 与 upgrade 各自的 inspect 404 必拒。
+func TestLocalFormInspectPerPath(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	missing := strings.Repeat("beef", 16) // 白名单里登记、引擎里没有（fake 对 beefbeef 形 404）
+	d.localImages[missing] = true
+	// create 路径
+	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_ip1","image":"local@sha256:`+missing+
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err == nil {
+		t.Fatal("create：登记但本机不存在必须拒（inspect 闸）")
+	}
+	// upgrade 路径：先有一个正常席位，再用不存在的 local ID 升级
+	if _, err := d.create(context.Background(), json.RawMessage(`{"seat_id":"ag_ip2","image":"`+goodImage+
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.upgrade(context.Background(), json.RawMessage(`{"seat_id":"ag_ip2","image":"local@sha256:`+missing+
+		`","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":1024},"cred_kind":"api_key"}`)); err == nil {
+		t.Fatal("upgrade：本机不存在必须拒（inspect 闸）")
+	}
+}
