@@ -110,16 +110,22 @@ func (h *Hub) DisconnectAgent(agentID string) {
 	if err != nil {
 		return
 	}
-	h.mu.Lock()
-	c := h.sessionClients[AgentKeyID(ag.OwnerLC)][ag.NameLC()]
-	h.mu.Unlock()
-	if c == nil || c.conn == nil {
-		return
-	}
 	// 关闭码同为 4401，原因按当前状态区分：吊销 ⇒ 客户端删凭据；暂停 ⇒ 不删，等启用。
 	reason := "credential_revoked"
 	if ag.State == identity.AgentSuspended {
 		reason = "credential_suspended"
+	}
+	h.disconnectAgentSession(AgentKeyID(ag.OwnerLC), ag.NameLC(), reason)
+}
+
+// disconnectAgentSession 以 4401＋reason 断开一个在线 Agent 会话（不在线即空操作）；最多等 agentDisconnectWait。
+// 用户停用（A11）也走这里，reason 用 credential_suspended：停用可恢复，客户端不得删凭据。
+func (h *Hub) disconnectAgentSession(keyID, sessionName, reason string) {
+	h.mu.Lock()
+	c := h.sessionClients[keyID][sessionName]
+	h.mu.Unlock()
+	if c == nil || c.conn == nil {
+		return
 	}
 	done := make(chan struct{})
 	go func() {

@@ -32,11 +32,9 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("PATCH /api/console/platform/items/{itemID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("edit", prefixHub.HandleConsolePlatformEdit)))
 	mux.HandleFunc("DELETE /api/console/platform/items/{itemID}", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("delete", prefixHub.HandleConsolePlatformDelete)))
 	mux.HandleFunc("POST /api/console/platform/items/{itemID}/approve", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("approve", prefixHub.HandleConsolePlatformApprove)))
-	if !newplat {
-		// 新平台第一版不含 specs 与 task-board（组长令：第一版范围＝登录、改密、平台管理、自备入网、Agent 列表、view、＠候选），
-		// 这两组路由一律不注册 ⇒ 404，不暴露（含旧共享 spec 页，组长裁定 140013Z ④）。
-		registerSpecTaskRoutes(mux, prefixHub)
-	}
+	// specs 与 task-board：两种模式都注册（R-V2-SPEC-TASK-SHIM-IMPL G4，定案甲）。新平台下认人、Agent 侧鉴权走新平台分支，
+	// 身份经垫片投影进旧表，处理器与存储不变。共享链接沿 095 口径（GET 公开、写凭链接里的编辑能力令牌）。
+	registerSpecTaskRoutes(mux, prefixHub)
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/capability", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleCapability))
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleFileUploadTicket))
 	mux.HandleFunc("POST /api/console/files/{fileID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleFileArchive))
@@ -48,7 +46,7 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 
 var _ httpapi.Mux = (*http.ServeMux)(nil)
 
-// registerSpecTaskRoutes specs 与 task-board 两组功能的全部路由（页面、console 接口、Agent capability 接口、共享链接）。只在旧平台注册。
+// registerSpecTaskRoutes specs 与 task-board 两组功能的全部路由（页面、console 接口、Agent capability 接口、共享链接）。新旧平台都注册。
 func registerSpecTaskRoutes(mux httpapi.Mux, prefixHub *m8.Hub) {
 	mux.HandleFunc("GET /console/specs", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleSpecsPage)))
 	mux.HandleFunc("GET /console/tasks", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAction("read", prefixHub.HandleConsoleTaskBoardPage)))

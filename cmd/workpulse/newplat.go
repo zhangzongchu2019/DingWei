@@ -118,8 +118,11 @@ func hasManagementUser(ctx context.Context, store identity.Store) (bool, error) 
 // wireNewPlatform 在给定身份存储上装配新平台、挂路由。不建任何账号；库中还没有管理用户时只提示运维执行初始化脚本。
 func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newPlatformConfig, store identity.Store, pool *repo.Pool) error {
 	svc := identity.NewService(store, nil, nil)
-	svc.OnRevoked = hub.DisconnectAgent
-	svc.OnSuspended = hub.DisconnectAgent
+	// 吊销／暂停：先停用垫片投影的 console_agent（spec／任务 Agent 侧立即失效），再按原样 4401 断开（R-V2-SPEC-TASK-SHIM-IMPL U3）。
+	svc.OnRevoked = hub.NewPlatformAgentGone
+	svc.OnSuspended = hub.NewPlatformAgentGone
+	// 用户停用／恢复／改类型（A11）：立即重投影；停用时断开其全部 Agent。
+	svc.OnUserChanged = hub.NewPlatformUserChanged
 	svc.OnCredentialIssued = hub.DisconnectAgent
 	svc.NameAllowed = m8.AgentNameAllowed
 	ob := identity.NewOnboarding(svc)
@@ -135,6 +138,10 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	hub.Onboarding = ob
 	hub.AgentCredentialOnly = true
 	hub.PublicOrigin = cfg.publicOrigin
+	// 垫片启动对账（R-V2-SPEC-TASK-SHIM-IMPL）：失败只记日志不挡启动——随请求同步会补上，且同步失败的请求一律拒绝。
+	if err := hub.ReconcileNewPlatformConsole(ctx); err != nil {
+		log.Printf("newplat shim: startup reconcile: %v", err)
+	}
 
 	n3 := &httpapi.N3{OB: ob, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Secure: true}
 	// G4 托管装配（88928305）：pool 非 nil（PG 模式）才尝试；内部按 DW_G4_MASTER_KEY_FILE 开关。

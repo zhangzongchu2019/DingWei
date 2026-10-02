@@ -37,6 +37,20 @@ var newPlatformAuthExempt = map[string]string{
 	"GET /api/enroll/applications/{id}":  "客户端轮询：凭轮询令牌",
 }
 
+// newPlatformSpecTaskExempt spec／任务路由里【不】按 N3 会话认人的（R-V2-SPEC-TASK-SHIM-IMPL H1），口径同 095：
+// 共享链接与静态资源公开读、写凭链接里的编辑能力令牌；Agent 侧凭专属凭据＋能力令牌。每条下面另有一格钉住无凭据时的应答。
+var newPlatformSpecTaskExempt = map[string]string{
+	"GET /console/specs/{specID}":                                        "共享 spec 页（公开页，095 同）",
+	"GET /console/spec-assets/{name}":                                    "spec 页静态资源（公开，095 同）",
+	"GET /api/specs/shared/{specID}":                                     "共享 spec 读（公开，095 同）",
+	"PATCH /api/specs/shared/{specID}":                                   "共享 spec 写：凭编辑能力令牌（无令牌按登录者判，均无 ⇒ 拒）",
+	"POST /api/specs/shared/{specID}/versions":                           "共享 spec 开新版：同上",
+	"GET /api/agent/console/task-driver/specs/{specID}/{revision}/tasks": "Agent 拉任务：专属凭据＋能力令牌",
+	"POST /api/agent/console/specs":                                      "Agent 建 spec：专属凭据＋能力令牌",
+	"PATCH /api/agent/console/specs/{specID}":                            "Agent 改 spec：专属凭据＋能力令牌",
+	"POST /api/agent/console/specs/{specID}/inferences":                  "Agent 回推论：专属凭据＋能力令牌",
+}
+
 // newPlatformOptionalExempt 只在某些编译形态下才注册的公开路由：注册了 ⇒ 按豁免处理，并且必须真的公开（无会话 200）；
 // 没注册 ⇒ 不要求（与 newPlatformAuthExempt 不同，后者要求「豁免项必须已注册」）。
 var newPlatformOptionalExempt = map[string]string{
@@ -102,16 +116,48 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			t.Fatalf("route %q not registered; recorded %d routes", must, len(rec.patterns))
 		}
 	}
-	// 新平台第一版不含 specs 与 task-board：这两组路由一律不注册（含旧共享 spec 页，140013Z ④），访问 404
-	for _, p := range rec.patterns {
-		if specTaskRoute.MatchString(p) {
-			t.Errorf("specs/task-board route registered in new-platform mode: %s", p)
+	// R-V2-SPEC-TASK-SHIM-IMPL G4（翻转原「一条都不能注册」）：spec 与任务路由在新平台全部注册，且与旧平台注册的是同一组。
+	// 认人：非豁免的照常进下面的全路由扫描（无会话 401／302、必须改密 403）；豁免的逐条钉住无凭据应答。
+	oldRec := &routeRecorder{mux: http.NewServeMux()}
+	registerSpecTaskRoutes(oldRec, newplatHub(t))
+	for _, p := range oldRec.patterns {
+		if !seen[p] {
+			t.Errorf("spec/task route %q not registered in new-platform mode", p)
 		}
 	}
-	for _, path := range []string{"/console/specs", "/console/tasks", "/console/specs/x", "/console/spec-assets/x.js",
-		"/api/console/specs", "/api/console/task-board", "/api/console/spec-editors", "/api/specs/shared/x"} {
-		if st, _, _ := do("GET", path, "", "application/json"); st != 404 {
-			t.Errorf("GET %s: %d, want 404 (not registered)", path, st)
+	nSpecTask := 0
+	for _, p := range rec.patterns {
+		if specTaskRoute.MatchString(p) {
+			nSpecTask++
+		}
+	}
+	if nSpecTask != len(oldRec.patterns) || nSpecTask != 35 {
+		t.Errorf("spec/task routes in new-platform mode=%d, registerSpecTaskRoutes=%d (want both 35)", nSpecTask, len(oldRec.patterns))
+	}
+	for p := range newPlatformSpecTaskExempt {
+		if !seen[p] {
+			t.Errorf("spec/task exempt route %q is not registered", p)
+		}
+		if _, dup := newPlatformAuthExempt[p]; dup {
+			t.Errorf("%q is in two exempt lists", p)
+		}
+	}
+	for _, c := range []struct {
+		method, path string
+		want         int
+	}{
+		{"GET", "/console/specs/x", 200},             // 共享页外壳（内容由页面再取，取不到即提示）
+		{"GET", "/console/spec-assets/nope.js", 404}, // 不认识的资源名
+		{"GET", "/api/specs/shared/nope", 404},
+		{"PATCH", "/api/specs/shared/nope", 404}, // 查无此 spec 先于判权
+		{"POST", "/api/specs/shared/nope/versions", 404},
+		{"GET", "/api/agent/console/task-driver/specs/x/1/tasks", 403},
+		{"POST", "/api/agent/console/specs", 403},
+		{"PATCH", "/api/agent/console/specs/x", 403},
+		{"POST", "/api/agent/console/specs/x/inferences", 403},
+	} {
+		if st, loc, body := do(c.method, c.path, "", "application/json"); st != c.want {
+			t.Errorf("exempt %s %s without credentials: %d loc=%q %s, want %d", c.method, c.path, st, loc, body, c.want)
 		}
 	}
 	// 可选豁免：注册了就必须真公开 —— 无会话、不跟随跳转地取 HTML，得 200（不是 302 回登录页、也不是 401）。
@@ -145,6 +191,9 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			continue
 		}
 		if _, ok := newPlatformOptionalExempt[k]; ok {
+			continue
+		}
+		if _, ok := newPlatformSpecTaskExempt[k]; ok {
 			continue
 		}
 		methods, path := []string{"GET", "POST"}, k // 不带方法的模式两种都扫

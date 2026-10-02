@@ -80,6 +80,8 @@ type Hub struct {
 	PublicOrigin string
 	// Onboarding 新平台 N3：飞书里的登录与注册指令改由它处理（为空＝沿用旧登录）。
 	Onboarding *identity.Onboarding
+	// newPlatformShimRepo 测试缝：非空时垫片用它代替 h.Repo（注入写库失败，复验方 H15）。
+	newPlatformShimRepo newPlatformShimRepository
 	// AgentCredentialOnly 新平台模式：旧入口 /ws/session 一律回 410（只认凭据，设计件 2.3）；
 	// /ws/service 只收本机与内网来源（台账 c796e65e）。
 	AgentCredentialOnly bool

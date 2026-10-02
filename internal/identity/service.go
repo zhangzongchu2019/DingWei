@@ -306,7 +306,15 @@ func (s *Service) AuthenticateAgent(ctx context.Context, credential string) (*Ag
 	case AgentSuspended:
 		return nil, "", ErrCredentialSuspended
 	}
-	return ag, s.fullName(ctx, ag), nil
+	// 属主用户被停用（A11）：按暂停处理——拒连，客户端不删凭据，等用户恢复。
+	owner, err := s.Store.GetUser(ctx, ag.OwnerLC)
+	if err != nil {
+		return nil, "", err
+	}
+	if owner.State != UserActive {
+		return nil, "", ErrCredentialSuspended
+	}
+	return ag, ag.Name + "." + owner.ShortName, nil // 与 fullName 同形（名称.属主简称）
 }
 
 // ── console 接口（actor＝当前登录用户的 user_id_lc）──────────────────────────
