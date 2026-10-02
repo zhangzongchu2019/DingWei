@@ -87,6 +87,10 @@ type Hub struct {
 	// IdleTickerFunc 只为测试注入会话空闲巡检的 tick（组长 R-M8-TESTSIDE 取甲：挂在实例上，不用包级变量）；
 	// 返回 tick 通道与停止函数。nil ⇒ time.NewTicker（生产行为不变）。会话活跃时刻同用 h.now()（NowFunc）。
 	IdleTickerFunc func(d time.Duration) (<-chan time.Time, func())
+	// deliveryFailedBackoffBase／Cap／Max 可重试 failed 的退避与上限；0 ⇒ 默认 2s／300s／30（只为测试注入）。
+	deliveryFailedBackoffBase time.Duration
+	deliveryFailedBackoffCap  time.Duration
+	deliveryFailedMax         int
 	// keepaliveInterval／keepaliveTimeout 会话保活 ping 的间隔与等 pong 上限（组长 R-M8-KEEPALIVE-RACE：挂实例，
 	// 原为包级变量，测试改写时与上一个会话仍在跑的保活协程竞争）。0 ⇒ 默认 30s／5s（生产行为不变）；间隔为负 ⇒ 不保活。
 	keepaliveInterval time.Duration
@@ -3968,9 +3972,24 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	} else if state == "failed" {
 		retryable := metaBool(env.Meta, "retryable")
 		if retryable {
-			_ = h.Repo.UpdateSessionDelivery(ctx, id, "queued", metaString(env.Meta, "reason"), time.Now().UTC().Add(2*time.Second))
-			h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", metaString(env.Meta, "reason"))
-			h.scheduleSessionDeliveryDrain(c, 2*time.Second)
+			// 可重试的失败：指数退避（2 秒起翻倍、封顶 300 秒），连续 30 次转 dead 并通知发送方（组长取甲；原为恒 2 秒、无上限）。
+			reason := metaString(env.Meta, "reason")
+			now := time.Now().UTC()
+			base, maxDelay, maxFailed := h.deliveryFailedRetryParams()
+			dead, failed, next, err := h.Repo.FailSessionDeliveryRetryable(ctx, id, reason, now, base, maxDelay, maxFailed)
+			if err != nil {
+				log.Printf("session delivery failed-retry record error delivery_id=%s err=%v", id, err)
+				return true
+			}
+			if dead {
+				log.Printf("session delivery dead reason=retry_exhausted delivery_id=%s failed=%d last_reason=%s", id, failed, reason)
+				h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", reason)
+				h.notifyDeliveryRetryExhausted(ctx, *d, failed, reason)
+				go h.drainSessionDeliveries(context.Background(), c)
+			} else {
+				h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", reason)
+				h.scheduleSessionDeliveryDrain(c, next.Sub(now))
+			}
 		} else {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "dead", metaString(env.Meta, "reason"), time.Now().UTC())
 			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", metaString(env.Meta, "reason"))
@@ -4056,6 +4075,43 @@ func (h *Hub) scheduleSessionDeliveryDrain(c *sessionClient, delay time.Duration
 		delay = 10 * time.Millisecond
 	}
 	time.AfterFunc(delay, func() { h.drainSessionDeliveries(context.Background(), c) })
+}
+
+// 可重试 failed 的退避与上限（组长取甲）。实例字段为 0 ⇒ 默认：2 秒起翻倍、封顶 300 秒、连续 30 次转 dead。
+const (
+	defaultDeliveryFailedBackoffBase = 2 * time.Second
+	defaultDeliveryFailedBackoffCap  = 300 * time.Second
+	defaultDeliveryFailedMax         = 30
+	deliveryRetryExhaustedCode       = "retry_exhausted"
+)
+
+func (h *Hub) deliveryFailedRetryParams() (time.Duration, time.Duration, int) {
+	base, maxDelay, maxFailed := h.deliveryFailedBackoffBase, h.deliveryFailedBackoffCap, h.deliveryFailedMax
+	if base <= 0 {
+		base = defaultDeliveryFailedBackoffBase
+	}
+	if maxDelay <= 0 {
+		maxDelay = defaultDeliveryFailedBackoffCap
+	}
+	if maxFailed <= 0 {
+		maxFailed = defaultDeliveryFailedMax
+	}
+	return base, maxDelay, maxFailed
+}
+
+// notifyDeliveryRetryExhausted 连续失败到限转 dead 时给发送方一条可见的投递失败通知：原因码＋最后一次失败原因。
+func (h *Hub) notifyDeliveryRetryExhausted(ctx context.Context, d model.SessionDelivery, failed int, lastReason string) {
+	var original model.Envelope
+	if json.Unmarshal([]byte(d.Envelope), &original) != nil || original.From == "" {
+		return
+	}
+	notice := model.Envelope{ID: "delivery_failed_" + randomHex(8), From: sessionAddress(d.SessionName, d.KeyID), To: original.From,
+		Body: fmt.Sprintf("消息投递失败，已连续重试 %d 次仍未成功，不再重投（原因码 %s；最后一次失败原因：%s）", failed, deliveryRetryExhaustedCode, lastReason),
+		Meta: map[string]any{"type": "delivery_status", "no_mirror": true, "system": true,
+			"delivery_id": d.ID, "reason_code": deliveryRetryExhaustedCode, "last_error": lastReason}}
+	if err := h.RouteEnvelope(ctx, notice); err != nil {
+		log.Printf("session delivery dead notice route failed delivery_id=%s err=%v", d.ID, err)
+	}
 }
 
 func (h *Hub) notifyDeliveryQueued(ctx context.Context, d model.SessionDelivery, position int) {
