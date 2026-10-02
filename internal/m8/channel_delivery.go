@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
@@ -64,6 +65,18 @@ func (h *Hub) defaultBotName() string {
 
 // ownerFeishuOpenID 取该 key 所属业主本人的飞书 open_id(兜底目标)。
 func (h *Hub) ownerFeishuOpenID(ctx context.Context, keyID string) string {
+	if h.Identity != nil {
+		if owner, ok := strings.CutPrefix(keyID, "u_"); ok && owner != "" {
+			u, err := h.Identity.Store.GetUser(ctx, owner)
+			if err == nil && u.State == identity.UserActive {
+				ident, err := h.Identity.Store.GetIdentity(ctx, owner, "feishu")
+				if err == nil {
+					return ident.Subject
+				}
+			}
+			return ""
+		}
+	}
 	if h.Repo == nil {
 		return ""
 	}
