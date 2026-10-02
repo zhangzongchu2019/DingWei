@@ -374,6 +374,12 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
             threading.Event().wait(0.01)
         raise AssertionError("timed out waiting for adapter boundary")
 
+    @classmethod
+    def settle_guide_only(cls, adapter):
+        """Wait for any wrongly enqueued standalone guide turn to become visible."""
+        cls.wait_for(lambda: adapter._commands.depth == 0)
+        threading.Event().wait(0.1)
+
     def make_driver_helper(self, tmp, driver):
         cfg = load_config(dict(
             BASE_ENV,
@@ -573,6 +579,7 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
             driver._request = request
             helper, adapter = self.make_driver_helper(tmp, driver)
             asyncio.run(helper.inject_agent_network_skill(guide_env()))
+            self.settle_guide_only(adapter)
             self.assertEqual(calls, [])
             asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
             self.wait_for(lambda: len(calls) == 1)
@@ -611,6 +618,7 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
             )
             helper, adapter = self.make_driver_helper(tmp, driver)
             asyncio.run(helper.inject_agent_network_skill(guide_env()))
+            self.settle_guide_only(adapter)
             self.assertEqual(driver._proc.stdin.frames, [])
             asyncio.run(helper.process_inbound_message(FakeWS(), business_env("FIRST")))
             self.wait_for(lambda: len(driver._proc.stdin.frames) == 1)
