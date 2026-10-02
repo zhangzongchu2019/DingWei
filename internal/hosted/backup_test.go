@@ -534,3 +534,61 @@ func TestBackupUsesLongTimeout(t *testing.T) {
 		t.Fatalf("export_seat 必须走 SendWithTimeout(15min): called=%v d=%v", gw.called, gw.usedD)
 	}
 }
+
+// 丙案新分支（复验二轮 G8 半格）：已 landed 但记录仍 pending 时，同一 id 再传 ⇒ 404 不覆写，
+// landed 登记与落盘件都不动。
+func TestBackupDuplicateUploadWhilePending(t *testing.T) {
+	_, s := mkPoolSvc(t)
+	ctx := context.Background()
+	secret, err := s.RegisterNode(ctx, Node{ID: "nd_dup", Name: "dup", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	bk := NewHubBackuper(s, &gwBackupNode{}, "", dir)
+	mux := http.NewServeMux()
+	mux.Handle("POST /api/node/backup/{id}", bk.BackupHandler())
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	id, _ := newBackupID()
+	if err := s.CreateBackup(ctx, Backup{ID: id, NodeID: "nd_dup", SeatID: "ag_d", State: "pending",
+		Path: dir + "/" + id + ".tar.gz", ExpiresAt: time.Now().Add(BackupTTL)}); err != nil {
+		t.Fatal(err)
+	}
+	good := mkTarGz(t, map[string]string{"ag_d/f": "first"})
+	if c, err := uploadBackup(ctx, srv.URL+"/api/node/backup/"+id, secret, good, sha256Hex(good)); err != nil || c != 200 {
+		t.Fatalf("首传应 200: %d %v", c, err)
+	}
+	landedSha := bk.landed[id].sha
+	// 第二次传（内容不同）⇒ 404；落盘件与 landed 都不被覆写
+	other := mkTarGz(t, map[string]string{"ag_d/f": "second"})
+	if c, err := uploadBackup(ctx, srv.URL+"/api/node/backup/"+id, secret, other, sha256Hex(other)); err != nil || c != 404 {
+		t.Fatalf("pending 期重复回传应 404: %d %v", c, err)
+	}
+	raw, _ := os.ReadFile(dir + "/" + id + ".tar.gz")
+	if !bytes.Equal(raw, good) {
+		t.Fatal("落盘件被覆写")
+	}
+	if bk.landed[id].sha != landedSha {
+		t.Fatal("landed 登记被覆写")
+	}
+}
+
+// G10（复验二轮）：节点掉线 ⇒ 销毁链断在备份步、backup_failed、不发 destroy_seat。
+func TestBackupNodeOfflineStopsDestroy(t *testing.T) {
+	lc, log, _, _, _, s, id := mkLifecycle(t)
+	gw := &gwBackupNode{sendErr: errors.New("node_offline")}
+	_, bk, _ := mkBackupRigOn(t, s, gw)
+	lc.backups = bk
+	log.reset()
+	err := lc.Destroy(context.Background(), id, "zzc", false, true)
+	var be *BackupFailedError
+	if !errors.As(err, &be) {
+		t.Fatalf("%v, want backup_failed", err)
+	}
+	eqSeq(t, "node offline stops destroy", log.get(), []string{"node:stop_seat"})
+	if seat, _ := s.GetSeat(context.Background(), id); seat.State != "error" || seat.StateDetail != "backup_failed" {
+		t.Fatalf("seat must show backup_failed: %+v", seat)
+	}
+}

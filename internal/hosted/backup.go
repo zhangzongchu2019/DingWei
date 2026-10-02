@@ -88,7 +88,10 @@ func (b *HubBackuper) BackupSeatVolume(ctx context.Context, nodeID, seatID strin
 		res, err = b.gw.Send(ctx, nodeID, cmd)
 	}
 	if err != nil {
+		// 结果没回来（掉线／超时／ctx 取消）：落盘登记也要摘——否则 landed[id] 永驻内存
+		//（复验二轮 qwen38maxkhovvob4：形状① 落地前大席位必走这条）。
 		_ = b.st.FailBackup(ctx, id)
+		b.forget(id)
 		return "", err
 	}
 	if !res.OK {
