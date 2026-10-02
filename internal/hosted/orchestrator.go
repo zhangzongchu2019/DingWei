@@ -352,23 +352,33 @@ func (o *Orchestrator) MarkOnline(ctx context.Context, agentID string) error {
 	return err
 }
 
+// starting 态的 state_detail：区分「新建席位起来」（空）与「既有席位重启／启用」。
+// 超时清扫对两者的处置不同：新建的超时整个回收（吊销、解绑）；既有席位只记 start_timeout，Agent 与账号原样保留，可再重启。
+const (
+	seatStartingRestart = "restart"
+	seatStartingEnable  = "enable"
+)
+
 // SweepTimeouts 超时清扫（排队 10 分钟不可取消／拉镜像 30m／启动 5m；超时即失败不留半成品）。
 func (o *Orchestrator) SweepTimeouts(ctx context.Context, now time.Time) {
 	o.sweepMu.Lock()
 	defer o.sweepMu.Unlock()
 	rows, err := o.st.pool.Query(ctx, htx(), `
-SELECT agent_id, state, updated_at FROM g4_hosted_seat
+SELECT agent_id, state, state_detail, updated_at FROM g4_hosted_seat
 WHERE state IN ('queued','pulling','starting')`)
 	if err != nil {
 		return
 	}
 	defer rows.Close()
-	type pending struct{ id, state string }
+	type pending struct {
+		id, state string
+		existing  bool // 既有席位的重启／启用（不是新建）
+	}
 	var timedOut []pending
 	for rows.Next() {
-		var id, state string
+		var id, state, detail string
 		var updated time.Time
-		if err := rows.Scan(&id, &state, &updated); err != nil {
+		if err := rows.Scan(&id, &state, &detail, &updated); err != nil {
 			return
 		}
 		var limit time.Duration
@@ -382,10 +392,17 @@ WHERE state IN ('queued','pulling','starting')`)
 			limit, reason = 5*time.Minute, "start_timeout"
 		}
 		if now.Sub(updated) > limit {
-			timedOut = append(timedOut, pending{id: id, state: reason})
+			existing := state == "starting" && (detail == seatStartingRestart || detail == seatStartingEnable)
+			timedOut = append(timedOut, pending{id: id, state: reason, existing: existing})
 		}
 	}
 	for _, p := range timedOut {
+		if p.existing {
+			// 🔴 既有席位重启／启用后 Agent 没连上：只记错，不吊销、不解绑 —— 那是用户在用的 Agent，
+			//    把新建失败的回收套在它身上会把它的凭据吊销掉。记 error 后 Restart 仍可再试（guard 放行 error）。
+			_ = o.st.SetSeatState(ctx, p.id, "error", p.state, "fail", json.RawMessage(`{"reason":"`+p.state+`","existing":true}`))
+			continue
+		}
 		o.dropToken(p.id)
 		seat, err := o.st.GetSeat(ctx, p.id)
 		if err == nil && seat.AccountRef.Valid {

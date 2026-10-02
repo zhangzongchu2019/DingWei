@@ -200,7 +200,9 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 		_ = l.st.SetSeatState(ctx, agentID, "error", "start_failed", "fail", nil)
 		return ErrStartFailed
 	}
-	return l.st.SetSeatState(ctx, agentID, "online", "", "online", nil)
+	// 容器重启 ≠ online（组长裁定，板 79498c60，与创建同口径）：停在 starting，Agent 以专属凭据连入（MarkOnline）才 online；
+	// 永不连入 ⇒ 清扫按 5 分钟记 start_timeout（这类既有席位只记错、不吊销，见 SweepTimeouts）。
+	return l.st.SetSeatState(ctx, agentID, "starting", seatStartingRestart, "start", nil)
 }
 
 // Disable 停用：confirm 必带（D8）；先 Suspend 凭据（4401 断开）再停容器。
@@ -259,7 +261,8 @@ func (l *Lifecycle) Enable(ctx context.Context, agentID, actorLC string, isAdmin
 		_ = l.st.SetSeatState(ctx, agentID, "error", "start_failed", "fail", nil)
 		return ErrStartFailed
 	}
-	return l.st.SetSeatState(ctx, agentID, "online", "", "online", json.RawMessage(`{"resumed":true}`))
+	// 同重启：容器起来 ≠ online，等 Agent 连入（板 79498c60）。
+	return l.st.SetSeatState(ctx, agentID, "starting", seatStartingEnable, "start", json.RawMessage(`{"resumed":true}`))
 }
 
 // Destroy 销毁：confirm 必带（D8）；先备份卷（留 14 天）→ Retire 吊销 → 停删容器 → 清配额 → 账号回池。
