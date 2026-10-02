@@ -607,3 +607,56 @@ func TestShimH16_ConcurrentSync(t *testing.T) {
 		t.Fatalf("owner scope after concurrent sync: %q %v", scope, err)
 	}
 }
+
+// H1（共享链接口径，复验方 8cf14faf 复审①）：与 095 实测一致——fcd3a3dd 上同断言读数：共享写口持编辑令牌 403、
+// 无令牌 403（store appendConsoleSpecRevisionWithCapability 恒拒，共享路由不挂认人，登录 cookie 不起作用）、GET 200。
+// 新平台照此：持令牌非登录者 403；无令牌 403；属主带登录 cookie 走共享写口仍 403（属主改 spec 走 /api/console/specs/{id}）；GET 200。
+func TestShimH1_SharedLinkParityWith095(t *testing.T) {
+	e := newShimEnv(t)
+	st, body := e.do("POST", "/api/console/specs", e.tokZZC, "", "", agentSpecBody(t, "shared"))
+	if st != 201 {
+		t.Fatalf("create: %d %s", st, body)
+	}
+	var spec model.ConsoleSpec
+	_ = json.Unmarshal([]byte(body), &spec)
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/specs/shared/{specID}", e.hub.HandleConsoleSpec)
+	mux.HandleFunc("PATCH /api/specs/shared/{specID}", e.hub.HandleConsoleSpec)
+	mux.HandleFunc("POST /api/specs/shared/{specID}/versions", e.hub.HandleConsoleSpecNewVersion)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	var m map[string]any
+	_ = json.Unmarshal([]byte(validSpecBody), &m)
+	m["expected_revision"] = 1
+	raw, _ := json.Marshal(m)
+	for _, c := range []struct{ method, suffix, capability, cookie string }{
+		{"PATCH", "", "some-edit-token", ""},
+		{"PATCH", "", "", ""},
+		{"PATCH", "", "", e.tokZZC},
+		{"POST", "/versions", "some-edit-token", ""},
+		{"POST", "/versions", "", ""},
+		{"POST", "/versions", "", e.tokZZC},
+	} {
+		req, _ := http.NewRequest(c.method, srv.URL+"/api/specs/shared/"+spec.ID+c.suffix, strings.NewReader(string(raw)))
+		req.Header.Set("Origin", npOrigin)
+		if c.capability != "" {
+			req.Header.Set("X-DW-Spec-Edit-Capability", c.capability)
+		}
+		if c.cookie != "" {
+			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: c.cookie})
+		}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if res.StatusCode != 403 {
+			t.Errorf("shared %s%s capability=%q cookie=%v: %d, want 403 (095 parity)", c.method, c.suffix, c.capability, c.cookie != "", res.StatusCode)
+		}
+	}
+	res, err := http.Get(srv.URL + "/api/specs/shared/" + spec.ID)
+	if err != nil || res.StatusCode != 200 {
+		t.Fatalf("shared GET: %v %v, want 200", res, err)
+	}
+	res.Body.Close()
+}
