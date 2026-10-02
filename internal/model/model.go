@@ -827,3 +827,23 @@ const (
 )
 
 // hub-meta-types:end
+
+// NewPlatformConsoleProjection 新平台一个用户投影进旧 console 表的内容（store.SyncNewPlatformConsoleIdentity；R-V2-SPEC-TASK-SHIM-IMPL）。
+type NewPlatformConsoleProjection struct {
+	PrincipalID string // 用户 ID 小写
+	Issuer      string
+	DisplayName string // 用户简称；与旧主体撞名时存储改写为「简称·用户ID」
+	OwnerKey    string // u_<用户 ID 小写>，与 /ws/agent 会话的 key_id 相同
+	Active      bool   // 用户 active
+	Management  bool   // 可管理用户（identity.CanManageUsers）⇒ console_platform_role＝management
+	Agents      []NewPlatformConsoleAgent
+	Session     *ConsoleSession // 非空 ⇒ 同事务投影这一个新平台会话（id／token_hash 带 np: 前缀）
+	Now         time.Time
+}
+
+// NewPlatformConsoleAgent 一个未吊销的新平台 Agent。
+type NewPlatformConsoleAgent struct {
+	ID          string // np_agent.id
+	SessionName string // 名称小写（/ws/agent 会话名）
+	Active      bool   // np_agent.state==active（暂停 ⇒ false）
+}

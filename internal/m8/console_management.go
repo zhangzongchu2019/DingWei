@@ -28,7 +28,9 @@ func (h *Hub) RequireConsoleManagement(next http.HandlerFunc) http.HandlerFunc {
 		// 与 RequireConsolePrincipal 同一口径:开关关闭时控制台端点**没有任何合法用途**,
 		// 404 而非 401/403 —— 不泄露"这里有个管理入口"。
 		// 🔵 而旧 /admin/* 那道门不看这个开关 ⇒ 业主"回退的地方"在回滚态下仍然可用。
-		if !h.consoleAuthEnabled {
+		// 门 B 组长裁定（2026-10-02T16:55:17Z）：「consoleAuthEnabled 或新平台模式」才进认人；旧模式行为不变。
+		// 新平台下 principal 由 RequireConsolePrincipal 的新平台分支给，角色读垫片投影的 console_platform_role。
+		if !h.consoleAuthEnabled && h.Identity == nil {
 			http.NotFound(w, r)
 			return
 		}

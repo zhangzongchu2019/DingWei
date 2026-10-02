@@ -202,7 +202,8 @@ func (h *Hub) HandleConsoleFileArchive(w http.ResponseWriter, r *http.Request) {
 	session, sessionOK := r.Context().Value(consoleSessionContextKey{}).(model.ConsoleSession)
 	repo, repoOK := h.Repo.(consoleOwnerScopeRepository)
 	fileID := strings.TrimSpace(r.PathValue("fileID"))
-	if !h.consoleAuthEnabled || !sessionOK || !repoOK || h.fileArchive == nil || !fileIDPattern.MatchString(fileID) {
+	// 新平台（C15）：会话为垫片投影会话（RequireConsolePrincipal 新平台分支放入），不看 consoleAuthEnabled。
+	if (!h.consoleAuthEnabled && h.Identity == nil) || !sessionOK || !repoOK || h.fileArchive == nil || !fileIDPattern.MatchString(fileID) {
 		http.NotFound(w, r)
 		return
 	}

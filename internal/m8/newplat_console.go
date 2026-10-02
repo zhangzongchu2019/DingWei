@@ -36,13 +36,18 @@ func (h *Hub) newPlatformRequireAction(action string, w http.ResponseWriter, r *
 
 // handleNewPlatformConsolePlatform 新平台的 /api/console/platform：形状与旧接口相同（role、actions、items）。
 // 平台项：管理角色下发 platform-admin（console 内部 tab，无 target）。
-// 不下发：Agent 编组（新平台编组归属待组长定，接好后再加，不给页面一个点不开的入口）；
-//
-//	Specs 与任务管理（旧平台功能，「旧功能带哪些」未定）。
+// Specs 与任务管理经身份垫片接上（R-V2-SPEC-TASK-SHIM-IMPL）后照常下发。
 func (h *Hub) handleNewPlatformConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	role := platformRole(r)
 	// 编组已接上新平台（np_group，组长裁定 132246Z）⇒ 人人都有「Agent 管理」入口（编排件第八节定的标题；页面据 id 打开编组工作区）。
+	// Specs 与任务管理（R-V2-SPEC-TASK-SHIM-IMPL G4）：经身份垫片接上新平台，人人下发（与旧平台同形、同序）。
 	items := []model.ConsolePlatformItem{{
+		ID: "specs", Kind: "spec", Title: "Specs",
+		Href: "#specs", Status: "approved", Active: true,
+	}, {
+		ID: "task-board", Kind: "task-board", Title: "任务管理",
+		Href: "#task-board", Status: "approved", Active: true,
+	}, {
 		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 管理",
 		Href: "#agent-groups", Status: "approved", Active: true,
 	}}
