@@ -184,25 +184,28 @@ func (l *Lifecycle) Restart(ctx context.Context, agentID, actorLC string, isAdmi
 	if err != nil {
 		return err
 	}
-	if err := l.st.SetSeatState(ctx, agentID, "busy", "restart", "restart", nil); err != nil {
+	// 🔴 先置 starting（detail=restart）再发节点命令（组长 lead-enable-restart-race ①）：容器里的 Agent 可能在节点回 ok
+	//    之前就连入，MarkOnline 只认 starting —— 若此刻席位还不是 starting，这次连入就丢了，5 分钟后被误记 start_timeout。
+	//    失败分支一律条件迁移（当前仍是 starting 才改）：命令途中 Agent 已连入置 online 的，不被回写盖掉。
+	if err := l.st.SetSeatState(ctx, agentID, "starting", seatStartingRestart, "restart", nil); err != nil {
 		return err
 	}
 	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "restart_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
 	if err != nil {
 		// 节点不通（组长裁定 lead-g4-joint-run-1 第 7 条）：席位状态回原样、凭据回原样，答 node_offline。
-		_ = l.st.SetSeatState(ctx, agentID, seat.State, seat.StateDetail, "node_offline", nil)
-		if !alreadyActive {
+		moved, _ := l.st.TransitionSeatState(ctx, agentID, "starting", seat.State, seat.StateDetail, "node_offline", nil)
+		if moved && !alreadyActive {
 			l.undo(ctx, agentID, actorLC, "suspend")
 		}
 		return ErrNodeOffline
 	}
 	if !res.OK {
-		_ = l.st.SetSeatState(ctx, agentID, "error", "start_failed", "fail", nil)
+		_, _ = l.st.TransitionSeatState(ctx, agentID, "starting", "error", "start_failed", "fail", nil)
 		return ErrStartFailed
 	}
-	// 容器重启 ≠ online（组长裁定，板 79498c60，与创建同口径）：停在 starting，Agent 以专属凭据连入（MarkOnline）才 online；
-	// 永不连入 ⇒ 清扫按 5 分钟记 start_timeout（这类既有席位只记错、不吊销，见 SweepTimeouts）。
-	return l.st.SetSeatState(ctx, agentID, "starting", seatStartingRestart, "start", nil)
+	// 容器重启 ≠ online（组长裁定，板 79498c60，与创建同口径）：已停在 starting，Agent 以专属凭据连入（MarkOnline）才 online；
+	// 永不连入 ⇒ 清扫按 5 分钟记 start_timeout（这类既有席位只记错、不吊销，见 SweepTimeouts；之后晚连入仍可置 online）。
+	return nil
 }
 
 // Disable 停用：confirm 必带（D8）；先 Suspend 凭据（4401 断开）再停容器。
@@ -249,20 +252,29 @@ func (l *Lifecycle) Enable(ctx context.Context, agentID, actorLC string, isAdmin
 	if err != nil {
 		return err
 	}
-	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "start_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
-	if err != nil {
-		// 节点不通（第 7 条）：撤回恢复、席位仍 disabled，答 node_offline。
+	// 同重启：先置 starting（detail=enable）再发命令（lead-enable-restart-race ①）。
+	if err := l.st.SetSeatState(ctx, agentID, "starting", seatStartingEnable, "enable", json.RawMessage(`{"resumed":true}`)); err != nil {
 		if !alreadyActive {
 			l.undo(ctx, agentID, actorLC, "suspend")
 		}
-		return ErrNodeOffline
+		return err
 	}
-	if !res.OK {
-		_ = l.st.SetSeatState(ctx, agentID, "error", "start_failed", "fail", nil)
-		return ErrStartFailed
+	res, err := l.gw.Send(ctx, seat.NodeID, NodeCommand{Type: "start_seat", Params: json.RawMessage(`{"seat_id":` + jsonStr(agentID) + `}`)})
+	if err != nil || !res.OK {
+		// 节点不通（第 7 条）或节点报起不来（lead-enable-restart-race ①）：席位回 disabled、撤回恢复。
+		// 条件迁移：命令途中 Agent 已连入置 online 的不回写，也不再暂停它的凭据。
+		kind, ret := "node_offline", ErrNodeOffline
+		if err == nil {
+			kind, ret = "fail", ErrStartFailed
+		}
+		moved, _ := l.st.TransitionSeatState(ctx, agentID, "starting", "disabled", "", kind, json.RawMessage(`{"op":"enable"}`))
+		if moved && !alreadyActive {
+			l.undo(ctx, agentID, actorLC, "suspend")
+		}
+		return ret
 	}
 	// 同重启：容器起来 ≠ online，等 Agent 连入（板 79498c60）。
-	return l.st.SetSeatState(ctx, agentID, "starting", seatStartingEnable, "start", json.RawMessage(`{"resumed":true}`))
+	return nil
 }
 
 // Destroy 销毁：confirm 必带（D8）；先备份卷（留 14 天）→ Retire 吊销 → 停删容器 → 清配额 → 账号回池。

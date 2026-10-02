@@ -348,7 +348,13 @@ func (o *Orchestrator) RunJob(ctx context.Context, agentID string) {
 // MarkOnline 席位以专属凭据连入时由 Hub 连接层回调（Hub.OnHostedAgentOnline，wireHosted 接线）。
 // 只认 starting → online：已 online 的重连、升级中（busy）新容器连入、已超时清掉的席位等一律不改（返回 nil）。
 func (o *Orchestrator) MarkOnline(ctx context.Context, agentID string) error {
-	_, err := o.st.TransitionSeatState(ctx, agentID, "starting", "online", "", "online", nil)
+	moved, err := o.st.TransitionSeatState(ctx, agentID, "starting", "online", "", "online", nil)
+	if err != nil || moved {
+		return err
+	}
+	// 既有席位重启／启用超时记了 error/start_timeout 之后 Agent 才连入（lead-enable-restart-race ②）：照样置 online。
+	// 新建超时已吊销回收，不涉及（OnlineAfterExistingTimeout 只认既有席位那条超时事件）。
+	_, err = o.st.OnlineAfterExistingTimeout(ctx, agentID)
 	return err
 }
 
@@ -400,7 +406,8 @@ WHERE state IN ('queued','pulling','starting')`)
 		if p.existing {
 			// 🔴 既有席位重启／启用后 Agent 没连上：只记错，不吊销、不解绑 —— 那是用户在用的 Agent，
 			//    把新建失败的回收套在它身上会把它的凭据吊销掉。记 error 后 Restart 仍可再试（guard 放行 error）。
-			_ = o.st.SetSeatState(ctx, p.id, "error", p.state, "fail", json.RawMessage(`{"reason":"`+p.state+`","existing":true}`))
+			//    条件迁移：选出之后、写之前 Agent 恰好连入置 online 的，不被盖回 error。
+			_, _ = o.st.TransitionSeatState(ctx, p.id, "starting", "error", p.state, "fail", json.RawMessage(`{"reason":"`+p.state+`","existing":true}`))
 			continue
 		}
 		o.dropToken(p.id)
