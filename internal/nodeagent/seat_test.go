@@ -1058,6 +1058,8 @@ func TestSeatCodexModelValidation(t *testing.T) {
 	for _, bad := range []string{
 		"gpt/6.1",               // 斜杠（路径注入面）
 		"gpt 6.1",               // 空格
+		" ",                     // 纯空白＝非法（口径对齐 01:50:12Z：与镜像侧一致拒启，不 trim 成不指定）
+		"   ",                   // 纯空白（多空格）
 		"gpt:",                  // 冒号
 		" gpt-6.1-sol",          // 首空白（不 trim——值须逐字）
 		"gpt-6.1-sol ",          // 尾空白
