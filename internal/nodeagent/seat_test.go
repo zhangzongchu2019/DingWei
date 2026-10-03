@@ -775,12 +775,11 @@ func TestParseLocalImagesRejectsWrongLength(t *testing.T) {
 // （复验存活刀 P5：RegisterDockerHandlers 若吞掉 ParseLocalImages 的错误返回 nil，本格必须红）。
 func TestRegisterDockerHandlersRejectsBadAllowlist(t *testing.T) {
 	f := newFakeDocker(t)
-	newAgent := func() *Agent { return &Agent{handlers: map[string]Handler{}} }
 	register := func(csv string) error {
-		return newAgent().RegisterDockerHandlers(
+		return (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
 			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-			"http://172.30.68.1:11080", "wss://hub.test", csv, false,
+			"http://172.30.68.1:11080", "wss://hub.test", csv, false, "",
 		)
 	}
 	if err := register(strings.Repeat("ab", 32) + "f"); err == nil || !strings.Contains(err.Error(), "NODEAGENT_LOCAL_IMAGES") {
@@ -980,7 +979,7 @@ func TestHubViaProxyThroughRegisterDockerHandlers(t *testing.T) {
 	if err := ag.RegisterDockerHandlers(
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-		"http://172.30.68.1:11080", "wss://dw.cmjrt.com:55055", "", true,
+		"http://172.30.68.1:11080", "wss://dw.cmjrt.com:55055", "", true, "",
 	); err != nil {
 		t.Fatalf("register: %v", err)
 	}
@@ -1010,5 +1009,96 @@ func TestHubViaProxyThroughRegisterDockerHandlers(t *testing.T) {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("透传后 create spec 的 Env 缺精确项 %q: %v", want, envs)
 		}
+	}
+}
+
+// R-SEAT-MODEL-NODEAGENT-20261003014344（业主方案 1，托管落实 gpt-6.1-sol）：
+// 开（模型值非空）⇒ 席位 env 含 CODEX_MODEL=<值>；空 ⇒ 与 597b4d93 逐字相同（不注入）。
+// 校验：非空非法（字符集外／超长）⇒ RegisterDockerHandlers 报错拒启（报键名）。
+// 反向：去掉注入 ⇒ 开态格红；去掉校验 ⇒ 校验格红。
+func TestSeatCodexModelInject(t *testing.T) {
+	f := newFakeDocker(t)
+	d := f.ops(t.TempDir())
+	d.seatCodexModel = "gpt-6.1-sol"
+	env := d.seatEnv("api_key", "codex")
+	joined := "\n" + strings.Join(env, "\n") + "\n"
+	if !strings.Contains(joined, "\nCODEX_MODEL=gpt-6.1-sol\n") {
+		t.Fatalf("开 ⇒ 必须含 CODEX_MODEL: %v", env)
+	}
+
+	// 空 ⇒ 逐字不变（与 597b4d93 的期望切片逐字比对）
+	d2 := f.ops(t.TempDir())
+	env2 := d2.seatEnv("api_key", "codex")
+	want := []string{
+		"SH_WS_BASE=wss://hub.test",
+		"SH_ENROLL_TOKEN_FILE=/work/enroll-token.json",
+		"SH_CRED_FILE=/work/account-credential",
+		"SH_CRED_KIND=api_key",
+		"SH_MODE=cli",
+		"SH_CLI=codex",
+		"HTTP_PROXY=http://172.30.68.1:11080",
+		"HTTPS_PROXY=http://172.30.68.1:11080",
+		"NO_PROXY=localhost,127.0.0.1,hub.test",
+	}
+	if strings.Join(env2, "|") != strings.Join(want, "|") {
+		t.Fatalf("空 ⇒ 与 597b4d93 逐字不同:\n得 %v\n要 %v", env2, want)
+	}
+}
+
+// 校验格：非法值 ⇒ RegisterDockerHandlers 报错并点名键名（启动失败路径）；合法值过。
+func TestSeatCodexModelValidation(t *testing.T) {
+	f := newFakeDocker(t)
+	register := func(model string) error {
+		return (&Agent{handlers: map[string]Handler{}}).RegisterDockerHandlers(
+			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+			"http://172.30.68.1:11080", "wss://hub.test", "", false, model,
+		)
+	}
+	for _, bad := range []string{
+		"gpt/6.1",               // 斜杠（路径注入面）
+		"gpt 6.1",               // 空格
+		strings.Repeat("a", 65), // 超长
+		"gpt;rm",                // 分号
+		"gpt$(x)",               // shell 展开形
+		"gpt-6.1-sol\nMAL=1",    // 换行（env 注入面）
+	} {
+		if err := register(bad); err == nil || !strings.Contains(err.Error(), "NODEAGENT_SEAT_CODEX_MODEL") {
+			t.Fatalf("%q 必须拒且报键名: %v", bad, err)
+		}
+	}
+	for _, ok := range []string{"", "gpt-6.1-sol", "claude_opus_4.8", "a"} {
+		if err := register(ok); err != nil {
+			t.Fatalf("%q 应放行: %v", ok, err)
+		}
+	}
+}
+
+// 透传层：模型值经 RegisterDockerHandlers → create handler → Docker create spec 的 Env 真含 CODEX_MODEL。
+func TestSeatCodexModelThroughCreateSpec(t *testing.T) {
+	f := newFakeDocker(t)
+	ag := &Agent{handlers: map[string]Handler{}}
+	if err := ag.RegisterDockerHandlers(
+		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+		"http://172.30.68.1:11080", "wss://hub.test", "", false, "gpt-6.1-sol",
+	); err != nil {
+		t.Fatalf("register: %v", err)
+	}
+	raw := `{"seat_id":"ag_cm","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`
+	if _, err := ag.handlers[CmdCreateSeat](context.Background(), json.RawMessage(raw)); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if len(f.specs) != 1 {
+		t.Fatalf("应有一次 create: %d", len(f.specs))
+	}
+	envs, _ := f.specs[0]["Env"].([]any)
+	joined := "\n"
+	for _, e := range envs {
+		v, _ := e.(string)
+		joined += v + "\n"
+	}
+	if !strings.Contains(joined, "\nCODEX_MODEL=gpt-6.1-sol\n") {
+		t.Fatalf("create spec 的 Env 必须含 CODEX_MODEL: %v", envs)
 	}
 }

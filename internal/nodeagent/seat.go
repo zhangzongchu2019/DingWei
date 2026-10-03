@@ -108,7 +108,11 @@ type dockerOps struct {
 	// 开 ⇒ NO_PROXY 不含 Hub 主机（入网 HTTP 走 relay）＋注 SH_PROXY=seatProxy（WS 走 relay CONNECT）；
 	// 关 ⇒ 现行为逐字不变（B12／本机 Hub 场景：Hub 主机追加进 NO_PROXY、WS 直连）。
 	seatHubViaProxy bool
-	waitMax         time.Duration
+	// seatCodexModel 席位 Codex 模型指定（R-SEAT-MODEL-NODEAGENT-20261003014344，业主方案 1）：
+	// 非空 ⇒ 注入 CODEX_MODEL=<值>；空 ⇒ 不注入（与 597b4d93 逐字相同）。
+	// 校验（字符集 [A-Za-z0-9._-]、≤64）在 RegisterDockerHandlers，非法即拒启。
+	seatCodexModel string
+	waitMax        time.Duration
 }
 
 func containerName(seatID string) string { return "seat-" + seatID }
@@ -266,6 +270,11 @@ func (d *dockerOps) seatEnv(credKind, cli string) []string {
 		// 且必须另注 SH_PROXY——helper WS 只认它（app.py:487-497：空＝显式 proxy=None 不读 HTTPS_PROXY）。
 		// 两个动作缺一不可：a 管 HTTP、b 管 WS。
 		env = append(env, "SH_PROXY="+d.seatProxy)
+	}
+	if d.seatCodexModel != "" {
+		// 业主方案 1（R-SEAT-MODEL-NODEAGENT）：模型指定注入席位；镜像侧 start.py 同名读入
+		// 校验后写 config.toml 的 model。空 ⇒ 不注入（行为与 597b4d93 逐字相同）。
+		env = append(env, "CODEX_MODEL="+d.seatCodexModel)
 	}
 	return env
 }
@@ -637,6 +646,19 @@ func ParseLocalImages(csv string) (map[string]bool, error) {
 	return allow, nil
 }
 
+// validModelName 模型名合法形：1–64 位、[A-Za-z0-9._-]（R-SEAT-MODEL-NODEAGENT；非法即启动失败，防注入串进席位 env）。
+func validModelName(s string) bool {
+	if len(s) == 0 || len(s) > 64 {
+		return false
+	}
+	for _, c := range s {
+		if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9') && c != '.' && c != '_' && c != '-' {
+			return false
+		}
+	}
+	return true
+}
+
 // isBareImageID：64 位小写裸 hex（Docker 镜像 ID 形态）。
 func isBareImageID(s string) bool {
 	if len(s) != 64 {
@@ -654,7 +676,10 @@ func isBareImageID(s string) bool {
 // 同时接上 T-G4-13 容量上报（真采集替换骨架桩，并注册心跳）。
 // cgroupParent 必填（eccc54bc）——create 的 --cgroup-parent 指向可配置父切片。
 // localImagesCSV 格式不对即报错（报键名），调用方拒启。
-func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool) error {
+func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, registry, cgroupParent, seatProxy, hubWSS, localImagesCSV string, seatHubViaProxy bool, seatCodexModel string) error {
+	if seatCodexModel != "" && !validModelName(seatCodexModel) {
+		return fmt.Errorf("NODEAGENT_SEAT_CODEX_MODEL %q 格式不对（须 1–64 位 [A-Za-z0-9._-]）", seatCodexModel)
+	}
 	// SH_WS_BASE＝HubURL 的 ws 源（wss://host[:port]；路径剥掉）
 	base := hubWSS
 	if i := strings.Index(base, "://"); i >= 0 {
@@ -668,7 +693,7 @@ func (a *Agent) RegisterDockerHandlers(eng *engine, quota quotaOps, seatRoot, re
 	if err != nil {
 		return err
 	}
-	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second, seatHubViaProxy: seatHubViaProxy}
+	d := &dockerOps{eng: eng, quota: quota, seatRoot: seatRoot, registry: registry, cgroupParent: cgroupParent, seatProxy: seatProxy, hubWSBase: base, localImages: allow, waitMax: 60 * time.Second, seatHubViaProxy: seatHubViaProxy, seatCodexModel: seatCodexModel}
 	a.Register(CmdPullImage, d.pull)
 	a.Register(CmdCreateSeat, d.create)
 	a.Register(CmdStopSeat, d.stop)
