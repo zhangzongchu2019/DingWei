@@ -74,6 +74,9 @@ func main() {
 		// R-SEAT-HUB-VIA-PROXY 案②（生产默认开）：席位到 Hub 全走 relay
 		//（NO_PROXY 不含 Hub＋注 SH_PROXY）；不设/非真值＝关（B12／本机 Hub 旧行为逐字不变）。
 		envTruthy("NODEAGENT_SEAT_HUB_VIA_PROXY"),
+		// R-SEAT-MODEL-NODEAGENT（业主方案 1）：席位 Codex 模型指定；可空——空则不注入
+		//（与 597b4d93 逐字相同）；非空非法格式即拒启（RegisterDockerHandlers 内校验并报键名）。
+		os.Getenv("NODEAGENT_SEAT_CODEX_MODEL"),
 	); err != nil {
 		log.Fatalf("nodeagent: %v", err)
 	}
