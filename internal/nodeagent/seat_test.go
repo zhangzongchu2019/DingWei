@@ -1058,13 +1058,26 @@ func TestSeatCodexModelValidation(t *testing.T) {
 	for _, bad := range []string{
 		"gpt/6.1",               // 斜杠（路径注入面）
 		"gpt 6.1",               // 空格
+		"gpt:",                  // 冒号
+		" gpt-6.1-sol",          // 首空白（不 trim——值须逐字）
+		"gpt-6.1-sol ",          // 尾空白
+		"gpt-模型",                // 非 ASCII
 		strings.Repeat("a", 65), // 超长
 		"gpt;rm",                // 分号
 		"gpt$(x)",               // shell 展开形
 		"gpt-6.1-sol\nMAL=1",    // 换行（env 注入面）
 	} {
-		if err := register(bad); err == nil || !strings.Contains(err.Error(), "NODEAGENT_SEAT_CODEX_MODEL") {
+		ag := &Agent{handlers: map[string]Handler{}}
+		err := ag.RegisterDockerHandlers(
+			newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+			t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+			"http://172.30.68.1:11080", "wss://hub.test", "", false, bad,
+		)
+		if err == nil || !strings.Contains(err.Error(), "NODEAGENT_SEAT_CODEX_MODEL") {
 			t.Fatalf("%q 必须拒且报键名: %v", bad, err)
+		}
+		if len(ag.handlers) != 0 { // 校验在注册前 ⇒ 不得部分注册（预审③）
+			t.Fatalf("%q 被拒后 handlers 应为空，实 %d", bad, len(ag.handlers))
 		}
 	}
 	for _, ok := range []string{"", "gpt-6.1-sol", "claude_opus_4.8", "a"} {
@@ -1074,31 +1087,67 @@ func TestSeatCodexModelValidation(t *testing.T) {
 	}
 }
 
-// 透传层：模型值经 RegisterDockerHandlers → create handler → Docker create spec 的 Env 真含 CODEX_MODEL。
+// 透传层（复验预审①②）：RegisterDockerHandlers(model) → handlers[CmdCreateSeat] → create spec。
+// 开态：CODEX_MODEL 精确出现一次、值不 trim/改写（gpt-6.1-sol＋1 字符＋64 字符边界）。
+// 空态：spec Env 不出现 CODEX_MODEL（与 seatEnv 空态逐字格互补，守 handler 入口）。
 func TestSeatCodexModelThroughCreateSpec(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		model string
+	}{
+		{"prod value", "gpt-6.1-sol"},
+		{"1 char boundary", "a"},
+		{"64 char boundary", strings.Repeat("g", 64)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newFakeDocker(t)
+			ag := &Agent{handlers: map[string]Handler{}}
+			if err := ag.RegisterDockerHandlers(
+				newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
+				t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
+				"http://172.30.68.1:11080", "wss://hub.test", "", false, tc.model,
+			); err != nil {
+				t.Fatalf("register: %v", err)
+			}
+			raw := `{"seat_id":"ag_cm","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`
+			if _, err := ag.handlers[CmdCreateSeat](context.Background(), json.RawMessage(raw)); err != nil {
+				t.Fatalf("create: %v", err)
+			}
+			if len(f.specs) != 1 {
+				t.Fatalf("应有一次 create: %d", len(f.specs))
+			}
+			envs, _ := f.specs[0]["Env"].([]any)
+			hits := 0
+			for _, e := range envs {
+				if v, _ := e.(string); strings.HasPrefix(v, "CODEX_MODEL=") {
+					hits++
+					if v != "CODEX_MODEL="+tc.model {
+						t.Fatalf("值不 trim/改写: %q ≠ %q", v, "CODEX_MODEL="+tc.model)
+					}
+				}
+			}
+			if hits != 1 {
+				t.Fatalf("CODEX_MODEL 须精确出现一次，实 %d: %v", hits, envs)
+			}
+		})
+	}
+	// 空态（预审②）：spec Env 不出现 CODEX_MODEL
 	f := newFakeDocker(t)
 	ag := &Agent{handlers: map[string]Handler{}}
 	if err := ag.RegisterDockerHandlers(
 		newFakeEngine(f.srv.Client(), f.srv.URL), &fakeQuota{},
 		t.TempDir(), "hub.local/dingwei", "dingwei-hosted.slice",
-		"http://172.30.68.1:11080", "wss://hub.test", "", false, "gpt-6.1-sol",
+		"http://172.30.68.1:11080", "wss://hub.test", "", false, "",
 	); err != nil {
 		t.Fatalf("register: %v", err)
 	}
-	raw := `{"seat_id":"ag_cm","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`
+	raw := `{"seat_id":"ag_cm0","image":"` + goodImage + `","resources":{"memory_mb":4096,"cpu_shares":2048,"disk_mb":8192},"cred_kind":"api_key","cli":"codex"}`
 	if _, err := ag.handlers[CmdCreateSeat](context.Background(), json.RawMessage(raw)); err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	if len(f.specs) != 1 {
-		t.Fatalf("应有一次 create: %d", len(f.specs))
-	}
-	envs, _ := f.specs[0]["Env"].([]any)
-	joined := "\n"
-	for _, e := range envs {
-		v, _ := e.(string)
-		joined += v + "\n"
-	}
-	if !strings.Contains(joined, "\nCODEX_MODEL=gpt-6.1-sol\n") {
-		t.Fatalf("create spec 的 Env 必须含 CODEX_MODEL: %v", envs)
+	for _, e := range f.specs[len(f.specs)-1]["Env"].([]any) {
+		if v, _ := e.(string); strings.HasPrefix(v, "CODEX_MODEL=") {
+			t.Fatalf("空态不得出现 CODEX_MODEL: %v", e)
+		}
 	}
 }
