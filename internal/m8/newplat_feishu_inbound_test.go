@@ -319,8 +319,8 @@ func TestH17NewPlatformFeishuRosterAndSyncUseIdentityOwner(t *testing.T) {
 	if err != nil || !sync.Matched || !strings.Contains(sync.Reply, "已开启同步 opus50ts") {
 		t.Fatalf("H17 sync did not resolve new-platform owner: %+v err=%v", sync, err)
 	}
-	msg = feishuInboundMessage("h17-unsync", "#unsync opus50ts")
-	unsync, err := e.hub.Dispatch(e.ctx, msg, "#unsync opus50ts")
+	msg = feishuInboundMessage("h17-unsync", "#unsync Opus50ts.zzc")
+	unsync, err := e.hub.Dispatch(e.ctx, msg, "#unsync Opus50ts.zzc")
 	if err != nil || !unsync.Matched || !strings.Contains(unsync.Reply, "已停止同步 opus50ts") {
 		t.Fatalf("H17 unsync did not resolve new-platform owner: %+v err=%v", unsync, err)
 	}
@@ -334,8 +334,8 @@ func TestH17NewPlatformFeishuRosterAndSyncUseIdentityOwner(t *testing.T) {
 	if err != nil || !sync.Matched || !strings.Contains(sync.Reply, "已开启同步 opus50ts") {
 		t.Fatalf("full_name sync did not normalize: %+v err=%v", sync, err)
 	}
-	msg = feishuInboundMessage("h17-unsync-full", "#unsync Opus50ts.zzc")
-	unsync, err = e.hub.Dispatch(e.ctx, msg, "#unsync Opus50ts.zzc")
+	msg = feishuInboundMessage("h17-unsync-full", "#unsync opus50ts")
+	unsync, err = e.hub.Dispatch(e.ctx, msg, "#unsync opus50ts")
 	if err != nil || !unsync.Matched || !strings.Contains(unsync.Reply, "已停止同步 opus50ts") {
 		t.Fatalf("full_name unsync did not normalize: %+v err=%v", unsync, err)
 	}

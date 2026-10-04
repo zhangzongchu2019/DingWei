@@ -223,6 +223,28 @@ func TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster(t *testing.T)
 	}
 }
 
+func TestNewPlatformAMRSelectorNormalizesFullName(t *testing.T) {
+	e := newAgentEnv(t)
+	codes, err := e.svc.Store.ListAgentGroups(e.ctx, e.agID)
+	if err != nil || len(codes) == 0 {
+		t.Fatalf("source group: %v %v", codes, err)
+	}
+	credB := e.enrollInGroup("dev-amr-full-name", "Kimi", codes[0])
+	a, _, _ := e.dial(e.cred, "")
+	b, _, _ := e.dial(credB, "")
+	if a == nil || b == nil {
+		t.Fatal("agent websocket did not connect")
+	}
+	defer a.CloseNow()
+	defer b.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "kimi")
+	handled, prepared, err := e.hub.prepareSessionSelector(e.ctx, AgentKeyID("zzc"), "opus50ts", model.Envelope{To: "#Kimi.zzc", Body: "amr-full-name"})
+	if err != nil || !handled || prepared.To != sessionAddress("kimi", AgentKeyID("zzc")) || prepared.Body != "amr-full-name" {
+		t.Fatalf("AMR selector full_name was not normalized: handled=%v prepared=%+v err=%v", handled, prepared, err)
+	}
+}
+
 func TestDisabledNewPlatformOwnerAgentShortSelectorIsRejected(t *testing.T) {
 	e := newAgentEnv(t)
 	codes, err := e.svc.Store.ListAgentGroups(e.ctx, e.agID)
