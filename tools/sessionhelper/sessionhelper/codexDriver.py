@@ -677,7 +677,7 @@ class CodexProtocolDriver(Driver):
 
         turn_id = self._envelope_to_turn.get(envelope_id) or (record.turn_id if record else "")
         if turn_id and turn_id in self._failed_turns:
-            detail = self._failed_turns[turn_id]
+            detail = self._failed_turns.pop(turn_id)  # 命中即清（复验提醒②：只写不删是无界增长）
             self._mark_delivery(envelope_id, "failed", detail)
             return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
         if turn_id:
