@@ -89,6 +89,35 @@ func TestViewV2RequestIDValidation(t *testing.T) {
 	}
 }
 
+func TestLegacyViewV2InputRejectsNonLegacySessionNames(t *testing.T) {
+	hub, _, _ := newTestHub(t)
+	if hub.Identity != nil {
+		t.Fatal("legacy test hub unexpectedly has an identity store")
+	}
+
+	for _, session := range []string{"kimi.zzc", "bad#session"} {
+		t.Run(session, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/internal/view-v2/input", nil)
+			req.SetPathValue("session", session)
+			recorder := httptest.NewRecorder()
+			hub.HandleInternalViewV2Input(recorder, req)
+			if recorder.Code != http.StatusBadRequest || !strings.Contains(recorder.Body.String(), "invalid session") {
+				t.Fatalf("non-legacy session %q was not rejected: status=%d body=%q", session, recorder.Code, recorder.Body.String())
+			}
+		})
+	}
+
+	// A valid legacy name must pass the name gate. With no routing target configured,
+	// the request reaches the next check and is rejected as capability-disabled.
+	req := httptest.NewRequest(http.MethodPost, "/internal/view-v2/input", nil)
+	req.SetPathValue("session", "alice-dev55-2642")
+	recorder := httptest.NewRecorder()
+	hub.HandleInternalViewV2Input(recorder, req)
+	if recorder.Code != http.StatusNotFound || !strings.Contains(recorder.Body.String(), "capability disabled") {
+		t.Fatalf("valid legacy session did not pass the name gate: status=%d body=%q", recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestViewV2TerminalSubmissionPreservesMultilineAndSubmitsOnce(t *testing.T) {
 	if got, want := terminalSubmission("line1\r\nline2\rline3"), "line1\nline2\nline3\r"; got != want {
 		t.Fatalf("terminal submission=%q want=%q", got, want)
