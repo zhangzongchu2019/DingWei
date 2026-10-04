@@ -283,6 +283,8 @@ class HubDeliveryPathTest(unittest.TestCase):
                 time.sleep(0.05)
             self.assertIn("turn_completed", blob, "事件面须见 turn_completed（Hub 据 session_event 记指标）")
             self.assertIn("failed", blob)
+            # 复验指出断言太弱：必须钉到原因文字（原始通知的 params.turn.error.message 透传）
+            self.assertIn("FAKE_TURN_BOOM", blob, "事件面须带原因文字（原始通知透传）")
 
     def test_handle_delivery_start_failure_raises_for_app_catch(self):
         # 面 2 经 handle_delivery：start 失败原样抛出——app 层（delivery_worker_loop
