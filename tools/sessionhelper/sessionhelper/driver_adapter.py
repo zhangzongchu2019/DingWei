@@ -214,6 +214,11 @@ class DriverAdapter:
             if receipt.state in ("done", "failed"):
                 if not admitted:
                     self._fail_admission(command.delivery_id)
+                if receipt.state == "failed" and not command.turn_id:
+                    # turn 未建立的同步失败（turn/start 鉴权错等）：driver 不会发 turn/completed
+                    # 通知 ⇒ 事件面补发终态（带原因），否则业主在 view 看不到（复验确认的缺口）。
+                    # turn 已建立的失败由 driver 通知驱动事件面，不重复发。
+                    self._publish_terminal_failure(command, "turn_failed", str(receipt.detail))
                 key = (command.delivery_id, command.turn_id)
                 outcome = (
                     "completed" if receipt.state == "done"

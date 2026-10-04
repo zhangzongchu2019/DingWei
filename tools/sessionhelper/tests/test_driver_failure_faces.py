@@ -203,8 +203,9 @@ class DriverFailureFacesTest(unittest.TestCase):
             # 登记修类，不挡），鉴权失败落在头部 ⇒ "turn/start failed"＋"401" 可见。
             self.assertIn("turn/start failed", logs, "helper 日志须读出失败点")
             self.assertIn("401", logs, "helper 日志须读出鉴权失败原因（401）")
-            # 「带原因的 failed」的载体＝队列终态 failed＋receipt detail（含 401 全文）；
-            # 事件面在本路径不另发 terminal failure（与面 2 的 driver_start_failed 不同路径）。
+            # 事件面（缺口修复后）：turn 未建立的同步失败也发终态事件、带完整原因
+            self.assertIn("turn_failed", reasons, "事件面须带 turn_failed")
+            self.assertIn("FAKE_TURN_AUTH_BAD", reasons, "事件面 detail 须含完整鉴权原因")
 
     def test_face3_stuck_no_terminal_event(self):
         with tempfile.TemporaryDirectory() as td:
