@@ -80,11 +80,15 @@ func (h *Hub) HandleInternalViewV2Cancel(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	keyID, internalSession, ok := h.viewInternalSession(r.Context(), session)
-	if !ok {
-		h.completeViewV2Request(targetName, req.RequestID, bodyHash, http.StatusNotFound, now)
-		http.Error(w, "session unavailable", http.StatusNotFound)
-		return
+	keyID, internalSession := "", session
+	if h.Identity != nil {
+		var ok bool
+		keyID, internalSession, ok = h.viewInternalSession(r.Context(), session)
+		if !ok {
+			h.completeViewV2Request(targetName, req.RequestID, bodyHash, http.StatusNotFound, now)
+			http.Error(w, "session unavailable", http.StatusNotFound)
+			return
+		}
 	}
 	result := h.cancelSessionDeliveryCore(r.Context(), keyID, internalSession, req.MessageID, req.DeliveryID)
 	h.completeViewV2Request(targetName, req.RequestID, bodyHash, result.Status, now)
