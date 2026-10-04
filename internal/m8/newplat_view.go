@@ -46,6 +46,57 @@ func (h *Hub) viewSessionNameAllowed(ctx context.Context, name string) bool {
 	return err == nil
 }
 
+// viewInternalSession resolves a public new-platform full_name to the key/session pair used
+// by terminal state and sessionClients. Legacy mode keeps its existing global session lookup.
+func (h *Hub) viewInternalSession(ctx context.Context, name string) (string, string, bool) {
+	name = strings.TrimSpace(name)
+	if h.Identity != nil {
+		ag, _, err := h.Identity.ResolveFullName(ctx, name)
+		if err != nil {
+			return "", "", false
+		}
+		return AgentKeyID(ag.OwnerLC), ag.NameLC(), true
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	st, ok := h.terminalBySessionNameLocked(name)
+	if !ok {
+		return "", "", false
+	}
+	return st.keyID, st.sessionName, true
+}
+
+// grantNewPlatformViewServiceInput gives the current View Service virtual viewer the same
+// single-writer grant used by #unlock. It never selects a disconnected browser viewer.
+func (h *Hub) grantNewPlatformViewServiceInput(ctx context.Context, fullName string) bool {
+	keyID, sessionName, ok := h.viewInternalSession(ctx, fullName)
+	if !ok {
+		return false
+	}
+	h.mu.Lock()
+	st := h.terminals[terminalKey(keyID, sessionName)]
+	if st == nil {
+		h.mu.Unlock()
+		return false
+	}
+	h.sweepStaleViewViewersLocked(st)
+	var target *terminalViewer
+	for _, viewer := range st.viewers {
+		if viewer.conn != nil || !viewer.disconnectedAt.IsZero() || viewer.lastSeen.IsZero() {
+			continue
+		}
+		if target == nil || viewer.lastSeen.After(target.lastSeen) {
+			target = viewer
+		}
+	}
+	h.mu.Unlock()
+	if target == nil {
+		return false
+	}
+	_, err := h.grantTerminalInput(keyID, sessionName, target.code)
+	return err == nil
+}
+
 // newPlatformViewAuth 新平台 view 路由的认人与授权；通过返回 true，否则已写好拒绝应答。
 // 不是归属用户与 Agent 不存在回同一个 404，不泄露别人名下有没有这个 Agent。
 func (h *Hub) newPlatformViewAuth(w http.ResponseWriter, r *http.Request) bool {

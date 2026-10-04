@@ -225,6 +225,9 @@ func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http
 		if h.Onboarding != nil {
 			// 新平台：路径段是 full_name，按新平台会话＋归属用户授权（newplat_view.go）。
 			if h.newPlatformViewAuth(w, r) {
+				if permission == "view" && strings.TrimSuffix(r.URL.Path, "/") == "/view/"+strings.TrimSpace(r.PathValue("sessionName")) {
+					h.grantNewPlatformViewServiceInput(r.Context(), r.PathValue("sessionName"))
+				}
 				next(w, r)
 			}
 			return
@@ -1277,6 +1280,7 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 			// 新平台：先按会话＋属主授权并校验写操作 Origin；写类子路径再核本页能力票。
 			// 有效票转换成只供内网 view-service 信任的头；无效/缺票不伪造写权，交给页面锁路径拒绝。
 			if h.newPlatformViewAuth(w, r) {
+				h.grantNewPlatformViewServiceInput(r.Context(), r.PathValue("sessionName"))
 				if r.Method != http.MethodGet && consoleCapabilityRequired(r.PathValue("rest")) {
 					verified, err := h.newPlatformViewCapability(r)
 					if err != nil {

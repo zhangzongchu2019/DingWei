@@ -110,11 +110,9 @@ func (h *Hub) HandleInternalViewV2Input(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Hub) routeViewServiceInput(ctx context.Context, session, pageID, requestID, text, principalID string) error {
-	routeSession := session
-	if h.Identity != nil {
-		if ag, _, err := h.Identity.ResolveFullName(ctx, session); err == nil {
-			routeSession = ag.NameLC()
-		}
+	_, routeSession, ok := h.viewInternalSession(ctx, session)
+	if !ok {
+		return fmt.Errorf("session unavailable")
 	}
 	h.mu.Lock()
 	st, found := h.terminalBySessionNameLocked(session)

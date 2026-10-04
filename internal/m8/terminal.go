@@ -1074,21 +1074,20 @@ func (h *Hub) HandleInternalViewInput(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
+	keyID, internalSession, found := h.viewInternalSession(r.Context(), sessionName)
 	h.mu.Lock()
-	st, found := h.terminalBySessionNameLocked(sessionName)
-	var keyID string
-	if found {
-		keyID = st.keyID
+	st := h.terminals[terminalKey(keyID, internalSession)]
+	if found && st != nil {
 		if v := st.viewers[req.ViewerID]; v != nil {
 			v.lastSeen = time.Now()
 		}
 	}
 	h.mu.Unlock()
-	if !found {
+	if !found || st == nil {
 		http.Error(w, "session offline or ambiguous", http.StatusNotFound)
 		return
 	}
-	if err := h.routeTerminalInput(r.Context(), keyID, sessionName, req.ViewerID, req.Token, req.Text); err != nil {
+	if err := h.routeTerminalInput(r.Context(), keyID, internalSession, req.ViewerID, req.Token, req.Text); err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
@@ -1105,10 +1104,11 @@ func (h *Hub) HandleInternalViewInterrupt(w http.ResponseWriter, r *http.Request
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
+	keyID, internalSession, found := h.viewInternalSession(r.Context(), sessionName)
 	h.mu.Lock()
-	st, found := h.terminalBySessionNameLocked(sessionName)
+	st := h.terminals[terminalKey(keyID, internalSession)]
 	authorized := false
-	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
+	if found && st != nil && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
 		authorized = true
 		st.writerUntil = time.Now().Add(terminalTokenTTL)
 	}
@@ -1133,18 +1133,18 @@ func (h *Hub) HandleInternalViewInterrupt(w http.ResponseWriter, r *http.Request
 // writeInterruptFrame forwards an interrupt to the unique online session.
 // Authorization stays with the caller; the helper remains the stale-turn CAS authority.
 func (h *Hub) writeInterruptFrame(ctx context.Context, sessionName, deliveryID, turnID string) (int, error) {
-	h.mu.Lock()
-	st, found := h.terminalBySessionNameLocked(sessionName)
-	var c *sessionClient
-	if found {
-		c = h.sessionClients[st.keyID][st.sessionName]
+	keyID, internalSession, found := h.viewInternalSession(ctx, sessionName)
+	if !found {
+		return http.StatusConflict, nil
 	}
+	h.mu.Lock()
+	c := h.sessionClients[keyID][internalSession]
 	h.mu.Unlock()
 	if c == nil {
 		return http.StatusConflict, nil
 	}
 	env := model.Envelope{
-		ID: randomHex(16), To: sessionAddress(sessionName, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
+		ID: randomHex(16), To: sessionAddress(internalSession, c.keyID), From: sessionAddress("workpulse", c.keyID), TS: time.Now().Unix(),
 		Meta: map[string]any{"type": terminalInterruptType, "system": true, "no_mirror": true, "delivery_id": deliveryID, "turn_id": turnID},
 	}
 	if err := c.write(ctx, env); err != nil {
@@ -1163,19 +1163,20 @@ func (h *Hub) HandleInternalViewCancel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
+	keyID, internalSession, found := h.viewInternalSession(r.Context(), sessionName)
 	h.mu.Lock()
-	st, found := h.terminalBySessionNameLocked(sessionName)
-	var keyID string
-	if found && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
-		keyID = st.keyID
+	st := h.terminals[terminalKey(keyID, internalSession)]
+	if found && st != nil && st.writerPage == req.ViewerID && st.writerToken != "" && st.writerToken == req.Token && time.Now().Before(st.writerUntil) {
 		st.writerUntil = time.Now().Add(terminalTokenTTL)
+	} else {
+		keyID = ""
 	}
 	h.mu.Unlock()
 	if keyID == "" {
 		http.Error(w, "cancel not authorized or session offline", http.StatusForbidden)
 		return
 	}
-	result := h.cancelSessionDeliveryCore(r.Context(), keyID, sessionName, req.MessageID, req.DeliveryID)
+	result := h.cancelSessionDeliveryCore(r.Context(), keyID, internalSession, req.MessageID, req.DeliveryID)
 	writeSessionDeliveryCancelResult(w, req.MessageID, req.DeliveryID, result)
 }
 
