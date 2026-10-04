@@ -397,3 +397,24 @@ func TestNewPlatformViewServiceOwnerGrantIsIdempotentDuringInput(t *testing.T) {
 		}
 	})
 }
+
+func TestNewPlatformEventsMissingSessionDoesNotCreateTerminal(t *testing.T) {
+	e := newViewEnv(t)
+	e.hub.mu.Lock()
+	before := len(e.hub.terminals)
+	e.hub.mu.Unlock()
+	req := httptest.NewRequest(http.MethodGet, "/internal/view/ghost.zzc/events", nil)
+	req.SetPathValue("session", "ghost.zzc")
+	result := httptest.NewRecorder()
+	e.hub.HandleInternalViewEvents(result, req)
+	if result.Code != http.StatusNotFound {
+		t.Fatalf("missing session status=%d body=%q", result.Code, result.Body.String())
+	}
+	e.hub.mu.Lock()
+	after := len(e.hub.terminals)
+	_, ghost := e.hub.terminals[terminalKey(AgentKeyID("zzc"), "ghost")]
+	e.hub.mu.Unlock()
+	if after != before || ghost {
+		t.Fatalf("missing events subscription created terminal: before=%d after=%d ghost=%v", before, after, ghost)
+	}
+}

@@ -26,7 +26,7 @@ type viewV2CancelRequest struct {
 // routes it through the same cancellation core as the legacy view endpoint.
 func (h *Hub) HandleInternalViewV2Cancel(w http.ResponseWriter, r *http.Request) {
 	session := strings.TrimSpace(r.PathValue("session"))
-	if !sessionNamePattern.MatchString(session) {
+	if !h.viewSessionNameAllowed(r.Context(), session) {
 		http.Error(w, "invalid session", http.StatusBadRequest)
 		return
 	}
@@ -80,7 +80,13 @@ func (h *Hub) HandleInternalViewV2Cancel(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	result := h.cancelSessionDeliveryCore(r.Context(), "", session, req.MessageID, req.DeliveryID)
+	keyID, internalSession, ok := h.viewInternalSession(r.Context(), session)
+	if !ok {
+		h.completeViewV2Request(targetName, req.RequestID, bodyHash, http.StatusNotFound, now)
+		http.Error(w, "session unavailable", http.StatusNotFound)
+		return
+	}
+	result := h.cancelSessionDeliveryCore(r.Context(), keyID, internalSession, req.MessageID, req.DeliveryID)
 	h.completeViewV2Request(targetName, req.RequestID, bodyHash, result.Status, now)
 	writeSessionDeliveryCancelResult(w, req.MessageID, req.DeliveryID, result)
 }

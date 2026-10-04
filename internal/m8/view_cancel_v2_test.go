@@ -192,3 +192,42 @@ func TestCancelSessionDeliveryCoreForwardsSentDelivery(t *testing.T) {
 		t.Fatalf("cancel envelope=%s", raw)
 	}
 }
+
+func TestNewPlatformViewV2CancelResolvesFullName(t *testing.T) {
+	e := newShimEnv(t)
+	if err := e.db.EnqueueSessionDelivery(e.ctx, model.SessionDelivery{
+		ID: "dlv-full-name", KeyID: AgentKeyID("zzc"), SessionName: "kimi", Envelope: `{}`,
+		SourceMessageID: "msg-full-name", SourceType: "view",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	secret := []byte("abcdef0123456789abcdef0123456789")
+	secretFile := filepath.Join(t.TempDir(), "vs-to-hub.key")
+	if err := os.WriteFile(secretFile, secret, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	configFile := filepath.Join(t.TempDir(), "routes.json")
+	raw, _ := json.Marshal(map[string]any{"sessions": map[string]string{"kimi.zzc": "canary"}, "targets": map[string]any{"canary": map[string]any{
+		"url": "http://127.0.0.1:19321", "view_unlock_v2": true, "vs_to_hub_secret_file": secretFile,
+	}}})
+	if err := os.WriteFile(configFile, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("VIEW_ROUTING_CONFIG", configFile)
+	resetViewRoutingCacheForTest()
+	t.Cleanup(resetViewRoutingCacheForTest)
+	path := "/internal/view-v2/kimi.zzc/cancel"
+	body, _ := json.Marshal(viewV2CancelRequest{Session: "kimi.zzc", PageID: "page", RequestID: "abcdef0123456789abcdef0123456789", MessageID: "msg-full-name", DeliveryID: "dlv-full-name"})
+	ts, nonce := strconv.FormatInt(time.Now().Unix(), 10), "abcdef0123456789abcdef0123456789"
+	req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(body))
+	req.SetPathValue("session", "kimi.zzc")
+	req.Header.Set("X-DW-VS-Target", "canary")
+	req.Header.Set("X-DW-Timestamp", ts)
+	req.Header.Set("X-DW-Nonce", nonce)
+	req.Header.Set("X-DW-Signature", signViewServiceRequest(secret, vsToHubDirection, http.MethodPost, path, ts, nonce, body))
+	result := httptest.NewRecorder()
+	e.hub.HandleInternalViewV2Cancel(result, req)
+	if result.Code != http.StatusOK {
+		t.Fatalf("full_name cancel: %d %s", result.Code, result.Body.String())
+	}
+}
