@@ -67,10 +67,18 @@ FAKE_CODEX = textwrap.dedent(
             else:
                 # stall：受理但永不发终态事件（卡交互屏的 driver 面）
                 out = {"id": rid, "result": {"turn": {"id": "turn_fake", "status": "inProgress"}}}
+        elif method == "turn/start" and False:
+            pass
         else:
             out = {"id": rid, "result": {}}
         sys.stdout.write(json.dumps(out) + "\\n")
         sys.stdout.flush()
+        if method == "turn/start" and BEHAVIOR == "turnfail-event":
+            # 真 codex 的 turn 失败通知形态：turn/completed 带 status=failed
+            note = {"method": "turn/completed", "params": {"threadId": "th_fake",
+                    "turn": {"id": "turn_fake", "status": "failed", "error": {"message": "turn failed: FAKE_TURN_BOOM"}}}}
+            sys.stdout.write(json.dumps(note) + "\\n")
+            sys.stdout.flush()
     """
 ).lstrip()
 
@@ -209,3 +217,90 @@ class DriverFailureFacesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class HubDeliveryPathTest(unittest.TestCase):
+    """复验须改 2：经 handle_delivery（Hub 真投递路径 adapter.handle_delivery，app.py:765）的格。
+    并在格内钉死 Hub 可见终态的事实口径：
+    - 面 2（start 失败）：handle_delivery 抛出（adapter 不吞）⇒ app delivery_worker_loop
+      的 except 兜住 ⇒ Hub 收 failed ACK（reason=cli_injection_failed）——既有路径，不经我方 catch。
+    - 面 1b/3（start 成功、turn 阶段失败）：handle_delivery 正常返回（入队即 injected ACK），
+      之后的失败只走 session_event（turn_completed outcome=failed 带 reason）——
+      Hub 投递态是 injected/processed，失败对 Hub 的投递面不可见（仅事件面）。"""
+
+    def _mk(self, td, behavior):
+        rig = DriverFailureFacesTest()
+        rig._testMethodName = "_mk"
+        rig._outcome = None
+        return rig._mk_adapter(td, behavior)
+
+    def test_handle_delivery_turn_auth_failure(self):
+        # turnauthfail＝turn/start 直接回错（同步 failed）；事件面（session_event）由
+        # turnfail-event 格覆盖（假件发 turn/completed(failed) 通知）。
+        with tempfile.TemporaryDirectory() as td:
+            adapter = self._mk(td, "turnauthfail")
+            injected = []
+            # handle_delivery 正常返回（不抛）＋on_injected 被调（⇒ Hub 先收 injected ACK）
+            out = adapter.handle_delivery(
+                {"body": "ping", "meta": {"source_kind": "user"}},
+                on_injected=lambda: injected.append(True),
+            )
+            self.assertEqual(out, "")
+            self.assertTrue(injected, "入队成功 ⇒ injected ACK（Hub 先见 injected）")
+            # worker 随后判 failed：队列终态＋事件面带原因；Hub 投递态停 injected/processed
+            deadline = time.monotonic() + 15
+            state = ""
+            while time.monotonic() < deadline:
+                for c in list(adapter._commands._by_delivery.values()):
+                    if c.state == "failed":
+                        state = "failed"
+                if state:
+                    break
+                time.sleep(0.05)
+            self.assertEqual(state, "failed")
+            events = []
+            while not adapter._event_q.empty():
+                events.append(adapter._event_q.get_nowait())
+            blob = json.dumps(events, ensure_ascii=False)
+            # 本路径失败载体＝队列终态 failed＋日志（session_event 的 turn_completed
+            # 由 turn/completed 通知驱动，本行为不发通知 ⇒ 不在此断言）
+
+    def test_handle_delivery_turn_failed_event_surfaces(self):
+        # 事件面：turn/completed(status=failed) 通知 ⇒ session_event 带 turn_completed
+        with tempfile.TemporaryDirectory() as td:
+            adapter = self._mk(td, "turnfail-event")
+            adapter.handle_delivery({"body": "ping", "meta": {"source_kind": "user"}},
+                                    on_injected=lambda: None)
+            deadline = time.monotonic() + 15
+            blob = ""
+            while time.monotonic() < deadline:
+                events = []
+                while not adapter._event_q.empty():
+                    events.append(adapter._event_q.get_nowait())
+                blob = json.dumps(events, ensure_ascii=False)
+                if "turn_completed" in blob:
+                    break
+                time.sleep(0.05)
+            self.assertIn("turn_completed", blob, "事件面须见 turn_completed（Hub 据 session_event 记指标）")
+            self.assertIn("failed", blob)
+
+    def test_handle_delivery_start_failure_raises_for_app_catch(self):
+        # 面 2 经 handle_delivery：start 失败原样抛出——app 层（delivery_worker_loop
+        # 的 except Exception）兜住并发 failed ACK（cli_injection_failed）。
+        # adapter 这层不吞（吞了 app 就没法区分「起不来」与「已受理」）。
+        with tempfile.TemporaryDirectory() as td:
+            adapter = self._mk(td, "crash")
+            with self.assertRaises(Exception) as cm:
+                adapter.handle_delivery({"body": "ping", "meta": {"source_kind": "user"}})
+            self.assertIn("FAKE_START_BAD", str(cm.exception))
+
+    def test_enqueue_human_start_failure_fails_with_reason(self):
+        # 小提示①：enqueue_human 的 catch 也要有格——crash 时投递以带原因 failed 结束
+        with tempfile.TemporaryDirectory() as td:
+            adapter = self._mk(td, "crash")
+            result = adapter.enqueue_human("ping")  # 不得抛出
+            self.assertIsNotNone(result.command)
+            self.assertEqual(result.command.state, "failed")
+            events = []
+            while not adapter._event_q.empty():
+                events.append(adapter._event_q.get_nowait())
+            self.assertIn("driver_start_failed", json.dumps(events, ensure_ascii=False))
