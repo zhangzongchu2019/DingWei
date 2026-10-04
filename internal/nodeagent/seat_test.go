@@ -1197,6 +1197,21 @@ func TestSeatModeSwitch(t *testing.T) {
 	if strings.Contains(joined, "SH_MODE=cli") {
 		t.Fatalf("driver ⇒ 不得再含 SH_MODE=cli: %v", env3)
 	}
+	// 其余键逐项不变（复验 M5 存活刀：driver 丢掉 HTTPS_PROXY 之类须红）——
+	// driver env 去掉 SH_MODE 与两个新键后，与未设 env 逐项相同。
+	strip := func(env []string) []string {
+		out := []string{}
+		for _, e := range env {
+			if strings.HasPrefix(e, "SH_MODE=") || strings.HasPrefix(e, "SH_DRIVER=") || strings.HasPrefix(e, "SH_EMIT_SESSION_EVENT=") {
+				continue
+			}
+			out = append(out, e)
+		}
+		return out
+	}
+	if strings.Join(strip(env3), "|") != strings.Join(strip(env), "|") {
+		t.Fatalf("driver 的其余键必须与未设逐项相同:\n得 %v\n要 %v", strip(env3), strip(env))
+	}
 	// 异议 1（组长采纳）：driver 对非 codex 席位不生效——claude 席位与现行逐字相同
 	d4 := f.ops(t.TempDir())
 	d4.seatMode = "driver"
